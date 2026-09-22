@@ -130,14 +130,13 @@ export interface DropPriceParams {
 
 export type RootStackParamList = {
   /**
-   * 앱을 열기 전 화면 둘. 탭과 배타로 그려지고 **한 번에 하나만** 스택에 선다.
-   *
-   * 둘을 함께 등록하지 않는 것이 계약이다. 함께 두면 둘 사이에 뒤로 가기와 가장자리 스와이프가
-   * 생기는데, 로그인에서 캐릭터 설정으로 간 뒤 되돌아갈 곳은 없다. 어느 것이 설지는
-   * `features/app-entry` 의 `EntryStage` 가 정한다.
+   * 앱을 열기 전 화면 넷. 탭과 배타로 그려지고 **한 스택에 함께** 쌓인다. 앞으로 가면 밀고 뒤로 가면 빼서, 기기 뒤로가기와
+   * 머리 줄의 뒤로가기 버튼이 하위 페이지와 같이 된다. 부팅 때 어디까지 쌓을지는 `features/app-entry` 의 `EntryStage` 가 정한다.
    */
   SignIn: undefined
   CharacterSetup: undefined
+  MvpGradePick: undefined
+  MvpGradeConfirm: undefined
   /**
    * 탭 레이어를 대신하는 화면 하나. 안에 층 스택과 바가 형제로 산다.
    *
@@ -193,7 +192,7 @@ export type RootStackParamList = {
 
 export type StackRouteName = Exclude<
   keyof RootStackParamList,
-  'SignIn' | 'CharacterSetup' | 'Main'
+  'SignIn' | 'CharacterSetup' | 'MvpGradePick' | 'MvpGradeConfirm' | 'Main'
 >
 
 /**
@@ -206,7 +205,7 @@ export type StackRouteName = Exclude<
  */
 export type RouteTarget =
   | { readonly kind: 'initial'; readonly route: TabRouteName }
-  | { readonly kind: 'root'; readonly route: 'SignIn' | 'CharacterSetup' }
+  | { readonly kind: 'root'; readonly route: 'SignIn' | 'CharacterSetup' | 'MvpGradePick' | 'MvpGradeConfirm' }
   | { readonly kind: 'tab'; readonly route: TabRouteName }
   | { readonly kind: 'push'; readonly route: StackRouteName }
 
@@ -242,6 +241,19 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/character-setup',
     screen: 'CharacterSetupScreen',
     target: { kind: 'root', route: 'CharacterSetup' },
+    origin: 'rn',
+  },
+  // 캐릭터 설정 다음의 온보딩 화면 둘. 웹에는 없던 자리라 `path` 는 이름표다.
+  {
+    path: '/onboarding/mvp-grade',
+    screen: 'MvpGradePickScreen',
+    target: { kind: 'root', route: 'MvpGradePick' },
+    origin: 'rn',
+  },
+  {
+    path: '/onboarding/mvp-grade/confirm',
+    screen: 'MvpGradeConfirmScreen',
+    target: { kind: 'root', route: 'MvpGradeConfirm' },
     origin: 'rn',
   },
 

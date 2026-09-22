@@ -25,7 +25,8 @@ import {
 
 export interface AuthStore extends AuthState {
   restoreFromStorage(): Promise<void>
-  signIn(apiKey: string): Promise<void>
+  /** 키를 검증하고 저장한다. 앱으로 넘어갈 수 있으면 `true`(화면이 다음 온보딩 화면을 민다). */
+  signIn(apiKey: string): Promise<boolean>
   // 개발 단계 키 모달의 확인. 모달만 닫고 저장소는 건드리지 않는다. 아래 confirmApiKeyNotice 와
   // 갈리는 자리다. 저쪽은 저장된 키가 죽은 것이라 지우지만, 이쪽은 새 키를 안 받은 것뿐이다.
   acknowledgeDevelopmentStageKey(): void
@@ -73,7 +74,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       const authError = toAuthError(error)
       useToastStore.getState().showError(formatAuthError(authError))
       set((state) => authReducer(state, { type: 'API_KEY_REJECTED', error: authError }))
-      return
+      return false
     }
 
     // 검증이 성공한 뒤에만 잰다. 키 오타는 흔한 실패인데 그때마다 열 건을 태우면 개발 단계
@@ -86,7 +87,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     // 단계 키를 새로 받는 것)까지 데려가기 때문이다.
     if ((await probeApiKeyStage(apiKey)) === 'developmentStage') {
       set((state) => authReducer(state, { type: 'DEVELOPMENT_STAGE_KEY_BLOCKED' }))
-      return
+      return false
     }
 
     // try 밖이면 미처리 rejection 이라 저장이 실패해도 아무 일도 안 일어난 것처럼 보인다.
@@ -96,7 +97,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       const authError = { kind: 'storageWriteFailed' } as const
       useToastStore.getState().showError(formatAuthError(authError))
       set((state) => authReducer(state, { type: 'API_KEY_REJECTED', error: authError }))
-      return
+      return false
     }
 
     useToastStore.getState().showSuccess('API 키를 확인했어요')
@@ -106,6 +107,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     // 같은 함수 하나가 하고(setApiKey 뒤라야 authConfig가 채워져 있다), 남의 계정 키로 이전
     // 목록을 쓰게 두지 않는 대조도 저쪽이 진다.
     await useAppEntryStore.getState().resolveAfterSignIn(accounts)
+    return true
   },
 
   acknowledgeDevelopmentStageKey() {

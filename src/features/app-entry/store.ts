@@ -14,7 +14,9 @@ import {
   getTrackedCharacterOcids,
   setTrackedCharacterOcids,
 } from '../../storage/character-selection'
+import { setMvpOnboardingPending } from '../../storage/mvp-grade-prefs'
 import type { MapleAccount } from '../../types'
+import { needsMvpOnboarding } from '../mvp-grade/onboarding'
 import { seedManualTrackedContent } from '../tracking-mode/seed'
 import { useTrackingModeStore } from '../tracking-mode/store'
 import { deriveEntryStage, type EntryStage } from './stage'
@@ -22,10 +24,15 @@ import { askNotificationPermissionOnce } from '../notice/permission-gate'
 
 export interface AppEntryState {
   stage: EntryStage
+  /**
+   * 부팅이 온보딩 중간에서 멈춘 것을 찾았을 때 그 단계. 로그인 화면이 받아 그 단계까지 스택을 다시 놓고 지운다.
+   * 온보딩은 뒤로 갈 수 있는 한 스택이라 그 화면 하나만 세우면 돌아갈 곳이 없다.
+   */
+  resumeTo: EntryStage | null
 }
 
 /** 부팅 직후. 저장소를 아직 안 읽었으므로 가장 앞 단계에 선다. */
-export const initialAppEntryState: AppEntryState = { stage: 'signIn' }
+export const initialAppEntryState: AppEntryState = { stage: 'signIn', resumeTo: null }
 
 export interface AppEntryStore extends AppEntryState {
   /** 부팅. 저장된 값에서 단계를 파생한다. */
@@ -33,12 +40,17 @@ export interface AppEntryStore extends AppEntryState {
   /** 로그인 직후. 저장된 목록이 이 키의 것인지까지 본다. */
   resolveAfterSignIn(accounts: MapleAccount[]): Promise<void>
   /**
-   * 고른 캐릭터를 저장하고 앱을 연다. 앱에서 직접 체크하는 모드면 저장한 캐릭터 전원을 시드한다.
+   * 고른 캐릭터를 저장하고 다음 단계로 간다. 앱에서 직접 체크하는 모드면 저장한 캐릭터 전원을 시드한다.
+   * 등급을 물을 메이플 ID 가 있으면 `mvpGrade`, 없으면 앱을 연다. 다음 단계를 돌려준다(화면이 그 화면을 민다).
    *
    * @param onSeedStart 시드가 실제로 시작될 때 한 번. 화면이 대기 표시를 CTA 에서 전체 화면으로
    *   바꾸는 신호다. 자동 모드에서는 시드가 없어 안 불린다.
    */
-  completeCharacterSetup(ocids: string[], onSeedStart?: () => void): Promise<void>
+  completeCharacterSetup(ocids: string[], onSeedStart?: () => void): Promise<EntryStage>
+  /** 온보딩 MVP 등급 화면의 `시작하기` 뒤. 표시를 지우고 앱을 연다. */
+  finishMvpOnboarding(): Promise<void>
+  /** 로그인 화면이 `resumeTo` 까지 스택을 다시 놓은 뒤 지운다. */
+  consumeResume(): void
   /** 로그아웃. 화면을 로그인으로 되돌린다. */
   reset(): void
 }
@@ -47,7 +59,8 @@ export const useAppEntryStore = create<AppEntryStore>()((set) => ({
   ...initialAppEntryState,
 
   async resolveFromStorage() {
-    set({ stage: await deriveEntryStage() })
+    const stage = await deriveEntryStage()
+    set({ stage, resumeTo: stage === 'characterSetup' || stage === 'mvpGrade' ? stage : null })
   },
 
   async resolveAfterSignIn(accounts) {
@@ -94,7 +107,25 @@ export const useAppEntryStore = create<AppEntryStore>()((set) => ({
       await seedManualTrackedContent(ocids)
     }
 
+    // 표시를 먼저 적는다. 그 사이 앱이 꺼져도 다시 켤 때 MVP 화면부터 잇는다.
+    if (await needsMvpOnboarding()) {
+      await setMvpOnboardingPending(true)
+      set({ stage: 'mvpGrade' })
+      return 'mvpGrade'
+    }
+    // MVP 화면에서 로그인까지 되돌아가 다른 캐릭터를 골랐을 수 있다. 앞서 적은 표시가 남으면 다음 부팅이 MVP 화면을 세운다.
+    await setMvpOnboardingPending(false)
     set({ stage: 'ready' })
+    return 'ready'
+  },
+
+  async finishMvpOnboarding() {
+    await setMvpOnboardingPending(false)
+    set({ stage: 'ready' })
+  },
+
+  consumeResume() {
+    set({ resumeTo: null })
   },
 
   reset() {

@@ -1,4 +1,4 @@
-/** MVP 등급을 묻는 흐름의 preferences 세 칸. 주간 확인 끄기 · 마지막으로 확인한 주 · 일괄 적용을 물었는가. */
+/** MVP 등급을 묻는 흐름의 preferences 네 칸. 주간 확인 끄기 · 마지막으로 확인한 주 · 일괄 적용을 물었는가 · 온보딩 MVP 화면. */
 import { STORAGE_KEYS } from './keys'
 import { preferences } from './ports'
 
@@ -28,4 +28,14 @@ export async function getMvpBulkApplyAsked(): Promise<boolean> {
 
 export async function setMvpBulkApplyAsked(): Promise<void> {
   await preferences.set(STORAGE_KEYS.mvpBulkApplyAsked, 'true')
+}
+
+/** 온보딩 MVP 등급 화면에 들어갔고 아직 시작하기를 안 눌렀나. */
+export async function getMvpOnboardingPending(): Promise<boolean> {
+  return (await preferences.get(STORAGE_KEYS.mvpOnboardingPending)) === 'true'
+}
+
+export async function setMvpOnboardingPending(pending: boolean): Promise<void> {
+  if (pending) await preferences.set(STORAGE_KEYS.mvpOnboardingPending, 'true')
+  else await preferences.remove(STORAGE_KEYS.mvpOnboardingPending)
 }

@@ -26,10 +26,12 @@ import { GUIDE_URL, NEXON_OPEN_API_URL } from './api-key-links'
 export interface ApiKeyFormProps {
   isSubmitting: boolean
   onSubmit: (apiKey: string) => void
+  /** 처음 채울 키. 온보딩에서 로그인 화면으로 돌아왔을 때 저장된 키다 */
+  initialApiKey?: string
 }
 
 export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
-  const [apiKey, setApiKey] = useState('')
+  const [apiKey, setApiKey] = useState(props.initialApiKey ?? '')
   const [isRevealed, setIsRevealed] = useState(false)
 
   function handleSubmit(): void {

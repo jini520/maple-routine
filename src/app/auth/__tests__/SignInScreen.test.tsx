@@ -5,6 +5,8 @@
 //
 // 스토어 목이 **셀렉터를 받는다**. 같은 훅을 셀렉터와 함께 부르는 자리가 있어 목 하나가 두
 // 쓰임을 다 받아야 한다.
+import { act, fireEvent } from '@testing-library/react-native'
+
 import { useAuthStore } from '../../../features/auth/store'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
@@ -13,6 +15,30 @@ import { SignInScreen } from '../SignInScreen'
 jest.mock('../../../features/auth/store', () => ({
   useAuthStore: jest.fn(),
 }))
+jest.mock('../../../features/auth/saved-key', () => ({ loadSavedApiKey: jest.fn(async () => mockSavedKey) }))
+jest.mock('../../../hooks/useScreenNavigation', () => ({
+  useScreenNavigation: () => ({ navigate: mockNavigate, goBack: jest.fn() }),
+}))
+// 온보딩 스택의 진입 단계. 셀렉터 훅과 `getState` 를 한 상태로 받는다.
+jest.mock('../../../features/app-entry/store', () => {
+  const hook = (selector: (state: unknown) => unknown) => selector(mockEntry)
+  hook.getState = () => mockEntry
+  return { useAppEntryStore: hook }
+})
+
+var mockSavedKey: string | null = null
+var mockNavigate: jest.Mock = jest.fn()
+var mockEntry: { stage: string; resumeTo: string | null; consumeResume: jest.Mock } = {
+  stage: 'signIn',
+  resumeTo: null,
+  consumeResume: jest.fn(),
+}
+
+beforeEach(() => {
+  mockSavedKey = null
+  mockNavigate = jest.fn()
+  mockEntry = { stage: 'signIn', resumeTo: null, consumeResume: jest.fn() }
+})
 
 const mockedUseAuthStore = jest.mocked(useAuthStore)
 
@@ -146,6 +172,60 @@ describe('SignInScreen', () => {
       expect(view.queryByText('기기에 저장하지 못했습니다. 다시 시도해주세요')).toBeNull()
     },
   )
+
+  // 온보딩은 뒤로 갈 수 있는 한 스택이다. 앞으로 가는 것은 이 화면이 민다.
+  it('로그인이 성공하면 다음 온보딩 화면을 민다', async () => {
+    const signIn = jest.fn(async () => {
+      mockEntry.stage = 'characterSetup'
+      return true
+    })
+    mockStore({ status: 'signedOut', signIn })
+    const view = await renderOverlay(<SignInScreen />)
+
+    await act(async () => {
+      fireEvent.changeText(view.getByPlaceholderText('발급받은 API 키를 입력하세요'), 'key-1')
+    })
+    await act(async () => {
+      fireEvent.press(view.getByText('확인'))
+    })
+
+    expect(signIn).toHaveBeenCalledWith('key-1')
+    expect(mockNavigate).toHaveBeenCalledWith('CharacterSetup')
+  })
+
+  it('로그인이 실패하면 안 민다', async () => {
+    mockStore({ status: 'signedOut', signIn: jest.fn(async () => false) })
+    const view = await renderOverlay(<SignInScreen />)
+
+    await act(async () => {
+      fireEvent.changeText(view.getByPlaceholderText('발급받은 API 키를 입력하세요'), 'bad')
+    })
+    await act(async () => {
+      fireEvent.press(view.getByText('확인'))
+    })
+
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('부팅이 온보딩 중간을 찾으면 그 단계까지 스택을 다시 놓는다', async () => {
+    mockEntry = { stage: 'mvpGrade', resumeTo: 'mvpGrade', consumeResume: jest.fn() }
+    mockStore({ status: 'signedIn' })
+
+    await renderOverlay(<SignInScreen />)
+
+    expect(mockNavigate.mock.calls).toEqual([['CharacterSetup'], ['MvpGradePick']])
+    expect(mockEntry.consumeResume).toHaveBeenCalled()
+  })
+
+  it('저장된 키가 있으면 입력칸에 채워 둔다', async () => {
+    mockSavedKey = 'saved-key'
+    mockStore({ status: 'signedIn' })
+
+    const view = await renderOverlay(<SignInScreen />)
+    await act(async () => {})
+
+    expect(view.getByPlaceholderText('발급받은 API 키를 입력하세요')).toHaveDisplayValue('saved-key')
+  })
 
   // 내비게이션 계약. `RootNavigator` 의 분기 테스트가 이 이름으로 화면을 지목한다
   // (`screen-<라우트 이름>` 규약).

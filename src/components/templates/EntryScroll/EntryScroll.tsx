@@ -1,6 +1,6 @@
 /**
- * 앱을 열기 전 화면(로그인 · 캐릭터 설정)이 놓이는 셸. 스크롤 뷰 · 안전영역 · 인디케이터 색과
- * 고정 액션 바를 갖는다.
+ * 앱을 열기 전 화면(로그인 · 캐릭터 설정 · MVP 등급)이 놓이는 셸. 스크롤 뷰 · 안전영역 · 인디케이터 색과
+ * 뒤로가기 머리 줄 · 고정 액션 바를 갖는다.
  *
  * **탭바 없는 화면의 `ScreenScroll`** 이다. 저쪽은 탭바 아래 사는 화면들의 것이라 하단 규칙이
  * 다르다.
@@ -16,6 +16,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
 import { useScrollIndicatorStyle } from '../../../theme/context'
+import { BackButton } from '../../molecules/BackButton/BackButton'
+import { PageHeader } from '../PageHeader/PageHeader'
+import { PageHeaderTitleRow } from '../PageHeader/PageHeaderTitleRow'
 
 // `props` 를 통째로 받지 않고 **구조 분해**하는 것이 계약이다. `react-hooks/refs` 는 ref 를 품은
 // 객체를 렌더 중에 읽는 것을 통째로 막으므로, `props.center` 처럼 다른 필드를 읽는 자리까지 전부
@@ -24,6 +27,7 @@ export function EntryScroll({
   center,
   scrollRef,
   tracksScrollOffset = false,
+  onBack,
   footer,
   children,
 }: {
@@ -35,6 +39,8 @@ export function EntryScroll({
    * ⚠️ 안 켜면 iOS 는 스크롤이 멈출 때 한 번만 보내서 끌기 중 오프셋이 낡는다.
    */
   tracksScrollOffset?: boolean
+  /** 머리 줄 뒤로가기 버튼이 부르는 것. 주면 하위 페이지와 같은 머리 줄이 위 안전영역을 먹고, 안 주면 머리 줄이 없다 */
+  onBack?: () => void
   /** 하단에 고정되는 액션 바의 내용. 안 주면 바 자체가 없다. */
   footer?: React.ReactNode
   children: React.ReactNode
@@ -57,9 +63,9 @@ export function EntryScroll({
       className="flex-1"
       // 마진이지 패딩이 아니다. 하단은 홈 인디케이터 자리라 콘텐츠 여백으로 남긴다. 탭바가
       // 없는 화면의 규칙이고 `ScreenScroll` 의 `bottom-inset.ts` 와 같은 갈래다.
-      style={{ marginTop: insets.top }}
+      style={{ marginTop: onBack === undefined ? insets.top : 0 }}
       contentContainerClassName={
-        center === true ? 'items-center justify-center px-4' : 'px-4 pt-8 pb-4'
+        center === true ? 'items-center justify-center px-4' : onBack === undefined ? 'px-4 pt-8 pb-4' : 'px-4 pt-4 pb-4'
       }
       contentContainerStyle={{
         flexGrow: 1,
@@ -79,20 +85,29 @@ export function EntryScroll({
     </ScrollView>
   )
 
-  // 바가 없는 화면은 상자를 하나도 더 두르지 않는다.
-  if (footer === undefined) return scroller
+  // 머리도 바도 없는 화면은 상자를 하나도 더 두르지 않는다.
+  if (footer === undefined && onBack === undefined) return scroller
 
   return (
     <View className="flex-1">
+      {onBack !== undefined && (
+        <PageHeader>
+          <PageHeaderTitleRow className="gap-2">
+            <BackButton onPress={onBack} />
+          </PageHeaderTitleRow>
+        </PageHeader>
+      )}
       {scroller}
-      <View
-        testID="entry-action-bar"
-        className="absolute inset-x-0 bottom-0 border-t border-border bg-bg px-4 pt-3"
-        style={{ paddingBottom: bottomSafeAreaPx + 12 }}
-        onLayout={(event) => setActionBarHeightPx(event.nativeEvent.layout.height)}
-      >
-        {footer}
-      </View>
+      {footer !== undefined && (
+        <View
+          testID="entry-action-bar"
+          className="absolute inset-x-0 bottom-0 border-t border-border bg-bg px-4 pt-3"
+          style={{ paddingBottom: bottomSafeAreaPx + 12 }}
+          onLayout={(event) => setActionBarHeightPx(event.nativeEvent.layout.height)}
+        >
+          {footer}
+        </View>
+      )}
     </View>
   )
 }

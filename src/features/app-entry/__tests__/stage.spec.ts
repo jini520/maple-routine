@@ -15,6 +15,11 @@ jest.mock('../../../storage/tracking-mode', () => ({
 }))
 const { getTrackingMode: getTrackingModeMock, setTrackingMode: setTrackingModeMock } = jest.requireMock('../../../storage/tracking-mode') as Record<string, jest.Mock>
 
+jest.mock('../../../storage/mvp-grade-prefs', () => ({
+  getMvpOnboardingPending: jest.fn(),
+}))
+const { getMvpOnboardingPending: getMvpOnboardingPendingMock } = jest.requireMock('../../../storage/mvp-grade-prefs') as Record<string, jest.Mock>
+
 import { deriveEntryStage } from '../stage'
 
 beforeEach(() => {
@@ -23,6 +28,7 @@ beforeEach(() => {
   getTrackingModeMock.mockResolvedValue('auto')
   getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
   setTrackingModeMock.mockResolvedValue(undefined)
+  getMvpOnboardingPendingMock.mockResolvedValue(false)
 })
 
 afterEach(() => {
@@ -61,6 +67,13 @@ describe('deriveEntryStage', () => {
     getTrackedCharacterOcidsMock.mockResolvedValue([])
 
     await expect(deriveEntryStage()).resolves.toBe('characterSetup')
+  })
+
+  // 등급 이력이 없는 것만으로는 온보딩 중인 사용자와 업데이트한 기존 사용자를 못 가른다. 표시로 가른다.
+  it('캐릭터 설정을 마치고 MVP 화면에서 꺼졌으면 mvpGrade 다', async () => {
+    getMvpOnboardingPendingMock.mockResolvedValue(true)
+
+    await expect(deriveEntryStage()).resolves.toBe('mvpGrade')
   })
 
   it('둘 다 있으면 ready 다', async () => {

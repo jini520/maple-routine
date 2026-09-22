@@ -7,22 +7,16 @@
  * @see docs/features/mvp-grade.md 묻는 자리
  */
 import { useState } from 'react'
-import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native'
+import { ScrollView, useWindowDimensions, View } from 'react-native'
 
-import { Button, CheckBox, CrownIcon, Text } from '../../components/atoms'
-import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
-import { MvpGradeGrid } from '../../components/molecules/MvpGradeGrid/MvpGradeGrid'
-import { MvpPlate } from '../../components/molecules/MvpPlate/MvpPlate'
-import { AccountRow } from '../../components/organisms/AccountSelect/AccountSelect'
+import { Button, CrownIcon, Text } from '../../components/atoms'
 import { Modal } from '../../components/organisms/Modal/Modal'
-import { WeekCalendarPopover } from '../../components/organisms/WeekCalendarPopover/WeekCalendarPopover'
-import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { historyFloorDateKey } from '../../features/cashbook/range'
 import type { MvpAsk } from '../../features/mvp-grade/ask'
 import type { MvpAskAccount, MvpAskResult } from '../../features/mvp-grade/flow-store'
-import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
-import { formatDayLabel, monthKeyOf, resetWeekStartOf } from '../../lib/calendar'
-import { mvpBenefitText, type MvpGradeKey } from '../../lib/mvp/grades'
+import { resetWeekStartOf } from '../../lib/calendar'
+import type { MvpGradeKey } from '../../lib/mvp/grades'
+import { MvpCheckRow, MvpConfirmCard, MvpPickCard, MvpWeeklyOffRow } from './MvpGradeCards'
 
 export interface MvpGradeModalProps {
   ask: MvpAsk
@@ -119,65 +113,34 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
           <ScrollView style={{ maxHeight: Math.max(windowHeight - 440, 180) }} contentContainerClassName="gap-2">
             {accounts.map((account) =>
               screen === 'pick' ? (
-                <View
+                <MvpPickCard
                   key={account.accountId}
-                  testID={`mvp-grade-card-${account.accountId}`}
-                  className="gap-3 rounded-[12px] border border-border p-3"
-                >
-                  <Identity account={account} />
-                  <MvpGradeGrid
-                    selected={gradeOf(account)}
-                    onSelect={(grade) => setGrades({ ...grades, [account.accountId]: grade })}
-                  />
-                  <Text className="text-xs text-text-muted">{mvpBenefitText(gradeOf(account))}</Text>
-                  {changedOf(account) && (
-                    <StartWeekRow
-                      testID={`mvp-grade-start-${account.accountId}`}
-                      label={startLabel}
-                      week={startOf(account)}
-                      min={floorWeek}
-                      max={thisWeek}
-                      onChange={(week) => setStarts({ ...starts, [account.accountId]: week })}
-                    />
-                  )}
-                </View>
+                  account={account}
+                  grade={gradeOf(account)}
+                  onGrade={(grade) => setGrades({ ...grades, [account.accountId]: grade })}
+                  start={changedOf(account) ? startOf(account) : null}
+                  startLabel={startLabel}
+                  floorWeek={floorWeek}
+                  thisWeek={thisWeek}
+                  onStart={(week) => setStarts({ ...starts, [account.accountId]: week })}
+                />
               ) : (
-                <View
+                <MvpConfirmCard
                   key={account.accountId}
-                  testID={`mvp-grade-card-${account.accountId}`}
-                  className="gap-2.5 rounded-[12px] border border-border p-3"
-                >
-                  <Identity account={account} />
-                  <View className="gap-2 border-t border-border pt-2.5">
-                    <ConfirmRow label="등급">
-                      <MvpPlate grade={gradeOf(account)} height={20} />
-                    </ConfirmRow>
-                    <ConfirmRow label="혜택">
-                      <Text className="text-xs text-text-muted">{mvpBenefitText(gradeOf(account))}</Text>
-                    </ConfirmRow>
-                    {changedOf(account) && (
-                      <ConfirmRow label={startLabel}>
-                        <Text className="text-xs text-text" style={TABULAR_NUMS}>
-                          {formatDayLabel(startOf(account))}
-                        </Text>
-                      </ConfirmRow>
-                    )}
-                  </View>
-                </View>
+                  account={account}
+                  grade={gradeOf(account)}
+                  start={changedOf(account) ? startOf(account) : null}
+                  startLabel={startLabel}
+                />
               ),
             )}
           </ScrollView>
 
           {screen === 'confirm' && (
             <View className="gap-3">
-              <CheckRow
-                label="앞으로 등급은 직접 바꿀게요"
-                hint="매주 등급 변경 여부를 확인하지 않아요. 설정에서 바꿀 수 있어요."
-                checked={weeklyOff}
-                onChange={setWeeklyOff}
-              />
+              <MvpWeeklyOffRow checked={weeklyOff} onChange={setWeeklyOff} />
               {ask.kind !== 'weekly' && ask.bulk && (
-                <CheckRow
+                <MvpCheckRow
                   label="지난 기록에도 수수료 적용하기"
                   hint="적용 시작 주부터의 판매 기록에 수수료를 반영해요. 직거래 기록은 나중에 없음으로 고칠 수 있어요."
                   checked={bulkApply}
@@ -212,88 +175,5 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
         </View>
       </Modal.Card>
     </Modal>
-  )
-}
-
-/** ID 카드의 머리. 목록을 못 받은 ID 는 표시 없이 선다. */
-function Identity(props: { account: MvpAskAccount }): React.JSX.Element {
-  if (props.account.summary === null) return <Text className="text-sm text-text">메이플 ID</Text>
-  return <AccountRow summary={props.account.summary} portraitUrl={props.account.portraitUrl} />
-}
-
-/** 확인 카드의 라벨–값 한 줄. */
-function ConfirmRow(props: { label: string; children: React.ReactNode }): React.JSX.Element {
-  return (
-    <View className="min-h-5 flex-row items-center justify-between gap-3">
-      <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
-      <View className="min-w-0 flex-row justify-end">{props.children}</View>
-    </View>
-  )
-}
-
-/** 적용 시작 주 한 줄. 누르면 주 고르기 달력이 열린다. */
-function StartWeekRow(props: {
-  testID: string
-  label: string
-  week: string
-  min: string
-  max: string
-  onChange: (week: string) => void
-}): React.JSX.Element {
-  const { ref, isOpen, anchor, toggle, close } = useAnchoredPopover()
-  const [monthKey, setMonthKey] = useState(monthKeyOf(props.week))
-
-  return (
-    <View className="flex-row items-center justify-between gap-2">
-      <Text className="text-xs text-text-muted">{props.label}</Text>
-      <DateSelect
-        ref={ref}
-        dateKey={props.week}
-        label={props.label}
-        onPress={toggle}
-        testID={props.testID}
-      />
-      {isOpen && (
-        <WeekCalendarPopover
-          selection={{ start: props.week, end: props.week }}
-          isSelectable={(week) => week >= props.min && week <= props.max}
-          min={props.min}
-          max={props.max}
-          monthKey={monthKey}
-          onChangeMonth={setMonthKey}
-          onSelect={(week) => {
-            props.onChange(week)
-            close()
-          }}
-          caption="선택한 주"
-          anchor={anchor}
-          onClose={close}
-        />
-      )}
-    </View>
-  )
-}
-
-/** 설명이 딸린 체크박스 한 줄. */
-function CheckRow(props: {
-  label: string
-  hint: string
-  checked: boolean
-  onChange: (checked: boolean) => void
-}): React.JSX.Element {
-  return (
-    <Pressable
-      role="checkbox"
-      aria-label={props.label}
-      aria-checked={props.checked}
-      onPress={() => props.onChange(!props.checked)}
-      className="flex-row items-start gap-2"
-    >
-      <CheckBox checked={props.checked} />
-      <View className="min-w-0 flex-1 gap-0.5">
-        <Text className="text-xs text-text">{props.label}</Text>
-        <Text className="text-11 text-text-muted">{props.hint}</Text>
-      </View>
-    </Pressable>
   )
 }

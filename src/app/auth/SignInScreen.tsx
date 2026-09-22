@@ -10,11 +10,18 @@
  * 검증(캐릭터 목록 조회)은 보통 1초 미만이라 별도 로딩 문구를 안 띄우고, 입력 폼을 그대로 유지한
  * 채 제출 버튼만 로딩 스피너로 바꾼다.
  *
+ * **온보딩 스택의 맨 아래다.** 로그인이 성공하면 캐릭터 설정을 밀고, 부팅이 온보딩 중간을 찾으면 그 단계까지
+ * 스택을 다시 놓는다. 그래야 그 위 화면들에서 뒤로가기가 이 화면까지 온다. 다시 섰을 때 입력칸에는 저장된 키가 있다.
+ *
  * @see docs/features/auth.md 정책
  */
+import { useEffect, useState } from 'react'
 import { View } from 'react-native'
 
+import { useAppEntryStore } from '../../features/app-entry/store'
+import { loadSavedApiKey } from '../../features/auth/saved-key'
 import { useAuthStore } from '../../features/auth/store'
+import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 
 import { EntryScroll } from '../../components/templates/EntryScroll/EntryScroll'
 import { ApiKeyForm } from './ApiKeyForm'
@@ -23,13 +30,46 @@ import { DevelopmentStageKeyModal } from './DevelopmentStageKeyModal'
 export function SignInScreen(): React.JSX.Element {
   const status = useAuthStore((state) => state.status)
   const signIn = useAuthStore((state) => state.signIn)
+  const resumeTo = useAppEntryStore((state) => state.resumeTo)
+  const navigation = useScreenNavigation()
+  const [savedKey, setSavedKey] = useState<string | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    void loadSavedApiKey().then((key) => {
+      if (alive) setSavedKey(key)
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  // 부팅이 찾은 단계까지 한 번 쌓는다. 스플래시가 덮고 있어 밀리는 것이 안 보인다.
+  useEffect(() => {
+    if (resumeTo === null) return
+    navigation.navigate('CharacterSetup')
+    if (resumeTo === 'mvpGrade') navigation.navigate('MvpGradePick')
+    useAppEntryStore.getState().consumeResume()
+  }, [resumeTo, navigation])
+
+  async function submit(apiKey: string): Promise<void> {
+    if (!(await signIn(apiKey))) return
+    // 앱이 열리면(`ready`) 스택이 통째로 바뀌어 밀 것이 없다.
+    if (useAppEntryStore.getState().stage !== 'ready') navigation.navigate('CharacterSetup')
+  }
 
   // `testID` 는 내비게이션 계약이다. `RootNavigator` 의 분기 테스트가 이 이름으로 "지금 이 화면이
   // 떠 있는가"를 묻는다(`screen-<라우트 이름>` 규약).
   return (
     <View testID="screen-SignIn" className="flex-1">
       <EntryScroll>
-        <ApiKeyForm isSubmitting={status === 'verifying'} onSubmit={signIn} />
+        {/* 저장된 키가 늦게 읽히면 폼을 새로 세워 그 키로 채운다. */}
+        <ApiKeyForm
+          key={savedKey ?? ''}
+          initialApiKey={savedKey ?? undefined}
+          isSubmitting={status === 'verifying'}
+          onSubmit={(apiKey) => void submit(apiKey)}
+        />
       </EntryScroll>
       {/* 폼과 직교한다. 스스로 떠 있을 때만 그리므로 이 한 줄로 폼 위에 덮인다. */}
       <DevelopmentStageKeyModal />
