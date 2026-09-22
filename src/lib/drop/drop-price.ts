@@ -9,6 +9,8 @@
  * 수수료 없이 나눈 옛 식 그대로 센다.
  */
 
+import { formatSharePercent } from '../boss/party-shares'
+
 /**
  * 가격 세 필드만 보는 구조적 타입.
  *
@@ -54,6 +56,21 @@ export function dropPayoutMeso(drop: DropPriceFields): number {
   }
   const others = total - mine
   return net - Math.floor((100 * net * others) / (mine * (100 - d) + 100 * others))
+}
+
+/**
+ * 그 드롭을 어떻게 나눴나. 균등이면 `4인`, 비율이면 내 몫 `75%` 이고, 안 나눴거나 값을 안 매겼으면 `null`.
+ *
+ * 비율로 나눈 드롭에 인원을 적으면 화면이 금액과 다른 말을 한다. 그 드롭은 인원으로 안 나눴다.
+ *
+ * @example dropSplitLabel(drop) // '75%'
+ */
+export function dropSplitLabel(drop: DropPriceFields): string | null {
+  if (drop.priceState !== 'entered') return null
+  const total = Math.max(1, drop.priceShare ?? 1)
+  const mine = Math.max(1, drop.priceMyShare ?? 1)
+  if (mine >= total) return null
+  return mine > 1 ? formatSharePercent(mine, total) : `${total}인`
 }
 
 /** 한 보스 행에 기록된 드롭 전체가 그 행에 더하는 금액. */

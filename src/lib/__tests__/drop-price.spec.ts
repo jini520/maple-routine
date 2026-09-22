@@ -1,6 +1,6 @@
 // 드롭 판매가 → 수익 환산. 이 함수가 틀리면 캐릭터 합계·총 수익·증감 칩이
 // 한꺼번에 틀리므로 규칙을 여기서 못 박는다.
-import { dropPayoutMeso, formatMesoCompact, formatMesoUnits, sumDropPayout } from '../drop/drop-price'
+import { dropPayoutMeso, dropSplitLabel, formatMesoCompact, formatMesoUnits, sumDropPayout } from '../drop/drop-price'
 
 describe('dropPayoutMeso', () => {
   it('분배 인원으로 나눈 몫을 내림한다', () => {
@@ -203,5 +203,25 @@ describe('formatMesoCompact', () => {
   it('만 미만은 단위 없이 그대로다', () => {
     expect(formatMesoCompact(9_999)).toBe('9999')
     expect(formatMesoCompact(0)).toBe('0')
+  })
+})
+
+// 비율로 나눈 드롭에 `÷ N인` 을 적으면 화면이 금액과 다른 말을 한다. 그 드롭은 인원으로 안 나눴다.
+describe('dropSplitLabel', () => {
+  it('균등이면 인원을 적는다', () => {
+    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 4 })).toBe('4인')
+  })
+
+  it('비율이면 내 몫을 백분율로 적는다', () => {
+    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 4, priceMyShare: 3 })).toBe('75%')
+  })
+
+  it('안 나눈 드롭은 적을 것이 없다', () => {
+    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 1 })).toBeNull()
+    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 3, priceMyShare: 3 })).toBeNull()
+  })
+
+  it('값을 안 매긴 드롭도 적을 것이 없다. 정해진 값처럼 읽힌다', () => {
+    expect(dropSplitLabel({ priceState: null, priceShare: 4 })).toBeNull()
   })
 })

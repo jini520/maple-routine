@@ -37,7 +37,7 @@ import {
   isEarliestNavigablePeriod,
   isLatestPeriod,
 } from '../../lib/boss/boss-profit-period'
-import { dropPayoutMeso } from '../../lib/drop/drop-price'
+import { dropPayoutMeso, dropSplitLabel } from '../../lib/drop/drop-price'
 import { dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
 import type { RootStackParamList } from '../../navigation/routes'
@@ -125,8 +125,10 @@ function EntryRow(props: {
   // 상자명(`boxOrigin`)은 쓰지 않는다. 반지 상자·칠흑 장신구 상자는 이름이 길어 실제 정보인
   // 아이템명과 보스를 밀어낸다. 무엇을 열었는지는 히스토리가 말한다.
   //
-  // 인원은 값을 매긴 기록에만 붙는다. 미입력에 `1인` 이 서면 이미 정해진 값처럼 읽힌다.
-  const shareLabel = drop.priceState === 'entered' ? ` · ${drop.priceShare ?? 1}인` : ''
+  // 나눈 몫은 값을 매긴 기록에만 붙는다. 미입력에 `1인` 이 서면 이미 정해진 값처럼 읽힌다.
+  // 비율로 나눈 드롭은 인원이 아니라 내 몫을 적는다.
+  const split = dropSplitLabel(drop)
+  const shareLabel = split === null ? '' : ` · ${split}`
 
   return (
     // RN 에 `:last-child` 가 없어 목록을 아는 부모가 알려 준다. 테두리를 아예 빼지 않고 색만

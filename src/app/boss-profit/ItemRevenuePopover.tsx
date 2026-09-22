@@ -19,7 +19,7 @@ import { type PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 
 import { formatMesoShort } from '../../lib/boss/boss-profit-delta'
 import { sortDropsForDisplay, takeTopDropsByPayout } from '../../lib/drop/drop-order'
-import { dropPayoutMeso } from '../../lib/drop/drop-price'
+import { dropPayoutMeso, dropSplitLabel } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
 import { dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
@@ -130,7 +130,7 @@ export function ItemRevenuePopover(props: {
           >
             {listed.map((drop, index) => {
               const iconUrl = dropItemIconOf(drop.itemKey)
-              const share = drop.priceShare ?? 1
+              const split = dropSplitLabel(drop)
               return (
                 <View
                   key={`${drop.itemKey ?? drop.itemName}|${drop.ringLevel ?? ''}|${index}`}
@@ -146,10 +146,10 @@ export function ItemRevenuePopover(props: {
                       {dropItemNameOf(drop.itemKey, drop.itemName)}
                       {drop.ringLevel !== undefined && ` ${drop.ringLevel}레벨`}
                     </Text>
-                    {/* 나눠 가졌을 때만 그 분배를 말한다. 1인이면 나눈 것이 없다. */}
-                    {share > 1 && (
+                    {/* 나눠 가졌을 때만 그 분배를 말한다. 혼자 다 가졌으면 나눈 것이 없다. */}
+                    {split !== null && (
                       <Text className="text-10 text-text-muted" style={TABULAR_NUMS}>
-                        {formatMesoShort(drop.priceMeso ?? 0)} ÷ {share}인
+                        {formatMesoShort(drop.priceMeso ?? 0)} {split.endsWith('인') ? '÷' : '중'} {split}
                       </Text>
                     )}
                   </View>
