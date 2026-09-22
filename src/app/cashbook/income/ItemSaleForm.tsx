@@ -7,14 +7,17 @@
  * 상태가 이 컴포넌트에 매여 있으므로 갈래를 옮기면 함께 사라진다.
  */
 import { useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Pressable } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
-import { Segment } from '../../../components/molecules/Segment/Segment'
+import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
+import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
+import { useAutoFee } from '../../../features/mvp-grade/store'
 import { netProceedsMeso, type FeePercent } from '../../../lib/cashbook/item-split'
-import { CharacterField, FieldRow } from '../sheet-fields'
+import { requiredCharacterOptions } from '../character-options'
+import { FieldRow } from '../sheet-fields'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { openInputCard } from '../../../features/input-card/store'
@@ -23,7 +26,7 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { acceptMesoText, settleMesoText } from '../../../components/organisms/MesoPad/meso-pad'
 
 /**
- * 수수료 조각 셋. `없음` 이 첫 조각이고 기본값이다.
+ * `자동` 을 끄면 서는 수수료 조각 셋.
  *
  * 3%·5% 만 두면 직거래를 못 적고, 무엇보다 수수료 칸이 생기기 전에 적힌 행이 거짓이 된다.
  * 수정 시트가 그 행을 열 때 요율 하나를 억지로 세우면 열기만 해도 금액이 달라진다.
@@ -51,15 +54,18 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   const [grossText, setGrossText] = useState(
     mesoTextOf((props.editing?.mesoAmount ?? 0) + (props.editing?.saleFeeMeso ?? 0)),
   )
-  const [feePercent, setFeePercent] = useState<FeePercent | null>(
-    props.editing?.saleFeePercent ?? null,
-  )
+  // 새 기록은 자동으로 시작한다. 수정으로 연 옛 행은 칸이 없어 손으로 고른 값으로 연다.
+  const [feeAuto, setFeeAuto] = useState(props.editing === undefined ? true : props.editing.saleFeeAuto)
+  const [manualFee, setManualFee] = useState<FeePercent | null>(props.editing?.saleFeePercent ?? null)
+  const autoFee = useAutoFee(ocid, props.dateKey)
   const { saving, submit, remove } = useSheetSubmit(props)
 
+  const feePercent = feeAuto ? (autoFee?.percent ?? null) : manualFee
   const gross = mesoValueOf(grossText)
   /** 분배 계산기의 계산을 **그대로 부른다**. 수수료 쪽을 내림한다(= 손에 남는 쪽이 커진다). */
   const net = feePercent === null ? gross : netProceedsMeso(gross, feePercent)
-  const canSave = gross > 0
+  // 요율을 캐릭터가 속한 ID 의 등급에서 찾아 캐릭터를 골라야 저장된다.
+  const canSave = gross > 0 && ocid !== null && (!feeAuto || autoFee !== null)
 
   useSaveSlot(props.setSave, {
     editing,
@@ -78,7 +84,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
         mesoAmount: net,
         saleFeePercent: feePercent,
         saleFeeMeso: feePercent === null ? null : gross - net,
-        saleFeeAuto: false,
+        saleFeeAuto: feeAuto,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
@@ -92,11 +98,16 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
 
   return (
     <>
-      <CharacterField
-        characters={props.characters}
-        selected={ocid}
-        onSelect={setOcid}
+      <ChainSelect
         testID="income-sheet-chain"
+        steps={[
+          {
+            name: '캐릭터',
+            options: requiredCharacterOptions(props.characters),
+            selected: ocid,
+            onSelect: setOcid,
+          },
+        ]}
       />
 
       <FieldRow label="판매 아이템" labelTestID="income-sheet-name-label">
@@ -165,19 +176,20 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
         </Text>
       </FieldRow>
 
-      <View
+      <FeeRow
         testID="income-sheet-fee"
-        className="flex-row items-center gap-3 border-b border-border pb-2"
-      >
-        <Text className="text-xs text-text-muted">수수료</Text>
-        <View className="ml-auto">
-          <Segment
-            options={FEE_OPTIONS}
-            selected={feeOptionOf(feePercent)}
-            onSelect={(option) => setFeePercent(feePercentOf(option))}
-          />
-        </View>
-      </View>
+        label="수수료"
+        auto={feeAuto}
+        onAutoChange={(next) => {
+          // 끄는 순간 방금까지 자동이던 요율을 고른 채 선다. 끄는 것만으로는 금액이 안 움직인다.
+          if (!next && autoFee !== null) setManualFee(autoFee.percent)
+          setFeeAuto(next)
+        }}
+        autoFee={autoFee}
+        options={FEE_OPTIONS}
+        selected={feeOptionOf(manualFee)}
+        onSelect={(option) => setManualFee(feePercentOf(option))}
+      />
 
       <AmountFigure
         // 아이템 판매의 큰 숫자는 합계다. 수수료를 뗀 값이고 앱이 세므로 못 친다.

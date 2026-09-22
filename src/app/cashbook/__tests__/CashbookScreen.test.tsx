@@ -239,8 +239,9 @@ async function 이름으로누르기(view: Rendered, label: string): Promise<voi
  * 못 친다. 시트는 **사냥으로 열리므로** 부르는 쪽이 갈래를 먼저 옮긴다.
  */
 async function 금액치기(view: Rendered, text: string): Promise<void> {
-  // 판매 대금은 입력 카드로 옮겨갔다. 줄을 눌러 카드를 열고 쳐서 확인한다.
-  await 누르기(view, 'income-sheet-gross')
+  // 기타의 금액은 입력 카드로 옮겨갔다. 줄을 눌러 카드를 열고 쳐서 확인한다.
+  // 저장 흐름만 보는 자리라 캐릭터가 필요 없는 기타로 적는다(아이템 판매는 캐릭터가 필수다).
+  await 누르기(view, 'income-sheet-unit-price')
   await act(async () => {
     fireEvent.changeText(view.getByTestId('input-card-value'), text)
   })
@@ -1038,7 +1039,7 @@ describe('펼침판이 시트를 연다', () => {
   it('저장하면 적고 다시 읽는다', async () => {
     const view = await 그리기()
     await 고르기(view, '수입 추가')
-    await 이름으로누르기(view, '아이템 판매')
+    await 누르기(view, 'income-sheet-category-etc')
 
     await 금액치기(view, '1')
     await 이름으로누르기(view, '저장')
@@ -1057,7 +1058,7 @@ describe('펼침판이 시트를 연다', () => {
   it('저장하면 시트가 닫힌다', async () => {
     const view = await 그리기()
     await 고르기(view, '수입 추가')
-    await 이름으로누르기(view, '아이템 판매')
+    await 누르기(view, 'income-sheet-category-etc')
 
     await 금액치기(view, '1')
     await 이름으로누르기(view, '저장')
@@ -1083,7 +1084,7 @@ describe('저장이 실패하면', () => {
     records.recordIncome.mockRejectedValue(new Error('no such column'))
     const view = await 그리기()
     await 고르기(view, '수입 추가')
-    await 이름으로누르기(view, '아이템 판매')
+    await 누르기(view, 'income-sheet-category-etc')
 
     await 금액치기(view, '1')
     await 이름으로누르기(view, '저장')
@@ -1130,7 +1131,8 @@ describe('저장이 실패하면', () => {
 // 무엇을 적었는지 보이고, 고치고, 지운다
 const 그날수입 = {
   id: 'inc-1',
-  ocid: null,
+  // 아이템 판매는 캐릭터가 있어야 고쳐 저장된다.
+  ocid: 'ocid-1',
   earnedOn: '2026-08-23',
   category: 'item_sale',
   item: '앱솔랩스 케이프',
@@ -1138,6 +1140,7 @@ const 그날수입 = {
   mesoAmount: 1_200_000_000,
   saleFeePercent: null,
   saleFeeMeso: null,
+  saleFeeAuto: false,
   // 수입도 통화 칸 셋을 든다. 안 쓴 통화는 `null` 이다.
   pointAmount: null,
   pointPer100mMeso: null,
