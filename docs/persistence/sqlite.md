@@ -86,12 +86,16 @@ PK: `(ocid, boss_key, difficulty, period_key)`. **보스 key 와 난이도 key �
 - **파티원 수 기본값**: `boss_party_settings`에 같은 (ocid, boss, difficulty) 설정이 있으면 그 값을, 없으면 1(솔로)을 시딩한다([[ADR-019]]).
 - **`world` = 기록 시점의 월드 스냅샷**([[ADR-069]] 결정 1, nullable). 월드 리프가 **과거 주의 결정석 귀속을 소급 이동**시키는 것을 막는다 — 전에는 화면이 라이브 캐시(`getCachedCharacterBasic`)의 월드를 썼다. `NULL`은 "월드 모름"이고 월드별 집계에서 조용히 빠진다([[ADR-054]] 결정 5). 나중에 추가된 컬럼이라 이미 만들어진 DB에는 `CREATE TABLE IF NOT EXISTS`가 손대지 않는다 — `db.ts`의 `ensureColumn`이 `PRAGMA table_info`로 확인하고 없을 때만 `ALTER TABLE ... ADD COLUMN` 한다(SQLite에 `ADD COLUMN IF NOT EXISTS`가 없다).
 - **읽기 원천 규칙**: 기록이 있으면 `record.world`, 없으면(현재 기간의 미완료 placeholder) 캐시.
+- **송금 수수료가 자동인지를 든다**([[ADR-306]] 결정 6, 설계만 · 구현 전). `split_fee_auto`(1 이 자동)를 `ensureColumn` 으로 붙인다.
+  자동인 행은 등급 기록이 바뀔 때 `split_fee_percent` 와 `payout_meso` 가 새 요율로 다시 적힌다. `NULL` 은 수동이다.
 - **`defeated_on` = 처치 **날짜** (KST `YYYY-MM-DD`, nullable — [[ADR-172]]).** `period_key` 는 주(목요일)·달이라 «며칟날» 을 못 든다. 이 칸이 그것을 들고, **가계부 캘린더만** 읽는다. 값은 스케줄러 API 의 날짜별 응답을 훑어 «미완료 → 완료» 로 뒤집힌 날을 찾아 채운다(`features/boss-profit/defeat-dates.ts`). **NULL 은 «모름» 이고 월간 칸 집계에서 조용히 빠진다** — `world` 와 같은 모양이다([[ADR-069]] 결정 1). `world` 와 마찬가지로 나중에 더한 컬럼이라 **`ensureColumn` 이 함께 있어야 한다.** 키가 아니므로 옛 행을 옮기지 않는다.
 
 ### `boss_party_settings` — 상시 파티 인원 설정
 PK: `(ocid, boss_key, difficulty)`. "이 캐릭터는 이 보스를 항상 N인 파티로 잡는다"는 사용자 설정. 완료 여부·기간과 무관한 상시 값이며, 보스 스케줄러 화면의 파티 배지·솔로/파티 필터와 보스 수익 계산기가 공유한다.
 
 - 삭제 API가 따로 없다 — 솔로로 되돌리려면 `party_size = 1`로 upsert한다("파티 관리" 설정과 솔로 취급이 값 레벨에서는 동일).
+- **송금 수수료가 자동인지를 든다**([[ADR-306]] 결정 6, 설계만 · 구현 전). `split_fee_auto` 가 1 이면 새 결정석 기록이 그 기록 날짜의
+  등급 요율로 적힌다. 비율로 바꿀 때의 기본이 자동이다([[ADR-305]] 결정 5 의 `NULL 은 3` 을 바꾼다).
 
 ### `boss_profit_period_checks` — 기간 재조회 여부 마킹
 PK: `(ocid, cycle, period_key)`. "이 캐릭터의 이 기간은 이미 (재)조회해서 로컬에 반영했다"는 마킹 전용 테이블 — 컬럼 자체에는 수익 정보가 없다.
@@ -108,6 +112,10 @@ PK: `(ocid, boss_key, difficulty, period_key, drop_index)`. [[ADR-038]]에서 �
 - **아이템을 key 로 든다**([[ADR-280]] 결정 11, 2026-09-15, 이슈 #444). `item_key`(아이템 key) · `box_origin_key`(상자 결과면 상자의 아이템 key)와 그때 이름(`item_name` · `box_origin`)을 함께 적는다. 이름만 든 옛 행은 버전 3 이 key 를 채웠고, 못 찾은 행은 key 가 `NULL` 이다. **`RecordedDrop` 을 만드는 자리(아래 변환기 셋)가 두 key 칸을 빠뜨리면 기록의 key 가 조용히 사라진다.** 가격 칸과 같은 함정이다.
 - **고가 여부는 저장하지 않는다.** `isValuableDropItem`(`lib/drop/valuable-drops`)은 표시 시점 판정이라, 이 테이블에는 **선택 등록 가능한 모든 아이템**이 구분 없이 들어 있다 — 드롭 히스토리가 별도 테이블 없이 이 테이블만 읽는 근거다([[ADR-071]] 결정 1).
 - **날짜 컬럼이 없다 — 짝인 수익 행의 `defeated_on` 을 물려받는다**([[ADR-172]] 결정 6). «먹은 날» 이 맞는 축이고([[ADR-170]] 결정 4 ④), 두 벌로 박으면 갈라질 수 있는 값이 하나 는다. 수익 행이 없는 드롭(결정석 가격을 모르는 보스)은 물려받을 것이 없어 NULL 이다.
+- **판매 · 분배 수수료를 든다**([[ADR-306]] 결정 6 · 7, 설계만 · 구현 전). `sale_fee_percent` · `split_fee_percent` 두 칸과
+  자동인지를 드는 `sale_fee_auto` · `split_fee_auto`(1 이 자동)를 `ensureColumn` 으로 붙인다. `NULL` 은 수수료를 안 센 옛 행이다.
+  자동인 칸은 등급 기록이 바뀔 때 새 요율로 다시 적힌다. **`RecordedDrop` 을 만드는 자리 셋이 두 칸을 빠뜨리면
+  값이 조용히 사라진다**(위 가격 칸과 같은 함정).
 - **`boss_profit_records`와 짝을 이룬다**(같은 `(ocid, boss, difficulty, period_key)`). FK가 없으므로 수익 기록만 지우고 이걸 남기면 고아 행이 되고, 같은 보스를 같은 기간에 다시 처치하면 예전 드롭이 되살아나 붙는다([[ADR-052]]).
 
 ### `character_profiles` — 캐릭터 이름·초상 스냅샷
@@ -207,6 +215,21 @@ SELECT target_item, MAX(item_level) AS item_level FROM enhancement_history
 이 원장이 조회 원장(`schedule-probe-ledger`, preferences)과 갈리는 이유는 **창이 없기 때문**이다.
 그쪽은 14일 뒤 스스로 떨어지지만 이쪽은 날짜가 영구히 쌓인다. preferences 에 두면 한 계정의
 JSON 하나가 무한히 자란다.
+
+### `mvp_grade_history` - 메이플 ID 의 MVP 등급 이력 ([[ADR-306]] 결정 2, 설계만 · 구현 전)
+
+PK: `(account_id, start_date)`. 한 줄이 `(메이플 ID, 시작 날짜, 등급)` 이고 **`start_date` 는 늘 목요일**(주간 기간 키)이다.
+MVP 등급이 매주 목요일에 바뀌기 때문이다. 같은 주에 다시 고르면 덮는다.
+기록의 날짜에 맞는 등급은 그 날짜 이하에서 가장 늦은 `start_date` 의 것이고, 첫 줄보다 앞이면 등급이 없다.
+**`grade` 는 `NULL` 일 수 있다.** 첫 줄보다 앞선 기간을 끼워 넣으면 그 끝을 닫는 `등급 없음` 줄이고, 그 줄부터 다음 줄 전까지는
+첫 줄보다 앞선 것과 같이 등급이 없다([[ADR-306]] 결정 11).
+스타포스 비용을 읽을 때 계산하므로 이 이력이 과거 지출을 지킨다. **`RECORD_TABLE_NAMES` 에 든다.**
+
+### `character_accounts` - 캐릭터의 메이플 ID 소속 ([[ADR-306]] 결정 3, 설계만 · 구현 전)
+
+한 줄이 `(ocid, 이름, 메이플 ID, 본 날짜)` 다. `character/list` 를 받는 모든 자리가 쓴다. 스타포스 줄은 이름만 들고 있어
+**이름으로** 찾고, 그래서 옛 이름을 지우지 않는다. `character_profiles` 는 이름을 덮어써 이 용도로 못 쓴다.
+**`RECORD_TABLE_NAMES` 에 든다.** 옛 이름과 지워진 캐릭터는 다시 받을 수 없다.
 
 ## 새 테이블을 추가할 때
 
