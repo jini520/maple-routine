@@ -49,8 +49,8 @@ export function ShareField(props: {
   const wide = props.layout === 'wide'
   // 머리 줄과 트랙 높이는 `wide` 도 `stacked` 와 같다. 갈리는 것은 합이 어디 서느냐뿐이다.
   const stacked = props.layout === 'stacked' || wide
-  // 합이 트랙 아래 가운데로 내려가는 벌만 `−` 가 먼저다. 나머지는 값이 느는 쪽이 왼쪽이다.
-  const minusFirst = props.layout === 'stacked'
+  // 가로로 서는 두 벌은 `−` 가 왼쪽이다(사용자 지정). 세로로 서는 `row` 만 `＋` 가 위다.
+  const minusFirst = stacked
   const [width, setWidth] = useState(0)
   /**
    * 끌기 중인가. 콜백은 렌더마다 새 제스처로 갈아 끼워지므로, 잡은 직후 다시 렌더되기 전에 온

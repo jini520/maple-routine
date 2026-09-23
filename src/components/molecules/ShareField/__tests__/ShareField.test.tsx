@@ -114,6 +114,19 @@ describe('ShareField', () => {
     expect(getByTestId('share-field-total-분배 비율')).toHaveTextContent('3')
   })
 
+  // 가로로 서는 두 벌은 `−` 가 왼쪽이다(사용자 지정). 세로로 서는 `row` 만 `＋` 가 위다.
+  it.each(['wide', 'stacked'] as const)('%s 는 − 가 ＋ 보다 앞이다', async (layout) => {
+    const { getAllByLabelText } = await renderAtom(
+      <ShareField label="결정석" value={{ myShare: 2, sharesTotal: 3 }} onChange={jest.fn()} layout={layout} />,
+    )
+
+    const 합버튼 = getAllByLabelText(/결정석 비율 합/)
+    expect(합버튼.map((node) => String(node.props.accessibilityLabel))).toEqual([
+      '결정석 비율 합 감소',
+      '결정석 비율 합 증가',
+    ])
+  })
+
   it('합이 상한이면 더 못 올린다', async () => {
     const onChange = jest.fn()
     const { getByLabelText } = await renderAtom(
