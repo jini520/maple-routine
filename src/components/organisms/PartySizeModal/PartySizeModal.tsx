@@ -103,7 +103,9 @@ function ShareCard(props: {
     // 칠이 `surface-2` 가 아니라 `bg` 다. 라이트에서 판(L .985)과 `surface-2`(L .90)의 단차가
     // 커 카드가 탁해 보였다(사용자 지적). `bg`(L .95)는 단차가 절반이고 채도도 낮다. 다크에서는
     // 판(L .20)보다 어두워져 파인 자리가 된다.
-    <View className="flex-1 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
+    // **늘리지도 줄이지도 않는다.** 두 장이 가로로 서던 때의 `flex-1` 을 세로 스택에 두면
+    // `flexBasis: 0` 이라 카드가 납작해지고, 밖으로 넘친 트랙과 합 버튼이 그대로 그려진다.
+    <View testID="party-share-card" className="rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
       <ShareField label={props.label} value={props.value} layout="wide" onChange={props.onChange} />
     </View>
   )

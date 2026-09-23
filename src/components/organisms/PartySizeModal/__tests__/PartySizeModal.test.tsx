@@ -335,3 +335,16 @@ describe('분배 비율', () => {
     expect(onApply).toHaveBeenCalledWith({ partySize: 2, shares: EVEN_SHARES })
   })
 })
+
+// 카드가 두 장이던 때는 `flex-row` 안에서 `flex-1` 이 폭을 반반 나눴다. 한 장이 되어 세로
+// 스택에 서면 그 `flex-1` 이 세로로 걸려 `flexBasis: 0` 이 된다. 카드가 납작해지고 RN 기본값이
+// `overflow: visible` 이라 트랙과 합 버튼이 카드 밖으로 삐져나왔다(사용자가 실기 화면에서 잡았다).
+it('비율 카드는 세로로 늘거나 줄지 않는다', async () => {
+  const { getByTestId } = await renderOverlay(
+    <PartySizeModal
+      {...props({ shares: { crystalMyShare: 2, crystalSharesTotal: 3, splitFeePercent: 3 } })}
+    />,
+  )
+
+  expect(flattenStyle(getByTestId('party-share-card').props.style).flex).toBeUndefined()
+})
