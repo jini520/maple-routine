@@ -85,6 +85,8 @@ it('부모가 마운트되면 창만 채운다. 라이브는 안 부른다', asy
 })
 
 it('채우는 동안 filling 이다. 자식이 그 사이에 스피너를 그린다', async () => {
+  // 안 받은 지난 날이 있는 회차라야 모달 경로로 들어간다. 오늘 칸만 받는 회차는 조용하다.
+  sizeMock.mockResolvedValue({ total: 105, hasPast: true })
   let 끝내기!: () => void
   syncMock.mockReturnValue(new Promise<void>((resolve) => { 끝내기 = resolve }))
 
@@ -297,6 +299,7 @@ describe('강화 사용 내역', () => {
 // 도착할 때마다 커진다. 다 합산될 때까지 안 그린다(사용자 지정).
 describe('회차 도중에는 안 알린다', () => {
   it('회차 표는 끝에 한 번만 오른다', async () => {
+    sizeMock.mockResolvedValue({ total: 105, hasPast: true })
     let resolve = (): void => undefined
     collectMock.mockImplementation(() => new Promise<void>((done) => (resolve = () => done())))
     const view = await 그리기()
@@ -424,5 +427,71 @@ describe('기록이 없는 기간으로 이동', () => {
       뒤회차끝내기()
     })
     expect(view.getByTestId('probe')).toHaveTextContent('ready:안잼')
+  })
+})
+
+// 탭을 떠나면 층이 층 스택에서 빠진다. 그래서 **재진입이 곧 마운트**이고, 마운트 회차가 모달을
+// 세우면 방문할 때마다 스피너가 돈다(사용자 보고 2026-09-23).
+//
+// 기간 이동이 쓰던 판정을 마운트도 쓴다. 오늘 칸만 받는 회차는 모달도 없고 화면도 안 막는다.
+describe('탭 재진입', () => {
+  function EntryProbe(): React.JSX.Element {
+    const { status, knownLong, collecting } = useLedgerData()
+    return (
+      <Text testID="probe">
+        {`${status}:${knownLong ? '잼' : '안잼'}:${collecting ? '막음' : '안막음'}`}
+      </Text>
+    )
+  }
+
+  const 진입 = async () =>
+    render(
+      <LedgerDataProvider>
+        <EntryProbe />
+      </LedgerDataProvider>,
+    )
+
+  /** 회차를 도는 중에 붙잡는다. 끝나 버리면 어느 길로 갔든 `ready` 라 구별이 안 된다. */
+  function 회차를_붙잡는다(): void {
+    collectMock.mockImplementation(() => new Promise<void>(() => undefined))
+  }
+
+  it('오늘 칸만 받는 회차는 모달도 없고 화면도 안 막는다', async () => {
+    sizeMock.mockResolvedValue({ total: 4, hasPast: false })
+    회차를_붙잡는다()
+
+    const view = await 진입()
+
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('idle:안잼:안막음'))
+  })
+
+  it('안 받은 지난 날이 있으면 모달을 띄우고 화면을 막는다', async () => {
+    sizeMock.mockResolvedValue({ total: 105, hasPast: true })
+    회차를_붙잡는다()
+
+    const view = await 진입()
+
+    // 이미 쟀으므로 400ms 문턱을 걷는다(`잼`). 기간 이동이 그러는 것과 같은 이유다.
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('filling:잼:막음'))
+  })
+
+  // 안 뜨는 모달보다 안 걷히는 모달이 나쁘다. 못 막는 화면보다 안 풀리는 화면이 나쁘다.
+  it('원장을 못 읽으면 안 띄우고 안 막는다', async () => {
+    sizeMock.mockRejectedValue(new Error('db'))
+    회차를_붙잡는다()
+
+    const view = await 진입()
+
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('idle:안잼:안막음'))
+  })
+
+  // 잰 값을 회차에 넘겨야 한다. 안 넘기면 회차가 같은 원장을 한 번 더 읽는다.
+  it('잰 분모를 회차에 넘긴다. 원장을 두 번 안 읽는다', async () => {
+    sizeMock.mockResolvedValue({ total: 4, hasPast: false })
+
+    await 진입()
+
+    await waitFor(() => expect(collectMock).toHaveBeenCalled())
+    expect(sizeMock).toHaveBeenCalledTimes(1)
   })
 })
