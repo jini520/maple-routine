@@ -260,6 +260,57 @@ describe('InputCard', () => {
       expect(view.queryByText('결정석')).toBeNull()
     })
 
+    /**
+     * 두 스테퍼는 같은 자리에 같은 모양으로 서지만 세는 것이 다르다. 인원은 몇 명이 나누나이고
+     * 합은 내 몫의 분모다. 한 값을 나눠 쓰면 비율에서 합을 고친 것이 인원을 덮는다(사용자 지정).
+     */
+    it('비율에서 합을 고쳐도 기본의 인원은 그대로다. 둘이 각자 기억한다', async () => {
+      const { view, onConfirm } = await 그리기({ share: 균등, value: '100' })
+
+      // 기본에서 인원을 3 -> 4
+      await act(async () => {
+        fireEvent.press(view.getByLabelText('분배 비율 파티원 수 증가'))
+      })
+
+      // 비율로 갔다가 합을 3 -> 5
+      await act(async () => {
+        fireEvent.press(view.getByText('비율'))
+      })
+      for (let 누름 = 0; 누름 < 2; 누름 += 1) {
+        await act(async () => {
+          fireEvent.press(view.getByLabelText('분배 비율 비율 합 증가'))
+        })
+      }
+      expect(view.getByTestId('share-field-total-분배 비율')).toHaveTextContent('5')
+
+      // 기본으로 돌아오면 인원은 내가 뒀던 4
+      await act(async () => {
+        fireEvent.press(view.getByText('기본'))
+      })
+      await 누르기(view, 'input-card-confirm')
+
+      expect(onConfirm).toHaveBeenCalledWith('100', { myShare: 1, sharesTotal: 4 })
+    })
+
+    it('기본에 다녀와도 비율은 제 합을 기억한다', async () => {
+      const { view } = await 그리기({ share: 균등 })
+
+      await act(async () => {
+        fireEvent.press(view.getByText('비율'))
+      })
+      await act(async () => {
+        fireEvent.press(view.getByLabelText('분배 비율 비율 합 증가'))
+      })
+      await act(async () => {
+        fireEvent.press(view.getByText('기본'))
+      })
+      await act(async () => {
+        fireEvent.press(view.getByText('비율'))
+      })
+
+      expect(view.getByTestId('share-field-total-분배 비율')).toHaveTextContent('4')
+    })
+
     it('내 비율이 1 이 아니면 비율로 열린다', async () => {
       const { view } = await 그리기({ share: 비율 })
 

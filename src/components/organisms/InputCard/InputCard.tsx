@@ -103,8 +103,18 @@ const FEE_OPTIONS = ['없음', '3%', '5%'] as const
 /** 분배 방식. `기본` 은 인원으로 균등하게 나누고 `비율` 은 내 비율과 합으로 나눈다. */
 const SPLIT_OPTIONS = ['기본', '비율'] as const
 
-/** `비율` 로 갈아탈 때 놓이는 값. 파티 모달과 같은 `2 : 1`(66.7%)이다. */
+/** 비율을 아직 안 정한 기록이 `비율` 로 갈아탈 때 놓이는 값. 파티 모달과 같은 `2 : 1`(66.7%)이다. */
 const SEED_RATIO = { myShare: 2, sharesTotal: 3 }
+
+/**
+ * `비율` 칸의 씨앗. 내 비율이 1 이면 인원으로 균등하게 나눈 기록이라 비율을 정한 적이 없고,
+ * 그 자리에는 `SEED_RATIO` 가 놓인다. 저장된 합을 그대로 쓰면 첫 화면이 `1/N`(33.3% 등)로 서서
+ * 이미 고른 값처럼 읽힌다.
+ */
+function ratioSeedOf(share: ShareSpec | undefined): ShareValue {
+  if (share === undefined || share.myShare === 1) return SEED_RATIO
+  return { myShare: share.myShare, sharesTotal: share.sharesTotal }
+}
 
 function feeOptionOf(percent: number | null): (typeof FEE_OPTIONS)[number] {
   return percent === 3 ? '3%' : percent === 5 ? '5%' : '없음'
@@ -208,10 +218,13 @@ function iconSourceOf(icon: InputCardIcon | undefined): ImageAssetRef | null {
 
 export function InputCard(props: InputCardProps): React.JSX.Element {
   const [draft, setDraft] = useState(props.value)
-  const [share, setShare] = useState<ShareValue>({
-    myShare: props.share?.myShare ?? 1,
-    sharesTotal: props.share?.sharesTotal ?? 1,
-  })
+  /**
+   * **인원과 비율 합을 따로 든다**(사용자 지정). 둘은 같은 자리에 같은 모양으로 서지만 세는 것이
+   * 다르다. 인원은 몇 명이 나누나이고 합은 내 몫의 분모다. 한 값을 나눠 쓰면 `비율` 에서 합을
+   * 고친 것이 `기본` 의 인원을 덮는다.
+   */
+  const [partySize, setPartySize] = useState(props.share?.sharesTotal ?? 1)
+  const [ratio, setRatio] = useState<ShareValue>(() => ratioSeedOf(props.share))
   /**
    * 씨앗을 다시 심는다. **그리는 중에** 바꾼다.
    *
@@ -226,12 +239,15 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   if (props.seed !== seed) {
     setSeed(props.seed)
     setDraft(props.value)
-    setShare({ myShare: props.share?.myShare ?? 1, sharesTotal: props.share?.sharesTotal ?? 1 })
+    setPartySize(props.share?.sharesTotal ?? 1)
+    setRatio(ratioSeedOf(props.share))
     setUsesRatio((props.share?.myShare ?? 1) !== 1)
     setSaleFee(props.fees?.sale ?? { auto: false, percent: null })
     setSplitFee(props.fees?.split ?? { auto: false, percent: null })
   }
   const autoFee = props.fees?.autoFee ?? null
+  /** 지금 선 쪽의 값. 확인이 내보내는 것도 수수료 줄이 보는 것도 이것 하나다. */
+  const share: ShareValue = usesRatio ? ratio : { myShare: 1, sharesTotal: partySize }
   // 내 비율이 합과 같으면 혼자 다 갖는 것이라 보낼 곳이 없다.
   const splits = share.sharesTotal > share.myShare
 
@@ -442,12 +458,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                   selected={usesRatio ? '비율' : '기본'}
                   size="md"
                   fixed
-                  onSelect={(option) => {
-                    const ratio = option === '비율'
-                    setUsesRatio(ratio)
-                    // 되돌아올 때 인원이 살아 있게, 기본으로 갈 때는 지금 합을 인원으로 쓴다.
-                    setShare(ratio ? SEED_RATIO : { myShare: 1, sharesTotal: Math.max(1, share.sharesTotal) })
-                  }}
+                  // 어느 쪽 수도 안 옮긴다. 둘이 각자 제 값을 들고 있어 돌아오면 그대로다.
+                  onSelect={(option) => setUsesRatio(option === '비율')}
                 />
               </View>
 
@@ -459,7 +471,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 {usesRatio ? (
                   // 파티 모달의 비율 카드와 같은 바탕이다. 드롭 하나의 값이라 카드가 한 장이다.
                   <View className="flex-1 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
-                    <ShareField label={props.share.label} value={share} onChange={setShare} layout="stacked" />
+                    <ShareField label={props.share.label} value={ratio} onChange={setRatio} layout="stacked" />
                   </View>
                 ) : (
                   // 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서 말한다.
@@ -487,9 +499,9 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                       <PartySizeStepper
                         size="bare"
                         label={props.share.label}
-                        value={share.sharesTotal}
+                        value={partySize}
                         max={props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}
-                        onChange={(next) => setShare({ myShare: 1, sharesTotal: next })}
+                        onChange={setPartySize}
                       />
                     </View>
                   </View>
