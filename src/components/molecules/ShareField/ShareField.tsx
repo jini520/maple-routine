@@ -141,10 +141,16 @@ export function ShareField(props: {
 
   return (
     <View className={stacked ? 'gap-4' : 'gap-2'}>
+      {/*
+        **높이를 못박는다.** 이 줄과 짝이 되는 자리(드롭 가격 카드의 `파티 인원` 줄)가 값 대신
+        배지를 이므로, 안 못박으면 줄 높이가 24(값)와 15(배지)로 갈려 두 라벨이 다른 높이에 선다.
+        `baseline` 이 아니라 `center` 인 것도 같은 이유다.
+      */}
       <View
+        testID="share-field-head"
         className={
           stacked
-            ? 'flex-row items-baseline justify-between gap-1.5'
+            ? 'h-6 flex-row items-center justify-between gap-1.5'
             : 'flex-row items-center justify-between gap-2.5'
         }
       >

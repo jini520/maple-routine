@@ -463,16 +463,25 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                   </View>
                 ) : (
                   // 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서 말한다.
-                  <View className="flex-1 gap-2.5 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
-                    <View className="flex-row items-center justify-between gap-1.5">
-                      <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
+                  <View className="flex-1 gap-4 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
+                    {/*
+                      비율 카드와 **같은 골격**이다(머리 24 · 간격 16 · 본문 94). 세그먼트를 눌러
+                      둘이 바뀔 때 칸 높이가 갈리면 그 아래 버튼 줄이 튀고, 머리 줄 높이가 갈리면
+                      `파티 인원` 과 `분배 비율` 이 서로 다른 높이에 선다(사용자 지정).
+                    */}
+                    <View
+                      testID="input-card-party-head"
+                      className="h-6 flex-row items-center justify-between gap-1.5"
+                    >
+                      <Text className="text-11 font-semibold tracking-[.04em] text-text-muted">
                         파티 인원
                       </Text>
                       <Badge variant="primary" size="mini" style={TABULAR_NUMS}>
                         최대 {props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}명
                       </Badge>
                     </View>
-                    <View className="h-9 items-center justify-center">
+                    {/* 94 는 비율 쪽 본문이다 - 트랙 44 + 간격 24 + 합 버튼 26. */}
+                    <View testID="input-card-party-body" className="h-[94px] items-center justify-center">
                       <PartySizeStepper
                         size="bare"
                         label={props.share.label}
