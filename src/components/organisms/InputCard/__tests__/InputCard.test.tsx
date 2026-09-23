@@ -391,32 +391,6 @@ describe('InputCard', () => {
         expect(flattenStyle(view.getByTestId('share-field-track').props.style).flexDirection).not.toBe('row')
       })
 
-      // 세그먼트를 눌러도 카드가 안 움직여야 한다(사용자 지정). 안쪽 내용이 무엇이든 이 줄의
-      // 높이가 곧 카드 높이라, 줄 자체를 못박는 것이 유일하게 확실한 길이다.
-      it('기본과 비율이 같은 높이의 줄에 선다', async () => {
-        const 비율칸 = await 그리기({ share: 비율, fees: 수수료 })
-        const 기본칸 = await 그리기({ share: { ...비율, myShare: 1, sharesTotal: 4 }, fees: 수수료 })
-
-        const 줄높이 = (view: typeof 비율칸.view): unknown =>
-          flattenStyle(view.getByTestId('input-card-split-fees').props.style).height
-
-        expect(줄높이(비율칸.view)).toBe(157)
-        expect(줄높이(기본칸.view)).toBe(157)
-      })
-
-      // 세그먼트를 누를 때마다 칸 높이가 갈리면 그 아래 버튼 줄이 튄다(사용자 지정).
-      it('기본과 비율이 같은 골격으로 선다. 라벨 줄과 본문 높이가 같다', async () => {
-        const 비율칸 = await 그리기({ share: 비율, fees: 수수료 })
-        const 기본칸 = await 그리기({ share: { ...비율, myShare: 1, sharesTotal: 4 }, fees: 수수료 })
-
-        const 높이 = (view: typeof 비율칸.view, testID: string): unknown =>
-          flattenStyle(view.getByTestId(testID).props.style).height
-
-        expect(높이(비율칸.view, 'share-field-head')).toBe(24)
-        expect(높이(기본칸.view, 'input-card-party-head')).toBe(24)
-        expect(높이(기본칸.view, 'input-card-party-body')).toBe(94)
-      })
-
       // 좁은 자리라 이름과 값이 한 줄을 다투면 세그먼트가 찌부러진다.
       it('수수료 줄은 이름과 값을 위아래로 나눈다', async () => {
         const { view } = await 그리기({ share: 비율, fees: 수수료 })

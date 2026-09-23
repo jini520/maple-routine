@@ -454,12 +454,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               {/*
                 왼쪽이 그 드롭의 분배, 오른쪽이 수수료 둘이다. 위아래로 쌓으면 줄이 넷이라
                 카드가 키보드를 밀어낸다.
-
-                **높이를 못박는다.** 이 줄이 카드에서 유일하게 내용대로 키가 변하는 자리라,
-                `기본` 과 `비율` 을 오갈 때도 수수료 줄이 하나로 줄 때도 카드가 안 움직인다.
-                157 은 비율 쪽 칸이다 - 여백 11 + 머리 24 + 간격 16 + 본문 94 + 여백 12.
               */}
-              <View testID="input-card-split-fees" className="h-[157px] flex-row items-stretch gap-3">
+              <View testID="input-card-split-fees" className="flex-row items-stretch gap-3">
                 {usesRatio ? (
                   // 파티 모달의 비율 카드와 같은 바탕이다. 드롭 하나의 값이라 카드가 한 장이다.
                   <View className="flex-1 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
@@ -467,25 +463,16 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                   </View>
                 ) : (
                   // 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서 말한다.
-                  <View className="flex-1 gap-4 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
-                    {/*
-                      비율 카드와 **같은 골격**이다(머리 24 · 간격 16 · 본문 94). 세그먼트를 눌러
-                      둘이 바뀔 때 칸 높이가 갈리면 그 아래 버튼 줄이 튀고, 머리 줄 높이가 갈리면
-                      `파티 인원` 과 `분배 비율` 이 서로 다른 높이에 선다(사용자 지정).
-                    */}
-                    <View
-                      testID="input-card-party-head"
-                      className="h-6 flex-row items-center justify-between gap-1.5"
-                    >
-                      <Text className="text-11 font-semibold tracking-[.04em] text-text-muted">
+                  <View className="flex-1 gap-2.5 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
+                    <View className="flex-row items-center justify-between gap-1.5">
+                      <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
                         파티 인원
                       </Text>
                       <Badge variant="primary" size="mini" style={TABULAR_NUMS}>
                         최대 {props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}명
                       </Badge>
                     </View>
-                    {/* 94 는 비율 쪽 본문이다 - 트랙 44 + 간격 24 + 합 버튼 26. */}
-                    <View testID="input-card-party-body" className="h-[94px] items-center justify-center">
+                    <View className="h-9 items-center justify-center">
                       <PartySizeStepper
                         size="bare"
                         label={props.share.label}
