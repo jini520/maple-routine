@@ -15,6 +15,23 @@ import { Modal } from '../Modal'
 const noop = (): void => {}
 
 describe('Modal', () => {
+  /*
+   * 안드로이드에서 RN `Modal` 은 별도 네이티브 창이라 앱 루트의 제스처 뿌리 밖이다. 그 안에
+   * 뿌리를 한 번 더 안 세우면 창 안의 제스처가 이벤트를 하나도 못 받는다 - 탭은 RN 응답자
+   * 시스템이라 멀쩡해서 **눌리는데 끌리지 않는다** 로 나온다(실기기 계측: 트리 17건 · 모달 안 0건).
+   */
+  it('제스처 뿌리가 모달 안에 선다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <Modal onClose={noop}>
+        <Modal.Panel>
+          <Text>내용</Text>
+        </Modal.Panel>
+      </Modal>,
+    )
+
+    expect(getByTestId('modal-gesture-root')).toBeTruthy()
+  })
+
   it('children 을 렌더링한다', async () => {
     const { getByText } = await renderOverlay(
       <Modal onClose={noop}>

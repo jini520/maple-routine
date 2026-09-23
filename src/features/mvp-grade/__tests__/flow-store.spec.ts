@@ -53,6 +53,54 @@ beforeEach(() => {
   m(afterGradeChange).mockResolvedValue(undefined)
 })
 
+describe('ID 표시를 기다리지 않는다', () => {
+  /**
+   * 고를 ID 는 **로컬로 이미 확정**된다(추적 캐릭터 + 소속 기록). 표시(닉네임 · 초상)만 넥슨
+   * `character/list` 에서 오고, 못 받으면 화면이 `메이플 ID` 로 폴백한다.
+   *
+   * 그것을 기다린 뒤에 한 번만 알리면, 망이 느린 사용자는 온보딩에서 전면 스피너를 10초까지 본다
+   * (조회 상한이 10초이고 재시도 · 캐시가 없다).
+   */
+  it('목록이 오기 전에 카드가 먼저 선다', async () => {
+    let 목록도착 = (): void => undefined
+    m(fetchAndRecordCharacterList).mockImplementation(
+      () => new Promise((resolve) => (목록도착 = () => resolve([]))),
+    )
+
+    const 회차 = useMvpAskStore.getState().evaluate(NOW)
+    try {
+      // 로컬 읽기가 다 끝나도록 한 바퀴 돌린다. 네트워크는 아직 안 왔다.
+      await new Promise((resolve) => setImmediate(resolve))
+
+      const 먼저 = useMvpAskStore.getState()
+      expect(먼저.ask).not.toBeNull()
+      expect(먼저.accounts.map((account) => account.accountId)).toEqual(['A'])
+      // 표시는 아직 없다. 화면은 `메이플 ID` 로 그린다.
+      expect(먼저.accounts[0]?.summary).toBeNull()
+    } finally {
+      // 단언이 던져도 놓아 준다. 안 놓으면 단일 비행 guard 가 남아 뒤 테스트가 전부 멈춘다.
+      목록도착()
+      await 회차
+    }
+  })
+
+  it('목록이 오면 그 자리에 표시가 채워진다', async () => {
+    await useMvpAskStore.getState().evaluate(NOW)
+
+    expect(useMvpAskStore.getState().accounts[0]?.summary).not.toBeNull()
+  })
+
+  it('목록을 못 받아도 카드는 선다', async () => {
+    m(fetchAndRecordCharacterList).mockRejectedValue(new Error('offline'))
+
+    await useMvpAskStore.getState().evaluate(NOW)
+
+    const { ask, accounts } = useMvpAskStore.getState()
+    expect(ask).not.toBeNull()
+    expect(accounts.map((account) => account.accountId)).toEqual(['A'])
+  })
+})
+
 describe('evaluate', () => {
   it('처음이면 추적 캐릭터의 ID 로 고르기를 열고 ID 표시를 채운다', async () => {
     await useMvpAskStore.getState().evaluate(NOW)

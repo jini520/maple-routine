@@ -27,6 +27,8 @@ function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
     recordedAt: '2026-08-27T00:00:00.000Z',
     priceState: null,
     priceMeso: null,
+    priceSplitMode: 'even',
+    pricePartySize: null,
     priceShare: null,
     priceMyShare: null,
     saleFeePercent: null,

@@ -186,7 +186,7 @@ describe('InputCardHost', () => {
 
     it('비율 고르개도 다음 카드의 씨앗으로 다시 심는다', async () => {
       // 내 비율이 1 이 아니라 카드가 `비율` 로 열린다(1 이면 인원 스테퍼가 선다).
-      const 비율 = { label: '분배 비율', myShare: 2, sharesTotal: 3 }
+      const 비율 = { label: '분배 비율', mode: 'ratio' as const, myShare: 2, sharesTotal: 3 }
       const view = await renderOverlay(<></>)
       await act(async () => {
         openInputCard({

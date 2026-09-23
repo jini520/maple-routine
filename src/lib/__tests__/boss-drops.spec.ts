@@ -550,3 +550,53 @@ describe('2026-09-17 패치: 아이템이 기간을 든다', () => {
     expect(plan?.drops.map((drop) => drop.itemName)).toEqual(['1단계 소울 에테르', '매지컬 무기 주문서 교환권'])
   })
 })
+
+/**
+ * 기록의 가격 칸들은 **전부 optional** 이라 매퍼가 하나를 빠뜨려도 타입 에러가 안 난다.
+ * 실제로 `price_split_mode` 를 더할 때 매퍼 셋 중 둘이 그것을 흘려, 비율로 적은 33.3% 가
+ * 화면에서 `3인` 으로 섰다(사용자 보고 2026-09-23). 그 부류를 여기서 막는다.
+ */
+describe('난이도 확정 매퍼는 가격 칸을 하나도 안 흘린다', () => {
+  const 가격칸 = [
+    'priceState',
+    'priceMeso',
+    'priceSplitMode',
+    'priceShare',
+    'priceMyShare',
+    'saleFeePercent',
+    'splitFeePercent',
+    'saleFeeAuto',
+    'splitFeeAuto',
+  ] as const
+
+  it('비율로 나눈 기록이 방식과 두 수를 그대로 들고 나온다', () => {
+    const stored: StoredDropRecord = {
+      difficulty: 'hard',
+      dropIndex: 0,
+      category: 'equipment',
+      itemKey: 'loose_control_machine_mark',
+      itemName: '루즈 컨트롤 머신 마크',
+      quantity: 1,
+      priceState: 'entered',
+      priceMeso: 900,
+      priceSplitMode: 'ratio',
+      priceShare: 3,
+      priceMyShare: 1,
+      saleFeePercent: 3,
+      splitFeePercent: 5,
+      saleFeeAuto: true,
+      splitFeeAuto: false,
+    }
+
+    // 옛 난이도 기록 하나를 확정 난이도로 옮긴다. 그 길이 매퍼를 지나간다.
+    const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', '2026-W39', [
+      { ...stored, difficulty: 'normal' },
+    ])
+    const moved = plan?.drops[0]
+    expect(moved).toBeDefined()
+
+    for (const 칸 of 가격칸) {
+      expect({ 칸, 값: moved?.[칸] }).toEqual({ 칸, 값: stored[칸] })
+    }
+  })
+})

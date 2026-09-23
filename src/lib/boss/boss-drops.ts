@@ -231,6 +231,8 @@ function toRecordedDrop(record: StoredDropRecord): RecordedDrop {
     // 타입 에러가 나지 않으므로(전부 optional) 이걸 막는 것은 테스트뿐이다.
     priceState: record.priceState,
     priceMeso: record.priceMeso,
+    priceSplitMode: record.priceSplitMode,
+    pricePartySize: record.pricePartySize,
     priceShare: record.priceShare,
     priceMyShare: record.priceMyShare,
     saleFeePercent: record.saleFeePercent,

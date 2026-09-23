@@ -226,7 +226,9 @@ describe('cleanUpWorldLeapDuplicates', () => {
       recordedAt: '2026-09-11T00:00:00.000Z',
       priceState: null,
       priceMeso: null,
-      priceShare: null,
+      priceSplitMode: 'even',
+    pricePartySize: null,
+    priceShare: null,
       priceMyShare: null,
       saleFeePercent: null,
       splitFeePercent: null,
@@ -278,7 +280,13 @@ describe('cleanUpWorldLeapDuplicates', () => {
       'hard',
       '2026-09-10',
       [
-        { category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 },
+        {
+          category: 'equipment',
+          itemKey: 'loose_control_machine_mark',
+          itemName: '루즈 컨트롤 머신 마크',
+          quantity: 1,
+          priceSplitMode: 'even',
+        },
         {
           category: 'equipment',
           itemKey: 'magic_eyepatch',
@@ -286,6 +294,7 @@ describe('cleanUpWorldLeapDuplicates', () => {
           quantity: 1,
           priceState: 'entered',
           priceMeso: 500_000_000,
+          priceSplitMode: 'even',
           priceShare: 3,
         },
       ],

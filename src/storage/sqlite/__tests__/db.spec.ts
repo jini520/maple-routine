@@ -422,7 +422,7 @@ describe('world 컬럼 마이그레이션', () => {
 // 가격 세 컬럼도 같은 사정이다. 이미 드롭을 기록해 둔 사용자의 DB에는
 // `boss_drop_records` 가 이미 있으므로 CREATE 로는 컬럼이 붙지 않는다.
 describe('가격 컬럼 마이그레이션', () => {
-  it('없으면 price_state·price_meso·price_share·price_my_share 를 ALTER 로 더한다', async () => {
+  it('없으면 price_state·price_meso·price_share·price_my_share·price_split_mode 를 ALTER 로 더한다', async () => {
     isConnectionMock.mockResolvedValue(false)
     dbQueryMock.mockResolvedValue({ values: [{ name: 'ocid' }] })
 
@@ -442,6 +442,14 @@ describe('가격 컬럼 마이그레이션', () => {
     expect(dbExecuteMock).toHaveBeenCalledWith(
       'ALTER TABLE boss_drop_records ADD COLUMN price_my_share INTEGER',
     )
+    // 위 두 칸의 뜻을 정하는 칸. 없으면 화면이 숫자로 되짚어 비율 1:3 이 `3인` 으로 선다.
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      'ALTER TABLE boss_drop_records ADD COLUMN price_split_mode TEXT',
+    )
+    // 기본의 인원. 비율 합과 칸을 가른다 - 겸하면 비율에서 고친 합이 인원을 덮는다.
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      'ALTER TABLE boss_drop_records ADD COLUMN price_party_size INTEGER',
+    )
   })
 
   it('이미 있으면 더하지 않는다', async () => {
@@ -452,6 +460,8 @@ describe('가격 컬럼 마이그레이션', () => {
         { name: 'price_meso' },
         { name: 'price_share' },
         { name: 'price_my_share' },
+        { name: 'price_split_mode' },
+        { name: 'price_party_size' },
       ],
     })
 

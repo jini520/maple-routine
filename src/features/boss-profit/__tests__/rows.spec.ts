@@ -229,6 +229,8 @@ describe('toRecordedDrop: 가격 필드', () => {
     ringLevel: null,
     quantity: 1,
     recordedAt: '2026-08-10T00:00:00.000Z',
+    priceSplitMode: 'even' as const,
+    pricePartySize: null,
     priceMyShare: null,
     saleFeePercent: null,
     splitFeePercent: null,
@@ -238,11 +240,20 @@ describe('toRecordedDrop: 가격 필드', () => {
 
   it('저장소의 가격 세 컬럼을 도메인 드롭으로 옮긴다', () => {
     expect(
-      toRecordedDrop({ ...base, priceState: 'entered', priceMeso: 15_000_000_000, priceShare: 3 }),
+      toRecordedDrop({
+        ...base,
+        priceState: 'entered',
+        priceMeso: 15_000_000_000,
+        pricePartySize: 4,
+        priceShare: 3,
+      }),
     ).toEqual(
       expect.objectContaining({
         priceState: 'entered',
         priceMeso: 15_000_000_000,
+        priceSplitMode: 'even',
+        // 기본의 인원. 비율 합과 칸이 다르다.
+        pricePartySize: 4,
         priceShare: 3,
       }),
     )
@@ -500,18 +511,25 @@ it('mergeRecordsIntoRows 는 기록의 비율과 송금 수수료도 행에 싣�
 })
 
 // 드롭 가격 카드의 씨앗. 비율은 결정석에만 있어 여기서는 그 행의 파티 인원으로 균등하다.
+// 인원과 비율은 **칸이 다르다**. 씨앗도 따로 놓는다 - 한 칸에서 둘을 뿌리면 비율에서 고친 합이
+// 기본의 인원을 덮는다(사용자 보고).
 describe('dropShareSeedOf', () => {
-  it('받은 파티 인원으로 균등하다', () => {
+  it('받은 파티 인원은 인원 칸에만 놓는다', () => {
     expect(dropShareSeedOf(4)).toEqual({
-      myShare: 1,
-      sharesTotal: 4,
+      mode: 'even',
+      partySize: 4,
+      // 비율은 아직 고른 적이 없다. 카드가 쓰는 씨앗(`2 : 3`)이 그대로 놓인다.
+      myShare: 2,
+      sharesTotal: 3,
     })
   })
 
-  it('혼자면 나눌 것이 없다', () => {
+  it('혼자여도 비율 씨앗은 인원을 안 따라간다', () => {
     expect(dropShareSeedOf(1)).toEqual({
-      myShare: 1,
-      sharesTotal: 1,
+      mode: 'even',
+      partySize: 1,
+      myShare: 2,
+      sharesTotal: 3,
     })
   })
 })

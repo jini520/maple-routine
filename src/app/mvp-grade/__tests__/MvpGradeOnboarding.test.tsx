@@ -1,5 +1,5 @@
 /** 온보딩의 MVP 등급 화면 둘. 캐릭터 설정 다음에 서고, 확인 버튼은 시작하기이며 수정이 없다. */
-import { fireEvent, within } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({
   useScreenNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
@@ -113,6 +113,26 @@ describe('MvpGradeConfirmScreen', () => {
       expect.any(Date),
     )
     expect(finishMvpOnboarding).toHaveBeenCalled()
+  })
+
+  /**
+   * `complete()` 는 이력을 다 적은 뒤 모달을 닫으려고 스토어를 비운다(`set({ ask: null, accounts: [] })`).
+   * 화면 전환은 그보다 **뒤**에 `afterGradeChange` 가 끝나야 일어난다.
+   *
+   * 이 화면이 그 스토어를 그대로 구독하면, 그 사이에 카드만 사라지고 체크박스 줄(다른 스토어)만
+   * 남은 화면이 보인다(사용자 보고).
+   */
+  it('시작하기 뒤 스토어가 비어도 카드가 안 사라진다', async () => {
+    useMvpOnboardingDraft.setState({ grades: { A: 'gold' }, starts: { A: '2026-09-10' }, seededFor: 'A' })
+    const view = await renderOverlay(<MvpGradeConfirmScreen />)
+    expect(view.getByTestId('mvp-grade-card-A')).toBeTruthy()
+
+    // `complete()` 가 하는 일을 그대로 흉내 낸다.
+    await act(async () => {
+      useMvpAskStore.setState({ ask: null, accounts: [] })
+    })
+
+    expect(view.getByTestId('mvp-grade-card-A')).toBeTruthy()
   })
 
   it('머리 줄의 뒤로가기는 고르기로 돌아간다', async () => {

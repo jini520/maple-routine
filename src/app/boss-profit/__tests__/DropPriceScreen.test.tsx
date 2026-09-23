@@ -274,7 +274,7 @@ describe('DropPriceScreen: 값 매기기', () => {
       expect.objectContaining({ bossKey: 주간보스 }),
       100_000_000,
       // 합이 그 행의 파티원 수인 균등. 내 비율 1 이라 값이 지금과 같다.
-      { myShare: 1, sharesTotal: 3 },
+      { mode: 'even', partySize: 3, myShare: 2, sharesTotal: 3 },
       // 새로 매긴 가격은 판매 · 분배 수수료가 자동이고 그 기간의 등급 요율이다.
       { saleFeePercent: 3, saleFeeAuto: true, splitFeePercent: 3, splitFeeAuto: true },
     )
@@ -298,7 +298,12 @@ describe('DropPriceScreen: 값 매기기', () => {
       fireEvent.press(getByTestId('input-card-confirm'))
     })
 
-    expect(savePrice).toHaveBeenCalledWith(expect.anything(), 100, { myShare: 1, sharesTotal: 3 }, expect.anything())
+    expect(savePrice).toHaveBeenCalledWith(
+      expect.anything(),
+      100,
+      { mode: 'even', partySize: 3, myShare: 2, sharesTotal: 3 },
+      expect.anything(),
+    )
   })
 
   it('저장이 실패하면 토스트로 알린다. 조용히 삼키면 저장된 줄 알고 떠난다', async () => {
@@ -409,7 +414,7 @@ describe('DropPriceScreen: 미입력 ≠ 0원', () => {
       price: {
         groups: 그룹([
           항목({
-            drop: 드롭({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 3 }),
+            drop: 드롭({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 3, priceSplitMode: 'even' }),
           }),
         ]),
       },

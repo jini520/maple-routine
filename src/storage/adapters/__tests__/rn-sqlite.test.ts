@@ -193,6 +193,8 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_party_settings ADD COLUMN split_fee_auto INTEGER',
       'ALTER TABLE boss_profit_records ADD COLUMN split_fee_auto INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_my_share INTEGER',
+      'ALTER TABLE boss_drop_records ADD COLUMN price_split_mode TEXT',
+      'ALTER TABLE boss_drop_records ADD COLUMN price_party_size INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN sale_fee_percent INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN split_fee_percent INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN sale_fee_auto INTEGER',
@@ -243,6 +245,8 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'crystal_shares_total' },
             { name: 'split_fee_percent' },
             { name: 'price_my_share' },
+            { name: 'price_split_mode' },
+            { name: 'price_party_size' },
             { name: 'sale_fee_auto' },
             { name: 'split_fee_auto' },
           ]
