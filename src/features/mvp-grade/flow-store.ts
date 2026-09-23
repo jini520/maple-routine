@@ -69,18 +69,34 @@ interface MvpAskState {
   complete: (result: MvpAskResult, now: Date) => Promise<void>
 }
 
-/** ID 표시에 지금 등급을 붙인다. */
-async function loadAccounts(accountIds: readonly string[], histories: Map<string, MvpGradeEntry[]>): Promise<MvpAskAccount[]> {
-  const identities = await loadAccountIdentities(accountIds)
-  return accountIds.map((accountId) => {
-    const history = histories.get(accountId) ?? []
-    return {
-      accountId,
-      summary: identities.get(accountId)?.summary ?? null,
-      portraitUrl: identities.get(accountId)?.portraitUrl ?? null,
-      currentGrade: history[history.length - 1]?.grade ?? null,
-    }
-  })
+/**
+ * 표시 없이 **ID 와 지금 등급만** 세운다. 둘 다 로컬에서 나온다.
+ *
+ * 화면이 카드를 세우는 데 필요한 것이 이만큼이다. 표시(닉네임 · 초상)는 넥슨 목록에서 오고
+ * 못 받으면 화면이 `메이플 ID` 로 폴백한다.
+ */
+function accountsWithoutIdentity(
+  accountIds: readonly string[],
+  histories: Map<string, MvpGradeEntry[]>,
+): MvpAskAccount[] {
+  return accountIds.map((accountId) => ({
+    accountId,
+    summary: null,
+    portraitUrl: null,
+    currentGrade: histories.get(accountId)?.at(-1)?.grade ?? null,
+  }))
+}
+
+/** 받아 온 표시를 이미 선 카드에 얹는다. 못 받은 ID 는 그대로 둔다. */
+function withIdentities(
+  accounts: readonly MvpAskAccount[],
+  identities: Map<string, { summary: AccountSummaryView | null; portraitUrl: string | null }>,
+): MvpAskAccount[] {
+  return accounts.map((account) => ({
+    ...account,
+    summary: identities.get(account.accountId)?.summary ?? null,
+    portraitUrl: identities.get(account.accountId)?.portraitUrl ?? null,
+  }))
 }
 
 async function evaluateAsk(now: Date, set: (partial: Partial<MvpAskState>) => void): Promise<void> {
@@ -110,7 +126,17 @@ async function evaluateAsk(now: Date, set: (partial: Partial<MvpAskState>) => vo
     set({ ask: null, accounts: [], weeklyOff })
     return
   }
-  set({ ask, accounts: await loadAccounts(ask.accountIds, histories), weeklyOff })
+  /*
+   * **ID 를 먼저 알린다.** 고를 ID 는 로컬로 이미 확정됐고(추적 캐릭터 + 소속 기록), 표시만
+   * 넥슨 `character/list` 에서 온다. 그것을 기다린 뒤에 한 번만 알리면 망이 느린 사용자가
+   * 온보딩에서 전면 스피너를 조회 상한(10초)까지 본다 - 재시도도 캐시도 없는 조회다.
+   */
+  const accounts = accountsWithoutIdentity(ask.accountIds, histories)
+  set({ ask, accounts, weeklyOff })
+
+  // 표시는 뒤이어 얹는다. 못 받으면 카드가 `메이플 ID` 로 선 채로 남는다.
+  const identities = await loadAccountIdentities(ask.accountIds).catch(() => null)
+  if (identities !== null) set({ accounts: withIdentities(accounts, identities) })
 }
 
 /** 진행 중인 `evaluate`. 부팅 · 복귀 · 캐릭터 저장이 겹쳐도 목록을 한 번만 받는다. */

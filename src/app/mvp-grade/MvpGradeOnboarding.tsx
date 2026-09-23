@@ -102,7 +102,16 @@ export function MvpGradePickScreen(): React.JSX.Element {
 
 export function MvpGradeConfirmScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
-  const accounts = useMvpAskStore((state) => state.accounts)
+  /**
+   * **들어올 때의 목록을 들고 있는다.** 스토어를 구독하지 않는다.
+   *
+   * `complete()` 는 이력을 다 적은 뒤 모달을 닫으려고 스토어를 비우는데, 화면 전환은 그보다
+   * 뒤에 `afterGradeChange` 가 끝나야 일어난다. 구독하면 그 사이에 카드만 사라지고 체크박스
+   * 줄(다른 스토어)만 남은 화면이 보인다.
+   *
+   * 이 화면이 그리는 것은 **방금 고른 것**이라 그 뒤의 스토어 변화를 따라갈 이유도 없다.
+   */
+  const [accounts] = useState(() => useMvpAskStore.getState().accounts)
   const grades = useMvpOnboardingDraft((state) => state.grades)
   const starts = useMvpOnboardingDraft((state) => state.starts)
   const weeklyOff = useMvpOnboardingDraft((state) => state.weeklyOff)
