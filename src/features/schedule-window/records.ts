@@ -20,6 +20,7 @@ import { getBossDropRecords } from '../../storage/boss-drops'
 import { crystalPayoutMeso } from '../../lib/boss/party-shares'
 import { lazyAutoFeePercent, settingSplitFee, type AutoFeePercentOf } from '../mvp-grade/auto-fee'
 import { getBossPartySetting } from '../../storage/boss-party-settings'
+import { getBossPartyPeriodOverride } from '../../storage/boss-party-period-overrides'
 import {
   getBossProfitRecords,
   markBossProfitRecordAuto,
@@ -144,7 +145,12 @@ async function recordPeriod(
     if (priceEntry === undefined || priceEntry.priceMeso === null) continue
 
     // 설정을 한 줄로 읽는다. 인원만 읽으면 비율 약속이 있는 보스가 균등으로 굳는다.
-    const configured = await withSqliteFallback(getBossPartySetting(ocid, bossKey, difficulty), null)
+    // 미완료 행에서 그 기간만 고쳐 둔 값이 있으면 그것이 이긴다.
+    const configured =
+      (await withSqliteFallback(
+        getBossPartyPeriodOverride(ocid, bossKey, difficulty, periodKey),
+        null,
+      )) ?? (await withSqliteFallback(getBossPartySetting(ocid, bossKey, difficulty), null))
     const partySize = configured?.partySize ?? 1
     const splitFee = await settingSplitFee(configured, ocid, periodStartDateKey(periodKey), autoFee)
     const shares = {

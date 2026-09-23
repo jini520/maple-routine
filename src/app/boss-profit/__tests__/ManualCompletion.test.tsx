@@ -168,7 +168,7 @@ describe('파티 인원의 시작값', () => {
     await act(async () => {})
     await press(view, '완료 상태로 변경')
 
-    expect(mockedPartySize).toHaveBeenCalledWith('ocid-1', 주간보스, 'chaos')
+    expect(mockedPartySize).toHaveBeenCalledWith('ocid-1', 주간보스, 'chaos', PERIOD)
     expect(saveManualCompletion).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ partySize: 3 }),

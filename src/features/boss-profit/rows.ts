@@ -445,10 +445,13 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
 }
 
 /**
- * 드롭 가격 카드가 받는 분배 씨앗. 그 행의 파티 인원으로 균등하다. 아이템 비율은 한 벌로 안 두고 건마다 고른다.
+ * 드롭 가격 카드가 받는 분배 씨앗. 받은 파티 인원으로 균등하다. 아이템 비율은 한 벌로 안 두고 건마다 고른다.
  *
- * @example const defaultShare = dropShareSeedOf(row)
+ * 인원을 행이 아니라 인자로 받는 것은 미완료 행의 인원이 행에 없기 때문이다. 그 값은 파티 관리
+ * 설정이나 그 기간에 갈라진 값에서 오고 화면이 이미 풀어 두었다.
+ *
+ * @example const defaultShare = dropShareSeedOf(partySize)
  */
-export function dropShareSeedOf(row: BossProfitRow): { myShare: number; sharesTotal: number } {
-  return { myShare: 1, sharesTotal: row.partySize ?? 1 }
+export function dropShareSeedOf(partySize: number): { myShare: number; sharesTotal: number } {
+  return { myShare: 1, sharesTotal: partySize }
 }

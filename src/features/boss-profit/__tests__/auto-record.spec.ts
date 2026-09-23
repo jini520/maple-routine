@@ -12,6 +12,13 @@ jest.mock('../../../storage/boss-party-settings', () => ({
 }))
 const { getBossPartySetting: getBossPartySettingMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
 
+jest.mock('../../../storage/boss-party-period-overrides', () => ({
+  getBossPartyPeriodOverride: jest.fn(),
+}))
+const { getBossPartyPeriodOverride: getOverrideMock } = jest.requireMock(
+  '../../../storage/boss-party-period-overrides',
+) as Record<string, jest.Mock>
+
 jest.mock('../../../storage/boss-profit', () => ({
   upsertBossProfitRecord: jest.fn(),
   markBossProfitRecordAuto: jest.fn(),
@@ -82,6 +89,7 @@ const 넥슨완료: ReadonlySet<string> = new Set()
 beforeEach(() => {
   jest.clearAllMocks()
   getBossPartySettingMock.mockResolvedValue(null)
+  getOverrideMock.mockResolvedValue(null)
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
   markAutoMock.mockResolvedValue(undefined)
   migrateDropsMock.mockResolvedValue(undefined)
@@ -174,6 +182,37 @@ describe('autoRecordRows', () => {
       expect.objectContaining({ partySize: 3, payoutMeso: 3_333_333 }),
     )
     expect(result[0].payoutMeso).toBe(3_333_333)
+  })
+
+  // 미완료 행에서 이번 주만 다르게 잡기로 적어 둔 값. 그것이 없으면 잡는 순간 사라진다.
+  it('그 기간만 갈라진 값이 있으면 파티 설정을 이긴다', async () => {
+    getBossPartySettingMock.mockResolvedValue(partySetting(3))
+    getOverrideMock.mockResolvedValue({
+      ocid: 'ocid-1',
+      bossKey: 'zakum',
+      difficulty: 'chaos',
+      periodKey: '2026-08-06',
+      partySize: 2,
+      crystalMyShare: null,
+      crystalSharesTotal: null,
+      splitFeePercent: null,
+      splitFeeAuto: false,
+      updatedAt: '2026-08-07T00:00:00.000Z',
+    })
+
+    await autoRecordRows({
+      rows: [row({ priceMeso: 10_000_000 })],
+      records: NO_RECORDS,
+      dropRecords: NO_DROPS,
+      now: NOW,
+      isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
+    })
+
+    expect(getOverrideMock).toHaveBeenCalledWith('ocid-1', 'zakum', 'chaos', '2026-08-06')
+    expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(
+      expect.objectContaining({ partySize: 2, payoutMeso: 5_000_000 }),
+    )
   })
 
   // 송금 수수료가 자동인 설정은 그 기간 첫날의 등급 요율로 적고 기록도 자동이다. 등급 기록이 바뀌면 다시 센다.
