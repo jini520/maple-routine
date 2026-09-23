@@ -106,6 +106,9 @@ export interface FeesValue {
   splitFeeAuto: boolean
 }
 
+/** 칩이 작아진 만큼 누를 자리를 위아래로 넓힌다. 시각 크기는 24 이고 실제 타깃은 40 이다. */
+const CHIP_HIT_SLOP = { top: 8, bottom: 8, left: 2, right: 2 }
+
 const FEE_OPTIONS = ['없음', '3%', '5%'] as const
 
 /** 분배 방식. `기본` 은 인원으로 균등하게 나누고 `비율` 은 내 비율과 합으로 나눈다. */
@@ -458,7 +461,10 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                   key={chip.label}
                   role="button"
                   onPress={() => add(chip.value)}
-                  className="h-7 justify-center rounded-full border border-border px-2.5 active:bg-surface-2"
+                  // 24px 이 권장 타깃(44)보다 작지만, 칩은 값을 더하는 곁들이라 잘못 눌러도
+                  // 되돌리기가 한 번 더 누르는 것이다. 줄이 넘치지 않게 작게 둔다(사용자 지정).
+                  hitSlop={CHIP_HIT_SLOP}
+                  className="h-6 justify-center rounded-full border border-border px-2 active:bg-surface-2"
                 >
                   <Text className="text-11 font-semibold text-text-muted" style={TABULAR_NUMS}>
                     {chip.label}
