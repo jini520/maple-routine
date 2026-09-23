@@ -274,7 +274,7 @@ describe('DropPriceScreen: 값 매기기', () => {
       expect.objectContaining({ bossKey: 주간보스 }),
       100_000_000,
       // 합이 그 행의 파티원 수인 균등. 내 비율 1 이라 값이 지금과 같다.
-      { mode: 'even', myShare: 1, sharesTotal: 3 },
+      { mode: 'even', partySize: 3, myShare: 2, sharesTotal: 3 },
       // 새로 매긴 가격은 판매 · 분배 수수료가 자동이고 그 기간의 등급 요율이다.
       { saleFeePercent: 3, saleFeeAuto: true, splitFeePercent: 3, splitFeeAuto: true },
     )
@@ -301,7 +301,7 @@ describe('DropPriceScreen: 값 매기기', () => {
     expect(savePrice).toHaveBeenCalledWith(
       expect.anything(),
       100,
-      { mode: 'even', myShare: 1, sharesTotal: 3 },
+      { mode: 'even', partySize: 3, myShare: 2, sharesTotal: 3 },
       expect.anything(),
     )
   })

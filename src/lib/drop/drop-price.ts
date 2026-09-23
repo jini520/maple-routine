@@ -27,9 +27,11 @@ export interface DropPriceFields {
    * 하나는 반드시 틀리므로, 고른 것을 그대로 들고 다닌다. 없으면 **모르는 것**이라 라벨을 안 그린다.
    */
   priceSplitMode?: 'even' | 'ratio' | null
-  /** `even` 이면 분배 인원, `ratio` 면 비율 합. */
+  /** `even` 의 분배 인원. **비율은 이 칸을 안 본다.** */
+  pricePartySize?: number | null
+  /** `ratio` 의 비율 합. **기본은 이 칸을 안 본다.** */
   priceShare?: number | null
-  /** 내 비율. `even` 은 이 칸을 안 본다. 없으면 1 이라 옛 기록의 금액이 안 움직인다. */
+  /** `ratio` 의 내 비율. 없으면 1 이라 옛 기록의 금액이 안 움직인다. */
   priceMyShare?: number | null
   /** 경매장 판매 수수료(%). `null` 은 없음 */
   saleFeePercent?: number | null
@@ -52,6 +54,18 @@ function myShareOf(drop: DropPriceFields): number {
 }
 
 /**
+ * 나누는 수. **방식마다 자기 칸만 본다.**
+ *
+ * 한 칸을 겸하게 두었더니 비율에서 합을 고친 것이 기본의 인원을 덮었다(사용자 보고). 칸이
+ * 갈리면 그 자리가 구조적으로 없어진다.
+ */
+function totalOf(drop: DropPriceFields): number {
+  // 0 이나 없음은 1 로 본다. 0 으로 나누어 Infinity 가 수익에 섞이는 것을 막는다.
+  if (drop.priceSplitMode === 'even') return Math.max(1, drop.pricePartySize ?? drop.priceShare ?? 1)
+  return Math.max(1, drop.priceShare ?? 1)
+}
+
+/**
  * 기록 한 건이 수익에 얹는 금액.
  *
  * **스킵과 미입력은 둘 다 0이다.** 두 상태를 여기서 가르지 않는 이유는 합산에서 하는 일이 같기
@@ -59,8 +73,7 @@ function myShareOf(drop: DropPriceFields): number {
  */
 export function dropPayoutMeso(drop: DropPriceFields): number {
   if (drop.priceState !== 'entered' || drop.priceMeso === undefined || drop.priceMeso === null) return 0
-  // 분배 인원이 없거나 0이면 1로 본다. 0으로 나누어 Infinity 가 수익에 섞이는 것을 막는다.
-  const total = Math.max(1, drop.priceShare ?? 1)
+  const total = totalOf(drop)
   const mine = myShareOf(drop)
   const saleFee = drop.saleFeePercent ?? null
   const splitFee = drop.splitFeePercent ?? null
@@ -95,7 +108,7 @@ export function dropSplitLabel(drop: DropPriceFields): string | null {
   const mode = drop.priceSplitMode
   if (mode !== 'even' && mode !== 'ratio') return null
 
-  const total = Math.max(1, drop.priceShare ?? 1)
+  const total = totalOf(drop)
   if (mode === 'even') return total <= 1 ? null : `${total}인`
 
   const mine = Math.max(0, drop.priceMyShare ?? 1)

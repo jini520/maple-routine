@@ -127,7 +127,7 @@ export function Modal(props: ModalProps): React.JSX.Element {
       {/*
         **제스처 뿌리를 모달 안에 한 번 더 세운다.** 안드로이드에서 RN `Modal` 은 별도 네이티브
         창이라 앱 루트의 `GestureHandlerRootView` 밖이고, 그 창 안의 제스처는 이벤트를 하나도
-        못 받는다. 탭은 RN 응답자 시스템이라 멀쩡해서, 증상이 «눌리는데 끌리지 않는다» 로 온다
+        못 받는다. 탭은 RN 응답자 시스템이라 멀쩡해서, 증상이 **눌리는데 끌리지 않는다** 로 온다
         (실기기 계측: 같은 스와이프에 트리에서는 17건, 모달 안에서는 0건).
       */}
       <GestureHandlerRootView testID="modal-gesture-root" style={{ flex: 1 }}>

@@ -232,6 +232,7 @@ function toRecordedDrop(record: StoredDropRecord): RecordedDrop {
     priceState: record.priceState,
     priceMeso: record.priceMeso,
     priceSplitMode: record.priceSplitMode,
+    pricePartySize: record.pricePartySize,
     priceShare: record.priceShare,
     priceMyShare: record.priceMyShare,
     saleFeePercent: record.saleFeePercent,

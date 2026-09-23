@@ -210,8 +210,24 @@ describe('InputCard', () => {
    */
   describe('한 아이템의 한 기록을 받는 모양', () => {
     // 어느 쪽으로 열릴지는 **적힌 방식**이 정한다. 숫자로 되짚으면 비율 1:3 이 기본 3인으로 열린다.
-    const 균등 = { label: '분배 비율', mode: 'even' as const, myShare: 1, sharesTotal: 3, maxPartySize: 6 }
-    const 비율 = { label: '분배 비율', mode: 'ratio' as const, myShare: 2, sharesTotal: 3, maxPartySize: 6 }
+    // 인원과 비율은 **칸이 다르다**. 픽스처도 따로 준다 - 한 칸에서 둘을 뿌리면 비율에서 고친
+    // 합이 기본의 인원을 덮는다.
+    const 균등 = {
+      label: '분배 비율',
+      mode: 'even' as const,
+      partySize: 3,
+      myShare: 2,
+      sharesTotal: 3,
+      maxPartySize: 6,
+    }
+    const 비율 = {
+      label: '분배 비율',
+      mode: 'ratio' as const,
+      partySize: 3,
+      myShare: 2,
+      sharesTotal: 3,
+      maxPartySize: 6,
+    }
 
     // 드롭 하나의 값이라 결정석 카드가 없다. 파티 모달과 다른 점은 그것뿐이다.
     it('방식이 기본이면 파티 인원 스테퍼가 선다', async () => {
@@ -232,7 +248,13 @@ describe('InputCard', () => {
         fireEvent.press(view.getByTestId('input-card-confirm'))
       })
 
-      expect(onConfirm).toHaveBeenCalledWith('100', { mode: 'even', myShare: 1, sharesTotal: 4 })
+      expect(onConfirm).toHaveBeenCalledWith('100', {
+        mode: 'even',
+        partySize: 4,
+        // 비율 칸은 안 건드렸으므로 씨앗 그대로다. 이것이 **둘이 각자 기억한다** 의 뜻이다.
+        myShare: 2,
+        sharesTotal: 3,
+      })
     })
 
     /**
@@ -290,7 +312,14 @@ describe('InputCard', () => {
       })
       await 누르기(view, 'input-card-confirm')
 
-      expect(onConfirm).toHaveBeenCalledWith('100', { mode: 'even', myShare: 1, sharesTotal: 4 })
+      expect(onConfirm).toHaveBeenCalledWith('100', {
+        mode: 'even',
+        partySize: 4,
+        // **양쪽이 다 남는다.** 인원은 내가 둔 4 이고, 비율 합은 비율 쪽에서 고친 5 다.
+        // 한 칸을 겸하던 때는 이 둘이 서로를 덮었다.
+        myShare: 2,
+        sharesTotal: 5,
+      })
     })
 
     it('기본에 다녀와도 비율은 제 합을 기억한다', async () => {
@@ -337,7 +366,12 @@ describe('InputCard', () => {
       await 치기(view, '3250000000')
       await 누르기(view, 'input-card-confirm')
 
-      expect(onConfirm).toHaveBeenCalledWith('3250000000', { mode: 'ratio', myShare: 3, sharesTotal: 3 })
+      expect(onConfirm).toHaveBeenCalledWith('3250000000', {
+        mode: 'ratio',
+        partySize: 3,
+        myShare: 3,
+        sharesTotal: 3,
+      })
     })
 
     // 안 맞추면 내 비율이 합보다 커져 내 몫이 100%를 넘는다.
@@ -420,7 +454,12 @@ describe('InputCard', () => {
       await 치기(view, '3250000000')
       await 누르기(view, 'input-card-prev')
 
-      expect(onPrev).toHaveBeenCalledWith('3250000000', { mode: 'ratio', myShare: 2, sharesTotal: 3 })
+      expect(onPrev).toHaveBeenCalledWith('3250000000', {
+        mode: 'ratio',
+        partySize: 3,
+        myShare: 2,
+        sharesTotal: 3,
+      })
     })
 
     // 드롭은 경매장에 팔 때 한 번, 파티원에게 보낼 때 한 번 수수료를 문다.
@@ -514,7 +553,7 @@ describe('InputCard', () => {
         })
         await 누르기(view, 'input-card-confirm')
 
-        expect(onConfirm).toHaveBeenCalledWith('1000000000', { mode: 'ratio', myShare: 2, sharesTotal: 3 }, {
+        expect(onConfirm).toHaveBeenCalledWith('1000000000', { mode: 'ratio', partySize: 3, myShare: 2, sharesTotal: 3 }, {
           saleFeePercent: 3,
           saleFeeAuto: true,
           splitFeePercent: 5,

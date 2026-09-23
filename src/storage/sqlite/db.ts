@@ -490,6 +490,18 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
    */
   await ensureColumn(db, 'boss_drop_records', 'price_split_mode', 'TEXT')
   await db.run(`UPDATE boss_drop_records SET price_split_mode = 'even' WHERE price_split_mode IS NULL`)
+  /*
+   * 기본의 분배 인원. 비율 합(`price_share`)과 **칸을 가른다**.
+   *
+   * 한 칸을 겸하게 두었더니 비율에서 합을 3 으로 고쳐 저장한 기록이 다시 열릴 때 기본의 인원
+   * 스테퍼까지 3 이 됐다(사용자 보고). 위 백필로 쌓인 행은 전부 `even` 이고 그 행의 `price_share`
+   * 가 곧 인원이었으므로 그대로 옮긴다.
+   */
+  await ensureColumn(db, 'boss_drop_records', 'price_party_size', 'INTEGER')
+  await db.run(
+    `UPDATE boss_drop_records SET price_party_size = price_share
+      WHERE price_party_size IS NULL AND price_split_mode = 'even'`,
+  )
   // 드롭의 판매 · 분배 수수료와 자동인지. NULL 인 옛 행은 수수료 없는 옛 식 그대로 센다.
   await ensureColumn(db, 'boss_drop_records', 'sale_fee_percent', 'INTEGER')
   await ensureColumn(db, 'boss_drop_records', 'split_fee_percent', 'INTEGER')

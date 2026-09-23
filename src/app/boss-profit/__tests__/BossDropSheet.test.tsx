@@ -62,7 +62,7 @@ beforeEach(() => {
   useDropEffectStore.setState({ enabled: true })
 })
 
-const PRICING = { defaultShare: { mode: 'even' as const, myShare: 1, sharesTotal: 3 }, characterName: '지내우시', ocid: 'ocid-1' }
+const PRICING = { defaultShare: { mode: 'even' as const, partySize: 3, myShare: 1, sharesTotal: 3 }, characterName: '지내우시', ocid: 'ocid-1' }
 
 function renderSheet(overrides: Partial<React.ComponentProps<typeof BossDropSheet>> = {}) {
   const onSave = jest.fn()

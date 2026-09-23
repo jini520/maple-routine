@@ -81,7 +81,9 @@ export const BOSS_DROP_RECORDS_BODY = `(
     -- 어떻게 나눴나. 'even'(기본) · 'ratio'(비율). **아래 두 칸의 뜻을 이 칸이 정한다.**
     -- 비율 1:3 과 균등 3인은 두 수가 같아 숫자로는 되짚을 수 없다. NULL 은 방식을 모르는 옛 행이다.
     price_split_mode TEXT,
-    -- 'even' 이면 분배 인원, 'ratio' 면 비율 합.
+    -- 'even' 의 분배 인원. 비율은 이 칸을 안 본다.
+    price_party_size INTEGER,
+    -- 'ratio' 의 비율 합. 기본은 이 칸을 안 본다.
     price_share INTEGER,
     -- 내 비율. 'even' 은 이 칸을 안 본다.
     price_my_share INTEGER,

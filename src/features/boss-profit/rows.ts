@@ -437,6 +437,7 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
     priceMeso: record.priceMeso ?? undefined,
     // 빠뜨리면 방식이 여기서 사라져 화면이 다시 숫자로 되짚게 된다.
     priceSplitMode: record.priceSplitMode ?? undefined,
+    pricePartySize: record.pricePartySize ?? undefined,
     priceShare: record.priceShare ?? undefined,
     priceMyShare: record.priceMyShare ?? undefined,
     saleFeePercent: record.saleFeePercent ?? undefined,
@@ -456,9 +457,11 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
  */
 export function dropShareSeedOf(partySize: number): {
   mode: 'even'
+  partySize: number
   myShare: number
   sharesTotal: number
 } {
   // 아직 안 나눈 새 기록은 **기본**이다. 이 값이 그대로 저장돼 다음에 열 때의 자리를 정한다.
-  return { mode: 'even', myShare: 1, sharesTotal: partySize }
+  // 비율 쪽은 아직 고른 적이 없으므로 카드가 자기 씨앗(`2 : 3`)을 놓는다.
+  return { mode: 'even', partySize, myShare: 2, sharesTotal: 3 }
 }

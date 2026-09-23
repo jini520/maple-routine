@@ -27,6 +27,8 @@
  */
 export interface DropShare {
   mode: 'even' | 'ratio'
+  /** `even` 의 인원. **비율 합과 칸이 다르다.** */
+  partySize: number
   myShare: number
   sharesTotal: number
 }
@@ -333,6 +335,7 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
       priceState: 'entered',
       priceMeso,
       priceSplitMode: share.mode,
+      pricePartySize: share.partySize,
       priceShare: share.sharesTotal,
       priceMyShare: share.myShare,
       ...dropFeeFields(fees),
@@ -344,6 +347,7 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
       priceState: 'excluded',
       priceMeso: undefined,
       priceSplitMode: undefined,
+      pricePartySize: undefined,
       priceShare: undefined,
       priceMyShare: undefined,
       ...dropFeeFields(undefined),
@@ -397,6 +401,7 @@ async function writePrice(
     | 'priceState'
     | 'priceMeso'
     | 'priceSplitMode'
+    | 'pricePartySize'
     | 'priceShare'
     | 'priceMyShare'
     | 'saleFeePercent'

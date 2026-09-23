@@ -68,7 +68,15 @@ export interface ShareSpec {
    * 33.3% 가 `기본 3인` 으로 열린다. 안 주면 아직 안 나눈 새 기록이라 `기본` 이다.
    */
   mode?: 'even' | 'ratio'
+  /**
+   * `기본` 의 분배 인원. **비율 합과 칸이 다르다.**
+   *
+   * 한 값을 나눠 쓰면 비율에서 합을 고친 것이 기본의 인원을 덮는다. 안 주면 1 이다.
+   */
+  partySize?: number
+  /** `비율` 의 내 몫. */
   myShare: number
+  /** `비율` 의 합. **기본의 인원이 아니다.** */
   sharesTotal: number
   /** `기본` 의 인원 상한. 그 보스 · 난이도의 최대 파티 인원이다 */
   maxPartySize?: number
@@ -77,7 +85,11 @@ export interface ShareSpec {
 /** 카드가 돌려주는 비율. 내 몫이 `내 비율 ÷ 합` 이고, **어느 쪽으로 골랐는지를 함께 싣는다.** */
 export interface ShareValue {
   mode: 'even' | 'ratio'
+  /** `기본` 의 인원. **방식과 무관하게 늘 싣는다** - 갈아타도 반대쪽 값이 안 사라진다. */
+  partySize: number
+  /** `비율` 의 내 몫. 방식과 무관하게 늘 싣는다. */
   myShare: number
+  /** `비율` 의 합. 방식과 무관하게 늘 싣는다. */
   sharesTotal: number
 }
 
@@ -115,16 +127,16 @@ const FEE_OPTIONS = ['없음', '3%', '5%'] as const
 const SPLIT_OPTIONS = ['기본', '비율'] as const
 
 /** 비율을 아직 안 정한 기록이 `비율` 로 갈아탈 때 놓이는 값. 파티 모달과 같은 `2 : 1`(66.7%)이다. */
-const SEED_RATIO: ShareValue = { mode: 'ratio', myShare: 2, sharesTotal: 3 }
+const SEED_RATIO = { myShare: 2, sharesTotal: 3 }
 
 /**
  * `비율` 칸의 씨앗. 내 비율이 1 이면 인원으로 균등하게 나눈 기록이라 비율을 정한 적이 없고,
  * 그 자리에는 `SEED_RATIO` 가 놓인다. 저장된 합을 그대로 쓰면 첫 화면이 `1/N`(33.3% 등)로 서서
  * 이미 고른 값처럼 읽힌다.
  */
-function ratioSeedOf(share: ShareSpec | undefined): ShareValue {
+function ratioSeedOf(share: ShareSpec | undefined): { myShare: number; sharesTotal: number } {
   if (share === undefined || share.mode !== 'ratio') return SEED_RATIO
-  return { mode: 'ratio', myShare: share.myShare, sharesTotal: share.sharesTotal }
+  return { myShare: share.myShare, sharesTotal: share.sharesTotal }
 }
 
 function feeOptionOf(percent: number | null): (typeof FEE_OPTIONS)[number] {
@@ -234,8 +246,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    * 다르다. 인원은 몇 명이 나누나이고 합은 내 몫의 분모다. 한 값을 나눠 쓰면 `비율` 에서 합을
    * 고친 것이 `기본` 의 인원을 덮는다.
    */
-  const [partySize, setPartySize] = useState(props.share?.sharesTotal ?? 1)
-  const [ratio, setRatio] = useState<ShareValue>(() => ratioSeedOf(props.share))
+  const [partySize, setPartySize] = useState(props.share?.partySize ?? 1)
+  const [ratio, setRatio] = useState(() => ratioSeedOf(props.share))
   /**
    * 씨앗을 다시 심는다. **그리는 중에** 바꾼다.
    *
@@ -250,7 +262,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   if (props.seed !== seed) {
     setSeed(props.seed)
     setDraft(props.value)
-    setPartySize(props.share?.sharesTotal ?? 1)
+    setPartySize(props.share?.partySize ?? 1)
     setRatio(ratioSeedOf(props.share))
     setUsesRatio(props.share?.mode === 'ratio')
     setSaleFee(props.fees?.sale ?? { auto: false, percent: null })
@@ -258,13 +270,18 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   }
   const autoFee = props.fees?.autoFee ?? null
   /** 지금 선 쪽의 값. 확인이 내보내는 것도 수수료 줄이 보는 것도 이것 하나다. */
-  const share: ShareValue = usesRatio
-    ? { ...ratio, mode: 'ratio' }
-    : { mode: 'even', myShare: 1, sharesTotal: partySize }
+  /**
+   * 지금 선 쪽의 값. **넷을 다 싣는다** - 방식을 갈아타도 반대쪽 값이 안 사라진다.
+   *
+   * 아래 `earns`·`splits` 는 **선 쪽의 수**로 판정해야 하므로 그 둘만 따로 센다.
+   */
+  const share: ShareValue = { mode: usesRatio ? 'ratio' : 'even', partySize, ...ratio }
+  const mine = usesRatio ? ratio.myShare : 1
+  const total = usesRatio ? ratio.sharesTotal : partySize
   /** 받는 돈이 있나. 내 몫이 0 이면 경매장에 떼일 것도 파티원에게 보낼 것도 없다. */
-  const earns = share.myShare > 0
+  const earns = mine > 0
   // 내 비율이 합과 같으면 혼자 다 갖는 것이라 보낼 곳이 없다.
-  const splits = share.sharesTotal > share.myShare
+  const splits = total > mine
 
   const isText = props.text === true
   const chips = isText ? [] : (props.chips ?? [])
@@ -500,7 +517,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                       label={props.share.label}
                       value={ratio}
                       // `ShareField` 는 방식을 모르는 부품이다. 여기는 늘 비율 쪽이다.
-                      onChange={(next) => setRatio({ mode: 'ratio', ...next })}
+                      onChange={setRatio}
                       layout="stacked"
                     />
                   </View>

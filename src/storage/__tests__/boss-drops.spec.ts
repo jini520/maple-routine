@@ -72,6 +72,8 @@ describe('replaceBossDropRecords', () => {
       null,
       // 분배 방식. 안 적으면 방식을 모르는 행이라 화면이 라벨을 안 그린다.
       null,
+      // 기본의 인원. 비율 합과 칸이 다르다.
+      null,
       null,
       // 내 비율. 안 적으면 1 이라 균등이다.
       null,
@@ -99,6 +101,8 @@ describe('replaceBossDropRecords', () => {
       3,
       1,
       '2026-07-26T00:00:00.000Z',
+      null,
+
       null,
       null,
       null,
@@ -249,6 +253,7 @@ describe('getBossDropRecords', () => {
         priceMeso: null,
         priceShare: null,
         priceSplitMode: null,
+        pricePartySize: null,
         priceMyShare: null,
         saleFeePercent: null,
         splitFeePercent: null,
@@ -342,6 +347,7 @@ describe('getAllBossDropRecords', () => {
         priceMeso: null,
         priceShare: null,
         priceSplitMode: null,
+        pricePartySize: null,
         priceMyShare: null,
         saleFeePercent: null,
         splitFeePercent: null,

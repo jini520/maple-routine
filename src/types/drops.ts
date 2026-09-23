@@ -78,11 +78,11 @@ export interface RecordedDrop {
    * 하나는 반드시 틀리므로 고른 것을 그대로 들고 다닌다. 없으면 방식을 모르는 옛 기록이다.
    */
   priceSplitMode?: 'even' | 'ratio'
-  /**
-   * `even` 이면 분배 인원, `ratio` 면 비율 합. 입력 시 그 행의 파티원 수로 씨를 뿌리고 저장 후 독립한다.
-   */
+  /** `even` 의 분배 인원. **비율은 이 칸을 안 본다.** 입력 시 그 행의 파티원 수로 씨를 뿌린다. */
+  pricePartySize?: number
+  /** `ratio` 의 비율 합. **기본은 이 칸을 안 본다.** */
   priceShare?: number
-  /** 내 비율 스냅샷. `even` 은 이 칸을 안 본다. 없으면 1 이다. */
+  /** `ratio` 의 내 비율. 없으면 1 이다. */
   priceMyShare?: number
   /** 판매 수수료(%). 없으면 없음 */
   saleFeePercent?: number

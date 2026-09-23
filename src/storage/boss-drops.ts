@@ -36,9 +36,11 @@ export interface BossDropRecord {
   priceState: 'entered' | 'excluded' | null
   /** 판매 **총액**. 수량이 2 이상이어도 묶음가 하나다. */
   priceMeso: number | null
-  /** `price_split_mode` 가 `even` 이면 분배 인원, `ratio` 면 비율 합. 그 행의 `party_size` 와 다를 수 있다. */
+  /** `ratio` 의 비율 합. **기본은 이 칸을 안 본다.** */
   /** 어떻게 나눴나. **아래 두 칸의 뜻을 이 칸이 정한다.** 없으면 방식을 모르는 옛 기록이다. */
   priceSplitMode: 'even' | 'ratio' | null
+  /** `even` 의 분배 인원. **비율은 이 칸을 안 본다.** */
+  pricePartySize: number | null
   priceShare: number | null
   /** 내 비율 스냅샷. `null` 은 1 이라 이 칸이 없던 옛 기록의 금액이 안 움직인다. */
   priceMyShare: number | null
@@ -60,9 +62,9 @@ const DELETE_SQL = `
 const INSERT_SQL = `
   INSERT INTO boss_drop_records
     (ocid, boss_key, boss, difficulty, period_key, drop_index, category, item_key, item_name, slot, box_origin_key,
-     box_origin, ring_level, quantity, recorded_at, price_state, price_meso, price_split_mode, price_share, price_my_share,
+     box_origin, ring_level, quantity, recorded_at, price_state, price_meso, price_split_mode, price_party_size, price_share, price_my_share,
      sale_fee_percent, split_fee_percent, sale_fee_auto, split_fee_auto)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 // 한 보스/기간의 드롭 집합을 통째로 교체한다(기존 삭제 후 0..n으로 재삽입). 빈 배열이면 삭제만.
@@ -153,6 +155,7 @@ export async function replaceBossDropRecords(
       drop.priceState ?? null,
       drop.priceMeso ?? null,
       drop.priceSplitMode ?? null,
+      drop.pricePartySize ?? null,
       drop.priceShare ?? null,
       drop.priceMyShare ?? null,
       drop.saleFeePercent ?? null,
@@ -196,6 +199,7 @@ function rowToRecord(row: Record<string, unknown>): BossDropRecord {
     priceState: normalizePriceState(row.price_state),
     priceMeso: (row.price_meso as number | null | undefined) ?? null,
     priceSplitMode: (row.price_split_mode as 'even' | 'ratio' | null | undefined) ?? null,
+    pricePartySize: (row.price_party_size as number | null | undefined) ?? null,
     priceShare: (row.price_share as number | null | undefined) ?? null,
     priceMyShare: (row.price_my_share as number | null | undefined) ?? null,
     saleFeePercent: (row.sale_fee_percent as number | null | undefined) ?? null,

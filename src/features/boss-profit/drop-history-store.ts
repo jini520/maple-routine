@@ -71,6 +71,7 @@ function toHistoryRecord(record: BossDropRecord): DropHistoryRecord {
     priceState: record.priceState ?? undefined,
     priceMeso: record.priceMeso ?? undefined,
     priceSplitMode: record.priceSplitMode ?? undefined,
+    pricePartySize: record.pricePartySize ?? undefined,
     priceShare: record.priceShare ?? undefined,
     priceMyShare: record.priceMyShare ?? undefined,
     saleFeePercent: record.saleFeePercent ?? undefined,

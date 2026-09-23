@@ -227,6 +227,7 @@ describe('cleanUpWorldLeapDuplicates', () => {
       priceState: null,
       priceMeso: null,
       priceSplitMode: 'even',
+    pricePartySize: null,
     priceShare: null,
       priceMyShare: null,
       saleFeePercent: null,

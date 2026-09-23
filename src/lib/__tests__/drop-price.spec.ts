@@ -321,3 +321,48 @@ describe('분배 방식은 기록이 들고 다닌다', () => {
     ).toBe('0%')
   })
 })
+
+// 인원과 비율은 **칸이 다르다**. 한 칸을 겸하면 비율에서 합을 고친 것이 기본의 인원을 덮는다
+// (사용자 보고: `33%로 바꿨는데 파티인원 스테퍼 기본값이 같이 바뀐다`).
+describe('인원과 비율은 칸이 다르다', () => {
+  it('기본은 인원 칸만 본다. 비율 칸이 무슨 값이든 안 흔들린다', () => {
+    const 기본 = {
+      priceState: 'entered',
+      priceMeso: 900,
+      priceSplitMode: 'even',
+      priceMyShare: 1,
+      priceShare: 3,
+      pricePartySize: 4,
+    } as const
+
+    expect(dropSplitLabel(기본)).toBe('4인')
+    expect(dropPayoutMeso(기본)).toBe(225)
+  })
+
+  it('비율은 비율 칸만 본다. 인원 칸이 무슨 값이든 안 흔들린다', () => {
+    const 비율 = {
+      priceState: 'entered',
+      priceMeso: 900,
+      priceSplitMode: 'ratio',
+      priceMyShare: 1,
+      priceShare: 3,
+      pricePartySize: 9,
+    } as const
+
+    expect(dropSplitLabel(비율)).toBe('33.3%')
+    expect(dropPayoutMeso(비율)).toBe(300)
+  })
+
+  it('방식을 바꿔도 반대쪽 값이 그대로 있다', () => {
+    const 둘다 = {
+      priceState: 'entered',
+      priceMeso: 900,
+      priceMyShare: 1,
+      priceShare: 3,
+      pricePartySize: 4,
+    } as const
+
+    expect(dropSplitLabel({ ...둘다, priceSplitMode: 'even' })).toBe('4인')
+    expect(dropSplitLabel({ ...둘다, priceSplitMode: 'ratio' })).toBe('33.3%')
+  })
+})

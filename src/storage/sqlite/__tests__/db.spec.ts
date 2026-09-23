@@ -446,6 +446,10 @@ describe('가격 컬럼 마이그레이션', () => {
     expect(dbExecuteMock).toHaveBeenCalledWith(
       'ALTER TABLE boss_drop_records ADD COLUMN price_split_mode TEXT',
     )
+    // 기본의 인원. 비율 합과 칸을 가른다 - 겸하면 비율에서 고친 합이 인원을 덮는다.
+    expect(dbExecuteMock).toHaveBeenCalledWith(
+      'ALTER TABLE boss_drop_records ADD COLUMN price_party_size INTEGER',
+    )
   })
 
   it('이미 있으면 더하지 않는다', async () => {
@@ -457,6 +461,7 @@ describe('가격 컬럼 마이그레이션', () => {
         { name: 'price_share' },
         { name: 'price_my_share' },
         { name: 'price_split_mode' },
+        { name: 'price_party_size' },
       ],
     })
 
