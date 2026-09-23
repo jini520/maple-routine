@@ -54,11 +54,6 @@ export function ShareField(props: {
   // 가로로 서는 두 벌은 `−` 가 왼쪽이다(사용자 지정). 세로로 서는 `row` 만 `＋` 가 위다.
   const minusFirst = stacked
   const [width, setWidth] = useState(0)
-  /**
-   * 끌기 중인가. 콜백은 렌더마다 새 제스처로 갈아 끼워지므로, 잡은 직후 다시 렌더되기 전에 온
-   * 이벤트는 `false` 를 보고 건너뛴다(한 프레임 이내).
-   */
-  const [grabbed, setGrabbed] = useState(false)
   const { myShare, sharesTotal } = props.value
 
   /** 바뀌었을 때만 알리고 햅틱을 낸다. 같은 칸에 머무는 끌기는 조용하다. */
@@ -72,14 +67,15 @@ export function ShareField(props: {
     .runOnJS(true)
     .activeOffsetX([-6, 6])
     .failOffsetY([-12, 12])
+    // 잡은 자리와 지나는 자리를 같은 식으로 옮긴다. **끌기 중인가 를 따로 들지 않는다** -
+    // `onUpdate` 는 `onStart` 뒤에만 오므로 물을 것이 없고, 그 값을 state 로 들었더니 제스처
+    // 콜백이 잡힌 렌더의 옛 값을 계속 봐서 끌기가 통째로 버려졌다(안드로이드에서 드러났다).
     .onStart((event) => {
-      setGrabbed(true)
       commit({ myShare: shareAt(event.x, width, sharesTotal), sharesTotal })
     })
     .onUpdate((event) => {
-      if (grabbed) commit({ myShare: shareAt(event.x, width, sharesTotal), sharesTotal })
+      commit({ myShare: shareAt(event.x, width, sharesTotal), sharesTotal })
     })
-    .onFinalize(() => setGrabbed(false))
     .withTestId('share-field-pan')
 
   function adjust(event: AccessibilityActionEvent): void {
