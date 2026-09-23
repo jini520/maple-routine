@@ -889,6 +889,33 @@ describe('BossDropSheet: 타일의 표식', () => {
     expect(getByText('32.5억')).toBeTruthy()
   })
 
+  /**
+   * **적는 수는 내 몫이다**(사용자 지정 2026-09-23). 판매 총액을 적으면 같은 드롭이 보스 수익
+   * 화면과 다른 수를 말한다. 그 화면은 `dropPayoutMeso` 로 센다.
+   */
+  it('나눈 드롭은 판매 총액이 아니라 내 몫을 적는다', async () => {
+    const { result } = renderSheet({
+      pricing: PRICING,
+      initialDrops: [드롭기록({ priceMeso: 10_000_000_000, priceShare: 4, priceMyShare: 1 })],
+    })
+    const { getByText, queryByText } = await result
+
+    expect(getByText('25억')).toBeTruthy()
+    expect(queryByText('100억')).toBeNull()
+  })
+
+  // 내 몫이 0 이면 받은 돈이 없다. 총액을 적으면 안 받은 돈이 타일에 선다.
+  it('내 몫이 0 이면 0 으로 적는다', async () => {
+    const { result } = renderSheet({
+      pricing: PRICING,
+      initialDrops: [드롭기록({ priceMeso: 10_000_000_000, priceShare: 10, priceMyShare: 0 })],
+    })
+    const { getByText, queryByText } = await result
+
+    expect(getByText('0')).toBeTruthy()
+    expect(queryByText('100억')).toBeNull()
+  })
+
   /** 기록 안함도 정한 것이다. 타일이 그 결정을 말한다(사용자 지정). */
   it('기록 안함인 타일은 그렇게 적는다', async () => {
     const { result } = renderSheet({
