@@ -42,11 +42,15 @@ export function FeeRow<T extends string>(props: {
     <View
       testID={props.testID === undefined ? undefined : `${props.testID}-value`}
       /*
-        **`stacked` 는 값 줄 높이를 못박는다.** 자동을 켜고 끌 때 이 자리가 명패 + 요율(19)과
-        세그먼트(26)를 오가는데, 안 못박으면 그 7px 만큼 아래의 버튼 줄과 옆 줄이 함께
-        흔들린다. 26 은 세그먼트 쪽 높이다(조각 16 + `py-0.5` 4 + 상자 `p-0.5` 4 + 테두리 2).
+        **값 줄 높이를 못박는다.** 자동을 켜고 끌 때 이 자리가 명패 + 요율(19)과 세그먼트(26)를
+        오가는데, 안 못박으면 그 7px 만큼 아래의 버튼 줄과 옆 줄이 함께 흔들린다(사용자 지적).
+        26 은 세그먼트 쪽 높이다(조각 16 + `py-0.5` 4 + 상자 `p-0.5` 4 + 테두리 2).
+
+        `field` 만 빼는 것은 그 줄이 이미 `min-h-7`(28)로 더 높은 바닥을 갖고 있어서다.
       */
-      className={`flex-row items-center justify-end gap-1.5${stacked ? ' h-[26px]' : ' flex-1'}`}
+      className={`flex-row items-center justify-end gap-1.5${stacked ? '' : ' flex-1'}${
+        stacked || compact ? ' h-[26px]' : ''
+      }`}
     >
       {props.auto ? (
         props.autoFee !== null ? (
