@@ -463,7 +463,15 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                   </View>
                 ) : (
                   // 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서 말한다.
-                  <View className="flex-1 gap-2.5 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
+                  //
+                  // **높이 156 을 못박는다.** 156 은 `비율` 칸이 제 내용으로 서는 높이다(여백 11 +
+                  // 머리 23 + 간격 16 + 트랙 44 + 간격 24 + 합 26 + 여백 12). 안 못박으면 이 칸이
+                  // 84 라, 세그먼트를 누를 때마다 아래 버튼 줄이 그 차이만큼 뛴다. `비율` 칸은 안
+                  // 못박는다. 제 내용대로 서게 두어야 글꼴 크기가 커져도 안이 안 잘린다.
+                  <View
+                    testID="input-card-party"
+                    className="h-[156px] flex-1 gap-2.5 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]"
+                  >
                     <View className="flex-row items-center justify-between gap-1.5">
                       <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
                         파티 인원
@@ -472,7 +480,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                         최대 {props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}명
                       </Badge>
                     </View>
-                    <View className="h-9 items-center justify-center">
+                    {/* 스테퍼는 머리 줄 아래 남는 자리 가운데다(사용자 지정). */}
+                    <View testID="input-card-party-body" className="flex-1 items-center justify-center">
                       <PartySizeStepper
                         size="bare"
                         label={props.share.label}

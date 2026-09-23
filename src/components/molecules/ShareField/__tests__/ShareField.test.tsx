@@ -114,6 +114,16 @@ describe('ShareField', () => {
     expect(getByTestId('share-field-total-분배 비율')).toHaveTextContent('3')
   })
 
+  // 라벨 11px 과 백분율 23px 를 baseline 으로 묶으면 라벨이 7px 내려앉아, 드롭 가격 카드에서
+  // 옆 칸의 `파티 인원` 과 다른 높이에 선다(사용자 지정).
+  it.each(['wide', 'stacked'] as const)('%s 는 라벨을 카드 좌상단에 세운다', async (layout) => {
+    const { getByTestId } = await renderAtom(
+      <ShareField label="결정석" value={{ myShare: 2, sharesTotal: 3 }} onChange={jest.fn()} layout={layout} />,
+    )
+
+    expect(flattenStyle(getByTestId('share-field-head').props.style).alignItems).toBe('flex-start')
+  })
+
   // 가로로 서는 두 벌은 `−` 가 왼쪽이다(사용자 지정). 세로로 서는 `row` 만 `＋` 가 위다.
   it.each(['wide', 'stacked'] as const)('%s 는 − 가 ＋ 보다 앞이다', async (layout) => {
     const { getAllByLabelText } = await renderAtom(

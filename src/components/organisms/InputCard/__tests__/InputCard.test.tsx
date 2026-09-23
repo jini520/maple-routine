@@ -234,6 +234,20 @@ describe('InputCard', () => {
       expect(onConfirm).toHaveBeenCalledWith('100', { myShare: 1, sharesTotal: 4 })
     })
 
+    /**
+     * 156 은 `비율` 칸이 제 내용으로 서는 높이다(여백 11 + 머리 23 + 간격 16 + 트랙 44 + 간격 24 +
+     * 합 26 + 여백 12). 안 못박으면 `기본` 칸이 84 라, 세그먼트를 누를 때마다 아래 버튼 줄이 뛴다.
+     */
+    it('기본 칸이 비율 칸과 같은 156 으로 서고 스테퍼가 남는 자리 가운데에 선다', async () => {
+      const { view } = await 그리기({ share: 균등 })
+
+      expect(flattenStyle(view.getByTestId('input-card-party').props.style).height).toBe(156)
+
+      const 본문 = flattenStyle(view.getByTestId('input-card-party-body').props.style)
+      expect(Number(본문.flexGrow)).toBe(1)
+      expect(본문.justifyContent).toBe('center')
+    })
+
     it('비율로 바꾸면 비율 카드 한 장이 서고 인원 스테퍼가 사라진다', async () => {
       const { view } = await 그리기({ share: 균등 })
 

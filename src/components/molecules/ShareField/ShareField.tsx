@@ -141,10 +141,16 @@ export function ShareField(props: {
 
   return (
     <View className={stacked ? 'gap-4' : 'gap-2'}>
+      {/*
+        가로로 선 두 벌은 라벨이 **카드 좌상단**이다. `items-baseline` 으로 묶으면 11px 라벨이
+        23px 백분율의 아랫변에 붙어 7px 내려앉고, 그러면 나란히 서는 칸의 라벨(드롭 가격 카드의
+        `파티 인원`)과 높이가 갈린다.
+      */}
       <View
+        testID="share-field-head"
         className={
           stacked
-            ? 'flex-row items-baseline justify-between gap-1.5'
+            ? 'flex-row items-start justify-between gap-1.5'
             : 'flex-row items-center justify-between gap-2.5'
         }
       >
