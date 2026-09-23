@@ -40,15 +40,18 @@ export type LedgerReloadPart = 'live' | 'window' | 'enhancement'
 
 export interface LedgerDataState {
   /**
-   * `filling` 인 동안 모달이 뜬다. 서는 자리가 셋이다. 마운트 · 당김 · **한 번도 안 받아 본
-   * 범위로의 기간 이동**. 셋 다 화면에 그릴 것이 아직 없는 자리다.
+   * `filling` 인 동안 모달이 뜬다. 서는 자리가 셋이다. **안 받아 둔 지난 날이 있는 마운트** ·
+   * 당김 · **한 번도 안 받아 본 범위로의 기간 이동**. 셋 다 화면에 그릴 것이 아직 없는 자리다.
+   *
+   * 오늘 칸만 받는 마운트는 `idle` 로 시작해 `ready` 로 간다. 그 회차는 지난 방문의 값이 이미
+   * 서 있어 덮을 것이 없다.
    */
   status: 'idle' | 'filling' | 'ready'
   /**
    * 이 회차가 **오래 걸릴 것을 시작 전에 알았나**. 참이면 모달이 400ms 를 안 끈다.
    *
-   * 그 문턱은 짧을지 길지 모르는 회차가 화면을 번쩍이지 않게 하는 보험이다. 기간 이동은 원장을
-   * 먼저 읽어 답을 이미 아므로, 거기서까지 기다리면 사용자는 빈 격자를 반 초 더 본다.
+   * 그 문턱은 짧을지 길지 모르는 회차가 화면을 번쩍이지 않게 하는 보험이다. 마운트와 기간 이동은
+   * 원장을 먼저 읽어 답을 이미 아므로, 거기서까지 기다리면 사용자는 빈 격자를 반 초 더 본다.
    */
   knownLong: boolean
   /**
@@ -56,6 +59,10 @@ export interface LedgerDataState {
    * 거기는 모달이 안 서지만 화면은 여전히 아무 값도 안 그려야 한다.
    *
    * 없으면 아직 안 받은 지출이 `0` 으로 단정된 채 서고, 값이 들어오며 네 번 바뀐다.
+   *
+   * **오늘 칸만 받는 회차에서는 거짓이다.** 그 회차의 기기 DB 는 지난 방문의 값을 다 들고 있어
+   * 자라는 중이 아니다. 새로 쓴 것만 회차 끝에 한 번 붙는다. 참으로 두면 탭에 들어올 때마다
+   * 화면이 빈다.
    */
   collecting: boolean
   /** 회차가 끝날 때마다 오른다. 자식이 **다시 읽을 계기**로 쓰는 유일한 신호다. */
@@ -98,12 +105,11 @@ export function useLedgerData(): LedgerDataState {
 export function LedgerDataProvider(props: {
   children: React.ReactNode
 }): React.JSX.Element {
-  // 마운트하면 반드시 채우므로 시작이 곧 `filling` 이다. 효과 안에서 이 값을 세우면 렌더가
-  // 한 번 더 돈다(연쇄 렌더).
-  const [status, setStatus] = useState<LedgerDataState['status']>('filling')
-  // 마운트 회차는 안 재고 시작한다. 문턱이 그 자리를 든다.
+  // 마운트 회차가 모달을 세울지는 **원장이 답한다**(아래 효과). 그 답이 오기 전에는 안 세운다.
+  // 무조건 `filling` 으로 시작하면 탭에 들어올 때마다 스피너가 돈다.
+  const [status, setStatus] = useState<LedgerDataState['status']>('idle')
   const [knownLong, setKnownLong] = useState(false)
-  // 마운트하면 반드시 채우므로 시작이 곧 참이다. 효과 안에서 세우면 렌더가 한 번 더 돈다.
+  // 재는 동안은 막아 둔다. SQLite 한 번이고, 덧칠 회차면 그 직후에 풀린다.
   const [collecting, setCollecting] = useState(true)
   const [revision, setRevision] = useState(0)
   // 회차가 겹칠 수 있다(기간을 연타하면 앞 회차가 아직 돈다). 세어야 뒤 회차가 도는 중에 앞
@@ -132,7 +138,8 @@ export function LedgerDataProvider(props: {
    * 회차를 열고 `finally` 에서 닫는다. 그래야 한 갈래가 끝나며 그 칸만 사라져 바가 중간에
    * 꺼지는 일이 없다.
    *
-   * @param historyTotal 기간 이동이 **미리 재 둔** 히스토리의 작업 수. 안 주면 여기서 잰다
+   * @param historyTotal 마운트와 기간 이동이 **미리 재 둔** 히스토리의 작업 수. 둘 다 그 값으로
+   *   모달을 세울지 정하느라 이미 읽었다. 안 주면 여기서 잰다
    */
   const run = useCallback(
     async (parts: readonly LedgerReloadPart[], range: CashbookRange, historyTotal?: number) => {
@@ -287,10 +294,41 @@ export function LedgerDataProvider(props: {
     [run],
   )
 
-  // 마운트는 **창과 강화**를 받는다. 강화를 여기서 빼면 가계부를 처음 누르는 순간 한 달치
-  // 수집이 시작돼 없던 자리에 모달이 하나 더 선다(사용자 지정 `보스 수익의 당김에서만 빼자`).
+  /**
+   * 마운트는 **창과 강화**를 받는다. 강화를 여기서 빼면 가계부를 처음 누르는 순간 한 달치
+   * 수집이 시작돼 없던 자리에 모달이 하나 더 선다(사용자 지정 `보스 수익의 당김에서만 빼자`).
+   *
+   * **기간 이동과 같은 판정을 쓴다.** 층은 수익·지출을 떠날 때 언마운트되므로 마운트가 곧
+   * 탭 재진입이다. 무조건 모달을 세우면 방문할 때마다 스피너가 돈다(사용자 보고).
+   *
+   * 오늘 칸은 굳을 수 없어 어느 회차에나 들지만, 그 회차의 기기 DB 는 지난 방문의 값을 이미
+   * 들고 있다. 그래서 **모달도 안 세우고 화면도 안 막는다**. 조회는 뒤에서 돌고 끝나면
+   * `revision` 이 올라 자식이 갈아 끼운다.
+   *
+   * 재는 것은 콜이 아니라 원장이라 SQLite 한 번이다. 잰 값을 회차에 넘겨야 원장을 두 번 안 읽는다.
+   *
+   * 못 읽으면 **안 띄우고 안 막는다**. 못 읽는 회차는 어차피 그릴 것을 못 가져온다.
+   */
   useEffect(() => {
-    void run(['window', 'enhancement'], range.current)
+    void (async () => {
+      const size = await measureEnhancementHistory(
+        datesBetween(range.current.from, range.current.to),
+        new Date(),
+      ).catch(() => null)
+
+      // 재는 사이에 탭을 떠났으면 여기서 멈춘다. 없는 화면을 위해 조회를 낼 이유가 없다.
+      if (!alive.current) return
+
+      if (size?.hasPast === true) {
+        // 이미 쟀으므로 모달이 400ms 를 더 끌 이유가 없다.
+        setKnownLong(true)
+        setStatus('filling')
+      } else {
+        setCollecting(false)
+      }
+
+      await run(['window', 'enhancement'], range.current, size?.total)
+    })()
   }, [run])
 
   const value = useMemo(
