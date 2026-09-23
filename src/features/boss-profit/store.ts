@@ -268,11 +268,7 @@ export interface BossProfitStore extends BossProfitState {
    */
   /** 보스별 분배 비율 설정을 읽어 둔다. 카드의 아이템 비율이 이 값을 그린다. */
   loadPartyShares(ocids: string[]): Promise<void>
-  setRowParty(
-    row: BossProfitRowKey,
-    /** `dropShares` 는 아이템 비율이다. 안 넘기면 그 기록의 값을 그대로 둔다 */
-    input: { partySize: number; shares: PartyShares; dropShares?: { myShare: number | null; sharesTotal: number | null } },
-  ): Promise<void>
+  setRowParty(row: BossProfitRowKey, input: { partySize: number; shares: PartyShares }): Promise<void>
   /**
    * 직접 적은 완료를 쓰거나 고친다. 쓰고 나서 이 기간을 다시 읽는다.
    *
@@ -1962,8 +1958,6 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       partyShares[partySizeKey(setting.ocid, setting.bossKey, setting.difficulty)] = {
         crystalMyShare: setting.crystalMyShare,
         crystalSharesTotal: setting.crystalSharesTotal,
-        dropMyShare: setting.dropMyShare,
-        dropSharesTotal: setting.dropSharesTotal,
         splitFeePercent: setting.splitFeePercent,
         splitFeeAuto: setting.splitFeeAuto,
       }
@@ -1971,7 +1965,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     set({ partyShares })
   },
 
-  async setRowParty(rowKey, { partySize, shares, dropShares }) {
+  async setRowParty(rowKey, { partySize, shares }) {
     const row = get().rows.find((candidate) => matchesRowKey(candidate, rowKey))
     if (row === undefined) {
       throw new Error('setRowParty: 존재하지 않는 보스 행입니다')
@@ -1996,8 +1990,6 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         payoutMeso: payoutMeso as number,
         crystalMyShare: shares.myShare,
         crystalSharesTotal: shares.sharesTotal,
-        dropMyShare: dropShares === undefined ? row.dropMyShare : dropShares.myShare,
-        dropSharesTotal: dropShares === undefined ? row.dropSharesTotal : dropShares.sharesTotal,
         splitFeePercent: shares.splitFeePercent,
         splitFeeAuto: shares.splitFeeAuto === true,
         recordedAt: new Date().toISOString(),
@@ -2017,8 +2009,6 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
             payoutMeso,
             crystalMyShare: shares.myShare,
             crystalSharesTotal: shares.sharesTotal,
-            dropMyShare: dropShares === undefined ? candidate.dropMyShare : dropShares.myShare,
-            dropSharesTotal: dropShares === undefined ? candidate.dropSharesTotal : dropShares.sharesTotal,
             splitFeePercent: shares.splitFeePercent,
             splitFeeAuto: shares.splitFeeAuto === true,
           }

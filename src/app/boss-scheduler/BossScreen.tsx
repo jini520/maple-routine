@@ -146,8 +146,6 @@ function BossCard(props: {
 const NO_SHARES: PartyModalShares = {
   crystalMyShare: null,
   crystalSharesTotal: null,
-  dropMyShare: null,
-  dropSharesTotal: null,
   splitFeePercent: null,
 }
 

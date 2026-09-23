@@ -23,8 +23,6 @@ type Props = React.ComponentProps<typeof PartySizeModal>
 const EVEN_SHARES = {
   crystalMyShare: null,
   crystalSharesTotal: null,
-  dropMyShare: null,
-  dropSharesTotal: null,
   splitFeePercent: null,
 }
 
@@ -246,8 +244,6 @@ describe('분배 비율', () => {
       shares: {
         crystalMyShare: 2,
         crystalSharesTotal: 3,
-        dropMyShare: 2,
-        dropSharesTotal: 3,
         // 자동이면 요율은 그 등급 요율이다. 보스 수익 행이 이 값으로 그 기록을 다시 센다.
         splitFeePercent: 3,
         splitFeeAuto: true,
@@ -286,12 +282,13 @@ describe('분배 비율', () => {
     expect(getByLabelText('스우 파티원 수 증가')).toBeTruthy()
   })
 
-  it('결정석과 아이템이 각각 선다. 둘을 다르게 약속하는 파티가 있다', async () => {
-    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3, dropMyShare: 1, dropSharesTotal: 2 }
-    const { getByTestId } = await renderOverlay(<PartySizeModal {...props({ shares })} />)
+  // 비율은 결정석에만 있다. 아이템은 건마다 값이 달라 드롭 가격 카드가 받는다.
+  it('결정석 카드 하나만 선다. 아이템 비율은 여기서 안 정한다', async () => {
+    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3 }
+    const { getByTestId, queryByTestId } = await renderOverlay(<PartySizeModal {...props({ shares })} />)
 
     expect(getByTestId('share-field-ratio-결정석')).toHaveTextContent('66.7%')
-    expect(getByTestId('share-field-ratio-아이템')).toHaveTextContent('50%')
+    expect(queryByTestId('share-field-ratio-아이템')).toBeNull()
   })
 
   it('기본으로 갈아타면 비율 칸을 전부 비운다. 되돌리는 길이 이것뿐이다', async () => {

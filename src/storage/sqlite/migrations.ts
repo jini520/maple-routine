@@ -27,7 +27,7 @@ import type { SqliteDbConnection } from '../ports'
 import { BOSS_KEYED_TABLES } from './boss-tables'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 9
+export const DB_VERSION = 10
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -278,6 +278,22 @@ async function clearZeroHuntFragmentPrices(db: SqliteDbConnection): Promise<void
   )
 }
 
+/**
+ * 아이템 비율 칸 넷을 지운다. 비율은 결정석에만 두기로 했다(사용자 지정 2026-09-23).
+ *
+ * 아이템은 건마다 값이 달라 한 벌로 못 정한다. 드롭 한 건의 몫은 `boss_drop_records` 가 그대로 든다.
+ * 칸이 없는 기기도 있어 있는 것만 지운다.
+ */
+async function dropDropShareColumns(db: SqliteDbConnection): Promise<void> {
+  for (const table of ['boss_party_settings', 'boss_profit_records']) {
+    const { values } = await db.query(`PRAGMA table_info(${table})`)
+    const columns = new Set(((values ?? []) as Row[]).map((column) => String(column.name)))
+    for (const column of ['drop_my_share', 'drop_shares_total']) {
+      if (columns.has(column)) await db.execute(`ALTER TABLE ${table} DROP COLUMN ${column}`)
+    }
+  }
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -290,6 +306,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   rewind0917PrePatchPrices,
   fixSwapped0917Prices,
   clearZeroHuntFragmentPrices,
+  dropDropShareColumns,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

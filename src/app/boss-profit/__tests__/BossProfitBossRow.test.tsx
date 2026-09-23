@@ -257,58 +257,22 @@ describe('BossProfitBossRow: 파티원 수', () => {
     expect(setRowParty).toHaveBeenCalledWith(row, {
       partySize: 4,
       shares: { myShare: null, sharesTotal: null, splitFeePercent: null, splitFeeAuto: undefined },
-      dropShares: { myShare: null, sharesTotal: null },
     })
   })
 
-  // 보스 수익 행에서 고치는 값은 그 주차의 것이라 아이템 비율도 그 기록에 쓴다.
-  it('모달에서 고친 아이템 비율도 그 기록에 쓴다', async () => {
-    const setRowParty = jest.fn().mockResolvedValue(undefined)
-    const row = 보스행({ partySize: 2, crystalMyShare: 2, crystalSharesTotal: 3 })
-    const { getByLabelText, getByText } = await renderProfit(
-      <BossProfitBossRow row={row} drops={[]} />,
-      컨텍스트값({ setRowParty }),
-    )
-
-    await act(async () => {
-      fireEvent.press(getByLabelText(`지내우시 ${주간보스이름} 하드 파티 인원과 비율 변경`))
-    })
-    await act(async () => {
-      fireEvent.press(getByLabelText('아이템 비율 3'))
-    })
-    await act(async () => {
-      fireEvent.press(getByText('적용'))
-    })
-
-    expect(setRowParty).toHaveBeenCalledWith(
-      row,
-      expect.objectContaining({ dropShares: { myShare: 3, sharesTotal: 3 } }),
-    )
-  })
-
-  // 기록이 아이템 비율을 들었으면 그 값을 적고, 안 들었으면 지금 설정값을 적는다.
-  it('비율이 있으면 인원 대신 결정석·아이템 두 열을 적는다', async () => {
-    const { getByText } = await renderProfit(
+  // 비율은 결정석에만 있다. 아이템 몫은 드롭마다 달라 이 줄이 한 수로 못 말한다.
+  it('비율이 있으면 인원 대신 결정석 몫 하나를 적는다', async () => {
+    const { getByText, queryByText } = await renderProfit(
       <BossProfitBossRow
         row={보스행({ partySize: 2, crystalMyShare: 2, crystalSharesTotal: 3, splitFeePercent: 3 })}
         drops={[]}
       />,
     )
 
-    expect(getByText('결정석')).toBeTruthy()
-    expect(getByText('66.7%')).toBeTruthy()
-    expect(getByText('아이템')).toBeTruthy()
-  })
-
-  it('기록이 아이템 비율을 들었으면 그 값을 적는다', async () => {
-    const { getByText } = await renderProfit(
-      <BossProfitBossRow
-        row={보스행({ partySize: 2, crystalMyShare: 1, crystalSharesTotal: 2, dropMyShare: 2, dropSharesTotal: 3 })}
-        drops={[]}
-      />,
-    )
-
-    expect(getByText('66.7%')).toBeTruthy()
+    // 이 카드는 줄이 좁아 소수를 뗀다. 보스 관리 화면은 66.7% 그대로다.
+    expect(getByText('67%')).toBeTruthy()
+    expect(queryByText('결정석')).toBeNull()
+    expect(queryByText('아이템')).toBeNull()
   })
 })
 

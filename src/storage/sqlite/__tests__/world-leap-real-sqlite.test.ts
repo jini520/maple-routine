@@ -75,9 +75,9 @@ describe('character_world_leaps', () => {
 
 describe('copyMissingBossPartySettings', () => {
   it('옛 캐릭터 설정을 전부 옮기고, 새 캐릭터에 이미 있는 설정은 안 덮는다', async () => {
-    await setBossPartySetting({ ocid: 'old', bossKey: 'lotus', difficulty: 'hard', partySize: 3, crystalMyShare: null, crystalSharesTotal: null, dropMyShare: null, dropSharesTotal: null, splitFeePercent: null, updatedAt: '2026-09-01T00:00:00.000Z' })
-    await setBossPartySetting({ ocid: 'old', bossKey: 'damien', difficulty: 'hard', partySize: 2, crystalMyShare: null, crystalSharesTotal: null, dropMyShare: null, dropSharesTotal: null, splitFeePercent: null, updatedAt: '2026-09-01T00:00:00.000Z' })
-    await setBossPartySetting({ ocid: 'new', bossKey: 'lotus', difficulty: 'hard', partySize: 6, crystalMyShare: null, crystalSharesTotal: null, dropMyShare: null, dropSharesTotal: null, splitFeePercent: null, updatedAt: '2026-09-12T00:00:00.000Z' })
+    await setBossPartySetting({ ocid: 'old', bossKey: 'lotus', difficulty: 'hard', partySize: 3, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null, updatedAt: '2026-09-01T00:00:00.000Z' })
+    await setBossPartySetting({ ocid: 'old', bossKey: 'damien', difficulty: 'hard', partySize: 2, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null, updatedAt: '2026-09-01T00:00:00.000Z' })
+    await setBossPartySetting({ ocid: 'new', bossKey: 'lotus', difficulty: 'hard', partySize: 6, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null, updatedAt: '2026-09-12T00:00:00.000Z' })
 
     await copyMissingBossPartySettings('old', 'new', '2026-09-14T00:00:00.000Z')
 

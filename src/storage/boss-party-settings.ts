@@ -1,14 +1,12 @@
 import { bossNameOf } from '../lib/boss/bosses'
 import { getBossProfitDb } from './sqlite/db'
 
-/** 비율 칸 다섯. 전부 `null` 이면 파티 인원으로 균등 분배다. */
+/** 결정석 비율과 송금 수수료 칸. 비율이 `null` 이면 파티 인원으로 균등 분배다. 아이템 비율은 이 표에 없다 */
 export interface BossPartyShareColumns {
   /** 결정석에서 내가 갖는 비율. `null` 은 균등 */
   crystalMyShare: number | null
   /** 결정석 비율의 합 */
   crystalSharesTotal: number | null
-  dropMyShare: number | null
-  dropSharesTotal: number | null
   /** 차액 송금의 경매장 수수료율. 3 또는 5 이고 `null` 은 3 */
   splitFeePercent: number | null
   /** 송금 수수료가 등급을 따라가나. 없으면 손으로 고른 값이다 */
@@ -27,8 +25,6 @@ export interface BossPartySetting extends BossPartyShareColumns {
 const SHARE_COLUMNS = [
   'crystal_my_share',
   'crystal_shares_total',
-  'drop_my_share',
-  'drop_shares_total',
   'split_fee_percent',
   'split_fee_auto',
 ] as const
@@ -36,7 +32,7 @@ const SHARE_COLUMNS = [
 const UPSERT_SQL = `
   INSERT INTO boss_party_settings
     (ocid, boss_key, boss, difficulty, party_size, ${SHARE_COLUMNS.join(', ')}, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(ocid, boss_key, difficulty) DO UPDATE SET
     boss = excluded.boss,
     party_size = excluded.party_size,
@@ -45,7 +41,7 @@ const UPSERT_SQL = `
 `
 
 /**
- * 파티 인원과 분배 비율을 한 번에 쓴다.
+ * 파티 인원과 결정석 비율을 한 번에 쓴다.
  *
  * **비율 칸을 안 넘기고 인원만 고치는 길을 두지 않는다.** 둘이 따로 가면 화면이 보고 있는 약속과
  * 저장된 약속이 갈린다. 균등으로 되돌리는 것도 비율 칸을 `null` 로 덮는 이 길 하나다.
@@ -61,8 +57,6 @@ export async function setBossPartySetting(setting: BossPartySetting): Promise<vo
     setting.partySize,
     setting.crystalMyShare,
     setting.crystalSharesTotal,
-    setting.dropMyShare,
-    setting.dropSharesTotal,
     setting.splitFeePercent,
     setting.splitFeeAuto === true ? 1 : null,
     setting.updatedAt,
@@ -83,8 +77,6 @@ function rowToSetting(row: Record<string, unknown>): BossPartySetting {
     partySize: row.party_size as number,
     crystalMyShare: shareColumn(row, 'crystal_my_share'),
     crystalSharesTotal: shareColumn(row, 'crystal_shares_total'),
-    dropMyShare: shareColumn(row, 'drop_my_share'),
-    dropSharesTotal: shareColumn(row, 'drop_shares_total'),
     splitFeePercent: shareColumn(row, 'split_fee_percent'),
     splitFeeAuto: Number(row.split_fee_auto) === 1,
     updatedAt: row.updated_at as string,

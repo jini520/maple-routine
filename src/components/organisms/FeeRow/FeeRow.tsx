@@ -26,16 +26,48 @@ export function FeeRow<T extends string>(props: {
   options: readonly T[]
   selected: T | null
   onSelect: (value: T) => void
-  /** `field` 는 가계부 시트의 줄(아래 선), `compact` 는 파티 모달의 줄 */
-  variant?: 'field' | 'compact'
+  /**
+   * `field` 는 가계부 시트의 줄(아래 선), `compact` 는 파티 모달의 줄.
+   *
+   * `stacked` 는 드롭 가격 카드다. 이름과 `자동` 이 윗줄, 값이 아랫줄이라 판의 반쪽 너비에서도
+   * 세그먼트가 이름과 자리를 다투지 않는다.
+   */
+  variant?: 'field' | 'compact' | 'stacked'
   testID?: string
 }): React.JSX.Element {
   const compact = props.variant === 'compact'
+  const stacked = props.variant === 'stacked'
+
+  const value = (
+    <View
+      testID={props.testID === undefined ? undefined : `${props.testID}-value`}
+      className={`flex-row items-center justify-end gap-1.5${stacked ? '' : ' flex-1'}`}
+    >
+      {props.auto ? (
+        props.autoFee !== null ? (
+          <>
+            <MvpPlate grade={props.autoFee.grade} height={18} />
+            <Text className="text-13 font-semibold text-text" style={TABULAR_NUMS}>
+              {props.autoFee.percent}%
+            </Text>
+          </>
+        ) : (
+          props.autoPlaceholder !== undefined && (
+            <Text className="text-13 text-text-disabled">{props.autoPlaceholder}</Text>
+          )
+        )
+      ) : (
+        <Segment options={props.options} selected={props.selected} fixed onSelect={props.onSelect} />
+      )}
+    </View>
+  )
+
   return (
-    <View testID={props.testID}>
+    <View testID={props.testID} className={stacked ? 'gap-1' : undefined}>
       <View
+        testID={props.testID === undefined || !stacked ? undefined : `${props.testID}-head`}
         className={
-          compact
+          compact || stacked
             ? 'flex-row items-center gap-2.5'
             : 'min-h-7 flex-row items-center gap-3 border-b border-border pb-2'
         }
@@ -44,7 +76,7 @@ export function FeeRow<T extends string>(props: {
           className={
             compact
               ? 'text-11 font-semibold tracking-[.04em] text-text-muted'
-              : 'shrink-0 text-xs text-text-muted'
+              : `shrink-0 text-xs text-text-muted${stacked ? ' flex-1' : ''}`
           }
         >
           {props.label}
@@ -60,25 +92,9 @@ export function FeeRow<T extends string>(props: {
           <CheckBox checked={props.auto} />
           <Text className="text-xs font-semibold text-text-muted">자동</Text>
         </Pressable>
-        <View className="flex-1 flex-row items-center justify-end gap-1.5">
-          {props.auto ? (
-            props.autoFee !== null ? (
-              <>
-                <MvpPlate grade={props.autoFee.grade} height={18} />
-                <Text className="text-13 font-semibold text-text" style={TABULAR_NUMS}>
-                  {props.autoFee.percent}%
-                </Text>
-              </>
-            ) : (
-              props.autoPlaceholder !== undefined && (
-                <Text className="text-13 text-text-disabled">{props.autoPlaceholder}</Text>
-              )
-            )
-          ) : (
-            <Segment options={props.options} selected={props.selected} fixed onSelect={props.onSelect} />
-          )}
-        </View>
+        {!stacked && value}
       </View>
+      {stacked && value}
     </View>
   )
 }

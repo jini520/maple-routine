@@ -150,6 +150,17 @@ describe('formatSharePercent: 내 몫을 백분율로', () => {
     expect(formatSharePercent(3, 7)).toBe('42.9%')
   })
 
+  // 보스 수익 카드는 줄이 좁아 소수를 뗀다(사용자 지정 2026-09-23). 다른 자리는 첫째 자리까지 그대로다.
+  it('정수로 달라고 하면 반올림해 적는다', () => {
+    expect(formatSharePercent(2, 3, { whole: true })).toBe('67%')
+    expect(formatSharePercent(1, 3, { whole: true })).toBe('33%')
+    expect(formatSharePercent(1, 2, { whole: true })).toBe('50%')
+  })
+
+  it('비율 글자도 정수를 받는다', () => {
+    expect(formatShareRatio({ myShare: 2, sharesTotal: 3, splitFeePercent: null }, { whole: true })).toBe('67%')
+  })
+
   // 큰 숫자의 축약 표기(`formatMesoCompact`)와 같은 규칙이다.
   it('딱 떨어지면 소수를 안 적는다', () => {
     expect(formatSharePercent(1, 2)).toBe('50%')

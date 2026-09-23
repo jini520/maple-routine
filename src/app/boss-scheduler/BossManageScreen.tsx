@@ -61,8 +61,6 @@ const MONTHLY_BOSSES: BossEntry[] = listedBosses('monthly')
 const NO_SHARES: BossPartyShareColumns = {
   crystalMyShare: null,
   crystalSharesTotal: null,
-  dropMyShare: null,
-  dropSharesTotal: null,
   splitFeePercent: null,
 }
 
@@ -291,11 +289,6 @@ export function BossManageScreen(): React.JSX.Element {
         crystal={{
           myShare: columns.crystalMyShare,
           sharesTotal: columns.crystalSharesTotal,
-          splitFeePercent: columns.splitFeePercent,
-        }}
-        drop={{
-          myShare: columns.dropMyShare,
-          sharesTotal: columns.dropSharesTotal,
           splitFeePercent: columns.splitFeePercent,
         }}
         onPress={() => setPartyModal({ entry, difficulty })}

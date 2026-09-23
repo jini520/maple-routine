@@ -19,9 +19,6 @@ export interface BossProfitRecord {
   /** 그 건의 결정석 분배 비율. `null` 이면 파티 인원으로 균등이라 옛 기록이 그대로 맞는다. */
   crystalMyShare: number | null
   crystalSharesTotal: number | null
-  /** 아이템 비율. 그 기록이 비율을 안 들었으면 `null` 이고 화면이 설정값을 본다 */
-  dropMyShare?: number | null
-  dropSharesTotal?: number | null
   /** 차액 송금의 수수료율 스냅샷. `null` 은 3 이다. */
   splitFeePercent: number | null
   /** 송금 수수료가 등급을 따라가나. 없으면 손으로 고른 값이다 */
@@ -63,9 +60,9 @@ export type BossProfitRecordSource = 'auto' | 'manual'
 const UPSERT_SQL = `
   INSERT INTO boss_profit_records
     (ocid, boss_key, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso,
-     crystal_my_share, crystal_shares_total, drop_my_share, drop_shares_total,
-     split_fee_percent, split_fee_auto, recorded_at, world, world_key, source)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     crystal_my_share, crystal_shares_total, split_fee_percent, split_fee_auto,
+     recorded_at, world, world_key, source)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(ocid, boss_key, difficulty, period_key) DO UPDATE SET
     source = excluded.source,
     boss = excluded.boss,
@@ -75,8 +72,6 @@ const UPSERT_SQL = `
     payout_meso = excluded.payout_meso,
     crystal_my_share = excluded.crystal_my_share,
     crystal_shares_total = excluded.crystal_shares_total,
-    drop_my_share = excluded.drop_my_share,
-    drop_shares_total = excluded.drop_shares_total,
     split_fee_percent = excluded.split_fee_percent,
     split_fee_auto = excluded.split_fee_auto,
     recorded_at = excluded.recorded_at,
@@ -145,8 +140,6 @@ export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<
     // SQLite 바인딩은 undefined 를 못 받는다. 칸이 없는 옛 픽스처도 NULL 로 떨어뜨린다.
     record.crystalMyShare ?? null,
     record.crystalSharesTotal ?? null,
-    record.dropMyShare ?? null,
-    record.dropSharesTotal ?? null,
     record.splitFeePercent ?? null,
     record.splitFeeAuto === true ? 1 : null,
     record.recordedAt,
@@ -199,8 +192,6 @@ function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
     payoutMeso: row.payout_meso as number,
     crystalMyShare: (row.crystal_my_share as number | null | undefined) ?? null,
     crystalSharesTotal: (row.crystal_shares_total as number | null | undefined) ?? null,
-    dropMyShare: (row.drop_my_share as number | null | undefined) ?? null,
-    dropSharesTotal: (row.drop_shares_total as number | null | undefined) ?? null,
     splitFeePercent: (row.split_fee_percent as number | null | undefined) ?? null,
     splitFeeAuto: Number(row.split_fee_auto) === 1,
     recordedAt: row.recorded_at as string,

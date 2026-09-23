@@ -23,8 +23,6 @@ const sampleSetting: BossPartySetting = {
   partySize: 4,
   crystalMyShare: null,
   crystalSharesTotal: null,
-  dropMyShare: null,
-  dropSharesTotal: null,
   splitFeePercent: null,
   splitFeeAuto: false,
   updatedAt: '2026-07-13T00:05:00.000Z',
@@ -51,8 +49,6 @@ describe('setBossPartySetting', () => {
       null,
       null,
       null,
-      null,
-      null,
       // 송금 수수료가 등급을 따라가나. 손으로 고른 값이라 비어 있다.
       null,
       '2026-07-13T00:05:00.000Z',
@@ -61,10 +57,10 @@ describe('setBossPartySetting', () => {
     const [secondSql, secondValues] = runMock.mock.calls[1]
     expect(secondSql).toBe(firstSql)
     expect(secondValues[4]).toBe(2)
-    expect(secondValues[11]).toBe('2026-07-13T01:00:00.000Z')
+    expect(secondValues[9]).toBe('2026-07-13T01:00:00.000Z')
   })
 
-  // 비율을 고치면 칸 다섯이 함께 간다. 인원만 쓰고 비율을 두고 오면 화면과 DB 가 갈린다.
+  // 비율을 고치면 칸 셋이 함께 간다. 인원만 쓰고 비율을 두고 오면 화면과 DB 가 갈린다.
   it('비율과 수수료율을 함께 쓴다', async () => {
     const { setBossPartySetting } = require('../boss-party-settings') as typeof import('../boss-party-settings')
 
@@ -73,8 +69,6 @@ describe('setBossPartySetting', () => {
       partySize: 2,
       crystalMyShare: 2,
       crystalSharesTotal: 3,
-      dropMyShare: 1,
-      dropSharesTotal: 2,
       splitFeePercent: 5,
     })
 
@@ -82,13 +76,11 @@ describe('setBossPartySetting', () => {
     for (const column of [
       'crystal_my_share',
       'crystal_shares_total',
-      'drop_my_share',
-      'drop_shares_total',
       'split_fee_percent',
     ]) {
       expect(sql).toContain(column)
     }
-    expect(values.slice(4, 10)).toEqual([2, 2, 3, 1, 2, 5])
+    expect(values.slice(4, 8)).toEqual([2, 2, 3, 5])
   })
 
   // 균등으로 되돌리는 길은 NULL 로 덮는 것뿐이다. 지우는 API 를 따로 두지 않는다.
@@ -98,7 +90,7 @@ describe('setBossPartySetting', () => {
     await setBossPartySetting({ ...sampleSetting, crystalMyShare: null, crystalSharesTotal: null })
 
     const [, values] = runMock.mock.calls[0]
-    expect(values.slice(5, 10)).toEqual([null, null, null, null, null])
+    expect(values.slice(5, 8)).toEqual([null, null, null])
   })
 })
 
@@ -128,8 +120,6 @@ describe('getBossPartySize', () => {
           party_size: 4,
           crystal_my_share: null,
           crystal_shares_total: null,
-          drop_my_share: null,
-          drop_shares_total: null,
           split_fee_percent: null,
           updated_at: '2026-07-13T00:05:00.000Z',
         },
@@ -173,8 +163,6 @@ describe('getBossPartySettings', () => {
           party_size: 4,
           crystal_my_share: null,
           crystal_shares_total: null,
-          drop_my_share: null,
-          drop_shares_total: null,
           split_fee_percent: null,
           updated_at: '2026-07-13T00:05:00.000Z',
         },

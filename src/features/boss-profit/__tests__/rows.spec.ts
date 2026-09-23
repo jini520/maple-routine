@@ -41,8 +41,6 @@ function row(overrides: Partial<BossProfitRow> = {}): BossProfitRow {
     payoutMeso: 5_000_000,
     crystalMyShare: null,
     crystalSharesTotal: null,
-    dropMyShare: null,
-    dropSharesTotal: null,
     splitFeePercent: null,
     isComplete: true,
     defeatedOn: null,
@@ -162,8 +160,6 @@ describe('buildRowFromRecord 의 월드', () => {
     payoutMeso: 1000,
     crystalMyShare: null,
     crystalSharesTotal: null,
-    dropMyShare: null,
-    dropSharesTotal: null,
     splitFeePercent: null,
     recordedAt: '2026-09-11T00:00:00.000Z',
   }
@@ -461,8 +457,6 @@ it('mergeRecordsIntoRows 는 기록의 처치 날짜도 행에 싣는다', () =>
     payoutMeso: 50,
     crystalMyShare: null,
     crystalSharesTotal: null,
-    dropMyShare: null,
-    dropSharesTotal: null,
     splitFeePercent: null,
     recordedAt: '2026-09-20T00:00:00.000Z',
     world: null,
@@ -505,46 +499,19 @@ it('mergeRecordsIntoRows 는 기록의 비율과 송금 수수료도 행에 싣�
   })
 })
 
-// 보스 수익 행에서 고친 아이템 비율은 그 주차의 값이라 기록에 남는다.
-it('mergeRecordsIntoRows 는 기록의 아이템 비율도 행에 싣는다', () => {
-  const target = row()
-  const record = {
-    ocid: target.ocid,
-    bossKey: target.bossKey,
-    boss: target.bossName,
-    difficulty: target.difficulty,
-    cycle: 'weekly' as const,
-    periodKey: target.periodKey,
-    partySize: 2,
-    priceMeso: 300,
-    payoutMeso: 200,
-    crystalMyShare: null,
-    crystalSharesTotal: null,
-    dropMyShare: 2,
-    dropSharesTotal: 3,
-    splitFeePercent: null,
-    recordedAt: '2026-07-10T00:00:00.000Z',
-    world: null,
-    worldKey: null,
-    defeatedOn: null,
-  }
-
-  expect(mergeRecordsIntoRows([target], [record])[0]).toMatchObject({ dropMyShare: 2, dropSharesTotal: 3 })
-})
-
-// 드롭 가격 카드의 씨앗. 기록이 비율을 들었으면 그 비율이고, 없으면 파티 인원으로 균등하다.
+// 드롭 가격 카드의 씨앗. 비율은 결정석에만 있어 여기서는 그 행의 파티 인원으로 균등하다.
 describe('dropShareSeedOf', () => {
-  it('기록이 아이템 비율을 들었으면 그 비율이다', () => {
-    expect(dropShareSeedOf(row({ dropMyShare: 2, dropSharesTotal: 3, partySize: 2 }))).toEqual({
-      myShare: 2,
-      sharesTotal: 3,
+  it('그 행의 파티 인원으로 균등하다', () => {
+    expect(dropShareSeedOf(row({ partySize: 4 }))).toEqual({
+      myShare: 1,
+      sharesTotal: 4,
     })
   })
 
-  it('안 들었으면 그 행의 파티 인원으로 균등하다', () => {
-    expect(dropShareSeedOf(row({ dropMyShare: null, dropSharesTotal: null, partySize: 4 }))).toEqual({
+  it('인원이 없으면 혼자다', () => {
+    expect(dropShareSeedOf(row({ partySize: null }))).toEqual({
       myShare: 1,
-      sharesTotal: 4,
+      sharesTotal: 1,
     })
   })
 })
@@ -625,8 +592,6 @@ describe('직접 적은 완료', () => {
           payoutMeso: 665_000_000,
           crystalMyShare: null,
           crystalSharesTotal: null,
-          dropMyShare: null,
-          dropSharesTotal: null,
           splitFeePercent: null,
           recordedAt: '2026-09-18T00:00:00.000Z',
           world: null,

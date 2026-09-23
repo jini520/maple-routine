@@ -282,6 +282,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     return (
       <FeeRow
         testID={testID}
+        variant="stacked"
         label={label}
         auto={fee.auto}
         onAutoChange={(auto) => setFee({ auto, percent: !auto && autoFee !== null ? autoFee.percent : fee.percent })}
@@ -450,38 +451,46 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 />
               </View>
 
-              {usesRatio ? (
-                // 파티 모달의 비율 카드와 같은 바탕이다. 드롭 하나의 값이라 카드가 한 장이다.
-                <View className="rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
-                  <ShareField label={props.share.label} value={share} onChange={setShare} />
-                </View>
-              ) : (
-                // 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서 말한다.
-                <View className="flex-row items-center justify-between gap-2.5">
-                  <View className="flex-row items-center gap-2">
-                    <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
-                      파티 인원
-                    </Text>
-                    <Badge variant="primary" size="mini" style={TABULAR_NUMS}>
-                      최대 {props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}명
-                    </Badge>
+              {/*
+                왼쪽이 그 드롭의 분배, 오른쪽이 수수료 둘이다. 위아래로 쌓으면 줄이 넷이라
+                카드가 키보드를 밀어낸다.
+              */}
+              <View testID="input-card-split-fees" className="flex-row items-stretch gap-3">
+                {usesRatio ? (
+                  // 파티 모달의 비율 카드와 같은 바탕이다. 드롭 하나의 값이라 카드가 한 장이다.
+                  <View className="flex-1 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
+                    <ShareField label={props.share.label} value={share} onChange={setShare} />
                   </View>
-                  <PartySizeStepper
-                    size="compact"
-                    label={props.share.label}
-                    value={share.sharesTotal}
-                    max={props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}
-                    onChange={(next) => setShare({ myShare: 1, sharesTotal: next })}
-                  />
-                </View>
-              )}
-            </View>
-          )}
+                ) : (
+                  // 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서 말한다.
+                  <View className="flex-1 gap-2.5 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
+                    <View className="flex-row items-center justify-between gap-1.5">
+                      <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
+                        파티 인원
+                      </Text>
+                      <Badge variant="primary" size="mini" style={TABULAR_NUMS}>
+                        최대 {props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}명
+                      </Badge>
+                    </View>
+                    <View className="h-9 items-center justify-center">
+                      <PartySizeStepper
+                        size="compact"
+                        label={props.share.label}
+                        value={share.sharesTotal}
+                        max={props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}
+                        onChange={(next) => setShare({ myShare: 1, sharesTotal: next })}
+                      />
+                    </View>
+                  </View>
+                )}
 
-          {props.fees !== undefined && (
-            <View className="mt-3 gap-2">
-              {feeRow('판매 수수료', 'input-card-sale-fee', saleFee, setSaleFee)}
-              {splits && feeRow('분배 수수료', 'input-card-split-fee', splitFee, setSplitFee)}
+                {props.fees !== undefined && (
+                  <View className="flex-1 justify-center gap-3.5">
+                    {feeRow('판매 수수료', 'input-card-sale-fee', saleFee, setSaleFee)}
+                    {splits && feeRow('분배 수수료', 'input-card-split-fee', splitFee, setSplitFee)}
+                  </View>
+                )}
+              </View>
             </View>
           )}
 

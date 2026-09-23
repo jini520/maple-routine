@@ -1,7 +1,7 @@
 /** 수수료 줄. `자동` 체크박스를 켜면 명패와 요율, 끄면 세그먼트다. 설명 줄은 없다. */
-import { fireEvent } from '@testing-library/react-native'
+import { fireEvent, within } from '@testing-library/react-native'
 
-import { renderAtom } from '../../../__tests__/render-atom'
+import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { FeeRow } from '../FeeRow'
 
 const OPTIONS = ['없음', '3%', '5%'] as const
@@ -66,6 +66,30 @@ describe('FeeRow', () => {
     fireEvent.press(screen.getByRole('checkbox'))
 
     expect(onAutoChange).toHaveBeenCalledWith(false)
+  })
+
+  // 드롭 가격 카드는 이 줄 둘을 판의 반쪽에 세운다. 한 줄로 두면 이름과 세그먼트가 붙는다.
+  it('stacked 는 이름과 자동이 윗줄, 값이 아랫줄이다', async () => {
+    const screen = await renderAtom(
+      <FeeRow
+        testID="fee"
+        variant="stacked"
+        label="판매 수수료"
+        auto
+        onAutoChange={jest.fn()}
+        autoFee={{ grade: 'diamond', percent: 3 }}
+        options={OPTIONS}
+        selected="5%"
+        onSelect={jest.fn()}
+      />,
+    )
+
+    expect(flattenStyle(screen.getByTestId('fee').props.style).flexDirection).not.toBe('row')
+    expect(flattenStyle(screen.getByTestId('fee-head').props.style).flexDirection).toBe('row')
+    // 값은 머리 줄 밖에 있다. 안에 있으면 이름과 한 줄을 다툰다.
+    expect(within(screen.getByTestId('fee-head')).queryByLabelText('MVP 다이아')).toBeNull()
+    expect(flattenStyle(screen.getByTestId('fee-value').props.style).justifyContent).toBe('flex-end')
+    expect(screen.getByLabelText('MVP 다이아')).toBeTruthy()
   })
 
   it('캐릭터를 고르기 전에는 자동의 값 자리가 빈다', async () => {

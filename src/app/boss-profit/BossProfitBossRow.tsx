@@ -21,7 +21,6 @@ import { dropShareSeedOf } from '../../features/boss-profit/rows'
 import { PartySizeModal, type PartyModalShares } from '../../components/organisms/PartySizeModal/PartySizeModal'
 import { supportedDifficultiesOf } from '../../lib/boss/bosses'
 import { partySizeForShares } from '../../lib/boss/party-shares'
-import { partySizeKey } from '../../features/boss-scheduler/store'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { bossPortraitSlugOf } from '../../lib/boss/bosses'
@@ -112,7 +111,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
 
 export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   const { row } = props
-  const { setRowParty, setBossDrops, now, partyShares } = useBossProfitContext()
+  const { setRowParty, setBossDrops, now } = useBossProfitContext()
   const [isDropSheetOpen, setIsDropSheetOpen] = useState(false)
   // 행의 `변경` 으로 여는 파티 모달. 인원과 비율을 함께 고친다.
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false)
@@ -151,13 +150,6 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   // 없다. 계산은 항상 0메소로 고정된다. "가격 미확정"과 동일한 비활성 처리를 재사용한다.
   const isEditable = row.isComplete && !isPriceUnknown
   const partySize = row.partySize ?? 1
-  const settingShares = partyShares[partySizeKey(row.ocid, row.bossKey, row.difficulty)]
-  /** 아이템 비율. 그 기록이 든 값이 먼저고, 안 들었으면 지금 설정된 값이다. */
-  const dropShares = {
-    myShare: row.dropMyShare ?? settingShares?.dropMyShare ?? null,
-    sharesTotal: row.dropSharesTotal ?? settingShares?.dropSharesTotal ?? null,
-    splitFeePercent: settingShares?.splitFeePercent ?? null,
-  }
   const recordShares = {
     myShare: row.crystalMyShare,
     sharesTotal: row.crystalSharesTotal,
@@ -196,8 +188,6 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   const modalShares: PartyModalShares = {
     crystalMyShare: row.crystalMyShare,
     crystalSharesTotal: row.crystalSharesTotal,
-    dropMyShare: dropShares.myShare,
-    dropSharesTotal: dropShares.sharesTotal,
     splitFeePercent: row.splitFeePercent,
     splitFeeAuto: row.splitFeeAuto,
   }
@@ -213,7 +203,6 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           splitFeePercent: input.shares.splitFeePercent,
           splitFeeAuto: input.shares.splitFeeAuto,
         },
-        dropShares: { myShare: input.shares.dropMyShare, sharesTotal: input.shares.dropSharesTotal },
       })
     } catch {
       useToastStore.getState().showError('파티원 수를 저장하지 못했습니다')
@@ -272,15 +261,14 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
         {canRecordManual ? (
           <ManualCompletionButton label={row.bossName} onPress={() => setManualSheet('create')} />
         ) : (
-        <View className="mt-2 flex-row items-center justify-between gap-2">
+        <View className="mt-1 flex-row items-center justify-between gap-2">
           <PartyShareSummary
             label={`${row.characterName} ${row.bossName} ${DIFFICULTY_NAME[row.difficulty]}`}
             partySize={partySize}
             size="compact"
             // 결정석은 **이 기록이 굳힌 값**이다. 금액을 그 비율로 셌으므로 지금 설정을 그리면
-            // 옆의 금액과 다른 말을 한다. 아이템은 기록에 없어 지금 설정을 그린다.
+            // 옆의 금액과 다른 말을 한다.
             crystal={recordShares}
-            drop={dropShares}
             disabled={!isEditable}
             onPress={() => setIsPartyModalOpen(true)}
           />

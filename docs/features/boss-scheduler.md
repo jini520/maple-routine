@@ -254,14 +254,16 @@ ADR-073(인디케이터) · ADR-098(헤더 고정). **각 파일 배너의 🔗 
 `party_size` 가 2 가 된다. 금액은 그 수를 안 보지만 파티 배지 · 솔로/파티 필터 · 드롭 분배
 기본값이 본다.
 
-`boss_party_settings` 에 칸 다섯이 붙는다. 전부 `INTEGER` 이고 `NULL` 이 균등 분배다.
+`boss_party_settings` 에 칸 넷이 붙는다. 전부 `INTEGER` 이고 `NULL` 이 균등 분배다.
 
 | 칸 | 뜻 |
 |---|---|
 | `crystal_my_share` · `crystal_shares_total` | 결정석 비율. `2` · `3` 이면 2:1 |
-| `drop_my_share` · `drop_shares_total` | 드롭 비율. 결정석과 다를 수 있다 |
 | `split_fee_percent` | 차액 송금의 경매장 수수료율(3 또는 5). `NULL` 은 3 |
 | `split_fee_auto` | 송금 수수료가 `자동` 인가. 1 이 자동([[ADR-306]] 결정 6) |
+
+**드롭 비율 칸은 없다**([[ADR-312]] 결정 2). `drop_my_share` · `drop_shares_total` 이 여기 있었는데 DB 버전 10 이
+지웠다. 아이템 몫은 파티마다가 아니라 드롭 한 건마다 정한다.
 
 `NULL` 이 균등이라 옛 행을 옮길 일이 없다. `db.ts` 의 `ensureColumn` 으로 칸만 붙인다.
 

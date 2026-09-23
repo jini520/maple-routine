@@ -373,6 +373,24 @@ describe('InputCard', () => {
         expect(view.getAllByLabelText('MVP 다이아')).toHaveLength(2)
       })
 
+      // 판의 반쪽씩이다. 위아래로 두면 카드가 키보드를 밀어낸다.
+      it('왼쪽이 분배이고 오른쪽이 수수료 둘이다', async () => {
+        const { view } = await 그리기({ share: 비율, fees: 수수료 })
+
+        const 줄 = view.getByTestId('input-card-split-fees')
+        expect(flattenStyle(줄.props.style).flexDirection).toBe('row')
+        expect(within(줄).getByTestId('share-field-track')).toBeTruthy()
+        expect(within(줄).getByTestId('input-card-sale-fee')).toBeTruthy()
+      })
+
+      // 좁은 자리라 이름과 값이 한 줄을 다투면 세그먼트가 찌부러진다.
+      it('수수료 줄은 이름과 값을 위아래로 나눈다', async () => {
+        const { view } = await 그리기({ share: 비율, fees: 수수료 })
+
+        expect(view.getByTestId('input-card-sale-fee-head')).toBeTruthy()
+        expect(view.getByTestId('input-card-sale-fee-value')).toBeTruthy()
+      })
+
       it('혼자면 분배 수수료 줄이 안 선다. 보낼 곳이 없다', async () => {
         const { view } = await 그리기({ share: { ...비율, sharesTotal: 1 }, fees: 수수료 })
 

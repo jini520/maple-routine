@@ -53,8 +53,6 @@ export function 보스행(overrides: Partial<BossProfitRow> = {}): BossProfitRow
     payoutMeso: 6_800_000_000,
     crystalMyShare: null,
     crystalSharesTotal: null,
-    dropMyShare: null,
-    dropSharesTotal: null,
     splitFeePercent: null,
     isComplete: true,
     defeatedOn: null,

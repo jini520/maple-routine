@@ -38,13 +38,17 @@ export function ShareField(props: {
   /**
    * 합을 어디에 두나. 기본은 트랙 오른쪽에 세로로 선다.
    *
-   * `'stacked'` 는 트랙 아래 가운데다. 좁은 카드 둘이 나란히 서는 자리(파티 모달)에서는 옆에
-   * 두면 트랙이 30px 밖에 안 남는다.
+   * `'stacked'` 는 트랙 아래 가운데다. 좁은 카드 둘이 나란히 서는 자리에서는 옆에 두면 트랙이
+   * 30px 밖에 안 남는다.
+   *
+   * `'wide'` 는 카드가 판 폭을 다 쓰는 자리(파티 모달)다. 트랙이 넓어 합이 그 옆에 서고 카드가 한 줄 낮아진다.
    */
-  layout?: 'row' | 'stacked'
+  layout?: 'row' | 'stacked' | 'wide'
   onChange: (next: Shares) => void
 }): React.JSX.Element {
-  const stacked = props.layout === 'stacked'
+  const wide = props.layout === 'wide'
+  // 머리 줄과 트랙 높이는 `wide` 도 `stacked` 와 같다. 갈리는 것은 합이 어디 서느냐뿐이다.
+  const stacked = props.layout === 'stacked' || wide
   const [width, setWidth] = useState(0)
   /**
    * 끌기 중인가. 콜백은 렌더마다 새 제스처로 갈아 끼워지므로, 잡은 직후 다시 렌더되기 전에 온
@@ -115,7 +119,7 @@ export function ShareField(props: {
 
       {/* 막대와 합이 **한 줄**이다. 합을 아래 줄로 내리면 고르개 하나가 두 줄을 먹는데,
           결정석과 드롭이 나란히 서는 자리라 그 두 줄이 네 줄이 된다. */}
-      <View className={stacked ? 'gap-6' : 'flex-row items-center gap-2.5'}>
+      <View className={wide ? 'flex-row items-center gap-2.5' : stacked ? 'gap-6' : 'flex-row items-center gap-2.5'}>
         <GestureDetector gesture={pan}>
           <View
             testID="share-field-track"
@@ -178,16 +182,24 @@ export function ShareField(props: {
         </GestureDetector>
 
         {/* 합. 넓은 자리에서는 트랙 오른쪽에 세로로, 좁은 카드에서는 트랙 아래 가운데에 선다. */}
-        <View className={stacked ? 'flex-row items-center justify-center gap-2.5' : 'w-7 items-center'}>
+        <View
+          className={
+            wide
+              ? 'flex-row items-center gap-2.5'
+              : stacked
+                ? 'flex-row items-center justify-center gap-2.5'
+                : 'w-7 items-center'
+          }
+        >
           <Pressable
             role="button"
-            aria-label={`${props.label} 비율 합 ${stacked ? '감소' : '증가'}`}
-            onPress={() => commit(withSharesTotal(props.value, sharesTotal + (stacked ? -1 : 1)))}
-            disabled={stacked ? sharesTotal <= 2 : sharesTotal >= MAX_SHARES_TOTAL}
+            aria-label={`${props.label} 비율 합 ${stacked && !wide ? '감소' : '증가'}`}
+            onPress={() => commit(withSharesTotal(props.value, sharesTotal + (stacked && !wide ? -1 : 1)))}
+            disabled={stacked && !wide ? sharesTotal <= 2 : sharesTotal >= MAX_SHARES_TOTAL}
             hitSlop={STEP_HIT_SLOP}
-            className={stepClass(stacked, stacked ? sharesTotal <= 2 : sharesTotal >= MAX_SHARES_TOTAL)}
+            className={stepClass(stacked, stacked && !wide ? sharesTotal <= 2 : sharesTotal >= MAX_SHARES_TOTAL)}
           >
-            {stacked ? (
+            {stacked && !wide ? (
               <MinusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
             ) : (
               <PlusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
@@ -202,13 +214,13 @@ export function ShareField(props: {
           </Text>
           <Pressable
             role="button"
-            aria-label={`${props.label} 비율 합 ${stacked ? '증가' : '감소'}`}
-            onPress={() => commit(withSharesTotal(props.value, sharesTotal + (stacked ? 1 : -1)))}
-            disabled={stacked ? sharesTotal >= MAX_SHARES_TOTAL : sharesTotal <= 2}
+            aria-label={`${props.label} 비율 합 ${stacked && !wide ? '증가' : '감소'}`}
+            onPress={() => commit(withSharesTotal(props.value, sharesTotal + (stacked && !wide ? 1 : -1)))}
+            disabled={stacked && !wide ? sharesTotal >= MAX_SHARES_TOTAL : sharesTotal <= 2}
             hitSlop={STEP_HIT_SLOP}
-            className={stepClass(stacked, stacked ? sharesTotal >= MAX_SHARES_TOTAL : sharesTotal <= 2)}
+            className={stepClass(stacked, stacked && !wide ? sharesTotal >= MAX_SHARES_TOTAL : sharesTotal <= 2)}
           >
-            {stacked ? (
+            {stacked && !wide ? (
               <PlusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
             ) : (
               <MinusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />

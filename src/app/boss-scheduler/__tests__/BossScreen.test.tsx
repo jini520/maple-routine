@@ -206,8 +206,6 @@ beforeEach(() => {
 const NO_SHARES = {
   crystalMyShare: null,
   crystalSharesTotal: null,
-  dropMyShare: null,
-  dropSharesTotal: null,
   splitFeePercent: null,
 }
 
