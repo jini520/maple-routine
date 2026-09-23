@@ -23,8 +23,12 @@ import { crystalPayoutMeso, type PartyShares } from '../../lib/boss/party-shares
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
 import { getRecordedCharacterOcids } from '../../storage/boss-profit'
-import { getBossPartySettings, type BossPartyShareColumns } from '../../storage/boss-party-settings'
-import { partySizeKey } from '../boss-scheduler/store'
+import { getBossPartySettings } from '../../storage/boss-party-settings'
+import {
+  getBossPartyPeriodOverrides,
+  setBossPartyPeriodOverride,
+} from '../../storage/boss-party-period-overrides'
+import { buildPartyPlans, partyPlanKey, type BossPartyPlan } from './party-plans'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
@@ -155,12 +159,15 @@ export interface BossProfitState {
   periodKey: string // 현재 tab 기준으로 선택된 기간
   rows: BossProfitRow[] // 선택된 (tab, periodKey)의 보스 row. monthly 탭이면 그 달의 monthly-cycle 보스만
   /**
-   * `partySizeKey(ocid, bossKey, difficulty)` → 지금 설정된 분배 비율.
+   * `partyPlanKey(ocid, bossKey, difficulty, periodKey)` → **미완료 행이 그릴** 파티 인원과 비율.
    *
-   * **기간 로드와 따로 돈다.** 기록이 아니라 설정이라 기간을 안 타고, 캐시된 기간을 그릴 때도
-   * 최신이어야 한다. 화면이 진입할 때 한 번 읽는다.
+   * 파티 관리 설정을 깔고 그 기간에 갈라진 값이 있으면 그것이 이긴다. 못 찾은 행은
+   * `SOLO_PARTY_PLAN` 으로 선다.
+   *
+   * **기간 로드와 따로 돈다.** 캐시된 기간을 그릴 때도 최신이어야 해서다. 담기는 기간은 지금
+   * 주차와 지금 달 둘뿐인데, 미완료 행이 지금 기간에만 서기 때문이다(과거 기간은 기록이 원천).
    */
-  partyShares: Record<string, BossPartyShareColumns>
+  partyPlans: Record<string, BossPartyPlan>
   /**
    * 지금 `rows`·`weeklySubtotals` 에 담긴 데이터가 어느 (tab, periodKey) 의 것인가.
    *
@@ -260,14 +267,17 @@ export interface BossProfitStore extends BossProfitState {
    * 백필한다. `refresh` 로는 대신할 수 없다. 그쪽은 현재 기간으로 되돌린다.
    */
   retryPeriod(): Promise<void>
+  /** 미완료 행이 그릴 파티 인원과 비율을 읽어 둔다. 설정 + 그 기간에 갈라진 값. */
+  loadPartyPlans(ocids: string[], now: Date): Promise<void>
   /**
-   * 그 행의 파티 인원과 분배 비율. **설정이 아니라 그 기록 한 건**을 다시 센다.
+   * 그 행의 파티 인원과 분배 비율. **파티 관리 설정은 안 건드린다.**
+   *
+   * 완료 행이면 그 기록 한 건을 다시 세고, 미완료 행이면 그 기간만의 값이 된다. 둘 다 그 행
+   * 하나에서 끝난다.
    *
    * 비율을 함께 받는 것은 둘이 따로 가면 금액과 표기가 갈리기 때문이다. 균등으로 되돌리는 것도
    * `shares` 를 전부 `null` 로 넘기는 이 길 하나다.
    */
-  /** 보스별 분배 비율 설정을 읽어 둔다. 카드의 아이템 비율이 이 값을 그린다. */
-  loadPartyShares(ocids: string[]): Promise<void>
   setRowParty(row: BossProfitRowKey, input: { partySize: number; shares: PartyShares }): Promise<void>
   /**
    * 직접 적은 완료를 쓰거나 고친다. 쓰고 나서 이 기간을 다시 읽는다.
@@ -328,6 +338,18 @@ let latestSyncSnapshot: LatestSyncSnapshot | null = null
  * 그 줄이 낡은 것을 모른다. `setLatestSyncSnapshot` 하나로만 갈리게 두어 세는 자리를 놓치지 않는다.
  */
 let syncSnapshotRevision = 0
+
+/**
+ * 미완료 행이 설 수 있는 기간 둘. 지금 주차와 지금 달이다.
+ *
+ * 과거 기간의 행은 기록에서 나와 전부 완료라, 그 기간의 갈라진 값은 읽을 일이 없다.
+ */
+function currentPartyPlanPeriodKeys(now: Date): string[] {
+  return [
+    getCurrentBossProfitPeriod('weekly', now).periodKey,
+    getCurrentBossProfitPeriod('monthly', now).periodKey,
+  ]
+}
 
 function setLatestSyncSnapshot(snapshot: LatestSyncSnapshot | null): void {
   latestSyncSnapshot = snapshot
@@ -1157,7 +1179,7 @@ const initialState: BossProfitState = {
   tab: 'weekly',
   periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
   rows: [],
-  partyShares: {},
+  partyPlans: {},
   loadedTab: 'weekly',
   loadedPeriodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
   currentPeriodRows: [],
@@ -1947,22 +1969,18 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     await loadPeriod(set, tab, periodKey, ocids, new Date(), myGeneration, true)
   },
 
-  async loadPartyShares(ocids) {
+  async loadPartyPlans(ocids, now) {
     if (ocids.length === 0) {
-      set({ partyShares: {} })
+      set({ partyPlans: {} })
       return
     }
-    const settings = await withSqliteFallback(getBossPartySettings(ocids), [])
-    const partyShares: Record<string, BossPartyShareColumns> = {}
-    for (const setting of settings) {
-      partyShares[partySizeKey(setting.ocid, setting.bossKey, setting.difficulty)] = {
-        crystalMyShare: setting.crystalMyShare,
-        crystalSharesTotal: setting.crystalSharesTotal,
-        splitFeePercent: setting.splitFeePercent,
-        splitFeeAuto: setting.splitFeeAuto,
-      }
-    }
-    set({ partyShares })
+    // 미완료 행은 지금 기간에만 선다. 주간 탭과 월간 탭이 각자의 지금을 갖는다.
+    const periodKeys = currentPartyPlanPeriodKeys(now)
+    const [settings, overrides] = await Promise.all([
+      withSqliteFallback(getBossPartySettings(ocids), []),
+      withSqliteFallback(getBossPartyPeriodOverrides(ocids, periodKeys), []),
+    ])
+    set({ partyPlans: buildPartyPlans(settings, overrides, periodKeys) })
   },
 
   async setRowParty(rowKey, { partySize, shares }) {
@@ -1973,6 +1991,33 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
 
     if (!Number.isInteger(partySize) || partySize < 1 || partySize > row.maxPartySize) {
       throw new Error(`setRowParty: 파티원 수는 1 이상 ${row.maxPartySize} 이하의 정수여야 합니다`)
+    }
+
+    // 아직 안 잡은 보스는 기록이 아니라 **그 기간만의 값**으로 간다. 기록 표에 쓰면 그 조합이
+    // 완료로 읽혀(`mergeRecordsIntoRows`) 잡지도 않은 보스가 완료로 선다.
+    if (!row.isComplete) {
+      const plan: BossPartyPlan = {
+        partySize,
+        crystalMyShare: shares.myShare,
+        crystalSharesTotal: shares.sharesTotal,
+        splitFeePercent: shares.splitFeePercent,
+        splitFeeAuto: shares.splitFeeAuto === true,
+      }
+      await setBossPartyPeriodOverride({
+        ocid: row.ocid,
+        bossKey: row.bossKey,
+        difficulty: row.difficulty,
+        periodKey: row.periodKey,
+        ...plan,
+        updatedAt: new Date().toISOString(),
+      })
+      set({
+        partyPlans: {
+          ...get().partyPlans,
+          [partyPlanKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)]: plan,
+        },
+      })
+      return
     }
 
     const payoutMeso = row.priceMeso === null ? null : crystalPayoutMeso(row.priceMeso, partySize, shares)

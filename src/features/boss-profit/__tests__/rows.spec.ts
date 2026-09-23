@@ -501,15 +501,15 @@ it('mergeRecordsIntoRows 는 기록의 비율과 송금 수수료도 행에 싣�
 
 // 드롭 가격 카드의 씨앗. 비율은 결정석에만 있어 여기서는 그 행의 파티 인원으로 균등하다.
 describe('dropShareSeedOf', () => {
-  it('그 행의 파티 인원으로 균등하다', () => {
-    expect(dropShareSeedOf(row({ partySize: 4 }))).toEqual({
+  it('받은 파티 인원으로 균등하다', () => {
+    expect(dropShareSeedOf(4)).toEqual({
       myShare: 1,
       sharesTotal: 4,
     })
   })
 
-  it('인원이 없으면 혼자다', () => {
-    expect(dropShareSeedOf(row({ partySize: null }))).toEqual({
+  it('혼자면 나눌 것이 없다', () => {
+    expect(dropShareSeedOf(1)).toEqual({
       myShare: 1,
       sharesTotal: 1,
     })

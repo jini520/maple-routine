@@ -32,6 +32,18 @@ erDiagram
         INTEGER party_size
         TEXT updated_at
     }
+    boss_party_period_overrides {
+        TEXT ocid PK
+        TEXT boss_key PK
+        TEXT difficulty PK
+        TEXT period_key PK
+        INTEGER party_size
+        INTEGER crystal_my_share
+        INTEGER crystal_shares_total
+        INTEGER split_fee_percent
+        INTEGER split_fee_auto
+        TEXT updated_at
+    }
     boss_profit_period_checks {
         TEXT ocid PK
         TEXT cycle PK
@@ -65,6 +77,7 @@ erDiagram
         TEXT updated_at
     }
     boss_party_settings ||--o{ boss_profit_records : "파티원 수 기본값 시드"
+    boss_party_period_overrides ||--o{ boss_profit_records : "그 기간만의 파티원 수·비율. 설정보다 먼저 읽힌다"
     boss_profit_records ||--o{ boss_drop_records : "같은 (ocid, boss, difficulty, period_key)"
     character_profiles ||--o{ boss_profit_records : "같은 ocid. 행에 이름·얼굴을 붙인다"
 ```
@@ -96,6 +109,14 @@ PK: `(ocid, boss_key, difficulty)`. "이 캐릭터는 이 보스를 항상 N인 
 - 삭제 API가 따로 없다 — 솔로로 되돌리려면 `party_size = 1`로 upsert한다("파티 관리" 설정과 솔로 취급이 값 레벨에서는 동일).
 - **송금 수수료가 자동인지를 든다**([[ADR-306]] 결정 6, 칸은 구현 완료 2026-09-22). `split_fee_auto` 가 1 이면 새 결정석 기록이 그 기록 날짜의
   등급 요율로 적힌다. 비율로 바꿀 때의 기본이 자동이다([[ADR-305]] 결정 5 의 `NULL 은 3` 을 바꾼다).
+
+### `boss_party_period_overrides` — 그 기간만의 파티 인원·비율
+PK: `(ocid, boss_key, difficulty, period_key)`. 보스 수익 화면의 **미완료 행에서 고친 값**이 여기 산다([[ADR-313]] 결정 2). 칸은 `boss_party_settings` 와 같다.
+
+- **읽는 차례는 `override ?? setting` 이다.** 이 표에 줄이 있으면 그 기간은 파티 관리를 안 따라간다. 자동 기록(`features/boss-profit/auto-record`) · 창 백필(`features/schedule-window/records`) · 직접 완료 시트(`features/manual-completion/record`) 셋이 같은 차례로 읽는다.
+- **기록 표에 못 넣어서 표가 따로 있다.** `boss_profit_records` 에 줄이 생기면 그 조합은 완료로 읽히므로(`mergeRecordsIntoRows`), 미완료 행의 수정값을 거기 쓰면 잡지도 않은 보스가 완료로 선다.
+- 줄을 지우는 손질이 없다. 다음 기간은 `period_key` 가 달라 안 읽으므로 안 쓰이는 줄이 남아도 화면이 틀리지 않는다.
+- `RECORD_TABLE_NAMES` 에 **안 넣는다**. `boss_party_settings` 와 같은 무게라 캐시 비우기의 `일반` 이 함께 지운다.
 
 ### `boss_profit_period_checks` — 기간 재조회 여부 마킹
 PK: `(ocid, cycle, period_key)`. "이 캐릭터의 이 기간은 이미 (재)조회해서 로컬에 반영했다"는 마킹 전용 테이블 — 컬럼 자체에는 수익 정보가 없다.

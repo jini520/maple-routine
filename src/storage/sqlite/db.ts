@@ -82,6 +82,27 @@ const TABLE_DEFINITIONS = [
     name: 'boss_party_settings',
     createSql: `CREATE TABLE IF NOT EXISTS boss_party_settings ${BOSS_PARTY_SETTINGS_BODY}`,
   },
+  // 미완료 보스 행에서 고친 그 기간만의 파티 인원·비율. 줄이 있으면 그 조합은 파티 관리 설정을
+  // 안 따라간다. 기록 표에 못 넣는 이유는 그쪽에 줄이 생기면 그 조합이 완료로 읽혀서다.
+  {
+    name: 'boss_party_period_overrides',
+    createSql: `CREATE TABLE IF NOT EXISTS boss_party_period_overrides (
+    ocid TEXT NOT NULL,
+    boss_key TEXT NOT NULL,
+    difficulty TEXT NOT NULL,
+    -- 주간이면 주차, 월간이면 달. 이 칸이 주기를 겸해서 가른다.
+    period_key TEXT NOT NULL,
+    party_size INTEGER NOT NULL,
+    -- 결정석 분배 비율. NULL 은 '파티 인원으로 균등'이라 boss_party_settings 와 같은 뜻이다.
+    crystal_my_share INTEGER,
+    crystal_shares_total INTEGER,
+    split_fee_percent INTEGER,
+    -- 1 이면 송금 수수료가 등급을 따라간다(자동).
+    split_fee_auto INTEGER,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (ocid, boss_key, difficulty, period_key)
+)`,
+  },
   {
     name: 'boss_profit_period_checks',
     createSql: `

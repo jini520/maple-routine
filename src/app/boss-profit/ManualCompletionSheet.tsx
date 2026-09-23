@@ -74,14 +74,14 @@ export function ManualCompletionSheet(props: ManualCompletionSheetProps): React.
     if (props.mode === 'edit' && difficulty === row.difficulty) return
     let alive = true
     partyTouched.current = false
-    void loadConfiguredPartySize(row.ocid, row.bossKey, difficulty).then((configured) => {
+    void loadConfiguredPartySize(row.ocid, row.bossKey, difficulty, row.periodKey).then((configured) => {
       if (!alive || configured === null || partyTouched.current) return
       setPartySize(Math.min(Math.max(configured, 1), getMaxPartySize(row.bossKey, difficulty)))
     })
     return () => {
       alive = false
     }
-  }, [props.mode, row.ocid, row.bossKey, row.difficulty, difficulty])
+  }, [props.mode, row.ocid, row.bossKey, row.difficulty, row.periodKey, difficulty])
 
   function changePartySize(next: number): void {
     partyTouched.current = true

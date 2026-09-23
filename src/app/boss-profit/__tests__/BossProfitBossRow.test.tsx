@@ -13,7 +13,8 @@ import type { RecordedDrop } from '../../../types/drops'
 
 import { flattenStyle } from '../../../components/__tests__/render-atom'
 import { BossProfitBossRow } from '../BossProfitBossRow'
-import { 보스행, 컨텍스트값, renderProfit, 주간보스이름 } from './harness'
+import { PERIOD, 보스행, 주간보스, 컨텍스트값, renderProfit, 주간보스이름 } from './harness'
+import { partyPlanKey } from '../../../features/boss-profit/party-plans'
 
 // 카운트업은 모듈 수준 기억을 갖는다. 케이스 사이로 새지 않게 비운다.
 beforeEach(() => {
@@ -51,12 +52,70 @@ describe('BossProfitBossRow: 금액을 모르는 행', () => {
     expect(queryByText(/메소/)).toBeNull()
   })
 
-  it('두 경우 모두 파티 줄에서 변경을 걷는다. 조정해도 계산이 0으로 고정된다', async () => {
+  // 가격을 모르는 완료 행에서만 변경을 걷는다. 그 자리는 기록을 다시 세는 곳이라 가격이 없으면
+  // 셀 수가 없다.
+  it('가격 미확정 완료 행은 파티 줄에서 변경을 걷는다', async () => {
     const { queryByLabelText } = await renderProfit(
-      <BossProfitBossRow row={보스행({ isComplete: false, payoutMeso: null })} drops={[]} />,
+      <BossProfitBossRow row={보스행({ priceMeso: null, payoutMeso: null })} drops={[]} />,
     )
 
     expect(queryByLabelText(`지내우시 ${주간보스이름} 하드 파티 인원과 비율 변경`)).toBeNull()
+  })
+})
+
+// 미완료 행은 아직 안 잡은 보스다. 그 자리에서 고치는 것은 금액이 아니라 나누는 약속이라,
+// 파티 관리 값을 그리고 손대면 그 기간만 갈라진다.
+describe('BossProfitBossRow: 미완료 행의 파티', () => {
+  const 미완료행 = 보스행({ isComplete: false, payoutMeso: null, partySize: null })
+
+  it('파티 관리 값을 그린다', async () => {
+    const { getByText } = await renderProfit(
+      <BossProfitBossRow row={미완료행} drops={[]} />,
+      컨텍스트값({
+        partyPlans: {
+          [partyPlanKey('ocid-1', 주간보스, 'hard', PERIOD)]: {
+            partySize: 3,
+            crystalMyShare: null,
+            crystalSharesTotal: null,
+            splitFeePercent: null,
+            splitFeeAuto: false,
+          },
+        },
+      }),
+    )
+
+    expect(getByText('파티 3인')).toBeTruthy()
+  })
+
+  it('설정도 갈라진 값도 없으면 솔로다', async () => {
+    const { getByText } = await renderProfit(<BossProfitBossRow row={미완료행} drops={[]} />)
+
+    expect(getByText('솔로')).toBeTruthy()
+  })
+
+  it('비율을 정해 둔 보스는 그 몫을 그린다', async () => {
+    const { getByText } = await renderProfit(
+      <BossProfitBossRow row={미완료행} drops={[]} />,
+      컨텍스트값({
+        partyPlans: {
+          [partyPlanKey('ocid-1', 주간보스, 'hard', PERIOD)]: {
+            partySize: 2,
+            crystalMyShare: 2,
+            crystalSharesTotal: 3,
+            splitFeePercent: null,
+            splitFeeAuto: false,
+          },
+        },
+      }),
+    )
+
+    expect(getByText('66.7%')).toBeTruthy()
+  })
+
+  it('변경이 열려 있다', async () => {
+    const { getByLabelText } = await renderProfit(<BossProfitBossRow row={미완료행} drops={[]} />)
+
+    expect(getByLabelText(`지내우시 ${주간보스이름} 하드 파티 인원과 비율 변경`)).toBeTruthy()
   })
 })
 

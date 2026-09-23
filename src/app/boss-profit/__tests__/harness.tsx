@@ -82,7 +82,7 @@ export function 컨텍스트값(overrides: Partial<BossProfitContextValue> = {})
     loadedPeriodKey: PERIOD,
     now: NOW,
     dropsByRowKey: {},
-    partyShares: {},
+    partyPlans: {},
     setRowParty: jest.fn().mockResolvedValue(undefined),
     setBossDrops: jest.fn().mockResolvedValue(undefined),
     onRetryPeriod: jest.fn(),

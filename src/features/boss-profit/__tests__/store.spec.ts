@@ -57,8 +57,23 @@ const { getLastWindowFailures: windowFailuresMock } = jest.requireMock('../../sc
 
 jest.mock('../../../storage/boss-party-settings', () => ({
   getBossPartySetting: jest.fn(),
+  getBossPartySettings: jest.fn(),
 }))
-const { getBossPartySetting: getBossPartySettingMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
+const {
+  getBossPartySetting: getBossPartySettingMock,
+  getBossPartySettings: getBossPartySettingsMock,
+} = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
+
+jest.mock('../../../storage/boss-party-period-overrides', () => ({
+  getBossPartyPeriodOverride: jest.fn(),
+  getBossPartyPeriodOverrides: jest.fn(),
+  setBossPartyPeriodOverride: jest.fn(),
+}))
+const {
+  getBossPartyPeriodOverride: getBossPartyPeriodOverrideMock,
+  getBossPartyPeriodOverrides: getBossPartyPeriodOverridesMock,
+  setBossPartyPeriodOverride: setBossPartyPeriodOverrideMock,
+} = jest.requireMock('../../../storage/boss-party-period-overrides') as Record<string, jest.Mock>
 
 jest.mock('../../../storage/scheduler-cache', () => ({
   getCachedSchedulerState: jest.fn(),
@@ -128,6 +143,7 @@ import {
   resetSyncRunStateForTests,
 } from '../../schedule-sync/sync-run-state'
 import { useBossProfitStore } from '../store'
+import { partyPlanKey } from '../party-plans'
 
 /** 비율을 안 쓰는 파티. 인원만 고치는 기존 테스트들이 넘긴다. */
 const EVEN_SHARES = { myShare: null, sharesTotal: null, splitFeePercent: null }
@@ -199,6 +215,8 @@ beforeEach(() => {
   resetSyncRunStateForTests()
   // 기간 스냅샷 표도 모듈 수준이다. 안 비우면 앞 테스트가 읽어 둔 기간이 그대로 그려진다.
   clearPeriodCacheForTests()
+  // 그 기간만 갈라진 값이 없는 것이 기본이다. 그때 기록은 파티 관리 설정을 따른다.
+  getBossPartyPeriodOverrideMock.mockResolvedValue(null)
   // `afterEach` 의 `resetAllMocks` 가 구현을 지운다. 판이 `undefined` 로 굳으면 표가 영영 안 낡는다.
   mockRecordsRevision = 0
   getBossProfitRecordsRevisionMock.mockImplementation(() => mockRecordsRevision)
@@ -1221,6 +1239,53 @@ describe('useBossProfitStore', () => {
     })
   })
 
+  // 미완료 행이 그릴 값. 파티 관리 설정을 깔고 그 기간에 갈라진 값이 이긴다.
+  describe('loadPartyPlans', () => {
+    const 설정 = {
+      ocid: 'ocid-1',
+      bossKey: 'zakum',
+      difficulty: 'chaos',
+      partySize: 3,
+      crystalMyShare: null,
+      crystalSharesTotal: null,
+      splitFeePercent: null,
+      splitFeeAuto: false,
+      updatedAt: '2026-09-10T00:00:00.000Z',
+    }
+
+    it('파티 관리 설정이 지금 주차와 지금 달에 함께 실린다', async () => {
+      getBossPartySettingsMock.mockResolvedValue([설정])
+      getBossPartyPeriodOverridesMock.mockResolvedValue([])
+
+      await useBossProfitStore.getState().loadPartyPlans(['ocid-1'], PINNED_NOW)
+
+      // 2026-09-12 는 목요일 리셋 기준 09-10 주차이고 달은 2026-09 다.
+      expect(getBossPartyPeriodOverridesMock).toHaveBeenCalledWith(['ocid-1'], ['2026-09-10', '2026-09'])
+      const plans = useBossProfitStore.getState().partyPlans
+      expect(plans[partyPlanKey('ocid-1', 'zakum', 'chaos', '2026-09-10')]?.partySize).toBe(3)
+      expect(plans[partyPlanKey('ocid-1', 'zakum', 'chaos', '2026-09')]?.partySize).toBe(3)
+    })
+
+    it('그 기간에 갈라진 값이 설정을 이긴다', async () => {
+      getBossPartySettingsMock.mockResolvedValue([설정])
+      getBossPartyPeriodOverridesMock.mockResolvedValue([
+        { ...설정, periodKey: '2026-09-10', partySize: 2, updatedAt: '2026-09-12T00:00:00.000Z' },
+      ])
+
+      await useBossProfitStore.getState().loadPartyPlans(['ocid-1'], PINNED_NOW)
+
+      const plans = useBossProfitStore.getState().partyPlans
+      expect(plans[partyPlanKey('ocid-1', 'zakum', 'chaos', '2026-09-10')]?.partySize).toBe(2)
+    })
+
+    it('추적 캐릭터가 없으면 조회하지 않고 표를 비운다', async () => {
+      await useBossProfitStore.getState().loadPartyPlans([], PINNED_NOW)
+
+      expect(getBossPartySettingsMock).not.toHaveBeenCalled()
+      expect(useBossProfitStore.getState().partyPlans).toEqual({})
+    })
+  })
+
   describe('setRowParty', () => {
     async function seedRow(overrides: Partial<BossContent> = {}) {
       syncSchedulesMock.mockResolvedValue([
@@ -1333,6 +1398,66 @@ describe('useBossProfitStore', () => {
           splitFeePercent: null,
         }),
       )
+    })
+
+    // 아직 안 잡은 보스는 기록이 아니라 그 기간만의 값으로 간다. 기록 표에 쓰면 그 조합이 완료로
+    // 읽혀 잡지도 않은 보스가 완료로 선다.
+    describe('미완료 행', () => {
+      async function seedIncompleteRow() {
+        syncSchedulesMock.mockResolvedValue([
+          syncResult({
+            state: {
+              ...syncResult().state!,
+              bossContents: [bossContent({ bossKey: 'zakum', apiName: '자쿰', isComplete: false })],
+            },
+          }),
+        ])
+        await useBossProfitStore.getState().refresh(['ocid-1'])
+        upsertBossProfitRecordMock.mockClear()
+        return useBossProfitStore.getState().rows[0]
+      }
+
+      it('기록을 쓰지 않고 그 기간만의 값으로 적는다', async () => {
+        const row = await seedIncompleteRow()
+
+        await useBossProfitStore.getState().setRowParty(row, {
+          partySize: 2,
+          shares: { myShare: 2, sharesTotal: 3, splitFeePercent: 5, splitFeeAuto: true },
+        })
+
+        expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+        expect(setBossPartyPeriodOverrideMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            ocid: 'ocid-1',
+            bossKey: 'zakum',
+            difficulty: 'chaos',
+            periodKey: row.periodKey,
+            partySize: 2,
+            crystalMyShare: 2,
+            crystalSharesTotal: 3,
+            splitFeePercent: 5,
+            splitFeeAuto: true,
+          }),
+        )
+      })
+
+      it('적은 값이 그 행의 표에 바로 선다', async () => {
+        const row = await seedIncompleteRow()
+
+        await useBossProfitStore.getState().setRowParty(row, { partySize: 4, shares: EVEN_SHARES })
+
+        const key = partyPlanKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)
+        expect(useBossProfitStore.getState().partyPlans[key]?.partySize).toBe(4)
+      })
+
+      // 그 칸은 자동 기록에서 **이미 기록됐나**를 겸해서 말한다. 설정값이 실리면 자동 기록이 멈춘다.
+      it('행의 partySize 는 그대로 비어 있다', async () => {
+        const row = await seedIncompleteRow()
+
+        await useBossProfitStore.getState().setRowParty(row, { partySize: 4, shares: EVEN_SHARES })
+
+        expect(useBossProfitStore.getState().rows[0].partySize).toBeNull()
+      })
     })
 
     it('priceMeso가 null인 보스는 upsert를 호출하지 않지만 partySize는 로컬 상태에 반영된다', async () => {

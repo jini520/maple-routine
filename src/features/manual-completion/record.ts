@@ -10,6 +10,7 @@
 import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import { getBossPartySize } from '../../storage/boss-party-settings'
+import { getBossPartyPeriodOverride } from '../../storage/boss-party-period-overrides'
 import {
   deleteBossProfitRecord,
   setBossProfitDefeatedOn,
@@ -43,7 +44,9 @@ export interface ManualCompletionInput {
 }
 
 /**
- * 파티 관리에 설정된 그 보스 · 그 난이도의 인원. 없거나 읽기가 실패하면 `null` 이다.
+ * 그 보스 · 그 난이도를 이번에 몇 인으로 잡나. 없거나 읽기가 실패하면 `null` 이다.
+ *
+ * 미완료 행에서 그 기간만 고쳐 둔 값이 있으면 그것이 파티 관리 설정을 이긴다.
  *
  * 완료 기록 시트가 이 값으로 시작한다. 실패를 `null` 로 삼키는 것은 인원을 못 읽었다고 시트를 못
  * 여는 것보다 1 인으로 여는 편이 낫기 때문이다(자동 기록과 같은 기본값).
@@ -52,7 +55,13 @@ export async function loadConfiguredPartySize(
   ocid: string,
   bossKey: string,
   difficulty: BossDifficulty,
+  periodKey: string,
 ): Promise<number | null> {
+  const override = await withSqliteFallback(
+    getBossPartyPeriodOverride(ocid, bossKey, difficulty, periodKey),
+    null,
+  )
+  if (override !== null) return override.partySize
   return withSqliteFallback(getBossPartySize(ocid, bossKey, difficulty), null)
 }
 
