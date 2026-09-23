@@ -386,6 +386,24 @@ describe('DropPriceScreen: 미입력 ≠ 0원', () => {
     expect(getByText('미입력 1건 이어서 입력')).toBeTruthy()
   })
 
+  /**
+   * **알약이 적는 것은 내 몫이다**(사용자 지정 2026-09-23). 판매 총액을 적으면 행을 더해도 위의
+   * `이 주 아이템 수익` 이 안 나온다. 그 합계는 `dropPayoutMeso` 로 센다.
+   */
+  it('행 알약은 판매 총액이 아니라 내 몫을 적는다', async () => {
+    mockStores({
+      price: {
+        groups: 그룹([
+          항목({ drop: 드롭({ priceState: 'entered', priceMeso: 10_000_000_000, priceShare: 4, priceMyShare: 1 }) }),
+        ]),
+      },
+    })
+    const { getByText, queryByText } = await renderOverlay(<DropPriceScreen />)
+
+    expect(getByText('25.0억')).toBeTruthy()
+    expect(queryByText('100.0억')).toBeNull()
+  })
+
   it('값을 매긴 행만 인원을 말한다. 미입력에 "1인" 이 서면 정해진 값처럼 읽힌다', async () => {
     mockStores({
       price: {

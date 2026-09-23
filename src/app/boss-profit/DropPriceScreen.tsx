@@ -87,6 +87,9 @@ function characterTotal(group: DropPriceGroup): number {
  *
  * 미입력 자리에 `0` 을 쓰지 않는다. `entered` 가 아니면 금액을 아예 그리지 않고 `입력`·
  * `기록 안함` 이라는 말이 선다. 값을 모르는 것과 0원인 것은 다른 사실이다.
+ *
+ * **판매 총액이 아니라 내 몫이다.** 총액을 적으면 행을 더해도 위의 `이 주 아이템 수익` 이 안
+ * 나온다. 그 합계도 드롭 시트의 타일 배지도 `dropPayoutMeso` 로 센다.
  */
 function PriceStatePill(props: { drop: RecordedDrop }): React.JSX.Element {
   const { drop } = props
@@ -95,7 +98,7 @@ function PriceStatePill(props: { drop: RecordedDrop }): React.JSX.Element {
     return (
       <View className="h-[26px] shrink-0 justify-center rounded-full bg-primary-tint px-2.5">
         <Text className="text-[12.5px] font-bold text-primary-ink" style={TABULAR_NUMS}>
-          {formatMesoShort(drop.priceMeso ?? 0)}
+          {formatMesoShort(dropPayoutMeso(drop))}
         </Text>
       </View>
     )
