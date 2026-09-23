@@ -119,13 +119,13 @@ describe('ShareField', () => {
    * 에서만** 그 높이를 0 으로 덮어, 막대만 상자 밖으로 넘쳐 보이고 칸 누르개가 죽는다.
    * 가로로 서는 `wide` 에서는 같은 `flex-1` 이 너비라 그대로 있어야 트랙이 남는 폭을 채운다.
    */
-  it('stacked 트랙은 높이 44 를 flex 에 안 뺏긴다', async () => {
+  it('stacked 트랙은 높이 24 를 flex 에 안 뺏긴다', async () => {
     const { getByTestId } = await renderAtom(
       <ShareField label="결정석" value={{ myShare: 2, sharesTotal: 3 }} onChange={jest.fn()} layout="stacked" />,
     )
 
     const 트랙 = flattenStyle(getByTestId('share-field-track').props.style)
-    expect(트랙.height).toBe(44)
+    expect(트랙.height).toBe(24)
     expect(트랙.flexGrow).toBeUndefined()
   })
 

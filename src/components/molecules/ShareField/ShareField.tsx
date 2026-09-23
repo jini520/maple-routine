@@ -192,14 +192,15 @@ export function ShareField(props: {
             onAccessibilityAction={adjust}
             onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
             // **상자 높이가 곧 누를 자리다.** 막대는 6px 만 그리지만 탭과 끌기를 받는 것은 이
-            // 상자다. 세로로 선 카드는 위아래가 라벨과 단추라 손가락이 빗나가므로 권장
-            // 타깃(44)까지 올린다. 가로로 설 때는 트랙이 길어 36 으로 닿는다.
+            // 상자다. 가로로 설 때는 44(`wide`) · 36(`row`)이고, 세로로 쌓는 벌은 24 다. 그 벌은
+            // 칸이 판의 반쪽이라 트랙을 키운 만큼 카드가 키보드 쪽으로 자라서, 끌기가 막대 위에서
+            // 잡히는 것에 기대고 24 로 둔다(사용자 지정).
             //
             // **세로로 쌓을 때는 `flex-1` 을 빼야 한다.** RN 의 `flex: 1` 은 `flexBasis: 0` 이라
             // 그 벌에서는 주축인 높이를 0 으로 덮고, 부모 높이가 내용으로 정해져 늘어날 여유도
             // 없다. 그러면 6px 막대만 상자 밖으로 넘쳐 보이고 칸 누르개(`inset-0`)가 함께 0 이
             // 돼 눌러 옮기기가 죽는다. 가로로 설 때의 `flex-1` 은 너비라 그대로 둔다.
-            className={`${stacked ? 'h-11' : 'h-9'} justify-center${column ? '' : ' flex-1'}`}
+            className={`${column ? 'h-6' : stacked ? 'h-11' : 'h-9'} justify-center${column ? '' : ' flex-1'}`}
           >
             {/* **채운 길이가 곧 내 몫**이다. 칸에 수를 적지 않는다 - 비율은 2~9 라 셀 일이 없고,
                 세어야 하는 것은 몇 칸인가가 아니라 얼마나 차지하는가다. */}
