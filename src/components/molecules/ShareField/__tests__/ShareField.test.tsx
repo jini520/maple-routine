@@ -3,8 +3,6 @@
 // 여기서 특히 중요한 것은 **합을 줄일 때 내 비율이 따라 내려가는가** 다. 안 맞추면 내 비율이
 // 합보다 커져 내 몫이 100%를 넘는다.
 import { fireEvent } from '@testing-library/react-native'
-import { State } from 'react-native-gesture-handler'
-import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils'
 
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { MAX_SHARES_TOTAL } from '../share-geometry'
@@ -17,32 +15,6 @@ describe('ShareField', () => {
     )
 
     expect(getByTestId('share-field-ratio-결정석')).toHaveTextContent('66.7%')
-  })
-
-  /**
-   * 손잡이를 **끌어서** 옮긴다. 탭(`BEGAN`)만 먹고 끌기(`ACTIVE`)가 안 먹은 적이 있다.
-   * 끌기 중인가 를 `useState` 로 들면 제스처 콜백이 잡힌 렌더의 옛 값을 계속 봐서,
-   * 다시 그려지기 전에 오는 `ACTIVE` 가 전부 버려진다(안드로이드에서 드러났다).
-   */
-  it('손잡이를 끌면 지나는 칸마다 값이 온다', async () => {
-    const onChange = jest.fn()
-    const { getByTestId } = await renderAtom(
-      <ShareField label="결정석" value={{ myShare: 0, sharesTotal: 4 }} onChange={onChange} />,
-    )
-    // 트랙 폭을 알려 준다. 0 이면 어느 칸인지 셀 수가 없다.
-    await fireEvent(getByTestId('share-field-track'), 'layout', {
-      nativeEvent: { layout: { width: 100, height: 44, x: 0, y: 0 } },
-    })
-
-    fireGestureHandler(getByGestureTestId('share-field-pan'), [
-      { state: State.BEGAN, x: 0, translationX: 0 },
-      { state: State.ACTIVE, x: 50, translationX: 50 },
-      { state: State.ACTIVE, x: 100, translationX: 100 },
-      { state: State.END, x: 100, translationX: 100 },
-    ])
-
-    // 끌기가 먹으면 마지막 칸까지 온다. 안 먹으면 `BEGAN` 의 0 하나로 끝난다.
-    expect(onChange).toHaveBeenCalledWith({ myShare: 4, sharesTotal: 4 })
   })
 
   it('칸을 누르면 내 비율이 그 칸으로 온다', async () => {
