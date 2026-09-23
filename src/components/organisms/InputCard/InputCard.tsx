@@ -454,8 +454,12 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               {/*
                 왼쪽이 그 드롭의 분배, 오른쪽이 수수료 둘이다. 위아래로 쌓으면 줄이 넷이라
                 카드가 키보드를 밀어낸다.
+
+                **높이를 못박는다.** 이 줄이 카드에서 유일하게 내용대로 키가 변하는 자리라,
+                `기본` 과 `비율` 을 오갈 때도 수수료 줄이 하나로 줄 때도 카드가 안 움직인다.
+                157 은 비율 쪽 칸이다 - 여백 11 + 머리 24 + 간격 16 + 본문 94 + 여백 12.
               */}
-              <View testID="input-card-split-fees" className="flex-row items-stretch gap-3">
+              <View testID="input-card-split-fees" className="h-[157px] flex-row items-stretch gap-3">
                 {usesRatio ? (
                   // 파티 모달의 비율 카드와 같은 바탕이다. 드롭 하나의 값이라 카드가 한 장이다.
                   <View className="flex-1 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
