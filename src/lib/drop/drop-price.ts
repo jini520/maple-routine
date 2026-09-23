@@ -40,8 +40,11 @@ export function dropPayoutMeso(drop: DropPriceFields): number {
   if (drop.priceState !== 'entered' || drop.priceMeso === undefined || drop.priceMeso === null) return 0
   // 분배 인원이 없거나 0이면 1로 본다. 0으로 나누어 Infinity 가 수익에 섞이는 것을 막는다.
   const total = Math.max(1, drop.priceShare ?? 1)
-  // 내 비율도 최소 1 이다. 0 이면 번 돈을 0 으로 적는다.
-  const mine = Math.max(1, drop.priceMyShare ?? 1)
+  /**
+   * **적힌 0 은 0 이다**(사용자 결정 2026-09-23). 슬라이더의 0 은 이 드롭의 돈을 하나도 안 받는다는
+   * 약속이라 그대로 센다. 안 적힌 것(`NULL`)만 1 이라 옛 기록의 금액이 안 움직인다.
+   */
+  const mine = Math.max(0, drop.priceMyShare ?? 1)
   const saleFee = drop.saleFeePercent ?? null
   const splitFee = drop.splitFeePercent ?? null
   if (saleFee === null && splitFee === null) return Math.floor((drop.priceMeso * mine) / total)
@@ -71,9 +74,10 @@ export function dropPayoutMeso(drop: DropPriceFields): number {
 export function dropSplitLabel(drop: DropPriceFields): string | null {
   if (drop.priceState !== 'entered') return null
   const total = Math.max(1, drop.priceShare ?? 1)
-  const mine = Math.max(1, drop.priceMyShare ?? 1)
+  const mine = Math.max(0, drop.priceMyShare ?? 1)
   if (mine >= total) return null
-  return mine > 1 ? formatSharePercent(mine, total) : `${total}인`
+  // 1 만 인원으로 적는다. 0 을 1 로 접으면 안 받은 몫이 `10인` 으로 서서 균등으로 나눈 것처럼 읽힌다.
+  return mine === 1 ? `${total}인` : formatSharePercent(mine, total)
 }
 
 /** 한 보스 행에 기록된 드롭 전체가 그 행에 더하는 금액. */

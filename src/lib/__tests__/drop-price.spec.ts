@@ -63,8 +63,31 @@ describe('dropPayoutMeso', () => {
     ).toBe(1_200_000_000)
   })
 
-  it('내 비율이 0 이하면 1 로 본다. 0 메소를 벌었다고 적지 않는다', () => {
-    expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 900, priceShare: 3, priceMyShare: 0 })).toBe(300)
+  /**
+   * 슬라이더의 0 은 `이 드롭의 돈을 하나도 안 받는다` 는 약속이라 그대로 센다(사용자 결정
+   * 2026-09-23). 1 로 바꾸던 옛 규칙은 0% 로 저장한 드롭을 `1/N` 번 것으로 잡았다.
+   */
+  it('내 비율이 0 이면 0원이다', () => {
+    expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 900, priceShare: 3, priceMyShare: 0 })).toBe(0)
+  })
+
+  it('내 비율이 0 이면 수수료를 매긴 기록도 0원이다', () => {
+    expect(
+      dropPayoutMeso({
+        priceState: 'entered',
+        priceMeso: 10_000_000_000,
+        priceShare: 10,
+        priceMyShare: 0,
+        saleFeePercent: 3,
+        splitFeePercent: 3,
+      }),
+    ).toBe(0)
+  })
+
+  // 비율을 안 적은 옛 기록은 1 그대로다. 안 그러면 옛 기록의 금액이 통째로 0 이 된다.
+  it('내 비율이 NULL 인 옛 기록은 1 로 본다', () => {
+    expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 900, priceShare: 3, priceMyShare: null })).toBe(300)
+    expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 900, priceShare: 3 })).toBe(300)
   })
 })
 
@@ -214,6 +237,11 @@ describe('dropSplitLabel', () => {
 
   it('비율이면 내 몫을 백분율로 적는다', () => {
     expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 4, priceMyShare: 3 })).toBe('75%')
+  })
+
+  // 0 을 1 로 접으면 `10인` 이 서서 안 받은 몫을 균등으로 나눈 것처럼 읽힌다(사용자가 잡았다).
+  it('내 비율이 0 이면 0% 로 적는다. 인원으로 안 적는다', () => {
+    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 10, priceMyShare: 0 })).toBe('0%')
   })
 
   it('안 나눈 드롭은 적을 것이 없다', () => {
