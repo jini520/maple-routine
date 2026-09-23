@@ -5,6 +5,7 @@
 import { fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { MAX_SHARES_TOTAL } from '../share-geometry'
 import { ShareField } from '../ShareField'
 
 describe('ShareField', () => {
@@ -165,7 +166,7 @@ describe('ShareField', () => {
   it('합이 상한이면 더 못 올린다', async () => {
     const onChange = jest.fn()
     const { getByLabelText } = await renderAtom(
-      <ShareField label="드롭" value={{ myShare: 1, sharesTotal: 9 }} onChange={onChange} />,
+      <ShareField label="드롭" value={{ myShare: 1, sharesTotal: MAX_SHARES_TOTAL }} onChange={onChange} />,
     )
 
     await fireEvent.press(getByLabelText('드롭 비율 합 증가'))

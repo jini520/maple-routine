@@ -248,6 +248,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   const autoFee = props.fees?.autoFee ?? null
   /** 지금 선 쪽의 값. 확인이 내보내는 것도 수수료 줄이 보는 것도 이것 하나다. */
   const share: ShareValue = usesRatio ? ratio : { myShare: 1, sharesTotal: partySize }
+  /** 받는 돈이 있나. 내 몫이 0 이면 경매장에 떼일 것도 파티원에게 보낼 것도 없다. */
+  const earns = share.myShare > 0
   // 내 비율이 합과 같으면 혼자 다 갖는 것이라 보낼 곳이 없다.
   const splits = share.sharesTotal > share.myShare
 
@@ -294,11 +296,18 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   }
 
   /** 수수료 줄 하나. 끄는 순간 방금까지 자동이던 요율을 고른 채 선다. */
-  function feeRow(label: string, testID: string, fee: FeeSeed, setFee: (next: FeeSeed) => void): React.JSX.Element {
+  function feeRow(
+    label: string,
+    testID: string,
+    fee: FeeSeed,
+    setFee: (next: FeeSeed) => void,
+    disabled: boolean,
+  ): React.JSX.Element {
     return (
       <FeeRow
         testID={testID}
         variant="stacked"
+        disabled={disabled}
         label={label}
         auto={fee.auto}
         onAutoChange={(auto) => setFee({ auto, percent: !auto && autoFee !== null ? autoFee.percent : fee.percent })}
@@ -508,9 +517,11 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 )}
 
                 {props.fees !== undefined && (
+                  // 줄 둘이 **항상 선다**(사용자 지정). 쓸 수 없는 줄은 없애지 않고 잠근다.
+                  // 없애면 이 칸의 높이가 바뀌고, 그 줄이 원래 있다는 것도 안 보인다.
                   <View className="flex-1 justify-center gap-3.5">
-                    {feeRow('판매 수수료', 'input-card-sale-fee', saleFee, setSaleFee)}
-                    {splits && feeRow('분배 수수료', 'input-card-split-fee', splitFee, setSplitFee)}
+                    {feeRow('판매 수수료', 'input-card-sale-fee', saleFee, setSaleFee, !earns)}
+                    {feeRow('분배 수수료', 'input-card-split-fee', splitFee, setSplitFee, !earns || !splits)}
                   </View>
                 )}
               </View>

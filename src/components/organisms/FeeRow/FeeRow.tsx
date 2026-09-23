@@ -33,14 +33,25 @@ export function FeeRow<T extends string>(props: {
    * 세그먼트가 이름과 자리를 다투지 않는다.
    */
   variant?: 'field' | 'compact' | 'stacked'
+  /**
+   * 쓸 수 없는 줄. 흐려지고 체크박스도 값도 안 눌린다. **없애지 않고 잠그는** 자리가 있다.
+   * 줄이 사라지면 그 칸의 높이가 바뀌고, 그 줄이 원래 있다는 것도 안 보인다.
+   */
+  disabled?: boolean
   testID?: string
 }): React.JSX.Element {
   const compact = props.variant === 'compact'
   const stacked = props.variant === 'stacked'
+  const disabled = props.disabled === true
 
   const value = (
     <View
       testID={props.testID === undefined ? undefined : `${props.testID}-value`}
+      /*
+        흐림은 줄 전체가 한 번만 진다(아래 뿌리의 `opacity-40`). 세그먼트에 `disabled` 를 주면
+        그쪽도 제 몫을 흐려 두 번 곱해지므로, 여기서는 **누름만** 막는다.
+      */
+      pointerEvents={disabled ? 'none' : 'auto'}
       /*
         **값 줄 높이를 못박는다.** 자동을 켜고 끌 때 이 자리가 명패 + 요율(19)과 세그먼트(26)를
         오가는데, 안 못박으면 그 7px 만큼 아래의 버튼 줄과 옆 줄이 함께 흔들린다(사용자 지적).
@@ -72,7 +83,10 @@ export function FeeRow<T extends string>(props: {
   )
 
   return (
-    <View testID={props.testID} className={stacked ? 'gap-1' : undefined}>
+    <View
+      testID={props.testID}
+      className={`${stacked ? 'gap-1' : ''}${disabled ? ' opacity-40' : ''}`.trim() || undefined}
+    >
       <View
         testID={props.testID === undefined || !stacked ? undefined : `${props.testID}-head`}
         className={
@@ -94,6 +108,8 @@ export function FeeRow<T extends string>(props: {
           role="checkbox"
           aria-label="자동"
           aria-checked={props.auto}
+          aria-disabled={disabled}
+          disabled={disabled}
           onPress={() => props.onAutoChange(!props.auto)}
           hitSlop={8}
           className="flex-row items-center gap-2"

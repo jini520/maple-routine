@@ -464,11 +464,40 @@ describe('InputCard', () => {
         expect(view.getByTestId('input-card-sale-fee-value')).toBeTruthy()
       })
 
-      it('혼자면 분배 수수료 줄이 안 선다. 보낼 곳이 없다', async () => {
-        const { view } = await 그리기({ share: { ...비율, sharesTotal: 1 }, fees: 수수료 })
+      /**
+       * 줄을 없애면 오른쪽 칸의 높이가 바뀌고 그 줄이 원래 있다는 것도 안 보인다. 그래서 쓸 수
+       * 없는 줄은 세워 두고 잠근다(사용자 지정).
+       */
+      const 잠김 = (view: Awaited<ReturnType<typeof 그리기>>['view'], testID: string): boolean =>
+        Number(flattenStyle(view.getByTestId(testID).props.style).opacity) < 1
 
-        expect(view.getByTestId('input-card-sale-fee')).toBeTruthy()
-        expect(view.queryByTestId('input-card-split-fee')).toBeNull()
+      it('혼자면 분배 수수료 줄이 서 있되 잠긴다. 보낼 곳이 없다', async () => {
+        const { view } = await 그리기({ share: { ...비율, myShare: 1, sharesTotal: 1 }, fees: 수수료 })
+
+        expect(잠김(view, 'input-card-sale-fee')).toBe(false)
+        expect(잠김(view, 'input-card-split-fee')).toBe(true)
+      })
+
+      it('내 몫이 100% 면 분배 수수료만 잠긴다', async () => {
+        const { view } = await 그리기({ share: { ...비율, myShare: 3, sharesTotal: 3 }, fees: 수수료 })
+
+        expect(잠김(view, 'input-card-sale-fee')).toBe(false)
+        expect(잠김(view, 'input-card-split-fee')).toBe(true)
+      })
+
+      // 받는 돈이 없으면 경매장에 떼일 것도 파티원에게 보낼 것도 없다.
+      it('내 몫이 0 이면 두 줄 다 잠긴다', async () => {
+        const { view } = await 그리기({ share: { ...비율, myShare: 0, sharesTotal: 3 }, fees: 수수료 })
+
+        expect(잠김(view, 'input-card-sale-fee')).toBe(true)
+        expect(잠김(view, 'input-card-split-fee')).toBe(true)
+      })
+
+      it('나눠 가지면 두 줄 다 열린다', async () => {
+        const { view } = await 그리기({ share: 비율, fees: 수수료 })
+
+        expect(잠김(view, 'input-card-sale-fee')).toBe(false)
+        expect(잠김(view, 'input-card-split-fee')).toBe(false)
       })
 
       it('확인이 자동이면 등급 요율을, 손으로 고르면 그 요율을 수수료와 함께 내보낸다', async () => {

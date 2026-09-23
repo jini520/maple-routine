@@ -51,6 +51,12 @@ describe('withSharesTotal: 합을 바꾼 뒤', () => {
   it('합은 상한을 안 넘는다', () => {
     expect(withSharesTotal({ myShare: 1, sharesTotal: 9 }, 99).sharesTotal).toBe(MAX_SHARES_TOTAL)
   })
+
+  // 입력 편의에서 온 값이라 게임 규칙이 아니다. 9 에서 올렸다(사용자 지정 2026-09-23).
+  it('상한은 10 이다', () => {
+    expect(MAX_SHARES_TOTAL).toBe(10)
+    expect(withSharesTotal({ myShare: 1, sharesTotal: 9 }, 10).sharesTotal).toBe(10)
+  })
 })
 
 describe('isEvenShares: 균등인가', () => {

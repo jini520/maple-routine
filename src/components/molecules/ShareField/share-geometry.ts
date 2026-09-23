@@ -5,8 +5,8 @@ export interface Shares {
   sharesTotal: number
 }
 
-/** 비율 합의 상한. 입력 편의에서 온 값이지 게임 규칙이 아니다. */
-export const MAX_SHARES_TOTAL = 9
+/** 비율 합의 상한. 입력 편의에서 온 값이지 게임 규칙이 아니다. 쓰는 곳 셋이 이것 하나를 나눠 쓴다. */
+export const MAX_SHARES_TOTAL = 10
 
 /**
  * 가로 위치가 가리키는 비율. **0 부터** 합까지고, 가장 가까운 눈금으로 붙는다.

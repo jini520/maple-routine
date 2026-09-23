@@ -17,7 +17,7 @@ import { formatSharePercent } from '../../../lib/boss/party-shares'
 import { MinusIcon, PlusIcon, Text } from '../../atoms'
 import { MAX_SHARES_TOTAL, shareAt, withSharesTotal, type Shares } from './share-geometry'
 
-/** 손잡이 지름. 합이 9 여도 칸(약 26px)보다 작아 이웃 눈금을 안 덮는다. */
+/** 손잡이 지름. 넓은 트랙(파티 모달)은 합이 상한이어도 칸이 이보다 넓어 이웃 눈금을 안 덮는다. */
 const GRIP = 18
 
 /** 스테퍼 버튼의 시각 크기와 권장 타깃(44px)의 차이를 사방으로 나눈 몫. */
