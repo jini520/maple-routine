@@ -57,11 +57,11 @@ export function FeeRow<T extends string>(props: {
         오가는데, 안 못박으면 그 7px 만큼 아래의 버튼 줄과 옆 줄이 함께 흔들린다(사용자 지적).
         26 은 세그먼트 쪽 높이다(조각 16 + `py-0.5` 4 + 상자 `p-0.5` 4 + 테두리 2).
 
-        `field` 만 빼는 것은 그 줄이 이미 `min-h-7`(28)로 더 높은 바닥을 갖고 있어서다.
+        `field` 도 든다. 그 줄의 `min-h-7`(28)이 이 차이를 흡수할 것 같지만, RN 의 높이는 여백과
+        테두리를 포함하므로 `pb-2` 8 과 테두리 1 을 뺀 19 만 값에 남는다. 그래서 세그먼트가 서는
+        쪽만 줄을 35 로 밀어 올렸다.
       */
-      className={`flex-row items-center justify-end gap-1.5${stacked ? '' : ' flex-1'}${
-        stacked || compact ? ' h-[26px]' : ''
-      }`}
+      className={`flex-row items-center justify-end gap-1.5 h-[26px]${stacked ? '' : ' flex-1'}`}
     >
       {props.auto ? (
         props.autoFee !== null ? (
