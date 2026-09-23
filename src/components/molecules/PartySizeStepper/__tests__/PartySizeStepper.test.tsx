@@ -74,12 +74,25 @@ describe('PartySizeStepper', () => {
    *
    * 전에는 기본 크기만 인 을 그려서 **한 앱에 스테퍼가 두 모양**이었다.
    */
-  it.each(['default', 'compact'] as const)('%s 는 단위를 안 그린다', async (size) => {
+  it.each(['default', 'compact', 'bare'] as const)('%s 는 단위를 안 그린다', async (size) => {
     const { queryByText } = await renderAtom(
       <PartySizeStepper label="스우" value={3} max={6} onChange={jest.fn()} size={size} />,
     )
 
     expect(queryByText('인')).toBeNull()
+  })
+
+  // 드롭 가격 카드의 분배 칸은 이미 제 바탕을 깐 상자 안이다. 알약을 또 깔면 상자가 둘로 보인다.
+  it('bare 는 바탕 알약 없이 낱개 원 버튼 둘로 선다', async () => {
+    const { getByTestId, getByLabelText } = await renderAtom(
+      <PartySizeStepper label="스우" value={3} max={6} onChange={jest.fn()} size="bare" />,
+    )
+
+    const 바탕 = flattenStyle(getByTestId('party-size-stepper').props.style)
+    expect(바탕.backgroundColor).toBeUndefined()
+    expect(바탕.borderWidth).toBeUndefined()
+    // 테두리는 버튼이 낱개로 두른다.
+    expect(flattenStyle(getByLabelText(증가).props.style).borderWidth).toBe(1)
   })
 
   it('값이 자릿수를 넘어가도 −/+ 가 움직이지 않게 tabular-nums 로 그린다', async () => {

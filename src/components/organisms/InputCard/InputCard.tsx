@@ -474,7 +474,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                     </View>
                     <View className="h-9 items-center justify-center">
                       <PartySizeStepper
-                        size="compact"
+                        size="bare"
                         label={props.share.label}
                         value={share.sharesTotal}
                         max={props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}

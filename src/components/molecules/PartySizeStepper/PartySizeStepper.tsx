@@ -11,14 +11,26 @@ const SIZES = {
   compact: {
     root: 'flex-row shrink-0 items-center gap-0.5 rounded-full border border-border bg-surface py-0.5 pl-2 pr-1',
     button: 'h-6 w-6',
-    icon: 'h-3.5 w-3.5',
+    icon: 'h-3.5 w-3.5 text-text',
     valueSlot: 'w-6 justify-center',
     value: 'text-sm font-semibold',
+  },
+  /**
+   * 바탕 알약 없이 **낱개 원 버튼 둘**. 제 바탕을 이미 깐 상자 안에 서는 자리다(드롭 가격 카드의
+   * 분배 칸). 알약을 또 깔면 상자가 둘로 보인다. `ShareField` 의 합 스테퍼와 같은 모양이라
+   * `기본` 과 `비율` 을 오가도 그 칸의 아랫줄이 안 흔들린다.
+   */
+  bare: {
+    root: 'flex-row shrink-0 items-center justify-center gap-2.5',
+    button: 'h-[26px] w-[26px] border border-border',
+    icon: 'h-3.5 w-3.5 text-text-muted',
+    valueSlot: 'min-w-3 justify-center',
+    value: 'text-15 font-bold',
   },
   default: {
     root: 'flex-row h-10 items-center justify-between rounded-full border border-border bg-surface p-1',
     button: 'h-8 w-8',
-    icon: 'h-4 w-4',
+    icon: 'h-4 w-4 text-text',
     // min-w 고정 + tabular-nums 라 1↔6 을 오가도 −/+ 가 제자리에 있다.
     valueSlot: 'min-w-[66px] justify-center gap-0.5',
     value: 'text-19 font-bold leading-none tracking-[-.03em]',
@@ -45,7 +57,7 @@ export function PartySizeStepper(props: {
   const canIncrease = props.value < props.max
 
   return (
-    <View className={size.root}>
+    <View testID="party-size-stepper" className={size.root}>
       <Pressable
         role="button"
         onPress={() => props.onChange(props.value - 1)}
@@ -54,7 +66,7 @@ export function PartySizeStepper(props: {
         aria-label={`${props.label} 파티원 수 감소`}
         className={`${buttonClass}${canDecrease ? '' : ' opacity-40'}`}
       >
-        <MinusIcon className={`${size.icon} text-text`} strokeWidth={2} aria-hidden />
+        <MinusIcon className={size.icon} strokeWidth={2} aria-hidden />
       </Pressable>
 
       {/* 단위를 안 적는다. 이 앱의 스테퍼는 숫자만 오르내린다. 무엇을 세는지는 곁의 라벨과
@@ -73,7 +85,7 @@ export function PartySizeStepper(props: {
         aria-label={`${props.label} 파티원 수 증가`}
         className={`${buttonClass}${canIncrease ? '' : ' opacity-40'}`}
       >
-        <PlusIcon className={`${size.icon} text-text`} strokeWidth={2} aria-hidden />
+        <PlusIcon className={size.icon} strokeWidth={2} aria-hidden />
       </Pressable>
     </View>
   )
