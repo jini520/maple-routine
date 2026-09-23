@@ -459,7 +459,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 {usesRatio ? (
                   // 파티 모달의 비율 카드와 같은 바탕이다. 드롭 하나의 값이라 카드가 한 장이다.
                   <View className="flex-1 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
-                    <ShareField label={props.share.label} value={share} onChange={setShare} layout="head" />
+                    <ShareField label={props.share.label} value={share} onChange={setShare} layout="stacked" />
                   </View>
                 ) : (
                   // 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서 말한다.
