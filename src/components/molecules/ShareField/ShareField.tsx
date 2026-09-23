@@ -49,6 +49,8 @@ export function ShareField(props: {
   const wide = props.layout === 'wide'
   // 머리 줄과 트랙 높이는 `wide` 도 `stacked` 와 같다. 갈리는 것은 합이 어디 서느냐뿐이다.
   const stacked = props.layout === 'stacked' || wide
+  /** 트랙과 합이 위아래로 서는 벌. 본문의 주축이 세로라 트랙 높이를 flex 가 덮을 수 있다. */
+  const column = stacked && !wide
   // 가로로 서는 두 벌은 `−` 가 왼쪽이다(사용자 지정). 세로로 서는 `row` 만 `＋` 가 위다.
   const minusFirst = stacked
   const [width, setWidth] = useState(0)
@@ -140,7 +142,9 @@ export function ShareField(props: {
   )
 
   return (
-    <View className={stacked ? 'gap-4' : 'gap-2'}>
+    // 세로로 서는 벌은 간격이 좁다. 트랙이 제 높이(44)를 지키므로 `wide` 의 16 을 그대로 쓰면
+    // 칸이 나란히 선 수수료 칸(110)보다 한참 높아져 카드가 판을 밀어낸다.
+    <View className={wide ? 'gap-4' : 'gap-2'}>
       {/*
         가로로 선 두 벌은 라벨이 **카드 좌상단**이다. `items-baseline` 으로 묶으면 11px 라벨이
         23px 백분율의 아랫변에 붙어 7px 내려앉고, 그러면 나란히 서는 칸의 라벨(드롭 가격 카드의
@@ -176,7 +180,7 @@ export function ShareField(props: {
 
       {/* 막대와 합이 **한 줄**이다. 합을 아래 줄로 내리면 고르개 하나가 두 줄을 먹는데,
           결정석과 드롭이 나란히 서는 자리라 그 두 줄이 네 줄이 된다. */}
-      <View className={wide || !stacked ? 'flex-row items-center gap-2.5' : 'gap-6'}>
+      <View className={column ? 'gap-2' : 'flex-row items-center gap-2.5'}>
         <GestureDetector gesture={pan}>
           <View
             testID="share-field-track"
@@ -190,7 +194,12 @@ export function ShareField(props: {
             // **상자 높이가 곧 누를 자리다.** 막대는 6px 만 그리지만 탭과 끌기를 받는 것은 이
             // 상자다. 세로로 선 카드는 위아래가 라벨과 단추라 손가락이 빗나가므로 권장
             // 타깃(44)까지 올린다. 가로로 설 때는 트랙이 길어 36 으로 닿는다.
-            className={stacked ? 'h-11 flex-1 justify-center' : 'h-9 flex-1 justify-center'}
+            //
+            // **세로로 쌓을 때는 `flex-1` 을 빼야 한다.** RN 의 `flex: 1` 은 `flexBasis: 0` 이라
+            // 그 벌에서는 주축인 높이를 0 으로 덮고, 부모 높이가 내용으로 정해져 늘어날 여유도
+            // 없다. 그러면 6px 막대만 상자 밖으로 넘쳐 보이고 칸 누르개(`inset-0`)가 함께 0 이
+            // 돼 눌러 옮기기가 죽는다. 가로로 설 때의 `flex-1` 은 너비라 그대로 둔다.
+            className={`${stacked ? 'h-11' : 'h-9'} justify-center${column ? '' : ' flex-1'}`}
           >
             {/* **채운 길이가 곧 내 몫**이다. 칸에 수를 적지 않는다 - 비율은 2~9 라 셀 일이 없고,
                 세어야 하는 것은 몇 칸인가가 아니라 얼마나 차지하는가다. */}

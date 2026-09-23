@@ -114,6 +114,31 @@ describe('ShareField', () => {
     expect(getByTestId('share-field-total-분배 비율')).toHaveTextContent('3')
   })
 
+  /**
+   * 트랙은 제 높이가 곧 누를 자리다. `flex-1` 은 `flexBasis: 0` 이라 **세로로 쌓는 `stacked`
+   * 에서만** 그 높이를 0 으로 덮어, 막대만 상자 밖으로 넘쳐 보이고 칸 누르개가 죽는다.
+   * 가로로 서는 `wide` 에서는 같은 `flex-1` 이 너비라 그대로 있어야 트랙이 남는 폭을 채운다.
+   */
+  it('stacked 트랙은 높이 44 를 flex 에 안 뺏긴다', async () => {
+    const { getByTestId } = await renderAtom(
+      <ShareField label="결정석" value={{ myShare: 2, sharesTotal: 3 }} onChange={jest.fn()} layout="stacked" />,
+    )
+
+    const 트랙 = flattenStyle(getByTestId('share-field-track').props.style)
+    expect(트랙.height).toBe(44)
+    expect(트랙.flexGrow).toBeUndefined()
+  })
+
+  it('wide 트랙은 flex 로 남는 폭을 채운다', async () => {
+    const { getByTestId } = await renderAtom(
+      <ShareField label="결정석" value={{ myShare: 2, sharesTotal: 3 }} onChange={jest.fn()} layout="wide" />,
+    )
+
+    const 트랙 = flattenStyle(getByTestId('share-field-track').props.style)
+    expect(트랙.height).toBe(44)
+    expect(Number(트랙.flexGrow)).toBe(1)
+  })
+
   // 라벨 11px 과 백분율 23px 를 baseline 으로 묶으면 라벨이 7px 내려앉아, 드롭 가격 카드에서
   // 옆 칸의 `파티 인원` 과 다른 높이에 선다(사용자 지정).
   it.each(['wide', 'stacked'] as const)('%s 는 라벨을 카드 좌상단에 세운다', async (layout) => {

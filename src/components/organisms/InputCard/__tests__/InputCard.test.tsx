@@ -235,13 +235,13 @@ describe('InputCard', () => {
     })
 
     /**
-     * 156 은 `비율` 칸이 제 내용으로 서는 높이다(여백 11 + 머리 23 + 간격 16 + 트랙 44 + 간격 24 +
+     * 132 는 `비율` 칸이 제 내용으로 서는 높이다(여백 11 + 머리 23 + 간격 8 + 트랙 44 + 간격 8 +
      * 합 26 + 여백 12). 안 못박으면 `기본` 칸이 84 라, 세그먼트를 누를 때마다 아래 버튼 줄이 뛴다.
      */
-    it('기본 칸이 비율 칸과 같은 156 으로 서고 스테퍼가 남는 자리 가운데에 선다', async () => {
+    it('기본 칸이 비율 칸과 같은 132 로 서고 스테퍼가 남는 자리 가운데에 선다', async () => {
       const { view } = await 그리기({ share: 균등 })
 
-      expect(flattenStyle(view.getByTestId('input-card-party').props.style).height).toBe(156)
+      expect(flattenStyle(view.getByTestId('input-card-party').props.style).height).toBe(132)
 
       const 본문 = flattenStyle(view.getByTestId('input-card-party-body').props.style)
       expect(Number(본문.flexGrow)).toBe(1)
