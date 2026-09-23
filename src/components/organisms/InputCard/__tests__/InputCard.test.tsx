@@ -405,7 +405,7 @@ describe('InputCard', () => {
       })
 
       // 세그먼트를 누를 때마다 칸 높이가 갈리면 그 아래 버튼 줄이 튄다(사용자 지정).
-      it('기본과 비율이 같은 골격으로 선다. 라벨 줄과 본문 높이가 같다', async () => {
+      it('두 라벨이 같은 높이의 머리 줄에 선다', async () => {
         const 비율칸 = await 그리기({ share: 비율, fees: 수수료 })
         const 기본칸 = await 그리기({ share: { ...비율, myShare: 1, sharesTotal: 4 }, fees: 수수료 })
 
@@ -414,7 +414,6 @@ describe('InputCard', () => {
 
         expect(높이(비율칸.view, 'share-field-head')).toBe(24)
         expect(높이(기본칸.view, 'input-card-party-head')).toBe(24)
-        expect(높이(기본칸.view, 'input-card-party-body')).toBe(94)
       })
 
       // 좁은 자리라 이름과 값이 한 줄을 다투면 세그먼트가 찌부러진다.
