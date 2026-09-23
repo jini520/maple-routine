@@ -342,8 +342,9 @@ COMMIT;
 | 7 | 09-17 주 수익 기록 중 패치 전(`recorded_at` 이 09-17 10:00 KST 전)에 새 가격으로 굳은 행을 옛 가격과 분배액으로 되돌린다([[ADR-261]] 정정 2) |
 | 8 | 카링 노멀 `price_meso = 576,000,000` · 찬란한 흉성 노멀 `593,000,000` 으로 굳은 수익 기록을 인게임 가격과 분배액으로 고친다. 두 값이 가격표에서 서로 바뀌어 있었고, 옛 가격이 든 행은 안 건드린다([[ADR-261]] 정정 3) |
 | 9 | 사냥 기록(`category_key = 'hunting'`)의 `hunt_fragment_price = 0` 을 `NULL` 로 옮긴다. 가격 칸이 빈 기록이 조각 보관에 드는데, 그전까지 칸이 0 과 빈 칸을 못 갈랐다([[ADR-290]] 결정 4) |
+| 10 | `boss_party_settings` · `boss_profit_records` 에서 `drop_my_share` · `drop_shares_total` 을 `DROP COLUMN` 한다([[ADR-312]] 결정 2). 비율이 결정석에만 남아 쓰는 곳이 없다. **표 정의와 `ensureColumn` 목록에서도 빼야 한다** - 안 빼면 다음 부팅이 칸을 다시 붙인다. 값이 든 행은 그 값을 잃는다 |
 
-새 기기는 CREATE 뒤 빈 테이블에 버전 1 ~ 9 가 돌고 `user_version` 이 9 가 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
+새 기기는 CREATE 뒤 빈 테이블에 버전 1 ~ 10 이 돌고 `user_version` 이 10 이 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
 
 ```sql
 UPDATE boss_party_settings SET boss = '시즌 보스 메이린' WHERE boss = '메이린';

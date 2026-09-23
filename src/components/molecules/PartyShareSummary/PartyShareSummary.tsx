@@ -1,8 +1,8 @@
 /**
- * 파티 분배를 적고 고치는 자리로 보내는 줄. **라벨을 이고 값이 아래** 선다.
+ * 파티 분배를 적고 고치는 자리로 보내는 줄. **배지 하나와 `변경`** 이다.
  *
- * 균등이면 라벨 없이 한 줄이고(`솔로` · `파티 3인`) 비율이면 라벨을 인 열 둘이다
- * (`결정석` · `아이템`). 열 사이는 세로선이 가른다.
+ * 배지는 `솔로` · `파티 3인` · `67%` 셋 중 하나다. 비율은 결정석에만 있어(아이템은 건마다 값이 달라 드롭 기록이 든다)
+ * 무엇의 비율인지 물을 일이 없고, 그래서 라벨이 없다.
  *
  * 값은 백분율이다. `나 : 나머지` 로 적으면 2:1 과 4:2 가 다른 값처럼 보이는데 둘은 같은 약속이다.
  *
@@ -12,27 +12,25 @@
 import { Pressable, View } from 'react-native'
 
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { formatSharePercent, formatShareRatio, type PartyShares } from '../../../lib/boss/party-shares'
-import { Text } from '../../atoms'
+import { formatShareRatio, type PartyShares } from '../../../lib/boss/party-shares'
+import { Badge, Text } from '../../atoms'
 
 /**
- * 크기 두 벌. **`compact` 는 두 줄 합이 20** 이라 보스 수익 카드의 줄 높이를 안 바꾼다.
+ * 크기 두 벌. **`compact` 는 보스 수익 카드**라 배지가 작다. 적는 수는 두 벌이 같다.
  *
  * 그 카드는 금액과 한 줄을 나눠 쓰므로 이 줄이 커지면 카드가 통째로 커진다.
  */
 const SIZES = {
-  default: { label: 'text-9', value: 'text-13', divider: 'h-[22px]', gap: 'gap-2' },
-  compact: { label: 'text-8', value: 'text-xs', divider: 'h-4', gap: 'gap-[7px]' },
+  default: { badge: 'default', gap: 'gap-2' },
+  compact: { badge: 'mini', gap: 'gap-[7px]' },
 } as const
 
 export function PartyShareSummary(props: {
   /** aria-label 접두. 목록에서 어느 행인지 구분한다(보스명). */
   label: string
   partySize: number
-  /** 결정석 비율. 균등이면 이 줄 전체가 파티 인원 한 열이 된다. */
+  /** 결정석 비율. 균등이면 인원을, 비율이면 내 몫을 적는다. */
   crystal: PartyShares
-  /** 아이템 비율. 결정석이 비율일 때만 선다. */
-  drop: PartyShares
   size?: keyof typeof SIZES
   /** 고칠 수 없는 행. 글자만 흐리게 서고 `변경` 이 사라진다. */
   disabled?: boolean
@@ -40,39 +38,16 @@ export function PartyShareSummary(props: {
 }): React.JSX.Element {
   const size = SIZES[props.size ?? 'default']
   const crystalRatio = formatShareRatio(props.crystal)
-  const dropRatio = formatShareRatio(props.drop)
-
-  /** 라벨을 이고 선 값 한 열. */
-  function column(label: string, value: string): React.JSX.Element {
-    return (
-      <View className="items-center">
-        <Text className={`${size.label} font-semibold tracking-[.04em] text-text-muted`}>{label}</Text>
-        <Text className={`${size.value} font-bold tracking-[-.01em] text-text`} style={TABULAR_NUMS}>
-          {value}
-        </Text>
-      </View>
-    )
-  }
 
   return (
     <View
       testID="party-share-summary"
       className={`flex-row items-center ${size.gap}${props.disabled === true ? ' opacity-40' : ''}`}
     >
-      {crystalRatio === null ? (
-        // 균등이면 라벨을 안 인다. 나눌 것이 없어 **무엇의 비율인가**를 물을 일이 없고, 글자
-        // 하나가 상태를 그대로 말한다. 혼자면 인원을 세지도 않는다.
-        <Text className={`${size.value} font-bold tracking-[-.01em] text-text`} style={TABULAR_NUMS}>
-          {props.partySize <= 1 ? '솔로' : `파티 ${props.partySize}인`}
-        </Text>
-      ) : (
-        <>
-          {column('결정석', crystalRatio)}
-          <View className={`w-px bg-border ${size.divider}`} />
-          {/* 비율을 켜면 모달이 둘 다 씨를 뿌린다. 값이 없는 행은 균등이라 1/n 이다. */}
-          {column('아이템', dropRatio ?? formatSharePercent(1, Math.max(2, props.partySize)))}
-        </>
-      )}
+      {/* 혼자면 인원을 세지도 않는다. `파티 1인` 은 파티가 아니다. */}
+      <Badge testID="party-share-badge" variant="primary" size={size.badge} style={TABULAR_NUMS}>
+        {crystalRatio ?? (props.partySize <= 1 ? '솔로' : `파티 ${props.partySize}인`)}
+      </Badge>
       {props.disabled !== true && (
         <Pressable
           role="button"

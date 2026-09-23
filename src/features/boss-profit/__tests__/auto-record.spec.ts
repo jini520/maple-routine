@@ -97,8 +97,6 @@ function partySetting(partySize: number, shares: Partial<Record<string, number>>
     partySize,
     crystalMyShare: null,
     crystalSharesTotal: null,
-    dropMyShare: null,
-    dropSharesTotal: null,
     splitFeePercent: null,
     updatedAt: '2026-09-12T00:00:00.000Z',
     ...shares,

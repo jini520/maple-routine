@@ -37,7 +37,7 @@ import {
   isEarliestNavigablePeriod,
   isLatestPeriod,
 } from '../../lib/boss/boss-profit-period'
-import { dropPayoutMeso } from '../../lib/drop/drop-price'
+import { dropPayoutMeso, dropSplitLabel } from '../../lib/drop/drop-price'
 import { dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
 import type { RootStackParamList } from '../../navigation/routes'
@@ -69,6 +69,7 @@ import { closeInputCard, openInputCard } from '../../features/input-card/store'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
+import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 
 /** 한 연쇄 안에서 매긴 값. 스토어를 다시 읽어도 이전으로 돌아가면 이 값이 보인다. */
 interface PriceEdit {
@@ -86,6 +87,9 @@ function characterTotal(group: DropPriceGroup): number {
  *
  * 미입력 자리에 `0` 을 쓰지 않는다. `entered` 가 아니면 금액을 아예 그리지 않고 `입력`·
  * `기록 안함` 이라는 말이 선다. 값을 모르는 것과 0원인 것은 다른 사실이다.
+ *
+ * **판매 총액이 아니라 내 몫이다.** 총액을 적으면 행을 더해도 위의 `이 주 아이템 수익` 이 안
+ * 나온다. 그 합계도 드롭 시트의 타일 배지도 `dropPayoutMeso` 로 센다.
  */
 function PriceStatePill(props: { drop: RecordedDrop }): React.JSX.Element {
   const { drop } = props
@@ -94,7 +98,7 @@ function PriceStatePill(props: { drop: RecordedDrop }): React.JSX.Element {
     return (
       <View className="h-[26px] shrink-0 justify-center rounded-full bg-primary-tint px-2.5">
         <Text className="text-[12.5px] font-bold text-primary-ink" style={TABULAR_NUMS}>
-          {formatMesoShort(drop.priceMeso ?? 0)}
+          {formatMesoShort(dropPayoutMeso(drop))}
         </Text>
       </View>
     )
@@ -124,8 +128,10 @@ function EntryRow(props: {
   // 상자명(`boxOrigin`)은 쓰지 않는다. 반지 상자·칠흑 장신구 상자는 이름이 길어 실제 정보인
   // 아이템명과 보스를 밀어낸다. 무엇을 열었는지는 히스토리가 말한다.
   //
-  // 인원은 값을 매긴 기록에만 붙는다. 미입력에 `1인` 이 서면 이미 정해진 값처럼 읽힌다.
-  const shareLabel = drop.priceState === 'entered' ? ` · ${drop.priceShare ?? 1}인` : ''
+  // 나눈 몫은 값을 매긴 기록에만 붙는다. 미입력에 `1인` 이 서면 이미 정해진 값처럼 읽힌다.
+  // 비율로 나눈 드롭은 인원이 아니라 내 몫을 적는다.
+  const split = dropSplitLabel(drop)
+  const shareLabel = split === null ? '' : ` · ${split}`
 
   return (
     // RN 에 `:last-child` 가 없어 목록을 아는 부모가 알려 준다. 테두리를 아예 빼지 않고 색만
@@ -268,6 +274,7 @@ export function DropPriceScreen(): React.JSX.Element {
         label: '분배 비율',
         myShare: edit?.share.myShare ?? target.drop.priceMyShare ?? 1,
         sharesTotal: edit?.share.sharesTotal ?? target.drop.priceShare ?? target.partySize,
+        maxPartySize: getMaxPartySize(target.bossKey, target.difficulty),
       },
       fees: {
         // 드롭에는 날짜 칸이 없어 기간 첫날의 등급으로 센다(다시 계산도 같은 날을 본다).

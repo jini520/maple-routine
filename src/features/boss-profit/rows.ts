@@ -317,6 +317,12 @@ export function mergeRecordsIntoRows(
       priceMeso: record.priceMeso,
       partySize: record.partySize,
       payoutMeso: record.payoutMeso,
+      // 비율도 기록값이다. 동기화가 만든 행은 비율을 모르므로, 안 실으면 비율로 저장한 기록이
+      // 화면을 떠났다 오는 순간 균등으로 보이고 파티 모달도 균등으로 열린다.
+      crystalMyShare: record.crystalMyShare,
+      crystalSharesTotal: record.crystalSharesTotal,
+      splitFeePercent: record.splitFeePercent,
+      splitFeeAuto: record.splitFeeAuto === true,
       defeatedOn: record.defeatedOn ?? row.defeatedOn,
       source: record.source ?? 'auto',
       // **기록이 있으면 그 조합은 완료다.** 자동 기록은 완료 행만 만들고, 직접 적은 완료도 기록이
@@ -436,4 +442,13 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
     saleFeeAuto: record.saleFeeAuto || undefined,
     splitFeeAuto: record.splitFeeAuto || undefined,
   }
+}
+
+/**
+ * 드롭 가격 카드가 받는 분배 씨앗. 그 행의 파티 인원으로 균등하다. 아이템 비율은 한 벌로 안 두고 건마다 고른다.
+ *
+ * @example const defaultShare = dropShareSeedOf(row)
+ */
+export function dropShareSeedOf(row: BossProfitRow): { myShare: number; sharesTotal: number } {
+  return { myShare: 1, sharesTotal: row.partySize ?? 1 }
 }

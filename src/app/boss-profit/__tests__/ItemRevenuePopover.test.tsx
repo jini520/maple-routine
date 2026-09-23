@@ -77,6 +77,16 @@ describe('ItemRevenuePopover: 미입력은 싣지 않는다', () => {
     expect(getByText('30.0억 ÷ 3인')).toBeTruthy()
   })
 
+  // 비율로 나눈 드롭에 인원을 적으면 옆의 금액과 다른 말을 한다. 그 드롭은 인원으로 안 나눴다.
+  it('비율로 나눈 드롭은 인원 대신 내 몫을 적는다', async () => {
+    const { getByText, queryByText } = await renderPopover({
+      drops: [drop({ priceState: 'entered', priceMeso: 10_000_000_000, priceShare: 4, priceMyShare: 3 })],
+    })
+
+    expect(getByText('100.0억 중 75%')).toBeTruthy()
+    expect(queryByText(/4인/)).toBeNull()
+  })
+
   it('1인이면 분배 줄을 만들지 않는다. 나눈 것이 없다', async () => {
     const { queryByText } = await renderPopover({
       drops: [drop({ priceState: 'entered', priceMeso: 3_000_000_000, priceShare: 1 })],

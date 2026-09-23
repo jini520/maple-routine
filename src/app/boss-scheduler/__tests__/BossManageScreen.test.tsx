@@ -397,7 +397,7 @@ describe('BossManageScreen: 수동 모드', () => {
   })
 
   // 행에는 스테퍼가 없다. 수 하나만 올리고 내릴 수 있어 비율이 들어갈 자리가 없다.
-  it('파티 줄은 결정석·아이템 비율을 적고 변경으로 모달을 연다', async () => {
+  it('파티 줄은 결정석 몫을 적고 변경으로 모달을 연다', async () => {
     mockStore({
       characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'extreme')] },
@@ -406,17 +406,15 @@ describe('BossManageScreen: 수동 모드', () => {
         'ocid-1:lotus:extreme': {
           crystalMyShare: 2,
           crystalSharesTotal: 3,
-          dropMyShare: null,
-          dropSharesTotal: null,
           splitFeePercent: 3,
         },
       },
     })
     await renderScreen()
 
-    expect(screen.getByText('결정석')).toBeTruthy()
+    // 이 화면은 소수 첫째 자리까지다. 보스 수익 카드만 줄이 좁아 소수를 뗀다.
     expect(screen.getByText('66.7%')).toBeTruthy()
-    expect(screen.getByText('아이템')).toBeTruthy()
+    expect(screen.queryByText('결정석')).toBeNull()
 
     await press(screen.getByLabelText('스우 파티 인원과 비율 변경'))
 
@@ -446,8 +444,6 @@ describe('BossManageScreen: 수동 모드', () => {
       shares: {
         crystalMyShare: null,
         crystalSharesTotal: null,
-        dropMyShare: null,
-        dropSharesTotal: null,
         splitFeePercent: null,
       },
     })
@@ -573,8 +569,6 @@ describe('BossManageScreen: 자동 모드', () => {
       shares: {
         crystalMyShare: null,
         crystalSharesTotal: null,
-        dropMyShare: null,
-        dropSharesTotal: null,
         splitFeePercent: null,
       },
     })
@@ -604,8 +598,6 @@ describe('BossManageScreen: 자동 모드', () => {
       shares: {
         crystalMyShare: null,
         crystalSharesTotal: null,
-        dropMyShare: null,
-        dropSharesTotal: null,
         splitFeePercent: null,
       },
     })
@@ -666,8 +658,6 @@ describe('BossManageScreen: 자동 모드', () => {
       shares: {
         crystalMyShare: null,
         crystalSharesTotal: null,
-        dropMyShare: null,
-        dropSharesTotal: null,
         splitFeePercent: null,
       },
     })

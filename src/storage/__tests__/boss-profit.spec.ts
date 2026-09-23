@@ -56,7 +56,7 @@ describe('upsertBossProfitRecord', () => {
       2,
       1_000_000,
       500_000,
-      // 비율 셋. 균등이라 NULL 이다.
+      // 결정석 비율 둘과 송금 수수료율. 균등이라 NULL 이다.
       null,
       null,
       null,

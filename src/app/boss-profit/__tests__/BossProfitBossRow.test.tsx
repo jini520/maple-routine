@@ -256,22 +256,23 @@ describe('BossProfitBossRow: 파티원 수', () => {
 
     expect(setRowParty).toHaveBeenCalledWith(row, {
       partySize: 4,
-      shares: { myShare: null, sharesTotal: null, splitFeePercent: null },
+      shares: { myShare: null, sharesTotal: null, splitFeePercent: null, splitFeeAuto: undefined },
     })
   })
 
-  // 결정석은 이 기록이 굳힌 값이고 아이템은 지금 설정값이다. 기록에 아이템 칸이 없어서다.
-  it('비율이 있으면 인원 대신 결정석·아이템 두 열을 적는다', async () => {
-    const { getByText } = await renderProfit(
+  // 비율은 결정석에만 있다. 아이템 몫은 드롭마다 달라 이 줄이 한 수로 못 말한다.
+  it('비율이 있으면 인원 대신 결정석 몫 하나를 적는다', async () => {
+    const { getByText, queryByText } = await renderProfit(
       <BossProfitBossRow
         row={보스행({ partySize: 2, crystalMyShare: 2, crystalSharesTotal: 3, splitFeePercent: 3 })}
         drops={[]}
       />,
     )
 
-    expect(getByText('결정석')).toBeTruthy()
+    // 소수 첫째 자리까지다(사용자 지정). 보스 관리 화면과 같은 수를 말한다.
     expect(getByText('66.7%')).toBeTruthy()
-    expect(getByText('아이템')).toBeTruthy()
+    expect(queryByText('결정석')).toBeNull()
+    expect(queryByText('아이템')).toBeNull()
   })
 })
 

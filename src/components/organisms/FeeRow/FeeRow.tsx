@@ -6,11 +6,10 @@ import { Segment } from '../../molecules/Segment/Segment'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { MvpGradeKey } from '../../../lib/mvp/grades'
 
-/** 손으로 고른 요율 아래 한 줄. 자동일 때는 명패가 등급을 말해 설명이 없다. */
-const MANUAL_HINT = '직접 고른 요율이라 등급이 바뀌어도 그대로예요.'
-
 /**
  * 수수료 줄. `자동` 체크박스를 켜면 값 자리에 등급 명패와 요율, 끄면 세그먼트가 선다.
+ *
+ * 끈 이유를 적는 설명 줄은 없다. 체크박스가 꺼져 있는 것이 그 말이고, 줄이 하나 늘면 폼마다 높이가 는다.
  *
  * @example
  * <FeeRow label="수수료" auto={auto} onAutoChange={setAuto} autoFee={useAutoFee(ocid, dateKey)}
@@ -27,16 +26,71 @@ export function FeeRow<T extends string>(props: {
   options: readonly T[]
   selected: T | null
   onSelect: (value: T) => void
-  /** `field` 는 가계부 시트의 줄(아래 선), `compact` 는 파티 모달의 줄 */
-  variant?: 'field' | 'compact'
+  /**
+   * `field` 는 가계부 시트의 줄(아래 선), `compact` 는 파티 모달의 줄.
+   *
+   * `stacked` 는 드롭 가격 카드다. 이름과 `자동` 이 윗줄, 값이 아랫줄이라 판의 반쪽 너비에서도
+   * 세그먼트가 이름과 자리를 다투지 않는다.
+   */
+  variant?: 'field' | 'compact' | 'stacked'
+  /**
+   * 쓸 수 없는 줄. 흐려지고 체크박스도 값도 안 눌린다. **없애지 않고 잠그는** 자리가 있다.
+   * 줄이 사라지면 그 칸의 높이가 바뀌고, 그 줄이 원래 있다는 것도 안 보인다.
+   */
+  disabled?: boolean
   testID?: string
 }): React.JSX.Element {
   const compact = props.variant === 'compact'
+  const stacked = props.variant === 'stacked'
+  const disabled = props.disabled === true
+
+  const value = (
+    <View
+      testID={props.testID === undefined ? undefined : `${props.testID}-value`}
+      /*
+        흐림은 줄 전체가 한 번만 진다(아래 뿌리의 `opacity-40`). 세그먼트에 `disabled` 를 주면
+        그쪽도 제 몫을 흐려 두 번 곱해지므로, 여기서는 **누름만** 막는다.
+      */
+      pointerEvents={disabled ? 'none' : 'auto'}
+      /*
+        **값 줄 높이를 못박는다.** 자동을 켜고 끌 때 이 자리가 명패 + 요율(19)과 세그먼트(26)를
+        오가는데, 안 못박으면 그 7px 만큼 아래의 버튼 줄과 옆 줄이 함께 흔들린다(사용자 지적).
+        26 은 세그먼트 쪽 높이다(조각 16 + `py-0.5` 4 + 상자 `p-0.5` 4 + 테두리 2).
+
+        `field` 만 빼는 것은 그 줄이 이미 `min-h-7`(28)로 더 높은 바닥을 갖고 있어서다.
+      */
+      className={`flex-row items-center justify-end gap-1.5${stacked ? '' : ' flex-1'}${
+        stacked || compact ? ' h-[26px]' : ''
+      }`}
+    >
+      {props.auto ? (
+        props.autoFee !== null ? (
+          <>
+            <MvpPlate grade={props.autoFee.grade} height={18} />
+            <Text className="text-13 font-semibold text-text" style={TABULAR_NUMS}>
+              {props.autoFee.percent}%
+            </Text>
+          </>
+        ) : (
+          props.autoPlaceholder !== undefined && (
+            <Text className="text-13 text-text-disabled">{props.autoPlaceholder}</Text>
+          )
+        )
+      ) : (
+        <Segment options={props.options} selected={props.selected} fixed onSelect={props.onSelect} />
+      )}
+    </View>
+  )
+
   return (
-    <View testID={props.testID} className="gap-1.5">
+    <View
+      testID={props.testID}
+      className={`${stacked ? 'gap-1' : ''}${disabled ? ' opacity-40' : ''}`.trim() || undefined}
+    >
       <View
+        testID={props.testID === undefined || !stacked ? undefined : `${props.testID}-head`}
         className={
-          compact
+          compact || stacked
             ? 'flex-row items-center gap-2.5'
             : 'min-h-7 flex-row items-center gap-3 border-b border-border pb-2'
         }
@@ -45,7 +99,7 @@ export function FeeRow<T extends string>(props: {
           className={
             compact
               ? 'text-11 font-semibold tracking-[.04em] text-text-muted'
-              : 'shrink-0 text-xs text-text-muted'
+              : `shrink-0 text-xs text-text-muted${stacked ? ' flex-1' : ''}`
           }
         >
           {props.label}
@@ -54,6 +108,8 @@ export function FeeRow<T extends string>(props: {
           role="checkbox"
           aria-label="자동"
           aria-checked={props.auto}
+          aria-disabled={disabled}
+          disabled={disabled}
           onPress={() => props.onAutoChange(!props.auto)}
           hitSlop={8}
           className="flex-row items-center gap-2"
@@ -61,26 +117,9 @@ export function FeeRow<T extends string>(props: {
           <CheckBox checked={props.auto} />
           <Text className="text-xs font-semibold text-text-muted">자동</Text>
         </Pressable>
-        <View className="flex-1 flex-row items-center justify-end gap-1.5">
-          {props.auto ? (
-            props.autoFee !== null ? (
-              <>
-                <MvpPlate grade={props.autoFee.grade} height={18} />
-                <Text className="text-13 font-semibold text-text" style={TABULAR_NUMS}>
-                  {props.autoFee.percent}%
-                </Text>
-              </>
-            ) : (
-              props.autoPlaceholder !== undefined && (
-                <Text className="text-13 text-text-disabled">{props.autoPlaceholder}</Text>
-              )
-            )
-          ) : (
-            <Segment options={props.options} selected={props.selected} fixed onSelect={props.onSelect} />
-          )}
-        </View>
+        {!stacked && value}
       </View>
-      {!props.auto && <Text className="text-11 text-text-muted">{MANUAL_HINT}</Text>}
+      {stacked && value}
     </View>
   )
 }

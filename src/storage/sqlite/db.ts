@@ -448,8 +448,6 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // 파티 분배 비율. NULL 이 '파티 인원으로 균등'이라 옛 행을 옮길 값이 없다.
   await ensureColumn(db, 'boss_party_settings', 'crystal_my_share', 'INTEGER')
   await ensureColumn(db, 'boss_party_settings', 'crystal_shares_total', 'INTEGER')
-  await ensureColumn(db, 'boss_party_settings', 'drop_my_share', 'INTEGER')
-  await ensureColumn(db, 'boss_party_settings', 'drop_shares_total', 'INTEGER')
   await ensureColumn(db, 'boss_party_settings', 'split_fee_percent', 'INTEGER')
   // 그 건의 비율 스냅샷. 설정을 고쳐도 과거 기록이 안 움직이는 규칙을 비율도 따른다.
   await ensureColumn(db, 'boss_profit_records', 'crystal_my_share', 'INTEGER')

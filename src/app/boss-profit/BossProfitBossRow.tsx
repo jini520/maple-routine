@@ -17,10 +17,10 @@ import type { RecordedDrop } from '../../types/drops'
 import { AnimatedNumber, Badge, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { PartyShareSummary } from '../../components/molecules/PartyShareSummary/PartyShareSummary'
+import { dropShareSeedOf } from '../../features/boss-profit/rows'
 import { PartySizeModal, type PartyModalShares } from '../../components/organisms/PartySizeModal/PartySizeModal'
 import { supportedDifficultiesOf } from '../../lib/boss/bosses'
 import { partySizeForShares } from '../../lib/boss/party-shares'
-import { partySizeKey } from '../../features/boss-scheduler/store'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { bossPortraitSlugOf } from '../../lib/boss/bosses'
@@ -111,7 +111,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
 
 export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   const { row } = props
-  const { setRowParty, setBossDrops, now, partyShares } = useBossProfitContext()
+  const { setRowParty, setBossDrops, now } = useBossProfitContext()
   const [isDropSheetOpen, setIsDropSheetOpen] = useState(false)
   // 행의 `변경` 으로 여는 파티 모달. 인원과 비율을 함께 고친다.
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false)
@@ -150,13 +150,6 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   // 없다. 계산은 항상 0메소로 고정된다. "가격 미확정"과 동일한 비활성 처리를 재사용한다.
   const isEditable = row.isComplete && !isPriceUnknown
   const partySize = row.partySize ?? 1
-  const settingShares = partyShares[partySizeKey(row.ocid, row.bossKey, row.difficulty)]
-  /** 아이템 비율은 기록에 없다. 지금 설정된 값을 그린다. */
-  const dropShares = {
-    myShare: settingShares?.dropMyShare ?? null,
-    sharesTotal: settingShares?.dropSharesTotal ?? null,
-    splitFeePercent: settingShares?.splitFeePercent ?? null,
-  }
   const recordShares = {
     myShare: row.crystalMyShare,
     sharesTotal: row.crystalSharesTotal,
@@ -195,15 +188,13 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   const modalShares: PartyModalShares = {
     crystalMyShare: row.crystalMyShare,
     crystalSharesTotal: row.crystalSharesTotal,
-    dropMyShare: null,
-    dropSharesTotal: null,
     splitFeePercent: row.splitFeePercent,
     splitFeeAuto: row.splitFeeAuto,
   }
 
   async function saveParty(input: { partySize: number; shares: PartyModalShares }): Promise<void> {
     try {
-      // **이 자리는 설정이 아니라 그 행의 기록을 다시 센다.** 드롭 비율 칸은 이 표에 없어 버린다.
+      // **이 자리는 설정이 아니라 그 행의 기록을 다시 센다.** 아이템 비율도 그 기록에 남는다.
       await setRowParty(row, {
         partySize: input.partySize,
         shares: {
@@ -270,15 +261,14 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
         {canRecordManual ? (
           <ManualCompletionButton label={row.bossName} onPress={() => setManualSheet('create')} />
         ) : (
-        <View className="mt-2 flex-row items-center justify-between gap-2">
+        <View className="mt-1 flex-row items-center justify-between gap-2">
           <PartyShareSummary
             label={`${row.characterName} ${row.bossName} ${DIFFICULTY_NAME[row.difficulty]}`}
             partySize={partySize}
             size="compact"
             // 결정석은 **이 기록이 굳힌 값**이다. 금액을 그 비율로 셌으므로 지금 설정을 그리면
-            // 옆의 금액과 다른 말을 한다. 아이템은 기록에 없어 지금 설정을 그린다.
+            // 옆의 금액과 다른 말을 한다.
             crystal={recordShares}
-            drop={dropShares}
             disabled={!isEditable}
             onPress={() => setIsPartyModalOpen(true)}
           />
@@ -422,9 +412,8 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           // 기록한 자리에서 바로 값을 매긴다. 분배 기본값은 이 행의 파티원 수이고, 저장하면 그
           // 값과 독립한다. 나중에 파티원 수를 고쳐도 이미 매긴 금액이 흔들리지 않는다.
           pricing={{
-            // 드롭 비율 칸은 이 표에 없다. 기록의 결정석 비율이 아니라 파티 인원으로 씨를
-            // 뿌린다. 균등이면 합이 곧 인원 수라 지금 값과 같다.
-            defaultShare: { myShare: 1, sharesTotal: partySize },
+            // 그 기록의 아이템 비율이 씨앗이다. 안 들었으면 파티 인원으로 균등하다.
+            defaultShare: dropShareSeedOf(row),
             characterName: row.characterName,
             ocid: row.ocid,
           }}

@@ -17,7 +17,7 @@ import { formatSharePercent } from '../../../lib/boss/party-shares'
 import { MinusIcon, PlusIcon, Text } from '../../atoms'
 import { MAX_SHARES_TOTAL, shareAt, withSharesTotal, type Shares } from './share-geometry'
 
-/** 손잡이 지름. 합이 9 여도 칸(약 26px)보다 작아 이웃 눈금을 안 덮는다. */
+/** 손잡이 지름. 넓은 트랙(파티 모달)은 합이 상한이어도 칸이 이보다 넓어 이웃 눈금을 안 덮는다. */
 const GRIP = 18
 
 /** 스테퍼 버튼의 시각 크기와 권장 타깃(44px)의 차이를 사방으로 나눈 몫. */
@@ -38,13 +38,21 @@ export function ShareField(props: {
   /**
    * 합을 어디에 두나. 기본은 트랙 오른쪽에 세로로 선다.
    *
-   * `'stacked'` 는 트랙 아래 가운데다. 좁은 카드 둘이 나란히 서는 자리(파티 모달)에서는 옆에
-   * 두면 트랙이 30px 밖에 안 남는다.
+   * `'stacked'` 는 트랙 아래 가운데다. 좁은 카드 둘이 나란히 서는 자리에서는 옆에 두면 트랙이
+   * 30px 밖에 안 남는다.
+   *
+   * `'wide'` 는 카드가 판 폭을 다 쓰는 자리(파티 모달)다. 트랙이 넓어 합이 그 옆에 서고 카드가 한 줄 낮아진다.
    */
-  layout?: 'row' | 'stacked'
+  layout?: 'row' | 'stacked' | 'wide'
   onChange: (next: Shares) => void
 }): React.JSX.Element {
-  const stacked = props.layout === 'stacked'
+  const wide = props.layout === 'wide'
+  // 머리 줄과 트랙 높이는 `wide` 도 `stacked` 와 같다. 갈리는 것은 합이 어디 서느냐뿐이다.
+  const stacked = props.layout === 'stacked' || wide
+  /** 트랙과 합이 위아래로 서는 벌. 본문의 주축이 세로라 트랙 높이를 flex 가 덮을 수 있다. */
+  const column = stacked && !wide
+  // 가로로 서는 두 벌은 `−` 가 왼쪽이다(사용자 지정). 세로로 서는 `row` 만 `＋` 가 위다.
+  const minusFirst = stacked
   const [width, setWidth] = useState(0)
   /**
    * 끌기 중인가. 콜백은 렌더마다 새 제스처로 갈아 끼워지므로, 잡은 직후 다시 렌더되기 전에 온
@@ -84,12 +92,69 @@ export function ShareField(props: {
   // 약속이 있다.
   const cells = Array.from({ length: sharesTotal + 1 }, (_, index) => index)
 
+  /** 합. 넓은 자리에서는 트랙 오른쪽에, 좁은 카드에서는 트랙 아래 가운데에 선다. */
+  const total = (
+    <View
+      className={
+        wide
+          ? 'flex-row items-center gap-2.5'
+          : stacked
+            ? 'flex-row items-center justify-center gap-2.5'
+            : 'w-7 items-center'
+      }
+    >
+      <Pressable
+        role="button"
+        aria-label={`${props.label} 비율 합 ${minusFirst ? '감소' : '증가'}`}
+        onPress={() => commit(withSharesTotal(props.value, sharesTotal + (minusFirst ? -1 : 1)))}
+        disabled={minusFirst ? sharesTotal <= 2 : sharesTotal >= MAX_SHARES_TOTAL}
+        hitSlop={STEP_HIT_SLOP}
+        className={stepClass(stacked, minusFirst ? sharesTotal <= 2 : sharesTotal >= MAX_SHARES_TOTAL)}
+      >
+        {minusFirst ? (
+          <MinusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
+        ) : (
+          <PlusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
+        )}
+      </Pressable>
+      <Text
+        testID={`share-field-total-${props.label}`}
+        className={`${stacked ? 'min-w-3 text-center text-13' : 'py-0.5 text-15'} font-bold text-text`}
+        style={TABULAR_NUMS}
+      >
+        {sharesTotal}
+      </Text>
+      <Pressable
+        role="button"
+        aria-label={`${props.label} 비율 합 ${minusFirst ? '증가' : '감소'}`}
+        onPress={() => commit(withSharesTotal(props.value, sharesTotal + (minusFirst ? 1 : -1)))}
+        disabled={minusFirst ? sharesTotal >= MAX_SHARES_TOTAL : sharesTotal <= 2}
+        hitSlop={STEP_HIT_SLOP}
+        className={stepClass(stacked, minusFirst ? sharesTotal >= MAX_SHARES_TOTAL : sharesTotal <= 2)}
+      >
+        {minusFirst ? (
+          <PlusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
+        ) : (
+          <MinusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
+        )}
+      </Pressable>
+    </View>
+  )
+
   return (
-    <View className={stacked ? 'gap-4' : 'gap-2'}>
+    // 세로로 서는 벌은 간격이 좁다. 트랙이 제 높이(44)를 지키므로 `wide` 의 16 을 그대로 쓰면
+    // 칸이 나란히 선 수수료 칸(110)보다 한참 높아져 카드가 판을 밀어낸다.
+    <View className={wide ? 'gap-4' : 'gap-2'}>
+      {/*
+        가로로 선 두 벌은 라벨이 **카드 좌상단**이다. `items-baseline` 으로 묶으면 11px 라벨이
+        23px 백분율의 아랫변에 붙어 7px 내려앉고, 그러면 나란히 서는 칸의 라벨(드롭 가격 카드의
+        `파티 인원`)과 높이가 갈린다.
+      */}
       <View
+        testID="share-field-head"
         className={
           stacked
-            ? 'flex-row items-baseline justify-between gap-1.5'
+            ? 'flex-row items-start justify-between gap-1.5'
             : 'flex-row items-center justify-between gap-2.5'
         }
       >
@@ -115,7 +180,7 @@ export function ShareField(props: {
 
       {/* 막대와 합이 **한 줄**이다. 합을 아래 줄로 내리면 고르개 하나가 두 줄을 먹는데,
           결정석과 드롭이 나란히 서는 자리라 그 두 줄이 네 줄이 된다. */}
-      <View className={stacked ? 'gap-6' : 'flex-row items-center gap-2.5'}>
+      <View className={column ? 'gap-2' : 'flex-row items-center gap-2.5'}>
         <GestureDetector gesture={pan}>
           <View
             testID="share-field-track"
@@ -127,9 +192,15 @@ export function ShareField(props: {
             onAccessibilityAction={adjust}
             onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
             // **상자 높이가 곧 누를 자리다.** 막대는 6px 만 그리지만 탭과 끌기를 받는 것은 이
-            // 상자다. 세로로 선 카드는 위아래가 라벨과 단추라 손가락이 빗나가므로 권장
-            // 타깃(44)까지 올린다. 가로로 설 때는 트랙이 길어 36 으로 닿는다.
-            className={stacked ? 'h-11 flex-1 justify-center' : 'h-9 flex-1 justify-center'}
+            // 상자다. 가로로 설 때는 44(`wide`) · 36(`row`)이고, 세로로 쌓는 벌은 24 다. 그 벌은
+            // 칸이 판의 반쪽이라 트랙을 키운 만큼 카드가 키보드 쪽으로 자라서, 끌기가 막대 위에서
+            // 잡히는 것에 기대고 24 로 둔다(사용자 지정).
+            //
+            // **세로로 쌓을 때는 `flex-1` 을 빼야 한다.** RN 의 `flex: 1` 은 `flexBasis: 0` 이라
+            // 그 벌에서는 주축인 높이를 0 으로 덮고, 부모 높이가 내용으로 정해져 늘어날 여유도
+            // 없다. 그러면 6px 막대만 상자 밖으로 넘쳐 보이고 칸 누르개(`inset-0`)가 함께 0 이
+            // 돼 눌러 옮기기가 죽는다. 가로로 설 때의 `flex-1` 은 너비라 그대로 둔다.
+            className={`${column ? 'h-6' : stacked ? 'h-11' : 'h-9'} justify-center${column ? '' : ' flex-1'}`}
           >
             {/* **채운 길이가 곧 내 몫**이다. 칸에 수를 적지 않는다 - 비율은 2~9 라 셀 일이 없고,
                 세어야 하는 것은 몇 칸인가가 아니라 얼마나 차지하는가다. */}
@@ -177,44 +248,7 @@ export function ShareField(props: {
           </View>
         </GestureDetector>
 
-        {/* 합. 넓은 자리에서는 트랙 오른쪽에 세로로, 좁은 카드에서는 트랙 아래 가운데에 선다. */}
-        <View className={stacked ? 'flex-row items-center justify-center gap-2.5' : 'w-7 items-center'}>
-          <Pressable
-            role="button"
-            aria-label={`${props.label} 비율 합 ${stacked ? '감소' : '증가'}`}
-            onPress={() => commit(withSharesTotal(props.value, sharesTotal + (stacked ? -1 : 1)))}
-            disabled={stacked ? sharesTotal <= 2 : sharesTotal >= MAX_SHARES_TOTAL}
-            hitSlop={STEP_HIT_SLOP}
-            className={stepClass(stacked, stacked ? sharesTotal <= 2 : sharesTotal >= MAX_SHARES_TOTAL)}
-          >
-            {stacked ? (
-              <MinusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
-            ) : (
-              <PlusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
-            )}
-          </Pressable>
-          <Text
-            testID={`share-field-total-${props.label}`}
-            className={`${stacked ? 'min-w-3 text-center text-13' : 'py-0.5 text-15'} font-bold text-text`}
-            style={TABULAR_NUMS}
-          >
-            {sharesTotal}
-          </Text>
-          <Pressable
-            role="button"
-            aria-label={`${props.label} 비율 합 ${stacked ? '증가' : '감소'}`}
-            onPress={() => commit(withSharesTotal(props.value, sharesTotal + (stacked ? 1 : -1)))}
-            disabled={stacked ? sharesTotal >= MAX_SHARES_TOTAL : sharesTotal <= 2}
-            hitSlop={STEP_HIT_SLOP}
-            className={stepClass(stacked, stacked ? sharesTotal >= MAX_SHARES_TOTAL : sharesTotal <= 2)}
-          >
-            {stacked ? (
-              <PlusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
-            ) : (
-              <MinusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
-            )}
-          </Pressable>
-        </View>
+        {total}
       </View>
     </View>
   )

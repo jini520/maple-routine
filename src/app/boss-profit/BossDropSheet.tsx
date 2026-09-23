@@ -28,7 +28,7 @@ import { dropItemIconOf, getItemIconUrlByFile } from '../../lib/assets/asset-loo
 import { dropItemNameOf } from '../../lib/drop/drop-items'
 import { dropPromptOf } from '../../lib/drop/drop-prompt'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
-import { formatMesoCompact } from '../../lib/drop/drop-price'
+import { dropPayoutMeso, formatMesoCompact } from '../../lib/drop/drop-price'
 import { bossNameOf } from '../../lib/boss/bosses'
 import { isValuableDropItem } from '../../lib/drop/valuable-drops'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
@@ -49,6 +49,7 @@ import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/DropEffectOverlay'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
+import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { closeInputCard, openInputCard } from '../../features/input-card/store'
 import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
@@ -87,17 +88,20 @@ interface BossDropSheetProps {
 /**
  * 타일이 자기 상태를 말하는 알약. 그림 아래를 덮는다.
  *
- * 정한 것에만 붙는다. 값을 매겼으면 **얼마인지**, 기록 안함이면 **그 결정**을 적는다. 아직 안
- * 정한 것은 비어 있고, 그 빈 자리가 곧 `남았다` 는 말이다.
+ * 정한 것에만 붙는다. 값을 매겼으면 **내 몫이 얼마인지**, 기록 안함이면 **그 결정**을 적는다.
+ * 아직 안 정한 것은 비어 있고, 그 빈 자리가 곧 `남았다` 는 말이다.
+ *
+ * **판매 총액이 아니라 `dropPayoutMeso` 다.** 총액을 적으면 같은 드롭이 보스 수익 화면과 다른
+ * 수를 말한다. 100억에 팔고 4인이 나눴으면 여기가 `100억`, 그 화면이 `25억` 이었다.
  *
  * 그림 위에 겹치는 것은 게임 인벤토리가 수량을 얹는 자리와 같아서 낯익다. 폭은 글자만큼이다.
  * 못박으면 `1억` 에는 빈자리가 남고 긴 금액은 넘친다.
  */
 function TileLabel(props: { drop: RecordedDrop | undefined }): React.JSX.Element | null {
-  const state = props.drop?.priceState
-  if (state === undefined) return null
+  const { drop } = props
+  if (drop === undefined || drop.priceState === undefined) return null
 
-  const 값 = state === 'entered'
+  const 값 = drop.priceState === 'entered'
   return (
     <View
       role="img"
@@ -115,7 +119,7 @@ function TileLabel(props: { drop: RecordedDrop | undefined }): React.JSX.Element
         className={`text-9 font-bold leading-none ${값 ? 'text-on-primary' : 'text-text-muted'}`}
         style={값 ? TABULAR_NUMS : undefined}
       >
-        {값 ? formatMesoCompact(props.drop?.priceMeso ?? 0) : '기록 안함'}
+        {값 ? formatMesoCompact(dropPayoutMeso(drop)) : '기록 안함'}
       </Text>
     </View>
   )
@@ -360,6 +364,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
         label: '분배 비율',
         myShare: edit?.share.myShare ?? target.priceMyShare ?? defaultShare.myShare,
         sharesTotal: edit?.share.sharesTotal ?? target.priceShare ?? defaultShare.sharesTotal,
+        maxPartySize: getMaxPartySize(props.bossKey, selectedDifficulty),
       },
       fees: {
         // 드롭에는 날짜 칸이 없어 기간 첫날의 등급으로 센다(다시 계산도 같은 날을 본다).

@@ -157,8 +157,6 @@ afterEach(() => {
 const EVEN_SHARE_COLUMNS = {
   crystalMyShare: null,
   crystalSharesTotal: null,
-  dropMyShare: null,
-  dropSharesTotal: null,
   splitFeePercent: null,
 }
 

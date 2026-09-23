@@ -43,8 +43,6 @@ import type { MvpGradeKey } from '../../../lib/mvp/grades'
 export interface PartyModalShares {
   crystalMyShare: number | null
   crystalSharesTotal: number | null
-  dropMyShare: number | null
-  dropSharesTotal: number | null
   splitFeePercent: number | null
   /** 송금 수수료가 등급을 따라가나. 적용하면 요율은 그 등급 요율로 나간다 */
   splitFeeAuto?: boolean
@@ -92,12 +90,10 @@ const ART_OPACITY = 0.8
 const NO_SHARES: PartyModalShares = {
   crystalMyShare: null,
   crystalSharesTotal: null,
-  dropMyShare: null,
-  dropSharesTotal: null,
   splitFeePercent: null,
 }
 
-/** 비율 고르개 한 장. 좁은 자리라 합이 트랙 아래 가운데에 선다. */
+/** 비율 고르개 한 장. 카드가 판 폭을 다 쓰므로 합이 트랙 옆에 선다. */
 function ShareCard(props: {
   label: string
   value: { myShare: number; sharesTotal: number }
@@ -107,8 +103,10 @@ function ShareCard(props: {
     // 칠이 `surface-2` 가 아니라 `bg` 다. 라이트에서 판(L .985)과 `surface-2`(L .90)의 단차가
     // 커 카드가 탁해 보였다(사용자 지적). `bg`(L .95)는 단차가 절반이고 채도도 낮다. 다크에서는
     // 판(L .20)보다 어두워져 파인 자리가 된다.
-    <View className="flex-1 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
-      <ShareField label={props.label} value={props.value} layout="stacked" onChange={props.onChange} />
+    // **늘리지도 줄이지도 않는다.** 두 장이 가로로 서던 때의 `flex-1` 을 세로 스택에 두면
+    // `flexBasis: 0` 이라 카드가 납작해지고, 밖으로 넘친 트랙과 합 버튼이 그대로 그려진다.
+    <View testID="party-share-card" className="rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
+      <ShareField label={props.label} value={props.value} layout="wide" onChange={props.onChange} />
     </View>
   )
 }
@@ -163,10 +161,6 @@ export function PartySizeModal(props: {
   const crystal = {
     myShare: draft.shares.crystalMyShare ?? SEED_SHARES.myShare,
     sharesTotal: draft.shares.crystalSharesTotal ?? SEED_SHARES.sharesTotal,
-  }
-  const drop = {
-    myShare: draft.shares.dropMyShare ?? SEED_SHARES.myShare,
-    sharesTotal: draft.shares.dropSharesTotal ?? SEED_SHARES.sharesTotal,
   }
   const splitFeePercent = draft.shares.splitFeePercent ?? 3
   const splitFeeAuto = draft.shares.splitFeeAuto === true
@@ -280,8 +274,6 @@ export function PartySizeModal(props: {
                       : {
                           crystalMyShare: SEED_SHARES.myShare,
                           crystalSharesTotal: SEED_SHARES.sharesTotal,
-                          dropMyShare: SEED_SHARES.myShare,
-                          dropSharesTotal: SEED_SHARES.sharesTotal,
                           // 비율로 바꿀 때 송금 수수료는 자동으로 시작한다(내 등급 요율).
                           splitFeePercent: null,
                           splitFeeAuto: true,
@@ -293,32 +285,18 @@ export function PartySizeModal(props: {
 
             {usesShares ? (
               <>
-                {/* 카드 둘이 좌우로 선다. 위아래로 쌓으면 같은 고르개가 두 번 포개져 판이
-                    그만큼 길어진다. */}
-                <View className="flex-row gap-2.5">
-                  <ShareCard
-                    label="결정석"
-                    value={crystal}
-                    onChange={(next) =>
-                      setShares({
-                        ...draft.shares,
-                        crystalMyShare: next.myShare,
-                        crystalSharesTotal: next.sharesTotal,
-                      })
-                    }
-                  />
-                  <ShareCard
-                    label="아이템"
-                    value={drop}
-                    onChange={(next) =>
-                      setShares({
-                        ...draft.shares,
-                        dropMyShare: next.myShare,
-                        dropSharesTotal: next.sharesTotal,
-                      })
-                    }
-                  />
-                </View>
+                {/* 카드 한 장이다. 아이템 비율은 건마다 값이 달라 드롭 가격 카드가 받는다. */}
+                <ShareCard
+                  label="결정석"
+                  value={crystal}
+                  onChange={(next) =>
+                    setShares({
+                      ...draft.shares,
+                      crystalMyShare: next.myShare,
+                      crystalSharesTotal: next.sharesTotal,
+                    })
+                  }
+                />
 
                 <FeeRow
                   variant="compact"

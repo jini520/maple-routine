@@ -38,6 +38,10 @@ import { Text, TextInput, XIcon } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { MAX_MESO, acceptMesoText, mesoTextOf, mesoValueOf } from '../MesoPad/meso-pad'
 import { ShareField } from '../../molecules/ShareField/ShareField'
+import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
+import { Segment } from '../../molecules/Segment/Segment'
+import { Badge } from '../../atoms/Badge/Badge'
+import { DEFAULT_MAX_PARTY_SIZE } from '../../../lib/boss/boss-crystal-prices'
 import { FeeRow } from '../FeeRow/FeeRow'
 import type { MvpGradeKey } from '../../../lib/mvp/grades'
 
@@ -59,6 +63,8 @@ export interface ShareSpec {
   label: string
   myShare: number
   sharesTotal: number
+  /** `기본` 의 인원 상한. 그 보스 · 난이도의 최대 파티 인원이다 */
+  maxPartySize?: number
 }
 
 /** 카드가 돌려주는 비율. 내 몫이 `내 비율 ÷ 합` 이다. */
@@ -93,6 +99,22 @@ export interface FeesValue {
 }
 
 const FEE_OPTIONS = ['없음', '3%', '5%'] as const
+
+/** 분배 방식. `기본` 은 인원으로 균등하게 나누고 `비율` 은 내 비율과 합으로 나눈다. */
+const SPLIT_OPTIONS = ['기본', '비율'] as const
+
+/** 비율을 아직 안 정한 기록이 `비율` 로 갈아탈 때 놓이는 값. 파티 모달과 같은 `2 : 1`(66.7%)이다. */
+const SEED_RATIO = { myShare: 2, sharesTotal: 3 }
+
+/**
+ * `비율` 칸의 씨앗. 내 비율이 1 이면 인원으로 균등하게 나눈 기록이라 비율을 정한 적이 없고,
+ * 그 자리에는 `SEED_RATIO` 가 놓인다. 저장된 합을 그대로 쓰면 첫 화면이 `1/N`(33.3% 등)로 서서
+ * 이미 고른 값처럼 읽힌다.
+ */
+function ratioSeedOf(share: ShareSpec | undefined): ShareValue {
+  if (share === undefined || share.myShare === 1) return SEED_RATIO
+  return { myShare: share.myShare, sharesTotal: share.sharesTotal }
+}
 
 function feeOptionOf(percent: number | null): (typeof FEE_OPTIONS)[number] {
   return percent === 3 ? '3%' : percent === 5 ? '5%' : '없음'
@@ -196,27 +218,38 @@ function iconSourceOf(icon: InputCardIcon | undefined): ImageAssetRef | null {
 
 export function InputCard(props: InputCardProps): React.JSX.Element {
   const [draft, setDraft] = useState(props.value)
-  const [share, setShare] = useState<ShareValue>({
-    myShare: props.share?.myShare ?? 1,
-    sharesTotal: props.share?.sharesTotal ?? 1,
-  })
+  /**
+   * **인원과 비율 합을 따로 든다**(사용자 지정). 둘은 같은 자리에 같은 모양으로 서지만 세는 것이
+   * 다르다. 인원은 몇 명이 나누나이고 합은 내 몫의 분모다. 한 값을 나눠 쓰면 `비율` 에서 합을
+   * 고친 것이 `기본` 의 인원을 덮는다.
+   */
+  const [partySize, setPartySize] = useState(props.share?.sharesTotal ?? 1)
+  const [ratio, setRatio] = useState<ShareValue>(() => ratioSeedOf(props.share))
   /**
    * 씨앗을 다시 심는다. **그리는 중에** 바꾼다.
    *
    * 효과로 미루면 한 프레임 동안 앞 아이템의 값이 보인다. React 는 그리는 중의 자기 상태 갱신을
    * 받아들이고 그 자리에서 다시 그린다.
    */
+  /** 비율로 나누나. 저장된 내 비율이 1 이면 인원으로 균등하게 나눈 것이라 `기본` 으로 연다. */
+  const [usesRatio, setUsesRatio] = useState((props.share?.myShare ?? 1) !== 1)
   const [saleFee, setSaleFee] = useState<FeeSeed>(props.fees?.sale ?? { auto: false, percent: null })
   const [splitFee, setSplitFee] = useState<FeeSeed>(props.fees?.split ?? { auto: false, percent: null })
   const [seed, setSeed] = useState(props.seed)
   if (props.seed !== seed) {
     setSeed(props.seed)
     setDraft(props.value)
-    setShare({ myShare: props.share?.myShare ?? 1, sharesTotal: props.share?.sharesTotal ?? 1 })
+    setPartySize(props.share?.sharesTotal ?? 1)
+    setRatio(ratioSeedOf(props.share))
+    setUsesRatio((props.share?.myShare ?? 1) !== 1)
     setSaleFee(props.fees?.sale ?? { auto: false, percent: null })
     setSplitFee(props.fees?.split ?? { auto: false, percent: null })
   }
   const autoFee = props.fees?.autoFee ?? null
+  /** 지금 선 쪽의 값. 확인이 내보내는 것도 수수료 줄이 보는 것도 이것 하나다. */
+  const share: ShareValue = usesRatio ? ratio : { myShare: 1, sharesTotal: partySize }
+  /** 받는 돈이 있나. 내 몫이 0 이면 경매장에 떼일 것도 파티원에게 보낼 것도 없다. */
+  const earns = share.myShare > 0
   // 내 비율이 합과 같으면 혼자 다 갖는 것이라 보낼 곳이 없다.
   const splits = share.sharesTotal > share.myShare
 
@@ -263,10 +296,18 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   }
 
   /** 수수료 줄 하나. 끄는 순간 방금까지 자동이던 요율을 고른 채 선다. */
-  function feeRow(label: string, testID: string, fee: FeeSeed, setFee: (next: FeeSeed) => void): React.JSX.Element {
+  function feeRow(
+    label: string,
+    testID: string,
+    fee: FeeSeed,
+    setFee: (next: FeeSeed) => void,
+    disabled: boolean,
+  ): React.JSX.Element {
     return (
       <FeeRow
         testID={testID}
+        variant="stacked"
+        disabled={disabled}
         label={label}
         auto={fee.auto}
         onAutoChange={(auto) => setFee({ auto, percent: !auto && autoFee !== null ? autoFee.percent : fee.percent })}
@@ -418,15 +459,72 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
           )}
 
           {props.share !== undefined && (
-            <View className="mt-3">
-              <ShareField label={props.share.label} value={share} onChange={setShare} />
-            </View>
-          )}
+            <View className="mt-3 gap-2.5">
+              <View className="flex-row items-center justify-between gap-2.5">
+                <Text className="text-13 font-bold text-text">분배 방식</Text>
+                <Segment
+                  options={SPLIT_OPTIONS}
+                  selected={usesRatio ? '비율' : '기본'}
+                  size="md"
+                  fixed
+                  // 어느 쪽 수도 안 옮긴다. 둘이 각자 제 값을 들고 있어 돌아오면 그대로다.
+                  onSelect={(option) => setUsesRatio(option === '비율')}
+                />
+              </View>
 
-          {props.fees !== undefined && (
-            <View className="mt-3 gap-2">
-              {feeRow('판매 수수료', 'input-card-sale-fee', saleFee, setSaleFee)}
-              {splits && feeRow('분배 수수료', 'input-card-split-fee', splitFee, setSplitFee)}
+              {/*
+                왼쪽이 그 드롭의 분배, 오른쪽이 수수료 둘이다. 위아래로 쌓으면 줄이 넷이라
+                카드가 키보드를 밀어낸다.
+              */}
+              <View testID="input-card-split-fees" className="flex-row items-stretch gap-3">
+                {usesRatio ? (
+                  // 파티 모달의 비율 카드와 같은 바탕이다. 드롭 하나의 값이라 카드가 한 장이다.
+                  <View className="flex-1 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
+                    <ShareField label={props.share.label} value={ratio} onChange={setRatio} layout="stacked" />
+                  </View>
+                ) : (
+                  // 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서 말한다.
+                  //
+                  // **높이 112 를 못박는다.** 112 는 `비율` 칸이 제 내용으로 서는 높이다(여백 11 +
+                  // 머리 23 + 간격 8 + 트랙 24 + 간격 8 + 합 26 + 여백 12). 안 못박으면 이 칸이
+                  // 84 라, 세그먼트를 누를 때마다 아래 버튼 줄이 그 차이만큼 뛴다. `비율` 칸은 안
+                  // 못박는다. 제 내용대로 서게 두어야 글꼴 크기가 커져도 안이 안 잘린다.
+                  //
+                  // 오른쪽 수수료 칸이 110 이라 줄 높이는 두 칸이 거의 같이 정한다(실측).
+                  <View
+                    testID="input-card-party"
+                    className="h-[112px] flex-1 gap-2.5 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]"
+                  >
+                    <View className="flex-row items-center justify-between gap-1.5">
+                      <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
+                        파티 인원
+                      </Text>
+                      <Badge variant="primary" size="mini" style={TABULAR_NUMS}>
+                        최대 {props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}명
+                      </Badge>
+                    </View>
+                    {/* 스테퍼는 머리 줄 아래 남는 자리 가운데다(사용자 지정). */}
+                    <View testID="input-card-party-body" className="flex-1 items-center justify-center">
+                      <PartySizeStepper
+                        size="bare"
+                        label={props.share.label}
+                        value={partySize}
+                        max={props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}
+                        onChange={setPartySize}
+                      />
+                    </View>
+                  </View>
+                )}
+
+                {props.fees !== undefined && (
+                  // 줄 둘이 **항상 선다**(사용자 지정). 쓸 수 없는 줄은 없애지 않고 잠근다.
+                  // 없애면 이 칸의 높이가 바뀌고, 그 줄이 원래 있다는 것도 안 보인다.
+                  <View className="flex-1 justify-center gap-3.5">
+                    {feeRow('판매 수수료', 'input-card-sale-fee', saleFee, setSaleFee, !earns)}
+                    {feeRow('분배 수수료', 'input-card-split-fee', splitFee, setSplitFee, !earns || !splits)}
+                  </View>
+                )}
+              </View>
             </View>
           )}
 

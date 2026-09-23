@@ -60,7 +60,8 @@ export type BossProfitRecordSource = 'auto' | 'manual'
 const UPSERT_SQL = `
   INSERT INTO boss_profit_records
     (ocid, boss_key, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso,
-     crystal_my_share, crystal_shares_total, split_fee_percent, split_fee_auto, recorded_at, world, world_key, source)
+     crystal_my_share, crystal_shares_total, split_fee_percent, split_fee_auto,
+     recorded_at, world, world_key, source)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(ocid, boss_key, difficulty, period_key) DO UPDATE SET
     source = excluded.source,

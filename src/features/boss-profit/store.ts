@@ -1958,8 +1958,6 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       partyShares[partySizeKey(setting.ocid, setting.bossKey, setting.difficulty)] = {
         crystalMyShare: setting.crystalMyShare,
         crystalSharesTotal: setting.crystalSharesTotal,
-        dropMyShare: setting.dropMyShare,
-        dropSharesTotal: setting.dropSharesTotal,
         splitFeePercent: setting.splitFeePercent,
         splitFeeAuto: setting.splitFeeAuto,
       }

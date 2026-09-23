@@ -281,14 +281,24 @@ describe('DropPriceScreen: 값 매기기', () => {
     expect(getByText).toBeTruthy()
   })
 
-  it('분배 비율 기본값은 합이 그 행의 파티원 수인 균등이다', async () => {
-    const { getByLabelText, getByTestId } = await renderOverlay(<DropPriceScreen />)
+  // 카드는 `기본` 으로 열린다. 내 몫이 `1 ÷ 인원` 이라 인원 하나만 받으면 된다.
+  it('분배는 기본으로 열리고 인원이 그 행의 파티원 수다', async () => {
+    const { getByLabelText, getByText, getByTestId, queryByTestId } = await renderOverlay(<DropPriceScreen />)
 
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
+    expect(getByText('파티 인원')).toBeTruthy()
+    expect(queryByTestId('share-field-ratio-분배 비율')).toBeNull()
 
-    expect(getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('33.3%')
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-card-value'), '100')
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('input-card-confirm'))
+    })
+
+    expect(savePrice).toHaveBeenCalledWith(expect.anything(), 100, { myShare: 1, sharesTotal: 3 }, expect.anything())
   })
 
   it('저장이 실패하면 토스트로 알린다. 조용히 삼키면 저장된 줄 알고 떠난다', async () => {
@@ -374,6 +384,24 @@ describe('DropPriceScreen: 미입력 ≠ 0원', () => {
     expect(getByText('0건')).toBeTruthy()
     // 미입력 카운트에서도 빠진다. 그 수를 말하는 자리는 이제 CTA 하나다.
     expect(getByText('미입력 1건 이어서 입력')).toBeTruthy()
+  })
+
+  /**
+   * **알약이 적는 것은 내 몫이다**(사용자 지정 2026-09-23). 판매 총액을 적으면 행을 더해도 위의
+   * `이 주 아이템 수익` 이 안 나온다. 그 합계는 `dropPayoutMeso` 로 센다.
+   */
+  it('행 알약은 판매 총액이 아니라 내 몫을 적는다', async () => {
+    mockStores({
+      price: {
+        groups: 그룹([
+          항목({ drop: 드롭({ priceState: 'entered', priceMeso: 10_000_000_000, priceShare: 4, priceMyShare: 1 }) }),
+        ]),
+      },
+    })
+    const { getByText, queryByText } = await renderOverlay(<DropPriceScreen />)
+
+    expect(getByText('25.0억')).toBeTruthy()
+    expect(queryByText('100.0억')).toBeNull()
   })
 
   it('값을 매긴 행만 인원을 말한다. 미입력에 "1인" 이 서면 정해진 값처럼 읽힌다', async () => {
