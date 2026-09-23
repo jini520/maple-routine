@@ -61,14 +61,22 @@ export type InputCardIcon = 'meso' | 'fragment' | ImageAssetRef
  */
 export interface ShareSpec {
   label: string
+  /**
+   * 어떻게 나눴나. **카드가 어느 쪽으로 열릴지를 이 값이 정한다.**
+   *
+   * 숫자로 되짚지 않는다. 비율 `1 : 3` 과 균등 `3인` 은 두 수가 같아, 되짚으면 비율로 고른
+   * 33.3% 가 `기본 3인` 으로 열린다. 안 주면 아직 안 나눈 새 기록이라 `기본` 이다.
+   */
+  mode?: 'even' | 'ratio'
   myShare: number
   sharesTotal: number
   /** `기본` 의 인원 상한. 그 보스 · 난이도의 최대 파티 인원이다 */
   maxPartySize?: number
 }
 
-/** 카드가 돌려주는 비율. 내 몫이 `내 비율 ÷ 합` 이다. */
+/** 카드가 돌려주는 비율. 내 몫이 `내 비율 ÷ 합` 이고, **어느 쪽으로 골랐는지를 함께 싣는다.** */
 export interface ShareValue {
+  mode: 'even' | 'ratio'
   myShare: number
   sharesTotal: number
 }
@@ -104,7 +112,7 @@ const FEE_OPTIONS = ['없음', '3%', '5%'] as const
 const SPLIT_OPTIONS = ['기본', '비율'] as const
 
 /** 비율을 아직 안 정한 기록이 `비율` 로 갈아탈 때 놓이는 값. 파티 모달과 같은 `2 : 1`(66.7%)이다. */
-const SEED_RATIO = { myShare: 2, sharesTotal: 3 }
+const SEED_RATIO: ShareValue = { mode: 'ratio', myShare: 2, sharesTotal: 3 }
 
 /**
  * `비율` 칸의 씨앗. 내 비율이 1 이면 인원으로 균등하게 나눈 기록이라 비율을 정한 적이 없고,
@@ -112,8 +120,8 @@ const SEED_RATIO = { myShare: 2, sharesTotal: 3 }
  * 이미 고른 값처럼 읽힌다.
  */
 function ratioSeedOf(share: ShareSpec | undefined): ShareValue {
-  if (share === undefined || share.myShare === 1) return SEED_RATIO
-  return { myShare: share.myShare, sharesTotal: share.sharesTotal }
+  if (share === undefined || share.mode !== 'ratio') return SEED_RATIO
+  return { mode: 'ratio', myShare: share.myShare, sharesTotal: share.sharesTotal }
 }
 
 function feeOptionOf(percent: number | null): (typeof FEE_OPTIONS)[number] {
@@ -231,8 +239,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    * 효과로 미루면 한 프레임 동안 앞 아이템의 값이 보인다. React 는 그리는 중의 자기 상태 갱신을
    * 받아들이고 그 자리에서 다시 그린다.
    */
-  /** 비율로 나누나. 저장된 내 비율이 1 이면 인원으로 균등하게 나눈 것이라 `기본` 으로 연다. */
-  const [usesRatio, setUsesRatio] = useState((props.share?.myShare ?? 1) !== 1)
+  /** 비율로 나누나. **기록에 적힌 방식**으로 연다. 숫자로 되짚지 않는다. */
+  const [usesRatio, setUsesRatio] = useState(props.share?.mode === 'ratio')
   const [saleFee, setSaleFee] = useState<FeeSeed>(props.fees?.sale ?? { auto: false, percent: null })
   const [splitFee, setSplitFee] = useState<FeeSeed>(props.fees?.split ?? { auto: false, percent: null })
   const [seed, setSeed] = useState(props.seed)
@@ -241,13 +249,15 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     setDraft(props.value)
     setPartySize(props.share?.sharesTotal ?? 1)
     setRatio(ratioSeedOf(props.share))
-    setUsesRatio((props.share?.myShare ?? 1) !== 1)
+    setUsesRatio(props.share?.mode === 'ratio')
     setSaleFee(props.fees?.sale ?? { auto: false, percent: null })
     setSplitFee(props.fees?.split ?? { auto: false, percent: null })
   }
   const autoFee = props.fees?.autoFee ?? null
   /** 지금 선 쪽의 값. 확인이 내보내는 것도 수수료 줄이 보는 것도 이것 하나다. */
-  const share: ShareValue = usesRatio ? ratio : { myShare: 1, sharesTotal: partySize }
+  const share: ShareValue = usesRatio
+    ? { ...ratio, mode: 'ratio' }
+    : { mode: 'even', myShare: 1, sharesTotal: partySize }
   /** 받는 돈이 있나. 내 몫이 0 이면 경매장에 떼일 것도 파티원에게 보낼 것도 없다. */
   const earns = share.myShare > 0
   // 내 비율이 합과 같으면 혼자 다 갖는 것이라 보낼 곳이 없다.
@@ -480,7 +490,13 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 {usesRatio ? (
                   // 파티 모달의 비율 카드와 같은 바탕이다. 드롭 하나의 값이라 카드가 한 장이다.
                   <View className="flex-1 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
-                    <ShareField label={props.share.label} value={ratio} onChange={setRatio} layout="stacked" />
+                    <ShareField
+                      label={props.share.label}
+                      value={ratio}
+                      // `ShareField` 는 방식을 모르는 부품이다. 여기는 늘 비율 쪽이다.
+                      onChange={(next) => setRatio({ mode: 'ratio', ...next })}
+                      layout="stacked"
+                    />
                   </View>
                 ) : (
                   // 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서 말한다.

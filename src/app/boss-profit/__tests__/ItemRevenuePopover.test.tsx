@@ -49,7 +49,7 @@ function renderPopover(props: {
 
 /** 이름으로 가려 보는 기록. key 가 없으면 적어 둔 이름이 그대로 선다. */
 function entered(itemName: string, priceMeso: number, itemKey: string | null = null): RecordedDrop {
-  return drop({ itemKey, itemName, priceState: 'entered', priceMeso, priceShare: 1 })
+  return drop({ itemKey, itemName, priceState: 'entered', priceMeso, priceShare: 1, priceSplitMode: 'even' })
 }
 
 describe('ItemRevenuePopover: 미입력은 싣지 않는다', () => {
@@ -57,7 +57,7 @@ describe('ItemRevenuePopover: 미입력은 싣지 않는다', () => {
   // 구현(`priceMeso ?? 0` 계열)이면 여기서 `30.0억` 이 새어 나온다.
   it('값을 안 매긴 기록은 목록에 안 선다', async () => {
     const { queryByText } = await renderPopover({
-      drops: [drop({ priceMeso: 3_000_000_000, priceShare: 3 })],
+      drops: [drop({ priceMeso: 3_000_000_000, priceShare: 3, priceSplitMode: 'even' })],
     })
 
     expect(queryByText('가디언 엔젤 링')).toBeNull()
@@ -68,7 +68,7 @@ describe('ItemRevenuePopover: 미입력은 싣지 않는다', () => {
 
   it('값을 매긴 기록만 금액을 낸다', async () => {
     const { getByText } = await renderPopover({
-      drops: [drop({ priceState: 'entered', priceMeso: 3_000_000_000, priceShare: 3 })],
+      drops: [drop({ priceState: 'entered', priceMeso: 3_000_000_000, priceShare: 3, priceSplitMode: 'even' })],
       itemMeso: 1_000_000_000,
     })
 
@@ -80,7 +80,7 @@ describe('ItemRevenuePopover: 미입력은 싣지 않는다', () => {
   // 비율로 나눈 드롭에 인원을 적으면 옆의 금액과 다른 말을 한다. 그 드롭은 인원으로 안 나눴다.
   it('비율로 나눈 드롭은 인원 대신 내 몫을 적는다', async () => {
     const { getByText, queryByText } = await renderPopover({
-      drops: [drop({ priceState: 'entered', priceMeso: 10_000_000_000, priceShare: 4, priceMyShare: 3 })],
+      drops: [drop({ priceState: 'entered', priceMeso: 10_000_000_000, priceShare: 4, priceMyShare: 3, priceSplitMode: 'ratio' })],
     })
 
     expect(getByText('100.0억 중 75%')).toBeTruthy()
@@ -89,7 +89,7 @@ describe('ItemRevenuePopover: 미입력은 싣지 않는다', () => {
 
   it('1인이면 분배 줄을 만들지 않는다. 나눈 것이 없다', async () => {
     const { queryByText } = await renderPopover({
-      drops: [drop({ priceState: 'entered', priceMeso: 3_000_000_000, priceShare: 1 })],
+      drops: [drop({ priceState: 'entered', priceMeso: 3_000_000_000, priceShare: 1, priceSplitMode: 'even' })],
     })
 
     expect(queryByText(/÷/)).toBeNull()

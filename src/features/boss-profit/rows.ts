@@ -435,6 +435,8 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
     // 빠뜨리면 저장은 됐는데 화면이 영영 미입력 으로 보인다.
     priceState: record.priceState ?? undefined,
     priceMeso: record.priceMeso ?? undefined,
+    // 빠뜨리면 방식이 여기서 사라져 화면이 다시 숫자로 되짚게 된다.
+    priceSplitMode: record.priceSplitMode ?? undefined,
     priceShare: record.priceShare ?? undefined,
     priceMyShare: record.priceMyShare ?? undefined,
     saleFeePercent: record.saleFeePercent ?? undefined,
@@ -452,6 +454,11 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
  *
  * @example const defaultShare = dropShareSeedOf(partySize)
  */
-export function dropShareSeedOf(partySize: number): { myShare: number; sharesTotal: number } {
-  return { myShare: 1, sharesTotal: partySize }
+export function dropShareSeedOf(partySize: number): {
+  mode: 'even'
+  myShare: number
+  sharesTotal: number
+} {
+  // 아직 안 나눈 새 기록은 **기본**이다. 이 값이 그대로 저장돼 다음에 열 때의 자리를 정한다.
+  return { mode: 'even', myShare: 1, sharesTotal: partySize }
 }

@@ -229,6 +229,7 @@ describe('toRecordedDrop: 가격 필드', () => {
     ringLevel: null,
     quantity: 1,
     recordedAt: '2026-08-10T00:00:00.000Z',
+    priceSplitMode: 'even' as const,
     priceMyShare: null,
     saleFeePercent: null,
     splitFeePercent: null,
@@ -243,7 +244,8 @@ describe('toRecordedDrop: 가격 필드', () => {
       expect.objectContaining({
         priceState: 'entered',
         priceMeso: 15_000_000_000,
-        priceShare: 3,
+        priceSplitMode: 'even',
+    priceShare: 3,
       }),
     )
   })
@@ -503,6 +505,7 @@ it('mergeRecordsIntoRows 는 기록의 비율과 송금 수수료도 행에 싣�
 describe('dropShareSeedOf', () => {
   it('받은 파티 인원으로 균등하다', () => {
     expect(dropShareSeedOf(4)).toEqual({
+      mode: 'even',
       myShare: 1,
       sharesTotal: 4,
     })
@@ -510,6 +513,7 @@ describe('dropShareSeedOf', () => {
 
   it('혼자면 나눌 것이 없다', () => {
     expect(dropShareSeedOf(1)).toEqual({
+      mode: 'even',
       myShare: 1,
       sharesTotal: 1,
     })

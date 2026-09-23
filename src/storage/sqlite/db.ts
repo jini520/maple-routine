@@ -479,6 +479,17 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'boss_profit_records', 'split_fee_auto', 'INTEGER')
   // 드롭의 내 비율. price_share 가 비율 합이 되고 균등이면 그것이 곧 인원 수다.
   await ensureColumn(db, 'boss_drop_records', 'price_my_share', 'INTEGER')
+  /*
+   * 드롭을 어떻게 나눴나. 이 칸이 위 두 칸의 뜻을 정한다.
+   *
+   * 값이 붙기 전에는 화면이 `내 몫이 1 이면 기본` 으로 되짚었는데, 비율 1:3 과 균등 3인은 저장된
+   * 두 수가 같아 비율로 적은 33.3% 가 `기본 3인` 으로 섰다.
+   *
+   * **쌓여 있던 행은 전부 `even` 이다**(사용자 지정 `어차피 아직 업데이트 안나갔어`). 스토어에
+   * 안 나간 버전이라 지킬 기록이 없다. 비율로 적었던 행은 내 몫이 1 로 읽혀 금액이 줄어든다.
+   */
+  await ensureColumn(db, 'boss_drop_records', 'price_split_mode', 'TEXT')
+  await db.run(`UPDATE boss_drop_records SET price_split_mode = 'even' WHERE price_split_mode IS NULL`)
   // 드롭의 판매 · 분배 수수료와 자동인지. NULL 인 옛 행은 수수료 없는 옛 식 그대로 센다.
   await ensureColumn(db, 'boss_drop_records', 'sale_fee_percent', 'INTEGER')
   await ensureColumn(db, 'boss_drop_records', 'split_fee_percent', 'INTEGER')

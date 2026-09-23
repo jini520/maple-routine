@@ -254,7 +254,7 @@ export function DropPriceScreen(): React.JSX.Element {
         return
       }
       const meso = mesoValueOf(next)
-      const 몫 = share ?? { myShare: 1, sharesTotal: target.partySize }
+      const 몫 = share ?? { mode: 'even' as const, myShare: 1, sharesTotal: target.partySize }
       const 다음편집 = new Map(edits).set(index, { meso, share: 몫, fees })
       void runWrite(() => savePrice(target, meso, 몫, fees), items, to, 다음편집)
     }
@@ -272,6 +272,8 @@ export function DropPriceScreen(): React.JSX.Element {
       value: mesoTextOf(edit?.meso ?? target.drop.priceMeso ?? 0),
       share: {
         label: '분배 비율',
+        // 열 때의 자리는 **적힌 방식**이 정한다. 숫자로 되짚으면 비율 33.3% 가 기본 3인으로 열린다.
+        mode: edit?.share.mode ?? target.drop.priceSplitMode ?? 'even',
         myShare: edit?.share.myShare ?? target.drop.priceMyShare ?? 1,
         sharesTotal: edit?.share.sharesTotal ?? target.drop.priceShare ?? target.partySize,
         maxPartySize: getMaxPartySize(target.bossKey, target.difficulty),

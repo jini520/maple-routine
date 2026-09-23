@@ -232,25 +232,31 @@ describe('formatMesoCompact', () => {
 // 비율로 나눈 드롭에 `÷ N인` 을 적으면 화면이 금액과 다른 말을 한다. 그 드롭은 인원으로 안 나눴다.
 describe('dropSplitLabel', () => {
   it('균등이면 인원을 적는다', () => {
-    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 4 })).toBe('4인')
+    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 4, priceSplitMode: 'even' })).toBe('4인')
   })
 
   it('비율이면 내 몫을 백분율로 적는다', () => {
-    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 4, priceMyShare: 3 })).toBe('75%')
+    expect(
+      dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 4, priceMyShare: 3, priceSplitMode: 'ratio' }),
+    ).toBe('75%')
   })
 
   // 0 을 1 로 접으면 `10인` 이 서서 안 받은 몫을 균등으로 나눈 것처럼 읽힌다(사용자가 잡았다).
   it('내 비율이 0 이면 0% 로 적는다. 인원으로 안 적는다', () => {
-    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 10, priceMyShare: 0 })).toBe('0%')
+    expect(
+      dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 10, priceMyShare: 0, priceSplitMode: 'ratio' }),
+    ).toBe('0%')
   })
 
   it('안 나눈 드롭은 적을 것이 없다', () => {
-    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 1 })).toBeNull()
-    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 3, priceMyShare: 3 })).toBeNull()
+    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 1, priceSplitMode: 'even' })).toBeNull()
+    expect(
+      dropSplitLabel({ priceState: 'entered', priceMeso: 100, priceShare: 3, priceMyShare: 3, priceSplitMode: 'ratio' }),
+    ).toBeNull()
   })
 
   it('값을 안 매긴 드롭도 적을 것이 없다. 정해진 값처럼 읽힌다', () => {
-    expect(dropSplitLabel({ priceState: null, priceShare: 4 })).toBeNull()
+    expect(dropSplitLabel({ priceState: null, priceShare: 4, priceSplitMode: 'even' })).toBeNull()
   })
 })
 
@@ -275,5 +281,43 @@ describe('비율에서 보내는 쪽은 몫이 큰 쪽이다', () => {
     expect(
       dropPayoutMeso({ priceState: 'entered', priceMeso: 백억, priceShare: 2, priceMyShare: 1, splitFeePercent: 3 }),
     ).toBe(4_923_857_869)
+  })
+})
+
+// 비율 `1 : 3` 과 균등 `3인` 은 **저장된 두 수가 같다**. 숫자로 되짚으면 둘 중 하나는
+// 반드시 틀린다. 그래서 방식을 기록이 들고 다닌다.
+describe('분배 방식은 기록이 들고 다닌다', () => {
+  const 같은두수 = { priceState: 'entered', priceMeso: 90, priceShare: 3, priceMyShare: 1 } as const
+
+  it('같은 두 수라도 방식이 다르면 라벨이 다르다', () => {
+    expect(dropSplitLabel({ ...같은두수, priceSplitMode: 'even' })).toBe('3인')
+    expect(dropSplitLabel({ ...같은두수, priceSplitMode: 'ratio' })).toBe('33.3%')
+  })
+
+  // 옛 기록은 방식을 모른다. 모르는 것을 단정하지 않는다.
+  it('방식이 없으면 라벨이 없다', () => {
+    expect(dropSplitLabel(같은두수)).toBeNull()
+  })
+
+  it('기본은 내 비율 칸을 안 본다', () => {
+    // 그 칸에 무슨 값이 들어 있든 기본 분배의 내 몫은 `1/N` 이다.
+    const 더러운칸 = { priceState: 'entered', priceMeso: 90, priceShare: 3, priceMyShare: 2 } as const
+    expect(dropSplitLabel({ ...더러운칸, priceSplitMode: 'even' })).toBe('3인')
+    expect(dropPayoutMeso({ ...더러운칸, priceSplitMode: 'even' })).toBe(30)
+    // 같은 칸을 비율로 읽으면 내 몫이 둘이다.
+    expect(dropPayoutMeso({ ...더러운칸, priceSplitMode: 'ratio' })).toBe(60)
+  })
+
+  it('혼자 가진 것은 방식과 무관하게 적을 것이 없다', () => {
+    expect(dropSplitLabel({ priceState: 'entered', priceMeso: 90, priceShare: 1, priceSplitMode: 'even' })).toBeNull()
+    expect(
+      dropSplitLabel({ priceState: 'entered', priceMeso: 90, priceShare: 3, priceMyShare: 3, priceSplitMode: 'ratio' }),
+    ).toBeNull()
+  })
+
+  it('비율의 내 몫 0 은 0% 다', () => {
+    expect(
+      dropSplitLabel({ priceState: 'entered', priceMeso: 90, priceShare: 10, priceMyShare: 0, priceSplitMode: 'ratio' }),
+    ).toBe('0%')
   })
 })

@@ -78,6 +78,7 @@ function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
     recordedAt: '2026-08-10T00:00:00.000Z',
     priceState: null,
     priceMeso: null,
+    priceSplitMode: 'even',
     priceShare: null,
     priceMyShare: null,
     saleFeePercent: null,
@@ -396,7 +397,7 @@ describe('savePrice · excludePrice', () => {
     await useDropPriceStore.getState().load(PERIOD)
     const target = useDropPriceStore.getState().groups[0].entries[1]
 
-    await useDropPriceStore.getState().savePrice(target, 1_200_000_000, { myShare: 1, sharesTotal: 1 })
+    await useDropPriceStore.getState().savePrice(target, 1_200_000_000, { mode: 'even' as const, myShare: 1, sharesTotal: 1 })
 
     const [, boss, difficulty, periodKey, drops] = replaceBossDropRecordsMock.mock.calls[0]
     expect([boss, difficulty, periodKey]).toEqual(['lotus', 'hard', PERIOD])
@@ -418,7 +419,7 @@ describe('savePrice · excludePrice', () => {
     await useDropPriceStore.getState().load(PERIOD)
     const target = useDropPriceStore.getState().groups[0].entries[0]
 
-    await useDropPriceStore.getState().savePrice(target, 6_000_000_000, { myShare: 1, sharesTotal: 2 })
+    await useDropPriceStore.getState().savePrice(target, 6_000_000_000, { mode: 'even' as const, myShare: 1, sharesTotal: 2 })
 
     expect(useDropPriceStore.getState().groups[0].entries[0].drop).toEqual(
       expect.objectContaining({ priceState: 'entered', priceMeso: 6_000_000_000, priceShare: 2 }),
@@ -443,7 +444,7 @@ describe('savePrice · excludePrice', () => {
     await useDropPriceStore.getState().load(PERIOD)
     const target = useDropPriceStore.getState().groups[0].entries[0]
 
-    await expect(useDropPriceStore.getState().savePrice(target, 1, { myShare: 1, sharesTotal: 1 })).rejects.toThrow()
+    await expect(useDropPriceStore.getState().savePrice(target, 1, { mode: 'even' as const, myShare: 1, sharesTotal: 1 })).rejects.toThrow()
   })
 })
 
@@ -456,7 +457,7 @@ describe('보스 수익 스토어 동기화', () => {
     await useDropPriceStore.getState().load(PERIOD)
     const target = useDropPriceStore.getState().groups[0].entries[0]
 
-    await useDropPriceStore.getState().savePrice(target, 6_000_000_000, { myShare: 1, sharesTotal: 2 })
+    await useDropPriceStore.getState().savePrice(target, 6_000_000_000, { mode: 'even' as const, myShare: 1, sharesTotal: 2 })
 
     expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|lotus|hard|${PERIOD}`]).toEqual([
       expect.objectContaining({ priceState: 'entered', priceMeso: 6_000_000_000, priceShare: 2 }),
@@ -483,7 +484,7 @@ describe('보스 수익 스토어 동기화', () => {
     const target = useDropPriceStore.getState().groups[0].entries[0]
     replaceBossDropRecordsMock.mockRejectedValue(new Error('쓰기 실패'))
 
-    await expect(useDropPriceStore.getState().savePrice(target, 1, { myShare: 1, sharesTotal: 1 })).rejects.toThrow()
+    await expect(useDropPriceStore.getState().savePrice(target, 1, { mode: 'even' as const, myShare: 1, sharesTotal: 1 })).rejects.toThrow()
 
     expect(useBossProfitStore.getState().dropsByRowKey[`ocid-1|lotus|hard|${PERIOD}`]).toBeUndefined()
   })

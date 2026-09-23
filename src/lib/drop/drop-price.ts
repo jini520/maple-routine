@@ -20,14 +20,35 @@ import { formatSharePercent } from '../boss/party-shares'
 export interface DropPriceFields {
   priceState?: 'entered' | 'excluded' | null
   priceMeso?: number | null
-  /** 분배 인원. 비율을 쓰는 기록에서는 **비율 합**이다. 균등이면 둘이 같은 수다. */
+  /**
+   * 어떻게 나눴나. **아래 두 칸의 뜻을 이 칸이 정한다.**
+   *
+   * 비율 `1 : 3` 과 균등 `3인` 은 저장된 두 수가 글자 하나 안 다르다. 숫자로 되짚으면 둘 중
+   * 하나는 반드시 틀리므로, 고른 것을 그대로 들고 다닌다. 없으면 **모르는 것**이라 라벨을 안 그린다.
+   */
+  priceSplitMode?: 'even' | 'ratio' | null
+  /** `even` 이면 분배 인원, `ratio` 면 비율 합. */
   priceShare?: number | null
-  /** 내 비율. 없으면 1 이라 옛 기록의 금액이 안 움직인다. */
+  /** 내 비율. `even` 은 이 칸을 안 본다. 없으면 1 이라 옛 기록의 금액이 안 움직인다. */
   priceMyShare?: number | null
   /** 경매장 판매 수수료(%). `null` 은 없음 */
   saleFeePercent?: number | null
   /** 파티원에게 보낼 때의 분배 수수료(%). `null` 은 없음 */
   splitFeePercent?: number | null
+}
+
+/**
+ * 이 기록에서 내가 갖는 몫. **방식마다 자기 재료만 쓴다.**
+ *
+ * `even` 은 내 비율 칸을 **안 본다**. 그 칸이 무슨 값이든 기본 분배의 내 몫은 `1/N` 이고, 이렇게
+ * 두어야 한쪽 칸이 더러워져도 다른 방식의 금액이 안 흔들린다.
+ *
+ * **적힌 0 은 0 이다**(사용자 결정 2026-09-23). 슬라이더의 0 은 이 드롭의 돈을 하나도 안 받는다는
+ * 약속이라 그대로 센다. 안 적힌 것(`NULL`)만 1 이라 옛 기록의 금액이 안 움직인다.
+ */
+function myShareOf(drop: DropPriceFields): number {
+  if (drop.priceSplitMode === 'even') return 1
+  return Math.max(0, drop.priceMyShare ?? 1)
 }
 
 /**
@@ -40,11 +61,7 @@ export function dropPayoutMeso(drop: DropPriceFields): number {
   if (drop.priceState !== 'entered' || drop.priceMeso === undefined || drop.priceMeso === null) return 0
   // 분배 인원이 없거나 0이면 1로 본다. 0으로 나누어 Infinity 가 수익에 섞이는 것을 막는다.
   const total = Math.max(1, drop.priceShare ?? 1)
-  /**
-   * **적힌 0 은 0 이다**(사용자 결정 2026-09-23). 슬라이더의 0 은 이 드롭의 돈을 하나도 안 받는다는
-   * 약속이라 그대로 센다. 안 적힌 것(`NULL`)만 1 이라 옛 기록의 금액이 안 움직인다.
-   */
-  const mine = Math.max(0, drop.priceMyShare ?? 1)
+  const mine = myShareOf(drop)
   const saleFee = drop.saleFeePercent ?? null
   const splitFee = drop.splitFeePercent ?? null
   if (saleFee === null && splitFee === null) return Math.floor((drop.priceMeso * mine) / total)
@@ -73,11 +90,17 @@ export function dropPayoutMeso(drop: DropPriceFields): number {
  */
 export function dropSplitLabel(drop: DropPriceFields): string | null {
   if (drop.priceState !== 'entered') return null
+  // 방식을 모르면 안 적는다. 숫자로 되짚으면 비율 `1 : 3` 이 `3인` 으로 선다(그 기록은 인원으로
+  // 안 나눴다). 방식 칸이 붙기 전에 쌓인 기록이 그 자리다.
+  const mode = drop.priceSplitMode
+  if (mode !== 'even' && mode !== 'ratio') return null
+
   const total = Math.max(1, drop.priceShare ?? 1)
+  if (mode === 'even') return total <= 1 ? null : `${total}인`
+
   const mine = Math.max(0, drop.priceMyShare ?? 1)
   if (mine >= total) return null
-  // 1 만 인원으로 적는다. 0 을 1 로 접으면 안 받은 몫이 `10인` 으로 서서 균등으로 나눈 것처럼 읽힌다.
-  return mine === 1 ? `${total}인` : formatSharePercent(mine, total)
+  return formatSharePercent(mine, total)
 }
 
 /** 한 보스 행에 기록된 드롭 전체가 그 행에 더하는 금액. */

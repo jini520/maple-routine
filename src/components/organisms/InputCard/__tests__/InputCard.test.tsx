@@ -209,11 +209,12 @@ describe('InputCard', () => {
    * 카드로 왔다. 부품은 도메인 낱말을 모르고 라벨은 호출부가 준다.
    */
   describe('한 아이템의 한 기록을 받는 모양', () => {
-    const 균등 = { label: '분배 비율', myShare: 1, sharesTotal: 3, maxPartySize: 6 }
-    const 비율 = { label: '분배 비율', myShare: 2, sharesTotal: 3, maxPartySize: 6 }
+    // 어느 쪽으로 열릴지는 **적힌 방식**이 정한다. 숫자로 되짚으면 비율 1:3 이 기본 3인으로 열린다.
+    const 균등 = { label: '분배 비율', mode: 'even' as const, myShare: 1, sharesTotal: 3, maxPartySize: 6 }
+    const 비율 = { label: '분배 비율', mode: 'ratio' as const, myShare: 2, sharesTotal: 3, maxPartySize: 6 }
 
     // 드롭 하나의 값이라 결정석 카드가 없다. 파티 모달과 다른 점은 그것뿐이다.
-    it('내 비율이 1 이면 기본으로 열려 파티 인원 스테퍼가 선다', async () => {
+    it('방식이 기본이면 파티 인원 스테퍼가 선다', async () => {
       const { view } = await 그리기({ share: 균등 })
 
       expect(view.getByText('파티 인원')).toBeTruthy()
@@ -231,7 +232,7 @@ describe('InputCard', () => {
         fireEvent.press(view.getByTestId('input-card-confirm'))
       })
 
-      expect(onConfirm).toHaveBeenCalledWith('100', { myShare: 1, sharesTotal: 4 })
+      expect(onConfirm).toHaveBeenCalledWith('100', { mode: 'even', myShare: 1, sharesTotal: 4 })
     })
 
     /**
@@ -289,7 +290,7 @@ describe('InputCard', () => {
       })
       await 누르기(view, 'input-card-confirm')
 
-      expect(onConfirm).toHaveBeenCalledWith('100', { myShare: 1, sharesTotal: 4 })
+      expect(onConfirm).toHaveBeenCalledWith('100', { mode: 'even', myShare: 1, sharesTotal: 4 })
     })
 
     it('기본에 다녀와도 비율은 제 합을 기억한다', async () => {
@@ -311,7 +312,7 @@ describe('InputCard', () => {
       expect(view.getByTestId('share-field-total-분배 비율')).toHaveTextContent('4')
     })
 
-    it('내 비율이 1 이 아니면 비율로 열린다', async () => {
+    it('방식이 비율이면 비율 고르개로 열린다', async () => {
       const { view } = await 그리기({ share: 비율 })
 
       expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('66.7%')
@@ -336,7 +337,7 @@ describe('InputCard', () => {
       await 치기(view, '3250000000')
       await 누르기(view, 'input-card-confirm')
 
-      expect(onConfirm).toHaveBeenCalledWith('3250000000', { myShare: 3, sharesTotal: 3 })
+      expect(onConfirm).toHaveBeenCalledWith('3250000000', { mode: 'ratio', myShare: 3, sharesTotal: 3 })
     })
 
     // 안 맞추면 내 비율이 합보다 커져 내 몫이 100%를 넘는다.
@@ -419,7 +420,7 @@ describe('InputCard', () => {
       await 치기(view, '3250000000')
       await 누르기(view, 'input-card-prev')
 
-      expect(onPrev).toHaveBeenCalledWith('3250000000', { myShare: 2, sharesTotal: 3 })
+      expect(onPrev).toHaveBeenCalledWith('3250000000', { mode: 'ratio', myShare: 2, sharesTotal: 3 })
     })
 
     // 드롭은 경매장에 팔 때 한 번, 파티원에게 보낼 때 한 번 수수료를 문다.
@@ -513,7 +514,7 @@ describe('InputCard', () => {
         })
         await 누르기(view, 'input-card-confirm')
 
-        expect(onConfirm).toHaveBeenCalledWith('1000000000', { myShare: 2, sharesTotal: 3 }, {
+        expect(onConfirm).toHaveBeenCalledWith('1000000000', { mode: 'ratio', myShare: 2, sharesTotal: 3 }, {
           saleFeePercent: 3,
           saleFeeAuto: true,
           splitFeePercent: 5,

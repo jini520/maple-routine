@@ -56,6 +56,7 @@ function dropRecord(overrides: Partial<BossDropRecord>): BossDropRecord {
     ringLevel: null,
     priceState: null,
     priceMeso: null,
+    priceSplitMode: 'even',
     priceShare: null,
     priceMyShare: null,
     saleFeePercent: null,

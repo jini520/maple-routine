@@ -20,8 +20,13 @@
  */
 
 
-/** 기록 한 건의 분배 비율. 합이 곧 분배 인원이고 균등이면 내 비율이 1 이다. */
+/**
+ * 기록 한 건의 분배. **방식이 두 수의 뜻을 정한다.**
+ *
+ * 비율 `1 : 3` 과 균등 `3인` 은 두 수가 같아 숫자로는 못 가른다. 그래서 고른 방식을 함께 싣는다.
+ */
 export interface DropShare {
+  mode: 'even' | 'ratio'
   myShare: number
   sharesTotal: number
 }
@@ -327,6 +332,7 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
     await writePrice(get, set, entry, {
       priceState: 'entered',
       priceMeso,
+      priceSplitMode: share.mode,
       priceShare: share.sharesTotal,
       priceMyShare: share.myShare,
       ...dropFeeFields(fees),
@@ -337,6 +343,7 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
     await writePrice(get, set, entry, {
       priceState: 'excluded',
       priceMeso: undefined,
+      priceSplitMode: undefined,
       priceShare: undefined,
       priceMyShare: undefined,
       ...dropFeeFields(undefined),
@@ -389,6 +396,7 @@ async function writePrice(
     RecordedDrop,
     | 'priceState'
     | 'priceMeso'
+    | 'priceSplitMode'
     | 'priceShare'
     | 'priceMyShare'
     | 'saleFeePercent'
