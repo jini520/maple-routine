@@ -269,8 +269,8 @@ describe('BossProfitBossRow: 파티원 수', () => {
       />,
     )
 
-    // 이 카드는 줄이 좁아 소수를 뗀다. 보스 관리 화면은 66.7% 그대로다.
-    expect(getByText('67%')).toBeTruthy()
+    // 소수 첫째 자리까지다(사용자 지정). 보스 관리 화면과 같은 수를 말한다.
+    expect(getByText('66.7%')).toBeTruthy()
     expect(queryByText('결정석')).toBeNull()
     expect(queryByText('아이템')).toBeNull()
   })

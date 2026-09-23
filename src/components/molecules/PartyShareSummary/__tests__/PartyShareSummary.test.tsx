@@ -39,8 +39,8 @@ describe('PartyShareSummary', () => {
     expect(queryByText('파티 2인')).toBeNull()
   })
 
-  // 보스 수익 카드는 줄이 좁아 소수를 뗀다(사용자 지정). 보스 관리 화면은 66.7% 그대로다.
-  it('compact 는 비율을 정수로 적는다', async () => {
+  // 두 크기가 같은 수를 말한다. 카드만 반올림하면 같은 비율이 화면마다 다른 수로 보인다(사용자 지정).
+  it('compact 도 소수 첫째 자리까지 적는다', async () => {
     const 작은 = await renderAtom(
       <PartyShareSummary
         label="스우"
@@ -51,8 +51,7 @@ describe('PartyShareSummary', () => {
       />,
     )
 
-    expect(작은.getByText('67%')).toBeTruthy()
-    expect(작은.queryByText('66.7%')).toBeNull()
+    expect(작은.getByText('66.7%')).toBeTruthy()
   })
 
   // 보스 수익 카드는 금액과 한 줄을 나눠 쓴다. 이 줄이 커지면 카드가 통째로 커진다.
@@ -70,11 +69,10 @@ describe('PartyShareSummary', () => {
       />,
     )
 
-    const 크기 = (view: typeof 기본, text: string): number =>
-      flattenStyle(view.getByText(text).props.style).fontSize as number
+    const 크기 = (view: typeof 기본): number =>
+      flattenStyle(view.getByText('66.7%').props.style).fontSize as number
 
-    // 작은 줄은 정수로 적어 값 글자가 갈린다. 크기는 그 값끼리 견준다.
-    expect(크기(작은, '67%')).toBeLessThan(크기(기본, '66.7%'))
+    expect(크기(작은)).toBeLessThan(크기(기본))
   })
 
   it('변경을 누르면 알린다', async () => {

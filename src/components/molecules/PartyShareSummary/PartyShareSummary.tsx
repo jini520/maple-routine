@@ -16,13 +16,13 @@ import { formatShareRatio, type PartyShares } from '../../../lib/boss/party-shar
 import { Badge, Text } from '../../atoms'
 
 /**
- * 크기 두 벌. **`compact` 는 보스 수익 카드**라 배지가 작고 비율에서 소수를 뗀다(사용자 지정).
+ * 크기 두 벌. **`compact` 는 보스 수익 카드**라 배지가 작다. 적는 수는 두 벌이 같다.
  *
  * 그 카드는 금액과 한 줄을 나눠 쓰므로 이 줄이 커지면 카드가 통째로 커진다.
  */
 const SIZES = {
-  default: { badge: 'default', gap: 'gap-2', whole: false },
-  compact: { badge: 'mini', gap: 'gap-[7px]', whole: true },
+  default: { badge: 'default', gap: 'gap-2' },
+  compact: { badge: 'mini', gap: 'gap-[7px]' },
 } as const
 
 export function PartyShareSummary(props: {
@@ -37,7 +37,7 @@ export function PartyShareSummary(props: {
   onPress: () => void
 }): React.JSX.Element {
   const size = SIZES[props.size ?? 'default']
-  const crystalRatio = formatShareRatio(props.crystal, { whole: size.whole })
+  const crystalRatio = formatShareRatio(props.crystal)
 
   return (
     <View

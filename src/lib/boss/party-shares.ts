@@ -87,8 +87,6 @@ export function partySizeForShares(shares: PartyShares, evenPartySize: number): 
 /**
  * 내 몫을 백분율로. **소수 첫째 자리까지**고 딱 떨어지면 소수를 안 적는다(`50%` · `66.7%`).
  *
- * `whole` 을 켜면 반올림한 정수다(`67%`). 보스 수익 카드처럼 줄이 좁은 자리가 쓴다.
- *
  * 나누는 것은 `내 비율 / 비율 합` 이다. `나 : 나머지` 로 적으면 2:1 과 4:2 가 다른 값처럼
  * 보이는데, 둘은 같은 약속이다.
  *
@@ -96,12 +94,7 @@ export function partySizeForShares(shares: PartyShares, evenPartySize: number): 
  *
  * @example formatSharePercent(2, 3) // '66.7%'
  */
-export function formatSharePercent(
-  myShare: number,
-  sharesTotal: number,
-  options: { whole?: boolean } = {},
-): string {
-  if (options.whole === true) return `${Math.round((myShare * 100) / sharesTotal)}%`
+export function formatSharePercent(myShare: number, sharesTotal: number): string {
   const tenths = Math.round((myShare * 1000) / sharesTotal)
   const whole = Math.floor(tenths / 10)
   const rest = tenths % 10
@@ -116,10 +109,10 @@ export function formatSharePercent(
  *
  * @example formatShareRatio({ myShare: 2, sharesTotal: 3, splitFeePercent: null }) // '66.7%'
  */
-export function formatShareRatio(shares: PartyShares, options: { whole?: boolean } = {}): string | null {
+export function formatShareRatio(shares: PartyShares): string | null {
   const { myShare, sharesTotal } = shares
   // 0 은 값이다. 하나도 안 갖는 약속이라 `0%` 로 적어야 하고, 여기서 빼면 인원만 서서 균등처럼
   // 보인다.
   if (myShare === null || sharesTotal === null || myShare < 0 || sharesTotal <= 0) return null
-  return formatSharePercent(myShare, sharesTotal, options)
+  return formatSharePercent(myShare, sharesTotal)
 }
