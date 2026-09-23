@@ -106,14 +106,17 @@ function ItemName(props: { drop: PricedDropView; sizeClass: string }): React.JSX
  * 2x2 아래로는 이 한 줄을 넣을 폭이 없다(158px 안에 아이콘 40 + 금액 78 이 이미 들어가 있다).
  * 억지로 넣으면 말줄임에 먹혀 `2인 분…` 이 되어 설명이 아니라 잡음이 된다.
  *
- * 단독(1인)이면 그리지 않는다. 나눈 적이 없는데 1인 분배 라고 적으면 없는 사건을 말하는 것이다.
+ * 안 나눴으면 그리지 않는다. 나눈 적이 없는데 `1인 분배` 라고 적으면 없는 사건을 말하는 것이다.
+ *
+ * **어떻게 나눴나는 층이 글자로 준다.** 여기서 수를 받아 `N인` 을 적으면 비율로 나눈 기록이
+ * 인원으로 선다.
  */
 function ShareNote(props: { drop: PricedDropView }): React.JSX.Element | null {
-  if (props.drop.shareCount <= 1) return null
+  if (props.drop.splitLabel === null) return null
 
   return (
     <Text fixed testID="top-item-share" numberOfLines={1} className="text-[10.5px] text-text-disabled">
-      {props.drop.shareCount}인 분배
+      {`${props.drop.splitLabel} 분배`}
     </Text>
   )
 }

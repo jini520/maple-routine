@@ -41,7 +41,7 @@ import {
 } from '../../lib/drop/drop-history'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
 import { bossNameOf } from '../../lib/boss/bosses'
-import { dropPayoutMeso, sumDropPayout } from '../../lib/drop/drop-price'
+import { dropPayoutMeso, dropSplitLabel, sumDropPayout } from '../../lib/drop/drop-price'
 import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../../lib/scheduler/reset-clock'
 import { HEADER_PORTRAIT_MAX } from './header-portrait-motion'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
@@ -245,8 +245,14 @@ export interface PricedDropView extends UnpricedDropView {
    * 순위 기준도 이 값이다. 표시와 순위가 갈리면 1위가 2위보다 작은 숫자를 달고 선다.
    */
   payoutMeso: number
-  /** 분배 인원(`priceShare`). `1` 이면 단독이라 화면이 분배 표기를 생략한다. */
-  shareCount: number
+  /**
+   * 어떻게 나눴나를 적은 한 줄(`4인` · `33.3%`). 안 나눴거나 방식을 모르면 `null` 이고 화면이
+   * 그 줄을 생략한다.
+   *
+   * **수가 아니라 글자다.** 수로 내리면 화면이 그것을 인원으로 단정해, 비율로 나눈 기록이
+   * `3인 분배` 로 선다(비율 `1 : 3` 과 균등 `3인` 은 저장된 두 수가 같다).
+   */
+  splitLabel: string | null
 }
 
 export interface TopItemView {
@@ -798,7 +804,7 @@ function buildTopItem(
         // 분배는 여기서 다시 나누지 않는다. `dropPayoutMeso` 가 그 규칙(0 나눗셈 방어 포함)을
         // 이미 갖고 있고, `주간 보스 수익`의 아이템 합(`sumDropPayout`)이 같은 함수를 쓴다.
         payoutMeso: dropPayoutMeso(record),
-        shareCount: Math.max(1, record.priceShare ?? 1),
+        splitLabel: dropSplitLabel(record),
       }),
     )
     .sort((a, b) => b.payoutMeso - a.payoutMeso)

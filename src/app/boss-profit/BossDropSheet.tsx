@@ -340,6 +340,8 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
         applyPrice(target, {
           priceState: 'entered',
           priceMeso: meso,
+          // 방식을 빠뜨리면 아래 두 칸의 뜻이 사라져, 비율 1:3 이 다시 열 때 기본 3인으로 선다.
+          priceSplitMode: 비율.mode,
           priceShare: 비율.sharesTotal,
           priceMyShare: 비율.myShare,
           ...dropFeeFields(fees),
@@ -362,6 +364,8 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       value: mesoTextOf(edit?.meso ?? target.priceMeso ?? 0),
       share: {
         label: '분배 비율',
+        // 열 때의 자리는 **적힌 방식**이 정한다. 숫자로 되짚으면 비율 33.3% 가 기본 3인으로 열린다.
+        mode: edit?.share.mode ?? target.priceSplitMode ?? defaultShare.mode,
         myShare: edit?.share.myShare ?? target.priceMyShare ?? defaultShare.myShare,
         sharesTotal: edit?.share.sharesTotal ?? target.priceShare ?? defaultShare.sharesTotal,
         maxPartySize: getMaxPartySize(props.bossKey, selectedDifficulty),
@@ -381,6 +385,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
           applyPrice(target, {
             priceState: 'excluded',
             priceMeso: undefined,
+            priceSplitMode: undefined,
             priceShare: undefined,
             priceMyShare: undefined,
             ...dropFeeFields(undefined),

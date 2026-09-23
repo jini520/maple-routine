@@ -160,7 +160,7 @@ export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
     quantity: 1,
     category: 'equipment',
     payoutMeso: 12_000_000_000,
-    shareCount: 1,
+    splitLabel: null,
     ...부분,
   }
 }

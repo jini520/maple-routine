@@ -70,6 +70,7 @@ function toHistoryRecord(record: BossDropRecord): DropHistoryRecord {
     // 안 그려 안 터지고, today 의 최고가 아이템·가격 미입력이 이 필드를 처음 읽으면서 드러난다.
     priceState: record.priceState ?? undefined,
     priceMeso: record.priceMeso ?? undefined,
+    priceSplitMode: record.priceSplitMode ?? undefined,
     priceShare: record.priceShare ?? undefined,
     priceMyShare: record.priceMyShare ?? undefined,
     saleFeePercent: record.saleFeePercent ?? undefined,

@@ -751,14 +751,42 @@ describe('최고가 아이템', () => {
       input({
         dropGroups: [
           dropGroup([
-            dropRecord({ itemName: '나눈 것', priceState: 'entered', priceMeso: 900, priceShare: 3 }),
+            dropRecord({
+              itemName: '나눈 것',
+              priceState: 'entered',
+              priceMeso: 900,
+              priceSplitMode: 'even',
+              priceShare: 3,
+            }),
           ]),
         ],
       }),
     )
 
     expect(model.topItem?.top.payoutMeso).toBe(300)
-    expect(model.topItem?.top.shareCount).toBe(3)
+    expect(model.topItem?.top.splitLabel).toBe('3인')
+  })
+
+  // 비율 `1 : 3` 과 균등 `3인` 은 저장된 두 수가 같다. 방식을 안 보면 비율이 인원으로 선다.
+  it('비율로 나눈 기록은 인원이 아니라 내 몫을 적는다', () => {
+    const model = buildTodayViewModel(
+      input({
+        dropGroups: [
+          dropGroup([
+            dropRecord({
+              itemName: '비율로 나눈 것',
+              priceState: 'entered',
+              priceMeso: 900,
+              priceSplitMode: 'ratio',
+              priceShare: 3,
+              priceMyShare: 1,
+            }),
+          ]),
+        ],
+      }),
+    )
+
+    expect(model.topItem?.top.splitLabel).toBe('33.3%')
   })
 
   it('순위도 분배 후 기준이다. 표시와 순위가 갈리면 1위가 더 작은 숫자를 단다', () => {
@@ -788,7 +816,7 @@ describe('최고가 아이템', () => {
     )
 
     expect(model.topItem?.top.payoutMeso).toBe(500)
-    expect(model.topItem?.top.shareCount).toBe(1)
+    expect(model.topItem?.top.splitLabel).toBeNull()
   })
 
   // 값을 모르는 것을 **가장 싼 것** 으로 단정하지 않는다.
