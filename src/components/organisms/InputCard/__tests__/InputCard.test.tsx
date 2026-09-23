@@ -383,6 +383,13 @@ describe('InputCard', () => {
         expect(within(줄).getByTestId('input-card-sale-fee')).toBeTruthy()
       })
 
+      // 판의 반쪽이라 합을 트랙 옆이나 아래에 두면 트랙이 짧아지거나 칸이 한 줄 높아진다.
+      it('비율 카드의 합은 머리 줄에 선다', async () => {
+        const { view } = await 그리기({ share: 비율, fees: 수수료 })
+
+        expect(within(view.getByTestId('share-field-head')).getByLabelText('분배 비율 비율 합 증가')).toBeTruthy()
+      })
+
       // 좁은 자리라 이름과 값이 한 줄을 다투면 세그먼트가 찌부러진다.
       it('수수료 줄은 이름과 값을 위아래로 나눈다', async () => {
         const { view } = await 그리기({ share: 비율, fees: 수수료 })

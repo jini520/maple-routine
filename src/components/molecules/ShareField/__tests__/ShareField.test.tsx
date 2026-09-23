@@ -2,7 +2,7 @@
 //
 // 여기서 특히 중요한 것은 **합을 줄일 때 내 비율이 따라 내려가는가** 다. 안 맞추면 내 비율이
 // 합보다 커져 내 몫이 100%를 넘는다.
-import { fireEvent } from '@testing-library/react-native'
+import { fireEvent, within } from '@testing-library/react-native'
 
 import { renderAtom } from '../../../__tests__/render-atom'
 import { ShareField } from '../ShareField'
@@ -100,6 +100,19 @@ describe('ShareField', () => {
     )
 
     expect(getByTestId('share-field-total-결정석')).toHaveTextContent('3')
+  })
+
+  // 드롭 가격 카드는 판의 반쪽이다. 합을 머리 줄로 올려야 트랙이 아래 한 줄을 다 쓴다(사용자 지정).
+  it('head 는 합을 머리 줄에 두고 트랙이 아래 한 줄을 다 쓴다', async () => {
+    const { getByTestId } = await renderAtom(
+      <ShareField label="분배 비율" value={{ myShare: 2, sharesTotal: 3 }} onChange={jest.fn()} layout="head" />,
+    )
+
+    const 머리 = within(getByTestId('share-field-head'))
+    expect(머리.getByTestId('share-field-ratio-분배 비율')).toBeTruthy()
+    expect(머리.getByLabelText('분배 비율 비율 합 증가')).toBeTruthy()
+    // 트랙 줄에는 합이 없다. 있으면 트랙이 그만큼 짧아진다.
+    expect(within(getByTestId('share-field-body')).queryByLabelText('분배 비율 비율 합 증가')).toBeNull()
   })
 
   it('합이 상한이면 더 못 올린다', async () => {
