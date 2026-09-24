@@ -384,6 +384,20 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    */
   const shown = isText || draft === '' ? draft : mesoValueOf(draft).toLocaleString()
 
+  /**
+   * 숫자 칸의 자리표시자를 **우리가 그린다**.
+   *
+   * 오른쪽 정렬 칸이 비어 있으면 안드로이드가 커서를 `hint` 의 **왼쪽**에 세운다(`|0 메소`).
+   * 치면 0 을 지나쳐 오른쪽으로 자라는데 커서는 왼쪽에 있어, 어디에 들어가는지가 거꾸로 읽힌다
+   * (사용자 지적). 커서는 값의 끝, 곧 `0` 과 단위 사이에 서야 한다(`0| 메소`).
+   *
+   * 그래서 칸에는 `hint` 를 안 주고 같은 글자를 **커서 왼쪽에 덧그린다**. 빈 오른쪽 정렬 칸의
+   * 커서는 칸의 오른쪽 끝에 서므로 그 왼쪽이 곧 값이 설 자리다.
+   *
+   * 글자 칸은 그대로 `hint` 를 쓴다. 왼쪽 정렬이라 커서가 이미 글자 앞에 선다.
+   */
+  const ownHint = !isText && draft === '' ? (props.placeholder ?? '0') : null
+
   function change(next: string): void {
     setDraft(isText ? next : acceptMesoText(draft, next))
   }
@@ -528,6 +542,20 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 {draft === '' ? '' : formatMesoUnits(mesoValueOf(draft))}
               </Text>
             )}
+            <View className="relative flex-1">
+              {ownHint !== null && (
+                // 커서 몫 3 을 비워 둔다. 0 이면 글자가 커서 밑에 깔린다.
+                <View pointerEvents="none" className="absolute inset-0 items-end justify-center pr-[3px]">
+                  <Text
+                    testID="input-card-hint"
+                    numberOfLines={1}
+                    className="font-bold text-text-disabled"
+                    style={[TABULAR_NUMS, { fontSize: 20 }]}
+                  >
+                    {ownHint}
+                  </Text>
+                </View>
+              )}
             <TextInput
               /*
                 **글자 칸만 다시 세운다.** 아톰이 글자 칸을 `defaultValue` 로 심는데(그래야 한글
@@ -549,7 +577,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               value={shown}
               onChangeText={change}
               keyboardType={isText ? undefined : 'number-pad'}
-              placeholder={props.placeholder ?? (isText ? '' : '0')}
+              placeholder={isText ? props.placeholder : undefined}
               /*
                 **자동 초점은 OS 키보드가 받는 칸에만 남는다**(사용자 지정). 그 카드는 열리는
                 순간부터 키보드 위에 서서 자리가 한 번도 안 움직인다. 자동 초점을 빼면 카드가
@@ -577,9 +605,10 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 바닥 `min-h-14`(56)와 같아서 지금 보이는 모양은 안 바뀐다. 글자는 이 36 안에서
                 가운데 선다.
               */
-              className={`h-9 flex-1 text-text ${isText ? 'text-left font-semibold' : 'text-right font-bold'}`}
+              className={`h-9 w-full text-text ${isText ? 'text-left font-semibold' : 'text-right font-bold'}`}
               style={[isText ? null : TABULAR_NUMS, { fontSize: isText ? 16 : 20 }]}
             />
+            </View>
             {props.unit !== undefined && (
               <Text className="shrink-0 text-xs font-semibold text-text-muted">{props.unit}</Text>
             )}

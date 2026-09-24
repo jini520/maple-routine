@@ -129,6 +129,39 @@ describe('판으로 받는가', () => {
   })
 })
 
+describe('빈 숫자 칸의 자리표시자', () => {
+  /**
+   * 오른쪽 정렬 칸이 비어 있으면 안드로이드가 커서를 `hint` 의 **왼쪽**에 세운다(`|0 메소`).
+   * 치면 값은 오른쪽으로 자라는데 커서는 왼쪽에 있어 어디에 들어가는지가 거꾸로 읽힌다.
+   * 그래서 칸에는 `hint` 를 안 주고 우리가 커서 왼쪽에 덧그린다.
+   */
+  it('숫자 칸은 `hint` 를 안 쓰고 카드가 덧그린다', async () => {
+    const { view } = await 그리기()
+
+    expect(view.getByTestId('input-card-value').props.placeholder).toBeUndefined()
+    expect(view.getByTestId('input-card-hint')).toHaveTextContent('0')
+  })
+
+  it('호출부가 준 글자를 그대로 쓴다', async () => {
+    const { view } = await 그리기({ placeholder: '미입력 시 보관' })
+
+    expect(view.getByTestId('input-card-hint')).toHaveTextContent('미입력 시 보관')
+  })
+
+  it('값이 들어오면 사라진다', async () => {
+    const { view } = await 그리기({ value: '1200' })
+
+    expect(view.queryByTestId('input-card-hint')).toBeNull()
+  })
+
+  it('글자 칸은 그대로 `hint` 를 쓴다. 왼쪽 정렬이라 커서가 이미 글자 앞이다', async () => {
+    const { view } = await 그리기({ text: true, placeholder: '아이템 명' })
+
+    expect(view.getByTestId('input-card-value').props.placeholder).toBe('아이템 명')
+    expect(view.queryByTestId('input-card-hint')).toBeNull()
+  })
+})
+
 describe('판으로 친다', () => {
   async function 판이_선_카드(props: Partial<InputCardProps> = {}) {
     const 결과 = await 그리기(props)

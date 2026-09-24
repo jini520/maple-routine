@@ -464,7 +464,10 @@ describe('금액. OS 숫자 키보드다', () => {
     await 아이디로누르기(view, 'income-sheet-unit-price')
     const 칸 = view.getByTestId('input-card-value')
     expect(칸.props.value).toBe('')
-    expect(칸.props.placeholder).toBe('0')
+    // 숫자 칸의 자리표시자는 카드가 직접 그린다. 오른쪽 정렬 칸의 `hint` 는 커서를
+    // 글자 **왼쪽**에 세워 `|0` 이 된다.
+    expect(칸.props.placeholder).toBeUndefined()
+    expect(view.getByTestId('input-card-hint')).toHaveTextContent('0')
   })
 
   /**
@@ -1969,7 +1972,7 @@ describe('조각 가격을 비우면 보관', () => {
     // 계산기는 줄이 누르개라 자리표시자가 줄에 서고, 카드를 열면 카드에도 같은 말이 선다.
     expect(줄글자(view, 'income-sheet-fragment-price')).toBe('미입력 시 보관')
     await 아이디로누르기(view, 'income-sheet-fragment-price')
-    expect(view.getByTestId('input-card-value').props.placeholder).toBe('미입력 시 보관')
+    expect(view.getByTestId('input-card-hint')).toHaveTextContent('미입력 시 보관')
     await 아이디로누르기(view, 'input-card-close')
 
     await 이름으로누르기(view, '획득 메소 직접 입력')
