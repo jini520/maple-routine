@@ -45,8 +45,20 @@ import { buildSheetScopeVariables } from '../../../theme/theme-vars'
 import { nextScrimOpacity } from './scrim-opacity'
 import { useStepDissolve } from './step-dissolve'
 
-/** 시트 최대 높이의 비율. 화면 높이 × 이 값. */
-const MAX_HEIGHT_RATIO = 0.82
+/**
+ * 시트가 위로 갈 수 있는 끝. **상단 안전영역 바로 아래까지**다(사용자 지정 2026-09-24).
+ *
+ * 전에는 화면 높이의 0.82 였다. 비율은 화면이 높을 때는 남는 18% 가 숨돌림이 되지만, 화면이
+ * 낮아지면 **그 18% 가 내용에서 먼저 깎인다.** 360×640dp 에서 0.82 는 525dp 이고 그중 저장 줄과
+ * 머리를 빼면 스크롤에 남는 것이 400dp 안팎이다. 같은 화면에서 안전영역만 피하면 609dp 라
+ * 84dp 가 돌아온다.
+ *
+ * 화면 높이에 비례하지 않는 것이 요점이다. 피해야 하는 것은 **노치와 상태바**이지 화면의 몇
+ * 퍼센트가 아니다.
+ */
+function maxSheetHeight(frameHeight: number, topInset: number): number {
+  return frameHeight - topInset
+}
 /** 시트 최대 너비. 넘으면 중앙 정렬로 남는다. */
 const MAX_WIDTH = 448
 /** 그랩 핸들이 차지하는 높이. 스크롤 내용의 `paddingTop` 이 이 값을 되돌려 준다. */
@@ -303,7 +315,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         애초에 없다. 아래로 끌어 닫는 길은 그대로다.
       */
       overDragResistanceFactor={0}
-      maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO}
+      maxDynamicContentSize={maxSheetHeight(frame.height, insets.top)}
       animationConfigs={move}
       backdropComponent={renderBackdrop}
       accessibilityLabel={props.label}

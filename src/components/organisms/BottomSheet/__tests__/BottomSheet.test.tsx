@@ -9,6 +9,7 @@
 import { useState, type ReactNode } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { act, fireEvent, within } from '@testing-library/react-native'
+import type { Metrics } from 'react-native-safe-area-context'
 
 // `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다. **`mock` 접두 이름만** 예외다.
 const mockPresent = jest.fn()
@@ -55,12 +56,13 @@ beforeEach(() => {
 })
 
 describe('BottomSheet: 가 정한 값을 넘긴다', () => {
-  async function open(): Promise<ReturnType<typeof renderOverlay>> {
-    return renderOverlay(
+  async function open(metrics?: Metrics): Promise<ReturnType<typeof renderOverlay>> {
+    const ui = (
       <BottomSheet onClose={noop} testId="boss-drop-sheet" label="드롭 아이템 기록">
         <Text>시트 내용</Text>
-      </BottomSheet>,
+      </BottomSheet>
     )
+    return metrics === undefined ? renderOverlay(ui) : renderOverlay(ui, metrics)
   }
 
   it('children 과 testId 를 그대로 전달한다. 공개 API 는 웹과 같다', async () => {
@@ -115,14 +117,23 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
 
   // `max-h-[82vh]` 는 **상한**이지 높이가 아니다. 고정 스냅 포인트(라이브러리의 흔한 사용법)로
   // 옮기면 내용이 짧아도 시트가 항상 82%까지 올라온다.
-  it('높이는 내용이 정하고 82%가 상한이다. 고정 스냅 포인트가 아니다', async () => {
+  it('높이는 내용이 정하고 상단 안전영역이 상한이다. 고정 스냅 포인트가 아니다', async () => {
     const { getByTestId } = await open()
     const sheet = getByTestId('sheet')
 
     expect(sheet.props.snapPoints).toBeUndefined()
     expect(sheet.props.enableDynamicSizing).toBe(true)
-    // 테스트 프레임 높이 844 × 0.82
-    expect(sheet.props.maxDynamicContentSize).toBeCloseTo(844 * 0.82)
+    // 테스트 프레임 높이 844 − 상단 인셋 59. 화면의 몇 퍼센트가 아니라 **노치를 피한 만큼**이다.
+    expect(sheet.props.maxDynamicContentSize).toBeCloseTo(844 - 59)
+  })
+
+  it('상한이 상단 인셋을 따라간다. 노치가 두꺼운 기기는 그만큼 낮아진다', async () => {
+    const { getByTestId } = await open({
+      frame: { x: 0, y: 0, width: 390, height: 844 },
+      insets: { top: 24, left: 0, right: 0, bottom: 0 },
+    })
+
+    expect(getByTestId('sheet').props.maxDynamicContentSize).toBeCloseTo(844 - 24)
   })
 
   /**
