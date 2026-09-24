@@ -131,25 +131,54 @@ describe('판으로 받는가', () => {
 
 describe('숫자 칸의 커서', () => {
   /**
-   * 칸이 든 것은 숫자만이고 보이는 것은 콤마가 낀 글자다. 한 자마다 길이가 달라지는데
-   * 네이티브는 제 인덱스를 들고 있어, 가운데를 눌러 치면 친 것이 엉뚱한 자리에 들어간다
-   * (`1,000|,000,000` 에 `34` → `100,0|00,000,034`).
+   * 칸이 든 것은 숫자만이고 보이는 것은 콤마가 낀 글자다. 한 자마다 길이가 달라지므로 커서를
+   * 글자 인덱스로 두면 어긋난다. **숫자 개수로 되짚어** 돌려놓는다.
    */
-  it('언제나 보이는 글자의 끝에 선다', async () => {
+  it('가운데에 쳐도 친 자리에 들어간다', async () => {
     const { view } = await 그리기({ value: '1000000000' })
-
     const 칸 = view.getByTestId('input-card-value')
-    expect(칸.props.value).toBe('1,000,000,000')
-    expect(칸.props.selection).toEqual({ start: 13, end: 13 })
+
+    // `1,000|,000,000` 에 커서를 두고
+    await act(async () => {
+      fireEvent(칸, 'selectionChange', { nativeEvent: { selection: { start: 5, end: 5 } } })
+    })
+    // `34` 를 친다. 칸이 내는 것은 그 자리에 끼워진 날 글자다.
+    await act(async () => {
+      fireEvent.changeText(칸, '1,00034,000,000')
+    })
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('100,034,000,000')
+    // 친 `34` 바로 뒤. 여섯째 숫자 뒤다.
+    expect(view.getByTestId('input-card-value').props.selection).toEqual({ start: 7, end: 7 })
   })
 
-  it('빈 칸에서는 0 에 선다', async () => {
-    const { view } = await 그리기()
+  it('끝에 치면 끝에 선다', async () => {
+    const { view } = await 그리기({ value: '1200' })
+    const 칸 = view.getByTestId('input-card-value')
 
-    expect(view.getByTestId('input-card-value').props.selection).toEqual({ start: 0, end: 0 })
+    await act(async () => {
+      fireEvent(칸, 'selectionChange', { nativeEvent: { selection: { start: 5, end: 5 } } })
+    })
+    await act(async () => {
+      fireEvent.changeText(칸, '1,2003')
+    })
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('12,003')
+    expect(view.getByTestId('input-card-value').props.selection).toEqual({ start: 6, end: 6 })
   })
 
-  it('글자 칸은 안 못박는다. 이름은 가운데를 고칠 수 있어야 한다', async () => {
+  it('칩은 값을 더하는 것이라 커서가 끝으로 간다', async () => {
+    const { view } = await 그리기({ value: '1000', chips: [{ label: '+1억', value: 100_000_000 }] })
+
+    await act(async () => {
+      fireEvent.press(view.getByText('+1억'))
+    })
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('100,001,000')
+    expect(view.getByTestId('input-card-value').props.selection).toEqual({ start: 11, end: 11 })
+  })
+
+  it('글자 칸은 커서를 안 붙든다. 이름은 가운데를 고칠 수 있어야 한다', async () => {
     const { view } = await 그리기({ text: true, value: '칠흑의 보스 반지' })
 
     expect(view.getByTestId('input-card-value').props.selection).toBeUndefined()
@@ -207,6 +236,38 @@ describe('판으로 친다', () => {
     }
 
     expect(view.getByTestId('input-card-value').props.value).toBe('1,234,567')
+  })
+
+  it('판도 커서 자리에 끼운다. 칸과 같은 규칙이다', async () => {
+    const { view } = await 판이_선_카드({ value: '1000000000' })
+
+    // `1,000|,000,000`
+    await act(async () => {
+      fireEvent(view.getByTestId('input-card-value'), 'selectionChange', {
+        nativeEvent: { selection: { start: 5, end: 5 } },
+      })
+    })
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('7'))
+    })
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('10,007,000,000')
+  })
+
+  it('판의 지우개도 커서 앞 한 자리를 지운다', async () => {
+    const { view } = await 판이_선_카드({ value: '1234' })
+
+    // `1,2|34`
+    await act(async () => {
+      fireEvent(view.getByTestId('input-card-value'), 'selectionChange', {
+        nativeEvent: { selection: { start: 3, end: 3 } },
+      })
+    })
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('한 자리 지우기'))
+    })
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('134')
   })
 
   it('지우개는 한 자리만 지운다', async () => {

@@ -47,6 +47,7 @@ import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { Text, TextInput, XIcon } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { MAX_MESO, acceptMesoText, mesoTextOf, mesoValueOf } from '../MesoPad/meso-pad'
+import { caretAfterDigits, digitsBefore } from '../MesoPad/meso-caret'
 import { ShareField } from '../../molecules/ShareField/ShareField'
 import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
 import { Segment } from '../../molecules/Segment/Segment'
@@ -398,12 +399,48 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    */
   const ownHint = !isText && draft === '' ? (props.placeholder ?? '0') : null
 
+  /**
+   * 숫자 칸의 커서. **보이는 글자 기준**이다.
+   *
+   * 칸이 든 것과 보이는 것이 달라(숫자만 · 콤마가 낀 글자) 다시 그릴 때마다 네이티브가 든
+   * 인덱스가 어긋난다. 그래서 우리가 들고, 다시 그린 뒤 **숫자 개수로 되짚어** 돌려놓는다.
+   */
+  const [caret, setCaret] = useState<{ start: number; end: number } | null>(null)
+
+  /** 커서 앞에 숫자가 몇 개인가. 값을 넣고 지우는 자리가 이 수로 정해진다. */
+  const digitCaret = caret === null ? mesoTextOf(mesoValueOf(draft)).length : digitsBefore(shown, caret.start)
+
+  /** 다시 그린 글자에서 그 개수째 숫자 뒤로 커서를 돌려놓는다. */
+  function settleCaret(nextDraft: string, keepDigits: number): void {
+    const nextShown = nextDraft === '' ? '' : mesoValueOf(nextDraft).toLocaleString()
+    const at = caretAfterDigits(nextShown, keepDigits)
+    setCaret({ start: at, end: at })
+  }
+
   function change(next: string): void {
-    setDraft(isText ? next : acceptMesoText(draft, next))
+    if (isText) {
+      setDraft(next)
+      return
+    }
+
+    /*
+      친 것이 어디에 들어갔나. 한 번의 타건은 **커서 자리에서 일어난 한 번의 끼움이나 지움**
+      이므로, 길이 차이로 새 글자 안의 커서를 되짚을 수 있다.
+    */
+    const 앞커서 = caret?.start ?? shown.length
+    const 새커서 = Math.max(0, Math.min(next.length, 앞커서 + (next.length - shown.length)))
+    const 남길숫자 = digitsBefore(next, 새커서)
+
+    const accepted = acceptMesoText(draft, next)
+    setDraft(accepted)
+    settleCaret(accepted, 남길숫자)
   }
 
   function add(step: number): void {
-    setDraft(mesoTextOf(Math.min(MAX_MESO, mesoValueOf(draft) + step)))
+    // 칩은 자리에 끼우는 것이 아니라 **값을 더하는** 것이라 커서가 끝으로 간다.
+    const next = mesoTextOf(Math.min(MAX_MESO, mesoValueOf(draft) + step))
+    setDraft(next)
+    settleCaret(next, mesoTextOf(mesoValueOf(next)).length)
   }
 
   /**
@@ -589,7 +626,12 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
 
                 대가는 가운데를 눌러 고칠 수 없다는 것이다. 지우고 다시 친다.
               */
-              selection={isText ? undefined : { start: shown.length, end: shown.length }}
+              selection={isText ? undefined : (caret ?? undefined)}
+              onSelectionChange={(event) => {
+                // 손으로 옮긴 커서. 다음 타건이 이 자리를 기준으로 끼운다.
+                if (isText) return
+                setCaret(event.nativeEvent.selection)
+              }}
               onChangeText={change}
               keyboardType={isText ? undefined : 'number-pad'}
               placeholder={isText ? props.placeholder : undefined}
@@ -777,8 +819,23 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               // 값 칸과의 사이는 칩 줄의 `mt-2` 와 같은 8 이다. 판이 그 자리에서 시작한다.
               <View testID="input-card-pad" className="absolute inset-x-0 top-2">
                 <NumberPad
-                  onDigit={(digit) => change(`${draft}${digit}`)}
-                  onBackspace={() => setDraft(draft.slice(0, -1))}
+                  /*
+                    판도 **커서 자리에** 넣고 뺀다. 칸을 눌러 가운데로 옮긴 뒤 판을 누르면 그
+                    자리에 들어가야 한다. 끝에만 붙이면 칸과 판이 다른 규칙을 갖게 된다.
+                  */
+                  onDigit={(digit) => {
+                    const 앞 = draft.slice(0, digitCaret)
+                    const 뒤 = draft.slice(digitCaret)
+                    const accepted = acceptMesoText(draft, `${앞}${digit}${뒤}`)
+                    setDraft(accepted)
+                    settleCaret(accepted, digitCaret + 1)
+                  }}
+                  onBackspace={() => {
+                    if (digitCaret === 0) return
+                    const next = `${draft.slice(0, digitCaret - 1)}${draft.slice(digitCaret)}`
+                    setDraft(next)
+                    settleCaret(next, digitCaret - 1)
+                  }}
                   onConfirm={() => setPadOpen(false)}
                 />
               </View>
