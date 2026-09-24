@@ -9,7 +9,7 @@ import {
   resolveNumberPadUse,
 } from '../number-pad-metrics'
 
-/** 실측값. 어느 기기에서 어떻게 쟀는지는 `docs/adr/ADR-315.md` 맥락 절에 있다. */
+/** 실측값. 갤럭시 Z Flip3 와 iOS 시뮬레이터에서 인셋을 덤프해 쟀다. */
 const 삼성_키보드 = 372
 const iOS_글자판 = 335
 
