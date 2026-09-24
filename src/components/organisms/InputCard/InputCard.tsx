@@ -575,6 +575,21 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               testID="input-card-value"
               aria-label={props.label}
               value={shown}
+              /*
+                **숫자 칸의 커서는 언제나 끝이다.**
+
+                칸이 든 것은 숫자만(`1000000000`)이고 보이는 것은 콤마가 낀 글자
+                (`1,000,000,000`)다. 한 자를 칠 때마다 콤마 자리가 바뀌어 글자 길이가 달라지는데,
+                네이티브는 제 커서 **인덱스**를 들고 있어 그 인덱스가 다른 곳을 가리키게 된다.
+                가운데를 눌러 치면 친 것이 엉뚱한 자리에 들어간다(사용자 지적:
+                `1,000|,000,000` 에 `34` 를 치면 `100,0|00,000,034`).
+
+                값은 **끝에서만 자란다.** 빠른 칩도 자체 판도 그 규칙이고, 지우는 것도 끝에서
+                한 자리씩이다. 커서를 끝에 못박으면 보이는 것과 드는 것이 어긋날 자리가 없어진다.
+
+                대가는 가운데를 눌러 고칠 수 없다는 것이다. 지우고 다시 친다.
+              */
+              selection={isText ? undefined : { start: shown.length, end: shown.length }}
               onChangeText={change}
               keyboardType={isText ? undefined : 'number-pad'}
               placeholder={isText ? props.placeholder : undefined}

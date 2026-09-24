@@ -129,6 +129,33 @@ describe('판으로 받는가', () => {
   })
 })
 
+describe('숫자 칸의 커서', () => {
+  /**
+   * 칸이 든 것은 숫자만이고 보이는 것은 콤마가 낀 글자다. 한 자마다 길이가 달라지는데
+   * 네이티브는 제 인덱스를 들고 있어, 가운데를 눌러 치면 친 것이 엉뚱한 자리에 들어간다
+   * (`1,000|,000,000` 에 `34` → `100,0|00,000,034`).
+   */
+  it('언제나 보이는 글자의 끝에 선다', async () => {
+    const { view } = await 그리기({ value: '1000000000' })
+
+    const 칸 = view.getByTestId('input-card-value')
+    expect(칸.props.value).toBe('1,000,000,000')
+    expect(칸.props.selection).toEqual({ start: 13, end: 13 })
+  })
+
+  it('빈 칸에서는 0 에 선다', async () => {
+    const { view } = await 그리기()
+
+    expect(view.getByTestId('input-card-value').props.selection).toEqual({ start: 0, end: 0 })
+  })
+
+  it('글자 칸은 안 못박는다. 이름은 가운데를 고칠 수 있어야 한다', async () => {
+    const { view } = await 그리기({ text: true, value: '칠흑의 보스 반지' })
+
+    expect(view.getByTestId('input-card-value').props.selection).toBeUndefined()
+  })
+})
+
 describe('빈 숫자 칸의 자리표시자', () => {
   /**
    * 오른쪽 정렬 칸이 비어 있으면 안드로이드가 커서를 `hint` 의 **왼쪽**에 세운다(`|0 메소`).
