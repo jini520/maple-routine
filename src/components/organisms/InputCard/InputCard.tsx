@@ -48,6 +48,7 @@ import { Text, TextInput, XIcon } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { MAX_MESO, acceptMesoText, mesoTextOf, mesoValueOf } from '../MesoPad/meso-pad'
 import { caretAfterDigits, digitsBefore } from '../MesoPad/meso-caret'
+import { useKeyboardShown } from '../../../hooks/useKeyboardShown'
 import { ShareField } from '../../molecules/ShareField/ShareField'
 import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
 import { Segment } from '../../molecules/Segment/Segment'
@@ -348,6 +349,17 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
 
   const padVisible = usesPadPath && padOpen
 
+  const keyboardShown = useKeyboardShown()
+
+  /**
+   * 지금 칠 수 있나. **커서는 이때만 보인다**(사용자 지정 2026-09-25).
+   *
+   * 칸은 초점을 쥔 채로 키보드만 내려가는 자리가 있다 - 자체 판은 바깥을 누르면 내려가고, OS
+   * 키보드는 스크림 탭이 `Keyboard.dismiss()` 를 부른다. 그때 커서만 남아 깜빡이면 칠 수 있는
+   * 것처럼 보인다.
+   */
+  const canType = usesPadPath ? padOpen : keyboardShown
+
   /**
    * 판 바깥을 누르면 내려간다. **카드는 안 닫힌다.**
    *
@@ -626,6 +638,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
 
                 대가는 가운데를 눌러 고칠 수 없다는 것이다. 지우고 다시 친다.
               */
+              caretHidden={!canType}
               selection={isText ? undefined : (caret ?? undefined)}
               onSelectionChange={(event) => {
                 // 손으로 옮긴 커서. 다음 타건이 이 자리를 기준으로 끼운다.

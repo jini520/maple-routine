@@ -6,9 +6,29 @@
  * 흉내 내지 않고도 그 경로를 돌릴 수 있다.
  */
 import { act, fireEvent } from '@testing-library/react-native'
+import { Keyboard, Platform, type KeyboardEvent } from 'react-native'
 
 import { renderOverlay } from '../../../__tests__/render-atom'
 import { InputCard, type InputCardProps } from '../InputCard'
+
+/**
+ * OS 키보드를 진짜로 올리고 내린다. 카드가 커서를 보일지 정하는 재료다.
+ *
+ * `Keyboard.addListener` 를 목으로 가로채는 대신 내부 `_emitter` 를 거친다. 목은 카드가 **어느
+ * 이벤트 이름을 구독했는지**를 안 보므로, 플랫폼별 이름(`will`/`did`)이 어긋나도 초록이 된다.
+ */
+function 키보드(up: boolean): void {
+  const 이름 = Platform.OS === 'ios' ? (up ? 'keyboardWillShow' : 'keyboardWillHide') : up ? 'keyboardDidShow' : 'keyboardDidHide'
+  const emitter = (Keyboard as unknown as { _emitter?: { emit?: unknown } })._emitter
+  if (typeof emitter?.emit !== 'function') {
+    throw new Error('Keyboard._emitter.emit 이 없습니다. RN 내부 구조가 바뀌었습니다.')
+  }
+  ;(emitter as { emit(name: string, event: KeyboardEvent): void }).emit(이름, {
+    duration: 0,
+    easing: 'keyboard',
+    endCoordinates: { screenX: 0, screenY: 0, width: 0, height: 0 },
+  } as unknown as KeyboardEvent)
+}
 
 /** 어떤 창에서도 OS 키보드로는 안 들어가는 높이. */
 const 안_들어가는_카드 = 2000
@@ -62,7 +82,7 @@ describe('판으로 받는가', () => {
     expect(view.getByTestId('input-card-pad')).toBeTruthy()
   })
 
-  it('판이 서면 OS 키보드를 안 띄운다. 커서는 살아 있어야 해서 초점은 그대로다', async () => {
+  it('판이 서면 OS 키보드를 안 띄운다. 물리 키보드 타건이 살아야 해서 초점은 그대로다', async () => {
     const { view } = await 그리기()
 
     await 재기(view, 안_들어가는_카드)
@@ -321,5 +341,69 @@ describe('판으로 친다', () => {
     })
 
     expect(onConfirm).toHaveBeenCalledWith('500')
+  })
+})
+
+describe('커서는 칠 수 있을 때만 보인다', () => {
+  /**
+   * 칸은 초점을 쥔 채로 키보드만 내려가는 자리가 있다. 판은 바깥 탭에 내려가고 OS 키보드는
+   * 스크림 탭이 `Keyboard.dismiss()` 를 부른다. 그때 커서만 남아 깜빡이면 칠 수 있는 것처럼
+   * 보여서 누르는데 아무 일도 안 난다.
+   */
+  it('판이 서기 전에는 커서를 감춘다', async () => {
+    const { view } = await 그리기()
+
+    await 재기(view, 안_들어가는_카드)
+
+    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(true)
+  })
+
+  it('판이 서면 커서가 보인다', async () => {
+    const { view } = await 그리기()
+
+    await 재기(view, 안_들어가는_카드)
+    await 값칸누르기(view)
+
+    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(false)
+  })
+
+  it('판을 내리면 커서도 사라진다', async () => {
+    const { view } = await 그리기()
+
+    await 재기(view, 안_들어가는_카드)
+    await 값칸누르기(view)
+    await act(async () => {
+      fireEvent.press(view.getByTestId('input-card-scrim'))
+    })
+
+    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(true)
+  })
+
+  it('OS 키보드 쪽은 키보드가 떠 있는 동안만 커서를 보인다', async () => {
+    const { view } = await 그리기()
+
+    await 재기(view, 들어가는_카드)
+    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(true)
+
+    await act(async () => {
+      키보드(true)
+    })
+    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(false)
+
+    await act(async () => {
+      키보드(false)
+    })
+    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(true)
+  })
+
+  it('글자 칸도 키보드를 따라간다. 판정을 기다릴 것이 없다', async () => {
+    const { view } = await 그리기({ text: true })
+
+    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(true)
+
+    await act(async () => {
+      키보드(true)
+    })
+    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(false)
   })
 })
