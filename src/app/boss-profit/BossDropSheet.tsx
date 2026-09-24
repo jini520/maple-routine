@@ -425,8 +425,51 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     }
   }
 
+  const 드롭머리 = (
+    <View>
+    <View className="flex-row items-center gap-2 pb-1 pt-1">
+      <Text className="text-lg font-bold text-text">{bossNameOf(props.bossKey, props.bossKey)}</Text>
+      <EffectToggle on={effectEnabled} onToggle={() => void setEffectEnabled(!effectEnabled)} />
+    </View>
+    <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1.5 pb-3">
+      <Text className="text-xs text-text-muted">획득한 아이템을 선택하세요</Text>
+      {props.isComplete ? (
+        // 완료: 완료된 난이도만 표시(선택 불가). 미완료 토글과 동일하게 오른쪽 끝 정렬.
+        <View className="ml-auto">
+          <Badge variant={props.difficulty}>
+            {DIFFICULTY_NAME[props.difficulty]}
+          </Badge>
+        </View>
+      ) : (
+        // 미완료: 드롭 테이블 난이도를 선택 버튼으로 나열(오른쪽 끝 정렬), 선택 안 된 것은 흐림 처리
+        <View className="ml-auto flex-row flex-wrap items-center gap-1.5">
+          {difficultyOptions.map((difficulty) => {
+            const active = difficulty === selectedDifficulty
+            return (
+              <Pressable
+                key={difficulty}
+                role="button"
+                aria-label={DIFFICULTY_NAME[difficulty]}
+                aria-selected={active}
+                onPress={() => selectDifficulty(difficulty)}
+                className={active ? '' : 'opacity-40'}
+              >
+                <Badge variant={difficulty}>
+                  {DIFFICULTY_NAME[difficulty]}
+                </Badge>
+              </Pressable>
+            )
+          })}
+        </View>
+      )}
+    </View>
+    </View>
+  )
+
   const 드롭저장줄 = (
-    <View className="border-t border-border -mx-4 px-4 pt-3">
+    // 구분선이 바닥 줄의 **맨 윗변**에 선다. `-mt-3` 이 슬롯의 위 여백을 되돌려, 선 위에
+    // 안 구르는 띠가 남지 않게 한다. 좌우도 같은 이유로 되돌려 선을 시트 끝까지 긋는다.
+    <View className="-mx-4 -mt-3 border-t border-border px-4 pt-3">
               {/* 기록 직후 그 아이템 하나에 대해 값을 매길지 묻는다. 흐름은 기록 → 확인 →
                   (입력 →) 복귀 이고 어느 갈래든 타일 그리드로 돌아온다. 차단하지 않는다.
                   일반 아이템은 확인창 없이 탭 즉시 기록된다. 기록은 이미 끝났고 이 줄은 그 옆에
@@ -490,46 +533,15 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
           자기 확인 버튼을 들고 있어 줄을 안 세운다.
         */
         footer={activeBox === null ? 드롭저장줄 : undefined}
+        /*
+          보스 이름 · 드롭 연출 토글 · 「획득한 아이템을 선택하세요」 · 난이도 배지까지가 머리다.
+          고르는 동안 **무엇의 무슨 난이도를 고르고 있나**가 안 사라져야 한다. 상자 드릴다운은
+          자기 제목을 들고 있어 머리를 안 세운다.
+        */
+        header={activeBox === null ? 드롭머리 : undefined}
       >
         {activeBox === null ? (
           <View>
-            <View className="flex-row items-center gap-2 px-4 pb-1 pt-1">
-              <Text className="text-lg font-bold text-text">{bossNameOf(props.bossKey, props.bossKey)}</Text>
-              <EffectToggle on={effectEnabled} onToggle={() => void setEffectEnabled(!effectEnabled)} />
-            </View>
-            <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1.5 px-4 pb-3">
-              <Text className="text-xs text-text-muted">획득한 아이템을 선택하세요</Text>
-              {props.isComplete ? (
-                // 완료: 완료된 난이도만 표시(선택 불가). 미완료 토글과 동일하게 오른쪽 끝 정렬.
-                <View className="ml-auto">
-                  <Badge variant={props.difficulty}>
-                    {DIFFICULTY_NAME[props.difficulty]}
-                  </Badge>
-                </View>
-              ) : (
-                // 미완료: 드롭 테이블 난이도를 선택 버튼으로 나열(오른쪽 끝 정렬), 선택 안 된 것은 흐림 처리
-                <View className="ml-auto flex-row flex-wrap items-center gap-1.5">
-                  {difficultyOptions.map((difficulty) => {
-                    const active = difficulty === selectedDifficulty
-                    return (
-                      <Pressable
-                        key={difficulty}
-                        role="button"
-                        aria-label={DIFFICULTY_NAME[difficulty]}
-                        aria-selected={active}
-                        onPress={() => selectDifficulty(difficulty)}
-                        className={active ? '' : 'opacity-40'}
-                      >
-                        <Badge variant={difficulty}>
-                          {DIFFICULTY_NAME[difficulty]}
-                        </Badge>
-                      </Pressable>
-                    )
-                  })}
-                </View>
-              )}
-            </View>
-
             {isEmpty ? (
               <View className="px-4 pb-4">
                 <EmptyState

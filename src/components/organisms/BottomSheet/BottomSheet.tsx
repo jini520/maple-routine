@@ -42,6 +42,7 @@ import { BlurView } from 'expo-blur'
 import { useBlurTint, useThemeAppearance } from '../../../theme/context'
 import { buildSheetScopeVariables } from '../../../theme/theme-vars'
 
+import { LinearGradient } from '../../../lib/nativewind-interop'
 import { nextScrimOpacity } from './scrim-opacity'
 import { useStepDissolve } from './step-dissolve'
 
@@ -81,6 +82,24 @@ const MOVE_MS = 380
 const HEADER_LAYER = 1
 /** 바닥 줄 층. 머리보다 위다 - 짧은 시트에서 둘이 만나면 바닥 줄이 이긴다. */
 const FOOTER_LAYER = 2
+
+/**
+ * 구르는 자리가 머리 · 바닥 줄과 만나는 곳의 페이드 길이.
+ *
+ * 스크롤 내용이 고정된 줄 밑으로 **선명한 채로 사라지면** 잘린 것처럼 보인다. 옅어지며 들어가면
+ * 그 밑에 더 있다는 것이 읽힌다. 16 은 한 줄 높이보다 작아서 내용을 가리지 않으면서도 경계가
+ * 뚜렷하지 않을 만큼이다.
+ *
+ * 화면 셸(`ScreenScroll`)은 같은 일을 **마스크**로 한다 - 거기는 뒤에 벽지가 있어 덮으면 띠가
+ * 남는다. 시트는 바탕이 불투명하므로 같은 색으로 덮는 것이 결과가 같고, 마스킹이 시트의 동적
+ * 높이 계산을 건드리지 않는다.
+ */
+const FADE_PX = 16
+
+/** 같은 색의 알파 0. 시트 바탕이 8자리로 올 수도 있어 앞 7자리만 쓴다. */
+function fadedOut(color: string): string {
+  return `${color.slice(0, 7)}00`
+}
 const HANDLE_LAYER = 3
 /** 갈아 드는 흐림. 머리도 함께 흐려져야 하므로 둘보다 위다. */
 const VEIL_LAYER = 4
@@ -424,6 +443,58 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         <View style={vars(sheetScope)}>{props.children}</View>
 
       </BottomSheetScrollView>
+
+      {/*
+        구르는 자리의 위아래 끝. 고정된 줄 밑으로 내용이 **옅어지며** 들어간다. 선명한 채로
+        사라지면 잘린 것으로 읽힌다. 터치는 안 먹는다(`pointerEvents="none"`).
+      */}
+      <View
+        testID="bottom-sheet-fade-top"
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top:
+            props.header === undefined
+              ? HANDLE_HEIGHT + 8
+              : headerHeight > 0
+                ? headerHeight
+                : HEADER_GUESS,
+          height: FADE_PX,
+        }}
+      >
+        <LinearGradient
+          colors={[sheetSurface, fadedOut(sheetSurface)]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ flex: 1 }}
+        />
+      </View>
+
+      <View
+        testID="bottom-sheet-fade-bottom"
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom:
+            props.footer === undefined
+              ? 0
+              : footerHeight > 0
+                ? footerHeight
+                : FOOTER_GUESS,
+          height: FADE_PX,
+        }}
+      >
+        <LinearGradient
+          colors={[fadedOut(sheetSurface), sheetSurface]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ flex: 1 }}
+        />
+      </View>
 
       {props.footer !== undefined && (
         /*
