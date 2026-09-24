@@ -36,6 +36,7 @@ import Clock from 'lucide-react-native/icons/clock'
 import CloudDownload from 'lucide-react-native/icons/cloud-download'
 import Crosshair from 'lucide-react-native/icons/crosshair'
 import Crown from 'lucide-react-native/icons/crown'
+import Delete from 'lucide-react-native/icons/delete'
 import ExternalLink from 'lucide-react-native/icons/external-link'
 import Eye from 'lucide-react-native/icons/eye'
 import EyeOff from 'lucide-react-native/icons/eye-off'
@@ -102,6 +103,8 @@ export const CalendarCheckIcon = withIconInterop(CalendarCheck)
 export const CastleIcon = withIconInterop(Castle)
 /** MVP 등급을 묻는 모달의 배지. `MvpGradeModal`. */
 export const CrownIcon = withIconInterop(Crown)
+/** 숫자 판의 한 자리 지우개. `NumberPad`. lucide 의 `delete` 는 백스페이스 키 모양이다. */
+export const DeleteIcon = withIconInterop(Delete)
 /** 선택 표식. `CacheClearConfirm` 체크박스 · `ThemeSelector` 선택 타일. */
 export const CheckIcon = withIconInterop(Check)
 /** 성공 토스트. `Toast`(success). lucide 실물 이름은 `circle-check-big` 다. */

@@ -28,7 +28,17 @@
  * />
  */
 import { useState } from 'react'
-import { Image, Keyboard, Pressable, View, type StyleProp, type ViewStyle } from 'react-native'
+import {
+  Image,
+  Keyboard,
+  Pressable,
+  View,
+  useWindowDimensions,
+  type LayoutChangeEvent,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, { type AnimatedStyle } from 'react-native-reanimated'
 
 import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
@@ -43,6 +53,8 @@ import { Segment } from '../../molecules/Segment/Segment'
 import { Badge } from '../../atoms/Badge/Badge'
 import { DEFAULT_MAX_PARTY_SIZE } from '../../../lib/boss/boss-crystal-prices'
 import { FeeRow } from '../FeeRow/FeeRow'
+import { NumberPad } from '../../molecules/NumberPad/NumberPad'
+import { defaultKeyboardPx, resolveNumberPadUse } from '../../../lib/number-pad-metrics'
 import type { MvpGradeKey } from '../../../lib/mvp/grades'
 
 /**
@@ -181,7 +193,13 @@ export interface InputCardProps {
   share?: ShareSpec
   /** 비율 아래 판매 · 분배 수수료 줄. 넘기면 확인이 셋째 인자로 수수료를 준다 */
   fees?: FeesSpec
-  /** 확인 버튼의 글자. 기본은 `확인`. 값을 곧 저장하는 자리에서는 `저장` 이다. */
+  /**
+   * 확인 버튼의 글자. 기본은 `입력`.
+   *
+   * **판의 확인 키와 다른 말이어야 한다.** 판의 `확인` 은 친 숫자를 칸에 넣고 판을 내리는
+   * 일이고, 이 버튼은 그 값을 기록에 넣고 카드를 닫는 일이다. 둘 다 `확인` 이면 판이 떠
+   * 있는 동안 같은 말이 두 자리에 서서 무엇이 일어날지가 안 읽힌다.
+   */
   confirmLabel?: string
   /**
    * **칸이 비었을 때**의 확인 글자. 안 주면 `confirmLabel` 을 그대로 쓴다.
@@ -284,6 +302,53 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   const splits = total > mine
 
   const isText = props.text === true
+
+  const { height: windowHeightPx } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
+
+  /**
+   * OS 키보드 대신 앱이 그린 판으로 받는가. `null` 은 아직 카드를 못 잰 것이다.
+   *
+   * **카드를 열 때 한 번 정하고, 정해진 뒤에는 판 쪽으로만 넘어간다.** 치는 중에 입력 방식이
+   * 오락가락하면 손이 가던 자리가 사라진다. 창이 작아지는 쪽(접기 · 분할)으로 바뀌면 다시
+   * 판정되고, 커지는 쪽으로는 안 돌아간다.
+   */
+  const [usesPad, setUsesPad] = useState<boolean | null>(null)
+
+  /** 판이 지금 떠 있나. 판 바깥을 누르면 내려가고 값 칸을 누르면 올라온다. */
+  const [padOpen, setPadOpen] = useState(true)
+
+  function measure(event: LayoutChangeEvent): void {
+    const 잰_높이 = event.nativeEvent.layout.height
+    const 판정 = resolveNumberPadUse({
+      windowHeightPx,
+      topInsetPx: insets.top,
+      keyboardHeightPx: defaultKeyboardPx(),
+      cardHeightPx: 잰_높이,
+    })
+    setUsesPad((prev) => prev === true || 판정)
+  }
+
+  /** 글자 칸은 IME 가 조합을 해야 해서 언제나 OS 키보드다. 판은 숫자 칸만 받는다. */
+  const padVisible = !isText && usesPad === true && padOpen
+
+  /**
+   * 판 바깥을 누르면 내려간다. **카드는 안 닫힌다.**
+   *
+   * OS 키보드를 쓰던 시절의 규칙을 자체 판이 그대로 물려받는다. 닫는 것은 `✕` 와 안드로이드
+   * 뒤로가기뿐이고, 바깥 탭으로 치던 값이 날아가지 않는다.
+   */
+  function dismissInput(): void {
+    if (padVisible) {
+      setPadOpen(false)
+      return
+    }
+    Keyboard.dismiss()
+  }
+
+  /** 판이 받기로 한 칸에서는 OS 키보드를 안 띄운다. 커서와 물리 키보드 타건은 살아 있다. */
+  const showsSystemKeyboard = isText || usesPad !== true
+
   const chips = isText ? [] : (props.chips ?? [])
   const iconSource = iconSourceOf(props.icon)
 
@@ -360,7 +425,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
       */}
       <Pressable
         testID="input-card-scrim"
-        onPress={Keyboard.dismiss}
+        onPress={dismissInput}
         className="absolute inset-0 bg-scrim"
       />
 
@@ -380,7 +445,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
         */}
         <Pressable
           testID="input-card-panel"
-          onPress={Keyboard.dismiss}
+          onLayout={measure}
+          onPress={dismissInput}
           className="mx-3 mb-3 rounded-2xl border border-border-strong bg-surface p-4"
         >
           <View className="flex-row items-center gap-2.5">
@@ -447,6 +513,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               keyboardType={isText ? undefined : 'number-pad'}
               placeholder={props.placeholder ?? (isText ? '' : '0')}
               autoFocus
+              showSoftInputOnFocus={showsSystemKeyboard}
+              onPressIn={() => setPadOpen(true)}
               /*
                 **글자와 숫자의 크기가 다르다.** 숫자는 자릿수를 세는 값이라 크게 두고, 글자는
                 한 줄에 이름이 다 들어가야 해서 한 단계 작다. 둘을 같은 크기로 두면 글자 칸에서
@@ -471,6 +539,14 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             )}
           </View>
 
+          {/*
+            값 칸 아래 전부. **판이 이 위에 덮인다.**
+
+            상자를 따로 두는 것은 판이 절대 배치로 이 자리 맨 위에 앉기 때문이다. 흐름에 끼워
+            넣으면 아래가 밀려 카드가 104dp 만큼 길어지고, 길어지면 애초에 판을 띄운 이유
+            (화면이 낮다)가 사라진다. 덮인 줄은 판 바깥을 한 번 눌러 돌아온다.
+          */}
+          <View className="relative">
           {chips.length > 0 && (
             <View className="mt-2 flex-row flex-wrap justify-end gap-1.5">
               {chips.map((chip) => (
@@ -602,9 +678,21 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               className="h-11 flex-[2] items-center justify-center rounded-xl bg-primary"
             >
               <Text numberOfLines={1} className="text-sm font-bold text-on-primary" style={TABULAR_NUMS}>
-                {draft === '' ? (props.confirmEmptyLabel ?? props.confirmLabel ?? '확인') : (props.confirmLabel ?? '확인')}
+                {draft === '' ? (props.confirmEmptyLabel ?? props.confirmLabel ?? '입력') : (props.confirmLabel ?? '입력')}
               </Text>
             </Pressable>
+          </View>
+
+            {padVisible && (
+              // 값 칸과의 사이는 칩 줄의 `mt-2` 와 같은 8 이다. 판이 그 자리에서 시작한다.
+              <View testID="input-card-pad" className="absolute inset-x-0 top-2">
+                <NumberPad
+                  onDigit={(digit) => change(`${draft}${digit}`)}
+                  onBackspace={() => setDraft(draft.slice(0, -1))}
+                  onConfirm={() => setPadOpen(false)}
+                />
+              </View>
+            )}
           </View>
         </Pressable>
       </Animated.View>
