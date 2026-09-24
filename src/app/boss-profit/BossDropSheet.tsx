@@ -425,9 +425,72 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     }
   }
 
+  const 드롭저장줄 = (
+    <View className="border-t border-border -mx-4 px-4 pt-3">
+              {/* 기록 직후 그 아이템 하나에 대해 값을 매길지 묻는다. 흐름은 기록 → 확인 →
+                  (입력 →) 복귀 이고 어느 갈래든 타일 그리드로 돌아온다. 차단하지 않는다.
+                  일반 아이템은 확인창 없이 탭 즉시 기록된다. 기록은 이미 끝났고 이 줄은 그 옆에
+                  설 뿐이라 무시하고 다음 아이템을 계속 골라도 된다. */}
+              {prompt !== null && props.pricing !== undefined && (
+                // **평평하다**(사용자 지정). 시트 바닥에 붙어 있는데 그림자가 있으면 시트 위에 뜬
+                // 또 하나의 판으로 읽힌다. 실제로는 아래 저장 줄과 같은 층이다.
+                //
+                // **고른 것이 있는 한 선다**(사용자 지정). 치우는 버튼을 안 둔다. 치우면 남은
+                // 미입력 건으로 돌아갈 길이 시트 안에 없어진다.
+                <View
+                  testID="drop-price-prompt"
+                  className="mb-2.5 flex-row items-center gap-2 rounded-[14px] bg-surface-2 px-3 py-2"
+                >
+                  <View className="min-w-0 flex-1">
+                    <Text numberOfLines={1} className="text-[12.5px] font-semibold leading-tight text-text">
+                      {prompt.title}
+                    </Text>
+                    {prompt.detail !== '' && (
+                      <Text numberOfLines={1} className="text-[12.5px] font-medium leading-tight text-text-muted">
+                        {prompt.detail}
+                      </Text>
+                    )}
+                  </View>
+                  {/* 다 정했으면 여는 차례가 고른 것 전체다. 남은 것이 없으니 고치러 들어간다. */}
+                  <Pressable
+                    role="button"
+                    onPress={() => openPriceCard(unpriced.length > 0 ? unpriced : selected, 0)}
+                    className="shrink-0 rounded-full bg-primary px-3 py-1.5"
+                  >
+                    <Text className="text-[12.5px] font-bold text-on-primary">
+                      {unpriced.length > 0 ? '가격 입력' : '가격 수정'}
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+              <Pressable
+                role="button"
+                onPress={() => {
+                  props.onSave(selected)
+                  props.onClose()
+                }}
+                className="w-full items-center rounded-xl bg-primary py-3"
+              >
+                <Text className="text-sm font-bold text-on-primary">
+                  추가 완료{selected.length > 0 ? ` · ${selected.length}개` : ''}
+                </Text>
+              </Pressable>
+    </View>
+  )
+
   return (
     <>
-      <BottomSheet onClose={props.onClose} testId="boss-drop-sheet" label="드롭 아이템 기록">
+      <BottomSheet
+        onClose={props.onClose}
+        testId="boss-drop-sheet"
+        label="드롭 아이템 기록"
+        /*
+          저장 줄은 **스크롤 밖**이다. 아이템 격자가 길어 낮은 화면에서는 늘 스크롤이 생기는데,
+          줄이 내용 끝에 실려 있으면 다 고르고 나서 저장하러 또 내려가야 한다. 상자 드릴다운은
+          자기 확인 버튼을 들고 있어 줄을 안 세운다.
+        */
+        footer={activeBox === null ? 드롭저장줄 : undefined}
+      >
         {activeBox === null ? (
           <View>
             <View className="flex-row items-center gap-2 px-4 pb-1 pt-1">
@@ -615,56 +678,6 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
               </>
             )}
 
-            <View className="border-t border-border bg-bg px-4 pb-3 pt-3">
-              {/* 기록 직후 그 아이템 하나에 대해 값을 매길지 묻는다. 흐름은 기록 → 확인 →
-                  (입력 →) 복귀 이고 어느 갈래든 타일 그리드로 돌아온다. 차단하지 않는다.
-                  일반 아이템은 확인창 없이 탭 즉시 기록된다. 기록은 이미 끝났고 이 줄은 그 옆에
-                  설 뿐이라 무시하고 다음 아이템을 계속 골라도 된다. */}
-              {prompt !== null && props.pricing !== undefined && (
-                // **평평하다**(사용자 지정). 시트 바닥에 붙어 있는데 그림자가 있으면 시트 위에 뜬
-                // 또 하나의 판으로 읽힌다. 실제로는 아래 저장 줄과 같은 층이다.
-                //
-                // **고른 것이 있는 한 선다**(사용자 지정). 치우는 버튼을 안 둔다. 치우면 남은
-                // 미입력 건으로 돌아갈 길이 시트 안에 없어진다.
-                <View
-                  testID="drop-price-prompt"
-                  className="mb-2.5 flex-row items-center gap-2 rounded-[14px] bg-surface-2 px-3 py-2"
-                >
-                  <View className="min-w-0 flex-1">
-                    <Text numberOfLines={1} className="text-[12.5px] font-semibold leading-tight text-text">
-                      {prompt.title}
-                    </Text>
-                    {prompt.detail !== '' && (
-                      <Text numberOfLines={1} className="text-[12.5px] font-medium leading-tight text-text-muted">
-                        {prompt.detail}
-                      </Text>
-                    )}
-                  </View>
-                  {/* 다 정했으면 여는 차례가 고른 것 전체다. 남은 것이 없으니 고치러 들어간다. */}
-                  <Pressable
-                    role="button"
-                    onPress={() => openPriceCard(unpriced.length > 0 ? unpriced : selected, 0)}
-                    className="shrink-0 rounded-full bg-primary px-3 py-1.5"
-                  >
-                    <Text className="text-[12.5px] font-bold text-on-primary">
-                      {unpriced.length > 0 ? '가격 입력' : '가격 수정'}
-                    </Text>
-                  </Pressable>
-                </View>
-              )}
-              <Pressable
-                role="button"
-                onPress={() => {
-                  props.onSave(selected)
-                  props.onClose()
-                }}
-                className="w-full items-center rounded-xl bg-primary py-3"
-              >
-                <Text className="text-sm font-bold text-on-primary">
-                  추가 완료{selected.length > 0 ? ` · ${selected.length}개` : ''}
-                </Text>
-              </Pressable>
-            </View>
           </View>
         ) : (
           <BoxDrillDown

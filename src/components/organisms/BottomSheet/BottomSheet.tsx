@@ -79,6 +79,8 @@ const MOVE_MS = 380
  * 핸들이 맨 위다. 머리가 핸들 자리를 덮는 데다 뒤에 그려져서, 층이 같으면 핸들이 안 보인다.
  */
 const HEADER_LAYER = 1
+/** 바닥 줄 층. 머리보다 위다 - 짧은 시트에서 둘이 만나면 바닥 줄이 이긴다. */
+const FOOTER_LAYER = 2
 const HANDLE_LAYER = 3
 /** 갈아 드는 흐림. 머리도 함께 흐려져야 하므로 둘보다 위다. */
 const VEIL_LAYER = 4
@@ -93,6 +95,12 @@ const VEIL_LAYER = 4
  * 잰 값이 오면 그것으로 갈아탄다. 여기 값은 **첫 프레임 한 번만** 쓰인다.
  */
 const HEADER_GUESS = HANDLE_HEIGHT + 8 + 28
+/**
+ * 바닥 줄의 첫 프레임 추정 높이. 재기 전에도 스크롤이 그만큼을 비워 둬야 마지막 줄이 안 가린다.
+ *
+ * 버튼 44 + 위 여백 12 + 아래 여백 16. 인셋은 줄이 자기 안에서 지므로 여기 없다.
+ */
+const FOOTER_GUESS = 44 + 12 + 16
 
 /** 가장 짙을 때의 흐림. `BlurView` 의 세기는 1~100 이다. */
 const STEP_BLUR = 72
@@ -270,6 +278,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
 
   /** 고정된 머리가 차지한 높이. 흐름 밖이라 스크롤 내용의 `paddingTop` 이 이만큼을 되돌려 준다. */
   const [headerHeight, setHeaderHeight] = useState(0)
+  const [footerHeight, setFooterHeight] = useState(0)
 
   useEffect(() => {
     scrollRef.current?.scrollTo?.({ y: 0, animated: false })
@@ -393,7 +402,19 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
               : headerHeight > 0
                 ? headerHeight
                 : HEADER_GUESS,
-          paddingBottom: insets.bottom + 16,
+          /*
+            바닥 줄이 흐름 밖에 서므로 그 자리를 비워 둔다. 라이브러리는 시트 키를 스크롤
+            **내용** 높이 하나로 정하므로, 이 몫이 곧 바닥 줄이 설 자리다. 안 비우면 마지막
+            줄이 줄 뒤로 들어간다.
+
+            인셋은 여기 없다. 바닥 줄이 자기 안에서 진다(줄이 화면 맨 아래에 붙으므로).
+          */
+          paddingBottom:
+            props.footer === undefined
+              ? insets.bottom + 16
+              : footerHeight > 0
+                ? footerHeight
+                : FOOTER_GUESS,
         }}
       >
         {/*
@@ -402,13 +423,35 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         */}
         <View style={vars(sheetScope)}>{props.children}</View>
 
-        {props.footer !== undefined && (
-          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-          <View testID="bottom-sheet-footer" style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+      </BottomSheetScrollView>
+
+      {props.footer !== undefined && (
+        /*
+          바닥 줄은 **스크롤 밖**이다. 시트 상자에 `bottom: 0` 으로 붙으므로 상자가 움직이면
+          같은 곡선으로 함께 미끄러진다. 그 몫을 따로 애니메이션하면 줄이 상자보다 앞서 도착해
+          단계를 오갈 때 빈 띠가 보인다([[ADR-241]] 정정 6 에서 실제로 그렇게 났다).
+
+          `pointerEvents="box-none"` 이 필수다. 층은 줄 높이만큼만 크지만 자기 상자로 터치를
+          먹으면 바로 위 내용이 안 눌린다.
+        */
+        <View
+          pointerEvents="box-none"
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: FOOTER_LAYER }}
+        >
+          <View
+            testID="bottom-sheet-footer"
+            onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}
+            style={{
+              backgroundColor: sheetSurface,
+              paddingHorizontal: 16,
+              paddingTop: 12,
+              paddingBottom: insets.bottom + 16,
+            }}
+          >
             <View style={vars(sheetScope)}>{props.footer}</View>
           </View>
-        )}
-      </BottomSheetScrollView>
+        </View>
+      )}
 
       {/* 갈아 드는 흐림. 머리·내용·바닥 줄을 통째로 덮으므로 층 셋보다 위다. */}
       {step.busy && <StepVeil key={step.turn} onDone={step.done} />}

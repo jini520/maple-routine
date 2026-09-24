@@ -299,10 +299,27 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
     )
   }
 
-  // 줄은 내용의 마지막 줄이다. 단계가 갈려 줄이 사라져도 남는 것은 인셋(34)과 숨돌림(16)뿐이다.
-  it('바닥 줄은 스크롤 안에 선다. 단계가 갈리면 함께 사라진다', async () => {
+  /**
+   * 줄은 **스크롤 밖**이다. 내용이 길어도 줄은 제자리에 남는다.
+   *
+   * 스크롤 내용은 그만큼을 `paddingBottom` 으로 비운다. 라이브러리가 시트 키를 스크롤 내용
+   * 하나로 재므로 그 몫이 곧 줄이 설 자리다. 재기 전에는 `FOOTER_GUESS`(72)를 쓴다.
+   */
+  it('바닥 줄은 스크롤 밖에 선다. 스크롤은 그 자리를 비워 둔다', async () => {
     const view = await renderOverlay(<StepSheet />)
-    expect(within(view.getByTestId('income-sheet')).queryByText('저장')).toBeTruthy()
+
+    expect(view.getByTestId('bottom-sheet-footer')).toBeTruthy()
+    // 줄이 스크롤 안에 없다. 있으면 내용과 함께 굴러간다.
+    expect(within(view.getByTestId('income-sheet')).queryByText('저장')).toBeNull()
+    expect(
+      (view.getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
+        .paddingBottom,
+    ).toBe(44 + 12 + 16)
+  })
+
+  // 단계가 갈려 줄이 사라지면 비워 둘 것도 없다. 남는 것은 인셋(34)과 숨돌림(16)뿐이다.
+  it('줄이 없는 단계에서는 비워 둔 자리도 없어진다', async () => {
+    const view = await renderOverlay(<StepSheet />)
 
     await act(async () => {
       fireEvent.press(view.getByLabelText('단계 바꾸기'))
