@@ -16,13 +16,17 @@
  * @example
  * <NumberPad onDigit={(d) => setDraft(draft + d)} onBackspace={drop} onConfirm={commit} />
  */
-import { Pressable, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import {
+  NUMBER_PAD_DARK_EDGE,
   NUMBER_PAD_GAP_PX,
   NUMBER_PAD_HEIGHT_PX,
   NUMBER_PAD_PADDING_PX,
+  NUMBER_PAD_SHADOW,
 } from '../../../lib/number-pad-metrics'
+import { boxShadowOf } from '../../../lib/shadow'
+import { useThemeAppearance } from '../../../theme/context'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { DeleteIcon, Text } from '../../atoms'
 
@@ -67,10 +71,21 @@ function DigitKey(props: { digit: string; onPress: (digit: string) => void }): R
 }
 
 export function NumberPad(props: NumberPadProps): React.JSX.Element {
+  const { definition } = useThemeAppearance()
+
   return (
     <View
       testID="number-pad"
-      style={{ height: NUMBER_PAD_HEIGHT_PX, padding: NUMBER_PAD_PADDING_PX, gap: NUMBER_PAD_GAP_PX }}
+      style={{
+        height: NUMBER_PAD_HEIGHT_PX,
+        padding: NUMBER_PAD_PADDING_PX,
+        gap: NUMBER_PAD_GAP_PX,
+        // 판이 카드 위에 떠 있다는 것을 낸다. 둘이 같은 계열 바탕이라 테두리만으로는 경계가 안 선다.
+        boxShadow: boxShadowOf(definition.shadowColor, NUMBER_PAD_SHADOW),
+        ...(definition.mode === 'dark'
+          ? { borderWidth: StyleSheet.hairlineWidth, borderColor: NUMBER_PAD_DARK_EDGE }
+          : null),
+      }}
       className="rounded-xl border border-border bg-bg"
     >
       <View

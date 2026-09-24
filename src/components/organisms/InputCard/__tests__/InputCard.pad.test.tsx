@@ -27,6 +27,13 @@ async function 그리기(props: Partial<InputCardProps> = {}) {
 
 type 화면 = Awaited<ReturnType<typeof renderOverlay>>
 
+/** 값 칸을 누른다. 판은 **눌러야** 올라온다(카드가 열릴 때는 안 뜬다). */
+async function 값칸누르기(view: 화면): Promise<void> {
+  await act(async () => {
+    fireEvent(view.getByTestId('input-card-value'), 'pressIn')
+  })
+}
+
 /** 카드를 잰 셈 친다. 이 값이 판정의 재료다. */
 async function 재기(view: 화면, height: number): Promise<void> {
   await act(async () => {
@@ -45,11 +52,13 @@ describe('판으로 받는가', () => {
     expect(view.getByTestId('input-card-value').props.showSoftInputOnFocus).toBe(false)
   })
 
-  it('카드가 키보드 위에 안 들어가면 판이 선다', async () => {
+  it('카드가 열릴 때는 판이 안 뜬다. 값 칸을 눌러야 올라온다', async () => {
     const { view } = await 그리기()
 
     await 재기(view, 안_들어가는_카드)
+    expect(view.queryByTestId('input-card-pad')).toBeNull()
 
+    await 값칸누르기(view)
     expect(view.getByTestId('input-card-pad')).toBeTruthy()
   })
 
@@ -75,6 +84,7 @@ describe('판으로 받는가', () => {
 
     await 재기(view, 안_들어가는_카드)
     await 재기(view, 들어가는_카드)
+    await 값칸누르기(view)
 
     expect(view.getByTestId('input-card-pad')).toBeTruthy()
   })
@@ -83,6 +93,7 @@ describe('판으로 받는가', () => {
     const { view } = await 그리기({ text: true })
 
     await 재기(view, 안_들어가는_카드)
+    await 값칸누르기(view)
 
     expect(view.queryByTestId('input-card-pad')).toBeNull()
     expect(view.getByTestId('input-card-value').props.showSoftInputOnFocus).toBe(true)
@@ -93,6 +104,7 @@ describe('판으로 친다', () => {
   async function 판이_선_카드(props: Partial<InputCardProps> = {}) {
     const 결과 = await 그리기(props)
     await 재기(결과.view, 안_들어가는_카드)
+    await 값칸누르기(결과.view)
     return 결과
   }
 
@@ -146,9 +158,7 @@ describe('판으로 친다', () => {
     await act(async () => {
       fireEvent.press(view.getByTestId('input-card-scrim'))
     })
-    await act(async () => {
-      fireEvent(view.getByTestId('input-card-value'), 'pressIn')
-    })
+    await 값칸누르기(view)
 
     expect(view.getByTestId('input-card-pad')).toBeTruthy()
   })

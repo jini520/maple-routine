@@ -315,8 +315,13 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    */
   const [usesPad, setUsesPad] = useState<boolean | null>(null)
 
-  /** 판이 지금 떠 있나. 판 바깥을 누르면 내려가고 값 칸을 누르면 올라온다. */
-  const [padOpen, setPadOpen] = useState(true)
+  /**
+   * 판이 지금 떠 있나. **카드가 열릴 때는 안 뜬다**(사용자 지정).
+   *
+   * 금액 · 개수 카드는 값을 고치러 여는 경우가 많다. 열자마자 판이 올라오면 지금 값이 얼마인지
+   * 보기 전에 아래가 덮인다. 값 칸을 눌러야 올라온다.
+   */
+  const [padOpen, setPadOpen] = useState(false)
 
   function measure(event: LayoutChangeEvent): void {
     const 잰_높이 = event.nativeEvent.layout.height
@@ -423,7 +428,12 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
 
   return (
     // 자리는 `InputCardLayer` 가 준다. 카드는 자기가 키보드 위 어디에 앉는지 모른다.
-    <View className="flex-1 justify-end" testID="input-card">
+    // 판이 받는 카드는 **화면 가운데**에 선다(사용자 지정). OS 키보드가 없으니 밀어 올릴 것이
+    // 없고, 바닥에 붙여 두면 카드 위로 빈 화면이 한 뼘 남아 판이 붙잡을 자리가 없어 보인다.
+    <View
+      className={`flex-1 ${usesPad === false ? 'justify-end' : 'justify-center'}`}
+      testID="input-card"
+    >
       {/*
         시트 위에 한 겹 더. **누르면 키보드만 내린다**(사용자 지정). 카드는 안 닫힌다. 닫는 것은
         ✕ 뿐이다. 판의 빈 자리와 같은 일을 하므로 카드 안팎이 같은 규칙이 된다.
@@ -525,7 +535,11 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               onChangeText={change}
               keyboardType={isText ? undefined : 'number-pad'}
               placeholder={props.placeholder ?? (isText ? '' : '0')}
-              autoFocus
+              /*
+                **숫자 칸은 자동으로 초점을 안 받는다**(사용자 지정). 카드가 열리자마자 OS
+                키보드도 자체 판도 안 뜬다. 글자 칸은 칠 것이 이름 하나뿐이라 그대로 둔다.
+              */
+              autoFocus={isText}
               showSoftInputOnFocus={showsSystemKeyboard}
               onPressIn={() => setPadOpen(true)}
               /*

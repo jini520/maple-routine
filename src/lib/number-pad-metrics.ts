@@ -10,6 +10,8 @@
  */
 import { Platform } from 'react-native'
 
+import type { ShadowLayer } from './shadow'
+
 /** 키 하나의 높이. 권장 터치 타깃과 같다. */
 export const NUMBER_PAD_KEY_PX = 44
 
@@ -27,6 +29,25 @@ export const NUMBER_PAD_PADDING_PX = 6
  */
 export const NUMBER_PAD_HEIGHT_PX =
   NUMBER_PAD_PADDING_PX * 2 + NUMBER_PAD_KEY_PX * 2 + NUMBER_PAD_GAP_PX
+
+/**
+ * 판이 카드 위에 떠 있다는 것을 내는 그림자 한 겹.
+ *
+ * 판은 카드와 **같은 계열의 바탕**이라(둘 다 카드 안쪽 재질) 테두리만으로는 경계가 안 선다.
+ * 덮고 있다는 것이 안 읽히면 가려진 줄이 사라진 것처럼 보인다.
+ *
+ * FAB 보다 반경이 크고 민 거리가 작다. 원은 화면 위에 뜬 물건이라 방향이 있고, 판은 바로 아래
+ * 내용을 덮는 판이라 **사방으로 퍼지는 쪽**이 덮개로 읽힌다.
+ */
+export const NUMBER_PAD_SHADOW: ShadowLayer = { opacity: 0.8, radius: 16, y: 3 }
+
+/**
+ * 다크에서 판의 경계를 내는 헤어라인. 어두운 바탕에서는 그림자가 거의 안 보인다.
+ *
+ * FAB 와 달리 흰색이 아니다. 판은 색을 진 물건이 아니라 중립 표면이라, 흰 테두리를 두르면
+ * 떠 있는 것이 아니라 빛나는 것으로 읽힌다.
+ */
+export const NUMBER_PAD_DARK_EDGE = 'rgba(255,255,255,0.14)'
 
 /** 카드와 키보드 사이. `InputCard` 판의 `mb-3` 과 같아야 한다. */
 export const CARD_GAP_PX = 12
