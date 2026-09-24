@@ -324,18 +324,11 @@ describe('갈래', () => {
   })
 
   /** 닫기는 다른 시트의 저장이 서는 자리다. 상자가 같고 칠만 다르다. */
-  it('1차 시트에 닫기가 선다. 누르면 시트를 닫는다', async () => {
-    const onClose = jest.fn()
-    const view = await 그리기({ onClose }, null)
+  it('1차 시트에는 닫기 버튼도 바닥 줄도 없다', async () => {
+    const view = await 그리기({}, null)
 
-    const 닫기 = view.getByTestId('income-sheet-close')
-    expect(닫기).toHaveTextContent('닫기')
-
-    await act(async () => {
-      fireEvent.press(닫기)
-    })
-
-    expect(onClose).toHaveBeenCalled()
+    expect(view.queryByTestId('income-sheet-close')).toBeNull()
+    expect(view.queryByTestId('bottom-sheet-footer')).toBeNull()
   })
 
   it('2차에는 닫기가 없다. 그 자리는 저장이 든다', async () => {
@@ -699,10 +692,9 @@ describe('판매 수수료', () => {
     expect(onSave).toHaveBeenCalled()
   })
 
-  it('갈래를 고르기 전에는 저장이 없다. 닫기뿐이다', async () => {
+  it('갈래를 고르기 전에는 저장이 없다', async () => {
     const view = await 그리기({}, null)
 
-    expect(view.getByTestId('income-sheet-close')).toBeTruthy()
     expect(view.queryByLabelText('저장')).toBeNull()
   })
 

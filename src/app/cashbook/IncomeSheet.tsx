@@ -182,7 +182,6 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           categories={INCOME_CATEGORIES}
           testIdPrefix="income-sheet"
           onSelect={setCategory}
-          onClose={props.onClose}
         />
         ) : (
       // 아래 여백을 안 붙인다. 바닥의 숨돌림은 껍데기가 한 값으로 낸다.

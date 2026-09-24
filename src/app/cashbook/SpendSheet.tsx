@@ -160,14 +160,19 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           <SpendHeader {...head} />
         )
       }
-      footer={category === null ? undefined : <SaveRow {...save} />}
+      /*
+        **셀 것이 없는 단계에는 바닥 줄이 없다**(사용자 지정 2026-09-25). 1차(갈래 고르기)와
+        항목 격자가 그렇다. 전에는 같은 높이의 빈 상자를 세워 단계를 오갈 때 바닥의 기하를
+        붙들어 뒀는데, 버튼이 없는데 87 이 비어 있는 것이 더 크게 읽혔다. 닫는 길은 아래로
+        쓸어내리기와 스크림 탭 둘이 이미 있다.
+      */
+      footer={category === null || !save.showSave ? undefined : <SaveRow {...save} />}
     >
       {category === null || formProps === null ? (
           <CategoryPicker
             categories={SPEND_CATEGORIES}
             testIdPrefix="spend-sheet"
             onSelect={setCategory}
-            onClose={props.onClose}
           />
       ) : (
         // 아래 여백을 안 붙인다. 바닥의 숨돌림은 껍데기가 한 값으로 낸다.

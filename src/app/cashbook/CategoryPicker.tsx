@@ -34,7 +34,6 @@ export function CategoryPicker<T extends string>(props: {
   /** `testID` 뿌리. `income-sheet` · `spend-sheet`. */
   testIdPrefix: string
   onSelect: (category: T) => void
-  onClose: () => void
 }): React.JSX.Element {
   return (
     /*
@@ -92,20 +91,6 @@ export function CategoryPicker<T extends string>(props: {
         })}
       </View>
 
-      {/* 닫기의 자리와 상자는 2차 시트의 저장과 같다(전폭 · radius 12 · 44). 칠은 테마의
-          `primary` 라 테마를 바꾸면 함께 바뀐다. 고르는 시트에는 으뜸 동작이 없어서 그 자리를
-          채우면 카드보다 닫기가 먼저 눈에 든다.
-
-          위 여백은 고르는 것과 물러나는 것을 갈라 놓는 몫이다. */}
-      <Pressable
-        role="button"
-        aria-label="닫기"
-        testID={`${props.testIdPrefix}-close`}
-        onPress={props.onClose}
-        className="mt-4 items-center rounded-xl bg-primary py-3 active:opacity-60"
-      >
-        <Text className="text-sm font-bold text-on-primary">닫기</Text>
-      </Pressable>
     </View>
   )
 }

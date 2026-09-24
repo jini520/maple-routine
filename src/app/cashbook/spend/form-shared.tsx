@@ -256,19 +256,12 @@ export function useHeaderSlot(
  * 삭제는 버튼처럼 안 생겼다. 이미 두 번 눌러야 여기까지 온다.
  */
 export function SaveRow(props: {
-  /** 셀 자리가 있나. 없으면 같은 높이의 빈 자리만 남는다. */
-  showSave: boolean
   editing: boolean
   canSave: boolean
   saving: boolean
   onSave: () => void
   onDelete?: () => void
 }): React.JSX.Element {
-  if (!props.showSave) {
-    // 버튼이 서던 자리. 상자만 남고 아무것도 안 그린다(전폭 · 44).
-    return <View testID="spend-sheet-save-placeholder" className="h-11" />
-  }
-
   return (
     <>
       <Pressable
