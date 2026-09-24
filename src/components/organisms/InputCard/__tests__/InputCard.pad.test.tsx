@@ -89,6 +89,35 @@ describe('판으로 받는가', () => {
     expect(view.getByTestId('input-card-pad')).toBeTruthy()
   })
 
+  it('OS 키보드가 받는 칸만 자동으로 초점을 받는다', async () => {
+    // 그 카드는 열리는 순간부터 키보드 위에 서서 자리가 한 번도 안 움직인다.
+    const { view } = await 그리기()
+
+    await 재기(view, 들어가는_카드)
+
+    expect(view.getByTestId('input-card-value').props.autoFocus).toBe(true)
+  })
+
+  it('판이 받는 칸은 초점을 안 받는다. 열자마자 아래가 덮이면 안 된다', async () => {
+    const { view } = await 그리기()
+
+    await 재기(view, 안_들어가는_카드)
+
+    expect(view.getByTestId('input-card-value').props.autoFocus).toBe(false)
+  })
+
+  it('재기 전에도 초점을 안 준다. 판정이 나야 어느 쪽인지 안다', async () => {
+    const { view } = await 그리기()
+
+    expect(view.getByTestId('input-card-value').props.autoFocus).toBe(false)
+  })
+
+  it('글자 칸은 재기 전부터 초점을 받는다. 판정을 기다릴 것이 없다', async () => {
+    const { view } = await 그리기({ text: true })
+
+    expect(view.getByTestId('input-card-value').props.autoFocus).toBe(true)
+  })
+
   it('글자 칸은 판을 안 쓴다. 한글 조합은 IME 가 해야 한다', async () => {
     const { view } = await 그리기({ text: true })
 

@@ -334,8 +334,18 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     setUsesPad((prev) => prev === true || 판정)
   }
 
-  /** 글자 칸은 IME 가 조합을 해야 해서 언제나 OS 키보드다. 판은 숫자 칸만 받는다. */
-  const padVisible = !isText && usesPad === true && padOpen
+  /**
+   * 판정을 **글자 칸까지 포함해** 한 값으로 모은 것. `null` 은 아직 안 정한 것이다.
+   *
+   * 글자 칸은 IME 가 조합을 해야 해서 언제나 OS 키보드이므로, 잰 높이가 어떻든 판 쪽으로
+   * 안 간다. 이 한 줄이 아래 넷(자동 초점 · 키보드 억제 · 카드 자리 · 판 표시)의 재료다.
+   */
+  const padDecided: boolean | null = isText ? false : usesPad
+
+  /** 판이 받는 카드인가. 카드가 서는 자리가 여기서 갈린다. */
+  const usesPadPath = padDecided === true
+
+  const padVisible = usesPadPath && padOpen
 
   /**
    * 판 바깥을 누르면 내려간다. **카드는 안 닫힌다.**
@@ -359,7 +369,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    * 판으로 나도 **이미 뜬 키보드는 이 프롭으로 안 닫히고**, 키보드가 카드를 밀어 올려
    * 값 칸과 판이 함께 화면 위로 나간다(실기기에서 그렇게 났다).
    */
-  const showsSystemKeyboard = isText || usesPad === false
+  const showsSystemKeyboard = padDecided === false
 
   const chips = isText ? [] : (props.chips ?? [])
   const iconSource = iconSourceOf(props.icon)
@@ -431,8 +441,13 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     // 판이 받는 카드는 **화면 가운데**에 선다(사용자 지정). OS 키보드가 없으니 밀어 올릴 것이
     // 없고, 바닥에 붙여 두면 카드 위로 빈 화면이 한 뼘 남아 판이 붙잡을 자리가 없어 보인다.
     <View
-      className={`flex-1 ${usesPad === false ? 'justify-end' : 'justify-center'}`}
+      className={`flex-1 ${usesPadPath ? 'justify-center' : 'justify-end'}`}
       testID="input-card"
+      /*
+        재는 프레임은 안 보여 준다. 판정 전에는 자리가 아직 안 정해져(바닥이 기본값) 판으로
+        판정되는 순간 가운데로 한 번 튄다. 그 한 프레임을 감추면 카드가 제자리에서 나타난다.
+      */
+      style={padDecided === null ? { opacity: 0 } : undefined}
     >
       {/*
         시트 위에 한 겹 더. **누르면 키보드만 내린다**(사용자 지정). 카드는 안 닫힌다. 닫는 것은
@@ -536,10 +551,14 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               keyboardType={isText ? undefined : 'number-pad'}
               placeholder={props.placeholder ?? (isText ? '' : '0')}
               /*
-                **숫자 칸은 자동으로 초점을 안 받는다**(사용자 지정). 카드가 열리자마자 OS
-                키보드도 자체 판도 안 뜬다. 글자 칸은 칠 것이 이름 하나뿐이라 그대로 둔다.
+                **자동 초점은 OS 키보드가 받는 칸에만 남는다**(사용자 지정). 그 카드는 열리는
+                순간부터 키보드 위에 서서 자리가 한 번도 안 움직인다. 자동 초점을 빼면 카드가
+                바닥에 섰다가 값 칸을 누를 때 키보드 높이만큼 뛴다.
+
+                판이 받는 숫자 칸은 초점을 안 받는다. 열자마자 판이 올라오면 지금 값이 얼마인지
+                보기 전에 아래가 덮인다. 글자 칸은 칠 것이 이름 하나뿐이라 언제나 받는다.
               */
-              autoFocus={isText}
+              autoFocus={padDecided === false}
               showSoftInputOnFocus={showsSystemKeyboard}
               onPressIn={() => setPadOpen(true)}
               /*
