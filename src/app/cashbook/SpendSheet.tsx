@@ -19,6 +19,7 @@
 import { useState } from 'react'
 import { View } from 'react-native'
 
+import { Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { SPEND_CATEGORIES, type SpendCategoryKey } from '../../lib/cashbook/categories'
 import type { SpendRecord } from '../../storage/spend'
@@ -27,7 +28,13 @@ import { CatalogForm } from './spend/CatalogForm'
 import { EtcForm } from './spend/EtcForm'
 import { ItemBuyForm } from './spend/ItemBuyForm'
 import { SymbolForm } from './spend/SymbolForm'
-import { SaveRow, type SpendFormProps, type SpendSaveSlot } from './spend/form-shared'
+import {
+  SaveRow,
+  SpendHeader,
+  type SpendFormProps,
+  type SpendHeaderSlot,
+  type SpendSaveSlot,
+} from './spend/form-shared'
 
 export type { SpendDraft } from './spend/form-shared'
 
@@ -89,6 +96,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
    * `showSave` 의 첫 값이 거짓인 것은 목록 갈래가 항목 격자로 열리기 때문이다. 직접 입력 둘은
    * 첫 렌더 직후에 참으로 올린다.
    */
+  /** 폼이 올려 주는 머리. 시트는 자리만 준다(저장 줄과 같은 방식). */
+  const [head, setHead] = useState<SpendHeaderSlot | null>(null)
   const [save, setSave] = useState<SpendSaveSlot>({
     showSave: false,
     editing: props.editing !== undefined,
@@ -109,6 +118,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       ? null
       : {
           setSave,
+          setHeader: setHead,
           dateKey,
           characters: props.characters,
           category,
@@ -139,11 +149,21 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
        *
        * 1차에는 셀 것이 없어 바닥 줄 자체가 없다. 닫기는 내용 안에 선다.
        */
+      /*
+        머리는 폼이 올린다. 제목과 되돌아가는 길이 그 폼의 단계에 딸려 있어(카탈로그는 항목 →
+        격자 → 1차) 시트가 혼자 정할 수 없다. 1차에서는 고르는 제목이 선다.
+      */
+      header={
+        category === null || formProps === null ? (
+          <Text className="text-base font-bold text-text">지출 추가</Text>
+        ) : head === null ? undefined : (
+          <SpendHeader {...head} />
+        )
+      }
       footer={category === null ? undefined : <SaveRow {...save} />}
     >
       {category === null || formProps === null ? (
           <CategoryPicker
-            title="지출 추가"
             categories={SPEND_CATEGORIES}
             testIdPrefix="spend-sheet"
             onSelect={setCategory}

@@ -22,7 +22,7 @@ import {
   symbolUpgradeCost,
 } from '../../../lib/cashbook/symbol-costs'
 import { CharacterField } from '../sheet-fields'
-import { SpendHeader, useSaveSlot, type SpendFormProps } from './form-shared'
+import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { type LevelRange } from './level-range'
 import { LevelRangeSlider } from './LevelRangeSlider'
 
@@ -108,17 +108,17 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
 
   const icon = found === null ? null : getItemIconUrlByFile(found.symbol.icon)
 
+  useHeaderSlot(props.setHeader, {
+    title: spendCategoryNameOf(props.category),
+    dateKey: props.dateKey,
+    todayDateKey: props.todayDateKey,
+    earliestDateKey: earliest,
+    onDateChange: props.onDateChange,
+    onBack: editing ? undefined : props.onBack,
+  })
+
   return (
     <>
-      <SpendHeader
-        title={spendCategoryNameOf(props.category)}
-        dateKey={props.dateKey}
-        todayDateKey={props.todayDateKey}
-        earliestDateKey={earliest}
-        onDateChange={props.onDateChange}
-        onBack={editing ? undefined : props.onBack}
-      />
-
       <CharacterField characters={props.characters} selected={ocid} onSelect={selectCharacter} testID="spend-sheet-chain" />
 
       <SelectField

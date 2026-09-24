@@ -47,7 +47,7 @@ import {
 } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { CharacterField, FieldRow, QuantityStepper } from '../sheet-fields'
-import { RateRow, SpendHeader, useSaveSlot, type SpendFormProps } from './form-shared'
+import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import type { SpendRecord } from '../../../storage/spend'
 import { rowsOfGroups } from './tile-rows'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
@@ -348,22 +348,22 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })
 
+  /*
+   * 한 걸음씩 되돌아간다. 항목을 골랐으면 격자로, 격자에서는 1차로.
+   *
+   * 수정 모드에는 되돌아갈 곳이 없다(고른 것을 못 바꾼다). 화살촉도 없다.
+   */
+  useHeaderSlot(props.setHeader, {
+    title,
+    dateKey: props.dateKey,
+    todayDateKey: props.todayDateKey,
+    earliestDateKey: props.earliestDateKey,
+    onDateChange: props.onDateChange,
+    onBack: editing ? undefined : choice === null ? props.onBack : clearChoice,
+  })
+
   return (
     <>
-      <SpendHeader
-        title={title}
-        dateKey={props.dateKey}
-        todayDateKey={props.todayDateKey}
-        earliestDateKey={props.earliestDateKey}
-        onDateChange={props.onDateChange}
-        /*
-         * 한 걸음씩 되돌아간다. 항목을 골랐으면 격자로, 격자에서는 1차로.
-         *
-         * 수정 모드에는 되돌아갈 곳이 없다(고른 것을 못 바꾼다). 화살촉도 없다.
-         */
-        onBack={editing ? undefined : choice === null ? props.onBack : clearChoice}
-      />
-
       {choice === null && !editing ? (
         // 여기에 스크롤을 두지 않는다. 시트 껍데기가 이미 `BottomSheetScrollView` 이고 높이도
         // 내용만큼, 82% 를 상한으로 다. 안쪽에 또 두면 중첩 스크롤이 되어 손가락이 어느 쪽을

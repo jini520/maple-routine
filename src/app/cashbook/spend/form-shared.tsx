@@ -31,9 +31,27 @@ export interface SpendSaveSlot {
 }
 
 /** 갈래별 폼이 **전부 받는 것**. */
+/**
+ * 폼이 시트 머리로 올리는 값. 저장 줄(`SpendSaveSlot`)과 같은 짝이다.
+ *
+ * 제목과 되돌아가는 길을 **폼이 정한다.** 카탈로그는 단계가 둘이라(항목 → 격자 → 1차) 제목도
+ * 되돌아갈 곳도 그 단계에 딸려 있고, 심볼은 고를 수 있는 첫날이 다르다. 시트가 그것을 알려면
+ * 폼의 속을 들여다봐야 한다.
+ */
+export interface SpendHeaderSlot {
+  title: string
+  dateKey: string
+  todayDateKey: string
+  earliestDateKey: string
+  onDateChange: (next: string) => void
+  onBack?: () => void
+}
+
 export interface SpendFormProps {
   /** 저장 줄을 시트 바닥으로 올리는 손잡이. 폼이 값을 정하고 자리는 시트가 준다. */
   setSave: (slot: SpendSaveSlot) => void
+  /** 머리를 시트 위로 올리는 손잡이. 저장 줄과 같은 방식이다. */
+  setHeader: (slot: SpendHeaderSlot) => void
   dateKey: string
   characters: ReadonlyArray<{ ocid: string; name: string; level: number | null }>
   /** 1차에서 고른 갈래 key. 머리의 제목은 이 key 로 찾은 갈래 이름이다. */
@@ -197,6 +215,35 @@ export function useSaveSlot(setSave: (slot: SpendSaveSlot) => void, slot: SpendS
       onDelete: hasDelete ? () => latest.current.onDelete?.() : undefined,
     })
   }, [setSave, slot.showSave, slot.editing, slot.canSave, slot.saving, hasDelete])
+}
+
+/**
+ * 머리를 시트로 올린다. `useSaveSlot` 과 같은 이유로 **그리기 전에** 올린다.
+ *
+ * 평범한 `useEffect` 로 올리면 시트가 한 프레임 동안 머리 없이 그려지고, 그 프레임에는 머리가
+ * 설 자리도 안 비어 있어 내용이 위로 튀어 올랐다 내려온다.
+ */
+export function useHeaderSlot(
+  setHeader: (slot: SpendHeaderSlot) => void,
+  slot: SpendHeaderSlot,
+): void {
+  const latest = useRef(slot)
+  useEffect(() => {
+    latest.current = slot
+  })
+
+  const hasBack = slot.onBack !== undefined
+
+  useLayoutEffect(() => {
+    setHeader({
+      title: slot.title,
+      dateKey: slot.dateKey,
+      todayDateKey: slot.todayDateKey,
+      earliestDateKey: slot.earliestDateKey,
+      onDateChange: (next) => latest.current.onDateChange(next),
+      onBack: hasBack ? () => latest.current.onBack?.() : undefined,
+    })
+  }, [setHeader, slot.title, slot.dateKey, slot.todayDateKey, slot.earliestDateKey, hasBack])
 }
 
 /**

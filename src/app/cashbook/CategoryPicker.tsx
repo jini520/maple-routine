@@ -20,8 +20,6 @@ import { getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
 const CARD_ICON_SIZE = 28
 
 export function CategoryPicker<T extends string>(props: {
-  /** 시트 제목. `수입 추가` · `지출 추가`. */
-  title: string
   /** 갈래 표(`lib/cashbook/categories.ts`). 그림은 `src/assets/items/` 의 파일명이다. */
   categories: ReadonlyArray<{
     readonly key: T
@@ -43,9 +41,7 @@ export function CategoryPicker<T extends string>(props: {
       위 여백이 카드와의 간격보다 넓다. 고르는 것과 물러나는 것을 갈라 놓아야 손이 닫기로
       잘못 가지 않는다.
     */
-    <View className="gap-2 px-4">
-      <Text className="text-base font-bold text-text">{props.title}</Text>
-
+    <View className="px-4">
       {/* 퍼센트 폭과 `gap` 을 섞으면 한 줄의 마지막 칸이 다음 줄로 밀린다. 간격은 자식의
           패딩이 만들고 바깥의 `-mx-1` 이 그만큼을 되돌린다(항목 타일 격자와 같은 방식). */}
       <View className="-mx-1 flex-row flex-wrap">
