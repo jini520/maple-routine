@@ -346,8 +346,15 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     Keyboard.dismiss()
   }
 
-  /** 판이 받기로 한 칸에서는 OS 키보드를 안 띄운다. 커서와 물리 키보드 타건은 살아 있다. */
-  const showsSystemKeyboard = isText || usesPad !== true
+  /**
+   * OS 키보드를 띄울 칸인가. 판이 받는 칸에서는 안 띄운다. 커서와 물리 키보드 타건은 살아 있다.
+   *
+   * **아직 안 정했으면(`null`) 안 띄운다.** 모르면 판 쪽으로 기울이는 규칙이 판정 함수에만
+   * 있고 여기에 없으면, 첫 프레임의 `autoFocus` 가 키보드를 올려 버린다. 그 뒤에 판정이
+   * 판으로 나도 **이미 뜬 키보드는 이 프롭으로 안 닫히고**, 키보드가 카드를 밀어 올려
+   * 값 칸과 판이 함께 화면 위로 나간다(실기기에서 그렇게 났다).
+   */
+  const showsSystemKeyboard = isText || usesPad === false
 
   const chips = isText ? [] : (props.chips ?? [])
   const iconSource = iconSourceOf(props.icon)
@@ -505,7 +512,13 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 숫자 칸은 통제된 값이라 다시 세울 것이 없다. 다시 세우면 `autoFocus` 가 키보드를
                 닫았다 여는데, 잇따라 받는 흐름은 숫자 칸뿐이라 그 깜빡임이 사라진다.
               */
-              key={isText ? props.seed : undefined}
+              /*
+                숫자 칸은 **판정이 정해질 때 한 번 다시 선다.** 칸을 안 다시 세우면
+                `showSoftInputOnFocus` 가 늦게 `true` 가 되어도 `autoFocus` 는 이미 지나가
+                OS 키보드가 안 올라온다. 카드가 열리는 순간이라 사용자가 치기 전이고,
+                값은 통제된 프롭이라 다시 세워도 안 날아간다.
+              */
+              key={isText ? props.seed : `pad-${String(usesPad)}`}
               testID="input-card-value"
               aria-label={props.label}
               value={shown}

@@ -37,11 +37,12 @@ async function 재기(view: 화면, height: number): Promise<void> {
 }
 
 describe('판으로 받는가', () => {
-  it('재기 전에는 판이 없다. OS 키보드가 뜬 채로 두고 기다린다', async () => {
+  it('재기 전에는 OS 키보드를 막는다. 모르면 판 쪽으로 기운다', async () => {
+    // 여기서 키보드를 띄우면 카드가 밀려 올라가 값 칸과 판이 함께 화면 밖으로 나간다.
     const { view } = await 그리기()
 
     expect(view.queryByTestId('input-card-pad')).toBeNull()
-    expect(view.getByTestId('input-card-value').props.showSoftInputOnFocus).toBe(true)
+    expect(view.getByTestId('input-card-value').props.showSoftInputOnFocus).toBe(false)
   })
 
   it('카드가 키보드 위에 안 들어가면 판이 선다', async () => {
@@ -60,12 +61,13 @@ describe('판으로 받는가', () => {
     expect(view.getByTestId('input-card-value').props.showSoftInputOnFocus).toBe(false)
   })
 
-  it('들어가면 판이 안 선다', async () => {
+  it('들어가면 판이 안 서고 OS 키보드를 다시 연다', async () => {
     const { view } = await 그리기()
 
     await 재기(view, 들어가는_카드)
 
     expect(view.queryByTestId('input-card-pad')).toBeNull()
+    expect(view.getByTestId('input-card-value').props.showSoftInputOnFocus).toBe(true)
   })
 
   it('한 번 판으로 정해지면 창이 커져도 안 돌아간다', async () => {
