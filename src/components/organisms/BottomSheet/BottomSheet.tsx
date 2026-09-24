@@ -298,6 +298,27 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   /** 고정된 머리가 차지한 높이. 흐름 밖이라 스크롤 내용의 `paddingTop` 이 이만큼을 되돌려 준다. */
   const [headerHeight, setHeaderHeight] = useState(0)
   const [footerHeight, setFooterHeight] = useState(0)
+  /**
+   * 구르는 자리의 위아래에 **가려진 내용이 있나**. 페이드는 그때만 뜬다.
+   *
+   * 늘 그려 두면 안 구르는 시트에서도 위아래 끝의 내용이 옅어져, 가릴 것이 없는데 가린 것처럼
+   * 보인다(사용자 지적). 내용이 상한에 안 닿으면 둘 다 거짓이라 페이드가 하나도 안 선다.
+   */
+  const [hiddenAbove, setHiddenAbove] = useState(false)
+  const [hiddenBelow, setHiddenBelow] = useState(false)
+  /**
+   * 구르는 자리와 그 안 내용의 키. **ref 다.**
+   *
+   * 둘은 같은 배치에서 잇따라 도착한다(`onLayout` 다음에 `onContentSizeChange`). state 로 두면
+   * 뒤에 오는 쪽이 앞의 값을 아직 못 봐서 판정이 한 번 틀린다.
+   */
+  const viewportRef = useRef(0)
+  const contentRef = useRef(0)
+
+  /** 아래에 더 있나. 두 키 중 무엇이 도착하든 같은 답을 낸다. */
+  function syncHiddenBelow(): void {
+    setHiddenBelow(contentRef.current > viewportRef.current + 1)
+  }
 
   useEffect(() => {
     scrollRef.current?.scrollTo?.({ y: 0, animated: false })
@@ -413,6 +434,26 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       <BottomSheetScrollView
         ref={scrollRef as never}
         testID={props.testId}
+        /*
+          페이드를 켜고 끄는 판정. 불리언이 뒤집힐 때만 state 가 바뀌므로 구르는 동안 다시
+          그리는 일이 거의 없다. `scrollEventThrottle` 은 안 준다 - 라이브러리가 그 값을
+          자기 제스처 배선에 맞춰 쥐고 있어 프롭에서 빼 뒀다.
+        */
+        onScroll={(event) => {
+          const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent
+          setHiddenAbove(contentOffset.y > 1)
+          // 1px 은 소수점 반올림 몫. 0 으로 두면 맨 아래에서 페이드가 깜빡인다.
+          setHiddenBelow(contentOffset.y + layoutMeasurement.height < contentSize.height - 1)
+        }}
+        onContentSizeChange={(_, height) => {
+          // 처음 그려질 때와 단계가 갈릴 때. 구르기 전에도 아래에 더 있으면 페이드가 선다.
+          contentRef.current = height
+          syncHiddenBelow()
+        }}
+        onLayout={(event) => {
+          viewportRef.current = event.nativeEvent.layout.height
+          syncHiddenBelow()
+        }}
         contentContainerStyle={{
           // 잰 머리 높이에 핸들 몫과 아래 여백이 이미 들어 있다. 두 번 더하지 않는다.
           paddingTop:
@@ -448,6 +489,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         구르는 자리의 위아래 끝. 고정된 줄 밑으로 내용이 **옅어지며** 들어간다. 선명한 채로
         사라지면 잘린 것으로 읽힌다. 터치는 안 먹는다(`pointerEvents="none"`).
       */}
+      {hiddenAbove && (
       <View
         testID="bottom-sheet-fade-top"
         pointerEvents="none"
@@ -471,7 +513,9 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           style={{ flex: 1 }}
         />
       </View>
+      )}
 
+      {hiddenBelow && (
       <View
         testID="bottom-sheet-fade-bottom"
         pointerEvents="none"
@@ -495,6 +539,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           style={{ flex: 1 }}
         />
       </View>
+      )}
 
       {props.footer !== undefined && (
         /*

@@ -318,6 +318,60 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
   })
 
   // 단계가 갈려 줄이 사라지면 비워 둘 것도 없다. 남는 것은 인셋(34)과 숨돌림(16)뿐이다.
+  /**
+   * 페이드는 **가릴 것이 있을 때만** 뜬다.
+   *
+   * 늘 그려 두면 안 구르는 시트에서도 위아래 끝의 내용이 옅어져, 가릴 것이 없는데 가린 것처럼
+   * 보인다. 처음 그려질 때는 구른 적이 없으므로 위쪽은 언제나 없다.
+   */
+  it('구르기 전에는 위 페이드가 없다', async () => {
+    const view = await renderOverlay(<StepSheet />)
+
+    expect(view.queryByTestId('bottom-sheet-fade-top')).toBeNull()
+  })
+
+  it('내용이 뷰포트를 넘으면 아래 페이드가 선다', async () => {
+    const view = await renderOverlay(<StepSheet />)
+    const scroller = view.getByTestId('income-sheet')
+
+    await act(async () => {
+      fireEvent(scroller, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 400 } } })
+      fireEvent(scroller, 'contentSizeChange', 360, 900)
+    })
+
+    expect(view.getByTestId('bottom-sheet-fade-bottom')).toBeTruthy()
+  })
+
+  it('내용이 다 보이면 아래 페이드도 없다', async () => {
+    const view = await renderOverlay(<StepSheet />)
+    const scroller = view.getByTestId('income-sheet')
+
+    await act(async () => {
+      fireEvent(scroller, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 400 } } })
+      fireEvent(scroller, 'contentSizeChange', 360, 300)
+    })
+
+    expect(view.queryByTestId('bottom-sheet-fade-bottom')).toBeNull()
+  })
+
+  it('구르면 위 페이드가 서고, 끝까지 내리면 아래 페이드가 사라진다', async () => {
+    const view = await renderOverlay(<StepSheet />)
+    const scroller = view.getByTestId('income-sheet')
+
+    await act(async () => {
+      fireEvent.scroll(scroller, {
+        nativeEvent: {
+          contentOffset: { x: 0, y: 500 },
+          contentSize: { width: 360, height: 900 },
+          layoutMeasurement: { width: 360, height: 400 },
+        },
+      })
+    })
+
+    expect(view.getByTestId('bottom-sheet-fade-top')).toBeTruthy()
+    expect(view.queryByTestId('bottom-sheet-fade-bottom')).toBeNull()
+  })
+
   it('줄이 없는 단계에서는 비워 둔 자리도 없어진다', async () => {
     const view = await renderOverlay(<StepSheet />)
 
