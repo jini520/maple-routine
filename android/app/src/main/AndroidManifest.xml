@@ -27,6 +27,14 @@
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
+      <!-- 넥슨 Open ID 가 로그인 결과를 돌려주는 자리. iOS 는 Info.plist 의 CFBundleURLSchemes 에
+           같은 스킴이 있다. 넥슨 애플리케이션 등록의 Redirect URI 와 글자까지 같아야 한다. -->
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="com.mapleroutine.app"/>
+      </intent-filter>
     </activity>
   </application>
 </manifest>

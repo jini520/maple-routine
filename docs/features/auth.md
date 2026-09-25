@@ -77,6 +77,16 @@
 - **어느 키가 죽었는지는 실패가 실어 나른다.** 동기화 오류(`ScheduleSyncError`)에 그때 쓴 자격이
   실리고, 모달의 확인이 그 값을 지운다. 안 실으면 어느 키를 지울지 알 수 없어 전부 지우게 된다.
 
+**넥슨이 로그인 결과를 앱에 돌려주는 길은 커스텀 스킴 하나다**(`com.mapleroutine.app://oauth/callback`,
+배선 완료 2026-09-26, #538). iOS 는 `ios/app/Info.plist` 의 `CFBundleURLSchemes` 에 이미 있었고
+안드로이드에는 없어서 `AndroidManifest.xml` 에 `intent-filter` 를 더했다. **이 배선과
+`expo-web-browser` 는 둘 다 지문을 바꾸므로 OTA 가 아니라 스토어 빌드로 나간다.**
+
+- 로그인 창은 `expo-web-browser` 의 `openAuthSessionAsync` 로 연다([[ADR-296]] 결정 5). iOS 에서는
+  ASWebAuthenticationSession 이라 콜백 URL 이 **그 세션에만** 돌아온다. `Linking.openURL` 로 Safari 를
+  열면 같은 스킴을 등록한 다른 앱이 콜백을 받을 수 있다.
+- **앱 안 웹뷰로 열지 않는다.** 주소창이 안 보이면 사용자가 자격 증명을 어디에 넣는지 확인할 방법이 없다.
+
 - **링크는 둘이다**(2026-08-08, 이슈 #61, 사용자 확정). 1차 경로가 **‘API 키 발급 방법’(가이드)**,
   다른 하나가 **`openapi.nexon.com` 바로 가기**다. 처음 쓰는 사용자를 넥슨 첫 화면에 떨궈 놓지 않는
   것이 1차 경로를 가이드로 두는 이유고, 이미 발급받은 사용자에게 7단계 안내를 거치게 하지 않는 것이
