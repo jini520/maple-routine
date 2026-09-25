@@ -198,6 +198,105 @@ describe('숫자 칸의 커서', () => {
     expect(view.getByTestId('input-card-value').props.selection).toEqual({ start: 11, end: 11 })
   })
 
+  /**
+   * 값이 갈리는 순간 네이티브 칸은 콤마가 없는 날 글자를 들고 있다. 그 인덱스가 뒤늦게
+   * `selectionChange` 로 오는데 받아 두면 고른 자리가 콤마 하나분 되돌아간다.
+   */
+  it('콤마가 늘 때 네이티브가 내는 옛 자리에 커서를 안 내준다', async () => {
+    const { view } = await 그리기({ value: '100' })
+    const 칸 = view.getByTestId('input-card-value')
+
+    // `100|` 에서 `0` 을 친다. 칸이 내는 것은 콤마 없는 날 글자다.
+    await act(async () => {
+      fireEvent(칸, 'selectionChange', { nativeEvent: { selection: { start: 3, end: 3 } } })
+    })
+    await act(async () => {
+      fireEvent.changeText(칸, '1000')
+    })
+    expect(view.getByTestId('input-card-value').props.value).toBe('1,000')
+    expect(view.getByTestId('input-card-value').props.selection).toEqual({ start: 5, end: 5 })
+
+    // 네이티브가 날 글자 `1000` 의 4 를 뒤늦게 낸다. 받으면 `1,00|0` 이 된다.
+    await act(async () => {
+      fireEvent(칸, 'selectionChange', { nativeEvent: { selection: { start: 4, end: 4 } } })
+    })
+
+    expect(view.getByTestId('input-card-value').props.selection).toEqual({ start: 5, end: 5 })
+  })
+
+  it('버리는 것은 한 번이다. 다시 누르면 그 자리로 간다', async () => {
+    const { view } = await 그리기({ value: '100' })
+    const 칸 = view.getByTestId('input-card-value')
+
+    await act(async () => {
+      fireEvent.changeText(칸, '1000')
+    })
+    await act(async () => {
+      fireEvent(칸, 'selectionChange', { nativeEvent: { selection: { start: 4, end: 4 } } })
+    })
+    // 손으로 그 자리를 누른다.
+    await act(async () => {
+      fireEvent(칸, 'selectionChange', { nativeEvent: { selection: { start: 4, end: 4 } } })
+    })
+
+    expect(view.getByTestId('input-card-value').props.selection).toEqual({ start: 4, end: 4 })
+  })
+
+  /**
+   * 콤마는 우리가 넣은 것이라 지울 대상이 아니다. 지우면 값이 안 갈려 한 번 헛돈다.
+   */
+  it('콤마 뒤에서 지우면 콤마를 건너뛰고 그 앞 숫자를 지운다', async () => {
+    const { view } = await 그리기({ value: '1000000000' })
+    const 칸 = view.getByTestId('input-card-value')
+
+    // `1,000,000,|000` 에 커서를 두고 지운다. 칸이 내는 것은 콤마가 빠진 날 글자다.
+    await act(async () => {
+      fireEvent(칸, 'selectionChange', { nativeEvent: { selection: { start: 10, end: 10 } } })
+    })
+    await act(async () => {
+      fireEvent.changeText(칸, '1,000,000000')
+    })
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('100,000,000')
+    // 지운 숫자 자리. 여섯째 숫자 뒤다.
+    expect(view.getByTestId('input-card-value').props.selection).toEqual({ start: 7, end: 7 })
+  })
+
+  it('숫자를 지우는 것은 그대로다', async () => {
+    const { view } = await 그리기({ value: '1234' })
+    const 칸 = view.getByTestId('input-card-value')
+
+    // `1,23|4` 에서 `3` 을 지운다.
+    await act(async () => {
+      fireEvent(칸, 'selectionChange', { nativeEvent: { selection: { start: 4, end: 4 } } })
+    })
+    await act(async () => {
+      fireEvent.changeText(칸, '1,24')
+    })
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('124')
+    expect(view.getByTestId('input-card-value').props.selection).toEqual({ start: 2, end: 2 })
+  })
+
+  it('자리가 그대로면 커서를 다시 안 세운다. 깜빡임이 끊긴다', async () => {
+    const { view } = await 그리기({ value: '1000' })
+    const 칸 = view.getByTestId('input-card-value')
+
+    await act(async () => {
+      fireEvent(칸, 'selectionChange', { nativeEvent: { selection: { start: 5, end: 5 } } })
+    })
+    const 앞 = view.getByTestId('input-card-value').props.selection
+
+    // 상한에 걸려 값이 안 갈리는 타건. 되짚은 자리는 그대로다.
+    await act(async () => {
+      fireEvent.changeText(칸, '1,00099999999999')
+    })
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('1,000')
+    // 같은 객체다. 새 객체를 주면 네이티브가 커서를 다시 세운다.
+    expect(view.getByTestId('input-card-value').props.selection).toBe(앞)
+  })
+
   it('글자 칸은 커서를 안 붙든다. 이름은 가운데를 고칠 수 있어야 한다', async () => {
     const { view } = await 그리기({ text: true, value: '칠흑의 보스 반지' })
 
