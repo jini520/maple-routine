@@ -19,6 +19,7 @@ import {
   setApiKey,
 } from '../../storage/api-key'
 import { useAppEntryStore } from '../app-entry/store'
+import { revokeNexonSession } from '../../server/nexon-auth'
 import { useToastStore } from '../toast/store'
 import { formatAuthError } from './format'
 import { apiKeyCredential } from '../../lib/nexon-credential'
@@ -172,6 +173,12 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   async signOut() {
+    // 로그인이 있었으면 서버의 토큰도 함께 거둔다. **기기에서 지우기 전에** 물어야 세션 값을
+    // 아직 들고 있다. 실패해도 진행한다 - 기기에서 지우는 것이 본론이고, 서버 쪽은 갱신 토큰
+    // 수명이 지나면 어차피 정리된다.
+    const session = (await getAuthConfig().catch(() => null))?.login?.session
+    if (session !== undefined) await revokeNexonSession(session)
+
     await clearAuthConfig()
     set((state) => authReducer(state, { type: 'SIGNED_OUT' }))
     useAppEntryStore.getState().reset()
