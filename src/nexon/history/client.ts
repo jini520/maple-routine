@@ -10,6 +10,7 @@
  *
  * @see docs/persistence/sqlite.md `enhancement_history`
  */
+import type { NexonCredential } from '../../types/auth'
 import { requestJson } from '../http'
 
 /** 한 번에 달라고 하는 최대 건수. 상한이라 이보다 적게 올 수 있다. */
@@ -83,7 +84,7 @@ export interface EnhancementHistoryQuery {
  * @example const page = await fetchEnhancementHistory(key, 'cube', equipmentItemKeyOfApiName, { dateKey: '2026-09-04' })
  */
 export async function fetchEnhancementHistory(
-  apiKey: string,
+  credential: NexonCredential,
   kind: EnhancementKind,
   itemKeyOf: (apiName: string) => string | null,
   query: EnhancementHistoryQuery,
@@ -91,7 +92,7 @@ export async function fetchEnhancementHistory(
   const tail = query.cursor === undefined ? `date=${query.dateKey}` : `cursor=${query.cursor}`
   const body = await requestJson<Record<string, unknown>>(
     `/maplestory/v1/history/${PATH_BY_KIND[kind]}?count=${PAGE_SIZE}&${tail}`,
-    apiKey,
+    credential,
   )
 
   const raw = body[historyKeyOf(kind)]

@@ -4,6 +4,10 @@
 import { NexonBadRequestError, NexonNetworkError } from '../../errors'
 import { requestJson } from '../../http'
 import { fetchNexonNotice, fetchNexonNoticeList, nexonNoticeRef } from '../client'
+import type { NexonCredential } from '../../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 
 jest.mock('../../http', () => ({ __esModule: true, requestJson: jest.fn() }))
 
@@ -16,12 +20,12 @@ beforeEach(() => {
 describe('fetchNexonNoticeList', () => {
   it('분류마다 다른 경로와 배열 키를 읽는다', async () => {
     request.mockResolvedValueOnce({ update_notice: [] })
-    await fetchNexonNoticeList('key', 'update')
-    expect(request).toHaveBeenCalledWith('/maplestory/v1/notice-update', 'key')
+    await fetchNexonNoticeList(자격('key'), 'update')
+    expect(request).toHaveBeenCalledWith('/maplestory/v1/notice-update', 자격('key'))
 
     request.mockResolvedValueOnce({ cashshop_notice: [] })
-    await fetchNexonNoticeList('key', 'cashshop')
-    expect(request).toHaveBeenLastCalledWith('/maplestory/v1/notice-cashshop', 'key')
+    await fetchNexonNoticeList(자격('key'), 'cashshop')
+    expect(request).toHaveBeenLastCalledWith('/maplestory/v1/notice-cashshop', 자격('key'))
   })
 
   // id 는 서버 사본과 같은 모양이어야 알림을 탭해도 같은 상세가 열린다.
@@ -40,7 +44,7 @@ describe('fetchNexonNoticeList', () => {
       ],
     })
 
-    expect(await fetchNexonNoticeList('key', 'event')).toEqual([
+    expect(await fetchNexonNoticeList(자격('key'), 'event')).toEqual([
       {
         id: 'event-1374',
         kind: 'event',
@@ -82,7 +86,7 @@ describe('fetchNexonNoticeList', () => {
       ],
     })
 
-    const [ongoing, limited] = await fetchNexonNoticeList('key', 'cashshop')
+    const [ongoing, limited] = await fetchNexonNoticeList(자격('key'), 'cashshop')
     expect(ongoing).not.toHaveProperty('startsAt')
     expect(ongoing).not.toHaveProperty('endsAt')
     expect(limited).toMatchObject({ startsAt: '2026-08-20T01:00:00.000Z', endsAt: '2026-09-16T14:59:00.000Z' })
@@ -93,7 +97,7 @@ describe('fetchNexonNoticeList', () => {
       notice: [{ title: '9/17(목) 넥슨 정기점검 안내', url: 'https://x', notice_id: 149862, date: '2026-09-15T14:44+09:00' }],
     })
 
-    const [notice] = await fetchNexonNoticeList('key', 'game')
+    const [notice] = await fetchNexonNoticeList(자격('key'), 'game')
     expect(notice).toEqual({
       id: 'game-149862',
       kind: 'game',
@@ -115,14 +119,14 @@ describe('fetchNexonNoticeList', () => {
       ],
     })
 
-    expect((await fetchNexonNoticeList('key', 'game')).map((n) => n.id)).toEqual(['game-3'])
+    expect((await fetchNexonNoticeList(자격('key'), 'game')).map((n) => n.id)).toEqual(['game-3'])
   })
 
   // 계약을 어긴 응답을 빈 목록으로 읽으면 넥슨 쪽 고장 하나가 기기의 사본을 지운다.
   it('배열 키가 없으면 빈 목록이 아니라 실패다', async () => {
     request.mockResolvedValueOnce({ something_else: [] })
 
-    await expect(fetchNexonNoticeList('key', 'event')).rejects.toBeInstanceOf(NexonNetworkError)
+    await expect(fetchNexonNoticeList(자격('key'), 'event')).rejects.toBeInstanceOf(NexonNetworkError)
   })
 })
 
@@ -150,9 +154,9 @@ describe('fetchNexonNotice', () => {
       date: '2026-09-10T11:08+09:00',
     })
 
-    const lookup = await fetchNexonNotice('key', 'event', 1374)
+    const lookup = await fetchNexonNotice(자격('key'), 'event', 1374)
 
-    expect(request).toHaveBeenCalledWith('/maplestory/v1/notice-event/detail?notice_id=1374', 'key')
+    expect(request).toHaveBeenCalledWith('/maplestory/v1/notice-event/detail?notice_id=1374', 자격('key'))
     expect(lookup).toEqual({
       status: 'found',
       notice: {
@@ -170,18 +174,18 @@ describe('fetchNexonNotice', () => {
   // 넥슨은 목록에 지금 떠 있는 글만 상세를 준다. 내린 글의 답이 400 OPENAPI00004 다.
   it('400 OPENAPI00004 만 없다는 답이다', async () => {
     request.mockRejectedValueOnce(new NexonBadRequestError('거부', 'OPENAPI00004'))
-    expect(await fetchNexonNotice('key', 'event', 1)).toEqual({ status: 'missing' })
+    expect(await fetchNexonNotice(자격('key'), 'event', 1)).toEqual({ status: 'missing' })
 
     request.mockRejectedValueOnce(new NexonBadRequestError('거부', 'OPENAPI00005'))
-    expect(await fetchNexonNotice('key', 'event', 1)).toEqual({ status: 'failed' })
+    expect(await fetchNexonNotice(자격('key'), 'event', 1)).toEqual({ status: 'failed' })
 
     request.mockRejectedValueOnce(new NexonNetworkError('끊김'))
-    expect(await fetchNexonNotice('key', 'event', 1)).toEqual({ status: 'failed' })
+    expect(await fetchNexonNotice(자격('key'), 'event', 1)).toEqual({ status: 'failed' })
   })
 
   it('제목을 못 읽으면 실패다', async () => {
     request.mockResolvedValueOnce({ contents: '<p>본문</p>', date: '2026-09-10T11:08+09:00' })
 
-    expect(await fetchNexonNotice('key', 'game', 1)).toEqual({ status: 'failed' })
+    expect(await fetchNexonNotice(자격('key'), 'game', 1)).toEqual({ status: 'failed' })
   })
 })

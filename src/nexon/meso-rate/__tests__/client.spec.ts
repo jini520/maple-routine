@@ -1,5 +1,9 @@
 import { fetchMesoRate } from '../client'
 import { NexonAuthError, NexonNetworkError } from '../../errors'
+import type { NexonCredential } from '../../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 
 const 원래전역: Record<string, unknown> = {}
 
@@ -61,7 +65,7 @@ describe('fetchMesoRate', () => {
     const fetchMock = 정상응답()
     stubGlobal('fetch', fetchMock)
 
-    await expect(fetchMesoRate('api-key', 'ocid-1', null)).resolves.toBe(149)
+    await expect(fetchMesoRate(자격('api-key'), 'ocid-1', null)).resolves.toBe(149)
     expect(fetchMock).toHaveBeenCalledTimes(6)
   })
 
@@ -69,7 +73,7 @@ describe('fetchMesoRate', () => {
     const fetchMock = 정상응답()
     stubGlobal('fetch', fetchMock)
 
-    await fetchMesoRate('api-key', 'oc id/1', null)
+    await fetchMesoRate(자격('api-key'), 'oc id/1', null)
 
     const 부른경로 = fetchMock.mock.calls.map(([url]) => String(url))
     for (const path of Object.keys(응답)) {
@@ -95,14 +99,14 @@ describe('fetchMesoRate', () => {
       }),
     )
 
-    await expect(fetchMesoRate('api-key', 'ocid-1', null)).resolves.toBe(169)
+    await expect(fetchMesoRate(자격('api-key'), 'ocid-1', null)).resolves.toBe(169)
   })
 
   it('섀도어면 그리드로 20 이 더 붙는다. 스킬 조회를 안 거친다', async () => {
     const fetchMock = 정상응답()
     stubGlobal('fetch', fetchMock)
 
-    await expect(fetchMesoRate('api-key', 'ocid-1', '섀도어')).resolves.toBe(169)
+    await expect(fetchMesoRate(자격('api-key'), 'ocid-1', '섀도어')).resolves.toBe(169)
   })
 
   it('여섯은 병렬이다. 앞의 응답을 기다리지 않는다', async () => {
@@ -120,7 +124,7 @@ describe('fetchMesoRate', () => {
       }),
     )
 
-    await fetchMesoRate('api-key', 'ocid-1', null)
+    await fetchMesoRate(자격('api-key'), 'ocid-1', null)
     expect(최대동시).toBe(6)
   })
 
@@ -134,7 +138,7 @@ describe('fetchMesoRate', () => {
       }),
     )
 
-    await expect(fetchMesoRate('api-key', 'ocid-1', null)).rejects.toBeInstanceOf(NexonAuthError)
+    await expect(fetchMesoRate(자격('api-key'), 'ocid-1', null)).rejects.toBeInstanceOf(NexonAuthError)
   })
 
   it('스킬 조회가 실패해도 던진다. 챌린저스가 빠진 값은 최대치가 아니다', async () => {
@@ -147,16 +151,16 @@ describe('fetchMesoRate', () => {
       }),
     )
 
-    await expect(fetchMesoRate('api-key', 'ocid-1', null)).rejects.toBeInstanceOf(NexonNetworkError)
+    await expect(fetchMesoRate(자격('api-key'), 'ocid-1', null)).rejects.toBeInstanceOf(NexonNetworkError)
   })
 
   it('네트워크가 끊기면 NexonNetworkError 다', async () => {
     stubGlobal('fetch', jest.fn(async () => { throw new TypeError('Network request failed') }))
-    await expect(fetchMesoRate('api-key', 'ocid-1', null)).rejects.toBeInstanceOf(NexonNetworkError)
+    await expect(fetchMesoRate(자격('api-key'), 'ocid-1', null)).rejects.toBeInstanceOf(NexonNetworkError)
   })
 
   it('미접속 캐릭터의 축약 응답(빈 몸)에서도 던지지 않고 0 을 낸다', async () => {
     stubGlobal('fetch', jest.fn(async () => jsonResponse(200, {})))
-    await expect(fetchMesoRate('api-key', 'ocid-1', null)).resolves.toBe(0)
+    await expect(fetchMesoRate(자격('api-key'), 'ocid-1', null)).resolves.toBe(0)
   })
 })

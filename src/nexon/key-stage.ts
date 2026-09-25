@@ -9,6 +9,7 @@
  *
  * @see docs/features/auth.md 이 판정으로 무엇을 막는지
  */
+import type { NexonCredential } from '../types/auth'
 import { CHARACTER_LIST_PATH } from './character/client'
 import { NexonRateLimitError } from './errors'
 import { requestJson } from './http'
@@ -34,10 +35,10 @@ export const PROBE_CALL_COUNT = 10
  * 429 가 아닌 실패는 전부 `undetermined` 다. 차단하는 쪽이 양성 증거를 요구해야, 네트워크가 끊긴
  * 자리에서 멀쩡한 키가 거부되지 않는다.
  */
-export async function probeApiKeyStage(apiKey: string): Promise<ApiKeyStageVerdict> {
+export async function probeApiKeyStage(credential: NexonCredential): Promise<ApiKeyStageVerdict> {
   const results = await Promise.allSettled(
     Array.from({ length: PROBE_CALL_COUNT }, () =>
-      requestJson<unknown>(CHARACTER_LIST_PATH, apiKey),
+      requestJson<unknown>(CHARACTER_LIST_PATH, credential),
     ),
   )
 

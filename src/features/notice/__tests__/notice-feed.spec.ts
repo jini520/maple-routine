@@ -9,6 +9,10 @@ import { getAuthConfig } from '../../../storage/api-key'
 import type { Notice, NoticeKind } from '../../../types/notice'
 import { saveNoticeResponse } from '../notice-copy'
 import { fetchNoticeDetail, groupNoticesByKind, refreshNoticeKind, refreshNoticeKinds } from '../notice-feed'
+import type { NexonCredential } from '../../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 
 jest.mock('../../../nexon/notice/client', () => ({
   __esModule: true,
@@ -50,7 +54,7 @@ describe('refreshNoticeKind', () => {
     nexonList.mockResolvedValueOnce([notice('event-1', 'event')])
 
     await expect(refreshNoticeKind('event')).resolves.toEqual([notice('event-1', 'event')])
-    expect(nexonList).toHaveBeenCalledWith('key', 'event')
+    expect(nexonList).toHaveBeenCalledWith(자격('key'), 'event')
     expect(serverList).not.toHaveBeenCalled()
     expect(save).toHaveBeenCalledWith('event', [notice('event-1', 'event')])
   })
@@ -179,7 +183,7 @@ describe('fetchNoticeDetail', () => {
     nexonDetail.mockResolvedValueOnce({ status: 'missing' })
 
     await expect(fetchNoticeDetail('cashshop-1004')).resolves.toEqual({ status: 'missing' })
-    expect(nexonDetail).toHaveBeenCalledWith('key', 'cashshop', 1004)
+    expect(nexonDetail).toHaveBeenCalledWith(자격('key'), 'cashshop', 1004)
     expect(serverDetail).not.toHaveBeenCalled()
   })
 

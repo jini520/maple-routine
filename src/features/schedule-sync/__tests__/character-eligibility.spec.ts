@@ -8,6 +8,10 @@ import {
 } from '../../../storage/schedule-probe-ledger'
 import type { SchedulerCharacterState } from '../../../types'
 import { readKnownEligibility, resolveCharacterEligibility } from '../character-eligibility'
+import type { NexonCredential } from '../../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 
 jest.mock('../../../nexon/schedule', () => ({
   fetchSchedulerCharacterState: jest.fn(),
@@ -94,13 +98,13 @@ describe('readKnownEligibility. 낡은 access_flag 가 원장을 못 덮는다',
 
 describe('access_flag는 배제 게이트가 아니라 충분조건이다', () => {
   it('access_flag: true면 API를 부르지 않고 곧바로 자격 O다', async () => {
-    await expect(resolveCharacterEligibility('key', 'ocid-1', true, NOW)).resolves.toBe('eligible')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', true, NOW)).resolves.toBe('eligible')
     expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
   })
 
   it('access_flag: false여도 과거에 완료 기록이 있으면 자격 O다', async () => {
     fetchSchedulerCharacterStateMock.mockResolvedValue(COMPLETED)
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('eligible')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('eligible')
   })
 })
 
@@ -111,7 +115,7 @@ describe('과거 날짜 스윕. 13일을 한꺼번에 태운다', () => {
       () => new Promise<SchedulerCharacterState>((resolve) => pending.push(resolve)),
     )
 
-    const promise = resolveCharacterEligibility('key', 'ocid-1', false, NOW)
+    const promise = resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)
     await flushMicrotasks()
 
     // 열셋이 한꺼번에 나간다. 직렬이면 첫 응답이 와야 둘째가 나가 1 이 된다.
@@ -126,16 +130,16 @@ describe('과거 날짜 스윕. 13일을 한꺼번에 태운다', () => {
   it('발사 순서는 최신 날짜부터다. 원장 필터가 날짜를 거른 뒤의 순서를 그대로 쓴다', async () => {
     fetchSchedulerCharacterStateMock.mockResolvedValue(state())
 
-    await resolveCharacterEligibility('key', 'ocid-1', false, NOW)
+    await resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)
 
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-08-02')
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(13, 'key', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-21')
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 자격('key'), 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-08-02')
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(13, 자격('key'), 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-21')
   })
 
   it('완료를 찾아도 13일이 다 나간다. 조기 종료를 포기한 대가다', async () => {
     fetchSchedulerCharacterStateMock.mockResolvedValue(COMPLETED)
 
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('eligible')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('eligible')
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(13)
   })
 
@@ -145,19 +149,19 @@ describe('과거 날짜 스윕. 13일을 한꺼번에 태운다', () => {
         dateKey === '2026-07-21' ? COMPLETED : state(),
     )
 
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('eligible')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('eligible')
   })
 
   it('14일 내내 완료가 없으면 자격 X이고 13일을 모두 조회한다', async () => {
     fetchSchedulerCharacterStateMock.mockResolvedValue(state())
 
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('ineligible')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('ineligible')
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(13)
   })
 
   it('오늘 응답을 이미 손에 쥔 호출부가 넘기면 그 완료만으로 통과한다 (호출 0회)', async () => {
     await expect(
-      resolveCharacterEligibility('key', 'ocid-1', false, NOW, COMPLETED),
+      resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW, COMPLETED),
     ).resolves.toBe('eligible')
     expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
   })
@@ -166,25 +170,25 @@ describe('과거 날짜 스윕. 13일을 한꺼번에 태운다', () => {
 describe('같은 날짜를 두 번 조회하지 않는다 (= 이슈 #87 문제 1)', () => {
   it('두 번째 판정은 원장에 없는 날짜만 조회한다. 스윕 전체가 반복되지 않는다', async () => {
     fetchSchedulerCharacterStateMock.mockResolvedValue(state())
-    await resolveCharacterEligibility('key', 'ocid-1', false, NOW)
+    await resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(13)
 
     fetchSchedulerCharacterStateMock.mockClear()
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('ineligible')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('ineligible')
     expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
   })
 
   it('하루가 지나면 새로 윈도우에 들어온 날짜 1개만 조회한다', async () => {
     fetchSchedulerCharacterStateMock.mockResolvedValue(state())
-    await resolveCharacterEligibility('key', 'ocid-1', false, NOW)
+    await resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)
 
     fetchSchedulerCharacterStateMock.mockClear()
     const tomorrow = new Date('2026-08-04T03:00:00.000Z')
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, tomorrow)).resolves.toBe(
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, tomorrow)).resolves.toBe(
       'ineligible',
     )
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-08-03')
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith(자격('key'), 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-08-03')
   })
 })
 
@@ -194,7 +198,7 @@ describe('실패 종류별 기록 정책', () => {
       new NexonBadRequestError('unavailable', 'OPENAPI00003'),
     )
 
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('unavailable')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('unavailable')
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(13)
     await expect(getScheduleProbeLedger('ocid-1', NOW)).resolves.toMatchObject({ unavailable: true })
   })
@@ -211,11 +215,11 @@ describe('실패 종류별 기록 정책', () => {
       },
     )
 
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('unavailable')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('unavailable')
 
     // 다음 회차가 같은 답을 낸다. 원장이 그렇게 적혔기 때문이다.
     fetchSchedulerCharacterStateMock.mockClear()
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('unavailable')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('unavailable')
     expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
   })
 
@@ -223,10 +227,10 @@ describe('실패 종류별 기록 정책', () => {
     fetchSchedulerCharacterStateMock.mockRejectedValue(
       new NexonBadRequestError('unavailable', 'OPENAPI00003'),
     )
-    await resolveCharacterEligibility('key', 'ocid-1', false, NOW)
+    await resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)
 
     fetchSchedulerCharacterStateMock.mockClear()
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('unavailable')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('unavailable')
     expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
   })
 
@@ -235,7 +239,7 @@ describe('실패 종류별 기록 정책', () => {
       .mockRejectedValueOnce(new NexonBadRequestError('out of range', 'OPENAPI00004'))
       .mockResolvedValue(COMPLETED)
 
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('eligible')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('eligible')
 
     const ledger = await getScheduleProbeLedger('ocid-1', NOW)
     expect(ledger.dates['2026-08-02']).toEqual({ kind: 'outOfRange' })
@@ -246,7 +250,7 @@ describe('실패 종류별 기록 정책', () => {
       new NexonBadRequestError('not collected', 'OPENAPI00009'),
     )
 
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('ineligible')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('ineligible')
     await expect(getScheduleProbeLedger('ocid-1', NOW)).resolves.toEqual({
       unavailable: false,
       dates: {},
@@ -256,7 +260,7 @@ describe('실패 종류별 기록 정책', () => {
   it('네트워크 실패도 기록하지 않는다. 모르는 실패를 확정으로 굳히지 않는다', async () => {
     fetchSchedulerCharacterStateMock.mockRejectedValue(new NexonNetworkError('offline'))
 
-    await expect(resolveCharacterEligibility('key', 'ocid-1', false, NOW)).resolves.toBe('ineligible')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('ineligible')
     await expect(getScheduleProbeLedger('ocid-1', NOW)).resolves.toEqual({
       unavailable: false,
       dates: {},
@@ -269,14 +273,14 @@ describe('결산 여부도 갱신한다', () => {
   it('날짜를 부르러 가면 결산도 다시 묻는다', async () => {
     fetchSchedulerCharacterStateMock.mockResolvedValue(COMPLETED)
 
-    await resolveCharacterEligibility('key', 'ocid-1', false, NOW)
+    await resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)
 
     expect(refreshSettlementMock).toHaveBeenCalled()
   })
 
   // 원장만으로 판정이 나면 조회가 한 번도 안 나간다. 그 길에서는 묻지 않는다.
   it('access_flag 로 곧바로 끝나면 결산도 안 묻는다', async () => {
-    await resolveCharacterEligibility('key', 'ocid-1', true, NOW)
+    await resolveCharacterEligibility(자격('key'), 'ocid-1', true, NOW)
 
     expect(refreshSettlementMock).not.toHaveBeenCalled()
   })

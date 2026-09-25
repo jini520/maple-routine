@@ -1,3 +1,4 @@
+import type { NexonCredential } from '../../types/auth'
 import type {
   CharacterBasicProfile,
   MapleAccount,
@@ -15,10 +16,10 @@ export const CHARACTER_LIST_PATH = '/maplestory/v1/character/list'
  * @param worldKeyOf API 월드 이름에서 월드 key. 앱은 `lib/world/worlds` 의 `worldKeyOfApiName` 을 넘긴다
  */
 export async function fetchCharacterList(
-  apiKey: string,
+  credential: NexonCredential,
   worldKeyOf: (apiName: string) => string | null,
 ): Promise<MapleAccount[]> {
-  const wire = await requestJson<NexonCharacterListResponse>(CHARACTER_LIST_PATH, apiKey)
+  const wire = await requestJson<NexonCharacterListResponse>(CHARACTER_LIST_PATH, credential)
   return normalizeCharacterList(wire, worldKeyOf)
 }
 
@@ -40,13 +41,13 @@ function hasCharacter(wire: NexonCharacterBasicResponse): boolean {
 }
 
 export async function fetchCharacterBasic(
-  apiKey: string,
+  credential: NexonCredential,
   ocid: string,
   worldKeyOf: (apiName: string) => string | null,
 ): Promise<CharacterBasicProfile> {
   const wire = await requestJson<NexonCharacterBasicResponse>(
     `/maplestory/v1/character/basic?ocid=${encodeURIComponent(ocid)}`,
-    apiKey,
+    credential,
   )
   if (!hasCharacter(wire)) {
     throw new NexonNoCharacterError('이 ocid 에는 더 이상 캐릭터가 없습니다')

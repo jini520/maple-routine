@@ -6,6 +6,7 @@
 
 ## 클라이언트·인증
 - 호출 도메인은 **`https://open.api.nexon.com/`**(문서 사이트 `openapi.nexon.com` 과 다름). 모든 요청 헤더에 **`x-nxopen-api-key: <저장된 개인 API 키>`**.
+- **호출부는 키 문자열이 아니라 **자격 객체**를 넘긴다**(`NexonCredential`, `src/types/auth.ts`. 구현 완료 2026-09-26, #535). `requestJson(path, credential)` 이고 client 파일들은 그 객체를 그대로 통과시킨다. **어떤 자격인지 보고 전송 경로를 가르는 자리가 `nexon/http.ts` 하나**여야 하기 때문이다([[ADR-296]] 결정 4). 지금은 종류가 `apiKey` 하나뿐이라 갈리는 것이 없고, 넥슨 로그인이 붙으면 그 자리에서 서버 경로가 갈린다.
 - **인증이 둘로 갈린다**([[ADR-296]], 설계 · 구현 전). 아래 **프렌즈 API 넷**만 넥슨 Open ID 액세스 토큰(`Authorization: Bearer`)으로도 부를 수 있고, 나머지는 API 키만 받는다. 그래서 Open ID 가 키를 대체하지 못한다.
 
 | 프렌즈 API | 스코프 key |

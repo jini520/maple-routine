@@ -4,6 +4,10 @@ jest.mock('../../../storage/character-accounts', () => ({ recordCharacterAccount
 import { fetchCharacterList } from '../../../nexon/character'
 import { recordCharacterAccounts } from '../../../storage/character-accounts'
 import { fetchAndRecordCharacterList } from '../character-list'
+import type { NexonCredential } from '../../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 
 const fetchMock = fetchCharacterList as jest.Mock
 const recordMock = recordCharacterAccounts as jest.Mock
@@ -20,23 +24,23 @@ beforeEach(() => {
 describe('fetchAndRecordCharacterList', () => {
   it('받은 목록을 그대로 돌려주고 소속을 KST 오늘 날짜로 적는다', async () => {
     // 2026-09-22 23:30 UTC 는 KST 로 9월 23일이다
-    const accounts = await fetchAndRecordCharacterList('key', new Date('2026-09-22T23:30:00Z'))
+    const accounts = await fetchAndRecordCharacterList(자격('key'), new Date('2026-09-22T23:30:00Z'))
 
     expect(accounts).toBe(ACCOUNTS)
-    expect(fetchMock).toHaveBeenCalledWith('key', expect.any(Function))
+    expect(fetchMock).toHaveBeenCalledWith(자격('key'), expect.any(Function))
     expect(recordMock).toHaveBeenCalledWith(ACCOUNTS, '2026-09-23')
   })
 
   it('소속을 못 적어도 목록은 받는다', async () => {
     recordMock.mockRejectedValue(new Error('db'))
 
-    await expect(fetchAndRecordCharacterList('key', new Date('2026-09-22T00:00:00Z'))).resolves.toBe(ACCOUNTS)
+    await expect(fetchAndRecordCharacterList(자격('key'), new Date('2026-09-22T00:00:00Z'))).resolves.toBe(ACCOUNTS)
   })
 
   it('목록을 못 받으면 그 실패를 그대로 던지고 아무것도 안 적는다', async () => {
     fetchMock.mockRejectedValue(new Error('network'))
 
-    await expect(fetchAndRecordCharacterList('key')).rejects.toThrow('network')
+    await expect(fetchAndRecordCharacterList(자격('key'))).rejects.toThrow('network')
     expect(recordMock).not.toHaveBeenCalled()
   })
 })

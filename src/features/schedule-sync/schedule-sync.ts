@@ -1,3 +1,4 @@
+import type { NexonCredential } from '../../types/auth'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { SCHEDULE_NAME_RESOLVERS } from '../../lib/scheduler/schedule-name-resolvers'
 import { mergeSchedulerState, type MergeOutput } from '../../lib/scheduler/scheduler-merge'
@@ -126,7 +127,7 @@ function canResolveAnyStaleSection(
 // 원장이 안 차 다음 동기화가 같은 13일을 다시 훑으므로, 기록은 폴드가 아니라 발사 지점에서
 // 한다. 최적화가 아니라 병렬화의 성립 조건이다.
 async function fillMissingSections(
-  apiKey: string,
+  credential: NexonCredential,
   ocid: string,
   stage1: MergeOutput,
   worldLedger: Record<string, SharedProgressEntry>,
@@ -163,7 +164,7 @@ async function fillMissingSections(
   const fetched = await Promise.all(
     dateKeys.map(async (dateKey) => {
       try {
-        const response = await fetchSchedulerCharacterState(apiKey, ocid, SCHEDULE_NAME_RESOLVERS, dateKey)
+        const response = await fetchSchedulerCharacterState(credential, ocid, SCHEDULE_NAME_RESOLVERS, dateKey)
         await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...toProbeObservation(response) })
         return { response, failure: null }
       } catch (error) {
@@ -242,7 +243,7 @@ async function fillMissingSections(
 // 자격(eligibility) 스윕은 하지 않는다. 추가 호출을 낳고, 추적 캐릭터는 사용자가 이미 고른
 // 대상이라 판정이 필요 없다. 그 스윕은 피커 경로의 몫이다.
 async function refreshCharacterBasics(
-  apiKey: string,
+  credential: NexonCredential,
   targets: TrackedCharacterContext[],
   forcedOcid: string | null,
 ): Promise<void> {
@@ -255,7 +256,7 @@ async function refreshCharacterBasics(
       try {
         // accountId 는 그 캐릭터가 사는 계정이다. 캐시 인덱스가 계정별이라 틀리면 다른 계정
         // 인덱스를 오염시킨다. jobClass 는 character/list 가 준 값을 그대로 실어 보낸다.
-        await fetchCharacterBasicCached(apiKey, accountId, character.ocid, now, character.jobClass, {
+        await fetchCharacterBasicCached(credential, accountId, character.ocid, now, character.jobClass, {
           force: character.ocid === forcedOcid,
         })
       } catch {
@@ -269,12 +270,12 @@ async function refreshCharacterBasics(
 // 비어있을 수 있고, 몬스터파크·에픽 던전처럼 월드/계정 전체가 공유하는 콘텐츠도 있다. 이 두
 // 문제를 mergeSchedulerState(순수 함수, lib/scheduler/scheduler-merge)가 흡수한 "실효 상태"를 캐싱·반환한다.
 async function syncOneCharacter(
-  apiKey: string,
+  credential: NexonCredential,
   character: MapleCharacter,
   accountId: string,
 ): Promise<CharacterScheduleSync> {
   try {
-    const fresh = await fetchSchedulerCharacterState(apiKey, character.ocid, SCHEDULE_NAME_RESOLVERS)
+    const fresh = await fetchSchedulerCharacterState(credential, character.ocid, SCHEDULE_NAME_RESOLVERS)
     const [previousCache, worldLedger, accountLedger] = await Promise.all([
       getCachedSchedulerState(character.ocid),
       // 월드 key 가 없으면 월드 공유 원장을 읽지도 쓰지도 않는다. 월드를 모르는 것과 같다.
@@ -292,7 +293,7 @@ async function syncOneCharacter(
     })
 
     const { characterState, worldLedgerUpdates, accountLedgerUpdates } = await fillMissingSections(
-      apiKey,
+      credential,
       character.ocid,
       stage1,
       worldLedger,
@@ -347,13 +348,13 @@ async function runSyncRound(
 
   // 추적 목록이 메이플 ID 경계를 넘으므로 선택 계정의 캐릭터를 받아 거르지 않는다. 전 계정에서
   // 찾고 각 캐릭터가 자기 계정을 들고 다닌다. 단일 계정에서는 결과가 완전히 같다.
-  const { apiKey, characters: targets, allCharacters } = await resolveTrackedCharacterContext(ocids)
+  const { credential, characters: targets, allCharacters } = await resolveTrackedCharacterContext(ocids)
   const total = targets.length
 
   onProgress?.(0, total)
 
   const [first, ...rest] = targets
-  const firstResult = await syncOneCharacter(apiKey, first.character, first.accountId)
+  const firstResult = await syncOneCharacter(credential, first.character, first.accountId)
   let completed = 1
   onProgress?.(completed, total)
 
@@ -382,13 +383,13 @@ async function runSyncRound(
   const [restResults] = await Promise.all([
     Promise.all(
       rest.map(async ({ character, accountId }) => {
-        const result = await syncOneCharacter(apiKey, character, accountId)
+        const result = await syncOneCharacter(credential, character, accountId)
         completed += 1
         onProgress?.(completed, total)
         return result
       }),
     ),
-    refreshCharacterBasics(apiKey, targets, forcedOcid),
+    refreshCharacterBasics(credential, targets, forcedOcid),
   ])
 
   const results = [firstResult, ...restResults]
@@ -401,7 +402,7 @@ async function runSyncRound(
   // 닿았기 때문이다. 콜드 스타트는 이 경로를 반드시 지난다.
   //
   // 401·429 갈래에는 안 둔다. 그 상태에서는 프로브도 같은 실패를 받아 아무것도 못 짚는다.
-  await probeStrandedTrackedCharacters(apiKey, new Set(ocids), allCharacters, new Date())
+  await probeStrandedTrackedCharacters(credential, new Set(ocids), allCharacters, new Date())
   // 모달을 안 거친 리프의 연결. 뒤에서 스토어가 기록을 쓰고 정리할 때 이 연결을 읽는다.
   await linkWorldLeapsFromRoster(allCharacters, new Date())
 

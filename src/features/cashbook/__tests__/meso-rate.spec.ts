@@ -1,4 +1,8 @@
 // 사냥 계산기가 쓰는 메소 획득량의 **오케스트레이션**.
+import type { NexonCredential } from '../../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 //
 // 화면은 `nexon/` 도 `storage/` 도 직접 안 부른다(CLAUDE.md CRITICAL). 그 셋을 잇는 이 자리만
 // 검증하면 된다.
@@ -32,7 +36,7 @@ beforeEach(() => {
 it('읽히면 자동값이다. 그 값으로 캐시를 갱신한다', async () => {
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 149 })
 
-  expect(fetchMesoRate).toHaveBeenCalledWith('api-key', 'ocid-1', null)
+  expect(fetchMesoRate).toHaveBeenCalledWith(자격('api-key'), 'ocid-1', null)
   expect(setCachedMesoRate).toHaveBeenCalledWith('ocid-1', 149)
 })
 
@@ -80,7 +84,7 @@ it('캐시에 든 직업 이름을 함께 넘긴다', async () => {
 
   await loadMesoRate('ocid-1')
 
-  expect(fetchMesoRate).toHaveBeenCalledWith('api-key', 'ocid-1', '섀도어')
+  expect(fetchMesoRate).toHaveBeenCalledWith(자격('api-key'), 'ocid-1', '섀도어')
 })
 
 it('캐시가 아직 안 따뜻하면 직업을 모르는 채로 부른다. 아무 값이나 얹지 않는다', async () => {
@@ -88,12 +92,12 @@ it('캐시가 아직 안 따뜻하면 직업을 모르는 채로 부른다. 아�
 
   await loadMesoRate('ocid-1')
 
-  expect(fetchMesoRate).toHaveBeenCalledWith('api-key', 'ocid-1', null)
+  expect(fetchMesoRate).toHaveBeenCalledWith(자격('api-key'), 'ocid-1', null)
 })
 
 it('직업 캐시를 못 읽어도 메획 조회는 그대로 돈다', async () => {
   getCachedCharacterBasic.mockRejectedValue(new Error('디스크 깨짐'))
 
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 149 })
-  expect(fetchMesoRate).toHaveBeenCalledWith('api-key', 'ocid-1', null)
+  expect(fetchMesoRate).toHaveBeenCalledWith(자격('api-key'), 'ocid-1', null)
 })

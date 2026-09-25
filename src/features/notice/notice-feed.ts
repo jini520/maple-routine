@@ -7,21 +7,25 @@
 import { fetchNexonNotice, fetchNexonNoticeList, nexonNoticeRef } from '../../nexon/notice/client'
 import { fetchNotice, fetchNotices } from '../../server/notices'
 import { getAuthConfig } from '../../storage/api-key'
+import type { NexonCredential } from '../../types/auth'
 import { NOTICE_KINDS, type Notice, type NoticeKind, type NoticeLookup } from '../../types/notice'
 import { saveNoticeResponse } from './notice-copy'
+import { credentialOf } from '../../lib/nexon-credential'
 
 /** 받는 중인 조회. 같은 분류를 또 부르면 이것을 기다린다. */
 const inFlight = new Map<NoticeKind, Promise<Notice[] | null>>()
 
-async function apiKey(): Promise<string | null> {
-  return (await getAuthConfig().catch(() => null))?.apiKey ?? null
+/** 저장된 자격. 넥슨 공지는 이것 없이는 못 받는다. */
+async function savedCredential(): Promise<NexonCredential | null> {
+  const config = await getAuthConfig().catch(() => null)
+  return config === null ? null : credentialOf(config)
 }
 
 async function receive(kind: NoticeKind): Promise<Notice[] | null> {
   if (kind === 'app') return fetchNotices(20, ['app'])
-  const key = await apiKey()
-  if (key === null) return null
-  return fetchNexonNoticeList(key, kind).catch(() => null)
+  const credential = await savedCredential()
+  if (credential === null) return null
+  return fetchNexonNoticeList(credential, kind).catch(() => null)
 }
 
 /**
@@ -75,9 +79,9 @@ export async function refreshNoticeKinds(
 export async function fetchNoticeDetail(id: string): Promise<NoticeLookup> {
   const ref = nexonNoticeRef(id)
   if (ref === null) return fetchNotice(id)
-  const key = await apiKey()
-  if (key === null) return { status: 'failed' }
-  return fetchNexonNotice(key, ref.kind, ref.noticeId)
+  const credential = await savedCredential()
+  if (credential === null) return { status: 'failed' }
+  return fetchNexonNotice(credential, ref.kind, ref.noticeId)
 }
 
 /** 사본을 분류마다 나눈 것. 순서는 받은 그대로다. */
