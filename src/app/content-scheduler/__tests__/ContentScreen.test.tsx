@@ -517,7 +517,7 @@ describe('ContentScreen: 실패의 목적지', () => {
 
     await renderScreen()
 
-    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('invalid')
+    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('invalid', undefined)
     expect(mockShowError).not.toHaveBeenCalled()
   })
 
@@ -526,7 +526,7 @@ describe('ContentScreen: 실패의 목적지', () => {
 
     await renderScreen()
 
-    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('rateLimited')
+    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('rateLimited', undefined)
     expect(mockShowError).not.toHaveBeenCalled()
   })
 

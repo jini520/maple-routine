@@ -332,11 +332,11 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
    * 소거법과 리셋 당일은 관측이 하나도 없어도 답이 나온다. 키 검사를 함수 맨 앞에 두면 조회할
    * 것이 없는 건까지 0 으로 나가고, 키를 지운 기기에서는 오늘 잡은 보스가 영영 캘린더에 안 찍힌다.
    */
-  const authConfig = await getAuthConfig()
+  const credential = credentialOf(await getAuthConfig())
 
   // 여기서부터 스케줄러를 부른다. 결산 여부도 함께 묻는다(안 기다린다). 미확정 기록이 없어 위에서
   // 돌아가는 길은 조회가 0회라 그 재진입을 이 요청으로 유료로 만들지 않는다.
-  if (authConfig !== null) void refreshSettlement()
+  if (credential !== null) void refreshSettlement()
 
   const byOcid = new Map<string, UndatedBossProfitRecord[]>()
   for (const candidate of candidates) {
@@ -370,9 +370,9 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
         (record) => resolveFor(record, observed, unobservable, todayDateKey, floorDateKey) === null,
       )
       // 키가 없으면 **부를 수가 없다**. 가진 것으로 푼 만큼만 채우고 나머지는 NULL 로 둔다.
-      if (unresolved.length > 0 && authConfig !== null) {
+      if (unresolved.length > 0 && credential !== null) {
         const days = missingDays(ledger.dates, periodsOf(unresolved), floorDateKey, ceilingDateKey)
-        const probed = await probeDays(credentialOf(authConfig), ocid, days)
+        const probed = await probeDays(credential, ocid, days)
         for (const [dateKey, keys] of probed.observed) {
           observed.set(dateKey, keys)
           kindByDate.set(dateKey, 'observed')

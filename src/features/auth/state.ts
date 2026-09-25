@@ -21,6 +21,17 @@ export type AuthError =
  * 로그인 화면 + `apiKey` 삭제)은 하나이고 갈리는 것은 문구뿐이다. 종류마다 다른 알림을 만들면
  * 문구·액션 표가 두 벌이 된다.
  */
+/**
+ * 저장된 키가 죽었다는 알림 하나. **어느 키인지 함께 든다.**
+ *
+ * 값이 없으면 실패가 안 실어 보낸 것이고, 확인이 키를 전부 지운다. 키가 여럿인 사용자에게
+ * 그것은 다른 넥슨 계정의 키까지 잃는 일이라, 알림으로 이어지는 경로는 값을 싣는다.
+ */
+export interface ApiKeyNotice {
+  kind: ApiKeyNoticeKind
+  apiKey: string | null
+}
+
 export type ApiKeyNoticeKind =
   | 'invalid' // 400 OPENAPI00005 · 401/403. 키 자체가 무효해졌다
   | 'rateLimited' // 429. 개발 단계 키의 호출 한도 초과
@@ -41,7 +52,7 @@ export interface AuthState {
    * 없는 모달이 덮인다. 확인을 누르는 순간에야 로그아웃이 나가 로그인 화면으로 이동한다. 상태를
    * 먼저 뒤집으면 화면이 이미 바뀐 뒤에 이유를 설명하게 된다.
    */
-  apiKeyNotice: ApiKeyNoticeKind | null
+  apiKeyNotice: ApiKeyNotice | null
   /**
    * 넣은 키가 개발 단계라 안 받았다는 것을 알리는 모달이 떠 있는가.
    *
@@ -70,7 +81,7 @@ export type AuthEvent =
   | { type: 'API_KEY_REJECTED'; error: AuthError }
   // 키를 다시 받아야 한다는 것을 알리기만 한다. status 는 그대로 두고 모달만 띄운다. 이동은
   // 사용자가 확인을 눌러 로그아웃이 나갈 때 일어난다. 원인(무효 키 · 429)을 싣는다.
-  | { type: 'API_KEY_NOTICED'; kind: ApiKeyNoticeKind }
+  | { type: 'API_KEY_NOTICED'; notice: ApiKeyNotice }
   // 넣은 키가 개발 단계였다. 폼으로 되돌리고 그 위에 모달을 덮는다.
   | { type: 'DEVELOPMENT_STAGE_KEY_BLOCKED' }
   | { type: 'DEVELOPMENT_STAGE_KEY_ACKNOWLEDGED' }
@@ -122,7 +133,7 @@ export function authReducer(state: AuthState, event: AuthEvent): AuthState {
       }
       return {
         ...state,
-        apiKeyNotice: event.kind,
+        apiKeyNotice: event.notice,
       }
 
     // 폼이 선 상태로 되돌린다. `verifying` 으로 남으면 모달을 닫았을 때 제출 버튼이

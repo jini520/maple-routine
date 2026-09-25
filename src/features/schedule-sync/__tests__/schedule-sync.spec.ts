@@ -171,7 +171,7 @@ beforeEach(async () => {
   refreshSettlementMock.mockReset().mockResolvedValue(undefined)
   useRefreshProgress.getState().resetForTests()
   prefs = installFakePreferences()
-  getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
+  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
   getCachedSchedulerStateMock.mockResolvedValue(null)
   setCachedSchedulerStateMock.mockResolvedValue(undefined)
   saveCharacterProfileMock.mockResolvedValue(undefined)
@@ -439,7 +439,7 @@ describe('syncSchedules', () => {
         state: schedulerState('캐시된-캐릭터1'),
         syncedAt: '2026-07-10T00:00:00.000Z',
         isStale: true,
-        error: { kind: 'network' },
+        error: { kind: 'network', apiKey: 'key-1' },
       },
     ])
     expect(setCachedSchedulerStateMock).not.toHaveBeenCalled()
@@ -461,7 +461,7 @@ describe('syncSchedules', () => {
         state: null,
         syncedAt: null,
         isStale: true,
-        error: { kind: 'network' },
+        error: { kind: 'network', apiKey: 'key-1' },
       },
     ])
   })
@@ -476,7 +476,7 @@ describe('syncSchedules', () => {
     const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
-    expect(results[0].error).toEqual({ kind: 'network' })
+    expect(results[0].error).toEqual({ kind: 'network', apiKey: 'key-1' })
     expect(results[1]).toEqual({
       ocid: 'ocid-2',
       characterName: '캐릭터-ocid-2',
@@ -499,7 +499,7 @@ describe('syncSchedules', () => {
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
     expect(getCachedSchedulerStateMock).toHaveBeenCalledTimes(3)
     for (const result of results) {
-      expect(result.error).toEqual({ kind: 'invalidApiKey' })
+      expect(result.error).toEqual({ kind: 'invalidApiKey', apiKey: 'key-1' })
       expect(result.isStale).toBe(true)
     }
   })
@@ -514,7 +514,7 @@ describe('syncSchedules', () => {
 
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
     for (const result of results) {
-      expect(result.error).toEqual({ kind: 'rateLimited' })
+      expect(result.error).toEqual({ kind: 'rateLimited', apiKey: 'key-1' })
       expect(result.isStale).toBe(true)
     }
   })
@@ -534,7 +534,7 @@ describe('syncSchedules', () => {
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(3)
     expect(results[0].isStale).toBe(false)
     expect(results[0].error).toBeNull()
-    expect(results[1].error).toEqual({ kind: 'invalidApiKey' })
+    expect(results[1].error).toEqual({ kind: 'invalidApiKey', apiKey: 'key-1' })
     expect(results[1].isStale).toBe(true)
     expect(results[2].isStale).toBe(false)
     expect(results[2].error).toBeNull()
@@ -1498,7 +1498,7 @@ describe('syncSchedules', () => {
 
     // RN 은 계정을 고르는 단계가 없어 selectedAccountId 가 영영 null 이다.
     it('selectedAccountId 가 없어도 동기화한다. 계정을 고른 적 없는 설치본', async () => {
-      getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
+      getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
       fetchCharacterListMock.mockResolvedValue([account('acc-9', [mockCharacter('ocid-1')])])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
 

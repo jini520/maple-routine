@@ -37,13 +37,13 @@ async function resolveAccountContext(accountId?: string): Promise<{
   credential: NexonCredential
   accountId: string
 }> {
-  const authConfig = await getAuthConfig()
-  if (authConfig === null || accountId === undefined) {
+  const credential = credentialOf(await getAuthConfig())
+  if (credential === null || accountId === undefined) {
     throw new Error(
       'resolveRegisteredCharacters: API 키가 없거나 계정을 지정하지 않았습니다',
     )
   }
-  return { credential: credentialOf(authConfig), accountId }
+  return { credential, accountId }
 }
 
 export async function resolveRegisteredCharacters(accountId?: string): Promise<{
@@ -104,13 +104,13 @@ export async function resolveTrackedCharacterContext(ocids: string[]): Promise<{
    */
   allCharacters: MapleCharacter[]
 }> {
-  const authConfig = await getAuthConfig()
-  if (authConfig === null) {
+  const credential = credentialOf(await getAuthConfig())
+  if (credential === null) {
     throw new Error('resolveTrackedCharacterContext: 온보딩이 완료되지 않았습니다 (API 키 없음)')
   }
 
   const wanted = new Set(ocids)
-  const accounts = await fetchAndRecordCharacterList(credentialOf(authConfig))
+  const accounts = await fetchAndRecordCharacterList(credential)
   const characters = accounts.flatMap((account) =>
     account.characters
       .filter((character) => wanted.has(character.ocid))
@@ -118,7 +118,7 @@ export async function resolveTrackedCharacterContext(ocids: string[]): Promise<{
   )
 
   return {
-    credential: credentialOf(authConfig),
+    credential,
     characters,
     allCharacters: accounts.flatMap((account) => account.characters),
   }

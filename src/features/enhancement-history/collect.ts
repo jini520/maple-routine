@@ -179,8 +179,8 @@ export async function collectEnhancementHistory(
   now: Date,
   onProgress?: HistoryProgress,
 ): Promise<void> {
-  const authConfig = await getAuthConfig()
-  if (authConfig === null) {
+  const credential = credentialOf(await getAuthConfig())
+  if (credential === null) {
     onProgress?.(0, 0)
     return
   }
@@ -193,7 +193,7 @@ export async function collectEnhancementHistory(
   if (jobs.length === 0) return
 
   // 목록을 못 받은 것과 스페셜 캐릭터가 없는 것은 다르다. 앞은 null, 뒤는 빈 집합이다.
-  const eventNames = await fetchAndRecordCharacterList(credentialOf(authConfig))
+  const eventNames = await fetchAndRecordCharacterList(credential)
     .then(async (accounts) => {
       const names = eventWorldCharacterNames(accounts)
       // 읽는 쪽이 이것을 쓴다. 칸 하나 그릴 때마다 계정 목록을 부를 수는 없다.
@@ -216,7 +216,7 @@ export async function collectEnhancementHistory(
     jobs,
     HISTORY_CALL_LIMIT,
     async (job) => {
-      const firstCursor = await collectOne(credentialOf(authConfig), job, observedLevels)
+      const firstCursor = await collectOne(credential, job, observedLevels)
       const settled = job.dateKey < todayDateKey && eventNames !== null
       await markEnhancementChecked(job.kind, job.dateKey, firstCursor, settled, checkedAt)
     },

@@ -11,11 +11,17 @@ import { create } from 'zustand'
 import { fetchAndRecordCharacterList } from '../mvp-grade/character-list'
 import { probeApiKeyStage } from '../../nexon/key-stage'
 import { isInvalidApiKeyError, NexonRateLimitError } from '../../nexon/errors'
-import { clearAuthConfig, getAuthConfig, removeApiKey, setApiKey } from '../../storage/api-key'
+import {
+  clearAuthConfig,
+  getAuthConfig,
+  removeAllApiKeys,
+  removeApiKey,
+  setApiKey,
+} from '../../storage/api-key'
 import { useAppEntryStore } from '../app-entry/store'
 import { useToastStore } from '../toast/store'
 import { formatAuthError } from './format'
-import { credentialOf } from '../../lib/nexon-credential'
+import { apiKeyCredential } from '../../lib/nexon-credential'
 import {
   authReducer,
   initialAuthState,
@@ -34,7 +40,7 @@ export interface AuthStore extends AuthState {
   // 저장된 키로 앞으로 갈 수 없게 됐을 때는 여기로만 들어온다. 원인은 무효 키(400 OPENAPI00005 ·
   // 401/403)와 429 둘이고 사슬은 하나이며 문구만 갈린다. 알리기만 하고 이동·삭제는 아래
   // confirmApiKeyNotice 가 한다.
-  noticeApiKeyIssue(kind: ApiKeyNoticeKind): void
+  noticeApiKeyIssue(kind: ApiKeyNoticeKind, apiKey?: string): void
   // 그 모달의 "확인". 로그인 화면으로 이동하고 저장된 apiKey 를 지운다(원인과 무관하게 같다).
   confirmApiKeyNotice(): Promise<void>
   // 연결 해제. 저장된 인증 정보를 통째로 버린다.
@@ -70,7 +76,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
     let accounts: AuthState['accounts']
     try {
-      accounts = await fetchAndRecordCharacterList(credentialOf({ apiKey }))
+      accounts = await fetchAndRecordCharacterList(apiKeyCredential(apiKey))
     } catch (error) {
       const authError = toAuthError(error)
       useToastStore.getState().showError(formatAuthError(authError))
@@ -86,7 +92,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     //
     // 알리는 것은 모달 하나다. 토스트를 함께 띄우지 않는 것은 그것이 스스로 사라져 처방(서비스
     // 단계 키를 새로 받는 것)까지 데려가기 때문이다.
-    if ((await probeApiKeyStage(credentialOf({ apiKey }))) === 'developmentStage') {
+    if ((await probeApiKeyStage(apiKeyCredential(apiKey))) === 'developmentStage') {
       set((state) => authReducer(state, { type: 'DEVELOPMENT_STAGE_KEY_BLOCKED' }))
       return false
     }
@@ -119,7 +125,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   // 일어나면 사용자는 이미 바뀐 화면에서 이유를 읽게 되고, 토스트는 스스로 사라져 놓칠 수
   // 있다. 원래 화면 위에 닫을 수 없는 모달이 덮이고 이동은 확인을 눌러야 일어난다. 429 도
   // 이 사슬을 그대로 탄다. 처방이 같아 화면도 같고 갈리는 것은 문구뿐이다.
-  noticeApiKeyIssue(kind: ApiKeyNoticeKind) {
+  noticeApiKeyIssue(kind: ApiKeyNoticeKind, apiKey?: string) {
     // 멱등 가드. 동기 함수라 이 구간 전체가 원자적이다. 여러 화면·여러 캐릭터에서
     // 동시에 터져도 모달은 하나이고, 원인이 겹치면 **먼저 뜬 것**이 유지된다(리듀서도 같은 규칙).
     if (get().apiKeyNotice !== null) {
@@ -135,14 +141,17 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
     // status 는 그대로다. 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게 됐는지
     // 보면서 이유를 읽는다. 저장소도 아직 건드리지 않는다.
-    set((state) => authReducer(state, { type: 'API_KEY_NOTICED', kind }))
+    set((state) =>
+      authReducer(state, { type: 'API_KEY_NOTICED', notice: { kind, apiKey: apiKey ?? null } }),
+    )
   },
 
   // 모달의 확인. 여기서야 이동과 삭제가 일어난다. 원인별로 갈라 처리하지 않는다. 429 도 키를
   // 지운다. 안 지우면 재시작 때 같은 키로 앱이 열려 또 막히고, 사용자에게는 재시작하면 되는
   // 것처럼 보이다가 안 되는 상태가 된다. 같은 키를 다시 붙여넣는 것은 안 막는다.
   async confirmApiKeyNotice() {
-    if (get().apiKeyNotice === null) {
+    const notice = get().apiKeyNotice
+    if (notice === null) {
       return
     }
 
@@ -152,7 +161,10 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     useAppEntryStore.getState().reset()
 
     try {
-      await removeApiKey()
+      // 어느 키가 죽었는지 실패가 실어 보냈으면 **그 키만** 지운다. 안 실렸으면 가릴 방법이
+      // 없어 전부 지운다. 키가 여럿인 사용자에게 그것은 다른 넥슨 계정의 키까지 잃는 일이다.
+      if (notice.apiKey === null) await removeAllApiKeys()
+      else await removeApiKey(notice.apiKey)
     } catch {
       // 삭제가 실패하면 재시작 시 옛 무효 키가 되살아나지만 그때는 다시 이 경로를 탈 뿐이라
       // 막다른 길이 아니다. rethrow 하면 호출부가 전부 void 호출이라 미처리 rejection 이 된다.

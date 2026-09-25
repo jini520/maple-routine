@@ -24,7 +24,7 @@ import { deriveEntryStage } from '../stage'
 
 beforeEach(() => {
   // 기본값 = 앱이 열리는 상태
-  getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
+  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
   getTrackingModeMock.mockResolvedValue('auto')
   getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
   setTrackingModeMock.mockResolvedValue(undefined)
@@ -98,7 +98,7 @@ describe('deriveEntryStage', () => {
 describe('deriveEntryStage: 계정 범위 all', () => {
   beforeEach(() => {
     // 계정을 고른 적이 없는 것이 RN 의 정상 상태다.
-    getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
+    getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
   })
 
   afterEach(() => {
@@ -140,7 +140,7 @@ describe('deriveEntryStage: 계정 범위 all', () => {
   // 옛 설치본에는 이 값이 남아 있다(지우지 않는다). 읽지 않는 값이라 판정을 바꾸지 않고,
   // 있으면 있는 그대로 실어 보낸다.
   it('저장된 selectedAccountId가 있으면 그 값을 그대로 싣는다. 판정은 바뀌지 않는다', async () => {
-    getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
+    getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
 
     await expect(deriveEntryStage()).resolves.toBe('ready')
   })

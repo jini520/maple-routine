@@ -117,9 +117,15 @@ describe('domain 타입 샘플 객체', () => {
     expect(account.characters).toHaveLength(1)
   })
 
-  it('NexonAuthConfig 는 API 키 하나다. 계정 선택이 사라졌다', () => {
-    const config: NexonAuthConfig = { apiKey: 'test-key' }
-    expect(config.apiKey).toBe('test-key')
+  // 넥슨 로그인 0~1개 + 이름 붙은 API 키 0개 이상이다. 키마다 이름이 붙는 것은 값이 비슷하게
+  // 생겨 목록에서 구분이 안 되기 때문이다.
+  it('NexonAuthConfig 는 인증 수단의 목록이다', () => {
+    const config: NexonAuthConfig = {
+      login: null,
+      apiKeys: [{ kind: 'apiKey', label: '본계정', value: 'test-key' }],
+    }
+    expect(config.apiKeys[0]?.value).toBe('test-key')
+    expect(config.login).toBeNull()
   })
 })
 

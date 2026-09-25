@@ -57,7 +57,7 @@ let prefs = installFakePreferences()
 
 beforeEach(async () => {
   prefs = installFakePreferences()
-  getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
+  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
   getCharacterProfilesMock.mockResolvedValue(new Map())
   saveCharacterProfileMock.mockResolvedValue(undefined)
   fetchCharacterBasicMock.mockReset()
