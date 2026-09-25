@@ -17,7 +17,7 @@
  * {열림 ? <BottomSheet label="수입 기록" onClose={() => setState(null)}>{내용}</BottomSheet> : null}
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { Pressable, View } from 'react-native'
+import { Platform, Pressable, View } from 'react-native'
 import Animated, {
   Easing,
   runOnJS,
@@ -213,7 +213,16 @@ interface BottomSheetProps {
 }
 
 /**
- * 갈아 드는 흐림 한 겹.
+ * 갈아 드는 한 겹. iOS 는 **흐림**, 안드로이드는 **시트색 덮기**다.
+ *
+ * 안드로이드가 다른 길인 것은 `expo-blur` 가 흐릴 대상을 한 박자 뒤에 잡기 때문이다. 층이 붙는
+ * 첫 프레임에는 대상이 없어 흐림 방식이 `none` 으로 떨어지고, 그 자리에서 tint 가 **배경색**으로
+ * 칠해진다(라이트 재질은 `#F9F9F9`). 다음 프레임에 대상이 도착하면 배경이 투명해지고 흐림이
+ * 켜진다. 단계마다 층을 새로 세우니 전환마다 흰 칠 한두 장이 끼고, 갈아타는 그 지점이
+ * **깜빡임**으로 보인다(사용자 보고 2026-09-25, 실기기).
+ *
+ * 그래서 안드로이드는 흐리지 않고 **시트 표면색으로 덮었다 걷는다.** 칠하는 것이 하나뿐이라
+ * 갈아타는 지점이 없다. 덮는 목적(단계가 갈리는 장면을 가린다)은 그대로 이룬다.
  *
  * **흐림이 짙어진 뒤에 마운트된다.** 리애니메이티드는 `useAnimatedProps` 를 처음 부른 그 순간의
  * 값을 첫 프레임에 쓰고(`initial.value`), 그 값이 인라인 프롭보다 세다. 그래서 이 훅이 시트에
@@ -221,7 +230,7 @@ interface BottomSheetProps {
  * (60fps 녹화에서 확인). 층과 훅을 함께 여기 두면 훅의 첫 호출이 곧 마운트라, 그때 이미 1 인
  * 값을 첫 프레임이 받는다.
  */
-function StepVeil(props: { onDone: () => void }): React.JSX.Element {
+function StepVeil(props: { onDone: () => void; surface: string }): React.JSX.Element {
   /**
    * 재질은 **앱 테마가 고른다**. 기본값 `'default'` 는 OS 외형을 따라가 다크 OS 에서 검게 깔린다
    * (라이트 테마 시트가 통째로 어두워졌다).
@@ -237,6 +246,13 @@ function StepVeil(props: { onDone: () => void }): React.JSX.Element {
    */
   const progress = useSharedValue(1)
   const veil = useAnimatedProps(() => ({ intensity: STEP_BLUR * progress.get() }))
+  /**
+   * 안드로이드가 쓰는 것. 같은 `progress` 를 불투명도로 읽는다.
+   *
+   * 색이 여기 함께 있는 것은 리애니메이티드가 **애니메이션 스타일로 `style` 을 통째로 갈아
+   * 끼우기** 때문이다. 밖에 두면 그 배열이 덮여 색이 사라진다.
+   */
+  const wash = useAnimatedStyle(() => ({ opacity: progress.get(), backgroundColor: props.surface }))
 
   const { onDone } = props
   useEffect(() => {
@@ -272,13 +288,20 @@ function StepVeil(props: { onDone: () => void }): React.JSX.Element {
         overflow: 'hidden',
       }}
     >
-      <AnimatedVeil
-        testID="bottom-sheet-veil-blur"
-        animatedProps={veil}
-        // 색을 따로 안 얹는다. 시트 표면 위라 얹으면 바탕이 함께 물든다.
-        tint={tint}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-      />
+      {Platform.OS === 'android' ? (
+        <Animated.View
+          testID="bottom-sheet-veil-wash"
+          style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, wash]}
+        />
+      ) : (
+        <AnimatedVeil
+          testID="bottom-sheet-veil-blur"
+          animatedProps={veil}
+          // 색을 따로 안 얹는다. 시트 표면 위라 얹으면 바탕이 함께 물든다.
+          tint={tint}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        />
+      )}
     </View>
   )
 }
@@ -570,7 +593,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       )}
 
       {/* 갈아 드는 흐림. 머리·내용·바닥 줄을 통째로 덮으므로 층 셋보다 위다. */}
-      {step.busy && <StepVeil key={step.turn} onDone={step.done} />}
+      {step.busy && <StepVeil key={step.turn} surface={sheetSurface} onDone={step.done} />}
     </BottomSheetModal>
   )
 }

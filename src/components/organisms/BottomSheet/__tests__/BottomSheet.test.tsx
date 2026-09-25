@@ -7,7 +7,7 @@
 //
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
 import { useState, type ReactNode } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Platform, Pressable, Text, View } from 'react-native'
 import { act, fireEvent, within } from '@testing-library/react-native'
 import type { Metrics } from 'react-native-safe-area-context'
 
@@ -481,6 +481,31 @@ describe('BottomSheet: 흐림 재질은 테마가 고른다', () => {
     const view = await 단계갈기()
 
     expect(흐림(view).props.tint).toBe('systemMaterialDark')
+  })
+
+  /**
+   * 안드로이드는 **안 흐린다.** `expo-blur` 가 흐릴 대상을 한 박자 뒤에 잡아, 층이 붙는 첫
+   * 프레임에 tint 가 배경색(`#F9F9F9`)으로 칠해졌다가 다음 프레임에 흐림으로 갈아탄다. 그
+   * 갈아타는 지점이 깜빡임으로 보인다. 시트 표면색으로 덮으면 칠하는 것이 하나라 그 지점이 없다.
+   */
+  describe('안드로이드', () => {
+    afterEach(() => {
+      Platform.OS = 'ios'
+    })
+
+    it('흐림 대신 시트 표면색으로 덮는다', async () => {
+      Platform.OS = 'android'
+
+      const view = await 단계갈기()
+
+      expect(
+        view.queryByTestId('bottom-sheet-veil-blur', { includeHiddenElements: true }),
+      ).toBeNull()
+      const 덮개 = view.getByTestId('bottom-sheet-veil-wash', { includeHiddenElements: true })
+      expect(flattenStyle(덮개.props.style).backgroundColor).toBe(
+        buildSheetScopeVariables(기본테마)['--color-bg'],
+      )
+    })
   })
 })
 
