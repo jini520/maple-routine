@@ -33,6 +33,7 @@ import {
   BottomSheetScrollView,
   useBottomSheetTimingConfigs,
   type BottomSheetBackdropProps,
+  type BottomSheetBackgroundProps,
 } from '@gorhom/bottom-sheet'
 
 import { vars } from 'nativewind'
@@ -60,6 +61,22 @@ import { useStepDissolve } from './step-dissolve'
 function maxSheetHeight(frameHeight: number, topInset: number): number {
   return frameHeight - topInset
 }
+/**
+ * 시트 바탕을 내용 상자 **아래로 더 깔아 두는 길이**.
+ *
+ * 긴 단계에서 짧은 단계로 갈 때 시트 **바닥이 화면 바닥에서 떨어진다.** 라이브러리가 내용 상자
+ * 높이와 시트 자리를 각각 애니메이션하는데, 높이는 잰 값이 바뀌는 즉시 UI 스레드에서 줄기
+ * 시작하고 자리는 몇 프레임 뒤에 출발한다. 그 사이 «자리 + 높이» 가 화면 높이에 못 미쳐 상자
+ * 아래로 뒤 화면이 비친다(실기기에서 330px 까지 벌어지는 것을 프레임으로 확인).
+ *
+ * 바탕은 몸통을 채우는 **절대 배치 뷰**라, 그 `bottom` 을 이만큼 음수로 주면 상자보다 아래까지
+ * 깔린다. 그 틈이 늘 시트색으로 덮인다. 평상시에는 화면 밖이라 안 보인다. 360×640dp 기준 최악이
+ * 화면 높이만큼이라 넉넉히 잡는다.
+ *
+ * 몸통에 `paddingBottom` 을 주는 길은 안 된다 - 절대 배치의 기준이 **안쪽 상자**라 바탕이 그만큼
+ * 짧아진다(실기기에서 그렇게 났다).
+ */
+const UNDERLAP = 640
 /** 시트 최대 너비. 넘으면 중앙 정렬로 남는다. */
 const MAX_WIDTH = 448
 /** 그랩 핸들이 차지하는 높이. 스크롤 내용의 `paddingTop` 이 이 값을 되돌려 준다. */
@@ -352,6 +369,22 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
     ref.current?.present()
   }, [])
 
+  /**
+   * 시트 바탕. 기본 바탕을 그대로 쓰되 **아래로 더 내린다**(`UNDERLAP`).
+   *
+   * 라이브러리는 바탕에 `top`·`bottom` 을 직접 못 주게 타입으로 막아 뒀다(`backgroundStyle`).
+   * 바탕 부품을 갈아 끼우는 것이 그 규칙 안에서 같은 일을 하는 길이다.
+   */
+  const renderBackground = useCallback(
+    (backgroundProps: BottomSheetBackgroundProps) => (
+      <View
+        pointerEvents="none"
+        style={[backgroundProps.style, { bottom: -UNDERLAP }]}
+      />
+    ),
+    [],
+  )
+
   const renderBackdrop = useCallback(
     (backdropProps: BottomSheetBackdropProps) => (
       <SheetScrim
@@ -390,6 +423,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       maxDynamicContentSize={maxSheetHeight(frame.height, insets.top)}
       animationConfigs={move}
       backdropComponent={renderBackdrop}
+      backgroundComponent={renderBackground}
       accessibilityLabel={props.label}
       style={{ maxWidth: MAX_WIDTH, width: '100%', alignSelf: 'center' }}
       backgroundStyle={{
