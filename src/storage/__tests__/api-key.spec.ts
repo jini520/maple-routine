@@ -1,5 +1,12 @@
 import { installFakePreferences } from './fake-preferences'
-import { clearAuthConfig, getAuthConfig, removeApiKey, setApiKey } from '../api-key'
+import {
+  clearAuthConfig,
+  clearNexonLogin,
+  getAuthConfig,
+  removeApiKey,
+  setApiKey,
+  setNexonLogin,
+} from '../api-key'
 import { STORAGE_KEYS } from '../keys'
 
 let prefs = installFakePreferences()
@@ -193,5 +200,79 @@ describe('무효화된 키 하나만 지운다', () => {
     await clearAuthConfig()
 
     await expect(prefs.get(STORAGE_KEYS.apiKey)).resolves.toBeNull()
+  })
+})
+
+// 로그인은 0~1개다. 앱 사용자를 식별하는 축이고 키는 거기 붙는 자원이라 둘 이상일 이유가 없다.
+describe('넥슨 로그인 자리', () => {
+  it('로그인만 있어도 수단이 있는 것이다', async () => {
+    await setNexonLogin('세션-가')
+
+    const config = await getAuthConfig()
+    expect(config?.login).toEqual({ kind: 'login', session: '세션-가' })
+    expect(config?.apiKeys).toEqual([])
+  })
+
+  it('다시 로그인하면 갈아끼운다. 늘지 않는다', async () => {
+    await setNexonLogin('세션-가')
+    await setNexonLogin('세션-나')
+
+    expect((await getAuthConfig())?.login).toEqual({ kind: 'login', session: '세션-나' })
+  })
+
+  it('로그인을 붙여도 키는 안 건드린다', async () => {
+    // 같은 계정인지 대조해 키를 지우는 일은 따로다(#541).
+    await setApiKey('키-가', '본계정')
+
+    await setNexonLogin('세션-가')
+
+    expect((await getAuthConfig())?.apiKeys).toEqual([
+      { kind: 'apiKey', label: '본계정', value: '키-가' },
+    ])
+  })
+
+  it('키를 더해도 로그인은 남는다', async () => {
+    await setNexonLogin('세션-가')
+
+    await setApiKey('키-가')
+
+    expect((await getAuthConfig())?.login).toEqual({ kind: 'login', session: '세션-가' })
+  })
+
+  it('로그인을 떼면 키는 남는다', async () => {
+    await setNexonLogin('세션-가')
+    await setApiKey('키-가')
+
+    await clearNexonLogin()
+
+    const config = await getAuthConfig()
+    expect(config?.login).toBeNull()
+    expect(config?.apiKeys).toHaveLength(1)
+  })
+
+  it('로그인만 있던 사용자는 떼고 나면 수단이 없다', async () => {
+    await setNexonLogin('세션-가')
+
+    await clearNexonLogin()
+
+    await expect(getAuthConfig()).resolves.toBeNull()
+  })
+
+  it('키를 전부 지워도 로그인은 남는다', async () => {
+    // 키 무효화가 로그인까지 끊으면 안 된다. 둘은 다른 수단이다.
+    await setNexonLogin('세션-가')
+    await setApiKey('키-가')
+
+    await removeApiKey('키-가')
+
+    expect((await getAuthConfig())?.login).toEqual({ kind: 'login', session: '세션-가' })
+  })
+
+  it('연결 해제는 로그인까지 버린다', async () => {
+    await setNexonLogin('세션-가')
+
+    await clearAuthConfig()
+
+    await expect(getAuthConfig()).resolves.toBeNull()
   })
 })

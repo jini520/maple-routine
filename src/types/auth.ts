@@ -24,10 +24,13 @@ export interface NexonApiKeyMethod {
 }
 
 /**
- * 넥슨 로그인 하나. 토큰은 서버가 들고 앱은 세션만 받는다.
+ * 앱이 도는 플랫폼. **넥슨 애플리케이션이 플랫폼마다 따로 등록된다.**
  *
- * **자리는 있지만 아직 아무도 안 채운다.** 채우는 것은 로그인 흐름이다.
+ * `client_id` 와 secret 이 쌍으로 갈려서, 서버가 요청마다 어느 쌍을 쓸지 골라야 한다.
  */
+export type Platform = 'ios' | 'android'
+
+/** 넥슨 로그인 하나. 토큰은 서버가 들고 앱은 세션만 받는다. */
 export interface NexonLoginMethod {
   kind: 'login'
   /** 서버가 발급한 세션 식별자. `x-nexon-session` 헤더로 서버에 되돌아간다. */

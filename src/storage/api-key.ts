@@ -81,6 +81,28 @@ export async function setApiKey(apiKey: string, label = ''): Promise<void> {
 }
 
 /**
+ * 넥슨 로그인을 붙인다. **로그인은 0~1개라 있던 것을 갈아끼운다.**
+ *
+ * 로그인은 앱 사용자를 식별하는 축이고 키는 거기 붙는 자원이다. 둘 이상일 이유가 없다.
+ * **API 키는 안 건드린다** - 같은 계정인지 대조해 지우는 일은 따로다(#541).
+ */
+export async function setNexonLogin(session: string): Promise<void> {
+  const current = (await getAuthConfig()) ?? { login: null, apiKeys: [] }
+  await write({ login: { kind: 'login', session }, apiKeys: current.apiKeys })
+}
+
+/**
+ * 넥슨 로그인을 뗀다. API 키는 남는다.
+ *
+ * 로그인만 있던 사용자는 이 뒤로 수단이 없어 `getAuthConfig` 가 `null` 이고 로그인 화면이 선다.
+ */
+export async function clearNexonLogin(): Promise<void> {
+  const current = await getAuthConfig()
+  if (current === null) return
+  await write({ login: null, apiKeys: current.apiKeys })
+}
+
+/**
  * 무효화된 키 **하나만** 지운다(400 OPENAPI00005 · 401/403 · 429).
  *
  * 아래 `clearAuthConfig` 로 갈아끼우지 말 것. 그쪽은 연결 해제용이라 목록을 통째로 버리고
