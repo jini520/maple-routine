@@ -5,11 +5,21 @@
  * 나머지는 지금처럼 넥슨을 직접 부르는데, 그 갈림을 `nexon/http.ts` 한 자리에 모으려면 부르는
  * 쪽이 **어떤 자격인지** 를 함께 넘겨야 한다. 지금은 종류가 하나라 갈리는 것이 없다.
  */
-export type NexonCredential = {
-  kind: 'apiKey'
-  /** `x-nxopen-api-key` 헤더에 그대로 실린다. */
-  value: string
-}
+export type NexonCredential =
+  | {
+      kind: 'apiKey'
+      /** `x-nxopen-api-key` 헤더로 넥슨에 그대로 실린다. */
+      value: string
+    }
+  | {
+      kind: 'login'
+      /**
+       * 서버가 발급한 세션. `x-nexon-session` 헤더로 **우리 서버**에 간다.
+       *
+       * 넥슨에는 안 나간다. 토큰은 서버가 들고 앱은 이 값만 안다.
+       */
+      value: string
+    }
 
 /**
  * 저장된 API 키 하나.
