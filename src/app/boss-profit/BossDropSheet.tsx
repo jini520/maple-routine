@@ -534,7 +534,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
         */
         footer={activeBox === null ? 드롭저장줄 : undefined}
         /*
-          보스 이름 · 드롭 연출 토글 · 「획득한 아이템을 선택하세요」 · 난이도 배지까지가 머리다.
+          보스 이름 · 드롭 연출 토글 · `획득한 아이템을 선택하세요` · 난이도 배지까지가 머리다.
           고르는 동안 **무엇의 무슨 난이도를 고르고 있나**가 안 사라져야 한다. 상자 드릴다운은
           자기 제목을 들고 있어 머리를 안 세운다.
         */
