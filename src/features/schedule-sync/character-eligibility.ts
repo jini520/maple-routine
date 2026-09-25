@@ -1,3 +1,4 @@
+import type { NexonCredential } from '../../types/auth'
 import { getBackfillDateKeys } from '../../lib/scheduler/reset-clock'
 import { hasCharacterScopeCompletion, toProbeObservation } from '../../lib/scheduler/scheduler-activity'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
@@ -77,7 +78,7 @@ type DayOutcome = 'completion' | 'observed' | 'unavailable' | 'skipped'
  * 없음 을 굳히면 그날 안에 접속한 캐릭터가 내일까지 목록에 못 들어온다.
  */
 export async function resolveCharacterEligibility(
-  apiKey: string,
+  credential: NexonCredential,
   ocid: string,
   accessFlag: boolean,
   now: Date,
@@ -110,7 +111,7 @@ export async function resolveCharacterEligibility(
     dateKeys.map(async (dateKey): Promise<DayOutcome> => {
       let dayState: SchedulerCharacterState
       try {
-        dayState = await fetchSchedulerCharacterState(apiKey, ocid, SCHEDULE_NAME_RESOLVERS, dateKey)
+        dayState = await fetchSchedulerCharacterState(credential, ocid, SCHEDULE_NAME_RESOLVERS, dateKey)
       } catch (error) {
         const kind = toScheduleSyncError(error).kind
         if (kind === 'characterUnavailable') {

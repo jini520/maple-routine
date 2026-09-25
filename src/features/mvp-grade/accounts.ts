@@ -5,6 +5,7 @@ import { getAuthConfig } from '../../storage/api-key'
 import { getCharacterProfiles } from '../../storage/character-profiles'
 import type { MapleAccount } from '../../types'
 import { fetchAndRecordCharacterList } from './character-list'
+import { credentialOf } from '../../lib/nexon-credential'
 
 export interface AccountIdentity {
   /** 목록을 못 받았으면 `null` 이라 ID 만 적는다 */
@@ -27,7 +28,7 @@ export function trackedAccountIdsOf(
 export async function loadAccountIdentities(accountIds: readonly string[]): Promise<Map<string, AccountIdentity>> {
   let lists: MapleAccount[] = []
   const auth = await getAuthConfig().catch(() => null)
-  if (auth !== null) lists = await fetchAndRecordCharacterList(auth.apiKey).catch(() => [])
+  if (auth !== null) lists = await fetchAndRecordCharacterList(credentialOf(auth)).catch(() => [])
   const summaries = new Map<string, AccountSummaryView>()
   for (const account of lists) {
     if (!accountIds.includes(account.accountId)) continue

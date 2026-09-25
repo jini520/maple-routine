@@ -5,6 +5,10 @@
 jest.mock('../../http', () => ({ requestJson: jest.fn() }))
 
 import { fetchEnhancementHistory } from '../client'
+import type { NexonCredential } from '../../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 
 const { requestJson: requestJsonMock } = jest.requireMock('../../http') as Record<string, jest.Mock>
 
@@ -30,22 +34,22 @@ describe('경로와 질의', () => {
   it('종류마다 자기 경로를 부른다', async () => {
     requestJsonMock.mockResolvedValue({ count: 0, next_cursor: null, cube_history: [] })
 
-    await fetchEnhancementHistory('key', 'cube', itemKeyOf, { dateKey: '2026-09-04' })
+    await fetchEnhancementHistory(자격('key'), 'cube', itemKeyOf, { dateKey: '2026-09-04' })
 
     expect(requestJsonMock).toHaveBeenCalledWith(
       '/maplestory/v1/history/cube?count=1000&date=2026-09-04',
-      'key',
+      자격('key'),
     )
   })
 
   it('스타포스·잠재도 같은 껍데기다', async () => {
     requestJsonMock.mockResolvedValue({ count: 0, next_cursor: null, starforce_history: [] })
 
-    await fetchEnhancementHistory('key', 'starforce', itemKeyOf, { dateKey: '2026-09-04' })
+    await fetchEnhancementHistory(자격('key'), 'starforce', itemKeyOf, { dateKey: '2026-09-04' })
 
     expect(requestJsonMock).toHaveBeenCalledWith(
       '/maplestory/v1/history/starforce?count=1000&date=2026-09-04',
-      'key',
+      자격('key'),
     )
   })
 
@@ -57,11 +61,11 @@ describe('경로와 질의', () => {
       soul_potential_history: [{ ...row('a', '2026-09-18T07:02:32+09:00'), soul_potential_grade: '레어' }],
     })
 
-    const page = await fetchEnhancementHistory('key', 'soul_potential', itemKeyOf, { dateKey: '2026-09-18' })
+    const page = await fetchEnhancementHistory(자격('key'), 'soul_potential', itemKeyOf, { dateKey: '2026-09-18' })
 
     expect(requestJsonMock).toHaveBeenCalledWith(
       '/maplestory/v1/history/soul-potential?count=1000&date=2026-09-18',
-      'key',
+      자격('key'),
     )
     expect(page.rows.map((r) => r.id)).toEqual(['a'])
   })
@@ -70,11 +74,11 @@ describe('경로와 질의', () => {
   it('커서로 이어받을 때는 날짜를 안 보낸다', async () => {
     requestJsonMock.mockResolvedValue({ count: 0, next_cursor: null, cube_history: [] })
 
-    await fetchEnhancementHistory('key', 'cube', itemKeyOf, { cursor: 'abc' })
+    await fetchEnhancementHistory(자격('key'), 'cube', itemKeyOf, { cursor: 'abc' })
 
     expect(requestJsonMock).toHaveBeenCalledWith(
       '/maplestory/v1/history/cube?count=1000&cursor=abc',
-      'key',
+      자격('key'),
     )
   })
 })
@@ -87,7 +91,7 @@ describe('응답 정규화', () => {
       potential_history: [row('a', '2026-09-04T07:02:32+09:00'), row('b', '2026-09-04T07:02:30+09:00')],
     })
 
-    const page = await fetchEnhancementHistory('key', 'potential', itemKeyOf, { dateKey: '2026-09-04' })
+    const page = await fetchEnhancementHistory(자격('key'), 'potential', itemKeyOf, { dateKey: '2026-09-04' })
 
     expect(page.rows.map((r) => r.id)).toEqual(['a', 'b'])
     expect(page.nextCursor).toBe('next')
@@ -97,7 +101,7 @@ describe('응답 정규화', () => {
   it('빈 날은 빈 쪽이다', async () => {
     requestJsonMock.mockResolvedValue({ count: 0, next_cursor: null, cube_history: [] })
 
-    const page = await fetchEnhancementHistory('key', 'cube', itemKeyOf, { dateKey: '2026-09-04' })
+    const page = await fetchEnhancementHistory(자격('key'), 'cube', itemKeyOf, { dateKey: '2026-09-04' })
 
     expect(page).toEqual({ rows: [], nextCursor: null })
   })
@@ -107,7 +111,7 @@ describe('응답 정규화', () => {
     const raw = row('a', '2026-09-04T07:02:32+09:00')
     requestJsonMock.mockResolvedValue({ count: 1, next_cursor: null, cube_history: [raw] })
 
-    const page = await fetchEnhancementHistory('key', 'cube', itemKeyOf, { dateKey: '2026-09-04' })
+    const page = await fetchEnhancementHistory(자격('key'), 'cube', itemKeyOf, { dateKey: '2026-09-04' })
 
     expect(page.rows[0].payload).toEqual(raw)
   })
@@ -119,7 +123,7 @@ describe('응답 정규화', () => {
       cube_history: [row('a', '2026-09-04T07:02:32.597+09:00')],
     })
 
-    const page = await fetchEnhancementHistory('key', 'cube', itemKeyOf, { dateKey: '2026-09-04' })
+    const page = await fetchEnhancementHistory(자격('key'), 'cube', itemKeyOf, { dateKey: '2026-09-04' })
 
     expect(page.rows[0]).toMatchObject({ dateKey: '2026-09-04', characterName: '루디' })
   })
@@ -128,7 +132,7 @@ describe('응답 정규화', () => {
   it('모양이 다르면 빈 쪽으로 접는다', async () => {
     requestJsonMock.mockResolvedValue({ count: 0 })
 
-    const page = await fetchEnhancementHistory('key', 'cube', itemKeyOf, { dateKey: '2026-09-04' })
+    const page = await fetchEnhancementHistory(자격('key'), 'cube', itemKeyOf, { dateKey: '2026-09-04' })
 
     expect(page).toEqual({ rows: [], nextCursor: null })
   })
@@ -152,7 +156,7 @@ it('스타포스처럼 레벨이 없는 응답은 null 로 든다', async () => 
     ],
   })
 
-  const page = await fetchEnhancementHistory('key', 'starforce', itemKeyOf, { dateKey: '2026-09-04' })
+  const page = await fetchEnhancementHistory(자격('key'), 'starforce', itemKeyOf, { dateKey: '2026-09-04' })
 
   expect(page.rows[0]).toMatchObject({ targetItem: '아케인셰이드 클로', itemLevel: null })
 })
@@ -165,7 +169,7 @@ it('큐브 응답의 레벨을 그대로 싣는다. 이것이 표의 재료다',
     cube_history: [row('a', '2026-09-04T07:04:33+09:00')],
   })
 
-  const page = await fetchEnhancementHistory('key', 'cube', itemKeyOf, { dateKey: '2026-09-04' })
+  const page = await fetchEnhancementHistory(자격('key'), 'cube', itemKeyOf, { dateKey: '2026-09-04' })
 
   expect(page.rows[0]).toMatchObject({ targetItem: '아케인셰이드 클로', itemLevel: 200 })
 })
@@ -178,7 +182,7 @@ it('넘긴 매칭 함수로 장비 key 를 얻고 원문 이름을 지킨다', a
     cube_history: [row('a', '2026-09-04T07:04:33+09:00'), { ...row('b', '2026-09-04T07:04:30+09:00'), target_item: '골드 히어로즈 엠블렘' }],
   })
 
-  const page = await fetchEnhancementHistory('key', 'cube', itemKeyOf, { dateKey: '2026-09-04' })
+  const page = await fetchEnhancementHistory(자격('key'), 'cube', itemKeyOf, { dateKey: '2026-09-04' })
 
   expect(page.rows.map((r) => [r.itemKey, r.targetItem])).toEqual([
     ['arcane_umbra_knuckle', '아케인셰이드 클로'],

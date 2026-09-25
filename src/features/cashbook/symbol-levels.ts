@@ -6,13 +6,14 @@
 import { symbolLevelsOf } from '../../lib/cashbook/symbol-costs'
 import { fetchSymbolEquipment } from '../../nexon/symbol-levels'
 import { getAuthConfig } from '../../storage/api-key'
+import { credentialOf } from '../../lib/nexon-credential'
 
 export async function loadSymbolLevels(ocid: string): Promise<Record<string, number> | null> {
   const auth = await getAuthConfig()
   // 키가 없으면 부르지도 않는다. 401 을 만들면 그 사슬이 저장된 키를 지운다.
   if (auth === null) return null
   try {
-    return symbolLevelsOf(await fetchSymbolEquipment(auth.apiKey, ocid))
+    return symbolLevelsOf(await fetchSymbolEquipment(credentialOf(auth), ocid))
   } catch {
     return null
   }

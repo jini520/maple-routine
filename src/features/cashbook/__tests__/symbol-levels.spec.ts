@@ -1,4 +1,8 @@
 // 심볼 강화 드롭다운이 쓰는 캐릭터의 심볼 레벨. 화면은 `nexon/` 도 `storage/` 도 직접 안 부른다.
+import type { NexonCredential } from '../../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../nexon/symbol-levels', () => ({ fetchSymbolEquipment: jest.fn() }))
 
@@ -17,7 +21,7 @@ beforeEach(() => {
 
 it('읽으면 심볼 key 별 레벨이다', async () => {
   await expect(loadSymbolLevels('ocid-1')).resolves.toEqual({ road_of_vanishing: 20, cernium: 4 })
-  expect(fetchSymbolEquipment).toHaveBeenCalledWith('api-key', 'ocid-1')
+  expect(fetchSymbolEquipment).toHaveBeenCalledWith(자격('api-key'), 'ocid-1')
 })
 
 it('키가 없으면 부르지 않고 모른다', async () => {

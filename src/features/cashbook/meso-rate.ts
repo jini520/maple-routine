@@ -11,6 +11,7 @@ import { fetchMesoRate } from '../../nexon/meso-rate'
 import { getAuthConfig } from '../../storage/api-key'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedMesoRate, setCachedMesoRate } from '../../storage/meso-rate-cache'
+import { credentialOf } from '../../lib/nexon-credential'
 
 /**
  * 읽었나 못 읽었나. 화면이 **줄의 모양을 가르는** 값이다.
@@ -41,7 +42,7 @@ export async function loadMesoRate(ocid: string): Promise<MesoRateLoad> {
   if (auth === null) return { kind: 'fallback', percent: await getCachedMesoRate(ocid) }
 
   try {
-    const percent = await fetchMesoRate(auth.apiKey, ocid, await jobClassOf(ocid))
+    const percent = await fetchMesoRate(credentialOf(auth), ocid, await jobClassOf(ocid))
     // 캐시 쓰기 실패로 **읽은 값을 버리지 않는다**. 캐시는 폴백의 기본값일 뿐이다.
     await setCachedMesoRate(ocid, percent).catch(() => undefined)
     return { kind: 'read', percent }

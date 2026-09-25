@@ -8,6 +8,10 @@ import {
 import { worldKeyOfApiName } from '../../../lib/world/worlds'
 import type { CharacterBasicProfile } from '../../../types'
 import { CHARACTER_BASIC_TTL_MS, fetchCharacterBasicCached } from '../character-basic-fetch'
+import type { NexonCredential } from '../../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 
 jest.mock('../../../nexon/character', () => ({
   fetchCharacterBasic: jest.fn(),
@@ -55,7 +59,7 @@ describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다'
       profile({ name: '낟낟', level: 293, imageUrl: 'https://example.com/1.png', world: '스카니아', worldKey: 'scania' }),
     )
 
-    await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
+    await fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)
 
     expect(saveCharacterProfileMock).toHaveBeenCalledTimes(1)
     expect(saveCharacterProfileMock).toHaveBeenCalledWith({
@@ -77,7 +81,7 @@ describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다'
   it('호출부가 직업을 넘기면 스냅샷에도 실린다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(profile({ name: '지내우시', level: 285 }))
 
-    await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW, '레테')
+    await fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW, '레테')
 
     expect(saveCharacterProfileMock).toHaveBeenCalledWith(
       expect.objectContaining({ jobClass: '레테' }),
@@ -88,7 +92,7 @@ describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다'
   it('월드를 모르면 null 로 넘긴다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(profile({ world: undefined }))
 
-    await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
+    await fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)
 
     expect(saveCharacterProfileMock.mock.calls[0][0].world).toBeNull()
     expect(saveCharacterProfileMock.mock.calls[0][0].worldKey).toBeNull()
@@ -100,7 +104,7 @@ describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다'
     fetchCharacterBasicMock.mockResolvedValue(fresh)
     saveCharacterProfileMock.mockRejectedValueOnce(new Error('sqlite down'))
 
-    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).resolves.toEqual(fresh)
+    await expect(fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)).resolves.toEqual(fresh)
   })
 
   // TTL 안이면 네트워크를 안 타므로 새로 알게 된 것이 없다. 같은 값을 다시 쓸 이유가 없다.
@@ -108,7 +112,7 @@ describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다'
     const cached = profile({ name: '캐시' })
     await seedCache(60_000, cached)
 
-    await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
+    await fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)
 
     expect(saveCharacterProfileMock).not.toHaveBeenCalled()
   })
@@ -119,9 +123,9 @@ describe('캐시가 없으면 네트워크로 받고 그 결과를 캐시에 쓴
     const fresh = profile({ name: '새로받음' })
     fetchCharacterBasicMock.mockResolvedValue(fresh)
 
-    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).resolves.toEqual(fresh)
+    await expect(fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)).resolves.toEqual(fresh)
     expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
-    expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key', OCID, worldKeyOfApiName)
+    expect(fetchCharacterBasicMock).toHaveBeenCalledWith(자격('key'), OCID, worldKeyOfApiName)
     await expect(getCachedCharacterBasic(OCID)).resolves.toEqual({
       profile: fresh,
       cachedAt: NOW.toISOString(),
@@ -131,7 +135,7 @@ describe('캐시가 없으면 네트워크로 받고 그 결과를 캐시에 쓴
   it('새 엔트리의 cachedAt 은 인자로 받은 now 다. 함수 안에서 시계를 다시 읽지 않는다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(profile())
 
-    await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
+    await fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)
 
     const entry = await getCachedCharacterBasic(OCID)
     expect(entry?.cachedAt).toBe(NOW.toISOString())
@@ -140,7 +144,7 @@ describe('캐시가 없으면 네트워크로 받고 그 결과를 캐시에 쓴
   it('캐시 쓰기는 인자로 받은 accountId 로 이뤄진다. 다른 계정 인덱스를 오염시키지 않는다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(profile())
 
-    await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
+    await fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)
 
     await expect(getAllCachedCharacterBasicOcids(ACCOUNT)).resolves.toEqual([OCID])
     await expect(getAllCachedCharacterBasicOcids('account-2')).resolves.toEqual([])
@@ -152,7 +156,7 @@ describe('5분 TTL 가드', () => {
     const cached = profile({ name: '캐시값' })
     await seedCache(CHARACTER_BASIC_TTL_MS - 1, cached)
 
-    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).resolves.toEqual(cached)
+    await expect(fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)).resolves.toEqual(cached)
     expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
   })
 
@@ -161,7 +165,7 @@ describe('5분 TTL 가드', () => {
     const fresh = profile({ name: '새로받음', level: 294 })
     fetchCharacterBasicMock.mockResolvedValue(fresh)
 
-    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).resolves.toEqual(fresh)
+    await expect(fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)).resolves.toEqual(fresh)
     expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
     await expect(getCachedCharacterBasic(OCID)).resolves.toEqual({
       profile: fresh,
@@ -173,7 +177,7 @@ describe('5분 TTL 가드', () => {
     await seedCache(CHARACTER_BASIC_TTL_MS, profile({ name: '캐시값' }))
     fetchCharacterBasicMock.mockResolvedValue(profile({ name: '새로받음' }))
 
-    await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
+    await fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)
 
     expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
   })
@@ -188,7 +192,7 @@ describe('force: 대표 캐릭터가 TTL 을 건너뛰는 문', () => {
     fetchCharacterBasicMock.mockResolvedValue(fresh)
 
     await expect(
-      fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW, undefined, { force: true }),
+      fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW, undefined, { force: true }),
     ).resolves.toEqual(fresh)
     expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
     await expect(getCachedCharacterBasic(OCID)).resolves.toEqual({
@@ -203,7 +207,7 @@ describe('force: 대표 캐릭터가 TTL 을 건너뛰는 문', () => {
     await seedCache(CHARACTER_BASIC_TTL_MS - 1, cached)
 
     await expect(
-      fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW, undefined, {}),
+      fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW, undefined, {}),
     ).resolves.toEqual(cached)
     expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
   })
@@ -213,7 +217,7 @@ describe('force: 대표 캐릭터가 TTL 을 건너뛰는 문', () => {
     await seedCache(0, profile({ name: '캐시값', jobClass: '렌' }))
     fetchCharacterBasicMock.mockResolvedValue(profile({ name: '새로받음', level: 294 }))
 
-    const result = await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW, undefined, {
+    const result = await fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW, undefined, {
       force: true,
     })
 
@@ -230,7 +234,7 @@ describe('신뢰할 수 없는 cachedAt 은 만료로 취급한다', () => {
     const fresh = profile({ name: '새로받음' })
     fetchCharacterBasicMock.mockResolvedValue(fresh)
 
-    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).resolves.toEqual(fresh)
+    await expect(fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)).resolves.toEqual(fresh)
     expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
   })
 
@@ -239,7 +243,7 @@ describe('신뢰할 수 없는 cachedAt 은 만료로 취급한다', () => {
     const fresh = profile({ name: '새로받음' })
     fetchCharacterBasicMock.mockResolvedValue(fresh)
 
-    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).resolves.toEqual(fresh)
+    await expect(fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)).resolves.toEqual(fresh)
     expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
   })
 })
@@ -250,7 +254,7 @@ describe('jobClass: character/list 가 준 값을 엔트리에 함께 싣는다'
   it('넘긴 값이 profile 에 실려 캐시에 쓰이고 그대로 반환된다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(profile())
 
-    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW, '렌')).resolves.toEqual(
+    await expect(fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW, '렌')).resolves.toEqual(
       profile({ jobClass: '렌' }),
     )
     await expect(getCachedCharacterBasic(OCID)).resolves.toEqual({
@@ -263,7 +267,7 @@ describe('jobClass: character/list 가 준 값을 엔트리에 함께 싣는다'
     await seedCache(CHARACTER_BASIC_TTL_MS + 1, profile({ jobClass: '비숍' }))
     fetchCharacterBasicMock.mockResolvedValue(profile({ name: '새로받음' }))
 
-    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).resolves.toEqual(
+    await expect(fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)).resolves.toEqual(
       profile({ name: '새로받음', jobClass: '비숍' }),
     )
   })
@@ -272,7 +276,7 @@ describe('jobClass: character/list 가 준 값을 엔트리에 함께 싣는다'
     await seedCache(CHARACTER_BASIC_TTL_MS + 1, profile({ jobClass: '비숍' }))
     fetchCharacterBasicMock.mockResolvedValue(profile())
 
-    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW, '렌')).resolves.toEqual(
+    await expect(fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW, '렌')).resolves.toEqual(
       profile({ jobClass: '렌' }),
     )
   })
@@ -280,7 +284,7 @@ describe('jobClass: character/list 가 준 값을 엔트리에 함께 싣는다'
   it('캐시도 없고 넘기지도 않으면 키 자체가 없다. 없는 값을 지어내지 않는다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(profile())
 
-    const result = await fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)
+    const result = await fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)
 
     expect('jobClass' in result).toBe(false)
   })
@@ -291,7 +295,7 @@ describe('실패는 캐시로 폴백하지 않고 그대로 전파한다', () =>
     const error = new NexonBadRequestError('unavailable', 'OPENAPI00003')
     fetchCharacterBasicMock.mockRejectedValue(error)
 
-    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).rejects.toBe(error)
+    await expect(fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)).rejects.toBe(error)
     await expect(getCachedCharacterBasic(OCID)).resolves.toBeNull()
   })
 
@@ -299,7 +303,7 @@ describe('실패는 캐시로 폴백하지 않고 그대로 전파한다', () =>
     const error = new NexonRateLimitError('rate limited')
     fetchCharacterBasicMock.mockRejectedValue(error)
 
-    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).rejects.toBe(error)
+    await expect(fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)).rejects.toBe(error)
   })
 
   it('만료된 캐시가 있어도 실패를 그 값으로 덮지 않는다', async () => {
@@ -308,7 +312,7 @@ describe('실패는 캐시로 폴백하지 않고 그대로 전파한다', () =>
     const error = new NexonRateLimitError('rate limited')
     fetchCharacterBasicMock.mockRejectedValue(error)
 
-    await expect(fetchCharacterBasicCached('key', ACCOUNT, OCID, NOW)).rejects.toBe(error)
+    await expect(fetchCharacterBasicCached(자격('key'), ACCOUNT, OCID, NOW)).rejects.toBe(error)
     // 캐시는 실패 전 값 그대로다. 새로 쓰지 않았다.
     const entry = await getCachedCharacterBasic(OCID)
     expect(entry?.profile).toEqual(stale)

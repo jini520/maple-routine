@@ -1,4 +1,5 @@
 import { NexonAuthError, NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from './errors'
+import type { NexonCredential } from '../types/auth'
 
 interface NexonErrorBody {
   error?: { name?: string; message?: string }
@@ -21,14 +22,23 @@ async function readErrorCode(response: Response): Promise<string | null> {
 const API_BASE_URL = 'https://open.api.nexon.com'
 const REQUEST_TIMEOUT_MS = 10_000
 
-export async function requestJson<T>(path: string, apiKey: string): Promise<T> {
+/**
+ * 넥슨에 한 번 묻는다.
+ *
+ * **자격을 문자열이 아니라 객체로 받는다.** 전송 경로가 갈리는 자리를 이 파일 하나로 모으기
+ * 위해서다 - 넥슨 로그인이 붙으면 프렌즈 API 넷만 서버를 거치고 나머지는 지금처럼 넥슨을 직접
+ * 부른다. 갈림이 client 파일마다 흩어지면 새는 자리를 못 센다.
+ *
+ * @param credential `storage/api-key` 의 `credentialOf` 가 만든다
+ */
+export async function requestJson<T>(path: string, credential: NexonCredential): Promise<T> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
   let response: Response
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
-      headers: { 'x-nxopen-api-key': apiKey },
+      headers: { 'x-nxopen-api-key': credential.value },
       signal: controller.signal,
     })
   } catch (error) {

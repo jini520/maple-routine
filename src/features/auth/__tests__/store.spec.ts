@@ -44,6 +44,10 @@ const resolveAfterSignInMock = jest.requireMock('../../app-entry/store').useAppE
 const entryResetMock = jest.requireMock('../../app-entry/store').useAppEntryStore.getState().reset as jest.Mock
 
 import { useAuthStore } from '../store'
+import type { NexonCredential } from '../../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 
 function account(accountId: string): MapleAccount {
   return {
@@ -483,7 +487,7 @@ describe('useAuthStore.signIn: 개발 단계 키를 문 앞에서 막는다', ()
 
     await useAuthStore.getState().signIn('key-2')
 
-    expect(probeApiKeyStageMock).toHaveBeenCalledWith('key-2')
+    expect(probeApiKeyStageMock).toHaveBeenCalledWith(자격('key-2'))
   })
 
   // 판정이 안 서는 자리가 있다(안드로이드의 동시 5건 천장 · 느린 망 · 리미터의 버스트 허용).

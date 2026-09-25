@@ -7,6 +7,7 @@
  * 하루가 1000줄을 넘기면 커서로 콜이 더 나가는데, 콜을 세면 분모가 도는 중에 늘어난다. 커서는
  * 작업 **안쪽** 일이라 밖에서는 1이다.
  */
+import type { NexonCredential } from '../../types/auth'
 import { fetchAndRecordCharacterList } from '../mvp-grade/character-list'
 import type { EnhancementHistoryRow, EnhancementKind } from '../../nexon/history/client'
 import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
@@ -26,6 +27,7 @@ import { eventWorldCharacterNames } from '../../lib/enhancement/world'
 import { SOUL_POTENTIAL_FROM } from '../../lib/enhancement/cost'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { mapWithLimit } from '../schedule-window/gate'
+import { credentialOf } from '../../lib/nexon-credential'
 
 /** 네 종류. 순서가 진행 표시에 보이지 않으므로 아무래도 된다. */
 export const ENHANCEMENT_KINDS: readonly EnhancementKind[] = ['cube', 'starforce', 'potential', 'soul_potential']
@@ -138,7 +140,7 @@ function pricedRows(
 }
 
 async function collectOne(
-  apiKey: string,
+  credential: NexonCredential,
   job: EnhancementHistoryJob,
   observedLevels: ReadonlyMap<string, number>,
 ): Promise<string | null> {
@@ -148,7 +150,7 @@ async function collectOne(
 
   for (let pageIndex = 0; pageIndex < MAX_PAGES; pageIndex += 1) {
     const query = cursor === null ? { dateKey: job.dateKey } : { cursor }
-    const page = await fetchEnhancementHistory(apiKey, job.kind, equipmentItemKeyOfApiName, query)
+    const page = await fetchEnhancementHistory(credential, job.kind, equipmentItemKeyOfApiName, query)
     if (pageIndex === 0) firstCursor = page.nextCursor
 
     await saveEnhancementHistory(job.kind, pricedRows(job.kind, page.rows, observedLevels))
@@ -191,7 +193,7 @@ export async function collectEnhancementHistory(
   if (jobs.length === 0) return
 
   // 목록을 못 받은 것과 스페셜 캐릭터가 없는 것은 다르다. 앞은 null, 뒤는 빈 집합이다.
-  const eventNames = await fetchAndRecordCharacterList(authConfig.apiKey)
+  const eventNames = await fetchAndRecordCharacterList(credentialOf(authConfig))
     .then(async (accounts) => {
       const names = eventWorldCharacterNames(accounts)
       // 읽는 쪽이 이것을 쓴다. 칸 하나 그릴 때마다 계정 목록을 부를 수는 없다.
@@ -214,7 +216,7 @@ export async function collectEnhancementHistory(
     jobs,
     HISTORY_CALL_LIMIT,
     async (job) => {
-      const firstCursor = await collectOne(authConfig.apiKey, job, observedLevels)
+      const firstCursor = await collectOne(credentialOf(authConfig), job, observedLevels)
       const settled = job.dateKey < todayDateKey && eventNames !== null
       await markEnhancementChecked(job.kind, job.dateKey, firstCursor, settled, checkedAt)
     },

@@ -1,6 +1,10 @@
 import type { NexonSchedulerCharacterStateWire } from '../../../types'
 import { fetchSchedulerCharacterState } from '../client'
 import type { ScheduleNameResolvers } from '../normalize'
+import type { NexonCredential } from '../../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 
 // 전역을 잠시 갈아 끼우는 도우미. 원래 값을 기억해 두고
 // `unstubAllGlobals` 가 되돌린다.
@@ -52,7 +56,7 @@ describe('fetchSchedulerCharacterState', () => {
     const fetchMock = jest.fn(async () => jsonResponse(200, schedulerFixture('낟낟')))
     stubGlobal('fetch', fetchMock)
 
-    const result = await fetchSchedulerCharacterState('test-api-key', 'ocid-123', NO_KEYS)
+    const result = await fetchSchedulerCharacterState(자격('test-api-key'), 'ocid-123', NO_KEYS)
 
     expect(result.characterName).toBe('낟낟')
     expect(fetchMock).toHaveBeenCalledWith(
@@ -76,7 +80,7 @@ describe('fetchSchedulerCharacterState', () => {
     }
     stubGlobal('fetch', jest.fn(async () => jsonResponse(200, wire)))
 
-    const result = await fetchSchedulerCharacterState('test-api-key', 'ocid-123', {
+    const result = await fetchSchedulerCharacterState(자격('test-api-key'), 'ocid-123', {
       bossKey: (name) => (name === '루시드' ? 'lucid' : null),
       contentKey: (name) => (name === '몬스터파크' ? 'monster_park' : null),
       worldKey: (name) => (name === '엘리시움' ? 'elysium' : null),
@@ -93,7 +97,7 @@ describe('fetchSchedulerCharacterState', () => {
     const fetchMock = jest.fn(async () => jsonResponse(200, schedulerFixture('낟낟')))
     stubGlobal('fetch', fetchMock)
 
-    await fetchSchedulerCharacterState('test-api-key', 'ocid-123', NO_KEYS, '2026-06-01')
+    await fetchSchedulerCharacterState(자격('test-api-key'), 'ocid-123', NO_KEYS, '2026-06-01')
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://open.api.nexon.com/maplestory/v1/scheduler/character-state?ocid=ocid-123&date=2026-06-01',

@@ -10,6 +10,7 @@
  * 직업은 안 부른다. 섀도어의 그리드는 그 직업이면 늘 켜져 있는 값이라 스킬을 조회해도 언제나
  * 같은 답이 나온다. 직업 이름은 이미 캐시에 있으므로 부르는 쪽이 넘긴다.
  */
+import type { NexonCredential } from '../../types/auth'
 import type {
   NexonAbilityResponse,
   NexonCharacterSkillResponse,
@@ -44,19 +45,19 @@ const CHALLENGERS_SKILL_GRADE = '0'
  * 이고 그때 직업 스킬 몫이 0 이다.
  */
 export async function fetchMesoRate(
-  apiKey: string,
+  credential: NexonCredential,
   ocid: string,
   jobClass: string | null,
 ): Promise<number> {
   const [itemEquipment, ability, symbol, unionRaider, unionArtifact, skill] = await Promise.all([
-    requestJson<NexonItemEquipmentResponse>(withOcid('/maplestory/v1/character/item-equipment', ocid), apiKey),
-    requestJson<NexonAbilityResponse>(withOcid('/maplestory/v1/character/ability', ocid), apiKey),
-    requestJson<NexonSymbolEquipmentResponse>(withOcid('/maplestory/v1/character/symbol-equipment', ocid), apiKey),
-    requestJson<NexonUnionRaiderResponse>(withOcid('/maplestory/v1/user/union-raider', ocid), apiKey),
-    requestJson<NexonUnionArtifactResponse>(withOcid('/maplestory/v1/user/union-artifact', ocid), apiKey),
+    requestJson<NexonItemEquipmentResponse>(withOcid('/maplestory/v1/character/item-equipment', ocid), credential),
+    requestJson<NexonAbilityResponse>(withOcid('/maplestory/v1/character/ability', ocid), credential),
+    requestJson<NexonSymbolEquipmentResponse>(withOcid('/maplestory/v1/character/symbol-equipment', ocid), credential),
+    requestJson<NexonUnionRaiderResponse>(withOcid('/maplestory/v1/user/union-raider', ocid), credential),
+    requestJson<NexonUnionArtifactResponse>(withOcid('/maplestory/v1/user/union-artifact', ocid), credential),
     requestJson<NexonCharacterSkillResponse>(
       `${withOcid('/maplestory/v1/character/skill', ocid)}&character_skill_grade=${CHALLENGERS_SKILL_GRADE}`,
-      apiKey,
+      credential,
     ),
   ])
 

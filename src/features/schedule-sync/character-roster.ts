@@ -5,6 +5,7 @@
  * 일을 하고 있었고, 둘 사이 참조는 한 방향뿐이라(동기화 → 로스터) 경계가 뚜렷했다.
  */
 
+import type { NexonCredential } from '../../types/auth'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { fetchCharacterBasic } from '../../nexon/character'
 import { fetchAndRecordCharacterList } from '../mvp-grade/character-list'
@@ -29,10 +30,11 @@ import { fetchCharacterBasicCached } from './character-basic-fetch'
 import { readKnownEligibility, resolveCharacterEligibility } from './character-eligibility'
 import type { CharacterEligibility } from './character-eligibility'
 import { toScheduleSyncError } from './errors'
+import { credentialOf } from '../../lib/nexon-credential'
 // 계정은 반드시 인자로 온다. 저장된 고른 계정 이라는 것이 없다. 부르는 쪽(캐릭터 관리의 계정
 // 드롭다운)이 어느 계정을 여는지 알고 있고, 모르면 그것은 버그이지 폴백으로 덮을 상태가 아니다.
 async function resolveAccountContext(accountId?: string): Promise<{
-  apiKey: string
+  credential: NexonCredential
   accountId: string
 }> {
   const authConfig = await getAuthConfig()
@@ -41,11 +43,11 @@ async function resolveAccountContext(accountId?: string): Promise<{
       'resolveRegisteredCharacters: API 키가 없거나 계정을 지정하지 않았습니다',
     )
   }
-  return { apiKey: authConfig.apiKey, accountId }
+  return { credential: credentialOf(authConfig), accountId }
 }
 
 export async function resolveRegisteredCharacters(accountId?: string): Promise<{
-  apiKey: string
+  credential: NexonCredential
   accountId: string
   characters: MapleCharacter[]
   /**
@@ -57,16 +59,16 @@ export async function resolveRegisteredCharacters(accountId?: string): Promise<{
    */
   allCharacters: MapleCharacter[]
 }> {
-  const { apiKey, accountId: resolved } = await resolveAccountContext(accountId)
+  const { credential, accountId: resolved } = await resolveAccountContext(accountId)
 
-  const accounts = await fetchAndRecordCharacterList(apiKey)
+  const accounts = await fetchAndRecordCharacterList(credential)
   const account = accounts.find((candidate) => candidate.accountId === resolved)
   if (account === undefined) {
     throw new Error('resolveRegisteredCharacters: 지정한 계정을 응답에서 찾을 수 없습니다')
   }
 
   return {
-    apiKey,
+    credential,
     accountId: resolved,
     characters: account.characters,
     allCharacters: accounts.flatMap((candidate) => candidate.characters),
@@ -92,7 +94,7 @@ export interface TrackedCharacterContext {
  * 표시 순서를 다시 세우는 일은 화면 셀렉터의 몫이다.
  */
 export async function resolveTrackedCharacterContext(ocids: string[]): Promise<{
-  apiKey: string
+  credential: NexonCredential
   characters: TrackedCharacterContext[]
   /**
    * **전 계정** 캐릭터를 편 것. 같은 응답에서 나오므로 호출이 안 는다.
@@ -108,7 +110,7 @@ export async function resolveTrackedCharacterContext(ocids: string[]): Promise<{
   }
 
   const wanted = new Set(ocids)
-  const accounts = await fetchAndRecordCharacterList(authConfig.apiKey)
+  const accounts = await fetchAndRecordCharacterList(credentialOf(authConfig))
   const characters = accounts.flatMap((account) =>
     account.characters
       .filter((character) => wanted.has(character.ocid))
@@ -116,7 +118,7 @@ export async function resolveTrackedCharacterContext(ocids: string[]): Promise<{
   )
 
   return {
-    apiKey: authConfig.apiKey,
+    credential: credentialOf(authConfig),
     characters,
     allCharacters: accounts.flatMap((account) => account.characters),
   }
@@ -185,7 +187,7 @@ export async function linkWorldLeapsFromRoster(allCharacters: readonly MapleChar
  * 두 벌로 만들지 않으려고 그쪽이 이 함수를 그대로 부른다.
  */
 export async function probeStrandedTrackedCharacters(
-  apiKey: string,
+  credential: NexonCredential,
   trackedOcids: ReadonlySet<string>,
   allCharacters: readonly MapleCharacter[],
   now: Date,
@@ -204,7 +206,7 @@ export async function probeStrandedTrackedCharacters(
         return
       }
       try {
-        await fetchCharacterBasic(apiKey, ocid, worldKeyOfApiName)
+        await fetchCharacterBasic(credential, ocid, worldKeyOfApiName)
       } catch (error) {
         // 401/429 는 여기서 안 던진다. 이 단계는 목록을 만드는 일이 아니라 곁다리 확정이라,
         // 전역 실패로 올리면 멀쩡히 그려진 로스터가 통째로 사라진다. 다음 회차가 다시 묻는다.
@@ -285,7 +287,7 @@ export async function getCharacterPickerRoster(
 ): Promise<void> {
   const now = new Date()
   // 계정과 추적 목록은 로컬 읽기라 stub 단계(네트워크 이전)에서도 알 수 있다.
-  const { apiKey, accountId } = await resolveAccountContext(options?.accountId)
+  const { credential, accountId } = await resolveAccountContext(options?.accountId)
   const trackedOcids = new Set((await getTrackedCharacterOcids()) ?? [])
 
   // 한 번이라도 사용자에게 보여줄 것을 흘렸는가. 인덱스에 ocid 가 있어도 전부 자격 미확인이면
@@ -362,7 +364,7 @@ export async function getCharacterPickerRoster(
 
   // 목록 밖 추적 ocid 확정. 로스터 방출과 섞이지 않게 먼저 끝낸다 - 이 단계가 원장에 표식을
   // 남기고, 아래 `readKnownEligibility` 가 그 원장을 읽는다.
-  await probeStrandedTrackedCharacters(apiKey, trackedOcids, allCharacters, now)
+  await probeStrandedTrackedCharacters(credential, trackedOcids, allCharacters, now)
   await linkWorldLeapsFromRoster(allCharacters, now)
   if (characters.length === 0) {
     onUpdate([])
@@ -401,7 +403,7 @@ export async function getCharacterPickerRoster(
         // 캐시 쓰기까지 공유 경로 안이다. 온보딩 한 바퀴(프로브 → 예열 → 피커)가 5분 안에 끝나면
         // 여기서는 네트워크가 나가지 않고 방금 채워진 캐시를 그대로 쓴다.
         const profile = await fetchCharacterBasicCached(
-          apiKey,
+          credential,
           accountId,
           character.ocid,
           now,
@@ -410,7 +412,7 @@ export async function getCharacterPickerRoster(
         // 여기서 스윕이 일어난다. 예열이 이미 훑었으면 원장이 채워져 있어
         // 추가 호출이 없고, 예열이 중간에 끊겼으면 이 경로가 이어서 완성한다.
         const eligibility = await resolveCharacterEligibility(
-          apiKey,
+          credential,
           character.ocid,
           profile.accessFlag,
           now,

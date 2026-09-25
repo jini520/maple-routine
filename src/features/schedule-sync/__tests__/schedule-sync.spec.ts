@@ -94,6 +94,10 @@ import {
   resetWorldLeapStoreForTests,
   useWorldLeapStore,
 } from '../../character-manage/world-leap-store'
+import type { NexonCredential } from '../../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 
 function mockCharacter(ocid: string): MapleCharacter {
   return {
@@ -260,8 +264,8 @@ describe('syncSchedules', () => {
     const results = await syncSchedules(['ocid-2', 'ocid-4'])
 
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-2', SCHEDULE_NAME_RESOLVERS)
-    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-4', SCHEDULE_NAME_RESOLVERS)
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 자격('key-1'), 'ocid-2', SCHEDULE_NAME_RESOLVERS)
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 자격('key-1'), 'ocid-4', SCHEDULE_NAME_RESOLVERS)
     expect(results.map((r) => r.ocid)).toEqual(['ocid-2', 'ocid-4'])
   })
 
@@ -632,8 +636,8 @@ describe('syncSchedules', () => {
 
       expect(ownerResults.map((result) => result.ocid)).toEqual(['ocid-1'])
       expect(outsiderResults.map((result) => result.ocid)).toEqual(['ocid-2'])
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2', SCHEDULE_NAME_RESOLVERS)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 자격('key-1'), 'ocid-2', SCHEDULE_NAME_RESOLVERS)
     })
 
     it('앞 회차가 실패해도 못 덮은 요청은 자기 회차를 잇는다', async () => {
@@ -713,8 +717,8 @@ describe('syncSchedules', () => {
 
       expect(fetchCharacterListMock).toHaveBeenCalledTimes(1)
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-2', SCHEDULE_NAME_RESOLVERS)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 자격('key-1'), 'ocid-2', SCHEDULE_NAME_RESOLVERS)
       expect(onProgress).toHaveBeenNthCalledWith(1, 0, 2)
       expect(onProgress).toHaveBeenLastCalledWith(2, 2)
       expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
@@ -924,8 +928,8 @@ describe('syncSchedules', () => {
 
       // 조회는 13일이 다 나가고, **멈추는 것은 병합이다**.
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(1, 자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
 
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
       expect(mergeSchedulerStateMock).toHaveBeenNthCalledWith(2, {
@@ -961,8 +965,8 @@ describe('syncSchedules', () => {
       await syncSchedules(['ocid-1'])
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-09')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-09')
       // -1일이 아직 stale이라 -2일까지 접고 거기서 멈춘다. 병합 순서는 그대로다.
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(3)
     })
@@ -1011,7 +1015,7 @@ describe('syncSchedules', () => {
         await syncSchedules(['ocid-1'])
 
         expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
-        expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS)
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith(자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS)
       })
 
       it('그 날짜에 그 섹션이 있었다면 다시 부른다. 원장은 값이 아니라 유무만 기억한다', async () => {
@@ -1043,7 +1047,7 @@ describe('syncSchedules', () => {
 
         await syncSchedules(['ocid-1'])
 
-        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
       })
 
       it('조회 불가(OPENAPI00003)로 확정된 캐릭터는 백필 루프에 아예 들어가지 않는다', async () => {
@@ -1097,7 +1101,7 @@ describe('syncSchedules', () => {
         await syncSchedules(['ocid-1'])
 
         expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(2)
-        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
+        expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
       })
     })
 
@@ -1121,7 +1125,7 @@ describe('syncSchedules', () => {
       const results = await syncSchedules(['ocid-1'])
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-09')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-09')
       // -1일 조회는 실패해서 merge가 안 불리고, 그다음 성공한 -2일만 merge된다(1단계 + -2일 = 2회)
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
       expect(results[0].state).toEqual(finalState)
@@ -1209,7 +1213,7 @@ describe('syncSchedules', () => {
       const results = await syncSchedules(['ocid-1'])
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(2, 자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-10')
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(2)
       expect(results[0].state).toEqual(finalState)
     })
@@ -1235,7 +1239,7 @@ describe('syncSchedules', () => {
       await syncSchedules(['ocid-1'])
 
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(14)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 'key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-09')
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenNthCalledWith(3, 자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS, '2026-07-09')
       expect(mergeSchedulerStateMock).toHaveBeenCalledTimes(3)
     })
 
@@ -1273,8 +1277,8 @@ describe('syncSchedules', () => {
 
       // 프리플라이트로 이미 동기화한 첫 캐릭터도 갱신 대상이다.
       expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2)
-      expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1', worldKeyOfApiName)
-      expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-2', worldKeyOfApiName)
+      expect(fetchCharacterBasicMock).toHaveBeenCalledWith(자격('key-1'), 'ocid-1', worldKeyOfApiName)
+      expect(fetchCharacterBasicMock).toHaveBeenCalledWith(자격('key-1'), 'ocid-2', worldKeyOfApiName)
       // mockCharacter/list 가 준 jobClass 가 엔트리에 함께 실린다. basic 응답에는 없다.
       expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', {
         profile: basicProfile({ name: '갱신-ocid-1', level: 293, jobClass: '렌' }),
@@ -1354,14 +1358,14 @@ describe('syncSchedules', () => {
 
       const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
-      expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith('key-1', 'ocid-2', worldKeyOfApiName)
+      expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith(자격('key-1'), 'ocid-2', worldKeyOfApiName)
       expect(setCachedCharacterBasicMock).not.toHaveBeenCalledWith(
         'acc-1',
         'ocid-2',
         expect.anything(),
       )
       // 스케줄 동기화 자체는 그대로 돈다. 건너뛴 것은 basic 하나뿐이다.
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2', SCHEDULE_NAME_RESOLVERS)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith(자격('key-1'), 'ocid-2', SCHEDULE_NAME_RESOLVERS)
       expect(results[1].isStale).toBe(false)
     })
 
@@ -1386,7 +1390,7 @@ describe('syncSchedules', () => {
         await syncSchedules(['ocid-1', 'ocid-2'])
 
         expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
-        expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-2', worldKeyOfApiName)
+        expect(fetchCharacterBasicMock).toHaveBeenCalledWith(자격('key-1'), 'ocid-2', worldKeyOfApiName)
       })
 
       // 대표 미지정은 today 에서 목록의 첫 번째가 그 자리에 선다(`resolveDisplayRepresentative`).
@@ -1401,7 +1405,7 @@ describe('syncSchedules', () => {
         await syncSchedules(['ocid-1', 'ocid-2'])
 
         expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(1)
-        expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 'ocid-1', worldKeyOfApiName)
+        expect(fetchCharacterBasicMock).toHaveBeenCalledWith(자격('key-1'), 'ocid-1', worldKeyOfApiName)
       })
 
       // 강제는 예외지 특권이 아니다. best-effort 계약은 그대로라 실패해도 스케줄 결과를 안 흔든다.
@@ -1435,8 +1439,8 @@ describe('syncSchedules', () => {
       const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
       expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-1', SCHEDULE_NAME_RESOLVERS)
-      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith('key-1', 'ocid-2', SCHEDULE_NAME_RESOLVERS)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith(자격('key-1'), 'ocid-1', SCHEDULE_NAME_RESOLVERS)
+      expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith(자격('key-1'), 'ocid-2', SCHEDULE_NAME_RESOLVERS)
       expect(results.every((result) => result.isStale === false)).toBe(true)
     })
 
@@ -2517,7 +2521,7 @@ describe('동기화가 월드 리프를 짚는다', () => {
 
     await syncSchedules([옛ocid, 'ocid-1'])
 
-    expect(fetchCharacterBasicMock).toHaveBeenCalledWith('key-1', 옛ocid, worldKeyOfApiName)
+    expect(fetchCharacterBasicMock).toHaveBeenCalledWith(자격('key-1'), 옛ocid, worldKeyOfApiName)
   })
 
   // 옛 월드가 챌린저스가 아니면 조회가 막힌 이유가 리프라고 단정할 수 없다(일반 월드는 장기

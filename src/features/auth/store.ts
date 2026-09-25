@@ -15,6 +15,7 @@ import { clearAuthConfig, getAuthConfig, removeApiKey, setApiKey } from '../../s
 import { useAppEntryStore } from '../app-entry/store'
 import { useToastStore } from '../toast/store'
 import { formatAuthError } from './format'
+import { credentialOf } from '../../lib/nexon-credential'
 import {
   authReducer,
   initialAuthState,
@@ -69,7 +70,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
     let accounts: AuthState['accounts']
     try {
-      accounts = await fetchAndRecordCharacterList(apiKey)
+      accounts = await fetchAndRecordCharacterList(credentialOf({ apiKey }))
     } catch (error) {
       const authError = toAuthError(error)
       useToastStore.getState().showError(formatAuthError(authError))
@@ -85,7 +86,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     //
     // 알리는 것은 모달 하나다. 토스트를 함께 띄우지 않는 것은 그것이 스스로 사라져 처방(서비스
     // 단계 키를 새로 받는 것)까지 데려가기 때문이다.
-    if ((await probeApiKeyStage(apiKey)) === 'developmentStage') {
+    if ((await probeApiKeyStage(credentialOf({ apiKey }))) === 'developmentStage') {
       set((state) => authReducer(state, { type: 'DEVELOPMENT_STAGE_KEY_BLOCKED' }))
       return false
     }

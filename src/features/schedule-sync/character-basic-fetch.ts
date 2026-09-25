@@ -1,3 +1,4 @@
+import type { NexonCredential } from '../../types/auth'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { fetchCharacterBasic } from '../../nexon/character'
 import { getCachedCharacterBasic, setCachedCharacterBasic } from '../../storage/character-basic-cache'
@@ -65,7 +66,7 @@ export interface FetchCharacterBasicOptions {
  * 로 덮으면 화면에서 직업이 사라진다.
  */
 export async function fetchCharacterBasicCached(
-  apiKey: string,
+  credential: NexonCredential,
   accountId: string,
   ocid: string,
   now: Date,
@@ -80,7 +81,7 @@ export async function fetchCharacterBasicCached(
   // 실패는 캐시로 폴백하지 않고 그대로 던진다. 호출부들이 그 예외에 판정을 걸고 있다.
   // 400 `OPENAPI00003` 로 계정의 조회 불가를 확정하고 401·429 는 전역 실패로 갈라진다.
   // 여기서 삼키면 그 판정이 통째로 죽는다.
-  const fetched = await fetchCharacterBasic(apiKey, ocid, worldKeyOfApiName)
+  const fetched = await fetchCharacterBasic(credential, ocid, worldKeyOfApiName)
 
   const resolvedJobClass = jobClass ?? cached?.profile.jobClass
   const profile: CharacterBasicProfile =

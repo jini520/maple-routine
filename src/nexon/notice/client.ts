@@ -6,6 +6,7 @@
  * ⚠️ 상세는 목록에 지금 떠 있는 글만 답한다. 목록 밖 번호는 400 `OPENAPI00004` 다.
  * ⚠️ 상세 응답에 `notice_id` 가 없어 부른 쪽의 번호로 id 를 만든다.
  */
+import type { NexonCredential } from '../../types/auth'
 import type { NexonNoticeKind, Notice, NoticeLookup } from '../../types/notice'
 import { NexonBadRequestError, NexonNetworkError } from '../errors'
 import { requestJson } from '../http'
@@ -62,9 +63,9 @@ function toNotice(kind: NexonNoticeKind, noticeId: number, item: Record<string, 
  *
  * 배열 키가 없는 응답은 빈 목록이 아니라 실패로 던진다. 빈 목록으로 읽으면 기기의 사본이 지워진다.
  */
-export async function fetchNexonNoticeList(apiKey: string, kind: NexonNoticeKind): Promise<Notice[]> {
+export async function fetchNexonNoticeList(credential: NexonCredential, kind: NexonNoticeKind): Promise<Notice[]> {
   const { list, key } = ENDPOINTS[kind]
-  const body = await requestJson<Record<string, unknown> | null>(list, apiKey)
+  const body = await requestJson<Record<string, unknown> | null>(list, credential)
   const raw = body?.[key]
   if (!Array.isArray(raw)) throw new NexonNetworkError(`Nexon 공지 목록에 ${key} 배열이 없습니다`)
 
@@ -89,13 +90,13 @@ export function nexonNoticeRef(id: string): { kind: NexonNoticeKind; noticeId: n
 
 /** 한 건의 상세. 본문 HTML 을 블록으로 바꿔 싣는다. */
 export async function fetchNexonNotice(
-  apiKey: string,
+  credential: NexonCredential,
   kind: NexonNoticeKind,
   noticeId: number,
 ): Promise<NoticeLookup> {
   let body: unknown
   try {
-    body = await requestJson<unknown>(`${ENDPOINTS[kind].list}/detail?notice_id=${noticeId}`, apiKey)
+    body = await requestJson<unknown>(`${ENDPOINTS[kind].list}/detail?notice_id=${noticeId}`, credential)
   } catch (error) {
     // 다른 400(키 무효 등)을 없다로 읽으면 멀쩡한 공지가 사본에서 빠진다.
     if (error instanceof NexonBadRequestError && error.code === 'OPENAPI00004') return { status: 'missing' }

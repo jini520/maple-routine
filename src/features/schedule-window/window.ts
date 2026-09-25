@@ -12,6 +12,7 @@
  * 원장이 호출 여부를 든다. 원장을 읽는 다른 셋(자격 스윕 · 선채움 · 날짜 캐기)은 이 함수가
  * 채워 둔 것을 그대로 보므로 **조회가 저절로 0 이 된다.** 지우지 않아도 통합된다.
  */
+import type { NexonCredential } from '../../types/auth'
 import { getMaxQueryableDate, getMinQueryableDate, MIN_SCHEDULER_DATE } from '../../lib/boss/boss-profit-period'
 import { getKstDateKeyDaysAgo } from '../../lib/scheduler/reset-clock'
 import { toProbeObservation } from '../../lib/scheduler/scheduler-activity'
@@ -27,6 +28,7 @@ import {
 import { refreshSettlement } from '../settlement/store'
 import { toScheduleSyncError } from '../schedule-sync/errors'
 import { mapWithLimit } from './gate'
+import { credentialOf } from '../../lib/nexon-credential'
 
 /**
  * 한 번에 나가는 조회 수. 캐릭터를 가로질러 센다.
@@ -99,12 +101,12 @@ export type WindowProgress = (done: number, total: number) => void
  */
 export interface ScheduleWindowPlan {
   /** 없으면 부를 수 없다. 로그인 전이거나 키가 없다 */
-  readonly apiKey: string | null
+  readonly credential: NexonCredential | null
   readonly jobs: readonly { readonly ocid: string; readonly dateKey: string }[]
 }
 
 /** 부를 것이 없는 계획. 세울 것도 없을 때 이 값을 쓴다. */
-const EMPTY_PLAN: ScheduleWindowPlan = { apiKey: null, jobs: [] }
+const EMPTY_PLAN: ScheduleWindowPlan = { credential: null, jobs: [] }
 
 /**
  * 창의 계획을 세운다. **콜 없이 원장만 읽는다.**
@@ -136,7 +138,7 @@ export async function planScheduleWindow(
     }
   }
 
-  return { apiKey: authConfig.apiKey, jobs }
+  return { credential: credentialOf(authConfig), jobs }
 }
 
 /**
@@ -159,13 +161,11 @@ export async function fillScheduleWindow(
     return
   }
 
-  const { apiKey, jobs } = plan ?? (await planScheduleWindow(ocids, now))
-  if (apiKey === null) {
+  const { credential, jobs } = plan ?? (await planScheduleWindow(ocids, now))
+  if (credential === null) {
     onProgress?.(0, 0)
     return
   }
-  const authConfig = { apiKey }
-
   // 스케줄러를 실제로 부르는 회차다. 결산 여부도 이 자리에서 함께 묻는다. 안 기다리는 것은
   // 그 답이 늦어도 창을 채우는 일이 늦으면 안 되기 때문이다.
   void refreshSettlement()
@@ -182,7 +182,7 @@ export async function fillScheduleWindow(
 
     let state
     try {
-      state = await fetchSchedulerCharacterState(authConfig.apiKey, ocid, SCHEDULE_NAME_RESOLVERS, dateKey)
+      state = await fetchSchedulerCharacterState(credential, ocid, SCHEDULE_NAME_RESOLVERS, dateKey)
     } catch (error) {
       const kind = toScheduleSyncError(error).kind
       if (kind === 'characterUnavailable') {

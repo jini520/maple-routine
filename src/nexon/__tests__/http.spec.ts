@@ -5,6 +5,10 @@ import {
   NexonRateLimitError,
 } from '../errors'
 import { requestJson } from '../http'
+import type { NexonCredential } from '../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 
 // 전역을 잠시 갈아 끼우는 도우미. 원래 값을 기억해 두고
 // `unstubAllGlobals` 가 되돌린다.
@@ -46,26 +50,26 @@ describe('requestJson: 에러 코드 보존', () => {
     stubGlobal('fetch', jest.fn(async () => response(400, { error: { name: 'OPENAPI00003', message: 'Please input valid id' } })),
     )
 
-    await expect(requestJson('/x', 'key')).rejects.toBeInstanceOf(NexonBadRequestError)
-    await expect(requestJson('/x', 'key')).rejects.toMatchObject({ code: 'OPENAPI00003' })
+    await expect(requestJson('/x', 자격('key'))).rejects.toBeInstanceOf(NexonBadRequestError)
+    await expect(requestJson('/x', 자격('key'))).rejects.toMatchObject({ code: 'OPENAPI00003' })
   })
 
   it.each(['OPENAPI00004', 'OPENAPI00009'])('400 %s 도 그대로 담는다', async (code) => {
     stubGlobal('fetch', jest.fn(async () => response(400, { error: { name: code } })))
 
-    await expect(requestJson('/x', 'key')).rejects.toMatchObject({ code })
+    await expect(requestJson('/x', 자격('key'))).rejects.toMatchObject({ code })
   })
 
   it('400인데 본문을 읽을 수 없으면 code는 null이다. 알 수 없는 실패로 degrade한다', async () => {
     stubGlobal('fetch', jest.fn(async () => response(400, undefined)))
 
-    await expect(requestJson('/x', 'key')).rejects.toMatchObject({ code: null })
+    await expect(requestJson('/x', 자격('key'))).rejects.toMatchObject({ code: null })
   })
 
   it('본문에 error가 없어도 code는 null이고 던지는 것은 여전히 NexonBadRequestError다', async () => {
     stubGlobal('fetch', jest.fn(async () => response(400, { something: 'else' })))
 
-    const error = await requestJson('/x', 'key').catch((caught: unknown) => caught)
+    const error = await requestJson('/x', 자격('key')).catch((caught: unknown) => caught)
     expect(error).toBeInstanceOf(NexonBadRequestError)
     expect((error as NexonBadRequestError).code).toBeNull()
   })
@@ -74,7 +78,7 @@ describe('requestJson: 에러 코드 보존', () => {
     stubGlobal('fetch', jest.fn(async () => response(400, { error: { name: 'OPENAPI00003', message: 'Please input valid id' } })),
     )
 
-    const error = (await requestJson('/x', 'key').catch((caught: unknown) => caught)) as Error
+    const error = (await requestJson('/x', 자격('key')).catch((caught: unknown) => caught)) as Error
     expect(error.message).not.toContain('Please input valid id')
   })
 })
@@ -82,17 +86,17 @@ describe('requestJson: 에러 코드 보존', () => {
 describe('requestJson: 기존 분기 유지', () => {
   it.each([401, 403])('%i 는 NexonAuthError', async (status) => {
     stubGlobal('fetch', jest.fn(async () => response(status, { error: { name: 'OPENAPI00001' } })))
-    await expect(requestJson('/x', 'key')).rejects.toBeInstanceOf(NexonAuthError)
+    await expect(requestJson('/x', 자격('key'))).rejects.toBeInstanceOf(NexonAuthError)
   })
 
   it('429 는 NexonRateLimitError', async () => {
     stubGlobal('fetch', jest.fn(async () => response(429, { error: { name: 'OPENAPI00007' } })))
-    await expect(requestJson('/x', 'key')).rejects.toBeInstanceOf(NexonRateLimitError)
+    await expect(requestJson('/x', 자격('key'))).rejects.toBeInstanceOf(NexonRateLimitError)
   })
 
   it('5xx 는 NexonNetworkError (BadRequest가 아니다)', async () => {
     stubGlobal('fetch', jest.fn(async () => response(503, { error: { name: 'WHATEVER' } })))
-    const error = await requestJson('/x', 'key').catch((caught: unknown) => caught)
+    const error = await requestJson('/x', 자격('key')).catch((caught: unknown) => caught)
     expect(error).toBeInstanceOf(NexonNetworkError)
     expect(error).not.toBeInstanceOf(NexonBadRequestError)
   })
@@ -102,16 +106,42 @@ describe('requestJson: 기존 분기 유지', () => {
         throw new Error('offline')
       }),
     )
-    await expect(requestJson('/x', 'key')).rejects.toBeInstanceOf(NexonNetworkError)
+    await expect(requestJson('/x', 자격('key'))).rejects.toBeInstanceOf(NexonNetworkError)
   })
 
   it('200 이면 본문을 그대로 반환한다', async () => {
     stubGlobal('fetch', jest.fn(async () => response(200, { ok: 1 })))
-    await expect(requestJson<{ ok: number }>('/x', 'key')).resolves.toEqual({ ok: 1 })
+    await expect(requestJson<{ ok: number }>('/x', 자격('key'))).resolves.toEqual({ ok: 1 })
   })
 
   it('200 인데 JSON이 아니면 NexonNetworkError', async () => {
     stubGlobal('fetch', jest.fn(async () => response(200, undefined)))
-    await expect(requestJson('/x', 'key')).rejects.toBeInstanceOf(NexonNetworkError)
+    await expect(requestJson('/x', 자격('key'))).rejects.toBeInstanceOf(NexonNetworkError)
+  })
+})
+
+// 자격을 문자열이 아니라 객체로 받는다(#535). 전송 경로를 가르는 자리를 이 파일 하나로
+// 모으려는 것이다. 넥슨 로그인이 붙으면 프렌즈 API 넷만 서버를 거치고 나머지는 지금처럼
+// 넥슨을 직접 부른다. 갈림이 client 파일마다 흩어지면 새는 자리를 못 센다.
+describe('requestJson: 자격 객체', () => {
+  it('API 키 자격이면 그 값을 x-nxopen-api-key 로 보낸다', async () => {
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, { ok: true }))
+    stubGlobal('fetch', fetcher)
+
+    await requestJson('/x', { kind: 'apiKey', value: '내키' })
+
+    const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
+    expect(headers['x-nxopen-api-key']).toBe('내키')
+  })
+
+  it('키 말고 다른 것은 헤더에 안 실린다', async () => {
+    // 자격 객체가 커져도 넥슨에 나가는 것은 키뿐이어야 한다.
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, { ok: true }))
+    stubGlobal('fetch', fetcher)
+
+    await requestJson('/x', { kind: 'apiKey', value: '내키' })
+
+    const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
+    expect(Object.keys(headers)).toEqual(['x-nxopen-api-key'])
   })
 })

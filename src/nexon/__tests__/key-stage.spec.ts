@@ -4,6 +4,10 @@
 // 바뀌면 호출 수도 반환값도 그대로인 채 판정만 조용히 죽는다.
 import { NexonAuthError, NexonNetworkError, NexonRateLimitError } from '../errors'
 import { PROBE_CALL_COUNT, probeApiKeyStage } from '../key-stage'
+import type { NexonCredential } from '../../types/auth'
+
+/** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
+const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
 
 jest.mock('../http', () => ({ requestJson: jest.fn() }))
 const { requestJson: requestJsonMock } = jest.requireMock('../http') as Record<string, jest.Mock>
@@ -25,12 +29,12 @@ describe('probeApiKeyStage', () => {
   it(`ocid 없이 부를 수 있는 유일한 엔드포인트를 ${PROBE_CALL_COUNT}건 부른다`, async () => {
     respond()
 
-    await probeApiKeyStage('key-1')
+    await probeApiKeyStage(자격('key-1'))
 
     expect(requestJsonMock).toHaveBeenCalledTimes(PROBE_CALL_COUNT)
-    for (const [path, apiKey] of requestJsonMock.mock.calls) {
+    for (const [path, credential] of requestJsonMock.mock.calls) {
       expect(path).toBe('/maplestory/v1/character/list')
-      expect(apiKey).toBe('key-1')
+      expect(credential).toEqual(자격('key-1'))
     }
   })
 
@@ -42,7 +46,7 @@ describe('probeApiKeyStage', () => {
       async () => await new Promise((resolve) => release.push(() => resolve({}))),
     )
 
-    const verdict = probeApiKeyStage('key-1')
+    const verdict = probeApiKeyStage(자격('key-1'))
     await Promise.resolve()
 
     expect(requestJsonMock).toHaveBeenCalledTimes(PROBE_CALL_COUNT)
@@ -54,7 +58,7 @@ describe('probeApiKeyStage', () => {
   it('429 를 하나라도 보면 개발 단계다', async () => {
     respond(new NexonRateLimitError('429'))
 
-    await expect(probeApiKeyStage('key-1')).resolves.toBe('developmentStage')
+    await expect(probeApiKeyStage(자격('key-1'))).resolves.toBe('developmentStage')
   })
 
   // 429 는 마지막에 와도 같다. 하나라도 봤는가이지 몇 번째인가가 아니다.
@@ -68,7 +72,7 @@ describe('probeApiKeyStage', () => {
       return {}
     })
 
-    await expect(probeApiKeyStage('key-1')).resolves.toBe('developmentStage')
+    await expect(probeApiKeyStage(자격('key-1'))).resolves.toBe('developmentStage')
   })
 
   // 429 를 못 봤다는 것은 **못 봤다는 뜻뿐**이다. 서비스 단계라는 뜻이 아니라서 반환값에
@@ -76,7 +80,7 @@ describe('probeApiKeyStage', () => {
   it('전부 성공하면 판정을 안 세운다', async () => {
     respond()
 
-    await expect(probeApiKeyStage('key-1')).resolves.toBe('undetermined')
+    await expect(probeApiKeyStage(자격('key-1'))).resolves.toBe('undetermined')
   })
 
   // 차단은 **양성 증거**를 요구한다. 네트워크가 끊겨 열 건이 다 죽은 것을 개발 단계로 읽으면
@@ -84,13 +88,13 @@ describe('probeApiKeyStage', () => {
   it('네트워크 오류만 있으면 판정을 안 세운다', async () => {
     respond(...Array.from({ length: PROBE_CALL_COUNT }, () => new NexonNetworkError('down')))
 
-    await expect(probeApiKeyStage('key-1')).resolves.toBe('undetermined')
+    await expect(probeApiKeyStage(자격('key-1'))).resolves.toBe('undetermined')
   })
 
   it('401 만 있으면 판정을 안 세운다', async () => {
     respond(...Array.from({ length: PROBE_CALL_COUNT }, () => new NexonAuthError('nope')))
 
-    await expect(probeApiKeyStage('key-1')).resolves.toBe('undetermined')
+    await expect(probeApiKeyStage(자격('key-1'))).resolves.toBe('undetermined')
   })
 
   // 프로브는 판정만 내고 던지지 않는다. 던지면 호출부가 검증 실패와 단계 판정 실패를
@@ -98,6 +102,6 @@ describe('probeApiKeyStage', () => {
   it('열 건이 다 실패해도 던지지 않는다', async () => {
     respond(...Array.from({ length: PROBE_CALL_COUNT }, () => new NexonNetworkError('down')))
 
-    await expect(probeApiKeyStage('key-1')).resolves.toBeDefined()
+    await expect(probeApiKeyStage(자격('key-1'))).resolves.toBeDefined()
   })
 })
