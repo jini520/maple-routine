@@ -27,8 +27,8 @@ export function trackedAccountIdsOf(
 /** 목록을 받아 그 ID 들의 표시를 만든다. 못 받으면 표시 없이 ID 만 선다. */
 export async function loadAccountIdentities(accountIds: readonly string[]): Promise<Map<string, AccountIdentity>> {
   let lists: MapleAccount[] = []
-  const auth = await getAuthConfig().catch(() => null)
-  if (auth !== null) lists = await fetchAndRecordCharacterList(credentialOf(auth)).catch(() => [])
+  const credential = credentialOf(await getAuthConfig().catch(() => null))
+  if (credential !== null) lists = await fetchAndRecordCharacterList(credential).catch(() => [])
   const summaries = new Map<string, AccountSummaryView>()
   for (const account of lists) {
     if (!accountIds.includes(account.accountId)) continue

@@ -42,6 +42,7 @@ export function useApiKeyNotice(error: ScheduleSyncError | null): void {
       return
     }
     routedErrors.add(error)
-    useAuthStore.getState().noticeApiKeyIssue(kind)
+    // 실패가 실어 온 키를 그대로 넘긴다. 확인이 그 키만 지운다.
+    useAuthStore.getState().noticeApiKeyIssue(kind, error.apiKey)
   }, [error])
 }

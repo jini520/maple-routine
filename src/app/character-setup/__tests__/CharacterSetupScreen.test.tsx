@@ -162,7 +162,7 @@ beforeEach(() => {
   rosterFailure = undefined
   accountsFailure = undefined
 
-  mockedGetAuthConfig.mockResolvedValue({ apiKey: 'key' })
+  mockedGetAuthConfig.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey' as const, label: '', value: 'key' }] })
   mockedFetchCharacterList.mockImplementation(async () => {
     if (accountsFailure !== undefined) throw accountsFailure
     return [계정A]
@@ -416,14 +416,15 @@ describe('CharacterSetupScreen: 키 재입력 진입점은 429 만 탄다', () =
     rosterFailure = new NexonRateLimitError('429')
     await renderStep()
 
-    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('rateLimited')
+    // 로스터 경로는 자격을 안쪽에서 고르므로 어느 키였는지 모른다. 그때는 안 싣는다.
+    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('rateLimited', undefined)
   })
 
   it('계정 목록 429 도 같은 진입점으로 넘어간다', async () => {
     accountsFailure = new NexonRateLimitError('429')
     await renderStep()
 
-    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('rateLimited')
+    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('rateLimited', expect.anything())
   })
 
   // 미배선이라는 선택이다. 이 자리의 401 은 방금 넣은 키가 나쁘다 는 뜻이라 폼 자체의 실패로

@@ -12,7 +12,7 @@ const { fetchSymbolEquipment } = jest.requireMock('../../../nexon/symbol-levels'
 const { loadSymbolLevels } = require('../symbol-levels') as typeof import('../symbol-levels')
 
 beforeEach(() => {
-  getAuthConfig.mockReset().mockResolvedValue({ apiKey: 'api-key' })
+  getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'api-key' }] })
   fetchSymbolEquipment.mockReset().mockResolvedValue([
     { symbol_name: '아케인심볼 : 소멸의 여로', symbol_level: 20 },
     { symbol_name: '어센틱심볼 : 세르니움', symbol_level: 4 },

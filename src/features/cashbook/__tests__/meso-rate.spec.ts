@@ -26,7 +26,7 @@ const { getCachedCharacterBasic } = jest.requireMock(
 const { loadMesoRate } = require('../meso-rate') as typeof import('../meso-rate')
 
 beforeEach(() => {
-  getAuthConfig.mockReset().mockResolvedValue({ apiKey: 'api-key' })
+  getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'api-key' }] })
   getCachedMesoRate.mockReset().mockResolvedValue(null)
   setCachedMesoRate.mockReset().mockResolvedValue(undefined)
   fetchMesoRate.mockReset().mockResolvedValue(149)

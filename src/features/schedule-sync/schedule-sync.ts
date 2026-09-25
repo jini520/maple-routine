@@ -40,6 +40,7 @@ import { markSyncAttemptedThisRun } from './sync-run-state'
 import { persistUnavailable } from './stranded-characters'
 import { resolveDisplayRepresentative } from '../character-manage/derivations'
 import { getRepresentativeCharacter } from '../../storage/character-selection'
+import { apiKeyValueOf } from '../../lib/nexon-credential'
 // 공개 API 는 그대로 둔다. 옮긴 것은 구현 위치이지 호출부가 알 바가 아니다.
 export { toScheduleSyncError } from './errors'
 export type { ScheduleSyncError } from './errors'
@@ -325,7 +326,7 @@ async function syncOneCharacter(
       error: null,
     }
   } catch (error) {
-    return buildFallbackResult(character, toScheduleSyncError(error))
+    return buildFallbackResult(character, toScheduleSyncError(error, apiKeyValueOf(credential)))
   }
 }
 

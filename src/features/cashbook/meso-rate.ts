@@ -37,12 +37,12 @@ async function jobClassOf(ocid: string): Promise<string | null> {
 }
 
 export async function loadMesoRate(ocid: string): Promise<MesoRateLoad> {
-  const auth = await getAuthConfig()
+  const credential = credentialOf(await getAuthConfig())
   // 키가 없으면 **부르지도 않는다**. 401 을 만들면 그 사슬이 저장된 키를 지운다.
-  if (auth === null) return { kind: 'fallback', percent: await getCachedMesoRate(ocid) }
+  if (credential === null) return { kind: 'fallback', percent: await getCachedMesoRate(ocid) }
 
   try {
-    const percent = await fetchMesoRate(credentialOf(auth), ocid, await jobClassOf(ocid))
+    const percent = await fetchMesoRate(credential, ocid, await jobClassOf(ocid))
     // 캐시 쓰기 실패로 **읽은 값을 버리지 않는다**. 캐시는 폴백의 기본값일 뿐이다.
     await setCachedMesoRate(ocid, percent).catch(() => undefined)
     return { kind: 'read', percent }

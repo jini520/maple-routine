@@ -64,7 +64,7 @@ beforeEach(() => {
   seedManualTrackedContentMock.mockResolvedValue(undefined)
   mockTrackingModeRef.current = 'auto'
   // 기본값 = 앱이 열리는 상태
-  getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
+  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
   getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-acc-1'])
   getMvpOnboardingPendingMock.mockResolvedValue(false)
   setMvpOnboardingPendingMock.mockResolvedValue(undefined)

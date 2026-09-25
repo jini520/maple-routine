@@ -22,8 +22,15 @@ jest.mock('../../../storage/api-key', () => ({
   setApiKey: jest.fn(),
   clearAuthConfig: jest.fn(),
   removeApiKey: jest.fn(),
+  removeAllApiKeys: jest.fn(),
 }))
-const { getAuthConfig: getAuthConfigMock, setApiKey: setApiKeyMock, clearAuthConfig: clearAuthConfigMock, removeApiKey: removeApiKeyMock } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
+const {
+  getAuthConfig: getAuthConfigMock,
+  setApiKey: setApiKeyMock,
+  clearAuthConfig: clearAuthConfigMock,
+  removeApiKey: removeApiKeyMock,
+  removeAllApiKeys: removeAllApiKeysMock,
+} = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
 jest.mock('../../toast/store', () => {
   const showSuccess = jest.fn()
@@ -70,10 +77,11 @@ beforeEach(() => {
   setApiKeyMock.mockResolvedValue(undefined)
   clearAuthConfigMock.mockResolvedValue(undefined)
   removeApiKeyMock.mockResolvedValue(undefined)
+  removeAllApiKeysMock.mockResolvedValue(undefined)
   resolveAfterSignInMock.mockResolvedValue(undefined)
   // 판정이 안 서는 것이 통상 경로다. 서는 경우만 그 테스트가 직접 세운다.
   probeApiKeyStageMock.mockResolvedValue('undetermined')
-  getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
+  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
 })
 
 afterEach(() => {
@@ -93,7 +101,7 @@ describe('useAuthStore.restoreFromStorage', () => {
   })
 
   it('저장된 키가 있으면 signedIn 이 된다. 네트워크는 안 탄다', async () => {
-    getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1' })
+    getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
 
     await useAuthStore.getState().restoreFromStorage()
 
@@ -240,7 +248,7 @@ describe('useAuthStore.noticeApiKeyIssue', () => {
       useAuthStore.getState().noticeApiKeyIssue(kind)
 
       const state = useAuthStore.getState()
-      expect(state.apiKeyNotice).toBe(kind)
+      expect(state.apiKeyNotice).toEqual({ kind, apiKey: null })
       expect(state.status).toBe('signedIn')
     },
   )
@@ -253,7 +261,7 @@ describe('useAuthStore.noticeApiKeyIssue', () => {
 
       useAuthStore.getState().noticeApiKeyIssue(kind)
 
-      expect(removeApiKeyMock).not.toHaveBeenCalled()
+      expect(removeAllApiKeysMock).not.toHaveBeenCalled()
       expect(clearAuthConfigMock).not.toHaveBeenCalled()
       expect(showErrorMock).not.toHaveBeenCalled()
     },
@@ -269,7 +277,7 @@ describe('useAuthStore.noticeApiKeyIssue', () => {
     useAuthStore.getState().noticeApiKeyIssue('invalid')
 
     expect(useAuthStore.getState()).toBe(afterFirst)
-    expect(useAuthStore.getState().apiKeyNotice).toBe('rateLimited')
+    expect(useAuthStore.getState().apiKeyNotice).toEqual({ kind: 'rateLimited', apiKey: null })
   })
 
   // 가드는 "이미 로그인 화면인가"만 본다. 그 두 상태가 곧 그 화면이라 보낼 곳이 없고,
@@ -288,7 +296,7 @@ describe('useAuthStore.noticeApiKeyIssue', () => {
     const state = useAuthStore.getState()
     expect(state.apiKeyNotice).toBeNull()
     expect(state.status).toBe(status)
-    expect(removeApiKeyMock).not.toHaveBeenCalled()
+    expect(removeAllApiKeysMock).not.toHaveBeenCalled()
   })
 
   // 429 로 로스터가 비는 하드 잠금은 **캐릭터 설정 화면**에서 난다. 그 화면도 로그인 상태라
@@ -299,10 +307,10 @@ describe('useAuthStore.noticeApiKeyIssue', () => {
     useAuthStore.getState().noticeApiKeyIssue('rateLimited')
 
     const state = useAuthStore.getState()
-    expect(state.apiKeyNotice).toBe('rateLimited')
+    expect(state.apiKeyNotice).toEqual({ kind: 'rateLimited', apiKey: null })
     // 알리기만 한다. status를 뒤집는 것은 확인(confirmApiKeyNotice)의 몫이다.
     expect(state.status).toBe('signedIn')
-    expect(removeApiKeyMock).not.toHaveBeenCalled()
+    expect(removeAllApiKeysMock).not.toHaveBeenCalled()
   })
 })
 
@@ -312,7 +320,7 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
       status: 'signedIn',
       accounts: [account('acc-1')],
       error: null,
-      apiKeyNotice: kind,
+      apiKeyNotice: { kind, apiKey: null },
       developmentStageBlocked: false,
     })
   }
@@ -339,7 +347,8 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
 
       await useAuthStore.getState().confirmApiKeyNotice()
 
-      expect(removeApiKeyMock).toHaveBeenCalledTimes(1)
+      // 알림이 키를 안 실어 왔다. 어느 키인지 못 가려 전부 지운다.
+      expect(removeAllApiKeysMock).toHaveBeenCalledTimes(1)
       expect(clearAuthConfigMock).not.toHaveBeenCalled()
     },
   )
@@ -351,7 +360,7 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
     await useAuthStore.getState().confirmApiKeyNotice()
 
     expect(useAuthStore.getState().status).toBe('signedIn')
-    expect(removeApiKeyMock).not.toHaveBeenCalled()
+    expect(removeAllApiKeysMock).not.toHaveBeenCalled()
     expect(entryResetMock).not.toHaveBeenCalled()
   })
 
@@ -373,7 +382,7 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
     await useAuthStore.getState().signOut()
 
     expect(clearAuthConfigMock).toHaveBeenCalledTimes(1)
-    expect(removeApiKeyMock).not.toHaveBeenCalled()
+    expect(removeAllApiKeysMock).not.toHaveBeenCalled()
   })
 })
 
@@ -456,7 +465,7 @@ describe('useAuthStore.signIn: 개발 단계 키를 문 앞에서 막는다', ()
     await useAuthStore.getState().signIn('dev-key')
     useAuthStore.getState().acknowledgeDevelopmentStageKey()
 
-    expect(removeApiKeyMock).not.toHaveBeenCalled()
+    expect(removeAllApiKeysMock).not.toHaveBeenCalled()
     expect(clearAuthConfigMock).not.toHaveBeenCalled()
   })
 

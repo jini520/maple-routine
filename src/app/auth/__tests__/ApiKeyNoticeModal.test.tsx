@@ -45,7 +45,7 @@ describe('ApiKeyNoticeModal', () => {
 
   describe.each(CASES)('$kind', ({ kind, title, body }) => {
     beforeEach(() => {
-      useAuthStore.setState({ apiKeyNotice: kind })
+      useAuthStore.setState({ apiKeyNotice: { kind, apiKey: null } })
     })
 
     // 원인마다 다른 말을 해야 한다. 무효 키는 "다음에 무슨 일이 일어나는가"를, 429 는 처방을

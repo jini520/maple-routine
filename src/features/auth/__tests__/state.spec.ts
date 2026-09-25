@@ -148,9 +148,10 @@ describe('authReducer', () => {
         developmentStageBlocked: false,
       }
 
-      const result = authReducer(signedIn, { type: 'API_KEY_NOTICED', kind })
+      const notice = { kind, apiKey: null }
+      const result = authReducer(signedIn, { type: 'API_KEY_NOTICED', notice })
 
-      expect(result).toEqual<AuthState>({ ...signedIn, apiKeyNotice: kind })
+      expect(result).toEqual<AuthState>({ ...signedIn, apiKeyNotice: notice })
     },
   )
 
@@ -161,13 +162,13 @@ describe('authReducer', () => {
       status: 'signedIn',
       accounts: [account('acc-1')],
       error: null,
-      apiKeyNotice: 'invalid',
+      apiKeyNotice: { kind: 'invalid', apiKey: null },
       developmentStageBlocked: false,
     }
 
-    const result = authReducer(noticed, { type: 'API_KEY_NOTICED', kind: 'rateLimited' })
+    const result = authReducer(noticed, { type: 'API_KEY_NOTICED', notice: { kind: 'rateLimited', apiKey: null } })
 
-    expect(result.apiKeyNotice).toBe('invalid')
+    expect(result.apiKeyNotice).toEqual({ kind: 'invalid', apiKey: null })
     expect(result).toBe(noticed)
   })
 
@@ -176,7 +177,7 @@ describe('authReducer', () => {
       status: 'signedIn',
       accounts: [account('acc-1')],
       error: null,
-      apiKeyNotice: 'rateLimited',
+      apiKeyNotice: { kind: 'rateLimited', apiKey: null },
       developmentStageBlocked: false,
     }
 

@@ -9,11 +9,11 @@ import { getAuthConfig } from '../../storage/api-key'
 import { credentialOf } from '../../lib/nexon-credential'
 
 export async function loadSymbolLevels(ocid: string): Promise<Record<string, number> | null> {
-  const auth = await getAuthConfig()
+  const credential = credentialOf(await getAuthConfig())
   // 키가 없으면 부르지도 않는다. 401 을 만들면 그 사슬이 저장된 키를 지운다.
-  if (auth === null) return null
+  if (credential === null) return null
   try {
-    return symbolLevelsOf(await fetchSymbolEquipment(credentialOf(auth), ocid))
+    return symbolLevelsOf(await fetchSymbolEquipment(credential, ocid))
   } catch {
     return null
   }

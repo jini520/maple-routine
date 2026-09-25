@@ -121,7 +121,10 @@ beforeEach(() => {
     imageUrl: 'https://example.invalid/look',
     accessFlag: true,
   })
-  getAuthConfigMock.mockResolvedValue({ apiKey: 'key-1', selectedAccountId: 'acc-1' })
+  getAuthConfigMock.mockResolvedValue({
+    login: null,
+    apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }],
+  })
   mergeSchedulerStateMock.mockImplementation(({ fresh }: { fresh: SchedulerCharacterState }) => ({
     characterState: fresh,
     worldLedgerUpdates: {},

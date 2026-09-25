@@ -33,7 +33,8 @@ import {
 import { fetchAndRecordCharacterList } from '../features/mvp-grade/character-list'
 import { getAuthConfig } from '../storage/api-key'
 import type { CharacterPickerEntry } from '../types'
-import { credentialOf } from '../lib/nexon-credential'
+import { apiKeyValueOf, credentialOf } from '../lib/nexon-credential'
+import type { NexonCredential } from '../types/auth'
 
 /** 계정 하나의 후보 목록 + **성공 도장**. 도장이 없으면 TTL 판정에서 아직 이다. */
 interface AccountRoster {
@@ -120,6 +121,8 @@ export function useAccountRosters(): AccountRosters {
       })
       .catch((error: unknown) => {
         if (openAccountRef.current !== accountId) return
+        // 자격을 `getCharacterPickerRoster` 안에서 고르므로 여기서는 어느 키였는지 모른다.
+        // 그래서 이 경로의 무효화는 키를 전부 지운다. 키가 여럿이 되면 그 안에서 실어 보낼 것.
         setRosterError(toScheduleSyncError(error))
         setIsRosterLoading(false)
       })
@@ -128,12 +131,15 @@ export function useAccountRosters(): AccountRosters {
   useEffect(() => {
     let cancelled = false
     void (async () => {
+      // catch 에서도 읽어야 해서 try 밖에 둔다. 실패했을 때 **어느 키로 부르다 그랬는지**를
+      // 실어 보내야 알림이 그 키만 지운다.
+      let credential: NexonCredential | null = null
       try {
-        const authConfig = await getAuthConfig()
-        if (authConfig === null) {
+        credential = credentialOf(await getAuthConfig())
+        if (credential === null) {
           throw new Error('useAccountRosters: API 키가 없습니다')
         }
-        const list = await fetchAndRecordCharacterList(credentialOf(authConfig))
+        const list = await fetchAndRecordCharacterList(credential)
         if (cancelled) return
         // 캐릭터 0명 계정은 `normalizeCharacterList` 가 이미 걸렀고,
         // `summarizeAccount` 의 `null` 은 그 규칙이 뚫렸을 때의 안전망이다. 렌더 중에 던지지 않는다.
@@ -156,7 +162,9 @@ export function useAccountRosters(): AccountRosters {
         if (next !== null) loadRoster(next)
       } catch (error: unknown) {
         if (cancelled) return
-        setAccountsError(toScheduleSyncError(error))
+        setAccountsError(
+          toScheduleSyncError(error, credential === null ? undefined : apiKeyValueOf(credential)),
+        )
         setIsAccountsLoading(false)
       }
     })()

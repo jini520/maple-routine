@@ -61,7 +61,7 @@ function schedulerState(): unknown {
 const asked = (): string[] => fetchStateMock.mock.calls.map(([, , , dateKey]) => dateKey).sort()
 
 beforeEach(() => {
-  getAuthConfigMock.mockReset().mockResolvedValue({ apiKey: 'key' })
+  getAuthConfigMock.mockReset().mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key' }] })
   getLedgerMock.mockReset().mockResolvedValue({ unavailable: false, dates: {} })
   markUnavailableMock.mockReset().mockResolvedValue(undefined)
   recordProbeMock.mockReset().mockResolvedValue(undefined)

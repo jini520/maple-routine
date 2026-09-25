@@ -242,7 +242,7 @@ beforeEach(() => {
     goBack,
     setParams: jest.fn(),
   } as unknown as ReturnType<typeof useSettingsNavigation>)
-  mockedGetAuthConfig.mockResolvedValue({ apiKey: 'key' })
+  mockedGetAuthConfig.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey' as const, label: '', value: 'key' }] })
   mockedFetchCharacterList.mockResolvedValue([계정A, 계정B])
   mockedGetCachedBasic.mockImplementation(async (ocid: string) => 캐시된캐릭터.get(ocid) ?? null)
   mockedGetRepresentative.mockResolvedValue(null)
@@ -702,6 +702,7 @@ describe('못 고르는 계정', () => {
 
     await press(view.getByText('API 키 다시 입력'))
 
+    // 사용자가 손으로 누른 것이라 실패가 없고, 따라서 실어 보낼 키도 없다.
     expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('invalid')
   })
 
@@ -725,7 +726,8 @@ describe('키 재입력 진입점', () => {
 
     await renderScreen()
 
-    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith(kind)
+    // 로스터 경로는 자격을 안쪽에서 고르므로 어느 키였는지 모른다.
+    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith(kind, undefined)
   })
 
   it('계정 목록 조회가 401 로 끝나도 같은 경로로 간다', async () => {
@@ -733,7 +735,7 @@ describe('키 재입력 진입점', () => {
 
     await renderScreen()
 
-    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('invalid')
+    expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('invalid', expect.anything())
   })
 
   it('401·429 가 아닌 실패는 그 경로를 타지 않는다', async () => {

@@ -54,7 +54,7 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
     return null
   }
 
-  const { icon, title, body } = NOTICE_COPY[apiKeyNotice]
+  const { icon, title, body } = NOTICE_COPY[apiKeyNotice.kind]
 
   return (
     // 톤은 두 원인 모두 `error` 다. 429 도 어미 규칙상 실패(`~습니다`)이고 error-resilience.md 의
