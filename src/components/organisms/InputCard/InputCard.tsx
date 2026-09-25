@@ -27,7 +27,7 @@
  *   onCancel={() => setEditing(null)}
  * />
  */
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   Image,
   Keyboard,
@@ -422,11 +422,27 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   /** 커서 앞에 숫자가 몇 개인가. 값을 넣고 지우는 자리가 이 수로 정해진다. */
   const digitCaret = caret === null ? mesoTextOf(mesoValueOf(draft)).length : digitsBefore(shown, caret.start)
 
-  /** 다시 그린 글자에서 그 개수째 숫자 뒤로 커서를 돌려놓는다. */
-  function settleCaret(nextDraft: string, keepDigits: number): void {
+  /**
+   * 값이 갈리는 순간 네이티브 칸이 들고 있는 자리. **한 번 쓰고 비운다.**
+   *
+   * 그 자리는 콤마를 다시 붙이기 전 글자의 인덱스다(`1000` 의 4). 네이티브가 그것을
+   * `onSelectionChange` 로 내는데, 받아 두면 우리가 고른 자리가 콤마 하나분 되돌아간다
+   * (`1,000` 이 `1,00|0`). 그 값으로 오는 이벤트 하나만 버린다.
+   */
+  const staleCaret = useRef<number | null>(null)
+
+  /**
+   * 다시 그린 글자에서 그 개수째 숫자 뒤로 커서를 돌려놓는다.
+   *
+   * @param nativeAt 갈기 전 네이티브 칸의 커서. 뒤늦게 이 값이 오면 버린다.
+   */
+  function settleCaret(nextDraft: string, keepDigits: number, nativeAt: number): void {
     const nextShown = nextDraft === '' ? '' : mesoValueOf(nextDraft).toLocaleString()
     const at = caretAfterDigits(nextShown, keepDigits)
-    setCaret({ start: at, end: at })
+    // 고른 자리와 같으면 버릴 것이 없다. 적어 두면 손으로 누른 그 자리를 잡아먹는다.
+    staleCaret.current = nativeAt === at ? null : nativeAt
+    // 자리가 그대로면 **새 객체를 안 만든다.** 주면 네이티브가 커서를 다시 세워 깜빡임이 끊긴다.
+    setCaret((prev) => (prev !== null && prev.start === at && prev.end === at ? prev : { start: at, end: at }))
   }
 
   function change(next: string): void {
@@ -443,16 +459,37 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     const 새커서 = Math.max(0, Math.min(next.length, 앞커서 + (next.length - shown.length)))
     const 남길숫자 = digitsBefore(next, 새커서)
 
+    /*
+      **콤마를 지운 타건.** 커서 앞이 콤마였고 그 한 글자만 빠졌으면 지워진 것이 콤마다. 콤마는
+      우리가 넣은 것이라 지울 대상이 아니고, 지워 봐야 값이 안 갈려 한 번 헛돈다(사용자 보고).
+      그 앞 숫자를 대신 지운다.
+
+      **빠진 글자를 맞춰 본다.** 「숫자 개수가 같고 짧아졌다」로만 보면 칸을 통째로 갈아 끼우는
+      타건(`12,000,000` 에 `34000000`)이 함께 걸려 숫자 하나를 잃는다.
+    */
+    const 콤마지움 =
+      앞커서 > 0 && shown[앞커서 - 1] === ',' && `${shown.slice(0, 앞커서 - 1)}${shown.slice(앞커서)}` === next
+    if (콤마지움 && 남길숫자 > 0) {
+      const digits = next.replace(/[^0-9]/g, '')
+      const 지운뒤 = `${digits.slice(0, 남길숫자 - 1)}${digits.slice(남길숫자)}`
+      const accepted = acceptMesoText(draft, 지운뒤)
+      setDraft(accepted)
+      // 지운 자리가 곧 커서다. 네이티브는 콤마만 빠진 자리에 서 있다.
+      settleCaret(accepted, 남길숫자 - 1, 새커서)
+      return
+    }
+
     const accepted = acceptMesoText(draft, next)
     setDraft(accepted)
-    settleCaret(accepted, 남길숫자)
+    // 칸이 칠 때 네이티브가 든 자리는 **방금 받은 날 글자 안**의 자리다.
+    settleCaret(accepted, 남길숫자, 새커서)
   }
 
   function add(step: number): void {
     // 칩은 자리에 끼우는 것이 아니라 **값을 더하는** 것이라 커서가 끝으로 간다.
     const next = mesoTextOf(Math.min(MAX_MESO, mesoValueOf(draft) + step))
     setDraft(next)
-    settleCaret(next, mesoTextOf(mesoValueOf(next)).length)
+    settleCaret(next, mesoTextOf(mesoValueOf(next)).length, caret?.start ?? shown.length)
   }
 
   /**
@@ -641,9 +678,14 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               caretHidden={!canType}
               selection={isText ? undefined : (caret ?? undefined)}
               onSelectionChange={(event) => {
-                // 손으로 옮긴 커서. 다음 타건이 이 자리를 기준으로 끼운다.
                 if (isText) return
-                setCaret(event.nativeEvent.selection)
+                const next = event.nativeEvent.selection
+                const stale = staleCaret.current
+                staleCaret.current = null
+                // 값을 갈기 전 글자에서 잰 자리다. 받으면 고른 자리가 콤마 하나분 되돌아간다.
+                if (stale !== null && next.start === stale && next.end === stale) return
+                // 손으로 옮긴 커서. 다음 타건이 이 자리를 기준으로 끼운다.
+                setCaret(next)
               }}
               onChangeText={change}
               keyboardType={isText ? undefined : 'number-pad'}
@@ -841,13 +883,14 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                     const 뒤 = draft.slice(digitCaret)
                     const accepted = acceptMesoText(draft, `${앞}${digit}${뒤}`)
                     setDraft(accepted)
-                    settleCaret(accepted, digitCaret + 1)
+                    // 판이 누를 때 네이티브가 든 자리는 **갈기 전 글자**의 커서다.
+                    settleCaret(accepted, digitCaret + 1, caret?.start ?? shown.length)
                   }}
                   onBackspace={() => {
                     if (digitCaret === 0) return
                     const next = `${draft.slice(0, digitCaret - 1)}${draft.slice(digitCaret)}`
                     setDraft(next)
-                    settleCaret(next, digitCaret - 1)
+                    settleCaret(next, digitCaret - 1, caret?.start ?? shown.length)
                   }}
                   onConfirm={() => setPadOpen(false)}
                 />
