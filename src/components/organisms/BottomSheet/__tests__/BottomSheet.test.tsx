@@ -7,8 +7,9 @@
 //
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
 import { useState, type ReactNode } from 'react'
-import { Pressable, Text, View } from 'react-native'
+import { Platform, Pressable, Text, View } from 'react-native'
 import { act, fireEvent, within } from '@testing-library/react-native'
+import type { Metrics } from 'react-native-safe-area-context'
 
 // `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다. **`mock` 접두 이름만** 예외다.
 const mockPresent = jest.fn()
@@ -55,12 +56,13 @@ beforeEach(() => {
 })
 
 describe('BottomSheet: 가 정한 값을 넘긴다', () => {
-  async function open(): Promise<ReturnType<typeof renderOverlay>> {
-    return renderOverlay(
+  async function open(metrics?: Metrics): Promise<ReturnType<typeof renderOverlay>> {
+    const ui = (
       <BottomSheet onClose={noop} testId="boss-drop-sheet" label="드롭 아이템 기록">
         <Text>시트 내용</Text>
-      </BottomSheet>,
+      </BottomSheet>
     )
+    return metrics === undefined ? renderOverlay(ui) : renderOverlay(ui, metrics)
   }
 
   it('children 과 testId 를 그대로 전달한다. 공개 API 는 웹과 같다', async () => {
@@ -115,14 +117,23 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
 
   // `max-h-[82vh]` 는 **상한**이지 높이가 아니다. 고정 스냅 포인트(라이브러리의 흔한 사용법)로
   // 옮기면 내용이 짧아도 시트가 항상 82%까지 올라온다.
-  it('높이는 내용이 정하고 82%가 상한이다. 고정 스냅 포인트가 아니다', async () => {
+  it('높이는 내용이 정하고 상단 안전영역이 상한이다. 고정 스냅 포인트가 아니다', async () => {
     const { getByTestId } = await open()
     const sheet = getByTestId('sheet')
 
     expect(sheet.props.snapPoints).toBeUndefined()
     expect(sheet.props.enableDynamicSizing).toBe(true)
-    // 테스트 프레임 높이 844 × 0.82
-    expect(sheet.props.maxDynamicContentSize).toBeCloseTo(844 * 0.82)
+    // 테스트 프레임 높이 844 − 상단 인셋 59. 화면의 몇 퍼센트가 아니라 **노치를 피한 만큼**이다.
+    expect(sheet.props.maxDynamicContentSize).toBeCloseTo(844 - 59)
+  })
+
+  it('상한이 상단 인셋을 따라간다. 노치가 두꺼운 기기는 그만큼 낮아진다', async () => {
+    const { getByTestId } = await open({
+      frame: { x: 0, y: 0, width: 390, height: 844 },
+      insets: { top: 24, left: 0, right: 0, bottom: 0 },
+    })
+
+    expect(getByTestId('sheet').props.maxDynamicContentSize).toBeCloseTo(844 - 24)
   })
 
   /**
@@ -288,10 +299,81 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
     )
   }
 
-  // 줄은 내용의 마지막 줄이다. 단계가 갈려 줄이 사라져도 남는 것은 인셋(34)과 숨돌림(16)뿐이다.
-  it('바닥 줄은 스크롤 안에 선다. 단계가 갈리면 함께 사라진다', async () => {
+  /**
+   * 줄은 **스크롤 밖**이다. 내용이 길어도 줄은 제자리에 남는다.
+   *
+   * 스크롤 내용은 그만큼을 `paddingBottom` 으로 비운다. 라이브러리가 시트 키를 스크롤 내용
+   * 하나로 재므로 그 몫이 곧 줄이 설 자리다. 재기 전에는 `FOOTER_GUESS`(72)를 쓴다.
+   */
+  it('바닥 줄은 스크롤 밖에 선다. 스크롤은 그 자리를 비워 둔다', async () => {
     const view = await renderOverlay(<StepSheet />)
-    expect(within(view.getByTestId('income-sheet')).queryByText('저장')).toBeTruthy()
+
+    expect(view.getByTestId('bottom-sheet-footer')).toBeTruthy()
+    // 줄이 스크롤 안에 없다. 있으면 내용과 함께 굴러간다.
+    expect(within(view.getByTestId('income-sheet')).queryByText('저장')).toBeNull()
+    expect(
+      (view.getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
+        .paddingBottom,
+    ).toBe(44 + 12 + 16)
+  })
+
+  // 단계가 갈려 줄이 사라지면 비워 둘 것도 없다. 남는 것은 인셋(34)과 숨돌림(16)뿐이다.
+  /**
+   * 페이드는 **가릴 것이 있을 때만** 뜬다.
+   *
+   * 늘 그려 두면 안 구르는 시트에서도 위아래 끝의 내용이 옅어져, 가릴 것이 없는데 가린 것처럼
+   * 보인다. 처음 그려질 때는 구른 적이 없으므로 위쪽은 언제나 없다.
+   */
+  it('구르기 전에는 위 페이드가 없다', async () => {
+    const view = await renderOverlay(<StepSheet />)
+
+    expect(view.queryByTestId('bottom-sheet-fade-top')).toBeNull()
+  })
+
+  it('내용이 뷰포트를 넘으면 아래 페이드가 선다', async () => {
+    const view = await renderOverlay(<StepSheet />)
+    const scroller = view.getByTestId('income-sheet')
+
+    await act(async () => {
+      fireEvent(scroller, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 400 } } })
+      fireEvent(scroller, 'contentSizeChange', 360, 900)
+    })
+
+    expect(view.getByTestId('bottom-sheet-fade-bottom')).toBeTruthy()
+  })
+
+  it('내용이 다 보이면 아래 페이드도 없다', async () => {
+    const view = await renderOverlay(<StepSheet />)
+    const scroller = view.getByTestId('income-sheet')
+
+    await act(async () => {
+      fireEvent(scroller, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 400 } } })
+      fireEvent(scroller, 'contentSizeChange', 360, 300)
+    })
+
+    expect(view.queryByTestId('bottom-sheet-fade-bottom')).toBeNull()
+  })
+
+  it('구르면 위 페이드가 서고, 끝까지 내리면 아래 페이드가 사라진다', async () => {
+    const view = await renderOverlay(<StepSheet />)
+    const scroller = view.getByTestId('income-sheet')
+
+    await act(async () => {
+      fireEvent.scroll(scroller, {
+        nativeEvent: {
+          contentOffset: { x: 0, y: 500 },
+          contentSize: { width: 360, height: 900 },
+          layoutMeasurement: { width: 360, height: 400 },
+        },
+      })
+    })
+
+    expect(view.getByTestId('bottom-sheet-fade-top')).toBeTruthy()
+    expect(view.queryByTestId('bottom-sheet-fade-bottom')).toBeNull()
+  })
+
+  it('줄이 없는 단계에서는 비워 둔 자리도 없어진다', async () => {
+    const view = await renderOverlay(<StepSheet />)
 
     await act(async () => {
       fireEvent.press(view.getByLabelText('단계 바꾸기'))
@@ -399,6 +481,31 @@ describe('BottomSheet: 흐림 재질은 테마가 고른다', () => {
     const view = await 단계갈기()
 
     expect(흐림(view).props.tint).toBe('systemMaterialDark')
+  })
+
+  /**
+   * 안드로이드는 **안 흐린다.** `expo-blur` 가 흐릴 대상을 한 박자 뒤에 잡아, 층이 붙는 첫
+   * 프레임에 tint 가 배경색(`#F9F9F9`)으로 칠해졌다가 다음 프레임에 흐림으로 갈아탄다. 그
+   * 갈아타는 지점이 깜빡임으로 보인다. 시트 표면색으로 덮으면 칠하는 것이 하나라 그 지점이 없다.
+   */
+  describe('안드로이드', () => {
+    afterEach(() => {
+      Platform.OS = 'ios'
+    })
+
+    it('흐림 대신 시트 표면색으로 덮는다', async () => {
+      Platform.OS = 'android'
+
+      const view = await 단계갈기()
+
+      expect(
+        view.queryByTestId('bottom-sheet-veil-blur', { includeHiddenElements: true }),
+      ).toBeNull()
+      const 덮개 = view.getByTestId('bottom-sheet-veil-wash', { includeHiddenElements: true })
+      expect(flattenStyle(덮개.props.style).backgroundColor).toBe(
+        buildSheetScopeVariables(기본테마)['--color-bg'],
+      )
+    })
   })
 })
 

@@ -136,7 +136,9 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
       // 단계가 갈리면 시트 전체가 흐려졌다 돌아온다.
       stepKey={category ?? '갈래'}
       header={
-        category === null ? undefined : (
+        category === null ? (
+          <Text className="text-base font-bold text-text">수입 추가</Text>
+        ) : (
         <View className="flex-row items-center justify-between gap-2">
           {/*
             제목이 곧 되돌아가는 누르개다. 갈래를 바꾸는 일이 1차 시트로 돌아가는 일이므로
@@ -177,11 +179,9 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
     >
       {category === null ? (
         <CategoryPicker
-          title="수입 추가"
           categories={INCOME_CATEGORIES}
           testIdPrefix="income-sheet"
           onSelect={setCategory}
-          onClose={props.onClose}
         />
         ) : (
       // 아래 여백을 안 붙인다. 바닥의 숨돌림은 껍데기가 한 값으로 낸다.

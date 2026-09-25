@@ -17,7 +17,7 @@
  * {열림 ? <BottomSheet label="수입 기록" onClose={() => setState(null)}>{내용}</BottomSheet> : null}
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { Pressable, View } from 'react-native'
+import { Platform, Pressable, View } from 'react-native'
 import Animated, {
   Easing,
   runOnJS,
@@ -33,6 +33,7 @@ import {
   BottomSheetScrollView,
   useBottomSheetTimingConfigs,
   type BottomSheetBackdropProps,
+  type BottomSheetBackgroundProps,
 } from '@gorhom/bottom-sheet'
 
 import { vars } from 'nativewind'
@@ -42,11 +43,40 @@ import { BlurView } from 'expo-blur'
 import { useBlurTint, useThemeAppearance } from '../../../theme/context'
 import { buildSheetScopeVariables } from '../../../theme/theme-vars'
 
+import { LinearGradient } from '../../../lib/nativewind-interop'
 import { nextScrimOpacity } from './scrim-opacity'
 import { useStepDissolve } from './step-dissolve'
 
-/** 시트 최대 높이의 비율. 화면 높이 × 이 값. */
-const MAX_HEIGHT_RATIO = 0.82
+/**
+ * 시트가 위로 갈 수 있는 끝. **상단 안전영역 바로 아래까지**다(사용자 지정 2026-09-24).
+ *
+ * 전에는 화면 높이의 0.82 였다. 비율은 화면이 높을 때는 남는 18% 가 숨돌림이 되지만, 화면이
+ * 낮아지면 **그 18% 가 내용에서 먼저 깎인다.** 360×640dp 에서 0.82 는 525dp 이고 그중 저장 줄과
+ * 머리를 빼면 스크롤에 남는 것이 400dp 안팎이다. 같은 화면에서 안전영역만 피하면 609dp 라
+ * 84dp 가 돌아온다.
+ *
+ * 화면 높이에 비례하지 않는 것이 요점이다. 피해야 하는 것은 **노치와 상태바**이지 화면의 몇
+ * 퍼센트가 아니다.
+ */
+function maxSheetHeight(frameHeight: number, topInset: number): number {
+  return frameHeight - topInset
+}
+/**
+ * 시트 바탕을 내용 상자 **아래로 더 깔아 두는 길이**.
+ *
+ * 긴 단계에서 짧은 단계로 갈 때 시트 **바닥이 화면 바닥에서 떨어진다.** 라이브러리가 내용 상자
+ * 높이와 시트 자리를 각각 애니메이션하는데, 높이는 잰 값이 바뀌는 즉시 UI 스레드에서 줄기
+ * 시작하고 자리는 몇 프레임 뒤에 출발한다. 그 사이 **자리 + 높이**가 화면 높이에 못 미쳐 상자
+ * 아래로 뒤 화면이 비친다(실기기에서 330px 까지 벌어지는 것을 프레임으로 확인).
+ *
+ * 바탕은 몸통을 채우는 **절대 배치 뷰**라, 그 `bottom` 을 이만큼 음수로 주면 상자보다 아래까지
+ * 깔린다. 그 틈이 늘 시트색으로 덮인다. 평상시에는 화면 밖이라 안 보인다. 360×640dp 기준 최악이
+ * 화면 높이만큼이라 넉넉히 잡는다.
+ *
+ * 몸통에 `paddingBottom` 을 주는 길은 안 된다 - 절대 배치의 기준이 **안쪽 상자**라 바탕이 그만큼
+ * 짧아진다(실기기에서 그렇게 났다).
+ */
+const UNDERLAP = 640
 /** 시트 최대 너비. 넘으면 중앙 정렬로 남는다. */
 const MAX_WIDTH = 448
 /** 그랩 핸들이 차지하는 높이. 스크롤 내용의 `paddingTop` 이 이 값을 되돌려 준다. */
@@ -67,6 +97,26 @@ const MOVE_MS = 380
  * 핸들이 맨 위다. 머리가 핸들 자리를 덮는 데다 뒤에 그려져서, 층이 같으면 핸들이 안 보인다.
  */
 const HEADER_LAYER = 1
+/** 바닥 줄 층. 머리보다 위다 - 짧은 시트에서 둘이 만나면 바닥 줄이 이긴다. */
+const FOOTER_LAYER = 2
+
+/**
+ * 구르는 자리가 머리 · 바닥 줄과 만나는 곳의 페이드 길이.
+ *
+ * 스크롤 내용이 고정된 줄 밑으로 **선명한 채로 사라지면** 잘린 것처럼 보인다. 옅어지며 들어가면
+ * 그 밑에 더 있다는 것이 읽힌다. 16 은 한 줄 높이보다 작아서 내용을 가리지 않으면서도 경계가
+ * 뚜렷하지 않을 만큼이다.
+ *
+ * 화면 셸(`ScreenScroll`)은 같은 일을 **마스크**로 한다 - 거기는 뒤에 벽지가 있어 덮으면 띠가
+ * 남는다. 시트는 바탕이 불투명하므로 같은 색으로 덮는 것이 결과가 같고, 마스킹이 시트의 동적
+ * 높이 계산을 건드리지 않는다.
+ */
+const FADE_PX = 16
+
+/** 같은 색의 알파 0. 시트 바탕이 8자리로 올 수도 있어 앞 7자리만 쓴다. */
+function fadedOut(color: string): string {
+  return `${color.slice(0, 7)}00`
+}
 const HANDLE_LAYER = 3
 /** 갈아 드는 흐림. 머리도 함께 흐려져야 하므로 둘보다 위다. */
 const VEIL_LAYER = 4
@@ -81,6 +131,12 @@ const VEIL_LAYER = 4
  * 잰 값이 오면 그것으로 갈아탄다. 여기 값은 **첫 프레임 한 번만** 쓰인다.
  */
 const HEADER_GUESS = HANDLE_HEIGHT + 8 + 28
+/**
+ * 바닥 줄의 첫 프레임 추정 높이. 재기 전에도 스크롤이 그만큼을 비워 둬야 마지막 줄이 안 가린다.
+ *
+ * 버튼 44 + 위 여백 12 + 아래 여백 16. 인셋은 줄이 자기 안에서 지므로 여기 없다.
+ */
+const FOOTER_GUESS = 44 + 12 + 16
 
 /** 가장 짙을 때의 흐림. `BlurView` 의 세기는 1~100 이다. */
 const STEP_BLUR = 72
@@ -174,7 +230,16 @@ interface BottomSheetProps {
 }
 
 /**
- * 갈아 드는 흐림 한 겹.
+ * 갈아 드는 한 겹. iOS 는 **흐림**, 안드로이드는 **시트색 덮기**다.
+ *
+ * 안드로이드가 다른 길인 것은 `expo-blur` 가 흐릴 대상을 한 박자 뒤에 잡기 때문이다. 층이 붙는
+ * 첫 프레임에는 대상이 없어 흐림 방식이 `none` 으로 떨어지고, 그 자리에서 tint 가 **배경색**으로
+ * 칠해진다(라이트 재질은 `#F9F9F9`). 다음 프레임에 대상이 도착하면 배경이 투명해지고 흐림이
+ * 켜진다. 단계마다 층을 새로 세우니 전환마다 흰 칠 한두 장이 끼고, 갈아타는 그 지점이
+ * **깜빡임**으로 보인다(사용자 보고 2026-09-25, 실기기).
+ *
+ * 그래서 안드로이드는 흐리지 않고 **시트 표면색으로 덮었다 걷는다.** 칠하는 것이 하나뿐이라
+ * 갈아타는 지점이 없다. 덮는 목적(단계가 갈리는 장면을 가린다)은 그대로 이룬다.
  *
  * **흐림이 짙어진 뒤에 마운트된다.** 리애니메이티드는 `useAnimatedProps` 를 처음 부른 그 순간의
  * 값을 첫 프레임에 쓰고(`initial.value`), 그 값이 인라인 프롭보다 세다. 그래서 이 훅이 시트에
@@ -182,7 +247,7 @@ interface BottomSheetProps {
  * (60fps 녹화에서 확인). 층과 훅을 함께 여기 두면 훅의 첫 호출이 곧 마운트라, 그때 이미 1 인
  * 값을 첫 프레임이 받는다.
  */
-function StepVeil(props: { onDone: () => void }): React.JSX.Element {
+function StepVeil(props: { onDone: () => void; surface: string }): React.JSX.Element {
   /**
    * 재질은 **앱 테마가 고른다**. 기본값 `'default'` 는 OS 외형을 따라가 다크 OS 에서 검게 깔린다
    * (라이트 테마 시트가 통째로 어두워졌다).
@@ -198,6 +263,13 @@ function StepVeil(props: { onDone: () => void }): React.JSX.Element {
    */
   const progress = useSharedValue(1)
   const veil = useAnimatedProps(() => ({ intensity: STEP_BLUR * progress.get() }))
+  /**
+   * 안드로이드가 쓰는 것. 같은 `progress` 를 불투명도로 읽는다.
+   *
+   * 색이 여기 함께 있는 것은 리애니메이티드가 **애니메이션 스타일로 `style` 을 통째로 갈아
+   * 끼우기** 때문이다. 밖에 두면 그 배열이 덮여 색이 사라진다.
+   */
+  const wash = useAnimatedStyle(() => ({ opacity: progress.get(), backgroundColor: props.surface }))
 
   const { onDone } = props
   useEffect(() => {
@@ -233,13 +305,20 @@ function StepVeil(props: { onDone: () => void }): React.JSX.Element {
         overflow: 'hidden',
       }}
     >
-      <AnimatedVeil
-        testID="bottom-sheet-veil-blur"
-        animatedProps={veil}
-        // 색을 따로 안 얹는다. 시트 표면 위라 얹으면 바탕이 함께 물든다.
-        tint={tint}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-      />
+      {Platform.OS === 'android' ? (
+        <Animated.View
+          testID="bottom-sheet-veil-wash"
+          style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, wash]}
+        />
+      ) : (
+        <AnimatedVeil
+          testID="bottom-sheet-veil-blur"
+          animatedProps={veil}
+          // 색을 따로 안 얹는다. 시트 표면 위라 얹으면 바탕이 함께 물든다.
+          tint={tint}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        />
+      )}
     </View>
   )
 }
@@ -258,6 +337,28 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
 
   /** 고정된 머리가 차지한 높이. 흐름 밖이라 스크롤 내용의 `paddingTop` 이 이만큼을 되돌려 준다. */
   const [headerHeight, setHeaderHeight] = useState(0)
+  const [footerHeight, setFooterHeight] = useState(0)
+  /**
+   * 구르는 자리의 위아래에 **가려진 내용이 있나**. 페이드는 그때만 뜬다.
+   *
+   * 늘 그려 두면 안 구르는 시트에서도 위아래 끝의 내용이 옅어져, 가릴 것이 없는데 가린 것처럼
+   * 보인다(사용자 지적). 내용이 상한에 안 닿으면 둘 다 거짓이라 페이드가 하나도 안 선다.
+   */
+  const [hiddenAbove, setHiddenAbove] = useState(false)
+  const [hiddenBelow, setHiddenBelow] = useState(false)
+  /**
+   * 구르는 자리와 그 안 내용의 키. **ref 다.**
+   *
+   * 둘은 같은 배치에서 잇따라 도착한다(`onLayout` 다음에 `onContentSizeChange`). state 로 두면
+   * 뒤에 오는 쪽이 앞의 값을 아직 못 봐서 판정이 한 번 틀린다.
+   */
+  const viewportRef = useRef(0)
+  const contentRef = useRef(0)
+
+  /** 아래에 더 있나. 두 키 중 무엇이 도착하든 같은 답을 낸다. */
+  function syncHiddenBelow(): void {
+    setHiddenBelow(contentRef.current > viewportRef.current + 1)
+  }
 
   useEffect(() => {
     scrollRef.current?.scrollTo?.({ y: 0, animated: false })
@@ -267,6 +368,22 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   useEffect(() => {
     ref.current?.present()
   }, [])
+
+  /**
+   * 시트 바탕. 기본 바탕을 그대로 쓰되 **아래로 더 내린다**(`UNDERLAP`).
+   *
+   * 라이브러리는 바탕에 `top`·`bottom` 을 직접 못 주게 타입으로 막아 뒀다(`backgroundStyle`).
+   * 바탕 부품을 갈아 끼우는 것이 그 규칙 안에서 같은 일을 하는 길이다.
+   */
+  const renderBackground = useCallback(
+    (backgroundProps: BottomSheetBackgroundProps) => (
+      <View
+        pointerEvents="none"
+        style={[backgroundProps.style, { bottom: -UNDERLAP }]}
+      />
+    ),
+    [],
+  )
 
   const renderBackdrop = useCallback(
     (backdropProps: BottomSheetBackdropProps) => (
@@ -303,9 +420,10 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         애초에 없다. 아래로 끌어 닫는 길은 그대로다.
       */
       overDragResistanceFactor={0}
-      maxDynamicContentSize={frame.height * MAX_HEIGHT_RATIO}
+      maxDynamicContentSize={maxSheetHeight(frame.height, insets.top)}
       animationConfigs={move}
       backdropComponent={renderBackdrop}
+      backgroundComponent={renderBackground}
       accessibilityLabel={props.label}
       style={{ maxWidth: MAX_WIDTH, width: '100%', alignSelf: 'center' }}
       backgroundStyle={{
@@ -373,6 +491,26 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       <BottomSheetScrollView
         ref={scrollRef as never}
         testID={props.testId}
+        /*
+          페이드를 켜고 끄는 판정. 불리언이 뒤집힐 때만 state 가 바뀌므로 구르는 동안 다시
+          그리는 일이 거의 없다. `scrollEventThrottle` 은 안 준다 - 라이브러리가 그 값을
+          자기 제스처 배선에 맞춰 쥐고 있어 프롭에서 빼 뒀다.
+        */
+        onScroll={(event) => {
+          const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent
+          setHiddenAbove(contentOffset.y > 1)
+          // 1px 은 소수점 반올림 몫. 0 으로 두면 맨 아래에서 페이드가 깜빡인다.
+          setHiddenBelow(contentOffset.y + layoutMeasurement.height < contentSize.height - 1)
+        }}
+        onContentSizeChange={(_, height) => {
+          // 처음 그려질 때와 단계가 갈릴 때. 구르기 전에도 아래에 더 있으면 페이드가 선다.
+          contentRef.current = height
+          syncHiddenBelow()
+        }}
+        onLayout={(event) => {
+          viewportRef.current = event.nativeEvent.layout.height
+          syncHiddenBelow()
+        }}
         contentContainerStyle={{
           // 잰 머리 높이에 핸들 몫과 아래 여백이 이미 들어 있다. 두 번 더하지 않는다.
           paddingTop:
@@ -381,7 +519,19 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
               : headerHeight > 0
                 ? headerHeight
                 : HEADER_GUESS,
-          paddingBottom: insets.bottom + 16,
+          /*
+            바닥 줄이 흐름 밖에 서므로 그 자리를 비워 둔다. 라이브러리는 시트 키를 스크롤
+            **내용** 높이 하나로 정하므로, 이 몫이 곧 바닥 줄이 설 자리다. 안 비우면 마지막
+            줄이 줄 뒤로 들어간다.
+
+            인셋은 여기 없다. 바닥 줄이 자기 안에서 진다(줄이 화면 맨 아래에 붙으므로).
+          */
+          paddingBottom:
+            props.footer === undefined
+              ? insets.bottom + 16
+              : footerHeight > 0
+                ? footerHeight
+                : FOOTER_GUESS,
         }}
       >
         {/*
@@ -390,16 +540,94 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         */}
         <View style={vars(sheetScope)}>{props.children}</View>
 
-        {props.footer !== undefined && (
-          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-          <View testID="bottom-sheet-footer" style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-            <View style={vars(sheetScope)}>{props.footer}</View>
-          </View>
-        )}
       </BottomSheetScrollView>
 
+      {/*
+        구르는 자리의 위아래 끝. 고정된 줄 밑으로 내용이 **옅어지며** 들어간다. 선명한 채로
+        사라지면 잘린 것으로 읽힌다. 터치는 안 먹는다(`pointerEvents="none"`).
+      */}
+      {hiddenAbove && (
+      <View
+        testID="bottom-sheet-fade-top"
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top:
+            props.header === undefined
+              ? HANDLE_HEIGHT + 8
+              : headerHeight > 0
+                ? headerHeight
+                : HEADER_GUESS,
+          height: FADE_PX,
+        }}
+      >
+        <LinearGradient
+          colors={[sheetSurface, fadedOut(sheetSurface)]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ flex: 1 }}
+        />
+      </View>
+      )}
+
+      {hiddenBelow && (
+      <View
+        testID="bottom-sheet-fade-bottom"
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom:
+            props.footer === undefined
+              ? 0
+              : footerHeight > 0
+                ? footerHeight
+                : FOOTER_GUESS,
+          height: FADE_PX,
+        }}
+      >
+        <LinearGradient
+          colors={[fadedOut(sheetSurface), sheetSurface]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ flex: 1 }}
+        />
+      </View>
+      )}
+
+      {props.footer !== undefined && (
+        /*
+          바닥 줄은 **스크롤 밖**이다. 시트 상자에 `bottom: 0` 으로 붙으므로 상자가 움직이면
+          같은 곡선으로 함께 미끄러진다. 그 몫을 따로 애니메이션하면 줄이 상자보다 앞서 도착해
+          단계를 오갈 때 빈 띠가 보인다(그렇게 만들어 봤고 실제로 났다).
+
+          `pointerEvents="box-none"` 이 필수다. 층은 줄 높이만큼만 크지만 자기 상자로 터치를
+          먹으면 바로 위 내용이 안 눌린다.
+        */
+        <View
+          pointerEvents="box-none"
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: FOOTER_LAYER }}
+        >
+          <View
+            testID="bottom-sheet-footer"
+            onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}
+            style={{
+              backgroundColor: sheetSurface,
+              paddingHorizontal: 16,
+              paddingTop: 12,
+              paddingBottom: insets.bottom + 16,
+            }}
+          >
+            <View style={vars(sheetScope)}>{props.footer}</View>
+          </View>
+        </View>
+      )}
+
       {/* 갈아 드는 흐림. 머리·내용·바닥 줄을 통째로 덮으므로 층 셋보다 위다. */}
-      {step.busy && <StepVeil key={step.turn} onDone={step.done} />}
+      {step.busy && <StepVeil key={step.turn} surface={sheetSurface} onDone={step.done} />}
     </BottomSheetModal>
   )
 }

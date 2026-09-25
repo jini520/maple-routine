@@ -208,19 +208,15 @@ describe('갈래', () => {
     }
   })
 
-  /** 닫기는 2차의 저장이 서는 자리다. 상자가 같고 칠만 다르다. */
-  it('1차 시트에 닫기가 선다. 누르면 시트를 닫는다', async () => {
-    const onClose = jest.fn()
-    const view = await 그리기({ onClose }, null)
+  /**
+   * 1차에는 바닥 줄이 없다(사용자 지정 2026-09-25). 닫는 길은 아래로 쓸어내리기와 스크림 탭
+   * 둘이고, 스크림은 `accessibilityLabel="닫기"` 누르개라 읽어 주는 길도 남는다.
+   */
+  it('1차 시트에는 닫기 버튼도 바닥 줄도 없다', async () => {
+    const view = await 그리기({}, null)
 
-    const 닫기 = view.getByTestId('spend-sheet-close')
-    expect(닫기).toHaveTextContent('닫기')
-
-    await act(async () => {
-      fireEvent.press(닫기)
-    })
-
-    expect(onClose).toHaveBeenCalled()
+    expect(view.queryByTestId('spend-sheet-close')).toBeNull()
+    expect(view.queryByTestId('bottom-sheet-footer')).toBeNull()
   })
 
   it('2차에는 닫기가 없다', async () => {
@@ -702,18 +698,14 @@ describe('저장 줄은 시트 바닥이다', () => {
   })
 
   /**
-   * 격자에는 셀 자리가 없지만 **바닥 영역은 그대로 잡는다**(사용자 지시). 영역째 걷으면
-   * 단계를 오갈 때 시트의 아랫부분이 그 높이만큼 늘었다 줄었다 한다.
+   * 격자에는 셀 자리가 없어 **바닥 줄 자체가 없다**(사용자 지정 2026-09-25). 전에는 같은
+   * 높이의 빈 상자를 세워 바닥의 기하를 붙들어 뒀는데, 버튼이 없는데 87 이 비어 있는 것이 더
+   * 크게 읽혔다.
    */
-  it('항목 격자는 버튼 없이 자리만 잡는다', async () => {
+  it('항목 격자에는 바닥 줄이 없다', async () => {
     const view = await 그리기()
 
-    const 바닥 = view.getByTestId('bottom-sheet-footer')
-    expect(within(바닥).queryByLabelText('저장')).toBeNull()
-    // 버튼이 서던 상자만 남는다. 높이가 같아야 바닥의 기하가 안 바뀐다.
-    expect(flattenStyle(view.getByTestId('spend-sheet-save-placeholder').props.style).height).toBe(
-      44,
-    )
+    expect(view.queryByTestId('bottom-sheet-footer')).toBeNull()
   })
 
   it('수정 모드는 삭제까지 바닥에 든다', async () => {

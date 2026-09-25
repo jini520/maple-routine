@@ -28,7 +28,17 @@
  * />
  */
 import { useState } from 'react'
-import { Image, Keyboard, Pressable, View, type StyleProp, type ViewStyle } from 'react-native'
+import {
+  Image,
+  Keyboard,
+  Pressable,
+  View,
+  useWindowDimensions,
+  type LayoutChangeEvent,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, { type AnimatedStyle } from 'react-native-reanimated'
 
 import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
@@ -37,12 +47,16 @@ import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { Text, TextInput, XIcon } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { MAX_MESO, acceptMesoText, mesoTextOf, mesoValueOf } from '../MesoPad/meso-pad'
+import { caretAfterDigits, digitsBefore } from '../MesoPad/meso-caret'
+import { useKeyboardShown } from '../../../hooks/useKeyboardShown'
 import { ShareField } from '../../molecules/ShareField/ShareField'
 import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
 import { Segment } from '../../molecules/Segment/Segment'
 import { Badge } from '../../atoms/Badge/Badge'
 import { DEFAULT_MAX_PARTY_SIZE } from '../../../lib/boss/boss-crystal-prices'
 import { FeeRow } from '../FeeRow/FeeRow'
+import { NumberPad } from '../../molecules/NumberPad/NumberPad'
+import { defaultKeyboardPx, resolveNumberPadUse } from '../../../lib/number-pad-metrics'
 import type { MvpGradeKey } from '../../../lib/mvp/grades'
 
 /**
@@ -181,7 +195,13 @@ export interface InputCardProps {
   share?: ShareSpec
   /** 비율 아래 판매 · 분배 수수료 줄. 넘기면 확인이 셋째 인자로 수수료를 준다 */
   fees?: FeesSpec
-  /** 확인 버튼의 글자. 기본은 `확인`. 값을 곧 저장하는 자리에서는 `저장` 이다. */
+  /**
+   * 확인 버튼의 글자. 기본은 `입력`.
+   *
+   * **판의 확인 키와 다른 말이어야 한다.** 판의 `확인` 은 친 숫자를 칸에 넣고 판을 내리는
+   * 일이고, 이 버튼은 그 값을 기록에 넣고 카드를 닫는 일이다. 둘 다 `확인` 이면 판이 떠
+   * 있는 동안 같은 말이 두 자리에 서서 무엇이 일어날지가 안 읽힌다.
+   */
   confirmLabel?: string
   /**
    * **칸이 비었을 때**의 확인 글자. 안 주면 `confirmLabel` 을 그대로 쓴다.
@@ -284,6 +304,86 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   const splits = total > mine
 
   const isText = props.text === true
+
+  const { height: windowHeightPx } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
+
+  /**
+   * OS 키보드 대신 앱이 그린 판으로 받는가. `null` 은 아직 카드를 못 잰 것이다.
+   *
+   * **카드를 열 때 한 번 정하고, 정해진 뒤에는 판 쪽으로만 넘어간다.** 치는 중에 입력 방식이
+   * 오락가락하면 손이 가던 자리가 사라진다. 창이 작아지는 쪽(접기 · 분할)으로 바뀌면 다시
+   * 판정되고, 커지는 쪽으로는 안 돌아간다.
+   */
+  const [usesPad, setUsesPad] = useState<boolean | null>(null)
+
+  /**
+   * 판이 지금 떠 있나. **카드가 열릴 때는 안 뜬다**(사용자 지정).
+   *
+   * 금액 · 개수 카드는 값을 고치러 여는 경우가 많다. 열자마자 판이 올라오면 지금 값이 얼마인지
+   * 보기 전에 아래가 덮인다. 값 칸을 눌러야 올라온다.
+   */
+  const [padOpen, setPadOpen] = useState(false)
+
+  function measure(event: LayoutChangeEvent): void {
+    const 잰_높이 = event.nativeEvent.layout.height
+    const 판정 = resolveNumberPadUse({
+      windowHeightPx,
+      topInsetPx: insets.top,
+      keyboardHeightPx: defaultKeyboardPx(),
+      cardHeightPx: 잰_높이,
+    })
+    setUsesPad((prev) => prev === true || 판정)
+  }
+
+  /**
+   * 판정을 **글자 칸까지 포함해** 한 값으로 모은 것. `null` 은 아직 안 정한 것이다.
+   *
+   * 글자 칸은 IME 가 조합을 해야 해서 언제나 OS 키보드이므로, 잰 높이가 어떻든 판 쪽으로
+   * 안 간다. 이 한 줄이 아래 넷(자동 초점 · 키보드 억제 · 카드 자리 · 판 표시)의 재료다.
+   */
+  const padDecided: boolean | null = isText ? false : usesPad
+
+  /** 판이 받는 카드인가. 카드가 서는 자리가 여기서 갈린다. */
+  const usesPadPath = padDecided === true
+
+  const padVisible = usesPadPath && padOpen
+
+  const keyboardShown = useKeyboardShown()
+
+  /**
+   * 지금 칠 수 있나. **커서는 이때만 보인다**(사용자 지정 2026-09-25).
+   *
+   * 칸은 초점을 쥔 채로 키보드만 내려가는 자리가 있다 - 자체 판은 바깥을 누르면 내려가고, OS
+   * 키보드는 스크림 탭이 `Keyboard.dismiss()` 를 부른다. 그때 커서만 남아 깜빡이면 칠 수 있는
+   * 것처럼 보인다.
+   */
+  const canType = usesPadPath ? padOpen : keyboardShown
+
+  /**
+   * 판 바깥을 누르면 내려간다. **카드는 안 닫힌다.**
+   *
+   * OS 키보드를 쓰던 시절의 규칙을 자체 판이 그대로 물려받는다. 닫는 것은 `✕` 와 안드로이드
+   * 뒤로가기뿐이고, 바깥 탭으로 치던 값이 날아가지 않는다.
+   */
+  function dismissInput(): void {
+    if (padVisible) {
+      setPadOpen(false)
+      return
+    }
+    Keyboard.dismiss()
+  }
+
+  /**
+   * OS 키보드를 띄울 칸인가. 판이 받는 칸에서는 안 띄운다. 커서와 물리 키보드 타건은 살아 있다.
+   *
+   * **아직 안 정했으면(`null`) 안 띄운다.** 모르면 판 쪽으로 기울이는 규칙이 판정 함수에만
+   * 있고 여기에 없으면, 첫 프레임의 `autoFocus` 가 키보드를 올려 버린다. 그 뒤에 판정이
+   * 판으로 나도 **이미 뜬 키보드는 이 프롭으로 안 닫히고**, 키보드가 카드를 밀어 올려
+   * 값 칸과 판이 함께 화면 위로 나간다(실기기에서 그렇게 났다).
+   */
+  const showsSystemKeyboard = padDecided === false
+
   const chips = isText ? [] : (props.chips ?? [])
   const iconSource = iconSourceOf(props.icon)
 
@@ -297,12 +397,62 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    */
   const shown = isText || draft === '' ? draft : mesoValueOf(draft).toLocaleString()
 
+  /**
+   * 숫자 칸의 자리표시자를 **우리가 그린다**.
+   *
+   * 오른쪽 정렬 칸이 비어 있으면 안드로이드가 커서를 `hint` 의 **왼쪽**에 세운다(`|0 메소`).
+   * 치면 0 을 지나쳐 오른쪽으로 자라는데 커서는 왼쪽에 있어, 어디에 들어가는지가 거꾸로 읽힌다
+   * (사용자 지적). 커서는 값의 끝, 곧 `0` 과 단위 사이에 서야 한다(`0| 메소`).
+   *
+   * 그래서 칸에는 `hint` 를 안 주고 같은 글자를 **커서 왼쪽에 덧그린다**. 빈 오른쪽 정렬 칸의
+   * 커서는 칸의 오른쪽 끝에 서므로 그 왼쪽이 곧 값이 설 자리다.
+   *
+   * 글자 칸은 그대로 `hint` 를 쓴다. 왼쪽 정렬이라 커서가 이미 글자 앞에 선다.
+   */
+  const ownHint = !isText && draft === '' ? (props.placeholder ?? '0') : null
+
+  /**
+   * 숫자 칸의 커서. **보이는 글자 기준**이다.
+   *
+   * 칸이 든 것과 보이는 것이 달라(숫자만 · 콤마가 낀 글자) 다시 그릴 때마다 네이티브가 든
+   * 인덱스가 어긋난다. 그래서 우리가 들고, 다시 그린 뒤 **숫자 개수로 되짚어** 돌려놓는다.
+   */
+  const [caret, setCaret] = useState<{ start: number; end: number } | null>(null)
+
+  /** 커서 앞에 숫자가 몇 개인가. 값을 넣고 지우는 자리가 이 수로 정해진다. */
+  const digitCaret = caret === null ? mesoTextOf(mesoValueOf(draft)).length : digitsBefore(shown, caret.start)
+
+  /** 다시 그린 글자에서 그 개수째 숫자 뒤로 커서를 돌려놓는다. */
+  function settleCaret(nextDraft: string, keepDigits: number): void {
+    const nextShown = nextDraft === '' ? '' : mesoValueOf(nextDraft).toLocaleString()
+    const at = caretAfterDigits(nextShown, keepDigits)
+    setCaret({ start: at, end: at })
+  }
+
   function change(next: string): void {
-    setDraft(isText ? next : acceptMesoText(draft, next))
+    if (isText) {
+      setDraft(next)
+      return
+    }
+
+    /*
+      친 것이 어디에 들어갔나. 한 번의 타건은 **커서 자리에서 일어난 한 번의 끼움이나 지움**
+      이므로, 길이 차이로 새 글자 안의 커서를 되짚을 수 있다.
+    */
+    const 앞커서 = caret?.start ?? shown.length
+    const 새커서 = Math.max(0, Math.min(next.length, 앞커서 + (next.length - shown.length)))
+    const 남길숫자 = digitsBefore(next, 새커서)
+
+    const accepted = acceptMesoText(draft, next)
+    setDraft(accepted)
+    settleCaret(accepted, 남길숫자)
   }
 
   function add(step: number): void {
-    setDraft(mesoTextOf(Math.min(MAX_MESO, mesoValueOf(draft) + step)))
+    // 칩은 자리에 끼우는 것이 아니라 **값을 더하는** 것이라 커서가 끝으로 간다.
+    const next = mesoTextOf(Math.min(MAX_MESO, mesoValueOf(draft) + step))
+    setDraft(next)
+    settleCaret(next, mesoTextOf(mesoValueOf(next)).length)
   }
 
   /**
@@ -351,7 +501,17 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
 
   return (
     // 자리는 `InputCardLayer` 가 준다. 카드는 자기가 키보드 위 어디에 앉는지 모른다.
-    <View className="flex-1 justify-end" testID="input-card">
+    // 판이 받는 카드는 **화면 가운데**에 선다(사용자 지정). OS 키보드가 없으니 밀어 올릴 것이
+    // 없고, 바닥에 붙여 두면 카드 위로 빈 화면이 한 뼘 남아 판이 붙잡을 자리가 없어 보인다.
+    <View
+      className={`flex-1 ${usesPadPath ? 'justify-center' : 'justify-end'}`}
+      testID="input-card"
+      /*
+        재는 프레임은 안 보여 준다. 판정 전에는 자리가 아직 안 정해져(바닥이 기본값) 판으로
+        판정되는 순간 가운데로 한 번 튄다. 그 한 프레임을 감추면 카드가 제자리에서 나타난다.
+      */
+      style={padDecided === null ? { opacity: 0 } : undefined}
+    >
       {/*
         시트 위에 한 겹 더. **누르면 키보드만 내린다**(사용자 지정). 카드는 안 닫힌다. 닫는 것은
         ✕ 뿐이다. 판의 빈 자리와 같은 일을 하므로 카드 안팎이 같은 규칙이 된다.
@@ -360,7 +520,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
       */}
       <Pressable
         testID="input-card-scrim"
-        onPress={Keyboard.dismiss}
+        onPress={dismissInput}
         className="absolute inset-0 bg-scrim"
       />
 
@@ -380,7 +540,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
         */}
         <Pressable
           testID="input-card-panel"
-          onPress={Keyboard.dismiss}
+          onLayout={measure}
+          onPress={dismissInput}
           className="mx-3 mb-3 rounded-2xl border border-border-strong bg-surface p-4"
         >
           <View className="flex-row items-center gap-2.5">
@@ -430,6 +591,20 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 {draft === '' ? '' : formatMesoUnits(mesoValueOf(draft))}
               </Text>
             )}
+            <View className="relative flex-1">
+              {ownHint !== null && (
+                // 커서 몫 3 을 비워 둔다. 0 이면 글자가 커서 밑에 깔린다.
+                <View pointerEvents="none" className="absolute inset-0 items-end justify-center pr-[3px]">
+                  <Text
+                    testID="input-card-hint"
+                    numberOfLines={1}
+                    className="font-bold text-text-disabled"
+                    style={[TABULAR_NUMS, { fontSize: 20 }]}
+                  >
+                    {ownHint}
+                  </Text>
+                </View>
+              )}
             <TextInput
               /*
                 **글자 칸만 다시 세운다.** 아톰이 글자 칸을 `defaultValue` 로 심는데(그래야 한글
@@ -439,14 +614,51 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 숫자 칸은 통제된 값이라 다시 세울 것이 없다. 다시 세우면 `autoFocus` 가 키보드를
                 닫았다 여는데, 잇따라 받는 흐름은 숫자 칸뿐이라 그 깜빡임이 사라진다.
               */
-              key={isText ? props.seed : undefined}
+              /*
+                숫자 칸은 **판정이 정해질 때 한 번 다시 선다.** 칸을 안 다시 세우면
+                `showSoftInputOnFocus` 가 늦게 `true` 가 되어도 `autoFocus` 는 이미 지나가
+                OS 키보드가 안 올라온다. 카드가 열리는 순간이라 사용자가 치기 전이고,
+                값은 통제된 프롭이라 다시 세워도 안 날아간다.
+              */
+              key={isText ? props.seed : `pad-${String(usesPad)}`}
               testID="input-card-value"
               aria-label={props.label}
               value={shown}
+              /*
+                **숫자 칸의 커서는 언제나 끝이다.**
+
+                칸이 든 것은 숫자만(`1000000000`)이고 보이는 것은 콤마가 낀 글자
+                (`1,000,000,000`)다. 한 자를 칠 때마다 콤마 자리가 바뀌어 글자 길이가 달라지는데,
+                네이티브는 제 커서 **인덱스**를 들고 있어 그 인덱스가 다른 곳을 가리키게 된다.
+                가운데를 눌러 치면 친 것이 엉뚱한 자리에 들어간다(사용자 지적:
+                `1,000|,000,000` 에 `34` 를 치면 `100,0|00,000,034`).
+
+                값은 **끝에서만 자란다.** 빠른 칩도 자체 판도 그 규칙이고, 지우는 것도 끝에서
+                한 자리씩이다. 커서를 끝에 못박으면 보이는 것과 드는 것이 어긋날 자리가 없어진다.
+
+                대가는 가운데를 눌러 고칠 수 없다는 것이다. 지우고 다시 친다.
+              */
+              caretHidden={!canType}
+              selection={isText ? undefined : (caret ?? undefined)}
+              onSelectionChange={(event) => {
+                // 손으로 옮긴 커서. 다음 타건이 이 자리를 기준으로 끼운다.
+                if (isText) return
+                setCaret(event.nativeEvent.selection)
+              }}
               onChangeText={change}
               keyboardType={isText ? undefined : 'number-pad'}
-              placeholder={props.placeholder ?? (isText ? '' : '0')}
-              autoFocus
+              placeholder={isText ? props.placeholder : undefined}
+              /*
+                **자동 초점은 OS 키보드가 받는 칸에만 남는다**(사용자 지정). 그 카드는 열리는
+                순간부터 키보드 위에 서서 자리가 한 번도 안 움직인다. 자동 초점을 빼면 카드가
+                바닥에 섰다가 값 칸을 누를 때 키보드 높이만큼 뛴다.
+
+                판이 받는 숫자 칸은 초점을 안 받는다. 열자마자 판이 올라오면 지금 값이 얼마인지
+                보기 전에 아래가 덮인다. 글자 칸은 칠 것이 이름 하나뿐이라 언제나 받는다.
+              */
+              autoFocus={padDecided === false}
+              showSoftInputOnFocus={showsSystemKeyboard}
+              onPressIn={() => setPadOpen(true)}
               /*
                 **글자와 숫자의 크기가 다르다.** 숫자는 자릿수를 세는 값이라 크게 두고, 글자는
                 한 줄에 이름이 다 들어가야 해서 한 단계 작다. 둘을 같은 크기로 두면 글자 칸에서
@@ -463,14 +675,23 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 바닥 `min-h-14`(56)와 같아서 지금 보이는 모양은 안 바뀐다. 글자는 이 36 안에서
                 가운데 선다.
               */
-              className={`h-9 flex-1 text-text ${isText ? 'text-left font-semibold' : 'text-right font-bold'}`}
+              className={`h-9 w-full text-text ${isText ? 'text-left font-semibold' : 'text-right font-bold'}`}
               style={[isText ? null : TABULAR_NUMS, { fontSize: isText ? 16 : 20 }]}
             />
+            </View>
             {props.unit !== undefined && (
               <Text className="shrink-0 text-xs font-semibold text-text-muted">{props.unit}</Text>
             )}
           </View>
 
+          {/*
+            값 칸 아래 전부. **판이 이 위에 덮인다.**
+
+            상자를 따로 두는 것은 판이 절대 배치로 이 자리 맨 위에 앉기 때문이다. 흐름에 끼워
+            넣으면 아래가 밀려 카드가 104dp 만큼 길어지고, 길어지면 애초에 판을 띄운 이유
+            (화면이 낮다)가 사라진다. 덮인 줄은 판 바깥을 한 번 눌러 돌아온다.
+          */}
+          <View className="relative">
           {chips.length > 0 && (
             <View className="mt-2 flex-row flex-wrap justify-end gap-1.5">
               {chips.map((chip) => (
@@ -602,9 +823,36 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               className="h-11 flex-[2] items-center justify-center rounded-xl bg-primary"
             >
               <Text numberOfLines={1} className="text-sm font-bold text-on-primary" style={TABULAR_NUMS}>
-                {draft === '' ? (props.confirmEmptyLabel ?? props.confirmLabel ?? '확인') : (props.confirmLabel ?? '확인')}
+                {draft === '' ? (props.confirmEmptyLabel ?? props.confirmLabel ?? '입력') : (props.confirmLabel ?? '입력')}
               </Text>
             </Pressable>
+          </View>
+
+            {padVisible && (
+              // 값 칸과의 사이는 칩 줄의 `mt-2` 와 같은 8 이다. 판이 그 자리에서 시작한다.
+              <View testID="input-card-pad" className="absolute inset-x-0 top-2">
+                <NumberPad
+                  /*
+                    판도 **커서 자리에** 넣고 뺀다. 칸을 눌러 가운데로 옮긴 뒤 판을 누르면 그
+                    자리에 들어가야 한다. 끝에만 붙이면 칸과 판이 다른 규칙을 갖게 된다.
+                  */
+                  onDigit={(digit) => {
+                    const 앞 = draft.slice(0, digitCaret)
+                    const 뒤 = draft.slice(digitCaret)
+                    const accepted = acceptMesoText(draft, `${앞}${digit}${뒤}`)
+                    setDraft(accepted)
+                    settleCaret(accepted, digitCaret + 1)
+                  }}
+                  onBackspace={() => {
+                    if (digitCaret === 0) return
+                    const next = `${draft.slice(0, digitCaret - 1)}${draft.slice(digitCaret)}`
+                    setDraft(next)
+                    settleCaret(next, digitCaret - 1)
+                  }}
+                  onConfirm={() => setPadOpen(false)}
+                />
+              </View>
+            )}
           </View>
         </Pressable>
       </Animated.View>

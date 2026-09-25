@@ -19,6 +19,7 @@
 import { useState } from 'react'
 import { View } from 'react-native'
 
+import { Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { SPEND_CATEGORIES, type SpendCategoryKey } from '../../lib/cashbook/categories'
 import type { SpendRecord } from '../../storage/spend'
@@ -27,7 +28,13 @@ import { CatalogForm } from './spend/CatalogForm'
 import { EtcForm } from './spend/EtcForm'
 import { ItemBuyForm } from './spend/ItemBuyForm'
 import { SymbolForm } from './spend/SymbolForm'
-import { SaveRow, type SpendFormProps, type SpendSaveSlot } from './spend/form-shared'
+import {
+  SaveRow,
+  SpendHeader,
+  type SpendFormProps,
+  type SpendHeaderSlot,
+  type SpendSaveSlot,
+} from './spend/form-shared'
 
 export type { SpendDraft } from './spend/form-shared'
 
@@ -89,6 +96,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
    * `showSave` 의 첫 값이 거짓인 것은 목록 갈래가 항목 격자로 열리기 때문이다. 직접 입력 둘은
    * 첫 렌더 직후에 참으로 올린다.
    */
+  /** 폼이 올려 주는 머리. 시트는 자리만 준다(저장 줄과 같은 방식). */
+  const [head, setHead] = useState<SpendHeaderSlot | null>(null)
   const [save, setSave] = useState<SpendSaveSlot>({
     showSave: false,
     editing: props.editing !== undefined,
@@ -109,6 +118,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       ? null
       : {
           setSave,
+          setHeader: setHead,
           dateKey,
           characters: props.characters,
           category,
@@ -139,15 +149,30 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
        *
        * 1차에는 셀 것이 없어 바닥 줄 자체가 없다. 닫기는 내용 안에 선다.
        */
-      footer={category === null ? undefined : <SaveRow {...save} />}
+      /*
+        머리는 폼이 올린다. 제목과 되돌아가는 길이 그 폼의 단계에 딸려 있어(카탈로그는 항목 →
+        격자 → 1차) 시트가 혼자 정할 수 없다. 1차에서는 고르는 제목이 선다.
+      */
+      header={
+        category === null || formProps === null ? (
+          <Text className="text-base font-bold text-text">지출 추가</Text>
+        ) : head === null ? undefined : (
+          <SpendHeader {...head} />
+        )
+      }
+      /*
+        **셀 것이 없는 단계에는 바닥 줄이 없다**(사용자 지정 2026-09-25). 1차(갈래 고르기)와
+        항목 격자가 그렇다. 전에는 같은 높이의 빈 상자를 세워 단계를 오갈 때 바닥의 기하를
+        붙들어 뒀는데, 버튼이 없는데 87 이 비어 있는 것이 더 크게 읽혔다. 닫는 길은 아래로
+        쓸어내리기와 스크림 탭 둘이 이미 있다.
+      */
+      footer={category === null || !save.showSave ? undefined : <SaveRow {...save} />}
     >
       {category === null || formProps === null ? (
           <CategoryPicker
-            title="지출 추가"
             categories={SPEND_CATEGORIES}
             testIdPrefix="spend-sheet"
             onSelect={setCategory}
-            onClose={props.onClose}
           />
       ) : (
         // 아래 여백을 안 붙인다. 바닥의 숨돌림은 껍데기가 한 값으로 낸다.

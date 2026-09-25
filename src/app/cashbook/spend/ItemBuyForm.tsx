@@ -29,7 +29,7 @@ import {
 } from '../../../lib/cashbook/categories'
 import { AmountInput, CharacterField, FieldRow, TextField } from '../sheet-fields'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
-import { SpendHeader, useSaveSlot, type SpendFormProps } from './form-shared'
+import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 
 /**
@@ -120,18 +120,18 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })
 
+  // 수정 모드에는 되돌아갈 곳이 없다(고른 것을 못 바꾼다). 화살촉도 없다.
+  useHeaderSlot(props.setHeader, {
+    title: spendCategoryNameOf(props.category),
+    dateKey: props.dateKey,
+    todayDateKey: props.todayDateKey,
+    earliestDateKey: props.earliestDateKey,
+    onDateChange: props.onDateChange,
+    onBack: editing ? undefined : props.onBack,
+  })
+
   return (
     <>
-      <SpendHeader
-        title={spendCategoryNameOf(props.category)}
-        dateKey={props.dateKey}
-        todayDateKey={props.todayDateKey}
-        earliestDateKey={props.earliestDateKey}
-        onDateChange={props.onDateChange}
-        // 수정 모드에는 되돌아갈 곳이 없다(고른 것을 못 바꾼다). 화살촉도 없다.
-        onBack={editing ? undefined : props.onBack}
-      />
-
       <CharacterField
         characters={props.characters}
         selected={ocid}
