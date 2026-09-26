@@ -1,4 +1,10 @@
-import { NexonAuthError, NexonBadRequestError, NexonNetworkError, NexonRateLimitError } from './errors'
+import {
+  NexonAuthError,
+  NexonBadRequestError,
+  NexonNetworkError,
+  NexonRateLimitError,
+  NexonSignInRequiredError,
+} from './errors'
 import type { NexonCredential } from '../types/auth'
 
 interface NexonErrorBody {
@@ -89,7 +95,12 @@ export async function requestJson<T>(path: string, credential: NexonCredential):
   }
 
   if (response.status === 401 || response.status === 403) {
-    throw new NexonAuthError('Nexon API 키가 유효하지 않습니다')
+    // 자격의 종류가 처방을 가른다. 로그인으로 부르다 받은 401 은 우리 서버가 세션을 거절한
+    // 것이라 탓할 키가 없고, 사용자가 할 일은 키 재입력이 아니라 재로그인이다. 여기서 안
+    // 가르면 로그인 만료 한 번이 사용자의 API 키를 전부 지운다.
+    throw credential.kind === 'login'
+      ? new NexonSignInRequiredError('넥슨 로그인이 만료되었습니다')
+      : new NexonAuthError('Nexon API 키가 유효하지 않습니다')
   }
   if (response.status === 429) {
     throw new NexonRateLimitError('Nexon API 호출 한도를 초과했습니다 (OPENAPI00007)')

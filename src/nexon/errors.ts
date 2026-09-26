@@ -19,6 +19,22 @@ export class NexonRateLimitError extends NexonApiError {
   }
 }
 
+/**
+ * 우리 서버가 세션을 거절했다. **키 무효가 아니라 로그인 만료다.**
+ *
+ * 갱신 토큰이 14일이라 그 뒤로 서버가 세션 행을 지운다. 2주 넘게 앱을 안 켠 사용자가 여기 걸린다.
+ *
+ * **`NexonAuthError` 를 상속하지 않는 것이 요점이다.** 상속하면 `isInvalidApiKeyError` 가 참을
+ * 돌려줘 무효 키와 한 덩어리가 되고, 알림의 확인이 사용자의 API 키를 전부 지운다. 그 키들은
+ * 멀쩡하고, 처방도 다르다. 키를 다시 넣는 것이 아니라 다시 로그인하는 것이다.
+ */
+export class NexonSignInRequiredError extends NexonApiError {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'NexonSignInRequiredError'
+  }
+}
+
 export class NexonNetworkError extends NexonApiError {
   constructor(message: string, options?: ErrorOptions) {
     super(message, options)

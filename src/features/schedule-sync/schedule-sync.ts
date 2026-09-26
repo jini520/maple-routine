@@ -359,7 +359,12 @@ async function runSyncRound(
   let completed = 1
   onProgress?.(completed, total)
 
-  const isGlobalFailure = firstResult.error?.kind === 'invalidApiKey' || firstResult.error?.kind === 'rateLimited'
+  // 셋 다 **자격 한 벌 전체**가 막힌 것이라 남은 캐릭터도 똑같이 실패한다. 안 세우면 같은
+  // 실패를 N 번 더 부른다.
+  const isGlobalFailure =
+    firstResult.error?.kind === 'invalidApiKey' ||
+    firstResult.error?.kind === 'rateLimited' ||
+    firstResult.error?.kind === 'signInRequired'
 
   if (isGlobalFailure) {
     const fallbackRest = await Promise.all(

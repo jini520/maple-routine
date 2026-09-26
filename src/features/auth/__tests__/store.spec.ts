@@ -23,6 +23,7 @@ jest.mock('../../../storage/api-key', () => ({
   clearAuthConfig: jest.fn(),
   removeApiKey: jest.fn(),
   removeAllApiKeys: jest.fn(),
+  clearNexonLogin: jest.fn(),
 }))
 const {
   getAuthConfig: getAuthConfigMock,
@@ -30,6 +31,7 @@ const {
   clearAuthConfig: clearAuthConfigMock,
   removeApiKey: removeApiKeyMock,
   removeAllApiKeys: removeAllApiKeysMock,
+  clearNexonLogin: clearNexonLoginMock,
 } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
 jest.mock('../../toast/store', () => {
@@ -78,6 +80,7 @@ beforeEach(() => {
   clearAuthConfigMock.mockResolvedValue(undefined)
   removeApiKeyMock.mockResolvedValue(undefined)
   removeAllApiKeysMock.mockResolvedValue(undefined)
+  clearNexonLoginMock.mockResolvedValue(undefined)
   resolveAfterSignInMock.mockResolvedValue(undefined)
   // 판정이 안 서는 것이 통상 경로다. 서는 경우만 그 테스트가 직접 세운다.
   probeApiKeyStageMock.mockResolvedValue('undetermined')
@@ -315,21 +318,31 @@ describe('useAuthStore.noticeApiKeyIssue', () => {
 })
 
 describe('useAuthStore.confirmApiKeyNotice', () => {
-  function primeNoticed(kind: 'invalid' | 'rateLimited' = 'invalid'): void {
+  function primeNoticed(
+    kind: 'invalid' | 'rateLimited' | 'signInRequired' = 'invalid',
+    apiKey: string | null = null,
+  ): void {
     useAuthStore.setState({
       status: 'signedIn',
       accounts: [account('acc-1')],
       error: null,
-      apiKeyNotice: { kind, apiKey: null },
+      apiKeyNotice: { kind, apiKey },
       developmentStageBlocked: false,
     })
   }
 
-  // 상태를 뒤집는 것이 곧 이동이다. 화면 목록을 가르는 것은 진입 게이트라 그쪽도 함께 되돌린다.
-  it.each(['invalid', 'rateLimited'] as const)(
-    '%s. signedOut 으로 되돌리고 진입 게이트도 로그인으로 보낸다(알림도 함께 꺼진다)',
+  /** 지운 뒤 남은 수단. `null` 이면 하나도 안 남았다. */
+  function 지운뒤남는것(config: { login: unknown; apiKeys: unknown[] } | null): void {
+    getAuthConfigMock.mockResolvedValue(config)
+  }
+
+  // 수단이 하나도 안 남으면 로그인 화면이다. 이 앱은 수단 없이 할 수 있는 것이 거의 없다.
+  // 상태를 뒤집는 것이 곧 이동이고, 화면 목록을 가르는 진입 게이트도 함께 되돌린다.
+  it.each(['invalid', 'rateLimited', 'signInRequired'] as const)(
+    '%s. 남은 수단이 없으면 signedOut 으로 되돌리고 진입 게이트도 로그인으로 보낸다',
     async (kind) => {
       primeNoticed(kind)
+      지운뒤남는것(null)
 
       await useAuthStore.getState().confirmApiKeyNotice()
 
@@ -338,20 +351,64 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
     },
   )
 
+  // 남은 수단으로 조회되던 메이플 ID 를 같이 잃으면 안 된다. 앱 전체가 멈출 이유가 없다.
+  it.each(['invalid', 'rateLimited', 'signInRequired'] as const)(
+    '%s. 수단이 남아 있으면 알림만 닫고 앱은 그대로 선다',
+    async (kind) => {
+      primeNoticed(kind)
+      지운뒤남는것({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: '살아있는키' }] })
+
+      await useAuthStore.getState().confirmApiKeyNotice()
+
+      const state = useAuthStore.getState()
+      expect(state.apiKeyNotice).toBeNull()
+      expect(state.status).toBe('signedIn')
+      expect(state.accounts).toHaveLength(1)
+      expect(entryResetMock).not.toHaveBeenCalled()
+    },
+  )
+
+  // 로그인이 만료됐는데 API 키를 지우면 멀쩡한 키를, 여럿이면 다른 넥슨 계정의 키까지 잃는다.
+  it('signInRequired 는 로그인만 뗀다. API 키는 안 건드린다', async () => {
+    primeNoticed('signInRequired')
+    지운뒤남는것({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: '키' }] })
+
+    await useAuthStore.getState().confirmApiKeyNotice()
+
+    expect(clearNexonLoginMock).toHaveBeenCalledTimes(1)
+    expect(removeApiKeyMock).not.toHaveBeenCalled()
+    expect(removeAllApiKeysMock).not.toHaveBeenCalled()
+    expect(clearAuthConfigMock).not.toHaveBeenCalled()
+  })
+
   // clearAuthConfig 는 지우는 범위가 넓어 재개를 불가능하게 만든다. 429 도 키를
   // 지운다. 원인별로 갈라 처리하지 않는다.
   it.each(['invalid', 'rateLimited'] as const)(
     '%s. 저장소에서 apiKey만 지운다(연결 해제 경로 clearAuthConfig를 타지 않는다)',
     async (kind) => {
       primeNoticed(kind)
+      지운뒤남는것(null)
 
       await useAuthStore.getState().confirmApiKeyNotice()
 
       // 알림이 키를 안 실어 왔다. 어느 키인지 못 가려 전부 지운다.
       expect(removeAllApiKeysMock).toHaveBeenCalledTimes(1)
       expect(clearAuthConfigMock).not.toHaveBeenCalled()
+      expect(clearNexonLoginMock).not.toHaveBeenCalled()
     },
   )
+
+  // 실패가 키를 실어 왔으면 그 키만 지운다. 키가 여럿인 사용자에게 전부 지우는 것은
+  // 다른 넥슨 계정의 키까지 잃는 일이다.
+  it('실린 키가 있으면 그 키만 지운다', async () => {
+    primeNoticed('invalid', '죽은키')
+    지운뒤남는것({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: '산키' }] })
+
+    await useAuthStore.getState().confirmApiKeyNotice()
+
+    expect(removeApiKeyMock).toHaveBeenCalledWith('죽은키')
+    expect(removeAllApiKeysMock).not.toHaveBeenCalled()
+  })
 
   // 알림이 없는데 확인이 불릴 일은 없지만, 불려도 저장된 키를 지우지 않아야 한다.
   it('알림이 켜져 있지 않으면 아무 일도 하지 않는다', async () => {
@@ -367,10 +424,22 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
   // 알려진 열화. 삭제가 실패해도 같은 길을 한 번 더 돌 뿐이라 막다른 길이 아니다. rethrow
   // 하면 호출부가 void 호출이라 미처리 rejection 이 된다.
   it('저장소 삭제가 실패해도 reject하지 않고 화면 이동은 그대로다', async () => {
-    primeNoticed()
+    primeNoticed('invalid', '죽은키')
     removeApiKeyMock.mockRejectedValue(new Error('disk full'))
 
     await expect(useAuthStore.getState().confirmApiKeyNotice()).resolves.toBeUndefined()
+
+    // 무엇이 남았는지 모른다. 세지 않고 로그인 화면으로 보낸다. 앱을 세워 두면 같은 실패를
+    // 무한히 다시 만난다.
+    expect(useAuthStore.getState().status).toBe('signedOut')
+  })
+
+  // 남은 것을 세는 읽기도 실패할 수 있다. 같은 이유로 로그인 화면이다.
+  it('남은 수단을 읽지 못하면 로그인 화면으로 보낸다', async () => {
+    primeNoticed('invalid', '죽은키')
+    getAuthConfigMock.mockRejectedValue(new Error('read failed'))
+
+    await useAuthStore.getState().confirmApiKeyNotice()
 
     expect(useAuthStore.getState().status).toBe('signedOut')
   })

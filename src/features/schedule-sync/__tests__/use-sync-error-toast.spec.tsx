@@ -88,6 +88,17 @@ describe('useScheduleSyncErrorToast', () => {
     expect(onRetry).not.toHaveBeenCalled()
   })
 
+  // 로그인 만료도 같은 모달로 간다. 토스트까지 띄우면 같은 사실을 두 번 말하고, 스스로
+  // 사라지는 토스트가 모달 뒤에서 겹친다.
+  it('signInRequired는 토스트를 띄우지 않고 재로그인 알림으로 넘긴다', async () => {
+    const onRetry = jest.fn()
+    render(<Harness error={{ kind: 'signInRequired' }} onRetry={onRetry} />)
+
+    expect(noticeApiKeyIssueMock).toHaveBeenCalledExactlyOnceWith('signInRequired')
+    expect(showErrorMock).not.toHaveBeenCalled()
+    expect(onRetry).not.toHaveBeenCalled()
+  })
+
   // 캐릭터별 실패가 토스트를 타면서 이 종류가 처음 여기 도달한다.
   // 400 OPENAPI00003은 영구 실패라 "다시 시도"는 눌러도 같은 400이다.
   it('characterUnavailable은 영구 실패라 액션 없이 문구만 띄운다', async () => {
