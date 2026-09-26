@@ -24,6 +24,7 @@ import { useAuthStore } from '../../features/auth/store'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 
 import { EntryScroll } from '../../components/templates/EntryScroll/EntryScroll'
+import { NexonLoginButton } from '../../components/molecules/NexonLoginButton/NexonLoginButton'
 import { ApiKeyForm } from './ApiKeyForm'
 import { DevelopmentStageKeyModal } from './DevelopmentStageKeyModal'
 
@@ -70,6 +71,20 @@ export function SignInScreen(): React.JSX.Element {
           isSubmitting={status === 'verifying'}
           onSubmit={(apiKey) => void submit(apiKey)}
         />
+        {/*
+          검수 캡처용. **이 브랜치에만 있다**(ADR-296 결정 7 · ADR-318 결정 5). 검수가 보는 것은
+          버튼의 모양이라 여기서는 그것만 세운다.
+
+          **누르는 것을 안 잇는다.** `signInWithNexon` 이 `expo-web-browser` 를 모듈 최상단에서
+          부르는데, 지금 시뮬레이터·실기기에 깔린 빌드는 그 네이티브 모듈이 붙기 전 것이라
+          import 만으로 앱이 죽는다(`Cannot find native module 'ExpoWebBrowser'`). 흐름을
+          실제로 눌러 보려면 네이티브를 다시 구워야 한다.
+
+          검수를 통과하면 이 자리를 제대로 짜서(구분선 문구 · 간격 · 누르는 것 잇기) main 으로 옮긴다.
+        */}
+        <View className="w-full pt-4">
+          <NexonLoginButton onPress={() => {}} />
+        </View>
       </EntryScroll>
       {/* 폼과 직교한다. 스스로 떠 있을 때만 그리므로 이 한 줄로 폼 위에 덮인다. */}
       <DevelopmentStageKeyModal />
