@@ -4,6 +4,7 @@ import {
   NexonNetworkError,
   NexonRateLimitError,
 } from '../errors'
+import { __setDeveloperKeysForTest } from '../developer-keys'
 import { requestJson } from '../http'
 import type { NexonCredential } from '../../types/auth'
 
@@ -224,5 +225,97 @@ describe('requestJson: 로그인 자격은 넥슨을 직접 부른다', () => {
     const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
     expect(headers['x-nxopen-api-key']).toBe('내키')
     expect(headers.Authorization).toBeUndefined()
+  })
+})
+
+describe('requestJson: 로그인은 프렌즈 밖 경로를 개발자 키로 부른다', () => {
+  // Open ID 가 안 여는 경로다. 로그인 사용자는 자기 키가 없으니 번들에 박은 키로 부른다.
+  const 로그인 = { kind: 'login', value: '액세스토큰' } as const
+  const 밖 = '/maplestory/v1/character/basic?ocid=x'
+
+  afterEach(() => {
+    __setDeveloperKeysForTest([])
+  })
+
+  it('개발자 키 헤더를 싣는다. Bearer 는 안 싣는다', async () => {
+    __setDeveloperKeysForTest(['개발키1'])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, {}))
+    stubGlobal('fetch', fetcher)
+
+    await requestJson(밖, 로그인)
+
+    expect(fetcher.mock.calls[0]?.[0]).toBe(`https://open.api.nexon.com${밖}`)
+    const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
+    expect(headers['x-nxopen-api-key']).toBe('개발키1')
+    expect(headers.Authorization).toBeUndefined()
+  })
+
+  it('요청마다 번갈아 쓴다', async () => {
+    __setDeveloperKeysForTest(['개발키1', '개발키2'])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, {}))
+    stubGlobal('fetch', fetcher)
+
+    await requestJson(밖, 로그인)
+    await requestJson(밖, 로그인)
+
+    const 쓴키 = fetcher.mock.calls.map(
+      (call) => (call[1]?.headers as Record<string, string>)['x-nxopen-api-key'],
+    )
+    expect(쓴키).toEqual(['개발키1', '개발키2'])
+  })
+
+  it('키가 하나도 없으면 던진다. 빈 키로 부르지 않는다', async () => {
+    // 빈 키를 실으면 넥슨이 400 을 주고, 그 400 은 사용자에게 키가 잘못됐다 로 보인다.
+    __setDeveloperKeysForTest([])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, {}))
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(밖, 로그인)).rejects.toThrow()
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('키가 무효면 그 키를 빼고 남은 키로 다시 부른다', async () => {
+    __setDeveloperKeysForTest(['죽은키', '산키'])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async (_url, init) => {
+      const key = (init?.headers as Record<string, string>)['x-nxopen-api-key']
+      return key === '죽은키'
+        ? response(400, { error: { name: 'OPENAPI00005' } })
+        : response(200, { ok: true })
+    })
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(밖, 로그인)).resolves.toEqual({ ok: true })
+    expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  it('한도를 넘은 키도 뺀다', async () => {
+    __setDeveloperKeysForTest(['탄키', '산키'])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async (_url, init) => {
+      const key = (init?.headers as Record<string, string>)['x-nxopen-api-key']
+      return key === '탄키' ? response(429, {}) : response(200, { ok: true })
+    })
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(밖, 로그인)).resolves.toEqual({ ok: true })
+  })
+
+  it('전부 죽으면 그 실패를 그대로 올린다', async () => {
+    // 되살릴 키가 없다. 여기서 성공으로 접으면 화면이 빈 응답을 그린다.
+    __setDeveloperKeysForTest(['키1', '키2'])
+    stubGlobal('fetch', jest.fn(async () => response(429, {})))
+
+    await expect(requestJson(밖, 로그인)).rejects.toBeInstanceOf(NexonRateLimitError)
+  })
+
+  it('API 키 자격은 개발자 키를 안 쓴다', async () => {
+    // 자기 키가 있는 사용자다. 우리 한도를 태울 이유가 없다.
+    __setDeveloperKeysForTest(['개발키1'])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, {}))
+    stubGlobal('fetch', fetcher)
+
+    await requestJson(밖, { kind: 'apiKey', value: '내키' })
+
+    const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
+    expect(headers['x-nxopen-api-key']).toBe('내키')
   })
 })

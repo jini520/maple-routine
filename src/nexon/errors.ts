@@ -1,4 +1,12 @@
 export class NexonApiError extends Error {
+  /**
+   * 이 실패를 낸 **개발자 키**. 사용자 키나 액세스 토큰으로 부른 회차면 없다.
+   *
+   * 키가 죽었을 때 **어느 것을 뺄지** 가리는 값이다. 없으면 뺄 것이 없다는 뜻이라 뺀다는
+   * 판정 자체를 안 한다(`http.ts` 의 `deadDeveloperKeyOf`).
+   */
+  developerKey?: string
+
   constructor(message: string, options?: ErrorOptions) {
     super(message, options)
     this.name = 'NexonApiError'
