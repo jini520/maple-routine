@@ -27,6 +27,7 @@ describe('formatRosterError', () => {
       { kind: 'characterUnavailable' },
       { kind: 'periodOutOfRange' },
       { kind: 'notCollected' },
+      { kind: 'signInRequired' },
     ]
 
     for (const error of kinds) {
@@ -123,11 +124,12 @@ describe('formatStaleRosterError', () => {
     'periodOutOfRange',
     'notCollected',
     'network',
+    'signInRequired',
   ]
 
   // 어미 규칙은. '아닙니다'를 함께 허용하는 것은 규칙을 푸는 게 아니라 같은
   // 하십시오체(~ㅂ니다)의 다른 활용이기 때문이다.
-  it('6종 전부 문구가 있고 에러 어미 규칙(~습니다 / ~주세요)을 따른다', () => {
+  it('7종 전부 문구가 있고 에러 어미 규칙(~습니다 / ~주세요)을 따른다', () => {
     for (const kind of KINDS) {
       const copy = formatStaleRosterError({ kind })
       expect(copy.message.length).toBeGreaterThan(0)
@@ -191,5 +193,26 @@ describe('formatSyncedAt', () => {
   it('60분을 넘으면 n시간 전을 반환한다', () => {
     const syncedAt = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
     expect(formatSyncedAt(syncedAt)).toBe('3시간 전')
+  })
+})
+
+// 로그인 만료는 키를 다시 넣는 것으로 안 풀린다. 문구가 키를 가리키면 사용자가 엉뚱한 일을 한다.
+describe('로그인 만료 문구', () => {
+  it('세 자리 모두 키가 아니라 로그인을 가리킨다', () => {
+    const 토스트 = formatScheduleSyncError({ kind: 'signInRequired' })
+    const 로스터 = formatRosterError({ kind: 'signInRequired' }, 'picker')
+    const 배너 = formatStaleRosterError({ kind: 'signInRequired' })
+
+    for (const text of [토스트, 로스터.title, 로스터.description, 배너.message]) {
+      expect(text).toContain('로그인')
+      expect(text).not.toContain('API 키')
+    }
+  })
+
+  it('재시도 액션을 주지 않는다. 눌러도 같은 401 이다', () => {
+    for (const place of ['picker', 'characterSetup'] as const) {
+      expect(formatRosterError({ kind: 'signInRequired' }, place).action).toBeUndefined()
+    }
+    expect(formatStaleRosterError({ kind: 'signInRequired' }).action).toBeUndefined()
   })
 })
