@@ -12,12 +12,14 @@ jest.mock('../../../server/nexon-auth', () => ({
   exchangeNexonCode: jest.fn(),
 }))
 jest.mock('../../../storage/api-key', () => ({ setNexonLogin: jest.fn() }))
+jest.mock('../prune-covered-keys', () => ({ pruneCoveredApiKeys: jest.fn() }))
 
 const { openAuthSessionAsync } = jest.requireMock('expo-web-browser') as Record<string, jest.Mock>
 const { startNexonLogin, exchangeNexonCode } = jest.requireMock(
   '../../../server/nexon-auth',
 ) as Record<string, jest.Mock>
 const { setNexonLogin } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
+const { pruneCoveredApiKeys } = jest.requireMock('../prune-covered-keys') as Record<string, jest.Mock>
 
 const 시작값 = {
   authorizeUrl: 'https://openid.nexon.com/oauth2/authorize?state=진짜state',
@@ -35,6 +37,7 @@ beforeEach(() => {
   startNexonLogin.mockResolvedValue(시작값)
   exchangeNexonCode.mockResolvedValue('받은세션')
   setNexonLogin.mockResolvedValue(undefined)
+  pruneCoveredApiKeys.mockResolvedValue(undefined)
   콜백('com.mapleroutine.app://oauth/callback?code=받은code&state=진짜state')
 })
 
@@ -43,6 +46,18 @@ describe('정상 흐름', () => {
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'signedIn' })
 
     expect(setNexonLogin).toHaveBeenCalledWith('받은세션')
+  })
+
+  it('로그인 뒤에 같은 계정의 키를 거둔다', async () => {
+    await signInWithNexon()
+    expect(pruneCoveredApiKeys).toHaveBeenCalledTimes(1)
+  })
+
+  it('키를 못 거둬도 로그인은 성공이다', async () => {
+    // 로그인은 이미 끝났다. 못 거두면 쓸모없는 키가 남을 뿐이고 다음 로그인이 다시 해 본다.
+    pruneCoveredApiKeys.mockRejectedValue(new Error('조회가 죽었다'))
+
+    await expect(signInWithNexon()).resolves.toEqual({ kind: 'signedIn' })
   })
 
   it('서버가 준 주소를 그대로 연다', async () => {

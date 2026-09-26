@@ -23,6 +23,7 @@ import { openAuthSessionAsync } from 'expo-web-browser'
 import { exchangeNexonCode, startNexonLogin } from '../../server/nexon-auth'
 import { setNexonLogin } from '../../storage/api-key'
 import type { Platform as NexonPlatform } from '../../types/auth'
+import { pruneCoveredApiKeys } from './prune-covered-keys'
 
 /** 넥슨에 등록한 값. 인증 세션이 이 주소로 돌아올 때만 콜백을 우리에게 준다. */
 const REDIRECT_URI = 'com.mapleroutine.app://oauth/callback'
@@ -67,6 +68,10 @@ export async function signInWithNexon(): Promise<NexonSignInResult> {
 
     // 못 적으면 다시 켤 때 로그인 상태가 아니다. 성공이라고 말하면 안 된다.
     await setNexonLogin(session)
+
+    // 같은 계정의 키가 있으면 거둔다. **로그인은 이미 끝났으므로 실패해도 성공이다** - 못
+    // 거두면 쓸모없는 키가 남을 뿐이고 다음 로그인이 다시 해 본다.
+    await pruneCoveredApiKeys().catch(() => undefined)
     return { kind: 'signedIn' }
   } catch {
     return { kind: 'failed' }
