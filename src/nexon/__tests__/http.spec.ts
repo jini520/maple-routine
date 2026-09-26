@@ -145,3 +145,83 @@ describe('requestJson: 자격 객체', () => {
     expect(Object.keys(headers)).toEqual(['x-nxopen-api-key'])
   })
 })
+
+// 전송 경로가 둘이다(#540). 자격이 넥슨 로그인이면 프렌즈 API 여섯만 우리 서버를 거치고,
+// API 키면 지금처럼 앱이 넥슨을 직접 부른다. 가르는 판정이 이 파일 밖으로 새면 안 된다.
+describe('requestJson: 로그인 자격은 서버를 거친다', () => {
+  const 로그인 = { kind: 'login', value: '내세션' } as const
+
+  function 잡는fetch() {
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () =>
+      response(200, { ok: true }),
+    )
+    stubGlobal('fetch', fetcher)
+    return fetcher
+  }
+
+  it('프렌즈 경로는 우리 서버로 가고 넥슨 경로를 그대로 뒤에 붙인다', async () => {
+    const fetcher = 잡는fetch()
+
+    await requestJson('/maplestory/v1/character/list', 로그인)
+
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      'https://mapleroutine.store/v1/nexon/maplestory/v1/character/list',
+    )
+  })
+
+  it('세션은 헤더로 가고 API 키 헤더는 안 실린다', async () => {
+    const fetcher = 잡는fetch()
+
+    await requestJson('/maplestory/v1/character/list', 로그인)
+
+    const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
+    expect(headers['x-nexon-session']).toBe('내세션')
+    expect(headers['x-nxopen-api-key']).toBeUndefined()
+  })
+
+  it('물음표 뒤 값을 그대로 넘긴다', async () => {
+    // 확률 기록이 날짜로, 스케줄러가 ocid 로 걸러 온다.
+    const fetcher = 잡는fetch()
+
+    await requestJson('/maplestory/v1/history/cube?count=1000&date=2026-09-25', 로그인)
+
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      'https://mapleroutine.store/v1/nexon/maplestory/v1/history/cube?count=1000&date=2026-09-25',
+    )
+  })
+
+  it.each([
+    '/maplestory/v1/character/list',
+    '/maplestory/v1/history/cube',
+    '/maplestory/v1/history/starforce',
+    '/maplestory/v1/history/potential',
+    '/maplestory/v1/history/soul-potential',
+    '/maplestory/v1/scheduler/character-state',
+  ])('%s 는 서버로 간다', async (path) => {
+    // 서버의 FRIENDS_PATHS 와 글자까지 같아야 한다. 한쪽만 늘리면 그 경로만 404 가 온다.
+    const fetcher = 잡는fetch()
+
+    await requestJson(path, 로그인)
+
+    expect(fetcher.mock.calls[0]?.[0]).toContain('mapleroutine.store')
+  })
+
+  it('프렌즈 밖 경로를 로그인으로 부르면 던진다', async () => {
+    // Open ID 로 안 열리는 경로라 보낼 곳이 없다. 조용히 넥슨으로 보내면 401 이 오고,
+    // 그 401 은 앱에 `키가 죽었다` 로 보인다. 원인이 묻힌다.
+    const fetcher = 잡는fetch()
+
+    await expect(requestJson('/maplestory/v1/character/basic?ocid=x', 로그인)).rejects.toThrow()
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('API 키 자격은 여전히 넥슨을 직접 부른다', async () => {
+    const fetcher = 잡는fetch()
+
+    await requestJson('/maplestory/v1/character/list', { kind: 'apiKey', value: '내키' })
+
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      'https://open.api.nexon.com/maplestory/v1/character/list',
+    )
+  })
+})

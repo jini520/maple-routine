@@ -4,17 +4,28 @@
  * `storage/` 가 아니라 여기 있는 것은 **순수 함수라서**다. 저장소 모듈은 테스트가 통째로
  * 갈아끼우는 I/O 경계라, 거기 두면 mock 마다 이 함수를 따로 알려 줘야 한다.
  *
- * **저장된 설정이 없는 것과 쓸 키가 없는 것을 한 답으로 묶는다.** 부르는 쪽이 하는 일이 같아서다
- * (조회를 건너뛴다). 가드를 둘로 두면 같은 말을 두 번 한다.
+ * **저장된 설정이 없는 것과 쓸 수단이 없는 것을 한 답으로 묶는다.** 부르는 쪽이 하는 일이
+ * 같아서다(조회를 건너뛴다). 가드를 둘로 두면 같은 말을 두 번 한다.
  *
- * **지금은 첫 API 키를 고른다.** 어느 메이플 ID 를 어느 수단으로 부를지는 메이플 ID 목록을
- * 합치는 단위(#537)가 정한다.
+ * **첫 API 키를 고른다.** 로그인은 프렌즈 API 여섯만 열어서, 아무 경로나 부르는 이 자리의
+ * 기본값이 될 수 없다. 어느 메이플 ID 를 어느 수단으로 부를지는 `maple-ids` 의 표가 정하고,
+ * 그 표를 가진 자리는 거기서 고른 자격을 직접 넘긴다.
  */
 import type { NexonAuthConfig, NexonCredential } from '../types/auth'
 
 export function credentialOf(config: NexonAuthConfig | null): NexonCredential | null {
   const key = config?.apiKeys[0]
   return key === undefined ? null : { kind: 'apiKey', value: key.value }
+}
+
+/**
+ * 저장된 넥슨 로그인 자격. 로그인이 없으면 `null`.
+ *
+ * 프렌즈 API 를 부르는 자리가 쓴다. 그 여섯 말고는 이 자격으로 못 부른다.
+ */
+export function loginCredentialOf(config: NexonAuthConfig | null): NexonCredential | null {
+  const login = config?.login
+  return login == null ? null : { kind: 'login', value: login.session }
 }
 
 /**
