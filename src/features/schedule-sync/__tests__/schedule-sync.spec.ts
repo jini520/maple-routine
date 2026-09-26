@@ -16,6 +16,7 @@ import {
   NexonNetworkError,
   NexonNoCharacterError,
   NexonRateLimitError,
+  NexonSignInRequiredError,
 } from '../../../nexon/errors'
 
 jest.mock('../../../nexon/character', () => ({
@@ -515,6 +516,23 @@ describe('syncSchedules', () => {
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
     for (const result of results) {
       expect(result.error).toEqual({ kind: 'rateLimited', apiKey: 'key-1' })
+      expect(result.isStale).toBe(true)
+    }
+  })
+
+  it('프리플라이트에서 로그인이 만료되면 이후 캐릭터는 API를 호출하지 않는다', async () => {
+    // 자격이 한 벌이라 남은 캐릭터도 똑같이 401 이다. 한 번 안 세우면 N 번 더 실패한다.
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonSignInRequiredError('만료'))
+    getCachedSchedulerStateMock.mockResolvedValue(null)
+
+    const results = await syncSchedules(['ocid-1', 'ocid-2'])
+
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
+    for (const result of results) {
+      // 지울 키가 없다. 로그인으로 부르다 난 실패다.
+      expect(result.error).toEqual({ kind: 'signInRequired' })
       expect(result.isStale).toBe(true)
     }
   })

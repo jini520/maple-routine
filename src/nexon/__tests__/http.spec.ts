@@ -1,8 +1,10 @@
 import {
+  isInvalidApiKeyError,
   NexonAuthError,
   NexonBadRequestError,
   NexonNetworkError,
   NexonRateLimitError,
+  NexonSignInRequiredError,
 } from '../errors'
 import { __setDeveloperKeysForTest } from '../developer-keys'
 import { requestJson, setAccessTokenRenewerForTest } from '../http'
@@ -347,7 +349,7 @@ describe('requestJson: 액세스 토큰이 만료되면 새로 받아 한 번 �
     const fetcher = jest.fn(async () => response(401, {}))
     stubGlobal('fetch', fetcher)
 
-    await expect(requestJson(프렌즈, 로그인)).rejects.toBeInstanceOf(NexonAuthError)
+    await expect(requestJson(프렌즈, 로그인)).rejects.toBeInstanceOf(NexonSignInRequiredError)
     expect(fetcher).toHaveBeenCalledTimes(2)
   })
 
@@ -357,7 +359,7 @@ describe('requestJson: 액세스 토큰이 만료되면 새로 받아 한 번 �
     const fetcher = jest.fn(async () => response(401, {}))
     stubGlobal('fetch', fetcher)
 
-    await expect(requestJson(프렌즈, 로그인)).rejects.toBeInstanceOf(NexonAuthError)
+    await expect(requestJson(프렌즈, 로그인)).rejects.toBeInstanceOf(NexonSignInRequiredError)
     expect(fetcher).toHaveBeenCalledTimes(1)
   })
 
@@ -378,7 +380,48 @@ describe('requestJson: 액세스 토큰이 만료되면 새로 받아 한 번 �
     const fetcher = jest.fn(async () => response(401, {}))
     stubGlobal('fetch', fetcher)
 
-    await expect(requestJson(프렌즈, 로그인)).rejects.toBeInstanceOf(NexonAuthError)
+    await expect(requestJson(프렌즈, 로그인)).rejects.toBeInstanceOf(NexonSignInRequiredError)
     expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('requestJson: 로그인 만료는 키 무효와 다른 실패다', () => {
+  const 로그인 = { kind: 'login', value: '내세션' } as const
+
+  it.each([401, 403])('로그인 자격의 %i 는 NexonSignInRequiredError', async (status) => {
+    // 서버가 세션을 거절한 것이다. 갱신 토큰(14일)이 죽으면 세션 행이 사라진다.
+    stubGlobal('fetch', jest.fn(async () => response(status, { error: { name: 'OPENAPI00001' } })))
+
+    await expect(requestJson('/maplestory/v1/character/list', 로그인)).rejects.toBeInstanceOf(
+      NexonSignInRequiredError,
+    )
+  })
+
+  it('그것은 NexonAuthError 가 아니다', async () => {
+    // 상속하면 isInvalidApiKeyError 가 참을 돌려줘 무효 키와 다시 한 덩어리가 되고,
+    // 확인이 사용자의 API 키를 전부 지운다.
+    stubGlobal('fetch', jest.fn(async () => response(401, { error: { name: 'OPENAPI00001' } })))
+
+    const error = await requestJson('/maplestory/v1/character/list', 로그인).catch(
+      (caught: unknown) => caught,
+    )
+
+    expect(error).not.toBeInstanceOf(NexonAuthError)
+    expect(isInvalidApiKeyError(error)).toBe(false)
+  })
+
+  it('API 키 자격의 401 은 그대로 NexonAuthError', async () => {
+    stubGlobal('fetch', jest.fn(async () => response(401, { error: { name: 'OPENAPI00001' } })))
+
+    await expect(requestJson('/x', 자격('키'))).rejects.toBeInstanceOf(NexonAuthError)
+  })
+
+  it('로그인 자격이어도 429 는 그대로 NexonRateLimitError', async () => {
+    // 가르는 것은 401·403 뿐이다. 한도 초과는 전송 경로와 무관하다.
+    stubGlobal('fetch', jest.fn(async () => response(429, { error: { name: 'OPENAPI00007' } })))
+
+    await expect(requestJson('/maplestory/v1/character/list', 로그인)).rejects.toBeInstanceOf(
+      NexonRateLimitError,
+    )
   })
 })

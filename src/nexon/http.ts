@@ -4,6 +4,7 @@ import {
   NexonBadRequestError,
   NexonNetworkError,
   NexonRateLimitError,
+  NexonSignInRequiredError,
 } from './errors'
 import { markDeveloperKeyDead, nextDeveloperKey } from './developer-keys'
 import type { NexonCredential } from '../types/auth'
@@ -124,9 +125,10 @@ async function retryWith(
     return nextDeveloperKey() === null ? null : credential
   }
 
-  // 액세스 토큰이 30분을 넘겼다. **키 자격은 여기 안 온다** - 키가 죽은 것이라 받아 올 토큰이
-  // 없다. 세션까지 죽었으면 갱신이 `null` 을 주고, 부르는 쪽이 그 401 을 보고 재로그인을 띄운다.
-  if (!(error instanceof NexonAuthError) || credential.kind !== 'login') return null
+  // 액세스 토큰이 30분을 넘겼다. 그 401 만 이 종류로 온다 - 키 자격과 개발자 키 회차는
+  // `NexonAuthError` 라 여기 안 걸린다. 세션까지 죽었으면 갱신이 `null` 을 주고, 그때는 원래
+  // 실패가 올라가 화면이 재로그인을 띄운다.
+  if (!(error instanceof NexonSignInRequiredError)) return null
   const renewed = await renewAccessToken?.()
   return renewed == null ? null : { kind: 'login', value: renewed }
 }
@@ -186,7 +188,14 @@ async function requestOnce<T>(path: string, credential: NexonCredential): Promis
   }
 
   if (response.status === 401 || response.status === 403) {
-    throw 실어서(new NexonAuthError('Nexon API 키가 유효하지 않습니다'))
+    // 자격의 종류가 처방을 가른다. **액세스 토큰으로 부르다 받은 401** 은 그 토큰이 죽은 것이라
+    // 탓할 키가 없고, 사용자가 할 일은 키 재입력이 아니라 재로그인이다(그 전에 부르는 쪽이 토큰을
+    // 새로 받아 한 번 더 해 본다). 개발자 키로 부른 회차는 **키가 죽은 것**이라 이쪽이 아니다.
+    throw 실어서(
+      credential.kind === 'login' && developerKey === null
+        ? new NexonSignInRequiredError('넥슨 로그인이 만료되었습니다')
+        : new NexonAuthError('Nexon API 키가 유효하지 않습니다'),
+    )
   }
   if (response.status === 429) {
     throw 실어서(new NexonRateLimitError('Nexon API 호출 한도를 초과했습니다 (OPENAPI00007)'))

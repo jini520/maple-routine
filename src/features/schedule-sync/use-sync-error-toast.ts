@@ -35,7 +35,7 @@ export function useScheduleSyncErrorToast(
   const lastShownRef = useRef<ScheduleSyncError | null>(null)
   const actionsRef = useLatestRef(actions)
 
-  // 무효 키(401/403·400 00005)와 429는 이 훅이 처리하지 않고 키 재입력 경로로 넘긴다
+  // 무효 키(401/403·400 00005)·429·로그인 만료는 이 훅이 처리하지 않고 알림 모달로 넘긴다
   //
   useApiKeyNotice(error)
 
@@ -45,11 +45,15 @@ export function useScheduleSyncErrorToast(
     }
     lastShownRef.current = error
 
-    // 이 훅은 저장된 키로는 앞으로 갈 수 없는 두 원인에 아무 토스트도 띄우지 않는다. 그 원인은
-    // 닫을 수 없는 모달로 알린다(`useApiKeyNotice` → `ApiKeyNoticeModal`). 토스트는 스스로
+    // 이 훅은 저장된 수단으로는 앞으로 갈 수 없는 세 원인에 아무 토스트도 띄우지 않는다. 그
+    // 원인은 닫을 수 없는 모달로 알린다(`useApiKeyNotice` → `ApiKeyNoticeModal`). 토스트는 스스로
     // 사라져 놓칠 수 있는데 이 실패들은 확인하고 넘어가야 하는 종류다. 모달이 원인과 처방을
     // 함께 말하므로 같은 사실을 토스트로 한 번 더 말하지 않는다.
-    if (error.kind === 'invalidApiKey' || error.kind === 'rateLimited') {
+    if (
+      error.kind === 'invalidApiKey' ||
+      error.kind === 'rateLimited' ||
+      error.kind === 'signInRequired'
+    ) {
       return
     }
 
