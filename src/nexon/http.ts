@@ -21,8 +21,6 @@ async function readErrorCode(response: Response): Promise<string | null> {
 
 const API_BASE_URL = 'https://open.api.nexon.com'
 
-/** 로그인 자격이 거쳐 가는 자리. 뒤에 넥슨 경로를 그대로 붙인다. */
-const PROXY_BASE_URL = 'https://mapleroutine.store/v1/nexon'
 
 const REQUEST_TIMEOUT_MS = 10_000
 
@@ -54,13 +52,13 @@ function routeOf(path: string, credential: NexonCredential): { url: string; head
   // 물음표 뒤는 경로가 아니다. 확률 기록이 날짜로, 스케줄러가 ocid 로 걸러 온다.
   const bare = path.split('?')[0] ?? path
   if (!FRIENDS_PATHS.includes(bare)) {
-    // Open ID 로 안 열리는 경로라 보낼 곳이 없다. 조용히 넥슨으로 보내면 401 이 오고, 그 401 은
-    // 앱에 `키가 죽었다` 로 보여 원인이 묻힌다. 로그인만 한 사용자가 today 의 캐릭터 기본
-    // 정보를 못 보는 문제가 이 자리이고, 답은 서버가 개발자 키로 대신 부르는 것이다(미구현).
+    // Open ID 로 안 열리는 경로라 이 토큰으로는 보낼 곳이 없다. 조용히 보내면 401 이 오고,
+    // 그 401 은 앱에 `로그인이 만료됐다` 로 보여 원인이 묻힌다. 답은 개발자 키로 부르는
+    // 것이다(미배선 - 그 키로 남의 ocid 를 볼 수 있는지 아직 안 쟀다).
     throw new NexonNetworkError(`넥슨 로그인으로는 부를 수 없는 경로입니다: ${bare}`)
   }
 
-  return { url: `${PROXY_BASE_URL}${path}`, headers: { 'x-nexon-session': credential.value } }
+  return { url: `${API_BASE_URL}${path}`, headers: { Authorization: `Bearer ${credential.value}` } }
 }
 
 /**

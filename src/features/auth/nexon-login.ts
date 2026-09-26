@@ -60,14 +60,14 @@ export async function signInWithNexon(): Promise<NexonSignInResult> {
     // CSRF 대응). 다르면 code 를 서버에 넘기지 않는다.
     if (code === null || params.get('state') !== started.state) return { kind: 'failed' }
 
-    const session = await exchangeNexonCode({
+    const tokens = await exchangeNexonCode({
       code,
       state: started.state,
       verifier: started.verifier,
     })
 
     // 못 적으면 다시 켤 때 로그인 상태가 아니다. 성공이라고 말하면 안 된다.
-    await setNexonLogin(session)
+    await setNexonLogin(tokens)
 
     // 같은 계정의 키가 있으면 거둔다. **로그인은 이미 끝났으므로 실패해도 성공이다** - 못
     // 거두면 쓸모없는 키가 남을 뿐이고 다음 로그인이 다시 해 본다.

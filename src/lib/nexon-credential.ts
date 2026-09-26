@@ -7,13 +7,19 @@
  * **저장된 설정이 없는 것과 쓸 수단이 없는 것을 한 답으로 묶는다.** 부르는 쪽이 하는 일이
  * 같아서다(조회를 건너뛴다). 가드를 둘로 두면 같은 말을 두 번 한다.
  *
- * **첫 API 키를 고른다.** 로그인은 프렌즈 API 여섯만 열어서, 아무 경로나 부르는 이 자리의
- * 기본값이 될 수 없다. 어느 메이플 ID 를 어느 수단으로 부를지는 `maple-ids` 의 표가 정하고,
- * 그 표를 가진 자리는 거기서 고른 자격을 직접 넘긴다.
+ * **로그인이 있으면 로그인이 이긴다.** 로그인을 붙이면 같은 계정의 키가 거둬지므로 통상은 둘 중
+ * 하나만 있다. 프렌즈 밖 경로는 이 자격으로 못 가는데, 그 자리는 `routeOf` 가 개발자 키로
+ * 바꿔 단다.
+ *
+ * **남은 키를 어느 메이플 ID 에 쓸지는 아직 아무도 안 정한다.** 로그인이 안 덮는 다른 넥슨
+ * 계정의 키가 남을 수 있고, 그 계정 캐릭터는 이 자격으로 안 보인다(열린 질문).
  */
 import type { NexonAuthConfig, NexonCredential } from '../types/auth'
 
 export function credentialOf(config: NexonAuthConfig | null): NexonCredential | null {
+  const login = config?.login
+  if (login != null) return { kind: 'login', value: login.accessToken }
+
   const key = config?.apiKeys[0]
   return key === undefined ? null : { kind: 'apiKey', value: key.value }
 }
@@ -21,11 +27,12 @@ export function credentialOf(config: NexonAuthConfig | null): NexonCredential | 
 /**
  * 저장된 넥슨 로그인 자격. 로그인이 없으면 `null`.
  *
- * 프렌즈 API 를 부르는 자리가 쓴다. 그 여섯 말고는 이 자격으로 못 부른다.
+ * **세션이 아니라 액세스 토큰이다.** 세션은 새 토큰을 받을 때만 우리 서버로 가고 넥슨에는
+ * 안 나간다. 프렌즈 여섯 말고는 이 자격으로 못 부른다.
  */
 export function loginCredentialOf(config: NexonAuthConfig | null): NexonCredential | null {
   const login = config?.login
-  return login == null ? null : { kind: 'login', value: login.session }
+  return login == null ? null : { kind: 'login', value: login.accessToken }
 }
 
 /**
