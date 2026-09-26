@@ -33,6 +33,7 @@ import { getNotices } from '../../storage/notices'
 import { NOTICE_KINDS, type Notice, type NoticeKind } from '../../types/notice'
 import { NoticeBannerRail } from './NoticeBannerRail'
 import { NoticeBannerSkeleton, NoticeLinesSkeleton } from './NoticeSkeleton'
+import { NexonLoginButton } from '../../components/molecules/NexonLoginButton/NexonLoginButton'
 import { NoticeLines } from './NoticeLines'
 import { SectionTitle } from './SectionTitle'
 import { SettingsLinkRow } from './SettingsLinkRow'
@@ -239,6 +240,20 @@ export function SettingsScreen(): React.JSX.Element {
 
         {/* 영역 사이만 넓힌다. 머리와 첫 영역까지 벌리면 제목이 내용과 떨어져 보인다. */}
         <View className="gap-7">
+          {/*
+            검수 캡처용. **이 브랜치에만 있다**(ADR-296 결정 7 · ADR-318 결정 5).
+
+            **키로 이미 들어온 사용자는 로그인 화면을 다시 못 본다.** 그래서 앱 안에 자리가 필요하고,
+            여기가 그 자리다(사용자 지정 2026-09-26). 소식 아래에 두면 갈래 셋이 한 화면을 넘게 써서
+            화면을 넘겨도 안 보인다(시뮬레이터 확인).
+
+            이 화면의 `소식이 맨 위다` 와 맞바꾼 것이다. 로그인하면 이 버튼이 사라져 소식이 다시
+            맨 위로 올라온다.
+
+            **누르는 것을 안 잇는다.** 지금 깔린 빌드에 `ExpoWebBrowser` 가 없어 import 만으로
+            앱이 죽는다.
+          */}
+          <NexonLoginButton onPress={() => {}} />
           {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
               한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
           {NOTICE_SECTIONS.map((section) => (
