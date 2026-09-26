@@ -29,6 +29,8 @@ import { SettingsScreen } from '../SettingsScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 import { refreshNoticeKinds } from '../../../features/notice/notice-feed'
 import { getNotices } from '../../../storage/notices'
+import { hasNexonLogin } from '../../../features/auth/saved-key'
+import { signInWithNexon } from '../../../features/auth/nexon-login'
 import type { Notice, NoticeKind } from '../../../types/notice'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
@@ -46,6 +48,10 @@ jest.mock('../../../features/settings/cache-data', () => ({ loadCacheDataSizes: 
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 // 소식은 사본을 먼저 그리고 분류마다 받은 것으로 바꾼다. 분류를 나누는 함수는 실물이다.
 jest.mock('../../../storage/notices', () => ({ __esModule: true, getNotices: jest.fn() }))
+// 넥슨 로그인 버튼이 이 화면 맨 위에 선다. 화면은 `features/` 를 거치고 저장소·브라우저 세션은
+// 그 아래가 맡는다(CLAUDE.md CRITICAL).
+jest.mock('../../../features/auth/saved-key', () => ({ hasNexonLogin: jest.fn() }))
+jest.mock('../../../features/auth/nexon-login', () => ({ signInWithNexon: jest.fn() }))
 jest.mock('../../../features/notice/notice-feed', () => ({
   __esModule: true,
   ...jest.requireActual('../../../features/notice/notice-feed'),
@@ -163,6 +169,8 @@ function notice(id: string, kind: NoticeKind, patch: Partial<Notice> = {}): Noti
   return { id, kind, title: `제목 ${id}`, body: '', publishedAt: '2026-09-15T00:00:00.000Z', ...patch }
 }
 
+const mockedHasNexonLogin = jest.mocked(hasNexonLogin)
+const mockedSignInWithNexon = jest.mocked(signInWithNexon)
 const mockedGetNotices = jest.mocked(getNotices)
 const mockedRefreshKinds = jest.mocked(refreshNoticeKinds)
 
@@ -235,6 +243,9 @@ beforeEach(() => {
   mockedGetNotices.mockResolvedValue([])
   // 기본은 "영원히 받는 중". 받은 결과가 필요한 케이스만 따로 세운다.
   mockedRefreshKinds.mockReturnValue(new Promise(() => {}))
+  // 기본은 "로그인이 아직 없다". 버튼이 서는 쪽이 통상 경로다.
+  mockedHasNexonLogin.mockResolvedValue(false)
+  mockedSignInWithNexon.mockResolvedValue({ kind: 'signedIn' })
 })
 
 afterEach(() => {
@@ -648,5 +659,87 @@ describe('설정 버튼의 촉각', () => {
     await press(view.getByLabelText('설정'))
 
     expect(tap).toHaveBeenCalledTimes(1)
+  })
+})
+
+// 키로 이미 들어온 사용자는 로그인 화면(`SignInScreen`)을 다시 못 본다. 저장된 수단이 하나도
+// 없을 때만 그 화면이 서기 때문이다. 그래서 이 탭 맨 위가 그 사용자의 유일한 진입점이다.
+describe('SettingsScreen: 넥슨 로그인 버튼', () => {
+  it('로그인이 없으면 선다', async () => {
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await waitFor(() => expect(view.getByLabelText('넥슨ID 로그인')).toBeTruthy())
+  })
+
+  it('로그인이 이미 있으면 안 선다', async () => {
+    // 한 번 누르면 끝나는 버튼이다. 남아 있으면 매일 여는 탭의 맨 위를 계속 차지한다.
+    mockedHasNexonLogin.mockResolvedValue(true)
+
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await waitFor(() => expect(mockedHasNexonLogin).toHaveBeenCalled())
+    expect(view.queryByLabelText('넥슨ID 로그인')).toBeNull()
+  })
+
+  it('판정 전에는 안 세운다', async () => {
+    // 세웠다 지우면 소식이 한 칸 튀어오른다. 모르는 동안은 자리를 안 잡는다.
+    mockedHasNexonLogin.mockReturnValue(new Promise(() => {}))
+
+    const view = await renderOverlay(<SettingsScreen />)
+
+    expect(view.queryByLabelText('넥슨ID 로그인')).toBeNull()
+  })
+
+  it('누르면 인증 세션을 연다', async () => {
+    const view = await renderOverlay(<SettingsScreen />)
+    const button = await waitFor(() => view.getByLabelText('넥슨ID 로그인'))
+
+    await act(async () => {
+      fireEvent.press(button)
+    })
+
+    expect(mockedSignInWithNexon).toHaveBeenCalledTimes(1)
+  })
+
+  it('성공하면 버튼이 사라지고 알린다', async () => {
+    const view = await renderOverlay(<SettingsScreen />)
+    const button = await waitFor(() => view.getByLabelText('넥슨ID 로그인'))
+
+    await act(async () => {
+      fireEvent.press(button)
+    })
+
+    expect(view.queryByLabelText('넥슨ID 로그인')).toBeNull()
+    expect(useToastStore.getState().toasts[0]?.message).toBe('넥슨 계정을 연결했어요')
+  })
+
+  it('취소는 아무 일도 안 일어난다', async () => {
+    // 사용자가 창을 닫은 것이다. 안내를 띄우면 자기가 닫아 놓고 무엇이 잘못됐나 찾게 된다.
+    mockedSignInWithNexon.mockResolvedValue({ kind: 'cancelled' })
+
+    const view = await renderOverlay(<SettingsScreen />)
+    const button = await waitFor(() => view.getByLabelText('넥슨ID 로그인'))
+
+    await act(async () => {
+      fireEvent.press(button)
+    })
+
+    expect(useToastStore.getState().toasts).toHaveLength(0)
+    expect(view.getByLabelText('넥슨ID 로그인')).toBeTruthy()
+  })
+
+  it('실패하면 말하고 버튼은 남는다', async () => {
+    // 다시 누를 수 있어야 한다. 버튼을 치우면 그 사용자는 갈 곳이 없다.
+    mockedSignInWithNexon.mockResolvedValue({ kind: 'failed' })
+
+    const view = await renderOverlay(<SettingsScreen />)
+    const button = await waitFor(() => view.getByLabelText('넥슨ID 로그인'))
+
+    await act(async () => {
+      fireEvent.press(button)
+    })
+
+    expect(useToastStore.getState().toasts[0]?.message).toBe('넥슨 로그인에 실패했습니다')
+    expect(view.getByLabelText('넥슨ID 로그인')).toBeTruthy()
   })
 })

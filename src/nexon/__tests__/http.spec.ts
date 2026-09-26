@@ -6,7 +6,8 @@ import {
   NexonRateLimitError,
   NexonSignInRequiredError,
 } from '../errors'
-import { requestJson } from '../http'
+import { __setDeveloperKeysForTest } from '../developer-keys'
+import { requestJson, setAccessTokenRenewerForTest } from '../http'
 import type { NexonCredential } from '../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
@@ -150,8 +151,10 @@ describe('requestJson: 자격 객체', () => {
 
 // 전송 경로가 둘이다(#540). 자격이 넥슨 로그인이면 프렌즈 API 여섯만 우리 서버를 거치고,
 // API 키면 지금처럼 앱이 넥슨을 직접 부른다. 가르는 판정이 이 파일 밖으로 새면 안 된다.
-describe('requestJson: 로그인 자격은 서버를 거친다', () => {
-  const 로그인 = { kind: 'login', value: '내세션' } as const
+describe('requestJson: 로그인 자격은 넥슨을 직접 부른다', () => {
+  // 앱이 직접 부른다. 강화 내역 한 회차가 수백 건이라 우리 서버가 중계하면 사용자 한 명의
+  // 조작이 서버에 수백 요청이 된다. 실리는 것은 세션이 아니라 액세스 토큰이다.
+  const 로그인 = { kind: 'login', value: '액세스토큰' } as const
 
   function 잡는fetch() {
     const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () =>
@@ -161,34 +164,33 @@ describe('requestJson: 로그인 자격은 서버를 거친다', () => {
     return fetcher
   }
 
-  it('프렌즈 경로는 우리 서버로 가고 넥슨 경로를 그대로 뒤에 붙인다', async () => {
+  it('프렌즈 경로도 넥슨으로 간다. 우리 서버를 안 거친다', async () => {
     const fetcher = 잡는fetch()
 
     await requestJson('/maplestory/v1/character/list', 로그인)
 
-    expect(fetcher.mock.calls[0]?.[0]).toBe(
-      'https://mapleroutine.store/v1/nexon/maplestory/v1/character/list',
-    )
+    expect(fetcher.mock.calls[0]?.[0]).toBe('https://open.api.nexon.com/maplestory/v1/character/list')
+    expect(fetcher.mock.calls[0]?.[0]).not.toContain('mapleroutine.store')
   })
 
-  it('세션은 헤더로 가고 API 키 헤더는 안 실린다', async () => {
+  it('액세스 토큰을 Bearer 로 싣는다. 세션 헤더는 없다', async () => {
     const fetcher = 잡는fetch()
 
     await requestJson('/maplestory/v1/character/list', 로그인)
 
     const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
-    expect(headers['x-nexon-session']).toBe('내세션')
+    expect(headers.Authorization).toBe('Bearer 액세스토큰')
+    expect(headers['x-nexon-session']).toBeUndefined()
     expect(headers['x-nxopen-api-key']).toBeUndefined()
   })
 
   it('물음표 뒤 값을 그대로 넘긴다', async () => {
-    // 확률 기록이 날짜로, 스케줄러가 ocid 로 걸러 온다.
     const fetcher = 잡는fetch()
 
     await requestJson('/maplestory/v1/history/cube?count=1000&date=2026-09-25', 로그인)
 
     expect(fetcher.mock.calls[0]?.[0]).toBe(
-      'https://mapleroutine.store/v1/nexon/maplestory/v1/history/cube?count=1000&date=2026-09-25',
+      'https://open.api.nexon.com/maplestory/v1/history/cube?count=1000&date=2026-09-25',
     )
   })
 
@@ -199,32 +201,187 @@ describe('requestJson: 로그인 자격은 서버를 거친다', () => {
     '/maplestory/v1/history/potential',
     '/maplestory/v1/history/soul-potential',
     '/maplestory/v1/scheduler/character-state',
-  ])('%s 는 서버로 간다', async (path) => {
-    // 서버의 FRIENDS_PATHS 와 글자까지 같아야 한다. 한쪽만 늘리면 그 경로만 404 가 온다.
+  ])('%s 는 Bearer 로 간다', async (path) => {
+    // Open ID 가 여는 것이 이 여섯뿐이다. 늘리려면 넥슨 등록에서 그 항목을 먼저 켠다.
     const fetcher = 잡는fetch()
 
     await requestJson(path, 로그인)
 
-    expect(fetcher.mock.calls[0]?.[0]).toContain('mapleroutine.store')
+    const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
+    expect(headers.Authorization).toBe('Bearer 액세스토큰')
   })
 
   it('프렌즈 밖 경로를 로그인으로 부르면 던진다', async () => {
-    // Open ID 로 안 열리는 경로라 보낼 곳이 없다. 조용히 넥슨으로 보내면 401 이 오고,
-    // 그 401 은 앱에 `키가 죽었다` 로 보인다. 원인이 묻힌다.
+    // Open ID 로 안 열린다. 이 경로는 개발자 키가 받는다(아직 미배선).
     const fetcher = 잡는fetch()
 
     await expect(requestJson('/maplestory/v1/character/basic?ocid=x', 로그인)).rejects.toThrow()
     expect(fetcher).not.toHaveBeenCalled()
   })
 
-  it('API 키 자격은 여전히 넥슨을 직접 부른다', async () => {
+  it('API 키 자격은 종전대로 키 헤더를 싣는다', async () => {
     const fetcher = 잡는fetch()
 
     await requestJson('/maplestory/v1/character/list', { kind: 'apiKey', value: '내키' })
 
-    expect(fetcher.mock.calls[0]?.[0]).toBe(
-      'https://open.api.nexon.com/maplestory/v1/character/list',
+    const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
+    expect(headers['x-nxopen-api-key']).toBe('내키')
+    expect(headers.Authorization).toBeUndefined()
+  })
+})
+
+describe('requestJson: 로그인은 프렌즈 밖 경로를 개발자 키로 부른다', () => {
+  // Open ID 가 안 여는 경로다. 로그인 사용자는 자기 키가 없으니 번들에 박은 키로 부른다.
+  const 로그인 = { kind: 'login', value: '액세스토큰' } as const
+  const 밖 = '/maplestory/v1/character/basic?ocid=x'
+
+  afterEach(() => {
+    __setDeveloperKeysForTest([])
+  })
+
+  it('개발자 키 헤더를 싣는다. Bearer 는 안 싣는다', async () => {
+    __setDeveloperKeysForTest(['개발키1'])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, {}))
+    stubGlobal('fetch', fetcher)
+
+    await requestJson(밖, 로그인)
+
+    expect(fetcher.mock.calls[0]?.[0]).toBe(`https://open.api.nexon.com${밖}`)
+    const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
+    expect(headers['x-nxopen-api-key']).toBe('개발키1')
+    expect(headers.Authorization).toBeUndefined()
+  })
+
+  it('요청마다 번갈아 쓴다', async () => {
+    __setDeveloperKeysForTest(['개발키1', '개발키2'])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, {}))
+    stubGlobal('fetch', fetcher)
+
+    await requestJson(밖, 로그인)
+    await requestJson(밖, 로그인)
+
+    const 쓴키 = fetcher.mock.calls.map(
+      (call) => (call[1]?.headers as Record<string, string>)['x-nxopen-api-key'],
     )
+    expect(쓴키).toEqual(['개발키1', '개발키2'])
+  })
+
+  it('키가 하나도 없으면 던진다. 빈 키로 부르지 않는다', async () => {
+    // 빈 키를 실으면 넥슨이 400 을 주고, 그 400 은 사용자에게 키가 잘못됐다 로 보인다.
+    __setDeveloperKeysForTest([])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, {}))
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(밖, 로그인)).rejects.toThrow()
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('키가 무효면 그 키를 빼고 남은 키로 다시 부른다', async () => {
+    __setDeveloperKeysForTest(['죽은키', '산키'])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async (_url, init) => {
+      const key = (init?.headers as Record<string, string>)['x-nxopen-api-key']
+      return key === '죽은키'
+        ? response(400, { error: { name: 'OPENAPI00005' } })
+        : response(200, { ok: true })
+    })
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(밖, 로그인)).resolves.toEqual({ ok: true })
+    expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  it('한도를 넘은 키도 뺀다', async () => {
+    __setDeveloperKeysForTest(['탄키', '산키'])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async (_url, init) => {
+      const key = (init?.headers as Record<string, string>)['x-nxopen-api-key']
+      return key === '탄키' ? response(429, {}) : response(200, { ok: true })
+    })
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(밖, 로그인)).resolves.toEqual({ ok: true })
+  })
+
+  it('전부 죽으면 그 실패를 그대로 올린다', async () => {
+    // 되살릴 키가 없다. 여기서 성공으로 접으면 화면이 빈 응답을 그린다.
+    __setDeveloperKeysForTest(['키1', '키2'])
+    stubGlobal('fetch', jest.fn(async () => response(429, {})))
+
+    await expect(requestJson(밖, 로그인)).rejects.toBeInstanceOf(NexonRateLimitError)
+  })
+
+  it('API 키 자격은 개발자 키를 안 쓴다', async () => {
+    // 자기 키가 있는 사용자다. 우리 한도를 태울 이유가 없다.
+    __setDeveloperKeysForTest(['개발키1'])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, {}))
+    stubGlobal('fetch', fetcher)
+
+    await requestJson(밖, { kind: 'apiKey', value: '내키' })
+
+    const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
+    expect(headers['x-nxopen-api-key']).toBe('내키')
+  })
+})
+
+describe('requestJson: 액세스 토큰이 만료되면 새로 받아 한 번 재시도한다', () => {
+  // 토큰이 30분이라 **한 회차 안에서 만료될 수 있다**. 강화 내역 수백 건이 그 자리다.
+  // 시작할 때만 확인하면 중간부터 전부 401 로 무너진다.
+  const 로그인 = { kind: 'login', value: '옛토큰' } as const
+  const 프렌즈 = '/maplestory/v1/character/list'
+
+  afterEach(() => {
+    setAccessTokenRenewerForTest(null)
+  })
+
+  it('401 이면 새 토큰으로 다시 부른다', async () => {
+    setAccessTokenRenewerForTest(async () => '새토큰')
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async (_url, init) => {
+      const auth = (init?.headers as Record<string, string>).Authorization
+      return auth === 'Bearer 새토큰' ? response(200, { ok: true }) : response(401, {})
+    })
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(프렌즈, 로그인)).resolves.toEqual({ ok: true })
+    expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  it('새 토큰도 401 이면 그 실패를 올린다. 무한히 안 돈다', async () => {
+    setAccessTokenRenewerForTest(async () => '새토큰')
+    const fetcher = jest.fn(async () => response(401, {}))
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(프렌즈, 로그인)).rejects.toBeInstanceOf(NexonSignInRequiredError)
+    expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  it('세션까지 죽어 새 토큰을 못 받으면 그대로 올린다', async () => {
+    // 서버가 401 signin_required 를 줬다. 부르는 쪽이 이것을 보고 재로그인을 띄운다.
+    setAccessTokenRenewerForTest(async () => null)
+    const fetcher = jest.fn(async () => response(401, {}))
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(프렌즈, 로그인)).rejects.toBeInstanceOf(NexonSignInRequiredError)
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+
+  it('API 키 자격의 401 은 토큰을 안 받는다', async () => {
+    // 키가 죽은 것이다. 받아 올 토큰이 없다.
+    const renew = jest.fn(async () => '새토큰')
+    setAccessTokenRenewerForTest(renew)
+    stubGlobal('fetch', jest.fn(async () => response(401, {})))
+
+    await expect(requestJson(프렌즈, { kind: 'apiKey', value: '내키' })).rejects.toBeInstanceOf(
+      NexonAuthError,
+    )
+    expect(renew).not.toHaveBeenCalled()
+  })
+
+  it('배선이 없으면 종전대로 던진다', async () => {
+    setAccessTokenRenewerForTest(null)
+    const fetcher = jest.fn(async () => response(401, {}))
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(프렌즈, 로그인)).rejects.toBeInstanceOf(NexonSignInRequiredError)
+    expect(fetcher).toHaveBeenCalledTimes(1)
   })
 })
 

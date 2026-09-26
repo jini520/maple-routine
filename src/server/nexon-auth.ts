@@ -53,19 +53,54 @@ export async function startNexonLogin(platform: Platform): Promise<NexonLoginSta
   return postJson<NexonLoginStart>('/auth/nexon/start', { platform })
 }
 
+/** 서버가 교환으로 돌려주는 것. **액세스 토큰까지 온다.** */
+export interface NexonSessionTokens {
+  session: string
+  accessToken: string
+  accessExpiresAt: string
+}
+
 /**
- * 받은 `code` 를 세션으로 바꾼다. **검증값이 맞을 때만 서버가 교환한다.**
+ * 받은 `code` 를 세션과 액세스 토큰으로 바꾼다. **검증값이 맞을 때만 서버가 교환한다.**
  *
  * 검증값은 콜백 URL 에 안 실리고 앱과 서버 사이 https 로만 오간다. 안드로이드에서 콜백을
  * 가로챈 앱은 `code` 와 `state` 만 갖고 이 값이 없다.
+ *
+ * **갱신 토큰은 안 온다.** 갱신이 `client_secret` 을 요구해 서버만 할 수 있다.
  */
 export async function exchangeNexonCode(params: {
   code: string
   state: string
   verifier: string
-}): Promise<string> {
-  const { session } = await postJson<{ session: string }>('/auth/nexon/session', params)
-  return session
+}): Promise<NexonSessionTokens> {
+  return postJson<NexonSessionTokens>('/auth/nexon/session', params)
+}
+
+/**
+ * 살아 있는 액세스 토큰을 받는다. **만료가 가깝거나 넥슨이 401 을 줬을 때 부른다.**
+ *
+ * 갱신은 서버가 한다(`client_secret` 이 필요하다). 앱은 세션만 내밀면 된다.
+ *
+ * 세션이 죽었으면 서버가 401 을 주고 이 함수는 `null` 을 돌려준다. 던지지 않는 것은 부르는 쪽이
+ * **재로그인을 띄울지** 를 그 값으로 정하기 때문이다.
+ */
+export async function fetchNexonAccessToken(session: string): Promise<NexonSessionTokens | null> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  try {
+    const res = await fetch(`${BASE_URL}/auth/nexon/token`, {
+      method: 'POST',
+      headers: { 'x-nexon-session': session },
+      signal: controller.signal,
+    })
+    if (!res.ok) return null
+    const body = (await res.json()) as Omit<NexonSessionTokens, 'session'>
+    return { session, ...body }
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 /**

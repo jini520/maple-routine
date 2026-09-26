@@ -6,6 +6,7 @@ import {
   removeApiKey,
   setApiKey,
   setNexonLogin,
+  updateNexonAccessToken,
 } from '../api-key'
 import { STORAGE_KEYS } from '../keys'
 
@@ -204,27 +205,32 @@ describe('무효화된 키 하나만 지운다', () => {
 })
 
 // 로그인은 0~1개다. 앱 사용자를 식별하는 축이고 키는 거기 붙는 자원이라 둘 이상일 이유가 없다.
+/** 교환이 돌려주는 한 벌. 세션과 액세스 토큰을 함께 적는다. */
+function 로그인(session: string, accessToken = '액세스-' + session, expiresAt = '2026-09-27T12:30:00.000Z') {
+  return { session, accessToken, accessExpiresAt: expiresAt }
+}
+
 describe('넥슨 로그인 자리', () => {
   it('로그인만 있어도 수단이 있는 것이다', async () => {
-    await setNexonLogin('세션-가')
+    await setNexonLogin(로그인('세션-가'))
 
     const config = await getAuthConfig()
-    expect(config?.login).toEqual({ kind: 'login', session: '세션-가' })
+    expect(config?.login).toMatchObject({ kind: 'login', session: '세션-가', accessToken: '액세스-세션-가' })
     expect(config?.apiKeys).toEqual([])
   })
 
   it('다시 로그인하면 갈아끼운다. 늘지 않는다', async () => {
-    await setNexonLogin('세션-가')
-    await setNexonLogin('세션-나')
+    await setNexonLogin(로그인('세션-가'))
+    await setNexonLogin(로그인('세션-나'))
 
-    expect((await getAuthConfig())?.login).toEqual({ kind: 'login', session: '세션-나' })
+    expect((await getAuthConfig())?.login).toMatchObject({ kind: 'login', session: '세션-나' })
   })
 
   it('로그인을 붙여도 키는 안 건드린다', async () => {
     // 같은 계정인지 대조해 키를 지우는 일은 따로다(#541).
     await setApiKey('키-가', '본계정')
 
-    await setNexonLogin('세션-가')
+    await setNexonLogin(로그인('세션-가'))
 
     expect((await getAuthConfig())?.apiKeys).toEqual([
       { kind: 'apiKey', label: '본계정', value: '키-가' },
@@ -232,15 +238,15 @@ describe('넥슨 로그인 자리', () => {
   })
 
   it('키를 더해도 로그인은 남는다', async () => {
-    await setNexonLogin('세션-가')
+    await setNexonLogin(로그인('세션-가'))
 
     await setApiKey('키-가')
 
-    expect((await getAuthConfig())?.login).toEqual({ kind: 'login', session: '세션-가' })
+    expect((await getAuthConfig())?.login).toMatchObject({ kind: 'login', session: '세션-가' })
   })
 
   it('로그인을 떼면 키는 남는다', async () => {
-    await setNexonLogin('세션-가')
+    await setNexonLogin(로그인('세션-가'))
     await setApiKey('키-가')
 
     await clearNexonLogin()
@@ -251,7 +257,7 @@ describe('넥슨 로그인 자리', () => {
   })
 
   it('로그인만 있던 사용자는 떼고 나면 수단이 없다', async () => {
-    await setNexonLogin('세션-가')
+    await setNexonLogin(로그인('세션-가'))
 
     await clearNexonLogin()
 
@@ -260,19 +266,43 @@ describe('넥슨 로그인 자리', () => {
 
   it('키를 전부 지워도 로그인은 남는다', async () => {
     // 키 무효화가 로그인까지 끊으면 안 된다. 둘은 다른 수단이다.
-    await setNexonLogin('세션-가')
+    await setNexonLogin(로그인('세션-가'))
     await setApiKey('키-가')
 
     await removeApiKey('키-가')
 
-    expect((await getAuthConfig())?.login).toEqual({ kind: 'login', session: '세션-가' })
+    expect((await getAuthConfig())?.login).toMatchObject({ kind: 'login', session: '세션-가' })
   })
 
   it('연결 해제는 로그인까지 버린다', async () => {
-    await setNexonLogin('세션-가')
+    await setNexonLogin(로그인('세션-가'))
 
     await clearAuthConfig()
 
     await expect(getAuthConfig()).resolves.toBeNull()
+  })
+})
+
+// 액세스 토큰은 30분이라 세션보다 훨씬 자주 바뀐다. 그때 세션까지 다시 쓰면 갈아끼우는 값이
+// 둘이 되고, 한쪽만 써지는 순간이 생긴다.
+describe('액세스 토큰만 갈아끼우기', () => {
+  it('세션은 그대로 두고 토큰만 바꾼다', async () => {
+    await setNexonLogin(로그인('세션-가'))
+
+    await updateNexonAccessToken('새액세스', '2026-09-27T13:00:00.000Z')
+
+    const login = (await getAuthConfig())?.login
+    expect(login?.session).toBe('세션-가')
+    expect(login?.accessToken).toBe('새액세스')
+    expect(login?.accessExpiresAt).toBe('2026-09-27T13:00:00.000Z')
+  })
+
+  it('로그인이 없으면 아무 일도 안 한다', async () => {
+    // 로그아웃과 토큰 받기가 겹치면 여기 온다. 없는 로그인을 만들어 내면 안 된다.
+    await setApiKey('키-가')
+
+    await updateNexonAccessToken('새액세스', '2026-09-27T13:00:00.000Z')
+
+    expect((await getAuthConfig())?.login).toBeNull()
   })
 })
