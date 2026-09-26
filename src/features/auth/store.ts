@@ -13,6 +13,7 @@ import { probeApiKeyStage } from '../../nexon/key-stage'
 import { isInvalidApiKeyError, NexonRateLimitError } from '../../nexon/errors'
 import {
   clearAuthConfig,
+  clearNexonLogin,
   getAuthConfig,
   removeAllApiKeys,
   removeApiKey,
@@ -42,7 +43,7 @@ export interface AuthStore extends AuthState {
   // 401/403)와 429 둘이고 사슬은 하나이며 문구만 갈린다. 알리기만 하고 이동·삭제는 아래
   // confirmApiKeyNotice 가 한다.
   noticeApiKeyIssue(kind: ApiKeyNoticeKind, apiKey?: string): void
-  // 그 모달의 "확인". 로그인 화면으로 이동하고 저장된 apiKey 를 지운다(원인과 무관하게 같다).
+  // 그 모달의 "확인". 죽은 수단을 지우고, 남은 수단이 없을 때만 로그인 화면으로 보낸다.
   confirmApiKeyNotice(): Promise<void>
   // 연결 해제. 저장된 인증 정보를 통째로 버린다.
   signOut(): Promise<void>
@@ -147,29 +148,46 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     )
   },
 
-  // 모달의 확인. 여기서야 이동과 삭제가 일어난다. 원인별로 갈라 처리하지 않는다. 429 도 키를
-  // 지운다. 안 지우면 재시작 때 같은 키로 앱이 열려 또 막히고, 사용자에게는 재시작하면 되는
-  // 것처럼 보이다가 안 되는 상태가 된다. 같은 키를 다시 붙여넣는 것은 안 막는다.
+  // 모달의 확인. 여기서야 삭제와 이동이 일어난다. **차례가 그 순서인 것이 요점이다.** 남은
+  // 수단은 지운 뒤에야 셀 수 있고, 그 수가 로그인 화면으로 보낼지 앱을 세워 둘지를 가른다.
+  //
+  // 429 도 키를 지운다. 안 지우면 재시작 때 같은 키로 앱이 열려 또 막히고, 사용자에게는
+  // 재시작하면 되는 것처럼 보이다가 안 되는 상태가 된다. 같은 키를 다시 붙여넣는 것은 안 막는다.
   async confirmApiKeyNotice() {
     const notice = get().apiKeyNotice
     if (notice === null) {
       return
     }
 
-    // 이동은 상태를 뒤집는 것으로 일어난다. 스토어는 라우터를 모른다. 무효화와 연결 해제의
-    // 차이는 상태가 아니라 저장소에서 무엇을 지우는가에 있다.
-    set((state) => authReducer(state, { type: 'SIGNED_OUT' }))
-    useAppEntryStore.getState().reset()
-
+    let 지웠다 = true
     try {
+      // 로그인 만료는 로그인 하나만 뗀다. API 키를 함께 지우면 멀쩡한 키를, 여럿이면 다른 넥슨
+      // 계정의 키까지 잃는다.
+      if (notice.kind === 'signInRequired') await clearNexonLogin()
       // 어느 키가 죽었는지 실패가 실어 보냈으면 **그 키만** 지운다. 안 실렸으면 가릴 방법이
       // 없어 전부 지운다. 키가 여럿인 사용자에게 그것은 다른 넥슨 계정의 키까지 잃는 일이다.
-      if (notice.apiKey === null) await removeAllApiKeys()
+      else if (notice.apiKey === null) await removeAllApiKeys()
       else await removeApiKey(notice.apiKey)
     } catch {
       // 삭제가 실패하면 재시작 시 옛 무효 키가 되살아나지만 그때는 다시 이 경로를 탈 뿐이라
       // 막다른 길이 아니다. rethrow 하면 호출부가 전부 void 호출이라 미처리 rejection 이 된다.
+      지웠다 = false
     }
+
+    // 무엇이 남았는지 모르면 로그인 화면으로 보낸다. 앱을 세워 두면 죽은 수단이 그대로 남아
+    // 같은 실패를 무한히 다시 만난다.
+    const 남은수단 = 지웠다 ? await getAuthConfig().catch(() => null) : null
+    if (남은수단 !== null) {
+      // 남은 수단으로 앱은 계속 선다. 알림만 닫는다. 여기서 로그아웃을 내면 그 수단으로
+      // 조회되던 메이플 ID 까지 함께 잃는다.
+      set((state) => authReducer(state, { type: 'NOTICE_ACKNOWLEDGED' }))
+      return
+    }
+
+    // 이동은 상태를 뒤집는 것으로 일어난다. 스토어는 라우터를 모른다. 화면 목록을 가르는 진입
+    // 게이트도 함께 되돌린다.
+    set((state) => authReducer(state, { type: 'SIGNED_OUT' }))
+    useAppEntryStore.getState().reset()
   },
 
   async signOut() {

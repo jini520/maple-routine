@@ -5,15 +5,17 @@ import { useAuthStore } from './store'
 
 /**
  * 스케줄 동기화·로스터 조회가 저장된 키로는 앞으로 갈 수 없는 실패로 끝나면 키 재입력 경로로
- * 넘긴다. 원인은 둘이다.
+ * 넘긴다. 원인은 셋이다.
  *
  * - `invalidApiKey`(401/403 · 400 `OPENAPI00005`). 키가 폐기됐다
  * - `rateLimited`(429). 개발 단계 키의 호출 한도를 넘었다
+ * - `signInRequired`(로그인 자격의 401/403). 넥슨 로그인이 만료됐다
  *
- * 원인이 다른데 한 경로를 타는 것은 처방이 같기 때문이다. 둘 다 사용자가 새 키를 넣어야 한다.
- * 갈리는 것은 모달 문구뿐이라 그 구분만 `kind` 로 실어 보낸다.
+ * 원인이 다른데 한 경로를 타는 것은 **저장된 수단으로는 앞으로 갈 수 없다**가 셋 다 같기
+ * 때문이다. 처방은 앞 둘이 새 키, 마지막이 재로그인으로 갈리고, 그 갈림은 `kind` 를 받은
+ * 모달 문구와 확인이 지우는 범위가 진다.
  *
- * 여기서 하는 일은 알리는 것뿐이다. 모달을 띄우고, 이동·삭제는 확인을 누를 때 일어난다.
+ * 여기서 하는 일은 알리는 것뿐이다. 모달을 띄우고, 삭제·이동은 확인을 누를 때 일어난다.
  * 중복 호출은 `noticeApiKeyIssue()` 안의 멱등 가드가 막는다.
  *
  * `features/auth` 에 사는 것은 이 훅이 다루는 것이 동기화가 아니라 인증 상태이기
@@ -30,6 +32,7 @@ const routedErrors = new WeakSet<ScheduleSyncError>()
 const NOTICE_KIND: Partial<Record<ScheduleSyncError['kind'], ApiKeyNoticeKind>> = {
   invalidApiKey: 'invalid',
   rateLimited: 'rateLimited',
+  signInRequired: 'signInRequired',
 }
 
 export function useApiKeyNotice(error: ScheduleSyncError | null): void {

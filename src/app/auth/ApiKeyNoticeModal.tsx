@@ -5,10 +5,10 @@
  * 토스트는 스스로 사라지기까지 한다. 그래서 원래 화면이 뒤에 남은 채 이 모달이 덮이고,
  * 사용자가 확인을 눌러야 이동한다.
  *
- * 429(호출 한도 초과)가 이 사슬을 그대로 탄다. 원인은 달라도 처방이 같기 때문이다. 그래서 새
- * 알림 UI 를 만들지 않고 문구만 갈린다.
+ * 429(호출 한도 초과)와 넥슨 로그인 만료가 이 사슬을 그대로 탄다. 저장된 수단으로는 앞으로 갈
+ * 수 없다는 것이 셋 다 같기 때문이다. 그래서 새 알림 UI 를 만들지 않고 아이콘과 문구만 갈린다.
  *
- * 닫을 수 없다. `onClose` 가 no-op 이라 오버레이를 눌러도 닫히지 않고 취소 버튼도 없다. 두
+ * 닫을 수 없다. `onClose` 가 no-op 이라 오버레이를 눌러도 닫히지 않고 취소 버튼도 없다. 세
  * 원인 모두 그 상태에서는 어느 화면도 제 기능을 못 하므로 닫아서 돌아갈 곳이 없다.
  *
  * 배치는 `organisms/NoticeModal` 이 갖는다. 이 파일이 정하는 것은 아이콘 · 톤 · 문구뿐이다.
@@ -16,7 +16,7 @@
 import { useAuthStore } from '../../features/auth/store'
 import type { ApiKeyNoticeKind } from '../../features/auth/state'
 
-import { GaugeIcon, KeyRoundIcon } from '../../components/atoms'
+import { CircleUserRoundIcon, GaugeIcon, KeyRoundIcon } from '../../components/atoms'
 import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 
 interface NoticeCopy {
@@ -41,6 +41,13 @@ const NOTICE_COPY: Record<ApiKeyNoticeKind, NoticeCopy> = {
     title: '호출 한도를 초과했습니다',
     body: '서비스 단계 키로 다시 입력해주세요.',
   },
+  // 다음에 무슨 일이 일어나는지 말하지 않는다. 이 원인만 **사용자마다 다르다** - API 키가 남아
+  // 있으면 확인을 눌러도 화면이 그대로다. 대신 두 갈래에서 모두 참인 처방을 말한다.
+  signInRequired: {
+    icon: CircleUserRoundIcon,
+    title: '넥슨 로그인이 만료됐습니다',
+    body: '다시 로그인해주세요.',
+  },
 }
 
 export function ApiKeyNoticeModal(): React.JSX.Element | null {
@@ -57,10 +64,10 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
   const { icon, title, body } = NOTICE_COPY[apiKeyNotice.kind]
 
   return (
-    // 톤은 두 원인 모두 `error` 다. 429 도 어미 규칙상 실패(`~습니다`)이고 error-resilience.md 의
+    // 톤은 세 원인 모두 `error` 다. 429 도 어미 규칙상 실패(`~습니다`)이고 error-resilience.md 의
     // 실패 표에 함께 서 있다. 아이콘만 원인을 가리킨다: 무효 키는 `KeyRound`, 한도 초과는
-    // 계기판(`Gauge`). 시간이 지나면 풀린다는 뜻이 읽히는 타이머 계열은 처방(키 단계 확인)과
-    // 어긋나 고르지 않았다.
+    // 계기판(`Gauge`), 로그인 만료는 사람(`CircleUserRound`). 시간이 지나면 풀린다는 뜻이 읽히는
+    // 타이머 계열은 처방(키 단계 확인)과 어긋나 고르지 않았다.
     <NoticeModal
       icon={icon}
       tone="error"

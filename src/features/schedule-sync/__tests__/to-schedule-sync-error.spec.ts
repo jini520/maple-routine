@@ -4,6 +4,7 @@ import {
   NexonNetworkError,
   NexonNoCharacterError,
   NexonRateLimitError,
+  NexonSignInRequiredError,
 } from '../../../nexon/errors'
 import { formatScheduleSyncError } from '../format'
 import { toScheduleSyncError } from '../schedule-sync'
@@ -78,6 +79,7 @@ describe('formatScheduleSyncError: 새 종류의 문구', () => {
         'characterUnavailable',
         'periodOutOfRange',
         'notCollected',
+        'signInRequired',
       ] as const
     ).map((kind) => formatScheduleSyncError({ kind }))
 
@@ -92,5 +94,25 @@ describe('formatScheduleSyncError: 새 종류의 문구', () => {
 
   it('notCollected 문구는 시각을 말하지 않는다 (집계 시각 미확정)', () => {
     expect(formatScheduleSyncError({ kind: 'notCollected' })).not.toMatch(/오전|오후|\d시/)
+  })
+})
+
+describe('로그인 만료는 무효 키와 다른 종류다', () => {
+  it('NexonSignInRequiredError 는 signInRequired 다', () => {
+    expect(toScheduleSyncError(new NexonSignInRequiredError('만료'))).toEqual({
+      kind: 'signInRequired',
+    })
+  })
+
+  it('실은 키가 있어도 안 싣는다', () => {
+    // 로그인으로 부르다 난 실패라 탓할 키가 없다. 실으면 확인이 멀쩡한 키를 지운다.
+    expect(toScheduleSyncError(new NexonSignInRequiredError('만료'), '키')).toEqual({
+      kind: 'signInRequired',
+    })
+  })
+
+  it('무효 키 판정에 걸리지 않는다', () => {
+    // NexonAuthError 를 상속하면 여기서 invalidApiKey 로 접혀 지금 결함으로 되돌아간다.
+    expect(toScheduleSyncError(new NexonSignInRequiredError('만료')).kind).not.toBe('invalidApiKey')
   })
 })
