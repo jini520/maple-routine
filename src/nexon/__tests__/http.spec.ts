@@ -5,7 +5,7 @@ import {
   NexonRateLimitError,
 } from '../errors'
 import { __setDeveloperKeysForTest } from '../developer-keys'
-import { requestJson } from '../http'
+import { requestJson, setAccessTokenRenewerForTest } from '../http'
 import type { NexonCredential } from '../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
@@ -317,5 +317,68 @@ describe('requestJson: 로그인은 프렌즈 밖 경로를 개발자 키로 부
 
     const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
     expect(headers['x-nxopen-api-key']).toBe('내키')
+  })
+})
+
+describe('requestJson: 액세스 토큰이 만료되면 새로 받아 한 번 재시도한다', () => {
+  // 토큰이 30분이라 **한 회차 안에서 만료될 수 있다**. 강화 내역 수백 건이 그 자리다.
+  // 시작할 때만 확인하면 중간부터 전부 401 로 무너진다.
+  const 로그인 = { kind: 'login', value: '옛토큰' } as const
+  const 프렌즈 = '/maplestory/v1/character/list'
+
+  afterEach(() => {
+    setAccessTokenRenewerForTest(null)
+  })
+
+  it('401 이면 새 토큰으로 다시 부른다', async () => {
+    setAccessTokenRenewerForTest(async () => '새토큰')
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async (_url, init) => {
+      const auth = (init?.headers as Record<string, string>).Authorization
+      return auth === 'Bearer 새토큰' ? response(200, { ok: true }) : response(401, {})
+    })
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(프렌즈, 로그인)).resolves.toEqual({ ok: true })
+    expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  it('새 토큰도 401 이면 그 실패를 올린다. 무한히 안 돈다', async () => {
+    setAccessTokenRenewerForTest(async () => '새토큰')
+    const fetcher = jest.fn(async () => response(401, {}))
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(프렌즈, 로그인)).rejects.toBeInstanceOf(NexonAuthError)
+    expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  it('세션까지 죽어 새 토큰을 못 받으면 그대로 올린다', async () => {
+    // 서버가 401 signin_required 를 줬다. 부르는 쪽이 이것을 보고 재로그인을 띄운다.
+    setAccessTokenRenewerForTest(async () => null)
+    const fetcher = jest.fn(async () => response(401, {}))
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(프렌즈, 로그인)).rejects.toBeInstanceOf(NexonAuthError)
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+
+  it('API 키 자격의 401 은 토큰을 안 받는다', async () => {
+    // 키가 죽은 것이다. 받아 올 토큰이 없다.
+    const renew = jest.fn(async () => '새토큰')
+    setAccessTokenRenewerForTest(renew)
+    stubGlobal('fetch', jest.fn(async () => response(401, {})))
+
+    await expect(requestJson(프렌즈, { kind: 'apiKey', value: '내키' })).rejects.toBeInstanceOf(
+      NexonAuthError,
+    )
+    expect(renew).not.toHaveBeenCalled()
+  })
+
+  it('배선이 없으면 종전대로 던진다', async () => {
+    setAccessTokenRenewerForTest(null)
+    const fetcher = jest.fn(async () => response(401, {}))
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(프렌즈, 로그인)).rejects.toBeInstanceOf(NexonAuthError)
+    expect(fetcher).toHaveBeenCalledTimes(1)
   })
 })

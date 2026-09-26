@@ -13,6 +13,8 @@ import {
   setThemeAppearancePort,
 } from './native/ports'
 import { setPreferencesPort, setSqlitePort } from './storage/ports'
+import { setAccessTokenRenewer } from './nexon/http'
+import { renewNexonAccessToken } from './features/auth/renew-access-token'
 
 import { rnAdsPort } from './native/adapters/rn-ads'
 import { rnBackGesturePort } from './native/adapters/rn-back-gesture'
@@ -94,4 +96,9 @@ export function installPorts(): void {
   setThemeAppearancePort(rnThemeAppearancePort)
 
   setLiveUpdatePort(rnLiveUpdatePort)
+
+  // 포트는 아니지만 방향을 뒤집는 것은 같다. `nexon/` 이 저장소와 우리 서버를 직접 부르면
+  // 계층이 거꾸로 선다. 액세스 토큰이 30분이라 긴 회차는 중간에 만료되고, 그때 이 함수가
+  // 새 토큰을 받아 와 부르던 쪽이 한 번 더 시도한다.
+  setAccessTokenRenewer(renewNexonAccessToken)
 }

@@ -98,16 +98,54 @@ export async function requestJson<T>(path: string, credential: NexonCredential):
   try {
     return await requestOnce<T>(path, credential)
   } catch (error) {
-    // 개발자 키가 죽었다. **그 키를 빼고 남은 키로 한 번 더** 부른다. 키를 둘 둔 이유가
-    // 이것이다. 뺀 표시는 남아 있어 다음 요청부터는 처음부터 산 키로 간다.
-    const dead = deadDeveloperKeyOf(error)
-    if (dead === null) throw error
-    markDeveloperKeyDead(dead)
-    // 남은 키가 없으면 `routeOf` 가 던져 준다. 그때는 원래 실패를 올린다.
-    if (nextDeveloperKey() === null) throw error
-    return await requestOnce<T>(path, credential)
+    // 재시도는 **한 번뿐**이다. 두 번째도 같은 실패면 올린다. 그래야 안 도는 것이 보장된다.
+    const 다시 = await retryWith(path, credential, error)
+    if (다시 === null) throw error
+    return (await requestOnce<T>(path, 다시)) as T
   }
 }
+
+/**
+ * 이 실패를 **다시 해 볼 수 있나.** 할 수 있으면 그때 쓸 자격, 없으면 `null`.
+ *
+ * 둘뿐이다. 개발자 키가 죽었거나(그 키를 빼고 남은 키로) 액세스 토큰이 만료됐거나(새로 받아서).
+ * 둘 다 `한 번 더 부르면 되는` 실패라, 사용자에게 알릴 것이 없다.
+ */
+async function retryWith(
+  path: string,
+  credential: NexonCredential,
+  error: unknown,
+): Promise<NexonCredential | null> {
+  // 개발자 키가 죽었다. 뺀 표시는 남아 있어 다음 요청부터는 처음부터 산 키로 간다.
+  const dead = deadDeveloperKeyOf(error)
+  if (dead !== null) {
+    markDeveloperKeyDead(dead)
+    // 남은 키가 없으면 원래 실패를 올린다. `routeOf` 가 다시 던질 뿐이다.
+    return nextDeveloperKey() === null ? null : credential
+  }
+
+  // 액세스 토큰이 30분을 넘겼다. **키 자격은 여기 안 온다** - 키가 죽은 것이라 받아 올 토큰이
+  // 없다. 세션까지 죽었으면 갱신이 `null` 을 주고, 부르는 쪽이 그 401 을 보고 재로그인을 띄운다.
+  if (!(error instanceof NexonAuthError) || credential.kind !== 'login') return null
+  const renewed = await renewAccessToken?.()
+  return renewed == null ? null : { kind: 'login', value: renewed }
+}
+
+/**
+ * 새 액세스 토큰을 받아 오는 함수. **앱이 부팅 때 꽂는다.**
+ *
+ * `nexon/` 이 저장소와 우리 서버를 직접 부르면 계층이 거꾸로 선다. 그래서 방향을 여기서
+ * 뒤집는다(`native/ports.ts` 와 같은 태도). 안 꽂혀 있으면 재시도하지 않고 401 을 그대로 올린다.
+ */
+let renewAccessToken: (() => Promise<string | null>) | null = null
+
+/** 부팅이 한 번 부른다. */
+export function setAccessTokenRenewer(renew: (() => Promise<string | null>) | null): void {
+  renewAccessToken = renew
+}
+
+/** 테스트가 갈아끼운다. 이름을 가른 것은 부팅 배선과 섞이지 않게 하려는 것이다. */
+export const setAccessTokenRenewerForTest = setAccessTokenRenewer
 
 /**
  * 이 실패가 **개발자 키를 빼야 하는 것**인가. 맞으면 그 키.
