@@ -34,6 +34,8 @@ import { NOTICE_KINDS, type Notice, type NoticeKind } from '../../types/notice'
 import { NoticeBannerRail } from './NoticeBannerRail'
 import { NoticeBannerSkeleton, NoticeLinesSkeleton } from './NoticeSkeleton'
 import { NexonLoginButton } from '../../components/molecules/NexonLoginButton/NexonLoginButton'
+import { hasNexonLogin } from '../../features/auth/saved-key'
+import { signInWithNexon } from '../../features/auth/nexon-login'
 import { NoticeLines } from './NoticeLines'
 import { SectionTitle } from './SectionTitle'
 import { SettingsLinkRow } from './SettingsLinkRow'
@@ -209,6 +211,38 @@ export function SettingsScreen(): React.JSX.Element {
     if (allFailed) useToastStore.getState().showError('소식을 불러오지 못했습니다')
   }, [showKind, settleUnknown])
 
+  // 로그인이 붙어 있으면 버튼을 안 세운다. **모르는 동안에도 안 세운다** - 세웠다 지우면
+  // 소식이 한 칸 튀어오른다.
+  const [showNexonLogin, setShowNexonLogin] = useState(false)
+
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true
+      void hasNexonLogin().then((has) => {
+        if (alive) setShowNexonLogin(!has)
+      })
+      return () => {
+        alive = false
+      }
+    }, []),
+  )
+
+  // 창을 여는 것부터 세션을 적는 것까지 `signInWithNexon` 안에 있다. 여기서 하는 일은 끝을
+  // 화면에 옮기는 것뿐이다.
+  async function handleNexonLogin(): Promise<void> {
+    const result = await signInWithNexon()
+    // 사용자가 창을 닫은 것이라 아무 일도 안 일어난 것이다. 안내를 띄우면 자기가 닫아 놓고
+    // 무엇이 잘못됐나 찾게 된다.
+    if (result.kind === 'cancelled') return
+    if (result.kind === 'failed') {
+      // 버튼은 남긴다. 치우면 다시 눌러 볼 길이 없다.
+      useToastStore.getState().showError('넥슨 로그인에 실패했습니다')
+      return
+    }
+    setShowNexonLogin(false)
+    useToastStore.getState().showSuccess('넥슨 계정을 연결했어요')
+  }
+
   const openNotice = (notice: Notice): void => navigation.navigate('SettingsNoticeDetail', { noticeId: notice.id })
 
   return (
@@ -241,19 +275,16 @@ export function SettingsScreen(): React.JSX.Element {
         {/* 영역 사이만 넓힌다. 머리와 첫 영역까지 벌리면 제목이 내용과 떨어져 보인다. */}
         <View className="gap-7">
           {/*
-            검수 캡처용. **이 브랜치에만 있다**(ADR-296 결정 7 · ADR-318 결정 5).
+            **키로 이미 들어온 사용자의 유일한 진입점이다.** 로그인 화면은 저장된 수단이 하나도
+            없을 때만 서서 그 사용자에게는 다시 안 보이고, 설정은 톱니바퀴 뒤라 한 단계 더 깊다.
 
-            **키로 이미 들어온 사용자는 로그인 화면을 다시 못 본다.** 그래서 앱 안에 자리가 필요하고,
-            여기가 그 자리다(사용자 지정 2026-09-26). 소식 아래에 두면 갈래 셋이 한 화면을 넘게 써서
-            화면을 넘겨도 안 보인다(시뮬레이터 확인).
+            이 탭 안에서도 소식 아래면 안 보인다. 갈래 셋에 배너 둘이 커서 첫 화면을 넘게 쓴다
+            (시뮬레이터 확인. 한 번 넘겨도 버튼이 안 나왔다).
 
-            이 화면의 `소식이 맨 위다` 와 맞바꾼 것이다. 로그인하면 이 버튼이 사라져 소식이 다시
-            맨 위로 올라온다.
-
-            **누르는 것을 안 잇는다.** 지금 깔린 빌드에 `ExpoWebBrowser` 가 없어 import 만으로
-            앱이 죽는다.
+            **한 번 누르면 끝이라** 이 화면의 소식이 맨 위다 와 영구히 부딪치지 않는다. 로그인하면
+            버튼이 사라져 소식이 다시 맨 위로 올라온다.
           */}
-          <NexonLoginButton onPress={() => {}} />
+          {showNexonLogin && <NexonLoginButton onPress={() => void handleNexonLogin()} />}
           {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
               한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
           {NOTICE_SECTIONS.map((section) => (
