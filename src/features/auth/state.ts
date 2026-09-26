@@ -35,6 +35,9 @@ export interface ApiKeyNotice {
 export type ApiKeyNoticeKind =
   | 'invalid' // 400 OPENAPI00005 · 401/403. 키 자체가 무효해졌다
   | 'rateLimited' // 429. 개발 단계 키의 호출 한도 초과
+  // 우리 서버가 세션을 거절했다(갱신 토큰 14일). 이 종류만 `apiKey` 가 늘 `null` 이고, 확인이
+  // 지우는 것도 로그인 하나다. 키와 섞으면 멀쩡한 키가 사라진다.
+  | 'signInRequired'
 
 export interface AuthState {
   status: AuthStatus
@@ -85,6 +88,9 @@ export type AuthEvent =
   // 넣은 키가 개발 단계였다. 폼으로 되돌리고 그 위에 모달을 덮는다.
   | { type: 'DEVELOPMENT_STAGE_KEY_BLOCKED' }
   | { type: 'DEVELOPMENT_STAGE_KEY_ACKNOWLEDGED' }
+  // 알림만 끄고 status 는 그대로 둔다. 죽은 수단을 지운 뒤에도 남은 수단이 있을 때의 확인이다.
+  // 아래 `SIGNED_OUT` 과 갈리는 자리다. 저쪽은 수단이 하나도 안 남았을 때다.
+  | { type: 'NOTICE_ACKNOWLEDGED' }
   | { type: 'SIGNED_OUT' }
 
 export function authReducer(state: AuthState, event: AuthEvent): AuthState {
@@ -152,6 +158,12 @@ export function authReducer(state: AuthState, event: AuthEvent): AuthState {
       return {
         ...state,
         developmentStageBlocked: false,
+      }
+
+    case 'NOTICE_ACKNOWLEDGED':
+      return {
+        ...state,
+        apiKeyNotice: null,
       }
 
     case 'SIGNED_OUT':

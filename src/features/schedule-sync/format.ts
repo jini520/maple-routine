@@ -26,6 +26,9 @@ export function formatScheduleSyncError(error: ScheduleSyncError): string {
       return '아직 집계되지 않았습니다'
     case 'network':
       return '네트워크 오류가 발생했습니다'
+    // 키를 가리키면 안 된다. 키를 다시 넣어도 안 풀린다.
+    case 'signInRequired':
+      return '넥슨 로그인이 만료됐습니다'
     default:
       return assertNever(error)
   }
@@ -97,6 +100,13 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
         description: '네트워크 연결을 확인해주세요',
         action: RETRY,
       }
+    // 자리를 안 가른다. 두 자리 모두 처방이 재로그인 하나다. 재시도는 주지 않는다 - 그 경로에는
+    // 탓할 키도, 눌러서 달라질 것도 없다.
+    case 'signInRequired':
+      return {
+        title: '넥슨 로그인이 만료됐습니다',
+        description: '다시 로그인해주세요',
+      }
     default:
       return assertNever(error)
   }
@@ -141,6 +151,8 @@ export function formatStaleRosterError(error: ScheduleSyncError): StaleRosterErr
     case 'notCollected':
     case 'network':
       return { message: '목록이 최신이 아닙니다', action: RETRY }
+    case 'signInRequired':
+      return { message: '넥슨 로그인이 만료되어 목록을 갱신하지 못했습니다' }
     default:
       return assertNever(error)
   }

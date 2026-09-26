@@ -10,6 +10,7 @@ import {
   NexonBadRequestError,
   NexonNoCharacterError,
   NexonRateLimitError,
+  NexonSignInRequiredError,
 } from '../../nexon/errors'
 // 400 하나에 처방이 전혀 다른 세 실패가 들어 있어 종류를 갈라 담는다. 재시도 가능성이 셋 다
 // 다르다. characterUnavailable 은 영구, notCollected 는 나중에 자동으로 풀리고,
@@ -34,6 +35,11 @@ export type ScheduleSyncError =
   | ({ kind: 'periodOutOfRange' } & WithApiKey) // 400 OPENAPI00004. 그 날짜를 조회할 수 없다
   | ({ kind: 'notCollected' } & WithApiKey) // 400 OPENAPI00009. 아직 집계 전(시간이 지나면 풀린다)
   | ({ kind: 'network' } & WithApiKey) // 그 외 네트워크/파싱 실패 + 코드를 모르는 400
+  // 우리 서버가 세션을 거절했다. 키가 아니라 로그인이 만료된 것이라 처방이 재로그인이다.
+  // `WithApiKey` 를 함께 붙이지만 **값은 안 싣는다** - 로그인으로 부르다 난 실패라 탓할 키가
+  // 없다. 교차 타입을 유지하는 것은 소비자가 `error.apiKey` 를 종류마다 갈라 읽지 않게 하려는
+  // 것뿐이다.
+  | ({ kind: 'signInRequired' } & WithApiKey)
 
 // 호출부가 reject 를 원인으로 변환할 수 있게 export 한다. 피커·온보딩 스텝이
 // `getCharacterPickerRoster` 의 catch 에서 이것을 통과시켜 loadError 로 내려준다.
@@ -44,6 +50,11 @@ export function toScheduleSyncError(error: unknown, apiKey?: string): ScheduleSy
   // 00005 가 "모르는 400" 으로 network 에 흡수돼 원래 결함으로 되돌아간다.
   if (isInvalidApiKeyError(error)) {
     return { kind: 'invalidApiKey', ...실은키 }
+  }
+  // 무효 키 판정보다 뒤에 둬도 안전하다. 이 클래스는 NexonAuthError 를 상속하지 않는다.
+  // 실은 키를 안 넘긴다. 로그인으로 부르다 난 실패라 지울 키가 없다.
+  if (error instanceof NexonSignInRequiredError) {
+    return { kind: 'signInRequired' }
   }
   if (error instanceof NexonRateLimitError) {
     return { kind: 'rateLimited', ...실은키 }
