@@ -37,7 +37,7 @@
 | 화면 | `app/auth/api-key-links.ts` | 폼과 모달이 함께 쓰는 발급 안내 주소 |
 | 화면 | `components/molecules/NexonLoginButton` | 넥슨 디자인 가이드대로 만든 로그인 버튼 |
 | 상태 | `features/auth/state.ts` | `AuthStatus` · `AuthError` · `ApiKeyNoticeKind` |
-| 상태 | `features/auth/store.ts` | `signIn` · `noticeApiKeyIssue` · `signOut` |
+| 상태 | `features/auth/store.ts` | `signIn` · `noticeApiKeyIssue` · `signOutNexonLogin` · `signOut` |
 | 상태 | `features/auth/format.ts` | `formatAuthError` |
 | 상태 | `features/auth/use-api-key-notice.ts` | 조회 실패를 키 재입력 경로로 넘기는 훅 |
 | API | `nexon/key-stage.ts` | `probeApiKeyStage`. 키가 개발 단계인지 잰다 |
@@ -193,6 +193,28 @@
 - **설정 화면에는 진입점을 두지 않는다**(2026-08-08 사용자 확정). 설정에 API 키 재입력 경로 자체가
   없어 가이드 링크만 놓으면 갈 곳 없는 안내가 된다.
 
+
+### 로그아웃 (구현 완료 2026-09-27)
+
+**연결 해제와 가른다.** 둘 다 내부 데이터(추적 목록 · 기록 · 설정)를 안 건드리는 것은 같고,
+**인증에서 지우는 범위**가 다르다.
+
+| | 지우는 것 | 남기는 것 |
+|---|---|---|
+| 로그아웃 | 넥슨 로그인(세션 + 액세스 토큰) | **API 키** · 내부 데이터 |
+| 연결 해제 | 인증 수단 전부(`clearAuthConfig`) | 내부 데이터 |
+
+- **서버 세션도 거둔다**(`revokeNexonSession`). 기기에서 지우기 **전에** 물어야 세션 값을 아직
+  들고 있다. 실패해도 진행한다 - 기기에서 지우는 것이 본론이고 서버 쪽은 갱신 토큰 수명이
+  지나면 정리된다.
+- **수단이 하나도 안 남으면 로그인 화면이다.** 남으면(다른 넥슨 계정의 API 키) 앱은 그 수단으로
+  계속 선다. [[ADR-317]] 결정 4 와 같은 규칙이고, 판정도 같은 자리(`getAuthConfig`)를 본다.
+- **확인 모달을 안 띄운다.** 되돌릴 수 있는 동작이라(다시 로그인하면 된다) 파괴적 행에만 쓰는
+  모달을 여기 두지 않는다. 연결 해제는 모달이 있다.
+
+**둘을 하나로 합치지 말 것**(사용자 지정 2026-09-27). 로그인만 쓰는 지금은 결과가 같아 보여
+합치고 싶어지는데, **뒤에 붙일 기능을 위해 자리를 갈라 둔 것**이다. 지금 갈리는 것은 다른 넥슨
+계정의 API 키가 남느냐 하나뿐이지만, 그 자리가 없으면 나중에 다시 만들어야 한다.
 
 ### 로그인이 만료되면 (구현 완료 2026-09-26, #542)
 

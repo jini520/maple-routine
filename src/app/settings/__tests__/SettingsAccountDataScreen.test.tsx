@@ -13,7 +13,7 @@
 // ⑤ **계정 변경 케이스 셋은 갱신이 아니라 삭제됐다**. 그 행이 없어졌으므로
 //    **어떻게 생겼는가**·**누르면 무엇이 열리는가** 는 물을 대상이 없다. 남는 계약(**그 행이 없다**)은
 //    아래 카드 케이스가 진다.
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, waitFor } from '@testing-library/react-native'
 
 import { clearCacheDataAndReload, loadCacheDataSizes } from '../../../features/settings/cache-data'
 import { useSettingsStore } from '../../../features/settings/store'
@@ -28,6 +28,13 @@ jest.mock('../../../features/settings/cache-data', () => ({
   clearCacheDataAndReload: jest.fn(async () => {}),
 }))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
+// 로그아웃 행은 로그인이 있을 때만 선다. 화면은 `features/` 를 거치고 저장소는 그 아래가 맡는다.
+jest.mock('../../../features/auth/saved-key', () => ({ hasNexonLogin: jest.fn() }))
+jest.mock('../../../features/auth/store', () => {
+  const signOutNexonLogin = jest.fn()
+  return { useAuthStore: (selector: (s: unknown) => unknown) => selector({ signOutNexonLogin }) }
+})
+const { hasNexonLogin: mockedHasNexonLogin } = jest.requireMock('../../../features/auth/saved-key') as Record<string, jest.Mock>
 const mockedStore = jest.mocked(useSettingsStore)
 const mockedLoadSizes = jest.mocked(loadCacheDataSizes)
 const mockedClearAndReload = jest.mocked(clearCacheDataAndReload)
@@ -90,6 +97,8 @@ beforeEach(() => {
     goBack,
   } as unknown as ReturnType<typeof useSettingsNavigation>)
   mockedLoadSizes.mockReturnValue(new Promise(() => {}))
+  // 기본은 로그인 없음. 행이 서는 케이스만 따로 세운다.
+  mockedHasNexonLogin.mockResolvedValue(false)
 })
 
 afterEach(() => {
@@ -215,5 +224,49 @@ describe('SettingsAccountDataScreen', () => {
     await press(buttons[buttons.length - 1])
 
     expect(disconnect).toHaveBeenCalledTimes(1)
+  })
+})
+
+// 로그아웃은 연결 해제와 다르다. 지우는 것은 넥슨 로그인 하나이고 API 키와 내부 데이터는 남는다.
+describe('넥슨 로그아웃 행', () => {
+  it('로그인이 있으면 선다', async () => {
+    mockedHasNexonLogin.mockResolvedValue(true)
+
+    const view = await renderOverlay(<SettingsAccountDataScreen />)
+
+    await waitFor(() => expect(view.getByText('넥슨 로그아웃')).toBeTruthy())
+  })
+
+  it('로그인이 없으면 안 선다. 뗄 것이 없다', async () => {
+    mockedHasNexonLogin.mockResolvedValue(false)
+
+    const view = await renderOverlay(<SettingsAccountDataScreen />)
+
+    await waitFor(() => expect(mockedHasNexonLogin).toHaveBeenCalled())
+    expect(view.queryByText('넥슨 로그아웃')).toBeNull()
+  })
+
+  it('판정 전에는 안 세운다', async () => {
+    mockedHasNexonLogin.mockReturnValue(new Promise(() => {}))
+
+    const view = await renderOverlay(<SettingsAccountDataScreen />)
+
+    expect(view.queryByText('넥슨 로그아웃')).toBeNull()
+  })
+
+  it('누르면 확인 모달 없이 바로 뗀다. 되돌릴 수 있는 동작이다', async () => {
+    mockedHasNexonLogin.mockResolvedValue(true)
+    const { useAuthStore } = jest.requireMock('../../../features/auth/store') as {
+      useAuthStore: (s: (v: { signOutNexonLogin: jest.Mock }) => unknown) => unknown
+    }
+    const signOut = useAuthStore((state) => state.signOutNexonLogin) as jest.Mock
+
+    const view = await renderOverlay(<SettingsAccountDataScreen />)
+    const row = await waitFor(() => view.getByText('넥슨 로그아웃'))
+
+    fireEvent.press(row)
+
+    expect(signOut).toHaveBeenCalledTimes(1)
+    expect(view.queryByText('연결을 해제할까요?')).toBeNull()
   })
 })
