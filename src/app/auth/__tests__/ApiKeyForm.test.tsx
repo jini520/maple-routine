@@ -5,18 +5,20 @@
 // ① `getByLabelText(/API 키/)` → `getByLabelText('Nexon Open API 키')`(RN 에는 라벨-컨트롤 연결이
 //    없어 `aria-label` 이 곧 접근성 이름이다).
 // ② `type="password"` → **`secureTextEntry`** 프롭을 본다.
-// ③ `getByRole('link', …)` + `href` → **`Linking.openURL` 이 무엇으로 불렸는가**. RN 에 `href` 가
-//  없으므로 링크의 계약은 "그 주소로 나간다" 하나뿐이고 이 지키려는 것도 그것이다.
+// ③ `getByRole('link', …)` + `href` → **`openInAppBrowser` 가 무엇으로 불렸는가**. RN 에 `href` 가
+//  없으므로 링크의 계약은 "그 주소를 연다" 하나뿐이고 이 지키려는 것도 그것이다.
 // ④ `toBeDisabled`·`aria-busy` 속성 대신 **`accessibilityState`** 를 본다. `Pressable` 이
 //    `disabled`·`aria-busy` 를 호스트 뷰에 그대로 넘기지 않고 그 객체로 접는다.
 // ⑤ Enter 제출 → `await fireEvent(input, 'submitEditing')`.
 import { fireEvent } from '@testing-library/react-native'
-import { Linking } from 'react-native'
 
-import { renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderAtom, 기본테마, type AtomElement } from '../../../components/__tests__/render-atom'
+import { openInAppBrowser } from '../../../native/browser'
 import { ApiKeyForm } from '../ApiKeyForm'
 
-const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true)
+jest.mock('../../../native/browser', () => ({ openInAppBrowser: jest.fn() }))
+
+const openBrowser = jest.mocked(openInAppBrowser)
 
 afterEach(() => {
   jest.clearAllMocks()
@@ -115,7 +117,7 @@ describe('ApiKeyForm', () => {
 
     await fireEvent.press(pressableOf(view.getByText('API 키 발급 방법 보기'), 'link'))
 
-    expect(openURL).toHaveBeenCalledWith('https://mapleroutine.store/api-key')
+    expect(openBrowser).toHaveBeenCalledWith('https://mapleroutine.store/api-key')
   })
 
   // 이미 키를 발급받은 사용자에게 7단계 안내를 경유시키지 않는다. 가이드와 별개의 진입점.
@@ -124,11 +126,10 @@ describe('ApiKeyForm', () => {
 
     await fireEvent.press(pressableOf(view.getByText('openapi.nexon.com에서 확인'), 'link'))
 
-    expect(openURL).toHaveBeenCalledWith('https://openapi.nexon.com')
+    expect(openBrowser).toHaveBeenCalledWith('https://openapi.nexon.com')
   })
 
-  // 갈림길 레이아웃: 가이드는 구분선 뒤에서 '누를 수 있는 크기'가 되지만 외부 URL로 나가는
-  // 이동이라 시맨틱은 링크다. 시맨틱을 `role` 로 남긴다.
+  // 인앱 브라우저로 열어도 목적지가 웹 문서인 것은 그대로다. 스크린리더가 링크로 읽어야 한다.
   it('두 진입점 모두 버튼이 아니라 링크 시맨틱이다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
 
@@ -136,12 +137,12 @@ describe('ApiKeyForm', () => {
     expect(pressableOf(view.getByText('openapi.nexon.com에서 확인'), 'link').props.role).toBe('link')
   })
 
-  // 온보딩 단계 중 이 화면에만 제목이 없었다. `ContentCharacterStep` 과 같은 블록을 쓴다.
-  it('제목과 보조문을 보여준다', async () => {
+  // 넥슨 블록과 **같은 골격**이다. 소제목과 그 아래 한 줄. 화면의 제목은 이 폼이 안 든다.
+  it('소제목과 그 아래 한 줄을 보여준다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
 
-    expect(view.getByText('넥슨 API 키를 입력해주세요')).toBeTruthy()
-    expect(view.getByText('스케줄러 API를 사용하려면 개인 API 키가 필요해요')).toBeTruthy()
+    expect(view.getByText('API 키로 시작하기')).toBeTruthy()
+    expect(view.getByText('넥슨 오픈 API에서 받은 키를 직접 넣어요')).toBeTruthy()
   })
 
   // 요청은 "수집하거나 저장하지 않는다"였으나 키는 기기에 저장된다(storage/api-key).
@@ -152,11 +153,21 @@ describe('ApiKeyForm', () => {
     expect(view.getByText('입력한 키는 이 기기에만 저장되고 넥슨 외 어디로도 전송되지 않아요')).toBeTruthy()
   })
 
-  it('아직 키가 없는 사용자를 위한 구분선 안내를 보여준다', async () => {
+  // 소제목이 이미 두 블록을 가른다. 선까지 두면 같은 일을 두 번 하고, 둘을 **같은 무게로**
+  // 갈라놓아 아래가 보조라는 것이 흐려진다.
+  it('구분선과 7단계 캡션은 없다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
 
-    expect(view.getByText('아직 API 키가 없나요?')).toBeTruthy()
-    expect(view.getByText('넥슨 오픈 API에서 키를 받는 7단계 안내')).toBeTruthy()
+    expect(view.queryByText('아직 API 키가 없나요?')).toBeNull()
+    expect(view.queryByText('넥슨 오픈 API에서 키를 받는 7단계 안내')).toBeNull()
+  })
+
+  // 넥슨 버튼이 파란 채움이라, 그 아래 주황 채움이 또 서면 무엇을 먼저 눌러야 하는지가 색으로
+  // 안 갈린다. 채운 알약보다 한 단 약한 주 동작 자리가 `tint` 다.
+  it('확인은 채운 알약이 아니라 tint 다', async () => {
+    const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
+
+    expect(flattenStyle(submitButton(view).props.style).backgroundColor).toBe(기본테마.primaryTint)
   })
 
   // 키는 손으로 치는 값이 아니라 붙여넣는 긴 문자열이라, 가려 두면 잘못 붙여넣었는지 확인할

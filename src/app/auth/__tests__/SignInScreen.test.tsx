@@ -10,7 +10,10 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { useAuthStore } from '../../../features/auth/store'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { openInAppBrowser } from '../../../native/browser'
 import { SignInScreen } from '../SignInScreen'
+
+jest.mock('../../../native/browser', () => ({ openInAppBrowser: jest.fn() }))
 
 jest.mock('../../../features/auth/store', () => ({
   useAuthStore: jest.fn(),
@@ -225,6 +228,55 @@ describe('SignInScreen', () => {
     await act(async () => {})
 
     expect(view.getByPlaceholderText('발급받은 API 키를 입력하세요')).toHaveDisplayValue('saved-key')
+  })
+
+  // 화면 머리가 **왜 인증이 필요한지**를 말한다. 앱 이름은 안 쓴다 - 아이콘이 이미 그 일을
+  // 하고, 이름을 적으면 그 줄이 제목 자리를 먹어 정작 필요한 설명이 보조로 밀린다.
+  it('머리에 왜 인증이 필요한지를 두 줄로 적는다', async () => {
+    mockStore({ status: 'signedOut' })
+
+    const view = await renderOverlay(<SignInScreen />)
+
+    expect(view.getByText('내 메이플 스토리 스케줄 정보 조회를 위해서')).toBeTruthy()
+    expect(view.getByText('로그인 또는 API 키 입력이 필요해요.')).toBeTruthy()
+    expect(view.queryByText('메이플 루틴')).toBeNull()
+  })
+
+  // 두 블록이 같은 골격을 쓴다. 소제목 · 둘째 줄 · 입력 수단.
+  it('넥슨 블록도 소제목과 그 아래 한 줄을 갖는다', async () => {
+    mockStore({ status: 'signedOut' })
+
+    const view = await renderOverlay(<SignInScreen />)
+
+    expect(view.getByText('게임 데이터 활용 로그인으로 시작하기')).toBeTruthy()
+    expect(view.getByText('게임 데이터 활용 로그인이란?')).toBeTruthy()
+  })
+
+  // 설명 다섯 문장을 앱이 싣지 않는다. 넥슨이 문구를 고치면 앱을 안 고쳐도 따라간다.
+  it('소개 링크는 인앱 브라우저로 넥슨 페이지를 연다', async () => {
+    mockStore({ status: 'signedOut' })
+    const view = await renderOverlay(<SignInScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByText('게임 데이터 활용 로그인이란?'))
+    })
+
+    expect(openInAppBrowser).toHaveBeenCalledWith(
+      'https://openapi.nexon.com/ko/data-util/introduction/',
+    )
+  })
+
+  // 주 경로가 넥슨이라는 것은 **순서**로 말한다. 직렬화한 트리는 문서 순서를 지키므로 두 소제목이
+  // 나오는 차례를 그대로 잰다.
+  it('넥슨 블록이 키 블록보다 위에 선다', async () => {
+    mockStore({ status: 'signedOut' })
+
+    const view = await renderOverlay(<SignInScreen />)
+
+    const tree = JSON.stringify(view.toJSON())
+    expect(tree.indexOf('게임 데이터 활용 로그인으로 시작하기')).toBeLessThan(
+      tree.indexOf('API 키로 시작하기'),
+    )
   })
 
   // 내비게이션 계약. `RootNavigator` 의 분기 테스트가 이 이름으로 화면을 지목한다

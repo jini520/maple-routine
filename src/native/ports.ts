@@ -256,6 +256,17 @@ export interface LiveUpdatePort {
 }
 
 /**
+ * 앱 안에서 웹 문서를 여는 창.
+ *
+ * 시스템 브라우저를 여는 길(`Linking.openURL`)은 포트가 아니라 화면이 직접 부른다. 그쪽은 RN 이
+ * 기본으로 들고 있어 어댑터가 감쌀 플랫폼 플러그인이 없다.
+ */
+export interface BrowserPort {
+  /** 주소를 앱 안 창으로 연다. 닫힐 때까지 기다린다. */
+  open(url: string): Promise<void>
+}
+
+/**
  * 포트 하나의 보관함. `storage/ports.ts` 와 같은 계약이다. 주입 전 접근은 던지고, 테스트는
  * 되돌릴 수 있다. 포트가 여럿이라 그 계약을 포트마다 손으로 베끼는 대신 한 곳에 두었다.
  */
@@ -295,6 +306,7 @@ const notificationsSlot = createPortSlot<NotificationsPort>('NotificationsPort')
 const pushSlot = createPortSlot<PushPort>('PushPort')
 const backGestureSlot = createPortSlot<BackGesturePort>('BackGesturePort')
 const liveUpdateSlot = createPortSlot<LiveUpdatePort>('LiveUpdatePort')
+const browserSlot = createPortSlot<BrowserPort>('BrowserPort')
 
 export const setColorSchemePort = colorSchemeSlot.set
 export const getColorSchemePort = colorSchemeSlot.get
@@ -332,6 +344,9 @@ export const getBackGesturePort = backGestureSlot.get
 export const setLiveUpdatePort = liveUpdateSlot.set
 export const getLiveUpdatePort = liveUpdateSlot.get
 
+export const setBrowserPort = browserSlot.set
+export const getBrowserPort = browserSlot.get
+
 /** 테스트 전용. 주입된 포트를 전부 비운다(`storage/ports.ts` 의 `__resetStoragePortsForTest` 관례). */
 export function __resetNativePortsForTest(): void {
   for (const slot of [
@@ -347,6 +362,7 @@ export function __resetNativePortsForTest(): void {
     pushSlot,
     backGestureSlot,
     liveUpdateSlot,
+    browserSlot,
   ]) {
     slot.clear()
   }

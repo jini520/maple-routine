@@ -53,6 +53,7 @@ import * as nativePorts from '../native/ports'
 import * as storagePorts from '../storage/ports'
 
 import { installPorts } from '../boot'
+import { rnBrowserPort } from '../native/adapters/rn-browser'
 import { rnLiveUpdatePort } from '../native/adapters/rn-live-update'
 import { rnAdsPort } from '../native/adapters/rn-ads'
 import { rnBackGesturePort } from '../native/adapters/rn-back-gesture'
@@ -84,6 +85,7 @@ const WIRED: [string, () => unknown, unknown][] = [
   ['getThemeAppearancePort', nativePorts.getThemeAppearancePort, rnThemeAppearancePort],
   ['getBackGesturePort', nativePorts.getBackGesturePort, rnBackGesturePort],
   ['getLiveUpdatePort', nativePorts.getLiveUpdatePort, rnLiveUpdatePort],
+  ['getBrowserPort', nativePorts.getBrowserPort, rnBrowserPort],
 ]
 
 function resetPorts(): void {
@@ -104,7 +106,7 @@ describe('installPorts()', () => {
       /^get[A-Za-z]+Port$/.test(key),
     )
 
-    expect(declared.length).toBe(14)
+    expect(declared.length).toBe(15)
     expect([...declared].sort()).toEqual(WIRED.map(([name]) => name).sort())
   })
 
