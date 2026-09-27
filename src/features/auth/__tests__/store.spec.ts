@@ -35,6 +35,10 @@ const {
 } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
 jest.mock('../../../server/nexon-auth', () => ({ revokeNexonSession: jest.fn() }))
+jest.mock('../nexon-login', () => ({ signInWithNexon: jest.fn() }))
+jest.mock('../current-credential', () => ({ currentCredential: jest.fn() }))
+const { signInWithNexon: signInWithNexonMock } = jest.requireMock('../nexon-login') as Record<string, jest.Mock>
+const { currentCredential: currentCredentialMock } = jest.requireMock('../current-credential') as Record<string, jest.Mock>
 const { revokeNexonSession: revokeNexonSessionMock } = jest.requireMock('../../../server/nexon-auth') as Record<string, jest.Mock>
 
 jest.mock('../../toast/store', () => {
@@ -648,5 +652,48 @@ describe('useAuthStore.signOutNexonLogin', () => {
     await useAuthStore.getState().signOutNexonLogin()
 
     expect(revokeNexonSessionMock).not.toHaveBeenCalled()
+  })
+})
+
+// 로그아웃이 생기면서 로그인 화면에도 버튼이 선다. 그 화면에서 성공하면 **앱이 열려야 한다** -
+// 진입 단계를 다시 판정하지 않으면 사용자는 로그인하고도 같은 화면에 남는다.
+describe('useAuthStore.signInWithNexonAccount', () => {
+  beforeEach(() => {
+    signInWithNexonMock.mockResolvedValue({ kind: 'signedIn' })
+    currentCredentialMock.mockResolvedValue({ kind: 'login', value: '토큰' })
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+  })
+
+  it('성공하면 목록을 받아 진입 단계를 다시 판정한다', async () => {
+    const ok = await useAuthStore.getState().signInWithNexonAccount()
+
+    expect(ok).toBe(true)
+    expect(useAuthStore.getState().status).toBe('signedIn')
+    expect(resolveAfterSignInMock).toHaveBeenCalledWith([account('acc-1')])
+  })
+
+  it('취소는 아무 일도 안 일어난다', async () => {
+    // 사용자가 창을 닫은 것이다. 안내를 띄우면 자기가 닫아 놓고 무엇이 잘못됐나 찾게 된다.
+    signInWithNexonMock.mockResolvedValue({ kind: 'cancelled' })
+
+    expect(await useAuthStore.getState().signInWithNexonAccount()).toBe(false)
+    expect(showErrorMock).not.toHaveBeenCalled()
+    expect(showSuccessMock).not.toHaveBeenCalled()
+    expect(resolveAfterSignInMock).not.toHaveBeenCalled()
+  })
+
+  it('실패하면 말한다', async () => {
+    signInWithNexonMock.mockResolvedValue({ kind: 'failed' })
+
+    expect(await useAuthStore.getState().signInWithNexonAccount()).toBe(false)
+    expect(showErrorMock).toHaveBeenCalledWith('넥슨 로그인에 실패했습니다')
+  })
+
+  it('로그인은 됐는데 목록을 못 받으면 앱을 열지 않는다', async () => {
+    // 세션은 저장됐다. 다음 회차가 다시 받으면 된다. 여기서 앱을 열면 캐릭터 없는 화면이 선다.
+    fetchCharacterListMock.mockRejectedValue(new Error('network'))
+
+    expect(await useAuthStore.getState().signInWithNexonAccount()).toBe(false)
+    expect(resolveAfterSignInMock).not.toHaveBeenCalled()
   })
 })

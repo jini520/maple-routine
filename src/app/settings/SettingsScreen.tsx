@@ -35,7 +35,7 @@ import { NoticeBannerRail } from './NoticeBannerRail'
 import { NoticeBannerSkeleton, NoticeLinesSkeleton } from './NoticeSkeleton'
 import { NexonLoginButton } from '../../components/molecules/NexonLoginButton/NexonLoginButton'
 import { hasNexonLogin } from '../../features/auth/saved-key'
-import { signInWithNexon } from '../../features/auth/nexon-login'
+import { useAuthStore } from '../../features/auth/store'
 import { NoticeLines } from './NoticeLines'
 import { SectionTitle } from './SectionTitle'
 import { SettingsLinkRow } from './SettingsLinkRow'
@@ -227,20 +227,11 @@ export function SettingsScreen(): React.JSX.Element {
     }, []),
   )
 
-  // 창을 여는 것부터 세션을 적는 것까지 `signInWithNexon` 안에 있다. 여기서 하는 일은 끝을
-  // 화면에 옮기는 것뿐이다.
+  // 로그인 화면과 **같은 동작**을 쓴다. 두 자리가 다른 끝을 내면 안 된다.
+  const signInWithNexonAccount = useAuthStore((state) => state.signInWithNexonAccount)
+
   async function handleNexonLogin(): Promise<void> {
-    const result = await signInWithNexon()
-    // 사용자가 창을 닫은 것이라 아무 일도 안 일어난 것이다. 안내를 띄우면 자기가 닫아 놓고
-    // 무엇이 잘못됐나 찾게 된다.
-    if (result.kind === 'cancelled') return
-    if (result.kind === 'failed') {
-      // 버튼은 남긴다. 치우면 다시 눌러 볼 길이 없다.
-      useToastStore.getState().showError('넥슨 로그인에 실패했습니다')
-      return
-    }
-    setShowNexonLogin(false)
-    useToastStore.getState().showSuccess('넥슨 계정을 연결했어요')
+    if (await signInWithNexonAccount()) setShowNexonLogin(false)
   }
 
   const openNotice = (notice: Notice): void => navigation.navigate('SettingsNoticeDetail', { noticeId: notice.id })

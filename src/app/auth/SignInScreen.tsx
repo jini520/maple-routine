@@ -23,6 +23,7 @@ import { loadSavedApiKey } from '../../features/auth/saved-key'
 import { useAuthStore } from '../../features/auth/store'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 
+import { NexonLoginButton } from '../../components/molecules/NexonLoginButton/NexonLoginButton'
 import { EntryScroll } from '../../components/templates/EntryScroll/EntryScroll'
 import { ApiKeyForm } from './ApiKeyForm'
 import { DevelopmentStageKeyModal } from './DevelopmentStageKeyModal'
@@ -30,6 +31,7 @@ import { DevelopmentStageKeyModal } from './DevelopmentStageKeyModal'
 export function SignInScreen(): React.JSX.Element {
   const status = useAuthStore((state) => state.status)
   const signIn = useAuthStore((state) => state.signIn)
+  const signInWithNexonAccount = useAuthStore((state) => state.signInWithNexonAccount)
   const resumeTo = useAppEntryStore((state) => state.resumeTo)
   const navigation = useScreenNavigation()
   const [savedKey, setSavedKey] = useState<string | null>(null)
@@ -70,6 +72,16 @@ export function SignInScreen(): React.JSX.Element {
           isSubmitting={status === 'verifying'}
           onSubmit={(apiKey) => void submit(apiKey)}
         />
+        {/*
+          **수단이 없을 때 서는 유일한 화면이다.** 로그아웃하면 탭 자체를 못 보므로, 여기 버튼이
+          없으면 나간 사용자가 다시 들어올 길이 없다.
+
+          키 폼 아래인 것은 검수를 통과하기 전까지 키가 1차 경로이기 때문이다. 통과하면 순서를
+          다시 본다.
+        */}
+        <View className="w-full pt-2">
+          <NexonLoginButton onPress={() => void signInWithNexonAccount()} />
+        </View>
       </EntryScroll>
       {/* 폼과 직교한다. 스스로 떠 있을 때만 그리므로 이 한 줄로 폼 위에 덮인다. */}
       <DevelopmentStageKeyModal />

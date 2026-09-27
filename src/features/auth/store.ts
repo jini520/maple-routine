@@ -24,6 +24,8 @@ import { revokeNexonSession } from '../../server/nexon-auth'
 import { useToastStore } from '../toast/store'
 import { formatAuthError } from './format'
 import { apiKeyCredential } from '../../lib/nexon-credential'
+import { signInWithNexon } from './nexon-login'
+import { currentCredential } from './current-credential'
 import {
   authReducer,
   initialAuthState,
@@ -45,6 +47,15 @@ export interface AuthStore extends AuthState {
   noticeApiKeyIssue(kind: ApiKeyNoticeKind, apiKey?: string): void
   // 그 모달의 "확인". 죽은 수단을 지우고, 남은 수단이 없을 때만 로그인 화면으로 보낸다.
   confirmApiKeyNotice(): Promise<void>
+  /**
+   * 넥슨 로그인 한 번. **끝나면 앱이 열린다.**
+   *
+   * `signInWithNexon` 은 세션을 적는 데까지다. 여기서 목록을 받아 진입 단계를 다시 판정해야
+   * 로그인 화면에 선 사용자가 그 자리를 벗어난다.
+   *
+   * 앱으로 넘어갈 수 있으면 `true`.
+   */
+  signInWithNexonAccount(): Promise<boolean>
   /**
    * 로그아웃. **넥슨 로그인만 뗀다.** API 키와 내부 데이터는 남는다.
    *
@@ -194,6 +205,36 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     // 게이트도 함께 되돌린다.
     set((state) => authReducer(state, { type: 'SIGNED_OUT' }))
     useAppEntryStore.getState().reset()
+  },
+
+  // 로그인 화면과 더보기 탭이 함께 쓴다. 두 자리가 같은 끝을 내야 한다.
+  async signInWithNexonAccount() {
+    const result = await signInWithNexon()
+    // 사용자가 창을 닫은 것이라 아무 일도 안 일어난 것이다. 안내를 띄우면 자기가 닫아 놓고
+    // 무엇이 잘못됐나 찾게 된다.
+    if (result.kind === 'cancelled') return false
+    if (result.kind === 'failed') {
+      useToastStore.getState().showError('넥슨 로그인에 실패했습니다')
+      return false
+    }
+
+    // 세션은 이미 적혔다. 여기서부터는 **앱을 여는 일**이다.
+    const credential = await currentCredential()
+    if (credential === null) return false
+
+    let accounts: AuthState['accounts']
+    try {
+      accounts = await fetchAndRecordCharacterList(credential)
+    } catch {
+      // 로그인은 끝났다. 목록은 다음 회차가 다시 받는다. 여기서 앱을 열면 캐릭터 없는 화면이
+      // 선다. 토스트는 안 띄운다 - 로그인 자체는 성공이라 실패라고 말하면 거짓이다.
+      return false
+    }
+
+    useToastStore.getState().showSuccess('넥슨 계정을 연결했어요')
+    set((state) => authReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
+    await useAppEntryStore.getState().resolveAfterSignIn(accounts)
+    return true
   },
 
   // 로그아웃. 지우는 것은 넥슨 로그인 하나이고 API 키와 내부 데이터는 그대로다. 확인 모달을
