@@ -18,6 +18,7 @@ import { getKstDateKeyDaysAgo } from '../../lib/scheduler/reset-clock'
 import { toProbeObservation } from '../../lib/scheduler/scheduler-activity'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { SCHEDULE_NAME_RESOLVERS } from '../../lib/scheduler/schedule-name-resolvers'
+import { currentCredential } from '../auth/current-credential'
 import { getAuthConfig } from '../../storage/api-key'
 import {
   getScheduleProbeLedger,
@@ -28,7 +29,6 @@ import {
 import { refreshSettlement } from '../settlement/store'
 import { toScheduleSyncError } from '../schedule-sync/errors'
 import { mapWithLimit } from './gate'
-import { credentialOf } from '../../lib/nexon-credential'
 
 /**
  * 한 번에 나가는 조회 수. 캐릭터를 가로질러 센다.
@@ -138,7 +138,7 @@ export async function planScheduleWindow(
     }
   }
 
-  return { credential: credentialOf(authConfig), jobs }
+  return { credential: await currentCredential(now), jobs }
 }
 
 /**

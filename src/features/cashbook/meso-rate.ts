@@ -7,11 +7,11 @@
  * 부르는 계기는 시트에서 캐릭터를 고를 때 하나다. 수정으로 열 때는 안 부른다. 그 행에 적힌
  * 그때의 값이 있고, 지금 값으로 다시 재면 옛 기록의 금액이 열 때마다 달라진다.
  */
+import { currentCredential } from '../auth/current-credential'
 import { fetchMesoRate } from '../../nexon/meso-rate'
 import { getAuthConfig } from '../../storage/api-key'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedMesoRate, setCachedMesoRate } from '../../storage/meso-rate-cache'
-import { credentialOf } from '../../lib/nexon-credential'
 
 /**
  * 읽었나 못 읽었나. 화면이 **줄의 모양을 가르는** 값이다.
@@ -37,7 +37,7 @@ async function jobClassOf(ocid: string): Promise<string | null> {
 }
 
 export async function loadMesoRate(ocid: string): Promise<MesoRateLoad> {
-  const credential = credentialOf(await getAuthConfig())
+  const credential = await currentCredential()
   // 키가 없으면 **부르지도 않는다**. 401 을 만들면 그 사슬이 저장된 키를 지운다.
   if (credential === null) return { kind: 'fallback', percent: await getCachedMesoRate(ocid) }
 

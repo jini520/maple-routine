@@ -14,6 +14,7 @@
  * 부르는 자리가 둘이라(보스 수익 동기화 뒤 · 가계부 진입) 겹침을 둘이 막는다. 조회 원장이 이미 본
  * 날짜를 들고, `inFlight` 가 같은 순간에 두 번 도는 것을 막는다.
  */
+import { currentCredential } from '../auth/current-credential'
 import type { NexonCredential } from '../../types/auth'
 import { getAuthConfig } from '../../storage/api-key'
 import {
@@ -43,7 +44,6 @@ import { BOSS_CYCLES, type BossCycle } from '../../types'
 import { toScheduleSyncError } from '../schedule-sync/errors'
 import { refreshSettlement } from '../settlement/store'
 import { withSqliteFallback } from './sqlite-guards'
-import { credentialOf } from '../../lib/nexon-credential'
 
 export interface DefeatDateInput {
   /** 그 기간의 날짜들. **오름차순**(`getPeriodDateKeys`). 오늘 뒤는 안 본다. */
@@ -332,7 +332,7 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
    * 소거법과 리셋 당일은 관측이 하나도 없어도 답이 나온다. 키 검사를 함수 맨 앞에 두면 조회할
    * 것이 없는 건까지 0 으로 나가고, 키를 지운 기기에서는 오늘 잡은 보스가 영영 캘린더에 안 찍힌다.
    */
-  const credential = credentialOf(await getAuthConfig())
+  const credential = await currentCredential()
 
   // 여기서부터 스케줄러를 부른다. 결산 여부도 함께 묻는다(안 기다린다). 미확정 기록이 없어 위에서
   // 돌아가는 길은 조회가 0회라 그 재진입을 이 요청으로 유료로 만들지 않는다.

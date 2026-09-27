@@ -5,20 +5,18 @@
  * 키 오류 안내 모달도 띄우지 않는다. 더보기에 들어올 때마다 부르므로 키가 죽은 날 탭을 오갈 때마다 뜨고, 그 안내는 동기화가 한다.
  */
 import { fetchNexonNotice, fetchNexonNoticeList, nexonNoticeRef } from '../../nexon/notice/client'
+import { currentCredential } from '../auth/current-credential'
 import { fetchNotice, fetchNotices } from '../../server/notices'
-import { getAuthConfig } from '../../storage/api-key'
 import type { NexonCredential } from '../../types/auth'
 import { NOTICE_KINDS, type Notice, type NoticeKind, type NoticeLookup } from '../../types/notice'
 import { saveNoticeResponse } from './notice-copy'
-import { credentialOf } from '../../lib/nexon-credential'
 
 /** 받는 중인 조회. 같은 분류를 또 부르면 이것을 기다린다. */
 const inFlight = new Map<NoticeKind, Promise<Notice[] | null>>()
 
 /** 저장된 자격. 넥슨 공지는 이것 없이는 못 받는다. */
 async function savedCredential(): Promise<NexonCredential | null> {
-  const config = await getAuthConfig().catch(() => null)
-  return config === null ? null : credentialOf(config)
+  return currentCredential()
 }
 
 async function receive(kind: NoticeKind): Promise<Notice[] | null> {

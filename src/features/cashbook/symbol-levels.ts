@@ -3,13 +3,13 @@
  *
  * 모르면 `null` 이고 그때 드롭다운은 만렙 묶음 없이 선다. 던지지 않는다.
  */
+import { currentCredential } from '../auth/current-credential'
 import { symbolLevelsOf } from '../../lib/cashbook/symbol-costs'
 import { fetchSymbolEquipment } from '../../nexon/symbol-levels'
 import { getAuthConfig } from '../../storage/api-key'
-import { credentialOf } from '../../lib/nexon-credential'
 
 export async function loadSymbolLevels(ocid: string): Promise<Record<string, number> | null> {
-  const credential = credentialOf(await getAuthConfig())
+  const credential = await currentCredential()
   // 키가 없으면 부르지도 않는다. 401 을 만들면 그 사슬이 저장된 키를 지운다.
   if (credential === null) return null
   try {

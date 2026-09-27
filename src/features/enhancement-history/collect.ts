@@ -7,6 +7,7 @@
  * 하루가 1000줄을 넘기면 커서로 콜이 더 나가는데, 콜을 세면 분모가 도는 중에 늘어난다. 커서는
  * 작업 **안쪽** 일이라 밖에서는 1이다.
  */
+import { currentCredential } from '../auth/current-credential'
 import type { NexonCredential } from '../../types/auth'
 import { fetchAndRecordCharacterList } from '../mvp-grade/character-list'
 import type { EnhancementHistoryRow, EnhancementKind } from '../../nexon/history/client'
@@ -27,7 +28,6 @@ import { eventWorldCharacterNames } from '../../lib/enhancement/world'
 import { SOUL_POTENTIAL_FROM } from '../../lib/enhancement/cost'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { mapWithLimit } from '../schedule-window/gate'
-import { credentialOf } from '../../lib/nexon-credential'
 
 /** 네 종류. 순서가 진행 표시에 보이지 않으므로 아무래도 된다. */
 export const ENHANCEMENT_KINDS: readonly EnhancementKind[] = ['cube', 'starforce', 'potential', 'soul_potential']
@@ -179,7 +179,7 @@ export async function collectEnhancementHistory(
   now: Date,
   onProgress?: HistoryProgress,
 ): Promise<void> {
-  const credential = credentialOf(await getAuthConfig())
+  const credential = await currentCredential()
   if (credential === null) {
     onProgress?.(0, 0)
     return
