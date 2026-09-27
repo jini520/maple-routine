@@ -45,6 +45,12 @@ export interface AuthStore extends AuthState {
   noticeApiKeyIssue(kind: ApiKeyNoticeKind, apiKey?: string): void
   // 그 모달의 "확인". 죽은 수단을 지우고, 남은 수단이 없을 때만 로그인 화면으로 보낸다.
   confirmApiKeyNotice(): Promise<void>
+  /**
+   * 로그아웃. **넥슨 로그인만 뗀다.** API 키와 내부 데이터는 남는다.
+   *
+   * 아래 `signOut`(연결 해제)과 갈리는 자리다. 저쪽은 인증 수단을 통째로 버린다.
+   */
+  signOutNexonLogin(): Promise<void>
   // 연결 해제. 저장된 인증 정보를 통째로 버린다.
   signOut(): Promise<void>
 }
@@ -186,6 +192,24 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
     // 이동은 상태를 뒤집는 것으로 일어난다. 스토어는 라우터를 모른다. 화면 목록을 가르는 진입
     // 게이트도 함께 되돌린다.
+    set((state) => authReducer(state, { type: 'SIGNED_OUT' }))
+    useAppEntryStore.getState().reset()
+  },
+
+  // 로그아웃. 지우는 것은 넥슨 로그인 하나이고 API 키와 내부 데이터는 그대로다. 확인 모달을
+  // 안 띄우는 것은 되돌릴 수 있기 때문이다 - 다시 로그인하면 된다.
+  async signOutNexonLogin() {
+    // **기기에서 지우기 전에** 물어야 세션 값을 아직 들고 있다. 실패해도 진행한다 - 기기에서
+    // 지우는 것이 본론이고, 서버 쪽은 갱신 토큰 수명이 지나면 어차피 정리된다.
+    const session = (await getAuthConfig().catch(() => null))?.login?.session
+    if (session !== undefined) await revokeNexonSession(session)
+
+    await clearNexonLogin()
+
+    // 남은 수단이 있으면 앱은 그 수단으로 계속 선다. 다른 넥슨 계정의 키가 남아 있는데
+    // 로그인 화면으로 보내면 그 계정 캐릭터까지 함께 잃는다.
+    if ((await getAuthConfig().catch(() => null)) !== null) return
+
     set((state) => authReducer(state, { type: 'SIGNED_OUT' }))
     useAppEntryStore.getState().reset()
   },

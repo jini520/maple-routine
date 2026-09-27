@@ -34,6 +34,9 @@ const {
   clearNexonLogin: clearNexonLoginMock,
 } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
+jest.mock('../../../server/nexon-auth', () => ({ revokeNexonSession: jest.fn() }))
+const { revokeNexonSession: revokeNexonSessionMock } = jest.requireMock('../../../server/nexon-auth') as Record<string, jest.Mock>
+
 jest.mock('../../toast/store', () => {
   const showSuccess = jest.fn()
   const showError = jest.fn()
@@ -578,5 +581,72 @@ describe('useAuthStore.signIn: 개발 단계 키를 문 앞에서 막는다', ()
 
     expect(setApiKeyMock).toHaveBeenCalledWith('key-1')
     expect(useAuthStore.getState().error).toBeNull()
+  })
+})
+
+// 연결 해제와 가른다. 둘 다 내부 데이터를 안 건드리고, **인증에서 지우는 범위**가 다르다.
+describe('useAuthStore.signOutNexonLogin', () => {
+  function primeSignedIn(): void {
+    useAuthStore.setState({ ...initialAuthState, status: 'signedIn', accounts: [account('acc-1')] })
+  }
+
+  it('넥슨 로그인만 뗀다. 연결 해제 경로를 안 탄다', async () => {
+    primeSignedIn()
+    getAuthConfigMock.mockResolvedValue({
+      login: { kind: 'login', session: '세션', accessToken: '토큰', accessExpiresAt: '2026-09-27T12:30:00.000Z' },
+      apiKeys: [],
+    })
+
+    await useAuthStore.getState().signOutNexonLogin()
+
+    expect(clearNexonLoginMock).toHaveBeenCalledTimes(1)
+    expect(clearAuthConfigMock).not.toHaveBeenCalled()
+    expect(removeAllApiKeysMock).not.toHaveBeenCalled()
+  })
+
+  it('서버 세션도 거둔다. **기기에서 지우기 전에** 묻는다', async () => {
+    primeSignedIn()
+    getAuthConfigMock.mockResolvedValue({
+      login: { kind: 'login', session: '세션값', accessToken: '토큰', accessExpiresAt: '' },
+      apiKeys: [],
+    })
+
+    await useAuthStore.getState().signOutNexonLogin()
+
+    expect(revokeNexonSessionMock).toHaveBeenCalledWith('세션값')
+  })
+
+  it('수단이 하나도 안 남으면 로그인 화면으로 보낸다', async () => {
+    primeSignedIn()
+    getAuthConfigMock
+      .mockResolvedValueOnce({ login: { kind: 'login', session: '세션', accessToken: 't', accessExpiresAt: '' }, apiKeys: [] })
+      .mockResolvedValueOnce(null)
+
+    await useAuthStore.getState().signOutNexonLogin()
+
+    expect(useAuthStore.getState()).toMatchObject(initialAuthState)
+    expect(entryResetMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('API 키가 남으면 앱은 그대로 선다', async () => {
+    // 다른 넥슨 계정의 키다. 로그인을 뗐다고 그 계정 캐릭터까지 잃으면 안 된다.
+    primeSignedIn()
+    getAuthConfigMock
+      .mockResolvedValueOnce({ login: { kind: 'login', session: '세션', accessToken: 't', accessExpiresAt: '' }, apiKeys: [{ kind: 'apiKey', label: '', value: '키' }] })
+      .mockResolvedValueOnce({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: '키' }] })
+
+    await useAuthStore.getState().signOutNexonLogin()
+
+    expect(useAuthStore.getState().status).toBe('signedIn')
+    expect(entryResetMock).not.toHaveBeenCalled()
+  })
+
+  it('로그인이 없으면 서버에 안 묻는다', async () => {
+    primeSignedIn()
+    getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: '키' }] })
+
+    await useAuthStore.getState().signOutNexonLogin()
+
+    expect(revokeNexonSessionMock).not.toHaveBeenCalled()
   })
 })

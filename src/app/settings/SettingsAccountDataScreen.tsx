@@ -16,6 +16,8 @@ import { reloadAppAsync } from 'expo'
 import type { CacheDataSizes } from '../../features/settings/cache-data'
 import { clearCacheDataAndReload, loadCacheDataSizes } from '../../features/settings/cache-data'
 import { useSettingsStore } from '../../features/settings/store'
+import { useAuthStore } from '../../features/auth/store'
+import { hasNexonLogin } from '../../features/auth/saved-key'
 import { formatBytes } from '../../lib/format-bytes'
 import type { CacheDataSelection } from '../../storage/cache-data'
 
@@ -47,11 +49,24 @@ export function SettingsAccountDataScreen(
   const [sizes, setSizes] = useState<CacheDataSizes | null>(null)
   const [isDisconnectOpen, setIsDisconnectOpen] = useState(false)
   const [isDisconnecting, setIsDisconnecting] = useState(false)
+  // 로그인이 없으면 뗄 것이 없다. 모르는 동안에도 안 세운다 - 세웠다 지우면 행이 하나 튄다.
+  const [showSignOut, setShowSignOut] = useState(false)
+  const signOutNexonLogin = useAuthStore((state) => state.signOutNexonLogin)
 
   useEffect(() => {
     loadCacheDataSizes()
       .then(setSizes)
       .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    let alive = true
+    void hasNexonLogin().then((has) => {
+      if (alive) setShowSignOut(has)
+    })
+    return () => {
+      alive = false
+    }
   }, [])
 
   // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다.
@@ -88,6 +103,23 @@ export function SettingsAccountDataScreen(
           {/* `settings-card` 는 본화면과 같은 이름이다. 같은 프리미티브라 같은 표식을 쓴다.
               웹 테스트가 카드 경계를 `Card` atom 의 라운딩 클래스로 잡던 자리이고, RN 에는 그
               클래스가 스타일로 컴파일돼 사라져 표식이 필요하다. */}
+          {/*
+            로그아웃은 **연결 해제와 다른 카드**다. 파괴적 행은 별도 카드로 내린다는 규칙이
+            이 화면에 이미 있고, 로그아웃은 되돌릴 수 있어 그 무리에 안 든다.
+
+            확인 모달을 안 띄운다. 다시 로그인하면 되므로 파괴적 행에만 쓰는 모달을 여기 두지
+            않는다. 지우는 것은 넥슨 로그인 하나이고 API 키와 내부 데이터는 남는다.
+          */}
+          {showSignOut && (
+            <Card className="px-6">
+              <SettingsRow
+                label="넥슨 로그아웃"
+                onPress={() => void signOutNexonLogin()}
+                showChevron={false}
+              />
+            </Card>
+          )}
+
           <Card className="px-6" testID="settings-card">
             <SettingsRow
               label="캐시 데이터 삭제"
