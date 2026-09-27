@@ -45,6 +45,13 @@ beforeEach(() => {
 
 const mockedUseAuthStore = jest.mocked(useAuthStore)
 
+/** 키 폼은 접힌 채로 선다. 안을 만지는 케이스는 머리를 눌러 연다. */
+async function expandApiKeyForm(view: { getByText: (text: string) => unknown }): Promise<void> {
+  await act(async () => {
+    fireEvent.press(view.getByText('API 키로 시작하기') as never)
+  })
+}
+
 type StoreState = ReturnType<typeof useAuthStore>
 
 function mockStore(overrides: Partial<StoreState>): void {
@@ -79,6 +86,7 @@ describe('SignInScreen', () => {
     mockStore({ status: 'signedOut' })
 
     const view = await renderOverlay(<SignInScreen />)
+    await expandApiKeyForm(view)
 
     expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
   })
@@ -87,6 +95,7 @@ describe('SignInScreen', () => {
     mockStore({ status: 'verifying' })
 
     const view = await renderOverlay(<SignInScreen />)
+    await expandApiKeyForm(view)
 
     expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
     // 라벨은 가려질 뿐 트리에 남는다. 대기는 `aria-busy` 가 말한다.
@@ -120,6 +129,7 @@ describe('SignInScreen', () => {
     mockStore({ status: 'signedOut', developmentStageBlocked: true })
 
     const view = await renderOverlay(<SignInScreen />)
+    await expandApiKeyForm(view)
 
     expect(view.getByTestId('development-stage-key-title')).toBeTruthy()
     expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
@@ -154,6 +164,7 @@ describe('SignInScreen', () => {
     mockStore({ status: 'signedOut', error: { kind: 'rateLimited' } })
 
     const view = await renderOverlay(<SignInScreen />)
+    await expandApiKeyForm(view)
 
     expect(view.queryByTestId('development-stage-key-title')).toBeNull()
     expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
@@ -170,6 +181,7 @@ describe('SignInScreen', () => {
       mockStore({ status: 'signedOut', accounts, error: { kind: 'invalidApiKey' } })
 
       const view = await renderOverlay(<SignInScreen />)
+      await expandApiKeyForm(view)
 
       expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
       expect(view.queryByText('기기에 저장하지 못했습니다. 다시 시도해주세요')).toBeNull()
@@ -184,6 +196,7 @@ describe('SignInScreen', () => {
     })
     mockStore({ status: 'signedOut', signIn })
     const view = await renderOverlay(<SignInScreen />)
+    await expandApiKeyForm(view)
 
     await act(async () => {
       fireEvent.changeText(view.getByPlaceholderText('발급받은 API 키를 입력하세요'), 'key-1')
@@ -199,6 +212,7 @@ describe('SignInScreen', () => {
   it('로그인이 실패하면 안 민다', async () => {
     mockStore({ status: 'signedOut', signIn: jest.fn(async () => false) })
     const view = await renderOverlay(<SignInScreen />)
+    await expandApiKeyForm(view)
 
     await act(async () => {
       fireEvent.changeText(view.getByPlaceholderText('발급받은 API 키를 입력하세요'), 'bad')
@@ -226,6 +240,7 @@ describe('SignInScreen', () => {
 
     const view = await renderOverlay(<SignInScreen />)
     await act(async () => {})
+    await expandApiKeyForm(view)
 
     expect(view.getByPlaceholderText('발급받은 API 키를 입력하세요')).toHaveDisplayValue('saved-key')
   })
@@ -277,6 +292,16 @@ describe('SignInScreen', () => {
     expect(tree.indexOf('게임 데이터 활용 로그인으로 시작하기')).toBeLessThan(
       tree.indexOf('API 키로 시작하기'),
     )
+  })
+
+  // 넥슨이 주 경로다. 키 폼이 펼쳐진 채로 서면 그 아래가 화면의 대부분을 먹는다.
+  it('키 폼은 접힌 채로 선다', async () => {
+    mockStore({ status: 'signedOut' })
+
+    const view = await renderOverlay(<SignInScreen />)
+
+    expect(view.getByText('API 키로 시작하기')).toBeTruthy()
+    expect(view.queryByLabelText('Nexon Open API 키')).toBeNull()
   })
 
   // 내비게이션 계약. `RootNavigator` 의 분기 테스트가 이 이름으로 화면을 지목한다

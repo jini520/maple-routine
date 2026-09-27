@@ -343,8 +343,9 @@ setApiKey
 넥슨 블록   소제목 text-15 font-semibold text-text  "게임 데이터 활용 로그인으로 시작하기"
             링크   text-13 text-primary-ink        "게임 데이터 활용 로그인이란?"
             NexonLoginButton (w-full)
-키 블록     소제목 text-15 font-semibold text-text  "API 키로 시작하기"
-            Text   text-13 text-text-muted         "넥슨 오픈 API에서 받은 키를 직접 넣어요"
+키 블록     소제목 text-15 font-semibold text-text  "API 키로 시작하기"          ⌄ 아코디언 머리
+            Text   text-13 text-text-muted         "넥슨 오픈 API에서 받은 키를 넣어요"
+            ─ 아래는 펼쳤을 때만 ─
             label text-sm font-medium + input + 표시 토글
                    "openapi.nexon.com에서 확인"     ← 키가 있는 사람의 동선
             확인 버튼 Button tint, w-full
@@ -371,6 +372,23 @@ setApiKey
 - **넥슨 설명은 앱이 안 싣는다**([[ADR-321]] 결정 5). 넥슨의 `게임 데이터 활용 로그인` 소개 다섯
   문장을 카드로 담아 봤더니 309px 를 먹어 화면이 904px 가 됐고, 접이식으로 줄여도 넥슨 버튼이
   설명 아래로 밀렸다. 남는 것은 링크 하나이고 설명은 그 링크가 여는 넥슨 페이지가 든다.
+
+### 키 블록은 접힌 채로 선다 ([[ADR-321]] 결정 8, 2026-09-28)
+
+머리 두 줄이 곧 펼침 단추이고 오른쪽 끝에 셰브론이 선다. 누르면 그 아래로 라벨 · 입력칸 · 표시
+토글 · 넥슨 바로 가기 · `확인` · 발급 안내 · 안심 문구가 펼쳐진다.
+
+**접지 않으면 넥슨을 위로 올린 것이 화면에서 무너진다.** 인풋과 버튼 넷이 늘 펼쳐져 있으면 키
+블록이 화면의 대부분을 먹어, 주 경로가 무엇인지가 자리만으로는 안 읽힌다.
+
+- **머리 두 줄은 접혀 있어도 보인다.** 키로 가는 길이 사라지지 않는다.
+- **셰브론은 `ChevronDownIcon`·`ChevronUpIcon` 이다.** 이 앱에서 오른쪽 셰브론은 다른 화면으로
+  간다는 뜻이고(`SettingsLinkRow`) 아래위 셰브론이 그 자리에서 펼친다는 뜻이다
+  (`boss-profit/CharacterAccordion`). 크기·색도 그쪽과 같다(`h-4 w-4 text-text-muted`).
+- **`aria-expanded` 를 준다.** RN 의 `Pressable` 이 그것을 `accessibilityState.expanded` 로 접는다.
+
+**열린 질문**: 키가 죽어 다시 넣으러 온 사용자도 접힌 화면을 만난다(`ApiKeyForm` 이
+`key={savedKey}` 로 다시 마운트된다). 저장된 키가 있으면 펼친 채로 열지는 안 정했다.
 
 ### 키 쪽 버튼 둘을 한 단씩 내린다 (갈림길 레이아웃 정정, 2026-09-28)
 
