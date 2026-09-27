@@ -228,6 +228,14 @@ describe('SettingsAccountDataScreen', () => {
 })
 
 // 로그아웃은 연결 해제와 다르다. 지우는 것은 넥슨 로그인 하나이고 API 키와 내부 데이터는 남는다.
+/** 스토어가 내주는 로그아웃 액션. 모킹이 셀렉터라 꺼내 쓰는 길이 한 줄이 아니다. */
+function 로그아웃액션(): jest.Mock {
+  const { useAuthStore } = jest.requireMock('../../../features/auth/store') as {
+    useAuthStore: (s: (v: { signOutNexonLogin: jest.Mock }) => unknown) => unknown
+  }
+  return useAuthStore((state) => state.signOutNexonLogin) as jest.Mock
+}
+
 describe('넥슨 로그아웃 행', () => {
   it('로그인이 있으면 선다', async () => {
     mockedHasNexonLogin.mockResolvedValue(true)
@@ -254,19 +262,54 @@ describe('넥슨 로그아웃 행', () => {
     expect(view.queryByText('넥슨 로그아웃')).toBeNull()
   })
 
-  it('누르면 확인 모달 없이 바로 뗀다. 되돌릴 수 있는 동작이다', async () => {
+  // 확인을 한 번 받는다. 다시 로그인하는 것이 창을 열고 넥슨을 거치는 일이라 실수로 눌렀을 때
+  // 치르는 값이 작지 않다.
+  it('누르면 바로 안 뗀다. 확인을 먼저 받는다', async () => {
     mockedHasNexonLogin.mockResolvedValue(true)
-    const { useAuthStore } = jest.requireMock('../../../features/auth/store') as {
-      useAuthStore: (s: (v: { signOutNexonLogin: jest.Mock }) => unknown) => unknown
-    }
-    const signOut = useAuthStore((state) => state.signOutNexonLogin) as jest.Mock
+    const signOut = 로그아웃액션()
 
     const view = await renderOverlay(<SettingsAccountDataScreen />)
-    const row = await waitFor(() => view.getByText('넥슨 로그아웃'))
+    await waitFor(() => view.getByText('넥슨 로그아웃'))
+    await press(rowOf(view, '넥슨 로그아웃'))
 
-    fireEvent.press(row)
+    expect(view.getByText('로그아웃할까요?')).toBeTruthy()
+    expect(signOut).not.toHaveBeenCalled()
+  })
+
+  it('확인을 누르면 뗀다', async () => {
+    mockedHasNexonLogin.mockResolvedValue(true)
+    const signOut = 로그아웃액션()
+
+    const view = await renderOverlay(<SettingsAccountDataScreen />)
+    await waitFor(() => view.getByText('넥슨 로그아웃'))
+    await press(rowOf(view, '넥슨 로그아웃'))
+    await press(view.getByText('로그아웃'))
 
     expect(signOut).toHaveBeenCalledTimes(1)
+  })
+
+  it('취소하면 아무 일도 안 일어나고 모달이 닫힌다', async () => {
+    mockedHasNexonLogin.mockResolvedValue(true)
+    const signOut = 로그아웃액션()
+
+    const view = await renderOverlay(<SettingsAccountDataScreen />)
+    await waitFor(() => view.getByText('넥슨 로그아웃'))
+    await press(rowOf(view, '넥슨 로그아웃'))
+    await press(view.getByText('취소'))
+
+    expect(signOut).not.toHaveBeenCalled()
+    expect(view.queryByText('로그아웃할까요?')).toBeNull()
+  })
+
+  it('연결 해제 모달과 다른 문구다', async () => {
+    // 두 행이 같은 화면에 있어 문구가 같으면 무엇을 누른 건지 모른다.
+    mockedHasNexonLogin.mockResolvedValue(true)
+    로그아웃액션()
+
+    const view = await renderOverlay(<SettingsAccountDataScreen />)
+    await waitFor(() => view.getByText('넥슨 로그아웃'))
+    await press(rowOf(view, '넥슨 로그아웃'))
+
     expect(view.queryByText('연결을 해제할까요?')).toBeNull()
   })
 })
