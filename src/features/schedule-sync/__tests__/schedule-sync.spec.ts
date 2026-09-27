@@ -1572,7 +1572,10 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       expect(onUpdate).toHaveBeenCalledWith([
         { ocid: 'ocid-1', name: '캐싱된캐릭', level: 180, imageUrl: basicProfile({ name: '캐싱된캐릭', level: 180 }).imageUrl },
       ])
-      expect(fetchCharacterListMock).toHaveBeenCalled()
+      // 자격을 고르는 자리가 async 층을 하나 더 거쳐(`currentCredential` 이 토큰을 챙긴다)
+      // 조회 시작이 stub 방출보다 한 틱 늦다. 이 케이스가 지키는 것은 **목록 응답 전에 stub 이
+      // 먼저 나간다** 이고(목록은 영영 resolve 안 한다) 그것은 그대로다.
+      await waitFor(() => expect(fetchCharacterListMock).toHaveBeenCalled())
     })
 
     it('추적 여부와 무관하게 인덱스에 있는 모든 ocid가 stub 목록에 포함된다', async () => {
@@ -2299,6 +2302,8 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
 
       // ② mockCharacter/list 응답 시점에 추가 방출
+      // 자격 고르기가 한 틱 늦어져, 조회가 시작되기 전에 resolve 하면 아무 일도 안 일어난다.
+      await waitFor(() => expect(fetchCharacterListMock).toHaveBeenCalled())
       resolveList([account('acc-1', characters)])
       await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
       await waitFor(() => expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2))

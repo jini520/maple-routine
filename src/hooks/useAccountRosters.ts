@@ -17,6 +17,7 @@
  * @example
  * const roster = useAccountRosters()
  */
+import { currentCredential } from '../features/auth/current-credential'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
@@ -33,7 +34,7 @@ import {
 import { fetchAndRecordCharacterList } from '../features/mvp-grade/character-list'
 import { getAuthConfig } from '../storage/api-key'
 import type { CharacterPickerEntry } from '../types'
-import { apiKeyValueOf, credentialOf } from '../lib/nexon-credential'
+import { apiKeyValueOf } from '../lib/nexon-credential'
 import type { NexonCredential } from '../types/auth'
 
 /** 계정 하나의 후보 목록 + **성공 도장**. 도장이 없으면 TTL 판정에서 아직 이다. */
@@ -135,7 +136,7 @@ export function useAccountRosters(): AccountRosters {
       // 실어 보내야 알림이 그 키만 지운다.
       let credential: NexonCredential | null = null
       try {
-        credential = credentialOf(await getAuthConfig())
+        credential = await currentCredential()
         if (credential === null) {
           throw new Error('useAccountRosters: API 키가 없습니다')
         }

@@ -5,6 +5,7 @@
  * 일을 하고 있었고, 둘 사이 참조는 한 방향뿐이라(동기화 → 로스터) 경계가 뚜렷했다.
  */
 
+import { currentCredential } from '../auth/current-credential'
 import type { NexonCredential } from '../../types/auth'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { fetchCharacterBasic } from '../../nexon/character'
@@ -30,14 +31,13 @@ import { fetchCharacterBasicCached } from './character-basic-fetch'
 import { readKnownEligibility, resolveCharacterEligibility } from './character-eligibility'
 import type { CharacterEligibility } from './character-eligibility'
 import { toScheduleSyncError } from './errors'
-import { credentialOf } from '../../lib/nexon-credential'
 // 계정은 반드시 인자로 온다. 저장된 고른 계정 이라는 것이 없다. 부르는 쪽(캐릭터 관리의 계정
 // 드롭다운)이 어느 계정을 여는지 알고 있고, 모르면 그것은 버그이지 폴백으로 덮을 상태가 아니다.
 async function resolveAccountContext(accountId?: string): Promise<{
   credential: NexonCredential
   accountId: string
 }> {
-  const credential = credentialOf(await getAuthConfig())
+  const credential = await currentCredential()
   if (credential === null || accountId === undefined) {
     throw new Error(
       'resolveRegisteredCharacters: API 키가 없거나 계정을 지정하지 않았습니다',
@@ -104,7 +104,7 @@ export async function resolveTrackedCharacterContext(ocids: string[]): Promise<{
    */
   allCharacters: MapleCharacter[]
 }> {
-  const credential = credentialOf(await getAuthConfig())
+  const credential = await currentCredential()
   if (credential === null) {
     throw new Error('resolveTrackedCharacterContext: 온보딩이 완료되지 않았습니다 (API 키 없음)')
   }
