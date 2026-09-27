@@ -29,6 +29,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { CacheClearConfirm } from './CacheClearConfirm'
 import { DisconnectConfirm } from './DisconnectConfirm'
+import { SignOutConfirm } from './SignOutConfirm'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 import { SettingsRow } from './SettingsRow'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
@@ -51,6 +52,8 @@ export function SettingsAccountDataScreen(
   const [isDisconnecting, setIsDisconnecting] = useState(false)
   // 로그인이 없으면 뗄 것이 없다. 모르는 동안에도 안 세운다 - 세웠다 지우면 행이 하나 튄다.
   const [showSignOut, setShowSignOut] = useState(false)
+  const [isSignOutOpen, setIsSignOutOpen] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const signOutNexonLogin = useAuthStore((state) => state.signOutNexonLogin)
 
   useEffect(() => {
@@ -107,14 +110,15 @@ export function SettingsAccountDataScreen(
             로그아웃은 **연결 해제와 다른 카드**다. 파괴적 행은 별도 카드로 내린다는 규칙이
             이 화면에 이미 있고, 로그아웃은 되돌릴 수 있어 그 무리에 안 든다.
 
-            확인 모달을 안 띄운다. 다시 로그인하면 되므로 파괴적 행에만 쓰는 모달을 여기 두지
-            않는다. 지우는 것은 넥슨 로그인 하나이고 API 키와 내부 데이터는 남는다.
+            확인을 한 번 받는다(사용자 지정). 되돌릴 수 있는 동작이지만 다시 로그인하는 것이
+            창을 열고 넥슨을 거치는 일이라 실수로 눌렀을 때 치르는 값이 작지 않다.
+            지우는 것은 넥슨 로그인 하나이고 API 키와 내부 데이터는 남는다.
           */}
           {showSignOut && (
             <Card className="px-6">
               <SettingsRow
                 label="넥슨 로그아웃"
-                onPress={() => void signOutNexonLogin()}
+                onPress={() => setIsSignOutOpen(true)}
                 showChevron={false}
               />
             </Card>
@@ -147,6 +151,15 @@ export function SettingsAccountDataScreen(
       </ScreenScroll>
 
       {/* 모달은 카드 밖이자 스크롤 상자 밖의 형제다. 카드 안에 두면 구분선이 하나 더 그려진다. */}
+      <SignOutConfirm
+        isOpen={isSignOutOpen}
+        isSigningOut={isSigningOut}
+        onCancel={() => setIsSignOutOpen(false)}
+        onConfirm={() => {
+          setIsSigningOut(true)
+          void signOutNexonLogin()
+        }}
+      />
       <CacheClearConfirm
         isOpen={isCacheClearOpen}
         isClearing={isClearing}
