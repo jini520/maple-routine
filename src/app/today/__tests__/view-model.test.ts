@@ -989,6 +989,19 @@ describe('초기화 카운트다운', () => {
     expect(new Date(model.resets.weekly.atMs).toISOString()).toBe('2026-08-19T15:00:00.000Z')
     expect(new Date(model.resets.monthly.atMs).toISOString()).toBe('2026-08-31T15:00:00.000Z')
   })
+
+  // 화면은 일일 `atMs` 에 다시 렌더된다. 주간·월간 경계도 그 시각과 겹치므로, 그 순간의 `now` 로
+  // 셋이 모두 다음 주기로 서야 한다.
+  it('초기화 시각 그 순간에 만들면 셋 다 다음 주기의 시각을 준다', () => {
+    // 2026-09-01(화) 00:00 KST. 월간 경계
+    const 월초 = buildTodayViewModel(input({ now: new Date('2026-08-31T15:00:00.000Z') }))
+    expect(new Date(월초.resets.daily.atMs).toISOString()).toBe('2026-09-01T15:00:00.000Z')
+    expect(new Date(월초.resets.monthly.atMs).toISOString()).toBe('2026-09-30T15:00:00.000Z')
+
+    // 2026-08-20(목) 00:00 KST. 주간 경계
+    const 목요일 = buildTodayViewModel(input({ now: new Date('2026-08-19T15:00:00.000Z') }))
+    expect(new Date(목요일.resets.weekly.atMs).toISOString()).toBe('2026-08-26T15:00:00.000Z')
+  })
 })
 
 //

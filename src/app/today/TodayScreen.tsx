@@ -241,6 +241,20 @@ export function TodayScreen(): React.JSX.Element {
   })
 
   /**
+   * 다음 KST 자정에 화면을 다시 렌더시키는 타이머.
+   *
+   * 초기화 시각과 기간 값은 이 렌더의 `now` 로 정해져서, 다시 렌더되지 않으면 카운트다운이 `0초` 에
+   * 멈추고 기간이 지난 기간에 머문다. 주간·월간 경계도 KST 자정이라 일일 시각 하나로 셋을 다 넘긴다.
+   * `boundaryTick` 을 deps 에 두는 것은 타이머가 경계보다 먼저 울려 `atMs` 가 그대로일 때 다시 걸기 위해서다.
+   */
+  const [boundaryTick, setBoundaryTick] = useState(0)
+  const nextResetAtMs = viewModel.resets.daily.atMs
+  useEffect(() => {
+    const id = setTimeout(() => setBoundaryTick((tick) => tick + 1), Math.max(0, nextResetAtMs - Date.now()))
+    return () => clearTimeout(id)
+  }, [nextResetAtMs, boundaryTick])
+
+  /**
    * 헤더 버튼과 당김이 같은 함수를 부른다.
    *
    * `allSettled` 다. 넷이 서로 독립이라 하나가 실패해도 나머지를 기다려야 하고, 넷이 다 끝나야
