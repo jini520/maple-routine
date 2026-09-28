@@ -122,6 +122,7 @@ export function BossProfitScreen(): React.JSX.Element {
     goToPreviousPeriod,
     goToNextPeriod,
     retryPeriod,
+    rereadPeriod,
     setRowParty,
     partyPlans,
     loadPartyPlans,
@@ -160,6 +161,22 @@ export function BossProfitScreen(): React.JSX.Element {
   // 일부 캐릭터만 실패한 경우도 토스트다. 본문이 한 줄이라 이름을 나열하면 잘리므로 인원 수만
   // 싣는다.
   useStaleCharactersToast(staleCharacterNames, () => refresh(trackedOcids ?? []))
+
+  /**
+   * 층이 회차를 끝내면 보는 기간을 다시 읽는다.
+   *
+   * 창 동기화는 화면을 안 막으려고 뒤에서 도는데 **그것이 지난 기간 기록을 만든다.** 다시 읽지
+   * 않으면 이전 화살표 게이트와 월간 주차 소계가 먼저 읽은 순간의 답에 굳어, 기록이 비어 있는
+   * 상태로 들어온 첫 회차에서 화살표가 꺼진 채로 남는다.
+   *
+   * 마운트 회차는 건너뛴다. 그때는 `loadTrackedOcids` 가 이미 읽고 있어 빈 화면이 한 프레임 스친다.
+   */
+  const seenLedgerRevision = useRef(ledger.revision)
+  useEffect(() => {
+    if (seenLedgerRevision.current === ledger.revision) return
+    seenLedgerRevision.current = ledger.revision
+    void rereadPeriod()
+  }, [ledger.revision, rereadPeriod])
 
   // 미완료 행이 그릴 파티 인원과 비율. 기록이 아니라 설정이라 기간 로드와 따로 읽고, 추적 목록이
   // 도착해야 읽을 수 있어 그 값이 바뀔 때 읽는다.

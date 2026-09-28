@@ -56,11 +56,13 @@ const dispatch = jest.fn()
 
 // 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
 const mockLedgerReload = jest.fn()
+// 층이 회차를 끝낼 때마다 오르는 값. 화면이 그때 기간을 다시 읽는지 재려면 테스트가 올려야 한다.
+let mockLedgerRevision = 1
 jest.mock('../../../features/ledger/useLedgerData', () => ({
   useLedgerData: () => ({
     status: 'ready',
     collecting: false,
-    revision: 1,
+    revision: mockLedgerRevision,
     reload: mockLedgerReload,
     requestDateRange: jest.fn(),
   }),
@@ -133,6 +135,7 @@ function mockStore(overrides: Partial<BossProfitStore> = {}): void {
     goToPreviousPeriod: jest.fn(),
     goToNextPeriod: jest.fn(),
     retryPeriod: jest.fn(),
+    rereadPeriod: jest.fn().mockResolvedValue(undefined),
     setPartySize: jest.fn(),
     setBossDrops: jest.fn(),
     ...overrides } as unknown as BossProfitStore)
@@ -207,6 +210,7 @@ function renderScreen(): ReturnType<typeof render> {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockLedgerRevision = 1
   mockLedgerReload.mockResolvedValue(undefined)
   // 카운트업의 '직전 표시값' 기억은 모듈 수준이라 언마운트를 건너 산다.
   // 테스트 하나가 곧 세션 하나다.
@@ -1017,6 +1021,35 @@ describe('구조 계약', () => {
 
     expect(scrollTo).not.toHaveBeenCalled()
     scrollTo.mockRestore()
+  })
+
+  // 창은 화면을 안 막으려고 뒤에서 도는데 그것이 지난 기간 기록을 만든다. 다시 읽지 않으면 이전
+  // 화살표가 읽은 순간의 답에 굳는다.
+  it('층이 회차를 끝내면 기간을 다시 읽는다', async () => {
+    const rereadPeriod = jest.fn().mockResolvedValue(undefined)
+    mockStore({ rereadPeriod })
+    const { rerender } = await renderScreen()
+    // 마운트 회차는 `loadTrackedOcids` 가 이미 읽고 있다. 여기서 또 읽으면 빈 화면이 한 프레임 스친다.
+    expect(rereadPeriod).not.toHaveBeenCalled()
+
+    mockLedgerRevision += 1
+    await act(async () => {
+      rerender(화면트리())
+    })
+
+    expect(rereadPeriod).toHaveBeenCalledTimes(1)
+  })
+
+  it('층의 회차 번호가 그대로면 다시 읽지 않는다', async () => {
+    const rereadPeriod = jest.fn().mockResolvedValue(undefined)
+    mockStore({ rereadPeriod })
+    const { rerender } = await renderScreen()
+
+    await act(async () => {
+      rerender(화면트리())
+    })
+
+    expect(rereadPeriod).not.toHaveBeenCalled()
   })
 
   it('탭·기간이 아코디언 key 에 들어가 이동하면 펼침이 리셋된다(#27)', async () => {

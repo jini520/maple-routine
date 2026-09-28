@@ -267,6 +267,17 @@ export interface BossProfitStore extends BossProfitState {
    * 백필한다. `refresh` 로는 대신할 수 없다. 그쪽은 현재 기간으로 되돌린다.
    */
   retryPeriod(): Promise<void>
+  /**
+   * 지금 보고 있는 (tab, periodKey) 를 **기록에서 다시 읽는다.** 기간도 탭도 안 바꾼다.
+   *
+   * 층의 회차가 끝날 때 화면이 부른다. 창 동기화가 화면보다 늦게 지난 기간 기록을 만들므로,
+   * 다시 읽지 않으면 이전 화살표 게이트와 월간 주차 소계가 먼저 읽은 순간의 답에 굳는다.
+   *
+   * `retryPeriod` 와 갈리는 자리가 둘이다. 표를 건너뛰지 않고(판이 갈렸으면 이미 못 쓴다),
+   * **회차 번호를 안 올린다**(올리면 돌고 있는 `refresh` 의 마지막 커밋이 취소돼 방금 받은
+   * 동기화 결과가 화면에 못 선다).
+   */
+  rereadPeriod(): Promise<void>
   /** 미완료 행이 그릴 파티 인원과 비율을 읽어 둔다. 설정 + 그 기간에 갈라진 값. */
   loadPartyPlans(ocids: string[], now: Date): Promise<void>
   /**
@@ -1362,8 +1373,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     await withSqliteFallback(fillMissingRecordWorlds(knownWorlds), undefined)
 
     // refresh 는 항상 현재 기간을 보여주므로 한 칸 더 과거로 갈 수 있는지도 함께 계산해 이전
-    // 버튼 게이트를 세운다. refresh 는 이전 기간의 기록을 안 건드리므로 아래 캐시·라이브 두
-    // set() 이 같은 값을 쓴다.
+    // 버튼 게이트를 세운다. **이 값은 캐시 단계까지만 쓴다.** 창 동기화가 화면을 안 막으려고
+    // 뒤에서 돌면서 지난 기간 기록을 만들므로, 아래 동기화가 끝난 뒤에는 다시 재야 한다.
     const canGoPreviousPeriod = await canReachPreviousPeriod(tab, currentPeriodKey, displayOcids)
 
     // 수동 모드에서는 게임 등록·처치가 아니라 사용자 멤버십(manualTrackedContent)이 표시 목록을
@@ -1837,13 +1848,17 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           )
         : []
 
-    const [liveDropsByRowKey, livePreviousPeriodTotalMeso, liveWeeksWithRecords] = await Promise.all([
-      loadDropsByRowKey(displayOcids, sortedRows, now),
-      previousPeriodTotalPromise,
-      tab === 'weekly'
-        ? loadWeeksWithRecords(syncedOcids, currentPeriodKey.slice(0, 7))
-        : Promise.resolve<string[]>([]),
-    ])
+    const [liveDropsByRowKey, livePreviousPeriodTotalMeso, liveWeeksWithRecords, liveCanGoPreviousPeriod] =
+      await Promise.all([
+        loadDropsByRowKey(displayOcids, sortedRows, now),
+        previousPeriodTotalPromise,
+        tab === 'weekly'
+          ? loadWeeksWithRecords(syncedOcids, currentPeriodKey.slice(0, 7))
+          : Promise.resolve<string[]>([]),
+        // **다시 잰다.** 위에서 잰 값은 조회 앞의 사실이고, 그 사이에 창 동기화가 지난 기간
+        // 기록을 만들 수 있다. 낡은 값을 여기서 쓰면 기록이 생겼는데도 화살표가 꺼진 채로 굳는다.
+        canReachPreviousPeriod(tab, currentPeriodKey, displayOcids),
+      ])
 
     if (myGeneration !== requestGeneration) return
 
@@ -1857,7 +1872,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       weeklySubtotals,
       isPeriodLoading: false,
       periodState: sortedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
-      canGoPreviousPeriod,
+      canGoPreviousPeriod: liveCanGoPreviousPeriod,
       previousPeriodTotalMeso: livePreviousPeriodTotalMeso,
       error: null,
       staleCharacterNames,
@@ -1967,6 +1982,14 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 표를 건너뛴다. 실패한 기간의 스냅샷도 표에 들어가므로, 쓰면 `다시 시도` 가 같은 실패를
     // 그대로 되돌려 준다.
     await loadPeriod(set, tab, periodKey, ocids, new Date(), myGeneration, true)
+  },
+
+  async rereadPeriod() {
+    const { tab, periodKey } = get()
+    const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
+    // 지금 회차의 번호를 그대로 쓴다. 올리면 돌고 있는 `refresh` 가 취소된다. 그 사이에 사용자가
+    // 움직이면 번호가 올라 이 읽기가 스스로 물러난다.
+    await loadPeriod(set, tab, periodKey, ocids, new Date(), requestGeneration)
   },
 
   async loadPartyPlans(ocids, now) {
