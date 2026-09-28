@@ -1,6 +1,7 @@
 import { reloadAppAsync } from 'expo'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 // NativeWind 배선의 **유일한 진입점**( 3단계). Metro 가 이 import 를 보고 Tailwind 를
@@ -18,8 +19,8 @@ import { InputCardHost } from './src/components/organisms/InputCard/InputCardHos
  *
  * ## 감싸는 순서가 계약이다
  *
- *   `GestureHandlerRootView` → `SafeAreaProvider` → `ThemeProvider` → `BottomSheetModalProvider`
- *   → `ErrorBoundary` → `AppShell`
+ *   `GestureHandlerRootView` → `SafeAreaProvider` → `KeyboardProvider` → `ThemeProvider`
+ *   → `BottomSheetModalProvider` → `ErrorBoundary` → `AppShell`
  *
  * - **`GestureHandlerRootView` 와 `BottomSheetModalProvider` 는 3단계가 여기로 넘긴 것이다.**
  *   `BottomSheet.tsx` 파일 머리가 *"`BottomSheetModal` 은 `BottomSheetModalProvider` 아래에서만
@@ -58,19 +59,22 @@ export default function App(): React.JSX.Element {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ThemeProvider>
-          <BottomSheetModalProvider>
-            <ErrorBoundary onRestart={() => void reloadAppAsync('ErrorBoundary 폴백의 다시 시작')}>
-              <AppShell />
-            </ErrorBoundary>
-          </BottomSheetModalProvider>
-          {/*
-            입력 카드는 프로바이더 **뒤**에 선다. 시트는 그 프로바이더가 자기 자식들 뒤에 그리므로,
-            시트 안에서 그린 카드는 무엇으로 감싸도 시트 위로 못 올라간다. 여기 두면 그 전부를
-            덮으면서 평범한 터치 트리 안에 있어 카드의 누르개가 산다.
-          */}
-          <InputCardHost />
-        </ThemeProvider>
+        {/* 입력 카드가 키보드 높이를 여기서 받는다. 없으면 높이가 0 에 머물러 카드가 키보드 뒤에 깔린다. */}
+        <KeyboardProvider>
+          <ThemeProvider>
+            <BottomSheetModalProvider>
+              <ErrorBoundary onRestart={() => void reloadAppAsync('ErrorBoundary 폴백의 다시 시작')}>
+                <AppShell />
+              </ErrorBoundary>
+            </BottomSheetModalProvider>
+            {/*
+              입력 카드는 프로바이더 **뒤**에 선다. 시트는 그 프로바이더가 자기 자식들 뒤에 그리므로,
+              시트 안에서 그린 카드는 무엇으로 감싸도 시트 위로 못 올라간다. 여기 두면 그 전부를
+              덮으면서 평범한 터치 트리 안에 있어 카드의 누르개가 산다.
+            */}
+            <InputCardHost />
+          </ThemeProvider>
+        </KeyboardProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   )
