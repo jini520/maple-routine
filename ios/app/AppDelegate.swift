@@ -35,6 +35,22 @@ class AppDelegate: ExpoAppDelegate {
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
+  /**
+   * 짧은 변이 600pt 미만인 화면(바형 아이폰 · 접는 아이폰의 커버)을 세로로 묶는 자리.
+   * 앱에 가로 레이아웃이 없어서다. 안드로이드가 큰 화면에서 잠금을 푸는 600dp 와 같은 수다.
+   * 창이 아니라 화면에서 잰다. 아이패드 분할 화면에서 창이 좁아져도 기기는 돌아야 한다.
+   */
+  public override func application(
+    _ application: UIApplication,
+    supportedInterfaceOrientationsFor window: UIWindow?
+  ) -> UIInterfaceOrientationMask {
+    let screen = window?.windowScene?.screen.bounds.size ?? UIScreen.main.bounds.size
+    if min(screen.width, screen.height) < 600 {
+      return .portrait
+    }
+    return super.application(application, supportedInterfaceOrientationsFor: window)
+  }
+
   // Linking API
   public override func application(
     _ app: UIApplication,
