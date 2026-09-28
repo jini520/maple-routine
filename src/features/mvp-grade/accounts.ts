@@ -2,7 +2,6 @@
 import { currentCredential } from '../auth/current-credential'
 import { summarizeAccount, type AccountSummaryView } from '../character-manage/derivations'
 import { accountOfOcid, type CharacterAccountSighting } from '../../lib/mvp/membership'
-import { getAuthConfig } from '../../storage/api-key'
 import { getCharacterProfiles } from '../../storage/character-profiles'
 import type { MapleAccount } from '../../types'
 import { fetchAndRecordCharacterList } from './character-list'

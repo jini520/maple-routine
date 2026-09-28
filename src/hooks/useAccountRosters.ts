@@ -32,7 +32,6 @@ import {
   type ScheduleSyncError,
 } from '../features/schedule-sync/schedule-sync'
 import { fetchAndRecordCharacterList } from '../features/mvp-grade/character-list'
-import { getAuthConfig } from '../storage/api-key'
 import type { CharacterPickerEntry } from '../types'
 import { apiKeyValueOf } from '../lib/nexon-credential'
 import type { NexonCredential } from '../types/auth'

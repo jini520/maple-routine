@@ -6,7 +6,6 @@
 import { currentCredential } from '../auth/current-credential'
 import { symbolLevelsOf } from '../../lib/cashbook/symbol-costs'
 import { fetchSymbolEquipment } from '../../nexon/symbol-levels'
-import { getAuthConfig } from '../../storage/api-key'
 
 export async function loadSymbolLevels(ocid: string): Promise<Record<string, number> | null> {
   const credential = await currentCredential()

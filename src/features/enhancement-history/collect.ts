@@ -13,7 +13,6 @@ import { fetchAndRecordCharacterList } from '../mvp-grade/character-list'
 import type { EnhancementHistoryRow, EnhancementKind } from '../../nexon/history/client'
 import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
 import { fetchEnhancementHistory } from '../../nexon/history/client'
-import { getAuthConfig } from '../../storage/api-key'
 import { saveEventWorldNames } from '../../storage/event-world-names'
 import {
   checkKey,

@@ -16,7 +16,6 @@ import {
   getCachedCharacterBasic,
   reconcileCachedCharacterBasicOcids,
 } from '../../storage/character-basic-cache'
-import { getAuthConfig } from '../../storage/api-key'
 import { getCharacterProfiles } from '../../storage/character-profiles'
 import type { CharacterProfileSnapshot } from '../../storage/character-profiles'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
