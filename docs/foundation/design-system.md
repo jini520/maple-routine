@@ -413,9 +413,11 @@ L 0.13~0.15 라 **스크림을 완전 불투명 검정으로 만들어도 1.07 �
   옮겨 가고 **터치 영역이 제자리에 남는다**. 그러면 옮겨 간 자리의 닫기 버튼을 눌러도 안 닫히고
   키보드만 내려간다(실기에서 사용자가 잡았다).
 
-- **키보드 높이는 Reanimated 가 잰다**(`useAnimatedKeyboard`). 값이 UI 스레드에서 갱신돼 JS 왕복
-  없이 따라간다. 그 훅은 **deprecated** 이고 대체제가 `react-native-keyboard-controller` 인데,
-  그쪽은 네이티브 모듈이라 OTA 로 못 나간다. 다음 스토어 빌드에서 옮긴다(이슈 #495).
+- **키보드 높이는 `react-native-keyboard-controller` 가 잰다**(`useReanimatedKeyboardAnimation`).
+  값이 UI 스레드에서 갱신돼 JS 왕복 없이 따라간다. 앱 셸이 `KeyboardProvider` 를 세워야 값이 온다.
+  라이브러리의 `height` 는 음수라 `keyboard-offset` 이 부호를 뒤집어 높이로 돌려준다. 처음에는
+  Reanimated 의 `useAnimatedKeyboard` 를 썼는데, 그 훅이 deprecated 여서 스토어 빌드에서 옮겼다
+  (이슈 #495).
 - **카드 자리는 그 카드가 본 가장 큰 키보드 높이를 붙든다.** 키보드가 닫히는 동안 값이 연속으로
   내려오므로(`291 → … → 0.5 → 0`) `0 보다 큰 마지막 값` 을 쓰면 카드가 따라 내려간다.
 

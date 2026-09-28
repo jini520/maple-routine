@@ -45,6 +45,10 @@ beforeEach(() => {
 require('./src/storage/__tests__/fake-preferences').installFakePreferences()
 require('./src/native/__tests__/fake-native-ports').installNoopNativePorts()
 
+// keyboard-controller 는 네이티브 모듈이라 jest 에서는 링크가 안 된다. 라이브러리가 내주는 목을 건다.
+// 안 걸면 입력 카드를 그리는 스위트가 import 단계에서 통째로 죽는다.
+jest.mock('react-native-keyboard-controller', () => require('react-native-keyboard-controller/jest'))
+
 // ② `expect(값, '메시지')` — **vitest 에는 있고 jest 에는 없다.**
 //
 //    옮겨 온 테스트 170곳이 이 두 번째 인자로 «어느 항목에서 틀렸는지» 를 말한다

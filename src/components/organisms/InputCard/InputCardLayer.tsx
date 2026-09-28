@@ -7,8 +7,7 @@
  * RN 의 `Modal` 로 띄우면 안 된다. 트리 안에 인라인으로 서서 **카드 안의 누르개가 터치를 하나도
  * 못 받았다**(실기 확인). 자리와 그림은 멀쩡한데 누르기만 전부 죽고 글자만 들어간다.
  *
- * 키보드 높이는 Reanimated 가 잰다(`keyboard-offset`). 만들 때 방법 셋을 다 구현해 눌러 보고
- * 고른 것이고, 고른 뒤 나머지 둘과 고르개를 걷었다.
+ * 키보드 높이는 keyboard-controller 가 잰다(`keyboard-offset`).
  */
 import { View } from 'react-native'
 import { useAnimatedReaction, useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
@@ -26,7 +25,7 @@ export function InputCardLayer(card: InputCardLayerProps): React.JSX.Element {
    * 키보드는 카드가 열린 동안에도 닫힐 수 있다. 판의 빈 자리를 누르거나 아래로 쓸어내리는
    * 자리가 그렇다. 그때마다 카드가 창 바닥까지 내려갔다 올라오면 치던 자리가 흔들린다.
    *
-   * **`0 보다 큰 마지막 값` 이 아니라 `가장 큰 값` 이다.** Reanimated 는 키보드가 닫히는 동안
+   * **`0 보다 큰 마지막 값` 이 아니라 `가장 큰 값` 이다.** keyboard-controller 는 키보드가 닫히는 동안
    * 값이 연속으로 내려온다(291 → 250 → … → 0.5 → 0). 마지막 값을 붙들면 그 작은 값들을 받아들여
    * 카드가 키보드를 따라 같이 내려갔다(사용자가 잡았다).
    *
