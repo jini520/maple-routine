@@ -3054,7 +3054,7 @@ PODS:
     - RNNotifee/NotifeeCore (= 9.1.8)
   - RNNotifee/NotifeeCore (9.1.8):
     - React-Core
-  - RNReanimated (4.5.1):
+  - RNReanimated (4.5.5):
     - boost
     - DoubleConversion
     - fast_float
@@ -3081,43 +3081,13 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNReanimated/apple (= 4.5.1)
-    - RNReanimated/common (= 4.5.1)
-    - RNReanimated/view (= 4.5.1)
+    - RNReanimated/apple (= 4.5.5)
+    - RNReanimated/common (= 4.5.5)
+    - RNReanimated/view (= 4.5.5)
     - RNWorklets
     - SocketRocket
     - Yoga
-  - RNReanimated/apple (4.5.1):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-hermes
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - RNWorklets
-    - SocketRocket
-    - Yoga
-  - RNReanimated/common (4.5.1):
+  - RNReanimated/apple (4.5.5):
     - boost
     - DoubleConversion
     - fast_float
@@ -3147,7 +3117,37 @@ PODS:
     - RNWorklets
     - SocketRocket
     - Yoga
-  - RNReanimated/view (4.5.1):
+  - RNReanimated/common (4.5.5):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNWorklets
+    - SocketRocket
+    - Yoga
+  - RNReanimated/view (4.5.5):
     - boost
     - DoubleConversion
     - fast_float
@@ -3899,7 +3899,7 @@ SPEC CHECKSUMS:
   RNGestureHandler: 83e66307c200b98c746bd03113c4403da5c9b486
   RNGoogleMobileAds: ea2da81e7951ed0ce97902b01fa80c39b2bb3ff9
   RNNotifee: 5e3b271e8ea7456a36eec994085543c9adca9168
-  RNReanimated: ab314192bf73cf8b4cc6567f2e2f9c90e9bb80e8
+  RNReanimated: 51d36cd3dad564b74c4353cda724e1270f63d91a
   RNScreens: 40460e1c9a818613c7004427f953005971f314fc
   RNSVG: c6acd5c597d26625214295105756c5e488f5ae4c
   RNWorklets: e620ac382f5f09f9eda84a47fcc12248fd001bde
