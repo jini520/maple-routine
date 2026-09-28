@@ -9,7 +9,6 @@
  */
 import { currentCredential } from '../auth/current-credential'
 import { fetchMesoRate } from '../../nexon/meso-rate'
-import { getAuthConfig } from '../../storage/api-key'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCachedMesoRate, setCachedMesoRate } from '../../storage/meso-rate-cache'
 

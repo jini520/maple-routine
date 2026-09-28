@@ -16,7 +16,6 @@
  */
 import { currentCredential } from '../auth/current-credential'
 import type { NexonCredential } from '../../types/auth'
-import { getAuthConfig } from '../../storage/api-key'
 import {
   MIN_SCHEDULER_DATE,
   getAdjacentPeriodKey,
