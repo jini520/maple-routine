@@ -226,6 +226,8 @@ describe('1초마다 다시 그린다', () => {
     expect(getByTestId('reset-value-daily').props.children).toBe('12시간 24분 0초')
   })
 
+  // 위젯은 받은 `atMs` 만 안다. 다음 주기로 넘기는 것은 화면이 경계에서 다시 렌더되는 일이고,
+  // 그것은 `TodayScreen.test.tsx` 의 `초기화 경계` 가 본다. 여기는 그 렌더 전 한순간의 값이다.
   it('0 밑으로 내려가지 않는다. 지난 시각을 음수로 말하지 않는다', async () => {
     const { getByTestId } = await 위젯(
       크기['2x1'],

@@ -23,6 +23,7 @@ import {
 import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
+import { formatBossProfitPeriodLabel } from '../../../lib/boss/boss-profit-period'
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import type { DropHistoryPeriodGroup, DropHistoryRecord } from '../../../lib/drop/drop-history'
 import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
@@ -793,6 +794,60 @@ describe('TodayScreen: 격자', () => {
     }
   })
 
+})
+
+// 뷰모델은 렌더 때의 `now` 로 초기화 시각과 기간을 정한다. 경계가 지나도 화면이 다시 렌더되지
+// 않으면 카운트다운이 `0초` 에 멈추고 기간 값이 지난 기간을 말한다(이슈 #459).
+describe('TodayScreen: 초기화 경계', () => {
+  afterEach(() => {
+    jest.setSystemTime(NOW)
+  })
+
+  function 일일_값(): unknown {
+    return screen.getByTestId('reset-value-daily').props.children
+  }
+
+  it('일일 초기화가 지나면 다음 24시간부터 다시 센다', async () => {
+    // 2026-08-17(월) 23:59:57 KST
+    jest.setSystemTime(new Date('2026-08-17T14:59:57.000Z'))
+    await renderScreen()
+    expect(일일_값()).toBe('3초')
+
+    await act(async () => {
+      jest.advanceTimersByTime(5 * 1000)
+    })
+
+    expect(일일_값()).toBe('23시간 59분 58초')
+  })
+
+  // 월간은 기본 배치(2x1)가 안 그린다. 월간 경계에서의 값은 `view-model.test.ts` 가 본다.
+  it('주간 초기화(목 00:00)가 지나면 다음 주기로 넘어간다', async () => {
+    // 2026-08-19(수) 23:59:30 KST
+    jest.setSystemTime(new Date('2026-08-19T14:59:30.000Z'))
+    await renderScreen()
+
+    await act(async () => {
+      jest.advanceTimersByTime(60 * 1000)
+    })
+
+    expect(screen.getByTestId('reset-value-weekly').props.children).toBe('6일 23시간')
+  })
+
+  it('주간 초기화가 지나면 보스 수익 타일의 기간 줄도 새 주를 말한다', async () => {
+    // 2026-08-19(수) 23:59:58 KST. 이번 주 키는 2026-08-13, 다음 주 키는 2026-08-20
+    jest.setSystemTime(new Date('2026-08-19T14:59:58.000Z'))
+    await renderScreen()
+    const 지난주 = formatBossProfitPeriodLabel('weekly', '2026-08-13', new Date()).secondary
+    expect(screen.getByText(지난주)).toBeTruthy()
+
+    await act(async () => {
+      jest.advanceTimersByTime(5 * 1000)
+    })
+
+    const 새주 = formatBossProfitPeriodLabel('weekly', '2026-08-20', new Date()).secondary
+    expect(screen.getByText(새주)).toBeTruthy()
+    expect(screen.queryByText(지난주)).toBeNull()
+  })
 })
 
 // 결산 줄이 공지 배너 **위**다. 공지는 읽을거리이고 결산 줄은 지금 화면의 값이 왜 안 맞는지를
