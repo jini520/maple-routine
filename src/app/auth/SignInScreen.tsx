@@ -88,7 +88,8 @@ export function SignInScreen(): React.JSX.Element {
               className="h-[72px] w-[72px] rounded-2xl border border-border"
               accessible={false}
             />
-            <View className="gap-1.5">
+            {/* 두 줄이 한 문장이라 사이를 안 벌린다. 줄 높이(20)가 곧 문단의 리듬이다. */}
+            <View>
               <Text className="text-center text-sm text-text-muted">
                 내 메이플 스토리 스케줄 정보 조회를 위해서
               </Text>

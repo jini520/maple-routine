@@ -304,6 +304,19 @@ describe('SignInScreen', () => {
     expect(view.queryByLabelText('Nexon Open API 키')).toBeNull()
   })
 
+  // 조건에 따라 갈리면 사용자가 화면을 두 가지로 배운다. 저장된 키가 있다는 것이 지금 키를
+  // 고치러 왔다는 뜻도 아니다 - 넥슨으로 갈아타러 왔을 수 있다.
+  it('저장된 키가 있어도 접힌 채로 선다', async () => {
+    mockSavedKey = 'saved-key'
+    mockStore({ status: 'signedOut' })
+
+    const view = await renderOverlay(<SignInScreen />)
+    await act(async () => {})
+
+    expect(view.getByText('API 키로 시작하기')).toBeTruthy()
+    expect(view.queryByLabelText('Nexon Open API 키')).toBeNull()
+  })
+
   // 내비게이션 계약. `RootNavigator` 의 분기 테스트가 이 이름으로 화면을 지목한다
   // (`screen-<라우트 이름>` 규약).
   it('라우트 이름 testID 를 루트에 유지한다', async () => {
