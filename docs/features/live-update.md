@@ -241,6 +241,20 @@
 심사 반려로 네이티브를 고쳐 다시 구우면 지문이 바뀌므로 이 값도 함께 갱신한다. 출시 후에는 비운다.
 1.0.8 출시로 지금은 두 플랫폼 다 비어 있다.
 
+### 지문을 바꾼 검증 빌드는 **자기가 잠긴다** (2026-09-28 실측)
+
+네이티브를 고친 빌드를 실기기에 올리면 켜자마자 `스토어 업데이트가 필요해요` 가 뜨고 닫을 길이
+없다. 그 기기의 지문이 `/latest` 의 `acceptedRuntimeVersions` 에 없어서다(`rn-live-update.ts` 의
+`accepted.includes(mine)`). 잠금은 제대로 동작한 것이고, 검증하려는 사람이 그 대상이 된 것뿐이다.
+
+**`IN_REVIEW_RUNTIME_VERSIONS` 로는 못 푼다.** 그 목록은 발행이 `latest-<platform>.json` 을 다시
+쓸 때 실리는데, 지문이 갈린 트리에서는 발행 자체를 하면 안 된다(위 「트리 지문이 곧 스토어
+바이너리의 지문이다」).
+
+검증 빌드에서만 앱 쪽을 끈다. `rnLiveUpdatePort.isSupported()` 에 `return false` 를 일회용으로
+넣고 굽는다. `src/` JS 는 지문 재료가 아니라 **지문이 안 바뀌고**, 확인 뒤
+`git checkout -- src/native/adapters/rn-live-update.ts` 로 정확히 되돌린다(build-use-delete).
+
 ### 잠금을 켜기 전에 실기기에서 확인한다
 
 **옛 지문을 뺀 뒤에는 `publish-rn-ota.mjs` 로 그 기기를 더 못 고친다.** 그 기기를 겨냥하려면
