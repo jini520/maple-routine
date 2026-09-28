@@ -15,6 +15,8 @@ Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루�
 
 ## 다음 스토어 릴리스에서 같이 할 일
 
+> **해결: 2026-09-29 에 UIScene 을 채택했다**([[ADR-324]]). 아래는 그 전의 기록이고, 끝의 우회는 이제 쓸 필요가 없다.
+>
 > **CRITICAL: UIScene 을 채택하지 않으면 iOS 27 에서 켜자마자 죽는다**(이슈 #494, 2026-09-20 실측).
 > 이 Mac 의 Xcode 가 27.0 뿐이라 빌드가 iOS 27 SDK 로 나가고, 그 SDK 로 만든 앱은 UIScene 생명주기가
 > 없으면 UIKit 이 실행을 막는다(`_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`).
