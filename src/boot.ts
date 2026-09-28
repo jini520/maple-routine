@@ -2,6 +2,7 @@ import {
   setAdsPort,
   setBackGesturePort,
   setColorSchemePort,
+  setBrowserPort,
   setHapticsPort,
   setKeyboardPort,
   setLiveUpdatePort,
@@ -27,6 +28,7 @@ import { rnSplashScreenPort } from './native/adapters/rn-splash-screen'
 import { rnStatusBarPort } from './native/adapters/rn-status-bar'
 import { rnSystemBarsPort } from './native/adapters/rn-system-bars'
 import { rnThemeAppearancePort } from './native/adapters/rn-theme-appearance'
+import { rnBrowserPort } from './native/adapters/rn-browser'
 import { rnLiveUpdatePort } from './native/adapters/rn-live-update'
 import { rnPreferencesPort } from './storage/adapters/rn-preferences'
 import { rnSqlitePort } from './storage/adapters/rn-sqlite'
@@ -96,6 +98,7 @@ export function installPorts(): void {
   setThemeAppearancePort(rnThemeAppearancePort)
 
   setLiveUpdatePort(rnLiveUpdatePort)
+  setBrowserPort(rnBrowserPort)
 
   // 포트는 아니지만 방향을 뒤집는 것은 같다. `nexon/` 이 저장소와 우리 서버를 직접 부르면
   // 계층이 거꾸로 선다. 액세스 토큰이 30분이라 긴 회차는 중간에 만료되고, 그때 이 함수가

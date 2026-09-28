@@ -1,5 +1,6 @@
 import {
   setAdsPort,
+  setBrowserPort,
   setBackGesturePort,
   setColorSchemePort,
   setHapticsPort,
@@ -26,6 +27,10 @@ import {
  * 구현을 다시 주입해 이 기본값을 덮는다.
  */
 export function installNoopNativePorts(): void {
+  // 테스트에서 링크를 눌러도 아무 창도 안 연다. 실제로 무엇으로 불렸는지는 화면 테스트가
+  // 이 모듈을 목으로 바꿔 본다.
+  setBrowserPort({ open: async () => {} })
+
   // `matchMedia` 없는 환경의 폴백과 같다. 테스트 기본 환경은 `node` 라 문서도 미디어 쿼리도 없다.
   setColorSchemePort({ get: () => 'light' })
 
