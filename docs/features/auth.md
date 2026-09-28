@@ -341,7 +341,7 @@ setApiKey
               "내 메이플 스토리 스케줄 정보 조회를 위해서"
               "로그인 또는 API 키 입력이 필요해요."
 넥슨 블록   소제목 text-15 font-semibold text-text  "게임 데이터 활용 로그인으로 시작하기"
-            링크   text-13 text-primary-ink        "게임 데이터 활용 로그인이란?"
+            링크   text-13 text-primary-ink + ExternalLink h-3.5  "게임 데이터 활용 로그인이란?"
             NexonLoginButton (w-full)
 키 블록     소제목 text-15 font-semibold text-text  "API 키로 시작하기"          ⌄ 아코디언 머리
             Text   text-13 text-text-muted         "넥슨 오픈 API에서 받은 키를 넣어요"
@@ -349,7 +349,7 @@ setApiKey
             label text-sm font-medium + input + 표시 토글
                    "openapi.nexon.com에서 확인"     ← 키가 있는 사람의 동선
             확인 버튼 Button tint, w-full
-            링크   text-13 text-primary-ink 중앙    "API 키 발급 방법 보기"
+            링크   text-13 text-primary-ink 중앙 + ExternalLink h-3.5  "API 키 발급 방법 보기"
             Text   text-xs text-text-muted 중앙     "입력한 키는 이 기기에만 저장되고 넥슨 외 어디로도 전송되지 않아요"
 ```
 
@@ -416,8 +416,12 @@ setApiKey
 **한 화면에 두 방식이 섞이지 않게 하는 것이 이유다.** 같은 크기 같은 색의 링크 셋이 하나는 앱을
 떠나고 둘은 안 떠나면, 누르기 전에는 어느 쪽인지 알 수 없다.
 
-- **바깥 화살표 아이콘(`ExternalLinkIcon`)을 뗀다.** 그 아이콘은 앱을 떠난다는 뜻인데 인앱
-  브라우저는 안 떠난다.
+- **바깥 화살표 아이콘(`ExternalLinkIcon`)은 남긴다**(사용자 지정 2026-09-28, 정정). 처음에는
+  뗐다가 되돌렸다. 떼면 링크라는 표식이 **색 하나만** 남는데, `primary-ink` 는 밝은 테마에서
+  표면 대비가 2.2~2.4 라 누를 수 있다는 것이 안 읽힌다. 크기는 글자에 맞춘다
+  (`text-xs` 옆 `h-3`, `text-13` 옆 `h-3.5`).
+- **링크 셋의 글자 굵기는 `normal` 이다**(사용자 지정 2026-09-28). 굵기까지 주면 소제목과 무게가
+  붙어 소제목 · 둘째 줄의 위아래 관계가 흐려진다.
 - **`role="link"` 는 남긴다.** 목적지가 웹 문서인 것은 그대로라 스크린리더가 링크로 읽어야 한다.
 - **범위는 이 화면뿐이다.** 설정·공지의 링크는 그대로 `Linking.openURL` 이다. 앱 전체를 바꾸는
   것은 별도 작업이다.

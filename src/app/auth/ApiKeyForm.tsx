@@ -21,6 +21,7 @@ import {
   Button,
   ChevronDownIcon,
   ChevronUpIcon,
+  ExternalLinkIcon,
   EyeIcon,
   EyeOffIcon,
   Text,
@@ -115,9 +116,10 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
             <Pressable
               role="link"
               onPress={() => openInAppBrowser(NEXON_OPEN_API_URL)}
-              className="self-start pt-0.5"
+              className="flex-row items-center gap-1 self-start pt-0.5"
             >
               <Text className="text-xs text-primary-ink">openapi.nexon.com에서 확인</Text>
+              <ExternalLinkIcon className="h-3 w-3 text-primary-ink" aria-hidden />
             </Pressable>
           </View>
 
@@ -137,9 +139,10 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
             <Pressable
               role="link"
               onPress={() => openInAppBrowser(GUIDE_URL)}
-              className="self-center px-3 py-0.5"
+              className="flex-row items-center gap-1 self-center px-3 py-0.5"
             >
-              <Text className="text-13 font-medium text-primary-ink">API 키 발급 방법 보기</Text>
+              <Text className="text-13 text-primary-ink">API 키 발급 방법 보기</Text>
+              <ExternalLinkIcon className="h-3.5 w-3.5 text-primary-ink" aria-hidden />
             </Pressable>
             {/* 키는 기기에 저장된다(storage/api-key). "저장하지 않는다"는 약속은 지킬 수 없다.
                 사실인 것은 백엔드가 없어 우리가 수집하지 않는다는 것뿐이다. */}

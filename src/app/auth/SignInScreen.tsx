@@ -29,7 +29,7 @@ import { loadSavedApiKey } from '../../features/auth/saved-key'
 import { useAuthStore } from '../../features/auth/store'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 
-import { Text } from '../../components/atoms'
+import { ExternalLinkIcon, Text } from '../../components/atoms'
 import { NexonLoginButton } from '../../components/molecules/NexonLoginButton/NexonLoginButton'
 import { EntryScroll } from '../../components/templates/EntryScroll/EntryScroll'
 import { openInAppBrowser } from '../../native/browser'
@@ -112,11 +112,10 @@ export function SignInScreen(): React.JSX.Element {
               <Pressable
                 role="link"
                 onPress={() => openInAppBrowser(DATA_UTIL_LOGIN_URL)}
-                className="self-start py-0.5"
+                className="flex-row items-center gap-1 self-start py-0.5"
               >
-                <Text className="text-13 font-medium text-primary-ink">
-                  게임 데이터 활용 로그인이란?
-                </Text>
+                <Text className="text-13 text-primary-ink">게임 데이터 활용 로그인이란?</Text>
+                <ExternalLinkIcon className="h-3.5 w-3.5 text-primary-ink" aria-hidden />
               </Pressable>
             </View>
             <NexonLoginButton onPress={() => void signInWithNexonAccount()} />
