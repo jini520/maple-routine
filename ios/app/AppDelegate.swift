@@ -9,6 +9,8 @@ class AppDelegate: ExpoAppDelegate {
 
   var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
+  /** 씬 대리자가 창을 열 때 리액트 네이티브에 넘기는 값. */
+  var launchOptions: [UIApplication.LaunchOptionsKey: Any]?
 
   public override func application(
     _ application: UIApplication,
@@ -20,16 +22,13 @@ class AppDelegate: ExpoAppDelegate {
 
     reactNativeDelegate = delegate
     reactNativeFactory = factory
+    self.launchOptions = launchOptions
 
 #if os(iOS) || os(tvOS)
-    window = UIWindow(frame: UIScreen.main.bounds)
     // FCM. 이 호출 전에는 Firebase API 가 전부 던진다. prebuild 가 넣어 주지만 이 저장소는
     // 산출물을 통째로 받지 않아(PrivacyInfo·Pods 참조를 지운다) 손으로 유지한다.
     FirebaseApp.configure()
-    factory.startReactNative(
-      withModuleName: "main",
-      in: window,
-      launchOptions: launchOptions)
+    // 창은 `SceneDelegate` 가 연다.
 #endif
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
@@ -49,25 +48,6 @@ class AppDelegate: ExpoAppDelegate {
       return .portrait
     }
     return super.application(application, supportedInterfaceOrientationsFor: window)
-  }
-
-  // Linking API
-  public override func application(
-    _ app: UIApplication,
-    open url: URL,
-    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
-  ) -> Bool {
-    return super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)
-  }
-
-  // Universal Links
-  public override func application(
-    _ application: UIApplication,
-    continue userActivity: NSUserActivity,
-    restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
-  ) -> Bool {
-    let result = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)
-    return super.application(application, continue: userActivity, restorationHandler: restorationHandler) || result
   }
 }
 
