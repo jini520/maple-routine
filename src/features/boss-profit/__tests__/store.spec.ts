@@ -2719,6 +2719,84 @@ describe('useBossProfitStore', () => {
       }
     })
 
+    it('refresh: 조회가 도는 사이에 지난 기간 기록이 생기면 게이트가 그것을 본다', async () => {
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-09-12T12:00:00+09:00'))
+
+      try {
+        // 기록이 하나도 없는 상태로 진입한다.
+        findAdjacentMock.mockResolvedValue(null)
+        // 창 동기화가 `syncSchedules` 가 도는 동안 지난 주 기록을 쓴다.
+        syncSchedulesMock.mockImplementation(async () => {
+          findAdjacentMock.mockResolvedValue('2026-09-03')
+          mockRecordsRevision += 1
+          return [syncResult()]
+        })
+
+        await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+
+        expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(true)
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
+    // 사용자 보고의 그 순서. 창은 13일 × 캐릭터 수라 캐릭터가 여럿이면 `refresh` 보다 늦게 끝난다.
+    it('rereadPeriod: 조회가 끝난 뒤에 창이 지난 기간 기록을 써도 게이트가 열린다', async () => {
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-09-12T12:00:00+09:00'))
+
+      try {
+        findAdjacentMock.mockResolvedValue(null)
+        syncSchedulesMock.mockResolvedValue([syncResult()])
+        await useBossProfitStore.getState().refresh(['ocid-1'], { auto: true })
+        expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(false)
+
+        // 층의 회차가 끝났다. 창이 그 사이에 지난 주 기록을 썼다.
+        findAdjacentMock.mockResolvedValue('2026-09-03')
+        mockRecordsRevision += 1
+        await useBossProfitStore.getState().rereadPeriod()
+
+        expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(true)
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
+    it('rereadPeriod: 게이트를 다시 읽고 돌고 있는 회차를 취소하지 않는다', async () => {
+      jest.useFakeTimers({ doNotFake: NOT_FAKED })
+      jest.setSystemTime(new Date('2026-09-12T12:00:00+09:00'))
+
+      try {
+        findAdjacentMock.mockResolvedValue(null)
+        let releaseSync: (results: CharacterScheduleSync[]) => void = () => undefined
+        syncSchedulesMock.mockImplementation(
+          () =>
+            new Promise<CharacterScheduleSync[]>((resolve) => {
+              releaseSync = resolve
+            }),
+        )
+        const refreshing = useBossProfitStore.getState().refresh(['ocid-1'])
+        await waitFor(() => expect(syncSchedulesMock).toHaveBeenCalled())
+
+        // 창 동기화가 지난 주 기록을 썼다. 층의 회차가 끝나 화면이 다시 읽는다.
+        findAdjacentMock.mockResolvedValue('2026-09-03')
+        mockRecordsRevision += 1
+        await useBossProfitStore.getState().rereadPeriod()
+
+        expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(true)
+
+        releaseSync([syncResult()])
+        await refreshing
+
+        // 돌던 회차가 취소되지 않아 동기화 결과가 화면에 선다.
+        expect(useBossProfitStore.getState().rows).toHaveLength(1)
+        expect(useBossProfitStore.getState().canGoPreviousPeriod).toBe(true)
+      } finally {
+        jest.useRealTimers()
+      }
+    })
+
     it('setTab: 더 과거에 기록이 없으면 canGoPreviousPeriod 가 false 다(monthly)', async () => {
       jest.useFakeTimers({ doNotFake: NOT_FAKED })
       jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
