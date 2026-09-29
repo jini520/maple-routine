@@ -4,7 +4,7 @@ import {
   fadeMaskColors,
   resolveSafeAreaFade,
 } from './safe-area-fade'
-import { Platform, RefreshControl, ScrollView, View, useWindowDimensions } from 'react-native'
+import { Platform, RefreshControl, ScrollView, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
 import { useBottomSafeAreaPx, useTopSafeAreaPx } from '../../../lib/safe-area'
 
 import { LinearGradient } from '../../../lib/nativewind-interop'
@@ -120,6 +120,12 @@ export interface ScreenScrollProps {
    */
   tracksScrollOffset?: boolean
   /**
+   * 스크롤할 때 받는 알림. 주면 프레임마다 흘린다(`tracksScrollOffset` 와 같은 간격).
+   *
+   * 통계 화면이 그래프가 화면에 들어오는 순간을 알려고 받는다.
+   */
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void
+  /**
    * 아래에 탭바가 있는가. 하단 인셋 처리만 가른다(`bottom-inset.ts`).
    *
    * **하위 페이지는 `false` 다.** 스택 위로 올라간 화면에는 탭바가 없다(
@@ -138,6 +144,7 @@ export function ScreenScroll({
   ref,
   onRefresh,
   tracksScrollOffset = false,
+  onScroll,
   hasTabBar = true,
 }: ScreenScrollProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
@@ -223,7 +230,8 @@ export function ScreenScroll({
         )
       }
       // 조건부 전개다. 안 켠 화면의 스크롤 뷰 프롭을 한 개도 바꾸지 않는다.
-      {...(tracksScrollOffset ? { scrollEventThrottle: 16 } : null)}
+      {...(tracksScrollOffset || onScroll !== undefined ? { scrollEventThrottle: 16 } : null)}
+      onScroll={onScroll}
       className="flex-1"
       style={port}
       // 헤더와 콘텐츠 사이, 그리고 콘텐츠 블록끼리의 간격을 **이 한 값**이 낸다. 래퍼 뷰가 따로

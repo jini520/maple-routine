@@ -4,6 +4,7 @@
  */
 import { memo, useState } from 'react'
 import { Pressable, View, type LayoutChangeEvent } from 'react-native'
+import Animated, { useAnimatedProps, type SharedValue } from 'react-native-reanimated'
 import Svg, { Line, Rect, Text as SvgText } from 'react-native-svg'
 
 import { Text } from '../../components/atoms'
@@ -14,7 +15,37 @@ import type { StatsPeriodRange } from '../../features/stats/periods'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { useThemeAppearance } from '../../theme/context'
 import type { BossCycle } from '../../types'
+import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
+
+const AnimatedRect = Animated.createAnimatedComponent(Rect)
+
+/** 0 선에서 자라는 막대. 진행값이 1 이면 제 길이다 */
+function GrowBar(props: {
+  x: number
+  width: number
+  from: number
+  to: number
+  fill: string
+  opacity: number
+  progress: SharedValue<number>
+}): React.JSX.Element {
+  const { from, to, progress } = props
+  const animatedProps = useAnimatedProps(() => {
+    const height = Math.abs(to - from) * progress.value
+    return { y: to < from ? from - height : from, height }
+  })
+  return (
+    <AnimatedRect
+      x={props.x}
+      width={props.width}
+      rx={3}
+      fill={props.fill}
+      opacity={props.opacity}
+      animatedProps={animatedProps}
+    />
+  )
+}
 
 const MODES = ['순수익', '수익', '지출'] as const
 type Mode = (typeof MODES)[number]
@@ -57,8 +88,11 @@ export const TrendSection = memo(function TrendSection(props: {
   cycle: BossCycle
   /** 오래된 것부터이고 마지막이 고른 기간이다 */
   trend: readonly StatsPeriodRange[]
+  /** 화면에 들어왔나. 들어오는 순간 막대가 자란다 */
+  revealed?: boolean
 }): React.JSX.Element {
   const { definition } = useThemeAppearance()
+  const progress = useRevealProgress(props.revealed ?? true)
   const [mode, setMode] = useState<Mode>('순수익')
   /** 고른 막대. 어느 기간에서 골랐는지 함께 들어, 기간이 바뀌면 새 기간의 끝으로 돌아간다 */
   const [picked, setPicked] = useState<{ periodKey: string; index: number } | null>(null)
@@ -116,17 +150,17 @@ export const TrendSection = memo(function TrendSection(props: {
             const x = AXIS_LEFT + slot * index + slot / 2
             const color = mode === '지출' || (net && value < 0) ? definition.fallInk : definition.riseInk
             const from = y(0)
-            const to = y(value)
+            const to = value === 0 ? from : Math.abs(y(value) - from) < 1 ? from + Math.sign(y(value) - from) : y(value)
             return (
-              <Rect
+              <GrowBar
                 key={props.trend[index].periodKey}
                 x={x - barWidth / 2}
-                y={Math.min(from, to)}
                 width={barWidth}
-                height={Math.max(Math.abs(to - from), value === 0 ? 0 : 1)}
-                rx={3}
+                from={from}
+                to={to}
                 fill={color}
                 opacity={index === selected ? 0.95 : 0.45}
+                progress={progress}
               />
             )
           })}

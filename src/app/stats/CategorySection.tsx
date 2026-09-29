@@ -5,15 +5,21 @@
  * 좁은 조각은 반원 오른쪽에 선으로 이어 적는다. 그림 높이는 반원에 고정해 두 카드의 높이가 같다.
  */
 import { memo, useState } from 'react'
-import { Pressable, View, type LayoutChangeEvent } from 'react-native'
-import Svg, { Path, Polyline } from 'react-native-svg'
+import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native'
+import Animated, { interpolate, useAnimatedProps, useAnimatedStyle } from 'react-native-reanimated'
+import Svg, { ClipPath, Defs, G, Path, Polyline } from 'react-native-svg'
 
 import { Text } from '../../components/atoms'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { CategoryTotal } from '../../features/stats/aggregate'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { useThemeAppearance } from '../../theme/context'
+import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
+
+const AnimatedPath = Animated.createAnimatedComponent(Path)
+/** NativeWind 가 등록한 `Animated.View` 는 정적 스타일을 버려서(`TabSegment` 와 같은 함정) 따로 만든다 */
+const AnimatedBox = Animated.createAnimatedComponent(View)
 
 /** 조각이 되는 갈래 수. 넘는 것은 `그 외` 로 묶는다 */
 const SLICE_LIMIT = 4
@@ -111,13 +117,29 @@ export const CategorySection = memo(function CategorySection(props: {
   title: string
   side: 'income' | 'expense'
   items: readonly CategoryTotal[]
+  /** 화면에 들어왔나. 들어오는 순간 반원이 왼쪽부터 쓸려 나온다 */
+  revealed?: boolean
 }): React.JSX.Element {
   const { definition } = useThemeAppearance()
+  const progress = useRevealProgress(props.revealed ?? true)
   const [width, setWidth] = useState(BASE.width)
   /** 팝오버를 연 항목 목록. 기간이 바뀌어 목록이 달라지면 저절로 닫힌다 */
   const [openFor, setOpenFor] = useState<readonly CategoryTotal[] | null>(null)
   const open = openFor === props.items
   const toggle = (): void => setOpenFor(open ? null : props.items)
+
+  // 반원을 왼쪽 끝에서 진행값만큼 쓸어 드러내는 부채꼴. 글자는 쓸기가 거의 끝날 때 나타난다.
+  const sweepScale = width / BASE.width
+  const sweepProps = useAnimatedProps(() => {
+    const cx = BASE.cx * sweepScale
+    const cy = BASE.cy * sweepScale
+    const radius = (BASE.outer + 4) * sweepScale
+    const angle = -Math.PI / 2 + Math.PI * Math.min(progress.value, 0.9999)
+    const x1 = cx + radius * Math.sin(angle)
+    const y1 = cy - radius * Math.cos(angle)
+    return { d: `M${cx} ${cy} L${cx - radius} ${cy} A${radius} ${radius} 0 0 1 ${x1} ${y1} Z` }
+  })
+  const labelStyle = useAnimatedStyle(() => ({ opacity: interpolate(progress.value, [0.6, 1], [0, 1], 'clamp') }))
 
   const label = props.side === 'income' ? '수입' : '지출'
   const color = props.side === 'income' ? definition.riseInk : definition.fallInk
@@ -182,6 +204,12 @@ export const CategorySection = memo(function CategorySection(props: {
     <StatsSection title={props.title} testID={`stats-category-${props.side}`}>
       <View style={{ height }} onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}>
         <Svg width={width} height={height}>
+          <Defs>
+            <ClipPath id={`stats-category-sweep-${props.side}`}>
+              <AnimatedPath animatedProps={sweepProps} />
+            </ClipPath>
+          </Defs>
+          <G clipPath={`url(#stats-category-sweep-${props.side})`}>
           {drawn.map(({ slice, from, to }) => (
             <Path
               key={slice.key}
@@ -194,6 +222,7 @@ export const CategorySection = memo(function CategorySection(props: {
               onPress={slice.rest ? toggle : undefined}
             />
           ))}
+          </G>
           {outside.map((part) => (
             <Polyline
               key={`leader-${part.slice.key}`}
@@ -205,6 +234,7 @@ export const CategorySection = memo(function CategorySection(props: {
           ))}
         </Svg>
 
+        <AnimatedBox pointerEvents="box-none" style={[StyleSheet.absoluteFill, labelStyle]}>
         {drawn
           .filter((part) => part.span >= INSIDE_MIN_SPAN)
           .map(({ slice, mid }) => {
@@ -242,6 +272,7 @@ export const CategorySection = memo(function CategorySection(props: {
             {formatMesoCompact(total)}
           </Text>
         </View>
+        </AnimatedBox>
 
         {open && (
           <>

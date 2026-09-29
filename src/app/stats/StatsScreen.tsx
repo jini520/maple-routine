@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
-import { Pressable, View } from 'react-native'
+import { Pressable, View, useWindowDimensions, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
 
 import { ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, Text } from '../../components/atoms'
 import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
@@ -40,6 +40,7 @@ import { BossSection } from './BossSection'
 import { CategorySection } from './CategorySection'
 import { CharacterSection } from './CharacterSection'
 import { CumulativeSection } from './CumulativeSection'
+import { sectionsToReveal } from './reveal'
 import { StatsSection } from './StatsSection'
 import { TrendSection } from './TrendSection'
 
@@ -137,6 +138,38 @@ export function StatsScreen(): React.JSX.Element {
     }
   }, [characterOcids])
 
+  /**
+   * 그래프가 화면에 들어오는 순간. 섹션마다 스크롤 내용 안의 윗변을 기억해 두고, 스크롤과 레이아웃 때
+   * 화면 아래 끝을 넘어 들어온 섹션을 한 번씩 보임으로 바꾼다. 보이면 그 섹션의 그래프가 자란다.
+   */
+  const { height: viewportHeight } = useWindowDimensions()
+  const [revealed, setRevealed] = useState<ReadonlySet<string>>(() => new Set())
+  const contentTop = useRef(0)
+  const sectionTops = useRef(new Map<string, number>())
+  const scrollY = useRef(0)
+  const revealVisible = useCallback(() => {
+    setRevealed((before) => {
+      // 레이아웃은 자식이 먼저 알린다. 섹션 위치는 목록 안의 값으로 두고 목록의 윗변은 판정할 때 더한다.
+      const tops = new Map([...sectionTops.current].map(([id, top]) => [id, contentTop.current + top]))
+      const next = sectionsToReveal(tops, scrollY.current, viewportHeight, before)
+      return next.length === 0 ? before : new Set([...before, ...next])
+    })
+  }, [viewportHeight])
+  const onScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollY.current = event.nativeEvent.contentOffset.y
+      revealVisible()
+    },
+    [revealVisible],
+  )
+  const onSectionLayout = useCallback(
+    (id: string) => (event: LayoutChangeEvent) => {
+      sectionTops.current.set(id, event.nativeEvent.layout.y)
+      revealVisible()
+    },
+    [revealVisible],
+  )
+
   const current = totalsBetween(days, ranges.current)
   const previous = totalsBetween(days, ranges.previous)
   const label = formatBossProfitPeriodLabel(cycle, periodKey, now)
@@ -154,6 +187,7 @@ export function StatsScreen(): React.JSX.Element {
     <View testID="screen-Stats" className="flex-1">
       <ScreenScroll
         onRefresh={() => ledger.reload(['live', 'window', 'enhancement'])}
+        onScroll={onScroll}
         header={
           <PageHeader>
             <PageHeaderTitleRow
@@ -172,7 +206,14 @@ export function StatsScreen(): React.JSX.Element {
           </PageHeader>
         }
       >
-        <View testID="stats-content" className="gap-2 px-4 pb-4">
+        <View
+          testID="stats-content"
+          className="gap-2 px-4 pb-4"
+          onLayout={(event: LayoutChangeEvent) => {
+            contentTop.current = event.nativeEvent.layout.y
+            revealVisible()
+          }}
+        >
           <View testID="stats-period-nav" className="flex-row items-center justify-center gap-4 py-3">
             <View className="h-7 w-7" />
             <PeriodArrow
@@ -236,24 +277,36 @@ export function StatsScreen(): React.JSX.Element {
             </View>
           </StatsSection>
 
-          <TrendSection days={days} cycle={cycle} trend={trend} />
+          <View onLayout={onSectionLayout('trend')}>
+            <TrendSection days={days} cycle={cycle} trend={trend} revealed={revealed.has('trend')} />
+          </View>
 
-          <CharacterSection rows={characters} images={images} />
+          <View onLayout={onSectionLayout('characters')}>
+            <CharacterSection rows={characters} images={images} revealed={revealed.has('characters')} />
+          </View>
 
-          <CategorySection
-            title="수입 내역"
-            side="income"
-            items={incomeItems}
-          />
-          <CategorySection
-            title="지출 내역"
-            side="expense"
-            items={expenseItems}
-          />
+          <View onLayout={onSectionLayout('income')}>
+            <CategorySection
+              title="수입 내역"
+              side="income"
+              items={incomeItems}
+              revealed={revealed.has('income')}
+            />
+          </View>
+          <View onLayout={onSectionLayout('expense')}>
+            <CategorySection
+              title="지출 내역"
+              side="expense"
+              items={expenseItems}
+              revealed={revealed.has('expense')}
+            />
+          </View>
 
           <BossSection days={days} range={currentRange} />
 
-          <CumulativeSection days={days} cycle={cycle} periodKey={periodKey} />
+          <View onLayout={onSectionLayout('cumulative')}>
+            <CumulativeSection days={days} cycle={cycle} periodKey={periodKey} revealed={revealed.has('cumulative')} />
+          </View>
         </View>
       </ScreenScroll>
     </View>

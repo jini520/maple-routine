@@ -4,7 +4,8 @@
  */
 import { memo, useState } from 'react'
 import { Pressable, View, type LayoutChangeEvent } from 'react-native'
-import Svg, { Circle, ClipPath, Defs, Line, Path, Rect } from 'react-native-svg'
+import Animated, { useAnimatedProps } from 'react-native-reanimated'
+import Svg, { Circle, ClipPath, Defs, G, Line, Path, Rect } from 'react-native-svg'
 
 import { Text } from '../../components/atoms'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -13,7 +14,10 @@ import { cumulativeRanges } from '../../features/stats/periods'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { useThemeAppearance } from '../../theme/context'
 import type { BossCycle } from '../../types'
+import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
+
+const AnimatedRect = Animated.createAnimatedComponent(Rect)
 
 const BUBBLE_SPACE = 42
 const CHART_HEIGHT = 96
@@ -29,8 +33,15 @@ function periodTitle(cycle: BossCycle, periodKey: string): string {
   return cycle === 'monthly' ? `${month}월` : `${month}월 ${Number(periodKey.slice(8, 10))}일 주`
 }
 
-export const CumulativeSection = memo(function CumulativeSection(props: { days: DaysByDate; cycle: BossCycle; periodKey: string }): React.JSX.Element {
+export const CumulativeSection = memo(function CumulativeSection(props: {
+  days: DaysByDate
+  cycle: BossCycle
+  periodKey: string
+  /** 화면에 들어왔나. 들어오는 순간 선이 왼쪽부터 그려진다 */
+  revealed?: boolean
+}): React.JSX.Element {
   const { definition } = useThemeAppearance()
+  const progress = useRevealProgress(props.revealed ?? true)
   const [width, setWidth] = useState(312)
   /** 고른 점. 어느 기간에서 골랐는지 함께 들어, 기간이 바뀌면 새 기간의 끝으로 돌아간다 */
   const [picked, setPicked] = useState<{ periodKey: string; index: number } | null>(null)
@@ -53,6 +64,7 @@ export const CumulativeSection = memo(function CumulativeSection(props: { days: 
   const zeroY = y(0)
   const pointColor = points[selected] >= 0 ? definition.riseInk : definition.fallInk
   const bubbleRatio = x(selected) / width
+  const revealProps = useAnimatedProps(() => ({ width: width * progress.value }))
 
   return (
     <StatsSection title="누적 순수익" testID="stats-cumulative">
@@ -74,8 +86,12 @@ export const CumulativeSection = memo(function CumulativeSection(props: { days: 
             <ClipPath id="stats-cumulative-below">
               <Rect x={0} y={zeroY} width={width} height={CHART_HEIGHT - zeroY} />
             </ClipPath>
+            <ClipPath id="stats-cumulative-reveal">
+              <AnimatedRect x={0} y={0} height={CHART_HEIGHT} animatedProps={revealProps} />
+            </ClipPath>
           </Defs>
           <Line x1={0} x2={width} y1={zeroY} y2={zeroY} stroke={definition.border} strokeWidth={1} />
+          <G clipPath="url(#stats-cumulative-reveal)">
           <Path d={area} fill={definition.riseInk} fillOpacity={0.1} clipPath="url(#stats-cumulative-above)" />
           <Path d={area} fill={definition.fallInk} fillOpacity={0.1} clipPath="url(#stats-cumulative-below)" />
           <Path
@@ -98,6 +114,7 @@ export const CumulativeSection = memo(function CumulativeSection(props: { days: 
           />
           <Line x1={x(selected)} x2={x(selected)} y1={TOP_PAD} y2={y(0)} stroke={definition.textDisabled} strokeDasharray="2 3" />
           <Circle cx={x(selected)} cy={y(points[selected])} r={4} fill={definition.surface} stroke={pointColor} strokeWidth={2} />
+          </G>
         </Svg>
 
         <View className="absolute bottom-0 left-0 right-0 flex-row" style={{ top: BUBBLE_SPACE }}>
