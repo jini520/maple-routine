@@ -11,6 +11,11 @@
  */
 import { difficultyKeyOfName } from '../../constants/domain/boss-difficulty'
 import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
+import {
+  MIN_SCHEDULER_DATE,
+  getMinQueryableDate,
+  getPeriodDateKeys,
+} from '../../lib/boss/boss-profit-period'
 import { bossKeyOfApiName } from '../../lib/boss/bosses'
 import {
   incomeCategoryKeyOfName,
@@ -27,7 +32,7 @@ import type { SqliteDbConnection } from '../ports'
 import { BOSS_KEYED_TABLES } from './boss-tables'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 10
+export const DB_VERSION = 11
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -294,6 +299,40 @@ async function dropDropShareColumns(db: SqliteDbConnection): Promise<void> {
   }
 }
 
+/** 날짜를 적는 월간 기록의 마지막 달. 9월은 아직 캐는 중이라 안 건드린다(사용자 지정 2026-09-30) */
+const LAST_FILLED_MONTHLY_PERIOD = '2026-08'
+
+/**
+ * 다시 못 캐는 날짜 없는 보스 기록에 기간 첫날을 적는다. 버전 11 이 한 번 돌린다.
+ *
+ * 날짜 없는 기록은 가계부 · 통계가 안 읽어 결정석과 판매액이 통째로 빠졌다. 주간은 조회 창보다 앞선 주만
+ * 그 주 목요일로 적는다. 창에 걸친 주는 날짜 캐기가 동기화마다 다시 보므로, 대신 날짜를 적으면 진짜 날을
+ * 찾을 길이 막힌다. 창 하한은 날짜 캐기(`resolvablePeriods`)와 같다.
+ */
+async function fillUnreachableDefeatDates(db: SqliteDbConnection, now: Date): Promise<void> {
+  const rollingFloor = getMinQueryableDate(now)
+  const floorDateKey = rollingFloor > MIN_SCHEDULER_DATE ? rollingFloor : MIN_SCHEDULER_DATE
+
+  const { values } = await db.query(
+    `SELECT DISTINCT period_key FROM boss_profit_records WHERE cycle = 'weekly' AND defeated_on IS NULL`,
+  )
+  for (const row of (values ?? []) as Row[]) {
+    const periodKey = String(row.period_key)
+    const days = getPeriodDateKeys('weekly', periodKey)
+    if (days[days.length - 1] >= floorDateKey) continue
+    await db.run(
+      `UPDATE boss_profit_records SET defeated_on = ? WHERE cycle = 'weekly' AND period_key = ? AND defeated_on IS NULL`,
+      [periodKey, periodKey],
+    )
+  }
+
+  await db.run(
+    `UPDATE boss_profit_records SET defeated_on = period_key || '-01'
+      WHERE cycle = 'monthly' AND defeated_on IS NULL AND period_key <= ?`,
+    [LAST_FILLED_MONTHLY_PERIOD],
+  )
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -307,6 +346,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   fixSwapped0917Prices,
   clearZeroHuntFragmentPrices,
   dropDropShareColumns,
+  (db) => fillUnreachableDefeatDates(db, new Date()),
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {
