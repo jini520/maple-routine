@@ -14,7 +14,6 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { bossTotalsBetween, type DaysByDate, type StatsRange } from '../../features/stats/aggregate'
 import { bossPortraitSlugOf } from '../../lib/boss/bosses'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
-import { useCountUp } from '../../hooks/useCountUp'
 import { StatsSection } from './StatsSection'
 
 const MODES = ['난이도별', '보스별'] as const
@@ -30,7 +29,6 @@ export const BossSection = memo(function BossSection(props: { days: DaysByDate; 
   const rows = bossTotalsBetween(props.days, props.range, mode === '보스별' ? 'boss' : 'difficulty')
   const total = rows.reduce((sum, row) => sum + row.meso, 0)
   const count = rows.reduce((sum, row) => sum + row.count, 0)
-  const shownTotal = useCountUp('stats-boss-total', total)
 
   return (
     <StatsSection
@@ -44,7 +42,7 @@ export const BossSection = memo(function BossSection(props: { days: DaysByDate; 
         <>
           <View className="flex-row items-baseline gap-1.5">
             <Text className="text-xl font-bold text-rise-ink" style={TABULAR_NUMS}>
-              {formatMesoCompact(shownTotal)}
+              {formatMesoCompact(total)}
             </Text>
             <Text testID="stats-boss-headline" className="text-11 text-text-muted">
               {`처치 ${count}회`}

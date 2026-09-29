@@ -29,7 +29,6 @@ jest.mock('@react-navigation/native', () => ({
 }))
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
-import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { apiWindowRange } from '../../../features/cashbook/range'
 import { StatsScreen } from '../StatsScreen'
@@ -68,7 +67,6 @@ function 지출(dateKey: string, meso: number): unknown {
 }
 
 beforeEach(() => {
-  clearCountUpMemory()
   installNoopNativePorts()
   jest.useFakeTimers({ now: 지금 })
   mockReload.mockReset().mockResolvedValue(undefined)
@@ -88,10 +86,6 @@ async function 그리기(): Promise<Awaited<ReturnType<typeof renderOverlay>>> {
   const view = await renderOverlay(<StatsScreen />)
   await act(async () => {
     await Promise.resolve()
-  })
-  // 처음 읽은 값도 0 에서 굴러 올라간다. 굴리기가 끝난 뒤를 본다.
-  await act(async () => {
-    jest.advanceTimersByTime(1000)
   })
   return view
 }
@@ -120,11 +114,6 @@ describe('StatsScreen', () => {
     })
 
     expect(view.getByTestId('stats-period-label').props.children).toBe('지난 주')
-    // 숫자는 이전 값에서 굴러간다. 굴리기가 끝나면 새 기간의 값이다.
-    expect(view.getByTestId('stats-summary-net').props.children.join('')).not.toContain('+1억')
-    await act(async () => {
-      jest.advanceTimersByTime(1000)
-    })
     expect(view.getByTestId('stats-summary-net').props.children.join('')).toContain('+1억')
   })
 

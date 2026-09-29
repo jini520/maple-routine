@@ -12,7 +12,6 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { cumulativeNet, totalsSeries, type DaysByDate } from '../../features/stats/aggregate'
 import { cumulativeRanges } from '../../features/stats/periods'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
-import { useCountUp } from '../../hooks/useCountUp'
 import { useThemeAppearance } from '../../theme/context'
 import type { BossCycle } from '../../types'
 import { useRevealProgress } from './reveal'
@@ -53,7 +52,6 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
   const selected =
     picked !== null && picked.periodKey === props.periodKey && picked.index < points.length ? picked.index : points.length - 1
   const total = points[points.length - 1]
-  const shownTotal = useCountUp('stats-cumulative-total', total)
   const start = ranges[0].from
 
   const low = Math.min(0, ...points)
@@ -72,7 +70,7 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
     <StatsSection title="누적 순수익" testID="stats-cumulative">
       <View className="flex-row items-end gap-2">
         <Text testID="stats-cumulative-total" className={`text-2xl font-bold ${total >= 0 ? 'text-rise-ink' : 'text-fall-ink'}`} style={TABULAR_NUMS}>
-          {signed(shownTotal)}{' '}
+          {signed(total)}{' '}
           <Text className="text-11 font-bold text-text-muted">메소</Text>
         </Text>
         <Text className="mb-1 text-11 text-text-muted">{`${Number(start.slice(5, 7))}월 ${Number(start.slice(8, 10))}일부터`}</Text>

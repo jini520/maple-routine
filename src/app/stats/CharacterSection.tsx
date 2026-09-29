@@ -11,7 +11,6 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { CharacterTotals } from '../../features/stats/aggregate'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { unknownCharacterAsset } from '../../lib/assets/asset-lookup'
-import { useCountUp } from '../../hooks/useCountUp'
 import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
 
@@ -22,22 +21,19 @@ import { StatsSection } from './StatsSection'
 const AnimatedBox = Animated.createAnimatedComponent(View)
 
 /**
- * 진행값만큼 한쪽 끝에서 자라는 상자. 막대는 0 축에서 옆으로, 단상은 바닥에서 위로.
+ * 진행값만큼 0 축에서 옆으로 뻗는 막대.
  *
  * 움직이는 겉 상자에는 `style` 만 주고 모양(`className`)은 안쪽 `View` 가 든다.
  */
 function Grow(props: {
   progress: SharedValue<number>
-  axis: 'x' | 'y'
-  origin: 'left' | 'right' | 'bottom'
+  origin: 'left' | 'right'
   className?: string
   style?: ViewStyle
   children?: React.ReactNode
 }): React.JSX.Element {
-  const { progress, axis } = props
-  const animated = useAnimatedStyle(() => ({
-    transform: axis === 'x' ? [{ scaleX: progress.value }] : [{ scaleY: progress.value }],
-  }))
+  const { progress } = props
+  const animated = useAnimatedStyle(() => ({ transform: [{ scaleX: progress.value }] }))
   return (
     <AnimatedBox style={[props.style, { transformOrigin: props.origin }, animated]}>
       <View className={`flex-1 ${props.className ?? ''}`}>{props.children}</View>
@@ -100,9 +96,9 @@ export const CharacterSection = memo(function CharacterSection(props: {
   rows: readonly CharacterTotals[]
   /** 줄의 키 → 전신 그림 주소. 없는 줄은 흰 실루엣이 선다 */
   images: ReadonlyMap<string, string>
-  /** 화면에 들어왔나. 들어오는 순간 막대와 단상이 자란다 */
+  /** 화면에 들어왔나. 들어오는 순간 막대가 자란다 */
   revealed?: boolean
-  /** 바뀌면 막대와 단상이 다시 자란다. 화면이 기간으로 준다 */
+  /** 바뀌면 막대가 다시 자란다. 화면이 기간으로 준다 */
   replayKey?: string
 }): React.JSX.Element {
   const [tab, setTab] = useState<Tab>('순수익')
@@ -113,7 +109,6 @@ export const CharacterSection = memo(function CharacterSection(props: {
     .filter((row) => valueOf(row, tab) !== 0)
     .sort((left, right) => valueOf(right, tab) - valueOf(left, tab))
   const total = shown.reduce((sum, row) => sum + valueOf(row, tab), 0)
-  const shownTotal = useCountUp('stats-character-total', total)
   const maxPositive = Math.max(0, ...shown.map((row) => valueOf(row, tab)))
   const maxNegative = Math.max(0, ...shown.map((row) => -valueOf(row, tab)))
   const span = maxPositive + maxNegative || 1
@@ -131,7 +126,7 @@ export const CharacterSection = memo(function CharacterSection(props: {
           <View className="flex-row items-baseline gap-1.5">
             <Text className="text-11 text-text-muted">{tab}</Text>
             <Text className="text-sm font-bold text-text" style={TABULAR_NUMS}>
-              {net ? signed(shownTotal) : formatMesoCompact(shownTotal)}
+              {net ? signed(total) : formatMesoCompact(total)}
             </Text>
           </View>
           {shown.map((row) => {
@@ -161,7 +156,6 @@ export const CharacterSection = memo(function CharacterSection(props: {
                   {net && <View className="absolute -bottom-[3px] -top-[3px] w-px bg-text-disabled" style={{ left: `${zero}%` }} />}
                   <Grow
                     progress={progress}
-                    axis="x"
                     origin={positive ? 'left' : 'right'}
                     className={`${fill} ${net ? (positive ? 'rounded-r-full' : 'rounded-l-full') : 'rounded-full'}`}
                     style={{ position: 'absolute', top: 0, bottom: 0, left: `${positive ? zero : zero - width}%`, width: `${width}%` }}
@@ -190,12 +184,9 @@ export const CharacterSection = memo(function CharacterSection(props: {
                 <View className="items-center justify-end" style={{ height: FIGURE_BOX.height * FIGURE_SCALE }}>
                   <Figure uri={uri} />
                 </View>
-                <Grow
-                  progress={progress}
-                  axis="y"
-                  origin="bottom"
-                  className={`items-center gap-px rounded-b-[3px] rounded-t-lg pt-1 ${first ? 'bg-primary-tint' : 'bg-surface-2'}`}
-                  style={{ width: '100%', height: BLOCK_HEIGHTS[rank] }}
+                <View
+                  className={`w-full items-center gap-px rounded-b-[3px] rounded-t-lg pt-1 ${first ? 'bg-primary-tint' : 'bg-surface-2'}`}
+                  style={{ height: BLOCK_HEIGHTS[rank] }}
                 >
                   <Text className={`text-xs font-bold ${first ? 'text-primary-ink' : 'text-text-muted'}`}>{rank + 1}</Text>
                   <Text numberOfLines={1} className="max-w-full px-0.5 text-10 font-semibold text-text">
@@ -209,7 +200,7 @@ export const CharacterSection = memo(function CharacterSection(props: {
                   >
                     {net ? signed(value) : formatMesoCompact(value)}
                   </Text>
-                </Grow>
+                </View>
               </View>
             )
           })}

@@ -13,7 +13,6 @@ import { Text } from '../../components/atoms'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { CategoryTotal } from '../../features/stats/aggregate'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
-import { useCountUp } from '../../hooks/useCountUp'
 import { useThemeAppearance } from '../../theme/context'
 import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
@@ -148,7 +147,6 @@ export const CategorySection = memo(function CategorySection(props: {
   const color = props.side === 'income' ? definition.riseInk : definition.fallInk
   const tone = props.side === 'income' ? 'text-rise-ink' : 'text-fall-ink'
   const total = props.items.reduce((sum, item) => sum + item.meso, 0)
-  const shownTotal = useCountUp(`stats-category-${props.side}`, total)
 
   if (props.items.length === 0 || total <= 0) {
     return (
@@ -273,7 +271,7 @@ export const CategorySection = memo(function CategorySection(props: {
         <View className="absolute items-center" style={{ left: cx, top: cy - 34, transform: [{ translateX: '-50%' }] }}>
           <Text className="text-11 font-semibold text-text-muted">{label}</Text>
           <Text testID="stats-category-total" className="text-lg font-bold text-text" style={TABULAR_NUMS}>
-            {formatMesoCompact(shownTotal)}
+            {formatMesoCompact(total)}
           </Text>
         </View>
         </AnimatedBox>
