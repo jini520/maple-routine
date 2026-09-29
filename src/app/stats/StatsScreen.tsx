@@ -15,8 +15,8 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { floorMonthKey, floorWeekStartKey } from '../../features/cashbook/range'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
 import { useDataFreshness } from '../../features/refresh/freshness'
-import { totalsBetween, type DaysByDate } from '../../features/stats/aggregate'
-import { loadStatsDays } from '../../features/stats/load'
+import { characterTotalsBetween, totalsBetween, type DaysByDate } from '../../features/stats/aggregate'
+import { loadStatsDays, loadStatsImages } from '../../features/stats/load'
 import { statsRanges } from '../../features/stats/periods'
 import {
   formatBossProfitPeriodLabel,
@@ -30,12 +30,14 @@ import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { tapFeedback } from '../../native/haptics'
 import type { BossCycle } from '../../types'
 import { DeltaChip } from '../boss-profit/HeadlineChips'
+import { CharacterSection } from './CharacterSection'
 import { StatsSection } from './StatsSection'
 import { TrendSection } from './TrendSection'
 
 const CYCLES = ['weekly', 'monthly'] as const
 const CYCLE_LABELS: Record<BossCycle, string> = { weekly: '주간', monthly: '월간' }
 const NO_DAYS: DaysByDate = {}
+const NO_IMAGES: ReadonlyMap<string, string> = new Map()
 
 /** 기간 줄의 원형 버튼. 가계부 · 보스 수익과 같은 28px 원이다. */
 function PeriodArrow(props: {
@@ -76,6 +78,7 @@ export function StatsScreen(): React.JSX.Element {
   const [cycle, setCycle] = useState<BossCycle>('weekly')
   const [periodKey, setPeriodKey] = useState(() => getCurrentBossProfitPeriod('weekly', now).periodKey)
   const [days, setDays] = useState<DaysByDate>(NO_DAYS)
+  const [images, setImages] = useState<ReadonlyMap<string, string>>(NO_IMAGES)
 
   const ranges = useMemo(() => statsRanges(cycle, periodKey), [cycle, periodKey])
 
@@ -94,6 +97,18 @@ export function StatsScreen(): React.JSX.Element {
       alive = false
     }
   }, [ledger.revision, todayDateKey])
+
+  const characters = useMemo(() => characterTotalsBetween(days, ranges.current), [days, ranges.current])
+  const characterOcids = characters.flatMap((row) => (row.ocid === null ? [] : [row.ocid])).join(',')
+  useEffect(() => {
+    let alive = true
+    void loadStatsImages(characterOcids === '' ? [] : characterOcids.split(',')).then((loaded) => {
+      if (alive) setImages(loaded)
+    })
+    return () => {
+      alive = false
+    }
+  }, [characterOcids])
 
   const current = totalsBetween(days, ranges.current)
   const previous = totalsBetween(days, ranges.previous)
@@ -195,6 +210,8 @@ export function StatsScreen(): React.JSX.Element {
           </StatsSection>
 
           <TrendSection key={`${cycle}-${periodKey}`} days={days} cycle={cycle} trend={ranges.trend} />
+
+          <CharacterSection rows={characters} images={images} />
         </View>
       </ScreenScroll>
     </View>

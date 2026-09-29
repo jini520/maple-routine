@@ -1,6 +1,9 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
-jest.mock('../../../features/stats/load', () => ({ loadStatsDays: jest.fn() }))
+jest.mock('../../../features/stats/load', () => ({
+  loadStatsDays: jest.fn(),
+  loadStatsImages: jest.fn().mockResolvedValue(new Map()),
+}))
 
 const mockReload = jest.fn()
 const mockRequestDateRange = jest.fn()

@@ -1,0 +1,61 @@
+import { act, fireEvent, within } from '@testing-library/react-native'
+
+import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
+import type { CharacterTotals } from '../../../features/stats/aggregate'
+import { CharacterSection } from '../CharacterSection'
+
+const rows: CharacterTotals[] = [
+  { key: 'ocid:b', ocid: 'b', name: '낟넘', incomeMeso: 890_000_000, expenseMeso: 310_000_000, netMeso: 580_000_000 },
+  { key: 'ocid:c', ocid: 'c', name: '지내우시', incomeMeso: 460_000_000, expenseMeso: 120_000_000, netMeso: 340_000_000 },
+  { key: 'ocid:a', ocid: 'a', name: '낟낟', incomeMeso: 2_610_000_000, expenseMeso: 2_940_000_000, netMeso: -330_000_000 },
+  { key: 'name:단풍라떼', ocid: null, name: '단풍라떼', incomeMeso: 0, expenseMeso: 40_000_000, netMeso: -40_000_000 },
+]
+const images = new Map([
+  ['a', 'https://img/a.png'],
+  ['b', 'https://img/b.png'],
+])
+
+async function 그리기(): Promise<Awaited<ReturnType<typeof renderOverlay>>> {
+  return renderOverlay(<CharacterSection rows={rows} images={images} />)
+}
+
+beforeEach(() => {
+  installNoopNativePorts()
+})
+
+describe('CharacterSection', () => {
+  it('순수익 탭은 순수익이 큰 순서이고 금액만 적는다', async () => {
+    const view = await 그리기()
+
+    const names = view.getAllByTestId(/^stats-character-row-/).map((row) => within(row).getByTestId('stats-character-name').props.children)
+    expect(names).toEqual(['낟넘', '지내우시', '단풍라떼', '낟낟'])
+    expect(within(view.getByTestId('stats-character-row-ocid:a')).getByTestId('stats-character-amount').props.children).toBe('−3.3억')
+    expect(view.queryAllByTestId('stats-character-percent')).toHaveLength(0)
+  })
+
+  it('수익 탭은 수익이 있는 캐릭터만 서고 금액 앞에 %를 적는다', async () => {
+    const view = await 그리기()
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('수익'))
+    })
+
+    const first = view.getByTestId('stats-character-row-ocid:a')
+    expect(within(first).getByTestId('stats-character-percent').props.children).toBe('66%')
+    expect(within(first).getByTestId('stats-character-amount').props.children).toBe('26.1억')
+    expect(view.queryByTestId('stats-character-row-name:단풍라떼')).toBeNull()
+  })
+
+  it('단상은 그 탭의 상위 셋이고 그림이 있으면 세운다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('stats-podium-1').props.accessibilityLabel).toBe('1위 낟넘')
+    expect(view.getByTestId('stats-podium-2').props.accessibilityLabel).toBe('2위 지내우시')
+    expect(view.getByTestId('stats-podium-3').props.accessibilityLabel).toBe('3위 단풍라떼')
+    expect(within(view.getByTestId('stats-podium-1')).getByTestId('stats-podium-image').props.source).toEqual({
+      uri: 'https://img/b.png',
+    })
+    expect(within(view.getByTestId('stats-podium-2')).queryByTestId('stats-podium-image')).toBeNull()
+  })
+})
