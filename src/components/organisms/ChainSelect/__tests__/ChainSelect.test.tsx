@@ -359,3 +359,44 @@ describe('ChainSelect: 앞 단계를 안 고르면 뒤에 못 간다', () => {
     expect(getByTestId('hunt-chain-placeholder').props.children).toBe('지역 선택')
   })
 })
+
+/**
+ * 사냥 계산기는 한 단계짜리 사슬 셋을 세로로 쌓는다. 단계 차례가 색을 정하므로 그대로면 셋 다
+ * 첫 색이 된다. 줄이 갈라져도 캐릭터 · 지역 · 사냥터가 색으로 갈리게 첫 색을 받는다.
+ */
+describe('ChainSelect: 한 단계짜리 줄을 쌓을 때', () => {
+  it('toneOffset 만큼 뒤의 색에서 시작한다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <>
+        <ChainSelect
+          testID="region"
+          toneOffset={1}
+          steps={[{ name: '지역', options: 지역, selected: 'cernium', onSelect: jest.fn() }]}
+        />
+        <ChainSelect
+          testID="ground"
+          toneOffset={2}
+          steps={[{ name: '사냥터', options: 사냥터, selected: 'yumyum', onSelect: jest.fn() }]}
+        />
+      </>,
+    )
+
+    expect(flattenStyle(getByTestId('region-badge-지역').props.style).backgroundColor).toBe(기본테마.secondaryTint)
+    expect(flattenStyle(getByTestId('ground-badge-사냥터').props.style).backgroundColor).toBe(기본테마.thirdTint)
+  })
+
+  // 줄 왼쪽에 서는 것은 여는 자리 밖이다. 누르면 목록이 열리는 곳은 알약 오른쪽부터다.
+  it('leading 은 줄 왼쪽에 서고 여는 누르개 밖이다', async () => {
+    const { Text } = jest.requireActual<typeof import('react-native')>('react-native')
+    const { getByTestId } = await renderOverlay(
+      <ChainSelect
+        testID="ground"
+        leading={<Text testID="ground-summary">요약</Text>}
+        steps={[{ name: '사냥터', options: 사냥터, selected: 'yumyum', onSelect: jest.fn() }]}
+      />,
+    )
+
+    expect(getByTestId('ground-summary')).toBeTruthy()
+    expect(within(getByTestId('ground-last-trigger')).queryByTestId('ground-summary')).toBeNull()
+  })
+})

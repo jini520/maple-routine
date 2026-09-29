@@ -85,9 +85,10 @@ export function killedMobsOf(mobs: number, missedMobs: number): number {
  * `id` 는 기록에 글자로 박히므로(`hunt_boosts`) 이름을 바꿔도 id 는 안 바꾼다. 바꾸면 그전
  * 기록이 어느 아이템도 안 가리키게 된다. `kind` 를 바꾸는 것은 값을 바꾸는 일이라 그전 기록의
  * 금액과 갈린다.
+ *
+ * 배열 차례가 사냥 시트 소비 줄의 체크박스 차례다(비약 먼저, 사용자 지정 2026-09-29).
  */
 export const MESO_BOOSTS = [
-  { id: 'union', label: '유니온의 부', percent: 50, kind: 'additive', icon: 'union_wealth.webp' },
   {
     id: 'potion',
     label: '소형 재물 획득의 비약',
@@ -95,9 +96,17 @@ export const MESO_BOOSTS = [
     kind: 'multiplier',
     icon: 'wealth_acquisition_potion_small.webp',
   },
+  { id: 'union', label: '유니온의 부', percent: 50, kind: 'additive', icon: 'union_wealth.webp' },
 ] as const
 
 export type MesoBoostId = (typeof MESO_BOOSTS)[number]['id']
+
+/** 유니온의 부 단계별 지속시간(분). 증가율은 세 단계 모두 +50% 다(사용자 제공). */
+export const UNION_TIER_MINUTES = { 1: 10, 2: 20, 3: 30 } as const
+
+export type UnionTier = keyof typeof UNION_TIER_MINUTES
+
+export const UNION_TIERS: readonly UnionTier[] = [1, 2, 3]
 
 /**
  * 레벨 차이 페널티. **차이 11 부터의 감소폭**이고 배열 자리가 곧 차이다(`[0]` = 차이 11).
@@ -164,11 +173,20 @@ export function appliedMesoRatePercent(boostPercent: number, boostMultiplier: nu
  * 통 **안**에 드는 것들의 증가율 합(%). 모르는 id 는 0 으로 친다(지운 아이템을 든 옛 기록).
  *
  * **재획비는 여기 안 든다**. `boostMultiplierOf` 가 통 밖에서 곱한다.
+ *
+ * 유니온의 부는 1소재(30분)마다 하나를 써서 단계의 분만큼만 걸린다. 분당 메소가 고르므로 사냥 전체로는
+ * `+50% × (단계 분 ÷ 30)` 이다.
+ *
+ * @param unionTier 유니온의 부 단계. 유니온의 부를 안 켰으면 아무 일도 안 한다
  */
-export function boostPercentOf(ids: readonly string[]): number {
+export function boostPercentOf(ids: readonly string[], unionTier: UnionTier): number {
   return ids.reduce((sum, id) => {
     const boost = MESO_BOOSTS.find((each) => each.id === id && each.kind === 'additive')
-    return sum + (boost?.percent ?? 0)
+    if (boost === undefined) return sum
+    // 곱한 뒤 나눈다. `50 × (10 / 30)` 은 2진 소수 오차로 끝의 내림에서 1 메소가 빠진다.
+    const percent =
+      boost.id === 'union' ? (boost.percent * UNION_TIER_MINUTES[unionTier]) / MINUTES_PER_SOJAE : boost.percent
+    return sum + percent
   }, 0)
 }
 

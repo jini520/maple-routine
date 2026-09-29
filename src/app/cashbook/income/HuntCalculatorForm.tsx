@@ -35,6 +35,8 @@ import {
 import {
   MESO_BOOSTS,
   MISSED_MOB_OPTIONS,
+  UNION_TIERS,
+  type UnionTier,
   appliedMesoRatePercent,
   boostMultiplierOf,
   boostPercentOf,
@@ -49,11 +51,9 @@ import { useSaleFeeChoice } from './sale-fee'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
-import type { LastHuntSelection } from '../../../storage/last-hunt-selection'
-import type { LastHuntToggles } from '../../../storage/last-hunt-toggles'
+import type { LastHunt, LastHunts } from '../../../storage/last-hunts'
 import { FieldRow, QuantityStepper } from '../sheet-fields'
 import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
-import { HuntAutoFillButton } from './HuntAutoFillButton'
 import { requiredCharacterOptions } from '../character-options'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
@@ -102,40 +102,89 @@ function levelLabelOf(ground: HuntingGround): string {
 }
 
 /**
- * 포스 배지. 그림 + 숫자다.
+ * 포스 그림 + 수치.
  *
  * 그림이 없으면 글자만으로 선다(`아케인 700`). 비슷한 그림을 갖다 붙이면 틀린 것을 그리는
  * 셈이다. 읽어 주는 이름은 언제나 온전한 말이라 그림이 있든 없든 어센틱 포스 700 으로 들린다.
  */
-function ForceBadge(props: {
-  /** `null` 은 **지역을 아직 안 골랐다**. 그림은 어센틱을 세워 자리를 지킨다. */
-  region: HuntingRegion | null
-  force: number | null
-}): React.JSX.Element {
-  const forceType = props.region?.forceType ?? 'authentic'
-  const icon = forceIconOf(forceType)
-  const label = FORCE_LABELS[forceType]
+function ForceMark(props: { region: HuntingRegion; force: number }): React.JSX.Element {
+  const icon = forceIconOf(props.region.forceType)
+  const label = FORCE_LABELS[props.region.forceType]
   return (
-    <View
-      testID="force-badge"
-      aria-label={`${label} ${props.force}`}
-      className="flex-row items-center gap-1.5 rounded-full bg-surface-2 px-2 py-0.5"
-    >
+    <View aria-label={`${label} ${props.force}`} className="flex-row items-center gap-1.5">
       {icon === null ? (
         <Text className="text-10 font-semibold text-text-muted">{label.split(' ')[0]}</Text>
       ) : (
         <Image source={icon} className="h-3.5 w-3.5" resizeMode="contain" aria-hidden />
       )}
-      <Text
-        className={`min-w-3 text-center text-11 font-semibold ${
-          props.force === null ? 'text-text-disabled' : 'text-text-muted'
-        }`}
-        style={TABULAR_NUMS}
-      >
-        {props.force ?? '-'}
+      <Text className="text-11 font-semibold text-text-muted" style={TABULAR_NUMS}>
+        {props.force}
       </Text>
     </View>
   )
+}
+
+/** 포스 배지. 사냥터 목록의 한 줄에 선다. */
+function ForceBadge(props: { region: HuntingRegion; force: number }): React.JSX.Element {
+  return (
+    <View testID="force-badge" className="rounded-full bg-surface-2 px-2 py-0.5">
+      <ForceMark region={props.region} force={props.force} />
+    </View>
+  )
+}
+
+/**
+ * 고른 사냥터의 포스 · 레벨 · 마릿수. 사냥터 줄 왼쪽에 서는 캡슐 하나다.
+ *
+ * 칸을 세로 선으로 나눈다. 셋이 한 사냥터의 정보라는 것을 모양이 말한다. 마릿수는 **잡는**
+ * 마릿수라 사냥 효율에서 놓친 만큼 준다.
+ */
+function GroundSummary(props: {
+  region: HuntingRegion
+  ground: HuntingGround
+  killedMobs: number
+}): React.JSX.Element {
+  return (
+    <View
+      testID="income-sheet-ground-summary"
+      className="shrink-0 flex-row items-center rounded-full bg-surface-2 px-1 py-0.5"
+    >
+      <View className="px-1.5">
+        <ForceMark region={props.region} force={props.ground.force} />
+      </View>
+      <View className="border-l border-border px-1.5">
+        <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
+          {levelLabelOf(props.ground)}
+        </Text>
+      </View>
+      <View className="border-l border-border px-1.5">
+        <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
+          <Text testID="income-sheet-killed-mobs">{props.killedMobs}</Text>마리
+        </Text>
+      </View>
+    </View>
+  )
+}
+
+/** 참조표에 있는 아이템 id 만. 지우거나 바꾼 id 를 세우면 화면에 없는 체크가 기록에 박힌다. */
+function knownBoostsOf(ids: readonly string[]): string[] {
+  return ids.filter((id) => MESO_BOOSTS.some((each) => each.id === id))
+}
+
+/**
+ * 그 캐릭터의 기억을 되살릴 수 있으면 그 사냥터. 없으면 `null` 이다.
+ *
+ * 참조표에서 사라진 사냥터와 그 레벨로 못 가는 지역은 되살리지 않는다. 목록에 없는 값을 고르개에
+ * 세우면 알약도 자리표시자도 안 서는 줄이 된다.
+ */
+function restorableGroundOf(
+  remembered: LastHunt | undefined,
+  level: number | null,
+): { region: HuntingRegion; ground: HuntingGround } | null {
+  if (remembered === undefined) return null
+  const found = findHuntingGround(remembered.groundKey)
+  if (found === null) return null
+  return huntingRegionsForLevel(level).some((each) => each.key === found.region.key) ? found : null
 }
 
 /** 사냥터 목록의 한 줄. 이름 · 포스 배지 · 레벨 · 마릿수. */
@@ -215,6 +264,9 @@ function BoostToggle(props: {
   )
 }
 
+/** 사냥터를 고르기 전 효율 줄의 글자를 셀 마릿수(사용자 지정). */
+const EFFICIENCY_PLACEHOLDER_MOBS = 40
+
 /** 메소 획득량 값 자리의 바닥 폭. `0%` 와 `258%` 의 글자 폭 차이가 줄을 밀지 않게. */
 const MESO_RATE_SLOT = { minWidth: 56 }
 
@@ -222,10 +274,8 @@ export function HuntCalculatorForm(
   props: IncomeFormProps & {
   /** 캐릭터의 메소 획득량을 읽어 오는 함수. 폼은 `nexon/` 도 `storage/` 도 모른다. */
     loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
-    /** 마지막에 적은 사냥 자리. 화면이 읽어서 넘긴다. 없으면 자동 입력이 꺼진다. */
-    lastHuntSelection: LastHuntSelection | null
-    /** 마지막에 저장한 체크 셋. 켠 아이템의 첫 값이고, 수정으로 열면 안 쓴다. */
-    lastHuntToggles: LastHuntToggles | null
+    /** 캐릭터별 마지막 사냥. 캐릭터를 고르면 그 몫이 선다. 화면이 읽어서 넘긴다. */
+    lastHunts: LastHunts
   },
 ): React.JSX.Element {
   const editing = props.editing !== undefined
@@ -261,21 +311,10 @@ export function HuntCalculatorForm(
    * 바꾸면 같은 조각의 글자가 달라진다.
    */
   const [missedMobs, setMissedMobs] = useState(detail?.missedMobs ?? 0)
-  /**
-   * 켠 메소 획득률 아이템. 수정으로 열면 기록이 정하고, 새로 적을 때는 마지막에 저장한 것이 선다.
-   *
-   * **참조표에 없는 id 는 뺀다.** 아이템을 지우거나 `id` 를 바꾸면 그 글자가 아무것도 안 가리키는데,
-   * 그대로 들면 화면에는 아무 체크도 없는데 새 기록의 `boosts` 에는 그 글자가 박힌다.
-   */
-  const [boosts, setBoosts] = useState<readonly string[]>(
-    () =>
-      detail?.boosts ??
-      (props.editing === undefined
-        ? (props.lastHuntToggles?.boosts.filter((id) =>
-            MESO_BOOSTS.some((each) => each.id === id),
-          ) ?? [])
-        : []),
-  )
+  /** 켠 메소 획득률 아이템. 수정으로 열면 기록이 정하고, 캐릭터를 고르면 그 캐릭터의 기억이 선다. */
+  const [boosts, setBoosts] = useState<readonly string[]>(detail?.boosts ?? [])
+  /** 유니온의 부 단계. 안 켰어도 고른 단계를 들고 있다가 켜면 그대로 선다. */
+  const [unionTier, setUnionTier] = useState<UnionTier>(detail?.unionTier ?? 3)
   const [sojae, setSojae] = useState(detail?.sojae ?? 1)
   const [fragmentsText, setFragmentsText] = useState(mesoTextOf(detail?.fragments ?? 0))
   /** 빈 칸은 가격을 안 적은 것이라 0 과 따로 든다. */
@@ -344,6 +383,9 @@ export function HuntCalculatorForm(
       ? null
       : (huntRegion.grounds.find((each) => each.key === groundKey) ?? null)
 
+  /** 효율 글자를 셀 마릿수. 사냥터 전에는 40마리 기준으로 흐리게 적는다. */
+  const efficiencyMobs = huntGround?.mobs ?? EFFICIENCY_PLACEHOLDER_MOBS
+
   /** 폴백 칸의 값. 못 읽었을 때만 쓰인다. 비어 있으면 0 이고, 그때 곱은 ×1 이다. */
   const typedMesoRate = /^\d+$/.test(mesoRateText) ? Number(mesoRateText) : 0
   /**
@@ -355,7 +397,7 @@ export function HuntCalculatorForm(
   /**
    * **캐릭터 메획과 가산 아이템이 한 통**이다. 더해서 한 번 곱한다.
    */
-  const boostPercent = boostPercentOf(boosts) + mesoRatePercent
+  const boostPercent = boostPercentOf(boosts, unionTier) + mesoRatePercent
   /** 통 **밖**에서 곱하는 배율. 재획비다. 합산이 끝난 값 전체에 걸린다. */
   const boostMultiplier = boostMultiplierOf(boosts)
   /**
@@ -385,22 +427,23 @@ export function HuntCalculatorForm(
   const canSave = huntMeso > 0 && ocid !== null && (fragmentPrice === null || fee.ready)
 
   /**
-   * 캐릭터를 고르면 레벨이 따라 바뀌고, 그 레벨로 못 가는 지역은 사냥터와 함께 풀린다.
+   * 캐릭터를 고르면 레벨이 따라 바뀌고 **그 캐릭터의 마지막 사냥이 선다**. 수정으로 연 기록도 같다.
    *
-   * 안 풀면 고르개가 목록에 없는 값을 들게 되어 트리거가 첫 칸(선택 안함)을 읽어 준다.
-   * 화면에는 다른 지역이 적히는데 계산은 옛 사냥터로 도는 상태가 된다.
+   * 기억이 있으면 고른 지역 · 사냥터 · 아이템을 덮어쓰고, 없거나 되살릴 수 없으면 셋을 비운다
+   * (사용자 결정). 같은 캐릭터를 다시 고르면 손으로 고친 것이 덮이지 않게 아무것도 안 한다.
    */
   function selectCharacter(next: string | null): void {
+    if (next === ocid) return
     setOcid(next)
     const level =
       next === null ? null : (props.characters.find((each) => each.ocid === next)?.level ?? null)
     setHuntLevel(level)
-    const 갈수있다 =
-      next !== null && huntingRegionsForLevel(level).some((each) => each.key === regionKey)
-    if (regionKey !== null && !갈수있다) {
-      setRegionKey(null)
-      setGroundKey(null)
-    }
+    const remembered = next === null ? undefined : props.lastHunts[next]
+    const restored = restorableGroundOf(remembered, level)
+    setRegionKey(restored?.region.key ?? null)
+    setGroundKey(restored?.ground.key ?? null)
+    setBoosts(restored === null || remembered === undefined ? [] : knownBoostsOf(remembered.boosts))
+    setUnionTier(restored === null || remembered === undefined ? 3 : remembered.unionTier)
     loadMesoRateFor(next)
   }
 
@@ -430,40 +473,6 @@ export function HuntCalculatorForm(
         setMesoRate({ kind: 'fallback', percent: null })
       },
     )
-  }
-
-  /**
-   * 되살릴 사냥터. 참조표에서 사라졌으면 `null` 이고 그때 자동 입력이 꺼진다.
-   *
-   * 참조표는 갱신되는 데이터라 어제 적은 사냥터가 오늘 없을 수 있다. 없는 key 를 고르개에 세우면
-   * 배지도 자리표시자도 안 서는 줄이 된다.
-   */
-  const remembered =
-    props.lastHuntSelection === null ? null : findHuntingGround(props.lastHuntSelection.groundKey)
-
-  /**
-   * 기억한 자리를 한 번에 세운다.
-   *
-   * **캐릭터는 조건이 맞을 때만 선다.** 추적 목록에서 빠졌거나 그 레벨로 그 지역에 못 가면
-   * 안 세운다. 레벨이 없으면 지역 목록이 전부 서므로(`huntingRegionsForLevel(null)`) 지역과
-   * 사냥터는 그대로 성립한다.
-   */
-  function autoFill(): void {
-    if (remembered === null || props.lastHuntSelection === null) return
-    const character =
-      props.characters.find((each) => each.ocid === props.lastHuntSelection?.ocid) ?? null
-    const 갈수있다 =
-      character !== null &&
-      huntingRegionsForLevel(character.level).some(
-        (each) => each.key === remembered.region.key,
-      )
-    const nextOcid = 갈수있다 && character !== null ? character.ocid : null
-
-    setOcid(nextOcid)
-    setHuntLevel(nextOcid === null ? null : (character?.level ?? null))
-    setRegionKey(remembered.region.key)
-    setGroundKey(remembered.ground.key)
-    loadMesoRateFor(nextOcid)
   }
 
   /** 지역을 옮기면 **사냥터가 풀린다**. 그 지역에 없는 맵이 남으면 계산이 남의 맵으로 돈다. */
@@ -513,6 +522,7 @@ export function HuntCalculatorForm(
           fragmentPrice,
           // **그때의** 메획이다. 장비를 갈아입어도 이 기록은 안 흔들린다.
           mesoRate: mesoRatePercent,
+          unionTier,
         },
         itemKind: null,
         memo: null,
@@ -523,8 +533,8 @@ export function HuntCalculatorForm(
   return (
     <>
       {/*
-        캐릭터·지역·사냥터가 한 줄을 나눠 쓴다. 고른 것은 알약이 되어 왼쪽에 쌓이고 자리표시자는
-        남은 것만 읽는다. 값마다 줄을 쓰면 세 줄 84 에 갭 24 인데 이 구조는 28 한 줄이다.
+        캐릭터 · 지역 · 사냥터가 한 줄씩이다. 한 단계짜리 사슬 셋이라 색이 단계 차례로 안 갈려
+        `toneOffset` 으로 줄마다 다음 색을 입힌다.
       */}
       <ChainSelect
         testID="income-sheet-chain"
@@ -535,15 +545,43 @@ export function HuntCalculatorForm(
             selected: ocid,
             onSelect: selectCharacter,
           },
+        ]}
+      />
+      <ChainSelect
+        testID="income-sheet-region"
+        toneOffset={1}
+        steps={[
           {
             name: '지역',
-            options: [
-              { value: null, label: '선택 안함' },
-              ...huntRegions.map((region) => ({ value: region.key, label: region.name })),
-            ],
+            // 캐릭터가 없으면 고를 지역을 안 준다. 캐릭터 없이 적힌 옛 기록의 지역만 알약으로 남긴다.
+            options:
+              ocid === null
+                ? [
+                    { value: null, label: '캐릭터를 먼저 고르세요' },
+                    ...(huntRegion === null ? [] : [{ value: huntRegion.key, label: huntRegion.name }]),
+                  ]
+                : [
+                    { value: null, label: '선택 안함' },
+                    ...huntRegions.map((region) => ({ value: region.key, label: region.name })),
+                  ],
             selected: regionKey,
             onSelect: selectRegion,
           },
+        ]}
+      />
+      <ChainSelect
+        testID="income-sheet-ground"
+        toneOffset={2}
+        leading={
+          huntRegion === null || huntGround === null ? null : (
+            <GroundSummary
+              region={huntRegion}
+              ground={huntGround}
+              killedMobs={killedMobsOf(huntGround.mobs, missedMobs)}
+            />
+          )
+        }
+        steps={[
           {
             name: '사냥터',
             options:
@@ -577,96 +615,65 @@ export function HuntCalculatorForm(
       />
 
       {/*
-        심볼·레벨·마리수. 안 골라도 자리를 지킨다. 안 세우면 사냥터를 고르는 순간 줄이 생겨
-        아래가 통째로 밀린다. 심볼 그림은 지역이 정하고 수치·레벨·마리수는 사냥터가 정한다.
+        효율 조각은 맵이 정한다. 40마리의 −1 은 98%, 22마리의 −1 은 95% 다. 줄은 늘 선다. 사냥터를
+        고를 때 생기면 아래가 밀린다. 사냥터 전에는 40마리 기준 글자를 흐리게 적고 못 누른다.
       */}
+      <FieldRow label="사냥 효율" testID="income-sheet-efficiency">
+        <Segment
+          options={MISSED_MOB_OPTIONS.map((missed) => `${efficiencyPercentOf(efficiencyMobs, missed)}%`)}
+          selected={`${efficiencyPercentOf(efficiencyMobs, missedMobs)}%`}
+          disabled={huntGround === null}
+          onSelect={(option) => {
+            const picked = MISSED_MOB_OPTIONS.find(
+              (missed) => `${efficiencyPercentOf(efficiencyMobs, missed)}%` === option,
+            )
+            if (picked !== undefined) setMissedMobs(picked)
+          }}
+        />
+      </FieldRow>
+
+      {/* 켜는 아이템. 켜면 아래 줄의 메소 획득량이 오른다. */}
       <View
-        testID="income-sheet-ground-detail"
-        className="flex-row items-center justify-end gap-2 pb-1"
+        testID="income-sheet-boost-line"
+        className="min-h-8 flex-row items-center justify-between border-b border-border pb-2"
       >
-        {/*
-          자동 입력이 이 줄의 왼쪽에 선다. 이 줄이 **사냥터가 정해지면 채워지는 자리**라
-          누르개와 그 결과가 한 줄에 서고, 안 골라도 서 있는 줄이라 버튼이 나타났다 사라지지
-          않는다.
-        */}
-        <View className="mr-auto">
-          <HuntAutoFillButton enabled={remembered !== null} onFill={autoFill} />
-        </View>
-        <ForceBadge region={huntRegion} force={huntGround?.force ?? null} />
-        {/*
-          `-` 는 글자 하나라 붙여 놓으면 `lv.` 과 `마리` 에 끼어 안 읽힌다. 값 자리의 최소 폭을
-          잡아 좌우로 숨을 준다. 값이 들어와도 그 폭이 바닥이라 줄이 안 흔들린다.
-        */}
-        <View className="flex-row items-baseline gap-1">
-          <Text className="text-11 text-text-muted">lv.</Text>
-          <Text
-            className="min-w-7 text-center text-11 text-text-muted"
-            style={TABULAR_NUMS}
-          >
-            {huntGround === null ? '-' : huntGround.levels.join('-')}
-          </Text>
-        </View>
-        <View className="flex-row items-baseline gap-1">
-          <Text
-            testID="income-sheet-killed-mobs"
-            className="min-w-6 text-center text-11 text-text-muted"
-            style={TABULAR_NUMS}
-          >
-            {huntGround === null ? '-' : killedMobsOf(huntGround.mobs, missedMobs)}
-          </Text>
-          <Text className="text-11 text-text-muted">마리</Text>
+        <Text className="shrink-0 text-xs text-text-muted">소비</Text>
+        <View testID="income-sheet-boosts" className="flex-row items-center gap-3.5">
+          {MESO_BOOSTS.map((boost) => (
+            <BoostToggle
+              key={boost.id}
+              label={boost.label}
+              icon={getItemIconUrlByFile(boost.icon)}
+              testID={`income-sheet-boost-icon-${boost.id}`}
+              selected={boosts.includes(boost.id)}
+              onPress={() => toggleBoost(boost.id)}
+            />
+          ))}
+          {/* 유니온의 부가 배열 끝이라 이 자리가 곧 그 체크박스 옆이다. 안 켜면 흐리고 못 누른다. */}
+          <View testID="income-sheet-union-tier">
+            <Segment
+              options={UNION_TIERS.map((tier) => `${tier}단계`)}
+              selected={`${unionTier}단계`}
+              disabled={!boosts.includes('union')}
+              onSelect={(option) => {
+                const picked = UNION_TIERS.find((tier) => `${tier}단계` === option)
+                if (picked !== undefined) setUnionTier(picked)
+              }}
+            />
+          </View>
         </View>
       </View>
 
-      {huntGround !== null && (
-        // 효율 조각은 맵이 정한다. 40마리의 −1 은 98%, 22마리의 −1 은 95% 다. 그래서 사냥터를
-        // 고르기 전에는 적을 글자가 없어 줄이 아예 안 선다.
-        <FieldRow label="사냥 효율" testID="income-sheet-efficiency">
-          <Segment
-            options={MISSED_MOB_OPTIONS.map(
-              (missed) => `${efficiencyPercentOf(huntGround.mobs, missed)}%`,
-            )}
-            selected={`${efficiencyPercentOf(huntGround.mobs, missedMobs)}%`}
-            onSelect={(option) => {
-              const picked = MISSED_MOB_OPTIONS.find(
-                (missed) => `${efficiencyPercentOf(huntGround.mobs, missed)}%` === option,
-              )
-              if (picked !== undefined) setMissedMobs(picked)
-            }}
-          />
-        </FieldRow>
-      )}
-
       {/*
-        켜는 것과 세어진 값이 한 줄이다. 둘은 원인과 결과라 옆에 붙어 있어도 그 관계가 읽힌다.
-
-        칸을 둘로 가르지 않는다. 밑줄 하나가 이 줄 전체의 경계이고 넷이 `space-between` 으로
-        벌어진다. 갈라 두면 두 칸의 잰 높이가 달라 줄 안에서 아래위가 어긋난다.
+        메소 획득량과 소재가 한 줄이다(사용자 지정). 라벨 · 값 · 스테퍼가 `space-between` 으로 벌어진다.
+        `소재`는 사용자가 실제로 세는 단위다. 하나가 30분.
       */}
       <View
         testID="income-sheet-meso-line"
         className="min-h-8 flex-row items-center justify-between border-b border-border pb-2"
       >
-        <Text className="shrink-0 text-xs text-text-muted">소비</Text>
-        <View testID="income-sheet-boosts" className="flex-row items-center gap-3">
-          <View className="flex-row items-center gap-3.5">
-            {MESO_BOOSTS.map((boost) => (
-              <BoostToggle
-                key={boost.id}
-                label={boost.label}
-                icon={getItemIconUrlByFile(boost.icon)}
-                testID={`income-sheet-boost-icon-${boost.id}`}
-                selected={boosts.includes(boost.id)}
-                onPress={() => toggleBoost(boost.id)}
-              />
-            ))}
-          </View>
-          <Text className="shrink-0 text-xs text-text-muted">메소 획득량</Text>
-        </View>
-        {/*
-          값 자리의 폭을 못박는다. `0%` 와 `258%` 의 글자 폭이 달라 안 박으면 캐릭터를 고르는
-          순간 왼쪽 덩어리가 통째로 밀린다. 자릿수가 늘어도 줄이 안 움직인다.
-        */}
+        <Text className="shrink-0 text-xs text-text-muted">메소 획득량</Text>
+        {/* 값 자리의 폭을 못박는다. `0%` 와 `258%` 의 글자 폭이 달라 안 박으면 캐릭터를 고르는 순간 스테퍼가 밀린다. */}
         <View
           testID="income-sheet-meso-rate-slot"
           style={MESO_RATE_SLOT}
@@ -699,18 +706,16 @@ export function HuntCalculatorForm(
               </Text>
             )}
         </View>
+        <View className="flex-row items-center">
+          <QuantityStepper
+            value={sojae}
+            onChange={setSojae}
+            label="소재"
+            testID="income-sheet-sojae"
+          />
+          <Text className="ml-2 shrink-0 text-xs text-text-muted">소재</Text>
+        </View>
       </View>
-
-      {/* `소재`는 사용자가 실제로 세는 단위다. 하나가 30분. */}
-      <FieldRow label="시간">
-        <QuantityStepper
-          value={sojae}
-          onChange={setSojae}
-          label="소재"
-          testID="income-sheet-sojae"
-        />
-        <Text className="ml-2 shrink-0 text-xs text-text-muted">소재</Text>
-      </FieldRow>
 
       {/*
         조각은 개수와 가격을 한 줄에서 받는다. 이름은 그림이 진다. `솔 에르다 조각` 여섯 글자가

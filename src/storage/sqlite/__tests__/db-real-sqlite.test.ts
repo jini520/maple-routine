@@ -311,6 +311,7 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
         fragmentPrice: 2_500_000,
         // **그때의** 캐릭터 메소 획득량. 칸이 하나 더 있다.
         mesoRate: 149,
+        unionTier: 2,
       },
     })
 
@@ -325,6 +326,7 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
       fragments: 83,
       fragmentPrice: 2_500_000,
       mesoRate: 149,
+      unionTier: 2,
     })
   })
 })

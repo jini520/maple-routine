@@ -11,6 +11,7 @@
  * 배지는 여러 원천을 읽어 합칠 때 붙는 뷰 모델의 값이지 컬럼이 아니다.
  */
 import { incomeCategoryNameOf, type IncomeCategoryKey, type ItemKindKey } from '../lib/cashbook/categories'
+import { UNION_TIERS, type UnionTier } from '../lib/cashbook/hunting-meso'
 import type { FeePercent } from '../lib/cashbook/item-split'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
@@ -148,6 +149,8 @@ export interface HuntingCalculatorDetail {
    * (그때는 메획이 계산에 없었다) 메획을 안 두른 캐릭터이기도 하다. 둘 다 곱이 ×1 이라 같다.
    */
   mesoRate: number
+  /** 유니온의 부 단계. 칸이 `NULL` 인 옛 행은 3단계다(그동안 사냥 전체에 걸렸다). */
+  unionTier: UnionTier
 }
 
 /** 칸 하나를 숫자로. 없거나 `NULL` 이면 `null` 이다. */
@@ -156,7 +159,7 @@ function numberOrNull(value: unknown): number | null {
 }
 
 /**
- * 여덟 칸 ↔ 한 덩어리. 어느 모양인지는 **칸 둘이 가른다**.
+ * 아홉 칸 ↔ 한 덩어리. 어느 모양인지는 **칸 둘이 가른다**.
  *
  * `hunt_typed_meso` 가 있으면 수동이고, 없는데 `hunt_missed_mobs` 가 있으면 계산기다. 둘 다 없으면
  *  이전에 적힌 행이라 `null` 이고, 그 행은 수동 입력 폼이 합계를 그대로 받아 연다.
@@ -191,19 +194,24 @@ function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
     // **`NULL` 은 이전 행**이고 0 으로 읽는다. 없는 값을 지어내면 옛 기록의 금액이
     // 지금 세는 값과 안 맞는다.
     mesoRate: (row.hunt_meso_rate as number | null | undefined) ?? 0,
+    unionTier: unionTierOf(row.hunt_union_tier),
   }
 }
 
+function unionTierOf(value: unknown): UnionTier {
+  return UNION_TIERS.includes(value as UnionTier) ? (value as UnionTier) : 3
+}
+
 /**
- * 한 덩어리 → 칸 여덟. 없으면 전부 `null` 이다(다른 갈래의 행이 그렇다).
+ * 한 덩어리 → 칸 아홉. 없으면 전부 `null` 이다(다른 갈래의 행이 그렇다).
  *
  * **수동 행은 계산기 칸 넷을 비운다**. 0 을 채우면 그 행이 놓친 마릿수 0 으로
  * 센 행 처럼 읽힌다. 비어 있는 것이 곧 앱이 센 값이 아니라는 뜻이다.
  */
 function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string | null> {
-  if (hunt === null) return [null, null, null, null, null, null, null, null]
+  if (hunt === null) return [null, null, null, null, null, null, null, null, null]
   if (hunt.mode === 'manual') {
-    return [null, null, null, null, hunt.fragments, hunt.fragmentPrice, null, hunt.typedMeso]
+    return [null, null, null, null, hunt.fragments, hunt.fragmentPrice, null, hunt.typedMeso, null]
   }
   return [
     hunt.characterLevel,
@@ -214,6 +222,7 @@ function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string |
     hunt.fragmentPrice,
     hunt.mesoRate,
     null,
+    hunt.unionTier,
   ]
 }
 
@@ -223,9 +232,9 @@ const INSERT_SQL = `
      sale_fee_percent, sale_fee_meso, sale_fee_auto,
      point_amount, point_per_100m_meso, cash_amount, quantity,
      hunt_character_level, hunt_missed_mobs, hunt_boosts, hunt_sojae, hunt_fragments,
-     hunt_fragment_price, hunt_meso_rate, hunt_typed_meso, item_kind_key,
+     hunt_fragment_price, hunt_meso_rate, hunt_typed_meso, hunt_union_tier, item_kind_key,
      memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 /**
@@ -275,7 +284,7 @@ const UPDATE_SQL = `
     point_amount = ?, point_per_100m_meso = ?, cash_amount = ?, quantity = ?,
     hunt_character_level = ?, hunt_missed_mobs = ?, hunt_boosts = ?, hunt_sojae = ?,
     hunt_fragments = ?, hunt_fragment_price = ?, hunt_meso_rate = ?, hunt_typed_meso = ?,
-    item_kind_key = ?, memo = ?
+    hunt_union_tier = ?, item_kind_key = ?, memo = ?
   WHERE id = ?
 `
 

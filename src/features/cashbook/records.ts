@@ -60,16 +60,7 @@ import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/e
 import { comparableEquipmentName } from '../../lib/equipment/equipment-items'
 import { datesBetween } from '../../lib/calendar'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
-import {
-  getLastHuntSelection,
-  setLastHuntSelection,
-  type LastHuntSelection,
-} from '../../storage/last-hunt-selection'
-import {
-  getLastHuntToggles,
-  setLastHuntToggles,
-  type LastHuntToggles,
-} from '../../storage/last-hunt-toggles'
+import { getLastHunts, setLastHunt, type LastHunt, type LastHunts } from '../../storage/last-hunts'
 import {
   deleteSpendRecord,
   getSpendRecordsBetween,
@@ -93,27 +84,30 @@ function newRecordId(now: Date): string {
 
 export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void> {
   await insertIncomeRecord({ ...draft, id: newRecordId(now), recordedAt: now.toISOString() })
-  // 저장이 성공한 뒤에만 기억한다. 사냥터 key 가 없는 사냥 행은 수동으로 적은 것이라 되살릴
-  // 자리가 없다.
-  if (draft.category === 'hunting' && draft.itemKey !== null) {
-    await setLastHuntSelection({ ocid: draft.ocid, groundKey: draft.itemKey })
-  }
-  // 켠 아이템도 같은 규칙이다. 아이템 줄은 계산기에만 있어 수동으로 적은 행은 안 남긴다.
-  const toggles = draft.category === 'hunting' && draft.hunt !== null ? nextHuntToggles(draft.hunt, null) : null
-  if (toggles !== null) await setLastHuntToggles(toggles)
+  // 저장이 성공한 뒤에만 기억한다.
+  const remembered = lastHuntOf(draft)
+  if (remembered !== null) await setLastHunt(remembered.ocid, remembered.hunt)
 }
 
 /**
- * 저장한 사냥 기록이 다음 사냥 시트에 남길 체크 셋.
+ * 저장한 수입이 남길 캐릭터별 마지막 사냥. 남길 것이 없으면 `null` 이다.
  *
- * 수동 폼에는 아이템 줄이 없다. 거기서 빈 값을 적으면 계산기에서 켜 두던 것이 지워지므로 기억을
- * 그대로 둔다.
+ * 계산기로 적은 사냥만 남긴다. 수동 폼에는 사냥터 · 아이템 줄이 없어 거기서 빈 값을 적으면 계산기에서
+ * 골라 두던 것이 지워진다. 캐릭터 없는 몫은 없다(사냥 기록은 캐릭터를 골라야 저장된다).
  */
-export function nextHuntToggles(
-  hunt: NonNullable<IncomeDraft['hunt']>,
-  current: LastHuntToggles | null,
-): LastHuntToggles | null {
-  return hunt.mode === 'calculator' ? { boosts: [...hunt.boosts] } : current
+function lastHuntOf(draft: IncomeDraft): { ocid: string; hunt: LastHunt } | null {
+  if (draft.category !== 'hunting' || draft.hunt?.mode !== 'calculator') return null
+  if (draft.ocid === null || draft.itemKey === null) return null
+  return {
+    ocid: draft.ocid,
+    hunt: { groundKey: draft.itemKey, boosts: [...draft.hunt.boosts], unionTier: draft.hunt.unionTier },
+  }
+}
+
+/** 저장 뒤 화면이 드는 기억. 저장이 쓴 것과 같은 규칙이고 남길 것이 없으면 그대로 돌려준다. */
+export function nextLastHunts(draft: IncomeDraft, current: LastHunts): LastHunts {
+  const remembered = lastHuntOf(draft)
+  return remembered === null ? current : { ...current, [remembered.ocid]: remembered.hunt }
 }
 
 export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
@@ -507,14 +501,9 @@ export async function loadLastPointRate(): Promise<number | null> {
   return getLastPointRate().catch(() => null)
 }
 
-/** `사냥터 자동 입력` 이 되살릴 자리. 그 사냥터가 참조표에 아직 있는지는 시트가 판정한다. */
-export async function loadLastHuntSelection(): Promise<LastHuntSelection | null> {
-  return getLastHuntSelection().catch(() => null)
-}
-
-/** 새 사냥 시트가 세울 체크 셋. 그 아이템 id 가 참조표에 아직 있는지는 시트가 판정한다. */
-export async function loadLastHuntToggles(): Promise<LastHuntToggles | null> {
-  return getLastHuntToggles().catch(() => null)
+/** 캐릭터를 고르면 설 마지막 사냥. 그 사냥터 · 아이템이 참조표에 아직 있는지는 시트가 판정한다. */
+export async function loadLastHunts(): Promise<LastHunts> {
+  return getLastHunts().catch(() => ({}))
 }
 
 
