@@ -35,8 +35,10 @@ import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { tapFeedback } from '../../native/haptics'
 import type { BossCycle } from '../../types'
 import { DeltaChip } from '../boss-profit/HeadlineChips'
+import { BossSection } from './BossSection'
 import { CategorySection } from './CategorySection'
 import { CharacterSection } from './CharacterSection'
+import { CumulativeSection } from './CumulativeSection'
 import { StatsSection } from './StatsSection'
 import { TrendSection } from './TrendSection'
 
@@ -231,6 +233,10 @@ export function StatsScreen(): React.JSX.Element {
             side="expense"
             items={categoryTotalsBetween(days, ranges.current, 'expense')}
           />
+
+          <BossSection days={days} range={ranges.current} />
+
+          <CumulativeSection key={`cumulative-${cycle}-${periodKey}`} days={days} cycle={cycle} periodKey={periodKey} />
         </View>
       </ScreenScroll>
     </View>

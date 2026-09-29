@@ -1,4 +1,4 @@
-import { statsRanges } from '../periods'
+import { cumulativeRanges, statsRanges } from '../periods'
 
 describe('statsRanges', () => {
   it('주간은 그 주와 그 주까지의 8주를 낸다', () => {
@@ -22,5 +22,22 @@ describe('statsRanges', () => {
       '2026-02',
       '2026-03',
     ])
+  })
+})
+
+describe('cumulativeRanges', () => {
+  it('기록이 처음 있는 주부터 고른 주까지 주마다 범위를 낸다', () => {
+    const ranges = cumulativeRanges('weekly', '2026-09-24', '2026-09-05')
+    expect(ranges.map((range) => range.periodKey)).toEqual(['2026-09-03', '2026-09-10', '2026-09-17', '2026-09-24'])
+  })
+
+  it('월간은 기록이 처음 있는 달부터다', () => {
+    const ranges = cumulativeRanges('monthly', '2026-09', '2026-07-30')
+    expect(ranges.map((range) => range.periodKey)).toEqual(['2026-07', '2026-08', '2026-09'])
+  })
+
+  it('처음 기록이 고른 기간보다 늦거나 없으면 고른 기간 하나다', () => {
+    expect(cumulativeRanges('weekly', '2026-09-24', null).map((range) => range.periodKey)).toEqual(['2026-09-24'])
+    expect(cumulativeRanges('weekly', '2026-09-24', '2026-10-02').map((range) => range.periodKey)).toEqual(['2026-09-24'])
   })
 })

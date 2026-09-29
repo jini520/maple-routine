@@ -2,6 +2,7 @@
  * 통계 화면의 기간 범위. 기간 줄이 고른 기간 하나에서 카드들이 읽을 날짜 범위를 낸다.
  */
 import { getAdjacentPeriodKey, getPeriodDateKeys } from '../../lib/boss/boss-profit-period'
+import { monthKeyOf, resetWeekStartOf } from '../../lib/calendar'
 import type { BossCycle } from '../../types'
 import type { StatsRange } from './aggregate'
 
@@ -35,4 +36,24 @@ export function statsRanges(cycle: BossCycle, periodKey: string): StatsRanges {
   const { from, to } = trend[trend.length - 1]
   const previous = trend[trend.length - 2]
   return { current: { from, to }, previous: { from: previous.from, to: previous.to }, trend }
+}
+
+/**
+ * 누적 선의 점들. 기록이 처음 있는 기간부터 고른 기간까지 기간마다 하나다.
+ *
+ * @param firstDateKey 기록이 있는 가장 이른 날. 없으면 `null`
+ */
+export function cumulativeRanges(
+  cycle: BossCycle,
+  periodKey: string,
+  firstDateKey: string | null,
+): StatsPeriodRange[] {
+  const first = firstDateKey === null ? periodKey : cycle === 'weekly' ? resetWeekStartOf(firstDateKey) : monthKeyOf(firstDateKey)
+  const ranges: StatsPeriodRange[] = [rangeOf(cycle, periodKey)]
+  let key = periodKey
+  while (first < key) {
+    key = getAdjacentPeriodKey(cycle, key, 'prev')
+    ranges.unshift(rangeOf(cycle, key))
+  }
+  return ranges
 }
