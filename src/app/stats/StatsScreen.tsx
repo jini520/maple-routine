@@ -15,7 +15,12 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { floorMonthKey, floorWeekStartKey } from '../../features/cashbook/range'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
 import { useDataFreshness } from '../../features/refresh/freshness'
-import { characterTotalsBetween, totalsBetween, type DaysByDate } from '../../features/stats/aggregate'
+import {
+  categoryTotalsBetween,
+  characterTotalsBetween,
+  totalsBetween,
+  type DaysByDate,
+} from '../../features/stats/aggregate'
 import { loadStatsDays, loadStatsImages } from '../../features/stats/load'
 import { statsRanges } from '../../features/stats/periods'
 import {
@@ -30,6 +35,7 @@ import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { tapFeedback } from '../../native/haptics'
 import type { BossCycle } from '../../types'
 import { DeltaChip } from '../boss-profit/HeadlineChips'
+import { CategorySection } from './CategorySection'
 import { CharacterSection } from './CharacterSection'
 import { StatsSection } from './StatsSection'
 import { TrendSection } from './TrendSection'
@@ -212,6 +218,19 @@ export function StatsScreen(): React.JSX.Element {
           <TrendSection key={`${cycle}-${periodKey}`} days={days} cycle={cycle} trend={ranges.trend} />
 
           <CharacterSection rows={characters} images={images} />
+
+          <CategorySection
+            key={`income-${cycle}-${periodKey}`}
+            title="수입 내역"
+            side="income"
+            items={categoryTotalsBetween(days, ranges.current, 'income')}
+          />
+          <CategorySection
+            key={`expense-${cycle}-${periodKey}`}
+            title="지출 내역"
+            side="expense"
+            items={categoryTotalsBetween(days, ranges.current, 'expense')}
+          />
         </View>
       </ScreenScroll>
     </View>
