@@ -3,7 +3,9 @@
  *
  * 카드마다 따로 읽지 않는다. 누적 카드가 처음부터 더하므로 그 범위가 나머지 카드의 범위를 다 덮는다.
  */
-import { loadMonthDays } from '../cashbook/records'
+import { cashbookDataRevision, loadMonthDays } from '../cashbook/records'
+import { getEnhancementHistoryRevision } from '../../storage/enhancement-history'
+import { getSpendRecordsRevision } from '../../storage/spend'
 import { getCharacterProfiles, type CharacterProfileSnapshot } from '../../storage/character-profiles'
 import { historyFloorDateKey } from '../cashbook/range'
 import type { DaysByDate } from './aggregate'
@@ -16,4 +18,12 @@ export async function loadStatsDays(todayDateKey: string): Promise<DaysByDate> {
 export async function loadStatsImages(ocids: readonly string[]): Promise<Map<string, string>> {
   const profiles = await getCharacterProfiles(ocids).catch(() => new Map<string, CharacterProfileSnapshot>())
   return new Map([...profiles.values()].map((profile) => [profile.ocid, profile.imageUrl]))
+}
+
+/**
+ * 통계가 읽는 표들의 판. 가계부의 판(보스 · 드롭 · 수입)에 강화 내역과 지출 기록의 판을 더한다.
+ * 모두 단조 증가라 어느 쪽이 올라도 합이 달라진다. 같으면 다시 읽을 까닭이 없다.
+ */
+export function statsDataRevision(): number {
+  return cashbookDataRevision() + getEnhancementHistoryRevision() + getSpendRecordsRevision()
 }

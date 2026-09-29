@@ -131,7 +131,15 @@ function assertPointRate(record: SpendRecord): void {
   }
 }
 
+/** 지출 기록의 판. 넣기 · 고치기 · 지우기마다 오른다. 통계 화면이 가계부 시트의 쓰기를 알려고 본다 */
+let spendRecordsRevision = 0
+
+export function getSpendRecordsRevision(): number {
+  return spendRecordsRevision
+}
+
 export async function insertSpendRecord(record: SpendRecord): Promise<void> {
+  spendRecordsRevision += 1
   assertPointRate(record)
 
   const db = await getBossProfitDb()
@@ -172,6 +180,7 @@ const UPDATE_SQL = `
 
 /** 넣을 때와 같은 검증을 탄다. 아니면 그 방어가 수정 쪽에서 반쪽이 된다. */
 export async function updateSpendRecord(record: SpendRecord): Promise<void> {
+  spendRecordsRevision += 1
   assertPointRate(record)
 
   const db = await getBossProfitDb()
@@ -194,6 +203,7 @@ export async function updateSpendRecord(record: SpendRecord): Promise<void> {
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteSpendRecord(id: string): Promise<void> {
+  spendRecordsRevision += 1
   const db = await getBossProfitDb()
   await db.run(`DELETE FROM spend_records WHERE id = ?`, [id])
 }

@@ -3,25 +3,39 @@ import { act, fireEvent } from '@testing-library/react-native'
 jest.mock('../../../features/stats/load', () => ({
   loadStatsDays: jest.fn(),
   loadStatsImages: jest.fn().mockResolvedValue(new Map()),
+  statsDataRevision: jest.fn().mockReturnValue(0),
 }))
 
 const mockReload = jest.fn()
 const mockRequestDateRange = jest.fn()
+let mockSetLayerRevision: ((value: number) => void) | null = null
 jest.mock('../../../features/ledger/useLedgerData', () => ({
-  useLedgerData: () => ({
-    status: 'ready',
-    collecting: false,
-    revision: 1,
-    reload: mockReload,
-    requestDateRange: mockRequestDateRange,
-  }),
+  useLedgerData: () => {
+    const react = require('react') as typeof import('react')
+    const [revision, setRevision] = react.useState(1)
+    mockSetLayerRevision = setRevision
+    return { status: 'ready', collecting: false, revision, reload: mockReload, requestDateRange: mockRequestDateRange }
+  },
+}))
+
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useFocusEffect: (callback: () => void) => {
+    const react = require('react') as typeof import('react')
+    react.useEffect(() => {
+      callback()
+    }, [callback])
+  },
 }))
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { StatsScreen } from '../StatsScreen'
 
-const { loadStatsDays } = jest.requireMock('../../../features/stats/load') as { loadStatsDays: jest.Mock }
+const { loadStatsDays, statsDataRevision } = jest.requireMock('../../../features/stats/load') as {
+  loadStatsDays: jest.Mock
+  statsDataRevision: jest.Mock
+}
 
 const 지금 = Date.parse('2026-09-29T05:00:00Z')
 
@@ -56,6 +70,7 @@ beforeEach(() => {
   jest.useFakeTimers({ now: 지금 })
   mockReload.mockReset().mockResolvedValue(undefined)
   mockRequestDateRange.mockReset()
+  statsDataRevision.mockReset().mockReturnValue(0)
   loadStatsDays.mockReset().mockResolvedValue({
     '2026-09-18': [수입('2026-09-18', 100_000_000)],
     '2026-09-25': [수입('2026-09-25', 500_000_000), 지출('2026-09-25', 200_000_000)],
@@ -116,5 +131,31 @@ describe('StatsScreen', () => {
     await 그리기()
 
     expect(mockRequestDateRange).toHaveBeenLastCalledWith({ from: '2026-09-24', to: '2026-09-30' })
+  })
+
+  // 주를 옮겨도 18개월치는 이미 들고 있다. 층의 회차가 끝나도 읽는 표가 안 바뀌었으면 다시 읽지 않는다.
+  it('기간을 옮기거나 층의 판만 오르면 다시 읽지 않는다', async () => {
+    const view = await 그리기()
+    expect(loadStatsDays).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('이전 주'))
+    })
+    await act(async () => {
+      mockSetLayerRevision?.(2)
+    })
+
+    expect(loadStatsDays).toHaveBeenCalledTimes(1)
+  })
+
+  it('읽는 표의 판이 오른 뒤 층의 회차가 끝나면 다시 읽는다', async () => {
+    await 그리기()
+
+    statsDataRevision.mockReturnValue(5)
+    await act(async () => {
+      mockSetLayerRevision?.(2)
+    })
+
+    expect(loadStatsDays).toHaveBeenCalledTimes(2)
   })
 })

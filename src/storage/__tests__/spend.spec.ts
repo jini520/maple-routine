@@ -423,3 +423,17 @@ describe('deleteSpendRecord', () => {
     expect(values).toEqual(['spd-1'])
   })
 })
+
+// 통계 화면이 이 판을 보고 다시 읽는다. 가계부 밖의 화면이라 시트의 쓰기를 모른다.
+describe('지출 기록의 판', () => {
+  it('넣기 · 고치기 · 지우기마다 오른다', async () => {
+    const spend = require('../spend') as typeof import('../spend')
+    const before = spend.getSpendRecordsRevision()
+
+    await spend.insertSpendRecord(mesoSpend)
+    await spend.updateSpendRecord(mesoSpend)
+    await spend.deleteSpendRecord(mesoSpend.id)
+
+    expect(spend.getSpendRecordsRevision()).toBe(before + 3)
+  })
+})

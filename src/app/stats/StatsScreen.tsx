@@ -3,7 +3,8 @@
  *
  * @see docs/features/stats.md
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useFocusEffect } from '@react-navigation/native'
 import { Pressable, View } from 'react-native'
 
 import { ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, Text } from '../../components/atoms'
@@ -21,7 +22,7 @@ import {
   totalsBetween,
   type DaysByDate,
 } from '../../features/stats/aggregate'
-import { loadStatsDays, loadStatsImages } from '../../features/stats/load'
+import { loadStatsDays, loadStatsImages, statsDataRevision } from '../../features/stats/load'
 import { statsRanges } from '../../features/stats/periods'
 import {
   formatBossProfitPeriodLabel,
@@ -96,7 +97,14 @@ export function StatsScreen(): React.JSX.Element {
     requestDateRange({ from: ranges.current.from, to: ranges.current.to })
   }, [requestDateRange, ranges])
 
+  /**
+   * 읽는 표의 판이 달라졌을 때만 다시 읽는다. 기간 이동은 이미 든 18개월 안의 일이라 안 읽고, 층의 회차가
+   * 새로 받은 것 없이 끝나도 안 읽는다. 가계부 시트의 쓰기는 층을 안 거치므로 포커스 때도 본다.
+   */
+  const loadedRevision = useRef<number | null>(null)
+  const [loadToken, setLoadToken] = useState(0)
   useEffect(() => {
+    loadedRevision.current = statsDataRevision()
     let alive = true
     void loadStatsDays(todayDateKey).then((loaded) => {
       if (alive) setDays(loaded)
@@ -104,7 +112,15 @@ export function StatsScreen(): React.JSX.Element {
     return () => {
       alive = false
     }
-  }, [ledger.revision, todayDateKey])
+  }, [loadToken, todayDateKey])
+  useEffect(() => {
+    if (loadedRevision.current !== statsDataRevision()) setLoadToken((token) => token + 1)
+  }, [ledger.revision])
+  useFocusEffect(
+    useCallback(() => {
+      if (loadedRevision.current !== statsDataRevision()) setLoadToken((token) => token + 1)
+    }, []),
+  )
 
   const characters = characterTotalsBetween(days, ranges.current)
   const characterOcids = characters.flatMap((row) => (row.ocid === null ? [] : [row.ocid])).join(',')
