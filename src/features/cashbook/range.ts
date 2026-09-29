@@ -122,8 +122,14 @@ export function historyFloorDateKey(todayDateKey: string): string {
   return floorWeekStartKey(monthKeyOf(todayDateKey))
 }
 
+/** 층에 알리는 범위가 보는 달에서 거슬러 덮는 달 수. 통계의 월간 추이가 여섯 달이다 */
+const API_TREND_MONTHS = 6
+
 /**
- * 층에 알리는 범위. 창 전체이되 **한도 아래로는 안 내려간다**.
+ * 층에 알리는 범위. 창 전체에 **보는 달까지의 여섯 달**을 더하되 **한도 아래로는 안 내려간다**.
+ *
+ * 여섯 달은 통계의 월간 추이 몫이다. 가계부와 통계가 이 함수 하나를 써야 두 화면을 오갈 때 층이
+ * 회차를 다시 안 열고, 사용자가 기다리는 것도 첫 회차 한 번이다.
  *
  * 한도보다 이른 달을 보고 있으면 `from` 이 `to` 를 넘어서고, 그때는 받을 날이 하나도 없다
  * (`datesBetween` 이 빈 목록을 준다). 그리는 것은 그대로다 - 기기 DB 읽기는 이 한도를 안 본다.
@@ -133,11 +139,15 @@ export function historyFloorDateKey(todayDateKey: string): string {
 export function apiWindowRange(viewMonthKey: string, todayDateKey: string): CashbookRange {
   const window = monthWindowRange(viewMonthKey, monthKeyOf(todayDateKey))
   const floor = historyFloorDateKey(todayDateKey)
-  return { from: window.from < floor ? floor : window.from, to: window.to }
+  // 뒤집힌 창에 앞을 붙이면 뒤집힘이 풀려 한도부터 이번 달까지 통째로 받게 된다.
+  if (window.from > window.to) return window
+  const trendFrom = monthBounds(getAdjacentMonthKey(viewMonthKey, -(API_TREND_MONTHS - 1))).from
+  const from = trendFrom < window.from ? trendFrom : window.from
+  return { from: from < floor ? floor : from, to: window.to }
 }
 
 /**
- * 처음 열었을 때의 범위. 이번 달과 그 앞 둘이다.
+ * 처음 열었을 때의 범위. 이번 달까지의 여섯 달이다.
  *
  * 층이 마운트에서 이 값을 쓴다. 화면이 자기 범위를 알려 주기를 기다리면 창이 먼저 분모를 잡고
  * 뒤늦게 히스토리가 자기 몫을 더해 **진행 바가 뒤로 간다**. 그래서 화면이 첫 렌더에 알릴 그

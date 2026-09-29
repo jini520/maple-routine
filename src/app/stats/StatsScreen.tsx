@@ -48,6 +48,7 @@ import { CharacterSection } from './CharacterSection'
 import { CumulativeSection } from './CumulativeSection'
 import { sectionsToReveal } from './reveal'
 import { StatsSection } from './StatsSection'
+import { StatsSkeleton } from './StatsSkeleton'
 import { TrendSection } from './TrendSection'
 
 const CYCLES = ['weekly', 'monthly'] as const
@@ -93,7 +94,12 @@ export function StatsScreen(): React.JSX.Element {
 
   const [cycle, setCycle] = useState<BossCycle>('weekly')
   const [periodKey, setPeriodKey] = useState(() => getCurrentBossProfitPeriod('weekly', now).periodKey)
-  const [days, setDays] = useState<DaysByDate>(NO_DAYS)
+  // `null` 은 아직 한 번도 못 읽었다는 뜻이다. 빈 기록(`{}`)과 갈라야 스켈레톤을 세울 수 있다.
+  const [loadedDays, setDays] = useState<DaysByDate | null>(null)
+  const days = loadedDays ?? NO_DAYS
+  // 아직 안 받은 지난 날을 받는 동안(`filling`)은 값이 모자라다. `collecting` 은 받아 둔 달로 옮겨도
+  // 켜지는데 그때 값은 이미 맞아서, 그것으로 막으면 값이 섰다가 스켈레톤이 덮는다.
+  const loading = loadedDays === null || ledger.status === 'filling'
   const [images, setImages] = useState<ReadonlyMap<string, string>>(NO_IMAGES)
   // 누적 순수익의 시작 날짜. 기기에 기억해 다음에 열어도 같은 날부터 더한다.
   const [cumulativeStart, setCumulativeStart] = useState<string | null>(null)
@@ -108,8 +114,8 @@ export function StatsScreen(): React.JSX.Element {
   const ranges = useMemo(() => statsRanges(cycle, periodKey), [cycle, periodKey])
 
   /**
-   * 층에 알리는 범위는 가계부와 같은 창이다. 고른 기간의 달(주간은 목요일이 든 달)을 가운데 두고 앞뒤
-   * 두 달이고 오늘을 안 넘는다. 같은 창이면 층이 회차를 다시 안 열어, 같은 달 안의 주 이동은 조용하다.
+   * 층에 알리는 범위는 가계부와 같은 함수에서 나온다. 보는 달(주간은 목요일이 든 달)의 앞뒤 두 달에 그 달까지의
+   * 여섯 달을 더한 범위다. 같은 범위면 층이 회차를 다시 안 열어, 같은 달 안의 주 이동과 가계부 왕복은 조용하다.
    */
   const viewMonthKey = cycle === 'weekly' ? monthKeyOf(periodKey) : periodKey
   const { requestDateRange } = ledger
@@ -264,80 +270,86 @@ export function StatsScreen(): React.JSX.Element {
             />
           </View>
 
-          <StatsSection title="순 수익" testID="stats-summary">
-            <View className="flex-row items-end justify-between gap-3">
-              <View className="shrink">
-                <View className="flex-row items-center">
-                  <Text
-                    testID="stats-summary-net"
-                    numberOfLines={1}
-                    className={`text-xl font-bold ${current.netMeso > 0 ? 'text-rise-ink' : current.netMeso < 0 ? 'text-fall-ink' : 'text-text'}`}
-                    style={TABULAR_NUMS}
-                  >
-                    {signed(current.netMeso)}{' '}
-                    <Text className="text-11 font-bold text-text-muted">메소</Text>
-                  </Text>
-                  <DeltaChip totalMeso={current.netMeso} previousMeso={previous.netMeso} tab={cycle} periodKey={periodKey} now={now} />
+          {loading ? (
+            <StatsSkeleton />
+          ) : (
+            <>
+              <StatsSection title="순 수익" testID="stats-summary">
+                <View className="flex-row items-end justify-between gap-3">
+                  <View className="shrink">
+                    <View className="flex-row items-center">
+                      <Text
+                        testID="stats-summary-net"
+                        numberOfLines={1}
+                        className={`text-xl font-bold ${current.netMeso > 0 ? 'text-rise-ink' : current.netMeso < 0 ? 'text-fall-ink' : 'text-text'}`}
+                        style={TABULAR_NUMS}
+                      >
+                        {signed(current.netMeso)}{' '}
+                        <Text className="text-11 font-bold text-text-muted">메소</Text>
+                      </Text>
+                      <DeltaChip totalMeso={current.netMeso} previousMeso={previous.netMeso} tab={cycle} periodKey={periodKey} now={now} />
+                    </View>
+                  </View>
+                  <View className="shrink-0 items-end gap-1">
+                    <View className="flex-row items-baseline gap-1.5">
+                      <Text className="text-11 text-text-muted">수입</Text>
+                      <Text className="w-16 text-right text-11 font-medium text-rise-ink" style={TABULAR_NUMS}>
+                        +{formatMesoCompact(current.incomeMeso)}
+                      </Text>
+                    </View>
+                    <View className="flex-row items-baseline gap-1.5">
+                      <Text className="text-11 text-text-muted">지출</Text>
+                      <Text className="w-16 text-right text-11 font-medium text-fall-ink" style={TABULAR_NUMS}>
+                        −{formatMesoCompact(current.expenseMeso)}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
+              </StatsSection>
+
+              <View onLayout={onSectionLayout('trend')}>
+                <TrendSection days={days} cycle={cycle} trend={trend} revealed={revealed.has('trend')} />
               </View>
-              <View className="shrink-0 items-end gap-1">
-                <View className="flex-row items-baseline gap-1.5">
-                  <Text className="text-11 text-text-muted">수입</Text>
-                  <Text className="w-16 text-right text-11 font-medium text-rise-ink" style={TABULAR_NUMS}>
-                    +{formatMesoCompact(current.incomeMeso)}
-                  </Text>
-                </View>
-                <View className="flex-row items-baseline gap-1.5">
-                  <Text className="text-11 text-text-muted">지출</Text>
-                  <Text className="w-16 text-right text-11 font-medium text-fall-ink" style={TABULAR_NUMS}>
-                    −{formatMesoCompact(current.expenseMeso)}
-                  </Text>
-                </View>
+
+              <View onLayout={onSectionLayout('characters')}>
+                <CharacterSection rows={characters} images={images} revealed={revealed.has('characters')} replayKey={replayKey} />
               </View>
-            </View>
-          </StatsSection>
 
-          <View onLayout={onSectionLayout('trend')}>
-            <TrendSection days={days} cycle={cycle} trend={trend} revealed={revealed.has('trend')} />
-          </View>
+              <View onLayout={onSectionLayout('income')}>
+                <CategorySection
+                  title="수입 내역"
+                  side="income"
+                  items={incomeItems}
+                  revealed={revealed.has('income')}
+                  replayKey={replayKey}
+                />
+              </View>
+              <View onLayout={onSectionLayout('expense')}>
+                <CategorySection
+                  title="지출 내역"
+                  side="expense"
+                  items={expenseItems}
+                  revealed={revealed.has('expense')}
+                  replayKey={replayKey}
+                />
+              </View>
 
-          <View onLayout={onSectionLayout('characters')}>
-            <CharacterSection rows={characters} images={images} revealed={revealed.has('characters')} replayKey={replayKey} />
-          </View>
+              <BossSection days={days} range={currentRange} cycle={cycle} />
 
-          <View onLayout={onSectionLayout('income')}>
-            <CategorySection
-              title="수입 내역"
-              side="income"
-              items={incomeItems}
-              revealed={revealed.has('income')}
-              replayKey={replayKey}
-            />
-          </View>
-          <View onLayout={onSectionLayout('expense')}>
-            <CategorySection
-              title="지출 내역"
-              side="expense"
-              items={expenseItems}
-              revealed={revealed.has('expense')}
-              replayKey={replayKey}
-            />
-          </View>
-
-          <BossSection days={days} range={currentRange} />
-
-          <View onLayout={onSectionLayout('cumulative')}>
-            <CumulativeSection
-              days={days}
-              cycle={cycle}
-              periodKey={periodKey}
-              startDateKey={cumulativeStart}
-              earliest={historyFloorDateKey(todayDateKey)}
-              latest={todayDateKey}
-              onChangeStart={changeCumulativeStart}
-              revealed={revealed.has('cumulative')}
-            />
-          </View>
+              <View onLayout={onSectionLayout('cumulative')}>
+                <CumulativeSection
+                  days={days}
+                  cycle={cycle}
+                  periodKey={periodKey}
+                  startDateKey={cumulativeStart}
+                  earliest={historyFloorDateKey(todayDateKey)}
+                  latest={todayDateKey}
+                  onChangeStart={changeCumulativeStart}
+                  revealed={revealed.has('cumulative')}
+                />
+              </View>
+            </>
+          )}
         </View>
       </ScreenScroll>
     </View>

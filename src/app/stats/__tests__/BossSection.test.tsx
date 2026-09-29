@@ -27,7 +27,7 @@ beforeEach(() => {
 
 describe('BossSection', () => {
   it('난이도별은 큰 순서의 타일이고 난이도 배지와 처치 횟수를 적는다', async () => {
-    const view = await renderOverlay(<BossSection days={days} range={range} />)
+    const view = await renderOverlay(<BossSection days={days} range={range} cycle="weekly" />)
 
     const tiles = view.getAllByTestId(/^stats-boss-tile-/)
     expect(tiles.map((tile) => tile.props.testID)).toEqual([
@@ -44,7 +44,7 @@ describe('BossSection', () => {
   })
 
   it('보스별은 난이도를 합치고 배지를 안 단다', async () => {
-    const view = await renderOverlay(<BossSection days={days} range={range} />)
+    const view = await renderOverlay(<BossSection days={days} range={range} cycle="weekly" />)
 
     await act(async () => {
       fireEvent.press(view.getByLabelText('보스별'))
@@ -58,7 +58,7 @@ describe('BossSection', () => {
   })
 
   it('처치 기록이 없으면 한 줄을 적는다', async () => {
-    const view = await renderOverlay(<BossSection days={{} as never} range={range} />)
+    const view = await renderOverlay(<BossSection days={{} as never} range={range} cycle="weekly" />)
 
     expect(view.getByText('이 기간에 결정석을 판 보스가 없어요')).toBeTruthy()
   })
