@@ -2,7 +2,7 @@
  * 추이 섹션. 최근 기간들의 순수익(0 선 위아래) 또는 수익 · 지출 한쪽을 막대로 그리고, 막대를 누르면
  * 그 기간의 값을 말풍선으로 띄운다.
  */
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { Pressable, View, type LayoutChangeEvent } from 'react-native'
 import Svg, { Line, Rect, Text as SvgText } from 'react-native-svg'
 
@@ -52,7 +52,7 @@ function bubbleTitle(cycle: BossCycle, periodKey: string): string {
   return `${Number(periodKey.slice(5, 7))}월 ${Number(periodKey.slice(8, 10))}일 주`
 }
 
-export function TrendSection(props: {
+export const TrendSection = memo(function TrendSection(props: {
   days: DaysByDate
   cycle: BossCycle
   /** 오래된 것부터이고 마지막이 고른 기간이다 */
@@ -60,11 +60,13 @@ export function TrendSection(props: {
 }): React.JSX.Element {
   const { definition } = useThemeAppearance()
   const [mode, setMode] = useState<Mode>('순수익')
-  const [picked, setPicked] = useState<number | null>(null)
+  /** 고른 막대. 어느 기간에서 골랐는지 함께 들어, 기간이 바뀌면 새 기간의 끝으로 돌아간다 */
+  const [picked, setPicked] = useState<{ periodKey: string; index: number } | null>(null)
   const [width, setWidth] = useState(312)
 
   const series = totalsSeries(props.days, props.trend)
-  const selected = picked === null || picked >= series.length ? series.length - 1 : picked
+  const lastPeriodKey = props.trend[props.trend.length - 1].periodKey
+  const selected = picked !== null && picked.periodKey === lastPeriodKey ? picked.index : series.length - 1
   const values = series.map((totals) => valueOf(totals, mode))
   const net = mode === '순수익'
 
@@ -150,7 +152,7 @@ export function TrendSection(props: {
               key={`hit-${range.periodKey}`}
               role="button"
               aria-label={`${bubbleTitle(props.cycle, range.periodKey)} 보기`}
-              onPress={() => setPicked(index)}
+              onPress={() => setPicked({ periodKey: lastPeriodKey, index })}
               className="flex-1"
             />
           ))}
@@ -192,4 +194,4 @@ export function TrendSection(props: {
       </Text>
     </StatsSection>
   )
-}
+})

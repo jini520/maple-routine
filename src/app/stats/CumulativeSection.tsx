@@ -2,7 +2,7 @@
  * 누적 순수익 섹션. 기록이 처음 있는 기간부터 고른 기간까지 순수익을 더해 큰 숫자와 선으로 그린다.
  * 기간을 누르면 그 기간까지의 누적을 말풍선으로 띄운다.
  */
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { Pressable, View, type LayoutChangeEvent } from 'react-native'
 import Svg, { Circle, ClipPath, Defs, Line, Path, Rect } from 'react-native-svg'
 
@@ -29,15 +29,17 @@ function periodTitle(cycle: BossCycle, periodKey: string): string {
   return cycle === 'monthly' ? `${month}월` : `${month}월 ${Number(periodKey.slice(8, 10))}일 주`
 }
 
-export function CumulativeSection(props: { days: DaysByDate; cycle: BossCycle; periodKey: string }): React.JSX.Element {
+export const CumulativeSection = memo(function CumulativeSection(props: { days: DaysByDate; cycle: BossCycle; periodKey: string }): React.JSX.Element {
   const { definition } = useThemeAppearance()
   const [width, setWidth] = useState(312)
-  const [picked, setPicked] = useState<number | null>(null)
+  /** 고른 점. 어느 기간에서 골랐는지 함께 들어, 기간이 바뀌면 새 기간의 끝으로 돌아간다 */
+  const [picked, setPicked] = useState<{ periodKey: string; index: number } | null>(null)
 
   const firstDateKey = Object.keys(props.days).sort()[0] ?? null
   const ranges = cumulativeRanges(props.cycle, props.periodKey, firstDateKey)
   const points = cumulativeNet(totalsSeries(props.days, ranges))
-  const selected = picked === null || picked >= points.length ? points.length - 1 : picked
+  const selected =
+    picked !== null && picked.periodKey === props.periodKey && picked.index < points.length ? picked.index : points.length - 1
   const total = points[points.length - 1]
   const start = ranges[0].from
 
@@ -104,7 +106,7 @@ export function CumulativeSection(props: { days: DaysByDate; cycle: BossCycle; p
               key={range.periodKey}
               role="button"
               aria-label={`${periodTitle(props.cycle, range.periodKey)}까지 보기`}
-              onPress={() => setPicked(index)}
+              onPress={() => setPicked({ periodKey: props.periodKey, index })}
               className="flex-1"
             />
           ))}
@@ -135,4 +137,4 @@ export function CumulativeSection(props: { days: DaysByDate; cycle: BossCycle; p
       </View>
     </StatsSection>
   )
-}
+})

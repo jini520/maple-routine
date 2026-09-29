@@ -84,3 +84,26 @@ describe('TrendSection', () => {
     expect(view.getByTestId('stats-trend-average').props.children).toBe('8주 평균 순수익 +1,250만')
   })
 })
+
+describe('TrendSection 기간 바꾸기', () => {
+  // 화면은 기간이 바뀌어도 섹션을 새로 만들지 않는다(다시 마운트하면 폭을 다시 재느라 두 번 그린다).
+  // 그래서 고른 막대는 기간이 바뀌면 스스로 새 기간으로 돌아가야 한다.
+  it('고른 막대는 기간이 바뀌면 새 기간으로 돌아간다', async () => {
+    let setPeriod: ((periodKey: string) => void) | null = null
+    function 하네스(): React.JSX.Element {
+      const react = require('react') as typeof import('react')
+      const [periodKey, set] = react.useState('2026-09-24')
+      setPeriod = set
+      return <TrendSection days={days} cycle="weekly" trend={statsRanges('weekly', periodKey).trend} />
+    }
+    const view = await renderOverlay(<하네스 />)
+    await 누르기(view, '9월 10일 주 보기')
+    expect(view.getByTestId('stats-trend-bubble-title').props.children).toBe('9월 10일 주')
+
+    await act(async () => {
+      setPeriod?.('2026-09-17')
+    })
+
+    expect(view.getByTestId('stats-trend-bubble-title').props.children).toBe('9월 17일 주')
+  })
+})

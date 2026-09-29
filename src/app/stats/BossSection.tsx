@@ -3,7 +3,7 @@
  *
  * 난이도별은 초상 아래 테두리에 작은 난이도 배지를 반쯤 걸치고, 보스별은 난이도를 합쳐 배지가 없다.
  */
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { ScrollView, View } from 'react-native'
 
 import { Badge, Text } from '../../components/atoms'
@@ -24,7 +24,7 @@ const PORTRAIT_SIZE = 48
 /** 작은 배지 높이의 반. 배지가 초상 아래 테두리에 반쯤 걸친다 */
 const BADGE_HALF = 7
 
-export function BossSection(props: { days: DaysByDate; range: StatsRange }): React.JSX.Element {
+export const BossSection = memo(function BossSection(props: { days: DaysByDate; range: StatsRange }): React.JSX.Element {
   const [mode, setMode] = useState<Mode>('난이도별')
   const rows = bossTotalsBetween(props.days, props.range, mode === '보스별' ? 'boss' : 'difficulty')
   const total = rows.reduce((sum, row) => sum + row.meso, 0)
@@ -88,4 +88,4 @@ export function BossSection(props: { days: DaysByDate; range: StatsRange }): Rea
       )}
     </StatsSection>
   )
-}
+})

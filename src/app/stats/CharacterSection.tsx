@@ -1,7 +1,7 @@
 /**
  * 캐릭터별 섹션. 왼쪽은 캐릭터마다 0 축 가로 막대, 오른쪽은 그 탭의 상위 셋이 서는 단상이다.
  */
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { Image, View } from 'react-native'
 
 import { Text } from '../../components/atoms'
@@ -55,7 +55,7 @@ function Figure(props: { uri: string }): React.JSX.Element {
   )
 }
 
-export function CharacterSection(props: {
+export const CharacterSection = memo(function CharacterSection(props: {
   rows: readonly CharacterTotals[]
   /** ocid → 전신 그림 주소 */
   images: ReadonlyMap<string, string>
@@ -164,4 +164,4 @@ export function CharacterSection(props: {
       </View>
     </StatsSection>
   )
-}
+})

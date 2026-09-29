@@ -4,7 +4,7 @@
  * 넷까지 조각이 되고 나머지는 `그 외` 한 조각이다(남는 것이 하나면 묶지 않는다). 넓은 조각은 안에,
  * 좁은 조각은 반원 오른쪽에 선으로 이어 적는다. 그림 높이는 반원에 고정해 두 카드의 높이가 같다.
  */
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { Pressable, View, type LayoutChangeEvent } from 'react-native'
 import Svg, { Path, Polyline } from 'react-native-svg'
 
@@ -107,14 +107,17 @@ function layoutSlices(
   return { drawn, outside }
 }
 
-export function CategorySection(props: {
+export const CategorySection = memo(function CategorySection(props: {
   title: string
   side: 'income' | 'expense'
   items: readonly CategoryTotal[]
 }): React.JSX.Element {
   const { definition } = useThemeAppearance()
   const [width, setWidth] = useState(BASE.width)
-  const [open, setOpen] = useState(false)
+  /** 팝오버를 연 항목 목록. 기간이 바뀌어 목록이 달라지면 저절로 닫힌다 */
+  const [openFor, setOpenFor] = useState<readonly CategoryTotal[] | null>(null)
+  const open = openFor === props.items
+  const toggle = (): void => setOpenFor(open ? null : props.items)
 
   const label = props.side === 'income' ? '수입' : '지출'
   const color = props.side === 'income' ? definition.riseInk : definition.fallInk
@@ -167,7 +170,7 @@ export function CategorySection(props: {
       </>
     )
     return slice.rest ? (
-      <Pressable role="button" aria-label={`${slice.name} 세부 항목`} onPress={() => setOpen((value) => !value)} className={inside ? 'items-center' : ''}>
+      <Pressable role="button" aria-label={`${slice.name} 세부 항목`} onPress={toggle} className={inside ? 'items-center' : ''}>
         {body}
       </Pressable>
     ) : (
@@ -188,7 +191,7 @@ export function CategorySection(props: {
               stroke={definition.surface}
               strokeWidth={2}
               strokeLinejoin="round"
-              onPress={slice.rest ? () => setOpen((value) => !value) : undefined}
+              onPress={slice.rest ? toggle : undefined}
             />
           ))}
           {outside.map((part) => (
@@ -242,7 +245,7 @@ export function CategorySection(props: {
 
         {open && (
           <>
-            <Pressable aria-label="세부 항목 닫기" onPress={() => setOpen(false)} className="absolute inset-0" />
+            <Pressable aria-label="세부 항목 닫기" onPress={() => setOpenFor(null)} className="absolute inset-0" />
             <View
               testID="stats-category-popover"
               className="absolute right-0 top-0 w-[248px] max-w-full gap-1.5 rounded-[12px] border border-border bg-surface p-3 shadow-lg"
@@ -267,4 +270,4 @@ export function CategorySection(props: {
       </View>
     </StatsSection>
   )
-}
+})

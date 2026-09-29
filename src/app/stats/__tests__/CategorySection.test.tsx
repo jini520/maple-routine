@@ -68,3 +68,26 @@ describe('CategorySection', () => {
     expect(view.getByText('이 기간의 수입 기록이 없어요')).toBeTruthy()
   })
 })
+
+describe('CategorySection 기간 바꾸기', () => {
+  it('열린 팝오버는 항목이 바뀌면 닫힌다', async () => {
+    let setItems: ((items: CategoryTotal[]) => void) | null = null
+    function 하네스(): React.JSX.Element {
+      const react = require('react') as typeof import('react')
+      const [items, set] = react.useState(지출)
+      setItems = set
+      return <CategorySection title="지출 내역" side="expense" items={items} />
+    }
+    const view = await renderOverlay(<하네스 />)
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('그 외 4 세부 항목'))
+    })
+    expect(view.getByTestId('stats-category-popover')).toBeTruthy()
+
+    await act(async () => {
+      setItems?.([...지출])
+    })
+
+    expect(view.queryByTestId('stats-category-popover')).toBeNull()
+  })
+})

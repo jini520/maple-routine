@@ -122,7 +122,10 @@ export function StatsScreen(): React.JSX.Element {
     }, []),
   )
 
-  const characters = characterTotalsBetween(days, ranges.current)
+  const { current: currentRange, trend } = ranges
+  const characters = useMemo(() => characterTotalsBetween(days, currentRange), [days, currentRange])
+  const incomeItems = useMemo(() => categoryTotalsBetween(days, currentRange, 'income'), [days, currentRange])
+  const expenseItems = useMemo(() => categoryTotalsBetween(days, currentRange, 'expense'), [days, currentRange])
   const characterOcids = characters.flatMap((row) => (row.ocid === null ? [] : [row.ocid])).join(',')
   useEffect(() => {
     let alive = true
@@ -233,26 +236,24 @@ export function StatsScreen(): React.JSX.Element {
             </View>
           </StatsSection>
 
-          <TrendSection key={`${cycle}-${periodKey}`} days={days} cycle={cycle} trend={ranges.trend} />
+          <TrendSection days={days} cycle={cycle} trend={trend} />
 
           <CharacterSection rows={characters} images={images} />
 
           <CategorySection
-            key={`income-${cycle}-${periodKey}`}
             title="수입 내역"
             side="income"
-            items={categoryTotalsBetween(days, ranges.current, 'income')}
+            items={incomeItems}
           />
           <CategorySection
-            key={`expense-${cycle}-${periodKey}`}
             title="지출 내역"
             side="expense"
-            items={categoryTotalsBetween(days, ranges.current, 'expense')}
+            items={expenseItems}
           />
 
-          <BossSection days={days} range={ranges.current} />
+          <BossSection days={days} range={currentRange} />
 
-          <CumulativeSection key={`cumulative-${cycle}-${periodKey}`} days={days} cycle={cycle} periodKey={periodKey} />
+          <CumulativeSection days={days} cycle={cycle} periodKey={periodKey} />
         </View>
       </ScreenScroll>
     </View>
