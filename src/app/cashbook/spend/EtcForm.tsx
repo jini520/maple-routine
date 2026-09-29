@@ -1,8 +1,7 @@
 /**
  * 기타 폼. 갈래 넷에 안 드는 지출.
  *
- * 캐시는 여기서만 산다. 통화도 여기서만 고른다. 그리고 금액 × 수량이다. 세는 것이 몇 회 라
- * 수량은 스테퍼 그대로다.
+ * 캐시는 여기서만 산다. 통화도 여기서만 고른다. 그리고 금액 × 수량이다.
  *
  * 합계는 언제나 메소다. 캐시만 예외인데 환산을 안 하므로 그 축에 얹을 값이 없고 그대로 원 으로
  * 적는다.
@@ -22,7 +21,7 @@ import {
 } from '../../../lib/cashbook/free-currency'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
-import { AmountInput, CharacterField, FieldRow, QuantityStepper, TextField } from '../sheet-fields'
+import { AmountInput, CharacterField, FieldRow, TextField } from '../sheet-fields'
 import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 
@@ -30,7 +29,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [name, setName] = useState(props.editing?.item ?? '')
-  const [quantity, setQuantity] = useState(props.editing?.quantity ?? 1)
+  const [quantityText, setQuantityText] = useState(mesoTextOf(props.editing?.quantity ?? 1))
   /** 친 값을 **되짚는다**. `단가 = 저장된 총액 ÷ 수량`. */
   const [typedText, setTypedText] = useState(() => {
     if (props.editing === undefined) return ''
@@ -56,6 +55,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
   const { saving, submit, remove } = useSpendSubmit(props)
 
   const typed = mesoValueOf(typedText)
+  const quantity = mesoValueOf(quantityText)
   const usesPoint = currency === 'point'
   const typedRate = Number(rateText)
   const rate = usesPoint && rateText !== '' && Number.isFinite(typedRate) ? typedRate : null
@@ -154,9 +154,17 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
         </Text>
       </FieldRow>
 
-      {/* `기타`가 세는 것은 **몇 회** 라 **스테퍼 그대로**다. */}
+      {/* 스테퍼가 아니라 치는 칸이다. 수량이 크면 스테퍼는 여러 번 눌러야 한다. 단위는 자유 입력이라
+          무엇을 세는지 몰라 안 적는다. `chips` 를 안 주면 메소 칩이 서므로 빈 배열을 넘긴다. */}
       <FieldRow label="수량">
-        <QuantityStepper value={quantity} onChange={setQuantity} testID="spend-sheet-quantity" />
+        <AmountInput
+          testID="spend-sheet-quantity"
+          label="수량"
+          context={name === '' ? undefined : name}
+          chips={[]}
+          value={quantityText}
+          onChange={setQuantityText}
+        />
       </FieldRow>
 
       {usesPoint && <RateRow value={rateText} onChange={setRateText} valid={rate !== null} />}

@@ -29,6 +29,8 @@ jest.mock('@gorhom/bottom-sheet', () => {
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import type { SpendCategoryKey, SpendFormKey } from '../../../lib/cashbook/categories'
 import { SpendSheet } from '../SpendSheet'
+import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
+import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 
 // 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다.
 
@@ -1532,7 +1534,40 @@ describe('기타. 금액 × 수량', () => {
     const view = await 기타()
 
     expect(view.getByTestId('spend-sheet-unit-price')).toBeTruthy()
-    expect(view.getByLabelText('수량 늘리기')).toBeTruthy()
+    expect(줄글자(view, 'spend-sheet-quantity')).toBe('1')
+  })
+
+  /** 스테퍼는 수량이 크면 여러 번 눌러야 했다. 아이템 구매와 같은 치는 칸이다. */
+  it('수량은 치는 칸이다. 스테퍼 버튼이 없다', async () => {
+    const view = await 기타()
+
+    expect(view.queryByLabelText('수량 늘리기')).toBeNull()
+    await act(async () => {
+      fireEvent.press(view.getByTestId('spend-sheet-quantity'))
+    })
+    expect(view.getByTestId('input-card-value').props.keyboardType).toBe('number-pad')
+  })
+
+  // 자유 입력이라 무엇을 세는지 앱이 모른다. 칩도 안 둔다. 안 넘기면 메소 칩이 선다.
+  it('수량에 단위와 칩이 없다', async () => {
+    const view = await 기타()
+
+    expect(view.queryByTestId('spend-sheet-quantity-unit')).toBeNull()
+    await act(async () => {
+      fireEvent.press(view.getByTestId('spend-sheet-quantity'))
+    })
+    for (const chip of [...MESO_QUICK_ADDS, ...COUNT_QUICK_ADDS]) {
+      expect(view.queryByText(chip.label)).toBeNull()
+    }
+  })
+
+  it('수량을 비우면 저장이 막힌다', async () => {
+    const view = await 기타()
+    await 금액치기(view, '30000000')
+
+    await 카드칸에치기(view, 'spend-sheet-quantity', '')
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
   it('큰 숫자는 못 친다. 합계 자리다', async () => {
@@ -1545,7 +1580,7 @@ describe('기타. 금액 × 수량', () => {
     const view = await 기타()
 
     await 금액치기(view, '30000000')
-    await 누르기(view, '수량 늘리기')
+    await 카드칸에치기(view, 'spend-sheet-quantity', '2')
 
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('6천만')
   })
@@ -1557,7 +1592,7 @@ describe('기타. 금액 × 수량', () => {
     const view = await 기타()
     await 누르기(view, '메포')
     await 금액치기(view, '30000')
-    await 누르기(view, '수량 늘리기')
+    await 카드칸에치기(view, 'spend-sheet-quantity', '2')
 
     // 60,000 메포 ÷ 1,180 × 1억 = 5,084,745,762 메소.
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('50억 8474만 5762')
@@ -1569,7 +1604,7 @@ describe('기타. 금액 × 수량', () => {
     const view = await 기타({ onSave })
 
     await 금액치기(view, '30000000')
-    await 누르기(view, '수량 늘리기')
+    await 카드칸에치기(view, 'spend-sheet-quantity', '2')
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 60_000_000, quantity: 2 })
