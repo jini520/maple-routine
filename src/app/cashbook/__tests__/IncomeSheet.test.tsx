@@ -38,6 +38,8 @@ jest.mock('../../../features/mvp-grade/fee-context', () => ({
 
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { IncomeSheet } from '../IncomeSheet'
+import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
+import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import type { IncomeRecord } from '../../../storage/income'
 
 // 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다.
@@ -1054,7 +1056,7 @@ describe('통화', () => {
     await 이름으로누르기(view, '메포')
     await 치기(view, '1500')
 
-    await 이름으로누르기(view, '수량 늘리기')
+    await 아이디로치기(view, 'income-sheet-quantity', '2')
 
     expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('3억')
   })
@@ -1116,7 +1118,7 @@ describe('통화', () => {
       const view = await 그리기({ onSave }, 'etc')
       await 치기(view, '30000000')
 
-      await 이름으로누르기(view, '수량 늘리기')
+      await 아이디로치기(view, 'income-sheet-quantity', '2')
 
       expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('6천만')
 
@@ -1124,6 +1126,28 @@ describe('통화', () => {
 
       // 통화 칸에는 **곱한 총액**이 들어가고 수량은 자기 칸에 남는다.
       expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 60_000_000, quantity: 2 })
+    })
+
+    /** 스테퍼는 수량이 크면 여러 번 눌러야 했다. 지출 기타와 같은 치는 칸이다. */
+    it('수량은 치는 칸이다. 스테퍼 · 단위 · 칩이 없다', async () => {
+      const view = await 그리기({}, 'etc')
+
+      expect(view.queryByLabelText('수량 늘리기')).toBeNull()
+      expect(view.queryByTestId('income-sheet-quantity-unit')).toBeNull()
+      await 아이디로누르기(view, 'income-sheet-quantity')
+      expect(view.getByTestId('input-card-value').props.keyboardType).toBe('number-pad')
+      for (const chip of [...MESO_QUICK_ADDS, ...COUNT_QUICK_ADDS]) {
+        expect(view.queryByText(chip.label)).toBeNull()
+      }
+    })
+
+    it('수량을 비우면 저장이 막힌다', async () => {
+      const view = await 그리기({}, 'etc')
+      await 치기(view, '30000000')
+
+      await 아이디로치기(view, 'income-sheet-quantity', '')
+
+      expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
     })
 
     it('수정으로 열면 금액을 되짚는다. `총액 ÷ 수량` 이다', async () => {
@@ -1153,6 +1177,7 @@ describe('통화', () => {
 
       // 총액(60,000,000)을 그대로 금액 칸에 넣으면 저장 한 번에 1.2억이 된다.
       expect(줄글자(view, 'income-sheet-unit-price')).toBe('30,000,000')
+      expect(줄글자(view, 'income-sheet-quantity')).toBe('2')
       expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('6천만')
     })
 

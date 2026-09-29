@@ -23,7 +23,7 @@ import {
 } from '../../../lib/cashbook/free-currency'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { AmountInput, CharacterField, FieldRow, QuantityStepper, TextField } from '../sheet-fields'
+import { AmountInput, CharacterField, FieldRow, TextField } from '../sheet-fields'
 import { openInputCard } from '../../../features/input-card/store'
 import { POINT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
@@ -38,7 +38,7 @@ export function EtcForm(
   const editing = props.editing !== undefined
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [name, setName] = useState(props.editing?.item ?? '')
-  const [quantity, setQuantity] = useState(props.editing?.quantity ?? 1)
+  const [quantityText, setQuantityText] = useState(mesoTextOf(props.editing?.quantity ?? 1))
   /**
    * 친 값을 **되짚는다**. `금액 = 저장된 총액 ÷ 수량`.
    *
@@ -69,6 +69,7 @@ export function EtcForm(
   const { saving, submit, remove } = useSheetSubmit(props)
 
   const typed = mesoValueOf(typedText)
+  const quantity = mesoValueOf(quantityText)
   const usesPoint = currency === 'point'
   const rate = /^\d+$/.test(rateText) && Number(rateText) > 0 ? Number(rateText) : null
   /** **언제나 곱한다**. 금액 × 수량. 지출 기타와 같은 식이다. */
@@ -171,9 +172,17 @@ export function EtcForm(
         </Text>
       </FieldRow>
 
-      {/* `기타`가 세는 것은 **몇 회** 라 **스테퍼 그대로**다. */}
+      {/* 스테퍼가 아니라 치는 칸이다. 수량이 크면 스테퍼는 여러 번 눌러야 한다. 단위는 자유 입력이라
+          무엇을 세는지 몰라 안 적는다. `chips` 를 안 주면 메소 칩이 서므로 빈 배열을 넘긴다. */}
       <FieldRow label="수량">
-        <QuantityStepper value={quantity} onChange={setQuantity} testID="income-sheet-quantity" />
+        <AmountInput
+          testID="income-sheet-quantity"
+          label="수량"
+          context={name === '' ? undefined : name}
+          chips={[]}
+          value={quantityText}
+          onChange={setQuantityText}
+        />
       </FieldRow>
 
       {usesPoint && (
