@@ -1,6 +1,6 @@
 /**
- * 누적 순수익 섹션. 기록이 처음 있는 기간부터 고른 기간까지 순수익을 더해 큰 숫자와 선으로 그린다.
- * 기간을 누르면 그 기간까지의 누적을 말풍선으로 띄운다.
+ * 누적 순수익 섹션. 시작 날짜부터 고른 기간까지 순수익을 더해 큰 숫자와 선으로 그린다. 시작 날짜는 알약을
+ * 눌러 달력에서 고르고, 고르지 않으면 기록이 처음 있는 날부터다. 기간을 누르면 그 기간까지의 누적을 말풍선으로 띄운다.
  */
 import { memo, useState } from 'react'
 import { Pressable, View, type LayoutChangeEvent } from 'react-native'
@@ -8,6 +8,10 @@ import Animated, { useAnimatedProps } from 'react-native-reanimated'
 import Svg, { Circle, ClipPath, Defs, G, Line, Path, Rect } from 'react-native-svg'
 
 import { Text } from '../../components/atoms'
+import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
+import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
+import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
+import { monthKeyOf } from '../../lib/calendar'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { cumulativeNet, totalsSeries, type DaysByDate } from '../../features/stats/aggregate'
 import { cumulativeRanges } from '../../features/stats/periods'
@@ -37,22 +41,31 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
   days: DaysByDate
   cycle: BossCycle
   periodKey: string
+  /** 더하기 시작하는 날. `null` 이면 기록이 처음 있는 날부터다 */
+  startDateKey: string | null
+  /** 달력에서 고를 수 있는 첫날 · 끝날 */
+  earliest: string
+  latest: string
+  /** `null` 이면 처음부터 더한다 */
+  onChangeStart: (next: string | null) => void
   /** 화면에 들어왔나. 들어오는 순간 선이 왼쪽부터 그려진다 */
   revealed?: boolean
 }): React.JSX.Element {
   const { definition } = useThemeAppearance()
-  const progress = useRevealProgress(props.revealed ?? true, props.periodKey)
+  const progress = useRevealProgress(props.revealed ?? true, `${props.periodKey}|${props.startDateKey ?? ''}`)
   const [width, setWidth] = useState(312)
   /** 고른 점. 어느 기간에서 골랐는지 함께 들어, 기간이 바뀌면 새 기간의 끝으로 돌아간다 */
   const [picked, setPicked] = useState<{ periodKey: string; index: number } | null>(null)
 
-  const firstDateKey = Object.keys(props.days).sort()[0] ?? null
-  const ranges = cumulativeRanges(props.cycle, props.periodKey, firstDateKey)
+  const firstRecordDateKey = Object.keys(props.days).sort()[0] ?? null
+  const ranges = cumulativeRanges(props.cycle, props.periodKey, props.startDateKey ?? firstRecordDateKey)
   const points = cumulativeNet(totalsSeries(props.days, ranges))
   const selected =
     picked !== null && picked.periodKey === props.periodKey && picked.index < points.length ? picked.index : points.length - 1
   const total = points[points.length - 1]
   const start = ranges[0].from
+  const { ref: startRef, isOpen, anchor, toggle, close } = useAnchoredPopover()
+  const [calendarMonth, setCalendarMonth] = useState(monthKeyOf(start))
 
   const low = Math.min(0, ...points)
   const high = Math.max(0, ...points, 1)
@@ -73,8 +86,41 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
           {signed(total)}{' '}
           <Text className="text-11 font-bold text-text-muted">메소</Text>
         </Text>
-        <Text className="mb-1 text-11 text-text-muted">{`${Number(start.slice(5, 7))}월 ${Number(start.slice(8, 10))}일부터`}</Text>
       </View>
+      <View className="flex-row items-center gap-2">
+        <DateSelect
+          ref={startRef}
+          dateKey={start}
+          label="누적 시작 날짜"
+          testID="stats-cumulative-start"
+          onPress={() => {
+            // 달력은 늘 지금 시작 날짜가 든 달로 열린다.
+            setCalendarMonth(monthKeyOf(start))
+            toggle()
+          }}
+        />
+        <Text className="text-11 text-text-muted">부터</Text>
+        {props.startDateKey !== null && (
+          <Pressable role="button" aria-label="처음부터 더하기" onPress={() => props.onChangeStart(null)} className="ml-auto active:opacity-60">
+            <Text className="text-11 font-semibold text-primary-ink">처음부터</Text>
+          </Pressable>
+        )}
+      </View>
+      {isOpen && (
+        <CalendarPopover
+          selected={start}
+          min={props.earliest}
+          max={props.latest}
+          monthKey={calendarMonth}
+          anchor={anchor}
+          onChangeMonth={setCalendarMonth}
+          onSelect={(next) => {
+            props.onChangeStart(next)
+            close()
+          }}
+          onClose={close}
+        />
+      )}
 
       <View style={{ paddingTop: BUBBLE_SPACE }} onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}>
         <Svg width={width} height={CHART_HEIGHT}>

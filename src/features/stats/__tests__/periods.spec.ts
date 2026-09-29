@@ -31,6 +31,12 @@ describe('cumulativeRanges', () => {
     expect(ranges.map((range) => range.periodKey)).toEqual(['2026-09-03', '2026-09-10', '2026-09-17', '2026-09-24'])
   })
 
+  // 시작 날짜를 고를 수 있어 첫 범위는 그 날부터다. 그 주의 앞날은 더하지 않는다.
+  it('첫 범위는 시작 날짜부터다', () => {
+    const ranges = cumulativeRanges('weekly', '2026-09-24', '2026-09-05')
+    expect(ranges[0]).toEqual({ periodKey: '2026-09-03', from: '2026-09-05', to: '2026-09-09' })
+  })
+
   it('월간은 기록이 처음 있는 달부터다', () => {
     const ranges = cumulativeRanges('monthly', '2026-09', '2026-07-30')
     expect(ranges.map((range) => range.periodKey)).toEqual(['2026-07', '2026-08', '2026-09'])

@@ -13,7 +13,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
-import { apiWindowRange, floorMonthKey, floorWeekStartKey } from '../../features/cashbook/range'
+import { apiWindowRange, floorMonthKey, floorWeekStartKey, historyFloorDateKey } from '../../features/cashbook/range'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import {
@@ -22,7 +22,13 @@ import {
   totalsBetween,
   type DaysByDate,
 } from '../../features/stats/aggregate'
-import { loadStatsDays, loadStatsImages, statsDataRevision } from '../../features/stats/load'
+import {
+  loadCumulativeStart,
+  loadStatsDays,
+  loadStatsImages,
+  saveCumulativeStart,
+  statsDataRevision,
+} from '../../features/stats/load'
 import { statsRanges } from '../../features/stats/periods'
 import {
   formatBossProfitPeriodLabel,
@@ -89,6 +95,15 @@ export function StatsScreen(): React.JSX.Element {
   const [periodKey, setPeriodKey] = useState(() => getCurrentBossProfitPeriod('weekly', now).periodKey)
   const [days, setDays] = useState<DaysByDate>(NO_DAYS)
   const [images, setImages] = useState<ReadonlyMap<string, string>>(NO_IMAGES)
+  // 누적 순수익의 시작 날짜. 기기에 기억해 다음에 열어도 같은 날부터 더한다.
+  const [cumulativeStart, setCumulativeStart] = useState<string | null>(null)
+  useEffect(() => {
+    void loadCumulativeStart().then(setCumulativeStart)
+  }, [])
+  const changeCumulativeStart = useCallback((next: string | null) => {
+    setCumulativeStart(next)
+    void saveCumulativeStart(next)
+  }, [])
 
   const ranges = useMemo(() => statsRanges(cycle, periodKey), [cycle, periodKey])
 
@@ -312,7 +327,16 @@ export function StatsScreen(): React.JSX.Element {
           <BossSection days={days} range={currentRange} />
 
           <View onLayout={onSectionLayout('cumulative')}>
-            <CumulativeSection days={days} cycle={cycle} periodKey={periodKey} revealed={revealed.has('cumulative')} />
+            <CumulativeSection
+              days={days}
+              cycle={cycle}
+              periodKey={periodKey}
+              startDateKey={cumulativeStart}
+              earliest={historyFloorDateKey(todayDateKey)}
+              latest={todayDateKey}
+              onChangeStart={changeCumulativeStart}
+              revealed={revealed.has('cumulative')}
+            />
           </View>
         </View>
       </ScreenScroll>

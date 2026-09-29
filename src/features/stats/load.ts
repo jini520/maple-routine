@@ -6,6 +6,7 @@
 import { cashbookDataRevision, loadMonthDays } from '../cashbook/records'
 import { getEnhancementHistoryRevision } from '../../storage/enhancement-history'
 import { getSpendRecordsRevision } from '../../storage/spend'
+import { getStatsCumulativeStart, setStatsCumulativeStart } from '../../storage/stats-cumulative-start'
 import {
   getCharacterProfiles,
   getCharacterProfilesByNames,
@@ -52,4 +53,14 @@ export async function loadStatsImages(
  */
 export function statsDataRevision(): number {
   return cashbookDataRevision() + getEnhancementHistoryRevision() + getSpendRecordsRevision()
+}
+
+/** 누적 순수익의 시작 날짜. 고른 적이 없으면 `null`(기록이 처음 있는 날부터) */
+export async function loadCumulativeStart(): Promise<string | null> {
+  return getStatsCumulativeStart().catch(() => null)
+}
+
+/** `null` 이면 처음부터 더한다 */
+export async function saveCumulativeStart(dateKey: string | null): Promise<void> {
+  await setStatsCumulativeStart(dateKey).catch(() => undefined)
 }

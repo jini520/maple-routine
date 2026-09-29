@@ -4,6 +4,8 @@ jest.mock('../../../features/stats/load', () => ({
   loadStatsDays: jest.fn(),
   loadStatsImages: jest.fn().mockResolvedValue(new Map()),
   statsDataRevision: jest.fn().mockReturnValue(0),
+  loadCumulativeStart: jest.fn().mockResolvedValue(null),
+  saveCumulativeStart: jest.fn().mockResolvedValue(undefined),
 }))
 
 const mockReload = jest.fn()

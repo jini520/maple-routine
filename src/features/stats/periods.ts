@@ -39,9 +39,9 @@ export function statsRanges(cycle: BossCycle, periodKey: string): StatsRanges {
 }
 
 /**
- * 누적 선의 점들. 기록이 처음 있는 기간부터 고른 기간까지 기간마다 하나다.
+ * 누적 선의 점들. 시작 날짜가 든 기간부터 고른 기간까지 기간마다 하나이고, 첫 범위는 시작 날짜부터다.
  *
- * @param firstDateKey 기록이 있는 가장 이른 날. 없으면 `null`
+ * @param firstDateKey 더하기 시작하는 날(고른 날이거나 기록이 처음 있는 날). 없으면 `null`
  */
 export function cumulativeRanges(
   cycle: BossCycle,
@@ -55,5 +55,6 @@ export function cumulativeRanges(
     key = getAdjacentPeriodKey(cycle, key, 'prev')
     ranges.unshift(rangeOf(cycle, key))
   }
+  if (firstDateKey !== null && ranges[0].from < firstDateKey) ranges[0] = { ...ranges[0], from: firstDateKey }
   return ranges
 }
