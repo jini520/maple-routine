@@ -30,6 +30,8 @@ import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { tapFeedback } from '../../native/haptics'
 import type { BossCycle } from '../../types'
 import { DeltaChip } from '../boss-profit/HeadlineChips'
+import { StatsSection } from './StatsSection'
+import { TrendSection } from './TrendSection'
 
 const CYCLES = ['weekly', 'monthly'] as const
 const CYCLE_LABELS: Record<BossCycle, string> = { weekly: '주간', monthly: '월간' }
@@ -57,19 +59,6 @@ function PeriodArrow(props: {
     >
       <Icon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
     </Pressable>
-  )
-}
-
-/** 섹션 하나. 테두리 없이 화면 양끝까지 펴고 섹션 사이는 페이지 바탕색 틈이다. */
-export function StatsSection(props: { title: string; trailing?: React.ReactNode; children: React.ReactNode; testID?: string }): React.JSX.Element {
-  return (
-    <View testID={props.testID} className="-mx-4 gap-3 bg-stats-section px-4 py-[18px]">
-      <View className="flex-row items-center justify-between">
-        <Text className="text-sm font-semibold text-text">{props.title}</Text>
-        {props.trailing}
-      </View>
-      {props.children}
-    </View>
   )
 }
 
@@ -204,6 +193,8 @@ export function StatsScreen(): React.JSX.Element {
               </View>
             </View>
           </StatsSection>
+
+          <TrendSection key={`${cycle}-${periodKey}`} days={days} cycle={cycle} trend={ranges.trend} />
         </View>
       </ScreenScroll>
     </View>
