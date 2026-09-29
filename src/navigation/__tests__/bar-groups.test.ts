@@ -114,6 +114,7 @@ describe('layerOfPage: 페이지가 사는 층 화면', () => {
     expect(layerOfPage('BossManage')).toBe('ScheduleSubs')
     expect(layerOfPage('Profit')).toBe('LedgerSubs')
     expect(layerOfPage('Cashbook')).toBe('LedgerSubs')
+    expect(layerOfPage('Stats')).toBe('LedgerSubs')
   })
 })
 
@@ -124,6 +125,7 @@ describe('층은 **지금 페이지** 가 정한다 (결정 2)', () => {
     expect(barLayer(at('BossManage'))).toBe('sub')
     expect(barLayer(at('Profit'))).toBe('sub')
     expect(barLayer(at('Cashbook'))).toBe('sub')
+    expect(barLayer(at('Stats'))).toBe('sub')
   })
 
   it('하위가 없는 그룹의 페이지에 있으면 그룹 행이다', () => {

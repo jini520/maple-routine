@@ -24,6 +24,7 @@ import {
   ArrowLeftIcon,
   CalendarCheckIcon,
   CalendarIcon,
+  ChartColumnIcon,
   MenuIcon,
   LayoutDashboardIcon,
   ListChecksIcon,
@@ -190,6 +191,8 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
   Profit: ProfitIcon,
   // 가계부 = 장부. 달력 계열(`CalendarCheck` = 스케줄러 그룹)과 겹치지 않게 골랐다.
   Cashbook: CalendarIcon,
+  // 막대 그림. 기간을 모아 보는 자리라 장부(달력)와 갈린다.
+  Stats: ChartColumnIcon,
   Utility: WrenchIcon,
   Settings: MenuIcon,
 }

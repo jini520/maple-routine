@@ -3,18 +3,22 @@
 > **범위**: 수익·지출 그룹의 셋째 하위 탭. 보스 수익과 가계부의 기록을 기간 단위로 모아 보는 화면이다. 기록을 쓰지 않고 읽기만 한다.
 > **여기 없는 것**: 기록을 적고 고치는 일은 [cashbook.md](./cashbook.md) · [boss-profit.md](./boss-profit.md) 가 한다. 보스 표의 `alias` 는 [../foundation/game-data.md](../foundation/game-data.md) 가 든다.
 > **관련 ADR**: [[ADR-330]](이 화면의 결정 전부) · [[ADR-169]](하위 탭) · [[ADR-170]](리셋 주) · [[ADR-237]](미완료 보스 행)
-> **상태**: 설계만 섰다(2026-09-29, 이슈 #352). 코드는 아직 없다.
+> **상태**: 구현 중(2026-09-29, 이슈 #352). 탭 · 기간 줄 · 순 수익 섹션까지 섰다.
 
 ## 관련 소스
 
-아직 없다. 구현 때 이 자리에 채운다. 계획은 아래와 같다.
-
-| 구분 | 파일(계획) | 하는 일 |
+| 구분 | 파일 | 하는 일 |
 |---|---|---|
-| 화면 | `app/stats/` | 머리 · 기간 줄 · 카드 일곱 |
-| 집계 | `features/stats/` | 기간 · 캐릭터 · 갈래 · 보스별 합계를 내는 순수 함수. 입력이 가계부의 `DayRecord` 다 |
-| 읽기 | `storage/` 의 기존 어댑터 | 보스 수익 · 드롭 · 수입 · 지출 · 강화 기록 |
-| 보스 이름 | `lib/boss/bosses.ts` 의 `BossEntry.alias` | 보스 타일의 이름 |
+| 화면 | `app/stats/StatsScreen.tsx` | 머리(주간 · 월간) · 기간 줄 · 섹션들. 층(`useLedgerData`)의 `revision` 이 오르면 다시 읽는다 |
+| 집계 | `features/stats/aggregate.ts` | 기간 · 추이 · 누적 · 캐릭터별 · 갈래별 · 보스별 합계. 입력이 가계부의 `DayRecord` 다 |
+| 기간 | `features/stats/periods.ts` | 고른 기간 하나에서 그 기간 · 지난 기간 · 추이 구간(8주 · 6개월) |
+| 읽기 | `features/stats/load.ts` | 가장 이른 조회일부터 오늘까지 `loadMonthDays` 한 번 |
+| 보스 금액 | `features/cashbook/records.ts` 의 `DefeatedBoss.payoutMeso` | 하루 결정석 줄이 보스 하나의 금액을 남긴다 |
+| 보스 이름 | `lib/boss/bosses.ts` 의 `bossAliasOf` | 보스 타일의 이름 |
+| 섹션 바탕 | `theme/theme-vars.ts` 의 `resolveStatsSection` · 유틸리티 `bg-stats-section` | 페이지보다 한 단 밝은 섹션 바탕 |
+| 탭 | `navigation/bar-groups.ts` · `navigation/routes.ts`(`Stats`, `/stats`) · `navigation/LayerStack.tsx` | 수익·지출의 셋째 하위 |
+
+층에 요청하는 날짜 범위는 고른 기간 하나다. 강화 내역은 날마다 API 를 부르므로 지난 기간은 받아 둔 것을 쓴다.
 
 ## 자리
 
