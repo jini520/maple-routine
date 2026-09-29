@@ -92,7 +92,6 @@ export const TrendSection = memo(function TrendSection(props: {
   revealed?: boolean
 }): React.JSX.Element {
   const { definition } = useThemeAppearance()
-  const progress = useRevealProgress(props.revealed ?? true)
   const [mode, setMode] = useState<Mode>('순수익')
   /** 고른 막대. 어느 기간에서 골랐는지 함께 들어, 기간이 바뀌면 새 기간의 끝으로 돌아간다 */
   const [picked, setPicked] = useState<{ periodKey: string; index: number } | null>(null)
@@ -100,6 +99,7 @@ export const TrendSection = memo(function TrendSection(props: {
 
   const series = totalsSeries(props.days, props.trend)
   const lastPeriodKey = props.trend[props.trend.length - 1].periodKey
+  const progress = useRevealProgress(props.revealed ?? true, `${lastPeriodKey}|${mode}`)
   const selected = picked !== null && picked.periodKey === lastPeriodKey ? picked.index : series.length - 1
   const values = series.map((totals) => valueOf(totals, mode))
   const net = mode === '순수익'

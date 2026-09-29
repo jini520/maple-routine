@@ -13,6 +13,7 @@ import { Text } from '../../components/atoms'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { CategoryTotal } from '../../features/stats/aggregate'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
+import { useCountUp } from '../../hooks/useCountUp'
 import { useThemeAppearance } from '../../theme/context'
 import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
@@ -119,9 +120,11 @@ export const CategorySection = memo(function CategorySection(props: {
   items: readonly CategoryTotal[]
   /** 화면에 들어왔나. 들어오는 순간 반원이 왼쪽부터 쓸려 나온다 */
   revealed?: boolean
+  /** 바뀌면 반원을 다시 쓴다. 화면이 기간으로 준다 */
+  replayKey?: string
 }): React.JSX.Element {
   const { definition } = useThemeAppearance()
-  const progress = useRevealProgress(props.revealed ?? true)
+  const progress = useRevealProgress(props.revealed ?? true, props.replayKey)
   const [width, setWidth] = useState(BASE.width)
   /** 팝오버를 연 항목 목록. 기간이 바뀌어 목록이 달라지면 저절로 닫힌다 */
   const [openFor, setOpenFor] = useState<readonly CategoryTotal[] | null>(null)
@@ -145,6 +148,7 @@ export const CategorySection = memo(function CategorySection(props: {
   const color = props.side === 'income' ? definition.riseInk : definition.fallInk
   const tone = props.side === 'income' ? 'text-rise-ink' : 'text-fall-ink'
   const total = props.items.reduce((sum, item) => sum + item.meso, 0)
+  const shownTotal = useCountUp(`stats-category-${props.side}`, total)
 
   if (props.items.length === 0 || total <= 0) {
     return (
@@ -269,7 +273,7 @@ export const CategorySection = memo(function CategorySection(props: {
         <View className="absolute items-center" style={{ left: cx, top: cy - 34, transform: [{ translateX: '-50%' }] }}>
           <Text className="text-11 font-semibold text-text-muted">{label}</Text>
           <Text testID="stats-category-total" className="text-lg font-bold text-text" style={TABULAR_NUMS}>
-            {formatMesoCompact(total)}
+            {formatMesoCompact(shownTotal)}
           </Text>
         </View>
         </AnimatedBox>

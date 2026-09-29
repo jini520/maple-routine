@@ -32,6 +32,7 @@ import {
 } from '../../lib/boss/boss-profit-period'
 import { monthKeyOf } from '../../lib/calendar'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
+import { useCountUp } from '../../hooks/useCountUp'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { tapFeedback } from '../../native/haptics'
 import type { BossCycle } from '../../types'
@@ -172,6 +173,11 @@ export function StatsScreen(): React.JSX.Element {
 
   const current = totalsBetween(days, ranges.current)
   const previous = totalsBetween(days, ranges.previous)
+  // 기간을 옮기면 숫자가 이전 값에서 굴러간다.
+  const shownNet = useCountUp('stats-summary-net', current.netMeso)
+  const shownIncome = useCountUp('stats-summary-income', current.incomeMeso)
+  const shownExpense = useCountUp('stats-summary-expense', current.expenseMeso)
+  const replayKey = `${cycle}-${periodKey}`
   const label = formatBossProfitPeriodLabel(cycle, periodKey, now)
   const isLatest = isLatestPeriod(cycle, periodKey, now)
   const isEarliest =
@@ -254,7 +260,7 @@ export function StatsScreen(): React.JSX.Element {
                     className={`text-xl font-bold ${current.netMeso > 0 ? 'text-rise-ink' : current.netMeso < 0 ? 'text-fall-ink' : 'text-text'}`}
                     style={TABULAR_NUMS}
                   >
-                    {signed(current.netMeso)}{' '}
+                    {signed(shownNet)}{' '}
                     <Text className="text-11 font-bold text-text-muted">메소</Text>
                   </Text>
                   <DeltaChip totalMeso={current.netMeso} previousMeso={previous.netMeso} tab={cycle} periodKey={periodKey} now={now} />
@@ -264,13 +270,13 @@ export function StatsScreen(): React.JSX.Element {
                 <View className="flex-row items-baseline gap-1.5">
                   <Text className="text-11 text-text-muted">수입</Text>
                   <Text className="w-16 text-right text-11 font-medium text-rise-ink" style={TABULAR_NUMS}>
-                    +{formatMesoCompact(current.incomeMeso)}
+                    +{formatMesoCompact(shownIncome)}
                   </Text>
                 </View>
                 <View className="flex-row items-baseline gap-1.5">
                   <Text className="text-11 text-text-muted">지출</Text>
                   <Text className="w-16 text-right text-11 font-medium text-fall-ink" style={TABULAR_NUMS}>
-                    −{formatMesoCompact(current.expenseMeso)}
+                    −{formatMesoCompact(shownExpense)}
                   </Text>
                 </View>
               </View>
@@ -282,7 +288,7 @@ export function StatsScreen(): React.JSX.Element {
           </View>
 
           <View onLayout={onSectionLayout('characters')}>
-            <CharacterSection rows={characters} images={images} revealed={revealed.has('characters')} />
+            <CharacterSection rows={characters} images={images} revealed={revealed.has('characters')} replayKey={replayKey} />
           </View>
 
           <View onLayout={onSectionLayout('income')}>
@@ -291,6 +297,7 @@ export function StatsScreen(): React.JSX.Element {
               side="income"
               items={incomeItems}
               revealed={revealed.has('income')}
+              replayKey={replayKey}
             />
           </View>
           <View onLayout={onSectionLayout('expense')}>
@@ -299,6 +306,7 @@ export function StatsScreen(): React.JSX.Element {
               side="expense"
               items={expenseItems}
               revealed={revealed.has('expense')}
+              replayKey={replayKey}
             />
           </View>
 

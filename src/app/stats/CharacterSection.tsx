@@ -10,6 +10,7 @@ import { Segment } from '../../components/molecules/Segment/Segment'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { CharacterTotals } from '../../features/stats/aggregate'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
+import { useCountUp } from '../../hooks/useCountUp'
 import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
 
@@ -93,15 +94,18 @@ export const CharacterSection = memo(function CharacterSection(props: {
   images: ReadonlyMap<string, string>
   /** 화면에 들어왔나. 들어오는 순간 막대와 단상이 자란다 */
   revealed?: boolean
+  /** 바뀌면 막대와 단상이 다시 자란다. 화면이 기간으로 준다 */
+  replayKey?: string
 }): React.JSX.Element {
   const [tab, setTab] = useState<Tab>('순수익')
-  const progress = useRevealProgress(props.revealed ?? true)
+  const progress = useRevealProgress(props.revealed ?? true, `${props.replayKey ?? ''}|${tab}`)
   const net = tab === '순수익'
 
   const shown = props.rows
     .filter((row) => valueOf(row, tab) !== 0)
     .sort((left, right) => valueOf(right, tab) - valueOf(left, tab))
   const total = shown.reduce((sum, row) => sum + valueOf(row, tab), 0)
+  const shownTotal = useCountUp('stats-character-total', total)
   const maxPositive = Math.max(0, ...shown.map((row) => valueOf(row, tab)))
   const maxNegative = Math.max(0, ...shown.map((row) => -valueOf(row, tab)))
   const span = maxPositive + maxNegative || 1
@@ -119,7 +123,7 @@ export const CharacterSection = memo(function CharacterSection(props: {
           <View className="flex-row items-baseline gap-1.5">
             <Text className="text-11 text-text-muted">{tab}</Text>
             <Text className="text-sm font-bold text-text" style={TABULAR_NUMS}>
-              {net ? signed(total) : formatMesoCompact(total)}
+              {net ? signed(shownTotal) : formatMesoCompact(shownTotal)}
             </Text>
           </View>
           {shown.map((row) => {

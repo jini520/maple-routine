@@ -23,13 +23,22 @@ export function sectionsToReveal(
   return [...positions].filter(([id, top]) => !revealed.has(id) && top < bottom).map(([id]) => id)
 }
 
-/** 보이면 0 에서 1 로 오르는 진행값. 모션 줄이기면 곧바로 1 이다 */
-export function useRevealProgress(revealed: boolean): SharedValue<number> {
+/**
+ * 보이면 0 에서 1 로 오르는 진행값. 모션 줄이기면 곧바로 1 이다.
+ *
+ * @param replayKey 바뀌면 0 으로 돌아가 다시 오른다. 기간이나 조각이 바뀌어 값이 달라질 때 그래프를 다시 그린다
+ */
+export function useRevealProgress(revealed: boolean, replayKey = ''): SharedValue<number> {
   const reduceMotion = useReducedMotion()
   const progress = useSharedValue(revealed && reduceMotion ? 1 : 0)
   useEffect(() => {
     if (!revealed) return
-    progress.value = reduceMotion ? 1 : withTiming(1, { duration: REVEAL_DURATION, easing: Easing.out(Easing.cubic) })
-  }, [progress, revealed, reduceMotion])
+    if (reduceMotion) {
+      progress.value = 1
+      return
+    }
+    progress.value = 0
+    progress.value = withTiming(1, { duration: REVEAL_DURATION, easing: Easing.out(Easing.cubic) })
+  }, [progress, revealed, reduceMotion, replayKey])
   return progress
 }
