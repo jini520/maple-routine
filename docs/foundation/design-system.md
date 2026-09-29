@@ -1038,7 +1038,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
     ```
     이동(tap)
       하단바      탭 이동 · `←` (BottomBar.tsx)
-      기간 이동    CashbookScreen · BossProfitScreen · DropPriceScreen 의 이전 · 다음 · `오늘`
+      기간 이동    CashbookScreen · BossProfitScreen · DropPriceScreen 의 이전 · 다음 · 겹화살표 · 보스 수익 헤더의 `보스 관리`
       페이지 뒤로   components/molecules/BackButton 하나가 든다(사용처 15곳)
       캐릭터 카드   추가 · 해제 (CharacterLayerGrid)
       설정 버튼    SettingsScreen 의 톱니바퀴

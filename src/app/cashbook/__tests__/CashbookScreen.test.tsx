@@ -388,22 +388,33 @@ describe('CashbookScreen: 달 이동', () => {
 // 화살표가 한 칸씩만 옮기므로 조회 한도(18개월)의 바닥에서 이번 달로 돌아오려면 열여덟 번,
 // 주간이면 일흔여덟 번을 눌러야 했다.
 describe('오늘로 이동', () => {
-  it('이번 주를 보고 있으면 안 보인다', async () => {
+  // 숨기면 줄 폭이 바뀌어 기간 이름이 흔들린다. `›` 와 같이 흐리게 남는다.
+  it('이번 주를 보고 있으면 겹화살표가 잠긴다', async () => {
     const view = await 그리기()
 
-    expect(view.queryByLabelText('오늘로 이동')).toBeNull()
+    expect(view.getByLabelText('이번 주로 이동')).toBeDisabled()
   })
 
-  it('과거로 가면 나타나고, 누르면 이번 주로 돌아온다', async () => {
+  // 고른 날을 오늘로 되돌리는 것은 격자의 몫이다(사용자 결정).
+  it('이번 주 안에서 다른 날을 골라도 잠긴 채다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '이전 주')
+    await 이름으로누르기(view, '다음 주')
+
+    expect(view.getByTestId('cashbook-selected-day')).not.toHaveTextContent('8월 23일 (일)')
+    expect(view.getByLabelText('이번 주로 이동')).toBeDisabled()
+  })
+
+  it('과거로 가면 열리고, 누르면 이번 주로 돌아온다', async () => {
     const view = await 그리기()
     await 이름으로누르기(view, '이전 주')
     await 이름으로누르기(view, '이전 주')
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('8월 1주차')
 
-    await 이름으로누르기(view, '오늘로 이동')
+    await 이름으로누르기(view, '이번 주로 이동')
 
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 주')
-    expect(view.queryByLabelText('오늘로 이동')).toBeNull()
+    expect(view.getByLabelText('이번 주로 이동')).toBeDisabled()
   })
 
   // 보는 기간만 옮기면 격자는 이번 주인데 아래 상세는 8월 6일이 서서, 한 화면의 두 구역이
@@ -412,7 +423,7 @@ describe('오늘로 이동', () => {
     const view = await 그리기()
     await 이름으로누르기(view, '이전 주')
 
-    await 이름으로누르기(view, '오늘로 이동')
+    await 이름으로누르기(view, '이번 주로 이동')
 
     expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 23일 (일)')
   })
@@ -422,9 +433,18 @@ describe('오늘로 이동', () => {
     await 월간으로(view)
     await 이름으로누르기(view, '이전 달')
 
-    await 이름으로누르기(view, '오늘로 이동')
+    await 이름으로누르기(view, '이번 달로 이동')
 
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
+  })
+
+  // 헤더의 그 자리는 비워 둔다.
+  it('헤더에 `오늘` 이 없다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '이전 주')
+
+    expect(view.queryByLabelText('오늘로 이동')).toBeNull()
+    expect(view.queryByText('오늘')).toBeNull()
   })
 })
 
@@ -2143,12 +2163,12 @@ describe('기간 이동의 촉각', () => {
     expect(tap).toHaveBeenCalledTimes(1)
   })
 
-  it('오늘로 이동에도 난다', async () => {
+  it('겹화살표에도 난다', async () => {
     const view = await 그리기()
     await 이름으로누르기(view, '이전 주')
     tap.mockClear()
 
-    await 이름으로누르기(view, '오늘로 이동')
+    await 이름으로누르기(view, '이번 주로 이동')
 
     expect(tap).toHaveBeenCalledTimes(1)
   })

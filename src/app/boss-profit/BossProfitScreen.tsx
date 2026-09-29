@@ -43,6 +43,7 @@ import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ChevronsRightIcon,
   ProfitIcon,
   Text,
 } from '../../components/atoms'
@@ -336,23 +337,20 @@ export function BossProfitScreen(): React.JSX.Element {
       <PageHeaderTitleRow
         fetchedAt={fetchedAt}
         trailing={
-          // `오늘` 은 세그먼트 **왼쪽**이고 이미 지금 기간이면 안 그린다. 가계부도 같은 자리에
-          // 같은 것이 선다. **테두리를 두르지 않는다**(사용자 지정) - 곁에 선 알약이 이미 홈을
-          // 가진 덩이라, 그 옆에 또 하나의 테두리가 서면 고르는 축이 둘로 읽힌다.
+          // 파티 인원 관리가 보스 수익과 바로 이어져 보스 관리로 가는 길이 세그먼트 **왼쪽**에 늘 선다.
+          // **테두리를 두르지 않는다**(사용자 지정) - 곁에 선 알약이 이미 홈을 가진 덩이라, 그 옆에
+          // 또 하나의 테두리가 서면 고르는 축이 둘로 읽힌다.
           <View className="flex-row items-center gap-1">
-            {!isOnCurrentPeriod && (
-              <Button
-                variant="text"
-                size="compact"
-                onPress={() => {
-                  tapFeedback()
-                  void goToCurrentPeriod()
-                }}
-                aria-label="오늘로 이동"
-              >
-                오늘
-              </Button>
-            )}
+            <Button
+              variant="text"
+              size="compact"
+              onPress={() => {
+                tapFeedback()
+                openTab('BossManage')
+              }}
+            >
+              보스 관리
+            </Button>
             <TabSegment
               options={BOSS_PROFIT_TABS}
               selected={tab}
@@ -372,6 +370,8 @@ export function BossProfitScreen(): React.JSX.Element {
   const periodSection = (
     <View className="gap-4 px-4">
         <View className="flex-row items-center justify-center gap-4 py-3">
+          {/* 오른쪽 겹화살표와 같은 폭. 기간 이름이 줄 가운데에 남는다. */}
+          <View className="h-7 w-7" />
           <Pressable
             role="button"
             aria-label="이전 기간"
@@ -417,6 +417,26 @@ export function BossProfitScreen(): React.JSX.Element {
             }
           >
             <ChevronRightIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
+          </Pressable>
+
+          {/* 지금 기간으로 건너뛴다. 지금 기간이면 숨지 않고 흐리다. 숨기면 줄 폭이 바뀌어 기간
+              이름이 흔들린다. */}
+          <Pressable
+            role="button"
+            aria-label={tab === 'weekly' ? '이번 주로 이동' : '이번 달로 이동'}
+            aria-disabled={isOnCurrentPeriod}
+            disabled={isOnCurrentPeriod}
+            onPress={() => {
+              tapFeedback()
+              void goToCurrentPeriod()
+            }}
+            className={
+              isOnCurrentPeriod
+                ? 'h-7 w-7 items-center justify-center rounded-full border border-border opacity-30'
+                : 'h-7 w-7 items-center justify-center rounded-full border border-border'
+            }
+          >
+            <ChevronsRightIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
           </Pressable>
         </View>
 
