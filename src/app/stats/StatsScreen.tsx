@@ -13,7 +13,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
-import { floorMonthKey, floorWeekStartKey } from '../../features/cashbook/range'
+import { apiWindowRange, floorMonthKey, floorWeekStartKey } from '../../features/cashbook/range'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import {
@@ -93,11 +93,15 @@ export function StatsScreen(): React.JSX.Element {
 
   const ranges = useMemo(() => statsRanges(cycle, periodKey), [cycle, periodKey])
 
-  // 강화 내역은 날마다 API 를 부르므로 층에는 고른 기간만 요청한다. 지난 기간은 받아 둔 것을 쓴다.
+  /**
+   * 층에 알리는 범위는 가계부와 같은 창이다. 고른 기간의 달(주간은 목요일이 든 달)을 가운데 두고 앞뒤
+   * 두 달이고 오늘을 안 넘는다. 같은 창이면 층이 회차를 다시 안 열어, 같은 달 안의 주 이동은 조용하다.
+   */
+  const viewMonthKey = cycle === 'weekly' ? monthKeyOf(periodKey) : periodKey
   const { requestDateRange } = ledger
   useEffect(() => {
-    requestDateRange({ from: ranges.current.from, to: ranges.current.to })
-  }, [requestDateRange, ranges])
+    requestDateRange(apiWindowRange(viewMonthKey, todayDateKey))
+  }, [requestDateRange, viewMonthKey, todayDateKey])
 
   /**
    * 읽는 표의 판이 달라졌을 때만 다시 읽는다. 기간 이동은 이미 든 18개월 안의 일이라 안 읽고, 층의 회차가

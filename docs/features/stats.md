@@ -19,7 +19,7 @@
 | 섹션 바탕 | `theme/theme-vars.ts` 의 `resolveStatsSection` · 유틸리티 `bg-stats-section` | 페이지보다 한 단 밝은 섹션 바탕 |
 | 탭 | `navigation/bar-groups.ts` · `navigation/routes.ts`(`Stats`, `/stats`) · `navigation/LayerStack.tsx` | 수익·지출의 셋째 하위 |
 
-층에 요청하는 날짜 범위는 고른 기간 하나다. 강화 내역은 날마다 API 를 부르므로 지난 기간은 받아 둔 것을 쓴다.
+층에 요청하는 날짜 범위는 가계부와 같은 창이다(`apiWindowRange`). 고른 기간의 달(주간은 목요일이 든 달)을 가운데 두고 앞뒤 두 달이고, 오늘과 18개월 한도를 안 넘는다. 창 안의 날짜 중 아직 확인하지 않은 날만 넥슨 API 를 부른다. 기기 DB 는 가장 이른 조회일부터 한 번 읽고, 읽는 표의 판이 바뀔 때만 다시 읽는다.
 
 ## 자리
 

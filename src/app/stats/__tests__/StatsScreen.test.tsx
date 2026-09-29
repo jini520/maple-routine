@@ -31,6 +31,7 @@ jest.mock('@react-navigation/native', () => ({
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
+import { apiWindowRange } from '../../../features/cashbook/range'
 import { StatsScreen } from '../StatsScreen'
 
 const { loadStatsDays, statsDataRevision } = jest.requireMock('../../../features/stats/load') as {
@@ -137,11 +138,27 @@ describe('StatsScreen', () => {
     expect(view.getByTestId('stats-period-label').props.children).toBe('이번 달')
   })
 
-  // 강화 내역은 날마다 API 를 부르므로 층에는 고른 기간만 요청한다.
-  it('층에는 고른 기간의 날짜 범위만 요청한다', async () => {
-    await 그리기()
+  // 가계부와 같은 창이다. 고른 기간의 달을 가운데 두고 앞뒤 두 달(오늘을 안 넘는다).
+  it('층에는 가계부와 같은 달 창을 요청한다', async () => {
+    const view = await 그리기()
+    expect(mockRequestDateRange).toHaveBeenLastCalledWith(apiWindowRange('2026-09', '2026-09-29'))
 
-    expect(mockRequestDateRange).toHaveBeenLastCalledWith({ from: '2026-09-24', to: '2026-09-30' })
+    // 같은 달 안의 주로 옮기면 창이 그대로다.
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('이전 주'))
+    })
+    expect(mockRequestDateRange).toHaveBeenLastCalledWith(apiWindowRange('2026-09', '2026-09-29'))
+
+    // 월간에서 석 달 전으로 가면 창이 그 달을 가운데 둔다.
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('월간'))
+    })
+    for (let step = 0; step < 3; step += 1) {
+      await act(async () => {
+        fireEvent.press(view.getByLabelText('이전 달'))
+      })
+    }
+    expect(mockRequestDateRange).toHaveBeenLastCalledWith(apiWindowRange('2026-06', '2026-09-29'))
   })
 
   // 주를 옮겨도 18개월치는 이미 들고 있다. 층의 회차가 끝나도 읽는 표가 안 바뀌었으면 다시 읽지 않는다.
