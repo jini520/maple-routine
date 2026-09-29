@@ -58,6 +58,54 @@ function arcPath(cx: number, cy: number, outer: number, inner: number, from: num
   return `M${point(outer, from)} A${outer} ${outer} 0 ${large} 1 ${point(outer, to)} L${point(inner, to)} A${inner} ${inner} 0 ${large} 0 ${point(inner, from)} Z`
 }
 
+
+interface DrawnSlice {
+  slice: Slice
+  from: number
+  to: number
+  mid: number
+  span: number
+}
+
+interface OutsideLabel extends DrawnSlice {
+  x0: number
+  y0: number
+  y: number
+}
+
+/**
+ * 조각의 각도와 바깥 라벨의 자리. 좁은 조각의 라벨은 반원 오른쪽에 조각 높이로 세우고, 겹치면 아래로
+ * 민 뒤 바닥을 넘으면 통째로 올린다.
+ */
+function layoutSlices(
+  slices: readonly Slice[],
+  total: number,
+  box: { cx: number; cy: number; outer: number; height: number },
+): { drawn: DrawnSlice[]; outside: OutsideLabel[] } {
+  const drawn: DrawnSlice[] = []
+  let angle = -Math.PI / 2
+  for (const slice of slices) {
+    const span = (slice.meso / total) * Math.PI
+    drawn.push({ slice, from: angle, to: angle + span, mid: angle + span / 2, span })
+    angle += span
+  }
+
+  const outside: OutsideLabel[] = drawn
+    .filter((part) => part.span < INSIDE_MIN_SPAN)
+    .map((part) => {
+      const x0 = box.cx + (box.outer + 1) * Math.sin(part.mid)
+      const y0 = box.cy - (box.outer + 1) * Math.cos(part.mid)
+      return { ...part, x0, y0, y: y0 + 4 }
+    })
+    .sort((left, right) => left.y - right.y)
+  for (let index = 1; index < outside.length; index += 1) {
+    if (outside[index].y - outside[index - 1].y < LABEL_GAP) outside[index].y = outside[index - 1].y + LABEL_GAP
+  }
+  const overflow = outside.length > 0 ? outside[outside.length - 1].y + LABEL_HEIGHT / 2 - box.height : 0
+  if (overflow > 0) for (const part of outside) part.y -= overflow
+  return { drawn, outside }
+}
+
 export function CategorySection(props: {
   title: string
   side: 'income' | 'expense'
@@ -88,29 +136,7 @@ export function CategorySection(props: {
   const inner = BASE.inner * scale
   const height = cy + 8
 
-  let angle = -Math.PI / 2
-  const drawn = slices.map((slice) => {
-    const span = (slice.meso / total) * Math.PI
-    const from = angle
-    angle += span
-    return { slice, from, to: angle, mid: from + span / 2, span }
-  })
-
-  // 좁은 조각의 라벨은 반원 오른쪽에 조각 높이로 세우고, 겹치면 아래로 민 뒤 바닥을 넘으면 통째로 올린다.
-  const outside = drawn
-    .filter((part) => part.span < INSIDE_MIN_SPAN)
-    .map((part) => ({
-      ...part,
-      x0: cx + (outer + 1) * Math.sin(part.mid),
-      y0: cy - (outer + 1) * Math.cos(part.mid),
-      y: cy - (outer + 1) * Math.cos(part.mid) + 4,
-    }))
-    .sort((left, right) => left.y - right.y)
-  outside.forEach((part, index) => {
-    if (index > 0 && part.y - outside[index - 1].y < LABEL_GAP) part.y = outside[index - 1].y + LABEL_GAP
-  })
-  const overflow = outside.length > 0 ? outside[outside.length - 1].y + LABEL_HEIGHT / 2 - height : 0
-  if (overflow > 0) outside.forEach((part) => (part.y -= overflow))
+  const { drawn, outside } = layoutSlices(slices, total, { cx, cy, outer, height })
   const labelX = cx + outer + 14 * scale
 
   const percent = (meso: number): string => `${Math.round((meso / total) * 100)}%`
