@@ -6,8 +6,8 @@
 import { dayTotalsOf, recordMesoOf, type DayRecord } from '../cashbook/records'
 import { incomeCategoryNameOf, spendCategoryNameOf } from '../../lib/cashbook/categories'
 import { enhancementCategoryNameOf } from '../../lib/enhancement/categories'
-import { bossAliasOf } from '../../lib/boss/bosses'
-import type { BossDifficulty } from '../../types'
+import { bossAliasOf, findBoss } from '../../lib/boss/bosses'
+import type { BossCycle, BossDifficulty } from '../../types'
 
 export type DaysByDate = Readonly<Record<string, readonly DayRecord[]>>
 
@@ -154,16 +154,24 @@ export interface BossTotal {
   count: number
 }
 
-/** 보스별 내 몫 결정석과 처치 횟수. 큰 순서다. `boss` 는 난이도를 합친다. */
+/**
+ * 보스별 내 몫 결정석과 처치 횟수. 큰 순서다. `boss` 는 난이도를 합친다.
+ *
+ * 주간이면 월간 보스를 뺀다. 한 달에 한 번 잡는 보스가 주간 타일에 서면 그 주만 튄다.
+ *
+ * @param cycle 보고 있는 주기
+ */
 export function bossTotalsBetween(
   byDate: DaysByDate,
   range: StatsRange,
   mode: 'difficulty' | 'boss',
+  cycle: BossCycle,
 ): BossTotal[] {
   const totals = new Map<string, BossTotal>()
   for (const entry of entriesBetween(byDate, range)) {
     if (entry.kind !== 'bossCrystal') continue
     for (const boss of entry.bosses) {
+      if (cycle === 'weekly' && findBoss(boss.bossKey)?.cycle === 'monthly') continue
       const key = mode === 'boss' ? boss.bossKey : `${boss.bossKey}|${boss.difficulty}`
       const total = totals.get(key) ?? {
         key,

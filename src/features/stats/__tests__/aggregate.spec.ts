@@ -227,7 +227,7 @@ describe('bossTotalsBetween', () => {
   }
 
   it('난이도별은 보스 · 난이도마다 금액과 처치 횟수를 내고 이름은 alias 다', () => {
-    expect(bossTotalsBetween(byDate, WEEK, 'difficulty')).toEqual([
+    expect(bossTotalsBetween(byDate, WEEK, 'difficulty', 'monthly')).toEqual([
       { key: 'chosen_seren|hard', bossKey: 'chosen_seren', name: '세렌', difficulty: 'hard', meso: 1000, count: 2 },
       { key: 'lucid|hard', bossKey: 'lucid', name: '루시드', difficulty: 'hard', meso: 300, count: 1 },
       { key: 'lucid|normal', bossKey: 'lucid', name: '루시드', difficulty: 'normal', meso: 100, count: 1 },
@@ -235,9 +235,33 @@ describe('bossTotalsBetween', () => {
   })
 
   it('보스별은 난이도를 합치고 난이도를 안 든다', () => {
-    expect(bossTotalsBetween(byDate, WEEK, 'boss')).toEqual([
+    expect(bossTotalsBetween(byDate, WEEK, 'boss', 'monthly')).toEqual([
       { key: 'chosen_seren', bossKey: 'chosen_seren', name: '세렌', difficulty: null, meso: 1000, count: 2 },
       { key: 'lucid', bossKey: 'lucid', name: '루시드', difficulty: null, meso: 400, count: 2 },
     ])
+  })
+
+  // 한 달에 한 번 잡는 보스가 주간 타일에 서면 그 주만 튄다. 합계(순 수익 · 추이)에서는 안 뺀다.
+  describe('월간 보스', () => {
+    const withMonthly = {
+      '2026-09-24': [crystalOf('a', [['lucid', 'hard', 300], ['black_mage', 'hard', 5000]])],
+    }
+
+    it('주간이면 보스 표에서 월간인 보스를 뺀다', () => {
+      expect(bossTotalsBetween(withMonthly, WEEK, 'boss', 'weekly').map((row) => row.bossKey)).toEqual(['lucid'])
+      expect(bossTotalsBetween(withMonthly, WEEK, 'difficulty', 'weekly').map((row) => row.bossKey)).toEqual(['lucid'])
+    })
+
+    it('월간이면 그대로 선다', () => {
+      expect(bossTotalsBetween(withMonthly, WEEK, 'boss', 'monthly').map((row) => row.bossKey)).toEqual([
+        'black_mage',
+        'lucid',
+      ])
+    })
+
+    it('표에 없는 key 는 주기를 몰라 주간에도 그대로 둔다', () => {
+      const unknown = { '2026-09-24': [crystalOf('a', [['no_such_boss', 'hard', 700]])] }
+      expect(bossTotalsBetween(unknown, WEEK, 'boss', 'weekly').map((row) => row.bossKey)).toEqual(['no_such_boss'])
+    })
   })
 })

@@ -11,12 +11,14 @@ jest.mock('../../../features/stats/load', () => ({
 const mockReload = jest.fn()
 const mockRequestDateRange = jest.fn()
 let mockSetLayerRevision: ((value: number) => void) | null = null
+let mockCollecting = false
+let mockStatus: 'idle' | 'filling' | 'ready' = 'ready'
 jest.mock('../../../features/ledger/useLedgerData', () => ({
   useLedgerData: () => {
     const react = require('react') as typeof import('react')
     const [revision, setRevision] = react.useState(1)
     mockSetLayerRevision = setRevision
-    return { status: 'ready', collecting: false, revision, reload: mockReload, requestDateRange: mockRequestDateRange }
+    return { status: mockStatus, collecting: mockCollecting, revision, reload: mockReload, requestDateRange: mockRequestDateRange }
   },
 }))
 
@@ -73,6 +75,8 @@ beforeEach(() => {
   jest.useFakeTimers({ now: 지금 })
   mockReload.mockReset().mockResolvedValue(undefined)
   mockRequestDateRange.mockReset()
+  mockCollecting = false
+  mockStatus = 'ready'
   statsDataRevision.mockReset().mockReturnValue(0)
   loadStatsDays.mockReset().mockResolvedValue({
     '2026-09-18': [수입('2026-09-18', 100_000_000)],
@@ -129,8 +133,8 @@ describe('StatsScreen', () => {
     expect(view.getByTestId('stats-period-label').props.children).toBe('이번 달')
   })
 
-  // 가계부와 같은 창이다. 고른 기간의 달을 가운데 두고 앞뒤 두 달(오늘을 안 넘는다).
-  it('층에는 가계부와 같은 달 창을 요청한다', async () => {
+  // 가계부와 같은 함수다. 범위가 같아야 두 화면을 오가도 층이 회차를 다시 안 연다.
+  it('층에는 가계부와 같은 범위를 요청한다', async () => {
     const view = await 그리기()
     expect(mockRequestDateRange).toHaveBeenLastCalledWith(apiWindowRange('2026-09', '2026-09-29'))
 
@@ -176,5 +180,46 @@ describe('StatsScreen', () => {
     })
 
     expect(loadStatsDays).toHaveBeenCalledTimes(2)
+  })
+
+  // 읽기 전에 `0 메소` 를 그리면 기록이 없다는 말로 읽힌다. 기간 줄과 카드 제목은 그대로 선다.
+  describe('불러오는 중', () => {
+    const 제목들 = ['순 수익', '추이', '캐릭터별', '수입 내역', '지출 내역', '보스별 수익', '누적 순수익']
+
+    it('첫 읽기가 끝나기 전에는 카드 본문 자리에 스켈레톤이 선다', async () => {
+      loadStatsDays.mockReset().mockReturnValue(new Promise(() => undefined))
+      const view = await 그리기()
+
+      expect(view.getByTestId('stats-skeleton')).toBeTruthy()
+      expect(view.queryByTestId('stats-summary-net')).toBeNull()
+      expect(view.getByTestId('stats-period-label').props.children).toBe('이번 주')
+      for (const 제목 of 제목들) expect(view.getByText(제목)).toBeTruthy()
+    })
+
+    it('읽기가 끝나면 스켈레톤이 걷히고 값이 선다', async () => {
+      const view = await 그리기()
+
+      expect(view.queryByTestId('stats-skeleton')).toBeNull()
+      expect(view.getByTestId('stats-summary-net')).toBeTruthy()
+    })
+
+    it('아직 안 받은 지난 날을 받는 동안(filling)에는 스켈레톤이다', async () => {
+      mockStatus = 'filling'
+      mockCollecting = true
+      const view = await 그리기()
+
+      expect(view.getByTestId('stats-skeleton')).toBeTruthy()
+      expect(view.queryByTestId('stats-summary-net')).toBeNull()
+    })
+
+    // 이미 받아 둔 달로 옮겨도 층은 회차를 돌려 `collecting` 을 켠다. 값은 18개월치를 이미 들고 있어
+    // 그대로 맞다. 여기서 스켈레톤을 세우면 값이 먼저 섰다가 스켈레톤이 뒤늦게 덮는다.
+    it('받아 둔 범위를 다시 도는 회차(collecting 만 참)에는 값을 그대로 둔다', async () => {
+      mockCollecting = true
+      const view = await 그리기()
+
+      expect(view.queryByTestId('stats-skeleton')).toBeNull()
+      expect(view.getByTestId('stats-summary-net')).toBeTruthy()
+    })
   })
 })
