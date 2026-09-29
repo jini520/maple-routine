@@ -12,8 +12,8 @@ const rows: CharacterTotals[] = [
   { key: 'name:단풍라떼', ocid: null, name: '단풍라떼', incomeMeso: 0, expenseMeso: 40_000_000, netMeso: -40_000_000 },
 ]
 const images = new Map([
-  ['a', 'https://img/a.png'],
-  ['b', 'https://img/b.png'],
+  ['ocid:a', 'https://img/a.png'],
+  ['ocid:b', 'https://img/b.png'],
 ])
 
 async function 그리기(): Promise<Awaited<ReturnType<typeof renderOverlay>>> {
@@ -56,6 +56,8 @@ describe('CharacterSection', () => {
     expect(within(view.getByTestId('stats-podium-1')).getByTestId('stats-podium-image').props.source).toEqual({
       uri: 'https://img/b.png',
     })
+    // 그림을 모르는 캐릭터는 흰 실루엣이 선다.
     expect(within(view.getByTestId('stats-podium-2')).queryByTestId('stats-podium-image')).toBeNull()
+    expect(within(view.getByTestId('stats-podium-2')).getByTestId('stats-podium-image-unknown')).toBeTruthy()
   })
 })

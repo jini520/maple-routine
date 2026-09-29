@@ -10,6 +10,7 @@ import { Segment } from '../../components/molecules/Segment/Segment'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { CharacterTotals } from '../../features/stats/aggregate'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
+import { unknownCharacterAsset } from '../../lib/assets/asset-lookup'
 import { useCountUp } from '../../hooks/useCountUp'
 import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
@@ -53,6 +54,9 @@ type Tab = (typeof TABS)[number]
  */
 const LOOK_SIZE = 300
 const FIGURE_BOX = { left: 92, top: 104, width: 116, height: 100 }
+/** 흰 실루엣(180×180)에서 같은 크기로 서는 칸. 발끝이 y≈144 라 넥슨 그림과 같은 줄에 발이 닿는다 */
+const UNKNOWN_SIZE = 180
+const UNKNOWN_BOX = { left: 28.5, top: 47 }
 const PODIUM_FIGURE_WIDTH = 72
 const FIGURE_SCALE = PODIUM_FIGURE_WIDTH / FIGURE_BOX.width
 /** 단상 블록 높이. 1 · 2 · 3위 차례다 */
@@ -68,20 +72,24 @@ function signed(meso: number): string {
   return `${meso > 0 ? '+' : meso < 0 ? '−' : ''}${formatMesoCompact(Math.abs(meso))}`
 }
 
-function Figure(props: { uri: string }): React.JSX.Element {
+/** 단상 위 캐릭터. 그림 주소를 모르면 흰 실루엣이 같은 자리에 선다 */
+function Figure(props: { uri: string | undefined }): React.JSX.Element {
+  const known = props.uri !== undefined
+  const size = known ? LOOK_SIZE : UNKNOWN_SIZE
+  const box = known ? FIGURE_BOX : UNKNOWN_BOX
   return (
     <View
       style={{ width: PODIUM_FIGURE_WIDTH, height: FIGURE_BOX.height * FIGURE_SCALE, overflow: 'hidden' }}
     >
       <Image
-        testID="stats-podium-image"
-        source={{ uri: props.uri }}
+        testID={known ? 'stats-podium-image' : 'stats-podium-image-unknown'}
+        source={known ? { uri: props.uri } : unknownCharacterAsset()}
         style={{
           position: 'absolute',
-          width: LOOK_SIZE * FIGURE_SCALE,
-          height: LOOK_SIZE * FIGURE_SCALE,
-          left: -FIGURE_BOX.left * FIGURE_SCALE,
-          top: -FIGURE_BOX.top * FIGURE_SCALE,
+          width: size * FIGURE_SCALE,
+          height: size * FIGURE_SCALE,
+          left: -box.left * FIGURE_SCALE,
+          top: -box.top * FIGURE_SCALE,
         }}
       />
     </View>
@@ -90,7 +98,7 @@ function Figure(props: { uri: string }): React.JSX.Element {
 
 export const CharacterSection = memo(function CharacterSection(props: {
   rows: readonly CharacterTotals[]
-  /** ocid → 전신 그림 주소 */
+  /** 줄의 키 → 전신 그림 주소. 없는 줄은 흰 실루엣이 선다 */
   images: ReadonlyMap<string, string>
   /** 화면에 들어왔나. 들어오는 순간 막대와 단상이 자란다 */
   revealed?: boolean
@@ -169,7 +177,7 @@ export const CharacterSection = memo(function CharacterSection(props: {
             const row = podium[rank]
             if (row === undefined) return <View key={`empty-${rank}`} className="flex-1" />
             const value = valueOf(row, tab)
-            const uri = row.ocid === null ? undefined : props.images.get(row.ocid)
+            const uri = props.images.get(row.key)
             const first = rank === 0
             return (
               <View
@@ -180,7 +188,7 @@ export const CharacterSection = memo(function CharacterSection(props: {
                 className="flex-1 items-center"
               >
                 <View className="items-center justify-end" style={{ height: FIGURE_BOX.height * FIGURE_SCALE }}>
-                  {uri !== undefined && <Figure uri={uri} />}
+                  <Figure uri={uri} />
                 </View>
                 <Grow
                   progress={progress}

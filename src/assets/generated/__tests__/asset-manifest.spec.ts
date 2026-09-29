@@ -16,6 +16,7 @@ import path from 'node:path'
 
 import { ASSET_GROUPS, type AssetGroup } from '../../asset-groups'
 import { BOSS_PORTRAIT_ASSETS } from '../bosses'
+import { CHARACTER_ASSETS } from '../characters'
 import { DROP_EFFECT_ASSETS } from '../drop-effect'
 import { FORCE_ASSETS } from '../force'
 import { ITEM_ASSETS } from '../items'
@@ -29,6 +30,7 @@ const ASSETS_DIR = __dirname + '/../../'
 
 /** 표의 `file` → 실제로 import 한 생성물. 여기 빠뜨리면 아래 첫 테스트가 잡는다. */
 const GENERATED: Record<string, Record<string, unknown>> = {
+  characters: CHARACTER_ASSETS,
   bosses: BOSS_PORTRAIT_ASSETS,
   items: ITEM_ASSETS,
   worlds: WORLD_EMBLEM_ASSETS,

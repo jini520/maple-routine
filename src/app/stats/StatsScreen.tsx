@@ -128,16 +128,16 @@ export function StatsScreen(): React.JSX.Element {
   const characters = useMemo(() => characterTotalsBetween(days, currentRange), [days, currentRange])
   const incomeItems = useMemo(() => categoryTotalsBetween(days, currentRange, 'income'), [days, currentRange])
   const expenseItems = useMemo(() => categoryTotalsBetween(days, currentRange, 'expense'), [days, currentRange])
-  const characterOcids = characters.flatMap((row) => (row.ocid === null ? [] : [row.ocid])).join(',')
+  // 캐릭터 줄은 메모돼 있어 기간이나 읽은 값이 바뀔 때만 그림을 다시 찾는다.
   useEffect(() => {
     let alive = true
-    void loadStatsImages(characterOcids === '' ? [] : characterOcids.split(',')).then((loaded) => {
+    void loadStatsImages(characters).then((loaded) => {
       if (alive) setImages(loaded)
     })
     return () => {
       alive = false
     }
-  }, [characterOcids])
+  }, [characters])
 
   /**
    * 그래프가 화면에 들어오는 순간. 섹션마다 스크롤 내용 안의 윗변을 기억해 두고, 스크롤과 레이아웃 때

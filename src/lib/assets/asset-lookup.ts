@@ -8,6 +8,7 @@ import type { ImageAssetRef } from '../../types/image-asset'
 import type { ImageCrop } from '../image-crop'
 import { THEME_BACKGROUND_ASSETS } from '../../assets/generated/themes'
 import { WORLD_EMBLEM_ASSETS } from '../../assets/generated/worlds'
+import { CHARACTER_ASSETS } from '../../assets/generated/characters'
 import { MVP_PLATE_ASSETS } from '../../assets/generated/mvp'
 import type { MvpGradeKey } from '../mvp/grades'
 import bossCropsData from '../../data/boss-portrait-crops.json'
@@ -115,6 +116,11 @@ export function worldEmblemUrl(worldKey: string | null | undefined): ImageAssetR
 /** 등급의 명패. 일반은 그림이 없어 `null` 이다. */
 export function mvpPlateAsset(grade: MvpGradeKey): ImageAssetRef | null {
   return MVP_PLATE_ASSETS[grade] ?? null
+}
+
+/** 캐릭터 그림을 모를 때 서는 흰 실루엣. 넥슨 그림과 달리 180×180 이다 */
+export function unknownCharacterAsset(): ImageAssetRef {
+  return CHARACTER_ASSETS.unknown
 }
 
 // 포스

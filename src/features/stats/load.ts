@@ -6,7 +6,11 @@
 import { cashbookDataRevision, loadMonthDays } from '../cashbook/records'
 import { getEnhancementHistoryRevision } from '../../storage/enhancement-history'
 import { getSpendRecordsRevision } from '../../storage/spend'
-import { getCharacterProfiles, type CharacterProfileSnapshot } from '../../storage/character-profiles'
+import {
+  getCharacterProfiles,
+  getCharacterProfilesByNames,
+  type CharacterProfileSnapshot,
+} from '../../storage/character-profiles'
 import { historyFloorDateKey } from '../cashbook/range'
 import type { DaysByDate } from './aggregate'
 
@@ -14,10 +18,32 @@ export async function loadStatsDays(todayDateKey: string): Promise<DaysByDate> {
   return loadMonthDays(historyFloorDateKey(todayDateKey), todayDateKey)
 }
 
-/** 단상에 세울 캐릭터 전신 그림. 프로필이 없는 캐릭터는 빠진다. */
-export async function loadStatsImages(ocids: readonly string[]): Promise<Map<string, string>> {
-  const profiles = await getCharacterProfiles(ocids).catch(() => new Map<string, CharacterProfileSnapshot>())
-  return new Map([...profiles.values()].map((profile) => [profile.ocid, profile.imageUrl]))
+/**
+ * 단상에 세울 캐릭터 전신 그림. 줄의 키 → 그림 주소이고, 못 찾은 줄은 빠진다.
+ *
+ * ocid 가 있는 줄은 ocid 로 찾는다. 이름만 있는 줄(개명 전 이름, 날짜를 몰라 보스 기록이 빠진 과거 주의
+ * 강화 줄)은 프로필을 이름으로 찾고, 같은 이름이 여럿이면 가장 최근에 본 캐릭터를 쓴다.
+ */
+export async function loadStatsImages(
+  rows: readonly { key: string; ocid: string | null; name: string }[],
+): Promise<Map<string, string>> {
+  const ocids = rows.flatMap((row) => (row.ocid === null ? [] : [row.ocid]))
+  const names = rows.flatMap((row) => (row.ocid === null && row.name !== '' ? [row.name] : []))
+  const [byOcid, byName] = await Promise.all([
+    getCharacterProfiles(ocids).catch(() => new Map<string, CharacterProfileSnapshot>()),
+    getCharacterProfilesByNames(names).catch(() => [] as CharacterProfileSnapshot[]),
+  ])
+  const latestByName = new Map<string, CharacterProfileSnapshot>()
+  for (const profile of byName) {
+    const seen = latestByName.get(profile.name)
+    if (seen === undefined || profile.updatedAt > seen.updatedAt) latestByName.set(profile.name, profile)
+  }
+  const images = new Map<string, string>()
+  for (const row of rows) {
+    const profile = row.ocid === null ? latestByName.get(row.name) : byOcid.get(row.ocid)
+    if (profile !== undefined) images.set(row.key, profile.imageUrl)
+  }
+  return images
 }
 
 /**
