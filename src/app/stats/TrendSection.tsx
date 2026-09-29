@@ -22,7 +22,7 @@ type Mode = (typeof MODES)[number]
 /** 말풍선이 차트를 가리지 않도록 그 위에 비워 두는 높이 */
 const BUBBLE_SPACE = 54
 const CHART_HEIGHT = 150
-const AXIS_LEFT = 34
+const AXIS_LEFT = 46
 const AXIS_BOTTOM = 20
 const TOP_PAD = 8
 

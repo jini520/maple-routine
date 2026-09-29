@@ -23,8 +23,9 @@ const SLICE_OPACITY = [1, 0.72, 0.5, 0.32, 0.2]
 const INSIDE_MIN_SPAN = 0.62
 /** 설계 좌표. 폭 300 기준이고 실제 폭에 맞춰 곱한다 */
 const BASE = { width: 300, cx: 116, cy: 122, outer: 108, inner: 52 }
-const LABEL_GAP = 27
-const LABEL_HEIGHT = 26
+/** 바깥 라벨(두 줄) 사이 간격과 높이. 글자는 화면 폭을 안 따라 커지므로 설계 좌표가 아니라 px 이다 */
+const LABEL_GAP = 32
+const LABEL_HEIGHT = 30
 
 interface Slice {
   key: string

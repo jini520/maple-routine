@@ -149,7 +149,9 @@ export function CharacterSection(props: {
                     {row.name}
                   </Text>
                   <Text
-                    className={`text-10 font-bold ${tab === '지출' || value < 0 ? 'text-fall-ink' : 'text-rise-ink'}`}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    className={`max-w-full px-0.5 text-10 font-bold ${tab === '지출' || value < 0 ? 'text-fall-ink' : 'text-rise-ink'}`}
                     style={TABULAR_NUMS}
                   >
                     {net ? signed(value) : formatMesoCompact(value)}
