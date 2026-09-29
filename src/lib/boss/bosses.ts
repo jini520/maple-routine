@@ -14,6 +14,8 @@ export interface BossEntry {
   key: string
   /** Nexon API `content_name` 표기. 화면에 보이는 이름이다. */
   name: string
+  /** 좁은 자리의 이름. 길어서 줄인 넷 말고는 `name` 과 같다. */
+  alias: string
   difficulties: BossDifficulty[]
   requiredLevels?: Partial<Record<BossDifficulty, number>>
   portraitSlug?: string
