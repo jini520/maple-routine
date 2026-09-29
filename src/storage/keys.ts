@@ -93,6 +93,10 @@ export const STORAGE_KEYS = {
   //
   // `KEEP_KEYS` 에는 안 넣는다. 지워져도 이번 주에 줄이 한 번 더 설 뿐이다.
   dismissedManualCompletion: 'dismissedManualCompletion',
+  // 통계의 누적 순수익이 더하기 시작하는 날(KST `YYYY-MM-DD`). 없으면 기록이 처음 있는 날부터다.
+  //
+  // `KEEP_KEYS` 에 넣는다. 재조회로 복구되지 않는, 사용자가 고른 값이다.
+  statsCumulativeStart: 'statsCumulativeStart',
   // 페이지별 마지막 데이터 호출 시각. `{ today: ISO, content: ISO, … }` 한 칸이다.
   //
   // 키를 다섯으로 쪼개지 않는 것은 읽는 쪽이 언제나 다섯을 한 번에 필요로 해서다(부팅 때 한 번

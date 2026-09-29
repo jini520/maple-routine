@@ -228,6 +228,23 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     expect(findDuplicates(names)).toEqual([])
   })
 
+  // 줄이는 넷은 사용자가 정했고(2026-09-29) 나머지는 이름 그대로다. 빈 칸이면 타일에 이름이 안 선다.
+  it('보스 alias 는 정한 넷만 줄이고 나머지는 이름과 같다', () => {
+    const shortened: Record<string, string> = {
+      '선택받은 세렌': '세렌',
+      '감시자 칼로스': '칼로스',
+      '가디언 엔젤 슬라임': '가엔슬',
+      '시즌 보스 메이린': '메이린',
+    }
+    const entries: { name: string; alias?: string }[] = [
+      ...weeklyBosses.weekly,
+      ...weeklyBosses.eventWeekly,
+      ...weeklyBosses.monthly,
+    ]
+    const wrong = entries.filter((entry) => entry.alias !== (shortened[entry.name] ?? entry.name))
+    expect(wrong.map((entry) => `${entry.name} → ${entry.alias}`)).toEqual([])
+  })
+
   it('보스 난이도 · 가격 · 드롭 표의 난이도는 난이도 key 다', () => {
     const difficulties = [
       ...[...weeklyBosses.weekly, ...weeklyBosses.eventWeekly, ...weeklyBosses.monthly].flatMap(

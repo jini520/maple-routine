@@ -27,6 +27,8 @@ import {
   scrollPageToTop,
 } from '../../../../navigation/scroll-to-top'
 
+import { fireEvent } from '@testing-library/react-native'
+
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../__tests__/render-atom'
 import { rnThemeAppearancePort } from '../../../../native/adapters/rn-theme-appearance'
 import { __resetThemeAppearanceForTest } from '../../../../theme/appearance-store'
@@ -60,6 +62,17 @@ describe('ScreenScroll', () => {
   //
   // NativeWind 는 `contentContainerClassName` 을 자식 뷰가 아니라 `contentContainerStyle`
   // 프롭으로 컴파일해 명시 스타일과 합친다. 그래서 렌더 트리를 훑으면 이 값이 안 보인다.
+  // 화면에 들어오는 순간을 알고 싶은 화면(통계의 그래프)이 받는다. iOS 는 흘림 간격을 안 주면 멈출 때 한 번만 보낸다.
+  it('onScroll 을 주면 스크롤 뷰에 걸고 프레임마다 흘린다', async () => {
+    const onScroll = jest.fn()
+    const { getByTestId } = await renderOverlay(<ScreenScroll onScroll={onScroll}>{목록}</ScreenScroll>)
+
+    const scroller = getByTestId('screen-scroll')
+    expect(scroller.props.scrollEventThrottle).toBe(16)
+    fireEvent.scroll(scroller, { nativeEvent: { contentOffset: { y: 120 } } })
+    expect(onScroll).toHaveBeenCalledTimes(1)
+  })
+
   it('콘텐츠 간격을 gap-2 로 준다', async () => {
     const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
 

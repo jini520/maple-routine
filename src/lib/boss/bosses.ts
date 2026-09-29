@@ -14,6 +14,8 @@ export interface BossEntry {
   key: string
   /** Nexon API `content_name` 표기. 화면에 보이는 이름이다. */
   name: string
+  /** 좁은 자리의 이름. 길어서 줄인 넷 말고는 `name` 과 같다. */
+  alias: string
   difficulties: BossDifficulty[]
   requiredLevels?: Partial<Record<BossDifficulty, number>>
   portraitSlug?: string
@@ -69,6 +71,15 @@ export function findBoss(key: string | null | undefined): BossEntry | null {
  */
 export function bossNameOf(key: string | null | undefined, fallbackName: string): string {
   return findBoss(key)?.name ?? fallbackName
+}
+
+/**
+ * 좁은 자리의 보스 이름. 표의 `alias` 이고, 모르는 key 면 넘긴 이름이다.
+ *
+ * @example bossAliasOf(boss.bossKey, boss.bossName)
+ */
+export function bossAliasOf(key: string | null | undefined, fallbackName: string): string {
+  return findBoss(key)?.alias ?? fallbackName
 }
 
 /** API 이름(또는 옛 기록의 보스 이름)에서 key. 표에 없으면 `null` 이다. */

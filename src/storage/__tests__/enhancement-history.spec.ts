@@ -201,3 +201,17 @@ describe('아는 id', () => {
     expect((await loadKnownHistoryIds('cube', '2026-09-04')).size).toBe(0)
   })
 })
+
+// 통계 화면이 이 판을 보고, 새 줄이 들어왔을 때만 다시 읽는다.
+describe('내역의 판', () => {
+  it('줄을 쓰면 오르고 빈 배열이면 그대로다', async () => {
+    const { getEnhancementHistoryRevision } = require('../enhancement-history') as typeof import('../enhancement-history')
+    const before = getEnhancementHistoryRevision()
+
+    await saveEnhancementHistory('cube', [])
+    expect(getEnhancementHistoryRevision()).toBe(before)
+
+    await saveEnhancementHistory('cube', [row('a')])
+    expect(getEnhancementHistoryRevision()).toBe(before + 1)
+  })
+})

@@ -5,35 +5,35 @@
   "weeklyBossSelectionLimit": 12,
   "weeklyCrystalSaleLimit": 90,
   "weekly": [
-    { "key": "zakum", "name": "자쿰", "difficulties": ["chaos"], "requiredLevels": { "chaos": 90 }, "portraitSlug": "zakum" },
-    { "key": "magnus", "name": "매그너스", "difficulties": ["hard"], "requiredLevels": { "hard": 175 }, "portraitSlug": "magnus" },
-    { "key": "papulatus", "name": "파풀라투스", "difficulties": ["chaos"], "requiredLevels": { "chaos": 190 }, "portraitSlug": "papulatus" },
-    { "key": "von_bon", "name": "반반", "difficulties": ["chaos"], "requiredLevels": { "chaos": 180 }, "portraitSlug": "vonBon" },
-    { "key": "pierre", "name": "피에르", "difficulties": ["chaos"], "requiredLevels": { "chaos": 180 }, "portraitSlug": "pierre" },
-    { "key": "crimson_queen", "name": "블러디퀸", "difficulties": ["chaos"], "requiredLevels": { "chaos": 180 }, "portraitSlug": "crimsonQueen" },
-    { "key": "vellum", "name": "벨룸", "difficulties": ["chaos"], "requiredLevels": { "chaos": 180 }, "portraitSlug": "vellum" },
-    { "key": "lotus", "name": "스우", "difficulties": ["normal", "hard", "extreme"], "requiredLevels": { "normal": 190, "hard": 190, "extreme": 190 }, "portraitSlug": "lotus" },
-    { "key": "damien", "name": "데미안", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 190, "hard": 190 }, "portraitSlug": "damien" },
-    { "key": "guardian_angel_slime", "name": "가디언 엔젤 슬라임", "difficulties": ["normal", "chaos"], "requiredLevels": { "normal": 210, "chaos": 210 }, "portraitSlug": "slime" },
-    { "key": "lucid", "name": "루시드", "difficulties": ["easy", "normal", "hard"], "requiredLevels": { "easy": 220, "normal": 220, "hard": 220 }, "portraitSlug": "lucid" },
-    { "key": "will", "name": "윌", "difficulties": ["easy", "normal", "hard"], "requiredLevels": { "easy": 235, "normal": 235, "hard": 235 }, "portraitSlug": "will" },
-    { "key": "gloom", "name": "더스크", "difficulties": ["normal", "chaos"], "requiredLevels": { "normal": 245, "chaos": 245 }, "portraitSlug": "gloom" },
-    { "key": "verus_hilla", "name": "진 힐라", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 250, "hard": 250 }, "portraitSlug": "verusHilla" },
-    { "key": "darknell", "name": "듄켈", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 255, "hard": 255 }, "portraitSlug": "darknell" },
-    { "key": "chosen_seren", "name": "선택받은 세렌", "difficulties": ["normal", "hard", "extreme"], "requiredLevels": { "normal": 260, "hard": 260, "extreme": 260 }, "portraitSlug": "seren" },
-    { "key": "guardian_kalos", "name": "감시자 칼로스", "difficulties": ["easy", "normal", "chaos", "extreme"], "requiredLevels": { "easy": 265, "normal": 265, "chaos": 265, "extreme": 265 }, "portraitSlug": "kalos" },
-    { "key": "first_adversary", "name": "최초의 대적자", "difficulties": ["easy", "normal", "hard", "extreme"], "requiredLevels": { "easy": 270, "normal": 270, "hard": 270, "extreme": 270 }, "portraitSlug": "adversary" },
-    { "key": "kaling", "name": "카링", "difficulties": ["easy", "normal", "hard", "extreme"], "requiredLevels": { "easy": 275, "normal": 275, "hard": 275, "extreme": 275 }, "portraitSlug": "kaling" },
-    { "key": "radiant_malefic_star", "name": "찬란한 흉성", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 280, "hard": 280 }, "portraitSlug": "maleficStar" },
-    { "key": "bellona", "name": "벨로나", "difficulties": ["easy", "normal", "hard"], "requiredLevels": { "easy": 280, "normal": 280, "hard": 280 }, "portraitSlug": "bellona" },
-    { "key": "limbo", "name": "림보", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 285, "hard": 285 }, "portraitSlug": "limbo" },
-    { "key": "bardrix", "name": "발드릭스", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 290, "hard": 290 }, "portraitSlug": "bardrix" },
-    { "key": "jupiter", "name": "유피테르", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 295, "hard": 295 }, "portraitSlug": "jupiter" }
+    { "key": "zakum", "name": "자쿰", "alias": "자쿰", "difficulties": ["chaos"], "requiredLevels": { "chaos": 90 }, "portraitSlug": "zakum" },
+    { "key": "magnus", "name": "매그너스", "alias": "매그너스", "difficulties": ["hard"], "requiredLevels": { "hard": 175 }, "portraitSlug": "magnus" },
+    { "key": "papulatus", "name": "파풀라투스", "alias": "파풀라투스", "difficulties": ["chaos"], "requiredLevels": { "chaos": 190 }, "portraitSlug": "papulatus" },
+    { "key": "von_bon", "name": "반반", "alias": "반반", "difficulties": ["chaos"], "requiredLevels": { "chaos": 180 }, "portraitSlug": "vonBon" },
+    { "key": "pierre", "name": "피에르", "alias": "피에르", "difficulties": ["chaos"], "requiredLevels": { "chaos": 180 }, "portraitSlug": "pierre" },
+    { "key": "crimson_queen", "name": "블러디퀸", "alias": "블러디퀸", "difficulties": ["chaos"], "requiredLevels": { "chaos": 180 }, "portraitSlug": "crimsonQueen" },
+    { "key": "vellum", "name": "벨룸", "alias": "벨룸", "difficulties": ["chaos"], "requiredLevels": { "chaos": 180 }, "portraitSlug": "vellum" },
+    { "key": "lotus", "name": "스우", "alias": "스우", "difficulties": ["normal", "hard", "extreme"], "requiredLevels": { "normal": 190, "hard": 190, "extreme": 190 }, "portraitSlug": "lotus" },
+    { "key": "damien", "name": "데미안", "alias": "데미안", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 190, "hard": 190 }, "portraitSlug": "damien" },
+    { "key": "guardian_angel_slime", "name": "가디언 엔젤 슬라임", "alias": "가엔슬", "difficulties": ["normal", "chaos"], "requiredLevels": { "normal": 210, "chaos": 210 }, "portraitSlug": "slime" },
+    { "key": "lucid", "name": "루시드", "alias": "루시드", "difficulties": ["easy", "normal", "hard"], "requiredLevels": { "easy": 220, "normal": 220, "hard": 220 }, "portraitSlug": "lucid" },
+    { "key": "will", "name": "윌", "alias": "윌", "difficulties": ["easy", "normal", "hard"], "requiredLevels": { "easy": 235, "normal": 235, "hard": 235 }, "portraitSlug": "will" },
+    { "key": "gloom", "name": "더스크", "alias": "더스크", "difficulties": ["normal", "chaos"], "requiredLevels": { "normal": 245, "chaos": 245 }, "portraitSlug": "gloom" },
+    { "key": "verus_hilla", "name": "진 힐라", "alias": "진 힐라", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 250, "hard": 250 }, "portraitSlug": "verusHilla" },
+    { "key": "darknell", "name": "듄켈", "alias": "듄켈", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 255, "hard": 255 }, "portraitSlug": "darknell" },
+    { "key": "chosen_seren", "name": "선택받은 세렌", "alias": "세렌", "difficulties": ["normal", "hard", "extreme"], "requiredLevels": { "normal": 260, "hard": 260, "extreme": 260 }, "portraitSlug": "seren" },
+    { "key": "guardian_kalos", "name": "감시자 칼로스", "alias": "칼로스", "difficulties": ["easy", "normal", "chaos", "extreme"], "requiredLevels": { "easy": 265, "normal": 265, "chaos": 265, "extreme": 265 }, "portraitSlug": "kalos" },
+    { "key": "first_adversary", "name": "최초의 대적자", "alias": "최초의 대적자", "difficulties": ["easy", "normal", "hard", "extreme"], "requiredLevels": { "easy": 270, "normal": 270, "hard": 270, "extreme": 270 }, "portraitSlug": "adversary" },
+    { "key": "kaling", "name": "카링", "alias": "카링", "difficulties": ["easy", "normal", "hard", "extreme"], "requiredLevels": { "easy": 275, "normal": 275, "hard": 275, "extreme": 275 }, "portraitSlug": "kaling" },
+    { "key": "radiant_malefic_star", "name": "찬란한 흉성", "alias": "찬란한 흉성", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 280, "hard": 280 }, "portraitSlug": "maleficStar" },
+    { "key": "bellona", "name": "벨로나", "alias": "벨로나", "difficulties": ["easy", "normal", "hard"], "requiredLevels": { "easy": 280, "normal": 280, "hard": 280 }, "portraitSlug": "bellona" },
+    { "key": "limbo", "name": "림보", "alias": "림보", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 285, "hard": 285 }, "portraitSlug": "limbo" },
+    { "key": "bardrix", "name": "발드릭스", "alias": "발드릭스", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 290, "hard": 290 }, "portraitSlug": "bardrix" },
+    { "key": "jupiter", "name": "유피테르", "alias": "유피테르", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 295, "hard": 295 }, "portraitSlug": "jupiter" }
   ],
   "eventWeekly": [
-    { "key": "meirin", "name": "시즌 보스 메이린", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 270, "hard": 280 }, "note": "표시명을 Nexon 스케줄러 Open API의 content_name과 통일(2026-07-22, 사용자 확정) — 기존 표시명 '메이린'에서 변경. apiAlias 매핑은 boss가 이제 content_name과 동일해 더 이상 필요 없어 제거함. boss-crystal-prices.json/item-drop-table.json의 boss 키도 함께 갱신했고, 기존 저장된 파티 설정·수익 기록(boss='메이린')은 storage/sqlite/db.ts의 마이그레이션으로 이관함", "portraitSlug": "maerin" }
+    { "key": "meirin", "name": "시즌 보스 메이린", "alias": "메이린", "difficulties": ["normal", "hard"], "requiredLevels": { "normal": 270, "hard": 280 }, "note": "표시명을 Nexon 스케줄러 Open API의 content_name과 통일(2026-07-22, 사용자 확정) — 기존 표시명 '메이린'에서 변경. apiAlias 매핑은 boss가 이제 content_name과 동일해 더 이상 필요 없어 제거함. boss-crystal-prices.json/item-drop-table.json의 boss 키도 함께 갱신했고, 기존 저장된 파티 설정·수익 기록(boss='메이린')은 storage/sqlite/db.ts의 마이그레이션으로 이관함", "portraitSlug": "maerin" }
   ],
   "monthly": [
-    { "key": "black_mage", "name": "검은 마법사", "difficulties": ["hard", "extreme"], "requiredLevels": { "hard": 255, "extreme": 255 }, "portraitSlug": "blackMage" }
+    { "key": "black_mage", "name": "검은 마법사", "alias": "검은 마법사", "difficulties": ["hard", "extreme"], "requiredLevels": { "hard": 255, "extreme": 255 }, "portraitSlug": "blackMage" }
   ]
 }

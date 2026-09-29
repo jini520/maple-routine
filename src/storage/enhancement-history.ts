@@ -53,11 +53,19 @@ export function checkKey(kind: EnhancementKind, dateKey: string): string {
  * 같은 줄을 두 번 받는 것이 정상이다. 커서를 이어받다 겹치고, 오늘 날짜는 하루에 여러 번 부른다.
  * 갱신하면 쓸 일도 없이 디스크만 두드린다.
  */
+/** 내역의 판. 줄을 쓸 때 오른다. 통계 화면이 새 줄이 들어왔을 때만 다시 읽으려고 본다 */
+let enhancementHistoryRevision = 0
+
+export function getEnhancementHistoryRevision(): number {
+  return enhancementHistoryRevision
+}
+
 export async function saveEnhancementHistory(
   kind: EnhancementKind,
   rows: readonly EnhancementHistoryRow[],
 ): Promise<void> {
   if (rows.length === 0) return
+  enhancementHistoryRevision += 1
   const db = await getBossProfitDb()
 
   for (let start = 0; start < rows.length; start += CHUNK) {

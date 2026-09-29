@@ -68,6 +68,15 @@ export const ASSET_GROUPS: AssetGroup[] = [
     purpose: '월드 엠블럼. `lib/assets/asset-lookup.ts` 의 `worldEmblemUrl` 이 `worlds.json` 의 `emblem` 으로 찾는다',
   },
   {
+    file: 'characters',
+    exportName: 'CHARACTER_ASSETS',
+    kind: 'record',
+    key: 'slug',
+    dirs: ['characters'],
+    extensions: ['png'],
+    purpose: '캐릭터 그림을 모를 때 서는 자리 그림. `lib/assets/asset-lookup.ts` 의 `unknownCharacterAsset` 이 찾는다',
+  },
+  {
     file: 'mvp',
     exportName: 'MVP_PLATE_ASSETS',
     kind: 'record',

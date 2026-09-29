@@ -26,6 +26,8 @@ const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.mvpBulkApplyAsked,
   // 끝나지 않은 작업 표시. 지워지면 반쯤 바뀐 기록이 이어지지 않고 그대로 굳는다.
   STORAGE_KEYS.pendingTasks,
+  // 통계 누적 순수익의 시작 날짜. 사용자가 고른 값이라 지워지면 아무도 되살리지 못한다.
+  STORAGE_KEYS.statsCumulativeStart,
 ])
 
 // 삭제 단위는 2그룹이다. 사용자가 해결하려는 갈등은 "용량은 비우고 싶은데 복구 불가능한

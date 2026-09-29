@@ -892,8 +892,8 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
 
     expect(줄.kind).toBe('bossCrystal')
     expect(줄.kind === 'bossCrystal' ? 줄.bosses : null).toEqual([
-      { bossKey: 'lotus', bossName: '스우', difficulty: 'hard' },
-      { bossKey: 'damien', bossName: '데미안', difficulty: 'hard' },
+      { bossKey: 'lotus', bossName: '스우', difficulty: 'hard', payoutMeso: 2_100_000_000 },
+      { bossKey: 'damien', bossName: '데미안', difficulty: 'hard', payoutMeso: 1_500_000_000 },
     ])
   })
 
@@ -930,8 +930,8 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
 
     // 같은 보스면 난이도 순서다(이지 < 노멀 < 하드 …).
     expect(줄.kind === 'bossCrystal' ? 줄.bosses : null).toEqual([
-      { bossKey: 'lotus', bossName: '스우', difficulty: 'normal' },
-      { bossKey: 'lotus', bossName: '스우', difficulty: 'hard' },
+      { bossKey: 'lotus', bossName: '스우', difficulty: 'normal', payoutMeso: 500_000_000 },
+      { bossKey: 'lotus', bossName: '스우', difficulty: 'hard', payoutMeso: 2_100_000_000 },
     ])
   })
 

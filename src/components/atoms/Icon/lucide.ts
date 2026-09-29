@@ -23,6 +23,7 @@ import Calculator from 'lucide-react-native/icons/calculator'
 import Calendar from 'lucide-react-native/icons/calendar'
 import CalendarCheck from 'lucide-react-native/icons/calendar-check'
 import Castle from 'lucide-react-native/icons/castle'
+import ChartColumn from 'lucide-react-native/icons/chart-column'
 import Check from 'lucide-react-native/icons/check'
 import ChevronDown from 'lucide-react-native/icons/chevron-down'
 import ChevronLeft from 'lucide-react-native/icons/chevron-left'
@@ -223,5 +224,6 @@ export const UsersIcon = withIconInterop(Users)
 export const WalletIcon = withIconInterop(Wallet)
 
 export const WrenchIcon = withIconInterop(Wrench)
+export const ChartColumnIcon = withIconInterop(ChartColumn)
 /** 닫기. `Toast` · `PartySizeModal`. */
 export const XIcon = withIconInterop(X)
