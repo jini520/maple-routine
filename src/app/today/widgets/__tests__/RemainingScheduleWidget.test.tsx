@@ -386,3 +386,13 @@ describe('조회 불가 행의 얼굴', () => {
     expect(view.queryByTestId('portrait-unavailable')).toBeNull()
   })
 })
+
+// 캐릭터 관리와 같은 폴백이다. 두 자리가 갈리면 같은 캐릭터가 화면마다 다르게 없어진다.
+describe('그림이 없는 얼굴', () => {
+  it('`?` 대신 흰 실루엣이다', async () => {
+    const view = await 위젯([스케줄행({ imageUrl: null })])
+
+    expect(view.getByTestId('schedule-face-fallback')).toBeTruthy()
+    expect(view.queryByText('?')).toBeNull()
+  })
+})

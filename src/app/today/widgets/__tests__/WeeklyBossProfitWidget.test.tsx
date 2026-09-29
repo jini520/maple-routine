@@ -260,3 +260,13 @@ describe('단위는 큰 금액에만 붙는다', () => {
 
 
 
+
+// 캐릭터 관리와 같은 폴백이다. 두 자리가 갈리면 같은 캐릭터가 화면마다 다르게 없어진다.
+describe('그림이 없는 얼굴', () => {
+  it('`?` 대신 흰 실루엣이다', async () => {
+    const view = await 위젯(크기['4x3'])
+
+    expect(view.getAllByTestId('profit-character-face-fallback')).toHaveLength(3)
+    expect(view.queryByText('?')).toBeNull()
+  })
+})
