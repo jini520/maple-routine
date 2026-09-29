@@ -91,6 +91,7 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
           ref={startRef}
           dateKey={start}
           label="누적 시작 날짜"
+          showChangeLabel={false}
           testID="stats-cumulative-start"
           onPress={() => {
             // 달력은 늘 지금 시작 날짜가 든 달로 열린다.

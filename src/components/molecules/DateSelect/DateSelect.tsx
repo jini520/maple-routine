@@ -30,6 +30,8 @@ export interface DateSelectProps {
   text?: string
   /** 아직 안 고른 자리라 흐린 글자로 적는다 */
   placeholder?: boolean
+  /** 왼쪽 `변경` 글자를 세우나. 기본은 세운다. 통계 누적의 시작 날짜처럼 알약만 두는 자리가 끈다 */
+  showChangeLabel?: boolean
 }
 
 export const DateSelect = forwardRef<View, DateSelectProps>(function DateSelect(props, ref) {
@@ -41,11 +43,13 @@ export const DateSelect = forwardRef<View, DateSelectProps>(function DateSelect(
       onPress={props.onPress}
       className="shrink-0 flex-row items-center gap-2 active:opacity-60"
     >
-      <View className="items-center">
-        <Text className="text-xs font-semibold text-text-muted">변경</Text>
-        {/* 글자 바로 아래 1px. 점선은 뷰로 그린다(RN 은 글자에 점선을 못 긋는다). */}
-        <View className="mt-px w-full border-b border-dashed border-text-muted" />
-      </View>
+      {props.showChangeLabel !== false && (
+        <View className="items-center">
+          <Text className="text-xs font-semibold text-text-muted">변경</Text>
+          {/* 글자 바로 아래 1px. 점선은 뷰로 그린다(RN 은 글자에 점선을 못 긋는다). */}
+          <View className="mt-px w-full border-b border-dashed border-text-muted" />
+        </View>
+      )}
 
       <View className="flex-row items-center gap-1.5 rounded-full border border-border px-2.5 py-1">
         <CalendarIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden />
