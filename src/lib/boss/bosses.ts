@@ -73,6 +73,15 @@ export function bossNameOf(key: string | null | undefined, fallbackName: string)
   return findBoss(key)?.name ?? fallbackName
 }
 
+/**
+ * 좁은 자리의 보스 이름. 표의 `alias` 이고, 모르는 key 면 넘긴 이름이다.
+ *
+ * @example bossAliasOf(boss.bossKey, boss.bossName)
+ */
+export function bossAliasOf(key: string | null | undefined, fallbackName: string): string {
+  return findBoss(key)?.alias ?? fallbackName
+}
+
 /** API 이름(또는 옛 기록의 보스 이름)에서 key. 표에 없으면 `null` 이다. */
 export function bossKeyOfApiName(name: string): string | null {
   return keyByComparableName.get(comparableName(name)) ?? null

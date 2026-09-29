@@ -277,6 +277,7 @@ async function loadBossDaySummaries(
       bossName: bossNameOf(record.bossKey, record.boss),
       // 이 컬럼이 드는 값은 다섯뿐이다. `rows.ts`·`drop-price-store.ts` 가 같은 단언을 한다.
       difficulty: record.difficulty as BossDifficulty,
+      payoutMeso: record.payoutMeso,
     })
   }
 
@@ -533,6 +534,8 @@ export interface DefeatedBoss {
   /** 보이는 보스 이름. 보스 표 이름이고, 표에서 빠진 보스면 적어 둔 이름이다. */
   bossName: string
   difficulty: BossDifficulty
+  /** 그 보스의 내 몫 결정석. 통계의 보스별 수익이 읽는다 */
+  payoutMeso: number
 }
 
 /**

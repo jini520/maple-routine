@@ -6,6 +6,8 @@
 import { dayTotalsOf, recordMesoOf, type DayRecord } from '../cashbook/records'
 import { incomeCategoryNameOf, spendCategoryNameOf } from '../../lib/cashbook/categories'
 import { enhancementCategoryNameOf } from '../../lib/enhancement/categories'
+import { bossAliasOf } from '../../lib/boss/bosses'
+import type { BossDifficulty } from '../../types'
 
 export type DaysByDate = Readonly<Record<string, readonly DayRecord[]>>
 
@@ -137,4 +139,44 @@ export function categoryTotalsBetween(
     totals.set(key, total)
   }
   return [...totals.values()].filter((total) => total.meso !== 0).sort((left, right) => right.meso - left.meso)
+}
+
+export interface BossTotal {
+  /** 난이도별은 `보스 key|난이도`, 보스별은 보스 key */
+  key: string
+  bossKey: string
+  /** 표의 `alias` */
+  name: string
+  /** 보스별로 합치면 `null` */
+  difficulty: BossDifficulty | null
+  meso: number
+  /** 처치 횟수. 캐릭터마다 센다 */
+  count: number
+}
+
+/** 보스별 내 몫 결정석과 처치 횟수. 큰 순서다. `boss` 는 난이도를 합친다. */
+export function bossTotalsBetween(
+  byDate: DaysByDate,
+  range: StatsRange,
+  mode: 'difficulty' | 'boss',
+): BossTotal[] {
+  const totals = new Map<string, BossTotal>()
+  for (const entry of entriesBetween(byDate, range)) {
+    if (entry.kind !== 'bossCrystal') continue
+    for (const boss of entry.bosses) {
+      const key = mode === 'boss' ? boss.bossKey : `${boss.bossKey}|${boss.difficulty}`
+      const total = totals.get(key) ?? {
+        key,
+        bossKey: boss.bossKey,
+        name: bossAliasOf(boss.bossKey, boss.bossName),
+        difficulty: mode === 'boss' ? null : boss.difficulty,
+        meso: 0,
+        count: 0,
+      }
+      total.meso += boss.payoutMeso
+      total.count += 1
+      totals.set(key, total)
+    }
+  }
+  return [...totals.values()].sort((left, right) => right.meso - left.meso)
 }

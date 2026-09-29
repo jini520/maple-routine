@@ -2,6 +2,7 @@ import type { DayRecord } from '../../cashbook/records'
 import type { IncomeRecord } from '../../../storage/income'
 import type { SpendRecord } from '../../../storage/spend'
 import {
+  bossTotalsBetween,
   categoryTotalsBetween,
   characterTotalsBetween,
   cumulativeNet,
@@ -72,7 +73,7 @@ function crystal(ocid: string, characterName: string, payoutMeso: number): DayRe
     characterName,
     payoutMeso,
     count: 1,
-    bosses: [{ bossKey: 'lucid', bossName: '루시드', difficulty: 'hard' }],
+    bosses: [{ bossKey: 'lucid', bossName: '루시드', difficulty: 'hard', payoutMeso }],
   }
 }
 
@@ -204,6 +205,39 @@ describe('categoryTotalsBetween', () => {
       { key: 'enhancement:starforce', name: '스타포스', meso: 400 },
       { key: 'symbol', name: '심볼 강화', meso: 70 },
       { key: 'enhancement:cube_reset', name: '큐브 재설정', meso: 50 },
+    ])
+  })
+})
+
+describe('bossTotalsBetween', () => {
+  function crystalOf(ocid: string, bosses: [string, 'hard' | 'normal', number][]): DayRecord {
+    return {
+      kind: 'bossCrystal',
+      ocid,
+      characterName: ocid,
+      payoutMeso: bosses.reduce((sum, [, , meso]) => sum + meso, 0),
+      count: bosses.length,
+      bosses: bosses.map(([bossKey, difficulty, payoutMeso]) => ({ bossKey, bossName: bossKey, difficulty, payoutMeso })),
+    }
+  }
+  const byDate = {
+    '2026-09-24': [crystalOf('a', [['lucid', 'hard', 300], ['chosen_seren', 'hard', 500]])],
+    '2026-09-25': [crystalOf('b', [['lucid', 'normal', 100], ['chosen_seren', 'hard', 500]])],
+    '2026-10-01': [crystalOf('a', [['lucid', 'hard', 999]])],
+  }
+
+  it('난이도별은 보스 · 난이도마다 금액과 처치 횟수를 내고 이름은 alias 다', () => {
+    expect(bossTotalsBetween(byDate, WEEK, 'difficulty')).toEqual([
+      { key: 'chosen_seren|hard', bossKey: 'chosen_seren', name: '세렌', difficulty: 'hard', meso: 1000, count: 2 },
+      { key: 'lucid|hard', bossKey: 'lucid', name: '루시드', difficulty: 'hard', meso: 300, count: 1 },
+      { key: 'lucid|normal', bossKey: 'lucid', name: '루시드', difficulty: 'normal', meso: 100, count: 1 },
+    ])
+  })
+
+  it('보스별은 난이도를 합치고 난이도를 안 든다', () => {
+    expect(bossTotalsBetween(byDate, WEEK, 'boss')).toEqual([
+      { key: 'chosen_seren', bossKey: 'chosen_seren', name: '세렌', difficulty: null, meso: 1000, count: 2 },
+      { key: 'lucid', bossKey: 'lucid', name: '루시드', difficulty: null, meso: 400, count: 2 },
     ])
   })
 })
