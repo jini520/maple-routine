@@ -90,17 +90,18 @@ export const INCOME_CATEGORIES = [
 export type IncomeCategoryKey = (typeof INCOME_CATEGORIES)[number]['key']
 
 /**
- * 아이템 구매의 종류. **게임의 인벤토리 탭 이름**이다. 이 값 하나가 수량과 관세를 함께 가른다.
+ * 아이템 구매 · 판매의 종류. **게임의 인벤토리 탭 이름**이다. 이 값 하나가 수량을 가르고, 구매에서는
+ * 관세도 함께 가른다.
  *
- * 기타가 지출 갈래의 기타와 이름이 겹치지만 사용자가 아는 말이 그것이라 바꾸지 않는다.
+ * 기타가 두 갈래의 기타와 이름이 겹치지만 사용자가 아는 말이 그것이라 바꾸지 않는다.
  */
-export const SPEND_ITEM_KINDS = [
+export const ITEM_KINDS = [
   { key: 'equipment', name: '장비' },
   { key: 'consumable', name: '소비' },
   { key: 'etc', name: '기타' },
 ] as const
 
-export type SpendItemKindKey = (typeof SPEND_ITEM_KINDS)[number]['key']
+export type ItemKindKey = (typeof ITEM_KINDS)[number]['key']
 
 /** 에픽던전 추가 리워드가 값을 받는 형태. 짧은 이름은 하루 목록의 줄 이름에 들어간다(사용자 지정). */
 export const SPEND_FORMS = [
@@ -119,8 +120,8 @@ export function incomeCategoryNameOf(key: IncomeCategoryKey): string {
   return INCOME_CATEGORIES.find((each) => each.key === key)!.name
 }
 
-export function spendItemKindNameOf(key: SpendItemKindKey): string {
-  return SPEND_ITEM_KINDS.find((each) => each.key === key)!.name
+export function itemKindNameOf(key: ItemKindKey): string {
+  return ITEM_KINDS.find((each) => each.key === key)!.name
 }
 
 /** 형태 하나. 모르는 key 는 `null` 이다. 카탈로그가 적은 형태가 이 표에 없을 수 있다. */
@@ -137,11 +138,11 @@ export function incomeCategoryKeyOfName(name: string): IncomeCategoryKey | null 
   return INCOME_CATEGORIES.find((each) => each.name === name)?.key ?? null
 }
 
-export function spendItemKindKeyOfName(name: string): SpendItemKindKey | null {
-  return SPEND_ITEM_KINDS.find((each) => each.name === name)?.key ?? null
+export function itemKindKeyOfName(name: string): ItemKindKey | null {
+  return ITEM_KINDS.find((each) => each.name === name)?.key ?? null
 }
 
-/** 수량과 관세가 서는 것은 **장비가 아닐 때**다. 판정이 한 자리에 산다. */
-export function countsQuantity(kind: SpendItemKindKey): boolean {
+/** 곱할 수량이 있는 것은 **장비가 아닐 때**다. 판정이 한 자리에 산다. */
+export function countsQuantity(kind: ItemKindKey): boolean {
   return kind !== 'equipment'
 }

@@ -10,7 +10,7 @@
  * 원천을 적는 칸이 없다. 이 테이블에 드는 것은 손입력 하나뿐이고 **테이블이 곧 원천**이다. 화면의
  * 배지는 여러 원천을 읽어 합칠 때 붙는 뷰 모델의 값이지 컬럼이 아니다.
  */
-import { incomeCategoryNameOf, type IncomeCategoryKey } from '../lib/cashbook/categories'
+import { incomeCategoryNameOf, type IncomeCategoryKey, type ItemKindKey } from '../lib/cashbook/categories'
 import type { FeePercent } from '../lib/cashbook/item-split'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
@@ -57,6 +57,12 @@ export interface IncomeRecord {
    * 이 칸이 없던 시절의 행도 `null` 이고 수량 1 로 열린다. 그 행은 총액이 곧 금액이다.
    */
   quantity: number | null
+  /**
+   * 아이템 판매의 종류. 다른 갈래는 `null` 이다.
+   *
+   * 판매 행의 `null` 은 이 칸이 생기기 전 행이고 장비로 연다. 수량이 없어 친 금액이 곧 판매 대금이다.
+   */
+  itemKind: ItemKindKey | null
   /** 경매장 수수료율(`FeePercent`). `null` = 없음(직거래이거나 수수료 칸이 생기기 전 행). */
   saleFeePercent: FeePercent | null
   /** 뗀 몫. **판매 대금 = `mesoAmount` + 이것** 이다. 요율만으로는 내림 때문에 역산이 안 된다. */
@@ -217,9 +223,9 @@ const INSERT_SQL = `
      sale_fee_percent, sale_fee_meso, sale_fee_auto,
      point_amount, point_per_100m_meso, cash_amount, quantity,
      hunt_character_level, hunt_missed_mobs, hunt_boosts, hunt_sojae, hunt_fragments,
-     hunt_fragment_price, hunt_meso_rate, hunt_typed_meso,
+     hunt_fragment_price, hunt_meso_rate, hunt_typed_meso, item_kind_key,
      memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 /**
@@ -255,6 +261,7 @@ export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
     record.cashAmount,
     record.quantity,
     ...huntToValues(record.hunt),
+    record.itemKind,
     record.memo,
     record.recordedAt,
   ])
@@ -268,7 +275,7 @@ const UPDATE_SQL = `
     point_amount = ?, point_per_100m_meso = ?, cash_amount = ?, quantity = ?,
     hunt_character_level = ?, hunt_missed_mobs = ?, hunt_boosts = ?, hunt_sojae = ?,
     hunt_fragments = ?, hunt_fragment_price = ?, hunt_meso_rate = ?, hunt_typed_meso = ?,
-    memo = ?
+    item_kind_key = ?, memo = ?
   WHERE id = ?
 `
 
@@ -290,6 +297,7 @@ export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
     record.cashAmount,
     record.quantity,
     ...huntToValues(record.hunt),
+    record.itemKind,
     record.memo,
     record.id,
   ])
@@ -319,6 +327,7 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
     pointPer100mMeso: (row.point_per_100m_meso as number | null | undefined) ?? null,
     cashAmount: (row.cash_amount as number | null | undefined) ?? null,
     quantity: (row.quantity as number | null | undefined) ?? null,
+    itemKind: (row.item_kind_key as ItemKindKey | null | undefined) ?? null,
     hunt: rowToHunt(row),
     memo: (row.memo as string | null | undefined) ?? null,
     recordedAt: row.recorded_at as string,

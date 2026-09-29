@@ -10,9 +10,9 @@
  */
 import {
   spendCategoryNameOf,
-  spendItemKindNameOf,
+  itemKindNameOf,
   type SpendCategoryKey,
-  type SpendItemKindKey,
+  type ItemKindKey,
 } from '../lib/cashbook/categories'
 import { getBossProfitDb } from './sqlite/db'
 
@@ -44,7 +44,7 @@ export interface SpendRecord {
    * 다른 갈래에서는 `null` 이고, 아이템 구매의 `null` 은 종류 칸이 생기기 전 행이라 장비로
    * 연다. 그때는 치는 금액 + 관세 하나뿐이었고 그것이 정확히 장비의 모양이다.
    */
-  itemKind: SpendItemKindKey | null
+  itemKind: ItemKindKey | null
   /** 심볼 강화의 강화 전 레벨. 다른 갈래에서는 `null` 이다. */
   levelFrom: number | null
   /** 심볼 강화의 강화 후 레벨. */
@@ -106,7 +106,7 @@ function identityValues(record: SpendRecord): Array<string | null> {
     record.itemKey,
     null,
     record.formItemKeys === null ? null : JSON.stringify(record.formItemKeys),
-    record.itemKind === null ? null : spendItemKindNameOf(record.itemKind),
+    record.itemKind === null ? null : itemKindNameOf(record.itemKind),
     record.itemKind,
   ]
 }
@@ -217,7 +217,7 @@ function rowToRecord(row: Record<string, unknown>): SpendRecord {
     item: (row.item as string | null | undefined) ?? null,
     itemKey: (row.item_key as string | null | undefined) ?? null,
     formItemKeys: parseFormItemKeys(row.form_item_keys),
-    itemKind: (row.item_kind_key as SpendItemKindKey | null | undefined) ?? null,
+    itemKind: (row.item_kind_key as ItemKindKey | null | undefined) ?? null,
     levelFrom: nullable(row.level_from),
     levelTo: nullable(row.level_to),
     quantity: nullable(row.quantity),

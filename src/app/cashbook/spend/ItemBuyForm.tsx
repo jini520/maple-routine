@@ -21,11 +21,11 @@ import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/m
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { SPEND_TARIFF_PERCENT, withTariffMeso } from '../../../lib/cashbook/spend-catalog'
 import {
-  SPEND_ITEM_KINDS,
+  ITEM_KINDS,
   countsQuantity,
   spendCategoryNameOf,
-  spendItemKindNameOf,
-  type SpendItemKindKey,
+  itemKindNameOf,
+  type ItemKindKey,
 } from '../../../lib/cashbook/categories'
 import { AmountInput, CharacterField, FieldRow, TextField } from '../sheet-fields'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
@@ -59,8 +59,8 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   })
   const [hasTariff, setHasTariff] = useState(props.editing?.tariffMeso != null)
   /** `null` 은 종류 칸이 생기기 전 행이고 장비다. */
-  const [itemKind, setItemKind] = useState<SpendItemKindKey>(
-    props.editing?.itemKind ?? SPEND_ITEM_KINDS[0].key,
+  const [itemKind, setItemKind] = useState<ItemKindKey>(
+    props.editing?.itemKind ?? ITEM_KINDS[0].key,
   )
   const { saving, submit, remove } = useSpendSubmit(props)
 
@@ -83,7 +83,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
    * 남긴다. 수량이 1 이면 장비의 금액과 소비의 단가가 같은 값이라 거짓이 되지 않는다.
    */
   function selectItemKind(name: string): void {
-    const next = SPEND_ITEM_KINDS.find((each) => each.name === name)?.key
+    const next = ITEM_KINDS.find((each) => each.name === name)?.key
     if (next === undefined) return
     setItemKind(next)
     setQuantityText('1')
@@ -153,8 +153,8 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
           축이다. */}
       <FieldRow label="종류" testID="spend-sheet-item-kind">
         <Segment
-          options={SPEND_ITEM_KINDS.map((each) => each.name)}
-          selected={spendItemKindNameOf(itemKind)}
+          options={ITEM_KINDS.map((each) => each.name)}
+          selected={itemKindNameOf(itemKind)}
           onSelect={selectItemKind}
         />
       </FieldRow>

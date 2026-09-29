@@ -27,6 +27,8 @@ const sample: IncomeRecord = {
   // 계산기 이전의 행. 사냥 칸 여섯이 없다.
   hunt: null,
   quantity: null,
+  // 장비 한 벌을 판 행이다.
+  itemKind: 'equipment',
   ocid: null,
   earnedOn: '2026-08-23',
   category: 'item_sale',
@@ -84,6 +86,8 @@ describe('insertIncomeRecord', () => {
       null,
       null,
       null,
+      // 아이템 판매의 종류 key.
+      'equipment',
       // memo
       null,
       '2026-08-23T05:00:00.000Z',
@@ -160,6 +164,7 @@ describe('getIncomeRecordsBetween', () => {
         // `hunt_missed_mobs` 가 없으면 계산기로 적힌 행이 아니다.
         hunt: null,
         quantity: null,
+        itemKind: null,
         memo: null,
         recordedAt: '2026-08-23T05:00:00.000Z',
       },
@@ -754,5 +759,66 @@ describe('getFragmentStorage: 캐릭터별 솔 에르다 조각 보관', () => {
 
     queryMock.mockResolvedValueOnce({ values: [] })
     await expect(getFragmentStorage('ocid-adele', '2026-09-10')).resolves.toBe(0)
+  })
+})
+
+// 아이템 판매의 종류. 아이템 구매와 같은 표(장비 · 소비 · 기타)이고 key 하나만 담는다.
+describe('item_kind_key: 아이템 판매의 종류', () => {
+  const 소비판매: IncomeRecord = {
+    ...sample,
+    item: '파워 엘릭서',
+    itemKind: 'consumable',
+    quantity: 100,
+  }
+
+  it('넣을 때 함께 싣는다', async () => {
+    const { insertIncomeRecord } = require('../income') as typeof import('../income')
+
+    await insertIncomeRecord(소비판매)
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('item_kind_key')
+    expect(values).toContain('consumable')
+  })
+
+  it('고칠 때도 함께 갈아 끼운다', async () => {
+    const { updateIncomeRecord } = require('../income') as typeof import('../income')
+
+    await updateIncomeRecord({ ...소비판매, itemKind: 'etc' })
+
+    const [sql, values] = runMock.mock.calls[0]
+    expect(sql).toContain('item_kind_key = ?')
+    expect(values).toContain('etc')
+  })
+
+  it('읽어 온다. 칸이 없는 옛 행은 null 이다', async () => {
+    queryMock.mockResolvedValue({
+      values: [
+        {
+          id: 'inc-1',
+          earned_on: '2026-08-23',
+          category: '아이템 판매',
+          category_key: 'item_sale',
+          item_kind_key: 'consumable',
+          meso_amount: 100,
+          quantity: 100,
+          recorded_at: '2026-08-23T05:00:00.000Z',
+        },
+        {
+          id: 'inc-2',
+          earned_on: '2026-08-23',
+          category: '아이템 판매',
+          category_key: 'item_sale',
+          meso_amount: 100,
+          recorded_at: '2026-08-23T05:00:00.000Z',
+        },
+      ],
+    })
+    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
+
+    const [새행, 옛행] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
+
+    expect(새행.itemKind).toBe('consumable')
+    expect(옛행.itemKind).toBeNull()
   })
 })

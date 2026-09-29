@@ -102,6 +102,7 @@ export function FragmentSettleForm(
         // 판 개수. 보관 조회가 이 칸을 빼고, 수정으로 열 때 단가를 되짚는다.
         quantity: count,
         hunt: null,
+        itemKind: null,
         memo: null,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),

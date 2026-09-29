@@ -514,6 +514,7 @@ export function HuntCalculatorForm(
           // **그때의** 메획이다. 장비를 갈아입어도 이 기록은 안 흔들린다.
           mesoRate: mesoRatePercent,
         },
+        itemKind: null,
         memo: null,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
