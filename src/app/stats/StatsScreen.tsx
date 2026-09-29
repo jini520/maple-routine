@@ -100,7 +100,7 @@ export function StatsScreen(): React.JSX.Element {
   useEffect(() => {
     void loadCumulativeStart().then(setCumulativeStart)
   }, [])
-  const changeCumulativeStart = useCallback((next: string | null) => {
+  const changeCumulativeStart = useCallback((next: string) => {
     setCumulativeStart(next)
     void saveCumulativeStart(next)
   }, [])

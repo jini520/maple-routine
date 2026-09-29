@@ -60,7 +60,6 @@ export async function loadCumulativeStart(): Promise<string | null> {
   return getStatsCumulativeStart().catch(() => null)
 }
 
-/** `null` 이면 처음부터 더한다 */
-export async function saveCumulativeStart(dateKey: string | null): Promise<void> {
+export async function saveCumulativeStart(dateKey: string): Promise<void> {
   await setStatsCumulativeStart(dateKey).catch(() => undefined)
 }

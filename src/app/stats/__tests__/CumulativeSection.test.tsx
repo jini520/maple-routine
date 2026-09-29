@@ -92,25 +92,11 @@ describe('CumulativeSection 시작 날짜', () => {
     expect(view.getByTestId('stats-cumulative-start').props.children).toBe('9월 18일 (금)')
   })
 
-  it('처음부터를 누르면 시작 날짜를 지운다', async () => {
-    const onChangeStart = jest.fn()
-    const view = await renderOverlay(
-      <CumulativeSection days={days} cycle="weekly" periodKey="2026-09-24" startDateKey="2026-09-18" earliest="2025-03-27" latest="2026-09-29" onChangeStart={onChangeStart} />,
-    )
-
-    await act(async () => {
-      fireEvent.press(view.getByLabelText('처음부터 더하기'))
-    })
-
-    expect(onChangeStart).toHaveBeenCalledWith(null)
-  })
-
-  it('고른 적이 없으면 기록이 처음 있는 날이 알약에 서고 처음부터 버튼은 없다', async () => {
+  it('고른 적이 없으면 기록이 처음 있는 날이 알약에 선다', async () => {
     const view = await renderOverlay(
       <CumulativeSection days={days} cycle="weekly" periodKey="2026-09-24" startDateKey={null} earliest="2025-03-27" latest="2026-09-29" onChangeStart={jest.fn()} />,
     )
 
     expect(view.getByTestId('stats-cumulative-start').props.children).toBe('9월 5일 (토)')
-    expect(view.queryByLabelText('처음부터 더하기')).toBeNull()
   })
 })

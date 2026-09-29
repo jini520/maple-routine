@@ -17,13 +17,6 @@ it('고른 날을 기억한다', async () => {
   expect(await getStatsCumulativeStart()).toBe('2026-08-01')
 })
 
-it('null 로 두면 지운다', async () => {
-  await setStatsCumulativeStart('2026-08-01')
-  await setStatsCumulativeStart(null)
-
-  expect(await prefs.get('statsCumulativeStart')).toBeNull()
-})
-
 it('날짜 모양이 아닌 값은 없는 것으로 읽는다', async () => {
   await prefs.set('statsCumulativeStart', '어제')
 

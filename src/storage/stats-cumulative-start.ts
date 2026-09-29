@@ -11,8 +11,6 @@ export async function getStatsCumulativeStart(): Promise<string | null> {
   return value !== null && DATE_KEY.test(value) ? value : null
 }
 
-/** `null` 이면 지워 처음부터 더한다 */
-export async function setStatsCumulativeStart(dateKey: string | null): Promise<void> {
-  if (dateKey === null) await preferences.remove(STORAGE_KEYS.statsCumulativeStart)
-  else await preferences.set(STORAGE_KEYS.statsCumulativeStart, dateKey)
+export async function setStatsCumulativeStart(dateKey: string): Promise<void> {
+  await preferences.set(STORAGE_KEYS.statsCumulativeStart, dateKey)
 }

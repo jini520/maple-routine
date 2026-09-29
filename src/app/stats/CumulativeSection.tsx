@@ -46,8 +46,7 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
   /** 달력에서 고를 수 있는 첫날 · 끝날 */
   earliest: string
   latest: string
-  /** `null` 이면 처음부터 더한다 */
-  onChangeStart: (next: string | null) => void
+  onChangeStart: (next: string) => void
   /** 화면에 들어왔나. 들어오는 순간 선이 왼쪽부터 그려진다 */
   revealed?: boolean
 }): React.JSX.Element {
@@ -100,11 +99,6 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
           }}
         />
         <Text className="text-11 text-text-muted">부터</Text>
-        {props.startDateKey !== null && (
-          <Pressable role="button" aria-label="처음부터 더하기" onPress={() => props.onChangeStart(null)} className="ml-auto active:opacity-60">
-            <Text className="text-11 font-semibold text-primary-ink">처음부터</Text>
-          </Pressable>
-        )}
       </View>
       {isOpen && (
         <CalendarPopover
