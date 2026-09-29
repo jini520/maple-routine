@@ -30,12 +30,12 @@ import { Image, Pressable, View } from 'react-native'
 
 import {
   Badge,
-  Button,
   CalendarIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
+  ChevronsRightIcon,
   ProfitIcon,
   ShoppingCartIcon,
   Text,
@@ -1001,7 +1001,7 @@ export function CashbookScreen(): React.JSX.Element {
       : null
 
   /**
-   * `오늘` 버튼. **보는 기간과 고른 날을 함께** 오늘로 옮긴다.
+   * 겹화살표 버튼. **보는 기간과 고른 날을 함께** 오늘로 옮긴다.
    *
    * 화살표가 한 칸씩만 옮기므로 조회 한도(18개월)의 바닥에서 이번 달로 돌아오려면 열여덟 번,
    * 주간이면 일흔여덟 번을 눌러야 했다.
@@ -1052,29 +1052,13 @@ export function CashbookScreen(): React.JSX.Element {
             <PageHeaderTitleRow
               fetchedAt={fetchedAt}
               trailing={
-                // `오늘` 은 세그먼트 **왼쪽**이고 이미 이번 주·이번 달이면 안 그린다. 보스
-                // 수익도 같은 자리에 같은 것이 선다. **테두리를 두르지 않는다**(사용자 지정).
-                <View className="flex-row items-center gap-1">
-                  {!isLatest && (
-                    <Button
-                      variant="text"
-                      size="compact"
-                      onPress={() => {
-                        tapFeedback()
-                        goToToday()
-                      }}
-                      aria-label="오늘로 이동"
-                    >
-                      오늘
-                    </Button>
-                  )}
-                  <TabSegment
-                    options={PERIOD_TABS}
-                    selected={isWeekly ? 'weekly' : 'monthly'}
-                    onSelect={(value) => (value === 'weekly' ? showWeekly() : showMonthly())}
-                    labelOf={(value) => PERIOD_TAB_LABELS[value]}
-                  />
-                </View>
+                // 보스 수익이 이 자리에 두는 `보스 관리` 는 여기 없다. 세그먼트만 선다.
+                <TabSegment
+                  options={PERIOD_TABS}
+                  selected={isWeekly ? 'weekly' : 'monthly'}
+                  onSelect={(value) => (value === 'weekly' ? showWeekly() : showMonthly())}
+                  labelOf={(value) => PERIOD_TAB_LABELS[value]}
+                />
               }
             >
               <Text className="text-lg font-semibold text-text">가계부</Text>
@@ -1096,6 +1080,8 @@ export function CashbookScreen(): React.JSX.Element {
             testID="cashbook-period-nav"
             className="flex-row items-center justify-center gap-4 py-3"
           >
+            {/* 오른쪽 겹화살표와 같은 폭. 기간 이름이 줄 가운데에 남는다. */}
+            <View className="h-7 w-7" />
             {/* 이름이 모드를 따른다. 스크린리더가 무엇이 옮겨지는가 를 듣는다. */}
             <MonthArrow
               label={isWeekly ? '이전 주' : '이전 달'}
@@ -1141,6 +1127,14 @@ export function CashbookScreen(): React.JSX.Element {
               icon={ChevronRightIcon}
               disabled={isLatest}
               onPress={() => movePeriod(1)}
+            />
+            {/* 지금 기간이면 숨지 않고 흐리다. 숨기면 줄 폭이 바뀌어 기간 이름이 흔들린다. 이번 주
+                안에서 고른 날은 격자에서 오늘을 눌러 옮긴다. */}
+            <MonthArrow
+              label={isWeekly ? '이번 주로 이동' : '이번 달로 이동'}
+              icon={ChevronsRightIcon}
+              disabled={isLatest}
+              onPress={goToToday}
             />
           </View>
 

@@ -43,6 +43,7 @@ import { setHapticsPort } from '../../../native/ports'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
+import { tabNavigateArgs } from '../../../navigation/tab-navigate'
 import { useUnpricedDropCount } from '../../../features/boss-profit/use-unpriced-drop-count'
 import { BossProfitScreen } from '../BossProfitScreen'
 
@@ -284,6 +285,39 @@ describe('빈 상태', () => {
   })
 })
 
+// 파티 인원 관리는 보스 수익과 바로 이어지는데 이 화면에서 보스 관리로 가는 길이 없었다.
+describe('보스 관리로 가는 길', () => {
+  it('헤더의 `보스 관리` 를 누르면 보스 관리 탭으로 보낸다', async () => {
+    const { getByText } = await renderScreen()
+
+    await act(async () => {
+      fireEvent.press(getByText('보스 관리'))
+    })
+
+    expect(navigate).toHaveBeenCalledWith(...tabNavigateArgs('BossManage'))
+  })
+
+  it('누르면 촉각이 한 번 난다', async () => {
+    const tap = jest.fn(async () => undefined)
+    setHapticsPort({ tap, select: async () => {} })
+    const { getByText } = await renderScreen()
+
+    await act(async () => {
+      fireEvent.press(getByText('보스 관리'))
+    })
+
+    expect(tap).toHaveBeenCalledTimes(1)
+    installNoopNativePorts()
+  })
+
+  it('과거 기간에서도 선다', async () => {
+    mockStore({ periodKey: '2026-07-02' })
+    const { getByText } = await renderScreen()
+
+    expect(getByText('보스 관리')).toBeTruthy()
+  })
+})
+
 describe('아이템 가격 입력으로 가는 문', () => {
   function 월간으로(): void {
     mockStore({
@@ -362,24 +396,41 @@ describe('탭과 기간 네비게이터', () => {
   })
 
   // 화살표는 한 칸(정확히는 기록이 있는 다음 칸)씩만 옮기므로 과거를 훑다가 이번 주로
-  // 돌아오는 길이 없었다. `오늘` 은 세그먼트 왼쪽에 서고 이미 지금 기간이면 안 그린다.
-  it('지금 기간을 보고 있으면 `오늘` 이 안 보인다', async () => {
+  // 돌아오는 길이 따로 있어야 한다. 겹화살표는 다음 화살표 옆에 서고, 지금 기간이면 숨지 않고 흐리다.
+  it('지금 기간을 보고 있으면 겹화살표가 잠긴다', async () => {
     mockStore({ periodKey: CURRENT_WEEKLY })
-    const { queryByLabelText } = await renderScreen()
+    const { getByLabelText } = await renderScreen()
 
-    expect(queryByLabelText('오늘로 이동')).toBeNull()
+    expect(getByLabelText('이번 주로 이동')).toBeDisabled()
   })
 
-  it('과거 기간에서는 `오늘` 이 서고 누르면 지금 기간으로 부른다', async () => {
+  it('과거 기간에서는 겹화살표가 열리고 누르면 지금 기간으로 부른다', async () => {
     const goToCurrentPeriod = jest.fn()
     mockStore({ periodKey: '2026-07-02', goToCurrentPeriod })
     const { getByLabelText } = await renderScreen()
 
+    expect(getByLabelText('이번 주로 이동')).not.toBeDisabled()
     await act(async () => {
-      fireEvent.press(getByLabelText('오늘로 이동'))
+      fireEvent.press(getByLabelText('이번 주로 이동'))
     })
 
     expect(goToCurrentPeriod).toHaveBeenCalled()
+  })
+
+  it('월간 탭에서는 겹화살표의 이름이 이번 달로 이동이다', async () => {
+    mockStore({ tab: 'monthly', periodKey: CURRENT_MONTHLY, loadedTab: 'monthly', loadedPeriodKey: CURRENT_MONTHLY })
+    const { getByLabelText } = await renderScreen()
+
+    expect(getByLabelText('이번 달로 이동')).toBeDisabled()
+  })
+
+  // 헤더의 그 자리는 이제 보스 관리로 가는 길이 쓴다.
+  it('헤더에 `오늘` 이 없다', async () => {
+    mockStore({ periodKey: '2026-07-02' })
+    const { queryByLabelText, queryByText } = await renderScreen()
+
+    expect(queryByLabelText('오늘로 이동')).toBeNull()
+    expect(queryByText('오늘')).toBeNull()
   })
 
   it('‹ › 는 각각 이전·다음 기간을 부른다', async () => {
@@ -445,12 +496,12 @@ describe('탭과 기간 네비게이터', () => {
       expect(tap).toHaveBeenCalledTimes(2)
     })
 
-    it('`오늘` 에도 난다', async () => {
+    it('겹화살표에도 난다', async () => {
       mockStore({ periodKey: '2026-07-02' })
       const { getByLabelText } = await renderScreen()
 
       await act(async () => {
-        fireEvent.press(getByLabelText('오늘로 이동'))
+        fireEvent.press(getByLabelText('이번 주로 이동'))
       })
 
       expect(tap).toHaveBeenCalledTimes(1)
