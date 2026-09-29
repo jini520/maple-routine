@@ -105,6 +105,7 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
           fragments,
           fragmentPrice,
         },
+        itemKind: null,
         memo: null,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),

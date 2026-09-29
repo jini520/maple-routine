@@ -109,6 +109,7 @@ const 수입: IncomeDraft = {
   pointAmount: null,
   pointPer100mMeso: null,
   cashAmount: null,
+  itemKind: null,
   memo: null,
 }
 
@@ -460,6 +461,7 @@ const 수입행 = {
   saleFeePercent: null,
   saleFeeMeso: null,
   saleFeeAuto: false,
+  itemKind: null,
   pointAmount: null,
   pointPer100mMeso: null,
   cashAmount: null,
@@ -1099,6 +1101,7 @@ describe('사냥 줄의 이름과 셈', () => {
     saleFeePercent: null,
     saleFeeMeso: null,
     saleFeeAuto: false,
+    itemKind: null,
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
@@ -1182,6 +1185,7 @@ describe('솔 에르다 조각 정산 줄', () => {
     saleFeePercent: null,
     saleFeeMeso: null,
     saleFeeAuto: false,
+    itemKind: null,
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
@@ -1201,6 +1205,50 @@ describe('솔 에르다 조각 정산 줄', () => {
     expect(recordTitleOf(rows[0])).toBe('루디 · 솔 에르다 조각')
     expect(recordCountLabelOf(rows[0])).toBe('50개')
     expect(recordMesoOf(rows[0])).toBe(400_000_000)
+  })
+})
+
+/** 아이템 판매 줄도 수량이 있으면(소비 · 기타) 판 개수를 센다. 조각 정산 줄과 같은 자리다. */
+describe('아이템 판매 줄의 개수', () => {
+  const 판매기록 = {
+    id: 'inc-i',
+    ocid: 'ocid-1',
+    earnedOn: '2026-08-21',
+    category: 'item_sale' as const,
+    item: '파워 엘릭서',
+    itemKey: null,
+    itemKind: 'consumable' as const,
+    mesoAmount: 97_000_000,
+    saleFeePercent: 3 as const,
+    saleFeeMeso: 3_000_000,
+    saleFeeAuto: false,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
+    hunt: null,
+    quantity: 100,
+    memo: null,
+    recordedAt: '2026-08-21T01:00:00.000Z',
+  }
+
+  it('소비 · 기타는 판 개수를 센다', async () => {
+    income.getIncomeRecordsBetween.mockResolvedValue([판매기록])
+    const { loadDayRecords, recordCountLabelOf } = require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(recordCountLabelOf(rows[0])).toBe('100개')
+  })
+
+  it('장비와 옛 행은 수량이 없어 안 센다', async () => {
+    income.getIncomeRecordsBetween.mockResolvedValue([
+      { ...판매기록, itemKind: 'equipment' as const, quantity: null },
+    ])
+    const { loadDayRecords, recordCountLabelOf } = require('../records') as typeof import('../records')
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(recordCountLabelOf(rows[0])).toBeNull()
   })
 })
 

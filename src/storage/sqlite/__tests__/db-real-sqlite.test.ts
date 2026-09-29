@@ -140,6 +140,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
       hunt: null,
       quantity: null,
       memo: '메모',
+      itemKind: null,
       recordedAt: '2026-08-20T12:00:00.000Z',
     })
     expect(rows.find((row) => row.id === 'a2')?.mesoAmount).toBe(12_000_000)
@@ -229,6 +230,7 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
     saleFeePercent: null,
     saleFeeMeso: null,
     saleFeeAuto: false,
+    itemKind: null,
     hunt: null,
     quantity: null,
     memo: null,
@@ -947,6 +949,7 @@ describe('버전 이관: 사냥 기록의 조각 가격 0 을 안 적은 가격�
     quantity: null,
     hunt: { mode: 'manual', typedMeso: 1_000_000_000, fragments: 80, fragmentPrice: 0 },
     memo: null,
+    itemKind: null,
     recordedAt: '2026-09-10T05:00:00.000Z',
   }
 

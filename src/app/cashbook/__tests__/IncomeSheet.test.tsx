@@ -215,6 +215,7 @@ const 옛사냥행 = {
   saleFeePercent: null,
   saleFeeMeso: null,
   saleFeeAuto: false,
+  itemKind: null,
   pointAmount: null,
   pointPer100mMeso: null,
   cashAmount: null,
@@ -636,6 +637,7 @@ describe('판매 수수료', () => {
       saleFeePercent: 3,
       saleFeeMeso: 36_000_000,
       saleFeeAuto: true,
+      itemKind: 'equipment',
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
@@ -729,6 +731,7 @@ describe('저장', () => {
       saleFeePercent: null,
       saleFeeMeso: null,
       saleFeeAuto: false,
+      itemKind: null,
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
@@ -829,6 +832,7 @@ describe('수정 모드', () => {
     saleFeePercent: null,
     saleFeeMeso: null,
     saleFeeAuto: false,
+    itemKind: null,
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
@@ -854,6 +858,11 @@ describe('수정 모드', () => {
     expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판매 아이템')
     expect(줄글자(view, 'income-sheet-gross')).toBe('1,200,000,000')
     expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
+    // 종류 칸이 없던 옛 행은 장비다. 수량이 없어 친 금액이 곧 판매 대금이다.
+    expect(
+      within(view.getByTestId('income-sheet-item-kind')).getByLabelText('장비').props.accessibilityState
+        ?.selected,
+    ).toBe(true)
   })
 
   /**
@@ -868,6 +877,117 @@ describe('수정 모드', () => {
 
     expect(줄글자(view, 'income-sheet-gross')).toBe('1,200,000,000')
     expect(view.getByLabelText('5%').props.accessibilityState?.selected).toBe(true)
+  })
+})
+
+/**
+ * **아이템 판매도 종류를 고른다**. 아이템 구매와 같은 세그먼트다.
+ *
+ * 장비는 하나를 팔아 `판매 대금` 한 칸이고, 소비 · 기타는 `단가` × 치는 `수량` 이다. 수수료는 모든
+ * 종류에서 합계에 대해 뗀다.
+ */
+describe('아이템 판매의 종류', () => {
+  async function 종류고르기(view: Rendered, 이름: '장비' | '소비' | '기타'): Promise<void> {
+    await act(async () => {
+      fireEvent.press(within(view.getByTestId('income-sheet-item-kind')).getByLabelText(이름))
+    })
+  }
+
+  function 고른종류(view: Rendered, 이름: '장비' | '소비' | '기타'): boolean | undefined {
+    return within(view.getByTestId('income-sheet-item-kind')).getByLabelText(이름).props
+      .accessibilityState?.selected
+  }
+
+  it('새 판매는 장비로 열린다. 금액 칸은 판매 대금이고 수량 칸이 없다', async () => {
+    const view = await 고른판매시트()
+
+    expect(고른종류(view, '장비')).toBe(true)
+    expect(view.getByLabelText('판매 대금')).toBeTruthy()
+    expect(view.queryByTestId('income-sheet-quantity')).toBeNull()
+  })
+
+  it('소비를 고르면 금액 칸이 단가가 되고 수량 칸이 1 로 선다', async () => {
+    const view = await 고른판매시트()
+
+    await 종류고르기(view, '소비')
+
+    expect(view.getByLabelText('단가')).toBeTruthy()
+    expect(view.queryByLabelText('판매 대금')).toBeNull()
+    expect(줄글자(view, 'income-sheet-quantity')).toBe('1')
+  })
+
+  it('단가 × 수량에서 수수료를 떼고 종류와 수량을 함께 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 고른판매시트({ onSave })
+    await 종류고르기(view, '소비')
+    await 대금치기(view, '1000000')
+    await 아이디로치기(view, 'income-sheet-quantity', '100')
+
+    // 루디의 ID 는 다이아라 자동 수수료가 3% 다.
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('9700만')
+
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      category: 'item_sale',
+      itemKind: 'consumable',
+      quantity: 100,
+      mesoAmount: 97_000_000,
+      saleFeePercent: 3,
+      saleFeeMeso: 3_000_000,
+    })
+  })
+
+  it('장비는 수량 없이 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 고른판매시트({ onSave })
+    await 대금치기(view, '1200000000')
+
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ itemKind: 'equipment', quantity: null })
+  })
+
+  it('종류를 바꾸면 수량은 1 로 돌아가고 친 금액은 남는다', async () => {
+    const view = await 고른판매시트()
+    await 종류고르기(view, '기타')
+    await 대금치기(view, '1000000')
+    await 아이디로치기(view, 'income-sheet-quantity', '30')
+
+    await 종류고르기(view, '소비')
+
+    expect(줄글자(view, 'income-sheet-quantity')).toBe('1')
+    expect(줄글자(view, 'income-sheet-gross')).toBe('1,000,000')
+  })
+
+  it('수정으로 열면 종류 · 수량 · 단가를 되짚는다', async () => {
+    const view = await 그리기({
+      editing: {
+        id: 'inc-c',
+        ocid: 'ocid-1',
+        earnedOn: '2026-08-23',
+        category: 'item_sale',
+        item: '파워 엘릭서',
+        itemKey: null,
+        itemKind: 'consumable',
+        mesoAmount: 97_000_000,
+        saleFeePercent: 3,
+        saleFeeMeso: 3_000_000,
+        saleFeeAuto: false,
+        pointAmount: null,
+        pointPer100mMeso: null,
+        cashAmount: null,
+        hunt: null,
+        quantity: 100,
+        memo: null,
+        recordedAt: '2026-08-23T01:00:00.000Z',
+      },
+      onDelete: jest.fn(),
+    })
+
+    expect(고른종류(view, '소비')).toBe(true)
+    expect(줄글자(view, 'income-sheet-quantity')).toBe('100')
+    expect(줄글자(view, 'income-sheet-gross')).toBe('1,000,000')
   })
 })
 
@@ -1025,6 +1145,7 @@ describe('통화', () => {
           hunt: null,
           quantity: 2,
           memo: null,
+          itemKind: null,
           recordedAt: '2026-08-23T05:00:00.000Z',
         },
         onDelete: jest.fn(),
@@ -1055,6 +1176,7 @@ describe('통화', () => {
           hunt: null,
           quantity: null,
           memo: null,
+          itemKind: null,
           recordedAt: '2026-08-23T05:00:00.000Z',
         },
         onDelete: jest.fn(),
@@ -1084,6 +1206,7 @@ describe('통화', () => {
         hunt: null,
         quantity: null,
         memo: null,
+        itemKind: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
       },
       onDelete: jest.fn(),
@@ -1571,6 +1694,7 @@ describe('사냥 계산기', () => {
         saleFeePercent: null,
         saleFeeMeso: null,
         saleFeeAuto: false,
+        itemKind: null,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
@@ -1832,6 +1956,7 @@ describe('사냥 수동 입력', () => {
         saleFeePercent: 3,
         saleFeeMeso: 19_920_000,
         saleFeeAuto: true,
+        itemKind: null,
         hunt: {
           mode: 'manual',
           typedMeso: 1_000_000_000,
@@ -2303,6 +2428,7 @@ describe('솔 에르다 조각 정산', () => {
       saleFeePercent: 3,
       saleFeeMeso: 12_000_000,
       saleFeeAuto: true,
+      itemKind: null,
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
@@ -2727,6 +2853,7 @@ describe('메소 획득량', () => {
         saleFeePercent: null,
         saleFeeMeso: null,
         saleFeeAuto: false,
+        itemKind: null,
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
@@ -2772,6 +2899,7 @@ describe('수정으로 열 때의 큰 숫자', () => {
       saleFeePercent: null,
       saleFeeMeso: null,
       saleFeeAuto: false,
+      itemKind: null,
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
@@ -2947,6 +3075,7 @@ describe('날짜 바꾸기', () => {
         hunt: null,
         quantity: null,
         memo: null,
+        itemKind: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
       },
     })

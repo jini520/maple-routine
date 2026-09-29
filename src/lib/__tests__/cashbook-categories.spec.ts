@@ -3,15 +3,15 @@ import {
   INCOME_CATEGORIES,
   SPEND_CATEGORIES,
   SPEND_FORMS,
-  SPEND_ITEM_KINDS,
+  ITEM_KINDS,
   countsQuantity,
   incomeCategoryKeyOfName,
   incomeCategoryNameOf,
   spendCategoryKeyOfName,
   spendCategoryNameOf,
   spendFormOf,
-  spendItemKindKeyOfName,
-  spendItemKindNameOf,
+  itemKindKeyOfName,
+  itemKindNameOf,
 } from '../cashbook/categories'
 
 // 가계부의 고정 목록 넷. 기록은 key 를 들고, 이름은 이 표에서 찾는다.
@@ -47,7 +47,7 @@ describe('가계부 갈래 표', () => {
   })
 
   it('아이템 구매 종류 셋은 게임 인벤토리 탭 이름이다', () => {
-    expect(SPEND_ITEM_KINDS.map((each) => [each.key, each.name])).toEqual([
+    expect(ITEM_KINDS.map((each) => [each.key, each.name])).toEqual([
       ['equipment', '장비'],
       ['consumable', '소비'],
       ['etc', '기타'],
@@ -76,8 +76,8 @@ describe('가계부 갈래 표', () => {
     expect(spendCategoryKeyOfName('상점·편의')).toBeNull()
     expect(incomeCategoryNameOf('item_sale')).toBe('아이템 판매')
     expect(incomeCategoryKeyOfName('사냥')).toBe('hunting')
-    expect(spendItemKindNameOf('consumable')).toBe('소비')
-    expect(spendItemKindKeyOfName('장비')).toBe('equipment')
+    expect(itemKindNameOf('consumable')).toBe('소비')
+    expect(itemKindKeyOfName('장비')).toBe('equipment')
   })
 
   // 장비는 하나를 사고 관세가 붙는다. 소비 · 기타는 여럿을 사고 관세가 없다.

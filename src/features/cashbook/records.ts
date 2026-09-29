@@ -975,8 +975,13 @@ export function recordCountLabelOf(entry: DayRecord): string | null {
   if (entry.kind === 'income' && entry.record.hunt?.mode === 'calculator') {
     return `${entry.record.hunt.sojae}소재`
   }
-  // 솔 에르다 조각 정산은 판 개수다. 사냥 줄의 소재가 서는 자리와 같다.
-  if (entry.kind === 'income' && entry.record.category === 'sol_erda_fragment' && entry.record.quantity !== null) {
+  // 솔 에르다 조각 정산과 아이템 판매(소비 · 기타)는 판 개수다. 사냥 줄의 소재가 서는 자리와 같다.
+  // 장비 판매는 수량이 `null` 이라 안 선다.
+  if (
+    entry.kind === 'income' &&
+    (entry.record.category === 'sol_erda_fragment' || entry.record.category === 'item_sale') &&
+    entry.record.quantity !== null
+  ) {
     return `${entry.record.quantity}개`
   }
   return null

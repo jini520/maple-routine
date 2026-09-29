@@ -108,6 +108,7 @@ export function EtcForm(
         // 곱한 총액만 남기면 수정으로 다시 열 때 되짚을 길이 없다.
         quantity,
         hunt: null,
+        itemKind: null,
         memo: null,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),

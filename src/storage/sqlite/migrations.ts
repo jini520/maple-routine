@@ -15,7 +15,7 @@ import { bossKeyOfApiName } from '../../lib/boss/bosses'
 import {
   incomeCategoryKeyOfName,
   spendCategoryKeyOfName,
-  spendItemKindKeyOfName,
+  itemKindKeyOfName,
 } from '../../lib/cashbook/categories'
 import { findHuntingGroundByName } from '../../lib/cashbook/hunting-grounds'
 import { legacySpendKeysOf } from '../../lib/cashbook/spend-catalog'
@@ -79,7 +79,7 @@ async function fillCashbookKeys(db: SqliteDbConnection): Promise<void> {
         category,
         itemKey,
         formItemKeys === null ? null : JSON.stringify(formItemKeys),
-        itemKind === null ? null : spendItemKindKeyOfName(itemKind),
+        itemKind === null ? null : itemKindKeyOfName(itemKind),
         row.id,
       ],
     )

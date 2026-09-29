@@ -46,6 +46,9 @@ const INCOME_RECORDS_BODY = `(
     -- 수량을 안 남기면 수정 시트가 되짚을 길이 없어 수량 1 · 금액 = 총액 으로 열린다.
     -- NULL = 이 칸이 없던 시절의 행이고, 그 행도 같은 이유로 수량 1 로 연다.
     quantity INTEGER,
+    -- **아이템 판매**의 종류 key(장비 · 소비 · 기타). 소비 · 기타면 quantity 가 곱한 수량이다.
+    -- 다른 갈래는 NULL 이다. NULL 인 판매 행은 이 칸 이전의 행이고 장비로 연다.
+    item_kind_key TEXT,
     -- **사냥** 갈래의 **계산 입력**. 합계만 남기면 수정 시트가 빈 계산기로
     -- 열려 만지는 순간 금액이 덮인다. 사냥터는 item 칸에 이름으로 들어간다
     -- (전역 유일이라 지역이 따라온다). **다른 갈래에서는 전부 NULL** 이다.
@@ -466,6 +469,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'income_records', 'item_key', 'TEXT')
   // 수수료가 등급을 따라가나. NULL 인 옛 행은 손으로 고른 값으로 읽는다.
   await ensureColumn(db, 'income_records', 'sale_fee_auto', 'INTEGER')
+  // 아이템 판매의 종류. NULL 인 옛 행은 장비로 읽어 옮길 값이 없다.
+  await ensureColumn(db, 'income_records', 'item_kind_key', 'TEXT')
   // 파티 분배 비율. NULL 이 '파티 인원으로 균등'이라 옛 행을 옮길 값이 없다.
   await ensureColumn(db, 'boss_party_settings', 'crystal_my_share', 'INTEGER')
   await ensureColumn(db, 'boss_party_settings', 'crystal_shares_total', 'INTEGER')
