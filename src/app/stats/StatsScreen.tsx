@@ -98,7 +98,7 @@ export function StatsScreen(): React.JSX.Element {
     }
   }, [ledger.revision, todayDateKey])
 
-  const characters = useMemo(() => characterTotalsBetween(days, ranges.current), [days, ranges.current])
+  const characters = characterTotalsBetween(days, ranges.current)
   const characterOcids = characters.flatMap((row) => (row.ocid === null ? [] : [row.ocid])).join(',')
   useEffect(() => {
     let alive = true
