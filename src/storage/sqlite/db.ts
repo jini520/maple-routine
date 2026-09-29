@@ -68,6 +68,8 @@ const INCOME_RECORDS_BODY = `(
     -- 안 쓰는 칸. 조각 보관은 hunt_fragment_price 의 NULL 이 가른다.
     -- 지우지 않는다. OTA 를 되돌린 옛 번들의 INSERT 가 이 칸을 적어서, 없으면 수입이 하나도 안 적힌다.
     hunt_fragments_deferred INTEGER,
+    -- 유니온의 부 단계(1 · 2 · 3). NULL = 이 칸 이전의 계산기 행 → 3단계로 읽는다
+    hunt_union_tier INTEGER,
     memo TEXT,
     recorded_at TEXT NOT NULL,
     PRIMARY KEY (id)
@@ -457,6 +459,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'income_records', 'hunt_typed_meso', 'INTEGER')
   // 안 쓰는 칸이지만 옛 번들의 INSERT 가 적는다. CREATE 문과 함께 남긴다.
   await ensureColumn(db, 'income_records', 'hunt_fragments_deferred', 'INTEGER')
+  // 옛 계산기 행은 NULL 이고 3단계로 읽어 금액이 그대로 맞는다.
+  await ensureColumn(db, 'income_records', 'hunt_union_tier', 'INTEGER')
   // 기록이 이름 대신 key 로 카탈로그와 사냥터를 가리킨다. 값은 아래 버전 이관이 채운다.
   await ensureColumn(db, 'spend_records', 'category_key', 'TEXT')
   await ensureColumn(db, 'spend_records', 'item_key', 'TEXT')

@@ -27,13 +27,14 @@ export const STORAGE_KEYS = {
   // `KEEP_KEYS` 에는 안 넣는다. 지워져도 다음 입력이 다시 채우고, 그때 생기는 것은 거짓 값이
   // 아니라 한 번 더 물어보기다. 지난 기록의 시세는 이미 그 행에 박혀 있어 영향이 없다.
   lastPointRate: 'lastPointRate',
-  // 마지막으로 계산기에 세운 사냥 자리(캐릭터 + 사냥터 이름). `사냥터 자동 입력` 이 되살린다.
-  lastHuntSelection: 'lastHuntSelection',
-  // 마지막으로 계산기로 저장한 사냥 기록의 켠 메소 획득률 아이템. `{ boosts }` JSON 한 칸이고 새 사냥
-  // 시트가 그 값으로 열린다. 옛 값에 남은 `fragmentsDeferred` 는 읽을 때 무시한다.
+  // 캐릭터별 마지막 사냥. `{ [ocid]: { groundKey, boosts } }` JSON 한 칸이고 사냥 계산기에서 캐릭터를
+  // 고르면 그 몫이 선다.
   //
-  // `KEEP_KEYS` 에는 안 넣는다. `lastHuntSelection` 과 같은 이유다. 한 번 적으면 다시 생기는 값이고
-  // 지워지면 시트가 전부 꺼진 채 열릴 뿐이다.
+  // `KEEP_KEYS` 에는 안 넣는다. 한 번 적으면 다시 생기는 값이고 지워지면 캐릭터를 골라도 빈 칸이 설
+  // 뿐이다.
+  lastHunts: 'lastHunts',
+  // 옛 한 벌 둘. `lastHunts` 가 없을 때 한 번 읽어 그 캐릭터 몫으로 옮기고 지운다.
+  lastHuntSelection: 'lastHuntSelection',
   lastHuntToggles: 'lastHuntToggles',
   // 이벤트 월드(스페셜) 캐릭터 이름. 수집기가 `character/list` 에서 받아 남기고, 지출을 읽는
   // 쪽이 그대로 쓴다.

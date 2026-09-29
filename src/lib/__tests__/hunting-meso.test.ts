@@ -5,6 +5,7 @@ import {
   MINUTES_PER_SOJAE,
   MISSED_MOB_OPTIONS,
   boostPercentOf,
+  UNION_TIER_MINUTES,
   efficiencyPercentOf,
   huntingMesoOf,
   fragmentSaleFeeOf,
@@ -293,17 +294,37 @@ describe('fragmentSaleFeeOf: 조각 몫의 판매 수수료', () => {
 
 describe('boostPercentOf: 통 **안**의 것만 더한다', () => {
   it('가산 아이템의 %를 더한다', () => {
-    expect(boostPercentOf([])).toBe(0)
-    expect(boostPercentOf(['union'])).toBe(50)
-    expect(boostPercentOf(['union', 'potion'])).toBe(50)
+    expect(boostPercentOf([], 3)).toBe(0)
+    expect(boostPercentOf(['union'], 3)).toBe(50)
+    expect(boostPercentOf(['union', 'potion'], 3)).toBe(50)
   })
 
   it('재획비는 여기 안 든다. 통 밖에서 곱한다', () => {
-    expect(boostPercentOf(['potion'])).toBe(0)
+    expect(boostPercentOf(['potion'], 3)).toBe(0)
   })
 
   it('모르는 id 는 0 으로 친다. 옛 기록이 지운 아이템을 들고 있을 수 있다', () => {
-    expect(boostPercentOf(['union', 'gone'])).toBe(50)
+    expect(boostPercentOf(['union', 'gone'], 3)).toBe(50)
+  })
+})
+
+/**
+ * 유니온의 부는 1 · 2 · 3단계가 10 · 20 · 30분 간다(사용자 제공). 1소재(30분)마다 하나를 쓰므로 사냥 전체로
+ * 보면 +50% × (단계 분 ÷ 30) 이 통 안에 든다.
+ */
+describe('boostPercentOf: 유니온의 부 단계', () => {
+  it('단계는 10 · 20 · 30분이다', () => {
+    expect(UNION_TIER_MINUTES).toEqual({ 1: 10, 2: 20, 3: 30 })
+  })
+
+  it('단계 분 ÷ 30 만큼 +50% 가 든다', () => {
+    expect(boostPercentOf(['union'], 3)).toBe(50)
+    expect(boostPercentOf(['union'], 2)).toBeCloseTo(100 / 3)
+    expect(boostPercentOf(['union'], 1)).toBeCloseTo(50 / 3)
+  })
+
+  it('유니온의 부를 안 켰으면 단계는 아무 일도 안 한다', () => {
+    expect(boostPercentOf(['potion'], 1)).toBe(0)
   })
 })
 
@@ -388,8 +409,8 @@ describe('표', () => {
   it('아이템은 둘이고 값·거는 자리는 사용자 확정분이다', () => {
     // **`kind` 가 곧 계산식의 자리**다. 유니온의 부는 합산 통 안, 재획비는 그 결과에 곱한다.
     expect(MESO_BOOSTS.map((each) => [each.id, each.percent, each.kind])).toEqual([
-      ['union', 50, 'additive'],
       ['potion', 20, 'multiplier'],
+      ['union', 50, 'additive'],
     ])
   })
 
@@ -402,8 +423,8 @@ describe('표', () => {
 
   it('아이템마다 그림 파일명이 붙어 있다', () => {
     expect(MESO_BOOSTS.map((each) => [each.id, each.icon])).toEqual([
-      ['union', 'union_wealth.webp'],
       ['potion', 'wealth_acquisition_potion_small.webp'],
+      ['union', 'union_wealth.webp'],
     ])
   })
 })

@@ -77,7 +77,8 @@ describe('insertIncomeRecord', () => {
       null,
       // 수량. `기타`가 아니라 비어 있다.
       null,
-      // 사냥 칸 여덟. 아이템 판매라 전부 비어 있다.
+      // 사냥 칸 아홉. 아이템 판매라 전부 비어 있다.
+      null,
       null,
       null,
       null,
@@ -316,6 +317,7 @@ describe('hunt_meso_rate: 그때의 메소 획득량', () => {
     fragments: 83,
     fragmentPrice: 8_000_000,
     mesoRate: 149,
+    unionTier: 2,
   }
   const 계산기행: IncomeRecord = {
     ...sample,
@@ -820,5 +822,75 @@ describe('item_kind_key: 아이템 판매의 종류', () => {
 
     expect(새행.itemKind).toBe('consumable')
     expect(옛행.itemKind).toBeNull()
+  })
+})
+
+/** 유니온의 부 단계. 옛 계산기 행은 칸이 NULL 이고 그동안 사냥 전체에 걸렸으므로 3단계로 읽는다. */
+describe('hunt_union_tier: 유니온의 부 단계', () => {
+  const 계산기입력: HuntingCalculatorDetail = {
+    mode: 'calculator',
+    characterLevel: 294,
+    missedMobs: 0,
+    boosts: ['union'],
+    sojae: 1,
+    fragments: 0,
+    fragmentPrice: null,
+    mesoRate: 0,
+    unionTier: 2,
+  }
+  const 행: IncomeRecord = {
+    ...sample,
+    category: 'hunting',
+    item: '밤의 길 3',
+    itemKey: 'tallahart_road_of_night_3',
+    hunt: 계산기입력,
+  }
+  const 읽은행 = (tier: number | null) => ({
+    id: 'inc-1',
+    earned_on: '2026-08-23',
+    category: '사냥',
+    category_key: 'hunting',
+    item: '밤의 길 3',
+    item_key: 'tallahart_road_of_night_3',
+    meso_amount: 1,
+    hunt_character_level: 294,
+    hunt_missed_mobs: 0,
+    hunt_boosts: 'union',
+    hunt_sojae: 1,
+    hunt_fragments: 0,
+    hunt_fragment_price: null,
+    hunt_meso_rate: 0,
+    hunt_union_tier: tier,
+    recorded_at: '2026-08-23T05:00:00.000Z',
+  })
+
+  it('넣을 때와 고칠 때 그 칸에 실린다', async () => {
+    const { insertIncomeRecord, updateIncomeRecord } = require('../income') as typeof import('../income')
+
+    await insertIncomeRecord(행)
+    await updateIncomeRecord({ ...행, hunt: { ...계산기입력, unionTier: 1 } })
+
+    const [insertSql, insertValues] = runMock.mock.calls[0]
+    expect(insertSql).toContain('hunt_union_tier')
+    expect(insertSql.match(/\?/g)).toHaveLength(insertValues.length)
+    const 칸들 = (insertSql as string)
+      .slice(insertSql.indexOf('(') + 1, insertSql.indexOf(')'))
+      .split(',')
+      .map((each) => each.trim())
+    expect(insertValues[칸들.indexOf('hunt_union_tier')]).toBe(2)
+    const [updateSql, updateValues] = runMock.mock.calls[1]
+    expect(updateSql).toContain('hunt_union_tier = ?')
+    expect(updateSql.match(/\?/g)).toHaveLength(updateValues.length)
+    expect(updateValues).toEqual(expect.arrayContaining([1]))
+  })
+
+  it('값이 있으면 그대로, NULL 이면 3단계로 읽는다', async () => {
+    queryMock.mockResolvedValue({ values: [읽은행(1), 읽은행(null)] })
+    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
+
+    const [첫째, 둘째] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
+
+    expect(첫째.hunt).toMatchObject({ mode: 'calculator', unionTier: 1 })
+    expect(둘째.hunt).toMatchObject({ mode: 'calculator', unionTier: 3 })
   })
 })

@@ -17,8 +17,7 @@ import { Pressable, View } from 'react-native'
 import { CheckBox, ChevronLeftIcon, Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
-import type { LastHuntSelection } from '../../storage/last-hunt-selection'
-import type { LastHuntToggles } from '../../storage/last-hunt-toggles'
+import type { LastHunts } from '../../storage/last-hunts'
 import {
   INCOME_CATEGORIES,
   incomeCategoryNameOf,
@@ -57,20 +56,8 @@ export interface IncomeSheetProps {
   earliestDateKey: string
   /** 캐릭터의 메소 획득량을 읽어 오는 콜백. 시트는 `nexon/` 도 `storage/` 도 모른다. 사냥 폼만 쓴다. */
   loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
-  /**
-   * 마지막에 적은 사냥 자리(캐릭터 + 사냥터 이름). 사냥 계산기의 `사냥터 자동 입력` 이 쓴다.
-   *
-   * `null` 이면 한 번도 안 적었다는 뜻이라 그 버튼이 꺼진다. 시트는 `storage/` 를 모르므로
-   * 화면이 읽어서 넘긴다.
-   */
-  lastHuntSelection: LastHuntSelection | null
-  /**
-   * 마지막에 계산기로 저장한 사냥 기록의 켠 메소 획득률 아이템.
-   *
-   * **새 기록의 첫 값**이다. 수정으로 열면 그 기록에 박힌 값이 이긴다. `null` 이면 한 번도 안
-   * 적었다는 뜻이라 전부 꺼진 채 열린다. 시트는 `storage/` 를 모르므로 화면이 읽어서 넘긴다.
-   */
-  lastHuntToggles: LastHuntToggles | null
+  /** 캐릭터별 마지막 사냥. 사냥 계산기에서 캐릭터를 고르면 그 몫이 선다. 화면이 읽어서 넘긴다. */
+  lastHunts: LastHunts
   /** 솔 에르다 조각 보관 개수 조회. 정산 폼이 쓰고 화면이 넘긴다. */
   loadFragmentStorage: LoadFragmentStorage
   /**
@@ -256,8 +243,7 @@ function IncomeForm(
     <HuntCalculatorForm
       {...props.formProps}
       loadMesoRate={props.loadMesoRate}
-      lastHuntSelection={props.lastHuntSelection}
-      lastHuntToggles={props.lastHuntToggles}
+      lastHunts={props.lastHunts}
     />
   )
 }

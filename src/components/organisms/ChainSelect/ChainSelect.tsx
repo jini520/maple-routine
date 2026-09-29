@@ -1,10 +1,8 @@
 /**
  * 한 줄이 값 여럿을 지는 고르개. 고른 것은 알약이 되어 왼쪽에 쌓이고, 자리표시자는 남은 것만
- * 읽는다.
+ * 읽는다. 알약이 20 이고 값도 20 이라 무엇을 골라도 줄 높이가 안 바뀐다.
  *
- * 값마다 줄을 쓰면 값 하나가 줄 28 에 갭 12 를 진다. 사냥 시트는 그렇게 세 줄 84 에 갭 24 를
- * 쓰고 있었고, 이 부품이 그것을 28 짜리 한 줄로 바꾼다. 알약이 20 이고 값도 20 이라 무엇을
- * 골라도 줄 높이가 안 바뀐다.
+ * 가계부 시트는 한 단계짜리로 쓴다. 사냥 계산기는 그런 줄 셋을 쌓고 `toneOffset` 으로 색을 가른다.
  *
  * 목록과 그 자리잡기는 `SelectField` 것을 그대로 쓴다. 트리거만 이쪽이 그린다.
  *
@@ -93,7 +91,12 @@ function toneOf(index: number): (typeof BADGE_TONES)[number] {
 export function ChainSelect(props: {
   steps: readonly ChainStep[]
   testID: string
+  /** 첫 단계가 입을 색의 차례. 한 단계짜리 줄을 쌓을 때 줄마다 다른 색을 입힌다. */
+  toneOffset?: number
+  /** 줄 왼쪽에 서는 것. 여는 누르개 밖이다. */
+  leading?: React.ReactNode
 }): React.JSX.Element {
+  const toneOffset = props.toneOffset ?? 0
   /**
    * 어느 단계의 목록을 열지. 알약을 누르면 그 단계이고, 자리표시자를 누르면 **안 고른 첫
    * 단계**다. 열기 전에 정해 두므로 목록이 뜰 때는 이미 그 단계의 보기가 들어 있다.
@@ -174,6 +177,7 @@ export function ChainSelect(props: {
           onLayout={(event) => rowWidth.set(event.nativeEvent.layout.width)}
           className="min-h-7 flex-row items-center gap-2 border-b border-border pb-2"
         >
+          {props.leading}
           {/*
             새 알약은 오른쪽 끝에서 미끄러져 들어오고, 이미 선 알약들은 `LinearTransition` 이
             잇는다. 값이 어디에서 와서 어디에 놓였는지를 눈이 따라간다.
@@ -199,10 +203,10 @@ export function ChainSelect(props: {
                       open()
                     }}
                     className={`h-5 justify-center rounded-full px-2 active:opacity-60 ${
-                      toneOf(index).box
+                      toneOf(toneOffset + index).box
                     }`}
                   >
-                    <Text className={`text-chip font-semibold ${toneOf(index).ink}`}>
+                    <Text className={`text-chip font-semibold ${toneOf(toneOffset + index).ink}`}>
                       {labelOf(step)}
                     </Text>
                   </Pressable>
@@ -236,9 +240,9 @@ export function ChainSelect(props: {
               */}
               <View
                 testID={`${props.testID}-badge-${props.steps[마지막]!.name}`}
-                className={`h-5 shrink-0 justify-center rounded-full px-2 ${toneOf(마지막).box}`}
+                className={`h-5 shrink-0 justify-center rounded-full px-2 ${toneOf(toneOffset + 마지막).box}`}
               >
-                <Text className={`text-chip font-semibold ${toneOf(마지막).ink}`}>
+                <Text className={`text-chip font-semibold ${toneOf(toneOffset + 마지막).ink}`}>
                   {labelOf(props.steps[마지막]!)}
                 </Text>
               </View>
