@@ -108,6 +108,23 @@ export function resolveCardBody(definition: ThemeDefinition): string {
 }
 
 /**
+ * 통계 화면의 섹션 바탕. 섹션은 테두리 없이 화면 양끝까지 펴고 페이지 바탕색 틈으로만 갈리므로,
+ * 페이지보다 한 단 밝아야 한다.
+ *
+ * 라이트는 `card-body` 와 `surface` 사이다. 테마 톤은 남기고 페이지 위에 떠 보인다.
+ * 다크는 `surface` 가 이미 어두워 같은 식이면 안 밝아진다. 한 단 밝은 `surface-2` 쪽으로 섞는다.
+ * 비율은 시안에서 사용자가 고른 값이다(2026-09-29).
+ */
+export const STATS_SECTION_TOKEN = 'stats-section'
+
+export function resolveStatsSection(definition: ThemeDefinition): string {
+  const cardBody = resolveCardBody(definition)
+  return definition.mode === 'light'
+    ? mixSrgb(cardBody, definition.surface, 0.45)
+    : mixSrgb(definition.surface2, cardBody, 0.6)
+}
+
+/**
  * 결산 안내 줄의 색 넷. **테마를 안 따라간다.**
  *
  * 앞의 둘(`panel-border` · `card-body`)과 같은 자리이지만 하는 일이 다르다. 저쪽은 테마 값에서
@@ -171,6 +188,7 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
   }
   variables[toColorVariableName(PANEL_BORDER_TOKEN)] = resolvePanelBorder(definition)
   variables[toColorVariableName(CARD_BODY_TOKEN)] = resolveCardBody(definition)
+  variables[toColorVariableName(STATS_SECTION_TOKEN)] = resolveStatsSection(definition)
 
   const settlement = resolveSettlementColors(definition)
   variables[toColorVariableName(SETTLEMENT_TOKENS.tint)] = settlement.tint

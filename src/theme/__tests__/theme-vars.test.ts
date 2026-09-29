@@ -18,6 +18,7 @@ import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
 import {
   CARD_BODY_TOKEN,
+  STATS_SECTION_TOKEN,
   SETTLEMENT_TOKENS,
   resolveSettlementColors,
   PANEL_BORDER_TOKEN,
@@ -27,6 +28,7 @@ import {
   buildThemeVariables,
   resolveCardBody,
   resolvePanelBorder,
+  resolveStatsSection,
   toColorVariableName,
 } from '../theme-vars'
 
@@ -93,6 +95,7 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
     const {
       [PANEL_BORDER_VARIABLE]: panelBorder,
       [toColorVariableName(CARD_BODY_TOKEN)]: cardBody,
+      [toColorVariableName(STATS_SECTION_TOKEN)]: statsSection,
       ...rest
     } = variables
     // 결산 줄의 넷도 core 에는 없다. 테마 값이 아니라 모드 상수라서다.
@@ -102,6 +105,7 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
 
     expect(panelBorder).toBe(resolvePanelBorder(definition))
     expect(cardBody).toBe(resolveCardBody(definition))
+    expect(statsSection).toBe(resolveStatsSection(definition))
     expect(tokens).toEqual(colorDeclarationsIn(css, ':root'))
   })
 
@@ -424,5 +428,28 @@ describe('resolveSettlementColors. 테마를 안 따라가는 공통색', () => 
     expect(variables[toColorVariableName(SETTLEMENT_TOKENS.ink)]).toBe(colors.ink)
     expect(variables[toColorVariableName(SETTLEMENT_TOKENS.inkMuted)]).toBe(colors.inkMuted)
     expect(variables[toColorVariableName(SETTLEMENT_TOKENS.mark)]).toBe(colors.mark)
+  })
+})
+
+
+// 통계 화면의 섹션 바탕. 섹션은 테두리 없이 바탕색 틈으로만 갈리므로 페이지보다 밝아야 한다.
+describe('resolveStatsSection', () => {
+  const 테마들 = THEME_NAMES.map((name) => getThemeDefinition(name))
+
+  it.each(테마들.map((definition) => [definition.mode, definition] as const))('%s 에서 페이지 바탕보다 밝다', (_, definition) => {
+    expect(hexToOklch(resolveStatsSection(definition)).l).toBeGreaterThan(hexToOklch(definition.bg).l)
+  })
+
+  it('라이트는 카드 본문보다 밝고 카드 표면보다 어둡다', () => {
+    for (const definition of 테마들.filter((theme) => theme.mode === 'light')) {
+      const section = hexToOklch(resolveStatsSection(definition)).l
+      expect(section).toBeGreaterThanOrEqual(hexToOklch(resolveCardBody(definition)).l)
+      expect(section).toBeLessThanOrEqual(hexToOklch(definition.surface).l)
+    }
+  })
+
+  it('`:root` 변수로 실린다', () => {
+    const definition = getThemeDefinition(THEME_NAMES[0])
+    expect(buildThemeVariables(definition)['--color-stats-section']).toBe(resolveStatsSection(definition))
   })
 })

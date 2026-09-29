@@ -51,6 +51,8 @@ const colors = {
   'panel-border': 'var(--color-panel-border)',
   // 같은 방식으로 파생되는 둘째 토큰 — 펼친 캐릭터 카드의 본문 바탕([[ADR-220]]).
   'card-body': 'var(--color-card-body)',
+  // 넷째 — 통계 화면의 섹션 바탕(`theme-vars.ts` 의 `resolveStatsSection`).
+  'stats-section': 'var(--color-stats-section)',
   // 셋째 — 결산 안내 줄. 앞의 둘과 달리 테마 값에서 계산하지 않고 **라이트/다크 상수 두 벌**이다
   // (`theme-vars.ts` 의 `resolveSettlementColors`). 그 줄이 말하는 것이 테마와 무관해서다.
   'settlement-tint': 'var(--color-settlement-tint)',
