@@ -34,6 +34,7 @@ import { worldNameOf } from '../../../lib/world/worlds'
 
 import { FACE_AVATAR_SIZE } from '../../../lib/face-crop'
 import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar'
+import { UnknownCharacterFace } from '../../molecules/CharacterAvatar/UnknownCharacterFace'
 import { ChevronDownIcon, Text } from '../../atoms'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { placeDropdown } from './place-dropdown'
@@ -71,12 +72,7 @@ export function AccountRow(props: AccountRowProps): React.JSX.Element {
         size={FACE_AVATAR_SIZE}
         className="shrink-0"
         fallback={
-          <View
-            testID={`account-select-face-fallback-${accountId}`}
-            className="h-full w-full items-center justify-center bg-primary"
-          >
-            <Text className="text-sm font-bold text-on-primary">?</Text>
-          </View>
+          <UnknownCharacterFace testID={`account-select-face-fallback-${accountId}`} size={FACE_AVATAR_SIZE} />
         }
       />
 

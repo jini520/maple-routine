@@ -18,6 +18,7 @@ import { Pressable, View } from 'react-native'
 import { Badge, ChevronDownIcon, ChevronUpIcon, Text } from '../../../components/atoms'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { CharacterAvatar } from '../../../components/molecules/CharacterAvatar/CharacterAvatar'
+import { UnknownCharacterFace } from '../../../components/molecules/CharacterAvatar/UnknownCharacterFace'
 import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { RemainingBossView, ScheduleRowView } from '../view-model'
@@ -150,12 +151,7 @@ function Portrait(props: { row: ScheduleRowView }): React.JSX.Element {
       fallback={
         // `CharacterRow` 와 같은 폴백. 이름 첫 글자는 이 캐릭터의 얼굴처럼 보여 못 가져왔다는 것을
         // 말하지 못한다.
-        <View
-          testID="schedule-face-fallback"
-          className="h-full w-full items-center justify-center bg-primary"
-        >
-          <Text fixed className="text-13 font-bold text-on-primary">?</Text>
-        </View>
+        <UnknownCharacterFace testID="schedule-face-fallback" size={PORTRAIT_PX} />
       }
     />
   )

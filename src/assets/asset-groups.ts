@@ -73,7 +73,7 @@ export const ASSET_GROUPS: AssetGroup[] = [
     kind: 'record',
     key: 'slug',
     dirs: ['characters'],
-    extensions: ['png'],
+    extensions: ['webp'],
     purpose: '캐릭터 그림을 모를 때 서는 자리 그림. `lib/assets/asset-lookup.ts` 의 `unknownCharacterAsset` 이 찾는다',
   },
   {

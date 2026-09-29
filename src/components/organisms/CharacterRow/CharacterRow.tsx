@@ -21,6 +21,7 @@ import { worldNameOf } from '../../../lib/world/worlds'
 
 import { FACE_AVATAR_SIZE } from '../../../lib/face-crop'
 import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar'
+import { UnknownCharacterFace } from '../../molecules/CharacterAvatar/UnknownCharacterFace'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { Text } from '../../atoms'
 
@@ -67,9 +68,8 @@ export function CharacterRow(props: CharacterRowProps): React.JSX.Element {
     <>
       {props.leading}
 
-      {/* 이름 첫 글자가 아니라 테마 주황 원 + `?` 다. 첫 글자는 이 캐릭터의 얼굴처럼 보여서 못
-          가져왔다 를 말하지 못한다. 글자색은 `on-primary`. 그 색 위에 놓는 글자로 이미 정의된
-          토큰이라 테마마다 대비가 보장된다. */}
+      {/* 이름 첫 글자가 아니라 흰 실루엣이다. 첫 글자는 이 캐릭터의 얼굴처럼 보여서 못
+          가져왔다 를 말하지 못한다. */}
       <CharacterAvatar
         imageTestID="character-row-face"
         imageUrl={props.imageUrl}
@@ -77,14 +77,7 @@ export function CharacterRow(props: CharacterRowProps): React.JSX.Element {
         size={FACE_AVATAR_SIZE}
         unavailable={props.unavailable}
         className="shrink-0"
-        fallback={
-          <View
-            testID="character-row-face-fallback"
-            className="h-full w-full items-center justify-center bg-primary"
-          >
-            <Text className="text-base font-bold text-on-primary">?</Text>
-          </View>
-        }
+        fallback={<UnknownCharacterFace testID="character-row-face-fallback" size={FACE_AVATAR_SIZE} />}
       />
 
       <View className="min-w-0 flex-1 gap-0.5">

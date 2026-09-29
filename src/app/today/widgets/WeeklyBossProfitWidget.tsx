@@ -22,6 +22,7 @@ import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
 
 import { Text } from '../../../components/atoms'
 import { CharacterAvatar } from '../../../components/molecules/CharacterAvatar/CharacterAvatar'
+import { UnknownCharacterFace } from '../../../components/molecules/CharacterAvatar/UnknownCharacterFace'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { ProfitSplit, WeeklyProfitCharacterView, WeeklyProfitView } from '../view-model'
@@ -217,14 +218,7 @@ function Face(props: { character: WeeklyProfitCharacterView }): React.JSX.Elemen
       name={props.character.characterName}
       size={FACE_PX}
       className="shrink-0"
-      fallback={
-        <View
-          testID="profit-character-face-fallback"
-          className="h-full w-full items-center justify-center bg-primary"
-        >
-          <Text fixed className="text-13 font-bold text-on-primary">?</Text>
-        </View>
-      }
+      fallback={<UnknownCharacterFace testID="profit-character-face-fallback" size={FACE_PX} />}
     />
   )
 }

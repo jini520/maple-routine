@@ -87,15 +87,15 @@ describe('AccountSelect: 트리거', () => {
     expect(getByText('루나 Lv.275 밤샘메린')).toBeTruthy()
   })
 
-  // 폴백 규칙은 `CharacterRow` 와 같다. 이니셜이 아니라 주황 원 + `?`.
-  it('얼굴이 없으면 주황 원 + ? 다. 얼굴 때문에 조회하지 않는다', async () => {
-    const { queryByTestId, getByTestId, queryByText, getAllByText } = await renderOverlay(
+  // 폴백 규칙은 `CharacterRow` 와 같다. 이니셜이 아니라 흰 실루엣.
+  it('얼굴이 없으면 흰 실루엣이다. 얼굴 때문에 조회하지 않는다', async () => {
+    const { queryByTestId, getByTestId, queryByText } = await renderOverlay(
       <AccountSelect {...props()} />,
     )
 
     expect(queryByTestId('account-select-face-account-a')).toBeNull()
     expect(queryByText('낟')).toBeNull()
-    expect(getAllByText('?').length).toBeGreaterThan(0)
+    expect(queryByText('?')).toBeNull()
     expect(getByTestId('account-select-face-fallback-account-a')).toBeTruthy()
   })
 
