@@ -4,7 +4,7 @@
  */
 import { useState } from 'react'
 import { Pressable, View, type LayoutChangeEvent } from 'react-native'
-import Svg, { Circle, Line, Path } from 'react-native-svg'
+import Svg, { Circle, ClipPath, Defs, Line, Path, Rect } from 'react-native-svg'
 
 import { Text } from '../../components/atoms'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -48,7 +48,8 @@ export function CumulativeSection(props: { days: DaysByDate; cycle: BossCycle; p
   const y = (value: number): number => TOP_PAD + plotHeight - ((value - low) / (high - low)) * plotHeight
   const line = points.map((value, index) => `${index === 0 ? 'M' : 'L'}${x(index).toFixed(1)} ${y(value).toFixed(1)}`).join(' ')
   const area = `${line} L${x(points.length - 1).toFixed(1)} ${y(0).toFixed(1)} L${x(0).toFixed(1)} ${y(0).toFixed(1)} Z`
-  const color = total >= 0 ? definition.riseInk : definition.fallInk
+  const zeroY = y(0)
+  const pointColor = points[selected] >= 0 ? definition.riseInk : definition.fallInk
   const bubbleRatio = x(selected) / width
 
   return (
@@ -63,11 +64,38 @@ export function CumulativeSection(props: { days: DaysByDate; cycle: BossCycle; p
 
       <View style={{ paddingTop: BUBBLE_SPACE }} onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}>
         <Svg width={width} height={CHART_HEIGHT}>
-          <Line x1={0} x2={width} y1={y(0)} y2={y(0)} stroke={definition.border} strokeWidth={1} />
-          <Path d={area} fill={color} fillOpacity={0.1} />
-          <Path d={line} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" />
+          {/* 0 선을 경계로 같은 선을 두 번 그려 자른다. 위는 수익 색, 아래(누적이 음수인 구간)는 지출 색이다 */}
+          <Defs>
+            <ClipPath id="stats-cumulative-above">
+              <Rect x={0} y={0} width={width} height={zeroY} />
+            </ClipPath>
+            <ClipPath id="stats-cumulative-below">
+              <Rect x={0} y={zeroY} width={width} height={CHART_HEIGHT - zeroY} />
+            </ClipPath>
+          </Defs>
+          <Line x1={0} x2={width} y1={zeroY} y2={zeroY} stroke={definition.border} strokeWidth={1} />
+          <Path d={area} fill={definition.riseInk} fillOpacity={0.1} clipPath="url(#stats-cumulative-above)" />
+          <Path d={area} fill={definition.fallInk} fillOpacity={0.1} clipPath="url(#stats-cumulative-below)" />
+          <Path
+            testID="stats-cumulative-line-above"
+            d={line}
+            fill="none"
+            stroke={definition.riseInk}
+            strokeWidth={2}
+            strokeLinejoin="round"
+            clipPath="url(#stats-cumulative-above)"
+          />
+          <Path
+            testID="stats-cumulative-line-below"
+            d={line}
+            fill="none"
+            stroke={definition.fallInk}
+            strokeWidth={2}
+            strokeLinejoin="round"
+            clipPath="url(#stats-cumulative-below)"
+          />
           <Line x1={x(selected)} x2={x(selected)} y1={TOP_PAD} y2={y(0)} stroke={definition.textDisabled} strokeDasharray="2 3" />
-          <Circle cx={x(selected)} cy={y(points[selected])} r={4} fill={definition.surface} stroke={color} strokeWidth={2} />
+          <Circle cx={x(selected)} cy={y(points[selected])} r={4} fill={definition.surface} stroke={pointColor} strokeWidth={2} />
         </Svg>
 
         <View className="absolute bottom-0 left-0 right-0 flex-row" style={{ top: BUBBLE_SPACE }}>
