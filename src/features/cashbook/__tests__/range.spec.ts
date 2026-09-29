@@ -84,10 +84,10 @@ describe('monthWindowRange: 층에 알리는 범위', () => {
  * 안 연다.
  */
 describe('defaultCashbookRange', () => {
-  it('이번 달과 그 앞 둘이다', () => {
+  it('이번 달까지의 여섯 달이다', () => {
     // KST 2026-08-23. UTC 로는 05:00 이라 날짜가 안 넘어간다.
     expect(defaultCashbookRange(new Date('2026-08-23T05:00:00Z'))).toEqual({
-      from: '2026-06-01',
+      from: '2026-03-01',
       to: '2026-08-31',
     })
   })
@@ -123,12 +123,20 @@ describe('historyFloorDateKey', () => {
 })
 
 describe('apiWindowRange: 층에 알리는 범위', () => {
-  it('한도 위에서는 창 그대로다', () => {
-    expect(apiWindowRange('2026-08', '2026-09-10')).toEqual(monthWindowRange('2026-08', '2026-09'))
+  // 통계의 월간 추이가 여섯 달이다. 가계부와 통계가 같은 범위를 써야 기다림이 한 번이다.
+  it('창에 보는 달까지의 여섯 달을 더한다', () => {
+    expect(apiWindowRange('2026-08', '2026-09-10')).toEqual({
+      from: '2026-03-01',
+      to: monthWindowRange('2026-08', '2026-09').to,
+    })
+  })
+
+  it('지난 달을 보면 그 달 기준 여섯 달과 그 달의 창을 함께 덮는다', () => {
+    expect(apiWindowRange('2026-05', '2026-09-29')).toEqual({ from: '2025-12-01', to: '2026-07-31' })
   })
 
   it('창이 한도 아래로 내려가면 한도에서 끊는다', () => {
-    // 2025-03 을 보면 창은 2025-01-01 부터인데 한도가 2025-02-27 이다.
+    // 2025-03 을 보면 여섯 달은 2024-10-01 부터인데 한도가 2025-02-27 이다.
     expect(apiWindowRange('2025-03', '2026-09-10')).toEqual({
       from: '2025-02-27',
       to: '2025-05-31',
@@ -139,6 +147,7 @@ describe('apiWindowRange: 층에 알리는 범위', () => {
    * 한도 밖의 달은 화살표가 막아 앱에서는 안 나지만, 함수는 답을 내야 한다. 뒤집힌 범위를 주면
    * `datesBetween` 이 빈 목록을 낸다.
    */
+  // 여섯 달을 앞에 붙이면 뒤집힌 범위가 풀려 한도부터 이번 달까지 통째로 받게 된다. 그러면 안 된다.
   it('한도 밖의 달은 받을 날이 없다', () => {
     const range = apiWindowRange('2024-05', '2026-09-10')
     expect(range.from > range.to).toBe(true)
