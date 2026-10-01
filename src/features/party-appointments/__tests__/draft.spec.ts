@@ -1,6 +1,7 @@
 import {
   canSave,
   durationOf,
+  endsNextDay,
   formatClock,
   formatLead,
   initialDraft,
@@ -16,7 +17,6 @@ function draft(overrides: Partial<AppointmentDraft>): AppointmentDraft {
   return {
     startDateKey: '2026-10-01',
     startMinutes: 21 * 60,
-    endDateKey: '2026-10-01',
     endMinutes: 21 * 60 + 30,
     bosses: [LIMBO],
     alarmOn: false,
@@ -34,7 +34,6 @@ describe('initialDraft', () => {
     expect(result).toMatchObject({
       startDateKey: '2026-10-01',
       startMinutes: 21 * 60 + 5,
-      endDateKey: '2026-10-01',
       endMinutes: 21 * 60 + 35,
       bosses: [],
       alarmOn: false,
@@ -49,28 +48,19 @@ describe('initialDraft', () => {
     expect(result.startMinutes).toBe(21 * 60 + 10)
   })
 
-  it('자정 직전에 열면 시작과 종료가 다음 날로 넘어간다', () => {
+  it('자정 직전에 열면 시작이 다음 날로 넘어간다', () => {
     // KST 2026-10-01 23:58
     const result = initialDraft(new Date('2026-10-01T14:58:00Z'))
 
-    expect(result).toMatchObject({
-      startDateKey: '2026-10-02',
-      startMinutes: 0,
-      endDateKey: '2026-10-02',
-      endMinutes: 30,
-    })
+    expect(result).toMatchObject({ startDateKey: '2026-10-02', startMinutes: 0, endMinutes: 30 })
   })
 
-  it('종료만 자정을 넘으면 종료 날짜만 다음 날이다', () => {
+  it('종료만 자정을 넘으면 종료 시각이 시작보다 이르다(다음 날)', () => {
     // KST 2026-10-01 23:40
     const result = initialDraft(new Date('2026-10-01T14:40:00Z'))
 
-    expect(result).toMatchObject({
-      startDateKey: '2026-10-01',
-      startMinutes: 23 * 60 + 45,
-      endDateKey: '2026-10-02',
-      endMinutes: 15,
-    })
+    expect(result).toMatchObject({ startDateKey: '2026-10-01', startMinutes: 23 * 60 + 45, endMinutes: 15 })
+    expect(endsNextDay(result)).toBe(true)
   })
 })
 
@@ -82,12 +72,25 @@ describe('shiftMinutes', () => {
 })
 
 describe('durationOf', () => {
-  it('종료가 다음 날이어도 분으로 센다', () => {
-    expect(durationOf(draft({ startMinutes: 23 * 60 + 30, endDateKey: '2026-10-02', endMinutes: 30 }))).toBe(60)
+  it('같은 날 끝나면 시작부터 종료까지의 분이다', () => {
+    expect(durationOf(draft({}))).toBe(30)
   })
 
-  it('종료가 시작보다 이르면 음수다', () => {
-    expect(durationOf(draft({ startMinutes: 22 * 60 }))).toBe(-30)
+  it('종료가 시작보다 이르면 다음 날로 센다', () => {
+    expect(durationOf(draft({ startMinutes: 23 * 60 + 30, endMinutes: 30 }))).toBe(60)
+    expect(durationOf(draft({ startMinutes: 22 * 60 }))).toBe(23 * 60 + 30)
+  })
+
+  it('종료가 시작과 같으면 0 이다', () => {
+    expect(durationOf(draft({ endMinutes: 21 * 60 }))).toBe(0)
+  })
+})
+
+describe('endsNextDay', () => {
+  it('종료가 시작보다 이를 때만 다음 날이다', () => {
+    expect(endsNextDay(draft({ startMinutes: 23 * 60 + 30, endMinutes: 30 }))).toBe(true)
+    expect(endsNextDay(draft({}))).toBe(false)
+    expect(endsNextDay(draft({ endMinutes: 21 * 60 }))).toBe(false)
   })
 })
 
@@ -100,9 +103,9 @@ describe('canSave', () => {
     expect(canSave(draft({ bosses: [] }))).toBe(false)
   })
 
-  it('종료가 시작과 같거나 이르면 못 한다', () => {
+  it('종료가 시작과 같으면 못 한다. 이른 종료는 다음 날이라 된다', () => {
     expect(canSave(draft({ endMinutes: 21 * 60 }))).toBe(false)
-    expect(canSave(draft({ endMinutes: 20 * 60 }))).toBe(false)
+    expect(canSave(draft({ endMinutes: 20 * 60 }))).toBe(true)
   })
 })
 
@@ -122,7 +125,7 @@ describe('toAppointment', () => {
 
   it('반복이면 시작 날짜의 요일과 그 리셋 주로 연다', () => {
     // 2026-09-30 은 수요일이고 그 리셋 주는 9/24(목)에서 시작한다.
-    const result = toAppointment(draft({ startDateKey: '2026-09-30', endDateKey: '2026-09-30', repeats: true }), 'id-2')
+    const result = toAppointment(draft({ startDateKey: '2026-09-30', repeats: true }), 'id-2')
 
     expect(result.schedule).toEqual({ type: 'weekly', weekday: 3, fromWeek: '2026-09-24', untilWeek: null })
   })

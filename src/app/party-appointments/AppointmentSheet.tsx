@@ -24,7 +24,13 @@ import {
   toAppointment,
   type AppointmentDraft,
 } from '../../features/party-appointments/draft'
-import { applyDelete, applyEdit, draftFromOccurrence, isPastWeek } from '../../features/party-appointments/edit'
+import {
+  applyDelete,
+  applyEdit,
+  draftFromOccurrence,
+  isPastWeek,
+  repeatWeekdayOf,
+} from '../../features/party-appointments/edit'
 import { alarmsOnDate } from '../../features/party-appointments/guards'
 import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
 import { WEEKDAY_LABELS } from '../../lib/calendar'
@@ -83,6 +89,9 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   const endInvalid = durationOf(draft) <= 0
   const savable = canSave(draft) && !saving
   const weekday = WEEKDAY_LABELS[new Date(`${draft.startDateKey}T00:00:00Z`).getUTCDay()]
+  // 상세와 `이 주만 적용하기` 는 반복 요일을 안 바꾼다. 옮긴 회차의 날짜가 아니라 약속의 요일을 적는다.
+  const repeatWeekday =
+    WEEKDAY_LABELS[repeatWeekdayOf(draft, target?.occurrence.appointment.schedule, step === 'view' || thisWeekOnly)]
 
   async function submit(): Promise<void> {
     if (!savable) return
@@ -217,11 +226,10 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
         todayKey={todayKey}
         startDateKey={draft.startDateKey}
         startMinutes={draft.startMinutes}
-        endDateKey={draft.endDateKey}
         endMinutes={draft.endMinutes}
         endInvalid={endInvalid}
         onChangeStart={(dateKey, minutes) => update({ startDateKey: dateKey, startMinutes: minutes })}
-        onChangeEnd={(dateKey, minutes) => update({ endDateKey: dateKey, endMinutes: minutes })}
+        onChangeEnd={(minutes) => update({ endMinutes: minutes })}
       />
       <AppointmentBossList
         bosses={draft.bosses}
@@ -251,7 +259,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
       >
         <CheckBox checked={draft.repeats} />
         <Text className="text-sm font-medium text-text">매주 반복</Text>
-        {draft.repeats && <Text className="text-xs text-text-muted">{weekday}요일마다</Text>}
+        {draft.repeats && <Text className="text-xs text-text-muted">{repeatWeekday}요일마다</Text>}
       </Pressable>
     </View>
   )
@@ -261,7 +269,6 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
         todayKey={todayKey}
         startDateKey={draft.startDateKey}
         startMinutes={draft.startMinutes}
-        endDateKey={draft.endDateKey}
         endMinutes={draft.endMinutes}
         endInvalid={false}
         readOnly
@@ -280,7 +287,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
       <AppointmentSummaryTiles
         leadMinutes={draft.alarmOn ? draft.leadMinutes : null}
         repeats={draft.repeats}
-        weekday={weekday ?? ''}
+        weekday={repeatWeekday ?? ''}
       />
     </View>
   )
@@ -319,7 +326,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
           title={repeating ? '반복 약속을 삭제할까요?' : '약속을 삭제할까요?'}
           description={
             repeating
-              ? `이번 주부터 매주 ${weekday}요일 약속이 사라져요. 지난 주 약속은 그대로 남아요.`
+              ? `이번 주부터 매주 ${repeatWeekday}요일 약속이 사라져요. 지난 주 약속은 그대로 남아요.`
               : '삭제한 약속은 되돌릴 수 없어요.'
           }
           // 되돌릴 수 없는 동작이라 주 버튼이 취소다. 삭제는 아래 빨간 글자.

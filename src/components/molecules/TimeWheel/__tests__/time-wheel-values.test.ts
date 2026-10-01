@@ -1,4 +1,4 @@
-import { HOUR_VALUES, minuteValues, snapMinute } from '../time-wheel-values'
+import { HOUR_VALUES, hoursFrom, minuteValues, snapMinute } from '../time-wheel-values'
 
 it('시는 0 부터 23 까지다', () => {
   expect(HOUR_VALUES).toHaveLength(24)
@@ -20,4 +20,10 @@ it('단위에 안 맞는 분은 가장 가까운 칸으로 맞춘다', () => {
 it('59 분은 다음 시로 넘기지 않고 그 시의 마지막 칸에 머문다', () => {
   expect(snapMinute(59, 5)).toBe(55)
   expect(snapMinute(50, 30)).toBe(30)
+})
+
+it('시작 시부터 세우면 23 다음이 00 이다', () => {
+  expect(hoursFrom(23).slice(0, 3)).toEqual([23, 0, 1])
+  expect(hoursFrom(20).slice(0, 5)).toEqual([20, 21, 22, 23, 0])
+  expect(hoursFrom(0)).toEqual(HOUR_VALUES)
 })

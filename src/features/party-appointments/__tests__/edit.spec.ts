@@ -1,4 +1,4 @@
-import { applyDelete, applyEdit, draftFromOccurrence, isPastWeek } from '../edit'
+import { applyDelete, applyEdit, draftFromOccurrence, isPastWeek, repeatWeekdayOf } from '../edit'
 import { occurrencesInWeek } from '../occurrences'
 import type { AppointmentDraft } from '../draft'
 import type { PartyAppointment } from '../../../types/party-appointment'
@@ -27,7 +27,6 @@ function draft(overrides: Partial<AppointmentDraft>): AppointmentDraft {
   return {
     startDateKey: '2026-10-01',
     startMinutes: 22 * 60,
-    endDateKey: '2026-10-01',
     endMinutes: 23 * 60,
     bosses: [JUPITER],
     alarmOn: false,
@@ -52,7 +51,6 @@ describe('draftFromOccurrence', () => {
     expect(draftFromOccurrence(occurrence!)).toEqual({
       startDateKey: '2026-10-01',
       startMinutes: 23 * 60 + 30,
-      endDateKey: '2026-10-02',
       endMinutes: 30,
       bosses: [LIMBO],
       alarmOn: true,
@@ -191,5 +189,37 @@ describe('applyDelete', () => {
     const weekly = appointment({ schedule: { type: 'weekly', weekday: 4, fromWeek: WEEK, untilWeek: null } })
 
     expect(applyDelete([weekly], weekly, WEEK)).toEqual([])
+  })
+})
+
+describe('repeatWeekdayOf', () => {
+  // 목요일(4) 반복 약속의 이 주 회차를 금요일 10/2 로 옮겼다.
+  const weekly = appointment({
+    exceptions: {
+      [WEEK]: {
+        type: 'override',
+        dateKey: '2026-10-02',
+        timeKst: '21:00',
+        durationMinutes: 30,
+        bosses: [LIMBO],
+        leadMinutes: 10,
+      },
+    },
+  })
+
+  it('반복을 안 바꾸는 자리(상세 · 이 주만)는 옮긴 날이 아니라 약속의 반복 요일이다', () => {
+    const [moved] = occurrencesInWeek([weekly], WEEK)
+    const movedDraft = draftFromOccurrence(moved!)
+
+    expect(movedDraft.startDateKey).toBe('2026-10-02')
+    expect(repeatWeekdayOf(movedDraft, weekly.schedule, true)).toBe(4)
+  })
+
+  it('앞으로 모두 고칠 때는 고른 시작 날짜의 요일이다', () => {
+    expect(repeatWeekdayOf(draft({ startDateKey: '2026-10-02' }), weekly.schedule, false)).toBe(5)
+  })
+
+  it('반복이 아닌 약속은 시작 날짜의 요일이다', () => {
+    expect(repeatWeekdayOf(draft({ startDateKey: '2026-10-03' }), { type: 'once', dateKey: '2026-10-03' }, true)).toBe(6)
   })
 })
