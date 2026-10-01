@@ -18,10 +18,13 @@ import ArrowLeft from 'lucide-react-native/icons/arrow-left'
 import ArrowRight from 'lucide-react-native/icons/arrow-right'
 import ArrowUp from 'lucide-react-native/icons/arrow-up'
 import Ban from 'lucide-react-native/icons/ban'
+import Bell from 'lucide-react-native/icons/bell'
 import BookOpen from 'lucide-react-native/icons/book-open'
 import Calculator from 'lucide-react-native/icons/calculator'
 import Calendar from 'lucide-react-native/icons/calendar'
 import CalendarCheck from 'lucide-react-native/icons/calendar-check'
+import CalendarClock from 'lucide-react-native/icons/calendar-clock'
+import Repeat from 'lucide-react-native/icons/repeat'
 import Castle from 'lucide-react-native/icons/castle'
 import ChartColumn from 'lucide-react-native/icons/chart-column'
 import Check from 'lucide-react-native/icons/check'
@@ -225,5 +228,11 @@ export const WalletIcon = withIconInterop(Wallet)
 
 export const WrenchIcon = withIconInterop(Wrench)
 export const ChartColumnIcon = withIconInterop(ChartColumn)
+/** 파티 약속 탭. */
+export const CalendarClockIcon = withIconInterop(CalendarClock)
+/** 알림이 달린 약속. `AppointmentsScreen` 블록. */
+export const BellIcon = withIconInterop(Bell)
+/** 매주 반복하는 약속. `AppointmentsScreen` 블록. */
+export const RepeatIcon = withIconInterop(Repeat)
 /** 닫기. `Toast` · `PartySizeModal`. */
 export const XIcon = withIconInterop(X)

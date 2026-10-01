@@ -1,0 +1,133 @@
+diff --git a/node_modules/@howljs/calendar-kit/lib/commonjs/context/EventsProvider.js b/node_modules/@howljs/calendar-kit/lib/commonjs/context/EventsProvider.js
+index 4bb0c68..53248d4 100644
+--- a/node_modules/@howljs/calendar-kit/lib/commonjs/context/EventsProvider.js
++++ b/node_modules/@howljs/calendar-kit/lib/commonjs/context/EventsProvider.js
+@@ -65,7 +65,19 @@ const EventsProvider = ({
+     });
+     const packedRegularEvents = {};
+     regularEventMap.forEach((rEvents, day) => {
+-      packedRegularEvents[day] = (0, _eventUtils.populateEvents)(rEvents, {
++      packedRegularEvents[day] = overlapType === 'stack'
++        ? rEvents
++            .slice()
++            .sort((a, b) => a._internal.startUnix - b._internal.startUnix || b._internal.endUnix - a._internal.endUnix)
++            .map((evt) => ({
++              ...evt,
++              _internal: {
++                ...evt._internal,
++                widthPercentage: 100,
++                xOffsetPercentage: 0,
++              },
++            }))
++        : (0, _eventUtils.populateEvents)(rEvents, {
+         overlap: overlapType === 'overlap',
+         minStartDifference,
+         resources
+diff --git a/node_modules/@howljs/calendar-kit/lib/module/context/EventsProvider.js b/node_modules/@howljs/calendar-kit/lib/module/context/EventsProvider.js
+index aed7e69..f0d8373 100644
+--- a/node_modules/@howljs/calendar-kit/lib/module/context/EventsProvider.js
++++ b/node_modules/@howljs/calendar-kit/lib/module/context/EventsProvider.js
+@@ -57,7 +57,19 @@ const EventsProvider = ({
+     });
+     const packedRegularEvents = {};
+     regularEventMap.forEach((rEvents, day) => {
+-      packedRegularEvents[day] = populateEvents(rEvents, {
++      packedRegularEvents[day] = overlapType === 'stack'
++        ? rEvents
++            .slice()
++            .sort((a, b) => a._internal.startUnix - b._internal.startUnix || b._internal.endUnix - a._internal.endUnix)
++            .map((evt) => ({
++              ...evt,
++              _internal: {
++                ...evt._internal,
++                widthPercentage: 100,
++                xOffsetPercentage: 0,
++              },
++            }))
++        : populateEvents(rEvents, {
+         overlap: overlapType === 'overlap',
+         minStartDifference,
+         resources
+diff --git a/node_modules/@howljs/calendar-kit/lib/typescript/context/EventsProvider.d.ts b/node_modules/@howljs/calendar-kit/lib/typescript/context/EventsProvider.d.ts
+index 7e204a8..d3a26c8 100644
+--- a/node_modules/@howljs/calendar-kit/lib/typescript/context/EventsProvider.d.ts
++++ b/node_modules/@howljs/calendar-kit/lib/typescript/context/EventsProvider.d.ts
+@@ -10,7 +10,7 @@ interface EventsProviderProps {
+     hideWeekDays: WeekdayNumbers[];
+     defaultOffset?: number;
+     minRegularEventMinutes?: number;
+-    overlapType?: 'no-overlap' | 'overlap';
++    overlapType?: 'no-overlap' | 'overlap' | 'stack';
+     minStartDifference?: number;
+     resources?: ResourceItem[];
+ }
+diff --git a/node_modules/@howljs/calendar-kit/lib/typescript/types.d.ts b/node_modules/@howljs/calendar-kit/lib/typescript/types.d.ts
+index 7de7ba6..69a79c2 100644
+--- a/node_modules/@howljs/calendar-kit/lib/typescript/types.d.ts
++++ b/node_modules/@howljs/calendar-kit/lib/typescript/types.d.ts
+@@ -412,10 +412,12 @@ export interface CalendarProviderProps extends ActionsProviderProps {
+      * - 'no-overlap': Events will be displayed side by side without overlapping.
+      * - 'overlap': Events will be displayed on top of each other, potentially
+      *   overlapping.
++     * - 'stack': Every event takes the full column width and later events are
++     *   drawn over earlier ones.
+      *
+      * Default is `no-overlap`
+      */
+-    overlapType?: 'no-overlap' | 'overlap';
++    overlapType?: 'no-overlap' | 'overlap' | 'stack';
+     /**
+      * Minimum start time difference (in minutes) between overlapping events.
+      * Events with start times closer than this value will be considered
+diff --git a/node_modules/@howljs/calendar-kit/src/context/EventsProvider.tsx b/node_modules/@howljs/calendar-kit/src/context/EventsProvider.tsx
+index e1ad54a..8678044 100644
+--- a/node_modules/@howljs/calendar-kit/src/context/EventsProvider.tsx
++++ b/node_modules/@howljs/calendar-kit/src/context/EventsProvider.tsx
+@@ -52,7 +52,7 @@ interface EventsProviderProps {
+   hideWeekDays: WeekdayNumbers[];
+   defaultOffset?: number;
+   minRegularEventMinutes?: number;
+-  overlapType?: 'no-overlap' | 'overlap';
++  overlapType?: 'no-overlap' | 'overlap' | 'stack';
+   minStartDifference?: number;
+   resources?: ResourceItem[];
+ }
+@@ -132,7 +132,19 @@ const EventsProvider: ForwardRefRenderFunction<
+       });
+       const packedRegularEvents: Record<string, PackedEvent[]> = {};
+       regularEventMap.forEach((rEvents, day) => {
+-        packedRegularEvents[day] = populateEvents(rEvents, {
++        packedRegularEvents[day] = overlapType === 'stack'
++        ? rEvents
++            .slice()
++            .sort((a, b) => a._internal.startUnix - b._internal.startUnix || b._internal.endUnix - a._internal.endUnix)
++            .map((evt): PackedEvent => ({
++              ...evt,
++              _internal: {
++                ...evt._internal,
++                widthPercentage: 100,
++                xOffsetPercentage: 0,
++              },
++            }))
++        : populateEvents(rEvents, {
+           overlap: overlapType === 'overlap',
+           minStartDifference,
+           resources,
+diff --git a/node_modules/@howljs/calendar-kit/src/types.ts b/node_modules/@howljs/calendar-kit/src/types.ts
+index 9946f01..e2505e8 100644
+--- a/node_modules/@howljs/calendar-kit/src/types.ts
++++ b/node_modules/@howljs/calendar-kit/src/types.ts
+@@ -496,10 +496,12 @@ export interface CalendarProviderProps extends ActionsProviderProps {
+    * - 'no-overlap': Events will be displayed side by side without overlapping.
+    * - 'overlap': Events will be displayed on top of each other, potentially
+    *   overlapping.
++   * - 'stack': Every event takes the full column width and later events are
++   *   drawn over earlier ones.
+    *
+    * Default is `no-overlap`
+    */
+-  overlapType?: 'no-overlap' | 'overlap';
++  overlapType?: 'no-overlap' | 'overlap' | 'stack';
+ 
+   /**
+    * Minimum start time difference (in minutes) between overlapping events.

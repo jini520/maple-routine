@@ -8,6 +8,7 @@ const ANCHOR = { left: 100, top: 100, width: 120, height: 28 }
 
 async function 그리기(props: Partial<WeekCalendarPopoverProps> = {}) {
   const onSelect = jest.fn()
+  const onConfirm = jest.fn()
   const view = await renderOverlay(
     <WeekCalendarPopover
       selection={{ start: '2026-09-17', end: '2026-09-17' }}
@@ -17,16 +18,33 @@ async function 그리기(props: Partial<WeekCalendarPopoverProps> = {}) {
       monthKey="2026-09"
       onChangeMonth={jest.fn()}
       onSelect={onSelect}
+      onConfirm={onConfirm}
       caption="선택한 주"
       anchor={ANCHOR}
       onClose={jest.fn()}
       {...props}
     />,
   )
-  return { view, onSelect }
+  return { view, onSelect, onConfirm }
 }
 
 describe('WeekCalendarPopover', () => {
+  it('날을 눌러도 확인 전에는 내보내지 않고, 확인을 누르면 내보낸다', async () => {
+    const { view, onConfirm } = await 그리기()
+
+    await fireEvent.press(view.getByLabelText('2026-09-08'))
+    expect(onConfirm).not.toHaveBeenCalled()
+
+    await fireEvent.press(view.getByRole('button', { name: '확인' }))
+    expect(onConfirm).toHaveBeenCalled()
+  })
+
+  it('confirmDisabled 면 확인이 꺼진다', async () => {
+    const { view } = await 그리기({ confirmDisabled: true })
+
+    expect(view.getByRole('button', { name: '확인' }).props.accessibilityState?.disabled).toBe(true)
+  })
+
   it('어느 날을 눌러도 그 날이 든 주의 목요일을 준다', async () => {
     const { view, onSelect } = await 그리기()
 

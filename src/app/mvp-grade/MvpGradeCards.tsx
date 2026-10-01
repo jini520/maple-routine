@@ -45,21 +45,32 @@ function StartWeekRow(props: {
 }): React.JSX.Element {
   const { ref, isOpen, anchor, toggle, close } = useAnchoredPopover()
   const [monthKey, setMonthKey] = useState(monthKeyOf(props.week))
+  const [draft, setDraft] = useState(props.week)
 
   return (
     <View className="flex-row items-center justify-between gap-2">
       <Text className="text-xs text-text-muted">{props.label}</Text>
-      <DateSelect ref={ref} dateKey={props.week} label={props.label} onPress={toggle} testID={props.testID} />
+      <DateSelect
+        ref={ref}
+        dateKey={props.week}
+        label={props.label}
+        onPress={() => {
+          setDraft(props.week)
+          toggle()
+        }}
+        testID={props.testID}
+      />
       {isOpen && (
         <WeekCalendarPopover
-          selection={{ start: props.week, end: props.week }}
+          selection={{ start: draft, end: draft }}
           isSelectable={(week) => week >= props.min && week <= props.max}
           min={props.min}
           max={props.max}
           monthKey={monthKey}
           onChangeMonth={setMonthKey}
-          onSelect={(week) => {
-            props.onChange(week)
+          onSelect={setDraft}
+          onConfirm={() => {
+            props.onChange(draft)
             close()
           }}
           caption="선택한 주"

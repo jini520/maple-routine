@@ -30,6 +30,7 @@ export type TabRouteName =
   | 'Content'
   | 'Boss'
   | 'BossManage'
+  | 'Appointments'
   | 'Profit'
   | 'Cashbook'
   | 'Stats'
@@ -41,6 +42,7 @@ export type TabParamList = {
   Content: undefined
   Boss: undefined
   BossManage: undefined
+  Appointments: undefined
   Profit: undefined
   Cashbook: undefined
   Stats: undefined
@@ -77,6 +79,7 @@ export type ScheduleSubsParamList = {
   Content: undefined
   Boss: undefined
   BossManage: undefined
+  Appointments: undefined
 }
 
 export type LedgerSubsParamList = {
@@ -320,6 +323,7 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   // 화면이다. today 는 위젯 격자 · 유틸리티는 도구 목록 · 가계부는 캘린더. 하위 페이지 둘도
   // 진짜 화면이다.
   { path: '/today', screen: 'TodayScreen', target: { kind: 'tab', route: 'Today' }, origin: 'rn' },
+  { path: '/appointments', screen: 'AppointmentsScreen', target: { kind: 'tab', route: 'Appointments' }, origin: 'rn' },
   { path: '/cashbook', screen: 'CashbookScreen', target: { kind: 'tab', route: 'Cashbook' }, origin: 'rn' },
   { path: '/stats', screen: 'StatsScreen', target: { kind: 'tab', route: 'Stats' }, origin: 'rn' },
   { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },

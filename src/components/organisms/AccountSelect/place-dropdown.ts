@@ -15,6 +15,11 @@ interface DropdownPlacementInput {
   safeTop: number
   safeBottom: number
   edgeGap: number
+  /**
+   * 트리거와 목록 사이. 주면 목록이 트리거를 덮지 않고 그 아래(뒤집히면 위)에 이만큼 떨어져 선다.
+   * 안 주면 트리거 자리에서 시작한다(메이플 ID 고르개).
+   */
+  gap?: number
 }
 
 interface DropdownPlacement {
@@ -36,17 +41,20 @@ export function placeDropdown(input: DropdownPlacementInput): DropdownPlacement 
   const topLimit = input.safeTop + input.edgeGap
   const bottomLimit = input.windowHeight - input.safeBottom - input.edgeGap
   const anchorBottom = input.anchorTop + input.anchorHeight
+  // 간격이 있으면 목록은 트리거 밖에 선다. 아래로는 트리거 밑변 + 간격에서, 위로는 트리거 윗변 - 간격까지.
+  const belowStart = input.gap === undefined ? input.anchorTop : anchorBottom + input.gap
+  const aboveEnd = input.gap === undefined ? anchorBottom : input.anchorTop - input.gap
 
-  const spaceBelow = bottomLimit - input.anchorTop
-  const spaceAbove = anchorBottom - topLimit
+  const spaceBelow = bottomLimit - belowStart
+  const spaceAbove = aboveEnd - topLimit
 
   if (input.contentHeight <= spaceBelow) {
-    return { top: input.anchorTop, maxHeight: spaceBelow }
+    return { top: belowStart, maxHeight: spaceBelow }
   }
   if (input.contentHeight <= spaceAbove) {
-    return { top: anchorBottom - input.contentHeight, maxHeight: spaceAbove }
+    return { top: aboveEnd - input.contentHeight, maxHeight: spaceAbove }
   }
   return spaceAbove > spaceBelow
     ? { top: topLimit, maxHeight: spaceAbove }
-    : { top: input.anchorTop, maxHeight: spaceBelow }
+    : { top: belowStart, maxHeight: spaceBelow }
 }

@@ -57,7 +57,7 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
   //
   // 탭이 넷에서 셋이 됐다. 사냥 수익·지출 껍데기 둘이 빠지고 가계부 하나가 들어왔다. 둘은
   // 사라진 것이 아니라 그 화면 안으로 들어간다.
-  it('RN 에서 새로 생긴 화면은 열다섯이고 넷은 탭·여덟은 하위 페이지·셋은 루트 화면이다', () => {
+  it('RN 에서 새로 생긴 화면은 열여섯이고 다섯은 탭·여덟은 하위 페이지·셋은 루트 화면이다', () => {
     const rnRows = ROUTE_TABLE.filter((row) => row.origin === 'rn')
 
     expect(rnRows.map((row) => row.target)).toEqual([
@@ -65,6 +65,7 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
       { kind: 'root', route: 'MvpGradePick' },
       { kind: 'root', route: 'MvpGradeConfirm' },
       { kind: 'tab', route: 'Today' },
+      { kind: 'tab', route: 'Appointments' },
       { kind: 'tab', route: 'Cashbook' },
       { kind: 'tab', route: 'Stats' },
       { kind: 'tab', route: 'Utility' },
@@ -103,7 +104,7 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
 
   // 라벨은 여기 없다. 바가 라벨을 두 층에서 쓰므로 `bar-groups.ts` 의 `BAR_GROUPS` 가 갖는다
   // 그 표와 이 목록이 같은 집합인지는 `bar-groups.test.ts` 가 본다.
-  it('탭 화면은 아홉이고 표에서 파생된다', () => {
+  it('탭 화면은 열이고 표에서 파생된다', () => {
     expect(TAB_ROUTE_NAMES).toEqual([
       'Content',
       'Boss',
@@ -113,6 +114,8 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
       'Profit',
       'Settings',
       'Today',
+      // 스케줄의 넷째 하위(파티 약속). 아홉에서 열이 됐다.
+      'Appointments',
       // 사냥 수익·지출 자리에 들어온 하나. 아홉에서 여덟이 됐다.
       'Cashbook',
       // 수익·지출의 셋째 하위. 여덟에서 아홉이 됐다.

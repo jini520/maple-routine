@@ -26,8 +26,8 @@ import Animated, {
   type LayoutAnimation,
 } from 'react-native-reanimated'
 
-import { ChevronDownIcon, Text } from '../../atoms'
-import { SelectField, type SelectOption } from '../SelectField/SelectField'
+import { Text } from '../../atoms'
+import { SelectChevron, SelectField, type SelectOption } from '../SelectField/SelectField'
 
 export interface ChainStep {
   /** 자리표시자에 서는 이름. `캐릭터·지역·사냥터 선택` 의 그 낱말이다. */
@@ -172,10 +172,11 @@ export function ChainSelect(props: {
       onSelect={(value) => pick(activeIndex, value)}
       renderOption={active.renderOption}
       testID={props.testID}
-      renderTrigger={(open) => (
+      renderTrigger={(open, isOpen) => (
         <View
           onLayout={(event) => rowWidth.set(event.nativeEvent.layout.width)}
-          className="min-h-7 flex-row items-center gap-2 border-b border-border pb-2"
+          // 상자(바탕 · 테두리)는 `SelectField` 가 두른다. 여기는 그 안만 그린다.
+          className="min-h-6 flex-1 flex-row items-center gap-2"
         >
           {props.leading}
           {/*
@@ -246,11 +247,7 @@ export function ChainSelect(props: {
                   {labelOf(props.steps[마지막]!)}
                 </Text>
               </View>
-              <ChevronDownIcon
-                className="h-4 w-4 shrink-0 text-text-disabled"
-                strokeWidth={2}
-                aria-hidden
-              />
+              <SelectChevron open={isOpen} />
             </Pressable>
           ) : (
             <Pressable
@@ -270,11 +267,7 @@ export function ChainSelect(props: {
               >
                 {placeholder}
               </Text>
-              <ChevronDownIcon
-                className="h-4 w-4 shrink-0 text-text-disabled"
-                strokeWidth={2}
-                aria-hidden
-              />
+              <SelectChevron open={isOpen} />
             </Pressable>
           )}
         </View>

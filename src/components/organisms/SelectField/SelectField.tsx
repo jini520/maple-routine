@@ -17,6 +17,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native'
+import Animated, { Easing, Keyframe, useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ChevronDownIcon, Text } from '../../atoms'
@@ -24,6 +25,56 @@ import { placeDropdown } from '../AccountSelect/place-dropdown'
 
 /** 목록이 화면 가장자리에 붙지 않게 남기는 여백. `AccountSelect` 와 같은 값이다. */
 const EDGE_GAP_PX = 12
+/** 트리거와 목록 사이. 목록은 트리거를 덮지 않고 그 아래에 뜬다 */
+const LIST_GAP_PX = 6
+
+/** 열리고 닫힐 때의 곡선. 빨리 출발해 부드럽게 멈춘다 */
+const EASE_OUT = Easing.bezier(0.2, 0.8, 0.2, 1)
+
+/**
+ * 닫힌 줄의 상자. 옅은 바탕 · 테두리 · 반경 12 이고 열리면 테두리가 주황이 된다. 자리마다 내용이 달라도
+ * (라벨–값 · 배지 사슬 · 캐릭터 줄) 상자는 이것 하나다.
+ */
+function triggerBoxClass(isOpen: boolean): string {
+  return `min-h-10 flex-row items-center gap-2.5 rounded-xl border bg-card-body px-3 py-2 ${
+    isOpen ? 'border-primary' : 'border-border'
+  }`
+}
+
+/**
+ * 열리면 뒤집히는 화살표. 내용을 직접 그리는 트리거(`renderTrigger`)도 이것을 끝에 둔다.
+ *
+ * Animated.View 에는 움직임만 준다. 정적 스타일을 함께 주면 버려진다.
+ *
+ * @param props.className 화살표 색(기본 흐린 글자색)
+ */
+export function SelectChevron(props: { open: boolean; className?: string }): React.JSX.Element {
+  const turn = useDerivedValue(() => withTiming(props.open ? 180 : 0, { duration: 250, easing: EASE_OUT }))
+  const style = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.value}deg` }] }))
+  return (
+    <Animated.View style={style}>
+      <ChevronDownIcon className={`h-4 w-4 ${props.className ?? 'text-text-muted'}`} strokeWidth={2} aria-hidden />
+    </Animated.View>
+  )
+}
+
+/** 목록 상자. 0.85 배 · 6 위에서 위쪽 가운데를 기준으로 펼쳐진다(가운데 기준 배율을 위로 당겨 맞춘다) */
+function listEntering(height: number) {
+  return new Keyframe({
+    0: { opacity: 0, transform: [{ translateY: -LIST_GAP_PX - height * 0.075 }, { scaleY: 0.85 }] },
+    100: { opacity: 1, transform: [{ translateY: 0 }, { scaleY: 1 }], easing: EASE_OUT },
+  }).duration(220)
+}
+
+/** 목록의 칸 하나. 위에서 4 내려오며 나타나고, 칸마다 40ms 씩 늦게 시작한다 */
+function itemEntering(index: number) {
+  return new Keyframe({
+    0: { opacity: 0, transform: [{ translateY: -4 }] },
+    100: { opacity: 1, transform: [{ translateY: 0 }], easing: EASE_OUT },
+  })
+    .duration(200)
+    .delay(index * 40)
+}
 
 export interface SelectOption {
   /** `null` 은 안 고름 이다. 고르개마다 그 뜻이 다르므로 라벨은 호출부가 준다. */
@@ -51,12 +102,13 @@ export interface SelectFieldProps {
    */
   renderOption?: (option: SelectOption, isSelected: boolean) => React.ReactNode
   /**
-   * 닫힌 줄을 통째로 다시 그리는 법. 없으면 라벨–값 한 줄이다.
+   * 닫힌 줄의 상자 **안**을 다시 그리는 법. 없으면 라벨–값 한 줄이다.
    *
-   * 배지 사슬처럼 한 줄이 값 여럿을 지는 자리가 쓴다. 목록은 이 트리거에 붙으므로 줄 전체를
-   * 넘기면 목록도 줄 폭으로 선다. 여는 일은 받은 손잡이를 부르는 쪽이 정한다.
+   * 배지 사슬처럼 한 줄이 값 여럿을 지는 자리가 쓴다. 상자(바탕 · 테두리 · 열림 색)는 이 파일이 두르고,
+   * 목록은 그 상자에 붙어 상자 폭으로 선다. 여는 일은 받은 손잡이를 부르는 쪽이 정하고, 끝에
+   * `SelectChevron` 을 둔다.
    */
-  renderTrigger?: (open: () => void) => React.ReactNode
+  renderTrigger?: (open: () => void, isOpen: boolean) => React.ReactNode
 }
 
 /** `null` 도 받는 키. 목록의 첫 칸이 대개 그것이다. */
@@ -122,8 +174,60 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           safeTop: insets.top,
           safeBottom: insets.bottom,
           edgeGap: EDGE_GAP_PX,
+          gap: LIST_GAP_PX,
         })
   const isPlaced = placement !== null && contentHeight !== null
+
+  function renderOptions(animate: boolean): React.ReactNode {
+    return props.options.map((option, index) => {
+      const isSelected = option.value === props.selected
+      const opensGroup = option.group !== undefined && option.group !== props.options[index - 1]?.group
+      const body = (
+        <>
+          {opensGroup && (
+            // 첫 묶음 말고는 위에 선을 긋는다. 라벨만으로는 앞 묶음의 끝이 안 보인다.
+            <Text
+              testID={`${props.testID}-group-${option.group}`}
+              className={`px-2.5 pb-1 pt-2.5 text-11 font-semibold text-text-disabled${
+                index === 0 ? '' : ' border-t border-surface-2'
+              }`}
+            >
+              {option.group}
+            </Text>
+          )}
+          <Pressable
+            testID={`${props.testID}-option-${keyOf(option.value)}`}
+            role="button"
+            aria-label={option.label}
+            aria-selected={isSelected}
+            onPress={() => {
+              props.onSelect(option.value)
+              close()
+            }}
+            className={`rounded-[10px] px-2.5 py-[9px] active:bg-card-body${isSelected ? ' bg-primary-tint' : ''}`}
+          >
+            {props.renderOption === undefined ? (
+              <Text
+                numberOfLines={1}
+                className={`text-sm ${isSelected ? 'font-semibold text-primary-ink' : 'font-semibold text-text'}`}
+              >
+                {option.label}
+              </Text>
+            ) : (
+              props.renderOption(option, isSelected)
+            )}
+          </Pressable>
+        </>
+      )
+      return animate ? (
+        <Animated.View key={keyOf(option.value)} entering={itemEntering(index)}>
+          {body}
+        </Animated.View>
+      ) : (
+        <View key={keyOf(option.value)}>{body}</View>
+      )
+    })
+  }
 
   return (
     <>
@@ -135,17 +239,17 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           aria-label={props.label}
           aria-expanded={isOpen}
           onPress={open}
-          className="flex-row items-center gap-3 border-b border-border pb-2 active:opacity-60"
+          className={`${triggerBoxClass(isOpen)} active:opacity-60`}
         >
           <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
-          <Text numberOfLines={1} className="ml-auto shrink text-sm text-text">
+          <Text numberOfLines={1} className="flex-1 text-15 font-bold text-text">
             {selectedLabel}
           </Text>
-          <ChevronDownIcon className="h-4 w-4 shrink-0 text-text-disabled" strokeWidth={2} aria-hidden />
+          <SelectChevron open={isOpen} />
         </Pressable>
       ) : (
-        <View ref={triggerRef} testID={`${props.testID}-trigger`}>
-          {props.renderTrigger(open)}
+        <View ref={triggerRef} testID={`${props.testID}-trigger`} className={triggerBoxClass(isOpen)}>
+          {props.renderTrigger(open, isOpen)}
         </View>
       )}
 
@@ -168,72 +272,39 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
             className="flex-1"
           />
 
-          <View
-            testID={`${props.testID}-list`}
-            role="menu"
-            aria-label={props.label}
-            style={{
-              left: anchor?.left ?? 0,
-              top: placement?.top ?? 0,
-              width: anchor?.width,
-              maxHeight: placement?.maxHeight,
-            }}
-            className={`absolute overflow-hidden rounded-xl border border-border bg-surface shadow-lg${
-              isPlaced ? '' : ' opacity-0'
-            }`}
-          >
-            <ScrollView>
-              {/* 자연 높이를 재는 자리. `ScrollView` 안이라 바깥 `maxHeight` 에 안 눌린다. */}
-              <View onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}>
-                {props.options.map((option, index) => {
-                  const isSelected = option.value === props.selected
-                  const opensGroup =
-                    option.group !== undefined && option.group !== props.options[index - 1]?.group
-                  return (
-                    <View key={keyOf(option.value)}>
-                      {opensGroup && (
-                        // 첫 묶음 말고는 위에 선을 긋는다. 라벨만으로는 앞 묶음의 끝이 안 보인다.
-                        <Text
-                          testID={`${props.testID}-group-${option.group}`}
-                          className={`px-3 pb-1 pt-2.5 text-11 font-semibold text-text-disabled${
-                            index === 0 ? '' : ' border-t border-surface-2'
-                          }`}
-                        >
-                          {option.group}
-                        </Text>
-                      )}
-                      <Pressable
-                        testID={`${props.testID}-option-${keyOf(option.value)}`}
-                        role="button"
-                        aria-label={option.label}
-                        aria-selected={isSelected}
-                        onPress={() => {
-                          props.onSelect(option.value)
-                          close()
-                        }}
-                        className={`px-3 py-2.5 active:bg-surface-2${
-                          isSelected ? ' bg-primary-tint' : ''
-                        }`}
-                      >
-                        {props.renderOption === undefined ? (
-                          <Text
-                            numberOfLines={1}
-                            className={`text-sm ${
-                              isSelected ? 'font-semibold text-primary-ink' : 'text-text'
-                            }`}
-                          >
-                            {option.label}
-                          </Text>
-                        ) : (
-                          props.renderOption(option, isSelected)
-                        )}
-                      </Pressable>
-                    </View>
-                  )
-                })}
+          {isPlaced ? (
+            // 자리는 바깥 View, 펼쳐지는 움직임만 Animated.View. 한데 주면 자리가 버려진다.
+            <View
+              style={{ position: 'absolute', left: anchor?.left ?? 0, top: placement.top, width: anchor?.width }}
+            >
+              <Animated.View entering={listEntering(Math.min(contentHeight, placement.maxHeight))}>
+                <View
+                  testID={`${props.testID}-list`}
+                  role="menu"
+                  aria-label={props.label}
+                  style={{ maxHeight: placement.maxHeight }}
+                  className="overflow-hidden rounded-[14px] border border-border bg-surface shadow-lg"
+                >
+                  <ScrollView contentContainerStyle={{ padding: 6 }}>{renderOptions(true)}</ScrollView>
+                </View>
+              </Animated.View>
+            </View>
+          ) : (
+            // 자리를 재기 전. 같은 목록을 안 보이게 그려 자연 높이를 재고, 잰 뒤에 펼쳐지는 목록으로 갈아 끼운다.
+            <View
+              testID={`${props.testID}-list`}
+              role="menu"
+              aria-label={props.label}
+              style={{ position: 'absolute', left: 0, top: 0, width: anchor?.width, opacity: 0 }}
+            >
+              <View
+                style={{ padding: 6 }}
+                onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}
+              >
+                {renderOptions(false)}
               </View>
-            </ScrollView>
-          </View>
+            </View>
+          )}
         </Modal>
       )}
     </>

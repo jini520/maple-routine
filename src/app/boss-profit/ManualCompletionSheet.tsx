@@ -221,7 +221,7 @@ export function ManualCompletionSheet(props: ManualCompletionSheetProps): React.
           monthKey={monthKey}
           anchor={anchor}
           onChangeMonth={setMonthKey}
-          onSelect={(next) => {
+          onConfirm={(next) => {
             setDateKey(next)
             closeCalendar()
           }}

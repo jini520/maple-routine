@@ -227,6 +227,12 @@ interface BottomSheetProps {
    * 아무 일도 안 한다.
    */
   stepKey?: string
+  /**
+   * 시트 높이의 하한. 화면 높이에 대한 비율(0.65 = 65%)이다. 안 주면 내용 높이 그대로다.
+   *
+   * 내용이 자라는 단계(보스 추가의 선택 줄)에서 시트가 들쭉날쭉 크지 않게 처음부터 넉넉히 연다.
+   */
+  minHeightRatio?: number
 }
 
 /**
@@ -512,6 +518,8 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
           syncHiddenBelow()
         }}
         contentContainerStyle={{
+          // 스크롤 내용이 머리 · 바닥 몫을 위아래 여백으로 품으므로 이 하한이 곧 시트 높이의 하한이다.
+          minHeight: props.minHeightRatio === undefined ? undefined : frame.height * props.minHeightRatio,
           // 잰 머리 높이에 핸들 몫과 아래 여백이 이미 들어 있다. 두 번 더하지 않는다.
           paddingTop:
             props.header === undefined

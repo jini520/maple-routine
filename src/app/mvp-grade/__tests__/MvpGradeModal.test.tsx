@@ -100,6 +100,7 @@ describe('MvpGradeModal', () => {
       expect(view.getByTestId('week-calendar-popover')).toBeTruthy()
       expect(view.getByLabelText('2026-09-24').props.accessibilityState?.disabled).toBe(true)
       await fireEvent.press(view.getByLabelText('2026-09-08'))
+      await fireEvent.press(view.getByRole('button', { name: '확인' }))
 
       expect(view.queryByTestId('week-calendar-popover')).toBeNull()
       expect(카드(view, 'a').getByTestId('mvp-grade-start-a')).toHaveTextContent('9월 3일 (목)')

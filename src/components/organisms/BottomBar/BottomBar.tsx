@@ -23,6 +23,7 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 import {
   ArrowLeftIcon,
   CalendarCheckIcon,
+  CalendarClockIcon,
   CalendarIcon,
   ChartColumnIcon,
   MenuIcon,
@@ -188,6 +189,8 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
   Boss: SwordsIcon,
   // 검(보스)·목록(컨텐츠)과 겹치지 않으면서 값을 맞추는 자리 를 말하는 그림이다.
   BossManage: SlidersHorizontalIcon,
+  // 시각이 붙은 달력. 스케줄 그룹(`CalendarCheck`)과 한 식구로 읽히게 골랐다.
+  Appointments: CalendarClockIcon,
   Profit: ProfitIcon,
   // 가계부 = 장부. 달력 계열(`CalendarCheck` = 스케줄러 그룹)과 겹치지 않게 골랐다.
   Cashbook: CalendarIcon,

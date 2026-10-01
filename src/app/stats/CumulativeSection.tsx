@@ -109,7 +109,7 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
           monthKey={calendarMonth}
           anchor={anchor}
           onChangeMonth={setCalendarMonth}
-          onSelect={(next) => {
+          onConfirm={(next) => {
             props.onChangeStart(next)
             close()
           }}

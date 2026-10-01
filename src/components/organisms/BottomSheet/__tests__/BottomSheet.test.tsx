@@ -127,6 +127,24 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     expect(sheet.props.maxDynamicContentSize).toBeCloseTo(844 - 59)
   })
 
+  it('최소 높이 비율을 주면 스크롤 내용이 화면 높이의 그 비율보다 작아지지 않는다', async () => {
+    const view = await renderOverlay(
+      <BottomSheet onClose={noop} testId="boss-drop-sheet" label="보스 추가" minHeightRatio={0.65}>
+        <Text>시트 내용</Text>
+      </BottomSheet>,
+    )
+
+    const style = view.getByTestId('boss-drop-sheet').props.contentContainerStyle as { minHeight?: number }
+    // 테스트 프레임 높이 844. 스크롤 내용이 머리 · 바닥 몫을 여백으로 품으므로 이것이 시트 높이의 하한이다.
+    expect(style.minHeight).toBeCloseTo(844 * 0.65)
+  })
+
+  it('최소 높이 비율을 안 주면 내용 높이 그대로다', async () => {
+    const { getByTestId } = await open()
+
+    expect((getByTestId('boss-drop-sheet').props.contentContainerStyle as { minHeight?: number }).minHeight).toBeUndefined()
+  })
+
   it('상한이 상단 인셋을 따라간다. 노치가 두꺼운 기기는 그만큼 낮아진다', async () => {
     const { getByTestId } = await open({
       frame: { x: 0, y: 0, width: 390, height: 844 },

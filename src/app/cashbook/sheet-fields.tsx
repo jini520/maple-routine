@@ -62,7 +62,7 @@ export function SheetDateField(props: {
           monthKey={monthKey}
           anchor={anchor}
           onChangeMonth={setMonthKey}
-          onSelect={(next) => {
+          onConfirm={(next) => {
             props.onChange(next)
             close()
           }}
