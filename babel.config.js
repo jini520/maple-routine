@@ -58,20 +58,11 @@ module.exports = function babelConfig(api) {
   api.cache.using(() => process.env.NODE_ENV)
 
   return {
-    presets: ['babel-preset-expo'],
-    overrides: [
-      // NativeWind 의 JSX 치환에서 캘린더 라이브러리를 뺀다. 치환되면 그 안의 reanimated
-      // `Animated.View` 가 NativeWind 래퍼를 거쳐 정적 style 을 잃고, 격자 줄과 약속 블록이 안 그려진다.
-      {
-        // 정규식이 아니라 함수다. Metro 가 파일 이름 없이 설정을 한 번 읽는데, 정규식이면 babel 이 그때 던진다.
-        exclude: (filename) =>
-          typeof filename === 'string' && /[\\/]node_modules[\\/]@howljs[\\/]/.test(filename),
-        presets: ['nativewind/babel'],
-      },
-      // 아래 오버라이드는 테스트에서만 돈다 — 이유는 플러그인 정의 위 주석에.
-      // **우리 소스에만** 건다: `node_modules` 의 RN 파일까지 내리면 그쪽이 자기 프리셋으로 이미 처리한
-      // 것과 겹쳐 `Unexpected token 'export'` 로 죽는다(실측).
-      ...(isTest
+    presets: ['babel-preset-expo', 'nativewind/babel'],
+    // 아래 오버라이드는 테스트에서만 돈다 — 이유는 플러그인 정의 위 주석에.
+    // **우리 소스에만** 건다: `node_modules` 의 RN 파일까지 내리면 그쪽이 자기 프리셋으로 이미 처리한
+    // 것과 겹쳐 `Unexpected token 'export'` 로 죽는다(실측).
+    overrides: isTest
       ? [
           {
             // **절대 경로로 못박는다** — `/src/` 로 잡으면 `node_modules/react-native/src/…` 까지
@@ -81,7 +72,6 @@ module.exports = function babelConfig(api) {
             plugins: [transformDynamicImport],
           },
         ]
-      : []),
-    ],
+      : [],
   }
 }

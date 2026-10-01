@@ -14,6 +14,7 @@ const SCREENS = [
   join(APP, 'boss-profit', 'BossProfitScreen.tsx'),
   join(APP, 'cashbook', 'CashbookScreen.tsx'),
   join(APP, 'boss-profit', 'DropPriceScreen.tsx'),
+  join(APP, 'party-appointments', 'AppointmentsScreen.tsx'),
 ]
 
 /** 줄을 여는 클래스. 셋이 같은 문자열로 시작한다. */

@@ -26,6 +26,10 @@ export interface TimePopoverProps {
   units?: { hour: string; minute: string }
   /** 고를 수 없는 칸. 흐리게 그리고, 거기서 멈추면 `확인` 을 막는다 */
   isDisabled?: (minutes: number) => boolean
+  /** 시 열의 첫 시(종료 휠은 시작 시부터) */
+  firstHour?: number
+  /** 시 열 왼쪽 날짜 열(`10/2 (금)` · `10/3 (토)`) */
+  dayLabels?: { today: string; next: string }
   onConfirm: (minutes: number) => void
   /** `null` 이면 아직 못 쟀다. 그리되 보이지 않는다 */
   anchor: PopoverAnchorRect | null
@@ -90,6 +94,8 @@ export function TimePopover(props: TimePopoverProps): React.JSX.Element {
         />
         <TimeWheel
           units={props.units}
+          firstHour={props.firstHour}
+          dayLabels={props.dayLabels}
           hour={Math.floor(value / 60)}
           minute={value % 60}
           step={props.step}

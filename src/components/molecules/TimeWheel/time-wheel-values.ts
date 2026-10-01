@@ -1,6 +1,15 @@
 /** 시 휠에 서는 값 */
 export const HOUR_VALUES: readonly number[] = Array.from({ length: 24 }, (_, hour) => hour)
 
+/**
+ * 그 시부터 한 바퀴 세운 시. 종료 휠이 시작 시부터 서야 23 다음 00 으로 자정을 이어 넘는다.
+ *
+ * @example hoursFrom(23) // [23, 0, 1, …, 22]
+ */
+export function hoursFrom(firstHour: number): number[] {
+  return HOUR_VALUES.map((hour) => (firstHour + hour) % 24)
+}
+
 /** 분 휠에 서는 값. `step` 은 60 을 나누는 분 단위 */
 export function minuteValues(step: number): number[] {
   return Array.from({ length: 60 / step }, (_, index) => index * step)

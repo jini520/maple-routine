@@ -4,18 +4,23 @@
  * 칸을 넘길 때마다 선택 햅틱이 울리고, 휠이 멈춘 뒤에 `onChange` 가 한 번 온다.
  */
 import WheelPicker from '@quidone/react-native-wheel-picker'
-import { useMemo } from 'react'
-import { View } from 'react-native'
+import { useMemo, useState } from 'react'
+import { type Animated, View } from 'react-native'
 
 import { Text } from '../../atoms'
 import { selectionFeedback } from '../../../native/haptics'
 import { useThemeAppearance } from '../../../theme/context'
-import { HOUR_VALUES, minuteValues, snapMinute } from './time-wheel-values'
+import { DayColumn, ScrollOffsetBridge } from './DayColumn'
+import { HOUR_VALUES, hoursFrom, minuteValues, snapMinute } from './time-wheel-values'
 
 /** 가운데 칸 높이. 위아래로 한 칸씩 더 보인다 */
 const ITEM_HEIGHT = 32
 const VISIBLE_ITEM_COUNT = 3
 const COLUMN_WIDTH = 56
+// 3D 원통 휠의 실제 높이와 이웃 줄 자리. 라이브러리가 칸을 45° 씩 기울여 그려서 칸 높이의 배수가 아니다.
+const PICKER_HEIGHT = ITEM_HEIGHT * (1 + Math.SQRT2)
+const NEAR_ROW_Y = (ITEM_HEIGHT * (1 + Math.SQRT1_2)) / 2
+const FAR_ROW_Y = ITEM_HEIGHT * (0.5 + Math.SQRT1_2)
 
 function pad(value: number): string {
   return String(value).padStart(2, '0')
@@ -31,16 +36,27 @@ export interface TimeWheelProps {
   units?: { hour: string; minute: string }
   /** 흐리게 그릴 칸. 막는 일(값 되돌리기)은 부르는 쪽이 `onChange` 에서 한다 */
   isDisabled?: (hour: number, minute: number) => boolean
+  /** 시 열의 첫 시. 주면 그 시부터 한 바퀴(`23 → 00 → 01 …`) 선다 */
+  firstHour?: number
+  /** 시 열 왼쪽 날짜 열. `00` 앞은 `today`, 뒤는 `next` */
+  dayLabels?: { today: string; next: string }
 }
 
 export function TimeWheel(props: TimeWheelProps): React.JSX.Element {
   const { definition } = useThemeAppearance()
   // 단위가 붙으면 길이(`1 시간`)라 앞의 0 을 안 채운다. 시각(`09:30`)일 때만 채운다.
   const padHour = props.units === undefined
+  const { firstHour, dayLabels } = props
   const hours = useMemo(
-    () => HOUR_VALUES.map((value) => ({ value, label: padHour ? pad(value) : String(value) })),
-    [padHour],
+    () =>
+      (firstHour === undefined ? HOUR_VALUES : hoursFrom(firstHour)).map((value) => ({
+        value,
+        label: padHour ? pad(value) : String(value),
+      })),
+    [padHour, firstHour],
   )
+  // 날짜 열이 따라 움직일 시 휠의 스크롤 값. 휠 안에서만 읽혀서 다리로 받아 온다.
+  const [hourOffset, setHourOffset] = useState<Animated.Value | null>(null)
   const minutes = useMemo(
     () => minuteValues(props.step).map((value) => ({ value, label: pad(value) })),
     [props.step],
@@ -84,10 +100,23 @@ export function TimeWheel(props: TimeWheelProps): React.JSX.Element {
         className="absolute left-0 right-0 bg-card-body"
         style={{ top: '50%', marginTop: -ITEM_HEIGHT / 2, height: ITEM_HEIGHT, borderRadius: 10 }}
       />
+      {dayLabels !== undefined && (
+        <DayColumn
+          offset={hourOffset}
+          boundary={hours.findIndex((item) => item.value === 0)}
+          today={dayLabels.today}
+          next={dayLabels.next}
+          itemHeight={ITEM_HEIGHT}
+          pickerHeight={PICKER_HEIGHT}
+          nearY={NEAR_ROW_Y}
+          farY={FAR_ROW_Y}
+        />
+      )}
       <WheelPicker
         {...common}
         data={hours}
         value={props.hour}
+        renderOverlay={dayLabels === undefined ? undefined : () => <ScrollOffsetBridge onOffset={setHourOffset} />}
         renderItem={({ item }) =>
           // 그 시의 모든 분이 막혔을 때만 시를 흐린다.
           cell(

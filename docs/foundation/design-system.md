@@ -861,8 +861,8 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 정하고 좌우 여백을 쓴다. 그래서 썸이 조각마다 폭을 다시 재서 미끄러질 수 있다.
 
 ### 기간 이동 줄(`←` · 기간 라벨 · `→`): [[ADR-256]] (2026-09-12)
-`BossProfitScreen` · `CashbookScreen` · `DropPriceScreen` 셋에 있다. **아직 부품이 아니다** —
-셋이 서로 베낀 코드이고, #351 이 년 → 월 → 주 드릴다운을 세우면서 하나로 모은다.
+`BossProfitScreen` · `CashbookScreen` · `DropPriceScreen` · `AppointmentsScreen` 넷에 있다. **아직 부품이 아니다** -
+넷이 서로 베낀 코드이고, #351 이 년 → 월 → 주 드릴다운을 세우면서 하나로 모은다.
 
 ```
 화살표  h-7 w-7 rounded-full border border-border · 꺼지면 opacity-30
@@ -870,7 +870,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 줄      flex-row items-center justify-center gap-4 py-3
 ```
 
-**`py-3`(위아래 각 12)은 세 화면이 같은 값이다.** 한 곳만 바꾸면 같은 줄이 화면마다 다르게
+**`py-3`(위아래 각 12)은 네 화면이 같은 값이다.** 한 곳만 바꾸면 같은 줄이 화면마다 다르게
 보인다. `src/__tests__/period-nav-padding.test.ts` 가 셋이 같은지 본다.
 
 ### 스크롤 영역: 화면이 스크롤을 소유하고, **고정되는 영역은 없다** ([[ADR-099]] · [[ADR-131]])

@@ -1,5 +1,7 @@
 /**
- * 등록 시트 맨 위의 시작 · 종료 타일 넷(2 × 2). 상세의 알림 · 반복 타일과 같은 모양이다.
+ * 등록 시트 맨 위의 날짜 · 시작 · 종료 타일 셋. 상세의 알림 · 반복 타일과 같은 모양이다.
+ *
+ * 종료는 시각만 받고 시작보다 이르면 다음 날이다. 그때 날짜 칸이 `10/2 (금) ~ 10/3 (토)` 로 이틀을 적는다.
  *
  * 추가 · 수정에서는 바꿀 수 있는 값을 주황과 `⌄` 로 쓰고, 고르개가 열린 타일은 주황 바탕이다.
  * 읽기 모드는 검은 값에 `⌄` 가 없다. 그래야 두 화면이 갈린다.
@@ -7,7 +9,7 @@
 import { forwardRef, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { CalendarIcon, ClockIcon, Text } from '../../components/atoms'
+import { CalendarIcon, ClockIcon, FlagIcon, Text } from '../../components/atoms'
 import { SelectChevron } from '../../components/organisms/SelectField/SelectField'
 import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
 import { TimePopover } from '../../components/organisms/TimePopover/TimePopover'
@@ -23,12 +25,12 @@ export interface AppointmentTimeBandProps {
   todayKey: string
   startDateKey: string
   startMinutes: number
-  endDateKey: string
+  /** 시작보다 이르면 다음 날 */
   endMinutes: number
-  /** 종료가 시작보다 이르거나 같다. 종료 값을 빨갛게 쓴다 */
+  /** 종료가 시작과 같다. 종료 값을 빨갛게 쓴다 */
   endInvalid: boolean
   onChangeStart: (dateKey: string, minutes: number) => void
-  onChangeEnd: (dateKey: string, minutes: number) => void
+  onChangeEnd: (minutes: number) => void
   /** 상세의 읽기 모드. 칸을 눌러도 고르개가 안 열린다 */
   readOnly?: boolean
   /** 지난 주 약속. 값을 흐리게 쓴다 */
@@ -48,19 +50,41 @@ function valueColor(tone: ValueTone): string {
   return tone.readOnly ? 'text-text' : 'text-primary-ink'
 }
 
-function DateText(props: { dateKey: string } & ValueTone): React.JSX.Element {
-  const date = new Date(`${props.dateKey}T00:00:00Z`)
+/** `10/3 (토)` */
+function dayLabelOf(dateKey: string): string {
+  const date = new Date(`${dateKey}T00:00:00Z`)
+  return `${date.getUTCMonth() + 1}/${date.getUTCDate()} (${WEEKDAY_LABELS[date.getUTCDay()]})`
+}
+
+/** 날짜 하나. `toDateKey` 가 있으면 `~ 그 날` 까지 같은 색으로 이어 적는다 */
+function DateText(props: { dateKey: string; toDateKey?: string } & ValueTone): React.JSX.Element {
   const weekdayColor = props.invalid || props.muted || !props.readOnly ? valueColor(props) : 'text-text-muted'
+  const day = (dateKey: string): React.JSX.Element => {
+    const date = new Date(`${dateKey}T00:00:00Z`)
+    return (
+      <>
+        {date.getUTCMonth() + 1}/{date.getUTCDate()}
+        <Text className={`text-xs font-medium ${weekdayColor}`}> ({WEEKDAY_LABELS[date.getUTCDay()]})</Text>
+      </>
+    )
+  }
   return (
     <Text className={`text-sm font-bold ${valueColor(props)}`} style={TABULAR_NUMS}>
-      {date.getUTCMonth() + 1}/{date.getUTCDate()}
-      <Text className={`text-xs font-medium ${weekdayColor}`}> ({WEEKDAY_LABELS[date.getUTCDay()]})</Text>
+      {day(props.dateKey)}
+      {props.toDateKey !== undefined && (
+        <>
+          {' ~ '}
+          {day(props.toDateKey)}
+        </>
+      )}
     </Text>
   )
 }
 
 interface TileProps extends ValueTone {
   label: string
+  /** 읽어 주는 이름(`시작 시각 고르기`) */
+  name: string
   icon: typeof CalendarIcon
   isOpen: boolean
   onPress: () => void
@@ -74,7 +98,7 @@ const Tile = forwardRef<View, TileProps>(function Tile(props, ref) {
     <Pressable
       ref={ref}
       role="button"
-      aria-label={`${props.label} 고르기`}
+      aria-label={props.name}
       aria-expanded={props.readOnly ? undefined : props.isOpen}
       disabled={props.readOnly}
       onPress={props.onPress}
@@ -105,22 +129,17 @@ export function AppointmentTimeBand(props: AppointmentTimeBandProps): React.JSX.
     useAnchoredPopover()
   const { ref: stRef, isOpen: stOpen, anchor: stAnchor, toggle: stToggle, close: stClose } =
     useAnchoredPopover()
-  const { ref: edRef, isOpen: edOpen, anchor: edAnchor, toggle: edToggle, close: edClose } =
-    useAnchoredPopover()
   const { ref: etRef, isOpen: etOpen, anchor: etAnchor, toggle: etToggle, close: etClose } =
     useAnchoredPopover()
   const [monthKey, setMonthKey] = useState(() => monthKeyOf(props.startDateKey))
   const maxDateKey = shiftDateKey(props.todayKey, MAX_DAYS_AHEAD)
+  const nextDateKey = shiftDateKey(props.startDateKey, 1)
+  const endsNextDay = props.endMinutes < props.startMinutes
+  const startHour = Math.floor(props.startMinutes / 60)
 
-  function openDate(toggle: () => void, dateKey: string): void {
-    setMonthKey(monthKeyOf(dateKey))
-    toggle()
-  }
-
-  // 종료가 시작과 같은 날이면 시작 이하의 시각을 막는다. 다음 날 이후면 막을 것이 없다.
+  // 종료 휠은 시작 시부터 선다. 그 시의 시작 이하 분은 같은 시각이거나 하루 가까이 뒤라 막는다.
   const endTimeDisabled = (minutes: number): boolean =>
-    props.endDateKey < props.startDateKey ||
-    (props.endDateKey === props.startDateKey && minutes <= props.startMinutes)
+    Math.floor(minutes / 60) === startHour && minutes <= props.startMinutes
 
   const readOnly = props.readOnly === true
   const muted = props.muted === true
@@ -129,35 +148,46 @@ export function AppointmentTimeBand(props: AppointmentTimeBandProps): React.JSX.
 
   return (
     <View className="gap-2 px-4">
-      <View className="flex-row gap-2">
+      {/* 타일이 가로로 늘어나는 \`flex-1\` 이라 세로 줄에 바로 두면 높이가 0 으로 접힌다. */}
+      <View className="flex-row">
         <Tile
           ref={sdRef}
           {...startTone}
-          label="시작 날짜"
+          label="날짜"
+          name="날짜 고르기"
           icon={CalendarIcon}
           isOpen={sdOpen}
-          onPress={() => openDate(sdToggle, props.startDateKey)}
+          onPress={() => {
+            setMonthKey(monthKeyOf(props.startDateKey))
+            sdToggle()
+          }}
         >
-          <DateText dateKey={props.startDateKey} {...startTone} />
-        </Tile>
-        <Tile ref={stRef} {...startTone} label="시작 시각" icon={ClockIcon} isOpen={stOpen} onPress={stToggle}>
-          <Text className={`text-sm font-bold ${valueColor(startTone)}`} style={TABULAR_NUMS}>
-            {formatClock(props.startMinutes)}
-          </Text>
+          <DateText dateKey={props.startDateKey} toDateKey={endsNextDay ? nextDateKey : undefined} {...startTone} />
         </Tile>
       </View>
       <View className="flex-row gap-2">
         <Tile
-          ref={edRef}
-          {...endTone}
-          label="종료 날짜"
-          icon={CalendarIcon}
-          isOpen={edOpen}
-          onPress={() => openDate(edToggle, props.endDateKey)}
+          ref={stRef}
+          {...startTone}
+          label="시작"
+          name="시작 시각 고르기"
+          icon={ClockIcon}
+          isOpen={stOpen}
+          onPress={stToggle}
         >
-          <DateText dateKey={props.endDateKey} {...endTone} />
+          <Text className={`text-sm font-bold ${valueColor(startTone)}`} style={TABULAR_NUMS}>
+            {formatClock(props.startMinutes)}
+          </Text>
         </Tile>
-        <Tile ref={etRef} {...endTone} label="종료 시각" icon={ClockIcon} isOpen={etOpen} onPress={etToggle}>
+        <Tile
+          ref={etRef}
+          {...endTone}
+          label="종료"
+          name="종료 시각 고르기"
+          icon={FlagIcon}
+          isOpen={etOpen}
+          onPress={etToggle}
+        >
           <Text className={`text-sm font-bold ${valueColor(endTone)}`} style={TABULAR_NUMS}>
             {formatClock(props.endMinutes)}
           </Text>
@@ -179,21 +209,6 @@ export function AppointmentTimeBand(props: AppointmentTimeBandProps): React.JSX.
           onClose={sdClose}
         />
       )}
-      {edOpen && (
-        <CalendarPopover
-          selected={props.endDateKey}
-          min={props.startDateKey}
-          max={maxDateKey}
-          monthKey={monthKey}
-          anchor={edAnchor}
-          onChangeMonth={setMonthKey}
-          onConfirm={(dateKey) => {
-            props.onChangeEnd(dateKey, props.endMinutes)
-            edClose()
-          }}
-          onClose={edClose}
-        />
-      )}
       {stOpen && (
         <TimePopover
           minutes={props.startMinutes}
@@ -210,10 +225,12 @@ export function AppointmentTimeBand(props: AppointmentTimeBandProps): React.JSX.
         <TimePopover
           minutes={props.endMinutes}
           step={MINUTE_STEP}
+          firstHour={startHour}
+          dayLabels={{ today: dayLabelOf(props.startDateKey), next: dayLabelOf(nextDateKey) }}
           isDisabled={endTimeDisabled}
           anchor={etAnchor}
           onConfirm={(minutes) => {
-            props.onChangeEnd(props.endDateKey, minutes)
+            props.onChangeEnd(minutes)
             etClose()
           }}
           onClose={etClose}

@@ -5,7 +5,11 @@
  */
 import { resetWeekStartOf } from '../../lib/calendar'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
-import type { PartyAppointment, PartyAppointmentOccurrence } from '../../types/party-appointment'
+import type {
+  PartyAppointment,
+  PartyAppointmentOccurrence,
+  PartyAppointmentSchedule,
+} from '../../types/party-appointment'
 import { DEFAULT_LEAD_MINUTES, durationOf, toAppointment, type AppointmentDraft } from './draft'
 
 const MINUTE_MS = 60_000
@@ -28,13 +32,27 @@ export function draftFromOccurrence(occurrence: PartyAppointmentOccurrence): App
   return {
     startDateKey: start.dateKey,
     startMinutes: start.minutes,
-    endDateKey: end.dateKey,
     endMinutes: end.minutes,
     bosses: occurrence.bosses,
     alarmOn: occurrence.leadMinutes !== null,
     leadMinutes: occurrence.leadMinutes ?? DEFAULT_LEAD_MINUTES,
     repeats: occurrence.appointment.schedule.type === 'weekly',
   }
+}
+
+/**
+ * 반복 요일(0=일). 반복을 안 바꾸는 자리면 약속에 저장된 요일이고, 아니면 고른 시작 날짜의 요일.
+ * 이 주만 다른 날로 옮긴 회차도 반복은 원래 요일 그대로다.
+ *
+ * @param keepSchedule 상세 · `이 주만 적용하기` 처럼 저장해도 반복 요일이 안 바뀌는 자리
+ */
+export function repeatWeekdayOf(
+  draft: AppointmentDraft,
+  schedule: PartyAppointmentSchedule | undefined,
+  keepSchedule: boolean,
+): number {
+  if (keepSchedule && schedule?.type === 'weekly') return schedule.weekday
+  return new Date(`${draft.startDateKey}T00:00:00Z`).getUTCDay()
 }
 
 /**

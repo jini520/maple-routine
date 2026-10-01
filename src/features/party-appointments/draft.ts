@@ -1,8 +1,8 @@
 /**
  * 등록 시트가 들고 있는 저장 전 약속과 그것을 다루는 순수 함수.
  *
- * 시작 · 종료를 날짜와 그 날의 분으로 따로 든다. 시트의 두 줄 띠가 날짜 칸과 시각 칸을 따로 고르기
- * 때문이다. 저장할 때 종료를 시작부터의 분(`durationMinutes`)으로 접는다.
+ * 날짜는 시작 날짜 하나만 든다. 약속은 하루를 넘겨 길어지지 않아, 종료가 시작보다 이르면 다음 날이다.
+ * 저장할 때 종료를 시작부터의 분(`durationMinutes`)으로 접는다.
  */
 import { resetWeekStartOf, shiftDateKey } from '../../lib/calendar'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
@@ -12,7 +12,7 @@ export interface AppointmentDraft {
   startDateKey: string
   /** 그 날 0시부터의 분 */
   startMinutes: number
-  endDateKey: string
+  /** 그 날 0시부터의 분. 시작보다 이르면 다음 날 */
   endMinutes: number
   /** 도는 차례대로 */
   bosses: PartyAppointmentBoss[]
@@ -54,12 +54,10 @@ export function initialDraft(now: Date): AppointmentDraft {
   const kstMinutes = Math.floor((now.getTime() / MINUTE_MS + KST_OFFSET_MINUTES) % DAY_MINUTES)
   const nextSlot = (Math.floor(kstMinutes / MINUTE_STEP) + 1) * MINUTE_STEP
   const start = shiftMinutes(todayKey, 0, nextSlot)
-  const end = shiftMinutes(start.dateKey, start.minutes, DEFAULT_DURATION_MINUTES)
   return {
     startDateKey: start.dateKey,
     startMinutes: start.minutes,
-    endDateKey: end.dateKey,
-    endMinutes: end.minutes,
+    endMinutes: (start.minutes + DEFAULT_DURATION_MINUTES) % DAY_MINUTES,
     bosses: [],
     alarmOn: false,
     leadMinutes: DEFAULT_LEAD_MINUTES,
@@ -67,13 +65,14 @@ export function initialDraft(now: Date): AppointmentDraft {
   }
 }
 
-function daysBetween(from: string, to: string): number {
-  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / (DAY_MINUTES * MINUTE_MS))
+/** 시작부터 종료까지의 분. 종료가 시작보다 이르면 다음 날로 세고, 같으면 0 이다 */
+export function durationOf(draft: AppointmentDraft): number {
+  return (draft.endMinutes - draft.startMinutes + DAY_MINUTES) % DAY_MINUTES
 }
 
-/** 시작부터 종료까지의 분. 종료가 시작보다 이르면 음수 */
-export function durationOf(draft: AppointmentDraft): number {
-  return daysBetween(draft.startDateKey, draft.endDateKey) * DAY_MINUTES + draft.endMinutes - draft.startMinutes
+/** 종료가 다음 날인가. 시작보다 이른 종료다 */
+export function endsNextDay(draft: AppointmentDraft): boolean {
+  return draft.endMinutes < draft.startMinutes
 }
 
 export function canSave(draft: AppointmentDraft): boolean {
