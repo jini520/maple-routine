@@ -2527,6 +2527,7 @@ describe('날짜 바꾸기', () => {
   async function 날짜고르기(view: Rendered, dateKey: string): Promise<void> {
     await 누르기(view, '적는 날 고르기')
     await 누르기(view, dateKey)
+    await 누르기(view, '확인')
   }
 
   it('달력에서 고른 날로 옮긴다. 달력은 닫힌다', async () => {

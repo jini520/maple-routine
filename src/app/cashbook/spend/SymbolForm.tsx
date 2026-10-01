@@ -7,9 +7,9 @@
 import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { ChevronDownIcon, Text } from '../../../components/atoms'
+import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { SelectField, type SelectOption } from '../../../components/organisms/SelectField/SelectField'
+import { SelectChevron, SelectField, type SelectOption } from '../../../components/organisms/SelectField/SelectField'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
@@ -127,13 +127,13 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
         selected={symbolKey}
         onSelect={selectSymbol}
         testID="spend-sheet-symbol"
-        renderTrigger={(open) => (
+        renderTrigger={(open, isOpen) => (
           <Pressable
             role="button"
             aria-label="심볼"
             testID="spend-sheet-symbol"
             onPress={open}
-            className="min-h-7 flex-row items-center gap-3 border-b border-border pb-2 active:opacity-60"
+            className="min-h-6 flex-1 flex-row items-center gap-3 active:opacity-60"
           >
             <Text className="shrink-0 text-xs text-text-muted">심볼</Text>
             <View className="ml-auto shrink flex-row items-center gap-1.5">
@@ -149,7 +149,7 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
                 {found === null ? '심볼 선택' : found.symbol.name}
               </Text>
             </View>
-            <ChevronDownIcon className="h-4 w-4 shrink-0 text-text-disabled" strokeWidth={2} aria-hidden />
+            <SelectChevron open={isOpen} />
           </Pressable>
         )}
         renderOption={(option, isSelected) => {

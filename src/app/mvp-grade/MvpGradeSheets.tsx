@@ -107,7 +107,7 @@ function GradeSheet(props: {
   )
 }
 
-/** 주 하나를 고르는 알약. 누르면 주 고르기 달력이 열리고, 고르면 닫힌다. */
+/** 주 하나를 고르는 알약. 누르면 주 고르기 달력이 열리고, `확인` 하면 닫힌다. */
 function WeekSelectField(props: {
   week: string
   min: string
@@ -116,6 +116,7 @@ function WeekSelectField(props: {
 }): React.JSX.Element {
   const { ref, isOpen, anchor, toggle, close } = useAnchoredPopover()
   const [monthKey, setMonthKey] = useState(monthKeyOf(props.week))
+  const [draft, setDraft] = useState(props.week)
 
   return (
     <>
@@ -123,19 +124,23 @@ function WeekSelectField(props: {
         ref={ref}
         dateKey={props.week}
         label="시작 주"
-        onPress={toggle}
+        onPress={() => {
+          setDraft(props.week)
+          toggle()
+        }}
         testID="mvp-grade-sheet-week"
       />
       {isOpen && (
         <WeekCalendarPopover
-          selection={{ start: props.week, end: props.week }}
+          selection={{ start: draft, end: draft }}
           isSelectable={(week) => week >= props.min && week <= props.max}
           min={props.min}
           max={props.max}
           monthKey={monthKey}
           onChangeMonth={setMonthKey}
-          onSelect={(week) => {
-            props.onChange(week)
+          onSelect={setDraft}
+          onConfirm={() => {
+            props.onChange(draft)
             close()
           }}
           caption="선택한 주"
@@ -149,6 +154,7 @@ function WeekSelectField(props: {
 
 /**
  * 기간 알약. 달력 위 `시작 주 | 종료 주` 탭이 어느 끝을 고를지 정하고, 시작 주를 고르면 종료 주 탭으로 넘어간다.
+ * 고른 기간은 초안이고 `확인` 해야 시트로 나간다.
  * 시작 주는 기록이 없는 지난 주, 종료 주는 시작 주부터 다음 기록의 앞 주까지다.
  */
 function PeriodSelectField(props: {
@@ -164,16 +170,16 @@ function PeriodSelectField(props: {
   const { ref, isOpen, anchor, toggle, close } = useAnchoredPopover()
   const [tab, setTab] = useState<WeekCalendarTab>('start')
   const [monthKey, setMonthKey] = useState(monthKeyOf(lastWeek))
+  const [draft, setDraft] = useState({ start, end })
 
   function select(week: string): void {
     if (tab === 'end') {
-      props.onChange(start, week)
-      close()
+      setDraft({ start: draft.start, end: week })
       return
     }
     // 새 시작 주로는 닿지 않는 종료 주는 버린다.
-    const keepEnd = end !== null && end >= week && end <= insertEndLimit(history, week, thisWeek)
-    props.onChange(week, keepEnd ? end : null)
+    const keepEnd = draft.end !== null && draft.end >= week && draft.end <= insertEndLimit(history, week, thisWeek)
+    setDraft({ start: week, end: keepEnd ? draft.end : null })
     setTab('end')
   }
 
@@ -192,28 +198,38 @@ function PeriodSelectField(props: {
         label="기간"
         text={text}
         placeholder={start === null}
-        onPress={toggle}
+        onPress={() => {
+          setDraft({ start, end })
+          toggle()
+        }}
         testID="mvp-grade-sheet-week"
       />
       {isOpen && (
         <WeekCalendarPopover
-          selection={{ start, end }}
+          selection={draft}
           isSelectable={(week) =>
             tab === 'start'
               ? insertStartSelectable(history, week, floorWeek, thisWeek)
-              : start !== null && week >= start && week <= insertEndLimit(history, start, thisWeek)
+              : draft.start !== null &&
+                week >= draft.start &&
+                week <= insertEndLimit(history, draft.start, thisWeek)
           }
           min={floorWeek}
           max={lastWeek}
           monthKey={monthKey}
           onChangeMonth={setMonthKey}
           onSelect={select}
+          confirmDisabled={draft.start === null}
+          onConfirm={() => {
+            props.onChange(draft.start, draft.end)
+            close()
+          }}
           caption="선택한 기간"
           tabs={{
             active: tab,
             // 시작 주를 고르기 전에는 종료 주를 고를 기준이 없다.
             onChange: (next) => {
-              if (next === 'end' && start === null) return
+              if (next === 'end' && draft.start === null) return
               setTab(next)
             },
           }}

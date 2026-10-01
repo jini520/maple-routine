@@ -1,0 +1,131 @@
+/**
+ * 등록 시트가 들고 있는 저장 전 약속과 그것을 다루는 순수 함수.
+ *
+ * 시작 · 종료를 날짜와 그 날의 분으로 따로 든다. 시트의 두 줄 띠가 날짜 칸과 시각 칸을 따로 고르기
+ * 때문이다. 저장할 때 종료를 시작부터의 분(`durationMinutes`)으로 접는다.
+ */
+import { resetWeekStartOf, shiftDateKey } from '../../lib/calendar'
+import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
+import type { PartyAppointment, PartyAppointmentBoss } from '../../types/party-appointment'
+
+export interface AppointmentDraft {
+  startDateKey: string
+  /** 그 날 0시부터의 분 */
+  startMinutes: number
+  endDateKey: string
+  endMinutes: number
+  /** 도는 차례대로 */
+  bosses: PartyAppointmentBoss[]
+  alarmOn: boolean
+  /** 알림을 꺼도 고른 값을 들고 있어, 다시 켜면 그 값으로 돌아온다 */
+  leadMinutes: number
+  repeats: boolean
+}
+
+/** 시각 휠 · 알림 휠의 분 단위 */
+export const MINUTE_STEP = 5
+export const DEFAULT_DURATION_MINUTES = 30
+export const DEFAULT_LEAD_MINUTES = 10
+/** 알약으로 고르는 알림 분. 그 밖의 값은 `직접` 이다 */
+export const LEAD_PRESETS: readonly number[] = [0, 10, 30, 60]
+
+const DAY_MINUTES = 24 * 60
+const MINUTE_MS = 60_000
+const KST_OFFSET_MINUTES = 9 * 60
+
+/**
+ * 날짜 · 분에 분을 더한 자리. 하루를 넘거나 모자라면 날짜를 옮긴다.
+ *
+ * @example shiftMinutes('2026-10-01', 23 * 60 + 30, 60) // { dateKey: '2026-10-02', minutes: 30 }
+ */
+export function shiftMinutes(
+  dateKey: string,
+  minutes: number,
+  delta: number,
+): { dateKey: string; minutes: number } {
+  const total = minutes + delta
+  const days = Math.floor(total / DAY_MINUTES)
+  return { dateKey: shiftDateKey(dateKey, days), minutes: total - days * DAY_MINUTES }
+}
+
+/** 시트를 처음 열 때. 시작은 지금 이후 첫 5분 칸, 종료는 그 30분 뒤 */
+export function initialDraft(now: Date): AppointmentDraft {
+  const todayKey = getCurrentKstDateKey(now)
+  const kstMinutes = Math.floor((now.getTime() / MINUTE_MS + KST_OFFSET_MINUTES) % DAY_MINUTES)
+  const nextSlot = (Math.floor(kstMinutes / MINUTE_STEP) + 1) * MINUTE_STEP
+  const start = shiftMinutes(todayKey, 0, nextSlot)
+  const end = shiftMinutes(start.dateKey, start.minutes, DEFAULT_DURATION_MINUTES)
+  return {
+    startDateKey: start.dateKey,
+    startMinutes: start.minutes,
+    endDateKey: end.dateKey,
+    endMinutes: end.minutes,
+    bosses: [],
+    alarmOn: false,
+    leadMinutes: DEFAULT_LEAD_MINUTES,
+    repeats: false,
+  }
+}
+
+function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / (DAY_MINUTES * MINUTE_MS))
+}
+
+/** 시작부터 종료까지의 분. 종료가 시작보다 이르면 음수 */
+export function durationOf(draft: AppointmentDraft): number {
+  return daysBetween(draft.startDateKey, draft.endDateKey) * DAY_MINUTES + draft.endMinutes - draft.startMinutes
+}
+
+export function canSave(draft: AppointmentDraft): boolean {
+  return draft.bosses.length > 0 && durationOf(draft) > 0
+}
+
+export function formatClock(minutes: number): string {
+  const hours = Math.floor(minutes / 60)
+  return `${String(hours).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+}
+
+/** `정각` · `10분 전` · `1시간 전` · `1시간 15분 전` */
+export function formatLead(leadMinutes: number): string {
+  if (leadMinutes === 0) return '정각'
+  const hours = Math.floor(leadMinutes / 60)
+  const minutes = leadMinutes % 60
+  const parts = [hours > 0 ? `${hours}시간` : '', minutes > 0 ? `${minutes}분` : ''].filter(Boolean)
+  return `${parts.join(' ')} 전`
+}
+
+export function toAppointment(draft: AppointmentDraft, id: string): PartyAppointment {
+  return {
+    id,
+    bosses: draft.bosses,
+    members: [],
+    timeKst: formatClock(draft.startMinutes),
+    durationMinutes: durationOf(draft),
+    leadMinutes: draft.alarmOn ? draft.leadMinutes : null,
+    schedule: draft.repeats
+      ? {
+          type: 'weekly',
+          weekday: new Date(`${draft.startDateKey}T00:00:00Z`).getUTCDay(),
+          fromWeek: resetWeekStartOf(draft.startDateKey),
+          untilWeek: null,
+        }
+      : { type: 'once', dateKey: draft.startDateKey },
+    exceptions: {},
+  }
+}
+
+/** `from` 자리의 칸을 `to` 자리로 옮긴 새 목록 */
+export function moveItem<T>(list: readonly T[], from: number, to: number): T[] {
+  const next = list.slice()
+  const [item] = next.splice(from, 1)
+  next.splice(to, 0, item as T)
+  return next
+}
+
+/**
+ * 새 약속의 id. `crypto.randomUUID` 는 Hermes 에 없다. 기기 안에서만 겹치지 않으면 되는 키라
+ * 시각과 난수로 충분하다.
+ */
+export function newAppointmentId(now: Date): string {
+  return `${now.getTime().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}

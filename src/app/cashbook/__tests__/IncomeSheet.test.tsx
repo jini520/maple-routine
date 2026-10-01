@@ -74,7 +74,7 @@ async function 그리기(
 
 /** 머리의 `변경` 을 눌러 달력을 열고 그 날을 누른다. 보스 직접 완료 시트와 같은 부품이다. */
 async function 날짜고르기(view: Awaited<ReturnType<typeof renderOverlay>>, dateKey: string): Promise<void> {
-  for (const label of ['적는 날 고르기', dateKey]) {
+  for (const label of ['적는 날 고르기', dateKey, '확인']) {
     await act(async () => {
       fireEvent.press(view.getByLabelText(label))
     })

@@ -76,15 +76,16 @@ describe('그룹 표', () => {
   })
 
   // 헤더 버튼으로만 열리던 화면이 컨텐츠·보스와 나란한 셋째 하위가 된다.
-  it('스케줄러 하위는 컨텐츠·보스·보스 관리 셋이다', () => {
+  it('스케줄러 하위는 컨텐츠·보스·보스 관리·약속 넷이다', () => {
     expect(groupById('schedule').subs).toEqual([
       { page: 'Content', label: '컨텐츠' },
       { page: 'Boss', label: '보스' },
       { page: 'BossManage', label: '보스 관리' },
+      { page: 'Appointments', label: '약속' },
     ])
   })
 
-  it('탭 화면 아홉이 표에 정확히 한 번씩 나온다', () => {
+  it('탭 화면 열이 표에 정확히 한 번씩 나온다', () => {
     const pages = BAR_GROUPS.flatMap((group) =>
       group.page === null ? group.subs.map((sub) => sub.page) : [group.page],
     )
@@ -112,6 +113,7 @@ describe('layerOfPage: 페이지가 사는 층 화면', () => {
   it('하위는 자기 그룹의 층 화면에 산다', () => {
     expect(layerOfPage('Content')).toBe('ScheduleSubs')
     expect(layerOfPage('BossManage')).toBe('ScheduleSubs')
+    expect(layerOfPage('Appointments')).toBe('ScheduleSubs')
     expect(layerOfPage('Profit')).toBe('LedgerSubs')
     expect(layerOfPage('Cashbook')).toBe('LedgerSubs')
     expect(layerOfPage('Stats')).toBe('LedgerSubs')
@@ -123,6 +125,7 @@ describe('층은 **지금 페이지** 가 정한다 (결정 2)', () => {
     expect(barLayer(at('Content'))).toBe('sub')
     expect(barLayer(at('Boss'))).toBe('sub')
     expect(barLayer(at('BossManage'))).toBe('sub')
+    expect(barLayer(at('Appointments'))).toBe('sub')
     expect(barLayer(at('Profit'))).toBe('sub')
     expect(barLayer(at('Cashbook'))).toBe('sub')
     expect(barLayer(at('Stats'))).toBe('sub')
@@ -135,7 +138,7 @@ describe('층은 **지금 페이지** 가 정한다 (결정 2)', () => {
   })
 
   it('하위 행이 보여 주는 항목은 그 그룹의 하위다. 그룹 행이면 비어 있다', () => {
-    expect(visibleSubs(at('Boss')).map((sub) => sub.page)).toEqual(['Content', 'Boss', 'BossManage'])
+    expect(visibleSubs(at('Boss')).map((sub) => sub.page)).toEqual(['Content', 'Boss', 'BossManage', 'Appointments'])
     expect(visibleSubs(at('Today'))).toEqual([])
   })
 })

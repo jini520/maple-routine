@@ -42,6 +42,11 @@
 > 기기가 생긴다. 아래 **앱을 켤 때와 돌아올 때 다시 구독한다** 절이 새 규칙이다. 열린 질문 둘은
 > 사용자가 답했다(2026-09-14).
 
+> **첫 알림 종류가 선다: 파티 약속 알림**(2026-09-30, [[ADR-331]], 이슈 #380, **설계 완료 · 구현 전**).
+> 정해진 시각에 한 번 쏘는 로컬 예약이라 백그라운드 태스크가 필요 없다. 그래서 이 이슈가 아래
+> 레지스트리 · 원장 · 재조정을 처음 코드로 세운다. 백그라운드 태스크는 여전히 #348 몫이다.
+> 안드로이드 채널에 `party` 가 더해진다([[ADR-331]] 결정 7). 기능 문서는 [party-appointments.md](./party-appointments.md).
+
 ## 관련 소스 (만들 것 포함)
 
 | 구분 | 파일 | 상태 |
@@ -51,8 +56,9 @@
 | 포트 | 같은 파일의 `BackgroundTaskPort` | **신설 예정** |
 | 포트 | `src/native/notifications.ts` · `push.ts` | 둘 다 있다 |
 | 포트 | `src/native/background-task.ts` | **신설 예정** |
-| 상태 | `src/features/notifications/` | **신설 예정.** 레지스트리 · 계획 · 재조정 · store |
-| 저장 | `src/storage/notification-settings.ts` · `notification-ledger.ts` | **신설 예정** |
+| 상태 | `src/features/notifications/` | **신설 예정([[ADR-331]]).** 레지스트리 · id 해시 · 재조정 · 재조정을 부르는 자리 |
+| 저장 | `src/storage/notification-settings.ts` · `notification-ledger.ts` | **신설 예정([[ADR-331]])** |
+| 종류 | `src/features/party-appointments/notification.ts` | **신설 예정.** 첫 종류 `party-appointment`([[ADR-331]]) |
 | 어댑터 | `src/native/adapters/rn-notifications.ts` | 있다 |
 | 어댑터 | 같은 폴더의 `rn-push.ts` | **있다** |
 | 어댑터 | 같은 폴더의 `rn-background-task.ts` | **신설 예정** |
@@ -219,6 +225,7 @@ OS 는 예약을 갖고 있는데 앱은 **개수만** 조회할 수 있다([../
 | `syncSchedules` 성공 직후 | 방금 받은 상태로 계획 |
 | 백그라운드 태스크 | 동기화가 되면 최신으로, 실패하면 캐시로([[ADR-008]] 폴백) |
 | 설정 변경(켬/끔·시각) | 즉시 |
+| 약속을 저장하거나 지울 때 | 즉시([[ADR-331]] 결정 8) |
 | 권한 상태 변화 감지 | 꺼졌으면 전부 취소 |
 
 **백그라운드 태스크는 ‘있으면 좋은 것’이다**. 한 번도 안 돌아도 알림은 뜬다([[ADR-146]] 결정 3).
@@ -229,6 +236,7 @@ OS 는 예약을 갖고 있는데 앱은 **개수만** 조회할 수 있다([../
 | 알림 | 채널 | 경로 | 판정 |
 |---|---|---|---|
 | 앱 공지 · 게임 공지 · 업데이트 · 이벤트 · 캐시샵 | `notice` | **FCM 토픽 푸시** | 서버가 판정 |
+| 파티 약속([[ADR-331]]) | `party` | 로컬 예약 | 사용자가 적은 시각. 재확인이 없다 |
 | 일간 스케줄 미완료 | `schedule` | 로컬 예약 | 하이브리드 |
 | 주간 보스 미완료 | `schedule` | 로컬 예약 | 하이브리드 |
 
@@ -496,7 +504,7 @@ JS 의 `onMessage` 로 준다. 메시지는 도착하는데(`FirebaseMessaging` 
 
 | 키 | 값 | 캐시 삭제 시 |
 |---|---|---|
-| `notificationSettings` | 종류별 `{enabled, timeKst}` (JSON) | **보존**. 사용자가 고른 설정이다 |
+| `notificationSettings` | 종류별 켜짐. 지금은 `{ partyAppointment: boolean }` (JSON, [[ADR-331]] 결정 9) | **보존**. 사용자가 고른 설정이다 |
 | `notificationLedger` | `{id, kind, fireAt}[]` (JSON) | 삭제 가능: 다음 재조정이 다시 쓴다 |
 
 - **원장이 지워져도 안전한 이유**: 계획이 다시 예약하면 **결정적 id 라 같은 예약을 덮어쓴다.** 남는

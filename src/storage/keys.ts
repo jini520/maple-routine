@@ -116,6 +116,8 @@ export const STORAGE_KEYS = {
   mvpOnboardingPending: 'mvpOnboardingPending',
   // 끝나지 않은 작업 표시. 지워지면 반쯤 바뀐 기록이 그대로 굳는다. `KEEP_KEYS` 에 넣는다.
   pendingTasks: 'pendingTasks',
+  // 파티 약속 목록(JSON). 사용자가 적은 것이라 아무도 되살려 주지 않는다. `KEEP_KEYS` 에 넣는다.
+  partyAppointments: 'partyAppointments',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {

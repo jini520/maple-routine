@@ -60,6 +60,22 @@ describe('GradeChangeSheet', () => {
     expect(view.getByLabelText('2026-09-08').props.accessibilityState?.disabled).toBe(false)
     expect(view.getByLabelText('2026-09-24').props.accessibilityState?.disabled).toBe(true)
   })
+
+  it('주를 눌러도 확인해야 바뀌고, 바깥을 누르면 버린다', async () => {
+    const view = await renderOverlay(
+      <GradeChangeSheet history={HISTORY} todayDateKey={TODAY} onSave={jest.fn()} onClose={jest.fn()} />,
+    )
+
+    await fireEvent.press(view.getByLabelText('시작 주 고르기'))
+    await fireEvent.press(view.getByLabelText('2026-09-08'))
+    await fireEvent.press(view.getByLabelText('주 고르기 닫기'))
+    expect(view.getByTestId('mvp-grade-sheet-week')).toHaveTextContent('9월 17일 (목)')
+
+    await fireEvent.press(view.getByLabelText('시작 주 고르기'))
+    await fireEvent.press(view.getByLabelText('2026-09-08'))
+    await fireEvent.press(view.getByRole('button', { name: '확인' }))
+    expect(view.getByTestId('mvp-grade-sheet-week')).toHaveTextContent('9월 3일 (목)')
+  })
 })
 
 describe('GradeEditSheet', () => {
@@ -138,6 +154,10 @@ describe('GradeInsertSheet', () => {
     // 종료 주는 다음 기록(7/30)의 앞 주까지다
     expect(view.getByLabelText('2026-07-31').props.accessibilityState?.disabled).toBe(true)
     await fireEvent.press(view.getByLabelText('2026-07-12'))
+    // 종료 주를 골라도 확인 전에는 닫히지 않고 시트에 반영되지 않는다
+    expect(view.getByTestId('week-calendar-popover')).toBeTruthy()
+    expect(view.getByTestId('mvp-grade-sheet-week')).toHaveTextContent('기간 선택')
+    await fireEvent.press(view.getByRole('button', { name: '확인' }))
 
     expect(view.queryByTestId('week-calendar-popover')).toBeNull()
     expect(view.getByTestId('mvp-grade-sheet-week')).toHaveTextContent('7월 2일 ~ 7월 15일')

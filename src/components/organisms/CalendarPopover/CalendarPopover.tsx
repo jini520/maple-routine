@@ -5,9 +5,13 @@
  * 생김새는 가계부 캘린더와 같다 - 고른 날은 채움, 오늘은 테두리다. 같은 앱에서 날짜를 고르는 두
  * 자리가 다르게 생기면 안 된다.
  *
+ * 날을 눌러도 안에서만 칠하고, `확인` 을 눌러야 밖으로 내보낸다. 바깥을 누르면 고른 것을 버린다.
+ * 시각 팝오버(`TimePopover`)와 같은 규칙이다. 한 시트에 날짜 칸과 시각 칸이 나란히 서므로 반영 방식이 갈리면 안 된다.
+ *
  * **고를 수 있는 범위를 받는다.** 그 밖의 날은 흐리고 눌러도 안 고른다. 범위 밖으로 나가는 달
  * 이동도 막는다 - 갈 수 없는 달을 열어 두면 빈 달력을 보고 왜 못 고르는지를 화면이 설명해야 한다.
  */
+import { useState } from 'react'
 import { Modal, Pressable, useWindowDimensions, View } from 'react-native'
 
 import { ChevronLeftIcon, ChevronRightIcon, Text } from '../../atoms'
@@ -36,7 +40,8 @@ export interface CalendarPopoverProps {
   /** 그리는 달. 사용자가 화살표로 옮긴다. */
   monthKey: string
   onChangeMonth: (monthKey: string) => void
-  onSelect: (dateKey: string) => void
+  /** `확인` 을 누르면 고른 날 */
+  onConfirm: (dateKey: string) => void
   /** `null` 이면 아직 못 쟀다. 그리되 보이지 않는다(아이템 수익 팝오버와 같은 규약). */
   anchor: PopoverAnchorRect | null
   onClose: () => void
@@ -45,6 +50,7 @@ export interface CalendarPopoverProps {
 export function CalendarPopover(props: CalendarPopoverProps): React.JSX.Element {
   const { width: windowWidth } = useWindowDimensions()
   const { anchor } = props
+  const [pending, setPending] = useState(props.selected)
 
   const geometry = anchorPopover({
     containerWidth: windowWidth,
@@ -137,7 +143,7 @@ export function CalendarPopover(props: CalendarPopoverProps): React.JSX.Element 
           <View key={week[0]?.dateKey} className="flex-row">
             {week.map((day) => {
               const selectable = day.dateKey >= props.min && day.dateKey <= props.max
-              const isSelected = day.dateKey === props.selected
+              const isSelected = day.dateKey === pending
               return (
                 <Pressable
                   key={day.dateKey}
@@ -145,7 +151,7 @@ export function CalendarPopover(props: CalendarPopoverProps): React.JSX.Element 
                   aria-label={day.dateKey}
                   aria-selected={isSelected}
                   disabled={!selectable}
-                  onPress={() => props.onSelect(day.dateKey)}
+                  onPress={() => setPending(day.dateKey)}
                   className="h-7 flex-1 items-center justify-center"
                 >
                   {/* 채움과 테두리를 한 뷰에 겹치지 않는다. 고른 날이 오늘이기도 한 경우가 있어
@@ -174,6 +180,18 @@ export function CalendarPopover(props: CalendarPopoverProps): React.JSX.Element 
             })}
           </View>
         ))}
+
+        <View className="mt-1 flex-row justify-end">
+          <Pressable
+            role="button"
+            aria-label="확인"
+            onPress={() => props.onConfirm(pending)}
+            hitSlop={8}
+            className="px-2 py-1"
+          >
+            <Text className="text-sm font-bold text-primary-ink">확인</Text>
+          </Pressable>
+        </View>
       </View>
     </Modal>
   )

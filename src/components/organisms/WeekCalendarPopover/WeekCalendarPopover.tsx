@@ -3,6 +3,8 @@
  *
  * 상자와 머리는 `CalendarPopover` 와 같은 규격이다(폭 248 · 반경 12 · 꼬리). 어느 날을 눌러도 그 날이 든 주의
  * 목요일을 돌려준다. MVP 등급이 매주 목요일에 바뀌어 저장값이 그 날이기 때문이다.
+ *
+ * 누른 주는 부르는 쪽이 초안으로 들고 `selection` 으로 돌려준다. 밖으로 반영하는 것은 `확인` 이다(날짜 달력과 같은 규칙).
  */
 import { Modal, Pressable, useWindowDimensions, View } from 'react-native'
 
@@ -37,8 +39,12 @@ export interface WeekCalendarPopoverProps {
   max: string
   monthKey: string
   onChangeMonth: (monthKey: string) => void
-  /** 고른 주의 목요일 */
+  /** 누른 주의 목요일. 부르는 쪽은 초안만 바꾼다 */
   onSelect: (week: string) => void
+  /** `확인` 을 눌렀다 */
+  onConfirm: () => void
+  /** 아직 반영할 것이 없다(기간의 시작 주를 안 골랐다) */
+  confirmDisabled?: boolean
   /** 아래 줄의 이름. `선택한 주` · `선택한 기간` */
   caption: string
   /** 기간의 어느 끝을 고르나. 넘기면 달력 위에 `시작 주 | 종료 주` 탭이 선다 */
@@ -235,6 +241,18 @@ export function WeekCalendarPopover(props: WeekCalendarPopoverProps): React.JSX.
           <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
             {captionValue}
           </Text>
+        </View>
+        <View className="mt-1 flex-row justify-end">
+          <Pressable
+            role="button"
+            aria-label="확인"
+            disabled={props.confirmDisabled === true}
+            onPress={props.onConfirm}
+            hitSlop={8}
+            className={`px-2 py-1${props.confirmDisabled === true ? ' opacity-40' : ''}`}
+          >
+            <Text className="text-sm font-bold text-primary-ink">확인</Text>
+          </Pressable>
         </View>
       </View>
     </Modal>
