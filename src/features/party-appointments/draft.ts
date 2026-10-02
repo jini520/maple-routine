@@ -78,24 +78,34 @@ export function dateInWeek(weekStart: string, weekday: number): string {
 }
 
 /**
- * 시트를 처음 열 때. 시작은 지금 이후 첫 5분 칸, 종료는 그 30분 뒤
+ * 시트를 처음 열 때. 시작은 지금에서 가장 가까운 다음 정각(지금이 정각이면 그 시각), 종료는 그 30분 뒤
  *
  * @param repeats ＋ 에서 고른 갈래. 매주 반복이면 true
  */
 export function initialDraft(now: Date, repeats = false): AppointmentDraft {
   const todayKey = getCurrentKstDateKey(now)
   const kstMinutes = Math.floor((now.getTime() / MINUTE_MS + KST_OFFSET_MINUTES) % DAY_MINUTES)
-  const nextSlot = (Math.floor(kstMinutes / MINUTE_STEP) + 1) * MINUTE_STEP
-  const start = shiftMinutes(todayKey, 0, nextSlot)
+  const nextHour = Math.ceil(kstMinutes / 60) * 60
+  const start = shiftMinutes(todayKey, 0, nextHour)
   return {
     startDateKey: start.dateKey,
     startMinutes: start.minutes,
-    endMinutes: (start.minutes + DEFAULT_DURATION_MINUTES) % DAY_MINUTES,
+    endMinutes: endAfter(start.minutes),
     bosses: [],
     alarmOn: false,
     leadMinutes: DEFAULT_LEAD_MINUTES,
     repeats,
   }
+}
+
+/** 시작의 기본 길이 뒤 종료. 하루를 넘으면 다음 날 시각이다 */
+function endAfter(startMinutes: number): number {
+  return (startMinutes + DEFAULT_DURATION_MINUTES) % DAY_MINUTES
+}
+
+/** 시작을 바꾼 약속. 종료는 고른 값이 있어도 늘 시작 + 30분으로 다시 선다 */
+export function withStart(draft: AppointmentDraft, startDateKey: string, startMinutes: number): AppointmentDraft {
+  return { ...draft, startDateKey, startMinutes, endMinutes: endAfter(startMinutes) }
 }
 
 /** 시작부터 종료까지의 분. 종료가 시작보다 이르면 다음 날로 세고, 같으면 0 이다 */

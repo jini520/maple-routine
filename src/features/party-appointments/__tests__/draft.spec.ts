@@ -11,6 +11,7 @@ import {
   moveItem,
   shiftMinutes,
   toAppointment,
+  withStart,
   type AppointmentDraft,
 } from '../draft'
 
@@ -30,14 +31,14 @@ function draft(overrides: Partial<AppointmentDraft>): AppointmentDraft {
 }
 
 describe('initialDraft', () => {
-  it('시작은 지금 이후 첫 5분 칸이고 종료는 그 30분 뒤다', () => {
+  it('시작은 지금에서 가장 가까운 다음 정각이고 종료는 그 30분 뒤다', () => {
     // KST 2026-10-01 21:04
     const result = initialDraft(new Date('2026-10-01T12:04:00Z'))
 
     expect(result).toMatchObject({
       startDateKey: '2026-10-01',
-      startMinutes: 21 * 60 + 5,
-      endMinutes: 21 * 60 + 35,
+      startMinutes: 22 * 60,
+      endMinutes: 22 * 60 + 30,
       bosses: [],
       alarmOn: false,
       leadMinutes: 10,
@@ -45,10 +46,9 @@ describe('initialDraft', () => {
     })
   })
 
-  it('딱 5분 칸이면 다음 칸으로 간다', () => {
-    const result = initialDraft(new Date('2026-10-01T12:05:00Z'))
-
-    expect(result.startMinutes).toBe(21 * 60 + 10)
+  it('지금이 정각이면 그 시각이다', () => {
+    // KST 2026-10-01 21:00
+    expect(initialDraft(new Date('2026-10-01T12:00:00Z')).startMinutes).toBe(21 * 60)
   })
 
   // 한 번 · 반복은 ＋ 의 갈래에서 고른다. 시트에는 그것을 바꾸는 칸이 없다.
@@ -57,18 +57,26 @@ describe('initialDraft', () => {
     expect(initialDraft(new Date('2026-10-01T12:04:00Z'), false).repeats).toBe(false)
   })
 
-  it('자정 직전에 열면 시작이 다음 날로 넘어간다', () => {
-    // KST 2026-10-01 23:58
-    const result = initialDraft(new Date('2026-10-01T14:58:00Z'))
+  it('23시대에 열면 다음 날 00:00 이다', () => {
+    // KST 2026-10-01 23:10
+    const result = initialDraft(new Date('2026-10-01T14:10:00Z'))
 
     expect(result).toMatchObject({ startDateKey: '2026-10-02', startMinutes: 0, endMinutes: 30 })
   })
+})
 
-  it('종료만 자정을 넘으면 종료 시각이 시작보다 이르다(다음 날)', () => {
-    // KST 2026-10-01 23:40
-    const result = initialDraft(new Date('2026-10-01T14:40:00Z'))
+// 시작 시각을 바꾸면 종료는 늘 시작 + 30분으로 다시 선다(사용자 결정).
+describe('withStart', () => {
+  it('종료를 시작 + 30분으로 옮긴다', () => {
+    const result = withStart(draft({ endMinutes: 23 * 60 }), '2026-10-02', 19 * 60)
 
-    expect(result).toMatchObject({ startDateKey: '2026-10-01', startMinutes: 23 * 60 + 45, endMinutes: 15 })
+    expect(result).toMatchObject({ startDateKey: '2026-10-02', startMinutes: 19 * 60, endMinutes: 19 * 60 + 30 })
+  })
+
+  it('시작이 23:30 이후면 종료가 자정을 넘는다', () => {
+    const result = withStart(draft({}), '2026-10-01', 23 * 60 + 45)
+
+    expect(result.endMinutes).toBe(15)
     expect(endsNextDay(result)).toBe(true)
   })
 })

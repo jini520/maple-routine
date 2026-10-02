@@ -9,6 +9,7 @@ import { Pressable, View } from 'react-native'
 
 import { Switch, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
+import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { SelectChevron, SelectField } from '../../components/organisms/SelectField/SelectField'
 import { isPicked, type BossPickerSections, type PickerTile } from '../../features/party-appointments/boss-picker'
 import { bossAliasOf, bossPortraitSlugOf } from '../../lib/boss/bosses'
@@ -24,6 +25,8 @@ export interface PickerCharacter {
   ocid: string
   name: string
   level: number | null
+  /** 캐릭터 얼굴 그림 URL */
+  imageUrl: string | null
   registeredCount: number
 }
 
@@ -33,7 +36,6 @@ export interface BossPickerBodyProps {
   onSelectCharacter: (ocid: string) => void
   sections: BossPickerSections
   picked: readonly PartyAppointmentBoss[]
-  colorOf: (ocid: string) => string
   /**
    * 누른 타일 초상의 창 기준 자리와 그것을 다시 재는 손잡이. 선택 줄로 날아가는 그림이 여기서 출발한다
    */
@@ -143,12 +145,12 @@ function TileGroup(props: {
   )
 }
 
-/** 드롭다운의 캐릭터 색 점. 캐릭터가 바뀌면 작아졌다가 넘치듯 커지며 새 색이 든다 */
-function CharacterDot(props: { color: string }): React.JSX.Element {
+/** 드롭다운의 캐릭터 얼굴. 캐릭터가 바뀌면 작아졌다가 넘치듯 커지며 새 얼굴이 든다 */
+function CharacterFace(props: { ocid: string; name: string; imageUrl: string | null }): React.JSX.Element {
   const scale = useSharedValue(1)
-  const lastColor = useRef(props.color)
+  const lastOcid = useRef(props.ocid)
   useEffect(() => {
-    if (lastColor.current !== props.color) {
+    if (lastOcid.current !== props.ocid) {
       scale.set(
         withSequence(
           withTiming(0.3, { duration: 0 }),
@@ -157,12 +159,12 @@ function CharacterDot(props: { color: string }): React.JSX.Element {
         ),
       )
     }
-    lastColor.current = props.color
-  }, [props.color, scale])
+    lastOcid.current = props.ocid
+  }, [props.ocid, scale])
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
   return (
     <Animated.View style={style}>
-      <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: props.color }} />
+      <CharacterAvatar imageUrl={props.imageUrl} name={props.name} size={22} className="bg-surface-2" />
     </Animated.View>
   )
 }
@@ -188,7 +190,7 @@ export function BossPickerBody(props: BossPickerBodyProps): React.JSX.Element {
             onPress={open}
             className="flex-1 flex-row items-center gap-2.5 active:opacity-60"
           >
-            <CharacterDot color={props.colorOf(props.ocid)} />
+            <CharacterFace ocid={props.ocid} name={current?.name ?? ''} imageUrl={current?.imageUrl ?? null} />
             <Text className="text-15 font-bold text-text">{current?.name ?? ''}</Text>
             {current?.level != null && <Text className="text-xs text-text-muted">Lv.{current.level}</Text>}
             <Text className="ml-auto text-11 text-text-muted">스케줄러 보스 {current?.registeredCount ?? 0}</Text>
@@ -199,7 +201,12 @@ export function BossPickerBody(props: BossPickerBodyProps): React.JSX.Element {
           const character = props.characters.find((one) => one.ocid === option.value)
           return (
             <View className="flex-row items-center gap-2.5">
-              <View className="h-3 w-3 rounded-full" style={{ backgroundColor: props.colorOf(option.value ?? '') }} />
+              <CharacterAvatar
+                imageUrl={character?.imageUrl ?? null}
+                name={option.label}
+                size={20}
+                className="bg-surface-2"
+              />
               <Text className={`text-sm font-semibold ${isSelected ? 'text-primary-ink' : 'text-text'}`}>
                 {option.label}
               </Text>

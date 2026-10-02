@@ -33,3 +33,14 @@ export function endClockOf(occurrence: PartyAppointmentOccurrence): string {
   const clock = end % (24 * 60)
   return `${String(Math.floor(clock / 60)).padStart(2, '0')}:${String(clock % 60).padStart(2, '0')}`
 }
+
+/**
+ * 보는 주에서 이번 주로 돌아가는 방향. 지난 주면 앞(`≫`), 다음 주 이후면 뒤(`≪`), 이번 주면 없다.
+ *
+ * @param weekStart 보는 리셋 주 첫날
+ * @param thisWeek 이번 리셋 주 첫날
+ */
+export function thisWeekJumpOf(weekStart: string, thisWeek: string): 'forward' | 'back' | 'none' {
+  if (weekStart === thisWeek) return 'none'
+  return weekStart < thisWeek ? 'forward' : 'back'
+}
