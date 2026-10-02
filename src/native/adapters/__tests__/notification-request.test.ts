@@ -127,3 +127,12 @@ describe('파티 약속 채널', () => {
     expect(channelFor(request())).toBe(NOTIFICATION_CHANNEL)
   })
 })
+
+describe('data', () => {
+  it('요청의 data 를 그대로 싣고, 없으면 칸을 두지 않는다', () => {
+    const data = { kind: 'party-appointment', appointmentId: 'a1', dateKey: '2026-10-08' }
+
+    expect(toTriggerNotification(request({ data }), NOW).notification.data).toEqual(data)
+    expect('data' in toTriggerNotification(request(), NOW).notification).toBe(false)
+  })
+})

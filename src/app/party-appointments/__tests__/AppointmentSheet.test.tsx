@@ -171,6 +171,8 @@ describe('알림 체크 상자를 켤 때', () => {
       schedule: async () => {},
       cancel: async () => {},
       getPendingCount: async () => 0,
+      addPressListener: () => () => {},
+      getInitialPress: async () => null,
     })
     await setNotificationPermissionAsked()
     usePartyAppointmentsStore.setState({ appointments: [] })

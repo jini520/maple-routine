@@ -40,6 +40,11 @@ export function planPartyNotifications(
         fireAt,
         ...notificationText(occurrence, names),
         channel: 'party',
+        data: {
+          kind: PARTY_NOTIFICATION_KIND,
+          appointmentId: occurrence.appointment.id,
+          dateKey: occurrence.dateKey,
+        },
       })
     }
   }

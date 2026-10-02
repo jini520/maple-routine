@@ -13,9 +13,9 @@
  * @see docs/features/notifications.md 로컬 알림과 원격 푸시가 갈라지는 자리
  */
 
-import notifee, { AuthorizationStatus, type NotificationSettings } from '@notifee/react-native'
+import notifee, { AuthorizationStatus, EventType, type Event, type NotificationSettings } from '@notifee/react-native'
 
-import type { NotificationsPort } from '../ports'
+import type { NotificationData, NotificationsPort } from '../ports'
 
 import { channelFor, toNotificationId, toTriggerNotification } from './notification-request'
 
@@ -28,6 +28,33 @@ function isGranted(settings: NotificationSettings): boolean {
     settings.authorizationStatus === AuthorizationStatus.AUTHORIZED ||
     settings.authorizationStatus === AuthorizationStatus.PROVISIONAL
   )
+}
+
+/** 알림의 `data` 를 문자열 지도로 좁힌다. notifee 타입은 숫자 · 객체도 허용하지만 우리는 문자열만 싣는다 */
+function toData(data: Record<string, unknown> | undefined): NotificationData {
+  const result: NotificationData = {}
+  for (const [key, value] of Object.entries(data ?? {})) {
+    if (typeof value === 'string') result[key] = value
+  }
+  return result
+}
+
+const pressListeners = new Set<(data: NotificationData) => void>()
+/** 리스너가 달리기 전에 온 배경 탭. 화면이 리스너를 달 때 넘긴다 */
+let pendingPresses: NotificationData[] = []
+
+function deliverPress(data: NotificationData): void {
+  if (pressListeners.size === 0) pendingPresses.push(data)
+  else pressListeners.forEach((listener) => listener(data))
+}
+
+/**
+ * `index.ts` 최상위에서 `notifee.onBackgroundEvent` 로 등록하는 처리. 배경에서 온 탭을 같은 리스너로 보낸다.
+ *
+ * 최상위여야 OS 가 배경에서 앱을 깨울 때 이 처리를 찾는다.
+ */
+export async function handleBackgroundNotificationEvent({ type, detail }: Event): Promise<void> {
+  if (type === EventType.PRESS) deliverPress(toData(detail.notification?.data))
 }
 
 export const rnNotificationsPort: NotificationsPort = {
@@ -55,5 +82,23 @@ export const rnNotificationsPort: NotificationsPort = {
   async getPendingCount() {
     const ids = await notifee.getTriggerNotificationIds()
     return ids.length
+  },
+  addPressListener(handler) {
+    pressListeners.add(handler)
+    const pending = pendingPresses
+    pendingPresses = []
+    pending.forEach((data) => handler(data))
+    const offForeground = notifee.onForegroundEvent(({ type, detail }) => {
+      if (type === EventType.PRESS) handler(toData(detail.notification?.data))
+    })
+    return () => {
+      pressListeners.delete(handler)
+      offForeground()
+    }
+  },
+  // iOS 는 같은 탭을 `onForegroundEvent` 로도 보낸다. 거르는 것은 받는 쪽이다.
+  async getInitialPress() {
+    const initial = await notifee.getInitialNotification()
+    return initial === null ? null : toData(initial.notification.data)
   },
 }

@@ -1,9 +1,11 @@
 import { registerRootComponent } from 'expo'
 import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebase/messaging'
+import notifee from '@notifee/react-native'
 
 import App from './App'
 import { installPorts } from './src/boot'
 import { holdSplashUntilAppReady } from './src/boot-splash'
+import { handleBackgroundNotificationEvent } from './src/native/adapters/rn-notifications'
 
 // 포트 주입은 **저장소·네이티브를 건드리는 어떤 코드보다 먼저** 와야 한다 — 웹 쪽
 // `main.tsx` 가 세터를 파일 맨 위에 둔 것과 같은 이유다. 주입 전 접근은 조용히 넘어가지 않고 던지므로,
@@ -30,6 +32,9 @@ holdSplashUntilAppReady()
 // 그리며 JS 를 안 깨우기 때문이다. 그래도 등록해 두는 이유는 자리가 네이티브 요건이라 나중에
 // 못 더하기 때문이고, data-only 를 섞어 보내기 시작하면 그날 몸통이 할 일이 생긴다.
 setBackgroundMessageHandler(getMessaging(), async () => undefined)
+
+// 로컬 알림 탭이 배경에서 오는 길. 위와 같은 이유로 최상위여야 한다. 받은 탭은 화면이 리스너를 달 때 넘어간다.
+notifee.onBackgroundEvent(handleBackgroundNotificationEvent)
 
 // registerRootComponent 이 AppRegistry.registerComponent('main', () => App) 를 대신한다.
 registerRootComponent(App)

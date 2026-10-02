@@ -110,7 +110,12 @@ export interface LocalNotificationRequest {
   scheduleAt: Date
   /** 안드로이드 채널. 없으면 옛 채널 `default` */
   channel?: 'party'
+  /** 탭했을 때 돌려받는 값. 어느 알림인지 다시 찾는 열쇠 */
+  data?: NotificationData
 }
+
+/** 로컬 알림이 실어 나르는 값. 문자열만 싣는다 */
+export type NotificationData = Record<string, string>
 
 export interface NotificationsPort {
   requestPermission(): Promise<boolean>
@@ -118,6 +123,10 @@ export interface NotificationsPort {
   schedule(request: LocalNotificationRequest): Promise<void>
   cancel(id: number): Promise<void>
   getPendingCount(): Promise<number>
+  /** 로컬 알림을 눌렀을 때(앱이 앞 · 배경). 해제 함수를 돌려준다 */
+  addPressListener(handler: (data: NotificationData) => void): () => void
+  /** 죽어 있던 앱을 로컬 알림 탭으로 열었으면 그 `data`. 아니면 `null` */
+  getInitialPress(): Promise<NotificationData | null>
 }
 
 /**

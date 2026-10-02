@@ -42,6 +42,8 @@ beforeEach(async () => {
       cancelled.push(id)
     },
     getPendingCount: async () => scheduled.length,
+    addPressListener: () => () => {},
+    getInitialPress: async () => null,
   })
   await setPartyAppointments([appointment])
 })
