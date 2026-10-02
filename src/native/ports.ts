@@ -108,6 +108,8 @@ export interface LocalNotificationRequest {
   title: string
   body: string
   scheduleAt: Date
+  /** 안드로이드 채널. 없으면 옛 채널 `default` */
+  channel?: 'party'
 }
 
 export interface NotificationsPort {

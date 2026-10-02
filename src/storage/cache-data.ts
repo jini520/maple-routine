@@ -19,6 +19,8 @@ const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.notificationPermissionAsked,
   // 파티 약속 알림 스위치. 지워지면 사용자가 끈 약속 알림이 다시 온다.
   STORAGE_KEYS.partyAlarmEnabled,
+  // 예약해 둔 로컬 알림. 지워지면 OS 에 남은 예약을 취소할 길이 없다.
+  STORAGE_KEYS.notificationLedger,
   // today 배너에서 닫은 공지. 지워지면 사용자가 이미 닫은 공지가 첫 화면에 되살아난다.
   // 받은 공지 자체(`notices`)는 서버가 다시 주지만 닫았다는 사실은 기기에만 있다.
   STORAGE_KEYS.dismissedNotices,

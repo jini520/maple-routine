@@ -3,7 +3,7 @@
 > **범위**: 파티로 잡는 보스의 약속을 주 단위로 적는 화면과, 약속 시간 전에 뜨는 로컬 알림.
 > **여기 없는 것**: 알림 레이어(레지스트리 · 원장 · 재조정)의 일반 규칙은 [notifications.md](./notifications.md) 에 있다. 결정석을 나누는 파티 인원은 [boss-scheduler.md](./boss-scheduler.md) 의 `파티 인원` 이고 이 기능과 따로 산다.
 > **관련 ADR**: [[ADR-331]](이 기능의 결정 전부) · [[ADR-146]](알림 레이어) · [[ADR-170]](리셋 주)
-> **상태**: 설계 진행 중 · 보드 · 추가 · 상세 · 수정 · 삭제 구현, 알림 레이어 미구현(2026-10-02, 이슈 #380).
+> **상태**: 보드 · 추가 · 상세 · 수정 · 삭제 · 알림 확인 모달 · 알림 예약 층 구현(2026-10-02, 이슈 #380). 아이폰 실기기에서 알림 도착 확인(2026-10-02).
 >
 > **이 문서의 `화면` 아래 처음 목록 설명은 처음 설계다.** 지금 보드는 `보드 목록` 절(요일별 목록, [[ADR-331]] 정정 12)이고, 시트는 `시트` 절이다.
 
@@ -17,7 +17,8 @@
 | 로직 | `features/party-appointments/edit.ts` | 수정할 값 채우기 · 이 주만 적용 · 앞으로 모두 수정 · 삭제(순수 함수) |
 | 로직 | `features/party-appointments/alarm-gate.ts` · `alarm-settings.ts` | 알림을 켤 때 · 저장할 때 권한 → 스위치 확인 · `파티 약속 알림` 스위치 상태 |
 | 상태 | `features/party-appointments/store.ts` | 목록을 들고, 바꾸면 저장한 뒤 알림 재조정을 부른다 |
-| 알림 | `features/party-appointments/notification.ts` · `notification-text.ts` | 레지스트리에 들어가는 `party-appointment` 정의(`plan()`) · 문구(구현됨) |
+| 알림 | `features/local-notifications/` · `storage/notification-ledger.ts` | 레지스트리 · 재조정(가까운 64개 · 차집합 · 문구 비교) · 원장 |
+| 알림 | `features/party-appointments/notification.ts` · `notification-text.ts` | 레지스트리에 들어가는 `party-appointment` 정의(`plan()`) · 문구 |
 | 화면 | `app/party-appointments/AppointmentsScreen.tsx` · `AppointmentAgenda.tsx` | 주 스테퍼 · 요일별 목록 · 빈 상태 · 펼치는 ＋(`SpeedDial`, [[ADR-332]]) |
 | 로직 | `features/party-appointments/agenda.ts` | 한 주의 회차를 약속 있는 날로 묶기 · 종료 시각 글자(순수 함수) |
 | 화면 | `app/party-appointments/AppointmentSheet.tsx` | 추가 · 상세(읽기 모드) · 수정 시트. 보스 추가는 같은 시트의 다음 단계(`stepKey`) |
@@ -183,6 +184,11 @@ interface PartyAppointmentOverride {
 - id 는 `party-appointment:<약속 id>:<회차 dateKey>` 의 32비트 해시다. 같은 회차는 몇 번을 계획해도 같은
   id 라 재예약이 덮어쓰기가 된다.
 - 안드로이드 채널은 `party`(`파티 약속`, 중요도 `HIGH`)다([[ADR-331]] 결정 7).
+- 재조정은 모든 종류의 계획을 울릴 시각 순으로 세워 **앞 64개만** 예약한다(iOS 한도, [[ADR-331]] 정정 24). 넘친 것은 다음 재조정이 채운다.
+  재조정이 도는 때는 앱을 켤 때 · 포그라운드로 돌아올 때 · 약속을 저장하거나 지울 때 · `파티 약속 알림` 스위치를 바꿀 때다.
+- 원장(`notificationLedger`)은 `{ id, kind, fireAt, title, body }` 를 적는다. 시각이 같아도 문구가 바뀌면 다시 예약한다.
+- 기기 알림 권한이 없으면 계획은 빈 목록이고 원장에 있는 것을 취소한다.
+- 문구의 캐릭터 이름은 캐시된 캐릭터 기본 정보에서 읽는다.
 - 문구([[ADR-331]] 정정 9, `notification-text.ts`):
 
   ```
@@ -198,6 +204,8 @@ interface PartyAppointmentOverride {
 | 키 | 값 | 캐시 삭제 시 |
 |---|---|---|
 | `partyAppointments` | `PartyAppointment[]`(JSON) | **보존**. 사용자가 적은 것이라 아무도 복원해 주지 않는다 |
+| `partyAlarmEnabled` | `on` · `off`(없으면 켜짐) | **보존**. 사용자가 고른 설정이다 |
+| `notificationLedger` | 예약해 둔 알림 `{ id, kind, fireAt, title, body }[]`(JSON) | **보존**. 지우면 OS 에 남은 예약을 취소할 길이 없다 |
 
 깨진 JSON 이면 빈 목록으로 읽는다. 모양이 틀린 항목 하나는 그 항목만 버린다.
 

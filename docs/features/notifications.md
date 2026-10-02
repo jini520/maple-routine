@@ -8,6 +8,10 @@
 > [../persistence/preferences.md](../persistence/preferences.md) · [settings.md](./settings.md) ·
 > [live-update.md](./live-update.md)
 
+> **2026-10-02: 로컬 알림 종류가 하나 생겼다(`party-appointment`).** 레지스트리 · 원장 · 재조정은 `features/local-notifications/` 에 있다.
+> 재조정은 울릴 시각 순으로 **앞 64개만** 예약하고(iOS 한도), 앱을 켤 때 · 돌아올 때 · 약속 저장 · 스위치 변경 때 다시 채운다.
+> 원장은 `fireAt` 과 함께 문구도 비교한다. 자세한 것은 [party-appointments.md](./party-appointments.md) 의 `알림` 과 [[ADR-331]] 정정 24.
+
 > **현재 상태 (2026-09-07): 푸시 능력을 싣는 중. 알림 종류는 여전히 0개.**
 >
 > `PushPort` 와 `rn-push.ts` 가 들어왔다. 능력만 싣는 것이라 **무엇을 언제 왜 띄우는가는 아직

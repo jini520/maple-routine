@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useDropEffectStore } from '../features/drop-effect/store'
 import { useDataFreshness } from '../features/refresh/freshness'
 import { useNoticeStore } from '../features/notice/store'
+import { requestNotificationReconcile } from '../features/local-notifications/run'
 import { useAppEntryStore } from '../features/app-entry/store'
 import { useAuthStore } from '../features/auth/store'
 import { useLiveUpdateStore } from '../features/live-update/store'
@@ -114,6 +115,12 @@ export function AppShell(): React.JSX.Element {
 
   // 돌아올 때도 같다. OS 설정에서 알림 권한을 켜고 돌아오면 그때 구독이 맞춰진다.
   useReturnToForeground(resubscribeNotice)
+
+  // 로컬 알림 예약을 맞춘다. iOS 는 가까운 64개만 들고 알림이 울려도 앱을 깨우지 않아, 켤 때마다 다시 채운다.
+  useEffect(() => {
+    void requestNotificationReconcile()
+  }, [])
+  useReturnToForeground(requestNotificationReconcile)
 
   // 페이지별 갱신 시각. 앱을 다시 켜도 화면이 그리는 것은 캐시에 있던 그 데이터라, 시각만
   // 비우면 그 데이터가 언제 것인지 말할 방법이 사라진다.
