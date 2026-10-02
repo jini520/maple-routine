@@ -83,7 +83,7 @@ describe('그룹 진입이 스택 한 단을 만든다', () => {
     await press('bar-group-schedule')
 
     expect(층_단들()).toEqual(['Groups', 'ScheduleSubs'])
-    expect(지금_화면()).toBe('Content')
+    expect(지금_화면()).toBe('Appointments')
   })
 
   it('← 를 누르면 그 단이 없어진다. 스와이프가 만드는 것과 같은 결과다', async () => {
@@ -152,12 +152,12 @@ describe('마지막으로 보던 하위를 기억한다', () => {
   it('나갔다 다시 들어오면 그 자리로 간다', async () => {
     await 앱을_켠다()
     await press('bar-group-schedule')
-    await press('bar-sub-BossManage')
+    await press('bar-sub-Boss')
 
     await press('bar-back')
     await press('bar-group-schedule')
 
-    expect(지금_화면()).toBe('BossManage')
+    expect(지금_화면()).toBe('Boss')
   })
 })
 

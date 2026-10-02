@@ -29,7 +29,6 @@ import {
   LayoutDashboardIcon,
   ListChecksIcon,
   ProfitIcon,
-  SlidersHorizontalIcon,
   SwordsIcon,
   Text,
   TrendingUpIcon,
@@ -189,8 +188,6 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
   Today: LayoutDashboardIcon,
   Content: ListChecksIcon,
   Boss: SwordsIcon,
-  // 검(보스)·목록(컨텐츠)과 겹치지 않으면서 값을 맞추는 자리 를 말하는 그림이다.
-  BossManage: SlidersHorizontalIcon,
   // 시각이 붙은 달력. 스케줄 그룹(`CalendarCheck`)과 한 식구로 읽히게 골랐다.
   Appointments: CalendarClockIcon,
   Profit: ProfitIcon,

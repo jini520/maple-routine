@@ -61,6 +61,7 @@ import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useManualCompletionStore } from '../../features/manual-completion/store'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { useOpenTab } from '../../hooks/useOpenTab'
+import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
 import type { BossProfitContextValue } from './boss-profit-context'
 import { BossProfitContextProvider } from './boss-profit-context'
@@ -147,6 +148,7 @@ export function BossProfitScreen(): React.JSX.Element {
   // 가계부의 당김과 층 마운트다.
 
   const openTab = useOpenTab()
+  const navigation = useScreenNavigation()
   /**
    * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
    *
@@ -346,7 +348,7 @@ export function BossProfitScreen(): React.JSX.Element {
               size="compact"
               onPress={() => {
                 tapFeedback()
-                openTab('BossManage')
+                navigation.navigate('BossManage')
               }}
             >
               보스 관리

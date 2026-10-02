@@ -913,9 +913,8 @@ describe('BossScreen: 빈 상태 문구', () => {
     expect(screen.queryByText('보스 관리')).toBeNull()
   })
 
-  // CTA 는 남되 목적지가 하위 페이지가 아니라 **형제 탭**이다. 헤더 버튼이
-  // 사라져 같은 라벨을 다투는 상대도 없어졌다.
-  it('수동 모드는 "보스 관리" CTA 를 주고, 누르면 그 탭으로 간다', async () => {
+  // 보스 관리는 설정에서 여는 하위 페이지다. CTA 는 그 화면을 민다.
+  it('수동 모드는 "보스 관리" CTA 를 주고, 누르면 보스 관리 화면을 연다', async () => {
     useTrackingModeStore.setState({ mode: 'manual' })
     mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
     await renderScreen()
@@ -923,12 +922,7 @@ describe('BossScreen: 빈 상태 문구', () => {
     expect(screen.getByText('추적할 보스가 없습니다')).toBeTruthy()
     await press(button('보스 관리'))
 
-    // 보스 관리는 이 화면과 **같은 스케줄러 단**에 산다. 층은 안 바뀌고 그 안에서 옆걸음한다
-    //
-    expect(navigate).toHaveBeenCalledWith('Main', {
-      screen: 'ScheduleSubs',
-      params: { screen: 'BossManage' },
-    })
+    expect(navigate).toHaveBeenCalledWith('BossManage')
   })
 
   // 캐시 우선 표시 중(`isStale`)에는 자동 모드에서 "없다"고 단정하지 않는다.

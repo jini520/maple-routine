@@ -12,9 +12,9 @@ describe('tabNavigateArgs: 탭 이름을 중첩 이동으로 옮긴다', () => {
       'Main',
       { screen: 'LedgerSubs', params: { screen: 'Profit' } },
     ])
-    expect(tabNavigateArgs('BossManage')).toEqual([
+    expect(tabNavigateArgs('Boss')).toEqual([
       'Main',
-      { screen: 'ScheduleSubs', params: { screen: 'BossManage' } },
+      { screen: 'ScheduleSubs', params: { screen: 'Boss' } },
     ])
   })
 

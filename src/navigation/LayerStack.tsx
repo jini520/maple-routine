@@ -6,7 +6,6 @@ import { View } from 'react-native'
 
 import { BossProfitScreen } from '../app/boss-profit/BossProfitScreen'
 import { AppointmentsScreen } from '../app/party-appointments/AppointmentsScreen'
-import { BossManageScreen } from '../app/boss-scheduler/BossManageScreen'
 import { BossScreen } from '../app/boss-scheduler/BossScreen'
 import { CashbookScreen } from '../app/cashbook/CashbookScreen'
 import { StatsScreen } from '../app/stats/StatsScreen'
@@ -58,11 +57,9 @@ function GroupLayer(): React.JSX.Element {
 function ScheduleLayer(): React.JSX.Element {
   return (
     <ScheduleTabs.Navigator {...TAB_LAYER_PROPS}>
+      <ScheduleTabs.Screen name="Appointments" component={AppointmentsScreen} />
       <ScheduleTabs.Screen name="Content" component={ContentScreen} />
       <ScheduleTabs.Screen name="Boss" component={BossScreen} />
-      {/* 헤더 버튼으로만 열리던 화면이 셋째 하위가 됐다. */}
-      <ScheduleTabs.Screen name="BossManage" component={BossManageScreen} />
-      <ScheduleTabs.Screen name="Appointments" component={AppointmentsScreen} />
     </ScheduleTabs.Navigator>
   )
 }

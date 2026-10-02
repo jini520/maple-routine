@@ -29,7 +29,6 @@ export type TabRouteName =
   | 'Today'
   | 'Content'
   | 'Boss'
-  | 'BossManage'
   | 'Appointments'
   | 'Profit'
   | 'Cashbook'
@@ -41,7 +40,6 @@ export type TabParamList = {
   Today: undefined
   Content: undefined
   Boss: undefined
-  BossManage: undefined
   Appointments: undefined
   Profit: undefined
   Cashbook: undefined
@@ -78,7 +76,6 @@ export type GroupLayerParamList = {
 export type ScheduleSubsParamList = {
   Content: undefined
   Boss: undefined
-  BossManage: undefined
   Appointments: undefined
 }
 
@@ -172,6 +169,8 @@ export type RootStackParamList = {
    * 캐릭터 관리. 두 층 + 드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어가 하위 페이지가 됐다.
    */
   SettingsCharacters: undefined
+  /** 보스 관리. 스케줄러 하위 탭이던 것이 설정에서 여는 하위 페이지가 됐다 */
+  BossManage: undefined
   /**
    * 공지 목록. **분류를 받아 그것만 그린다.**
    *
@@ -272,8 +271,7 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   },
 
   { path: '/boss', screen: 'BossScreen', target: { kind: 'tab', route: 'Boss' }, origin: 'web' },
-  // `origin: 'web'` 인데 `push` 가 아닌 행은 이것뿐이다. 스케줄 그룹의 셋째 하위 탭이다.
-  { path: '/boss/manage', screen: 'BossManageScreen', target: { kind: 'tab', route: 'BossManage' }, origin: 'web' },
+  { path: '/boss/manage', screen: 'BossManageScreen', target: { kind: 'push', route: 'BossManage' }, origin: 'web' },
 
   { path: '/profit', screen: 'BossProfitScreen', target: { kind: 'tab', route: 'Profit' }, origin: 'web' },
   { path: '/profit/drops', screen: 'DropHistoryScreen', target: { kind: 'push', route: 'DropHistory' }, origin: 'web' },

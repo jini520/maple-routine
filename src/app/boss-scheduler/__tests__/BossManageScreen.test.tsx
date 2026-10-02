@@ -173,17 +173,18 @@ describe('BossManageScreen: 공통', () => {
   // 제목 줄 우측의 compact 드롭다운이 **초상화 레일**이 됐다. 캐릭터 이름은
   // 이제 SVG 곡선 글자라 `getByText` 로 안 잡힌다. 레일이 섰는지로 본다.
   //
-  // **뒤로 버튼을 묻던 짝은 사라졌다**. 이 화면은 하위 페이지가 아니라 탭이라
-  // pop 할 스택이 없고, ← 는 하단바가 진다.
-  it('제목·캐릭터 레일이 보이고, 화면 안에 뒤로 버튼이 없다', async () => {
+  // 설정에서 여는 하위 페이지라 하단바가 없고, 돌아가는 일은 화면의 ← 가 진다.
+  it('제목·캐릭터 레일이 보이고, 뒤로 버튼이 화면을 닫는다', async () => {
     mockStore({ characters: [character()] })
 
     await renderScreen()
 
     expect(screen.getByText('보스 관리')).toBeTruthy()
     expect(screen.getByTestId('character-rail')).toBeTruthy()
-    expect(screen.queryByLabelText('뒤로')).toBeNull()
-    expect(goBack).not.toHaveBeenCalled()
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('뒤로'))
+    })
+    expect(goBack).toHaveBeenCalled()
   })
 
   // 이 화면의 일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.

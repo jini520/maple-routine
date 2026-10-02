@@ -17,7 +17,7 @@ src/
 ├── app/                    # 화면 (탭·하위 페이지)
 │   ├── today/              # 첫 화면: 위젯 격자([[ADR-147]]) + widgets/
 │   ├── content-scheduler/  # 일간 탭 + 주간 탭 (월간 탭 없음, [[ADR-013]])
-│   ├── boss-scheduler/     # 주간·월간 탭 + 보스 관리([[ADR-145]])
+│   ├── boss-scheduler/     # 보스 스케줄러 + 보스 관리(설정에서 여는 하위 페이지, [[ADR-145]] 정정 3)
 │   ├── boss-profit/        # 주간/월간 탭 + 기간 네비게이터 + 드롭 시트·히스토리·가격 입력
 │   ├── onboarding/  settings/  hunting-profit/  spend/  utility/
 │   ├── AppShell.tsx  prehydrate.ts  UpdatePromptModal.tsx

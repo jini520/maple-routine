@@ -33,6 +33,8 @@ import { CharacterUnavailableNotice } from '../../components/organisms/Character
 import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { useOpenTab } from '../../hooks/useOpenTab'
+import { useScreenNavigation } from '../../hooks/useScreenNavigation'
+import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PartyShareSummary } from '../../components/molecules/PartyShareSummary/PartyShareSummary'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -117,6 +119,7 @@ export function BossManageScreen(): React.JSX.Element {
   const selected = resolveSelectedCharacter(selectedOcid, characters)
   // 조회 불가 안내가 캐릭터 관리로 보내는 길. 빈 상태 CTA 와 같은 목적지다.
   const openTab = useOpenTab()
+  const navigation = useScreenNavigation()
 
   /**
    * 지금 캐릭터의 편집 표. 주인이 다르면 빈 표다.
@@ -298,13 +301,13 @@ export function BossManageScreen(): React.JSX.Element {
 
   return (
     <ScreenScroll
+      // 설정에서 여는 하위 페이지라 하단바가 없다.
+      hasTabBar={false}
       header={
-        // 헤더는 제목 줄 하나다. 레일도 토글도 콘텐츠로 내려갔다. 헤더에 담는 것은 제목 ·
-        // 기준 시각 · 다른 페이지로 가는 것 셋뿐이다.
+        // 헤더는 제목 줄 하나다. 레일도 토글도 콘텐츠로 내려갔다. 헤더에 담는 것은 ← · 제목 · 기준 시각이다.
         <PageHeader>
-          {/* **← 가 없다.** 하위 페이지가 아니라 스케줄 그룹의 하위 탭이라 pop 할 스택이 없고,
-              뒤로 가는 일은 하단바가 진다. */}
-          <PageHeaderTitleRow fetchedAt={fetchedAt}>
+          <PageHeaderTitleRow fetchedAt={fetchedAt} className="gap-2">
+            <BackButton onPress={() => navigation.goBack()} />
             <Text className="text-lg font-semibold text-text">보스 관리</Text>
           </PageHeaderTitleRow>
         </PageHeader>

@@ -71,7 +71,7 @@ describe('하위 층 페이지로 갈 때', () => {
   it('깊이와 무관하게 안 되돌린다', async () => {
     층깊이(2)
 
-    await 열기('BossManage')
+    await 열기('Boss')
 
     expect(mockLayerDispatch).not.toHaveBeenCalled()
   })
