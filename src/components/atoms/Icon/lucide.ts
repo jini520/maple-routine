@@ -19,6 +19,7 @@ import ArrowRight from 'lucide-react-native/icons/arrow-right'
 import ArrowUp from 'lucide-react-native/icons/arrow-up'
 import Ban from 'lucide-react-native/icons/ban'
 import Bell from 'lucide-react-native/icons/bell'
+import BellOff from 'lucide-react-native/icons/bell-off'
 import BookOpen from 'lucide-react-native/icons/book-open'
 import Calculator from 'lucide-react-native/icons/calculator'
 import Calendar from 'lucide-react-native/icons/calendar'
@@ -236,6 +237,8 @@ export const ChartColumnIcon = withIconInterop(ChartColumn)
 export const CalendarClockIcon = withIconInterop(CalendarClock)
 /** 알림이 달린 약속. `AppointmentsScreen` 블록. */
 export const BellIcon = withIconInterop(Bell)
+/** 기기 알림 권한이 꺼짐. 파티 약속 알림 체크 상자의 권한 모달. */
+export const BellOffIcon = withIconInterop(BellOff)
 /** 매주 반복하는 약속. `AppointmentsScreen` 블록 · 펼치는 ＋ 의 `매주 반복`. */
 export const RepeatIcon = withIconInterop(Repeat)
 /** 한 번만 서는 약속. 파티 약속 펼치는 ＋ 의 `한 번만`. */

@@ -11,10 +11,10 @@
  * `+ 보스 추가` 는 같은 시트 안에서 단계를 바꾼다(`stepKey`). 보스 추가 단계는 머리 · 본문 · 바닥을 통째로
  * 갈아 끼우고, `n개 추가` 로 돌아오면 고른 목록이 시트의 보스 목록이 된다.
  */
-import { useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import { Platform, Pressable, View } from 'react-native'
 
-import { AlertTriangleIcon, CheckBox, ChevronLeftIcon, Text } from '../../components/atoms'
+import { AlertTriangleIcon, BellIcon, BellOffIcon, CheckBox, ChevronLeftIcon, Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import {
@@ -37,11 +37,13 @@ import {
   repeatWeekdayOf,
 } from '../../features/party-appointments/edit'
 import { orderByCharacter } from '../../features/party-appointments/boss-groups'
-import { alarmsOnDate } from '../../features/party-appointments/guards'
+import { checkAlarmGate, ensureNotificationPermission, type AlarmGateResult } from '../../features/party-appointments/alarm-gate'
+import { usePartyAlarmSettingsStore } from '../../features/party-appointments/alarm-settings'
 import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
 import { WEEKDAY_LABELS } from '../../lib/calendar'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import type { PartyAppointmentOccurrence } from '../../types/party-appointment'
+import { openNotificationSettings } from '../settings/notification-settings-link'
 import { AppointmentAlarmField } from './AppointmentAlarmField'
 import { AppointmentBossList } from './AppointmentBossList'
 import { AppointmentSummaryTiles } from './AppointmentSummaryTiles'
@@ -61,6 +63,9 @@ export interface AppointmentSheetTarget {
 }
 
 type Step = 'view' | 'form' | 'bosses'
+
+/** 걸린 확인과 그것이 저장할 때 걸렸는지 */
+type AlarmBlock = Exclude<AlarmGateResult, { kind: 'ok' }> & { atSave: boolean }
 
 export interface AppointmentSheetProps {
   /** 없으면 추가, 있으면 그 회차의 상세로 연다 */
@@ -85,6 +90,9 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   const [step, setStep] = useState<Step>(target === undefined ? 'form' : 'view')
   const [thisWeekOnly, setThisWeekOnly] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  /** 알림 체크 상자를 켤 때나 저장할 때 걸린 확인. 걸린 것이 없으면 `null` */
+  const [alarmBlock, setAlarmBlock] = useState<AlarmBlock | null>(null)
+  const alarmSwitch = usePartyAlarmSettingsStore()
   const picker = useBossPicker()
   const todayKey = getCurrentKstDateKey(now)
   const editing = target !== undefined
@@ -104,6 +112,27 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
     return target === undefined ? nextOccurrenceDateKey(weekday, startMinutes, new Date()) : dateInWeek(target.weekStart, weekday)
   }
 
+  useEffect(() => {
+    if (!alarmSwitch.loaded) void alarmSwitch.load()
+  }, [alarmSwitch])
+
+  /**
+   * 알림 체크 상자를 켤 때 기기 권한 → 파티 약속 알림 스위치 차례로 보고 걸리는 첫 하나의 모달을 띄운다.
+   * 체크 상자는 먼저 켠다.
+   */
+  async function turnAlarmOn(): Promise<void> {
+    update({ alarmOn: true })
+    const result = await checkAlarm()
+    if (result.kind !== 'ok') setAlarmBlock({ ...result, atSave: false })
+  }
+
+  function checkAlarm(): Promise<AlarmGateResult> {
+    return checkAlarmGate({
+      ensurePermission: ensureNotificationPermission,
+      switchEnabled: usePartyAlarmSettingsStore.getState().enabled,
+    })
+  }
+
   const endInvalid = durationOf(draft) <= 0
   const savable = canSave(draft) && !saving
   const weekday = WEEKDAY_LABELS[new Date(`${draft.startDateKey}T00:00:00Z`).getUTCDay()]
@@ -111,15 +140,31 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   const repeatWeekday =
     WEEKDAY_LABELS[repeatWeekdayOf(draft, target?.occurrence.appointment.schedule, step === 'view' || thisWeekOnly)]
 
+  /**
+   * 알림이 켜져 있으면 저장할 값으로 세 확인을 다시 보고 저장한다.
+   * 켤 때 본 것만 믿으면 설정에서 권한을 켜지 않고 돌아온 약속이 알림을 단 채 저장된다.
+   */
   async function submit(): Promise<void> {
     if (!savable) return
+    if (draft.alarmOn) {
+      setSaving(true)
+      const result = await checkAlarm().finally(() => setSaving(false))
+      if (result.kind !== 'ok') {
+        setAlarmBlock({ ...result, atSave: true })
+        return
+      }
+    }
+    await persist(draft)
+  }
+
+  async function persist(values: AppointmentDraft): Promise<void> {
     setSaving(true)
     try {
       const id = newAppointmentId(new Date())
       await save(
         target === undefined
-          ? [...appointments, toAppointment(draft, id)]
-          : applyEdit(appointments, target.occurrence.appointment, target.weekStart, draft, {
+          ? [...appointments, toAppointment(values, id)]
+          : applyEdit(appointments, target.occurrence.appointment, target.weekStart, values, {
               thisWeekOnly: repeating && thisWeekOnly,
               newId: id,
             }),
@@ -135,6 +180,15 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
     setConfirmingDelete(false)
     await save(applyDelete(appointments, target.occurrence.appointment, target.weekStart))
     props.onClose()
+  }
+
+  const saveWithoutAlarm = {
+    label: '알림 없이 저장',
+    onPress: () => {
+      setAlarmBlock(null)
+      update({ alarmOn: false })
+      void persist({ ...draft, alarmOn: false })
+    },
   }
 
   const inBosses = step === 'bosses'
@@ -292,10 +346,10 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
       <AppointmentAlarmField
         alarmOn={draft.alarmOn}
         leadMinutes={draft.leadMinutes}
-        startDateKey={draft.startDateKey}
-        usedOnDate={alarmsOnDate(appointments, draft.startDateKey, target?.occurrence.appointment.id)}
-        dayLabel={byWeekday ? `${WEEKDAY_LABELS[weekdayOf(draft.startDateKey)]}요일` : undefined}
-        onToggle={(alarmOn) => update({ alarmOn })}
+        onToggle={(alarmOn) => {
+          if (alarmOn) void turnAlarmOn()
+          else update({ alarmOn: false })
+        }}
         onChangeLead={(leadMinutes) => update({ leadMinutes })}
       />
     </View>
@@ -355,6 +409,44 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
       >
         {inBosses ? bossesBody : inView ? viewBody : formBody}
       </BottomSheet>
+      {alarmBlock?.kind === 'permission' && (
+        <NoticeModal
+          icon={BellOffIcon}
+          tone="error"
+          title="알림이 꺼져 있어요"
+          description="기기에서 이 앱의 알림이 꺼져 있어요. 설정에서 알림을 켜주세요."
+          action={{
+            label: '설정 열기',
+            onPress: () => {
+              setAlarmBlock(null)
+              void openNotificationSettings(Platform.OS).catch(() => undefined)
+            },
+          }}
+          // 켤 때는 체크 상자를 켠 채 닫는다. 저장할 때는 알림을 끄고 저장한다.
+          secondaryAction={alarmBlock.atSave ? saveWithoutAlarm : { label: '나중에', onPress: () => setAlarmBlock(null) }}
+          onClose={() => setAlarmBlock(null)}
+          testId="appointment-alarm-permission-modal"
+        />
+      )}
+      {alarmBlock?.kind === 'switch' && (
+        <NoticeModal
+          icon={BellIcon}
+          tone="primary"
+          title="스케줄 알림이 꺼져있어요"
+          description="스케줄 알림이 꺼져있어요. 알림을 켤까요?"
+          action={{
+            label: '알림 켜기',
+            onPress: () => {
+              setAlarmBlock(null)
+              void alarmSwitch.setEnabled(true)
+              if (alarmBlock.atSave) void persist(draft)
+            },
+          }}
+          secondaryAction={alarmBlock.atSave ? saveWithoutAlarm : { label: '나중에', onPress: () => setAlarmBlock(null) }}
+          onClose={() => setAlarmBlock(null)}
+          testId="appointment-alarm-switch-modal"
+        />
+      )}
       {confirmingDelete && (
         <NoticeModal
           icon={AlertTriangleIcon}

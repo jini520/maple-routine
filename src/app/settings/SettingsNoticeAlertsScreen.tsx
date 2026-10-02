@@ -18,6 +18,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useNoticeStore } from '../../features/notice/store'
 import { anySubscribed, NOTICE_TOPICS } from '../../features/notice/topics'
+import { usePartyAlarmSettingsStore } from '../../features/party-appointments/alarm-settings'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { openNotificationSettings } from './notification-settings-link'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
@@ -51,17 +52,22 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
   const blockedByPermission = useNoticeStore((state) => state.blockedByPermission)
   const permissionGranted = useNoticeStore((state) => state.permissionGranted)
   const refreshPermission = useNoticeStore((state) => state.refreshPermission)
+  const partyAlarmOn = usePartyAlarmSettingsStore((state) => state.enabled)
+  const loadPartyAlarm = usePartyAlarmSettingsStore((state) => state.load)
+  const setPartyAlarm = usePartyAlarmSettingsStore((state) => state.setEnabled)
   /** 누른 값을 덮은 구독. 스위치가 왕복을 기다리지 않게 하는 값. */
   const shown = { ...subscriptions, ...pending }
   // **저장하지 않고 파생한다.** 저장하면 `전체는 켜졌는데 넷은 다 꺼진` 상태가 생기고, 그때
   // 화면은 스위치가 켜졌다고 말하면서 알림은 안 온다.
-  const on = anySubscribed(shown)
+  // 약속 스위치도 더한다. 빼 두면 전체가 꺼진 채로 약속 알림이 오는 상태가 생긴다.
+  const on = anySubscribed(shown) || partyAlarmOn
 
   // 들어올 때마다 읽는다. 기기 설정에 갔다 오는 사이 값이 바뀌고, 그 왕복이 이 화면에서 시작된다.
   useFocusEffect(
     useCallback(() => {
       void refreshPermission()
-    }, [refreshPermission]),
+      void loadPartyAlarm()
+    }, [refreshPermission, loadPartyAlarm]),
   )
 
   /**
@@ -130,6 +136,7 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
               onToggle={() => {
                 // 켜면 기본 묶음이 켜지고 끄면 전부 꺼진다.
                 report(setAllSubscribed(!on))
+                void setPartyAlarm(!on)
               }}
             />
           </View>
@@ -193,11 +200,20 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
         {on && <SectionLabel>스케줄러</SectionLabel>}
         {on && (
           <Card className="px-6">
-            {SCHEDULER_ALERTS.map((alert, index) => (
-              <View
-                key={alert.key}
-                className={`flex-row items-center py-4 ${index === 0 ? '' : SETTINGS_ROW_DIVIDER_CLASS}`}
-              >
+            <View className="flex-row items-center py-4">
+              <Text className="shrink text-sm text-text">파티 약속 알림</Text>
+              <Switch
+                on={partyAlarmOn}
+                label="파티 약속 알림"
+                size="lg"
+                className="ml-auto"
+                onToggle={() => {
+                  void setPartyAlarm(!partyAlarmOn)
+                }}
+              />
+            </View>
+            {SCHEDULER_ALERTS.map((alert) => (
+              <View key={alert.key} className={`flex-row items-center py-4 ${SETTINGS_ROW_DIVIDER_CLASS}`}>
                 <Text className="shrink text-sm text-text-disabled">{alert.label}</Text>
                 {/* 스위치 자리에 `준비 중` 을 세운다. 못 켜는 스위치를 그려 두면 사용자가 눌러
                     보고 나서야 못 쓴다는 것을 알고, 그 사이 화면은 고장으로 읽힌다. */}

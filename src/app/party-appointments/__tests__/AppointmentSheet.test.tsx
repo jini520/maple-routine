@@ -20,6 +20,12 @@ jest.mock('@gorhom/bottom-sheet', () => {
 })
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { usePartyAlarmSettingsStore } from '../../../features/party-appointments/alarm-settings'
+import { initialDraft } from '../../../features/party-appointments/draft'
+import { usePartyAppointmentsStore } from '../../../features/party-appointments/store'
+import { __resetNativePortsForTest, setNotificationsPort } from '../../../native/ports'
+import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
+import { setNotificationPermissionAsked } from '../../../storage/notice-settings'
 import { occurrencesInWeek } from '../../../features/party-appointments/occurrences'
 import type { PartyAppointment } from '../../../types/party-appointment'
 import { AppointmentSheet } from '../AppointmentSheet'
@@ -49,12 +55,11 @@ describe('추가 시트', () => {
     expect(view.getByLabelText('날짜 고르기')).toBeTruthy()
   })
 
-  it('반복 약속은 날짜 대신 요일을 고르고, 알림 사용량도 요일로 적는다', async () => {
+  it('반복 약속은 날짜 대신 요일을 고른다', async () => {
     const view = await 그리기({ repeats: true })
 
     expect(view.queryByLabelText('날짜 고르기')).toBeNull()
     expect(view.getByText(/^매주 .요일$/)).toBeTruthy()
-    expect(view.getByText(/^.요일 알림 /)).toBeTruthy()
   })
 
   it('매주 반복 체크 상자가 없다', async () => {
@@ -150,5 +155,169 @@ describe('수정 시트', () => {
     })
 
     expect(view.getByLabelText('이 주만 적용하기').props.accessibilityState).toMatchObject({ checked: false })
+  })
+})
+
+// 알림 체크 상자를 켤 때의 모달 둘(정정 21 · 23). 기기 권한 → 파티 약속 알림 스위치 차례다.
+describe('알림 체크 상자를 켤 때', () => {
+  let granted = true
+
+  beforeEach(async () => {
+    installFakePreferences()
+    granted = true
+    setNotificationsPort({
+      requestPermission: async () => granted,
+      hasPermission: async () => granted,
+      schedule: async () => {},
+      cancel: async () => {},
+      getPendingCount: async () => 0,
+    })
+    await setNotificationPermissionAsked()
+    usePartyAppointmentsStore.setState({ appointments: [] })
+    usePartyAlarmSettingsStore.setState({ enabled: true, loaded: true })
+  })
+
+  afterEach(__resetNativePortsForTest)
+
+  /** 시트가 처음 여는 날짜에 알림 달린 약속 셋을 깐다 */
+  function 그날알림셋(): void {
+    const dateKey = initialDraft(new Date()).startDateKey
+    usePartyAppointmentsStore.setState({
+      appointments: ['x', 'y', 'z'].map((id) => ({
+        id,
+        bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
+        members: [],
+        timeKst: '10:00',
+        durationMinutes: 30,
+        leadMinutes: 10,
+        schedule: { type: 'once', dateKey },
+        exceptions: {},
+      })),
+    })
+  }
+
+  async function 켜기(view: Awaited<ReturnType<typeof 그리기>>): Promise<void> {
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('알림'))
+    })
+  }
+
+  it('걸리는 것이 없으면 모달 없이 켜진다', async () => {
+    const view = await 그리기({ repeats: false })
+    await 켜기(view)
+
+    expect(view.getByLabelText('알림').props.accessibilityState).toMatchObject({ checked: true })
+    expect(view.queryByText('알림이 꺼져 있어요')).toBeNull()
+  })
+
+  // 하루 한도는 없다. 약속 알림은 기기가 예약해 서버 비용이 없다(정정 23).
+  it('그 날 알림이 이미 셋이어도 모달 없이 켜지고 사용량을 적지 않는다', async () => {
+    그날알림셋()
+    const view = await 그리기({ repeats: false })
+    await 켜기(view)
+
+    expect(view.getByLabelText('알림').props.accessibilityState).toMatchObject({ checked: true })
+    expect(view.queryByText(/알림 \d\/3/)).toBeNull()
+  })
+
+  it('기기 권한이 없으면 권한 모달이고, 나중에를 눌러도 체크 상자는 켜져 있다', async () => {
+    granted = false
+    const view = await 그리기({ repeats: false })
+    await 켜기(view)
+
+    expect(view.getByText('알림이 꺼져 있어요')).toBeTruthy()
+    expect(view.getByText('설정 열기')).toBeTruthy()
+
+    await act(async () => {
+      fireEvent.press(view.getByText('나중에'))
+    })
+
+    expect(view.getByLabelText('알림').props.accessibilityState).toMatchObject({ checked: true })
+  })
+
+  it('권한은 있는데 파티 약속 알림 스위치가 꺼져 있으면 알림 켜기로 스위치를 켠다', async () => {
+    usePartyAlarmSettingsStore.setState({ enabled: false, loaded: true })
+    const view = await 그리기({ repeats: false })
+    await 켜기(view)
+
+    expect(view.getByText('스케줄 알림이 꺼져있어요')).toBeTruthy()
+
+    await act(async () => {
+      fireEvent.press(view.getByText('알림 켜기'))
+    })
+
+    expect(usePartyAlarmSettingsStore.getState().enabled).toBe(true)
+    expect(view.getByLabelText('알림').props.accessibilityState).toMatchObject({ checked: true })
+  })
+
+  // 저장할 때 같은 차례를 저장할 값으로 한 번 더 본다(정정 22).
+  describe('저장할 때', () => {
+    const weekly: PartyAppointment = {
+      id: 'a1',
+      bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
+      members: [],
+      timeKst: '21:00',
+      durationMinutes: 30,
+      leadMinutes: 10,
+      schedule: { type: 'weekly', weekday: 4, fromWeek: '2099-01-01', untilWeek: null },
+      exceptions: {},
+    }
+
+    async function 수정으로(appointment: PartyAppointment) {
+      usePartyAppointmentsStore.setState({ appointments: [appointment] })
+      const [occurrence] = occurrencesInWeek([appointment], '2099-01-01')
+      const onClose = jest.fn()
+      const view = await 그리기({ target: { occurrence: occurrence!, weekStart: '2099-01-01' }, onClose })
+      await act(async () => {
+        fireEvent.press(view.getByLabelText('수정'))
+      })
+      return { view, onClose }
+    }
+
+    async function 저장(view: Awaited<ReturnType<typeof 그리기>>): Promise<void> {
+      await act(async () => {
+        fireEvent.press(view.getByLabelText('저장'))
+      })
+    }
+
+    // 설정 열기로 갔다가 켜지 않고 돌아와도 체크 상자는 켜져 있다(사용자 보고).
+    it('권한이 여전히 없으면 권한 모달이고, 알림 없이 저장은 알림을 끄고 저장한다', async () => {
+      granted = false
+      const { view, onClose } = await 수정으로(weekly)
+
+      await 저장(view)
+
+      expect(view.getByText('알림이 꺼져 있어요')).toBeTruthy()
+      expect(view.queryByText('나중에')).toBeNull()
+      await act(async () => {
+        fireEvent.press(view.getByText('알림 없이 저장'))
+      })
+      expect(onClose).toHaveBeenCalled()
+      expect(usePartyAppointmentsStore.getState().appointments[0]!.leadMinutes).toBeNull()
+    })
+
+    it('스위치가 꺼져 있으면 알림 켜기가 스위치를 켜고 알림을 단 채 저장한다', async () => {
+      usePartyAlarmSettingsStore.setState({ enabled: false, loaded: true })
+      const { view, onClose } = await 수정으로(weekly)
+
+      await 저장(view)
+
+      expect(view.getByText('스케줄 알림이 꺼져있어요')).toBeTruthy()
+      expect(view.getByText('알림 없이 저장')).toBeTruthy()
+      await act(async () => {
+        fireEvent.press(view.getByText('알림 켜기'))
+      })
+      expect(usePartyAlarmSettingsStore.getState().enabled).toBe(true)
+      expect(onClose).toHaveBeenCalled()
+      expect(usePartyAppointmentsStore.getState().appointments[0]!.leadMinutes).toBe(10)
+    })
+
+    it('걸리는 것이 없으면 그대로 저장한다', async () => {
+      const { view, onClose } = await 수정으로(weekly)
+
+      await 저장(view)
+
+      expect(onClose).toHaveBeenCalled()
+    })
   })
 })
