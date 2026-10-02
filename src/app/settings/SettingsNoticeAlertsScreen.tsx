@@ -201,10 +201,10 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
         {on && (
           <Card className="px-6">
             <View className="flex-row items-center py-4">
-              <Text className="shrink text-sm text-text">파티 약속 알림</Text>
+              <Text className="shrink text-sm text-text">파티 스케줄 알림</Text>
               <Switch
                 on={partyAlarmOn}
-                label="파티 약속 알림"
+                label="파티 스케줄 알림"
                 size="lg"
                 className="ml-auto"
                 onToggle={() => {

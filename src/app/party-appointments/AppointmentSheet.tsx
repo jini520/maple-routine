@@ -197,8 +197,8 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   const editingIndex = picker.editing?.index ?? null
   const editingBoss = editingIndex === null ? undefined : picker.picked[editingIndex]
 
-  const addTitle = draft.repeats ? '반복 약속 추가' : '약속 추가'
-  const viewHeader = <Text className="text-base font-bold text-text">약속</Text>
+  const addTitle = draft.repeats ? '반복 스케줄 추가' : '스케줄 추가'
+  const viewHeader = <Text className="text-base font-bold text-text">스케줄</Text>
   const formHeader = editing ? (
     <Pressable
       role="button"
@@ -212,7 +212,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
       className="flex-row items-center gap-1 self-start active:opacity-60"
     >
       <ChevronLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
-      <Text className="text-base font-bold text-text">약속 수정</Text>
+      <Text className="text-base font-bold text-text">스케줄 수정</Text>
     </Pressable>
   ) : (
     <Text className="text-base font-bold text-text">{addTitle}</Text>
@@ -230,7 +230,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   )
 
   const viewFooter = past ? (
-    <Text className="py-2 text-center text-13 text-text-muted">지난 주 약속은 볼 수만 있어요</Text>
+    <Text className="py-2 text-center text-13 text-text-muted">지난 주 스케줄은 볼 수만 있어요</Text>
   ) : (
     // 다른 시트와 같은 바닥. 전폭 주 버튼 아래에 되돌릴 수 없는 동작을 작은 빨간 글자로 둔다.
     <View className="gap-1">
@@ -398,7 +398,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
     <>
       <BottomSheet
         testId="appointment-sheet"
-        label={inBosses ? '보스 추가' : inView ? '약속' : editing ? '약속 수정' : addTitle}
+        label={inBosses ? '보스 추가' : inView ? '스케줄' : editing ? '스케줄 수정' : addTitle}
         stepKey={step}
         resetScrollKey={step}
         // 보스 추가는 선택 줄이 펼쳐지며 바닥이 자란다. 처음부터 넉넉히 열어 시트가 덜 출렁이게 한다.
@@ -451,11 +451,11 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
         <NoticeModal
           icon={AlertTriangleIcon}
           tone="error"
-          title={repeating ? '반복 약속을 삭제할까요?' : '약속을 삭제할까요?'}
+          title={repeating ? '반복 스케줄을 삭제할까요?' : '스케줄을 삭제할까요?'}
           description={
             repeating
-              ? `이번 주부터 매주 ${repeatWeekday}요일 약속이 사라져요. 지난 주 약속은 그대로 남아요.`
-              : '삭제한 약속은 되돌릴 수 없어요.'
+              ? `이번 주부터 매주 ${repeatWeekday}요일 스케줄이 사라져요. 지난 주 스케줄은 그대로 남아요.`
+              : '삭제한 스케줄은 되돌릴 수 없어요.'
           }
           // 되돌릴 수 없는 동작이라 주 버튼이 취소다. 삭제는 아래 빨간 글자.
           action={{ label: '취소', onPress: () => setConfirmingDelete(false) }}

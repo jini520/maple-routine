@@ -37,16 +37,16 @@ function 그리기(props: Partial<React.ComponentProps<typeof AppointmentSheet>>
 }
 
 describe('추가 시트', () => {
-  it('한 번만 갈래로 열면 제목이 약속 추가다', async () => {
+  it('한 번만 갈래로 열면 제목이 스케줄 추가다', async () => {
     const view = await 그리기({ repeats: false })
 
-    expect(view.getByText('약속 추가')).toBeTruthy()
+    expect(view.getByText('스케줄 추가')).toBeTruthy()
   })
 
-  it('매주 반복 갈래로 열면 제목이 반복 약속 추가다', async () => {
+  it('매주 반복 갈래로 열면 제목이 반복 스케줄 추가다', async () => {
     const view = await 그리기({ repeats: true })
 
-    expect(view.getByText('반복 약속 추가')).toBeTruthy()
+    expect(view.getByText('반복 스케줄 추가')).toBeTruthy()
   })
 
   it('한 번 약속은 날짜를 고른다', async () => {
@@ -82,7 +82,7 @@ describe('수정 시트', () => {
   }
 
   // 한 번 ↔ 반복은 수정에서 바꾸지 못한다. 바꾸려면 지우고 다시 추가한다.
-  it('매주 반복 체크 상자가 없고, 제목은 약속 수정 그대로다', async () => {
+  it('매주 반복 체크 상자가 없고, 제목은 스케줄 수정 그대로다', async () => {
     const [occurrence] = occurrencesInWeek([weekly], '2099-01-01')
     const view = await 그리기({ target: { occurrence: occurrence!, weekStart: '2099-01-01' } })
 
@@ -90,7 +90,7 @@ describe('수정 시트', () => {
       fireEvent.press(view.getByLabelText('수정'))
     })
 
-    expect(view.getByText('약속 수정')).toBeTruthy()
+    expect(view.getByText('스케줄 수정')).toBeTruthy()
     expect(view.queryByLabelText('매주 반복')).toBeNull()
     expect(view.getByLabelText('이 주만 적용하기')).toBeTruthy()
   })

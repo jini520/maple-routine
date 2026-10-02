@@ -33,9 +33,10 @@ const EASE_OUT = Easing.bezier(0.2, 0.8, 0.2, 1)
 
 /**
  * 닫힌 줄의 상자. 옅은 바탕 · 테두리 · 반경 12 이고 열리면 테두리가 주황이 된다. 자리마다 내용이 달라도
- * (라벨–값 · 배지 사슬 · 캐릭터 줄) 상자는 이것 하나다.
+ * (라벨–값 · 배지 사슬 · 캐릭터 줄) 상자는 이것 하나다. `bare` 는 테두리 없이 48 높이다.
  */
-function triggerBoxClass(isOpen: boolean): string {
+function triggerBoxClass(isOpen: boolean, bare: boolean): string {
+  if (bare) return 'min-h-12 flex-row items-center gap-2.5 rounded-xl bg-card-body px-3 py-2'
   return `min-h-10 flex-row items-center gap-2.5 rounded-xl border bg-card-body px-3 py-2 ${
     isOpen ? 'border-primary' : 'border-border'
   }`
@@ -109,6 +110,8 @@ export interface SelectFieldProps {
    * `SelectChevron` 을 둔다.
    */
   renderTrigger?: (open: () => void, isOpen: boolean) => React.ReactNode
+  /** 테두리 없이 조금 더 높은 줄. 시트 바탕 위에 바로 서는 자리(보스 추가) */
+  bare?: boolean
 }
 
 /** `null` 도 받는 키. 목록의 첫 칸이 대개 그것이다. */
@@ -239,7 +242,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           aria-label={props.label}
           aria-expanded={isOpen}
           onPress={open}
-          className={`${triggerBoxClass(isOpen)} active:opacity-60`}
+          className={`${triggerBoxClass(isOpen, props.bare === true)} active:opacity-60`}
         >
           <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
           <Text numberOfLines={1} className="flex-1 text-15 font-bold text-text">
@@ -248,7 +251,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           <SelectChevron open={isOpen} />
         </Pressable>
       ) : (
-        <View ref={triggerRef} testID={`${props.testID}-trigger`} className={triggerBoxClass(isOpen)}>
+        <View ref={triggerRef} testID={`${props.testID}-trigger`} className={triggerBoxClass(isOpen, props.bare === true)}>
           {props.renderTrigger(open, isOpen)}
         </View>
       )}

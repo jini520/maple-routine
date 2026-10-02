@@ -114,7 +114,7 @@ describe('파티 약속 채널', () => {
   it('party 채널은 HIGH · 소리 있음이다', () => {
     expect(PARTY_NOTIFICATION_CHANNEL).toMatchObject({
       id: 'party',
-      name: '파티 약속',
+      name: '파티 스케줄',
       importance: AndroidImportance.HIGH,
       sound: 'default',
     })

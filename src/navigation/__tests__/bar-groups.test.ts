@@ -81,7 +81,7 @@ describe('그룹 표', () => {
       { page: 'Content', label: '컨텐츠' },
       { page: 'Boss', label: '보스' },
       { page: 'BossManage', label: '보스 관리' },
-      { page: 'Appointments', label: '약속' },
+      { page: 'Appointments', label: '파티 스케줄' },
     ])
   })
 

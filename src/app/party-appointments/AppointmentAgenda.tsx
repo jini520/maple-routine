@@ -64,7 +64,7 @@ function OccurrenceRow(props: {
   return (
     <Pressable
       role="button"
-      aria-label={`${occurrence.timeKst} 약속 상세`}
+      aria-label={`${occurrence.timeKst} 스케줄 상세`}
       onPress={props.onPress}
       className={`gap-1 active:opacity-60 ${ended ? 'opacity-50' : ''}`}
     >
@@ -133,9 +133,9 @@ export function AppointmentAgenda(props: AppointmentAgendaProps): React.JSX.Elem
     return (
       <EmptyState
         icon={CalendarClockIcon}
-        title={`${props.weekLabel} 약속이 없어요`}
+        title={`${props.weekLabel} 파티 스케줄이 없어요`}
         // 버튼이 없다. ＋ 가 같은 화면에 있다.
-        description="파티 보스 약속을 적어 두면 시작 전에 알려 드려요"
+        description="파티 보스 스케줄을 적어 두면 시작 전에 알려 드려요"
       />
     )
   }

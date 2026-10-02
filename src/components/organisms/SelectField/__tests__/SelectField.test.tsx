@@ -120,3 +120,23 @@ describe('SelectField', () => {
   })
 })
 
+
+// 보스 추가 시트처럼 시트 바탕 위에 바로 서는 자리. 테두리 없이 조금 더 높다.
+describe('bare', () => {
+  it('테두리가 없고 줄이 48 이상이다', async () => {
+    const view = await renderOverlay(
+      <SelectField label="캐릭터" options={보기} selected={null} onSelect={jest.fn()} testID="pick" bare />,
+    )
+    const style = Object.assign({}, ...[view.getByTestId('pick-trigger').props.style].flat())
+
+    expect(style.borderWidth ?? 0).toBe(0)
+    expect(style.minHeight).toBe(48)
+  })
+
+  it('없으면 테두리를 두른다', async () => {
+    const { view } = await 그리기()
+    const style = Object.assign({}, ...[view.getByTestId('pick-trigger').props.style].flat())
+
+    expect(style.borderWidth).toBe(1)
+  })
+})
