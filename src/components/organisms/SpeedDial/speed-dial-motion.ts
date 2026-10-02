@@ -1,73 +1,112 @@
 /**
- * 펼침판의 움직임 값. 판정과 그리기를 가른다.
+ * 펼치는 ＋ 의 움직임 값과 치수. 판정과 그리기를 가른다.
  *
- * 값이 컴포넌트 밖에 있는 것은 애니메이션을 띄우지 않고도 규칙을 검증할 수 있어야 하기
- * 때문이다. 계단의 방향(어느 것이 먼저 뜨고 먼저 접히는가)이 이 판이 말하려는 것의 전부인데,
- * 그것은 렌더된 프레임으로는 붙들기 어렵다.
+ * 값이 컴포넌트 밖에 있는 것은 애니메이션을 띄우지 않고도 규칙을 검증할 수 있어야 하기 때문이다.
  *
- * - 열 때는 FAB 에서 가까운 것부터. 지출 원 → 지출 칩 → 수입 원 → 수입 칩. 그래야 두 개가
- *   동시에 나타났다 가 아니라 이 버튼에서 나왔다 로 읽힌다.
- * - 칩은 제 원보다 늦다. 원이 자리를 잡은 뒤 라벨이 옆으로 밀려 나오는 한 겹이 메뉴가 떴다 를
- *   버튼이 자기 이름을 폈다 로 바꾼다.
- * - 닫을 때는 역순이고 더 짧다. 먼 것부터 접혀 FAB 로 빨려 들어가는 방향이고, 닫기가
- *   열기만큼 길면 답답하다.
+ * - 펴기는 두 단계다. 아이콘 원만 ＋ 에 가까운 것부터 솟아 한 줄로 서고, 그 뒤 맨 위 원부터 알약으로 펼쳐진다.
+ *   솟는 방향(아래 → 위)과 펼치는 방향(위 → 아래)이 엇갈려 한 흐름으로 읽힌다.
+ * - 접기는 거울이고 더 짧다. 이름이 사라지고, 알약이 원으로 줄고, 먼 원부터 ＋ 로 들어간다.
  */
+import { FAB_DIAMETER_PX } from '../../../lib/fab-metrics'
 
-/** 한 요소가 열리고 닫히는 데 드는 시간(ms). */
+/** 한 요소가 움직이기 시작하는 때와 드는 시간(ms) */
 export interface DialStep {
-  readonly openDelayMs: number
-  readonly openMs: number
-  readonly closeDelayMs: number
-  readonly closeMs: number
+  readonly delayMs: number
+  readonly durationMs: number
 }
 
-/** 닫힘은 어느 요소든 이 길이다. 값이 하나라 닫기가 더 짧다 가 구조로 지켜진다. */
-const CLOSE_MS = 130
+/** 갈래 하나가 쓰는 세 움직임 */
+export interface DialTiming {
+  /** 원이 ＋ 자리에서 제자리로 솟는다(이동 · 크기 · 투명도) */
+  readonly rise: DialStep
+  /** 원이 알약으로 늘어난다(폭) */
+  readonly expand: DialStep
+  /** 이름 · 설명이 나타난다(투명도) */
+  readonly label: DialStep
+}
 
-export const DIAL_MOTION = {
-  scrim: { openDelayMs: 0, openMs: 160, closeDelayMs: 0, closeMs: CLOSE_MS },
-  fab: { openDelayMs: 0, openMs: 220, closeDelayMs: 0, closeMs: CLOSE_MS },
-  // 아래 넷의 지연이 계단이다.
-  //
-  //   열림   원 둘이 먼저 솟고(0 · 50) 칩 둘이 뒤따라 펴진다(60 · 110).
-  //   닫힘   그 정확한 거울. 칩 둘이 먼저 접히고(0 · 20) 원 둘이 꺼진다(40 · 60).
-  //
-  // 닫힘을 행별로 두면 열림은 종류별, 닫힘은 행별이라 두 방향이 서로 다른 규칙이 된다. 각 줄
-  // 안에서는 수입이 먼저 접힌다. FAB 에서 먼 것부터라 빨려 들어가는 방향이 된다.
-  expenseCircle: { openDelayMs: 0, openMs: 220, closeDelayMs: 60, closeMs: CLOSE_MS },
-  expenseChip: { openDelayMs: 60, openMs: 180, closeDelayMs: 20, closeMs: CLOSE_MS },
-  incomeCircle: { openDelayMs: 50, openMs: 220, closeDelayMs: 40, closeMs: CLOSE_MS },
-  incomeChip: { openDelayMs: 110, openMs: 180, closeDelayMs: 0, closeMs: CLOSE_MS },
-} as const satisfies Record<string, DialStep>
-
-/**
- * 원과 칩이 움직이는 거리(px). `BottomBar` 의 `ROW_SHIFT` 와 같은 값이다. 크면 날아온다 가
- * 되어 층 관계가 흐려진다.
- */
-export const DIAL_RISE_PX = 10
-export const DIAL_SLIDE_PX = 10
-
-/** 원이 시작하는 크기. 0 에서 자라면 터져 나온다 가 되어 위 거리와 어울리지 않는다. */
-export const DIAL_START_SCALE = 0.8
-
-/** ＋ 를 이만큼 돌리면 그대로 ✕ 다. 아이콘이 하나뿐이라 두 그림이 어긋날 자리가 없다. */
+/** 알약 높이. ＋ 와 같아서 펼치기 전의 원이 ＋ 와 같은 크기로 줄을 선다 */
+export const PILL_HEIGHT_PX = FAB_DIAMETER_PX
+/** 알약 사이와 맨 아래 알약과 ＋ 사이 */
+export const DIAL_GAP_PX = 12
+/** 알약 왼쪽의 아이콘 원 자리(여백 7 + 원 42 + 틈 11). 글자가 여기서 시작한다 */
+export const PILL_ICON_SLOT_PX = 60
+/** 글자 뒤 오른쪽 여백 */
+export const PILL_END_PADDING_PX = 16
+/** 원이 솟기 시작하는 크기 */
+export const DIAL_RISE_START_SCALE = 0.5
+/** ＋ 를 이만큼 돌리면 그대로 ✕ 다 */
 export const FAB_OPEN_ROTATION_DEG = 45
 
+const RISE_STAIR_MS = 40
+const RISE_MS = 300
+/** 마지막 원이 거의 자리를 잡은 뒤에 펼치기 시작한다 */
+const EXPAND_START_MS = 220
+const EXPAND_STAIR_MS = 50
+const EXPAND_MS = 320
+const LABEL_AFTER_EXPAND_MS = 120
+const LABEL_MS = 180
+
+const CLOSE_LABEL_MS = 70
+const CLOSE_EXPAND_DELAY_MS = 30
+const CLOSE_MS = 150
+/** 알약이 원으로 다 줄어든 뒤 원이 들어간다 */
+const CLOSE_RISE_DELAY_MS = CLOSE_EXPAND_DELAY_MS + CLOSE_MS - 30
+const CLOSE_RISE_STAIR_MS = 25
+
 /**
- * 이 요소가 지금 쓸 지연과 길이.
+ * 갈래 하나의 움직임 값.
  *
- * 움직임을 줄이면 지연을 0 으로 접는다. 계단은 이동·스케일이 있을 때만 보이는데 그것들을 끄고
- * 지연만 남기면 아무 일도 없다가 툭 나타난다 가 된다. 길이는 남긴다. 페이드는 여전히 열리는
- * 중을 말해 준다.
+ * @param index 위에서부터 차례(0 이 맨 위, `count - 1` 이 ＋ 에 가장 가깝다)
+ * @param reduceMotion 움직임 줄이기. 지연을 0 으로 접는다. 계단은 이동이 있을 때만 보이고 지연만 남으면 툭 나타난다
  */
-export function dialTiming(
-  step: DialStep,
-  isOpen: boolean,
-  reduceMotion: boolean,
-): { delay: number; duration: number } {
-  const delay = isOpen ? step.openDelayMs : step.closeDelayMs
+export function dialTiming(index: number, count: number, isOpen: boolean, reduceMotion: boolean): DialTiming {
+  const fromFab = count - 1 - index
+  const timing: DialTiming = isOpen
+    ? (() => {
+        const expandDelay = EXPAND_START_MS + (count - 1) * RISE_STAIR_MS + index * EXPAND_STAIR_MS
+        return {
+          rise: { delayMs: fromFab * RISE_STAIR_MS, durationMs: RISE_MS },
+          expand: { delayMs: expandDelay, durationMs: EXPAND_MS },
+          label: { delayMs: expandDelay + LABEL_AFTER_EXPAND_MS, durationMs: LABEL_MS },
+        }
+      })()
+    : {
+        rise: { delayMs: CLOSE_RISE_DELAY_MS + index * CLOSE_RISE_STAIR_MS, durationMs: CLOSE_MS },
+        expand: { delayMs: CLOSE_EXPAND_DELAY_MS, durationMs: CLOSE_MS },
+        label: { delayMs: 0, durationMs: CLOSE_LABEL_MS },
+      }
+  if (!reduceMotion) return timing
   return {
-    delay: reduceMotion ? 0 : delay,
-    duration: isOpen ? step.openMs : step.closeMs,
+    rise: { ...timing.rise, delayMs: 0 },
+    expand: { ...timing.expand, delayMs: 0 },
+    label: { ...timing.label, delayMs: 0 },
   }
+}
+
+/** 스크림과 ＋ 회전. 펼 때는 기다리지 않고, 접을 때는 원이 들어가기 시작할 때 함께 걷힌다 */
+export function chromeTiming(isOpen: boolean, reduceMotion: boolean): { scrim: DialStep; fab: DialStep } {
+  const delayMs = isOpen || reduceMotion ? 0 : CLOSE_RISE_DELAY_MS
+  return isOpen
+    ? { scrim: { delayMs, durationMs: 180 }, fab: { delayMs, durationMs: RISE_MS } }
+    : { scrim: { delayMs, durationMs: CLOSE_MS }, fab: { delayMs, durationMs: CLOSE_MS } }
+}
+
+/**
+ * 펼친 알약의 폭. 모든 알약이 가장 긴 글자에 맞춘 한 폭을 쓴다.
+ *
+ * @param widestLabelPx 가장 긴 이름 · 설명의 폭. 아직 못 쟀으면 0 이고 그때는 원 크기다
+ */
+export function pillWidth(widestLabelPx: number): number {
+  if (widestLabelPx <= 0) return PILL_HEIGHT_PX
+  return PILL_ICON_SLOT_PX + Math.ceil(widestLabelPx) + PILL_END_PADDING_PX
+}
+
+/**
+ * 원이 솟기 시작하는 자리까지의 거리. ＋ 중심에서 그 줄 중심까지다.
+ *
+ * @param fromFab ＋ 에서 몇 번째 줄인지(0 이 ＋ 바로 위)
+ */
+export function riseOffsetPx(fromFab: number): number {
+  return (fromFab + 1) * (PILL_HEIGHT_PX + DIAL_GAP_PX)
 }

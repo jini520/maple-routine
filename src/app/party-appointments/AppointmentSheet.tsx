@@ -1,10 +1,11 @@
 /**
- * 약속을 적고 보고 고치는 시트. FAB 를 누르면 추가로, 보드 블록을 누르면 상세로 열린다.
+ * 약속을 적고 보고 고치는 시트. ＋ 의 갈래(한 번만 · 매주 반복)를 고르면 추가로, 목록의 약속을 누르면 상세로 열린다.
  *
  * 상세는 추가 시트의 읽기 모드다(고르개 · 손잡이 · `✕` · 보스 추가 칸 없음, 알림 · 반복은 타일). 바닥의 `수정` 을
  * 누르면 같은 시트가 수정 모드가 되고, 반복 약속이면 저장 위에 `이 주만 적용하기` 가 선다. 지난 주 약속은 읽기만 한다.
  *
- * 위에서부터 시작 · 종료 띠, 보스 목록, 알림, 매주 반복이고 바닥에 저장이 고정된다. 저장은 보스가
+ * 위에서부터 날짜 · 시작 · 종료 타일, 보스 목록, 알림이고 바닥에 저장이 고정된다. 한 번 · 반복은 ＋ 에서 정해져
+ * 시트에서 바꾸지 못한다. 저장은 보스가
  * 하나 이상이고 종료가 시작보다 늦을 때만 켜진다. 같은 캐릭터 · 같은 보스의 약속이 있어도 묻지 않는다.
  *
  * `+ 보스 추가` 는 같은 시트 안에서 단계를 바꾼다(`stepKey`). 보스 추가 단계는 머리 · 본문 · 바닥을 통째로
@@ -18,10 +19,13 @@ import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import {
   canSave,
+  dateInWeek,
   durationOf,
   initialDraft,
   newAppointmentId,
+  nextOccurrenceDateKey,
   toAppointment,
+  weekdayOf,
   type AppointmentDraft,
 } from '../../features/party-appointments/draft'
 import {
@@ -59,6 +63,8 @@ type Step = 'view' | 'form' | 'bosses'
 export interface AppointmentSheetProps {
   /** 없으면 추가, 있으면 그 회차의 상세로 연다 */
   target?: AppointmentSheetTarget
+  /** 추가할 때 고른 ＋ 의 갈래. 매주 반복이면 true */
+  repeats?: boolean
   names: ReadonlyMap<string, string>
   colorOf: (ocid: string) => string
   onClose: () => void
@@ -70,7 +76,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   const { target } = props
   const [now] = useState(() => new Date())
   const [draft, setDraft] = useState<AppointmentDraft>(() =>
-    target === undefined ? initialDraft(now) : draftFromOccurrence(target.occurrence),
+    target === undefined ? initialDraft(now, props.repeats ?? false) : draftFromOccurrence(target.occurrence),
   )
   const [saving, setSaving] = useState(false)
   const [step, setStep] = useState<Step>(target === undefined ? 'form' : 'view')
@@ -84,6 +90,14 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
 
   function update(patch: Partial<AppointmentDraft>): void {
     setDraft((current) => ({ ...current, ...patch }))
+  }
+
+  // 반복 약속은 날짜 대신 요일을 고른다. 이 주만 적용하기는 그 주 한 회차를 옮기는 것이라 날짜다.
+  const byWeekday = draft.repeats && !(editing && thisWeekOnly)
+
+  /** 요일에서 낸 시작 날짜. 추가는 다음 회차, 앞으로 모두 수정은 그 주 W 안의 그 요일이다 */
+  function dateForWeekday(weekday: number, startMinutes: number): string {
+    return target === undefined ? nextOccurrenceDateKey(weekday, startMinutes, new Date()) : dateInWeek(target.weekStart, weekday)
   }
 
   const endInvalid = durationOf(draft) <= 0
@@ -125,6 +139,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   const editingIndex = picker.editing?.index ?? null
   const editingBoss = editingIndex === null ? undefined : picker.picked[editingIndex]
 
+  const addTitle = draft.repeats ? '반복 약속 추가' : '약속 추가'
   const viewHeader = <Text className="text-base font-bold text-text">약속</Text>
   const formHeader = editing ? (
     <Pressable
@@ -142,7 +157,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
       <Text className="text-base font-bold text-text">약속 수정</Text>
     </Pressable>
   ) : (
-    <Text className="text-base font-bold text-text">약속 추가</Text>
+    <Text className="text-base font-bold text-text">{addTitle}</Text>
   )
   const bossesHeader = (
     <Pressable
@@ -178,12 +193,18 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   const formFooter = (
     <View className="gap-3">
       {editing && repeating && (
-        // 추가 시트에서 반복 체크가 있던 자리. 끄면 이 주부터 앞으로 모두, 켜면 이 주 회차만 바뀐다.
+        // 끄면 이 주부터 앞으로 모두, 켜면 이 주 회차만 바뀐다.
         <Pressable
           role="checkbox"
           aria-label="이 주만 적용하기"
           aria-checked={thisWeekOnly}
-          onPress={() => setThisWeekOnly(!thisWeekOnly)}
+          onPress={() => {
+            // 끄면 요일 타일로 돌아간다. 이 주만 다른 주 날짜로 옮겼어도 앞으로 모두는 그 주 W 부터다.
+            if (thisWeekOnly && target !== undefined) {
+              update({ startDateKey: dateInWeek(target.weekStart, weekdayOf(draft.startDateKey)) })
+            }
+            setThisWeekOnly(!thisWeekOnly)
+          }}
           className="flex-row items-center gap-2 self-start"
         >
           <CheckBox checked={thisWeekOnly} />
@@ -228,8 +249,14 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
         startMinutes={draft.startMinutes}
         endMinutes={draft.endMinutes}
         endInvalid={endInvalid}
-        onChangeStart={(dateKey, minutes) => update({ startDateKey: dateKey, startMinutes: minutes })}
+        onChangeStart={(dateKey, minutes) =>
+          // 반복 추가는 시작 시각이 바뀌면 다음 회차가 이번 주인지 다음 주인지 다시 센다.
+          update({ startDateKey: byWeekday ? dateForWeekday(weekdayOf(dateKey), minutes) : dateKey, startMinutes: minutes })
+        }
         onChangeEnd={(minutes) => update({ endMinutes: minutes })}
+        onChangeWeekday={
+          byWeekday ? (weekday) => update({ startDateKey: dateForWeekday(weekday, draft.startMinutes) }) : undefined
+        }
       />
       <AppointmentBossList
         bosses={draft.bosses}
@@ -246,21 +273,10 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
         leadMinutes={draft.leadMinutes}
         startDateKey={draft.startDateKey}
         usedOnDate={alarmsOnDate(appointments, draft.startDateKey, target?.occurrence.appointment.id)}
+        dayLabel={byWeekday ? `${WEEKDAY_LABELS[weekdayOf(draft.startDateKey)]}요일` : undefined}
         onToggle={(alarmOn) => update({ alarmOn })}
         onChangeLead={(leadMinutes) => update({ leadMinutes })}
       />
-      {/* 알림 아래. 바닥 줄 저장 바로 위 자리는 수정 시트가 `이 주만 적용하기` 로 쓴다. */}
-      <Pressable
-        role="checkbox"
-        aria-label="매주 반복"
-        aria-checked={draft.repeats}
-        onPress={() => update({ repeats: !draft.repeats })}
-        className="flex-row items-center gap-2 self-start px-4 py-1"
-      >
-        <CheckBox checked={draft.repeats} />
-        <Text className="text-sm font-medium text-text">매주 반복</Text>
-        {draft.repeats && <Text className="text-xs text-text-muted">{repeatWeekday}요일마다</Text>}
-      </Pressable>
     </View>
   )
   const viewBody = (
@@ -308,7 +324,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
     <>
       <BottomSheet
         testId="appointment-sheet"
-        label={inBosses ? '보스 추가' : inView ? '약속' : editing ? '약속 수정' : '약속 추가'}
+        label={inBosses ? '보스 추가' : inView ? '약속' : editing ? '약속 수정' : addTitle}
         stepKey={step}
         resetScrollKey={step}
         // 보스 추가는 선택 줄이 펼쳐지며 바닥이 자란다. 처음부터 넉넉히 열어 시트가 덜 출렁이게 한다.

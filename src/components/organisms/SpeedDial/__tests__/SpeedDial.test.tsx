@@ -1,9 +1,10 @@
-// 펼침판. ＋ 하나가 갈래 둘을 편다.
+// 펼치는 ＋. ＋ 하나가 받은 갈래들을 편다.
 //
 // **움직임은 여기서 안 본다**. 값은 `speed-dial-motion.ts` 가 들고 그쪽 테스트가 붙든다. 여기서
 // 보는 것은 **무엇이 눌리고 무엇이 안 눌리는가** 다.
 import { act, fireEvent } from '@testing-library/react-native'
 import { StyleSheet } from 'react-native'
+import { useReducedMotion } from 'react-native-reanimated'
 
 import { flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
 import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
@@ -12,7 +13,9 @@ import {
   __resetThemeAppearanceForTest,
   setThemeAppearance,
 } from '../../../../theme/appearance-store'
-import { SpeedDial } from '../SpeedDial'
+import { ProfitIcon, ShoppingCartIcon } from '../../../atoms'
+import { SpeedDial, type SpeedDialAction } from '../SpeedDial'
+import { pillWidth } from '../speed-dial-motion'
 import { boxShadowOf } from '../../../../lib/shadow'
 import {
   FAB_CONTENT_GAP_PX,
@@ -23,12 +26,44 @@ import {
   FAB_SPACE_PX,
 } from '../../../../lib/fab-metrics'
 
+// `__esModule` 은 펼쳐도 안 넘어와서 직접 적는다. 빠지면 `Animated.View` 가 없어진다.
+jest.mock('react-native-reanimated', () => ({
+  ...jest.requireActual('react-native-reanimated'),
+  __esModule: true,
+  useReducedMotion: jest.fn(() => false),
+}))
+
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
-async function 그리기(overrides: Partial<React.ComponentProps<typeof SpeedDial>> = {}) {
-  return renderOverlay(
-    <SpeedDial onSelectIncome={jest.fn()} onSelectExpense={jest.fn()} {...overrides} />,
-  )
+interface 갈래 {
+  onSelectIncome?: () => void
+  onSelectExpense?: () => void
+  descriptions?: boolean
+}
+
+/** 가계부와 같은 두 갈래. 위가 수입, ＋ 에 가까운 아래가 지출이다 */
+function 갈래둘(options: 갈래 = {}): SpeedDialAction[] {
+  return [
+    {
+      key: 'income',
+      label: '수입',
+      accessibilityLabel: '수입 추가',
+      description: options.descriptions ? '받은 메소' : undefined,
+      Icon: ProfitIcon,
+      onSelect: options.onSelectIncome ?? jest.fn(),
+    },
+    {
+      key: 'expense',
+      label: '지출',
+      accessibilityLabel: '지출 추가',
+      Icon: ShoppingCartIcon,
+      onSelect: options.onSelectExpense ?? jest.fn(),
+    },
+  ]
+}
+
+async function 그리기(options: 갈래 = {}) {
+  return renderOverlay(<SpeedDial label="기록 추가" actions={갈래둘(options)} />)
 }
 
 async function 누르기(view: Rendered, label: string): Promise<void> {
@@ -70,8 +105,8 @@ describe('접혀 있을 때', () => {
 })
 
 describe('펼친 뒤', () => {
-  async function 펼치기(overrides: Partial<React.ComponentProps<typeof SpeedDial>> = {}) {
-    const view = await 그리기(overrides)
+  async function 펼치기(options: 갈래 = {}) {
+    const view = await 그리기(options)
     await 누르기(view, '기록 추가')
     return view
   }
@@ -256,14 +291,13 @@ describe('떠 있는 원의 입체감', () => {
     expect(circle.height).toBe(FAB_DIAMETER_PX)
   })
 
-  // 사용자 결정. 어두운 스크림 위에 색이 꽉 찬 원이라 그림자가 거의 안 보이고, 떠 있음은
-  // 스크림이 이미 만든다. 값이 큰 원 하나에만 걸려 있으면 갈릴 자리도 없다.
-  it('펼침판의 작은 원 둘에는 그림자가 없다', async () => {
+  // 사용자 결정. 스크림 위의 흰 알약이라 떠 있음은 스크림이 이미 만든다.
+  it('펼친 알약에는 그림자가 없다', async () => {
     const view = await 그리기()
     await 누르기(view, '기록 추가')
 
-    for (const row of view.getAllByTestId(/^speed-dial-row-/)) {
-      expect(flattenStyle(row.props.style).boxShadow).toBeUndefined()
+    for (const key of ['income', 'expense']) {
+      expect(flattenStyle(view.getByTestId(`speed-dial-pill-${key}`).props.style).boxShadow).toBeUndefined()
     }
   })
 })
@@ -297,5 +331,56 @@ describe('＋ 의 촉각', () => {
     await 누르기(view, '수입 추가')
 
     expect(tap).not.toHaveBeenCalled()
+  })
+})
+
+// 갈래 하나는 왼쪽 옅은 주황 원 + 이름 + (있으면) 설명이다. 원 색은 화면과 상관없이 주황 하나다.
+describe('알약의 모양', () => {
+  beforeEach(() => setHapticsPort({ tap: async () => {}, select: async () => {} }))
+  afterEach(() => {
+    __resetNativePortsForTest()
+    jest.mocked(useReducedMotion).mockReturnValue(false)
+  })
+
+  it('이름을 적고, 설명은 준 갈래에만 적는다', async () => {
+    const view = await 그리기({ descriptions: true })
+
+    expect(view.getByText('수입')).toBeTruthy()
+    expect(view.getByText('받은 메소')).toBeTruthy()
+    expect(view.getByText('지출')).toBeTruthy()
+    expect(view.getAllByTestId(/^speed-dial-description-/)).toHaveLength(1)
+  })
+
+  it('아이콘 원은 옅은 주황이다', async () => {
+    const view = await 그리기()
+
+    for (const key of ['income', 'expense']) {
+      expect(flattenStyle(view.getByTestId(`speed-dial-icon-${key}`).props.style).backgroundColor).toBe(기본테마.primaryTint)
+    }
+  })
+
+  // 넉넉한 고정 폭을 두지 않는다. 가장 긴 글자에 맞춘 한 폭을 모든 알약이 쓴다(사용자 지시).
+  // 폭은 움직이는 값이라 움직임 줄이기에서 본다. 그때는 늘어남 없이 곧바로 펼친 폭이다.
+  it('펼친 알약은 모두 가장 긴 글자에 맞춘 같은 폭이다', async () => {
+    jest.mocked(useReducedMotion).mockReturnValue(true)
+    const view = await 그리기({ descriptions: true })
+    await act(async () => {
+      fireEvent(view.getByTestId('speed-dial-label-income'), 'layout', { nativeEvent: { layout: { width: 72, height: 34 } } })
+      fireEvent(view.getByTestId('speed-dial-label-expense'), 'layout', { nativeEvent: { layout: { width: 28, height: 19 } } })
+    })
+    await 누르기(view, '기록 추가')
+
+    // 움직이는 값의 최신은 `style` 이 아니라 Reanimated 가 테스트용으로 남기는 `jestAnimatedStyle` 에 있다.
+    for (const key of ['income', 'expense']) {
+      expect(view.getByTestId(`speed-dial-pill-${key}`).props.jestAnimatedStyle.value.width).toBe(pillWidth(72))
+    }
+  })
+
+  // 펼친 동안 강한 색이 ＋ 하나뿐이라 물러날 까닭이 없다. 돌아서 × 가 된 것만으로 닫기가 읽힌다.
+  it('펼쳐도 ＋ 는 주황 그대로다', async () => {
+    const view = await 그리기()
+    await 누르기(view, '기록 추가')
+
+    expect(flattenStyle(view.getByLabelText('닫기').props.style).backgroundColor).toBe(기본테마.primary)
   })
 })

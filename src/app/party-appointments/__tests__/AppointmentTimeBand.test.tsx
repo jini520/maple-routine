@@ -1,3 +1,5 @@
+import { fireEvent } from '@testing-library/react-native'
+
 import { flattenStyle, renderAtom, 기본테마 } from '../../../components/__tests__/render-atom'
 import { AppointmentTimeBand, type AppointmentTimeBandProps } from '../AppointmentTimeBand'
 
@@ -59,5 +61,88 @@ describe('AppointmentTimeBand', () => {
 
     const end = getAllByText('21:00')[1]!
     expect(flattenStyle(end.props.style).color).toBe(기본테마.errorInk)
+  })
+})
+
+// 반복 약속은 날짜가 아니라 요일을 고른다. 시트에는 날짜를 적지 않는다(사용자 결정).
+describe('AppointmentTimeBand: 요일 타일', () => {
+  const 목요일 = { startDateKey: '2026-10-08', onChangeWeekday: jest.fn() }
+
+  it('날짜 타일 대신 요일 타일이 서고, 날짜는 어디에도 없다', async () => {
+    const { getByText, queryByLabelText, queryByText } = await renderAtom(<AppointmentTimeBand {...props(목요일)} />)
+
+    expect(getByText('매주 목요일')).toBeTruthy()
+    expect(queryByLabelText('날짜 고르기')).toBeNull()
+    expect(queryByText(/10\/8/)).toBeNull()
+  })
+
+  it('요일은 목요일부터 수요일까지 리셋 주 순서다', async () => {
+    const { getAllByRole } = await renderAtom(<AppointmentTimeBand {...props(목요일)} />)
+
+    const 요일 = getAllByRole('button')
+      .map((node) => node.props.accessibilityLabel as string)
+      .filter((label) => /^.요일$/.test(label))
+    expect(요일).toEqual(['목요일', '금요일', '토요일', '일요일', '월요일', '화요일', '수요일'])
+  })
+
+  it('요일을 누르면 확인 없이 바로 알린다', async () => {
+    const onChangeWeekday = jest.fn()
+    const { getByLabelText } = await renderAtom(<AppointmentTimeBand {...props({ ...목요일, onChangeWeekday })} />)
+
+    await fireEvent.press(getByLabelText('금요일'))
+
+    expect(onChangeWeekday).toHaveBeenCalledWith(5)
+  })
+
+  it('고른 요일은 선택된 것으로 읽힌다', async () => {
+    const { getByLabelText } = await renderAtom(<AppointmentTimeBand {...props(목요일)} />)
+
+    expect(getByLabelText('목요일').props.accessibilityState).toMatchObject({ selected: true })
+    expect(getByLabelText('금요일').props.accessibilityState).toMatchObject({ selected: false })
+  })
+
+  it('자정을 넘으면 값이 다음 요일까지 적힌다', async () => {
+    const { getByText } = await renderAtom(
+      <AppointmentTimeBand {...props({ ...목요일, startMinutes: 23 * 60 + 30, endMinutes: 30 })} />,
+    )
+
+    expect(getByText('매주 목 ~ 금요일')).toBeTruthy()
+  })
+
+  // 자정을 넘으면 상자가 다음 요일까지 한 알약으로 늘어난다. 두 칸 모두 상자 위 흰 글자다.
+  it('자정을 넘으면 다음 요일 글자도 상자 위 흰 글자다', async () => {
+    const { getByText } = await renderAtom(
+      <AppointmentTimeBand {...props({ ...목요일, startMinutes: 23 * 60 + 30, endMinutes: 30 })} />,
+    )
+
+    expect(flattenStyle(getByText('금').props.style).color).toBe(기본테마.onPrimary)
+    expect(flattenStyle(getByText('토').props.style).color).toBe(기본테마.text)
+  })
+
+  it('이웃한 두 칸이면 상자 하나가 둘을 덮는다', async () => {
+    const { getAllByTestId } = await renderAtom(
+      <AppointmentTimeBand {...props({ ...목요일, startMinutes: 23 * 60 + 30, endMinutes: 30 })} />,
+    )
+
+    expect(getAllByTestId(/^weekday-thumb/)).toHaveLength(1)
+  })
+
+  // 끝 칸 수요일에서 다음 날 목요일은 줄의 반대쪽 끝이라 이웃이 아니다. 양쪽에 상자를 하나씩 둔다.
+  it('수요일에서 목요일로 넘어가면 양 끝에 상자를 하나씩 둔다', async () => {
+    const { getAllByTestId, getByText } = await renderAtom(
+      <AppointmentTimeBand
+        {...props({ startDateKey: '2026-10-07', onChangeWeekday: jest.fn(), startMinutes: 23 * 60 + 30, endMinutes: 30 })}
+      />,
+    )
+
+    expect(getAllByTestId(/^weekday-thumb/)).toHaveLength(2)
+    expect(flattenStyle(getByText('목').props.style).color).toBe(기본테마.onPrimary)
+  })
+
+  it('같은 날 끝나면 상자는 하나, 다음 요일은 보통 글자다', async () => {
+    const { getAllByTestId, getByText } = await renderAtom(<AppointmentTimeBand {...props(목요일)} />)
+
+    expect(getAllByTestId(/^weekday-thumb/)).toHaveLength(1)
+    expect(flattenStyle(getByText('금').props.style).color).toBe(기본테마.text)
   })
 })

@@ -28,7 +28,6 @@ export interface AppointmentAgendaProps {
   names: ReadonlyMap<string, string>
   colorOf: (ocid: string) => string
   onPressOccurrence: (occurrence: PartyAppointmentOccurrence) => void
-  onAdd: () => void
 }
 
 function BossLine(props: {
@@ -131,8 +130,8 @@ export function AppointmentAgenda(props: AppointmentAgendaProps): React.JSX.Elem
       <EmptyState
         icon={CalendarClockIcon}
         title={`${props.weekLabel} 약속이 없어요`}
+        // 버튼이 없다. ＋ 가 같은 화면에 있다.
         description="파티 보스 약속을 적어 두면 시작 전에 알려 드려요"
-        action={{ label: '약속 추가', onClick: props.onAdd }}
       />
     )
   }

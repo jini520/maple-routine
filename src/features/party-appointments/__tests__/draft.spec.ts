@@ -4,7 +4,10 @@ import {
   endsNextDay,
   formatClock,
   formatLead,
+  RESET_WEEKDAYS,
+  dateInWeek,
   initialDraft,
+  nextOccurrenceDateKey,
   moveItem,
   shiftMinutes,
   toAppointment,
@@ -46,6 +49,12 @@ describe('initialDraft', () => {
     const result = initialDraft(new Date('2026-10-01T12:05:00Z'))
 
     expect(result.startMinutes).toBe(21 * 60 + 10)
+  })
+
+  // 한 번 · 반복은 ＋ 의 갈래에서 고른다. 시트에는 그것을 바꾸는 칸이 없다.
+  it('반복 갈래로 열면 반복 약속이다', () => {
+    expect(initialDraft(new Date('2026-10-01T12:04:00Z'), true).repeats).toBe(true)
+    expect(initialDraft(new Date('2026-10-01T12:04:00Z'), false).repeats).toBe(false)
   })
 
   it('자정 직전에 열면 시작이 다음 날로 넘어간다', () => {
@@ -155,5 +164,41 @@ describe('moveItem', () => {
   it('한 칸을 다른 자리로 옮긴다', () => {
     expect(moveItem(['a', 'b', 'c'], 0, 2)).toEqual(['b', 'c', 'a'])
     expect(moveItem(['a', 'b', 'c'], 2, 0)).toEqual(['c', 'a', 'b'])
+  })
+})
+
+// 반복 약속은 날짜가 아니라 요일을 고른다. 시트는 요일에서 첫 회차 날짜를 낸다.
+describe('nextOccurrenceDateKey', () => {
+  // KST 2026-10-02(금) 21:04
+  const now = new Date('2026-10-02T12:04:00Z')
+
+  it('이번 주 그 요일이 아직이면 이번 주다', () => {
+    expect(nextOccurrenceDateKey(3, 21 * 60, now)).toBe('2026-10-07')
+  })
+
+  it('이번 주에 이미 지났으면 다음 주다', () => {
+    expect(nextOccurrenceDateKey(4, 21 * 60, now)).toBe('2026-10-08')
+  })
+
+  it('오늘이고 시작이 아직이면 오늘이다', () => {
+    expect(nextOccurrenceDateKey(5, 22 * 60, now)).toBe('2026-10-02')
+  })
+
+  it('오늘이고 시작이 지났으면 다음 주다', () => {
+    expect(nextOccurrenceDateKey(5, 21 * 60, now)).toBe('2026-10-09')
+  })
+})
+
+describe('dateInWeek', () => {
+  it('리셋 주(목요일 시작) 안의 그 요일 날짜다', () => {
+    expect(dateInWeek('2026-10-01', 4)).toBe('2026-10-01')
+    expect(dateInWeek('2026-10-01', 0)).toBe('2026-10-04')
+    expect(dateInWeek('2026-10-01', 3)).toBe('2026-10-07')
+  })
+})
+
+describe('RESET_WEEKDAYS', () => {
+  it('목요일부터 수요일까지다', () => {
+    expect(RESET_WEEKDAYS).toEqual([4, 5, 6, 0, 1, 2, 3])
   })
 })

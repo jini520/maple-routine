@@ -32,7 +32,6 @@ function props(appointments: PartyAppointment[], overrides: Partial<AppointmentA
     names: NAMES,
     colorOf: () => '#3F7FC4',
     onPressOccurrence: jest.fn(),
-    onAdd: jest.fn(),
     ...overrides,
   }
 }
@@ -85,12 +84,11 @@ describe('AppointmentAgenda', () => {
     expect(onPressOccurrence).toHaveBeenCalledWith(expect.objectContaining({ dateKey: '2026-10-01' }))
   })
 
-  it('약속이 없으면 그 주 이름의 빈 상태와 약속 추가 버튼을 둔다', async () => {
-    const onAdd = jest.fn()
-    const view = await renderAtom(<AppointmentAgenda {...props([], { onAdd, weekLabel: '9월 1주차' })} />)
+  // ＋ 가 같은 화면에 있어서 빈 상태에는 버튼을 두지 않는다(사용자 결정).
+  it('약속이 없으면 그 주 이름의 빈 상태를 두고 버튼은 없다', async () => {
+    const view = await renderAtom(<AppointmentAgenda {...props([], { weekLabel: '9월 1주차' })} />)
 
     expect(view.getByText('9월 1주차 약속이 없어요')).toBeTruthy()
-    await fireEvent.press(view.getByText('약속 추가'))
-    expect(onAdd).toHaveBeenCalled()
+    expect(view.queryByRole('button')).toBeNull()
   })
 })

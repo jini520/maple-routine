@@ -10,8 +10,10 @@ import { Animated, View } from 'react-native'
 
 import { Text } from '../../atoms'
 
-/** 날짜 열 폭 */
-export const DAY_COLUMN_WIDTH = 64
+/** 글자와 시 열 사이 */
+const DAY_COLUMN_GAP = 4
+/** 가운데 띠 왼쪽 끝과 글자 사이. 없으면 글자가 띠 모서리에 붙는다 */
+const DAY_COLUMN_INSET = 8
 
 /** 휠 바깥에서 시 휠의 스크롤 값을 받아 오는 다리. 그 값은 휠 안에서만 읽힌다 */
 export function ScrollOffsetBridge(props: { onOffset: (offset: Animated.Value) => void }): null {
@@ -51,14 +53,20 @@ export function DayColumn(props: DayColumnProps): React.JSX.Element {
     }
   }, [offset, boundary, h, nearY, farY])
 
-  const slot = { position: 'absolute' as const, left: 0, right: 0, top: (props.pickerHeight - h) / 2, height: h }
+  const slot = { position: 'absolute' as const, left: DAY_COLUMN_INSET, right: DAY_COLUMN_GAP, top: (props.pickerHeight - h) / 2, height: h }
   const label = (text: string): React.JSX.Element => (
     <Text className="text-right text-11 font-semibold text-text-muted" style={{ lineHeight: h }} numberOfLines={1}>
       {text}
     </Text>
   )
   return (
-    <View aria-hidden style={{ width: DAY_COLUMN_WIDTH, height: props.pickerHeight, overflow: 'hidden' }}>
+    // 폭을 박지 않는다. 짧은 요일(`금요일`)을 날짜(`10/2 (금)`)에 맞춘 폭에 두면 왼쪽이 크게 빈다.
+    <View testID="day-column" aria-hidden style={{ height: props.pickerHeight, overflow: 'hidden', paddingLeft: DAY_COLUMN_INSET, paddingRight: DAY_COLUMN_GAP }}>
+      {/* 자리 잡기 줄. 높이 0 · 안 보이는 두 글자가 열 폭을 둘 중 긴 것에 맞춘다(움직이는 글자는 절대 배치라 폭을 못 낸다). */}
+      <View testID="day-column-sizer" style={{ height: 0, opacity: 0 }}>
+        {label(props.today)}
+        {label(props.next)}
+      </View>
       <View style={slot}>
         <Animated.View style={motion === null ? undefined : { transform: [{ translateY: motion.todayY }], opacity: motion.todayOpacity }}>
           {label(props.today)}
