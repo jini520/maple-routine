@@ -1,6 +1,6 @@
-import { getNotificationsPort, type LocalNotificationRequest } from './ports'
+import { getNotificationsPort, type LocalNotificationRequest, type NotificationData } from './ports'
 
-export type { LocalNotificationRequest }
+export type { LocalNotificationRequest, NotificationData }
 
 export async function requestNotificationPermission(): Promise<boolean> {
   return getNotificationsPort().requestPermission()
@@ -20,4 +20,12 @@ export async function cancelLocalNotification(id: number): Promise<void> {
 
 export async function getPendingNotificationCount(): Promise<number> {
   return getNotificationsPort().getPendingCount()
+}
+
+export function addNotificationPressListener(handler: (data: NotificationData) => void): () => void {
+  return getNotificationsPort().addPressListener(handler)
+}
+
+export async function getInitialNotificationPress(): Promise<NotificationData | null> {
+  return getNotificationsPort().getInitialPress()
 }

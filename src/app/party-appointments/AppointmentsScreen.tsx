@@ -23,6 +23,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { agendaDays, thisWeekJumpOf } from '../../features/party-appointments/agenda'
+import { findNotifiedOccurrence, usePartyAppointmentOpenStore } from '../../features/party-appointments/open-request'
 import { occurrencesInWeek } from '../../features/party-appointments/occurrences'
 import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
 import { formatBossProfitPeriodLabel } from '../../lib/boss/boss-profit-period'
@@ -46,12 +47,6 @@ export function AppointmentsScreen(): React.JSX.Element {
   // 추가는 ＋ 에서 고른 갈래(`once` · `weekly`), 상세는 누른 회차다.
   const [sheet, setSheet] = useState<'once' | 'weekly' | AppointmentSheetTarget | null>(null)
 
-  useFocusEffect(
-    useCallback(() => {
-      void load()
-    }, [load]),
-  )
-
   // 분마다 다시 그려 방금 끝난 약속도 흐려지게 한다.
   const [nowMs, setNowMs] = useState(() => Date.now())
   useEffect(() => {
@@ -62,6 +57,33 @@ export function AppointmentsScreen(): React.JSX.Element {
   const todayKey = getCurrentKstDateKey(new Date(nowMs))
   const thisWeek = resetWeekStartOf(todayKey)
   const [weekStart, setWeekStart] = useState(thisWeek)
+
+  /**
+   * 목록을 읽고, 알림을 눌러 왔으면 그 회차가 든 주로 가서 상세를 연다. 약속이 없어졌으면 그 주만 연다.
+   * 들어올 때와, 이 화면에 있는 채로 알림을 눌렀을 때 부른다.
+   */
+  const loadAndOpenNotified = useCallback(async () => {
+    await load()
+    const request = usePartyAppointmentOpenStore.getState().request
+    if (request === null) return
+    usePartyAppointmentOpenStore.getState().clear()
+    const found = findNotifiedOccurrence(usePartyAppointmentsStore.getState().appointments, request)
+    setWeekStart(found.weekStart)
+    setSheet(found.occurrence === undefined ? null : { occurrence: found.occurrence, weekStart: found.weekStart })
+  }, [load])
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadAndOpenNotified()
+    }, [loadAndOpenNotified]),
+  )
+  useEffect(
+    () =>
+      usePartyAppointmentOpenStore.subscribe((state) => {
+        if (state.request !== null) void loadAndOpenNotified()
+      }),
+    [loadAndOpenNotified],
+  )
   const periodLabel = formatBossProfitPeriodLabel('weekly', weekStart, new Date(nowMs))
   const jump = thisWeekJumpOf(weekStart, thisWeek)
 

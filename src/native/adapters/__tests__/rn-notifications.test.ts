@@ -18,16 +18,20 @@ jest.mock('@notifee/react-native', () => ({
     cancelNotification: jest.fn(),
     cancelTriggerNotification: jest.fn(),
     getTriggerNotificationIds: jest.fn(),
+    onForegroundEvent: jest.fn(),
+    getInitialNotification: jest.fn(),
   },
 }))
 
 import notifee, {
   AuthorizationStatus,
+  EventType,
   TriggerType,
+  type Event,
   type NotificationSettings,
 } from '@notifee/react-native'
 
-import { rnNotificationsPort } from '../rn-notifications'
+import { handleBackgroundNotificationEvent, rnNotificationsPort } from '../rn-notifications'
 
 const mocked = jest.mocked(notifee)
 
@@ -133,5 +137,86 @@ describe('getPendingCount', () => {
   it('예약이 없으면 0 이다', async () => {
     mocked.getTriggerNotificationIds.mockResolvedValue([])
     await expect(rnNotificationsPort.getPendingCount()).resolves.toBe(0)
+  })
+})
+
+describe('data', () => {
+  // 탭했을 때 어느 약속인지 다시 찾는 열쇠다. 빠지면 탭이 아무 데도 못 간다.
+  it('요청의 data 를 알림에 싣는다', async () => {
+    await rnNotificationsPort.schedule({
+      id: 7,
+      title: '제목',
+      body: '본문',
+      scheduleAt: new Date(Date.now() + 60_000),
+      data: { kind: 'party-appointment', appointmentId: 'a1', dateKey: '2026-10-08' },
+    })
+
+    expect(mocked.createTriggerNotification.mock.calls[0]![0].data).toEqual({
+      kind: 'party-appointment',
+      appointmentId: 'a1',
+      dateKey: '2026-10-08',
+    })
+  })
+})
+
+// 탭이 앱에 닿는 길 셋(앞 · 배경 · 죽어 있다 열림)을 한 리스너로 모은다.
+describe('알림 탭', () => {
+  function press(data: Record<string, string>): Event {
+    return { type: EventType.PRESS, detail: { notification: { id: '1', data } } }
+  }
+
+  it('앞에서 누른 탭을 리스너로 보내고, 누름이 아닌 것은 버린다', () => {
+    const handler = jest.fn()
+    let foreground: ((event: Event) => void) | undefined
+    mocked.onForegroundEvent.mockImplementation((observer) => {
+      foreground = observer
+      return () => undefined
+    })
+
+    const off = rnNotificationsPort.addPressListener(handler)
+    foreground!(press({ kind: 'k' }))
+    foreground!({ type: EventType.DELIVERED, detail: { notification: { id: '1', data: { kind: 'x' } } } })
+    off()
+
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(handler).toHaveBeenCalledWith({ kind: 'k' })
+  })
+
+  // 배경 탭은 화면이 리스너를 달기 전에 올 수 있다. 붙들었다가 넘긴다.
+  it('리스너가 없을 때 온 배경 탭은 붙들었다가 리스너를 달 때 넘긴다', async () => {
+    mocked.onForegroundEvent.mockReturnValue(() => undefined)
+    await handleBackgroundNotificationEvent(press({ kind: 'later' }))
+    const handler = jest.fn()
+
+    const off = rnNotificationsPort.addPressListener(handler)
+
+    expect(handler).toHaveBeenCalledWith({ kind: 'later' })
+    off()
+  })
+
+  it('리스너가 있으면 배경 탭을 바로 넘긴다', async () => {
+    mocked.onForegroundEvent.mockReturnValue(() => undefined)
+    const handler = jest.fn()
+    const off = rnNotificationsPort.addPressListener(handler)
+
+    await handleBackgroundNotificationEvent(press({ kind: 'now' }))
+
+    expect(handler).toHaveBeenCalledWith({ kind: 'now' })
+    off()
+  })
+
+  it('죽어 있다 탭으로 열렸으면 그 data 를 준다', async () => {
+    mocked.getInitialNotification.mockResolvedValue({
+      notification: { id: '1', data: { kind: 'cold' } },
+      pressAction: { id: 'default' },
+    })
+
+    await expect(rnNotificationsPort.getInitialPress()).resolves.toEqual({ kind: 'cold' })
+  })
+
+  it('탭으로 열리지 않았으면 null 이다', async () => {
+    mocked.getInitialNotification.mockResolvedValue(null)
+
+    await expect(rnNotificationsPort.getInitialPress()).resolves.toBeNull()
   })
 })

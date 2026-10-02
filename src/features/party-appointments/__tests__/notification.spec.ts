@@ -33,6 +33,8 @@ describe('planPartyNotifications', () => {
     expect(item!.id).toBe(notificationId(PARTY_NOTIFICATION_KIND, 'a1', '2026-10-07'))
     expect(item!.title).toBe('낟낟 파티 보스 스케줄이 곧 시작해요')
     expect(item!.body).toBe('21:00 낟낟 하드 림보 파티 10분 전이에요')
+    // 탭하면 이것으로 회차를 다시 찾는다.
+    expect(item!.data).toEqual({ kind: PARTY_NOTIFICATION_KIND, appointmentId: 'a1', dateKey: '2026-10-07' })
   })
 
   it('알림이 없는 약속은 내지 않는다', () => {

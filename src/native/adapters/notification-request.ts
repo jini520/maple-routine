@@ -114,6 +114,7 @@ export function toTriggerNotification(
       title: request.title,
       body: request.body,
       android: { channelId: channelFor(request).id },
+      ...(request.data === undefined ? {} : { data: request.data }),
     },
     trigger: { type: TriggerType.TIMESTAMP, timestamp },
   }

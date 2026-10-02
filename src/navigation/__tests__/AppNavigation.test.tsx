@@ -9,6 +9,17 @@
 //
 // `act` 규칙은 `RootNavigator.test.tsx` 머리말과 같다. 렌더 전 준비는 그냥 `setState`,
 // 렌더 뒤 갱신은 `await act(async …)`.
+// 약속 시트는 바텀시트 라이브러리를 탄다. 여기서 보는 것은 열렸는가뿐이라 맨 뷰로 둔다.
+jest.mock('../../app/party-appointments/AppointmentSheet', () => {
+  const { View } = jest.requireActual<typeof import('react-native')>('react-native')
+  const React = jest.requireActual<typeof import('react')>('react')
+  return {
+    __esModule: true,
+    AppointmentSheet: (props: { target?: { occurrence: { dateKey: string } } }) =>
+      React.createElement(View, { testID: `appointment-sheet-${props.target?.occurrence.dateKey ?? 'add'}` }),
+  }
+})
+
 jest.mock('../../server/notices', () => ({
   __esModule: true,
   fetchNotices: jest.fn(async () => []),
@@ -20,6 +31,8 @@ import { PortalProvider } from '@gorhom/portal'
 import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context'
 
 import { useAppEntryStore } from '../../features/app-entry/store'
+import { usePartyAppointmentOpenStore } from '../../features/party-appointments/open-request'
+import { setPartyAppointments } from '../../storage/party-appointments'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { installNoopNativePorts } from '../../native/__tests__/fake-native-ports'
 import { setPushPort } from '../../native/ports'
@@ -73,6 +86,7 @@ beforeEach(() => {
   installNoopNativePorts()
   useTrackingModeStore.setState({ mode: 'manual' })
   useAppEntryStore.setState({ stage: 'signIn' })
+  usePartyAppointmentOpenStore.setState({ request: null })
 })
 
 async function 단계를_옮긴다(stage: 'signIn' | 'characterSetup' | 'ready'): Promise<void> {
@@ -134,5 +148,35 @@ describe('알림 탭이 여는 공지 상세', () => {
 
     expect(screen.queryByTestId('screen-SettingsNoticeDetail')).toBeNull()
     expect(screen.getByTestId('screen-Today')).toBeTruthy()
+  })
+})
+
+// 파티 약속 알림을 누르면 약속 화면으로 가서 그 회차의 상세를 연다.
+describe('알림 탭이 여는 약속 상세', () => {
+  const 약속 = {
+    id: 'a1',
+    bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
+    members: [],
+    timeKst: '21:00',
+    durationMinutes: 30,
+    leadMinutes: 10,
+    schedule: { type: 'once' as const, dateKey: '2099-01-01' },
+    exceptions: {},
+  }
+
+  it('앱이 열리기 전에는 붙들었다가 열리면 약속 화면으로 가서 상세를 연다', async () => {
+    await setPartyAppointments([약속])
+    usePartyAppointmentOpenStore.getState().open({ appointmentId: 'a1', dateKey: '2099-01-01' })
+    await render(<Harness />)
+    expect(screen.queryByTestId('screen-Appointments')).toBeNull()
+
+    await 단계를_옮긴다('ready')
+    // 화면이 들어오며 저장소를 읽는다.
+    await act(async () => {})
+    await act(async () => {})
+
+    expect(screen.getByTestId('screen-Appointments')).toBeTruthy()
+    expect(screen.getByTestId('appointment-sheet-2099-01-01')).toBeTruthy()
+    expect(usePartyAppointmentOpenStore.getState().request).toBeNull()
   })
 })

@@ -377,6 +377,8 @@ describe('왕복을 기다리지 않는다', () => {
       schedule: async () => {},
       cancel: async () => {},
       getPendingCount: async () => 0,
+      addPressListener: () => () => {},
+      getInitialPress: async () => null,
     })
     useNoticeStore.setState({
       setSubscribed: 진짜.setSubscribed,

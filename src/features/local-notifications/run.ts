@@ -37,7 +37,7 @@ export async function reconcileLocalNotifications(now: Date): Promise<void> {
       next.push(entry)
     }
   }
-  for (const { channel, ...entry } of schedule) {
+  for (const { channel, data, ...entry } of schedule) {
     try {
       await scheduleLocalNotification({
         id: entry.id,
@@ -45,6 +45,7 @@ export async function reconcileLocalNotifications(now: Date): Promise<void> {
         body: entry.body,
         scheduleAt: new Date(entry.fireAt),
         channel,
+        data,
       })
       next.push(entry)
     } catch {

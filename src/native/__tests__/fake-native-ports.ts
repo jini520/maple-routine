@@ -68,6 +68,8 @@ export function installNoopNativePorts(): void {
     schedule: async () => {},
     cancel: async () => {},
     getPendingCount: async () => 0,
+    addPressListener: () => () => {},
+    getInitialPress: async () => null,
   })
 
   setPushPort({

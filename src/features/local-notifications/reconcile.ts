@@ -4,12 +4,15 @@
  * 계획은 울릴 시각 순으로 자리 수만큼만 잡는다. iOS 는 앱 하나에 가까운 64개만 두고 나머지를 조용히 버리기 때문이다.
  * 넘친 것은 다음 재조정이 채운다.
  */
+import type { NotificationData } from '../../native/notifications'
 import type { NotificationLedgerEntry } from '../../storage/notification-ledger'
 
 /** 예약할 알림 하나 */
 export interface PlannedNotification extends NotificationLedgerEntry {
   /** 안드로이드 채널. 없으면 옛 채널 */
   channel?: 'party'
+  /** 탭했을 때 돌려받는 값. id 와 같은 재료라 원장에서 비교하지 않는다 */
+  data?: NotificationData
 }
 
 /** iOS 의 예약 알림 한도. 레지스트리 밖에서 예약하는 알림이 없어 그대로 쓴다 */
