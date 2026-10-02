@@ -72,6 +72,10 @@ export const STORAGE_KEYS = {
   //
   // `KEEP_KEYS` 에 넣는다. 사용자가 끈 스위치가 캐시 삭제로 되살아나면 끈 약속 알림이 다시 온다.
   partyAlarmEnabled: 'partyAlarmEnabled',
+  // 지금 기기에 예약해 둔 로컬 알림 `{ id, kind, fireAt, title, body }[]`. OS 는 예약 목록을 못 읽어 우리가 적는다.
+  //
+  // `KEEP_KEYS` 에 넣는다. 지우면 OS 에 남은 예약을 지목할 길이 없어 유령 알림이 된다.
+  notificationLedger: 'notificationLedger',
   // 공지의 사본. 분류마다 마지막 서버 응답(최대 20건)을 한 JSON 배열에 함께 둔다. 서버가 죽어도
   // 마지막으로 받은 것은 열려야 해서 남긴다.
   notices: 'notices',

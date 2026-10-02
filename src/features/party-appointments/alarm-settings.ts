@@ -6,6 +6,7 @@
 import { create } from 'zustand'
 
 import { getPartyAlarmEnabled, setPartyAlarmEnabled } from '../../storage/party-appointment-settings'
+import { requestNotificationReconcile } from '../local-notifications/run'
 
 export interface PartyAlarmSettingsState {
   enabled: boolean
@@ -24,5 +25,7 @@ export const usePartyAlarmSettingsStore = create<PartyAlarmSettingsState>((set) 
   setEnabled: async (enabled) => {
     set({ enabled })
     await setPartyAlarmEnabled(enabled)
+    // 끄면 예약된 약속 알림을 취소하고 켜면 다시 잡는다.
+    void requestNotificationReconcile()
   },
 }))

@@ -17,11 +17,7 @@ import notifee, { AuthorizationStatus, type NotificationSettings } from '@notife
 
 import type { NotificationsPort } from '../ports'
 
-import {
-  NOTIFICATION_CHANNEL,
-  toNotificationId,
-  toTriggerNotification,
-} from './notification-request'
+import { channelFor, toNotificationId, toTriggerNotification } from './notification-request'
 
 /**
  * 권한 판정. iOS 는 `.authorized`·`.provisional` 을 허용으로 접는다. notifee 에 `ephemeral` 은
@@ -47,7 +43,7 @@ export const rnNotificationsPort: NotificationsPort = {
     // 채널이 없으면 Android 는 알림을 아예 안 띄운다. `createNotificationChannel` 은 멱등이라
     // (이미 있으면 설정을 안 바꾼다) 예약마다 불러도 되고, 그래서 "만들었던가"를 기억하는
     // 모듈 상태를 두지 않는다. 그 상태가 어긋나면 알림이 조용히 사라진다.
-    await notifee.createChannel(NOTIFICATION_CHANNEL)
+    await notifee.createChannel(channelFor(request))
     await notifee.createTriggerNotification(notification, trigger)
   },
   // `cancelTriggerNotification` 이 아니라 `cancelNotification` 이다. 예약 취소와 이미 떠 있는

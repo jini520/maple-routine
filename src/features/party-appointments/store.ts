@@ -4,6 +4,7 @@
 import { create } from 'zustand'
 
 import { getPartyAppointments, setPartyAppointments } from '../../storage/party-appointments'
+import { requestNotificationReconcile } from '../local-notifications/run'
 import type { PartyAppointment } from '../../types/party-appointment'
 
 interface PartyAppointmentsState {
@@ -26,5 +27,7 @@ export const usePartyAppointmentsStore = create<PartyAppointmentsState>()((set) 
     // 저장이 먼저다. 저장이 실패했는데 화면만 바뀌면 다시 켰을 때 약속이 사라진다.
     await setPartyAppointments(next)
     set({ appointments: next, loaded: true })
+    // 재조정은 저장소를 읽으니 저장 뒤에 부른다.
+    void requestNotificationReconcile()
   },
 }))

@@ -45,6 +45,23 @@ export const NOTIFICATION_CHANNEL: AndroidChannel = {
 }
 
 /**
+ * 파티 약속 알림 채널. 약속은 시각이 지나면 쓸모가 없어 화면 위에 뜨는 `HIGH` 다.
+ *
+ * 채널은 한 번 만들면 앱이 이름 · 중요도를 못 바꾼다. 값을 고치면 이미 만든 기기에는 반영되지 않는다.
+ */
+export const PARTY_NOTIFICATION_CHANNEL: AndroidChannel = {
+  id: 'party',
+  name: '파티 약속',
+  importance: AndroidImportance.HIGH,
+  sound: 'default',
+}
+
+/** 요청이 갈 채널. 고르지 않으면 옛 채널 */
+export function channelFor(request: LocalNotificationRequest): AndroidChannel {
+  return request.channel === 'party' ? PARTY_NOTIFICATION_CHANNEL : NOTIFICATION_CHANNEL
+}
+
+/**
  * 포트의 숫자 ID → notifee 의 문자열 ID.
  *
  * **ID 는 앱 전체에 걸친 계약이다**. `cancel(id)` 가 `schedule` 한 그 알림을 지목해야 하므로
@@ -96,7 +113,7 @@ export function toTriggerNotification(
       id: toNotificationId(request.id),
       title: request.title,
       body: request.body,
-      android: { channelId: NOTIFICATION_CHANNEL_ID },
+      android: { channelId: channelFor(request).id },
     },
     trigger: { type: TriggerType.TIMESTAMP, timestamp },
   }

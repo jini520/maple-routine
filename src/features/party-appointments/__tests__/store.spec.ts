@@ -1,3 +1,8 @@
+const mockReconcile = jest.fn(async () => undefined)
+jest.mock('../../local-notifications/run', () => ({
+  requestNotificationReconcile: () => mockReconcile(),
+}))
+
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { usePartyAppointmentsStore } from '../store'
 import type { PartyAppointment } from '../../../types/party-appointment'
@@ -38,4 +43,11 @@ it('저장하면 상태와 저장소가 함께 바뀐다', async () => {
   usePartyAppointmentsStore.setState({ appointments: [] })
   await usePartyAppointmentsStore.getState().load()
   expect(usePartyAppointmentsStore.getState().appointments).toEqual([LIMBO])
+})
+
+// 저장하면 알림 예약을 다시 맞춘다. 지운 약속의 알림이 남거나 새 약속의 알림이 빠지면 안 된다.
+it('저장한 뒤 알림 재조정을 부른다', async () => {
+  await usePartyAppointmentsStore.getState().save([LIMBO])
+
+  expect(mockReconcile).toHaveBeenCalled()
 })
