@@ -6,19 +6,14 @@
  */
 import { Pressable, View } from 'react-native'
 
-import { Badge, BellIcon, CalendarClockIcon, RepeatIcon, Text } from '../../components/atoms'
-import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
+import { CalendarClockIcon, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
-import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { endClockOf, type AgendaDay } from '../../features/party-appointments/agenda'
 import { groupBossesByCharacter } from '../../features/party-appointments/boss-groups'
-import { formatLead } from '../../features/party-appointments/draft'
-import { bossAliasOf, bossPortraitSlugOf } from '../../lib/boss/bosses'
 import { WEEKDAY_LABELS } from '../../lib/calendar'
-import type { BossDifficulty } from '../../types'
-import type { PartyAppointmentBoss, PartyAppointmentOccurrence } from '../../types/party-appointment'
-import { CharacterGroupLabel } from './CharacterGroupLabel'
+import type { PartyAppointmentOccurrence } from '../../types/party-appointment'
+import { OccurrenceBossGroups } from './OccurrenceBossGroups'
 
 export interface AppointmentAgendaProps {
   days: AgendaDay[]
@@ -34,22 +29,6 @@ export interface AppointmentAgendaProps {
   onPressOccurrence: (occurrence: PartyAppointmentOccurrence) => void
 }
 
-function BossLine(props: { boss: PartyAppointmentBoss }): React.JSX.Element {
-  const { boss } = props
-  const name = bossAliasOf(boss.bossKey, boss.bossKey)
-  return (
-    <View className="min-h-[34px] flex-row items-center gap-2">
-      <BossPortrait portraitSlug={bossPortraitSlugOf(boss.bossKey)} label={name} size={28} />
-      <Text className="shrink text-13 font-semibold text-text" numberOfLines={1}>
-        {name}
-      </Text>
-      <Badge variant={boss.difficulty as BossDifficulty} size="mini">
-        {DIFFICULTY_NAME[boss.difficulty as BossDifficulty] ?? boss.difficulty}
-      </Badge>
-    </View>
-  )
-}
-
 function OccurrenceRow(props: {
   occurrence: PartyAppointmentOccurrence
   nowMs: number
@@ -60,7 +39,6 @@ function OccurrenceRow(props: {
   const { occurrence } = props
   const ended = occurrence.endsAt.getTime() <= props.nowMs
   const repeats = occurrence.appointment.schedule.type === 'weekly'
-  const hasAlarm = occurrence.leadMinutes !== null
   return (
     <Pressable
       role="button"
@@ -78,34 +56,15 @@ function OccurrenceRow(props: {
         </Text>
       </View>
       <View className="gap-2.5 rounded-[14px] bg-surface px-3 py-2.5">
-        {groupBossesByCharacter(occurrence.bosses).map((group) => (
-          <View key={group.ocid} className="flex-row gap-1.5">
-            <View className="pt-[5px]">
-              <CharacterGroupLabel name={props.names.get(group.ocid) ?? ''} imageUrl={props.faces.get(group.ocid) ?? null} />
-            </View>
-            <View className="flex-1">
-              {group.bosses.map((boss) => (
-                <BossLine key={`${boss.ocid}:${boss.bossKey}`} boss={boss} />
-              ))}
-            </View>
-          </View>
-        ))}
-        {(hasAlarm || repeats) && (
-          <View className="flex-row gap-2.5">
-            {hasAlarm && (
-              <View className="flex-row items-center gap-1">
-                <BellIcon className="h-3 w-3 text-primary-ink" strokeWidth={2.2} aria-hidden />
-                <Text className="text-11 text-primary-ink">{formatLead(occurrence.leadMinutes ?? 0)}</Text>
-              </View>
-            )}
-            {repeats && (
-              <View className="flex-row items-center gap-1">
-                <RepeatIcon className="h-3 w-3 text-text-muted" strokeWidth={2.2} aria-hidden />
-                <Text className="text-11 text-text-muted">매주</Text>
-              </View>
-            )}
-          </View>
-        )}
+        <OccurrenceBossGroups
+          groups={groupBossesByCharacter(occurrence.bosses).map((group) => ({
+            ...group,
+            name: props.names.get(group.ocid) ?? '',
+            imageUrl: props.faces.get(group.ocid) ?? null,
+          }))}
+          leadMinutes={occurrence.leadMinutes}
+          repeats={repeats}
+        />
       </View>
     </Pressable>
   )

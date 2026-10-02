@@ -13,10 +13,10 @@ describe('기본 배치', () => {
     expect(validateWidgetLayout(TILE_LAYOUT, WIDGET_SIZES_BY_ID)).toEqual([])
   })
 
-  it('레지스트리의 위젯 아홉이 배치에 정확히 한 번씩 등장한다', () => {
+  it('레지스트리의 위젯 열이 배치에 정확히 한 번씩 등장한다', () => {
     const placedIds = TILE_LAYOUT.map((placement) => placement.id)
 
-    expect(WIDGETS).toHaveLength(9)
+    expect(WIDGETS).toHaveLength(10)
     expect([...placedIds].sort()).toEqual(WIDGETS.map((widget) => widget.id).sort())
     expect(new Set(placedIds).size).toBe(placedIds.length)
   })
@@ -47,6 +47,15 @@ describe('기본 배치', () => {
       for (const size of widget.sizes) {
         if (size.h === 'auto') expect(size.w).toBe(4)
       }
+    }
+  })
+})
+
+// 숨는 타일은 가로 전체여야 한다. 옆 칸이 있으면 빠진 자리가 빈 사각형으로 남는다.
+describe('숨는 위젯', () => {
+  it('isVisible 이 있는 위젯은 가로 전체로 놓인다', () => {
+    for (const widget of WIDGETS.filter((one) => one.isVisible !== undefined)) {
+      expect(TILE_LAYOUT.find((placement) => placement.id === widget.id)?.w).toBe(4)
     }
   })
 })

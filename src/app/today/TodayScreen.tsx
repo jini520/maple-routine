@@ -29,6 +29,7 @@ import { View } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 
 import { useDataFreshness } from '../../features/refresh/freshness'
+import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
 import { useManualCompletionStore } from '../../features/manual-completion/store'
 import { useNoticeBannerStore } from '../../features/notice/banner-store'
 import { useDropHistoryStore } from '../../features/boss-profit/drop-history-store'
@@ -101,6 +102,8 @@ export function TodayScreen(): React.JSX.Element {
   const loadNoticeBanner = useNoticeBannerStore((state) => state.load)
   const refreshNoticeBanner = useNoticeBannerStore((state) => state.refresh)
   const refreshManualCompletion = useManualCompletionStore((state) => state.refresh)
+  const partyAppointments = usePartyAppointmentsStore((state) => state.appointments)
+  const loadPartyAppointments = usePartyAppointmentsStore((state) => state.load)
 
   // 프로필은 스토어가 아니라 저장소에서 온다(`character-basic-cache` 는 보스 수익·히스토리가 이미
   // 같은 방식으로 읽는다).
@@ -184,6 +187,13 @@ export function TodayScreen(): React.JSX.Element {
     }, [refreshManualCompletion]),
   )
 
+  // 파티 스케줄은 기기에만 있다. 포커스마다 읽어 파티 스케줄 탭에서 고친 것이 위젯 10 에 선다.
+  useFocusEffect(
+    useCallback(() => {
+      void loadPartyAppointments()
+    }, [loadPartyAppointments]),
+  )
+
   // 화면 순서는 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
   const orderedOcids = content.trackedOcids ?? []
   // 배열 자체는 매 렌더 새 참조라 deps 로 쓸 수 없다. 목록이 실제로 바뀌었을 때만 다시 읽는다.
@@ -238,6 +248,7 @@ export function TodayScreen(): React.JSX.Element {
     profitDropsByRowKey: profit.dropsByRowKey,
     dropGroups: dropHistory.groups,
     drought: dropHistory.drought,
+    partyAppointments,
   })
 
   /**

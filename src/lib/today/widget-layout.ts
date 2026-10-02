@@ -226,3 +226,27 @@ export function resolveWidgetPositions(
     containerHeightPx: tiles.reduce((bottom, tile) => Math.max(bottom, tile.topPx + tile.heightPx), 0),
   }
 }
+
+/**
+ * 숨긴 타일을 빼고 그 아래 행을 당긴 배치. 보여 줄 것이 없는 위젯이 타일째 숨을 때 쓴다.
+ *
+ * 가로 전체 타일만 받는다. 옆 칸이 있는 타일을 빼면 그 자리가 빈 사각형으로 남는다.
+ *
+ * @param hiddenIds 숨길 위젯 id
+ */
+export function omitHiddenTiles<T extends WidgetPlacement>(layout: readonly T[], hiddenIds: ReadonlySet<string>): T[] {
+  const hidden = layout.filter((placement) => hiddenIds.has(placement.id))
+  for (const placement of hidden) {
+    if (placement.w !== GRID_COLUMNS) {
+      throw new Error(`가로 전체가 아닌 타일은 숨길 수 없다: ${placement.id} (w ${placement.w})`)
+    }
+  }
+  return layout
+    .filter((placement) => !hiddenIds.has(placement.id))
+    .map((placement) => {
+      const lift = hidden
+        .filter((gone) => gone.row < placement.row)
+        .reduce((sum, gone) => sum + nominalRows(gone.h), 0)
+      return lift === 0 ? placement : { ...placement, row: placement.row - lift }
+    })
+}

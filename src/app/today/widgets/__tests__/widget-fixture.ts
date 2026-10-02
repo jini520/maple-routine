@@ -51,6 +51,7 @@ export const 빈_뷰모델: TodayViewModel = {
     weekly: { atMs: 0, remainingMs: 0, periodMs: 7 * DAY_MS },
     monthly: { atMs: 0, remainingMs: 0, periodMs: 31 * DAY_MS },
   },
+  nextParty: [],
 }
 
 export function 뷰모델(부분: Partial<TodayViewModel>): TodayViewModel {

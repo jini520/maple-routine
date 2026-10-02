@@ -2,7 +2,7 @@
 // 실수는 반드시 나므로, 자동 패킹 대신 **검증** 을 산 값이 여기서 회수된다.
 
 import { GRID_GAP, GRID_ROW_HEIGHT, resolveWidgetGridMetrics } from '../today/widget-grid-metrics'
-import { resolveWidgetPositions, validateWidgetLayout, type WidgetPlacement } from '../today/widget-layout'
+import { omitHiddenTiles, resolveWidgetPositions, validateWidgetLayout, type WidgetPlacement } from '../today/widget-layout'
 
 const sizes = {
   대표: [{ w: 4, h: 1 }],
@@ -224,5 +224,25 @@ describe('resolveWidgetPositions: 좌표를 절대 위치로', () => {
     // 수익 타일: top 3×(행+간격)· 높이 3×행 + 2×간격
     const top = 3 * (GRID_ROW_HEIGHT + GRID_GAP)
     expect(containerHeightPx).toBe(top + GRID_ROW_HEIGHT * 3 + GRID_GAP * 2)
+  })
+})
+
+// 보여 줄 것이 없는 위젯을 타일째 숨긴다. 가로 전체 타일만 숨겨 그 행만큼 아래를 올리면 빈 사각형이 안 남는다.
+describe('omitHiddenTiles', () => {
+  it('숨긴 가로 전체 타일을 빼고, 그 아래 행을 그 타일의 행 수만큼 올린다', () => {
+    const result = omitHiddenTiles(유효한_배치, new Set(['스케줄']))
+
+    expect(result.map((placement) => placement.id)).toEqual(['대표', '초기화', '결정석', '수익'])
+    expect(result.find((placement) => placement.id === '수익')?.row).toBe(2)
+    expect(validateWidgetLayout(result, sizes)).toEqual([])
+  })
+
+  it('숨길 것이 없으면 배치 그대로다', () => {
+    expect(omitHiddenTiles(유효한_배치, new Set())).toEqual(유효한_배치)
+  })
+
+  // 옆 칸이 있는 타일을 빼면 그 자리가 빈 사각형으로 남는다.
+  it('가로 전체가 아닌 타일은 숨길 수 없다', () => {
+    expect(() => omitHiddenTiles(유효한_배치, new Set(['초기화']))).toThrow()
   })
 })

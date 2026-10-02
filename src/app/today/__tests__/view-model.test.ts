@@ -172,6 +172,7 @@ function input(overrides: Partial<TodayViewModelInput> = {}): TodayViewModelInpu
     profitDropsByRowKey: {},
     dropGroups: [],
     drought: null,
+    partyAppointments: [],
     ...overrides,
   }
 }
@@ -1442,5 +1443,44 @@ describe('요구 레벨 미달은 남은 개수에서 빠진다', () => {
   // 레벨을 모르면 단정하지 않는다. 전부 센다(태도).
   it('레벨을 모르면 아무것도 안 뺀다', () => {
     expect(남은것()).toHaveLength(2)
+  })
+})
+
+// 위젯 10 다음 파티 스케줄. 지금 뒤에 시작하는 회차를 시각 순으로, 캐릭터 묶음에 이름 · 얼굴을 붙여 낸다.
+describe('다음 파티 스케줄', () => {
+  const 약속 = {
+    id: 'p1',
+    bosses: [
+      { bossKey: 'limbo', difficulty: 'hard', ocid: 'a' },
+      { bossKey: 'jupiter', difficulty: 'normal', ocid: 'b' },
+      { bossKey: 'bardrix', difficulty: 'hard', ocid: 'a' },
+    ],
+    members: [],
+    timeKst: '21:00',
+    durationMinutes: 60,
+    leadMinutes: 30,
+    schedule: { type: 'once' as const, dateKey: '2026-08-17' },
+    exceptions: {},
+  }
+
+  it('지금 뒤의 회차를 캐릭터 묶음과 함께 낸다', () => {
+    const model = buildTodayViewModel(
+      input({
+        partyAppointments: [약속],
+        bossCharacters: [bossView('a', { characterName: '낟낟', imageUrl: 'face-a' }), bossView('b', { characterName: '낟넘' })],
+      }),
+    )
+    const [next] = model.nextParty
+
+    expect(next).toMatchObject({ appointmentId: 'p1', dateKey: '2026-08-17', timeKst: '21:00', endClock: '22:00', leadMinutes: 30, repeats: false })
+    expect(next!.groups.map((group) => [group.name, group.bosses.map((boss) => boss.bossKey)])).toEqual([
+      ['낟낟', ['limbo', 'bardrix']],
+      ['낟넘', ['jupiter']],
+    ])
+    expect(next!.groups[0]!.imageUrl).toBe('face-a')
+  })
+
+  it('약속이 없으면 빈 목록이다', () => {
+    expect(buildTodayViewModel(input()).nextParty).toEqual([])
   })
 })

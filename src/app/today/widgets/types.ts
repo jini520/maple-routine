@@ -24,6 +24,7 @@ export type WidgetId =
   | 'reset-countdown'
   | 'unpriced-drops'
   | 'valuable-drought'
+  | 'next-party-schedule'
 
 /**
  * 탭 이름이거나 루트 스택 화면 `DropPrice`. 그 화면은 파라미터를 안 받으면 열리는 순간의 이번 주로
@@ -53,5 +54,10 @@ export interface WidgetDefinition {
    * 무반응이 고장 으로 읽힌다.
    */
   target?: WidgetTarget
+  /**
+   * 보여 줄 것이 없으면 거짓. 거짓이면 격자가 타일째 빼고 그 아래를 당긴다. 없으면 늘 보인다.
+   * 가로 전체 타일만 쓸 수 있다. 옆 칸이 있으면 빠진 자리가 빈 사각형으로 남는다.
+   */
+  isVisible?: (data: TodayViewModel) => boolean
   Component: React.ComponentType<WidgetProps>
 }
