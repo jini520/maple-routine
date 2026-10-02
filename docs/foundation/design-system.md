@@ -1062,7 +1062,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
       페이지 뒤로   components/molecules/BackButton 하나가 든다(사용처 15곳)
       캐릭터 카드   추가 · 해제 (CharacterLayerGrid)
       설정 버튼    SettingsScreen 의 톱니바퀴
-      FAB        가계부의 `＋`(organisms/SpeedDial) · 보스 수익의 아이템 가격 입력(DropPriceFab)
+      FAB        가계부 · 파티 약속의 펼치는 `＋`(organisms/SpeedDial) · 보스 수익의 아이템 가격 입력(DropPriceFab)
     선택(select)
       세그먼트     Segment · TabSegment · DifficultySegment 부품 셋이 든다(사용처 18곳)
       스위치       알림 받기와 알림 토픽 다섯 · 보스 관리의 `모든 보스 보기` · 드롭 연출
@@ -1074,7 +1074,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
     침묵하는 자리
       활성 탭 재누름 · 최상단 이동 · 이미 고른 세그먼트 칸 · 끝 기간의 꺼진 화살표
       이미 고른 날 · 이미 고른 캐릭터 · 알림 왕복 중의 누름
-      끌기 시작 · 끌던 카드에서 손을 뗄 때 · SpeedDial 을 펼친 뒤 고르는 수입·지출
+      끌기 시작 · 끌던 카드에서 손을 뗄 때 · SpeedDial 을 펼친 뒤 고르는 갈래
       시트 안의 단계 뒤로 · 가계부 입력 시트의 `하루 앞으로`·`하루 뒤로`(입력 필드다)
       가장자리 스와이프 · 안드로이드 시스템 뒤로(완료 시점을 우리 코드가 안 받는다)
     ```
@@ -1291,7 +1291,7 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 - **떠 있는 원은 탭 화면마다 한 자리다.** 오른쪽 아래, 지름 56, 하단바 위 12. 값은
   `lib/fab-metrics.ts` 하나에서 나오고 자리는 `useFabBottomPx()` 가 낸다([[ADR-249]] 결정 5).
   **바 높이가 창 폭의 함수라 화면이 손으로 옮겨 적으면 기기마다 갈린다.** 지금 서 있는 둘은
-  가계부의 ＋(`SpeedDial`)와 보스 수익의 아이템 가격 입력(`DropPriceFab`)이다.
+  가계부 · 파티 약속의 펼치는 ＋(`SpeedDial`)와 보스 수익의 아이템 가격 입력(`DropPriceFab`)이다.
   그리는 자리는 `BottomBarOverlay` 포털 안이어야 한다. 화면 안에서 그리면 `zIndex` 를 얼마로
   주든 떠 있는 바 아래로 간다.
   **콘텐츠는 그 몫을 바닥에 갚는다** - `FAB_SPACE_PX`(84)를 `paddingBottom` 으로 주고 `pb-4` 를
@@ -1309,8 +1309,14 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   거의 안 보인다(하단바가 라이트 그림자 · 다크 테두리로 가른 것과 같은 자리). 테두리는 크기가
   박힌 **원 자신**에게 준다. 바깥 뷰에 주면 그 뷰가 자식 크기로 서 있어 두께만큼 커지고 원이
   안쪽 상자를 넘긴다.
-  펼침판의 작은 원 둘(44)에는 그림자가 없다(사용자 결정). 어두운 스크림 위에 색이 꽉 찬 원이라
-  그림자가 거의 안 보이고, 떠 있음은 스크림이 이미 만든다.
+  펼친 알약에는 그림자가 없다(사용자 결정). 스크림 위의 흰 면이라 떠 있음은 스크림이 이미 만든다.
+- **펼치는 ＋ 는 부품 하나다**([[ADR-332]]). ＋ 에서 갈래를 고르는 화면은 모두 `organisms/SpeedDial` 에
+  갈래 목록(이름 · 선택 설명 · 아이콘 · 고르면 부를 함수)을 넘긴다. 지금 쓰는 곳은 가계부(수입 · 지출)와 파티 약속(한 번만 · 매주 반복)이다.
+  - **모양**: 갈래마다 높이 56 알약(`surface`) 안 왼쪽에 옅은 주황 원(42, `primary-tint` · `primary-ink`), 오른쪽에 이름(14 굵게)과
+    설명(11 흐리게). 원 색은 화면과 상관없이 주황 하나다. 알약 폭은 모두 같고 **가장 긴 글자에 맞춘다**(원 자리 60 + 글자 + 16).
+    넉넉한 고정 폭을 두지 않는다. 오른쪽 끝은 ＋ 와 맞추고 사이는 12 다.
+  - **움직임**: ① 원만 ＋ 에서 가까운 것부터 솟고(0.5 배 → 1 배, 40ms 계단) ② 맨 위 원부터 알약으로 왼쪽으로 펼쳐진다(50ms 계단,
+    이름은 120ms 뒤). 접기는 거울이고 더 짧다. 움직임 줄이기에서는 펼친 알약이 페이드로만 나타난다. 값은 `speed-dial-motion.ts`.
 - **스테퍼는 숫자만 오르내린다**([[ADR-173]] 결정 18). ‘인’·‘회’ 같은 단위를 안 적는다. 무엇을
   세는지는 곁의 라벨과 표식(`Users`)이 말한다. 단위를 `+` 옆에 붙이면 알약의 좌우가 어긋나고,
   단위가 없는 자리에서는 빈 칸만 남는다.

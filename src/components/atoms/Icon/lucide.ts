@@ -24,6 +24,7 @@ import Calculator from 'lucide-react-native/icons/calculator'
 import Calendar from 'lucide-react-native/icons/calendar'
 import CalendarCheck from 'lucide-react-native/icons/calendar-check'
 import CalendarClock from 'lucide-react-native/icons/calendar-clock'
+import CalendarPlus from 'lucide-react-native/icons/calendar-plus'
 import Repeat from 'lucide-react-native/icons/repeat'
 import Castle from 'lucide-react-native/icons/castle'
 import ChartColumn from 'lucide-react-native/icons/chart-column'
@@ -232,7 +233,9 @@ export const ChartColumnIcon = withIconInterop(ChartColumn)
 export const CalendarClockIcon = withIconInterop(CalendarClock)
 /** 알림이 달린 약속. `AppointmentsScreen` 블록. */
 export const BellIcon = withIconInterop(Bell)
-/** 매주 반복하는 약속. `AppointmentsScreen` 블록. */
+/** 매주 반복하는 약속. `AppointmentsScreen` 블록 · 펼치는 ＋ 의 `매주 반복`. */
 export const RepeatIcon = withIconInterop(Repeat)
+/** 한 번만 서는 약속. 파티 약속 펼치는 ＋ 의 `한 번만`. */
+export const CalendarPlusIcon = withIconInterop(CalendarPlus)
 /** 닫기. `Toast` · `PartySizeModal`. */
 export const XIcon = withIconInterop(X)

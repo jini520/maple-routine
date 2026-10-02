@@ -67,7 +67,7 @@
 | 캐릭터별 마지막 사냥 | `storage/last-hunts.ts` + `features/cashbook/records.ts` 의 `loadLastHunts` | 캐릭터를 고르면 설 사냥터 key 와 켠 아이템([[ADR-328]] 결정 4). Preferences 키 하나(`{ [ocid]: { groundKey, boosts, unionTier } }`, 유니온의 부 단계는 [[ADR-329]] 결정 4)이고 **행에 박는 것과 별개**라 소급하지 않는다. 옛 키 `lastHuntSelection` · `lastHuntToggles` 는 처음 읽을 때 한 번 옮기고 지운다(결정 7) |
 | 오케스트레이션 | `features/cashbook/records.ts` | 행의 신원(`id`·`recordedAt`) · 시세 기억 · **네 원천을 하루로 접기** · 줄의 표기(`recordTitleOf`·`recordCountLabelOf`) · **그날 합계**(`dayTotalsOf`) |
 | 보스 날짜 캐기 | `features/boss-profit/defeat-dates.ts` | 날짜별 응답을 훑어 ‘뒤집힌 날’을 찾아 `defeated_on` 을 채운다([[ADR-172]]) |
-| 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/`(`speed-dial-motion` 움직임 · `speed-dial-metrics` 치수) | 떠 있는 ＋ → 종류 둘 → 시트 |
+| 입력 | `app/cashbook/SpendSheet.tsx` · `IncomeSheet.tsx` · `components/organisms/SpeedDial/`(앱 공용 펼치는 ＋, [[ADR-332]] · `speed-dial-motion` 움직임) | 떠 있는 ＋ → 종류 둘 → 시트 |
 | 1차 갈래 고르개 | `app/cashbook/CategoryPicker.tsx` | 두 시트가 **한 벌을 쓴다**([[ADR-243]] 결정 1). 제목 · 카드 격자 · 닫기까지 들고, 시트가 주는 것은 갈래 목록과 그림 표와 `testID` 뿌리뿐. 그림은 파일명으로 찾는다(`getItemIconUrlByFile`). 카드는 **가로 · 한 줄에 둘**(아래 `갈래 카드는 가로로 눕는다`) |
 | 큰 숫자 | `components/molecules/AmountFigure/` | 숫자 한 줄. **저장 바로 위**에 놓이고 자기 윗선을 안 긋는다([[ADR-173]] 결정 1·9). **못 치는 글자만 그린다**([[ADR-202]] 결정 5). 한국어 단위로 접혀 서고(결정 9) 값이 바뀌면 **곧바로** 갈아 끼운다(결정 12가 카운트업을 걷었다). 밑의 힌트 한 줄은 없앴다 |
 | 축 고르개 | `components/molecules/Segment/` | 통화·종류·관세, 그리고 **에픽던전의 형태별 단계**(경험치 줄과 솔 에르다 줄 각각 `0단계|1단계|2단계`, [[ADR-245]] 결정 2). 종류 칩과 모양을 갈라 둔 결정이다([[ADR-173]] 결정 3). 같은 알약 세 종류가 안 읽히던 것이 다시 짠 이유였고, 그 칩은 [[ADR-243]] 결정 1 이 없앴다 |
@@ -330,8 +330,8 @@
 
 
 ```
-[＋]  누르면 종류 둘이 계단으로 펼쳐진다        수입 (ProfitIcon · rise-ink)
-                                              지출 (ShoppingCartIcon · fall-ink)
+[＋]  누르면 원 둘이 솟고 위부터 알약으로 펼쳐진다    수입 (ProfitIcon)
+      ([[ADR-332]], 원은 둘 다 옅은 주황)             지출 (ShoppingCartIcon)
 ```
 
 - **진입점은 떠 있는 ＋ 하나**다(결정 5). 스크롤 위치와 무관하게 닿는 대신 **종류·날짜·중복**을
@@ -642,6 +642,8 @@
 - **아이콘은 새로 안 만든다**(결정 9). 수입은 [[ADR-066]] 의 `ProfitIcon`(동전 더미), 지출은
   [[ADR-169]] 결정 2 가 지운 탭이 쓰던 `ShoppingCartIcon`. **lucide `coins` 는 쓰면 안 된다**.
   `ProfitIcon` 과 ‘거의 같은데 다른 동전’이 된다.
+- **펼침판은 앱 공용 펼치는 ＋ 다**([[ADR-332]]). 갈래 둘은 이름 `수입` · `지출`(설명 없음)이고 원 색은 파티 약속과 같은 주황이다.
+  [[ADR-170]] 결정 7 의 원 + 칩 · 수입 빨강 · 지출 파랑은 그 ADR 이 대체했다.
 - 움직임의 값은 `components/organisms/SpeedDial/speed-dial-motion.ts` 가 가진다. **애니메이션을 띄우지
   않고도** 계단의 방향을 검증하기 위해서다(`valuable-card-glow.ts` 와 같은 구조).
 - **종류가 통화를 정하는 방식이 셋으로 나뉜다**. ‘기타’는 **사용자가 고르고**(캐시가 사는 유일한

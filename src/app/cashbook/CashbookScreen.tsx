@@ -1193,9 +1193,13 @@ export function CashbookScreen(): React.JSX.Element {
         </View>
       </ScreenScroll>
 
+      {/* 수입이 위 · 지출이 아래다. 칸의 두 줄과 같은 순서이고 잦은 지출이 ＋ 에 더 가깝다. */}
       <SpeedDial
-        onSelectIncome={() => setSheet('income')}
-        onSelectExpense={() => setSheet('expense')}
+        label="기록 추가"
+        actions={[
+          { key: 'income', label: '수입', accessibilityLabel: '수입 추가', Icon: ProfitIcon, onSelect: () => setSheet('income') },
+          { key: 'expense', label: '지출', accessibilityLabel: '지출 추가', Icon: ShoppingCartIcon, onSelect: () => setSheet('expense') },
+        ]}
       />
 
       {/* 시트는 조건부 마운트다. 마운트가 곧 열림이고 `onClose` 로 언마운트한다. */}

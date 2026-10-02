@@ -2,6 +2,7 @@
  * 등록 시트 맨 위의 날짜 · 시작 · 종료 타일 셋. 상세의 알림 · 반복 타일과 같은 모양이다.
  *
  * 종료는 시각만 받고 시작보다 이르면 다음 날이다. 그때 날짜 칸이 `10/2 (금) ~ 10/3 (토)` 로 이틀을 적는다.
+ * 반복 약속을 요일로 고를 때(`onChangeWeekday`)는 날짜 타일 대신 요일 타일이 서고 날짜를 어디에도 적지 않는다.
  *
  * 추가 · 수정에서는 바꿀 수 있는 값을 주황과 `⌄` 로 쓰고, 고르개가 열린 타일은 주황 바탕이다.
  * 읽기 모드는 검은 값에 `⌄` 가 없다. 그래야 두 화면이 갈린다.
@@ -14,9 +15,10 @@ import { SelectChevron } from '../../components/organisms/SelectField/SelectFiel
 import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
 import { TimePopover } from '../../components/organisms/TimePopover/TimePopover'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
-import { MINUTE_STEP, formatClock } from '../../features/party-appointments/draft'
+import { MINUTE_STEP, formatClock, weekdayOf } from '../../features/party-appointments/draft'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { WEEKDAY_LABELS, monthKeyOf, shiftDateKey } from '../../lib/calendar'
+import { AppointmentWeekdayTile } from './AppointmentWeekdayTile'
 
 /** 날짜 달력이 열어 두는 가장 먼 날. 약속은 길어야 몇 주 앞이다 */
 const MAX_DAYS_AHEAD = 365
@@ -35,6 +37,8 @@ export interface AppointmentTimeBandProps {
   readOnly?: boolean
   /** 지난 주 약속. 값을 흐리게 쓴다 */
   muted?: boolean
+  /** 있으면 날짜 대신 요일을 고른다(반복 약속). 요일은 `startDateKey` 의 요일이다 */
+  onChangeWeekday?: (weekday: number) => void
 }
 
 interface ValueTone {
@@ -136,6 +140,12 @@ export function AppointmentTimeBand(props: AppointmentTimeBandProps): React.JSX.
   const nextDateKey = shiftDateKey(props.startDateKey, 1)
   const endsNextDay = props.endMinutes < props.startMinutes
   const startHour = Math.floor(props.startMinutes / 60)
+  const byWeekday = props.onChangeWeekday !== undefined
+  const weekday = weekdayOf(props.startDateKey)
+  // 요일로 고를 때는 종료 휠의 날짜 열도 날짜 대신 요일을 적는다.
+  const endDayLabels = byWeekday
+    ? { today: `${WEEKDAY_LABELS[weekday]}요일`, next: `${WEEKDAY_LABELS[(weekday + 1) % 7]}요일` }
+    : { today: dayLabelOf(props.startDateKey), next: dayLabelOf(nextDateKey) }
 
   // 종료 휠은 시작 시부터 선다. 그 시의 시작 이하 분은 같은 시각이거나 하루 가까이 뒤라 막는다.
   const endTimeDisabled = (minutes: number): boolean =>
@@ -150,20 +160,24 @@ export function AppointmentTimeBand(props: AppointmentTimeBandProps): React.JSX.
     <View className="gap-2 px-4">
       {/* 타일이 가로로 늘어나는 \`flex-1\` 이라 세로 줄에 바로 두면 높이가 0 으로 접힌다. */}
       <View className="flex-row">
-        <Tile
-          ref={sdRef}
-          {...startTone}
-          label="날짜"
-          name="날짜 고르기"
-          icon={CalendarIcon}
-          isOpen={sdOpen}
-          onPress={() => {
-            setMonthKey(monthKeyOf(props.startDateKey))
-            sdToggle()
-          }}
-        >
-          <DateText dateKey={props.startDateKey} toDateKey={endsNextDay ? nextDateKey : undefined} {...startTone} />
-        </Tile>
+        {props.onChangeWeekday !== undefined ? (
+          <AppointmentWeekdayTile weekday={weekday} endsNextDay={endsNextDay} onChange={props.onChangeWeekday} />
+        ) : (
+          <Tile
+            ref={sdRef}
+            {...startTone}
+            label="날짜"
+            name="날짜 고르기"
+            icon={CalendarIcon}
+            isOpen={sdOpen}
+            onPress={() => {
+              setMonthKey(monthKeyOf(props.startDateKey))
+              sdToggle()
+            }}
+          >
+            <DateText dateKey={props.startDateKey} toDateKey={endsNextDay ? nextDateKey : undefined} {...startTone} />
+          </Tile>
+        )}
       </View>
       <View className="flex-row gap-2">
         <Tile
@@ -226,7 +240,7 @@ export function AppointmentTimeBand(props: AppointmentTimeBandProps): React.JSX.
           minutes={props.endMinutes}
           step={MINUTE_STEP}
           firstHour={startHour}
-          dayLabels={{ today: dayLabelOf(props.startDateKey), next: dayLabelOf(nextDateKey) }}
+          dayLabels={endDayLabels}
           isDisabled={endTimeDisabled}
           anchor={etAnchor}
           onConfirm={(minutes) => {

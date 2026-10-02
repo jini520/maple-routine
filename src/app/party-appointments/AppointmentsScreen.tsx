@@ -7,7 +7,15 @@ import { useFocusEffect } from '@react-navigation/native'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, Text } from '../../components/atoms'
+import {
+  CalendarPlusIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsRightIcon,
+  RepeatIcon,
+  Text,
+} from '../../components/atoms'
+import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -23,7 +31,6 @@ import { FAB_SPACE_PX } from '../../lib/fab-metrics'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { tapFeedback } from '../../native/haptics'
 import { AppointmentAgenda } from './AppointmentAgenda'
-import { AppointmentFab } from './AppointmentFab'
 import { AppointmentSheet, type AppointmentSheetTarget } from './AppointmentSheet'
 
 /** 지난 약속을 가르는 시계가 한 번씩 도는 간격 */
@@ -37,7 +44,8 @@ export function AppointmentsScreen(): React.JSX.Element {
   const characters = useBossSchedulerStore((state) => state.characters)
   const trackedOcids = useBossSchedulerStore((state) => state.trackedOcids)
   /** 열린 시트. `add` 는 추가, 회차면 그 상세 */
-  const [sheet, setSheet] = useState<'add' | AppointmentSheetTarget | null>(null)
+  // 추가는 ＋ 에서 고른 갈래(`once` · `weekly`), 상세는 누른 회차다.
+  const [sheet, setSheet] = useState<'once' | 'weekly' | AppointmentSheetTarget | null>(null)
 
   useFocusEffect(
     useCallback(() => {
@@ -132,14 +140,33 @@ export function AppointmentsScreen(): React.JSX.Element {
             names={names}
             colorOf={colorOf}
             onPressOccurrence={(occurrence) => setSheet({ occurrence, weekStart })}
-            onAdd={() => setSheet('add')}
           />
         </View>
       </ScreenScroll>
-      <AppointmentFab onPress={() => setSheet('add')} />
+      {/* 매주 반복이 위, ＋ 에 가까운 아래가 한 번만이다. */}
+      <SpeedDial
+        label="약속 추가"
+        actions={[
+          {
+            key: 'weekly',
+            label: '매주 반복',
+            description: '매주 같은 요일 · 시각의 약속',
+            Icon: RepeatIcon,
+            onSelect: () => setSheet('weekly'),
+          },
+          {
+            key: 'once',
+            label: '한 번만',
+            description: '그 날 하루만 서는 약속',
+            Icon: CalendarPlusIcon,
+            onSelect: () => setSheet('once'),
+          },
+        ]}
+      />
       {sheet !== null && (
         <AppointmentSheet
-          target={sheet === 'add' ? undefined : sheet}
+          target={typeof sheet === 'string' ? undefined : sheet}
+          repeats={sheet === 'weekly'}
           names={names}
           colorOf={colorOf}
           onClose={() => setSheet(null)}

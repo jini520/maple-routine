@@ -20,6 +20,8 @@ export interface AppointmentAlarmFieldProps {
   startDateKey: string
   /** 시작 날짜에 이미 달린 다른 약속의 알림 수 */
   usedOnDate: number
+  /** 사용량 앞의 날 이름. 없으면 시작 날짜(`10/1`)이고 반복 약속은 `목요일` 이다 */
+  dayLabel?: string
   onToggle: (on: boolean) => void
   onChangeLead: (leadMinutes: number) => void
 }
@@ -84,7 +86,7 @@ export function AppointmentAlarmField(props: AppointmentAlarmFieldProps): React.
           className={`text-11 font-semibold ${full ? 'text-error-ink' : 'text-text-muted'}`}
           style={TABULAR_NUMS}
         >
-          {date.getUTCMonth() + 1}/{date.getUTCDate()} 알림 {props.usedOnDate + (props.alarmOn ? 1 : 0)}/
+          {props.dayLabel ?? `${date.getUTCMonth() + 1}/${date.getUTCDate()}`} 알림 {props.usedOnDate + (props.alarmOn ? 1 : 0)}/
           {DAILY_ALARM_LIMIT}
         </Text>
       </View>

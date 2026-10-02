@@ -48,8 +48,41 @@ export function shiftMinutes(
   return { dateKey: shiftDateKey(dateKey, days), minutes: total - days * DAY_MINUTES }
 }
 
-/** 시트를 처음 열 때. 시작은 지금 이후 첫 5분 칸, 종료는 그 30분 뒤 */
-export function initialDraft(now: Date): AppointmentDraft {
+/** 반복 약속의 요일 세그먼트 순서. 리셋 주(목 → 수)라 보드 · 기간 스테퍼와 같다 */
+export const RESET_WEEKDAYS: readonly number[] = [4, 5, 6, 0, 1, 2, 3]
+
+/** 날짜의 요일(0 = 일) */
+export function weekdayOf(dateKey: string): number {
+  return new Date(`${dateKey}T00:00:00Z`).getUTCDay()
+}
+
+/**
+ * 그 요일 · 시각의 다음 회차 날짜(KST). 반복 약속 추가는 이 날짜의 리셋 주부터 선다.
+ *
+ * 오늘이 그 요일이어도 시작 시각이 지금 이하면 다음 주다.
+ */
+export function nextOccurrenceDateKey(weekday: number, startMinutes: number, now: Date): string {
+  const todayKey = getCurrentKstDateKey(now)
+  const nowMinutes = Math.floor((now.getTime() / MINUTE_MS + KST_OFFSET_MINUTES) % DAY_MINUTES)
+  const ahead = (weekday - weekdayOf(todayKey) + 7) % 7
+  return shiftDateKey(todayKey, ahead === 0 && startMinutes <= nowMinutes ? 7 : ahead)
+}
+
+/**
+ * 리셋 주 안의 그 요일 날짜. 반복 약속의 앞으로 모두 수정이 그 주부터 바뀌도록 쓴다.
+ *
+ * @param weekStart 리셋 주 첫날(목요일)
+ */
+export function dateInWeek(weekStart: string, weekday: number): string {
+  return shiftDateKey(weekStart, RESET_WEEKDAYS.indexOf(weekday))
+}
+
+/**
+ * 시트를 처음 열 때. 시작은 지금 이후 첫 5분 칸, 종료는 그 30분 뒤
+ *
+ * @param repeats ＋ 에서 고른 갈래. 매주 반복이면 true
+ */
+export function initialDraft(now: Date, repeats = false): AppointmentDraft {
   const todayKey = getCurrentKstDateKey(now)
   const kstMinutes = Math.floor((now.getTime() / MINUTE_MS + KST_OFFSET_MINUTES) % DAY_MINUTES)
   const nextSlot = (Math.floor(kstMinutes / MINUTE_STEP) + 1) * MINUTE_STEP
@@ -61,7 +94,7 @@ export function initialDraft(now: Date): AppointmentDraft {
     bosses: [],
     alarmOn: false,
     leadMinutes: DEFAULT_LEAD_MINUTES,
-    repeats: false,
+    repeats,
   }
 }
 
