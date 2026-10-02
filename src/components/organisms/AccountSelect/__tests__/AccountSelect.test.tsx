@@ -226,3 +226,25 @@ describe('placeDropdown: 트리거 자리에서 시작하고, 넘치면 뒤집�
     expect(placed.maxHeight).toBe(689)
   })
 })
+
+// 닫힌 줄과 펼친 목록 모두 테두리가 없다. 앱의 드롭다운이 한 모양이다.
+describe('AccountSelect: 테두리', () => {
+  it('닫힌 줄과 펼친 목록에 테두리가 없다', async () => {
+    const rendered = await 열어서()
+
+    expect(flattenStyle(rendered.getByTestId('account-select-trigger').props.style).borderWidth ?? 0).toBe(0)
+    expect(flattenStyle(rendered.getByTestId('account-select-list').props.style).borderWidth ?? 0).toBe(0)
+  })
+})
+
+// 목록은 모서리를 자르느라 `overflow: hidden` 이다. iOS 는 그 상자의 그림자를 함께 잘라서, 그림자는 바깥 상자가 든다.
+describe('AccountSelect: 그림자', () => {
+  it('목록 바깥 상자가 boxShadow 를 들고, 자르는 상자에는 그림자가 없다', async () => {
+    const rendered = await 열어서()
+
+    expect(typeof flattenStyle(rendered.getByTestId('account-select-list-shadow').props.style).boxShadow).toBe('string')
+    const list = flattenStyle(rendered.getByTestId('account-select-list').props.style)
+    expect(list.overflow).toBe('hidden')
+    expect(list.shadowRadius).toBeUndefined()
+  })
+})

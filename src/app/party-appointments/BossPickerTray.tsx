@@ -321,7 +321,7 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
       {count > 0 && (
         // 처음 고를 때 줄이 아래에서 펼쳐진다. 스타일 없는 겉 층에만 애니메이션을 단다(className 함정).
         <Animated.View entering={FadeInDown.duration(260)} exiting={FadeOutDown.duration(180)}>
-          <View className="border-t border-border bg-card-body">
+          <View className="border-t border-border bg-surface">
             <View className="flex-row items-center justify-between px-4 pb-0.5 pt-2">
               <Text className="text-11 font-bold text-text-muted">{count}개 선택됨</Text>
               <Text className="text-11 font-bold text-text-muted">초상화 터치 시 난이도 변경 또는 제거</Text>

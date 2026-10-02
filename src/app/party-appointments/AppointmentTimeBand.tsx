@@ -106,7 +106,7 @@ const Tile = forwardRef<View, TileProps>(function Tile(props, ref) {
       aria-expanded={props.readOnly ? undefined : props.isOpen}
       disabled={props.readOnly}
       onPress={props.onPress}
-      className={`flex-1 flex-row items-center gap-2.5 rounded-xl px-3 py-2.5 active:opacity-60 ${props.isOpen ? 'bg-primary-tint' : 'bg-card-body'}`}
+      className={`flex-1 flex-row items-center gap-2.5 rounded-xl px-3 py-2.5 active:opacity-60 ${props.isOpen ? 'bg-primary-tint' : 'bg-surface'}`}
     >
       <View
         className={`h-[30px] w-[30px] items-center justify-center rounded-full ${props.muted ? 'bg-surface-2' : 'bg-primary-tint'}`}

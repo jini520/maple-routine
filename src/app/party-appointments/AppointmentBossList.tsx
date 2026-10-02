@@ -55,7 +55,7 @@ function RowBody(props: { boss: PartyAppointmentBoss }): React.JSX.Element {
   )
 }
 
-const ROW_CLASS = 'h-[46px] flex-row items-center gap-2 rounded-[10px] bg-card-body pr-2'
+const ROW_CLASS = 'h-[46px] flex-row items-center gap-2 rounded-[10px] bg-surface pr-2'
 
 export function AppointmentBossList(props: AppointmentBossListProps): React.JSX.Element {
   const { bosses } = props
