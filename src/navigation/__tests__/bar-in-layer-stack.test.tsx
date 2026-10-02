@@ -100,6 +100,14 @@ describe('채우지 못하는 아이콘은 활성일 때 굵어진다', () => {
     expect(Math.max(...strokes('bar-sub-Content'))).toBe(2.2)
   })
 
+  // 통계는 오르는 화살표(`TrendingUp`)다. 막대 그림에서 바꿨다(사용자).
+  it('통계 탭은 오르는 화살표 그림이다', async () => {
+    await render(<NavigationHarness />)
+    await press('bar-group-ledger')
+
+    expect(JSON.stringify(screen.getByTestId('bar-sub-Stats'))).toContain('M16 7h6v6')
+  })
+
   it('비활성은 어느 그림이든 기본 굵기다', async () => {
     await render(<NavigationHarness />)
 

@@ -28,7 +28,7 @@ import CalendarClock from 'lucide-react-native/icons/calendar-clock'
 import CalendarPlus from 'lucide-react-native/icons/calendar-plus'
 import Repeat from 'lucide-react-native/icons/repeat'
 import Castle from 'lucide-react-native/icons/castle'
-import ChartColumn from 'lucide-react-native/icons/chart-column'
+import TrendingUp from 'lucide-react-native/icons/trending-up'
 import Check from 'lucide-react-native/icons/check'
 import ChevronDown from 'lucide-react-native/icons/chevron-down'
 import ChevronLeft from 'lucide-react-native/icons/chevron-left'
@@ -232,7 +232,8 @@ export const UsersIcon = withIconInterop(Users)
 export const WalletIcon = withIconInterop(Wallet)
 
 export const WrenchIcon = withIconInterop(Wrench)
-export const ChartColumnIcon = withIconInterop(ChartColumn)
+/** 통계 탭. */
+export const TrendingUpIcon = withIconInterop(TrendingUp)
 /** 파티 약속 탭. */
 export const CalendarClockIcon = withIconInterop(CalendarClock)
 /** 알림이 달린 약속. `AppointmentsScreen` 블록. */
