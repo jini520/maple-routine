@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-09-21",
-  "source": "사용자 제공 (2026-08-23). 메이플 포인트 소모처와 고정 비용 버프 아이템 — [[ADR-006]] 대상이라 AI 가 추정해 채우지 않는다. [[ADR-166]] 결정 7 이 기다리던 선택 목록이 이 파일이다. 2026-09-11 사용자 제공: 에픽던전 아우룸 레기스 추가 리워드 둘(1단계 15,000 · 2단계 60,000 메포)과 메소로 사는 주문서 19종(갈래 `주문서`). 2026-09-12 사용자 지정: 펫장비 공격력·마력을 `펫장비 주문서` 타일 하나로 묶어 단계에서 고르게 했고, 이름을 `펫장비 이노센트`·`펫장비 순백` 으로 줄였다. 타일 이름 둘을 줄였다(사용자 지정 2026-09-12): 프리미엄 악세서리 → 프리미엄 악세, 펫장비 리턴 스크롤 → 펫장비 리턴. 항목 이름(`프리미엄 악세서리 공격력 주문서 100%` 등)은 그대로다. 2026-09-13 사용자 확인: 아우룸 레기스 1단계 · 2단계는 2026-09-17 부터다(from). from 이 있는 항목은 적는 날짜가 든 주간 기간이 그 날보다 앞서면 타일이 안 선다. 이미 적힌 기록을 되짚을 때는 기간을 안 본다. base 가 같은 항목은 from 이 같아야 한다(ADR-261 정정 1). 2026-09-15: 항목 · 타일 · 묶음 · 갈래에 영문 snake_case key 를 더했다. 기록은 key 로 이 파일을 가리키고, 타일 그림은 `tiles` 가 든다(ADR-280 결정 10). 2026-09-16 사용자 제공: 에픽던전 추가 리워드는 세라자르 주화를 준다 — 1단계 4개 · 2단계 8개를 형태마다 각각 주고(`rewardCoins`), 주화 1개의 상점 판매가는 40,000,000 메소다(`rewardCoin`). 네 던전이 모두 같다(ADR-245 정정 1).",
+  "updatedAt": "2026-10-02",
+  "source": "사용자 제공 (2026-08-23). 메이플 포인트 소모처와 고정 비용 버프 아이템 — [[ADR-006]] 대상이라 AI 가 추정해 채우지 않는다. [[ADR-166]] 결정 7 이 기다리던 선택 목록이 이 파일이다. 2026-09-11 사용자 제공: 에픽던전 아우룸 레기스 추가 리워드 둘(1단계 15,000 · 2단계 60,000 메포)과 메소로 사는 주문서 19종(갈래 `주문서`). 2026-09-12 사용자 지정: 펫장비 공격력·마력을 `펫장비 주문서` 타일 하나로 묶어 단계에서 고르게 했고, 이름을 `펫장비 이노센트`·`펫장비 순백` 으로 줄였다. 타일 이름 둘을 줄였다(사용자 지정 2026-09-12): 프리미엄 악세서리 → 프리미엄 악세, 펫장비 리턴 스크롤 → 펫장비 리턴. 항목 이름(`프리미엄 악세서리 공격력 주문서 100%` 등)은 그대로다. 2026-09-13 사용자 확인: 아우룸 레기스 1단계 · 2단계는 2026-09-17 부터다(from). from 이 있는 항목은 적는 날짜가 든 주간 기간이 그 날보다 앞서면 타일이 안 선다. 이미 적힌 기록을 되짚을 때는 기간을 안 본다. base 가 같은 항목은 from 이 같아야 한다(ADR-261 정정 1). 2026-09-15: 항목 · 타일 · 묶음 · 갈래에 영문 snake_case key 를 더했다. 기록은 key 로 이 파일을 가리키고, 타일 그림은 `tiles` 가 든다(ADR-280 결정 10). 2026-09-16 사용자 제공: 에픽던전 추가 리워드는 세라자르 주화를 준다 — 1단계 4개 · 2단계 8개를 형태마다 각각 주고(`rewardCoins`), 주화 1개의 상점 판매가는 40,000,000 메소다(`rewardCoin`). 네 던전이 모두 같다(ADR-245 정정 1). 2026-10-02 사용자 제공: 버프 갈래를 보스 버프 · 사냥 버프 두 묶음으로 나눴다(`buff_potion` → `boss_buff`, `hunting_buff` 추가). 영약 넷은 보스 버프다. 새 버프 20종을 더했다. VIP 버프 (능력치) · (경험치)는 50만 메소이고, 나머지 새 항목은 경매장 값이라 `unitPrice` 가 null 이다. null 인 항목은 적을 때 개당 가격을 친다(ADR-333 결정 6). 향상된 10단계 물약은 타일 하나에 힘 · 민첩 · 지능 · 행운 단계다. 새 타일의 그림은 사용자가 나중에 준다. 2026-10-02 사용자 제공(둘째): 버프 그림 열셋을 붙였다. 보스 킬러 · 대영웅 · 대축복 비약은 같은 그림이고 고급 셋도 같은 그림이다. 재물 획득 비약 둘과 영롱한 달빛 포션은 이미 있던 그림이다. 반짝이는 파란 별 물약을 걷고, 사냥 버프에 경험치 3배 · 4배 쿠폰을 더했다(개당 가격을 친다). 경험 축적의 비약 그림도 같은 날 받았다.",
   "note": "`category` 는 [[ADR-166]] 정정 1 ② 가 정한 큰 갈래 셋에 `주문서` 를 더한 넷이고(컨텐츠 · 이벤트·BM · 버프 · 주문서), 나머지 둘(아이템 구매 · 기타)은 **직접 입력**이라 이 목록에 항목이 없다. `group` 은 사용자가 적어 준 묶음 이름 그대로다 — 갈래 안에서 다시 나누는 자리이고 앱이 새로 묶지 않는다. `unit` 은 «가격 하나가 무엇 하나의 값인가» 이고, 사용자가 «1회당»·«1포인트당»·«1시간당» 이라 적은 것은 그대로 옮겼으며 그 표현이 없던 항목은 «회»(한 번 구매)로 적었다. 기록 한 건의 금액은 **`unitPrice` × 수량**이다(정정 1 ③). `limit` 은 사용자 문장을 **그대로** 옮긴 것이고 앱이 해석하지 않는다. **화면에는 안 선다**. `maxQuantity` 숫자가 어디서 왔는지를 이 파일 안에서 말하는 자리로만 남는다([[ADR-245]] 결정 3). `maxQuantity` 는 그 문장에서 **사용자가 고른 숫자**다(2026-08-25) — 문장을 파싱해 뽑지 않는다. 몬스터 파크처럼 축이 여럿인 문장(월드당 14 · 캐릭터당 7 · 무료 2)은 어느 축이 기록 한 건의 상한인지 앱이 알 수 없어 **사용자가 14 로 지정**했다. 이 값은 기록 **한 건**의 수량 상한이지 기간 누계가 아니다 — 앱은 누계를 세지 않는다. `base`·`tier` 는 **사용자가 지정한 갈래**다(2026-08-25) — 「하이마운틴 1단계」 처럼 이름 안에 글자로만 있던 축을 칸으로 뺐다. `name` 은 사용자가 준 그대로 두고 칸만 더했으므로 둘이 어긋날 일이 없다. 두 칸이 있는 항목은 입력이 **두 단계**가 된다(대표 → 단계). `forms` 가 있는 항목은 둘째 단계에서 **형태마다 단계를 따로** 고르고(경험치 · 솔 에르다 각각 0·1·2단계) 금액은 고른 단계 값의 **합**이다([[ADR-245]] 결정 2, 사용자 확인 2026-09-10). 0단계는 사는 것이 아니라 기본 보상이라 이 목록에 자리가 없다. 없는 항목은 한 단계다. `groups` 는 **묶음이 지금 열려 있는가**를 든다([[ADR-166]] 정정 5) — 여기 없는 묶음은 언제나 열린 것이다. 기간제 이벤트(메이플 포인트 샵)는 열릴 때마다 사용자가 알려 주고 `active` 와 품목만 갈아 끼운다. `maxQuantity: 1` 은 «셀 것이 없다» 는 뜻이라 화면이 수량 줄을 세우지 않는다([[ADR-170]] 정정 14 ①) — 에픽던전 추가 리워드 여덟이 그렇다(메이플 ID 당 주 1회, 사용자 확인 2026-08-27). `options` 는 줄이 둘인 타일(매지컬 주문서 · 귀 장식 주문서)의 항목이 드는 축 값이다. 있으면 `tier` 가 없다. 한 값을 누르면 그 값을 가진 항목만 남고, 고른 값이 한 항목의 축 값과 꼭 맞아야 저장된다. 줄 이름 `무기` · `능력치` 는 이슈 #360 의 예시를 따랐고 `스탯` 은 앱이 지었다. `rewardCoins` 는 그 항목을 **한 형태**에서 샀을 때 받는 주화 개수다. 형태 둘을 다 사면 두 값을 더한다. 지출은 메포 값에서 `rewardCoin.priceMeso` × 개수를 뺀 값이고, 그 뺄셈은 저장이 아니라 **읽을 때** 한다([[ADR-245]] 정정 1).",
   "tariffPercent": 10,
   "tariffNote": "아이템 구매의 «관세» — 구입가의 10% 이고 **항상 고정**이다(사용자 확인, 2026-08-23). 메포로 내지만 실시간 메소마켓 시세에 맞춰 매겨지므로 **메소로 재면 언제나 10%** 이고, 그래서 관세를 계산할 때는 시세가 필요 없다([[ADR-166]] 정정 2 ②).",
@@ -44,8 +44,11 @@
     "etc": {
       "name": "기타"
     },
-    "buff_potion": {
-      "name": "버프 물약"
+    "boss_buff": {
+      "name": "보스 버프"
+    },
+    "hunting_buff": {
+      "name": "사냥 버프"
     },
     "scroll": {
       "name": "주문서"
@@ -179,6 +182,132 @@
       "name": "명예의 영약",
       "icon": {
         "file": "honor_elixir.webp"
+      }
+    },
+    "boss_killer_potion": {
+      "name": "보스 킬러 비약",
+      "icon": {
+        "file": "boss_rush_boost_potion.webp"
+      }
+    },
+    "advanced_boss_killer_potion": {
+      "name": "고급 보스 킬러 비약",
+      "icon": {
+        "file": "advanced_boss_rush_boost_potion.webp"
+      }
+    },
+    "great_hero_potion": {
+      "name": "대영웅의 비약",
+      "icon": {
+        "file": "boss_rush_boost_potion.webp"
+      }
+    },
+    "advanced_great_hero_potion": {
+      "name": "고급 대영웅의 비약",
+      "icon": {
+        "file": "advanced_boss_rush_boost_potion.webp"
+      }
+    },
+    "great_blessing_potion": {
+      "name": "대축복의 비약",
+      "icon": {
+        "file": "boss_rush_boost_potion.webp"
+      }
+    },
+    "advanced_great_blessing_potion": {
+      "name": "고급 대축복의 비약",
+      "icon": {
+        "file": "advanced_boss_rush_boost_potion.webp"
+      }
+    },
+    "legendary_hero_potion": {
+      "name": "전설의 영웅 비약",
+      "icon": {
+        "file": "legendary_blessing_potion.webp"
+      }
+    },
+    "shining_red_star_potion": {
+      "name": "반짝이는 빨간 별 물약",
+      "icon": {
+        "file": "red_star_potion.webp"
+      }
+    },
+    "radiant_moonlight_potion": {
+      "name": "영롱한 달빛 포션",
+      "icon": {
+        "file": "luminous_moonshine_potion.png"
+      }
+    },
+    "enhanced_10_stat_potion": {
+      "name": "향상된 10단계 물약",
+      "icon": {
+        "file": "advanced_strength_potion_x.webp"
+      }
+    },
+    "vip_buff_stat": {
+      "name": "VIP 버프 (능력치)",
+      "icon": {
+        "file": "vip_buff_stats.webp"
+      }
+    },
+    "small_wealth_acquisition_potion": {
+      "name": "소형 재물 획득의 비약",
+      "icon": {
+        "file": "wealth_acquisition_potion_small.webp"
+      }
+    },
+    "wealth_acquisition_potion": {
+      "name": "재물 획득의 비약",
+      "icon": {
+        "file": "wealth_acquisition_potion.webp"
+      }
+    },
+    "small_exp_accumulation_potion": {
+      "name": "소형 경험 축적의 비약",
+      "icon": {
+        "file": "small_exp_accumulation_potion.webp"
+      }
+    },
+    "small_concentrated_exp_accumulation_potion": {
+      "name": "소형 고농축 경험 축적의 비약",
+      "icon": {
+        "file": "small_concentrated_exp_accumulation_potion.webp"
+      }
+    },
+    "exp_accumulation_potion": {
+      "name": "경험 축적의 비약",
+      "icon": {
+        "file": "exp_accumulation_potion.webp"
+      }
+    },
+    "extra_exp_50_coupon": {
+      "name": "추가 경험치 50% 쿠폰",
+      "icon": {
+        "file": "extra_exp_50_coupon.webp"
+      }
+    },
+    "mvp_extra_exp_70_coupon": {
+      "name": "MVP 추가 경험치 70% 쿠폰",
+      "icon": {
+        "file": "mvp_extra_exp_70_coupon.webp"
+      }
+    },
+    "exp_3x_coupon": {
+      "name": "경험치 3배 쿠폰",
+      "icon": {
+        "file": "exp_3x_coupon.webp"
+      }
+    },
+    "exp_4x_coupon": {
+      "name": "경험치 4배 쿠폰",
+      "icon": {
+        "file": "exp_4x_coupon.webp"
+      }
+    },
+    "vip_buff_exp": {
+      "name": "VIP 버프 (경험치)",
+      "icon": {
+        "file": "vip_buff_exp.webp"
       }
     },
     "magical_scroll": {
@@ -543,7 +672,7 @@
     {
       "key": "seiram_elixir",
       "category": "buff",
-      "group": "buff_potion",
+      "group": "boss_buff",
       "tile": "seiram_elixir",
       "name": "세이람의 영약",
       "currency": "meso",
@@ -553,7 +682,7 @@
     {
       "key": "alleria_elixir",
       "category": "buff",
-      "group": "buff_potion",
+      "group": "boss_buff",
       "tile": "alleria_elixir",
       "name": "알레리아의 영약",
       "currency": "meso",
@@ -563,7 +692,7 @@
     {
       "key": "collector_elixir",
       "category": "buff",
-      "group": "buff_potion",
+      "group": "boss_buff",
       "tile": "collector_elixir",
       "name": "콜렉터의 영약",
       "currency": "meso",
@@ -573,11 +702,255 @@
     {
       "key": "honor_elixir",
       "category": "buff",
-      "group": "buff_potion",
+      "group": "boss_buff",
       "tile": "honor_elixir",
       "name": "명예의 영약",
       "currency": "meso",
       "unitPrice": 5000000,
+      "unit": "회"
+    },
+    {
+      "key": "boss_killer_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "boss_killer_potion",
+      "name": "보스 킬러 비약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "advanced_boss_killer_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "advanced_boss_killer_potion",
+      "name": "고급 보스 킬러 비약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "great_hero_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "great_hero_potion",
+      "name": "대영웅의 비약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "advanced_great_hero_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "advanced_great_hero_potion",
+      "name": "고급 대영웅의 비약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "great_blessing_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "great_blessing_potion",
+      "name": "대축복의 비약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "advanced_great_blessing_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "advanced_great_blessing_potion",
+      "name": "고급 대축복의 비약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "legendary_hero_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "legendary_hero_potion",
+      "name": "전설의 영웅 비약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "shining_red_star_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "shining_red_star_potion",
+      "name": "반짝이는 빨간 별 물약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "radiant_moonlight_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "radiant_moonlight_potion",
+      "name": "영롱한 달빛 포션",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "enhanced_10_str_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "enhanced_10_stat_potion",
+      "name": "향상된 10단계 힘의 물약",
+      "tier": "힘",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "enhanced_10_dex_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "enhanced_10_stat_potion",
+      "name": "향상된 10단계 민첩의 물약",
+      "tier": "민첩",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "enhanced_10_int_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "enhanced_10_stat_potion",
+      "name": "향상된 10단계 지능의 물약",
+      "tier": "지능",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "enhanced_10_luk_potion",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "enhanced_10_stat_potion",
+      "name": "향상된 10단계 행운의 물약",
+      "tier": "행운",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "vip_buff_stat",
+      "category": "buff",
+      "group": "boss_buff",
+      "tile": "vip_buff_stat",
+      "name": "VIP 버프 (능력치)",
+      "currency": "meso",
+      "unitPrice": 500000,
+      "unit": "회"
+    },
+    {
+      "key": "small_wealth_acquisition_potion",
+      "category": "buff",
+      "group": "hunting_buff",
+      "tile": "small_wealth_acquisition_potion",
+      "name": "소형 재물 획득의 비약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "wealth_acquisition_potion",
+      "category": "buff",
+      "group": "hunting_buff",
+      "tile": "wealth_acquisition_potion",
+      "name": "재물 획득의 비약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "small_exp_accumulation_potion",
+      "category": "buff",
+      "group": "hunting_buff",
+      "tile": "small_exp_accumulation_potion",
+      "name": "소형 경험 축적의 비약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "small_concentrated_exp_accumulation_potion",
+      "category": "buff",
+      "group": "hunting_buff",
+      "tile": "small_concentrated_exp_accumulation_potion",
+      "name": "소형 고농축 경험 축적의 비약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "exp_accumulation_potion",
+      "category": "buff",
+      "group": "hunting_buff",
+      "tile": "exp_accumulation_potion",
+      "name": "경험 축적의 비약",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "extra_exp_50_coupon",
+      "category": "buff",
+      "group": "hunting_buff",
+      "tile": "extra_exp_50_coupon",
+      "name": "추가 경험치 50% 쿠폰",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "mvp_extra_exp_70_coupon",
+      "category": "buff",
+      "group": "hunting_buff",
+      "tile": "mvp_extra_exp_70_coupon",
+      "name": "MVP 추가 경험치 70% 쿠폰",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "exp_3x_coupon",
+      "category": "buff",
+      "group": "hunting_buff",
+      "tile": "exp_3x_coupon",
+      "name": "경험치 3배 쿠폰",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "exp_4x_coupon",
+      "category": "buff",
+      "group": "hunting_buff",
+      "tile": "exp_4x_coupon",
+      "name": "경험치 4배 쿠폰",
+      "currency": "meso",
+      "unitPrice": null,
+      "unit": "개"
+    },
+    {
+      "key": "vip_buff_exp",
+      "category": "buff",
+      "group": "hunting_buff",
+      "tile": "vip_buff_exp",
+      "name": "VIP 버프 (경험치)",
+      "currency": "meso",
+      "unitPrice": 500000,
       "unit": "회"
     },
     {

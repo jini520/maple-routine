@@ -1482,14 +1482,25 @@ describe('사냥 계산기', () => {
     expect(view.queryByTestId('income-sheet-ground-summary')).toBeNull()
   })
 
-  it('소재를 늘리면 메소가 그만큼 는다. 하나가 30분이다 (결정 7)', async () => {
+  it('소재를 치면 메소가 그만큼 는다. 하나가 30분이다 (결정 7)', async () => {
     const view = await 그리기()
     await 밤의길3(view)
 
-    await 누르기(view, '소재 늘리기')
+    await 칸에치기(view, 'income-sheet-sojae', '2')
 
     expect(view.getByTestId('income-sheet-sojae')).toHaveTextContent('2')
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 42,336,000')
+  })
+
+  // 0 소재를 돌았다는 말은 성립하지 않는다. 메소가 0 이라 저장이 꺼진다.
+  it('소재를 비우면 저장이 꺼진다', async () => {
+    const view = await 그리기()
+    await 밤의길3(view)
+    await 루디고르기(view)
+
+    await 칸에치기(view, 'income-sheet-sojae', '')
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
   /**
@@ -1676,8 +1687,8 @@ describe('사냥 계산기', () => {
 
     expect(줄글자(view, 'income-sheet-fragments')).toBe('83')
     expect(view.queryByLabelText('솔 에르다 조각 늘리기')).toBeNull()
-    // 소재는 그대로 스테퍼다. 0~여남은이라 누를 만하다.
-    expect(view.getByLabelText('소재 늘리기')).toBeTruthy()
+    // 소재도 치는 칸이다.
+    expect(view.queryByLabelText('소재 늘리기')).toBeNull()
   })
 
   // 붙여넣기가 숫자 아닌 것을 들여보낸다. 조각 가격과 같은 규칙을 쓴다.
@@ -1733,7 +1744,7 @@ describe('사냥 계산기', () => {
     await 루디고르기(view)
     await 누르기(view, '90%') // 40마리에서 넷을 놓친다
     await 누르기(view, '유니온의 부')
-    await 누르기(view, '소재 늘리기')
+    await 칸에치기(view, 'income-sheet-sojae', '2')
     await 칸에치기(view, 'income-sheet-fragments', '35')
     await 칸에치기(view, 'income-sheet-fragment-price', '8000000')
     await 이름으로누르기(view, '저장')

@@ -9,7 +9,7 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { MinusIcon, PlusIcon, Text } from '../../components/atoms'
+import { Text } from '../../components/atoms'
 import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
 import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
 import { ChainSelect } from '../../components/organisms/ChainSelect/ChainSelect'
@@ -238,64 +238,3 @@ export function FieldRow(props: {
   )
 }
 
-/**
- * 수 스테퍼. 숫자만 오르내린다.
- *
- * 단위(회 · 개 · 포인트 · 시간)를 `+` 오른쪽에 붙이면 알약의 좌우가 안 맞는다. 기타처럼
- * 단위가 없는 자리는 그 칸이 빈 채로 간격만 남아 더 그렇다.
- *
- * `PartySizeStepper` 로 접지 않는다. 그 molecule 은 `Users` 표식과 두 크기가 못박혀 있어 이
- * 자리의 셋째 모양을 담지 못한다.
- */
-export function QuantityStepper(props: {
-  value: number
-  /** 상한. 사용자가 준 한도에서 온다. 없는 항목은 안 막는다. */
-  max?: number
-  onChange: (next: number) => void
-  /** 읽어 주는 이름의 뿌리. 한 시트에 스테퍼가 둘이면 수량 하나로는 못 가른다. */
-  label?: string
-  testID?: string
-}): React.JSX.Element {
-  const label = props.label ?? '수량'
-  // 바닥은 1 이다. 수량도 소재도 **0** 이 뜻이 없다(0 소재를 돌았다는 말은 성립하지 않는다).
-  const canDecrease = props.value > 1
-  const canIncrease = props.max === undefined || props.value < props.max
-  return (
-    <View className="h-9 flex-row items-center gap-3 rounded-full border border-border px-2">
-      <Pressable
-        role="button"
-        aria-label={`${label} 줄이기`}
-        disabled={!canDecrease}
-        onPress={() => props.onChange(props.value - 1)}
-        hitSlop={8}
-      >
-        {/* NativeWind 의 `disabled:` 는 RN 의 `disabled` 프롭과 안 이어져 있다. JS 조건으로 쓴다. */}
-        <MinusIcon
-          className={`h-4 w-4 ${canDecrease ? 'text-text' : 'text-text-disabled'}`}
-          strokeWidth={2}
-          aria-hidden
-        />
-      </Pressable>
-      <Text
-        testID={props.testID}
-        className="min-w-6 text-center text-sm font-bold text-text"
-        style={TABULAR_NUMS}
-      >
-        {props.value}
-      </Text>
-      <Pressable
-        role="button"
-        aria-label={`${label} 늘리기`}
-        disabled={!canIncrease}
-        onPress={() => props.onChange(props.value + 1)}
-        hitSlop={8}
-      >
-        <PlusIcon
-          className={`h-4 w-4 ${canIncrease ? 'text-text' : 'text-text-disabled'}`}
-          strokeWidth={2}
-          aria-hidden
-        />
-      </Pressable>
-    </View>
-  )
-}

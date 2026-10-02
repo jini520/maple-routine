@@ -55,6 +55,8 @@ const UNKNOWN_SIZE = 180
 const UNKNOWN_BOX = { left: 28.5, top: 47 }
 const PODIUM_FIGURE_WIDTH = 72
 const FIGURE_SCALE = PODIUM_FIGURE_WIDTH / FIGURE_BOX.width
+/** 그림 칸이 단상 블록 위로 겹쳐 내려가는 높이. 발끝 아래가 잘리지 않고 블록 앞에 그려진다 */
+const FIGURE_OVERLAP = 16
 /** 단상 블록 높이. 1 · 2 · 3위 차례다 */
 const BLOCK_HEIGHTS = [74, 60, 50]
 /** 화면에 서는 차례. 2위 · 1위 · 3위 */
@@ -75,7 +77,7 @@ function Figure(props: { uri: string | undefined }): React.JSX.Element {
   const box = known ? FIGURE_BOX : UNKNOWN_BOX
   return (
     <View
-      style={{ width: PODIUM_FIGURE_WIDTH, height: FIGURE_BOX.height * FIGURE_SCALE, overflow: 'hidden' }}
+      style={{ width: PODIUM_FIGURE_WIDTH, height: FIGURE_BOX.height * FIGURE_SCALE + FIGURE_OVERLAP, overflow: 'hidden' }}
     >
       <Image
         testID={known ? 'stats-podium-image' : 'stats-podium-image-unknown'}
@@ -181,7 +183,15 @@ export const CharacterSection = memo(function CharacterSection(props: {
                 accessibilityLabel={`${rank + 1}위 ${row.name}`}
                 className="flex-1 items-center"
               >
-                <View className="items-center justify-end" style={{ height: FIGURE_BOX.height * FIGURE_SCALE }}>
+                <View
+                  testID="stats-podium-figure"
+                  className="items-center justify-end"
+                  style={{
+                    height: FIGURE_BOX.height * FIGURE_SCALE + FIGURE_OVERLAP,
+                    marginBottom: -FIGURE_OVERLAP,
+                    zIndex: 1,
+                  }}
+                >
                   <Figure uri={uri} />
                 </View>
                 <View

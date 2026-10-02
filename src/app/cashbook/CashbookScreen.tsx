@@ -75,7 +75,7 @@ import {
   monthWindow,
 } from '../../features/cashbook/range'
 import { recordIconOf } from '../../features/cashbook/row-icon'
-import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
+import { formatMesoCompact, formatMesoSigned } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import {
@@ -178,7 +178,7 @@ function MonthArrow(props: {
 function SourceRow(props: {
   testID: string
   label: string
-  sign: string
+  sign: '+' | '−'
   amount: number
   tone: string
 }): React.JSX.Element {
@@ -191,8 +191,7 @@ function SourceRow(props: {
         className={`w-16 text-right text-11 font-medium ${props.tone}`}
         style={TABULAR_NUMS}
       >
-        {props.sign}
-        {formatMesoCompact(props.amount)}
+        {formatMesoSigned(props.amount, props.sign)}
       </Text>
     </View>
   )
@@ -432,7 +431,7 @@ function EnhancedItemRows(props: {
               : `${item.count}회`}
           </Text>
           <Text className="ml-auto shrink-0 text-11 font-medium text-fall-ink" style={TABULAR_NUMS}>
-            {item.count === item.unpricedCount ? '값 모름' : `−${formatMesoCompact(item.costMeso)}`}
+            {item.count === item.unpricedCount ? '값 모름' : formatMesoSigned(item.costMeso, '−')}
           </Text>
         </View>
       ))}
@@ -470,7 +469,7 @@ function SoldItemRows(props: { rowKey: string; items: readonly SoldItem[] }): Re
               {item.itemName}
             </Text>
             <Text className="ml-auto shrink-0 text-11 font-medium text-rise-ink" style={TABULAR_NUMS}>
-              +{formatMesoCompact(item.payoutMeso)}
+              {formatMesoSigned(item.payoutMeso, '+')}
             </Text>
           </View>
         )
@@ -570,8 +569,9 @@ function DayRecordRow(props: {
           className={`ml-auto shrink-0 text-xs font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
           style={TABULAR_NUMS}
         >
-          {income ? '+' : '−'}
-          {cash === null ? formatMesoCompact(recordMesoOf(entry)) : `${cash.toLocaleString()}원`}
+          {cash === null
+            ? formatMesoSigned(recordMesoOf(entry), income ? '+' : '−')
+            : `${cash === 0 ? '' : income ? '+' : '−'}${cash.toLocaleString()}원`}
         </Text>
         {/* 화살촉이 상자를 하나 쓰는 이유는 lucide 아이콘이 `testID` 를 SVG 안으로 안 흘려보내
             화살촉이 사라졌다 를 테스트가 못 잡기 때문이다. 상자는 `shrink-0` 도 함께 든다.
@@ -1163,13 +1163,13 @@ export function CashbookScreen(): React.JSX.Element {
                 <View className="flex-row justify-between">
                   <Text className="text-xs text-text-muted">수입</Text>
                   <Text className="text-sm font-semibold text-rise-ink" style={TABULAR_NUMS}>
-                    +{formatMesoCompact(selectedTotals.incomeMeso)}
+                    {formatMesoSigned(selectedTotals.incomeMeso, '+')}
                   </Text>
                 </View>
                 <View className="flex-row justify-between">
                   <Text className="text-xs text-text-muted">지출</Text>
                   <Text className="text-sm font-semibold text-fall-ink" style={TABULAR_NUMS}>
-                    −{formatMesoCompact(selectedTotals.expenseMeso)}
+                    {formatMesoSigned(selectedTotals.expenseMeso, '−')}
                   </Text>
                 </View>
 

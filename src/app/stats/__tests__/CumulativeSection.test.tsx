@@ -37,15 +37,28 @@ describe('CumulativeSection', () => {
     expect(view.getByTestId('stats-cumulative-start').props.children).toBe('9월 5일 (토)')
   })
 
-  it('기간을 누르면 그 기간까지의 누적이 뜬다', async () => {
+  it('처음에는 아무 점도 안 골라 말풍선이 없다', async () => {
     const view = await renderOverlay(<CumulativeSection days={days} cycle="weekly" periodKey="2026-09-24" startDateKey={null} earliest="2025-03-27" latest="2026-09-29" onChangeStart={jest.fn()} />)
 
-    await act(async () => {
-      fireEvent.press(view.getByLabelText('9월 17일 주까지 보기'))
-    })
+    expect(view.queryByTestId('stats-cumulative-bubble-title')).toBeNull()
+  })
+
+  it('기간을 누르면 그 기간까지의 누적이 뜨고, 다시 누르면 닫힌다', async () => {
+    const view = await renderOverlay(<CumulativeSection days={days} cycle="weekly" periodKey="2026-09-24" startDateKey={null} earliest="2025-03-27" latest="2026-09-29" onChangeStart={jest.fn()} />)
+    const 누르기 = async (): Promise<void> => {
+      await act(async () => {
+        fireEvent.press(view.getByLabelText('9월 17일 주까지 보기'))
+      })
+    }
+
+    await 누르기()
 
     expect(view.getByTestId('stats-cumulative-bubble-title').props.children).toBe('9월 17일 주까지')
     expect(view.getByTestId('stats-cumulative-bubble-value').props.children).toBe('+3억')
+
+    await 누르기()
+
+    expect(view.queryByTestId('stats-cumulative-bubble-title')).toBeNull()
   })
 })
 

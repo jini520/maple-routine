@@ -16,7 +16,7 @@ import { StatsSection } from './StatsSection'
 const LINE = { 11: 16, xl: 28, '2xl': 31 } as const
 
 /** `TrendSection` 의 말풍선 자리 · 그래프 높이 · 왼쪽 눈금 폭 · 아래 축 높이 · 위 여백 */
-const TREND = { bubble: 54, chart: 150, axisLeft: 46, axisBottom: 20, topPad: 8 } as const
+const TREND = { bubble: 54, chart: 162, axisLeft: 46, axisBottom: 32, topPad: 8 } as const
 /** 추이 막대 여덟의 높이. 0 선에서 위(+) · 아래(−)로 뻗는 비율이라 순수익 그래프로 읽힌다 */
 const TREND_BARS = [0.35, 0.6, -0.25, 0.5, 0.8, -0.4, 0.55, 0.7] as const
 /** `CumulativeSection` 의 말풍선 자리 · 그래프 높이 · 위아래 여백 */

@@ -37,7 +37,7 @@ import {
   isLatestPeriod,
 } from '../../lib/boss/boss-profit-period'
 import { monthKeyOf } from '../../lib/calendar'
-import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
+import { formatMesoCompact, formatMesoSigned } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { tapFeedback } from '../../native/haptics'
 import type { BossCycle } from '../../types'
@@ -294,13 +294,13 @@ export function StatsScreen(): React.JSX.Element {
                     <View className="flex-row items-baseline gap-1.5">
                       <Text className="text-11 text-text-muted">수입</Text>
                       <Text className="w-16 text-right text-11 font-medium text-rise-ink" style={TABULAR_NUMS}>
-                        +{formatMesoCompact(current.incomeMeso)}
+                        {formatMesoSigned(current.incomeMeso, '+')}
                       </Text>
                     </View>
                     <View className="flex-row items-baseline gap-1.5">
                       <Text className="text-11 text-text-muted">지출</Text>
                       <Text className="w-16 text-right text-11 font-medium text-fall-ink" style={TABULAR_NUMS}>
-                        −{formatMesoCompact(current.expenseMeso)}
+                        {formatMesoSigned(current.expenseMeso, '−')}
                       </Text>
                     </View>
                   </View>

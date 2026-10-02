@@ -174,20 +174,86 @@ describe('characterTotalsBetween', () => {
 })
 
 describe('categoryTotalsBetween', () => {
-  it('수입 갈래는 결정석 · 아이템 판매(드롭과 손입력을 합친다) · 손입력 갈래이고 큰 순서다', () => {
+  it('수입 갈래는 결정석 · 보스 드롭 · 손입력 갈래이고 큰 순서다. 보스 드롭과 아이템 판매는 다른 갈래다', () => {
     const byDate = {
       '2026-09-24': [
         crystal('a', '낟낟', 500),
         dropSale('a', '낟낟', 100),
         income(null, '', { category: 'item_sale', mesoAmount: 50 }),
-        income(null, '', { category: 'hunting', mesoAmount: 200 }),
+        income(null, '', { category: 'etc', mesoAmount: 30 }),
         spend(null, '', { mesoAmount: 999 }),
       ],
     }
     expect(categoryTotalsBetween(byDate, WEEK, 'income')).toEqual([
       { key: 'boss_crystal', name: '보스 결정석', meso: 500 },
-      { key: 'hunting', name: '사냥', meso: 200 },
-      { key: 'item_sale', name: '아이템 판매', meso: 150 },
+      { key: 'boss_drop', name: '보스 드롭', meso: 100 },
+      { key: 'item_sale', name: '아이템 판매', meso: 50 },
+      { key: 'etc', name: '기타', meso: 30 },
+    ])
+  })
+
+  it('사냥과 솔 에르다 조각은 사냥 한 갈래이고, 사냥 기록의 조각 값은 조각 쪽으로 나눈다', () => {
+    const byDate = {
+      '2026-09-24': [
+        income(null, '', {
+          category: 'hunting',
+          mesoAmount: 1000,
+          hunt: { mode: 'manual', typedMeso: 700, fragments: 3, fragmentPrice: 100 },
+        }),
+        // 조각 가격을 안 적은 사냥은 조각 값이 합계에 없다
+        income(null, '', {
+          category: 'hunting',
+          mesoAmount: 400,
+          hunt: { mode: 'manual', typedMeso: 400, fragments: 5, fragmentPrice: null },
+        }),
+        // 계산기 도입 전의 사냥 행은 합계가 곧 사냥 메소다
+        income(null, '', { category: 'hunting', mesoAmount: 50 }),
+        income(null, '', { category: 'sol_erda_fragment', mesoAmount: 200 }),
+      ],
+    }
+    expect(categoryTotalsBetween(byDate, WEEK, 'income')).toEqual([
+      {
+        key: 'hunting',
+        name: '사냥',
+        meso: 1650,
+        parts: [
+          { key: 'hunting_meso', name: '사냥 메소', meso: 1150 },
+          { key: 'sol_erda_fragment', name: '솔 에르다 조각', meso: 500 },
+        ],
+      },
+    ])
+  })
+
+  it('조각만 있는 사냥도 사냥 갈래이고 0 인 줄은 나눈 목록에 없다', () => {
+    const byDate = { '2026-09-24': [income(null, '', { category: 'sol_erda_fragment', mesoAmount: 200 })] }
+    expect(categoryTotalsBetween(byDate, WEEK, 'income')).toEqual([
+      {
+        key: 'hunting',
+        name: '사냥',
+        meso: 200,
+        parts: [{ key: 'sol_erda_fragment', name: '솔 에르다 조각', meso: 200 }],
+      },
+    ])
+  })
+
+  it('버프는 한 갈래이고 선택 목록의 묶음(보스 버프 · 사냥 버프)으로 나눈다', () => {
+    const byDate = {
+      '2026-09-24': [
+        spend(null, '', { category: 'buff', itemKey: 'seiram_elixir', mesoAmount: 2000000 }),
+        spend(null, '', { category: 'buff', itemKey: 'vip_buff_stat', mesoAmount: 500000 }),
+        spend(null, '', { category: 'buff', itemKey: 'vip_buff_exp', mesoAmount: 1500000 }),
+      ],
+    }
+    expect(categoryTotalsBetween(byDate, WEEK, 'expense')).toEqual([
+      {
+        key: 'buff',
+        name: '버프',
+        meso: 4000000,
+        parts: [
+          { key: 'boss_buff', name: '보스 버프', meso: 2500000 },
+          { key: 'hunting_buff', name: '사냥 버프', meso: 1500000 },
+        ],
+      },
     ])
   })
 

@@ -18,9 +18,17 @@ const 지출: CategoryTotal[] = [
 
 const 수입: CategoryTotal[] = [
   { key: 'boss_crystal', name: '보스 결정석', meso: 2_840_000_000 },
-  { key: 'item_sale', name: '아이템 판매', meso: 970_000_000 },
-  { key: 'hunting', name: '사냥', meso: 180_000_000 },
-  { key: 'sol_erda_fragment', name: '솔 에르다 조각', meso: 20_000_000 },
+  { key: 'boss_drop', name: '보스 드롭', meso: 970_000_000 },
+  {
+    key: 'hunting',
+    name: '사냥',
+    meso: 200_000_000,
+    parts: [
+      { key: 'hunting_meso', name: '사냥 메소', meso: 180_000_000 },
+      { key: 'sol_erda_fragment', name: '솔 에르다 조각', meso: 20_000_000 },
+    ],
+  },
+  { key: 'item_sale', name: '아이템 판매', meso: 30_000_000 },
   { key: 'etc', name: '기타', meso: 10_000_000 },
 ]
 
@@ -60,6 +68,23 @@ describe('CategorySection', () => {
 
     expect(view.queryByTestId('stats-category-label-rest')).toBeNull()
     expect(view.getByTestId('stats-category-label-etc')).toBeTruthy()
+  })
+
+  it('나눠 보이는 조각은 누르면 그 갈래의 세부 줄이 뜬다', async () => {
+    const view = await renderOverlay(<CategorySection title="수입 내역" side="income" items={수입} />)
+
+    expect(within(view.getByTestId('stats-category-label-hunting')).getByText('사냥 ›')).toBeTruthy()
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('사냥 세부 항목'))
+    })
+
+    const popover = view.getByTestId('stats-category-popover')
+    expect(within(popover).getByText('사냥')).toBeTruthy()
+    expect(within(popover).getByText('사냥 메소')).toBeTruthy()
+    expect(within(popover).getByText('1.8억')).toBeTruthy()
+    expect(within(popover).getByText('솔 에르다 조각')).toBeTruthy()
+    expect(within(popover).getByText('2,000만')).toBeTruthy()
   })
 
   it('기록이 없으면 도넛 대신 한 줄을 적는다', async () => {
