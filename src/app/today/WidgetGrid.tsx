@@ -16,12 +16,12 @@ import { Pressable, useWindowDimensions, View } from 'react-native'
 
 import { Card } from '../../components/atoms'
 import { resolveWidgetGridMetrics } from '../../lib/today/widget-grid-metrics'
-import { resolveWidgetPositions } from '../../lib/today/widget-layout'
+import { omitHiddenTiles, resolveWidgetPositions } from '../../lib/today/widget-layout'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import type { TodayViewModel } from './view-model'
 import { TILE_LAYOUT } from './widgets/layout'
-import { WIDGET_BY_ID } from './widgets/registry'
+import { WIDGETS, WIDGET_BY_ID } from './widgets/registry'
 import type { WidgetTarget } from './widgets/types'
 
 export interface WidgetGridProps {
@@ -35,7 +35,12 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
   const metrics = resolveWidgetGridMetrics(width)
   const [autoHeights, setAutoHeights] = useState<Readonly<Record<string, number>>>({})
 
-  const { tiles, containerHeightPx } = resolveWidgetPositions(TILE_LAYOUT, metrics, autoHeights)
+  // 보여 줄 것이 없는 위젯은 타일째 빼고 그 아래를 당긴다.
+  const hiddenIds = new Set(
+    WIDGETS.filter((widget) => widget.isVisible !== undefined && !widget.isVisible(data)).map((widget) => widget.id),
+  )
+  const layout = omitHiddenTiles(TILE_LAYOUT, hiddenIds)
+  const { tiles, containerHeightPx } = resolveWidgetPositions(layout, metrics, autoHeights)
   const tileById = new Map(tiles.map((tile) => [tile.id, tile]))
 
   /** 같은 값이면 **같은 객체를 돌려준다**. 안 그러면 측정 → 렌더 → 측정으로 도는 고리가 된다. */
@@ -57,7 +62,7 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
 
   return (
     <View testID="widget-grid" style={{ height: containerHeightPx }}>
-      {TILE_LAYOUT.map((placement) => {
+      {layout.map((placement) => {
         const { Component, target } = WIDGET_BY_ID[placement.id]
         const tile = tileById.get(placement.id)
         if (tile === undefined) return null

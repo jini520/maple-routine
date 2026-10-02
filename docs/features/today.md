@@ -41,8 +41,10 @@
 | 상태 | `features/notice/banner-store.ts` | 배너가 세우는 공지 하나 |
 | 판정 | `features/notice/pick-banner-notice.ts` | 안 닫은 것 중 가장 최근 하나 |
 | 저장 | `storage/notice-banner.ts` | 닫은 공지 id |
-| 조립 | `app/today/view-model.ts` | **아홉이 읽는 값을 여기서 한 번에 만든다** |
+| 조립 | `app/today/view-model.ts` | **열이 읽는 값을 여기서 한 번에 만든다** |
 | 위젯 | `app/today/widgets/types.ts` · `registry.ts` · `layout.ts` | 계약 · 목록 · 좌표 |
+| 위젯 | `app/today/widgets/NextPartyScheduleWidget.tsx` | 위젯 10 다음 파티 스케줄. 보여 줄 회차가 없으면 숨는다 |
+| 판정 | `features/party-appointments/upcoming.ts` | 지금 뒤에 시작하는 회차를 시각 순으로 |
 | 위젯 | `app/today/widgets/` 의 아홉 컴포넌트 | `RepresentativeCharacterWidget` · `ResetCountdownWidget` · `RemainingScheduleWidget` · `CrystalLimitWidget` · `WeeklyBossProfitWidget` · `TopValuableItemWidget` · `UnpricedDropsWidget` · `ValuableDroughtWidget` · `SharedContentsWidget` |
 | 계산 | `lib/today/widget-grid-metrics.ts` · `lib/today/widget-layout.ts` | 치수와 좌표 검증 |
 | 계산 | `constants/style/drought-tier-styles.ts` | 잎 램프. 드롭 히스토리 화면과 공유한다 |
@@ -412,11 +414,12 @@ function validateWidgetLayout(
 ```
 (0,0)  4x1     대표 캐릭터
 (0,1)  2x1     초기화 카운트다운      (2,1) 2x1  주간 결정석 판매 한도
-(0,2)  4×auto  계정 및 메이플 ID 공유 컨텐츠
-(0,3)  4×auto  캐릭터별 남은 스케줄
-(0,4)  4×auto  주간 보스 수익          ← 여기까지 셋이 auto ([[ADR-183]])
-(0,5)  2x1     이번 주 최고가 아이템  (2,5) 2x1  가격 미입력
-(0,6)  4x1     아이템 드롭 가뭄
+(0,2)  4×auto  다음 파티 스케줄        ← 보여 줄 회차가 없으면 숨는다 ([[ADR-147]] 정정 47)
+(0,3)  4×auto  계정 및 메이플 ID 공유 컨텐츠
+(0,4)  4×auto  캐릭터별 남은 스케줄
+(0,5)  4×auto  주간 보스 수익          ← 여기까지 넷이 auto ([[ADR-183]])
+(0,6)  2x1     이번 주 최고가 아이템  (2,6) 2x1  가격 미입력
+(0,7)  4x1     아이템 드롭 가뭄
 ```
 
 읽는 순서가 곧 이 배열의 근거다. 정체(대표) → 마감·상한(초기화 · 결정석) → **한 번만 하면 되는
@@ -704,7 +707,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
   타일이 다른 시각을 말한다(위젯 6과 같은 규칙). 히스토리 화면과 **같은 라벨 함수**라 두 자리가 같은
   주를 다르게 부르지 않는다.
 
-## 위젯 아홉 ([[ADR-147]] 결정 6 · 정정 28)
+## 위젯 열 ([[ADR-147]] 결정 6 · 정정 28 · 47)
 
 굵은 것이 기본 크기다.
 
@@ -719,6 +722,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 | 7 | `unpriced-drops` | 가격 미입력 드롭 N건 | **2x1** · 2x2 · 1x1 | **아이템 가격 입력**(`DropPrice`, #431) | `drop-history` |
 | 8 | `valuable-drought` | ‘N주째 아이템 드롭 없음’ | **4x1** · 2x2 · 2x1 | **없음**(#431) | `summarizeValuableDrought` |
 | 9 | `shared-contents` | **계정 및 메이플 ID 공유 컨텐츠**. 계열별(몬스터파크 · 메이플 유니온 · 에픽 던전) | **`4×auto`** | 없음 | 컨텐츠 스토어 + `scheduler-content-catalog.json` |
+| 10 | `next-party-schedule` | **다음 파티 스케줄**. 시작 전인 가장 가까운 회차 하나(파티 스케줄 목록 카드, 안쪽 바탕 없음). **없으면 타일째 숨는다** | **`4×auto`** | 파티 스케줄 탭 + 그 회차 상세(위젯이 직접) | 파티 스케줄 스토어 + 스케줄러 캐릭터 |
 
 **타일을 누르면 가는 곳은 이슈 #431 에서 사용자가 정했다**(2026-09-14). 목록에 없는 위젯은 전과 같다.
 
@@ -1266,10 +1270,26 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
 (레지스트리) 창 좌우 여백이 곧 타일의 변이다. 제목이 고정 문구라 `?` 자리가 안 움직여서, 변에
 붙여도 `?` 는 상자 위에 남는다.
 
+### 10. 다음 파티 스케줄 ([[ADR-147]] 정정 47)
+
+파티 스케줄 페이지의 목록 카드를 안쪽 바탕 없이 옮긴 타일이다(시안 라1, 사용자 선택 2026-10-02).
+
+- 제목 줄: `다음 파티 스케줄` 과 오른쪽 `파티 스케줄 ›`.
+- 시각 줄: `21:00 ~ 22:00` 과 주황 `오늘 · 3시간 25분 뒤`. 날은 `오늘` · `내일` · 그 밖은 `일 10/4`. 남은 시간은 `n일 뒤` · `n시간 m분 뒤` · `n분 뒤` · 1분 미만은 `곧`.
+- 몸통: 캐릭터별 묶음(얼굴 24 · 이름 열 + 보스 초상 · 이름 · 난이도 줄)과 알림 · 반복 줄. 페이지 카드와 같은 재료이고 안쪽 바탕만 없다.
+- 보스는 **전부** 그린다. 넷까지만 그리고 `외 n마리` 로 접는 안을 실기기에서 보고 걷었다(사용자, 2026-10-02). 길어도 다 보이는 편이 낫다.
+- **다음** 은 시작 시각이 지금보다 뒤인 가장 가까운 회차다. 시작하면 그 다음으로 넘어간다. 리셋 주와 상관없이 앞으로 찾는다.
+- 위젯은 분마다 스스로 시계를 읽어 남은 시간과 다음 회차를 고친다. 뷰모델은 다가오는 회차 몇을 시각 순으로 준다.
+- 누르면 파티 스케줄 탭으로 가서 그 회차의 상세 시트를 연다(알림 탭과 같은 길, `usePartyAppointmentOpenStore`).
+- 보여 줄 회차가 없으면 타일째 숨긴다(아래 `빈 상태와 실패`).
+
 ## 빈 상태와 실패 ([[ADR-147]] 결정 5)
 
 - **위젯은 사라지지 않는다.** 좌표 배치라 자리를 빼면 아래 타일이 올라오지 않고 **빈 사각형**이
   남는다. 그 구멍은 ‘어제 있던 것이 오늘 없다’로 읽힌다. 빈 상태는 **자기 타일 안에서** 말한다.
+  - **예외: 위젯 10 `다음 파티 스케줄`**([[ADR-147]] 정정 47, 사용자 지시). 파티 보스를 안 가는 사용자에게 빈 타일은
+    쓸 일 없는 기능의 광고라 보여 줄 회차가 없으면 타일째 숨긴다. 가로 전체 타일이라 그 행만큼 아래가 올라와 빈 사각형이
+    남지 않는다(`isVisible` · `omitHiddenTiles`). 숨김은 `w === 4` 타일만 받는다.
 - **‘없다’와 ‘모른다’를 가른다**([../foundation/error-resilience.md](../foundation/error-resilience.md)
   원칙 1). 동기화가 실패해 모르는 것을 ‘0 메소’로 그리지 않는다. 이 화면은 숫자를 크게 그리므로
   그 구분이 특히 중요하다. 큰 `0` 은 사실을 단정하는 그림이다.

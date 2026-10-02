@@ -44,6 +44,10 @@ import { bossNameOf } from '../../lib/boss/bosses'
 import { dropPayoutMeso, dropSplitLabel, sumDropPayout } from '../../lib/drop/drop-price'
 import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../../lib/scheduler/reset-clock'
 import { HEADER_PORTRAIT_MAX } from './header-portrait-motion'
+import { endClockOf } from '../../features/party-appointments/agenda'
+import { groupBossesByCharacter } from '../../features/party-appointments/boss-groups'
+import { upcomingOccurrences } from '../../features/party-appointments/upcoming'
+import type { PartyAppointment, PartyAppointmentBoss } from '../../types/party-appointment'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type {
@@ -353,6 +357,30 @@ export interface TodayViewModelInput {
   /** 드롭 히스토리 스토어(전 기간). */
   dropGroups: readonly DropHistoryPeriodGroup[]
   drought: ValuableDroughtSummary | null
+  /** 파티 스케줄 스토어. 위젯 10. */
+  partyAppointments: readonly PartyAppointment[]
+}
+
+/** 다음 파티 스케줄의 캐릭터 묶음 하나 */
+export interface NextPartyGroupView {
+  ocid: string
+  name: string
+  imageUrl: string | null
+  bosses: PartyAppointmentBoss[]
+}
+
+/** 위젯 10 이 그리는 회차 하나 */
+export interface NextPartyView {
+  appointmentId: string
+  /** KST 날짜 `YYYY-MM-DD` */
+  dateKey: string
+  timeKst: string
+  /** 종료 시각 글자. 자정을 넘어도 시계 그대로(`00:30`) */
+  endClock: string
+  startsAtMs: number
+  groups: NextPartyGroupView[]
+  leadMinutes: number | null
+  repeats: boolean
 }
 
 /**
@@ -393,6 +421,11 @@ export interface TodayViewModel {
   crystalLimits: CrystalLimitView[]
   drought: DroughtView | null
   resets: ResetCountdownView
+  /**
+   * 지금 뒤에 시작하는 파티 스케줄 회차. 시작 순. 위젯 10 은 분마다 시계를 읽어 아직 시작하지 않은 맨 앞을 그린다.
+   * 비어 있으면 그 위젯이 타일째 숨는다.
+   */
+  nextParty: NextPartyView[]
 }
 
 export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel {
@@ -418,7 +451,30 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
       .map((record) => toDropView(record, input.profilesByOcid)),
     drought: buildDrought(input.drought, input.now),
     resets: buildResets(input.now),
+    nextParty: buildNextParty(input),
   }
+}
+
+/** 이름 · 얼굴은 스케줄러 캐릭터에서 읽는다. 남은 스케줄 위젯과 같은 두 출처다 */
+function buildNextParty(input: TodayViewModelInput): NextPartyView[] {
+  const nameOf = (ocid: string): { name: string; imageUrl: string | null } => {
+    const content = input.contentCharacters.find((character) => character.ocid === ocid)
+    const boss = input.bossCharacters.find((character) => character.ocid === ocid)
+    return {
+      name: content?.characterName ?? boss?.characterName ?? '',
+      imageUrl: content?.imageUrl ?? boss?.imageUrl ?? null,
+    }
+  }
+  return upcomingOccurrences(input.partyAppointments, input.now).map((occurrence) => ({
+    appointmentId: occurrence.appointment.id,
+    dateKey: occurrence.dateKey,
+    timeKst: occurrence.timeKst,
+    endClock: endClockOf(occurrence),
+    startsAtMs: occurrence.startsAt.getTime(),
+    groups: groupBossesByCharacter(occurrence.bosses).map((group) => ({ ...group, ...nameOf(group.ocid) })),
+    leadMinutes: occurrence.leadMinutes,
+    repeats: occurrence.appointment.schedule.type === 'weekly',
+  }))
 }
 
 /**

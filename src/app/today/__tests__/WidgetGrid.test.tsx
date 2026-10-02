@@ -97,6 +97,35 @@ describe('WidgetGrid: 좌표 배치', () => {
 
 })
 
+// 위젯 10 은 보여 줄 회차가 없으면 타일째 숨고, 그 행만큼 아래가 올라온다.
+describe('다음 파티 스케줄 타일', () => {
+  const 회차 = {
+    appointmentId: 'p1',
+    dateKey: '2099-01-01',
+    timeKst: '21:00',
+    endClock: '22:00',
+    startsAtMs: Date.parse('2099-01-01T12:00:00Z'),
+    groups: [{ ocid: 'a', name: '낟낟', imageUrl: null, bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'a' }] }],
+    leadMinutes: 30,
+    repeats: false,
+  }
+
+  it('회차가 없으면 타일이 없고 공유 컨텐츠가 그 자리에 선다', async () => {
+    const view = await 격자()
+
+    expect(view.queryByTestId('widget-tile-next-party-schedule')).toBeNull()
+    expect(스타일(타일(view, 'shared-contents'))).toMatchObject({ top: 2 * 행 })
+  })
+
+  it('회차가 있으면 초기화까지 아래에 서고 그 아래가 한 행 내려간다', async () => {
+    const view = await renderAtom(<WidgetGrid data={{ ...빈_뷰모델, nextParty: [회차] }} />)
+
+    expect(스타일(타일(view, 'next-party-schedule'))).toMatchObject({ left: 0, top: 2 * 행 })
+    expect(스타일(타일(view, 'shared-contents'))).toMatchObject({ top: 3 * 행 })
+    expect(스타일(타일(view, 'valuable-drought'))).toMatchObject({ top: 7 * 행 })
+  })
+})
+
 describe('`h: auto` 타일', () => {
   // 선언한 `h` 는 **최소 높이**다. 실측이 오기 전에도 그 값으로 자리를 잡아야 격자가 첫 프레임부터
   // 맞는다(측정을 기다리면 한 프레임 접혀 있다).

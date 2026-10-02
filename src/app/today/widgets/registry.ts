@@ -1,5 +1,5 @@
 /**
- * 위젯 아홉의 표. 존재 · 크기 · 목적지를 한 자리에 둔다.
+ * 위젯 열의 표. 존재 · 크기 · 목적지를 한 자리에 둔다.
  *
  * 배치(`layout.ts`)는 id 만 가리키고 격자는 이 표에서 그림과 목적지를 찾는다. 그래서 위젯이 하나
  * 늘 때 손댈 곳이 표 한 줄과 배치 한 줄로 고정되고, 그 둘이 어긋나면 `validateWidgetLayout` 이
@@ -12,6 +12,7 @@
 
 import type { WidgetSize } from '../../../lib/today/widget-layout'
 import { CrystalLimitWidget } from './CrystalLimitWidget'
+import { NextPartyScheduleWidget } from './NextPartyScheduleWidget'
 import { RemainingScheduleWidget } from './RemainingScheduleWidget'
 import { SharedContentsWidget } from './SharedContentsWidget'
 import { ResetCountdownWidget } from './ResetCountdownWidget'
@@ -119,6 +120,13 @@ export const WIDGETS: readonly WidgetDefinition[] = [
     ],
     // `target` 이 없다. 가려던 드롭 히스토리는 진입점이 임시로 걷혀 있어 갈 수 없다.
     Component: ValuableDroughtWidget,
+  },
+  {
+    // 파티 보스를 안 가는 사용자도 있어 보여 줄 회차가 없으면 타일째 숨는다. 누름은 위젯이 직접 받는다(그 회차의 상세까지 연다).
+    id: 'next-party-schedule',
+    sizes: [{ w: 4, h: 'auto' }],
+    isVisible: (data) => data.nextParty.length > 0,
+    Component: NextPartyScheduleWidget,
   },
 ]
 
