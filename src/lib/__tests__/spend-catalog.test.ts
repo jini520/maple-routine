@@ -71,7 +71,7 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
     expect(monsterPark.choices[0].items).toHaveLength(1)
   })
 
-  it('목록 갈래 넷이 마흔다섯을 나눠 갖는다. 접혀도 항목 수는 그대로다', () => {
+  it('목록 갈래 넷이 일흔을 나눠 갖는다. 접혀도 항목 수는 그대로다', () => {
     const counted = (['content', 'event_bm', 'buff', 'scroll'] as const).map((category) =>
       spendGroupsOf(category, 패치후).reduce(
         (sum, group) => sum + group.choices.reduce((n, choice) => n + choice.items.length, 0),
@@ -80,9 +80,9 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
     )
 
     // 보약 버프 둘이 `버프` 에서 `이벤트·BM` 으로 옮겨갔다. 아우룸 레기스 둘과 주문서 열아홉은
-    // 2026-09-11 사용자 제공분이다.
-    expect(counted).toEqual([12, 10, 4, 19])
-    expect(counted.reduce((sum, count) => sum + count, 0)).toBe(45)
+    // 2026-09-11 사용자 제공분이다. 버프 스물다섯(향상된 10단계 물약은 넷)은 2026-10-02 사용자 제공분이다.
+    expect(counted).toEqual([12, 10, 29, 19])
+    expect(counted.reduce((sum, count) => sum + count, 0)).toBe(70)
   })
 
   // 직접 입력 둘은 목록이 없다. 빈 배열이지 예외가 아니다.

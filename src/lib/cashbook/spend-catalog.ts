@@ -27,7 +27,8 @@ export interface SpendCatalogItem extends EffectivePeriod {
   readonly tile: string
   readonly name: string
   readonly currency: 'meso' | 'point'
-  readonly unitPrice: number
+  /** `null` 은 경매장 값이라 매번 다른 항목이고, 적을 때 개당 가격을 친다. */
+  readonly unitPrice: number | null
   /** 가격 하나가 무엇 하나의 값인가. 회 · 개 · 포인트 · 시간. 수량 칸의 라벨이 된다. */
   readonly unit: string
   /**
@@ -215,6 +216,17 @@ export function findSpendChoice(
     }
   }
   return null
+}
+
+/**
+ * 기록이 가리키는 항목의 묶음(`boss_buff` · `보스 버프`). 통계가 버프를 묶음별로 나눌 때 쓴다.
+ *
+ * 카탈로그에서 못 찾으면 `null` 이다.
+ */
+export function spendGroupOf(category: string, itemKey: string | null): { key: string; name: string } | null {
+  const found = findSpendChoice(category, itemKey)
+  if (found === null) return null
+  return { key: found.item.group, name: GROUPS[found.item.group]?.name ?? found.item.group }
 }
 
 /**

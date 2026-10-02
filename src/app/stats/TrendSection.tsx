@@ -1,6 +1,6 @@
 /**
- * 추이 섹션. 최근 기간들의 순수익(0 선 위아래) 또는 수익 · 지출 한쪽을 막대로 그리고, 막대를 누르면
- * 그 기간의 값을 말풍선으로 띄운다.
+ * 추이 섹션. 고른 기간까지 주간 8주 · 월간 6개월의 순수익(0 선 위아래) 또는 수익 · 지출 한쪽을
+ * 막대로 그린다. 막대를 누르면 그 막대만 진해지고 값이 말풍선으로 뜬다. 고르지 않으면 모든 막대가 진하다.
  */
 import { memo, useState } from 'react'
 import { Pressable, View, type LayoutChangeEvent } from 'react-native'
@@ -12,6 +12,7 @@ import { Segment } from '../../components/molecules/Segment/Segment'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { totalsSeries, type DaysByDate, type StatsTotals } from '../../features/stats/aggregate'
 import type { StatsPeriodRange } from '../../features/stats/periods'
+import { weekOfMonthLabel } from '../../lib/boss/boss-profit-period'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { useThemeAppearance } from '../../theme/context'
 import type { BossCycle } from '../../types'
@@ -52,9 +53,11 @@ type Mode = (typeof MODES)[number]
 
 /** 말풍선이 차트를 가리지 않도록 그 위에 비워 두는 높이 */
 const BUBBLE_SPACE = 54
-const CHART_HEIGHT = 150
+const CHART_HEIGHT = 162
 const AXIS_LEFT = 46
-const AXIS_BOTTOM = 20
+/** 축 글자 두 줄(`10월` · `1주차`) 자리. `10월 1주차` 한 줄은 여덟 칸에 안 들어간다 */
+const AXIS_BOTTOM = 32
+const AXIS_LINE = 12
 const TOP_PAD = 8
 
 function signed(meso: number): string {
@@ -73,14 +76,15 @@ function valueOf(totals: StatsTotals, mode: Mode): number {
   return mode === '순수익' ? totals.netMeso : mode === '수익' ? totals.incomeMeso : totals.expenseMeso
 }
 
-function axisLabel(cycle: BossCycle, periodKey: string): string {
-  if (cycle === 'monthly') return `${Number(periodKey.slice(5, 7))}월`
-  return `${Number(periodKey.slice(5, 7))}.${Number(periodKey.slice(8, 10))}`
+/** 축 글자 줄들. 주간은 `10월` · `1주차` 두 줄이다 */
+function axisLines(cycle: BossCycle, periodKey: string): string[] {
+  if (cycle === 'monthly') return [`${Number(periodKey.slice(5, 7))}월`]
+  return weekOfMonthLabel(periodKey).split(' ')
 }
 
 function bubbleTitle(cycle: BossCycle, periodKey: string): string {
   if (cycle === 'monthly') return `${Number(periodKey.slice(5, 7))}월`
-  return `${Number(periodKey.slice(5, 7))}월 ${Number(periodKey.slice(8, 10))}일 주`
+  return weekOfMonthLabel(periodKey)
 }
 
 export const TrendSection = memo(function TrendSection(props: {
@@ -93,14 +97,16 @@ export const TrendSection = memo(function TrendSection(props: {
 }): React.JSX.Element {
   const { definition } = useThemeAppearance()
   const [mode, setMode] = useState<Mode>('순수익')
-  /** 고른 막대. 어느 기간에서 골랐는지 함께 들어, 기간이 바뀌면 새 기간의 끝으로 돌아간다 */
-  const [picked, setPicked] = useState<{ periodKey: string; index: number } | null>(null)
+  /** 고른 막대. 어느 구간 · 보기에서 골랐는지 함께 들어, 그것이 바뀌면 고름이 풀린다 */
+  const [picked, setPicked] = useState<{ scope: string; index: number } | null>(null)
   const [width, setWidth] = useState(312)
 
   const series = totalsSeries(props.days, props.trend)
   const lastPeriodKey = props.trend[props.trend.length - 1].periodKey
   const progress = useRevealProgress(props.revealed ?? true, `${lastPeriodKey}|${mode}`)
-  const selected = picked !== null && picked.periodKey === lastPeriodKey ? picked.index : series.length - 1
+  const scope = `${props.trend[0].periodKey}|${lastPeriodKey}|${mode}`
+  const selected = picked !== null && picked.scope === scope ? picked.index : null
+  const toggle = (index: number): void => setPicked(selected === index ? null : { scope, index })
   const values = series.map((totals) => valueOf(totals, mode))
   const net = mode === '순수익'
 
@@ -114,11 +120,10 @@ export const TrendSection = memo(function TrendSection(props: {
   const ticks = net ? [-top, -top / 2, 0, top / 2, top] : [0, top / 2, top]
   const barWidth = Math.min(slot * 0.5, 22)
 
-  const title = bubbleTitle(props.cycle, props.trend[selected].periodKey)
-  const pickedTotals = series[selected]
+  const pickedTotals = selected === null ? null : series[selected]
   const average = values.reduce((sum, value) => sum + value, 0) / values.length
   const span = props.cycle === 'weekly' ? `${series.length}주` : `${series.length}개월`
-  const bubbleX = AXIS_LEFT + slot * selected + slot / 2
+  const bubbleX = AXIS_LEFT + slot * (selected ?? 0) + slot / 2
   const bubbleAlign = bubbleX / width < 0.3 ? 'left' : bubbleX / width > 0.7 ? 'right' : 'center'
 
   return (
@@ -159,24 +164,27 @@ export const TrendSection = memo(function TrendSection(props: {
                 from={from}
                 to={to}
                 fill={color}
-                opacity={index === selected ? 0.95 : 0.45}
+                opacity={selected === null || index === selected ? 0.95 : 0.45}
                 progress={progress}
               />
             )
           })}
-          {props.trend.map((range, index) => (
-            <SvgText
-              key={`x-${range.periodKey}`}
-              x={AXIS_LEFT + slot * index + slot / 2}
-              y={CHART_HEIGHT - 5}
-              fontSize={9}
-              fontWeight={index === selected ? '700' : '400'}
-              fill={index === selected ? definition.text : definition.textMuted}
-              textAnchor="middle"
-            >
-              {axisLabel(props.cycle, range.periodKey)}
-            </SvgText>
-          ))}
+          {props.trend.flatMap((range, index) => {
+            const lines = axisLines(props.cycle, range.periodKey)
+            return lines.map((line, row) => (
+              <SvgText
+                key={`x-${range.periodKey}-${row}`}
+                x={AXIS_LEFT + slot * index + slot / 2}
+                y={CHART_HEIGHT - 5 - (lines.length - 1 - row) * AXIS_LINE}
+                fontSize={9}
+                fontWeight={index === selected ? '700' : '400'}
+                fill={index === selected ? definition.text : definition.textMuted}
+                textAnchor="middle"
+              >
+                {line}
+              </SvgText>
+            ))
+          })}
         </Svg>
 
         {/* 누르는 자리. 막대가 가늘어 칸 전체를 받는다 */}
@@ -186,41 +194,43 @@ export const TrendSection = memo(function TrendSection(props: {
               key={`hit-${range.periodKey}`}
               role="button"
               aria-label={`${bubbleTitle(props.cycle, range.periodKey)} 보기`}
-              onPress={() => setPicked({ periodKey: lastPeriodKey, index })}
+              onPress={() => toggle(index)}
               className="flex-1"
             />
           ))}
         </View>
 
-        <View
-          pointerEvents="none"
-          className="absolute top-0 rounded-[10px] border border-border bg-surface px-2 py-1 shadow-sm"
-          style={
-            bubbleAlign === 'left'
-              ? { left: 0 }
-              : bubbleAlign === 'right'
-                ? { right: 0 }
-                : { left: bubbleX, transform: [{ translateX: '-50%' }] }
-          }
-        >
-          <Text testID="stats-trend-bubble-title" className="text-10 text-text-muted">
-            {title}
-          </Text>
-          <Text
-            testID="stats-trend-bubble-value"
-            className={`text-11 font-bold ${mode === '지출' || (net && pickedTotals.netMeso < 0) ? 'text-fall-ink' : 'text-rise-ink'}`}
-            style={TABULAR_NUMS}
+        {pickedTotals !== null && (
+          <View
+            pointerEvents="none"
+            className="absolute top-0 rounded-[10px] border border-border bg-surface px-2 py-1 shadow-sm"
+            style={
+              bubbleAlign === 'left'
+                ? { left: 0 }
+                : bubbleAlign === 'right'
+                  ? { right: 0 }
+                  : { left: bubbleX, transform: [{ translateX: '-50%' }] }
+            }
           >
-            {net
-              ? `순수익 ${signed(pickedTotals.netMeso)}`
-              : `${mode} ${formatMesoCompact(valueOf(pickedTotals, mode))}`}
-          </Text>
-          {net && (
-            <Text testID="stats-trend-bubble-sub" className="text-10 text-text-muted" style={TABULAR_NUMS}>
-              {`수입 ${formatMesoCompact(pickedTotals.incomeMeso)} · 지출 ${formatMesoCompact(pickedTotals.expenseMeso)}`}
+            <Text testID="stats-trend-bubble-title" className="text-10 text-text-muted">
+              {bubbleTitle(props.cycle, props.trend[selected!].periodKey)}
             </Text>
-          )}
-        </View>
+            <Text
+              testID="stats-trend-bubble-value"
+              className={`text-11 font-bold ${mode === '지출' || (net && pickedTotals.netMeso < 0) ? 'text-fall-ink' : 'text-rise-ink'}`}
+              style={TABULAR_NUMS}
+            >
+              {net
+                ? `순수익 ${signed(pickedTotals.netMeso)}`
+                : `${mode} ${formatMesoCompact(valueOf(pickedTotals, mode))}`}
+            </Text>
+            {net && (
+              <Text testID="stats-trend-bubble-sub" className="text-10 text-text-muted" style={TABULAR_NUMS}>
+                {`수입 ${formatMesoCompact(pickedTotals.incomeMeso)} · 지출 ${formatMesoCompact(pickedTotals.expenseMeso)}`}
+              </Text>
+            )}
+          </View>
+        )}
       </View>
 
       <Text testID="stats-trend-average" className="self-end text-11 text-text-muted" style={TABULAR_NUMS}>

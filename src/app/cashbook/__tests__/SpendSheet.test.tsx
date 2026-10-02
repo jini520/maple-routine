@@ -29,6 +29,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import type { SpendCategoryKey, SpendFormKey } from '../../../lib/cashbook/categories'
 import { SpendSheet } from '../SpendSheet'
+import type { SpendRecord } from '../../../storage/spend'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 
@@ -231,7 +232,7 @@ describe('갈래', () => {
     const view = await 그리기({}, '버프')
 
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('버프')
-    expect(view.getByText('버프 물약')).toBeTruthy()
+    expect(view.getByText('보스 버프')).toBeTruthy()
     expect(view.queryByText('에픽던전 추가 리워드')).toBeNull()
   })
 
@@ -275,7 +276,7 @@ describe('갈래', () => {
     // 고를 것을 고르는 화면에는 **저장이 아예 없다**. 셀 것이 없다.
     expect(view.queryByLabelText('저장')).toBeNull()
     // `버프` 의 묶음이 섰다. 고르던 컨텐츠 항목은 풀렸다.
-    expect(view.getAllByText('버프 물약').length).toBeGreaterThan(0)
+    expect(view.getAllByText('보스 버프').length).toBeGreaterThan(0)
   })
 })
 
@@ -458,38 +459,40 @@ describe('세라자르 주화', () => {
 
 describe('수량. 곱셈은 앱이 한다', () => {
   /**
-   * 스테퍼는 **숫자만** 든다.
-   *
-   * 단위가 `+` 오른쪽에 붙어 있어 알약의 좌우가 안 맞았고(기타는 단위가 없어 그 자리가 빈 채로
-   * 간격만 남았다), 무엇보다 **한 앱에 스테퍼가 두 모양**이 됐다.
+   * 수량은 **치는 칸**이다. 스테퍼는 수량이 크면 여러 번 눌러야 했다.
+   * 단위를 안 적고 처음 값은 1 이다.
    */
-  it('단위를 안 적는다. 숫자만 오르내린다', async () => {
+  it('수량은 치는 칸이다. 스테퍼 · 단위가 없고 처음은 1 이다', async () => {
     const view = await 그리기()
     await 갈래바꾸기(view, '이벤트·BM')
 
     await 누르기(view, '보약 버프 추가 구매')
 
+    expect(view.queryByLabelText('수량 늘리기')).toBeNull()
     expect(view.queryByTestId('spend-sheet-quantity-unit')).toBeNull()
-    expect(view.getByTestId('spend-sheet-quantity')).toHaveTextContent('1')
+    expect(줄글자(view, 'spend-sheet-quantity')).toBe('1')
   })
 
   // 에픽던전은 **수량이 없다**. 곱셈을 보는 자리는 상한이 여럿인 항목이다.
-  it('수량을 올리면 금액이 그만큼 는다', async () => {
+  it('수량을 치면 금액이 그만큼 는다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
     await 누르기(view, '몬스터 파크')
 
-    await 누르기(view, '수량 늘리기')
+    await 카드칸에치기(view, 'spend-sheet-quantity', '2')
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ quantity: 2, pointAmount: 1_200 })
   })
 
-  it('1 아래로는 못 내린다', async () => {
-    const view = await 그리기()
+  // 지운 값을 앱이 1 로 채우면 화면과 저장값이 갈린다. 0 · 빈 칸은 막는다.
+  it('수량을 비우면 저장이 꺼진다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
     await 누르기(view, '몬스터 파크')
 
-    expect(view.getByLabelText('수량 줄이기').props.accessibilityState?.disabled).toBe(true)
+    await 카드칸에치기(view, 'spend-sheet-quantity', '')
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
   /**
@@ -546,16 +549,15 @@ describe('수량. 곱셈은 앱이 한다', () => {
     expect(view.queryByText(/한도/)).toBeNull()
   })
 
-  // 한도를 적어만 두면 **넘겨서 적을 수 있다**. 스테퍼가 막아야 한다(사용자 지적).
+  // 한도를 적어만 두면 **넘겨서 적을 수 있다**. 칸이 막아야 한다(사용자 지적).
   // 몬스터 파크는 상한이 14 다.
-  it('한도가 있으면 스테퍼가 그 수에서 멈춘다', async () => {
+  it('한도가 있으면 넘겨 친 수량이 그 수로 줄어든다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
     await 누르기(view, '몬스터 파크')
 
-    for (let i = 0; i < 20; i += 1) await 누르기(view, '수량 늘리기')
+    await 카드칸에치기(view, 'spend-sheet-quantity', '20')
 
-    expect(view.getByText('14')).toBeTruthy()
-    expect(view.getByLabelText('수량 늘리기').props.accessibilityState?.disabled).toBe(true)
+    expect(줄글자(view, 'spend-sheet-quantity')).toBe('14')
   })
 
   // 상한이 1 이면 늘리는 자리가 처음부터 막혀 있어야 한다. 눌리는데 안 늘면 고장으로 읽힌다.
@@ -569,14 +571,14 @@ describe('수량. 곱셈은 앱이 한다', () => {
     expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
   })
 
-  // 상한이 없는 항목은 계속 는다. 없는 한도를 앱이 지어내면 그것이 추정이다.
-  it('한도가 없으면 스테퍼가 안 막힌다', async () => {
+  // 상한이 없는 항목은 친 그대로다. 없는 한도를 앱이 지어내면 그것이 추정이다.
+  it('한도가 없으면 친 수량 그대로다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
     await 누르기(view, '에픽던전')
 
-    for (let i = 0; i < 20; i += 1) await 누르기(view, '수량 늘리기')
+    await 카드칸에치기(view, 'spend-sheet-quantity', '20')
 
-    expect(view.getByLabelText('수량 늘리기').props.accessibilityState?.disabled).toBeFalsy()
+    expect(줄글자(view, 'spend-sheet-quantity')).toBe('20')
   })
 
   // 0단계는 **사는 것이 아니라 기본 보상**이다. 둘 다 0단계면 적을 지출이 없다.
@@ -2784,5 +2786,101 @@ describe('심볼 강화', () => {
 
     await 누르기(view, '수정')
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-1', itemKey: 'road_of_vanishing', levelFrom: 3, levelTo: 7 })
+  })
+})
+
+/**
+ * 버프는 보스 버프 · 사냥 버프 두 묶음이다(사용자 제공 2026-10-02). 경매장 값인 항목은 카탈로그에 가격이
+ * 없어 적을 때 개당 가격을 치고, 금액은 개당 가격 × 수량이다.
+ */
+describe('가격을 치는 버프', () => {
+  function 보스킬러비약기록(overrides: Partial<SpendRecord> = {}): SpendRecord {
+    return {
+      id: 'spd-buff',
+      ocid: null,
+      spentOn: '2026-08-23',
+      category: 'buff',
+      item: '보스 킬러 비약',
+      itemKey: 'boss_killer_potion',
+      formItemKeys: null,
+      itemKind: null,
+      levelFrom: null,
+      levelTo: null,
+      quantity: 2,
+      mesoAmount: 6_000_000,
+      tariffMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
+      memo: null,
+      recordedAt: '2026-08-23T01:00:00.000Z',
+      ...overrides,
+    }
+  }
+
+  it('버프 목록은 보스 버프 · 사냥 버프 두 묶음이다', async () => {
+    const view = await 그리기({}, '버프')
+
+    expect(view.getByText('보스 버프')).toBeTruthy()
+    expect(view.getByText('사냥 버프')).toBeTruthy()
+    expect(view.queryByText('버프 물약')).toBeNull()
+  })
+
+  it('VIP 버프는 50만 메소 고정이라 가격 칸이 없다', async () => {
+    const view = await 그리기({}, '버프')
+    expect(within(view.getByTestId('spend-tile-box-vip_buff_stat')).getByText('50만 메소')).toBeTruthy()
+
+    await 누르기(view, 'VIP 버프 (능력치)')
+
+    expect(view.queryByTestId('spend-sheet-unit-price')).toBeNull()
+  })
+
+  it('가격이 없는 항목은 타일에 가격 줄이 없고, 고르면 개당 가격 칸이 서며 비면 저장이 꺼진다', async () => {
+    const view = await 그리기({}, '버프')
+    expect(within(view.getByTestId('spend-tile-box-boss_killer_potion')).queryByText(/메소/)).toBeNull()
+
+    await 누르기(view, '보스 킬러 비약')
+
+    expect(view.getByTestId('spend-sheet-unit-price')).toBeTruthy()
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('개당 가격 × 수량이 합계이고 그대로 저장된다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave }, '버프')
+    await 누르기(view, '보스 킬러 비약')
+
+    await 카드칸에치기(view, 'spend-sheet-unit-price', '3000000')
+    await 카드칸에치기(view, 'spend-sheet-quantity', '2')
+
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('600만')
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      category: 'buff',
+      item: '보스 킬러 비약',
+      itemKey: 'boss_killer_potion',
+      quantity: 2,
+      mesoAmount: 6_000_000,
+      pointAmount: null,
+    })
+  })
+
+  it('수정으로 열면 총액 ÷ 수량으로 개당 가격을 되짚는다', async () => {
+    const view = await 그리기({ editing: 보스킬러비약기록(), onDelete: jest.fn() })
+
+    expect(줄글자(view, 'spend-sheet-unit-price')).toBe('3,000,000')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('600만')
+  })
+
+  it('향상된 10단계 물약은 타일 하나에서 능력치를 고른다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave }, '버프')
+    await 누르기(view, '향상된 10단계 물약')
+
+    await 누르기(view, '행운')
+    await 카드칸에치기(view, 'spend-sheet-unit-price', '1000000')
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'enhanced_10_luk_potion', mesoAmount: 1_000_000 })
   })
 })

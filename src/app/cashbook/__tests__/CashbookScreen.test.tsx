@@ -1817,7 +1817,7 @@ describe('기간 합계 세 칸', () => {
     // 단위는 큰 숫자에만 붙는다. 셋이 같은 축이라 한 번이면 된다. 이 케이스는 기록이 없어
     // 셋 다 0 이고 0 에는 부호도 안 붙는다.
     expect(view.getByTestId('cashbook-summary-net')).toHaveTextContent('0 메소')
-    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+0')
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent(/^0$/)
   })
 
   it('순 수익이 양수면 수익과 같은 색이다', async () => {
@@ -1868,7 +1868,7 @@ describe('CashbookScreen: 낡은 숫자', () => {
   it('다시 읽은 숫자가 그대로 합계에 선다. 증상이 사라지는 지점이다', async () => {
     칸금액을({})
     const view = await 그리기()
-    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+0')
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent(/^0$/)
 
     // 보스 수익 탭에서 아이템 가격을 적고 돌아왔다.
     칸금액을({
@@ -2115,7 +2115,7 @@ describe('확정 전에는 안 그린다', () => {
     )
     await 이름으로누르기(view, '이전 주')
 
-    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+0')
+    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent(/^0$/)
 
     await act(async () => {
       resolve?.({})

@@ -52,7 +52,7 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import type { LastHunt, LastHunts } from '../../../storage/last-hunts'
-import { FieldRow, QuantityStepper } from '../sheet-fields'
+import { FieldRow } from '../sheet-fields'
 import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
 import { requiredCharacterOptions } from '../character-options'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
@@ -62,8 +62,8 @@ import { openInputCard } from '../../../features/input-card/store'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 
-/** 입력 카드가 받는 칸 셋. 나머지 줄은 누르는 칸이라 카드가 안 선다. */
-type EditingField = 'mesoRate' | 'fragments' | 'fragmentPrice'
+/** 입력 카드가 받는 칸 넷. 나머지 줄은 누르는 칸이라 카드가 안 선다. */
+type EditingField = 'mesoRate' | 'sojae' | 'fragments' | 'fragmentPrice'
 
 /**
  * 칸마다 카드에 넘기는 것. 값과 확인 뒤 처리는 폼이 따로 준다.
@@ -77,6 +77,11 @@ const CARD_FIELDS: Record<EditingField, Omit<InputCardProps, 'value' | 'onConfir
     context: '캐릭터에서 못 읽어 직접 입력',
     unit: '%',
     chips: COUNT_QUICK_ADDS,
+  },
+  sojae: {
+    label: '소재',
+    context: '하나가 30분',
+    chips: [],
   },
   fragments: {
     label: '조각 개수',
@@ -315,7 +320,8 @@ export function HuntCalculatorForm(
   const [boosts, setBoosts] = useState<readonly string[]>(detail?.boosts ?? [])
   /** 유니온의 부 단계. 안 켰어도 고른 단계를 들고 있다가 켜면 그대로 선다. */
   const [unionTier, setUnionTier] = useState<UnionTier>(detail?.unionTier ?? 3)
-  const [sojae, setSojae] = useState(detail?.sojae ?? 1)
+  const [sojaeText, setSojaeText] = useState(mesoTextOf(detail?.sojae ?? 1))
+  const sojae = mesoValueOf(sojaeText)
   const [fragmentsText, setFragmentsText] = useState(mesoTextOf(detail?.fragments ?? 0))
   /** 빈 칸은 가격을 안 적은 것이라 0 과 따로 든다. */
   const [fragmentPriceText, setFragmentPriceText] = useState(optionalMesoTextOf(detail?.fragmentPrice ?? null))
@@ -332,6 +338,7 @@ export function HuntCalculatorForm(
   /** 카드에 넘길 씨앗. 칸마다 폼이 든 글자가 다르다. */
   function cardValueOf(field: EditingField): string {
     if (field === 'mesoRate') return mesoRateText
+    if (field === 'sojae') return sojaeText
     return field === 'fragments' ? fragmentsText : fragmentPriceText
   }
 
@@ -356,6 +363,10 @@ export function HuntCalculatorForm(
   function confirmCard(field: EditingField, next: string): void {
     if (field === 'mesoRate') {
       setMesoRateText(next)
+      return
+    }
+    if (field === 'sojae') {
+      setSojaeText(settleMesoText(next))
       return
     }
     if (field === 'fragments') {
@@ -707,13 +718,22 @@ export function HuntCalculatorForm(
             )}
         </View>
         <View className="flex-row items-center">
-          <QuantityStepper
-            value={sojae}
-            onChange={setSojae}
-            label="소재"
+          {/* 0 · 빈 칸은 메소가 0 이라 저장이 꺼진다. 0 소재를 돌았다는 말은 성립하지 않는다. */}
+          <Pressable
             testID="income-sheet-sojae"
-          />
-          <Text className="ml-2 shrink-0 text-xs text-text-muted">소재</Text>
+            role="button"
+            aria-label="소재"
+            onPress={() => editField('sojae')}
+            className="flex-row items-baseline"
+          >
+            <Text
+              className={`text-sm font-semibold ${sojae === 0 ? 'text-text-disabled' : 'text-text'}`}
+              style={TABULAR_NUMS}
+            >
+              {sojae.toLocaleString()}
+            </Text>
+          </Pressable>
+          <Text className="ml-1.5 shrink-0 text-xs text-text-muted">소재</Text>
         </View>
       </View>
 

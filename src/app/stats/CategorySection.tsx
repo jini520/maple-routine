@@ -3,6 +3,7 @@
  *
  * 넷까지 조각이 되고 나머지는 `그 외` 한 조각이다(남는 것이 하나면 묶지 않는다). 넓은 조각은 안에,
  * 좁은 조각은 반원 오른쪽에 선으로 이어 적는다. 그림 높이는 반원에 고정해 두 카드의 높이가 같다.
+ * `그 외` 와 갈래 여럿을 품은 조각(사냥 · 버프)은 누르면 세부 줄이 팝오버로 뜬다.
  */
 import { memo, useState } from 'react'
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native'
@@ -39,13 +40,22 @@ interface Slice {
   meso: number
   opacity: number
   rest: boolean
+  /** 누르면 팝오버에 뜨는 줄. 없으면 안 눌린다 */
+  details: readonly CategoryTotal[]
 }
 
-function slicesOf(items: readonly CategoryTotal[]): { slices: Slice[]; rest: CategoryTotal[] } {
+function slicesOf(items: readonly CategoryTotal[]): Slice[] {
   const cut = items.length === SLICE_LIMIT + 1 ? items.length : SLICE_LIMIT
   const top = items.slice(0, cut)
   const rest = items.slice(cut)
-  const slices: Slice[] = top.map((item, index) => ({ ...item, opacity: SLICE_OPACITY[index], rest: false }))
+  const slices: Slice[] = top.map((item, index) => ({
+    key: item.key,
+    name: item.name,
+    meso: item.meso,
+    opacity: SLICE_OPACITY[index],
+    rest: false,
+    details: item.parts ?? [],
+  }))
   if (rest.length > 0) {
     slices.push({
       key: 'rest',
@@ -53,9 +63,10 @@ function slicesOf(items: readonly CategoryTotal[]): { slices: Slice[]; rest: Cat
       meso: rest.reduce((sum, item) => sum + item.meso, 0),
       opacity: 1,
       rest: true,
+      details: rest,
     })
   }
-  return { slices, rest }
+  return slices
 }
 
 function arcPath(cx: number, cy: number, outer: number, inner: number, from: number, to: number): string {
@@ -125,10 +136,10 @@ export const CategorySection = memo(function CategorySection(props: {
   const { definition } = useThemeAppearance()
   const progress = useRevealProgress(props.revealed ?? true, props.replayKey)
   const [width, setWidth] = useState(BASE.width)
-  /** 팝오버를 연 항목 목록. 기간이 바뀌어 목록이 달라지면 저절로 닫힌다 */
-  const [openFor, setOpenFor] = useState<readonly CategoryTotal[] | null>(null)
-  const open = openFor === props.items
-  const toggle = (): void => setOpenFor(open ? null : props.items)
+  /** 팝오버를 연 조각과 그때의 항목 목록. 기간이 바뀌어 목록이 달라지면 저절로 닫힌다 */
+  const [openFor, setOpenFor] = useState<{ items: readonly CategoryTotal[]; key: string } | null>(null)
+  const openKey = openFor !== null && openFor.items === props.items ? openFor.key : null
+  const toggle = (key: string): void => setOpenFor(openKey === key ? null : { items: props.items, key })
 
   // 반원을 왼쪽 끝에서 진행값만큼 쓸어 드러내는 부채꼴. 글자는 쓸기가 거의 끝날 때 나타난다.
   const sweepScale = width / BASE.width
@@ -156,7 +167,8 @@ export const CategorySection = memo(function CategorySection(props: {
     )
   }
 
-  const { slices, rest } = slicesOf(props.items)
+  const slices = slicesOf(props.items)
+  const opened = slices.find((slice) => slice.key === openKey) ?? null
   const scale = width / BASE.width
   const cx = BASE.cx * scale
   const cy = BASE.cy * scale
@@ -173,7 +185,7 @@ export const CategorySection = memo(function CategorySection(props: {
     const body = (
       <>
         <Text className={`text-11 font-bold ${inside ? '' : 'text-text'}`} style={inside ? { color: ink } : undefined}>
-          {slice.rest ? `${slice.name} ›` : slice.name}
+          {slice.details.length > 0 ? `${slice.name} ›` : slice.name}
         </Text>
         {inside ? (
           <>
@@ -193,8 +205,13 @@ export const CategorySection = memo(function CategorySection(props: {
         )}
       </>
     )
-    return slice.rest ? (
-      <Pressable role="button" aria-label={`${slice.name} 세부 항목`} onPress={toggle} className={inside ? 'items-center' : ''}>
+    return slice.details.length > 0 ? (
+      <Pressable
+        role="button"
+        aria-label={`${slice.name} 세부 항목`}
+        onPress={() => toggle(slice.key)}
+        className={inside ? 'items-center' : ''}
+      >
         {body}
       </Pressable>
     ) : (
@@ -221,7 +238,7 @@ export const CategorySection = memo(function CategorySection(props: {
               stroke={definition.surface}
               strokeWidth={2}
               strokeLinejoin="round"
-              onPress={slice.rest ? toggle : undefined}
+              onPress={slice.details.length > 0 ? () => toggle(slice.key) : undefined}
             />
           ))}
           </G>
@@ -276,15 +293,15 @@ export const CategorySection = memo(function CategorySection(props: {
         </View>
         </AnimatedBox>
 
-        {open && (
+        {opened !== null && (
           <>
             <Pressable aria-label="세부 항목 닫기" onPress={() => setOpenFor(null)} className="absolute inset-0" />
             <View
               testID="stats-category-popover"
               className="absolute right-0 top-0 w-[248px] max-w-full gap-1.5 rounded-[12px] border border-border bg-surface p-3 shadow-lg"
             >
-              <Text className="text-10 font-bold tracking-wide text-text-muted">{`그 외 ${rest.length}`}</Text>
-              {rest.map((item) => (
+              <Text className="text-10 font-bold tracking-wide text-text-muted">{opened.name}</Text>
+              {opened.details.map((item) => (
                 <View key={item.key} className="flex-row items-center justify-between">
                   <Text className="text-11 text-text">{item.name}</Text>
                   <View className="flex-row items-baseline gap-1.5">

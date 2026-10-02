@@ -74,3 +74,13 @@ export function formatMesoCompact(meso: number): string {
 
   return meso.toLocaleString()
 }
+
+/**
+ * 수입 `+` · 지출 `−` 를 붙인 `formatMesoCompact`. 0 은 부호 없이 `0` 이다. `+0` · `−0` 은 없던 돈이 있었던 것처럼 읽힌다.
+ *
+ * @param meso 0 이상인 금액
+ * @param sign 수입은 `+`, 지출은 `−`(U+2212)
+ */
+export function formatMesoSigned(meso: number, sign: '+' | '−'): string {
+  return meso === 0 ? '0' : `${sign}${formatMesoCompact(meso)}`
+}

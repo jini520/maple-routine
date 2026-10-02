@@ -141,6 +141,13 @@ export function getWeeklyPeriodKeysInMonth(monthPeriodKey: string): string[] {
   return result
 }
 
+/** 주간 기간 키의 `n월 m주차`. 주 키(목요일)가 든 달에서 몇째 주인가다 */
+export function weekOfMonthLabel(periodKey: string): string {
+  const { year, month } = parseWeeklyPeriodKey(periodKey)
+  const weekIndex = getWeeklyPeriodKeysInMonth(`${year}-${pad(month)}`).indexOf(periodKey)
+  return `${month}월 ${weekIndex + 1}주차`
+}
+
 /** 기간 라벨. now 기준 최근 2개 기간(이번/지난)만 상대 표현을 쓰고, 그 이전은 절대 표현을 쓴다. */
 export function formatBossProfitPeriodLabel(
   cycle: BossCycle,
@@ -164,9 +171,7 @@ export function formatBossProfitPeriodLabel(
       return { primary: '지난 주', secondary }
     }
 
-    const weekKeysInMonth = getWeeklyPeriodKeysInMonth(`${year}-${pad(month)}`)
-    const weekIndex = weekKeysInMonth.indexOf(periodKey)
-    return { primary: `${month}월 ${weekIndex + 1}주차`, secondary }
+    return { primary: weekOfMonthLabel(periodKey), secondary }
   }
 
   const { year, month } = parseMonthlyPeriodKey(periodKey)

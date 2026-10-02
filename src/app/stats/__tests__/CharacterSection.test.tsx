@@ -1,6 +1,6 @@
 import { act, fireEvent, within } from '@testing-library/react-native'
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import type { CharacterTotals } from '../../../features/stats/aggregate'
 import { CharacterSection } from '../CharacterSection'
@@ -59,5 +59,14 @@ describe('CharacterSection', () => {
     // 그림을 모르는 캐릭터는 흰 실루엣이 선다.
     expect(within(view.getByTestId('stats-podium-2')).queryByTestId('stats-podium-image')).toBeNull()
     expect(within(view.getByTestId('stats-podium-2')).getByTestId('stats-podium-image-unknown')).toBeTruthy()
+  })
+
+  // 발끝 아래에서 그림 칸이 잘리면 발이 단상 뒤로 숨는다. 그림 칸을 블록 위로 겹쳐 내리고 앞에 그린다.
+  it('캐릭터 그림은 단상 블록에 겹쳐 내려 블록보다 앞에 선다', async () => {
+    const view = await 그리기()
+
+    const figure = flattenStyle(within(view.getByTestId('stats-podium-1')).getByTestId('stats-podium-figure').props.style)
+    expect(figure.zIndex).toBeGreaterThan(0)
+    expect(figure.marginBottom).toBeLessThan(0)
   })
 })

@@ -1,7 +1,7 @@
 // 캘린더 칸은 너비가 **화면 폭 ÷ 7** 이라 `formatMesoUnits`(`1억 2345만 6789`)가 안 들어간다.
 // 단위 하나만 남긴다.
 
-import { formatMesoCompact } from '../cashbook/meso-compact'
+import { formatMesoCompact, formatMesoSigned } from '../cashbook/meso-compact'
 
 describe('formatMesoCompact: 억', () => {
   // 숫자는 넷까지, 소수는 둘째 자리까지. 둘 중 먼저 걸리는 쪽이 이긴다(사용자 지정).
@@ -97,3 +97,16 @@ it('숫자가 넷을 안 넘는다', () => {
 
 const EOK = 100_000_000
 const JO = 1_000_000_000_000
+
+// 수입 `+`, 지출 `−` 를 앞에 붙이되 0 은 부호 없이 `0` 이다. `+0` · `−0` 은 번 적도 쓴 적도 없는데 무언가 있었던 것처럼 읽힌다.
+describe('formatMesoSigned', () => {
+  it('0 이 아니면 받은 부호를 붙인다', () => {
+    expect(formatMesoSigned(60_000_000, '+')).toBe('+6,000만')
+    expect(formatMesoSigned(25_000_000, '−')).toBe('−2,500만')
+  })
+
+  it('0 은 부호 없이 0 이다', () => {
+    expect(formatMesoSigned(0, '+')).toBe('0')
+    expect(formatMesoSigned(0, '−')).toBe('0')
+  })
+})

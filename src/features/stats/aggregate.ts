@@ -5,6 +5,8 @@
  */
 import { dayTotalsOf, recordMesoOf, type DayRecord } from '../cashbook/records'
 import { incomeCategoryNameOf, spendCategoryNameOf } from '../../lib/cashbook/categories'
+import { spendGroupOf } from '../../lib/cashbook/spend-catalog'
+import type { IncomeRecord } from '../../storage/income'
 import { enhancementCategoryNameOf } from '../../lib/enhancement/categories'
 import { bossAliasOf, findBoss } from '../../lib/boss/bosses'
 import type { BossCycle, BossDifficulty } from '../../types'
@@ -34,6 +36,8 @@ export interface CategoryTotal {
   key: string
   name: string
   meso: number
+  /** 한 조각이 품은 갈래들(사냥 · 버프). 큰 순서이고 0 인 줄은 없다. 없으면 나눌 것이 없는 조각이다 */
+  parts?: CategoryTotal[]
 }
 
 function isExpense(entry: DayRecord): boolean {
@@ -106,22 +110,60 @@ export function characterTotalsBetween(byDate: DaysByDate, range: StatsRange): C
   return [...rows.values()].sort((left, right) => right.netMeso - left.netMeso)
 }
 
-/** 결정석과 드롭 판매는 손입력 갈래 표에 없다. 드롭 판매는 손입력 `아이템 판매` 와 한 갈래로 센다. */
+/** 결정석과 보스 드롭은 손입력 갈래 표에 없다. */
 const BOSS_CRYSTAL = { key: 'boss_crystal', name: '보스 결정석' }
+const BOSS_DROP = { key: 'boss_drop', name: '보스 드롭' }
+/** 사냥과 솔 에르다 조각은 사냥이 낸 것이라 한 조각이고, 누르면 메소와 조각으로 나눈다 */
+const HUNTING = { key: 'hunting', name: incomeCategoryNameOf('hunting') }
+const HUNTING_MESO = { key: 'hunting_meso', name: '사냥 메소' }
+const SOL_ERDA_FRAGMENT = { key: 'sol_erda_fragment', name: incomeCategoryNameOf('sol_erda_fragment') }
+/** 버프 갈래의 항목이 선택 목록에서 묶음을 못 찾을 때의 줄 */
+const UNKNOWN_BUFF_GROUP = { key: 'buff_etc', name: '기타' }
 
-function categoryOf(entry: DayRecord): { key: string; name: string } {
+/** 사냥 기록에 적힌 조각 값. 조각 가격을 안 적었으면 합계에 없어 0 이다 */
+function fragmentMesoOf(record: IncomeRecord): number {
+  const hunt = record.hunt
+  if (hunt === null || hunt.fragmentPrice === null) return 0
+  return hunt.fragments * hunt.fragmentPrice
+}
+
+/** 한 줄이 드는 조각과, 그 조각 안에서 나눠 보일 줄들의 몫. */
+function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; parts: { key: string; name: string; meso: number }[] } {
+  const meso = recordMesoOf(entry)
+  const whole = (slice: { key: string; name: string }) => ({ slice, parts: [] })
   switch (entry.kind) {
     case 'bossCrystal':
-      return BOSS_CRYSTAL
+      return whole(BOSS_CRYSTAL)
     case 'dropSale':
-      return { key: 'item_sale', name: incomeCategoryNameOf('item_sale') }
+      return whole(BOSS_DROP)
     case 'enhancement':
-      return { key: `enhancement:${entry.category}`, name: enhancementCategoryNameOf(entry.category) }
-    case 'income':
-      return { key: entry.record.category, name: incomeCategoryNameOf(entry.record.category) }
-    case 'spend':
-      return { key: entry.record.category, name: spendCategoryNameOf(entry.record.category) }
+      return whole({ key: `enhancement:${entry.category}`, name: enhancementCategoryNameOf(entry.category) })
+    case 'income': {
+      const { category } = entry.record
+      if (category === 'sol_erda_fragment') return { slice: HUNTING, parts: [{ ...SOL_ERDA_FRAGMENT, meso }] }
+      if (category === 'hunting') {
+        const fragmentMeso = fragmentMesoOf(entry.record)
+        return {
+          slice: HUNTING,
+          parts: [
+            { ...HUNTING_MESO, meso: meso - fragmentMeso },
+            { ...SOL_ERDA_FRAGMENT, meso: fragmentMeso },
+          ],
+        }
+      }
+      return whole({ key: category, name: incomeCategoryNameOf(category) })
+    }
+    case 'spend': {
+      const { category, itemKey } = entry.record
+      const slice = { key: category, name: spendCategoryNameOf(category) }
+      if (category !== 'buff') return whole(slice)
+      return { slice, parts: [{ ...(spendGroupOf(category, itemKey) ?? UNKNOWN_BUFF_GROUP), meso }] }
+    }
   }
+}
+
+function sortedNonZero(totals: Iterable<CategoryTotal>): CategoryTotal[] {
+  return [...totals].filter((total) => total.meso !== 0).sort((left, right) => right.meso - left.meso)
 }
 
 /** 수입 또는 지출의 갈래별 합계. 큰 순서이고 0 인 갈래는 없다. */
@@ -131,14 +173,24 @@ export function categoryTotalsBetween(
   side: 'income' | 'expense',
 ): CategoryTotal[] {
   const totals = new Map<string, CategoryTotal>()
+  const partsBySlice = new Map<string, Map<string, CategoryTotal>>()
   for (const entry of entriesBetween(byDate, range)) {
     if (isExpense(entry) !== (side === 'expense')) continue
-    const { key, name } = categoryOf(entry)
-    const total = totals.get(key) ?? { key, name, meso: 0 }
+    const { slice, parts } = sliceOf(entry)
+    const total = totals.get(slice.key) ?? { ...slice, meso: 0 }
     total.meso += recordMesoOf(entry)
-    totals.set(key, total)
+    totals.set(slice.key, total)
+    if (parts.length === 0) continue
+    const sliceParts = partsBySlice.get(slice.key) ?? new Map<string, CategoryTotal>()
+    for (const part of parts) {
+      const sum = sliceParts.get(part.key) ?? { key: part.key, name: part.name, meso: 0 }
+      sum.meso += part.meso
+      sliceParts.set(part.key, sum)
+    }
+    partsBySlice.set(slice.key, sliceParts)
   }
-  return [...totals.values()].filter((total) => total.meso !== 0).sort((left, right) => right.meso - left.meso)
+  for (const [key, parts] of partsBySlice) totals.get(key)!.parts = sortedNonZero(parts.values())
+  return sortedNonZero(totals.values())
 }
 
 export interface BossTotal {

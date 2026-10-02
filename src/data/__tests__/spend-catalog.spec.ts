@@ -17,7 +17,7 @@ const items = spendCatalog.items as {
   tile: string
   name: string
   currency: string
-  unitPrice: number
+  unitPrice: number | null
   unit: string
   tier?: string
   options?: Record<string, string>
@@ -73,8 +73,13 @@ describe('spend-catalog.json: 규약', () => {
     }
   })
 
-  it('가격은 양의 정수다', () => {
+  // `null` 은 경매장 값이라 적을 때 개당 가격을 치는 항목이다. 메소로 사는 버프에만 있다.
+  it('가격은 양의 정수이거나, 메소 버프에서만 null 이다', () => {
     for (const item of items) {
+      if (item.unitPrice === null) {
+        expect([item.category, item.currency]).toEqual(['buff', 'meso'])
+        continue
+      }
       expect(Number.isInteger(item.unitPrice)).toBe(true)
       expect(item.unitPrice).toBeGreaterThan(0)
     }
@@ -186,7 +191,7 @@ describe('spend-catalog.json: key', () => {
 })
 
 describe('spend-catalog.json: 닻 (사용자 확인값, 2026-08-23)', () => {
-  const priceOf = (name: string): number | undefined =>
+  const priceOf = (name: string): number | null | undefined =>
     items.find((item) => item.name === name)?.unitPrice
 
   // 형태만 검사하면 **값이 조용히 바뀌는** 사고를 못 잡는다. 묶음마다 하나씩만 못 박는다.
@@ -223,12 +228,75 @@ describe('spend-catalog.json: 닻 (사용자 확인값, 2026-08-23)', () => {
     }
   })
 
-  // 버프 물약과 주문서만 메소다(주문서는 2026-09-11 사용자 제공). 나머지는 전부 메포라는 것이
+  // 버프와 주문서만 메소다(주문서는 2026-09-11 사용자 제공). 나머지는 전부 메포라는 것이
   // 이 데이터의 축이다.
-  it('메소로 사는 것은 버프 물약과 주문서뿐이다', () => {
+  it('메소로 사는 것은 버프와 주문서뿐이다', () => {
     for (const item of items) {
-      expect(item.currency).toBe(item.group === 'buff_potion' || item.category === 'scroll' ? 'meso' : 'point')
+      expect(item.currency).toBe(item.category === 'buff' || item.category === 'scroll' ? 'meso' : 'point')
     }
+  })
+
+  // 2026-10-02 사용자 제공. 버프는 보스 버프 · 사냥 버프 두 묶음이다.
+  it('버프는 보스 버프 · 사냥 버프 두 묶음이고, VIP 버프 둘만 고정가다', () => {
+    const buffs = items.filter((item) => item.category === 'buff')
+    const namesOf = (group: string): string[] => buffs.filter((item) => item.group === group).map((item) => item.name)
+
+    expect([...new Set(buffs.map((item) => item.group))]).toEqual(['boss_buff', 'hunting_buff'])
+    expect(namesOf('boss_buff')).toEqual([
+      '세이람의 영약',
+      '알레리아의 영약',
+      '콜렉터의 영약',
+      '명예의 영약',
+      '보스 킬러 비약',
+      '고급 보스 킬러 비약',
+      '대영웅의 비약',
+      '고급 대영웅의 비약',
+      '대축복의 비약',
+      '고급 대축복의 비약',
+      '전설의 영웅 비약',
+      '반짝이는 빨간 별 물약',
+      '영롱한 달빛 포션',
+      '향상된 10단계 힘의 물약',
+      '향상된 10단계 민첩의 물약',
+      '향상된 10단계 지능의 물약',
+      '향상된 10단계 행운의 물약',
+      '마법의 숫돌',
+      'VIP 버프 (능력치)',
+    ])
+    expect(namesOf('hunting_buff')).toEqual([
+      '소형 재물 획득의 비약',
+      '재물 획득의 비약',
+      '소형 경험 축적의 비약',
+      '소형 고농축 경험 축적의 비약',
+      '경험 축적의 비약',
+      '추가 경험치 50% 쿠폰',
+      'MVP 추가 경험치 70% 쿠폰',
+      '경험치 3배 쿠폰',
+      '경험치 4배 쿠폰',
+      'VIP 버프 (경험치)',
+    ])
+    expect(priceOf('VIP 버프 (능력치)')).toBe(500000)
+    expect(priceOf('VIP 버프 (경험치)')).toBe(500000)
+    const fixed = new Set(['세이람의 영약', '알레리아의 영약', '콜렉터의 영약', '명예의 영약', 'VIP 버프 (능력치)', 'VIP 버프 (경험치)'])
+    for (const buff of buffs) {
+      expect(buff.unitPrice === null).toBe(!fixed.has(buff.name))
+    }
+  })
+
+  // 2026-10-02 사용자 제공 그림. 같은 그림을 쓰는 비약 셋 · 고급 셋은 사용자가 지정했다.
+  it('버프 타일의 그림은 사용자가 준 파일이다', () => {
+    const iconOf = (tile: string): string | undefined =>
+      (spendCatalog.tiles as Record<string, { icon?: { file?: string } }>)[tile]?.icon?.file
+    expect(iconOf('boss_killer_potion')).toBe('boss_rush_boost_potion.webp')
+    expect(iconOf('great_hero_potion')).toBe('boss_rush_boost_potion.webp')
+    expect(iconOf('great_blessing_potion')).toBe('boss_rush_boost_potion.webp')
+    expect(iconOf('advanced_boss_killer_potion')).toBe('advanced_boss_rush_boost_potion.webp')
+    expect(iconOf('advanced_great_hero_potion')).toBe('advanced_boss_rush_boost_potion.webp')
+    expect(iconOf('advanced_great_blessing_potion')).toBe('advanced_boss_rush_boost_potion.webp')
+    expect(iconOf('small_wealth_acquisition_potion')).toBe('wealth_acquisition_potion_small.webp')
+    expect(iconOf('wealth_acquisition_potion')).toBe('wealth_acquisition_potion.webp')
+    expect(iconOf('exp_accumulation_potion')).toBe('exp_accumulation_potion.webp')
+    expect(iconOf('magic_whetstone')).toBe('magic_whetstone.webp')
   })
 })
 

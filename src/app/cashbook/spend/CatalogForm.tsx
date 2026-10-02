@@ -1,9 +1,9 @@
 /**
  * 고르는 갈래의 폼. 컨텐츠 · 이벤트·BM · 버프 · 주문서.
  *
- * 이 갈래들의 항목에는 전부 가격이 붙어 있다. 그래서 금액 칸이 없고, 고르면 단가가 그대로
+ * 이 갈래들의 항목에는 대개 가격이 붙어 있다. 그래서 금액 칸이 없고, 고르면 단가가 그대로
  * 금액이 되며 수량만 조절한다. 곱셈은 앱이 한다. 사용자가 대신하면 몇 포인트 썼나 를 나중에
- * 되물을 수 없다.
+ * 되물을 수 없다. 가격이 없는 항목(경매장 값인 버프)만 `개당 가격` 칸이 서고 곱셈은 그대로 앱이 한다.
  *
  * 두 단계다. ① 묶음별 대표를 고른다(하이마운틴 · 몬스터 파크 …). ② 대표가 여럿을 품으면 그
  * 안에서 고른다. `choice` 가 지금 어느 단계인가 를 든다. `null` 이면 목록이 서고, 있으면 그
@@ -46,7 +46,8 @@ import {
   type SpendTileIcon,
 } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { CharacterField, FieldRow, QuantityStepper } from '../sheet-fields'
+import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
+import { AmountInput, CharacterField, FieldRow } from '../sheet-fields'
 import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import type { SpendRecord } from '../../../storage/spend'
 import { rowsOfGroups } from './tile-rows'
@@ -62,14 +63,21 @@ import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
  * 값이 모두 같으면 하나만 적는다. 같은 값을 셋 적으면 좁은 타일에서 잘리고, 갈래마다 값이
  * 다르다고 읽힌다.
  */
-function tilePriceLabel(items: readonly SpendCatalogItem[]): string {
+function tilePriceLabel(items: readonly SpendCatalogItem[]): string | null {
   const first = items[0]
   if (first === undefined) return ''
+  // 적을 때 가격을 치는 항목은 적을 값이 없다.
+  if (items.some((item) => item.unitPrice === null)) return null
   const shown = items.every((item) => item.unitPrice === first.unitPrice) ? [first] : items
   const numbers = shown.map((item) =>
-    item.currency === 'point' ? item.unitPrice.toLocaleString() : formatMesoCompact(item.unitPrice),
+    item.currency === 'point' ? item.unitPrice!.toLocaleString() : formatMesoCompact(item.unitPrice!),
   )
   return `${numbers.join(' | ')} ${first.currency === 'point' ? '메포' : '메소'}`
+}
+
+/** 상한을 넘겨 친 수량을 상한으로 줄인다. 상한은 사용자가 준 한도에서 온다. 없는 항목은 안 막는다 */
+function capQuantityText(text: string, max: number | undefined): string {
+  return max !== undefined && mesoValueOf(text) > max ? mesoTextOf(max) : text
 }
 
 /**
@@ -217,7 +225,16 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const [tierByForm, setTierByForm] = useState<Record<string, string>>(found?.tierByForm ?? {})
   /** 축마다 고른 값. 축 값을 든 대표(매지컬 · 귀 장식 주문서)만 쓴다. */
   const [optionByAxis, setOptionByAxis] = useState<Record<string, string>>(found?.optionByAxis ?? {})
-  const [quantity, setQuantity] = useState(props.editing?.quantity ?? 1)
+  const [quantityText, setQuantityText] = useState(mesoTextOf(props.editing?.quantity ?? 1))
+  /**
+   * 가격이 없는 항목의 개당 가격. 수정이면 `총액 ÷ 수량` 으로 되짚는다. 저장된 총액이 `개당 가격 × 수량`
+   * 으로 만든 값이라 나누어떨어진다.
+   */
+  const [priceText, setPriceText] = useState(() => {
+    const editing = props.editing
+    if (editing === undefined || found?.item?.unitPrice !== null) return ''
+    return mesoTextOf(Math.round((editing.mesoAmount ?? 0) / (editing.quantity ?? 1)))
+  })
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [rateText, setRateText] = useState(() => {
     const rate = props.editing?.pointPer100mMeso ?? props.lastPointRate
@@ -248,6 +265,8 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const scope = item ?? choice?.items[0] ?? null
 
   const currency = scope?.currency ?? 'meso'
+  /** 적을 때 개당 가격을 치는 항목인가. 한 대표 안의 단계들은 이것도 같다. */
+  const typesPrice = scope !== null && scope.unitPrice === null
   const usesPoint = currency === 'point'
   const typedRate = Number(rateText)
   const rate = usesPoint && rateText !== '' && Number.isFinite(typedRate) ? typedRate : null
@@ -255,7 +274,11 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const unitPrice =
     choice !== null && forms.length > 0
       ? spendRewardPrice(choice, tierByForm)
-      : (item?.unitPrice ?? 0)
+      : typesPrice
+        ? mesoValueOf(priceText)
+        : (item?.unitPrice ?? 0)
+  /** 친 수량. 상한을 넘겨 치면 상한으로 줄인다(`capQuantityText`). 0 · 빈 칸이면 저장이 꺼진다 */
+  const quantity = mesoValueOf(quantityText)
   const amount = unitPrice * quantity
   // 메소로 셀 수 없는 상태. 시세 줄의 빨간 `*` 와 꺼진 저장 버튼이 그 사실을 말한다.
   const blocked = usesPoint && (rate === null || rate <= 0)
@@ -270,7 +293,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
    */
   const totalMeso = usesPoint ? pointToMeso(amount, rate ?? 0) - (blocked ? 0 : rewardCoinMeso(coins)) : amount
   const picked = forms.length > 0 ? rewardName !== null : item !== null
-  const canSave = picked && !blocked
+  const canSave = picked && !blocked && quantity > 0 && (!typesPrice || unitPrice > 0)
 
   /** ① 대표를 고르는 단계. 갈래가 하나뿐이면 **그 자리에서 항목까지 정해진다.** */
   function selectChoice(next: SpendCatalogChoice): void {
@@ -280,14 +303,15 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     // 채로 시작한다.
     setTierByForm({})
     setOptionByAxis({})
-    setQuantity(1)
+    setQuantityText('1')
+    setPriceText('')
     props.onScrollKeyChange(next.key)
   }
 
   /** ② 그 안의 단계를 고르는 단계. 형태가 없는 대표의 길이다. */
   function selectItem(next: SpendCatalogItem): void {
     setItem(next)
-    setQuantity(1)
+    setQuantityText('1')
   }
 
   /** ② 축 하나의 값을 고르는 단계. 고른 값들이 한 항목과 꼭 맞으면 그 항목이 정해진다. */
@@ -304,7 +328,8 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     setItem(null)
     setTierByForm({})
     setOptionByAxis({})
-    setQuantity(1)
+    setQuantityText('1')
+    setPriceText('')
     props.onScrollKeyChange('')
   }
 
@@ -499,17 +524,35 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
             </FieldRow>
           )}
 
+          {typesPrice && (
+            <FieldRow label="개당 가격">
+              <AmountInput
+                testID="spend-sheet-unit-price"
+                label="개당 가격"
+                context={item?.name ?? choice?.label}
+                icon="meso"
+                unit="메소"
+                reading
+                value={priceText}
+                onChange={setPriceText}
+              />
+              <Text className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted">메소</Text>
+            </FieldRow>
+          )}
+
           {scope !== null && scope.maxQuantity !== 1 && (
             /*
              * 단위·상한은 대표가 안다. 단계를 고르기 전에도 선다. 상한이 1 이면 안 세운다.
-             * 오르내릴 자리가 없는 스테퍼는 조절할 수 있다 는 거짓말이다.
+             * 1 밖에 못 치는 칸은 고칠 수 있다 는 거짓말이다.
              */
             <FieldRow label="수량">
-              <QuantityStepper
-                value={quantity}
-                max={scope.maxQuantity}
-                onChange={setQuantity}
+              <AmountInput
                 testID="spend-sheet-quantity"
+                label="수량"
+                context={item?.name ?? choice?.label}
+                chips={[]}
+                value={quantityText}
+                onChange={(next) => setQuantityText(capQuantityText(next, scope.maxQuantity))}
               />
             </FieldRow>
           )}
