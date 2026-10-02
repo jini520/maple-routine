@@ -68,6 +68,10 @@ export const STORAGE_KEYS = {
   // `KEEP_KEYS` 에 넣는다. 지워지면 iOS 에서 다시 묻게 되는데, 그 시스템 팝업은 이미 답한
   // 사용자에게 두 번째로는 아예 안 뜬다. 그래서 사용자는 아무 일도 안 일어난 것을 본다.
   notificationPermissionAsked: 'notificationPermissionAsked',
+  // 파티 약속 알림 스위치(설정 > 알림 설정). 없으면 켜짐이다.
+  //
+  // `KEEP_KEYS` 에 넣는다. 사용자가 끈 스위치가 캐시 삭제로 되살아나면 끈 약속 알림이 다시 온다.
+  partyAlarmEnabled: 'partyAlarmEnabled',
   // 공지의 사본. 분류마다 마지막 서버 응답(최대 20건)을 한 JSON 배열에 함께 둔다. 서버가 죽어도
   // 마지막으로 받은 것은 열려야 해서 남긴다.
   notices: 'notices',

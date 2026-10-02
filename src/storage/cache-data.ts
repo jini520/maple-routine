@@ -17,6 +17,8 @@ const KEEP_KEYS = new Set<string>([
   // 권한을 물었다는 사실. 지워지면 iOS 에서 다시 묻게 되는데, 그 시스템 팝업은 이미 답한
   // 사용자에게 두 번째로는 아예 안 뜬다. 그래서 사용자는 아무 일도 안 일어난 것을 본다.
   STORAGE_KEYS.notificationPermissionAsked,
+  // 파티 약속 알림 스위치. 지워지면 사용자가 끈 약속 알림이 다시 온다.
+  STORAGE_KEYS.partyAlarmEnabled,
   // today 배너에서 닫은 공지. 지워지면 사용자가 이미 닫은 공지가 첫 화면에 되살아난다.
   // 받은 공지 자체(`notices`)는 서버가 다시 주지만 닫았다는 사실은 기기에만 있다.
   STORAGE_KEYS.dismissedNotices,

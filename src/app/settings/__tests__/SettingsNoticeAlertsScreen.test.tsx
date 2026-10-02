@@ -5,6 +5,7 @@ import { Platform } from 'react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { useNoticeStore } from '../../../features/notice/store'
+import { usePartyAlarmSettingsStore } from '../../../features/party-appointments/alarm-settings'
 import { NOTICE_TOPICS } from '../../../features/notice/topics'
 import { NO_SUBSCRIPTIONS } from '../../../types/notice'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
@@ -52,6 +53,13 @@ beforeEach(() => {
     refreshPermission,
     setSubscribed: jest.fn().mockResolvedValue(undefined),
     setAllSubscribed: jest.fn().mockResolvedValue(undefined),
+  })
+  // 약속 스위치는 꺼 둔다. 위 공지 구독만으로 전체 스위치가 갈리게 한다.
+  usePartyAlarmSettingsStore.setState({
+    enabled: false,
+    loaded: true,
+    load: jest.fn().mockResolvedValue(undefined),
+    setEnabled: jest.fn().mockResolvedValue(undefined),
   })
 })
 
@@ -111,6 +119,41 @@ describe('전체 스위치', () => {
     })
 
     expect(setAllSubscribed).toHaveBeenCalledWith(true)
+  })
+})
+
+// 약속 스위치를 전체에서 빼 두면 전체가 꺼진 채로 약속 알림이 오는 상태가 생긴다.
+describe('전체 스위치와 파티 약속 알림', () => {
+  it('공지가 다 꺼져도 약속 스위치가 켜져 있으면 켜진 것으로 그린다', async () => {
+    useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS })
+    usePartyAlarmSettingsStore.setState({ enabled: true })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.getByLabelText('알림 받기').props.accessibilityState.checked).toBe(true)
+  })
+
+  it('끄면 약속 스위치도 끈다', async () => {
+    usePartyAlarmSettingsStore.setState({ enabled: true })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('알림 받기'))
+    })
+
+    expect(useNoticeStore.getState().setAllSubscribed).toHaveBeenCalledWith(false)
+    expect(usePartyAlarmSettingsStore.getState().setEnabled).toHaveBeenCalledWith(false)
+  })
+
+  it('켜면 약속 스위치도 켠다', async () => {
+    useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('알림 받기'))
+    })
+
+    expect(useNoticeStore.getState().setAllSubscribed).toHaveBeenCalledWith(true)
+    expect(usePartyAlarmSettingsStore.getState().setEnabled).toHaveBeenCalledWith(true)
   })
 })
 
@@ -451,6 +494,24 @@ describe('스케줄러 알림', () => {
 
     expect(view.getAllByText('준비 중')).toHaveLength(2)
     expect(view.queryByLabelText('미완료 스케줄 알림 알림')).toBeNull()
+  })
+
+  it('파티 약속 알림은 스위치로 첫 줄에 선다', async () => {
+    usePartyAlarmSettingsStore.setState({ enabled: true })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.getByLabelText('파티 약속 알림').props.accessibilityState.checked).toBe(true)
+  })
+
+  it('파티 약속 알림 스위치를 누르면 저장 쪽으로 부른다', async () => {
+    usePartyAlarmSettingsStore.setState({ enabled: true })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('파티 약속 알림'))
+    })
+
+    expect(usePartyAlarmSettingsStore.getState().setEnabled).toHaveBeenCalledWith(false)
   })
 
   it('전체가 꺼져 있으면 구역째 안 그린다', async () => {
