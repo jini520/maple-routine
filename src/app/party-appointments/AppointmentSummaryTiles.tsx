@@ -16,7 +16,7 @@ function Tile(props: {
 }): React.JSX.Element {
   const Icon = props.icon
   return (
-    <View className="flex-1 flex-row items-center gap-2.5 rounded-xl bg-card-body px-3 py-2.5">
+    <View className="flex-1 flex-row items-center gap-2.5 rounded-xl bg-surface px-3 py-2.5">
       <View
         className={`h-[30px] w-[30px] items-center justify-center rounded-full ${props.on ? 'bg-primary-tint' : 'bg-surface-2'}`}
       >

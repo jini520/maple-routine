@@ -178,7 +178,7 @@ export function BossPickerBody(props: BossPickerBodyProps): React.JSX.Element {
       <SelectField
         label="캐릭터"
         testID="boss-picker-character"
-        bare
+        tall
         options={props.characters.map((character) => ({ value: character.ocid, label: character.name }))}
         selected={props.ocid}
         onSelect={(value) => {

@@ -37,6 +37,8 @@ import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar
 import { UnknownCharacterFace } from '../../molecules/CharacterAvatar/UnknownCharacterFace'
 import { ChevronDownIcon, Text } from '../../atoms'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
+import { boxShadowOf, DROPDOWN_SHADOW } from '../../../lib/shadow'
+import { useThemeAppearance } from '../../../theme/context'
 import { placeDropdown } from './place-dropdown'
 
 // 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다. 캐릭터 카드(`CharacterRow`)도 같은 것을 쓴다.
@@ -119,6 +121,7 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
   const [anchor, setAnchor] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
   const [contentHeight, setContentHeight] = useState<number | null>(null)
   const insets = useSafeAreaInsets()
+  const { definition } = useThemeAppearance()
   const { height: windowHeight } = useWindowDimensions()
 
   const close = useCallback((): void => {
@@ -169,7 +172,7 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
         role="button"
         aria-expanded={isOpen}
         onPress={open}
-        className={`rounded-[14px] border border-border bg-surface ${ROW_PADDING}`}
+        className={`rounded-[14px] bg-surface ${ROW_PADDING}`}
       >
         <AccountRow
           summary={selected}
@@ -196,19 +199,24 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
             className="flex-1"
           />
 
+          {/* 그림자는 바깥 상자가 든다. 모서리를 자르는 안쪽 상자에 주면 iOS 가 그림자까지 자른다. */}
           <View
-            testID="account-select-list"
-            role="menu"
-            aria-label="메이플 ID"
+            testID="account-select-list-shadow"
             style={{
               left: anchor?.left ?? 0,
               top: placement?.top ?? 0,
               width: anchor?.width,
-              maxHeight: placement?.maxHeight,
+              borderRadius: 14,
+              boxShadow: boxShadowOf(definition.shadowColor, DROPDOWN_SHADOW),
             }}
-            className={`absolute overflow-hidden rounded-[14px] border border-border bg-surface shadow-lg${
-              isPlaced ? '' : ' opacity-0'
-            }`}
+            className={`absolute${isPlaced ? '' : ' opacity-0'}`}
+          >
+          <View
+            testID="account-select-list"
+            role="menu"
+            aria-label="메이플 ID"
+            style={{ maxHeight: placement?.maxHeight }}
+            className="overflow-hidden rounded-[14px] bg-surface"
           >
             <ScrollView>
               {/* 자연 높이를 재는 자리. `ScrollView` 안이라 바깥 `maxHeight` 에 눌리지 않는다. */}
@@ -236,6 +244,7 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
                 })}
               </View>
             </ScrollView>
+          </View>
           </View>
         </Modal>
       )}

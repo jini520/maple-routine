@@ -7,7 +7,7 @@
  */
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { renderOverlay } from '../../../__tests__/render-atom'
+import { renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
 import { SelectField } from '../SelectField'
 
 const 보기 = [
@@ -121,22 +121,34 @@ describe('SelectField', () => {
 })
 
 
-// 보스 추가 시트처럼 시트 바탕 위에 바로 서는 자리. 테두리 없이 조금 더 높다.
-describe('bare', () => {
-  it('테두리가 없고 줄이 48 이상이다', async () => {
-    const view = await renderOverlay(
-      <SelectField label="캐릭터" options={보기} selected={null} onSelect={jest.fn()} testID="pick" bare />,
-    )
-    const style = Object.assign({}, ...[view.getByTestId('pick-trigger').props.style].flat())
+// 닫힌 줄에 테두리가 없다(펼친 목록은 jest 가 자리를 안 재서 그려지지 않는다). 높은 줄(`tall`)은 보스 추가처럼 시트 바탕 위에 바로 서는 자리다.
+describe('테두리와 높이', () => {
+  const styleOf = (view: Awaited<ReturnType<typeof renderOverlay>>) =>
+    Object.assign({}, ...[view.getByTestId('pick-trigger').props.style].flat())
 
-    expect(style.borderWidth ?? 0).toBe(0)
-    expect(style.minHeight).toBe(48)
+  it('닫힌 줄에 테두리가 없고 높이는 40 이상이다', async () => {
+    const { view } = await 그리기()
+
+    expect(styleOf(view).borderWidth ?? 0).toBe(0)
+    expect(styleOf(view).minHeight).toBe(40)
   })
 
-  it('없으면 테두리를 두른다', async () => {
+  it('tall 은 48 이상이다', async () => {
+    const view = await renderOverlay(
+      <SelectField label="캐릭터" options={보기} selected={null} onSelect={jest.fn()} testID="pick" tall />,
+    )
+
+    expect(styleOf(view).borderWidth ?? 0).toBe(0)
+    expect(styleOf(view).minHeight).toBe(48)
+  })
+})
+
+// 닫힌 줄 바탕은 흰 카드색(`surface`)이다.
+describe('바탕', () => {
+  it('닫힌 줄은 흰 카드색이다', async () => {
     const { view } = await 그리기()
     const style = Object.assign({}, ...[view.getByTestId('pick-trigger').props.style].flat())
 
-    expect(style.borderWidth).toBe(1)
+    expect(String(style.backgroundColor).toLowerCase()).toBe(기본테마.surface.toLowerCase())
   })
 })

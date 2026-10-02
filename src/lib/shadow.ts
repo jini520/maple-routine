@@ -43,3 +43,6 @@ export function boxShadowOf(shadowColor: string, { opacity, radius, y }: ShadowL
 
   return `0px ${y}px ${radius * 2}px ${base}${alpha}`
 }
+
+/** 드롭다운을 펼친 목록의 그림자. 테두리가 없어 이것이 목록을 바탕에서 띄운다 */
+export const DROPDOWN_SHADOW: ShadowLayer = { opacity: 1, radius: 10, y: 4 }

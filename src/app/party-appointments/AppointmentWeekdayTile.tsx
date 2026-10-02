@@ -96,7 +96,7 @@ export function AppointmentWeekdayTile(props: AppointmentWeekdayTileProps): Reac
     : `매주 ${WEEKDAY_LABELS[props.weekday]}요일`
 
   return (
-    <View className="flex-1 gap-2 rounded-xl bg-card-body px-3 pb-3 pt-2.5">
+    <View className="flex-1 gap-2 rounded-xl bg-surface px-3 pb-3 pt-2.5">
       <View className="flex-row items-center gap-2.5">
         <View className="h-[30px] w-[30px] items-center justify-center rounded-full bg-primary-tint">
           <RepeatIcon className="h-[15px] w-[15px] text-primary-ink" strokeWidth={2} aria-hidden />
