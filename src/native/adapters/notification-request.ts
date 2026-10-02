@@ -51,7 +51,7 @@ export const NOTIFICATION_CHANNEL: AndroidChannel = {
  */
 export const PARTY_NOTIFICATION_CHANNEL: AndroidChannel = {
   id: 'party',
-  name: '파티 약속',
+  name: '파티 스케줄',
   importance: AndroidImportance.HIGH,
   sound: 'default',
 }

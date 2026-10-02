@@ -158,10 +158,12 @@ const ICON_STROKE = 1.5
  * (달력·지갑·목록·검·조준경)는 안쪽 선이 의미를 져서 채울 수 없으므로 굵기로 말한다. 둘을
  * 같이 주면 채운 그림이 과해지므로 배타다. `activeStroke` 가 그것을 한 자리에서 고른다.
  *
- * 안쪽에 선이 많은 그림일수록 굵은 획이 칸을 메워 형태가 뭉갠다. 값이 전 탭 공통인 것은
- * 자리마다 다르면 같은 바 안에서 활성의 무게가 갈리기 때문이다.
+ * 안쪽에 선이 많은 그림일수록 굵은 획이 칸을 메워 형태가 뭉갠다. 그런 그림은 아래 표가 한 단계 낮춘다.
  */
 const ICON_STROKE_ACTIVE = 2.2
+
+/** 활성 굵기를 낮추는 그림. 달력 + 시계는 2.2 에서 안쪽 선이 칸을 메운다 */
+const LIGHT_ACTIVE_STROKE: ReadonlyMap<IconComponent, number> = new Map([[CalendarClockIcon, 1.8]])
 
 type IconComponent = React.ComponentType<{
   className?: string
@@ -233,7 +235,8 @@ function activeFill(Icon: IconComponent, active: boolean, accent: string): strin
 
 /** 채우지 못하는 그림만 활성일 때 굵어진다. 채우는 그림은 기본 굵기 그대로다(배타). */
 function activeStroke(Icon: IconComponent, active: boolean): number {
-  return active && !FILLED_ICONS.has(Icon) ? ICON_STROKE_ACTIVE : ICON_STROKE
+  if (!active || FILLED_ICONS.has(Icon)) return ICON_STROKE
+  return LIGHT_ACTIVE_STROKE.get(Icon) ?? ICON_STROKE_ACTIVE
 }
 
 interface BarItemProps {

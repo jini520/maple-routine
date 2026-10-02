@@ -90,7 +90,7 @@ describe('AppointmentAgenda', () => {
   it('약속이 없으면 그 주 이름의 빈 상태를 두고 버튼은 없다', async () => {
     const view = await renderAtom(<AppointmentAgenda {...props([], { weekLabel: '9월 1주차' })} />)
 
-    expect(view.getByText('9월 1주차 약속이 없어요')).toBeTruthy()
+    expect(view.getByText('9월 1주차 파티 스케줄이 없어요')).toBeTruthy()
     expect(view.queryByRole('button')).toBeNull()
   })
 

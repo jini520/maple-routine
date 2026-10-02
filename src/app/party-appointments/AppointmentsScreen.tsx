@@ -108,7 +108,7 @@ export function AppointmentsScreen(): React.JSX.Element {
         header={
           <PageHeader>
             <PageHeaderTitleRow>
-              <Text className="text-lg font-semibold text-text">파티 약속</Text>
+              <Text className="text-lg font-semibold text-text">파티 스케줄</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }
@@ -175,19 +175,19 @@ export function AppointmentsScreen(): React.JSX.Element {
       </ScreenScroll>
       {/* 매주 반복이 위, ＋ 에 가까운 아래가 한 번만이다. */}
       <SpeedDial
-        label="약속 추가"
+        label="스케줄 추가"
         actions={[
           {
             key: 'weekly',
             label: '매주 반복',
-            description: '매주 같은 요일 · 시각의 약속',
+            description: '고정 파티 등록',
             Icon: RepeatIcon,
             onSelect: () => setSheet('weekly'),
           },
           {
             key: 'once',
             label: '한 번만',
-            description: '그 날 하루만 서는 약속',
+            description: '일회성 파티 등록',
             Icon: CalendarPlusIcon,
             onSelect: () => setSheet('once'),
           },

@@ -178,6 +178,7 @@ export function BossPickerBody(props: BossPickerBodyProps): React.JSX.Element {
       <SelectField
         label="캐릭터"
         testID="boss-picker-character"
+        bare
         options={props.characters.map((character) => ({ value: character.ocid, label: character.name }))}
         selected={props.ocid}
         onSelect={(value) => {
@@ -193,8 +194,9 @@ export function BossPickerBody(props: BossPickerBodyProps): React.JSX.Element {
             <CharacterFace ocid={props.ocid} name={current?.name ?? ''} imageUrl={current?.imageUrl ?? null} />
             <Text className="text-15 font-bold text-text">{current?.name ?? ''}</Text>
             {current?.level != null && <Text className="text-xs text-text-muted">Lv.{current.level}</Text>}
-            <Text className="ml-auto text-11 text-text-muted">스케줄러 보스 {current?.registeredCount ?? 0}</Text>
-            <SelectChevron open={isOpen} />
+            <View className="ml-auto">
+              <SelectChevron open={isOpen} />
+            </View>
           </Pressable>
         )}
         renderOption={(option, isSelected) => {

@@ -88,6 +88,18 @@ describe('채우지 못하는 아이콘은 활성일 때 굵어진다', () => {
     expect(active.some((width) => width > 1.5)).toBe(thicker)
   })
 
+  // 안쪽 선이 많은 달력 + 시계는 2.2 에서 선이 칸을 메워 뭉갠다. 한 단계 낮춘 1.8 이다.
+  it('파티 스케줄은 활성일 때 1.8, 다른 굵어지는 탭은 2.2 다', async () => {
+    await render(<NavigationHarness />)
+    await press('bar-group-schedule')
+    await press('bar-sub-Appointments')
+
+    expect(Math.max(...strokes('bar-sub-Appointments'))).toBe(1.8)
+
+    await press('bar-sub-Content')
+    expect(Math.max(...strokes('bar-sub-Content'))).toBe(2.2)
+  })
+
   it('비활성은 어느 그림이든 기본 굵기다', async () => {
     await render(<NavigationHarness />)
 

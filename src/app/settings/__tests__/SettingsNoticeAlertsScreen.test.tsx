@@ -502,7 +502,7 @@ describe('스케줄러 알림', () => {
     usePartyAlarmSettingsStore.setState({ enabled: true })
     const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
 
-    expect(view.getByLabelText('파티 약속 알림').props.accessibilityState.checked).toBe(true)
+    expect(view.getByLabelText('파티 스케줄 알림').props.accessibilityState.checked).toBe(true)
   })
 
   it('파티 약속 알림 스위치를 누르면 저장 쪽으로 부른다', async () => {
@@ -510,7 +510,7 @@ describe('스케줄러 알림', () => {
     const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
 
     await act(async () => {
-      fireEvent.press(view.getByLabelText('파티 약속 알림'))
+      fireEvent.press(view.getByLabelText('파티 스케줄 알림'))
     })
 
     expect(usePartyAlarmSettingsStore.getState().setEnabled).toHaveBeenCalledWith(false)

@@ -56,7 +56,7 @@ export const BAR_GROUPS: readonly BarGroup[] = [
       // 순서는 보던 화면 → 그 화면을 편집하는 자리 라 보스 뒤다.
       { page: 'BossManage', label: '보스 관리' },
       // 파티로 잡는 보스의 약속. 주 단위 간트.
-      { page: 'Appointments', label: '약속' },
+      { page: 'Appointments', label: '파티 스케줄' },
     ],
   },
   {
