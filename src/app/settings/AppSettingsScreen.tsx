@@ -110,6 +110,10 @@ export function AppSettingsScreen(): React.JSX.Element {
                   trackedOcids === null ? undefined : <ValueBadge>{trackedOcids.length}개</ValueBadge>
                 }
               />
+              {/* 스케줄러 하위 바에서 빠진 보스 관리. 캐릭터 관리 다음 줄이다(사용자 지정). */}
+              <View className={SETTINGS_ROW_DIVIDER_CLASS}>
+                <SettingsRow label="보스 관리" onPress={() => navigation.navigate('BossManage')} />
+              </View>
               <View className={SETTINGS_ROW_DIVIDER_CLASS}>
                 <SettingsRow
                   label="테마"

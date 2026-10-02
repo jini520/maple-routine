@@ -43,7 +43,6 @@ import { setHapticsPort } from '../../../native/ports'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
-import { tabNavigateArgs } from '../../../navigation/tab-navigate'
 import { useUnpricedDropCount } from '../../../features/boss-profit/use-unpriced-drop-count'
 import { BossProfitScreen } from '../BossProfitScreen'
 
@@ -287,14 +286,14 @@ describe('빈 상태', () => {
 
 // 파티 인원 관리는 보스 수익과 바로 이어지는데 이 화면에서 보스 관리로 가는 길이 없었다.
 describe('보스 관리로 가는 길', () => {
-  it('헤더의 `보스 관리` 를 누르면 보스 관리 탭으로 보낸다', async () => {
+  it('헤더의 `보스 관리` 를 누르면 보스 관리 화면을 연다', async () => {
     const { getByText } = await renderScreen()
 
     await act(async () => {
       fireEvent.press(getByText('보스 관리'))
     })
 
-    expect(navigate).toHaveBeenCalledWith(...tabNavigateArgs('BossManage'))
+    expect(navigate).toHaveBeenCalledWith('BossManage')
   })
 
   it('누르면 촉각이 한 번 난다', async () => {

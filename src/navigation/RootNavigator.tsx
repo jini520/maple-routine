@@ -10,6 +10,7 @@ import { MvpGradeConfirmScreen, MvpGradePickScreen } from '../app/mvp-grade/MvpG
 import { SettingsAboutScreen } from '../app/settings/SettingsAboutScreen'
 import { SettingsAccountDataScreen } from '../app/settings/SettingsAccountDataScreen'
 import { SettingsCharactersScreen } from '../app/settings/SettingsCharactersScreen'
+import { BossManageScreen } from '../app/boss-scheduler/BossManageScreen'
 import { SettingsFeatureGuideListScreen } from '../app/settings/SettingsFeatureGuideListScreen'
 import { SettingsFeatureGuideScreen } from '../app/settings/SettingsFeatureGuideScreen'
 import { SettingsNoticeDetailScreen } from '../app/settings/SettingsNoticeDetailScreen'
@@ -49,6 +50,7 @@ const STACK_SCREENS = {
   SettingsAbout: SettingsAboutScreen,
   SettingsPrivacy: SettingsPrivacyScreen,
   SettingsCharacters: SettingsCharactersScreen,
+  BossManage: BossManageScreen,
   SettingsNotices: SettingsNoticesScreen,
   SettingsNoticeAlerts: SettingsNoticeAlertsScreen,
   SettingsMvpGrade: SettingsMvpGradeScreen,

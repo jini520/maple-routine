@@ -56,7 +56,7 @@ describe('pageFromLayerState: 가장 안쪽 화면이 곧 지금 페이지다', 
   it('상태도 파라미터도 없으면 그 층의 첫 화면이다', () => {
     const bare: NavStateLike = { index: 0, routes: [{ name: 'ScheduleSubs' }] }
 
-    expect(pageFromLayerState(bare)).toBe('Content')
+    expect(pageFromLayerState(bare)).toBe('Appointments')
   })
 
   it('층 스택 자체가 아직 없으면 첫 화면(today)이다', () => {

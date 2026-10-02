@@ -50,13 +50,11 @@ export const BAR_GROUPS: readonly BarGroup[] = [
     label: '스케줄러',
     page: null,
     layer: 'ScheduleSubs',
+    // 보스 관리는 바에서 빠져 설정에서 연다(사용자).
     subs: [
+      { page: 'Appointments', label: '파티 스케줄' },
       { page: 'Content', label: '컨텐츠' },
       { page: 'Boss', label: '보스' },
-      // 순서는 보던 화면 → 그 화면을 편집하는 자리 라 보스 뒤다.
-      { page: 'BossManage', label: '보스 관리' },
-      // 파티로 잡는 보스의 약속. 주 단위 간트.
-      { page: 'Appointments', label: '파티 스케줄' },
     ],
   },
   {

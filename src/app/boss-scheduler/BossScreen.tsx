@@ -60,6 +60,7 @@ import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useOpenTab } from '../../hooks/useOpenTab'
+import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 
 const PARTY_FILTERS = ['all', 'solo', 'party'] as const satisfies readonly PartyFilter[]
 
@@ -175,6 +176,7 @@ export function BossScreen(): React.JSX.Element {
   // **당김이 시작한 회차에만** 인디케이터가 돈다. 헤더 버튼과 자동 조회는 안 연다.
   const { mode } = useTrackingModeStore()
   const openTab = useOpenTab()
+  const navigation = useScreenNavigation()
   const topSafeAreaPx = useTopSafeAreaPx()
   // 카드 탭으로 여는 파티 인원 모달. 편집 중인 난이도를 함께 든다.
   /**
@@ -412,14 +414,9 @@ export function BossScreen(): React.JSX.Element {
   }
 
   //  이 만든 헤더 진입점("보스 관리")은 **여기 없다**.
-  // 그 화면이 스케줄 그룹의 하위 탭이 되면서 진입 자리를 하단바가 가져갔다. 이 걷은
-  // "캐릭터 관리"에 이어 제목 줄의 두 번째이자 마지막 버튼이 사라진 것이라, 이제 그 줄에서 폭을
-  // 다투는 상대가 없다.
-  //
-  // 남는 것은 빈 상태 CTA 하나이고, 그것도 push 가 아니라 **같은 층의 형제**로 보낸다
-  // (보스 관리는 이 화면과 같은 스케줄러 단에 산다).
+  // 보스 관리는 설정에서 여는 하위 페이지다. 빈 상태 CTA 가 그 화면을 민다.
   function goToBossManage(): void {
-    openTab('BossManage')
+    navigation.navigate('BossManage')
   }
 
   // 빈 상태 문구는 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다. 자동 모드가

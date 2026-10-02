@@ -129,6 +129,8 @@ const ROW_LABELS = [
   // 맨 위에 혼자 선다. 이 화면에서 유일하게 밖으로 나가는 설정이라 성질이 다르다.
   '알림 설정',
   '캐릭터 관리',
+  // 스케줄러 하위 바에서 빠진 보스 관리. `캐릭터 관리` 바로 다음 줄이다(사용자 지정).
+  '보스 관리',
   // `캐릭터 관리` **아래**. 이 자리가 계약이다.
   '테마',
   '스케줄 관리 방법',
@@ -217,7 +219,7 @@ describe('AppSettingsScreen', () => {
       })
 
     expect(labelsIn(cards[0])).toEqual(['알림 설정'])
-    expect(labelsIn(cards[1])).toEqual(['캐릭터 관리', '테마'])
+    expect(labelsIn(cards[1])).toEqual(['캐릭터 관리', '보스 관리', '테마'])
     // 구역 제목과 행 이름이 같아 `ROW_LABELS` 로는 못 찾는다. 카드 안에서 본다.
     expect(within(cards[2]).getByText('MVP 등급')).toBeTruthy()
     expect(labelsIn(cards[3])).toEqual(['스케줄 관리 방법'])
@@ -442,6 +444,14 @@ describe('AppSettingsScreen: 캐릭터 관리', () => {
     await press(rowOf(view, '캐릭터 관리'))
 
     expect(navigate).toHaveBeenCalledWith('SettingsCharacters')
+  })
+
+  it('보스 관리 행을 누르면 보스 관리 화면을 민다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    await press(rowOf(view, '보스 관리'))
+
+    expect(navigate).toHaveBeenCalledWith('BossManage')
   })
 
   // 조회가 통째로 옮겨간 것이 이 개편의 요점이다. 설정 본화면은 이제 캐릭터 목록을 모른다.

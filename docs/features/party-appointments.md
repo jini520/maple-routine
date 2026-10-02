@@ -27,16 +27,16 @@
 | 화면 | `app/party-appointments/BossPickerBody.tsx` · `BossPickerTray.tsx` · `BossDifficultyPopover.tsx` · `useBossPicker.ts` | 보스 추가 단계(타일 묶음 · 선택 줄과 날아오는 초상 · 난이도 팝오버) |
 | 로직 | `features/party-appointments/draft.ts` · `boss-picker.ts` | 저장 전 약속 · 보스 묶음 나누기와 고르기(순수 함수) |
 | 부품 | `components/organisms/TimePopover/TimePopover.tsx` | 5분 휠 팝오버. 휠 3줄 · 폭은 휠에 맞춤(아래가 모자라면 위로 뒤집힌다) |
-| 탭 | `navigation/routes.ts` · `navigation/bar-groups.ts` · `navigation/LayerStack.tsx` | 스케줄 층의 넷째 하위 |
+| 탭 | `navigation/routes.ts` · `navigation/bar-groups.ts` · `navigation/LayerStack.tsx` | 스케줄 층의 첫째 하위 |
 
 ## 자리
 
 ```
-[ 스케줄 ]
- 컨텐츠 | 보스 | 보스 관리 | 약속
+[ 스케줄러 ]
+ 파티 스케줄 | 컨텐츠 | 보스
 ```
 
-[[ADR-331]] 결정 5.
+[[ADR-331]] 결정 5. 2026-10-02 에 맨 앞으로 옮겼고 보스 관리는 바에서 빠져 설정에서 연다([[ADR-145]] 정정 3, 사용자).
 
 ## 약속의 모양
 

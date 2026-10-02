@@ -178,7 +178,7 @@ describe('바는 **지금 페이지** 가 정하는 층을 그린다', () => {
 
     await press('bar-group-schedule')
 
-    expect(screen.getByTestId('screen-Content')).toBeTruthy()
+    expect(screen.getByTestId('screen-Appointments')).toBeTruthy()
     expect(screen.getByTestId('bar-sub-Boss')).toBeTruthy()
     expect(screen.getByTestId('bar-back')).toBeTruthy()
  // 하위 행이 떴으면 그룹 행은 자리를 비운다. 한 줄에 두 층이 겹칠 수 없다.
@@ -188,16 +188,16 @@ describe('바는 **지금 페이지** 가 정하는 층을 그린다', () => {
  // 헤더 버튼으로 열던 하위 페이지가 하위 행의 셋째 항목이 됐다. 여기서 물을
  // 것은 **바에 섰는가** 가 아니라 **눌러서 그 화면이 열리는가** 다(라우트 표만 고치고 내비게이터에
  // 안 꽂으면 바에는 서고 화면은 안 바뀐다. 2026-08-13 설정 탭 사고와 같은 부류).
-  it('스케줄 하위의 보스 관리를 누르면 그 화면이 열린다', async () => {
+  // 보스 관리는 바에서 빠져 설정에서 여는 하위 페이지가 됐다. 스케줄러 하위 행은 파티 스케줄이 맨 앞이다.
+  it('스케줄 하위 행은 파티 스케줄 · 컨텐츠 · 보스이고 보스 관리가 없다', async () => {
     await render(<NavigationHarness />)
 
     await press('bar-group-schedule')
-    await press('bar-sub-BossManage')
 
-    expect(screen.getByTestId('screen-BossManage')).toBeTruthy()
- // 하위 행에 남아 있다. 탭이지 push 가 아니므로 층이 안 바뀐다.
+    expect(screen.getByTestId('bar-sub-Appointments')).toBeTruthy()
+    expect(screen.getByTestId('bar-sub-Content')).toBeTruthy()
     expect(screen.getByTestId('bar-sub-Boss')).toBeTruthy()
-    expect(screen.getByTestId('bar-back')).toBeTruthy()
+    expect(screen.queryByTestId('bar-sub-BossManage')).toBeNull()
   })
 
   it('하위가 없는 그룹은 그룹 행을 유지한다. ← 도 안 선다', async () => {
@@ -258,7 +258,7 @@ describe('← 는 **한 층 내려온 자리**로 되돌린다 (결정 4)', () =
 
     await press('bar-group-settings')
     await press('bar-group-schedule')
-    expect(screen.getByTestId('screen-Content')).toBeTruthy()
+    expect(screen.getByTestId('screen-Appointments')).toBeTruthy()
 
     await press('bar-back')
 
@@ -425,15 +425,15 @@ describe('활성 탭 더블 터치가 최상단으로 되돌린다', () => {
   it('하위 행. 지금 보는 하위의 이름으로 부른다', async () => {
     await render(<NavigationHarness />)
     await press('bar-group-schedule')
-    const content = jest.fn()
+    const appointments = jest.fn()
     const today = jest.fn()
-    registerScrollToTop('Content', content)
+    registerScrollToTop('Appointments', appointments)
     registerScrollToTop('Today', today)
 
-    await press('bar-sub-Content')
-    await press('bar-sub-Content')
+    await press('bar-sub-Appointments')
+    await press('bar-sub-Appointments')
 
-    expect(content).toHaveBeenCalledTimes(1)
+    expect(appointments).toHaveBeenCalledTimes(1)
     expect(today).not.toHaveBeenCalled()
   })
 
