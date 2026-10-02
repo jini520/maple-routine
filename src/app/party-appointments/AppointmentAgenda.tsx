@@ -1,7 +1,8 @@
 /**
  * 파티 약속 보드의 요일별 목록. 약속이 있는 날만 요일 머리를 세우고 그 아래에 약속을 시작 순으로 쌓는다.
  *
- * 약속 한 줄은 왼쪽 시각 열과 오른쪽 보스 줄 카드다. 그 주에 약속이 없으면 빈 상태를 둔다.
+ * 약속 하나는 카드 위 시각 한 줄과 그 아래 보스 카드다. 카드 안의 보스는 캐릭터별로 묶고, 캐릭터 얼굴 · 이름은 묶음 왼쪽 열에 한 번만 적는다.
+ * 그 주에 약속이 없으면 빈 상태를 둔다.
  */
 import { Pressable, View } from 'react-native'
 
@@ -11,11 +12,13 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { endClockOf, type AgendaDay } from '../../features/party-appointments/agenda'
+import { groupBossesByCharacter } from '../../features/party-appointments/boss-groups'
 import { formatLead } from '../../features/party-appointments/draft'
 import { bossAliasOf, bossPortraitSlugOf } from '../../lib/boss/bosses'
 import { WEEKDAY_LABELS } from '../../lib/calendar'
 import type { BossDifficulty } from '../../types'
 import type { PartyAppointmentBoss, PartyAppointmentOccurrence } from '../../types/party-appointment'
+import { CharacterGroupLabel } from './CharacterGroupLabel'
 
 export interface AppointmentAgendaProps {
   days: AgendaDay[]
@@ -26,15 +29,12 @@ export interface AppointmentAgendaProps {
   nowMs: number
   /** 캐릭터 `ocid → 이름` */
   names: ReadonlyMap<string, string>
-  colorOf: (ocid: string) => string
+  /** 캐릭터 `ocid → 얼굴 그림 URL` */
+  faces: ReadonlyMap<string, string | null>
   onPressOccurrence: (occurrence: PartyAppointmentOccurrence) => void
 }
 
-function BossLine(props: {
-  boss: PartyAppointmentBoss
-  names: ReadonlyMap<string, string>
-  colorOf: (ocid: string) => string
-}): React.JSX.Element {
+function BossLine(props: { boss: PartyAppointmentBoss }): React.JSX.Element {
   const { boss } = props
   const name = bossAliasOf(boss.bossKey, boss.bossKey)
   return (
@@ -46,12 +46,6 @@ function BossLine(props: {
       <Badge variant={boss.difficulty as BossDifficulty} size="mini">
         {DIFFICULTY_NAME[boss.difficulty as BossDifficulty] ?? boss.difficulty}
       </Badge>
-      <View className="ml-auto flex-row items-center gap-1">
-        <View className="h-2 w-2 rounded-full" style={{ backgroundColor: props.colorOf(boss.ocid) }} />
-        <Text className="text-11 text-text-muted" numberOfLines={1}>
-          {props.names.get(boss.ocid) ?? ''}
-        </Text>
-      </View>
     </View>
   )
 }
@@ -60,7 +54,7 @@ function OccurrenceRow(props: {
   occurrence: PartyAppointmentOccurrence
   nowMs: number
   names: ReadonlyMap<string, string>
-  colorOf: (ocid: string) => string
+  faces: ReadonlyMap<string, string | null>
   onPress: () => void
 }): React.JSX.Element {
   const { occurrence } = props
@@ -72,22 +66,32 @@ function OccurrenceRow(props: {
       role="button"
       aria-label={`${occurrence.timeKst} 약속 상세`}
       onPress={props.onPress}
-      className={`flex-row gap-2.5 active:opacity-60 ${ended ? 'opacity-50' : ''}`}
+      className={`gap-1 active:opacity-60 ${ended ? 'opacity-50' : ''}`}
     >
-      <View className="w-12 pt-1.5">
-        <Text className="text-sm font-bold text-text" style={TABULAR_NUMS} numberOfLines={1}>
+      {/* 시각은 카드 위 한 줄이다. 카드가 화면 폭을 다 써 보스 이름이 덜 잘린다. */}
+      <View className="flex-row items-baseline px-0.5">
+        <Text className="text-15 font-bold text-text" style={TABULAR_NUMS}>
           {occurrence.timeKst}
         </Text>
-        <Text className="text-11 text-text-muted" style={TABULAR_NUMS} numberOfLines={1}>
-          ~{endClockOf(occurrence)}
+        <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>
+          {` ~ ${endClockOf(occurrence)}`}
         </Text>
       </View>
-      <View className="flex-1 rounded-[14px] bg-surface px-3 pb-2 pt-1.5">
-        {occurrence.bosses.map((boss) => (
-          <BossLine key={`${boss.ocid}:${boss.bossKey}`} boss={boss} names={props.names} colorOf={props.colorOf} />
+      <View className="gap-2.5 rounded-[14px] bg-surface px-3 py-2.5">
+        {groupBossesByCharacter(occurrence.bosses).map((group) => (
+          <View key={group.ocid} className="flex-row gap-1.5">
+            <View className="pt-[5px]">
+              <CharacterGroupLabel name={props.names.get(group.ocid) ?? ''} imageUrl={props.faces.get(group.ocid) ?? null} />
+            </View>
+            <View className="flex-1">
+              {group.bosses.map((boss) => (
+                <BossLine key={`${boss.ocid}:${boss.bossKey}`} boss={boss} />
+              ))}
+            </View>
+          </View>
         ))}
         {(hasAlarm || repeats) && (
-          <View className="flex-row gap-2.5 pt-0.5">
+          <View className="flex-row gap-2.5">
             {hasAlarm && (
               <View className="flex-row items-center gap-1">
                 <BellIcon className="h-3 w-3 text-primary-ink" strokeWidth={2.2} aria-hidden />
@@ -111,8 +115,8 @@ function DayHeader(props: { dateKey: string; today: boolean }): React.JSX.Elemen
   const date = new Date(`${props.dateKey}T00:00:00Z`)
   return (
     <View className="flex-row items-center gap-1">
-      <Text className="text-13 font-bold text-text">{WEEKDAY_LABELS[date.getUTCDay()]}</Text>
-      <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>
+      <Text className="text-sm font-bold text-text">{WEEKDAY_LABELS[date.getUTCDay()]}</Text>
+      <Text className="text-13 text-text-muted" style={TABULAR_NUMS}>
         {date.getUTCMonth() + 1}/{date.getUTCDate()}
       </Text>
       {props.today && (
@@ -136,9 +140,9 @@ export function AppointmentAgenda(props: AppointmentAgendaProps): React.JSX.Elem
     )
   }
   return (
-    <View className="gap-3">
+    <View className="gap-4">
       {props.days.map((day) => (
-        <View key={day.dateKey} className="gap-1.5">
+        <View key={day.dateKey} className="gap-2">
           <DayHeader dateKey={day.dateKey} today={day.dateKey === props.todayKey} />
           {day.occurrences.map((occurrence) => (
             <OccurrenceRow
@@ -146,7 +150,7 @@ export function AppointmentAgenda(props: AppointmentAgendaProps): React.JSX.Elem
               occurrence={occurrence}
               nowMs={props.nowMs}
               names={props.names}
-              colorOf={props.colorOf}
+              faces={props.faces}
               onPress={() => props.onPressOccurrence(occurrence)}
             />
           ))}

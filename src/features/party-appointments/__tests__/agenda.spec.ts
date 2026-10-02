@@ -1,4 +1,4 @@
-import { agendaDays, endClockOf } from '../agenda'
+import { agendaDays, endClockOf, thisWeekJumpOf } from '../agenda'
 import { occurrencesInWeek } from '../occurrences'
 import type { PartyAppointment } from '../../../types/party-appointment'
 
@@ -49,5 +49,20 @@ describe('endClockOf', () => {
 
     expect(endClockOf(midnight!)).toBe('00:00')
     expect(endClockOf(after!)).toBe('00:30')
+  })
+})
+
+// 약속 화면은 미래 주로도 가서 이번 주로 돌아가는 겹화살표의 방향이 갈린다(정정 20).
+describe('thisWeekJumpOf', () => {
+  it('지난 주에서는 오른쪽으로 돌아간다', () => {
+    expect(thisWeekJumpOf('2026-09-24', '2026-10-01')).toBe('forward')
+  })
+
+  it('다음 주 이후에서는 왼쪽으로 돌아간다', () => {
+    expect(thisWeekJumpOf('2026-10-15', '2026-10-01')).toBe('back')
+  })
+
+  it('이번 주에서는 갈 곳이 없다', () => {
+    expect(thisWeekJumpOf('2026-10-01', '2026-10-01')).toBe('none')
   })
 })

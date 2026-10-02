@@ -33,6 +33,7 @@ import ChevronDown from 'lucide-react-native/icons/chevron-down'
 import ChevronLeft from 'lucide-react-native/icons/chevron-left'
 import ChevronRight from 'lucide-react-native/icons/chevron-right'
 import ChevronUp from 'lucide-react-native/icons/chevron-up'
+import ChevronsLeft from 'lucide-react-native/icons/chevrons-left'
 import ChevronsRight from 'lucide-react-native/icons/chevrons-right'
 import CircleAlert from 'lucide-react-native/icons/circle-alert'
 import CircleCheckBig from 'lucide-react-native/icons/circle-check-big'
@@ -125,6 +126,8 @@ export const ChevronRightIcon = withIconInterop(ChevronRight)
 export const ChevronUpIcon = withIconInterop(ChevronUp)
 /** 지금 기간으로 건너뛰기. 보스 수익 · 가계부 기간 스테퍼의 겹화살표. */
 export const ChevronsRightIcon = withIconInterop(ChevronsRight)
+/** 미래 주에서 이번 주로 돌아가기. 파티 약속의 기간 스테퍼. */
+export const ChevronsLeftIcon = withIconInterop(ChevronsLeft)
 
 /** 도움말 여는 자리. 위젯 9 머리의 `?`. */
 export const CircleQuestionMarkIcon = withIconInterop(CircleQuestionMark)

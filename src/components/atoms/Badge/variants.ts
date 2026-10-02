@@ -4,7 +4,7 @@
  * `Badge.tsx` 와 파일이 나뉘어 있다. 스타일 표와 컴포넌트 코드를 섞지 않는다.
  * 표가 한 곳이라 같은 자리에 서는 배지의 크기가 어긋날 수 없다.
  */
-import { type TextStyle, type ViewStyle } from 'react-native'
+import { type ColorValue, type TextStyle, type ViewStyle } from 'react-native'
 
 import type { BossDifficulty } from '../../../types'
 
@@ -103,3 +103,12 @@ export type BadgeSize = keyof typeof BADGE_SIZE
 export type BadgeWeight = keyof typeof BADGE_WEIGHT
 /** `variant` 로 바로 쓸 수 있게 난이도 key 가 그대로 키다. */
 export type BadgeDifficulty = BossDifficulty & BadgeVariant
+
+/**
+ * 난이도 배지의 테두리 색. 배지 밖에서 그 난이도를 한 색으로 알릴 때 쓴다(보스 초상 테두리 등).
+ *
+ * @example difficultyOutlineColor('hard') // '#9c3a5c'
+ */
+export function difficultyOutlineColor(difficulty: BadgeDifficulty): ColorValue {
+  return BADGE_VARIANT[difficulty].border?.borderColor ?? '#67717a'
+}

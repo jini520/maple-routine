@@ -1,6 +1,6 @@
 // 약속 시트. 한 번 · 반복은 ＋ 의 갈래에서 정해지고, 시트에는 그것을 바꾸는 칸이 없다.
 import type { ReactNode } from 'react'
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 // 시트 라이브러리를 맨 뷰로 바꾼다. 여기서 보는 것은 시트 안에 무엇이 서는가다.
 jest.mock('@gorhom/bottom-sheet', () => {
@@ -27,7 +27,7 @@ import { AppointmentSheet } from '../AppointmentSheet'
 const NAMES = new Map([['ocid-1', '낟낟']])
 
 function 그리기(props: Partial<React.ComponentProps<typeof AppointmentSheet>> = {}) {
-  return renderOverlay(<AppointmentSheet names={NAMES} colorOf={() => '#3F7FC4'} onClose={jest.fn()} {...props} />)
+  return renderOverlay(<AppointmentSheet names={NAMES} faces={new Map()} onClose={jest.fn()} {...props} />)
 }
 
 describe('추가 시트', () => {
@@ -106,5 +106,49 @@ describe('수정 시트', () => {
     })
 
     expect(view.getByLabelText('날짜 고르기')).toBeTruthy()
+  })
+
+  // 일요일 반복을 이 주만 월요일로 옮긴 회차를 다시 고치면 이 주만 적용하기가 켜진 채 고친 날짜로 열린다(사용자 결정).
+  // 끄면 앞으로 모두가 되고 요일 타일은 옮긴 날이 아니라 반복 요일(일요일)이다(사용자 보고).
+  it('이 주만 고친 회차를 다시 고치면 이 주만 적용하기가 켜진 채 고친 날짜로 열린다', async () => {
+    const sunday: PartyAppointment = {
+      ...weekly,
+      schedule: { type: 'weekly', weekday: 0, fromWeek: '2099-01-01', untilWeek: null },
+      exceptions: {
+        '2099-01-01': {
+          type: 'override',
+          dateKey: '2099-01-05',
+          timeKst: '21:00',
+          durationMinutes: 30,
+          bosses: weekly.bosses,
+          leadMinutes: null,
+        },
+      },
+    }
+    const [occurrence] = occurrencesInWeek([sunday], '2099-01-01')
+    expect(occurrence!.dateKey).toBe('2099-01-05')
+    const view = await 그리기({ target: { occurrence: occurrence!, weekStart: '2099-01-01' } })
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('수정'))
+    })
+
+    expect(view.getByLabelText('이 주만 적용하기').props.accessibilityState).toMatchObject({ checked: true })
+    expect(within(view.getByLabelText('날짜 고르기')).getByText(/^1\/5/)).toBeTruthy()
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('이 주만 적용하기'))
+    })
+
+    expect(view.getByText('매주 일요일')).toBeTruthy()
+  })
+
+  it('이 주만 고친 적이 없는 회차는 이 주만 적용하기가 꺼진 채 열린다', async () => {
+    const [occurrence] = occurrencesInWeek([weekly], '2099-01-01')
+    const view = await 그리기({ target: { occurrence: occurrence!, weekStart: '2099-01-01' } })
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('수정'))
+    })
+
+    expect(view.getByLabelText('이 주만 적용하기').props.accessibilityState).toMatchObject({ checked: false })
   })
 })

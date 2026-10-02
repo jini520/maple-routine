@@ -10,6 +10,7 @@ import { Pressable, View } from 'react-native'
 import {
   CalendarPlusIcon,
   ChevronLeftIcon,
+  ChevronsLeftIcon,
   ChevronRightIcon,
   ChevronsRightIcon,
   RepeatIcon,
@@ -21,8 +22,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
-import { agendaDays } from '../../features/party-appointments/agenda'
-import { characterColorsOf } from '../../features/party-appointments/character-colors'
+import { agendaDays, thisWeekJumpOf } from '../../features/party-appointments/agenda'
 import { occurrencesInWeek } from '../../features/party-appointments/occurrences'
 import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
 import { formatBossProfitPeriodLabel } from '../../lib/boss/boss-profit-period'
@@ -42,7 +42,6 @@ export function AppointmentsScreen(): React.JSX.Element {
   const appointments = usePartyAppointmentsStore((state) => state.appointments)
   const load = usePartyAppointmentsStore((state) => state.load)
   const characters = useBossSchedulerStore((state) => state.characters)
-  const trackedOcids = useBossSchedulerStore((state) => state.trackedOcids)
   /** 열린 시트. `add` 는 추가, 회차면 그 상세 */
   // 추가는 ＋ 에서 고른 갈래(`once` · `weekly`), 상세는 누른 회차다.
   const [sheet, setSheet] = useState<'once' | 'weekly' | AppointmentSheetTarget | null>(null)
@@ -64,11 +63,11 @@ export function AppointmentsScreen(): React.JSX.Element {
   const thisWeek = resetWeekStartOf(todayKey)
   const [weekStart, setWeekStart] = useState(thisWeek)
   const periodLabel = formatBossProfitPeriodLabel('weekly', weekStart, new Date(nowMs))
-  const isOnThisWeek = weekStart === thisWeek
+  const jump = thisWeekJumpOf(weekStart, thisWeek)
 
-  const colorOf = useMemo(
-    () => characterColorsOf(trackedOcids ?? characters.map((character) => character.ocid)),
-    [trackedOcids, characters],
+  const faces = useMemo(
+    () => new Map(characters.map((character) => [character.ocid, character.imageUrl ?? null])),
+    [characters],
   )
   const names = useMemo(
     () => new Map(characters.map((character) => [character.ocid, character.characterName])),
@@ -95,8 +94,17 @@ export function AppointmentsScreen(): React.JSX.Element {
         {/* 바닥 여백은 떠 있는 ＋ 의 몫이다. 하단바의 몫은 `ScreenScroll` 이 남긴다. */}
         <View className="gap-1 px-4" style={{ paddingBottom: FAB_SPACE_PX }}>
           <View className="flex-row items-center justify-center gap-4 py-3">
-            {/* 오른쪽 겹화살표와 같은 폭. 기간 이름이 줄 가운데에 남는다. */}
-            <View className="h-7 w-7" />
+            {/* 미래 주에서는 왼쪽 겹화살표로 이번 주에 돌아간다. 늘 서 있고 쓸 수 없으면 흐리게 막힌다. */}
+            <Pressable
+              role="button"
+              aria-label="이번 주로 이동"
+              aria-disabled={jump !== 'back'}
+              disabled={jump !== 'back'}
+              onPress={() => moveWeek(thisWeek)}
+              className={`${ARROW_CLASS}${jump !== 'back' ? ' opacity-30' : ''}`}
+            >
+              <ChevronsLeftIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
+            </Pressable>
             <Pressable
               role="button"
               aria-label="이전 주"
@@ -119,14 +127,14 @@ export function AppointmentsScreen(): React.JSX.Element {
             >
               <ChevronRightIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
             </Pressable>
-            {/* 이번 주면 숨지 않고 흐리다. 숨기면 줄 폭이 바뀌어 기간 이름이 흔들린다. */}
+            {/* 지난 주에서는 오른쪽 겹화살표로 이번 주에 돌아간다. 늘 서 있고 쓸 수 없으면 흐리게 막힌다. */}
             <Pressable
               role="button"
               aria-label="이번 주로 이동"
-              aria-disabled={isOnThisWeek}
-              disabled={isOnThisWeek}
+              aria-disabled={jump !== 'forward'}
+              disabled={jump !== 'forward'}
               onPress={() => moveWeek(thisWeek)}
-              className={`${ARROW_CLASS}${isOnThisWeek ? ' opacity-30' : ''}`}
+              className={`${ARROW_CLASS}${jump !== 'forward' ? ' opacity-30' : ''}`}
             >
               <ChevronsRightIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
             </Pressable>
@@ -138,7 +146,7 @@ export function AppointmentsScreen(): React.JSX.Element {
             weekLabel={periodLabel.primary}
             nowMs={nowMs}
             names={names}
-            colorOf={colorOf}
+            faces={faces}
             onPressOccurrence={(occurrence) => setSheet({ occurrence, weekStart })}
           />
         </View>
@@ -168,7 +176,7 @@ export function AppointmentsScreen(): React.JSX.Element {
           target={typeof sheet === 'string' ? undefined : sheet}
           repeats={sheet === 'weekly'}
           names={names}
-          colorOf={colorOf}
+          faces={faces}
           onClose={() => setSheet(null)}
         />
       )}

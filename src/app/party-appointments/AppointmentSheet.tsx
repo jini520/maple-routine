@@ -26,6 +26,7 @@ import {
   nextOccurrenceDateKey,
   toAppointment,
   weekdayOf,
+  withStart,
   type AppointmentDraft,
 } from '../../features/party-appointments/draft'
 import {
@@ -35,6 +36,7 @@ import {
   isPastWeek,
   repeatWeekdayOf,
 } from '../../features/party-appointments/edit'
+import { orderByCharacter } from '../../features/party-appointments/boss-groups'
 import { alarmsOnDate } from '../../features/party-appointments/guards'
 import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
 import { WEEKDAY_LABELS } from '../../lib/calendar'
@@ -66,7 +68,8 @@ export interface AppointmentSheetProps {
   /** 추가할 때 고른 ＋ 의 갈래. 매주 반복이면 true */
   repeats?: boolean
   names: ReadonlyMap<string, string>
-  colorOf: (ocid: string) => string
+  /** 캐릭터 `ocid → 얼굴 그림 URL` */
+  faces: ReadonlyMap<string, string | null>
   onClose: () => void
 }
 
@@ -85,7 +88,8 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   const picker = useBossPicker()
   const todayKey = getCurrentKstDateKey(now)
   const editing = target !== undefined
-  const repeating = target?.occurrence.appointment.schedule.type === 'weekly'
+  const schedule = target?.occurrence.appointment.schedule
+  const repeating = schedule?.type === 'weekly'
   const past = target !== undefined && isPastWeek(target.weekStart, todayKey)
 
   function update(patch: Partial<AppointmentDraft>): void {
@@ -179,7 +183,15 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
       <Pressable
         role="button"
         aria-label="수정"
-        onPress={() => setStep('form')}
+        onPress={() => {
+          if (target !== undefined && schedule?.type === 'weekly') {
+            // 이 주만 고친 회차는 이 주만 적용하기를 켠 채 고친 날짜로 연다. 아니면 앞으로 모두이고 약속의 반복 요일에서 시작한다.
+            const overridden = target.occurrence.appointment.exceptions[target.weekStart]?.type === 'override'
+            setThisWeekOnly(overridden)
+            update({ startDateKey: overridden ? target.occurrence.dateKey : dateInWeek(target.weekStart, schedule.weekday) })
+          }
+          setStep('form')
+        }}
         className="items-center rounded-xl bg-primary py-3 active:opacity-80"
       >
         <Text className="text-sm font-bold text-on-primary">수정</Text>
@@ -200,8 +212,11 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
           aria-checked={thisWeekOnly}
           onPress={() => {
             // 끄면 요일 타일로 돌아간다. 이 주만 다른 주 날짜로 옮겼어도 앞으로 모두는 그 주 W 부터다.
-            if (thisWeekOnly && target !== undefined) {
-              update({ startDateKey: dateInWeek(target.weekStart, weekdayOf(draft.startDateKey)) })
+            // 켜면 그 회차의 날짜, 끄면 그 주 W 안의 반복 요일로 돌아간다.
+            if (target !== undefined && schedule?.type === 'weekly') {
+              update({
+                startDateKey: thisWeekOnly ? dateInWeek(target.weekStart, schedule.weekday) : target.occurrence.dateKey,
+              })
             }
             setThisWeekOnly(!thisWeekOnly)
           }}
@@ -228,13 +243,15 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   const bossesFooter = (
     <BossPickerTray
       picked={picker.picked}
-      colorOf={props.colorOf}
+      names={props.names}
+      faces={props.faces}
       flight={picker.flight}
       onFlightDone={picker.endFlight}
       onReorder={picker.setPicked}
       onPressItem={picker.openEditing}
       onConfirm={() => {
-        update({ bosses: picker.picked })
+        // 저장되는 한 줄은 캐릭터 묶음 순서다. 화면과 알림 문구가 같은 순서를 본다.
+        update({ bosses: orderByCharacter(picker.picked) })
         setStep('form')
       }}
     />
@@ -249,10 +266,14 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
         startMinutes={draft.startMinutes}
         endMinutes={draft.endMinutes}
         endInvalid={endInvalid}
-        onChangeStart={(dateKey, minutes) =>
+        onChangeStart={(dateKey, minutes) => {
           // 반복 추가는 시작 시각이 바뀌면 다음 회차가 이번 주인지 다음 주인지 다시 센다.
-          update({ startDateKey: byWeekday ? dateForWeekday(weekdayOf(dateKey), minutes) : dateKey, startMinutes: minutes })
-        }
+          const startDateKey = byWeekday ? dateForWeekday(weekdayOf(dateKey), minutes) : dateKey
+          // 시각을 바꾸면 종료는 늘 시작 + 30분이다. 날짜만 바꾸면 종료는 그대로 둔다.
+          setDraft((current) =>
+            minutes === current.startMinutes ? { ...current, startDateKey } : withStart(current, startDateKey, minutes),
+          )
+        }}
         onChangeEnd={(minutes) => update({ endMinutes: minutes })}
         onChangeWeekday={
           byWeekday ? (weekday) => update({ startDateKey: dateForWeekday(weekday, draft.startMinutes) }) : undefined
@@ -261,7 +282,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
       <AppointmentBossList
         bosses={draft.bosses}
         names={props.names}
-        colorOf={props.colorOf}
+        faces={props.faces}
         onChange={(bosses) => update({ bosses })}
         onAdd={() => {
           picker.begin(draft.bosses)
@@ -296,7 +317,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
         readOnly
         bosses={draft.bosses}
         names={props.names}
-        colorOf={props.colorOf}
+        faces={props.faces}
         onChange={() => undefined}
         onAdd={() => undefined}
       />
@@ -314,7 +335,6 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
       onSelectCharacter={picker.setOcid}
       sections={picker.sections}
       picked={picker.picked}
-      colorOf={props.colorOf}
       onPressTile={picker.pressTile}
     />
   )

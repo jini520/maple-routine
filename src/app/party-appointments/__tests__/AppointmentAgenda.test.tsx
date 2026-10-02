@@ -21,7 +21,8 @@ function appointment(overrides: Partial<PartyAppointment>): PartyAppointment {
 }
 
 const WEEK = '2026-10-01'
-const NAMES = new Map([['ocid-1', '낟낟']])
+const NAMES = new Map([['ocid-1', '낟낟'], ['ocid-2', '낟넘']])
+const FACES = new Map<string, string | null>([['ocid-1', null], ['ocid-2', null]])
 
 function props(appointments: PartyAppointment[], overrides: Partial<AppointmentAgendaProps> = {}): AppointmentAgendaProps {
   return {
@@ -30,7 +31,7 @@ function props(appointments: PartyAppointment[], overrides: Partial<AppointmentA
     weekLabel: '이번 주',
     nowMs: Date.parse('2026-10-01T20:00:00Z'),
     names: NAMES,
-    colorOf: () => '#3F7FC4',
+    faces: FACES,
     onPressOccurrence: jest.fn(),
     ...overrides,
   }
@@ -53,7 +54,8 @@ describe('AppointmentAgenda', () => {
     const view = await renderAtom(<AppointmentAgenda {...props([appointment({ timeKst: '23:30' })])} />)
 
     expect(view.getByText('23:30')).toBeTruthy()
-    expect(view.getByText('~00:00')).toBeTruthy()
+    // 시각은 카드 위 한 줄이다. 종료는 시작 옆에 `~ 종료` 로 붙는다(정정 19).
+    expect(view.getByText('~ 00:00')).toBeTruthy()
     expect(view.getByText('낟낟')).toBeTruthy()
   })
 
@@ -90,5 +92,27 @@ describe('AppointmentAgenda', () => {
 
     expect(view.getByText('9월 1주차 약속이 없어요')).toBeTruthy()
     expect(view.queryByRole('button')).toBeNull()
+  })
+
+  // 보스는 캐릭터별로 묶여 선다. 캐릭터 이름은 묶음 머리에 한 번만 적고 보스 줄에는 없다(정정 17).
+  it('보스를 캐릭터를 처음 고른 순서로 묶고, 캐릭터 이름은 묶음마다 한 번 적는다', async () => {
+    const view = await renderAtom(
+      <AppointmentAgenda
+        {...props([
+          appointment({
+            bosses: [
+              { bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' },
+              { bossKey: 'jupiter', difficulty: 'normal', ocid: 'ocid-2' },
+              { bossKey: 'kaling', difficulty: 'normal', ocid: 'ocid-1' },
+            ],
+          }),
+        ])}
+      />,
+    )
+
+    expect(view.getAllByText('낟낟')).toHaveLength(1)
+    expect(view.getAllByText('낟넘')).toHaveLength(1)
+    const order = view.getAllByText(/^(낟낟|낟넘|림보|유피테르|카링)$/).map((node) => node.props.children)
+    expect(order).toEqual(['낟낟', '림보', '카링', '낟넘', '유피테르'])
   })
 })

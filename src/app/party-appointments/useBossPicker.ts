@@ -111,6 +111,7 @@ export function useBossPicker(): BossPicker {
       ocid: character.ocid,
       name: character.characterName,
       level: character.level ?? null,
+      imageUrl: character.imageUrl ?? null,
       registeredCount: registeredByOcid.get(character.ocid)?.length ?? 0,
     })),
     ocid,
