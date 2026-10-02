@@ -142,58 +142,59 @@ import a127 from '../items/karma_premium_pet_equip_attack_scroll.webp'
 import a128 from '../items/karma_premium_pet_equip_magic_scroll.webp'
 import a129 from '../items/legendary_blessing_potion.webp'
 import a130 from '../items/luminous_moonshine_potion.png'
-import a131 from '../items/magical_onehand_attack_scroll.webp'
-import a132 from '../items/magical_onehand_magic_scroll.webp'
-import a133 from '../items/magical_twohand_attack_scroll.webp'
-import a134 from '../items/magical_weapon_scroll_coupon.png'
-import a135 from '../items/maleficstar_shard.webp'
-import a136 from '../items/maleficstar_shard_piece.webp'
-import a137 from '../items/mechaberry_farm_ticket.webp'
-import a138 from '../items/meso.webp'
-import a139 from '../items/meso_pouch.webp'
-import a140 from '../items/mihoroid.webp'
-import a141 from '../items/monster_park_ticket.webp'
-import a142 from '../items/mvp_extra_exp_70_coupon.webp'
-import a143 from '../items/npc_mr_newname.webp'
-import a144 from '../items/papulatus_mark.png'
-import a145 from '../items/pet_equip_attack_scroll.webp'
-import a146 from '../items/pet_equip_innocent_scroll.webp'
-import a147 from '../items/pet_equip_magic_scroll.webp'
-import a148 from '../items/pet_equip_pure_white_scroll.webp'
-import a149 from '../items/pet_equip_return_scroll.webp'
-import a150 from '../items/potential_reset.png'
-import a151 from '../items/premium_accessory_attack_scroll.webp'
-import a152 from '../items/premium_accessory_magic_scroll.webp'
-import a153 from '../items/premium_accessory_scroll_coupon.png'
-import a154 from '../items/premium_pet_equip_attack_scroll.webp'
-import a155 from '../items/premium_pet_equip_magic_scroll.webp'
-import a156 from '../items/premium_petequip_scroll_coupon.png'
-import a157 from '../items/red_star_potion.webp'
-import a158 from '../items/return_scroll.webp'
-import a159 from '../items/scroll_10_percent.webp'
-import a160 from '../items/seiram_elixir.webp'
-import a161 from '../items/selazar_coin.webp'
-import a162 from '../items/small_concentrated_exp_accumulation_potion.webp'
-import a163 from '../items/small_exp_accumulation_potion.webp'
-import a164 from '../items/sol_erda_fragment.webp'
-import a165 from '../items/sole_10.png'
-import a166 from '../items/sole_1000.webp'
-import a167 from '../items/sole_200.png'
-import a168 from '../items/sole_500.webp'
-import a169 from '../items/soul_ether_1.webp'
-import a170 from '../items/soul_ether_2.webp'
-import a171 from '../items/soul_ether_3.webp'
-import a172 from '../items/soul_ether_4.webp'
-import a173 from '../items/soul_weapon_potential.webp'
-import a174 from '../items/spell_trace.webp'
-import a175 from '../items/union_wealth.webp'
-import a176 from '../items/vip_buff_exp.webp'
-import a177 from '../items/vip_buff_stats.webp'
-import a178 from '../items/vip_sauna_ticket.webp'
-import a179 from '../items/wealth_acquisition_potion.webp'
-import a180 from '../items/wealth_acquisition_potion_small.webp'
-import a181 from '../items/whetstone_faith.png'
-import a182 from '../items/whetstone_life.png'
+import a131 from '../items/magic_whetstone.webp'
+import a132 from '../items/magical_onehand_attack_scroll.webp'
+import a133 from '../items/magical_onehand_magic_scroll.webp'
+import a134 from '../items/magical_twohand_attack_scroll.webp'
+import a135 from '../items/magical_weapon_scroll_coupon.png'
+import a136 from '../items/maleficstar_shard.webp'
+import a137 from '../items/maleficstar_shard_piece.webp'
+import a138 from '../items/mechaberry_farm_ticket.webp'
+import a139 from '../items/meso.webp'
+import a140 from '../items/meso_pouch.webp'
+import a141 from '../items/mihoroid.webp'
+import a142 from '../items/monster_park_ticket.webp'
+import a143 from '../items/mvp_extra_exp_70_coupon.webp'
+import a144 from '../items/npc_mr_newname.webp'
+import a145 from '../items/papulatus_mark.png'
+import a146 from '../items/pet_equip_attack_scroll.webp'
+import a147 from '../items/pet_equip_innocent_scroll.webp'
+import a148 from '../items/pet_equip_magic_scroll.webp'
+import a149 from '../items/pet_equip_pure_white_scroll.webp'
+import a150 from '../items/pet_equip_return_scroll.webp'
+import a151 from '../items/potential_reset.png'
+import a152 from '../items/premium_accessory_attack_scroll.webp'
+import a153 from '../items/premium_accessory_magic_scroll.webp'
+import a154 from '../items/premium_accessory_scroll_coupon.png'
+import a155 from '../items/premium_pet_equip_attack_scroll.webp'
+import a156 from '../items/premium_pet_equip_magic_scroll.webp'
+import a157 from '../items/premium_petequip_scroll_coupon.png'
+import a158 from '../items/red_star_potion.webp'
+import a159 from '../items/return_scroll.webp'
+import a160 from '../items/scroll_10_percent.webp'
+import a161 from '../items/seiram_elixir.webp'
+import a162 from '../items/selazar_coin.webp'
+import a163 from '../items/small_concentrated_exp_accumulation_potion.webp'
+import a164 from '../items/small_exp_accumulation_potion.webp'
+import a165 from '../items/sol_erda_fragment.webp'
+import a166 from '../items/sole_10.png'
+import a167 from '../items/sole_1000.webp'
+import a168 from '../items/sole_200.png'
+import a169 from '../items/sole_500.webp'
+import a170 from '../items/soul_ether_1.webp'
+import a171 from '../items/soul_ether_2.webp'
+import a172 from '../items/soul_ether_3.webp'
+import a173 from '../items/soul_ether_4.webp'
+import a174 from '../items/soul_weapon_potential.webp'
+import a175 from '../items/spell_trace.webp'
+import a176 from '../items/union_wealth.webp'
+import a177 from '../items/vip_buff_exp.webp'
+import a178 from '../items/vip_buff_stats.webp'
+import a179 from '../items/vip_sauna_ticket.webp'
+import a180 from '../items/wealth_acquisition_potion.webp'
+import a181 from '../items/wealth_acquisition_potion_small.webp'
+import a182 from '../items/whetstone_faith.png'
+import a183 from '../items/whetstone_life.png'
 
 export const ITEM_ASSETS: Record<string, ImageAssetRef> = {
   "Berserker_Ring.png": a0,
@@ -327,56 +328,57 @@ export const ITEM_ASSETS: Record<string, ImageAssetRef> = {
   "karma_premium_pet_equip_magic_scroll.webp": a128,
   "legendary_blessing_potion.webp": a129,
   "luminous_moonshine_potion.png": a130,
-  "magical_onehand_attack_scroll.webp": a131,
-  "magical_onehand_magic_scroll.webp": a132,
-  "magical_twohand_attack_scroll.webp": a133,
-  "magical_weapon_scroll_coupon.png": a134,
-  "maleficstar_shard.webp": a135,
-  "maleficstar_shard_piece.webp": a136,
-  "mechaberry_farm_ticket.webp": a137,
-  "meso.webp": a138,
-  "meso_pouch.webp": a139,
-  "mihoroid.webp": a140,
-  "monster_park_ticket.webp": a141,
-  "mvp_extra_exp_70_coupon.webp": a142,
-  "npc_mr_newname.webp": a143,
-  "papulatus_mark.png": a144,
-  "pet_equip_attack_scroll.webp": a145,
-  "pet_equip_innocent_scroll.webp": a146,
-  "pet_equip_magic_scroll.webp": a147,
-  "pet_equip_pure_white_scroll.webp": a148,
-  "pet_equip_return_scroll.webp": a149,
-  "potential_reset.png": a150,
-  "premium_accessory_attack_scroll.webp": a151,
-  "premium_accessory_magic_scroll.webp": a152,
-  "premium_accessory_scroll_coupon.png": a153,
-  "premium_pet_equip_attack_scroll.webp": a154,
-  "premium_pet_equip_magic_scroll.webp": a155,
-  "premium_petequip_scroll_coupon.png": a156,
-  "red_star_potion.webp": a157,
-  "return_scroll.webp": a158,
-  "scroll_10_percent.webp": a159,
-  "seiram_elixir.webp": a160,
-  "selazar_coin.webp": a161,
-  "small_concentrated_exp_accumulation_potion.webp": a162,
-  "small_exp_accumulation_potion.webp": a163,
-  "sol_erda_fragment.webp": a164,
-  "sole_10.png": a165,
-  "sole_1000.webp": a166,
-  "sole_200.png": a167,
-  "sole_500.webp": a168,
-  "soul_ether_1.webp": a169,
-  "soul_ether_2.webp": a170,
-  "soul_ether_3.webp": a171,
-  "soul_ether_4.webp": a172,
-  "soul_weapon_potential.webp": a173,
-  "spell_trace.webp": a174,
-  "union_wealth.webp": a175,
-  "vip_buff_exp.webp": a176,
-  "vip_buff_stats.webp": a177,
-  "vip_sauna_ticket.webp": a178,
-  "wealth_acquisition_potion.webp": a179,
-  "wealth_acquisition_potion_small.webp": a180,
-  "whetstone_faith.png": a181,
-  "whetstone_life.png": a182,
+  "magic_whetstone.webp": a131,
+  "magical_onehand_attack_scroll.webp": a132,
+  "magical_onehand_magic_scroll.webp": a133,
+  "magical_twohand_attack_scroll.webp": a134,
+  "magical_weapon_scroll_coupon.png": a135,
+  "maleficstar_shard.webp": a136,
+  "maleficstar_shard_piece.webp": a137,
+  "mechaberry_farm_ticket.webp": a138,
+  "meso.webp": a139,
+  "meso_pouch.webp": a140,
+  "mihoroid.webp": a141,
+  "monster_park_ticket.webp": a142,
+  "mvp_extra_exp_70_coupon.webp": a143,
+  "npc_mr_newname.webp": a144,
+  "papulatus_mark.png": a145,
+  "pet_equip_attack_scroll.webp": a146,
+  "pet_equip_innocent_scroll.webp": a147,
+  "pet_equip_magic_scroll.webp": a148,
+  "pet_equip_pure_white_scroll.webp": a149,
+  "pet_equip_return_scroll.webp": a150,
+  "potential_reset.png": a151,
+  "premium_accessory_attack_scroll.webp": a152,
+  "premium_accessory_magic_scroll.webp": a153,
+  "premium_accessory_scroll_coupon.png": a154,
+  "premium_pet_equip_attack_scroll.webp": a155,
+  "premium_pet_equip_magic_scroll.webp": a156,
+  "premium_petequip_scroll_coupon.png": a157,
+  "red_star_potion.webp": a158,
+  "return_scroll.webp": a159,
+  "scroll_10_percent.webp": a160,
+  "seiram_elixir.webp": a161,
+  "selazar_coin.webp": a162,
+  "small_concentrated_exp_accumulation_potion.webp": a163,
+  "small_exp_accumulation_potion.webp": a164,
+  "sol_erda_fragment.webp": a165,
+  "sole_10.png": a166,
+  "sole_1000.webp": a167,
+  "sole_200.png": a168,
+  "sole_500.webp": a169,
+  "soul_ether_1.webp": a170,
+  "soul_ether_2.webp": a171,
+  "soul_ether_3.webp": a172,
+  "soul_ether_4.webp": a173,
+  "soul_weapon_potential.webp": a174,
+  "spell_trace.webp": a175,
+  "union_wealth.webp": a176,
+  "vip_buff_exp.webp": a177,
+  "vip_buff_stats.webp": a178,
+  "vip_sauna_ticket.webp": a179,
+  "wealth_acquisition_potion.webp": a180,
+  "wealth_acquisition_potion_small.webp": a181,
+  "whetstone_faith.png": a182,
+  "whetstone_life.png": a183,
 }

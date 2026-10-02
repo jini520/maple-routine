@@ -260,6 +260,7 @@ describe('spend-catalog.json: 닻 (사용자 확인값, 2026-08-23)', () => {
       '향상된 10단계 민첩의 물약',
       '향상된 10단계 지능의 물약',
       '향상된 10단계 행운의 물약',
+      '마법의 숫돌',
       'VIP 버프 (능력치)',
     ])
     expect(namesOf('hunting_buff')).toEqual([
@@ -295,6 +296,7 @@ describe('spend-catalog.json: 닻 (사용자 확인값, 2026-08-23)', () => {
     expect(iconOf('small_wealth_acquisition_potion')).toBe('wealth_acquisition_potion_small.webp')
     expect(iconOf('wealth_acquisition_potion')).toBe('wealth_acquisition_potion.webp')
     expect(iconOf('exp_accumulation_potion')).toBe('exp_accumulation_potion.webp')
+    expect(iconOf('magic_whetstone')).toBe('magic_whetstone.webp')
   })
 })
 
