@@ -9,18 +9,19 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../components/atoms'
+import { MinusIcon, PlusIcon, Text } from '../../components/atoms'
 import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
 import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
 import { ChainSelect } from '../../components/organisms/ChainSelect/ChainSelect'
 import {
   acceptMesoText,
+  mesoTextOf,
   mesoValueOf,
   settleMesoText,
 } from '../../components/organisms/MesoPad/meso-pad'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { openInputCard } from '../../features/input-card/store'
-import type { InputCardIcon } from '../../components/organisms/InputCard/InputCard'
+import type { InputCardChip, InputCardIcon } from '../../components/organisms/InputCard/InputCard'
 import { characterOptions } from './character-options'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { monthKeyOf } from '../../lib/calendar'
@@ -131,7 +132,7 @@ export function AmountInput(props: {
   /** 한국어 단위 읽기(`1200만`). 메소 금액에만 뜻이 있다. */
   reading?: boolean
   icon?: InputCardIcon
-  chips?: readonly { label: string; value: number }[]
+  chips?: readonly InputCardChip[]
   placeholder?: string
 }): React.JSX.Element {
   const empty = props.value === ''
@@ -140,19 +141,7 @@ export function AmountInput(props: {
       testID={props.testID}
       role="button"
       aria-label={props.label}
-      onPress={() =>
-        openInputCard({
-          label: props.label,
-          context: props.context,
-          icon: props.icon,
-          unit: props.unit,
-          reading: props.reading,
-          chips: props.chips ?? MESO_QUICK_ADDS,
-          placeholder: props.placeholder,
-          value: props.value,
-          onConfirm: (next) => props.onChange(settleMesoText(acceptMesoText(props.value, next))),
-        })
-      }
+      onPress={() => openAmountCard(props)}
       className="h-5 flex-1"
     >
       <Text
@@ -163,6 +152,31 @@ export function AmountInput(props: {
       </Text>
     </Pressable>
   )
+}
+
+/** 수를 받는 입력 카드를 여는 함수. `AmountInput` 과 `QuantityStepper` 의 가운데 숫자가 같은 카드를 연다. */
+function openAmountCard(props: {
+  label: string
+  value: string
+  onChange: (next: string) => void
+  context?: string
+  unit?: string
+  reading?: boolean
+  icon?: InputCardIcon
+  chips?: readonly InputCardChip[]
+  placeholder?: string
+}): void {
+  openInputCard({
+    label: props.label,
+    context: props.context,
+    icon: props.icon,
+    unit: props.unit,
+    reading: props.reading,
+    chips: props.chips ?? MESO_QUICK_ADDS,
+    placeholder: props.placeholder,
+    value: props.value,
+    onConfirm: (next) => props.onChange(settleMesoText(acceptMesoText(props.value, next))),
+  })
 }
 
 /**
@@ -238,3 +252,81 @@ export function FieldRow(props: {
   )
 }
 
+/**
+ * 수량 스테퍼. `+ / −` 로 하나씩 오르내리고, **가운데 숫자를 누르면 입력 카드가 받는다.**
+ *
+ * 값은 글자로 든다. 카드로 친 빈 칸이 그대로 남아야 저장이 꺼진다(앱이 1 로 채우면 화면과 저장값이 갈린다).
+ * 상한을 넘겨 친 값을 줄이는 것은 부르는 쪽 `onChange` 의 일이다.
+ *
+ * 단위(회 · 개 · 소재)를 `+` 오른쪽에 붙이면 알약의 좌우가 안 맞는다. 단위는 부르는 쪽이 알약 밖에 적는다.
+ *
+ * @param label 읽어 주는 이름의 뿌리이자 카드 머리. 한 시트에 스테퍼가 둘이면 `수량` 하나로는 못 가른다
+ * @param context 카드 머리 아래 한 줄
+ */
+export function QuantityStepper(props: {
+  label: string
+  value: string
+  onChange: (next: string) => void
+  /** 상한. 사용자가 준 한도에서 온다. 없으면 `+` 를 안 막는다. */
+  max?: number
+  context?: string
+  testID?: string
+}): React.JSX.Element {
+  const value = mesoValueOf(props.value)
+  // 바닥은 1 이다. 수량도 소재도 0 이 뜻이 없다(0 소재를 돌았다는 말은 성립하지 않는다).
+  const canDecrease = value > 1
+  const canIncrease = props.max === undefined || value < props.max
+  return (
+    <View className="h-9 flex-row items-center gap-3 rounded-full border border-border px-2">
+      <Pressable
+        role="button"
+        aria-label={`${props.label} 줄이기`}
+        disabled={!canDecrease}
+        onPress={() => props.onChange(mesoTextOf(value - 1))}
+        hitSlop={8}
+      >
+        {/* NativeWind 의 `disabled:` 는 RN 의 `disabled` 프롭과 안 이어져 있다. JS 조건으로 쓴다. */}
+        <MinusIcon
+          className={`h-4 w-4 ${canDecrease ? 'text-text' : 'text-text-disabled'}`}
+          strokeWidth={2}
+          aria-hidden
+        />
+      </Pressable>
+      <Pressable
+        testID={props.testID}
+        role="button"
+        aria-label={props.label}
+        onPress={() =>
+          openAmountCard({
+            label: props.label,
+            context: props.context,
+            chips: [],
+            value: props.value,
+            onChange: props.onChange,
+          })
+        }
+        hitSlop={{ top: 8, bottom: 8 }}
+      >
+        <Text
+          className={`min-w-6 text-center text-sm font-bold ${value === 0 ? 'text-text-disabled' : 'text-text'}`}
+          style={TABULAR_NUMS}
+        >
+          {value.toLocaleString()}
+        </Text>
+      </Pressable>
+      <Pressable
+        role="button"
+        aria-label={`${props.label} 늘리기`}
+        disabled={!canIncrease}
+        onPress={() => props.onChange(mesoTextOf(value + 1))}
+        hitSlop={8}
+      >
+        <PlusIcon
+          className={`h-4 w-4 ${canIncrease ? 'text-text' : 'text-text-disabled'}`}
+          strokeWidth={2}
+          aria-hidden
+        />
+      </Pressable>
+    </View>
+  )
+}

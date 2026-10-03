@@ -1503,6 +1503,21 @@ describe('사냥 계산기', () => {
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
+  // 소재는 스테퍼이고 가운데 숫자를 누르면 친다. 0 소재는 뜻이 없어 1 에서 멈춘다.
+  it('소재 스테퍼는 하나씩 오르내리고 1 에서 멈춘다', async () => {
+    const view = await 그리기()
+    await 밤의길3(view)
+
+    expect(view.getByLabelText('소재 줄이기').props.accessibilityState?.disabled).toBe(true)
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('소재 늘리기'))
+    })
+
+    expect(view.getByTestId('income-sheet-sojae')).toHaveTextContent('2')
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 42,336,000')
+    expect(view.getByLabelText('소재 줄이기').props.accessibilityState?.disabled).toBe(false)
+  })
+
   /**
    * **효율 조각은 맵이 정한다**. 고르는 것은 몇
    * 마리를 놓치나 이고 %는 그 결과다. 40마리에서 하나를 놓치면 98%, 22마리면 95% 다.
@@ -1687,8 +1702,6 @@ describe('사냥 계산기', () => {
 
     expect(줄글자(view, 'income-sheet-fragments')).toBe('83')
     expect(view.queryByLabelText('솔 에르다 조각 늘리기')).toBeNull()
-    // 소재도 치는 칸이다.
-    expect(view.queryByLabelText('소재 늘리기')).toBeNull()
   })
 
   // 붙여넣기가 숫자 아닌 것을 들여보낸다. 조각 가격과 같은 규칙을 쓴다.
@@ -2584,6 +2597,30 @@ describe('솔 에르다 조각 정산', () => {
       hunt: null,
       memo: null,
     })
+  })
+
+  // `모두` 는 판 개수를 보관 개수로 바꾼다. 친 값에 더하지 않는다.
+  it('판 개수 카드의 모두 칩이 보관 개수를 넣는다', async () => {
+    const view = await 정산시트({ loadFragmentStorage: async () => 120 })
+    await 사슬고르기(view, 'ocid-1')
+    await 아이디로치기(view, 'income-sheet-settle-count', '5')
+
+    await 아이디로누르기(view, 'income-sheet-settle-count')
+    await act(async () => {
+      fireEvent.press(view.getByText('모두'))
+    })
+    await 아이디로누르기(view, 'input-card-confirm')
+
+    expect(줄글자(view, 'income-sheet-settle-count')).toBe('120')
+  })
+
+  // 보관을 모르면 넣을 값이 없다.
+  it('캐릭터를 고르기 전에는 모두 칩이 없다', async () => {
+    const view = await 정산시트({ loadFragmentStorage: async () => 120 })
+
+    await 아이디로누르기(view, 'income-sheet-settle-count')
+
+    expect(view.queryByText('모두')).toBeNull()
   })
 
   it('판 개수가 보관을 넘기면 저장이 꺼진다. 보관만큼은 팔 수 있다', async () => {

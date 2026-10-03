@@ -47,7 +47,7 @@ import {
 } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
-import { AmountInput, CharacterField, FieldRow } from '../sheet-fields'
+import { AmountInput, CharacterField, FieldRow, QuantityStepper } from '../sheet-fields'
 import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import type { SpendRecord } from '../../../storage/spend'
 import { rowsOfGroups } from './tile-rows'
@@ -544,16 +544,29 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
             /*
              * 단위·상한은 대표가 안다. 단계를 고르기 전에도 선다. 상한이 1 이면 안 세운다.
              * 1 밖에 못 치는 칸은 고칠 수 있다 는 거짓말이다.
+             *
+             * 상한이 있으면 스테퍼, 없으면 치는 칸이다. 상한이 없는 수량은 클 수 있어 스테퍼가 안 맞는다.
              */
             <FieldRow label="수량">
-              <AmountInput
-                testID="spend-sheet-quantity"
-                label="수량"
-                context={item?.name ?? choice?.label}
-                chips={[]}
-                value={quantityText}
-                onChange={(next) => setQuantityText(capQuantityText(next, scope.maxQuantity))}
-              />
+              {scope.maxQuantity !== undefined ? (
+                <QuantityStepper
+                  testID="spend-sheet-quantity"
+                  label="수량"
+                  context={item?.name ?? choice?.label}
+                  max={scope.maxQuantity}
+                  value={quantityText}
+                  onChange={(next) => setQuantityText(capQuantityText(next, scope.maxQuantity))}
+                />
+              ) : (
+                <AmountInput
+                  testID="spend-sheet-quantity"
+                  label="수량"
+                  context={item?.name ?? choice?.label}
+                  chips={[]}
+                  value={quantityText}
+                  onChange={setQuantityText}
+                />
+              )}
             </FieldRow>
           )}
 

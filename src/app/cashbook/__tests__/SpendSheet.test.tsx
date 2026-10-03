@@ -459,10 +459,10 @@ describe('세라자르 주화', () => {
 
 describe('수량. 곱셈은 앱이 한다', () => {
   /**
-   * 수량은 **치는 칸**이다. 스테퍼는 수량이 크면 여러 번 눌러야 했다.
+   * 상한이 없는 항목의 수량은 **치는 칸**이다. 수량이 클 수 있어 스테퍼가 안 맞는다.
    * 단위를 안 적고 처음 값은 1 이다.
    */
-  it('수량은 치는 칸이다. 스테퍼 · 단위가 없고 처음은 1 이다', async () => {
+  it('상한이 없으면 수량은 치는 칸이다. 스테퍼 · 단위가 없고 처음은 1 이다', async () => {
     const view = await 그리기()
     await 갈래바꾸기(view, '이벤트·BM')
 
@@ -569,6 +569,23 @@ describe('수량. 곱셈은 앱이 한다', () => {
     await 누르기(view, '미호로이드')
 
     expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
+  })
+
+  // 상한이 있는 항목은 스테퍼다. 가운데 숫자를 누르면 친다(위 케이스들). `+` 는 상한에서, `−` 는 1 에서 멈춘다.
+  it('상한이 있으면 수량은 스테퍼이고 상한과 1 에서 멈춘다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180 })
+    await 누르기(view, '몬스터 파크')
+
+    expect(view.getByLabelText('수량 줄이기').props.accessibilityState?.disabled).toBe(true)
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('수량 늘리기'))
+    })
+    expect(줄글자(view, 'spend-sheet-quantity')).toBe('2')
+
+    await 카드칸에치기(view, 'spend-sheet-quantity', '14')
+
+    expect(view.getByLabelText('수량 늘리기').props.accessibilityState?.disabled).toBe(true)
+    expect(view.getByLabelText('수량 줄이기').props.accessibilityState?.disabled).toBe(false)
   })
 
   // 상한이 없는 항목은 친 그대로다. 없는 한도를 앱이 지어내면 그것이 추정이다.
