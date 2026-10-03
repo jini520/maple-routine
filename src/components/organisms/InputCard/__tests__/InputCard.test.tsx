@@ -145,6 +145,16 @@ describe('InputCard', () => {
     expect(onConfirm).toHaveBeenCalledWith('1000000')
   })
 
+  // `모두` 처럼 값을 정하는 칩은 더하지 않고 바꾼다.
+  it('set 칩을 누르면 친 값이 그 값으로 바뀐다', async () => {
+    const { view, onConfirm } = await 그리기({ value: '5', chips: [{ label: '모두', value: 120, set: true }] })
+
+    await 누르기(view, '모두')
+    await 누르기(view, 'input-card-confirm')
+
+    expect(onConfirm).toHaveBeenCalledWith('120')
+  })
+
   it('읽기를 켜면 한국어 단위를 보조로 적는다', async () => {
     const { view } = await 그리기({ value: '12000000', reading: true })
 

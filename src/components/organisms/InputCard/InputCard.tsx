@@ -162,6 +162,13 @@ function feePercentOf(option: (typeof FEE_OPTIONS)[number]): number | null {
 }
 
 
+/** 칩 하나. 기본은 값에 더하고, `set` 이면 값을 그것으로 바꾼다(`모두` 처럼 값을 정하는 칩). */
+export interface InputCardChip {
+  label: string
+  value: number
+  set?: boolean
+}
+
 export interface InputCardProps {
   /** 칸 이름. 머리의 큰 글자. */
   label: string
@@ -186,7 +193,7 @@ export interface InputCardProps {
   /** 글자 칸. 글자판이 뜨고 값이 왼쪽 정렬이며 칩이 안 선다. */
   text?: boolean
   /** 값에 더하는 눈금. 글자 칸에서는 무시된다. */
-  chips?: readonly { label: string; value: number }[]
+  chips?: readonly InputCardChip[]
   /**
    * 값 칸 아래에 서는 **분배 비율 고르개**. 넘기면 카드가 칸 둘을 받는 모양이 된다.
    *
@@ -485,9 +492,9 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     settleCaret(accepted, 남길숫자, 새커서)
   }
 
-  function add(step: number): void {
-    // 칩은 자리에 끼우는 것이 아니라 **값을 더하는** 것이라 커서가 끝으로 간다.
-    const next = mesoTextOf(Math.min(MAX_MESO, mesoValueOf(draft) + step))
+  function add(step: number, set = false): void {
+    // 칩은 자리에 끼우는 것이 아니라 **값을 더하거나 바꾸는** 것이라 커서가 끝으로 간다.
+    const next = mesoTextOf(Math.min(MAX_MESO, set ? step : mesoValueOf(draft) + step))
     setDraft(next)
     settleCaret(next, mesoTextOf(mesoValueOf(next)).length, caret?.start ?? shown.length)
   }
@@ -740,7 +747,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 <Pressable
                   key={chip.label}
                   role="button"
-                  onPress={() => add(chip.value)}
+                  onPress={() => add(chip.value, chip.set)}
                   // 24px 이 권장 타깃(44)보다 작지만, 칩은 값을 더하는 곁들이라 잘못 눌러도
                   // 되돌리기가 한 번 더 누르는 것이다. 줄이 넘치지 않게 작게 둔다(사용자 지정).
                   hitSlop={CHIP_HIT_SLOP}

@@ -78,6 +78,9 @@ export function FragmentSettleForm(
   const price = mesoValueOf(priceText)
   const gross = count * price
   const amount = fee.percent === null ? gross : netProceedsMeso(gross, fee.percent)
+  /** 판 개수 칩. `모두` 는 보관 개수로 바꾸고, 보관을 모르거나 0 이하면 넣을 값이 없어 안 선다. */
+  const countChips =
+    storage !== null && storage > 0 ? [{ label: '모두', value: storage, set: true }, ...COUNT_QUICK_ADDS] : COUNT_QUICK_ADDS
   /** 보관이 있어야 하고 판 개수는 1 부터 보관까지다. */
   const canSave = storage !== null && count >= 1 && count <= storage && price > 0 && fee.ready
 
@@ -143,7 +146,7 @@ export function FragmentSettleForm(
             context="솔 에르다 조각"
             icon="fragment"
             unit="개"
-            chips={COUNT_QUICK_ADDS}
+            chips={countChips}
             value={countText}
             onChange={setCountText}
           />
