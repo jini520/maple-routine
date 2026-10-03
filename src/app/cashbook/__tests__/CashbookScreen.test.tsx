@@ -1023,6 +1023,13 @@ describe('펼침판이 시트를 연다', () => {
     expect(view.getByText('지출 추가')).toBeTruthy()
   })
 
+  it('펼침판의 수입 · 지출 아래에 설명이 선다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId('speed-dial-description-income')).toHaveTextContent('사냥 · 아이템 판매 등을 기록')
+    expect(view.getByTestId('speed-dial-description-expense')).toHaveTextContent('컨텐츠 · 아이템 구매 등을 기록')
+  })
+
   it('수입을 고르면 수입 시트가 뜬다', async () => {
     const view = await 그리기()
 
