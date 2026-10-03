@@ -112,6 +112,12 @@ describe('StatsScreen', () => {
     expect(view.getByTestId('stats-summary-net').props.children.join('')).toContain('+3억')
   })
 
+  it('순 수익 옆에 지난 기간 대비 증감 칩이 없다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByLabelText(/지난 주(에는| 대비)/)).toBeNull()
+  })
+
   it('이전 기간으로 옮기면 지난 주의 합계가 선다', async () => {
     const view = await 그리기()
 

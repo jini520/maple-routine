@@ -12,8 +12,6 @@ export interface StatsPeriodRange extends StatsRange {
 
 export interface StatsRanges {
   current: StatsRange
-  /** 증감 칩의 비교 대상 */
-  previous: StatsRange
   /** 추이 막대. 오래된 것부터이고 마지막이 고른 기간이다 */
   trend: StatsPeriodRange[]
 }
@@ -34,8 +32,7 @@ export function statsRanges(cycle: BossCycle, periodKey: string): StatsRanges {
     key = getAdjacentPeriodKey(cycle, key, 'prev')
   }
   const { from, to } = trend[trend.length - 1]
-  const previous = trend[trend.length - 2]
-  return { current: { from, to }, previous: { from: previous.from, to: previous.to }, trend }
+  return { current: { from, to }, trend }
 }
 
 /**
