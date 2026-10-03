@@ -26,8 +26,11 @@ export function CategoryPicker<T extends string>(props: {
     readonly name: string
     readonly icon: string
     /**
-     * 이름 아래 한 줄. **한 줄에 들어가게 쓸 것** - 반폭 카드의 글자 폭이 390 화면에서 115 뿐이라
-     * 10px 로 열한 자 남짓이다. 넘치면 말줄임표가 붙는다.
+     * 이름 아래 한 줄.
+     *
+     * **넘치면 말줄임표로 잘리게 둔다**(사용자 지정 2026-09-21). 기기마다 가로 비율이 달라 어떤
+     * 글자든 다 들어간다고 못 박을 수가 없다. 글자를 줄여 맞추지도, 두 줄로 흘리지도 않는다 -
+     * 둘 다 줄 수가 갈려 카드 높이가 기기마다 달라진다. 참고로 390 화면의 글자 폭은 115 다.
      */
     readonly description: string
   }>
