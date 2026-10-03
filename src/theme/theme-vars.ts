@@ -108,7 +108,7 @@ export function resolveCardBody(definition: ThemeDefinition): string {
 }
 
 /**
- * 통계 화면의 섹션 바탕. 섹션은 테두리 없이 화면 양끝까지 펴고 페이지 바탕색 틈으로만 갈리므로,
+ * 통계 화면의 섹션 바탕. 섹션은 테두리 없는 카드라 페이지 바탕색 틈으로만 갈리므로,
  * 페이지보다 한 단 밝아야 한다.
  *
  * 라이트는 `card-body` 와 `surface` 사이다. 테마 톤은 남기고 페이지 위에 떠 보인다.

@@ -1,5 +1,5 @@
 /**
- * 통계 화면의 섹션 하나. 테두리 없이 화면 양끝까지 펴고 섹션 사이는 페이지 바탕색 틈이다.
+ * 통계 화면의 섹션 하나. 페이지 좌우 여백 안에 선 테두리 없는 카드이고 섹션 사이는 페이지 바탕색 틈이다.
  */
 import { View } from 'react-native'
 
@@ -12,7 +12,7 @@ export function StatsSection(props: {
   testID?: string
 }): React.JSX.Element {
   return (
-    <View testID={props.testID} className="-mx-4 gap-3 bg-stats-section px-4 py-[18px]">
+    <View testID={props.testID} className="gap-3 rounded-[14px] bg-stats-section px-4 py-[18px]">
       <View className="flex-row items-center justify-between">
         <Text className="text-sm font-semibold text-text">{props.title}</Text>
         {props.trailing}

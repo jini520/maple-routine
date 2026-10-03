@@ -41,7 +41,6 @@ import { formatMesoCompact, formatMesoSigned } from '../../lib/cashbook/meso-com
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { tapFeedback } from '../../native/haptics'
 import type { BossCycle } from '../../types'
-import { DeltaChip } from '../boss-profit/HeadlineChips'
 import { BossSection } from './BossSection'
 import { CategorySection } from './CategorySection'
 import { CharacterSection } from './CharacterSection'
@@ -196,7 +195,6 @@ export function StatsScreen(): React.JSX.Element {
   )
 
   const current = totalsBetween(days, ranges.current)
-  const previous = totalsBetween(days, ranges.previous)
   const replayKey = `${cycle}-${periodKey}`
   const label = formatBossProfitPeriodLabel(cycle, periodKey, now)
   const isLatest = isLatestPeriod(cycle, periodKey, now)
@@ -277,18 +275,15 @@ export function StatsScreen(): React.JSX.Element {
               <StatsSection title="순 수익" testID="stats-summary">
                 <View className="flex-row items-end justify-between gap-3">
                   <View className="shrink">
-                    <View className="flex-row items-center">
-                      <Text
-                        testID="stats-summary-net"
-                        numberOfLines={1}
-                        className={`text-xl font-bold ${current.netMeso > 0 ? 'text-rise-ink' : current.netMeso < 0 ? 'text-fall-ink' : 'text-text'}`}
-                        style={TABULAR_NUMS}
-                      >
-                        {signed(current.netMeso)}{' '}
-                        <Text className="text-11 font-bold text-text-muted">메소</Text>
-                      </Text>
-                      <DeltaChip totalMeso={current.netMeso} previousMeso={previous.netMeso} tab={cycle} periodKey={periodKey} now={now} />
-                    </View>
+                    <Text
+                      testID="stats-summary-net"
+                      numberOfLines={1}
+                      className={`text-xl font-bold ${current.netMeso > 0 ? 'text-rise-ink' : current.netMeso < 0 ? 'text-fall-ink' : 'text-text'}`}
+                      style={TABULAR_NUMS}
+                    >
+                      {signed(current.netMeso)}{' '}
+                      <Text className="text-11 font-bold text-text-muted">메소</Text>
+                    </Text>
                   </View>
                   <View className="shrink-0 items-end gap-1">
                     <View className="flex-row items-baseline gap-1.5">
