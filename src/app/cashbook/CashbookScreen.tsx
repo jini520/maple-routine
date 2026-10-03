@@ -1197,8 +1197,22 @@ export function CashbookScreen(): React.JSX.Element {
       <SpeedDial
         label="기록 추가"
         actions={[
-          { key: 'income', label: '수입', accessibilityLabel: '수입 추가', Icon: ProfitIcon, onSelect: () => setSheet('income') },
-          { key: 'expense', label: '지출', accessibilityLabel: '지출 추가', Icon: ShoppingCartIcon, onSelect: () => setSheet('expense') },
+          {
+            key: 'income',
+            label: '수입',
+            description: '사냥 · 아이템 판매 등을 기록',
+            accessibilityLabel: '수입 추가',
+            Icon: ProfitIcon,
+            onSelect: () => setSheet('income'),
+          },
+          {
+            key: 'expense',
+            label: '지출',
+            description: '컨텐츠 · 아이템 구매 등을 기록',
+            accessibilityLabel: '지출 추가',
+            Icon: ShoppingCartIcon,
+            onSelect: () => setSheet('expense'),
+          },
         ]}
       />
 
