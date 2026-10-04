@@ -79,8 +79,10 @@ export const PINNED_RUNTIME_VERSIONS = {
  * 그 방향이 안전한 쪽이라 조용히 지나간다. 플랫폼마다 따로 비운다 - 두 스토어의 게시 시점이 다르다.
  */
 export const IN_REVIEW_RUNTIME_VERSIONS = {
-  // 비었다. 1.0.8 게시를 확인하고 iOS 는 2026-09-13, 안드로이드는 2026-09-14 에 비웠다.
-  // 비운 것이 곧 그 플랫폼 1.0.6 기기의 잠금이다.
+  // 1.0.12 심사 중(2026-10-04). iOS 는 아카이브 MapleRoutine-1.0.12-16 의 `EXUpdates.bundle/fingerprint`,
+  // 안드로이드는 versionCode 23 AAB 의 `base/assets/fingerprint` 에서 읽었다. 게시를 확인하면 플랫폼별로 비운다.
+  ios: ['e2b57239f4c854a2517cc07d90fd054e409e9d5e'],
+  android: ['f5a1973c6a28dcfd31a6e3bfbebec9fedbcd4920'],
 }
 
 /**
