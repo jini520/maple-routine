@@ -35,6 +35,81 @@ export const RELEASE_NOTE_CATEGORY_ORDER: readonly ReleaseNoteCategory[] = [
 // 이 파일은 순수 데이터다. `features/`·`storage/`·`native/` 를 import 하지 않는다.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '1.0.12',
+    // 스토어 바이너리 1.0.12 의 노트다. 심사에 내는 날로 적고, 다른 날이 되면 그날로 고친다.
+    date: '2026-10-04',
+    // 1.0.11 이후 머지된 PR #534~#596 에서 **화면에서 겪는 변화**만 사용자가 직접 골라 썼다
+    // (2026-10-04). 넥슨 로그인(#544~#557)은 이 빌드에 꺼진 채로 실려 적지 않는다.
+    // `highlights` 는 `items` 에서 파생하지 않았다(사용자가 골랐다 2026-10-04).
+    highlights: ['통계 탭 추가.', '파티 스케줄 추가.', '다수의 버그 및 사용성 개선.'],
+    items: [
+      {
+        category: 'feature',
+        text: '수익·지출에 통계 탭이 추가됩니다. 순 수익과 추이, 캐릭터별 수익, 수입·지출 내역, 보스별 수익, 누적 순수익을 주간·월간으로 볼 수 있습니다.',
+      },
+      {
+        category: 'feature',
+        text: '파티 스케줄이 추가됩니다. 파티 보스 일정을 한 번 또는 요일 반복으로 등록하고, 시작 전에 알림을 받을 수 있습니다.',
+      },
+      {
+        category: 'feature',
+        text: 'today에 다음 파티 스케줄 위젯이 추가됩니다.',
+      },
+      {
+        category: 'feature',
+        text: '가계부 버프 지출이 보스 버프와 사냥 버프로 나뉘고, 마법의 숫돌 등 새 항목이 추가됩니다.',
+      },
+      {
+        category: 'feature',
+        text: '사냥 수익의 지역과 사냥터의 자동 완성 기능이 캐릭터 별로 적용됩니다.',
+      },
+      {
+        category: 'feature',
+        text: '사냥 계산기의 유니온의 부 아이템이 단계를 고를 수 있도록 개선됩니다.',
+      },
+      {
+        category: 'improvement',
+        text: '스케줄러 하위 탭이 파티 스케줄·컨텐츠·보스 순서로 바뀌고, 보스 관리는 설정을 보스 수익 페이지 및 설정에서 열 수 있도록 수정됩니다.',
+      },
+      {
+        category: 'improvement',
+        text: '보스 수익과 가계부의 기간 이동 옆에 이번 주로 이동하는 버튼이 추가됩니다.',
+      },
+      {
+        category: 'improvement',
+        text: '수익 및 지출 추가 기능에서 수량을 직접 입력할 수 있도록 개선됩니다.',
+      },
+      {
+        category: 'improvement',
+        text: '조각 정산에 ‘모두’ 선택이 추가됩니다.',
+      },
+      {
+        category: 'improvement',
+        text: '그림이 없는 캐릭터는 물음표 대신 실루엣으로 표시됩니다.',
+      },
+      {
+        category: 'fix',
+        text: '아이템 판매도 종류(장비·소비·기타)를 고를 수 있습니다.',
+      },
+      {
+        category: 'fix',
+        text: '초기화 시각이 지나도 today가 다음 주기로 넘어가지 않던 현상이 수정됩니다.',
+      },
+      {
+        category: 'fix',
+        text: '보스 수익에서 이전 기간으로 넘어가면 기록이 안 보이던 현상이 수정됩니다.',
+      },
+      {
+        category: 'fix',
+        text: '숫자 입력 칸에서 커서가 쉼표에 밀리던 현상이 수정됩니다.',
+      },
+      {
+        category: 'fix',
+        text: '그 밖의 버그를 수정했습니다.',
+      },
+    ],
+  },
+  {
     version: '1.0.11',
     // 발행하는 날로 적는다(사용자 결정). 발행이 다른 날이 되면 발행 직전에 그날로 고친다.
     date: '2026-09-25',
