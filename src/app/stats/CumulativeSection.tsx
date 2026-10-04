@@ -5,8 +5,8 @@
  */
 import { memo, useState } from 'react'
 import { Pressable, View, type LayoutChangeEvent } from 'react-native'
-import Animated, { useAnimatedProps } from 'react-native-reanimated'
-import Svg, { Circle, ClipPath, Defs, G, Line, Path, Rect } from 'react-native-svg'
+import Animated, { useAnimatedStyle } from 'react-native-reanimated'
+import Svg, { Circle, ClipPath, Defs, Line, Path, Rect } from 'react-native-svg'
 
 import { Text } from '../../components/atoms'
 import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
@@ -22,7 +22,11 @@ import type { BossCycle } from '../../types'
 import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
 
-const AnimatedRect = Animated.createAnimatedComponent(Rect)
+/**
+ * 그래프를 왼쪽부터 드러내는 상자. `ClipPath` 안 도형을 움직이면 안드로이드에서 안 보인다. react-native-svg 가
+ * 클립 안 도형이 바뀌어도 다시 그리지 않아 첫 프레임의 폭 0 에 굳는다. 그래서 그래프 밖의 뷰 폭을 움직인다.
+ */
+const AnimatedBox = Animated.createAnimatedComponent(View)
 
 const BUBBLE_SPACE = 42
 const CHART_HEIGHT = 96
@@ -78,7 +82,7 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
   const zeroY = y(0)
   const pointColor = selected !== null && points[selected] < 0 ? definition.fallInk : definition.riseInk
   const bubbleRatio = x(selected ?? 0) / width
-  const revealProps = useAnimatedProps(() => ({ width: width * progress.value }))
+  const revealStyle = useAnimatedStyle(() => ({ width: width * progress.value }))
 
   return (
     <StatsSection title="누적 순수익" testID="stats-cumulative">
@@ -120,6 +124,7 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
       )}
 
       <View style={{ paddingTop: BUBBLE_SPACE }} onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}>
+        <AnimatedBox style={[{ height: CHART_HEIGHT, overflow: 'hidden' }, revealStyle]}>
         <Svg width={width} height={CHART_HEIGHT}>
           {/* 0 선을 경계로 같은 선을 두 번 그려 자른다. 위는 수익 색, 아래(누적이 음수인 구간)는 지출 색이다 */}
           <Defs>
@@ -129,12 +134,8 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
             <ClipPath id="stats-cumulative-below">
               <Rect x={0} y={zeroY} width={width} height={CHART_HEIGHT - zeroY} />
             </ClipPath>
-            <ClipPath id="stats-cumulative-reveal">
-              <AnimatedRect x={0} y={0} height={CHART_HEIGHT} animatedProps={revealProps} />
-            </ClipPath>
           </Defs>
           <Line x1={0} x2={width} y1={zeroY} y2={zeroY} stroke={definition.border} strokeWidth={1} />
-          <G clipPath="url(#stats-cumulative-reveal)">
           <Path d={area} fill={definition.riseInk} fillOpacity={0.1} clipPath="url(#stats-cumulative-above)" />
           <Path d={area} fill={definition.fallInk} fillOpacity={0.1} clipPath="url(#stats-cumulative-below)" />
           <Path
@@ -161,8 +162,8 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
               <Circle cx={x(selected)} cy={y(points[selected])} r={4} fill={definition.surface} stroke={pointColor} strokeWidth={2} />
             </>
           )}
-          </G>
         </Svg>
+        </AnimatedBox>
 
         <View className="absolute bottom-0 left-0 right-0 flex-row" style={{ top: BUBBLE_SPACE }}>
           {ranges.map((range, index) => (
