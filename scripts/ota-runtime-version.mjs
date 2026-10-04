@@ -80,9 +80,11 @@ export const PINNED_RUNTIME_VERSIONS = {
  */
 export const IN_REVIEW_RUNTIME_VERSIONS = {
   // 1.0.12 심사 중(2026-10-04). iOS 는 아카이브 MapleRoutine-1.0.12-16 의 `EXUpdates.bundle/fingerprint`,
-  // 안드로이드는 versionCode 23 AAB 의 `base/assets/fingerprint` 에서 읽었다. 게시를 확인하면 플랫폼별로 비운다.
+  // 안드로이드는 AAB 의 `base/assets/fingerprint` 에서 읽었다. 게시를 확인하면 플랫폼별로 비운다.
+  // 안드로이드 둘째 값이 심사에 내는 versionCode 24 다. 첫째(23)는 Play 에 먼저 올라가 버린 것이라
+  // 그것을 받은 테스터가 잠기지 않게 함께 둔다.
   ios: ['e2b57239f4c854a2517cc07d90fd054e409e9d5e'],
-  android: ['f5a1973c6a28dcfd31a6e3bfbebec9fedbcd4920'],
+  android: ['f5a1973c6a28dcfd31a6e3bfbebec9fedbcd4920', 'ac0e4f8bb6f30c19375675b2376c45bb90e2d22b'],
 }
 
 /**
