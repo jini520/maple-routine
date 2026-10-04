@@ -241,10 +241,10 @@ export function TodayScreen(): React.JSX.Element {
     manualBossByOcid: boss.manualTrackedByOcid,
     manualCompletedByOcid: boss.manualCompletedByOcid,
     characterIssues: profit.characterIssues,
-    // 보고 있는 것이 아니라 지금 기간이다. `rows` 는 `filterRowsForTab` 이 `cycle` 까지 걸러 낸
-    // 보스 수익 화면의 한 조각이라, 그 화면을 월간 탭으로 옮기기만 해도 이 화면의 주간 수익·
-    // 결정석 한도가 함께 빈다. 이번 주로 자르는 것은 뷰모델이 한다.
-    profitRows: profit.currentPeriodRows,
+    // 보고 있는 것이 아니라 이번 주다. `rows` 는 보스 수익 화면이 보고 있는 (탭, 기간) 한
+    // 조각이라, 그 화면을 월간 탭으로 옮기기만 해도 이 화면의 주간 수익·결정석 한도가 함께
+    // 빈다. 이번 주로 자르는 것은 스토어가 이미 했다 - 뷰모델은 다시 자르지 않는다.
+    profitRows: profit.currentWeekRows,
     profitDropsByRowKey: profit.dropsByRowKey,
     dropGroups: dropHistory.groups,
     drought: dropHistory.drought,

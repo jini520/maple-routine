@@ -181,16 +181,19 @@ export interface BossProfitState {
   loadedTab: BossCycle
   loadedPeriodKey: string
   /**
-   * 지금 기간의 행 전부(주간·월간 두 주기가 함께 들어 있다). 위의 `rows` 와 뜻이 다른 값이다.
+   * **이번 주 행.** 주간 보스 + 그 주에 선 월간 보스다. 위의 `rows` 와 뜻이 다른 값이다.
    *
-   * `rows` 는 `filterRowsForTab` 이 `cycle` 까지 걸러 낸 한 조각이라 이 화면의 네비게이션을
-   * 따라 움직인다. today 위젯은 그것을 읽으면 안 된다. 그 화면은 언제나 이번 주를 그리므로,
-   * 여기서 월간 탭으로 옮기는 것만으로 주간 보스 수익과 주간 결정석 한도가 함께 빈다.
+   * `rows` 는 이 화면의 네비게이션을 따라 움직이는 한 조각이라 today 위젯은 그것을 읽으면
+   * 안 된다. 그 화면은 언제나 이번 주를 그리므로, 여기서 월간 탭으로 옮기는 것만으로 주간
+   * 보스 수익과 주간 결정석 한도가 함께 빈다.
    *
-   * 내용은 `latestSyncSnapshot.rows` 와 같다. 모든 커밋이 그 스냅샷을 함께 싣기 때문에 둘이
-   * 어긋날 수 없다. 기간 이동(`loadPeriod`)은 이 값을 안 건드린다. 자르는 것은 읽는 쪽 몫이다.
+   * 내용은 `latestSyncSnapshot.currentWeekRows` 와 같다. 모든 커밋이 그 스냅샷을 함께 싣기
+   * 때문에 둘이 어긋날 수 없다. 기간 이동(`loadPeriod`)은 이 값을 안 건드린다.
+   *
+   * **읽는 쪽이 이것을 다시 자르면 안 된다.** 그 자가 현재 기간 주간 탭의 `rows` 를 만드는
+   * 자와 갈려, 그 주에 잡은 월간 보스 수익이 today 에서만 사라진다(사용자 제보).
    */
-  currentPeriodRows: BossProfitRow[]
+  currentWeekRows: BossProfitRow[]
   dropsByRowKey: Record<string, RecordedDrop[]> // 보스 행별 기록된 드롭. 키는 dropRowKey(ocid|bossKey|difficulty|periodKey). rows와 독립 상태라 탭 전환 시 loadPeriod가 DB에서 재로드
   weeklySubtotals: BossProfitWeeklySubtotal[] // monthly 탭에서만 채워짐(주차별 합계). weekly 탭에서는 항상 []
   isPeriodLoading: boolean // periodKey 이동이 도는 중인 창 동기화를 기다리는 중
@@ -338,6 +341,22 @@ interface LatestSyncSnapshot {
    * 행이 0개인데, 그쪽은 조회가 된 것이라 배지를 달면 거짓말이 된다.
    */
   strandedOcids: string[]
+  /**
+   * 이번 주가 품은 달에서 **주간 기록이 있는 주차들**. 날짜를 모르는 월간 기록이 설 주를
+   * `resolveUndatedWeek` 이 이것으로 고른다.
+   *
+   * 보고 있는 탭과 무관하게 읽는다. today 는 늘 이번 주를 세므로, 월간 탭에서 안 읽으면 빈
+   * 목록이 폴백을 타고 today 만 다른 주를 고른다.
+   */
+  weeksWithRecords: string[]
+  /**
+   * **이번 주 행.** 주간 보스 + 그 주에 선 월간 보스다.
+   *
+   * 자르는 일을 읽는 쪽에 맡기지 않는다. 그렇게 두었을 때 today 가 `cycle === 'weekly'` 로
+   * 자르고 화면은 월간 행을 그 주에 끌어와, 그 주에 잡은 월간 보스 수익이 today 에서만
+   * 사라졌다(사용자 제보). 현재 기간 주간 탭의 `rows` 도 이 배열이다.
+   */
+  currentWeekRows: BossProfitRow[]
 }
 
 let latestSyncSnapshot: LatestSyncSnapshot | null = null
@@ -362,9 +381,61 @@ function currentPartyPlanPeriodKeys(now: Date): string[] {
   ]
 }
 
-function setLatestSyncSnapshot(snapshot: LatestSyncSnapshot | null): void {
-  latestSyncSnapshot = snapshot
+/**
+ * 이번 주 기간 키의 달. 주차 목록을 읽을 범위다.
+ *
+ * 달 경계 주가 품은 둘째 달은 **읽을 필요가 없다**. 그 목록은 날짜 모르는 기록이 설 주를 고를
+ * 때만 쓰이고, `resolveUndatedWeek` 은 그 달에 든 목요일 중에서만 고르므로 경계 주가 둘째 달
+ * 기록의 결과가 될 수 없다. 날짜를 아는 처치는 이 목록을 안 탄다.
+ */
+function currentWeekMonthKey(now: Date): string {
+  return getCurrentBossProfitPeriod('weekly', now).periodKey.slice(0, 7)
+}
+
+/**
+ * 스냅샷을 갈아끼우고 **이번 주 행을 함께 센다**.
+ *
+ * 자르는 호출이 여기 하나라, 화면의 주간 탭과 today 가 다른 수를 말할 자리가 없다.
+ *
+ * @param now 이번 주를 정하는 시계. 주 경계를 넘긴 채 앱이 떠 있으면 다시 동기화할 때까지 낡는다
+ */
+function setLatestSyncSnapshot(
+  snapshot: Omit<LatestSyncSnapshot, 'currentWeekRows'> | null,
+  now: Date,
+): void {
+  latestSyncSnapshot =
+    snapshot === null
+      ? null
+      : {
+          ...snapshot,
+          currentWeekRows: filterRowsForTab(
+            snapshot.rows,
+            'weekly',
+            getCurrentBossProfitPeriod('weekly', now).periodKey,
+            now,
+            snapshot.weeksWithRecords,
+          ),
+        }
   syncSnapshotRevision += 1
+}
+
+/**
+ * 현재 기간을 그릴 `rows`. 주간 탭이면 스냅샷이 센 이번 주 행을 **그대로** 쓴다.
+ *
+ * 자르는 호출이 하나여야 today 와 이 화면이 같은 수를 말한다. 월간 탭은 `filterRowsForTab` 이
+ * 주차 목록을 보지 않으므로 빈 배열로 충분하다.
+ *
+ * @param rows 스냅샷에 실은 그 행 배열. 월간 탭에서만 읽는다
+ */
+function rowsOfCurrentPeriod(
+  tab: BossCycle,
+  currentPeriodKey: string,
+  rows: BossProfitRow[],
+  now: Date,
+): BossProfitRow[] {
+  return tab === 'weekly'
+    ? (latestSyncSnapshot?.currentWeekRows ?? [])
+    : filterRowsForTab(rows, tab, currentPeriodKey, now, [])
 }
 
 // 액션 넷이 전부 비동기라 여러 호출이 동시에 진행될 수 있다(‹ › 연타). 나중에 시작된 호출이
@@ -848,15 +919,16 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
   // 않게 한다.
   const profileSnapshot = toProfileSnapshot(sortedCharacterInfo)
 
-  // 날짜 모르는 월간 보스가 어느 주에 서는지를 이 목록이 정한다. 월간 탭은 안 쓴다.
-  const weeksWithRecords =
-    tab === 'weekly' ? await loadWeeksWithRecords(sortedOcids, periodKey.slice(0, 7)) : []
-
   if (periodKey === currentPeriodKey) {
+    // 주간 탭의 현재 기간은 스냅샷이 이미 자른 그 배열이다. 여기서 다시 자르면 자가 둘이 되고,
+    // 날짜 모르는 월간 보스가 설 주를 고르는 주차 목록을 이쪽만 못 읽는 순간 두 값이 갈린다.
+    // 월간 탭은 `filterRowsForTab` 이 그 목록을 안 보므로 빈 배열로 충분하다.
     const syncedRows =
       latestSyncSnapshot === null
         ? []
-        : filterRowsForTab(latestSyncSnapshot.rows, tab, periodKey, now, weeksWithRecords)
+        : tab === 'weekly'
+          ? latestSyncSnapshot.currentWeekRows
+          : filterRowsForTab(latestSyncSnapshot.rows, tab, periodKey, now, [])
     // 동기화 스냅샷이 한 줄도 안 그린 캐릭터는 기록에서 만든다. 추적을 해제해도 이번 주에 이미
     // 잡은 것이 사라지면 안 된다.
     //
@@ -1193,7 +1265,7 @@ const initialState: BossProfitState = {
   partyPlans: {},
   loadedTab: 'weekly',
   loadedPeriodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
-  currentPeriodRows: [],
+  currentWeekRows: [],
   dropsByRowKey: {},
   weeklySubtotals: [],
   isPeriodLoading: false,
@@ -1272,15 +1344,15 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
   /**
    * 이 스토어의 모든 커밋은 지금 기간을 함께 싣는다.
    *
-   * `currentPeriodRows` 의 내용은 `latestSyncSnapshot.rows` 와 같다. 갱신하는 자리마다 잊지 않고
-   * 함께 쓴다 로 두면 사본 둘이 언젠가 어긋나고, 반대로 스냅샷을 바꿀 때마다 `set` 을 한 번씩
-   * 더 부르면 건너뛴 진입의 커밋은 1회 가 깨진다(그 계약이 화면 깜빡임을 막는다).
+   * `currentWeekRows` 의 내용은 `latestSyncSnapshot.currentWeekRows` 와 같다. 갱신하는 자리마다
+   * 잊지 않고 함께 쓴다 로 두면 사본 둘이 언젠가 어긋나고, 반대로 스냅샷을 바꿀 때마다 `set` 을
+   * 한 번씩 더 부르면 건너뛴 진입의 커밋은 1회 가 깨진다(그 계약이 화면 깜빡임을 막는다).
    *
    * 그래서 커밋 자체에 얹는다. 커밋 수는 그대로이고 어느 커밋에서 보든 상태와 스냅샷이 같다.
    * 대신 스냅샷 대입은 그것을 화면에 반영할 `set` 보다 앞에 와야 한다.
    */
   const set: BossProfitSetter = (partial) => {
-    rawSet({ ...partial, currentPeriodRows: latestSyncSnapshot?.rows ?? [] })
+    rawSet({ ...partial, currentWeekRows: latestSyncSnapshot?.currentWeekRows ?? [] })
   }
 
   return {
@@ -1325,7 +1397,10 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const previousPeriodTotalPromise = loadPreviousPeriodTotal(displayOcids, tab, currentPeriodKey)
 
     if (ocids.length === 0) {
-      setLatestSyncSnapshot({ ocids: [], rows: [], characterProfiles: new Map(), strandedOcids: [] })
+      setLatestSyncSnapshot(
+        { ocids: [], rows: [], characterProfiles: new Map(), strandedOcids: [], weeksWithRecords: [] },
+        now,
+      )
       if (myGeneration !== requestGeneration) return
       // 추적은 비었는데 기록이 있으면 화면은 여전히 그것을 그려야 한다. 동기화할 것이 없을 뿐
       // 이라, 화면 반영은 기록을 원천으로 아는 `loadPeriod` 에 넘긴다.
@@ -1572,17 +1647,24 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       sortedOcids,
     )
 
+    // 스냅샷이 이번 주 행을 세는 재료다. 리프 중복 정리 뒤여야 지운 기록이 주차 목록에 안 남는다.
+    const cachedWeeksWithRecords = await loadWeeksWithRecords(sortedOcids, currentWeekMonthKey(now))
+
     // latestSyncSnapshot 을 캐시 데이터로 즉시 채워 둔다. 이후 syncSchedules 가 실패해도 이
     // 스냅샷이 null 로 남지 않아야 그 상태에서 탭 전환·기간 이동을 해도 캐시 우선 표시가
     // 유지된다. 동기화가 성공하면 아래에서 다시 최신 데이터로 덮어쓴다.
-    setLatestSyncSnapshot({
-      ocids: [...ocids],
-      rows: cachedSortedRows,
-      characterProfiles: cachedCharacterProfiles,
-      // 이번 회차가 물어본 결과가 아니라 **표가 이미 들고 있던 사실**이다. 동기화가 답하면 아래
-      // 최종 커밋이 이 목록을 그 결과로 갈아끼운다.
-      strandedOcids: knownUnavailableOcids,
-    })
+    setLatestSyncSnapshot(
+      {
+        ocids: [...ocids],
+        rows: cachedSortedRows,
+        characterProfiles: cachedCharacterProfiles,
+        // 이번 회차가 물어본 결과가 아니라 **표가 이미 들고 있던 사실**이다. 동기화가 답하면 아래
+        // 최종 커밋이 이 목록을 그 결과로 갈아끼운다.
+        strandedOcids: knownUnavailableOcids,
+        weeksWithRecords: cachedWeeksWithRecords,
+      },
+      now,
+    )
 
     // 제자리 새로고침은 캐시 우선 표시의 화면 반영만 건너뛴다. 이 단계가 그리는 것은 현재 기간의
     // 캐시 행이라 그대로 두면 7월 화면에 8월 데이터가 한 프레임 스친다. 화면은 이미 그 기간을
@@ -1624,14 +1706,10 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       // 판정은 복원까지 끝낸 최종 행으로 한다. 캐시 행이 0 이어도 기록에서 되살아난 행이 있으면
       // 헤드라인이 있다. 건너뛰는 진입에는 이 값을 다시 채울 동기화 완료 단계가 없어, 행이
       // 하나도 없어도 직전 기간 합계를 읽어야 증감 칩이 0 으로 굳지 않는다.
-      const [cachedDropsByRowKey, previousPeriodTotalMeso, cachedWeeksWithRecords] =
-        await Promise.all([
-          loadDropsByRowKey(displayOcids, cachedSortedRows, now),
-          cachedSortedRows.length > 0 || skipSync ? previousPeriodTotalPromise : Promise.resolve(0),
-          tab === 'weekly'
-            ? loadWeeksWithRecords(sortedOcids, currentPeriodKey.slice(0, 7))
-            : Promise.resolve<string[]>([]),
-        ])
+      const [cachedDropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
+        loadDropsByRowKey(displayOcids, cachedSortedRows, now),
+        cachedSortedRows.length > 0 || skipSync ? previousPeriodTotalPromise : Promise.resolve(0),
+      ])
 
       // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
       // 캐시 우선 표시조차 화면에 반영하지 않는다. 더 최신 액션이 이미 진행 중이므로 그 결과가
@@ -1643,7 +1721,9 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         // 로딩이 한 프레임 번쩍인다. 이 분기가 이미 화면에 필요한 값을 전부 채운다.
         status: skipSync ? 'loaded' : 'loading',
         periodKey: currentPeriodKey,
-        rows: filterRowsForTab(cachedSortedRows, tab, currentPeriodKey, now, cachedWeeksWithRecords),
+        // 주간 탭이면 스냅샷이 방금 센 그 배열이다(위 `setLatestSyncSnapshot`). 자르는 호출이
+        // 한 번이라 today 가 읽는 값과 이 화면이 그리는 값이 어긋날 수 없다.
+        rows: rowsOfCurrentPeriod(tab, currentPeriodKey, cachedSortedRows, now),
         loadedTab: tab,
         loadedPeriodKey: currentPeriodKey,
         dropsByRowKey: cachedDropsByRowKey,
@@ -1790,9 +1870,21 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     for (const ocid of strandedOcids) {
       characterIssues[ocid] = 'unavailable'
     }
+    // 스냅샷이 이번 주 행을 세는 재료다. 리프 중복 정리 뒤여야 지운 기록이 주차 목록에 안 남는다.
+    const liveWeeksWithRecords = await loadWeeksWithRecords(syncedOcids, currentWeekMonthKey(now))
+
     // 표에 남기는 일은 **`syncSchedules` 가 한다**(`persistUnavailable`). 조회 불가는 보스 수익의
     // 사실이 아니라 캐릭터의 사실이라, 이 화면을 안 여는 사용자에게도 표가 차야 한다.
-    setLatestSyncSnapshot({ ocids: [...ocids], rows: sortedRows, characterProfiles, strandedOcids })
+    setLatestSyncSnapshot(
+      {
+        ocids: [...ocids],
+        rows: sortedRows,
+        characterProfiles,
+        strandedOcids,
+        weeksWithRecords: liveWeeksWithRecords,
+      },
+      now,
+    )
 
     // 잡지 않은 보스의 드롭을 지운다. 주간 한도 마감으로 행이 걷힌 자리, 추적에서 빠진 보스,
     // 영영 미처치로 굳은 기간이 전부 여기로 온다.
@@ -1848,13 +1940,10 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           )
         : []
 
-    const [liveDropsByRowKey, livePreviousPeriodTotalMeso, liveWeeksWithRecords, liveCanGoPreviousPeriod] =
+    const [liveDropsByRowKey, livePreviousPeriodTotalMeso, liveCanGoPreviousPeriod] =
       await Promise.all([
         loadDropsByRowKey(displayOcids, sortedRows, now),
         previousPeriodTotalPromise,
-        tab === 'weekly'
-          ? loadWeeksWithRecords(syncedOcids, currentPeriodKey.slice(0, 7))
-          : Promise.resolve<string[]>([]),
         // **다시 잰다.** 위에서 잰 값은 조회 앞의 사실이고, 그 사이에 창 동기화가 지난 기간
         // 기록을 만들 수 있다. 낡은 값을 여기서 쓰면 기록이 생겼는데도 화살표가 꺼진 채로 굳는다.
         canReachPreviousPeriod(tab, currentPeriodKey, displayOcids),
@@ -1865,7 +1954,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     set({
       status: 'loaded',
       periodKey: currentPeriodKey,
-      rows: filterRowsForTab(sortedRows, tab, currentPeriodKey, now, liveWeeksWithRecords),
+      // 주간 탭이면 스냅샷이 센 그 배열이다(위 `setLatestSyncSnapshot`).
+      rows: rowsOfCurrentPeriod(tab, currentPeriodKey, sortedRows, now),
       loadedTab: tab,
       loadedPeriodKey: currentPeriodKey,
       dropsByRowKey: liveDropsByRowKey,
@@ -2086,10 +2176,13 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // 기간을 이동했다 복귀할 때, loadPeriod 의 현재 기간 분기가 이 스냅샷에서 그대로 슬라이스해
     // 방금 수정한 값이 낡은 값으로 되돌아가 보인다.
     //
-    // set 보다 앞이어야 한다. 아래 set 이 이 스냅샷을 그대로 실어 `currentPeriodRows` 를
-    // 만든다. 뒤에 두면 이 수정이 today 위젯에 한 커밋 늦게 닿는다.
+    // set 보다 앞이어야 한다. 아래 set 이 이 스냅샷의 `currentWeekRows` 를 그대로 싣는다.
+    // 뒤에 두면 이 수정이 today 위젯에 한 커밋 늦게 닿는다.
     if (latestSyncSnapshot !== null) {
-      setLatestSyncSnapshot({ ...latestSyncSnapshot, rows: latestSyncSnapshot.rows.map(applyEdit) })
+      setLatestSyncSnapshot(
+        { ...latestSyncSnapshot, rows: latestSyncSnapshot.rows.map(applyEdit) },
+        new Date(),
+      )
     }
 
     set({ rows: get().rows.map(applyEdit) })

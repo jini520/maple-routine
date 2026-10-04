@@ -19,6 +19,7 @@ import { displayedBosses } from '../../features/boss-scheduler/displayed-bosses'
 import type { BossCharacterView } from '../../features/boss-scheduler/store'
 import type { ContentCharacterView } from '../../features/content-scheduler/store'
 import type { BossProfitRow } from '../../features/boss-profit/store'
+import { dropRowKey } from '../../features/boss-profit/store'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
 import { getShareScope, getSharedContentGroups } from '../../lib/scheduler/scheduler-content-scope'
 import { contentCategoryNameOf, type ContentCategoryKey } from '../../lib/scheduler/content-categories'
@@ -351,7 +352,12 @@ export interface TodayViewModelInput {
   manualCompletedByOcid: Record<string, string[]>
   /** 보스 수익 스토어의 캐릭터 단위 실패 표식. 위젯 2·3 이 물려받는다. */
   characterIssues: Readonly<Record<string, 'unavailable' | 'failed'>>
-  /** 보스 수익 스토어. 이번 주가 아닌 기간의 행은 이 파일이 걸러낸다. */
+  /**
+   * 보스 수익 스토어의 **이번 주 행**(`currentWeekRows`). 주간 보스 + 그 주에 선 월간 보스다.
+   *
+   * 자르는 일은 스토어가 끝냈다. 여기서 기간이나 주기로 다시 거르지 말 것 - 그 자가 보스 수익
+   * 화면을 그리는 자와 갈려, 그 주에 잡은 월간 보스 수익이 이 화면에서만 사라진다.
+   */
   profitRows: readonly BossProfitRow[]
   profitDropsByRowKey: Readonly<Record<string, RecordedDrop[]>>
   /** 드롭 히스토리 스토어(전 기간). */
@@ -430,7 +436,7 @@ export interface TodayViewModel {
 
 export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel {
   const weeklyPeriodKey = getCurrentBossProfitPeriod('weekly', input.now).periodKey
-  const weeklyDrops = collectWeeklyDrops(input.dropGroups, weeklyPeriodKey)
+  const weeklyDrops = collectWeeklyDrops(input.dropGroups, weeklyPeriodKey, input.profitRows)
   const schedule = buildScheduleRows(input, weeklyPeriodKey)
   // 값을 기다리는 것 의 정의는 `priceState === undefined` 하나다. `'excluded'`(기록 안 함)는
   // 사용자가 값을 매기지 않기로 정한 것이라 기다리는 건이 아니다.
@@ -753,10 +759,9 @@ function buildProfit(
   input: TodayViewModelInput,
   weeklyPeriodKey: string,
 ): Pick<TodayViewModel, 'profit' | 'crystalLimits'> {
-  // 보스 수익 스토어는 사용자가 보던 (탭, 기간)을 들고 있다. 이번 주 주간 행만 남긴다.
-  const rows = input.profitRows.filter(
-    (row) => row.cycle === 'weekly' && row.periodKey === weeklyPeriodKey,
-  )
+  // 스토어가 이번 주로 자른 행을 그대로 받는다. 여기서 다시 거르면 그 자가 보스 수익 화면의
+  // 자와 갈려, 그 주에 잡은 월간 보스 수익이 이 화면에서만 사라진다(사용자 제보 2026-10-04).
+  const rows = [...input.profitRows]
   // 월간 탭에서만 채워지는 값이라 이번 주 계산에는 언제나 빈 배열이다.
   const groups = buildCharacterGroups(rows, [])
   const dropsByRowKey = input.profitDropsByRowKey as Record<string, RecordedDrop[]>
@@ -816,11 +821,35 @@ function buildProfit(
   }
 }
 
+/**
+ * 이번 주 드롭 기록. 주간 키 묶음 전부 + **그 주에 선 월간 보스**의 기록이다.
+ *
+ * 월간 보스 드롭은 달 키(`YYYY-MM`)로 저장되므로 주간 키로는 안 걸린다. 어느 주에 서는지는
+ * 스토어가 이미 판정해 `weekRows` 의 월간 행으로 실어 보냈고, 여기서는 그 행과 짝이 맞는 기록만
+ * 집는다. 주를 여기서 다시 판정하면 그 판정이 세 벌(보스 수익 화면 · 아이템 가격 입력 · 이 화면)
+ * 이 되어, 위젯이 `미입력 0` 이라 말하는데 그 위젯이 여는 화면에 미입력 건이 서게 된다.
+ *
+ * @param weekRows 스토어가 자른 이번 주 행(`currentWeekRows`)
+ */
 function collectWeeklyDrops(
   groups: readonly DropHistoryPeriodGroup[],
   weeklyPeriodKey: string,
+  weekRows: readonly BossProfitRow[],
 ): DropHistoryRecord[] {
-  return groups.filter((group) => group.periodKey === weeklyPeriodKey).flatMap((group) => group.records)
+  const monthlyRows = weekRows.filter((row) => row.cycle === 'monthly')
+  const monthlyRowKeys = new Set(
+    monthlyRows.map((row) => dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)),
+  )
+  // 묶음을 먼저 좁힌다. 이 함수는 렌더마다 돌고 `groups` 는 **전 기간**이라, 묶음을 안 좁히면
+  // 기록 한 건마다 짝을 찾느라 과거 전부를 훑는다. 월간 행이 품은 달은 많아야 둘이다.
+  const monthKeys = new Set(monthlyRows.map((row) => row.periodKey))
+  return groups.flatMap((group) => {
+    if (group.periodKey === weeklyPeriodKey) return group.records
+    if (!monthKeys.has(group.periodKey)) return []
+    return group.records.filter((record) =>
+      monthlyRowKeys.has(dropRowKey(record.ocid, record.bossKey, record.difficulty, record.periodKey)),
+    )
+  })
 }
 
 /**

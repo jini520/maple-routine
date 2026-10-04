@@ -22,6 +22,8 @@ import { buildTodayViewModel, type TodayViewModelInput } from '../view-model'
 // 2026-08-17(월) 12:00 KST. 이 시점의 주간 기간 키는 직전 목요일인 2026-08-13 이다.
 const NOW = new Date('2026-08-17T03:00:00.000Z')
 const WEEK_KEY = '2026-08-13'
+// 그 주가 품은 달. 월간 보스(검은마법사) 기록의 기간 키가 이 모양이다.
+const MONTH_KEY = '2026-08'
 const HOUR_MS = 60 * 60 * 1000
 
 /** 표에 있는 컨텐츠의 신원 둘. API 이름은 표의 `content_name` 이다. */
@@ -672,9 +674,83 @@ describe('주간 보스 수익', () => {
     expect(model.profit.hasRecords).toBe(false)
   })
 
-  it('보던 기간이 이번 주가 아니면 그 행은 세지 않는다', () => {
+  // 자르는 일은 스토어(`currentWeekRows`)가 한다. 뷰모델이 기간을 다시 판정하면 그 자가 화면의
+  // 자와 갈려, 그 주에 잡은 월간 보스 수익이 today 에서만 사라진다(사용자 제보 2026-10-04).
+  it('받은 행을 그대로 더한다. 기간을 다시 판정하지 않는다', () => {
     const model = buildTodayViewModel(
-      input({ orderedOcids: ['a'], profitRows: [profitRow({ periodKey: '2026-08-06' })] }),
+      input({
+        orderedOcids: ['a'],
+        profitRows: [
+          profitRow({ payoutMeso: 100 }),
+          profitRow({
+            bossKey: 'black_mage',
+            bossName: '검은 마법사',
+            difficulty: 'hard',
+            cycle: 'monthly',
+            periodKey: MONTH_KEY,
+            defeatedOn: '2026-08-15',
+            payoutMeso: 500,
+          }),
+        ],
+      }),
+    )
+
+    expect(model.profit.totalMeso).toBe(600)
+    expect(model.profit.crystalMeso).toBe(600)
+  })
+
+  it('행이 하나도 없으면 0 이다', () => {
+    const model = buildTodayViewModel(input({ orderedOcids: ['a'], profitRows: [] }))
+
+    expect(model.profit.totalMeso).toBe(0)
+    expect(model.profit.hasRecords).toBe(false)
+  })
+
+  // 월간 보스 드롭은 달 키로 저장된다. 행이 그 주에 섰으면 그 드롭도 이번 주 몫이다.
+  it('월간 보스 행의 드롭도 총액에 든다', () => {
+    const drops = {
+      [`a|black_mage|hard|${MONTH_KEY}`]: [
+        { category: 'equipment' as const, itemKey: null, itemName: '창세의 뱃지', quantity: 1, priceState: 'entered' as const, priceMeso: 90, priceShare: 1 },
+      ],
+    }
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        profitRows: [
+          profitRow({
+            bossKey: 'black_mage',
+            bossName: '검은 마법사',
+            difficulty: 'hard',
+            cycle: 'monthly',
+            periodKey: MONTH_KEY,
+            defeatedOn: '2026-08-15',
+            payoutMeso: 500,
+          }),
+        ],
+        profitDropsByRowKey: drops,
+      }),
+    )
+
+    expect(model.profit.itemMeso).toBe(90)
+    expect(model.profit.totalMeso).toBe(590)
+  })
+
+  // 아직 안 잡은 월간 보스는 이번 주에 미완료로 선다. 금액은 0 이다(`payoutMeso` 가 0).
+  it('미완료 월간 보스 행은 금액을 안 올린다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a'],
+        profitRows: [
+          profitRow({
+            bossKey: 'black_mage',
+            bossName: '검은 마법사',
+            cycle: 'monthly',
+            periodKey: MONTH_KEY,
+            isComplete: false,
+            payoutMeso: 0,
+          }),
+        ],
+      }),
     )
 
     expect(model.profit.totalMeso).toBe(0)
@@ -869,6 +945,71 @@ describe('최고가 아이템', () => {
 
     expect(model.topItem).toBeNull()
     expect(model.unpricedCount).toBe(0)
+  })
+
+  // 월간 보스 드롭은 달 키(`YYYY-MM`)로 저장된다. 그 보스가 이번 주에 섰는지는 스토어가 이미
+  // 판정해 행으로 실어 보내므로, 여기서는 그 행과 짝이 맞는 기록만 집는다. 전에는 달 키 묶음을
+  // 통째로 버려, today 가 여는 가격 입력 화면에는 미입력 건이 서는데 위젯은 `0` 이라 말했다.
+  const 월간드롭 = (overrides: Partial<DropHistoryRecord> = {}): DropHistoryRecord =>
+    dropRecord({
+      bossKey: 'black_mage',
+      boss: '검은 마법사',
+      difficulty: 'hard',
+      periodKey: MONTH_KEY,
+      ...overrides,
+    })
+  const 이번주에선월간행 = profitRow({
+    bossKey: 'black_mage',
+    bossName: '검은 마법사',
+    difficulty: 'hard',
+    cycle: 'monthly',
+    periodKey: MONTH_KEY,
+    defeatedOn: '2026-08-15',
+  })
+
+  it('이번 주에 선 월간 보스 드롭은 순위와 미입력 건수에 든다', () => {
+    const model = buildTodayViewModel(
+      input({
+        profitRows: [이번주에선월간행],
+        dropGroups: [
+          dropGroup([월간드롭({ itemName: '창세의 뱃지', priceState: 'entered', priceMeso: 9999 })], MONTH_KEY),
+          dropGroup([월간드롭({ itemName: '미입력 뱃지' })], MONTH_KEY),
+        ],
+      }),
+    )
+
+    expect(model.topItem?.top.itemName).toBe('창세의 뱃지')
+    expect(model.unpricedCount).toBe(1)
+  })
+
+  it('이번 주에 서지 않은 월간 보스 드롭은 안 든다', () => {
+    const model = buildTodayViewModel(
+      input({
+        // 행이 없으면 그 월간 보스는 이번 주에 서지 않았다는 뜻이다.
+        profitRows: [],
+        dropGroups: [
+          dropGroup([월간드롭({ itemName: '창세의 뱃지', priceState: 'entered', priceMeso: 9999 })], MONTH_KEY),
+        ],
+      }),
+    )
+
+    expect(model.topItem).toBeNull()
+    expect(model.unpricedCount).toBe(0)
+  })
+
+  // 짝은 `ocid|bossKey|difficulty|periodKey` 다. 난이도가 다른 기록을 끌어오면 이번 주에 안 선
+  // 난이도의 드롭이 금액을 단다.
+  it('난이도가 다른 월간 기록은 짝이 아니다', () => {
+    const model = buildTodayViewModel(
+      input({
+        profitRows: [이번주에선월간행],
+        dropGroups: [
+          dropGroup([월간드롭({ difficulty: 'extreme', itemName: '다른 난이도', priceState: 'entered', priceMeso: 9999 })], MONTH_KEY),
+        ],
+      }),
+    )
+
+    expect(model.topItem).toBeNull()
   })
 
   // 위젯 4가 **캐릭터· 보스** 를 그린다. ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
