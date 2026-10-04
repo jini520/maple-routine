@@ -662,11 +662,10 @@ describe('useBossProfitStore', () => {
     expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
   })
 
-  // `rows` 는 **보고 있는 (탭, 기간)** 이고 today 위젯이 읽는 것은 **지금 기간** 이다.
+  // `rows` 는 **보고 있는 (탭, 기간)** 이고 today 위젯이 읽는 것은 **이번 주** 다.
   // 이 화면을 월간 탭으로 옮기기만 해도 today 의 주간 보스 수익·주간
   // 결정석 한도가 함께 비었다. 그 화면은 이 화면의 네비게이션을 모르는 채로 이번 주를 그린다.
-  it('월간 탭으로 옮겨도 currentPeriodRows 는 이번 주 행을 그대로 들고 있다', async () => {
-    const weekKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
+  it('월간 탭으로 옮겨도 currentWeekRows 는 이번 주 행을 그대로 들고 있다', async () => {
     syncSchedulesMock.mockResolvedValue([
       syncResult({
         state: {
@@ -680,15 +679,40 @@ describe('useBossProfitStore', () => {
     ])
 
     await useBossProfitStore.getState().refresh(['ocid-1'])
+    const weeklyTabRows = useBossProfitStore.getState().rows.map((row) => row.bossName)
     await useBossProfitStore.getState().setTab('monthly')
 
     // 화면은 보던 대로 월간이다.
     expect(useBossProfitStore.getState().rows.map((row) => row.bossName)).toEqual(['검은 마법사'])
-    // today 가 읽는 값에는 이번 주 행이 그대로 있다.
-    const weeklyRows = useBossProfitStore
-      .getState()
-      .currentPeriodRows.filter((row) => row.cycle === 'weekly' && row.periodKey === weekKey)
-    expect(weeklyRows.map((row) => row.bossName)).toEqual(['자쿰'])
+    // today 가 읽는 것은 **주간 탭이 그리던 그 배열**이다. 그 주에 잡은 월간 보스가 함께 든다.
+    // 자르는 일을 읽는 쪽에 맡겼을 때 today 만 월간 행을 버려 금액이 사라졌다.
+    expect(useBossProfitStore.getState().currentWeekRows.map((row) => row.bossName)).toEqual(
+      weeklyTabRows,
+    )
+    expect(weeklyTabRows).toEqual(['검은 마법사', '자쿰'])
+  })
+
+  // 보던 탭이 월간이면 주차 목록을 안 읽어, 날짜 모르는 월간 기록이 설 주를 폴백이 골랐다.
+  // today 는 늘 이번 주를 세므로 그 폴백이 화면과 다른 주를 가리킬 수 있다.
+  it('월간 탭에서도 주차 목록을 읽어 이번 주를 센다', async () => {
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({
+        state: {
+          ...syncResult().state!,
+          bossContents: [
+            bossContent({ bossKey: 'black_mage', apiName: '검은 마법사', difficulty: 'extreme', cycle: 'monthly', isComplete: true }),
+          ],
+        },
+      }),
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+    getWeeklyPeriodKeysWithRecordsMock.mockClear()
+    await useBossProfitStore.getState().setTab('monthly')
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    const monthKey = getCurrentBossProfitPeriod('weekly', new Date()).periodKey.slice(0, 7)
+    expect(getWeeklyPeriodKeysWithRecordsMock).toHaveBeenCalledWith(['ocid-1'], monthKey)
   })
 
   it('월간 탭으로 옮겨도 dropsByRowKey 가 이번 주 드롭을 잃지 않는다', async () => {

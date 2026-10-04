@@ -58,7 +58,7 @@
 | 상태 | `features/character-selection/store.ts` 의 `representativeOcid` | 저장된 대표 ocid. 대표 카드와 머리 버튼이 구독한다([[ADR-275]]) |
 | 저장 | `storage/character-selection` 의 `getRepresentativeCharacter` | 대표 표식. **today 는 직접 안 부른다**. 스토어가 읽는다 |
 
-**관련 ADR**: [[ADR-147]](이 화면의 설계 전부) · [[ADR-230]](공지 배너) · [[ADR-277]](배너가 읽는 공지는 서버 응답의 사본) · [[ADR-153]](수익 위젯이 읽는 값: ‘지금 기간’) ·
+**관련 ADR**: [[ADR-147]](이 화면의 설계 전부) · [[ADR-230]](공지 배너) · [[ADR-277]](배너가 읽는 공지는 서버 응답의 사본) · [[ADR-153]](수익 위젯이 읽는 값: ‘지금 기간’) · [[ADR-335]](이번 주 행은 스토어가 한 번 자른다) ·
 [[ADR-132]](첫 화면 이동 · 하단바 · 동기화 트리거) · [[ADR-097]]·[[ADR-101]](동기화 게이트 · 예열) ·
 [[ADR-142]](완료 판정의 출처) · [[ADR-035]]·[[ADR-031]](표시 대상 보스) · [[ADR-187]](주간 한도를
 채우면 ‘남은 것’이 아니다) · [[ADR-054]]·[[ADR-059]](결정석 한도) · [[ADR-071]]·[[ADR-124]](드롭
@@ -677,17 +677,26 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 셋 다 **현재 주간 기간 키 하나**로 자른다(보스 수익 화면의 주간 탭과 같은 범위).
 
 - **원천은 ‘지금 기간’ 이지 ‘보고 있는 기간’이 아니다**([[ADR-153]], 2026-08-19). 수익 입력은
-  보스 수익 스토어의 `rows` 가 아니라 **`currentPeriodRows`** 다. `rows` 는 `filterRowsForTab` 이
-  `cycle` 까지 걸러 낸 ‘사용자가 보고 있는 (탭, 기간)’ 한 조각이라, 그 화면을 **월간 탭으로 옮기는
-  것만으로** today 의 위젯 3·5 가 함께 비었다(사용자 보고: 재현 경로가 짧고 결정적이다). 드롭
-  기록이 원천인 위젯 4·7·8 이 그때도 멀쩡한 것이 이 경계를 그대로 보여 준다.
+  보스 수익 스토어의 `rows` 가 아니라 **`currentWeekRows`** 다. `rows` 는 ‘사용자가 보고 있는
+  (탭, 기간)’ 한 조각이라, 그 화면을 **월간 탭으로 옮기는 것만으로** today 의 위젯 3·5 가 함께
+  비었다(사용자 보고: 재현 경로가 짧고 결정적이다). 드롭 기록이 원천인 위젯 4·7·8 이 그때도
+  멀쩡한 것이 이 경계를 그대로 보여 준다.
 
-- **추적을 해제한 캐릭터의 수익도 여기 든다**([[ADR-219]] 결정 4·5). 원천인 `currentPeriodRows`
+- **자르는 일은 스토어가 하고 뷰모델은 받아 쓴다**([[ADR-335]], 2026-10-04). `currentWeekRows` 는
+  스토어가 `filterRowsForTab` 로 **한 번** 자른 이번 주 행이고, 보스 수익 화면의 주간 탭이 현재
+  기간에서 그리는 것과 **같은 배열**이다. 뷰모델에 기간 필터가 한 줄도 없는 것이 요점이다.
+  전에는 뷰모델이 `currentPeriodRows`(지금 기간 전부)를 받아 `cycle === 'weekly'` 로 다시 잘랐고,
+  그 자가 화면의 자와 달라 **그 주에 잡은 월간 보스 수익이 today 에서만 사라졌다**(사용자 제보).
+  화면 쪽은 [[ADR-221]] 결정 4 로 월간 행을 그 주에 끌어오는데 today 의 자는 그것을 버렸다.
+- **추적을 해제한 캐릭터의 수익도 여기 든다**([[ADR-219]] 결정 4·5). 원천인 `currentWeekRows`
   가 이제 `추적 ∪ 기록이 있는 ocid` 로 서기 때문이다. 주 중간에 관리 목록에서 뺀 캐릭터가 그 주에
   이미 잡은 것이 today 에서만 사라지면 보스 수익 화면과 다른 말을 하게 된다. 미완료 자리는 그
   캐릭터에 안 서므로 `남은 스케줄` 은 안 늘어난다(그쪽은 스케줄러가 원천이라 추적 목록 그대로다).
-- 월간 키(`YYYY-MM`)로 저장되는 검은마법사 드롭은 여기 **안 들어간다**. 그쪽은 보스 수익 화면 월간 탭의
-  몫이고, 위젯 3이 이미 주간 탭 기준이라 셋이 갈리면 같은 격자에서 서로 다른 기간을 말하게 된다.
+- **월간 키(`YYYY-MM`)로 저장되는 검은마법사 드롭도 그 주에 섰으면 든다**([[ADR-335]] 결정 5).
+  어느 주에 서는지는 `currentWeekRows` 의 월간 행이 이미 답했고, `collectWeeklyDrops` 는 그 행과
+  `ocid|bossKey|difficulty|periodKey` 가 맞는 기록을 집기만 한다. 여기서 주를 다시 판정하면 그
+  판정이 세 벌(보스 수익 화면 · 아이템 가격 입력 · today)이 된다. 전에는 달 키 묶음을 통째로
+  버려서, today 가 여는 가격 입력 화면에는 미입력 건이 서는데 위젯 7 은 `0` 이라 말할 수 있었다.
 - 셋이 같은 범위여야 위젯 7(가격 미입력)이 위젯 4(최고가)의 ‘없음’을 설명한다([[ADR-147]] 결정 9).
 - `unpricedCount` 는 `priceState === undefined` 만 센다. `'excluded'`(기록 안함)는 ‘값을 매기지
   않기로 한’ 사용자의 결정이라 기다리는 건이 아니다.
@@ -715,9 +724,9 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 |---|---|---|---|---|---|
 | 1 | `representative-character` | 대표 캐릭터: 엠블럼 · 닉네임 · `Lv.` + 직업 · 길드 · EXP | **4x1** · 4x2 · 2x2 | **없음**(#431) | `character-basic-cache` + `resolveDisplayRepresentative` |
 | 2 | `remaining-schedule` | 캐릭터별 남은 일퀘 · 주간퀘 · 주간 보스 · 검마 (행 탭 → 아코디언). **공유 항목(카탈로그 여덟)은 빠진다** | **`4×auto`** | **없음**(정정 25) | 컨텐츠·보스 스케줄러 스토어 |
-| 3 | `weekly-boss-profit` | 이번 주 총 수익 + 캐릭터 top3(아이템 판매 포함) | **4x3** · 4x2 · 2x2 · 2x1 | Profit | 보스 수익 스토어 `currentPeriodRows`([[ADR-153]]. ‘보고 있는 탭’이 아니다) |
+| 3 | `weekly-boss-profit` | 이번 주 총 수익 + 캐릭터 top3(아이템 판매 포함) | **4x3** · 4x2 · 2x2 · 2x1 | Profit | 보스 수익 스토어 `currentWeekRows`([[ADR-153]]. ‘보고 있는 탭’이 아니다. 주간 보스 + 그 주에 선 월간 보스, [[ADR-335]]) |
 | 4 | `top-valuable-item` | 이번 주 최고가 아이템 (4x2 는 top 5) | **2x1** · 4x2 · 2x2 · 1x1 | **아이템 가격 입력**(`DropPrice`, #431) | `drop-history` |
-| 5 | `crystal-limit` | 주간 결정석 판매 한도 `n/90`(월드별) | **2x1** · 4x1 · 2x2 · 1x1 | Profit | 보스 수익 `currentPeriodRows` 파생([[ADR-054]] · [[ADR-153]]) |
+| 5 | `crystal-limit` | 주간 결정석 판매 한도 `n/90`(월드별) | **2x1** · 4x1 · 2x2 · 1x1 | Profit | 보스 수익 `currentWeekRows` 파생([[ADR-054]] · [[ADR-153]]). 분자는 주간 행만 센다 |
 | 6 | `reset-countdown` | 일일/주간/월간 초기화까지 남은 시간(**일일은 초까지 · 1초 갱신**) | **2x1** · 2x2 · 4x1 · 1x1 | — | `lib/scheduler/reset-clock.ts` |
 | 7 | `unpriced-drops` | 가격 미입력 드롭 N건 | **2x1** · 2x2 · 1x1 | **아이템 가격 입력**(`DropPrice`, #431) | `drop-history` |
 | 8 | `valuable-drought` | ‘N주째 아이템 드롭 없음’ | **4x1** · 2x2 · 2x1 | **없음**(#431) | `summarizeValuableDrought` |
@@ -1410,6 +1419,11 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
   행은 세지 않는다~~ → **`currentPeriodRows`(지금 기간)를 읽는다**([[ADR-153]], 2026-08-19). 그
   ‘세지 않는다’는 적어 둔 대가였는데, 실제로는 보스 수익 화면을 월간 탭으로 옮기기만 해도 today 의
   위젯 3·5 가 함께 비는 결함이었다(사용자 보고).
+- ~~`currentPeriodRows`(지금 기간 전부)를 받아 뷰모델이 `cycle === 'weekly'` 로 다시 자른다. 월간
+  키로 저장되는 검은마법사 드롭은 안 들어간다~~ → **스토어가 자른 `currentWeekRows` 를 그대로
+  읽는다**([[ADR-335]], 2026-10-04). 뷰모델의 자가 화면의 자(`filterRowsForTab`)와 달라, 그 주에
+  잡은 월간 보스 수익이 today 에서만 사라졌다(사용자 제보). 드롭 축도 같이 걷혀 위젯 4·7 이 그
+  주에 선 월간 보스 드롭을 센다.
 - ~~`today` 는 ‘개발 진행중’ 빈 화면이다([[ADR-132]] 결정 12)~~ → 위젯 격자로 채운다([[ADR-147]],
   구현 완료 2026-08-18).
 - ~~첫 화면은 컨텐츠 스케줄러(`INITIAL_TAB_ROUTE = 'Content'`)~~ → `Today`([[ADR-132]] 결정 7).

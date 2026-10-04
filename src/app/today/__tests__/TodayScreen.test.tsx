@@ -157,8 +157,8 @@ function setStores(
     tab: 'weekly',
     periodKey: WEEK_KEY,
     rows: [],
-    // 이 화면이 읽는 것은 **지금 기간** 이다. `rows`(보고 있는 탭·기간)가 아니다.
-    currentPeriodRows: [],
+    // 이 화면이 읽는 것은 **이번 주** 다. `rows`(보고 있는 탭·기간)가 아니다.
+    currentWeekRows: [],
     loadedTab: 'weekly',
     loadedPeriodKey: WEEK_KEY,
     dropsByRowKey: {},
@@ -296,9 +296,9 @@ const 캐릭터_넷 = {
     characters: OCIDS.map((ocid, index) => bossView(ocid, index + 1)) },
   profit: {
     trackedOcids: OCIDS,
-    // 주간 탭·현재 기간에서는 둘이 같은 내용이다(대가). 픽스처도 그 상태를 그대로 둔다.
+    // 주간 탭·현재 기간에서는 둘이 **같은 배열**이다(스토어가 한 번 자른다).
     rows: OCIDS.map((ocid, index) => profitRow(ocid, index + 1)),
-    currentPeriodRows: OCIDS.map((ocid, index) => profitRow(ocid, index + 1)),
+    currentWeekRows: OCIDS.map((ocid, index) => profitRow(ocid, index + 1)),
     lastSyncedAt: new Date(NOW.getTime() - 5 * 60 * 1000).toISOString() },
   dropHistory: {
     groups: [
@@ -449,6 +449,30 @@ describe('TodayScreen: 수익 위젯이 읽는 값', () => {
     // 1 + 2 + 3 + 4 백만. 화면의 접기 규칙은 `formatMesoShort` 하나가 판다(총액과 결정석 분해가
     // 같은 값이라 자리는 여럿이다).
     expect(screen.getAllByText(formatMesoShort(10_000_000)).length).toBeGreaterThan(0)
+  })
+
+  // 제보(2026-10-04): 그 주에 잡은 월간 보스 수익이 이 위젯에만 안 들어갔다. 스토어가 자른
+  // 이번 주 행에 월간 행이 함께 들어 있고, 이 화면은 그것을 다시 거르지 않는다.
+  it('그 주에 잡은 월간 보스 수익도 더한다', async () => {
+    const 월간행: BossProfitRow = {
+      ...profitRow('ocid-1', 1),
+      bossKey: 'black_mage',
+      bossName: '검은 마법사',
+      difficulty: 'hard',
+      cycle: 'monthly',
+      periodKey: WEEK_KEY.slice(0, 7),
+      payoutMeso: 90_000_000,
+    }
+    setStores({
+      ...캐릭터_넷,
+      profit: {
+        ...캐릭터_넷.profit,
+        currentWeekRows: [...캐릭터_넷.profit.currentWeekRows, 월간행] } })
+
+    await renderScreen()
+
+    // 주간 1,000만 + 월간 9,000만.
+    expect(screen.getAllByText(formatMesoShort(100_000_000)).length).toBeGreaterThan(0)
   })
 })
 
