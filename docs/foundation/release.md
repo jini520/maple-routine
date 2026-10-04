@@ -233,8 +233,12 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 
 | 값 | 현재 | 규칙 |
 |---|---|---|
-| `versionCode` | 23 (1.0.12) | 업로드마다 +1. **되돌리지 않는다**. 내부 테스트에 한 번 올린 번호는 프로덕션에 다시 못 쓴다 |
+| `versionCode` | 24 (1.0.12) | 업로드마다 +1. **되돌리지 않는다**. 내부 테스트에 한 번 올린 번호는 프로덕션에 다시 못 쓴다 |
 | `versionName` | `1.0.12` | 3단 고정. OTA 매니페스트와 같은 축이라 2단(`1.0`)이면 OTA가 깨진다 |
+
+> **1.0.12 는 `build.gradle` 만 24 이고 `app.json` 은 23 이다**(2026-10-04). 23 을 Play 에 먼저 올려 버려 24 로 다시 구웠다.
+> `app.json` 은 두 플랫폼 공통 지문 재료라, 거기를 올리면 iOS 지문까지 바뀌어(`e2b57239…` → `bb2eac45…`, 실측) 이미 올린
+> iOS 빌드 16 과 main 이 갈린다. `build.gradle` 만 올리면 안드로이드 지문만 바뀐다. 다음 스토어 릴리스에서 두 값을 다시 맞춘다.
 
 내장 번들과 OTA 채널의 버전 관계는 [features/live-update.md](../features/live-update.md) 참조.
 
