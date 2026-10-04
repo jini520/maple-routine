@@ -69,7 +69,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
       },
       {
         category: 'improvement',
-        text: '스케줄러 하위 탭이 파티 스케줄·컨텐츠·보스 순서로 바뀌고, 보스 관리는 설정을 보스 수익 페이지 및 설정에서 열 수 있도록 수정됩니다.',
+        text: '스케줄러 하위 탭이 파티 스케줄·컨텐츠·보스 순서로 바뀌고, 보스 관리는 보스 수익 및 설정에서 열 수 있도록 수정됩니다.',
       },
       {
         category: 'improvement',
