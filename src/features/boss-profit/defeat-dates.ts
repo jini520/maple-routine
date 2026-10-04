@@ -81,13 +81,15 @@ export interface DefeatDateInput {
  *
  * | 만나는 것 | 답 |
  * |---|---|
- * | 창 하한보다 앞선 날 · `unobservableDays` | **건너뛴다**. 못 봤다는 것이 굳어 있어 그 뒤의 첫 완료를 못 믿는다 |
- * | 그날 완료로 관측됐다 | 앞에 못 본 날이 없으면 **그날이다** |
+ * | 창 하한보다 앞선 날 · `unobservableDays` | **건너뛴다**. 영영 못 본다 |
  * | 못 본 날인데 그날이 **오늘**이다 | **오늘이다**(소거법. 어제까지 미완료인데 기록이 있다) |
- * | 못 본 날인데 오늘이 아니다 | **`null`**. 구멍이라 그 뒤의 완료를 못 믿는다 |
+ * | 못 본 날인데 오늘이 아니다 | **건너뛴다**. 다시 물을 수 있는 구멍이다 |
+ * | 그날 미완료로 관측됐다 | 계속 훑는다. **앞의 못 본 날들이 여기서 전부 무효가 된다** |
+ * | 그날 완료로 관측됐다 | 앞에 못 본 날이 없으면 **그날이다**. 구멍이 있으면 `null`, 영영 못 보는 날뿐이면 상한을 적는다 |
  *
  * **미완료를 한 번 보면 그 앞의 못 본 날들이 무효가 된다.** 그때 이 보스는 아직 안 잡혀 있었고,
- * 다음 완료가 곧 처치일이라 그 앞이 무엇이었는지는 답을 안 바꾼다.
+ * 완료는 그 기간 안에서 한 방향이라 되돌아가지 않는다. 그래서 다음 완료가 곧 처치일이고 그 앞이
+ * 무엇이었는지는 답을 안 바꾼다.
  *
  * 소거법이 (a)앱이 기록한 날 과 다른 점: **어제가 미완료였다는 관측**이 있어야만 오늘이라고
  * 말한다. 하루 뒤에 열었다면 어제가 완료로 관측되어 어제로 적힌다. 이 함수는 **틀린 날짜를 만들
@@ -96,7 +98,12 @@ export interface DefeatDateInput {
 export function resolveDefeatedOn(input: DefeatDateInput): string | null {
   const floorDateKey = input.queryFloorDateKey ?? ''
   // 앞에 **못 본 날이 있는가**. 참이면 그 뒤의 첫 완료가 그날이라고 말할 수 없다.
-  let blind = false
+  //
+  // 둘로 가르는 것은 **상한 단정을 걸 자리**가 갈려서다. 영영 못 보는 날은 다시 물어도 답이 안
+  // 오므로 상한을 처치일로 적는다. 아직 못 본 날은 다음 회차가 채워 확정할 수 있어, 단정으로
+  // 덮으면 확정 가능한 것을 추측으로 바꾼다.
+  let blindForever = false
+  let blindForNow = false
 
   for (const day of input.periodDays) {
     // 아직 오지 않은 날에 잡을 수는 없다. 기간은 오늘 뒤로도 이어질 수 있다(진행 중인 주).
@@ -104,20 +111,28 @@ export function resolveDefeatedOn(input: DefeatDateInput): string | null {
       return null
     }
     if (day < floorDateKey || input.unobservableDays?.has(day) === true) {
-      blind = true
+      blindForever = true
       continue
     }
 
     const seen = input.observed.get(day)
     if (seen === undefined) {
-      return day === input.todayDateKey && !blind ? day : null
+      // 오늘은 조회로 영영 못 본다(400). 어제까지 끊김 없이 미완료를 봤으면 소거법으로 오늘이다.
+      if (day === input.todayDateKey && !blindForever && !blindForNow) return day
+      blindForNow = true
+      continue
     }
     if (seen.has(input.bossKey)) {
-      // 앞이 창 밖이라 며칟날인지는 못 캔다. 그 날이거나 그 앞이므로 **상한**은 안다.
-      if (!blind) return day
+      if (!blindForever && !blindForNow) return day
+      // 앞을 못 봐 며칟날인지는 못 캔다. 그 날이거나 그 앞이므로 **상한**은 안다. 다시 물을 수
+      // 있는 구멍이면 그 상한을 안 적고 기다린다.
+      if (blindForNow) return null
       return input.fallbackToEarliestQueryable === true ? day : null
     }
-    blind = false
+    // **미완료를 봤다.** 그때 안 잡혀 있었고 완료는 그 기간 안에서 한 방향이라, 그 앞이 구멍이든
+    // 건너뛴 날이든 답을 안 바꾼다.
+    blindForever = false
+    blindForNow = false
   }
   return null
 }

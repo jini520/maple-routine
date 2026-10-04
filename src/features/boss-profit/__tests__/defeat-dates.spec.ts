@@ -156,6 +156,42 @@ describe('resolveDefeatedOn: 구멍 (결정 2)', () => {
       }),
     ).toBe('2026-08-20')
   })
+
+  // 완료는 그 기간 안에서 한 방향이다. 8/22 가 미완료면 그 앞에서는 안 잡은 것이라, 8/21 이
+  // 구멍이어도 답을 안 바꾼다. 전에는 8/21 에서 함수가 먼저 끝나 NULL 이었다.
+  it('구멍 뒤에 미완료를 보면 그 뒤 첫 완료가 확정이다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-20': [], '2026-08-22': [], '2026-08-23': ['lotus|hard'] }),
+        todayDateKey: '2026-08-26',
+        bossKey: 'lotus|hard',
+      }),
+    ).toBe('2026-08-23')
+  })
+
+  it('시작일이 구멍이어도 미완료를 본 뒤라면 확정한다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-21': [], '2026-08-22': ['lotus|hard'] }),
+        todayDateKey: '2026-08-26',
+        bossKey: 'lotus|hard',
+      }),
+    ).toBe('2026-08-22')
+  })
+
+  // 구멍이 뒤집힘 바로 앞이면 그 날에 잡았을 수 있다. 상한만 알고 확정은 못 한다.
+  it('구멍 뒤에 미완료가 없으면 여전히 확정하지 않는다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-20': [], '2026-08-22': ['lotus|hard'] }),
+        todayDateKey: '2026-08-26',
+        bossKey: 'lotus|hard',
+      }),
+    ).toBeNull()
+  })
 })
 
 describe('resolveDefeatedOn: 창 하한 앞은 건너뛴다 (정정 6)', () => {
@@ -280,6 +316,20 @@ describe('resolveDefeatedOn: 못 캐면 가장 빠른 조회 가능일', () => {
         fallbackToEarliestQueryable: true,
       }),
     ).toBeNull()
+  })
+
+  // 구멍이 미완료 관측으로 무효가 된 뒤라면 폴백이 설 자리가 아니다. 그 뒤 첫 완료가 확정이다.
+  it('구멍이 무효가 된 뒤의 완료는 폴백이 아니라 확정이다', () => {
+    expect(
+      resolveDefeatedOn({
+        periodDays: WEEK,
+        observed: observed({ '2026-08-24': [], '2026-08-25': ['lotus|hard'] }),
+        todayDateKey: '2026-09-05',
+        bossKey: 'lotus|hard',
+        queryFloorDateKey: '2026-08-23',
+        fallbackToEarliestQueryable: true,
+      }),
+    ).toBe('2026-08-25')
   })
 
   it('끄면 전과 같이 null 이다', () => {
@@ -652,11 +702,14 @@ describe('resolveDefeatedOn: 리프 경계 앞의 날', () => {
     ).toBe('2026-09-11')
   })
 
-  it('영영 못 보는 날로 안 준 창 안의 빈 날은 여전히 구멍이다', () => {
+  // 바로 위 테스트와 짝이다. `unobservableDays` 를 안 주면 9/10 은 **영영 못 보는 날**이 아니라
+  // 다시 물을 수 있는 구멍이라, 첫 관측이 이미 완료여도 폴백이 안 걸린다. 다음 회차가 그 날을
+  // 채우면 확정할 수 있어, 상한으로 덮으면 확정 가능한 것을 추측으로 바꾸기 때문이다.
+  it('영영 못 보는 날로 안 준 창 안의 빈 날은 폴백을 안 받는다', () => {
     expect(
       resolveDefeatedOn({
         periodDays: LEAP_WEEK,
-        observed: observed({ '2026-09-11': [], '2026-09-12': ['lotus|hard'] }),
+        observed: observed({ '2026-09-11': ['lotus|hard'] }),
         todayDateKey: '2026-09-14',
         bossKey: 'lotus|hard',
         queryFloorDateKey: '2026-09-01',
