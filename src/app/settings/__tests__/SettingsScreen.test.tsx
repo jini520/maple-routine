@@ -50,6 +50,13 @@ jest.mock('../../../storage/notices', () => ({ __esModule: true, getNotices: jes
 // 넥슨 로그인 버튼이 이 화면 맨 위에 선다. 화면은 `features/` 를 거치고 저장소·브라우저 세션은
 // 그 아래가 맡는다(CLAUDE.md CRITICAL).
 jest.mock('../../../features/auth/saved-key', () => ({ hasNexonLogin: jest.fn() }))
+// 스토어 빌드는 꺼진 값으로 나간다. 켜진 화면과 꺼진 화면을 둘 다 잰다.
+var mockNexonLoginEnabled = true
+jest.mock('../../../features/auth/nexon-login-enabled', () => ({
+  get NEXON_LOGIN_ENABLED() {
+    return mockNexonLoginEnabled
+  },
+}))
 jest.mock('../../../features/auth/store', () => {
   const signInWithNexonAccount = jest.fn()
   return { useAuthStore: (selector: (s: unknown) => unknown) => selector({ signInWithNexonAccount }) }
@@ -229,6 +236,7 @@ const openURL = jest.spyOn(Linking, 'openURL')
 const 원래플랫폼 = Platform.OS
 
 beforeEach(() => {
+  mockNexonLoginEnabled = true
   openURL.mockResolvedValue(true)
   mockThemeStore()
   mockTrackingModeStore()
@@ -680,6 +688,16 @@ describe('SettingsScreen: 넥슨 로그인 버튼', () => {
   it('로그인이 이미 있으면 안 선다', async () => {
     // 한 번 누르면 끝나는 버튼이다. 남아 있으면 매일 여는 탭의 맨 위를 계속 차지한다.
     mockedHasNexonLogin.mockResolvedValue(true)
+
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await waitFor(() => expect(mockedHasNexonLogin).toHaveBeenCalled())
+    expect(view.queryByLabelText('넥슨ID 로그인')).toBeNull()
+  })
+
+  // 프로덕션 승인 전에는 테스트 사용자만 로그인된다. 나머지가 눌러 실패하지 않게 진입점을 끈다.
+  it('넥슨 로그인이 꺼져 있으면 로그인이 없어도 안 선다', async () => {
+    mockNexonLoginEnabled = false
 
     const view = await renderOverlay(<SettingsScreen />)
 

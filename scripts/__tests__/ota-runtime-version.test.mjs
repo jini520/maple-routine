@@ -127,9 +127,13 @@ describe('resolveAcceptedRuntimeVersions ([[ADR-268]] 결정 2)', () => {
 // 못박은 지문과 같은 성질이라 같은 파일에 둔다. 출시 후에 비워야 해서 수치로 박아 둔다. 안 비우면
 // 아무도 안 잠기고, 그 방향이 안전한 쪽이라 조용히 지나간다.
 describe('IN_REVIEW_RUNTIME_VERSIONS: 심사 중인 바이너리의 지문', () => {
-  // 비운 것이 곧 그 플랫폼 1.0.6 기기의 잠금이다. iOS 2026-09-13 · 안드로이드 2026-09-14.
-  it('두 플랫폼 다 비었다: 1.0.8 이 게시돼 1.0.6 기기가 잠긴다', () => {
-    expect(IN_REVIEW_RUNTIME_VERSIONS).toEqual({})
+  // 값이 들어 있는 것은 임시 상태다. 심사에 올린 1.0.12(iOS 16 · 안드로이드 23)를 받아주고,
+  // 게시가 확인되면 플랫폼별로 비운다. 비우는 것이 곧 그 플랫폼 1.0.8 기기의 잠금이다.
+  it('두 플랫폼 다 심사 중인 1.0.12 바이너리 하나씩을 받아준다', () => {
+    expect(IN_REVIEW_RUNTIME_VERSIONS).toEqual({
+      ios: ['e2b57239f4c854a2517cc07d90fd054e409e9d5e'],
+      android: ['f5a1973c6a28dcfd31a6e3bfbebec9fedbcd4920'],
+    })
   })
 })
 

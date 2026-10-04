@@ -34,6 +34,7 @@ import { NOTICE_KINDS, type Notice, type NoticeKind } from '../../types/notice'
 import { NoticeBannerRail } from './NoticeBannerRail'
 import { NoticeBannerSkeleton, NoticeLinesSkeleton } from './NoticeSkeleton'
 import { NexonLoginButton } from '../../components/molecules/NexonLoginButton/NexonLoginButton'
+import { NEXON_LOGIN_ENABLED } from '../../features/auth/nexon-login-enabled'
 import { hasNexonLogin } from '../../features/auth/saved-key'
 import { useAuthStore } from '../../features/auth/store'
 import { NoticeLines } from './NoticeLines'
@@ -275,7 +276,7 @@ export function SettingsScreen(): React.JSX.Element {
             **한 번 누르면 끝이라** 이 화면의 소식이 맨 위다 와 영구히 부딪치지 않는다. 로그인하면
             버튼이 사라져 소식이 다시 맨 위로 올라온다.
           */}
-          {showNexonLogin && <NexonLoginButton onPress={() => void handleNexonLogin()} />}
+          {NEXON_LOGIN_ENABLED && showNexonLogin && <NexonLoginButton onPress={() => void handleNexonLogin()} />}
           {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
               한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
           {NOTICE_SECTIONS.map((section) => (

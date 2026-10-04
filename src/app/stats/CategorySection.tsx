@@ -7,8 +7,8 @@
  */
 import { memo, useState } from 'react'
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native'
-import Animated, { interpolate, useAnimatedProps, useAnimatedStyle } from 'react-native-reanimated'
-import Svg, { ClipPath, Defs, G, Path, Polyline } from 'react-native-svg'
+import Animated, { interpolate, useAnimatedProps, useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
+import Svg, { Path, Polyline } from 'react-native-svg'
 
 import { Text } from '../../components/atoms'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -70,12 +70,47 @@ function slicesOf(items: readonly CategoryTotal[]): Slice[] {
 }
 
 function arcPath(cx: number, cy: number, outer: number, inner: number, from: number, to: number): string {
+  'worklet'
   const point = (radius: number, angle: number): string =>
     `${(cx + radius * Math.sin(angle)).toFixed(2)} ${(cy - radius * Math.cos(angle)).toFixed(2)}`
   const large = to - from > Math.PI ? 1 : 0
   return `M${point(outer, from)} A${outer} ${outer} 0 ${large} 1 ${point(outer, to)} L${point(inner, to)} A${inner} ${inner} 0 ${large} 0 ${point(inner, from)} Z`
 }
 
+/**
+ * 왼쪽 끝에서 진행값만큼 자라는 조각. 쓸기를 `ClipPath` 로 내면 안드로이드에서 안 보인다. react-native-svg 가
+ * 클립 안 도형이 바뀌어도 다시 그리지 않아 첫 프레임의 빈 클립에 굳는다. 그래서 조각 자신의 `d` 를 움직인다.
+ */
+function SweepSlice(props: {
+  progress: SharedValue<number>
+  cx: number
+  cy: number
+  outer: number
+  inner: number
+  from: number
+  to: number
+  fill: string
+  fillOpacity: number
+  stroke: string
+  onPress?: () => void
+}): React.JSX.Element {
+  const { progress, cx, cy, outer, inner, from, to } = props
+  const animatedProps = useAnimatedProps(() => {
+    const end = Math.min(to, -Math.PI / 2 + Math.PI * progress.value)
+    return { d: end <= from ? 'M0 0' : arcPath(cx, cy, outer, inner, from, end) }
+  })
+  return (
+    <AnimatedPath
+      animatedProps={animatedProps}
+      fill={props.fill}
+      fillOpacity={props.fillOpacity}
+      stroke={props.stroke}
+      strokeWidth={2}
+      strokeLinejoin="round"
+      onPress={props.onPress}
+    />
+  )
+}
 
 interface DrawnSlice {
   slice: Slice
@@ -141,17 +176,7 @@ export const CategorySection = memo(function CategorySection(props: {
   const openKey = openFor !== null && openFor.items === props.items ? openFor.key : null
   const toggle = (key: string): void => setOpenFor(openKey === key ? null : { items: props.items, key })
 
-  // 반원을 왼쪽 끝에서 진행값만큼 쓸어 드러내는 부채꼴. 글자는 쓸기가 거의 끝날 때 나타난다.
-  const sweepScale = width / BASE.width
-  const sweepProps = useAnimatedProps(() => {
-    const cx = BASE.cx * sweepScale
-    const cy = BASE.cy * sweepScale
-    const radius = (BASE.outer + 4) * sweepScale
-    const angle = -Math.PI / 2 + Math.PI * Math.min(progress.value, 0.9999)
-    const x1 = cx + radius * Math.sin(angle)
-    const y1 = cy - radius * Math.cos(angle)
-    return { d: `M${cx} ${cy} L${cx - radius} ${cy} A${radius} ${radius} 0 0 1 ${x1} ${y1} Z` }
-  })
+  // 글자는 쓸기가 거의 끝날 때 나타난다.
   const labelStyle = useAnimatedStyle(() => ({ opacity: interpolate(progress.value, [0.6, 1], [0, 1], 'clamp') }))
 
   const label = props.side === 'income' ? '수입' : '지출'
@@ -223,25 +248,22 @@ export const CategorySection = memo(function CategorySection(props: {
     <StatsSection title={props.title} testID={`stats-category-${props.side}`}>
       <View style={{ height }} onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}>
         <Svg width={width} height={height}>
-          <Defs>
-            <ClipPath id={`stats-category-sweep-${props.side}`}>
-              <AnimatedPath animatedProps={sweepProps} />
-            </ClipPath>
-          </Defs>
-          <G clipPath={`url(#stats-category-sweep-${props.side})`}>
           {drawn.map(({ slice, from, to }) => (
-            <Path
+            <SweepSlice
               key={slice.key}
-              d={arcPath(cx, cy, outer, inner, from, to)}
+              progress={progress}
+              cx={cx}
+              cy={cy}
+              outer={outer}
+              inner={inner}
+              from={from}
+              to={to}
               fill={slice.rest ? definition.surface2 : color}
               fillOpacity={slice.rest ? 1 : slice.opacity}
               stroke={definition.surface}
-              strokeWidth={2}
-              strokeLinejoin="round"
               onPress={slice.details.length > 0 ? () => toggle(slice.key) : undefined}
             />
           ))}
-          </G>
           {outside.map((part) => (
             <Polyline
               key={`leader-${part.slice.key}`}

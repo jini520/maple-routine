@@ -25,6 +25,7 @@ import { Image, Pressable, View } from 'react-native'
 import appIcon from '../../../assets/icon.png'
 
 import { useAppEntryStore } from '../../features/app-entry/store'
+import { NEXON_LOGIN_ENABLED } from '../../features/auth/nexon-login-enabled'
 import { loadSavedApiKey } from '../../features/auth/saved-key'
 import { useAuthStore } from '../../features/auth/store'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
@@ -93,8 +94,9 @@ export function SignInScreen(): React.JSX.Element {
               <Text className="text-center text-sm text-text-muted">
                 내 메이플 스토리 스케줄 정보 조회를 위해서
               </Text>
+              {/* 넥슨 로그인이 꺼져 있으면 로그인을 말하지 않는다. 없는 수단을 찾게 된다. */}
               <Text className="text-center text-sm text-text-muted">
-                로그인 또는 API 키 입력이 필요해요.
+                {NEXON_LOGIN_ENABLED ? '로그인 또는 API 키 입력이 필요해요.' : 'API 키 입력이 필요해요.'}
               </Text>
             </View>
           </View>
@@ -103,24 +105,26 @@ export function SignInScreen(): React.JSX.Element {
             **수단이 없을 때 서는 유일한 화면이다.** 로그아웃하면 탭 자체를 못 보므로, 여기 버튼이
             없으면 나간 사용자가 다시 들어올 길이 없다.
           */}
-          <View className="gap-3.5">
-            <View className="gap-0.5">
-              <Text className="text-15 font-semibold text-text">
-                게임 데이터 활용 로그인으로 시작하기
-              </Text>
-              {/* 글자 폭만큼만 차지한다. 줄 전체로 늘리면 옆 빈 자리를 눌러도 반응해 어디까지가
-                  링크인지 알 수 없다. */}
-              <Pressable
-                role="link"
-                onPress={() => openInAppBrowser(DATA_UTIL_LOGIN_URL)}
-                className="flex-row items-center gap-1 self-start py-0.5"
-              >
-                <Text className="text-13 text-primary-ink">게임 데이터 활용 로그인이란?</Text>
-                <ExternalLinkIcon className="h-3.5 w-3.5 text-primary-ink" aria-hidden />
-              </Pressable>
+          {NEXON_LOGIN_ENABLED && (
+            <View className="gap-3.5">
+              <View className="gap-0.5">
+                <Text className="text-15 font-semibold text-text">
+                  게임 데이터 활용 로그인으로 시작하기
+                </Text>
+                {/* 글자 폭만큼만 차지한다. 줄 전체로 늘리면 옆 빈 자리를 눌러도 반응해 어디까지가
+                    링크인지 알 수 없다. */}
+                <Pressable
+                  role="link"
+                  onPress={() => openInAppBrowser(DATA_UTIL_LOGIN_URL)}
+                  className="flex-row items-center gap-1 self-start py-0.5"
+                >
+                  <Text className="text-13 text-primary-ink">게임 데이터 활용 로그인이란?</Text>
+                  <ExternalLinkIcon className="h-3.5 w-3.5 text-primary-ink" aria-hidden />
+                </Pressable>
+              </View>
+              <NexonLoginButton onPress={() => void signInWithNexonAccount()} />
             </View>
-            <NexonLoginButton onPress={() => void signInWithNexonAccount()} />
-          </View>
+          )}
 
           {/* 저장된 키가 늦게 읽히면 폼을 새로 세워 그 키로 채운다. */}
           <ApiKeyForm
@@ -128,6 +132,7 @@ export function SignInScreen(): React.JSX.Element {
             initialApiKey={savedKey ?? undefined}
             isSubmitting={status === 'verifying'}
             onSubmit={(apiKey) => void submit(apiKey)}
+            collapsible={NEXON_LOGIN_ENABLED}
           />
         </View>
       </EntryScroll>

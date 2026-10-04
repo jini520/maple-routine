@@ -76,6 +76,24 @@ describe('CumulativeSection 선 색', () => {
     }
   }
 
+  // 안드로이드의 react-native-svg 는 ClipPath 안 도형이 바뀌어도 다시 그리지 않는다. 드러내기를 클립으로
+  // 내면 첫 프레임(폭 0)의 빈 클립에 굳어 그래프가 통째로 안 보인다(1.0.12 실기기).
+  it('드러내기를 ClipPath 로 내지 않는다', async () => {
+    const view = await renderOverlay(
+      <CumulativeSection
+        days={days}
+        cycle="weekly"
+        periodKey="2026-09-24"
+        startDateKey={null}
+        earliest="2025-03-27"
+        latest="2026-09-29"
+        onChangeStart={jest.fn()}
+      />,
+    )
+
+    expect(JSON.stringify(view.toJSON())).not.toContain('stats-cumulative-reveal')
+  })
+
   // 0 선 위는 빨강, 아래는 파랑이다. 누적이 음수로 내려간 구간이 파랑으로 보여야 한다.
   it('0 선 위는 수익 색, 아래는 지출 색으로 나눠 그린다', async () => {
     const view = await renderOverlay(

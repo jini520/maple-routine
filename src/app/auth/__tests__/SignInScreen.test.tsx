@@ -29,6 +29,14 @@ jest.mock('../../../features/app-entry/store', () => {
   return { useAppEntryStore: hook }
 })
 
+// 스토어 빌드는 꺼진 값으로 나간다. 켜진 화면과 꺼진 화면을 둘 다 잰다.
+jest.mock('../../../features/auth/nexon-login-enabled', () => ({
+  get NEXON_LOGIN_ENABLED() {
+    return mockNexonLoginEnabled
+  },
+}))
+
+var mockNexonLoginEnabled = true
 var mockSavedKey: string | null = null
 var mockNavigate: jest.Mock = jest.fn()
 var mockEntry: { stage: string; resumeTo: string | null; consumeResume: jest.Mock } = {
@@ -38,6 +46,7 @@ var mockEntry: { stage: string; resumeTo: string | null; consumeResume: jest.Moc
 }
 
 beforeEach(() => {
+  mockNexonLoginEnabled = true
   mockSavedKey = null
   mockNavigate = jest.fn()
   mockEntry = { stage: 'signIn', resumeTo: null, consumeResume: jest.fn() }
@@ -325,5 +334,43 @@ describe('SignInScreen', () => {
     const view = await renderOverlay(<SignInScreen />)
 
     expect(view.getByTestId('screen-SignIn')).toBeTruthy()
+  })
+})
+
+// 프로덕션 승인 전에는 테스트 사용자만 로그인된다. 스토어 빌드는 진입점을 끈 채로 나가고
+// 승인이 나면 상수만 켜는 OTA 로 연다.
+describe('SignInScreen: 넥슨 로그인이 꺼져 있을 때', () => {
+  beforeEach(() => {
+    mockNexonLoginEnabled = false
+  })
+
+  it('넥슨 블록을 통째로 안 세운다', async () => {
+    mockStore({ status: 'signedOut' })
+
+    const view = await renderOverlay(<SignInScreen />)
+
+    expect(view.queryByText('게임 데이터 활용 로그인으로 시작하기')).toBeNull()
+    expect(view.queryByText('게임 데이터 활용 로그인이란?')).toBeNull()
+    expect(view.queryByLabelText('넥슨ID 로그인')).toBeNull()
+  })
+
+  // 로그인을 말하면 없는 수단을 찾게 된다.
+  it('머리 둘째 줄은 키만 말한다', async () => {
+    mockStore({ status: 'signedOut' })
+
+    const view = await renderOverlay(<SignInScreen />)
+
+    expect(view.getByText('API 키 입력이 필요해요.')).toBeTruthy()
+    expect(view.queryByText('로그인 또는 API 키 입력이 필요해요.')).toBeNull()
+  })
+
+  // 키가 유일한 경로라 접어 두면 한 번 더 눌러야 입력칸이 나온다.
+  it('키 폼은 펼친 채로 서고 접는 단추가 없다', async () => {
+    mockStore({ status: 'signedOut' })
+
+    const view = await renderOverlay(<SignInScreen />)
+
+    expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
+    expect(view.queryByTestId('accordion-chevron')).toBeNull()
   })
 })

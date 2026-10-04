@@ -37,6 +37,14 @@ beforeEach(() => {
 })
 
 describe('CategorySection', () => {
+  // 안드로이드의 react-native-svg 는 ClipPath 안 도형이 바뀌어도 다시 그리지 않는다. 쓸기를 클립으로 내면
+  // 첫 프레임(진행값 0)의 빈 클립에 굳어 도넛이 통째로 안 보인다(1.0.12 실기기).
+  it('쓸기를 ClipPath 로 내지 않는다', async () => {
+    const view = await renderOverlay(<CategorySection title="지출 내역" side="expense" items={지출} />)
+
+    expect(JSON.stringify(view.toJSON())).not.toContain('stats-category-sweep')
+  })
+
   it('가운데에 합계가 서고 조각마다 항목 · % · 금액이 적힌다', async () => {
     const view = await renderOverlay(<CategorySection title="지출 내역" side="expense" items={지출} />)
 

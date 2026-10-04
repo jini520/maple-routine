@@ -183,6 +183,18 @@ describe('ApiKeyForm', () => {
     expect(view.queryByLabelText('Nexon Open API 키')).toBeNull()
   })
 
+  // 넥슨 로그인이 꺼진 빌드에서는 키가 유일한 경로다. 접어 두면 한 번 더 눌러야 입력칸이 나온다.
+  it('collapsible 이 false 면 펼친 채로 서고 머리는 누를 수 없는 제목이다', async () => {
+    const view = await renderAtom(
+      <ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} collapsible={false} />,
+    )
+
+    expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
+    expect(view.getByText('API 키로 시작하기')).toBeTruthy()
+    expect(view.queryByTestId('accordion-chevron')).toBeNull()
+    expect(() => pressableOf(view.getByText('API 키로 시작하기'), 'button')).toThrow()
+  })
+
   // 요청은 "수집하거나 저장하지 않는다"였으나 키는 기기에 저장된다(storage/api-key).
   // 사실인 것은 "우리가 수집하지 않는다"뿐이라 지킬 수 있는 약속만 적는다.
   it('키가 기기 밖으로 나가지 않는다는 안내를 보여준다', async () => {
