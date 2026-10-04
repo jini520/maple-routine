@@ -230,8 +230,8 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 
 | 값 | 현재 | 규칙 |
 |---|---|---|
-| `versionCode` | 21 | 업로드마다 +1. **되돌리지 않는다**. 내부 테스트에 한 번 올린 번호는 프로덕션에 다시 못 쓴다 |
-| `versionName` | `1.0.0` | 3단 고정. OTA 매니페스트와 같은 축이라 2단(`1.0`)이면 OTA가 깨진다 |
+| `versionCode` | 23 (1.0.12) | 업로드마다 +1. **되돌리지 않는다**. 내부 테스트에 한 번 올린 번호는 프로덕션에 다시 못 쓴다 |
+| `versionName` | `1.0.12` | 3단 고정. OTA 매니페스트와 같은 축이라 2단(`1.0`)이면 OTA가 깨진다 |
 
 내장 번들과 OTA 채널의 버전 관계는 [features/live-update.md](../features/live-update.md) 참조.
 
@@ -254,7 +254,7 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 | 계정 삭제 정책 | 해당 없음 (조건부) | 계정 생성 기능이 없다. [[ADR-227]] 이 서버를 들였지만 결정 4 가 올리는 것을 **식별자를 뗀 2차 가공 데이터**로 한정하고 계정·백업을 **넥슨 OAuth 승인 뒤로 미뤘다**. 지울 계정이 없어 이 항목은 아직 안 생긴다. **승인이 나 계정을 만드는 릴리스부터는 필수**이고 Play·App Store 둘 다 앱 안과 웹 양쪽을 요구한다. 승인이 났고(2026-09-19) [[ADR-299]] 가 서버 기록을 uid·API 키 해시에 묶으므로(설계), 그 릴리스가 이 항목을 연다 |
 | 스크린샷 | ✅ | `resources/screenshots/listing/play-store-1320x2640/` 6장 |
 | 피처 그래픽 1024×500 | ✅ | `resources/play-feature-graphic-1024x500.png`(2026-08-04). **알파 채널을 뺀 24-bit PNG**. Play는 알파를 받지 않는다. 16:9로 크롭돼도(좌우 68px씩) 카피·로고가 모두 살아남는 것을 확인했다 |
-| 아이콘 512×512 | ✅ | `resources/play-store-icon-512.png`(2026-08-04). iOS 마케팅 아이콘 1024를 **정확히 2:1로 축소**해 만든다. Android 런처 아이콘(adaptive)은 전경에 16.7% inset이 들어가 스토어 아이콘으로 쓰면 안 된다. **모서리를 미리 둥글리지 않는다**(Play가 마스크를 씌운다) |
+| 아이콘 512×512 | ⬜ 1.0.12 에서 교체 | 핑크빈 아이콘(2026-09-21)으로 바뀌어 **다시 올린다**. `resources/` 는 지워졌고 저장소에 두지 않는다. 올릴 때 `assets/icon.png`(= iOS 마케팅 아이콘 1024)를 **정확히 2:1로 축소**해 32비트 PNG 로 만든다(`python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA').resize((512,512), Image.LANCZOS).save('play-store-icon-512.png')"`). Android 런처 아이콘(adaptive)은 전경에 16.7% inset이 들어가 스토어 아이콘으로 쓰면 안 된다. **모서리를 미리 둥글리지 않는다**(Play가 마스크를 씌운다) |
 
 게시 **후**에 AdMob 콘솔에서 앱을 연결해 검토(2~3일)를 통과해야 광고가 정상 노출된다.
 미게시 앱은 *limited ad serving* 이다.
@@ -265,7 +265,8 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 프로모션 텍스트 · 키워드 · 심사 메모가 더 붙는다. 짧은 설명 · 자세한 설명 · 키워드는 **상시 노출**,
 출시 노트는 **그 버전 한정**, 프로모션 텍스트는 **심사 없이 언제든 바꾸는 칸**이다.
 
-아래는 **1.0.8 기준으로 다시 쓴 원문**이다(2026-09-13). 1.0.0 원문은 문서 끝 폐기된 정책에 있다.
+아래는 **1.0.12 기준 원문**이다(2026-10-04, 사용자 확인 전 초안). 1.0.8 원문(2026-09-13)은 git 히스토리에, 1.0.0 원문은 문서 끝 폐기된 정책에 있다.
+**출시 노트는 사용자가 직접 쓴다**(2026-10-04). 이 문서는 1.0.8 노트를 형식 참고로만 남긴다.
 
 **공통 정책**. 가격("무료")·순위("1위")·설치 유도("지금 다운로드") 문구를 넣지 않는다. 다른
 앱이나 플랫폼도 언급하지 않는다. HTML 태그가 먹지 않아 불릿은 문자(`■` `▶` `•`)로 쓴다.
@@ -276,8 +277,11 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 [[ADR-156]] 에서 지워졌다). 1.0.8 문구에서 셋 다 걷었다. 다음에 문구를 고칠 때도 **화면에서 눌러
 확인한 것만** 적을 것.
 
-> **App Store 는 교체했다**(2026-09-13, 1.0.8 심사 제출과 함께). **Play 는 아직 1.0.6 문구다** -
-> 안드로이드 1.0.8 을 올릴 때 짧은 설명 · 자세한 설명 · 출시 노트 셋을 위 문구로 교체할 것.
+> **1.0.12 에서 두 스토어를 함께 교체한다.** Play 는 1.0.8 때 교체했는지 확인되지 않아(2026-10-04 사용자
+> 확인) 짧은 설명 · 자세한 설명 · 출시 노트 셋을 이번에 모두 아래 문구로 넣는다.
+>
+> **넥슨 로그인은 문구에 안 쓴다**([[ADR-334]] 결정 5). 1.0.12 바이너리에 꺼진 채로 실려서다. 켜는 OTA 를
+> 낼 때 자세한 설명의 `회원가입이 없습니다` 와 심사 메모의 `[NO LOGIN ...]` 을 함께 고친다.
 
 ### 짧은 설명 (Play, 80자 제한)
 
@@ -294,10 +298,10 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 ### 프로모션 텍스트 (App Store, 170자 제한)
 
 ```
-가계부가 커졌습니다. 스타포스·큐브·잠재 재설정에 쓴 메소가 지출로 자동으로 잡히고, 사냥터를 고르면 사냥 수입이 계산됩니다. 넥슨 공지도 앱에서 바로 받아보세요. 9월 17일 패치 결정석 가격까지 반영했습니다.
+수익·지출에 통계 탭이 생겼습니다. 순 수익 추이와 캐릭터별·보스별 수익을 주간·월간으로 확인하세요. 파티 보스 일정은 파티 스케줄에 등록해 두면 시작 전에 알림으로 알려드립니다.
 ```
 
-118자. **심사 없이 바꿀 수 있는 유일한 칸**이라 이번 버전에서 새로 생긴 것을 넣는다. 설명 맨 위에
+100자. **심사 없이 바꿀 수 있는 유일한 칸**이라 이번 버전에서 새로 생긴 것을 넣는다. 설명 맨 위에
 붙어 첫 화면에서 읽히므로, 여기서 파는 것은 앱 소개가 아니라 **지금 바뀐 것**이다. 다음 릴리스
 때는 그 버전의 새 기능으로 갈아 끼운다.
 
@@ -311,7 +315,12 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 
 ■ today
 
-앱을 켜면 위젯 화면이 먼저 섭니다. 대표 캐릭터, 오늘 남은 숙제, 이번 주 보스 수익, 결정석 판매 한도, 리셋까지 남은 시간을 한눈에 봅니다. 시세를 아직 적지 않은 드랍과 물욕템이 끊긴 기간도 여기서 알려드립니다.
+앱을 켜면 위젯 화면이 먼저 섭니다. 대표 캐릭터, 오늘 남은 숙제, 이번 주 보스 수익, 결정석 판매 한도, 리셋까지 남은 시간, 다음 파티 스케줄을 한눈에 봅니다. 시세를 아직 적지 않은 드랍과 물욕템이 끊긴 기간도 여기서 알려드립니다.
+
+
+■ 파티 스케줄
+
+파티 보스 일정을 요일별 목록으로 관리합니다. 한 번만 있는 일정과 매주 반복하는 일정을 나눠 등록하고, 일정마다 캐릭터와 보스를 묶어 둡니다. 시작 전에 알림을 받을 수 있고, 알림을 누르면 그 일정이 바로 열립니다.
 
 
 ■ 컨텐츠 스케줄러
@@ -341,6 +350,11 @@ keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release
 지출은 세 갈래로 적습니다. 스타포스·큐브·잠재 재설정에 쓴 메소는 강화 사용 내역에서 읽어 자동으로 잡히고, 주문서와 컨텐츠 입장료·버프 아이템은 목록에서 골라 적고, 그 밖의 지출은 직접 적습니다.
 
 사냥 수입은 계산기로 냅니다. 사냥터와 시간, 사용한 버프를 고르면 캐릭터에 붙어 있는 메소 획득량까지 반영해 금액을 계산합니다. 직접 입력도 됩니다.
+
+
+■ 통계
+
+수입과 지출을 주간·월간으로 모아 봅니다. 순 수익과 그 추이, 캐릭터별 수익, 수입·지출 내역, 보스별 수익, 시작 날짜부터 쌓인 누적 순수익을 카드로 보여줍니다.
 
 
 ■ 유틸리티
@@ -378,7 +392,7 @@ Maple Routine is not associated with NEXON Korea
 Data based on NEXON Open API
 ```
 
-1,993자. 제한의 절반도 안 쓴다. 설명은 길이가 순위를 올려주지 않고, 첫 3줄 뒤는 "더보기"에
+2,240자. 1.0.8 의 1,993자에 파티 스케줄 · 통계 두 절과 today 의 한 항목을 더했다. 제한의 절반도 안 쓴다. 설명은 길이가 순위를 올려주지 않고, 첫 3줄 뒤는 "더보기"에
 접힌다.
 
 - **기능 목록이 준비 사항보다 앞이다.** 1.0.0 은 반대였다. 접히기 전 3줄에 무엇을 하는 앱인지가
@@ -442,7 +456,7 @@ TEST API KEY:
 2. Paste the test key above and submit. The key is long, so please paste rather than type.
 3. On the character screen, select one or more characters and tap "계속하기" (Continue).
 4. A progress bar loads that account's data. This may take several seconds.
-5. You land on the "today" tab, a grid of summary widgets. The bottom bar has five groups: today, 스케줄러 (Scheduler: daily and weekly content, boss clear status, boss management), 수익·지출 (Income and expense: boss crystal income, cashbook calendar), 유틸리티 (Utility: a sale-split calculator), 더보기 (More: API key, notices, theme, guides).
+5. You land on the "today" tab, a grid of summary widgets. The bottom bar has five groups: today, 스케줄러 (Scheduler: party schedule, daily and weekly content, boss clear status), 수익·지출 (Income and expense: boss crystal income, cashbook calendar, statistics), 유틸리티 (Utility: a sale-split calculator), 더보기 (More: notices; the gear icon opens settings, including boss management).
 6. Item drop records open by selecting a boss on the 보스 (Boss) page. Cashbook entries are added with the floating + button on the 가계부 (Cashbook) page.
 
 [EXPECTED BEHAVIOR, NOT BUGS]
@@ -451,7 +465,7 @@ TEST API KEY:
 - Weekly data resets Thursday 00:00 KST, so reviewing right after a reset may legitimately show zero or low values.
 
 [PERMISSIONS / THIRD PARTIES]
-- Notifications: optional, used only for NEXON notice alerts (game notices, update notices, Sunday Maple, cash shop). The app works fully if denied.
+- Notifications: optional. Used for NEXON notice alerts (game notices, update notices, Sunday Maple, cash shop) and for local reminders of party schedules the user creates. Party reminders are scheduled on the device. The app works fully if denied.
 - Network: NEXON Open API for game data and NEXON notices (game notices, updates, events, cash shop), and our own server at mapleroutine.store for the app notice list and detail (read-only GET, no user identifier in the request). Push delivery uses Firebase Cloud Messaging topics, so no device token or account is tied to a user on our side.
 - No ads in this version.
 - No user accounts and no analytics service. The API key and every record the user creates stay on the device.
