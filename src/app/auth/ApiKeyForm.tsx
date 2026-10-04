@@ -36,6 +36,8 @@ export interface ApiKeyFormProps {
   onSubmit: (apiKey: string) => void
   /** 처음 채울 키. 온보딩에서 로그인 화면으로 돌아왔을 때 저장된 키다 */
   initialApiKey?: string
+  /** `false` 면 접지 않는다. 넥슨 로그인이 꺼져 키가 유일한 경로일 때. 기본 `true` */
+  collapsible?: boolean
 }
 
 export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
@@ -51,38 +53,48 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
   }
 
   const isSubmitDisabled = props.isSubmitting || apiKey.trim().length === 0
+  const collapsible = props.collapsible ?? true
+  const isOpen = !collapsible || isExpanded
+
+  const heading = (
+    <View className="flex-1 gap-0.5">
+      <Text className="text-15 font-semibold text-text">API 키로 시작하기</Text>
+      <Text className="text-13 text-text-muted">넥슨 오픈 API에서 받은 키를 넣어요</Text>
+    </View>
+  )
 
   return (
     <View className="w-full gap-3.5">
       {/* 머리 두 줄이 곧 펼침 단추다. 접혀 있어도 이 둘은 남아 키로 가는 길을 보여준다. */}
-      <Pressable
-        role="button"
-        aria-expanded={isExpanded}
-        onPress={() => setIsExpanded((expanded) => !expanded)}
-        className="flex-row items-center gap-2"
-      >
-        <View className="flex-1 gap-0.5">
-          <Text className="text-15 font-semibold text-text">API 키로 시작하기</Text>
-          <Text className="text-13 text-text-muted">넥슨 오픈 API에서 받은 키를 넣어요</Text>
-        </View>
-        {isExpanded ? (
-          <ChevronUpIcon
-            testID="accordion-chevron"
-            className="h-4 w-4 text-text-muted"
-            strokeWidth={2}
-            aria-hidden
-          />
-        ) : (
-          <ChevronDownIcon
-            testID="accordion-chevron"
-            className="h-4 w-4 text-text-muted"
-            strokeWidth={2}
-            aria-hidden
-          />
-        )}
-      </Pressable>
+      {!collapsible ? (
+        <View className="flex-row items-center gap-2">{heading}</View>
+      ) : (
+        <Pressable
+          role="button"
+          aria-expanded={isExpanded}
+          onPress={() => setIsExpanded((expanded) => !expanded)}
+          className="flex-row items-center gap-2"
+        >
+          {heading}
+          {isExpanded ? (
+            <ChevronUpIcon
+              testID="accordion-chevron"
+              className="h-4 w-4 text-text-muted"
+              strokeWidth={2}
+              aria-hidden
+            />
+          ) : (
+            <ChevronDownIcon
+              testID="accordion-chevron"
+              className="h-4 w-4 text-text-muted"
+              strokeWidth={2}
+              aria-hidden
+            />
+          )}
+        </Pressable>
+      )}
 
-      {isExpanded ? (
+      {isOpen ? (
         <>
           <View className="gap-1">
             <Text className="text-sm font-medium text-text">Nexon Open API 키</Text>

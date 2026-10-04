@@ -39,6 +39,7 @@
 | 상태 | `features/auth/state.ts` | `AuthStatus` · `AuthError` · `ApiKeyNoticeKind` |
 | 상태 | `features/auth/store.ts` | `signIn` · `noticeApiKeyIssue` · `signOutNexonLogin` · `signOut` |
 | 상태 | `features/auth/format.ts` | `formatAuthError` |
+| 상태 | `features/auth/nexon-login-enabled.ts` | `NEXON_LOGIN_ENABLED`. 넥슨 로그인 진입점을 켜고 끈다 |
 | 상태 | `features/auth/use-api-key-notice.ts` | 조회 실패를 키 재입력 경로로 넘기는 훅 |
 | API | `nexon/key-stage.ts` | `probeApiKeyStage`. 키가 개발 단계인지 잰다 |
 | API | `nexon/errors.ts` | `isInvalidApiKeyError` · `NexonSignInRequiredError`(로그인 만료) |
@@ -47,7 +48,7 @@
 | 네이티브 | `native/browser.ts` · `native/adapters/rn-browser.ts` | 로그인 화면의 바깥 링크를 인앱 브라우저로 연다 |
 
 **관련 ADR** (유효): [[ADR-003]] [[ADR-007]] [[ADR-110]] [[ADR-115]] [[ADR-116]] [[ADR-214]]
-[[ADR-215]] [[ADR-296]] [[ADR-317]] [[ADR-318]] [[ADR-321]]
+[[ADR-215]] [[ADR-296]] [[ADR-317]] [[ADR-318]] [[ADR-321]] [[ADR-334]]
 
 ## 로그인 상태 셋
 
@@ -435,13 +436,20 @@ Preferences 한 번 읽는 시간이라 손가락이 그 사이에 닿기는 어
   ([[ADR-003]] 결정 1). `features/auth/nexon-login.ts` 가 지금 직접 부르고 있는데 그것은 기존
   위반이고 이 작업에서 안 건드린다.
 
-### 검수 통과 전에는 안 내보낸다 ([[ADR-321]] 결정 7)
+### 스토어 1.0.12 에는 꺼진 채로 나간다 ([[ADR-334]])
 
-이 화면은 순수 JS 라 OTA 로 먼저 나갈 수 있지만 **안 보낸다.** 검수를 통과하기 전에는 등록된
-테스트 사용자만 로그인이 되므로([[ADR-296]] 결정 7), 넥슨 버튼을 맨 위 주 동작으로 세워 놓으면
-나머지 사용자가 제일 큰 버튼을 눌러 실패한다. [[ADR-318]] 결정 5 가 적은 다음 스토어 빌드에
-함께 탄다.
+넥슨 프렌즈 프로그램의 프로덕션 승인 전에는 등록된 테스트 사용자만 로그인된다([[ADR-296]] 결정 7).
+버튼을 켠 채로 내보내면 나머지 사용자가 제일 큰 버튼을 눌러 실패한다. 그래서 1.0.12 바이너리에는
+로그인 코드와 네이티브 배선을 다 싣되 진입점은 끈다.
 
+- **켜고 끄는 것은 `features/auth/nexon-login-enabled.ts` 의 `NEXON_LOGIN_ENABLED` 하나다.** 지금 `false` 다.
+- 꺼져 있으면 로그인 화면의 넥슨 블록(소제목 · 소개 링크 · 버튼)과 더보기 맨 위 버튼이 안 선다.
+  머리 둘째 줄은 `API 키 입력이 필요해요.` 다.
+- 꺼져 있으면 키 블록은 **펼친 채로** 선다(`ApiKeyForm` 의 `collapsible={false}`). 접는 이유였던 넥슨
+  주 경로가 없어서다. 아래 `키 블록은 접힌 채로 선다` 는 켜졌을 때의 모양이다.
+- **승인이 나면 상수를 `true` 로 바꾸는 OTA 로 켠다**(1.0.12+1 또는 1.0.13). 스킴 · `intent-filter` ·
+  `expo-web-browser` · `SceneDelegate` 배선은 그 OTA 가 기댈 바이너리의 일부라 빼지 않는다.
+  켤 때 스토어 설명 · 심사 메모의 `회원가입 없음` 도 함께 고친다(`foundation/release.md`).
 
 ### 키 표시 토글
 
@@ -586,6 +594,9 @@ Preferences(iOS `UserDefaults` · 안드로이드 `SharedPreferences`)에 저장
   것이 아니라 **한 번 제기됐다 미뤄진 것**이다. 그래서 429 발생 건수는 그대로다.
 ## 폐기된 정책 (history)
 
+- ~~넥슨 로그인 화면은 검수 통과 뒤 스토어 빌드에 묶어 켠 채로 내보낸다~~([[ADR-321]] 결정 7 ·
+  [[ADR-318]] 결정 5) → **스토어 1.0.12 에 꺼진 채로 싣고 프로덕션 승인 뒤 OTA 로 켠다**([[ADR-334]],
+  2026-10-04). 승인을 기다리면 같은 빌드에 묶인 통계 · 파티 스케줄 · 앱 아이콘까지 못 나가서다.
 - ~~키 폼이 먼저이고 넥슨 버튼이 그 아래 붙는다~~ → **넥슨이 위, 키가 아래**([[ADR-321]] 결정 1,
   2026-09-28). 화면 하나에 둘 다 서는 것은 그대로다.
 - ~~제목 블록은 `넥슨 API 키를 입력해주세요` + 보조문 둘이다~~ → **앱 아이콘 72px + 왜 인증이
