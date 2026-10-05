@@ -5,6 +5,7 @@
  * 가 막는다. **이 파일이 그 규칙의 예외 둘 중 하나다**(다른 하나는 `atoms/Text/Text.tsx`).
  */
 import {
+  Platform,
   TextInput as RNTextInput,
   useWindowDimensions,
   type TextInputProps as RNTextInputProps,
@@ -18,6 +19,12 @@ import { fontScalingProps, type Clamped } from '../Text/font-scaling'
 export type TextInputProps = Clamped<RNTextInputProps>
 
 /** 조합이 안 도는 키보드. 숫자만 나오므로 IME 가 조합 구간을 쥘 일이 없다. */
+/**
+ * iOS 한 줄 칸에서 지우는 줄 높이. 남으면 글자에 단어 단위 줄바꿈 문단 스타일이 붙고, iOS 26 은 초점 없는
+ * 한 줄 칸의 긴 값을 그 줄바꿈대로 두 줄로 그려 칸 밖으로 넘친다. 한 줄 칸에는 띄울 줄 사이가 없다.
+ */
+const NO_LINE_HEIGHT = { lineHeight: undefined }
+
 const NUMERIC_KEYBOARDS = new Set<RNTextInputProps['keyboardType']>([
   'number-pad',
   'numeric',
@@ -26,11 +33,12 @@ const NUMERIC_KEYBOARDS = new Set<RNTextInputProps['keyboardType']>([
 ])
 
 /**
- * 입력 칸 하나. `value`·`onChangeText` 를 평소처럼 준다. 호출부가 아래 셋을 안 고른다.
+ * 입력 칸 하나. `value`·`onChangeText` 를 평소처럼 준다. 호출부가 아래 넷을 안 고른다.
  *
  *  ① 시스템 글자 배수를 `[1.0, 1.235]` 로 자른다
  *  ② 조합이 도는 칸은 `value` 대신 `defaultValue` 로 심는다
- *  ③ 자리표시자 색과 상자를 못박아 두 플랫폼을 맞춘다.
+ *  ③ 자리표시자 색과 상자를 못박아 두 플랫폼을 맞춘다
+ *  ④ iOS 한 줄 칸에는 줄 높이를 안 넘긴다.
  *
  * 치수를 주고 싶으면 `className` 이나 `style` 로 주면 되고, 그쪽이 여기 기본값을 이긴다.
  *
@@ -74,6 +82,7 @@ export function TextInput({
       style={[
         { ...BASE_TEXT_STYLE, padding: 0, includeFontPadding: false, textAlignVertical: 'center' },
         rest.style,
+        Platform.OS === 'ios' && rest.multiline !== true ? NO_LINE_HEIGHT : null,
       ]}
       /** 계산한 프롭이 뒤에 온다. 스프레드로 들어온 값이 클램프를 못 이기게. */
       {...fontScalingProps(fontScale, fixed)}

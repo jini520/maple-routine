@@ -8,7 +8,7 @@
 // `useWindowDimensions` 는 초기값을 그 호출에서 얻으므로, 그 하나만 목으로 덮으면 시스템 글자
 // 크기가 그렇게 설정된 기기를 만들 수 있다. 훅 자체를 목으로 안 덮는 것은 `react-native` 의
 // export 가 게터라 `jest.spyOn` 이 안 걸리기 때문이다.
-import { Dimensions } from 'react-native'
+import { Dimensions, Platform } from 'react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { FONT_SCALE_MAX } from '../../Text/font-scaling'
@@ -113,6 +113,40 @@ describe('TextInput: 플랫폼 기본 상자를 지운다', () => {
     )
 
     expect(flattenStyle(getByTestId('칸').props.style)).toMatchObject({ paddingVertical: 8 })
+  })
+})
+
+// iOS 는 줄 높이가 있으면 글자에 문단 스타일을 붙이고, 그 기본 줄바꿈이 단어 단위다. iOS 26 의 한 줄 칸은
+// 초점이 없을 때 그 줄바꿈을 따라 긴 값을 두 줄로 그려 칸 밖으로 넘친다(1.0.12 심사 iPad 의 API 키 칸).
+describe('TextInput: iOS 한 줄 칸은 줄 높이를 안 넘긴다', () => {
+  const 원래플랫폼 = Platform.OS
+  afterEach(() => {
+    Platform.OS = 원래플랫폼
+  })
+
+  it('iOS 한 줄 칸은 호출부가 준 줄 높이를 지운다', async () => {
+    Platform.OS = 'ios'
+    const { getByTestId } = await renderAtom(<TextInput testID="칸" value="" style={{ fontSize: 16, lineHeight: 24 }} />)
+
+    const style = flattenStyle(getByTestId('칸').props.style)
+    expect(style.lineHeight).toBeUndefined()
+    expect(style.fontSize).toBe(16)
+  })
+
+  it('여러 줄 칸은 줄 높이가 남는다. 줄 사이를 그 값이 정한다', async () => {
+    Platform.OS = 'ios'
+    const { getByTestId } = await renderAtom(
+      <TextInput testID="칸" value="" multiline style={{ fontSize: 16, lineHeight: 24 }} />,
+    )
+
+    expect(flattenStyle(getByTestId('칸').props.style).lineHeight).toBe(24)
+  })
+
+  it('안드로이드는 줄 높이가 남는다', async () => {
+    Platform.OS = 'android'
+    const { getByTestId } = await renderAtom(<TextInput testID="칸" value="" style={{ fontSize: 16, lineHeight: 24 }} />)
+
+    expect(flattenStyle(getByTestId('칸').props.style).lineHeight).toBe(24)
   })
 })
 

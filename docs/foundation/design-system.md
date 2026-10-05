@@ -1222,6 +1222,10 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   `value` 로 통제하고(서식 `1,234` 가 그 되쓰기다) **글자 칸은 `defaultValue` 로 한 번만 심는다.**
   호출부는 종전대로 `value`/`onChangeText` 를 쓴다. 대가는 ‘밖에서 글자 칸을 갈아 끼울 수 없다’이고,
   필요하면 그 칸에 `key` 를 준다.
+- **iOS 한 줄 칸에는 줄 높이를 안 넘긴다**(2026-10-05, 아톰이 지운다). `text-base` 같은 글자 크기 클래스는 줄 높이를
+  함께 넣는다. 그러면 RN iOS 가 글자에 단어 단위 줄바꿈 문단 스타일을 붙이고, iOS 26 의 한 줄 칸은 **초점이 없을 때**
+  긴 값을 두 줄로 그려 칸 밖으로 넘친다(1.0.12 심사 iPad 의 API 키 칸, iPadOS 26.5 시뮬레이터에서 재현). 초점이 있을
+  때와 iOS 18 에서는 안 보인다. 여러 줄 칸과 안드로이드는 줄 높이를 그대로 받는다.
 - **입력 칸의 상자는 아톰이 정한다**([[ADR-170]] 정정 13). 치수를 안 주면 플랫폼 기본값이 그대로
   드러난다(실측: 같은 칸이 **안드로이드 41.14dp · iOS 20.00pt**). 아톰이 `padding: 0` ·
   `includeFontPadding: false` · `textAlignVertical: 'center'` 를 **기본으로 깔고**, 호출부가 준 치수
