@@ -23,7 +23,7 @@ import {
 } from '../../../lib/cashbook/free-currency'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { AmountInput, CharacterField, FieldRow, TextField } from '../sheet-fields'
+import { AmountInput, CharacterField, FieldRow, TextField, useCountField } from '../sheet-fields'
 import { openInputCard } from '../../../features/input-card/store'
 import { POINT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
@@ -38,7 +38,9 @@ export function EtcForm(
   const editing = props.editing !== undefined
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [name, setName] = useState(props.editing?.item ?? '')
-  const [quantityText, setQuantityText] = useState(mesoTextOf(props.editing?.quantity ?? 1))
+  const { text: quantityText, pristine: quantityPristine, set: setQuantityText } = useCountField(
+    props.editing?.quantity,
+  )
   /**
    * 친 값을 **되짚는다**. `금액 = 저장된 총액 ÷ 수량`.
    *
@@ -181,6 +183,7 @@ export function EtcForm(
           context={name === '' ? undefined : name}
           chips={[]}
           value={quantityText}
+          pristine={quantityPristine}
           onChange={setQuantityText}
         />
       </FieldRow>

@@ -459,6 +459,81 @@ describe('세라자르 주화', () => {
 
 describe('수량. 곱셈은 앱이 한다', () => {
   /**
+   * 기본값 1 은 앱이 넣은 값이라 카드에 안 싣는다. 고치려고 누른 사람이 매번 그 1 을 지우고
+   * 다시 쳐야 했다(사용자 지적 2026-10-05).
+   */
+  it('안 건드린 수량은 카드가 빈 칸으로 열린다. 줄에는 1 이 서 있다', async () => {
+    const view = await 그리기()
+    await 갈래바꾸기(view, '이벤트·BM')
+    await 누르기(view, '보약 버프 추가 구매')
+
+    expect(줄글자(view, 'spend-sheet-quantity')).toBe('1')
+    await act(async () => {
+      fireEvent.press(view.getByTestId('spend-sheet-quantity'))
+    })
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('')
+  })
+
+  it('빈 채로 확인하면 수량이 1 그대로다. 안 친 것이라 바꿀 것이 없다', async () => {
+    const view = await 그리기()
+    await 갈래바꾸기(view, '이벤트·BM')
+    await 누르기(view, '보약 버프 추가 구매')
+
+    await act(async () => {
+      fireEvent.press(view.getByTestId('spend-sheet-quantity'))
+    })
+    await act(async () => {
+      fireEvent.press(view.getByTestId('input-card-confirm'))
+    })
+
+    expect(줄글자(view, 'spend-sheet-quantity')).toBe('1')
+  })
+
+  it('한 번 친 뒤에는 그 값을 들고 연다. 사용자가 적은 값이다', async () => {
+    const view = await 그리기()
+    await 갈래바꾸기(view, '이벤트·BM')
+    await 누르기(view, '보약 버프 추가 구매')
+
+    await 카드칸에치기(view, 'spend-sheet-quantity', '3')
+    await act(async () => {
+      fireEvent.press(view.getByTestId('spend-sheet-quantity'))
+    })
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('3')
+  })
+
+  // 버프 · 주문서는 세는 것이 개수로 정해져 있고 자릿수가 크다(주문서 수십~수백 장).
+  it('버프의 수량 카드에는 +10 · +1 칩이 선다', async () => {
+    const view = await 그리기()
+    await 갈래바꾸기(view, '버프')
+    await 누르기(view, '세이람의 영약')
+
+    await act(async () => {
+      fireEvent.press(view.getByTestId('spend-sheet-quantity'))
+    })
+
+    for (const chip of COUNT_QUICK_ADDS) {
+      expect(view.getByText(chip.label)).toBeTruthy()
+    }
+  })
+
+  // 같은 칸을 쓰지만 갈래로 가른다(사용자 지정). 컨텐츠 · 이벤트·BM 은 그대로 없다.
+  it('이벤트·BM 의 수량 카드에는 칩이 없다', async () => {
+    const view = await 그리기()
+    await 갈래바꾸기(view, '이벤트·BM')
+    await 누르기(view, '보약 버프 추가 구매')
+
+    await act(async () => {
+      fireEvent.press(view.getByTestId('spend-sheet-quantity'))
+    })
+
+    for (const chip of [...MESO_QUICK_ADDS, ...COUNT_QUICK_ADDS]) {
+      expect(view.queryByText(chip.label)).toBeNull()
+    }
+  })
+
+  /**
    * 상한이 없는 항목의 수량은 **치는 칸**이다. 수량이 클 수 있어 스테퍼가 안 맞는다.
    * 단위를 안 적고 처음 값은 1 이다.
    */
@@ -486,10 +561,12 @@ describe('수량. 곱셈은 앱이 한다', () => {
   })
 
   // 지운 값을 앱이 1 로 채우면 화면과 저장값이 갈린다. 0 · 빈 칸은 막는다.
-  it('수량을 비우면 저장이 꺼진다', async () => {
+  it('친 수량을 비우면 저장이 꺼진다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
     await 누르기(view, '몬스터 파크')
 
+    // 안 건드린 기본값은 카드가 빈 칸으로 열려 `비울` 것이 없다. 한 번 친 뒤부터 비울 수 있다.
+    await 카드칸에치기(view, 'spend-sheet-quantity', '2')
     await 카드칸에치기(view, 'spend-sheet-quantity', '')
 
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
@@ -1580,10 +1657,12 @@ describe('기타. 금액 × 수량', () => {
     }
   })
 
-  it('수량을 비우면 저장이 막힌다', async () => {
+  it('친 수량을 비우면 저장이 막힌다', async () => {
     const view = await 기타()
     await 금액치기(view, '30000000')
 
+    // 안 건드린 기본값은 카드가 빈 칸으로 열려 `비울` 것이 없다. 한 번 친 뒤부터 비울 수 있다.
+    await 카드칸에치기(view, 'spend-sheet-quantity', '2')
     await 카드칸에치기(view, 'spend-sheet-quantity', '')
 
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
@@ -2189,10 +2268,12 @@ describe('아이템 구매의 종류', () => {
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('360만')
   })
 
-  it('단가만 있고 수량이 0 이면 저장할 수 없다', async () => {
+  it('단가만 있고 친 수량을 비우면 저장할 수 없다', async () => {
     const view = await 구매('소비')
     await 단가치기(view, '12000')
 
+    // 안 건드린 기본값은 카드가 빈 칸으로 열려 `비울` 것이 없다. 한 번 친 뒤부터 비울 수 있다.
+    await 수량치기(view, '2')
     await 수량치기(view, '')
 
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)

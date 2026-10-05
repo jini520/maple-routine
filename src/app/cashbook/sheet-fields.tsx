@@ -28,6 +28,39 @@ import { monthKeyOf } from '../../lib/calendar'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
 /**
+ * 기본값 1 로 서는 수를 드는 훅. 수량 다섯과 사냥 계산기의 `소재` 가 쓴다.
+ *
+ * 글자와 함께 **사용자가 손댔는가**를 든다. 안 건드린 1 은 앱이 넣은 값이라 입력 카드가 빈 칸으로
+ * 열려야 한다 - 카드가 그 1 을 들고 열리면 고치려는 사람이 매번 지우고 다시 쳤다.
+ *
+ * @param stored 수정으로 열 때 저장돼 있던 값. 있으면 사용자가 적은 값이라 처음부터 안 비운다
+ * @example
+ * const { text, pristine, set, reset } = useCountField(props.editing?.quantity)
+ */
+export function useCountField(stored: number | null | undefined): {
+  text: string
+  pristine: boolean
+  set: (next: string) => void
+  /** 앱이 1 로 되돌리는 자리(종류 · 항목을 바꿀 때). 다시 안 건드린 기본값이 된다 */
+  reset: () => void
+} {
+  const [text, setText] = useState(mesoTextOf(stored ?? 1))
+  const [pristine, setPristine] = useState(stored === null || stored === undefined)
+  return {
+    text,
+    pristine,
+    set: (next) => {
+      setPristine(false)
+      setText(next)
+    },
+    reset: () => {
+      setPristine(true)
+      setText(mesoTextOf(1))
+    },
+  }
+}
+
+/**
  * 머리의 날짜 고르개. 두 시트가 함께 쓰고, 보스 직접 완료 시트와 같은 부품이다(`DateSelect` +
  * `CalendarPopover`).
  *
@@ -134,6 +167,8 @@ export function AmountInput(props: {
   icon?: InputCardIcon
   chips?: readonly InputCardChip[]
   placeholder?: string
+  /** 아직 사용자가 안 건드린 기본값인가. 참이면 카드가 빈 칸으로 열린다 */
+  pristine?: boolean
 }): React.JSX.Element {
   const empty = props.value === ''
   return (
@@ -165,7 +200,10 @@ function openAmountCard(props: {
   icon?: InputCardIcon
   chips?: readonly InputCardChip[]
   placeholder?: string
+  pristine?: boolean
 }): void {
+  // 앱이 넣은 기본값은 카드에 안 싣는다. 고치려고 누른 사람이 매번 그 값을 지우고 다시 쳤다.
+  const seed = props.pristine === true ? '' : props.value
   openInputCard({
     label: props.label,
     context: props.context,
@@ -174,8 +212,13 @@ function openAmountCard(props: {
     reading: props.reading,
     chips: props.chips ?? MESO_QUICK_ADDS,
     placeholder: props.placeholder,
-    value: props.value,
-    onConfirm: (next) => props.onChange(settleMesoText(acceptMesoText(props.value, next))),
+    value: seed,
+    onConfirm: (next) => {
+      const settled = settleMesoText(acceptMesoText(seed, next))
+      // 빈 채로 확인하면 안 친 것이다. 기본값이 그대로 남아야 줄과 셈이 안 갈린다.
+      if (settled === '' && props.pristine === true) return
+      props.onChange(settled)
+    },
   })
 }
 
@@ -271,6 +314,8 @@ export function QuantityStepper(props: {
   max?: number
   context?: string
   testID?: string
+  /** 아직 사용자가 안 건드린 기본값인가. 참이면 가운데 숫자를 눌러 연 카드가 빈 칸이다 */
+  pristine?: boolean
 }): React.JSX.Element {
   const value = mesoValueOf(props.value)
   // 바닥은 1 이다. 수량도 소재도 0 이 뜻이 없다(0 소재를 돌았다는 말은 성립하지 않는다).
@@ -303,6 +348,7 @@ export function QuantityStepper(props: {
             chips: [],
             value: props.value,
             onChange: props.onChange,
+            pristine: props.pristine,
           })
         }
         hitSlop={{ top: 8, bottom: 8 }}

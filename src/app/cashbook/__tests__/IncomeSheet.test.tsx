@@ -1133,10 +1133,12 @@ describe('통화', () => {
       }
     })
 
-    it('수량을 비우면 저장이 막힌다', async () => {
+    it('친 수량을 비우면 저장이 막힌다', async () => {
       const view = await 그리기({}, 'etc')
       await 치기(view, '30000000')
 
+      // 안 건드린 기본값은 카드가 빈 칸으로 열려 `비울` 것이 없다. 한 번 친 뒤부터 비울 수 있다.
+      await 아이디로치기(view, 'income-sheet-quantity', '2')
       await 아이디로치기(view, 'income-sheet-quantity', '')
 
       expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
@@ -1493,14 +1495,42 @@ describe('사냥 계산기', () => {
   })
 
   // 0 소재를 돌았다는 말은 성립하지 않는다. 메소가 0 이라 저장이 꺼진다.
-  it('소재를 비우면 저장이 꺼진다', async () => {
+  it('친 소재를 비우면 저장이 꺼진다', async () => {
     const view = await 그리기()
     await 밤의길3(view)
     await 루디고르기(view)
 
+    // 안 건드린 기본값은 카드가 빈 칸으로 열려 `비울` 것이 없다. 한 번 친 뒤부터 비울 수 있다.
+    await 칸에치기(view, 'income-sheet-sojae', '2')
     await 칸에치기(view, 'income-sheet-sojae', '')
 
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  /**
+   * 기본값 1 은 앱이 넣은 값이라 카드에 안 싣는다. 고치려고 누른 사람이 매번 그 1 을 지우고
+   * 다시 쳐야 했다(사용자 지적 2026-10-05).
+   */
+  it('안 건드린 소재는 카드가 빈 칸으로 열린다. 줄에는 1 이 서 있다', async () => {
+    const view = await 그리기()
+    await 밤의길3(view)
+
+    expect(view.getByTestId('income-sheet-sojae')).toHaveTextContent('1')
+    await 아이디로누르기(view, 'income-sheet-sojae')
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('')
+  })
+
+  it('스테퍼를 눌러 바꾼 뒤에는 카드가 그 값을 들고 연다', async () => {
+    const view = await 그리기()
+    await 밤의길3(view)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('소재 늘리기'))
+    })
+    await 아이디로누르기(view, 'income-sheet-sojae')
+
+    expect(view.getByTestId('input-card-value').props.value).toBe('2')
   })
 
   // 소재는 스테퍼이고 가운데 숫자를 누르면 친다. 0 소재는 뜻이 없어 1 에서 멈춘다.

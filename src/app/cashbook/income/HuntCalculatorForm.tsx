@@ -52,7 +52,7 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import type { LastHunt, LastHunts } from '../../../storage/last-hunts'
-import { FieldRow, QuantityStepper } from '../sheet-fields'
+import { FieldRow, QuantityStepper, useCountField } from '../sheet-fields'
 import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
 import { requiredCharacterOptions } from '../character-options'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
@@ -315,7 +315,7 @@ export function HuntCalculatorForm(
   const [boosts, setBoosts] = useState<readonly string[]>(detail?.boosts ?? [])
   /** 유니온의 부 단계. 안 켰어도 고른 단계를 들고 있다가 켜면 그대로 선다. */
   const [unionTier, setUnionTier] = useState<UnionTier>(detail?.unionTier ?? 3)
-  const [sojaeText, setSojaeText] = useState(mesoTextOf(detail?.sojae ?? 1))
+  const { text: sojaeText, pristine: sojaePristine, set: setSojaeText } = useCountField(detail?.sojae)
   const sojae = mesoValueOf(sojaeText)
   const [fragmentsText, setFragmentsText] = useState(mesoTextOf(detail?.fragments ?? 0))
   /** 빈 칸은 가격을 안 적은 것이라 0 과 따로 든다. */
@@ -714,6 +714,7 @@ export function HuntCalculatorForm(
             label="소재"
             context="하나가 30분"
             value={sojaeText}
+            pristine={sojaePristine}
             onChange={setSojaeText}
           />
           <Text className="ml-2 shrink-0 text-xs text-text-muted">소재</Text>

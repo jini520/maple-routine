@@ -21,7 +21,7 @@ import {
 } from '../../../lib/cashbook/free-currency'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
-import { AmountInput, CharacterField, FieldRow, TextField } from '../sheet-fields'
+import { AmountInput, CharacterField, FieldRow, TextField, useCountField } from '../sheet-fields'
 import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 
@@ -29,7 +29,9 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [name, setName] = useState(props.editing?.item ?? '')
-  const [quantityText, setQuantityText] = useState(mesoTextOf(props.editing?.quantity ?? 1))
+  const { text: quantityText, pristine: quantityPristine, set: setQuantityText } = useCountField(
+    props.editing?.quantity,
+  )
   /** 친 값을 **되짚는다**. `단가 = 저장된 총액 ÷ 수량`. */
   const [typedText, setTypedText] = useState(() => {
     if (props.editing === undefined) return ''
@@ -163,6 +165,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
           context={name === '' ? undefined : name}
           chips={[]}
           value={quantityText}
+          pristine={quantityPristine}
           onChange={setQuantityText}
         />
       </FieldRow>

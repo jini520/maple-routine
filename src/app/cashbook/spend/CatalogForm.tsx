@@ -47,7 +47,8 @@ import {
 } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
-import { AmountInput, CharacterField, FieldRow, QuantityStepper } from '../sheet-fields'
+import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
+import { AmountInput, CharacterField, FieldRow, QuantityStepper, useCountField } from '../sheet-fields'
 import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import type { SpendRecord } from '../../../storage/spend'
 import { rowsOfGroups } from './tile-rows'
@@ -225,7 +226,15 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const [tierByForm, setTierByForm] = useState<Record<string, string>>(found?.tierByForm ?? {})
   /** 축마다 고른 값. 축 값을 든 대표(매지컬 · 귀 장식 주문서)만 쓴다. */
   const [optionByAxis, setOptionByAxis] = useState<Record<string, string>>(found?.optionByAxis ?? {})
-  const [quantityText, setQuantityText] = useState(mesoTextOf(props.editing?.quantity ?? 1))
+  const { text: quantityText, pristine: quantityPristine, set: setQuantityText, reset: resetQuantity } =
+    useCountField(props.editing?.quantity)
+  /**
+   * 수량 카드의 칩. 버프 · 주문서만 받는다.
+   *
+   * 그 둘은 세는 것이 개수로 정해져 있고 자릿수가 크다(주문서 수십~수백 장). 나머지 갈래는 무엇을
+   * 세는지가 항목마다 달라 더할 수가 없다.
+   */
+  const quantityChips = props.category === 'buff' || props.category === 'scroll' ? COUNT_QUICK_ADDS : []
   /**
    * 가격이 없는 항목의 개당 가격. 수정이면 `총액 ÷ 수량` 으로 되짚는다. 저장된 총액이 `개당 가격 × 수량`
    * 으로 만든 값이라 나누어떨어진다.
@@ -303,7 +312,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     // 채로 시작한다.
     setTierByForm({})
     setOptionByAxis({})
-    setQuantityText('1')
+    resetQuantity()
     setPriceText('')
     props.onScrollKeyChange(next.key)
   }
@@ -311,7 +320,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   /** ② 그 안의 단계를 고르는 단계. 형태가 없는 대표의 길이다. */
   function selectItem(next: SpendCatalogItem): void {
     setItem(next)
-    setQuantityText('1')
+    resetQuantity()
   }
 
   /** ② 축 하나의 값을 고르는 단계. 고른 값들이 한 항목과 꼭 맞으면 그 항목이 정해진다. */
@@ -328,7 +337,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     setItem(null)
     setTierByForm({})
     setOptionByAxis({})
-    setQuantityText('1')
+    resetQuantity()
     setPriceText('')
     props.onScrollKeyChange('')
   }
@@ -555,6 +564,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
                   context={item?.name ?? choice?.label}
                   max={scope.maxQuantity}
                   value={quantityText}
+                  pristine={quantityPristine}
                   onChange={(next) => setQuantityText(capQuantityText(next, scope.maxQuantity))}
                 />
               ) : (
@@ -562,8 +572,9 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
                   testID="spend-sheet-quantity"
                   label="수량"
                   context={item?.name ?? choice?.label}
-                  chips={[]}
+                  chips={quantityChips}
                   value={quantityText}
+                  pristine={quantityPristine}
                   onChange={setQuantityText}
                 />
               )}
