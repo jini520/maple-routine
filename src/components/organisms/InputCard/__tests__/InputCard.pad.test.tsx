@@ -118,12 +118,25 @@ describe('판으로 받는가', () => {
     expect(view.getByTestId('input-card-value').props.autoFocus).toBe(true)
   })
 
-  it('판이 받는 칸은 초점을 안 받는다. 열자마자 아래가 덮이면 안 된다', async () => {
+  /**
+   * 초점이 없으면 커서도 없어 **칠 자리가 화면에 안 남는다**(사용자 지적 2026-10-05). OS 키보드는
+   * `showSoftInputOnFocus` 가 막으므로 판은 그대로 눌러야 올라온다.
+   */
+  it('판이 받는 칸도 판정이 나면 초점을 받는다. 키보드는 안 뜬다', async () => {
     const { view } = await 그리기()
 
     await 재기(view, 안_들어가는_카드)
 
-    expect(view.getByTestId('input-card-value').props.autoFocus).toBe(false)
+    expect(view.getByTestId('input-card-value').props.autoFocus).toBe(true)
+    expect(view.getByTestId('input-card-value').props.showSoftInputOnFocus).toBe(false)
+  })
+
+  it('초점을 받아도 판은 안 올라온다. 지금 값을 먼저 봐야 한다', async () => {
+    const { view } = await 그리기()
+
+    await 재기(view, 안_들어가는_카드)
+
+    expect(view.queryByTestId('input-card-pad')).toBeNull()
   })
 
   it('재기 전에도 초점을 안 준다. 판정이 나야 어느 쪽인지 안다', async () => {
@@ -449,12 +462,12 @@ describe('커서는 칠 수 있을 때만 보인다', () => {
    * 스크림 탭이 `Keyboard.dismiss()` 를 부른다. 그때 커서만 남아 깜빡이면 칠 수 있는 것처럼
    * 보여서 누르는데 아무 일도 안 난다.
    */
-  it('판이 서기 전에는 커서를 감춘다', async () => {
+  it('진입 직후에는 판이 없어도 커서가 보인다. 칠 자리를 알린다', async () => {
     const { view } = await 그리기()
 
     await 재기(view, 안_들어가는_카드)
 
-    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(true)
+    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(false)
   })
 
   it('판이 서면 커서가 보인다', async () => {
