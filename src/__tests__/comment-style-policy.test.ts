@@ -7,7 +7,9 @@
 //   2. `「」` 를 안 쓴다. 백틱이 그 자리다.
 //   3. `—` 를 문장을 끊거나 괄호로 쓰지 않는다. 마침표나 쌍점이 그 자리다.
 //
-// 셋째만 예외가 있다. 아래 `DASH_ALLOWED` 를 볼 것.
+// 기호 둘은 데이터 `.json` 과 `src` 안 `.md` 의 설명 글까지 본다. 주석이 아니지만 같은 사람이 같은
+// 뜻으로 쓰는 자리이고, `.ts` 만 보던 사이에 스물한 건이 쌓여 있었다. `—` 는 그 글에서 날짜와 설명을
+// 잇는 목록 구분자라 소스에만 건다. 셋째만 예외가 또 있다. 아래 `DASH_ALLOWED` 를 볼 것.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -29,12 +31,12 @@ const DASH_ALLOWED: ReadonlyArray<{ file: string; why: string }> = [
   },
 ]
 
-function sourceFiles(dir: string): string[] {
+function filesUnder(dir: string, kind: RegExp): string[] {
   const out: string[] = []
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry)
-    if (statSync(path).isDirectory()) out.push(...sourceFiles(path))
-    else if (/\.tsx?$/.test(entry)) out.push(path)
+    if (statSync(path).isDirectory()) out.push(...filesUnder(path, kind))
+    else if (kind.test(entry)) out.push(path)
   }
   return out
 }
@@ -42,11 +44,13 @@ function sourceFiles(dir: string): string[] {
 /** 이 파일은 기호를 **검사 대상으로** 들고 있어야 해서 스스로를 뺀다. */
 const SELF = join('__tests__', 'comment-style-policy.test.ts')
 
-const FILES = sourceFiles(SRC).filter((f) => f.slice(SRC.length + 1) !== SELF)
+const FILES = filesUnder(SRC, /\.tsx?$/).filter((f) => f.slice(SRC.length + 1) !== SELF)
+/** 기호 둘이 보는 것. 소스에 데이터 `.json` 과 `src` 안 `.md` 의 설명 글을 더한다. */
+const MARK_FILES = [...FILES, ...filesUnder(SRC, /\.(json|md)$/)]
 
-function offenders(mark: RegExp, allow: ReadonlySet<string> = new Set()): string[] {
+function offenders(mark: RegExp, files: string[] = FILES, allow: ReadonlySet<string> = new Set()): string[] {
   const out: string[] = []
-  for (const file of FILES) {
+  for (const file of files) {
     const rel = file.slice(SRC.length + 1)
     if (allow.has(rel)) continue
     for (const [i, line] of readFileSync(file, 'utf8').split('\n').entries()) {
@@ -59,19 +63,20 @@ function offenders(mark: RegExp, allow: ReadonlySet<string> = new Set()): string
 describe('주석 문체', () => {
   it('훑을 것을 실제로 찾았다', () => {
     expect(FILES.length).toBeGreaterThan(600)
+    expect(MARK_FILES.length).toBeGreaterThan(FILES.length)
   })
 
   it('`«»` 를 쓰지 않는다', () => {
-    expect(offenders(/[«»]/)).toEqual([])
+    expect(offenders(/[«»]/, MARK_FILES)).toEqual([])
   })
 
   it('`「」` 를 쓰지 않는다', () => {
-    expect(offenders(/[「」]/)).toEqual([])
+    expect(offenders(/[「」]/, MARK_FILES)).toEqual([])
   })
 
   it('`—` 는 정해진 두 자리에만 남는다', () => {
     const allow = new Set(DASH_ALLOWED.map((a) => a.file))
-    expect(offenders(/—/, allow)).toEqual([])
+    expect(offenders(/—/, FILES, allow)).toEqual([])
   })
 
   it('파일 머리 주석은 JSDoc 이다', () => {
