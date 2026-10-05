@@ -25,7 +25,7 @@ const DASH_ALLOWED: ReadonlyArray<{ file: string; why: string }> = [
   },
   {
     file: 'lib/boss/boss-profit-period.ts',
-    why: '표의 빈 칸(`| — |`)이라 「해당 없음」 이지 문장을 끊는 것이 아니다',
+    why: '표의 빈 칸(`| — |`)이라 `해당 없음` 이지 문장을 끊는 것이 아니다',
   },
 ]
 
