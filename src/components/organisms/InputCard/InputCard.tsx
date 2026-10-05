@@ -331,6 +331,13 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    * 보기 전에 아래가 덮인다. 값 칸을 눌러야 올라온다.
    */
   const [padOpen, setPadOpen] = useState(false)
+  /**
+   * 판을 한 번이라도 올렸나. **진입 직후와 내린 뒤를 가른다.**
+   *
+   * 커서를 `칠 수 있을 때만` 으로 두면 판 경로로 연 카드가 커서 없이 떠서 칠 자리가 안 보인다.
+   * 반대로 늘 보이게 두면 판을 내린 뒤에도 깜빡여 칠 수 있는 것처럼 읽힌다. 그 둘을 이 값이 가른다.
+   */
+  const [padEverOpened, setPadEverOpened] = useState(false)
 
   function measure(event: LayoutChangeEvent): void {
     const 잰_높이 = event.nativeEvent.layout.height
@@ -366,6 +373,9 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    * 것처럼 보인다.
    */
   const canType = usesPadPath ? padOpen : keyboardShown
+
+  /** 커서를 보일까. 칠 수 있을 때와 **판을 한 번도 안 올린 진입 직후**다. */
+  const showsCaret = canType || (usesPadPath && !padEverOpened)
 
   /**
    * 판 바깥을 누르면 내려간다. **카드는 안 닫힌다.**
@@ -682,7 +692,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
 
                 대가는 가운데를 눌러 고칠 수 없다는 것이다. 지우고 다시 친다.
               */
-              caretHidden={!canType}
+              caretHidden={!showsCaret}
               selection={isText ? undefined : (caret ?? undefined)}
               onSelectionChange={(event) => {
                 if (isText) return
@@ -702,12 +712,17 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 순간부터 키보드 위에 서서 자리가 한 번도 안 움직인다. 자동 초점을 빼면 카드가
                 바닥에 섰다가 값 칸을 누를 때 키보드 높이만큼 뛴다.
 
-                판이 받는 숫자 칸은 초점을 안 받는다. 열자마자 판이 올라오면 지금 값이 얼마인지
-                보기 전에 아래가 덮인다. 글자 칸은 칠 것이 이름 하나뿐이라 언제나 받는다.
+                판이 받는 숫자 칸도 **판정이 난 뒤에는 초점을 받는다.** 초점이 없으면 커서도 없어
+                칠 자리가 화면에 안 남는다. OS 키보드는 `showSoftInputOnFocus` 가 막으므로 판은
+                그대로 값 칸을 눌러야 올라온다(iOS 는 그 프롭이 `inputView` 를 빈 뷰로 갈아 끼워
+                커서만 깜빡인다). 판정 전(`null`)에는 안 준다 - 그때 주면 키보드가 올라온다.
               */
-              autoFocus={padDecided === false}
+              autoFocus={padDecided !== null}
               showSoftInputOnFocus={showsSystemKeyboard}
-              onPressIn={() => setPadOpen(true)}
+              onPressIn={() => {
+                setPadOpen(true)
+                setPadEverOpened(true)
+              }}
               /*
                 **글자와 숫자의 크기가 다르다.** 숫자는 자릿수를 세는 값이라 크게 두고, 글자는
                 한 줄에 이름이 다 들어가야 해서 한 단계 작다. 둘을 같은 크기로 두면 글자 칸에서

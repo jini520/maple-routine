@@ -25,7 +25,7 @@ import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { netProceedsMeso } from '../../../lib/cashbook/item-split'
 import { requiredCharacterOptions } from '../character-options'
 import { ITEM_KINDS, countsQuantity, itemKindNameOf, type ItemKindKey } from '../../../lib/cashbook/categories'
-import { AmountInput, FieldRow } from '../sheet-fields'
+import { AmountInput, FieldRow, useCountField } from '../sheet-fields'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSaleFeeChoice } from './sale-fee'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
@@ -41,7 +41,8 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   const [name, setName] = useState(props.editing?.item ?? '')
   /** `null` 은 종류 칸이 생기기 전 행이고 장비다. */
   const [itemKind, setItemKind] = useState<ItemKindKey>(props.editing?.itemKind ?? ITEM_KINDS[0].key)
-  const [quantityText, setQuantityText] = useState(mesoTextOf(props.editing?.quantity ?? 1))
+  const { text: quantityText, pristine: quantityPristine, set: setQuantityText, reset: resetQuantity } =
+    useCountField(props.editing?.quantity)
   /**
    * 치는 값은 판매 대금(장비)이나 단가(소비 · 기타)다. 행에 남는 것은 수수료를 뗀 합계라 되짚을 때
    * 뗀 몫을 되돌리고 수량으로 나눈다. 요율만 들고 역산하면 내림 때문에 1 메소가 어긋난다.
@@ -70,7 +71,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
     const next = ITEM_KINDS.find((each) => each.name === name)?.key
     if (next === undefined) return
     setItemKind(next)
-    setQuantityText('1')
+    resetQuantity()
   }
 
   useSaveSlot(props.setSave, {
@@ -201,6 +202,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
             unit="개"
             chips={COUNT_QUICK_ADDS}
             value={quantityText}
+            pristine={quantityPristine}
             onChange={setQuantityText}
           />
           <Text className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted">개</Text>

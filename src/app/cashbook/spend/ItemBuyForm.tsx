@@ -27,7 +27,7 @@ import {
   itemKindNameOf,
   type ItemKindKey,
 } from '../../../lib/cashbook/categories'
-import { AmountInput, CharacterField, FieldRow, TextField } from '../sheet-fields'
+import { AmountInput, CharacterField, FieldRow, TextField, useCountField } from '../sheet-fields'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
@@ -44,7 +44,8 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [name, setName] = useState(props.editing?.item ?? '')
-  const [quantityText, setQuantityText] = useState(mesoTextOf(props.editing?.quantity ?? 1))
+  const { text: quantityText, pristine: quantityPristine, set: setQuantityText, reset: resetQuantity } =
+    useCountField(props.editing?.quantity)
   /**
    * 친 값을 되짚는 복원. `단가 = (저장된 총액 − 관세분) ÷ 수량`.
    *
@@ -86,7 +87,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
     const next = ITEM_KINDS.find((each) => each.name === name)?.key
     if (next === undefined) return
     setItemKind(next)
-    setQuantityText('1')
+    resetQuantity()
     setHasTariff(false)
   }
 
@@ -209,6 +210,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
             unit="개"
             chips={COUNT_QUICK_ADDS}
             value={quantityText}
+            pristine={quantityPristine}
             onChange={setQuantityText}
           />
           <Text
