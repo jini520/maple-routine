@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react'
 
 import { displayedBosses } from '../../features/boss-scheduler/displayed-bosses'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { resolveDisplayRepresentative } from '../../features/character-manage/derivations'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import {
   bossPickerSections,
@@ -45,7 +46,7 @@ export function useBossPicker(): BossPicker {
   const manualTrackedByOcid = useBossSchedulerStore((state) => state.manualTrackedByOcid)
   const manualCompletedByOcid = useBossSchedulerStore((state) => state.manualCompletedByOcid)
   const { mode } = useTrackingModeStore()
-  const selectedOcid = useCharacterSelectionStore((state) => state.selectedOcid)
+  const representativeOcid = useCharacterSelectionStore((state) => state.representativeOcid)
 
   // 추적 차례대로. 추적 목록을 아직 못 읽었으면 동기화된 차례를 쓴다.
   const ordered = useMemo(() => {
@@ -76,8 +77,9 @@ export function useBossPicker(): BossPicker {
     [ordered, mode, manualTrackedByOcid, manualCompletedByOcid],
   )
 
-  const [ocid, setOcid] = useState(() =>
-    ordered.some((character) => character.ocid === selectedOcid) ? (selectedOcid ?? '') : (ordered[0]?.ocid ?? ''),
+  // 대표 캐릭터로 연다. 미지정이거나 추적 목록에 없으면 추적 순서의 첫 캐릭터다(today 대표 위젯과 같은 규칙).
+  const [ocid, setOcid] = useState(
+    () => resolveDisplayRepresentative(ordered.map((character) => character.ocid), representativeOcid) ?? '',
   )
   const [picked, setPicked] = useState<PartyAppointmentBoss[]>([])
   const [flight, setFlight] = useState<Flight | null>(null)
