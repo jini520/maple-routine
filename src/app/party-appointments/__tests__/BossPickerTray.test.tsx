@@ -125,3 +125,44 @@ describe('BossPickerTray: 캐릭터 묶음', () => {
     expect(flattenStyle(view.getByTestId('tray-ring-ocid-2:jupiter').props.style).borderColor).toBe('#1f7690')
   })
 })
+
+describe('BossPickerTray: 줄이 생기고 사라질 때', () => {
+  const 첫보스 = 고른보스[0]!
+
+  function 비행(measureFrom: jest.Mock): BossPickerTrayProps['flight'] {
+    return { id: 1, boss: 첫보스, from: { left: 0, top: 0, width: 48, height: 48 }, measureFrom }
+  }
+
+  // 줄이 생기며 시트가 올라가는 380ms 를 다 기다리면 첫 보스 하나에 1.2초가 걸렸다(사용자 지적).
+  // 이동 곡선이 out(cubic) 이라 180ms 면 89% 가 끝나고, 남은 몫은 출발 직전의 다시 재기가 덮는다.
+  it('첫 보스는 180ms 뒤에 타일을 다시 재고 출발한다', async () => {
+    jest.useFakeTimers()
+    try {
+      const measureFrom = jest.fn()
+      const view = await renderAtom(<BossPickerTray {...props([첫보스])} flight={비행(measureFrom)} />)
+
+      await act(async () => {
+        jest.advanceTimersByTime(170)
+      })
+      expect(measureFrom).not.toHaveBeenCalled()
+
+      await act(async () => {
+        jest.advanceTimersByTime(20)
+      })
+      expect(measureFrom).toHaveBeenCalled()
+      view.unmount()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  // 이탈 애니메이션은 줄을 배치에서 빼고 제자리에 그리는데, 바닥 줄이 그 즉시 줄어 그 자리가
+  // 저장 버튼 자리가 된다. 마지막 보스를 뺄 때 초상이 버튼 위로 흘러내렸다(사용자 보고).
+  it('선택 줄은 이탈 애니메이션 없이 사라진다', async () => {
+    const view = await renderAtom(<BossPickerTray {...props(고른보스)} />)
+
+    const 줄 = view.getByTestId('tray-row')
+    expect(줄.props.entering).toBeTruthy()
+    expect(줄.props.exiting).toBeUndefined()
+  })
+})

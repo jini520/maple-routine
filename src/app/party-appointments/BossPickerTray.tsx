@@ -11,7 +11,6 @@ import Animated, {
   Easing,
   FadeInDown,
   interpolate,
-  FadeOutDown,
   runOnJS,
   useAnimatedRef,
   useAnimatedStyle,
@@ -47,16 +46,26 @@ const GROUP_GAP = 12
 const GROUP_SPACE = GROUP_GAP * 2 + 1
 /** 묶음 왼쪽 얼굴 열과 초상 사이. 칸의 가로 자리가 열 폭 + 이만큼 오른쪽이다 */
 const LABEL_GAP = 8
-/** 시안과 같은 값. 0.52초, 시간 곡선은 처음에 느리고 끝에서 감속한다 */
-const FLIGHT_MS = 520
+/**
+ * 날아가는 시간. 시간 곡선은 처음에 느리고 끝에서 감속한다.
+ *
+ * 시안은 0.52초였다. 날아가는 거리가 시트 높이의 절반이라 이 아래로는 초상이 어디서 와서 어디로
+ * 갔는지가 안 읽힌다.
+ */
+const FLIGHT_MS = 400
 const FLIGHT_EASING = Easing.bezier(0.35, 0, 0.25, 1)
 /** 넘치듯 튀는 곡선. 도착한 칸 · 난이도를 바꾼 칸 · 버튼 숫자가 쓴다 */
 const POP_EASING = Easing.bezier(0.3, 1.6, 0.5, 1)
+/** 도착한 칸이 0.4 배에서 드러나는 시간 */
+const LAND_MS = 160
 /**
- * 첫 보스는 시트가 다 자란 뒤에 출발한다. 줄이 생기며 바닥이 자라 시트가 통째로 올라가므로(시트 이동 380ms),
- * 그 전에 출발하면 초상만 옛 자리에 남는다.
+ * 첫 보스가 기다렸다 출발하는 시간. 줄이 생기며 바닥이 자라 시트가 통째로 올라가므로(시트 이동 380ms),
+ * 출발 자리를 그 전에 재면 초상이 타일의 옛 자리에서 뜬다.
+ *
+ * 380ms 를 다 기다리지는 않는다. 시트 이동 곡선이 `Easing.out(cubic)` 이라 180ms 면 이동의 89% 가
+ * 끝나 있고, 남은 몫은 출발 직전에 타일을 다시 재는 것(`measureFrom`)이 덮는다.
  */
-const FIRST_FLIGHT_DELAY_MS = 420
+const FIRST_FLIGHT_DELAY_MS = 180
 
 /** 날아오는 중인 초상 하나 */
 export interface Flight {
@@ -170,8 +179,8 @@ function TrayItem(props: {
   // 날아온 초상이 내려앉으면 0.4 배에서 넘치듯 커지며 드러난다.
   useEffect(() => {
     if (wasHidden.current && !hidden) {
-      scale.set(withSequence(withTiming(0.4, { duration: 0 }), withTiming(1, { duration: 420, easing: POP_EASING })))
-      opacity.set(withTiming(1, { duration: 420, easing: POP_EASING }))
+      scale.set(withSequence(withTiming(0.4, { duration: 0 }), withTiming(1, { duration: LAND_MS, easing: POP_EASING })))
+      opacity.set(withTiming(1, { duration: LAND_MS, easing: POP_EASING }))
     }
     if (hidden) opacity.set(0)
     wasHidden.current = hidden
@@ -320,7 +329,9 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
     <View className="-mx-4 -mt-3">
       {count > 0 && (
         // 처음 고를 때 줄이 아래에서 펼쳐진다. 스타일 없는 겉 층에만 애니메이션을 단다(className 함정).
-        <Animated.View entering={FadeInDown.duration(260)} exiting={FadeOutDown.duration(180)}>
+        // 사라질 때는 애니메이션이 없다. 이탈하는 뷰는 배치에서 빠져 제자리에 그려지는데, 바닥 줄이
+        // 그 즉시 줄어 그 제자리가 저장 버튼 자리라 초상이 버튼 위로 흘러내렸다.
+        <Animated.View testID="tray-row" entering={FadeInDown.duration(260)}>
           <View className="border-t border-border bg-surface">
             <View className="flex-row items-center justify-between px-4 pb-0.5 pt-2">
               <Text className="text-11 font-bold text-text-muted">{count}개 선택됨</Text>
