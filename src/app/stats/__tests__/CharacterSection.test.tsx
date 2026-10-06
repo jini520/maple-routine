@@ -47,6 +47,25 @@ describe('CharacterSection', () => {
     expect(view.queryByTestId('stats-character-row-name:단풍라떼')).toBeNull()
   })
 
+  // % 를 금액 옆 따로 둔 글자로 두고 기준선을 맞추면 줄이 1pt 가까이 커져, 같은 캐릭터 수에서도 탭마다
+  // 카드 높이가 달랐다(#617). 한 Text 안에 두면 줄 높이가 바깥 글자 하나로 정해진다.
+  it('% 와 금액은 한 줄 글자 안에 있어 탭마다 줄 높이가 같다', async () => {
+    const view = await 그리기()
+    const 줄 = (): ReturnType<typeof view.getByTestId> =>
+      within(view.getByTestId('stats-character-row-ocid:a')).getByTestId('stats-character-value')
+
+    expect(within(줄()).getByTestId('stats-character-amount')).toBeTruthy()
+    const netClass = 줄().props.className
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('수익'))
+    })
+
+    expect(within(줄()).getByTestId('stats-character-percent')).toBeTruthy()
+    expect(within(줄()).getByTestId('stats-character-amount')).toBeTruthy()
+    expect(줄().props.className).toBe(netClass)
+  })
+
   it('단상은 그 탭의 상위 셋이고 그림이 있으면 세운다', async () => {
     const view = await 그리기()
 

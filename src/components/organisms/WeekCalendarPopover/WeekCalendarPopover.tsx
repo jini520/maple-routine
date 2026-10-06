@@ -6,9 +6,10 @@
  *
  * 누른 주는 부르는 쪽이 초안으로 들고 `selection` 으로 돌려준다. 밖으로 반영하는 것은 `확인` 이다(날짜 달력과 같은 규칙).
  */
-import { Modal, Pressable, useWindowDimensions, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { ChevronLeftIcon, ChevronRightIcon, Text } from '../../atoms'
+import { AnchoredPopover } from '../../molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import {
   buildCalendarMonth,
@@ -19,14 +20,9 @@ import {
   shiftDateKey,
   WEEKDAY_LABELS,
 } from '../../../lib/calendar'
-import { anchorPopover } from '../../../lib/popover-anchor'
 import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
-import { usePopoverPlacement } from '../../../hooks/usePopoverPlacement'
 
 const POPOVER_WIDTH = 248
-const EDGE_GAP = 12
-const CARET_SIZE = 8
-const POPOVER_GAP = 8
 
 export type WeekCalendarTab = 'start' | 'end'
 
@@ -59,16 +55,7 @@ function percent(cells: number): `${number}%` {
 }
 
 export function WeekCalendarPopover(props: WeekCalendarPopoverProps): React.JSX.Element {
-  const { width: windowWidth } = useWindowDimensions()
-  const { anchor, selection } = props
-  const geometry = anchorPopover({
-    containerWidth: windowWidth,
-    anchorCenterX: anchor === null ? 0 : anchor.left + anchor.width / 2,
-    popoverWidth: POPOVER_WIDTH,
-    edgeGap: EDGE_GAP,
-    caretSize: CARET_SIZE,
-  })
-  const placement = usePopoverPlacement(anchor, POPOVER_GAP)
+  const { selection } = props
 
   const weeks = buildCalendarMonth(props.monthKey)
   const previousMonth = getAdjacentMonthKey(props.monthKey, -1)
@@ -109,172 +96,134 @@ export function WeekCalendarPopover(props: WeekCalendarPopoverProps): React.JSX.
   }
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType="none"
-      statusBarTranslucent
-      navigationBarTranslucent
-      onRequestClose={props.onClose}
+    <AnchoredPopover
+      testID="week-calendar-popover"
+      ariaLabel="주 고르기"
+      closeLabel="주 고르기 닫기"
+      anchor={props.anchor}
+      width={POPOVER_WIDTH}
+      onClose={props.onClose}
+      className="p-3"
     >
-      <Pressable
-        testID="week-calendar-popover-scrim"
-        aria-label="주 고르기 닫기"
-        onPress={props.onClose}
-        className={`flex-1${placement.side === 'center' ? ' bg-scrim' : ''}`}
-        // 앵커를 버리고 가운데로 옮겼을 때만 옅게 깐다. 어느 칸에서 열렸는지 대신 지금 고르는 중이라는 것을 알린다.
-        style={placement.side === 'center' ? { opacity: 0.5 } : undefined}
-      />
-      <View
-        testID="week-calendar-popover"
-        role="dialog"
-        aria-label="주 고르기"
-        onLayout={placement.onLayout}
-        style={{
-          left: placement.side === 'center' ? (windowWidth - POPOVER_WIDTH) / 2 : geometry.left,
-          top: placement.top,
-          width: POPOVER_WIDTH,
-          // 앵커나 상자 높이를 재기 전에는 자리를 모른다. 그리되 안 보이게 둔다.
-          opacity: placement.measured ? undefined : 0,
-        }}
-        className="absolute rounded-[12px] border border-border bg-surface p-3 shadow-lg"
-      >
-        {placement.side !== 'center' && (
-          <View
-            testID="week-calendar-popover-caret"
-            aria-hidden
-            style={{
-              left: geometry.caretLeft,
-              width: CARET_SIZE,
-              height: CARET_SIZE,
-              ...(placement.side === 'below' ? { top: -4 } : { bottom: -4 }),
-            }}
-            className={`absolute rotate-45 border-border bg-surface ${
-              placement.side === 'below' ? 'border-l border-t' : 'border-b border-r'
-            }`}
-          />
-        )}
-
-        {props.tabs !== undefined && (
-          <View className="mb-2.5 flex-row gap-1 rounded-[10px] border border-border p-0.5">
-            {tab('start', '시작 주', bandStart === null ? null : formatDayLabel(bandStart))}
-            {tab('end', '종료 주', endCap === null ? null : formatDayLabel(endCap))}
-          </View>
-        )}
-
-        <View className="mb-2 flex-row items-center justify-between">
-          <Pressable
-            role="button"
-            aria-label="지난달"
-            disabled={!canGoPrevious}
-            onPress={() => props.onChangeMonth(previousMonth)}
-            hitSlop={8}
-            className={canGoPrevious ? undefined : 'opacity-40'}
-          >
-            <ChevronLeftIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
-          </Pressable>
-          <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
-            {props.monthKey.replace('-', '년 ')}월
-          </Text>
-          <Pressable
-            role="button"
-            aria-label="다음달"
-            disabled={!canGoNext}
-            onPress={() => props.onChangeMonth(nextMonth)}
-            hitSlop={8}
-            className={canGoNext ? undefined : 'opacity-40'}
-          >
-            <ChevronRightIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
-          </Pressable>
+      {props.tabs !== undefined && (
+        <View className="mb-2.5 flex-row gap-1 rounded-[10px] border border-border p-0.5">
+          {tab('start', '시작 주', bandStart === null ? null : formatDayLabel(bandStart))}
+          {tab('end', '종료 주', endCap === null ? null : formatDayLabel(endCap))}
         </View>
+      )}
 
-        <View className="flex-row">
-          {WEEKDAY_LABELS.map((label) => (
-            <Text key={label} className="flex-1 text-center text-xs text-text-muted">
-              {label}
-            </Text>
-          ))}
-        </View>
-
-        {weeks.map((week) => {
-          const inside = week
-            .map((day, index) => ({ day, index }))
-            .filter(({ day }) => bandStart !== null && day.dateKey >= bandStart && day.dateKey <= (bandEnd as string))
-          const lo = inside[0]
-          const hi = inside[inside.length - 1]
-          return (
-            <View key={week[0]?.dateKey} className="relative flex-row">
-              {lo !== undefined && hi !== undefined && (
-                <View
-                  testID="week-calendar-band"
-                  aria-hidden
-                  pointerEvents="none"
-                  style={{
-                    left: percent(lo.index),
-                    width: percent(hi.index - lo.index + 1),
-                    borderTopLeftRadius: lo.day.dateKey === bandStart ? 999 : 0,
-                    borderBottomLeftRadius: lo.day.dateKey === bandStart ? 999 : 0,
-                    borderTopRightRadius: hi.day.dateKey === bandEnd ? 999 : 0,
-                    borderBottomRightRadius: hi.day.dateKey === bandEnd ? 999 : 0,
-                  }}
-                  className="absolute bottom-0.5 top-0.5 bg-primary-tint"
-                />
-              )}
-              {week.map((day) => {
-                const selectable = props.isSelectable(resetWeekStartOf(day.dateKey))
-                // 채운 원은 저장되는 끝이다. 시작 주의 목요일과 종료 주의 수요일.
-                const cap = day.dateKey === bandStart || day.dateKey === endCap
-                return (
-                  <Pressable
-                    key={day.dateKey}
-                    role="button"
-                    aria-label={day.dateKey}
-                    disabled={!selectable}
-                    onPress={() => props.onSelect(resetWeekStartOf(day.dateKey))}
-                    className="h-7 flex-1 items-center justify-center"
-                  >
-                    <View
-                      collapsable={false}
-                      className={`h-6 w-6 items-center justify-center rounded-full ${cap ? 'bg-primary' : ''}`}
-                    >
-                      <Text
-                        className={`text-xs ${
-                          cap ? 'font-semibold text-on-primary' : selectable ? 'text-text' : 'text-text-disabled'
-                        }`}
-                        style={TABULAR_NUMS}
-                      >
-                        {day.day}
-                      </Text>
-                    </View>
-                  </Pressable>
-                )
-              })}
-            </View>
-          )
-        })}
-
-        <View
-          testID="week-calendar-caption"
-          className="mt-2 flex-row items-center justify-between gap-2 border-t border-border pt-2"
+      <View className="mb-2 flex-row items-center justify-between">
+        <Pressable
+          role="button"
+          aria-label="지난달"
+          disabled={!canGoPrevious}
+          onPress={() => props.onChangeMonth(previousMonth)}
+          hitSlop={8}
+          className={canGoPrevious ? undefined : 'opacity-40'}
         >
-          <Text className="text-11 text-text-muted">{props.caption}</Text>
-          <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
-            {captionValue}
-          </Text>
-        </View>
-        <View className="mt-1 flex-row justify-end">
-          <Pressable
-            role="button"
-            aria-label="확인"
-            disabled={props.confirmDisabled === true}
-            onPress={props.onConfirm}
-            hitSlop={8}
-            className={`px-2 py-1${props.confirmDisabled === true ? ' opacity-40' : ''}`}
-          >
-            <Text className="text-sm font-bold text-primary-ink">확인</Text>
-          </Pressable>
-        </View>
+          <ChevronLeftIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
+        </Pressable>
+        <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
+          {props.monthKey.replace('-', '년 ')}월
+        </Text>
+        <Pressable
+          role="button"
+          aria-label="다음달"
+          disabled={!canGoNext}
+          onPress={() => props.onChangeMonth(nextMonth)}
+          hitSlop={8}
+          className={canGoNext ? undefined : 'opacity-40'}
+        >
+          <ChevronRightIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
+        </Pressable>
       </View>
-    </Modal>
+
+      <View className="flex-row">
+        {WEEKDAY_LABELS.map((label) => (
+          <Text key={label} className="flex-1 text-center text-xs text-text-muted">
+            {label}
+          </Text>
+        ))}
+      </View>
+
+      {weeks.map((week) => {
+        const inside = week
+          .map((day, index) => ({ day, index }))
+          .filter(({ day }) => bandStart !== null && day.dateKey >= bandStart && day.dateKey <= (bandEnd as string))
+        const lo = inside[0]
+        const hi = inside[inside.length - 1]
+        return (
+          <View key={week[0]?.dateKey} className="relative flex-row">
+            {lo !== undefined && hi !== undefined && (
+              <View
+                testID="week-calendar-band"
+                aria-hidden
+                pointerEvents="none"
+                style={{
+                  left: percent(lo.index),
+                  width: percent(hi.index - lo.index + 1),
+                  borderTopLeftRadius: lo.day.dateKey === bandStart ? 999 : 0,
+                  borderBottomLeftRadius: lo.day.dateKey === bandStart ? 999 : 0,
+                  borderTopRightRadius: hi.day.dateKey === bandEnd ? 999 : 0,
+                  borderBottomRightRadius: hi.day.dateKey === bandEnd ? 999 : 0,
+                }}
+                className="absolute bottom-0.5 top-0.5 bg-primary-tint"
+              />
+            )}
+            {week.map((day) => {
+              const selectable = props.isSelectable(resetWeekStartOf(day.dateKey))
+              // 채운 원은 저장되는 끝이다. 시작 주의 목요일과 종료 주의 수요일.
+              const cap = day.dateKey === bandStart || day.dateKey === endCap
+              return (
+                <Pressable
+                  key={day.dateKey}
+                  role="button"
+                  aria-label={day.dateKey}
+                  disabled={!selectable}
+                  onPress={() => props.onSelect(resetWeekStartOf(day.dateKey))}
+                  className="h-7 flex-1 items-center justify-center"
+                >
+                  <View
+                    collapsable={false}
+                    className={`h-6 w-6 items-center justify-center rounded-full ${cap ? 'bg-primary' : ''}`}
+                  >
+                    <Text
+                      className={`text-xs ${
+                        cap ? 'font-semibold text-on-primary' : selectable ? 'text-text' : 'text-text-disabled'
+                      }`}
+                      style={TABULAR_NUMS}
+                    >
+                      {day.day}
+                    </Text>
+                  </View>
+                </Pressable>
+              )
+            })}
+          </View>
+        )
+      })}
+
+      <View
+        testID="week-calendar-caption"
+        className="mt-2 flex-row items-center justify-between gap-2 border-t border-border pt-2"
+      >
+        <Text className="text-11 text-text-muted">{props.caption}</Text>
+        <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
+          {captionValue}
+        </Text>
+      </View>
+      <View className="mt-1 flex-row justify-end">
+        <Pressable
+          role="button"
+          aria-label="확인"
+          disabled={props.confirmDisabled === true}
+          onPress={props.onConfirm}
+          hitSlop={8}
+          className={`px-2 py-1${props.confirmDisabled === true ? ' opacity-40' : ''}`}
+        >
+          <Text className="text-sm font-bold text-primary-ink">확인</Text>
+        </Pressable>
+      </View>
+    </AnchoredPopover>
   )
 }

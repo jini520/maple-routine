@@ -1,6 +1,6 @@
 import { act, fireEvent, within } from '@testing-library/react-native'
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { findAllOfType, flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import type { CategoryTotal } from '../../../features/stats/aggregate'
 import { CategorySection } from '../CategorySection'
@@ -93,6 +93,34 @@ describe('CategorySection', () => {
     expect(within(popover).getByText('1.8억')).toBeTruthy()
     expect(within(popover).getByText('솔 에르다 조각')).toBeTruthy()
     expect(within(popover).getByText('2,000만')).toBeTruthy()
+  })
+
+  // 닫기 층이 카드 안에 깔려 카드 밖을 눌러야 닫혔다(#617). 팝오버는 화면 전체를 덮는 층 위에 뜬다.
+  it('팝오버는 화면 전체를 덮는 Modal 안에 뜨고 밖을 누르면 닫힌다', async () => {
+    const view = await renderOverlay(<CategorySection title="지출 내역" side="expense" items={지출} />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('그 외 4 세부 항목'))
+    })
+
+    const [modal] = findAllOfType(view.toJSON(), 'Modal')
+    expect(JSON.stringify(modal)).toContain('stats-category-popover')
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('세부 항목 닫기'))
+    })
+    expect(view.queryByTestId('stats-category-popover', { includeHiddenElements: true })).toBeNull()
+  })
+
+  // 248 고정 폭이 두 줄짜리 내용에 비해 넓었다(#617). 폭은 가장 긴 줄이 정한다.
+  it('팝오버 폭은 고정 값이 아니다', async () => {
+    const view = await renderOverlay(<CategorySection title="수입 내역" side="income" items={수입} />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('사냥 세부 항목'))
+    })
+
+    const popover = view.getByTestId('stats-category-popover', { includeHiddenElements: true })
+    expect(flattenStyle(popover.props.style).width).toBeUndefined()
   })
 
   it('기록이 없으면 도넛 대신 한 줄을 적는다', async () => {
