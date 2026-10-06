@@ -129,49 +129,14 @@ export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
     <Modal onClose={props.onClose} testId={testId} align="center">
       {/* 부 버튼이 있으면 아래 패딩을 줄인다. 그 버튼이 주 버튼보다 작아(`py-1.5`) 아래 여백이
           상대적으로 커 보인다. */}
-      <Modal.Card maxWidth="max-w-xs" tight={props.secondaryAction !== undefined}>
-        <View className="gap-5">
-          <View className="items-center gap-3">
-            <View
-              testID={`${testId}-badge`}
-              className={`h-14 w-14 items-center justify-center ${
-                SHAPE[props.badgeShape ?? 'circle']
-              } ${tone.bg}`}
-            >
-              <Icon className={`h-7 w-7 ${tone.ink}`} strokeWidth={1.75} aria-hidden />
-            </View>
-
-            {/* 제목·내용·설명이 한 덩어리다. 내용은 제목에 딸린 값이라(버전·단계) 떼어 놓으면
-                따로 선 사실이 되어 무엇에 대한 값인지가 사라진다.
-
-                `w-full` 은 표가 전폭으로 서게 한다. 바깥이 `items-center` 라 안 주면 표가 글자
-                폭으로 오그라든다. */}
-            <View testID={`${testId}-body`} className="w-full gap-2">
-              <Text
-                testID={props.titleTestId}
-                className="text-center text-base font-semibold leading-snug text-text"
-              >
-                {props.title}
-              </Text>
-              {props.content !== undefined && (
-                <View testID={`${testId}-content`}>{props.content}</View>
-              )}
-              {props.description !== undefined && (
-                <Text
-                  testID={`${testId}-description`}
-                  className="text-center text-xs text-text-muted"
-                >
-                  {props.description}
-                </Text>
-              )}
-            </View>
-          </View>
-
-          {props.option !== undefined && <View testID={`${testId}-option`}>{props.option}</View>}
-
-          {/* 링크는 알약에서 더 떨어뜨린다(12). 작은 글자 둘이 붙으면 한 문단으로 뭉쳐 누를 수
-              있는 것으로 안 보인다. 고스트 버튼은 알약과 한 벌이라 4 다. */}
-          <View className={`items-center ${props.link !== undefined ? 'gap-3' : 'gap-1'}`}>
+      <Modal.Card
+        maxWidth="max-w-xs"
+        tight={props.secondaryAction !== undefined}
+        footer={
+          // 버튼 줄은 스크롤 밖에 고정해 카드가 상한에 닿아도 늘 보인다. `mt-5` 가 머리 덩어리와의 20 이다.
+          // 링크는 알약에서 더 떨어뜨린다(12). 작은 글자 둘이 붙으면 한 문단으로 뭉쳐 누를 수
+          // 있는 것으로 안 보인다. 고스트 버튼은 알약과 한 벌이라 4 다.
+          <View className={`mt-5 items-center ${props.link !== undefined ? 'gap-3' : 'gap-1'}`}>
             <Button
               variant="primary"
               onPress={props.action.onPress}
@@ -211,6 +176,47 @@ export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
               </Pressable>
             )}
           </View>
+        }
+      >
+        <View className="gap-5">
+          <View className="items-center gap-3">
+            <View
+              testID={`${testId}-badge`}
+              className={`h-14 w-14 items-center justify-center ${
+                SHAPE[props.badgeShape ?? 'circle']
+              } ${tone.bg}`}
+            >
+              <Icon className={`h-7 w-7 ${tone.ink}`} strokeWidth={1.75} aria-hidden />
+            </View>
+
+            {/* 제목·내용·설명이 한 덩어리다. 내용은 제목에 딸린 값이라(버전·단계) 떼어 놓으면
+                따로 선 사실이 되어 무엇에 대한 값인지가 사라진다.
+
+                `w-full` 은 표가 전폭으로 서게 한다. 바깥이 `items-center` 라 안 주면 표가 글자
+                폭으로 오그라든다. */}
+            <View testID={`${testId}-body`} className="w-full gap-2">
+              <Text
+                testID={props.titleTestId}
+                className="text-center text-base font-semibold leading-snug text-text"
+              >
+                {props.title}
+              </Text>
+              {props.content !== undefined && (
+                <View testID={`${testId}-content`}>{props.content}</View>
+              )}
+              {props.description !== undefined && (
+                <Text
+                  testID={`${testId}-description`}
+                  className="text-center text-xs text-text-muted"
+                >
+                  {props.description}
+                </Text>
+              )}
+            </View>
+          </View>
+
+          {props.option !== undefined && <View testID={`${testId}-option`}>{props.option}</View>}
+
         </View>
       </Modal.Card>
     </Modal>

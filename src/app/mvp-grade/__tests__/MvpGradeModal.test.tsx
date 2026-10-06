@@ -178,6 +178,22 @@ describe('MvpGradeModal', () => {
     })
   })
 
+  // 목록 높이를 `max(창 높이 − 440, 180)` 으로 따로 걸던 것이 폴드 인너(616dp)에서 모자라 `수정` 이
+  // 내비 바 밑으로 들어갔다(#530). 목록 · 체크박스는 카드의 스크롤 하나를 함께 쓰고 버튼은 고정이다.
+  it('확인 화면의 목록 · 체크박스는 카드 스크롤 안에, 맞아요 · 수정은 그 밖에 선다', async () => {
+    const { view } = await 그리기({ kind: 'select', accountIds: ['a'], bulk: true }, [account('a', '하나')])
+
+    await fireEvent.press(view.getByText('다음'))
+
+    const scroll = within(view.getByTestId('modal-card-scroll'))
+    expect(scroll.getByTestId('mvp-grade-card-a')).toBeTruthy()
+    expect(scroll.getByText('지난 기록에도 수수료 적용하기')).toBeTruthy()
+    expect(scroll.queryByText('맞아요')).toBeNull()
+    expect(scroll.queryByText('수정')).toBeNull()
+    expect(view.getByText('맞아요')).toBeTruthy()
+    expect(view.getByText('수정')).toBeTruthy()
+  })
+
   it('직접 바꾸기 체크박스는 저장된 값으로 선다', async () => {
     const { view } = await 그리기({ kind: 'newId', accountIds: ['c'], bulk: false }, [account('c', '셋')], true)
 

@@ -56,7 +56,7 @@ export function installNoopNativePorts(): void {
     refreshSafeAreaInsets: async () => {},
   })
 
-  setKeyboardPort({ addVisibilityListener: async () => () => {} })
+  setKeyboardPort({ addVisibilityListener: async () => () => {}, addHeightListener: async () => () => {} })
 
   // 두드림은 눈에 안 보이므로 no-op 으로 둔다. 실제로 부르는지는 배선 테스트가 자기 목을
   // 꽂아서 본다(`bar-in-layer-stack.test.tsx`).

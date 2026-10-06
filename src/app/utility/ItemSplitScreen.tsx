@@ -116,6 +116,7 @@ export function ItemSplitScreen(): React.JSX.Element {
   return (
     <ScreenScroll
       hasTabBar={false}
+      keyboardAware
       header={
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">

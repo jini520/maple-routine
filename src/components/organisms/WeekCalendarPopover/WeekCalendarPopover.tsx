@@ -21,6 +21,7 @@ import {
 } from '../../../lib/calendar'
 import { anchorPopover } from '../../../lib/popover-anchor'
 import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
+import { usePopoverPlacement } from '../../../hooks/usePopoverPlacement'
 
 const POPOVER_WIDTH = 248
 const EDGE_GAP = 12
@@ -67,6 +68,7 @@ export function WeekCalendarPopover(props: WeekCalendarPopoverProps): React.JSX.
     edgeGap: EDGE_GAP,
     caretSize: CARET_SIZE,
   })
+  const placement = usePopoverPlacement(anchor, POPOVER_GAP)
 
   const weeks = buildCalendarMonth(props.monthKey)
   const previousMonth = getAdjacentMonthKey(props.monthKey, -1)
@@ -115,25 +117,43 @@ export function WeekCalendarPopover(props: WeekCalendarPopoverProps): React.JSX.
       navigationBarTranslucent
       onRequestClose={props.onClose}
     >
-      <Pressable aria-label="주 고르기 닫기" onPress={props.onClose} className="flex-1" />
+      <Pressable
+        testID="week-calendar-popover-scrim"
+        aria-label="주 고르기 닫기"
+        onPress={props.onClose}
+        className={`flex-1${placement.side === 'center' ? ' bg-scrim' : ''}`}
+        // 앵커를 버리고 가운데로 옮겼을 때만 옅게 깐다. 어느 칸에서 열렸는지 대신 지금 고르는 중이라는 것을 알린다.
+        style={placement.side === 'center' ? { opacity: 0.5 } : undefined}
+      />
       <View
         testID="week-calendar-popover"
         role="dialog"
         aria-label="주 고르기"
+        onLayout={placement.onLayout}
         style={{
-          left: geometry.left,
-          top: anchor === null ? 0 : anchor.top + anchor.height + POPOVER_GAP,
+          left: placement.side === 'center' ? (windowWidth - POPOVER_WIDTH) / 2 : geometry.left,
+          top: placement.top,
           width: POPOVER_WIDTH,
+          // 앵커나 상자 높이를 재기 전에는 자리를 모른다. 그리되 안 보이게 둔다.
+          opacity: placement.measured ? undefined : 0,
         }}
-        className={`absolute rounded-[12px] border border-border bg-surface p-3 shadow-lg${
-          anchor === null ? ' opacity-0' : ''
-        }`}
+        className="absolute rounded-[12px] border border-border bg-surface p-3 shadow-lg"
       >
-        <View
-          aria-hidden
-          style={{ left: geometry.caretLeft, width: CARET_SIZE, height: CARET_SIZE, top: -4 }}
-          className="absolute rotate-45 border-l border-t border-border bg-surface"
-        />
+        {placement.side !== 'center' && (
+          <View
+            testID="week-calendar-popover-caret"
+            aria-hidden
+            style={{
+              left: geometry.caretLeft,
+              width: CARET_SIZE,
+              height: CARET_SIZE,
+              ...(placement.side === 'below' ? { top: -4 } : { bottom: -4 }),
+            }}
+            className={`absolute rotate-45 border-border bg-surface ${
+              placement.side === 'below' ? 'border-l border-t' : 'border-b border-r'
+            }`}
+          />
+        )}
 
         {props.tabs !== undefined && (
           <View className="mb-2.5 flex-row gap-1 rounded-[10px] border border-border p-0.5">

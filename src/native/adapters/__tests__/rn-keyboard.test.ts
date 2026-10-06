@@ -19,7 +19,7 @@ const EVENT = {
   endCoordinates: { screenX: 0, screenY: 0, width: 0, height: 0 },
 } as unknown as KeyboardEvent
 
-function emit(eventName: string): void {
+function emit(eventName: string, event: KeyboardEvent = EVENT): void {
   const emitter = (Keyboard as unknown as { _emitter?: { emit?: unknown } })._emitter
   if (typeof emitter?.emit !== 'function') {
     throw new Error(
@@ -27,7 +27,7 @@ function emit(eventName: string): void {
         '"해제 함수가 리스너를 실제로 떼는가"이므로, 목으로 대체하지 말고 emit 경로를 다시 찾으세요.',
     )
   }
-  ;(emitter as { emit(name: string, event: KeyboardEvent): void }).emit(eventName, EVENT)
+  ;(emitter as { emit(name: string, event: KeyboardEvent): void }).emit(eventName, event)
 }
 
 describe('rnKeyboardPort', () => {
@@ -96,6 +96,33 @@ describe('rnKeyboardPort', () => {
     expect(pending).toBeInstanceOf(Promise)
     void pending.then((unsubscribe) => {
       unsubscribe()
+    })
+  })
+
+  // 입력 카드가 숫자 판을 쓸지 정할 때 이 기기의 실제 키보드 높이를 쓴다.
+  describe('키보드 높이', () => {
+    function shown(height: number): KeyboardEvent {
+      return { ...EVENT, endCoordinates: { screenX: 0, screenY: 0, width: 360, height } } as KeyboardEvent
+    }
+
+    it('키보드가 뜨면 그 높이를 알린다', async () => {
+      const onHeight = jest.fn()
+      const unsubscribe = await rnKeyboardPort.addHeightListener(onHeight)
+
+      emit('keyboardDidShow', shown(372))
+
+      expect(onHeight).toHaveBeenCalledWith(372)
+      unsubscribe()
+    })
+
+    it('해제하면 그 뒤 이벤트에는 반응하지 않는다', async () => {
+      const onHeight = jest.fn()
+      const unsubscribe = await rnKeyboardPort.addHeightListener(onHeight)
+
+      unsubscribe()
+      emit('keyboardDidShow', shown(372))
+
+      expect(onHeight).not.toHaveBeenCalled()
     })
   })
 })

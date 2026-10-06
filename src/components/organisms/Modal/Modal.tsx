@@ -8,11 +8,22 @@
  * 오버레이가 소유하는 취약 구조(전체 화면 덮기·스크림·안전영역 오프셋·바깥 탭)는 한곳에
  * 남는다. 호출부가 그 관계를 깰 수 없다.
  */
-import type { ReactNode } from 'react'
-import { Dimensions, Modal as RNModal, Platform, Pressable, View } from 'react-native'
+import { createContext, useContext, useRef, useState, type ReactNode } from 'react'
+import {
+  Dimensions,
+  Modal as RNModal,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+  useWindowDimensions,
+} from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { MODAL_TOP_GAP_PX, overlayWindowHeightPx, resolveModalMaxHeight } from '../../../lib/modal-metrics'
+import { LinearGradient } from '../../../lib/nativewind-interop'
+import { useThemeAppearance } from '../../../theme/context'
 import { Card } from '../../atoms'
 
 export interface ModalProps {
@@ -45,10 +56,100 @@ interface ModalCardProps extends ModalPanelProps {
    * 모달에 쓴다(업데이트 모달).
    */
   tight?: boolean
+  /** 카드 바닥에 고정되는 버튼 줄. 카드가 상한에 닿아도 늘 보인다. 없으면 카드 전체가 구른다. */
+  footer?: ReactNode
 }
 
 /** 터치를 이 요소가 가져가게 하는 responder. 바깥으로 흘러가 모달이 닫히는 것을 막는다. */
 const claimTouch = (): boolean => true
+
+/** 패널이 가질 수 있는 높이. 오버레이가 안전영역과 정렬에서 내려 준다. */
+const MaxHeightContext = createContext<number | undefined>(undefined)
+
+/** 구르는 칸이 가려진 쪽 끝에 까는 페이드 길이. 시트와 같은 값이다. */
+const FADE_PX = 16
+
+/** 같은 색의 알파 0. 표면색이 8자리로 올 수도 있어 앞 7자리만 쓴다. */
+function fadedOut(color: string): string {
+  return `${color.slice(0, 7)}00`
+}
+
+/**
+ * 상한 안에서 넘치는 몫만 구르는 칸. 위아래로 가려진 내용이 있을 때만 그쪽에 페이드를 깐다.
+ *
+ * 넘치지 않으면 스크롤을 끈다. 켜 두면 모달 안의 제스처(파티 인원 모달의 비율 슬라이더)와
+ * 세로 스크롤이 다툰다.
+ */
+function CapScroll(props: { children: ReactNode; surface?: string; testId: string }): React.JSX.Element {
+  const viewportRef = useRef(0)
+  const contentRef = useRef(0)
+  const [overflows, setOverflows] = useState(false)
+  const [hiddenAbove, setHiddenAbove] = useState(false)
+  const [hiddenBelow, setHiddenBelow] = useState(false)
+
+  function sync(): void {
+    // 1px 은 소수점 반올림 몫. 0 으로 두면 맨 아래에서 페이드가 깜빡인다.
+    const over = contentRef.current > viewportRef.current + 1
+    setOverflows(over)
+    setHiddenBelow(over)
+  }
+
+  return (
+    <View style={{ flexShrink: 1 }}>
+      <ScrollView
+        testID={props.testId}
+        scrollEnabled={overflows}
+        bounces={false}
+        scrollEventThrottle={16}
+        keyboardShouldPersistTaps="handled"
+        style={{ flexGrow: 0 }}
+        onLayout={(event) => {
+          viewportRef.current = event.nativeEvent.layout.height
+          sync()
+        }}
+        onContentSizeChange={(_, height) => {
+          contentRef.current = height
+          sync()
+        }}
+        onScroll={(event) => {
+          const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent
+          setHiddenAbove(contentOffset.y > 1)
+          setHiddenBelow(contentOffset.y + layoutMeasurement.height < contentSize.height - 1)
+        }}
+      >
+        {props.children}
+      </ScrollView>
+      {props.surface !== undefined && hiddenAbove && (
+        <View
+          testID={`${props.testId.replace(/-scroll$/, '')}-fade-top`}
+          pointerEvents="none"
+          style={{ position: 'absolute', left: 0, right: 0, top: 0, height: FADE_PX }}
+        >
+          <LinearGradient
+            colors={[props.surface, fadedOut(props.surface)]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={{ flex: 1 }}
+          />
+        </View>
+      )}
+      {props.surface !== undefined && hiddenBelow && (
+        <View
+          testID={`${props.testId.replace(/-scroll$/, '')}-fade-bottom`}
+          pointerEvents="none"
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: FADE_PX }}
+        >
+          <LinearGradient
+            colors={[fadedOut(props.surface), props.surface]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={{ flex: 1 }}
+          />
+        </View>
+      )}
+    </View>
+  )
+}
 
 /**
  * 카드 껍데기(테두리·배경·패딩)를 갖는 패널. 모달 대부분이 이것을 쓴다.
@@ -58,14 +159,21 @@ const claimTouch = (): boolean => true
  * 클래스가 덮는다.
  */
 function ModalCard(props: ModalCardProps): React.JSX.Element {
+  const maxHeight = useContext(MaxHeightContext)
+  const { definition } = useThemeAppearance()
   return (
     <Card
+      testID="modal-card"
       onStartShouldSetResponder={claimTouch}
       className={`w-full ${props.maxWidth ?? 'max-w-sm'} border-panel-border ${
         props.tight === true ? 'px-6 pb-4 pt-6' : 'p-6'
       }`}
+      style={{ maxHeight }}
     >
-      {props.children}
+      <CapScroll testId="modal-card-scroll" surface={definition.surface}>
+        {props.children}
+      </CapScroll>
+      {props.footer}
     </Card>
   )
 }
@@ -82,12 +190,15 @@ function ModalCard(props: ModalCardProps): React.JSX.Element {
  * 화면 몫이다.
  */
 function ModalPanel(props: ModalPanelProps): React.JSX.Element {
+  const maxHeight = useContext(MaxHeightContext)
   return (
     <View
+      testID="modal-panel"
       onStartShouldSetResponder={claimTouch}
       className={`w-full ${props.maxWidth ?? 'max-w-sm'}`}
+      style={{ maxHeight }}
     >
-      {props.children}
+      <CapScroll testId="modal-panel-scroll">{props.children}</CapScroll>
     </View>
   )
 }
@@ -112,7 +223,14 @@ function scrimMinHeight(): number | undefined {
 
 export function Modal(props: ModalProps): React.JSX.Element {
   const insets = useSafeAreaInsets()
+  const window = useWindowDimensions()
   const align = props.align ?? 'top'
+  const maxHeight = resolveModalMaxHeight({
+    windowHeightPx: overlayWindowHeightPx(window.height),
+    insetTopPx: insets.top,
+    insetBottomPx: insets.bottom,
+    align,
+  })
 
   return (
     <RNModal
@@ -138,11 +256,11 @@ export function Modal(props: ModalProps): React.JSX.Element {
         className={`flex-1 items-center bg-scrim px-4 ${align === 'center' ? 'justify-center' : ''}`}
         // 상단 정렬은 안전영역(상태바·노치)만큼 내린 뒤 여백을 더 둬 화면 끝에 붙지 않게 한다.
         style={{
-          ...(align === 'center' ? null : { paddingTop: insets.top + 32 }),
+          ...(align === 'center' ? null : { paddingTop: insets.top + MODAL_TOP_GAP_PX }),
           minHeight: scrimMinHeight(),
         }}
       >
-          {props.children}
+          <MaxHeightContext.Provider value={maxHeight}>{props.children}</MaxHeightContext.Provider>
         </Pressable>
       </GestureHandlerRootView>
     </RNModal>

@@ -73,6 +73,23 @@ describe('ScreenScroll', () => {
     expect(onScroll).toHaveBeenCalledTimes(1)
   })
 
+  // 아이템 분배 계산기의 숫자 칸이 iOS 에서 키보드에 덮이고, 키보드가 뜬 동안 첫 탭이 키보드를 내리는 데 먹혔다.
+  it('keyboardAware 면 입력 화면 셸과 같은 키보드 프롭 둘을 넘긴다', async () => {
+    const { getByTestId } = await renderOverlay(<ScreenScroll keyboardAware>{목록}</ScreenScroll>)
+
+    const scroller = getByTestId('screen-scroll')
+    expect(scroller.props.keyboardShouldPersistTaps).toBe('handled')
+    expect(scroller.props.automaticallyAdjustKeyboardInsets).toBe(true)
+  })
+
+  it('안 켠 화면의 스크롤 뷰에는 키보드 프롭이 없다', async () => {
+    const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
+
+    const scroller = getByTestId('screen-scroll')
+    expect(scroller.props.keyboardShouldPersistTaps).toBeUndefined()
+    expect(scroller.props.automaticallyAdjustKeyboardInsets).toBeUndefined()
+  })
+
   it('콘텐츠 간격을 gap-2 로 준다', async () => {
     const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
 

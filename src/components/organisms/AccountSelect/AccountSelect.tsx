@@ -39,7 +39,7 @@ import { ChevronDownIcon, Text } from '../../atoms'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { boxShadowOf, DROPDOWN_SHADOW } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
-import { placeDropdown } from './place-dropdown'
+import { placeDropdown } from '../../../lib/place-dropdown'
 
 // 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다. 캐릭터 카드(`CharacterRow`)도 같은 것을 쓴다.
 

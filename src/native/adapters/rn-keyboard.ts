@@ -35,4 +35,13 @@ export const rnKeyboardPort: KeyboardPort = {
       hide.remove()
     }
   },
+
+  async addHeightListener(onHeight) {
+    const show = Keyboard.addListener('keyboardDidShow', (event) => {
+      onHeight(event.endCoordinates.height)
+    })
+    return () => {
+      show.remove()
+    }
+  },
 }

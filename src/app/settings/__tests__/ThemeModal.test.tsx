@@ -6,7 +6,7 @@
 // ② 누른 뒤 화면을 보려면 `act` 로 흘려보낸다(`CacheClearConfirm` 테스트).
 //
 // **테마 이름을 손으로 나열하지 않는다**. 레지스트리에서 둘을 뽑아 쓴다.
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { useThemeStore } from '../../../features/theme/store'
 import { THEME_NAMES } from '../../../lib/theme/theme-registry'
@@ -103,6 +103,16 @@ describe('ThemeModal', () => {
     await press(buttonOf(view, '완료'))
 
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  // 테마 모달은 약 704dp 라 폴드 커버 · 인너에서 완료 버튼째 화면 밖으로 넘쳤다(#530).
+  it('완료 버튼은 스크롤 밖에 고정되고 테마 목록은 스크롤 안에 선다', async () => {
+    const view = await renderOverlay(<ThemeModal onClose={jest.fn()} />)
+
+    const scroll = view.getByTestId('modal-card-scroll')
+    expect(within(scroll).getByText('테마')).toBeTruthy()
+    expect(within(scroll).queryByText('완료')).toBeNull()
+    expect(view.getByText('완료')).toBeTruthy()
   })
 
   it('오버레이를 누르면 onClose가 호출된다', async () => {

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import { useDropEffectStore } from '../features/drop-effect/store'
+import { startKeyboardHeightRecorder } from '../features/input-card/keyboard-height'
 import { useDataFreshness } from '../features/refresh/freshness'
 import { useNoticeStore } from '../features/notice/store'
 import { requestNotificationReconcile } from '../features/local-notifications/run'
@@ -103,6 +104,20 @@ export function AppShell(): React.JSX.Element {
   useEffect(() => {
     void restoreDropEffect()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 입력 카드가 숫자 판을 쓸지 이 기기의 실제 키보드 높이로 정한다. 저장된 값을 읽고 키보드가 뜰 때마다 갱신한다.
+  useEffect(() => {
+    let remove: (() => void) | null = null
+    let unmounted = false
+    void startKeyboardHeightRecorder().then((off) => {
+      if (unmounted) off()
+      else remove = off
+    })
+    return () => {
+      unmounted = true
+      remove?.()
+    }
   }, [])
 
   // 구독 스위치가 저장된 값을 그리고, **복원이 끝난 뒤** 켜 둔 토픽을 다시 구독한다. 토픽 구독은

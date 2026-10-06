@@ -5,9 +5,10 @@
 // *"뒷 페이지 스크롤을 막는다"* → **사라진다.** 네이티브 윈도우가 구조적으로 한다.
 // 클래스 문자열을 보던 자리는 **스타일 값**을 본다(`panel-on-scrim` → 실제 테두리 색).
 // `align` 두 케이스는 `pt-[calc(var(--sa-top)+2rem)]` 대신 실제 `paddingTop` 숫자를 잰다.
-import { fireEvent } from '@testing-library/react-native'
+import { fireEvent, within } from '@testing-library/react-native'
 import { Dimensions, Platform, Text, View } from 'react-native'
 
+import { resolveModalMaxHeight } from '../../../../lib/modal-metrics'
 import { flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
 import { resolvePanelBorder } from '../../../../theme/theme-vars'
 import { Modal } from '../Modal'
@@ -81,7 +82,7 @@ describe('Modal', () => {
   })
 
   it('Modal.Card 는 카드 껍데기(테두리·배경·패딩)를 갖는다', async () => {
-    const { getByText } = await renderOverlay(
+    const { getByTestId } = await renderOverlay(
       <Modal onClose={noop}>
         <Modal.Card>
           <Text>내용</Text>
@@ -89,7 +90,7 @@ describe('Modal', () => {
       </Modal>,
     )
 
-    const style = flattenStyle(getByText('내용').parent?.props.style)
+    const style = flattenStyle(getByTestId('modal-card').props.style)
     expect(style.borderWidth).toBe(1)
     expect(style.backgroundColor).toBe(기본테마.surface)
     expect(style.padding).toBe(24)
@@ -97,7 +98,7 @@ describe('Modal', () => {
 
   // 업데이트 모달의 부 동작 버튼이 작아 아래 여백이 커 보이던 것.
   it('Modal.Card 의 tight 는 하단 패딩만 줄인다', async () => {
-    const { getByText } = await renderOverlay(
+    const { getByTestId } = await renderOverlay(
       <Modal onClose={noop}>
         <Modal.Card tight>
           <Text>내용</Text>
@@ -105,13 +106,13 @@ describe('Modal', () => {
       </Modal>,
     )
 
-    const style = flattenStyle(getByText('내용').parent?.props.style)
+    const style = flattenStyle(getByTestId('modal-card').props.style)
     expect(style.paddingTop).toBe(24)
     expect(style.paddingBottom).toBe(16)
   })
 
   it('Modal.Panel 은 카드 테두리/배경 없이 위치만 잡는다', async () => {
-    const { getByText } = await renderOverlay(
+    const { getByTestId } = await renderOverlay(
       <Modal onClose={noop}>
         <Modal.Panel>
           <View>
@@ -121,8 +122,7 @@ describe('Modal', () => {
       </Modal>,
     )
 
-    // 내용 → 그 래퍼 View → Modal.Panel
-    const panel = getByText('내용').parent?.parent
+    const panel = getByTestId('modal-panel')
     const style = flattenStyle(panel?.props.style)
     expect(style.borderWidth).toBeUndefined()
     expect(style.backgroundColor).toBeUndefined()
@@ -134,7 +134,7 @@ describe('Modal', () => {
   // **`Card` atom 의 `border-border` 를 그것이 실제로 덮는지**를 지킨다. 클래스 순서가 아니라
   // 생성된 스타일시트 순서에 달린 자리라, 조용히 뒤집히면 라이트 모달 테두리가 도드라진다.
   it('Modal.Card 의 테두리는 스크림 위 값으로 덮인다', async () => {
-    const { getByText } = await renderOverlay(
+    const { getByTestId } = await renderOverlay(
       <Modal onClose={noop}>
         <Modal.Card>
           <Text>내용</Text>
@@ -142,7 +142,7 @@ describe('Modal', () => {
       </Modal>,
     )
 
-    const style = flattenStyle(getByText('내용').parent?.props.style)
+    const style = flattenStyle(getByTestId('modal-card').props.style)
     expect(style.borderColor).toBe(resolvePanelBorder(기본테마))
     expect(style.borderColor).not.toBe(기본테마.border)
   })
@@ -234,4 +234,107 @@ describe('Modal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  // 짧은 화면(폴드 커버 · 인너)에서 테마 모달이 완료 버튼째 화면 밖으로 넘쳤다(#530).
+  describe('짧은 화면의 상한', () => {
+    /** iOS 테스트 창 높이에서 안전영역(상 59 · 하 34)을 뺀 상한. */
+    function capOf(align: 'top' | 'center'): number {
+      return resolveModalMaxHeight({
+        windowHeightPx: Dimensions.get('window').height,
+        insetTopPx: 59,
+        insetBottomPx: 34,
+        align,
+      })
+    }
+
+    it.each(['top', 'center'] as const)('%s 정렬 카드는 안전영역 안의 높이를 상한으로 갖는다', async (align) => {
+      const { getByTestId } = await renderOverlay(
+        <Modal onClose={noop} align={align}>
+          <Modal.Card>
+            <Text>내용</Text>
+          </Modal.Card>
+        </Modal>,
+      )
+
+      expect(flattenStyle(getByTestId('modal-card').props.style).maxHeight).toBe(capOf(align))
+    })
+
+    it('Modal.Panel 도 같은 상한을 갖는다', async () => {
+      const { getByTestId } = await renderOverlay(
+        <Modal onClose={noop}>
+          <Modal.Panel>
+            <Text>내용</Text>
+          </Modal.Panel>
+        </Modal>,
+      )
+
+      expect(flattenStyle(getByTestId('modal-panel').props.style).maxHeight).toBe(capOf('top'))
+    })
+
+    it('footer 는 스크롤 밖에 서고 본문은 스크롤 안에 선다', async () => {
+      const { getByTestId, getByText } = await renderOverlay(
+        <Modal onClose={noop}>
+          <Modal.Card footer={<Text>완료</Text>}>
+            <Text>본문</Text>
+          </Modal.Card>
+        </Modal>,
+      )
+
+      const scroll = getByTestId('modal-card-scroll')
+      expect(within(scroll).getByText('본문')).toBeTruthy()
+      expect(within(scroll).queryByText('완료')).toBeNull()
+      expect(getByText('완료')).toBeTruthy()
+    })
+
+    /** 스크롤이 자기 칸과 내용 높이를 잰 것처럼 이벤트를 넣는다. */
+    async function measure(scroll: Parameters<typeof fireEvent.scroll>[0], viewport: number, content: number): Promise<void> {
+      await fireEvent(scroll, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: viewport } } })
+      await fireEvent(scroll, 'contentSizeChange', 300, content)
+    }
+
+    // 넘치지 않는 모달에서 스크롤이 살아 있으면 파티 인원 모달의 비율 슬라이더와 제스처를 다툰다.
+    it('내용이 칸에 들어가면 스크롤도 페이드도 없다', async () => {
+      const { getByTestId, queryByTestId } = await renderOverlay(
+        <Modal onClose={noop}>
+          <Modal.Card>
+            <Text>본문</Text>
+          </Modal.Card>
+        </Modal>,
+      )
+
+      const scroll = getByTestId('modal-card-scroll')
+      await measure(scroll, 300, 300)
+
+      expect(scroll.props.scrollEnabled).toBe(false)
+      expect(queryByTestId('modal-card-fade-top')).toBeNull()
+      expect(queryByTestId('modal-card-fade-bottom')).toBeNull()
+    })
+
+    it('넘치면 스크롤이 켜지고 가려진 쪽에만 페이드가 선다', async () => {
+      const { getByTestId, queryByTestId } = await renderOverlay(
+        <Modal onClose={noop}>
+          <Modal.Card>
+            <Text>본문</Text>
+          </Modal.Card>
+        </Modal>,
+      )
+
+      const scroll = getByTestId('modal-card-scroll')
+      await measure(scroll, 300, 700)
+
+      expect(scroll.props.scrollEnabled).toBe(true)
+      expect(queryByTestId('modal-card-fade-top')).toBeNull()
+      expect(getByTestId('modal-card-fade-bottom')).toBeTruthy()
+
+      await fireEvent.scroll(scroll, {
+        nativeEvent: {
+          contentOffset: { y: 400 },
+          contentSize: { height: 700 },
+          layoutMeasurement: { height: 300 },
+        },
+      })
+
+      expect(getByTestId('modal-card-fade-top')).toBeTruthy()
+      expect(queryByTestId('modal-card-fade-bottom')).toBeNull()
+    })
+  })
 })

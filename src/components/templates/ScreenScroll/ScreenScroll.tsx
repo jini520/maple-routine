@@ -132,6 +132,11 @@ export interface ScreenScrollProps {
    * 탭바는 아래 화면과 한 덩어리로 밀려 나간다).
    */
   hasTabBar?: boolean
+  /**
+   * 입력 칸이 있는 화면인가. 켜면 `EntryScroll` 과 같은 키보드 프롭 둘을 넘긴다. 키보드가 뜬 동안
+   * 첫 탭이 버튼에 닿고, iOS 는 키보드에 덮인 칸까지 굴릴 수 있다.
+   */
+  keyboardAware?: boolean
 }
 
 /** 위는 화면 끝에서 드러나고, 아래는 그 반대다. 색을 만드는 규칙은 `safe-area-fade.ts` 가 갖는다. */
@@ -144,6 +149,7 @@ export function ScreenScroll({
   ref,
   onRefresh,
   tracksScrollOffset = false,
+  keyboardAware = false,
   onScroll,
   hasTabBar = true,
 }: ScreenScrollProps): React.JSX.Element {
@@ -231,6 +237,13 @@ export function ScreenScroll({
       }
       // 조건부 전개다. 안 켠 화면의 스크롤 뷰 프롭을 한 개도 바꾸지 않는다.
       {...(tracksScrollOffset || onScroll !== undefined ? { scrollEventThrottle: 16 } : null)}
+      {...(keyboardAware
+        ? {
+            keyboardShouldPersistTaps: 'handled' as const,
+            // 안드로이드는 창이 줄어 저절로 해결되므로 iOS 만 OS 가 인셋을 넣게 한다.
+            automaticallyAdjustKeyboardInsets: Platform.OS === 'ios',
+          }
+        : null)}
       onScroll={onScroll}
       className="flex-1"
       style={port}

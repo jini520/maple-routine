@@ -8,3 +8,8 @@ export async function addKeyboardVisibilityListener(
 ): Promise<() => void> {
   return getKeyboardPort().addVisibilityListener(onChange)
 }
+
+/** 키보드가 뜰 때마다 그 높이를 받는다. 입력 카드가 숫자 판을 쓸지 정하는 재료다. 해제 함수를 돌려준다. */
+export async function addKeyboardHeightListener(onHeight: (heightPx: number) => void): Promise<() => void> {
+  return getKeyboardPort().addHeightListener(onHeight)
+}
