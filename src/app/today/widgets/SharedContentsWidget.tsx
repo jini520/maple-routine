@@ -32,10 +32,8 @@ const ITEM_HEIGHT_PX = 16
  * 한 문장으로 뭉뚱그리면 어느 쪽도 안 맞는다. Open API 는 몬스터파크 계열을 마지막 접속 캐릭터
  * 기준으로 돌려주고, 그 캐릭터가 누구인지 구분할 신호가 응답에 없다.
  *
- * **끊는 자리를 손으로 정한다.** 한 문장이 두 줄에 걸치는데 RN 에는 `text-wrap: balance` 가 없어,
- * 그냥 두면 첫 줄이 `... 메이플` / `ID 기준입니다.` 로 갈려 둘째 줄에 두 낱말만 남는다. 어느
- * 계열인가 와 무엇 기준인가 사이에서 끊으면 두 줄이 고르고, 끊기는 자리가 글꼴 폭에 안 달린다.
- * 글자는 `fixed` 라 시스템 배수로도 안 흔들린다.
+ * 줄바꿈을 넣지 않는다. 손으로 끊으면 줄이 짧아 상자도 그만큼 좁다. 글은 폭 상한까지 흐르고
+ * 거기서 꺾인다. 글자는 `fixed` 라 시스템 배수로도 안 흔들린다.
  */
 const SCOPE_NOTES = [
   ['에픽 던전과 메이플 유니온은', '메이플 ID 기준입니다.'],
@@ -51,11 +49,11 @@ const NOTE_GAP = 8
  * 상한만 주고 실제 폭은 레이아웃 엔진이 가장 긴 줄에 맞춘다. 재서 못박지 않는 것은 그 값이
  * 글꼴 실측이라, 손으로 어림한 값이 틀리면 줄바꿈이 다시 깨지기 때문이다.
  *
- * 값은 `ItemRevenuePopover` 의 폭과 같다. 그쪽은 목록이라 폭을 못박아야 줄이 안 흔들리고,
- * 여기는 문구 둘이라 줄어드는 쪽이 맞다. 상한이 없으면 넓은 기기에서 두 문장이 한 줄씩으로
- * 늘어져 상자가 화면을 가로지른다.
+ * 248(아이템 수익 팝오버 폭)이던 것을 320 으로 넓혔다(2026-10-07, 사용자 지정). 248 은 안쪽 여백을
+ * 빼면 가장 긴 줄(`몬스터파크와 익스트림 몬스터파커는`)과 거의 같아 상자가 빠듯했다. 상한이 없으면
+ * 넓은 기기에서 두 문장이 한 줄씩으로 늘어져 상자가 화면을 가로지른다.
  */
-const NOTE_MAX_WIDTH = 248
+const NOTE_MAX_WIDTH = 320
 
 /** 계열이 차지하는 **줄 수**. 제목 한 줄 + 항목들. 두 열의 높이를 견주는 자다. */
 function groupRows(group: SharedContentGroupView): number {
@@ -264,8 +262,9 @@ function ScopeNotePopover(props: {
         }`}
       >
         {SCOPE_NOTES.map(([subject, rule]) => (
-          <Text key={subject} fixed className="text-[11.5px] leading-snug text-text-muted">
-            {`${subject}\n${rule}`}
+          // iOS 기본값은 한글을 글자 단위로 끊어 낱말 가운데서 꺾는다
+          <Text key={subject} fixed lineBreakStrategyIOS="hangul-word" className="text-[11.5px] leading-snug text-text-muted">
+            {`${subject} ${rule}`}
           </Text>
         ))}
       </View>
