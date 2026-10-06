@@ -3,14 +3,14 @@
 // 합산은 `dropPayoutMeso` 가 기록 안함과 미입력을 똑같이 0으로 접는다(core, 의도된 설계). 상자는
 // 그 둘을 아예 싣지 않는다. 미입력에 `0` 을 쓰면 사용자가 적지 않은 사실이 "0원에 팔았다"는 기록으로
 // 굳고, 미입력이 있다는 신호는 아이템 가격 입력 버튼의 배지가 받는다.
-import { render, within } from '@testing-library/react-native'
+import { fireEvent, render, within } from '@testing-library/react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import type { RecordedDrop } from '../../../types/drops'
 
 import valuableDropsData from '../../../data/valuable-drops.json'
 import { dropItemNameOf } from '../../../lib/drop/drop-items'
-import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'
+import { flattenStyle, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { ItemRevenuePopover } from '../ItemRevenuePopover'
 
@@ -219,14 +219,17 @@ describe('ItemRevenuePopover: 좌표를 모르면 그리되 보이지 않는다'
   it('anchor 가 null 이면 투명하다', async () => {
     const { getByTestId } = await renderPopover({ drops: [], anchor: null })
 
-    const style = getByTestId('item-revenue-popover').props.style
+    const style = flattenStyle(getByTestId('item-revenue-popover').props.style)
     expect(style.opacity).toBe(0)
   })
 
-  it('anchor 를 알면 트리거 아래에 앉고 불투명해진다', async () => {
+  it('anchor 와 상자 높이를 알면 트리거 아래에 앉고 불투명해진다', async () => {
     const { getByTestId } = await renderPopover({ drops: [] })
+    await fireEvent(getByTestId('item-revenue-popover'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 248, height: 160 } },
+    })
 
-    const style = getByTestId('item-revenue-popover').props.style
+    const style = flattenStyle(getByTestId('item-revenue-popover').props.style)
     expect(style.opacity).toBeUndefined()
     // 트리거 밑변(300 + 20) + 간격 8
     expect(style.top).toBe(328)

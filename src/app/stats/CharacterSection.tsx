@@ -143,16 +143,18 @@ export const CharacterSection = memo(function CharacterSection(props: {
                   <Text testID="stats-character-name" numberOfLines={1} className="shrink text-11 text-text">
                     {row.name}
                   </Text>
-                  <View className="flex-row items-baseline gap-1.5">
+                  {/* % 와 금액은 한 Text 다. 따로 두고 기준선을 맞추면 % 가 선 탭에서만 줄이 커진다 */}
+                  <Text testID="stats-character-value" className="text-11" style={TABULAR_NUMS}>
                     {!net && (
-                      <Text testID="stats-character-percent" className="text-10 text-text-muted" style={TABULAR_NUMS}>
+                      <Text testID="stats-character-percent" className="text-10 text-text-muted">
                         {`${Math.round((value / total) * 100)}%`}
                       </Text>
                     )}
-                    <Text testID="stats-character-amount" className={`text-11 font-semibold ${tone}`} style={TABULAR_NUMS}>
+                    {!net && ' '}
+                    <Text testID="stats-character-amount" className={`font-semibold ${tone}`}>
                       {net ? signed(value) : formatMesoCompact(value)}
                     </Text>
-                  </View>
+                  </Text>
                 </View>
                 <View className="h-[7px] rounded-full bg-surface-2">
                   {net && <View className="absolute -bottom-[3px] -top-[3px] w-px bg-text-disabled" style={{ left: `${zero}%` }} />}

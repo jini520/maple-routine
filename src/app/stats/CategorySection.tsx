@@ -3,16 +3,18 @@
  *
  * 넷까지 조각이 되고 나머지는 `그 외` 한 조각이다(남는 것이 하나면 묶지 않는다). 넓은 조각은 안에,
  * 좁은 조각은 반원 오른쪽에 선으로 이어 적는다. 그림 높이는 반원에 고정해 두 카드의 높이가 같다.
- * `그 외` 와 갈래 여럿을 품은 조각(사냥 · 버프)은 누르면 세부 줄이 팝오버로 뜬다.
+ * `그 외` 와 갈래 여럿을 품은 조각(사냥 · 버프)은 누르면 세부 줄이 그 조각의 라벨 아래 팝오버로 뜬다.
  */
-import { memo, useState } from 'react'
+import { memo, useRef, useState } from 'react'
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import Animated, { interpolate, useAnimatedProps, useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
 import Svg, { Path, Polyline } from 'react-native-svg'
 
 import { Text } from '../../components/atoms'
+import { AnchoredPopover } from '../../components/molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { CategoryTotal } from '../../features/stats/aggregate'
+import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { useThemeAppearance } from '../../theme/context'
 import { useRevealProgress } from './reveal'
@@ -172,9 +174,30 @@ export const CategorySection = memo(function CategorySection(props: {
   const progress = useRevealProgress(props.revealed ?? true, props.replayKey)
   const [width, setWidth] = useState(BASE.width)
   /** 팝오버를 연 조각과 그때의 항목 목록. 기간이 바뀌어 목록이 달라지면 저절로 닫힌다 */
-  const [openFor, setOpenFor] = useState<{ items: readonly CategoryTotal[]; key: string } | null>(null)
+  const [openFor, setOpenFor] = useState<{
+    items: readonly CategoryTotal[]
+    key: string
+    anchor: PopoverAnchorRect | null
+  } | null>(null)
   const openKey = openFor !== null && openFor.items === props.items ? openFor.key : null
-  const toggle = (key: string): void => setOpenFor(openKey === key ? null : { items: props.items, key })
+  /** 조각 key → 그 라벨. 조각(SVG)을 눌러도 팝오버는 같은 조각의 라벨에 붙는다 */
+  const labelNodes = useRef(new Map<string, View>())
+
+  function toggle(key: string): void {
+    if (openKey === key) {
+      setOpenFor(null)
+      return
+    }
+    const items = props.items
+    setOpenFor({ items, key, anchor: null })
+    labelNodes.current.get(key)?.measureInWindow((left, top, width, height) => {
+      setOpenFor((current) =>
+        current !== null && current.key === key && current.items === items
+          ? { ...current, anchor: { left, top, width, height } }
+          : current,
+      )
+    })
+  }
 
   // 글자는 쓸기가 거의 끝날 때 나타난다.
   const labelStyle = useAnimatedStyle(() => ({ opacity: interpolate(progress.value, [0.6, 1], [0, 1], 'clamp') }))
@@ -232,6 +255,10 @@ export const CategorySection = memo(function CategorySection(props: {
     )
     return slice.details.length > 0 ? (
       <Pressable
+        ref={(node) => {
+          if (node === null) labelNodes.current.delete(slice.key)
+          else labelNodes.current.set(slice.key, node)
+        }}
         role="button"
         aria-label={`${slice.name} 세부 항목`}
         onPress={() => toggle(slice.key)}
@@ -316,15 +343,17 @@ export const CategorySection = memo(function CategorySection(props: {
         </AnimatedBox>
 
         {opened !== null && (
-          <>
-            <Pressable aria-label="세부 항목 닫기" onPress={() => setOpenFor(null)} className="absolute inset-0" />
-            <View
-              testID="stats-category-popover"
-              className="absolute right-0 top-0 w-[248px] max-w-full gap-1.5 rounded-[12px] border border-border bg-surface p-3 shadow-lg"
-            >
+          <AnchoredPopover
+            testID="stats-category-popover"
+            ariaLabel={opened.name}
+            closeLabel="세부 항목 닫기"
+            anchor={openFor?.anchor ?? null}
+            onClose={() => setOpenFor(null)}
+            className="gap-1.5 p-3"
+          >
               <Text className="text-10 font-bold tracking-wide text-text-muted">{opened.name}</Text>
               {opened.details.map((item) => (
-                <View key={item.key} className="flex-row items-center justify-between">
+                <View key={item.key} className="flex-row items-center justify-between gap-3">
                   <Text className="text-11 text-text">{item.name}</Text>
                   <View className="flex-row items-baseline gap-1.5">
                     <Text className="text-10 text-text-muted" style={TABULAR_NUMS}>
@@ -336,8 +365,7 @@ export const CategorySection = memo(function CategorySection(props: {
                   </View>
                 </View>
               ))}
-            </View>
-          </>
+          </AnchoredPopover>
         )}
       </View>
     </StatsSection>

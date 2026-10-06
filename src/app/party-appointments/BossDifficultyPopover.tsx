@@ -5,10 +5,11 @@
  * 가운데를 맞춰 아래쪽을 기준으로 0.7 배에서 튀어나온다(시안과 같은 값).
  */
 import { useState } from 'react'
-import { Modal, Pressable, useWindowDimensions, View } from 'react-native'
+import { Pressable, useWindowDimensions, View } from 'react-native'
 import Animated, { Easing, Keyframe } from 'react-native-reanimated'
 
 import { Badge, Text } from '../../components/atoms'
+import { PopoverLayer } from '../../components/molecules/Popover/Popover'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { supportedDifficultiesOf } from '../../lib/boss/bosses'
 import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
@@ -52,15 +53,7 @@ export function BossDifficultyPopover(props: BossDifficultyPopoverProps): React.
   const top = size === null ? 0 : anchor.top - GAP - size.height
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType="none"
-      statusBarTranslucent
-      navigationBarTranslucent
-      onRequestClose={props.onClose}
-    >
-      <Pressable aria-label="난이도 고르기 닫기" onPress={props.onClose} className="flex-1" />
+    <PopoverLayer closeLabel="난이도 고르기 닫기" onClose={props.onClose}>
       {/* 크기를 재기 전에는 안 보이게 그린다. 잰 뒤 다시 그리며 튀어나온다. */}
       {size === null ? (
         <View
@@ -77,7 +70,7 @@ export function BossDifficultyPopover(props: BossDifficultyPopoverProps): React.
           </Animated.View>
         </View>
       )}
-    </Modal>
+    </PopoverLayer>
   )
 }
 

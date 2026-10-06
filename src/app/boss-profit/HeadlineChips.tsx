@@ -4,7 +4,7 @@
  * 결정석 판매 한도 요약(월드별로 집계한다)과 직전 기간 대비 증감(상승 빨강·하락 파랑, 방향이
  * 없으면 테마 색). 둘 다 자기 상자 안에서 끝난다.
  */
-import { Image, Modal, Pressable, View, useWindowDimensions } from 'react-native'
+import { Image, Pressable, View, useWindowDimensions } from 'react-native'
 
 import { getItemIconUrlByFile, worldEmblemUrl } from '../../lib/assets/asset-lookup'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
@@ -20,6 +20,7 @@ import {
   ChevronUpIcon,
   Text,
 } from '../../components/atoms'
+import { PopoverLayer } from '../../components/molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { summarizeWorldCrystals } from './character-groups'
 import type { CharacterGroup } from './character-groups'
@@ -149,20 +150,8 @@ export function CrystalSummaryChip(props: {
 
           펼쳐도 헤더 높이가 안 변하는 것은 그대로다. 별도 창이라 흐름에 아예 없다.
         */
-        <Modal
-          visible
-          transparent
-          animationType="none"
-          statusBarTranslucent
-          navigationBarTranslucent
-          onRequestClose={closeBreakdown}
-        >
+        <PopoverLayer closeLabel="월드별 결정석 판매 현황 닫기" onClose={closeBreakdown}>
           {/* 바깥 탭으로 닫는다. **스크림이 없다**. 뒤를 덮으면 비교 대상인 헤드라인이 함께 어두워진다. */}
-          <Pressable
-            aria-label="월드별 결정석 판매 현황 닫기"
-            onPress={closeBreakdown}
-            className="flex-1"
-          />
           <View
             testID="world-crystal-breakdown"
             style={{
@@ -196,7 +185,7 @@ export function CrystalSummaryChip(props: {
               })}
             </View>
           </View>
-        </Modal>
+        </PopoverLayer>
       )}
     </>
   )

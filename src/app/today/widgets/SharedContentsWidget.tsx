@@ -11,12 +11,13 @@
  * @see docs/features/today.md 위젯 정책
  */
 
-import { Modal, Pressable, View, useWindowDimensions } from 'react-native'
+import { Pressable, View, useWindowDimensions } from 'react-native'
 
 import { useAnchoredPopover } from '../../../hooks/useAnchoredPopover'
 import { GRID_SIDE_PADDING } from '../../../lib/today/widget-grid-metrics'
 
 import { CheckIcon, CircleQuestionMarkIcon, Text } from '../../../components/atoms'
+import { PopoverLayer } from '../../../components/molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { SharedContentGroupView, SharedContentItemView } from '../view-model'
 import type { WidgetProps } from './types'
@@ -195,16 +196,8 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
 
           별도 창이라 흐름에 아예 없어서, 카드 안 절대 배치이던 시절처럼 타일 높이가 안 변한다.
         */
-        <Modal
-          visible
-          transparent
-          animationType="none"
-          statusBarTranslucent
-          navigationBarTranslucent
-          onRequestClose={closeNote}
-        >
+        <PopoverLayer closeLabel="표시 기준 설명 닫기" onClose={closeNote}>
           {/* 바깥 탭으로 닫는다. **스크림이 없다**. 뒤를 덮으면 설명이 가리키는 목록이 함께 어두워진다. */}
-          <Pressable aria-label="표시 기준 설명 닫기" onPress={closeNote} className="flex-1" />
           <View
             testID="shared-note"
             role="dialog"
@@ -230,7 +223,7 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
               </Text>
             ))}
           </View>
-        </Modal>
+        </PopoverLayer>
       )}
 
       {data.sharedContents.length > 0 && (
