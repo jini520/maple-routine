@@ -66,16 +66,38 @@ interface PopoverPlacement {
 }
 
 /**
- * 앵커에 붙는 팝오버의 자리. 아래, 위, 가운데 순서로 고른다.
+ * 앵커에 붙는 팝오버의 자리. 위아래 중 빈 공간이 넓은 쪽, 거기 안 들어가면 반대쪽, 둘 다 안 되면 가운데다.
+ *
+ * 넓은 쪽을 고를 때만 하단바가 덮는 자리(`coveredBottomPx`)를 뺀다. 들어가는지 판정에서까지 빼면 바가
+ * 없는 시트에서 쓸데없이 가운데로 간다.
  *
  * 드롭다운과 달리 양쪽 다 모자랄 때 자르지 않는다. 달력은 줄 몇 개만 보여서는 날을 고를 수
  * 없어서, 앵커를 버리고 화면 가운데에 온전히 앉힌다.
  */
-export function placePopover(input: DropdownPlacementInput & { gap: number }): PopoverPlacement {
-  const placed = placeDropdown(input)
-  if (input.contentHeight <= placed.maxHeight) {
-    return { side: placed.top > input.anchorTop ? 'below' : 'above', top: placed.top }
-  }
+export function placePopover(
+  input: DropdownPlacementInput & {
+    gap: number
+    /** 창 바닥에서부터 하단바가 덮는 높이. 안전영역을 포함한다 */
+    coveredBottomPx?: number
+  },
+): PopoverPlacement {
+  const topLimit = input.safeTop + input.edgeGap
+  const bottomLimit = input.windowHeight - input.safeBottom - input.edgeGap
+  const belowTop = input.anchorTop + input.anchorHeight + input.gap
+  const aboveBottom = input.anchorTop - input.gap
+  const spaceAbove = aboveBottom - topLimit
+  const spaceBelow = bottomLimit - belowTop
+  const openBelow =
+    input.windowHeight - Math.max(input.safeBottom, input.coveredBottomPx ?? 0) - input.edgeGap - belowTop
+
+  const below: PopoverPlacement = { side: 'below', top: belowTop }
+  const above: PopoverPlacement = { side: 'above', top: aboveBottom - input.contentHeight }
+  const [first, second] = spaceAbove > openBelow ? [above, below] : [below, above]
+  const fits = (placement: PopoverPlacement): boolean =>
+    input.contentHeight <= (placement.side === 'below' ? spaceBelow : spaceAbove)
+  if (fits(first)) return first
+  if (fits(second)) return second
+
   const usable = input.windowHeight - input.safeTop - input.safeBottom
   const centered = input.safeTop + (usable - input.contentHeight) / 2
   // 가운데에 둔 상자가 앵커를 덮는 것은 괜찮다. 화면 위로 넘치는 것만 막는다.

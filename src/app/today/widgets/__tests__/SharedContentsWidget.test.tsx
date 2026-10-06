@@ -8,7 +8,7 @@
 
 import { act, fireEvent, within } from '@testing-library/react-native'
 
-import { flattenStyle, renderAtom, 기본테마 } from '../../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, 기본테마 } from '../../../../components/__tests__/render-atom'
 import { GRID_SIDE_PADDING } from '../../../../lib/today/widget-grid-metrics'
 import { SharedContentsWidget } from '../SharedContentsWidget'
 import { 공유계열, 공유항목, 공유컨텐츠, 뷰모델 } from './widget-fixture'
@@ -16,8 +16,8 @@ import type { SharedContentGroupView } from '../../view-model'
 
 async function 위젯(
   sharedContents: SharedContentGroupView[],
-): Promise<ReturnType<typeof renderAtom>> {
-  return renderAtom(<SharedContentsWidget w={4} h="auto" data={뷰모델({ sharedContents })} />)
+): Promise<ReturnType<typeof renderOverlay>> {
+  return renderOverlay(<SharedContentsWidget w={4} h="auto" data={뷰모델({ sharedContents })} />)
 }
 
 /** 테스트 하네스의 창 폭. 팝오버는 별도 창이라 좌표가 화면 기준이다. */

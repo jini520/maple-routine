@@ -49,6 +49,28 @@ describe('placePopover', () => {
     })
   })
 
+  // 아래에 들어가기만 하면 아래로 열어, 화면 아래쪽 라벨의 팝오버가 하단바 위까지 내려왔다.
+  it('위아래 둘 다 들어가면 빈 공간이 넓은 쪽에 연다', () => {
+    expect(placePopover({ ...커버, anchorTop: 400, anchorHeight: 27, contentHeight: 100 })).toEqual({
+      side: 'above',
+      top: 400 - 8 - 100,
+    })
+  })
+
+  it('넓은 쪽을 고를 때 하단바가 덮는 자리는 빈 공간으로 치지 않는다', () => {
+    const input = { ...BASE, gap: 8, anchorTop: 330, anchorHeight: 27, contentHeight: 100 }
+
+    expect(placePopover(input).side).toBe('below')
+    expect(placePopover({ ...input, coveredBottomPx: 30 + 140 })).toEqual({ side: 'above', top: 330 - 8 - 100 })
+  })
+
+  // 하단바를 들어가는지 판정에서까지 빼면 바가 없는 시트에서 쓸데없이 가운데로 간다.
+  it('넓은 쪽에 안 들어가면 하단바 뒤까지 쳐서 반대쪽에 연다', () => {
+    expect(
+      placePopover({ ...BASE, gap: 8, anchorTop: 300, anchorHeight: 27, contentHeight: 300, coveredBottomPx: 30 + 300 }),
+    ).toEqual({ side: 'below', top: 335 })
+  })
+
   it('가운데로도 안 들어가면 위 한계에 붙인다', () => {
     expect(placePopover({ ...인너, anchorTop: 300, anchorHeight: 27, contentHeight: 560 }).top).toBe(31 + 12)
   })
