@@ -3,6 +3,8 @@
 // 이 구현이 하는 일은 값을 한 칸에 놓고 구독자에게 알리는 것이다. 그래서 검사 대상은 셋이다.
 // 초기값 · 갈아치우기 · 알림.
 
+import { Appearance, Platform } from 'react-native'
+
 import { DEFAULT_THEME, getThemeDefinition } from '../../../lib/theme/theme-registry'
 
 import {
@@ -72,5 +74,41 @@ describe('rnThemeAppearancePort', () => {
     rnThemeAppearancePort.apply('렌', getThemeDefinition('렌'))
 
     expect(listener).not.toHaveBeenCalled()
+  })
+})
+
+// iOS 시스템 스위치의 꺼진 트랙은 창의 라이트 · 다크를 따른다. 앱 테마와 OS 설정이 다르면
+// 트랙이 테마와 어긋나서, 테마를 적용할 때 창 외관을 테마 `mode` 로 고정한다.
+describe('rnThemeAppearancePort: 창 외관', () => {
+  const 원래플랫폼 = Platform.OS
+  let setColorScheme: jest.SpyInstance
+
+  beforeEach(() => {
+    setColorScheme = jest.spyOn(Appearance, 'setColorScheme').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    Platform.OS = 원래플랫폼
+    setColorScheme.mockRestore()
+  })
+
+  it.each([
+    ['검은마법사', 'dark'],
+    ['머쉬맘', 'light'],
+  ] as const)('iOS 는 %s 의 mode(%s)로 창 외관을 고정한다', (theme, mode) => {
+    Platform.OS = 'ios'
+
+    rnThemeAppearancePort.apply(theme, getThemeDefinition(theme))
+
+    expect(setColorScheme).toHaveBeenCalledWith(mode)
+  })
+
+  // 안드로이드의 같은 함수는 화면을 다시 만들 수 있고, 안드로이드 스위치는 시스템 색을 안 쓴다.
+  it('안드로이드는 창 외관을 안 건드린다', () => {
+    Platform.OS = 'android'
+
+    rnThemeAppearancePort.apply('검은마법사', getThemeDefinition('검은마법사'))
+
+    expect(setColorScheme).not.toHaveBeenCalled()
   })
 })
