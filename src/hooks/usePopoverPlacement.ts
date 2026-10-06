@@ -1,15 +1,17 @@
 /**
  * 앵커에 붙는 팝오버가 자기 높이를 재서 아래, 위, 가운데 중 어디에 설지 정하는 훅.
  *
- * 달력 팝오버 둘이 쓴다. 높이를 재기 전에는 자리를 모르므로 `measured` 가 거짓인 동안 상자를
+ * 팝오버 전부가 쓴다. 높이를 재기 전에는 자리를 모르므로 `measured` 가 거짓인 동안 상자를
  * 그리되 보이지 않게 둔다(앵커를 재기 전과 같은 규약).
  */
 import { useState } from 'react'
 import { useWindowDimensions, type LayoutChangeEvent } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { resolveBottomBarMetrics } from '../lib/bottom-bar-metrics'
 import { overlayWindowHeightPx } from '../lib/modal-metrics'
 import { placePopover } from '../lib/place-dropdown'
+import { useBottomSafeAreaPx } from '../lib/safe-area'
 import type { PopoverAnchorRect } from './useAnchoredPopover'
 
 /** 상자가 화면 위아래 안전영역에서 띄우는 여백. 드롭다운과 같은 값이다. */
@@ -28,6 +30,7 @@ export interface PopoverPlacement {
 export function usePopoverPlacement(anchor: PopoverAnchorRect | null, gap: number): PopoverPlacement {
   const window = useWindowDimensions()
   const insets = useSafeAreaInsets()
+  const bottomSafeAreaPx = useBottomSafeAreaPx()
   const [height, setHeight] = useState<number | null>(null)
 
   function onLayout(event: LayoutChangeEvent): void {
@@ -47,6 +50,8 @@ export function usePopoverPlacement(anchor: PopoverAnchorRect | null, gap: numbe
     safeBottom: insets.bottom,
     edgeGap: EDGE_GAP_PX,
     gap,
+    // 하단바 윗변. 토스트가 서는 자리와 같은 계산이다
+    coveredBottomPx: bottomSafeAreaPx + resolveBottomBarMetrics(window.width).spacePx,
   })
   return { ...placed, measured: true, onLayout }
 }

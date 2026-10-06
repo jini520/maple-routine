@@ -25,6 +25,7 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { summarizeWorldCrystals } from './character-groups'
 import type { CharacterGroup } from './character-groups'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
+import { usePopoverPlacement } from '../../hooks/usePopoverPlacement'
 
 /** 칩 밑변과 상자 윗변 사이. 흐름 안에 있던 시절의 `mt-1.5` 를 그대로 옮긴 값. */
 const BREAKDOWN_GAP = 6
@@ -67,6 +68,7 @@ export function CrystalSummaryChip(props: {
     close: closeBreakdown,
   } = useAnchoredPopover()
   const { width: windowWidth } = useWindowDimensions()
+  const placement = usePopoverPlacement(anchor, BREAKDOWN_GAP)
 
   const worlds = summarizeWorldCrystals(props.groups, props.monthlyByWorld)
   // 월드를 아는 캐릭터가 하나도 없으면(구버전 캐시만 있는 경우) 대비할 한도가 없다. 반대로 월드는
@@ -154,16 +156,18 @@ export function CrystalSummaryChip(props: {
           {/* 바깥 탭으로 닫는다. **스크림이 없다**. 뒤를 덮으면 비교 대상인 헤드라인이 함께 어두워진다. */}
           <View
             testID="world-crystal-breakdown"
+            onLayout={placement.onLayout}
             style={{
               left: anchor?.left ?? 0,
-              top: anchor === null ? 0 : anchor.top + anchor.height + BREAKDOWN_GAP,
+              // 칩 위아래 중 빈 공간이 넓은 쪽에 선다
+              top: placement.top,
               // 폭은 내용이 정하므로(`min-w-[168px]`) 상한만 준다. 월드 이름이 길어도 화면 밖으로
               // 안 나간다.
               maxWidth: windowWidth - (anchor?.left ?? 0) - BREAKDOWN_EDGE_GAP,
             }}
-            // 아직 못 쟀으면 그리되 안 보인다. 0,0 에 한 프레임 번쩍이는 것을 막는다.
+            // 칩과 상자 높이를 재기 전에는 그리되 안 보인다. 0,0 에 한 프레임 번쩍이는 것을 막는다.
             className={`absolute min-w-[168px] rounded-[12px] border border-border bg-surface p-2 shadow-lg${
-              anchor === null ? ' opacity-0' : ''
+              placement.measured ? '' : ' opacity-0'
             }`}
           >
             <Text className="px-1 pb-1.5 text-11 font-bold tracking-wide text-text-muted">월드별 판매 현황</Text>
