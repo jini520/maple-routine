@@ -312,11 +312,10 @@ describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => 
   // 기본 매처는 공백을 정규화해 줄바꿈을 공백 하나로 뭉갠다. 그러면 이 단언이 끊는 자리를 못 본다.
   const 그대로 = { normalizer: (text: string) => text }
 
-  // 줄바꿈이 문구에 들어 있다. RN 에는 `text-wrap: balance` 가 없어 그대로 두면 첫 줄이
-  // `... 메이플` / `ID 기준입니다.` 로 갈려 둘째 줄에 두 낱말만 남는다. 주어와 규칙 사이에서
-  // 끊으면 두 줄이 고르고, 어디서 끊길지가 글꼴 폭에 안 달린다.
-  const 아이디줄 = '에픽 던전과 메이플 유니온은\n메이플 ID 기준입니다.'
-  const 캐릭터줄 = '몬스터파크와 익스트림 몬스터파커는\n마지막에 접속한 캐릭터 기준입니다.'
+  // 문구에 줄바꿈을 넣지 않는다(2026-10-07 사용자 지정). 손으로 끊으면 줄이 짧아 상자가 그만큼 좁았다.
+  // 글은 폭 상한까지 흐르고 거기서 꺾인다.
+  const 아이디줄 = '에픽 던전과 메이플 유니온은 메이플 ID 기준입니다.'
+  const 캐릭터줄 = '몬스터파크와 익스트림 몬스터파커는 마지막에 접속한 캐릭터 기준입니다.'
 
   it('평소에는 안 보인다. 늘 떠 있는 각주는 격자에서 잡음이다', async () => {
     const { queryByTestId, queryByText } = await 위젯(공유컨텐츠())
@@ -333,6 +332,15 @@ describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => 
 
     expect(getByText(아이디줄, 그대로)).toBeTruthy()
     expect(getByText(캐릭터줄, 그대로)).toBeTruthy()
+  })
+
+  // iOS 기본값은 한글을 글자 단위로 끊어 `기 / 준입니다.` 처럼 낱말 가운데서 꺾였다(시뮬레이터).
+  it('줄은 낱말 단위로 꺾인다', async () => {
+    const { getByTestId, getByText } = await 위젯(공유컨텐츠())
+
+    await 누름(getByTestId('shared-note-toggle'))
+
+    expect(getByText(캐릭터줄, 그대로).props.lineBreakStrategyIOS).toBe('hangul-word')
   })
 
   // **바깥을 누르면 닫힌다**(사용자 지시). 닫는 길이 `?` 뿐이면 12px 아이콘을 정확히 눌러야
@@ -391,7 +399,7 @@ describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => 
       maxWidth: number
     }
     expect(style.width).toBeUndefined()
-    expect(style.maxWidth).toBe(248)
+    expect(style.maxWidth).toBe(320)
   })
 
   // **부모 타일을 안 벗어난다**(사용자 지시). 창은 별도라 좌표가 화면 기준인데, 화면 여백을
