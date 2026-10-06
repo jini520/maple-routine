@@ -63,21 +63,23 @@ export interface SwitchProps {
 }
 
 export function Switch(props: SwitchProps): React.JSX.Element {
+  // 켜고 끄는 것도 고른 값이 바뀌는 일이라 선택 촉각이다.
+  const press = (): void => {
+    selectionFeedback()
+    props.onToggle()
+  }
+
   return (
     <Pressable
       role="switch"
       aria-checked={props.on}
       aria-label={props.label}
-      // 켜고 끄는 것도 고른 값이 바뀌는 일이라 선택 촉각이다.
-      onPress={() => {
-        selectionFeedback()
-        props.onToggle()
-      }}
+      onPress={press}
       className={`shrink-0 flex-row items-center ${props.className ?? ''}`}
     >
       {props.children}
       {Platform.OS === 'ios' ? (
-        <IosSwitch on={props.on} size={props.size ?? 'sm'} />
+        <IosSwitch on={props.on} size={props.size ?? 'sm'} onPress={press} />
       ) : (
         <DrawnSwitch on={props.on} size={props.size ?? 'sm'} />
       )}
@@ -94,20 +96,23 @@ interface FaceProps {
  * 줄인 크기의 박스에 넣은 iOS 시스템 스위치.
  *
  * 줄이기는 가운데 기준이고 RN 이 `alignSelf: 'flex-start'` 를 붙여 정렬로는 못 맞춘다. 그래서
- * `absolute` 로 두고 보이는 그림이 박스에 딱 맞는 자리를 준다. 누름은 감싸는 `Pressable` 만 받는다.
- * 시스템 스위치가 받으면 원래 크기 영역이 남고 촉각이 두 길로 난다.
+ * `absolute` 로 두고 보이는 그림이 박스에 딱 맞는 자리를 준다.
+ *
+ * 누름은 시스템 스위치가 직접 받는다. 막으면 iOS 26 의 누름 효과와 끌기가 빠진다. RN 스위치가
+ * 응답자를 먼저 가져가 감싸는 `Pressable` 의 `onPress` 와 겹쳐 불리지 않는다.
  */
-function IosSwitch(props: FaceProps): React.JSX.Element {
+function IosSwitch(props: FaceProps & { onPress: () => void }): React.JSX.Element {
   const { definition } = useThemeAppearance()
   const height = IOS_SWITCH_SIZE[props.size]
   const scale = height / IOS_NATIVE.height
   const width = IOS_NATIVE.width * scale
 
   return (
-    <View testID="switch-box" pointerEvents="none" style={{ width, height }}>
+    <View testID="switch-box" style={{ width, height }}>
       <NativeSwitch
         testID="switch-native"
         value={props.on}
+        onValueChange={props.onPress}
         trackColor={{ false: definition.surface2, true: definition.primary }}
         ios_backgroundColor={definition.surface2}
         style={{

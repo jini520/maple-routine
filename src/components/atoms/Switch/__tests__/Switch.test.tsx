@@ -238,11 +238,20 @@ describe('Switch(ios): 줄인 시스템 스위치', () => {
     expect(꺼짐.getByTestId('switch-native').props.value).toBe(false)
   })
 
-  // 시스템 스위치가 직접 받으면 원래 크기(63×28) 영역이 남고 촉각 · onToggle 길이 둘이 된다.
-  it('시스템 스위치는 누름을 안 받는다', async () => {
-    const { getByTestId } = await renderAtom(<Switch on label="켜기" onToggle={() => {}} />)
+  // iOS 26 의 누름 효과 · 끌기를 살리려고 시스템 스위치가 누름을 직접 받는다.
+  it('시스템 스위치를 누르면 onToggle 과 선택 촉각이 한 번씩 난다', async () => {
+    const select = jest.fn().mockResolvedValue(undefined)
+    setHapticsPort({ tap: jest.fn().mockResolvedValue(undefined), select })
+    const onToggle = jest.fn()
+    const { getByTestId } = await renderAtom(
+      <Switch on={false} label="켜기" onToggle={onToggle} />,
+    )
 
-    expect(getByTestId('switch-box').props.pointerEvents).toBe('none')
+    expect(getByTestId('switch-box').props.pointerEvents).toBeUndefined()
+    fireEvent(getByTestId('switch-native'), 'valueChange', true)
+
+    expect(onToggle).toHaveBeenCalledTimes(1)
+    expect(select).toHaveBeenCalledTimes(1)
   })
 
   it('켜짐 primary · 꺼짐 surface-2 를 준다. 손잡이는 시스템 색이다', async () => {

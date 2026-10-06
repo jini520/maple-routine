@@ -835,8 +835,9 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
   `IOS_SWITCH_SIZE` 하나다. 스위치는 63×28 고정이라 `transform: scale` 로만 준다. 그래서 줄인
   크기의 박스로 감싸고 스위치를 `absolute` 로 놓는다(RN 이 붙이는 `alignSelf: 'flex-start'` 때문에
   정렬로는 못 맞춘다).
-- **iOS 시스템 스위치는 누름을 안 받는다**(`pointerEvents="none"`). 감싸는 `Pressable` 이 받아야
-  누르는 영역이 박스 크기로 정해지고 촉각이 한 번 난다. 끌어서 켜는 동작은 없다.
+- **iOS 시스템 스위치는 누름을 직접 받는다.** iOS 26 의 누름 효과와 끌어서 켜는 동작이 시스템
+  스위치를 쓰는 이유라서다. 스위치는 `onValueChange` 로, 옆 글자는 감싸는 `Pressable` 로 같은
+  촉각 · `onToggle` 을 낸다. RN 스위치가 응답자를 먼저 가져가 둘이 겹쳐 불리지 않는다.
 - **iOS 색**은 켜짐 `primary` · 꺼짐 `surface2`(`trackColor` · `ios_backgroundColor`)이고 손잡이는
   시스템 흰색이다. 꺼진 트랙은 시스템이 반투명 회색을 겹쳐 그리고 그 회색이 창의 라이트 · 다크를
   따른다. 그래서 테마를 적용할 때 iOS 창의 라이트 · 다크를 테마 `mode` 로 고정한다
