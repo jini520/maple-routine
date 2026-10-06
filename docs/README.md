@@ -55,7 +55,7 @@ docs/
 | 아키텍처 | [foundation/architecture.md](./foundation/architecture.md) | 디렉토리 구조·레이어 패턴·데이터 흐름·상태관리·네이티브 개요·테스트 전략 |
 | Nexon Open API | [foundation/nexon-api.md](./foundation/nexon-api.md) | API 호출·인증·정규화·호출 제한을 만질 때 |
 | 에러/복원력 | [foundation/error-resilience.md](./foundation/error-resilience.md) | 실패 처리·빈 상태·참조 무결성·멱등성·엣지 케이스 |
-| 디자인 시스템 | [foundation/design-system.md](./foundation/design-system.md) | 색·시맨틱 토큰·기본 컴포넌트(카드/버튼/입력)·공유 UI 패턴(탭/스크롤/모달)·타이포·아이콘 |
+| 디자인 시스템 | [foundation/design-system.md](./foundation/design-system.md) | 색·시맨틱 토큰·기본 컴포넌트(카드/버튼/입력)·공유 UI 패턴(탭/스크롤/모달/팝오버 `components/molecules/Popover`)·타이포·아이콘 |
 | 게임 레퍼런스 데이터 | [foundation/game-data.md](./foundation/game-data.md) | `src/data/*.json` 을 만질 때 ([[ADR-006]] — AI 임의 추정 금지) |
 | 스토어 릴리스 | [foundation/release.md](./foundation/release.md) | 스토어에 나갈 바이너리를 만들 때 — 서명·`versionCode`·빌드 커맨드·산출물 검증·콘솔 요건 |
 

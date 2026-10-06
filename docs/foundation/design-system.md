@@ -787,6 +787,20 @@ flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center
 - **열림**: 목록이 위쪽 가운데를 기준으로 0.85 배 · 6 위에서 0.22초 동안 펼쳐지고, 칸은 위에서 4 내려오며 40ms 씩 늦게 나타난다.
 - reanimated 의 `Animated.View` 에는 움직임만 준다. 자리 · 크기를 함께 주면 그쪽이 버려진다.
 
+### 팝오버 (`components/molecules/Popover`): [[ADR-338]] (2026-10-07)
+
+**팝오버는 이 부품이 띄운다. `Modal` 과 닫기 층을 화면에서 직접 그리지 말 것.** 닫기 층을 팝오버를 연
+컴포넌트 안에 깔면 그 컴포넌트 영역만 덮어서, 바깥을 눌러도 안 닫혔다(이슈 #617).
+
+- `PopoverLayer`: 투명 `Modal` 과 화면 전체를 덮는 닫기 `Pressable`. 닫기 층의 이름(`closeLabel`)은
+  프롭이다. 팝오버 내용도 이 층 **안에** 그린다. 닫기 층과 내용이 다른 창에 있으면 닫기 층이 상자 위에
+  깔린다([[ADR-217]] 결정 2).
+- `AnchoredPopover`: 위 층에 상자(반경 12 · 테두리 · 그림자 · 안쪽 여백은 `className`) · 꼬리 · 자리를
+  얹는다. 자리는 `usePopoverPlacement` 가 정한다. 트리거 아래가 기본이고, 모자라면 위로 뒤집고, 둘 다
+  모자라면 가운데로 옮기며 옅은 스크림을 깐다. 폭은 `width`(248) 를 주거나, 안 주면 내용이 정한다.
+- 쓰는 곳: `AnchoredPopover` 는 아이템 수익 · 직접 기록 설명 · 날짜 · 주 · 시각 · 통계 내역.
+  `PopoverLayer` 만 쓰는 곳은 자리를 따로 잡는 월드별 결정석 · 공유 컨텐츠 설명 · 난이도 캡슐.
+
 ### 날짜 · 주 · 시각 팝오버는 `확인` 으로 반영한다 (`CalendarPopover` · `WeekCalendarPopover` · `TimePopover`): 2026-10-02
 
 사용자 지정(이슈 #380 작업 중). 날짜를 눌러도 팝오버 안에서만 칠해지고, 아래 오른쪽 `확인` 을 눌러야 밖으로 나간다.
