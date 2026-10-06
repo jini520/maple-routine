@@ -1,6 +1,7 @@
 /**
  * 켜고 끄는 스위치. **앱의 스위치는 이것 하나다.**
  *
+ * iOS 는 RN 기본 `Switch` 를 줄여 그리고 안드로이드는 트랙 · 손잡이를 직접 그린다.
  * 스크린리더 계약(`role="switch"`·`aria-checked`·`aria-label`)과 선택 촉각을 이 부품이 든다.
  * 호출부에서 `selectionFeedback()` 을 또 부르면 한 번 누르고 두 번 울린다.
  *
@@ -13,11 +14,12 @@
  *   <Text className="text-xs font-medium text-text-muted">모든 보스 보기</Text>
  * </Switch>
  */
-import { Pressable, View } from 'react-native'
+import { Platform, Pressable, Switch as NativeSwitch, View } from 'react-native'
 import { cubicBezier, useReducedMotion } from 'react-native-reanimated'
 
 import { AnimatedView } from '../../../lib/nativewind-interop'
 import { selectionFeedback } from '../../../native/haptics'
+import { useThemeAppearance } from '../../../theme/context'
 
 /**
  * 크기 두 벌의 치수(px).
@@ -29,6 +31,12 @@ const SWITCH_SIZE = {
   sm: { track: 'h-4 w-7', knob: 'h-3 w-3', travel: 14 },
   lg: { track: 'h-6 w-11', knob: 'h-5 w-5', travel: 22 },
 } as const
+
+/** iOS 26 시스템 스위치의 고정 크기(pt). `width` · `height` 로는 안 줄어 배율로만 준다. */
+const IOS_NATIVE = { width: 63, height: 28 }
+
+/** iOS 갈래의 보이는 높이(pt). 안드로이드 트랙과 같아 줄 높이가 안 바뀐다. */
+const IOS_SWITCH_SIZE = { sm: 16, lg: 24 } as const
 
 /**
  * 손잡이가 미끄러지는 트랜지션. 세그먼트의 미끄러지는 상자(`useSlidingThumb`)와 같은 시간·곡선.
@@ -55,37 +63,89 @@ export interface SwitchProps {
 }
 
 export function Switch(props: SwitchProps): React.JSX.Element {
-  const size = SWITCH_SIZE[props.size ?? 'sm']
-  const reduceMotion = useReducedMotion()
-  const knobPlace = { transform: [{ translateX: props.on ? size.travel : 2 }] }
+  // 켜고 끄는 것도 고른 값이 바뀌는 일이라 선택 촉각이다.
+  const press = (): void => {
+    selectionFeedback()
+    props.onToggle()
+  }
 
   return (
     <Pressable
       role="switch"
       aria-checked={props.on}
       aria-label={props.label}
-      // 켜고 끄는 것도 고른 값이 바뀌는 일이라 선택 촉각이다.
-      onPress={() => {
-        selectionFeedback()
-        props.onToggle()
-      }}
+      onPress={press}
       className={`shrink-0 flex-row items-center ${props.className ?? ''}`}
     >
       {props.children}
-      {/* 트랙 색은 안 흐른다. 색까지 기다리면 누른 스위치가 그동안 안 눌린 것처럼 보인다. */}
-      <View
-        testID="switch-track"
-        className={`${size.track} shrink-0 flex-row items-center rounded-full ${
-          props.on ? 'bg-primary' : 'bg-surface-2'
-        }`}
-      >
-        <AnimatedView
-          testID="switch-knob"
-          className={`${size.knob} rounded-full bg-surface`}
-          // 움직임 줄이기면 트랜지션 키를 아예 안 준다. 곧바로 선다.
-          style={reduceMotion ? knobPlace : { ...knobPlace, ...KNOB_TRANSITION }}
-        />
-      </View>
+      {Platform.OS === 'ios' ? (
+        <IosSwitch on={props.on} size={props.size ?? 'sm'} onPress={press} />
+      ) : (
+        <DrawnSwitch on={props.on} size={props.size ?? 'sm'} />
+      )}
     </Pressable>
+  )
+}
+
+interface FaceProps {
+  on: boolean
+  size: keyof typeof SWITCH_SIZE
+}
+
+/**
+ * 줄인 크기의 박스에 넣은 iOS 시스템 스위치.
+ *
+ * 줄이기는 가운데 기준이고 RN 이 `alignSelf: 'flex-start'` 를 붙여 정렬로는 못 맞춘다. 그래서
+ * `absolute` 로 두고 보이는 그림이 박스에 딱 맞는 자리를 준다.
+ *
+ * 누름은 시스템 스위치가 직접 받는다. 막으면 iOS 26 의 누름 효과와 끌기가 빠진다. RN 스위치가
+ * 응답자를 먼저 가져가 감싸는 `Pressable` 의 `onPress` 와 겹쳐 불리지 않는다.
+ */
+function IosSwitch(props: FaceProps & { onPress: () => void }): React.JSX.Element {
+  const { definition } = useThemeAppearance()
+  const height = IOS_SWITCH_SIZE[props.size]
+  const scale = height / IOS_NATIVE.height
+  const width = IOS_NATIVE.width * scale
+
+  return (
+    <View testID="switch-box" style={{ width, height }}>
+      <NativeSwitch
+        testID="switch-native"
+        value={props.on}
+        onValueChange={props.onPress}
+        trackColor={{ false: definition.surface2, true: definition.primary }}
+        ios_backgroundColor={definition.surface2}
+        style={{
+          position: 'absolute',
+          left: (width - IOS_NATIVE.width) / 2,
+          top: (height - IOS_NATIVE.height) / 2,
+          transform: [{ scale }],
+        }}
+      />
+    </View>
+  )
+}
+
+/** 안드로이드 스위치. 기본 스위치 모양이 아니라 트랙 · 손잡이를 직접 그린다. */
+function DrawnSwitch(props: FaceProps): React.JSX.Element {
+  const size = SWITCH_SIZE[props.size]
+  const reduceMotion = useReducedMotion()
+  const knobPlace = { transform: [{ translateX: props.on ? size.travel : 2 }] }
+
+  // 트랙 색은 안 흐른다. 색까지 기다리면 누른 스위치가 그동안 안 눌린 것처럼 보인다.
+  return (
+    <View
+      testID="switch-track"
+      className={`${size.track} shrink-0 flex-row items-center rounded-full ${
+        props.on ? 'bg-primary' : 'bg-surface-2'
+      }`}
+    >
+      <AnimatedView
+        testID="switch-knob"
+        className={`${size.knob} rounded-full bg-surface`}
+        // 움직임 줄이기면 트랜지션 키를 아예 안 준다. 곧바로 선다.
+        style={reduceMotion ? knobPlace : { ...knobPlace, ...KNOB_TRANSITION }}
+      />
+    </View>
   )
 }

@@ -4,8 +4,12 @@
 // 것은 **그 갈림이 다시 생기지 않는 조건** 셋이다. 치수가 표 하나에서 나오는가 · 색이 한 벌인가 ·
 // 스크린리더 계약과 두드림을 부품이 드는가.
 //
+// iOS 는 RN 기본 `Switch` 를 줄여 그리고 안드로이드는 트랙 · 손잡이를 그린다. 그림은 갈려도
+// 스크린리더 계약과 누름은 두 플랫폼이 같아야 한다.
+//
 // 클래스 문자열은 트리에 안 남으므로(NativeWind 가 스타일로 푼다) 풀린 값을 본다.
 import { fireEvent } from '@testing-library/react-native'
+import { Platform } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
@@ -22,9 +26,23 @@ jest.mock('react-native-reanimated', () => ({
   useReducedMotion: jest.fn(() => false),
 }))
 
-beforeEach(installNoopNativePorts)
+const 원래플랫폼 = Platform.OS
 
-describe('Switch: 스크린리더 계약', () => {
+beforeEach(() => {
+  installNoopNativePorts()
+  // 아래 치수 · 색 · 손잡이 묶음은 안드로이드 갈래다. iOS 를 보는 묶음은 자기가 바꾼다.
+  Platform.OS = 'android'
+})
+
+afterEach(() => {
+  Platform.OS = 원래플랫폼
+})
+
+describe.each(['ios', 'android'] as const)('Switch(%s): 스크린리더 계약', (os) => {
+  beforeEach(() => {
+    Platform.OS = os
+  })
+
   it('role·aria-checked·aria-label 을 부품이 낸다', async () => {
     const { getByLabelText } = await renderAtom(
       <Switch on label="알림 받기" onToggle={() => {}} />,
@@ -44,7 +62,7 @@ describe('Switch: 스크린리더 계약', () => {
   })
 })
 
-describe('Switch: 치수 두 벌', () => {
+describe('Switch(android): 치수 두 벌', () => {
   it('sm 은 트랙 28×16 · 손잡이 12 다. 안 적으면 이것이다', async () => {
     const { getByTestId } = await renderAtom(
       <Switch on={false} label="드롭 연출" onToggle={() => {}} />,
@@ -95,7 +113,7 @@ describe('Switch: 치수 두 벌', () => {
   })
 })
 
-describe('Switch: 색 한 벌', () => {
+describe('Switch(android): 색 한 벌', () => {
   it('켜면 트랙이 primary 다', async () => {
     const { getByTestId } = await renderAtom(<Switch on label="켜기" onToggle={() => {}} />)
 
@@ -120,7 +138,7 @@ describe('Switch: 색 한 벌', () => {
 
 // 손잡이만 흐르고 트랙 색은 누르는 즉시 바뀐다. Reanimated 는 트랜지션 키를 `style` 에서 걷어
 // 가므로, 전달됐는지는 `jestInlineStyle`(테스트용으로 남기는 원본)로 본다.
-describe('Switch: 손잡이가 미끄러진다', () => {
+describe('Switch(android): 손잡이가 미끄러진다', () => {
   const 움직임줄이기 = jest.mocked(useReducedMotion)
 
   beforeEach(() => {
@@ -153,7 +171,11 @@ describe('Switch: 손잡이가 미끄러진다', () => {
   })
 })
 
-describe('Switch: 누름', () => {
+describe.each(['ios', 'android'] as const)('Switch(%s): 누름', (os) => {
+  beforeEach(() => {
+    Platform.OS = os
+  })
+
   it('누르면 onToggle 과 선택 촉각을 부품이 낸다', async () => {
     const select = jest.fn().mockResolvedValue(undefined)
     setHapticsPort({ tap: jest.fn().mockResolvedValue(undefined), select })
@@ -180,5 +202,65 @@ describe('Switch: 누름', () => {
     fireEvent.press(getByText('모든 보스 보기'))
 
     expect(onToggle).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('Switch(ios): 줄인 시스템 스위치', () => {
+  beforeEach(() => {
+    Platform.OS = 'ios'
+  })
+
+  // 높이를 안드로이드 갈래와 같게 줄여 줄 높이가 안 바뀐다. 시스템 스위치는 63×28 고정이라
+  // 배율로만 준다. 줄이기가 가운데 기준이라 이 자리여야 보이는 그림이 박스에 딱 맞는다.
+  it.each([
+    { size: undefined, box: { width: 36, height: 16 }, scale: 16 / 28, left: -13.5, top: -6 },
+    { size: 'lg' as const, box: { width: 54, height: 24 }, scale: 24 / 28, left: -4.5, top: -2 },
+  ])('$size 는 $box.width×$box.height 박스에 줄여 넣는다', async ({ size, box, scale, left, top }) => {
+    const { getByTestId, queryByTestId } = await renderAtom(
+      <Switch on={false} label="켜기" size={size} onToggle={() => {}} />,
+    )
+
+    expect(flattenStyle(getByTestId('switch-box').props.style)).toMatchObject(box)
+    expect(flattenStyle(getByTestId('switch-native').props.style)).toMatchObject({
+      position: 'absolute',
+      left,
+      top,
+      transform: [{ scale }],
+    })
+    expect(queryByTestId('switch-knob')).toBeNull()
+  })
+
+  it('on 이 시스템 스위치의 값이다', async () => {
+    const 켜짐 = await renderAtom(<Switch on label="켜기" onToggle={() => {}} />)
+    expect(켜짐.getByTestId('switch-native').props.value).toBe(true)
+
+    const 꺼짐 = await renderAtom(<Switch on={false} label="켜기" onToggle={() => {}} />)
+    expect(꺼짐.getByTestId('switch-native').props.value).toBe(false)
+  })
+
+  // iOS 26 의 누름 효과 · 끌기를 살리려고 시스템 스위치가 누름을 직접 받는다.
+  it('시스템 스위치를 누르면 onToggle 과 선택 촉각이 한 번씩 난다', async () => {
+    const select = jest.fn().mockResolvedValue(undefined)
+    setHapticsPort({ tap: jest.fn().mockResolvedValue(undefined), select })
+    const onToggle = jest.fn()
+    const { getByTestId } = await renderAtom(
+      <Switch on={false} label="켜기" onToggle={onToggle} />,
+    )
+
+    expect(getByTestId('switch-box').props.pointerEvents).toBeUndefined()
+    fireEvent(getByTestId('switch-native'), 'valueChange', true)
+
+    expect(onToggle).toHaveBeenCalledTimes(1)
+    expect(select).toHaveBeenCalledTimes(1)
+  })
+
+  it('켜짐 primary · 꺼짐 surface-2 를 준다. 손잡이는 시스템 색이다', async () => {
+    const { getByTestId } = await renderAtom(<Switch on label="켜기" onToggle={() => {}} />)
+    const native = getByTestId('switch-native')
+
+    expect(native.props.onTintColor).toBe(기본테마.primary)
+    expect(native.props.tintColor).toBe(기본테마.surface2)
+    expect(flattenStyle(native.props.style).backgroundColor).toBe(기본테마.surface2)
+    expect(native.props.thumbTintColor).toBeUndefined()
   })
 })
