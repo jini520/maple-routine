@@ -23,7 +23,16 @@ export function ThemeModal(props: ThemeModalProps): React.JSX.Element {
 
   return (
     <Modal onClose={props.onClose} testId="theme-modal-overlay">
-      <Modal.Card>
+      <Modal.Card
+        footer={
+          // 설정의 다른 모달(TrackingModeModal·DisconnectConfirm)과 같은 골격. 버튼만 하나다.
+          <View className="mt-4 flex-row justify-end">
+            <Button variant="primary" onPress={props.onClose} textClassName="text-sm">
+              완료
+            </Button>
+          </View>
+        }
+      >
         <View className="mb-4 gap-1">
           <Text className="text-lg font-semibold text-text">테마</Text>
           <Text className="text-sm text-text-muted">원하는 테마를 선택해주세요.</Text>
@@ -34,13 +43,6 @@ export function ThemeModal(props: ThemeModalProps): React.JSX.Element {
             void selectTheme(next)
           }}
         />
-
-        {/* 설정의 다른 모달(TrackingModeModal·DisconnectConfirm)과 같은 골격. 버튼만 하나다. */}
-        <View className="mt-4 flex-row justify-end">
-          <Button variant="primary" onPress={props.onClose} textClassName="text-sm">
-            완료
-          </Button>
-        </View>
       </Modal.Card>
     </Modal>
   )

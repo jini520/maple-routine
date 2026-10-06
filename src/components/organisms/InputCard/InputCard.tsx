@@ -56,7 +56,8 @@ import { Badge } from '../../atoms/Badge/Badge'
 import { DEFAULT_MAX_PARTY_SIZE } from '../../../lib/boss/boss-crystal-prices'
 import { FeeRow } from '../FeeRow/FeeRow'
 import { NumberPad } from '../../molecules/NumberPad/NumberPad'
-import { defaultKeyboardPx, resolveNumberPadUse } from '../../../lib/number-pad-metrics'
+import { resolveNumberPadUse } from '../../../lib/number-pad-metrics'
+import { keyboardHeightPx } from '../../../features/input-card/keyboard-height'
 import type { MvpGradeKey } from '../../../lib/mvp/grades'
 
 /**
@@ -344,7 +345,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     const 판정 = resolveNumberPadUse({
       windowHeightPx,
       topInsetPx: insets.top,
-      keyboardHeightPx: defaultKeyboardPx(),
+      keyboardHeightPx: keyboardHeightPx(),
       cardHeightPx: 잰_높이,
     })
     setUsesPad((prev) => prev === true || 판정)

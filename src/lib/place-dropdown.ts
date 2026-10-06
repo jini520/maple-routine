@@ -1,5 +1,5 @@
 /**
- * 메이플 ID 목록을 어디에 앉힐지. 순수 기하.
+ * 트리거에 붙는 목록 · 팝오버를 어디에 앉힐지. 순수 기하.
  *
  * 컴포넌트 파일 밖에 사는 것은 값 계산이라 화면 없이 검사할 수 있고, 컴포넌트 파일이 값을
  * export 하면 fast refresh 가 깨지기 때문이다.
@@ -57,4 +57,27 @@ export function placeDropdown(input: DropdownPlacementInput): DropdownPlacement 
   return spaceAbove > spaceBelow
     ? { top: topLimit, maxHeight: spaceAbove }
     : { top: belowStart, maxHeight: spaceBelow }
+}
+
+interface PopoverPlacement {
+  /** 앵커 아래 · 위 · 앵커를 버린 화면 가운데. 꼬리 방향과 스크림을 이것이 정한다. */
+  side: 'below' | 'above' | 'center'
+  top: number
+}
+
+/**
+ * 앵커에 붙는 팝오버의 자리. 아래, 위, 가운데 순서로 고른다.
+ *
+ * 드롭다운과 달리 양쪽 다 모자랄 때 자르지 않는다. 달력은 줄 몇 개만 보여서는 날을 고를 수
+ * 없어서, 앵커를 버리고 화면 가운데에 온전히 앉힌다.
+ */
+export function placePopover(input: DropdownPlacementInput & { gap: number }): PopoverPlacement {
+  const placed = placeDropdown(input)
+  if (input.contentHeight <= placed.maxHeight) {
+    return { side: placed.top > input.anchorTop ? 'below' : 'above', top: placed.top }
+  }
+  const usable = input.windowHeight - input.safeTop - input.safeBottom
+  const centered = input.safeTop + (usable - input.contentHeight) / 2
+  // 가운데에 둔 상자가 앵커를 덮는 것은 괜찮다. 화면 위로 넘치는 것만 막는다.
+  return { side: 'center', top: Math.max(centered, input.safeTop + input.edgeGap) }
 }

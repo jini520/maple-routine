@@ -7,7 +7,7 @@
  * @see docs/features/mvp-grade.md 묻는 자리
  */
 import { useState } from 'react'
-import { ScrollView, useWindowDimensions, View } from 'react-native'
+import { View } from 'react-native'
 
 import { Button, CrownIcon, Text } from '../../components/atoms'
 import { Modal } from '../../components/organisms/Modal/Modal'
@@ -52,7 +52,6 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
   const weekly = ask.kind === 'weekly'
   const thisWeek = resetWeekStartOf(props.todayDateKey)
   const floorWeek = historyFloorDateKey(props.todayDateKey)
-  const { height: windowHeight } = useWindowDimensions()
 
   const [screen, setScreen] = useState<Screen>(weekly ? 'confirm' : 'pick')
   const [grades, setGrades] = useState<Record<string, MvpGradeKey>>(() =>
@@ -97,7 +96,34 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
   return (
     // 답을 받아야 끝나는 흐름이라 바깥 탭 · 뒤로가기로 안 닫힌다. 고르지 않은 ID 는 `일반` 으로 이미 서 있다.
     <Modal onClose={() => {}} testId="mvp-grade" align="center">
-      <Modal.Card tight={screen === 'confirm'}>
+      <Modal.Card
+        tight={screen === 'confirm'}
+        footer={
+          // 버튼은 스크롤 밖에 고정한다. 짧은 화면에서도 답할 길이 늘 보인다. `mt-5` 가 본문과의 20 이다.
+          <View className="mt-5 items-center gap-1">
+            <Button
+              variant="primary"
+              onPress={screen === 'pick' ? () => setScreen('confirm') : done}
+              busy={screen === 'confirm' && props.busy}
+              className="w-full items-center"
+              textClassName="text-sm"
+            >
+              {screen === 'pick' ? '다음' : '맞아요'}
+            </Button>
+            {screen === 'confirm' && (
+              <Button
+                variant="text"
+                onPress={() => setScreen('pick')}
+                disabled={props.busy}
+                className="w-full items-center px-4 py-1.5"
+                textClassName="text-xs"
+              >
+                수정
+              </Button>
+            )}
+          </View>
+        }
+      >
         <View className="gap-5">
           <View className="items-center gap-3">
             <View className="h-14 w-14 items-center justify-center rounded-full bg-primary-tint">
@@ -109,8 +135,7 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
             </View>
           </View>
 
-          {/* 머리 · 체크박스 · 버튼을 뺀 높이만 쓴다. ID 가 여럿이면 카드끼리 스크롤한다. */}
-          <ScrollView style={{ maxHeight: Math.max(windowHeight - 440, 180) }} contentContainerClassName="gap-2">
+          <View className="gap-2">
             {accounts.map((account) =>
               screen === 'pick' ? (
                 <MvpPickCard
@@ -134,7 +159,7 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
                 />
               ),
             )}
-          </ScrollView>
+          </View>
 
           {screen === 'confirm' && (
             <View className="gap-3">
@@ -149,29 +174,6 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
               )}
             </View>
           )}
-
-          <View className="items-center gap-1">
-            <Button
-              variant="primary"
-              onPress={screen === 'pick' ? () => setScreen('confirm') : done}
-              busy={screen === 'confirm' && props.busy}
-              className="w-full items-center"
-              textClassName="text-sm"
-            >
-              {screen === 'pick' ? '다음' : '맞아요'}
-            </Button>
-            {screen === 'confirm' && (
-              <Button
-                variant="text"
-                onPress={() => setScreen('pick')}
-                disabled={props.busy}
-                className="w-full items-center px-4 py-1.5"
-                textClassName="text-xs"
-              >
-                수정
-              </Button>
-            )}
-          </View>
         </View>
       </Modal.Card>
     </Modal>

@@ -101,6 +101,8 @@ export interface HapticsPort {
 export interface KeyboardPort {
   /** 키보드 표시 여부 구독. 해제 함수를 돌려준다. 키보드가 없는 환경이면 no-op 해제 함수. */
   addVisibilityListener(onChange: (visible: boolean) => void): Promise<() => void>
+  /** 키보드가 뜰 때마다 그 높이(dp · pt) 구독. 해제 함수를 돌려준다. */
+  addHeightListener(onHeight: (heightPx: number) => void): Promise<() => void>
 }
 
 export interface LocalNotificationRequest {

@@ -64,6 +64,13 @@ describe('ItemSplitScreen: 골격', () => {
 
     expect(goBack).toHaveBeenCalledTimes(1)
   })
+
+  // 판매가 칸이 iOS 에서 키보드에 덮이고, 키보드가 뜬 동안 첫 탭이 먹혔다.
+  it('입력 칸이 있는 화면이라 셸이 키보드를 챙긴다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+
+    expect(view.getByTestId('screen-scroll').props.keyboardShouldPersistTaps).toBe('handled')
+  })
 })
 
 describe('ItemSplitScreen: 결과', () => {

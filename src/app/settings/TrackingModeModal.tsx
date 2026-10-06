@@ -48,40 +48,42 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
       }}
       testId="tracking-mode-modal-overlay"
     >
-      <Modal.Card>
+      <Modal.Card
+        footer={
+          // 설정의 다른 확정 모달(DisconnectConfirm/CacheClearConfirm)과 같은 골격.
+          // 다른 것은 색뿐. 모드 전환은 파괴적 동작이 아니라 진행 동작이라 border-error 가 아니다.
+          <View className="mt-4 flex-row justify-end gap-2">
+            <Button
+              variant="text"
+              disabled={isApplying}
+              onPress={props.onClose}
+              className={isApplying ? 'opacity-50' : undefined}
+            >
+              취소
+            </Button>
+            <Button
+              variant="primary"
+              // 바뀐 것이 없으면 누를 것도 없다. 닫기는 취소·오버레이가 맡는다.
+              disabled={isUnchanged || isApplying}
+              busy={isApplying}
+              onPress={() => {
+                void handleApply()
+              }}
+              className={`flex-row items-center justify-center${
+                isUnchanged || isApplying ? ' opacity-50' : ''
+              }`}
+              textClassName="text-sm"
+            >
+              적용
+            </Button>
+          </View>
+        }
+      >
         <View className="mb-4 gap-1">
           <Text className="text-lg font-semibold text-text">스케줄 관리 방법</Text>
           <Text className="text-sm text-text-muted">진행 상황을 어떻게 관리할지 선택해주세요.</Text>
         </View>
         <TrackingModeSelector mode={selected} isApplying={isApplying} onSelect={setSelected} />
-
-        {/* 설정의 다른 확정 모달(DisconnectConfirm/CacheClearConfirm)과 같은 골격.
-            다른 것은 색뿐. 모드 전환은 파괴적 동작이 아니라 진행 동작이라 border-error 가 아니다. */}
-        <View className="mt-4 flex-row justify-end gap-2">
-          <Button
-            variant="text"
-            disabled={isApplying}
-            onPress={props.onClose}
-            className={isApplying ? 'opacity-50' : undefined}
-          >
-            취소
-          </Button>
-          <Button
-            variant="primary"
-            // 바뀐 것이 없으면 누를 것도 없다. 닫기는 취소·오버레이가 맡는다.
-            disabled={isUnchanged || isApplying}
-            busy={isApplying}
-            onPress={() => {
-              void handleApply()
-            }}
-            className={`flex-row items-center justify-center${
-              isUnchanged || isApplying ? ' opacity-50' : ''
-            }`}
-            textClassName="text-sm"
-          >
-            적용
-          </Button>
-        </View>
       </Modal.Card>
     </Modal>
   )

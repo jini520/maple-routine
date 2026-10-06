@@ -130,6 +130,7 @@ jest.mock('../features/live-update/store', () => ({
 jest.mock('../native/keyboard', () => ({
   __esModule: true,
   addKeyboardVisibilityListener: async () => () => {},
+  addKeyboardHeightListener: async () => () => {},
 }))
 
 jest.mock('../native/splash-screen', () => ({

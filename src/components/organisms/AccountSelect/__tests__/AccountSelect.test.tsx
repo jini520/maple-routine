@@ -15,7 +15,7 @@ import { worldKeyOfApiName } from '../../../../lib/world/worlds'
 
 import { flattenStyle, renderOverlay, 기본테마, type TreeNode } from '../../../__tests__/render-atom'
 import { AccountSelect } from '../AccountSelect'
-import { placeDropdown } from '../place-dropdown'
+import { placeDropdown } from '../../../../lib/place-dropdown'
 
 function 캐릭터(name: string, world: string, level: number): MapleCharacter {
   return { ocid: `ocid-${name}`, name, world, worldKey: worldKeyOfApiName(world), jobClass: '아크메이지(썬, 콜)', level }

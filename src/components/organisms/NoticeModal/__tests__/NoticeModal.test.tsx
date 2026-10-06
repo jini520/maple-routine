@@ -31,6 +31,23 @@ describe('NoticeModal: 영역', () => {
     expect(getByText('다시 입력하기')).toBeTruthy()
   })
 
+  // 짧은 화면에서 카드가 상한에 닿아도 버튼은 늘 보여야 한다. 버튼 줄이 스크롤 밖에 선다.
+  it('버튼 줄은 카드의 스크롤 밖에 서고 머리는 스크롤 안에 선다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <NoticeModal
+        {...기본프롭()}
+        secondaryAction={{ label: '나중에', onPress: noop }}
+        option={<RNText>옵션</RNText>}
+      />,
+    )
+
+    const scroll = getByTestId('modal-card-scroll')
+    expect(within(scroll).getByText('이 키로는 연결할 수 없습니다')).toBeTruthy()
+    expect(within(scroll).getByText('옵션')).toBeTruthy()
+    expect(within(scroll).queryByText('다시 입력하기')).toBeNull()
+    expect(within(scroll).queryByText('나중에')).toBeNull()
+  })
+
   // 나머지 다섯은 선택이다. 안 주면 그 자리가 아예 없어야 한다. 빈 `View` 로 남으면 위아래
   // 간격이 두 번 먹어 덩어리 사이가 벌어진다.
   it('나머지 영역은 안 주면 자리가 없다', async () => {
