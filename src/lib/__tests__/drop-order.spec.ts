@@ -8,7 +8,7 @@ const 다른연출아이템 = valuableDropsData.items[1]
 
 /** 이름 자리에 고가 목록의 key 를 넣으면 연출 아이템이 된다. 나머지 글자는 표에 없는 key 라 평범하다. */
 function 드롭(itemKey: string, overrides: Partial<RecordedDrop> = {}): RecordedDrop {
-  return { category: 'equipment', itemKey, itemName: itemKey, quantity: 1, ...overrides }
+  return { dropRecordId: null, category: 'equipment', itemKey, itemName: itemKey, quantity: 1, ...overrides }
 }
 
 function 값매김(itemKey: string, meso: number): RecordedDrop {

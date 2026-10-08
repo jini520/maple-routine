@@ -17,7 +17,7 @@ import { ItemRevenuePopover } from '../ItemRevenuePopover'
 const ANCHOR = { left: 200, top: 300, width: 80, height: 20 }
 
 function drop(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
-  return { category: 'equipment', itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', quantity: 1, ...overrides }
+  return { dropRecordId: null, category: 'equipment', itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', quantity: 1, ...overrides }
 }
 
 function renderPopover(props: {

@@ -280,6 +280,7 @@ function dropRecord(overrides: Partial<DropHistoryRecord> = {}): DropHistoryReco
     boss: '스우',
     difficulty: 'normal',
     periodKey: WEEK_KEY,
+    dropRecordId: null,
     category: 'equipment',
     itemKey: null,
     itemName: '가디언 엔젤링',
@@ -307,7 +308,8 @@ const 캐릭터_넷 = {
         cycle: 'weekly',
         records: [
           dropRecord({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 1 }),
-          dropRecord({ itemKey: 'life_whetstone', itemName: '생명의 연마석', category: 'consumable' }),
+          dropRecord({ itemKey: 'life_whetstone', itemName: '생명의 연마석', dropRecordId: null,
+          category: 'consumable' }),
         ] },
     ] satisfies DropHistoryPeriodGroup[],
     drought: {

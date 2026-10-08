@@ -88,6 +88,7 @@ function 기록(overrides: Partial<DropHistoryRecord> = {}): DropHistoryRecord {
     boss: 주간보스이름,
     difficulty: 'hard',
     periodKey: PERIOD,
+    dropRecordId: null,
     category: 'equipment',
     itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
@@ -287,7 +288,8 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
           periodKey: PERIOD,
           cycle: 'weekly',
           records: [
-            기록({ itemKey: 'spell_trace', itemName: '주문의 흔적', category: 'fixed', slot: undefined, quantity: 240 }),
+            기록({ itemKey: 'spell_trace', itemName: '주문의 흔적', dropRecordId: null,
+            category: 'fixed', slot: undefined, quantity: 240 }),
             기록({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', slot: undefined, quantity: 1 }),
           ],
         },
@@ -311,6 +313,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
             기록({
               itemKey: 'restraint_ring',
               itemName: '리스트레인트 링',
+              dropRecordId: null,
               category: 'consumable',
               slot: undefined,
               boxOriginKey: 'red_boss_ring_box',

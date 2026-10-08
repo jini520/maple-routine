@@ -2265,6 +2265,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       row.periodKey,
       drops,
       new Date().toISOString(),
+      { name: row.world, key: row.worldKey },
     )
 
     // dropsByRowKey 는 rows 와 독립된 상태라 setPartySize 와 달리 latestSyncSnapshot 이중 갱신이

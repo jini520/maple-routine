@@ -29,10 +29,11 @@ import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
 import type { SqliteDbConnection } from '../ports'
-import { BOSS_KEYED_TABLES } from './boss-tables'
+import { BOSS_DROP_RECORDS_BODY, BOSS_KEYED_TABLES } from './boss-tables'
+import { NEW_UUID_SQL } from './uuid'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 11
+export const DB_VERSION = 12
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -159,7 +160,13 @@ async function rekeyBossTables(db: SqliteDbConnection): Promise<void> {
     const columns = ((columnRows ?? []) as Row[]).map((column) => String(column.name))
     // 이름 이관(버전 1)을 거쳤어도 두 이름이 한 key 로 모일 수 있다. 부딪히면 먼저 옮긴 행을 남기고 이관이
     // 던지지 않게 한다. 던지면 부팅마다 DB 열기가 실패한다.
-    const insert = `INSERT OR IGNORE INTO ${rebuild} (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`
+    // **`drop_record_id` 는 이 버전에 아직 비어 있다.** 그 칸은 버전 12 가 채우는데, 표 본문을
+    // 공유하므로 여기서도 `NOT NULL` 기본키로 선다. 비운 채 넣으면 `INSERT OR IGNORE` 가 행을
+    // 통째로 버린다(실제로 그래서 드롭 기록 전부가 사라졌다). 그 자리에서 만들어 넣는다.
+    const placeholders = columns.map((column) =>
+      column === 'drop_record_id' ? `COALESCE(?, ${NEW_UUID_SQL})` : '?',
+    )
+    const insert = `INSERT OR IGNORE INTO ${rebuild} (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`
     for (const row of (rows ?? []) as Row[]) {
       const bossKey = textOrNull(row.boss_key) ?? bossKeyOfApiName(String(row.boss))
       const difficulty = difficultyKeyOf(String(row.difficulty))
@@ -333,6 +340,37 @@ async function fillUnreachableDefeatDates(db: SqliteDbConnection, now: Date): Pr
   )
 }
 
+/**
+ * 드롭 기록의 기본키를 `drop_record_id` 로 옮기고 기존 행에 값을 채운다.
+ *
+ * **SQLite 는 `ALTER TABLE` 로 기본키를 못 바꾼다.** 표를 다시 쓰는 것이 이 길뿐이고, 선례는
+ * 버전 4(`rekeyBossTables`)다.
+ *
+ * 값을 채우는 것이 먼저다. 안 채우면 `NOT NULL` 기본키에 빈 값이 들어가 재작성이 던진다. 그리고
+ * 그룹을 다시 저장할 때 빈 값과 새 값이 섞인다.
+ *
+ * **기존 행의 월드는 안 채운다.** 지금 캐시의 월드로 채우면 리프한 캐릭터의 리프 전 드롭에 리프
+ * 후 월드가 영구히 박힌다. 버전 5(`fillWorldKeys`)가 수익 기록에 그것을 했을 때는 실사용자가
+ * 없다는 근거가 있었고 지금은 사라졌다. 기존 기록은 서버로 안 보내므로 비어도 된다.
+ */
+async function rekeyDropRecordsByUuid(db: SqliteDbConnection): Promise<void> {
+  await db.execute(`UPDATE boss_drop_records SET drop_record_id = ${NEW_UUID_SQL} WHERE drop_record_id IS NULL`)
+
+  const rebuild = 'boss_drop_records_rebuild'
+  const { values: rows } = await db.query('SELECT * FROM boss_drop_records')
+  await db.execute(`CREATE TABLE ${rebuild} ${BOSS_DROP_RECORDS_BODY}`)
+  const { values: columnRows } = await db.query(`PRAGMA table_info(${rebuild})`)
+  const columns = ((columnRows ?? []) as Row[]).map((column) => String(column.name))
+  // 같은 uuid 가 둘 있을 일은 없지만, 부딪히면 던지지 말고 먼저 옮긴 행을 남긴다. 던지면
+  // 부팅마다 DB 열기가 실패한다.
+  const insert = `INSERT OR IGNORE INTO ${rebuild} (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`
+  for (const row of (rows ?? []) as Row[]) {
+    await db.run(insert, columns.map((column) => row[column] ?? null))
+  }
+  await db.execute('DROP TABLE boss_drop_records')
+  await db.execute(`ALTER TABLE ${rebuild} RENAME TO boss_drop_records`)
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -347,6 +385,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   clearZeroHuntFragmentPrices,
   dropDropShareColumns,
   (db) => fillUnreachableDefeatDates(db, new Date()),
+  rekeyDropRecordsByUuid,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

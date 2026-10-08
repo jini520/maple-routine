@@ -256,6 +256,8 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   function toggleNormal(candidate: DropCandidate): void {
     const isAdding = findNormalDrop(candidate.key) === undefined
     const added: RecordedDrop = {
+      // 새로 고른 드롭이다. 저장이 그 자리에서 식별자를 만든다.
+      dropRecordId: null,
       category: candidate.category,
       itemKey: candidate.key,
       itemName: candidate.name,
@@ -280,6 +282,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     ringLevel?: number,
   ): void {
     const added: RecordedDrop = {
+      dropRecordId: null,
       category,
       itemKey,
       itemName: dropItemNameOf(itemKey, itemKey),

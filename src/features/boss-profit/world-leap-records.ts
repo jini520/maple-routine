@@ -5,7 +5,7 @@
  * upsert 가 그 중복을 못 막으므로, 짝을 찾아 옛 기록을 지우고 새 기록 하나로 센다.
  */
 import { dropTileIdentity } from '../../lib/boss/boss-drops'
-import { getBossDropRecords, replaceBossDropRecords, type BossDropRecord } from '../../storage/boss-drops'
+import { NO_WORLD, getBossDropRecords, replaceBossDropRecords, type BossDropRecord } from '../../storage/boss-drops'
 import {
   deleteBossProfitRecord,
   getBossProfitRecords,
@@ -139,13 +139,16 @@ async function cleanUpLink(link: CharacterWorldLeap, now: Date): Promise<number>
     // 새 쪽을 먼저 쓰고 옛 쪽을 지운다. 중간에 앱이 죽어도 다음 회차가 같은 짝을 다시 찾고, 이미 합친
     // 드롭은 같은 타일이라 다시 안 붙는다.
     if (merged.length > keptDrops.length) {
-      await replaceBossDropRecords(kept.ocid, kept.bossKey, kept.difficulty, kept.periodKey, merged, recordedAt)
+      await replaceBossDropRecords(kept.ocid, kept.bossKey, kept.difficulty, kept.periodKey, merged, recordedAt, {
+        name: kept.world,
+        key: kept.worldKey,
+      })
     }
     if (keptChanged) {
       await upsertBossProfitRecord(kept)
     }
     if (staleDrops.length > 0) {
-      await replaceBossDropRecords(stale.ocid, stale.bossKey, stale.difficulty, stale.periodKey, [], recordedAt)
+      await replaceBossDropRecords(stale.ocid, stale.bossKey, stale.difficulty, stale.periodKey, [], recordedAt, NO_WORLD)
     }
     await deleteBossProfitRecord(stale)
   }

@@ -46,6 +46,7 @@ describe('WeeklyAccordionBody', () => {
         dropsByRowKey: {
           [key]: [
             {
+              dropRecordId: null,
               category: 'equipment',
               itemKey: 'papulatus_mark',
               itemName: '파풀라투스 마크',
@@ -130,7 +131,7 @@ describe('WeeklySubtotalRow: 상태마다 얼굴이 다르다', () => {
         subtotal={주차소계({
           totalMeso: 4_000_000_000,
           drops: [
-            {
+            { dropRecordId: null,
               category: 'equipment',
               itemKey: 'papulatus_mark',
               itemName: '파풀라투스 마크',

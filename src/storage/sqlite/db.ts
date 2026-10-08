@@ -1,6 +1,6 @@
 import { getSqlitePort } from '../ports'
 import type { SqliteDbConnection } from '../ports'
-import { BOSS_DROP_RECORDS_BODY, BOSS_PARTY_SETTINGS_BODY, BOSS_PROFIT_RECORDS_BODY } from './boss-tables'
+import { BOSS_DROP_RECORDS_BODY, BOSS_DROP_RECORDS_GROUP_INDEX, BOSS_PARTY_SETTINGS_BODY, BOSS_PROFIT_RECORDS_BODY } from './boss-tables'
 import { runVersionedMigrations } from './migrations'
 
 const DB_NAME = 'boss_profit'
@@ -516,8 +516,17 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'boss_drop_records', 'split_fee_percent', 'INTEGER')
   await ensureColumn(db, 'boss_drop_records', 'sale_fee_auto', 'INTEGER')
   await ensureColumn(db, 'boss_drop_records', 'split_fee_auto', 'INTEGER')
+  // 기록 시점의 월드 스냅샷. 옛 행은 NULL 로 남는다 - 현재 캐시의 월드로 채우면 리프한 캐릭터의
+  // 리프 전 드롭에 리프 후 월드가 영구히 박힌다.
+  await ensureColumn(db, 'boss_drop_records', 'world', 'TEXT')
+  await ensureColumn(db, 'boss_drop_records', 'world_key', 'TEXT')
+  // 이 기록을 다시 가리키는 값. **칸만 여기서 더하고 값과 기본키는 버전 12 가 옮긴다** -
+  // SQLite 는 ALTER TABLE 로 기본키를 못 바꿔서 표를 다시 써야 한다.
+  await ensureColumn(db, 'boss_drop_records', 'drop_record_id', 'TEXT')
   // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
   await runVersionedMigrations(db)
+  // 기본키를 uuid 로 옮긴 뒤에 선다. 종전에는 기본키가 곧 이 인덱스였다.
+  await db.execute(BOSS_DROP_RECORDS_GROUP_INDEX)
 
   return db
 }

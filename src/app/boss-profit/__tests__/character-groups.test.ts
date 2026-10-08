@@ -29,7 +29,7 @@ function group(rows: BossProfitRow[]): CharacterGroup {
 }
 
 const priced: RecordedDrop[] = [
-  {
+  { dropRecordId: null,
     category: 'equipment',
     itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
@@ -60,8 +60,8 @@ describe('groupTotalMeso: 아이템 수익 합산', () => {
   it('스킵·미입력은 더하지 않는다', () => {
     const drops = {
       [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [
-        { category: 'equipment' as const, itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', quantity: 1 },
-        { category: 'equipment' as const, itemKey: 'giant_terror', itemName: '거대한 공포', quantity: 1, priceState: 'excluded' as const },
+        { dropRecordId: null, category: 'equipment' as const, itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', quantity: 1 },
+        { dropRecordId: null, category: 'equipment' as const, itemKey: 'giant_terror', itemName: '거대한 공포', quantity: 1, priceState: 'excluded' as const },
       ],
     }
 
@@ -73,6 +73,7 @@ describe('groupTotalMeso: 아이템 수익 합산', () => {
 // 그런데 그 행은 금액 자리에 `미완료` 배지를 세워 돈을 아예 안 그린다. 합만 그것을 더하면 **카드
 // 어디에도 없는 돈이 총액에 선다**(사용자 보고).
 const 고가드롭: RecordedDrop = {
+  dropRecordId: null,
   category: 'equipment',
   itemKey: valuableDropsData.items[0],
   itemName: valuableDropsData.items[0],
@@ -161,7 +162,7 @@ describe('월간 탭의 금액은 월간 보스 줄 + 주차 소계다', () => {
     const 월간행 = 보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 0 })
     const drops = {
       [dropRowKey(월간행.ocid, 월간행.bossKey, 월간행.difficulty, 월간행.periodKey)]: [
-        { category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 5_000_000_000, priceShare: 1 },
+        { dropRecordId: null, category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 5_000_000_000, priceShare: 1 },
       ],
     }
 
@@ -190,7 +191,7 @@ describe('월간 탭의 금액은 월간 보스 줄 + 주차 소계다', () => {
 // 수익 내역 상자의 목록과 아이템 줄이 읽는 드롭. 카드 금액과 같은 원천이어야 셋이 맞는다. 월간 보스
 // 드롭은 보스 행에도 남고 그 보스가 선 주차 소계로도 옮겨 담기므로, 둘을 합치면 두 번 센다.
 describe('collectRevenueDrops: 상자가 읽는 드롭은 카드 금액과 같은 원천이다', () => {
-  const 반지 = (priceMeso: number): RecordedDrop => ({
+  const 반지 = (priceMeso: number): RecordedDrop => ({ dropRecordId: null,
     category: 'equipment',
     itemKey: null,
     itemName: '반지',

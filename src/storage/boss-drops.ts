@@ -1,6 +1,7 @@
 import { bossNameOf } from '../lib/boss/bosses'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
+import { NEW_UUID_SQL } from './sqlite/uuid'
 import { inTransaction } from './sqlite/transaction'
 import type { DropCategory, RecordedDrop } from '../types/drops'
 
@@ -11,6 +12,8 @@ import type { DropCategory, RecordedDrop } from '../types/drops'
 // 아니라 스냅샷이라 재평가 대상이 아니고, 같은 행에 두므로 난이도 확정 이관·prune 삭제가 가격까지
 // 함께 옮기고 지운다.
 export interface BossDropRecord {
+  /** 이 기록을 다시 가리키는 값. 저장 계층이 붙이고 그룹을 다시 저장해도 유지된다. */
+  dropRecordId: string
   ocid: string
   /** 보스 key. 기본키에 든다. */
   bossKey: string
@@ -32,9 +35,13 @@ export interface BossDropRecord {
   ringLevel: number | null
   quantity: number
   recordedAt: string // ISO 8601
+  /** 기록 시점의 월드 스냅샷. 모르면 `null`. */
+  world: string | null
+  /** 월드 key. `world` 가 `null` 이면 함께 `null`. */
+  worldKey: string | null
   /** `'entered'` · `'excluded'` · `null`(미입력). 상태를 금액 유무로 추론하지 않는다. */
   priceState: 'entered' | 'excluded' | null
-  /** 판매 **총액**. 수량이 2 이상이어도 묶음가 하나다. */
+  /** 입력한 판매가. */
   priceMeso: number | null
   /** `ratio` 의 비율 합. **기본은 이 칸을 안 본다.** */
   /** 어떻게 나눴나. **아래 두 칸의 뜻을 이 칸이 정한다.** 없으면 방식을 모르는 옛 기록이다. */
@@ -54,18 +61,66 @@ export interface BossDropRecord {
   splitFeeAuto: boolean
 }
 
+/**
+ * 기록할 월드. **한 번의 저장이 한 캐릭터·한 시점이라 드롭마다가 아니라 호출마다 하나다.**
+ *
+ * 짝인 수익 행에서 물려받지 않는다 - 결정석 가격을 모르는 보스는 수익 행이 없어 물려받을 짝이 없고,
+ * 서버로 보내는 값이라 비면 그 기록을 못 쓴다.
+ */
+export interface DropWorld {
+  name: string | null
+  key: string | null
+}
+
+/** 월드를 모를 때. 지우기만 하는 호출도 이것을 쓴다(쓸 행이 없다). */
+export const NO_WORLD: DropWorld = { name: null, key: null }
+
 const DELETE_SQL = `
   DELETE FROM boss_drop_records
   WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?
 `
 
+/**
+ * 한 행을 넣는다. **식별자는 넘겨받은 것이 있으면 그것을, 없으면 SQLite 가 만든 새 값을 쓴다.**
+ *
+ * `COALESCE` 로 가르는 것이 요점이다. 인자로 `null` 을 주면 그 자리에서 새 uuid 가 생기고, 값을
+ * 주면 그것이 그대로 남는다. 두 경로를 SQL 하나로 묶어 분기를 안 만든다.
+ */
 const INSERT_SQL = `
   INSERT INTO boss_drop_records
-    (ocid, boss_key, boss, difficulty, period_key, drop_index, category, item_key, item_name, slot, box_origin_key,
-     box_origin, ring_level, quantity, recorded_at, price_state, price_meso, price_split_mode, price_party_size, price_share, price_my_share,
+    (drop_record_id, ocid, boss_key, boss, difficulty, period_key, drop_index, category, item_key, item_name, slot, box_origin_key,
+     box_origin, ring_level, quantity, recorded_at, world, world_key, price_state, price_meso, price_split_mode, price_party_size, price_share, price_my_share,
      sale_fee_percent, split_fee_percent, sale_fee_auto, split_fee_auto)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (COALESCE(?, ${NEW_UUID_SQL}), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
+
+/** 그룹 안에서 아이템 하나를 가리키는 값. 저장을 되풀이해도 같아야 식별자를 물려줄 수 있다. */
+const SELECT_GROUP_IDS_SQL = `
+  SELECT drop_record_id, world, world_key, item_key, item_name, slot, box_origin_key, ring_level
+  FROM boss_drop_records
+  WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?
+`
+
+/**
+ * 아이템의 신분. **같은 아이템이 일반 드롭과 상자 결과로 둘 들어올 수 있어** 아이템 key 하나로는
+ * 못 가린다. 상자 key 와 칸·반지 레벨까지 넣어야 둘이 갈린다.
+ *
+ * `item_key` 가 `null` 인 옛 행은 이름으로 떨어진다(이관이 key 를 못 찾은 행이다).
+ */
+function identityOf(parts: {
+  itemKey?: string | null
+  itemName: string
+  slot?: string | null
+  boxOriginKey?: string | null
+  ringLevel?: number | null
+}): string {
+  return [
+    parts.itemKey ?? `name:${parts.itemName}`,
+    parts.slot ?? '',
+    parts.boxOriginKey ?? '',
+    parts.ringLevel ?? '',
+  ].join('\u0000')
+}
 
 // 한 보스/기간의 드롭 집합을 통째로 교체한다(기존 삭제 후 0..n으로 재삽입). 빈 배열이면 삭제만.
 /**
@@ -127,14 +182,48 @@ export async function replaceBossDropRecords(
   periodKey: string,
   drops: RecordedDrop[],
   recordedAt: string,
+  world: DropWorld,
 ): Promise<void> {
   const db = await getBossProfitDb()
+
+  // **지우기 전에 식별자를 읽어 둔다.** 그룹을 통째로 바꾸는 저장이라, 안 읽으면 같은 아이템이
+  // 매번 새 식별자를 받아 서버에 같은 기록이 계속 쌓인다.
+  const { values: before } = await db.query(SELECT_GROUP_IDS_SQL, [ocid, bossKey, difficulty, periodKey])
+  const kept = new Map<string, { id: string; world: string | null; worldKey: string | null }>()
+  for (const row of (before ?? []) as Record<string, unknown>[]) {
+    kept.set(
+      identityOf({
+        itemKey: row.item_key as string | null,
+        itemName: row.item_name as string,
+        slot: row.slot as string | null,
+        boxOriginKey: row.box_origin_key as string | null,
+        ringLevel: row.ring_level as number | null,
+      }),
+      {
+        id: row.drop_record_id as string,
+        world: (row.world as string | null | undefined) ?? null,
+        worldKey: (row.world_key as string | null | undefined) ?? null,
+      },
+    )
+  }
+
   await db.run(DELETE_SQL, [ocid, bossKey, difficulty, periodKey])
   // 이름 칸은 적을 때의 이름이다. 수익 기록과 모양을 맞춘다.
   const bossName = bossNameOf(bossKey, bossKey)
   for (let index = 0; index < drops.length; index++) {
     const drop = drops[index]
+    // **드롭이 들고 온 식별자가 먼저다.** 난이도 확정 이관처럼 다른 그룹으로 옮기는 경로는 신분
+    // 조회로 못 찾는다(그 그룹에 그 행이 없다).
+    //
+    // 신분 조회는 식별자를 안 들고 온 경로의 안전망이다. 같은 신분이 둘 있으면 첫 행만 물려받고
+    // 둘째는 새 값을 받는다 - 한 식별자가 두 행에 붙으면 서버가 그것을 한 기록으로 보고 하나가
+    // 다른 하나를 덮는다.
+    const identity = identityOf(drop)
+    const inherited = kept.get(identity)
+    if (inherited !== undefined) kept.delete(identity)
+
     await db.run(INSERT_SQL, [
+      drop.dropRecordId ?? inherited?.id ?? null,
       ocid,
       bossKey,
       bossName,
@@ -150,6 +239,10 @@ export async function replaceBossDropRecords(
       drop.ringLevel ?? null,
       drop.quantity,
       recordedAt,
+      // **월드도 물려받는다.** 기록 시점의 스냅샷이라 가격만 고치는 저장이 그것을 지우면 안 된다.
+      // 가격 편집 경로는 월드를 모르고 `NO_WORLD` 를 넘긴다.
+      inherited?.world ?? world.name,
+      inherited?.worldKey ?? world.key,
       // **미입력은 NULL 이다. 0 이 아니다.** 0 으로 넣으면 "0메소에 팔았다"가 되어
       // 스킵·미입력과 구분이 사라진다.
       drop.priceState ?? null,
@@ -179,6 +272,7 @@ function normalizePriceState(value: unknown): BossDropRecord['priceState'] {
 
 function rowToRecord(row: Record<string, unknown>): BossDropRecord {
   return {
+    dropRecordId: row.drop_record_id as string,
     ocid: row.ocid as string,
     bossKey: row.boss_key as string,
     boss: row.boss as string,
@@ -194,6 +288,8 @@ function rowToRecord(row: Record<string, unknown>): BossDropRecord {
     ringLevel: (row.ring_level as number | null) ?? null,
     quantity: row.quantity as number,
     recordedAt: row.recorded_at as string,
+    world: (row.world as string | null | undefined) ?? null,
+    worldKey: (row.world_key as string | null | undefined) ?? null,
     // 옛 값 `'skipped'` 는 지금의 `'excluded'`(기록 안함)와 같은 뜻이다. 이름만 갈렸다
     // (정정, 2026-08-10). 읽을 때 흡수하므로 마이그레이션이 필요 없다.
     priceState: normalizePriceState(row.price_state),

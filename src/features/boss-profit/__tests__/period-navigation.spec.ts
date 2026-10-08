@@ -15,6 +15,8 @@ const {
   getMonthlyDefeatDates: getMonthlyDefeatDatesMock,
 } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 jest.mock('../../../storage/boss-drops', () => ({
+  // 실물과 같은 값이어야 호출 단언이 맞는다. 목이 안 내주면 `undefined` 가 흐른다.
+  NO_WORLD: { name: null, key: null },
   getBossDropRecords: jest.fn(),
 }))
 const { getBossDropRecords: getBossDropRecordsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>

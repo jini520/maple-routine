@@ -8,7 +8,7 @@
  * 자동 기록이 쓰는 식과 같은 것이다.
  */
 import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
-import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
+import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import { getBossPartySize } from '../../storage/boss-party-settings'
 import { getBossPartyPeriodOverride } from '../../storage/boss-party-period-overrides'
 import {
@@ -158,6 +158,7 @@ export async function cancelManualCompletion(key: BossProfitRecordKey, now: Date
     key.periodKey,
     [],
     now.toISOString(),
+    NO_WORLD,
   )
   await deleteBossProfitRecord(key)
 }

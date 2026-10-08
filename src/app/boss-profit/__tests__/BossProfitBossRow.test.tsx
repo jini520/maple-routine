@@ -22,7 +22,7 @@ beforeEach(() => {
 })
 
 const 값매긴드롭: RecordedDrop[] = [
-  {
+  { dropRecordId: null,
     category: 'equipment',
     itemKey: 'papulatus_mark',
     itemName: '파풀라투스 마크',
@@ -156,7 +156,7 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
     const { getByText, queryByLabelText } = await renderProfit(
       <BossProfitBossRow
         row={보스행()}
-        drops={[{ category: 'equipment', itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', quantity: 1 }]}
+        drops={[{ dropRecordId: null, category: 'equipment', itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', quantity: 1 }]}
       />,
     )
 
@@ -187,6 +187,7 @@ describe('BossProfitBossRow: 드롭 지시자', () => {
 
   it('네 개 이상이면 셋만 보이고 나머지는 개수로 접는다', async () => {
     const drops: RecordedDrop[] = ['가', '나', '다', '라', '마'].map((name) => ({
+      dropRecordId: null,
       category: 'equipment',
       itemKey: null,
       itemName: name,
@@ -209,7 +210,7 @@ describe('BossProfitBossRow: 고가 드롭 배경이 없다', () => {
     const { queryByTestId } = await renderProfit(
       <BossProfitBossRow
         row={보스행()}
-        drops={[{ category: 'equipment', itemKey: 고가키, itemName: dropItemNameOf(고가키, 고가키), quantity: 1 }]}
+        drops={[{ dropRecordId: null, category: 'equipment', itemKey: 고가키, itemName: dropItemNameOf(고가키, 고가키), quantity: 1 }]}
       />,
     )
 
@@ -247,7 +248,7 @@ describe('BossProfitBossRow: 아이템 차례', () => {
 
   it('연출이 나는 아이템이 더 비싼 것보다 앞이다', async () => {
     const 이름들 = await 목록([
-      {
+      { dropRecordId: null,
         category: 'equipment',
         itemKey: null,
         itemName: '평범한 것',
@@ -256,7 +257,7 @@ describe('BossProfitBossRow: 아이템 차례', () => {
         priceMeso: 9_000_000_000,
         priceShare: 1,
       },
-      { category: 'equipment', itemKey: 고가키, itemName: 고가아이템, quantity: 1, priceState: 'entered', priceMeso: 1, priceShare: 1 },
+      { dropRecordId: null, category: 'equipment', itemKey: 고가키, itemName: 고가아이템, quantity: 1, priceState: 'entered', priceMeso: 1, priceShare: 1 },
     ])
 
     expect(이름들).toEqual([고가아이템, '평범한 것'])
@@ -265,7 +266,7 @@ describe('BossProfitBossRow: 아이템 차례', () => {
   // 미입력 신호는 아이템 가격 입력 버튼의 배지가 받는다. 행 상자도 미입력을 싣지 않는다.
   it('값을 안 매긴 드롭은 행 상자에도 안 선다', async () => {
     const 이름들 = await 목록([
-      {
+      { dropRecordId: null,
         category: 'equipment',
         itemKey: null,
         itemName: '평범한 것',
@@ -274,7 +275,7 @@ describe('BossProfitBossRow: 아이템 차례', () => {
         priceMeso: 9_000_000_000,
         priceShare: 1,
       },
-      { category: 'equipment', itemKey: 고가키, itemName: 고가아이템, quantity: 1 },
+      { dropRecordId: null, category: 'equipment', itemKey: 고가키, itemName: 고가아이템, quantity: 1 },
     ])
 
     expect(이름들).toEqual(['평범한 것'])
@@ -282,8 +283,8 @@ describe('BossProfitBossRow: 아이템 차례', () => {
 
   it('연출이 없는 것끼리는 비싼 순이다', async () => {
     const 이름들 = await 목록([
-      { category: 'equipment', itemKey: null, itemName: '싼 것', quantity: 1, priceState: 'entered', priceMeso: 100, priceShare: 1 },
-      { category: 'equipment', itemKey: null, itemName: '비싼 것', quantity: 1, priceState: 'entered', priceMeso: 900, priceShare: 1 },
+      { dropRecordId: null, category: 'equipment', itemKey: null, itemName: '싼 것', quantity: 1, priceState: 'entered', priceMeso: 100, priceShare: 1 },
+      { dropRecordId: null, category: 'equipment', itemKey: null, itemName: '비싼 것', quantity: 1, priceState: 'entered', priceMeso: 900, priceShare: 1 },
     ])
 
     expect(이름들.indexOf('비싼 것')).toBeLessThan(이름들.indexOf('싼 것'))

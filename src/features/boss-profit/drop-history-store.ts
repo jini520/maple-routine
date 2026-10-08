@@ -65,6 +65,7 @@ function toHistoryRecord(record: BossDropRecord): DropHistoryRecord {
     boxOriginKey: record.boxOriginKey ?? undefined,
     boxOrigin: record.boxOrigin ?? undefined,
     ringLevel: record.ringLevel ?? undefined,
+    dropRecordId: record.dropRecordId,
     quantity: record.quantity,
     // 가격 셋을 빠뜨리면 저장은 됐는데 화면이 영영 미입력으로 보인다. 히스토리 화면은 금액을
     // 안 그려 안 터지고, today 의 최고가 아이템·가격 미입력이 이 필드를 처음 읽으면서 드러난다.

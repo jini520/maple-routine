@@ -430,6 +430,7 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
     boxOriginKey: record.boxOriginKey ?? undefined,
     boxOrigin: record.boxOrigin ?? undefined,
     ringLevel: record.ringLevel ?? undefined,
+    dropRecordId: record.dropRecordId,
     quantity: record.quantity,
     // 이쪽이 `lib/boss/boss-drops` 의 동명 함수보다 자주 지나간다. DB 에서 읽을 때마다다.
     // 빠뜨리면 저장은 됐는데 화면이 영영 미입력 으로 보인다.

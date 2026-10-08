@@ -39,7 +39,7 @@ import { withSqliteTimeout } from './sqlite-guards'
 import { create } from 'zustand'
 import { toRecordedDrop } from './rows'
 import { useBossProfitStore } from './store'
-import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
+import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import {
   getBossProfitRecords,
@@ -427,6 +427,8 @@ async function writePrice(
     entry.periodKey,
     nextDrops,
     new Date().toISOString(),
+    // 가격만 고치는 경로다. 월드는 기존 행이 물려주므로 여기서 모를 수 있다.
+    NO_WORLD,
   )
 
   // 보스 수익 화면은 스택 왕복에도 마운트를 유지하므로 자기 스냅샷을 다시 읽지 않는다. 여기서
