@@ -51,11 +51,12 @@ erDiagram
         TEXT checked_at
     }
     boss_drop_records {
-        TEXT ocid PK
-        TEXT boss PK
-        TEXT difficulty PK
-        TEXT period_key PK
-        INTEGER drop_index PK
+        TEXT drop_record_id PK
+        TEXT ocid
+        TEXT boss
+        TEXT difficulty
+        TEXT period_key
+        INTEGER drop_index
         TEXT category
         TEXT item_name
         TEXT slot
@@ -63,6 +64,8 @@ erDiagram
         INTEGER ring_level
         INTEGER quantity
         TEXT recorded_at
+        TEXT world
+        TEXT world_key
         TEXT price_state
         INTEGER price_meso
         INTEGER price_share
@@ -124,7 +127,12 @@ PK: `(ocid, cycle, period_key)`. "이 캐릭터의 이 기간은 이미 (재)조
 - 보스 수익 화면의 기간 네비게이터가 과거로 이동할 때, 이 테이블에 체크 기록이 없는 기간만 `nexon/schedule`을 `date` 파라미터로 1회 재조회한다([[ADR-023]]). 한 번 체크되면 그 기간은 다시 재조회하지 않고 로컬 기록만 신뢰한다.
 
 ### `boss_drop_records` — 기간별 드롭 기록
-PK: `(ocid, boss_key, difficulty, period_key, drop_index)`. [[ADR-038]]에서 도입했다. **PK에 난이도가 들어 있어 처치 난이도가 나중에 확정·변경되면 이관이 필요하다**([[ADR-069]] 결정 4 — 옛 난이도 키의 드롭을 확정 키로 옮기고 그 난이도에서 획득 불가한 항목은 삭제한다. 상세는 [../features/boss-profit.md](../features/boss-profit.md) "자동 기록"). 한 보스가 여러 드롭을 가지므로 `drop_index`로 **같은 (보스, 난이도, 기간)에 여러 행**이 들어간다 — 위 세 테이블처럼 조합당 1행이 아니다.
+PK: `drop_record_id`(v4 uuid, DB 버전 12 · [[ADR-342]] 결정 1). 표 자체는 [[ADR-038]]에서 도입했다. 한 보스가 여러 드롭을 가지므로 `drop_index`로 **같은 (보스, 난이도, 기간)에 여러 행**이 들어간다 — 위 세 테이블처럼 조합당 1행이 아니다. 처치 난이도가 나중에 확정·변경되면 그 난이도 키로 행을 옮기는 이관이 돈다([[ADR-069]] 결정 4 — 옛 난이도 키의 드롭을 확정 키로 옮기고 그 난이도에서 획득 불가한 항목은 삭제한다. 상세는 [../features/boss-profit.md](../features/boss-profit.md) "자동 기록").
+
+- **PK 가 uuid 한 칸인 이유는 옛 PK 의 조각 둘이 설계상 바뀌어서다.** `difficulty` 는 위 난이도 확정 이관이 옮기고, `drop_index` 는 `replaceBossDropRecords` 가 그룹을 다시 쓸 때마다 배열 자리로 다시 매긴다. 그 열쇠로 서버에 가격을 보내면 목록에서 하나를 뺀 뒤 **가격이 엉뚱한 아이템에 붙는다**. 옛 다섯 칸은 평범한 칸으로 남고 그 위에 인덱스 `boss_drop_records_group` 이 선다(종전에는 PK 가 곧 그 인덱스였다). **`UNIQUE` 가 아니다** — 한 행씩 고치는 사이에 `drop_index` 가 일시적으로 겹친다.
+- **⚠️ `drop_record_id` 를 새로 만드는 자리는 둘뿐이어야 한다.** `replaceBossDropRecords` 가 그룹을 다시 쓸 때 **기존 값을 물려주고**(아이템 신분 = `item_key` + `box_origin_key` + `slot` + `ring_level`), 난이도 확정 이관은 행을 옮기며 **보존한다**. 어느 쪽이든 새로 만들면 서버에 같은 기록이 계속 쌓인다([[ADR-342]] 결정 2 — "이 문서의 유일한 함정이 그 두 자리다").
+- **값은 SQLite 가 만든다**(`storage/sqlite/uuid.ts` 의 `NEW_UUID_SQL`, `randomblob()` 식). JS 에서 안 만드는 이유는 Hermes 전역에 `crypto` 가 없고 네이티브 모듈을 들이면 스토어 빌드를 기다려야 해서다. SQLite 는 이미 번들에 있어 OTA 로 간다.
+- **기록 시점의 월드를 자기 칸으로 든다**(`world` · `world_key`, [[ADR-342]] 결정 3). 캐릭터가 삭제되거나 월드 리프된 뒤에도 그 기록이 어느 월드의 것인지 남는다. **짝인 수익 행에서 물려받지 않는다** — `defeated_on` 은 그렇게 했지만([[ADR-172]] 결정 6) 결정석 가격을 모르는 보스는 수익 행이 없어 물려받을 짝이 없다. 모르면 `NULL` 이고, **옛 행은 채우지 않는다**(현재 캐시의 월드로 채우면 리프한 캐릭터의 리프 전 드롭에 리프 후 월드가 박힌다).
 
 - **금액을 저장한다 — 기록 한 건에 붙는 실판매가다**([[ADR-124]] 결정 1·4, 이슈 #185). `price_state`(`'entered'`·`'excluded'`·`NULL`=미입력) · `price_meso`(입력한 판매가) · `price_share`(분배 인원 **스냅샷**). **상태를 금액의 유무로 추론하지 않는다** — 기록 안함과 미입력이 둘 다 "금액 없음"이라 구분이 사라진다. `slot`·`box_origin`·`ring_level`도 nullable이다(해당 카테고리가 아닌 드롭에는 값이 없다).
   - **저장되는 상태는 셋이고 `'skipped'` 는 그중에 없다**(확인 2026-10-08 · `src/types/drops.ts` · `storage/boss-drops.ts`). 화면의 스킵은 "아직 안 팔렸다, 팔리면 그때 넣겠다" 라서 **상태를 바꾸지 않고 미입력(`NULL`)에 머문다** — 저장되는 값이 없다. `'excluded'`(기록 안함)는 "이 아이템은 값을 매길 만하지 않다" 는 다른 결정이고 그래서 저장된다.
