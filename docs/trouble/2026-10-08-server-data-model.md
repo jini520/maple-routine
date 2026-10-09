@@ -76,6 +76,10 @@
 - 앱 jini520/maple-routine#630 · 서버 jini520/maple-routine-server#14
 - 서버 배포는 `docker compose up -d --build` 이고 **라이브 서버를 재시작한다.** 부팅에
   마이그레이션이 돈다
+- **앞단 nginx 는 안 고쳐도 된다**(확인 2026-10-09). Oracle 의 `location /v1/` 과
+  `location /admin` 이 둘 다 **접두 일치**이고 메서드 제한이 없어 `POST`·`DELETE` 가 그대로
+  넘어간다. 헤더 둘은 밑줄이 아니라 붙임표라(`x-api-key-hash`) nginx 가 버리지 않는다. 속도
+  제한은 `/v1/` 전체에 10r/s · burst 20 이고, 사용자가 가격을 한 건씩 저장하는 속도로는 안 걸린다
 - ⛳ **앱이 나가기 전에 `SERVER_PRICE_FROM` 을 그 주 목요일로 맞출 것**
   (`features/server-sync/drop-price-sync.ts`). 지금 값은 `2026-10-15` 다. 지난 날짜를 두면 기능이
   서기 전의 기록이 올라가고, 너무 먼 날짜를 두면 한동안 아무것도 안 올라간다
