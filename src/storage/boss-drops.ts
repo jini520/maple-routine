@@ -327,7 +327,7 @@ export async function getBossDropRecords(
 /**
  * 식별자 하나로 그 기록을 찾는다. 서버로 보낼 때 **현재 값**을 읽는 자리다.
  *
- * 없으면 `null` 이고, 그것이 「서버에서 지워라」 의 신호다 - 보내기와 지우기를 가르는 칸을 따로
+ * 없으면 `null` 이고, 그것이 **서버에서 지워라** 의 신호다 - 보내기와 지우기를 가르는 칸을 따로
  * 두지 않고 원본의 유무로 판다.
  */
 export async function getBossDropRecordById(dropRecordId: string): Promise<BossDropRecord | null> {

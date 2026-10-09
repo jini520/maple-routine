@@ -28,7 +28,7 @@ describe('전송 종류 레지스트리', () => {
   })
 
   it('`enqueueServerSync` 에 넘기는 이름이 전부 표에 있다', () => {
-    // 상수 이름으로 넘기는 것이 규약이다. 문자열을 손으로 적으면 오타가 «안 나감» 으로 조용히
+    // 상수 이름으로 넘기는 것이 규약이다. 문자열을 손으로 적으면 오타가 **안 나감** 으로 조용히
     // 실패하고, 그 오타는 타입 검사에 안 걸린다.
     const kinds = new Set(Object.keys(SYNC_HANDLERS))
     const constants = new Map<string, string>([['DROP_PRICE_KIND', DROP_PRICE_KIND]])

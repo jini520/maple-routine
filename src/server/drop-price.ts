@@ -66,6 +66,16 @@ export async function sendDropPrice(
   })
 }
 
+/**
+ * **서버에 있는 내 자리를 지운다.** 연결 해제가 부른다.
+ *
+ * 거두기와 다르다 - 그쪽은 가격 한 건을 물리는 것이고 이쪽은 그 사람의 표본 전부와 식별자를
+ * 없애는 것이다. 처리방침이 적은 삭제 요구권을 사실로 만드는 자리다.
+ */
+export async function deleteMyServerData(headers: Record<string, string>): Promise<SendResult> {
+  return call('/me', { method: 'DELETE', headers })
+}
+
 /** 그 기록의 가격을 거둔다. 기기에서 사라졌거나 기록 안함으로 바뀐 경우다. */
 export async function withdrawDropPrice(
   headers: Record<string, string>,

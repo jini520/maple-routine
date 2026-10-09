@@ -24,7 +24,7 @@ import { MAX_SYNC_ATTEMPTS, type SyncQueueEntry } from '../../storage/server-syn
  * 종류 하나가 서버와 주고받는 법.
  *
  * `read` 가 `null` 을 주면 그 기록은 서버에서 지운다. **삭제 판정이 종류 안에 있다** - 드롭
- * 가격은 「원본이 없거나 `price_state` 가 `'entered'` 가 아니다」 를 `null` 로 답한다.
+ * 가격은 **원본이 없거나 `price_state` 가 `'entered'` 가 아니다** 를 `null` 로 답한다.
  */
 export interface SyncHandler<Value> {
   read: (recordId: string) => Promise<Value | null>

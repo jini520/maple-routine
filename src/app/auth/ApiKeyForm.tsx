@@ -157,9 +157,10 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
               <ExternalLinkIcon className="h-3.5 w-3.5 text-primary-ink" aria-hidden />
             </Pressable>
             {/* 키는 기기에 저장된다(storage/api-key). "저장하지 않는다"는 약속은 지킬 수 없다.
-                사실인 것은 백엔드가 없어 우리가 수집하지 않는다는 것뿐이다. */}
+                그리고 **어디로도 안 간다** 도 이제 거짓이다 - 시세를 모으는 요청이 키에서 만든
+                해시를 싣는다. 원문이 안 나간다는 것만 적는다. */}
             <Text className="text-center text-xs text-text-muted">
-              입력한 키는 이 기기에만 저장되고 넥슨 외 어디로도 전송되지 않아요
+              입력한 키는 이 기기에만 저장되고, 넥슨 밖으로는 키 자체가 나가지 않아요
             </Text>
           </View>
         </>
