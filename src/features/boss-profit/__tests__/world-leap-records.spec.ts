@@ -12,6 +12,8 @@ jest.mock('../../../storage/boss-profit', () => ({
   deleteBossProfitRecord: jest.fn(),
 }))
 jest.mock('../../../storage/boss-drops', () => ({
+  // 실물과 같은 값이어야 호출 단언이 맞는다. 목이 안 내주면 `undefined` 가 흐른다.
+  NO_WORLD: { name: null, key: null },
   getBossDropRecords: jest.fn(),
   replaceBossDropRecords: jest.fn(),
 }))
@@ -151,7 +153,7 @@ const KEY_BY_NAME: Record<string, string> = {
 }
 
 function drop(itemName: string, overrides: Partial<RecordedDrop> = {}): RecordedDrop {
-  return { category: 'equipment', itemKey: KEY_BY_NAME[itemName] ?? null, itemName, quantity: 1, ...overrides }
+  return { dropRecordId: null, category: 'equipment', itemKey: KEY_BY_NAME[itemName] ?? null, itemName, quantity: 1, ...overrides }
 }
 
 // 같은 드롭은 같은 타일이다. 일반 아이템은 아이템 key, 상자 결과는 상자 key.
@@ -171,7 +173,7 @@ describe('mergeWorldLeapDrops', () => {
   })
 
   it('같은 상자면 나온 반지가 달라도 새 카드 결과만 남는다', () => {
-    const box = { category: 'consumable' as const, boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자' }
+    const box = { dropRecordId: null, category: 'consumable' as const, boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자' }
     const kept = drop('리스트레인트 링', { ...box, ringLevel: 3 })
     const stale = drop('웨폰퍼프 - I링', { ...box, ringLevel: 4 })
 
@@ -215,6 +217,9 @@ describe('cleanUpWorldLeapDuplicates', () => {
       difficulty: 'hard',
       periodKey: '2026-09-10',
       dropIndex,
+      dropRecordId: 'drop-1',
+      world: null,
+      worldKey: null,
       category: 'equipment',
       itemKey: KEY_BY_NAME[itemName] ?? null,
       itemName,
@@ -281,6 +286,7 @@ describe('cleanUpWorldLeapDuplicates', () => {
       '2026-09-10',
       [
         {
+          dropRecordId: 'drop-1',
           category: 'equipment',
           itemKey: 'loose_control_machine_mark',
           itemName: '루즈 컨트롤 머신 마크',
@@ -288,6 +294,7 @@ describe('cleanUpWorldLeapDuplicates', () => {
           priceSplitMode: 'even',
         },
         {
+          dropRecordId: 'drop-1',
           category: 'equipment',
           itemKey: 'magic_eyepatch',
           itemName: '마력이 깃든 안대',
@@ -299,8 +306,9 @@ describe('cleanUpWorldLeapDuplicates', () => {
         },
       ],
       NOW.toISOString(),
+      { name: '엘리시움', key: 'elysium' },
     )
-    expect(replaceDropsMock).toHaveBeenCalledWith('old', 'lotus', 'hard', '2026-09-10', [], NOW.toISOString())
+    expect(replaceDropsMock).toHaveBeenCalledWith('old', 'lotus', 'hard', '2026-09-10', [], NOW.toISOString(), { name: null, key: null })
     expect(order).toEqual(['drops:new', 'drops:old', 'delete'])
   })
 
@@ -311,7 +319,7 @@ describe('cleanUpWorldLeapDuplicates', () => {
     await cleanUpWorldLeapDuplicates(NOW)
 
     expect(replaceDropsMock).not.toHaveBeenCalledWith('new', expect.anything(), expect.anything(), expect.anything(), expect.anything(), expect.anything())
-    expect(replaceDropsMock).toHaveBeenCalledWith('old', 'lotus', 'hard', '2026-09-10', [], NOW.toISOString())
+    expect(replaceDropsMock).toHaveBeenCalledWith('old', 'lotus', 'hard', '2026-09-10', [], NOW.toISOString(), { name: null, key: null })
   })
 
   it('새 ocid 에 기록이 없으면 아무것도 안 읽는다', async () => {

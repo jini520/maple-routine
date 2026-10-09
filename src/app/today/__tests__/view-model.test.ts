@@ -134,6 +134,7 @@ function dropRecord(overrides: Partial<DropHistoryRecord> = {}): DropHistoryReco
     boss: '스우',
     difficulty: 'normal',
     periodKey: WEEK_KEY,
+    dropRecordId: null,
     category: 'equipment',
     // key 가 없는 기록이 기본이다. 그래야 이름을 덮는 케이스가 적어 둔 이름을 그대로 읽는다.
     itemKey: null,
@@ -654,7 +655,8 @@ describe('대표 캐릭터', () => {
 
 describe('주간 보스 수익', () => {
   it('결정석과 아이템 판매가를 함께 더한다', () => {
-    const drops = { [`a|lotus|normal|${WEEK_KEY}`]: [{ category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 }] }
+    const drops = { [`a|lotus|normal|${WEEK_KEY}`]: [{ dropRecordId: null,
+    category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 }] }
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -710,7 +712,8 @@ describe('주간 보스 수익', () => {
   it('월간 보스 행의 드롭도 총액에 든다', () => {
     const drops = {
       [`a|black_mage|hard|${MONTH_KEY}`]: [
-        { category: 'equipment' as const, itemKey: null, itemName: '창세의 뱃지', quantity: 1, priceState: 'entered' as const, priceMeso: 90, priceShare: 1 },
+        { dropRecordId: null,
+        category: 'equipment' as const, itemKey: null, itemName: '창세의 뱃지', quantity: 1, priceState: 'entered' as const, priceMeso: 90, priceShare: 1 },
       ],
     }
     const model = buildTodayViewModel(
@@ -779,7 +782,8 @@ describe('주간 보스 수익', () => {
   it('총액을 결정석과 아이템으로 가르고, 둘의 합이 총액이다', () => {
     const drops = {
       [`a|lotus|normal|${WEEK_KEY}`]: [
-        { category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 },
+        { dropRecordId: null,
+        category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 },
       ],
     }
     const model = buildTodayViewModel(

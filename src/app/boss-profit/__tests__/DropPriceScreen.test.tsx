@@ -87,6 +87,7 @@ const excludePrice = jest.fn()
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
   return {
+    dropRecordId: null,
     category: 'equipment',
     itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
@@ -477,6 +478,7 @@ describe('DropPriceScreen: 표시 규칙 정정 (2026-08-10)', () => {
         groups: 그룹([
           항목({
             drop: 드롭({
+              dropRecordId: null,
               category: 'consumable',
               itemKey: 'restraint_ring',
               itemName: '리스트레인트 링',

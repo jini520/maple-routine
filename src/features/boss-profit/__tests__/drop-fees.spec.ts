@@ -1,6 +1,7 @@
 import { dropFeeFields, dropFeeSeeds } from '../drop-fees'
 
-const drop = { category: 'equipment' as const, itemKey: 'x', itemName: 'x', quantity: 1 }
+const drop = { dropRecordId: null,
+category: 'equipment' as const, itemKey: 'x', itemName: 'x', quantity: 1 }
 
 describe('dropFeeSeeds', () => {
   it('새로 매기면 두 줄 다 자동이다', () => {

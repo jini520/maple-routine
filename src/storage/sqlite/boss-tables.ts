@@ -59,6 +59,11 @@ export const BOSS_PARTY_SETTINGS_BODY = `(
   )`
 
 export const BOSS_DROP_RECORDS_BODY = `(
+    -- 이 기록을 다시 가리키는 값. SQLite 가 만든다(sqlite/uuid.ts 의 NEW_UUID_SQL).
+    -- 아래 다섯 칸을 기본키로 쓰면 그중 둘이 설계상 바뀌어 행을 가리킬 방법이 사라진다 -
+    -- difficulty 는 처치 난이도가 확정될 때 옮겨지고, drop_index 는 그룹을 저장할 때마다
+    -- 배열 자리로 다시 매겨진다. 서버로 가격을 보낼 때 이 값이 멱등 열쇠가 된다.
+    drop_record_id TEXT NOT NULL,
     ocid TEXT NOT NULL,
     boss_key TEXT NOT NULL,
     boss TEXT NOT NULL,
@@ -74,6 +79,11 @@ export const BOSS_DROP_RECORDS_BODY = `(
     ring_level INTEGER,
     quantity INTEGER NOT NULL,
     recorded_at TEXT NOT NULL,
+    -- 기록 시점의 월드 스냅샷. 모르면 NULL 이고, 0 이나 빈 문자열로 채우면 '모름' 이 값으로 둔갑한다.
+    -- 짝인 수익 행에서 물려받지 않는다 - 결정석 가격을 모르는 보스는 수익 행이 없어 물려받을 짝이 없다.
+    world TEXT,
+    -- 월드 key. world 가 NULL 이면 함께 NULL 이다.
+    world_key TEXT,
     -- 가격. 셋 다 nullable 이고 NULL 은 '미입력'이다. 0 을 쓰면
     -- '0메소에 팔았다'가 되어 스킵·미입력과 구분이 사라진다.
     price_state TEXT,
@@ -93,8 +103,21 @@ export const BOSS_DROP_RECORDS_BODY = `(
     -- 1 이면 자동. 등급 기록이 바뀔 때 새 요율로 다시 적힌다. NULL 은 손으로 고른 값이다.
     sale_fee_auto INTEGER,
     split_fee_auto INTEGER,
-    PRIMARY KEY (ocid, boss_key, difficulty, period_key, drop_index)
+    PRIMARY KEY (drop_record_id)
   )`
+
+/**
+ * 그룹을 찾는 인덱스. **기본키가 곧 인덱스였던 자리를 메꾼다.**
+ *
+ * 종전에는 `(ocid, boss_key, difficulty, period_key, drop_index)` 가 기본키라 그 앞부분으로 찾는
+ * 조회가 공짜였다. 기본키를 uuid 로 옮기면 그 조회가 전체 스캔이 되므로 인덱스가 선택이 아니다.
+ *
+ * **`UNIQUE` 가 아니다.** 필요한 것은 조회 속도이고, 유일성을 걸면 한 행씩 고치는 사이에
+ * `drop_index` 가 일시적으로 겹쳐 그 자리에서 실패한다.
+ */
+export const BOSS_DROP_RECORDS_GROUP_INDEX =
+  'CREATE INDEX IF NOT EXISTS boss_drop_records_group' +
+  ' ON boss_drop_records (ocid, boss_key, difficulty, period_key, drop_index)'
 
 /** 기본키를 보스 key 로 다시 만드는 표 셋. 버전 4 가 이 차례로 돈다. */
 export const BOSS_KEYED_TABLES = [

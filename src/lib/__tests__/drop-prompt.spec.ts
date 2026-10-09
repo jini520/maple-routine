@@ -9,6 +9,7 @@ import type { RecordedDrop } from '../../types/drops'
 
 function 드롭(name: string, price?: 'entered' | 'excluded'): RecordedDrop {
   return {
+    dropRecordId: null,
     category: 'equipment',
     itemKey: null,
     itemName: name,

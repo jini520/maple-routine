@@ -16,7 +16,9 @@ jest.mock('../../../storage/boss-profit', () => ({
   upsertBossProfitRecord: jest.fn(),
   markBossProfitRecordAuto: jest.fn(),
 }))
-jest.mock('../../../storage/boss-drops', () => ({ getBossDropRecords: jest.fn(), replaceBossDropRecords: jest.fn() }))
+jest.mock('../../../storage/boss-drops', () => ({
+  // 실물과 같은 값이어야 호출 단언이 맞는다. 목이 안 내주면 `undefined` 가 흐른다.
+  NO_WORLD: { name: null, key: null }, getBossDropRecords: jest.fn(), replaceBossDropRecords: jest.fn() }))
 jest.mock('../../../storage/boss-party-settings', () => ({ getBossPartySetting: jest.fn() }))
 jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 // 판 알림을 모으는 반복. 쓰기가 그 안에서 도는지 깊이로 본다.
@@ -232,6 +234,7 @@ describe('처치 난이도 확정', () => {
         difficulty: 'hard',
         periodKey: '2026-09-03',
         dropIndex: 0,
+        dropRecordId: null,
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',

@@ -50,6 +50,14 @@ export interface BoxResult {
 // boxOrigin에 상자명이 남는다. 가격은 기록 한 건에 붙는 실제 판매가다(#185).의
 // "금액을 저장하지 않는다"를 뒤집은 자리이고, 그래서 세 필드가 전부 optional이다(옛 기록엔 없다).
 export interface RecordedDrop {
+  /**
+   * 이 기록을 다시 가리키는 값. **새로 고른 드롭은 `null`** 이고 저장이 그 자리에서 만든다.
+   *
+   * 필수로 둔 것이 요점이다. 선택으로 두면 이 객체를 만드는 다섯 자리 중 하나가 빠뜨려도 타입
+   * 검사를 통과하고 값만 조용히 사라진다. 그러면 난이도 확정 이관이 식별자를 새로 만들어 서버에
+   * 같은 기록이 둘 쌓인다.
+   */
+  dropRecordId: string | null
   category: DropCategory
   /** 아이템 key. 이름만 저장된 옛 기록에서 이관이 못 찾았으면 `null` 이다. */
   itemKey: string | null
@@ -69,7 +77,7 @@ export interface RecordedDrop {
    * 머문다. 그래서 스킵은 저장되는 값이 없다.
    */
   priceState?: 'entered' | 'excluded'
-  /** 입력한 판매 **총액**(메소). 수량이 2 이상이어도 묶음가 하나다. */
+  /** 입력한 판매가(메소). */
   priceMeso?: number
   /**
    * 어떻게 나눴나. **아래 두 칸의 뜻을 이 칸이 정한다.**

@@ -6,7 +6,9 @@ jest.mock('../recalculate-fees', () => ({
   recalcCrystalUpdates: jest.fn(),
 }))
 jest.mock('../../../storage/income', () => ({ applyAutoIncomeSaleFees: jest.fn(), updateIncomeSaleFees: jest.fn() }))
-jest.mock('../../../storage/boss-drops', () => ({ applyAutoDropFees: jest.fn(), updateDropFees: jest.fn() }))
+jest.mock('../../../storage/boss-drops', () => ({
+  // 실물과 같은 값이어야 호출 단언이 맞는다. 목이 안 내주면 `undefined` 가 흐른다.
+  NO_WORLD: { name: null, key: null }, applyAutoDropFees: jest.fn(), updateDropFees: jest.fn() }))
 jest.mock('../../../storage/boss-profit', () => ({ updateProfitSplitFees: jest.fn() }))
 
 import { bulkIncomeUpdates } from '../bulk-apply'

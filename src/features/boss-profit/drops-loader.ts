@@ -6,7 +6,7 @@
  */
 
 import { planConfirmedDifficultyDropMigration, pruneUnobtainableDrops } from '../../lib/boss/boss-drops'
-import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
+import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import { batchRecordWrites } from '../../storage/record-revision-batch'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { RecordedDrop } from '../../types/drops'
@@ -48,13 +48,15 @@ export async function migrateDropsToConfirmedDifficulty(
   const recordedAt = now.toISOString()
   if (plan.drops.length > 0) {
     await withSqliteFallback(
-      replaceBossDropRecords(row.ocid, row.bossKey, row.difficulty, row.periodKey, plan.drops, recordedAt),
+      // 난이도 확정 이관이다. 옮기는 드롭이 자기 식별자를 들고 오고(`dropRecordId`), 월드도 그
+      // 행의 값이라 여기서 새로 정하지 않는다.
+      replaceBossDropRecords(row.ocid, row.bossKey, row.difficulty, row.periodKey, plan.drops, recordedAt, NO_WORLD),
       undefined,
     )
   }
   for (const staleDifficulty of plan.staleDifficulties) {
     await withSqliteFallback(
-      replaceBossDropRecords(row.ocid, row.bossKey, staleDifficulty, row.periodKey, [], recordedAt),
+      replaceBossDropRecords(row.ocid, row.bossKey, staleDifficulty, row.periodKey, [], recordedAt, NO_WORLD),
       undefined,
     )
   }
@@ -96,7 +98,10 @@ export async function loadDropsByRowKey(
       if (pruned.length !== drops.length) {
         map[key] = pruned
         await withSqliteFallback(
-          replaceBossDropRecords(row.ocid, row.bossKey, row.difficulty, row.periodKey, pruned, now.toISOString()),
+          replaceBossDropRecords(row.ocid, row.bossKey, row.difficulty, row.periodKey, pruned, now.toISOString(), {
+            name: row.world,
+            key: row.worldKey,
+          }),
           undefined,
         )
       }

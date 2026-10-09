@@ -47,6 +47,9 @@ function dropRecord(overrides: Partial<BossDropRecord>): BossDropRecord {
     difficulty: 'hard',
     periodKey: '2026-07-09',
     dropIndex: 0,
+    dropRecordId: 'drop-1',
+    world: null,
+    worldKey: null,
     category: 'equipment',
     itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
@@ -243,7 +246,8 @@ describe('useDropHistoryStore.load', () => {
 
   it('고가 기록이 없으면 요약이 null이다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
-      dropRecord({ itemKey: 'restraint_ring', itemName: '리스트레인트 링', category: 'consumable', slot: null }),
+      dropRecord({ itemKey: 'restraint_ring', itemName: '리스트레인트 링',
+      category: 'consumable', slot: null }),
     ])
     const store = await loadStore()
 

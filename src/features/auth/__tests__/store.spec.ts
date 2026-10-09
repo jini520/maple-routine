@@ -35,6 +35,7 @@ const {
 } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
 jest.mock('../../../server/nexon-auth', () => ({ revokeNexonSession: jest.fn() }))
+jest.mock('../../server-sync/forget', () => ({ forgetServerData: jest.fn() }))
 jest.mock('../nexon-login', () => ({ signInWithNexon: jest.fn() }))
 jest.mock('../current-credential', () => ({ currentCredential: jest.fn() }))
 const { signInWithNexon: signInWithNexonMock } = jest.requireMock('../nexon-login') as Record<string, jest.Mock>
@@ -463,6 +464,27 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
 })
 
 describe('useAuthStore.signOut', () => {
+  // 처리방침이 적은 삭제 요구권을 사실로 만드는 자리다. **키를 지우기 전**이어야 한다 - 자기를
+  // 밝힐 값이 그 키에서 나오므로, 지운 뒤에는 무엇을 지워 달라고 말할 길이 없다.
+  it('서버의 내 자리를 먼저 거두고 나서 기기를 지운다', async () => {
+    const { forgetServerData } = jest.requireMock('../../server-sync/forget') as Record<
+      string,
+      jest.Mock
+    >
+    const 순서: string[] = []
+    forgetServerData.mockImplementation(async () => {
+      순서.push('서버')
+      return true
+    })
+    clearAuthConfigMock.mockImplementation(async () => {
+      순서.push('기기')
+    })
+
+    await useAuthStore.getState().signOut()
+
+    expect(순서).toEqual(['서버', '기기'])
+  })
+
   it('clearAuthConfig를 호출하고 상태를 initialAuthState로 되돌린다', async () => {
     useAuthStore.setState({
       status: 'signedIn',

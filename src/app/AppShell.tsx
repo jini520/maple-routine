@@ -5,6 +5,7 @@ import { startKeyboardHeightRecorder } from '../features/input-card/keyboard-hei
 import { useDataFreshness } from '../features/refresh/freshness'
 import { useNoticeStore } from '../features/notice/store'
 import { requestNotificationReconcile } from '../features/local-notifications/run'
+import { runServerSync } from '../features/server-sync/run'
 import { useAppEntryStore } from '../features/app-entry/store'
 import { useAuthStore } from '../features/auth/store'
 import { useLiveUpdateStore } from '../features/live-update/store'
@@ -160,6 +161,16 @@ export function AppShell(): React.JSX.Element {
   useEffect(() => {
     if (!isReady) return
     void prehydrateTabStores()
+  }, [isReady])
+
+  // 서버로 못 보낸 것을 다시 보낸다. **첫 화면을 막지 않는다** - `void` 로 띄우고 결과를 안
+  // 기다린다. 평소에 대기 표가 비어 있어 조회 한 번으로 끝난다.
+  //
+  // `isReady` 를 기다리는 것은 밝힐 수단이 그때 서기 때문이다. 키도 로그인도 없는 단계에서 돌면
+  // 신원이 `null` 이라 한 회차가 통째로 헛돈다.
+  useEffect(() => {
+    if (!isReady) return
+    void runServerSync()
   }, [isReady])
 
   // OTA 부팅 확인. 체크만 한다.

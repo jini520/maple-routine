@@ -97,6 +97,7 @@ describe('BossDropSheet: 타일 선택', () => {
 
     expect(onSave).toHaveBeenCalledWith([
       {
+        dropRecordId: null,
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',
@@ -324,7 +325,7 @@ describe('BossDropSheet: 상자 드릴다운', () => {
       bossKey: 'gloom',
       difficulty: 'chaos',
       initialDrops: [
-        {
+        { dropRecordId: null,
           category: 'consumable',
           itemKey: 'restraint_ring',
           itemName: '옛 반지 이름',
@@ -344,7 +345,7 @@ describe('BossDropSheet: 상자 드릴다운', () => {
 
 // 이관이 이름을 못 찾아 key 가 빈 옛 기록. 판정할 key 가 없으므로 지우지 않는다(사용자 결정 2026-09-15).
 describe('BossDropSheet: key 가 없는 옛 기록', () => {
-  const 옛기록 = { category: 'consumable' as const, itemKey: null, itemName: '익셉셔널 해머', quantity: 1 }
+  const 옛기록 = { dropRecordId: null, category: 'consumable' as const, itemKey: null, itemName: '익셉셔널 해머', quantity: 1 }
 
   it('난이도를 바꿔도 남고 저장에 그대로 실린다', async () => {
     const { result, onSave } = renderSheet({ isComplete: false, initialDrops: [옛기록] })
@@ -472,7 +473,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       const { result } = renderSheet({
         pricing: PRICING,
         initialDrops: [
-          {
+          { dropRecordId: null,
             category: 'equipment',
             itemKey: 'loose_control_machine_mark',
             itemName: '루즈 컨트롤 머신 마크',
@@ -802,7 +803,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     const { result } = renderSheet({
       pricing: PRICING,
       initialDrops: [
-        {
+        { dropRecordId: null,
           category: 'equipment',
           itemKey: 'loose_control_machine_mark',
           itemName: '루즈 컨트롤 머신 마크',
@@ -825,7 +826,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     const { result } = renderSheet({
       pricing: PRICING,
       initialDrops: [
-        {
+        { dropRecordId: null,
           category: 'equipment',
           itemKey: 'loose_control_machine_mark',
           itemName: '루즈 컨트롤 머신 마크',
@@ -844,6 +845,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
 /** 값이 매겨진 기록 한 건. 케이스마다 가격만 바꾼다. */
 function 드롭기록(patch: Partial<RecordedDrop> = {}): RecordedDrop {
   return {
+    dropRecordId: null,
     category: 'equipment',
     itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
@@ -947,7 +949,7 @@ describe('BossDropSheet: 타일의 표식', () => {
       difficulty: 'chaos',
       pricing: PRICING,
       initialDrops: [
-        {
+        { dropRecordId: null,
           category: 'consumable',
           itemKey: 'restraint_ring',
           itemName: '리스트레인트 링',

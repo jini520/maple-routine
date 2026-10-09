@@ -13,7 +13,7 @@
  * 뜬다. 술어를 추적 목록에 없다 로 쓰면 진짜 처치 기록의 드롭이 날아간다.
  */
 import { hasPriceEntry } from '../../lib/boss/boss-crystal-prices'
-import { getBossDropRecords, replaceBossDropRecords, type BossDropRecord } from '../../storage/boss-drops'
+import { NO_WORLD, getBossDropRecords, replaceBossDropRecords, type BossDropRecord } from '../../storage/boss-drops'
 import type { BossDifficulty } from '../../types'
 import { withSqliteFallback } from './sqlite-guards'
 import type { BossProfitRow } from './rows'
@@ -126,7 +126,7 @@ export async function sweepOrphanDrops(input: OrphanDropSweepInput): Promise<num
     // 순차 실행이다. `replaceBossDropRecords` 가 공유 커넥션에 자체 트랜잭션을 열어
     // 동시에 던지면 겹친다(`auto-record.ts` 의 upsert 루프와 같은 이유).
     await withSqliteFallback(
-      replaceBossDropRecords(group.ocid, group.bossKey, group.difficulty, group.periodKey, [], recordedAt),
+      replaceBossDropRecords(group.ocid, group.bossKey, group.difficulty, group.periodKey, [], recordedAt, NO_WORLD),
       undefined,
     )
     removed += group.dropCount

@@ -17,8 +17,8 @@ beforeEach(() => {
 })
 
 const drops: RecordedDrop[] = [
-  { category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
-  {
+  { dropRecordId: null, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+  { dropRecordId: null,
     category: 'consumable',
     itemKey: 'restraint_ring',
     itemName: '리스트레인트 링',
@@ -31,7 +31,7 @@ const drops: RecordedDrop[] = [
 
 describe('replaceBossDropRecords', () => {
   it('기존 행을 DELETE한 뒤 drop_index 0..n으로 다시 INSERT한다', async () => {
-    const { replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
+    const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await replaceBossDropRecords(
       'ocid-1',
@@ -40,6 +40,7 @@ describe('replaceBossDropRecords', () => {
       '2026-W30',
       drops,
       '2026-07-26T00:00:00.000Z',
+      NO_WORLD,
     )
 
     expect(runMock).toHaveBeenCalledTimes(3) // 1 DELETE + 2 INSERT
@@ -52,6 +53,8 @@ describe('replaceBossDropRecords', () => {
     const [insSql, insValues0] = runMock.mock.calls[1]
     expect(insSql).toContain('INSERT INTO boss_drop_records')
     expect(insValues0).toEqual([
+      // 식별자. 물려받을 것이 없어 `null` 이고 SQL 의 `COALESCE` 가 그 자리에서 만든다.
+      null,
       'ocid-1',
       'lotus',
       // 이름 칸에는 보스 표의 이름을 함께 적는다.
@@ -68,6 +71,9 @@ describe('replaceBossDropRecords', () => {
       null,
       1,
       '2026-07-26T00:00:00.000Z',
+      // 월드 스냅샷. `NO_WORLD` 를 넘겼고 물려받을 행도 없다.
+      null,
+      null,
       null,
       null,
       // 분배 방식. 안 적으면 방식을 모르는 행이라 화면이 라벨을 안 그린다.
@@ -86,6 +92,8 @@ describe('replaceBossDropRecords', () => {
 
     const [, insValues1] = runMock.mock.calls[2]
     expect(insValues1).toEqual([
+      // 식별자. 물려받을 것이 없어 `null` 이고 SQL 의 `COALESCE` 가 그 자리에서 만든다.
+      null,
       'ocid-1',
       'lotus',
       '스우',
@@ -101,6 +109,9 @@ describe('replaceBossDropRecords', () => {
       3,
       1,
       '2026-07-26T00:00:00.000Z',
+      // 월드 스냅샷. `NO_WORLD` 를 넘겼고 물려받을 행도 없다.
+      null,
+      null,
       null,
 
       null,
@@ -116,9 +127,9 @@ describe('replaceBossDropRecords', () => {
   })
 
   it('드롭이 비면 DELETE만 하고 INSERT하지 않는다', async () => {
-    const { replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
+    const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
-    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', [], '2026-07-26T00:00:00.000Z')
+    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', [], '2026-07-26T00:00:00.000Z', NO_WORLD)
 
     expect(runMock).toHaveBeenCalledTimes(1)
     expect(runMock.mock.calls[0][0]).toContain('DELETE FROM boss_drop_records')
@@ -129,26 +140,26 @@ describe('replaceBossDropRecords', () => {
 // 알 수 없어서 알림을 받는다.
 describe('subscribeBossDropRecordsRevision', () => {
   it('쓰기가 끝나면 구독자를 부른다', async () => {
-    const { replaceBossDropRecords, subscribeBossDropRecordsRevision } =
+    const { NO_WORLD, replaceBossDropRecords, subscribeBossDropRecordsRevision } =
       require('../boss-drops') as typeof import('../boss-drops')
     const listener = jest.fn()
     const unsubscribe = subscribeBossDropRecordsRevision(listener)
 
-    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z')
+    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z', NO_WORLD)
 
     expect(listener).toHaveBeenCalledTimes(1)
     unsubscribe()
   })
 
   it('쓰기가 던지면 안 부른다', async () => {
-    const { replaceBossDropRecords, subscribeBossDropRecordsRevision } =
+    const { NO_WORLD, replaceBossDropRecords, subscribeBossDropRecordsRevision } =
       require('../boss-drops') as typeof import('../boss-drops')
     const listener = jest.fn()
     const unsubscribe = subscribeBossDropRecordsRevision(listener)
     runMock.mockRejectedValueOnce(new Error('database is locked'))
 
     await expect(
-      replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z'),
+      replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z', NO_WORLD),
     ).rejects.toThrow('database is locked')
 
     expect(listener).not.toHaveBeenCalled()
@@ -156,7 +167,7 @@ describe('subscribeBossDropRecordsRevision', () => {
   })
 
   it('여러 건을 쓰는 반복 안에서는 판은 쓸 때마다 오르고 구독자는 끝날 때 한 번 부른다', async () => {
-    const { replaceBossDropRecords, subscribeBossDropRecordsRevision, getBossDropRecordsRevision } =
+    const { NO_WORLD, getBossDropRecordsRevision, replaceBossDropRecords, subscribeBossDropRecordsRevision } =
       require('../boss-drops') as typeof import('../boss-drops')
     const { batchRecordWrites } = require('../record-revision-batch') as typeof import('../record-revision-batch')
     const listener = jest.fn()
@@ -164,8 +175,8 @@ describe('subscribeBossDropRecordsRevision', () => {
     const before = getBossDropRecordsRevision()
 
     await batchRecordWrites(async () => {
-      await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z')
-      await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W31', drops, '2026-07-26T00:00:00.000Z')
+      await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z', NO_WORLD)
+      await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W31', drops, '2026-07-26T00:00:00.000Z', NO_WORLD)
       expect(getBossDropRecordsRevision()).toBe(before + 2)
       expect(listener).not.toHaveBeenCalled()
     })
@@ -175,12 +186,12 @@ describe('subscribeBossDropRecordsRevision', () => {
   })
 
   it('구독을 풀면 더 안 부른다', async () => {
-    const { replaceBossDropRecords, subscribeBossDropRecordsRevision } =
+    const { NO_WORLD, replaceBossDropRecords, subscribeBossDropRecordsRevision } =
       require('../boss-drops') as typeof import('../boss-drops')
     const listener = jest.fn()
     subscribeBossDropRecordsRevision(listener)()
 
-    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', [], '2026-07-26T00:00:00.000Z')
+    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', [], '2026-07-26T00:00:00.000Z', NO_WORLD)
 
     expect(listener).not.toHaveBeenCalled()
   })
@@ -220,6 +231,7 @@ describe('getBossDropRecords', () => {
           box_origin: '홍옥의 보스 반지 상자',
           ring_level: 3,
           quantity: 1,
+          drop_record_id: 'drop-1',
           recorded_at: '2026-07-26T00:00:00.000Z',
         },
       ],
@@ -240,6 +252,9 @@ describe('getBossDropRecords', () => {
         difficulty: 'hard',
         periodKey: '2026-W30',
         dropIndex: 1,
+        dropRecordId: 'drop-1',
+        world: null,
+        worldKey: null,
         category: 'consumable',
         itemKey: 'restraint_ring',
         itemName: '리스트레인트 링',
@@ -319,6 +334,7 @@ describe('getAllBossDropRecords', () => {
           box_origin: null,
           ring_level: null,
           quantity: 1,
+          drop_record_id: 'drop-1',
           recorded_at: '2026-07-26T00:00:00.000Z',
         },
       ],
@@ -333,6 +349,9 @@ describe('getAllBossDropRecords', () => {
         difficulty: 'hard',
         periodKey: '2026-07-09',
         dropIndex: 0,
+        dropRecordId: 'drop-1',
+        world: null,
+        worldKey: null,
         category: 'equipment',
         // key 칸이 없던 옛 행이다. 읽을 때 `null` 로 선다.
         itemKey: null,
@@ -369,7 +388,7 @@ describe('getAllBossDropRecords', () => {
 // 컬럼을 알면 값이 조용히 사라진다.
 describe('가격 컬럼 왕복', () => {
   it('INSERT 에 price_state·price_meso·price_share 를 함께 싣는다', async () => {
-    const { replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
+    const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await replaceBossDropRecords(
       'ocid-1',
@@ -377,7 +396,7 @@ describe('가격 컬럼 왕복', () => {
       'hard',
       '2026-08-06',
       [
-        {
+        { dropRecordId: null,
           category: 'equipment',
           itemKey: 'loose_control_machine_mark',
           itemName: '루즈 컨트롤 머신 마크',
@@ -389,6 +408,7 @@ describe('가격 컬럼 왕복', () => {
         },
       ],
       '2026-08-10T00:00:00.000Z',
+      NO_WORLD,
     )
 
     const insert = runMock.mock.calls.find(([sql]) => String(sql).includes('INSERT'))
@@ -397,20 +417,22 @@ describe('가격 컬럼 왕복', () => {
   })
 
   it('가격이 없는 드롭은 세 컬럼을 NULL 로 넣는다. 0 이 아니다', async () => {
-    const { replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
+    const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await replaceBossDropRecords(
       'ocid-1',
       'lotus',
       'hard',
       '2026-08-06',
-      [{ category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }],
+      [{ dropRecordId: null, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }],
       '2026-08-10T00:00:00.000Z',
+      NO_WORLD,
     )
 
     const insert = runMock.mock.calls.find(([sql]) => String(sql).includes('INSERT'))
-    // 16~18 번째 자리가 가격 컬럼이다. 0 으로 넣으면 "0메소에 팔았다"가 되어 미입력과 구분이 사라진다.
-    expect(insert?.[1].slice(15, 18)).toEqual([null, null, null])
+    // 19~21 번째 자리가 가격 컬럼이다(식별자 하나와 월드 둘이 앞에 들어 밀렸다). 0 으로 넣으면
+    // "0메소에 팔았다"가 되어 미입력과 구분이 사라진다.
+    expect(insert?.[1].slice(18, 21)).toEqual([null, null, null])
   })
 
   it('조회 결과의 가격 컬럼을 BossDropRecord 로 옮긴다', async () => {
@@ -429,6 +451,7 @@ describe('가격 컬럼 왕복', () => {
           box_origin: null,
           ring_level: null,
           quantity: 1,
+          drop_record_id: 'drop-1',
           recorded_at: '2026-08-10T00:00:00.000Z',
           price_state: 'entered',
           price_meso: 15_000_000_000,
@@ -448,7 +471,7 @@ describe('가격 컬럼 왕복', () => {
 
 describe('드롭 수수료 칸', () => {
   it('판매 · 분배 수수료와 자동인지를 적고 읽는다', async () => {
-    const { replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
+    const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 
     await replaceBossDropRecords(
       'ocid-1',
@@ -456,7 +479,7 @@ describe('드롭 수수료 칸', () => {
       'hard',
       '2026-08-06',
       [
-        {
+        { dropRecordId: null,
           category: 'equipment',
           itemKey: 'loose_control_machine_mark',
           itemName: '루즈 컨트롤 머신 마크',
@@ -471,6 +494,7 @@ describe('드롭 수수료 칸', () => {
         },
       ],
       '2026-08-10T00:00:00.000Z',
+      NO_WORLD,
     )
 
     const insert = runMock.mock.calls.find(([sql]) => String(sql).includes('INSERT'))

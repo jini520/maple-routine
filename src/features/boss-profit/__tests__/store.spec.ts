@@ -116,6 +116,8 @@ jest.mock('../../../storage/manual-tracked-content', () => ({
 const { getManualTrackedContent: getManualTrackedContentMock } = jest.requireMock('../../../storage/manual-tracked-content') as Record<string, jest.Mock>
 
 jest.mock('../../../storage/boss-drops', () => ({
+  // 실물과 같은 값이어야 호출 단언이 맞는다. 목이 안 내주면 `undefined` 가 흐른다.
+  NO_WORLD: { name: null, key: null },
   getBossDropRecords: jest.fn(),
   replaceBossDropRecords: jest.fn(),
   getBossDropRecordsRevision: jest.fn(() => 0),
@@ -336,6 +338,7 @@ describe('setBossDrops', () => {
 
     const drops = [
       {
+        dropRecordId: null,
         category: 'equipment' as const,
         itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',
@@ -355,6 +358,7 @@ describe('setBossDrops', () => {
       '2026-W30',
       drops,
       expect.any(String),
+      { name: null, key: null },
     )
     expect(useBossProfitStore.getState().dropsByRowKey['ocid-1|lotus|hard|2026-W30']).toEqual(drops)
   })
@@ -380,6 +384,7 @@ describe('처치 난이도 획득 불가 드롭 제거 (후속)', () => {
       boss: '스우',
       difficulty: 'hard',
       cycle: 'weekly',
+      dropRecordId: null,
       category: 'equipment',
       slot: null,
       boxOrigin: null,
@@ -417,6 +422,7 @@ describe('처치 난이도 획득 불가 드롭 제거 (후속)', () => {
       period,
       [expect.objectContaining({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' })],
       expect.any(String),
+      { name: null, key: null },
     )
   })
 
@@ -457,6 +463,7 @@ describe('처치 난이도 확정 시 드롭 이관', () => {
       difficulty: 'extreme',
       periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
       dropIndex: 0,
+      dropRecordId: null,
       category: 'equipment',
       slot: null,
       boxOrigin: null,
@@ -490,6 +497,7 @@ describe('처치 난이도 확정 시 드롭 이관', () => {
       period,
       [expect.objectContaining({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' })],
       expect.any(String),
+      { name: null, key: null },
     )
     expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
       'ocid-1',
@@ -498,6 +506,7 @@ describe('처치 난이도 확정 시 드롭 이관', () => {
       period,
       [],
       expect.any(String),
+      { name: null, key: null },
     )
   })
 
@@ -731,6 +740,7 @@ describe('useBossProfitStore', () => {
               difficulty: 'chaos',
               periodKey: weekKey,
               dropIndex: 0,
+              dropRecordId: null,
               category: 'fixed',
               itemKey: null,
               itemName: '테스트 드롭',
@@ -775,6 +785,7 @@ describe('useBossProfitStore', () => {
       difficulty,
       periodKey: weekKey,
       dropIndex: 0,
+      dropRecordId: null,
       category: 'fixed' as const,
       itemKey: null,
       itemName: '테스트 드롭',
@@ -1926,6 +1937,7 @@ describe('useBossProfitStore', () => {
           difficulty: 'extreme', // 복원 행이 루프를 타면 확정 난이도(하드)로 옮겨졌을 옛 키
           periodKey: weekKey,
           dropIndex: 0,
+          dropRecordId: null,
           category: 'equipment',
           itemKey: 'loose_control_machine_mark',
           itemName: '루즈 컨트롤 머신 마크',
@@ -3507,6 +3519,7 @@ describe('useBossProfitStore', () => {
             difficulty: 'extreme', // 옛 난이도 키. 확정 난이도(하드)로 옮겨져야 한다
             periodKey,
             dropIndex: 0,
+            dropRecordId: null,
             category: 'equipment',
             itemKey: 'loose_control_machine_mark',
             itemName: '루즈 컨트롤 머신 마크',
@@ -3528,6 +3541,7 @@ describe('useBossProfitStore', () => {
           periodKey,
           [expect.objectContaining({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' })],
           expect.any(String),
+          { name: null, key: null },
         )
         expect(replaceBossDropRecordsMock).toHaveBeenCalledWith(
           'ocid-1',
@@ -3536,6 +3550,7 @@ describe('useBossProfitStore', () => {
           periodKey,
           [],
           expect.any(String),
+          { name: null, key: null },
         )
       })
 
@@ -3743,6 +3758,7 @@ describe('잡지 않은 보스의 드롭 정리', () => {
       difficulty: 'chaos',
       periodKey: WEEK_KEY,
       dropIndex: 0,
+      dropRecordId: null,
       category: 'equipment',
       itemKey: null,
       itemName: '칠흑의 보스 반지 상자',
@@ -3787,6 +3803,7 @@ describe('잡지 않은 보스의 드롭 정리', () => {
         WEEK_KEY,
         [],
         expect.any(String),
+        { name: null, key: null },
       )
     })
   })
@@ -3847,6 +3864,7 @@ describe('잡지 않은 보스의 드롭 정리', () => {
       previousPeriodKey,
       [],
       expect.any(String),
+      { name: null, key: null },
     )
   })
 
@@ -4220,6 +4238,7 @@ describe('추적에서 빠진 캐릭터의 기록', () => {
         difficulty: 'hard',
         periodKey: previousPeriodKey,
         dropIndex: 0,
+        dropRecordId: null,
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',

@@ -10,7 +10,9 @@ jest.mock('../../../storage/mvp-grade-prefs', () => ({
   setMvpBulkApplyAsked: jest.fn(),
 }))
 jest.mock('../../../storage/income', () => ({ getBulkFeeIncomeRecords: jest.fn() }))
-jest.mock('../../../storage/boss-drops', () => ({ getBulkFeeDropRecords: jest.fn() }))
+jest.mock('../../../storage/boss-drops', () => ({
+  // 실물과 같은 값이어야 호출 단언이 맞는다. 목이 안 내주면 `undefined` 가 흐른다.
+  NO_WORLD: { name: null, key: null }, getBulkFeeDropRecords: jest.fn() }))
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/character-profiles', () => ({ getCharacterProfiles: jest.fn() }))
 jest.mock('../character-list', () => ({ fetchAndRecordCharacterList: jest.fn() }))

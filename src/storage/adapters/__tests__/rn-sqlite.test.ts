@@ -201,6 +201,9 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_drop_records ADD COLUMN split_fee_percent INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN sale_fee_auto INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN split_fee_auto INTEGER',
+      'ALTER TABLE boss_drop_records ADD COLUMN world TEXT',
+      'ALTER TABLE boss_drop_records ADD COLUMN world_key TEXT',
+      'ALTER TABLE boss_drop_records ADD COLUMN drop_record_id TEXT',
     ])
   })
 
@@ -252,6 +255,8 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'price_party_size' },
             { name: 'sale_fee_auto' },
             { name: 'split_fee_auto' },
+            { name: 'world' },
+            { name: 'drop_record_id' },
           ]
         : []
 

@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs'
+import { DB_VERSION } from '../migrations'
 
 const isWebPlatformMock = jest.fn()
 const initWebStoreMock = jest.fn()
@@ -90,7 +91,7 @@ describe('getBossProfitDb', () => {
   // 이름 이관은 부팅마다 돌지 않는다. 버전 번호가 이미 끝까지 올랐으면 한 문장도 안 나간다.
   it('user_version 이 마지막 버전이면 값을 옮기는 이관이 안 돈다', async () => {
     dbQueryMock.mockImplementation(async (sql: string) =>
-      sql === 'PRAGMA user_version' ? { values: [{ user_version: 11 }] } : { values: [{ name: 'world' }] },
+      sql === 'PRAGMA user_version' ? { values: [{ user_version: DB_VERSION }] } : { values: [{ name: 'world' }] },
     )
     const { getBossProfitDb } = require('../db') as typeof import('../db')
 
@@ -111,42 +112,12 @@ describe('getBossProfitDb', () => {
 
     const statements = dbExecuteMock.mock.calls.map(([sql]) => String(sql))
     const tail = statements.slice(statements.indexOf('BEGIN'))
-    const markers = ['BEGIN', 'COMMIT', 'PRAGMA user_version = 1', 'PRAGMA user_version = 2', 'PRAGMA user_version = 3', 'PRAGMA user_version = 4', 'PRAGMA user_version = 5', 'PRAGMA user_version = 6', 'PRAGMA user_version = 7', 'PRAGMA user_version = 8', 'PRAGMA user_version = 9', 'PRAGMA user_version = 10', 'PRAGMA user_version = 11']
-    expect(tail.filter((sql) => markers.includes(sql))).toEqual([
-      'BEGIN',
-      'PRAGMA user_version = 1',
-      'COMMIT',
-      'BEGIN',
-      'PRAGMA user_version = 2',
-      'COMMIT',
-      'BEGIN',
-      'PRAGMA user_version = 3',
-      'COMMIT',
-      'BEGIN',
-      'PRAGMA user_version = 4',
-      'COMMIT',
-      'BEGIN',
-      'PRAGMA user_version = 5',
-      'COMMIT',
-      'BEGIN',
-      'PRAGMA user_version = 6',
-      'COMMIT',
-      'BEGIN',
-      'PRAGMA user_version = 7',
-      'COMMIT',
-      'BEGIN',
-      'PRAGMA user_version = 8',
-      'COMMIT',
-      'BEGIN',
-      'PRAGMA user_version = 9',
-      'COMMIT',
-      'BEGIN',
-      'PRAGMA user_version = 10',
-      'COMMIT',
-      'BEGIN',
-      'PRAGMA user_version = 11',
-      'COMMIT',
-    ])
+    // 버전 목록을 손으로 적지 않는다. `DB_VERSION` 이 오를 때마다 이 배열이 조용히 스탈해진다.
+    const versions = Array.from({ length: DB_VERSION }, (_, index) => index + 1)
+    const markers = ['BEGIN', 'COMMIT', ...versions.map((version) => `PRAGMA user_version = ${version}`)]
+    expect(tail.filter((sql) => markers.includes(sql))).toEqual(
+      versions.flatMap((version) => ['BEGIN', `PRAGMA user_version = ${version}`, 'COMMIT']),
+    )
   })
 
   it('웹 플랫폼에서는 커넥션을 열기 전에 initWebStore를 먼저 호출한다', async () => {

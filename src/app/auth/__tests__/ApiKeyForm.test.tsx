@@ -200,7 +200,9 @@ describe('ApiKeyForm', () => {
   it('키가 기기 밖으로 나가지 않는다는 안내를 보여준다', async () => {
     const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
 
-    expect(view.getByText('입력한 키는 이 기기에만 저장되고 넥슨 외 어디로도 전송되지 않아요')).toBeTruthy()
+    expect(
+      view.getByText('입력한 키는 이 기기에만 저장되고, 넥슨 밖으로는 키 자체가 나가지 않아요'),
+    ).toBeTruthy()
   })
 
   // 소제목이 이미 두 블록을 가른다. 선까지 두면 같은 일을 두 번 하고, 둘을 **같은 무게로**

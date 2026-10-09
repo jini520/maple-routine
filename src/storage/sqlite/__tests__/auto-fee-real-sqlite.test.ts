@@ -15,14 +15,7 @@ import {
   insertIncomeRecord,
   updateIncomeSaleFees,
 } from '../../income'
-import {
-  applyAutoDropFees,
-  getAutoFeeDropRecords,
-  getBossDropRecords,
-  getBulkFeeDropRecords,
-  replaceBossDropRecords,
-  updateDropFees,
-} from '../../boss-drops'
+import { NO_WORLD, applyAutoDropFees, getAutoFeeDropRecords, getBossDropRecords, getBulkFeeDropRecords, replaceBossDropRecords, updateDropFees } from '../../boss-drops'
 import {
   type BossProfitRecord,
   getAutoFeeProfitRecords,
@@ -85,11 +78,12 @@ describe('수입의 자동 수수료', () => {
 
 describe('드롭의 자동 수수료', () => {
   it('두 칸 중 하나라도 자동인 기록을 읽고, 두 요율을 고쳐 쓴다', async () => {
-    const base = { category: 'equipment' as const, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }
+    const base = { dropRecordId: null,
+    category: 'equipment' as const, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }
     await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-08-06', [
       { ...base, priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2, saleFeePercent: 5, splitFeePercent: 5, saleFeeAuto: true },
       { ...base, priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2, saleFeePercent: 3, splitFeePercent: 3 },
-    ], '2026-08-10T00:00:00.000Z')
+    ], '2026-08-10T00:00:00.000Z', NO_WORLD)
 
     const auto = await getAutoFeeDropRecords()
     expect(auto.map((record) => record.dropIndex)).toEqual([0])
@@ -157,12 +151,13 @@ describe('일괄 적용 대상', () => {
   })
 
   it('가격을 입력하고 두 수수료가 빈 드롭만 고르고, 적용하면 두 칸이 자동이 된다', async () => {
-    const base = { category: 'equipment' as const, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }
+    const base = { dropRecordId: null,
+    category: 'equipment' as const, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }
     await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-08-06', [
       { ...base, priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2 },
       { ...base },
       { ...base, priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2, saleFeePercent: 3 },
-    ], '2026-08-10T00:00:00.000Z')
+    ], '2026-08-10T00:00:00.000Z', NO_WORLD)
 
     const candidates = await getBulkFeeDropRecords()
     expect(candidates.map((record) => record.dropIndex)).toEqual([0])

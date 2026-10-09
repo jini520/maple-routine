@@ -27,6 +27,7 @@
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.2.14",
     "@gorhom/portal": "^1.0.14",
+    "@noble/hashes": "^2.4.0",
     "@notifee/react-native": "^9.1.8",
     "@op-engineering/op-sqlite": "^17.1.5",
     "@quidone/react-native-wheel-picker": "1.7.1",

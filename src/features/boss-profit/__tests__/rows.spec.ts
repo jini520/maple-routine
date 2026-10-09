@@ -220,6 +220,9 @@ describe('toRecordedDrop: 가격 필드', () => {
     difficulty: 'hard',
     periodKey: '2026-08-06',
     dropIndex: 0,
+    dropRecordId: 'drop-1',
+    world: null,
+    worldKey: null,
     category: 'equipment' as const,
     itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
@@ -278,6 +281,7 @@ describe('toRecordedDrop: 가격 필드', () => {
   it('아이템 key 와 상자 key 를 옮긴다', () => {
     const drop = toRecordedDrop({
       ...base,
+      dropRecordId: 'drop-1',
       category: 'consumable',
       itemKey: 'restraint_ring',
       itemName: '리스트레인트 링',

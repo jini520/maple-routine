@@ -33,6 +33,7 @@ import {
   type AuthError,
   type AuthState,
 } from './state'
+import { forgetServerData } from '../server-sync/forget'
 
 export interface AuthStore extends AuthState {
   restoreFromStorage(): Promise<void>
@@ -256,6 +257,11 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   async signOut() {
+    // 서버에 모아 둔 시세 표본과 식별자를 먼저 거둔다. **기기에서 키를 지우기 전**이어야 한다 -
+    // 자기를 밝힐 값이 그 키에서 나오므로, 지운 뒤에는 무엇을 지워 달라고 말할 길이 없다.
+    // 실패해도 진행한다(처리방침이 그 경우를 적는다).
+    await forgetServerData()
+
     // 로그인이 있었으면 서버의 토큰도 함께 거둔다. **기기에서 지우기 전에** 물어야 세션 값을
     // 아직 들고 있다. 실패해도 진행한다 - 기기에서 지우는 것이 본론이고, 서버 쪽은 갱신 토큰
     // 수명이 지나면 어차피 정리된다.
