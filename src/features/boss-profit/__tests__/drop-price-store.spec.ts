@@ -19,6 +19,19 @@ const {
   replaceBossDropRecords: replaceBossDropRecordsMock,
   getBossDropRecordsRevision: getBossDropRecordsRevisionMock,
 } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
+
+// 서버 전송은 다른 기능이 소유한다(`features/server-sync`). 여기서는 **부르는지만** 본다 -
+// 실제 전송을 태우면 이 스위트가 네트워크와 신원까지 짊어진다.
+var mockServerSync: Record<string, unknown>
+jest.mock('../../server-sync/drop-price-sync', () => {
+  // 위 목들과 같은 이유다. `jest.resetModules` 뒤 다시 require 한 스토어가 **같은 목**을 봐야
+  // 호출을 셀 수 있다. 팩토리에서 바로 만들면 회차마다 새 목이 생겨 호출 수가 늘 0 이다.
+  mockServerSync = mockServerSync ?? { reportDropPrice: jest.fn() }
+  return mockServerSync
+})
+const { reportDropPrice: reportDropPriceMock } = jest.requireMock(
+  '../../server-sync/drop-price-sync',
+) as Record<string, jest.Mock>
 var mockModule1: Record<string, unknown>
 jest.mock('../../../storage/boss-profit', () => {
   // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
@@ -411,6 +424,8 @@ describe('savePrice · excludePrice', () => {
     expect(drops[1]).toEqual(
       expect.objectContaining({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 1 }),
     )
+    // 저장이 끝난 뒤 그 한 건을 서버로 보낸다. 식별자만 넘기고 값은 전송 쪽이 다시 읽는다.
+    expect(reportDropPriceMock).toHaveBeenCalledWith('drop-1', expect.any(Date))
     // 가격만 고친다. 다시 쓰면서 key 를 빠뜨리면 그 기록이 그림과 판정을 잃는다.
     expect(drops[0]).toEqual(expect.objectContaining({ itemKey: 'loose_control_machine_mark' }))
     expect(drops[1]).toEqual(

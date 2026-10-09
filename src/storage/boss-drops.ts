@@ -324,6 +324,21 @@ export async function getBossDropRecords(
   return (values ?? []).map(rowToRecord)
 }
 
+/**
+ * 식별자 하나로 그 기록을 찾는다. 서버로 보낼 때 **현재 값**을 읽는 자리다.
+ *
+ * 없으면 `null` 이고, 그것이 「서버에서 지워라」 의 신호다 - 보내기와 지우기를 가르는 칸을 따로
+ * 두지 않고 원본의 유무로 판다.
+ */
+export async function getBossDropRecordById(dropRecordId: string): Promise<BossDropRecord | null> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(`SELECT * FROM boss_drop_records WHERE drop_record_id = ?`, [
+    dropRecordId,
+  ])
+  const row = (values ?? [])[0]
+  return row === undefined ? null : rowToRecord(row as Record<string, unknown>)
+}
+
 /** 판매 · 분배 수수료 중 하나라도 자동인 기록 전부. 등급 기록이 바뀌면 다시 셀 대상이다. */
 export async function getAutoFeeDropRecords(): Promise<BossDropRecord[]> {
   const db = await getBossProfitDb()

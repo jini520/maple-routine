@@ -293,6 +293,26 @@ const TABLE_DEFINITIONS = [
   },
   // 캐릭터의 메이플 ID 소속. 스타포스 줄은 이름만 들어 옛 이름을 지우면 안 된다.
   // 옛 이름과 지운 캐릭터는 다시 받을 수 없어 `RECORD_TABLE_NAMES` 에 직접 적혀 있어야 한다.
+  // 서버로 못 보낸 것만 든다. 평소에 비어 있다 - 전송은 사용자가 값을 저장하는 그 자리에서
+  // 한 건 나가고, 실패한 것만 여기 줄이 남는다. 할 일만 들어서 표 자체가 목록이 된다.
+  //
+  // **`general` 그룹이다**(차집합 파생). 캐시를 비우면 아직 못 보낸 것이 사라지는데, 서버가 값을
+  // 모으는 목적이 통계라 한두 건이 빠지는 것은 문제가 아니다. 사용자의 기록은 기록 표에 남는다.
+  {
+    name: 'server_sync_queue',
+    createSql: `CREATE TABLE IF NOT EXISTS server_sync_queue (
+    id TEXT NOT NULL,
+    -- 어느 종류의 기록인가. **파생되지 않는다** - uuid 만 보고는 어느 표를 열어야 하는지 모른다.
+    kind TEXT NOT NULL,
+    -- 그 기록의 uuid. 한 기록에 줄은 하나다(같은 것을 여러 번 고쳐도).
+    record_id TEXT NOT NULL UNIQUE,
+    -- 응답을 받은 횟수. 5 가 되면 버린다. **네트워크가 없으면 안 오른다.**
+    attempts INTEGER NOT NULL DEFAULT 0,
+    last_error TEXT,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (id)
+)`,
+  },
   {
     name: 'character_accounts',
     createSql: `CREATE TABLE IF NOT EXISTS character_accounts (

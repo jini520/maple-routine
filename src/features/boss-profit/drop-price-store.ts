@@ -40,6 +40,7 @@ import { create } from 'zustand'
 import { toRecordedDrop } from './rows'
 import { useBossProfitStore } from './store'
 import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
+import { reportDropPrice } from '../server-sync/drop-price-sync'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import {
   getBossProfitRecords,
@@ -437,6 +438,13 @@ async function writePrice(
   useBossProfitStore
     .getState()
     .applyExternalDropEdit(entry.ocid, entry.bossKey, entry.difficulty, entry.periodKey, nextDrops)
+
+  // 서버로 한 건 보낸다(시세 표본). **기기 저장이 끝난 뒤이고 결과를 안 기다린다** - 사용자가
+  // 보는 것은 저장이고 전송은 거기 얹힌 일이다. 실패는 대기 표가 들고 다음 부팅에 다시 나간다.
+  //
+  // 식별자가 `null` 인 경우는 저장된 적 없는 드롭인데, 이 경로는 읽어 온 그룹만 고쳐서 안 온다.
+  const dropRecordId = entry.drop.dropRecordId
+  if (dropRecordId !== null) void reportDropPrice(dropRecordId, new Date())
 
   set({
     groups: get().groups.map((group) => ({

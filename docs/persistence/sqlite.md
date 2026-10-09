@@ -79,10 +79,19 @@ erDiagram
         TEXT job_class
         TEXT updated_at
     }
+    server_sync_queue {
+        TEXT id PK
+        TEXT kind
+        TEXT record_id
+        INTEGER attempts
+        TEXT last_error
+        TEXT created_at
+    }
     boss_party_settings ||--o{ boss_profit_records : "파티원 수 기본값 시드"
     boss_party_period_overrides ||--o{ boss_profit_records : "그 기간만의 파티원 수·비율. 설정보다 먼저 읽힌다"
     boss_profit_records ||--o{ boss_drop_records : "같은 (ocid, boss, difficulty, period_key)"
     character_profiles ||--o{ boss_profit_records : "같은 ocid. 행에 이름·얼굴을 붙인다"
+    boss_drop_records ||--o| server_sync_queue : "못 보낸 것만. record_id = drop_record_id"
 ```
 
 > FOREIGN KEY 제약은 실제로 걸려 있지 않다 — 위 관계는 앱 코드가 `(ocid, boss, difficulty)`(파티 설정) / `(ocid, boss, difficulty, period_key)`(드롭 기록)로 논리적으로 조인하는 것뿐이다(`features/boss-profit/store.ts`가 완료 감지 시 `boss_party_settings`를 먼저 조회해 `boss_profit_records`의 기본 파티원 수로 쓴다). 제약이 없으므로 **한쪽만 지우면 고아 행이 남는다** — 캐시 삭제가 네 테이블을 함께 비워야 하는 이유다([[ADR-052]]).
@@ -262,6 +271,25 @@ PK: `(ocid, name, account_id)`. 칸은 `first_seen_on` · `last_seen_on`(KST `YY
 쓰고, 볼 때마다 줄을 쌓지 않고 두 날짜를 넓힌다(`MIN` · `MAX`). 스타포스 줄은 이름만 들고 있어
 **이름으로** 찾고, 그래서 옛 이름을 지우지 않는다. `character_profiles` 는 이름을 덮어써 이 용도로 못 쓴다.
 **`RECORD_TABLE_NAMES` 에 든다.** 옛 이름과 지워진 캐릭터는 다시 받을 수 없다.
+
+### `server_sync_queue` - 서버로 못 보낸 것 ([[ADR-343]], 구현 완료 2026-10-09)
+
+PK: `id`(v4 uuid). **평소에 비어 있다.** 전송은 사용자가 값을 저장하는 그 자리에서 한 건 나가고
+([[ADR-342]] 결정 4) 실패한 것만 여기 줄이 남는다. 보낼 것을 찾으려고 기록 표를 훑지 않는다 -
+그쪽이 더 낭비다. 할 일만 들어서 **표 자체가 목록**이고 부분 인덱스가 필요 없다.
+
+| 칸 | 뜻 |
+|---|---|
+| `kind` | 어느 종류의 기록인가. **파생되지 않는다** - uuid 만 보고는 어느 표를 열어야 하는지 모른다. 지금 값은 `'drop-price'` 하나다 |
+| `record_id` | 그 기록의 uuid(`UNIQUE`). 드롭 가격이면 `boss_drop_records.drop_record_id` 다. **FK 가 아니다** - 기록이 지워진 뒤에도 줄이 남아야 하고, 그 상태가 곧 「서버에서 지워라」 다 |
+| `attempts` | 응답을 받은 횟수. 5 가 되면 줄을 버린다. **네트워크가 없으면 안 오른다** |
+| `last_error` | 마지막 거절. `HTTP 503` 같은 글자다 |
+
+- **값을 담지 않는다**([[ADR-343]] 결정 4). 보낼 때 원본에서 현재 값을 읽는다. 담으면 그 사이에 또 고친 경우 **중간 값이 서버로 간다.**
+- **작업 종류(올리기 · 지우기)를 적지 않는다**(결정 2). 원본이 있으면 올리기이고 없으면 지우기이므로 파생된다. 적으면 지워진 기록에 올리기가 남은 상태가 표현 가능해지고 제약으로는 못 막는다.
+- **한 기록에 줄은 하나다**(결정 1). 같은 것을 여러 번 고쳐도 줄이 하나이고, 보낼 때 현재 값을 읽으므로 마지막 값이 간다. 다시 넣어도 `attempts` 를 0 으로 **안 돌린다** - 사용자가 다시 저장했다는 것이 망이 나아졌다는 뜻은 아니고, 돌려 주면 서버가 영구히 거절하는 건이 무한히 재시도된다.
+- **`attempts` 는 응답을 받은 뒤에 적는다**(결정 5). 미리 적고 성공하면 되돌리는 모양이면 훑는 중에 앱이 꺼졌을 때 그 되돌리기가 못 돌아 한 번 켰다 끈 것이 시도로 남는다.
+- **`general` 그룹이다**(차집합 파생). 캐시를 비우면 아직 못 보낸 것이 사라지는데, 서버가 값을 모으는 목적이 통계라 한두 건이 빠지는 것은 문제가 아니다. 사용자의 기록은 기록 표에 남는다.
 
 ## 새 테이블을 추가할 때
 
