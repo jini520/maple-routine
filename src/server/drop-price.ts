@@ -67,12 +67,16 @@ export async function sendDropPrice(
 }
 
 /**
- * **서버에 있는 내 자리를 지운다.** 연결 해제가 부른다.
+ * **탈퇴를 알린다.** 연결 해제가 부른다.
  *
- * 거두기와 다르다 - 그쪽은 가격 한 건을 물리는 것이고 이쪽은 그 사람의 표본 전부와 식별자를
- * 없애는 것이다. 처리방침이 적은 삭제 요구권을 사실로 만드는 자리다.
+ * 메서드가 `DELETE` 지만 서버는 **행을 안 지운다.** 탈퇴 표시를 적고, 세션만 지우고, 시세 표본은
+ * 그대로 둔다 - 시세 추이가 사람이 들어왔다 나갔다고 흔들리지 않아야 한다. 같은 키를 다시 넣으면
+ * 그 사람이 되살아난다.
+ *
+ * 가격 한 건을 물리는 `withdrawDropPrice` 와 다른 축이다. 저쪽은 그 기록의 가격을 거두는 것이고
+ * 이쪽은 사람을 접는 것이다.
  */
-export async function deleteMyServerData(headers: Record<string, string>): Promise<SendResult> {
+export async function withdrawFromServer(headers: Record<string, string>): Promise<SendResult> {
   return call('/me', { method: 'DELETE', headers })
 }
 
