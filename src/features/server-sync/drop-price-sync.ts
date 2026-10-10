@@ -9,7 +9,7 @@
  */
 import { getBossDropRecordById, type BossDropRecord } from '../../storage/boss-drops'
 import { enqueueServerSync } from '../../storage/server-sync-queue'
-import { sendDropPrice, withdrawDropPrice } from '../../server/drop-price'
+import { deleteDropPrice, sendDropPrice } from '../../server/drop-price'
 import type { DropPricePayload } from '../../types/drop-price'
 import { serverIdentityHeaders } from '../auth/server-identity'
 import type { SyncHandler } from './sweep'
@@ -74,7 +74,7 @@ export const dropPriceHandler: SyncHandler<DropPricePayload> = {
   },
   send: async (headers, recordId, value) =>
     value === null
-      ? withdrawDropPrice(headers, recordId)
+      ? deleteDropPrice(headers, recordId)
       : sendDropPrice(headers, value),
 }
 
@@ -107,7 +107,7 @@ export async function reportDropPrice(dropRecordId: string, now: Date): Promise<
 
   const result =
     value === null
-      ? await withdrawDropPrice(headers, dropRecordId)
+      ? await deleteDropPrice(headers, dropRecordId)
       : await sendDropPrice(headers, value)
 
   if (result.outcome !== 'sent') {

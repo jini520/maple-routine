@@ -11,7 +11,7 @@
  * **통신이 실패해도 진행한다.** 기기에서 지우는 것이 본론이고, 그 경우 서버가 탈퇴를 모른 채
  * 남는다. 같은 키를 다시 넣고 연결 해제를 다시 하면 그때 전해진다.
  */
-import { withdrawFromServer } from '../../server/drop-price'
+import { deleteMeOnServer } from '../../server/drop-price'
 import { clearServerSyncQueue } from '../../storage/server-sync-queue'
 import { serverIdentityHeaders } from '../auth/server-identity'
 
@@ -21,7 +21,7 @@ export async function forgetServerData(): Promise<boolean> {
   try {
     const headers = await serverIdentityHeaders()
     if (headers !== null) {
-      told = (await withdrawFromServer(headers)).outcome === 'sent'
+      told = (await deleteMeOnServer(headers)).outcome === 'sent'
     }
   } catch {
     // 밝힐 수단을 읽다가 터졌다. 아래 비우기는 그래도 해야 한다.

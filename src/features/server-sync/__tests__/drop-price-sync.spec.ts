@@ -18,13 +18,13 @@ jest.mock('../../../storage/boss-drops', () => ({ getBossDropRecordById: jest.fn
 jest.mock('../../../storage/server-sync-queue', () => ({ enqueueServerSync: jest.fn() }))
 jest.mock('../../../server/drop-price', () => ({
   sendDropPrice: jest.fn(),
-  withdrawDropPrice: jest.fn(),
+  deleteDropPrice: jest.fn(),
 }))
 jest.mock('../../auth/server-identity', () => ({ serverIdentityHeaders: jest.fn() }))
 
 const { getBossDropRecordById } = jest.requireMock('../../../storage/boss-drops')
 const { enqueueServerSync } = jest.requireMock('../../../storage/server-sync-queue')
-const { sendDropPrice, withdrawDropPrice } = jest.requireMock('../../../server/drop-price')
+const { sendDropPrice, deleteDropPrice } = jest.requireMock('../../../server/drop-price')
 const { serverIdentityHeaders } = jest.requireMock('../../auth/server-identity')
 
 const HEADERS = { 'x-api-key-hash': 'a'.repeat(64) }
@@ -69,7 +69,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   serverIdentityHeaders.mockResolvedValue(HEADERS)
   sendDropPrice.mockResolvedValue({ outcome: 'sent' })
-  withdrawDropPrice.mockResolvedValue({ outcome: 'sent' })
+  deleteDropPrice.mockResolvedValue({ outcome: 'sent' })
 })
 
 describe('보내는 기간', () => {
@@ -162,7 +162,7 @@ describe('저장 자리의 전송', () => {
     await reportDropPrice(ID, NOW)
 
     expect(sendDropPrice).not.toHaveBeenCalled()
-    expect(withdrawDropPrice).not.toHaveBeenCalled()
+    expect(deleteDropPrice).not.toHaveBeenCalled()
     expect(enqueueServerSync).not.toHaveBeenCalled()
   })
 
@@ -171,7 +171,7 @@ describe('저장 자리의 전송', () => {
     getBossDropRecordById.mockResolvedValue(record({ priceState: 'excluded' }))
     await reportDropPrice(ID, NOW)
 
-    expect(withdrawDropPrice).toHaveBeenCalledWith(HEADERS, ID)
+    expect(deleteDropPrice).toHaveBeenCalledWith(HEADERS, ID)
     expect(sendDropPrice).not.toHaveBeenCalled()
   })
 
@@ -197,7 +197,7 @@ describe('저장 자리의 전송', () => {
     await reportDropPrice(ID, NOW)
 
     expect(sendDropPrice).not.toHaveBeenCalled()
-    expect(withdrawDropPrice).not.toHaveBeenCalled()
+    expect(deleteDropPrice).not.toHaveBeenCalled()
     expect(enqueueServerSync).not.toHaveBeenCalled()
   })
 

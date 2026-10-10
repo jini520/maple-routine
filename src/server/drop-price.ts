@@ -73,15 +73,18 @@ export async function sendDropPrice(
  * 그대로 둔다 - 시세 추이가 사람이 들어왔다 나갔다고 흔들리지 않아야 한다. 같은 키를 다시 넣으면
  * 그 사람이 되살아난다.
  *
- * 가격 한 건을 물리는 `withdrawDropPrice` 와 다른 축이다. 저쪽은 그 기록의 가격을 거두는 것이고
- * 이쪽은 사람을 접는 것이다.
+ * 가격 한 건을 빼는 `deleteDropPrice` 와 다른 축이다. 저쪽은 그 기록의 가격이고 이쪽은 사람이다.
  */
-export async function withdrawFromServer(headers: Record<string, string>): Promise<SendResult> {
+export async function deleteMeOnServer(headers: Record<string, string>): Promise<SendResult> {
   return call('/me', { method: 'DELETE', headers })
 }
 
-/** 그 기록의 가격을 거둔다. 기기에서 사라졌거나 기록 안함으로 바뀐 경우다. */
-export async function withdrawDropPrice(
+/**
+ * 그 기록의 가격을 뺀다. 기기에서 사라졌거나 기록 안함으로 바뀐 경우다.
+ *
+ * 서버는 줄을 안 지우고 `deleted_at` 만 채운다. 다시 적으면 그 칸이 비워져 되살아난다.
+ */
+export async function deleteDropPrice(
   headers: Record<string, string>,
   dropRecordId: string,
 ): Promise<SendResult> {

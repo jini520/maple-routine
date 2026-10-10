@@ -6,11 +6,11 @@
  */
 import { forgetServerData } from '../forget'
 
-jest.mock('../../../server/drop-price', () => ({ withdrawFromServer: jest.fn() }))
+jest.mock('../../../server/drop-price', () => ({ deleteMeOnServer: jest.fn() }))
 jest.mock('../../../storage/server-sync-queue', () => ({ clearServerSyncQueue: jest.fn() }))
 jest.mock('../../auth/server-identity', () => ({ serverIdentityHeaders: jest.fn() }))
 
-const { withdrawFromServer } = jest.requireMock('../../../server/drop-price')
+const { deleteMeOnServer } = jest.requireMock('../../../server/drop-price')
 const { clearServerSyncQueue } = jest.requireMock('../../../storage/server-sync-queue')
 const { serverIdentityHeaders } = jest.requireMock('../../auth/server-identity')
 
@@ -19,7 +19,7 @@ const HEADERS = { 'x-api-key-hash': 'a'.repeat(64) }
 beforeEach(() => {
   jest.clearAllMocks()
   serverIdentityHeaders.mockResolvedValue(HEADERS)
-  withdrawFromServer.mockResolvedValue({ outcome: 'sent' })
+  deleteMeOnServer.mockResolvedValue({ outcome: 'sent' })
   clearServerSyncQueue.mockResolvedValue(undefined)
 })
 
@@ -27,13 +27,13 @@ describe('서버 쪽 거두기', () => {
   it('지금 신원으로 탈퇴를 알리고 대기 표를 비운다', async () => {
     expect(await forgetServerData()).toBe(true)
 
-    expect(withdrawFromServer).toHaveBeenCalledWith(HEADERS)
+    expect(deleteMeOnServer).toHaveBeenCalledWith(HEADERS)
     expect(clearServerSyncQueue).toHaveBeenCalledTimes(1)
   })
 
   it('통신이 실패해도 대기 표는 비운다', async () => {
     // 못 보낸 줄이 다음 사람의 신원으로 나가는 것이 서버에 표본이 남는 것보다 나쁘다.
-    withdrawFromServer.mockResolvedValue({ outcome: 'no-response' })
+    deleteMeOnServer.mockResolvedValue({ outcome: 'no-response' })
 
     expect(await forgetServerData()).toBe(false)
     expect(clearServerSyncQueue).toHaveBeenCalledTimes(1)
@@ -41,7 +41,7 @@ describe('서버 쪽 거두기', () => {
 
   it('서버가 거절해도 못 알린 것으로 답한다', async () => {
     // 같은 키를 다시 넣고 연결 해제를 다시 하면 그때 전해진다.
-    withdrawFromServer.mockResolvedValue({ outcome: 'rejected', status: 401 })
+    deleteMeOnServer.mockResolvedValue({ outcome: 'rejected', status: 401 })
 
     expect(await forgetServerData()).toBe(false)
   })
@@ -50,7 +50,7 @@ describe('서버 쪽 거두기', () => {
     serverIdentityHeaders.mockResolvedValue(null)
 
     expect(await forgetServerData()).toBe(false)
-    expect(withdrawFromServer).not.toHaveBeenCalled()
+    expect(deleteMeOnServer).not.toHaveBeenCalled()
     expect(clearServerSyncQueue).toHaveBeenCalledTimes(1)
   })
 
