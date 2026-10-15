@@ -18,7 +18,7 @@ import type { NexonAuthConfig, NexonCredential } from '../types/auth'
 
 export function credentialOf(config: NexonAuthConfig | null): NexonCredential | null {
   const login = config?.login
-  if (login != null) return { kind: 'login', value: login.accessToken }
+  if (login != null) return { kind: 'login', value: login.session }
 
   const key = config?.apiKeys[0]
   return key === undefined ? null : { kind: 'apiKey', value: key.value }
@@ -27,12 +27,12 @@ export function credentialOf(config: NexonAuthConfig | null): NexonCredential | 
 /**
  * 저장된 넥슨 로그인 자격. 로그인이 없으면 `null`.
  *
- * **세션이 아니라 액세스 토큰이다.** 세션은 새 토큰을 받을 때만 우리 서버로 가고 넥슨에는
- * 안 나간다. 프렌즈 여섯 말고는 이 자격으로 못 부른다.
+ * **값은 서버 세션이다.** 넥슨에는 안 나가고 우리 서버의 프렌즈 스트림에만 실린다. 프렌즈 여섯
+ * 말고는 이 자격으로 못 부른다.
  */
 export function loginCredentialOf(config: NexonAuthConfig | null): NexonCredential | null {
   const login = config?.login
-  return login == null ? null : { kind: 'login', value: login.accessToken }
+  return login == null ? null : { kind: 'login', value: login.session }
 }
 
 /**

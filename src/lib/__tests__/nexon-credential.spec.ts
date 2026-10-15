@@ -8,12 +8,7 @@ function 설정(login: string | null, ...keys: string[]): NexonAuthConfig {
     login:
       login === null
         ? null
-        : {
-            kind: 'login',
-            session: '세션',
-            accessToken: login,
-            accessExpiresAt: '2026-09-27T12:30:00.000Z',
-          },
+        : { kind: 'login', session: login },
     apiKeys: keys.map((value) => ({ kind: 'apiKey' as const, label: '', value })),
   }
 }
@@ -23,7 +18,7 @@ describe('credentialOf', () => {
     expect(credentialOf(설정(null, '키-가'))).toEqual({ kind: 'apiKey', value: '키-가' })
   })
 
-  it('로그인만 있으면 액세스 토큰이다', () => {
+  it('로그인만 있으면 서버 세션이다', () => {
     // 종전에는 여기서 null 을 돌려줬다. 그래서 키를 거둔 사용자의 조회가 전부 죽었다.
     expect(credentialOf(설정('액세스'))).toEqual({ kind: 'login', value: '액세스' })
   })

@@ -7,6 +7,7 @@ import {
   NexonSignInRequiredError,
 } from './errors'
 import { markDeveloperKeyDead, nextDeveloperKey } from './developer-keys'
+import type { StreamLine, StreamTask } from '../server/friends-stream'
 import type { NexonCredential } from '../types/auth'
 
 interface NexonErrorBody {
@@ -60,9 +61,9 @@ interface Route {
  *
  * client 파일들은 이것을 모른다. 갈림이 그쪽으로 흩어지면 새는 자리를 못 센다.
  *
- * 넥슨 주소는 셋 다 같다. 갈리는 것은 **무엇을 싣는가**뿐이다.
+ * 넥슨으로 가는 둘은 주소가 같고 **무엇을 싣는가**만 다르다. 로그인 + 프렌즈는 넥슨이 아니라
+ * 우리 서버의 스트림으로 가므로 여기 없다(`requestViaStream`).
  *   API 키 자격        `x-nxopen-api-key`  사용자 키
- *   로그인 + 프렌즈     `Authorization`     액세스 토큰
  *   로그인 + 그 밖      `x-nxopen-api-key`  개발자 키
  */
 function routeOf(path: string, credential: NexonCredential): Route {
@@ -71,24 +72,23 @@ function routeOf(path: string, credential: NexonCredential): Route {
     return { url, headers: { 'x-nxopen-api-key': credential.value }, developerKey: null }
   }
 
-  // 물음표 뒤는 경로가 아니다. 확률 기록이 날짜로, 스케줄러가 ocid 로 걸러 온다.
-  const bare = path.split('?')[0] ?? path
-  if (FRIENDS_PATHS.includes(bare)) {
-    return { url, headers: { Authorization: `Bearer ${credential.value}` }, developerKey: null }
-  }
-
   // Open ID 가 안 여는 경로다. 로그인 사용자는 자기 키가 없으니 번들에 박은 키로 부른다.
   const developerKey = nextDeveloperKey()
   if (developerKey === null) {
     // 빈 키를 실으면 넥슨이 400 을 주고, 그 400 은 사용자에게 키가 잘못됐다 로 보인다.
-    throw new NexonNetworkError(`넥슨 로그인으로는 부를 수 없는 경로입니다: ${bare}`)
+    throw new NexonNetworkError(`넥슨 로그인으로는 부를 수 없는 경로입니다: ${bareOf(path)}`)
   }
 
   return { url, headers: { 'x-nxopen-api-key': developerKey }, developerKey }
 }
 
+/** 물음표 앞. 확률 기록이 날짜로, 스케줄러가 ocid 로 걸러 와서 경로만 떼야 프렌즈인지 가려진다. */
+function bareOf(path: string): string {
+  return path.split('?')[0] ?? path
+}
+
 /**
- * 넥슨에 한 번 묻는다. 자격이 로그인이면 **우리 서버를 거친다.**
+ * 넥슨에 한 번 묻는다. 자격이 로그인이고 프렌즈 경로면 **우리 서버의 스트림을 거친다.**
  *
  * **자격을 문자열이 아니라 객체로 받는 이유가 이것이다.** 전송 경로가 갈리는 자리를 이 파일
  * 하나로 모은다.
@@ -96,6 +96,9 @@ function routeOf(path: string, credential: NexonCredential): Route {
  * @param credential `lib/nexon-credential` 의 `credentialOf` 가 고른다
  */
 export async function requestJson<T>(path: string, credential: NexonCredential): Promise<T> {
+  if (credential.kind === 'login' && FRIENDS_PATHS.includes(bareOf(path))) {
+    return requestViaStream<T>(path, credential.value)
+  }
   try {
     return await requestOnce<T>(path, credential)
   } catch (error) {
@@ -109,45 +112,131 @@ export async function requestJson<T>(path: string, credential: NexonCredential):
 /**
  * 이 실패를 **다시 해 볼 수 있나.** 할 수 있으면 그때 쓸 자격, 없으면 `null`.
  *
- * 둘뿐이다. 개발자 키가 죽었거나(그 키를 빼고 남은 키로) 액세스 토큰이 만료됐거나(새로 받아서).
- * 둘 다 `한 번 더 부르면 되는` 실패라, 사용자에게 알릴 것이 없다.
+ * 하나뿐이다. 개발자 키가 죽었으면 그 키를 빼고 남은 키로 간다. `한 번 더 부르면 되는` 실패라
+ * 사용자에게 알릴 것이 없다.
  */
-async function retryWith(
-  path: string,
+function retryWith(
+  _path: string,
   credential: NexonCredential,
   error: unknown,
 ): Promise<NexonCredential | null> {
   // 개발자 키가 죽었다. 뺀 표시는 남아 있어 다음 요청부터는 처음부터 산 키로 간다.
   const dead = deadDeveloperKeyOf(error)
-  if (dead !== null) {
-    markDeveloperKeyDead(dead)
-    // 남은 키가 없으면 원래 실패를 올린다. `routeOf` 가 다시 던질 뿐이다.
-    return nextDeveloperKey() === null ? null : credential
-  }
-
-  // 액세스 토큰이 30분을 넘겼다. 그 401 만 이 종류로 온다 - 키 자격과 개발자 키 회차는
-  // `NexonAuthError` 라 여기 안 걸린다. 세션까지 죽었으면 갱신이 `null` 을 주고, 그때는 원래
-  // 실패가 올라가 화면이 재로그인을 띄운다.
-  if (!(error instanceof NexonSignInRequiredError)) return null
-  const renewed = await renewAccessToken?.()
-  return renewed == null ? null : { kind: 'login', value: renewed }
+  if (dead === null) return Promise.resolve(null)
+  markDeveloperKeyDead(dead)
+  // 남은 키가 없으면 원래 실패를 올린다. `routeOf` 가 다시 던질 뿐이다.
+  return Promise.resolve(nextDeveloperKey() === null ? null : credential)
 }
 
 /**
- * 새 액세스 토큰을 받아 오는 함수. **앱이 부팅 때 꽂는다.**
+ * 우리 서버의 프렌즈 스트림을 부르는 함수. **앱이 부팅 때 꽂는다.**
  *
- * `nexon/` 이 저장소와 우리 서버를 직접 부르면 계층이 거꾸로 선다. 그래서 방향을 여기서
- * 뒤집는다(`native/ports.ts` 와 같은 태도). 안 꽂혀 있으면 재시도하지 않고 401 을 그대로 올린다.
+ * `nexon/` 이 우리 서버를 직접 부르면 계층이 거꾸로 선다. 그래서 방향을 여기서 뒤집는다
+ * (`native/ports.ts` 와 같은 태도). 안 꽂혀 있으면 로그인 자격의 프렌즈 조회는 못 닿은 것으로 던진다.
  */
-let renewAccessToken: (() => Promise<string | null>) | null = null
+export type FriendsStream = (session: string, tasks: readonly StreamTask[]) => Promise<StreamLine[]>
+
+let friendsStream: FriendsStream | null = null
 
 /** 부팅이 한 번 부른다. */
-export function setAccessTokenRenewer(renew: (() => Promise<string | null>) | null): void {
-  renewAccessToken = renew
+export function setFriendsStream(stream: FriendsStream | null): void {
+  friendsStream = stream
 }
 
 /** 테스트가 갈아끼운다. 이름을 가른 것은 부팅 배선과 섞이지 않게 하려는 것이다. */
-export const setAccessTokenRenewerForTest = setAccessTokenRenewer
+export const setFriendsStreamForTest = setFriendsStream
+
+/** 경로와 쿼리를 서버 작업으로. 내역은 `date=`, 스케줄러는 `ocid=` 와 있으면 `date=` 를 든다. */
+function taskOf(path: string): StreamTask {
+  const [bare, query = ''] = path.split('?')
+  const params = new URLSearchParams(query)
+  const kind = (bare ?? path).slice('/maplestory/v1/'.length).split('/').pop() ?? ''
+  if (kind === 'list') return { kind: 'character-list' }
+  if (kind === 'character-state') {
+    const date = params.get('date')
+    return { kind, ocid: params.get('ocid') ?? '', ...(date === null ? {} : { date }) }
+  }
+  if (kind === 'cube' || kind === 'starforce' || kind === 'potential' || kind === 'soul-potential') {
+    return { kind, date: params.get('date') ?? '' }
+  }
+  throw new NexonNetworkError(`프렌즈 경로가 아닙니다: ${path}`)
+}
+
+/** 같은 작업의 줄인가. 서버가 작업 필드를 그대로 되돌려 준다. */
+function isOf(line: StreamLine, task: StreamTask): boolean {
+  if (line.t === 'end' || line.kind !== task.kind) return false
+  const date = 'date' in task ? task.date : undefined
+  const ocid = 'ocid' in task ? task.ocid : undefined
+  return line.date === date && line.ocid === ocid
+}
+
+/**
+ * 쪽 여럿을 응답 하나로. 내역의 `*_history` 배열을 잇고 `next_cursor` 는 `null` 이다.
+ *
+ * 서버가 커서를 따라 끝까지 받아 주므로 앱은 이어받을 일이 없다. 부르는 쪽의 커서 고리는 한 번에 끝난다.
+ */
+function mergePages(bodies: readonly unknown[]): unknown {
+  const first = bodies[0]
+  if (bodies.length <= 1 || typeof first !== 'object' || first === null) return first ?? {}
+  const merged: Record<string, unknown> = { ...(first as Record<string, unknown>) }
+  for (const [key, value] of Object.entries(merged)) {
+    if (!Array.isArray(value)) continue
+    merged[key] = bodies.flatMap((body) => {
+      const rows = (body as Record<string, unknown>)[key]
+      return Array.isArray(rows) ? rows : []
+    })
+  }
+  merged.next_cursor = null
+  return merged
+}
+
+/** `fail` 줄을 넥슨 에러 어휘로. 서버가 status 와 넥슨 코드를 그대로 전해 줘서 직접 부른 것과 같이 가른다. */
+function errorOfFail(status: number, code: string | undefined): NexonApiError {
+  if (status === 401 || status === 403) return new NexonSignInRequiredError('넥슨 로그인이 만료되었습니다')
+  if (status === 429) return new NexonRateLimitError('Nexon API 호출 한도를 초과했습니다 (OPENAPI00007)')
+  if (status === 400) {
+    return new NexonBadRequestError(
+      `Nexon API가 요청을 거부했습니다 (code: ${code ?? '알 수 없음'})`,
+      code ?? null,
+    )
+  }
+  return new NexonNetworkError(`Nexon API가 오류 응답을 반환했습니다 (status: ${status})`)
+}
+
+/**
+ * 로그인 자격의 프렌즈 조회. 작업 하나를 스트림에 보내고 그 작업의 쪽들을 응답 하나로 되돌린다.
+ *
+ * 서버의 거절은 둘로 가른다. 401 은 세션이 죽은 것이라 재로그인이고, 503 은 상한이라 못 닿은 것과
+ * 같이 다음 회차에 다시 온다.
+ */
+async function requestViaStream<T>(path: string, session: string): Promise<T> {
+  if (friendsStream === null) throw new NexonNetworkError('프렌즈 스트림이 배선되지 않았습니다')
+  const task = taskOf(path)
+
+  let lines: StreamLine[]
+  try {
+    lines = await friendsStream(session, [task])
+  } catch (error) {
+    const status = (error as { status?: unknown }).status
+    if (status === 401) throw new NexonSignInRequiredError('넥슨 로그인이 만료되었습니다', { cause: error })
+    throw new NexonNetworkError('프렌즈 조회에 실패했습니다', { cause: error })
+  }
+
+  const mine = lines.filter((line) => isOf(line, task))
+  const fail = mine.find((line) => line.t === 'fail')
+  if (fail !== undefined && fail.t === 'fail') throw errorOfFail(fail.status, fail.code)
+
+  const pages = mine.filter((line) => line.t === 'page').map((line) => (line.t === 'page' ? line.body : null))
+  const done = mine.some((line) => line.t === 'done')
+  if (!done) {
+    const end = lines.find((line) => line.t === 'end')
+    if (end?.t === 'end' && end.reason === 'relogin') {
+      throw new NexonSignInRequiredError('넥슨 로그인이 만료되었습니다')
+    }
+    throw new NexonNetworkError('프렌즈 조회가 끝나기 전에 끊겼습니다')
+  }
+  return mergePages(pages) as T
+}
 
 /**
  * 이 실패가 **개발자 키를 빼야 하는 것**인가. 맞으면 그 키.

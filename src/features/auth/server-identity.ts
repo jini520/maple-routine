@@ -4,7 +4,7 @@
  *
  * | 헤더 | 값 |
  * |---|---|
- * | `x-nexon-session` | 서버가 발급한 세션. 로그인한 사용자 |
+ * | `Authorization: Bearer <세션>` | 서버가 발급한 세션. 로그인한 사용자 |
  * | `x-api-key-hash` | API 키의 SHA-256. 키만 쓰는 사용자 |
  *
  * **세션이 있으면 키 해시를 안 싣는다.** 둘을 다 보내도 서버가 세션을 고르지만, 세션이 죽었을 때
@@ -27,7 +27,7 @@ export async function serverIdentityHeaders(): Promise<Record<string, string> | 
   }
 
   const session = config?.login?.session
-  if (typeof session === 'string' && session !== '') return { 'x-nexon-session': session }
+  if (typeof session === 'string' && session !== '') return { Authorization: `Bearer ${session}` }
 
   const key = config?.apiKeys[0]?.value
   if (typeof key === 'string' && key !== '') return { 'x-api-key-hash': apiKeyHashHex(key) }

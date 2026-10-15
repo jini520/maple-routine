@@ -14,9 +14,10 @@ export type NexonCredential =
   | {
       kind: 'login'
       /**
-       * 넥슨 액세스 토큰. `Authorization: Bearer` 로 **넥슨에 직접** 간다.
+       * 우리 서버가 발급한 세션. `Authorization: Bearer` 로 **우리 서버**에 간다.
        *
-       * 세션이 아니다. 세션은 새 토큰을 받을 때만 우리 서버로 가고, 넥슨에는 안 나간다.
+       * 넥슨 액세스 토큰이 아니다. 토큰은 서버만 들고(넥슨 보안 가이드라인), 프렌즈 경로는 서버가
+       * 이 세션으로 사람을 가려 대신 부른다.
        */
       value: string
     }
@@ -41,21 +42,16 @@ export interface NexonApiKeyMethod {
 export type Platform = 'ios' | 'android'
 
 /**
- * 넥슨 로그인 하나. **액세스 토큰까지 앱이 든다.**
+ * 넥슨 로그인 하나. **앱이 드는 것은 서버 세션뿐이다.**
  *
- * 앱이 넥슨을 직접 부른다. 강화 내역 한 회차가 수백 건이라 우리 서버가 중계하면 사용자 한 명의
- * 조작이 서버에 수백 요청이 된다.
- *
- * **갱신 토큰은 여기 없다.** 갱신이 `client_secret` 을 요구해 서버만 할 수 있다.
+ * 액세스 토큰과 갱신 토큰은 서버가 든다. 넥슨 보안 가이드라인이 액세스 토큰을 서버에서만 관리하라고
+ * 적어서다. 프렌즈 경로는 서버가 이 세션으로 사람을 가려 대신 부르고, 나머지는 번들 개발자 키로
+ * 앱이 직접 부른다.
  */
 export interface NexonLoginMethod {
   kind: 'login'
-  /** 서버가 발급한 세션 식별자. 새 액세스 토큰을 받을 때만 서버로 되돌아간다. */
+  /** 서버가 발급한 세션. 갱신 토큰 14일이 지나면 서버가 지우고 앱은 401 을 받는다. */
   session: string
-  /** 넥슨에 `Authorization: Bearer` 로 실린다. 수명 30분. */
-  accessToken: string
-  /** ISO 8601. 이보다 앞서면 서버에서 새로 받는다. */
-  accessExpiresAt: string
 }
 
 /**

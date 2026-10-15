@@ -13,6 +13,14 @@ interface StoredShape {
   apiKeys: NexonApiKeyMethod[]
 }
 
+/** 저장된 로그인 칸. 세션만 든다. 옛 설치본이 적어 둔 액세스 토큰 칸은 읽으면서 버린다. */
+function loginOf(value: unknown): NexonAuthConfig['login'] {
+  if (typeof value !== 'object' || value === null) return null
+  const one = value as Record<string, unknown>
+  if (one.kind !== 'login' || typeof one.session !== 'string' || one.session === '') return null
+  return { kind: 'login', session: one.session }
+}
+
 function isApiKeyMethod(value: unknown): value is NexonApiKeyMethod {
   if (typeof value !== 'object' || value === null) return false
   const one = value as Record<string, unknown>
@@ -32,7 +40,7 @@ function parse(raw: string | null): StoredShape | null {
     const shape = value as Record<string, unknown>
     if (!Array.isArray(shape.apiKeys)) return null
     return {
-      login: shape.login === undefined ? null : (shape.login as StoredShape['login']),
+      login: loginOf(shape.login),
       apiKeys: shape.apiKeys.filter(isApiKeyMethod),
     }
   } catch {
@@ -86,34 +94,9 @@ export async function setApiKey(apiKey: string, label = ''): Promise<void> {
  * 로그인은 앱 사용자를 식별하는 축이고 키는 거기 붙는 자원이다. 둘 이상일 이유가 없다.
  * **API 키는 안 건드린다** - 같은 계정인지 대조해 지우는 일은 따로다(#541).
  */
-export async function setNexonLogin(tokens: {
-  session: string
-  accessToken: string
-  accessExpiresAt: string
-}): Promise<void> {
+export async function setNexonLogin(login: { session: string }): Promise<void> {
   const current = (await getAuthConfig()) ?? { login: null, apiKeys: [] }
-  await write({ login: { kind: 'login', ...tokens }, apiKeys: current.apiKeys })
-}
-
-/**
- * 액세스 토큰만 갈아끼운다. **세션은 안 건드린다.**
- *
- * 토큰이 30분이라 세션보다 훨씬 자주 바뀐다. 세션까지 다시 쓰면 갈아끼우는 값이 둘이 되고,
- * 한쪽만 써진 순간이 생긴다.
- *
- * 로그인이 없으면 아무 일도 안 한다. 로그아웃과 토큰 받기가 겹치면 여기 오는데, 없는 로그인을
- * 만들어 내면 안 된다.
- */
-export async function updateNexonAccessToken(
-  accessToken: string,
-  accessExpiresAt: string,
-): Promise<void> {
-  const current = await getAuthConfig()
-  if (current?.login == null) return
-  await write({
-    login: { ...current.login, accessToken, accessExpiresAt },
-    apiKeys: current.apiKeys,
-  })
+  await write({ login: { kind: 'login', session: login.session }, apiKeys: current.apiKeys })
 }
 
 /**

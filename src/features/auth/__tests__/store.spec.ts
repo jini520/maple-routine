@@ -619,7 +619,7 @@ describe('useAuthStore.signOutNexonLogin', () => {
   it('넥슨 로그인만 뗀다. 연결 해제 경로를 안 탄다', async () => {
     primeSignedIn()
     getAuthConfigMock.mockResolvedValue({
-      login: { kind: 'login', session: '세션', accessToken: '토큰', accessExpiresAt: '2026-09-27T12:30:00.000Z' },
+      login: { kind: 'login', session: '세션' },
       apiKeys: [],
     })
 
@@ -633,7 +633,7 @@ describe('useAuthStore.signOutNexonLogin', () => {
   it('서버 세션도 거둔다. **기기에서 지우기 전에** 묻는다', async () => {
     primeSignedIn()
     getAuthConfigMock.mockResolvedValue({
-      login: { kind: 'login', session: '세션값', accessToken: '토큰', accessExpiresAt: '' },
+      login: { kind: 'login', session: '세션값' },
       apiKeys: [],
     })
 
@@ -645,7 +645,7 @@ describe('useAuthStore.signOutNexonLogin', () => {
   it('수단이 하나도 안 남으면 로그인 화면으로 보낸다', async () => {
     primeSignedIn()
     getAuthConfigMock
-      .mockResolvedValueOnce({ login: { kind: 'login', session: '세션', accessToken: 't', accessExpiresAt: '' }, apiKeys: [] })
+      .mockResolvedValueOnce({ login: { kind: 'login', session: '세션' }, apiKeys: [] })
       .mockResolvedValueOnce(null)
 
     await useAuthStore.getState().signOutNexonLogin()
@@ -658,7 +658,7 @@ describe('useAuthStore.signOutNexonLogin', () => {
     // 다른 넥슨 계정의 키다. 로그인을 뗐다고 그 계정 캐릭터까지 잃으면 안 된다.
     primeSignedIn()
     getAuthConfigMock
-      .mockResolvedValueOnce({ login: { kind: 'login', session: '세션', accessToken: 't', accessExpiresAt: '' }, apiKeys: [{ kind: 'apiKey', label: '', value: '키' }] })
+      .mockResolvedValueOnce({ login: { kind: 'login', session: '세션' }, apiKeys: [{ kind: 'apiKey', label: '', value: '키' }] })
       .mockResolvedValueOnce({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: '키' }] })
 
     await useAuthStore.getState().signOutNexonLogin()

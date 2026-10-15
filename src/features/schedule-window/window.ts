@@ -138,7 +138,7 @@ export async function planScheduleWindow(
     }
   }
 
-  return { credential: await currentCredential(now), jobs }
+  return { credential: await currentCredential(), jobs }
 }
 
 /**

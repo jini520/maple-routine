@@ -44,7 +44,10 @@
 | API | `nexon/key-stage.ts` | `probeApiKeyStage`. 키가 개발 단계인지 잰다 |
 | API | `nexon/errors.ts` | `isInvalidApiKeyError` · `NexonSignInRequiredError`(로그인 만료) |
 | 저장 | `storage/api-key.ts` | `getAuthConfig` · `setApiKey` · `removeApiKey` · `clearAuthConfig` |
-| 자격 | `lib/nexon-credential.ts` | 저장된 설정에서 넥슨에 넘길 자격을 고른다 |
+| 자격 | `lib/nexon-credential.ts` | 저장된 설정에서 넥슨에 넘길 자격을 고른다. 로그인이면 값은 서버 세션이다 |
+| 서버 | `server/nexon-auth.ts` | 로그인 시작 · 세션 받기 · 연결 해제 |
+| 서버 | `server/friends-stream.ts` | 로그인 사용자의 프렌즈 조회. 서버가 넥슨을 대신 부르고 줄로 흘린다 |
+| 서버 | `features/auth/server-identity.ts` | 우리 서버에 자기를 밝히는 헤더. `Authorization: Bearer` 또는 `x-api-key-hash` |
 | 네이티브 | `native/browser.ts` · `native/adapters/rn-browser.ts` | 로그인 화면의 바깥 링크를 인앱 브라우저로 연다 |
 
 **관련 ADR** (유효): [[ADR-003]] [[ADR-007]] [[ADR-110]] [[ADR-115]] [[ADR-116]] [[ADR-214]]
@@ -102,23 +105,32 @@
 - **주인이 바뀌면 캐릭터도 그쪽 응답을 쓴다.** 두 응답을 섞으면 어느 쪽이 최신인지 모른다.
 - 어느 메이플 ID 를 어느 수단으로 부를지는 이 표가 정한다. **캐릭터마다 다시 판정하지 않는다.**
 
-### 로그인 흐름 (구현 완료 2026-09-26, #539)
+### 로그인 흐름 (구현 완료 2026-09-26, #539 · [[ADR-347]] 결정 3 으로 다시 씀 2026-10-15)
 
 ```
-앱     서버에 시작을 요청한다. 서버가 state 와 검증값을 만들어 짝지어 두고 앱에 준다
+앱     서버에 시작을 요청한다. 서버가 짝을 만들어 authorizeUrl 과 redeemKey 를 준다
 앱     openAuthSessionAsync 로 그 authorizeUrl 을 연다
 넥슨   로그인 · 동의
-넥슨   com.mapleroutine.app://oauth/callback?code=&state=   인증 세션이 앱에 돌려준다
-앱     state 가 받은 값과 같은지 확인하고 code · state · 검증값을 서버에 넘긴다
-서버   검증값이 맞을 때만 교환해 보관하고 세션을 응답으로 준다
+넥슨   서버의 콜백(https://mapleroutine.store/v1/auth/nexon/callback?code=&state=)으로 보낸다
+서버   짝을 state 로 집어 교환하고 세션을 봉해 둔 뒤 com.mapleroutine.app://oauth/callback?receipt= 로 돌려보낸다
+앱     redeemKey 와 receipt 둘을 서버에 넘겨 세션을 받는다. 콜백이 아직 도는 중(pending)이면 1초 뒤 다시 묻는다
 앱     그 세션을 인증 수단 목록의 로그인 자리에 넣는다
 ```
 
-**앱이 `state` 를 확인하는 것이 요점이다.** 넥슨 보안 가이드라인이 지목한 CSRF 대응이고, 콜백이
-우리가 시작한 그 요청의 답인지 가리는 유일한 방법이다. 다르면 `code` 를 서버에 넘기지 않는다.
+**열쇠가 둘인 것이 요점이다.** `redeemKey` 는 시작한 앱만 들고 콜백 URL 에는 안 실린다. `receipt` 는
+돌아오는 길에만 실린다. 돌아오는 길을 가로챈 앱은 `redeemKey` 가 없고, 시작을 흉내 내 남의 로그인을
+자기 짝에 붙이려는 공격자는 `receipt` 가 없다. `state` 대조는 콜백을 받는 서버가 한다. 앱은 이제
+`state` 와 검증값을 모른다.
 
-**검증값은 앱이 들고 있다가 교환 때 돌려준다.** 콜백 URL 에는 안 실린다. 안드로이드에서 콜백을
-가로챈 앱은 `code` 와 `state` 만 갖고 이 값이 없어 서버가 교환을 거절한다.
+**액세스 토큰은 앱에 안 온다.** 넥슨 보안 가이드라인이 액세스 토큰을 서버에서만 관리하라고 적는다.
+앱이 드는 것은 세션 하나이고, 프렌즈 조회는 서버가 그 세션으로 사람을 가려 대신 부른다
+(`foundation/nexon-api.md` 의 전송 경로).
+
+**안드로이드도 지금은 스킴으로 돌아온다.** App Link 는 다음 스토어 빌드에서 켠다(이슈 #635,
+[[ADR-347]] 정정 1).
+
+**되묻는 상한은 30회다**(`features/auth/nexon-login.ts` 의 `REDEEM_MAX_TRIES`). 끝까지 `pending` 이면
+실패로 접는다. `gone`(404)은 바로 실패다.
 
 **취소는 실패가 아니다.** 사용자가 창을 닫으면 아무 일도 안 일어난다. 토스트도 안 띄운다.
 
@@ -225,21 +237,23 @@
 합치고 싶어지는데, **뒤에 붙일 기능을 위해 자리를 갈라 둔 것**이다. 지금 갈리는 것은 다른 넥슨
 계정의 API 키가 남느냐 하나뿐이지만, 그 자리가 없으면 나중에 다시 만들어야 한다.
 
-### 로그인이 만료되면 (구현 완료 2026-09-26, #542)
+### 로그인이 만료되면 (구현 완료 2026-09-26, #542 · 전송 경로 변경 2026-10-15)
 
-[[ADR-317]] 이다. 갱신 토큰은 14일이고, 그 뒤로 서버가 세션 행을 지우고 앱에 401 을 준다
-([[ADR-296]] 결정 4). 2주 넘게 앱을 안 켠 사용자가 여기 걸린다.
+[[ADR-317]] 이다. 갱신 토큰은 14일이고, 그 뒤로 서버가 세션 행을 지우고 앱에 401 을 준다. 2주 넘게
+앱을 안 켠 사용자가 여기 걸린다.
 
-**그 401 을 키 무효화와 가르는 자리는 `nexon/http.ts` 하나다.** 자격이 로그인이면
-`NexonSignInRequiredError` 를 던지고, 그 밖의 401·403 은 종전대로 `NexonAuthError` 다. 전송 경로가
-갈리는 자리(`routeOf`)가 이미 이 파일이라 자격의 종류를 아는 곳도 여기뿐이다.
+**그 401 을 키 무효화와 가르는 자리는 `nexon/http.ts` 하나다.** 로그인 자격의 프렌즈 조회는 우리
+서버의 스트림으로 가는데, 서버가 세션을 거절하면(401) `NexonSignInRequiredError` 를 던진다. 스트림의
+`end` 줄이 `relogin` 이거나 `fail` 줄이 401 · 403 이어도 같다. 그 밖의 401·403 은 종전대로
+`NexonAuthError` 다.
 
 - **`NexonAuthError` 를 상속하지 않는다.** 상속하면 `isInvalidApiKeyError` 가 참을 돌려줘 무효 키와
   다시 한 덩어리가 된다.
-- 로그인 전송에서 **403 도 같이 묶는다.** 그 경로에는 탓할 키가 없어 처방이 `다시 로그인` 하나다.
 - 어휘는 `signInRequired` 다. 모달은 `넥슨 로그인이 만료됐습니다` / `다시 로그인해주세요.` 이고
   아이콘은 `CircleUserRound` 다(키 계열 `KeyRound` · 한도 계열 `Gauge` 와 한눈에 갈린다).
 - 확인을 누르면 `clearNexonLogin()` 만 부른다. **API 키는 안 건드린다.**
+- **토큰 갱신은 앱의 일이 아니다.** 종전에는 앱이 30분마다 토큰을 새로 받았는데, 이제 토큰은 서버만
+  들고 갱신도 서버가 한다(`renew-access-token.ts` 를 걷었다).
 
 고치기 전에는 그 401 이 무효 키로 읽혀, **로그인 하나가 만료되면 사용자의 API 키가 전부 지워졌다**
 (실을 키가 없어 `notice.apiKey` 가 `null` → `removeAllApiKeys`). 그 키들은 멀쩡했고 여럿이면 다른
