@@ -3,7 +3,7 @@
 // 그 전에는 export 된 것이 dropRowKey 하나뿐이라, 89개 스토어 테스트가 전부 스토어를 거쳐
 // 간접 검증했다. 정렬처럼 "입력을 어떻게 주느냐"가 핵심인 로직은 그 방식으로는 경우를
 // 만들기가 번거로워, 실제로 결정적 정렬에 직접 붙은 테스트가 없었다.
-import weeklyBossesData from '../../../data/weekly-bosses.json'
+import { bossesInSection } from '../../../lib/boss/bosses'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
 import type { BossContent } from '../../../types'
@@ -313,8 +313,8 @@ describe('toRecordedDrop: 가격 필드', () => {
  * 같아야 해서 보스 이름이 아니라 `eventWeekly` 분류로 거른다.
  */
 describe('selectProfitDisplayBosses: 시즌 보스는 챌린저스 월드에만', () => {
-  const SEASON = (weeklyBossesData.eventWeekly as { key: string; name: string }[])[0]
-  const WEEKLY = (weeklyBossesData.weekly as { key: string; name: string }[])[0]
+  const SEASON = bossesInSection('eventWeekly')[0]
+  const WEEKLY = bossesInSection('weekly')[0]
 
   function content(entry: { key: string; name: string }, overrides: Partial<BossContent>): BossContent {
     return {
@@ -359,7 +359,7 @@ describe('selectProfitDisplayBosses: 시즌 보스는 챌린저스 월드에만'
 })
 
 describe('selectProfitDisplayBosses: 주간 한도 마감', () => {
-  const WEEKLY = weeklyBossesData.weekly as { key: string; name: string }[]
+  const WEEKLY = bossesInSection('weekly')
   const PENDING = WEEKLY[0].key
 
   function content(overrides: Partial<BossContent> & { bossKey: string | null }): BossContent {
@@ -579,7 +579,7 @@ describe('직접 적은 완료', () => {
       isComplete: true,
       ownComplete: true,
     })
-    const 열하나 = (weeklyBossesData.weekly as { key: string }[])
+    const 열하나 = bossesInSection('weekly')
       .slice(0, WEEKLY_BOSS_CLEAR_LIMIT - 1)
       .map((entry) => weekly(entry.key))
     // 열한 마리 목록에 없는 보스라야 열두째가 된다.

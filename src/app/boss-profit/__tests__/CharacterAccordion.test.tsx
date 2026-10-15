@@ -15,7 +15,7 @@
 //    움직인다(닫을 이유가 사라졌다).
 import { act, fireEvent } from '@testing-library/react-native'
 
-import weeklyBossesData from '../../../data/weekly-bosses.json'
+import { bossesInSection } from '../../../lib/boss/bosses'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import valuableDropsData from '../../../data/valuable-drops.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
@@ -110,7 +110,7 @@ describe('처치 진행 링', () => {
     const group = 그룹([보스행({ bossKey: 월간보스, cycle: 'monthly' })])
     const { getByLabelText } = await renderProfit(<CharacterAccordion group={group} />, 컨텍스트값({ tab: 'monthly' }))
 
-    expect(getByLabelText(`월간 보스 처치 1 / ${weeklyBossesData.monthly.length}`)).toBeTruthy()
+    expect(getByLabelText(`월간 보스 처치 1 / ${bossesInSection('monthly').length}`)).toBeTruthy()
   })
 })
 

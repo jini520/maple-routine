@@ -46,7 +46,7 @@ export interface DisplayedBoss extends MatchedBoss {
  * 세는 것 = 화면에 보이는 것 이 구조로 보장된다. 레일은 선택되지 않은 캐릭터도 세므로 지금
  * 선택된 캐릭터를 안에서 집을 수 없다.
  *
- * 순서는 `weekly-bosses.json` 정규 순서다. 아래 `orderByReference` 가 모드를 안 가르고 끝에서
+ * 순서는 보스 표(`bosses.json`) 정규 순서다. 아래 `orderByReference` 가 모드를 안 가르고 끝에서
  * 한 번 세운다.
  */
 export function displayedBosses(
@@ -162,7 +162,7 @@ export interface BossSection {
  * 빈 무리를 걷지 않는다. 솔로/파티 필터는 화면이 걸고 비었다 는 판정은 그 뒤에야 성립한다.
  * 여기서 미리 걷어도 화면이 필터 후 다시 걷어야 하므로 판정이 두 곳이 된다.
  *
- * 완료는 자리를 안 바꾼다. 무리 안의 순서는 두 모드 모두 `weekly-bosses.json` 정규 순서이고,
+ * 완료는 자리를 안 바꾼다. 무리 안의 순서는 두 모드 모두 보스 표(`bosses.json`) 정규 순서이고,
  * 그것을 세우는 자리는 `displayedBosses` 다.
  */
 export function displayedBossSections(

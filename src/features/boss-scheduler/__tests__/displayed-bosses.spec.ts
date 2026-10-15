@@ -4,13 +4,12 @@
 
 import type { BossCharacterView } from '../store'
 import { displayedBosses, displayedBossSections, type DisplayedBoss } from '../displayed-bosses'
-import weeklyBossesData from '../../../data/weekly-bosses.json'
 import {
   matchBossContent,
   WEEKLY_BOSS_CLEAR_LIMIT,
   type MatchedBoss,
 } from '../../../lib/boss/boss-matching'
-import { bossKeyOfApiName } from '../../../lib/boss/bosses'
+import { bossesInSection, bossKeyOfApiName } from '../../../lib/boss/bosses'
 import type { BossContent, BossCycle, BossDifficulty } from '../../../types'
 import type { ManualTrackedItem } from '../../../types/scheduler'
 
@@ -154,7 +153,7 @@ describe('displayedBosses: 자동 모드', () => {
 
 // 자동 모드는 정렬이 아예 없어 Nexon `boss_contents` **응답 순서**로 서고 있었다.
 // 이제 두 모드가 같은 비교자(`compareBossOrder`)를 지나므로 응답이 어떤 차례로 오든 화면이 안 흔들린다.
-describe('displayedBosses: 순서는 weekly-bosses.json 정규 순서다', () => {
+describe('displayedBosses: 순서는 bosses.json 정규 순서다', () => {
   it('자동 모드가 응답 순서를 버리고 정규 순서로 낸다', () => {
     const 루시드 = boss({ name: '루시드', difficulty: 'hard', cycle: 'weekly', isRegistered: true })
     const 자쿰 = boss({ name: '자쿰', difficulty: 'chaos', cycle: 'weekly', isRegistered: true })
@@ -389,7 +388,7 @@ describe('displayedBossSections: 통합 목록의 순서', () => {
 // 판정하면 그 등식이 깨진다.
 describe('displayedBosses: 주간 한도 마감', () => {
   // 참조표에서 앞에서부터 뽑는다. 이름을 손으로 적지 않는다.
-  const WEEKLY_NAMES = (weeklyBossesData.weekly as unknown as { name: string }[]).map((entry) => entry.name)
+  const WEEKLY_NAMES = bossesInSection('weekly').map((entry) => entry.name)
 
   /** 끝에서부터 한도만큼 잡아 둔 주간 보스들. 아래 미처치 보스와 겹치지 않게 뒤에서 뽑는다. */
   function clearedBosses(count: number): MatchedBoss[] {

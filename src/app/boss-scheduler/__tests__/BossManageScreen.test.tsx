@@ -2,8 +2,7 @@
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 
-import weeklyBossesData from '../../../data/weekly-bosses.json'
-import { bossKeyOfApiName } from '../../../lib/boss/bosses'
+import { bossesInSection, bossKeyOfApiName } from '../../../lib/boss/bosses'
 import {
   useBossSchedulerStore,
   type BossCharacterView,
@@ -43,14 +42,9 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 type Store = BossSchedulerStore
 
 /** 참조표에서 뽑은 보이는 이름. 손으로 적으면 데이터가 바뀔 때 조용히 어긋난다. */
-const WEEKLY_NAMES = weeklyBossesData.weekly.map((entry) => entry.name)
-const SEASON_NAME = weeklyBossesData.eventWeekly[0].name
-const MONTHLY_NAME = weeklyBossesData.monthly[0].name
-// 미출시 보스는 있을 때도 없을 때도 있다. 벨로나 출시로 현재는 0개다.
-// `!` 로 단정하면 표본이 사라진 순간 `undefined` 를 찾는 검증이 되어 조용히 통과한다.
-const UNRELEASED_NAME = (weeklyBossesData.weekly as { name: string; status?: string }[]).find(
-  (entry) => entry.status === 'unreleased',
-)?.name
+const WEEKLY_NAMES = bossesInSection('weekly').map((entry) => entry.name)
+const SEASON_NAME = bossesInSection('eventWeekly')[0].name
+const MONTHLY_NAME = bossesInSection('monthly')[0].name
 
 /** 보이는 이름에서 보스 key. 스토어 호출과 추적 항목은 key 를 든다. */
 const keyOf = (name: string): string => bossKeyOfApiName(name) ?? name
@@ -800,20 +794,6 @@ describe('BossManageScreen: 목록 구성', () => {
   beforeEach(() => {
     useTrackingModeStore.setState({ mode: 'manual' })
   })
-
-  // 참조표에 미출시 엔트리가 있을 때만 돌린다. 규칙은 표본이 없어도 코드에
-  // 남아 있으므로 테스트도 남기되, 표본이 없으면 건너뛴다.
-  const 미출시표본있음 = UNRELEASED_NAME !== undefined
-  ;(미출시표본있음 ? it : it.skip)(
-    '미출시 보스는 목록에 나오지 않는다. 이름이 아니라 status 로 거른다',
-    async () => {
-      mockStore({ characters: [character()] })
-
-      await renderScreen()
-
-      expect(screen.queryByText(UNRELEASED_NAME!)).toBeNull()
-    },
-  )
 
   it.each([
     ['챌린저스 월드 캐릭터에게는 시즌 보스가 나온다', 'challengers_2', true],

@@ -1,4 +1,4 @@
-import weeklyBossesData from '../../../data/weekly-bosses.json'
+import { bossesInSection } from '../../../lib/boss/bosses'
 
 import { waitFor } from '../../../__tests__/wait-for'
 import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
@@ -941,9 +941,9 @@ describe('useBossProfitStore', () => {
     expect(cacheFirstOrder).toEqual(['ocid-2', 'ocid-1']) // 레벨 내림차순(ocid-2가 250으로 더 높음)
   })
 
-  it('한 캐릭터 안의 보스 순서는 소스 순서와 무관하게 weekly-bosses.json 정규 순서로 고정된다(#28)', async () => {
+  it('한 캐릭터 안의 보스 순서는 소스 순서와 무관하게 bosses.json 정규 순서로 고정된다(#28)', async () => {
     // 소스(bossContents)는 참조 순서와 어긋나게 뒤섞어 공급한다. 루시드(10) → 자쿰(0) → 스우(7).
-    // 최종 rows는 항상 weekly-bosses.json 순서(자쿰 → 스우 → 루시드)여야 한다.
+    // 최종 rows는 항상 bosses.json 순서(자쿰 → 스우 → 루시드)여야 한다.
     syncSchedulesMock.mockResolvedValue([
       syncResult({
         state: {
@@ -3733,7 +3733,7 @@ describe('useBossProfitStore', () => {
 // 설 자리도 처치 기록도 없는 드롭은 지운다. 안 지우면 보스 수익에서는
 // 사라지고(그룹 합계가 행으로만 훑는다) 드롭 히스토리·today 위젯에는 영원히 남는다.
 describe('잡지 않은 보스의 드롭 정리', () => {
-  const WEEKLY = weeklyBossesData.weekly as { key: string; name: string; difficulties: string[] }[]
+  const WEEKLY = bossesInSection('weekly')
   const WEEK_KEY = getCurrentBossProfitPeriod('weekly', PINNED_NOW).periodKey
 
   /** 끝에서부터 한도만큼 실제로 처치한 보스. 자쿰(목록 맨 앞)과 겹치지 않는다. */

@@ -19,7 +19,6 @@ import { render } from '@testing-library/react-native'
 import { ScrollView } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
-import weeklyBossesData from '../../../data/weekly-bosses.json'
 import valuableDropsData from '../../../data/valuable-drops.json'
 import {
   useBossProfitStore,
@@ -28,7 +27,7 @@ import {
   type BossProfitWeeklySubtotal } from '../../../features/boss-profit/store'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss/boss-matching'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period'
-import { bossNameOf } from '../../../lib/boss/bosses'
+import { bossesInSection, bossNameOf } from '../../../lib/boss/bosses'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
 
@@ -99,9 +98,9 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 // 현재를 가리키도록 실제 계산값을 쓴다.
 const CURRENT_WEEKLY = getCurrentBossProfitPeriod('weekly', new Date()).periodKey
 const CURRENT_MONTHLY = getCurrentBossProfitPeriod('monthly', new Date()).periodKey
-const 주간보스 = weeklyBossesData.weekly[0].key
-const 주간보스이름 = weeklyBossesData.weekly[0].name
-const 다른주간보스 = weeklyBossesData.weekly[1].key
+const 주간보스 = bossesInSection('weekly')[0].key
+const 주간보스이름 = bossesInSection('weekly')[0].name
+const 다른주간보스 = bossesInSection('weekly')[1].key
 const 고가아이템 = valuableDropsData.items[0]
 
 function mockStore(overrides: Partial<BossProfitStore> = {}): void {
@@ -857,7 +856,7 @@ describe('총 수익 헤드라인', () => {
       periodState: 'recorded',
       rows: [
         보스행({ payoutMeso: 6_000_000 }),
-        보스행({ bossKey: weeklyBossesData.monthly[0].key, cycle: 'monthly', payoutMeso: 4_000_000 }),
+        보스행({ bossKey: bossesInSection('monthly')[0].key, cycle: 'monthly', payoutMeso: 4_000_000 }),
       ] })
     const { getByLabelText, getByTestId } = await renderScreen()
 
@@ -932,8 +931,8 @@ describe('총 수익 헤드라인', () => {
       loadedTab: 'monthly',
       loadedPeriodKey: CURRENT_MONTHLY,
       periodState: 'recorded',
-      rows: [보스행({ bossKey: weeklyBossesData.monthly[0].key, cycle: 'monthly', periodKey: CURRENT_MONTHLY, payoutMeso: 0 })],
-      dropsByRowKey: { [`ocid-1|${weeklyBossesData.monthly[0].key}|hard|${CURRENT_MONTHLY}`]: [월간드롭] },
+      rows: [보스행({ bossKey: bossesInSection('monthly')[0].key, cycle: 'monthly', periodKey: CURRENT_MONTHLY, payoutMeso: 0 })],
+      dropsByRowKey: { [`ocid-1|${bossesInSection('monthly')[0].key}|hard|${CURRENT_MONTHLY}`]: [월간드롭] },
       weeklySubtotals: [주차소계({ periodKey: '2026-01-01', totalMeso: 11_000_000, drops: [주간드롭] })] })
     const { getByLabelText, getByTestId } = await renderScreen()
 
@@ -964,7 +963,7 @@ describe('총 수익 헤드라인', () => {
       periodState: 'recorded',
       rows: [
         보스행({ world: '스카니아', worldKey: 'scania' }),
-        보스행({ bossKey: weeklyBossesData.monthly[0].key, cycle: 'monthly', periodKey: CURRENT_MONTHLY, world: '스카니아', worldKey: 'scania' }),
+        보스행({ bossKey: bossesInSection('monthly')[0].key, cycle: 'monthly', periodKey: CURRENT_MONTHLY, world: '스카니아', worldKey: 'scania' }),
       ] })
     const { getByLabelText } = await renderScreen()
 
@@ -1028,7 +1027,7 @@ describe('월간 탭', () => {
       loadedTab: 'monthly',
       periodKey: CURRENT_MONTHLY,
       loadedPeriodKey: CURRENT_MONTHLY,
-      rows: [보스행({ bossKey: weeklyBossesData.monthly[0].key, cycle: 'monthly', periodKey: CURRENT_MONTHLY, world: '스카니아', worldKey: 'scania' })],
+      rows: [보스행({ bossKey: bossesInSection('monthly')[0].key, cycle: 'monthly', periodKey: CURRENT_MONTHLY, world: '스카니아', worldKey: 'scania' })],
       weeklySubtotals: [주차소계()] })
     const { getByText, getByLabelText, queryByLabelText } = await renderScreen()
 

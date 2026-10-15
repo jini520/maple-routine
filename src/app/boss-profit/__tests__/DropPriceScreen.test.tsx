@@ -29,7 +29,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
-import weeklyBossesData from '../../../data/weekly-bosses.json'
+import { bossesInSection } from '../../../lib/boss/bosses'
 import { useDropPriceStore, type DropPriceEntry } from '../../../features/boss-profit/drop-price-store'
 import { useBossProfitStore } from '../../../features/boss-profit/store'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period'
@@ -77,8 +77,8 @@ const mockedNavigation = jest.mocked(useScreenNavigation)
 type PriceStore = ReturnType<typeof useDropPriceStore>
 
 // 보스 이름·난이도는 게임 레퍼런스 데이터에서 뽑는다.
-const 주간보스 = weeklyBossesData.weekly[0].key
-const 주간보스이름 = weeklyBossesData.weekly[0].name
+const 주간보스 = bossesInSection('weekly')[0].key
+const 주간보스이름 = bossesInSection('weekly')[0].name
 const PERIOD = '2026-08-06'
 
 const load = jest.fn()

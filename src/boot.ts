@@ -16,6 +16,7 @@ import {
 import { setPreferencesPort, setSqlitePort } from './storage/ports'
 import { setAccessTokenRenewer } from './nexon/http'
 import { renewNexonAccessToken } from './features/auth/renew-access-token'
+import { hydrateBossCatalog } from './features/bosses/store'
 
 import { rnAdsPort } from './native/adapters/rn-ads'
 import { rnBackGesturePort } from './native/adapters/rn-back-gesture'
@@ -104,4 +105,14 @@ export function installPorts(): void {
   // 계층이 거꾸로 선다. 액세스 토큰이 30분이라 긴 회차는 중간에 만료되고, 그때 이 함수가
   // 새 토큰을 받아 와 부르던 쪽이 한 번 더 시도한다.
   setAccessTokenRenewer(renewNexonAccessToken)
+}
+
+/**
+ * 보스 표를 기기 사본과 서버 응답으로 덮는 부팅 곁가지. 포트 주입 뒤에 부른다. 저장소를 읽기 때문이다.
+ *
+ * 첫 화면을 막지 않는다. `void` 로 띄우고 결과를 안 기다린다. 못 받으면 번들 사본 그대로라 늦어도
+ * 화면에 모자라는 것이 없다.
+ */
+export function loadBossCatalog(): void {
+  void hydrateBossCatalog()
 }

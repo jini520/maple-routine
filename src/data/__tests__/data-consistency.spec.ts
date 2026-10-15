@@ -1,4 +1,4 @@
-import weeklyBosses from '../weekly-bosses.json'
+import bossesData from '../bosses.json'
 import bossCrystalPrices from '../boss-crystal-prices.json'
 import itemDropTable from '../item-drop-table.json'
 import dropItemTable from '../drop-items.json'
@@ -6,6 +6,7 @@ import contentTemplate from '../scheduler-content-template.json'
 import contentCatalog from '../scheduler-content-catalog.json'
 import spendCatalog from '../spend-catalog.json'
 import { DROP_CATEGORIES } from '../../types/drops'
+import { BOSS_CATALOG_CYCLES } from '../../types/boss-catalog'
 import { BOSS_DIFFICULTIES } from '../../types/scheduler'
 
 const dropNameByKey = new Map(dropItemTable.items.map((item) => [item.key, item.name]))
@@ -14,16 +15,9 @@ function key(boss: string, difficulty: string): string {
   return `${boss}::${difficulty}`
 }
 
-function weeklyBossKeys(): Set<string> {
-  const keys = new Set<string>()
-  for (const section of ['weekly', 'eventWeekly', 'monthly'] as const) {
-    for (const entry of weeklyBosses[section]) {
-      for (const difficulty of entry.difficulties) {
-        keys.add(key(entry.key, difficulty))
-      }
-    }
-  }
-  return keys
+/** 보스 표의 보스 × 난이도 전부. 난이도 한 줄이 조합 하나다. */
+function bossDifficultyKeys(): string[] {
+  return bossesData.bosses.flatMap((boss) => boss.difficulties.map((row) => key(boss.key, row.difficulty)))
 }
 
 function findDuplicates(keys: string[]): string[] {
@@ -37,7 +31,7 @@ function findDuplicates(keys: string[]): string[] {
 }
 
 // item-drop-table.json 상단 note에 데이터 없음/의도적 제외로 이미 문서화된 조합.
-// weekly-bosses.json에 새 보스/난이도가 추가되면서 드랍 데이터가 누락된 경우와
+// bosses.json에 새 보스/난이도가 추가되면서 드랍 데이터가 누락된 경우와
 // 구분하기 위한 허용 목록. 여기 없는 조합이 빠지면 테스트가 실패해야 한다.
 // 남은 여섯은 전부 "상세 보상 정보 자체가 제공되지 않은" 구보스다. 벨로나 세 조합은
 // 출시분 반영으로 빠졌다. 이제 이 목록에 "미출시" 사유는 없다.
@@ -52,34 +46,25 @@ const KNOWN_MISSING_DROP_ENTRIES = new Set([
 
 describe('게임 레퍼런스 데이터 정합성', () => {
   // 가격 파일은 한 조합에 줄이 여럿일 수 있다(기간을 든 줄). 그쪽은 아래 `기간을 든 줄` 이 본다.
-  it('주간 보스·드롭 테이블 안에 중복된 보스+난이도 조합이 없다', () => {
-    const allWeeklyKeys: string[] = []
-    for (const section of ['weekly', 'eventWeekly', 'monthly'] as const) {
-      for (const entry of weeklyBosses[section]) {
-        for (const difficulty of entry.difficulties) {
-          allWeeklyKeys.push(key(entry.key, difficulty))
-        }
-      }
-    }
-    expect(findDuplicates(allWeeklyKeys)).toEqual([])
+  it('보스 표·드롭 테이블 안에 중복된 보스+난이도 조합이 없다', () => {
+    expect(findDuplicates(bossDifficultyKeys())).toEqual([])
 
     const dropKeys = itemDropTable.rewards.map((r) => key(r.boss, r.difficulty))
     expect(findDuplicates(dropKeys)).toEqual([])
   })
 
-  it('weekly-bosses의 모든 보스+난이도 조합이 boss-crystal-prices에 존재한다', () => {
-    const weeklyKeys = weeklyBossKeys()
+  it('bosses.json의 모든 보스+난이도 조합이 boss-crystal-prices에 존재한다', () => {
     const priceKeys = new Set(bossCrystalPrices.prices.map((p) => key(p.boss, p.difficulty)))
 
-    const missing = [...weeklyKeys].filter((k) => !priceKeys.has(k))
+    const missing = bossDifficultyKeys().filter((k) => !priceKeys.has(k))
     expect(missing).toEqual([])
   })
 
-  it('boss-crystal-prices에 weekly-bosses에 없는 보스+난이도 조합이 없다', () => {
-    const weeklyKeys = weeklyBossKeys()
+  it('boss-crystal-prices에 bosses.json에 없는 보스+난이도 조합이 없다', () => {
+    const bossKeys = new Set(bossDifficultyKeys())
     const priceKeys = new Set(bossCrystalPrices.prices.map((p) => key(p.boss, p.difficulty)))
 
-    const extra = [...priceKeys].filter((k) => !weeklyKeys.has(k))
+    const extra = [...priceKeys].filter((k) => !bossKeys.has(k))
     expect(extra).toEqual([])
   })
 
@@ -90,19 +75,18 @@ describe('게임 레퍼런스 데이터 정합성', () => {
     expect(invalid).toEqual([])
   })
 
-  it('item-drop-table은 weekly-bosses에 없는 보스+난이도 조합을 포함하지 않는다', () => {
-    const weeklyKeys = weeklyBossKeys()
+  it('item-drop-table은 bosses.json에 없는 보스+난이도 조합을 포함하지 않는다', () => {
+    const bossKeys = new Set(bossDifficultyKeys())
     const dropKeys = new Set(itemDropTable.rewards.map((r) => key(r.boss, r.difficulty)))
 
-    const extra = [...dropKeys].filter((k) => !weeklyKeys.has(k))
+    const extra = [...dropKeys].filter((k) => !bossKeys.has(k))
     expect(extra).toEqual([])
   })
 
   it('item-drop-table에서 빠진 조합은 KNOWN_MISSING_DROP_ENTRIES에 등록된 것만 허용한다', () => {
-    const weeklyKeys = weeklyBossKeys()
     const dropKeys = new Set(itemDropTable.rewards.map((r) => key(r.boss, r.difficulty)))
 
-    const missing = [...weeklyKeys].filter((k) => !dropKeys.has(k))
+    const missing = bossDifficultyKeys().filter((k) => !dropKeys.has(k))
     const undocumented = missing.filter((k) => !KNOWN_MISSING_DROP_ENTRIES.has(k))
     expect(undocumented).toEqual([])
   })
@@ -169,41 +153,49 @@ describe('게임 레퍼런스 데이터 정합성', () => {
   // weeklyBossSelectionLimit(캐릭터당 12)과 weeklyCrystalSaleLimit(월드당 90)은
   // 이름이 비슷해 서로 바꿔 적기 쉽다. 값의 대소로 뒤바뀜을 잡는다.
   it('weeklyCrystalSaleLimit이 양의 정수이며 weeklyBossSelectionLimit보다 크다', () => {
-    const { weeklyCrystalSaleLimit, weeklyBossSelectionLimit } = weeklyBosses
+    const { weeklyCrystalSaleLimit, weeklyBossSelectionLimit } = bossesData.rules
 
     expect(Number.isInteger(weeklyCrystalSaleLimit)).toBe(true)
     expect(weeklyCrystalSaleLimit).toBeGreaterThan(0)
     expect(weeklyCrystalSaleLimit).toBeGreaterThan(weeklyBossSelectionLimit)
   })
 
-  // requiredLevels는 난이도별 맵이다. 키가 difficulties와 어긋나면 그 난이도는
-  // 조용히 "요구 레벨 없음"(=잠금 없음)으로 통과해버려 오타가 드러나지 않는다.
-  it('requiredLevels의 키는 같은 엔트리 difficulties의 부분집합이다', () => {
-    const invalid: string[] = []
-    for (const section of ['weekly', 'eventWeekly', 'monthly'] as const) {
-      for (const entry of weeklyBosses[section]) {
-        const requiredLevels = (entry as { requiredLevels?: Record<string, number> }).requiredLevels
-        if (requiredLevels === undefined) continue
-        for (const difficulty of Object.keys(requiredLevels)) {
-          if (!entry.difficulties.includes(difficulty)) invalid.push(key(entry.key, difficulty))
-        }
-      }
-    }
+  // 서버 모양 그대로다. 맨 위 updatedAt 은 서버가 넣은 시각이고 받은 적 없는 사본은 null 이다.
+  it('updatedAt 은 null 이거나 ISO 시각이다', () => {
+    const { updatedAt } = bossesData as { updatedAt: string | null }
+    expect(updatedAt === null || !Number.isNaN(Date.parse(updatedAt))).toBe(true)
+  })
+
+  it('보스의 cycle 은 weekly · event_weekly · monthly 중 하나이고 주간 24 · 시즌 1 · 월간 1 이다', () => {
+    const unknown = bossesData.bosses.filter(
+      (boss) => !(BOSS_CATALOG_CYCLES as readonly string[]).includes(boss.cycle),
+    )
+    expect(unknown.map((boss) => boss.key)).toEqual([])
+
+    const countOf = (cycle: string): number => bossesData.bosses.filter((boss) => boss.cycle === cycle).length
+    expect([countOf('weekly'), countOf('event_weekly'), countOf('monthly')]).toEqual([24, 1, 1])
+  })
+
+  // 난이도 한 줄이 요구 레벨을 함께 든다. 줄이 비거나 값이 0 이면 그 난이도는 조용히 잠금 없음이 된다.
+  it('난이도 줄의 requiredLevel 은 모두 양의 정수다', () => {
+    const invalid = bossesData.bosses.flatMap((boss) =>
+      boss.difficulties
+        .filter((row) => !Number.isInteger(row.requiredLevel) || row.requiredLevel <= 0)
+        .map((row) => key(boss.key, row.difficulty)),
+    )
     expect(invalid).toEqual([])
   })
 
-  it('requiredLevels의 값은 모두 양의 정수다', () => {
-    const invalid: string[] = []
-    for (const section of ['weekly', 'eventWeekly', 'monthly'] as const) {
-      for (const entry of weeklyBosses[section]) {
-        const requiredLevels = (entry as { requiredLevels?: Record<string, number> }).requiredLevels
-        if (requiredLevels === undefined) continue
-        for (const [difficulty, level] of Object.entries(requiredLevels)) {
-          if (!Number.isInteger(level) || level <= 0) invalid.push(key(entry.key, difficulty))
-        }
-      }
-    }
-    expect(invalid).toEqual([])
+  // 서버는 ENUM 차례로 준다. 번들 사본이 다른 차례면 같은 보스의 난이도 세그먼트가 켤 때마다 자리를 바꾼다.
+  it('한 보스의 난이도 줄은 BOSS_DIFFICULTIES 차례이고 겹치지 않는다', () => {
+    const order = (difficulty: string): number => (BOSS_DIFFICULTIES as readonly string[]).indexOf(difficulty)
+    const broken = bossesData.bosses
+      .filter((boss) => {
+        const ranks = boss.difficulties.map((row) => order(row.difficulty))
+        return ranks.some((rank, i) => i > 0 && rank <= ranks[i - 1])
+      })
+      .map((boss) => boss.key)
+    expect(broken).toEqual([])
   })
 
   it('컨텐츠 템플릿의 requiredLevel은 값이 있으면 양의 정수다(없으면 레벨 제한 없음)', () => {
@@ -215,16 +207,14 @@ describe('게임 레퍼런스 데이터 정합성', () => {
   })
 
   it('보스 key 는 snake_case 이고 겹치지 않는다', () => {
-    const keys = [...weeklyBosses.weekly, ...weeklyBosses.eventWeekly, ...weeklyBosses.monthly].map((entry) => entry.key)
+    const keys = bossesData.bosses.map((entry) => entry.key)
     expect(keys.filter((bossKey) => !/^[a-z0-9]+(_[a-z0-9]+)*$/.test(bossKey))).toEqual([])
     expect(findDuplicates(keys)).toEqual([])
   })
 
   // API 이름은 NFC 뒤 공백을 지우고 맞춘다. 지운 뒤 두 이름이 같으면 한 응답이 어느 보스인지 갈리지 않는다.
   it('보스 이름은 NFC 뒤 공백을 지워도 겹치지 않는다', () => {
-    const names = [...weeklyBosses.weekly, ...weeklyBosses.eventWeekly, ...weeklyBosses.monthly].map((entry) =>
-      entry.name.normalize('NFC').replace(/\s+/g, ''),
-    )
+    const names = bossesData.bosses.map((entry) => entry.name.normalize('NFC').replace(/\s+/g, ''))
     expect(findDuplicates(names)).toEqual([])
   })
 
@@ -236,20 +226,13 @@ describe('게임 레퍼런스 데이터 정합성', () => {
       '가디언 엔젤 슬라임': '가엔슬',
       '시즌 보스 메이린': '메이린',
     }
-    const entries: { name: string; alias?: string }[] = [
-      ...weeklyBosses.weekly,
-      ...weeklyBosses.eventWeekly,
-      ...weeklyBosses.monthly,
-    ]
-    const wrong = entries.filter((entry) => entry.alias !== (shortened[entry.name] ?? entry.name))
+    const wrong = bossesData.bosses.filter((entry) => entry.alias !== (shortened[entry.name] ?? entry.name))
     expect(wrong.map((entry) => `${entry.name} → ${entry.alias}`)).toEqual([])
   })
 
   it('보스 난이도 · 가격 · 드롭 표의 난이도는 난이도 key 다', () => {
     const difficulties = [
-      ...[...weeklyBosses.weekly, ...weeklyBosses.eventWeekly, ...weeklyBosses.monthly].flatMap(
-        (entry) => entry.difficulties,
-      ),
+      ...bossesData.bosses.flatMap((entry) => entry.difficulties.map((row) => row.difficulty)),
       ...bossCrystalPrices.prices.map((price) => price.difficulty),
       ...itemDropTable.rewards.map((reward) => reward.difficulty),
     ]
@@ -311,7 +294,7 @@ describe('기간을 든 줄', () => {
 
   // 경계가 기간 가운데에 서면 첫날로 판정하는 규칙이 그 기간의 처치 일부에 틀린 가격을 준다.
   it('가격의 경계는 그 보스의 기간 경계에 선다. 주간은 목요일, 월간은 1일이다', () => {
-    const monthlyBosses = new Set(weeklyBosses.monthly.map((entry) => entry.key))
+    const monthlyBosses = new Set(bossesData.bosses.filter((entry) => entry.cycle === 'monthly').map((entry) => entry.key))
     const misplaced: string[] = []
     for (const row of priceRows) {
       for (const date of [row.from, row.until]) {

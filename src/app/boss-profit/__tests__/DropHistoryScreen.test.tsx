@@ -15,7 +15,7 @@ import { processColor } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { useDropHistoryStore } from '../../../features/boss-profit/drop-history-store'
-import weeklyBossesData from '../../../data/weekly-bosses.json'
+import { bossesInSection } from '../../../lib/boss/bosses'
 import { formatBossProfitPeriodLabel } from '../../../lib/boss/boss-profit-period'
 import {
   formatValuableDroughtHeadline,
@@ -42,8 +42,8 @@ const load = jest.fn()
 const goBack = jest.fn()
 
 // 보스 key · 이름은 게임 레퍼런스 데이터에서 뽑는다.
-const 주간보스 = weeklyBossesData.weekly[0].key
-const 주간보스이름 = weeklyBossesData.weekly[0].name
+const 주간보스 = bossesInSection('weekly')[0].key
+const 주간보스이름 = bossesInSection('weekly')[0].name
 const PERIOD = '2026-07-09'
 
 /**

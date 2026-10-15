@@ -36,8 +36,8 @@ export function bossPickerSections(input: BossPickerInput): BossPickerSections {
     return (input.partySizes[key] ?? 1) >= 2 || input.partyShares[key]?.crystalMyShare != null
   }
   const registeredDifficulty = new Map(input.registered.map((tile) => [tile.bossKey, tile.difficulty]))
-  // 시즌 보스와 출시 전 보스는 뺀다. 등록돼 있으면 위 두 묶음에 이미 선다.
-  const all = BOSS_ENTRIES.filter((entry) => entry.section !== 'eventWeekly' && entry.status !== 'unreleased').map(
+  // 시즌 보스는 뺀다. 등록돼 있으면 위 두 묶음에 이미 선다.
+  const all = BOSS_ENTRIES.filter((entry) => entry.section !== 'eventWeekly').map(
     (entry): PickerTile => ({
       bossKey: entry.key,
       // 표의 난이도는 낮은 것부터라 끝이 가장 높다.

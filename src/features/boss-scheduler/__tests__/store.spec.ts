@@ -791,7 +791,7 @@ describe('useBossSchedulerStore', () => {
       ])
     })
 
-    // weekly-bosses.json의 주간 보스 12종(시즌 보스 제외). 12개 한도를 채우는 데 쓴다.
+    // bosses.json의 주간 보스 12종(시즌 보스 제외). 12개 한도를 채우는 데 쓴다.
     const WEEKLY_BOSS_NAMES = [
       'zakum',
       'magnus',
@@ -932,7 +932,7 @@ describe('useBossSchedulerStore', () => {
   // 한도 가드의 본체는 스토어다. UI 에서만 막으면 난이도 교체·시드 같은 다른 호출 경로가
   // 그대로 새어나간다.
   describe(': 수동 주간 보스 12개 한도', () => {
-    // weekly-bosses.json 주간 섹션 앞부분 12종. 실재하는 이름이어야 주기·시즌 판정이 통한다.
+    // bosses.json 주간 섹션 앞부분 12종. 실재하는 이름이어야 주기·시즌 판정이 통한다.
     const TWELVE_WEEKLY_BOSSES = [
       'zakum',
       'magnus',

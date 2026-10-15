@@ -37,7 +37,7 @@
 | 계산 | `lib/boss/boss-matching.ts` | 정렬(`compareBossOrder`), 한도 판정(`isWeeklyClearLimitReached`·`countManualWeeklyBosses`) |
 | 계산 | `lib/boss/manual-boss-merge.ts` | 수동 모드 목록 합치기(`mergeManualBossList`) |
 | 계산 | `lib/assets/asset-lookup.ts` | 보스 초상화 |
-| 참조 | `src/data/weekly-bosses.json` | 보스명·난이도 매핑, 정규 순서, `requiredLevels` |
+| 참조 | `src/data/bosses.json` | 보스 표의 번들 사본. 서버 `GET /v1/bosses` 와 같은 모양이고 앱을 켜면 기기 사본 · 서버 응답이 덮는다([[ADR-349]] 결정 5). 조회는 `lib/boss/bosses`, 현재 표는 `lib/boss/catalog`, 덮는 흐름은 `features/bosses/store` |
 | 참조 | `src/data/boss-crystal-prices.json` | 관리 화면이 보여줄 난이도 목록의 출처 |
 | 참조 | `src/data/boss-portrait-crops.json` | 카드 일러스트 크롭 |
 
@@ -58,7 +58,7 @@ ADR-073(인디케이터) · ADR-098(헤더 고정). **각 파일 배너의 🔗 
 | | 지금 규칙 |
 |---|---|
 | 섹션 순서 | **월간 → 주간**. `displayed-bosses` 의 `BOSS_SECTION_ORDER` 와 `displayedBossSections` 가 정한다. 화면은 다시 정렬하지 않는다 |
-| 섹션 **안**의 순서 | **`weekly-bosses.json` 정규 순서 → 난이도 → 보스명**([[ADR-186]], 2026-08-30). 자동·수동 모드를 가르지 않고 `displayedBosses` 끝에서 공용 `compareBossOrder`(`lib/boss/boss-matching`)로 한 번 정렬한다 |
+| 섹션 **안**의 순서 | **보스 표(`bosses.json`) 정규 순서 → 난이도 → 보스명**([[ADR-186]], 2026-08-30). 자동·수동 모드를 가르지 않고 `displayedBosses` 끝에서 공용 `compareBossOrder`(`lib/boss/boss-matching`)로 한 번 정렬한다 |
 | 주기 구분 | **섹션 헤더 두 줄**(‘월간’·‘주간’). 두 화면이 각자 인라인으로 그린다. 배지가 세는 것이 화면마다 달라(스케줄러는 `countClearedWeeklyBosses` 처치 수, 관리 화면은 `countManualWeeklyBosses` 등록 수) 공용 컴포넌트로 두면 같은 조건을 호출부와 컴포넌트가 두 번 쓰게 된다 |
 | `n/12` · 시즌 배지(`isSeasonBoss`) | ‘주간’ 헤더에 붙는다. 탭이 있던 시절 `activeTab === 'weekly'` 조건에 매달려 있던 것을 헤더로 옮겼다 |
 | 완료 정렬 | **없다.** 주기가 순서를 정하고 완료는 순서를 바꾸지 않는다. 완료한 검은마법사도 맨 위에 남는다 |
@@ -97,8 +97,8 @@ ADR-073(인디케이터) · ADR-098(헤더 고정). **각 파일 배너의 🔗 
 `manualCompletedByOcid` 하나라 SQLite 한 번이고 넥슨은 안 부른다(`reloadManualCompleted`). today 의
 남은 스케줄이 같은 스토어 값을 보므로 today 도 포커스에서 같은 것을 부른다.
 
-`weekly-bosses.json` 이 보스명과 난이도 표기를 매핑하는 참조표다(주간은 `weekly` 와 `eventWeekly`
-섹션, 월간은 `monthly` 섹션). 매핑에 없는 것은 "알 수 없는 콘텐츠"로 표시한다.
+보스 표(`bosses.json`, 서버 `GET /v1/bosses` 의 사본)가 보스명과 난이도 표기를 매핑하는 참조표다(줄의 `cycle` 이
+`weekly` · `event_weekly` 면 주간, `monthly` 면 월간). 매핑에 없는 것은 "알 수 없는 콘텐츠"로 표시한다.
 
 미완료 보스에는 로컬 알림을 띄운다(실시간 재확인). 주간 리셋은 KST 목요일 00:00이다.
 
@@ -685,7 +685,7 @@ difficulty)` 의 다른 칸을 열고, 거기서 수를 고치면 **그 캐릭�
 ### 목록과 정렬
 
 - ~~섹션 **안**의 순서는 자동 모드가 Nexon `boss_contents` 응답 순서다(정렬 코드 없음)~~ →
-  **`weekly-bosses.json` 정규 순서 → 난이도 → 보스명**([[ADR-186]], 2026-08-30). 같은 보스 목록을
+  **보스 표(`bosses.json`) 정규 순서 → 난이도 → 보스명**([[ADR-186]], 2026-08-30). 같은 보스 목록을
   보여주는 화면 넷(여기 · today ‘남은 스케줄’ 펼침 · 보스 수익 · 가계부 결정석 타일)의 기준이
   넷이었다. 정렬은 `displayedBosses` 끝에서 **모드를 안 가르고** 공용 `compareBossOrder` 로 한 번 한다.
 - ~~주간 카드가 0장이어도 배지(`n/12`·시즌)를 실은 ‘주간’ 헤더는 남는다~~ → **카드가 0장이면 헤더도
@@ -741,7 +741,7 @@ difficulty)` 의 다른 칸을 열고, 거기서 수를 고치면 **그 캐릭�
   이벤트가 나지 않아 "누르면 알려준다"와 양립할 수 없다.
 - ~~레벨 미달 보스·난이도는 수동 선택 불가(흐리게 + 요구 레벨 표시), 표시 화면엔 "진행 불가"~~ →
   **미도입, 자유 선택**([[ADR-055]] 정정 2, 2026-07-29 사용자 결정, 이슈 #32 폐기). 요구 레벨
-  데이터(`requiredLevels`)는 `weekly-bosses.json` 에 남아 있으나 **읽는 코드가 없다.**
+  데이터(난이도 줄의 `requiredLevel`)는 `bosses.json` 에 남아 있으나 **읽는 코드가 없다.**
 
 ### 화면 구조
 

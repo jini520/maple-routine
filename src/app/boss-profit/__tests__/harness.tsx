@@ -5,15 +5,14 @@
 // 사라진다), 안전영역(시트가 읽는다), 그리고 **보스 수익 컨텍스트**(`useBossProfitContext` 는
 // 밖에서 부르면 던진다. 그것이 그 컨텍스트의 계약이다).
 //
-// 픽스처의 보스 key·이름은 **`weekly-bosses.json` 에서 뽑는다**(게임 레퍼런스
+// 픽스처의 보스 key·이름은 **`bosses.json` 에서 뽑는다**(게임 레퍼런스
 // 값을 테스트가 베끼면 두 벌이 된다).
 import { render } from '@testing-library/react-native'
 import type { ReactElement, ReactNode } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../../features/boss-profit/store'
-import weeklyBossesData from '../../../data/weekly-bosses.json'
-import { bossNameOf } from '../../../lib/boss/bosses'
+import { bossesInSection, bossNameOf } from '../../../lib/boss/bosses'
 
 import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { 테스트_안전영역 } from '../../../components/__tests__/render-atom'
@@ -21,13 +20,13 @@ import { BossProfitContextProvider } from '../boss-profit-context'
 import type { BossProfitContextValue } from '../boss-profit-context'
 
 /** 픽스처가 쓰는 주간 보스의 key. 목록의 첫 항목이라 데이터가 바뀌어도 따라간다. */
-export const 주간보스 = weeklyBossesData.weekly[0].key
-export const 다른주간보스 = weeklyBossesData.weekly[1].key
-export const 월간보스 = weeklyBossesData.monthly[0].key
+export const 주간보스 = bossesInSection('weekly')[0].key
+export const 다른주간보스 = bossesInSection('weekly')[1].key
+export const 월간보스 = bossesInSection('monthly')[0].key
 /** 화면에 보이는 이름. 글자를 확인하는 단언이 쓴다. */
-export const 주간보스이름 = weeklyBossesData.weekly[0].name
-export const 다른주간보스이름 = weeklyBossesData.weekly[1].name
-export const 월간보스이름 = weeklyBossesData.monthly[0].name
+export const 주간보스이름 = bossesInSection('weekly')[0].name
+export const 다른주간보스이름 = bossesInSection('weekly')[1].name
+export const 월간보스이름 = bossesInSection('monthly')[0].name
 
 export const PERIOD = '2026-08-06'
 export const NOW = new Date('2026-08-11T12:00:00+09:00')

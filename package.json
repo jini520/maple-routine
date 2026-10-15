@@ -21,6 +21,7 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "assets:gen": "node scripts/generate-asset-manifest.mjs",
+    "sync:bosses": "node scripts/sync-bosses.mjs",
     "build:site": "node scripts/build-site.mjs",
     "deploy:site": "bash scripts/deploy-site.sh"
   },

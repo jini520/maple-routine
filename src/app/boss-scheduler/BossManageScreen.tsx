@@ -3,7 +3,7 @@
  *
  * 행의 원형 `BossPortrait` 에는 프롭을 그대로 넘기기만 하고 계산을 갖지 않는다.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { Pressable, View } from 'react-native'
@@ -13,6 +13,7 @@ import { BOSS_SECTION_ORDER } from '../../features/boss-scheduler/displayed-boss
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useToastStore } from '../../features/toast/store'
+import { useBossCatalogStore } from '../../features/bosses/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import { partySizeForShares } from '../../lib/boss/party-shares'
@@ -43,18 +44,6 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 
 /** 주인이 다른 편집 표를 읽을 때 대신 주는 빈 표. 렌더마다 새 객체를 만들지 않는다. */
 const NO_DIFFICULTY_EDITS: Record<string, BossDifficulty> = {}
-
-// 목록은 보스 표(`weekly-bosses.json`) 그대로다. 주간 탭은 주간(챌린저스 월드는 시즌 주간까지),
-// 월간 탭은 월간이다. 난이도 후보도 같은 표의 `difficulties` 를 쓴다.
-// 미출시 보스(`status: 'unreleased'`)는 뺀다. 보스를 코드에 안 박고 데이터로 거르므로 출시되면 그 칸을
-// 지우는 것만으로 돌아온다. 지금 걸리는 줄은 0개다.
-function listedBosses(section: 'weekly' | 'eventWeekly' | 'monthly'): BossEntry[] {
-  return bossesInSection(section).filter((entry) => entry.status !== 'unreleased')
-}
-
-const WEEKLY_BOSSES: BossEntry[] = listedBosses('weekly')
-const SEASON_BOSSES: BossEntry[] = listedBosses('eventWeekly')
-const MONTHLY_BOSSES: BossEntry[] = listedBosses('monthly')
 
 // 수동 모드는 행 탭이 추적 토글이고 즉시 저장한다. 체크된 행에만 난이도와 스테퍼가 펼쳐진다.
 // 자동 모드는 체크 없이 파티 인원만 설정하고, 미등록 보스도 미리 설정할 수 있다.
@@ -177,15 +166,28 @@ export function BossManageScreen(): React.JSX.Element {
   // 비-챌린저스로 본다. 판정은 스케줄러 화면과 같은 함수여야 한다.
   // 시즌 보스는 챌린저스 월드 전용이라 그 월드 캐릭터에게만 보인다. 월드를 모르는 구버전 캐시는
   const showsSeasonBosses = isChallengersWorld(selected?.worldKey)
+  // 목록은 보스 표 그대로다. 주간 탭은 주간(챌린저스 월드는 시즌 주간까지), 월간 탭은 월간이다. 난이도
+  // 후보도 같은 표의 `difficulties` 를 쓴다. 표는 켜는 동안 서버 응답으로 덮일 수 있어 스토어를 구독하고,
+  // 덮이면 목록을 다시 만든다.
+  const catalog = useBossCatalogStore((state) => state.catalog)
+  const listed = useMemo<Record<'weekly' | 'eventWeekly' | 'monthly', BossEntry[]>>(
+    () => ({
+      weekly: bossesInSection('weekly'),
+      eventWeekly: bossesInSection('eventWeekly'),
+      monthly: bossesInSection('monthly'),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 표가 바뀌었다는 신호다. 값은 `bossesInSection` 이 같은 표에서 읽는다.
+    [catalog],
+  )
   // **무리 둘이고 월간이 위다.** 스케줄러 목록과 같은 순서여야 보는 화면과 편집 화면이 같아진다.
   const allSections = BOSS_SECTION_ORDER.map((cycle) => ({
     cycle,
     entries:
       cycle === 'monthly'
-        ? MONTHLY_BOSSES
+        ? listed.monthly
         : showsSeasonBosses
-          ? [...WEEKLY_BOSSES, ...SEASON_BOSSES]
-          : WEEKLY_BOSSES,
+          ? [...listed.weekly, ...listed.eventWeekly]
+          : listed.weekly,
   }))
   // 자동 모드 기본은 등록된 보스만이다. 등록이 하나도 없으면(신규 캐릭터) 전체 목록으로
   // 대체해 미등록 보스의 파티 인원을 미리 설정할 수 있게 한다.
@@ -418,7 +420,7 @@ export function BossManageScreen(): React.JSX.Element {
               const nameContent = (
                 <>
                   <View aria-hidden>
-                    <BossPortrait portraitSlug={entry.portraitSlug ?? null} label={entry.name} size={44} />
+                    <BossPortrait portraitSlug={entry.portraitSlug} label={entry.name} size={44} />
                   </View>
                   <Text numberOfLines={1} className="min-w-0 flex-1 text-sm font-semibold text-text">
                     {entry.name}

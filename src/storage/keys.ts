@@ -129,6 +129,11 @@ export const STORAGE_KEYS = {
   pendingTasks: 'pendingTasks',
   // 파티 약속 목록(JSON). 사용자가 적은 것이라 아무도 되살려 주지 않는다. `KEEP_KEYS` 에 넣는다.
   partyAppointments: 'partyAppointments',
+  // 보스 표의 기기 사본. 서버 `GET /v1/bosses` 응답(JSON) 그대로다. 앱을 켜면 번들 사본 대신 이것으로
+  // 표를 세우고, 서버의 `updatedAt` 이 다르면 응답으로 통째로 바꾼다.
+  //
+  // `KEEP_KEYS` 에는 안 넣는다. 지워져도 번들 사본이 서고 다음 조회가 다시 채운다.
+  bossCatalog: 'bossCatalog',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {

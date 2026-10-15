@@ -62,7 +62,7 @@
 | 훅 | `hooks/useCountUp.ts` | 금액이 바뀌면 목표까지 굴러가는 숫자([[ADR-087]]) |
 | UI | `components/atoms/AnimatedNumber/` | 그 훅을 **잎에 가두는** 컴포넌트(정정 3). 매 프레임 다시 그리는 범위를 좁히는 것이 존재 이유다 |
 | 참조 | `src/data/boss-crystal-prices.json` | 결정석 정가 |
-| 참조 | `src/data/weekly-bosses.json` | 보스 목록과 정규 순서 |
+| 참조 | `src/data/bosses.json` | 보스 목록과 정규 순서. 서버 응답의 번들 사본이라 앱을 켜면 덮일 수 있다([[ADR-349]] 결정 5) |
 | 참조 | `src/data/boss-portrait-icon-crops.json` | 보스 초상화 크롭 |
 | UI | `components/molecules/ValuableDropBadge/` | 고가 드롭 배지 |
 | UI | `app/boss-profit/valuable-card-glow.ts` | 고가 드롭 연출 값(카드). 행 배경 쪽은 삭제([[ADR-236]] 결정 5) |
@@ -271,7 +271,7 @@ Nexon API 를 부른다.
 포함 범위도 좁다. 주간 보스만 세고 월간 보스 결정석은 안 들어가며, 시즌 보스(메이린)도 빠진다.
 안 판 결정석은 다음 주로 넘어가지 않는다. 매주 초기화된다.
 
-두 값의 출처는 `src/data/weekly-bosses.json` 의 `weeklyBossSelectionLimit` 과 `weeklyCrystalSaleLimit`
+두 값의 출처는 보스 표(`src/data/bosses.json` 의 `rules`, 서버가 덮을 수 있다)의 `weeklyBossSelectionLimit` 과 `weeklyCrystalSaleLimit`
 이고, `lib/boss/boss-matching` 이 위 두 상수로 나란히 export 한다. 한 파일에 두면 둘을 헷갈릴 일이 줄어든다.
 
 ### 처치 수는 store가 아니라 화면에서 만든다
@@ -1193,7 +1193,7 @@ today 가 `cycle === 'weekly'` 로 자르는 동안 이 화면은 `filterRowsFor
 
 ### 표시 순서
 
-- **보스 순서**([[ADR-036]]): `sortRowsByOcidOrder` 가 `weekly-bosses.json` 의 정규 순서
+- **보스 순서**([[ADR-036]]): `sortRowsByOcidOrder` 가 보스 표(`bosses.json`)의 정규 순서
   (보스 표 차례: weekly → eventWeekly → monthly)를 2차 정렬 키로 써서 캐시·라이브·과거 기록 세
   경로를 같은 순서로 고정한다. 키 셋(참조 인덱스 → 난이도 인덱스 → 보스명)은 이제 `boss-matching.ts`
   의 공용 `compareBossOrder` 가 맡는다([[ADR-186]], 2026-08-30). 인라인이던 것을 그대로 옮긴 것이라 이

@@ -1,4 +1,5 @@
-import weeklyBossesData from '../../data/weekly-bosses.json'
+import bossesData from '../../data/bosses.json'
+import { bossesInSection } from '../boss/bosses'
 import type { BossContent } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
 import {
@@ -96,15 +97,17 @@ describe('matchBossContent', () => {
 })
 
 describe('WEEKLY_BOSS_CLEAR_LIMIT', () => {
-  it('weekly-bosses.json의 weeklyBossSelectionLimit(12)를 그대로 노출한다', () => {
+  it('bosses.json의 rules.weeklyBossSelectionLimit(12)를 그대로 노출한다', () => {
     expect(WEEKLY_BOSS_CLEAR_LIMIT).toBe(12)
+    expect(WEEKLY_BOSS_CLEAR_LIMIT).toBe(bossesData.rules.weeklyBossSelectionLimit)
   })
 })
 
 // 캐릭터당 한도(12)와 월드당 결정석 판매 한도(90)는 별개 지표다.
 describe('WEEKLY_CRYSTAL_SALE_LIMIT', () => {
-  it('weekly-bosses.json의 weeklyCrystalSaleLimit(90)을 그대로 노출한다', () => {
+  it('bosses.json의 rules.weeklyCrystalSaleLimit(90)을 그대로 노출한다', () => {
     expect(WEEKLY_CRYSTAL_SALE_LIMIT).toBe(90)
+    expect(WEEKLY_CRYSTAL_SALE_LIMIT).toBe(bossesData.rules.weeklyCrystalSaleLimit)
   })
 
   it('캐릭터당 한도(12)와 월드당 한도(90)는 서로 다른 값이다. 둘을 혼용하는 회귀 가드', () => {
@@ -194,7 +197,7 @@ describe('countClearedWeeklyBosses', () => {
 
 describe('isWeeklyClearLimitReached', () => {
   // 보스 표에서 앞에서부터 뽑는다. 보스 key 를 손으로 적지 않는다.
-  const WEEKLY_BOSSES = weeklyBossesData.weekly as { key: string; name: string }[]
+  const WEEKLY_BOSSES = bossesInSection('weekly')
 
   function cleared(count: number): MatchedBoss[] {
     return WEEKLY_BOSSES.slice(0, count).map((entry) =>

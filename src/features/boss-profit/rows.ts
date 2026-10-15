@@ -117,7 +117,7 @@ export function toProfileSnapshot(infos: SortedCharacterInfo[]): Map<string, Cha
 }
 
 // rows(보스 단위, 캐릭터당 여러 개)를 sortedOcids 가 정한 캐릭터 순서로 재배열하고, 같은 캐릭터
-// 안에서는 `weekly-bosses.json` 정규 순서로 결정적으로 정렬한다.
+// 안에서는 보스 표(`bosses.json`) 정규 순서로 결정적으로 정렬한다.
 //
 // ocid 로만 정렬하고 stable sort 에 의존하면 보스 순서를 데이터 소스가 만든 순서 그대로
 // 물려받는데, 그 소스 순서가 비결정적이라(ORDER BY 없는 조회 · Map 삽입 순서) 로드마다 달라진다.
@@ -131,7 +131,7 @@ export function sortRowsByOcidOrder(rows: BossProfitRow[], sortedOcids: string[]
     if (rankDiff !== 0) return rankDiff
     // 순위가 같은데 ocid가 다르면(둘 다 sortedOcids 밖인 예외) 캐릭터끼리 섞이지 않게 ocid로 묶는다.
     if (a.ocid !== b.ocid) return a.ocid < b.ocid ? -1 : 1
-    // 월간 보스가 그 캐릭터의 맨 위다(사용자 지정). `weekly-bosses.json` 정규 순서에서는 월간이
+    // 월간 보스가 그 캐릭터의 맨 위다(사용자 지정). 보스 표(`bosses.json`) 정규 순서에서는 월간이
     // 맨 뒤라, 이 화면만 그 앞으로 끌어올린다. 무리 **안** 의 순서는 아래 공용 비교자 그대로다.
     if ((a.cycle === 'monthly') !== (b.cycle === 'monthly')) {
       return a.cycle === 'monthly' ? -1 : 1

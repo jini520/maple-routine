@@ -63,12 +63,6 @@ import {
   VALUABLE_CARD_RING_WIDTH,
 } from './valuable-card-glow'
 
-// 월간 탭 진행 링의 분모. 리터럴 1 이 아니라 참조 데이터에서 파생한다. 월간 보스가 늘면 링 칸
-// 수가 따라 늘어 데이터는 2종인데 링은 1칸 이 될 수 없다. `boss-matching` 의 두 한도와 나란히
-// 두지 않는 것은 성격이 달라서다. 그쪽은 게임이 정한 한도이고 이건 우리가 추적하는 월간 보스
-// 종류 수라 이 화면만 쓴다.
-const MONTHLY_BOSS_COUNT = bossesInSection('monthly').length
-
 /** 카드 수익 내역 상자에 싣는 아이템 건수. 나머지는 한 줄로 접는다. */
 const CARD_REVENUE_LIST_LIMIT = 5
 
@@ -280,10 +274,13 @@ export function CharacterAccordion(props: {
   // 처치 진행 링은 두 탭 · 모든 기간에 그리고 무엇을 세는지는 탭이 정한다. 월간 탭은 주간 처치
   // 수를 끌어오지 않는다. 월간 rows 에 주간 행 자체가 없고, 12 는 주 단위로 초기화되는 한도라
   // 월 단위로 곱한 분모는 게임에 없다.
+  //
+  // 월간 분모는 리터럴 1 이 아니라 보스 표의 월간 보스 종류 수다. 표는 켜는 동안 서버 응답으로 덮일 수
+  // 있어 그릴 때 읽는다.
   const clearProgress =
     tab === 'weekly'
       ? { cleared: countGroupClearedWeeklyBosses(group), total: WEEKLY_BOSS_CLEAR_LIMIT, cycle: tab }
-      : { cleared: countGroupClearedMonthlyBosses(group), total: MONTHLY_BOSS_COUNT, cycle: tab }
+      : { cleared: countGroupClearedMonthlyBosses(group), total: bossesInSection('monthly').length, cycle: tab }
 
   /**
    * 배지를 탭하면 두 상자를 재서 팝오버를 앉힌다.

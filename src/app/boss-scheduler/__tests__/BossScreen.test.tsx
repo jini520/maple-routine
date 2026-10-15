@@ -11,8 +11,7 @@ import {
 } from '../../../features/boss-scheduler/store'
 import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
-import weeklyBossesData from '../../../data/weekly-bosses.json'
-import { bossKeyOfApiName } from '../../../lib/boss/bosses'
+import { bossesInSection, bossKeyOfApiName } from '../../../lib/boss/bosses'
 import { WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../../lib/boss/boss-matching'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
@@ -1137,7 +1136,7 @@ describe('BossScreen: 수동 모드', () => {
 // 주간 12마리를 채우면 남은 미처치 주간 보스는 `완료` 자리에 `마감`을 단다.
 // 완료로 칠하지 않는 것이 핵심이다: 안 잡은 보스를 완료로 두면 그 거짓이 보스 수익의 금액이 된다.
 describe('BossScreen: 주간 한도 마감 배지', () => {
-  const WEEKLY_NAMES = weeklyBossesData.weekly.map((entry) => entry.name)
+  const WEEKLY_NAMES = bossesInSection('weekly').map((entry) => entry.name)
   const PENDING = WEEKLY_NAMES[0]
 
   /** 끝에서부터 실제로 처치한 주간 보스들. `PENDING` 과 겹치지 않게 뒤에서 뽑는다. */
@@ -1215,7 +1214,7 @@ describe('BossScreen: 주간 한도 마감 배지', () => {
 //  후속. 한도를 채웠으면 진행 링도 꽉 찬다. 마감은 **이번 주에 더 할
 // 것이 없다** 이므로 링이 100%에 못 닿으면 링이 거짓을 말한다.
 describe('BossScreen: 한도 마감과 진행 링', () => {
-  const WEEKLY_NAMES = weeklyBossesData.weekly.map((entry) => entry.name)
+  const WEEKLY_NAMES = bossesInSection('weekly').map((entry) => entry.name)
 
   /** 링의 접근성 이름에 실린 주간 n/m. 링을 나타내는 것이 이것뿐이라 계약이 여기 있다. */
   function ringLabel(): string {
