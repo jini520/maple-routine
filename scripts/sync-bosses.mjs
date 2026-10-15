@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 보스 표 동기화. `npm run sync:bosses`
+ * 보스 표 동기화. `node scripts/sync-bosses.mjs`
  *
  * 서버 `GET /v1/bosses` 를 받아 `src/data/bosses.json` 을 다시 쓴다. 서버가 보스 표의 기준이고 번들은
  * 그 사본이라, 빌드 전에 이것을 돌려 사본을 최신으로 맞춘다. `updatedAt` 도 응답 그대로 쓴다. 앱이

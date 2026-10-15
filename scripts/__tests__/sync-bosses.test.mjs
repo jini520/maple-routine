@@ -50,9 +50,11 @@ describe('renderBossesFile', () => {
     // jest 가 CJS 로 돌려 `import.meta.url` 이 비어 있다. `__dirname` 은 있다.
     const bundled = readFileSync(join(__dirname, '../../src/data/bosses.json'), 'utf8')
     const parsed = JSON.parse(bundled)
+    // 한 번 받아 둔 뒤로는 updatedAt 이 문자열이다. 아직 null 이면 값을 끼워 같은 모양인지만 본다.
+    const stamped = parsed.updatedAt ?? '2026-10-15T01:00:00.000Z'
 
-    expect(renderBossesFile({ ...parsed, updatedAt: '2026-10-15T01:00:00.000Z' })).toBe(
-      bundled.replace('"updatedAt": null', '"updatedAt": "2026-10-15T01:00:00.000Z"'),
+    expect(renderBossesFile({ ...parsed, updatedAt: stamped })).toBe(
+      bundled.replace('"updatedAt": null', `"updatedAt": "${stamped}"`),
     )
   })
 })

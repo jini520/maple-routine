@@ -1,7 +1,7 @@
 {
   "name": "maple-routine",
   "private": true,
-  "version": "1.0.12+1",
+  "version": "1.0.12+2",
   "main": "index.ts",
   "expo": {
     "install": {
@@ -21,7 +21,6 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "assets:gen": "node scripts/generate-asset-manifest.mjs",
-    "sync:bosses": "node scripts/sync-bosses.mjs",
     "build:site": "node scripts/build-site.mjs",
     "deploy:site": "bash scripts/deploy-site.sh"
   },

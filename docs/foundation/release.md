@@ -702,7 +702,9 @@ AAB `base/assets/fingerprint`), `publish-rn-ota.mjs` 는 **발행 시점 트리�
 
 **스토어 릴리스는 `app.json` 의 `expo.version` 을, OTA 발행은 `package.json` 의 `version` 을 올린다.** 둘은 서로
 관계를 검사하지 않는다([[ADR-279]] 결정 4). OTA 버전을 올리려고 `app.json` 을 건드리면 지문이 바뀐다.
-`package.json` 의 `version` 은 지문 재료가 아니다(2026-09-14 실측).
+`package.json` 의 `version` 은 지문 재료가 아니다(2026-09-14 실측). **그러나 `package.json` 의 `scripts` 는 지문 재료다**(2026-10-15 실측).
+`"sync:bosses"` 한 줄을 더했더니 두 플랫폼 지문이 다 바뀌었고 빼니 돌아왔다. 스토어 게시 뒤에는 npm 스크립트를 더하지
+말고 `node scripts/<이름>.mjs` 로 부른다.
 
 ### 규칙 2: 업로드 직전에 ‘바이너리 안 지문 == 트리 계산값’을 대조한다
 
