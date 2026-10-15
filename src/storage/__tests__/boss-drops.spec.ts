@@ -126,6 +126,20 @@ describe('replaceBossDropRecords', () => {
     ])
   })
 
+  it('다시 쓴 뒤 식별자를 넘긴 차례대로 돌려준다. 새 값은 INSERT 에서 생겨 저장 뒤에야 안다', async () => {
+    const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
+    queryMock
+      .mockResolvedValueOnce({ values: [] }) // 물려줄 식별자 조회
+      .mockResolvedValueOnce({ values: [{ drop_record_id: 'id-0' }, { drop_record_id: 'id-1' }] })
+
+    const ids = await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z', NO_WORLD)
+
+    expect(ids).toEqual(['id-0', 'id-1'])
+    const [sql, values] = queryMock.mock.calls[1]
+    expect(sql).toContain('ORDER BY drop_index')
+    expect(values).toEqual(['ocid-1', 'lotus', 'hard', '2026-W30'])
+  })
+
   it('드롭이 비면 DELETE만 하고 INSERT하지 않는다', async () => {
     const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
 

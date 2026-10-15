@@ -107,6 +107,8 @@ function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
 }
 
 beforeEach(async () => {
+  // 실물은 다시 쓴 뒤 식별자 배열을 돌려준다. 목이 안 내주면 `undefined` 가 흘러 가격 저장이 던진다.
+  replaceBossDropRecordsMock.mockResolvedValue([])
   jest.resetModules()
   getBossDropRecordsMock.mockReset().mockResolvedValue([record()])
   replaceBossDropRecordsMock.mockReset().mockResolvedValue(undefined)
@@ -431,6 +433,29 @@ describe('savePrice · excludePrice', () => {
     expect(drops[1]).toEqual(
       expect.objectContaining({ itemKey: 'restraint_ring', boxOriginKey: 'red_boss_ring_box' }),
     )
+  })
+
+  it('메모리의 드롭에 식별자가 없으면 저장소가 돌려준 식별자로 보낸다', async () => {
+    // 시트에서 방금 기록한 드롭은 식별자가 없다. INSERT 에서 처음 생기므로 저장 뒤 돌려받은 값을 쓴다.
+    getBossDropRecordsMock.mockResolvedValue([
+      record({ dropIndex: 0, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }),
+      record({ dropIndex: 1, itemKey: 'restraint_ring', itemName: '리스트레인트 링', boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3 }),
+    ])
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+    await useDropPriceStore.getState().load(PERIOD)
+    const groups = useDropPriceStore.getState().groups
+    useDropPriceStore.setState({
+      groups: groups.map((group) => ({
+        ...group,
+        entries: group.entries.map((entry) => ({ ...entry, drop: { ...entry.drop, dropRecordId: null } })),
+      })),
+    })
+    replaceBossDropRecordsMock.mockResolvedValue(['id-0', 'id-1'])
+    const target = useDropPriceStore.getState().groups[0].entries[1]
+
+    await useDropPriceStore.getState().savePrice(target, 1_200_000_000, { mode: 'even' as const, partySize: 1, myShare: 1, sharesTotal: 1 })
+
+    expect(reportDropPriceMock).toHaveBeenCalledWith('id-1', expect.any(Date))
   })
 
   it('저장하면 화면 상태도 즉시 갱신된다. 재조회를 기다리지 않는다', async () => {

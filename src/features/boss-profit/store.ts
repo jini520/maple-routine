@@ -19,6 +19,7 @@ import {
   type BossProfitRecord,
 } from '../../storage/boss-profit'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
+import { reportDropPrice } from '../server-sync/drop-price-sync'
 import { crystalPayoutMeso, type PartyShares } from '../../lib/boss/party-shares'
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
@@ -2258,20 +2259,30 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     }
 
     // 한 보스/기간의 드롭 집합을 통째로 교체한다(replace-all).
-    await replaceBossDropRecords(
+    const now = new Date()
+    const ids = await replaceBossDropRecords(
       row.ocid,
       row.bossKey,
       row.difficulty,
       row.periodKey,
       drops,
-      new Date().toISOString(),
+      now.toISOString(),
       { name: row.world, key: row.worldKey },
     )
+
+    // 시트에서 가격까지 적은 드롭은 여기서 서버로 한 건씩 보낸다(시세 표본). 가격 편집 화면과 같은
+    // 규칙이다. **기기 저장이 끝난 뒤이고 결과를 안 기다린다.** 식별자는 메모리의 드롭에 없을 수 있어
+    // (방금 적은 드롭) 저장소가 돌려준 값을 쓴다. 뺀 가격도 보낸다. 서버의 그 줄을 거두는 요청이다.
+    const saved = drops.map((drop, index) => ({ ...drop, dropRecordId: ids[index] ?? drop.dropRecordId }))
+    for (const drop of saved) {
+      if (drop.priceState === undefined || drop.dropRecordId === null) continue
+      void reportDropPrice(drop.dropRecordId, now)
+    }
 
     // dropsByRowKey 는 rows 와 독립된 상태라 setPartySize 와 달리 latestSyncSnapshot 이중 갱신이
     // 필요 없다. 탭 전환·기간 이동 시 loadPeriod 가 DB 에서 다시 로드한다.
     const key = dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)
-    set({ dropsByRowKey: { ...get().dropsByRowKey, [key]: drops } })
+    set({ dropsByRowKey: { ...get().dropsByRowKey, [key]: saved } })
   },
 
   applyExternalDropEdit(ocid, bossKey, difficulty, periodKey, drops) {

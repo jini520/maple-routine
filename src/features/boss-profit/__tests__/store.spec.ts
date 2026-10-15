@@ -126,6 +126,9 @@ const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: repl
 
 // 월드 리프한 기간의 중복 기록 정리. 자동 기록 뒤에 불리고, 지운 것이 있으면 기록을 다시 읽는가만 본다.
 jest.mock('../world-leap-records', () => ({ cleanUpWorldLeapDuplicates: jest.fn() }))
+// 서버 전송은 다른 기능이 소유한다(`features/server-sync`). 여기서는 **부르는지만** 본다.
+jest.mock('../../server-sync/drop-price-sync', () => ({ reportDropPrice: jest.fn() }))
+const { reportDropPrice: reportDropPriceMock } = jest.requireMock('../../server-sync/drop-price-sync') as Record<string, jest.Mock>
 const { cleanUpWorldLeapDuplicates: cleanUpWorldLeapMock } = jest.requireMock('../world-leap-records') as Record<string, jest.Mock>
 
 // 잡지 않은 보스의 드롭을 지운 뒤 **건수를 토스트로 알린다**. 값까지 사라지므로.
@@ -256,7 +259,8 @@ beforeEach(() => {
   getWeeklyPeriodKeysWithRecordsMock.mockResolvedValue([])
   fillMissingRecordWorldsMock.mockResolvedValue(undefined)
   getBossDropRecordsMock.mockResolvedValue([])
-  replaceBossDropRecordsMock.mockResolvedValue(undefined)
+  replaceBossDropRecordsMock.mockResolvedValue([])
+  reportDropPriceMock.mockReset()
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
   getBossPartySettingMock.mockResolvedValue(null)
   getCachedSchedulerStateMock.mockResolvedValue(null)
@@ -361,6 +365,46 @@ describe('setBossDrops', () => {
       { name: null, key: null },
     )
     expect(useBossProfitStore.getState().dropsByRowKey['ocid-1|lotus|hard|2026-W30']).toEqual(drops)
+  })
+
+  it('가격을 적은 드롭은 저장소가 돌려준 식별자로 서버에 보내고, 메모리의 드롭에도 그 식별자를 붙인다', async () => {
+    // 시트에서 드롭을 기록하며 가격까지 적으면 식별자가 아직 없다. INSERT 에서 처음 생기므로 저장소가
+    // 돌려준 값으로 보낸다. 가격을 안 적은 드롭은 보낼 것이 없다.
+    useBossProfitStore.setState({ status: 'loaded', rows: [sampleRow], dropsByRowKey: {} })
+    replaceBossDropRecordsMock.mockResolvedValue(['id-0', 'id-1'])
+    const drops = [
+      {
+        dropRecordId: null,
+        category: 'equipment' as const,
+        itemKey: 'loose_control_machine_mark',
+        itemName: '루즈 컨트롤 머신 마크',
+        slot: '얼굴장식',
+        quantity: 1,
+        priceState: 'entered' as const,
+        priceMeso: 1_200_000_000,
+      },
+      { dropRecordId: null, category: 'equipment' as const, itemKey: 'restraint_ring', itemName: '리스트레인트 링', quantity: 1 },
+    ]
+    await useBossProfitStore.getState().setBossDrops(
+      { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-W30' },
+      drops,
+    )
+
+    expect(reportDropPriceMock).toHaveBeenCalledTimes(1)
+    expect(reportDropPriceMock).toHaveBeenCalledWith('id-0', expect.any(Date))
+    const saved = useBossProfitStore.getState().dropsByRowKey['ocid-1|lotus|hard|2026-W30']
+    expect(saved.map((drop) => drop.dropRecordId)).toEqual(['id-0', 'id-1'])
+  })
+
+  it('뺀 가격도 보낸다. 서버의 그 줄을 거두는 요청이다', async () => {
+    useBossProfitStore.setState({ status: 'loaded', rows: [sampleRow], dropsByRowKey: {} })
+    replaceBossDropRecordsMock.mockResolvedValue(['id-0'])
+    await useBossProfitStore.getState().setBossDrops(
+      { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-W30' },
+      [{ dropRecordId: null, category: 'equipment' as const, itemKey: 'restraint_ring', itemName: '리스트레인트 링', quantity: 1, priceState: 'excluded' as const }],
+    )
+
+    expect(reportDropPriceMock).toHaveBeenCalledWith('id-0', expect.any(Date))
   })
 
   it('존재하지 않는 행이면 에러를 던지고 DB를 건드리지 않는다', async () => {

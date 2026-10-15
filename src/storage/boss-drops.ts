@@ -94,6 +94,14 @@ const INSERT_SQL = `
   VALUES (COALESCE(?, ${NEW_UUID_SQL}), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
+/** 다시 쓴 뒤 식별자를 차례대로 읽는다. 새로 생긴 값은 SQLite 가 만들어 여기서만 알 수 있다. */
+const SELECT_IDS_IN_ORDER_SQL = `
+  SELECT drop_record_id
+  FROM boss_drop_records
+  WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?
+  ORDER BY drop_index
+`
+
 /** 그룹 안에서 아이템 하나를 가리키는 값. 저장을 되풀이해도 같아야 식별자를 물려줄 수 있다. */
 const SELECT_GROUP_IDS_SQL = `
   SELECT drop_record_id, world, world_key, item_key, item_name, slot, box_origin_key, ring_level
@@ -183,7 +191,7 @@ export async function replaceBossDropRecords(
   drops: RecordedDrop[],
   recordedAt: string,
   world: DropWorld,
-): Promise<void> {
+): Promise<string[]> {
   const db = await getBossProfitDb()
 
   // **지우기 전에 식별자를 읽어 둔다.** 그룹을 통째로 바꾸는 저장이라, 안 읽으면 같은 아이템이
@@ -261,6 +269,12 @@ export async function replaceBossDropRecords(
   // **삭제/삽입이 다 끝난 뒤**에 올린다. 중간에 던지면 테이블이 바뀌지 않은 채로 끝나므로
   // 그때 올리면 읽는 쪽이 헛되이 전 기간을 다시 읽는다.
   bumpRecordsRevision()
+
+  // 드롭을 넘긴 차례 그대로의 식별자. 가격을 서버로 보내는 쪽이 이것으로 기록을 가리킨다.
+  // 메모리의 드롭은 식별자가 없을 수 있고(시트에서 방금 적은 것), 그 값은 위 INSERT 에서 처음 생긴다.
+  if (drops.length === 0) return []
+  const { values } = await db.query(SELECT_IDS_IN_ORDER_SQL, [ocid, bossKey, difficulty, periodKey])
+  return ((values ?? []) as Record<string, unknown>[]).map((row) => row.drop_record_id as string)
 }
 
 /** 저장된 상태 문자열을 도메인 값으로. 모르는 값은 미입력으로 떨어뜨린다(거짓 상태를 만들지 않는다). */
