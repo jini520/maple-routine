@@ -178,24 +178,26 @@ export function isBossActiveIn(
   key: string | null | undefined,
   periodKey: string,
   now?: Date,
-  /** 난이도까지 받으면 그 난이도의 기간도 본다. 둘이 겹치는 범위가 유효 범위다. */
+  /**
+   * 난이도까지 받으면 그 난이도의 기간이 보스의 기간을 **칸마다 덮는다**. 난이도 줄이 든 칸은 그 값이고, 안 든 칸은
+   * 보스의 값이다. 보스 10-11 ~ 10-23 에 하드만 10-12 ~ 10-21 이면 하드는 후자, 나머지는 전자다.
+   */
   difficulty?: BossDifficulty | string,
 ): boolean {
   const entry = findBoss(key)
   if (entry === null) return true
-  if (!isEffectiveIn({ from: entry.from, until: entry.until }, periodKey, now)) return false
-  const period = difficulty === undefined ? undefined : entry.difficultyPeriods?.[difficulty as BossDifficulty]
-  return period === undefined || isEffectiveIn(period, periodKey, now)
+  const own = difficulty === undefined ? undefined : entry.difficultyPeriods?.[difficulty as BossDifficulty]
+  return isEffectiveIn({ from: own?.from ?? entry.from, until: own?.until ?? entry.until }, periodKey, now)
 }
 
 /**
- * 그 기간에 유효한 난이도. 표 차례 그대로다. 보스 자체가 기간 밖이면 빈 배열이고, 표에 없는 key 도 빈 배열이다.
+ * 그 기간에 유효한 난이도. 표 차례 그대로다. 난이도마다 보스의 기간을 자기 기간으로 덮어 본다. 표에 없는 key 는 빈 배열이다.
  *
  * 기록을 고치는 자리는 그 행의 난이도가 여기 없어도 남겨야 한다. 지난 기록이 기간 밖 난이도를 들 수 있어서다.
  */
 export function activeDifficultiesOf(key: string | null | undefined, periodKey: string, now?: Date): BossDifficulty[] {
   const entry = findBoss(key)
-  if (entry === null || !isBossActiveIn(key, periodKey, now)) return []
+  if (entry === null) return []
   return entry.difficulties.filter((difficulty) => isBossActiveIn(key, periodKey, now, difficulty))
 }
 

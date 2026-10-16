@@ -102,6 +102,42 @@ describe('난이도의 유효 기간', () => {
     expect(isBossActiveIn('lotus', '2026-10-22', undefined, 'extreme')).toBe(true)
   })
 
+  // 보스 10-11 ~ 10-23 에 하드만 10-12 ~ 10-21 이면 하드는 후자, 나머지는 전자다. 겹치는 범위가 아니라 덮어쓰기다.
+  it('난이도의 기간이 보스의 기간을 칸마다 덮는다. 난이도의 끝이 보스의 끝보다 뒤면 그 난이도만 더 산다', () => {
+    const table: BossCatalog = {
+      ...BUNDLED_BOSS_CATALOG,
+      updatedAt: 'x',
+      bosses: BUNDLED_BOSS_CATALOG.bosses.map((boss) =>
+        boss.key === 'lotus'
+          ? {
+              ...boss,
+              from: '2026-10-08',
+              until: '2026-10-22',
+              difficulties: boss.difficulties.map((d) =>
+                d.difficulty === 'hard' ? { ...d, from: '2026-10-15', until: '2026-10-29' } : d.difficulty === 'extreme' ? { ...d, from: '2026-10-15' } : d,
+              ),
+            }
+          : boss,
+      ),
+    }
+    setBossCatalog(table)
+
+    // normal: 보스 기간 그대로 10-08 ~ 10-22
+    expect(isBossActiveIn('lotus', '2026-10-08', undefined, 'normal')).toBe(true)
+    expect(isBossActiveIn('lotus', '2026-10-22', undefined, 'normal')).toBe(false)
+    // hard: 자기 기간 10-15 ~ 10-29. 보스의 끝보다 뒤까지 산다
+    expect(isBossActiveIn('lotus', '2026-10-08', undefined, 'hard')).toBe(false)
+    expect(isBossActiveIn('lotus', '2026-10-22', undefined, 'hard')).toBe(true)
+    expect(isBossActiveIn('lotus', '2026-10-29', undefined, 'hard')).toBe(false)
+    // extreme: 시작만 들어 끝은 보스의 10-22 를 물려받는다
+    expect(isBossActiveIn('lotus', '2026-10-08', undefined, 'extreme')).toBe(false)
+    expect(isBossActiveIn('lotus', '2026-10-15', undefined, 'extreme')).toBe(true)
+    expect(isBossActiveIn('lotus', '2026-10-22', undefined, 'extreme')).toBe(false)
+    // 보스가 유효한가는 어느 난이도든 유효한가다
+    expect(activeDifficultiesOf('lotus', '2026-10-22')).toEqual(['hard'])
+    expect(activeBossesInSection('weekly', new Date('2026-10-23T03:00:00+09:00')).map((b) => b.key)).toContain('lotus')
+  })
+
   it('activeDifficultiesOf 는 표 차례로 유효한 난이도만 내고, 보스가 기간 밖이면 비고, 표에 없으면 빈다', () => {
     setBossCatalog(withLotusExtremeFrom('2026-10-22T10:00'))
 
