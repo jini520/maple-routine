@@ -37,7 +37,7 @@
 | 계산 | `lib/boss/boss-matching.ts` | 정렬(`compareBossOrder`), 한도 판정(`isWeeklyClearLimitReached`·`countManualWeeklyBosses`) |
 | 계산 | `lib/boss/manual-boss-merge.ts` | 수동 모드 목록 합치기(`mergeManualBossList`) |
 | 계산 | `lib/assets/asset-lookup.ts` | 보스 초상화 |
-| 참조 | `src/data/bosses.json` | 보스 표의 번들 사본. 서버 `GET /v1/bosses` 와 같은 모양이고 앱을 켜면 기기 사본 · 서버 응답이 덮는다([[ADR-349]] 결정 5). 조회는 `lib/boss/bosses`, 현재 표는 `lib/boss/catalog`, 덮는 흐름은 `features/bosses/store` |
+| 참조 | `src/data/bosses.json` | 보스 표의 번들 사본. 서버 `GET /v1/game-data` 의 `bosses` 칸과 같은 모양이고 앱을 켜면 기기 사본 · 서버 응답이 덮는다([[ADR-349]] 결정 5 · [[ADR-350]] 결정 4). 조회는 `lib/boss/bosses`, 현재 표는 `lib/boss/catalog`, 덮는 흐름은 `features/game-data/hydrate` 와 `features/bosses/store` |
 | 참조 | `src/data/boss-crystal-prices.json` | 관리 화면이 보여줄 난이도 목록의 출처 |
 | 참조 | `src/data/boss-portrait-crops.json` | 카드 일러스트 크롭 |
 
@@ -97,7 +97,7 @@ ADR-073(인디케이터) · ADR-098(헤더 고정). **각 파일 배너의 🔗 
 `manualCompletedByOcid` 하나라 SQLite 한 번이고 넥슨은 안 부른다(`reloadManualCompleted`). today 의
 남은 스케줄이 같은 스토어 값을 보므로 today 도 포커스에서 같은 것을 부른다.
 
-보스 표(`bosses.json`, 서버 `GET /v1/bosses` 의 사본)가 보스명과 난이도 표기를 매핑하는 참조표다(줄의 `cycle` 이
+보스 표(`bosses.json`, 서버 `GET /v1/game-data` 의 `bosses` 칸 사본)가 보스명과 난이도 표기를 매핑하는 참조표다(줄의 `cycle` 이
 `weekly` · `event_weekly` 면 주간, `monthly` 면 월간). 매핑에 없는 것은 "알 수 없는 콘텐츠"로 표시한다.
 
 미완료 보스에는 로컬 알림을 띄운다(실시간 재확인). 주간 리셋은 KST 목요일 00:00이다.

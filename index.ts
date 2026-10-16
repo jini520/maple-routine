@@ -3,7 +3,7 @@ import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebas
 import notifee from '@notifee/react-native'
 
 import App from './App'
-import { installPorts, loadBossCatalog } from './src/boot'
+import { installPorts, loadGameData } from './src/boot'
 import { holdSplashUntilAppReady } from './src/boot-splash'
 import { handleBackgroundNotificationEvent } from './src/native/adapters/rn-notifications'
 
@@ -16,9 +16,9 @@ import { handleBackgroundNotificationEvent } from './src/native/adapters/rn-noti
 // "렌더보다 먼저"가 코드 순서로 읽히게 한다.
 installPorts()
 
-// 보스 표를 기기 사본과 서버 응답으로 덮는다. 포트 주입 **뒤**여야 한다. 기기 사본을 Preferences 에서
+// 게임 데이터 표를 기기 사본과 서버 응답으로 덮는다. 포트 주입 **뒤**여야 한다. 기기 사본을 Preferences 에서
 // 읽기 때문이다. 결과는 안 기다린다. 번들 사본으로 이미 서 있다.
-loadBossCatalog()
+loadGameData()
 
 // 스플래시를 **첫 렌더까지 붙들고**, 그 렌더가 끝내 오지 않으면 8초 뒤 트리 밖에서 내린다
 // ( — 근거는 `boot-splash.ts`). 포트 주입 **뒤**여야 한다:
