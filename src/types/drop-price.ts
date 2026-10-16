@@ -18,4 +18,8 @@ export interface DropPricePayload {
   ringLevel: number | null
   /** 장비 부위. 해당 갈래가 아니면 `null`. */
   slot: string | null
+  /** 어느 보스에서 얻었나. 보스 key. */
+  boss: string
+  /** 어느 난이도에서 얻었나. 난이도 key. 확정 전 난이도일 수 있고, 확정되면 다시 보낸다. */
+  difficulty: string
 }

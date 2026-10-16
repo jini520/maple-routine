@@ -63,6 +63,8 @@ export function dropPricePayloadOf(record: BossDropRecord): DropPricePayload | n
     worldKey: record.worldKey,
     ringLevel: record.ringLevel,
     slot: record.slot,
+    boss: record.bossKey,
+    difficulty: record.difficulty,
   }
 }
 

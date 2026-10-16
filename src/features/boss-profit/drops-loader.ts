@@ -10,6 +10,7 @@ import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../../stor
 import { batchRecordWrites } from '../../storage/record-revision-batch'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { RecordedDrop } from '../../types/drops'
+import { reportDropPrice } from '../server-sync/drop-price-sync'
 import { dropRowKey, toRecordedDrop } from './rows'
 import { withSqliteFallback } from './sqlite-guards'
 import type { BossProfitRow } from './rows'
@@ -22,6 +23,9 @@ import type { BossProfitRow } from './rows'
  *
  * **확정 키를 먼저 쓰고 옛 키를 비운다.** 순서를 뒤집으면 중간에 앱이 죽었을 때 기록이 사라지는데,
  * 이 순서면 최악이 "아무도 읽지 않는 옛 키에 사본이 남는다"(=이관 전과 같은 고아)로 끝난다.
+ *
+ * **옮긴 드롭의 가격은 서버에 다시 보낸다.** 전송값이 난이도를 싣는데 서버 줄은 옛 난이도를 가리키고
+ * 있어서다. 기록 id 가 같아 서버가 값을 덮는다. 확정 키에 이미 있던 드롭은 안 보낸다.
  */
 export async function migrateDropsToConfirmedDifficulty(
   row: Pick<BossProfitRow, 'ocid' | 'bossKey' | 'difficulty' | 'periodKey'>,
@@ -59,6 +63,15 @@ export async function migrateDropsToConfirmedDifficulty(
       replaceBossDropRecords(row.ocid, row.bossKey, staleDifficulty, row.periodKey, [], recordedAt, NO_WORLD),
       undefined,
     )
+  }
+
+  const movedIds = new Set(
+    dropRecords.filter((record) => record.difficulty !== row.difficulty).map((record) => record.dropRecordId),
+  )
+  for (const drop of plan.drops) {
+    if (drop.dropRecordId === null || !movedIds.has(drop.dropRecordId)) continue
+    if (drop.priceState === undefined) continue
+    void reportDropPrice(drop.dropRecordId, now)
   }
 }
 
