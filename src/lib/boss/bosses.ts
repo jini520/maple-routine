@@ -7,6 +7,7 @@
  */
 import type { BossCycle, BossDifficulty } from '../../types'
 import type { BossCatalog, BossCatalogBoss, BossCatalogCycle } from '../../types/boss-catalog'
+import { getCurrentBossProfitPeriod, isEffectiveIn } from './boss-profit-period'
 import { getBossCatalog, subscribeBossCatalog } from './catalog'
 
 /** 관리 화면의 묶음. 시즌 보스(eventWeekly)도 주기는 주간이다. */
@@ -26,6 +27,9 @@ export interface BossEntry {
   cycle: BossCycle
   /** 시즌 보스는 주간 12마리 한도와 결정석 판매 수에서 빠진다. */
   isSeasonBoss: boolean
+  /** 유효 기간. KST 글자. 없으면 처음부터 · 끝없이. */
+  from?: string
+  until?: string
 }
 
 const SECTION_OF_CYCLE: Record<BossCatalogCycle, BossSection> = {
@@ -47,6 +51,8 @@ function toEntry(boss: BossCatalogBoss): BossEntry {
     section: SECTION_OF_CYCLE[boss.cycle],
     cycle: boss.cycle === 'monthly' ? 'monthly' : 'weekly',
     isSeasonBoss: boss.cycle === 'event_weekly',
+    ...(boss.from === undefined ? {} : { from: boss.from }),
+    ...(boss.until === undefined ? {} : { until: boss.until }),
   }
 }
 
@@ -146,4 +152,24 @@ export function bossPortraitSlugOf(key: string | null | undefined): string | nul
 
 export function bossesInSection(section: BossSection): BossEntry[] {
   return index.entries.filter((entry) => entry.section === section)
+}
+
+/**
+ * 보스가 그 기간에 유효한가. 기간의 첫날이 `until` 앞이고 `from` 뒤면 참이다. 드롭 표 줄과 같은 판정이다.
+ *
+ * 표에 없는 key 는 참이다. 표가 못 가리는 보스를 여기서 숨기면 안 된다. 지난 기간은 그대로 서고 끝난 뒤의
+ * 기간에서만 빠진다. 시즌 보스가 시즌이 끝난 뒤 새 챌린저스 월드에 서지 않게 하는 자리다.
+ *
+ * @param now 경계가 기간 첫날 안에 시각까지 들 때만 쓴다
+ */
+export function isBossActiveIn(key: string | null | undefined, periodKey: string, now?: Date): boolean {
+  const entry = findBoss(key)
+  if (entry === null) return true
+  return isEffectiveIn({ from: entry.from, until: entry.until }, periodKey, now)
+}
+
+/** 지금 기간에 유효한 묶음의 보스. 관리 화면과 약속 보스 고르개가 쓴다. */
+export function activeBossesInSection(section: BossSection, now: Date = new Date()): BossEntry[] {
+  const periodKey = getCurrentBossProfitPeriod(section === 'monthly' ? 'monthly' : 'weekly', now).periodKey
+  return bossesInSection(section).filter((entry) => isBossActiveIn(entry.key, periodKey, now))
 }

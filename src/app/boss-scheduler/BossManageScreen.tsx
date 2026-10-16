@@ -19,9 +19,9 @@ import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import { partySizeForShares } from '../../lib/boss/party-shares'
 import type { BossPartyShareColumns } from '../../storage/boss-party-settings'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
-import { bossPortraitSlugOf, supportedDifficultiesOf } from '../../lib/boss/bosses'
+import { activeBossesInSection, bossPortraitSlugOf, supportedDifficultiesOf } from '../../lib/boss/bosses'
 import { countManualWeeklyBosses, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
-import { bossCycleOf, bossesInSection, isSeasonBoss, type BossEntry } from '../../lib/boss/bosses'
+import { bossCycleOf, isSeasonBoss, type BossEntry } from '../../lib/boss/bosses'
 import { isChallengersWorld } from '../../lib/world/worlds'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
@@ -166,15 +166,16 @@ export function BossManageScreen(): React.JSX.Element {
   // 비-챌린저스로 본다. 판정은 스케줄러 화면과 같은 함수여야 한다.
   // 시즌 보스는 챌린저스 월드 전용이라 그 월드 캐릭터에게만 보인다. 월드를 모르는 구버전 캐시는
   const showsSeasonBosses = isChallengersWorld(selected?.worldKey)
-  // 목록은 보스 표 그대로다. 주간 탭은 주간(챌린저스 월드는 시즌 주간까지), 월간 탭은 월간이다. 난이도
+  // 목록은 보스 표에서 지금 기간에 유효한 것이다. 시즌이 끝난 시즌 보스는 빠진다. 주간 탭은 주간(챌린저스
+  // 월드는 시즌 주간까지), 월간 탭은 월간이다. 난이도
   // 후보도 같은 표의 `difficulties` 를 쓴다. 표는 켜는 동안 서버 응답으로 덮일 수 있어 스토어를 구독하고,
   // 덮이면 목록을 다시 만든다.
   const catalog = useBossCatalogStore((state) => state.catalog)
   const listed = useMemo<Record<'weekly' | 'eventWeekly' | 'monthly', BossEntry[]>>(
     () => ({
-      weekly: bossesInSection('weekly'),
-      eventWeekly: bossesInSection('eventWeekly'),
-      monthly: bossesInSection('monthly'),
+      weekly: activeBossesInSection('weekly'),
+      eventWeekly: activeBossesInSection('eventWeekly'),
+      monthly: activeBossesInSection('monthly'),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 표가 바뀌었다는 신호다. 값은 `bossesInSection` 이 같은 표에서 읽는다.
     [catalog],

@@ -28,10 +28,11 @@ import { useToastStore } from '../../features/toast/store'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/assets/asset-lookup'
+import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { isChallengersWorld } from '../../lib/world/worlds'
 import type { ImageCrop } from '../../lib/image-crop'
 import type { MatchedBoss } from '../../lib/boss/boss-matching'
-import { bossNameOf, supportedDifficultiesOf } from '../../lib/boss/bosses'
+import { bossNameOf, isBossActiveIn, supportedDifficultiesOf } from '../../lib/boss/bosses'
 import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import { partySizeForShares } from '../../lib/boss/party-shares'
 
@@ -291,7 +292,11 @@ export function BossScreen(): React.JSX.Element {
   // 챌린저스 월드면 등록 여부와 무관하게 시즌 보스 완료를 배지로 보인다. 판정은
   const seasonBosses =
     selected !== null && isChallengersWorld(selected.worldKey)
-      ? selected.weeklyBosses.filter((boss) => boss.isSeasonBoss)
+      ? selected.weeklyBosses.filter(
+          (boss) =>
+            boss.isSeasonBoss &&
+            isBossActiveIn(boss.bossKey, getCurrentBossProfitPeriod('weekly', new Date()).periodKey, new Date()),
+        )
       : []
   const isSeasonBossComplete = seasonBosses.some((boss) => boss.isComplete)
 

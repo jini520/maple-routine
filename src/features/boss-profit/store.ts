@@ -1509,6 +1509,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           manualItemsByOcid.get(ocid) ?? [],
           worldKeyByOcid.get(ocid) ?? null,
           manualCompletedKeys.get(ocid),
+          { periodKey: currentPeriodKey, now },
         )
         const profile: CharacterProfileInfo = {
           characterName: cached.state.characterName,
@@ -1812,6 +1813,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         manualItemsByOcid.get(result.ocid) ?? [],
         profile.worldKey,
         manualCompletedKeys.get(result.ocid),
+        { periodKey: currentPeriodKey, now },
       )
 
       for (const boss of displayBosses) {

@@ -19,6 +19,8 @@ import {
   selectDisplayBosses,
   type MatchedBoss,
 } from '../../lib/boss/boss-matching'
+import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
+import { isBossActiveIn } from '../../lib/boss/bosses'
 import { mergeManualBossList } from '../../lib/boss/manual-boss-merge'
 import { applyManualCompletions } from '../../lib/boss/manual-completion'
 import { isChallengersWorld } from '../../lib/world/worlds'
@@ -61,6 +63,8 @@ export function displayedBosses(
    * 스케줄러 카드와 today 남은 스케줄의 공용 판정이라, 얹는 자리도 여기 하나다.
    */
   manualCompletedByOcid?: Record<string, readonly string[]> | null,
+  /** 유효 기간 판정의 시계. 표시 목록은 늘 지금 기간이다. */
+  now: Date = new Date(),
 ): DisplayedBoss[] {
   const manualKeys = new Set(manualCompletedByOcid?.[character.ocid] ?? [])
   const weeklyBosses = applyManualCompletions(character.weeklyBosses, manualKeys)
@@ -72,11 +76,15 @@ export function displayedBosses(
   // 시즌 보스는 챌린저스 월드 캐릭터에만 선다. 리프하면 챌린저스 때 등록이 새 ocid 로 넘어와 일반 월드
   // 캐릭터에 시즌 보스가 등록된 채로 온다. 월드를 모르면 안 세운다.
   const inWorld = (boss: MatchedBoss): boolean => !boss.isSeasonBoss || isChallengersWorld(character.worldKey)
+  // 유효 기간이 끝난 보스는 안 선다. 시즌이 끝난 시즌 보스가 그렇다. 표시 목록은 지금 기간이다.
+  const periodKey = getCurrentBossProfitPeriod(cycle, now).periodKey
+  const inPeriod = (boss: MatchedBoss): boolean => isBossActiveIn(boss.bossKey, periodKey, now)
+  const shownHere = (boss: MatchedBoss): boolean => inWorld(boss) && inPeriod(boss)
 
   if (mode !== 'manual') {
     return stampLimitClosed(
       orderByReference(
-        selectDisplayBosses(cycle === 'weekly' ? weeklyBosses : monthlyBosses).filter(inWorld),
+        selectDisplayBosses(cycle === 'weekly' ? weeklyBosses : monthlyBosses).filter(shownHere),
       ),
       limitReached,
     )
@@ -100,7 +108,7 @@ export function displayedBosses(
     orderByReference(
       mergeManualBossList(items, synced)
         .map(matchBossContent)
-        .filter((boss) => boss.cycle === cycle && inWorld(boss)),
+        .filter((boss) => boss.cycle === cycle && shownHere(boss)),
     ),
     limitReached,
   )
