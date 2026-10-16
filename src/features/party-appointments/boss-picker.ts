@@ -6,7 +6,7 @@
  * 같은 보스라도 다른 캐릭터로는 따로 고른다.
  */
 import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
-import { BOSS_ENTRIES, isBossActiveIn } from '../../lib/boss/bosses'
+import { BOSS_ENTRIES, activeDifficultiesOf } from '../../lib/boss/bosses'
 import type { BossPartyShareColumns } from '../../storage/boss-party-settings'
 import type { PartyAppointmentBoss } from '../../types/party-appointment'
 import { partySizeKey } from '../boss-scheduler/store'
@@ -41,17 +41,13 @@ export function bossPickerSections(input: BossPickerInput): BossPickerSections {
   const registeredDifficulty = new Map(input.registered.map((tile) => [tile.bossKey, tile.difficulty]))
   // 시즌 보스는 뺀다. 등록돼 있으면 위 두 묶음에 이미 선다. 유효 기간이 끝난 보스도 뺀다.
   const now = input.now ?? new Date()
-  const all = BOSS_ENTRIES.filter(
-    (entry) =>
-      entry.section !== 'eventWeekly' &&
-      isBossActiveIn(entry.key, getCurrentBossProfitPeriod(entry.cycle, now).periodKey, now),
-  ).map(
-    (entry): PickerTile => ({
-      bossKey: entry.key,
-      // 표의 난이도는 낮은 것부터라 끝이 가장 높다.
-      difficulty: registeredDifficulty.get(entry.key) ?? entry.difficulties[entry.difficulties.length - 1] ?? '',
-    }),
-  )
+  const all = BOSS_ENTRIES.flatMap((entry): PickerTile[] => {
+    if (entry.section === 'eventWeekly') return []
+    const difficulties = activeDifficultiesOf(entry.key, getCurrentBossProfitPeriod(entry.cycle, now).periodKey, now)
+    if (difficulties.length === 0) return []
+    // 표의 난이도는 낮은 것부터라 끝이 가장 높다.
+    return [{ bossKey: entry.key, difficulty: registeredDifficulty.get(entry.key) ?? difficulties[difficulties.length - 1] ?? '' }]
+  })
   return {
     party: input.registered.filter(isParty),
     scheduler: input.registered.filter((tile) => !isParty(tile)),

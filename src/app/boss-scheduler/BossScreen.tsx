@@ -32,7 +32,7 @@ import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { isChallengersWorld } from '../../lib/world/worlds'
 import type { ImageCrop } from '../../lib/image-crop'
 import type { MatchedBoss } from '../../lib/boss/boss-matching'
-import { bossNameOf, isBossActiveIn, supportedDifficultiesOf } from '../../lib/boss/bosses'
+import { activeDifficultiesNow, bossNameOf, isBossActiveIn } from '../../lib/boss/bosses'
 import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import { partySizeForShares } from '../../lib/boss/party-shares'
 
@@ -295,7 +295,7 @@ export function BossScreen(): React.JSX.Element {
       ? selected.weeklyBosses.filter(
           (boss) =>
             boss.isSeasonBoss &&
-            isBossActiveIn(boss.bossKey, getCurrentBossProfitPeriod('weekly', new Date()).periodKey, new Date()),
+            isBossActiveIn(boss.bossKey, getCurrentBossProfitPeriod('weekly', new Date()).periodKey, new Date(), boss.difficulty),
         )
       : []
   const isSeasonBossComplete = seasonBosses.some((boss) => boss.isComplete)
@@ -606,8 +606,8 @@ export function BossScreen(): React.JSX.Element {
           portraitSlug={partyModal.boss.portraitSlug}
           // 표에서 빠진 key 는 후보를 알 수 없다. 지금 난이도 하나만 그려 세그먼트가 사라지지 않게 한다.
           difficulties={
-            supportedDifficultiesOf(modalBossKey).length > 0
-              ? supportedDifficultiesOf(modalBossKey)
+            activeDifficultiesNow(modalBossKey).length > 0
+              ? activeDifficultiesNow(modalBossKey)
               : [partyModal.difficulty]
           }
           difficulty={partyModal.difficulty}

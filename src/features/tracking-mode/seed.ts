@@ -34,7 +34,7 @@ function toTrackedItems(state: SchedulerCharacterState, now: Date = new Date()):
     boss.bossKey !== null &&
     (!isSeasonBoss(boss.bossKey) || isChallengersWorld(state.worldKey)) &&
     // 유효 기간이 끝난 보스는 안 담는다. 담으면 관리 화면이 숨겨 사용자가 뺄 길이 없다.
-    isBossActiveIn(boss.bossKey, getCurrentBossProfitPeriod(boss.cycle, now).periodKey, now)
+    isBossActiveIn(boss.bossKey, getCurrentBossProfitPeriod(boss.cycle, now).periodKey, now, boss.difficulty)
       ? [{ kind: 'boss' as const, bossKey: boss.bossKey, difficulty: boss.difficulty }]
       : [],
   )

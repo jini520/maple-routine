@@ -13,6 +13,9 @@ export type BossCatalogCycle = (typeof BOSS_CATALOG_CYCLES)[number]
 export interface BossCatalogDifficulty {
   difficulty: BossDifficulty
   requiredLevel: number
+  /** 난이도의 유효 기간. 없으면 보스의 기간 그대로. 새로 생긴 난이도가 시작을 든다. */
+  from?: string
+  until?: string
 }
 
 export interface BossCatalogBoss {

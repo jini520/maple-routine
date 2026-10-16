@@ -1,5 +1,5 @@
 // 보스의 유효 기간. 시즌이 끝난 시즌 보스가 다음 챌린저스 월드에 서지 않게 하는 판정이다.
-import { activeBossesInSection, isBossActiveIn } from '../boss/bosses'
+import { activeBossesInSection, activeDifficultiesOf, isBossActiveIn, withOwnDifficulty } from '../boss/bosses'
 import { BUNDLED_BOSS_CATALOG, parseBossCatalog, setBossCatalog } from '../boss/catalog'
 import type { BossCatalog } from '../../types/boss-catalog'
 
@@ -78,3 +78,51 @@ describe('parseBossCatalog: 유효 기간', () => {
     expect(parseBossCatalog(withMeirinUntil('2026-10-22', '2026-7-3'))).toBeNull()
   })
 })
+
+/** 스우 익스트림이 시작을 들게 바꾼 표. */
+function withLotusExtremeFrom(from: string): BossCatalog {
+  return {
+    ...BUNDLED_BOSS_CATALOG,
+    updatedAt: '2026-10-16T00:00:00.000Z',
+    bosses: BUNDLED_BOSS_CATALOG.bosses.map((boss) =>
+      boss.key === 'lotus'
+        ? { ...boss, difficulties: boss.difficulties.map((d) => (d.difficulty === 'extreme' ? { ...d, from } : d)) }
+        : boss,
+    ),
+  }
+}
+
+describe('난이도의 유효 기간', () => {
+  it('난이도까지 받으면 그 난이도의 기간도 본다. 시작 전 기간에는 그 난이도만 안 선다', () => {
+    setBossCatalog(withLotusExtremeFrom('2026-10-22T10:00'))
+
+    expect(isBossActiveIn('lotus', '2026-10-15')).toBe(true)
+    expect(isBossActiveIn('lotus', '2026-10-15', undefined, 'hard')).toBe(true)
+    expect(isBossActiveIn('lotus', '2026-10-15', undefined, 'extreme')).toBe(false)
+    expect(isBossActiveIn('lotus', '2026-10-22', undefined, 'extreme')).toBe(true)
+  })
+
+  it('activeDifficultiesOf 는 표 차례로 유효한 난이도만 내고, 보스가 기간 밖이면 비고, 표에 없으면 빈다', () => {
+    setBossCatalog(withLotusExtremeFrom('2026-10-22T10:00'))
+
+    expect(activeDifficultiesOf('lotus', '2026-10-15')).toEqual(['normal', 'hard'])
+    expect(activeDifficultiesOf('lotus', '2026-10-22')).toEqual(['normal', 'hard', 'extreme'])
+    expect(activeDifficultiesOf('nobody', '2026-10-22')).toEqual([])
+
+    setBossCatalog(withMeirinUntil('2026-10-22'))
+    expect(activeDifficultiesOf('meirin', '2026-10-22')).toEqual([])
+  })
+
+  it('withOwnDifficulty 는 그 행의 난이도를 표 차례 자리에 끼운다', () => {
+    expect(withOwnDifficulty(['normal', 'hard'], 'hard')).toEqual(['normal', 'hard'])
+    expect(withOwnDifficulty(['normal', 'hard'], 'extreme')).toEqual(['normal', 'hard', 'extreme'])
+    expect(withOwnDifficulty(['hard'], 'normal')).toEqual(['normal', 'hard'])
+  })
+
+  it('난이도 줄의 from · until 도 파싱하고 모양이 틀리면 표를 거절한다', () => {
+    const parsed = parseBossCatalog(withLotusExtremeFrom('2026-10-22T10:00'))
+    expect(parsed?.bosses.find((b) => b.key === 'lotus')?.difficulties.find((d) => d.difficulty === 'extreme')).toMatchObject({ from: '2026-10-22T10:00' })
+    expect(parseBossCatalog(withLotusExtremeFrom('2026-10-22T10'))).toBeNull()
+  })
+})
+

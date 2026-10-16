@@ -11,7 +11,7 @@ import Animated, { Easing, Keyframe } from 'react-native-reanimated'
 import { Badge, Text } from '../../components/atoms'
 import { PopoverLayer } from '../../components/molecules/Popover/Popover'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
-import { supportedDifficultiesOf } from '../../lib/boss/bosses'
+import { activeDifficultiesNow, supportedDifficultiesOf } from '../../lib/boss/bosses'
 import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 import { usePopoverPlacement } from '../../hooks/usePopoverPlacement'
 
@@ -47,7 +47,7 @@ export function BossDifficultyPopover(props: BossDifficultyPopoverProps): React.
   const [size, setSize] = useState<{ width: number; height: number } | null>(null)
   const { anchor } = props
   const placement = usePopoverPlacement(anchor, GAP)
-  const difficulties = supportedDifficultiesOf(props.bossKey)
+  const difficulties = activeDifficultiesNow(props.bossKey)
 
   const left =
     size === null
