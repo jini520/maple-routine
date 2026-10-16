@@ -73,6 +73,7 @@ export const BOSS_DROP_RECORDS_BODY = `(
     category TEXT NOT NULL,
     item_key TEXT,
     item_name TEXT NOT NULL,
+    -- 죽은 칸. 2026-10-16 부터 안 적고 안 읽는다. 표를 다시 만들지 않으려고 남긴다.
     slot TEXT,
     box_origin_key TEXT,
     box_origin TEXT,

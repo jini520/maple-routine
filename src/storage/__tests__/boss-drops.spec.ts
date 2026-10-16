@@ -17,7 +17,7 @@ beforeEach(() => {
 })
 
 const drops: RecordedDrop[] = [
-  { dropRecordId: null, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+  { dropRecordId: null, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 },
   { dropRecordId: null,
     category: 'consumable',
     itemKey: 'restraint_ring',
@@ -65,7 +65,6 @@ describe('replaceBossDropRecords', () => {
       'equipment',
       'loose_control_machine_mark',
       '루즈 컨트롤 머신 마크',
-      '얼굴장식',
       null,
       null,
       null,
@@ -103,7 +102,6 @@ describe('replaceBossDropRecords', () => {
       'consumable',
       'restraint_ring',
       '리스트레인트 링',
-      null,
       'red_boss_ring_box',
       '홍옥의 보스 반지 상자',
       3,
@@ -240,7 +238,6 @@ describe('getBossDropRecords', () => {
           category: 'consumable',
           item_key: 'restraint_ring',
           item_name: '리스트레인트 링',
-          slot: null,
           box_origin_key: 'red_boss_ring_box',
           box_origin: '홍옥의 보스 반지 상자',
           ring_level: 3,
@@ -272,7 +269,6 @@ describe('getBossDropRecords', () => {
         category: 'consumable',
         itemKey: 'restraint_ring',
         itemName: '리스트레인트 링',
-        slot: null,
         boxOriginKey: 'red_boss_ring_box',
         boxOrigin: '홍옥의 보스 반지 상자',
         ringLevel: 3,
@@ -344,7 +340,6 @@ describe('getAllBossDropRecords', () => {
           drop_index: 0,
           category: 'equipment',
           item_name: '루즈 컨트롤 머신 마크',
-          slot: '얼굴장식',
           box_origin: null,
           ring_level: null,
           quantity: 1,
@@ -370,7 +365,6 @@ describe('getAllBossDropRecords', () => {
         // key 칸이 없던 옛 행이다. 읽을 때 `null` 로 선다.
         itemKey: null,
         itemName: '루즈 컨트롤 머신 마크',
-        slot: '얼굴장식',
         boxOriginKey: null,
         boxOrigin: null,
         ringLevel: null,
@@ -414,7 +408,6 @@ describe('가격 컬럼 왕복', () => {
           category: 'equipment',
           itemKey: 'loose_control_machine_mark',
           itemName: '루즈 컨트롤 머신 마크',
-          slot: '얼굴장식',
           quantity: 1,
           priceState: 'entered',
           priceMeso: 15_000_000_000,
@@ -461,7 +454,6 @@ describe('가격 컬럼 왕복', () => {
           drop_index: 0,
           category: 'equipment',
           item_name: '루즈 컨트롤 머신 마크',
-          slot: '얼굴장식',
           box_origin: null,
           ring_level: null,
           quantity: 1,
@@ -521,7 +513,7 @@ describe('드롭 수수료 칸', () => {
       values: [
         {
           ocid: 'ocid-1', boss_key: 'lotus', boss: '스우', difficulty: 'hard', period_key: '2026-08-06', drop_index: 0,
-          category: 'equipment', item_key: 'loose_control_machine_mark', item_name: '루즈 컨트롤 머신 마크', slot: null,
+          category: 'equipment', item_key: 'loose_control_machine_mark', item_name: '루즈 컨트롤 머신 마크',
           box_origin_key: null, box_origin: null, ring_level: null, quantity: 1, recorded_at: '2026-08-10T00:00:00.000Z',
           price_state: 'entered', price_meso: 1_000_000_000, price_share: 3, price_my_share: null,
           sale_fee_percent: 3, split_fee_percent: 5, sale_fee_auto: 1, split_fee_auto: null,

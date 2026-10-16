@@ -22,7 +22,6 @@ function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
     category: 'equipment',
     itemKey: null,
     itemName: '칠흑의 보스 반지 상자',
-    slot: null,
     boxOriginKey: null,
     boxOrigin: null,
     ringLevel: null,

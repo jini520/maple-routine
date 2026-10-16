@@ -61,7 +61,6 @@ function toHistoryRecord(record: BossDropRecord): DropHistoryRecord {
     category: record.category,
     itemKey: record.itemKey,
     itemName: record.itemName,
-    slot: record.slot ?? undefined,
     boxOriginKey: record.boxOriginKey ?? undefined,
     boxOrigin: record.boxOrigin ?? undefined,
     ringLevel: record.ringLevel ?? undefined,

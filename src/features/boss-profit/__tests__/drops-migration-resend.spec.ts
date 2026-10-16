@@ -34,7 +34,6 @@ function record(over: Partial<BossDropRecord>): BossDropRecord {
     category: 'equipment',
     itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
-    slot: '얼굴장식',
     boxOriginKey: null,
     boxOrigin: null,
     ringLevel: null,
@@ -70,7 +69,6 @@ it('옛 난이도에서 옮겨 온 드롭 중 가격 상태가 있는 것은 다
       category: 'consumable',
       itemKey: 'red_boss_ring_box',
       itemName: '홍옥의 보스 반지 상자',
-      slot: null,
       priceState: 'excluded',
       priceMeso: null,
     }),
@@ -100,7 +98,6 @@ it('확정 난이도에 이미 있던 드롭은 다시 안 보낸다', async () 
       category: 'consumable',
       itemKey: 'red_boss_ring_box',
       itemName: '홍옥의 보스 반지 상자',
-      slot: null,
     }),
   ], NOW)
 
@@ -116,7 +113,6 @@ it('확정 난이도에서 못 얻어 걷힌 드롭은 안 보낸다', async () 
       category: 'consumable',
       itemKey: 'white_boss_ring_box',
       itemName: '백옥의 보스 반지 상자',
-      slot: null,
     }),
   ], NOW)
 

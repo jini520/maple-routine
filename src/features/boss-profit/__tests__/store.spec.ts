@@ -346,7 +346,6 @@ describe('setBossDrops', () => {
         category: 'equipment' as const,
         itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',
-        slot: '얼굴장식',
         quantity: 1,
       },
     ]
@@ -378,7 +377,6 @@ describe('setBossDrops', () => {
         category: 'equipment' as const,
         itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',
-        slot: '얼굴장식',
         quantity: 1,
         priceState: 'entered' as const,
         priceMeso: 1_200_000_000,
@@ -430,7 +428,6 @@ describe('처치 난이도 획득 불가 드롭 제거 (후속)', () => {
       cycle: 'weekly',
       dropRecordId: null,
       category: 'equipment',
-      slot: null,
       boxOrigin: null,
       ringLevel: null,
       quantity: 1,
@@ -449,7 +446,7 @@ describe('처치 난이도 획득 불가 드롭 제거 (후속)', () => {
       }),
     ])
     getBossDropRecordsMock.mockResolvedValue([
-      dropRecord({ periodKey: period, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식' }), // 하드+익스 유지
+      dropRecord({ periodKey: period, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }), // 하드+익스 유지
       dropRecord({ periodKey: period, itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤' }), // 익스 전용 제거
     ])
 
@@ -509,7 +506,6 @@ describe('처치 난이도 확정 시 드롭 이관', () => {
       dropIndex: 0,
       dropRecordId: null,
       category: 'equipment',
-      slot: null,
       boxOrigin: null,
       ringLevel: null,
       quantity: 1,
@@ -528,7 +524,7 @@ describe('처치 난이도 확정 시 드롭 이관', () => {
       }),
     ])
     getBossDropRecordsMock.mockResolvedValue([
-      dropRecord({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식' }), // 하드+익스 → 이관
+      dropRecord({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }), // 하드+익스 → 이관
       dropRecord({ dropIndex: 1, itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤' }), // 익스 전용 → 삭제
     ])
 
@@ -566,7 +562,7 @@ describe('처치 난이도 확정 시 드롭 이관', () => {
       }),
     ])
     getBossDropRecordsMock.mockResolvedValue([
-      dropRecord({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식' }),
+      dropRecord({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }),
     ])
 
     await useBossProfitStore.getState().refresh(['ocid-1'])
@@ -788,7 +784,6 @@ describe('useBossProfitStore', () => {
               category: 'fixed',
               itemKey: null,
               itemName: '테스트 드롭',
-              slot: null,
               boxOriginKey: null,
               boxOrigin: null,
               ringLevel: null,
@@ -833,7 +828,6 @@ describe('useBossProfitStore', () => {
       category: 'fixed' as const,
       itemKey: null,
       itemName: '테스트 드롭',
-      slot: null,
       boxOriginKey: null,
       boxOrigin: null,
       ringLevel: null,
@@ -1985,7 +1979,6 @@ describe('useBossProfitStore', () => {
           category: 'equipment',
           itemKey: 'loose_control_machine_mark',
           itemName: '루즈 컨트롤 머신 마크',
-          slot: '얼굴장식',
           boxOriginKey: null,
           boxOrigin: null,
           ringLevel: null,
@@ -3567,7 +3560,6 @@ describe('useBossProfitStore', () => {
             category: 'equipment',
             itemKey: 'loose_control_machine_mark',
             itemName: '루즈 컨트롤 머신 마크',
-            slot: '얼굴장식',
             boxOriginKey: null,
             boxOrigin: null,
             ringLevel: null,
@@ -3806,7 +3798,6 @@ describe('잡지 않은 보스의 드롭 정리', () => {
       category: 'equipment',
       itemKey: null,
       itemName: '칠흑의 보스 반지 상자',
-      slot: null,
       boxOriginKey: null,
       boxOrigin: null,
       ringLevel: null,
@@ -4286,7 +4277,6 @@ describe('추적에서 빠진 캐릭터의 기록', () => {
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',
-        slot: '얼굴장식',
         boxOriginKey: null,
         boxOrigin: null,
         ringLevel: null,

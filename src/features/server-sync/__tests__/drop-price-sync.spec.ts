@@ -43,7 +43,6 @@ function record(over: Partial<BossDropRecord> = {}): BossDropRecord {
     category: 'equipment',
     itemKey: 'ring-restraint',
     itemName: '리스트레인트 링',
-    slot: 'ring',
     boxOriginKey: null,
     boxOrigin: null,
     ringLevel: 4,
@@ -101,7 +100,6 @@ describe('보낼 값', () => {
       periodKey: '2026-10-15',
       worldKey: 'challengers_2',
       ringLevel: 4,
-      slot: 'ring',
       boss: 'lucid',
       difficulty: 'hard',
     })
@@ -120,7 +118,6 @@ describe('보낼 값', () => {
       'periodKey',
       'priceMeso',
       'ringLevel',
-      'slot',
       'worldKey',
     ])
   })

@@ -223,7 +223,6 @@ describe('cleanUpWorldLeapDuplicates', () => {
       category: 'equipment',
       itemKey: KEY_BY_NAME[itemName] ?? null,
       itemName,
-      slot: null,
       boxOriginKey: null,
       boxOrigin: null,
       ringLevel: null,

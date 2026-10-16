@@ -205,7 +205,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   const effectEnabled = useDropEffectStore((state) => state.enabled)
   const setEffectEnabled = useDropEffectStore((state) => state.setEnabled)
 
-  // 난이도별 표시: 장비·소비는 name+slot으로 통합된 후보에서 현재 난이도만 필터, 고정은 현재
+  // 난이도별 표시: 장비·소비는 아이템 key 로 통합된 후보에서 현재 난이도만 필터, 고정은 현재
   // 난이도 그룹만. 통합 후보는 등장 난이도(difficulties)를 담고 있어 그대로 필터에 쓴다.
   // 패치가 기간 첫날 안에서 적용되는 날이 있어 시계를 넘긴다. 09-17 패치는 오전 10시다.
   const now = new Date()
@@ -261,7 +261,6 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       category: candidate.category,
       itemKey: candidate.key,
       itemName: candidate.name,
-      slot: candidate.slot,
       quantity: 1,
     }
     setSelected((prev) => {

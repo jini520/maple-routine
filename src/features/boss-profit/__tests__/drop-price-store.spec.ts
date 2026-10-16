@@ -86,7 +86,6 @@ function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
     category: 'equipment',
     itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
-    slot: '얼굴장식',
     boxOriginKey: null,
     boxOrigin: null,
     ringLevel: null,
