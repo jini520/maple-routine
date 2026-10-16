@@ -102,6 +102,8 @@ describe('보낼 값', () => {
       worldKey: 'challengers_2',
       ringLevel: 4,
       slot: 'ring',
+      boss: 'lucid',
+      difficulty: 'hard',
     })
   })
 
@@ -111,6 +113,8 @@ describe('보낼 값', () => {
       record({ pricePartySize: 3, priceShare: 4, saleFeePercent: 5, splitFeePercent: 6 }),
     )
     expect(Object.keys(payload ?? {}).sort()).toEqual([
+      'boss',
+      'difficulty',
       'dropRecordId',
       'itemKey',
       'periodKey',
