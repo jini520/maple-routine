@@ -107,7 +107,7 @@ it('확정 난이도에 이미 있던 드롭은 다시 안 보낸다', async () 
   expect(reportMock.mock.calls.map((c) => c[0])).toEqual(['moved'])
 })
 
-// 확정 난이도에서 못 얻는 드롭은 기기에서 걷힌다. 그 가격의 서버 줄은 남는다(ADR-342 정정 5 의 남는 틈).
+// 확정 난이도에서 못 얻는 드롭은 기기에서 걷힌다. 그 가격의 서버 줄은 남는다. 전부터 있던 틈이고 여기서는 안 건드린다.
 it('확정 난이도에서 못 얻어 걷힌 드롭은 안 보낸다', async () => {
   await migrateDropsToConfirmedDifficulty(row, [
     record({
