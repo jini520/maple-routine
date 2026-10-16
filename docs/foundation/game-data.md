@@ -16,7 +16,7 @@
 - 앱을 켜면 `features/game-data/hydrate` 가 표마다 기기 사본(Preferences)을 세운 뒤 `server/game-data` 로 한 번 받아, 칸마다 `updatedAt` 이 다르면 그 표만 덮는다. 칸 하나가 계약을 어기면 그 칸만 버린다. 못 받으면 들고 있던 표 그대로다.
 - 빌드 전에 `node scripts/sync-game-data.mjs` 가 응답을 받아 번들 파일 전부를 다시 쓴다. `package.json` 의 `scripts` 에는 넣지 않는다(OTA 지문 재료, `release.md`).
 - 서버 표의 첫 채움은 서버 저장소의 씨앗 CLI 가 번들 JSON 에서 걷을 칸을 뺀 파일로 한다. 비어 있는 표만 채운다. 그 뒤는 관리 화면 폼이다.
-- 옮긴 표: `bosses.json`(2026-10-15, [[ADR-349]]). 나머지는 [[ADR-350]] 결정 2 의 차례대로 옮기며 여기에 더한다.
+- 옮긴 표: `bosses.json`(2026-10-15, [[ADR-349]]). **드롭 묶음 다섯은 서버 표가 섰고 앱 쪽은 아직이다**([[ADR-350]] 정정 1, 2026-10-16. `drop-items.json` · `item-drop-table.json` · `boss-ring-boxes.json` · `accessory-boxes.json` · `boss-crystal-prices.json` · `valuable-drops.json`). 나머지는 결정 2 의 차례대로 옮기며 여기에 더한다.
 
 ## 조인 키
 
