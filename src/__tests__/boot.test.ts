@@ -49,17 +49,17 @@ jest.mock('react-native-google-mobile-ads', () => ({
   InterstitialAd: { createForAdRequest: () => ({}) },
 }))
 
-// 보스 표 덮기는 네트워크와 저장소를 만지는 곁가지다. 여기서 보는 것은 배선뿐이라 몸통을 비운다.
-jest.mock('../features/bosses/store', () => ({
+// 게임 데이터 표 덮기는 네트워크와 저장소를 만지는 곁가지다. 여기서 보는 것은 배선뿐이라 몸통을 비운다.
+jest.mock('../features/game-data/hydrate', () => ({
   __esModule: true,
-  hydrateBossCatalog: jest.fn(async () => {}),
+  hydrateGameData: jest.fn(async () => {}),
 }))
 
 import * as nativePorts from '../native/ports'
 import * as storagePorts from '../storage/ports'
 
-import { installPorts, loadBossCatalog } from '../boot'
-import { hydrateBossCatalog } from '../features/bosses/store'
+import { installPorts, loadGameData } from '../boot'
+import { hydrateGameData } from '../features/game-data/hydrate'
 import { rnBrowserPort } from '../native/adapters/rn-browser'
 import { rnLiveUpdatePort } from '../native/adapters/rn-live-update'
 import { rnAdsPort } from '../native/adapters/rn-ads'
@@ -171,12 +171,12 @@ describe('installPorts()', () => {
 // 같은가 이미 적어 둔 판단을 그대로 적용한 것이다: *"빈 목록을 돌리는 테스트는 언제나
 // 초록이라 아무것도 지키지 않는다."*
 
-// 포트가 아니라 **부팅 곁가지**다. 보스 표를 기기 사본과 서버 응답으로 덮는 흐름을 띄우기만 하고 결과를
-// 안 기다린다. 기다리면 첫 화면이 네트워크를 기다린다.
-describe('loadBossCatalog()', () => {
-  it('보스 표 덮기를 띄우고 기다리지 않는다', () => {
-    expect(loadBossCatalog()).toBeUndefined()
+// 포트가 아니라 **부팅 곁가지**다. 게임 데이터 표를 기기 사본과 서버 응답으로 덮는 흐름을 띄우기만 하고
+// 결과를 안 기다린다. 기다리면 첫 화면이 네트워크를 기다린다.
+describe('loadGameData()', () => {
+  it('게임 데이터 표 덮기를 띄우고 기다리지 않는다', () => {
+    expect(loadGameData()).toBeUndefined()
 
-    expect(hydrateBossCatalog).toHaveBeenCalledTimes(1)
+    expect(hydrateGameData).toHaveBeenCalledTimes(1)
   })
 })
