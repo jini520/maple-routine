@@ -19,7 +19,7 @@ import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortra
 import { PartyShareSummary } from '../../components/molecules/PartyShareSummary/PartyShareSummary'
 import { dropShareSeedOf } from '../../features/boss-profit/rows'
 import { PartySizeModal, type PartyModalShares } from '../../components/organisms/PartySizeModal/PartySizeModal'
-import { supportedDifficultiesOf } from '../../lib/boss/bosses'
+import { activeDifficultiesOf, withOwnDifficulty } from '../../lib/boss/bosses'
 import { partySizeForShares } from '../../lib/boss/party-shares'
 import { SOLO_PARTY_PLAN, partyPlanKey } from '../../features/boss-profit/party-plans'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -346,7 +346,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           bossName={row.bossName}
           cycleLabel={row.cycle === 'monthly' ? '월간 보스' : '주간 보스'}
           portraitSlug={bossPortraitSlugOf(row.bossKey)}
-          difficulties={supportedDifficultiesOf(row.bossKey)}
+          difficulties={withOwnDifficulty(activeDifficultiesOf(row.bossKey, row.periodKey, new Date()), row.difficulty)}
           difficulty={row.difficulty}
           partySize={partySize}
           maxPartySize={row.maxPartySize}

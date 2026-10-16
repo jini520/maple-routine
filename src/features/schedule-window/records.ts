@@ -115,7 +115,7 @@ async function recordPeriod(
     // 모르면 이번 회차는 건너뛰고, 월드를 알게 된 회차가 기록한다(아래 이미 있는 행 판정이 안 막는다).
     if (isSeasonBoss(bossKey) && !isChallengersWorld(worldKey)) continue
     // 유효 기간이 끝난 보스는 그 기간에 기록하지 않는다. 넥슨이 목록에 남겨 둔 시즌 보스가 그렇다.
-    if (!isBossActiveIn(bossKey, periodKey, now)) continue
+    if (!isBossActiveIn(bossKey, periodKey, now, difficulty)) continue
 
     // 같은 난이도 기록이 사용자가 적은 것이면 표식을 걷는다. 값은 안 건드린다 - 사용자가 적은
     // 날짜와 파티원 수가 더 정확하다.

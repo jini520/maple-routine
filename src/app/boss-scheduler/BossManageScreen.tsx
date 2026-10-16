@@ -19,7 +19,7 @@ import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import { partySizeForShares } from '../../lib/boss/party-shares'
 import type { BossPartyShareColumns } from '../../storage/boss-party-settings'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
-import { activeBossesInSection, bossPortraitSlugOf, supportedDifficultiesOf } from '../../lib/boss/bosses'
+import { activeBossesInSection, activeDifficultiesNow, bossPortraitSlugOf } from '../../lib/boss/bosses'
 import { countManualWeeklyBosses, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 import { bossCycleOf, isSeasonBoss, type BossEntry } from '../../lib/boss/bosses'
 import { isChallengersWorld } from '../../lib/world/worlds'
@@ -402,8 +402,10 @@ export function BossManageScreen(): React.JSX.Element {
                 countsTowardWeeklyLimit(entry.key)
 
               // 자동 모드의 행 난이도: 화면 전용 선택 → 등록 난이도 → 첫 난이도 순.
+              // 지금 기간에 유효한 난이도만. 시작 전인 난이도와 끝난 난이도는 안 선다.
+              const difficulties = activeDifficultiesNow(entry.key)
               const autoDifficulty =
-                autoDifficultyByBoss[entry.key] ?? defaultDifficultyFor(entry.key, entry.difficulties)
+                autoDifficultyByBoss[entry.key] ?? defaultDifficultyFor(entry.key, difficulties)
 
               // 스테퍼·난이도가 펼쳐지는 활성 난이도: 수동은 추적 난이도, 자동은 행 난이도.
               const activeDifficulty = mode === 'manual' ? trackedDifficulty : autoDifficulty
@@ -438,7 +440,7 @@ export function BossManageScreen(): React.JSX.Element {
                         role="button"
                         aria-selected={isTracked}
                         aria-label={entry.name}
-                        onPress={() => void handleToggleTracked(entry.key, entry.difficulties)}
+                        onPress={() => void handleToggleTracked(entry.key, difficulties)}
                         className="min-w-0 flex-1 flex-row items-center gap-3"
                       >
                         {nameContent}
@@ -454,13 +456,13 @@ export function BossManageScreen(): React.JSX.Element {
                     <View className="flex-row flex-wrap items-center gap-2 border-t border-border px-3 pb-2.5 pt-2.5">
                       {mode === 'manual' && trackedDifficulty !== null ? (
                         <DifficultySegment
-                          difficulties={entry.difficulties}
+                          difficulties={difficulties}
                           selected={trackedDifficulty}
                           onSelect={(difficulty) => void handleSwitchDifficulty(entry.key, difficulty)}
                         />
                       ) : (
                         <DifficultySegment
-                          difficulties={entry.difficulties}
+                          difficulties={difficulties}
                           selected={autoDifficulty}
                           onSelect={(difficulty) =>
                             setDifficultyEdit({
@@ -486,7 +488,7 @@ export function BossManageScreen(): React.JSX.Element {
           bossName={partyModal.entry.name}
           cycleLabel={bossCycleOf(partyModal.entry.key) === 'monthly' ? '월간 보스' : '주간 보스'}
           portraitSlug={bossPortraitSlugOf(partyModal.entry.key)}
-          difficulties={supportedDifficultiesOf(partyModal.entry.key)}
+          difficulties={activeDifficultiesNow(partyModal.entry.key)}
           difficulty={partyModal.difficulty}
           partySize={partySizes[partySizeKey(selected.ocid, partyModal.entry.key, partyModal.difficulty)] ?? 1}
           maxPartySize={getMaxPartySize(partyModal.entry.key, partyModal.difficulty)}

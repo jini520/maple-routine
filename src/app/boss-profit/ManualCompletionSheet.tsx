@@ -19,7 +19,7 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { findPriceEntry, getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import { getPeriodDateKeys } from '../../lib/boss/boss-profit-period'
-import { supportedDifficultiesOf } from '../../lib/boss/bosses'
+import { activeDifficultiesOf, withOwnDifficulty } from '../../lib/boss/bosses'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { monthKeyOf } from '../../lib/calendar'
 import type { BossProfitRow } from '../../features/boss-profit/rows'
@@ -62,7 +62,8 @@ export function ManualCompletionSheet(props: ManualCompletionSheetProps): React.
     close: closeCalendar,
   } = useAnchoredPopover()
 
-  const difficulties = supportedDifficultiesOf(row.bossKey)
+  // 그 행의 기간에 유효한 난이도. 그 행이 든 난이도는 기간 밖이어도 남긴다. 기록을 고치는 자리라서다.
+  const difficulties = withOwnDifficulty(activeDifficultiesOf(row.bossKey, row.periodKey, props.now), row.difficulty)
   const maxPartySize = getMaxPartySize(row.bossKey, difficulty)
   const priceMeso = findPriceEntry(row.bossKey, difficulty, row.periodKey, props.now)?.priceMeso ?? null
   const payoutMeso = priceMeso === null ? null : Math.floor(priceMeso / partySize)

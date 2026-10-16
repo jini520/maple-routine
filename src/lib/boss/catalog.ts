@@ -52,7 +52,15 @@ function toDifficulty(value: unknown): BossCatalogDifficulty | null {
   const row = value as Record<string, unknown>
   if (!(BOSS_DIFFICULTIES as readonly unknown[]).includes(row.difficulty)) return null
   if (!isPositiveInteger(row.requiredLevel)) return null
-  return { difficulty: row.difficulty as BossDifficulty, requiredLevel: row.requiredLevel }
+  const from = toPeriodText(row.from)
+  const until = toPeriodText(row.until)
+  if (from === false || until === false) return null
+  return {
+    difficulty: row.difficulty as BossDifficulty,
+    requiredLevel: row.requiredLevel,
+    ...(from === undefined ? {} : { from }),
+    ...(until === undefined ? {} : { until }),
+  }
 }
 
 function toBoss(value: unknown): BossCatalogBoss | null {

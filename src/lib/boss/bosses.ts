@@ -5,9 +5,9 @@
  * 덮는다. 기록 · 캐시 · 데이터 파일은 보스 key 를 들고, 이름 · 주기 · 요구 레벨 · 초상은 이 표에서
  * 찾는다. API 이름에서 key 를 얻는 규칙도 여기 하나다(`bossKeyOfApiName`).
  */
-import type { BossCycle, BossDifficulty } from '../../types'
+import { BOSS_DIFFICULTIES, type BossCycle, type BossDifficulty } from '../../types'
 import type { BossCatalog, BossCatalogBoss, BossCatalogCycle } from '../../types/boss-catalog'
-import { getCurrentBossProfitPeriod, isEffectiveIn } from './boss-profit-period'
+import { type EffectivePeriod, getCurrentBossProfitPeriod, isEffectiveIn } from './boss-profit-period'
 import { getBossCatalog, subscribeBossCatalog } from './catalog'
 
 /** 관리 화면의 묶음. 시즌 보스(eventWeekly)도 주기는 주간이다. */
@@ -30,6 +30,8 @@ export interface BossEntry {
   /** 유효 기간. KST 글자. 없으면 처음부터 · 끝없이. */
   from?: string
   until?: string
+  /** 난이도의 유효 기간. 기간을 든 난이도만 있다. 없으면 보스의 기간 그대로다. */
+  difficultyPeriods?: Partial<Record<BossDifficulty, EffectivePeriod>>
 }
 
 const SECTION_OF_CYCLE: Record<BossCatalogCycle, BossSection> = {
@@ -40,7 +42,16 @@ const SECTION_OF_CYCLE: Record<BossCatalogCycle, BossSection> = {
 
 function toEntry(boss: BossCatalogBoss): BossEntry {
   const requiredLevels: Partial<Record<BossDifficulty, number>> = {}
-  for (const row of boss.difficulties) requiredLevels[row.difficulty] = row.requiredLevel
+  const difficultyPeriods: Partial<Record<BossDifficulty, EffectivePeriod>> = {}
+  for (const row of boss.difficulties) {
+    requiredLevels[row.difficulty] = row.requiredLevel
+    if (row.from !== undefined || row.until !== undefined) {
+      difficultyPeriods[row.difficulty] = {
+        ...(row.from === undefined ? {} : { from: row.from }),
+        ...(row.until === undefined ? {} : { until: row.until }),
+      }
+    }
+  }
   return {
     key: boss.key,
     name: boss.name,
@@ -53,6 +64,7 @@ function toEntry(boss: BossCatalogBoss): BossEntry {
     isSeasonBoss: boss.cycle === 'event_weekly',
     ...(boss.from === undefined ? {} : { from: boss.from }),
     ...(boss.until === undefined ? {} : { until: boss.until }),
+    ...(Object.keys(difficultyPeriods).length === 0 ? {} : { difficultyPeriods }),
   }
 }
 
@@ -162,14 +174,48 @@ export function bossesInSection(section: BossSection): BossEntry[] {
  *
  * @param now 경계가 기간 첫날 안에 시각까지 들 때만 쓴다
  */
-export function isBossActiveIn(key: string | null | undefined, periodKey: string, now?: Date): boolean {
+export function isBossActiveIn(
+  key: string | null | undefined,
+  periodKey: string,
+  now?: Date,
+  /** 난이도까지 받으면 그 난이도의 기간도 본다. 둘이 겹치는 범위가 유효 범위다. */
+  difficulty?: BossDifficulty | string,
+): boolean {
   const entry = findBoss(key)
   if (entry === null) return true
-  return isEffectiveIn({ from: entry.from, until: entry.until }, periodKey, now)
+  if (!isEffectiveIn({ from: entry.from, until: entry.until }, periodKey, now)) return false
+  const period = difficulty === undefined ? undefined : entry.difficultyPeriods?.[difficulty as BossDifficulty]
+  return period === undefined || isEffectiveIn(period, periodKey, now)
+}
+
+/**
+ * 그 기간에 유효한 난이도. 표 차례 그대로다. 보스 자체가 기간 밖이면 빈 배열이고, 표에 없는 key 도 빈 배열이다.
+ *
+ * 기록을 고치는 자리는 그 행의 난이도가 여기 없어도 남겨야 한다. 지난 기록이 기간 밖 난이도를 들 수 있어서다.
+ */
+export function activeDifficultiesOf(key: string | null | undefined, periodKey: string, now?: Date): BossDifficulty[] {
+  const entry = findBoss(key)
+  if (entry === null || !isBossActiveIn(key, periodKey, now)) return []
+  return entry.difficulties.filter((difficulty) => isBossActiveIn(key, periodKey, now, difficulty))
+}
+
+/** 목록에 그 난이도가 없으면 표 차례 자리에 끼운다. 기록을 고치는 자리가 쓴다. 표에 없는 난이도는 맨 뒤다. */
+export function withOwnDifficulty(active: BossDifficulty[], own: BossDifficulty | string): BossDifficulty[] {
+  if ((active as string[]).includes(own)) return active
+  const order = BOSS_DIFFICULTIES as readonly string[]
+  const merged = [...active, own as BossDifficulty]
+  return merged.sort((a, b) => (order.indexOf(a) === -1 ? order.length : order.indexOf(a)) - (order.indexOf(b) === -1 ? order.length : order.indexOf(b)))
+}
+
+/** 지금 기간에 유효한 난이도. 그 보스의 주기로 기간을 잡는다. */
+export function activeDifficultiesNow(key: string | null | undefined, now: Date = new Date()): BossDifficulty[] {
+  const entry = findBoss(key)
+  if (entry === null) return []
+  return activeDifficultiesOf(key, getCurrentBossProfitPeriod(entry.cycle, now).periodKey, now)
 }
 
 /** 지금 기간에 유효한 묶음의 보스. 관리 화면과 약속 보스 고르개가 쓴다. */
 export function activeBossesInSection(section: BossSection, now: Date = new Date()): BossEntry[] {
   const periodKey = getCurrentBossProfitPeriod(section === 'monthly' ? 'monthly' : 'weekly', now).periodKey
-  return bossesInSection(section).filter((entry) => isBossActiveIn(entry.key, periodKey, now))
+  return bossesInSection(section).filter((entry) => activeDifficultiesOf(entry.key, periodKey, now).length > 0)
 }

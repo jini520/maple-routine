@@ -78,7 +78,7 @@ export function displayedBosses(
   const inWorld = (boss: MatchedBoss): boolean => !boss.isSeasonBoss || isChallengersWorld(character.worldKey)
   // 유효 기간이 끝난 보스는 안 선다. 시즌이 끝난 시즌 보스가 그렇다. 표시 목록은 지금 기간이다.
   const periodKey = getCurrentBossProfitPeriod(cycle, now).periodKey
-  const inPeriod = (boss: MatchedBoss): boolean => isBossActiveIn(boss.bossKey, periodKey, now)
+  const inPeriod = (boss: MatchedBoss): boolean => isBossActiveIn(boss.bossKey, periodKey, now, boss.difficulty)
   const shownHere = (boss: MatchedBoss): boolean => inWorld(boss) && inPeriod(boss)
 
   if (mode !== 'manual') {
