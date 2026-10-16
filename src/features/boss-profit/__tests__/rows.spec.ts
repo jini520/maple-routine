@@ -625,3 +625,36 @@ describe('직접 적은 완료', () => {
     expect(병합.payoutMeso).toBe(665_000_000)
   })
 })
+
+describe('selectProfitDisplayBosses: 유효 기간', () => {
+  const { BUNDLED_BOSS_CATALOG, setBossCatalog } = require('../../../lib/boss/catalog') as typeof import('../../../lib/boss/catalog')
+  const SEASON_KEY = 'meirin'
+
+  afterEach(() => {
+    setBossCatalog(BUNDLED_BOSS_CATALOG)
+  })
+
+  it('끝 뒤의 기간에는 시즌 보스 행을 안 세우고, 끝 전 기간에는 세운다', () => {
+    setBossCatalog({
+      ...BUNDLED_BOSS_CATALOG,
+      updatedAt: 'x',
+      bosses: BUNDLED_BOSS_CATALOG.bosses.map((b) => (b.key === SEASON_KEY ? { ...b, until: '2026-10-22' } : b)),
+    })
+    const killed = {
+      bossKey: SEASON_KEY,
+      apiName: '시즌 보스 메이린',
+      difficulty: 'normal' as const,
+      cycle: 'weekly' as const,
+      isRegistered: true,
+      isComplete: true,
+      ownComplete: true,
+    }
+    const now = new Date('2026-10-23T03:00:00+09:00')
+    const keysOf = (rows: { bossKey: string }[]) => rows.map((r) => r.bossKey)
+
+    expect(keysOf(selectProfitDisplayBosses([killed], 'auto', [], 'challengers_4', new Set(), { periodKey: '2026-10-15', now }))).toContain(SEASON_KEY)
+    expect(keysOf(selectProfitDisplayBosses([killed], 'auto', [], 'challengers_4', new Set(), { periodKey: '2026-10-22', now }))).not.toContain(SEASON_KEY)
+    expect(keysOf(selectProfitDisplayBosses([killed], 'auto', [], 'challengers_4'))).toContain(SEASON_KEY)
+  })
+})
+

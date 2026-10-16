@@ -18,7 +18,7 @@ import {
 import type { MatchedBoss } from '../../lib/boss/boss-matching'
 import { formatBossProfitPeriodLabel, getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { isMonthlyRowInWeek } from '../../lib/boss/monthly-boss-week'
-import { bossNameOf } from '../../lib/boss/bosses'
+import { bossNameOf, isBossActiveIn } from '../../lib/boss/bosses'
 import { mergeManualBossList } from '../../lib/boss/manual-boss-merge'
 import { applyManualCompletions } from '../../lib/boss/manual-completion'
 import { isChallengersWorld } from '../../lib/world/worlds'
@@ -213,8 +213,12 @@ export function selectProfitDisplayBosses(
    * 얹는다. 한쪽만 얹으면 같은 주에 두 화면이 다른 처치 수를 말한다.
    */
   manualCompleted: ReadonlySet<string> = new Set(),
+  /** 행의 기간. 유효 기간이 끝난 보스(시즌이 끝난 시즌 보스)는 그 기간에 행을 안 세운다. 없으면 안 가린다. */
+  period?: { periodKey: string; now: Date },
 ): ProfitBoss[] {
-  const inWorld = (boss: MatchedBoss): boolean => !boss.isSeasonBoss || isChallengersWorld(worldKey)
+  const inWorld = (boss: MatchedBoss): boolean =>
+    (!boss.isSeasonBoss || isChallengersWorld(worldKey)) &&
+    (period === undefined || isBossActiveIn(boss.bossKey, period.periodKey, period.now))
   const matched = applyManualCompletions(bossContents.map(matchBossContent), manualCompleted)
   // 주간 한도를 채웠으면 미처치 placeholder 는 아예 안 세운다. 두 모드 공통이라 아래 ①②보다
   // 앞에 선다. 판정은 동기화 결과 전체로 한다. 겨누는 상황이 표시 목록 밖 보스로 12를 채웠다

@@ -476,3 +476,33 @@ describe('displayedBosses: 주간 한도 마감', () => {
     expect(entry?.isWeeklyLimitClosed).toBe(true)
   })
 })
+
+/**
+ * 시즌이 끝난 시즌 보스는 챌린저스 월드 캐릭터에게도 안 선다. 월드 판정만 있으면 다음 시즌 월드에 지난
+ * 시즌 보스가 선다.
+ */
+describe('유효 기간이 끝난 보스', () => {
+  const { BUNDLED_BOSS_CATALOG, setBossCatalog } = require('../../../lib/boss/catalog') as typeof import('../../../lib/boss/catalog')
+
+  afterEach(() => {
+    setBossCatalog(BUNDLED_BOSS_CATALOG)
+  })
+
+  it('끝 뒤의 기간에서는 어느 모드에서도 안 선다. 끝 전이면 선다', () => {
+    const meirin = boss({ name: '시즌 보스 메이린', difficulty: 'normal', cycle: 'weekly', isRegistered: true })
+    const view = character({ worldKey: 'challengers_4', weeklyBosses: [meirin] })
+    const before = new Date('2026-10-16T03:00:00+09:00')
+    const after = new Date('2026-10-23T03:00:00+09:00')
+    setBossCatalog({
+      ...BUNDLED_BOSS_CATALOG,
+      updatedAt: 'x',
+      bosses: BUNDLED_BOSS_CATALOG.bosses.map((b) => (b.key === 'meirin' ? { ...b, until: '2026-10-22' } : b)),
+    })
+
+    expect(displayedBosses(view, 'weekly', 'auto', null, null, before)).toEqual([shown(meirin)])
+    expect(displayedBosses(view, 'weekly', 'auto', null, null, after)).toEqual([])
+    const manual = { 'ocid-1': [bossItem('시즌 보스 메이린', 'normal')] }
+    expect(displayedBosses(view, 'weekly', 'manual', manual, null, after)).toEqual([])
+  })
+})
+

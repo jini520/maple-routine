@@ -5,7 +5,8 @@
  * 파티 인원이 둘 이상이거나 분배 비율을 적어 둔 것이다. 같은 캐릭터 · 같은 보스는 한 번만 고르고,
  * 같은 보스라도 다른 캐릭터로는 따로 고른다.
  */
-import { BOSS_ENTRIES } from '../../lib/boss/bosses'
+import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
+import { BOSS_ENTRIES, isBossActiveIn } from '../../lib/boss/bosses'
 import type { BossPartyShareColumns } from '../../storage/boss-party-settings'
 import type { PartyAppointmentBoss } from '../../types/party-appointment'
 import { partySizeKey } from '../boss-scheduler/store'
@@ -28,6 +29,8 @@ export interface BossPickerInput {
   registered: readonly PickerTile[]
   partySizes: Readonly<Record<string, number>>
   partyShares: Readonly<Record<string, BossPartyShareColumns>>
+  /** 유효 기간 판정의 시계. 없으면 지금이다. */
+  now?: Date
 }
 
 export function bossPickerSections(input: BossPickerInput): BossPickerSections {
@@ -36,8 +39,13 @@ export function bossPickerSections(input: BossPickerInput): BossPickerSections {
     return (input.partySizes[key] ?? 1) >= 2 || input.partyShares[key]?.crystalMyShare != null
   }
   const registeredDifficulty = new Map(input.registered.map((tile) => [tile.bossKey, tile.difficulty]))
-  // 시즌 보스는 뺀다. 등록돼 있으면 위 두 묶음에 이미 선다.
-  const all = BOSS_ENTRIES.filter((entry) => entry.section !== 'eventWeekly').map(
+  // 시즌 보스는 뺀다. 등록돼 있으면 위 두 묶음에 이미 선다. 유효 기간이 끝난 보스도 뺀다.
+  const now = input.now ?? new Date()
+  const all = BOSS_ENTRIES.filter(
+    (entry) =>
+      entry.section !== 'eventWeekly' &&
+      isBossActiveIn(entry.key, getCurrentBossProfitPeriod(entry.cycle, now).periodKey, now),
+  ).map(
     (entry): PickerTile => ({
       bossKey: entry.key,
       // 표의 난이도는 낮은 것부터라 끝이 가장 높다.

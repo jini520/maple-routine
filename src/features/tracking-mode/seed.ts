@@ -1,6 +1,7 @@
 import { setManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
 import { TEMPLATE_DAILY_KEYS, TEMPLATE_WEEKLY_KEYS } from '../../lib/scheduler/scheduler-content-template'
-import { isSeasonBoss } from '../../lib/boss/bosses'
+import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
+import { isBossActiveIn, isSeasonBoss } from '../../lib/boss/bosses'
 import { isChallengersWorld } from '../../lib/world/worlds'
 import type { SchedulerCharacterState } from '../../types'
 import { syncSchedules } from '../schedule-sync/schedule-sync'
@@ -10,7 +11,7 @@ import { syncSchedules } from '../schedule-sync/schedule-sync'
 // `mergeManualBossList` 의 매칭 기준과 같게 보스 key 로 저장하고, 보스 표에 없는 보스(key 가 없다)는 뺀다.
 // 저장하는 것은 멤버십(+보스 난이도)뿐이다. nowCount·isComplete 같은 값은 표시 시점에
 // schedulerCache 에서 조회한다.
-function toTrackedItems(state: SchedulerCharacterState): ManualTrackedItem[] {
+function toTrackedItems(state: SchedulerCharacterState, now: Date = new Date()): ManualTrackedItem[] {
   const { dailyContents, weeklyContents, bossContents } = state
 
   const contentItems: ManualTrackedItem[] = [
@@ -31,7 +32,9 @@ function toTrackedItems(state: SchedulerCharacterState): ManualTrackedItem[] {
   const bossItems: ManualTrackedItem[] = bossContents.flatMap((boss) =>
     boss.isRegistered &&
     boss.bossKey !== null &&
-    (!isSeasonBoss(boss.bossKey) || isChallengersWorld(state.worldKey))
+    (!isSeasonBoss(boss.bossKey) || isChallengersWorld(state.worldKey)) &&
+    // 유효 기간이 끝난 보스는 안 담는다. 담으면 관리 화면이 숨겨 사용자가 뺄 길이 없다.
+    isBossActiveIn(boss.bossKey, getCurrentBossProfitPeriod(boss.cycle, now).periodKey, now)
       ? [{ kind: 'boss' as const, bossKey: boss.bossKey, difficulty: boss.difficulty }]
       : [],
   )

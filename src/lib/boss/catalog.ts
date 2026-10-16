@@ -69,6 +69,9 @@ function toBoss(value: unknown): BossCatalogBoss | null {
     if (row === null || difficulties.some((d) => d.difficulty === row.difficulty)) return null
     difficulties.push(row)
   }
+  const from = toPeriodText(boss.from)
+  const until = toPeriodText(boss.until)
+  if (from === false || until === false) return null
   return {
     key: boss.key,
     name: boss.name,
@@ -76,7 +79,17 @@ function toBoss(value: unknown): BossCatalogBoss | null {
     cycle: boss.cycle as BossCatalogCycle,
     portraitSlug: boss.portraitSlug,
     difficulties,
+    ...(from === undefined ? {} : { from }),
+    ...(until === undefined ? {} : { until }),
   }
+}
+
+const PERIOD_TEXT = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/
+
+/** 기간 글자. 없음(`null` · 빠짐)은 `undefined`, 모양이 틀리면 `false`. */
+function toPeriodText(value: unknown): string | undefined | false {
+  if (value === null || value === undefined) return undefined
+  return typeof value === 'string' && PERIOD_TEXT.test(value) ? value : false
 }
 
 function toRules(value: unknown): BossCatalogRules | null {
