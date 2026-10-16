@@ -181,7 +181,7 @@ function 주차소계(overrides: Partial<BossProfitWeeklySubtotal> = {}): BossPr
 }
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
-  return { itemKey: 'other_ring', itemName: '기타', slot: null, ...overrides } as RecordedDrop
+  return { itemKey: 'other_ring', itemName: '기타', ...overrides } as RecordedDrop
 }
 
 /**

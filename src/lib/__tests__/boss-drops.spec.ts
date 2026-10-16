@@ -32,13 +32,13 @@ describe('getBossDropCandidates', () => {
     expect(candidates.some((candidate) => candidate.name === '주문의 흔적')).toBe(false)
   })
 
-  it('같은 아이템은 key+slot으로 통합하고 등장 난이도를 정규 순서로 담는다', () => {
+  it('같은 아이템은 key 로 통합하고 등장 난이도를 정규 순서로 담는다', () => {
     // 루즈 컨트롤 머신 마크(얼굴장식)는 스우 하드+익스트림에서 드롭 → 한 후보로 통합
     const marks = getBossDropCandidates('lotus', 패치전, 패치후시각).filter(
       (candidate) => candidate.name === '루즈 컨트롤 머신 마크',
     )
     expect(marks.length).toBe(1)
-    expect(marks[0]).toMatchObject({ category: 'equipment', slot: '얼굴장식' })
+    expect(marks[0]).toMatchObject({ category: 'equipment' })
     expect(marks[0].difficulties).toEqual(['hard', 'extreme'])
   })
 
@@ -140,7 +140,7 @@ describe('getObtainableTileKeys', () => {
 describe('pruneUnobtainableDrops', () => {
   it('처치 난이도에서 획득 불가한 선택 드롭을 제거한다 (스우 하드)', () => {
     const drops: RecordedDrop[] = [
-      { dropRecordId: null, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 }, // 하드+익스 유지
+      { dropRecordId: null, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }, // 하드+익스 유지
       { dropRecordId: null, category: 'equipment', itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤', quantity: 1 }, // 익스 전용 제거
       { dropRecordId: null, category: 'consumable', itemKey: 'restraint_ring', itemName: '리스트레인트 링', boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3, quantity: 1 }, // 홍옥(하드) 유지
       { dropRecordId: null, category: 'consumable', itemKey: null, itemName: '아무 반지', boxOriginKey: 'white_boss_ring_box', boxOrigin: '백옥의 보스 반지 상자', quantity: 1 }, // 백옥(익스) 제거
@@ -270,7 +270,7 @@ describe('getAccessoryBoxContents', () => {
 // 키에 남아 영구 고아가 된다(화면·환산 가치에서 사라지고 DB에만 남는다).
 describe('planConfirmedDifficultyDropMigration', () => {
   const extremeDrops: StoredDropRecord[] = [
-    { dropRecordId: null, difficulty: 'extreme', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+    { dropRecordId: null, difficulty: 'extreme', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 },
     { dropRecordId: null, difficulty: 'extreme', dropIndex: 1, category: 'equipment', itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤', quantity: 1 },
   ]
 
@@ -298,14 +298,13 @@ describe('planConfirmedDifficultyDropMigration', () => {
   // 만들면 시트가 하나만 보여 주고 금액은 두 번 센다.
   it('확정 난이도에 같은 아이템이 이미 있으면 두 번 넣지 않는다. 이미 있는 쪽을 남긴다', () => {
     const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전, [
-      { dropRecordId: null, difficulty: 'hard', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+      { dropRecordId: null, difficulty: 'hard', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 },
       { dropRecordId: null,
         difficulty: 'extreme',
         dropIndex: 0,
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',
-        slot: '얼굴장식',
         quantity: 1,
         priceState: 'entered',
         priceMeso: 15_000_000_000,
@@ -313,7 +312,7 @@ describe('planConfirmedDifficultyDropMigration', () => {
     ])
 
     expect(plan).toEqual({
-      drops: [{ dropRecordId: null, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 }],
+      drops: [{ dropRecordId: null, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }],
       staleDifficulties: ['extreme'],
     })
   })
@@ -347,7 +346,7 @@ describe('planConfirmedDifficultyDropMigration', () => {
 
   it('옛 난이도 키가 여러 개면 정규 난이도 순서로 이어 붙이고 모두 비운다', () => {
     const plan = planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,[
-      { dropRecordId: null, difficulty: 'extreme', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+      { dropRecordId: null, difficulty: 'extreme', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 },
       { dropRecordId: null, difficulty: 'normal', dropIndex: 0, category: 'fixed', itemKey: 'spell_trace', itemName: '주문의 흔적', quantity: 1 },
     ])
 
@@ -361,7 +360,7 @@ describe('planConfirmedDifficultyDropMigration', () => {
   it('옛 난이도 키가 없으면 null: 쓸 일이 없다는 뜻이다(멱등)', () => {
     expect(
       planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,[
-        { dropRecordId: null, difficulty: 'hard', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', slot: '얼굴장식', quantity: 1 },
+        { dropRecordId: null, difficulty: 'hard', dropIndex: 0, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 },
       ]),
     ).toBeNull()
     expect(planConfirmedDifficultyDropMigration('lotus', 'hard', 패치전,[])).toBeNull()
@@ -390,7 +389,6 @@ describe('planConfirmedDifficultyDropMigration: 가격 생존', () => {
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',
-        slot: '얼굴장식',
         quantity: 1,
         priceState: 'entered',
         priceMeso: 15_000_000_000,
@@ -417,7 +415,6 @@ describe('planConfirmedDifficultyDropMigration: 가격 생존', () => {
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',
-        slot: '얼굴장식',
         quantity: 1,
         priceState: 'excluded',
       },
@@ -448,7 +445,6 @@ describe('planConfirmedDifficultyDropMigration: 가격 생존', () => {
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
         itemName: '루즈 컨트롤 머신 마크',
-        slot: '얼굴장식',
         quantity: 1,
       },
     ])

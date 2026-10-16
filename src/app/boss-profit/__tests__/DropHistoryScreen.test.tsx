@@ -92,7 +92,6 @@ function 기록(overrides: Partial<DropHistoryRecord> = {}): DropHistoryRecord {
     category: 'equipment',
     itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
-    slot: '얼굴장식',
     quantity: 1,
     ...overrides,
   }
@@ -212,7 +211,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
         {
           periodKey: PERIOD,
           cycle: 'weekly',
-          records: [기록({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', slot: undefined })],
+          records: [기록({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링' })],
         },
       ],
     })
@@ -245,7 +244,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
         {
           periodKey: PERIOD,
           cycle: 'weekly',
-          records: [기록({ itemKey: null, itemName: '익셉셔널 해머', slot: undefined })],
+          records: [기록({ itemKey: null, itemName: '익셉셔널 해머' })],
         },
       ],
     })
@@ -289,8 +288,8 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
           cycle: 'weekly',
           records: [
             기록({ itemKey: 'spell_trace', itemName: '주문의 흔적', dropRecordId: null,
-            category: 'fixed', slot: undefined, quantity: 240 }),
-            기록({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', slot: undefined, quantity: 1 }),
+            category: 'fixed', quantity: 240 }),
+            기록({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', quantity: 1 }),
           ],
         },
       ],
@@ -315,7 +314,6 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
               itemName: '리스트레인트 링',
               dropRecordId: null,
               category: 'consumable',
-              slot: undefined,
               boxOriginKey: 'red_boss_ring_box',
               boxOrigin: '홍옥의 보스 반지 상자',
               ringLevel: 3,
@@ -341,7 +339,7 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
         {
           periodKey: PERIOD,
           cycle: 'weekly',
-          records: [기록({ ocid: 'ocid-unknown', itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', slot: undefined })],
+          records: [기록({ ocid: 'ocid-unknown', itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링' })],
         },
       ],
       charactersByOcid: {},
@@ -512,7 +510,7 @@ describe('DropHistoryScreen: 미획득 요약', () => {
 
   it('그 주에 고가를 여럿 먹었으면 첫 항목 + 외 N개로 줄인다', async () => {
     mockStore({
-      drought: 가뭄(3, [기록(), 기록({ itemKey: 'genesis_badge', itemName: '창세의 뱃지', slot: undefined })]),
+      drought: 가뭄(3, [기록(), 기록({ itemKey: 'genesis_badge', itemName: '창세의 뱃지' })]),
     })
     const { getByTestId } = await renderHistory()
 

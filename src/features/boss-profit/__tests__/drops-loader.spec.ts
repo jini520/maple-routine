@@ -70,7 +70,6 @@ function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
     category: 'equipment',
     itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
-    slot: '얼굴장식',
     boxOriginKey: null,
     boxOrigin: null,
     ringLevel: null,
@@ -131,7 +130,6 @@ describe('loadDropsByRowKey: 가격 생존', () => {
         dropIndex: 1,
         itemKey: 'complete_under_control',
         itemName: '컴플리트 언더컨트롤',
-        slot: null,
         priceState: null,
         priceMeso: null,
         priceShare: null,
@@ -159,7 +157,7 @@ describe('loadDropsByRowKey: 가격 생존', () => {
     })
     getBossDropRecordsMock.mockResolvedValue([
       record({ dropIndex: 0 }),
-      record({ dropIndex: 1, itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤', slot: null }),
+      record({ dropIndex: 1, itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤' }),
     ])
     const { loadDropsByRowKey } = require('../drops-loader') as typeof import('../drops-loader')
 
@@ -172,7 +170,7 @@ describe('loadDropsByRowKey: 가격 생존', () => {
   it('완료 행이어도 아이템 key 가 없는 옛 기록은 지우지 않고 DB 에 다시 안 쓴다', async () => {
     getBossDropRecordsMock.mockResolvedValue([
       record({ dropIndex: 0 }),
-      record({ dropIndex: 1, itemKey: null, itemName: '익셉셔널 해머', slot: null }),
+      record({ dropIndex: 1, itemKey: null, itemName: '익셉셔널 해머' }),
     ])
     const { loadDropsByRowKey } = require('../drops-loader') as typeof import('../drops-loader')
 
@@ -197,7 +195,6 @@ describe('loadDropsByRowKey: 기간으로 정리한다', () => {
       category: 'consumable',
       itemKey: 'magical_weapon_scroll_voucher',
       itemName: '매지컬 무기 주문서 교환권',
-      slot: null,
     })
   const 가엔슬행 = (periodKey: string) => row({ bossKey: 'guardian_angel_slime', bossName: '가디언 엔젤 슬라임', difficulty: 'chaos', periodKey })
 

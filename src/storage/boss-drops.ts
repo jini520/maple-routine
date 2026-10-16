@@ -28,7 +28,6 @@ export interface BossDropRecord {
   itemKey: string | null
   /** 적을 때의 이름. */
   itemName: string
-  slot: string | null
   /** 상자 결과면 상자의 아이템 key. */
   boxOriginKey: string | null
   boxOrigin: string | null
@@ -88,10 +87,10 @@ const DELETE_SQL = `
  */
 const INSERT_SQL = `
   INSERT INTO boss_drop_records
-    (drop_record_id, ocid, boss_key, boss, difficulty, period_key, drop_index, category, item_key, item_name, slot, box_origin_key,
+    (drop_record_id, ocid, boss_key, boss, difficulty, period_key, drop_index, category, item_key, item_name, box_origin_key,
      box_origin, ring_level, quantity, recorded_at, world, world_key, price_state, price_meso, price_split_mode, price_party_size, price_share, price_my_share,
      sale_fee_percent, split_fee_percent, sale_fee_auto, split_fee_auto)
-  VALUES (COALESCE(?, ${NEW_UUID_SQL}), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (COALESCE(?, ${NEW_UUID_SQL}), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 /** 다시 쓴 뒤 식별자를 차례대로 읽는다. 새로 생긴 값은 SQLite 가 만들어 여기서만 알 수 있다. */
@@ -104,27 +103,25 @@ const SELECT_IDS_IN_ORDER_SQL = `
 
 /** 그룹 안에서 아이템 하나를 가리키는 값. 저장을 되풀이해도 같아야 식별자를 물려줄 수 있다. */
 const SELECT_GROUP_IDS_SQL = `
-  SELECT drop_record_id, world, world_key, item_key, item_name, slot, box_origin_key, ring_level
+  SELECT drop_record_id, world, world_key, item_key, item_name, box_origin_key, ring_level
   FROM boss_drop_records
   WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?
 `
 
 /**
  * 아이템의 신분. **같은 아이템이 일반 드롭과 상자 결과로 둘 들어올 수 있어** 아이템 key 하나로는
- * 못 가린다. 상자 key 와 칸·반지 레벨까지 넣어야 둘이 갈린다.
+ * 못 가린다. 상자 key 와 반지 레벨까지 넣어야 둘이 갈린다.
  *
  * `item_key` 가 `null` 인 옛 행은 이름으로 떨어진다(이관이 key 를 못 찾은 행이다).
  */
 function identityOf(parts: {
   itemKey?: string | null
   itemName: string
-  slot?: string | null
   boxOriginKey?: string | null
   ringLevel?: number | null
 }): string {
   return [
     parts.itemKey ?? `name:${parts.itemName}`,
-    parts.slot ?? '',
     parts.boxOriginKey ?? '',
     parts.ringLevel ?? '',
   ].join('\u0000')
@@ -203,7 +200,6 @@ export async function replaceBossDropRecords(
       identityOf({
         itemKey: row.item_key as string | null,
         itemName: row.item_name as string,
-        slot: row.slot as string | null,
         boxOriginKey: row.box_origin_key as string | null,
         ringLevel: row.ring_level as number | null,
       }),
@@ -241,7 +237,6 @@ export async function replaceBossDropRecords(
       drop.category,
       drop.itemKey,
       drop.itemName,
-      drop.slot ?? null,
       drop.boxOriginKey ?? null,
       drop.boxOrigin ?? null,
       drop.ringLevel ?? null,
@@ -296,7 +291,6 @@ function rowToRecord(row: Record<string, unknown>): BossDropRecord {
     category: row.category as DropCategory,
     itemKey: (row.item_key as string | null | undefined) ?? null,
     itemName: row.item_name as string,
-    slot: (row.slot as string | null) ?? null,
     boxOriginKey: (row.box_origin_key as string | null | undefined) ?? null,
     boxOrigin: (row.box_origin as string | null) ?? null,
     ringLevel: (row.ring_level as number | null) ?? null,

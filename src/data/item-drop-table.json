@@ -10,7 +10,6 @@
         "equipment": [
           {
             "item": "papulatus_mark",
-            "slot": "눈장식",
             "note": "보스 장신구 세트"
           }
         ]
@@ -64,7 +63,6 @@
         "equipment": [
           {
             "item": "loose_control_machine_mark",
-            "slot": "얼굴장식",
             "set": "pitch_black_boss_set"
           }
         ],
@@ -93,12 +91,10 @@
         "equipment": [
           {
             "item": "loose_control_machine_mark",
-            "slot": "얼굴장식",
             "set": "pitch_black_boss_set"
           },
           {
             "item": "complete_under_control",
-            "slot": "기계심장",
             "set": "pitch_black_boss_set"
           }
         ],
@@ -159,7 +155,6 @@
         "equipment": [
           {
             "item": "magic_eyepatch",
-            "slot": "눈장식",
             "set": "pitch_black_boss_set"
           }
         ],
@@ -188,7 +183,6 @@
         "equipment": [
           {
             "item": "guardian_angel_ring",
-            "slot": "반지",
             "set": "boss_accessory_or_dawn_boss_set"
           }
         ],
@@ -231,7 +225,6 @@
         "equipment": [
           {
             "item": "guardian_angel_ring",
-            "slot": "반지",
             "set": "boss_accessory_or_dawn_boss_set"
           }
         ],
@@ -297,7 +290,6 @@
         "equipment": [
           {
             "item": "twilight_mark",
-            "slot": "얼굴장식",
             "set": "dawn_boss_set"
           }
         ],
@@ -334,12 +326,10 @@
         "equipment": [
           {
             "item": "dreamy_belt",
-            "slot": "벨트",
             "set": "pitch_black_boss_set"
           },
           {
             "item": "twilight_mark",
-            "slot": "얼굴장식",
             "set": "dawn_boss_set"
           }
         ],
@@ -390,7 +380,6 @@
         "equipment": [
           {
             "item": "twilight_mark",
-            "slot": "얼굴장식",
             "set": "dawn_boss_set"
           }
         ],
@@ -436,14 +425,12 @@
         "equipment": [
           {
             "item": "twilight_mark",
-            "slot": "얼굴장식",
             "set": "dawn_boss_set"
           }
         ],
         "consumable": [
           {
             "item": "cursed_spellbook_selection_box",
-            "slot": "포켓 아이템",
             "set": "pitch_black_boss_set",
             "note": "교환 불가, 7일"
           },
@@ -471,7 +458,6 @@
         "equipment": [
           {
             "item": "estella_earring",
-            "slot": "귀고리",
             "set": "dawn_boss_set"
           }
         ],
@@ -514,12 +500,10 @@
         "equipment": [
           {
             "item": "giant_terror",
-            "slot": "반지",
             "set": "pitch_black_boss_set"
           },
           {
             "item": "estella_earring",
-            "slot": "귀고리",
             "set": "dawn_boss_set"
           }
         ],
@@ -572,7 +556,6 @@
         "equipment": [
           {
             "item": "daybreak_pendant",
-            "slot": "펜던트",
             "set": "dawn_boss_set"
           }
         ],
@@ -615,12 +598,10 @@
         "equipment": [
           {
             "item": "source_of_suffering",
-            "slot": "펜던트",
             "set": "pitch_black_boss_set"
           },
           {
             "item": "daybreak_pendant",
-            "slot": "펜던트",
             "set": "dawn_boss_set"
           }
         ],
@@ -664,7 +645,6 @@
         "equipment": [
           {
             "item": "estella_earring",
-            "slot": "귀고리",
             "set": "dawn_boss_set"
           }
         ],
@@ -707,12 +687,10 @@
         "equipment": [
           {
             "item": "commander_force_earring",
-            "slot": "귀고리",
             "set": "pitch_black_boss_set"
           },
           {
             "item": "estella_earring",
-            "slot": "귀고리",
             "set": "dawn_boss_set"
           }
         ],
@@ -770,7 +748,6 @@
         "equipment": [
           {
             "item": "daybreak_pendant",
-            "slot": "펜던트",
             "set": "dawn_boss_set"
           }
         ],
@@ -824,7 +801,6 @@
         "equipment": [
           {
             "item": "daybreak_pendant",
-            "slot": "펜던트",
             "set": "dawn_boss_set"
           }
         ],
@@ -835,7 +811,6 @@
           },
           {
             "item": "mitra_rage_selection_box",
-            "slot": "엠블렘",
             "set": "pitch_black_boss_set",
             "note": "교환 불가, 7일"
           },
@@ -881,7 +856,6 @@
         "equipment": [
           {
             "item": "daybreak_pendant",
-            "slot": "펜던트",
             "set": "dawn_boss_set"
           }
         ],
@@ -896,13 +870,11 @@
           },
           {
             "item": "mitra_rage_selection_box",
-            "slot": "엠블렘",
             "set": "pitch_black_boss_set",
             "note": "교환 불가, 7일"
           },
           {
             "item": "exceptional_hammer_face_accessory",
-            "slot": "얼굴장식",
             "note": "교환 가능"
           }
         ]
@@ -1097,7 +1069,6 @@
           },
           {
             "item": "exceptional_hammer_eye_accessory",
-            "slot": "눈장식",
             "note": "교환 가능"
           },
           {
@@ -1231,7 +1202,6 @@
         "equipment": [
           {
             "item": "immortal_legacy",
-            "slot": "훈장",
             "set": "brilliant_boss_set"
           }
         ],
@@ -1291,7 +1261,6 @@
         "equipment": [
           {
             "item": "immortal_legacy",
-            "slot": "훈장",
             "set": "brilliant_boss_set"
           }
         ],
@@ -1313,7 +1282,6 @@
           },
           {
             "item": "exceptional_hammer_medal",
-            "slot": "훈장",
             "note": "교환 가능"
           },
           {
@@ -1547,7 +1515,6 @@
           },
           {
             "item": "exceptional_hammer_earring",
-            "slot": "귀고리",
             "note": "교환 가능"
           },
           {
@@ -1649,7 +1616,6 @@
         "equipment": [
           {
             "item": "enchanting_nightmare",
-            "slot": "반지",
             "set": "brilliant_boss_set"
           }
         ],
@@ -1753,7 +1719,6 @@
         "equipment": [
           {
             "item": "starving_crimson_wraith",
-            "slot": "눈장식",
             "set": "brilliant_boss_set"
           }
         ],
@@ -1854,7 +1819,6 @@
         "equipment": [
           {
             "item": "whisper_of_origin",
-            "slot": "반지",
             "set": "brilliant_boss_set"
           }
         ],
@@ -1969,7 +1933,6 @@
         "equipment": [
           {
             "item": "oath_of_death",
-            "slot": "펜던트",
             "set": "brilliant_boss_set"
           }
         ],
@@ -2072,7 +2035,6 @@
         "equipment": [
           {
             "item": "original_sin_of_arrogance",
-            "slot": "얼굴장식",
             "set": "brilliant_boss_set"
           }
         ],
@@ -2201,7 +2163,6 @@
         "equipment": [
           {
             "item": "genesis_badge",
-            "slot": "뱃지",
             "set": "pitch_black_boss_set"
           }
         ],
@@ -2241,7 +2202,6 @@
         "equipment": [
           {
             "item": "genesis_badge",
-            "slot": "뱃지",
             "set": "pitch_black_boss_set"
           }
         ],
@@ -2252,7 +2212,6 @@
           },
           {
             "item": "exceptional_hammer_belt",
-            "slot": "벨트",
             "note": "교환 가능"
           },
           {

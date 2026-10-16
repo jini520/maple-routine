@@ -19,7 +19,6 @@ interface RawRewardItem {
   /** 아이템 key(`drop-items.json`). */
   item: string
   amount?: string
-  slot?: string
   set?: string
   note?: string
   /** 이 때부터 나온다(KST `YYYY-MM-DD` 또는 `YYYY-MM-DDTHH:mm`). 패치로 생긴 아이템. */
@@ -35,10 +34,6 @@ interface RawRewardEntry {
 }
 
 const rewardEntries = itemDropTableData.rewards as RawRewardEntry[]
-
-function nfc(value: string): string {
-  return value.normalize('NFC')
-}
 
 // BOSS_DIFFICULTIES 정규 순서 인덱스(미상 난이도는 뒤로).
 function difficultyOrder(difficulty: string): number {
@@ -60,7 +55,7 @@ function effectiveNow(item: RawRewardItem, periodKey: string, now: Date | null):
 }
 
 // 보스의 선택 가능한 드롭 후보(장비·소비)를 난이도 무관하게 통합해 반환한다.
-// 같은 아이템은 아이템 key+slot으로 dedupe하고, 등장하는 난이도를 difficulties에 정규 순서로 담는다.
+// 같은 아이템은 아이템 key 로 dedupe하고, 등장하는 난이도를 difficulties에 정규 순서로 담는다.
 // 고정 드롭은 값이 난이도마다 달라 여기서 제외하고 getBossFixedDrops로 별도 표시한다.
 // 그 기간에 나오는 줄만 든다. `now` 를 주면 시계로 가르고(표시), `null` 이면 그 기간 어느 때라도
 // 나왔으면 든다(기록 정리). 갈라 두는 것은 09-17 09시에 적은 교환권을 10시에 지우지 않기 위해서다.
@@ -73,14 +68,13 @@ export function getBossDropCandidates(boss: string, periodKey: string, now: Date
     for (const category of SELECTABLE_DROP_CATEGORIES) {
       for (const item of entry.rewards[category] ?? []) {
         if (!effectiveNow(item, periodKey, now)) continue
-        const key = `${category}|${item.item}|${nfc(item.slot ?? '')}`
+        const key = `${category}|${item.item}`
         const existing = byKey.get(key)
         if (existing === undefined) {
           byKey.set(key, {
             key: item.item,
             name: dropItemNameOf(item.item, item.item),
             category,
-            slot: item.slot,
             set: item.set,
             note: item.note,
             difficulties: [difficulty],
@@ -103,7 +97,6 @@ export function getBossFixedDrops(boss: string, periodKey: string, now: Date): F
       key: item.item,
       name: dropItemNameOf(item.item, item.item),
       amount: item.amount,
-      slot: item.slot,
     }))
     if (items.length > 0) {
       groups.push({ difficulty: entry.difficulty as BossDifficulty, items })
@@ -222,7 +215,6 @@ function toRecordedDrop(record: StoredDropRecord): RecordedDrop {
     category: record.category,
     itemKey: record.itemKey,
     itemName: record.itemName,
-    slot: record.slot,
     boxOriginKey: record.boxOriginKey,
     boxOrigin: record.boxOrigin,
     ringLevel: record.ringLevel,

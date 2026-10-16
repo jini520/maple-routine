@@ -59,7 +59,7 @@ erDiagram
         INTEGER drop_index
         TEXT category
         TEXT item_name
-        TEXT slot
+        TEXT slot            -- 죽은 칸. 2026-10-16 부터 안 적고 안 읽는다([[ADR-351]] 결정 2)
         TEXT box_origin
         INTEGER ring_level
         INTEGER quantity
@@ -139,7 +139,7 @@ PK: `(ocid, cycle, period_key)`. "이 캐릭터의 이 기간은 이미 (재)조
 PK: `drop_record_id`(v4 uuid, DB 버전 12 · [[ADR-342]] 결정 1). 표 자체는 [[ADR-038]]에서 도입했다. 한 보스가 여러 드롭을 가지므로 `drop_index`로 **같은 (보스, 난이도, 기간)에 여러 행**이 들어간다 — 위 세 테이블처럼 조합당 1행이 아니다. 처치 난이도가 나중에 확정·변경되면 그 난이도 키로 행을 옮기는 이관이 돈다([[ADR-069]] 결정 4 — 옛 난이도 키의 드롭을 확정 키로 옮기고 그 난이도에서 획득 불가한 항목은 삭제한다. 상세는 [../features/boss-profit.md](../features/boss-profit.md) "자동 기록").
 
 - **PK 가 uuid 한 칸인 이유는 옛 PK 의 조각 둘이 설계상 바뀌어서다.** `difficulty` 는 위 난이도 확정 이관이 옮기고, `drop_index` 는 `replaceBossDropRecords` 가 그룹을 다시 쓸 때마다 배열 자리로 다시 매긴다. 그 열쇠로 서버에 가격을 보내면 목록에서 하나를 뺀 뒤 **가격이 엉뚱한 아이템에 붙는다**. 옛 다섯 칸은 평범한 칸으로 남고 그 위에 인덱스 `boss_drop_records_group` 이 선다(종전에는 PK 가 곧 그 인덱스였다). **`UNIQUE` 가 아니다** — 한 행씩 고치는 사이에 `drop_index` 가 일시적으로 겹친다.
-- **⚠️ `drop_record_id` 를 새로 만드는 자리는 둘뿐이어야 한다.** `replaceBossDropRecords` 가 그룹을 다시 쓸 때 **기존 값을 물려주고**(아이템 신분 = `item_key` + `box_origin_key` + `slot` + `ring_level`), 난이도 확정 이관은 행을 옮기며 **보존한다**. 어느 쪽이든 새로 만들면 서버에 같은 기록이 계속 쌓인다([[ADR-342]] 결정 2 — "이 문서의 유일한 함정이 그 두 자리다").
+- **⚠️ `drop_record_id` 를 새로 만드는 자리는 둘뿐이어야 한다.** `replaceBossDropRecords` 가 그룹을 다시 쓸 때 **기존 값을 물려주고**(아이템 신분 = `item_key` + `box_origin_key` + `ring_level`. 부위는 [[ADR-351]] 이 걷었다), 난이도 확정 이관은 행을 옮기며 **보존한다**. 어느 쪽이든 새로 만들면 서버에 같은 기록이 계속 쌓인다([[ADR-342]] 결정 2 — "이 문서의 유일한 함정이 그 두 자리다").
 - **값은 SQLite 가 만든다**(`storage/sqlite/uuid.ts` 의 `NEW_UUID_SQL`, `randomblob()` 식). JS 에서 안 만드는 이유는 Hermes 전역에 `crypto` 가 없고 네이티브 모듈을 들이면 스토어 빌드를 기다려야 해서다. SQLite 는 이미 번들에 있어 OTA 로 간다.
 - **기록 시점의 월드를 자기 칸으로 든다**(`world` · `world_key`, [[ADR-342]] 결정 3). 캐릭터가 삭제되거나 월드 리프된 뒤에도 그 기록이 어느 월드의 것인지 남는다. **짝인 수익 행에서 물려받지 않는다** — `defeated_on` 은 그렇게 했지만([[ADR-172]] 결정 6) 결정석 가격을 모르는 보스는 수익 행이 없어 물려받을 짝이 없다. 모르면 `NULL` 이고, **옛 행은 채우지 않는다**(현재 캐시의 월드로 채우면 리프한 캐릭터의 리프 전 드롭에 리프 후 월드가 박힌다).
 

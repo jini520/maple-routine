@@ -53,7 +53,6 @@ function dropRecord(overrides: Partial<BossDropRecord>): BossDropRecord {
     category: 'equipment',
     itemKey: 'loose_control_machine_mark',
     itemName: '루즈 컨트롤 머신 마크',
-    slot: '얼굴장식',
     boxOriginKey: null,
     boxOrigin: null,
     ringLevel: null,
@@ -170,7 +169,7 @@ describe('useDropHistoryStore.load', () => {
   it('확정 난이도 조합의 획득 불가 기록을 거른다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
       dropRecord({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', dropIndex: 0 }), // 하드+익스 → 유지
-      dropRecord({ itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤', slot: null, dropIndex: 1 }), // 익스 전용 → 제거
+      dropRecord({ itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤', dropIndex: 1 }), // 익스 전용 → 제거
     ])
     getAllBossProfitRecordKeysMock.mockResolvedValue([
       { ocid: 'ocid-1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', periodKey: '2026-07-09' },
@@ -187,7 +186,7 @@ describe('useDropHistoryStore.load', () => {
   // 이관이 이름을 못 찾아 key 가 빈 옛 기록. 못 찾은 것이 못 먹은 것은 아니라 숨기지 않는다.
   it('확정 난이도 조합이어도 아이템 key 가 없는 옛 기록은 거르지 않는다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
-      dropRecord({ itemKey: null, itemName: '익셉셔널 해머', slot: null }),
+      dropRecord({ itemKey: null, itemName: '익셉셔널 해머' }),
     ])
     getAllBossProfitRecordKeysMock.mockResolvedValue([
       { ocid: 'ocid-1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', periodKey: '2026-07-09' },
@@ -205,7 +204,6 @@ describe('useDropHistoryStore.load', () => {
         category: 'consumable',
         itemKey: 'restraint_ring',
         itemName: '리스트레인트 링',
-        slot: null,
         boxOriginKey: 'red_boss_ring_box',
         boxOrigin: '홍옥의 보스 반지 상자',
         ringLevel: 3,
@@ -223,7 +221,7 @@ describe('useDropHistoryStore.load', () => {
 
   it('수익 기록이 없는(=난이도 미확정) 조합은 거르지 않는다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
-      dropRecord({ itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤', slot: null }),
+      dropRecord({ itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤' }),
     ])
     getAllBossProfitRecordKeysMock.mockResolvedValue([])
     const store = await loadStore()
@@ -247,7 +245,7 @@ describe('useDropHistoryStore.load', () => {
   it('고가 기록이 없으면 요약이 null이다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
       dropRecord({ itemKey: 'restraint_ring', itemName: '리스트레인트 링',
-      category: 'consumable', slot: null }),
+      category: 'consumable' }),
     ])
     const store = await loadStore()
 

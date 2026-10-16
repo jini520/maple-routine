@@ -41,7 +41,7 @@ import { mockReducedMotion } from '../../../components/__tests__/reduced-motion'
 const 고가아이템 = valuableDropsData.items[0]
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
-  return { itemKey: 'other_ring', itemName: '기타', slot: null, ...overrides } as RecordedDrop
+  return { itemKey: 'other_ring', itemName: '기타', ...overrides } as RecordedDrop
 }
 
 function 그룹(rows = [보스행()], subtotals: ReturnType<typeof 주차소계>[] = []) {
