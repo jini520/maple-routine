@@ -51,7 +51,10 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     //
     // 1.0.12+3 OTA(2026-10-15)는 드롭 시트에서 적은 가격이 서버에 안 가던 것을 고친 것이다. 사용자가 겪는 변화가
     // 없어 항목을 더하지 않고 핵심 줄도 +2 그대로다(사용자 지정).
-    highlights: ['서버 마이그레이션 작업 반영.'],
+    //
+    // 1.0.12+4 OTA(2026-10-18)는 게임 데이터를 서버에서 받게 바꾼 것(#653)과 통계 내역 조각의 세부 줄(#632)·결산
+    // 안내 줄(#629)이다. 핵심 줄 둘과 항목 한 줄을 사용자가 골랐다(2026-10-18).
+    highlights: ['게임 데이터 서버 이전 및 마이그레이션', '통계 페이지 수익 및 지출 상세 정보 추가'],
     items: [
       {
         category: 'feature',
@@ -76,6 +79,10 @@ export const RELEASE_NOTES: ReleaseNote[] = [
       {
         category: 'feature',
         text: '사냥 계산기의 유니온의 부 아이템이 단계를 고를 수 있도록 개선됩니다.',
+      },
+      {
+        category: 'feature',
+        text: '통계 페이지 수익 및 지출 상세 정보 추가',
       },
       {
         category: 'improvement',
