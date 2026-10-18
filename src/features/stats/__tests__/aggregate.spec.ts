@@ -185,10 +185,16 @@ describe('categoryTotalsBetween', () => {
       ],
     }
     expect(categoryTotalsBetween(byDate, WEEK, 'income')).toEqual([
+      // 보스 결정석만 줄이 없다. 아래 보스별 수익 카드가 나눈다
       { key: 'boss_crystal', name: '보스 결정석', meso: 500 },
-      { key: 'boss_drop', name: '보스 드롭', meso: 100 },
-      { key: 'item_sale', name: '아이템 판매', meso: 50 },
-      { key: 'etc', name: '기타', meso: 30 },
+      {
+        key: 'boss_drop',
+        name: '보스 드롭',
+        meso: 100,
+        parts: [{ key: 'item:루즈 컨트롤 머신 마크', name: '루즈 컨트롤 머신 마크', meso: 100 }],
+      },
+      { key: 'item_sale', name: '아이템 판매', meso: 50, parts: [{ key: 'unnamed', name: '이름 없음', meso: 50 }] },
+      { key: 'etc', name: '기타', meso: 30, parts: [{ key: 'unnamed', name: '이름 없음', meso: 30 }] },
     ])
   })
 
@@ -268,10 +274,151 @@ describe('categoryTotalsBetween', () => {
       ],
     }
     expect(categoryTotalsBetween(byDate, WEEK, 'expense')).toEqual([
-      { key: 'enhancement:starforce', name: '스타포스', meso: 400 },
-      { key: 'symbol', name: '심볼 강화', meso: 70 },
-      { key: 'enhancement:cube_reset', name: '큐브 재설정', meso: 50 },
+      {
+        key: 'enhancement:starforce',
+        name: '스타포스',
+        meso: 400,
+        parts: [{ key: 'equipment:아케인셰이드 투구', name: '아케인셰이드 투구', meso: 400 }],
+      },
+      { key: 'symbol', name: '심볼 강화', meso: 70, parts: [{ key: 'unnamed', name: '이름 없음', meso: 70 }] },
+      {
+        key: 'enhancement:cube_reset',
+        name: '큐브 재설정',
+        meso: 50,
+        parts: [{ key: 'equipment:아케인셰이드 투구', name: '아케인셰이드 투구', meso: 50 }],
+      },
     ])
+  })
+
+  // 이슈 #632. 사냥 · 버프만 나뉘던 것을 보스 결정석 빼고 전부 나눈다. 줄의 축은 갈래마다 하나다.
+  describe('조각마다의 줄', () => {
+    it('보스 드롭은 아이템별이고 같은 아이템은 합친다', () => {
+      const sale = (ocid: string, items: { itemKey: string | null; itemName: string; payoutMeso: number }[]): DayRecord => ({
+        kind: 'dropSale',
+        ocid,
+        characterName: '낟낟',
+        payoutMeso: items.reduce((sum, item) => sum + item.payoutMeso, 0),
+        count: items.length,
+        items,
+      })
+      const byDate = {
+        '2026-09-24': [
+          sale('a', [
+            { itemKey: 'genesis_badge', itemName: '창세의 뱃지', payoutMeso: 300 },
+            { itemKey: 'immortal_legacy', itemName: '불멸의 유산', payoutMeso: 100 },
+          ]),
+          sale('b', [{ itemKey: 'genesis_badge', itemName: '창세의 뱃지', payoutMeso: 200 }]),
+        ],
+      }
+      expect(categoryTotalsBetween(byDate, WEEK, 'income')[0].parts).toEqual([
+        { key: 'item:genesis_badge', name: '창세의 뱃지', meso: 500 },
+        { key: 'item:immortal_legacy', name: '불멸의 유산', meso: 100 },
+      ])
+    })
+
+    it('컨텐츠 · 이벤트·BM · 주문서는 선택 목록의 타일별이다. 단계와 형태별 항목은 타일에 접힌다', () => {
+      const byDate = {
+        '2026-09-24': [
+          spend(null, '', { category: 'content', itemKey: 'high_mountain_1', mesoAmount: 100 }),
+          spend(null, '', {
+            category: 'content',
+            itemKey: null,
+            formItemKeys: { exp: 'high_mountain_1', sol_erda: 'high_mountain_2' },
+            mesoAmount: 50,
+          }),
+          spend(null, '', { category: 'content', itemKey: 'angler_company_1', mesoAmount: 30 }),
+          spend(null, '', { category: 'event_bm', itemKey: 'mechaberry_farm', mesoAmount: 20 }),
+          spend(null, '', { category: 'scroll', itemKey: 'magical_one_handed_weapon_attack_scroll_100', mesoAmount: 10 }),
+          spend(null, '', { category: 'scroll', itemKey: 'magical_two_handed_weapon_attack_scroll_100', mesoAmount: 5 }),
+        ],
+      }
+      const totals = categoryTotalsBetween(byDate, WEEK, 'expense')
+      expect(totals.find((total) => total.key === 'content')?.parts).toEqual([
+        { key: 'tile:high_mountain', name: '하이마운틴', meso: 150 },
+        { key: 'tile:angler_company', name: '앵글러 컴퍼니', meso: 30 },
+      ])
+      expect(totals.find((total) => total.key === 'event_bm')?.parts).toEqual([
+        { key: 'tile:mechaberry_farm', name: '메카베리 농장', meso: 20 },
+      ])
+      expect(totals.find((total) => total.key === 'scroll')?.parts).toEqual([
+        { key: 'tile:magical_scroll', name: '매지컬 주문서', meso: 15 },
+      ])
+    })
+
+    it('심볼 강화는 심볼별이고 표에 없는 key 는 친 이름이다', () => {
+      const byDate = {
+        '2026-09-24': [
+          spend(null, '', { category: 'symbol', itemKey: 'road_of_vanishing', item: '소멸의 여로 Lv.3 → 7', mesoAmount: 100 }),
+          spend(null, '', { category: 'symbol', itemKey: 'road_of_vanishing', item: '소멸의 여로 Lv.7 → 9', mesoAmount: 50 }),
+          spend(null, '', { category: 'symbol', itemKey: 'no_such_symbol', item: '옛 심볼', mesoAmount: 10 }),
+        ],
+      }
+      expect(categoryTotalsBetween(byDate, WEEK, 'expense')[0].parts).toEqual([
+        { key: 'symbol:road_of_vanishing', name: '소멸의 여로', meso: 150 },
+        { key: 'name:옛 심볼', name: '옛 심볼', meso: 10 },
+      ])
+    })
+
+    // 비슷한 이름을 추정해 묶지 않는다. 공백과 NFC 만 맞춘다.
+    it('아이템 구매 · 판매 · 기타는 친 이름별이고 앞뒤 공백 · NFC 만 맞춘다. 이름이 없으면 이름 없음이다', () => {
+      const byDate = {
+        '2026-09-24': [
+          spend(null, '', { category: 'item_purchase', item: '칠흑 장신구 ', mesoAmount: 100 }),
+          spend(null, '', { category: 'item_purchase', item: '칠흑 장신구'.normalize('NFD'), mesoAmount: 50 }),
+          spend(null, '', { category: 'item_purchase', item: '칠흑장신구', mesoAmount: 20 }),
+          spend(null, '', { category: 'item_purchase', item: null, mesoAmount: 5 }),
+          income(null, '', { category: 'item_sale', item: '여명 펜던트', mesoAmount: 70 }),
+          income(null, '', { category: 'etc', item: null, mesoAmount: 30 }),
+        ],
+      }
+      expect(categoryTotalsBetween(byDate, WEEK, 'expense')[0].parts).toEqual([
+        { key: 'name:칠흑 장신구', name: '칠흑 장신구', meso: 150 },
+        { key: 'name:칠흑장신구', name: '칠흑장신구', meso: 20 },
+        { key: 'unnamed', name: '이름 없음', meso: 5 },
+      ])
+      const income_ = categoryTotalsBetween(byDate, WEEK, 'income')
+      expect(income_.find((total) => total.key === 'item_sale')?.parts).toEqual([
+        { key: 'name:여명 펜던트', name: '여명 펜던트', meso: 70 },
+      ])
+      expect(income_.find((total) => total.key === 'etc')?.parts).toEqual([{ key: 'unnamed', name: '이름 없음', meso: 30 }])
+    })
+
+    it('강화는 장비별이고 값을 못 매긴 건은 금액에 없다', () => {
+      const byDate = {
+        '2026-09-24': [
+          {
+            kind: 'enhancement' as const,
+            category: 'starforce' as const,
+            characterName: '낟낟',
+            payoutMeso: 300,
+            count: 3,
+            unpricedCount: 1,
+            items: [
+              { itemKey: 'arcane_shade_hat', targetItem: '아케인셰이드 투구', count: 2, costMeso: 300, unpricedCount: 0 },
+              { itemKey: null, targetItem: '모르는 장비', count: 1, costMeso: 0, unpricedCount: 1 },
+            ],
+          },
+        ],
+      }
+      expect(categoryTotalsBetween(byDate, WEEK, 'expense')[0].parts).toEqual([
+        { key: 'equipment:arcane_shade_hat', name: '아케인셰이드 투구', meso: 300 },
+      ])
+    })
+
+    // 팝오버는 스크롤이 없다. 도넛이 조각 넷 뒤를 묶듯 줄도 일곱 뒤를 묶는다.
+    it('줄이 일곱을 넘으면 그 외 n 으로 묶고, 남는 것이 하나면 묶지 않는다', () => {
+      const names = (count: number): DayRecord[] =>
+        Array.from({ length: count }, (_, index) =>
+          spend(null, '', { category: 'etc', item: `항목 ${index + 1}`, mesoAmount: 100 - index }),
+        )
+      const eight = categoryTotalsBetween({ '2026-09-24': names(8) }, WEEK, 'expense')[0].parts
+      expect(eight).toHaveLength(8)
+      expect(eight?.some((part) => part.key === 'rest')).toBe(false)
+
+      const nine = categoryTotalsBetween({ '2026-09-24': names(9) }, WEEK, 'expense')[0].parts
+      expect(nine).toHaveLength(8)
+      expect(nine?.[7]).toEqual({ key: 'rest', name: '그 외 2', meso: 93 + 92 })
+    })
   })
 })
 
