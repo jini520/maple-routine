@@ -2,9 +2,9 @@
 /**
  * 게임 데이터 번들 동기화. `node scripts/sync-game-data.mjs`
  *
- * 서버 `GET /v1/game-data` 를 받아 칸마다 `src/data/<표>.json` 을 다시 쓴다. 서버가 표의 기준이고
- * 번들은 그 사본이라, 빌드 전에 이것을 돌려 사본을 최신으로 맞춘다. `updatedAt` 도 응답 그대로 쓴다.
- * 앱이 켤 때 이 값과 서버 값이 같으면 사본을 그대로 쓰기 때문이다.
+ * 서버 `GET /v1/game-data` 를 받아 칸마다 `src/data/<칸>.json` 을 다시 쓴다. 서버가 표의 기준이고
+ * 번들은 그 사본이라, 빌드 전에 이것을 돌려 사본을 최신으로 맞춘다. 파일 이름은 칸 이름이고 본문은
+ * 응답 그대로다(선택 칸의 `null` 도 그대로). `updatedAt` 도 응답 그대로 쓴다.
  *
  * 서버가 아직 안 넣은 표(`updatedAt: null`)는 파일을 건드리지 않고 이름만 알린다.
  * `package.json` 의 `scripts` 에는 넣지 않는다. 그 칸이 OTA 지문 재료라서다.
@@ -14,28 +14,44 @@ import { fileURLToPath } from 'node:url'
 
 const GAME_DATA_URL = 'https://mapleroutine.store/v1/game-data'
 
-/**
- * 보스 칸을 파일 본문으로 바꾼다. 모양이 어긋나면 던진다.
- *
- * 검사는 파일을 쓰기 전에 걸리는 것만 본다. 값 하나하나의 계약은 앱의 `parseBossCatalog` 가 보고,
- * 그 검사가 실패하면 `src/lib/__tests__/catalog.spec.ts` 의 번들 사본 검사가 빨개진다.
- *
- * @param body 응답의 `bosses` 칸
- */
-export function renderBossesFile(body) {
-  if (typeof body !== 'object' || body === null) throw new Error('bosses 칸이 객체가 아닙니다')
-  if (typeof body.updatedAt !== 'string' || body.updatedAt === '') {
-    throw new Error('서버에 아직 보스 표가 없습니다(updatedAt 이 비었습니다). 관리 화면에서 먼저 넣으세요')
-  }
-  if (typeof body.rules !== 'object' || body.rules === null) throw new Error('bosses 칸에 rules 가 없습니다')
-  if (!Array.isArray(body.bosses) || body.bosses.length === 0) throw new Error('bosses 칸의 bosses 가 비었습니다')
+/** 칸 이름 열셋. 앱의 `GAME_DATA_SECTIONS`(`src/types/game-data.ts`)와 같은 차례다. */
+export const SECTIONS = [
+  'bosses',
+  'dropItems',
+  'bossDrops',
+  'dropBoxes',
+  'crystalPrices',
+  'worlds',
+  'spendCatalog',
+  'symbolCosts',
+  'contents',
+  'equipmentItems',
+  'enhancementCosts',
+  'mvpGrades',
+  'huntingGrounds',
+]
 
-  const file = { updatedAt: body.updatedAt, rules: body.rules, bosses: body.bosses }
-  return `${JSON.stringify(file, null, 2)}\n`
+/** 칸 이름의 번들 파일 경로. `dropItems` → `src/data/drop-items.json`. */
+export function fileNameOf(section) {
+  return `src/data/${section.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}.json`
 }
 
-/** 칸 이름 · 번들 파일 · 본문을 만드는 함수. 표가 옮겨 올 때마다 줄이 는다. */
-const SECTIONS = [{ key: 'bosses', path: 'src/data/bosses.json', render: renderBossesFile }]
+/**
+ * 칸 하나를 파일 본문으로 바꾼다. 모양이 어긋나면 던진다.
+ *
+ * 검사는 파일을 쓰기 전에 걸리는 것만 본다. 값 하나하나의 계약은 앱의 `parse` 가 보고,
+ * 그 검사가 실패하면 `src/data/__tests__/bundled-game-data.spec.ts` 가 빨개진다.
+ *
+ * @param section 칸 이름
+ * @param body 응답의 그 칸
+ */
+export function renderSectionFile(section, body) {
+  if (typeof body !== 'object' || body === null) throw new Error(`${section} 칸이 객체가 아닙니다`)
+  if (typeof body.updatedAt !== 'string' || body.updatedAt === '') {
+    throw new Error(`서버에 아직 ${section} 표가 없습니다(updatedAt 이 비었습니다). 관리 화면에서 먼저 넣으세요`)
+  }
+  return `${JSON.stringify(body, null, 2)}\n`
+}
 
 /**
  * 응답을 번들 파일 목록으로 바꾼다. 칸이 없거나 `updatedAt` 이 `null` 이면 그 파일은 건너뛰고 `skipped` 에 적는다.
@@ -49,12 +65,12 @@ export function renderGameDataFiles(body) {
   const files = []
   const skipped = []
   for (const section of SECTIONS) {
-    const value = body[section.key]
+    const value = body[section]
     if (typeof value !== 'object' || value === null || value.updatedAt == null) {
-      skipped.push(section.key)
+      skipped.push(section)
       continue
     }
-    files.push({ path: section.path, text: section.render(value) })
+    files.push({ path: fileNameOf(section), text: renderSectionFile(section, value) })
   }
   return { files, skipped }
 }

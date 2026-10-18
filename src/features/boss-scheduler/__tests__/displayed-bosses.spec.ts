@@ -10,8 +10,28 @@ import {
   type MatchedBoss,
 } from '../../../lib/boss/boss-matching'
 import { bossesInSection, bossKeyOfApiName } from '../../../lib/boss/bosses'
+import { BUNDLED_BOSS_CATALOG, setBossCatalog } from '../../../lib/boss/catalog'
+import type { BossCatalog } from '../../../types/boss-catalog'
 import type { BossContent, BossCycle, BossDifficulty } from '../../../types'
 import type { ManualTrackedItem } from '../../../types/scheduler'
+
+/** 시즌이 끝난 메이린을 다시 연 표. 번들은 서버가 적은 시즌 끝(2026-09-16)을 들어 지금 기간에는 안 선다. */
+function withMeirinOpen(): BossCatalog {
+  return {
+    ...BUNDLED_BOSS_CATALOG,
+    bosses: BUNDLED_BOSS_CATALOG.bosses.map((boss) =>
+      boss.key === 'meirin' ? { ...boss, from: undefined, until: undefined } : boss,
+    ),
+  }
+}
+
+beforeEach(() => {
+  setBossCatalog(withMeirinOpen())
+})
+
+afterAll(() => {
+  setBossCatalog(BUNDLED_BOSS_CATALOG)
+})
 
 /** `name` 은 API 원문이다. key 는 보스 표에서 찾고, 표에 없는 이름이면 `null` 이다. */
 function boss(

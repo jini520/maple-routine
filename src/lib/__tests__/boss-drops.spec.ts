@@ -470,14 +470,13 @@ describe('2026-09-17 패치: 아이템이 기간을 든다', () => {
     }
   })
 
-  it('소울 에테르는 패치 뒤의 주부터 교환 가능한 소비 후보로 선다', () => {
+  it('소울 에테르는 패치 뒤의 주부터 소비 후보로 선다', () => {
     expect(namesOf('kaling', 패치전)).not.toContain('1단계 소울 에테르')
 
     expect(getBossDropCandidates('kaling', 패치후, 패치후시각)).toContainEqual(
       expect.objectContaining({
         name: '1단계 소울 에테르',
         category: 'consumable',
-        note: '교환 가능',
         difficulties: ['normal', 'hard', 'extreme'],
       }),
     )

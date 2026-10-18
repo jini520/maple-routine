@@ -1,45 +1,35 @@
-import catalog from '../../data/scheduler-content-catalog.json'
+/**
+ * 컨텐츠의 공유 범위 · 누적 점수 · API 오류 덮기 · 갈래 주간 한도. 전부 컨텐츠 표(`contents` 칸)의 칸이다.
+ *
+ * 옛 카탈로그 파일이 들던 것을 컨텐츠 줄과 갈래 줄이 든다. 조회 함수의 이름과 뜻은 그대로다.
+ */
+import type { ContentCategoryKey, ContentRow, ContentSection, ShareScope } from '../../types/game-data'
 import type { EffectivePeriod } from '../boss/boss-profit-period'
-import type { ContentCategoryKey } from './content-categories'
-import { contentCategoryOf, findContent } from './contents'
+import { compact } from '../game-data/contract'
+import { derive } from '../game-data/table'
+import { contentCategoryOf, contentsTable } from './contents'
 
-export type ShareScope = 'character' | 'world' | 'account'
-
-interface CatalogEntry {
-  /** 컨텐츠 key. */
-  content: string
-  section: 'daily' | 'weekly'
-  /** today 공유 위젯의 글자. 갈래 머리글 아래에 서므로 갈래명을 뺀 나머지다. */
-  shortName: string
-  onlyWhenScheduled?: boolean
-  trustRegistrationFlag?: boolean
-}
+export type { ShareScope }
 
 export interface ContentCatalogEntry {
   contentKey: string
   scope: 'world' | 'account'
 }
 
-const WORLD_ENTRIES = catalog.worldShared as CatalogEntry[]
-const ACCOUNT_ENTRIES = catalog.accountShared as CatalogEntry[]
-const MAX_COUNT_OVERRIDES = catalog.maxCountOverrides as Record<string, number>
-const SHARED_GROUP_ORDER = catalog.sharedGroupOrder as ContentCategoryKey[]
-const CUMULATIVE_SCORES = catalog.cumulativeScores as string[]
-const GROUP_WEEKLY_LIMITS = catalog.groupWeeklyLimits as Partial<Record<ContentCategoryKey, number>>
+const index = derive(contentsTable, (table) => ({
+  byKey: new Map(table.contents.map((content) => [content.key, content])),
+  categoryByKey: new Map(table.categories.map((category) => [category.key, category])),
+  /** 캐릭터 범위가 아닌 줄. 표의 차례(일간 뒤 주간) 그대로다. */
+  shared: table.contents.filter((content) => content.shareScope !== 'character'),
+}))
 
-function findEntry(entries: CatalogEntry[], contentKey: string | null): CatalogEntry | undefined {
-  return contentKey === null ? undefined : entries.find((entry) => entry.content === contentKey)
+function rowOf(contentKey: string | null): ContentRow | undefined {
+  return contentKey === null ? undefined : index().byKey.get(contentKey)
 }
 
 /** 공유 범위. 컨텐츠 key 가 없는(표에 없는) 항목은 캐릭터 범위다. */
 export function getShareScope(contentKey: string | null): ShareScope {
-  if (findEntry(WORLD_ENTRIES, contentKey) !== undefined) {
-    return 'world'
-  }
-  if (findEntry(ACCOUNT_ENTRIES, contentKey) !== undefined) {
-    return 'account'
-  }
-  return 'character'
+  return rowOf(contentKey)?.shareScope ?? 'character'
 }
 
 /**
@@ -48,13 +38,12 @@ export function getShareScope(contentKey: string | null): ShareScope {
  * 나머지 공유 항목은 원장의 `active` 가 한 번 참이면 계속 참이다.
  */
 export function trustsRegistrationFlag(contentKey: string | null): boolean {
-  const entry = findEntry(WORLD_ENTRIES, contentKey) ?? findEntry(ACCOUNT_ENTRIES, contentKey)
-  return entry?.trustRegistrationFlag === true
+  return rowOf(contentKey)?.trustRegistrationFlag === true
 }
 
-/** 갈래의 주간 진행 한도(카탈로그의 `groupWeeklyLimits`). 한도가 없는 갈래면 `null`. */
+/** 갈래의 주간 진행 한도(갈래 줄의 `weeklyLimit`). 한도가 없는 갈래면 `null`. */
 export function getGroupWeeklyLimit(category: ContentCategoryKey): number | null {
-  return GROUP_WEEKLY_LIMITS[category] ?? null
+  return index().categoryByKey.get(category)?.weeklyLimit ?? null
 }
 
 /**
@@ -66,20 +55,20 @@ export function getGroupWeeklyLimit(category: ContentCategoryKey): number | null
  * (실측 : `[길드] 지하 수로` 73635 → 75889 → 79579, 07-30 리셋 통과에도 감소 없음).
  */
 export function isCumulativeScore(contentKey: string | null): boolean {
-  return contentKey !== null && CUMULATIVE_SCORES.includes(contentKey)
+  return rowOf(contentKey)?.cumulativeScore === true
 }
 
 export function getMaxCountOverride(contentKey: string | null): number | null {
-  return contentKey === null ? null : (MAX_COUNT_OVERRIDES[contentKey] ?? null)
+  return rowOf(contentKey)?.maxCountOverride ?? null
 }
 
-/** 공유 항목 하나. 카탈로그 줄에 컨텐츠 표의 이름 · 갈래 · 기간을 붙였다. `from` · `until` 은 그 줄이 서는 기간이다. */
+/** 공유 항목 하나. 컨텐츠 줄에서 위젯 글자 · 갈래 · 기간을 모았다. `from` · `until` 은 그 줄이 서는 기간이다. */
 export interface SharedContentEntry extends EffectivePeriod {
   contentKey: string
   /** 화면에 그리는 짧은 이름. 갈래명이 위에 있어 그것을 뺀 나머지다. */
   shortName: string
   category: ContentCategoryKey
-  section: 'daily' | 'weekly'
+  section: ContentSection
   scope: 'world' | 'account'
   /**
    * 참이면 **추적 중인 캐릭터 중 누구의 스케줄러에도 없을 때 그 줄을 안 그린다**
@@ -96,19 +85,18 @@ export interface SharedContentGroup {
   entries: readonly SharedContentEntry[]
 }
 
-function toSharedEntry(entry: CatalogEntry, scope: 'world' | 'account'): SharedContentEntry {
-  const content = findContent(entry.content)
-  return {
-    contentKey: entry.content,
-    shortName: entry.shortName,
-    // 카탈로그의 key 가 표에 있는지는 정합성 테스트가 지킨다.
-    category: content!.category,
-    section: entry.section,
-    scope,
-    onlyWhenScheduled: entry.onlyWhenScheduled === true,
-    from: content?.from,
-    until: content?.until,
-  }
+function toSharedEntry(row: ContentRow): SharedContentEntry {
+  return compact({
+    contentKey: row.key,
+    // 공유 줄은 위젯 글자를 든다(서버 쓰기 검사). 없으면 좁은 자리 이름으로 선다.
+    shortName: row.sharedShortName ?? row.shortName,
+    category: row.category,
+    section: row.section,
+    scope: row.shareScope === 'account' ? ('account' as const) : ('world' as const),
+    onlyWhenScheduled: row.onlyWhenScheduled,
+    from: row.from,
+    until: row.until,
+  })
 }
 
 /**
@@ -116,51 +104,39 @@ function toSharedEntry(entry: CatalogEntry, scope: 'world' | 'account'): SharedC
  *
  * ## 월드/계정이 축이 아니다
  *
- * 두 목록을 **합쳐서** 갈래로 다시 가른다. 월드 공유는 응답이 마지막 접속 월드 것이라 월드로 가를
+ * 월드 공유와 계정 공유를 **합쳐서** 갈래로 가른다. 월드 공유는 응답이 마지막 접속 월드 것이라 월드로 가를
  * 수 없고, 갈래로 묶으면 그 축을 화면이 아예 주장하지 않게 된다. `scope` 는
  * 그래도 나른다. 그리는 데 안 쓰지만 다계정 처리(열린 질문)가 오면 필요한 값이다.
  *
  * ## 순서의 출처가 둘이다
  *
- * - **갈래 순서**는 `sharedGroupOrder` 가 손으로 적는다. 배열을 이어 읽은 첫 등장 순서와 지금은
- *   같지만 그것에 맡기지 않는다. 두 배열은 순서가 아니라 공유 단위로 갈려 있어, 계정 공유
- *   컨텐츠가 하나 붙는 날 화면 순서가 조용히 바뀐다.
- * - **갈래 안의 항목 순서**는 `worldShared` → `accountShared` 를 이어 읽은 순서 그대로다.
+ * - **갈래 순서**는 갈래 줄의 `sharedOrder` 다. 컨텐츠 줄을 읽은 첫 등장 순서와 지금은 같지만 그것에 맡기지
+ *   않는다. 계정 공유 컨텐츠가 하나 붙는 날 화면 순서가 조용히 바뀐다.
+ * - **갈래 안의 항목 순서**는 컨텐츠 표의 차례(일간 뒤 주간, 섹션 안은 관리 화면 차례) 그대로다.
  *
- * `sharedGroupOrder` 에 없는 갈래는 **버리지 않고 뒤에 붙인다**. 카탈로그에 항목을 더하고 순서를
- * 안 적었을 때 화면에서 조용히 사라지는 것보다 순서가 어긋나는 편이 낫다.
+ * `sharedOrder` 가 없는 갈래는 **버리지 않고 뒤에 붙인다**. 항목을 더하고 순서를 안 적었을 때 화면에서 조용히
+ * 사라지는 것보다 순서가 어긋나는 편이 낫다.
  */
 export function getSharedContentGroups(): SharedContentGroup[] {
-  const entries: SharedContentEntry[] = [
-    ...WORLD_ENTRIES.map((entry): SharedContentEntry => toSharedEntry(entry, 'world')),
-    ...ACCOUNT_ENTRIES.map((entry): SharedContentEntry => toSharedEntry(entry, 'account')),
-  ]
-
+  const { shared, categoryByKey } = index()
   const groups = new Map<ContentCategoryKey, SharedContentEntry[]>()
-  for (const entry of entries) {
-    const bucket = groups.get(entry.category)
-    if (bucket === undefined) groups.set(entry.category, [entry])
-    else bucket.push(entry)
+  for (const row of shared) {
+    const bucket = groups.get(row.category)
+    if (bucket === undefined) groups.set(row.category, [toSharedEntry(row)])
+    else bucket.push(toSharedEntry(row))
   }
 
-  const ordered = [...groups.keys()].sort((a, b) => {
-    const rankA = SHARED_GROUP_ORDER.indexOf(a)
-    const rankB = SHARED_GROUP_ORDER.indexOf(b)
-    return (rankA === -1 ? SHARED_GROUP_ORDER.length : rankA) -
-      (rankB === -1 ? SHARED_GROUP_ORDER.length : rankB)
-  })
+  const rankOf = (category: ContentCategoryKey): number =>
+    categoryByKey.get(category)?.sharedOrder ?? Number.MAX_SAFE_INTEGER
+  const ordered = [...groups.keys()].sort((a, b) => rankOf(a) - rankOf(b))
 
   return ordered.map((category) => ({ category, entries: groups.get(category) ?? [] }))
 }
 
-export function getContentCatalogEntries(section: 'daily' | 'weekly'): ContentCatalogEntry[] {
-  const world = WORLD_ENTRIES.filter((entry) => entry.section === section).map(
-    (entry): ContentCatalogEntry => ({ contentKey: entry.content, scope: 'world' }),
-  )
-  const account = ACCOUNT_ENTRIES.filter((entry) => entry.section === section).map(
-    (entry): ContentCatalogEntry => ({ contentKey: entry.content, scope: 'account' }),
-  )
-  return [...world, ...account]
+export function getContentCatalogEntries(section: ContentSection): ContentCatalogEntry[] {
+  return index()
+    .shared.filter((row) => row.section === section)
+    .map((row): ContentCatalogEntry => ({ contentKey: row.key, scope: row.shareScope === 'account' ? 'account' : 'world' }))
 }
 
 /** 컨텐츠의 갈래. 컨텐츠 표에서 찾는다. 표에 없는 컨텐츠는 `null` 이다. */

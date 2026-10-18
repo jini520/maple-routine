@@ -50,7 +50,7 @@ jest.mock('react-native-google-mobile-ads', () => ({
 }))
 
 // 게임 데이터 표 덮기는 네트워크와 저장소를 만지는 곁가지다. 여기서 보는 것은 배선뿐이라 몸통을 비운다.
-jest.mock('../features/game-data/hydrate', () => ({
+jest.mock('../features/game-data/query', () => ({
   __esModule: true,
   hydrateGameData: jest.fn(async () => {}),
 }))
@@ -59,7 +59,7 @@ import * as nativePorts from '../native/ports'
 import * as storagePorts from '../storage/ports'
 
 import { installPorts, loadGameData } from '../boot'
-import { hydrateGameData } from '../features/game-data/hydrate'
+import { hydrateGameData } from '../features/game-data/query'
 import { rnBrowserPort } from '../native/adapters/rn-browser'
 import { rnLiveUpdatePort } from '../native/adapters/rn-live-update'
 import { rnAdsPort } from '../native/adapters/rn-ads'

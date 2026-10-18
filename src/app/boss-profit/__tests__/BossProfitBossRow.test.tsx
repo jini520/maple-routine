@@ -5,9 +5,8 @@
 // "0원 벌었다"가 같은 화면이 된다.
 import { act, fireEvent, within } from '@testing-library/react-native'
 
-import valuableDropsData from '../../../data/valuable-drops.json'
-import { dropItemNameOf } from '../../../lib/drop/drop-items'
-import { isValuableDropItem } from '../../../lib/drop/valuable-drops'
+import dropItemsData from '../../../data/drop-items.json'
+import { dropItemNameOf, isValuableDropItem } from '../../../lib/drop/drop-items'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
 
@@ -204,7 +203,7 @@ describe('BossProfitBossRow: 드롭 지시자', () => {
 // 고가 드롭 행의 숨쉬는 배경을 걷었다(사용자 지시, 다시 디자인할 예정). 같은 효과가 가격 기록
 // 화면에는 그대로 남아 있어 컴포넌트 자체는 산다.
 describe('BossProfitBossRow: 고가 드롭 배경이 없다', () => {
-  const 고가키 = valuableDropsData.items[0]
+  const 고가키 = dropItemsData.items.filter((item) => item.valuable)[0].key
 
   it('고가 목록에 든 아이템이어도 배경을 안 깐다', async () => {
     const { queryByTestId } = await renderProfit(
@@ -224,7 +223,7 @@ describe('BossProfitBossRow: 고가 드롭 배경이 없다', () => {
 // 안 된다. 규칙 자체는 `lib/drop/drop-order` 가 갖고 여기서는 **화면이 그것을 쓰는가**만 본다.
 // 차례는 팝오버 목록에서 읽는다. 스택은 그림뿐이라 이름을 안 든다.
 describe('BossProfitBossRow: 아이템 차례', () => {
-  const 고가키 = valuableDropsData.items[0]
+  const 고가키 = dropItemsData.items.filter((item) => item.valuable)[0].key
   const 고가아이템 = dropItemNameOf(고가키, 고가키)
 
   /** 팝오버를 열고 목록에 선 이름을 **선 차례대로** 읽는다. */

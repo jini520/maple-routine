@@ -74,7 +74,7 @@ describe('bosses', () => {
 describe('bosses: 표가 덮이면', () => {
   const 덮은표: BossCatalog = {
     updatedAt: '2026-10-15T01:00:00.000Z',
-    rules: { weeklyBossSelectionLimit: 10, weeklyCrystalSaleLimit: 80 },
+    rules: { weeklyBossSelectionLimit: 10, weeklyCrystalSaleLimit: 80, defaultMaxPartySize: 6 },
     bosses: [
       {
         key: 'black_mage',

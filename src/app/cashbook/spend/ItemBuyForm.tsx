@@ -19,7 +19,7 @@ import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
-import { SPEND_TARIFF_PERCENT, withTariffMeso } from '../../../lib/cashbook/spend-catalog'
+import { spendTariffPercent, withTariffMeso } from '../../../lib/cashbook/spend-catalog'
 import {
   ITEM_KINDS,
   countsQuantity,
@@ -35,10 +35,12 @@ import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 /**
  * 관세 조각 둘. **`없음` 이 첫 조각이고 기본값**이다.
  *
- * 요율은 `SPEND_TARIFF_PERCENT` **하나에서 나온다**. 여기 숫자를 적으면 참조표가 바뀌는 날
+ * 요율은 `spendTariffPercent()` **하나에서 나온다**. 여기 숫자를 적으면 참조표가 바뀌는 날
  * 글자와 셈이 갈린다.
  */
-const TARIFF_OPTIONS = ['없음', `${SPEND_TARIFF_PERCENT}%`] as const
+function tariffOptions(): readonly [string, string] {
+  return ['없음', `${spendTariffPercent()}%`]
+}
 
 export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
@@ -190,8 +192,8 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
          */
         <FieldRow label="관세" testID="spend-sheet-tariff">
           <Segment
-            options={TARIFF_OPTIONS}
-            selected={hasTariff ? TARIFF_OPTIONS[1] : TARIFF_OPTIONS[0]}
+            options={tariffOptions()}
+            selected={hasTariff ? tariffOptions()[1] : tariffOptions()[0]}
             onSelect={(option) => setHasTariff(option !== '없음')}
           />
         </FieldRow>

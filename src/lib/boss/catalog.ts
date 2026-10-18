@@ -1,7 +1,7 @@
 /**
  * 지금 앱이 쓰는 보스 표. 번들 `bosses.json` 으로 시작하고 기기 사본과 서버 응답이 덮는다.
  *
- * `bosses.ts` 의 조회 함수가 전부 이 값을 읽는다. 덮는 흐름은 `features/bosses/store` 에 있다.
+ * `bosses.ts` 의 조회 함수가 전부 이 값을 읽는다. 덮는 흐름은 `features/game-data/query` 에 있다.
  * 서버 응답과 기기 사본을 받는 자리가 같은 검사(`parseBossCatalog`)를 거친다.
  */
 import bundled from '../../data/bosses.json'
@@ -9,105 +9,60 @@ import {
   BOSS_CATALOG_CYCLES,
   type BossCatalog,
   type BossCatalogBoss,
-  type BossCatalogCycle,
   type BossCatalogDifficulty,
   type BossCatalogRules,
 } from '../../types/boss-catalog'
-import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
+import { BOSS_DIFFICULTIES } from '../../types/scheduler'
+import {
+  compact,
+  isNonEmptyString,
+  isOneOf,
+  isPeriodText,
+  isPositiveInteger,
+  isRow,
+  optional,
+  rowsOf,
+  uniqueBy,
+  updatedAtOf,
+  type Row,
+} from '../game-data/contract'
+import { bundledTable } from '../game-data/table'
 
-export const BUNDLED_BOSS_CATALOG: BossCatalog = bundled as BossCatalog
-
-let current: BossCatalog = BUNDLED_BOSS_CATALOG
-const listeners = new Set<() => void>()
-
-export function getBossCatalog(): BossCatalog {
-  return current
+function toDifficulty(row: Row): BossCatalogDifficulty | null {
+  if (!isOneOf(row.difficulty, BOSS_DIFFICULTIES) || !isPositiveInteger(row.requiredLevel)) return null
+  const maxPartySize = optional(row.maxPartySize, isPositiveInteger)
+  const from = optional(row.from, isPeriodText)
+  const until = optional(row.until, isPeriodText)
+  if (maxPartySize === false || from === false || until === false) return null
+  return compact({ difficulty: row.difficulty, requiredLevel: row.requiredLevel, maxPartySize, from, until })
 }
 
-/** 표를 통째로 바꾸고 구독자에게 알린다. 같은 객체면 아무 일도 없다. */
-export function setBossCatalog(next: BossCatalog): void {
-  if (next === current) return
-  current = next
-  for (const listener of listeners) listener()
-}
-
-/** @returns 구독을 푸는 함수 */
-export function subscribeBossCatalog(listener: () => void): () => void {
-  listeners.add(listener)
-  return () => {
-    listeners.delete(listener)
-  }
-}
-
-function isPositiveInteger(value: unknown): value is number {
-  return Number.isInteger(value) && (value as number) > 0
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value !== ''
-}
-
-function toDifficulty(value: unknown): BossCatalogDifficulty | null {
-  if (typeof value !== 'object' || value === null) return null
-  const row = value as Record<string, unknown>
-  if (!(BOSS_DIFFICULTIES as readonly unknown[]).includes(row.difficulty)) return null
-  if (!isPositiveInteger(row.requiredLevel)) return null
-  const from = toPeriodText(row.from)
-  const until = toPeriodText(row.until)
+function toBoss(row: Row): BossCatalogBoss | null {
+  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isNonEmptyString(row.alias)) return null
+  if (!isNonEmptyString(row.portraitSlug) || !isOneOf(row.cycle, BOSS_CATALOG_CYCLES)) return null
+  const difficulties = rowsOf(row.difficulties, toDifficulty)
+  if (difficulties === null || !uniqueBy(difficulties, (each) => each.difficulty)) return null
+  const from = optional(row.from, isPeriodText)
+  const until = optional(row.until, isPeriodText)
   if (from === false || until === false) return null
-  return {
-    difficulty: row.difficulty as BossDifficulty,
-    requiredLevel: row.requiredLevel,
-    ...(from === undefined ? {} : { from }),
-    ...(until === undefined ? {} : { until }),
-  }
-}
-
-function toBoss(value: unknown): BossCatalogBoss | null {
-  if (typeof value !== 'object' || value === null) return null
-  const boss = value as Record<string, unknown>
-  if (!isNonEmptyString(boss.key) || !isNonEmptyString(boss.name) || !isNonEmptyString(boss.alias)) return null
-  if (!isNonEmptyString(boss.portraitSlug)) return null
-  if (!(BOSS_CATALOG_CYCLES as readonly unknown[]).includes(boss.cycle)) return null
-  if (!Array.isArray(boss.difficulties) || boss.difficulties.length === 0) return null
-
-  const difficulties: BossCatalogDifficulty[] = []
-  for (const raw of boss.difficulties) {
-    const row = toDifficulty(raw)
-    if (row === null || difficulties.some((d) => d.difficulty === row.difficulty)) return null
-    difficulties.push(row)
-  }
-  const from = toPeriodText(boss.from)
-  const until = toPeriodText(boss.until)
-  if (from === false || until === false) return null
-  return {
-    key: boss.key,
-    name: boss.name,
-    alias: boss.alias,
-    cycle: boss.cycle as BossCatalogCycle,
-    portraitSlug: boss.portraitSlug,
+  return compact({
+    key: row.key,
+    name: row.name,
+    alias: row.alias,
+    cycle: row.cycle,
+    portraitSlug: row.portraitSlug,
     difficulties,
-    ...(from === undefined ? {} : { from }),
-    ...(until === undefined ? {} : { until }),
-  }
-}
-
-const PERIOD_TEXT = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/
-
-/** 기간 글자. 없음(`null` · 빠짐)은 `undefined`, 모양이 틀리면 `false`. */
-function toPeriodText(value: unknown): string | undefined | false {
-  if (value === null || value === undefined) return undefined
-  return typeof value === 'string' && PERIOD_TEXT.test(value) ? value : false
+    from,
+    until,
+  })
 }
 
 function toRules(value: unknown): BossCatalogRules | null {
-  if (typeof value !== 'object' || value === null) return null
-  const rules = value as Record<string, unknown>
-  if (!isPositiveInteger(rules.weeklyBossSelectionLimit) || !isPositiveInteger(rules.weeklyCrystalSaleLimit)) return null
-  return {
-    weeklyBossSelectionLimit: rules.weeklyBossSelectionLimit,
-    weeklyCrystalSaleLimit: rules.weeklyCrystalSaleLimit,
-  }
+  if (!isRow(value)) return null
+  const { weeklyBossSelectionLimit, weeklyCrystalSaleLimit, defaultMaxPartySize } = value
+  if (!isPositiveInteger(weeklyBossSelectionLimit) || !isPositiveInteger(weeklyCrystalSaleLimit)) return null
+  if (!isPositiveInteger(defaultMaxPartySize)) return null
+  return { weeklyBossSelectionLimit, weeklyCrystalSaleLimit, defaultMaxPartySize }
 }
 
 /**
@@ -117,19 +72,31 @@ function toRules(value: unknown): BossCatalogRules | null {
  * 들고 있던 사본이 그대로 선다.
  */
 export function parseBossCatalog(value: unknown): BossCatalog | null {
-  if (typeof value !== 'object' || value === null) return null
-  const catalog = value as Record<string, unknown>
-
-  if (catalog.updatedAt !== null && typeof catalog.updatedAt !== 'string') return null
-  const rules = toRules(catalog.rules)
+  if (!isRow(value)) return null
+  const updatedAt = updatedAtOf(value)
+  if (updatedAt === false) return null
+  const rules = toRules(value.rules)
   if (rules === null) return null
-  if (!Array.isArray(catalog.bosses) || catalog.bosses.length === 0) return null
+  const bosses = rowsOf(value.bosses, toBoss)
+  if (bosses === null || !uniqueBy(bosses, (boss) => boss.key)) return null
+  return { updatedAt, rules, bosses }
+}
 
-  const bosses: BossCatalogBoss[] = []
-  for (const raw of catalog.bosses) {
-    const boss = toBoss(raw)
-    if (boss === null || bosses.some((b) => b.key === boss.key)) return null
-    bosses.push(boss)
-  }
-  return { updatedAt: catalog.updatedAt, rules, bosses }
+export const bossCatalogTable = bundledTable('bosses', bundled, parseBossCatalog)
+
+/** 번들 사본이 계약을 통과한 값. 서버도 기기 사본도 없는 첫 실행이 이것으로 선다. */
+export const BUNDLED_BOSS_CATALOG: BossCatalog = bossCatalogTable.get()
+
+export function getBossCatalog(): BossCatalog {
+  return bossCatalogTable.get()
+}
+
+/** 표를 통째로 바꾸고 구독자에게 알린다. 같은 객체면 아무 일도 없다. */
+export function setBossCatalog(next: BossCatalog): void {
+  bossCatalogTable.set(next)
+}
+
+/** @returns 구독을 푸는 함수 */
+export function subscribeBossCatalog(listener: () => void): () => void {
+  return bossCatalogTable.subscribe(listener)
 }

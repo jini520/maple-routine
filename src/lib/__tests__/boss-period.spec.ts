@@ -3,12 +3,15 @@ import { activeBossesInSection, activeDifficultiesOf, isBossActiveIn, withOwnDif
 import { BUNDLED_BOSS_CATALOG, parseBossCatalog, setBossCatalog } from '../boss/catalog'
 import type { BossCatalog } from '../../types/boss-catalog'
 
+/** 메이린의 기간을 넘긴 값으로 바꾼 표. 번들은 서버가 적은 시즌 끝(2026-09-16)을 들어 먼저 비운다. */
 function withMeirinUntil(until: string | undefined, from?: string): BossCatalog {
   return {
     ...BUNDLED_BOSS_CATALOG,
     updatedAt: '2026-10-16T00:00:00.000Z',
     bosses: BUNDLED_BOSS_CATALOG.bosses.map((boss) =>
-      boss.key === 'meirin' ? { ...boss, ...(from === undefined ? {} : { from }), ...(until === undefined ? {} : { until }) } : boss,
+      boss.key === 'meirin'
+        ? { ...boss, from: undefined, until: undefined, ...(from === undefined ? {} : { from }), ...(until === undefined ? {} : { until }) }
+        : boss,
     ),
   }
 }
@@ -52,6 +55,7 @@ describe('isBossActiveIn', () => {
 describe('activeBossesInSection', () => {
   it('지금 기간에 유효한 보스만 세운다', () => {
     const now = new Date('2026-10-23T03:00:00+09:00')
+    setBossCatalog(withMeirinUntil(undefined))
     expect(activeBossesInSection('eventWeekly', now).map((b) => b.key)).toEqual(['meirin'])
 
     setBossCatalog(withMeirinUntil('2026-10-22'))
@@ -67,8 +71,8 @@ describe('parseBossCatalog: 유효 기간', () => {
     expect(meirin).toMatchObject({ from: '2026-07-03', until: '2026-10-22T10:00' })
 
     const nulled = parseBossCatalog({
-      ...BUNDLED_BOSS_CATALOG,
-      bosses: BUNDLED_BOSS_CATALOG.bosses.map((b) => ({ ...b, from: null, until: null })),
+      ...withMeirinUntil(undefined),
+      bosses: withMeirinUntil(undefined).bosses.map((b) => ({ ...b, from: null, until: null })),
     })
     expect(nulled?.bosses.find((b) => b.key === 'meirin')).not.toHaveProperty('until')
   })

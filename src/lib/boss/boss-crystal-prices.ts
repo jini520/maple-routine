@@ -1,25 +1,67 @@
-import bossCrystalPricesData from '../../data/boss-crystal-prices.json'
-import type { BossDifficulty } from '../../types'
+/**
+ * 결정석 가격 표(`crystalPrices` 칸) 조회. 보스 · 난이도 · 기간으로 가격 줄 하나를 고른다.
+ *
+ * 파티 인원 상한은 여기 없다. 보스 표의 난이도 줄이 들고 `lib/boss/bosses` 의 `getMaxPartySize` 가 읽는다.
+ */
+import bundled from '../../data/crystal-prices.json'
+import type { CrystalPriceRow, CrystalPricesTable } from '../../types/game-data'
+import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
+import {
+  compact,
+  isNonEmptyString,
+  isNonNegativeInteger,
+  isOneOf,
+  isPeriodText,
+  isRow,
+  optional,
+  rowsOf,
+  updatedAtOf,
+  type Row,
+} from '../game-data/contract'
+import { bundledTable, derive } from '../game-data/table'
 import { isEffectiveAnytimeIn, isEffectiveIn } from './boss-profit-period'
 
-export interface CrystalPriceEntry {
-  /** 보스 key. */
-  boss: string
-  /** 난이도 key. */
-  difficulty: string
-  priceMeso: number | null
-  maxPartySize?: number
-  /** 이 때부터 유효하다(KST `YYYY-MM-DD` 또는 `YYYY-MM-DDTHH:mm`). 없으면 처음부터다. */
-  from?: string
-  /** 이 때 전까지 유효하다. 없으면 끝이 없다. */
-  until?: string
+export type CrystalPriceEntry = CrystalPriceRow
+
+function toPrice(row: Row): CrystalPriceRow | null {
+  if (!isNonEmptyString(row.boss) || !isOneOf(row.difficulty, BOSS_DIFFICULTIES)) return null
+  if (!isNonNegativeInteger(row.priceMeso)) return null
+  const from = optional(row.from, isPeriodText)
+  const until = optional(row.until, isPeriodText)
+  if (from === false || until === false) return null
+  return compact({ boss: row.boss, difficulty: row.difficulty, priceMeso: row.priceMeso, from, until })
 }
 
-export const CRYSTAL_PRICES = bossCrystalPricesData.prices as CrystalPriceEntry[]
-export const DEFAULT_MAX_PARTY_SIZE = bossCrystalPricesData.partySizeScaling.defaultMaxPartySize
+/** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */
+export function parseCrystalPrices(value: unknown): CrystalPricesTable | null {
+  if (!isRow(value)) return null
+  const updatedAt = updatedAtOf(value)
+  if (updatedAt === false) return null
+  const prices = rowsOf(value.prices, toPrice)
+  if (prices === null) return null
+  return { updatedAt, prices }
+}
 
-function isPair(entry: CrystalPriceEntry, bossKey: string, difficulty: BossDifficulty): boolean {
-  return entry.boss === bossKey && entry.difficulty === difficulty
+export const crystalPricesTable = bundledTable('crystalPrices', bundled, parseCrystalPrices)
+
+function pairKey(bossKey: string, difficulty: string): string {
+  return `${bossKey}|${difficulty}`
+}
+
+/** 보스 · 난이도마다 가격 줄들. 패치로 값이 바뀐 조합은 줄이 여럿이다. */
+const pricesByPair = derive(crystalPricesTable, (table) => {
+  const byPair = new Map<string, CrystalPriceRow[]>()
+  for (const row of table.prices) {
+    const key = pairKey(row.boss, row.difficulty)
+    const rows = byPair.get(key)
+    if (rows === undefined) byPair.set(key, [row])
+    else rows.push(row)
+  }
+  return byPair
+})
+
+function pricesOf(bossKey: string, difficulty: BossDifficulty): readonly CrystalPriceRow[] {
+  return pricesByPair().get(pairKey(bossKey, difficulty)) ?? []
 }
 
 /**
@@ -36,15 +78,10 @@ export function findPriceEntry(
   periodKey: string,
   now: Date,
 ): CrystalPriceEntry | undefined {
-  return CRYSTAL_PRICES.find((entry) => isPair(entry, bossKey, difficulty) && isEffectiveIn(entry, periodKey, now))
+  return pricesOf(bossKey, difficulty).find((entry) => isEffectiveIn(entry, periodKey, now))
 }
 
 /** 그 기간에 가격을 아는 조합인가. 시계를 안 본다. 기록을 지우는 판정이 쓴다. */
 export function hasPriceEntry(bossKey: string, difficulty: BossDifficulty, periodKey: string): boolean {
-  return CRYSTAL_PRICES.some((entry) => isPair(entry, bossKey, difficulty) && isEffectiveAnytimeIn(entry, periodKey))
-}
-
-/** 파티 인원 상한. 기간을 안 탄다. 한 조합의 줄들이 같은 값을 드는 것은 정합성 테스트가 지킨다. */
-export function getMaxPartySize(bossKey: string, difficulty: BossDifficulty): number {
-  return CRYSTAL_PRICES.find((entry) => isPair(entry, bossKey, difficulty))?.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE
+  return pricesOf(bossKey, difficulty).some((entry) => isEffectiveAnytimeIn(entry, periodKey))
 }

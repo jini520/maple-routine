@@ -1,8 +1,9 @@
 /**
- * 지출 참조표를 읽는 자리. 화면이 JSON 을 직접 안 뒤지게 하는 조회 함수들.
+ * 지출 참조표(`spendCatalog` 칸)를 읽는 자리. 화면이 표를 직접 안 뒤지게 하는 조회 함수들.
  *
- * 파일 자체는 게임 레퍼런스라 **사용자가 준 값 그대로**이고 형태는 테스트가 붙든다. 이 모듈은
- * 그것을 갈래 → 묶음 → 항목으로 집어 주고 환산 둘(메포→메소 · 관세)을 든다.
+ * 응답은 묶음 · 타일 · 항목 · 축 값 · 형태가 납작한 줄 표다. 여기서 항목 줄에 축 값(`options`)과 형태(`forms`)를
+ * 붙여 `SpendCatalogItem` 을 만들고, 그것을 갈래 → 묶음 → 항목으로 집어 주며 환산 둘(메포→메소 · 관세)을 든다.
+ * 값은 사용자가 준 것이고 관리 화면이 고친다.
  *
  * **묶음을 앱이 다시 묶지 않는다.** `category` 는 앱이 정한 축이고 `group` 은 사용자가 적어 준 이름
  * 그대로다. 차례도 파일 순서를 지킨다. 이름순으로 정렬하면 `에픽던전 1단계 · 2단계` 처럼 의도한
@@ -10,10 +11,35 @@
  *
  * 나눗셈은 둘 다 버린다. 이 저장소의 돈 계산이 그렇다.
  */
-import spendCatalog from '../../data/spend-catalog.json'
+import bundled from '../../data/spend-catalog.json'
+import type {
+  SpendCatalogRules,
+  SpendCatalogTable,
+  SpendGroupRow,
+  SpendItemFormRow,
+  SpendItemOptionRow,
+  SpendItemRow,
+  SpendTileRow,
+} from '../../types/game-data'
 import { isEffectiveIn, type EffectivePeriod } from '../boss/boss-profit-period'
 import { resetWeekStartOf } from '../calendar'
-import { SPEND_FORMS, spendFormOf, type SpendCategoryKey } from './categories'
+import {
+  compact,
+  isBoolean,
+  isNonEmptyString,
+  isNonNegativeInteger,
+  isOneOf,
+  isPeriodText,
+  isPositiveInteger,
+  isRow,
+  optional,
+  rowsOf,
+  uniqueBy,
+  updatedAtOf,
+  type Row,
+} from '../game-data/contract'
+import { bundledTable, derive } from '../game-data/table'
+import { SPEND_CATEGORIES, SPEND_FORMS, spendFormOf, type SpendCategoryKey } from './categories'
 
 /** 항목 줄. `from` · `until` 은 그 항목이 서는 기간이다(KST 날짜). */
 export interface SpendCatalogItem extends EffectivePeriod {
@@ -55,10 +81,8 @@ export interface SpendCatalogItem extends EffectivePeriod {
    * 지출에서 빠진다.
    */
   readonly rewardCoins?: number
-  /** 사용자가 준 한도 문장. **화면에 안 쓴다**. `maxQuantity` 숫자의 출처로만 남는다. */
-  readonly limit?: string
   /**
-   * 기록 한 건의 수량 상한. `limit` 문장에서 사용자가 고른 숫자다.
+   * 기록 한 건의 수량 상한. 사용자가 한도 문장에서 고른 숫자다.
    *
    * 문장을 파싱해 뽑지 않는다. 몬스터 파크의 문장은 축이 셋(월드당 14 · 캐릭터당 7 · 무료 2)이라
    * 어느 것이 한 건의 상한인지 **글에는 안 적혀 있다**. 앱이 고르면 그 고름이 추정이 된다
@@ -68,9 +92,6 @@ export interface SpendCatalogItem extends EffectivePeriod {
    * 그것을 합치지 않는다. 세는 것은 사람이 한다.
    */
   readonly maxQuantity?: number
-  readonly note?: string
-  /** 메이플 포인트 샵은 **기간 운영**이라 시즌마다 상품이 갈린다. */
-  readonly seasonal?: boolean
 }
 
 /**
@@ -117,25 +138,154 @@ export interface SpendCatalogGroup {
   readonly active: boolean
 }
 
-const ITEMS = spendCatalog.items as readonly SpendCatalogItem[]
+const SPEND_CATEGORY_KEYS = SPEND_CATEGORIES.map((category) => category.key)
+const SPEND_FORM_KEYS = SPEND_FORMS.map((form) => form.key)
+const CURRENCIES = ['point', 'meso'] as const
 
-/** 묶음 표. `active` 는 닫힌 묶음만 적는다(없으면 열린 것이다). 사유는 `SpendCatalogGroup.active` 주석. */
-const GROUPS = spendCatalog.groups as Readonly<Record<string, { readonly name: string; readonly active?: boolean }>>
-
-const TILES = spendCatalog.tiles as Readonly<Record<string, { readonly name: string; readonly icon?: SpendTileIcon }>>
-
-/** 관세율. **화면이 `* 1.1` 을 들면 게임 수치가 코드에 박히는 자리**가 된다. */
-export const SPEND_TARIFF_PERCENT = spendCatalog.tariffPercent
-
-/** 시세의 단위. `'pointPer100mMeso'`(1억 메소당 메포). 이름이 방향을 든다. */
-export const SPEND_MARKET_RATE_UNIT = spendCatalog.marketRateUnit
-
-/** 세라자르 주화. 에픽던전 추가 리워드가 주고 상점에 팔면 메소가 된다. 이름 · 그림 · 상점 판매가. */
-export const SPEND_REWARD_COIN = spendCatalog.rewardCoin as {
-  readonly name: string
-  readonly icon: string
-  readonly priceMeso: number
+function toRules(value: unknown): SpendCatalogRules | null {
+  if (!isRow(value) || !isNonNegativeInteger(value.tariffPercent) || !isNonNegativeInteger(value.rewardCoinPriceMeso)) {
+    return null
+  }
+  return { tariffPercent: value.tariffPercent, rewardCoinPriceMeso: value.rewardCoinPriceMeso }
 }
+
+function toGroup(row: Row): SpendGroupRow | null {
+  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isBoolean(row.active)) return null
+  if (!isOneOf(row.category, SPEND_CATEGORY_KEYS)) return null
+  return { key: row.key, name: row.name, category: row.category, active: row.active }
+}
+
+function toTile(row: Row): SpendTileRow | null {
+  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
+  const iconFile = optional(row.iconFile, isNonEmptyString)
+  const iconMap = optional(row.iconMap, isNonEmptyString)
+  if (iconFile === false || iconMap === false) return null
+  return compact({ key: row.key, name: row.name, iconFile, iconMap })
+}
+
+function toItem(row: Row): SpendItemRow | null {
+  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.group) || !isNonEmptyString(row.tile)) return null
+  if (!isNonEmptyString(row.name) || !isNonEmptyString(row.unit) || !isOneOf(row.currency, CURRENCIES)) return null
+  // null 은 경매장 값이라 매번 다른 항목이다. 빠진 칸이 아니라 값이라 그대로 둔다.
+  if (row.unitPrice !== null && !isNonNegativeInteger(row.unitPrice)) return null
+  const tier = optional(row.tier, isNonEmptyString)
+  const maxQuantity = optional(row.maxQuantity, isPositiveInteger)
+  const rewardCoins = optional(row.rewardCoins, isPositiveInteger)
+  const from = optional(row.from, isPeriodText)
+  const until = optional(row.until, isPeriodText)
+  if (tier === false || maxQuantity === false || rewardCoins === false || from === false || until === false) return null
+  return compact({
+    key: row.key,
+    group: row.group,
+    tile: row.tile,
+    name: row.name,
+    tier,
+    currency: row.currency,
+    unitPrice: row.unitPrice,
+    unit: row.unit,
+    maxQuantity,
+    rewardCoins,
+    from,
+    until,
+  })
+}
+
+function toOption(row: Row): SpendItemOptionRow | null {
+  if (!isNonEmptyString(row.item) || !isNonEmptyString(row.axis) || !isNonEmptyString(row.value)) return null
+  return { item: row.item, axis: row.axis, value: row.value }
+}
+
+function toForm(row: Row): SpendItemFormRow | null {
+  if (!isNonEmptyString(row.item) || !isOneOf(row.form, SPEND_FORM_KEYS)) return null
+  return { item: row.item, form: row.form }
+}
+
+/** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */
+export function parseSpendCatalog(value: unknown): SpendCatalogTable | null {
+  if (!isRow(value)) return null
+  const updatedAt = updatedAtOf(value)
+  if (updatedAt === false) return null
+  const rules = toRules(value.rules)
+  const groups = rowsOf(value.groups, toGroup)
+  const tiles = rowsOf(value.tiles, toTile)
+  const items = rowsOf(value.items, toItem)
+  const itemOptions = rowsOf(value.itemOptions, toOption, { allowEmpty: true })
+  const itemForms = rowsOf(value.itemForms, toForm, { allowEmpty: true })
+  if (rules === null || groups === null || tiles === null || items === null || itemOptions === null || itemForms === null) {
+    return null
+  }
+  if (!uniqueBy(groups, (group) => group.key) || !uniqueBy(tiles, (tile) => tile.key) || !uniqueBy(items, (item) => item.key)) {
+    return null
+  }
+  return { updatedAt, rules, groups, tiles, items, itemOptions, itemForms }
+}
+
+export const spendCatalogTable = bundledTable('spendCatalog', bundled, parseSpendCatalog)
+
+interface CatalogIndex {
+  /** 항목 줄에 축 값과 형태를 붙인 것. 차례는 표의 차례다. */
+  readonly items: readonly SpendCatalogItem[]
+  readonly groups: ReadonlyMap<string, SpendGroupRow>
+  readonly tiles: ReadonlyMap<string, { readonly name: string; readonly icon?: SpendTileIcon }>
+}
+
+const catalog = derive(spendCatalogTable, (table): CatalogIndex => {
+  const groups = new Map(table.groups.map((group) => [group.key, group]))
+  const tiles = new Map(
+    table.tiles.map((tile) => [
+      tile.key,
+      {
+        name: tile.name,
+        icon: tile.iconFile === undefined && tile.iconMap === undefined ? undefined : compact({ file: tile.iconFile, map: tile.iconMap }),
+      },
+    ]),
+  )
+  const optionsByItem = new Map<string, Record<string, string>>()
+  for (const option of table.itemOptions) {
+    const options = optionsByItem.get(option.item) ?? {}
+    options[option.axis] = option.value
+    optionsByItem.set(option.item, options)
+  }
+  const formsByItem = new Map<string, string[]>()
+  for (const form of table.itemForms) {
+    const forms = formsByItem.get(form.item)
+    if (forms === undefined) formsByItem.set(form.item, [form.form])
+    else forms.push(form.form)
+  }
+  const items = table.items.map((row): SpendCatalogItem =>
+    compact({
+      key: row.key,
+      category: groups.get(row.group)?.category ?? row.group,
+      group: row.group,
+      tile: row.tile,
+      name: row.name,
+      currency: row.currency,
+      unitPrice: row.unitPrice,
+      unit: row.unit,
+      tier: row.tier,
+      options: optionsByItem.get(row.key),
+      forms: formsByItem.get(row.key),
+      rewardCoins: row.rewardCoins,
+      maxQuantity: row.maxQuantity,
+      from: row.from,
+      until: row.until,
+    }),
+  )
+  return { items, groups, tiles }
+})
+
+/** 관세율(%). **화면이 `* 1.1` 을 들면 게임 수치가 코드에 박히는 자리**가 된다. */
+export function spendTariffPercent(): number {
+  return spendCatalogTable.get().rules.tariffPercent
+}
+
+/** 세라자르 주화 1개의 상점 판매가(메소). 규칙이라 표가 든다. */
+export function rewardCoinPriceMeso(): number {
+  return spendCatalogTable.get().rules.rewardCoinPriceMeso
+}
+
+/** 세라자르 주화. 에픽던전 추가 리워드가 주고 상점에 팔면 메소가 된다. 이름과 그림은 앱 상수이고 판매가는 `rewardCoinPriceMeso()` 다. */
+export const SPEND_REWARD_COIN = { name: '세라자르 주화', icon: 'selazar_coin.webp' } as const
 
 const MESO_PER_RATE_UNIT = 100_000_000
 
@@ -152,7 +302,7 @@ const MESO_PER_RATE_UNIT = 100_000_000
  */
 export function spendGroupsOf(category: SpendCategoryKey, dateKey: string): SpendCatalogGroup[] {
   const periodKey = resetWeekStartOf(dateKey)
-  return groupItems(ITEMS.filter((item) => item.category === category && isEffectiveIn(item, periodKey)))
+  return groupItems(catalog().items.filter((item) => item.category === category && isEffectiveIn(item, periodKey)))
 }
 
 /**
@@ -161,7 +311,7 @@ export function spendGroupsOf(category: SpendCategoryKey, dateKey: string): Spen
  * 기간으로 거르면 출시 전 날짜로 적힌 기록을 수정 시트가 못 찾아 세부를 못 편다.
  */
 function allSpendGroupsOf(category: string): SpendCatalogGroup[] {
-  return groupItems(ITEMS.filter((item) => item.category === category))
+  return groupItems(catalog().items.filter((item) => item.category === category))
 }
 
 function groupItems(items: readonly SpendCatalogItem[]): SpendCatalogGroup[] {
@@ -174,8 +324,8 @@ function groupItems(items: readonly SpendCatalogItem[]): SpendCatalogGroup[] {
   for (const item of items) {
     let group = groups[groups.length - 1]
     if (group === undefined || group.key !== item.group) {
-      const entry = GROUPS[item.group]
-      // `active` 를 안 적은 묶음은 **열린 것**이다. 닫힘만 적는다.
+      const entry = catalog().groups.get(item.group)
+      // 표에 없는 묶음은 **열린 것**이다.
       group = { key: item.group, group: entry?.name ?? item.group, active: entry?.active ?? true, choices: [] }
       groups.push(group)
     }
@@ -187,7 +337,7 @@ function groupItems(items: readonly SpendCatalogItem[]): SpendCatalogGroup[] {
       last.items.push(item)
       continue
     }
-    const tile = TILES[item.tile]
+    const tile = catalog().tiles.get(item.tile)
     group.choices.push({ key: item.tile, label: tile?.name ?? item.name, icon: tile?.icon, items: [item] })
   }
   return groups
@@ -226,7 +376,7 @@ export function findSpendChoice(
 export function spendGroupOf(category: string, itemKey: string | null): { key: string; name: string } | null {
   const found = findSpendChoice(category, itemKey)
   if (found === null) return null
-  return { key: found.item.group, name: GROUPS[found.item.group]?.name ?? found.item.group }
+  return { key: found.item.group, name: catalog().groups.get(found.item.group)?.name ?? found.item.group }
 }
 
 /**
@@ -285,7 +435,7 @@ export function spendRewardCoins(
 
 /** 주화 개수를 상점에 판 메소로. 지출에서 이만큼 뺀다. */
 export function rewardCoinMeso(coins: number): number {
-  return coins * SPEND_REWARD_COIN.priceMeso
+  return coins * rewardCoinPriceMeso()
 }
 
 /**
@@ -508,7 +658,7 @@ export function pointToMeso(pointAmount: number, pointPer100mMeso: number): numb
  * 메소마켓 시세가 양변에서 상쇄된다.
  */
 export function tariffMesoOf(priceMeso: number): number {
-  return Math.floor((priceMeso * SPEND_TARIFF_PERCENT) / 100)
+  return Math.floor((priceMeso * spendTariffPercent()) / 100)
 }
 
 /**

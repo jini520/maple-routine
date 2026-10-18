@@ -1,6 +1,6 @@
 import {
   HUNTING_LEVEL_BELOW,
-  HUNTING_REGIONS,
+  huntingRegions,
   findHuntingGround,
   findHuntingGroundByName,
   findHuntingRegion,
@@ -12,17 +12,15 @@ import {
 
 describe('monsterLevelRangeOf', () => {
   /**
-   * 지역의 범위는 사냥터에 등장하는 몬스터 레벨이 정한다. 참조표가 적어 둔 `minLevel`·
-   * `maxLevel` 은 추천 레벨이라 이것과 다르다.
+   * 지역의 범위는 사냥터에 등장하는 몬스터 레벨이 정한다. 옛 참조표가 적어 둔 추천 캐릭터 레벨은
+   * 이것과 달랐고 서버 표에서 걷었다.
    */
   it('그 지역 사냥터의 몬스터 레벨을 훑어 낸다', () => {
     expect(monsterLevelRangeOf(findHuntingRegion('tallahart')!)).toEqual({ min: 290, max: 294 })
   })
 
-  it('추천 레벨과 **다를 수 있다**. 리버스 시티는 209 까지라 적혀 있지만 몬스터가 213 까지다', () => {
-    const reverseCity = findHuntingRegion('reverse_city')!
-    expect([reverseCity.minLevel, reverseCity.maxLevel]).toEqual([205, 209])
-    expect(monsterLevelRangeOf(reverseCity)).toEqual({ min: 205, max: 213 })
+  it('리버스 시티는 추천 레벨이 209 까지였지만 몬스터가 213 까지다', () => {
+    expect(monsterLevelRangeOf(findHuntingRegion('reverse_city')!)).toEqual({ min: 205, max: 213 })
   })
 })
 
@@ -31,7 +29,7 @@ describe('huntingRegionsForLevel', () => {
     huntingRegionsForLevel(level).map((each) => each.name)
 
   it('캐릭터 레벨을 모르면 **전부** 선다. 고르개가 `선택 안함` 인 상태다', () => {
-    expect(huntingRegionsForLevel(null)).toHaveLength(HUNTING_REGIONS.length)
+    expect(huntingRegionsForLevel(null)).toHaveLength(huntingRegions().length)
   })
 
   /**
@@ -88,7 +86,7 @@ describe('huntingRegionsForLevel', () => {
    * 곧 지금 캐릭터가 갈 만한 곳인데, 참조표 차례로 세우면 그것이 맨 아래에 묻힌다.
    */
   it('차례는 참조표의 **역순**이다. 이름순으로 정렬하지 않는다', () => {
-    const 역순 = [...HUNTING_REGIONS].reverse().map((each) => each.name)
+    const 역순 = [...huntingRegions()].reverse().map((each) => each.name)
     const 골라낸것 = 이름들(260)
     expect(골라낸것).toEqual(역순.filter((name) => 골라낸것.includes(name)))
   })
@@ -150,7 +148,7 @@ describe('huntingGroundsFor', () => {
   })
 
   it('빠뜨리는 사냥터가 없다. 거르는 것이 아니라 **줄 세우는** 것이다', () => {
-    for (const region of HUNTING_REGIONS) {
+    for (const region of huntingRegions()) {
       expect(huntingGroundsFor(region, 260)).toHaveLength(region.grounds.length)
     }
   })

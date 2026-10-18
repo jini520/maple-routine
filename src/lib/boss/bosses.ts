@@ -22,6 +22,8 @@ export interface BossEntry {
   /** 표의 난이도 줄 차례 그대로다. */
   difficulties: BossDifficulty[]
   requiredLevels: Partial<Record<BossDifficulty, number>>
+  /** 난이도 줄이 든 파티 인원 상한. 없는 난이도는 `rules.defaultMaxPartySize` 다. */
+  maxPartySizes: Partial<Record<BossDifficulty, number>>
   portraitSlug: string
   section: BossSection
   cycle: BossCycle
@@ -42,9 +44,11 @@ const SECTION_OF_CYCLE: Record<BossCatalogCycle, BossSection> = {
 
 function toEntry(boss: BossCatalogBoss): BossEntry {
   const requiredLevels: Partial<Record<BossDifficulty, number>> = {}
+  const maxPartySizes: Partial<Record<BossDifficulty, number>> = {}
   const difficultyPeriods: Partial<Record<BossDifficulty, EffectivePeriod>> = {}
   for (const row of boss.difficulties) {
     requiredLevels[row.difficulty] = row.requiredLevel
+    if (row.maxPartySize !== undefined) maxPartySizes[row.difficulty] = row.maxPartySize
     if (row.from !== undefined || row.until !== undefined) {
       difficultyPeriods[row.difficulty] = {
         ...(row.from === undefined ? {} : { from: row.from }),
@@ -58,6 +62,7 @@ function toEntry(boss: BossCatalogBoss): BossEntry {
     alias: boss.alias,
     difficulties: boss.difficulties.map((row) => row.difficulty),
     requiredLevels,
+    maxPartySizes,
     portraitSlug: boss.portraitSlug,
     section: SECTION_OF_CYCLE[boss.cycle],
     cycle: boss.cycle === 'monthly' ? 'monthly' : 'weekly',
@@ -156,6 +161,16 @@ export function supportedDifficultiesOf(key: string | null | undefined): BossDif
 /** 보스+난이도의 요구 레벨. 표에 없거나 값이 없으면 `null` 이다. */
 export function bossRequiredLevel(key: string | null | undefined, difficulty: BossDifficulty): number | null {
   return findBoss(key)?.requiredLevels[difficulty] ?? null
+}
+
+/** 난이도 줄이 상한을 안 들 때의 파티 인원 상한. 게임 수치라 표가 든다. */
+export function defaultMaxPartySize(): number {
+  return getBossCatalog().rules.defaultMaxPartySize
+}
+
+/** 파티 인원 상한. 난이도 줄 → 기본값 차례다. 기간을 안 탄다. 모르는 보스도 기본값이다. */
+export function getMaxPartySize(key: string | null | undefined, difficulty: BossDifficulty): number {
+  return findBoss(key)?.maxPartySizes[difficulty] ?? defaultMaxPartySize()
 }
 
 export function bossPortraitSlugOf(key: string | null | undefined): string | null {

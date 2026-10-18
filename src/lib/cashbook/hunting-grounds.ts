@@ -1,21 +1,108 @@
 /**
- * 사냥터 참조표를 **읽는 자리**. 화면이 JSON 을 직접 뒤지지 않게 한다.
+ * 사냥터 참조표(`huntingGrounds` 칸)를 **읽는 자리**. 화면이 표를 직접 뒤지지 않게 한다.
  * `lib/cashbook/spend-catalog.ts` 가 지출 참조표에 하는 일과 같은 자리다.
  *
- * 파일 자체는 대상이라 **사용자가 준 값 그대로**이고, 그 형태는
- * `data/__tests__/hunting-grounds.spec.ts` 가 붙든다. 여기 있는 것은 조회 셋뿐이다.
+ * 응답은 지역 · 사냥터 · 몬스터 레벨이 납작한 줄 표다. 여기서 지역 안에 사냥터를, 사냥터 안에 레벨을 품게
+ * 묶어(`huntingRegions`) 조회 여섯이 그 모양을 읽는다. 값은 전부 사용자가 준 것이다.
  *
  * ## 사냥터 key 하나로 지역이 따라온다
  *
  * 기록은 사냥터 key 만 적고 지역을 안 적는다. 그래서 `findHuntingGround` 가 사냥터와 지역을
  * **함께** 돌려준다. 부르는 쪽이 지역을 다시 찾게 두면 그 조회가 화면마다 한 벌씩 생긴다.
  */
-import huntingGrounds from '../../data/hunting-grounds.json'
-import type { HuntingGround, HuntingGroundTable, HuntingRegion } from '../../types/hunting-grounds'
+import bundled from '../../data/hunting-grounds.json'
+import type {
+  HuntingGroundLevelRow,
+  HuntingGroundRow,
+  HuntingGroundsTable,
+  HuntingRegionRow,
+} from '../../types/game-data'
+import type { HuntingGround, HuntingRegion } from '../../types/hunting-grounds'
+import {
+  isNonEmptyString,
+  isNonNegativeInteger,
+  isOneOf,
+  isPositiveInteger,
+  isRow,
+  rowsOf,
+  uniqueBy,
+  updatedAtOf,
+  type Row,
+} from '../game-data/contract'
+import { bundledTable, derive } from '../game-data/table'
 
-/** 참조표 전체. **차례는 파일에 적힌 그대로**다(사용자가 매긴 순서라 정렬하지 않는다). */
-export const HUNTING_REGIONS: readonly HuntingRegion[] = (huntingGrounds as HuntingGroundTable)
-  .regions
+const FORCE_TYPES = ['arcane', 'authentic'] as const
+
+function toRegion(row: Row): HuntingRegionRow | null {
+  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isOneOf(row.forceType, FORCE_TYPES)) return null
+  return { key: row.key, name: row.name, forceType: row.forceType }
+}
+
+function toGround(row: Row): HuntingGroundRow | null {
+  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.region) || !isNonEmptyString(row.name)) return null
+  if (!isNonNegativeInteger(row.force) || !isPositiveInteger(row.mobs)) return null
+  return { key: row.key, region: row.region, name: row.name, force: row.force, mobs: row.mobs }
+}
+
+function toLevel(row: Row): HuntingGroundLevelRow | null {
+  if (!isNonEmptyString(row.ground) || !isPositiveInteger(row.level)) return null
+  return { ground: row.ground, level: row.level }
+}
+
+/**
+ * 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다.
+ *
+ * 레벨이 없는 사냥터도 어긴 것이다. 몬스터 레벨 범위를 빈 목록에서 재면 `Infinity` 가 되어 지역 목록이 깨진다.
+ */
+export function parseHuntingGrounds(value: unknown): HuntingGroundsTable | null {
+  if (!isRow(value)) return null
+  const updatedAt = updatedAtOf(value)
+  if (updatedAt === false) return null
+  const regions = rowsOf(value.regions, toRegion)
+  const grounds = rowsOf(value.grounds, toGround)
+  const groundLevels = rowsOf(value.groundLevels, toLevel)
+  if (regions === null || grounds === null || groundLevels === null) return null
+  if (!uniqueBy(regions, (region) => region.key) || !uniqueBy(grounds, (ground) => ground.key)) return null
+  const leveled = new Set(groundLevels.map((row) => row.ground))
+  if (grounds.some((ground) => !leveled.has(ground.key))) return null
+  return { updatedAt, regions, grounds, groundLevels }
+}
+
+export const huntingGroundsTable = bundledTable('huntingGrounds', bundled, parseHuntingGrounds)
+
+/** 줄 표를 지역 → 사냥터 → 레벨로 묶은 것. 차례는 표에 적힌 그대로다(사용자가 매긴 순서라 정렬하지 않는다). */
+const regions = derive(huntingGroundsTable, (table): readonly HuntingRegion[] => {
+  const levelsByGround = new Map<string, number[]>()
+  for (const row of table.groundLevels) {
+    const levels = levelsByGround.get(row.ground)
+    if (levels === undefined) levelsByGround.set(row.ground, [row.level])
+    else levels.push(row.level)
+  }
+  const groundsByRegion = new Map<string, HuntingGround[]>()
+  for (const row of table.grounds) {
+    const ground: HuntingGround = {
+      key: row.key,
+      name: row.name,
+      force: row.force,
+      mobs: row.mobs,
+      levels: [...(levelsByGround.get(row.key) ?? [])].sort((a, b) => a - b),
+    }
+    const grounds = groundsByRegion.get(row.region)
+    if (grounds === undefined) groundsByRegion.set(row.region, [ground])
+    else grounds.push(ground)
+  }
+  return table.regions.map((row) => ({
+    key: row.key,
+    name: row.name,
+    forceType: row.forceType,
+    grounds: groundsByRegion.get(row.key) ?? [],
+  }))
+})
+
+/** 참조표 전체. 지역 안에 사냥터, 사냥터 안에 레벨이다. */
+export function huntingRegions(): readonly HuntingRegion[] {
+  return regions()
+}
 
 /**
  * 목록의 바닥. 캐릭터 레벨에서 아래로 몇 레벨까지 세우나.
@@ -27,9 +114,8 @@ export const HUNTING_LEVEL_BELOW = 20
 /**
  * 지역이 실제로 내놓는 **몬스터 레벨의 범위**.
  *
- * 참조표의 `minLevel`·`maxLevel` 은 **추천 캐릭터 레벨**이라 이것과 다르다. 리버스 시티는
- * 205-209 로 적혀 있지만 몬스터는 **213 까지** 있고, 그래서 213 짜리 캐릭터에게 효율이 가장 좋다
- * (사용자 지적). 목록을 거르는 근거는 추천 레벨이 아니라 이쪽이다.
+ * 옛 참조표의 추천 캐릭터 레벨은 이것과 달랐다. 리버스 시티는 205-209 로 적혀 있었지만 몬스터는 **213 까지**
+ * 있고, 그래서 213 짜리 캐릭터에게 효율이 가장 좋다(사용자 지적). 목록을 거르는 근거는 이쪽이다.
  */
 export function monsterLevelRangeOf(region: HuntingRegion): { min: number; max: number } {
   const levels = region.grounds.flatMap((ground) => ground.levels)
@@ -48,9 +134,6 @@ export function monsterLevelRangeOf(region: HuntingRegion): { min: number; max: 
  * - 천장. 그 지역의 가장 낮은 몬스터가 캐릭터 레벨 이하여야 간다.
  * - 바닥. 그 지역의 가장 높은 몬스터가 캐릭터 − 20 이상이어야 한다. 한 맵이라도 걸리면 선다.
  *
- * 추천 레벨로 재면 목록이 뒤집힌다. 리버스 시티(추천 205-209)가 lv.213 짜리에게서 빠지는데
- * 거기 몬스터는 213 까지라 정작 그 캐릭터가 가장 잘 잡는 자리다.
- *
  * 지역 안의 맵까지 거르지는 않는다. 한 맵이라도 들면 지역이 서고 그 안에는 창 밖의 맵도 있다.
  * 사냥터 줄이 레벨을 적어 두므로 고르는 사람이 본다.
  *
@@ -61,7 +144,7 @@ export function monsterLevelRangeOf(region: HuntingRegion): { min: number; max: 
  * 갈 만한 곳인데, 참조표 차례로 세우면 그것이 맨 아래에 묻힌다.
  */
 export function huntingRegionsForLevel(characterLevel: number | null): HuntingRegion[] {
-  const 높은데부터 = [...HUNTING_REGIONS].reverse()
+  const 높은데부터 = [...huntingRegions()].reverse()
   if (characterLevel === null) return 높은데부터
 
   return 높은데부터.filter((region) => {
@@ -95,7 +178,7 @@ export function levelGapOf(ground: HuntingGround, characterLevel: number): numbe
  * 그대로 차례가 된다.
  *
  * 완전 동률이면 참조표 순서다(`sort` 가 안정 정렬이다). 원본 배열은 안 건드린다.
- * `HUNTING_REGIONS` 는 모듈 하나가 들고 도는 값이라 제자리 정렬하면 다음 호출이 달라진다.
+ * 표에서 묶은 값이라 제자리 정렬하면 다음 호출이 달라진다.
  */
 export function huntingGroundsFor(
   region: HuntingRegion,
@@ -112,7 +195,7 @@ export function huntingGroundsFor(
 
 /** 지역 key 로 지역 하나. 없으면 `null`. 화면이 지운 key 를 들고 있을 수 있다. */
 export function findHuntingRegion(key: string): HuntingRegion | null {
-  return HUNTING_REGIONS.find((region) => region.key === key) ?? null
+  return huntingRegions().find((region) => region.key === key) ?? null
 }
 
 /**
@@ -137,7 +220,7 @@ export function findHuntingGroundByName(
 function findGround(
   matches: (ground: HuntingGround) => boolean,
 ): { region: HuntingRegion; ground: HuntingGround } | null {
-  for (const region of HUNTING_REGIONS) {
+  for (const region of huntingRegions()) {
     const ground = region.grounds.find(matches)
     if (ground !== undefined) return { region, ground }
   }

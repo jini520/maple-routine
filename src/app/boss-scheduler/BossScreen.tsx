@@ -32,8 +32,7 @@ import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { isChallengersWorld } from '../../lib/world/worlds'
 import type { ImageCrop } from '../../lib/image-crop'
 import type { MatchedBoss } from '../../lib/boss/boss-matching'
-import { activeDifficultiesNow, bossNameOf, isBossActiveIn } from '../../lib/boss/bosses'
-import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
+import { activeDifficultiesNow, bossNameOf, getMaxPartySize, isBossActiveIn } from '../../lib/boss/bosses'
 import { partySizeForShares } from '../../lib/boss/party-shares'
 
 import {

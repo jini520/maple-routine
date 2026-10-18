@@ -352,15 +352,16 @@ describe('SPEND_CATEGORIES 와 카탈로그', () => {
   it('카탈로그가 아는 넷을 그대로 품는다', () => {
     const keys = SPEND_CATEGORIES.map((each) => each.key)
 
-    for (const category of spendCatalog.categories) {
+    for (const category of new Set(spendCatalog.groups.map((group) => group.category))) {
       expect(keys).toContain(category)
     }
   })
 
   // 나머지 둘은 **직접 입력**이라 카탈로그에 항목이 없다.
   it('직접 입력 둘은 카탈로그에 없다', () => {
-    expect(spendCatalog.categories).not.toContain('item_purchase')
-    expect(spendCatalog.categories).not.toContain('etc')
+    const categories = spendCatalog.groups.map((group) => group.category)
+    expect(categories).not.toContain('item_purchase')
+    expect(categories).not.toContain('etc')
   })
 })
 

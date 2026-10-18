@@ -14,7 +14,7 @@
  * const shown = sortDropsForDisplay(drops).slice(0, 3)
  */
 import { dropPayoutMeso, type DropPriceFields } from './drop-price'
-import { isValuableDropItem } from './valuable-drops'
+import { isValuableDropItem } from './drop-items'
 
 /** 순서를 정하는 데 필요한 것만 본다. 도메인 `RecordedDrop` 과 저장 계층 기록이 함께 통과한다. */
 type OrderableDrop = DropPriceFields & { itemKey: string | null }

@@ -13,13 +13,12 @@ import { BOSS_SECTION_ORDER } from '../../features/boss-scheduler/displayed-boss
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useToastStore } from '../../features/toast/store'
-import { useBossCatalogStore } from '../../features/bosses/store'
+import { useGameTable } from '../../features/game-data/query'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
-import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
 import { partySizeForShares } from '../../lib/boss/party-shares'
 import type { BossPartyShareColumns } from '../../storage/boss-party-settings'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
-import { activeBossesInSection, activeDifficultiesNow, bossPortraitSlugOf } from '../../lib/boss/bosses'
+import { activeBossesInSection, activeDifficultiesNow, bossPortraitSlugOf, getMaxPartySize } from '../../lib/boss/bosses'
 import { countManualWeeklyBosses, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 import { bossCycleOf, isSeasonBoss, type BossEntry } from '../../lib/boss/bosses'
 import { isChallengersWorld } from '../../lib/world/worlds'
@@ -168,9 +167,9 @@ export function BossManageScreen(): React.JSX.Element {
   const showsSeasonBosses = isChallengersWorld(selected?.worldKey)
   // 목록은 보스 표에서 지금 기간에 유효한 것이다. 시즌이 끝난 시즌 보스는 빠진다. 주간 탭은 주간(챌린저스
   // 월드는 시즌 주간까지), 월간 탭은 월간이다. 난이도
-  // 후보도 같은 표의 `difficulties` 를 쓴다. 표는 켜는 동안 서버 응답으로 덮일 수 있어 스토어를 구독하고,
+  // 후보도 같은 표의 `difficulties` 를 쓴다. 표는 켜는 동안 서버 응답으로 덮일 수 있어 칸을 구독하고,
   // 덮이면 목록을 다시 만든다.
-  const catalog = useBossCatalogStore((state) => state.catalog)
+  const catalog = useGameTable('bosses')
   const listed = useMemo<Record<'weekly' | 'eventWeekly' | 'monthly', BossEntry[]>>(
     () => ({
       weekly: activeBossesInSection('weekly'),

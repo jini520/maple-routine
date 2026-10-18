@@ -8,7 +8,7 @@
  * SQLite 복원력 래퍼, 백필 대상 계산은 스토어의 흐름에 붙어 있어 그대로 남겼다.
  */
 
-import { DEFAULT_MAX_PARTY_SIZE, findPriceEntry, getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
+import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
 import {
   compareBossOrder,
   isWeeklyClearLimitReached,
@@ -18,7 +18,7 @@ import {
 import type { MatchedBoss } from '../../lib/boss/boss-matching'
 import { formatBossProfitPeriodLabel, getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { isMonthlyRowInWeek } from '../../lib/boss/monthly-boss-week'
-import { bossNameOf, isBossActiveIn } from '../../lib/boss/bosses'
+import { bossNameOf, getMaxPartySize, isBossActiveIn } from '../../lib/boss/bosses'
 import { mergeManualBossList } from '../../lib/boss/manual-boss-merge'
 import { applyManualCompletions } from '../../lib/boss/manual-completion'
 import { isChallengersWorld } from '../../lib/world/worlds'
@@ -158,7 +158,7 @@ export function buildBossProfitRow(
   const periodLabel = formatBossProfitPeriodLabel(boss.cycle, period.periodKey, now).primary
   const priceEntry = findPriceEntry(boss.bossKey, boss.difficulty, period.periodKey, now)
   const priceMeso = priceEntry?.priceMeso ?? null
-  const maxPartySize = priceEntry?.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE
+  const maxPartySize = getMaxPartySize(boss.bossKey, boss.difficulty)
 
   return {
     ocid,

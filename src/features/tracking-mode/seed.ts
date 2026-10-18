@@ -1,5 +1,5 @@
 import { setManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
-import { TEMPLATE_DAILY_KEYS, TEMPLATE_WEEKLY_KEYS } from '../../lib/scheduler/scheduler-content-template'
+import { templateKeysOf } from '../../lib/scheduler/scheduler-content-template'
 import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { isBossActiveIn, isSeasonBoss } from '../../lib/boss/bosses'
 import { isChallengersWorld } from '../../lib/world/worlds'
@@ -16,12 +16,12 @@ function toTrackedItems(state: SchedulerCharacterState, now: Date = new Date()):
 
   const contentItems: ManualTrackedItem[] = [
     ...dailyContents.flatMap((content) =>
-      content.isRegistered && content.contentKey !== null && TEMPLATE_DAILY_KEYS.has(content.contentKey)
+      content.isRegistered && content.contentKey !== null && templateKeysOf('daily').has(content.contentKey)
         ? [{ contentKey: content.contentKey, kind: 'daily' as const }]
         : [],
     ),
     ...weeklyContents.flatMap((content) =>
-      content.isRegistered && content.contentKey !== null && TEMPLATE_WEEKLY_KEYS.has(content.contentKey)
+      content.isRegistered && content.contentKey !== null && templateKeysOf('weekly').has(content.contentKey)
         ? [{ contentKey: content.contentKey, kind: 'weekly' as const }]
         : [],
     ),
