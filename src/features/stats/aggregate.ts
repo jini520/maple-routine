@@ -5,8 +5,10 @@
  */
 import { dayTotalsOf, recordMesoOf, type DayRecord } from '../cashbook/records'
 import { incomeCategoryNameOf, spendCategoryNameOf } from '../../lib/cashbook/categories'
-import { spendGroupOf } from '../../lib/cashbook/spend-catalog'
+import { findSpendChoice, findSpendRewardChoice, spendGroupOf } from '../../lib/cashbook/spend-catalog'
+import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import type { IncomeRecord } from '../../storage/income'
+import type { SpendRecord } from '../../storage/spend'
 import { enhancementCategoryNameOf } from '../../lib/enhancement/categories'
 import { bossAliasOf, findBoss } from '../../lib/boss/bosses'
 import type { BossCycle, BossDifficulty } from '../../types'
@@ -36,7 +38,10 @@ export interface CategoryTotal {
   key: string
   name: string
   meso: number
-  /** 한 조각이 품은 갈래들(사냥 · 버프). 큰 순서이고 0 인 줄은 없다. 없으면 나눌 것이 없는 조각이다 */
+  /**
+   * 조각을 누르면 보이는 줄. 큰 순서이고 0 인 줄은 없다. 상위 일곱 뒤는 `그 외 n` 한 줄이다.
+   * 없으면 나눌 것이 없는 조각이다(보스 결정석)
+   */
   parts?: CategoryTotal[]
 }
 
@@ -119,6 +124,38 @@ const HUNTING_MESO = { key: 'hunting_meso', name: '사냥 메소' }
 const SOL_ERDA_FRAGMENT = { key: 'sol_erda_fragment', name: incomeCategoryNameOf('sol_erda_fragment') }
 /** 버프 갈래의 항목이 선택 목록에서 묶음을 못 찾을 때의 줄 */
 const UNKNOWN_BUFF_GROUP = { key: 'buff_etc', name: '기타' }
+/** 손으로 친 이름이 없는 기록의 줄 */
+const UNNAMED = { key: 'unnamed', name: '이름 없음' }
+/** 팝오버에 서는 줄의 상한. 넘는 것은 `그 외 n` 으로 묶는다. 도넛이 조각 넷 뒤를 묶는 것과 같은 어법이다 */
+const PART_LIMIT = 7
+
+interface Part {
+  key: string
+  name: string
+  meso: number
+}
+
+/**
+ * 손으로 친 이름의 줄. 앞뒤 공백과 NFC 만 맞춰 같은 글자끼리 합친다. 다르게 친 것은 다른 줄이고 추정하지
+ * 않는다. 비어 있으면 `이름 없음` 이다.
+ */
+function typedNamePart(name: string | null, meso: number): Part {
+  const trimmed = name === null ? '' : name.normalize('NFC').trim()
+  return trimmed === '' ? { ...UNNAMED, meso } : { key: `name:${trimmed}`, name: trimmed, meso }
+}
+
+/** 선택 목록의 타일 줄. 단계(1단계 · 2단계)와 형태별 항목이 타일 하나로 접힌다. 목록에서 못 찾으면 친 이름이다. */
+function tilePart(record: SpendRecord, meso: number): Part {
+  const found = record.itemKey === null ? null : findSpendChoice(record.category, record.itemKey)
+  const choice = found?.choice ?? findSpendRewardChoice(record.category, record.formItemKeys)?.choice ?? null
+  return choice === null ? typedNamePart(record.item, meso) : { key: `tile:${choice.key}`, name: choice.label, meso }
+}
+
+/** 심볼 강화의 줄. 심볼 표에서 못 찾으면 친 이름이다. */
+function symbolPart(record: SpendRecord, meso: number): Part {
+  const symbol = findSymbol(record.itemKey)?.symbol
+  return symbol === undefined ? typedNamePart(record.item, meso) : { key: `symbol:${symbol.key}`, name: symbol.name, meso }
+}
 
 /** 사냥 기록에 적힌 조각 값. 조각 가격을 안 적었으면 합계에 없어 0 이다 */
 function fragmentMesoOf(record: IncomeRecord): number {
@@ -127,17 +164,36 @@ function fragmentMesoOf(record: IncomeRecord): number {
   return hunt.fragments * hunt.fragmentPrice
 }
 
-/** 한 줄이 드는 조각과, 그 조각 안에서 나눠 보일 줄들의 몫. */
-function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; parts: { key: string; name: string; meso: number }[] } {
+/**
+ * 한 줄이 드는 조각과, 그 조각 안에서 나눠 보일 줄들의 몫. 보스 결정석만 줄이 없다. 아래 보스별 수익 카드가
+ * 보스 · 난이도로 이미 나눈다.
+ *
+ * 줄의 축은 갈래마다 하나다. 보스 드롭은 아이템, 강화는 장비, 컨텐츠 · 이벤트·BM · 주문서는 선택 목록의 타일,
+ * 버프는 묶음, 심볼 강화는 심볼, 아이템 판매 · 구매 · 기타는 친 이름, 사냥은 메소와 조각이다.
+ */
+function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; parts: Part[] } {
   const meso = recordMesoOf(entry)
-  const whole = (slice: { key: string; name: string }) => ({ slice, parts: [] })
   switch (entry.kind) {
     case 'bossCrystal':
-      return whole(BOSS_CRYSTAL)
+      return { slice: BOSS_CRYSTAL, parts: [] }
     case 'dropSale':
-      return whole(BOSS_DROP)
+      return {
+        slice: BOSS_DROP,
+        parts: entry.items.map((item) => ({
+          key: `item:${item.itemKey ?? item.itemName}`,
+          name: item.itemName,
+          meso: item.payoutMeso,
+        })),
+      }
     case 'enhancement':
-      return whole({ key: `enhancement:${entry.category}`, name: enhancementCategoryNameOf(entry.category) })
+      return {
+        slice: { key: `enhancement:${entry.category}`, name: enhancementCategoryNameOf(entry.category) },
+        parts: entry.items.map((item) => ({
+          key: `equipment:${item.itemKey ?? item.targetItem}`,
+          name: item.targetItem,
+          meso: item.costMeso,
+        })),
+      }
     case 'income': {
       const { category } = entry.record
       if (category === 'sol_erda_fragment') return { slice: HUNTING, parts: [{ ...SOL_ERDA_FRAGMENT, meso }] }
@@ -151,15 +207,39 @@ function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; part
           ],
         }
       }
-      return whole({ key: category, name: incomeCategoryNameOf(category) })
+      return {
+        slice: { key: category, name: incomeCategoryNameOf(category) },
+        parts: [typedNamePart(entry.record.item, meso)],
+      }
     }
     case 'spend': {
       const { category, itemKey } = entry.record
       const slice = { key: category, name: spendCategoryNameOf(category) }
-      if (category !== 'buff') return whole(slice)
-      return { slice, parts: [{ ...(spendGroupOf(category, itemKey) ?? UNKNOWN_BUFF_GROUP), meso }] }
+      switch (category) {
+        case 'buff':
+          return { slice, parts: [{ ...(spendGroupOf(category, itemKey) ?? UNKNOWN_BUFF_GROUP), meso }] }
+        case 'content':
+        case 'event_bm':
+        case 'scroll':
+          return { slice, parts: [tilePart(entry.record, meso)] }
+        case 'symbol':
+          return { slice, parts: [symbolPart(entry.record, meso)] }
+        case 'item_purchase':
+        case 'etc':
+          return { slice, parts: [typedNamePart(entry.record.item, meso)] }
+      }
     }
   }
+}
+
+/** 상위 일곱과 `그 외 n`. 남는 것이 하나면 묶지 않는다. 도넛의 조각 규칙과 같다. */
+function capParts(parts: CategoryTotal[]): CategoryTotal[] {
+  if (parts.length <= PART_LIMIT + 1) return parts
+  const rest = parts.slice(PART_LIMIT)
+  return [
+    ...parts.slice(0, PART_LIMIT),
+    { key: 'rest', name: `그 외 ${rest.length}`, meso: rest.reduce((sum, part) => sum + part.meso, 0) },
+  ]
 }
 
 function sortedNonZero(totals: Iterable<CategoryTotal>): CategoryTotal[] {
@@ -189,7 +269,7 @@ export function categoryTotalsBetween(
     }
     partsBySlice.set(slice.key, sliceParts)
   }
-  for (const [key, parts] of partsBySlice) totals.get(key)!.parts = sortedNonZero(parts.values())
+  for (const [key, parts] of partsBySlice) totals.get(key)!.parts = capParts(sortedNonZero(parts.values()))
   return sortedNonZero(totals.values())
 }
 
