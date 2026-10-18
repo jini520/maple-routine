@@ -1,4 +1,4 @@
-// 결산 안내 줄. today 맨 위, 공지 배너 바로 위에 서는 띠 한 줄.
+// 결산 안내 줄. today · 가계부 · 통계의 머리글 바로 아래에 서는 띠 한 줄. 둘째 줄은 화면이 준다.
 //
 // 여기가 지키는 것 셋. **결산 중일 때만 선다**(못 받았으면 안 선다) · **닫기와 탭이 다른 일을
 // 한다**(X 는 닫고 그 밖은 FAQ 를 연다) · **문장 둘이 각자 한 줄**이다(한 문단으로 흘리면 폭에
@@ -25,8 +25,8 @@ jest.mock('@gorhom/bottom-sheet', () => {
 
 import { act, fireEvent, screen } from '@testing-library/react-native'
 
-import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
-import { useSettlementStore } from '../../../features/settlement/store'
+import { renderOverlay, type AtomElement } from '../../components/__tests__/render-atom'
+import { useSettlementStore } from '../../features/settlement/store'
 import { SettlementBanner } from '../SettlementBanner'
 
 const 결산중 = {
@@ -56,7 +56,7 @@ beforeEach(() => {
 it('결산 중이면 문장 둘이 각자 한 줄로 선다', async () => {
   세우기()
 
-  await renderOverlay(<SettlementBanner />)
+  await renderOverlay(<SettlementBanner testID="today-settlement-banner" detail="일부 데이터가 갱신되지 않을 수 있습니다." />)
 
   expect(screen.getByText('스케줄러 데이터를 결산 중입니다.')).toBeTruthy()
   expect(screen.getByText('일부 데이터가 갱신되지 않을 수 있습니다.')).toBeTruthy()
@@ -64,7 +64,7 @@ it('결산 중이면 문장 둘이 각자 한 줄로 선다', async () => {
 
 // 결산 중이 아닐 때 빈 상자를 두면 아래 것들이 이유 없이 밀린다.
 it('결산 중이 아니면 아무것도 안 그린다', async () => {
-  await renderOverlay(<SettlementBanner />)
+  await renderOverlay(<SettlementBanner testID="today-settlement-banner" detail="일부 데이터가 갱신되지 않을 수 있습니다." />)
 
   expect(screen.queryByTestId('today-settlement-banner')).toBeNull()
 })
@@ -73,34 +73,45 @@ it('결산 중이 아니면 아무것도 안 그린다', async () => {
 it('서버를 못 받아 안 보이는 상태면 안 그린다', async () => {
   세우기({ visible: false })
 
-  await renderOverlay(<SettlementBanner />)
+  await renderOverlay(<SettlementBanner testID="today-settlement-banner" detail="일부 데이터가 갱신되지 않을 수 있습니다." />)
 
   expect(screen.queryByTestId('today-settlement-banner')).toBeNull()
 })
 
 it('닫기를 누르면 스토어가 닫는다', async () => {
   세우기()
-  await renderOverlay(<SettlementBanner />)
+  await renderOverlay(<SettlementBanner testID="today-settlement-banner" detail="일부 데이터가 갱신되지 않을 수 있습니다." />)
 
   await press(screen.getByLabelText('결산 안내 닫기'))
 
   expect(dismiss).toHaveBeenCalled()
 })
 
-it('줄을 탭하면 FAQ 시트가 열린다', async () => {
+it('줄을 탭하면 FAQ 시트가 열린다. 가계부 · 통계 문답도 든다', async () => {
   세우기()
-  await renderOverlay(<SettlementBanner />)
+  await renderOverlay(<SettlementBanner testID="today-settlement-banner" detail="일부 데이터가 갱신되지 않을 수 있습니다." />)
 
   await press(screen.getByLabelText('결산이 무엇인지 보기'))
 
   expect(screen.getByText('스케줄러 결산')).toBeTruthy()
   expect(screen.getByText('결산이 무엇인가요?')).toBeTruthy()
+  expect(screen.getByText('가계부와 통계에 오늘 잡은 보스가 안 보여요.')).toBeTruthy()
+})
+
+// 둘째 줄은 화면이 준다. 가계부 · 통계는 그 화면에서 빠지는 것을 말한다.
+it('둘째 줄은 넘긴 글자이고 testID 도 넘긴 것이다', async () => {
+  세우기()
+
+  await renderOverlay(<SettlementBanner testID="cashbook-settlement-banner" detail="오늘 잡은 보스 수익은 결산이 끝난 뒤 반영됩니다." />)
+
+  expect(screen.getByTestId('cashbook-settlement-banner')).toBeTruthy()
+  expect(screen.getByText('오늘 잡은 보스 수익은 결산이 끝난 뒤 반영됩니다.')).toBeTruthy()
 })
 
 // 재조회가 아닌 이유는 결산 중에는 같은 값이 다시 와서 앱이 고장 난 것으로 읽히기 때문이다.
 it('닫기는 시트를 안 연다', async () => {
   세우기()
-  await renderOverlay(<SettlementBanner />)
+  await renderOverlay(<SettlementBanner testID="today-settlement-banner" detail="일부 데이터가 갱신되지 않을 수 있습니다." />)
 
   await press(screen.getByLabelText('결산 안내 닫기'))
 

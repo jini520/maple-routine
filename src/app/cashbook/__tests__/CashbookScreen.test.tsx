@@ -109,6 +109,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 
 import { useToastStore } from '../../../features/toast/store'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
+import { useSettlementStore } from '../../../features/settlement/store'
 import { FAB_SPACE_PX } from '../../../lib/fab-metrics'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
@@ -2186,5 +2187,33 @@ describe('기간 이동의 촉각', () => {
     await 이름으로누르기(view, '다음 주')
 
     expect(tap).not.toHaveBeenCalled()
+  })
+})
+
+// 처치 날짜가 있는 기록만 읽는 화면이라 결산 중에는 오늘 잡은 보스가 빠진다. 그 말을 머리글 바로 아래 줄이 한다.
+describe('결산 안내 줄', () => {
+  // 실물 스토어라 값이 케이스 사이로 샌다.
+  beforeEach(() => {
+    useSettlementStore.setState({ settling: false, startedAt: null, dismissedAt: null, visible: false })
+  })
+
+  it('결산 중이 아니면 안 선다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByTestId('cashbook-settlement-banner')).toBeNull()
+  })
+
+  it('결산 중이면 머리글 아래에 서고 둘째 줄이 보스 수익이 늦는다고 말한다', async () => {
+    useSettlementStore.setState({
+      settling: true,
+      startedAt: '2026-10-18T15:00:00.000Z',
+      dismissedAt: null,
+      visible: true,
+    })
+
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-settlement-banner')).toBeTruthy()
+    expect(view.getByText('오늘 잡은 보스 수익은 결산이 끝난 뒤 반영됩니다.')).toBeTruthy()
   })
 })

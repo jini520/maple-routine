@@ -28,6 +28,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { View } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 
+import { SETTLEMENT_BANNER_DETAIL_TODAY } from '../../features/settlement/banner-text'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
 import { useManualCompletionStore } from '../../features/manual-completion/store'
@@ -50,7 +51,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { CharacterManageButton } from './CharacterManageButton'
 import { ManualCompletionBanner } from './ManualCompletionBanner'
 import { NoticeBanner } from './NoticeBanner'
-import { SettlementBanner } from './SettlementBanner'
+import { SettlementBanner } from '../SettlementBanner'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
 
@@ -324,7 +325,7 @@ export function TodayScreen(): React.JSX.Element {
 
             결산 줄이 공지 배너 **위**다. 공지는 읽을거리이고 결산 줄은 지금 화면의 값이 왜 안 맞는지를
             말하므로, 그 줄이 값보다 먼저 와야 한다. */}
-        <SettlementBanner />
+        <SettlementBanner testID="today-settlement-banner" detail={SETTLEMENT_BANNER_DETAIL_TODAY} />
         <ManualCompletionBanner />
         <NoticeBanner />
         {/* 좌우 16 은 앱 공통 `px-4` 라 화면의 래퍼가 준다. 격자가 또 주면 두 겹이 되는데,
