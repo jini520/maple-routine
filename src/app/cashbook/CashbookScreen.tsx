@@ -115,6 +115,8 @@ import { useDataFreshness } from '../../features/refresh/freshness'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
 import { tapFeedback } from '../../native/haptics'
 import { useToastStore } from '../../features/toast/store'
+import { SETTLEMENT_BANNER_DETAIL_LEDGER } from '../../features/settlement/banner-text'
+import { SettlementBanner } from '../SettlementBanner'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
 import { useMonthDays } from './useMonthDays'
@@ -1056,6 +1058,9 @@ export function CashbookScreen(): React.JSX.Element {
           </PageHeader>
         }
       >
+        {/* 결산 줄은 전폭이라 아래 `px-4` 래퍼 밖이다. today 와 같은 자리다. 이 화면은 처치 날짜가 있는
+            기록만 읽어 결산 중에는 오늘 잡은 보스가 빠지는데, 그 말을 이 줄이 한다. */}
+        <SettlementBanner testID="cashbook-settlement-banner" detail={SETTLEMENT_BANNER_DETAIL_LEDGER} />
         {/* 바닥 여백이 떠 있는 ＋ 의 몫이다. FAB 는 콘텐츠를 밀어내지 않아 여기서 갚지 않으면
             끝까지 내렸을 때 마지막 줄이 버튼 뒤로 들어간다.
 

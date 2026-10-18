@@ -1,7 +1,9 @@
 /**
- * 넥슨이 결산 중일 때 today 맨 위에 서는 띠 한 줄. 결산 중이 아니면 아무것도 안 그린다.
+ * 넥슨이 결산 중일 때 today · 가계부 · 통계의 머리글 바로 아래에 서는 띠 한 줄. 결산 중이 아니면 아무것도
+ * 안 그린다. 세 화면이 같은 스토어를 보고 닫기도 같은 열쇠(이번 결산의 시작 시각)라, 한 화면에서 닫으면 셋 다
+ * 그 결산 동안 안 선다. 둘째 줄만 화면이 준다. 그 화면에서 실제로 빠지는 것을 말하기 위해서다.
  *
- * **카드가 아니다.** 모서리도 그림자도 테두리도 없다. 바로 아래 `NoticeBanner` 가 카드라, 둘이
+ * **카드가 아니다.** 모서리도 그림자도 테두리도 없다. today 에서 바로 아래 `NoticeBanner` 가 카드라, 둘이
  * 붙어 서도 무엇이 무엇인지 갈린다. 안쪽 좌우 16 은 그 배너와 같은 값이라 격자까지 왼쪽 선이
  * 한 줄로 맞는다.
  *
@@ -21,15 +23,20 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { ClockIcon, Text, XIcon } from '../../components/atoms'
-import { FaqSheet } from '../../components/organisms/FaqSheet/FaqSheet'
-import { SETTLEMENT_FAQ, SETTLEMENT_FAQ_TITLE } from '../../features/settlement/faq'
-import { useSettlementStore } from '../../features/settlement/store'
+import { ClockIcon, Text, XIcon } from '../components/atoms'
+import { FaqSheet } from '../components/organisms/FaqSheet/FaqSheet'
+import { SETTLEMENT_BANNER_TITLE } from '../features/settlement/banner-text'
+import { SETTLEMENT_FAQ, SETTLEMENT_FAQ_TITLE } from '../features/settlement/faq'
+import { useSettlementStore } from '../features/settlement/store'
 
 /** 16px 아이콘을 권장 타깃 44px 로 되돌린다. 나란히 선 것이 없어 네 면 다 준다. */
 const CLOSE_HIT_SLOP = 14
 
-export function SettlementBanner(): React.JSX.Element | null {
+export function SettlementBanner(props: {
+  testID: string
+  /** 둘째 줄. 그 화면에서 결산 중에 무엇이 빠지는지를 말한다(`features/settlement/banner-text`). */
+  detail: string
+}): React.JSX.Element | null {
   const visible = useSettlementStore((state) => state.visible)
   const dismiss = useSettlementStore((state) => state.dismiss)
   const [faqOpen, setFaqOpen] = useState(false)
@@ -39,7 +46,7 @@ export function SettlementBanner(): React.JSX.Element | null {
   return (
     <>
       <View
-        testID="today-settlement-banner"
+        testID={props.testID}
         className="flex-row items-center gap-2.5 bg-settlement-tint px-4 py-2.5"
       >
         {/* 시계인 이유는 결산이 오류가 아니라 시간이 지나면 끝나는 상태이기 때문이다. 경고
@@ -54,12 +61,8 @@ export function SettlementBanner(): React.JSX.Element | null {
           onPress={() => setFaqOpen(true)}
           className="shrink grow active:opacity-60"
         >
-          <Text className="text-xs font-semibold text-settlement-ink">
-            스케줄러 데이터를 결산 중입니다.
-          </Text>
-          <Text className="text-11 text-settlement-ink-muted">
-            일부 데이터가 갱신되지 않을 수 있습니다.
-          </Text>
+          <Text className="text-xs font-semibold text-settlement-ink">{SETTLEMENT_BANNER_TITLE}</Text>
+          <Text className="text-11 text-settlement-ink-muted">{props.detail}</Text>
         </Pressable>
 
         <Pressable

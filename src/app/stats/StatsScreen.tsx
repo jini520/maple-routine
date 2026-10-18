@@ -15,6 +15,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { apiWindowRange, floorMonthKey, floorWeekStartKey, historyFloorDateKey } from '../../features/cashbook/range'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
+import { SETTLEMENT_BANNER_DETAIL_LEDGER } from '../../features/settlement/banner-text'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import {
   categoryTotalsBetween,
@@ -41,6 +42,7 @@ import { formatMesoCompact, formatMesoSigned } from '../../lib/cashbook/meso-com
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { tapFeedback } from '../../native/haptics'
 import type { BossCycle } from '../../types'
+import { SettlementBanner } from '../SettlementBanner'
 import { BossSection } from './BossSection'
 import { CategorySection } from './CategorySection'
 import { CharacterSection } from './CharacterSection'
@@ -230,6 +232,9 @@ export function StatsScreen(): React.JSX.Element {
           </PageHeader>
         }
       >
+        {/* 결산 줄은 전폭이라 아래 `px-4` 래퍼 밖이다. 가계부와 같은 말을 한다. 통계도 처치 날짜가 있는
+            기록만 세어서다. */}
+        <SettlementBanner testID="stats-settlement-banner" detail={SETTLEMENT_BANNER_DETAIL_LEDGER} />
         <View
           testID="stats-content"
           className="gap-2 px-4 pb-4"
