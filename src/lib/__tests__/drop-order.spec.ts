@@ -1,10 +1,10 @@
 // 아이콘 스택은 셋만 보여준다. 이 순서가 곧 **무엇이 보이는가**다.
-import valuableDropsData from '../../data/valuable-drops.json'
+import dropItemsData from '../../data/drop-items.json'
 import type { RecordedDrop } from '../../types/drops'
 import { sortDropsForDisplay, takeTopDropsByPayout } from '../drop/drop-order'
 
-const 연출아이템 = valuableDropsData.items[0]
-const 다른연출아이템 = valuableDropsData.items[1]
+const 연출아이템 = dropItemsData.items.filter((item) => item.valuable)[0].key
+const 다른연출아이템 = dropItemsData.items.filter((item) => item.valuable)[1].key
 
 /** 이름 자리에 고가 목록의 key 를 넣으면 연출 아이템이 된다. 나머지 글자는 표에 없는 key 라 평범하다. */
 function 드롭(itemKey: string, overrides: Partial<RecordedDrop> = {}): RecordedDrop {

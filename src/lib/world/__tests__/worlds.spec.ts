@@ -1,6 +1,6 @@
 // 월드 마스터 표 조회. 기록 · 원장 · 판정은 월드 key 를 들고 이름 · 엠블럼 · 챌린저스 여부는 여기서 찾는다.
 import { worldEmblemUrl } from '../../assets/asset-lookup'
-import { findWorld, isChallengersWorld, isEventWorld, worldKeyOfApiName, worldNameOf, WORLDS } from '../worlds'
+import { findWorld, isChallengersWorld, isEventWorld, worldKeyOfApiName, worldNameOf, worlds } from '../worlds'
 
 describe('API 이름에서 key 를 찾는다', () => {
   it('API 표기 그대로 찾는다', () => {
@@ -32,7 +32,7 @@ describe('key 로 찾는다', () => {
   })
 
   it('챌린저스 넷만 챌린저스 월드다', () => {
-    expect(WORLDS.filter((world) => isChallengersWorld(world.key)).map((world) => world.key)).toEqual([
+    expect(worlds().filter((world) => isChallengersWorld(world.key)).map((world) => world.key)).toEqual([
       'challengers',
       'challengers_2',
       'challengers_3',
@@ -43,7 +43,7 @@ describe('key 로 찾는다', () => {
 
   // 챌린저스는 시즌 월드지만 재화가 본섭으로 넘어와 이벤트 월드가 아니다(사용자 지정).
   it('스페셜만 이벤트 월드다', () => {
-    expect(WORLDS.filter((world) => isEventWorld(world.key)).map((world) => world.key)).toEqual(['special'])
+    expect(worlds().filter((world) => isEventWorld(world.key)).map((world) => world.key)).toEqual(['special'])
     expect(isEventWorld(null)).toBe(false)
   })
 })

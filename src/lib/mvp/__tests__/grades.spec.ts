@@ -1,5 +1,5 @@
 import {
-  MVP_GRADES,
+  mvpGrades,
   auctionFeePercentOf,
   findMvpGrade,
   highestMvpGrade,
@@ -10,7 +10,7 @@ import {
 describe('MVP 등급 표', () => {
   // 사용자 확인값(2026-09-22). 옮겨 적다 틀리면 여기서 잡힌다.
   it('등급 일곱의 경매장 수수료와 스타포스 할인이 확인값과 같다', () => {
-    expect(MVP_GRADES.map((grade) => [grade.key, grade.name, grade.auctionFeePercent, grade.starforceDiscountPercent])).toEqual([
+    expect(mvpGrades().map((grade) => [grade.key, grade.name, grade.auctionFeePercent, grade.starforceDiscountPercent])).toEqual([
       ['normal', '일반', 5, 0],
       ['bronze', '브론즈', 5, 0],
       ['silver', '실버', 3, 3],
@@ -62,7 +62,7 @@ describe('명패 그림', () => {
   const { mvpPlateAsset } = jest.requireActual<typeof import('../../assets/asset-lookup')>('../../assets/asset-lookup')
 
   it('일반을 뺀 여섯 등급에 명패가 있다', () => {
-    for (const grade of MVP_GRADES) {
+    for (const grade of mvpGrades()) {
       if (grade.key === 'normal') expect(mvpPlateAsset(grade.key)).toBeNull()
       else expect(mvpPlateAsset(grade.key)).not.toBeNull()
     }

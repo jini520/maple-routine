@@ -4,7 +4,7 @@
 // 여기서 보는 것은 **화면이 그 값을 어떻게 집어 오는가** 다. 갈래별 묶음과 환산 둘.
 import {
   BASE_TIER,
-  SPEND_TARIFF_PERCENT,
+  spendTariffPercent,
   buildSpendRewardName,
   findSpendChoice,
   findSpendRewardChoice,
@@ -193,7 +193,7 @@ describe('pointToMeso: 나눗셈이다', () => {
 
 describe('관세. 구입가의 10% 고정', () => {
   it('요율은 카탈로그가 든다. 화면이 하드코딩하지 않는다', () => {
-    expect(SPEND_TARIFF_PERCENT).toBe(10)
+    expect(spendTariffPercent()).toBe(10)
   })
 
   it('구입가의 10% 다', () => {
@@ -408,10 +408,11 @@ describe('축 값: 줄 둘로 항목 하나를 고른다', () => {
   const 매지컬 = tileOf('매지컬 주문서')
   const 귀장식 = tileOf('귀 장식 주문서')
 
+  // 축의 차례는 서버가 준 차례다. 축 이름순이라 매지컬은 능력치 줄이 먼저 선다. 값의 차례는 항목의 차례다.
   it('줄과 값은 항목에 처음 나온 차례다', () => {
     expect(optionAxesOf(매지컬)).toEqual([
-      { axis: '무기', values: ['한손무기', '두손무기'] },
       { axis: '능력치', values: ['공격력', '마력'] },
+      { axis: '무기', values: ['한손무기', '두손무기'] },
     ])
     expect(optionAxesOf(귀장식)).toEqual([
       { axis: '능력치', values: ['공격력', '마력'] },

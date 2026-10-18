@@ -19,7 +19,7 @@ import { render } from '@testing-library/react-native'
 import { ScrollView } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
-import valuableDropsData from '../../../data/valuable-drops.json'
+import dropItemsData from '../../../data/drop-items.json'
 import {
   useBossProfitStore,
   type BossProfitRow,
@@ -101,7 +101,7 @@ const CURRENT_MONTHLY = getCurrentBossProfitPeriod('monthly', new Date()).period
 const 주간보스 = bossesInSection('weekly')[0].key
 const 주간보스이름 = bossesInSection('weekly')[0].name
 const 다른주간보스 = bossesInSection('weekly')[1].key
-const 고가아이템 = valuableDropsData.items[0]
+const 고가아이템 = dropItemsData.items.filter((item) => item.valuable)[0].key
 
 function mockStore(overrides: Partial<BossProfitStore> = {}): void {
   mockedStore.mockReturnValue({

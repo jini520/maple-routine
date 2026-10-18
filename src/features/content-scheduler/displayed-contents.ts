@@ -9,28 +9,29 @@
  * 정한다.
  */
 
-import { categorizeContentEntries, WEEKLY_CATEGORY_ORDER } from '../../lib/scheduler/content-category'
+import { categorizeContentEntries, weeklyCategoryOrder } from '../../lib/scheduler/content-category'
 import type { ContentEntry } from '../../lib/scheduler/contents'
 import { mergeManualContentList, orderContentsByTemplate } from '../../lib/scheduler/manual-content-merge'
-import { CONTENT_TEMPLATE, effectiveTemplateEntries } from '../../lib/scheduler/scheduler-content-template'
+import { contentTemplate, effectiveTemplateEntries } from '../../lib/scheduler/scheduler-content-template'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import type { ManualTrackedContentItem } from '../../types/scheduler'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type { DailyContent, WeeklyContent } from '../../types'
 
 /**
- * 관리 페이지와 같은 `categorizeContentEntries` 평탄화 순서로 미리 정렬해 둔 템플릿
- * (일간은 첫 등장 순서, 주간은 `WEEKLY_CATEGORY_ORDER`).
- * 캐릭터와 무관한 상수라 모듈 레벨에서 1회 계산한다.
+ * 관리 페이지와 같은 `categorizeContentEntries` 평탄화 순서로 정렬한 템플릿
+ * (일간은 첫 등장 순서, 주간은 갈래 표의 차례).
+ * 컨텐츠 표가 켜는 동안 서버 응답으로 덮일 수 있어 부를 때 읽는다. 줄이 41 이라 값이 싸다.
  */
-const ORDERED_DAILY_TEMPLATE = categorizeContentEntries(CONTENT_TEMPLATE.daily).flatMap((group) =>
-  group.items.map((item) => item.entry),
-)
+function orderedDailyTemplate(): ContentEntry[] {
+  return categorizeContentEntries(contentTemplate().daily).flatMap((group) => group.items.map((item) => item.entry))
+}
 
-const ORDERED_WEEKLY_TEMPLATE = categorizeContentEntries(
-  CONTENT_TEMPLATE.weekly,
-  WEEKLY_CATEGORY_ORDER,
-).flatMap((group) => group.items.map((item) => item.entry))
+function orderedWeeklyTemplate(): ContentEntry[] {
+  return categorizeContentEntries(contentTemplate().weekly, weeklyCategoryOrder()).flatMap((group) =>
+    group.items.map((item) => item.entry),
+  )
+}
 
 /** 한 캐릭터의 컨텐츠 목록과 그 캐릭터의 수동 멤버십. 화면이 스토어에서 꺼내 그대로 넘긴다. */
 export interface DisplayedContentsInput {
@@ -64,17 +65,18 @@ export function displayedDailyContents(
   mode: TrackingMode,
   weeklyPeriodKey: string,
 ): DailyContent[] {
+  const template = orderedDailyTemplate()
   if (mode === 'manual') {
     return mergeManualContentList(
-      trackedInPeriod(input.manualItems, 'daily', ORDERED_DAILY_TEMPLATE, weeklyPeriodKey),
+      trackedInPeriod(input.manualItems, 'daily', template, weeklyPeriodKey),
       input.dailyContents,
-      ORDERED_DAILY_TEMPLATE,
+      template,
     )
   }
 
   return orderContentsByTemplate(
     input.dailyContents.filter((content) => content.isRegistered),
-    ORDERED_DAILY_TEMPLATE,
+    template,
   )
 }
 
@@ -84,16 +86,17 @@ export function displayedWeeklyContents(
   mode: TrackingMode,
   weeklyPeriodKey: string,
 ): WeeklyContent[] {
+  const template = orderedWeeklyTemplate()
   if (mode === 'manual') {
     return mergeManualContentList(
-      trackedInPeriod(input.manualItems, 'weekly', ORDERED_WEEKLY_TEMPLATE, weeklyPeriodKey),
+      trackedInPeriod(input.manualItems, 'weekly', template, weeklyPeriodKey),
       input.weeklyContents,
-      ORDERED_WEEKLY_TEMPLATE,
+      template,
     ) as WeeklyContent[]
   }
 
   return orderContentsByTemplate(
     input.weeklyContents.filter((content) => content.isRegistered),
-    ORDERED_WEEKLY_TEMPLATE,
+    template,
   )
 }

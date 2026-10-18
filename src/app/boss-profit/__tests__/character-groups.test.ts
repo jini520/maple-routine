@@ -7,7 +7,7 @@ import { dropRowKey } from '../../../features/boss-profit/store'
 import type { BossProfitRow } from '../../../features/boss-profit/store'
 import type { RecordedDrop } from '../../../types/drops'
 
-import valuableDropsData from '../../../data/valuable-drops.json'
+import dropItemsData from '../../../data/drop-items.json'
 
 import {
   buildCharacterGroups,
@@ -75,8 +75,8 @@ describe('groupTotalMeso: 아이템 수익 합산', () => {
 const 고가드롭: RecordedDrop = {
   dropRecordId: null,
   category: 'equipment',
-  itemKey: valuableDropsData.items[0],
-  itemName: valuableDropsData.items[0],
+  itemKey: dropItemsData.items.filter((item) => item.valuable)[0].key,
+  itemName: dropItemsData.items.filter((item) => item.valuable)[0].key,
   quantity: 1,
 }
 

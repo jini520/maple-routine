@@ -5,7 +5,7 @@
 
 import type { BossDifficulty } from './scheduler'
 
-// item-drop-table.json의 카테고리 키(영문). UI 라벨(고정/장비/소비)은 표시 계층에서 매핑.
+// 드롭 표(`bossDrops` 칸)의 갈래 key. 서버 ENUM 과 같다. UI 라벨(고정/장비/소비)은 표시 계층에서 매핑.
 export const DROP_CATEGORIES = ['fixed', 'equipment', 'consumable'] as const
 export type DropCategory = (typeof DROP_CATEGORIES)[number]
 
@@ -21,8 +21,6 @@ export interface DropCandidate {
   /** 마스터 표의 지금 이름. */
   name: string
   category: SelectableDropCategory
-  set?: string
-  note?: string
   difficulties: BossDifficulty[]
 }
 

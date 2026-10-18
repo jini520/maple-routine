@@ -30,7 +30,7 @@ import type {
   ValuableDroughtSummary,
 } from '../../lib/drop/drop-history'
 import { dropItemIconOf } from '../../lib/assets/asset-lookup'
-import { isValuableDropItem } from '../../lib/drop/valuable-drops'
+import { isValuableDropItem } from '../../lib/drop/drop-items'
 
 import { MapleLeaf, ScrollTextIcon, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'

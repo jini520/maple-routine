@@ -4,7 +4,7 @@ import {
   displayedWeeklyContents,
   type DisplayedContentsInput,
 } from '../displayed-contents'
-import { CONTENT_TEMPLATE, findContent } from '../../../lib/scheduler/contents'
+import { contentTemplate, findContent } from '../../../lib/scheduler/contents'
 import type { DailyContent, WeeklyContent } from '../../../types'
 
 // `표시 대상 컨텐츠` 판정을 화면이 아니라 여기서 한다. 이 필터가 빠지면 **모든 캐릭터가 일퀘 18**
@@ -28,8 +28,8 @@ function weekly(
 }
 
 /** 실제 템플릿에서 빌린 key. 지어낸 key 는 템플릿 정렬을 타지 못해 판정이 흐려진다. */
-const DAILY_KEYS = CONTENT_TEMPLATE.daily.map((entry) => entry.key)
-const WEEKLY_KEYS = CONTENT_TEMPLATE.weekly.map((entry) => entry.key)
+const DAILY_KEYS = contentTemplate().daily.map((entry) => entry.key)
+const WEEKLY_KEYS = contentTemplate().weekly.map((entry) => entry.key)
 
 /** 주간 기간 키. 아우룸 레기스는 2026-09-17 주부터 선다. */
 const 패치전주 = '2026-09-10'

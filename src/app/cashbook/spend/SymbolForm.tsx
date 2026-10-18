@@ -15,8 +15,8 @@ import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import {
-  SYMBOL_COSTS_FROM,
   findSymbol,
+  symbolCostsFrom,
   symbolMenu,
   symbolRecordName,
   symbolUpgradeCost,
@@ -51,10 +51,14 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
   const options: SelectOption[] = menu.flatMap((section) =>
     section.symbols.map((symbol) => ({ value: symbol.key, label: symbol.name, group: section.name })),
   )
-  const amount = found === null ? 0 : symbolUpgradeCost(found.symbol, range.from, range.to)
-  // 표는 2026-09-17 부터다. 그 전 날짜로 열린 폼은 저장을 막는다. 안내는 없다(사용자 지정).
-  const beforeTable = !editing && props.dateKey < SYMBOL_COSTS_FROM
-  const earliest = props.earliestDateKey > SYMBOL_COSTS_FROM ? props.earliestDateKey : SYMBOL_COSTS_FROM
+  // 단계마다 적는 날짜의 주간 기간에 유효한 줄을 더한다. 표가 서기 전 날짜거나 비용이 없는 레벨이면 null 이라
+  // 저장을 막는다.
+  const cost = found === null ? null : symbolUpgradeCost(found.symbol, range.from, range.to, props.dateKey)
+  const amount = cost ?? 0
+  // 표가 서는 첫날 전으로는 날짜를 못 고른다. 그 전 날짜로 열린 폼은 저장을 막는다. 안내는 없다(사용자 지정).
+  const tableFrom = symbolCostsFrom()
+  const beforeTable = !editing && tableFrom !== null && props.dateKey < tableFrom
+  const earliest = tableFrom !== null && tableFrom > props.earliestDateKey ? tableFrom : props.earliestDateKey
 
   function selectSymbol(key: string | null): void {
     const next = findSymbol(key)
@@ -79,7 +83,7 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
   useSaveSlot(props.setSave, {
     showSave: true,
     editing,
-    canSave: found !== null && range.to > range.from && !beforeTable,
+    canSave: found !== null && cost !== null && range.to > range.from && !beforeTable,
     saving,
     onSave: () => {
       if (found === null) return

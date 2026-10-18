@@ -69,7 +69,7 @@ import { closeInputCard, openInputCard } from '../../features/input-card/store'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
-import { getMaxPartySize } from '../../lib/boss/boss-crystal-prices'
+import { getMaxPartySize } from '../../lib/boss/bosses'
 
 /** 한 연쇄 안에서 매긴 값. 스토어를 다시 읽어도 이전으로 돌아가면 이 값이 보인다. */
 interface PriceEdit {

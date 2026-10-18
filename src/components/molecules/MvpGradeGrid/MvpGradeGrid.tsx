@@ -3,7 +3,7 @@ import { Image, Pressable, View } from 'react-native'
 import { Text } from '../../atoms'
 import { mvpPlateAsset } from '../../../lib/assets/asset-lookup'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
-import { MVP_GRADES, type MvpGradeKey } from '../../../lib/mvp/grades'
+import { mvpGrades, type MvpGradeKey } from '../../../lib/mvp/grades'
 
 /** 문양 타일의 한 변. 명패 높이를 이 수로 맞추면 왼쪽 정사각이 문양이다. */
 const TILE = 34
@@ -16,7 +16,7 @@ const TILE = 34
 export function MvpGradeGrid(props: { selected: MvpGradeKey | null; onSelect: (grade: MvpGradeKey) => void }): React.JSX.Element {
   return (
     <View className="flex-row pt-1">
-      {MVP_GRADES.map((grade) => {
+      {mvpGrades().map((grade) => {
         const on = grade.key === props.selected
         const source = mvpPlateAsset(grade.key)
         return (

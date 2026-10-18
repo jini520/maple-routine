@@ -1,13 +1,12 @@
 import {
-  CONTENT_TEMPLATE,
-  TEMPLATE_DAILY_KEYS,
-  TEMPLATE_WEEKLY_KEYS,
   contentCategoryOf,
   contentDisplayNameOf,
   contentKeyOfApiName,
   contentSectionOf,
   contentShortNameOf,
   findContent,
+  contentTemplate,
+  templateKeysOf,
 } from '../scheduler/contents'
 import { contentCategoryNameOf, contentCategoryTagOf } from '../scheduler/content-categories'
 
@@ -48,7 +47,7 @@ describe('contentKeyOfApiName', () => {
   })
 
   it('표의 모든 줄은 자기 content_name 으로 자기 key 를 얻는다', () => {
-    const rows = [...CONTENT_TEMPLATE.daily, ...CONTENT_TEMPLATE.weekly]
+    const rows = [...contentTemplate().daily, ...contentTemplate().weekly]
     expect(rows.filter((row) => contentKeyOfApiName(row.content_name) !== row.key).map((row) => row.key)).toEqual([])
   })
 })
@@ -101,11 +100,11 @@ describe('contentSectionOf', () => {
   })
 
   it('key 집합이 섹션과 같다', () => {
-    expect(TEMPLATE_DAILY_KEYS.has('monster_park')).toBe(true)
-    expect(TEMPLATE_DAILY_KEYS.has('monster_park_extreme')).toBe(false)
-    expect(TEMPLATE_WEEKLY_KEYS.has('monster_park_extreme')).toBe(true)
-    expect(TEMPLATE_DAILY_KEYS.size + TEMPLATE_WEEKLY_KEYS.size).toBe(
-      CONTENT_TEMPLATE.daily.length + CONTENT_TEMPLATE.weekly.length,
+    expect(templateKeysOf('daily').has('monster_park')).toBe(true)
+    expect(templateKeysOf('daily').has('monster_park_extreme')).toBe(false)
+    expect(templateKeysOf('weekly').has('monster_park_extreme')).toBe(true)
+    expect(templateKeysOf('daily').size + templateKeysOf('weekly').size).toBe(
+      contentTemplate().daily.length + contentTemplate().weekly.length,
     )
   })
 })

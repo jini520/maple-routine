@@ -5,17 +5,18 @@ import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
 import type { LucideIcon } from 'lucide-react-native'
 
-import { CONTENT_TEMPLATE, effectiveTemplateEntries } from '../../lib/scheduler/scheduler-content-template'
+import { contentTemplate, effectiveTemplateEntries } from '../../lib/scheduler/scheduler-content-template'
 import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import {
   categorizeContentEntries,
   contentCountTag,
   isGuildContent,
-  WEEKLY_CATEGORY_ORDER,
+  weeklyCategoryOrder,
 } from '../../lib/scheduler/content-category'
 import type { ContentCategoryKey } from '../../lib/scheduler/content-categories'
 import type { ContentEntry } from '../../lib/scheduler/contents'
 import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
+import { useGameTable } from '../../features/game-data/query'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
@@ -91,6 +92,8 @@ export function ContentManageScreen(): React.JSX.Element {
   // 되돌리지 않는다. 되돌리면 잠깐 다른 탭을 뒤져본 것 때문에 돌아갔을 때 보던 화면이 바뀌어,
   // 애초에 고치려던 문제("보던 자리를 잃는다")를 반대 방향으로 다시 만든다.
   const [activeTab, setActiveTab] = useState<ContentTab>(schedulerTab)
+  // 컨텐츠 표는 켜는 동안 서버 응답으로 덮일 수 있다. 칸을 구독해 덮이면 목록을 다시 그린다.
+  useGameTable('contents')
 
   // 스케줄러를 거치지 않고 직접 진입해도 스토어가 채워지도록 동일하게 로드한다.
   useEffect(() => {
@@ -222,10 +225,10 @@ export function ContentManageScreen(): React.JSX.Element {
             {categorizeContentEntries(
               // 출시 전인 컨텐츠는 고를 수 없다. 이미 추적 중이어도 목록에서만 빠지고 저장은 그대로다.
               effectiveTemplateEntries(
-                CONTENT_TEMPLATE[activeTab],
+                contentTemplate()[activeTab],
                 getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
               ),
-              activeTab === 'weekly' ? WEEKLY_CATEGORY_ORDER : undefined,
+              activeTab === 'weekly' ? weeklyCategoryOrder() : undefined,
             ).map((group) => {
               const GroupIcon = CATEGORY_ICON[group.category]
               const trackedCount = group.items.filter((item) => trackedKeys.has(item.entry.key)).length

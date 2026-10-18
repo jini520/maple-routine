@@ -1,12 +1,12 @@
 import {
-  WEEKLY_CATEGORY_ORDER,
   contentCategoryNameOf,
   contentCategoryTagOf,
+  weeklyCategoryOrder,
   type ContentCategoryKey,
 } from './content-categories'
 import type { ContentEntry } from './contents'
 
-export { WEEKLY_CATEGORY_ORDER }
+export { weeklyCategoryOrder }
 
 export interface ContentCategoryItem {
   entry: ContentEntry

@@ -150,7 +150,7 @@ PK: `drop_record_id`(v4 uuid, DB 버전 12 · [[ADR-342]] 결정 1). 표 자체�
 - **가격을 이 테이블에 둔 이유**([[ADR-124]] 결정 4): 난이도 확정 이관이 행을 통째로 옮기므로 가격이 **따라가고**, `pruneUnobtainableDrops` 탈락분의 가격이 **함께 사라지며**, 히스토리의 "원천은 이 테이블 하나"([[ADR-071]] 결정 1)가 유지된다. 가격 전용 테이블이면 셋 다 별도 코드가 된다.
 - **⚠️ `recorded_at`은 "언제 먹었는가"가 아니다 — 감사 필드다**([[ADR-071]] 결정 2). `replaceBossDropRecords`가 DELETE→INSERT로 그룹을 통째로 교체하며 **그룹 전체 행에 호출 시점을 박고**, `pruneUnobtainableDrops` 정리와 난이도 확정 이관도 `now`로 덮는다. 그래서 같은 (보스, 난이도, 기간)에 드롭 하나를 더 추가하면 기존 드롭들의 `recorded_at`까지 오늘로 갱신된다. **드롭이 일어난 시점을 알아야 하면 `period_key`를 쓴다**(주간=리셋일 `YYYY-MM-DD`, 월간=`YYYY-MM`, 불변). 시간순 정렬도 `period_key DESC, drop_index`이고 `recorded_at DESC`는 과거 기간 재편집 한 번에 순서가 뒤집힌다.
 - **아이템을 key 로 든다**([[ADR-280]] 결정 11, 2026-09-15, 이슈 #444). `item_key`(아이템 key) · `box_origin_key`(상자 결과면 상자의 아이템 key)와 그때 이름(`item_name` · `box_origin`)을 함께 적는다. 이름만 든 옛 행은 버전 3 이 key 를 채웠고, 못 찾은 행은 key 가 `NULL` 이다. **`RecordedDrop` 을 만드는 자리(아래 변환기 셋)가 두 key 칸을 빠뜨리면 기록의 key 가 조용히 사라진다.** 가격 칸과 같은 함정이다.
-- **고가 여부는 저장하지 않는다.** `isValuableDropItem`(`lib/drop/valuable-drops`)은 표시 시점 판정이라, 이 테이블에는 **선택 등록 가능한 모든 아이템**이 구분 없이 들어 있다 — 드롭 히스토리가 별도 테이블 없이 이 테이블만 읽는 근거다([[ADR-071]] 결정 1).
+- **고가 여부는 저장하지 않는다.** `isValuableDropItem`(`lib/drop/drop-items`)은 표시 시점 판정이라, 이 테이블에는 **선택 등록 가능한 모든 아이템**이 구분 없이 들어 있다 — 드롭 히스토리가 별도 테이블 없이 이 테이블만 읽는 근거다([[ADR-071]] 결정 1).
 - **날짜 컬럼이 없다 — 짝인 수익 행의 `defeated_on` 을 물려받는다**([[ADR-172]] 결정 6). «먹은 날» 이 맞는 축이고([[ADR-170]] 결정 4 ④), 두 벌로 박으면 갈라질 수 있는 값이 하나 는다. 수익 행이 없는 드롭(결정석 가격을 모르는 보스)은 물려받을 것이 없어 NULL 이다.
 - **판매 · 분배 수수료를 든다**([[ADR-306]] 결정 6 · 7, 구현 완료 2026-09-22). `sale_fee_percent` · `split_fee_percent` 두 칸과
   자동인지를 드는 `sale_fee_auto` · `split_fee_auto`(1 이 자동)를 `ensureColumn` 으로 붙인다. `NULL` 은 수수료를 안 센 옛 행이다.

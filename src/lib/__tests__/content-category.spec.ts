@@ -2,10 +2,10 @@ import {
   categorizeContentEntries,
   contentCountTag,
   isGuildContent,
-  WEEKLY_CATEGORY_ORDER,
+  weeklyCategoryOrder,
 } from '../scheduler/content-category'
 import type { ContentCategoryKey } from '../scheduler/content-categories'
-import { CONTENT_TEMPLATE, findContent, type ContentEntry } from '../scheduler/contents'
+import { contentTemplate, findContent, type ContentEntry } from '../scheduler/contents'
 
 function entry(key: string, category: ContentCategoryKey, overrides: Partial<ContentEntry> = {}): ContentEntry {
   return {
@@ -66,12 +66,12 @@ describe('categorizeContentEntries', () => {
 
 describe('categorizeContentEntries: 실제 템플릿 그룹 구성 (사용자 확정 2026-07-24)', () => {
   it('일간: 몬스터파크 · 일일 퀘스트 두 그룹', () => {
-    const labels = categorizeContentEntries(CONTENT_TEMPLATE.daily).map((g) => g.label)
+    const labels = categorizeContentEntries(contentTemplate().daily).map((g) => g.label)
     expect(labels).toEqual(['몬스터파크', '일일 퀘스트'])
   })
 
-  it('주간: 사용자 지정 순서(WEEKLY_CATEGORY_ORDER)로 7개 그룹 + 아케인리버 지역 퀘스트 구성', () => {
-    const groups = categorizeContentEntries(CONTENT_TEMPLATE.weekly, WEEKLY_CATEGORY_ORDER)
+  it('주간: 갈래 표의 차례(weeklyCategoryOrder)로 7개 그룹 + 아케인리버 지역 퀘스트 구성', () => {
+    const groups = categorizeContentEntries(contentTemplate().weekly, weeklyCategoryOrder())
 
     expect(groups.map((g) => g.label)).toEqual([
       '에픽 던전',

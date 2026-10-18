@@ -1,39 +1,88 @@
-import accessoryBoxesData from '../../data/accessory-boxes.json'
-import bossRingBoxesData from '../../data/boss-ring-boxes.json'
-import itemDropTableData from '../../data/item-drop-table.json'
+/**
+ * 드롭 표(`bossDrops` 칸)와 상자 표(`dropBoxes` 칸) 조회. 게임 수치는 여기서 읽기만 하고 추정하지 않는다.
+ *
+ * 응답은 보스 · 난이도 · 갈래 · 아이템이 한 줄인 납작한 표다. 여기서 보스마다 난이도 정규 차례의 보상 묶음으로
+ * 묶어 지금 코드가 읽던 모양을 만든다. 함수가 받는 `boss` 는 보스 key 이고 난이도는 난이도 key 다.
+ */
+import bundledBossDrops from '../../data/boss-drops.json'
+import bundledDropBoxes from '../../data/drop-boxes.json'
 import {
+  DROP_CATEGORIES,
   SELECTABLE_DROP_CATEGORIES,
   type DropCandidate,
   type DropCategory,
   type FixedDropGroup,
   type RecordedDrop,
 } from '../../types/drops'
+import type { BossDropRow, BossDropsTable, DropBoxRow, DropBoxesTable } from '../../types/game-data'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
 import { dropItemNameOf } from '../drop/drop-items'
+import {
+  compact,
+  isNonEmptyString,
+  isOneOf,
+  isPeriodText,
+  isPositiveInteger,
+  isRow,
+  optional,
+  rowsOf,
+  uniqueBy,
+  updatedAtOf,
+  type Row,
+} from '../game-data/contract'
+import { bundledTable, derive } from '../game-data/table'
 import { isEffectiveAnytimeIn, isEffectiveIn } from './boss-profit-period'
 
-// item-drop-table.json / boss-ring-boxes.json / accessory-boxes.json 조회 헬퍼. 게임
-// 수치 데이터는 여기서 읽기만 하고 추정하지 않는다. 함수가 받는 `boss` 는 보스 key 이고 난이도는 난이도 key 다.
-
-interface RawRewardItem {
-  /** 아이템 key(`drop-items.json`). */
-  item: string
-  amount?: string
-  set?: string
-  note?: string
-  /** 이 때부터 나온다(KST `YYYY-MM-DD` 또는 `YYYY-MM-DDTHH:mm`). 패치로 생긴 아이템. */
-  from?: string
-  /** 이 때 전까지 나온다. 패치로 빠진 아이템. 줄을 지우면 패치 전 기록이 거짓 기록으로 지워진다. */
-  until?: string
-}
-interface RawRewardEntry {
-  /** 보스 key. */
-  boss: string
-  difficulty: string
-  rewards: Partial<Record<DropCategory, RawRewardItem[]>>
+function toReward(row: Row): BossDropRow | null {
+  if (!isNonEmptyString(row.boss) || !isOneOf(row.difficulty, BOSS_DIFFICULTIES)) return null
+  if (!isOneOf(row.category, DROP_CATEGORIES) || !isNonEmptyString(row.item)) return null
+  const amount = optional(row.amount, isNonEmptyString)
+  const from = optional(row.from, isPeriodText)
+  const until = optional(row.until, isPeriodText)
+  if (amount === false || from === false || until === false) return null
+  return compact({
+    boss: row.boss,
+    difficulty: row.difficulty,
+    category: row.category,
+    item: row.item,
+    amount,
+    from,
+    until,
+  })
 }
 
-const rewardEntries = itemDropTableData.rewards as RawRewardEntry[]
+/** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */
+export function parseBossDrops(value: unknown): BossDropsTable | null {
+  if (!isRow(value)) return null
+  const updatedAt = updatedAtOf(value)
+  if (updatedAt === false) return null
+  const rewards = rowsOf(value.rewards, toReward)
+  if (rewards === null) return null
+  return { updatedAt, rewards }
+}
+
+function toBox(row: Row): DropBoxRow | null {
+  if (!isNonEmptyString(row.item)) return null
+  const levelMin = optional(row.levelMin, isPositiveInteger)
+  const levelMax = optional(row.levelMax, isPositiveInteger)
+  if (levelMin === false || levelMax === false || (levelMin === undefined) !== (levelMax === undefined)) return null
+  if (levelMin !== undefined && levelMax !== undefined && levelMin > levelMax) return null
+  if (!Array.isArray(row.contents) || row.contents.length === 0 || !row.contents.every(isNonEmptyString)) return null
+  return compact({ item: row.item, levelMin, levelMax, contents: [...row.contents] })
+}
+
+/** 계약을 지킨 값만 통과시킨다. 반지 상자는 레벨 범위 둘을 다 들고 장신구 상자는 둘 다 없다. */
+export function parseDropBoxes(value: unknown): DropBoxesTable | null {
+  if (!isRow(value)) return null
+  const updatedAt = updatedAtOf(value)
+  if (updatedAt === false) return null
+  const boxes = rowsOf(value.boxes, toBox)
+  if (boxes === null || !uniqueBy(boxes, (box) => box.item)) return null
+  return { updatedAt, boxes }
+}
+
+export const bossDropsTable = bundledTable('bossDrops', bundledBossDrops, parseBossDrops)
+export const dropBoxesTable = bundledTable('dropBoxes', bundledDropBoxes, parseDropBoxes)
 
 // BOSS_DIFFICULTIES 정규 순서 인덱스(미상 난이도는 뒤로).
 function difficultyOrder(difficulty: string): number {
@@ -41,16 +90,45 @@ function difficultyOrder(difficulty: string): number {
   return index === -1 ? BOSS_DIFFICULTIES.length : index
 }
 
-// 보스의 전 난이도 엔트리를 난이도 정규 순서로 반환한다.
-function entriesForBoss(bossKey: string): RawRewardEntry[] {
-  return rewardEntries
-    .filter((entry) => entry.boss === bossKey)
-    .slice()
-    .sort((a, b) => difficultyOrder(a.difficulty) - difficultyOrder(b.difficulty))
+/** 보스 한 난이도의 보상 묶음. 갈래마다 줄이 표의 차례다. */
+interface RewardEntry {
+  difficulty: BossDifficulty
+  rewards: Partial<Record<DropCategory, BossDropRow[]>>
+}
+
+/** 보스마다 난이도 정규 차례의 보상 묶음. 줄 표를 지금 코드가 읽는 모양으로 묶는다. */
+const rewardsByBoss = derive(bossDropsTable, (table) => {
+  const byBoss = new Map<string, Map<BossDifficulty, RewardEntry>>()
+  for (const row of table.rewards) {
+    let entries = byBoss.get(row.boss)
+    if (entries === undefined) {
+      entries = new Map()
+      byBoss.set(row.boss, entries)
+    }
+    let entry = entries.get(row.difficulty)
+    if (entry === undefined) {
+      entry = { difficulty: row.difficulty, rewards: {} }
+      entries.set(row.difficulty, entry)
+    }
+    ;(entry.rewards[row.category] ??= []).push(row)
+  }
+  const result = new Map<string, RewardEntry[]>()
+  for (const [boss, entries] of byBoss) {
+    result.set(
+      boss,
+      [...entries.values()].sort((a, b) => difficultyOrder(a.difficulty) - difficultyOrder(b.difficulty)),
+    )
+  }
+  return result
+})
+
+// 보스의 전 난이도 묶음을 난이도 정규 순서로 반환한다.
+function entriesForBoss(bossKey: string): readonly RewardEntry[] {
+  return rewardsByBoss().get(bossKey) ?? []
 }
 
 /** 그 줄이 이 기간에 든가. `now` 가 있으면 시계로 가르고, `null` 이면 기간 전체를 본다. */
-function effectiveNow(item: RawRewardItem, periodKey: string, now: Date | null): boolean {
+function effectiveNow(item: BossDropRow, periodKey: string, now: Date | null): boolean {
   return now === null ? isEffectiveAnytimeIn(item, periodKey) : isEffectiveIn(item, periodKey, now)
 }
 
@@ -64,7 +142,6 @@ export function getBossDropCandidates(boss: string, periodKey: string, now: Date
   const order: string[] = []
 
   for (const entry of entriesForBoss(boss)) {
-    const difficulty = entry.difficulty as BossDifficulty
     for (const category of SELECTABLE_DROP_CATEGORIES) {
       for (const item of entry.rewards[category] ?? []) {
         if (!effectiveNow(item, periodKey, now)) continue
@@ -75,13 +152,11 @@ export function getBossDropCandidates(boss: string, periodKey: string, now: Date
             key: item.item,
             name: dropItemNameOf(item.item, item.item),
             category,
-            set: item.set,
-            note: item.note,
-            difficulties: [difficulty],
+            difficulties: [entry.difficulty],
           })
           order.push(key)
-        } else if (!existing.difficulties.includes(difficulty)) {
-          existing.difficulties.push(difficulty)
+        } else if (!existing.difficulties.includes(entry.difficulty)) {
+          existing.difficulties.push(entry.difficulty)
         }
       }
     }
@@ -93,13 +168,11 @@ export function getBossDropCandidates(boss: string, periodKey: string, now: Date
 export function getBossFixedDrops(boss: string, periodKey: string, now: Date): FixedDropGroup[] {
   const groups: FixedDropGroup[] = []
   for (const entry of entriesForBoss(boss)) {
-    const items = (entry.rewards.fixed ?? []).filter((item) => isEffectiveIn(item, periodKey, now)).map((item) => ({
-      key: item.item,
-      name: dropItemNameOf(item.item, item.item),
-      amount: item.amount,
-    }))
+    const items = (entry.rewards.fixed ?? [])
+      .filter((item) => isEffectiveIn(item, periodKey, now))
+      .map((item) => compact({ key: item.item, name: dropItemNameOf(item.item, item.item), amount: item.amount }))
     if (items.length > 0) {
-      groups.push({ difficulty: entry.difficulty as BossDifficulty, items })
+      groups.push({ difficulty: entry.difficulty, items })
     }
   }
   return groups
@@ -110,11 +183,8 @@ export function getBossFixedDrops(boss: string, periodKey: string, now: Date): F
 export function getBossDifficulties(boss: string): BossDifficulty[] {
   const present = new Set<BossDifficulty>()
   for (const entry of entriesForBoss(boss)) {
-    const hasDisplayable =
-      (entry.rewards.fixed?.length ?? 0) > 0 ||
-      (entry.rewards.equipment?.length ?? 0) > 0 ||
-      (entry.rewards.consumable?.length ?? 0) > 0
-    if (hasDisplayable) present.add(entry.difficulty as BossDifficulty)
+    const hasDisplayable = DROP_CATEGORIES.some((category) => (entry.rewards[category]?.length ?? 0) > 0)
+    if (hasDisplayable) present.add(entry.difficulty)
   }
   return BOSS_DIFFICULTIES.filter((difficulty) => present.has(difficulty))
 }
@@ -130,16 +200,16 @@ export function getObtainableTileKeys(boss: string, difficulty: BossDifficulty, 
 }
 
 // 드롭 히스토리는 이 판정을 기록 한 건마다 한다. getObtainableTileKeys는 매
-// 호출마다 그 보스의 전 난이도 후보를 다시 순회하므로 난이도별 결과를 캐시한다. 입력이 정적
-// JSON뿐이라 결과가 바뀔 일이 없다.
-const obtainableTileKeysCache = new Map<string, Set<string>>()
+// 호출마다 그 보스의 전 난이도 후보를 다시 순회하므로 난이도별 결과를 캐시한다. 표가 덮이면 캐시도 새것이다.
+const obtainableTileKeysCache = derive(bossDropsTable, () => new Map<string, Set<string>>())
 
 function obtainableTileKeys(boss: string, difficulty: BossDifficulty, periodKey: string): Set<string> {
+  const cache = obtainableTileKeysCache()
   const key = `${boss}|${difficulty}|${periodKey}`
-  let cached = obtainableTileKeysCache.get(key)
+  let cached = cache.get(key)
   if (cached === undefined) {
     cached = getObtainableTileKeys(boss, difficulty, periodKey)
-    obtainableTileKeysCache.set(key, cached)
+    cache.set(key, cached)
   }
   return cached
 }
@@ -296,25 +366,28 @@ export function planConfirmedDifficultyDropMigration(
   }
 }
 
-interface RawRingBox {
-  item: string
-  levelProbabilities: { level: number }[]
-  itemProbabilities: { item: string }[]
-}
-const ringBoxes = bossRingBoxesData.boxes as RawRingBox[]
+// '기타': 백옥 반지 상자 목록 밖의 저가치 반지들을 한 칸으로 묶는 UI 전용 항목. 그림은 마스터 표가 든다.
+export const OTHER_RING_KEY = 'other_ring'
 
-interface RawAccessoryBox {
-  item: string
-  itemProbabilities: { item: string }[]
-}
-const accessoryBoxes = accessoryBoxesData.boxes as RawAccessoryBox[]
+// 명명 반지 기준(baseline) = 백옥 상자 반지 집합. 데이터에서 동적 산출(하드코딩·추정 없음).
+const BASELINE_RING_BOX_KEY = 'white_boss_ring_box'
 
-const ringBoxKeys = new Set(ringBoxes.map((box) => box.item))
-const accessoryBoxKeys = new Set(accessoryBoxes.map((box) => box.item))
+// 연마석은 반지가 아니라 등급(레벨) 개념이 없다.
+const WHETSTONE_KEYS: ReadonlySet<string> = new Set(['life_whetstone', 'faith_whetstone'])
+
+const boxIndex = derive(dropBoxesTable, (table) => ({
+  byItem: new Map(table.boxes.map((box) => [box.item, box])),
+  baselineRingKeys: new Set(table.boxes.find((box) => box.item === BASELINE_RING_BOX_KEY)?.contents ?? []),
+}))
+
+/** 반지 상자인가. 레벨 범위를 든 상자다. 장신구 상자는 레벨이 없다. */
+function isRingBox(box: DropBoxRow): box is DropBoxRow & { levelMin: number; levelMax: number } {
+  return box.levelMin !== undefined && box.levelMax !== undefined
+}
 
 // 개봉 결과를 직접 선택해야 하는 랜덤 상자인지(반지 상자 또는 칠흑 장신구 상자). 아이템 key 로 묻는다.
 export function isBoxItem(key: string | null): boolean {
-  return key !== null && (ringBoxKeys.has(key) || accessoryBoxKeys.has(key))
+  return key !== null && boxIndex().byItem.has(key)
 }
 
 export interface RingOption {
@@ -328,18 +401,6 @@ export interface RingBoxContents {
   rings: RingOption[]
 }
 
-// '기타': 백옥 반지 상자 목록 밖의 저가치 반지들을 한 칸으로 묶는 UI 전용 항목. 그림은 마스터 표가 든다.
-export const OTHER_RING_KEY = 'other_ring'
-
-// 명명 반지 기준(baseline) = 백옥 상자 반지 집합. 데이터에서 동적 산출(하드코딩·추정 없음).
-const BASELINE_RING_BOX_KEY = 'white_boss_ring_box'
-const baselineRingKeys = new Set(
-  (ringBoxes.find((box) => box.item === BASELINE_RING_BOX_KEY)?.itemProbabilities ?? []).map((ring) => ring.item),
-)
-
-// 연마석은 반지가 아니라 등급(레벨) 개념이 없다.
-const WHETSTONE_KEYS: ReadonlySet<string> = new Set(['life_whetstone', 'faith_whetstone'])
-
 function optionOf(key: string, hasLevel: boolean): RingOption {
   return { key, name: dropItemNameOf(key, key), hasLevel }
 }
@@ -347,18 +408,18 @@ function optionOf(key: string, hasLevel: boolean): RingOption {
 // 반지 상자의 등급 후보와 반지 후보. 백옥 목록을 기준으로 명명 반지만 개별 노출하고, 그 밖 반지는
 // 단일 '기타'로 묶는다. 연마석은 별도(레벨 없음). 정렬: 명명 → 연마석 → 기타. 아니면 null.
 export function getRingBoxContents(boxKey: string): RingBoxContents | null {
-  const box = ringBoxes.find((candidate) => candidate.item === boxKey)
-  if (box === undefined) return null
+  const box = boxIndex().byItem.get(boxKey)
+  if (box === undefined || !isRingBox(box)) return null
 
   const named: RingOption[] = []
   const whetstones: RingOption[] = []
   let hasOther = false
 
-  for (const entry of box.itemProbabilities) {
-    if (WHETSTONE_KEYS.has(entry.item)) {
-      whetstones.push(optionOf(entry.item, false))
-    } else if (baselineRingKeys.has(entry.item)) {
-      named.push(optionOf(entry.item, true))
+  for (const item of box.contents) {
+    if (WHETSTONE_KEYS.has(item)) {
+      whetstones.push(optionOf(item, false))
+    } else if (boxIndex().baselineRingKeys.has(item)) {
+      named.push(optionOf(item, true))
     } else {
       hasOther = true
     }
@@ -369,16 +430,15 @@ export function getRingBoxContents(boxKey: string): RingBoxContents | null {
     rings.push(optionOf(OTHER_RING_KEY, true))
   }
 
-  return {
-    levels: box.levelProbabilities.map((entry) => entry.level),
-    rings,
-  }
+  const levels: number[] = []
+  for (let level = box.levelMin; level <= box.levelMax; level += 1) levels.push(level)
+  return { levels, rings }
 }
 
 // 칠흑 장신구 상자의 후보 장신구 목록(등급 없음). 장신구 상자가 아니면 null.
 export function getAccessoryBoxContents(boxKey: string): { key: string; name: string }[] | null {
-  const box = accessoryBoxes.find((candidate) => candidate.item === boxKey)
-  if (box === undefined) return null
+  const box = boxIndex().byItem.get(boxKey)
+  if (box === undefined || isRingBox(box)) return null
 
-  return box.itemProbabilities.map((entry) => ({ key: entry.item, name: dropItemNameOf(entry.item, entry.item) }))
+  return box.contents.map((key) => ({ key, name: dropItemNameOf(key, key) }))
 }

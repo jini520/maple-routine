@@ -37,8 +37,7 @@ export type FeePercent = 3 | 5
 export const MAX_SALE_PRICE_MESO = 9_999_999_999_999
 
 /**
- * 파티원 수 상한. `src/data/boss-crystal-prices.json` 의
- * `partySizeScaling.defaultMaxPartySize`(사용자 확인값)를 따른다.
+ * 파티원 수 상한. 보스 표(`src/data/bosses.json`)의 `rules.defaultMaxPartySize`(사용자 확인값)와 같은 값이다.
  */
 export const MAX_PARTY_SIZE = 6
 

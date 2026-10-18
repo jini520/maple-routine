@@ -1,5 +1,5 @@
 /**
- * 보스 표. 우리 서버 `GET /v1/bosses` 의 응답이고, 번들 `src/data/bosses.json` 과 기기 사본도 같은 모양이다.
+ * 보스 표. 우리 서버 `GET /v1/game-data` 의 `bosses` 칸이고, 번들 `src/data/bosses.json` 과 기기 사본도 같은 모양이다.
  *
  * 계약의 원본은 서버 저장소와 이 앱이 나눠 갖는다. 한쪽만 바꾸면 타입 검사가 못 잡으므로
  * 필드를 더할 때 양쪽을 함께 볼 것.
@@ -13,6 +13,8 @@ export type BossCatalogCycle = (typeof BOSS_CATALOG_CYCLES)[number]
 export interface BossCatalogDifficulty {
   difficulty: BossDifficulty
   requiredLevel: number
+  /** 파티 인원 상한. 없으면 `rules.defaultMaxPartySize` 다. 스우 익스트림 2 · 메이린 1 같은 예외만 든다. */
+  maxPartySize?: number
   /** 난이도의 유효 기간. 없으면 보스의 기간 그대로. 새로 생긴 난이도가 시작을 든다. */
   from?: string
   until?: string
@@ -40,6 +42,8 @@ export interface BossCatalogRules {
   weeklyBossSelectionLimit: number
   /** 월드당 주간 결정석 판매 한도. */
   weeklyCrystalSaleLimit: number
+  /** 난이도 줄이 상한을 안 들 때의 파티 인원 상한. 게임 수치라 코드에 박지 않는다. */
+  defaultMaxPartySize: number
 }
 
 export interface BossCatalog {

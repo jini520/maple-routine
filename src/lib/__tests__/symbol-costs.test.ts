@@ -1,7 +1,10 @@
-// 심볼 강화 비용 표를 읽는 쪽. 표의 모양은 `data/__tests__/symbol-costs.spec.ts` 가 붙든다.
+// 심볼 강화 비용 표를 읽는 쪽. 번들의 계약 통과는 `data/__tests__/bundled-game-data.spec.ts` 가 본다.
+// 비용은 레벨마다 기간 줄이라 적는 날짜를 함께 넘긴다. 첫 줄은 전부 2026-09-17 부터다.
+const 패치뒤 = '2026-10-01'
 import {
-  SYMBOL_COSTS_FROM,
   findSymbol,
+  symbolCostsFrom,
+  symbolCostsTable,
   symbolLevelsOf,
   symbolMenu,
   symbolRecordName,
@@ -22,21 +25,33 @@ function 접기(menu: ReturnType<typeof symbolMenu>): string[] {
 describe('symbolUpgradeCost: 여러 단계를 한 번에 올린 비용', () => {
   it('강화 전 레벨의 단계부터 강화 후 바로 앞 단계까지 더한다', () => {
     // 3→4 1,160,000 · 4→5 1,580,000 · 5→6 2,140,000 · 6→7 2,820,000
-    expect(symbolUpgradeCost(심볼('road_of_vanishing'), 3, 7)).toBe(7_700_000)
+    expect(symbolUpgradeCost(심볼('road_of_vanishing'), 3, 7, 패치뒤)).toBe(7_700_000)
   })
 
   it('한 단계면 그 칸 하나다', () => {
-    expect(symbolUpgradeCost(심볼('cernium'), 1, 2)).toBe(36_500_000)
-    expect(symbolUpgradeCost(심볼('geardrak'), 10, 11)).toBe(4_708_000_000)
+    expect(symbolUpgradeCost(심볼('cernium'), 1, 2, 패치뒤)).toBe(36_500_000)
+    expect(symbolUpgradeCost(심볼('geardrak'), 10, 11, 패치뒤)).toBe(4_708_000_000)
   })
 
-  it('1 에서 최고 레벨까지는 표 한 줄의 합이다', () => {
-    const 여로 = 심볼('road_of_vanishing')
-    expect(symbolUpgradeCost(여로, 1, 20)).toBe(여로.costs.reduce((sum, cost) => sum + cost, 0))
+  it('1 에서 최고 레벨까지는 그 심볼의 비용 줄 전부의 합이다', () => {
+    const 여로비용 = symbolCostsTable
+      .get()
+      .levelCosts.filter((row) => row.symbol === 'road_of_vanishing')
+      .reduce((sum, row) => sum + row.costMeso, 0)
+    expect(symbolUpgradeCost(심볼('road_of_vanishing'), 1, 20, 패치뒤)).toBe(여로비용)
   })
 
   it('두 레벨이 같으면 0 이다. 아직 안 올렸다', () => {
-    expect(symbolUpgradeCost(심볼('arcana'), 5, 5)).toBe(0)
+    expect(symbolUpgradeCost(심볼('arcana'), 5, 5, 패치뒤)).toBe(0)
+  })
+
+  // 표가 서기 전 날짜에는 유효한 줄이 없다. 0 으로 세우면 저장이 거짓 금액으로 열린다.
+  it('표가 서기 전 날짜는 null 이다', () => {
+    expect(symbolUpgradeCost(심볼('cernium'), 1, 2, '2026-09-10')).toBeNull()
+  })
+
+  it('표에 없는 레벨은 null 이다', () => {
+    expect(symbolUpgradeCost(심볼('cernium'), 11, 12, 패치뒤)).toBeNull()
   })
 })
 
@@ -55,8 +70,8 @@ describe('findSymbol: 기록의 key 로 심볼을 되짚는다', () => {
     expect(findSymbol(null)).toBeNull()
   })
 
-  it('표는 2026-09-17 부터다. 날짜 고르개의 첫날이 이 값이다', () => {
-    expect(SYMBOL_COSTS_FROM).toBe('2026-09-17')
+  it('표는 2026-09-17 부터다. 비용 줄 중 가장 이른 from 이고 날짜 고르개의 첫날이 이 값이다', () => {
+    expect(symbolCostsFrom()).toBe('2026-09-17')
   })
 })
 

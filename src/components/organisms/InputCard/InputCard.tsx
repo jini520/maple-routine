@@ -53,7 +53,7 @@ import { ShareField } from '../../molecules/ShareField/ShareField'
 import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
 import { Segment } from '../../molecules/Segment/Segment'
 import { Badge } from '../../atoms/Badge/Badge'
-import { DEFAULT_MAX_PARTY_SIZE } from '../../../lib/boss/boss-crystal-prices'
+import { defaultMaxPartySize } from '../../../lib/boss/bosses'
 import { FeeRow } from '../FeeRow/FeeRow'
 import { NumberPad } from '../../molecules/NumberPad/NumberPad'
 import { resolveNumberPadUse } from '../../../lib/number-pad-metrics'
@@ -825,7 +825,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                         파티 인원
                       </Text>
                       <Badge variant="primary" size="mini" style={TABULAR_NUMS}>
-                        최대 {props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}명
+                        최대 {props.share.maxPartySize ?? defaultMaxPartySize()}명
                       </Badge>
                     </View>
                     {/* 스테퍼는 머리 줄 아래 남는 자리 가운데다(사용자 지정). */}
@@ -834,7 +834,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                         size="bare"
                         label={props.share.label}
                         value={partySize}
-                        max={props.share.maxPartySize ?? DEFAULT_MAX_PARTY_SIZE}
+                        max={props.share.maxPartySize ?? defaultMaxPartySize()}
                         onChange={setPartySize}
                       />
                     </View>

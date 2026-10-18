@@ -14,7 +14,7 @@ import {
   setThemeAppearancePort,
 } from './native/ports'
 import { setPreferencesPort, setSqlitePort } from './storage/ports'
-import { hydrateGameData } from './features/game-data/hydrate'
+import { hydrateGameData } from './features/game-data/query'
 import { setFriendsStream } from './nexon/http'
 import { streamFriends } from './server/friends-stream'
 
@@ -107,7 +107,7 @@ export function installPorts(): void {
 }
 
 /**
- * 게임 데이터 표를 기기 사본과 서버 응답으로 덮는 부팅 곁가지. 포트 주입 뒤에 부른다. 저장소를 읽기 때문이다.
+ * 게임 데이터 표 열셋을 기기 사본과 서버 응답으로 덮는 부팅 곁가지. 포트 주입 뒤에 부른다. 저장소를 읽기 때문이다.
  *
  * 첫 화면을 막지 않는다. `void` 로 띄우고 결과를 안 기다린다. 못 받으면 번들 사본 그대로라 늦어도
  * 화면에 모자라는 것이 없다.

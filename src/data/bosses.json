@@ -1,8 +1,9 @@
 {
-  "updatedAt": "2026-10-15T04:49:21.657Z",
+  "updatedAt": "2026-10-16T14:55:54.701Z",
   "rules": {
     "weeklyBossSelectionLimit": 12,
-    "weeklyCrystalSaleLimit": 90
+    "weeklyCrystalSaleLimit": 90,
+    "defaultMaxPartySize": 6
   },
   "bosses": [
     {
@@ -11,10 +12,15 @@
       "alias": "자쿰",
       "cycle": "weekly",
       "portraitSlug": "zakum",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "chaos",
-          "requiredLevel": 90
+          "requiredLevel": 90,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -24,10 +30,15 @@
       "alias": "매그너스",
       "cycle": "weekly",
       "portraitSlug": "magnus",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "hard",
-          "requiredLevel": 175
+          "requiredLevel": 175,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -37,10 +48,15 @@
       "alias": "파풀라투스",
       "cycle": "weekly",
       "portraitSlug": "papulatus",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "chaos",
-          "requiredLevel": 190
+          "requiredLevel": 190,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -50,10 +66,15 @@
       "alias": "반반",
       "cycle": "weekly",
       "portraitSlug": "vonBon",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "chaos",
-          "requiredLevel": 180
+          "requiredLevel": 180,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -63,10 +84,15 @@
       "alias": "피에르",
       "cycle": "weekly",
       "portraitSlug": "pierre",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "chaos",
-          "requiredLevel": 180
+          "requiredLevel": 180,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -76,10 +102,15 @@
       "alias": "블러디퀸",
       "cycle": "weekly",
       "portraitSlug": "crimsonQueen",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "chaos",
-          "requiredLevel": 180
+          "requiredLevel": 180,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -89,10 +120,15 @@
       "alias": "벨룸",
       "cycle": "weekly",
       "portraitSlug": "vellum",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "chaos",
-          "requiredLevel": 180
+          "requiredLevel": 180,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -102,18 +138,29 @@
       "alias": "스우",
       "cycle": "weekly",
       "portraitSlug": "lotus",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "normal",
-          "requiredLevel": 190
+          "requiredLevel": 190,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 190
+          "requiredLevel": 190,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "extreme",
-          "requiredLevel": 190
+          "requiredLevel": 190,
+          "maxPartySize": 2,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -123,14 +170,22 @@
       "alias": "데미안",
       "cycle": "weekly",
       "portraitSlug": "damien",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "normal",
-          "requiredLevel": 190
+          "requiredLevel": 190,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 190
+          "requiredLevel": 190,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -140,14 +195,22 @@
       "alias": "가엔슬",
       "cycle": "weekly",
       "portraitSlug": "slime",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "normal",
-          "requiredLevel": 210
+          "requiredLevel": 210,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "chaos",
-          "requiredLevel": 210
+          "requiredLevel": 210,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -157,18 +220,29 @@
       "alias": "루시드",
       "cycle": "weekly",
       "portraitSlug": "lucid",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "easy",
-          "requiredLevel": 220
+          "requiredLevel": 220,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "normal",
-          "requiredLevel": 220
+          "requiredLevel": 220,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 220
+          "requiredLevel": 220,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -178,18 +252,29 @@
       "alias": "윌",
       "cycle": "weekly",
       "portraitSlug": "will",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "easy",
-          "requiredLevel": 235
+          "requiredLevel": 235,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "normal",
-          "requiredLevel": 235
+          "requiredLevel": 235,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 235
+          "requiredLevel": 235,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -199,14 +284,22 @@
       "alias": "더스크",
       "cycle": "weekly",
       "portraitSlug": "gloom",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "normal",
-          "requiredLevel": 245
+          "requiredLevel": 245,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "chaos",
-          "requiredLevel": 245
+          "requiredLevel": 245,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -216,14 +309,22 @@
       "alias": "진 힐라",
       "cycle": "weekly",
       "portraitSlug": "verusHilla",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "normal",
-          "requiredLevel": 250
+          "requiredLevel": 250,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 250
+          "requiredLevel": 250,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -233,14 +334,22 @@
       "alias": "듄켈",
       "cycle": "weekly",
       "portraitSlug": "darknell",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "normal",
-          "requiredLevel": 255
+          "requiredLevel": 255,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 255
+          "requiredLevel": 255,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -250,18 +359,29 @@
       "alias": "세렌",
       "cycle": "weekly",
       "portraitSlug": "seren",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "normal",
-          "requiredLevel": 260
+          "requiredLevel": 260,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 260
+          "requiredLevel": 260,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "extreme",
-          "requiredLevel": 260
+          "requiredLevel": 260,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -271,22 +391,36 @@
       "alias": "칼로스",
       "cycle": "weekly",
       "portraitSlug": "kalos",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "easy",
-          "requiredLevel": 265
+          "requiredLevel": 265,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "normal",
-          "requiredLevel": 265
+          "requiredLevel": 265,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "chaos",
-          "requiredLevel": 265
+          "requiredLevel": 265,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "extreme",
-          "requiredLevel": 265
+          "requiredLevel": 265,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -296,22 +430,36 @@
       "alias": "최초의 대적자",
       "cycle": "weekly",
       "portraitSlug": "adversary",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "easy",
-          "requiredLevel": 270
+          "requiredLevel": 270,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "normal",
-          "requiredLevel": 270
+          "requiredLevel": 270,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 270
+          "requiredLevel": 270,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "extreme",
-          "requiredLevel": 270
+          "requiredLevel": 270,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -321,22 +469,36 @@
       "alias": "카링",
       "cycle": "weekly",
       "portraitSlug": "kaling",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "easy",
-          "requiredLevel": 275
+          "requiredLevel": 275,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "normal",
-          "requiredLevel": 275
+          "requiredLevel": 275,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 275
+          "requiredLevel": 275,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "extreme",
-          "requiredLevel": 275
+          "requiredLevel": 275,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -346,14 +508,22 @@
       "alias": "찬란한 흉성",
       "cycle": "weekly",
       "portraitSlug": "maleficStar",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "normal",
-          "requiredLevel": 280
+          "requiredLevel": 280,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 280
+          "requiredLevel": 280,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -363,18 +533,29 @@
       "alias": "벨로나",
       "cycle": "weekly",
       "portraitSlug": "bellona",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "easy",
-          "requiredLevel": 280
+          "requiredLevel": 280,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "normal",
-          "requiredLevel": 280
+          "requiredLevel": 280,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 280
+          "requiredLevel": 280,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -384,14 +565,29 @@
       "alias": "림보",
       "cycle": "weekly",
       "portraitSlug": "limbo",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "normal",
-          "requiredLevel": 285
+          "requiredLevel": 285,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 285
+          "requiredLevel": 285,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
+        },
+        {
+          "difficulty": "extreme",
+          "requiredLevel": 285,
+          "maxPartySize": 3,
+          "from": "2026-10-22T10:00",
+          "until": null
         }
       ]
     },
@@ -401,14 +597,29 @@
       "alias": "발드릭스",
       "cycle": "weekly",
       "portraitSlug": "bardrix",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "normal",
-          "requiredLevel": 290
+          "requiredLevel": 290,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 290
+          "requiredLevel": 290,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
+        },
+        {
+          "difficulty": "extreme",
+          "requiredLevel": 290,
+          "maxPartySize": 3,
+          "from": "2026-10-22T10:00",
+          "until": null
         }
       ]
     },
@@ -418,14 +629,22 @@
       "alias": "유피테르",
       "cycle": "weekly",
       "portraitSlug": "jupiter",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "normal",
-          "requiredLevel": 295
+          "requiredLevel": 295,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 295
+          "requiredLevel": 295,
+          "maxPartySize": 3,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -435,14 +654,22 @@
       "alias": "메이린",
       "cycle": "event_weekly",
       "portraitSlug": "maerin",
+      "from": "2026-06-18T10:00",
+      "until": "2026-09-16T23:59",
       "difficulties": [
         {
           "difficulty": "normal",
-          "requiredLevel": 270
+          "requiredLevel": 270,
+          "maxPartySize": 1,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "hard",
-          "requiredLevel": 280
+          "requiredLevel": 280,
+          "maxPartySize": 1,
+          "from": null,
+          "until": null
         }
       ]
     },
@@ -452,14 +679,22 @@
       "alias": "검은 마법사",
       "cycle": "monthly",
       "portraitSlug": "blackMage",
+      "from": null,
+      "until": null,
       "difficulties": [
         {
           "difficulty": "hard",
-          "requiredLevel": 255
+          "requiredLevel": 255,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         },
         {
           "difficulty": "extreme",
-          "requiredLevel": 255
+          "requiredLevel": 255,
+          "maxPartySize": null,
+          "from": null,
+          "until": null
         }
       ]
     }

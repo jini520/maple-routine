@@ -17,7 +17,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 
 import { bossesInSection } from '../../../lib/boss/bosses'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
-import valuableDropsData from '../../../data/valuable-drops.json'
+import dropItemsData from '../../../data/drop-items.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import { dropRowKey } from '../../../features/boss-profit/store'
 import type { RecordedDrop } from '../../../types/drops'
@@ -38,7 +38,7 @@ jest.mock('react-native-reanimated', () =>
 )
 import { mockReducedMotion } from '../../../components/__tests__/reduced-motion'
 
-const 고가아이템 = valuableDropsData.items[0]
+const 고가아이템 = dropItemsData.items.filter((item) => item.valuable)[0].key
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
   return { itemKey: 'other_ring', itemName: '기타', ...overrides } as RecordedDrop

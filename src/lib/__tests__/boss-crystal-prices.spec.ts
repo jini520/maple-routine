@@ -1,5 +1,6 @@
 // 결정석 가격은 처치의 기간으로 고른다. 값은 2026-09-17 패치에서 사용자가 준 것이다(2026-09-11).
-import { findPriceEntry, getMaxPartySize } from '../boss/boss-crystal-prices'
+import { getMaxPartySize } from '../boss/bosses'
+import { findPriceEntry } from '../boss/boss-crystal-prices'
 
 // 09-17 패치가 적용된 뒤. 경계 날이 곧 기간 첫날일 때만 시계를 보므로 다른 기간의 답은 안 바뀐다.
 const 패치후시각 = new Date('2026-09-18T12:00:00+09:00')
