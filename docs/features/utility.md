@@ -111,7 +111,7 @@ MVP 실버 등급 이상이면 경매장 수수료가 **5% → 3%** 로 내려�
   그 1 메소가 ‘모두가 같은가’를 무너뜨린다. `N × 100` 이 안전 정수 안에 있어야 해서 판매가 상한이
   **9,999,999,999,999** 다.
 - **파티원이 1인이면 결과가 없다**. 보낼 곳이 없다. 상한은 6 이고, 그 값은
-  `src/data/boss-crystal-prices.json` 의 `partySizeScaling.defaultMaxPartySize` 를 따른다.
+  `src/data/bosses.json` 의 `rules.defaultMaxPartySize` 를 따른다(`lib/boss/bosses` 의 `defaultMaxPartySize()`).
   **처음 놓이는 값은 2** 다([[ADR-168]] 정정 3). 나눌 수 있는 가장 작은 파티라 스테퍼가 올리기만
   하면 되고, 한 번 내리면 곧바로 그 경계를 만난다.
 

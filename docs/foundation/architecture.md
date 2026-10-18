@@ -134,6 +134,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 ## 상태 관리
 - Nexon 스케줄러 데이터는 사용자 본인 계정 데이터이지만 앱 입장에선 "외부 동기화 읽기 전용 데이터"로 다룬다. 동기화 상태(로딩/성공/실패)·마지막 동기화 시각·캐시 응답을 `nexon/schedule` 이 노출하고 `storage/` 에 영속화.
 - 전역 클라이언트 상태(현재 선택 캐릭터, 선택 테마, API 키 등록 여부, 타이머 진행 등)는 **Zustand**로 관리([[ADR-009]] 테마 포함).
+- 서버가 기준인 게임 데이터 표 열셋은 **TanStack Query** 가 든다([[ADR-350]] 정정 7, `features/game-data/query`). 쿼리 하나에 응답 전체를 두고 `storage/query-persister` 가 Preferences 에 저장하며, React 밖의 조회 모듈은 `lib/game-data/table` 의 표를 읽는다. 다른 서버 상태(결산 · 직접 완료 · 공지)는 아직 zustand 스토어다.
 - 영속 데이터(API 키·동기화 캐시·보스 기록·드랍 히스토리·선택 테마)는 `storage/` 에 저장하고 앱 시작 시 hydration. 상세 스키마는 [persistence/](../persistence/README.md).
 - **탭 화면 스토어는 부팅 때 미리 하이드레이션한다**([[ADR-101]] 결정 2~6, `features/prehydrate.ts`). 세 탭 스토어(컨텐츠·보스·보스 수익)의 `loadTrackedOcids()` 를 앱 셸 마운트 직후 백그라운드로 돌린다. 그러지 않으면 탭 첫 진입이 저장소 읽기(Preferences N회 + SQLite 오픈)를 사용자가 보는 앞에서 치러 로딩 프레임이 낀다. 지켜야 하는 성질 넷:
   - **순차다.** [[ADR-097]] 게이트의 신선도 조건은 앞 회차가 캐시를 **쓴 뒤에야** 참이 되므로, 병렬로 띄우면 셋 다 게이트를 통과해 같은 응답을 3번 받는다.

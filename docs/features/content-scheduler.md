@@ -21,7 +21,7 @@
 | [컨텐츠 관리 화면](#컨텐츠-관리-화면) | 카테고리 그룹핑, 길드 잠금 |
 | [폐기된 정책](#폐기된-정책-history) | |
 
-> **컨텐츠는 이름이 아니라 컨텐츠 key 로 찾는다**([[ADR-280]] 결정 13, 구현 완료 2026-09-15 · 실기기 미검증, 이슈 #446 의 첫 PR). 템플릿(`scheduler-content-template.json`)이 컨텐츠 마스터 표이고 줄마다 key · 갈래 key · 보이는 이름 · 그림을 든다. 응답을 정규화하는 자리가 API 이름에서 key 를 한 번 얻고, 카드 고르기 · 완료 판정 · 공유 범위 · 수동 추적은 모두 그 key 와 갈래 key 로 가른다. 표에 없는 컨텐츠는 key 가 `null` 이고 자동 모드 목록에만 원문 이름으로 선다.
+> **컨텐츠는 이름이 아니라 컨텐츠 key 로 찾는다**([[ADR-280]] 결정 13, 구현 완료 2026-09-15 · 실기기 미검증, 이슈 #446 의 첫 PR). 컨텐츠 표(`contents.json`, 서버 `contents` 칸의 사본)가 컨텐츠 마스터 표이고 줄마다 key · 갈래 key · 보이는 이름 · 그림을 든다. 응답을 정규화하는 자리가 API 이름에서 key 를 한 번 얻고, 카드 고르기 · 완료 판정 · 공유 범위 · 수동 추적은 모두 그 key 와 갈래 key 로 가른다. 표에 없는 컨텐츠는 key 가 `null` 이고 자동 모드 목록에만 원문 이름으로 선다.
 
 ## 관련 소스
 
@@ -45,8 +45,7 @@
 | 저장 | `storage/scheduler-cache.ts` | 캐릭터별 마지막 정상 상태와 `syncedAt` |
 | 저장 | `storage/shared-progress-cache.ts` | 월드·계정 공유 진행 원장 |
 | 저장 | `storage/schedule-probe-ledger.ts` | 어느 캐릭터를 어느 날짜로 조회했는지 |
-| 참조 | `src/data/scheduler-content-catalog.json` | 공유 범위 · `cumulativeScores` |
-| 참조 | `src/data/scheduler-content-template.json` | 컨텐츠 마스터 표. 관리 화면 목록의 원천 |
+| 참조 | `src/data/contents.json` | 컨텐츠 마스터 표 · 갈래 표 · 공유 범위 · `cumulativeScore`. 서버 `GET /v1/game-data` 의 `contents` 칸 사본([[ADR-350]] 정정 4 · 7) |
 | 참조 | `src/data/daily-quest-region-crops.json` | 지도 배경 크롭 |
 
 **관련 ADR** (유효): [[ADR-012]] [[ADR-013]] [[ADR-020]] [[ADR-021]] [[ADR-030]] [[ADR-034]]
@@ -110,7 +109,7 @@ today ‘남은 스케줄’) 흩어지면 같은 항목이 화면마다 다르�
 
 ### 출시 전인 컨텐츠는 목록에 안 선다 ([[ADR-261]] 정정 1)
 
-**구현 완료**(2026-09-14, 사용자 결정, 이슈 #412) · 실기기 미검증. 템플릿(`scheduler-content-template.json`)의 줄이
+**구현 완료**(2026-09-14, 사용자 결정, 이슈 #412) · 실기기 미검증. 컨텐츠 표(`contents.json`)의 줄이
 `from` 을 들 수 있고, 그 날이 **지금 주간 기간**의 첫날보다 뒤면 그 줄을 그리지 않는다. 판정은
 `isEffectiveIn` 하나이고, 목록은 `effectiveTemplateEntries`(`lib/scheduler/scheduler-content-template.ts`)가 거른다. 09-17 패치의 아우룸 레기스(`from: 2026-09-17`)가 출시 전인 1.0.8 에서 컨텐츠
 관리 목록에 섰고, 고르면 템플릿 기본값(`0/5`)으로 스케줄러 카드가 섰다. 지금 할 수 있는 일을 말하는
@@ -323,7 +322,7 @@ today ‘남은 스케줄’) 흩어지면 같은 항목이 화면마다 다르�
    유지하고 진행값(`now_count`·`quest_state`·`isComplete`)만 리셋한다. `boss_contents` 는
    `cycle: weekly` 를 `weekly_contents` 와 같이, `cycle: monthly` 를 월간 경계(매월 1일 00:00 KST)와
    같이 판정한다.
-3. **신선하면** 항목마다 `scheduler-content-catalog.json` 의 공유 범위를 본다.
+3. **신선하면** 항목마다 컨텐츠 표(`contents.json`)의 `shareScope` 를 본다.
    카탈로그가 `worldShared` 와 `accountShared` 두 목록으로 그 범위를 갖는다.
    - `character` 면 캐릭터별 캐시를 갱신한다.
    - `world`·`account` 면 개별 `registration_flag` 를 **무시하고**(마지막 활성 캐릭터 오염 대상이라
@@ -678,7 +677,7 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
 
 ### 체크리스트: 카테고리 그룹핑
 
-2026-07-24다. `scheduler-content-template.json` 을 카테고리로 묶어 나열하고(시작 기간 전인 줄은 뺀다,
+2026-07-24다. 컨텐츠 표(`contents.json`)를 갈래로 묶어 나열하고(시작 기간 전인 줄은 뺀다,
 [[ADR-261]] 정정 1), 추적 중인 항목만 선택 상태다(`aria-pressed`, 선택 시
 `border-primary bg-primary-tint`). 행을 누르면 추적 토글이고 **즉시 저장**한다.
 
@@ -691,7 +690,7 @@ mask `linear-gradient(90deg,#000 0%,#000 38%,transparent 76%)`)이다.
 `무릉도장`(단독), 주간 "아케인리버 지역 퀘스트"(에르다 스펙트럼 · 배고픈 무토 · 미드나잇 체이서 ·
 스피릿 세이비어 · 엔하임 디펜스 · 프로텍트 에스페라 + `성실한 조사에 대한 보답`).
 
-**주간 그룹 순서**(`WEEKLY_CATEGORY_ORDER`): 에픽 던전 → 몬스터파크 → 길드 → 아케인리버 지역 퀘스트 →
+**주간 그룹 순서**(`weeklyCategoryOrder()`, 갈래 표의 차례): 에픽 던전 → 몬스터파크 → 길드 → 아케인리버 지역 퀘스트 →
 주간 퀘스트 → 무릉도장 → 메이플 유니온. 일간은 첫 등장 순서를 유지한다.
 
 - **그룹 헤더**: 아이콘 배지(`h-6 w-6 rounded-lg bg-third-tint text-third-ink`) + 카테고리명 + 추적

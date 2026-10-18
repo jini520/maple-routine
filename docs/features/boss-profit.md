@@ -61,7 +61,7 @@
 | 계산 | `lib/boss/boss-matching.ts` · `lib/boss/bosses.ts` | 보스 정렬 순서(`compareBossOrder`), `WEEKLY_BOSS_CLEAR_LIMIT`, `WEEKLY_CRYSTAL_SALE_LIMIT`, 보스 표 조회(`bossNameOf` · `isSeasonBoss` · `bossPortraitSlugOf` 등) |
 | 훅 | `hooks/useCountUp.ts` | 금액이 바뀌면 목표까지 굴러가는 숫자([[ADR-087]]) |
 | UI | `components/atoms/AnimatedNumber/` | 그 훅을 **잎에 가두는** 컴포넌트(정정 3). 매 프레임 다시 그리는 범위를 좁히는 것이 존재 이유다 |
-| 참조 | `src/data/boss-crystal-prices.json` | 결정석 정가 |
+| 참조 | `src/data/crystal-prices.json` | 결정석 정가. 서버 `crystalPrices` 칸 사본([[ADR-350]] 정정 7) |
 | 참조 | `src/data/bosses.json` | 보스 목록과 정규 순서. 서버 응답의 번들 사본이라 앱을 켜면 덮일 수 있다([[ADR-349]] 결정 5) |
 | 참조 | `src/data/boss-portrait-icon-crops.json` | 보스 초상화 크롭 |
 | UI | `components/molecules/ValuableDropBadge/` | 고가 드롭 배지 |
@@ -106,7 +106,7 @@ ADR-073 · ADR-077 · ADR-078 · ADR-080 · ADR-102 · ADR-112. **각 파일 배
 ### 결정석 수익 계산
 
 ```
-정가 조회   boss-crystal-prices.json 에서 그 처치의 기간에 유효한 줄의 priceMeso
+정가 조회   crystal-prices.json 에서 그 처치의 기간에 유효한 줄의 priceMeso
 파티 분배   floor(priceMeso / partySize)      (partySizeScaling.formula)
 아이템 더함 그 위에 드롭 판매가를 더한다        (아래 "아이템 수익 합산")
 ```
@@ -377,7 +377,7 @@ placeholder 행을 지운다([[ADR-187]] 결정 4, 2026-08-30).
 2. **월드를 모르는 캐릭터는 월드 합계에서 빠진다.** 구버전 `character-basic-cache` 엔트리에는
    `world` 가 없어 어느 월드에도 귀속시킬 수 없다. 그 캐릭터의 `n/12` 배지는 정상이고, 캐시가
    갱신되면 합계에 저절로 합류한다.
-3. **과거 기간은 기록된 것만 센다.** 백필과 자동 기록은 `boss-crystal-prices.json` 에 가격 항목이
+3. **과거 기간은 기록된 것만 센다.** 백필과 자동 기록은 `crystal-prices.json` 에 가격 항목이
    없거나 `priceMeso === null` 인 보스를 건너뛴다. 그래서 그런 보스는 그 기간의 링과 칩에서도
    빠진다([[ADR-059]] 트레이드오프). 지금 `priceMeso: null` 인 항목은 0개라([[ADR-151]]) 실질 영향도
    0이지만, 신규 보스가 나왔는데 가격표 갱신이 늦으면 같은 일이 생긴다. 참조 데이터를 갱신하면

@@ -40,9 +40,9 @@
 | 연출 | `components/organisms/DropEffectOverlay/` | 전체화면 연출 |
 | 연출 | `components/organisms/DropEffectOverlay/drop-effect-layout.ts` | 프레임 목록과 origin 테이블 |
 | 도구 | `scripts/measure-drop-effect-origins.py` | origin 재계측 |
-| 참조 | `src/data/item-drop-table.json` | 보스별 드롭 테이블 |
-| 참조 | `src/data/boss-ring-boxes.json` · `accessory-boxes.json` | 상자 개봉 후보 |
-| 참조 | `src/data/drop-items.json` · `valuable-drops.json` | 드롭 아이템 key 마스터 표(이름 · 그림), 고가 목록 |
+| 참조 | `src/data/boss-drops.json` | 보스별 드롭 테이블. 서버 `GET /v1/game-data` 의 `bossDrops` 칸 사본([[ADR-350]] 정정 7) |
+| 참조 | `src/data/drop-boxes.json` | 상자 개봉 후보(반지 상자 5 · 칠흑 장신구 상자 2) |
+| 참조 | `src/data/drop-items.json` | 드롭 아이템 key 마스터 표(이름 · 그림 · 고가 여부 `valuable`) |
 
 **관련 ADR** (유효): [[ADR-010]] [[ADR-011]] [[ADR-038]] [[ADR-040]] [[ADR-041]] [[ADR-045]]
 [[ADR-048]] [[ADR-069]] [[ADR-070]] [[ADR-071]] [[ADR-103]] [[ADR-124]] [[ADR-147]] [[ADR-172]]
@@ -85,7 +85,7 @@
 
 ### 아이템은 난이도를 가리지 않고 보여준다
 
-[[ADR-011]] 이다. 보스를 고르면 `item-drop-table.json` 에서 그 보스명과 일치하는 **모든 난이도**
+[[ADR-011]] 이다. 보스를 고르면 `boss-drops.json` 에서 그 보스명과 일치하는 **모든 난이도**
 엔트리의 아이템을 이름 기준으로 합쳐 보여준다.
 
 **이유는 유저가 실제 처치 난이도를 게임에 정확히 등록하지 않았을 수 있기 때문이다.** 난이도로 거르면
@@ -238,7 +238,7 @@
 아이템은, 기록할 때 **실제로 나온 결과**(반지 종류와 레벨, 장신구 종류)를 후보 목록에서 골라 함께
 저장한다. **확률로 자동 추정하지 않는다.**
 
-후보는 `boss-ring-boxes.json` 과 `accessory-boxes.json` 이다.
+후보는 `drop-boxes.json` 이다.
 
 반지 상자 결과의 규칙은 [[ADR-041]] 이다. 백옥 기준 목록 · 저가치 반지는 ‘기타’로 묶기 · 반지를 고른
 뒤 레벨을 고르는 순서 · 연마석 레벨 없음이다.
@@ -264,7 +264,7 @@
 black-crush와 `mix-blend:screen` 을 써서 29MB 를 약 2MB 로 줄였다. 원본 PNG는 커밋하지 않고
 최적화본만 커밋한다.
 
-고가 목록은 `valuable-drops.json` 이다([[ADR-038]] 1차 + [[ADR-040]] 익셉셔널 해머 추가). 보스 수익
+고가 목록은 `drop-items.json` 의 `valuable` 칸이다([[ADR-038]] 1차 + [[ADR-040]] 익셉셔널 해머 추가, [[ADR-350]] 결정 6 이 세트를 칸으로 접었다). 보스 수익
 목록 쪽의 고가 강조는 [boss-profit.md](./boss-profit.md) 의 [[ADR-045]] 절에 있다.
 
 ### DropEff 프레임 정렬

@@ -37,8 +37,8 @@
 | 계산 | `lib/boss/boss-matching.ts` | 정렬(`compareBossOrder`), 한도 판정(`isWeeklyClearLimitReached`·`countManualWeeklyBosses`) |
 | 계산 | `lib/boss/manual-boss-merge.ts` | 수동 모드 목록 합치기(`mergeManualBossList`) |
 | 계산 | `lib/assets/asset-lookup.ts` | 보스 초상화 |
-| 참조 | `src/data/bosses.json` | 보스 표의 번들 사본. 서버 `GET /v1/game-data` 의 `bosses` 칸과 같은 모양이고 앱을 켜면 기기 사본 · 서버 응답이 덮는다([[ADR-349]] 결정 5 · [[ADR-350]] 결정 4). 조회는 `lib/boss/bosses`, 현재 표는 `lib/boss/catalog`, 덮는 흐름은 `features/game-data/hydrate` 와 `features/bosses/store` |
-| 참조 | `src/data/boss-crystal-prices.json` | 관리 화면이 보여줄 난이도 목록의 출처 |
+| 참조 | `src/data/bosses.json` | 보스 표의 번들 사본. 서버 `GET /v1/game-data` 의 `bosses` 칸과 같은 모양이고 앱을 켜면 기기 사본 · 서버 응답이 덮는다([[ADR-349]] 결정 5 · [[ADR-350]] 결정 4). 조회는 `lib/boss/bosses`, 현재 표는 `lib/boss/catalog`, 덮는 흐름은 `features/game-data/query`(TanStack Query, [[ADR-350]] 정정 7) |
+| 참조 | `src/data/bosses.json` 의 `rules.defaultMaxPartySize` · 난이도 줄의 `maxPartySize` | 파티 스테퍼의 상한. 옛 `boss-crystal-prices.json` 에서 옮겨 왔다([[ADR-350]] 정정 7) |
 | 참조 | `src/data/boss-portrait-crops.json` | 카드 일러스트 크롭 |
 
 **관련 ADR** (유효): [[ADR-006]] [[ADR-007]] [[ADR-012]] [[ADR-013]] [[ADR-018]] [[ADR-019]]
@@ -580,7 +580,7 @@ Modal.Panel maxWidth="max-w-xs"(320) · align="center"   ← 키보드를 안 �
 
 - **수동 모드**: 위 규칙으로 걸러진 보스를 나열한다(주간 섹션 = weekly + 시즌, 월간 섹션 = monthly.
   스케줄러와 같은 순서로 월간이 위다). 행은 체크(추적, 탭 즉시 저장) + 체크된 행에 난이도 배지
-  목록(`boss-crystal-prices.json` 이 지원하는 난이도, 미선택은 `opacity-40`)과 파티 스테퍼다. 난이도를
+  목록(보스 표의 난이도 줄, 미선택은 `opacity-40`)과 파티 스테퍼다. 난이도를
   바꾸면 (보스, 난이도) 쌍이 교체된다.
 - **자동 모드**: 같은 행 구조에서 체크박스만 없다. 난이도는 등록 난이도가 기본 선택이다. 토글은
   ‘모든 보스 보기’이고 기본이 꺼짐이다([[ADR-145]] 결정 3·4). 기본은 등록한 보스만 보여주고, 등록이

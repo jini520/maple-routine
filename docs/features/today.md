@@ -730,7 +730,7 @@ function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel
 | 6 | `reset-countdown` | 일일/주간/월간 초기화까지 남은 시간(**일일은 초까지 · 1초 갱신**) | **2x1** · 2x2 · 4x1 · 1x1 | — | `lib/scheduler/reset-clock.ts` |
 | 7 | `unpriced-drops` | 가격 미입력 드롭 N건 | **2x1** · 2x2 · 1x1 | **아이템 가격 입력**(`DropPrice`, #431) | `drop-history` |
 | 8 | `valuable-drought` | ‘N주째 아이템 드롭 없음’ | **4x1** · 2x2 · 2x1 | **없음**(#431) | `summarizeValuableDrought` |
-| 9 | `shared-contents` | **계정 및 메이플 ID 공유 컨텐츠**. 계열별(몬스터파크 · 메이플 유니온 · 에픽 던전) | **`4×auto`** | 없음 | 컨텐츠 스토어 + `scheduler-content-catalog.json` |
+| 9 | `shared-contents` | **계정 및 메이플 ID 공유 컨텐츠**. 계열별(몬스터파크 · 메이플 유니온 · 에픽 던전) | **`4×auto`** | 없음 | 컨텐츠 스토어 + `contents.json` 의 공유 줄 |
 | 10 | `next-party-schedule` | **다음 파티 스케줄**. 시작 전인 가장 가까운 회차 하나(파티 스케줄 목록 카드, 안쪽 바탕 없음). **없으면 타일째 숨는다** | **`4×auto`** | 파티 스케줄 탭 + 그 회차 상세(위젯이 직접) | 파티 스케줄 스토어 + 스케줄러 캐릭터 |
 
 **타일을 누르면 가는 곳은 이슈 #431 에서 사용자가 정했다**(2026-09-14). 목록에 없는 위젯은 전과 같다.
@@ -1141,7 +1141,7 @@ formatValuableDroughtHeadline(weeksSince, lateIndex)  →  (weeksSince, index)
 |---|---|
 | 대상 판정 | `getShareScope(contentKey) !== 'character'`. 분류를 새로 만들지 않는다 |
 | 시작 기간 | 같은 컨텐츠 key 의 템플릿 줄 `from` 이 **지금 주간 기간**의 첫날보다 뒤면 그 줄을 안 그린다(`isEffectiveIn`, [[ADR-261]] 정정 1). 아우룸 레기스는 `2026-09-17` 부터 선다 |
-| 계열·짧은 이름 | 계열은 템플릿 줄의 갈래 key(`category`)이고 제목 글자는 갈래 표(`content-categories.ts`)가 든다. 짧은 이름은 `scheduler-content-catalog.json` 의 `shortName`(사람이 적는다, 정정 31) ([[ADR-280]] 결정 13) |
+| 계열·짧은 이름 | 계열은 템플릿 줄의 갈래 key(`category`)이고 제목 글자는 갈래 표(`content-categories.ts`)가 든다. 짧은 이름은 `contents.json` 공유 줄의 `sharedShortName`(사람이 적는다, 정정 31) ([[ADR-280]] 결정 13) |
 | 순서 | 계열은 `sharedGroupOrder`(갈래 key 로 손으로 적는다. **몬스터파크 · 메이플 유니온 · 에픽 던전**, 정정 46) · 계열 ‘안’은 `worldShared` → `accountShared` 를 이어 읽은 순서 |
 | 열 | **둘**([[ADR-182]] 결정 1). 폭 반반(`flex-1` + 사이 12). 계열은 자기 열 안에서 세로로 쌓이고, **오른쪽 열이 비면 한 열로** 그린다 |
 | 열 가르기 | **순서를 지키면서 두 열의 ‘줄 수’(제목 1 + 항목 수)가 가장 고른 지점**에서 자른다. 지그재그(홀짝)로 나누면 타일이 한 줄 높아진다 |
