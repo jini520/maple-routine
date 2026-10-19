@@ -16,7 +16,7 @@ import { toOpenOptions, type SqlitePlatform } from './capacitor-sqlite-open'
  *
  * op-sqlite 를 고른 이유는 성능이 아니라 `location` 이다. 기존 DB 는 Capacitor 플러그인이 정한
  * 자리에 있고, 자기 전용 디렉터리에만 파일을 만드는 라이브러리로는 거기 닿을 수 없다. 그러면
- * 빈 DB 가 새로 생기고 사용자에게는 보스 수익·드랍 기록이 전부 사라진 것으로 보인다. op-sqlite
+ * 빈 DB 가 새로 생기고 사용자에게는 보스 수익·드롭 기록이 전부 사라진 것으로 보인다. op-sqlite
  * 는 `open({ location })` 이 절대 경로를 받고 네이티브 기준 디렉터리를 상수로 내준다
  * (`ANDROID_DATABASE_PATH`·`IOS_DOCUMENT_PATH`).
  *

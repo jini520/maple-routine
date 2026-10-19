@@ -74,8 +74,6 @@ import {
   groupTotalMeso,
   monthlyCrystalMesoOf,
 } from './character-groups'
-// `DeltaChip` 은 증감 표시를 통계 기능으로 옮길 때까지 쓰이지 않는다. 컴포넌트와 테스트는
-// 그대로 두고 여기서 부르지만 않는다.
 import { CrystalSummaryChip } from './HeadlineChips'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
@@ -131,9 +129,6 @@ export function BossProfitScreen(): React.JSX.Element {
     setBossDrops,
     dropsByRowKey,
   } = useBossProfitStore()
-  // 당김이 시작한 회차에만 인디케이터가 돈다. 헤더 버튼·자동 조회는 같은 재조회를 부르지만
-  // 인디케이터는 안 연다. 버튼은 자기 스피너와 조회 중… 을 이미 갖고 있고 자동 조회는 원래
-  // 조용해야 하는 것이다.
   const ledger = useLedgerData()
 
   /**
@@ -498,9 +493,6 @@ export function BossProfitScreen(): React.JSX.Element {
                 <AnimatedNumber identity={`total|${loadedTab}`} value={totalMeso} />{' '}
                 <Text className="text-xs font-bold text-text-muted">메소</Text>
               </Text>
-              {/* 증감 칩은 뺀 채로 둔다. 총 수익에서는 뜻이 퇴색한다고 봤고 통계 기능이 생기면
-                  그쪽으로 옮긴다. `DeltaChip` 과 스토어의 `previousPeriodTotalMeso` 는 지우지
-                  않는다. 그 자리를 자세히 보기가 받는다. */}
               <Pressable
                 ref={periodChipRef}
                 role="button"

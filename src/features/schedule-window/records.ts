@@ -234,8 +234,7 @@ export function periodStateKey(ocid: string, cycle: BossCycle, periodKey: string
 /**
  * 창이 **확정 관측한** (캐릭터, 기간)들. 화면이 `조회해서 0건` 과 `아직 못 받았다` 를 이걸로 가른다.
  *
- * 전에는 `boss_profit_period_checks` 표가 이 답을 들었다. 이제 조회 원장이 든다. 표를 따로 두면
- * 원장과 어긋나고, 어긋나면 조회한 주가 미조회로 보인다.
+ * 답은 조회 원장이 든다. 표를 따로 두면 원장과 어긋나고, 어긋나면 조회한 주가 미조회로 보인다.
  */
 export async function loadObservedPeriodKeys(
   ocids: readonly string[],

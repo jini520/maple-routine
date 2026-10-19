@@ -45,7 +45,7 @@
 | 그룹 | 지우는 것 |
 |---|---|
 | `general` | `KEEP_KEYS` 에 없는 Preferences 키 전부 + 기록 그룹이 아닌 테이블(`boss_party_settings` · `boss_party_period_overrides` · `server_sync_queue`) |
-| `records` | `RECORD_TABLE_NAMES` 의 테이블: `boss_profit_records` · `boss_drop_records` · `boss_profit_period_checks` · `enhancement_history` · `enhancement_history_checks` · `income_records` · `spend_records` · `character_profiles` · `character_world_leaps` · `mvp_grade_history` · `character_accounts` |
+| `records` | `RECORD_TABLE_NAMES` 의 테이블: `boss_profit_records` · `boss_drop_records` · `enhancement_history` · `enhancement_history_checks` · `income_records` · `spend_records` · `character_profiles` · `character_world_leaps` · `mvp_grade_history` · `character_accounts` |
 
 `general` 은 따로 목록이 없고, `KEEP_KEYS` 와 `RECORD_TABLE_NAMES` 에 들지 않은 나머지 전부다. 그래서 새 Preferences 키와 새 테이블은 따로 적지 않으면 `general` 에
 들어간다. 다시 받을 수 없는 값은 `KEEP_KEYS` 나 `RECORD_TABLE_NAMES` 에 직접 넣어야 한다. 테이블은 `DROP` 이 아니라

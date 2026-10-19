@@ -44,8 +44,9 @@ SDK 초기화(`rnAdsPort.initialize()`)는 지금 아무 곳에서도 부르지 
 
 ### 결정 4. `features/*` 와 `app/*` 은 광고 SDK 를 직접 부르지 않는다
 
-화면과 기능 코드는 `native/ads.ts` 만 부르고, SDK 는 `native/adapters/rn-ads.ts` 만 import 한다. 지금은
-광고를 띄우는 화면이 없으므로 `native/ads.ts` 를 부르는 곳도 없다.
+SDK 는 `native/adapters/rn-ads.ts` 만 import 한다. 화면과 기능 코드가 부를 함수는 광고를 붙일 때 `native/` 에
+둔다. 지금은 광고를 띄우는 화면이 없어서 그런 함수도 두지 않았다. `native/ads.ts` 에는 어댑터가 쓰는 ID 판정
+함수 둘만 있다.
 
 ### 결정 5. 실제 광고 단위 ID 는 저장소에 두지 않고, 빌드할 때 환경 변수로 넣는다
 

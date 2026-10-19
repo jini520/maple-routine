@@ -107,12 +107,9 @@ describe('그룹 ↔ 테이블 분할', () => {
     expect(GENERAL_TABLE_NAMES.filter((table) => records.has(table))).toEqual([])
   })
 
-  // 재조회 표식만 남고 기록이 사라지면 loadPeriod의 isPeriodChecked 가드가
-  // 백필을 건너뛰어, API가 아직 주는 최근 2주치마저 되살릴 수 없게 된다.
-  it('boss_profit_period_checks는 수익 기록과 같은 그룹이다', () => {
+  it('boss_drop_records는 수익 기록과 같은 그룹이다', () => {
     expect(RECORD_TABLE_NAMES).toContain('boss_profit_records')
     expect(RECORD_TABLE_NAMES).toContain('boss_drop_records')
-    expect(RECORD_TABLE_NAMES).toContain('boss_profit_period_checks')
   })
 
   // 기록이 아니라 설정이고, 어느 쪽으로 지워도 위험한 조합이 없다.

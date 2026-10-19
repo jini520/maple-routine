@@ -37,7 +37,6 @@
 | 표 | 이유 |
 |---|---|
 | `boss_profit_records` · `boss_drop_records` | 넥슨 API 는 최근 2주치만 준다. 수익만 지우고 드롭이 남으면, 같은 캐릭터가 같은 보스를 같은 기간에 다시 잡을 때 지웠다고 생각한 옛 드롭이 새 기록에 붙는다. 그래서 둘을 나누지 않는다 |
-| `boss_profit_period_checks` | 기록에 붙은 표식이다. 기록만 지우고 표식이 남는 조합을 막는다 |
 | `enhancement_history` · `enhancement_history_checks` | 어제 이전 날짜는 다시 조회하지 않아 지우면 되살릴 수 없다. 원장도 같은 그룹이어야 표식만 남고 내역이 사라지는 일이 없다 |
 | `income_records` · `spend_records` | 손으로 적은 기록이라 API 로 되살릴 수 없다 |
 | `character_profiles` | 이 이름이 없으면 기록을 화면에 그릴 수 없다. 지우면 과거 수익이 화면에서 통째로 사라진다 |

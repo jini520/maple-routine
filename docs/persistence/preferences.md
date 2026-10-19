@@ -59,7 +59,6 @@
 | `lastRunBundleVersion` | 버전 문자열 | `last-run-bundle-version.ts` | 지운다 | 마지막으로 실행한 OTA 번들 버전. 방금 업데이트했는지 판단한다 |
 | `queryCache` | JSON 문자열(TanStack Query 캐시 전체) | `query-persister.ts` | 지운다 | 게임 데이터 표의 기기 사본([[ADR-020]]) |
 | `bossCatalog` | JSON | `query-persister.ts` | 지운다 | 옛 키. 읽지 않고 켤 때 지운다 |
-| `lastAdShownAt` | | | | `keys.ts` 에 이름만 있고 읽거나 쓰는 코드가 없다 |
 
 ## 캐릭터 · 계정 · 월드마다 달라지는 키
 

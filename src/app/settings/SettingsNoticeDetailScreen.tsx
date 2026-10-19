@@ -25,11 +25,10 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { formatNoticeDate } from '../../features/notice/format'
-import { forgetNotice } from '../../features/notice/notice-copy'
+import { forgetNotice, readNoticeCopy } from '../../features/notice/notice-copy'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { NoticeBlocks } from './NoticeBlocks'
 import { fetchNoticeDetail } from '../../features/notice/notice-feed'
-import { getNotices } from '../../storage/notices'
 import type { Notice } from '../../types/notice'
 
 export function SettingsNoticeDetailScreen(props: {
@@ -54,7 +53,7 @@ export function SettingsNoticeDetailScreen(props: {
 
     // `noticeId` 가 없어도 같은 비동기 경로로 답한다. 여기서 곧장 `setNotice(null)` 하면
     // 렌더 도중에 상태가 바뀌어 한 번 더 그린다.
-    void getNotices()
+    void readNoticeCopy()
       .then((all) => {
         const copy = noticeId === undefined ? null : (all.find((n) => n.id === noticeId) ?? null)
         if (alive) setNotice(copy)

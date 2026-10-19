@@ -33,15 +33,13 @@ import { useDataFreshness } from '../../features/refresh/freshness'
 import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
 import { useManualCompletionStore } from '../../features/manual-completion/store'
 import { useNoticeBannerStore } from '../../features/notice/banner-store'
-import { useDropHistoryStore } from '../../features/boss-profit/drop-history-store'
-import { getBossDropRecordsRevision } from '../../storage/boss-drops'
+import { isDropHistoryOutdated, useDropHistoryStore } from '../../features/boss-profit/drop-history-store'
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
-import { resolveDisplayRepresentative } from '../../features/character-manage/derivations'
+import { readCharacterProfiles, readRepresentativeProfile } from '../../features/character-profile/cached-profiles'
 import type { CharacterBasicProfile } from '../../types'
 
 import { Text } from '../../components/atoms'
@@ -54,45 +52,6 @@ import { NoticeBanner } from './NoticeBanner'
 import { SettlementBanner } from '../SettlementBanner'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
-
-/**
- * 프로필 맵을 저장소에서 읽는 함수. 마운트가 쓴다. 네트워크는 없다.
- *
- * 캐시에 없는 캐릭터는 **항목을 만들지 않는다**. 이름 없이 카드를 그릴 수 없고, ocid 는
- * 사용자에게 뜻이 없는 값이라 대신 넣지 않는다(`drop-history-store` 와 같은 규칙).
- */
-async function readCharacterProfiles(
-  ocids: string[],
-): Promise<Readonly<Record<string, CharacterBasicProfile>>> {
-  const entries = await Promise.all(
-    ocids.map(async (ocid) => [ocid, await getCachedCharacterBasic(ocid).catch(() => null)] as const),
-  )
-
-  return Object.fromEntries(
-    entries.flatMap(([ocid, entry]) => (entry === null ? [] : [[ocid, entry.profile] as const])),
-  )
-}
-
-/**
- * **대표 하나**의 프로필을 다시 읽는 함수. 재조회 끝이 쓴다.
- *
- * 전원을 다시 읽지 않는다. 저장소 읽기 하나가 네이티브 호출 하나라 추적 45명이면 당길 때마다
- * 45번이 되는데, 이 화면이 나머지 항목에서 꺼내는 것은 드롭 위젯의 캐릭터 **이름** 하나뿐이라
- * 개명이 아니면 값이 안 바뀐다. 그 이름은 다음 마운트가 읽어도 늦지 않다.
- *
- * @param representative 선택 스토어의 대표 표식. 저장소에서 다시 읽으면 늦게 온 읽기가 방금 바꾼 대표를 되돌린다.
- */
-async function readRepresentativeProfile(
-  ocids: string[],
-  representative: string | null,
-): Promise<{ ocid: string; profile: CharacterBasicProfile } | null> {
-  // 화면이 대표 자리에 세우는 캐릭터를 그대로 고른다. 미지정이면 목록의 첫 번째다.
-  const ocid = resolveDisplayRepresentative(ocids, representative)
-  if (ocid === null) return null
-
-  const entry = await getCachedCharacterBasic(ocid).catch(() => null)
-  return entry === null ? null : { ocid, profile: entry.profile }
-}
 
 export function TodayScreen(): React.JSX.Element {
   const content = useContentSchedulerStore()
@@ -144,7 +103,7 @@ export function TodayScreen(): React.JSX.Element {
     useCallback(() => {
       const store = dropHistoryRef.current
       if (store.status === 'loading') return
-      if (store.status === 'idle' || store.loadedRevision !== getBossDropRecordsRevision()) {
+      if (store.status === 'idle' || isDropHistoryOutdated(store.loadedRevision)) {
         void store.load()
       }
     }, []),
@@ -296,9 +255,6 @@ export function TodayScreen(): React.JSX.Element {
     }
 
   }
-
-  // 당김이 시작한 회차에만 인디케이터가 돈다. `isSyncing` 은 제목 옆 조회 중… 과 헤더 버튼의
-  // 스피너가 쓴다. 그쪽은 자동 조회도 말해야 하는 자리다.
 
   return (
     <View testID="screen-Today" className="flex-1">

@@ -9,12 +9,12 @@ import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { __resetToastsForTest, useToastStore } from '../../../features/toast/store'
 import { refreshNoticeKinds } from '../../../features/notice/notice-feed'
-import { getNotices } from '../../../storage/notices'
+import { readNoticeCopy } from '../../../features/notice/notice-copy'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 import { SettingsNoticesScreen } from '../SettingsNoticesScreen'
 import type { Notice, NoticeKind } from '../../../types/notice'
 
-jest.mock('../../../storage/notices', () => ({ __esModule: true, getNotices: jest.fn() }))
+jest.mock('../../../features/notice/notice-copy', () => ({ __esModule: true, readNoticeCopy: jest.fn() }))
 jest.mock('../../../features/notice/notice-feed', () => ({
   __esModule: true,
   refreshNoticeKinds: jest.fn(),
@@ -24,7 +24,7 @@ jest.mock('../../../hooks/useSettingsNavigation', () => ({
   useSettingsNavigation: jest.fn(),
 }))
 
-const notices = jest.mocked(getNotices)
+const notices = jest.mocked(readNoticeCopy)
 const refresh = jest.mocked(refreshNoticeKinds)
 
 /**

@@ -138,7 +138,7 @@ API 는 최근 14일만 주므로, 오래 쉬었다 돌아오면 그 사이 기�
 
 `features/boss-profit/period-cache.ts` 가 `{tab}|{periodKey}` 마다 그 기간의 스냅샷을 담는다. 스냅샷은 화면이
 한 기간에 대해 읽는 값 전부다(`rows` · `dropsByRowKey` · `weeklySubtotals` · `periodState` ·
-`periodPendingAggregation` · `canGoPreviousPeriod` · `previousPeriodTotalMeso` · `unqueryableCards`).
+`periodPendingAggregation` · `canGoPreviousPeriod` · `unqueryableCards`).
 
 - `loadPeriod` 는 표에 있으면 곧장 그리고 `isPeriodLoading` 을 켜지 않는다. 없으면 `buildPeriodSnapshot` 으로
   만들어 표에 넣고 그린다. 표에 넣는 값은 이 함수 하나에서만 나온다.
@@ -164,7 +164,7 @@ API 는 최근 14일만 주므로, 오래 쉬었다 돌아오면 그 사이 기�
 
 ### 결정 10. 기간 하나를 만들 때 서로 무관한 조회는 함께 던진다
 
-`buildPeriodSnapshot` 은 이전 화살표 판정 · 드롭 읽기 · 직전 기간 합을 `Promise.all` 로 함께 던진다. 차례로
+`buildPeriodSnapshot` 은 이전 화살표 판정과 드롭 읽기를 `Promise.all` 로 함께 던진다. 차례로
 기다리면 조회 하나가 늦을 때마다 `withSqliteFallback` 의 5초 제한이 더해진다. 캐릭터 프로필은 한 번 읽고
 (`getSortedCharacterInfo`) 그 결과를 `buildRowsFromRecords` 와 `buildWeeklySubtotalsForMonth` 에 넘긴다.
 함수마다 다시 읽으면 캐릭터 수의 세 배만큼 저장소를 오간다. 프로필이 없는 캐릭터의 기록은 이름을 모르므로

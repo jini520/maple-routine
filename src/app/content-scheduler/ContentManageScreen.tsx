@@ -209,7 +209,7 @@ export function ContentManageScreen(): React.JSX.Element {
         ) : selected === null ? (
           <View className="px-4 pb-4">
             <Text className="text-sm text-text-muted">
-              캐릭터를 먼저 선택해주세요. 컨텐츠 스케줄러의 "캐릭터 관리"에서 추가할 수 있어요.
+              캐릭터를 먼저 선택해주세요. 설정의 ‘캐릭터 관리’에서 추가할 수 있어요.
             </Text>
           </View>
         ) : selected.error?.kind === 'characterUnavailable' ? (

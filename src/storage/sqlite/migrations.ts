@@ -33,7 +33,7 @@ import { BOSS_DROP_RECORDS_BODY, BOSS_KEYED_TABLES } from './boss-tables'
 import { NEW_UUID_SQL } from './uuid'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 12
+export const DB_VERSION = 13
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -371,6 +371,13 @@ async function rekeyDropRecordsByUuid(db: SqliteDbConnection): Promise<void> {
   await db.execute(`ALTER TABLE ${rebuild} RENAME TO boss_drop_records`)
 }
 
+/**
+ * 기간 재조회 표식 표를 지운다. 조회 원장이 그 답을 들어 읽는 코드가 없다. 새 기기에는 처음부터 없다.
+ */
+async function dropBossProfitPeriodChecks(db: SqliteDbConnection): Promise<void> {
+  await db.execute('DROP TABLE IF EXISTS boss_profit_period_checks')
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -386,6 +393,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   dropDropShareColumns,
   (db) => fillUnreachableDefeatDates(db, new Date()),
   rekeyDropRecordsByUuid,
+  dropBossProfitPeriodChecks,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

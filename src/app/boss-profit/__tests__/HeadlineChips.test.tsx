@@ -1,72 +1,13 @@
-// 총 수익 헤드라인 옆 칩 둘.
-//
-// `DeltaChip` 은 화면에서 떼어냈지만(총 수익에서는 뜻이 퇴색한다) 컴포넌트와 계약은 그대로 둔다.
-// 되살릴 때 계약이 서 있어야 하므로 다섯을 그대로 적는다.
+// 총 수익 헤드라인 옆 결정석 칩.
 import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss/boss-matching'
 import type { BossProfitRow } from '../../../features/boss-profit/store'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
-import { CrystalSummaryChip, DeltaChip } from '../HeadlineChips'
+import { CrystalSummaryChip } from '../HeadlineChips'
 import type { CharacterGroup } from '../character-groups'
 import { 다른주간보스, 보스행, 월간보스 } from './harness'
-
-// 비교 대상 라벨("지난 주")은 now 기준 상대 표현이라 시각을 고정해 넘긴다.
-// 2026-07-22 기준 이번 주는 2026-07-16, 그 직전 주가 2026-07-09 다.
-const NOW = new Date('2026-07-22T12:00:00+09:00')
-
-function renderDelta(totalMeso: number, previousMeso: number): ReturnType<typeof renderOverlay> {
-  return renderOverlay(
-    <DeltaChip
-      totalMeso={totalMeso}
-      previousMeso={previousMeso}
-      tab="weekly"
-      periodKey="2026-07-16"
-      now={NOW}
-    />,
-  )
-}
-
-describe('DeltaChip', () => {
-  it('늘었으면 퍼센트와 함께 증가를 말한다', async () => {
-    const { getByLabelText, getByText } = await renderDelta(5_000_000, 4_000_000)
-
-    expect(getByLabelText('지난 주 대비 25.0퍼센트 증가')).toBeTruthy()
-    expect(getByText('25.0%')).toBeTruthy()
-  })
-
-  it('줄었으면 감소를 말한다', async () => {
-    const { getByLabelText, getByText } = await renderDelta(3_000_000, 4_000_000)
-
-    expect(getByLabelText('지난 주 대비 25.0퍼센트 감소')).toBeTruthy()
-    expect(getByText('25.0%')).toBeTruthy()
-  })
-
-  it('같으면 사용자 지정 표기 "-" 다', async () => {
-    const { getByLabelText, getByText } = await renderDelta(4_000_000, 4_000_000)
-
-    expect(getByLabelText('지난 주 대비 변화 없음')).toBeTruthy()
-    expect(getByText('-')).toBeTruthy()
-  })
-
-  // 조회한 적 없는 직전 기간도 0으로 들어온다. 퍼센트가 정의되지 않으므로 절대 증감이다.
-  it('직전 기간이 0이면 퍼센트 대신 절대 증감을 보여준다', async () => {
-    const { getByLabelText, getByText } = await renderDelta(500_000_000, 0)
-
-    expect(getByLabelText(/지난 주에는 수익이 없었습니다/)).toBeTruthy()
-    expect(getByText('5.0억')).toBeTruthy()
-  })
-
-  it('방향이 없으면 신호색을 쓰지 않는다. 빨강도 파랑도 거짓이다', async () => {
-    const same = await renderDelta(4_000_000, 4_000_000)
-    const up = await renderDelta(5_000_000, 4_000_000)
-
-    const sameColor = same.getByLabelText('지난 주 대비 변화 없음').props.style.backgroundColor
-    const upColor = up.getByLabelText('지난 주 대비 25.0퍼센트 증가').props.style.backgroundColor
-    expect(sameColor).not.toBe(upColor)
-  })
-})
 
 function group(rows: BossProfitRow[]): CharacterGroup {
   return {

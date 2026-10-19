@@ -105,7 +105,7 @@ COMMIT
 
 ### 결정 7. 값을 옮기는 이관은 `PRAGMA user_version` 으로 한 번씩만 돌린다
 
-`migrations.ts` 의 `STEPS` 에 이관이 버전 순서대로 들어 있고, `DB_VERSION`(지금 12)이 마지막 버전이다.
+`migrations.ts` 의 `STEPS` 에 이관이 버전 순서대로 들어 있고, `DB_VERSION`(지금 13)이 마지막 버전이다.
 `runVersionedMigrations` 는 `user_version` 보다 큰 버전만 차례로 돌리고, 버전마다 한 트랜잭션 안에서 이관과
 `PRAGMA user_version = N` 을 함께 실행한다. 중간에 던지면 그 버전의 변경과 버전 번호가 같이 되돌아가 다음
 부팅에 다시 돈다.
@@ -128,7 +128,7 @@ COMMIT
 | | 결정 7: `user_version` 이 마지막 버전이면 이관이 안 도는지, 버전마다 트랜잭션 안에서 돌고 번호를 올리는지 본다 |
 | `storage/sqlite/__tests__/db-real-sqlite.test.ts` | 결정 5: 새 DB 는 처음부터 `meso_amount` 가 nullable 인지, 옛 스키마로 만든 DB 가 nullable 이 되는지, 기존 행과 값이 그대로인지, 칸이 모자란 옛 테이블도 옮기고 없던 칸은 `NULL` 인지, 재작성이 `ensureColumn` 보다 먼저 도는지, 두 번째 부팅에서는 문장이 하나도 안 나가는지 본다 |
 | | 결정 5 · 6: 메이플 포인트 · 캐시 `기타` 수입이 실제 엔진에서 저장되는지, 메소 `기타` 와 사냥은 그대로인지 본다 |
-| | 결정 7: 버전마다 옛 행을 옮기는지, 못 찾는 값은 key 만 비우고 행을 지키는지, 한 번 돈 이관이 다시 안 도는지 본다 |
+| | 결정 7: 버전마다 옛 행을 옮기는지, 못 찾는 값은 key 만 비우고 행을 지키는지, 한 번 돈 이관이 다시 안 도는지, 버전 13 이 옛 기기에 남은 `boss_profit_period_checks` 를 지우는지 본다 |
 | `storage/adapters/__tests__/rn-sqlite.test.ts` 의 `db.ts 와 맞물리는가` | 결정 4: 어댑터가 `PRAGMA table_info` 결과를 `values` 로 감싸서 `ensureColumn` 이 칸 유무를 바르게 읽는지 본다. 어긋나면 부팅마다 `ALTER` 를 시도한다 |
 
 ## 번호 기록

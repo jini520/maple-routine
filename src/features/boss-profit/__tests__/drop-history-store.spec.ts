@@ -334,3 +334,20 @@ describe('useDropHistoryStore.load', () => {
     expect(store.getState().groups).toEqual([])
   })
 })
+
+// 오늘 화면은 포커스마다 이 판정으로 다시 읽을지 정한다. 기록이 안 바뀌었는데 읽으면 전 기간을 통째로 다시 읽는다.
+describe('isDropHistoryOutdated', () => {
+  it('찍어 둔 리비전이 지금과 같으면 낡지 않았다', () => {
+    getBossDropRecordsRevisionMock.mockReturnValue(4)
+    const { isDropHistoryOutdated } = require('../drop-history-store') as typeof import('../drop-history-store')
+
+    expect(isDropHistoryOutdated(4)).toBe(false)
+  })
+
+  it('기록이 바뀌어 리비전이 올라갔으면 낡았다', () => {
+    getBossDropRecordsRevisionMock.mockReturnValue(5)
+    const { isDropHistoryOutdated } = require('../drop-history-store') as typeof import('../drop-history-store')
+
+    expect(isDropHistoryOutdated(4)).toBe(true)
+  })
+})

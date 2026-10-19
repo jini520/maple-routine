@@ -108,18 +108,6 @@ const TABLE_DEFINITIONS = [
     PRIMARY KEY (ocid, boss_key, difficulty, period_key)
 )`,
   },
-  {
-    name: 'boss_profit_period_checks',
-    createSql: `
-  CREATE TABLE IF NOT EXISTS boss_profit_period_checks (
-    ocid TEXT NOT NULL,
-    cycle TEXT NOT NULL,
-    period_key TEXT NOT NULL,
-    checked_at TEXT NOT NULL,
-    PRIMARY KEY (ocid, cycle, period_key)
-  )
-`,
-  },
   // 보스별/기간별 드롭 기록. 한 보스가 여러 드롭을 가지므로 drop_index로 다중 행.
   // 금액도 여기 담는다. 기록 한 건에 붙는 실판매가다(반전). 같은 행에 두면
   // 난이도 확정 이관·prune 삭제가 가격까지 함께 옮기고 지운다.

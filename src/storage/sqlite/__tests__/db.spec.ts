@@ -56,9 +56,6 @@ describe('getBossProfitDb', () => {
     expect(dbExecuteMock).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS boss_party_settings'),
     )
-    expect(dbExecuteMock).toHaveBeenCalledWith(
-      expect.stringContaining('CREATE TABLE IF NOT EXISTS boss_profit_period_checks'),
-    )
     // 가계부가 손으로 적는 둘.
     expect(dbExecuteMock).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS income_records'),

@@ -25,7 +25,6 @@ export interface PeriodSnapshot {
   weeklySubtotals: BossProfitWeeklySubtotal[]
   periodState: PeriodDataState
   periodPendingAggregation: boolean
-  previousPeriodTotalMeso: number
   canGoPreviousPeriod: boolean
   /**
    * 행이 하나도 없지만 카드는 세워야 하는 캐릭터. 조회할 수 없게 된 추적 캐릭터다.

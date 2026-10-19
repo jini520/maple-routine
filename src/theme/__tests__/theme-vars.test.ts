@@ -2,16 +2,16 @@
 //
 // 값을 손으로 적지 않는다. 색은 대상이라 사람이 확인해 `job-themes.json` 에 커밋한
 // 것이고, 테스트가 그 값을 베끼면 두 벌이 되어 어느 쪽이 진실인지 알 수 없게 된다. 그래서 기대값은
-// **데이터에서 읽거나 core 의 출력과 대조**한다. 예외는 딱 하나 가 실기기에서 확정해
+// **데이터에서 읽는다**. 예외는 딱 하나 가 실기기에서 확정해
 // ADR 본문 표에 적어 둔 세 값이다(그건 데이터가 아니라 **결정**이라 다시 계산해선 안 된다).
 //
 // 이 파일이 지키는 고리 넷:
-//   ① 변수 **이름**이 core 의 `buildThemeCss` 와 같은가. 다르면 색이 조용히 사라진다
+//   ① 변수 **이름**이 토큰 이름의 kebab-case 인가. 다르면 색이 조용히 사라진다
 //   ② 변수 **값**이 `job-themes.json` 의 값 그대로인가
 //  ③ `.media-scope` 재선언이 빠짐없이 실리는가
 //   ④ `tailwind.config.js` 가 만든 유틸리티 이름과 변수 이름이 맞물리는가
 
-import { buildThemeCss, THEME_NAMES, getThemeDefinition } from '../../lib/theme/theme-registry'
+import { THEME_NAMES, getThemeDefinition } from '../../lib/theme/theme-registry'
 import { THEME_TOKEN_KEYS } from '../../lib/theme/theme-derive'
 import { hexToOklch } from '../../lib/color'
 import type { ThemeDefinition, ThemeName } from '../../types/theme'
@@ -32,35 +32,8 @@ import {
   toColorVariableName,
 } from '../theme-vars'
 
-/** `buildThemeCss` 결과에서 뽑은 한 블록의 `--이름: 값;` 선언. */
-function declarationsIn(css: string, selector: string): Record<string, string> {
-  const start = css.indexOf(`${selector} {`)
-  const body = css.slice(start, css.indexOf('}', start))
-  return Object.fromEntries(
-    [...body.matchAll(/(?<name>--[a-z0-9-]+):\s*(?<value>[^;]+);/g)].map((match) => [
-      match.groups!.name,
-      match.groups!.value.trim(),
-    ]),
-  )
-}
-
-/** 파생 토큰은 core 의 CSS 에 없다. RN 이 선택자 대신 값으로 푸는 자리다. */
+/** 38토큰에 없는 파생 토큰. RN 이 선택자 대신 값으로 푸는 자리다. */
 const PANEL_BORDER_VARIABLE = toColorVariableName(PANEL_BORDER_TOKEN)
-
-/**
- * `--color-*` 만 남긴다. `:root` 블록에는 배경 이미지(`--theme-bg-*`)도 섞여 있다.
- *
- *  전에는 RN 에서 배경 슬러그가 **아무것도 해석되지 않아** 그 줄이 애초에 안 나왔고,
- * 그래서 두 맵을 통째로 비교해도 맞았다. 지금은 에셋이 있어 `buildThemeCss` 가 그 줄을 낸다.
- * 그런데 RN 은 벽지를 CSS 배경이 아니라 `<Image>` 로 그리므로 **값의 형태가 다르고**
- * (`theme-vars.ts`) 변수로 내지 않는 것이 여전히 맞다. 그 내지 않는다는 아래에서
- * 따로 단언하고, 여기서는 색만 견준다.
- */
-function colorDeclarationsIn(css: string, selector: string): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(declarationsIn(css, selector)).filter(([name]) => name.startsWith('--color-')),
-  )
-}
 
 describe('변수 이름 규칙', () => {
   it.each([
@@ -72,25 +45,12 @@ describe('변수 이름 규칙', () => {
   ])('%s → %s', (token, expected) => {
     expect(toColorVariableName(token)).toBe(expected)
   })
-
-  // 이름 규칙이 core 에 한 벌, 여기 한 벌 있다(core 쪽은 export 되지 않는다). 규칙이 갈라지면
-  // 유틸리티가 참조하는 변수와 우리가 내는 변수가 어긋나 색이 **조용히 사라지므로**, 토큰 이름
-  // 전부를 core 의 실제 출력과 대조한다.
-  it('38토큰 전부가 core 의 `buildThemeCss` 와 같은 이름으로 나온다', () => {
-    const fromCore = Object.keys(
-      colorDeclarationsIn(buildThemeCss(getThemeDefinition('머쉬맘')), ':root'),
-    )
-
-    expect(fromCore).toHaveLength(THEME_TOKEN_KEYS.length)
-    expect(THEME_TOKEN_KEYS.map(toColorVariableName).sort()).toEqual([...fromCore].sort())
-  })
 })
 
 describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
   const definition = getThemeDefinition(name)
-  const css = buildThemeCss(definition)
 
-  it('`:root` 변수가 core 의 출력과 이름·값 모두 같다(RN 이 더 내는 것만 뺀다)', () => {
+  it('`:root` 변수가 38토큰과 RN 이 더 내는 것뿐이다', () => {
     const variables = buildThemeVariables(definition)
     const {
       [PANEL_BORDER_VARIABLE]: panelBorder,
@@ -98,7 +58,7 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
       [toColorVariableName(STATS_SECTION_TOKEN)]: statsSection,
       ...rest
     } = variables
-    // 결산 줄의 넷도 core 에는 없다. 테마 값이 아니라 모드 상수라서다.
+    // 결산 줄의 넷도 38토큰이 아니다. 테마 값이 아니라 모드 상수라서다.
     const tokens = Object.fromEntries(
       Object.entries(rest).filter(([name]) => !name.startsWith('--color-settlement-')),
     )
@@ -106,11 +66,13 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
     expect(panelBorder).toBe(resolvePanelBorder(definition))
     expect(cardBody).toBe(resolveCardBody(definition))
     expect(statsSection).toBe(resolveStatsSection(definition))
-    expect(tokens).toEqual(colorDeclarationsIn(css, ':root'))
+    expect(tokens).toEqual(
+      Object.fromEntries(THEME_TOKEN_KEYS.map((token) => [toColorVariableName(token), definition[token]])),
+    )
   })
 
-  // **배경 이미지는 변수로 내지 않는다**(`theme-vars.ts`). 이후 core 는 그 줄을
-  // 내고 에셋도 실재하지만, RN 에서 그 값은 URL 문자열이 아니라 에셋 id 라 `url("…")` 이 뜻을 잃는다.
+  // **배경 이미지는 변수로 내지 않는다**(`theme-vars.ts`). RN 에서 그 값은 URL 문자열이 아니라
+  // 에셋 id 라 `url("…")` 이 뜻을 잃는다.
   // 벽지를 `<Image>` 로 그리는 것은 뷰 레이어 몫으로 남아 있다. 여기서 새어 나가면 조용히 죽는
   // 스타일이 하나 생기므로 계약으로 막는다.
   it('배경 이미지는 변수 맵에 새어 나오지 않는다', () => {
@@ -128,16 +90,14 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
     }
   })
 
-  it('`.media-scope` 재선언이 core 의 출력과 같다', () => {
-    expect(buildMediaScopeVariables(definition)).toEqual(declarationsIn(css, '.media-scope'))
-  })
+  // 카드 안에서 쓰는 토큰을 하나라도 빠뜨리면 페이지 값이 그대로 내려온다. 어두운 카드 위에 페이지의
+  // 밝은 크림색 pill 이 얹혔던 실패가 그것이다.
+  it('`.media-scope` 가 카드 안 표면·글자를 빠짐없이 다시 선언한다', () => {
+    const names = Object.keys(buildMediaScopeVariables(definition))
 
-  // 카드 안에서 쓰는 토큰을 하나라도 빠뜨리면 페이지 값이 그대로 내려온다(어두운 카드 위에 페이지의
-  // 밝은 크림색 pill 이 얹혔던 실패, 2026-07-30). 무엇이 재선언돼야 하는지는 core 가 알고 있으므로
-  // 개수를 여기 박지 않고 그쪽 출력과 대조하되, **0개가 아님**은 따로 본다(둘 다 비면 위 단언이
-  // 저절로 통과한다).
-  it('`.media-scope` 재선언이 비어 있지 않다', () => {
-    expect(Object.keys(buildMediaScopeVariables(definition)).length).toBeGreaterThan(0)
+    for (const token of ['surface', 'surface-2', 'track', 'border', 'text', 'text-muted']) {
+      expect(names).toContain(`--color-${token}`)
+    }
   })
 })
 

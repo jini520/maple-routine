@@ -363,7 +363,7 @@ python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA')
 
 ▶ 개인정보
 
-회원가입이 없습니다. 발급받은 API 키와 앱에서 만든 모든 기록은 이용자의 기기에만 저장되며 운영자에게 전송되지 않습니다. 공지를 받아오는 요청에는 이용자를 식별할 정보가 들어가지 않습니다.
+회원가입이 없습니다. 발급받은 API 키와 앱에서 만든 기록은 이용자의 기기에 저장되며, API 키 원문은 운영자에게 전송되지 않습니다. 다만 아이템 시세 추이를 보기 위해, 드롭 기록에 적은 판매가는 API 키의 해시값과 함께 운영자 서버로 전송됩니다. 공지를 받아오는 요청에는 이용자를 식별할 정보가 들어가지 않습니다.
 
 개인정보 처리방침: https://mapleroutine.store/privacy
 문의: https://mapleroutine.store/support

@@ -278,8 +278,8 @@ async function requestOnce<T>(path: string, credential: NexonCredential): Promis
 
   if (response.status === 401 || response.status === 403) {
     // 자격의 종류가 처방을 가른다. **액세스 토큰으로 부르다 받은 401** 은 그 토큰이 죽은 것이라
-    // 탓할 키가 없고, 사용자가 할 일은 키 재입력이 아니라 재로그인이다(그 전에 부르는 쪽이 토큰을
-    // 새로 받아 한 번 더 해 본다). 개발자 키로 부른 회차는 **키가 죽은 것**이라 이쪽이 아니다.
+    // 탓할 키가 없고, 사용자가 할 일은 키 재입력이 아니라 재로그인이다. 개발자 키로 부른 회차는
+    // **키가 죽은 것**이라 이쪽이 아니다.
     throw 실어서(
       credential.kind === 'login' && developerKey === null
         ? new NexonSignInRequiredError('넥슨 로그인이 만료되었습니다')

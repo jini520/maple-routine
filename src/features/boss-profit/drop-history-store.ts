@@ -141,3 +141,13 @@ export const useDropHistoryStore = create<DropHistoryState>((set) => ({
     }
   },
 }))
+
+/**
+ * 들고 있는 스냅샷이 지금의 `boss_drop_records` 보다 낡았는지. 다시 읽을지 정하는 판정.
+ *
+ * @param loadedRevision 스토어의 `loadedRevision`
+ * @example if (store.status === 'idle' || isDropHistoryOutdated(store.loadedRevision)) void store.load()
+ */
+export function isDropHistoryOutdated(loadedRevision: number): boolean {
+  return loadedRevision !== getBossDropRecordsRevision()
+}

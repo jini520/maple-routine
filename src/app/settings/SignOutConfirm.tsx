@@ -26,7 +26,7 @@ export function SignOutConfirm(props: SignOutConfirmProps): React.JSX.Element | 
       tone="primary"
       title="로그아웃할까요?"
       // 무엇이 남는지 먼저 말한다. 연결 해제와 헷갈리는 자리라 지우는 범위를 분명히 한다.
-      description="넥슨 계정 연결만 해제됩니다. 저장된 API 키와 보스 수익·드랍 기록은 그대로 남습니다."
+      description="넥슨 계정 연결만 해제됩니다. 저장된 API 키와 보스 수익·드롭 기록은 그대로 남습니다."
       action={{ label: '로그아웃', onPress: props.onConfirm, busy: props.isSigningOut, disabled: props.isSigningOut }}
       secondaryAction={{ label: '취소', onPress: props.onCancel, disabled: props.isSigningOut }}
       onClose={props.onCancel}

@@ -10,7 +10,7 @@
 |---|---|
 | `storage/sqlite/db.ts` | 테이블 정의(`TABLE_DEFINITIONS`) · DB 열기와 닫기 · 칸 보강(`ensureColumn`) · `income_records` 재작성 |
 | `storage/sqlite/boss-tables.ts` | 보스 표 셋의 정의를 한 곳에 둔다. 정상 생성과 버전 4 재작성에서 함께 쓴다 · 드롭 그룹 인덱스 |
-| `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 12) |
+| `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 13) |
 | `storage/sqlite/transaction.ts` | 쓰기 여럿을 트랜잭션 하나로 묶는 `inTransaction` |
 | `storage/sqlite/uuid.ts` | 행 식별자를 SQLite 가 만드는 식(`NEW_UUID_SQL`) |
 | `storage/adapters/rn-sqlite.ts` | `SqlitePort` 구현(op-sqlite) |
@@ -44,7 +44,6 @@ FOREIGN KEY 제약은 걸려 있지 않다. 표 사이의 관계는 앱 코드�
 | `boss_profit_records` | `(ocid, boss_key, difficulty, period_key)` | 기간별 보스 처치 한 건의 파티 인원 · 결정석 가격 · 받은 몫 · 처치 날짜 · 월드 | `storage/boss-profit.ts` | 기록 | `features/boss-profit.md` |
 | `boss_party_settings` | `(ocid, boss_key, difficulty)` | 캐릭터 · 보스마다 늘 쓰는 파티 인원과 분배 비율 | `storage/boss-party-settings.ts` | 일반 | `features/boss-scheduler.md` |
 | `boss_party_period_overrides` | `(ocid, boss_key, difficulty, period_key)` | 미완료 보스 행에서 고친 그 기간만의 파티 인원과 비율 | `storage/boss-party-period-overrides.ts` | 일반 | `features/boss-profit.md` |
-| `boss_profit_period_checks` | `(ocid, cycle, period_key)` | 그 기간을 이미 다시 조회했다는 표시. 지금은 이 모듈을 import 하는 제품 코드가 없다 | `storage/boss-profit-period-checks.ts` | 기록 | `features/boss-profit.md` |
 | `boss_drop_records` | `drop_record_id`(v4 uuid) | 기간별 드롭 아이템과 판매가 · 수수료 · 월드 | `storage/boss-drops.ts` | 기록 | `features/item-drop.md` |
 | `character_profiles` | `ocid` | 기록 옆에 보일 캐릭터 이름 · 초상 주소 · 월드 · 레벨 · 직업 | `storage/character-profiles.ts` | 기록 | `features/character.md` |
 | `character_world_leaps` | `from_ocid` | 월드 리프로 바뀐 옛 ocid 와 새 ocid 의 연결 | `storage/character-world-leaps.ts` | 기록 | `features/character.md` |
@@ -65,7 +64,6 @@ FOREIGN KEY 제약은 걸려 있지 않다. 표 사이의 관계는 앱 코드�
 | `boss_profit_records` | `ocid` NN · `boss_key` NN · `boss` NN · `difficulty` NN · `cycle` NN · `period_key` NN · `party_size` NN · `price_meso` NN · `payout_meso` NN · `crystal_my_share` · `crystal_shares_total` · `split_fee_percent` · `split_fee_auto` · `recorded_at` NN · `world` · `world_key` · `defeated_on` · `source` |
 | `boss_party_settings` | `ocid` NN · `boss_key` NN · `boss` NN · `difficulty` NN · `party_size` NN · `crystal_my_share` · `crystal_shares_total` · `split_fee_percent` · `split_fee_auto` · `updated_at` NN |
 | `boss_party_period_overrides` | `ocid` NN · `boss_key` NN · `difficulty` NN · `period_key` NN · `party_size` NN · `crystal_my_share` · `crystal_shares_total` · `split_fee_percent` · `split_fee_auto` · `updated_at` NN |
-| `boss_profit_period_checks` | `ocid` NN · `cycle` NN · `period_key` NN · `checked_at` NN |
 | `boss_drop_records` | `drop_record_id` NN · `ocid` NN · `boss_key` NN · `boss` NN · `difficulty` NN · `period_key` NN · `drop_index` NN · `category` NN · `item_key` · `item_name` NN · `slot` · `box_origin_key` · `box_origin` · `ring_level` · `quantity` NN · `recorded_at` NN · `world` · `world_key` · `price_state` · `price_meso` · `price_split_mode` · `price_party_size` · `price_share` · `price_my_share` · `sale_fee_percent` · `split_fee_percent` · `sale_fee_auto` · `split_fee_auto` |
 | `character_profiles` | `ocid` NN · `name` NN · `image_url` NN · `world` · `world_key` · `level` · `job_class` · `updated_at` NN |
 | `character_world_leaps` | `from_ocid` NN · `to_ocid` NN · `linked_at` NN |
@@ -106,6 +104,7 @@ FOREIGN KEY 제약은 걸려 있지 않다. 표 사이의 관계는 앱 코드�
 | 10 | `dropDropShareColumns` | 파티 설정 · 수익 기록의 드롭 비율 칸 둘을 지운다 |
 | 11 | `fillUnreachableDefeatDates` | 날짜를 다시 알아낼 수 없는 보스 기록에 기간 첫날을 적는다 |
 | 12 | `rekeyDropRecordsByUuid` | 드롭 기록에 `drop_record_id` 를 채우고 그것을 기본키로 다시 만든다 |
+| 13 | `dropBossProfitPeriodChecks` | 읽는 코드가 없는 `boss_profit_period_checks` 표를 지운다. 조회했는지는 조회 원장이 답한다 |
 
 못 찾는 이름은 key 만 비우고 행과 이름은 남긴다.
 

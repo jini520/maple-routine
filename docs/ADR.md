@@ -124,7 +124,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-001](./adr/ADR-001_utility_item-split.md) | 🟢 | utility | 판매 분배금 계산기 |
 | [ADR-002](./adr/ADR-002_stats_overview.md) | 🟢 | stats | 통계 화면 |
 | [ADR-003](./adr/ADR-003_docs_writing-rules.md) | 🟢 | docs | 문서 · 주석 · 앱 문구 쓰는 규칙 |
-| [ADR-004](./adr/ADR-004_architecture_local-first-adapters.md) | 🟢 | architecture | 기기 저장소와 네이티브 어댑터 경계 |
+| [ADR-004+065](./adr/ADR-004+065_architecture_local-first-adapters.md) | 🟢 | architecture | 기기 저장소와 네이티브 어댑터 경계 |
 | [ADR-005](./adr/ADR-005_architecture_react-native.md) | 🟢 | architecture | React Native 앱 하나로 만든다 |
 | [ADR-006](./adr/ADR-006_architecture_testing.md) | 🟢 | architecture | 테스트 러너와 테스트 작성 규칙 |
 | [ADR-007](./adr/ADR-007_persistence_sqlite.md) | 🟢 | persistence | SQLite 커넥션과 스키마 진화 |

@@ -42,11 +42,6 @@ export const DEFAULT_SUBSCRIPTIONS: NoticeSubscriptions = {
   cashshop: false,
 }
 
-/** 켜져 있는 분류 전부. 목록을 그 분류로만 물을 때 쓴다. */
-export function subscribedKinds(subscriptions: NoticeSubscriptions): NoticeKind[] {
-  return NOTICE_TOPICS.filter((one) => subscriptions[one.key]).map((one) => one.key)
-}
-
 /**
  * 하나라도 켜져 있으면 참. **전체 스위치는 이 값으로 그린다.**
  *

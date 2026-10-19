@@ -21,3 +21,16 @@ export function openInAppBrowser(url: string): void {
     .open(url)
     .catch(() => undefined)
 }
+
+/**
+ * 로그인용 인증 창. 돌아온 콜백 주소를 돌려주고, 사용자가 닫았으면 `null`.
+ *
+ * 거절을 삼키지 않는다. 부르는 쪽이 실패와 취소를 갈라야 한다.
+ *
+ * @param url 인증 시작 주소
+ * @param redirectUrl 넥슨에 등록한 돌아올 주소
+ * @example const callbackUrl = await openAuthSession(started.authorizeUrl, REDIRECT_URI)
+ */
+export function openAuthSession(url: string, redirectUrl: string): Promise<string | null> {
+  return getBrowserPort().openAuthSession(url, redirectUrl)
+}

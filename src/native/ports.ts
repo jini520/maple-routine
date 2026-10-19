@@ -277,6 +277,12 @@ export interface LiveUpdatePort {
 export interface BrowserPort {
   /** 주소를 앱 안 창으로 연다. 닫힐 때까지 기다린다. */
   open(url: string): Promise<void>
+  /**
+   * 로그인용 인증 창. `redirectUrl` 로 돌아온 주소를 돌려주고, 돌아오지 않고 닫히면 `null`.
+   *
+   * 콜백 주소가 이 세션에만 돌아오는 창이라 `open` 과 따로 둔다.
+   */
+  openAuthSession(url: string, redirectUrl: string): Promise<string | null>
 }
 
 /**

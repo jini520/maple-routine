@@ -8,7 +8,7 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `native/ads.ts` | 광고 단위 ID 판정(`resolveInterstitialAdId`) · 테스트 광고 판정(`shouldUseTestAds`) · 화면 코드가 부를 함수 |
+| `native/ads.ts` | 광고 단위 ID 판정(`resolveInterstitialAdId`) · 테스트 광고 판정(`shouldUseTestAds`) |
 | `native/adapters/rn-ads.ts` | `AdsPort` 구현. 환경 변수를 읽고 `react-native-google-mobile-ads` 를 부른다 |
 | `native/adapters/ads-env.ts` | `__DEV__` 와 환경 변수를 테스트 광고 판정에 넘길 값으로 바꾼다 |
 | `boot.ts` | `setAdsPort(rnAdsPort)` |
@@ -61,7 +61,7 @@
 ## 광고를 다시 붙일 때
 
 - SDK 초기화(`rnAdsPort.initialize()`)를 부를 위치를 정한다. `AppShell` 에 그 위치를 적은 주석이 있다.
-- 화면 코드는 `native/ads.ts` 만 부른다.
+- 화면 코드가 부를 함수를 `native/` 에 만든다. 화면은 광고 SDK 를 직접 import 하지 않는다.
 - 전면광고를 다시 넣으려면 `interstitial-policy.test.ts` 와 [[ADR-014]] 결정 1 을 먼저 바꾼다.
 
 ## 개인정보 처리방침

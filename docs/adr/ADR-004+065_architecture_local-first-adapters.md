@@ -1,8 +1,8 @@
-# ADR-004 기기 저장소와 네이티브 어댑터 경계
+# ADR-004+065 기기 저장소와 네이티브 어댑터 경계
 
 > 🟢 유효
 > 옛 번호: ADR-003 · ADR-005 · ADR-267 · ADR-094 결정 7
-> 관련 소스: `src/storage/` · `src/native/` · `src/boot.ts` · `index.ts` · `app.json` · `package.json`
+> 관련 소스: `src/storage/` · `src/native/` · `src/boot.ts` · `index.ts` · `app.json` · `package.json` · `src/__tests__/layer-boundary-policy.test.ts`
 
 ## 배경
 
@@ -22,6 +22,16 @@
 안만 고치면 된다. 화면(`app/`)과 공용 컴포넌트(`components/`)도 같은 함수를 쓴다.
 
 외부 서비스도 같은 방식으로 감싼다. 넥슨 Open API 는 `nexon/` 이, 우리 서버는 `server/` 가 맡는다.
+
+`features/` 가 import 해도 되는 바깥 패키지는 테스트의 허용 목록에 적은 것뿐이다. 지금은 `react` ·
+`react-native` · `zustand` · `@tanstack/react-query` · `@tanstack/react-query-persist-client` 다. 금지 목록
+대신 허용 목록을 쓴다. 금지 목록이면 새 네이티브 라이브러리를 들일 때마다 목록에 더하는 일을 잊기 쉽다. 네이티브 코드가 없는 JS 라이브러리가 필요하면 목록에 더한다. `react-native` 는 `Platform`
+같은 범용 API 를 쓰려고 허용한다. 타입만 가져오는 `import type` 은 런타임 의존이 없어서 검사하지 않는다.
+
+넥슨 로그인 창도 이 규칙을 따른다. `features/auth/nexon-login.ts` 는 `native/browser.ts` 의
+`openAuthSession` 을 부르고, `expo-web-browser` 의 `openAuthSessionAsync` 는 `native/adapters/rn-browser.ts`
+만 부른다. 어댑터는 성공이 아닌 결과(`cancel` · `dismiss`)를 `null` 로 모아 돌려주고, 로그인 쪽은 `null`
+을 보고 취소로 끝낸다.
 
 ### 결정 2. 어댑터는 포트에만 의존하고, 포트 구현은 부팅할 때 주입한다
 
@@ -96,6 +106,23 @@ autolinking 으로 바이너리에 들어간다.
 줄 수 상한을 목표로 삼지 않는 이유는, 그러면 함께 있어야 할 코드부터 옮기게 되기 때문이다. 나눌 때는 서로의
 값을 참조하는 코드끼리 같은 파일에 둔다. 컴포넌트를 다른 파일로 옮기는 것만으로는 렌더 결과가 바뀌지 않는다.
 
+### 결정 8. `app/` 은 `storage/` 의 값을 import 하지 않는다
+
+화면이 저장된 값을 읽거나 쓸 때는 `features/` 의 함수나 스토어를 부른다. 화면이 `storage/` 를 직접 부르면
+같은 읽기가 화면마다 따로 생겨서, 캐시나 리비전 규칙을 바꿀 때 고칠 곳을 놓친다. 타입만 가져오는
+`import type` 은 런타임 의존이 없어서 허용한다.
+
+이 규칙에 맞춰 화면 넷의 호출을 아래처럼 옮겼다.
+
+| 화면 | 전에 부르던 것 | 지금 부르는 것 |
+|---|---|---|
+| `SettingsScreen` · `SettingsNoticesScreen` · `SettingsNoticeDetailScreen` | `storage/notices` 의 `getNotices` | `features/notice/notice-copy.ts` 의 `readNoticeCopy` |
+| `TodayScreen` | `storage/character-basic-cache` 의 `getCachedCharacterBasic` | `features/character-profile/cached-profiles.ts` 의 `readCharacterProfiles` · `readRepresentativeProfile` |
+| `TodayScreen` | `storage/boss-drops` 의 `getBossDropRecordsRevision` | `features/boss-profit/drop-history-store.ts` 의 `isDropHistoryOutdated` |
+
+`hooks/` 와 `components/` 는 이 검사에 들지 않는다. `hooks/useKnownProfiles.ts` 는 아직
+`storage/character-basic-cache` 를 직접 읽는다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -103,16 +130,15 @@ autolinking 으로 바이너리에 들어간다.
 | `src/__tests__/boot.test.ts` | 결정 2: `storage/ports` · `native/ports` 가 내보내는 `get*Port` 열다섯이 모두 배선표에 있는지, 주입 전에는 던지고 주입 후에는 정해진 `rn-*` 어댑터를 그대로 주는지, 두 번 주입해도 같은지 본다 |
 | `src/native/__tests__/haptics.test.ts` · `browser.test.ts` | 결정 2: 포트가 주입되지 않았으면 던지는지, 포트가 거절해도 부른 쪽으로 예외가 새지 않는지 본다 |
 | `src/storage/adapters/__tests__/rn-preferences.test.ts` · `rn-sqlite.test.ts` | 결정 2: 어댑터가 포트 계약대로 라이브러리를 부르는지 본다. 자세한 내용은 [[ADR-005]] · [[ADR-007]] |
+| `src/__tests__/layer-boundary-policy.test.ts` | 결정 1 · 8: import 문을 정적으로 읽어 `features/` 가 허용 목록 밖의 패키지를, `app/` 이 `storage/` 의 값을 가져오는 곳이 있으면 실패한다. `__tests__` 아래 파일은 보지 않는다 |
+| `src/native/adapters/__tests__/rn-browser.test.ts` | 결정 1: 인증 창의 결과가 성공이면 돌아온 주소를, `cancel` · `dismiss` 면 `null` 을 돌려주는지 본다 |
 
-결정 1 과 결정 7 을 검사하는 테스트는 없다. 결정 4 ~ 6 의 네이티브 설정도 테스트가 없어서, 바꿀 때는 빌드한
+결정 7 을 검사하는 테스트는 없다. 결정 4 ~ 6 의 네이티브 설정도 테스트가 없어서, 바꿀 때는 빌드한
 `AndroidManifest.xml` 과 `Info.plist` 를 직접 확인한다.
-
-## 열린 질문
-
-- `features/auth/nexon-login.ts` 가 `expo-web-browser` 의 `openAuthSessionAsync` 와 `react-native` 의 `Platform` 을
-  직접 import 한다. 결정 1 을 어기고 있으므로 `native/` 어댑터로 옮길지 정해야 한다.
 
 ## 번호 기록
 
 - ADR-004 (2026-10-19): 옛 ADR-003 · 005 · 267 을 합쳐 처음 작성. 옛 ADR-003 의 `백엔드 없이 기기만 쓴다` 와
   옛 ADR-005 의 사냥 타이머는 폐기된 결정이라 옮기지 않았다. 옛 ADR-094 결정 7 을 결정 7 로 옮겼다
+- ADR-065 (2026-10-19): 결정 1 에 `features/` 의 패키지 허용 목록과 넥슨 로그인 창의 어댑터를 더하고, 결정 8
+  (`app/` 은 `storage/` 의 값을 import 하지 않는다)을 더했다. 두 규칙을 `layer-boundary-policy.test.ts` 가 검사한다

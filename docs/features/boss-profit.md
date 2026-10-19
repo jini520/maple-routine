@@ -24,7 +24,7 @@ today 도 읽는다. 왜 이렇게 만들었는지는 [[ADR-040]] (기록) · [[
 | `app/boss-profit/AccordionBody.tsx` | 카드 본문. 주간은 월간 · 주간 띠와 보스 행, 월간은 열람 행과 주차 줄 |
 | `app/boss-profit/BossProfitBossRow.tsx` | 주간 탭의 보스 행. 파티 · 드롭 · 직접 완료 |
 | `app/boss-profit/MonthlyBossViewRow.tsx` | 월간 탭의 월간 보스 열람 행 |
-| `app/boss-profit/HeadlineChips.tsx` | 결정석 칩. 쓰지 않는 증감 칩(`DeltaChip`)도 있다 |
+| `app/boss-profit/HeadlineChips.tsx` | 결정석 칩 |
 | `app/boss-profit/ItemRevenuePopover.tsx` · `ItemRevenueTrigger.tsx` | 수익 내역 상자와 그것을 여는 금액 |
 | `app/boss-profit/CharacterIssue.tsx` | 조회 불가 · 동기화 실패 배지와 설명 팝오버 |
 | `app/boss-profit/character-groups.ts` | 행을 캐릭터로 묶고 금액 · 처치 수 · 결정석 수 · 고가 드롭을 센다 |
@@ -34,7 +34,7 @@ today 도 읽는다. 왜 이렇게 만들었는지는 [[ADR-040]] (기록) · [[
 | `features/boss-profit/auto-record.ts` | 자동 기록과 처치 난이도 드롭 이관 |
 | `features/boss-profit/defeat-dates.ts` | 처치 날짜 찾기 |
 | `features/boss-profit/world-leap-records.ts` · `world-leap-link.ts` | 월드 리프한 기간의 중복 기록 정리와 두 캐릭터 연결 |
-| `features/boss-profit/period-navigation.ts` | 기록이 있는 이웃 기간 · 이전 화살표 판정 · 직전 기간 합 |
+| `features/boss-profit/period-navigation.ts` | 기록이 있는 이웃 기간 · 이전 화살표 판정 |
 | `features/boss-profit/period-cache.ts` · `period-window.ts` | 읽은 기간의 표와 미리 읽을 기간 목록 |
 | `features/boss-profit/monthly-crystals.ts` | 주간 탭 칩의 그 달 월간 결정석 누적 |
 | `features/boss-profit/use-unpriced-drop-count.ts` | 버튼 배지의 미입력 건수 |

@@ -4,7 +4,7 @@ import { Platform } from 'react-native'
 
 import { REDEEM_MAX_TRIES, REDEEM_RETRY_MS, signInWithNexon } from '../nexon-login'
 
-jest.mock('expo-web-browser', () => ({ openAuthSessionAsync: jest.fn() }))
+jest.mock('../../../native/browser', () => ({ openAuthSession: jest.fn() }))
 jest.mock('../../../server/nexon-auth', () => ({
   startNexonLogin: jest.fn(),
   redeemNexonSession: jest.fn(),
@@ -12,7 +12,7 @@ jest.mock('../../../server/nexon-auth', () => ({
 jest.mock('../../../storage/api-key', () => ({ setNexonLogin: jest.fn() }))
 jest.mock('../prune-covered-keys', () => ({ pruneCoveredApiKeys: jest.fn() }))
 
-const { openAuthSessionAsync } = jest.requireMock('expo-web-browser') as Record<string, jest.Mock>
+const { openAuthSession } = jest.requireMock('../../../native/browser') as Record<string, jest.Mock>
 const { startNexonLogin, redeemNexonSession } = jest.requireMock(
   '../../../server/nexon-auth',
 ) as Record<string, jest.Mock>
@@ -22,7 +22,7 @@ const { pruneCoveredApiKeys } = jest.requireMock('../prune-covered-keys') as Rec
 const 시작값 = { authorizeUrl: 'https://openid.nexon.com/oauth2/authorize?state=s', redeemKey: '되찾기열쇠' }
 
 function 콜백(url: string): void {
-  openAuthSessionAsync.mockResolvedValue({ type: 'success', url })
+  openAuthSession.mockResolvedValue(url)
 }
 
 beforeEach(() => {
@@ -58,7 +58,7 @@ describe('정상 흐름', () => {
   it('서버가 준 주소를 그대로 열고 돌아올 주소는 등록한 스킴이다', async () => {
     await signInWithNexon()
 
-    const [url, redirect] = openAuthSessionAsync.mock.calls[0] as [string, string]
+    const [url, redirect] = openAuthSession.mock.calls[0] as [string, string]
     expect(url).toBe(시작값.authorizeUrl)
     expect(redirect).toBe('com.mapleroutine.app://oauth/callback')
   })
@@ -129,10 +129,10 @@ describe('receipt 가 없으면 서버에 묻지 않는다', () => {
 })
 
 describe('취소는 실패가 아니다', () => {
-  it.each(['cancel', 'dismiss'])('사용자가 창을 닫으면 %s 로 끝난다', async (type) => {
+  it('사용자가 창을 닫으면 취소로 끝난다', async () => {
     // 아무 일도 안 일어난 것이다. 실패로 다루면 안내가 뜨고, 사용자는 자기가 닫아 놓고
-    // 무엇이 잘못됐나 찾게 된다.
-    openAuthSessionAsync.mockResolvedValue({ type })
+    // 무엇이 잘못됐나 찾게 된다. 닫힌 종류를 `null` 로 모으는 일은 브라우저 어댑터가 한다.
+    openAuthSession.mockResolvedValue(null)
 
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'cancelled' })
     expect(redeemNexonSession).not.toHaveBeenCalled()

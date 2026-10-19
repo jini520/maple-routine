@@ -7,6 +7,7 @@
 
 - `features/*` 는 로컬 저장소와 네이티브 라이브러리를 직접 부르지 않고 `storage/` · `native/` 를 거친다
   ([[ADR-004]] 결정 1).
+- `app/` 은 `storage/` 에서 타입만 가져온다. 저장된 값은 `features/` 의 함수나 스토어로 읽고 쓴다([[ADR-065]] 결정 8).
 - 게임 수치(`src/data/`)는 짐작해서 적지 않고 사용자 확인을 받아 넣는다([[ADR-019]]).
 - 화면은 `app/`, 기능의 상태와 로직은 `features/`, 공용 UI 는 `components/`, 타입은 `types/`, 범용 함수는
   `lib/` 에 둔다.
@@ -49,7 +50,7 @@ src/
 
 | 디렉터리 | 의존하는 것 | 하는 일 |
 |---|---|---|
-| `app/` | `features/` · `components/` · `hooks/` · `navigation/` | 화면을 그린다. 저장 함수와 타입은 `storage/` 에서, 햅틱 같은 네이티브 기능은 `native/` 에서 가져온다 |
+| `app/` | `features/` · `components/` · `hooks/` · `navigation/` | 화면을 그린다. `storage/` 에서는 타입만, 햅틱 같은 네이티브 기능은 `native/` 에서 가져온다 |
 | `features/` | `storage/` · `native/` · `nexon/` · `server/` · `lib/` | 기능 상태와 흐름. 플랫폼 라이브러리를 모른다 |
 | `storage/` · `native/` | 자기 `ports.ts` | 저장소 · 네이티브 기능을 감싼다. 플랫폼 라이브러리는 `adapters/rn-*` 만 부른다 |
 | `nexon/` · `server/` | `lib/` | 외부 API 를 감싼다. 응답을 앱 타입으로 정규화한다 |

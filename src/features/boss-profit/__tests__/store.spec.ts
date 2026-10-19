@@ -237,12 +237,10 @@ beforeEach(() => {
     dropsByRowKey: {},
     weeklySubtotals: [],
     isPeriodLoading: false,
-    previousPeriodTotalMeso: 0,
     canGoPreviousPeriod: false,
     error: null,
     staleCharacterNames: [],
     trackedOcids: null,
-    lastSyncedAt: null,
   })
   getBossProfitRecordsMock.mockResolvedValue([])
   getManualCompletedKeysMock.mockResolvedValue([])
@@ -1023,24 +1021,6 @@ describe('useBossProfitStore', () => {
     await useBossProfitStore.getState().refresh(['ocid-1'])
 
     expect(useBossProfitStore.getState().staleCharacterNames).toEqual(['캐릭터1'])
-  })
-
-  it('refresh가 성공하면 lastSyncedAt이 현재 시각으로 갱신된다', async () => {
-    syncSchedulesMock.mockResolvedValue([syncResult()])
-    expect(useBossProfitStore.getState().lastSyncedAt).toBeNull()
-
-    await useBossProfitStore.getState().refresh(['ocid-1'])
-
-    expect(useBossProfitStore.getState().lastSyncedAt).not.toBeNull()
-  })
-
-  it('refresh 자체가 실패하면(syncSchedules 예외) lastSyncedAt이 갱신되지 않는다', async () => {
-    syncSchedulesMock.mockRejectedValue(new Error('network down'))
-
-    await useBossProfitStore.getState().refresh(['ocid-1'])
-
-    expect(useBossProfitStore.getState().status).toBe('error')
-    expect(useBossProfitStore.getState().lastSyncedAt).toBeNull()
   })
 
   it('저장된 기록이 있으면 refresh 후 partySize/payoutMeso가 복원된다(멱등성)', async () => {
@@ -2213,109 +2193,6 @@ describe('useBossProfitStore', () => {
     })
   })
 
-  // 증감 칩의 비교 기준. 기록 합만 보고 기간 상태는 묻지 않는다.
-  describe('직전 기간 총 수익', () => {
-    function record(overrides: Partial<BossProfitRecord> = {}): BossProfitRecord {
-      return {
-        ocid: 'ocid-1',
-        bossKey: 'zakum',
-        boss: '자쿰',
-        difficulty: 'chaos',
-        cycle: 'weekly',
-        periodKey: '2026-07-09',
-        partySize: 1,
-        priceMeso: 8_080_000,
-        payoutMeso: 8_080_000,
-        crystalMyShare: null,
-        crystalSharesTotal: null,
-        splitFeePercent: null,
-        recordedAt: '2026-07-10T00:00:00.000Z',
-        world: '베라',
-        worldKey: 'bera',
-        ...overrides,
-      }
-    }
-
-    it('주간 탭은 직전 주 기록만 합산한다', async () => {
-      jest.useFakeTimers({ doNotFake: NOT_FAKED })
-      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16, 직전 주 2026-07-09
-      try {
-        syncSchedulesMock.mockResolvedValue([syncResult()])
-        getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
-          keys.includes('2026-07-09')
-            ? [record({ payoutMeso: 5_000_000 }), record({ bossKey: 'magnus', boss: '매그너스', payoutMeso: 3_000_000 })]
-            : [],
-        )
-
-        await useBossProfitStore.getState().refresh(['ocid-1'])
-
-        expect(getBossProfitRecordsMock).toHaveBeenCalledWith(['ocid-1'], ['2026-07-09'])
-        expect(useBossProfitStore.getState().previousPeriodTotalMeso).toBe(8_000_000)
-      } finally {
-        jest.useRealTimers()
-      }
-    })
-
-    // 월간 탭 총액은 monthly 보스 행 + 그 달의 주차별 합계라(groupTotalMeso), 직전 달 합계도 같은 산식이다.
-    it('월간 탭은 직전 달 monthly 기록과 그 달에 속한 weekly 기록을 함께 합산한다', async () => {
-      jest.useFakeTimers({ doNotFake: NOT_FAKED })
-      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 달 2026-07, 직전 달 2026-06
-      try {
-        syncSchedulesMock.mockResolvedValue([syncResult()])
-        getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) => {
-          if (!keys.includes('2026-06')) return []
-          return [
-            record({ cycle: 'monthly', bossKey: 'black_mage', boss: '검은 마법사', periodKey: '2026-06', payoutMeso: 10_000_000 }),
-            record({ periodKey: '2026-06-04', payoutMeso: 1_000_000 }),
-            record({ periodKey: '2026-06-25', payoutMeso: 2_000_000 }),
-          ]
-        })
-
-        await useBossProfitStore.getState().setTab('monthly')
-
-        const keys = getBossProfitRecordsMock.mock.calls.map((call) => call[1] as string[]).find((k) => k.includes('2026-06'))
-        expect(keys).toEqual(['2026-06', '2026-06-04', '2026-06-11', '2026-06-18', '2026-06-25'])
-        expect(useBossProfitStore.getState().previousPeriodTotalMeso).toBe(13_000_000)
-      } finally {
-        jest.useRealTimers()
-      }
-    })
-
-    it('직전 기간 기록이 없으면 0이다. 조회한 적 없는 기간도 같다(결정 3)', async () => {
-      jest.useFakeTimers({ doNotFake: NOT_FAKED })
-      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00'))
-      try {
-        syncSchedulesMock.mockResolvedValue([syncResult()])
-        getBossProfitRecordsMock.mockResolvedValue([])
-
-        await useBossProfitStore.getState().refresh(['ocid-1'])
-
-        expect(useBossProfitStore.getState().previousPeriodTotalMeso).toBe(0)
-      } finally {
-        jest.useRealTimers()
-      }
-    })
-
-    it('과거 기간으로 이동하면 그 기간의 직전 기간으로 기준이 바뀐다', async () => {
-      jest.useFakeTimers({ doNotFake: NOT_FAKED })
-      jest.setSystemTime(new Date('2026-07-22T12:00:00+09:00')) // 이번 주 2026-07-16
-      try {
-        syncSchedulesMock.mockResolvedValue([syncResult()])
-        getBossProfitRecordsMock.mockImplementation(async (_ocids: string[], keys: string[]) =>
-          keys.includes('2026-07-02') ? [record({ periodKey: '2026-07-02', payoutMeso: 777 })] : [],
-        )
-
-        await useBossProfitStore.getState().refresh(['ocid-1'])
-        await useBossProfitStore.getState().goToPreviousPeriod() // → 2026-07-09, 직전은 2026-07-02
-
-        expect(useBossProfitStore.getState().periodKey).toBe('2026-07-09')
-        expect(useBossProfitStore.getState().previousPeriodTotalMeso).toBe(777)
-      } finally {
-        jest.useRealTimers()
-      }
-    })
-  })
-
   describe('기간 네비게이션', () => {
     function schedulerState(overrides: Partial<SchedulerCharacterState> = {}): SchedulerCharacterState {
       return {
@@ -2361,20 +2238,14 @@ describe('useBossProfitStore', () => {
         expect(useBossProfitStore.getState().periodKey).toBe('2026-07-09')
         expect(useBossProfitStore.getState().status).toBe('loaded')
 
-        // 뒤늦게 끝난 refresh는 세대 불일치로 화면(rows/status)을 덮어쓰지 않지만, 동기화가 실제로
-        // 성공했으므로 lastSyncedAt만은 기록돼야 한다. 그렇지 않으면 현재 기간 복귀 시 신선한
-        // 데이터를 보여주면서도 "동기화 기록 없음"으로 표시된다.
-        expect(useBossProfitStore.getState().lastSyncedAt).toBeNull()
         resolveSync([syncResult()])
         await refreshPromise
         expect(useBossProfitStore.getState().status).toBe('loaded')
-        expect(useBossProfitStore.getState().lastSyncedAt).not.toBeNull()
 
-        // 다시 이번 주로 돌아와도 "조회 중..."에 무한히 갇히지 않고, 동기화 시각도 유지된다.
+        // 다시 이번 주로 돌아와도 "조회 중..."에 무한히 갇히지 않는다.
         await useBossProfitStore.getState().goToNextPeriod()
         expect(useBossProfitStore.getState().periodKey).toBe('2026-07-16')
         expect(useBossProfitStore.getState().status).toBe('loaded')
-        expect(useBossProfitStore.getState().lastSyncedAt).not.toBeNull()
       } finally {
         jest.useRealTimers()
       }
@@ -3397,22 +3268,6 @@ describe('useBossProfitStore', () => {
       expect(state.rows[0].characterName).toBe('캐시캐릭터')
     })
 
-    // 이 화면의 lastSyncedAt 은 스토어 메모리에만 있어 건너뛴 진입에서는 null 로 남는다.
-    // 그러면 신선한 데이터를 보여주면서 "동기화 기록 없음"이라고 말하게 된다. 지금 시각으로 채우는
-    // 것도 답이 아니다(하지 않은 동기화를 했다고 말하는 것이다).
-    it('건너뛴 진입의 lastSyncedAt 은 가장 오래된 캐시 syncedAt 이다(지금 시각이 아니다)', async () => {
-      const oldest = minutesAgo(8)
-      markSyncAttemptedThisRun()
-      getCachedSchedulerStateMock.mockImplementation(async (ocid: string) =>
-        cachedEntry(ocid === 'ocid-1' ? minutesAgo(5) : oldest),
-      )
-
-      await useBossProfitStore.getState().refresh(['ocid-1', 'ocid-2'], { auto: true })
-
-      expect(syncSchedulesMock).not.toHaveBeenCalled()
-      expect(useBossProfitStore.getState().lastSyncedAt).toBe(oldest)
-    })
-
     // (폐기): 건너뛴 진입은 이 캐시 단계가 곧 최종 화면이라, 여기서
     // 기록하지 않으면 수익이 계산되지 않은 채로 뜬다.
     // 건너뛰는 것은 **네트워크 재조회**뿐이고, 안전 가드는 캐시의 나이가 아니라 **기간 동일성**이다.
@@ -3691,7 +3546,6 @@ describe('useBossProfitStore', () => {
         const state = useBossProfitStore.getState()
         expect(state.periodKey).toBe('2026-07') // 보던 기간이 튕겨 나가지 않는다
         expect(state.status).toBe('loaded') // status는 loadPeriod가 확정한다
-        expect(state.lastSyncedAt).toBe(syncedAt)
       } finally {
         jest.useRealTimers()
       }
@@ -4416,11 +4270,11 @@ describe('기간을 미리 들고 있는다', () => {
   it('retryPeriod 는 표를 건너뛰고 다시 읽는다', async () => {
     syncSchedulesMock.mockResolvedValue([syncResult()])
     await useBossProfitStore.getState().refresh(['ocid-1'])
-    getBossProfitRecordsMock.mockClear()
+    findAdjacentMock.mockClear()
 
     await useBossProfitStore.getState().retryPeriod()
 
-    expect(getBossProfitRecordsMock).toHaveBeenCalled()
+    expect(findAdjacentMock).toHaveBeenCalled()
   })
 
   it('goToCurrentPeriod: 지금 기간으로 돌아온다', async () => {

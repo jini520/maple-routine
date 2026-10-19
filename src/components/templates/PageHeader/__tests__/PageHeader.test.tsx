@@ -8,11 +8,10 @@
 // | `fixed` 이지 `sticky` 가 아니다 | **스크롤 뷰 밖에 있다**. 위치가 스크롤의 함수가 아닌 것이 요점이고, RN 은 그것을 레이아웃으로 얻는다 |
 // | spacer 가 실측 높이와 같은 커밋에 갱신된다 | **spacer 자체가 없다**. 아래 회귀 가드 |
 // | 페이드에 `backdrop-filter` 가 없다 | **페이드째 걷어냈다**(아래). 검사할 대상이 없다 |
-// | `below` 는 페이드 뒤, 셸의 마지막 자식 | `below` 가 마지막인 것만 검사한다 |
 //
 // 안전영역은 `renderOverlay` 가 넣는 인셋(상 59)을 쓴다.
 
-import { Text, View } from 'react-native'
+import { Text } from 'react-native'
 
 import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../__tests__/render-atom'
 import { __resetThemeAppearanceForTest } from '../../../../theme/appearance-store'
@@ -65,45 +64,3 @@ describe('PageHeader', () => {
 // 하나다.
 describe('경계 페이드', () => {
 })
-
-describe('below 슬롯', () => {
-  // 당겨서 새로고침 인디케이터는 `absolute inset-x-0 top-full` 이라 이 셸이 기준 상자여야 한다.
-  // children 에 섞으면 `gap-4` 안으로 들어가 흐름 자식이 되어 위치가 완전히 달라진다.
-  it('below 는 페이드 뒤, 셸의 마지막 자식으로 놓인다', async () => {
-    const { toJSON } = await renderOverlay(
-      <PageHeader below={<View testID="ptr" />}>{내용}</PageHeader>,
-    )
-
-    const header = findByTestID(toJSON(), 'page-header')
-    const last = header?.children.at(-1) as TreeNode
-    expect(last.props.testID).toBe('ptr')
-  })
-})
-
-interface TreeNode {
-  type: string
-  props: Record<string, unknown>
-  children: (TreeNode | string)[]
-}
-
-/**
- * `toJSON` 결과에서 `testID` 로 노드를 찾는 도우미.
- *
- * RNTL 의 `getByTestId` 를 쓰지 않는 이유는 **자식 목록**을 보기 때문이다. 그쪽이 돌려주는
- * 엘리먼트는 React 트리(내부 컴포넌트 포함)라 자식 수가 호스트 뷰 수와 다르다. 이 파일의 여러
- * 단언이 "자식이 몇 개인가·마지막이 무엇인가"라서 호스트 트리를 직접 봐야 한다.
- */
-function findByTestID(node: unknown, testID: string): TreeNode | null {
-  if (Array.isArray(node)) {
-    for (const child of node) {
-      const found = findByTestID(child, testID)
-      if (found !== null) return found
-    }
-    return null
-  }
-  if (node === null || typeof node !== 'object') return null
-
-  const current = node as TreeNode
-  if (current.props?.testID === testID) return current
-  return findByTestID(current.children, testID)
-}

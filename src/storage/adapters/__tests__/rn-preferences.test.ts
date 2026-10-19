@@ -48,9 +48,9 @@ describe('rnPreferencesPort (iOS)', () => {
   })
 
   it('지우면 저장소에서 사라진다', async () => {
-    mockStore.set('CapacitorStorage.lastAdShownAt', '2026-08-11T00:00:00.000Z')
+    mockStore.set('CapacitorStorage.theme', '혼테일')
 
-    await rnPreferencesPort.remove('lastAdShownAt')
+    await rnPreferencesPort.remove('theme')
 
     expect(mockStore.size).toBe(0)
   })
