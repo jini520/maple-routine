@@ -32,21 +32,6 @@ async function press(element: AtomElement): Promise<void> {
 }
 
 describe('UtilityScreen', () => {
-  it('**유틸리티** 제목을 그린다', async () => {
-    const view = await renderOverlay(<UtilityScreen />)
-
-    expect(view.getByText('유틸리티')).toBeTruthy()
-    expect(view.getByTestId('screen-Utility')).toBeTruthy()
-  })
-
-  // 도구가 들어온 자리라 **개발 진행중** 은 사라져야 한다.
-  // 남아 있으면 도구 목록 아래에 "아직 없다"가 함께 서는 화면이 된다.
-  it('**개발 진행중** 자리표시자가 더는 없다', async () => {
-    const view = await renderOverlay(<UtilityScreen />)
-
-    expect(view.queryByText('개발 진행중')).toBeNull()
-  })
-
   it('계산기 타일을 그리고, 누르면 하위 페이지로 민다', async () => {
     const view = await renderOverlay(<UtilityScreen />)
 

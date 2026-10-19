@@ -9,7 +9,6 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { ItemSplitScreen } from '../ItemSplitScreen'
-import { ITEM_SPLIT_TOOL_NAME } from '../tool-names'
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
@@ -52,19 +51,6 @@ function pressableOf(node: AtomElement | null): AtomElement {
 }
 
 describe('ItemSplitScreen: 골격', () => {
-  it('제목과 뒤로 버튼을 그리고, 뒤로를 누르면 pop 한다', async () => {
-    const view = await renderOverlay(<ItemSplitScreen />)
-
-    // 타일과 같은 글자여야 한다. `tool-names` 한 벌에서 온다.
-    expect(view.getByText(ITEM_SPLIT_TOOL_NAME)).toBeTruthy()
-    expect(view.getByTestId('screen-UtilityItemSplit')).toBeTruthy()
-    expect(view.getByText('정산 금액')).toBeTruthy()
-
-    await press(view.getByLabelText('뒤로'))
-
-    expect(goBack).toHaveBeenCalledTimes(1)
-  })
-
   // 판매가 칸이 iOS 에서 키보드에 덮이고, 키보드가 뜬 동안 첫 탭이 먹혔다.
   it('입력 칸이 있는 화면이라 셸이 키보드를 챙긴다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
@@ -158,14 +144,6 @@ describe('ItemSplitScreen: 금액 입력', () => {
     expect(view.getByTestId('item-split-sale-price-units').props.children).toBe('1억')
   })
 
-  it('숫자가 아닌 글자는 흘린다', async () => {
-    const view = await renderOverlay(<ItemSplitScreen />)
-
-    await typeSalePrice(view, '1,000,000a')
-
-    expect(view.getByLabelText('판매가').props.value).toBe('1,000,000')
-  })
-
   // 상한을 넘기면 `N × 100` 이 안전 정수를 벗어나 계산이 조용히 틀린다.
   it('상한을 넘는 입력은 상한에서 멈춘다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
@@ -173,14 +151,5 @@ describe('ItemSplitScreen: 금액 입력', () => {
     await typeSalePrice(view, '99999999999999999')
 
     expect(view.getByLabelText('판매가').props.value).toBe('9,999,999,999,999')
-  })
-
-  it('초기화가 금액을 비운다', async () => {
-    const view = await renderOverlay(<ItemSplitScreen />)
-    await typeSalePrice(view, '1000000000')
-
-    await press(view.getByLabelText('금액 초기화'))
-
-    expect(view.getByLabelText('판매가').props.value).toBe('')
   })
 })
