@@ -10,6 +10,12 @@ describe('API 이름에서 key 를 찾는다', () => {
     expect(worldKeyOfApiName('스페셜')).toBe('special')
   })
 
+  // 넥슨 표기는 ㅐ 다. ㅔ 로 적으면 핼리오스 캐릭터 전부가 월드 key 를 못 얻는다.
+  it('핼리오스는 넥슨 표기로 찾는다', () => {
+    expect(worldKeyOfApiName('핼리오스')).toBe('helios')
+    expect(worldKeyOfApiName('헬리오스')).toBeNull()
+  })
+
   // 규칙은 보스 · 컨텐츠 · 강화와 같다.
   it('NFC 뒤 공백을 지우고 완전 일치로 맞춘다', () => {
     expect(worldKeyOfApiName('챌린저스 2')).toBe('challengers_2')
