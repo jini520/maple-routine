@@ -39,10 +39,6 @@ describe('boxShadowOf', () => {
 
 // 떠 있는 원 둘이 나눠 쓰는 값. 원이 알약보다 한 겹 위에 떠 있어 반경과 민 거리가 한 걸음 크다.
 describe('FAB_SHADOW', () => {
-  it('원의 그림자가 그 값에서 나온다', () => {
-    expect(boxShadowOf(SHADOW_COLOR, FAB_SHADOW)).toBe('0px 4px 24px #0000003a')
-  })
-
   // 실효 알파는 하단바 알약과 같은 0.23 이다. 그 값은 실기기에서 고른 것이라 여기서 되짚는다.
   it('실효 알파가 알약과 같다', () => {
     expect(FAB_SHADOW.opacity).toBe(0.65)

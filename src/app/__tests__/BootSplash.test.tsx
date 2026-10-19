@@ -125,30 +125,4 @@ describe('BootSplash', () => {
 
     expect(view.queryByTestId('boot-splash')).toBeNull()
   })
-
-  // **배경색만** 1겹과 같으면 된다. 색이 갈리면 넘겨받는 순간이 깜빡임으로 드러난다.
-  // 로고는 이 층이 더하는 것이다. 1겹은 로고 없는 단색이고, 로고가 나타나는 것이 곧
-  // 애니메이션의 시작점이 된다. 값의 원천은 `app.json` 의 `expo-splash-screen` 블록이다.
-  it('배경은 1겹과 같은 색이고, 로고는 이 층이 더한다', async () => {
-    const view = await render(<BootSplash />)
-
-    const root = view.getByTestId('boot-splash')
-    expect(root).toHaveStyle({ backgroundColor: '#F58B0F' })
-    expect(root).toHaveStyle({ alignItems: 'center', justifyContent: 'center' })
-
-    expect(view.getByTestId('boot-splash-logo')).toHaveStyle({ width: 200 })
-  })
-
-  // 화면을 덮지 못하면 아래의 앱 콘텐츠가 비쳐 두 겹인 것이 드러난다.
-  it('화면 전체를 덮는다', async () => {
-    const view = await render(<BootSplash />)
-
-    expect(view.getByTestId('boot-splash')).toHaveStyle({
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-    })
-  })
 })

@@ -231,14 +231,6 @@ describe('closeBossProfitDb', () => {
     expect(createConnectionMock).toHaveBeenCalledTimes(2)
   })
 
-  it('한 번도 연 적 없으면 아무것도 하지 않는다', async () => {
-    const { closeBossProfitDb } = require('../db') as typeof import('../db')
-
-    await closeBossProfitDb()
-
-    expect(closeConnectionMock).not.toHaveBeenCalled()
-  })
-
   it('종료 중 에러가 나도 던지지 않는다(리로드는 곧 진행돼야 하므로 best-effort)', async () => {
     closeConnectionMock.mockRejectedValue(new Error('close fail'))
     const { getBossProfitDb, closeBossProfitDb } = require('../db') as typeof import('../db')

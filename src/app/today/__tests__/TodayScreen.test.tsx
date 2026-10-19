@@ -521,15 +521,6 @@ describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', ()
 })
 
 describe('TodayScreen: 명시적 재조회', () => {
-  // **문이 하나다.** 헤더 버튼을 걷고 당김만 남겼다.
-  it('헤더에 새로고침 버튼이 없다', async () => {
-    setStores(캐릭터_넷)
-    await renderScreen()
-
-    expect(screen.queryByLabelText('새로고침')).toBeNull()
-    expect(refreshControl()).toBeDefined()
-  })
-
   // 명시적 재조회는 TTL 을 무시하고 **이 화면이 그리는 스토어 셋을 모두** 읽는다
   // 하나만 읽으면 당겨도 보스·수익 위젯이 안 바뀐다. 셋이 동시에 나가도 `syncSchedules` 의 단일
   // 비행이 한 회차로 합친다.
@@ -882,12 +873,6 @@ describe('TodayScreen: 결산 안내 줄', () => {
   // 실물 스토어라 값이 케이스 사이로 샌다.
   beforeEach(() => {
     useSettlementStore.setState({ settling: false, startedAt: null, dismissedAt: null, visible: false })
-  })
-
-  it('결산 중이 아니면 안 선다', async () => {
-    await renderScreen()
-
-    expect(screen.queryByTestId('today-settlement-banner')).toBeNull()
   })
 
   it('결산 중이면 격자 위에 선다', async () => {

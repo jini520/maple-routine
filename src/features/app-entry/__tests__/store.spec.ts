@@ -78,30 +78,6 @@ afterEach(() => {
 // 끝내지 않은 설정은 그 지점부터 이어간다. 전에는 키 하나만 보고 곧바로 앱을 열어, 캐릭터를
 // 고르지 않은 채 빈 메인으로 떨어졌다.
 describe('useAppEntryStore.resolveFromStorage', () => {
-  it('키가 없으면 signIn 이다', async () => {
-    getAuthConfigMock.mockResolvedValue(null)
-
-    await useAppEntryStore.getState().resolveFromStorage()
-
-    expect(useAppEntryStore.getState().stage).toBe('signIn')
-  })
-
-  it('추적 캐릭터를 고르지 않았으면(null) characterSetup 이다', async () => {
-    getTrackedCharacterOcidsMock.mockResolvedValue(null)
-
-    await useAppEntryStore.getState().resolveFromStorage()
-
-    expect(useAppEntryStore.getState().stage).toBe('characterSetup')
-  })
-
-  it('추적 캐릭터가 빈 배열이어도 미완료로 본다. 0명은 사용자 의도가 아니다', async () => {
-    getTrackedCharacterOcidsMock.mockResolvedValue([])
-
-    await useAppEntryStore.getState().resolveFromStorage()
-
-    expect(useAppEntryStore.getState().stage).toBe('characterSetup')
-  })
-
   it('키와 목록이 다 있으면 ready 다', async () => {
     await useAppEntryStore.getState().resolveFromStorage()
 

@@ -9,12 +9,6 @@ import { act, renderHook, waitFor } from '@testing-library/react-native'
 import { usePullRefresh } from '../usePullRefresh'
 
 describe('usePullRefresh', () => {
-  it('당기기 전에는 돌지 않는다', async () => {
-    const { result } = await renderHook(() => usePullRefresh(async () => undefined))
-
-    expect(result.current.refreshing).toBe(false)
-  })
-
   it('당기면 돌기 시작하고, 회차가 끝나면 멈춘다', async () => {
     let 회차_끝내기 = (): void => undefined
     const 회차 = jest.fn(

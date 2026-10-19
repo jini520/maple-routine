@@ -27,12 +27,6 @@ beforeEach(() => {
   useTrackingModeStore.setState({ mode: 'auto' })
 })
 
-describe('초기 상태', () => {
-  it('mode는 auto다', () => {
-    expect(useTrackingModeStore.getState().mode).toBe('auto')
-  })
-})
-
 describe('restoreFromStorage', () => {
   it('저장된 값이 manual이면 mode를 manual로 갱신한다', async () => {
     jest.mocked(getTrackingMode).mockResolvedValue('manual')

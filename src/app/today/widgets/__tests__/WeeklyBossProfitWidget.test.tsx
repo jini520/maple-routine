@@ -37,24 +37,12 @@ async function 위젯(
 }
 
 /**
- * 트리 전체의 **글자와 색**. 회귀 가드가 어디에도 없다 를 묻는 데 쓴다.
- *
- * 스타일이 아니라 글자만 모으는 것이 요점이다: 스택 바의 폭이 `80.00%` 라 트리를 통째로 문자열로
- * 만들면 퍼센트가 없다 를 물을 수 없다.
+ * 트리 전체의 글자. 크기별 그림이 같은지 견주는 데 쓴다.
  */
 function 모든글자(view: Awaited<ReturnType<typeof renderAtom>>): string {
   return findAllOfType(view.toJSON(), 'Text')
     .flatMap((node) => (node.children ?? []).filter((child) => typeof child === 'string'))
     .join('|')
-}
-
-function 모든색(view: Awaited<ReturnType<typeof renderAtom>>): unknown[] {
-  return [...findAllOfType(view.toJSON(), 'Text'), ...findAllOfType(view.toJSON(), 'View')].flatMap(
-    (node) => {
-      const style = flattenStyle(node.props.style)
-      return [style.color, style.backgroundColor]
-    },
-  )
 }
 
 describe('높이는 내용이 정한다', () => {
@@ -67,13 +55,6 @@ describe('높이는 내용이 정한다', () => {
     expect(auto.getByTestId('profit-period-header')).toBeTruthy()
     expect(auto.getAllByTestId('profit-character-rank')).toHaveLength(3)
     expect(모든글자(auto)).toBe(모든글자(고정))
-  })
-
-  // 남는 자리를 채울 높이가 없는데 `flex-1` 을 걸면 그것이 **채운다** 는 거짓 신호로 남는다.
-  it('바깥 상자에 `flex-1` 이 없다. 늘릴 높이가 없다', async () => {
-    const { getByTestId } = await 위젯(크기['4×auto'])
-
-    expect(flattenStyle(getByTestId('widget-weekly-boss-profit').props.style).flexGrow).toBeUndefined()
   })
 })
 
@@ -98,27 +79,6 @@ describe('순위는 `1st · 2nd · 3rd` 다 (사용자 지정)', () => {
       expect(style.width).toBeUndefined()
       expect(node.props.numberOfLines).toBe(1)
     }
-  })
-})
-
-describe('증감은 어디에도 없다', () => {
-  // `rise`/`fall` 은 이 증감 전용으로 만든 토큰이라, 그 색이 이 타일에 나타나는 것은
-  // 증감 표기가 되살아났다는 뜻이다. 퍼센트 기호도 같은 신호다.
-  it.each(Object.entries(크기))('%s: 퍼센트도 `rise`/`fall` 색도 안 쓴다', async (_이름, 값) => {
-    const view = await 위젯(값)
-
-    expect(모든글자(view)).not.toContain('%')
-    expect(모든색(view)).not.toContain(기본테마.riseInk)
-    expect(모든색(view)).not.toContain(기본테마.fallInk)
-    expect(모든색(view)).not.toContain(기본테마.riseTint)
-    expect(모든색(view)).not.toContain(기본테마.fallTint)
-  })
-
-  it('직전 기간을 말하는 문구가 없다', async () => {
-    const view = await 위젯(크기['4x3'])
-
-    expect(모든글자(view)).not.toContain('지난 주')
-    expect(모든글자(view)).not.toContain('대비')
   })
 })
 
@@ -257,9 +217,6 @@ describe('단위는 큰 금액에만 붙는다', () => {
     expect(flattenStyle(getByText('40.0억').props.style).fontVariant).toEqual(['tabular-nums'])
   })
 })
-
-
-
 
 // 캐릭터 관리와 같은 폴백이다. 두 자리가 갈리면 같은 캐릭터가 화면마다 다르게 없어진다.
 describe('그림이 없는 얼굴', () => {

@@ -1,5 +1,5 @@
 // 알림을 눌러 연 약속. 그 회차가 든 주와 회차를 다시 찾는다.
-import { findNotifiedOccurrence, parsePartyNotificationData, usePartyAppointmentOpenStore } from '../open-request'
+import { findNotifiedOccurrence, parsePartyNotificationData } from '../open-request'
 import type { PartyAppointment } from '../../../types/party-appointment'
 
 const weekly: PartyAppointment = {
@@ -48,17 +48,5 @@ describe('findNotifiedOccurrence', () => {
     const found = findNotifiedOccurrence([], { appointmentId: 'w1', dateKey: '2026-10-08' })
 
     expect(found).toEqual({ weekStart: '2026-10-08', occurrence: undefined })
-  })
-})
-
-describe('usePartyAppointmentOpenStore', () => {
-  beforeEach(() => usePartyAppointmentOpenStore.setState({ request: null }))
-
-  it('요청을 들고 있다가 비운다', () => {
-    usePartyAppointmentOpenStore.getState().open({ appointmentId: 'w1', dateKey: '2026-10-08' })
-    expect(usePartyAppointmentOpenStore.getState().request).toEqual({ appointmentId: 'w1', dateKey: '2026-10-08' })
-
-    usePartyAppointmentOpenStore.getState().clear()
-    expect(usePartyAppointmentOpenStore.getState().request).toBeNull()
   })
 })

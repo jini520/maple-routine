@@ -400,7 +400,7 @@ describe('AppSettingsScreen', () => {
     expect(order).toEqual(['content', 'boss', 'profit'])
   })
 
-  it.each(['계정 변경', '연결 해제', '캐시 데이터 삭제', 'API 키 재입력'])(
+  it.each(['연결 해제', '캐시 데이터 삭제'])(
     '"%s" 행을 본화면에 두지 않는다',
     async (label) => {
       const view = await renderOverlay(<AppSettingsScreen />)

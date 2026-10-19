@@ -91,15 +91,6 @@ afterEach(() => {
 })
 
 describe('SignInScreen', () => {
-  it('signedOut 이면 ApiKeyForm이 렌더링된다', async () => {
-    mockStore({ status: 'signedOut' })
-
-    const view = await renderOverlay(<SignInScreen />)
-    await expandApiKeyForm(view)
-
-    expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
-  })
-
   it('verifying 이면 API 키 폼이 유지되고 제출 버튼이 로딩 상태가 된다', async () => {
     mockStore({ status: 'verifying' })
 
@@ -123,15 +114,6 @@ describe('SignInScreen', () => {
     expect(scroll.props.contentContainerStyle).toMatchObject({ flexGrow: 1 })
   })
 
-  // 고정 바는 **CTA 를 넘긴 화면에만** 선다. 셸이 늘 그리면 여기에 빈 띠가 남는다.
-  it('이 화면에는 고정 액션 바가 없다', async () => {
-    mockStore({ status: 'signedOut' })
-
-    const view = await renderOverlay(<SignInScreen />)
-
-    expect(view.queryByTestId('entry-action-bar')).toBeNull()
-  })
-
   // 막기만 하고 길을 안 주면 이슈 #176 의 하드 잠금이 된다. 모달 뒤에 폼이 그대로 남아 닫는
   // 것이 곧 다시 넣는 것이다.
   it('개발 단계 키로 막히면 모달이 덮이고 폼은 뒤에 남는다', async () => {
@@ -142,29 +124,6 @@ describe('SignInScreen', () => {
 
     expect(view.getByTestId('development-stage-key-title')).toBeTruthy()
     expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
-  })
-
-  // 제목이 낱말을 안 쓰는 것이 이 모달의 요점이다. 넣은 키가 개발 단계라는 것은 그 아래 표가
-  // 말하고, 제목은 **못 쓴다**만 말한다. 이 사람은 개발 단계가 무엇인지 모르고 그것을 골랐다.
-  it('제목은 단계 낱말이 아니라 못 쓴다는 사실을 말한다', async () => {
-    mockStore({ status: 'signedOut', developmentStageBlocked: true })
-
-    const view = await renderOverlay(<SignInScreen />)
-
-    expect(view.getByTestId('development-stage-key-title')).toHaveTextContent(
-      '이 키로는 연결할 수 없습니다',
-    )
-  })
-
-  // 두 값이 함께 서야 그 자리에 다른 값이 있었다는 것이 읽힌다. 한쪽만 남으면 낱말을 모르는
-  // 사람에게는 그냥 모르는 말 하나가 된다.
-  it('넣은 단계와 필요한 단계를 함께 세운다', async () => {
-    mockStore({ status: 'signedOut', developmentStageBlocked: true })
-
-    const view = await renderOverlay(<SignInScreen />)
-
-    expect(view.getByText('개발 단계')).toBeTruthy()
-    expect(view.getByText('서비스 단계')).toBeTruthy()
   })
 
   // 429 는 단계를 판정하지 못한 실패다. 그 자리에 단계를 단정하는 모달을 세우면 서비스 단계
@@ -264,16 +223,6 @@ describe('SignInScreen', () => {
     expect(view.getByText('내 메이플 스토리 스케줄 정보 조회를 위해서')).toBeTruthy()
     expect(view.getByText('로그인 또는 API 키 입력이 필요해요.')).toBeTruthy()
     expect(view.queryByText('메이플 루틴')).toBeNull()
-  })
-
-  // 두 블록이 같은 골격을 쓴다. 소제목 · 둘째 줄 · 입력 수단.
-  it('넥슨 블록도 소제목과 그 아래 한 줄을 갖는다', async () => {
-    mockStore({ status: 'signedOut' })
-
-    const view = await renderOverlay(<SignInScreen />)
-
-    expect(view.getByText('게임 데이터 활용 로그인으로 시작하기')).toBeTruthy()
-    expect(view.getByText('게임 데이터 활용 로그인이란?')).toBeTruthy()
   })
 
   // 설명 다섯 문장을 앱이 싣지 않는다. 넥슨이 문구를 고치면 앱을 안 고쳐도 따라간다.

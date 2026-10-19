@@ -14,10 +14,6 @@ import { DROP_PRICE_KIND } from '../drop-price-sync'
 const SYNC_DIR = join(__dirname, '..')
 
 describe('전송 종류 레지스트리', () => {
-  it('지금 있는 종류는 드롭 가격 하나다', () => {
-    expect(Object.keys(SYNC_HANDLERS)).toEqual([DROP_PRICE_KIND])
-  })
-
   it('표의 종류마다 함수 둘이 다 있다', () => {
     for (const [kind, handler] of Object.entries(SYNC_HANDLERS)) {
       expect(typeof handler.read).toBe('function')

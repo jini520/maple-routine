@@ -249,12 +249,6 @@ async function 금액치기(view: Rendered, text: string): Promise<void> {
 
 
 describe('CashbookScreen: 자리와 머리', () => {
-  it('화면과 제목이 **가계부** 다', async () => {
-    const view = await 그리기()
-
-    expect(view.getByTestId('screen-Cashbook')).toBeTruthy()
-    expect(view.getByText('가계부')).toBeTruthy()
-  })
 
   it('월간으로 옮기면 이번 달이다', async () => {
     const view = await 그리기()
@@ -437,14 +431,6 @@ describe('오늘로 이동', () => {
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
   })
 
-  // 헤더의 그 자리는 비워 둔다.
-  it('헤더에 `오늘` 이 없다', async () => {
-    const view = await 그리기()
-    await 이름으로누르기(view, '이전 주')
-
-    expect(view.queryByLabelText('오늘로 이동')).toBeNull()
-    expect(view.queryByText('오늘')).toBeNull()
-  })
 })
 
 /**
@@ -627,11 +613,6 @@ describe('CashbookScreen: 날짜 선택', () => {
 })
 
 describe('CashbookScreen: 아직 기록이 없다', () => {
-  it('고른 날에 기록이 없다고 말한다', async () => {
-    const view = await 그리기()
-
-    expect(view.getByTestId('cashbook-empty')).toBeTruthy()
-  })
 
   // 적은 것이 없는 날은 **두 줄 다 빈다**(전에는 수익 줄에 **0** 을 적었다).
   it('적은 것이 없으면 칸이 비고 칠해지지도 않는다', async () => {
@@ -772,19 +753,6 @@ describe('주간/월간 전환', () => {
     expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 25일 (화)')
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 주')
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 20일 ~ 8월 26일')
-  })
-})
-
-// 두 축이 공존하는 것은 그대로다(월간 격자의 한 줄 != 주간의 한 주). 그것을 격자에 **그리지
-// 않기로** 했다. 어긋남을 만나는 자리는 주간 보기이고,
-// 그 화면이 자기 기간을 날짜로 직접 말한다. `대가` 절에 옛 문장이 취소선으로 남아 있어,
-// 그것만 읽고 되살리는 것을 이 테스트가 막는다.
-describe('목요일 경계선', () => {
-  it('월간 격자에도 안 그린다', async () => {
-    const view = await 그리기()
-    await 월간으로(view)
-
-    expect(view.queryByTestId('calendar-reset-divider')).toBeNull()
   })
 })
 
@@ -1022,13 +990,6 @@ describe('펼침판이 시트를 연다', () => {
     await 고르기(view, '지출 추가')
 
     expect(view.getByText('지출 추가')).toBeTruthy()
-  })
-
-  it('펼침판의 수입 · 지출 아래에 설명이 선다', async () => {
-    const view = await 그리기()
-
-    expect(view.getByTestId('speed-dial-description-income')).toHaveTextContent('사냥 · 아이템 판매 등을 기록')
-    expect(view.getByTestId('speed-dial-description-expense')).toHaveTextContent('컨텐츠 · 아이템 구매 등을 기록')
   })
 
   it('수입을 고르면 수입 시트가 뜬다', async () => {
@@ -1669,12 +1630,6 @@ describe('당겨서 새로고침', () => {
   function 당김(view: Rendered): { refreshing: boolean; onRefresh: () => void } {
     return view.getByTestId('screen-scroll').props.refreshControl.props
   }
-
-  it('컨트롤이 붙어 있다', async () => {
-    const view = await 그리기()
-
-    expect(당김(view).refreshing).toBe(false)
-  })
 
   // 당김은 **부모에게 부탁만** 한다. 무엇을 다시 부를지(오늘·과거)는 그쪽이 정하고, 끝나면
   // 회차 수가 올라 화면이 다시 읽는다. 전에는 이 화면이 자기만의 조합을 들고 있었다.

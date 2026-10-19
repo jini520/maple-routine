@@ -22,10 +22,6 @@ const SRC = join(__dirname, '..')
  */
 const DASH_ALLOWED: ReadonlyArray<{ file: string; why: string }> = [
   {
-    file: '__tests__/adr-citation-policy.test.ts',
-    why: '`docs/ADR.md` 집계 줄을 글자 그대로 무는 정규식이다. 주석이 아니라 코드다',
-  },
-  {
     file: 'lib/boss/boss-profit-period.ts',
     why: '표의 빈 칸(`| — |`)이라 `해당 없음` 이지 문장을 끊는 것이 아니다',
   },

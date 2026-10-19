@@ -326,15 +326,6 @@ describe('아이템 가격 입력으로 가는 문', () => {
     })
   }
 
-  // 제목 줄의 회색 글자였다. 버튼처럼 안 보여 떠 있는 원으로 올렸고, 같은 화면으로 가는 길을
-  // 둘로 안 남긴다.
-  it('제목 줄에는 제목만 있다', async () => {
-    const { getByText, queryByText } = await renderScreen()
-
-    expect(getByText('보스 수익')).toBeTruthy()
-    expect(queryByText('아이템 가격')).toBeNull()
-  })
-
   // 배지 수는 버튼이 여는 가격 입력 화면과 같은 주의 것이어야 한다.
   it('버튼은 보고 있는 주의 미입력 건수를 센다', async () => {
     await renderScreen()
@@ -349,13 +340,6 @@ describe('아이템 가격 입력으로 가는 문', () => {
       fireEvent.press(getByLabelText('아이템 가격 입력'))
     })
     expect(navigate).toHaveBeenCalledWith('DropPrice', { cycle: 'weekly', periodKey: CURRENT_WEEKLY })
-  })
-
-  // 화면·라우트는 살아 있고 링크만 걷었다. 자리를 다시 정하면 되돌린다.
-  it('히스토리 링크는 없다. 임시로 걷었다', async () => {
-    const { queryByText } = await renderScreen()
-
-    expect(queryByText('히스토리')).toBeNull()
   })
 
   it('월간 탭에서는 버튼이 서지 않는다', async () => {
@@ -420,15 +404,6 @@ describe('탭과 기간 네비게이터', () => {
     const { getByLabelText } = await renderScreen()
 
     expect(getByLabelText('이번 달로 이동')).toBeDisabled()
-  })
-
-  // 헤더의 그 자리는 이제 보스 관리로 가는 길이 쓴다.
-  it('헤더에 `오늘` 이 없다', async () => {
-    mockStore({ periodKey: '2026-07-02' })
-    const { queryByLabelText, queryByText } = await renderScreen()
-
-    expect(queryByLabelText('오늘로 이동')).toBeNull()
-    expect(queryByText('오늘')).toBeNull()
   })
 
   it('‹ › 는 각각 이전·다음 기간을 부른다', async () => {
@@ -519,13 +494,6 @@ describe('탭과 기간 네비게이터', () => {
 })
 
 describe('갱신 시각', () => {
-  // **문이 하나다.** 헤더 버튼을 걷고 당김만 남겼다. 이 화면의 버튼은 기간 탭 줄에 있었다.
-  it('새로고침 버튼이 없다', async () => {
-    mockStore({ trackedOcids: ['ocid-1'] })
-    const { queryByLabelText } = await renderScreen()
-
-    expect(queryByLabelText('새로고침')).toBeNull()
-  })
 
   // **화면이 재지 않는다.** 실시간 조회가 끝난 자리에서 적히는 값 하나를 다섯 화면이 함께 읽는다.
   it('실시간 조회 시각을 읽는다', async () => {

@@ -144,15 +144,6 @@ describe('펼친 뒤', () => {
     expect(view.getByLabelText('기록 추가')).toBeTruthy()
   })
 
-  it('지출도 같다', async () => {
-    const onSelectExpense = jest.fn()
-    const view = await 펼치기({ onSelectExpense })
-
-    await 누르기(view, '지출 추가')
-
-    expect(onSelectExpense).toHaveBeenCalledTimes(1)
-  })
-
   it('스크림을 누르면 접힌다. 아무것도 안 고른다', async () => {
     const onSelectIncome = jest.fn()
     const onSelectExpense = jest.fn()

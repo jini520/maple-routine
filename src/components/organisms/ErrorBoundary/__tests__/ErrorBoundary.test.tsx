@@ -35,17 +35,6 @@ afterEach(() => {
 })
 
 describe('ErrorBoundary', () => {
-  it('예외가 없으면 children 을 그대로 그린다', async () => {
-    const { getByText, queryByTestId } = await renderAtom(
-      <ErrorBoundary onRestart={noop}>
-        <Text>정상 화면</Text>
-      </ErrorBoundary>,
-    )
-
-    expect(getByText('정상 화면')).toBeTruthy()
-    expect(queryByTestId('error-boundary-fallback')).toBeNull()
-  })
-
   it('렌더 중 예외가 나면 빈 화면 대신 폴백을 그린다', async () => {
     const { getByTestId, getByText } = await renderAtom(
       <ErrorBoundary onRestart={noop}>

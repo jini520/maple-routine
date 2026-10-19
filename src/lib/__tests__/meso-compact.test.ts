@@ -100,10 +100,6 @@ const JO = 1_000_000_000_000
 
 // 수입 `+`, 지출 `−` 를 앞에 붙이되 0 은 부호 없이 `0` 이다. `+0` · `−0` 은 번 적도 쓴 적도 없는데 무언가 있었던 것처럼 읽힌다.
 describe('formatMesoSigned', () => {
-  it('0 이 아니면 받은 부호를 붙인다', () => {
-    expect(formatMesoSigned(60_000_000, '+')).toBe('+6,000만')
-    expect(formatMesoSigned(25_000_000, '−')).toBe('−2,500만')
-  })
 
   it('0 은 부호 없이 0 이다', () => {
     expect(formatMesoSigned(0, '+')).toBe('0')

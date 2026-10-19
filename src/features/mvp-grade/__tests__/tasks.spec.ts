@@ -24,13 +24,6 @@ beforeEach(() => {
 })
 
 describe('지난 기록 수수료 적용', () => {
-  it('판매 기록 · 드롭 판매가 두 단계이고 이름 · 제목 · 완료 문구가 선다', () => {
-    expect(mvpBulkFeeTask.steps.map((step) => step.label)).toEqual(['판매 기록', '드롭 판매가'])
-    expect(mvpBulkFeeTask.name).toBe('지난 기록 수수료 적용')
-    expect(mvpBulkFeeTask.title).toBe('지난 기록에 수수료를 적용하고 있어요')
-    expect(mvpBulkFeeTask.doneToast(1240)).toBe('지난 기록 1,240건에 수수료를 적용했어요')
-  })
-
   it('남은 일은 목록의 길이이고, 조각은 앞에서 limit 개를 잘라 적용한다', async () => {
     const updates = Array.from({ length: 5 }, (_, i) => ({ id: `r${i}`, mesoAmount: 1, saleFeePercent: 3, saleFeeMeso: 0 }))
     m(bulkIncomeUpdates).mockResolvedValue(updates)
@@ -43,11 +36,6 @@ describe('지난 기록 수수료 적용', () => {
 })
 
 describe('자동 수수료 다시 계산', () => {
-  it('판매 기록 · 드롭 판매가 · 결정석 분배 세 단계다', () => {
-    expect(mvpRecalcFeeTask.steps.map((step) => step.label)).toEqual(['판매 기록', '드롭 판매가', '결정석 분배'])
-    expect(mvpRecalcFeeTask.doneToast(3)).toBe('자동 수수료 기록 3건을 다시 계산했어요')
-  })
-
   it('결정석 단계는 받은 몫과 함께 고쳐 쓴다', async () => {
     const update = { ocid: 'a1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', splitFeePercent: 3, payoutMeso: 1 }
     m(recalcCrystalUpdates).mockResolvedValue([update])

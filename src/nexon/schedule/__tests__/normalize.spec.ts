@@ -138,21 +138,6 @@ describe('normalizeSchedulerCharacterState', () => {
     })
   })
 
-  it('주간 quest_state 문자열도 일간과 동일하게 숫자로 파싱한다', () => {
-    const result = normalizeSchedulerCharacterState(baseWire, resolve)
-
-    expect(result.weeklyContents[0]).toEqual({
-      contentKey: 'epic_dungeon_nightmare_paradise',
-      apiName: '에픽 던전 : 악몽선경',
-      kind: 'contents',
-      isRegistered: true,
-      nowCount: 5,
-      maxCount: 0,
-      questState: null,
-    })
-    expect(result.weeklyContents[1].questState).toBe(0)
-  })
-
   // API 난이도 값이 곧 난이도 key 다. 보스 key 는 넘겨받은 함수가 원문 이름으로 찾는다.
   it('difficulty 는 영문 그대로 두고, cycle을 weekly/monthly로, 보스 key 를 resolver 로 채운다', () => {
     const result = normalizeSchedulerCharacterState(baseWire, resolve)

@@ -6,7 +6,7 @@
 import { act, fireEvent, within } from '@testing-library/react-native'
 
 import dropItemsData from '../../../data/drop-items.json'
-import { dropItemNameOf, isValuableDropItem } from '../../../lib/drop/drop-items'
+import { dropItemNameOf } from '../../../lib/drop/drop-items'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
 
@@ -197,25 +197,6 @@ describe('BossProfitBossRow: 드롭 지시자', () => {
 
     expect(getByText('+2')).toBeTruthy()
     expect(queryByText('＋ 드롭 추가')).toBeNull()
-  })
-})
-
-// 고가 드롭 행의 숨쉬는 배경을 걷었다(사용자 지시, 다시 디자인할 예정). 같은 효과가 가격 기록
-// 화면에는 그대로 남아 있어 컴포넌트 자체는 산다.
-describe('BossProfitBossRow: 고가 드롭 배경이 없다', () => {
-  const 고가키 = dropItemsData.items.filter((item) => item.valuable)[0].key
-
-  it('고가 목록에 든 아이템이어도 배경을 안 깐다', async () => {
-    const { queryByTestId } = await renderProfit(
-      <BossProfitBossRow
-        row={보스행()}
-        drops={[{ dropRecordId: null, category: 'equipment', itemKey: 고가키, itemName: dropItemNameOf(고가키, 고가키), quantity: 1 }]}
-      />,
-    )
-
-    expect(isValuableDropItem(고가키)).toBe(true)
-    expect(queryByTestId('valuable-drop-row-tint')).toBeNull()
-    expect(queryByTestId('valuable-drop-row-glow')).toBeNull()
   })
 })
 

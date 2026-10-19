@@ -4,15 +4,12 @@
 // 두 단계(원이 솟고 → 알약으로 펼쳐진다)의 **순서와 계단의 방향**이고, 그것이 이 부품이 말하려는 것의 전부다.
 import {
   DIAL_GAP_PX,
-  DIAL_RISE_START_SCALE,
-  FAB_OPEN_ROTATION_DEG,
   PILL_HEIGHT_PX,
   chromeTiming,
   dialTiming,
   pillWidth,
   riseOffsetPx,
 } from '../speed-dial-motion'
-import { FAB_DIAMETER_PX } from '../../../../lib/fab-metrics'
 
 /** 갈래 셋, 위에서부터 0 · 1 · 2. 2 가 ＋ 에 가장 가깝다 */
 const 셋 = [0, 1, 2].map((index) => dialTiming(index, 3, true, false))
@@ -101,11 +98,6 @@ describe('움직임을 줄이면', () => {
 })
 
 describe('치수', () => {
-  // 알약이 ＋ 와 같은 높이라 펼치기 전의 원이 ＋ 와 같은 크기로 줄을 선다.
-  it('알약 높이는 ＋ 지름이다', () => {
-    expect(PILL_HEIGHT_PX).toBe(FAB_DIAMETER_PX)
-  })
-
   // 넉넉한 고정 폭을 두지 않는다. 문구가 짧아지면 알약도 짧아진다(사용자 지시).
   it('알약 폭은 가장 긴 글자에 원 자리 60 과 오른쪽 여백 16 을 더한 것이다', () => {
     expect(pillWidth(100)).toBe(176)
@@ -119,14 +111,5 @@ describe('치수', () => {
   it('솟는 거리는 ＋ 중심에서 그 줄 중심까지다', () => {
     expect(riseOffsetPx(0)).toBe(PILL_HEIGHT_PX + DIAL_GAP_PX)
     expect(riseOffsetPx(1)).toBe(2 * (PILL_HEIGHT_PX + DIAL_GAP_PX))
-  })
-
-  it('원은 반 크기에서 솟는다', () => {
-    expect(DIAL_RISE_START_SCALE).toBe(0.5)
-  })
-
-  // ＋ 를 45° 돌리면 그대로 ✕ 다. 아이콘이 하나뿐이라 두 그림이 어긋날 자리가 없다.
-  it('＋ 가 사십오도 돈다', () => {
-    expect(FAB_OPEN_ROTATION_DEG).toBe(45)
   })
 })

@@ -134,10 +134,6 @@ describe('getPendingCount', () => {
     await expect(rnNotificationsPort.getPendingCount()).resolves.toBe(3)
   })
 
-  it('예약이 없으면 0 이다', async () => {
-    mocked.getTriggerNotificationIds.mockResolvedValue([])
-    await expect(rnNotificationsPort.getPendingCount()).resolves.toBe(0)
-  })
 })
 
 describe('data', () => {

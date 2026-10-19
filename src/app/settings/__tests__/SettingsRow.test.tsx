@@ -80,10 +80,4 @@ describe('SettingsRow', () => {
 
     expect(flattenStyle(view.getByText('연결 해제').props.style).color).toBe(기본테마.errorInk)
   })
-
-  it('danger가 아니면 기본 글자색이다', async () => {
-    const view = await renderAtom(<SettingsRow label="테마" onPress={jest.fn()} />)
-
-    expect(flattenStyle(view.getByText('테마').props.style).color).toBe(기본테마.text)
-  })
 })

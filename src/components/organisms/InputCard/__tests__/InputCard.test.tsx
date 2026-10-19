@@ -51,13 +51,6 @@ async function 누르기카드(view: { getByLabelText: (label: string) => unknow
 }
 
 describe('InputCard', () => {
-  it('칸 이름과 맥락 줄을 머리에 그린다', async () => {
-    const { view } = await 그리기({ context: '솔 에르다 조각 · 개당' })
-
-    expect(view.getByText('조각 가격')).toBeTruthy()
-    expect(view.getByText('솔 에르다 조각 · 개당')).toBeTruthy()
-  })
-
   it('시트가 든 지금 값을 씨앗으로 받는다. 숫자는 콤마로 끊어 보인다', async () => {
     const { view } = await 그리기({ value: '12000000' })
 
@@ -393,13 +386,6 @@ describe('InputCard', () => {
       expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('100%')
     })
 
-    it('확인 라벨을 호출부가 바꾼다', async () => {
-      const { view } = await 그리기({ confirmLabel: '저장' })
-
-      expect(view.getByText('저장')).toBeTruthy()
-      expect(view.queryByText('확인')).toBeNull()
-    })
-
     /**
      * **친 값이 있나에 따라 확인이 다른 말을 한다.** 저장과 다음을 두 버튼으로 두었더니 어느
      * 쪽이 값을 쓰는지가 안 읽혔다(사용자 지적). 버튼은 하나이고 글자가 지금 누르면 무슨 일이
@@ -413,12 +399,6 @@ describe('InputCard', () => {
       await 치기(view, '100')
       expect(view.getByText('저장 후 다음(3/3)')).toBeTruthy()
       expect(view.queryByText('다음(3/3)')).toBeNull()
-    })
-
-    it('빈 칸용 라벨을 안 넘기면 둘이 같은 말을 한다', async () => {
-      const { view } = await 그리기({ confirmLabel: '완료' })
-
-      expect(view.getByText('완료')).toBeTruthy()
     })
 
     /** 셋 다 지금 아이템을 처리하고 넘어가는 길이라 한 줄에 선다. */

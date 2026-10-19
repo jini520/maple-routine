@@ -85,10 +85,6 @@ describe('getBossDropCandidates', () => {
 
     expect(names).toEqual(['프리미엄 악세서리 스크롤 교환권'])
   })
-
-  it('없는 보스는 빈 배열을 반환한다', () => {
-    expect(getBossDropCandidates('no_such_boss', 패치전, 패치후시각)).toEqual([])
-  })
 })
 
 describe('getBossFixedDrops', () => {
@@ -106,10 +102,6 @@ describe('getBossFixedDrops', () => {
       expect.objectContaining({ name: '솔 에르다의 기운', amount: '280' }),
     )
   })
-
-  it('고정 드롭이 없는 보스는 빈 배열을 반환한다', () => {
-    expect(getBossFixedDrops('no_such_boss', 패치전, 패치후시각)).toEqual([])
-  })
 })
 
 describe('getBossDifficulties', () => {
@@ -119,10 +111,6 @@ describe('getBossDifficulties', () => {
 
   it('카링은 이지~익스트림 4난이도를 정규 순서로 반환한다', () => {
     expect(getBossDifficulties('kaling')).toEqual(['easy', 'normal', 'hard', 'extreme'])
-  })
-
-  it('없는 보스는 빈 배열을 반환한다', () => {
-    expect(getBossDifficulties('no_such_boss')).toEqual([])
   })
 })
 

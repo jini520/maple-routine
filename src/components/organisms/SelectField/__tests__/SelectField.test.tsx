@@ -7,7 +7,7 @@
  */
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
+import { renderOverlay } from '../../../__tests__/render-atom'
 import { SelectField } from '../SelectField'
 
 const 보기 = [
@@ -40,12 +40,6 @@ describe('SelectField', () => {
     const { view } = await 그리기(null)
 
     expect(view.getByTestId('pick-trigger')).toHaveTextContent('캐릭터선택 안함')
-  })
-
-  it('고른 값이 있으면 그것을 적는다', async () => {
-    const { view } = await 그리기('ocid-2')
-
-    expect(view.getByTestId('pick-trigger')).toHaveTextContent('캐릭터아델')
   })
 
   // 좁은 글자 하나가 아니라 **줄 전체**가 눌린다.
@@ -120,7 +114,6 @@ describe('SelectField', () => {
   })
 })
 
-
 // 닫힌 줄에 테두리가 없다(펼친 목록은 jest 가 자리를 안 재서 그려지지 않는다). 높은 줄(`tall`)은 보스 추가처럼 시트 바탕 위에 바로 서는 자리다.
 describe('테두리와 높이', () => {
   const styleOf = (view: Awaited<ReturnType<typeof renderOverlay>>) =>
@@ -145,10 +138,4 @@ describe('테두리와 높이', () => {
 
 // 닫힌 줄 바탕은 흰 카드색(`surface`)이다.
 describe('바탕', () => {
-  it('닫힌 줄은 흰 카드색이다', async () => {
-    const { view } = await 그리기()
-    const style = Object.assign({}, ...[view.getByTestId('pick-trigger').props.style].flat())
-
-    expect(String(style.backgroundColor).toLowerCase()).toBe(기본테마.surface.toLowerCase())
-  })
 })

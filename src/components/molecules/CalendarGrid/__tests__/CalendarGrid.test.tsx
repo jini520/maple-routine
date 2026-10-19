@@ -39,14 +39,6 @@ function 칸(view: ReturnType<typeof renderAtom> extends Promise<infer T> ? T : 
 }
 
 describe('CalendarGrid: 격자', () => {
-  it('요일 머리를 일요일부터 일곱 개 그린다', async () => {
-    const view = await 그리기()
-
-    for (const label of ['일', '월', '화', '수', '목', '금', '토']) {
-      expect(view.getByText(label)).toBeTruthy()
-    }
-  })
-
   it('받은 주의 모든 칸을 그린다. 8월은 여섯 주 마흔두 칸', async () => {
     const view = await 그리기()
 

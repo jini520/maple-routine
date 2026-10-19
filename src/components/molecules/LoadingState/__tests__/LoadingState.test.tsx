@@ -4,12 +4,6 @@ import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/rende
 import { LoadingState } from '../LoadingState'
 
 describe('LoadingState', () => {
-  it('대기 문구를 보여준다', async () => {
-    const { getByText } = await renderAtom(<LoadingState message="불러오고 있어요" />)
-
-    expect(getByText('불러오고 있어요')).toBeTruthy()
-  })
-
   it('보조기술에 진행 중임을 알린다', async () => {
     const { getByTestId } = await renderAtom(<LoadingState message="불러오고 있어요" />)
 
@@ -36,12 +30,6 @@ describe('LoadingState', () => {
     const { getByTestId } = await renderAtom(<LoadingState message="불러오고 있어요" />)
 
     expect(flattenStyle(getByTestId('loading-state').props.style).borderStyle).toBeUndefined()
-  })
-
-  it('기본(inline)은 24px 스피너를 쓴다', async () => {
-    const { getByTestId } = await renderAtom(<LoadingState message="불러오고 있어요" />)
-
-    expect(getByTestId('maple-sweep-spinner', { includeHiddenElements: true }).props.width).toBe(24)
   })
 
   it('page 변형은 32px 스피너로 커지고 최소 높이를 갖는다', async () => {

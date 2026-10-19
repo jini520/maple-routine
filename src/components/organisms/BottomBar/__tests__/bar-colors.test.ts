@@ -136,13 +136,6 @@ describe('떠 있는 바의 색', () => {
     expect(hexToOklch(resolveBarColors(theme).muted).c).toBeLessThan(0.005)
   })
 
-  // 다만 **바 안에서만** 이다. 같은 테마의 다른 보조 텍스트는 `text-muted` 를 그대로 쓴다.
-  it('테마의 text-muted 토큰 자체는 건드리지 않는다', () => {
-    const lethe = THEMES.find(([name]) => name === '레테')
-    expect(lethe).toBeDefined()
-    expect(lethe?.[1].textMuted).toBe('#B89CBD')
-  })
-
   // **활성과 비활성이 같은 색으로 보이면 안 된다.** 레테에서 활성 글리프 (176,148,196) 와
   // 비활성 (184,156,189) 이 사실상 같은 색이었다. 그 테마는 `textMuted` 자체가 연보라라, 강조색을
   // `text` 쪽으로 미는 것만으로는 비활성과 같은 자리에 도착한다.

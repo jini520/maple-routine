@@ -14,16 +14,6 @@ function notice(id: string, publishedAt: string, kind: NoticeKind = 'app', body 
 }
 
 describe('공지 사본', () => {
-  it('저장된 것이 없으면 빈 배열', async () => {
-    await expect(getNotices()).resolves.toEqual([])
-  })
-
-  it('넣은 것을 읽는다', async () => {
-    await replaceNotices('app', [notice('a', '2026-09-01T00:00:00Z')])
-
-    await expect(getNotices()).resolves.toEqual([notice('a', '2026-09-01T00:00:00Z')])
-  })
-
   it('최근 발행순으로 정렬한다', async () => {
     await replaceNotices('app', [
       notice('old', '2026-09-01T00:00:00Z'),

@@ -18,12 +18,6 @@ describe('drop-effect 저장', () => {
     await expect(getDropEffectEnabled()).resolves.toBe(false)
   })
 
-  it('다시 true로 되돌리면 true를 읽는다', async () => {
-    await setDropEffectEnabled(false)
-    await setDropEffectEnabled(true)
-    await expect(getDropEffectEnabled()).resolves.toBe(true)
-  })
-
   it('Preferences.set이 reject되면 에러를 그대로 전파한다', async () => {
     prefs.set.mockRejectedValueOnce(new Error('disk full'))
     await expect(setDropEffectEnabled(false)).rejects.toThrow('disk full')

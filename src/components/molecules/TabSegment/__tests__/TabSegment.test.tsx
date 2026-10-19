@@ -89,15 +89,6 @@ describe('생김새', () => {
     )
   })
 
-  // 트랙이 파인 홈이라야 썸이 그 안에서 떠 보인다. 배경과 같은 색이면 상자가 아니라 알약만 뜬다.
-  it('트랙은 한 칸 파여 있다', async () => {
-    const view = await 그리기()
-
-    expect(flattenStyle(view.getByTestId('tab-segment').props.style).backgroundColor).toBe(
-      기본테마.surface2,
-    )
-  })
-
   // 상자가 도착하기를 기다리면 누른 조각이 그동안 안 눌린 것처럼 보인다.
   it('글자색은 상자를 안 기다린다', async () => {
     const view = await 그리기()

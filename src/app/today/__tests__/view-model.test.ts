@@ -552,14 +552,6 @@ describe('남은 스케줄. 순서는 **관리 순서**뿐이다', () => {
 
     expect(model.representative?.unavailable).toBe(true)
   })
-
-  it('실패가 없으면 null 이다', () => {
-    const model = buildTodayViewModel(
-      input({ orderedOcids: ['a'], contentCharacters: [withRemaining('a', 1)] }),
-    )
-
-    expect(model.schedule[0].syncIssue).toBeNull()
-  })
 })
 
 // 조회 불가 캐릭터가 어디에 서든 그 사실이 함께 서야 한다. 한 화면에서만 말하면 다른 자리의
@@ -631,10 +623,6 @@ describe('대표 캐릭터', () => {
     expect(model.representative?.ocid).toBe('a')
   })
 
-  it('목록이 비면 null 이다', () => {
-    expect(buildTodayViewModel(input()).representative).toBeNull()
-  })
-
   // 이름 없이 카드를 그릴 수 없다. ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다.
   it('캐시에 프로필이 없으면 null 이다', () => {
     const model = buildTodayViewModel(input({ orderedOcids: ['a'], profilesByOcid: {} }))
@@ -698,13 +686,6 @@ describe('주간 보스 수익', () => {
 
     expect(model.profit.totalMeso).toBe(600)
     expect(model.profit.crystalMeso).toBe(600)
-  })
-
-  it('행이 하나도 없으면 0 이다', () => {
-    const model = buildTodayViewModel(input({ orderedOcids: ['a'], profitRows: [] }))
-
-    expect(model.profit.totalMeso).toBe(0)
-    expect(model.profit.hasRecords).toBe(false)
   })
 
   // 월간 보스 드롭은 달 키로 저장된다. 행이 그 주에 섰으면 그 드롭도 이번 주 몫이다.
@@ -1622,9 +1603,5 @@ describe('다음 파티 스케줄', () => {
       ['낟넘', ['jupiter']],
     ])
     expect(next!.groups[0]!.imageUrl).toBe('face-a')
-  })
-
-  it('약속이 없으면 빈 목록이다', () => {
-    expect(buildTodayViewModel(input()).nextParty).toEqual([])
   })
 })

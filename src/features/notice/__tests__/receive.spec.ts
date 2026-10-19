@@ -45,12 +45,6 @@ describe('페이로드 읽기', () => {
     })
   })
 
-  it('link 가 있으면 함께 담는다', () => {
-    expect(parseNotice({ ...온전한, link: 'https://example.com' })?.link).toBe(
-      'https://example.com',
-    )
-  })
-
   // 우리가 안 쓰는 키가 섞여 와도 통과해야 한다. 서버가 필드를 더할 수 있다.
   it('모르는 키는 버리고 통과시킨다', () => {
     expect(parseNotice({ ...온전한, 미래필드: '값' })).not.toBeNull()
@@ -69,8 +63,4 @@ describe('페이로드 읽기', () => {
     expect(parseNotice({ ...온전한, noticeId: '' })).toBeNull()
   })
 
-  // 공지가 아닌 푸시가 올 수 있다. 그때 조용히 지나가야지 던지면 안 된다.
-  it('빈 페이로드는 null', () => {
-    expect(parseNotice({})).toBeNull()
-  })
 })

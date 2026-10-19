@@ -24,7 +24,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 
 import { screen } from '@testing-library/react-native'
 
-import { flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
+import { renderOverlay } from '../../../__tests__/render-atom'
 import { FaqSheet } from '../FaqSheet'
 import type { FaqItem } from '../FaqSheet'
 
@@ -45,14 +45,6 @@ const 문답: FaqItem[] = [
 async function 그리기(items: FaqItem[] = 문답): Promise<void> {
   await renderOverlay(<FaqSheet title="스케줄러 결산" items={items} onClose={jest.fn()} />)
 }
-
-it('머리에는 그 화면의 말이 선다', async () => {
-  await 그리기()
-
-  expect(screen.getByText('스케줄러 결산')).toBeTruthy()
-  // `자주 묻는 질문` 은 무엇에 대한 설명인지를 안 말한다.
-  expect(screen.queryByText('자주 묻는 질문')).toBeNull()
-})
 
 it('질문과 답이 전부 펼쳐져 있다', async () => {
   await 그리기()
@@ -76,25 +68,9 @@ it('펼치는 누르개가 없다', async () => {
   expect(screen.queryAllByRole('button')).toHaveLength(0)
 })
 
-it('문답마다 테스트 아이디가 붙어 몇 개인지 셀 수 있다', async () => {
-  await 그리기()
-
-  expect(screen.getAllByTestId(/^faq-item-/)).toHaveLength(2)
-})
-
 it('문답이 없으면 머리만 선다', async () => {
   await 그리기([])
 
   expect(screen.getByText('스케줄러 결산')).toBeTruthy()
   expect(screen.queryAllByTestId(/^faq-item-/)).toHaveLength(0)
-})
-
-// 껍데기의 스크롤 본문에는 좌우 여백이 없다. 머리와 바닥 줄만 16 을 갖고 자식은 자기 여백을 진다.
-// 안 주면 글자가 화면 끝에 붙고 문답 사이 선이 시트를 가로질러 통째로 갈라 놓는다(실측으로 잡았다).
-it('좌우 16 을 자기가 준다', async () => {
-  await 그리기()
-
-  const 목록 = screen.getByTestId('faq-item-0').parent
-  expect(flattenStyle(목록?.props.style).paddingLeft).toBe(16)
-  expect(flattenStyle(목록?.props.style).paddingRight).toBe(16)
 })

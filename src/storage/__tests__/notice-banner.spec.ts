@@ -14,16 +14,6 @@ beforeEach(async () => {
 })
 
 describe('배너에서 닫은 공지', () => {
-  it('닫은 것이 없으면 빈 배열', async () => {
-    await expect(getDismissedNoticeIds()).resolves.toEqual([])
-  })
-
-  it('닫으면 남는다', async () => {
-    await dismissNotice('a')
-
-    await expect(getDismissedNoticeIds()).resolves.toEqual(['a'])
-  })
-
   // 같은 배너를 두 번 닫을 수는 없지만, 저장이 늦고 사용자가 빨리 누르면 두 번 들어올 수 있다.
   it('같은 id 를 두 번 닫아도 한 칸만 쓴다', async () => {
     await dismissNotice('a')

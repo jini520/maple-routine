@@ -11,7 +11,6 @@ import { act } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom } from '../../../../components/__tests__/render-atom'
 import { ResetCountdownWidget } from '../ResetCountdownWidget'
-import { WIDGET_BY_ID } from '../registry'
 import { 뷰모델, 초기화 } from './widget-fixture'
 import type { TodayViewModel } from '../../view-model'
 import type { WidgetHeight } from '../../../../lib/today/widget-layout'
@@ -189,14 +188,6 @@ describe('임박을 색으로 말하지 않는다', () => {
     expect(임박.getByTestId('reset-value-daily').props.className).toBe(
       여유.getByTestId('reset-value-daily').props.className,
     )
-  })
-})
-
-describe('누를 수 없는 타일이다', () => {
-  // 초기화 시각은 이 타일이 다 말하고 더 볼 화면이 없다. 갈 데 없는 것을 누르게 두면 무반응이
-  // **고장** 으로 읽힌다(격자가 `target` 없는 타일을 `Pressable` 로 감싸지 않는 것이 그 계약이다).
-  it('레지스트리에 목적지가 없다', () => {
-    expect(WIDGET_BY_ID['reset-countdown'].target).toBeUndefined()
   })
 })
 

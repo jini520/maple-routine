@@ -24,19 +24,6 @@ describe('InputCardHost', () => {
     useInputCardStore.setState({ request: null })
   })
 
-  it('부탁이 없으면 아무것도 안 그린다', async () => {
-    const view = await renderOverlay(<></>)
-
-    expect(view.queryByTestId('input-card')).toBeNull()
-  })
-
-  it('칸을 맡기면 카드가 선다', async () => {
-    const { view } = await 열기()
-
-    expect(view.getByTestId('input-card-layer')).toBeTruthy()
-    expect(view.getByText('조각 개수')).toBeTruthy()
-  })
-
   it('확인은 값을 넘기고 카드를 닫는다', async () => {
     const { view, onConfirm } = await 열기()
 

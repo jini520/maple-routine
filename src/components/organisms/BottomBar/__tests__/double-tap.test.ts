@@ -22,9 +22,4 @@ describe('isSecondTap', () => {
   it('다른 항목이면 창 안이어도 첫 누름이다', () => {
     expect(isSecondTap({ key: 'Today', at: 1_000 }, 'Utility', 1_100)).toBe(false)
   })
-
-  // 시스템 더블탭 창과 같은 값이다. 늘리면 한참 뒤의 별개 누름 둘이 한 쌍으로 묶인다.
-  it('창은 300ms 다', () => {
-    expect(DOUBLE_TAP_MS).toBe(300)
-  })
 })

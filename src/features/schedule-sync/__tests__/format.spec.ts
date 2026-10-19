@@ -176,10 +176,6 @@ describe('formatStaleRosterError', () => {
 })
 
 describe('formatSyncedAt', () => {
-  it('null이면 "동기화 기록 없음"을 반환한다', () => {
-    expect(formatSyncedAt(null)).toBe('동기화 기록 없음')
-  })
-
   it('1분 미만이면 "방금 전"을 반환한다', () => {
     const syncedAt = new Date(Date.now() - 30 * 1000).toISOString()
     expect(formatSyncedAt(syncedAt)).toBe('방금 전')

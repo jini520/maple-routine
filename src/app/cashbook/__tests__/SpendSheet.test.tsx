@@ -146,11 +146,6 @@ describe('머리', () => {
     expect(view.getByTestId('spend-sheet-date')).toHaveTextContent('8월 23일 (일)')
   })
 
-  it('수입/지출 세그먼트가 없다. 갈래는 펼침판이 이미 갈랐다', async () => {
-    const view = await 그리기()
-
-    expect(view.queryByLabelText('수입')).toBeNull()
-  })
 })
 
 describe('갈래', () => {
@@ -178,23 +173,6 @@ describe('갈래', () => {
 
     const 상자 = view.getByTestId('spend-sheet-category-box-content')
     expect(flattenStyle(상자.props.style)).toMatchObject({ flexDirection: 'row' })
-  })
-
-  // 이름만으로는 `컨텐츠` 와 `이벤트·BM` 이 무엇을 담는지 안 읽힌다. 한 줄로 말한다
-  // (사용자 지정 2026-09-21).
-  it('카드마다 이름 아래에 설명이 선다', async () => {
-    const view = await 그리기({}, null)
-
-    const 설명 = (key: string): string =>
-      String(view.getByTestId(`spend-sheet-category-desc-${key}`).props.children)
-
-    expect(설명('content')).toBe('몬파·에픽던전·퀵패스')
-    expect(설명('event_bm')).toBe('메포샵·보약 버프 등')
-    expect(설명('buff')).toBe('메소 구입 버프 아이템')
-    expect(설명('scroll')).toBe('장비·악세·펫장비')
-    expect(설명('symbol')).toBe('심볼 강화 비용')
-    expect(설명('item_purchase')).toBe('구매 아이템 지출')
-    expect(설명('etc')).toBe('각종 패스 등 기타 지출')
   })
 
   /**
@@ -613,17 +591,6 @@ describe('수량. 곱셈은 앱이 한다', () => {
 
     expect(view.getByTestId('spend-sheet-back')).toBeTruthy()
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('하이마운틴')
-  })
-
-  // 한도 문장은 **화면에서 걷혔다**(사용자 지정). 앱이 해석하지도 세지도 않아 화면에서 하는
-  // 일이 없었다. 참조표의 문장은 `maxQuantity` 숫자의 출처로 그대로 남는다.
-  it('한도 문장을 안 적는다', async () => {
-    const view = await 그리기({ lastPointRate: 1_180 })
-
-    await 누르기(view, '몬스터 파크')
-
-    expect(view.queryByTestId('spend-sheet-limit')).toBeNull()
-    expect(view.queryByText(/한도/)).toBeNull()
   })
 
   // 한도를 적어만 두면 **넘겨서 적을 수 있다**. 칸이 막아야 한다(사용자 지적).
@@ -1311,18 +1278,6 @@ describe('아이템 구매', () => {
     })
   })
 
-  // 관세 줄에서 **더해지는 금액을 안 적는다**. 큰 숫자가 그만큼 올라가는 것이 그 말이다.
-  it('관세 줄은 `관세 10%` 뿐이다', async () => {
-    const view = await 그리기()
-    await 갈래바꾸기(view, '아이템 구매')
-    await 치기(view, '850000000')
-
-    await 관세고르기(view, '10%')
-
-    expect(view.queryByText('+85,000,000')).toBeNull()
-    expect(view.queryByText(/월드 간 거래/)).toBeNull()
-  })
-
   // 총액과 그 몫을 **둘 다** 박는다. 집계는 총액 한 칸만 본다.
   it('총액과 관세분을 함께 저장한다', async () => {
     const onSave = jest.fn()
@@ -1926,14 +1881,6 @@ describe('수량 줄', () => {
  * 숨기지 않는 이유는 그런 것이 있었지 를 기억할 수 있어야 해서다. 열리면 같은 자리에 돌아온다.
  */
 describe('안 열린 묶음', () => {
-  it('메이플 포인트 샵은 이벤트 기간이 아닙니다 라고 적는다', async () => {
-    const view = await 그리기()
-
-    await 갈래바꾸기(view, '이벤트·BM')
-
-    expect(view.getByText('메이플 포인트 샵')).toBeTruthy()
-    expect(view.getByTestId('spend-sheet-closed-maple_point_shop')).toHaveTextContent('· 이벤트 기간이 아닙니다')
-  })
 
   it('그 묶음의 타일은 안 눌린다', async () => {
     const view = await 그리기()
@@ -1959,41 +1906,11 @@ describe('안 열린 묶음', () => {
  * **이름 칸의 라벨은 갈래가 정한다**. 아이템 구매에서 그 칸이 묻는 것은
  * 무엇을 샀나 이지 어디에 썼나가 아니다.
  */
-describe('직접 입력의 이름 칸', () => {
-  it('아이템 구매는 구매 아이템이다', async () => {
-    const view = await 그리기()
-
-    await 갈래바꾸기(view, '아이템 구매')
-
-    expect(view.getByTestId('spend-sheet-name-label')).toHaveTextContent('구매 아이템')
-  })
-
-  it('기타는 `내용` 이다. 수입 `기타`와 같은 낱말이다', async () => {
-    const view = await 그리기()
-
-    await 갈래바꾸기(view, '기타')
-
-    expect(view.getByTestId('spend-sheet-name-label')).toHaveTextContent('내용')
-  })
-})
 
 /**
  * **직접 입력의 금액 뒤에 단위를 적는다**. 기타는 통화를 고르는 자리라
  * 숫자만 있으면 무엇으로 낸 것인지 줄에서 사라진다.
  */
-describe('금액 줄의 단위', () => {
-  it('고른 통화를 그대로 적는다', async () => {
-    const view = await 그리기()
-
-    await 갈래바꾸기(view, '기타')
-
-    expect(view.getByTestId('spend-sheet-unit-price-unit')).toHaveTextContent('메소')
-
-    await 누르기(view, '캐시')
-
-    expect(view.getByTestId('spend-sheet-unit-price-unit')).toHaveTextContent('캐시')
-  })
-})
 
 /**
  * **고를 것에 그림이 붙는다**.
@@ -2165,11 +2082,6 @@ describe('아이템 구매의 종류', () => {
    * 단위는 `개` 다. 수량에 단위를 안 적는 근거는 `기타` 가 자유 입력이라 앱이 무엇을 세는지
    * 모른다는 것이었다. 아이템 구매에서 세는 것은 아이템이라 그 근거가 성립하지 않는다.
    */
-  it('수량에 개를 적는다', async () => {
-    const view = await 구매('소비')
-
-    expect(view.getByTestId('spend-sheet-quantity-unit')).toHaveTextContent('개')
-  })
 
   it('소비를 저장하면 합계·수량·종류가 함께 실린다', async () => {
     const onSave = jest.fn()

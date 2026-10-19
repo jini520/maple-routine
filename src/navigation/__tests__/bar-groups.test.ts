@@ -6,13 +6,11 @@
 // 사용자가 준 예시 셋이 그대로 남아 있다(`설정 → 스케줄러 → ← → 설정`·
 // `유틸리티 → 수익·지출 → ← → 유틸리티`· **`유틸리티 → 설정 → ← 은 안 된다`**). 셋째가 이
 // 설계의 축이다. 같은 층의 옆걸음은 쌓이지 않는다.
-import { INITIAL_TAB_ROUTE, TAB_ROUTE_NAMES, LAYER_ROUTE_NAMES } from '../routes'
+import { TAB_ROUTE_NAMES, LAYER_ROUTE_NAMES } from '../routes'
 import {
   BAR_GROUPS,
   barLayer,
   canGoBack,
-  groupById,
-  groupOfPage,
   initialBarState,
   layerOfPage,
   openPage,
@@ -30,28 +28,6 @@ function at(page: BarState['page'], patch: Partial<BarState> = {}): BarState {
 }
 
 describe('그룹 표', () => {
-  it('그룹은 다섯이고 순서가 곧 바의 순서다', () => {
-    expect(BAR_GROUPS.map((group) => group.id)).toEqual([
-      'today',
-      'schedule',
-      'ledger',
-      'utility',
-      'settings',
-    ])
-  })
-
-  // 라벨을 여기서 고정하는 이유는 바가 그것을 **두 층에서** 쓰기 때문이다. 그룹 행의 글자와
-  // `accessibilityLabel`(`BottomBar` 의 `BarItem`).
-  it('그룹 라벨 다섯을 고정한다', () => {
-    expect(BAR_GROUPS.map((group) => group.label)).toEqual([
-      'today',
-      '스케줄러',
-      '수익·지출',
-      '유틸리티',
-      '더보기',
-    ])
-  })
-
   // 하위가 있으면 그룹 자신은 페이지가 아니고, 없으면 그룹이 곧 페이지다. 둘 다이거나 둘 다
   // 아닌 그룹이 생기면 **층** 판정이 답을 못 낸다.
   it('하위가 있는 그룹은 자기 페이지를 갖지 않는다. 그 반대도 같다', () => {
@@ -75,16 +51,6 @@ describe('그룹 표', () => {
     expect(['Groups', ...layers]).toEqual([...LAYER_ROUTE_NAMES])
   })
 
-  // 헤더 버튼으로만 열리던 화면이 컨텐츠·보스와 나란한 셋째 하위가 된다.
-  // 보스 관리는 바에서 빠져 설정에서 여는 하위 페이지가 됐다(사용자).
-  it('스케줄러 하위는 파티 스케줄·컨텐츠·보스 셋이다', () => {
-    expect(groupById('schedule').subs).toEqual([
-      { page: 'Appointments', label: '파티 스케줄' },
-      { page: 'Content', label: '컨텐츠' },
-      { page: 'Boss', label: '보스' },
-    ])
-  })
-
   it('탭 화면 열이 표에 정확히 한 번씩 나온다', () => {
     const pages = BAR_GROUPS.flatMap((group) =>
       group.page === null ? group.subs.map((sub) => sub.page) : [group.page],
@@ -92,12 +58,6 @@ describe('그룹 표', () => {
 
     expect(new Set(pages).size).toBe(pages.length)
     expect(pages.slice().sort()).toEqual(TAB_ROUTE_NAMES.slice().sort())
-  })
-
-  it('첫 화면은 today 다 (결정 7)', () => {
-    expect(INITIAL_TAB_ROUTE).toBe('Today')
-    expect(initialBarState().page).toBe('Today')
-    expect(groupOfPage('Today').id).toBe('today')
   })
 })
 

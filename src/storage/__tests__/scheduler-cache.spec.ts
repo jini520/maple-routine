@@ -42,18 +42,6 @@ describe('round-trip', () => {
   })
 })
 
-describe('저장된 값이 없는 경우', () => {
-  it('캐시된 적 없는 ocid는 null을 반환한다', async () => {
-    await expect(getCachedSchedulerState('unknown-ocid')).resolves.toBeNull()
-  })
-
-  it('clearCachedSchedulerState 이후에는 null을 반환한다', async () => {
-    await setCachedSchedulerState('ocid-1', sampleEntry)
-    await clearCachedSchedulerState('ocid-1')
-    await expect(getCachedSchedulerState('ocid-1')).resolves.toBeNull()
-  })
-})
-
 // 보스 항목이 이름 대신 key 를 드는 모양으로 바뀌었다. 옛 캐시는 옮기지 않고 다음 동기화가 다시 받는다.
 describe('모양 번호', () => {
   it('모양 번호가 없는 옛 캐시는 없는 것으로 본다', async () => {

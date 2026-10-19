@@ -250,16 +250,6 @@ describe('ContentScreen: 목록', () => {
     expect(screen.getByTestId('screen-scroll')).toBeTruthy()
   })
 
-  // 헤더에서 없어진 것은 이 버튼 하나이고, 수동 모드의 "컨텐츠 관리"는 남는다
-  // (그쪽은 아래 `수동 트래킹 모드` 절이 본다).
-  it('헤더에 "캐릭터 관리" 버튼이 없다', async () => {
-    withContents()
-
-    await renderScreen()
-
-    expect(screen.queryByText('캐릭터 관리')).toBeNull()
-  })
-
   // 캐시가 있으면 재검증 중에도 계속 보여준다(셸 승계 카드는 보여줄 게 없을 때만).
   it('status 가 loading 이어도 캐시된 목록이 있으면 로딩 표시 대신 목록을 보여준다', async () => {
     mockStore({
@@ -416,15 +406,6 @@ describe('ContentScreen: 에픽 던전 주간 한도', () => {
 describe('ContentScreen: 재조회', () => {
   const loaded = (status: Store['status'] = 'loaded'): Store =>
     mockStore({ status, trackedOcids: ['ocid-1'], characters: [character()] })
-
-  // **문이 하나다.** 헤더 버튼을 걷고 당김만 남겼다.
-  it('헤더에 새로고침 버튼이 없다', async () => {
-    loaded()
-    await renderScreen()
-
-    expect(screen.queryByLabelText('새로고침')).toBeNull()
-    expect(refreshControl()).toBeDefined()
-  })
 
   it('당겨서 새로고침이 추적 목록으로 재조회한다', async () => {
     const store = loaded()

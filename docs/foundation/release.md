@@ -1,139 +1,75 @@
-# 스토어 릴리스 (Play · App Store)
+# 스토어 릴리스
 
-> **범위**: 스토어에 나가는 **바이너리**를 만드는 절차: 서명·버전·빌드 커맨드·산출물 검증, 그리고 콘솔에 채워 넣어야 하는 요건. 앱 안에서 도는 OTA 갱신은 [features/live-update.md](../features/live-update.md), 광고 관련 스토어 요건의 *배경*은 [features/ads.md](../features/ads.md).
-> **관련 소스**(전부 저장소 루트 아래: [[ADR-155]] 결정 2): `android/app/build.gradle`(서명·`versionCode`) · `android/keystore.properties`(**커밋 금지**) · `ios/app.xcodeproj`(iOS 서명) · `ios/app/Info.plist`(`CFBundleVersion`) · `app.json`(**두 플랫폼 공통 지문 재료**. `expo.version`·`ios.buildNumber`·`android.versionCode`) · `package.json`(**OTA 버전**. 매니페스트 `appVersion` 의 원천이고 스토어 버전인 `app.json` 의 `expo.version` 과 따로 올린다. 화면은 도는 번들의 버전을 보인다: [[ADR-279]]).
-> **관련 ADR**: [[ADR-091]](Android 서명) ADR-090(광고: 스토어 요건이 늘어난 이유) ADR-024(버전 형식) [[ADR-119]](릴리스 노트) [[ADR-126]](핵심 목록·모달). **관련 문서**: [../features/ads.md](../features/ads.md), [../features/live-update.md](../features/live-update.md), [../features/site.md](../features/site.md), [../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md).
+Play 와 App Store 에 올릴 바이너리를 만드는 절차다. 서명 · 버전 · 빌드 커맨드 · 산출물 확인 · 콘솔에 적을 값을
+다룬다. 앱 안에서 받는 OTA 업데이트를 발행하는 절차는 `features/live-update.md` 에 있다.
 
-## 빌드는 Expo/네이티브 하나다 ([[ADR-155]])
+관련 결정은 Android 서명 [[ADR-008]], 바이너리 크기 [[ADR-009]], 회전 잠금과 iOS 씬 [[ADR-010]], 지문과 버전
+[[ADR-011]] 이다.
 
-스토어 바이너리는 **네이티브 빌드 산출물**이다. Android 는 `android/` 의 Gradle, iOS 는 `ios/` 의
-Xcode 아카이브다. 저장소 루트가 곧 Expo 프로젝트라 둘 다 루트 기준 한 칸 아래에 있다.
+## 관련 소스
 
-> 종전에는 이 자리에 ‘웹 번들을 어느 스크립트로 굽는가’(`npm run build` / `build:beta` /
-> `build:test-ads`) 표가 있었다. 그 스크립트들은 캐패시터 앱의 것이었고 앱과 함께 사라졌다.
-> 아래 ‘폐기된 정책’ 참고.
+| 파일 | 하는 일 |
+|---|---|
+| `app.json` | 스토어 버전 `expo.version` · `ios.buildNumber` · `android.versionCode`. 두 플랫폼이 같이 쓰는 지문 재료 |
+| `package.json` | OTA 버전 `version`. 스토어 버전과 따로 올린다([[ADR-011]]) |
+| `android/app/build.gradle` | `versionCode` · `versionName`(빌드가 실제로 읽는 값) · 릴리스 서명 · 축소 설정 |
+| `android/gradle.properties` | R8 · 리소스 축소 켜기 · 기본 ABI 넷 |
+| `android/keystore.properties` | 업로드 키 경로와 비밀번호. 커밋하지 않는다 |
+| `android/app/src/main/AndroidManifest.xml` | 세로 잠금 · 권한 |
+| `ios/app/Info.plist` | `CFBundleShortVersionString` · `CFBundleVersion`(빌드가 실제로 읽는 값) · 씬 매니페스트 · 방향 |
+| `ios/app.xcodeproj/project.pbxproj` | 서명 설정 · `Strip Embedded Frameworks` 빌드 단계 |
+| `ios/app/AppDelegate.swift` · `SceneDelegate.swift` | 회전 제한 · 창 만들기 |
+| `ios/app/app.entitlements` | `aps-environment` |
+| `scripts/__tests__/ios-signing-settings.test.mjs` | iOS 서명 설정이 남아 있는지 검사 |
+| `src/__tests__/orientation-policy.test.ts` · `ios-scene-policy.test.ts` | 회전 잠금과 씬 설정이 남아 있는지 검사 |
 
-## 다음 스토어 릴리스에서 같이 할 일
+## 네이티브 프로젝트는 커밋돼 있고, `expo prebuild` 를 돌리지 않는다
 
-> **해결: 2026-09-29 에 UIScene 을 채택했다**([[ADR-324]]). 아래는 그 전의 기록이고, 끝의 우회는 이제 쓸 필요가 없다.
->
-> **CRITICAL: UIScene 을 채택하지 않으면 iOS 27 에서 켜자마자 죽는다**(이슈 #494, 2026-09-20 실측).
-> 이 Mac 의 Xcode 가 27.0 뿐이라 빌드가 iOS 27 SDK 로 나가고, 그 SDK 로 만든 앱은 UIScene 생명주기가
-> 없으면 UIKit 이 실행을 막는다(`_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`).
-> 앱은 `AppDelegate` 가 창을 직접 만들고 `Info.plist` 에 `UIApplicationSceneManifest` 가 없다.
-> 앱스토어판 1.0.8(15)은 Xcode 26 으로 구워 멀쩡하고, iOS 26.5 시뮬레이터에서도 안 드러난다.
-> **스토어 바이너리를 굽기 전에 이슈 #494 를 먼저 끝낼 것.** 네이티브 변경이라 OTA 로는 못 고친다.
-> 실기기 테스트 빌드에 쓴 우회(실행 파일의 SDK 기록만 26.5 로 바꿔 재서명)는 스토어에 쓸 수 없다.
+`android/` 와 `ios/` 는 저장소에 커밋돼 있다. `expo prebuild` 를 돌리면 이 디렉터리를 다시 만들면서 손으로 넣은
+값이 지워진다. Android 릴리스 서명 연결, iOS 서명 설정, `Strip Embedded Frameworks` 단계, 씬
+대리자, 회전 잠금이 지워진다. 그래서 `app.json` 의 네이티브 설정(예: `orientation`)은 네이티브 파일과 다를 수 있다.
+네이티브 설정을 바꿀 때는 `android/` · `ios/` 의 파일을 직접 고친다.
 
-> **해결: 2026-10-04 에 확인했다.** 두 파일의 값이 `.env` 의 `EXPO_PUBLIC_ADS_APP_ID_ANDROID` · `..._IOS` 와 글자까지 같다.
-> 옛 값이 남은 것이 아니라서 prebuild 를 돌리지 않는다(prebuild 는 손으로 쓴 네이티브 파일을 지운다). 아래는 그 전의 기록이다.
->
-> **네이티브 트리에서 AdMob 앱 ID를 걷는다.** 2026-08-31에 앱 ID를 환경 변수로 옮겼지만
-> (`EXPO_PUBLIC_ADS_APP_ID_ANDROID`·`..._IOS`, `app.config.js`), 커밋된 prebuild 산출물에는
-> 옛 값이 그대로 남아 있다.
->
-> ```
-> android/app/src/main/AndroidManifest.xml   com.google.android.gms.ads.APPLICATION_ID
-> ios/app/Info.plist                         GADApplicationIdentifier
-> ```
->
-> **이 두 파일은 OTA 로 못 바꾼다.** OTA 는 JS 번들과 에셋만 갈아끼우고, 네이티브 설정 파일은
-> 번들에 안 들어간다. 그래서 스토어 바이너리를 만들 때가 유일한 기회다.
->
-> 할 일은 `.env` 를 채운 상태로 prebuild 를 돌려 네이티브 파일이 환경 변수 값으로 다시 써지는지
-> 확인하고, 그 트리에서 바이너리를 굽는 것이다. 아래 규칙 1~4 를 그대로 따르면 된다. 자세한
-> 배경은 [../features/ads.md](../features/ads.md).
+## 버전
 
-> **`react-native-reanimated` 4.5.5 가 이 빌드로만 나간다**([[ADR-322]], 이슈 #394 · #409).
-> 4.5.1 이 애니메이션된 값을 React 에 넘기기 전에 지워서 세그먼트 선택 배경이 사라지고 캐릭터
-> 관리 격자가 깨진다. 수정이 C++ 이라 OTA 로 못 보낸다. 지문도 이미 바뀌었다
-> (iOS `87be3791…` → `34201e5f…` · Android `19d059d4…` → `d950f7a1…`. iOS 는 `pod install` 뒤에 잰 값이다).
->
-> 구운 뒤 실기기에서 볼 것 셋이다. ① 세그먼트 상자가 캐릭터 관리를 다녀온 뒤에도 선다
-> ② 캐릭터 관리에서 추가·해제·순서 바꾸기와 앱 전환 뒤 복귀에 격자가 안 깨진다 ③ reanimated 를
-> 쓰는 나머지 자리(today 헤더 초상화 · 스피너 둘 · 드롭 가격 FAB · 바텀 시트 · 입력 카드 ·
-> 스피드 다이얼 · 공지 레일 · 스켈레톤)가 그대로 돈다.
+| 값 | 어디 | 지금 | 규칙 |
+|---|---|---|---|
+| 스토어 버전 | `app.json` `expo.version` · `build.gradle` `versionName` · `Info.plist` `CFBundleShortVersionString` | 1.0.12 | `x.y.z` 세 자리 |
+| Android `versionCode` | `build.gradle` · `app.json` | 24 · 23 | 올리기만 한다. 한 번 올린 번호는 다시 못 쓴다 |
+| iOS 빌드 번호 | `Info.plist` `CFBundleVersion` · `app.json` `ios.buildNumber` | 16 · 16 | 올리기만 한다 |
+| OTA 버전 | `package.json` `version` | `features/live-update.md` 참고 | 스토어 버전과 따로 올린다 |
 
-## 릴리스는 노트를 쓰는 것으로 시작한다 ([[ADR-119]])
+빌드 번호는 두 파일에 있다. 빌드가 실제로 읽는 것은 `build.gradle` 과 `Info.plist` 이고, `app.json` 만 고치면
+옛 번호로 나간다. `app.json` 은 두 플랫폼이 같이 쓰는 지문 재료라서, 한 플랫폼의 번호만 올려도 다른 플랫폼의
+지문이 바뀐다.
 
-**버전을 올리기 전이 아니라, 올리면서 `src/data/release-notes.ts` 에 그 버전의 항목을
-먼저 쓴다.** OTA 배포든 스토어 바이너리든 순서는 같다.
+1.0.12 는 Android `versionCode` 가 `build.gradle` 24, `app.json` 23 으로 다르다. 23 을 Play 에 먼저 올려 버려서
+24 로 다시 빌드했는데, `app.json` 까지 올리면 이미 올린 iOS 빌드 16 의 지문도 바뀌기 때문에 `build.gradle` 만
+올렸다. 다음 스토어 릴리스에서 두 값을 맞춘다.
 
-```
-1. package.json 의 version 을 올린다        (x.y.z 또는 같은 버전의 버그 수정이면 x.y.z+n: ADR-292. 2단이면 OTA가 깨진다, ADR-024)
-     ↑ 저장소 루트 package.json 이 아니다. 루트는 워크스페이스 오케스트레이션용이라 version 이 없다
-2. src/data/release-notes.ts 에 그 버전 항목을 쓴다            ← 이 단계를 건너뛰면 3에서 막힌다
-     · items:      변경 전부. 개발 노트 화면이 읽는다
-     · highlights: 핵심 3~4줄. **업데이트 모달**이 받기 전에 읽는다([[ADR-126]] 결정 2·3)
-     · 네이티브 변경 항목에는 ‘스토어 업데이트 필요’ 표식(항목 단위)
-3. npm run build / node scripts/publish-live-update.mjs
+## 빌드하기 전에
+
+1. 버전과 빌드 번호를 먼저 올리고 커밋한다. 그 트리에서 두 플랫폼을 빌드한다. 빌드하고 나서 번호를
+   올리면 지문이 바뀌어 두 바이너리를 모두 다시 빌드해야 한다.
+2. 스토어 게시 뒤에는 `package.json` 의 `scripts` 에 줄을 더하지 않는다. `scripts` 도 지문 재료다. 스크립트는
+   `node scripts/<이름>.mjs` 로 부른다.
+3. 빌드하는 트리의 지문을 적어 둔다. 업로드 직전에 바이너리 안의 지문과 같은지 본다(아래 산출물 확인).
+
+```bash
+npx expo-updates runtimeversion:resolve --platform ios
+npx expo-updates runtimeversion:resolve --platform android
 ```
 
-> ⚠️ **캐패시터 앱의 `1.0.6` 이 그 앱의 마지막 번들이다**([[ADR-154]]). 소스는 이미 지웠고([[ADR-155]]) 남은 재료는 `ota/latest.json` 뿐이다.
-> [[ADR-128]] 의 RN 전환분이 스토어에 올라가면서 capacitor 앱은 갱신이 끝났고, 이 배포는 ‘적용될
-> 번들’을 나르는 것이 아니라 **사용자를 스토어로 보내는** 것이 목적이다. **버전은 여기서 더 올리지
-> 않는다**. iOS 스토어 심사 버전이 1.0.6 이라 OTA 가 그 위로 가면 안 되고([[ADR-154]] 맥락),
-> 판정이 버전이 아니라 플랫폼 목록이라 올릴 필요도 없다.
->
-> **3단계로 나눠 친다**. 플랫폼마다 ‘스토어에 받을 것이 생기는’ 시점이 다르기 때문이다.
-> 2026-08-21 실측으로 **두 스토어 모두 아직 새 바이너리가 없다**(Play 404 · App Store 1.0.0).
->
-> ```
-> 1단계  node scripts/publish-live-update.mjs --bundle-only --highlight '<문구>' ...   ✅ 완료
->          ← zip 만 올리고 latest.json 은 안 건드린다(모달 안 뜸). 초안이 ota/latest.json 에 남는다.
->            캐패시터 소스가 필요한 마지막 순간이다.
-> 2단계  ota/latest.json 에 "storeRequiredPlatforms": ["android"] 를 넣어 발행 (Play 게시 확인 후)
-> 3단계  같은 필드를 ["android","ios"] 로                            (App Store 게시 확인 후)
->          gh release upload live-update-latest ota/latest.json --repo jini520/maple-routine --clobber
->          ← 둘 다 빌드 없음·다운로드 없음. 그래서 1단계 직후 캐패시터 소스를 지웠다([[ADR-155]]).
-> ```
->
-> - **먼저 쏘지 말 것**. 스토어에 받을 것이 없는 플랫폼을 목록에 넣으면 막다른 길로 보낸다.
->   게시 확인은 콘솔 상태가 아니라 **조회**로 한다(Play 상세 페이지 HTTP 코드 · iTunes Lookup 의 `version`).
-> - **되돌릴 수 있다**. 목록에서 플랫폼을 빼고 다시 덮어쓰면 원복된다([[ADR-154]] 결정 5).
->   종전 `--min-native` 계획은 되돌릴 수 없는 지점이었다.
-> - **`--highlight` 로 덮어쓰는 이유**. 1.0.6 노트는 **RN 의 것**이라 넷 중 셋이 캐패시터 번들에
->   없는 기능이다. 원천(`release-notes.ts`)과 아래 가드는 그대로 돌고 매니페스트에 실리는 값만
->   갈린다([[ADR-154]] 결정 7).
-> - **1단계 번들에 `APP_STORE_ID` 수정이 실려 있어야 한다**. 게이트가 켜지면 새 번들은 다운로드
->   자체가 안 되므로 그 뒤엔 못 고친다([[ADR-154]] 결정 6, 이미 반영됨).
->
-> 노트를 안 쓴 채 스크립트를 돌리면 가드에 걸려 중단되는 것이 정상이고
-> ([[ADR-119]] 결정 6 + [[ADR-126]] 결정 8), 위 1·2 를 먼저 하면 풀린다. **`highlights` 를 빠뜨리는
-> 것도 같은 중단**이다. 문구가 어느 쪽이 비었는지 말해 준다.
-
-> [!NOTE]
-> **이 절은 캐패시터 기준이다.** RN 앱의 OTA 는 프로토콜도 스크립트도 다르다
-> (`scripts/publish-rn-ota.mjs` · [[ADR-137]]). **RN 스토어 릴리스 절차는 아직 이 문서에 없다**. 1.0.6
-> 을 내보내며 확인된 것부터 여기 채울 것.
-
-- **노트나 핵심 목록이 없으면 `publish-live-update.mjs` 가 중단한다**(`process.exit(1)`, 문구가 어느
-  쪽이 비었는지 말한다). 앱 `package.json` version 형식 검사와 **같은 자리**에서, `npm run build` 보다
-  **앞에서** 죽으므로 몇 분짜리 빌드를 버리지 않는다.
-- **`highlights` 를 `items` 에서 베끼지 말 것**([[ADR-126]] 결정 3). *"무엇이 바뀌었나"* 가 아니라
-  *"받으면 무엇이 생기나"* 를 쓰고, 자잘한 것은 `일부 버그 및 사용성 개선` 처럼 한 줄로 뭉친다.
-- **스크립트가 `.ts` 를 읽는 방법은 Node 내장 타입 스트리핑이다**. `.mjs` 가
-  `src/data/release-notes.ts` 를 **그대로 `import`** 한다(Node 22.18+/23.6+ 부터 플래그 없이 켜져 있고
-  이 저장소는 24.x 에서 확인했다). **이 자리를 만질 때 `tsx`·`ts-node` 를 들이지 말 것**. 배포
-  스크립트는 릴리스 경로의 일부라 의존성이 늘수록 릴리스가 깨질 표면이 넓어진다. 정규식으로 파일을
-  긁는 것도 안 된다(원천 형식이 바뀌는 순간 조용히 틀린 값을 낸다). `release-notes.ts` 는 순수
-  데이터라 타입 선언 말고는 스트리핑할 것도 없다.
-- **경고가 아니라 중단인 이유**: 노트가 빠진 채 배포되면 그 버전은 **영영 빈 채로 남는다**.
-  [[ADR-119]] 결정 4 가 사후 재구성을 금지했으므로(릴리스 노트는 사실 기록이다) 나중에 채울 방법이
-  없다. 사후 복구가 불가능한 실수는 사전에 막는다.
-- 같은 파일이 두 곳으로 나간다. 앱 내장 **개발 노트 화면**(`/settings/release-notes`, 과거 전체)과
-  배포 스크립트가 파생시키는 **`latest.json` 의 `highlights`**(업데이트 모달, 그 버전의 핵심 3~4줄).
-  상세는 [../features/live-update.md](../features/live-update.md)·[../features/settings.md](../features/settings.md).
-- 스토어 등록정보의 **출시 노트**(아래 "스토어 등록정보 문구")는 **별개 칸**이다. 콘솔에 직접 쓰고
-  이 파일에서 파생되지 않는다. 같은 릴리스라도 담는 말이 다를 수 있다(스토어는 그 버전 한정 소개,
-  개발 노트는 누적 기록).
+두 값이 다르면 그 바이너리는 OTA 를 받지 못하고, 다음 OTA 발행이 그 스토어 사용자에게 닫을 수 없는 스토어
+업데이트 모달을 띄운다([[ADR-011]]). 심사에 올린 바이너리의 지문은 `IN_REVIEW_RUNTIME_VERSIONS` 에 넣는다.
+그 절차는 `features/live-update.md` 의 `스토어 게시 뒤 옛 바이너리 잠그기` 에 있다.
 
 ## Android
 
-### 사전 1회: 업로드 키스토어 만들기 ([[ADR-091]])
+### 처음 한 번: 업로드 키 만들기
 
-**저장소 밖**에 만든다. 여기서 정한 비밀번호 두 개와 별칭은 다시 볼 수 없으니 암호 관리자에
-먼저 넣어둘 것.
+이미 쓰는 업로드 키가 있다면 이 절은 건너뛴다. 키는 저장소 밖에 만든다([[ADR-008]] 결정 2). 비밀번호와 별칭은
+다시 볼 수 없으므로 먼저 암호 관리자에 넣어 둔다.
 
 ```bash
 mkdir -p ~/keys
@@ -144,23 +80,11 @@ keytool -genkeypair -v \
   -storetype PKCS12
 ```
 
-- `-validity 10000`(약 27년). Play는 **2033-10-22 이후까지** 유효한 키를 요구한다.
-- `-storetype PKCS12`. JKS는 레거시 포맷이라 `keytool` 이 변환 경고를 낸다.
+- `-validity 10000`(약 27년). Play 는 2033-10-22 이후까지 유효한 키를 요구한다.
+- 인증서 소유자 정보는 `CN=MapleRoutine, O=Maple Routine, L=Seoul, ST=Seoul, C=KR` 을 썼다. 한글은 넣지 않는다.
+- 마지막 확인 질문의 기본값이 `아니오` 라서, 엔터만 치면 처음부터 다시 묻는다. `y` 를 입력한다.
 
-**인증서 소유자 정보(DN)** 를 대화형으로 묻는다. **업로드 키의 DN은 사용자에게 어디에도 보이지
-않는** 인증서 메타데이터라 값은 자유롭지만, 나중에 바꾸려면 키를 새로 만들어야 한다. 실제로
-쓴 값은 이렇다.
-
-```
-CN=MapleRoutine, O=Maple Routine, L=Seoul, ST=Seoul, C=KR
-```
-
-- **한글을 넣지 않는다.** 이 저장소는 한글 번들 이름의 NFD 인코딩 때문에 App Store 서명 검증이
-  깨진 전례가 있다([../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md)).
-- 마지막 확인(`… 이(가) 맞습니까? [아니오]:`)에서 **`y` 를 입력**한다. 기본값이 "아니오"라
-  그냥 엔터를 치면 처음부터 다시 묻는다.
-
-그 다음 `android/keystore.properties` 를 만든다(**gitignore 대상 · 절대경로**).
+그 다음 `android/keystore.properties` 를 만든다. `storeFile` 은 절대 경로이고, PKCS12 라 두 비밀번호는 같은 값이다.
 
 ```properties
 storeFile=/Users/<user>/keys/maple-routine-upload.jks
@@ -169,185 +93,201 @@ keyAlias=upload
 keyPassword=<같은 비밀번호>
 ```
 
-⚠️ **`storePassword` 와 `keyPassword` 는 같은 값이다.** PKCS12는 키 비밀번호가 키스토어
-비밀번호와 같아야 해서 `keytool` 이 키 비밀번호를 **따로 묻지 않는다**(JKS 시절의 "키 저장소
-암호와 동일한 경우 RETURN" 프롬프트가 없다). 다른 값을 적으면 빌드가 서명 단계에서 실패한다.
-
-> 업로드 키는 **분실보다 유출이 위험하다**. Play 앱 서명을 쓰므로 잃어버리면 Google에 재설정을
-> 요청할 수 있다([[ADR-091]] 결정 1).
-
-### 매 릴리스
-
-**릴리스 노트가 선행한다**(위 "릴리스는 노트를 쓰는 것으로 시작한다"). 아래는 그 뒤의 빌드 절차다.
-
-**네이티브 프로젝트는 저장소 루트의 `android/` 다**([[ADR-155]] 결정 2). 웹 번들을 굽고
-`npx cap sync` 로 넣던 단계는 없다. JS 는 Gradle 이 Metro 를 불러 AAB 안에 직접 넣는다.
+### 릴리스마다
 
 ```bash
-# 1. versionCode 를 **두 파일에** 올린다: 소진된 번호는 재사용 불가
-#      android/app/build.gradle  ← 빌드가 실제로 읽는 값
-#      app.json                  ← 지문(runtimeVersion) 재료. 한쪽만 고치면 AAB 는 옛 번호로 나온다(실측, c9ce4697)
-# 2. expo-updates 의 임베드 에셋 목록을 **지워서** 다시 만들게 한다
-#      그 Gradle 태스크가 소스를 입력으로 선언하지 않아 한 번 만들어지면 UP-TO-DATE 로 건너뛴다.
-#      스탈해지면 새 그림이 **에러도 로그도 없이** 빈 자리로 나온다(c9ce4697: 카링·벨로나 5장).
+# 1. expo-updates 의 임베드 에셋 목록을 지워 다시 만들게 한다.
+#    이 Gradle 태스크는 입력을 선언하지 않아서, 한 번 만들어지면 UP-TO-DATE 로 건너뛴다.
+#    목록이 오래되면 새 그림이 오류도 로그도 없이 빈칸으로 나온다.
 rm -rf android/app/build/generated/assets/createReleaseUpdatesResources
-# 3. AAB (APK 아님: Play는 AAB만 받는다)
-#      **플래그를 빼지 말 것**([[ADR-269]] 결정 1). x86·x86_64 는 에뮬레이터 전용이라 스토어
-#      빌드에 담을 이유가 없고, 빼면 그 ABI 의 네이티브 16.0 MB 와 **그 ABI 의 디버그 심볼
-#      14.3 MB 가 함께** 빠진다(합 30.3 MB). 기본값(`gradle.properties`)은 에뮬레이터 개발
-#      빌드를 위해 넷 그대로 두므로, 좁히는 것은 이 커맨드뿐이다.
+
+# 2. AAB 를 빌드한다. ABI 플래그를 빼지 않는다(ADR-009 결정 5).
 cd android && ./gradlew bundleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a
-# 4. 산출물: android/app/build/outputs/bundle/release/app-release.aab
+
+# 3. 산출물
+#    android/app/build/outputs/bundle/release/app-release.aab
 ```
 
-**디버그 심볼은 따로 할 일이 없다**([[ADR-269]] 결정 2). AAB 에 실린 채로 나가고 Play 가 거기서
-자동으로 꺼내 쓴다. `debugSymbolLevel` 을 손대지 말 것 - `'none'` 은 심볼을 AAB 에서 빼는 것이
-아니라 **추출 자체를 멈춰** Play 에 올릴 파일도 안 남긴다(실측). 기본값이 이미 `symbol_table` 이라
-낮출 여지도 없다.
+디버그 심볼과 R8 매핑은 따로 할 일이 없다. 둘 다 AAB 안에 들어 있어 Play 가 알아서 쓴다([[ADR-009]] 결정 6 · 7).
 
-**난독화 매핑도 따로 할 일이 없다**([[ADR-269]] 정정 1). R8 이 켜져 있어 `mapping.txt` 가 생기지만
-AGP 가 그 사본을 AAB 안(`BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map`)에
-넣으므로 Play 가 자동으로 쓴다. 스택트레이스가 난독화된 채 보이면 그때 이 파일을 의심할 것.
-
-> ⚠️ **R8 이 켜진 릴리스는 실기기 스모크가 게이트다**([[ADR-269]] 정정 1). R8 은 리플렉션으로만
-> 닿는 코드를 지울 수 있고, 그것은 **빌드도 설치도 성공한 뒤 그 화면을 눌렀을 때** 드러난다.
-> debug 빌드에서는 R8 이 안 돌아 재현되지 않는다. 릴리스 APK 를 실기기에 올려 주요 화면을 전부
-> 밟을 것. 확인할 때 OTA 번들이 임베드 번들을 가릴 수 있으므로 버전을 올려 리셋한 뒤 본다.
-
-**서명 확인**. 서명이 안 붙어도 빌드는 성공하므로([[ADR-091]] 결정 4) 산출물을 직접 본다.
+### 산출물 확인
 
 ```bash
+# 서명. 키스토어 설정을 못 읽어도 빌드는 성공하므로 직접 본다(ADR-008 결정 4).
 keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release.aab
+
+# 지문. 빌드하기 전에 적어 둔 android 값과 같아야 한다.
+unzip -p android/app/build/outputs/bundle/release/app-release.aab base/assets/fingerprint
 ```
 
-`소유자: CN=...` 이 나오면 서명된 것이고, 아무것도 안 나오면 `keystore.properties` 를 못 읽은
-것이다. **실제 업로드 키로 끝까지 한 번 돌려 검증했다**(2026-08-04).
+`소유자: CN=MapleRoutine, O=Maple Routine, L=Seoul, ST=Seoul, C=KR` 이 나오면 업로드 키로 서명된 것이다. 아무것도
+안 나오면 `keystore.properties` 를 못 읽은 것이다.
 
-```
-소유자: CN=MapleRoutine, O=Maple Routine, L=Seoul, ST=Seoul, C=KR
-종료 날짜: Sat Dec 20 18:39:09 KST 2053     ← Play 요건(2033-10-22 이후) 충족
-주체 공용 키 알고리즘: 2048비트 RSA 키       ← Play 요건(RSA 2048 이상) 충족
-```
+R8 이 켜져 있으므로 릴리스 빌드를 실기기에 깔고 주요 화면을 모두 눌러 본 뒤에 올린다([[ADR-009]] 결정 7).
+debug 빌드에서는 R8 이 돌지 않아 문제가 재현되지 않는다. 이전 OTA 번들이 임베드 번들을 가릴 수 있으니,
+확인할 때는 새 `versionCode` 로 깔아 OTA 상태를 초기화한다.
 
-### 버전 규칙 (ADR-024, [[ADR-091]] 결정 5)
+## iOS
 
-| 값 | 현재 | 규칙 |
+### 서명 설정
+
+Xcode 자동 서명을 쓴다. `project.pbxproj` 에 네 값이 있어야 한다.
+
+| 값 | 어디 | 없거나 틀리면 |
 |---|---|---|
-| `versionCode` | 24 (1.0.12) | 업로드마다 +1. **되돌리지 않는다**. 내부 테스트에 한 번 올린 번호는 프로덕션에 다시 못 쓴다 |
-| `versionName` | `1.0.12` | 3단 고정. OTA 매니페스트와 같은 축이라 2단(`1.0`)이면 OTA가 깨진다 |
+| `DEVELOPMENT_TEAM = TQPKW249G7` | 타깃의 Debug · Release | `Signing for "app" requires a development team` 으로 아카이브가 실패한다 |
+| `CODE_SIGN_STYLE = Automatic` | 타깃의 Debug · Release | |
+| `"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development"` | 프로젝트의 Debug · Release | 템플릿의 옛 문자열 `"iPhone Developer"` 가 남아 있으면 아카이브는 통과하고 export 에서 error 90034 로 실패한다 |
+| `PRODUCT_NAME` | 타깃 | 지금 `app`. 한글로 두면 번들 경로가 NFD 로 저장되어 서명 경로와 어긋나고, 업로드가 error 90034 로 거부된다. 홈 화면 이름은 `CFBundleDisplayName`(`메이플 루틴`)이 정한다 |
 
-> **1.0.12 는 `build.gradle` 만 24 이고 `app.json` 은 23 이다**(2026-10-04). 23 을 Play 에 먼저 올려 버려 24 로 다시 구웠다.
-> `app.json` 은 두 플랫폼 공통 지문 재료라, 거기를 올리면 iOS 지문까지 바뀌어(`e2b57239…` → `bb2eac45…`, 실측) 이미 올린
-> iOS 빌드 16 과 main 이 갈린다. `build.gradle` 만 올리면 안드로이드 지문만 바뀐다. 다음 스토어 릴리스에서 두 값을 다시 맞춘다.
+Release 의 `CODE_SIGN_IDENTITY` 를 `"Apple Distribution"` 으로 바꾸면 안 된다. 자동 서명과 충돌해 빌드가
+실패한다. 자동 서명에서는 아카이브를 개발 인증서로 서명하고, export 단계에서 Xcode 가 배포 인증서로 다시
+서명한다.
 
-내장 번들과 OTA 채널의 버전 관계는 [features/live-update.md](../features/live-update.md) 참조.
+이 값들은 `pbxproj` 에만 있어서 `expo prebuild` 가 지우고, 다음 아카이브 때까지 아무 증상이 없다.
+`scripts/__tests__/ios-signing-settings.test.mjs` 가 팀과 자동 서명이 두 구성에 있는지, 옛 문자열이 돌아오지
+않았는지 본다.
 
-## Play Console 요건
+`ios/app/app.entitlements` 의 `aps-environment` 는 `development` 로 둔다. App Store 용 export 가 배포 프로파일로
+다시 서명하면서 `production` 으로 바꿔 넣는다. 손으로 `production` 으로 고치면 개발 빌드가 깨진다.
 
-바이너리와 별개로 콘솔에서 채워야 하는 것들. **코드로 해결되지 않는 항목이 대부분이다.**
+### 아카이브
 
-| 항목 | 상태 | 메모 |
-|---|---|---|
-| 개발자 계정 | ⏳ 개인 계정 보유 | — |
-| **비공개 테스트 12명 × 14일 연속** | ❌ | 2023-11 이후 **개인** 계정의 프로덕션 출시 전제조건. 조직 계정은 면제. **전체 일정을 지배하는 항목** |
-| 개인정보 처리방침 URL | ✅ | `https://mapleroutine.store/privacy`. 게시 확인 완료(2026-08-04) |
-| 개인정보 처리방침 **앱 내 링크** | ✅ | 설정 footer 맨 위(2026-08-04). Play 사용자 데이터 정책은 스토어 등록정보 **와 앱 안** 양쪽을 요구한다([features/settings.md](../features/settings.md)) |
-| **앱 액세스 권한** | ❌ | 로그인이 넥슨 API 키 하드 게이트라([features/auth.md](../features/auth.md)) **심사자용 테스트 키 + 캐릭터 있는 계정 + 입력 절차**를 적어주지 않으면 리뷰어가 앱을 실행조차 못 한다 |
-| 데이터 안전 | ❌ | `AD_ID` 권한을 선언했으므로 **광고 ID 수집 신고 필수**. 넥슨 API 키의 취급 분류도 함께. **알림을 넣는 릴리스부터 한 항목 더**. FCM 등록 토큰은 앱이 서버로 안 보내도(토픽 방식, [[ADR-146]] 결정 2) **Firebase 가 갖는 기기 식별자**라 신고 대상이다. **드롭 판매가 수집이 섰으므로**([[ADR-342]], 2026-10-09) 이제 신고할 항목이 확정됐다 - 아래 "수집 신고에 적을 값" 참고 |
-| **개인정보 처리방침 갱신 (푸시)** | ✅ | v1.1(2026-09-20 시행)이 푸시 알림·Firebase 데이터 처리를 담았다 |
-| **개인정보 처리방침 갱신 (판매가 수집)** | ⬜ 작성 완료 · 게시 대기 | `PRIVACY.md` **v1.2**(2026-10-09 개정·시행)가 1-7 절로 적었다. **먼저 게시하는 것이 곧 사전 안내다** - 전송은 그 기능을 담은 앱 버전부터 시작되므로, 처리방침이 앞서 서 있으면 수집 전에 알린 것이 된다(부칙이 그 사실을 적는다). ⚠️ **`mapleroutine.store/privacy` 에 게시하는 것이 앱 발행보다 먼저여야 한다** - 순서가 뒤집히면 옛 내용이 걸린 채로 수집이 시작된다 |
-| "광고 포함" 선언 | ❌ | ADR-090 |
-| 콘텐츠 등급 설문 · 타겟 연령 | ❌ | — |
-| 배포 국가 | 한국 한정 | EU 사용자가 없어 GDPR 동의(UMP) 구현이 불필요하다는 전제다. 국가를 넓히려면 그 흐름부터 |
-| 계정 삭제 정책 | ⬜ **이 릴리스가 연다** | 회원가입은 여전히 없지만 서버가 사람 행(`users`)과 판매가를 든다([[ADR-340]]·[[ADR-342]]). **앱 안 경로는 섰다** - `연결 해제`(더보기 → 설정 → 계정 및 데이터)가 `DELETE /v1/me` 를 보내 판매가와 식별자를 지운다(`features/server-sync/forget.ts`). Play·App Store 는 **웹 경로도** 요구하므로 사이트에 그 안내 한 쪽이 필요하다. 처리방침 3장·6장이 절차를 적어 두었으니 그것을 가리키면 된다 |
-| 스크린샷 | ✅ | `resources/screenshots/listing/play-store-1320x2640/` 6장 |
-| 피처 그래픽 1024×500 | ✅ | `resources/play-feature-graphic-1024x500.png`(2026-08-04). **알파 채널을 뺀 24-bit PNG**. Play는 알파를 받지 않는다. 16:9로 크롭돼도(좌우 68px씩) 카피·로고가 모두 살아남는 것을 확인했다 |
-| 아이콘 512×512 | ⬜ 1.0.12 에서 교체 | 핑크빈 아이콘(2026-09-21)으로 바뀌어 **다시 올린다**. `resources/` 는 지워졌고 저장소에 두지 않는다. 올릴 때 `assets/icon.png`(= iOS 마케팅 아이콘 1024)를 **정확히 2:1로 축소**해 32비트 PNG 로 만든다(`python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA').resize((512,512), Image.LANCZOS).save('play-store-icon-512.png')"`). Android 런처 아이콘(adaptive)은 전경에 16.7% inset이 들어가 스토어 아이콘으로 쓰면 안 된다. **모서리를 미리 둥글리지 않는다**(Play가 마스크를 씌운다) |
+Xcode 화면이 아니라 CLI 로 빌드한다. 실패 지점이 로그에 남고, 같은 트리에서 GUI 아카이브가 CLI 와 다른 지문을
+낸 적이 있다. `-archivePath` 를 `~/Library/Developer/Xcode/Archives/<날짜>/` 아래로 주면 Organizer 에도 그대로
+나타난다.
 
-게시 **후**에 AdMob 콘솔에서 앱을 연결해 검토(2~3일)를 통과해야 광고가 정상 노출된다.
-미게시 앱은 *limited ad serving* 이다.
+```bash
+# 1. 이미 쓴 빌드 번호를 로컬 아카이브에서 확인한다.
+#    task = distribute 이고 uploadEvent.state = success 인 uploadedBuildNumber 는 다시 못 쓴다.
+#    task = validate 만 있는 것은 검증만 한 것이라 그 번호를 아직 쓸 수 있다.
+for a in ~/Library/Developer/Xcode/Archives/*/*.xcarchive; do
+  plutil -p "$a/Info.plist" | grep -e uploadedBuildNumber -e '"title"' -e '"state"'
+done
 
-### 수집 신고에 적을 값 (Play 데이터 안전 · App Store 개인정보 라벨)
+# 2. 아카이브
+cd ios
+xcodebuild -workspace app.xcworkspace -scheme app \
+  -configuration Release -destination 'generic/platform=iOS' \
+  -archivePath "$HOME/Library/Developer/Xcode/Archives/$(date +%Y-%m-%d)/MapleRoutine-<버전>-<빌드>.xcarchive" \
+  archive
+```
 
-**판매가 수집이 서면서 확정된 값이다**([[ADR-342]], 2026-10-09). 코드가 보내는 것은
-`features/server-sync/drop-price-sync.ts` 의 `dropPricePayloadOf` 가 만드는 일곱 칸과 신원 헤더
-하나뿐이므로, 아래가 전부다.
+JS 번들은 `Bundle React Native code and images` 빌드 단계가 매 빌드 새로 만든다. 임베드 프레임워크는
+`Strip Embedded Frameworks` 단계가 심볼을 제거하고 다시 서명한다([[ADR-009]] 결정 8).
 
-**Play 데이터 안전** — 각 항목을 `수집함 · 공유하지 않음 · 필수(선택 아님) · 앱 기능 + 분석`으로.
-`전송 중 암호화됨`은 ✅(HTTPS), `사용자가 삭제를 요청할 수 있음`도 ✅(연결 해제).
+### export 와 업로드
 
-| 데이터 유형 | 왜 |
+업로드 전에 export 를 돌려 배포 서명을 확인한다. 아카이브는 개발 인증서로도 성공하고, 배포 인증서로는
+export 단계에서 바뀐다.
+
+```bash
+xcodebuild -exportArchive -archivePath <위 경로> \
+  -exportPath <저장소 밖 경로> -exportOptionsPlist <저장소 밖 경로>/ExportOptions.plist \
+  -allowProvisioningUpdates
+# ExportOptions: method app-store-connect · destination export · teamID TQPKW249G7 · signingStyle automatic
+```
+
+- `destination` 을 `upload` 로 바꿔 한 번 더 돌리면 Xcode 에 로그인된 계정으로 업로드된다.
+- `ExportOptions.plist` 는 저장소 안에 두지 않는다. `ios/` 안의 추적되지 않는 파일도 지문 재료라서, 거기 두면
+  바이너리의 지문과 트리 계산값이 달라진다.
+- `-allowProvisioningUpdates` 가 없으면 오래된 프로파일 그대로 진행해 실패한다(Push Notifications capability 가 없다는
+  오류). 이 플래그를 주면 xcodebuild 가 프로파일을 새로 받는다.
+
+### 산출물 확인
+
+```bash
+A=<아카이브>/Products/Applications/app.app
+plutil -p "$A/Info.plist" | grep -E 'CFBundleVersion|CFBundleShortVersionString'
+codesign -dv --verbose=2 "$A" 2>&1 | grep -E 'Identifier|Authority|TeamIdentifier'
+cat "$A/EXUpdates.bundle/fingerprint"                          # 빌드하기 전에 적어 둔 ios 값과 같아야 한다
+find "$A/Frameworks" -name "React" -exec ls -lh {} \;          # 12 MB 에 가까우면 심볼이 제거되지 않았다
+codesign -dvv <export 경로>/*.ipa 2>&1 | grep Authority        # Apple Distribution 이어야 한다
+```
+
+업로드할 때 `GoogleMobileAds.framework` · `UserMessagingPlatform.framework` 의 dSYM 이 없다는 경고가 나온다. 이
+둘은 dSYM 없이 배포되는 프레임워크라서 생기는 경고이고, 업로드를 막지 않는다.
+
+### Xcode Cloud 는 쓰지 않는다
+
+iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다(2026-08-04).
+
+## 콘솔에 적을 값
+
+### 개인정보 처리방침
+
+- 처리방침 원본은 `PRIVACY.md` 이고 `https://mapleroutine.store/privacy` 에 게시한다. 앱 안에서는 설정의
+  `SettingsPrivacyScreen` 이 보여 준다.
+- 문의 주소는 `https://mapleroutine.store/support` 다.
+
+### 수집 신고(Play 데이터 안전 · App Store 개인정보 라벨)
+
+앱은 우리 서버로 드롭 가격 기록을 보낸다(`features/server-sync/drop-price-sync.ts` 의 `dropPricePayloadOf`).
+보내는 칸은 `dropRecordId` · `itemKey` · `status` · `priceMeso` · `periodKey` · `worldKey` · `ringLevel` · `boss` ·
+`difficulty` 이고, 신원 헤더 하나가 함께 간다(`features/auth/server-identity.ts`). 전송은 `AppShell` 이 띄우는
+`runServerSync` 와 가격을 저장하는 순간에 일어난다([[ADR-018]]).
+
+| 신고 항목 | 왜 |
 |---|---|
-| **개인 정보 → 사용자 ID** | 넥슨 로그인 세션 또는 API 키 해시를 보낸다. 되돌릴 수 없는 해시여도 **한 사람의 기록을 묶는 값**이라 신고 대상이다 |
-| **앱 활동 → 기타 사용자 생성 콘텐츠** | 이용자가 적은 판매가 · 아이템 종류 · 기간 · 월드 · 반지 레벨 |
+| 사용자 ID | 넥슨 로그인 세션이나 API 키 해시를 보낸다. 되돌릴 수 없는 해시여도 한 사람의 기록을 묶는 값이다 |
+| 기타 사용자 생성 콘텐츠 | 사용자가 적은 판매가와 아이템 · 기간 · 월드 · 반지 레벨 |
+| 광고 ID | 앱에 `AD_ID` 권한이 들어 있다 |
+| 기기 식별자 | Firebase 가 FCM 등록 토큰을 보관한다 |
 
-- **광고 ID**: `AD_ID` 권한을 들고 나가므로 계속 신고한다(선행 항목, 2026-09-13 결정)
-- **FCM 등록 토큰**: 기기 식별자로 신고한다(선행 항목)
-- 선택이 아니라 **필수**로 적는다. 끄는 토글을 두지 않았다([[ADR-299]] 결정 4)
+Play 는 `수집함 · 공유하지 않음 · 필수 · 앱 기능과 분석`, `전송 중 암호화`, `삭제 요청 가능`(연결 해제가 서버의
+값을 지운다)으로 적는다. App Store 는 `사용자에게 연결됨`, `추적 아님` 으로 적는다. 제3자에게 넘기지 않고, 광고
+식별자와 엮지 않고, 맞춤 광고에 쓰지 않기 때문이다. 이 셋 중 하나라도 바뀌면 ATT 동의 창이 필요하다.
 
-**App Store 개인정보 라벨** — 둘 다 `앱 기능` + `분석` 목적, **사용자에게 연결됨**(Linked),
-**추적 아님**(Not used for tracking. 제3자에게 안 주고 광고에 안 쓴다).
+수집하는 내용을 바꿀 때는 처리방침 게시 → 앱 발행 → 콘솔 양식 갱신 순서를 지킨다. 아직 수집하지 않는 것을
+신고하면 양식과 실제 동작이 달라 정책 위반이 된다.
 
-| 데이터 유형 | 왜 |
-|---|---|
-| **식별자 → 사용자 ID** | 애플이 `assigned user ID`·`account-level ID` 를 이 유형으로 명시한다 |
-| **사용자 콘텐츠 → 기타 사용자 콘텐츠** | 판매가와 그 맥락 |
+### 스토어 아이콘
 
-⚠️ **「추적」으로 분류하지 않는 근거**를 유지할 것. 제3자에게 넘기지 않고, 광고 식별자와 엮지
-않으며, 맞춤 광고에 쓰지 않는다. 이 중 하나라도 바뀌면 ATT 동의 창이 필요해진다.
+Play 스토어 아이콘(512×512)은 `assets/icon.png` 를 정확히 절반으로 줄인 32비트 PNG 로 만든다. Android 런처
+아이콘은 전경에 여백이 들어가 있어 스토어 아이콘으로 쓰면 안 된다. 모서리는 Play 가 마스크를 씌우므로 미리
+둥글리지 않는다.
 
-⚠️ **양식을 앱 발행보다 먼저 바꿔 두면 안 된다.** 아직 수집하지 않는 것을 수집한다고 신고하는
-것이 되고, Play 는 양식과 실제 동작의 불일치를 정책 위반으로 본다. 순서는 **처리방침 게시 →
-앱 발행 → 양식 갱신**이다. 처리방침만 앞세우는 것은 안전하다 - 그쪽은 앞으로 무엇을 할지 알리는
-문서이고 부칙이 시작 시점을 적는다.
+```bash
+python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA').resize((512,512), Image.LANCZOS).save('play-store-icon-512.png')"
+```
 
 ## 스토어 등록정보 문구
 
-**칸은 스토어마다 다르다.** Play 는 짧은 설명 · 자세한 설명 · 출시 노트 셋이고, App Store 는 여기에
-프로모션 텍스트 · 키워드 · 심사 메모가 더 붙는다. 짧은 설명 · 자세한 설명 · 키워드는 **상시 노출**,
-출시 노트는 **그 버전 한정**, 프로모션 텍스트는 **심사 없이 언제든 바꾸는 칸**이다.
+칸은 스토어마다 다르다. Play 는 짧은 설명 · 자세한 설명 · 출시 노트 셋이고, App Store 는 여기에 프로모션
+텍스트 · 키워드 · 심사 메모가 더 있다. 프로모션 텍스트는 심사 없이 언제든 바꿀 수 있다.
 
-아래는 **1.0.12 기준 원문**이다(2026-10-04, 사용자 확인 전 초안). 1.0.8 원문(2026-09-13)은 git 히스토리에, 1.0.0 원문은 문서 끝 폐기된 정책에 있다.
-출시 노트는 사용자가 확정했다(2026-10-04). `■ 새로운 기능` · `■ 개선 사항` 두 묶음으로 나누고 버그 수정은 개선 사항 끝 줄에 둔다. 앱 아이콘 변경은 안 적는다(사용자 결정).
+쓰는 규칙은 이렇다.
 
-**공통 정책**. 가격("무료")·순위("1위")·설치 유도("지금 다운로드") 문구를 넣지 않는다. 다른
-앱이나 플랫폼도 언급하지 않는다. HTML 태그가 먹지 않아 불릿은 문자(`■` `▶` `•`)로 쓴다.
+- 앱에 없는 기능을 적지 않는다. 화면에서 눌러 확인한 것만 적는다.
+- 가격(`무료`) · 순위(`1위`) · 설치 유도(`지금 다운로드`) 문구를 넣지 않고, 다른 앱이나 플랫폼을 언급하지 않는다.
+  HTML 이 적용되지 않으므로 불릿은 문자(`■` `▶` `•`)로 쓴다.
+- 넥슨 로그인은 문구에 쓰지 않는다. 1.0.12 바이너리에 꺼진 채로 들어 있기 때문이다
+  (`features/auth/nexon-login-enabled.ts` 의 `NEXON_LOGIN_ENABLED = false`). 로그인을 켜는 OTA 를 낼 때 자세한
+  설명의 `회원가입이 없습니다` 와 심사 메모의 `[NO LOGIN ...]` 을 함께 고치고, App Store 의 계정 삭제 요건도 그때
+  다시 본다.
+- 앱 안에서는 컨텐츠라고 부르지만 짧은 설명에서만 `숙제` 를 쓴다. 스토어에서는 `메이플 숙제` 로 검색하기
+  때문이다.
+- 비제휴 고지는 앱 설정 화면 · 안내 사이트 · `PRIVACY.md` 와 같은 영문 문구를 쓴다.
+- 출시 노트는 `■ 새로운 기능` · `■ 개선 사항` 두 묶음이고, 버그 수정은 개선 사항 마지막 줄에 둔다. 순서와 내용은
+  `src/data/release-notes.ts` 의 그 버전 노트를 따른다.
+- 심사용 테스트 키는 저장소에 적지 않는다. App Store Connect 에 직접 붙이고, 붙이기 전에 그 키로 앱이 열리는지
+  본다. 개발 단계 키면 `DevelopmentStageKeyModal` 이 막아 심사가 첫 화면에서 끝난다.
 
-**앱에 없는 기능을 적지 않는다.** 1.0.6 까지 게시된 설명은 **사냥 타이머**(한 줄도 구현된 적 없다,
-[[ADR-005]] ⛔)와 **숙제 미완료 알림**(`native/notifications.ts` 의 `scheduleLocalNotification` 을
-부르는 코드가 앱에 없다)을 광고하고 있었고, 심사 메모는 **전면광고**를 고지하고 있었다(코드는
-[[ADR-156]] 에서 지워졌다). 1.0.8 문구에서 셋 다 걷었다. 다음에 문구를 고칠 때도 **화면에서 눌러
-확인한 것만** 적을 것.
+아래는 1.0.12 원문이다.
 
-> **1.0.12 에서 두 스토어를 함께 교체한다.** Play 는 1.0.8 때 교체했는지 확인되지 않아(2026-10-04 사용자
-> 확인) 짧은 설명 · 자세한 설명 · 출시 노트 셋을 이번에 모두 아래 문구로 넣는다.
->
-> **넥슨 로그인은 문구에 안 쓴다**([[ADR-334]] 결정 5). 1.0.12 바이너리에 꺼진 채로 실려서다. 켜는 OTA 를
-> 낼 때 자세한 설명의 `회원가입이 없습니다` 와 심사 메모의 `[NO LOGIN ...]` 을 함께 고친다.
-
-### 짧은 설명 (Play, 80자 제한)
+### 짧은 설명 (Play, 80자)
 
 ```
 메이플스토리 일간·주간 숙제와 보스 수익, 아이템 드롭을 캐릭터별로 관리
 ```
 
-40자. **여유를 일부러 남긴다**. 검색 결과에서 앱 이름 아래 한 줄로 붙는 자리라, 키워드를
-채우면 읽히지 않고 스팸으로 보인다.
-
-**앱 안에서는 "컨텐츠"라 부르지만 여기서만 "숙제"를 쓴다.** 스토어에서 찾는 사람은 "메이플
-숙제"로 검색하고, 이 앱 유입의 대부분이 검색이다. 이 자리만 플레이어의 말을 쓴다.
-
-### 프로모션 텍스트 (App Store, 170자 제한)
+### 프로모션 텍스트 (App Store, 170자)
 
 ```
 수익·지출에 통계 탭이 생겼습니다. 순 수익 추이와 캐릭터별·보스별 수익을 주간·월간으로 확인하세요. 파티 보스 일정은 파티 스케줄에 등록해 두면 시작 전에 알림으로 알려드립니다.
 ```
 
-100자. **심사 없이 바꿀 수 있는 유일한 칸**이라 이번 버전에서 새로 생긴 것을 넣는다. 설명 맨 위에
-붙어 첫 화면에서 읽히므로, 여기서 파는 것은 앱 소개가 아니라 **지금 바뀐 것**이다. 다음 릴리스
-때는 그 버전의 새 기능으로 갈아 끼운다.
-
-### 자세한 설명 (4000자 제한)
+### 자세한 설명 (4000자)
 
 ```
 메이플스토리 플레이어를 위한 루틴 관리 앱입니다. 오늘 숙제가 남은 캐릭터는 누구인지, 이번 주 보스로 얼마를 벌고 강화에 얼마를 썼는지, 본캐부터 부캐까지 한 곳에서 확인하세요. 여러 메이플 ID의 캐릭터를 함께 관리할 수 있습니다.
@@ -434,30 +374,15 @@ Maple Routine is not associated with NEXON Korea
 Data based on NEXON Open API
 ```
 
-2,240자. 1.0.8 의 1,993자에 파티 스케줄 · 통계 두 절과 today 의 한 항목을 더했다. 제한의 절반도 안 쓴다. 설명은 길이가 순위를 올려주지 않고, 첫 3줄 뒤는 "더보기"에
-접힌다.
-
-- **기능 목록이 준비 사항보다 앞이다.** 1.0.0 은 반대였다. 접히기 전 3줄에 무엇을 하는 앱인지가
-  없으면 설치 자체가 안 일어나서 순서를 뒤집었고, **API 키가 필요하다는 사실은 인트로 바로 아래
-  한 줄로 올려** 1.0.0 이 막으려던 별점 1점(키가 필요한 줄 모르고 설치)을 그대로 막는다.
-- **자동·수동 두 모드를 둘 다 적는다.** "게임 스케줄러에 등록 안 한 항목은 안 보인다"는 자동
-  모드의 사실이고, 수동 모드는 직접 고른다. 한쪽만 적으면 문의가 그쪽으로 온다.
-- **비제휴 고지는 앱 설정 footer·안내 사이트·`PRIVACY.md` 와 같은 영문 문구를 쓴다**
-  ([features/settings.md](../features/settings.md)). 한 곳만 고치면 네 곳이 달라진다.
-
-### 키워드 (App Store, 100자 제한)
+### 키워드 (App Store, 100자)
 
 ```
 메이플스토리,일일퀘,일퀘,주간보스,결정석,아이템드롭,숙제,주간숙제,체크리스트,스케줄러,몬스터파크,메소,가계부,강화비용,스타포스,큐브,사냥터,메획,보스파티,분배금,넥슨,반지상자
 ```
 
-97자. 쉼표도 글자 수에 든다. 드롭 아이템의 검색어는 `아이템드롭` 이다(1.0.12). **없는 기능의 검색어를 빼고**(`타이머`·`솔야누스`) 1.0.8 이
-가진 것을 넣었다(`가계부`·`강화비용`·`스타포스`·`큐브`·`사냥터`·`메획`·`분배금`).
+앱 이름의 낱말(`메이플` · `루틴`)은 이미 색인되므로 키워드에 다시 넣지 않는다. 쉼표도 글자 수에 들어간다.
 
-앱 이름의 낱말(`메이플`·`루틴`)은 이미 색인되므로 키워드에 다시 적지 않는다. `메이플스토리` 는
-한 낱말로 검색되는 말이라 남긴다.
-
-### 출시 노트 (500자 제한, 언어별)
+### 출시 노트 (500자)
 
 ```
 ■ 새로운 기능
@@ -473,23 +398,7 @@ Data based on NEXON Open API
 • 여러 버그를 수정했습니다.
 ```
 
-449자. 한국어만 배포하므로 언어는 하나면 된다.
-
-- **순서는 `src/data/release-notes.ts` 의 `highlights` 를 따른다.** 그 네 줄은 사용자가 직접 골랐고
-  가계부가 첫 줄이다. 첫 초안이 넥슨 공지를 맨 위에 뒀다가 내렸다. 노트의 첫 줄은 **이 버전에서
-  사람들이 가장 많이 쓸 것**이지, 가장 새로운 기술이 아니다.
-- **묶음 제목은 `■ 새로운 기능` · `■ 개선 사항` 둘이다**(사용자 결정 2026-10-04). 1.0.8 까지는 제목 없이
-  한 목록이었다. 버그 수정은 따로 묶지 않고 개선 사항 끝 줄에 둔다.
-- **같은 사실만 적는다.** 앱 안 릴리스 노트 화면과 스토어가 다른 말을 하면 어느 쪽이 참인지 알
-  방법이 없다. 글자 수가 남아도 항목을 늘리지 않는다.
-- 짧은 판(184자)도 만들어 뒀다가 안 썼다. 가계부 두 줄을 한 줄로 접으면 **강화가 자동이라는 것**이
-  사라지는데, 그것이 이 버전에서 가장 많이 받을 질문이다.
-
-### 심사 메모 (App Store, App Review 전용)
-
-**테스트 키는 저장소에 적지 않는다.** 자격 증명이고, 만료되면 여기 남은 값이 거짓이 된다.
-App Store Connect 에서 직접 붙이고, 붙이기 전에 **그 키로 앱이 실제로 열리는지** 확인할 것.
-키가 개발 단계면 `DevelopmentStageKeyModal` 이 막아 심사가 첫 화면에서 끝난다.
+### 심사 메모 (App Store)
 
 ```
 [NO LOGIN - API KEY REQUIRED INSTEAD]
@@ -521,339 +430,3 @@ TEST API KEY:
 
 [CONTACT] If the test key stops working during review, please email support.mapleroutine@gmail.com and we will send a replacement immediately.
 ```
-
-**1.0.6 메모에서 걷은 것 둘.** 전면광고 고지(광고가 없다)와 "no servers of our own"(공지 조회가
-`mapleroutine.store/v1` 로 나간다). 탭 이름도 다섯 그룹으로 갈렸다.
-
-## iOS
-
-Xcode 자동 서명을 쓰므로 키 관리가 없다. 대신 두 가지 함정을 이미 밟았고 둘 다 고쳐져 있다.
-`CODE_SIGN_IDENTITY` 의 레거시 문자열과 **한글 `PRODUCT_NAME`**(NFD 경로가 코드 서명을 깬다).
-전말과 CLI 검증 절차는 [../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md).
-
-`cap add ios` 를 다시 하면 `PRODUCT_NAME` 이 `capacitor.config.ts` 의 한글 `appName` 으로
-되살아난다. **플랫폼을 재생성했다면 ASCII 로 다시 바꿀 것.**
-
-### 아카이브 (2026-08-19, v1.0.6 build 13 으로 확인)
-
-Xcode GUI 가 아니라 **CLI 로 돈다.** Organizer 는 아카이브가 `~/Library/Developer/Xcode/Archives/<오늘
-날짜>/` 밑에 있으면 그대로 집어 가므로, `-archivePath` 를 거기로 주면 GUI 의 `Product ▸ Archive` 와
-결과가 같다. CLI 를 쓰는 이유는 실패 지점이 로그에 남기 때문이다. 서명 문제는 GUI 로 하면
-Organizer 의 Distribute 까지 가야 드러난다([../trouble/2026-08-04-ios-appstore-signing.md](../trouble/2026-08-04-ios-appstore-signing.md)).
-
-#### 1. 빌드 번호는 **두 파일**이다: Android 와 같은 함정
-
-| 파일 | 값 |
-|---|---|
-| `app.json` | `ios.buildNumber` |
-| `ios/app/Info.plist` | `CFBundleVersion` ← **빌드가 실제로 읽는 값** |
-
-이 저장소는 네이티브 트리를 커밋해 두므로 `app.json` 은 원천이 아니다(prebuild 를 돌려야 반영된다,
-[[ADR-138]]). `app.json` 만 고치면 **옛 번호로 나간다**. Android 가 `versionCode` 20 으로 그렇게 한 번
-나갔다(`c9ce4697`). 타겟의 `MARKETING_VERSION`(`1.0`)·`CURRENT_PROJECT_VERSION`(`1`) 은 스캐폴드
-기본값 그대로 둬도 된다. `INFOPLIST_FILE` 의 리터럴이 이긴다.
-
-#### 2. 소진된 번호는 **로컬 아카이브가 알고 있다**
-
-App Store Connect 를 열 필요가 없다. Xcode 는 업로드 이력을 아카이브 안에 적어 둔다.
-
-```bash
-for a in ~/Library/Developer/Xcode/Archives/*/*.xcarchive; do
-  plutil -p "$a/Info.plist" | grep -e uploadedBuildNumber -e '"title"' -e '"state"'
-done
-```
-
-`task = distribute` 항목의 `uploadEvent.state = success` 가 보이면 그 `uploadedBuildNumber` 는 **다시 못
-쓴다.** build 12 가 그랬다(업로드 2026-08-19 05:23). `task = validate` 만 있는 것은 검증만 한 것이라
-번호가 살아 있다. 둘을 구별할 것.
-
-#### 3. 아카이브
-
-```bash
-cd ios
-xcodebuild -workspace app.xcworkspace -scheme app \
-  -configuration Release -destination 'generic/platform=iOS' \
-  -archivePath "$HOME/Library/Developer/Xcode/Archives/$(date +%Y-%m-%d)/MapleRoutine-1.0.6-13.xcarchive" \
-  archive
-```
-
-`npm run build`·`npx cap sync` 는 **필요 없다**(그건 capacitor 쪽 절차다). RN 은 `Bundle React Native
-code and images` 빌드 단계가 `expo export:embed` 를 돌려 JS 번들과 에셋을 매 빌드 새로 만든다.
-
-**임베드 프레임워크는 빌드 단계가 벗긴다**([[ADR-269]] 결정 3). `Strip Embedded Frameworks` 단계가
-`[CP] Embed Pods Frameworks` 뒤에서 `strip -x -S` 를 걸고 **같은 신원으로 다시 서명한다.** 재서명이
-빠지면 CocoaPods 가 복사 직후 붙여 둔 서명이 무효가 되어 업로드가 튕긴다. 실측으로 24.1 MB →
-12.1 MB 이고 이것은 사용자가 받는 크기다.
-
-아카이브 뒤 실제로 벗겨졌는지는 산출물에서 본다. `React.framework` 가 12 MB 에 가까우면 안 벗겨진
-것이다.
-
-```bash
-find <아카이브>/Products/Applications/app.app/Frameworks -name "React" -exec ls -lh {} \;
-```
-
-#### 4. 업로드 전에 export 까지 돌려 배포 서명을 확인한다
-
-아카이브는 **개발 인증서로 서명된 채 성공한다**(`SigningIdentity = Apple Development …`). 배포
-인증서로 바뀌는 것은 export 단계이고, 거기서 깨지면 error 90034 다. 그래서 업로드 전에 한 번 돌린다.
-
-```bash
-xcodebuild -exportArchive -archivePath <위 경로> \
-  -exportPath /tmp/export -exportOptionsPlist ExportOptions.plist -allowProvisioningUpdates
-# method: app-store-connect · destination: export · teamID: TQPKW249G7 · signingStyle: automatic
-```
-
-`destination` 을 `export` 로 두면 IPA 만 만들고 업로드하지 않는다. **업로드까지 CLI 로 하려면 같은
-plist 의 `destination` 만 `upload` 로 바꿔 한 번 더 돌린다** — Xcode 에 로그인된 계정으로 올라가고
-아카이브에 `uploadedBuildNumber` 가 기록된다(2026-09-13, build 15 로 확인).
-
-**`ExportOptions.plist` 는 저장소에 두지 말 것.** `ios/` 안의 추적되지 않는 파일도 지문 재료라
-거기 두면 **바이너리에 박힌 지문과 트리 계산값이 갈린다**(규칙 2 가 그것을 잡는다). 스크래치패드
-같은 저장소 밖에 두고 경로로 넘긴다.
-
-**`-allowProvisioningUpdates` 가 필요하다.** 없으면 프로파일이 낡은 채로 실패한다.
-
-```
-error: Provisioning profile "iOS Team Store Provisioning Profile: com.mapleroutine.app"
-       doesn't include the Push Notifications capability.
-```
-
-1.0.8 이 그랬다. 아카이브는 통과하고 여기서 떨어진다. 플래그를 주면 xcodebuild 가 App ID 의
-capability 를 맞춰 **프로파일을 새로 발급**받는다. 손으로 하려면 developer.apple.com 의
-Identifiers 에서 Push Notifications 를 켜고 프로파일을 재발급한다.
-
-**`ios/app/app.entitlements` 의 `aps-environment` 는 `development` 로 둔다.** App Store export 가
-배포 프로파일로 다시 서명하면서 `production` 으로 바꿔 넣는다(1.0.8 IPA 에서 확인). 손으로
-`production` 으로 고치면 개발 빌드가 깨진다.
-
-#### 5. 산출물 확인: 무엇을 보는가
-
-```bash
-A=~/Library/Developer/Xcode/Archives/<날짜>/<이름>.xcarchive/Products/Applications/app.app
-plutil -p "$A/Info.plist" | grep -E 'CFBundleVersion|CFBundleShortVersionString'
-codesign -dv --verbose=2 "$A" 2>&1 | grep -E 'Identifier|Authority|TeamIdentifier'
-```
-
-**Android 의 `app.manifest` 스탈 문제(`c9ce4697`)는 iOS 에 없다.** `Bundle React Native code and images`
-와 `[CP-User] Generate updates resources for expo-updates` 가 둘 다 *"Based on dependency analysis"* 를 끈
-채라 **매 빌드 돈다**(아카이브 로그의 `note:` 로 확인된다). Gradle 처럼 UP-TO-DATE 로 건너뛰는 자리가
-없다. 그래도 스토어행 바이너리는 눈으로 확인하고 보낸다. build 13 에서는 `EXUpdates.bundle/app.manifest`
-의 288개 항목이 전부 `app.app/assets/` 의 실제 파일로 풀렸고, 카링·벨로나의 `packagerHash` 가
-`src/assets/bosses/*.webp` 의 md5 와 같았다.
-
-**같은 자리에서 `EXUpdates.bundle/fingerprint` 도 함께 본다**. 아래 ‘스토어 바이너리와 OTA 의
-runtimeVersion’ 절이 그 이유다(1.0.6 에서 실제로 어긋난 채 올라갔다).
-
-### 알림을 넣는 릴리스의 iOS 준비물 ([[ADR-146]], 설계 완료·구현 전)
-
-**바이너리에 안 들어가면 다음 심사까지 못 쓴다**. Push Notifications capability · Background Modes
-(`remote-notification`·`fetch`) · `GoogleService-Info.plist` · **APNs 인증 키(.p8)를 Firebase 콘솔에
-업로드**. 마지막 것은 코드가 아니라 콘솔 작업이라 빌드가 통과해도 조용히 빠진다(그러면 iOS 에서만
-푸시가 안 온다). 전체 체크리스트는 [../features/notifications.md](../features/notifications.md).
-
-### 저장소만 클론해서는 iOS를 빌드할 수 없다 (Xcode Cloud 비활성, 2026-08-04)
-
-Xcode Cloud 워크플로(`메이플루틴 | Default | Archive - iOS`)가 **main 푸시마다** 아카이브를
-시도해 머지할 때마다 실패 메일이 왔다. 간헐적 실패가 아니라 **구조적으로 성공할 수 없는
-상태**였다.
-
-```
-ios/App/CapApp-SPM/Package.swift  (저장소에 추적됨)
-  → .package(path: "../../../node_modules/@capacitor-community/admob") …
-  → node_modules 는 gitignore 대상이라 클론본에 없음
-  → SPM 의존성 해석이 컴파일 전에 실패
-```
-
-웹 번들(`ios/App/App/public`)과 `App/App/capacitor.config.json` 도 gitignore 대상이라, SPM이
-풀렸더라도 내용 없는 앱이 나온다. **`npm ci` → `npm run build` → `npx cap sync ios` 가 선행돼야
-Xcode가 이 프로젝트를 열 수 있다**. 로컬 아카이브가 되는 것은 그 세 단계가 이미 실행된 워킹
-디렉토리에서 빌드하기 때문이다. Android 도 같은 구조다(`app/src/main/assets/public` 이 gitignore).
-
-**결정: 워크플로를 비활성화하고 iOS 는 로컬 아카이브로 제출한다**(사용자 결정 2026-08-04).
-로컬 경로가 이미 성공적으로 돌고 있고, 지금은 Play 배포가 우선이다.
-
-다시 붙이려면 두 가지가 필요하다.
-
-- `ios/App/ci_scripts/ci_post_clone.sh`. **`.xcodeproj` 와 같은 디렉토리**여야 하며(저장소 루트가
-  아니다), 스크립트의 실행 위치가 `ci_scripts` 라 `cd $CI_WORKSPACE` 로 저장소 루트로 옮긴 뒤
-  위 세 단계를 돌려야 한다.
-- **트리거를 좁힐 것.** 무료 한도가 월 25 컴퓨팅 시간인데, main 푸시마다 아카이브가 돌면
-  머지가 잦은 날 하루에 한도의 상당분을 쓴다. 태그나 수동 실행이 맞다.
-
-## 스토어 바이너리와 OTA 의 runtimeVersion (RN, [[ADR-137]])
-
-**RN 앱의 OTA 는 버전 번호가 아니라 `runtimeVersion`(네이티브 트리의 fingerprint 해시)으로
-매칭된다.** 그 값은 **빌드 시각에 바이너리 안에 박히고**(`EXUpdates.bundle/fingerprint` ·
-AAB `base/assets/fingerprint`), `publish-rn-ota.mjs` 는 **발행 시점 트리의 계산값**을 쓴다. 둘이
-갈리면 매니페스트는 아무도 묻지 않는 이름으로 남고, `latest-<platform>.json` 은 최신 사용자에게
-**‘스토어 업데이트가 필요해요’ 거짓 모달**을 띄운다([[ADR-137]] 결정 4의 판정 경로).
-
-1.0.6 이 그 상태로 두 스토어에 올라갔다. 전말은
-[../trouble/2026-08-19-rn-runtimeversion-drift.md](../trouble/2026-08-19-rn-runtimeversion-drift.md).
-
-### 규칙 1: 버전·빌드 번호를 **먼저 커밋**하고, 그 트리에서 굽는다
-
-`app.json` 은 **두 플랫폼 공통** 지문 재료다(`expoConfig` 가 통째로 들어가고 거기에
-`ios.buildNumber` 와 `android.versionCode` 가 함께 있다). 그래서 **iOS 빌드 번호만 올려도 이미
-구워 둔 Android AAB 의 지문이 무효화된다.** 1.0.6 에서 정확히 그렇게 됐다.
-
-굽고 나서 번호를 올리면(소진 여부를 로컬 아카이브에서 확인한 뒤 올리므로 그렇게 되기 쉽다)
-**두 바이너리를 모두 다시 구워야 한다.**
-
-**스토어 릴리스는 `app.json` 의 `expo.version` 을, OTA 발행은 `package.json` 의 `version` 을 올린다.** 둘은 서로
-관계를 검사하지 않는다([[ADR-279]] 결정 4). OTA 버전을 올리려고 `app.json` 을 건드리면 지문이 바뀐다.
-`package.json` 의 `version` 은 지문 재료가 아니다(2026-09-14 실측). **그러나 `package.json` 의 `scripts` 는 지문 재료다**(2026-10-15 실측).
-`"sync:bosses"` 한 줄을 더했더니 두 플랫폼 지문이 다 바뀌었고 빼니 돌아왔다. 스토어 게시 뒤에는 npm 스크립트를 더하지
-말고 `node scripts/<이름>.mjs` 로 부른다.
-
-### 규칙 2: 업로드 직전에 ‘바이너리 안 지문 == 트리 계산값’을 대조한다
-
-```bash
-cd .   # 저장소 루트가 곧 Expo 프로젝트다
-npx expo-updates runtimeversion:resolve --platform ios      # {"runtimeVersion":"…", …}
-npx expo-updates runtimeversion:resolve --platform android
-
-cat <archive>/Products/Applications/app.app/EXUpdates.bundle/fingerprint
-unzip -p android/app/build/outputs/bundle/release/app-release.aab base/assets/fingerprint
-```
-
-**두 플랫폼 모두 같아야 업로드한다.** 다르면 그 바이너리는 OTA 를 영영 못 받고, 발행하는 순간
-거짓 모달의 원인이 된다. Android 는 `app.manifest` 스탈 문제(`c9ce4697`)도 같은 자리에서 함께 본다.
-
-### 규칙 3: 아카이브는 CLI 로 굽는다
-
-같은 트리에서 `xcodebuild archive`(CLI)와 Xcode GUI `Product ▸ Archive` 가 **서로 다른
-fingerprint** 를 낸 사례가 있다(1.0.6, 재현 불가). 위 ‘RN 앱의 아카이브’ 절의 CLI 경로를 쓰고,
-**업로드하는 바로 그 아카이브**의 지문을 대조한다.
-
-### 규칙 4: 발행은 ‘구운 트리’에서, 스토어 업로드 뒤에
-
-`node scripts/publish-rn-ota.mjs` 는 두 바이너리를 구운 트리 그대로에서 돌린다. 심사 반려로
-네이티브를 고쳐 재빌드하면 지문이 다시 바뀌므로 **발행도 다시** 한다.
-
-### 규칙 4-1: 한 플랫폼만 발행할 수 있다 (`--platform`)
-
-```bash
-node scripts/publish-rn-ota.mjs --platform ios
-```
-
-`--platform` 을 주면 export · 지문 해석 · 매니페스트와 `latest-<platform>.json` 쓰기 · 왕복 확인 ·
-못박기 검사가 **그 플랫폼에만** 걸린다. 안 주면 지금처럼 둘 다 발행한다.
-
-두 스토어의 바이너리가 따로 움직여서 필요하다. 2026-09-14 에 iOS 는 1.0.8 이 게시돼 트리 지문이
-스토어와 같았고, 안드로이드는 스토어가 여전히 1.0.6(FCM 네이티브 모듈이 없다)이라 main 번들을 보내면
-그 기기가 켜자마자 죽는다. 둘을 한 번에만 낼 수 있으면 iOS 도 안드로이드 게시를 기다려야 했다.
-
-**못박기가 비어 있는 플랫폼은 발행 직전에 트리 지문이 스토어 바이너리와 같은지 사람이 본다.**
-스크립트가 그 플랫폼의 `latest-<platform>.json` 을 트리 계산값으로 덮기 때문이다. 다르면 그 스토어
-사용자 전원이 닫을 수 없는 스토어 업데이트 창에 막힌다.
-
-```bash
-npx expo-updates runtimeversion:resolve --platform ios   # 스토어 바이너리의 EXUpdates.bundle/fingerprint 와 같아야 한다
-```
-
-**워크트리에서 발행하면 git 이 무시하는 파일 넷을 본 체크아웃에서 복사한다.** 그 파일들도 지문
-재료인데 워크트리에는 없어서, 코드가 같아도 지문이 달라진다. 2026-09-14 에 `android/keystore.properties`
-하나가 빠져 안드로이드 지문이 `eebd6802…` 대신 `2491b08e…` 로 나왔다. 넷 다 하나씩 빼 보고 지문이
-바뀌는 것을 확인했다.
-
-| 파일 | 걸리는 지문 | 이유 |
-|---|---|---|
-| `.env` | 둘 다 | `app.config.js` 가 광고 앱 ID 를 읽어 설정에 넣는다. 번들의 `EXPO_PUBLIC_*` 값도 여기서 온다 |
-| `android/keystore.properties` | android | `android/` 디렉터리 전체가 지문 재료다 |
-| `ios/.xcode.env.local` | ios | `ios/` 디렉터리 전체가 지문 재료다 |
-| `ios/app.xcodeproj/project.xcworkspace/` | ios | 같다 |
-
-### 규칙 5: 규칙 1~4 가 **이미 어긋난 뒤**에는 지문을 못박는다 ([[ADR-190]])
-
-트리가 스토어 바이너리의 지문을 **재현하지 못하는 상태**가 있다. 1.0.6 이 그렇다. GUI 아카이브가
-낸 값이 사후에 재현되지 않고(규칙 3 의 사례), 그 위에 [[ADR-155]] 가 네이티브 트리를 루트로 옮겨
-격차가 영구화됐다.
-
-| | 지문 |
-|---|---|
-| App Store 1.0.6 | `d304704ee9eeedd73d61383372e00849f830f8fb` |
-| Play 1.0.6 (versionCode 21) | `3df849c014ea95bb7b0b9dd506094148b0fdc508` |
-| 트리 계산값 (2026-08-30) | ios `a52ce256dea7a8316d27c3c5e07466c751abc440` · android `7e2fec5dcde4539a077aa014b8cba5eeef456267` |
-
-그 상태에서 **그냥 발행하면 안 된다.** 스크립트는 매니페스트와 `latest-*.json` 을 함께 쓰는데,
-`latest-*.json` 은 배달이 아니라 **‘스토어 업데이트가 필요해요’ 판정 파일**이다([[ADR-137]]
-결정 4). 트리 계산값으로 덮이는 순간 스토어 사용자 **전원**이 부팅할 때마다 거짓 모달을 본다.
-
-```js
-// scripts/publish-rn-ota.mjs
-const PINNED_RUNTIME_VERSIONS = {
-  ios: { runtimeVersion: 'd304704e…', binaryAppVersion: '1.0.6' },
-  android: { runtimeVersion: '3df849c0…', binaryAppVersion: '1.0.6' },
-}
-```
-
-- 값은 **바이너리에서 읽어 온 사실**이다(규칙 2 의 `EXUpdates.bundle/fingerprint` ·
-  AAB `base/assets/fingerprint`). 지어내는 값이 아니다.
-- 스크립트가 발행 **전에** ‘못박은 값 == 지금 발행된 `/latest` 의 판정값’을 대조하고, 다르면
-  **중단한다**. `expo export` 앞이라 빌드를 안 태운다.
-- 못박은 플랫폼마다 콘솔에 줄을 찍는다. 조용히 못박으면 다음 사람이 트리 계산값으로 나가고
-  있다고 믿는다.
-
-> ⚠️ **이 상수가 살아 있는 동안 네이티브 변경은 OTA 로 못 나간다.** 못박은 지문은 ‘옛 네이티브’를
-> 가리키므로, 네이티브를 고쳤으면 **스토어 빌드**로 가야 한다. 그리고 새 스토어 바이너리를
-> 규칙 1~3 을 지켜 구운 뒤에는 **이 상수를 지운다**. 그때부터 트리 계산값이 곧 바이너리의 값이다.
-
-**지금은 비어 있다**(2026-09-14). 두 스토어의 1.0.8 이 트리 계산값과 같은 지문으로 게시됐다(iOS
-`6bc20c97…` · 안드로이드 `eebd6802…`). 다시 못박아야 하면 규칙 6 을 먼저 볼 것. 발행 스크립트는
-못박은 플랫폼이 있으면 발행을 거부한다.
-
-### 규칙 6: 못박은 발행은 **에셋 이름도** 옛 바이너리에 맞춰야 한다 ([[ADR-191]])
-
-지문을 못박는다는 것은 번들이 지금 트리로는 못 만드는 바이너리를 겨냥한다는 뜻이다. 그러면
-지문 말고 하나가 더 갈린다. **안드로이드 이미지의 리소스 이름**이다.
-
-안드로이드는 APK 에 박힌 이미지를 파일이 아니라 드로어블 **리소스**로 들고, 그 이름을 에셋의
-소스 경로(`httpServerLocation`)에서 파생한다. [[ADR-155]] 가 `packages/core` 를 `src` 로 옮기면서
-그 이름이 `_core_src_assets_…` 에서 `src_assets_…` 로 바뀌었고, 1.0.7 을 그대로 내보냈다가 **앱
-이미지 273개가 전부 빈칸**이 됐다(iOS 는 파일 경로로 풀어 멀쩡했다).
-
-**그 이름을 맞추던 장치는 걷었다**(2026-09-14). 두 스토어 1.0.8 이 게시돼 못박기를 비웠고, 새
-바이너리의 드로어블은 이미 `src_assets_…` 라 장치가 켜져 있으면 같은 사고가 반대 방향으로 난다.
-그래서 **발행 스크립트는 못박은 플랫폼이 있으면 발행을 거부한다.** 다시 못박아야 하면
-`git log -- scripts/ota-legacy-asset-paths.cjs` 에서 플러그인과 발행 관문을 되살리고, 이름표는 그
-바이너리가 깔린 기기의 logcat `embeddedAssetFileMap` 에서 새로 뽑는다.
-
-> ⚠️ **정적 대조가 실기기 확인을 대신하지 않는다.** 1.0.7 은 에셋 누락 0 · 해시 손상 0 · 키 집합
-> 정상이었고 화면만 빈칸이었다. 발행 뒤 **실기기에서 그림이 뜨는 것을 눈으로 본다.**
-
-JS 만 바뀌었는지는 지문이 안 말해 주므로 **사람이 확인한다.** 1.0.7 발행 때 본 것: 새 네이티브
-의존성 0(늘어난 `@gorhom/portal`·`zustand` 는 순수 JS) · 로컬 Expo 모듈 셋의 JS API diff 0줄 ·
-`app.json` 이 1.0.6 과 바이트 동일 · 폰트 0개 · `react-native`·`expo` 버전 동일(Hermes 바이트코드
-호환).
-
-## 폐기된 정책 (history)
-
-- ~~1.0.8 진행 중: iOS 게시 완료 · 안드로이드 비공개 테스트 검토 중~~ → **두 스토어 게시 완료**(iOS
-  2026-09-12T20:04Z · Play 2026-09-13). 지문은 iOS `6bc20c97…` · 안드로이드 `eebd6802…` 이고 둘 다
-  트리 계산값과 같다. 잠금은 iOS 가 2026-09-13 에 번들 없이 켰고, 안드로이드는 2026-09-14 에 1.0.9
-  번들과 같은 회차로 켰다. 안드로이드 AAB 는 광고 SDK 가 붙인 `com.google.android.gms.permission.AD_ID`
-  를 그대로 들고 나갔다(사용자 결정 2026-09-13). 그래서 데이터 안전 양식의 광고 ID 수집 신고가 계속
-  필요하고, 빼려면 `tools:node="remove"` 두 줄과 재빌드다.
-- ~~SNS 공유용 이미지 내보내기의 의존성은 다음 바이너리가 처음 싣는다. 구운 뒤 못박기와
-  `share-image-native-modules.test.mjs` 를 함께 치운다~~ → **두 스토어 1.0.8 에 실렸고 둘 다
-  치웠다**(2026-09-14, [[ADR-267]]). 이제 시안과 화면 구현은 OTA 로 나간다.
-- ~~규칙 5-1: 못박은 동안 HEAD 에서 발행하면 1.0.6 기기가 부팅에서 죽는다~~ → **못박기를
-  비웠다**(2026-09-14). `index.ts` 가 `@react-native-firebase/messaging` 을 최상단에서 import 하는데
-  1.0.6 바이너리에는 그 모듈이 없다. 못박은 지문으로 나간 번들은 그 기기에서 첫 렌더 전에 죽고
-  업데이트 모달도 함께 죽는다. 그래서 두 플랫폼 다 1.0.6 기기에 번들을 더 내지 않고 잠갔다. 지금은
-  지문이 다르면 매니페스트 이름이 갈려 새 번들이 옛 기기로 안 간다.
-- ~~규칙 6: 못박은 발행은 `OTA_LEGACY_ASSET_MAP`·`OTA_ASSET_REPORT` 로 에셋 이름표를 주고,
-  `metro.config.js` 가 `scripts/ota-legacy-asset-paths.cjs` 를 건다~~ → **장치를 걷었다**
-  (2026-09-14). 1.0.6 Play 바이너리의 이름표 `ota/apk-embedded-map-android-1.0.6.json` 도 함께 지웠다.
-- ~~스토어 문구는 1.0.0 원문이고 준비 사항이 기능 목록보다 앞이다~~ → **1.0.8 기준으로 다시
-  썼다**(2026-09-13). 순서를 뒤집고 API 키가 필요하다는 한 줄만 인트로 아래로 올렸다. 1.0.0
-  원문은 `git log -p -- docs/foundation/release.md` 에 있다.
-- ~~설명이 사냥 타이머와 숙제 미완료 알림을, 심사 메모가 전면광고를 적는다~~ → **셋 다 앱에
-  없다**([[ADR-005]] ⛔ · [[ADR-156]]). 1.0.8 문구에서 걷었다.
-- ~~웹 번들을 `npm run build`(+`build:beta`·`build:test-ads`·`build:screenshot`)로 굽고
-  `npx cap sync` 로 네이티브에 넣는다~~ → **네이티브 빌드가 JS 를 직접 만든다**([[ADR-155]]).
-  그 스크립트들은 캐패시터 앱의 것이었고 앱과 함께 사라졌다. 광고 테스트 모드는 빌드 스크립트가
-  아니라 `EXPO_PUBLIC_*` 환경 변수로 가른다(`src/native/adapters/rn-ads.ts`).
-- ~~네이티브 프로젝트는 `packages/app-capacitor/` 안에 있다~~ → **저장소 루트의 `android/`·`ios/`**
-  ([[ADR-155]] 결정 2: 모노레포 해체).

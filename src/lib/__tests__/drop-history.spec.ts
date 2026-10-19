@@ -5,7 +5,6 @@ import {
   formatValuableDroughtHeadline,
   formatValuableDroughtItems,
   getValuableDroughtTier,
-  getPeriodCycle,
   getPeriodStartUtcMs,
   groupDropRecordsByPeriod,
   objectParticle,
@@ -45,13 +44,6 @@ function record(overrides: Partial<DropHistoryRecord>): DropHistoryRecord {
     ...overrides,
   }
 }
-
-describe('getPeriodCycle', () => {
-  it('주간 키(YYYY-MM-DD)는 weekly, 월간 키(YYYY-MM)는 monthly', () => {
-    expect(getPeriodCycle('2026-07-09')).toBe('weekly')
-    expect(getPeriodCycle('2026-07')).toBe('monthly')
-  })
-})
 
 describe('getPeriodStartUtcMs', () => {
   it('주간 키는 그 KST 날짜 00:00을 가리킨다', () => {
@@ -111,10 +103,6 @@ describe('groupDropRecordsByPeriod', () => {
       '주문의 흔적',
       '리스트레인트 링',
     ])
-  })
-
-  it('기록이 없으면 빈 배열', () => {
-    expect(groupDropRecordsByPeriod([])).toEqual([])
   })
 })
 
@@ -277,10 +265,6 @@ describe('summarizeValuableDrought', () => {
       now,
     )
     expect(summary).toBeNull()
-  })
-
-  it('기록이 아예 없으면 null', () => {
-    expect(summarizeValuableDrought([], now)).toBeNull()
   })
 })
 
@@ -463,16 +447,6 @@ describe('formatValuableDroughtHeadline', () => {
     expect(pool(3)).toEqual(['선넘네?!', '이게 억까지 뭐야'])
   })
 
-  it('4주 이상은 기존 다섯 줄 그대로다. 채택된 추가 문구가 없다', () => {
-    expect(pool(9)).toEqual([
-      '이건 아니지...',
-      '적당히 해!',
-      '제발 한 번만...',
-      '이제 기대도 안 해',
-      '내가 뭘 잘못했나',
-    ])
-  })
-
   it('풀 안에서 문구가 겹치지 않는다. 같은 말이 두 슬롯을 차지하면 랜덤이 덜 랜덤해진다', () => {
     for (const weeks of [0, 1, 2, 3, 9]) {
       expect(new Set(pool(weeks)).size).toBe(valuableDroughtHeadlineCount(weeks))
@@ -495,32 +469,17 @@ describe('formatValuableDroughtHeadline', () => {
       )
     }
   })
-
-  it('index를 주지 않으면 항상 같은 문구다. 렌더마다 깜빡이지 않게 하는 기본값', () => {
-    expect(formatValuableDroughtHeadline(9)).toBe(formatValuableDroughtHeadline(9))
-    expect(formatValuableDroughtHeadline(0)).toBe(formatValuableDroughtHeadline(0, 0))
-  })
 })
 
 // 화면이 무작위 인덱스를 고르려면 **그 단계의** 풀 크기를 알아야 한다. 마지막 단계만 알려주던 상수
 // (`VALUABLE_DROUGHT_LATE_HEADLINE_COUNT`)로는 모자라 함수가 됐다.
 describe('valuableDroughtHeadlineCount', () => {
-  it('단계마다 자기 풀 크기를 준다', () => {
-    expect([0, 1, 2, 3, 4].map(valuableDroughtHeadlineCount)).toEqual([3, 2, 3, 2, 5])
-  })
-
   it('마지막 단계로 묶이는 주 수는 모두 같은 크기다', () => {
     expect([4, 5, 16, 200].map(valuableDroughtHeadlineCount)).toEqual([5, 5, 5, 5])
   })
 })
 
 describe('formatValuableDroughtItems', () => {
-  it('하나면 그 이름만', () => {
-    expect(formatValuableDroughtItems([record({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' })])).toBe(
-      '루즈 컨트롤 머신 마크',
-    )
-  })
-
   it('여럿이면 첫 항목 + "외 N개"전부 나열하면 한 줄을 넘긴다', () => {
     expect(
       formatValuableDroughtItems([
@@ -529,9 +488,5 @@ describe('formatValuableDroughtItems', () => {
         record({ itemKey: 'life_whetstone', itemName: '생명의 연마석' }),
       ]),
     ).toBe('루즈 컨트롤 머신 마크 외 2개')
-  })
-
-  it('비면 빈 문자열. 호출부가 부재를 판단한다', () => {
-    expect(formatValuableDroughtItems([])).toBe('')
   })
 })

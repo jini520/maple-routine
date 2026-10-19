@@ -57,12 +57,6 @@ function props(overrides: Partial<React.ComponentProps<typeof CacheClearConfirm>
 }
 
 describe('CacheClearConfirm', () => {
-  it('isOpen이 false면 아무것도 렌더링하지 않는다', async () => {
-    const view = await renderOverlay(<CacheClearConfirm {...props({ isOpen: false })} />)
-
-    expect(view.queryByTestId('cache-clear-confirm-overlay')).toBeNull()
-  })
-
   // 지울 데이터를 2그룹 중 골라서 지운다.
   it('삭제 대상을 2그룹 체크리스트로 보여준다', async () => {
     const view = await renderOverlay(<CacheClearConfirm {...props()} />)

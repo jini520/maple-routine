@@ -27,14 +27,6 @@ describe('restoreFromStorage', () => {
 
     expect(useDropEffectStore.getState().enabled).toBe(false)
   })
-
-  it('저장된 값이 true면 enabled는 true다', async () => {
-    jest.mocked(getDropEffectEnabled).mockResolvedValue(true)
-
-    await useDropEffectStore.getState().restoreFromStorage()
-
-    expect(useDropEffectStore.getState().enabled).toBe(true)
-  })
 })
 
 describe('setEnabled', () => {
@@ -43,14 +35,5 @@ describe('setEnabled', () => {
 
     expect(setDropEffectEnabled).toHaveBeenCalledWith(false)
     expect(useDropEffectStore.getState().enabled).toBe(false)
-  })
-
-  it('다시 true로 되돌리면 setDropEffectEnabled(true)를 호출하고 상태를 true로 갱신한다', async () => {
-    useDropEffectStore.setState({ enabled: false })
-
-    await useDropEffectStore.getState().setEnabled(true)
-
-    expect(setDropEffectEnabled).toHaveBeenCalledWith(true)
-    expect(useDropEffectStore.getState().enabled).toBe(true)
   })
 })

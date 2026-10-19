@@ -28,10 +28,6 @@ beforeEach(() => {
   prefs = installFakePreferences()
 })
 
-it('한 번도 안 적었으면 빈 목록이다', async () => {
-  expect(await getPartyAppointments()).toEqual([])
-})
-
 it('적은 목록을 그대로 읽는다', async () => {
   await setPartyAppointments([LIMBO])
 

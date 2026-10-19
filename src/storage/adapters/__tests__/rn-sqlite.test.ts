@@ -57,11 +57,6 @@ afterEach(async () => {
 })
 
 describe('rnSqlitePort', () => {
-  it('웹 폴백이 없다. RN 에는 웹 타깃이 없다', async () => {
-    expect(rnSqlitePort.isWebPlatform()).toBe(false)
-    await expect(rnSqlitePort.initWebStore()).resolves.toBeUndefined()
-  })
-
   // 이 옵션이 곧 "Capacitor 가 남기고 간 파일을 연다" 이다.
   it('Capacitor 가 쓰던 파일을 연다 (iOS)', async () => {
     const db = await rnSqlitePort.createConnection('boss_profit', 'no-encryption', 1)

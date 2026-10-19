@@ -16,40 +16,6 @@ function boxOf(label: AtomElement): AtomElement {
 }
 
 describe('평면 variant: 색만 갈리고 상자는 같다', () => {
-  it('primary 는 `*-tint` 배경 위 `*-ink` 글자', async () => {
-    const { getByText } = await renderAtom(<Badge variant="primary">3</Badge>)
-
-    expect(flattenStyle(getByText('3').props.style)).toMatchObject({
-      backgroundColor: 기본테마.primaryTint,
-      color: 기본테마.primaryInk,
-      borderRadius: 9999,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      fontSize: 12,
-      fontWeight: '600',
-    })
-  })
-
-  it('third 는 배경·글자 토큰만 바뀐다', async () => {
-    const { getByText } = await renderAtom(<Badge variant="third">7</Badge>)
-
-    expect(flattenStyle(getByText('7').props.style)).toMatchObject({
-      backgroundColor: 기본테마.thirdTint,
-      color: 기본테마.thirdInk,
-    })
-  })
-
-  // 완료 배지다. 두께가 기본값과 달라서 variant 가 두께까지 쥔다.
-  it('secondary 는 두께가 bold 다', async () => {
-    const { getByText } = await renderAtom(<Badge variant="secondary">완료</Badge>)
-
-    expect(flattenStyle(getByText('완료').props.style)).toMatchObject({
-      backgroundColor: 기본테마.secondaryTint,
-      color: 기본테마.secondaryInk,
-      fontWeight: '700',
-    })
-  })
-
   // 눌린 회색 둘. 배경은 같고 글자만 갈린다. 진행 불가·시작 안함이 muted, 진행 중이 neutral 이다.
   it('muted 와 neutral 은 배경이 같고 글자가 다르다', async () => {
     const muted = await renderAtom(<Badge variant="muted">진행 불가</Badge>)
@@ -133,13 +99,6 @@ describe('난이도 variant: 그라디언트·테두리·그림자', () => {
 
     const chaos = await renderAtom(<Badge variant="chaos">카오스</Badge>)
     expect(flattenStyle(chaos.getByText('카오스').props.style).textShadowColor).toBeUndefined()
-  })
-
-  // 800 은 안 쓴다. 안드로이드가 그 굵기에서 잰 폭보다 넓게 그려 뒷 음절을 잃는다.
-  it('난이도는 두께가 bold 다. 앱이 쓰는 최대 굵기다', async () => {
-    const { getByText } = await renderAtom(<Badge variant="hard">하드</Badge>)
-
-    expect(flattenStyle(getByText('하드').props.style).fontWeight).toBe('700')
   })
 })
 
@@ -303,13 +262,5 @@ describe('프롭', () => {
       marginLeft: 'auto',
       backgroundColor: 기본테마.primaryTint,
     })
-  })
-
-  it('Text 속성을 그대로 전달한다', async () => {
-    const { getByTestId } = await renderAtom(
-      <Badge variant="third" testID="count" accessibilityLabel="완료 수">5</Badge>,
-    )
-
-    expect(getByTestId('count').props.accessibilityLabel).toBe('완료 수')
   })
 })

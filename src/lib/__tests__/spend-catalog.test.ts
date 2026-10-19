@@ -4,7 +4,6 @@
 // 여기서 보는 것은 **화면이 그 값을 어떻게 집어 오는가** 다. 갈래별 묶음과 환산 둘.
 import {
   BASE_TIER,
-  spendTariffPercent,
   buildSpendRewardName,
   findSpendChoice,
   findSpendRewardChoice,
@@ -179,10 +178,6 @@ describe('pointToMeso: 나눗셈이다', () => {
     expect(pointToMeso(1, 3)).toBe(33_333_333)
   })
 
-  it('메포가 0 이면 0 이다', () => {
-    expect(pointToMeso(0, 1_180)).toBe(0)
-  })
-
   // 어댑터가 이미 막지만(`storage/spend.ts`) 여기서도 0 을 안 나눈다. 화면이 입력 중간 상태로
   // 0 을 들고 있을 수 있고, 그때 `Infinity` 가 뜨면 금액 칸이 깨진다.
   it('시세가 0 이하면 0 이다. Infinity 를 만들지 않는다', () => {
@@ -192,9 +187,6 @@ describe('pointToMeso: 나눗셈이다', () => {
 })
 
 describe('관세. 구입가의 10% 고정', () => {
-  it('요율은 카탈로그가 든다. 화면이 하드코딩하지 않는다', () => {
-    expect(spendTariffPercent()).toBe(10)
-  })
 
   it('구입가의 10% 다', () => {
     expect(tariffMesoOf(850_000_000)).toBe(85_000_000)

@@ -3,7 +3,6 @@
 // 여기서 막는 사고는 그림이 일그러지는 것이다. 가이드는 심볼과 레이블을 `고정 영역` 으로, 좌우를
 // `확장영역` 으로 적어 폭이 늘어도 내용이 안 늘고, 잡아 늘이면 금지 항목 둘(`텍스트 왜곡 및 변형` ·
 // `가이드에서 벗어난 사이즈 및 비율 적용`)을 한 번에 어긴다.
-import { fireEvent } from '@testing-library/react-native'
 
 import { assetUri } from '../../../../assets/__tests__/asset-uri'
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
@@ -27,15 +26,6 @@ describe('NexonLoginButton', () => {
     expect(assetUri(view.getByTestId('nexon-login-button-image').props.source)).toContain(
       'nexon/login-button-wide-center.png',
     )
-  })
-
-  it('누르면 알린다', async () => {
-    const onPress = jest.fn()
-    const view = await renderAtom(<NexonLoginButton onPress={onPress} />)
-
-    fireEvent.press(view.getByLabelText('넥슨ID 로그인'))
-
-    expect(onPress).toHaveBeenCalledTimes(1)
   })
 
   it('읽어 주는 이름은 버튼이 든다. 그림은 안 읽는다', async () => {

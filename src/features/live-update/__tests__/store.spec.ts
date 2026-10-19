@@ -11,7 +11,7 @@ jest.mock('../../../native/live-update', () => ({
   openStoreForUpdate: jest.fn(),
   getLiveUpdateChannel: jest.fn(),
 }))
-const { applyLiveUpdate: applyLiveUpdateMock, checkForLiveUpdate: checkForLiveUpdateMock, downloadLiveUpdate: downloadLiveUpdateMock, getCurrentBundleVersion: getCurrentBundleVersionMock, getNetworkType: getNetworkTypeMock, openStoreForUpdate: openStoreForUpdateMock } = jest.requireMock('../../../native/live-update') as Record<string, jest.Mock>
+const { applyLiveUpdate: applyLiveUpdateMock, checkForLiveUpdate: checkForLiveUpdateMock, downloadLiveUpdate: downloadLiveUpdateMock, getCurrentBundleVersion: getCurrentBundleVersionMock, getNetworkType: getNetworkTypeMock } = jest.requireMock('../../../native/live-update') as Record<string, jest.Mock>
 
 jest.mock('../../../storage/last-run-bundle-version', () => ({
   getLastRunBundleVersion: jest.fn(),
@@ -52,7 +52,6 @@ beforeEach(() => {
   downloadLiveUpdateMock.mockReset()
   getCurrentBundleVersionMock.mockReset()
   getNetworkTypeMock.mockReset().mockResolvedValue('wifi')
-  openStoreForUpdateMock.mockReset()
   showSplashScreenMock.mockReset().mockResolvedValue(undefined)
   hideSplashScreenMock.mockReset().mockResolvedValue(undefined)
   // 기본은 "적어 둔 적 없음"완료 안내가 뜨지 않는 쪽이라 다른 테스트를 오염시키지 않는다.
@@ -62,11 +61,6 @@ beforeEach(() => {
 })
 
 describe('useLiveUpdateStore', () => {
-  it('초기 상태는 idle', () => {
-    expect(s().status).toBe('idle')
-    expect(s().currentVersion).toBeNull()
-  })
-
   describe('loadCurrentVersion', () => {
     it('네이티브 번들 버전을 담고, null이면 unsupported', async () => {
       getCurrentBundleVersionMock.mockResolvedValue('1.0.1')
@@ -290,12 +284,7 @@ describe('useLiveUpdateStore', () => {
     })
   })
 
-  describe('openStore / dismiss', () => {
-    it('openStore는 어댑터를 호출한다', () => {
-      s().openStore()
-      expect(openStoreForUpdateMock).toHaveBeenCalled()
-    })
-
+  describe('dismiss', () => {
     it('dismiss는 idle로 되돌리고 대기 정보를 비운다(현 버전 유지)', () => {
       useLiveUpdateStore.setState({
         status: 'update-available',

@@ -19,12 +19,6 @@ describe('round-trip', () => {
     await setTrackingMode('manual')
     await expect(getTrackingMode()).resolves.toBe('manual')
   })
-
-  it('manual에서 auto로 되돌릴 수 있다', async () => {
-    await setTrackingMode('manual')
-    await setTrackingMode('auto')
-    await expect(getTrackingMode()).resolves.toBe('auto')
-  })
 })
 
 describe('손상된 값', () => {

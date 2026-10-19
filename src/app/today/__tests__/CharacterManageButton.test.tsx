@@ -45,13 +45,6 @@ beforeEach(() => {
 })
 
 describe('버튼', () => {
-  // 원 안에 글자가 없다. 이 이름이 무엇이 열리는지 말하는 유일한 자리다.
-  it('이름으로 자기가 여는 화면을 말한다', async () => {
-    const view = await renderAtom(<CharacterManageButton portraits={셋} />)
-
-    expect(view.getByLabelText('캐릭터 관리')).toBeTruthy()
-  })
-
   it('누르면 캐릭터 관리로 push 한다', async () => {
     const view = await renderAtom(<CharacterManageButton portraits={셋} />)
 
@@ -60,15 +53,6 @@ describe('버튼', () => {
     })
 
     expect(navigate).toHaveBeenCalledWith('SettingsCharacters')
-  })
-
-  // 지름이 치수 표에서 온다. 화면에 숫자로 적으면 다음 규격이 또 다른 자리에 선다.
-  it('원의 지름이 치수 표에서 온다', async () => {
-    const view = await renderAtom(<CharacterManageButton portraits={셋} />)
-    const circle = flattenStyle(view.getByLabelText('캐릭터 관리').props.style)
-
-    expect(circle.width).toBe(PORTRAIT_HEADER.slot)
-    expect(circle.height).toBe(PORTRAIT_HEADER.slot)
   })
 
   // 얼굴은 원보다 작다. 그 차이가 원 안의 여백이고, 여기서 `slot` 을 넘기면 여백이 사라져

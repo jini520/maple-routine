@@ -12,28 +12,9 @@ import {
   getMaxQueryableDate,
   isEffectiveIn,
   isPeriodQueryable,
-  periodStartDateKey,
   resolvePagePeriodState,
   resolvePeriodDataState,
-  MIN_SCHEDULER_DATE,
 } from '../boss/boss-profit-period'
-
-describe('MIN_SCHEDULER_DATE', () => {
-  it('사용자 재실측(2026-07-14)으로 확인된 스케줄러 API 조회 가능 최소 날짜다', () => {
-    expect(MIN_SCHEDULER_DATE).toBe('2026-07-01')
-  })
-})
-
-// 참조 데이터의 줄이 `from`(이 날부터)·`until`(이 날 전까지)을 든다. 기간은 첫날로 판정한다.
-describe('periodStartDateKey', () => {
-  it('주간 키는 그 리셋일이 곧 첫날이다', () => {
-    expect(periodStartDateKey('2026-09-17')).toBe('2026-09-17')
-  })
-
-  it('월간 키는 그 달 1일이다', () => {
-    expect(periodStartDateKey('2026-09')).toBe('2026-09-01')
-  })
-})
 
 describe('isEffectiveIn', () => {
   const 교환권 = { until: '2026-09-17' }

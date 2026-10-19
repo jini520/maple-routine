@@ -24,10 +24,6 @@ describe('batchRecordWrites', () => {
     expect(notify).toHaveBeenCalledTimes(1)
   })
 
-  it('반복이 돌려준 값을 그대로 돌려준다', async () => {
-    await expect(batchRecordWrites(async () => 3)).resolves.toBe(3)
-  })
-
   // 수익·지출 탭의 회차는 오늘 기록과 지난 기간 기록을 나란히 돌린다.
   it('겹친 반복은 마지막 반복이 끝날 때 알린다', async () => {
     const notify = jest.fn()

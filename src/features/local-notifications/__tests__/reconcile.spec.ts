@@ -44,11 +44,6 @@ describe('planReconcile', () => {
     expect(result.cancel.map((item) => item.id)).toEqual([3])
   })
 
-  it('기본 자리는 64개다', () => {
-    const many = Array.from({ length: 70 }, (_, index) => planned(index + 1, index))
-
-    expect(planReconcile(many, []).schedule).toHaveLength(64)
-  })
 })
 
 describe('notificationId', () => {

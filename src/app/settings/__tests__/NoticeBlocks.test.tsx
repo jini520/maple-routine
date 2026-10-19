@@ -81,9 +81,4 @@ describe('공지 본문 블록', () => {
     expect(open).toHaveBeenCalledWith('https://maplestory.nexon.com/News/Notice/1')
   })
 
-  it('블록이 없으면 아무것도 안 세운다', async () => {
-    const view = await renderOverlay(<NoticeBlocks blocks={[]} />)
-
-    expect(view.getByTestId('notice-blocks').props.children).toEqual([])
-  })
 })

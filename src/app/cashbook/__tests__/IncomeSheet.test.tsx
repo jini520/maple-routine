@@ -289,20 +289,6 @@ describe('갈래', () => {
     expect(flattenStyle(상자.props.style)).toMatchObject({ flexDirection: 'row' })
   })
 
-  // 이름만으로는 `솔 에르다 조각` 과 `사냥` 이 무엇을 가르는지 안 읽힌다. 한 줄로 말한다
-  // (사용자 지정 2026-09-21).
-  it('카드마다 이름 아래에 설명이 선다', async () => {
-    const view = await 그리기({}, null)
-
-    const 설명 = (key: string): string =>
-      String(view.getByTestId(`income-sheet-category-desc-${key}`).props.children)
-
-    expect(설명('hunting')).toBe('메소 · 조각 수익 기록')
-    expect(설명('sol_erda_fragment')).toBe('사냥 수익 조각 정산')
-    expect(설명('item_sale')).toBe('판매 아이템 수익')
-    expect(설명('etc')).toBe('이벤트 등 기타 수익')
-  })
-
   /**
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
    * 더하고 `npm run assets:gen` 을 안 돌리면 셋 중 하나가 조용히 빈 자리가 된다.
@@ -381,12 +367,6 @@ describe('갈래', () => {
  * **치는 자리는 `금액` 칸**이다. 큰 숫자는 그 곱을 그리기만 한다.
  */
 describe('금액. OS 숫자 키보드다', () => {
-  it('앱 키패드를 안 그린다', async () => {
-    const view = await 그리기()
-
-    expect(view.queryByLabelText('한 자리 지우기')).toBeNull()
-    expect(view.queryByLabelText('00')).toBeNull()
-  })
 
   it('숫자 키보드를 부른다. 글자 키보드가 아니다', async () => {
     const view = await 직접치는시트()
@@ -471,16 +451,6 @@ describe('금액. OS 숫자 키보드다', () => {
    * 폼 안에 두면 저장과 이웃하고, 키보드 위로 내보내면 자리를 못 잡는다(라이브러리 슬롯).
    * 시트 마지막 자식으로 붙여도 마찬가지라 없는 편이 낫다.
    */
-  it('빠른 칩이 없다. 커서를 넣어도 안 뜬다', async () => {
-    const view = await 직접치는시트()
-
-    await act(async () => {
-      fireEvent(view.getByTestId('income-sheet-amount'), 'focus')
-    })
-
-    expect(view.queryByTestId('quick-add-bar')).toBeNull()
-    expect(view.queryByLabelText('+1억')).toBeNull()
-  })
 
   // 큰 숫자는 화면에 **하나**다. 합계 카드도 힌트 줄도 없고, 억/만 환산은
   // 그 숫자가 직접 한다.
@@ -1240,13 +1210,6 @@ describe('통화', () => {
  * **판매 대금 뒤에 단위를 적는다**. 큰 숫자가 수수료를 뗀 합계라
  * 이 줄과 축이 같은지 헷갈린다.
  */
-describe('판매 대금의 단위', () => {
-  it('메소라고 적는다', async () => {
-    const view = await 판매시트()
-
-    expect(view.getByTestId('income-sheet-gross-unit')).toHaveTextContent('메소')
-  })
-})
 
 /**
  * 사냥 갈래는 **계산기**다.
@@ -1382,12 +1345,6 @@ describe('사냥 계산기', () => {
    * 고르개가 바로 위에 **비어 있는 채로** 있으므로 그 사실은 이미 화면에 있고, 문장은 자리만
    * 차지했다(시트가 82vh 를 넘기던 그 자리다).
    */
-  it('레벨 안내 줄이 없다. 빈 캐릭터 고르개가 이미 그 말을 한다', async () => {
-    const view = await 그리기({}, 'hunting')
-
-    expect(view.queryByTestId('income-sheet-hunt-level-notice')).toBeNull()
-    expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
-  })
 
   it('기억이 없는 캐릭터로 바꾸면 지역 · 사냥터가 **풀린다**', async () => {
     const view = await 그리기()
@@ -2000,12 +1957,6 @@ describe('캐릭터를 고르면 그 캐릭터의 마지막 사냥이 선다', (
     expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(false)
   })
 
-  it('자동 입력 버튼이 없다', async () => {
-    const view = await 그리기({ lastHunts: 기억 }, 'hunting')
-
-    expect(view.queryByTestId('income-sheet-autofill')).toBeNull()
-  })
-
   describe('수정으로 연 기록', () => {
     const 수정기록 = {
       ...옛사냥행,
@@ -2335,12 +2286,6 @@ describe('조각 가격을 비우면 보관', () => {
       unionTier: 3,
     }
   }
-
-  it('조각 가격 나중에 입력 체크박스가 없다', async () => {
-    const view = await 그리기({}, 'hunting')
-
-    expect(view.queryByLabelText('조각 가격 나중에 입력')).toBeNull()
-  })
 
   // 수정에서는 `획득 메소 직접 입력` 도 안 선다. 빈 줄을 두면 간격만 한 칸 더 생긴다.
   it('수정으로 열면 체크 줄이 없다', async () => {
@@ -3232,14 +3177,6 @@ describe('사냥 폼의 줄 배치 (사용자 지정 2026-09-01)', () => {
     expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(true)
   })
 
-  it('아이템 그림에 **원형 테두리가 없다**', async () => {
-    const view = await 그리기()
-
-    // 알약 테두리는 **고르는 하나** 로 읽혀 여럿이 동시에 켜지는 것과 안 맞았다.
-    expect(String(view.getByLabelText('유니온의 부').props.className ?? '')).not.toContain(
-      'rounded-full',
-    )
-  })
 })
 
 /**

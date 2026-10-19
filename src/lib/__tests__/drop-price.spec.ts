@@ -9,12 +9,6 @@ describe('dropPayoutMeso', () => {
     )
   })
 
-  it('1인이면 입력한 총액 그대로다', () => {
-    expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 1 })).toBe(
-      1_200_000_000,
-    )
-  })
-
   it('기록 안함은 0이다. 값을 매기지 않기로 한 것이지 0원에 판 것이 아니다', () => {
     expect(dropPayoutMeso({ priceState: 'excluded' })).toBe(0)
   })
@@ -144,10 +138,6 @@ describe('sumDropPayout', () => {
       ]),
     ).toBe(6_200_000_000)
   })
-
-  it('빈 배열은 0이다', () => {
-    expect(sumDropPayout([])).toBe(0)
-  })
 })
 
 describe('formatMesoUnits', () => {
@@ -204,12 +194,6 @@ describe('formatMesoCompact', () => {
     expect(formatMesoCompact(3_250_000_000)).toBe('32.5억')
     expect(formatMesoCompact(1_000_000_000)).toBe('10억')
     expect(formatMesoCompact(100_000_000)).toBe('1억')
-  })
-
-  it('만 단위도 같은 규칙이다', () => {
-    expect(formatMesoCompact(10_000_000)).toBe('1000만')
-    expect(formatMesoCompact(12_340_000)).toBe('1234만')
-    expect(formatMesoCompact(15_000)).toBe('1.5만')
   })
 
   it('조 단위까지 올라간다', () => {

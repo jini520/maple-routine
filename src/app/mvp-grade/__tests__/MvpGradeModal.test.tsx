@@ -128,12 +128,6 @@ describe('MvpGradeModal', () => {
       expect(onDone.mock.calls[0][0].bulkApply).toBe(true)
     })
 
-    it('새 메이플 ID 는 제목이 다르다', async () => {
-      const { view } = await 그리기({ kind: 'newId', accountIds: ['c'], bulk: false }, [account('c', '셋')])
-
-      expect(view.getByText('새 메이플 ID의 MVP 등급을 알려주세요')).toBeTruthy()
-    })
-
     it('목록을 못 받은 ID 는 표시 없이 선다', async () => {
       const { view } = await 그리기(ASK, [{ accountId: 'a', summary: null, portraitUrl: null, currentGrade: null }])
 

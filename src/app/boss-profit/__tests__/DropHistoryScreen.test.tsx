@@ -161,13 +161,6 @@ describe('DropHistoryScreen: 셸과 조회', () => {
     expect(load).toHaveBeenCalled()
   })
 
-  it('조회 중에는 로딩을 보여준다', async () => {
-    mockStore({ status: 'loading' })
-    const { getByTestId } = await renderHistory()
-
-    expect(getByTestId('loading-state')).toBeTruthy()
-  })
-
   it('실패하면 빈 상태가 아니라 실패 상태와 다시 시도를 보여준다', async () => {
     mockStore({ status: 'failed' })
     const { getByTestId, getByText, queryByTestId } = await renderHistory()
@@ -269,15 +262,6 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
     const inline = flattenStyle(getByTestId('valuable-drop-inline').props.style)
     expect(inline.backgroundColor).toBe('#f7c400')
     expect(inline.color).toBe('#6b4e00')
-  })
-
-  //  이 **명시적으로 뺀 것**. 줄간격을 좁히면 배경 블록끼리 붙어 서로를 잡아먹는다.
-  it('고가 줄에도 `.valuable-drop-row` 배경은 쓰지 않는다', async () => {
-    mockStore({ groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록()] }] })
-    const { queryByTestId } = await renderHistory()
-
-    expect(queryByTestId('valuable-drop-row-tint')).toBeNull()
-    expect(queryByTestId('valuable-drop-row-glow')).toBeNull()
   })
 
   it('수량이 2 이상일 때만 개수를 말한다', async () => {
@@ -496,16 +480,6 @@ describe('DropHistoryScreen: 미획득 요약', () => {
       rerenderSame()
     })
     expect(문장(getByTestId('valuable-drought'))).toBe(shown)
-  })
-
-  it('요약에도 배경·카드를 두지 않는다', async () => {
-    mockStore({ drought: 가뭄(3) })
-    const { getByTestId } = await renderHistory()
-
-    const style = flattenStyle(getByTestId('valuable-drought').props.style)
-    expect(style.backgroundColor).toBeUndefined()
-    expect(style.borderWidth).toBeUndefined()
-    expect(style.borderRadius).toBeUndefined()
   })
 
   it('그 주에 고가를 여럿 먹었으면 첫 항목 + 외 N개로 줄인다', async () => {

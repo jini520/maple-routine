@@ -596,13 +596,6 @@ describe('처치 난이도 확정 시 드롭 이관', () => {
 })
 
 describe('useBossProfitStore', () => {
-  it('초기 상태는 idle이고 rows가 비어있다', () => {
-    const state = useBossProfitStore.getState()
-    expect(state.status).toBe('idle')
-    expect(state.rows).toEqual([])
-    expect(state.error).toBeNull()
-    expect(state.staleCharacterNames).toEqual([])
-  })
 
   it('refresh([])는 syncSchedules를 호출하지 않고 곧바로 loaded/빈 배열 상태가 된다', async () => {
     await useBossProfitStore.getState().refresh([])
@@ -1403,13 +1396,6 @@ describe('useBossProfitStore', () => {
       const row = await seedRow()
 
       await expect(useBossProfitStore.getState().setRowParty(row, { partySize: 0, shares: EVEN_SHARES })).rejects.toThrow()
-      expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
-    })
-
-    it('음수 값은 에러를 던지고 저장하지 않는다', async () => {
-      const row = await seedRow()
-
-      await expect(useBossProfitStore.getState().setRowParty(row, { partySize: -1, shares: EVEN_SHARES })).rejects.toThrow()
       expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
     })
 

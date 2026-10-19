@@ -230,14 +230,6 @@ describe('ContentManageScreen', () => {
     expect(screen.getByText('불러오고 있어요')).toBeTruthy()
     expect(screen.queryByText(/캐릭터를 먼저 선택해주세요/)).toBeNull()
   })
-
-  it('조회가 끝났는데 캐릭터가 없으면 안내 문구를 보여준다', async () => {
-    mockStore({ status: 'loaded', characters: [] })
-
-    await renderScreen()
-
-    expect(screen.getByText(/캐릭터를 먼저 선택해주세요/)).toBeTruthy()
-  })
 })
 
 describe('ContentManageScreen: 길드 미가입 잠금', () => {

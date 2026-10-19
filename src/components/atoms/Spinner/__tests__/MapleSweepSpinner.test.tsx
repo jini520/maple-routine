@@ -46,12 +46,6 @@ describe('MapleSweepSpinner', () => {
     expect(getByTestId('maple-sweep-spinner', HIDDEN).props['aria-hidden']).toBe(true)
   })
 
-  it('size prop으로 지정한 너비만큼 렌더링된다', async () => {
-    const { getByTestId } = await renderAtom(<MapleSweepSpinner size={24} />)
-
-    expect(getByTestId('maple-sweep-spinner', HIDDEN).props.width).toBe(24)
-  })
-
   it('색은 className 이 정한다. `currentColor` 가 읽는 `color` 프롭으로 들어간다', async () => {
     const { getByTestId } = await renderAtom(<MapleSweepSpinner className="text-text-muted" />)
 

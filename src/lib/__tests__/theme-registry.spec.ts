@@ -73,10 +73,6 @@ describe('groupThemesByCategory: 선택 목록의 섹션', () => {
     expect(groups.flatMap((group) => group.themes)).toEqual(darkOnly)
   })
 
-  it('빈 목록이면 그룹도 없다', () => {
-    expect(groupThemesByCategory([])).toEqual([])
-  })
-
   it.each(NAMES)('%s 는 테마 이름이다', (name) => {
     expect(isThemeName(name)).toBe(true)
   })

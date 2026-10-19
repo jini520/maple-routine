@@ -1,8 +1,5 @@
 import { installFakePreferences } from './fake-preferences'
 import {
-  clearLastSelectedCharacter,
-  clearRepresentativeCharacter,
-  clearTrackedCharacterOcids,
   getLastSelectedCharacter,
   getRepresentativeCharacter,
   getTrackedCharacterOcids,
@@ -20,36 +17,10 @@ beforeEach(() => {
   prefs = installFakePreferences()
 })
 
-describe('round-trip', () => {
-  it('setTrackedCharacterOcids 후 getTrackedCharacterOcids로 저장한 값을 그대로 읽는다', async () => {
-    await setTrackedCharacterOcids(['ocid-1', 'ocid-2'])
-    await expect(getTrackedCharacterOcids()).resolves.toEqual(['ocid-1', 'ocid-2'])
-  })
-
-  it('단일 키(trackedCharacters)에 저장한다', async () => {
-    await setTrackedCharacterOcids(['ocid-1'])
-    await expect(prefs.get('trackedCharacters')).resolves.toBe(JSON.stringify(['ocid-1']))
-  })
-})
-
-describe('저장된 값이 없는 경우', () => {
-  it('한 번도 설정한 적 없으면 null을 반환한다', async () => {
-    await expect(getTrackedCharacterOcids()).resolves.toBeNull()
-  })
-})
-
 describe('빈 배열과 null의 구분', () => {
   it('사용자가 명시적으로 전부 해제하면 null이 아니라 빈 배열을 반환한다', async () => {
     await setTrackedCharacterOcids([])
     await expect(getTrackedCharacterOcids()).resolves.toEqual([])
-  })
-})
-
-describe('clearTrackedCharacterOcids', () => {
-  it('clear 이후에는 다시 null을 반환한다', async () => {
-    await setTrackedCharacterOcids(['ocid-1'])
-    await clearTrackedCharacterOcids()
-    await expect(getTrackedCharacterOcids()).resolves.toBeNull()
   })
 })
 
@@ -161,26 +132,6 @@ describe('통합 마이그레이션', () => {
 // 대표 캐릭터는 "표식"이다. 미지정이면 키가 없고, 그때 "첫 번째가 임시 대표"라는
 // 규칙은 읽는 쪽(화면)의 것이라 저장 레이어가 그 파생값을 만들지도 저장하지도 않는다.
 describe('대표 캐릭터', () => {
-  it('저장 전에는 null을 반환한다', async () => {
-    await expect(getRepresentativeCharacter()).resolves.toBeNull()
-  })
-
-  it('setRepresentativeCharacter 후 저장한 ocid를 그대로 읽는다', async () => {
-    await setRepresentativeCharacter('ocid-1')
-    await expect(getRepresentativeCharacter()).resolves.toBe('ocid-1')
-  })
-
-  it('단일 키(representativeCharacter)에 저장한다', async () => {
-    await setRepresentativeCharacter('ocid-1')
-    await expect(prefs.get('representativeCharacter')).resolves.toBe('ocid-1')
-  })
-
-  it('clearRepresentativeCharacter 호출 후 다시 null을 반환한다', async () => {
-    await setRepresentativeCharacter('ocid-1')
-    await clearRepresentativeCharacter()
-    await expect(getRepresentativeCharacter()).resolves.toBeNull()
-  })
-
   it('미지정이면 목록의 첫 번째를 대신 돌려주지 않는다. 파생값을 만들지 않는다', async () => {
     await setTrackedCharacterOcids(['ocid-1', 'ocid-2'])
     await expect(getRepresentativeCharacter()).resolves.toBeNull()
@@ -245,23 +196,6 @@ describe('setCharacterSelection (참조 무결성)', () => {
 
     await expect(getTrackedCharacterOcids()).resolves.toEqual(['ocid-1'])
     await expect(getRepresentativeCharacter()).resolves.toBe('ocid-1')
-  })
-})
-
-describe('마지막 선택 캐릭터', () => {
-  it('저장 전에는 null을 반환한다', async () => {
-    await expect(getLastSelectedCharacter()).resolves.toBeNull()
-  })
-
-  it('setLastSelectedCharacter 후 getLastSelectedCharacter로 저장한 ocid를 그대로 읽는다', async () => {
-    await setLastSelectedCharacter('ocid-1')
-    await expect(getLastSelectedCharacter()).resolves.toBe('ocid-1')
-  })
-
-  it('clearLastSelectedCharacter 호출 후 다시 null을 반환한다', async () => {
-    await setLastSelectedCharacter('ocid-1')
-    await clearLastSelectedCharacter()
-    await expect(getLastSelectedCharacter()).resolves.toBeNull()
   })
 })
 

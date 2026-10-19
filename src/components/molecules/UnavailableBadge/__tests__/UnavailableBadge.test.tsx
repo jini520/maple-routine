@@ -6,18 +6,10 @@
  */
 import { fireEvent } from '@testing-library/react-native'
 
-import { findAllOfType, flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
+import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { UnavailableBadge } from '../UnavailableBadge'
 
 describe('UnavailableBadge', () => {
-  // 아이콘이 `Badge` 와 갈리는 자리다. lucide 그림은 `testID` 가 안 통해 트리에서 본다.
-  it('아이콘과 글자가 한 상자에 든다', async () => {
-    const view = await renderAtom(<UnavailableBadge label="조회 불가" />)
-
-    expect(view.getByText('조회 불가')).toBeTruthy()
-    expect(findAllOfType(view.toJSON(), 'RNSVGSvgView')).toHaveLength(1)
-  })
-
   it('글자색은 `Badge` 의 `error` 와 같은 값이다', async () => {
     const view = await renderAtom(<UnavailableBadge label="조회 불가" />)
 

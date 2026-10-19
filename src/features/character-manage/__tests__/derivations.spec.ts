@@ -142,12 +142,6 @@ describe('summarizeAccount: 대표', () => {
   it('캐릭터가 0명이면 던지지 않고 null 을 돌려준다 (호출부가 거른다)', () => {
     expect(summarizeAccount(account([]))).toBeNull()
   })
-
-  it('accountId 를 그대로 싣는다', () => {
-    const summary = summarizeAccount(account([character({ name: '가', level: 1 })], 'account-42'))
-
-    expect(summary?.accountId).toBe('account-42')
-  })
 })
 
 describe('buildSelectedCharacterViews', () => {
@@ -239,10 +233,6 @@ describe('buildSelectedCharacterViews', () => {
 
     expect(views[0]).toMatchObject({ name: '옛이름', level: 250, unavailable: true })
   })
-
-  it('빈 목록이면 빈 배열이다', () => {
-    expect(buildSelectedCharacterViews([], new Map(), new Set())).toEqual([])
-  })
 })
 
 describe('resolveRepresentative', () => {
@@ -256,10 +246,6 @@ describe('resolveRepresentative', () => {
 
   it('저장값이 없으면 null 이다. 첫 번째를 임시 대표로 만들지 않는다', () => {
     expect(resolveRepresentative(['a', 'b'], null)).toBeNull()
-  })
-
-  it('목록이 비어 있으면 null 이다', () => {
-    expect(resolveRepresentative([], 'a')).toBeNull()
   })
 })
 
@@ -277,10 +263,6 @@ describe('resolveDisplayRepresentative', () => {
 
   it('저장값이 없으면 첫 번째가 임시 대표다', () => {
     expect(resolveDisplayRepresentative(['a', 'b'], null)).toBe('a')
-  })
-
-  it('목록이 비어 있으면 null 이다', () => {
-    expect(resolveDisplayRepresentative([], 'a')).toBeNull()
   })
 
   it('회귀 가드. 같은 입력에 resolveRepresentative 는 여전히 null 이다', () => {

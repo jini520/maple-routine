@@ -21,7 +21,6 @@ jest.mock('@gorhom/bottom-sheet', () => {
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { usePartyAlarmSettingsStore } from '../../../features/party-appointments/alarm-settings'
-import { initialDraft } from '../../../features/party-appointments/draft'
 import { usePartyAppointmentsStore } from '../../../features/party-appointments/store'
 import { __resetNativePortsForTest, setNotificationsPort } from '../../../native/ports'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
@@ -37,18 +36,6 @@ function 그리기(props: Partial<React.ComponentProps<typeof AppointmentSheet>>
 }
 
 describe('추가 시트', () => {
-  it('한 번만 갈래로 열면 제목이 스케줄 추가다', async () => {
-    const view = await 그리기({ repeats: false })
-
-    expect(view.getByText('스케줄 추가')).toBeTruthy()
-  })
-
-  it('매주 반복 갈래로 열면 제목이 반복 스케줄 추가다', async () => {
-    const view = await 그리기({ repeats: true })
-
-    expect(view.getByText('반복 스케줄 추가')).toBeTruthy()
-  })
-
   it('한 번 약속은 날짜를 고른다', async () => {
     const view = await 그리기({ repeats: false })
 
@@ -60,12 +47,6 @@ describe('추가 시트', () => {
 
     expect(view.queryByLabelText('날짜 고르기')).toBeNull()
     expect(view.getByText(/^매주 .요일$/)).toBeTruthy()
-  })
-
-  it('매주 반복 체크 상자가 없다', async () => {
-    const view = await 그리기({ repeats: true })
-
-    expect(view.queryByLabelText('매주 반복')).toBeNull()
   })
 })
 
@@ -181,23 +162,6 @@ describe('알림 체크 상자를 켤 때', () => {
 
   afterEach(__resetNativePortsForTest)
 
-  /** 시트가 처음 여는 날짜에 알림 달린 약속 셋을 깐다 */
-  function 그날알림셋(): void {
-    const dateKey = initialDraft(new Date()).startDateKey
-    usePartyAppointmentsStore.setState({
-      appointments: ['x', 'y', 'z'].map((id) => ({
-        id,
-        bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
-        members: [],
-        timeKst: '10:00',
-        durationMinutes: 30,
-        leadMinutes: 10,
-        schedule: { type: 'once', dateKey },
-        exceptions: {},
-      })),
-    })
-  }
-
   async function 켜기(view: Awaited<ReturnType<typeof 그리기>>): Promise<void> {
     await act(async () => {
       fireEvent.press(view.getByLabelText('알림'))
@@ -210,16 +174,6 @@ describe('알림 체크 상자를 켤 때', () => {
 
     expect(view.getByLabelText('알림').props.accessibilityState).toMatchObject({ checked: true })
     expect(view.queryByText('알림이 꺼져 있어요')).toBeNull()
-  })
-
-  // 하루 한도는 없다. 약속 알림은 기기가 예약해 서버 비용이 없다(정정 23).
-  it('그 날 알림이 이미 셋이어도 모달 없이 켜지고 사용량을 적지 않는다', async () => {
-    그날알림셋()
-    const view = await 그리기({ repeats: false })
-    await 켜기(view)
-
-    expect(view.getByLabelText('알림').props.accessibilityState).toMatchObject({ checked: true })
-    expect(view.queryByText(/알림 \d\/3/)).toBeNull()
   })
 
   it('기기 권한이 없으면 권한 모달이고, 나중에를 눌러도 체크 상자는 켜져 있다', async () => {

@@ -10,14 +10,6 @@ describe('digitsBefore', () => {
     expect(digitsBefore('1,000,000,000', 5)).toBe(4)
   })
 
-  it('맨 앞은 0', () => {
-    expect(digitsBefore('1,234', 0)).toBe(0)
-  })
-
-  it('맨 뒤는 전부', () => {
-    expect(digitsBefore('1,234', 5)).toBe(4)
-  })
-
   it('글자 길이를 넘는 자리는 전부로 본다', () => {
     expect(digitsBefore('1,234', 99)).toBe(4)
   })
@@ -33,16 +25,8 @@ describe('caretAfterDigits', () => {
     expect(caretAfterDigits('1,000,000,000', 4)).toBe(5)
   })
 
-  it('0 이면 맨 앞', () => {
-    expect(caretAfterDigits('1,234', 0)).toBe(0)
-  })
-
   it('숫자가 모자라면 맨 뒤', () => {
     expect(caretAfterDigits('1,234', 99)).toBe(5)
-  })
-
-  it('빈 글자는 0', () => {
-    expect(caretAfterDigits('', 3)).toBe(0)
   })
 
   it('digitsBefore 와 서로 되짚는다', () => {

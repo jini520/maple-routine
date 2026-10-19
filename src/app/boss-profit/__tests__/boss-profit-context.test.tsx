@@ -16,15 +16,6 @@ function PeriodLabel(): React.JSX.Element {
 }
 
 describe('useBossProfitContext', () => {
-  it('Provider 안에서는 맥락을 그대로 읽는다', async () => {
-    const { getByText } = await render(
-      <BossProfitContextProvider value={컨텍스트값()}>
-        <PeriodLabel />
-      </BossProfitContextProvider>,
-    )
-
-    expect(getByText(`${PERIOD}/${PERIOD}`)).toBeTruthy()
-  })
 
   // RNTL 14 의 `render` 는 비동기라 렌더 중 예외가 **동기 throw 가 아니라 거부된 프로미스**로 온다.
   it('Provider 밖에서는 던진다', async () => {

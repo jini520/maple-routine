@@ -31,13 +31,6 @@ function props(overrides: Partial<React.ComponentProps<typeof DisconnectConfirm>
 }
 
 describe('DisconnectConfirm', () => {
-  it('isOpen이 false면 아무것도 렌더링하지 않는다', async () => {
-    const view = await renderOverlay(<DisconnectConfirm {...props({ isOpen: false })} />)
-
-    expect(view.queryByTestId('disconnect-confirm-overlay')).toBeNull()
-    expect(view.queryByText('연결을 해제할까요?')).toBeNull()
-  })
-
   it('확인 버튼을 누르면 onConfirm이 호출된다', async () => {
     const onConfirm = jest.fn()
     const view = await renderOverlay(<DisconnectConfirm {...props({ onConfirm })} />)

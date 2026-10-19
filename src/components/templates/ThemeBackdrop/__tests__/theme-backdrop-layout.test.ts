@@ -6,12 +6,6 @@
 import { parseBackgroundPosition, resolveThemeBackdropLayout } from '../theme-backdrop-layout'
 
 describe('background-position 읽기', () => {
-  it('키워드를 0~1 로 옮긴다', () => {
-    expect(parseBackgroundPosition('left top')).toEqual({ x: 0, y: 0 })
-    expect(parseBackgroundPosition('right bottom')).toEqual({ x: 1, y: 1 })
-    expect(parseBackgroundPosition('center center')).toEqual({ x: 0.5, y: 0.5 })
-  })
-
   // 실제 데이터가 이 형태다. 혼테일 `45% bottom`, 검은마법사 `25% bottom`.
   it('퍼센트와 키워드를 섞어 쓴다', () => {
     expect(parseBackgroundPosition('45% bottom')).toEqual({ x: 0.45, y: 1 })

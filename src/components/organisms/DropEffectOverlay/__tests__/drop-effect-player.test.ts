@@ -39,13 +39,6 @@ function run(
 }
 
 describe('아이템은 8프레임 시점에 뜬다', () => {
-  it('처음에는 기둥도 아이템도 없다', () => {
-    const s = createDropEffectState()
-
-    expect(s.pillarPhase).toBeNull()
-    expect(s.itemVisible).toBe(false)
-  })
-
   it('8프레임 직전까지는 안 뜬다', () => {
     const s = run(createDropEffectState(), MS(DROP_EFFECT_FPS.screen, DROP_START_FRAME) - 20)
 

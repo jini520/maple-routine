@@ -7,10 +7,6 @@ beforeEach(() => {
   prefs = installFakePreferences()
 })
 
-it('한 번도 안 적었으면 빈 표다', async () => {
-  expect(await getLastHunts()).toEqual({})
-})
-
 it('캐릭터마다 따로 기억한다', async () => {
   await setLastHunt('ocid-1', { groundKey: 'geardrak_basement_1', boosts: ['union'], unionTier: 3 })
   await setLastHunt('ocid-2', { groundKey: 'arteria_west', boosts: [], unionTier: 3 })

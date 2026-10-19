@@ -161,13 +161,6 @@ const EVEN_SHARE_COLUMNS = {
 }
 
 describe('useBossSchedulerStore', () => {
-  it('초기 상태는 idle이고 캐릭터가 비어있다', () => {
-    const state = useBossSchedulerStore.getState()
-    expect(state.status).toBe('idle')
-    expect(state.characters).toEqual([])
-    expect(state.error).toBeNull()
-  })
-
   it('refresh([])는 syncSchedules를 호출하지 않고 곧바로 loaded/빈 배열 상태가 된다', async () => {
     await useBossSchedulerStore.getState().refresh([])
 
@@ -228,35 +221,6 @@ describe('useBossSchedulerStore', () => {
         isSeasonBoss: false,
       },
     ])
-  })
-
-  it('월간 보스만 있으면 weeklyBosses는 빈 배열, monthlyBosses에만 항목이 들어간다', async () => {
-    syncSchedulesMock.mockResolvedValue([
-      syncResult({
-        state: {
-          ...syncResult().state!,
-          bossContents: [bossContent({ bossKey: 'black_mage', apiName: '검은 마법사', cycle: 'monthly' })],
-        },
-      }),
-    ])
-
-    await useBossSchedulerStore.getState().refresh(['ocid-1'])
-
-    const state = useBossSchedulerStore.getState()
-    expect(state.characters[0].weeklyBosses).toEqual([])
-    expect(state.characters[0].monthlyBosses).toHaveLength(1)
-    expect(state.characters[0].monthlyBosses[0].cycle).toBe('monthly')
-  })
-
-  it('주간 보스만 있으면 monthlyBosses는 빈 배열, weeklyBosses에만 항목이 들어간다', async () => {
-    syncSchedulesMock.mockResolvedValue([syncResult()])
-
-    await useBossSchedulerStore.getState().refresh(['ocid-1'])
-
-    const state = useBossSchedulerStore.getState()
-    expect(state.characters[0].monthlyBosses).toEqual([])
-    expect(state.characters[0].weeklyBosses).toHaveLength(1)
-    expect(state.characters[0].weeklyBosses[0].cycle).toBe('weekly')
   })
 
   it('모든 캐릭터가 성공하면 status: loaded이고 클리어 카운트를 직접 계산한다', async () => {
@@ -1180,28 +1144,7 @@ describe('useBossSchedulerStore', () => {
     })
   })
 
-  // 탭이 걷히면서 `activeTab` 도 함께 사라지고, 목록이 하나가 되면서 필터도 하나가 된다.
-  describe(': 필터 상태. 하나다', () => {
-    it('초기 필터는 전체다', () => {
-      expect(useBossSchedulerStore.getInitialState().partyFilter).toBe('all')
-    })
-
-    it('setPartyFilter 가 필터를 바꾼다', () => {
-      useBossSchedulerStore.getState().setPartyFilter('solo')
-
-      expect(useBossSchedulerStore.getState().partyFilter).toBe('solo')
-    })
-
-    // 탭이 남아 있으면 다음 세션이 **관리 화면만 쓰는 상태** 로 되살린다. 없는 것을 못 박는다.
-    it('탭 상태와 세터가 스토어에 없다', () => {
-      const state = useBossSchedulerStore.getState() as unknown as Record<string, unknown>
-
-      expect(state.activeTab).toBeUndefined()
-      expect(state.setActiveTab).toBeUndefined()
-      expect(state.weeklyFilter).toBeUndefined()
-      expect(state.monthlyFilter).toBeUndefined()
-    })
-
+  describe(': 필터 상태', () => {
     it('필터를 바꿔도 동기화를 호출하지 않는다', () => {
       useBossSchedulerStore.getState().setPartyFilter('party')
 

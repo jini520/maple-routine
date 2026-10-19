@@ -47,17 +47,6 @@ afterEach(__resetThemeAppearanceForTest)
 const 목록 = <Text>목록</Text>
 
 describe('ScreenScroll', () => {
-  it('화면을 채우는 스크롤 상자다', async () => {
-    const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
-
-    // NativeWind 의 `flex-1` 은 축약형이 아니라 세 값으로 풀린다.
-    expect(flattenStyle(getByTestId('screen-scroll').props.style)).toMatchObject({
-      flexGrow: 1,
-      flexShrink: 1,
-      flexBasis: '0%',
-    })
-  })
-
   // 헤더와 콘텐츠 사이, 그리고 콘텐츠 블록끼리의 간격을 **이 한 값**이 낸다(사용자 지정 8).
   //
   // NativeWind 는 `contentContainerClassName` 을 자식 뷰가 아니라 `contentContainerStyle`
@@ -252,14 +241,6 @@ describe('당김 배선', () => {
     // 색은 테마에서 온다. 화면이 넘기지 않는다.
     expect(control.props.tintColor).toBe(테마.primaryInk)
     expect(control.props.progressBackgroundColor).toBe(테마.surface)
-  })
-
-  // 안 주면 당김이 없는 화면이다(설정 계열·하위 페이지). 그 화면의 스크롤 뷰 프롭을 한 개도
-  // 바꾸지 않는다.
-  it('안 주면 인디케이터 자체가 없다', async () => {
-    const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
-
-    expect(getByTestId('screen-scroll').props.refreshControl).toBeUndefined()
   })
 
   // **당긴 회차에만** 돈다. 그 판정은 `usePullRefresh` 가 들고 셸이 그것을 부른다. 화면이

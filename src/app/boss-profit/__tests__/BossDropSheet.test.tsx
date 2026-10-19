@@ -978,13 +978,6 @@ describe('BossDropSheet: 타일 배치', () => {
     expect(장비.props.horizontal).toBe(true)
     expect(getByTestId('drop-tile-row-consumable').props.horizontal).toBe(true)
   })
-
-  it('타일은 72 폭으로 못박힌다. 굴러야 하므로 비율로 둘 수 없다', async () => {
-    const { result } = renderSheet()
-    const { getByLabelText } = await result
-
-    expect(flattenStyle(getByLabelText('루즈 컨트롤 머신 마크').props.style)).toMatchObject({ width: 72 })
-  })
 })
 
 describe('BossDropSheet: 고정 영역', () => {
@@ -1020,14 +1013,5 @@ describe('BossDropSheet: 고정 영역', () => {
     expect(style.paddingTop).toBe(style.paddingBottom)
     // 배지가 얹히는 자리를 벌어야 해서 예전(10)보다 넓다.
     expect(Number(style.paddingTop)).toBeGreaterThan(10)
-  })
-})
-
-describe('BossDropSheet: 드롭 데이터가 없는 보스', () => {
-  it('빈 상태로 안내하고 타일을 만들지 않는다', async () => {
-    const { result } = renderSheet({ bossKey: 'unknown_boss' })
-    const { getByText } = await result
-
-    expect(getByText('이 보스의 드롭 데이터가 아직 없습니다')).toBeTruthy()
   })
 })

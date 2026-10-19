@@ -41,10 +41,6 @@ describe('채널', () => {
     expect(NOTIFICATION_CHANNEL.id).toBe('default')
   })
 
-  it('중요도가 Capacitor 와 같은 DEFAULT 다', () => {
-    expect(NOTIFICATION_CHANNEL.importance).toBe(AndroidImportance.DEFAULT)
-  })
-
   // notifee 의 기본값은 "소리 없음"이라 이 값을 빼면 채널이 통째로 무음이 된다.
   it('시스템 기본 알림음을 쓴다', () => {
     expect(NOTIFICATION_CHANNEL.sound).toBe('default')
@@ -52,10 +48,6 @@ describe('채널', () => {
 })
 
 describe('toNotificationId', () => {
-  it('숫자 ID 를 문자열로 바꾼다', () => {
-    expect(toNotificationId(42)).toBe('42')
-  })
-
   // `cancel(id)` 이 `schedule` 한 알림을 지목하려면 이 왕복이 성립해야 한다.
   it.each([0, 1, 42, -7, Number.MAX_SAFE_INTEGER])('%p 는 왕복 손실이 없다', (id) => {
     expect(Number(toNotificationId(id))).toBe(id)

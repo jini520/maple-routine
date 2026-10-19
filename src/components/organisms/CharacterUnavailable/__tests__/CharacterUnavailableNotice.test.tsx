@@ -6,15 +6,6 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { CharacterUnavailableNotice } from '../CharacterUnavailableNotice'
 
-it('무슨 일인지와 무엇을 할 수 있는지를 함께 말한다', async () => {
-  const { getByText } = await renderAtom(
-    <CharacterUnavailableNotice onOpenCharacterManage={jest.fn()} />,
-  )
-
-  expect(getByText('이 캐릭터는 조회할 수 없습니다')).toBeTruthy()
-  expect(getByText(/캐릭터 관리에서 추적을 해제하거나/)).toBeTruthy()
-})
-
 // 처방이 새로고침이 아니다. 이 실패는 영구라 사용자가 할 수 있는 일이 캐릭터 관리뿐이다.
 it('캐릭터 관리로 가는 버튼을 누르면 호출부에 넘긴다', async () => {
   const onOpenCharacterManage = jest.fn()

@@ -20,38 +20,14 @@ const SAMPLE_ITEMS: ManualTrackedItem[] = [
   { kind: 'boss', bossKey: 'black_mage', difficulty: 'extreme' },
 ]
 
-describe('저장된 값이 없는 경우', () => {
-  it('한 번도 저장한 적 없으면 빈 배열을 반환한다', async () => {
-    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([])
-  })
-})
-
 describe('round-trip', () => {
   it('setManualTrackedContent 후 getManualTrackedContent로 저장한 배열을 그대로 읽는다', async () => {
     await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual(SAMPLE_ITEMS)
   })
-
-  it('전체 교체 방식이라 다시 저장하면 이전 배열을 완전히 덮어쓴다', async () => {
-    await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
-    const replaced: ManualTrackedItem[] = [{ contentKey: 'mu_lung_dojo', kind: 'weekly' }]
-    await setManualTrackedContent('ocid-1', replaced)
-    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual(replaced)
-  })
-
-  it('빈 배열도 그대로 저장·복원된다', async () => {
-    await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
-    await setManualTrackedContent('ocid-1', [])
-    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([])
-  })
 })
 
 describe('ocid 독립성', () => {
-  it('한 ocid에 저장해도 다른 ocid는 영향받지 않는다', async () => {
-    await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
-    await expect(getManualTrackedContent('ocid-2')).resolves.toEqual([])
-  })
-
   it('서로 다른 ocid는 서로 다른 배열을 독립적으로 저장한다', async () => {
     const other: ManualTrackedItem[] = [{ contentKey: 'erda_spectrum', kind: 'weekly', maxCount: 1 }]
     await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)

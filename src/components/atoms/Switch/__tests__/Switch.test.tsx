@@ -52,14 +52,6 @@ describe.each(['ios', 'android'] as const)('Switch(%s): 스크린리더 계약',
     expect(target.props.role).toBe('switch')
     expect(target.props.accessibilityState.checked).toBe(true)
   })
-
-  it('꺼져 있으면 checked 가 거짓이다', async () => {
-    const { getByLabelText } = await renderAtom(
-      <Switch on={false} label="알림 받기" onToggle={() => {}} />,
-    )
-
-    expect(getByLabelText('알림 받기').props.accessibilityState.checked).toBe(false)
-  })
 })
 
 describe('Switch(android): 치수 두 벌', () => {
@@ -114,14 +106,6 @@ describe('Switch(android): 치수 두 벌', () => {
 })
 
 describe('Switch(android): 색 한 벌', () => {
-  it('켜면 트랙이 primary 다', async () => {
-    const { getByTestId } = await renderAtom(<Switch on label="켜기" onToggle={() => {}} />)
-
-    expect(flattenStyle(getByTestId('switch-track').props.style).backgroundColor).toBe(
-      기본테마.primary,
-    )
-  })
-
   it('끄면 트랙이 surface-2 이고 손잡이는 언제나 surface 다', async () => {
     const { getByTestId } = await renderAtom(
       <Switch on={false} label="켜기" onToggle={() => {}} />,

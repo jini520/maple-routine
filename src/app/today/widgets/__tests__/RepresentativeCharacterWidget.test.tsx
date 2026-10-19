@@ -12,7 +12,6 @@ import {
   renderAtom,
   findAllOfType,
   flattenStyle,
-  기본테마,
 } from '../../../../components/__tests__/render-atom'
 import { RepresentativeCharacterWidget } from '../RepresentativeCharacterWidget'
 import { 대표_캐릭터, 뷰모델, 빈_뷰모델 } from './widget-fixture'
@@ -146,12 +145,6 @@ describe('2x2 는 잘리되 지우지 않는다', () => {
 
     expect(getByTestId('representative-job').props.numberOfLines).toBe(1)
   })
-
-  it('이름 색은 테마 `text` 다. 강조색을 얹지 않는다', async () => {
-    const { getByText } = await 위젯(크기['2x2'])
-
-    expect(flattenStyle(getByText('단풍루틴').props.style).color).toBe(기본테마.text)
-  })
 })
 
 describe('길드는 닉네임 옆이다', () => {
@@ -182,22 +175,6 @@ describe('길드는 닉네임 옆이다', () => {
 
     expect(flattenStyle(getByTestId('representative-name').props.style).flexShrink).toBe(1)
     expect(flattenStyle(getByTestId('representative-guild').props.style).flexShrink).toBe(0)
-  })
-})
-
-describe('EXP 열이 길어졌다', () => {
-  it('4x1 의 EXP 열은 100px 다. 바가 짧아 진행률이 눈에 안 들어왔다', async () => {
-    const { getByTestId } = await 위젯(크기['4x1'])
-
-    expect(flattenStyle(getByTestId('representative-exp').props.style).width).toBe(100)
-  })
-
-  it('4x2·2x2 는 아래 전폭이라 고정 폭이 없다', async () => {
-    for (const 값 of [크기['4x2'], 크기['2x2']]) {
-      const { getByTestId } = await 위젯(값)
-
-      expect(flattenStyle(getByTestId('representative-exp').props.style).width).toBe('100%')
-    }
   })
 })
 

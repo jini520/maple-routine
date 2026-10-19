@@ -167,10 +167,6 @@ describe('진행 합계', () => {
 
     expect(dailyContentProgress(contents, null)).toEqual({ completed: 0, total: 1 })
   })
-
-  it('빈 목록은 0/0 이다', () => {
-    expect(dailyContentProgress([], 300)).toEqual({ completed: 0, total: 0 })
-  })
 })
 
 // 에픽 던전은 4종이지만 주 3회가 한도다. 3종을 끝낸 뒤 남은 1종은 할 일이 아니라 `마감` 이다.

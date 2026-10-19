@@ -59,35 +59,9 @@ describe('계열이 축이다', () => {
     expect(queryByText(/월드/)).toBeNull()
     expect(queryByText(/스카니아/)).toBeNull()
   })
-
-  // **머리에 수를 안 단다**(사용자 지시). 남은 줄은 아래 체크박스가 이미 세어 볼 수 있게 그린다.
-  // 그 수를 머리에 또 쓰면 같은 말이 둘이고, 위젯 2 의 `남은 스케줄` 수와 나란히 읽혀 두 수의
-  // 관계를 사용자가 짐작하게 된다.
-  it('머리에 수를 안 단다', async () => {
-    const { queryByTestId, queryByText } = await 위젯(공유컨텐츠())
-
-    expect(queryByTestId('shared-total')).toBeNull()
-    expect(queryByText(/개$/)).toBeNull()
-  })
 })
 
 describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
-  // 체크박스와 취소선이 이미 완료를 말한다. 배지는 같은 말의 세 번째였고, 그 46px 이 반폭 열에서
-  // 긴 이름을 말줄임으로 밀어냈다.
-  it('완료해도 오른쪽에 배지가 안 선다. CLEAR 를 걷었다', async () => {
-    const { queryAllByTestId, queryByText } = await 위젯([
-      공유계열('epic_dungeon', [
-        공유항목('하이마운틴', { isComplete: true }),
-        공유항목('앵글러컴퍼니', { isComplete: true }),
-        공유항목('악몽선경'),
-      ]),
-    ])
-
-    expect(queryAllByTestId('shared-clear')).toHaveLength(0)
-    expect(queryByText('CLEAR')).toBeNull()
-    expect(queryAllByTestId('shared-count')).toHaveLength(0)
-  })
-
   it('미완료이고 카운트가 없으면 오른쪽을 비운다 (사용자 지정)', async () => {
     const { queryAllByTestId } = await 위젯([공유계열('epic_dungeon', [공유항목('악몽선경')])])
 

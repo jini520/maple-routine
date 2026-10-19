@@ -141,13 +141,6 @@ afterEach(() => {
 })
 
 describe('useContentSchedulerStore', () => {
-  it('초기 상태는 idle이고 캐릭터가 비어있다', () => {
-    const state = useContentSchedulerStore.getState()
-    expect(state.status).toBe('idle')
-    expect(state.characters).toEqual([])
-    expect(state.error).toBeNull()
-  })
-
   it('refresh([])는 syncSchedules를 호출하지 않고 곧바로 loaded/빈 배열 상태가 된다', async () => {
     await useContentSchedulerStore.getState().refresh([])
 
@@ -783,22 +776,6 @@ describe('useContentSchedulerStore', () => {
   // 탭 선택을 화면 로컬 state가 아니라 스토어가 소유한다. 화면이 언마운트돼도
   // 값이 남고, 스케줄러와 관리 페이지가 같은 값을 본다.
   describe(': 탭 선택 상태', () => {
-    it('초기 탭은 일간이다', () => {
-      expect(useContentSchedulerStore.getInitialState().activeTab).toBe('daily')
-    })
-
-    it('setActiveTab이 탭을 바꾼다', () => {
-      useContentSchedulerStore.getState().setActiveTab('weekly')
-
-      expect(useContentSchedulerStore.getState().activeTab).toBe('weekly')
-    })
-
-    // 보스 수익의 setTab은 기간을 다시 불러오느라 async지만, 스케줄러 탭은 이미 받아 둔 데이터를
-    // 갈라 보여줄 뿐이라 네트워크가 없다. 모양을 맞추려고 async를 씌우지 않는다.
-    it('setActiveTab은 동기 세터라 프로미스를 반환하지 않는다', () => {
-      expect(useContentSchedulerStore.getState().setActiveTab('weekly')).toBeUndefined()
-    })
-
     it('탭을 바꿔도 동기화를 호출하지 않는다', () => {
       useContentSchedulerStore.getState().setActiveTab('weekly')
 

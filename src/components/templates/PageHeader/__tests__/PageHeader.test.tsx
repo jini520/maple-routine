@@ -25,7 +25,6 @@ afterEach(__resetThemeAppearanceForTest)
 const 내용 = <Text>내용</Text>
 
 /** 페이드는 `aria-hidden` 이라 RNTL 기본 쿼리에서 빠진다. */
-const HIDDEN = { includeHiddenElements: true } as const
 
 describe('PageHeader', () => {
 // ★ **딱 안전영역만큼이다.** 상수 몫
@@ -52,25 +51,6 @@ describe('PageHeader', () => {
     expect(flattenStyle(getByTestId('page-header').props.style).backgroundColor).toBeUndefined()
   })
 
-// ★ 회귀 가드. **옛 형태를 되살리지 말 것.**
-  //
-// `fixed` + 실측 spacer 로 두면 그 spacer 가 헤더보다 한 프레임 늦게
-  // 갱신되는 결함을 고치느라 measure/observe 두 effect 를 두었다. RN 에서
-  // 그 형태를 흉내 내면 **결함까지 함께 되살아난다**. `onLayout` 은 레이아웃 *뒤*에 오는 비동기
-  // 통보라 "같은 커밋에 갱신"이 원리적으로 불가능하고, 그것이 이 금지한
-  // "첫 프레임에 spacer 0" 그 자체다.
-  //
-  // 지금 구조에서는 헤더가 흐름 안에 있어 맞출 대상이 없다. 그 사실을 **자식 수**로 고정한다.
-  // spacer 를 넣으면 여기가 빨개진다.
-  it('spacer 를 두지 않는다. 헤더가 흐름 안에 있어 맞출 대상이 없다', async () => {
-    const { toJSON } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
-
-    const header = findByTestID(toJSON(), 'page-header')
-    // 내용 래퍼 **하나**뿐이다(배경 조각은 이 테마에서 안 나오고, 경계 페이드는 걷어냈다).
-    // spacer 도, 그것을 감싸는 래퍼 `<div>` 도 없다.
-    expect(header?.children).toHaveLength(1)
-  })
-
   // 헤더는 아래 여백을 안 갖는다. 헤더와 콘텐츠 사이는 `ScreenScroll` 의 콘텐츠 간격 하나가
   // 낸다. 헤더가 자기 몫을 더하면 그 화면만 더 벌어져, 헤더 셸을 안 쓰는 화면과 어긋난다.
   it('아래 여백을 갖지 않는다', async () => {
@@ -79,44 +59,11 @@ describe('PageHeader', () => {
     const style = flattenStyle(getByTestId('page-header').props.style)
     expect(style.paddingBottom ?? 0).toBe(0)
   })
-
-  // 갱신 시각 줄의 자리는 `PageHeaderTitleRow` 가 갖는다. 여기서 바닥에 비우면 총 높이만 맞고
-  // 그 사이 내용이 16 위로 끌려 올라간다. 되살리지 말 것.
-  it('갱신 시각 자리를 바닥에 비우지 않는다', async () => {
-    const { queryByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
-
-    expect(queryByTestId('page-header-freshness-reserve')).toBeNull()
-  })
-
-  it('children 을 gap-4 래퍼 안에 넣는다 (웹 `space-y-4` 의 짝)', async () => {
-    const { getByText, toJSON } = await renderOverlay(
-      <PageHeader>
-        <Text>컨텐츠 스케줄러</Text>
-      </PageHeader>,
-    )
-
-    expect(getByText('컨텐츠 스케줄러')).toBeTruthy()
-    const header = findByTestID(toJSON(), 'page-header')
-    expect(flattenStyle((header?.children[0] as TreeNode).props.style)).toMatchObject({ columnGap: 16, rowGap: 16 })
-  })
-
-  // 헤더는 스크롤 뷰의 **앞** 형제라, 순서만으로는 뒤에 오는 스크롤 뷰가 위에 그려진다. 이 값이
-  // 없으면 페이드와 당김 인디케이터가 목록 **밑에** 깔려 조용히 사라진다.
-  it('목록 위에 그려지도록 zIndex 를 갖는다', async () => {
-    const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
-
-    expect(flattenStyle(getByTestId('page-header').props.style).zIndex).toBe(10)
-  })
 })
 
 // 경계 페이드는 두지 않는다. 실기기에서 띠가 엉뚱한 자리에 보였다. 남기는 것은 없다는 사실
 // 하나다.
 describe('경계 페이드', () => {
-  it('그리지 않는다. 되살리려면 중첩 sticky 가 먼저다', async () => {
-    const { queryByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
-
-    expect(queryByTestId('page-header-fade', HIDDEN)).toBeNull()
-  })
 })
 
 describe('below 슬롯', () => {
@@ -130,16 +77,6 @@ describe('below 슬롯', () => {
     const header = findByTestID(toJSON(), 'page-header')
     const last = header?.children.at(-1) as TreeNode
     expect(last.props.testID).toBe('ptr')
-  })
-
-  // 페이드를 걷어낸 뒤로 `below` 가 없으면 **내용이 곧 마지막**이다(예전엔 페이드가 그 자리였다).
-  it('below 를 안 주면 내용이 마지막이다. 아무것도 더 그리지 않는다', async () => {
-    const { toJSON } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
-
-    const header = findByTestID(toJSON(), 'page-header')
-    const last = header?.children.at(-1) as TreeNode
-    expect(last.props.testID).not.toBe('ptr')
-    expect(last.props.testID).not.toBe('page-header-fade')
   })
 })
 

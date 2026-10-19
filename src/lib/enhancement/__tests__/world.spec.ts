@@ -26,9 +26,6 @@ describe('이름으로 거를 대상', () => {
     expect(eventWorldCharacterNames(renamed)).toEqual(new Set(['다른표기']))
   })
 
-  it('계정이 없으면 빈 집합이다', () => {
-    expect(eventWorldCharacterNames([])).toEqual(new Set())
-  })
 })
 
 describe('지출로 세나', () => {

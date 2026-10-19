@@ -1,68 +1,44 @@
-# 영속 데이터 지도
+# 기기 저장소
 
-이 디렉토리는 메이플 루틴 앱이 기기에 **영속적으로(재실행·재부팅 후에도 남게)** 저장하는 모든 데이터를 정리한다. 백엔드가 없는 구조라 여기 정리된 것이 앱이 가진 데이터의 전부다. **[[ADR-227]] 이 서버를 들였지만 이 문장은 아직 산다** - 결정 4 가 올리는 것을 식별자를 뗀 2차 가공 데이터로 한정했고 계정 백업은 넥슨 OAuth 승인 뒤로 미뤘다. 즉 서버에 가는 것은 여기 있는 데이터의 **사본이 아니라 파생값**이다. 계정 백업이 붙는 시점에 이 문단부터 다시 쓸 것. [[ADR-299]](설계, 넥슨 로그인 뒤 착수)가 그 시점이다. 변하지 않는 과거 값을 계산해 서버에 적고, 로우 데이터와 화면 데이터는 여기 남는다.
+앱이 기기에 저장하는 데이터를 한눈에 정리한 문서다. 앱을 다시 켜거나 기기를 재부팅해도 남는 값을 다룬다. 기록의 원본은 기기에
+있고, 저장소를 어떻게 감싸는지는 [[ADR-004]] 에 있다.
 
-- [preferences.md](./preferences.md) — Key-Value 저장소(UserDefaults / SharedPreferences) 전체 키 목록
-- [sqlite.md](./sqlite.md) — SQLite `boss_profit.db` 스키마
-- [lifecycle.md](./lifecycle.md) — 데이터가 언제 생성·갱신·삭제되는지 (온보딩, 캐시 삭제, 연결 해제, OTA 리로드)
-- [capacitor-storage.md](./capacitor-storage.md) — 캐패시터 시절에 저장된 기기 데이터를 RN 앱이 그대로 읽는 방법
+| 문서 | 다루는 것 |
+|---|---|
+| [preferences.md](./preferences.md) | Key-Value 저장소의 키 전부 |
+| [sqlite.md](./sqlite.md) | SQLite 테이블 · 칸 · 버전 이관 |
+| [lifecycle.md](./lifecycle.md) | 언제 읽고, 쓰고, 지우는가(부팅 · 캐시 데이터 삭제 · 연결 해제 · 리로드) |
+| [capacitor-storage.md](./capacitor-storage.md) | Capacitor 앱이 남긴 저장소를 그대로 여는 규칙 |
 
-## 왜 3개 물리 저장소로 나뉘는가
+## 저장소 셋
 
-| 저장소 | 무엇을 담당 | 형태 |
+| 저장소 | 담는 것 | 형태 |
 |---|---|---|
-| **Preferences** | 대부분의 데이터. 인증, 테마, 동기화 캐시, 사용자 기록 원장 | 평문 Key-Value (iOS UserDefaults / Android SharedPreferences) |
-| **SQLite (`boss_profit.db`)** | 보스 수익 관련 데이터만 | 관계형 테이블 4개 |
-| **네이티브 OS 레벨** | 로컬 알림 예약, OTA 번들 파일 | 앱 코드가 직접 읽지 못하는 OS/라이브러리 소유 저장소 |
+| Preferences | 설정 · 동기화 캐시 · 캐릭터 선택 · 작은 기록(파티 약속 등) | 평문 Key-Value. iOS `UserDefaults`, Android SharedPreferences |
+| SQLite(`boss_profit`) | 보스 수익 · 드롭 · 가계부 · 강화 내역 · MVP 등급 같은 기록 | 테이블 열넷 |
+| OS 와 라이브러리 | 예약된 로컬 알림 · 받은 OTA 번들 | 앱이 직접 읽지 못한다 |
 
-보스 수익만 SQLite인 이유는 "기간별 기록이 누적되고, (ocid, boss, difficulty, period_key) 같은 복합키로 조회·upsert가 잦다"는 특성 때문이다. 나머지는 대부분 "캐릭터 하나당 JSON 덩어리 하나" 형태라 Key-Value로 충분하다.
+단순한 값은 Preferences 에, 날짜 범위로 조회하거나 복합 키로 upsert 하는 기록은 SQLite 에 둔다([[ADR-004]] 결정 3).
 
-## 전체 계층 구조
+## 읽고 쓰는 경로
 
-`features/*` 코드는 로컬 저장소·네이티브 API에 직접 접근하지 않고 반드시 `storage/`·`native/` 어댑터를 거친다([[ADR-003]], [[ADR-005]]). 어댑터 하나가 물리 저장소 하나의 특정 부분만 책임진다.
+`features/*` · `app/*` 는 `storage/*.ts` 의 함수만 부른다. 그 함수들은 `storage/ports.ts` 의 포트를 거쳐
+`storage/adapters/rn-preferences.ts` · `rn-sqlite.ts` 에 닿는다.
 
-```mermaid
-flowchart LR
-    subgraph L1[" features/ · app/ (Zustand) "]
-        UI["화면 상태\n(대부분의 feature가 여기 해당)"]
-    end
-
-    subgraph L2[" storage/ · native/ — ADR-003 어댑터 레이어 "]
-        direction TB
-        PrefAdapters["Preferences 어댑터\napi-key · theme · character-selection\ncharacter-basic-cache · scheduler-cache\nshared-progress-cache"]
-        SqlAdapters["SQLite 어댑터\nboss-profit · boss-party-settings\nboss-profit-period-checks"]
-        NativeAdapters["Native 어댑터\nlive-update · notifications"]
-    end
-
-    subgraph L3[" 실제 저장 매체 "]
-        Pref[("Preferences\nUserDefaults / SharedPreferences\n⚠️ 평문 저장")]
-        Sql[("SQLite: boss_profit.db")]
-        OS[["OS 알림 스케줄러\n(AlarmManager / UNUserNotificationCenter)"]]
-        OTA[["OTA 번들 파일\n(expo-updates 소유)"]]
-    end
-
-    UI <--> PrefAdapters
-    UI <--> SqlAdapters
-    UI <--> NativeAdapters
-    PrefAdapters --> Pref
-    SqlAdapters --> Sql
-    NativeAdapters --> OS
-    NativeAdapters --> OTA
+```
+features/* · app/*  →  storage/*.ts  →  storage/ports.ts  →  storage/adapters/rn-*.ts  →  modules/capacitor-storage · op-sqlite
 ```
 
-이 레이어링 덕분에 (1) feature 코드는 네이티브 API를 몰라도 되고, (2) 물리 저장소를 바꾸더라도 어댑터 내부만 교체하면 된다. **RN 전환이 그것을 실제로 증명했다**([[ADR-128]]) — 저장 매체는 한 바이트도 안 옮기고 어댑터만 갈아끼웠다(`storage/adapters/rn-preferences.ts`·`rn-sqlite.ts`, [capacitor-storage.md](./capacitor-storage.md)).
+## 데이터의 성격
 
-## 데이터 성격별 3분류
-
-| 분류 | 예시 | 특징 |
+| 성격 | 예 | 잃으면 |
 |---|---|---|
-| **인증/설정** | `apiKey`, `selectedAccountId`, `theme`, `trackingMode`, `dropEffect` | 사용자가 명시적으로 설정. "캐시 데이터 삭제"에도 보존됨 |
-| **동기화 캐시** | 스케줄러 상태, 캐릭터 기본 정보, 공유 진행 원장 | Nexon API 응답을 로컬에 미러링. 서버가 진실이고 이건 stale-while-revalidate용 사본(ADR-016) |
-| **로컬 전용 기록** | 보스 수익 기록, 파티 설정, 기간 체크 | Nexon API에 없는, 사용자가 이 앱에서만 남기는 값. 서버 재동기화로 복구 불가 |
+| 사용자가 고른 설정 | `theme` · `trackingMode` · `dropEffect` · 알림 스위치 | 다시 고르면 된다. 대부분 캐시 삭제에서 남긴다 |
+| 동기화 캐시 | `schedulerCache:{ocid}` · `characterBasicCache:{ocid}` · `queryCache` | 다음 조회가 다시 채운다 |
+| 기기에만 있는 기록 | 보스 수익 · 드롭 · 가계부 · 파티 약속 · MVP 등급 이력 | 되살릴 방법이 없다. 넥슨 API 는 최근 기간만 준다 |
 
-## 영속 데이터가 "아닌" 것
+## 여기서 다루지 않는 것
 
-혼동하기 쉬운 인접 개념들을 명확히 구분한다.
-
-- **`src/data/*.json` (게임 레퍼런스 데이터)**: 보스 목록, 결정 가격표, 드랍 테이블 등. 앱 번들에 정적으로 포함되는 **읽기 전용 참조 데이터**이지 사용자별 영속 데이터가 아니다. 사용자 기기마다 값이 달라지지 않고, 앱 업데이트로만 바뀐다. AI가 임의로 값을 추정해 넣지 않고 반드시 사용자 확인을 거친다([[ADR-006]]) — 이 문서의 범위 밖.
-- **Zustand 스토어 자체**: `features/*/store.ts`의 in-memory 상태는 저장소가 아니라 저장소를 읽어 들인 **런타임 캐시**다. 앱을 완전히 종료하면 사라지고, 다음 실행 시 아래 어댑터에서 다시 채워진다(전부는 아님 — [lifecycle.md](./lifecycle.md)의 "부팅 시 하이드레이션" 참고).
+- `src/data/*.json`(보스 표 · 결정석 가격 · 드롭 표). 앱 번들에 들어 있는 읽기 전용 데이터다. 서버에서 받은 사본만
+  `queryCache` 로 저장된다([[ADR-019]] · [[ADR-020]]).
+- zustand 스토어. 저장소를 읽어 메모리에 올린 것이라 앱을 끄면 사라진다.

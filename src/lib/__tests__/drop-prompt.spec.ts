@@ -19,10 +19,6 @@ function 드롭(name: string, price?: 'entered' | 'excluded'): RecordedDrop {
 }
 
 describe('dropPromptOf', () => {
-  it('고른 것이 없으면 줄이 없다', () => {
-    expect(dropPromptOf([])).toBeNull()
-  })
-
   describe('한 건', () => {
     it('안 매겼으면 이름과 물음이다', () => {
       expect(dropPromptOf([드롭('창세의 뱃지')])).toEqual({

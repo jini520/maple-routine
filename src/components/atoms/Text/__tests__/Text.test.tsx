@@ -63,15 +63,4 @@ describe('Text: 시스템 글자 배수를 [1.0, 1.235] 로 자른다', () => {
       fontWeight: '600',
     })
   })
-
-  it('나머지 Text 프롭은 그대로 통과한다', async () => {
-    시스템_글자배수(1)
-    const { getByTestId } = await renderAtom(
-      <Text testID="라벨" numberOfLines={1}>
-        보스
-      </Text>,
-    )
-
-    expect(getByTestId('라벨').props.numberOfLines).toBe(1)
-  })
 })

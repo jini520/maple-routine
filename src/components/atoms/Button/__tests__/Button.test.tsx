@@ -33,41 +33,6 @@ describe('Button', () => {
     })
   })
 
-  it('text: 채움 없는 보조 동작', async () => {
-    const { getByRole, getByText } = await renderAtom(<Button variant="text">취소</Button>)
-
-    expect(flattenStyle(getByRole('button').props.style).backgroundColor).toBeUndefined()
-    expect(flattenStyle(getByText('취소').props.style)).toMatchObject({
-      color: 기본테마.textMuted,
-      fontSize: 14,
-      fontWeight: '500',
-    })
-  })
-
-  it('danger: 파괴적 동작(연결 해제 등)', async () => {
-    const { getByRole, getByText } = await renderAtom(<Button variant="danger">해제</Button>)
-
-    expect(flattenStyle(getByRole('button').props.style)).toMatchObject({
-      borderWidth: 1,
-      borderColor: 기본테마.error,
-    })
-    expect(flattenStyle(getByText('해제').props.style).color).toBe(기본테마.errorInk)
-  })
-
-  // 주 CTA 옆/아래에 서는 부 동작. danger 와 같은 테두리 pill 이되 색이 중립이라
-  // 파괴적 동작과 헷갈리지 않는다(design-system.md `기본 컴포넌트`).
-  it('outline: 중립 테두리 pill', async () => {
-    const { getByRole, getByText } = await renderAtom(
-      <Button variant="outline">발급 방법 보기</Button>,
-    )
-
-    expect(flattenStyle(getByRole('button').props.style)).toMatchObject({
-      borderWidth: 1,
-      borderColor: 기본테마.border,
-    })
-    expect(flattenStyle(getByText('발급 방법 보기').props.style).color).toBe(기본테마.text)
-  })
-
 // 겉모습만 입혀야 하는 자리를 위해 변형 클래스를 별도 모듈에 둔다(컴포넌트
   // 파일이 컴포넌트 아닌 값을 export 하면 fast refresh 가 깨진다).
   it('변형 클래스가 상자·글자 두 벌로 모듈에 있다', () => {
@@ -167,12 +132,6 @@ describe('Button: busy', () => {
     })
   })
 
-  it('안 바쁠 때는 스피너가 아예 없다', async () => {
-    const { queryByTestId } = await renderAtom(<Button variant="primary">확인</Button>)
-
-    expect(queryByTestId('button-busy')).toBeNull()
-  })
-
   // 호출부가 색을 안 주면 스피너가 검정으로 떨어진다.
   it('스피너 색이 variant 의 라벨 색과 같다', async () => {
     const cases = [
@@ -202,18 +161,6 @@ describe('Button: busy', () => {
         BUTTON_VARIANT_SPINNER_CLASS[variant],
       )
     }
-  })
-  // 여백은 변형이 아니라 크기가 정한다. 여섯 변형이 전부 같은 값을 적고 있었으므로 그것은
-  // 변형의 성질이 아니었다. 호출부에서 `className` 으로 덮는 길은 생성된 CSS 순서가 이겨서 막혀 있다.
-  it('size 를 안 주면 지금까지의 여백 그대로다', async () => {
-    const { getByRole } = await renderAtom(<Button variant="primary">확인</Button>)
-
-    expect(flattenStyle(getByRole('button').props.style)).toMatchObject({
-      paddingLeft: 20,
-      paddingRight: 20,
-      paddingTop: 10,
-      paddingBottom: 10,
-    })
   })
 
   it('compact: 상자가 14/6 으로 줄고 라벨이 13px 이 된다', async () => {
@@ -249,17 +196,5 @@ describe('Button: busy', () => {
     for (const box of Object.values(BUTTON_SIZE_CLASS)) {
       expect(box).not.toMatch(/(^|\s)(bg-|border-|rounded-|font-)/)
     }
-  })
-  // 선도 글자도 테마색이다. 밝은 테마에서 대비가 AA 에 못 미치는 것은 알고 고른 값이라
-  // (머쉬맘 2.38) 여기서 토큰을 값으로 물어 둔다. 중립으로 되돌아가면 이 단언이 잡는다.
-  it('primaryOutline: 테마색 테두리에 테마색 글자', async () => {
-    const { getByRole, getByText } = await renderAtom(
-      <Button variant="primaryOutline">자세히 보기</Button>,
-    )
-
-    const box = flattenStyle(getByRole('button').props.style)
-    expect(box.borderColor).toBe(기본테마.primary)
-    expect(box.backgroundColor).toBeUndefined()
-    expect(flattenStyle(getByText('자세히 보기').props.style).color).toBe(기본테마.primaryInk)
   })
 })

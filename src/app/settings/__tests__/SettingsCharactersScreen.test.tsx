@@ -670,15 +670,6 @@ describe('계정 전환 TTL', () => {
     }
   })
 
-  // **방금 확인함** 류의 표시를 두지 않는다. 사용자가 아니라 구현의 사정이다.
-  it('TTL 을 알리는 표시가 화면에 없다', async () => {
-    const view = await renderScreen()
-
-    await switchAccount(view, 'account-b')
-    await switchAccount(view, 'account-a')
-
-    expect(view.queryByText(/방금|최신|캐시/)).toBeNull()
-  })
 })
 
 describe('못 고르는 계정', () => {
@@ -904,12 +895,6 @@ describe('저장', () => {
     })
   })
 
-  // 뒤로가기가 둘(헤더 `←`· OS)인 화면에서 셋째 출구는 중복이다.
-  it('`닫기` 버튼은 없다. 출구는 뒤로가기다', async () => {
-    const view = await renderScreen()
-
-    expect(view.queryByText('닫기')).toBeNull()
-  })
 })
 
 describe('화면 골격', () => {

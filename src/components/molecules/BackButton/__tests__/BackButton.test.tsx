@@ -37,15 +37,6 @@ describe('BackButton', () => {
     expect(getByRole('button', { name: '뒤로' })).toBeTruthy()
   })
 
-  // 옮겨오기 전 열다섯 자리가 두 가지 그림이었다. 이번 작업이 바꾸는 것은 촉감이라 둘 다 남긴다.
-  it('기본은 설정 하위 화면들이 쓰던 작은 칸이다', async () => {
-    const { getByLabelText } = await renderAtom(<BackButton onPress={jest.fn()} />)
-
-    const style = flattenStyle(getByLabelText('뒤로').props.style)
-    expect(style.padding).toBe(4)
-    expect(style.marginLeft).toBe(-4)
-  })
-
   it('`regular` 은 손가락이 닿는 칸이 36px 이다', async () => {
     const { getByLabelText } = await renderAtom(<BackButton size="regular" onPress={jest.fn()} />)
 

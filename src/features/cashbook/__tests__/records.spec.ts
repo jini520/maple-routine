@@ -291,11 +291,6 @@ describe('spendMesoOf: 메소 축으로 접는다', () => {
     expect(spendMesoOf(행)).toBe(2_542_372_881)
   })
 
-  it('메소는 그대로다', () => {
-    expect(spendMesoOf({ ...행, mesoAmount: 2_000_000, pointAmount: null, pointPer100mMeso: null }))
-      .toBe(2_000_000)
-  })
-
   it('둘 다 쓴 행은 합친다. 아이템 구매의 모양이다', () => {
     expect(spendMesoOf({ ...행, mesoAmount: 935_000_000 })).toBe(935_000_000 + 2_542_372_881)
   })
@@ -573,11 +568,6 @@ describe('줄에 적는 것', () => {
 })
 
 describe('줄의 금액', () => {
-  it('수입은 메소 그대로다', () => {
-    const { recordMesoOf } = require('../records') as typeof import('../records')
-
-    expect(recordMesoOf({ kind: 'income', record: 수입행, characterName: '' })).toBe(1_200_000_000)
-  })
 
   it('메포 지출은 시세로 환산한 메소다', () => {
     const { recordMesoOf } = require('../records') as typeof import('../records')

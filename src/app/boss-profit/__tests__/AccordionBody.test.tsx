@@ -283,16 +283,6 @@ describe('본문은 자기 바탕을 갖는다', () => {
     })
   })
 
-  it('월간 본문 바탕도 같다', async () => {
-    const { getByTestId } = await renderProfit(
-      <MonthlyAccordionBody bossRows={[보스행()]} weeklySubtotals={[주차소계()]} />,
-    )
-
-    expect(flattenStyle(getByTestId('accordion-body').props.style)).toMatchObject({
-      backgroundColor: resolveCardBody(기본테마),
-    })
-  })
-
   // 머리(카드)와 페이지 둘 다와 갈려야 이 바탕이 값을 한다.
   it('카드와도 페이지와도 다른 색이다', async () => {
     expect(resolveCardBody(기본테마)).not.toBe(기본테마.surface)

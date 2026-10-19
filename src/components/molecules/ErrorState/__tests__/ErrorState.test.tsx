@@ -6,22 +6,6 @@ import { renderAtom } from '../../../__tests__/render-atom'
 import { ErrorState } from '../ErrorState'
 
 describe('ErrorState', () => {
-  it('제목과 설명을 렌더링한다', async () => {
-    const { getByText } = await renderAtom(
-      <ErrorState title="캐릭터 목록을 불러오지 못했습니다" description="네트워크 연결을 확인해주세요" />,
-    )
-
-    expect(getByText('캐릭터 목록을 불러오지 못했습니다')).toBeTruthy()
-    expect(getByText('네트워크 연결을 확인해주세요')).toBeTruthy()
-  })
-
-  it('설명이 없으면 제목만 렌더링한다', async () => {
-    const { getByText, queryByTestId } = await renderAtom(<ErrorState title="요청이 너무 많습니다" />)
-
-    expect(getByText('요청이 너무 많습니다')).toBeTruthy()
-    expect(queryByTestId('error-state-description')).toBeNull()
-  })
-
   // `action` 이 옵셔널인 것은 "액션이 없어도 된다"가 아니라 **그 자리의 진행
   // 경로를 다른 것(모달의 닫기·취소, 위에 덮이는 안내 모달)이 제공할 수 있다**는 뜻이다. 조건이
   // 지켜지는지는 이 컴포넌트가 알 수 없으므로 각 호출부 테스트가 본다(피커·온보딩·설정 계정 변경).

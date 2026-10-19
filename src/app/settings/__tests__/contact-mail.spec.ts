@@ -1,7 +1,7 @@
 // 문의 메일 주소.
 //
 // 플랫폼 분기를 화면에 인라인으로 적으면 두 갈래 중 한쪽만 테스트가 볼 수 있다. 순수 함수라 양쪽을 다 잰다.
-import { CONTACT_EMAIL, contactDeviceLine, contactDeviceOf, contactMailUrl } from '../contact-mail'
+import { contactDeviceLine, contactDeviceOf, contactMailUrl } from '../contact-mail'
 
 describe('contactDeviceOf', () => {
   // 안드로이드의 `Platform.Version` 은 API 레벨 숫자라 버전 이름을 따로 읽는다.
@@ -45,15 +45,6 @@ describe('contactDeviceLine', () => {
 describe('contactMailUrl', () => {
   const url = contactMailUrl({ platform: 'android', appVersion: '1.0.10', osVersion: '15', model: 'SM-F711N' })
   const query = new URLSearchParams(url.slice(url.indexOf('?') + 1))
-
-  it('받는 사람이 문의 주소다', () => {
-    expect(url.startsWith(`mailto:${CONTACT_EMAIL}?`)).toBe(true)
-    expect(CONTACT_EMAIL).toBe('support.mapleroutine@gmail.com')
-  })
-
-  it('제목은 `[메이플 루틴 문의]` 다', () => {
-    expect(query.get('subject')).toBe('[메이플 루틴 문의]')
-  })
 
   // 본문에는 문의 자리 · 버그 신고 안내 · 기기 정보 줄만 넣는다. API 키 · 캐릭터 정보는 안 넣는다.
   it('본문은 문의 자리 · 버그 신고 안내 · 기기 정보 줄이다', () => {

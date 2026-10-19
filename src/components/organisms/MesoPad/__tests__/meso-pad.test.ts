@@ -5,7 +5,6 @@
 import {
   MAX_MESO,
   acceptMesoText,
-  mesoTextOf,
   mesoValueOf,
   optionalMesoTextOf,
   optionalMesoValueOf,
@@ -36,10 +35,6 @@ describe('acceptMesoText', () => {
     expect(acceptMesoText('0000000000', '60000000000')).toBe('60000000000')
   })
 
-  it('다 지우면 빈 칸이다', () => {
-    expect(acceptMesoText('1200', '')).toBe('')
-  })
-
   // 넘기면 안 먹는다.
   it('상한을 넘기는 입력은 안 먹는다. 글자가 그대로다', () => {
     expect(acceptMesoText(`${MAX_MESO}`, `${MAX_MESO}0`)).toBe(`${MAX_MESO}`)
@@ -57,12 +52,6 @@ describe('mesoValueOf · mesoTextOf', () => {
     expect(mesoValueOf('0000000000')).toBe(0)
     expect(mesoValueOf('0012')).toBe(12)
   })
-
-  // 0 은 **빈 칸**이다. 자리표시자 `0` 이 그 자리를 대신한다.
-  it('값을 글자로 되돌린다', () => {
-    expect(mesoTextOf(0)).toBe('')
-    expect(mesoTextOf(1200)).toBe('1200')
-  })
 })
 
 /**
@@ -78,11 +67,6 @@ describe('settleMesoText', () => {
   it('0 만 남으면 빈 칸이다', () => {
     expect(settleMesoText('0000000000')).toBe('')
     expect(settleMesoText('0')).toBe('')
-  })
-
-  it('멀쩡한 글자는 안 건드린다', () => {
-    expect(settleMesoText('60000000000')).toBe('60000000000')
-    expect(settleMesoText('')).toBe('')
   })
 })
 

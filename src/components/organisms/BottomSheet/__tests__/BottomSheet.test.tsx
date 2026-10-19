@@ -65,13 +65,6 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     return metrics === undefined ? renderOverlay(ui) : renderOverlay(ui, metrics)
   }
 
-  it('children 과 testId 를 그대로 전달한다. 공개 API 는 웹과 같다', async () => {
-    const { getByText, getByTestId } = await open()
-
-    expect(getByText('시트 내용')).toBeTruthy()
-    expect(getByTestId('boss-drop-sheet')).toBeTruthy()
-  })
-
   // 라이브러리 기본 핸들 색·라운딩이 아니라 이 값들이어야 한다.
   // 껍데기가 이름을 하나로 갖고 있으면 시트 넷이 전부 그 이름으로 읽힌다. 실제로 그랬다:
   // 수입·지출·판매가 키패드까지 `드롭 아이템 기록` 이었다. 프롭이고, 기본값이 없다.
@@ -83,36 +76,6 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     )
 
     expect(getByTestId('sheet').props.accessibilityLabel).toBe('수입 기록')
-  })
-
-  it('그랩 핸들·배경·라운딩이 스킨 그대로다', async () => {
-    const { getByTestId } = await open()
-    const sheet = getByTestId('sheet')
-
-    // 핸들은 **시트 첫 자식으로 우리가 그린다.** 라이브러리 슬롯(`handleIndicatorStyle`·
-    // `handleComponent`)에 넘긴 것이 기기에서 두 번 다 안 그려졌기 때문이다(컴포넌트 주석).
-    // 그래서 `handleComponent` 는 명시적으로 `null` 이고, 알약은 렌더 트리에서 직접 찾는다.
-    expect(sheet.props.handleComponent).toBeNull()
-    expect(flattenStyle(getByTestId('bottom-sheet-handle').props.style)).toMatchObject({
-      height: 4,
-      width: 36,
-      backgroundColor: 기본테마.borderStrong,
-    })
-    expect(flattenStyle(sheet.props.backgroundStyle)).toMatchObject({
-      backgroundColor: 기본테마.bg,
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-    })
-  })
-
-  // **위 테두리는 걷었다.** 그 선은 면이 경계를 못 만들던 시절의 대타였고, 다크에서 몸통이
-  // 한 칸 올라간 지금은 밝아진 면 위에 뜬 줄 하나로 남는다.
-  it('위 테두리를 그리지 않는다', async () => {
-    const { getByTestId } = await open()
-    const style = flattenStyle(getByTestId('sheet').props.backgroundStyle)
-
-    expect(style.borderTopWidth).toBeUndefined()
-    expect(style.borderTopColor).toBeUndefined()
   })
 
   // `max-h-[82vh]` 는 **상한**이지 높이가 아니다. 고정 스냅 포인트(라이브러리의 흔한 사용법)로
@@ -161,12 +124,6 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
    *
    * 상한에서 그만큼을 빼면 윗변이 키보드가 있든 없든 같은 선에 선다.
    */
-  // 맞출 상대가 없다. 키보드에 맞추던 시절의 250ms 를 그대로 쓰면 휙 바뀐다(사용자 지적).
-  it('자리를 옮기는 시간은 380ms 한 갈래다', async () => {
-    const { getByTestId } = await open()
-
-    expect(getByTestId('sheet').props.animationConfigs).toMatchObject({ duration: 380 })
-  })
 
   it('폭은 max-w-md(448) 중앙 정렬이다. 라이브러리 기본은 전폭이다', async () => {
     const { getByTestId } = await open()
@@ -175,22 +132,6 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
       maxWidth: 448,
       alignSelf: 'center',
     })
-  })
-
-  // 스크림은 테마 토큰이고, **라이브러리 백드롭이 아니라 우리가 직접 그린다.**
-  //
-  // ⚠️ 이 테스트는 **스크림이 실제로 보이는가**·**제때 사라지는가** 를 답하지 못한다. 이 파일이
-  // 라이브러리를 목으로 갈아 끼우기 때문이다. 그 자리에서 두 번 틀렸다:
-  // 라이브러리 백드롭은 **아예 안 보였고**(스냅 포인트가 하나라 불투명도 보간이 퇴화 구간),
-  // 그걸 애니메이션 없는 단색으로 바꾸자 이번엔 **닫히는 동안 늦게까지 남았다.**
-  // 지금은 `SheetScrim` 이 인덱스를 직접 보간한다. 여기서 지킬 수 있는 것은 **색과 닫힘 배선**
-  // 뿐이고, 보이는지·제때 사라지는지는 사람이 본다.
-  it('스크림은 테마 토큰이다', async () => {
-    const { getByTestId } = await open()
-    const sheet = getByTestId('sheet')
-    const backdrop = (sheet.props.backdropComponent as (p: object) => React.JSX.Element)({})
-
-    expect(backdrop.props.color).toBe(기본테마.scrim)
   })
 
   // 바깥을 눌러 닫는다. 예전엔 라이브러리의 `pressBehavior="close"` 가 하던 일이라

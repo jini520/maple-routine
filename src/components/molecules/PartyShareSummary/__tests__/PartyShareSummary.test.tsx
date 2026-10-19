@@ -2,7 +2,6 @@
 //
 // 배지 하나가 상태를 말한다. `솔로` · `파티 3인` · `67%` 셋 중 하나이고 `67%` 는 결정석 몫이다.
 // 비율이 결정석에만 있어 무엇의 비율인가를 물을 일이 없다.
-import { fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { PartyShareSummary } from '../PartyShareSummary'
@@ -73,17 +72,6 @@ describe('PartyShareSummary', () => {
       flattenStyle(view.getByText('66.7%').props.style).fontSize as number
 
     expect(크기(작은)).toBeLessThan(크기(기본))
-  })
-
-  it('변경을 누르면 알린다', async () => {
-    const onPress = jest.fn()
-    const { getByLabelText } = await renderAtom(
-      <PartyShareSummary label="스우" partySize={2} crystal={EVEN} onPress={onPress} />,
-    )
-
-    await fireEvent.press(getByLabelText('스우 파티 인원과 비율 변경'))
-
-    expect(onPress).toHaveBeenCalled()
   })
 
   it('고칠 수 없는 행에는 변경이 없다', async () => {

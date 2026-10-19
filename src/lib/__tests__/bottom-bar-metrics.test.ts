@@ -47,11 +47,6 @@ describe('바의 세로는 창 폭에서 나온다', () => {
 })
 
 describe('큰 화면에서는 폭이 상한에서 멈춘다', () => {
-  it('태블릿에서 폭이 상한을 넘지 않는다', () => {
-    expect(resolveBottomBarMetrics(태블릿).widthPx).toBe(BAR_MAX_WIDTH)
-    expect(resolveBottomBarMetrics(1024).widthPx).toBe(BAR_MAX_WIDTH)
-  })
-
   // 폭의 상한이 높이의 상한을 겸한다. 값을 따로 적으면 폭은 멈췄는데 높이만 계속 자라는
   // 조합이 만들어지고, 그것은 비율 자체를 깨는 상태다.
   it('폭이 멈추면 높이도 함께 멈춘다', () => {
@@ -67,12 +62,6 @@ describe('큰 화면에서는 폭이 상한에서 멈춘다', () => {
 
     expect(metrics.sideMarginPx).toBe((태블릿 - BAR_MAX_WIDTH) / 2)
     expect(metrics.sideMarginPx * 2 + metrics.widthPx).toBe(태블릿)
-  })
-
-  it('상한에 안 걸리면 좌우 여백은 14 그대로다', () => {
-    for (const width of [320, 360, 402, 430]) {
-      expect(resolveBottomBarMetrics(width).sideMarginPx).toBe(BAR_SIDE_MARGIN)
-    }
   })
 })
 

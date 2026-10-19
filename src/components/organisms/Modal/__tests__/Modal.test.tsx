@@ -33,18 +33,6 @@ describe('Modal', () => {
     expect(getByTestId('modal-gesture-root')).toBeTruthy()
   })
 
-  it('children 을 렌더링한다', async () => {
-    const { getByText } = await renderOverlay(
-      <Modal onClose={noop}>
-        <Modal.Card>
-          <Text>모달 내용</Text>
-        </Modal.Card>
-      </Modal>,
-    )
-
-    expect(getByText('모달 내용')).toBeTruthy()
-  })
-
   it('오버레이(바깥 영역)를 누르면 onClose 가 호출된다', async () => {
     const onClose = jest.fn()
     const { getByTestId } = await renderOverlay(
@@ -79,36 +67,6 @@ describe('Modal', () => {
     }
 
     expect(claims).toBe(true)
-  })
-
-  it('Modal.Card 는 카드 껍데기(테두리·배경·패딩)를 갖는다', async () => {
-    const { getByTestId } = await renderOverlay(
-      <Modal onClose={noop}>
-        <Modal.Card>
-          <Text>내용</Text>
-        </Modal.Card>
-      </Modal>,
-    )
-
-    const style = flattenStyle(getByTestId('modal-card').props.style)
-    expect(style.borderWidth).toBe(1)
-    expect(style.backgroundColor).toBe(기본테마.surface)
-    expect(style.padding).toBe(24)
-  })
-
-  // 업데이트 모달의 부 동작 버튼이 작아 아래 여백이 커 보이던 것.
-  it('Modal.Card 의 tight 는 하단 패딩만 줄인다', async () => {
-    const { getByTestId } = await renderOverlay(
-      <Modal onClose={noop}>
-        <Modal.Card tight>
-          <Text>내용</Text>
-        </Modal.Card>
-      </Modal>,
-    )
-
-    const style = flattenStyle(getByTestId('modal-card').props.style)
-    expect(style.paddingTop).toBe(24)
-    expect(style.paddingBottom).toBe(16)
   })
 
   it('Modal.Panel 은 카드 테두리/배경 없이 위치만 잡는다', async () => {

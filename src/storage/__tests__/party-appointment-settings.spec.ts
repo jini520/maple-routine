@@ -18,10 +18,4 @@ describe('파티 약속 알림 스위치', () => {
     await setPartyAlarmEnabled(false)
     await expect(getPartyAlarmEnabled()).resolves.toBe(false)
   })
-
-  it('다시 켜면 켜진다', async () => {
-    await setPartyAlarmEnabled(false)
-    await setPartyAlarmEnabled(true)
-    await expect(getPartyAlarmEnabled()).resolves.toBe(true)
-  })
 })

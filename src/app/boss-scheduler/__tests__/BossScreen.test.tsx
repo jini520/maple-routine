@@ -400,17 +400,6 @@ describe('BossScreen: 목록', () => {
     expect(screen.getByTestId('screen-scroll')).toBeTruthy()
   })
 
-  //  이 "캐릭터 관리"를 걷었고 이 남은 "보스 관리"마저 걷는다
-  // (그쪽은 하단바의 하위 탭이 됐다). 목록이 있는 화면에서 제목 줄에 남는 것은 상태와 새로고침뿐이다.
-  it('헤더에 "캐릭터 관리"도 "보스 관리"도 없다', async () => {
-    withBosses()
-
-    await renderScreen()
-
-    expect(screen.queryByText('캐릭터 관리')).toBeNull()
-    expect(screen.queryByText('보스 관리')).toBeNull()
-  })
-
   // 스토어는 레벨 내림차순으로 준다. 그 위에 사용자가
   // 정한 저장 배열 순서를 얹는다. 그래서 **입력 순서와 다른 순서**로 주는 것이 이 케이스의 요점이다.
   it('레일 순서는 스토어 순서가 아니라 trackedOcids 저장 순서다', async () => {
@@ -558,15 +547,6 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
 describe('BossScreen: 재조회', () => {
   const loaded = (status: Store['status'] = 'loaded'): Store =>
     mockStore({ status, trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
-
-  // **문이 하나다.** 헤더 버튼을 걷고 당김만 남겼다.
-  it('헤더에 새로고침 버튼이 없다', async () => {
-    loaded()
-    await renderScreen()
-
-    expect(screen.queryByLabelText('새로고침')).toBeNull()
-    expect(refreshControl()).toBeDefined()
-  })
 
   it('당겨서 새로고침이 추적 목록으로 재조회한다', async () => {
     const store = loaded()
@@ -951,16 +931,6 @@ describe('BossScreen: 빈 상태 문구', () => {
     await renderScreen()
 
     expect(screen.queryByText('등록된 보스가 없습니다')).toBeNull()
-  })
-
-  // 헤더에 있던 보스 관리 진입점은 폐기됐다. 목록이 있는 화면에는
-  // 관리로 가는 자리가 **하나도 없다**(하단바가 진다). 그 부재를 여기서 못 박는다.
-  it('목록이 있으면 "보스 관리"로 가는 자리가 화면에 없다', async () => {
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character({ weeklyBosses: [boss()] })] })
-
-    await renderScreen()
-
-    expect(screen.queryByText('보스 관리')).toBeNull()
   })
 })
 

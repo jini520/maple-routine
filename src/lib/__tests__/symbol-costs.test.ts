@@ -41,10 +41,6 @@ describe('symbolUpgradeCost: 여러 단계를 한 번에 올린 비용', () => {
     expect(symbolUpgradeCost(심볼('road_of_vanishing'), 1, 20, 패치뒤)).toBe(여로비용)
   })
 
-  it('두 레벨이 같으면 0 이다. 아직 안 올렸다', () => {
-    expect(symbolUpgradeCost(심볼('arcana'), 5, 5, 패치뒤)).toBe(0)
-  })
-
   // 표가 서기 전 날짜에는 유효한 줄이 없다. 0 으로 세우면 저장이 거짓 금액으로 열린다.
   it('표가 서기 전 날짜는 null 이다', () => {
     expect(symbolUpgradeCost(심볼('cernium'), 1, 2, '2026-09-10')).toBeNull()

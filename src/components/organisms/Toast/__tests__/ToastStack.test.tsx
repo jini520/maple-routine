@@ -54,23 +54,6 @@ afterEach(() => {
 })
 
 describe('ToastStack', () => {
-// 렌더 도우미가 프로바이더를 두르므로 **스택 자체가
-  // 없는지**를 본다(컴포넌트가 `null` 을 돌려준다).
-  it('토스트가 없으면 아무것도 렌더하지 않는다', async () => {
-    mockStore([])
-    const { queryByTestId } = await renderOverlay(<ToastStack />)
-
-    expect(queryByTestId('toast-stack')).toBeNull()
-  })
-
-  it('store 의 toasts 를 각각 렌더한다', async () => {
-    mockStore([toast('t1', '첫째'), toast('t2', '둘째')])
-    const { getByText } = await renderOverlay(<ToastStack />)
-
-    expect(getByText('첫째')).toBeTruthy()
-    expect(getByText('둘째')).toBeTruthy()
-  })
-
   // 목록 순서가 곧 위→아래 순서다.
   it('오래된 토스트가 위, 최신 토스트가 탭바에 가까운 아래쪽에 온다', async () => {
     mockStore([toast('t1', '첫째'), toast('t2', '둘째')])

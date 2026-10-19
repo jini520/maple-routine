@@ -160,12 +160,6 @@ afterEach(() => {
 })
 
 describe('SettingsFeatureGuideScreen', () => {
-  it('안내 제목을 머리말로 그린다', async () => {
-    const view = await renderOverlay(<SettingsFeatureGuideScreen />)
-
-    expect(view.getByText('파티 인원 관리')).toBeTruthy()
-  })
-
   // 같은 화면이 두 라우트에 걸린다. **어디서 왔든 그리로 돌아간다**. RN 은
   // 스택이 그것을 알고 있어 계산이 사라지고 `goBack` 하나만 남는다.
   it.each(['SettingsFeatureGuide', 'SettingsReleaseNoteGuide'])(

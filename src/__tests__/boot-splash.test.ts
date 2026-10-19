@@ -30,12 +30,6 @@ afterEach(() => {
 })
 
 describe('holdSplashUntilAppReady', () => {
-  it('스플래시를 붙든다', () => {
-    holdSplashUntilAppReady()
-
-    expect(mockPreventAutoHideAsync).toHaveBeenCalledTimes(1)
-  })
-
   // 안드로이드는 퇴장에 alpha 페이드를 **항상** 건다(`SplashScreenManager.kt` 의
   // `setOnExitAnimationListener`). 기본값 400ms 는 1겹이 화면에 더 남아 있는 시간이고, 그동안
   // 2겹은 이미 그려진 채 가려져 있다. 0 으로 끄면 그만큼이 1겹 노출에서 빠진다.

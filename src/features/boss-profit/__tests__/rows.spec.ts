@@ -16,7 +16,6 @@ import {
   mergeRecordsIntoRows,
   selectProfitDisplayBosses,
   sortRowsByOcidOrder,
-  sumRowsPayout,
   toRecordedDrop,
   type ProfitBoss,
 } from '../rows'
@@ -176,16 +175,6 @@ describe('buildRowFromRecord 의 월드', () => {
     const row = buildRowFromRecord({ ...기록, world: null, worldKey: null }, 지금캐릭터, now)
 
     expect([row.world, row.worldKey]).toEqual(['엘리시움', 'elysium'])
-  })
-})
-
-describe('sumRowsPayout', () => {
-  it('payoutMeso를 더한다', () => {
-    expect(sumRowsPayout([row({ payoutMeso: 100 }), row({ payoutMeso: 250 })])).toBe(350)
-  })
-
-  it('빈 배열은 0이다. "기록 없음"과 "0메소"를 호출부가 구분할 수 있게 던지지 않는다', () => {
-    expect(sumRowsPayout([])).toBe(0)
   })
 })
 

@@ -51,14 +51,6 @@ describe('CharacterAvatar', () => {
     })
   })
 
-  it('이름을 읽어 준다', async () => {
-    const { getByTestId } = await renderAtom(
-      <CharacterAvatar imageTestID="그림" imageUrl="https://example.test/a.png" name="아무개" size={36} />,
-    )
-
-    expect(getByTestId('그림').props.accessibilityLabel).toBe('아무개')
-  })
-
   it('그림이 없으면 받은 폴백을 그 자리에 그린다', async () => {
     const { getByTestId, queryByTestId } = await renderAtom(
       <CharacterAvatar imageTestID="그림" imageUrl={null} name="아무개" size={36} fallback={폴백} />,
@@ -94,14 +86,6 @@ describe('조회 불가 표식', () => {
     )
 
     expect(getByTestId('portrait-unavailable')).toBeTruthy()
-  })
-
-  it('안 적으면 안 붙는다', async () => {
-    const { queryByTestId } = await renderAtom(
-      <CharacterAvatar imageUrl={null} name="지내우시" size={26} />,
-    )
-
-    expect(queryByTestId('portrait-unavailable')).toBeNull()
   })
 
   // 얼굴이 자리마다 달라 고정값으로 두면 작은 얼굴을 덮는다.

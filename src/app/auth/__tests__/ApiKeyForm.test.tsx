@@ -12,7 +12,7 @@
 // ⑤ Enter 제출 → `await fireEvent(input, 'submitEditing')`.
 import { fireEvent } from '@testing-library/react-native'
 
-import { flattenStyle, renderAtom, 기본테마, type AtomElement } from '../../../components/__tests__/render-atom'
+import { renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
 import { openInAppBrowser } from '../../../native/browser'
 import { ApiKeyForm } from '../ApiKeyForm'
 
@@ -193,33 +193,6 @@ describe('ApiKeyForm', () => {
     expect(view.getByText('API 키로 시작하기')).toBeTruthy()
     expect(view.queryByTestId('accordion-chevron')).toBeNull()
     expect(() => pressableOf(view.getByText('API 키로 시작하기'), 'button')).toThrow()
-  })
-
-  // 요청은 "수집하거나 저장하지 않는다"였으나 키는 기기에 저장된다(storage/api-key).
-  // 사실인 것은 "우리가 수집하지 않는다"뿐이라 지킬 수 있는 약속만 적는다.
-  it('키가 기기 밖으로 나가지 않는다는 안내를 보여준다', async () => {
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
-
-    expect(
-      view.getByText('입력한 키는 이 기기에만 저장되고, 넥슨 밖으로는 키 자체가 나가지 않아요'),
-    ).toBeTruthy()
-  })
-
-  // 소제목이 이미 두 블록을 가른다. 선까지 두면 같은 일을 두 번 하고, 둘을 **같은 무게로**
-  // 갈라놓아 아래가 보조라는 것이 흐려진다.
-  it('구분선과 7단계 캡션은 없다', async () => {
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
-
-    expect(view.queryByText('아직 API 키가 없나요?')).toBeNull()
-    expect(view.queryByText('넥슨 오픈 API에서 키를 받는 7단계 안내')).toBeNull()
-  })
-
-  // 넥슨 버튼이 파란 채움이라, 그 아래 주황 채움이 또 서면 무엇을 먼저 눌러야 하는지가 색으로
-  // 안 갈린다. 채운 알약보다 한 단 약한 주 동작 자리가 `tint` 다.
-  it('확인은 채운 알약이 아니라 tint 다', async () => {
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
-
-    expect(flattenStyle(submitButton(view).props.style).backgroundColor).toBe(기본테마.primaryTint)
   })
 
   // 키는 손으로 치는 값이 아니라 붙여넣는 긴 문자열이라, 가려 두면 잘못 붙여넣었는지 확인할

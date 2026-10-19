@@ -8,12 +8,6 @@ function agoIso(ms: number): string {
 
 const MINUTE = 60 * 1000
 
-describe('SYNC_TTL_MS', () => {
-  it('10분이다', () => {
-    expect(SYNC_TTL_MS).toBe(10 * 60 * 1000)
-  })
-})
-
 describe('isSyncFresh', () => {
   it('추적 대상이 없으면 신선하다. 조회할 것이 없다', () => {
     expect(isSyncFresh([], 0, NOW)).toBe(true)

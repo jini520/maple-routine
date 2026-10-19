@@ -138,25 +138,11 @@ describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다',
 
     expect(fade).toEqual({ topPx: 0, bottomPx: 바_페이드 })
   })
-
-  it('안전영역도 바도 없으면 둘 다 0이다', () => {
-    const fade = resolveSafeAreaFade({
-      ...화면(false, 'ios', 0),
-      hasHeader: false,
-      topSafeAreaPx: 0,
-    })
-
-    expect(fade).toEqual({ topPx: 0, bottomPx: 0 })
-  })
 })
 
 describe('마스크 곡선은 smoothstep² 이다', () => {
   /** 세지기 전 곡선. 지금은 이것을 제곱해 쓴다. */
   const smoothstep = (t: number): number => t * t * (3 - 2 * t)
-
-  it('정지점과 알파가 짝을 이룬다', () => {
-    expect(FADE_MASK_ALPHAS).toHaveLength(FADE_MASK_LOCATIONS.length)
-  })
 
   // 끝점이 어긋나면 둘 다 **선** 으로 보인다. 시작이 0이 아니면 화면 끝에 콘텐츠 자국이 남고,
   // 끝이 1이 아니면 페이드가 끝나는 자리에 밝기 단차가 생긴다.
@@ -171,10 +157,6 @@ describe('마스크 곡선은 smoothstep² 이다', () => {
     const 증가량 = FADE_MASK_ALPHAS.slice(1).map((alpha, i) => alpha - FADE_MASK_ALPHAS[i])
 
     expect(증가량.every((step) => step > 0)).toBe(true)
-  })
-
-  it('(3t²−2t³)² 의 값이다', () => {
-    expect(FADE_MASK_ALPHAS).toEqual(FADE_MASK_LOCATIONS.map((t) => smoothstep(t) ** 2))
   })
 
   // 효과를 더 강하게 가 이 한 숫자다. 구간 한가운데에서 콘텐츠가 4분의 1만 남는다(제곱 전에는

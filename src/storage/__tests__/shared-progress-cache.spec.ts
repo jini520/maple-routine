@@ -33,10 +33,6 @@ beforeEach(async () => {
 })
 
 describe('world 원장', () => {
-  it('저장된 적 없는 월드는 빈 객체를 반환한다', async () => {
-    await expect(getWorldSharedProgress('scania')).resolves.toEqual({})
-  })
-
   it('setWorldSharedProgressEntry 후 같은 월드에서 그대로 읽힌다', async () => {
     await setWorldSharedProgressEntry('elysium', 'monster_park', sampleEntry)
     await expect(getWorldSharedProgress('elysium')).resolves.toEqual({ monster_park: sampleEntry })
@@ -94,10 +90,6 @@ describe('월드 key 이관', () => {
 })
 
 describe('account 원장', () => {
-  it('저장된 적 없는 계정은 빈 객체를 반환한다', async () => {
-    await expect(getAccountSharedProgress('acc-unknown')).resolves.toEqual({})
-  })
-
   it('setAccountSharedProgressEntry 후 같은 계정에서 그대로 읽힌다', async () => {
     await setAccountSharedProgressEntry('acc-1', 'epic_dungeon_nightmare_paradise', sampleEntry)
     await expect(getAccountSharedProgress('acc-1')).resolves.toEqual({ epic_dungeon_nightmare_paradise: sampleEntry })

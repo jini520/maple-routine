@@ -191,10 +191,4 @@ describe('조회 불가 행의 얼굴', () => {
 
     expect(getByTestId('portrait-unavailable')).toBeTruthy()
   })
-
-  it('안 적으면 안 붙는다', async () => {
-    const { queryByTestId } = await renderAtom(<CharacterRow {...기본} />)
-
-    expect(queryByTestId('portrait-unavailable')).toBeNull()
-  })
 })

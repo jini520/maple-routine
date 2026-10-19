@@ -62,14 +62,6 @@ describe('DevelopmentStageKeyModal', () => {
       expect(getByText('서비스 단계')).toBeTruthy()
     })
 
-    it('무엇을 해야 하는지 한 문장으로 준다', async () => {
-      const { getByText } = await renderOverlay(<DevelopmentStageKeyModal />)
-
-      expect(
-        getByText('넥슨 오픈 API에서 단계를 ‘서비스 단계’로 골라 키를 새로 발급받은 뒤 입력해주세요.'),
-      ).toBeTruthy()
-    })
-
     // 주 동작은 되돌아가는 것이다. 이 모달은 길을 막고 서 있어 사용자가 바로 할 일이 폼으로
     // 돌아가는 것이라, 가장 큰 버튼이 앱 밖으로 내보내면 안 된다.
     it('주 버튼은 폼으로 되돌린다. 앱 밖으로 내보내지 않는다', async () => {

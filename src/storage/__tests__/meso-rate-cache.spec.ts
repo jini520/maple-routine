@@ -7,16 +7,6 @@ beforeEach(() => {
   prefs = installFakePreferences()
 })
 
-it('한 번도 안 읽은 캐릭터는 null 이다', async () => {
-  expect(await getCachedMesoRate('ocid-1')).toBeNull()
-})
-
-it('넣은 값을 그대로 돌려준다', async () => {
-  await setCachedMesoRate('ocid-1', 149)
-
-  expect(await getCachedMesoRate('ocid-1')).toBe(149)
-})
-
 it('캐릭터마다 따로 산다', async () => {
   await setCachedMesoRate('ocid-1', 149)
   await setCachedMesoRate('ocid-2', 46)

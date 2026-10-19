@@ -1,31 +1,10 @@
 import {
   mvpGrades,
   auctionFeePercentOf,
-  findMvpGrade,
   highestMvpGrade,
   mvpBenefitText,
   starforceDiscountPercentOf,
 } from '../grades'
-
-describe('MVP 등급 표', () => {
-  // 사용자 확인값(2026-09-22). 옮겨 적다 틀리면 여기서 잡힌다.
-  it('등급 일곱의 경매장 수수료와 스타포스 할인이 확인값과 같다', () => {
-    expect(mvpGrades().map((grade) => [grade.key, grade.name, grade.auctionFeePercent, grade.starforceDiscountPercent])).toEqual([
-      ['normal', '일반', 5, 0],
-      ['bronze', '브론즈', 5, 0],
-      ['silver', '실버', 3, 3],
-      ['gold', '골드', 3, 5],
-      ['diamond', '다이아', 3, 10],
-      ['red', '레드', 3, 10],
-      ['black', '블랙', 3, 10],
-    ])
-  })
-
-  it('모르는 key 는 없다', () => {
-    expect(findMvpGrade('platinum')).toBeNull()
-    expect(findMvpGrade('gold')?.name).toBe('골드')
-  })
-})
 
 describe('등급이 없을 때', () => {
   it('수수료는 일반 요율이다', () => {

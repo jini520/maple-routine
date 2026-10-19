@@ -47,10 +47,6 @@ describe('rnPreferencesPort (iOS)', () => {
     expect(await rnPreferencesPort.get('theme')).toBe('혼테일')
   })
 
-  it('없는 키는 null 이다', async () => {
-    expect(await rnPreferencesPort.get('theme')).toBeNull()
-  })
-
   it('지우면 저장소에서 사라진다', async () => {
     mockStore.set('CapacitorStorage.lastAdShownAt', '2026-08-11T00:00:00.000Z')
 

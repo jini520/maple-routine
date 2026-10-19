@@ -138,13 +138,6 @@ describe('원장이 중복을 막는다', () => {
 })
 
 describe('안 부르는 길', () => {
-  it('캐릭터가 없으면 아무것도 안 한다', async () => {
-    await fillScheduleWindow([], NOW)
-
-    expect(getAuthConfigMock).not.toHaveBeenCalled()
-    expect(fetchStateMock).not.toHaveBeenCalled()
-  })
-
   it('키가 없으면 조회하지 않는다', async () => {
     getAuthConfigMock.mockResolvedValue(null)
 

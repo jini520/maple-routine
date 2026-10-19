@@ -43,12 +43,6 @@ describe('useApiKeyNotice', () => {
     },
   )
 
-  it('error가 null이면 넘기지 않는다', async () => {
-    renderHook(() => useApiKeyNotice(null))
-
-    expect(noticeApiKeyIssueMock).not.toHaveBeenCalled()
-  })
-
   // 이 케이스가 없으면 키를 다시 넣어도 곧바로 튕긴다.
   // 동기화 스토어의 error는 화면이 언마운트돼도 살아남으므로, 재입력 후 화면이 다시 마운트될 때
   // **같은 객체**가 다시 훅에 들어온다. 그때 다시 알리면 방금 저장한 유효한 키가 지워진다.

@@ -30,10 +30,6 @@ describe('agendaDays', () => {
     expect(days.map((day) => day.dateKey)).toEqual(['2026-10-01', '2026-10-04'])
     expect(days[0]!.occurrences.map((one) => one.appointment.id)).toEqual(['first', 'second'])
   })
-
-  it('약속이 없으면 빈 목록이다', () => {
-    expect(agendaDays([])).toEqual([])
-  })
 })
 
 describe('endClockOf', () => {

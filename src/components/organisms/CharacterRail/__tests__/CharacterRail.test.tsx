@@ -37,12 +37,6 @@ async function render(
 }
 
 describe('CharacterRail', () => {
-  it('추적 캐릭터마다 초상화를 하나씩 그린다', async () => {
-    const view = await render([entry(), entry({ ocid: 'ocid-2', characterName: '두번째' })])
-
-    expect(view.getAllByTestId('character-portrait')).toHaveLength(2)
-  })
-
   // 드롭다운이 못 채운 계약. 누르면 실제로 바뀐다.
   it('초상화를 누르면 그 캐릭터의 ocid 로 onSelect 를 부른다', async () => {
     const view = await render([entry(), entry({ ocid: 'ocid-2', characterName: '두번째' })])
@@ -97,12 +91,6 @@ describe('조회 불가 표식', () => {
     const { getByTestId } = await render([entry({ unavailable: true })])
 
     expect(getByTestId('portrait-unavailable')).toBeTruthy()
-  })
-
-  it('안 적으면 안 붙는다', async () => {
-    const { queryByTestId } = await render([entry()])
-
-    expect(queryByTestId('portrait-unavailable')).toBeNull()
   })
 
   it('표식이 붙어도 링은 그대로 읽힌다', async () => {

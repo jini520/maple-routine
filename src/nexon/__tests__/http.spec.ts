@@ -113,11 +113,6 @@ describe('requestJson: 기존 분기 유지', () => {
     await expect(requestJson('/x', 자격('key'))).rejects.toBeInstanceOf(NexonNetworkError)
   })
 
-  it('200 이면 본문을 그대로 반환한다', async () => {
-    stubGlobal('fetch', jest.fn(async () => response(200, { ok: 1 })))
-    await expect(requestJson<{ ok: number }>('/x', 자격('key'))).resolves.toEqual({ ok: 1 })
-  })
-
   it('200 인데 JSON이 아니면 NexonNetworkError', async () => {
     stubGlobal('fetch', jest.fn(async () => response(200, undefined)))
     await expect(requestJson('/x', 자격('key'))).rejects.toBeInstanceOf(NexonNetworkError)

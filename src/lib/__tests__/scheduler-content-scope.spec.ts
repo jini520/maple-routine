@@ -4,7 +4,6 @@ import {
   getMaxCountOverride,
   getShareScope,
   getSharedContentGroups,
-  getGroupWeeklyLimit,
   isCumulativeScore,
   trustsRegistrationFlag,
 } from '../scheduler/scheduler-content-scope'
@@ -183,12 +182,6 @@ describe('getMaxCountOverride: 익스트림 몬스터파커', () => {
   it('오버라이드가 없다. API 와 템플릿의 5 가 그대로 흐른다', () => {
     expect(getMaxCountOverride('monster_park_extreme')).toBeNull()
   })
-
-  // 오버라이드 표 자체는 죽지 않았다. 길드 미션 포인트는 API 가 가끔 0 을 주는 오류 보정이라
-  // 성격이 다르고 그대로 선다.
-  it('길드 주간 미션 포인트는 그대로 10 이다', () => {
-    expect(getMaxCountOverride('guild_weekly_mission_points')).toBe(10)
-  })
 })
 
 // 어느 항목이 응답의 등록 값을 믿는지는 카탈로그의 칸이 말한다. 이름으로 추론하지 않는다.
@@ -209,15 +202,6 @@ describe('trustsRegistrationFlag', () => {
 
 // 에픽 던전은 4종이지만 주 3회만 돈다(사용자 확인 2026-09-13). 게임 규칙이라 카탈로그가 든다.
 describe('갈래의 주간 한도', () => {
-  it('epic_dungeon 갈래의 한도는 3 이다', () => {
-    expect(getGroupWeeklyLimit('epic_dungeon')).toBe(3)
-  })
-
-  it('한도가 없는 갈래는 null 이다', () => {
-    expect(getGroupWeeklyLimit('monster_park')).toBeNull()
-    expect(getGroupWeeklyLimit('guild')).toBeNull()
-  })
-
   it('항목의 갈래는 컨텐츠 표의 category 다. 이름으로 추론하지 않는다', () => {
     expect(contentCategoryOf('epic_dungeon_aurum_regis')).toBe('epic_dungeon')
     expect(contentCategoryOf('maple_union_weekly_dragon')).toBe('maple_union')

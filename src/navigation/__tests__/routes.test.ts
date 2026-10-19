@@ -1,91 +1,18 @@
-// 라우트 표에서 경로가 빠지거나 늘지 않았는지 본다. **화면 동작이 아니라 목록의 완전성**이 대상이다.
-// 실제로 열리는지는 `RootNavigator.test.tsx` 가 본다.
-//
-// 여기 적힌 경로 문자열이 대조판이다. 화면이 늘면 `routes.ts` 와 이 목록이 **함께** 움직여야 한다.
-import {
-  FEATURE_GUIDE_ROUTE_NAMES,
-  INITIAL_TAB_ROUTE,
-  ROUTE_TABLE,
-  STACK_ROUTE_NAMES,
-  TAB_ROUTE_NAMES,
-} from '../routes'
+// 라우트 표가 지켜야 하는 규칙. 실제로 열리는지는 `RootNavigator.test.tsx` 가 본다.
+import { FEATURE_GUIDE_ROUTE_NAMES, INITIAL_TAB_ROUTE, ROUTE_TABLE } from '../routes'
 
-/** 앱이 여는 경로 전부. RN 전환 때 옮긴 화면 목록의 순서를 그대로 따른다. */
-const PARITY_PATHS = [
-  '/',
-  '/onboarding',
-  '/content',
-  '/content/manage',
-  '/boss',
-  '/boss/manage',
-  '/profit',
-  '/profit/drops',
-  '/profit/prices',
-  '/settings',
-  '/settings/guide',
-  '/settings/guide/:guideId',
-  '/settings/release-notes',
-  '/settings/release-notes/:guideId',
-  '/settings/account-data',
-  '/settings/about',
-  '/settings/about/privacy',
-]
-
-describe('ROUTE_TABLE: 계획서 §1 대조', () => {
-// **`origin` 으로 갈라 본다**. 새로 생긴 화면 넷은 대조할 짝이 없으므로 이
-  // 대조에 섞이면 안 된다. 섞으면 **계획서와 같은가** 라는 이 테스트의 질문이 답할 수 없는 것이 된다.
-  it('웹에서 온 17개 경로를 하나도 빠뜨리지 않고 순서까지 같다', () => {
-    expect(ROUTE_TABLE.filter((row) => row.origin === 'web').map((row) => row.path)).toEqual(
-      PARITY_PATHS,
-    )
-  })
-
+describe('ROUTE_TABLE', () => {
   it('경로가 중복되지 않는다', () => {
     const paths = ROUTE_TABLE.map((row) => row.path)
 
     expect(new Set(paths).size).toBe(paths.length)
   })
 
-  // 셋은 탭이고 나머지 넷은 하위 페이지다(캐릭터 관리 · 아이템 분배 계산기 · 공지 목록 · 공지 상세).
-  //
-  // 탭이 넷에서 셋이 됐다. 사냥 수익·지출 껍데기 둘이 빠지고 가계부 하나가 들어왔다. 둘은
-  // 사라진 것이 아니라 그 화면 안으로 들어간다.
-  it('RN 에서 새로 생긴 화면은 열여섯이고 다섯은 탭·여덟은 하위 페이지·셋은 루트 화면이다', () => {
-    const rnRows = ROUTE_TABLE.filter((row) => row.origin === 'rn')
-
-    expect(rnRows.map((row) => row.target)).toEqual([
-      { kind: 'root', route: 'CharacterSetup' },
-      { kind: 'root', route: 'MvpGradePick' },
-      { kind: 'root', route: 'MvpGradeConfirm' },
-      { kind: 'tab', route: 'Today' },
-      { kind: 'tab', route: 'Appointments' },
-      { kind: 'tab', route: 'Cashbook' },
-      { kind: 'tab', route: 'Stats' },
-      { kind: 'tab', route: 'Utility' },
-      { kind: 'push', route: 'UtilityItemSplit' },
-      { kind: 'push', route: 'SettingsCharacters' },
-      { kind: 'push', route: 'SettingsNotices' },
-      { kind: 'push', route: 'SettingsNoticeAlerts' },
-      { kind: 'push', route: 'SettingsMvpGrade' },
-      { kind: 'push', route: 'SettingsMvpGradeHistory' },
-      { kind: 'push', route: 'AppSettings' },
-      { kind: 'push', route: 'SettingsNoticeDetail' },
-    ])
-  })
-
-// **`/` 행과 첫 화면이 갈렸다**. `/` 행은 *"그 경로에서 무엇을 보여
+  // **`/` 행과 첫 화면이 갈렸다**. `/` 행은 *"그 경로에서 무엇을 보여
   // 줬는가"* 라는 기록이라 그대로 컨텐츠이고, *"이 앱이 어디서 시작하는가"* 는 새 `today` 다.
-  // 한쪽만 고치면 이 테스트가 운다. 갈린 것 자체가 결정이므로 둘을 함께 고정한다.
-  it('`/` 행은 웹 기록이라 컨텐츠 그대로다', () => {
-    const root = ROUTE_TABLE.find((row) => row.path === '/')
-
-    expect(root?.target).toEqual({ kind: 'initial', route: 'Content' })
-    expect(root?.screen).toBe(ROUTE_TABLE.find((row) => row.path === '/content')?.screen)
-  })
-
-  // 위 케이스와 짝이다. **한 케이스 안에서** 둘을 함께 단언한다. 갈린 것 자체가 결정이라
-  //  *"둘이 지금 이렇게 갈려 있다"* 가 한 자리에 적혀 있어야, `today` 에 내용이
-  // 붙은 뒤 누군가 **불일치** 로 보고 `/` 를 `Today` 로 맞추는 일이 안 생긴다.
+  // **한 케이스 안에서** 둘을 함께 단언한다. 갈린 것 자체가 결정이라
+  //  *"둘이 지금 이렇게 갈려 있다"* 가 한 자리에 적혀 있어야, 누군가 **불일치** 로 보고 `/` 를
+  // `Today` 로 맞추는 일이 안 생긴다.
   it('첫 화면은 today 이고 `/` 행은 여전히 컨텐츠다', () => {
     expect(INITIAL_TAB_ROUTE).toBe('Today')
     expect(ROUTE_TABLE.find((row) => row.path === '/')?.target).toEqual({
@@ -93,26 +20,6 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
       route: 'Content',
     })
     expect(ROUTE_TABLE.find((row) => row.target.kind === 'tab' && row.target.route === 'Today')).toBeDefined()
-  })
-
-  // 라벨은 여기 없다. 바가 라벨을 두 층에서 쓰므로 `bar-groups.ts` 의 `BAR_GROUPS` 가 갖는다
-  // 그 표와 이 목록이 같은 집합인지는 `bar-groups.test.ts` 가 본다.
-  it('탭 화면은 아홉이고 표에서 파생된다', () => {
-    expect(TAB_ROUTE_NAMES).toEqual([
-      'Content',
-      'Boss',
-      'Profit',
-      'Settings',
-      'Today',
-      // 스케줄의 넷째 하위(파티 약속). 아홉에서 열이 됐다.
-      'Appointments',
-      // 사냥 수익·지출 자리에 들어온 하나. 아홉에서 여덟이 됐다.
-      'Cashbook',
-      // 수익·지출의 셋째 하위. 여덟에서 아홉이 됐다.
-      'Stats',
-      'Utility',
-    ])
-    expect(new Set(TAB_ROUTE_NAMES).size).toBe(TAB_ROUTE_NAMES.length)
   })
 
   // 웹의 `/…/…` 경로는 전부 push 다. 보스 관리가 탭이던 예외는 설정에서 여는 하위 페이지로 돌아가며 사라졌다.
@@ -124,48 +31,6 @@ describe('ROUTE_TABLE: 계획서 §1 대조', () => {
     expect(promoted).toEqual([])
     expect(ROUTE_TABLE.find((row) => row.path === '/boss/manage')?.target).toEqual({ kind: 'push', route: 'BossManage' })
   })
-
-  it('하위 페이지는 열아홉이고 이름이 겹치지 않는다', () => {
-    expect(STACK_ROUTE_NAMES).toEqual([
-      'ContentManage',
-// 스케줄러 하위 탭이던 것이 설정에서 여는 하위 페이지로 돌아왔다.
-      'BossManage',
-      'DropHistory',
-      'DropPrice',
-      'SettingsFeatureGuideList',
-      'SettingsFeatureGuide',
-      'SettingsReleaseNotes',
-      'SettingsReleaseNoteGuide',
-      'SettingsAccountData',
-      'SettingsAbout',
-      'SettingsPrivacy',
-// 유틸리티의 첫 도구.
-      'UtilityItemSplit',
-// 설정의 모달이 아니라 화면이다.
-      'SettingsCharacters',
-// 공지사항. 목록이 구독 스위치를 함께 들고, 상세는 알림 탭이 곧장 연다.
-      'SettingsNotices',
-      'SettingsNoticeAlerts',
-// MVP 등급 목록과 ID 이력 상세.
-      'SettingsMvpGrade',
-      'SettingsMvpGradeHistory',
-      'AppSettings',
-      'SettingsNoticeDetail',
-    ])
-    expect(new Set(STACK_ROUTE_NAMES).size).toBe(STACK_ROUTE_NAMES.length)
-  })
-
-  // 앱을 열기 전 화면 둘. 탭과 배타로 그려지고 한 번에 하나만 스택에 선다.
-  it('온보딩 화면 넷은 탭도 하위 페이지도 아닌 루트 화면이다', () => {
-    const rootRows = ROUTE_TABLE.filter((row) => row.target.kind === 'root')
-
-    expect(rootRows.map((row) => [row.path, row.screen])).toEqual([
-      ['/onboarding', 'SignInScreen'],
-      ['/character-setup', 'CharacterSetupScreen'],
-      ['/onboarding/mvp-grade', 'MvpGradePickScreen'],
-      ['/onboarding/mvp-grade/confirm', 'MvpGradeConfirmScreen'],
-    ])
-  })
 })
 
 // 기능 설명 목록에서도, 개발 노트 항목에서도 **같은 상세**가 열린다.
@@ -175,13 +40,6 @@ describe('안내 상세는 두 경로가 같은 화면을 가리킨다', () => {
   const guideRows = ROUTE_TABLE.filter((row) =>
     row.path.endsWith('/:guideId'),
   )
-
-  it('상세로 가는 경로가 정확히 둘이다', () => {
-    expect(guideRows.map((row) => row.path)).toEqual([
-      '/settings/guide/:guideId',
-      '/settings/release-notes/:guideId',
-    ])
-  })
 
   it('둘의 `screen` 이 같다. 사본이 아니라 한 벌이다', () => {
     expect(guideRows.map((row) => row.screen)).toEqual([

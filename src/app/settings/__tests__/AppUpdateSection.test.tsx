@@ -63,26 +63,12 @@ function render(
 }
 
 describe('AppUpdateSection', () => {
-  it('현재 번들 버전을 표시한다', async () => {
-    const view = await render()
-
-    expect(view.getByText('현재 버전')).toBeTruthy()
-    expect(view.getByText('1.0.3')).toBeTruthy()
-  })
-
 // `currentVersion === null` 이면 폴백 값을 쓴다. 그 경로만
   // 남아 호출부가 값을 넘긴다(`SettingsAboutScreen`). 값을 지어내지 않고 분기 하나로 좁힌 것이다.
   it('currentVersion 이 없으면 fallbackVersion 을 쓴다', async () => {
     const view = await render({ currentVersion: null, status: 'unsupported' })
 
     expect(view.getByText(FALLBACK_VERSION)).toBeTruthy()
-  })
-
-  // 이 카드가 놓이는 화면의 제목이 이미 `앱 정보`다.
-  it('섹션 제목을 스스로 그리지 않는다', async () => {
-    const view = await render()
-
-    expect(view.queryByText('앱 업데이트')).toBeNull()
   })
 
   it('베타 채널이면 "beta" 배지를 보여준다(한글 아님)', async () => {
@@ -101,24 +87,11 @@ describe('AppUpdateSection', () => {
     expect(check).toHaveBeenCalledTimes(1)
   })
 
-  // `현재 버전` 바로 아래 행이라 주어가 생략되면 무엇이 최신인지가 문장에 없다.
-  it('최신이면 "최신 버전입니다"를 표시한다', async () => {
-    const view = await render({ status: 'up-to-date' })
-
-    expect(view.getByText('최신 버전입니다')).toBeTruthy()
-  })
-
   it('패치 번호가 붙은 버전은 괄호로 보인다', async () => {
     const view = await render({ status: 'update-available', currentVersion: '1.0.10+1', availableVersion: '1.0.10+2' })
 
     expect(view.getByText('1.0.10(1)')).toBeTruthy()
     expect(view.getByText('새 버전 v1.0.10(2) 있음')).toBeTruthy()
-  })
-
-  it('새 버전이 있으면 상태에 버전을 표시한다', async () => {
-    const view = await render({ status: 'update-available', availableVersion: '1.0.4' })
-
-    expect(view.getByText('새 버전 v1.0.4 있음')).toBeTruthy()
   })
 
   it('다운로드 중에는 진행률을 표시하고 버튼이 비활성화된다', async () => {

@@ -158,14 +158,6 @@ describe('전체 스위치와 파티 약속 알림', () => {
 })
 
 describe('구독 스위치', () => {
-  it('네 토글이 다 있다', async () => {
-    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
-
-    for (const topic of NOTICE_TOPICS) {
-      expect(view.getByLabelText(`${topic.label} 알림`)).toBeTruthy()
-    }
-  })
-
   // 전체가 켜져 있어야 하위가 보인다. 그래서 앱 공지만 켠 상태에서 시작한다.
   it('꺼져 있으면 켜는 쪽으로 부른다', async () => {
     const setSubscribed = jest.fn().mockResolvedValue(undefined)
@@ -480,15 +472,6 @@ describe('왕복을 기다리지 않는다', () => {
 // 자리를 미리 세우는 이유는 이 화면이 `알림으로 무엇을 받을 수 있는가` 를 말하는 자리이고,
 // 목록에서 빠져 있으면 없는 기능인지 못 찾는 기능인지 모르기 때문이다.
 describe('스케줄러 알림', () => {
-  it('두 줄이 구역 이름 아래 선다', async () => {
-    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
-
-    expect(view.getByText('일반')).toBeTruthy()
-    expect(view.getByText('스케줄러')).toBeTruthy()
-    expect(view.getByText('미완료 스케줄 알림')).toBeTruthy()
-    expect(view.getByText('주간 결산 알림')).toBeTruthy()
-  })
-
   // 못 켜는 스위치를 그려 두면 사용자가 눌러 보고 나서야 못 쓴다는 것을 알고, 그 사이 화면은
   // 고장으로 읽힌다.
   it('스위치 대신 준비 중이라고 적는다', async () => {

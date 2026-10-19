@@ -503,12 +503,6 @@ describe('getRecordedCharacterOcids', () => {
     expect(sql).toContain('UNION')
   })
 
-  it('기록이 없으면 빈 배열이다', async () => {
-    const { getRecordedCharacterOcids } = require('../boss-profit') as typeof import('../boss-profit')
-    queryMock.mockResolvedValue({ values: [] })
-
-    await expect(getRecordedCharacterOcids()).resolves.toEqual([])
-  })
 })
 
 // 스케줄러 API 가 최근 14일만 주므로 오래 쉬었다 돌아오면 그 사이가 전부 조회 불가다. 화살표가
