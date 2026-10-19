@@ -587,6 +587,32 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     ])
   })
 
+  // 균등 기록에 비율 칸 값이 남으면 수수료가 있을 때 계산기와 다른 몫이 나온다.
+  it('기본으로 매기면 내 비율 칸을 비워 저장한다', async () => {
+    const { result, onSave } = renderSheet({ pricing: PRICING })
+    const { getByLabelText, getByTestId, getByText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText('가격 입력'))
+    })
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-card-value'), '100')
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('input-card-confirm'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText('추가 완료 · 1개'))
+    })
+
+    const [saved] = onSave.mock.calls[0][0]
+    expect(saved).toEqual(expect.objectContaining({ priceSplitMode: 'even', pricePartySize: 3 }))
+    expect(saved.priceMyShare).toBeUndefined()
+  })
+
   it('카드의 기록 안함은 값 없이 그 결정만 쓴다', async () => {
     const { result, onSave } = renderSheet({ pricing: PRICING })
     const { getByLabelText, getByTestId, getByText, queryByLabelText } = await result

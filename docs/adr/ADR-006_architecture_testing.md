@@ -69,16 +69,15 @@ jest 는 CommonJS 로 돌아서 네이티브 `import()` 를 만나면 실패한�
 로 실패한다. `@babel/plugin-transform-modules-commonjs` 로는 안 된다. `babel-preset-expo` 가 동적 import 를
 일부러 남기도록 설정하기 때문이다. Metro 는 이 변환을 거치지 않으므로 앱 번들에는 영향이 없다.
 
-### 결정 5. DOM 에서 도는 스펙 여섯은 jsdom 환경에 둔다
+### 결정 5. DOM 에서 도는 스펙 다섯은 jsdom 환경에 둔다
 
-`@jest-environment jsdom` 과 `@testing-library/react` 로 도는 스펙이 여섯 있다.
+`@jest-environment jsdom` 과 `@testing-library/react` 로 도는 스펙이 다섯 있다.
 
 - `features/auth/__tests__/use-api-key-notice.spec.tsx`
 - `features/boss-profit/__tests__/use-period-error-toast.spec.tsx`
 - `features/notice/__tests__/use-notice-delivery.spec.tsx`
 - `features/schedule-sync/__tests__/use-sync-error-toast.spec.tsx`
 - `hooks/__tests__/useCountUp.spec.tsx`
-- `storage/__tests__/pending-notice.spec.ts`
 
 React Native 용 testing-library 로 옮겨 봤다가 되돌렸다. 그쪽 `render` 가 비동기라 케이스마다 `await` 이
 붙고, `requestAnimationFrame` 을 손으로 돌리는 `useCountUp` 은 값이 맞지 않았다. 그래서 `react-dom` ·

@@ -4,8 +4,10 @@ import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from './sqlite/db'
 
 // 캐시 데이터 삭제. 인증·사용자 설정만 남기고 나머지 저장 데이터를 지운다.
 // trackingMode·dropEffect는 재조회로 복구되는 캐시가 아니라 사용자가 명시적으로 고른 취향 설정이라
-// theme과 같이 보존한다. 어떤 그룹을 골라도 이 5개는 삭제 대상이 아니다.
+// theme과 같이 보존한다. 어떤 그룹을 골라도 이 목록은 삭제 대상이 아니다.
 const KEEP_KEYS = new Set<string>([
+  // 인증 수단 목록. 지워지면 옛 `apiKey` 칸이 없는 설치본은 다시 띄운 뒤 로그인 화면으로 돌아간다.
+  STORAGE_KEYS.authMethods,
   STORAGE_KEYS.apiKey,
   STORAGE_KEYS.theme,
   STORAGE_KEYS.trackingMode,

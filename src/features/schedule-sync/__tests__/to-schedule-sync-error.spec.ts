@@ -116,3 +116,18 @@ describe('로그인 만료는 무효 키와 다른 종류다', () => {
     expect(toScheduleSyncError(new NexonSignInRequiredError('만료')).kind).not.toBe('invalidApiKey')
   })
 })
+
+// 로그인 사용자의 프렌즈 밖 조회는 앱에 든 개발자 키로 간다. 그 키의 실패를 사용자 키 탓으로 접으면
+// 확인이 어느 키를 지울지 몰라 사용자의 API 키를 전부 지운다.
+describe('개발자 키로 난 실패는 사용자의 키 탓이 아니다', () => {
+  const 개발자키로 = <E extends NexonAuthError | NexonBadRequestError | NexonRateLimitError>(error: E): E =>
+    Object.assign(error, { developerKey: '개발키' })
+
+  it.each([
+    ['401/403', () => 개발자키로(new NexonAuthError('x'))],
+    ['400 OPENAPI00005', () => 개발자키로(new NexonBadRequestError('x', 'OPENAPI00005'))],
+    ['429', () => 개발자키로(new NexonRateLimitError('x'))],
+  ])('%s 는 network 이고 키를 싣지 않는다', (_label, make) => {
+    expect(toScheduleSyncError(make())).toEqual({ kind: 'network' })
+  })
+})

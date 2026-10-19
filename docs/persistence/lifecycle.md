@@ -60,7 +60,8 @@
 `clearCacheDataAndReload` 는 아래 순서로 진행한다.
 
 1. `clearCacheData(selection)` 를 10초 타임아웃과 경쟁시킨다.
-2. 실패하거나 시간을 넘기면 `setPendingNotice('cacheClearFailed')` 를 남긴다(`preferences.md` 의 주의 참고).
+2. 실패하거나 시간을 넘기면 `setPendingNotice('cacheClearFailed')` 로 Preferences 에 표시를 남긴다. 다시 띄운 뒤
+   `AppShell` 이 `showPendingCacheClearNotice` 로 읽고 오류 토스트를 띄운다.
 3. `closeBossProfitDb()` 로 SQLite 커넥션을 닫는다(5초 상한, [[ADR-007]] 결정 3).
 4. `showSplashScreen()` 을 부른다. RN 에는 스플래시를 다시 띄우는 API 가 없어서 이 호출은 아무 일도 하지 않는다([[ADR-013]] 결정 9).
 5. 실패했어도 리로드한다. 지운 데이터가 이미 화면 곳곳에 반영돼 있어, 리로드하지 않고 어중간한 상태로 두는 편이 더 나쁘다.

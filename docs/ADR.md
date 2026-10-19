@@ -145,7 +145,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-022](./adr/ADR-022_error-resilience_failure-states.md) | 🟢 | error-resilience | 실패를 알리는 방법과 기간 데이터 상태 |
 | [ADR-023](./adr/ADR-023_error-resilience_resumable-task.md) | 🟢 | error-resilience | 이어서 하는 작업과 기록 판 알림 |
 | [ADR-024](./adr/ADR-024_auth_api-key.md) | 🟢 | auth | API 키 로그인과 키 재입력 |
-| [ADR-025](./adr/ADR-025_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
+| [ADR-025+068](./adr/ADR-025+068_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
 | [ADR-026](./adr/ADR-026_app-entry_onboarding.md) | 🟢 | app-entry | 온보딩 흐름 |
 | [ADR-027](./adr/ADR-027_app-entry_cold-start.md) | 🟢 | app-entry | 콜드 스타트 첫 화면 |
 | [ADR-028](./adr/ADR-028_character_tracking.md) | 🟢 | character | 추적 캐릭터 |
@@ -164,7 +164,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-041](./adr/ADR-041_boss-profit_period.md) | 🟢 | boss-profit | 보스 수익 기간 |
 | [ADR-042](./adr/ADR-042_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 |
 | [ADR-043](./adr/ADR-043_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |
-| [ADR-044](./adr/ADR-044_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
+| [ADR-044+066](./adr/ADR-044+066_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
 | [ADR-045](./adr/ADR-045_item-drop_effect.md) | 🟢 | item-drop | 고가 드롭 연출과 강조 |
 | [ADR-046](./adr/ADR-046_cashbook_calendar.md) | 🟢 | cashbook | 가계부 캘린더 |
 | [ADR-047](./adr/ADR-047_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 |
@@ -173,7 +173,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-050](./adr/ADR-050_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
 | [ADR-051](./adr/ADR-051_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
 | [ADR-052](./adr/ADR-052_settings_screen.md) | 🟢 | settings | 더보기 · 설정 화면과 안내 |
-| [ADR-053](./adr/ADR-053_settings_cache-data.md) | 🟢 | settings | 캐시 데이터 삭제 |
+| [ADR-053+067](./adr/ADR-053+067_settings_cache-data.md) | 🟢 | settings | 캐시 데이터 삭제 |
 | [ADR-054](./adr/ADR-054_theme_tokens.md) | 🟢 | theme | 테마와 색 토큰 |
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |
 | [ADR-056](./adr/ADR-056_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |

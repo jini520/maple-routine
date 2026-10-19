@@ -1,4 +1,4 @@
-# ADR-025 넥슨 로그인
+# ADR-025+068 넥슨 로그인
 
 > 🟢 유효
 > 옛 번호: ADR-296 · ADR-318 · ADR-320 결정 3 · 4 · ADR-321 · ADR-334 결정 1 · 2 · 3 · 4
@@ -49,10 +49,14 @@
 서버 쪽 스트림의 동작은 [[ADR-016]] 에 있다.
 
 개발자 키는 둘이다(`EXPO_PUBLIC_NEXON_API_KEY_1` · `_2`, `nexon/developer-keys.ts`). 요청마다 번갈아 써서
-한도를 두 배로 쓰고, 무효(400 `OPENAPI00005`)나 한도 초과(429)가 난 키는 그 실행 동안 빼고 남은 키만
+한도를 두 배로 쓰고, 무효(401 · 403 · 400 `OPENAPI00005`)나 한도 초과(429)가 난 키는 그 실행 동안 빼고 남은 키만
 쓴다. 앱을 다시 켜면 다시 시도한다. 키가 앱 번들에 들어 있어 꺼내 쓸 수 있고, 그러면 우리 한도가 줄어든다.
 넥슨이 그 키를 막으면 로그인 사용자 모두의 프렌즈 밖 조회가 함께 멈춘다. 사용자가 이 위험을 알고 고른
 방식이다.
+
+개발자 키로 난 키 실패는 사용자의 키 탓으로 보지 않는다. `toScheduleSyncError` 는 실패에 `developerKey` 가 실려
+있으면 무효와 한도 초과를 `invalidApiKey` · `rateLimited` 가 아니라 `network` 로 바꾼다. 사용자가 고칠 수 없는
+실패이기 때문이다. 키 탓으로 보내면 키 재입력 안내의 확인이 어느 키를 지울지 몰라 사용자의 API 키를 모두 지운다.
 
 ### 결정 3. 로그인 창은 `openAuthSessionAsync` 로 열고, 세션은 열쇠 둘로 받는다
 
@@ -246,6 +250,8 @@ API 키    API 키로 시작하기                        15px semibold        �
 | `lib/__tests__/nexon-credential.spec.ts` | 결정 1: 로그인이 있으면 로그인을, 없으면 첫 키를 고르는지 본다 |
 | `features/auth/__tests__/current-credential.spec.ts` | 결정 1 · 2: 로그인 자격의 값이 서버 세션인지, 저장소를 못 읽어도 던지지 않는지 본다 |
 | `nexon/__tests__/developer-keys.spec.ts` | 결정 2: 개발자 키를 번갈아 쓰는지, 빈 값과 죽은 키를 빼고 되살리지 않는지 본다 |
+| `nexon/__tests__/http.spec.ts` | 결정 2: 로그인 자격의 프렌즈 밖 경로가 개발자 키를 싣는지, 무효 · 401 · 한도 초과가 난 키를 빼고 남은 키로 한 번 더 부르는지, 모두 죽으면 원래 실패를 올리는지 본다 |
+| `features/schedule-sync/__tests__/to-schedule-sync-error.spec.ts` | 결정 2: 개발자 키로 난 무효 · 한도 초과가 키를 싣지 않은 `network` 인지 본다 |
 | `features/auth/__tests__/nexon-login.spec.ts` | 결정 3: 열쇠 둘로 세션을 받아 저장하는지, 서버가 준 주소와 등록한 스킴을 쓰는지, `pending` 이면 다시 묻되 끝이 있는지, `gone` 과 `receipt` 없는 콜백이 실패인지, 취소가 실패가 아닌지, 던지지 않는지 본다. 결정 4: 로그인 뒤에 키를 거두고, 거두지 못해도 성공인지 본다 |
 | `lib/__tests__/covered-keys.spec.ts` | 결정 4: ocid 집합이 같을 때만 지우는지, 다른 계정의 키는 두는지, 한쪽이 비어 있으면 지우지 않는지 본다 |
 | `components/molecules/NexonLoginButton/__tests__/NexonLoginButton.test.tsx` | 결정 5: 폭만 정하고 높이는 정하지 않는지, 받은 이미지를 그대로 쓰는지, 스크린리더 이름을 버튼이 갖는지 본다 |
@@ -258,3 +264,5 @@ API 키    API 키로 시작하기                        15px semibold        �
 ## 번호 기록
 
 - ADR-025 (2026-10-19): 옛 ADR-296 · 318 · 320 · 321 · 334 를 합쳐 처음 작성
+- ADR-068 (2026-10-19): 결정 2 에 401 · 403 을 받은 개발자 키도 빼는 것과, 개발자 키의 키 실패를 `network` 로
+  보는 규칙을 더했다

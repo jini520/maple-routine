@@ -434,6 +434,19 @@ describe('savePrice · excludePrice', () => {
     )
   })
 
+  // 비율 칸 값은 카드가 비율 씨앗으로 들고 온 것이다. 균등 기록에 남으면 수수료 계산이 비율 식으로 샌다.
+  it('기본으로 저장하면 내 비율 칸을 비운다', async () => {
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+    await useDropPriceStore.getState().load(PERIOD)
+    const target = useDropPriceStore.getState().groups[0].entries[0]
+
+    await useDropPriceStore.getState().savePrice(target, 1_200_000_000, { mode: 'even' as const, partySize: 3, myShare: 2, sharesTotal: 3 })
+
+    const [, , , , drops] = replaceBossDropRecordsMock.mock.calls[0]
+    expect(drops[0]).toEqual(expect.objectContaining({ priceSplitMode: 'even', pricePartySize: 3 }))
+    expect(drops[0].priceMyShare).toBeUndefined()
+  })
+
   it('메모리의 드롭에 식별자가 없으면 저장소가 돌려준 식별자로 보낸다', async () => {
     // 시트에서 방금 기록한 드롭은 식별자가 없다. INSERT 에서 처음 생기므로 저장 뒤 돌려받은 값을 쓴다.
     getBossDropRecordsMock.mockResolvedValue([

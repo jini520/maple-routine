@@ -358,6 +358,17 @@ describe('requestJson: 로그인은 프렌즈 밖 경로를 개발자 키로 부
     await expect(requestJson(밖, 로그인)).resolves.toEqual({ ok: true })
   })
 
+  it('401 을 받은 키도 뺀다', async () => {
+    __setDeveloperKeysForTest(['막힌키', '산키'])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async (_url, init) => {
+      const key = (init?.headers as Record<string, string>)['x-nxopen-api-key']
+      return key === '막힌키' ? response(401, {}) : response(200, { ok: true })
+    })
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(밖, 로그인)).resolves.toEqual({ ok: true })
+  })
+
   it('전부 죽으면 그 실패를 그대로 올린다', async () => {
     // 되살릴 키가 없다. 여기서 성공으로 접으면 화면이 빈 응답을 그린다.
     __setDeveloperKeysForTest(['키1', '키2'])

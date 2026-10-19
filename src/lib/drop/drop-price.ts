@@ -15,7 +15,7 @@ import { formatSharePercent } from '../boss/party-shares'
  * 가격 세 필드만 보는 구조적 타입.
  *
  * `RecordedDrop`(도메인, `undefined`)과 `BossDropRecord`(저장 계층, `null`)가 **같은 함수를
- * 쓰게 하려는 것이다**. 합산이 두 벌이 되면 화면과 증감 칩이 서로 다른 규칙으로 더하게 된다.
+ * 쓰게 하려는 것이다**. 합산이 두 벌이 되면 화면마다 서로 다른 규칙으로 더하게 된다.
  */
 export interface DropPriceFields {
   priceState?: 'entered' | 'excluded' | null
@@ -31,7 +31,7 @@ export interface DropPriceFields {
   pricePartySize?: number | null
   /** `ratio` 의 비율 합. **기본은 이 칸을 안 본다.** */
   priceShare?: number | null
-  /** `ratio` 의 내 비율. 없으면 1 이라 옛 기록의 금액이 안 움직인다. */
+  /** `ratio` 의 내 비율. 없으면 1 이라 옛 기록의 금액이 안 움직인다. `even` 은 비워 저장한다(`dropShareFieldsOf`). */
   priceMyShare?: number | null
   /** 경매장 판매 수수료(%). `null` 은 없음 */
   saleFeePercent?: number | null
@@ -83,6 +83,7 @@ export function dropPayoutMeso(drop: DropPriceFields): number {
   const net = drop.priceMeso - Math.floor((drop.priceMeso * (saleFee ?? 0)) / 100)
   if (mine >= total) return net
   const d = splitFee ?? 0
+  // 2026-10-19 전의 균등 기록은 내 비율 칸이 차 있어 아래 비율 식으로 센다. 지난 금액이 바뀌지 않게 그대로 둔다(사용자 결정).
   if (drop.priceMyShare == null) {
     const perMember = Math.floor((net * 100) / (total * 100 - d))
     return net - perMember * (total - 1)
@@ -92,6 +93,25 @@ export function dropPayoutMeso(drop: DropPriceFields): number {
   // 세면 수수료가 그만큼 더 나가 둘 다 손해다(결정석의 `crystalPayoutMeso` 와 같은 규칙).
   if (mine < others) return Math.floor((net * mine * (100 - d)) / (others * (100 - d) + 100 * mine))
   return net - Math.floor((100 * net * others) / (mine * (100 - d) + 100 * others))
+}
+
+/**
+ * 카드에서 고른 분배를 기록 칸으로. **균등이면 내 비율 칸을 비운다.**
+ *
+ * 카드는 균등일 때도 비율 씨앗을 들고 있다. 그 값이 남으면 `dropPayoutMeso` 가 균등 식 대신 비율 식을 탄다.
+ */
+export function dropShareFieldsOf(share: {
+  mode: 'even' | 'ratio'
+  partySize: number
+  myShare: number
+  sharesTotal: number
+}): { priceSplitMode: 'even' | 'ratio'; pricePartySize: number; priceShare: number; priceMyShare: number | undefined } {
+  return {
+    priceSplitMode: share.mode,
+    pricePartySize: share.partySize,
+    priceShare: share.sharesTotal,
+    priceMyShare: share.mode === 'ratio' ? share.myShare : undefined,
+  }
 }
 
 /**

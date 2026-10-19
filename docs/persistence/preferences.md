@@ -28,7 +28,7 @@
 
 | 키 | 값 | 어댑터 | 캐시 삭제 | 메모 |
 |---|---|---|---|---|
-| `authMethods` | JSON. 넥슨 로그인 0 ~ 1개 + 이름 붙은 API 키 목록 | `api-key.ts` | 지운다 | 저장된 인증 수단 전부. `KEEP_KEYS` 에 없다(아래 주의) |
+| `authMethods` | JSON. 넥슨 로그인 0 ~ 1개 + 이름 붙은 API 키 목록 | `api-key.ts` | 보존 | 저장된 인증 수단 전부 |
 | `apiKey` | 문자열 | `api-key.ts` | 보존 | 옛 설치본의 API 키 하나. `authMethods` 가 없을 때만 읽어 목록에 넣고, 읽은 뒤에도 지우지 않는다. 지우는 곳은 연결 해제뿐이다 |
 | `selectedAccountId` | 문자열 | `api-key.ts` · `character-basic-cache.ts` | 지운다 | 옛 키. 아무도 쓰지 않고, 연결 해제와 캐시 삭제가 지운다 |
 | `theme` | 테마 이름(`job-themes.json` 의 키) | `theme.ts` | 보존 | |
@@ -57,6 +57,7 @@
 | `lastHuntSelection` · `lastHuntToggles` | JSON | `last-hunts.ts` | 지운다 | 옛 키. `lastHunts` 가 없을 때 한 번 읽어 옮기고 지운다 |
 | `eventWorldNames` | JSON 이름 배열 | `event-world-names.ts` | 지운다 | 이벤트 월드 캐릭터 이름. 값이 없는 것(아직 못 받음)과 빈 배열(그런 캐릭터가 없음)을 구분한다 |
 | `lastRunBundleVersion` | 버전 문자열 | `last-run-bundle-version.ts` | 지운다 | 마지막으로 실행한 OTA 번들 버전. 방금 업데이트했는지 판단한다 |
+| `pendingNotice` | `'cacheClearFailed'` | `pending-notice.ts` | 지운다 | 캐시 삭제가 실패했다는 표시. 삭제가 끝난 뒤에 쓰고, 다시 띄운 앱이 읽으면서 지운다([[ADR-053]] 결정 5) |
 | `queryCache` | JSON 문자열(TanStack Query 캐시 전체) | `query-persister.ts` | 지운다 | 게임 데이터 표의 기기 사본([[ADR-020]]) |
 | `bossCatalog` | JSON | `query-persister.ts` | 지운다 | 옛 키. 읽지 않고 켤 때 지운다 |
 
@@ -79,12 +80,3 @@
 | `manualTrackedContent:{ocid}` | JSON `ManualTrackedItem[]` | `manual-tracked-content.ts` | 수동 모드에서 그 캐릭터가 추적할 항목 |
 | `worldSharedProgress:{worldKey}` | JSON `{ [contentKey]: SharedProgressEntry }` | `shared-progress-cache.ts` | 월드 단위로 완료가 공유되는 컨텐츠의 진행. 월드 이름을 쓰던 옛 키는 읽거나 쓸 때 옮기고 지운다 |
 | `accountSharedProgress:{accountId}` | JSON `{ [contentKey]: SharedProgressEntry }` | `shared-progress-cache.ts` | 계정 단위로 공유되는 컨텐츠의 진행. `accountId` 는 그 캐릭터가 속한 계정이다 |
-
-## 주의
-
-- `authMethods` 가 `KEEP_KEYS` 에 없다. 그래서 캐시 데이터 삭제의 `일반` 그룹을 고르면 저장된 인증 수단이 지워진다.
-  옛 `apiKey` 가 남아 있는 기기는 그것을 다시 목록에 넣지만, 새 방식으로만 키를 저장한 기기는 로그인 화면으로
-  돌아간다.
-- `storage/pending-notice.ts` 는 Preferences 가 아니라 `sessionStorage` 를 쓴다. 캐시 삭제가 실패했다는 알림을 리로드
-  뒤까지 넘기려는 것인데, React Native 에는 `sessionStorage` 가 없어서 쓰기는 예외를 삼키고 넘어간다. 읽는 함수
-  `consumePendingNotice` 를 부르는 제품 코드도 없다.

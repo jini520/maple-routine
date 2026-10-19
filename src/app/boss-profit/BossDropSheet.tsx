@@ -28,7 +28,7 @@ import { dropItemIconOf, getItemIconUrlByFile } from '../../lib/assets/asset-loo
 import { dropItemNameOf, isValuableDropItem } from '../../lib/drop/drop-items'
 import { dropPromptOf } from '../../lib/drop/drop-prompt'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
-import { dropPayoutMeso, formatMesoCompact } from '../../lib/drop/drop-price'
+import { dropPayoutMeso, dropShareFieldsOf, formatMesoCompact } from '../../lib/drop/drop-price'
 import { bossNameOf, getMaxPartySize } from '../../lib/boss/bosses'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
 import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory } from '../../types/drops'
@@ -340,11 +340,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
         applyPrice(target, {
           priceState: 'entered',
           priceMeso: meso,
-          // 방식을 빠뜨리면 아래 두 칸의 뜻이 사라져, 비율 1:3 이 다시 열 때 기본 3인으로 선다.
-          priceSplitMode: 비율.mode,
-          pricePartySize: 비율.partySize,
-          priceShare: 비율.sharesTotal,
-          priceMyShare: 비율.myShare,
+          ...dropShareFieldsOf(비율),
           ...dropFeeFields(fees),
         })
         다음편집.set(index, { meso, share: 비율, fees })
