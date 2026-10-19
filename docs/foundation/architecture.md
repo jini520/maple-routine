@@ -144,7 +144,7 @@ Feature 단위 구조. 각 `features/*` 폴더가 그 기능의 상태·로직�
 
 ## 네이티브 연동 개요 ([[ADR-128]] 결정 4: 포트 + 어댑터)
 - **알림**([[ADR-146]], 설계 완료·구현 전): 바이너리엔 **능력 셋**(로컬 알림 표시 `@notifee/react-native` / 원격 푸시 FCM / 백그라운드 태스크)만 들어가고, **무엇을 언제 왜 띄우는가는 네이티브에 한 줄도 없다**(전부 JS = OTA). 딸림이 있다. 백그라운드 태스크·푸시 백그라운드·알림 탭 **핸들러 셋은 모듈 최상위에 ‘등록’ 돼 있어야** OS 가 죽은 앱을 깨울 수 있어 그 한 줄만 바이너리에 박힌다.
-- **로컬 Expo 모듈** `modules/` 셋: `capacitor-storage`(기존 사용자 저장소를 그대로 연다. `migration/data.md`) · `app-background`(앱을 백그라운드로) · `app-system-bars`(시스템 바).
+- **로컬 Expo 모듈** `modules/` 셋: `capacitor-storage`(기존 사용자 저장소를 그대로 연다. `persistence/capacitor-storage.md`) · `app-background`(앱을 백그라운드로) · `app-system-bars`(시스템 바).
 - `@op-engineering/op-sqlite`: 보스 수익 기록 등([[ADR-003]]).
 - `expo-updates`: Live Update([[ADR-137]]) → [features/live-update.md](../features/live-update.md).
 - **이미지 내보내기**([[ADR-267]], 네이티브만 실었고 기능은 미구현): 바이너리에 `react-native-view-shot`(화면을 그림으로) · `expo-sharing`(공유 시트) · `expo-media-library`(앨범 저장)가 들어가고, 무엇을 어떤 모양으로 내보내는가는 전부 JS = OTA 다. 알림과 같은 모양이다 — 능력만 네이티브에 두고 판단은 JS 에 둔다. **다음 스토어 바이너리가 나가기 전에는 부르면 안 된다**(기기에 그 모듈이 없다). 포트는 기능과 함께 생긴다.

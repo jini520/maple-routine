@@ -74,8 +74,7 @@ function createDbConnection(database: string, encryption: string): SqliteDbConne
 }
 
 export const rnSqlitePort: SqlitePort = {
-  // RN 에는 웹 타깃이 없다. `jeep-sqlite`·`sql.js` 폴백은 이 전환에서 버린다
-  // (`docs/migration/README.md` 의존성 대응표).
+  // RN 에는 웹 타깃이 없어 `jeep-sqlite`·`sql.js` 폴백을 두지 않는다.
   isWebPlatform() {
     return false
   },

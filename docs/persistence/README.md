@@ -5,6 +5,7 @@
 - [preferences.md](./preferences.md) — Key-Value 저장소(UserDefaults / SharedPreferences) 전체 키 목록
 - [sqlite.md](./sqlite.md) — SQLite `boss_profit.db` 스키마
 - [lifecycle.md](./lifecycle.md) — 데이터가 언제 생성·갱신·삭제되는지 (온보딩, 캐시 삭제, 연결 해제, OTA 리로드)
+- [capacitor-storage.md](./capacitor-storage.md) — 캐패시터 시절에 저장된 기기 데이터를 RN 앱이 그대로 읽는 방법
 
 ## 왜 3개 물리 저장소로 나뉘는가
 
@@ -49,7 +50,7 @@ flowchart LR
     NativeAdapters --> OTA
 ```
 
-이 레이어링 덕분에 (1) feature 코드는 네이티브 API를 몰라도 되고, (2) 물리 저장소를 바꾸더라도 어댑터 내부만 교체하면 된다. **RN 전환이 그것을 실제로 증명했다**([[ADR-128]]) — 저장 매체는 한 바이트도 안 옮기고 어댑터만 갈아끼웠다(`storage/adapters/rn-preferences.ts`·`rn-sqlite.ts`, [migration/data.md](../migration/data.md)).
+이 레이어링 덕분에 (1) feature 코드는 네이티브 API를 몰라도 되고, (2) 물리 저장소를 바꾸더라도 어댑터 내부만 교체하면 된다. **RN 전환이 그것을 실제로 증명했다**([[ADR-128]]) — 저장 매체는 한 바이트도 안 옮기고 어댑터만 갈아끼웠다(`storage/adapters/rn-preferences.ts`·`rn-sqlite.ts`, [capacitor-storage.md](./capacitor-storage.md)).
 
 ## 데이터 성격별 3분류
 

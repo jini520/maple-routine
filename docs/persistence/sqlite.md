@@ -5,7 +5,7 @@
 > **파일 자리는 캐패시터 시절 그대로다.** op-sqlite 를 고른 이유는 성능이 아니라 `location` 이다 —
 > 기존 DB 가 캐패시터 플러그인이 정한 경로에 있고, 자기 전용 디렉터리에만 파일을 만드는 라이브러리로는
 > 거기 닿을 수 없다(닿지 못하면 빈 DB 가 새로 생기고 사용자에게는 기록이 전부 사라진 것으로 보인다).
-> 경로 계산은 `storage/adapters/capacitor-sqlite-open.ts` 가 공유한다([migration/data.md](../migration/data.md) 결정 2).
+> 경로 계산은 `storage/adapters/capacitor-sqlite-open.ts` 가 공유한다([capacitor-storage.md](./capacitor-storage.md) 결정 2).
 
 ## 스키마
 

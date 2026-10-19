@@ -2,7 +2,7 @@ const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 const THURSDAY = 4 // Date#getUTCDay(): 0=Sun ... 6=Sat
 
 /**
- * Nexon 서버의 주간 리셋 시각(KST 목요일 00:00, ARCHITECTURE.md 확인 완료 사항) 기준으로,
+ * Nexon 서버의 주간 리셋 시각(KST 목요일 00:00) 기준으로,
  * 주어진 시점에서 가장 최근에 지난(또는 지금 막 지난) 리셋 시각을 반환한다.
  *
  * 기기 로컬 타임존과 무관하게 항상 KST 기준으로 계산해야 하므로, Date의 로컬 getter(getDay 등)는

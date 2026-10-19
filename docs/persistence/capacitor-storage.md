@@ -1,7 +1,6 @@
 # 기존 사용자 데이터 보존
 
-**범위**: 이미 앱을 쓰고 있는 사용자의 기기 데이터를 RN 빌드가 **그대로 이어받는** 방법. 전략은
-[README.md](./README.md), 옮길 코드 목록은 [parity-inventory.md](./parity-inventory.md).
+**범위**: 이미 앱을 쓰고 있는 사용자의 기기 데이터를 RN 빌드가 **그대로 이어받는** 방법.
 
 **관련 소스(read/write)**: `src/storage/adapters/capacitor-storage-keys.ts`·`capacitor-sqlite-open.ts` ·
 `modules/capacitor-storage/`(로컬 Expo 모듈) · `android/` · `ios/`
@@ -230,7 +229,7 @@ request code 로 쓰고(`LocalNotificationManager.java:411-419`), 채널은 `"de
 `native/notifications.ts` 에는 ADR 참조가 없지만, 동작 계약은 [[ADR-004]](서버 푸시 없이 로컬 알림만)에
 있다. **사냥 타이머의 상시 표시 알림([[ADR-005]])은 성격이 다르지만 (예약 알림이 아니라 지속 알림)
 옮길 것이 없었다** — 그 커스텀 플러그인은 작성된 적이 없어 네이티브에서 거부돼 왔고, 그래서 남아
-있는 예약도 정리할 상태도 없었다(2026-08-11 확인, [parity-inventory](./parity-inventory.md)).
+있는 예약도 정리할 상태도 없었다(2026-08-11 확인).
 **그 뒤 사냥 타이머 계획 자체가 폐기됐다**(2026-08-30, [[ADR-005]] ⛔) — 포트·어댑터·기능 문서를
 지웠으므로 이 항목은 닫혔다.
 
@@ -382,7 +381,7 @@ request code 로 쓰고(`LocalNotificationManager.java:411-419`), 채널은 `"de
 | 항목 | 확인 방법 |
 |---|---|
 | ~~iOS SQLite 기본 경로~~ — **확정**: 시뮬레이터 컨테이너에서 `Documents/boss_profitSQLite.db` 실측(2026-08-11, «실측 검증 기록») | — |
-| ~~사냥 타이머 상시 알림의 네이티브 구현~~ — **확정**: 구현이 존재한 적 없다(네이티브는 `UNIMPLEMENTED` 거부, 인메모리 폴백은 웹 전용). 옮길 데이터도 SDK 결정도 없고 RN 도 거부한다 ([parity-inventory](./parity-inventory.md), 2026-08-11) | — |
+| ~~사냥 타이머 상시 알림의 네이티브 구현~~ — **확정**: 구현이 존재한 적 없다(네이티브는 `UNIMPLEMENTED` 거부, 인메모리 폴백은 웹 전용). 옮길 데이터도 SDK 결정도 없고 RN 도 거부한다 (2026-08-11) | — |
 | ~~옛 로컬 알림 ID 체계~~ — **확정**(결정 4 «확인된 사실», 2026-08-11). **그리고 2026-08-17 에 «옮길 예약이 0건» 인 것까지 확정돼 이 축은 완전히 닫혔다**(결정 4 정정) | — |
 
 ---

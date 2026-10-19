@@ -4,7 +4,7 @@ iOS UserDefaults / Android SharedPreferences 를 그대로 쓰는 Key-Value 저�
 
 > **읽고 쓰는 경로**: `storage/adapters/rn-preferences.ts` → 로컬 Expo 모듈 `modules/capacitor-storage`.
 > 캐패시터 시절 `@capacitor/preferences` 가 쓰던 **바로 그 키와 그 저장소**를 연다 — 기존 사용자의
-> 데이터를 한 바이트도 옮기지 않기 위해서다([migration/data.md](../migration/data.md) 결정 1). 그래서
+> 데이터를 한 바이트도 옮기지 않기 위해서다([capacitor-storage.md](./capacitor-storage.md) 결정 1). 그래서
 > 키 앞에 붙는 네이티브 접두사 규칙까지 그대로이고, 그 변환은 `storage/adapters/capacitor-storage-keys.ts`
 > 가 맡는다.
 

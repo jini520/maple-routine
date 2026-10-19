@@ -1,9 +1,7 @@
-// 라우트 표가 계획서 §1 과 어긋나지 않는지 본다. **화면 동작이 아니라 목록의 완전성**이 대상이다.
+// 라우트 표에서 경로가 빠지거나 늘지 않았는지 본다. **화면 동작이 아니라 목록의 완전성**이 대상이다.
 // 실제로 열리는지는 `RootNavigator.test.tsx` 가 본다.
 //
-// 이 파일이 있는 이유는 하나다: 계획서(`docs/migration/parity-inventory.md` §1)와 코드가 두 벌이면
-// 하나를 빠뜨려도 아무 데서도 안 드러난다. 여기 적힌 17개 경로 문자열이 그 대조판이고, 화면이 늘면
-// 계획서·`routes.ts`·이 목록이 **함께** 움직여야 한다.
+// 여기 적힌 경로 문자열이 대조판이다. 화면이 늘면 `routes.ts` 와 이 목록이 **함께** 움직여야 한다.
 import {
   FEATURE_GUIDE_ROUTE_NAMES,
   INITIAL_TAB_ROUTE,
@@ -12,12 +10,7 @@ import {
   TAB_ROUTE_NAMES,
 } from '../routes'
 
-/**
- * `docs/migration/parity-inventory.md` §1 의 첫 열, 순서 그대로.
- *
- * `/settings/about/privacy` 만 계획서 표의 `/settings/privacy` 와 다르다. 구현 중에 `about` 의
- * 자식으로 정정한 것이 맞고, 계획서 쪽이 낡았다.
- */
+/** 앱이 여는 경로 전부. RN 전환 때 옮긴 화면 목록의 순서를 그대로 따른다. */
 const PARITY_PATHS = [
   '/',
   '/onboarding',
