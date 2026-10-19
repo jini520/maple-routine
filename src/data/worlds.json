@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-16T15:07:54.435Z",
+  "updatedAt": "2026-10-19T04:31:51.170Z",
   "worlds": [
     {
       "key": "scania",
@@ -94,7 +94,7 @@
     },
     {
       "key": "helios",
-      "name": "헬리오스",
+      "name": "핼리오스",
       "emblem": "helios",
       "challengers": false,
       "event": false
