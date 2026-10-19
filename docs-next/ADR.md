@@ -127,3 +127,4 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | ADR | 상태 | 카테고리 | 제목 |
 |---|---|---|---|
 | [ADR-001](./adr/ADR-001_utility_item-split.md) | 🟢 | utility | 판매 분배금 계산기 |
+| [ADR-002](./adr/ADR-002_stats_overview.md) | 🟢 | stats | 통계 화면 |

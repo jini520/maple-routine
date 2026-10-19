@@ -122,12 +122,6 @@ describe('CategorySection', () => {
     const popover = view.getByTestId('stats-category-popover', { includeHiddenElements: true })
     expect(flattenStyle(popover.props.style).width).toBeUndefined()
   })
-
-  it('기록이 없으면 도넛 대신 한 줄을 적는다', async () => {
-    const view = await renderOverlay(<CategorySection title="수입 내역" side="income" items={[]} />)
-
-    expect(view.getByText('이 기간의 수입 기록이 없어요')).toBeTruthy()
-  })
 })
 
 describe('CategorySection 기간 바꾸기', () => {

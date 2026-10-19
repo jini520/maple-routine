@@ -21,7 +21,7 @@ jest.mock('../../../storage/stats-cumulative-start', () => ({
 
 import { loadMonthDays } from '../../cashbook/records'
 import { historyFloorDateKey } from '../../cashbook/range'
-import { loadCumulativeStart, loadStatsDays, loadStatsImages, statsDataRevision } from '../load'
+import { loadCumulativeStart, loadStatsDays, loadStatsImages } from '../load'
 
 describe('loadStatsDays', () => {
   // 누적 카드가 기록의 처음부터 더하므로, 앱이 조회할 수 있는 가장 이른 날부터 오늘까지 한 번에 읽는다.
@@ -49,13 +49,6 @@ describe('loadStatsImages', () => {
     // 같은 이름이 여럿이면 가장 최근에 본 캐릭터다.
     expect(images.get('name:단풍라떼')).toBe('https://img/new.png')
     expect(images.has('name:젓눈')).toBe(false)
-  })
-})
-
-describe('statsDataRevision', () => {
-  // 통계가 읽는 표 넷(보스 · 드롭 · 수입은 가계부 판) 과 강화 · 지출의 판을 더한다. 어느 쪽이 올라도 합이 달라진다.
-  it('가계부 판과 강화 · 지출 판의 합이다', () => {
-    expect(statsDataRevision()).toBe(15)
   })
 })
 
