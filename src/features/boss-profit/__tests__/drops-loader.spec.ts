@@ -14,6 +14,8 @@ jest.mock('../../../storage/boss-drops', () => ({
   replaceBossDropRecords: jest.fn(),
 }))
 const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: replaceBossDropRecordsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
+jest.mock('../../server-sync/drop-price-sync', () => ({ reportDropPrice: jest.fn(), reportDropRemoved: jest.fn() }))
+const { reportDropRemoved: reportDropRemovedMock } = jest.requireMock('../../server-sync/drop-price-sync') as Record<string, jest.Mock>
 // 판 알림을 모으는 반복. 쓰기가 그 안에서 도는지 깊이로 본다.
 jest.mock('../../../storage/record-revision-batch', () => ({
   batchRecordWrites: async (write: () => Promise<unknown>) => {
@@ -147,6 +149,30 @@ describe('loadDropsByRowKey: 가격 생존', () => {
         priceMeso: 15_000_000_000,
       }),
     ])
+  })
+
+  // 걷힌 드롭은 기기에서 기록이 사라진 것이다. 서버 줄이 남으면 먹지 않은 것이 시세 표본에 남는다.
+  it('prune 이 걷은 드롭은 지우기를 보내고 살아남은 드롭은 안 보낸다', async () => {
+    reportDropRemovedMock.mockReset()
+    getBossDropRecordsMock.mockResolvedValue([
+      record({ dropIndex: 0, dropRecordId: 'kept-id' }),
+      record({
+        dropIndex: 1,
+        dropRecordId: 'pruned-id',
+        itemKey: 'complete_under_control',
+        itemName: '컴플리트 언더컨트롤',
+        priceState: null,
+        priceMeso: null,
+        priceShare: null,
+      }),
+    ])
+    const { loadDropsByRowKey } = require('../drops-loader') as typeof import('../drops-loader')
+    const now = new Date('2026-08-10T00:00:00Z')
+
+    await loadDropsByRowKey(['ocid-1'], [row()], now)
+
+    expect(reportDropRemovedMock).toHaveBeenCalledTimes(1)
+    expect(reportDropRemovedMock).toHaveBeenCalledWith('pruned-id', PERIOD, now)
   })
 
   // 행마다 다시 쓸 수 있다. 쓰기마다 알리면 판을 구독하는 화면이 그만큼 다시 그려진다.

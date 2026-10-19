@@ -19,7 +19,7 @@ import {
   type BossProfitRecord,
 } from '../../storage/boss-profit'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
-import { reportDropPrice } from '../server-sync/drop-price-sync'
+import { reportDropPrice, reportDropRemoved } from '../server-sync/drop-price-sync'
 import { crystalPayoutMeso, type PartyShares } from '../../lib/boss/party-shares'
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
@@ -2272,18 +2272,26 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       { name: row.world, key: row.worldKey },
     )
 
-    // 시트에서 가격까지 적은 드롭은 여기서 서버로 한 건씩 보낸다(시세 표본). 가격 편집 화면과 같은
-    // 규칙이다. **기기 저장이 끝난 뒤이고 결과를 안 기다린다.** 식별자는 메모리의 드롭에 없을 수 있어
-    // (방금 적은 드롭) 저장소가 돌려준 값을 쓴다. 뺀 가격도 보낸다. 서버의 그 줄을 거두는 요청이다.
+    // 저장한 드롭 전부를 여기서 서버로 한 건씩 보낸다(시세 표본). 가격 편집 화면과 같은 규칙이고
+    // 가격이 없는 드롭도 보낸다(서버가 pending · skipped 로 든다). **기기 저장이 끝난 뒤이고 결과를
+    // 안 기다린다.** 식별자는 메모리의 드롭에 없을 수 있어(방금 적은 드롭) 저장소가 돌려준 값을 쓴다.
     const saved = drops.map((drop, index) => ({ ...drop, dropRecordId: ids[index] ?? drop.dropRecordId }))
     for (const drop of saved) {
-      if (drop.priceState === undefined || drop.dropRecordId === null) continue
+      if (drop.dropRecordId === null) continue
       void reportDropPrice(drop.dropRecordId, now)
+    }
+
+    // 저장에서 빠진 드롭은 기기에서 기록이 사라진 것이다. 서버의 그 줄을 deleted 로 표시하는 요청이다.
+    // 해제하고 다시 고른 드롭은 저장소가 신분으로 식별자를 물려주므로 saved 에 그대로 있다.
+    const key = dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)
+    const savedIds = new Set(saved.map((drop) => drop.dropRecordId))
+    for (const drop of get().dropsByRowKey[key] ?? []) {
+      if (drop.dropRecordId === null || savedIds.has(drop.dropRecordId)) continue
+      void reportDropRemoved(drop.dropRecordId, row.periodKey, now)
     }
 
     // dropsByRowKey 는 rows 와 독립된 상태라 setPartySize 와 달리 latestSyncSnapshot 이중 갱신이
     // 필요 없다. 탭 전환·기간 이동 시 loadPeriod 가 DB 에서 다시 로드한다.
-    const key = dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)
     set({ dropsByRowKey: { ...get().dropsByRowKey, [key]: saved } })
   },
 
