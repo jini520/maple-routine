@@ -127,8 +127,8 @@ const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: repl
 // 월드 리프한 기간의 중복 기록 정리. 자동 기록 뒤에 불리고, 지운 것이 있으면 기록을 다시 읽는가만 본다.
 jest.mock('../world-leap-records', () => ({ cleanUpWorldLeapDuplicates: jest.fn() }))
 // 서버 전송은 다른 기능이 소유한다(`features/server-sync`). 여기서는 **부르는지만** 본다.
-jest.mock('../../server-sync/drop-price-sync', () => ({ reportDropPrice: jest.fn() }))
-const { reportDropPrice: reportDropPriceMock } = jest.requireMock('../../server-sync/drop-price-sync') as Record<string, jest.Mock>
+jest.mock('../../server-sync/drop-price-sync', () => ({ reportDropPrice: jest.fn(), reportDropRemoved: jest.fn() }))
+const { reportDropPrice: reportDropPriceMock, reportDropRemoved: reportDropRemovedMock } = jest.requireMock('../../server-sync/drop-price-sync') as Record<string, jest.Mock>
 const { cleanUpWorldLeapDuplicates: cleanUpWorldLeapMock } = jest.requireMock('../world-leap-records') as Record<string, jest.Mock>
 
 // 잡지 않은 보스의 드롭을 지운 뒤 **건수를 토스트로 알린다**. 값까지 사라지므로.
@@ -261,6 +261,7 @@ beforeEach(() => {
   getBossDropRecordsMock.mockResolvedValue([])
   replaceBossDropRecordsMock.mockResolvedValue([])
   reportDropPriceMock.mockReset()
+  reportDropRemovedMock.mockReset()
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
   getBossPartySettingMock.mockResolvedValue(null)
   getCachedSchedulerStateMock.mockResolvedValue(null)
@@ -366,9 +367,9 @@ describe('setBossDrops', () => {
     expect(useBossProfitStore.getState().dropsByRowKey['ocid-1|lotus|hard|2026-W30']).toEqual(drops)
   })
 
-  it('가격을 적은 드롭은 저장소가 돌려준 식별자로 서버에 보내고, 메모리의 드롭에도 그 식별자를 붙인다', async () => {
-    // 시트에서 드롭을 기록하며 가격까지 적으면 식별자가 아직 없다. INSERT 에서 처음 생기므로 저장소가
-    // 돌려준 값으로 보낸다. 가격을 안 적은 드롭은 보낼 것이 없다.
+  it('저장한 드롭 전부를 저장소가 돌려준 식별자로 서버에 보내고, 메모리의 드롭에도 그 식별자를 붙인다', async () => {
+    // 시트에서 기록한 드롭은 식별자가 아직 없다. INSERT 에서 처음 생기므로 저장소가 돌려준 값으로 보낸다.
+    // 가격을 안 적은 드롭도 보낸다. 서버가 pending 으로 든다.
     useBossProfitStore.setState({ status: 'loaded', rows: [sampleRow], dropsByRowKey: {} })
     replaceBossDropRecordsMock.mockResolvedValue(['id-0', 'id-1'])
     const drops = [
@@ -388,13 +389,36 @@ describe('setBossDrops', () => {
       drops,
     )
 
-    expect(reportDropPriceMock).toHaveBeenCalledTimes(1)
+    expect(reportDropPriceMock).toHaveBeenCalledTimes(2)
     expect(reportDropPriceMock).toHaveBeenCalledWith('id-0', expect.any(Date))
+    expect(reportDropPriceMock).toHaveBeenCalledWith('id-1', expect.any(Date))
+    expect(reportDropRemovedMock).not.toHaveBeenCalled()
     const saved = useBossProfitStore.getState().dropsByRowKey['ocid-1|lotus|hard|2026-W30']
     expect(saved.map((drop) => drop.dropRecordId)).toEqual(['id-0', 'id-1'])
   })
 
-  it('뺀 가격도 보낸다. 서버의 그 줄을 거두는 요청이다', async () => {
+  it('저장에서 빠진 드롭은 지우기를 보낸다. 기기에서 기록이 사라진 것이다', async () => {
+    const kept = { dropRecordId: 'old-a', category: 'equipment' as const, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }
+    const removed = { dropRecordId: 'old-b', category: 'equipment' as const, itemKey: 'restraint_ring', itemName: '리스트레인트 링', quantity: 1, priceState: 'entered' as const, priceMeso: 5 }
+    useBossProfitStore.setState({
+      status: 'loaded',
+      rows: [sampleRow],
+      dropsByRowKey: { 'ocid-1|lotus|hard|2026-W30': [kept, removed] },
+    })
+    replaceBossDropRecordsMock.mockResolvedValue(['old-a'])
+
+    await useBossProfitStore.getState().setBossDrops(
+      { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-W30' },
+      [kept],
+    )
+
+    expect(reportDropPriceMock).toHaveBeenCalledTimes(1)
+    expect(reportDropPriceMock).toHaveBeenCalledWith('old-a', expect.any(Date))
+    expect(reportDropRemovedMock).toHaveBeenCalledTimes(1)
+    expect(reportDropRemovedMock).toHaveBeenCalledWith('old-b', '2026-W30', expect.any(Date))
+  })
+
+  it('기록 안함도 보낸다. 서버의 그 줄이 skipped 가 된다', async () => {
     useBossProfitStore.setState({ status: 'loaded', rows: [sampleRow], dropsByRowKey: {} })
     replaceBossDropRecordsMock.mockResolvedValue(['id-0'])
     await useBossProfitStore.getState().setBossDrops(

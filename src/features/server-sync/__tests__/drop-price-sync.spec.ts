@@ -1,14 +1,15 @@
 /**
  * 드롭 가격 종류의 함수 둘과 저장 자리의 전송.
  *
- * 여기서 막는 사고는 셋이다. **기준 기간보다 앞선 기록이 올라가는 것**, **기록 안함으로 바꾼
- * 가격이 서버에 남는 것**, 그리고 **전송 실패가 대기 표에 안 남는 것**이다.
+ * 여기서 막는 사고는 셋이다. **기준 기간보다 앞선 기록이 올라가는 것**, **가격 없는 기록이 지우기로
+ * 나가는 것**(기록 안함 · 미입력은 상태를 달아 올린다), 그리고 **전송 실패가 대기 표에 안 남는 것**이다.
  */
 import {
   DROP_PRICE_KIND,
   dropPriceHandler,
   dropPricePayloadOf,
   reportDropPrice,
+  reportDropRemoved,
   SERVER_PRICE_FROM,
   sendsToServer,
 } from '../drop-price-sync'
@@ -92,10 +93,11 @@ describe('보내는 기간', () => {
 })
 
 describe('보낼 값', () => {
-  it('입력된 가격만 값이 된다', () => {
+  it('입력된 가격은 completed 다', () => {
     expect(dropPricePayloadOf(record())).toEqual({
       dropRecordId: ID,
       itemKey: 'ring-restraint',
+      status: 'completed',
       priceMeso: 10_000_000_000,
       periodKey: '2026-10-15',
       worldKey: 'challengers_2',
@@ -118,16 +120,30 @@ describe('보낼 값', () => {
       'periodKey',
       'priceMeso',
       'ringLevel',
+      'status',
       'worldKey',
     ])
   })
 
-  it('기록 안함과 미입력은 지우기다', () => {
-    expect(dropPricePayloadOf(record({ priceState: 'excluded' }))).toBeNull()
-    expect(dropPricePayloadOf(record({ priceState: null, priceMeso: null }))).toBeNull()
+  // 둘 다 기록은 있고 가격만 없다. 지우기로 보내면 올라간 적 없는 기록에 지우기가 나간다.
+  it('기록 안함은 skipped, 미입력은 pending 이고 가격은 null 이다', () => {
+    expect(dropPricePayloadOf(record({ priceState: 'excluded', priceMeso: null }))).toMatchObject({
+      dropRecordId: ID,
+      status: 'skipped',
+      priceMeso: null,
+    })
+    expect(dropPricePayloadOf(record({ priceState: null, priceMeso: null }))).toMatchObject({
+      status: 'pending',
+      priceMeso: null,
+    })
   })
 
-  it('아이템 key 가 없으면 못 보낸다', () => {
+  it('입력 상태인데 가격이 없거나 0 이면 pending 이다', () => {
+    expect(dropPricePayloadOf(record({ priceMeso: null }))).toMatchObject({ status: 'pending', priceMeso: null })
+    expect(dropPricePayloadOf(record({ priceMeso: 0 }))).toMatchObject({ status: 'pending', priceMeso: null })
+  })
+
+  it('아이템 key 가 없으면 못 보낸다. 값이 null 인 유일한 경우다', () => {
     // 서버가 그 칸을 분포의 축으로 쓴다.
     expect(dropPricePayloadOf(record({ itemKey: null }))).toBeNull()
   })
@@ -167,13 +183,20 @@ describe('저장 자리의 전송', () => {
     expect(enqueueServerSync).not.toHaveBeenCalled()
   })
 
-  it('기록 안함으로 바뀌면 거두기를 보낸다', async () => {
-    // 한 번 올라간 가격을 거두는 길이 이것뿐이다.
-    getBossDropRecordById.mockResolvedValue(record({ priceState: 'excluded' }))
+  it('기록 안함은 skipped 로 올린다. 지우기가 아니다', async () => {
+    getBossDropRecordById.mockResolvedValue(record({ priceState: 'excluded', priceMeso: null }))
     await reportDropPrice(ID, NOW)
 
-    expect(deleteDropPrice).toHaveBeenCalledWith(HEADERS, ID)
-    expect(sendDropPrice).not.toHaveBeenCalled()
+    expect(sendDropPrice).toHaveBeenCalledWith(HEADERS, expect.objectContaining({ status: 'skipped', priceMeso: null }))
+    expect(deleteDropPrice).not.toHaveBeenCalled()
+  })
+
+  it('미입력도 pending 으로 올린다', async () => {
+    getBossDropRecordById.mockResolvedValue(record({ priceState: null, priceMeso: null }))
+    await reportDropPrice(ID, NOW)
+
+    expect(sendDropPrice).toHaveBeenCalledWith(HEADERS, expect.objectContaining({ status: 'pending' }))
+    expect(deleteDropPrice).not.toHaveBeenCalled()
   })
 
   it('응답이 안 왔으면 대기 표에 쌓는다', async () => {
@@ -208,6 +231,39 @@ describe('저장 자리의 전송', () => {
     await reportDropPrice(ID, NOW)
 
     expect(sendDropPrice).not.toHaveBeenCalled()
+    expect(enqueueServerSync).toHaveBeenCalledTimes(1)
+  })
+})
+
+// 기기에서 기록이 사라진 자리다. 시트 저장에서 빠진 드롭과 난이도 확정으로 걷힌 드롭이 여기로 온다.
+describe('기록이 사라진 자리의 전송', () => {
+  it('기준 기간의 기록이면 지우기를 보낸다. 기록을 다시 읽지 않는다', async () => {
+    await reportDropRemoved(ID, '2026-10-15', NOW)
+
+    expect(deleteDropPrice).toHaveBeenCalledWith(HEADERS, ID)
+    expect(getBossDropRecordById).not.toHaveBeenCalled()
+    expect(enqueueServerSync).not.toHaveBeenCalled()
+  })
+
+  it('기준보다 앞선 기간이면 보내지도 쌓지도 않는다', async () => {
+    await reportDropRemoved(ID, '2026-09-10', NOW)
+
+    expect(deleteDropPrice).not.toHaveBeenCalled()
+    expect(enqueueServerSync).not.toHaveBeenCalled()
+  })
+
+  it('응답이 안 왔으면 대기 표에 쌓는다. 다음 회차는 원본이 없어 그대로 지우기다', async () => {
+    deleteDropPrice.mockResolvedValue({ outcome: 'no-response' })
+    await reportDropRemoved(ID, '2026-10-15', NOW)
+
+    expect(enqueueServerSync).toHaveBeenCalledWith(DROP_PRICE_KIND, ID, NOW.toISOString())
+  })
+
+  it('밝힐 수단이 없으면 보내지 않고 쌓아만 둔다', async () => {
+    serverIdentityHeaders.mockResolvedValue(null)
+    await reportDropRemoved(ID, '2026-10-15', NOW)
+
+    expect(deleteDropPrice).not.toHaveBeenCalled()
     expect(enqueueServerSync).toHaveBeenCalledTimes(1)
   })
 })
