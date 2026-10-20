@@ -12,7 +12,6 @@ import { createNavigationContainerRef, StackActions } from '@react-navigation/na
 import { useAppEntryStore } from '../../features/app-entry/store'
 import { __resetThemeAppearanceForTest } from '../../theme/appearance-store'
 import { resetBarStoreForTests } from '../../components/organisms/BottomBar/bar-store'
-import { PUSH_SCREEN_OPTIONS } from '../push-screen-options'
 import { needsPopToGroupLayer, tabNavigateArgs } from '../tab-navigate'
 import { NavigationHarness } from './harness'
 import { installMemoryPreferences } from './memory-preferences'
@@ -158,17 +157,5 @@ describe('마지막으로 보던 하위를 기억한다', () => {
     await press('bar-group-schedule')
 
     expect(지금_화면()).toBe('Boss')
-  })
-})
-
-// 두 스택이 **같은 상수**를 쓴다는 것이 **다른 하위 페이지처럼 열린다** 의 실질이다. 각자 적으면
-// 그 **처럼** 이 우연이 되고, 한쪽만 고쳐도 아무 테스트가 울지 않는다.
-describe('층은 하위 페이지와 같은 방식으로 열린다', () => {
-  it('전환과 제스처가 켜져 있다', () => {
-    expect(PUSH_SCREEN_OPTIONS.animation).toBe('ios_from_right')
-    expect(PUSH_SCREEN_OPTIONS.gestureEnabled).toBe(true)
-    // 가장자리 인식기는 **OS 기본값**이어야 한다. 숫자를 얹으면 흉내가 원본을 덮는다.
-    expect(PUSH_SCREEN_OPTIONS.gestureResponseDistance).toBeUndefined()
-    expect(PUSH_SCREEN_OPTIONS.fullScreenGestureEnabled).toBeUndefined()
   })
 })

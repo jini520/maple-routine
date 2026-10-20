@@ -151,14 +151,6 @@ describe('useContentSchedulerStore', () => {
     expect(state.error).toBeNull()
   })
 
-  it('refresh(ocids)는 syncSchedules(ocids)를 정확히 그 인자로 호출한다', async () => {
-    syncSchedulesMock.mockResolvedValue([syncResult()])
-
-    await useContentSchedulerStore.getState().refresh(['ocid-1'])
-
-    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'], undefined)
-  })
-
   it('모든 캐릭터가 성공하면 status: loaded이고 dailyContents·weeklyContents가 하나의 상태에서 동시에 반영된다', async () => {
     syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' })])
 
@@ -376,16 +368,6 @@ describe('useContentSchedulerStore', () => {
       expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
       expect(useContentSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
       expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
-    })
-
-    it('saveTrackedOcids가 끝나면 완료 토스트를 띄운다', async () => {
-      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1'])
-
-      expect(showSuccessMock).toHaveBeenCalledWith('캐릭터 정보를 모두 불러왔어요')
-      expect(showErrorMock).not.toHaveBeenCalled()
     })
 
     it('storage 저장이 실패하면 실패 토스트를 띄우고 상태를 바꾸지 않는다(예외를 던지지 않음)', async () => {

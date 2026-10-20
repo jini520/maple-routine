@@ -15,6 +15,8 @@ import type { Metrics } from 'react-native-safe-area-context'
 const mockPresent = jest.fn()
 /** 스크롤 손잡이. 라이브러리는 ref 로 `scrollTo` 를 내준다. */
 const mockScrollTo = jest.fn()
+/** 시트를 닫는 손잡이. 이탈 애니메이션을 돌린 뒤 `onDismiss` 를 부른다. */
+const mockDismiss = jest.fn()
 
 jest.mock('@gorhom/bottom-sheet', () => {
   const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
@@ -24,7 +26,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
     BottomSheetBackdrop: (props: Record<string, unknown>) =>
       React.createElement(ReactNative.View, { testID: 'sheet-backdrop', ...props }),
     BottomSheetModal: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
-      React.useImperativeHandle(ref as never, () => ({ present: mockPresent, dismiss: jest.fn() }))
+      React.useImperativeHandle(ref as never, () => ({ present: mockPresent, dismiss: mockDismiss }))
       return React.createElement(ReactNative.View, { testID: 'sheet', ...props })
     }),
     BottomSheetScrollView: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
@@ -53,6 +55,7 @@ type 요소 = ReturnType<Awaited<ReturnType<typeof renderOverlay>>['getByTestId'
 beforeEach(() => {
   mockPresent.mockClear()
   mockScrollTo.mockClear()
+  mockDismiss.mockClear()
 })
 
 describe('BottomSheet: 가 정한 값을 넘긴다', () => {
@@ -129,10 +132,19 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
   // 그 프롭 값만 검사했는데, 이제 우리 `onPress` 가 하므로 **실제로 눌러 본다.**
   it('스크림을 누르면 시트를 닫는다', async () => {
     const { getByTestId } = await open()
-    const sheet = getByTestId('sheet')
-    const backdrop = (sheet.props.backdropComponent as (p: object) => React.JSX.Element)({})
+    const 자리 = { get: () => 0 }
+    const backdrop = (getByTestId('sheet').props.backdropComponent as (p: object) => React.JSX.Element)({
+      animatedIndex: 자리,
+      animatedPosition: 자리,
+      style: {},
+    })
+    const scrim = await renderOverlay(backdrop)
 
-    expect(typeof backdrop.props.onPress).toBe('function')
+    await act(async () => {
+      fireEvent.press(scrim.getByLabelText('닫기'))
+    })
+
+    expect(mockDismiss).toHaveBeenCalledTimes(1)
   })
 
   // 마운트가 곧 열림이고, 닫힘은 이탈 애니메이션이 끝난 뒤

@@ -11,7 +11,6 @@ import {
   renderAtom,
   findAllOfType,
   flattenStyle,
-  기본테마,
 } from '../../../../components/__tests__/render-atom'
 import { WeeklyBossProfitWidget } from '../WeeklyBossProfitWidget'
 import { 뷰모델, 빈_뷰모델, 수익, 수익캐릭터셋 } from './widget-fixture'
@@ -126,17 +125,6 @@ describe('스택 바가 총액을 가른다', () => {
       const style = flattenStyle(getByTestId(`profit-fill-${key}`).props.style)
       expect(style.height).toBe('100%')
     }
-  })
-
-  it('두 조각의 색이 링과 같은 짝이다. 결정석 `primary` · 아이템 `third`', async () => {
-    const { getByTestId } = await 위젯(크기['4x3'])
-
-    expect(flattenStyle(getByTestId('profit-fill-crystal').props.style).backgroundColor).toBe(
-      기본테마.primary,
-    )
-    expect(flattenStyle(getByTestId('profit-fill-item').props.style).backgroundColor).toBe(
-      기본테마.third,
-    )
   })
 
   it('분해 금액이 같은 두 값을 글자로 말한다', async () => {

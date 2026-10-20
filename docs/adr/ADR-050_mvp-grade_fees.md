@@ -389,8 +389,7 @@ ID 표시(닉네임 · 초상)는 넥슨 `character/list` 에서 오지만, 물�
 | `features/mvp-grade/__tests__/bulk-apply.spec.ts` | 결정 10: 그 날 등급이 있는 기록에만 요율을 붙이는지, 드롭은 두 칸에 같은 요율을 붙이는지 본다 |
 | `features/mvp-grade/__tests__/tasks.spec.ts` | 결정 10: 남은 일을 목록 길이로 세고 앞에서부터 잘라 쓰는지, 결정석 단계가 받은 몫과 함께 쓰는지 본다 |
 | `features/mvp-grade/__tests__/settings-store.spec.ts` | 결정 14: 추적 ID 가 먼저 오는지, 읽기 실패를 빈 목록으로 감추지 않는지, 저장 뒤 다시 계산을 돌리는지, 저장 실패 시 토스트를 띄우고 화면 값을 그대로 두는지, 스위치가 저장값의 반대인지 본다 |
-| `storage/__tests__/mvp-grade-prefs.spec.ts` | 결정 12: 아무것도 없으면 주간 확인이 켜져 있는지 본다 |
-| `app/mvp-grade/__tests__/MvpGradeModal.test.tsx` | 결정 13: 고르기 → 확인 → 수정 흐름, 적용 시작 주의 범위, 일괄 적용 체크박스가 보이는 조건과 처음 상태, 주간 확인에서 바꾼 ID 에만 시작 주 줄이 보이는지, 직접 바꾸기 체크박스가 저장값으로 시작하는지 본다 |
+| `app/mvp-grade/__tests__/MvpGradeModal.test.tsx` | 결정 13: 고르기 → 확인 → 수정 흐름, 적용 시작 주의 범위, 일괄 적용 체크박스가 보이는 조건과 처음 상태, 주간 확인에서 바꾼 ID 에만 시작 주 줄이 보이는지 본다 |
 | `app/mvp-grade/__tests__/MvpGradeHost.test.tsx` | 결정 12: 끝나지 않은 작업이 있거나 앱이 열리기 전에는 판단하지 않는지, 물을 것이 생기면 모달을 띄우는지 본다 |
 | `app/mvp-grade/__tests__/MvpGradeSheets.test.tsx` | 결정 14 · 15: 각 시트가 여는 값과 고를 수 있는 주, 주를 눌러도 `확인` 전에는 바뀌지 않는지, 기간 추가가 종료 주 탭으로 넘어가고 뜻 줄을 바꾸는지 본다 |
 | `app/settings/__tests__/SettingsMvpGradeScreens.test.tsx` | 결정 14: 목록 · 실패 · 이력 상세 · 연도 줄 · 등급 없음 줄 · 추가와 고치기 시트 · 지우기 확인을 본다 |

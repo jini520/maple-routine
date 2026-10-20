@@ -261,12 +261,11 @@ FCM 구독이 실패했는데 켜졌다고 저장하면 스위치는 켜져 있�
 | `native/adapters/__tests__/notification-request.test.ts` | 결정 4 · 5: 옛 채널 id 와 소리를 유지하는지, id 가 왕복 손실 없이 바뀌고 정수가 아니면 던지는지, 지난 시각 · 지금 · `Invalid Date` 를 던지는지 본다 |
 | `native/adapters/__tests__/rn-notifications.test.ts` | 결정 4 · 5 · 6: 채널을 만든 뒤 예약하는지, 권한 조회가 팝업을 띄우지 않는지, 취소가 예약 때와 같은 id 로 떠 있는 알림까지 내리는지, 리스너를 달기 전에 온 백그라운드 탭을 쌓아 두었다가 넘기는지 본다 |
 | `native/adapters/__tests__/rn-push.test.ts` | 결정 7: 토픽 이름을 그대로 넘기는지, 실패를 삼키지 않는지, iOS 에서 APNs 토큰을 기다리고 끝내 없으면 읽을 수 있는 이유로 던지는지, 안드로이드는 기다리지 않는지 본다 |
-| `features/notice/__tests__/topics.spec.ts` | 결정 8: 토픽 이름이 서버와 같은지, 앱 공지 토픽이 `notice` 인지, 분류 다섯이 한 줄씩 있는지 본다 |
 | `features/notice/__tests__/permission-gate.spec.ts` | 결정 9: 처음 한 번만 묻는지, 요청이 던져도 물은 것으로 남는지, 허용하면 기본 셋을 켜고 구독이 실패해도 던지지 않는지 본다 |
 | `features/notice/__tests__/store.spec.ts` | 결정 8 ~ 12: 구독 실패 시 저장하지 않는지, 옛 값을 이어받고 옛 키에도 적는지, 기본 셋만 켜는지, 권한 상태별로 켜는 동작이 갈리는지, 끄기는 권한을 안 보는지, 연타가 마지막 값 하나로 합쳐지는지, 실패한 스위치만 돌아가는지, 재구독이 켜짐만 보내고 권한을 묻지 않고 대기열에서 합쳐지는지 본다 |
 | `storage/__tests__/notification-ledger.spec.ts` | 결정 2: 깨진 원장은 빈 목록으로, 형식이 틀린 항목은 그 항목만 버리는지 본다 |
 | `storage/__tests__/notice-settings.spec.ts` | 결정 10: 저장이 실패하면 그대로 던지는지 본다 |
-| `app/settings/__tests__/SettingsNoticeAlertsScreen.test.tsx` | 결정 11 · 13: 전체 스위치가 계산 값이고 파티 알림까지 함께 움직이는지, 기기 설정 버튼과 권한 카드가 같은 함수를 부르는지, 권한 카드가 뜨는 조건과 안 뜨는 조건, 실패 이유를 적는지, 왕복을 기다리지 않고 그리는지, 준비 중 항목과 파티 스위치가 맞게 보이는지, 스위치를 누르면 촉각이 나는지 본다 |
+| `app/settings/__tests__/SettingsNoticeAlertsScreen.test.tsx` | 결정 11 · 13: 전체 스위치가 계산 값이고 파티 알림까지 함께 움직이는지, 기기 설정 버튼과 권한 카드가 같은 함수를 부르는지, 권한 카드가 뜨는 조건과 안 뜨는 조건, 실패 이유를 적는지, 왕복을 기다리지 않고 그리는지, 파티 스위치가 맞게 보이는지, 스위치를 누르면 촉각이 나는지 본다 |
 | `app/settings/__tests__/notification-settings-link.spec.ts` | 결정 13: 안드로이드는 알림 설정 인텐트로, iOS 는 앱 설정으로 여는지 본다 |
 
 ## 번호 기록

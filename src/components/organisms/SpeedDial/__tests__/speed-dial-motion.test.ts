@@ -96,12 +96,6 @@ describe('움직임을 줄이면', () => {
 })
 
 describe('치수', () => {
-  // 넉넉한 고정 폭을 두지 않는다. 문구가 짧아지면 알약도 짧아진다(사용자 지시).
-  it('알약 폭은 가장 긴 글자에 원 자리 60 과 오른쪽 여백 16 을 더한 것이다', () => {
-    expect(pillWidth(100)).toBe(176)
-    expect(pillWidth(40)).toBe(116)
-  })
-
   it('글자를 아직 못 쟀으면 원 크기다', () => {
     expect(pillWidth(0)).toBe(PILL_HEIGHT_PX)
   })

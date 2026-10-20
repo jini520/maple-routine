@@ -289,15 +289,15 @@ Preferences `lastRunBundleVersion` 과 지금 번들 버전을 비교한다(`con
 | 파일 | 확인하는 것 |
 |---|---|
 | `app/settings/__tests__/SettingsScreen.test.tsx` | 결정 1 · 2: 읽는 행 넷의 순서와 한 카드, 카드 제목, 문의 메일과 실패 토스트, 톱니바퀴, 설정 행이 더보기에 없는지, `openPicker` 진입을 본다. 결정 3: 스켈레톤이 나타나고 사라지는 때, 사본, 당김과 토스트 조건을 본다 |
-| `app/settings/__tests__/AppSettingsScreen.test.tsx` | 결정 4: 카드 넷과 제목 순서, 각 행이 여는 화면, 고지 네 줄과 버전 출처를 본다. 결정 6: 캐시 용량 합계와 `- KB`, 앱 버전 표기를 본다. 위험 행이 이 화면에 없는지 본다 |
+| `app/settings/__tests__/AppSettingsScreen.test.tsx` | 결정 4: 카드 넷과 제목 순서, 각 행이 여는 화면, 하단 버전이 도는 번들의 버전인지 본다. 결정 6: 캐시 용량 합계와 `- KB`, 앱 버전 표기를 본다 |
 | `app/settings/__tests__/SettingsRow.test.tsx` · `SettingsLinkRow.test.tsx` | 결정 5: 배지와 chevron 이 함께 나오는지, 위험 색, 외부 링크가 주소를 열고 실패를 알리는지, 두 행의 글자가 같은지 본다 |
 | `app/settings/__tests__/SettingsAccountDataScreen.test.tsx` | 결정 7: 위험 행 둘이 한 카드에 chevron 없이 있는지, 넥슨 로그아웃이 보이는 조건과 확인, 고른 그룹을 넘기는지, 연결 해제가 확인을 거쳐 부르는지 본다 |
 | `app/settings/__tests__/DisconnectConfirm.test.tsx` | 결정 7: 버튼과 바깥 누름이 맞는 콜백을 부르는지, 처리 중 대기 상태를 본다 |
-| `app/settings/__tests__/SettingsAboutScreen.test.tsx` · `AppUpdateSection.test.tsx` | 결정 8: 업데이트 카드가 제목을 다시 그리지 않는지, 실행 중인 번들 버전, 미지원 상태, 개인정보 처리방침이 하위 화면을 여는지 본다 |
+| `app/settings/__tests__/SettingsAboutScreen.test.tsx` · `AppUpdateSection.test.tsx` | 결정 8: 실행 중인 번들 버전, 미지원 상태, 개인정보 처리방침이 하위 화면을 여는지 본다 |
 | `app/settings/__tests__/SettingsPrivacyScreen.test.tsx` | 결정 8: 즉시 실패와 8초 실패, 성공 뒤 타이머가 멈추는지, `브라우저로 열기` 를 본다 |
 | `app/settings/__tests__/contact-mail.spec.ts` | 결정 9: 플랫폼별 OS 버전과 모델, 기기 정보 줄, 본문과 인코딩을 본다 |
 | `app/settings/__tests__/store-review-link.spec.ts` | 결정 10: 플랫폼별 리뷰 주소를 본다 |
-| `data/__tests__/release-notes.spec.ts` | 결정 11: 버전과 날짜 형식, 중복 없음, 내림차순, 카테고리, 빈 항목 없음, 최신 노트의 `highlights`, 없는 버전에 던지지 않는지 본다 |
+| `data/__tests__/release-notes.spec.ts` | 결정 11: 버전과 날짜 형식, 중복 없음, 내림차순, 카테고리, 빈 항목 없음, 최신 노트의 `highlights` 를 본다 |
 | `app/settings/__tests__/SettingsReleaseNotesScreen.test.tsx` | 결정 12: 배열 순서, 카테고리 묶음과 순서, 빈 묶음, `사용 중` 배지 기준, `스토어 업데이트 필요`, `guideId` 항목만 눌리는지 본다 |
 | `data/__tests__/feature-guides.spec.ts` | 결정 14: 파일과 목록이 일대일인지, id 중복, 그룹, 노트가 가리키는 안내와 마디가 실재하는지 본다 |
 | `app/settings/__tests__/SettingsFeatureGuideListScreen.test.tsx` · `SettingsFeatureGuideScreen.test.tsx` | 결정 14: 탭 순서와 감춤, 여러 그룹 안내, 목차, 마디 스크롤, 이미지, 두 라우트, 없는 `guideId` 를 본다 |

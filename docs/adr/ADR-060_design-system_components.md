@@ -253,7 +253,7 @@ iOS 의 꺼진 트랙은 시스템이 반투명 색을 겹쳐 그려서 앱 테�
 | `components/molecules/Segment/__tests__/` · `TabSegment/__tests__/` · `DifficultySegment/__tests__/` | 결정 10: 고른 것만 선택으로 읽히는지, 누르면 라벨이 아니라 값을 주는지, 고른 것을 다시 누르면 콜백과 촉각이 없는지, 상자가 칠하고 글자색은 상자를 기다리지 않는지, 상자가 터치를 막지 않는지, `Segment` 의 `fixed` 와 `disabled` 를 본다 |
 | `hooks/__tests__/useSlidingThumb.test.tsx` | 결정 10: 처음 그려질 때와 다시 나타날 때는 미끄러지지 않는지, 폭만 바뀌어도 옮긴 것으로 보는지, 옛 렌더의 핸들러로 새 위치가 와도 상자가 따라가는지, 옆 조각이 알려도 다시 계산하는지 본다 |
 | `components/atoms/Switch/__tests__/Switch.test.tsx` | 결정 11: 스크린리더 계약, 안드로이드 두 크기에서 손잡이가 가는 거리, 손잡이 트랜지션과 모션 줄이기, 트랙 색이 즉시 바뀌는지, 누르면 `onToggle` 과 촉각이 한 번씩 나는지, `children` 글자를 눌러도 켜지는지, iOS 의 상자 크기 · 값 · 누름을 본다 |
-| `components/molecules/AmountFigure/__tests__/AmountFigure.test.tsx` | 결정 13: 숫자와 단위가 같은 줄 높이를 쓰는지, 단위 줄에 숫자와 같은 크기의 글자가 들어 있는지, 숫자의 줄 상자가 글자보다 커서 위가 잘리지 않는지, 눌러도 값이 바뀌지 않는지 본다 |
+| `components/molecules/AmountFigure/__tests__/AmountFigure.test.tsx` | 결정 13: 숫자와 단위가 같은 줄 높이를 쓰는지, 단위 줄에 숫자와 같은 크기의 글자가 들어 있는지, 숫자의 줄 상자가 글자보다 커서 위가 잘리지 않는지 본다 |
 | `hooks/__tests__/useSelectionDraft.spec.tsx` | 결정 12: `moveOcid` 가 모든 `(from, to)` 에서 라이브러리 `reorderInsert` 와 같은 배열을 내는지 본다 |
 
 ## 번호 기록

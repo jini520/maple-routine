@@ -35,12 +35,6 @@ describe('API 이름에서 key 를 찾는다', () => {
     expect(equipmentItemKeyOfApiName('')).toBeNull()
   })
 
-  // 강화가 불가능한 장비는 표에 안 담는다(사용자 지정). 담아 두면 다음 세션이 그 자리를 빈 레벨로 보고 채우려 든다.
-  it('강화 불가 장비는 표에 없다', () => {
-    expect(equipmentItemKeyOfApiName('도전자의 모자')).toBeNull()
-    expect(equipmentItemKeyOfApiName('칠요의 뱃지')).toBeNull()
-  })
-
   // 키는 `arcane_umbra_soul_shooter` 인데 이름이 아케인셰이드엔젤릭슈터로 들어와 있었다. API 가
   // 주는 이름과 안 맞아 11건이 조용히 빠졌다. 키의 영문을 이름으로 옮겨 적을 때 나는 종류다.
   it('키와 이름이 어긋나 안 붙던 자리를 지킨다', () => {

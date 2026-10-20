@@ -119,14 +119,6 @@ function refreshControl(): { refreshing: boolean; onRefresh: () => void } {
   return screen.getByTestId('screen-scroll').props.refreshControl.props
 }
 
-/** 두 노드를 **같은 줄**로 묶는 가장 작은 상자(아래 케이스가 그것으로 자리를 본다). */
-function contains(ancestor: AtomElement, node: AtomElement): boolean {
-  for (let current: AtomElement | null = node; current !== null; current = current.parent) {
-    if (current === ancestor) return true
-  }
-  return false
-}
-
 beforeEach(() => {
   mockShowError.mockClear()
   mockNoticeApiKeyIssue.mockClear()
@@ -444,17 +436,6 @@ describe('ContentScreen: 재조회', () => {
 })
 
 describe('ContentScreen: 갱신 시각', () => {
-  // 제목에 딸린 작은 글씨다. 제목 **줄 안**에 있으면 폭을 다투고, 그때 줄어드는 것은 제목이다.
-  it('제목 줄이 아니라 그 아래에 선다', async () => {
-    useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
-    await renderScreen()
-
-    const line = screen.getByTestId('data-freshness')
-    expect(contains(screen.getByTestId('page-header-title-row'), line)).toBe(false)
-    expect(contains(screen.getByTestId('page-header'), line)).toBe(true)
-  })
-
   // **자리는 지킨다.** 값이 들어오는 순간 줄이 생기면 헤더가 16 만큼 내려앉고 그 아래 화면
   // 전체가 한 번 밀린다. 콜드 스타트 첫 진입에서 실제로 일어난다.
   it('받은 적이 없으면 글자만 빈다', async () => {

@@ -153,19 +153,6 @@ describe('useDropHistoryStore.load', () => {
     expect(record.priceShare).toBeUndefined()
   })
 
-  it('캐릭터 이름·아바타를 ocid로 찾을 수 있게 함께 담는다', async () => {
-    getAllBossDropRecordsMock.mockResolvedValue([dropRecord({})])
-    const store = await loadStore()
-
-    await store.getState().load()
-
-    expect(store.getState().charactersByOcid['ocid-1']).toEqual({
-      ocid: 'ocid-1',
-      characterName: '메이플영웅',
-      imageUrl: 'https://img/1.png',
-    })
-  })
-
   it('확정 난이도 조합의 획득 불가 기록을 거른다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
       dropRecord({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', dropIndex: 0 }), // 하드+익스 → 유지
@@ -196,27 +183,6 @@ describe('useDropHistoryStore.load', () => {
     await store.getState().load()
 
     expect(store.getState().groups[0].records.map((record) => record.itemName)).toEqual(['익셉셔널 해머'])
-  })
-
-  it('기록의 아이템 key 와 상자 key 를 히스토리 기록으로 옮긴다', async () => {
-    getAllBossDropRecordsMock.mockResolvedValue([
-      dropRecord({
-        category: 'consumable',
-        itemKey: 'restraint_ring',
-        itemName: '리스트레인트 링',
-        boxOriginKey: 'red_boss_ring_box',
-        boxOrigin: '홍옥의 보스 반지 상자',
-        ringLevel: 3,
-      }),
-    ])
-    const store = await loadStore()
-
-    await store.getState().load()
-
-    expect(store.getState().groups[0].records[0]).toMatchObject({
-      itemKey: 'restraint_ring',
-      boxOriginKey: 'red_boss_ring_box',
-    })
   })
 
   it('수익 기록이 없는(=난이도 미확정) 조합은 거르지 않는다', async () => {

@@ -95,8 +95,8 @@
 | 파일 | 확인하는 것 |
 |---|---|
 | `app/boss-profit/__tests__/BossProfitScreen.test.tsx` | 결정 1: 헤더에 경계 페이드가 없는지, `보스 관리` 가 `BossManage` 를 열고 촉각이 나는지, 지난 기간에도 보이는지 본다. 결정 5: 기간이 바뀌면 스크롤이 0 으로 가고 그대로면 안 건드리는지, 이동하면 펼침이 리셋되는지 본다. 결정 6: 버튼이 있는 탭에서만 그 몫을 더하는지 본다 |
-| `app/boss-profit/__tests__/CharacterAccordion.test.tsx` | 결정 3: 링 반경이 펼침에서 13 으로 줄고 배지가 유지되는지 본다. 결정 4: 처음에 접혀 있고 머리로 여닫는지 본다 |
-| `app/boss-profit/__tests__/AccordionBody.test.tsx` | 결정 3: 행을 순서대로 그리고 마지막 행만 선 색을 지우는지 본다. 결정 7: 본문 바탕 색이 카드 · 페이지와 다른지, 띠 둘이 보이는 조건과 오른쪽 글자를 본다 |
+| `app/boss-profit/__tests__/CharacterAccordion.test.tsx` | 결정 3: 펼치면 링의 모서리 반경이 줄고 배지가 유지되는지 본다. 결정 4: 처음에 접혀 있고 머리로 여닫는지 본다 |
+| `app/boss-profit/__tests__/AccordionBody.test.tsx` | 결정 3: 행을 순서대로 그리고 마지막 행만 선 색을 지우는지 본다. 결정 7: 띠 둘이 보이는 조건과 오른쪽 글자를 본다 |
 | `app/boss-profit/__tests__/BossProfitBossRow.test.tsx` | 결정 7: 연출 아이템이 먼저이고 그다음 비싼 순인지 본다 |
 | `src/__tests__/sticky-policy.test.ts` | 화면 어디에도 고정 헤더 수단이 없는지 본다([[ADR-063]]) |
 

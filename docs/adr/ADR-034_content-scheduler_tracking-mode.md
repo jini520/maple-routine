@@ -169,7 +169,7 @@
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `storage/__tests__/tracking-mode.spec.ts` | 결정 1: 저장 값이 없거나 알 수 없는 값이면 자동으로 꾸미지 않고 `null` 인지 본다 |
+| `storage/__tests__/tracking-mode.spec.ts` | 결정 1: 저장 값이 알 수 없는 값이면 자동으로 꾸미지 않고 `null` 인지 본다 |
 | `features/tracking-mode/__tests__/store.spec.ts` | 결정 5: 자동에서 수동으로 바꿀 때만 추적 캐릭터 전원을 한 번에 시드하는지 본다 |
 | `features/tracking-mode/__tests__/seed.spec.ts` | 결정 5: 등록된 항목만 일간 · 주간을 정해 넣는지, 표에 없는 컨텐츠 · 보스를 빼는지, 결과가 없으면 저장하지 않고 실패하는지, 여러 캐릭터를 한 번에 동기화하고 ocid 로 찾는지 본다 |
 | `features/tracking-mode/__tests__/seed-round-isolation.spec.ts` | 결정 5: 전환 시드에서 캐릭터마다 자기 스케줄로 채워지는지 본다 |

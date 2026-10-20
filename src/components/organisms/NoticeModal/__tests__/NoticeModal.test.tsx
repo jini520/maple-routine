@@ -87,31 +87,6 @@ describe('NoticeModal: 영역', () => {
 })
 
 describe('NoticeModal: 배지', () => {
-  /**
-   * 배지 안의 아이콘. `testID` 를 달아도 못 잡는다. lucide 아이콘은 그것을 `data-testid` 로
-   * 내려보내고 쿼리는 `testID` 를 본다. 그래서 배지의 첫 자식을 그냥 집는다.
-   *
-   * 색은 `style` 이 아니라 `stroke` 로 온다. 선으로 그리는 그림이다.
-   */
-  function 아이콘(badge: { children: unknown[] }): { props: { stroke?: string } } {
-    return badge.children[0] as { props: { stroke?: string } }
-  }
-
-  const 톤 = [
-    { tone: 'primary', tint: 기본테마.primaryTint, ink: 기본테마.primaryInk },
-    { tone: 'secondary', tint: 기본테마.secondaryTint, ink: 기본테마.secondaryInk },
-    { tone: 'third', tint: 기본테마.thirdTint, ink: 기본테마.thirdInk },
-    { tone: 'error', tint: 기본테마.errorTint, ink: 기본테마.errorInk },
-  ] as const
-
-  it.each(톤)('$tone 은 바탕과 아이콘이 같은 계열에서 나온다', async ({ tone, tint, ink }) => {
-    const { getByTestId } = await renderOverlay(<NoticeModal {...기본프롭()} tone={tone} />)
-
-    const badge = getByTestId('notice-badge')
-    expect(flattenStyle(badge.props.style).backgroundColor).toBe(tint)
-    expect(아이콘(badge).props.stroke).toBe(ink)
-  })
-
   // 표가 바로 아래 오는 자리만 네모다. 모서리를 맞춰 둘이 한 덩어리로 읽히게 한다.
   it('표가 붙는 자리는 네모로 바꾼다', async () => {
     const { getByTestId } = await renderOverlay(

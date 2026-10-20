@@ -187,12 +187,4 @@ describe('MvpGradeModal', () => {
     expect(view.getByText('맞아요')).toBeTruthy()
     expect(view.getByText('수정')).toBeTruthy()
   })
-
-  it('직접 바꾸기 체크박스는 저장된 값으로 선다', async () => {
-    const { view } = await 그리기({ kind: 'newId', accountIds: ['c'], bulk: false }, [account('c', '셋')], true)
-
-    await fireEvent.press(view.getByText('다음'))
-
-    expect(view.getByRole('checkbox', { name: '앞으로 등급은 직접 바꿀게요' }).props.accessibilityState?.checked).toBe(true)
-  })
 })

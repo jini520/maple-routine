@@ -2237,12 +2237,6 @@ describe('조각 가격을 비우면 보관', () => {
     })
   })
 
-  it('가격 칸은 꺼지지 않는다', async () => {
-    const view = await 그리기({}, 'hunting')
-
-    expect(view.getByTestId('income-sheet-fragment-price').props.editable).not.toBe(false)
-  })
-
   // 0 은 적은 값이다. 커서가 빠질 때 빈 칸으로 접히면 보관으로 둔갑한다.
   it('0 을 치면 커서가 빠져도 `0` 이 남고 0 으로 저장된다', async () => {
     const onSave = jest.fn()

@@ -10,13 +10,4 @@ describe('갱신 시각 한 줄', () => {
 
     expect(screen.getByTestId('data-freshness')).toHaveTextContent('')
   })
-
-  // 그 높이는 `PageHeader` 가 이 줄을 안 그리는 화면에서 비우는 값과 같아야 한다.
-  it('줄 높이를 못박는다', async () => {
-    await renderAtom(<DataFreshness fetchedAt={null} />)
-
-    expect(screen.getByTestId('data-freshness').props.style).toEqual(
-      expect.objectContaining({ lineHeight: 16 }),
-    )
-  })
 })

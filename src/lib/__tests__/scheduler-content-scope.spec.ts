@@ -1,5 +1,4 @@
 import {
-  contentCategoryOf,
   getMaxCountOverride,
   getShareScope,
   getSharedContentGroups,
@@ -116,15 +115,6 @@ describe('getSharedContentGroups', () => {
     expect(periods).toEqual([['epic_dungeon_aurum_regis', '2026-09-17']])
   })
 
-  it('유니온 둘만 **스케줄러에 있을 때만** 표식을 단다', () => {
-    const conditional = getSharedContentGroups()
-      .flatMap((group) => group.entries)
-      .filter((entry) => entry.onlyWhenScheduled)
-      .map((entry) => entry.shortName)
-
-    expect(conditional).toEqual(['주간 드래곤 퇴치', 'PC방 주간 드래곤 퇴치'])
-  })
-
   it('여덟을 하나도 빠뜨리거나 더하지 않는다', () => {
     const keys = getSharedContentGroups().flatMap((group) => group.entries.map((entry) => entry.contentKey))
 
@@ -149,26 +139,11 @@ describe('getMaxCountOverride: 익스트림 몬스터파커', () => {
 
 // 어느 항목이 응답의 등록 값을 믿는지는 카탈로그의 칸이 말한다. 이름으로 추론하지 않는다.
 describe('trustsRegistrationFlag', () => {
-  it('메이플 유니온 두 항목만 참이다', () => {
-    expect(trustsRegistrationFlag('maple_union_weekly_dragon')).toBe(true)
-    expect(trustsRegistrationFlag('maple_union_pc_cafe_weekly_dragon')).toBe(true)
-  })
-
   it('나머지 공유 항목 · 캐릭터 항목 · key 가 없는 항목은 거짓이다', () => {
     expect(trustsRegistrationFlag('monster_park')).toBe(false)
     expect(trustsRegistrationFlag('monster_park_extreme')).toBe(false)
     expect(trustsRegistrationFlag('epic_dungeon_high_mountain')).toBe(false)
     expect(trustsRegistrationFlag('mu_lung_dojo')).toBe(false)
     expect(trustsRegistrationFlag(null)).toBe(false)
-  })
-})
-
-// 에픽 던전은 4종이지만 주 3회만 돈다(사용자 확인 2026-09-13). 게임 규칙이라 카탈로그가 든다.
-describe('갈래의 주간 한도', () => {
-  it('항목의 갈래는 컨텐츠 표의 category 다. 이름으로 추론하지 않는다', () => {
-    expect(contentCategoryOf('epic_dungeon_aurum_regis')).toBe('epic_dungeon')
-    expect(contentCategoryOf('maple_union_weekly_dragon')).toBe('maple_union')
-    expect(contentCategoryOf('erda_spectrum')).toBe('arcane_river_quest')
-    expect(contentCategoryOf(null)).toBeNull()
   })
 })

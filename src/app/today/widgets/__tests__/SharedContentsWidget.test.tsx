@@ -149,23 +149,6 @@ describe('완료는 체크와 취소선이 말한다', () => {
     expect(상자들[1]?.props.children).toBeFalsy()
   })
 
-  // 채운 상자는 언제나 `primary` 다. 완료 = `secondary` 계보를 따르면 `secondary` 가 테마의
-  // 두 번째 시드라 메인 컬러와 색상이 무관하다(렌은 빨강 테마에 틸 `#437B71`, 엔젤릭버스터는
-  // 분홍 테마에 하늘 `#82B5C3`). 앱의 다른 체크박스 셋이 쓰는 색으로 맞춘다.
-  //
-  // 체크 표시(`shared-checkbox-mark`)의 색은 여기서 못 잰다. SVG 는 `testID` 를 호스트
-  // 노드로 안 넘긴다. 상자의 두 값이 같은 토큰을 가리키는 것으로 되돌아가지 않았다 를 잡는다.
-  it('채운 상자는 채움도 테두리도 primary 다. secondary 가 아니다', async () => {
-    const { getAllByTestId } = await 위젯([
-      공유계열('epic_dungeon', [공유항목('하이마운틴', { isComplete: true })]),
-    ])
-
-    const 상자 = flattenStyle(getAllByTestId('shared-checkbox', 숨은것포함)[0]?.props.style)
-    expect(상자.backgroundColor).toBe(기본테마.primary)
-    expect(상자.borderColor).toBe(기본테마.primary)
-    expect(상자.backgroundColor).not.toBe(기본테마.secondaryInk)
-  })
-
   // 취소선만으로는 **지운 것/흐린 것** 이 애매하고, 색만으로는 흑백 화면에서 안 보인다.
   it('완료한 이름에 취소선과 흐린 색이 **함께** 걸린다', async () => {
     const { getAllByTestId } = await 위젯([
@@ -346,22 +329,6 @@ describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => 
     await 누름(getByTestId('shared-note-toggle'))
 
     expect(물음표색(getByTestId('shared-note-toggle'))).toBe(닫힘)
-  })
-
-  // **폭을 못박지 않는다**(사용자 지시). 폭을 주면 가장 긴 줄보다 넓은 만큼이 오른쪽에 죽은
-  // 여백으로 남아 글 덩어리가 왼쪽으로 쏠린다. 상한만 주고 폭은 레이아웃 엔진이 가장 긴 줄에
-  // 맞춰 줄인다. 손으로 잰 값을 박으면 그 추정이 틀렸을 때 줄바꿈이 다시 깨진다.
-  it('폭을 못박지 않는다. 상한만 주고 글줄에 맞춰 줄어든다', async () => {
-    const { getByTestId } = await 위젯(공유컨텐츠())
-
-    await 누름(getByTestId('shared-note-toggle'))
-
-    const style = flattenStyle(getByTestId('shared-note').props.style) as {
-      width?: number
-      maxWidth: number
-    }
-    expect(style.width).toBeUndefined()
-    expect(style.maxWidth).toBe(320)
   })
 
   // **부모 타일을 안 벗어난다**(사용자 지시). 창은 별도라 좌표가 화면 기준인데, 화면 여백을

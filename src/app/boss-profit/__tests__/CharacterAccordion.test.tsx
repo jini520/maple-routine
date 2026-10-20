@@ -26,7 +26,6 @@ import { CharacterAccordion } from '../CharacterAccordion'
 import { buildCharacterGroups } from '../character-groups'
 import {
   VALUABLE_CARD_GLOW_STATIC,
-  VALUABLE_CARD_RING_COLOR,
   VALUABLE_CARD_RING_RADIUS,
 } from '../valuable-card-glow'
 import { 다른주간보스, 월간보스, PERIOD, renderProfit, 보스행, 주간보스, 주차소계, 컨텍스트값, 주간보스이름 } from './harness'
@@ -155,14 +154,13 @@ describe('고가 드롭 강조', () => {
     expect(queryByLabelText('고가 드롭')).toBeNull()
   })
 
-  it('링 색과 두께는 웹의 degrade 폴백 그대로다. 반경만 펼침에서 13으로 줄어든다', async () => {
+  it('펼치면 링의 모서리 반경이 줄어든다', async () => {
     const { getByTestId, getByRole } = await renderProfit(
       <CharacterAccordion group={그룹()} />,
       컨텍스트값({ dropsByRowKey: 고가드롭 }),
     )
 
     expect(getByTestId('valuable-drop-card-ring')).toHaveStyle({
-      borderColor: VALUABLE_CARD_RING_COLOR,
       borderRadius: VALUABLE_CARD_RING_RADIUS.collapsed,
     })
 

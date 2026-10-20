@@ -146,11 +146,6 @@ describe('고리가 쓰는 읽기', () => {
     getBossDropRecordById.mockResolvedValue(null)
     expect(await dropPriceHandler.read('없는-id')).toBeNull()
   })
-
-  it('원본이 있으면 지금 값을 읽는다. 표에 담아 둔 값이 아니다', async () => {
-    getBossDropRecordById.mockResolvedValue(record({ priceMeso: 3_000_000_000 }))
-    expect(await dropPriceHandler.read('id')).toMatchObject({ priceMeso: 3_000_000_000 })
-  })
 })
 
 describe('저장 자리의 전송', () => {

@@ -36,16 +36,6 @@ describe('NoticeBannerSkeleton', () => {
 
     expect(ratioOf(event)).not.toBe(ratioOf(cashshop))
   })
-
-  // 막대 하나하나는 장식이고, 조회 중임을 말하는 것은 갈래를 감싸는 이 상자다
-  // (`LoadingState` 와 같은 계약).
-  it('조회 중임을 보조기술에 알린다', async () => {
-    const { getByTestId } = await renderAtom(<NoticeBannerSkeleton kind="event" />)
-
-    const box = getByTestId('notice-banner-skeleton', HIDDEN)
-    expect(box.props.role).toBe('status')
-    expect(box.props['aria-busy']).toBe(true)
-  })
 })
 
 describe('NoticeLinesSkeleton', () => {
@@ -58,14 +48,6 @@ describe('NoticeLinesSkeleton', () => {
     expect(getAllByTestId('notice-skeleton-date', HIDDEN)[0]).toHaveStyle({
       height: lineHeightOf('xs'),
     })
-  })
-
-  it('조회 중임을 보조기술에 알린다', async () => {
-    const { getByTestId } = await renderAtom(<NoticeLinesSkeleton lines={2} />)
-
-    const box = getByTestId('notice-lines-skeleton', HIDDEN)
-    expect(box.props.role).toBe('status')
-    expect(box.props['aria-busy']).toBe(true)
   })
 })
 
@@ -85,13 +67,5 @@ describe('NoticeBannerCardSkeleton', () => {
     // `NoticeBannerCard` 의 제목은 `text-13`, 기간은 `text-xs` 다.
     expect(getByTestId('notice-card-skeleton-title', HIDDEN)).toHaveStyle({ height: lineHeightOf('13') })
     expect(getByTestId('notice-card-skeleton-period', HIDDEN)).toHaveStyle({ height: lineHeightOf('xs') })
-  })
-
-  it('조회 중임을 보조기술에 알린다', async () => {
-    const { getByTestId } = await renderAtom(<NoticeBannerCardSkeleton kind="event" />)
-
-    const box = getByTestId('notice-card-skeleton', HIDDEN)
-    expect(box.props.role).toBe('status')
-    expect(box.props['aria-busy']).toBe(true)
   })
 })

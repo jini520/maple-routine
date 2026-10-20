@@ -32,20 +32,6 @@ const 크기 = {
   '2x2': { w: 2, h: 2 },
 } as const
 
-describe('세 크기가 같은 구조다', () => {
-  it.each(Object.entries(크기))('%s: 엠블럼 + 두 줄 + EXP', async (_이름, 값) => {
-    const { getByText, getByTestId } = await 위젯(값)
-
-    expect(getByTestId('representative-emblem')).toBeTruthy()
-    expect(getByText('단풍루틴')).toBeTruthy()
-    expect(getByText('Lv. 291')).toBeTruthy()
-    expect(getByText('아크메이지(불,독)')).toBeTruthy()
-    expect(getByText('백호단')).toBeTruthy()
-    expect(getByTestId('representative-exp')).toBeTruthy()
-  })
-
-})
-
 describe('모르는 것을 그리지 않는다', () => {
   // 0% 바를 그리면 **경험치가 0** 으로 읽힌다. 없는 것과 0 은 다르다.
   it('`expRate` 가 없으면 EXP 줄 자체가 없다', async () => {

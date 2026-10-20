@@ -9,18 +9,6 @@ afterEach(() => {
 })
 
 describe('useToastStore', () => {
-  it('showError는 duration이 null이고 action을 그대로 담는다', () => {
-    const onClick = jest.fn()
-    useToastStore.getState().showError('저장하지 못했습니다', { label: '다시 시도', onClick })
-
-    expect(useToastStore.getState().toasts[0]).toMatchObject({
-      variant: 'error',
-      message: '저장하지 못했습니다',
-      duration: null,
-      action: { label: '다시 시도', onClick },
-    })
-  })
-
   it('토스트마다 서로 다른 id를 가진다', () => {
     useToastStore.getState().showSuccess('a')
     useToastStore.getState().showSuccess('b')

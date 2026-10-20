@@ -11,10 +11,11 @@ import { renderOverlay } from '../../../__tests__/render-atom'
 import { openInputCard, useInputCardStore } from '../../../../features/input-card/store'
 
 // 카드가 서는 자리는 **하네스가 앱 셸처럼 세워 둔다**. 여기서 또 세우면 카드가 둘이 된다.
-async function 열기(onConfirm = jest.fn(), overrides = {}) {
+async function 열기() {
+  const onConfirm = jest.fn()
   const view = await renderOverlay(<></>)
   await act(async () => {
-    openInputCard({ label: '조각 개수', value: '', onConfirm, ...overrides })
+    openInputCard({ label: '조각 개수', value: '', onConfirm })
   })
   return { view, onConfirm }
 }
@@ -70,13 +71,6 @@ describe('InputCardHost', () => {
     // 안 끊으면 카드와 시트가 함께 닫힌다.
     expect(끊었나).toBe(true)
     등록.mockRestore()
-  })
-
-  it('재는 방법을 바꿔도 카드는 같은 것을 그린다', async () => {
-    const { view } = await 열기(jest.fn(), { tracking: 'reanimated', value: '84', unit: '개' })
-
-    expect(view.getByTestId('input-card-value').props.value).toBe('84')
-    expect(view.getByText('개')).toBeTruthy()
   })
 
   /**

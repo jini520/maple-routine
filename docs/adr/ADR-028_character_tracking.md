@@ -218,7 +218,7 @@ ocid 의 마지막으로 알던 월드가 월드 표에서 챌린저스(`isChall
 |---|---|
 | `storage/__tests__/character-selection.spec.ts` | 결정 1: `null` 과 `[]` 를 구분하는지, 깨진 JSON 을 `null` 로 읽는지, 네 옛 키를 한 번만 합쳐 옮기고 지우는지, 동시에 읽어도 합집합을 잃지 않는지 본다. 결정 10: 교체가 순서를 지키고 대표 · 마지막 선택을 함께 옮기는지, 빼기가 남은 순서를 건드리지 않는지 본다 |
 | `features/schedule-sync/__tests__/character-eligibility.spec.ts` | 결정 3: `access_flag: true` 면 바로 통과하는지, 과거 날짜를 한꺼번에 조회하는지 본다. 결정 4: 같은 날짜를 두 번 조회하지 않는지, 실패 종류별로 원장에 남기는 것이 맞는지, 캐시된 `access_flag` 가 원장을 덮지 못하는지 본다 |
-| `storage/__tests__/schedule-probe-ledger.spec.ts` | 결정 4: 관측 기록, 캐릭터 단위 조회 불가, 14일 범위 밖 날짜 정리, 조회 불가 표식을 지우는 것을 본다 |
+| `storage/__tests__/schedule-probe-ledger.spec.ts` | 결정 4: 남긴 관측 기록을 다시 읽으면 확정으로 판정되는지, 캐릭터 단위 조회 불가, 14일 범위 밖 날짜 정리, 조회 불가 표식을 지우는 것을 본다 |
 | `features/schedule-sync/__tests__/schedule-sync.spec.ts` 의 `getCharacterPickerRoster` 묶음 | 결정 5: 캐시가 있으면 `character/list` 전에 먼저 보여 주는지, 한 명도 확인하지 못했으면 빈 목록을 내보내지 않는지, 자격이 없어도 추적 중이면 남기는지 본다. 결정 8: 목록 밖 추적 ocid 를 따로 묻고, 이미 조회 불가면 다시 안 부르는지 본다 |
 | `features/schedule-sync/__tests__/roster-cache-index.spec.ts` · `storage/__tests__/character-basic-cache.spec.ts` | 결정 5: 캐시 인덱스를 메이플 ID 마다 두고, 옛 전역 인덱스를 옮기고, 마지막 목록에 맞춰 정리하는지 본다 |
 | `nexon/character/__tests__/normalize.spec.ts` | 결정 5: 캐릭터가 없는 메이플 ID 를 걸러 내는지 본다 |

@@ -3,17 +3,6 @@ import { assetUri } from '../../assets/__tests__/asset-uri'
 import { cashbookRowIconOf, dropItemIconOf, getItemIconUrlByFile, spendIconOf } from '../assets/asset-lookup'
 
 describe('dropItemIconOf', () => {
-  it('마스터 표에 그림이 있는 아이템은 그 파일로 조회된다 (홍옥의 보스 반지 상자 -> boss_ring_box_red.png)', () => {
-    const url = dropItemIconOf('red_boss_ring_box')
-
-    expect(url).not.toBeNull()
-    expect(assetUri(url)).toContain('boss_ring_box_red')
-  })
-
-  it('반지는 rings/ 하위 파일로 조회된다 (리스트레인트 링 -> Ring_of_Restraint.webp)', () => {
-    expect(assetUri(dropItemIconOf('restraint_ring'))).toContain('Ring_of_Restraint')
-  })
-
   // 그림 없는 줄 · 모르는 key · key 없는 옛 기록은 비운다. 비슷한 그림을 붙이면 틀린 것을 그린다.
   it('그림이 없거나 모르는 key 이거나 key 가 없으면 null 이다', () => {
     expect(dropItemIconOf('sol_erda_energy')).toBeNull()

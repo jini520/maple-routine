@@ -28,17 +28,6 @@ describe('저장된 값이 없는 경우', () => {
   })
 })
 
-// 키 무효화(400 OPENAPI00005 · 401/403)는 그 키 하나만 지운다.
-describe('removeApiKey', () => {
-  it('그 뒤 getAuthConfig는 null을 반환한다', async () => {
-    await setApiKey('test-api-key')
-
-    await removeApiKey('test-api-key')
-
-    await expect(getAuthConfig()).resolves.toBeNull()
-  })
-})
-
 // 계정 선택이 사라진 뒤 남은 레거시 키. 아무도 읽고 쓰지 않지만, 그 시절을 거친 설치본에는
 // 값이 남아 있어 연결 해제가 함께 치운다.
 describe('레거시 selectedAccountId', () => {

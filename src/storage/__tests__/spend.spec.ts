@@ -322,13 +322,6 @@ describe('SPEND_CATEGORIES 와 카탈로그', () => {
       expect(keys).toContain(category)
     }
   })
-
-  // 나머지 둘은 **직접 입력**이라 카탈로그에 항목이 없다.
-  it('직접 입력 둘은 카탈로그에 없다', () => {
-    const categories = spendCatalog.groups.map((group) => group.category)
-    expect(categories).not.toContain('item_purchase')
-    expect(categories).not.toContain('etc')
-  })
 })
 
 

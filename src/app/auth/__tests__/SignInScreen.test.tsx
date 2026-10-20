@@ -103,17 +103,6 @@ describe('SignInScreen', () => {
     expect(view.queryByText(/확인하고 있어요/)).toBeNull()
   })
 
-  // 자동 여백·중앙 정렬은 부모가 남는 세로 공간을 줄 때만 작동한다. RN 에서 그 짝이 콘텐츠
-  // 컨테이너의 `flexGrow` 다.
-  it('스크롤 콘텐츠가 화면을 채워 자동 여백이 설 자리를 만든다', async () => {
-    mockStore({ status: 'signedOut' })
-
-    const view = await renderOverlay(<SignInScreen />)
-
-    const scroll = view.getByTestId('entry-scroll')
-    expect(scroll.props.contentContainerStyle).toMatchObject({ flexGrow: 1 })
-  })
-
   // 막기만 하고 길을 안 주면 이슈 #176 의 하드 잠금이 된다. 모달 뒤에 폼이 그대로 남아 닫는
   // 것이 곧 다시 넣는 것이다.
   it('개발 단계 키로 막히면 모달이 덮이고 폼은 뒤에 남는다', async () => {

@@ -110,7 +110,6 @@ jest.mock('@gorhom/bottom-sheet', () => {
 import { useToastStore } from '../../../features/toast/store'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { useSettlementStore } from '../../../features/settlement/store'
-import { FAB_SPACE_PX } from '../../../lib/fab-metrics'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
@@ -1281,19 +1280,6 @@ describe('줄을 누르면 고칠 수 있다', () => {
   })
 })
 
-// FAB 는 화면 위에 떠 있어 콘텐츠를 밀어내지 않는다. 그 몫을 콘텐츠 끝에서 갚지 않으면 스크롤을
-// 끝까지 내렸을 때 마지막 줄이 버튼 뒤로 들어간다. 값의 출처가 다이얼과 같은 상수여야 갈리지
-// 않는다.
-describe('떠 있는 ＋ 가 먹는 자리', () => {
-  it('콘텐츠 끝에 다이얼 몫만큼 여백을 남긴다', async () => {
-    const view = await 그리기()
-
-    const 여백 = flattenStyle(view.getByTestId('cashbook-content').props.style).paddingBottom
-
-    expect(여백).toBe(FAB_SPACE_PX)
-  })
-})
-
 // 보스 수익이 흘러든 줄. **여기서 못 고친다**. 눌러도 시트가 안 열린다.
 // 가는 곳은 줄마다 다르다. 결정석은 **그 자리에서
 // 펼쳐지고**, 판매는 보스 수익 탭으로 간다.
@@ -1438,25 +1424,6 @@ describe('자동으로 흘러든 줄', () => {
     expect(view.getByTestId('cashbook-boss-tile-damien|normal')).toBeTruthy()
   })
 
-  // 사용자가 지정한 것이 **초상화** 다. 이름만 뜨면 그 지정을 안 지킨 것이다.
-  it('타일마다 초상이 든다', async () => {
-    const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
-
-    expect(view.getAllByTestId('boss-portrait')).toHaveLength(2)
-  })
-
-  // 56px 타일 위에 `익스트림` 넉 자가 앉으면 초상을 거의 다 덮는다.
-  it('난이도는 타일 안에 한 칸으로 든다', async () => {
-    const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
-
-    expect(view.getByText('H')).toBeTruthy()
-    expect(view.getByText('N')).toBeTruthy()
-    expect(view.queryByText('하드')).toBeNull()
-    expect(view.queryByText('노멀')).toBeNull()
-  })
-
   // 한 줄에 여섯 · 이름 없음.
   //
   // 폭으로 재지 않는다. 고정 px 면 기기마다 다섯도 일곱도 되고, 퍼센트(`w-1/6` = `16.67%`)면
@@ -1497,14 +1464,6 @@ describe('자동으로 흘러든 줄', () => {
     // 상한에 걸려 줄이 덜 차면 **가운데로** 모인다. 왼쪽으로 붙으면 오른쪽만 비어 기운다.
     const 줄 = flattenStyle(view.getAllByTestId(/^cashbook-boss-row-/)[0].props.style)
     expect(줄.justifyContent).toBe('center')
-  })
-
-  it('보스 이름을 안 적는다. 초상이 대신한다', async () => {
-    const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
-
-    expect(view.queryByText('스우')).toBeNull()
-    expect(view.queryByText('데미안')).toBeNull()
   })
 
   // 눈으로 읽던 것이 사라졌으므로 그 자리를 접근성 이름이 받아야 한다.

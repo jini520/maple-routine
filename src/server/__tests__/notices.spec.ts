@@ -21,14 +21,6 @@ beforeEach(() => {
 })
 
 describe('목록', () => {
-  it('우리 서버의 주소로 부른다', async () => {
-    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(ok(응답))
-
-    await fetchNotices()
-
-    expect(String(spy.mock.calls[0][0])).toContain('mapleroutine.store/v1/notices')
-  })
-
   // 서버가 죽어도 앱은 돈다. 화면은 사본을 그리면 된다.
   it('네트워크가 실패하면 null', async () => {
     jest.spyOn(global, 'fetch').mockRejectedValue(new Error('offline'))

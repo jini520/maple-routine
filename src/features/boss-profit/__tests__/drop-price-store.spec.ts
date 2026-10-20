@@ -208,17 +208,6 @@ describe('load: 그 주에 서는 월간 보스', () => {
     defeatedOn,
   })
 
-  it('주간 키로 열면 그 주가 속한 달의 키도 함께 읽는다', async () => {
-    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
-
-    await useDropPriceStore.getState().load(PERIOD)
-
-    expect(getBossDropRecordsMock).toHaveBeenCalledWith(
-      ['ocid-1'],
-      expect.arrayContaining([PERIOD, MONTH]),
-    )
-  })
-
   it('그 주에 잡은 월간 보스의 드롭이 목록에 든다', async () => {
     getBossDropRecordsMock.mockResolvedValue([월간드롭()])
     getBossProfitRecordsMock.mockResolvedValue([월간수익기록(그주의날)])

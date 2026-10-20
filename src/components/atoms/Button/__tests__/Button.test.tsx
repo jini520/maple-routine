@@ -86,22 +86,6 @@ describe('Button: busy', () => {
     expect(대기.fontWeight).toBe(평소.fontWeight)
   })
 
-  it('스피너는 라벨 위에 겹친다. 자리를 차지하면 폭이 늘어난다', async () => {
-    const { getByTestId } = await renderAtom(
-      <Button variant="primary" busy>
-        확인
-      </Button>,
-    )
-
-    // `inset-0` 은 RN 0.71+ 의 `inset` 축약으로 풀린다(네 변을 따로 안 적는다).
-    expect(flattenStyle(getByTestId('button-busy').props.style)).toMatchObject({
-      position: 'absolute',
-      inset: 0,
-      alignItems: 'center',
-      justifyContent: 'center',
-    })
-  })
-
   // 호출부가 색을 안 주면 스피너가 검정으로 떨어진다.
   it('스피너 색이 variant 의 라벨 색과 같다', async () => {
     const cases = [

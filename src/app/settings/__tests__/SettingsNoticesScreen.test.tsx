@@ -4,7 +4,7 @@
 // ② 목록은 사본이나 응답을 받은 순서 그대로 그린다. 화면이 다시 정렬하지 않는다.
 // ③ 행을 누르면 상세로 밀되 **`noticeId` 만** 넘긴다. 본문을 넘기면 알림에서 온 경로와
 //    목록에서 온 경로가 서로 다른 내용을 그릴 수 있다.
-import { act, fireEvent, waitFor } from '@testing-library/react-native'
+import { act, fireEvent, waitFor, within } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { __resetToastsForTest, useToastStore } from '../../../features/toast/store'
@@ -145,16 +145,19 @@ describe('목록', () => {
     expect(view.queryByText('캐시 업데이트')).toBeNull()
   })
 
+  // 날짜를 일부러 뒤섞어 둔다. 화면이 날짜로 다시 정렬하면 어느 방향이든 순서가 달라진다.
   it('저장소가 준 순서를 그대로 그린다', async () => {
     notices.mockResolvedValue([
-      notice('b', '나중 공지', '2026-09-05T00:00:00Z'),
+      notice('b', '가운데 공지', '2026-09-03T00:00:00Z'),
+      notice('c', '나중 공지', '2026-09-05T00:00:00Z'),
       notice('a', '먼저 공지', '2026-09-01T00:00:00Z'),
     ])
     const view = await renderOverlay(<SettingsNoticesScreen />)
 
-    const rows = view.getAllByTestId('notice-row')
-    expect(rows).toHaveLength(2)
-    expect(view.getByText('나중 공지')).toBeTruthy()
+    const titles = view
+      .getAllByTestId('notice-row')
+      .map((row) => within(row).getByText(/공지$/).props.children)
+    expect(titles).toEqual(['가운데 공지', '나중 공지', '먼저 공지'])
   })
 
   it('누르면 noticeId 만 넘겨 상세로 민다', async () => {

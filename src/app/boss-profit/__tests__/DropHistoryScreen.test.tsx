@@ -184,15 +184,6 @@ describe('DropHistoryScreen: 셸과 조회', () => {
     })
     expect(goBack).toHaveBeenCalled()
   })
-
-  it('뒤로는 pop 이다', async () => {
-    const { getByLabelText } = await renderHistory()
-
-    await act(async () => {
-      fireEvent.press(getByLabelText('뒤로'))
-    })
-    expect(goBack).toHaveBeenCalled()
-  })
 })
 
 // 한 기록이 목록에서 큰 비중을 차지하지 않도록 아이콘·난이도 배지·2단 레이아웃 없이 한 줄

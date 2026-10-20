@@ -112,7 +112,7 @@ Metro 는 사이클을 찾으면 `Require cycle: …` 경고를 내고, 그 경�
 | `src/storage/adapters/__tests__/capacitor-sqlite-open.test.ts` | 결정 2: 파일 이름이 `boss_profitSQLite.db` 인지, iOS 는 `Library/CapacitorDatabase` 가 아니라 `Documents` 인지, 암호화 키를 넘기지 않는지, `no-encryption` 이 아니면 던지는지 본다 |
 | `src/storage/adapters/__tests__/rn-preferences.test.ts` | 결정 2: 어댑터의 네 연산이 모두 같은 접두사 규칙으로 저장소를 읽고 쓰는지, `keys()` 가 앱 키만 돌려주는지 본다 |
 | `src/storage/adapters/__tests__/rn-sqlite.test.ts` | 결정 2: Capacitor 가 쓰던 파일 경로로 여는지 본다 |
-| `src/__tests__/tailwind-axes.test.ts` 의 `v4 축 파생` | 결정 5: 간격 배수 · `max-w-2xs`(288) · 모서리 계단이 v4 값 그대로인지 본다 |
+| `src/__tests__/tailwind-axes.test.ts` 의 `v4 축 파생` | 결정 5: 간격 값 · `max-w-2xs`(288) · 모서리 계단이 v4 값 그대로인지 본다 |
 | `src/__tests__/require-cycle-policy.test.ts` | 결정 7: Metro 가 번들하는 `src/` 그래프에 런타임 import 사이클이 없는지, 그래프를 실제로 읽었는지 본다 |
 | `ota/__tests__/latest.spec.ts` | 결정 6: `latest.json` 이 동결한 파서를 통과하는지(문자열로 와도), 목록에 `android` 만 있는지, `highlights` 에 스토어 이야기가 없는지(iOS 도 같은 문구를 읽는다), `url` · `checksum` · `size` 형식이 맞는지 본다 |
 

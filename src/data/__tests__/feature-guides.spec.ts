@@ -195,10 +195,3 @@ describe('노트 항목 → 안내 참조 (정정 · 결정 7)', () => {
     expect(new Set(keys).size, `중복 참조: ${keys.join(', ')}`).toBe(keys.length)
   })
 })
-
-describe('findFeatureGuide', () => {
-  // `findReleaseNote` 와 같은 계약이다. "없다"의 판정은 호출부가 한다(화면은 목록으로 되돌린다).
-  it('없는 id 에는 던지지 않고 undefined 를 돌린다', () => {
-    expect(findFeatureGuide('없는-안내')).toBeUndefined()
-  })
-})

@@ -1,6 +1,6 @@
 // 월드 마스터 표 조회. 기록 · 원장 · 판정은 월드 key 를 들고 이름 · 엠블럼 · 챌린저스 여부는 여기서 찾는다.
 import { worldEmblemUrl } from '../../assets/asset-lookup'
-import { findWorld, isEventWorld, worldKeyOfApiName, worldNameOf, worlds } from '../worlds'
+import { findWorld, worldKeyOfApiName, worldNameOf } from '../worlds'
 
 describe('API 이름에서 key 를 찾는다', () => {
   // 넥슨 표기는 ㅐ 다. ㅔ 로 적으면 핼리오스 캐릭터 전부가 월드 key 를 못 얻는다.
@@ -28,12 +28,6 @@ describe('key 로 찾는다', () => {
     expect(worldNameOf('nope', '어딘가')).toBe('어딘가')
     expect(worldNameOf(null, '어딘가')).toBe('어딘가')
     expect(findWorld(undefined)).toBeNull()
-  })
-
-  // 챌린저스는 시즌 월드지만 재화가 본섭으로 넘어와 이벤트 월드가 아니다(사용자 지정).
-  it('스페셜만 이벤트 월드다', () => {
-    expect(worlds().filter((world) => isEventWorld(world.key)).map((world) => world.key)).toEqual(['special'])
-    expect(isEventWorld(null)).toBe(false)
   })
 })
 

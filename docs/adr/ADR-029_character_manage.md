@@ -247,7 +247,7 @@ today 에서 캐릭터 관리로 가려면 설정 안쪽까지 들어가야 했�
 | `features/character-manage/__tests__/grid-split.spec.ts` | 결정 3: 구분자 앞이 고른 것인지, 구분자가 없으면 아무것도 바꾸지 않는지 본다 |
 | `components/organisms/CharacterManage/__tests__/CharacterLayerGrid.test.tsx` | 결정 5: 끄는 동안 촉각이 나는 때를 본다 |
 | `features/content-scheduler/__tests__/store.spec.ts` | 결정 9: 빼기만 하면 조회하지 않고, 더하면 더한 캐릭터만 조회하는지 본다 |
-| `app/today/__tests__/CharacterManageButton.test.tsx` · `header-portrait-motion.test.ts` · `view-model.test.ts` | 결정 10: 누르면 push 하는지, 얼굴 · 테두리 · 바탕 치수와 색, 다크에서 바탕이 바뀌는지, 6자리 hex 인지, 얼굴을 넓게 자르는지, 사람 아이콘, 움직임 줄이기, 얼굴 차례와 불투명도, 대표가 첫 번째인지 본다 |
+| `app/today/__tests__/CharacterManageButton.test.tsx` · `header-portrait-motion.test.ts` · `view-model.test.ts` | 결정 10: 누르면 push 하는지, 얼굴이 원보다 작게 앉고 원이 얼굴을 자르는지, 바탕이 라이트에서 흰색 · 다크에서 검정인지, 얼굴을 넓게 자르는지, 사람 아이콘, 움직임 줄이기, 얼굴 차례와 불투명도, 대표가 첫 번째인지 본다 |
 | `features/character-selection/__tests__/store.spec.ts` · `app/today/__tests__/TodayScreen.test.tsx` 의 `TodayScreen: 대표 표식` | 결정 11: 복원 · 미지정과 안 읽음 구분 · 늦게 온 복원이 덮지 않는지 · 메모리 먼저 쓰기, today 가 다시 마운트하지 않고도 새 대표를 그리는지 본다 |
 
 ## 번호 기록

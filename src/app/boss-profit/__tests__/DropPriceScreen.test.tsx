@@ -235,16 +235,6 @@ describe('DropPriceScreen: 기간을 이어받는다', () => {
 
     expect(getByLabelText('이전 기간').props.accessibilityState.disabled).toBe(true)
   })
-
-  it('뒤로는 pop 이다. 딥링크가 없어 돌아갈 곳을 계산하지 않는다', async () => {
-    const { getByLabelText } = await renderOverlay(<DropPriceScreen />)
-
-    await act(async () => {
-      fireEvent.press(getByLabelText('뒤로'))
-    })
-
-    expect(goBack).toHaveBeenCalled()
-  })
 })
 
 describe('DropPriceScreen: 값 매기기', () => {

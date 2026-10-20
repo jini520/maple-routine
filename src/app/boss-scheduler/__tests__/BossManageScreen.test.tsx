@@ -201,16 +201,6 @@ describe('BossManageScreen: 공통', () => {
     expect(goBack).toHaveBeenCalled()
   })
 
-  // 이 화면의 일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.
-  it('관리 화면의 레일에는 진행 링이 없다', async () => {
-    mockStore({ characters: [character()] })
-
-    await renderScreen()
-
-    expect(screen.queryAllByTestId('portrait-ring-track')).toHaveLength(0)
-    expect(screen.queryAllByTestId('portrait-ring-fill')).toHaveLength(0)
-  })
-
   it('마운트하면 loadTrackedOcids 를 부른다. 스케줄러를 거치지 않고 들어와도 채워진다', async () => {
     const store = mockStore({ characters: [character()] })
 

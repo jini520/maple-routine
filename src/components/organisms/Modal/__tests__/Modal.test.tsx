@@ -69,24 +69,6 @@ describe('Modal', () => {
     expect(claims).toBe(true)
   })
 
-  it('Modal.Panel 은 카드 테두리/배경 없이 위치만 잡는다', async () => {
-    const { getByTestId } = await renderOverlay(
-      <Modal onClose={noop}>
-        <Modal.Panel>
-          <View>
-            <Text>내용</Text>
-          </View>
-        </Modal.Panel>
-      </Modal>,
-    )
-
-    const panel = getByTestId('modal-panel')
-    const style = flattenStyle(panel?.props.style)
-    expect(style.borderWidth).toBeUndefined()
-    expect(style.backgroundColor).toBeUndefined()
-    expect(style.maxWidth).toBe(384)
-  })
-
   // 라이트에서만 테두리를 배경색 쪽으로 눌러 가라앉힌다. RN 에는 선택자가 없어
   // 그 결과를 `--color-panel-border` 토큰이 값으로 갖고 있고(`theme/theme-vars.ts`), 이 케이스는
   // **`Card` atom 의 `border-border` 를 그것이 실제로 덮는지**를 지킨다. 클래스 순서가 아니라

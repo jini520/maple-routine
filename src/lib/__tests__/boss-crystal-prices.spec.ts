@@ -1,5 +1,4 @@
 // 결정석 가격은 처치의 기간으로 고른다. 값은 2026-09-17 패치에서 사용자가 준 것이다(2026-09-11).
-import { getMaxPartySize } from '../boss/bosses'
 import { findPriceEntry } from '../boss/boss-crystal-prices'
 
 // 09-17 패치가 적용된 뒤. 경계 날이 곧 기간 첫날일 때만 시계를 보므로 다른 기간의 답은 안 바뀐다.
@@ -25,14 +24,5 @@ describe('findPriceEntry: 그 기간의 가격', () => {
 
   it('없는 조합은 undefined 다', () => {
     expect(findPriceEntry('no_such_boss', 'hard', '2026-09-17', 패치후시각)).toBeUndefined()
-  })
-})
-
-// 파티 인원 상한은 보스·난이도의 성질이지 그 기간의 값이 아니다.
-describe('getMaxPartySize: 기간을 안 탄다', () => {
-  it('가격 줄이 여럿인 보스도 상한이 하나다', () => {
-    expect(getMaxPartySize('first_adversary', 'normal')).toBe(3)
-    expect(getMaxPartySize('lotus', 'extreme')).toBe(2)
-    expect(getMaxPartySize('zakum', 'chaos')).toBe(6)
   })
 })

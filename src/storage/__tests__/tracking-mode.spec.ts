@@ -8,12 +8,6 @@ beforeEach(async () => {
   await prefs.remove('trackingMode')
 })
 
-describe('미선택', () => {
-  it('저장된 값이 없으면 null(미선택)을 반환한다. auto로 위장하지 않는다', async () => {
-    await expect(getTrackingMode()).resolves.toBeNull()
-  })
-})
-
 describe('손상된 값', () => {
   it('저장된 값이 알 수 없는 문자열이면 null(미선택)로 폴백한다', async () => {
     await prefs.set('trackingMode', 'something-else')

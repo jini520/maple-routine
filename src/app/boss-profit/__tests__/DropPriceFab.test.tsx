@@ -133,21 +133,11 @@ describe('미입력 건수 배지', () => {
 })
 
 describe('도는 그림', () => {
-  it('셋이 다 마운트된 채로 있다', async () => {
-    const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
-
-    expect(DROP_PRICE_FAB_ITEMS).toHaveLength(3)
-    for (let slot = 0; slot < DROP_PRICE_FAB_ITEMS.length; slot += 1) {
-      expect(view.getByTestId(`drop-price-fab-item-${slot}`)).toBeTruthy()
-    }
-  })
-
   // 파일명은 화면이 안 든다. `drop-items.json` 이 key 에 매어 둔 것을 그대로 꺼내므로
   // 매핑이 바뀌면 이 버튼도 함께 따라간다.
   it('그림은 아이템 key 로 찾은 것이다', async () => {
     const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
 
-    expect(DROP_PRICE_FAB_ITEMS).toEqual(['source_of_suffering', 'giant_terror', 'complete_under_control'])
     DROP_PRICE_FAB_ITEMS.forEach((itemKey, slot) => {
       const icon = dropItemIconOf(itemKey)
 

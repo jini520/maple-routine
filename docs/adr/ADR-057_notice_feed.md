@@ -305,11 +305,11 @@ today 머리 아래, 위젯 격자 위에 공지 하나를 보여 준다(`Notice
 | `storage/__tests__/notices.spec.ts` | 결정 5: 최근 발행순인지, 그 분류만 통째로 바꾸고 빈 응답이면 비우는지, 다른 분류의 사본과 항목을 건드리지 않는지, 옛 코드가 쌓은 값도 그 분류의 조회가 바꾸는지, 깨진 값을 빈 배열로 읽는지 본다 |
 | `storage/__tests__/notice-banner.spec.ts` | 결정 9: 같은 id 를 한 번만 적는지, 50건에서 자르는지, 서버에 없는 id 를 빼는지, 깨진 값을 빈 배열로 읽는지 본다 |
 | `app/settings/__tests__/SettingsNoticeDetailScreen.test.tsx` | 결정 6: 사본을 먼저 그리고 조회 결과로 바꾸는지, 실패하면 사본을 그리는지, 404 면 사본이 있어도 없다고 표시하고 지우는지, 본문이 빈 공지의 받는 중 · 못 받음 문구를 본다 |
-| `app/settings/__tests__/NoticeBlocks.test.tsx` | 결정 7: 이미지를 그리고 링크를 누르면 밖으로 여는지, 이미지 비율을 받기 전에도 높이가 있는지, 못 받은 이미지를 알리는지 본다 |
-| `app/settings/__tests__/SettingsNoticesScreen.test.tsx` | 결정 10: 스켈레톤이 뜨고 사라지는 조건, 준 분류만 받는지, 실패하면 사본을 그리는지, 당기면 보던 분류만 다시 받고 전부 실패했을 때만 토스트를 띄우는지, 카드와 글 줄을 분류에 맞게 쓰는지 본다 |
+| `app/settings/__tests__/NoticeBlocks.test.tsx` | 결정 7: 링크를 누르면 밖으로 여는지, 이미지 비율을 받기 전에도 높이가 있는지, 못 받은 이미지를 알리는지 본다 |
+| `app/settings/__tests__/SettingsNoticesScreen.test.tsx` | 결정 10: 스켈레톤이 뜨고 사라지는 조건, 준 분류만 받는지, 실패하면 사본을 그리는지, 당기면 보던 분류만 다시 받고 전부 실패했을 때만 토스트를 띄우는지, 카드와 글 줄을 분류에 맞게 쓰는지 본다. 받은 목록을 다시 정렬하지 않고 그 순서대로 그리는지 본다 |
 | `app/settings/__tests__/NoticeBanner.test.tsx` | 결정 10 · 12: 양끝 사본이 스크린리더에서 숨는지, 배너가 하나면 사본과 점이 없는지, 점이 불투명한 흰 바탕에 점 전체 72% 인지, 캡슐 제목, 그림 실패 시 빈 칸, 카드의 기간과 `상시 판매`, 글 줄을 본다 |
 | `app/settings/__tests__/notice-banner-motion.test.ts` | 결정 10 · 12: 진하기 곡선, 넘기는 방향에 따른 새 배너와 이전 배너, 숨은 칸이 스크롤해도 같은 스타일이라 다시 반영되지 않는지, 양끝 사본 번호 바꾸기, 점 표시가 늘었다 줄어드는지 본다 |
-| `app/settings/__tests__/NoticeSkeleton.test.tsx` | 결정 10: 스켈레톤이 결과와 같은 비율과 줄 높이를 갖는지, 조회 중임을 보조기술에 알리는지 본다 |
+| `app/settings/__tests__/NoticeSkeleton.test.tsx` | 결정 10: 스켈레톤이 결과와 같은 비율과 줄 높이를 갖는지 본다 |
 | `app/today/__tests__/NoticeBanner.test.tsx` | 결정 9: 보여 줄 공지가 없으면 그리지 않는지, 접힌 상태에 버튼이 없는지, 머리를 누르면 펼쳐지고 이동하지 않는지, 공지가 바뀌면 접힌 채 보이는지, 두 버튼이 상세를 열고 배너를 닫는지 본다 |
 
 ## 번호 기록

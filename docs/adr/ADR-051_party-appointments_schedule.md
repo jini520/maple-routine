@@ -247,23 +247,20 @@ SQLite 를 쓰지 않는 이유는 스케줄이 한 주에 몇 건뿐이고 다�
 | `features/party-appointments/__tests__/boss-groups.spec.ts` | 결정 3: 캐릭터를 처음 고른 순서로 묶는지, 순서를 묶음 안에서만 옮기는지 본다 |
 | `features/party-appointments/__tests__/boss-picker.spec.ts` | 결정 8: 파티 · 스케줄러 묶음을 나누는 기준, 모든 보스의 난이도와 중복 없음, 같은 캐릭터 · 같은 보스는 한 번만 고르는지 본다 |
 | `features/party-appointments/__tests__/alarm-gate.spec.ts` | 결정 9: 권한 → 스위치 순서, 묻지 않았으면 묻기 전에 물었다고 적는지, 물었는데 없으면 다시 묻지 않는지 본다 |
-| `features/party-appointments/__tests__/alarm-settings.spec.ts` | 결정 9: 기기 값을 읽는지, 바꾸면 저장하고 재조정을 부르는지 본다 |
+| `features/party-appointments/__tests__/alarm-settings.spec.ts` | 결정 9: 스위치를 바꾸면 알림 재조정을 부르는지 본다 |
 | `features/party-appointments/__tests__/notification.spec.ts` | 결정 10: 알림 있는 회차마다 하나를 계획하는지, 지난 시각과 7일 뒤를 빼는지, 주 경계를 넘는지 본다 |
 | `features/party-appointments/__tests__/notification-text.spec.ts` | 결정 10: 제목 · 본문의 형태, `외 n마리` · `외 n캐릭터`, 정각과 시간 단위를 본다 |
 | `features/party-appointments/__tests__/open-request.spec.ts` | 결정 11: 알림 `data` 를 읽는지, 회차와 그 주를 찾는지, 회차가 없으면 주만 돌려주는지 본다 |
 | `features/party-appointments/__tests__/upcoming.spec.ts` | 결정 11: 지금 뒤에 시작하는 회차를 시작 순으로 돌려주는지, 먼 한 번만 스케줄도 찾는지 본다 |
 | `features/party-appointments/__tests__/store.spec.ts` | 결정 12: 저장하면 저장소와 상태가 함께 바뀌고 재조정을 부르는지 본다 |
 | `storage/__tests__/party-appointments.spec.ts` | 결정 12: 깨진 JSON 과 형식이 틀린 항목을 어떻게 다루는지 본다 |
-| `storage/__tests__/party-appointment-settings.spec.ts` | 결정 9: 값이 없으면 켜짐인지 본다 |
 | `app/party-appointments/__tests__/AppointmentSheet.test.tsx` | 결정 7: 한 번만은 날짜, 반복은 요일을 고르는지, 수정 시트의 `이 주만 적용하기` 와 타일 전환을 본다. 결정 9: 켤 때와 저장할 때의 모달과 각 버튼의 결과를 본다 |
 | `app/party-appointments/__tests__/AppointmentTimeBand.test.tsx` | 결정 4 · 7: 다음 날 표기, 주황과 빨강의 우선순위, 읽기 모드, 요일 세그먼트의 순서와 상자 형태를 본다 |
 | `app/party-appointments/__tests__/AppointmentAgenda.test.tsx` | 결정 6: 요일 머리, 시각 줄, 알림 · 반복 줄, 누르면 그 회차로 부르는지, 빈 상태, 캐릭터 묶음을 본다 |
-| `app/party-appointments/__tests__/AppointmentBossList.test.tsx` | 결정 3 · 7: 캐릭터 머리 줄과 순서, 차례 숫자가 없는지, 묶음 안에서만 끌리는지, 상세도 묶는지 본다 |
-| `app/party-appointments/__tests__/BossPickerTray.test.tsx` | 결정 8: 묶음과 정렬 줄, 난이도 색 테두리, 첫 보스의 180ms 출발, 사라질 때 애니메이션이 없는지 본다 |
+| `app/party-appointments/__tests__/AppointmentBossList.test.tsx` | 결정 3 · 7: 캐릭터 머리 줄과 순서, 묶음 안에서만 끌리는지, 상세도 묶는지 본다 |
+| `app/party-appointments/__tests__/BossPickerTray.test.tsx` | 결정 8: 묶음과 정렬 줄, 첫 보스의 180ms 출발, 사라질 때 애니메이션이 없는지 본다 |
 | `app/party-appointments/__tests__/BossDifficultyPopover.test.tsx` | 결정 8: 팝오버가 넓은 쪽에 뜨는지, 측정 전에는 안 보이는지 본다 |
 | `app/party-appointments/__tests__/useBossPicker.test.tsx` | 결정 8: 드롭다운이 대표 캐릭터나 추적 첫 캐릭터로 열리는지 본다 |
-| `app/party-appointments/__tests__/CharacterGroupLabel.test.tsx` | 결정 6: 묶음 왼쪽 열의 폭이 묶음마다 같은지 본다 |
-| `app/party-appointments/__tests__/tile-surfaces.test.tsx` | 결정 7: 알림 · 반복 타일, 보스 줄, 요일 타일이 흰 카드색인지 본다 |
 
 ## 번호 기록
 

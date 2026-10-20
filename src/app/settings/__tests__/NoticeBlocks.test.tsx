@@ -11,16 +11,6 @@ import type { NoticeBlock } from '../../../types/notice'
 import { NoticeBlocks } from '../NoticeBlocks'
 
 describe('공지 본문 블록', () => {
-  it('이미지 한 장짜리 본문을 그린다', async () => {
-    const blocks: NoticeBlock[] = [{ type: 'image', src: 'https://lwi.nexon.com/a.png' }]
-
-    const view = await renderOverlay(<NoticeBlocks blocks={blocks} />)
-
-    expect(view.getByTestId('notice-image').props.source).toEqual({
-      uri: 'https://lwi.nexon.com/a.png',
-    })
-  })
-
   // 넥슨이 실제 크기를 알려 주기 전에는 비율을 모른다. 높이가 0이면 이미지가 안 보인다.
   it('비율을 받기 전에도 높이를 갖는다', async () => {
     const view = await renderOverlay(

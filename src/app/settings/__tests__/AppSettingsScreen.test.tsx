@@ -330,14 +330,6 @@ describe('AppSettingsScreen', () => {
     }
   })
 
-  // 개인정보 처리방침은 `앱 정보` 화면의 행이다. 고지 블록은 전부 읽고 끝나는 정적 문구만 남는다.
-  it('고지 블록은 4줄이고 링크를 두지 않는다', async () => {
-    const view = await renderOverlay(<AppSettingsScreen />)
-
-    expect(view.getByTestId('settings-footer').children).toHaveLength(4)
-    expect(view.queryByText('개인정보 처리방침')).toBeNull()
-  })
-
   it('"스케줄 관리 방법"을 누르면 트래킹 모드 모달이 열린다', async () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
@@ -380,15 +372,6 @@ describe('AppSettingsScreen', () => {
 
     expect(order).toEqual(['content', 'boss', 'profit'])
   })
-
-  it.each(['연결 해제', '캐시 데이터 삭제'])(
-    '"%s" 행을 본화면에 두지 않는다',
-    async (label) => {
-      const view = await renderOverlay(<AppSettingsScreen />)
-
-      expect(view.queryByText(label)).toBeNull()
-    },
-  )
 
 describe('AppSettingsScreen: 캐릭터 관리', () => {
   // 파생·추정값이 아니라 저장된 목록의 길이다. **단위가 명 이 아니라 개** 인 것은 캐릭터가

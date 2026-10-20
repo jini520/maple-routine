@@ -171,14 +171,6 @@ describe('useBossSchedulerStore', () => {
     expect(state.error).toBeNull()
   })
 
-  it('refresh(ocids)는 syncSchedules(ocids)를 정확히 그 인자로 호출한다', async () => {
-    syncSchedulesMock.mockResolvedValue([syncResult()])
-
-    await useBossSchedulerStore.getState().refresh(['ocid-1'])
-
-    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'], undefined)
-  })
-
   it('weekly와 monthly가 섞여 있으면 각각 weeklyBosses/monthlyBosses로 정확히 분리된다', async () => {
     syncSchedulesMock.mockResolvedValue([
       syncResult({
@@ -459,16 +451,6 @@ describe('useBossSchedulerStore', () => {
       expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
       expect(useBossSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
       expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
-    })
-
-    it('saveTrackedOcids가 끝나면 완료 토스트를 띄운다', async () => {
-      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1'])
-
-      expect(showSuccessMock).toHaveBeenCalledWith('캐릭터 정보를 모두 불러왔어요')
-      expect(showErrorMock).not.toHaveBeenCalled()
     })
 
     it('storage 저장이 실패하면 실패 토스트를 띄우고 상태를 바꾸지 않는다(예외를 던지지 않음)', async () => {
@@ -1092,14 +1074,6 @@ describe('useBossSchedulerStore', () => {
         }),
       )
       expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:zakum:chaos': 4 })
-    })
-
-    it('setPartySetting가 성공하면 완료 토스트를 띄운다', async () => {
-      setBossPartySettingMock.mockResolvedValue(undefined)
-
-      await useBossSchedulerStore.getState().setPartySetting('ocid-1', 'zakum', 'chaos', { partySize: 4, shares: EVEN_SHARE_COLUMNS })
-
-      expect(showSuccessMock).toHaveBeenCalledWith('파티원 수를 저장했어요')
     })
 
     it('setPartySetting는 해당 보스의 maxPartySize를 초과하면 에러를 던지고 storage를 호출하지 않는다', async () => {

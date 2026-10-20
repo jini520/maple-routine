@@ -144,7 +144,7 @@ ocid 대신 캐릭터를 돌려준다. 네 화면 모두 고른 ocid 를 구하�
 | `app/content-scheduler/__tests__/content-completion.test.ts` | 결정 4: 항목마다 완료 판정과 무릉도장을 분모에서 빼는 규칙을 본다 |
 | `app/content-scheduler/__tests__/ContentScreen.test.tsx` | 결정 1 · 4 · 9: 레일에서 누르면 고른 캐릭터가 바뀌는지, 링이 표시 목록과 같은 것을 세는지, 레일이 저장 순서대로 보이고 저장 목록에 없는 캐릭터가 사라지지 않는지 본다 |
 | `app/boss-scheduler/__tests__/BossScreen.test.tsx` | 결정 4: 처치 한도로 마감된 보스를 다 한 것으로 세는지 본다. 결정 9: 레일 순서를 본다 |
-| `app/boss-scheduler/__tests__/BossManageScreen.test.tsx` | 결정 3: 관리 화면 레일에 진행 링이 없는지 본다. 결정 8 · 9: 고른 적이 없으면 저장 순서의 첫 캐릭터가 열리는지, 레일 순서를 본다 |
+| `app/boss-scheduler/__tests__/BossManageScreen.test.tsx` | 결정 8 · 9: 고른 적이 없으면 저장 순서의 첫 캐릭터가 열리는지, 레일 순서를 본다 |
 
 ## 번호 기록
 

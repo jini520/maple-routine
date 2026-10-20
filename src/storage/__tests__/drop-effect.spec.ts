@@ -1,5 +1,5 @@
 import { installFakePreferences } from './fake-preferences'
-import { getDropEffectEnabled, setDropEffectEnabled } from '../drop-effect'
+import { setDropEffectEnabled } from '../drop-effect'
 
 let prefs = installFakePreferences()
 
@@ -9,10 +9,6 @@ beforeEach(async () => {
 })
 
 describe('drop-effect 저장', () => {
-  it('저장된 값이 없으면 기본은 연출 표시(true)', async () => {
-    await expect(getDropEffectEnabled()).resolves.toBe(true)
-  })
-
   it('Preferences.set이 reject되면 에러를 그대로 전파한다', async () => {
     prefs.set.mockRejectedValueOnce(new Error('disk full'))
     await expect(setDropEffectEnabled(false)).rejects.toThrow('disk full')

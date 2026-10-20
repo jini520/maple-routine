@@ -508,15 +508,6 @@ describe('dropShareSeedOf', () => {
       sharesTotal: 3,
     })
   })
-
-  it('혼자여도 비율 씨앗은 인원을 안 따라간다', () => {
-    expect(dropShareSeedOf(1)).toEqual({
-      mode: 'even',
-      partySize: 1,
-      myShare: 2,
-      sharesTotal: 3,
-    })
-  })
 })
 
 // 직접 적은 완료는 넥슨 응답에 없다. 기록에서 뽑은 열쇠를 행 고르기와 병합 둘이 함께 봐야

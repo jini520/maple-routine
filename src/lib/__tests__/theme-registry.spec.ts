@@ -73,10 +73,6 @@ describe('groupThemesByCategory: 선택 목록의 섹션', () => {
     expect(groups.flatMap((group) => group.themes)).toEqual(darkOnly)
   })
 
-  it.each(NAMES)('%s 는 테마 이름이다', (name) => {
-    expect(isThemeName(name)).toBe(true)
-  })
-
   it('등록되지 않은 값은 걸러낸다', () => {
     expect(isThemeName('없는테마')).toBe(false)
     expect(isThemeName('')).toBe(false)

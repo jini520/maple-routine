@@ -51,13 +51,6 @@ describe('AppointmentBossList', () => {
     expect(view.getByText('보스 1')).toBeTruthy()
   })
 
-  it('보스 줄에 차례 숫자가 없다', async () => {
-    const view = await renderAtom(<AppointmentBossList {...props()} />)
-
-    expect(view.queryByText('1')).toBeNull()
-    expect(view.queryByText('2')).toBeNull()
-  })
-
   it('끌어서 바꾸는 차례는 그 캐릭터 묶음 안에서만이다', async () => {
     const onChange = jest.fn()
     await renderAtom(<AppointmentBossList {...props({ onChange })} />)

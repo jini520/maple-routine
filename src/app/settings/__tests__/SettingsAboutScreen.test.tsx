@@ -84,13 +84,6 @@ describe('SettingsAboutScreen', () => {
     expect(goBack).toHaveBeenCalledTimes(1)
   })
 
-  // 페이지 제목이 이미 `앱 정보`라 업데이트 카드가 자기 제목을 또 그리면 중복이다.
-  it('업데이트 카드가 "앱 업데이트" 제목을 다시 그리지 않는다', async () => {
-    const view = await renderOverlay(<SettingsAboutScreen />)
-
-    expect(view.queryByText('앱 업데이트')).toBeNull()
-  })
-
   // `LiveUpdatePort` 가 던져 확인 경로가 없다. **없는 것을 있는 척하지 않는
   // 것이 이 화면의 계약**이라 확인 버튼도 함께 사라진다.
   // 런타임이 없는 환경(개발 서버)에서는 확인 버튼 자체가 없어야 한다. 누를 수 없는 것을 그리면

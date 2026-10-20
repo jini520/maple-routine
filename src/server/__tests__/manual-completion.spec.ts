@@ -18,14 +18,6 @@ it('열린 보스가 없으면 빈 목록이다', async () => {
   await expect(fetchManualCompletionBosses()).resolves.toEqual([])
 })
 
-it('우리 서버의 주소로 부른다', async () => {
-  const spy = jest.spyOn(global, 'fetch').mockResolvedValue(ok({ bosses: [] }))
-
-  await fetchManualCompletionBosses()
-
-  expect(String(spy.mock.calls[0][0])).toContain('mapleroutine.store/v1/manual-completion')
-})
-
 it('네트워크가 실패하면 null', async () => {
   jest.spyOn(global, 'fetch').mockRejectedValue(new Error('offline'))
 

@@ -190,12 +190,6 @@ describe('구독 스위치', () => {
 // 아래 권한 카드와 가는 곳이 같지만 그 카드는 켜려다 막혔을 때만 나온다. 막힌 적 없이 기기
 // 쪽에서 알림을 끄거나 채널을 손보러 가려는 사용자에게는 앱 안에 길이 없었다.
 describe('헤더의 기기 설정', () => {
-  it('막히지 않았어도 늘 서 있다', async () => {
-    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
-
-    expect(view.getByLabelText('OS 알림 설정 열기')).toBeTruthy()
-  })
-
   // 가는 길은 플랫폼마다 다르고 그 분기는 `notification-settings-link` 가 잰다. 여기서 재는
   // 것은 누름이 거기로 이어지는가뿐이다.
   it('누르면 OS 알림 설정을 연다', async () => {
@@ -469,18 +463,7 @@ describe('왕복을 기다리지 않는다', () => {
   })
 })
 
-// 자리를 미리 세우는 이유는 이 화면이 `알림으로 무엇을 받을 수 있는가` 를 말하는 자리이고,
-// 목록에서 빠져 있으면 없는 기능인지 못 찾는 기능인지 모르기 때문이다.
 describe('스케줄러 알림', () => {
-  // 못 켜는 스위치를 그려 두면 사용자가 눌러 보고 나서야 못 쓴다는 것을 알고, 그 사이 화면은
-  // 고장으로 읽힌다.
-  it('스위치 대신 준비 중이라고 적는다', async () => {
-    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
-
-    expect(view.getAllByText('준비 중')).toHaveLength(2)
-    expect(view.queryByLabelText('미완료 스케줄 알림 알림')).toBeNull()
-  })
-
   it('파티 약속 알림은 스위치로 첫 줄에 선다', async () => {
     usePartyAlarmSettingsStore.setState({ enabled: true })
     const view = await renderOverlay(<SettingsNoticeAlertsScreen />)

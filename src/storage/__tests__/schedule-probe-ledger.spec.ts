@@ -79,7 +79,8 @@ describe('관측 기록', () => {
     await recordScheduleProbe('ocid-1', '2026-07-25', { kind: 'outOfRange' })
 
     const ledger = await getScheduleProbeLedger('ocid-1', NOW)
-    expect(ledger.dates['2026-07-25']).toEqual({ kind: 'outOfRange' })
+    // 되읽은 기록이 확정으로 판정돼야 다음 회차가 이 날짜를 다시 부르지 않는다.
+    expect(isSettledProbe(ledger.dates['2026-07-25'], '2026-07-25', '2026-08-03')).toBe(true)
   })
 })
 
