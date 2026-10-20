@@ -322,7 +322,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
           testId="calculator-save-choice"
           icon={FileTextIcon}
           tone="primary"
-          title="연 기록을 덮을까요?"
+          title="기존 저장된 기록에 덮어쓸까요?"
           description="새 기록으로 따로 남길 수도 있어요."
           action={{ label: '덮기', onPress: () => void save('overwrite') }}
           secondaryAction={{ label: '새 기록으로', onPress: () => void save('new') }}
