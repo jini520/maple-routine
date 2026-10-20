@@ -450,7 +450,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
 
     await 누르기(view, '보약 버프 추가 구매')
 
-    expect(view.queryByLabelText('수량 늘리기')).toBeNull()
+    expect(view.queryByLabelText('수량 증가')).toBeNull()
     expect(view.queryByTestId('spend-sheet-quantity-unit')).toBeNull()
     expect(줄글자(view, 'spend-sheet-quantity')).toBe('1')
   })
@@ -549,16 +549,16 @@ describe('수량. 곱셈은 앱이 한다', () => {
     const view = await 그리기({ lastPointRate: 1_180 })
     await 누르기(view, '몬스터 파크')
 
-    expect(view.getByLabelText('수량 줄이기').props.accessibilityState?.disabled).toBe(true)
+    expect(view.getByLabelText('수량 감소').props.accessibilityState?.disabled).toBe(true)
     await act(async () => {
-      fireEvent.press(view.getByLabelText('수량 늘리기'))
+      fireEvent.press(view.getByLabelText('수량 증가'))
     })
     expect(줄글자(view, 'spend-sheet-quantity')).toBe('2')
 
     await 카드칸에치기(view, 'spend-sheet-quantity', '14')
 
-    expect(view.getByLabelText('수량 늘리기').props.accessibilityState?.disabled).toBe(true)
-    expect(view.getByLabelText('수량 줄이기').props.accessibilityState?.disabled).toBe(false)
+    expect(view.getByLabelText('수량 증가').props.accessibilityState?.disabled).toBe(true)
+    expect(view.getByLabelText('수량 감소').props.accessibilityState?.disabled).toBe(false)
   })
 
   // 상한이 없는 항목은 친 그대로다. 없는 한도를 앱이 지어내면 그것이 추정이다.

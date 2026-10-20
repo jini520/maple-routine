@@ -50,7 +50,7 @@ import { MAX_MESO, acceptMesoText, mesoTextOf, mesoValueOf } from '../MesoPad/me
 import { caretAfterDigits, digitsBefore } from '../MesoPad/meso-caret'
 import { useKeyboardShown } from '../../../hooks/useKeyboardShown'
 import { ShareField } from '../../molecules/ShareField/ShareField'
-import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
+import { Stepper } from '../../molecules/Stepper/Stepper'
 import { Segment } from '../../molecules/Segment/Segment'
 import { Badge } from '../../atoms/Badge/Badge'
 import { defaultMaxPartySize } from '../../../lib/boss/bosses'
@@ -830,9 +830,9 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                     </View>
                     {/* 스테퍼는 머리 줄 아래 남는 자리 가운데다(사용자 지정). */}
                     <View testID="input-card-party-body" className="flex-1 items-center justify-center">
-                      <PartySizeStepper
-                        size="bare"
-                        label={props.share.label}
+                      <Stepper
+                        size="sm"
+                        label={`${props.share.label} 파티원 수`}
                         value={partySize}
                         max={props.share.maxPartySize ?? defaultMaxPartySize()}
                         onChange={setPartySize}

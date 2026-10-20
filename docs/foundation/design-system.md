@@ -58,7 +58,8 @@
 | `AmountFigure` | 시트의 큰 숫자. 칠 수 없다 |
 | `BackButton` | 헤더의 `←` |
 | `CalendarGrid` · `DateSelect` · `TimeWheel` | 달력 격자 · 날짜 선택 버튼 · 시각 휠 |
-| `ShareField` · `PartySizeStepper` · `PartyShareSummary` | 분배 비율 고르기 · 파티 인원 스테퍼 · 분배 요약 줄([[ADR-038]]) |
+| `ShareField` · `PartyShareSummary` | 분배 비율 고르기 · 분배 요약 줄([[ADR-038]]) |
+| `Stepper` | `−` · 숫자 · `+` 고르개. 크기 `sm` · `md` · `lg`([[ADR-060]] 결정 14) |
 | `BossPortrait` · `CharacterAvatar` | 보스 얼굴 · 캐릭터 얼굴 원 |
 | `FadedIllustration` | 카드 안 일러스트와 베일 |
 | `MvpGradeGrid` · `MvpPlate` | MVP 등급 고르기 · 등급 명패([[ADR-050]]) |

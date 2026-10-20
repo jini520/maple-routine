@@ -16,7 +16,7 @@ import { Pressable, View } from 'react-native'
 import { Card, Switch, Text, TextInput } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { ShareField } from '../../components/molecules/ShareField/ShareField'
-import { PartySizeStepper } from '../../components/molecules/PartySizeStepper/PartySizeStepper'
+import { Stepper } from '../../components/molecules/Stepper/Stepper'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -179,8 +179,9 @@ export function ItemSplitScreen(): React.JSX.Element {
           {shares === null && (
             <>
               <Text className="text-xs font-semibold text-text-muted">파티원 수</Text>
-              <PartySizeStepper
-                label="분배"
+              <Stepper
+                size="lg"
+                label="분배 파티원 수"
                 value={partySize}
                 max={MAX_PARTY_SIZE}
                 onChange={setPartySize}

@@ -1386,7 +1386,7 @@ describe('사냥 계산기', () => {
     await 밤의길3(view)
 
     await act(async () => {
-      fireEvent.press(view.getByLabelText('소재 늘리기'))
+      fireEvent.press(view.getByLabelText('소재 증가'))
     })
     await 아이디로누르기(view, 'income-sheet-sojae')
 
@@ -1398,14 +1398,14 @@ describe('사냥 계산기', () => {
     const view = await 그리기()
     await 밤의길3(view)
 
-    expect(view.getByLabelText('소재 줄이기').props.accessibilityState?.disabled).toBe(true)
+    expect(view.getByLabelText('소재 감소').props.accessibilityState?.disabled).toBe(true)
     await act(async () => {
-      fireEvent.press(view.getByLabelText('소재 늘리기'))
+      fireEvent.press(view.getByLabelText('소재 증가'))
     })
 
     expect(view.getByTestId('income-sheet-sojae')).toHaveTextContent('2')
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 42,336,000')
-    expect(view.getByLabelText('소재 줄이기').props.accessibilityState?.disabled).toBe(false)
+    expect(view.getByLabelText('소재 감소').props.accessibilityState?.disabled).toBe(false)
   })
 
   /**
@@ -1591,7 +1591,7 @@ describe('사냥 계산기', () => {
     await 칸에치기(view, 'income-sheet-fragments', '83')
 
     expect(줄글자(view, 'income-sheet-fragments')).toBe('83')
-    expect(view.queryByLabelText('솔 에르다 조각 늘리기')).toBeNull()
+    expect(view.queryByLabelText('솔 에르다 조각 증가')).toBeNull()
   })
 
   // 붙여넣기가 숫자 아닌 것을 들여보낸다. 조각 가격과 같은 규칙을 쓴다.
