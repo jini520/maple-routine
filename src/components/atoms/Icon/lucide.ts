@@ -177,7 +177,7 @@ export const MedalIcon = withIconInterop(Medal)
  * 뜻하는 것은 순서 변경이다. 뜻은 자리와 접근성 이름이 진다.
  */
 export const MenuIcon = withIconInterop(Menu)
-/** 파티원 수 감소. `PartySizeStepper`. */
+/** 하나 줄이기. `Stepper`. */
 export const MinusIcon = withIconInterop(Minus)
 /** 다크 테마 표식. `ThemeSelector` 타일. */
 export const MoonIcon = withIconInterop(Moon)
@@ -194,7 +194,7 @@ export const CalendarIcon = withIconInterop(Calendar)
 export const PackageOpenIcon = withIconInterop(PackageOpen)
 /** 고정 드롭(읽기 전용) 섹션. `BossDropSheet`. */
 export const PinIcon = withIconInterop(Pin)
-/** 파티원 수 증가. `PartySizeStepper`. */
+/** 하나 늘리기. `Stepper`. */
 export const PlusIcon = withIconInterop(Plus)
 /** 토스트 액션의 기본 아이콘('다시 시도' 전제). `Toast`. */
 export const RefreshCwIcon = withIconInterop(RefreshCw)
@@ -222,7 +222,7 @@ export const SwordIcon = withIconInterop(Sword)
 export const SunIcon = withIconInterop(Sun)
 /** 몬스터파크 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const SwordsIcon = withIconInterop(Swords)
-/** 파티원 표식. `PartySizeStepper`(compact) · 파티 인원 라벨 `PartySizeModal`. */
+/** 파티원 표식. 파티 인원 라벨 `PartySizeModal`. */
 export const UsersIcon = withIconInterop(Users)
 
 export const WalletIcon = withIconInterop(Wallet)

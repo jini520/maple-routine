@@ -32,7 +32,7 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
 import { DifficultySegment } from '../../molecules/DifficultySegment/DifficultySegment'
 import { FadedIllustration } from '../../molecules/FadedIllustration/FadedIllustration'
-import { PartySizeStepper } from '../../molecules/PartySizeStepper/PartySizeStepper'
+import { Stepper } from '../../molecules/Stepper/Stepper'
 import { Segment } from '../../molecules/Segment/Segment'
 import { ShareField } from '../../molecules/ShareField/ShareField'
 import { FeeRow } from '../FeeRow/FeeRow'
@@ -333,9 +333,8 @@ export function PartySizeModal(props: {
                     최대 {props.maxPartySize}명
                   </Badge>
                 </View>
-                <PartySizeStepper
-                  size="compact"
-                  label={props.bossName}
+                <Stepper
+                  label={`${props.bossName} 파티원 수`}
                   value={draft.partySize}
                   max={props.maxPartySize}
                   onChange={(next) => setDraft((prev) => ({ ...prev, partySize: next }))}

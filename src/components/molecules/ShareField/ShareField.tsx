@@ -14,29 +14,19 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { selectionFeedback } from '../../../native/haptics'
 import { formatSharePercent } from '../../../lib/boss/party-shares'
-import { MinusIcon, PlusIcon, Text } from '../../atoms'
+import { Text } from '../../atoms'
+import { Stepper } from '../Stepper/Stepper'
 import { MAX_SHARES_TOTAL, shareAt, withSharesTotal, type Shares } from './share-geometry'
 
 /** 손잡이 지름. 넓은 트랙(파티 모달)은 합이 상한이어도 칸이 이보다 넓어 이웃 눈금을 안 덮는다. */
 const GRIP = 18
-
-/** 스테퍼 버튼의 시각 크기와 권장 타깃(44px)의 차이를 사방으로 나눈 몫. */
-const STEP_HIT_SLOP = { top: 8, bottom: 8, left: 10, right: 10 }
-
-/** 합을 올리고 내리는 단추. 가로로 서면 테두리를 둘러 눌리는 자리를 말한다. */
-function stepClass(stacked: boolean, atEnd: boolean): string {
-  const base = stacked
-    ? 'h-[26px] w-[26px] items-center justify-center rounded-full border border-border'
-    : 'h-4 w-7 items-center justify-center'
-  return atEnd ? `${base} opacity-40` : base
-}
 
 export function ShareField(props: {
   /** aria 접두. 한 화면에 결정석과 아이템이 나란히 서서 어느 쪽인지 말해야 한다. */
   label: string
   value: Shares
   /**
-   * 합을 어디에 두나. 기본은 트랙 오른쪽에 세로로 선다.
+   * 합을 어디에 두나. 기본은 트랙 오른쪽이다.
    *
    * `'stacked'` 는 트랙 아래 가운데다. 좁은 카드 둘이 나란히 서는 자리에서는 옆에 두면 트랙이
    * 30px 밖에 안 남는다.
@@ -51,8 +41,6 @@ export function ShareField(props: {
   const stacked = props.layout === 'stacked' || wide
   /** 트랙과 합이 위아래로 서는 벌. 본문의 주축이 세로라 트랙 높이를 flex 가 덮을 수 있다. */
   const column = stacked && !wide
-  // 가로로 서는 두 벌은 `−` 가 왼쪽이다(사용자 지정). 세로로 서는 `row` 만 `＋` 가 위다.
-  const minusFirst = stacked
   const [width, setWidth] = useState(0)
   /**
    * 끌기 중인가. 콜백은 렌더마다 새 제스처로 갈아 끼워지므로, 잡은 직후 다시 렌더되기 전에 온
@@ -92,52 +80,18 @@ export function ShareField(props: {
   // 약속이 있다.
   const cells = Array.from({ length: sharesTotal + 1 }, (_, index) => index)
 
-  /** 합. 넓은 자리에서는 트랙 오른쪽에, 좁은 카드에서는 트랙 아래 가운데에 선다. */
+  /** 합. 좁은 카드(`stacked`)에서는 트랙 아래 가운데에, 나머지는 트랙 오른쪽에 선다. */
   const total = (
-    <View
-      className={
-        wide
-          ? 'flex-row items-center gap-2.5'
-          : stacked
-            ? 'flex-row items-center justify-center gap-2.5'
-            : 'w-7 items-center'
-      }
-    >
-      <Pressable
-        role="button"
-        aria-label={`${props.label} 비율 합 ${minusFirst ? '감소' : '증가'}`}
-        onPress={() => commit(withSharesTotal(props.value, sharesTotal + (minusFirst ? -1 : 1)))}
-        disabled={minusFirst ? sharesTotal <= 2 : sharesTotal >= MAX_SHARES_TOTAL}
-        hitSlop={STEP_HIT_SLOP}
-        className={stepClass(stacked, minusFirst ? sharesTotal <= 2 : sharesTotal >= MAX_SHARES_TOTAL)}
-      >
-        {minusFirst ? (
-          <MinusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
-        ) : (
-          <PlusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
-        )}
-      </Pressable>
-      <Text
+    <View className={column ? 'items-center' : undefined}>
+      <Stepper
+        size="sm"
         testID={`share-field-total-${props.label}`}
-        className={`${stacked ? 'min-w-3 text-center text-13' : 'py-0.5 text-15'} font-bold text-text`}
-        style={TABULAR_NUMS}
-      >
-        {sharesTotal}
-      </Text>
-      <Pressable
-        role="button"
-        aria-label={`${props.label} 비율 합 ${minusFirst ? '증가' : '감소'}`}
-        onPress={() => commit(withSharesTotal(props.value, sharesTotal + (minusFirst ? 1 : -1)))}
-        disabled={minusFirst ? sharesTotal >= MAX_SHARES_TOTAL : sharesTotal <= 2}
-        hitSlop={STEP_HIT_SLOP}
-        className={stepClass(stacked, minusFirst ? sharesTotal >= MAX_SHARES_TOTAL : sharesTotal <= 2)}
-      >
-        {minusFirst ? (
-          <PlusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
-        ) : (
-          <MinusIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
-        )}
-      </Pressable>
+        label={`${props.label} 비율 합`}
+        value={sharesTotal}
+        min={2}
+        max={MAX_SHARES_TOTAL}
+        onChange={(next) => commit(withSharesTotal(props.value, next))}
+      />
     </View>
   )
 

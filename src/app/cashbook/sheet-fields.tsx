@@ -9,7 +9,8 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { MinusIcon, PlusIcon, Text } from '../../components/atoms'
+import { Text } from '../../components/atoms'
+import { Stepper } from '../../components/molecules/Stepper/Stepper'
 import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
 import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
 import { ChainSelect } from '../../components/organisms/ChainSelect/ChainSelect'
@@ -317,62 +318,24 @@ export function QuantityStepper(props: {
   /** 아직 사용자가 안 건드린 기본값인가. 참이면 가운데 숫자를 눌러 연 카드가 빈 칸이다 */
   pristine?: boolean
 }): React.JSX.Element {
-  const value = mesoValueOf(props.value)
   // 바닥은 1 이다. 수량도 소재도 0 이 뜻이 없다(0 소재를 돌았다는 말은 성립하지 않는다).
-  const canDecrease = value > 1
-  const canIncrease = props.max === undefined || value < props.max
   return (
-    <View className="h-9 flex-row items-center gap-3 rounded-full border border-border px-2">
-      <Pressable
-        role="button"
-        aria-label={`${props.label} 줄이기`}
-        disabled={!canDecrease}
-        onPress={() => props.onChange(mesoTextOf(value - 1))}
-        hitSlop={8}
-      >
-        {/* NativeWind 의 `disabled:` 는 RN 의 `disabled` 프롭과 안 이어져 있다. JS 조건으로 쓴다. */}
-        <MinusIcon
-          className={`h-4 w-4 ${canDecrease ? 'text-text' : 'text-text-disabled'}`}
-          strokeWidth={2}
-          aria-hidden
-        />
-      </Pressable>
-      <Pressable
-        testID={props.testID}
-        role="button"
-        aria-label={props.label}
-        onPress={() =>
-          openAmountCard({
-            label: props.label,
-            context: props.context,
-            chips: [],
-            value: props.value,
-            onChange: props.onChange,
-            pristine: props.pristine,
-          })
-        }
-        hitSlop={{ top: 8, bottom: 8 }}
-      >
-        <Text
-          className={`min-w-6 text-center text-sm font-bold ${value === 0 ? 'text-text-disabled' : 'text-text'}`}
-          style={TABULAR_NUMS}
-        >
-          {value.toLocaleString()}
-        </Text>
-      </Pressable>
-      <Pressable
-        role="button"
-        aria-label={`${props.label} 늘리기`}
-        disabled={!canIncrease}
-        onPress={() => props.onChange(mesoTextOf(value + 1))}
-        hitSlop={8}
-      >
-        <PlusIcon
-          className={`h-4 w-4 ${canIncrease ? 'text-text' : 'text-text-disabled'}`}
-          strokeWidth={2}
-          aria-hidden
-        />
-      </Pressable>
-    </View>
+    <Stepper
+      testID={props.testID}
+      label={props.label}
+      value={mesoValueOf(props.value)}
+      max={props.max}
+      onChange={(next) => props.onChange(mesoTextOf(next))}
+      onPressValue={() =>
+        openAmountCard({
+          label: props.label,
+          context: props.context,
+          chips: [],
+          value: props.value,
+          onChange: props.onChange,
+          pristine: props.pristine,
+        })
+      }
+    />
   )
 }

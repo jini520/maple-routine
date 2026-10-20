@@ -60,7 +60,6 @@ describe('ShareField', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  // 합은 슬라이더 오른쪽 세로 스테퍼다. 아래 줄로 내리면 고르개 하나가 두 줄을 먹는다.
   it('합을 늘리면 내 비율은 그대로다', async () => {
     const onChange = jest.fn()
     const { getByLabelText } = await renderAtom(
@@ -142,8 +141,8 @@ describe('ShareField', () => {
     expect(flattenStyle(getByTestId('share-field-head').props.style).alignItems).toBe('flex-start')
   })
 
-  // 가로로 서는 두 벌은 `−` 가 왼쪽이다(사용자 지정). 세로로 서는 `row` 만 `＋` 가 위다.
-  it.each(['wide', 'stacked'] as const)('%s 는 − 가 ＋ 보다 앞이다', async (layout) => {
+  // 합은 어느 배치에서나 가로 `Stepper` 다. 세로로 쌓던 `row` 의 모양은 없앴다(사용자 지정).
+  it.each(['row', 'wide', 'stacked'] as const)('%s 는 − 가 ＋ 보다 앞이다', async (layout) => {
     const { getAllByLabelText } = await renderAtom(
       <ShareField label="결정석" value={{ myShare: 2, sharesTotal: 3 }} onChange={jest.fn()} layout={layout} />,
     )
