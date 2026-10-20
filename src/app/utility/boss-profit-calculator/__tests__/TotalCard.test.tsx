@@ -45,6 +45,7 @@ describe('TotalCard', () => {
     expect(view.queryAllByTestId(/^calculator-legend-/)).toHaveLength(0)
     expect(view.getByTestId('donut-empty')).toBeTruthy()
     expect(view.getByTestId('calculator-donut-count').props.children).toBe(0)
+    expect(view.getByText('0캐릭터 · 보스 0')).toBeTruthy()
   })
 
   it('다섯 캐릭터면 모두 제 이름으로 적고 묶지 않는다', async () => {

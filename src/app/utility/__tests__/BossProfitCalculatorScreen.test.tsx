@@ -92,7 +92,7 @@ describe('BossProfitCalculatorScreen', () => {
   it('처음 열면 모든 캐릭터가 비어 있고, 카드 머리에 안내와 보스 선택이 선다', async () => {
     const view = await renderOverlay(<BossProfitCalculatorScreen />)
 
-    expect(view.getByText('2캐릭터 · 보스 0')).toBeTruthy()
+    expect(view.getByText('0캐릭터 · 보스 0')).toBeTruthy()
     expect(view.getByText('이 캐릭터가 잡을 보스를 선택하세요')).toBeTruthy()
     expect(view.getByLabelText('보스 선택')).toBeTruthy()
     expect(view.getByTestId('calculator-character-total').props.children).toBe('0')
@@ -106,7 +106,7 @@ describe('BossProfitCalculatorScreen', () => {
 
     await importSelected(view)
 
-    expect(view.getByText('2캐릭터 · 보스 2')).toBeTruthy()
+    expect(view.getByText('1캐릭터 · 보스 2')).toBeTruthy()
     expect(view.getByTestId('calculator-boss-count').props.children).toBe('2 / 12')
     expect(view.getByTestId('calculator-character-total').props.children).toBe(formatMesoUnits(루시드 + 카링))
     expect(view.getByTestId('calculator-total').props.children).toBe(formatMesoUnits(루시드 + 카링))
@@ -120,7 +120,7 @@ describe('BossProfitCalculatorScreen', () => {
 
     const view = await renderOverlay(<BossProfitCalculatorScreen />)
 
-    expect(view.getByText('2캐릭터 · 보스 0')).toBeTruthy()
+    expect(view.getByText('0캐릭터 · 보스 0')).toBeTruthy()
   })
 
   // 금액은 값을 고칠 때마다 다시 센다. 계산 버튼이 없다.

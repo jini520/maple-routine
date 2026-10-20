@@ -102,7 +102,7 @@ export function TotalCard(props: {
           }
         >
           <Text className="text-11 font-semibold text-text-muted">캐릭터</Text>
-          {/* 금액이 있는 캐릭터만 센다. 범례가 그리는 캐릭터와 같은 수다. */}
+          {/* 금액이 있는 캐릭터만 센다. 범례가 그리는 캐릭터 · 아래 면의 캐릭터 수와 같은 수다. */}
           <Text testID="calculator-donut-count" className="text-lg font-bold text-text" style={TABULAR_NUMS}>
             {earningCount}
           </Text>
@@ -156,7 +156,7 @@ export function TotalCard(props: {
         <View className="flex-row items-baseline justify-between gap-3">
           <Text className="text-13 font-semibold text-text">주간 보스 예상 수익</Text>
           <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>
-            {props.characters.length}캐릭터 · 보스 {props.bossCount}
+            {earningCount}캐릭터 · 보스 {props.bossCount}
           </Text>
         </View>
         <Text
