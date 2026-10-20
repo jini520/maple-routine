@@ -8,12 +8,12 @@ import { useState } from 'react'
 import { Pressable, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native'
 import Animated, { Easing, Keyframe } from 'react-native-reanimated'
 
-import { Badge, Text } from '../../components/atoms'
-import { PopoverLayer } from '../../components/molecules/Popover/Popover'
-import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
-import { activeDifficultiesNow, supportedDifficultiesOf } from '../../lib/boss/bosses'
-import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
-import { usePopoverPlacement } from '../../hooks/usePopoverPlacement'
+import { Badge, Text } from '../../atoms'
+import { PopoverLayer } from '../../molecules/Popover/Popover'
+import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
+import { activeDifficultiesNow, supportedDifficultiesOf } from '../../../lib/boss/bosses'
+import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
+import { usePopoverPlacement } from '../../../hooks/usePopoverPlacement'
 
 /** 초상과 캡슐 사이 · 화면 가장자리 여백 */
 const GAP = 10

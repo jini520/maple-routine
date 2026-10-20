@@ -3,8 +3,8 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { useState } from 'react'
 import { Pressable } from 'react-native'
 
-import { flattenStyle, renderAtom } from '../../../components/__tests__/render-atom'
-import type { PartyAppointmentBoss } from '../../../types/party-appointment'
+import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import type { PartyAppointmentBoss } from '../../../../types/party-appointment'
 import { BossPickerTray, type BossPickerTrayProps } from '../BossPickerTray'
 
 let mock줄프롭: Record<string, unknown> | null = null
@@ -33,6 +33,10 @@ const 고른보스: PartyAppointmentBoss[] = [
 function props(picked: PartyAppointmentBoss[]): BossPickerTrayProps {
   return {
     picked,
+    grouped: true,
+    countLabel: `${picked.length}개 선택됨`,
+    confirmLabel: `${picked.length}개 추가`,
+    emptyLabel: '보스를 선택해주세요',
     names: new Map([['ocid-1', '낟낟'], ['ocid-2', '낟넘']]),
     faces: new Map(),
     flight: null,
@@ -156,5 +160,32 @@ describe('BossPickerTray: 줄이 생기고 사라질 때', () => {
     const 줄 = view.getByTestId('tray-row')
     expect(줄.props.entering).toBeTruthy()
     expect(줄.props.exiting).toBeUndefined()
+  })
+})
+
+// 주간 보스 수익 계산기는 캐릭터 하나만 고르고, 줄은 출력 순서를 지킨다. 끌어서 바꾸지 않는다.
+describe('BossPickerTray: 묶지 않는 줄', () => {
+  beforeEach(() => {
+    mock묶음프롭 = []
+  })
+
+  it('캐릭터 머리 없이 한 줄이고 끌기를 끈다', async () => {
+    const view = await renderAtom(
+      <BossPickerTray {...props(고른보스)} grouped={false} names={undefined} faces={undefined} countLabel="2 / 12" />,
+    )
+
+    expect(view.queryByTestId('character-group-label')).toBeNull()
+    expect(mock묶음프롭.slice(-1)[0]?.sortEnabled).toBe(false)
+    expect(view.getByText('2 / 12')).toBeTruthy()
+  })
+})
+
+describe('BossPickerTray: 테두리 없는 바닥', () => {
+  it('개수 배지와 버튼 글자는 여는 쪽이 준 것이고, 바닥에 구분선이 없다', async () => {
+    const view = await renderAtom(<BossPickerTray {...props(고른보스)} confirmLabel="적용" />)
+
+    expect(view.getByText('2개 선택됨')).toBeTruthy()
+    expect(view.getByText('적용')).toBeTruthy()
+    expect(flattenStyle(view.getByTestId('tray-surface').props.style).borderTopWidth).toBeUndefined()
   })
 })
