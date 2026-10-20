@@ -2,7 +2,7 @@
 import { fireEvent } from '@testing-library/react-native'
 import { Dimensions } from 'react-native'
 
-import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
 import { BossDifficultyPopover } from '../BossDifficultyPopover'
 
 const H = Dimensions.get('window').height

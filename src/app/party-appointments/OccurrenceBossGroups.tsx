@@ -10,7 +10,7 @@ import { formatLead } from '../../features/party-appointments/draft'
 import { bossAliasOf, bossPortraitSlugOf } from '../../lib/boss/bosses'
 import type { BossDifficulty } from '../../types'
 import type { PartyAppointmentBoss } from '../../types/party-appointment'
-import { CharacterGroupLabel } from './CharacterGroupLabel'
+import { CharacterGroupLabel } from '../../components/molecules/CharacterGroupLabel/CharacterGroupLabel'
 
 export interface OccurrenceBossGroup {
   ocid: string

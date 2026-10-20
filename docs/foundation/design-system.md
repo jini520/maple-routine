@@ -61,6 +61,7 @@
 | `ShareField` · `PartyShareSummary` | 분배 비율 고르기 · 분배 요약 줄([[ADR-038]]) |
 | `Stepper` | `−` · 숫자 · `+` 고르개. 크기 `sm` · `md` · `lg`([[ADR-060]] 결정 14) |
 | `BossPortrait` · `CharacterAvatar` | 보스 얼굴 · 캐릭터 얼굴 원 |
+| `CharacterGroupLabel` | 캐릭터별 묶음 왼쪽의 얼굴 · 이름 열 |
 | `FadedIllustration` | 카드 안 일러스트와 베일 |
 | `MvpGradeGrid` · `MvpPlate` | MVP 등급 고르기 · 등급 명패([[ADR-050]]) |
 | `NexonLoginButton` | 넥슨 로그인 버튼([[ADR-025]]) |
@@ -73,6 +74,7 @@
 | `BottomSheet` | 바텀시트 껍데기. 다크에서 안쪽 표면을 한 칸 올린다 |
 | `InputCard` | 키보드 위에 뜨는 입력 카드. `InputCardHost` 는 앱 셸에 한 번만 둔다 |
 | `MesoPad` | 숫자 칸의 글자 처리와 커서 계산(`meso-pad.ts` · `meso-caret.ts`) |
+| `BossPicker` | 보스 고르기의 본문 · 선택 줄 · 난이도 팝오버. 파티 스케줄과 주간 보스 수익 계산기가 쓴다([[ADR-051]] 결정 13) |
 | `Modal` · `NoticeModal` | 가운데 모달 · 알림 모달 틀 |
 | `LoadingModal` · `TaskProgressModal` · `TaskResumeModal` | 불러오는 중 모달 · 오래 걸리는 작업 진행률 · 이어서 하기([[ADR-023]]) |
 | `CalendarPopover` · `WeekCalendarPopover` · `TimePopover` | 날짜 · 주 · 시각 팝오버 |

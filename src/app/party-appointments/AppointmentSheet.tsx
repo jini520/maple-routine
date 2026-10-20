@@ -48,9 +48,11 @@ import { AppointmentAlarmField } from './AppointmentAlarmField'
 import { AppointmentBossList } from './AppointmentBossList'
 import { AppointmentSummaryTiles } from './AppointmentSummaryTiles'
 import { AppointmentTimeBand } from './AppointmentTimeBand'
-import { BossDifficultyPopover } from './BossDifficultyPopover'
-import { BossPickerBody } from './BossPickerBody'
-import { BossPickerTray } from './BossPickerTray'
+import { BossDifficultyPopover } from '../../components/organisms/BossPicker/BossDifficultyPopover'
+import { BossPickerBody } from '../../components/organisms/BossPicker/BossPickerBody'
+import { isPicked } from '../../features/party-appointments/boss-picker'
+import { PickerCharacterSelect } from './PickerCharacterSelect'
+import { BossPickerTray } from '../../components/organisms/BossPicker/BossPickerTray'
 import { useBossPicker } from './useBossPicker'
 
 /** 보스 추가 단계의 시트 높이 하한(화면의 65%, 사용자 지정) */
@@ -297,6 +299,10 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   const bossesFooter = (
     <BossPickerTray
       picked={picker.picked}
+      grouped
+      countLabel={`${picker.picked.length}개 선택됨`}
+      confirmLabel={`${picker.picked.length}개 추가`}
+      emptyLabel="보스를 선택해주세요"
       names={props.names}
       faces={props.faces}
       flight={picker.flight}
@@ -384,11 +390,13 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   )
   const bossesBody = (
     <BossPickerBody
-      characters={picker.characters}
-      ocid={picker.ocid}
-      onSelectCharacter={picker.setOcid}
-      sections={picker.sections}
-      picked={picker.picked}
+      character={<PickerCharacterSelect characters={picker.characters} ocid={picker.ocid} onSelect={picker.setOcid} />}
+      groups={[
+        { key: 'party', label: '파티', tiles: picker.sections.party },
+        { key: 'scheduler', label: '스케줄러', tiles: picker.sections.scheduler },
+        { key: 'all', label: '모든 보스', tiles: picker.sections.all, onlyWithAll: true },
+      ]}
+      isSelected={(tile) => isPicked(picker.picked, picker.ocid, tile.bossKey)}
       onPressTile={picker.pressTile}
     />
   )

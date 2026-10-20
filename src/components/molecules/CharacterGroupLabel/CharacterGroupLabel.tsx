@@ -3,8 +3,8 @@
  */
 import { View } from 'react-native'
 
-import { Text } from '../../components/atoms'
-import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
+import { Text } from '../../atoms'
+import { CharacterAvatar } from '../CharacterAvatar/CharacterAvatar'
 
 /** 열 폭. 보스 줄이 이만큼 오른쪽에서 시작한다 */
 export const CHARACTER_LABEL_WIDTH = 40

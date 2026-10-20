@@ -26,7 +26,8 @@
 | `app/party-appointments/AppointmentSheet.tsx` | 추가 · 상세 · 수정 시트와 보스 추가 단계 |
 | `app/party-appointments/AppointmentTimeBand.tsx` · `AppointmentWeekdayTile.tsx` | 날짜 · 요일 · 시작 · 종료 타일 |
 | `app/party-appointments/AppointmentBossList.tsx` · `AppointmentAlarmField.tsx` · `AppointmentSummaryTiles.tsx` | 보스 목록 · 알림 칸 · 상세의 알림 · 반복 타일 |
-| `app/party-appointments/BossPickerBody.tsx` · `BossPickerTray.tsx` · `BossDifficultyPopover.tsx` · `useBossPicker.ts` | 보스 추가 단계 |
+| `components/organisms/BossPicker/` | 보스 추가 단계의 본문 · 선택 줄 · 난이도 팝오버. 주간 보스 수익 계산기와 함께 쓴다 |
+| `app/party-appointments/useBossPicker.ts` · `PickerCharacterSelect.tsx` | 보스 추가 단계의 상태 · 캐릭터 드롭다운 |
 | `navigation/bar-groups.ts` · `navigation/LayerStack.tsx` | 스케줄러의 첫째 하위 탭 `Appointments` |
 
 ## 스케줄의 형식

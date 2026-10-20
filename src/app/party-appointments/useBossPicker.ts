@@ -19,8 +19,8 @@ import {
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 import type { PartyAppointmentBoss } from '../../types/party-appointment'
-import type { PickerCharacter } from './BossPickerBody'
-import type { Flight } from './BossPickerTray'
+import type { PickerCharacter } from './PickerCharacterSelect'
+import type { Flight } from '../../components/organisms/BossPicker/BossPickerTray'
 
 export interface BossPicker {
   begin: (current: readonly PartyAppointmentBoss[]) => void

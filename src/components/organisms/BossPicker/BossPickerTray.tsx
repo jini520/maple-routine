@@ -1,7 +1,8 @@
 /**
- * 보스 추가 단계의 바닥. `n개 선택됨` 줄과 `n개 추가` 버튼.
+ * 보스 고르기의 바닥. 개수 배지가 있는 선택 줄과 확정 버튼.
  *
- * 고른 보스는 캐릭터별로 묶여 선다. 묶음마다 왼쪽 열에 얼굴 · 이름이 서고 그 오른쪽에 초상이 서며, 묶음 사이를 세로선으로 가른다.
+ * `grouped` 면 고른 보스가 캐릭터별로 묶여 선다. 묶음마다 왼쪽 열에 얼굴 · 이름이 서고 그 오른쪽에 초상이 서며, 묶음 사이는
+ * 간격으로만 가른다. 묶지 않으면 받은 차례 그대로 한 줄이고 끌어서 순서를 바꾸지 않는다.
  * 타일을 누르면 그 초상이 그 캐릭터 묶음의 끝 자리로 날아온다. 날아오는 동안 진짜 칸은 숨겨 두었다가 도착하면
  * 드러낸다. 칸을 길게 누르면 떠서 **같은 묶음 안에서** 좌우로 끌어 차례를 바꾸고, 누르면 난이도 팝오버가 열린다.
  */
@@ -20,30 +21,34 @@ import Animated, {
 } from 'react-native-reanimated'
 import Sortable from 'react-native-sortables'
 
-import { Badge, Text, difficultyOutlineColor } from '../../components/atoms'
-import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
-import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
-import { groupBossesByCharacter, moveWithinGroup } from '../../features/party-appointments/boss-groups'
-import { bossAliasOf, bossPortraitSlugOf } from '../../lib/boss/bosses'
-import { selectionFeedback } from '../../native/haptics'
-import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
-import type { BossDifficulty } from '../../types'
-import type { PartyAppointmentBoss } from '../../types/party-appointment'
+import { Badge, Text } from '../../atoms'
+import { BossPortrait } from '../../molecules/BossPortrait/BossPortrait'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
+import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
+import { groupBossesByCharacter, moveWithinGroup } from '../../../features/party-appointments/boss-groups'
+import { bossAliasOf, bossPortraitSlugOf } from '../../../lib/boss/bosses'
+import { selectionFeedback } from '../../../native/haptics'
+import { boxShadowOf, type ShadowLayer } from '../../../lib/shadow'
+import { useThemeAppearance } from '../../../theme/context'
+import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
+import type { BossDifficulty } from '../../../types'
+import type { PartyAppointmentBoss } from '../../../types/party-appointment'
 import { TILE_PORTRAIT } from './BossPickerBody'
-import { CHARACTER_LABEL_WIDTH, CharacterGroupLabel } from './CharacterGroupLabel'
+import { CHARACTER_LABEL_WIDTH, CharacterGroupLabel } from '../../molecules/CharacterGroupLabel/CharacterGroupLabel'
 
-/** 선택 줄 칸의 폭 · 초상 한 변 · 칸 사이 · 줄 좌우 여백 */
+/** 선택 줄 칸의 폭 · 초상 한 변 · 칸 사이 · 줄 좌우 여백 · 초상 위 여백 */
 const ITEM_WIDTH = 50
-const ITEM_PORTRAIT = 40
-/** 초상과 테두리 사이의 바탕 틈, 그리고 테두리 두께 */
-const RING_GAP = 2
-const RING = 2
-const SLOT = ITEM_PORTRAIT + (RING_GAP + RING) * 2
+const ITEM_PORTRAIT = 42
 const SLOT_GAP = 10
 const ROW_PAD = 16
-/** 묶음 사이: 틈 · 세로선 1 · 틈 */
+const ROW_TOP = 12
+/** 묶음 사이 간격. 선으로 가르지 않는다 */
 const GROUP_GAP = 12
-const GROUP_SPACE = GROUP_GAP * 2 + 1
+const GROUP_SPACE = GROUP_GAP * 2
+/** 바닥이 본문 위로 드리우는 그림자. 구분선 대신 이것이 둘을 가른다 */
+const TRAY_SHADOW: ShadowLayer = { opacity: 0.23, radius: 12, y: -10 }
+/** 선택 줄 초상의 옅은 그림자 */
+const ITEM_SHADOW: ShadowLayer = { opacity: 0.35, radius: 3, y: 2 }
 /** 묶음 왼쪽 얼굴 열과 초상 사이. 칸의 가로 자리가 열 폭 + 이만큼 오른쪽이다 */
 const LABEL_GAP = 8
 /**
@@ -79,13 +84,21 @@ export interface Flight {
 
 export interface BossPickerTrayProps {
   picked: PartyAppointmentBoss[]
-  /** 캐릭터 `ocid → 이름` */
-  names: ReadonlyMap<string, string>
-  /** 캐릭터 `ocid → 얼굴 그림 URL` */
-  faces: ReadonlyMap<string, string | null>
+  /** 캐릭터별로 묶고 묶음 안에서 끌어 순서를 바꾼다. 끄면 받은 차례 그대로 한 줄이다 */
+  grouped: boolean
+  /** 선택 줄 머리의 개수 배지 */
+  countLabel: string
+  /** 고른 것이 있을 때의 버튼 글자 */
+  confirmLabel: string
+  /** 고른 것이 없을 때의 버튼 글자 */
+  emptyLabel: string
+  /** 캐릭터 `ocid → 이름`. 묶을 때만 쓴다 */
+  names?: ReadonlyMap<string, string>
+  /** 캐릭터 `ocid → 얼굴 그림 URL`. 묶을 때만 쓴다 */
+  faces?: ReadonlyMap<string, string | null>
   flight: Flight | null
   onFlightDone: () => void
-  onReorder: (next: PartyAppointmentBoss[]) => void
+  onReorder?: (next: PartyAppointmentBoss[]) => void
   /** `index` 는 `picked` 안의 차례 */
   onPressItem: (index: number, anchor: PopoverAnchorRect) => void
   onConfirm: () => void
@@ -165,6 +178,8 @@ function TrayItem(props: {
   boss: PartyAppointmentBoss
   index: number
   hidden: boolean
+  /** 초상 그림자. 테마 그림자 색으로 만든 `boxShadow` 다 */
+  shadow: string
   onPress: BossPickerTrayProps['onPressItem']
 }): React.JSX.Element {
   const { boss, index, hidden } = props
@@ -206,19 +221,12 @@ function TrayItem(props: {
       style={{ width: ITEM_WIDTH }}
     >
       <Animated.View style={popStyle}>
-        <View style={{ alignItems: 'center', gap: 3 }}>
-        {/* 바탕색 틈 2 + 난이도 색 테두리 2. 캐릭터는 색이 아니라 묶음 왼쪽 얼굴이 알린다. */}
+        <View style={{ alignItems: 'center', gap: 4 }}>
+        {/* 난이도는 아래 배지가 말한다. 테두리를 두르지 않고 옅은 그림자로 바탕에서 띄운다. */}
         <View
           ref={itemRef}
-          testID={`tray-ring-${keyOf(boss)}`}
-          style={{
-            width: SLOT,
-            height: SLOT,
-            borderRadius: SLOT / 2,
-            borderWidth: RING,
-            borderColor: difficultyOutlineColor(boss.difficulty as BossDifficulty),
-            padding: RING_GAP,
-          }}
+          testID={`tray-item-${keyOf(boss)}`}
+          style={{ width: ITEM_PORTRAIT, height: ITEM_PORTRAIT, borderRadius: ITEM_PORTRAIT / 2, boxShadow: props.shadow }}
         >
           <BossPortrait portraitSlug={bossPortraitSlugOf(boss.bossKey)} label={name} size={ITEM_PORTRAIT} />
         </View>
@@ -253,7 +261,11 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
   const bumpStyle = useAnimatedStyle(() => ({ transform: [{ scale: bump.value }] }))
 
   const rowRef = useRef<View>(null)
-  const groups = groupBossesByCharacter(picked)
+  const { definition } = useThemeAppearance()
+  const groups = props.grouped ? groupBossesByCharacter(picked) : [{ ocid: 'all', bosses: picked }]
+  /** 묶음 머리 열이 차지하는 폭. 묶지 않으면 머리가 없다 */
+  const labelSpace = props.grouped ? CHARACTER_LABEL_WIDTH + LABEL_GAP : 0
+  const itemShadow = boxShadowOf(definition.shadowColor, ITEM_SHADOW)
   /** 묶음마다 잰 폭. 머리 이름이 칸보다 길면 묶음이 칸 줄보다 넓다 */
   const groupWidths = useRef(new Map<string, number>())
   /** 날아가는 동안 줄을 세워 둘 가로 스크롤 자리 */
@@ -270,12 +282,12 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
     const widthOf = (index: number): number => {
       const group = groups[index]!
       const items = group.bosses.length * ITEM_WIDTH + (group.bosses.length - 1) * SLOT_GAP
-      return Math.max(groupWidths.current.get(group.ocid) ?? 0, CHARACTER_LABEL_WIDTH + LABEL_GAP + items)
+      return Math.max(groupWidths.current.get(group.ocid) ?? 0, labelSpace + items)
     }
     let groupX = ROW_PAD
     for (let index = 0; index < at; index += 1) groupX += widthOf(index) + GROUP_SPACE
     const slot = groups[at]!.bosses.findIndex((boss) => keyOf(boss) === keyOf(target.boss))
-    const itemX = groupX + CHARACTER_LABEL_WIDTH + LABEL_GAP + slot * (ITEM_WIDTH + SLOT_GAP)
+    const itemX = groupX + labelSpace + slot * (ITEM_WIDTH + SLOT_GAP)
     let contentWidth = ROW_PAD * 2
     for (let index = 0; index < groups.length; index += 1) contentWidth += widthOf(index) + (index > 0 ? GROUP_SPACE : 0)
     rowRef.current?.measureInWindow((rowX, rowY, rowWidth) => {
@@ -285,8 +297,8 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
       scrollRef.current?.scrollTo({ x: scrollX, animated: false })
       setTarget({
         id: target.id,
-        x: rowX + itemX - scrollX + (ITEM_WIDTH - SLOT) / 2 + RING_GAP + RING,
-        y: rowY + 8 + RING_GAP + RING,
+        x: rowX + itemX - scrollX + (ITEM_WIDTH - ITEM_PORTRAIT) / 2,
+        y: rowY + ROW_TOP,
       })
     })
   }
@@ -326,23 +338,30 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
   const count = picked.length
   return (
     // 바닥 줄의 좌우 · 위 여백을 걷어 선택 줄이 시트 폭 끝까지 깔린다.
-    <View className="-mx-4 -mt-3">
+    // 바닥 줄의 좌우 · 위 여백을 걷어 선택 줄이 시트 폭 끝까지 깔린다. 구분선 대신 위로 드리운 그림자가 본문과 가른다.
+    <View
+      testID="tray-surface"
+      className="-mx-4 -mt-3 bg-bg pt-3"
+      style={{ boxShadow: boxShadowOf(definition.shadowColor, TRAY_SHADOW) }}
+    >
       {count > 0 && (
         // 처음 고를 때 줄이 아래에서 펼쳐진다. 스타일 없는 겉 층에만 애니메이션을 단다(className 함정).
         // 사라질 때는 애니메이션이 없다. 이탈하는 뷰는 배치에서 빠져 제자리에 그려지는데, 바닥 줄이
         // 그 즉시 줄어 그 제자리가 저장 버튼 자리라 초상이 버튼 위로 흘러내렸다.
         <Animated.View testID="tray-row" entering={FadeInDown.duration(260)}>
-          <View className="border-t border-border bg-surface">
-            <View className="flex-row items-center justify-between px-4 pb-0.5 pt-2">
-              <Text className="text-11 font-bold text-text-muted">{count}개 선택됨</Text>
-              <Text className="text-11 font-bold text-text-muted">초상화 터치 시 난이도 변경 또는 제거</Text>
+          <View>
+            <View className="flex-row items-center justify-between px-5">
+              <Badge variant="primary" style={TABULAR_NUMS}>
+                {props.countLabel}
+              </Badge>
+              <Text className="text-11 text-text-muted">초상화를 눌러 난이도 변경 · 제거</Text>
             </View>
             <View ref={rowRef}>
               <Animated.ScrollView
                 ref={scrollRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: ROW_PAD, paddingTop: 8, paddingBottom: 10 }}
+                contentContainerStyle={{ paddingHorizontal: ROW_PAD, paddingTop: ROW_TOP, paddingBottom: 20 }}
                 // 날아가는 동안은 내용 폭이 늘 때마다 도착 칸이 보이는 자리로 다시 세운다.
                 onContentSizeChange={() => {
                   if (flight !== null && flightScrollX.current !== null) {
@@ -352,17 +371,18 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
               >
                 <View className="flex-row" style={{ gap: GROUP_GAP }}>
                   {groups.map((group, groupIndex) => (
-                    <View key={group.ocid} className="flex-row" style={{ gap: GROUP_GAP }}>
-                      {groupIndex > 0 && <View className="w-px bg-border" />}
+                    <View key={group.ocid} className="flex-row" style={{ marginLeft: groupIndex > 0 ? GROUP_GAP : 0 }}>
                       <View
                         className="flex-row items-center"
                         style={{ gap: LABEL_GAP }}
                         onLayout={(event) => groupWidths.current.set(group.ocid, event.nativeEvent.layout.width)}
                       >
-                        <CharacterGroupLabel
-                          name={props.names.get(group.ocid) ?? ''}
-                          imageUrl={props.faces.get(group.ocid) ?? null}
-                        />
+                        {props.grouped && (
+                          <CharacterGroupLabel
+                            name={props.names?.get(group.ocid) ?? ''}
+                            imageUrl={props.faces?.get(group.ocid) ?? null}
+                          />
+                        )}
                         {/* 묶음마다 정렬 줄이 따로라, 끌어도 다른 캐릭터 묶음으로는 못 넘어간다. 폭을 미리 박는다. 라이브러리가 칸을
                             재기 전에는 줄 폭이 0 이라 묶음이 접혀, 둘째 칸이 옆 묶음 자리에 그려졌다가 제자리로 옮겨 갔다. */}
                         <View
@@ -376,12 +396,13 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
                           // 새 칸의 등장은 칸이 직접 한다(0.4 배에서 튄다). 라이브러리 효과가 겹치면 칸이 옆에서 미끄러져 들어온다.
                           itemEntering={null}
                           itemsLayoutTransitionMode={layoutTransition}
+                          sortEnabled={props.grouped}
                           onOrderChange={() => {
                             'worklet'
                             runOnJS(selectionFeedback)()
                           }}
                           onDragEnd={({ fromIndex, toIndex }) =>
-                            props.onReorder(moveWithinGroup(picked, group.ocid, fromIndex, toIndex))
+                            props.onReorder?.(moveWithinGroup(picked, group.ocid, fromIndex, toIndex))
                           }
                         >
                           {group.bosses.map((boss) => (
@@ -390,6 +411,7 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
                               boss={boss}
                               index={picked.findIndex((one) => keyOf(one) === keyOf(boss))}
                               hidden={keyOf(boss) === flyingKey}
+                              shadow={itemShadow}
                               onPress={props.onPressItem}
                             />
                           ))}
@@ -404,17 +426,17 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
           </View>
         </Animated.View>
       )}
-      <View className="border-t border-border px-4 pt-2.5">
+      <View className="px-4">
         <Pressable
           role="button"
-          aria-label={count === 0 ? '보스를 선택해주세요' : `${count}개 추가`}
+          aria-label={count === 0 ? props.emptyLabel : props.confirmLabel}
           disabled={count === 0}
           onPress={props.onConfirm}
-          className={`items-center rounded-xl py-3 ${count === 0 ? 'bg-surface-2' : 'bg-primary'}`}
+          className={`h-[52px] items-center justify-center rounded-full ${count === 0 ? 'bg-surface-2' : 'bg-primary'}`}
         >
           <Animated.View style={bumpStyle}>
-            <Text className={`text-sm font-bold ${count === 0 ? 'text-text-disabled' : 'text-on-primary'}`}>
-              {count === 0 ? '보스를 선택해주세요' : `${count}개 추가`}
+            <Text className={`text-base font-bold ${count === 0 ? 'text-text-disabled' : 'text-on-primary'}`}>
+              {count === 0 ? props.emptyLabel : props.confirmLabel}
             </Text>
           </Animated.View>
         </Pressable>
