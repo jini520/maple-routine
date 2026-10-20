@@ -42,12 +42,9 @@ interface LegendRow {
   grouped?: readonly TotalCardCharacter[]
 }
 
-/**
- * 금액이 큰 캐릭터부터 늘어놓고 금액이 0 인 캐릭터는 뺀다. 모두 0 이면 빈 상태임을 보이려고 모든 캐릭터를 그대로 둔다.
- */
+/** 금액이 큰 캐릭터부터 늘어놓고 금액이 0 인 캐릭터는 예외 없이 뺀다(사용자 지정). 모두 0 이면 빈 목록이다 */
 function legendRows(all: readonly TotalCardCharacter[], colors: readonly string[]): LegendRow[] {
-  const earning = all.filter((character) => character.meso > 0)
-  const characters = earning.length === 0 ? all : [...earning].sort((a, b) => b.meso - a.meso)
+  const characters = all.filter((character) => character.meso > 0).sort((a, b) => b.meso - a.meso)
   const namedCount = characters.length <= MAX_NAMED ? characters.length : NAMED_WHEN_GROUPED
   const named = characters.slice(0, namedCount).map((character, index) => ({
     key: character.ocid,
@@ -88,6 +85,7 @@ export function TotalCard(props: {
   const [otherOpen, setOtherOpen] = useState(false)
   const total = rows.reduce((sum, row) => sum + row.meso, 0)
   const empty = total === 0
+  const earningCount = props.characters.filter((character) => character.meso > 0).length
 
   return (
     <View testID="calculator-total-card" className="mx-4 gap-3.5 rounded-[22px] bg-surface px-[18px] pb-3.5 pt-4" style={props.style}>
@@ -104,8 +102,9 @@ export function TotalCard(props: {
           }
         >
           <Text className="text-11 font-semibold text-text-muted">캐릭터</Text>
-          <Text className="text-lg font-bold text-text" style={TABULAR_NUMS}>
-            {props.characters.length}
+          {/* 금액이 있는 캐릭터만 센다. 범례가 그리는 캐릭터와 같은 수다. */}
+          <Text testID="calculator-donut-count" className="text-lg font-bold text-text" style={TABULAR_NUMS}>
+            {earningCount}
           </Text>
         </DonutRing>
         <View className="flex-1 gap-0.5">

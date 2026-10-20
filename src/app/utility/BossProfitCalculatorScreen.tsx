@@ -348,7 +348,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
         >
           <Pressable
             role="menuitem"
-            aria-label="보스 관리 값 가져오기"
+            aria-label="스케줄러 데이터 가져오기"
             onPress={() => {
               calculator.importFromBossManage(selected.ocid, new Date())
               setMenuOpen(false)
@@ -356,7 +356,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
             }}
             className="h-10 justify-center rounded-[10px] px-3 active:bg-bg"
           >
-            <Text className="text-13 font-semibold text-text">보스 관리 값 가져오기</Text>
+            <Text className="text-13 font-semibold text-text">스케줄러 데이터 가져오기</Text>
           </Pressable>
           {/* 지울 보스가 없으면 초기화를 두지 않는다. */}
           {selectedBosses.length > 0 && (
