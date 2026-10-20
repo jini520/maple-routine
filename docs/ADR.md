@@ -185,3 +185,4 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-062](./adr/ADR-062_design-system_sheets.md) | 🟢 | design-system | 시트 · 모달 · 팝오버 · 입력 카드 |
 | [ADR-063](./adr/ADR-063_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
+| [ADR-071](./adr/ADR-071_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 잘못 적은 값 빼기 · 관리 화면 |

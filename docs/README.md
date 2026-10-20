@@ -55,7 +55,7 @@ docs/
 | `nexon-api` | [foundation/nexon-api.md](./foundation/nexon-api.md) | 넥슨 Open API 호출과 동기화 | [[ADR-021]] |
 | `error-resilience` | [foundation/error-resilience.md](./foundation/error-resilience.md) | 실패 처리 · 이어서 하는 작업 | [[ADR-022]] · [[ADR-023]] |
 | `game-data` | [foundation/game-data.md](./foundation/game-data.md) | 보스 · 드롭 · 지출 목록 같은 게임 수치 | [[ADR-019]] · [[ADR-020]] |
-| `server` | [foundation/server.md](./foundation/server.md) | 우리 서버의 경로와 인증 | [[ADR-016]] · [[ADR-017]] |
+| `server` | [foundation/server.md](./foundation/server.md) | 우리 서버의 경로와 인증 · 드롭 시세 | [[ADR-016]] · [[ADR-017]] · [[ADR-071]] |
 | `server-sync` | [foundation/server-sync.md](./foundation/server-sync.md) | 앱이 서버로 올리는 값 | [[ADR-018]] |
 | `persistence` | [persistence/README.md](./persistence/README.md) | 기기 저장소 · SQLite 스키마 · 데이터 수명 | [[ADR-007]] |
 | `release` | [foundation/release.md](./foundation/release.md) | 스토어 빌드 · 서명 · 버전 | [[ADR-008]] · [[ADR-009]] · [[ADR-010]] |
