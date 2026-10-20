@@ -1,20 +1,30 @@
 /**
  * 계산기 맨 위의 합계 카드. 도넛은 캐릭터별 금액의 비중이고, 옆에 캐릭터별 이름 · 비율 · 금액, 아래 면에 합계가 있다.
  *
- * 조각 색은 레일 순서대로 넷이고 다섯째 캐릭터부터는 `그 외` 로 묶는다. 넷은 색약 · 일반 시야 구분 검사를 통과한 색이라
- * 테마를 따라가지 않는다. 색만으로 캐릭터를 가르지 않도록 이름을 늘 함께 적는다.
+ * 조각 색은 테마 색이라 테마를 바꾸면 함께 바뀐다. 다섯 캐릭터까지는 모두 적고, 그보다 많으면 앞의 넷 뒤에 나머지를
+ * `그 외 n캐릭터` 한 줄로 묶어 누르면 팝오버로 보인다. 색만으로 캐릭터를 가르지 않도록 이름을 늘 함께 적는다.
  */
-import { View } from 'react-native'
+import { useRef, useState } from 'react'
+import { Pressable, View } from 'react-native'
 
-import { Text } from '../../../components/atoms'
+import { ChevronRightIcon, Text } from '../../../components/atoms'
 import { DonutRing } from '../../../components/molecules/DonutRing/DonutRing'
+import { AnchoredPopover } from '../../../components/molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
+import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
 import { formatEok } from '../../../lib/boss/boss-profit-calculator'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { useThemeAppearance } from '../../../theme/context'
+import type { ThemeDefinition } from '../../../types/theme'
 
-const SLICE_COLORS = ['#E07A0A', '#7A5AC8', '#C9A400', '#8A3E05'] as const
-const OTHER_COLOR = '#A3996E'
+/** 제 이름으로 적는 캐릭터 수의 상한. 이보다 많으면 앞의 `NAMED_WHEN_GROUPED` 만 적고 나머지를 묶는다 */
+const MAX_NAMED = 5
+const NAMED_WHEN_GROUPED = 4
+
+/** 레일 순서대로 쓰는 조각 색. 묶음 줄은 마지막 색이다 */
+function sliceColors(definition: ThemeDefinition): readonly string[] {
+  return [definition.primary, definition.secondary, definition.third, definition.textMuted, definition.border]
+}
 
 export interface TotalCardCharacter {
   ocid: string
@@ -27,22 +37,34 @@ interface LegendRow {
   name: string
   meso: number
   color: string
+  /** 묶음 줄이 품은 캐릭터 */
+  grouped?: readonly TotalCardCharacter[]
 }
 
-/** 앞의 넷은 제 이름, 다섯째부터는 `그 외 n명` 한 줄 */
-function legendRows(characters: readonly TotalCardCharacter[]): LegendRow[] {
-  const named = characters.slice(0, SLICE_COLORS.length).map((character, index) => ({
+function legendRows(characters: readonly TotalCardCharacter[], colors: readonly string[]): LegendRow[] {
+  const namedCount = characters.length <= MAX_NAMED ? characters.length : NAMED_WHEN_GROUPED
+  const named = characters.slice(0, namedCount).map((character, index) => ({
     key: character.ocid,
     name: character.name,
     meso: character.meso,
-    color: SLICE_COLORS[index]!,
+    color: colors[index]!,
   }))
-  const rest = characters.slice(SLICE_COLORS.length)
+  const rest = characters.slice(namedCount)
   if (rest.length === 0) return named
   return [
     ...named,
-    { key: 'other', name: `그 외 ${rest.length}명`, meso: rest.reduce((sum, one) => sum + one.meso, 0), color: OTHER_COLOR },
+    {
+      key: 'other',
+      name: `그 외 ${rest.length}캐릭터`,
+      meso: rest.reduce((sum, one) => sum + one.meso, 0),
+      color: colors[colors.length - 1]!,
+      grouped: rest,
+    },
   ]
+}
+
+function percentOf(meso: number, total: number): string {
+  return `${Math.round((meso / total) * 100)}%`
 }
 
 export function TotalCard(props: {
@@ -54,7 +76,10 @@ export function TotalCard(props: {
   style?: { boxShadow: string }
 }): React.JSX.Element {
   const { definition } = useThemeAppearance()
-  const rows = legendRows(props.characters)
+  const rows = legendRows(props.characters, sliceColors(definition))
+  const otherRef = useRef<View>(null)
+  const [otherAnchor, setOtherAnchor] = useState<PopoverAnchorRect | null>(null)
+  const [otherOpen, setOtherOpen] = useState(false)
   const total = rows.reduce((sum, row) => sum + row.meso, 0)
   const empty = total === 0
 
@@ -69,7 +94,7 @@ export function TotalCard(props: {
           label={
             empty
               ? '캐릭터별 수익 분포. 고른 보스가 없습니다'
-              : `캐릭터별 수익 분포. ${rows.map((row) => `${row.name} ${Math.round((row.meso / total) * 100)}%`).join(', ')}`
+              : `캐릭터별 수익 분포. ${rows.map((row) => `${row.name} ${percentOf(row.meso, total)}`).join(', ')}`
           }
         >
           <Text className="text-11 font-semibold text-text-muted">캐릭터</Text>
@@ -77,21 +102,49 @@ export function TotalCard(props: {
             {props.characters.length}
           </Text>
         </DonutRing>
-        <View className="flex-1 gap-1">
-          {rows.map((row) => (
-            <View key={row.key} testID={`calculator-legend-${row.key}`} className="h-[26px] flex-row items-center gap-2">
-              <View className="h-2.5 w-2.5 rounded-[3px]" style={{ backgroundColor: empty ? definition.surface2 : row.color }} />
-              <Text className={`text-13 ${row.key === props.selectedOcid ? 'font-bold text-text' : 'font-medium text-text'}`}>{row.name}</Text>
-              {!empty && (
-                <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
-                  {Math.round((row.meso / total) * 100)}%
+        <View className="flex-1 gap-0.5">
+          {rows.map((row) => {
+            const strong = row.key === props.selectedOcid
+            const label = (
+              <>
+                <View className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: empty ? definition.surface2 : row.color }} />
+                <Text className={`text-11 text-text ${strong ? 'font-semibold' : 'font-medium'}`}>{row.name}</Text>
+                {row.grouped !== undefined && <ChevronRightIcon className="h-3 w-3 text-text-muted" strokeWidth={2.5} aria-hidden />}
+                {!empty && (
+                  <Text className="text-10 text-text-muted" style={TABULAR_NUMS}>
+                    {percentOf(row.meso, total)}
+                  </Text>
+                )}
+                {/* 금액은 이름보다 한 단계만 굵다. 크게 강조할 값이 아니다. */}
+                <Text
+                  className={`ml-auto text-11 ${strong ? 'font-bold' : 'font-semibold'} ${empty ? 'text-text-disabled' : 'text-text'}`}
+                  style={TABULAR_NUMS}
+                >
+                  {formatEok(row.meso)}
                 </Text>
-              )}
-              <Text className={`ml-auto text-sm font-bold ${empty ? 'text-text-disabled' : 'text-text'}`} style={TABULAR_NUMS}>
-                {formatEok(row.meso)}
-              </Text>
-            </View>
-          ))}
+              </>
+            )
+            return row.grouped === undefined ? (
+              <View key={row.key} testID={`calculator-legend-${row.key}`} className="h-[18px] flex-row items-center gap-1.5">
+                {label}
+              </View>
+            ) : (
+              <Pressable
+                key={row.key}
+                ref={otherRef}
+                testID={`calculator-legend-${row.key}`}
+                role="button"
+                aria-label={`${row.name} 자세히`}
+                onPress={() => {
+                  setOtherOpen(true)
+                  otherRef.current?.measureInWindow((left, top, width, height) => setOtherAnchor({ left, top, width, height }))
+                }}
+                className="h-[18px] flex-row items-center gap-1.5 active:opacity-60"
+              >
+                {label}
+              </Pressable>
+            )
+          })}
         </View>
       </View>
       <View className="-mx-1.5 gap-0.5 rounded-2xl bg-bg px-3 pb-3 pt-2.5">
@@ -109,6 +162,33 @@ export function TotalCard(props: {
           {formatMesoUnits(total)}
         </Text>
       </View>
+      {otherOpen && (
+        <AnchoredPopover
+          testID="calculator-legend-other-popover"
+          ariaLabel="그 외 캐릭터"
+          closeLabel="그 외 캐릭터 닫기"
+          anchor={otherAnchor}
+          onClose={() => {
+            setOtherOpen(false)
+            setOtherAnchor(null)
+          }}
+          className="gap-1.5 px-3 py-2.5"
+        >
+          {(rows.find((row) => row.grouped !== undefined)?.grouped ?? []).map((character) => (
+            <View key={character.ocid} className="flex-row items-center gap-2">
+              <Text className="text-xs font-medium text-text">{character.name}</Text>
+              {!empty && (
+                <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
+                  {percentOf(character.meso, total)}
+                </Text>
+              )}
+              <Text className="ml-auto pl-3 text-xs font-semibold text-text" style={TABULAR_NUMS}>
+                {formatEok(character.meso)}
+              </Text>
+            </View>
+          ))}
+        </AnchoredPopover>
+      )}
     </View>
   )
 }

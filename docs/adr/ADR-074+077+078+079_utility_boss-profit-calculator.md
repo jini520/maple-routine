@@ -1,4 +1,4 @@
-# ADR-074+077+078 주간 보스 수익 계산기
+# ADR-074+077+078+079 주간 보스 수익 계산기
 
 > 🟢 유효
 > 관련 소스: `app/utility/BossProfitCalculatorScreen.tsx` · `app/utility/BossProfitCalculatorRecordsScreen.tsx` · `app/utility/boss-profit-calculator/` · `components/molecules/DonutRing/` · `components/molecules/DifficultyExpander/` · `features/boss-profit-calculator/` · `lib/boss/boss-profit-calculator.ts` · `storage/boss-profit-calculator-records.ts` · `native/uuid.ts`
@@ -53,11 +53,14 @@ push 한다. 이름은 `tool-names.ts` 에 한 번만 적고 타일과 화면 �
 
 - 도넛은 캐릭터별 금액의 비중이다. 지름 112 · 두께 14 · 조각 사이 2px 틈이고, 조각 모서리를 반지름 5 로 둥글게 깎는다.
   좁은 조각은 폭이 허락하는 만큼만 깎는다. 뒤에 회색 링을 깔지 않는다.
-- 조각 색은 레일 순서대로 주황 `#E07A0A` · 보라 `#7A5AC8` · 금색 `#C9A400` · 갈색 `#8A3E05` 이고, 다섯째 캐릭터부터는
-  회색 `#A3996E` 의 `그 외` 로 묶는다. 넷 다 색약 · 일반 시야 구분 검사를 통과했다. 테마 노랑은 바탕보다 밝아 뺐고,
-  파랑은 앱에서 지출을 뜻해 뺐다.
-- 도넛 옆에는 캐릭터별 이름 · 비율 · 금액을 적는다. 금액은 억 단위 소수 둘째 자리까지 반올림해 적는다(`2억 6490만` →
-  `2.65억`). 색만으로 캐릭터를 가르지 않도록 이름을 늘 함께 적는다.
+- 조각 색은 테마 색이다(사용자 지정). 레일 순서대로 `primary` · `secondary` · `third` · `textMuted` · `border` 를 쓴다.
+  테마를 바꾸면 도넛도 함께 바뀌어 앱의 다른 화면과 같은 색 말투가 된다.
+- 캐릭터가 다섯까지면 모두 제 이름으로 적는다. 여섯 이상이면 앞의 넷만 적고 나머지는 `그 외 n캐릭터` 한 줄로 묶는다
+  (캐릭터는 `명` 으로 세지 않는다). 그 줄은 오른쪽 화살표 아이콘과 함께 누를 수 있고, 누르면 팝오버에 묶인 캐릭터마다
+  이름 · 비율 · 금액이 나온다.
+- 도넛 옆에는 캐릭터별 이름 · 비율 · 금액을 작은 글자로 촘촘히 적는다. 금액을 따로 크게 강조하지 않고 이름보다 한 단계만
+  굵게 둔다. 금액은 억 단위 소수 둘째 자리까지 반올림해 적는다(`2억 6490만` → `2.65억`). 색만으로 캐릭터를 가르지 않도록
+  이름을 늘 함께 적는다.
 - 아래 옅은 면의 첫 줄은 `주간 보스 예상 수익` 과 `n캐릭터 · 보스 m`, 둘째 줄은 합계(`21억 4248만 3333`)다. 특정 주를
   계산하는 것이 아니라서 `이번 주` 라고 쓰지 않고, 날짜와 시간도 적지 않는다.
 - 고른 보스가 하나도 없으면 회색 링만 그린다. 조각이 없을 때 도넛 자리를 비워 두지 않기 위해서다.
@@ -141,6 +144,7 @@ Expo SDK 의 공식 모듈이고, 패키지 하나로 동기로 부를 수 있�
 | `app/utility/__tests__/BossProfitCalculatorScreen.test.tsx` | 결정 4 · 6 · 8 · 9 · 11: 보스 관리 값으로 채운 합계와 캐릭터별 금액, 난이도를 펼쳐 바꾸면 몫이 바로 바뀌는지, 초기화, 결과 저장의 두 갈래 |
 | `app/utility/__tests__/CalculatorBossPickerSheet.test.tsx` | 결정 10: 지금 고른 보스를 담고 여는지, `n / 12` 배지, 12개를 고르면 나머지 타일이 잠기는지 |
 | `app/utility/__tests__/BossProfitCalculatorRecordsScreen.test.tsx` | 결정 11 · 12: 기록 제목이 저장 날짜와 시간인지, 연 기록 표시, 기록을 열면 계산기로 돌아가는지, 지우면 빠지는지 |
+| `app/utility/boss-profit-calculator/__tests__/TotalCard.test.tsx` | 결정 6: 다섯 캐릭터까지는 모두 적는지, 여섯 이상이면 `그 외 n캐릭터` 로 묶고 `명` 을 쓰지 않는지, 누르면 묶인 캐릭터가 팝오버에 나오는지 |
 | `components/molecules/DonutRing/__tests__/DonutRing.test.tsx` | 결정 6: 조각마다 그 색으로 그리는지, 조각이 없으면 회색 링, 좁은 조각의 모서리를 줄이는지 |
 | `components/molecules/DifficultyExpander/__tests__/DifficultyExpander.test.tsx` | 결정 8: 접힌 동안 고른 난이도만, 펼치면 모든 난이도와 흐린 나머지, 펼친 동안 형제 UI 보다 위에 서는지, 고르면 알리고 같은 것을 다시 누르면 알리지 않는지 |
 | `components/organisms/CharacterPortrait/__tests__/CharacterPortrait.test.tsx` | 결정 7: 굵은 빈 링이 진행 링과 같은 두께인지 |
@@ -150,3 +154,4 @@ Expo SDK 의 공식 모듈이고, 패키지 하나로 동기로 부를 수 있�
 - ADR-074 (2026-10-20): 처음 작성(#193). 같은 날 구현 뒤 기록에 없는 캐릭터는 보스 없이 열도록 정했다
 - ADR-077 (2026-10-20): 결정 8 의 난이도 펼침을 배지가 미끄러져 나오는 애니메이션으로 바꾸고 펼친 줄이 다른 UI 위에 서게 했다. 결정 7 의 레일 링을 두께 3 으로 정했다
 - ADR-078 (2026-10-20): 결정 8 의 접힘을 고르지 않은 배지는 곧바로 투명해지고 고른 배지만 제자리로 돌아가는 것으로 바꿨다
+- ADR-079 (2026-10-20): 결정 6 의 도넛 색을 테마 색으로, 다섯 캐릭터까지는 모두 적고 그 이상만 `그 외 n캐릭터` 팝오버로 묶게, 범례 글자를 작게 바꿨다. 결정 8 의 화살표가 펼침 · 접힘에 맞춰 줄고 자라게 했다

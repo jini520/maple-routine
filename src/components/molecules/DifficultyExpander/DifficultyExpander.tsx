@@ -11,10 +11,12 @@ import Animated, {
   Easing,
   runOnJS,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withDelay,
   withSpring,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated'
 
 import { ChevronRightIcon, difficultyFill, Text } from '../../atoms'
@@ -39,7 +41,31 @@ const FADE_MS = 60
  */
 const LANE_WIDTH = 480
 
-function Pill(props: { difficulty: BossDifficulty; withChevron?: boolean }): React.JSX.Element {
+/** 화살표 아이콘 한 변과 글자와의 사이. 배지 오른쪽 여백은 늘 6 이고, 화살표 칸이 사이 2 를 품는다 */
+const CHEVRON_SIZE = 9
+const CHEVRON_GAP = 2
+
+/** 화살표 칸. 펼침 정도(`shown`, 0~1)만큼 폭과 진하기가 자라고, 0 이면 사이 2 만 남는다 */
+function ChevronSlot(props: { color: string; shown: SharedValue<number> | number }): React.JSX.Element {
+  const { shown } = props
+  const style = useAnimatedStyle(() => {
+    const value = Math.min(1, Math.max(0, typeof shown === 'number' ? shown : shown.value))
+    return { width: CHEVRON_GAP + CHEVRON_SIZE * value, opacity: value, overflow: 'hidden' }
+  })
+  return (
+    <Animated.View style={style}>
+      <View style={{ marginLeft: CHEVRON_GAP, width: CHEVRON_SIZE }}>
+        <ChevronRightIcon className="h-[9px] w-[9px]" color={props.color} strokeWidth={3} aria-hidden />
+      </View>
+    </Animated.View>
+  )
+}
+
+/**
+ * 난이도 배지. `chevron` 이 화살표가 보이는 정도다(0 이면 없고 1 이면 다 보인다). 고른 배지가 펼쳐지며 미끄러지는 동안
+ * 화살표가 줄어 사라지고, 돌아오는 동안 다시 자란다. 한순간에 생기고 사라지면 배지가 바뀌는 것으로 보인다.
+ */
+function Pill(props: { difficulty: BossDifficulty; chevron?: SharedValue<number> | number }): React.JSX.Element {
   const { gradient, textStyle } = difficultyFill(props.difficulty)
   return (
     <LinearGradient
@@ -47,16 +73,21 @@ function Pill(props: { difficulty: BossDifficulty; withChevron?: boolean }): Rea
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       className="flex-row items-center rounded-full"
-      style={{ height: PILL_HEIGHT, paddingLeft: 8, paddingRight: props.withChevron === true ? 6 : 8, gap: 2 }}
+      style={{ height: PILL_HEIGHT, paddingLeft: 8, paddingRight: 6 }}
     >
       <Text className="text-chip-sm font-bold" style={textStyle}>
         {DIFFICULTY_NAME[props.difficulty]}
       </Text>
-      {props.withChevron === true && (
-        <ChevronRightIcon className="h-[9px] w-[9px]" color={textStyle.color as string} strokeWidth={3} aria-hidden />
-      )}
+      <ChevronSlot color={textStyle.color as string} shown={props.chevron ?? 0} />
     </LinearGradient>
   )
+}
+
+/** 펼친 줄에 선 고른 배지. 접힌 자리(펼침 정도 0)에서는 화살표가 다 보이고, 제자리로 갈수록 줄어 사라진다 */
+function SelectedPill(props: { difficulty: BossDifficulty; progress: SharedValue<number> }): React.JSX.Element {
+  const { progress } = props
+  const chevron = useDerivedValue(() => 1 - progress.value)
+  return <Pill difficulty={props.difficulty} chevron={chevron} />
 }
 
 /** 펼친 줄의 배지 하나. 고른 배지 자리(줄의 왼쪽 끝)에서 제자리로 미끄러져 나오고, 접을 때 그리로 돌아간다 */
@@ -69,7 +100,8 @@ function SlidingPill(props: {
   /** 고른 배지. 흐려지지 않고 접힌 배지 자리로 돌아가 접힌 배지와 바로 이어진다 */
   selected: boolean
   onClosed?: () => void
-  children: React.ReactNode
+  /** 배지 자리. 고른 배지는 펼침 정도를 받아 화살표를 줄이고 키운다 */
+  children: (progress: SharedValue<number>) => React.ReactNode
 }): React.JSX.Element {
   const progress = useSharedValue(0)
   /** 고르지 않은 배지를 접을 때 지우는 값. 자리는 그대로 두고 투명해지기만 한다 */
@@ -111,7 +143,7 @@ function SlidingPill(props: {
   // 자리 · 모양은 바깥 View, 움직임만 Animated.View. 둘을 한 배열로 주면 정적 쪽이 버려진다.
   return (
     <View style={{ position: 'absolute', left: props.x, top: 0 }}>
-      <Animated.View style={style}>{props.children}</Animated.View>
+      <Animated.View style={style}>{props.children(progress)}</Animated.View>
     </View>
   )
 }
@@ -160,7 +192,7 @@ export function DifficultyExpander(props: {
         style={shown ? { opacity: 0 } : undefined}
         className="self-start"
       >
-        <Pill difficulty={props.value} withChevron />
+        <Pill difficulty={props.value} chevron={1} />
       </Pressable>
 
       <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, top: 0, width: LANE_WIDTH, height: PILL_HEIGHT }}>
@@ -208,6 +240,7 @@ export function DifficultyExpander(props: {
                   selected={on}
                   onClosed={on ? () => setShown(false) : undefined}
                 >
+                  {(progress) => (
                   <Pressable
                     role="radio"
                     aria-checked={on}
@@ -218,8 +251,9 @@ export function DifficultyExpander(props: {
                     }}
                     style={on ? undefined : { opacity: OFF_OPACITY }}
                   >
-                    <Pill difficulty={difficulty} />
+                    {on ? <SelectedPill difficulty={difficulty} progress={progress} /> : <Pill difficulty={difficulty} />}
                   </Pressable>
+                  )}
                 </SlidingPill>
               )
             })}
