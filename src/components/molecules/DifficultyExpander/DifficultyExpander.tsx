@@ -31,7 +31,9 @@ const OFF_OPACITY = 0.35
 /** 배지마다 늦게 출발하는 간격. 한꺼번에 움직이면 펼쳐지는 것이 아니라 한 덩어리가 미끄러지는 것으로 보인다 */
 const STAGGER_MS = 35
 const OPEN_SPRING = { damping: 15, stiffness: 260, mass: 0.6 }
-const CLOSE_MS = 170
+/** 접힐 때 고른 배지가 돌아가는 시간과 나머지가 투명해지는 시간 */
+const CLOSE_MS = 200
+const FADE_MS = 60
 /**
  * 펼친 줄이 놓이는 칸의 폭. 접힌 배지 폭 안에 두면 줄이 그 폭으로 눌려 배지가 잘린다. 칸은 누름을 통과시킨다.
  */
@@ -64,15 +66,15 @@ function SlidingPill(props: {
   x: number
   /** 펼칠 때 늦게 출발하는 차례 */
   order: number
-  /** 접을 때 늦게 출발하는 차례 */
-  closeOrder: number
-  /** 고른 배지. 흐려지지 않고 접힌 배지 자리까지 남아 접힌 배지와 바로 이어진다 */
+  /** 고른 배지. 흐려지지 않고 접힌 배지 자리로 돌아가 접힌 배지와 바로 이어진다 */
   selected: boolean
   onClosed?: () => void
   children: React.ReactNode
 }): React.JSX.Element {
   const progress = useSharedValue(0)
-  const { open, order, closeOrder } = props
+  /** 고르지 않은 배지를 접을 때 지우는 값. 자리는 그대로 두고 투명해지기만 한다 */
+  const fade = useSharedValue(1)
+  const { open, order, selected } = props
   // 렌더마다 새로 오는 콜백을 효과의 의존에 넣으면 그때마다 애니메이션이 처음부터 다시 돈다.
   const onClosed = useRef(props.onClosed)
   useEffect(() => {
@@ -85,22 +87,24 @@ function SlidingPill(props: {
 
   useEffect(() => {
     if (open) {
+      fade.set(1)
       progress.set(withDelay(order * STAGGER_MS, withSpring(1, OPEN_SPRING)))
       return
     }
+    // 접힐 때는 고른 배지만 움직인다. 나머지가 차례로 모여들면 펼칠 때보다 길고 어수선해 보였다.
+    if (!selected) {
+      fade.set(withTiming(0, { duration: FADE_MS }))
+      return
+    }
     progress.set(
-      withDelay(
-        closeOrder * STAGGER_MS,
-        withTiming(0, { duration: CLOSE_MS, easing: Easing.in(Easing.cubic) }, (finished) => {
-          if (finished) runOnJS(notifyClosed)()
-        }),
-      ),
+      withTiming(0, { duration: CLOSE_MS, easing: Easing.out(Easing.cubic) }, (finished) => {
+        if (finished) runOnJS(notifyClosed)()
+      }),
     )
-  }, [open, order, closeOrder, progress])
+  }, [open, order, selected, progress, fade])
 
-  const selected = props.selected
   const style = useAnimatedStyle(() => ({
-    opacity: selected ? 1 : Math.min(1, progress.value * 1.6),
+    opacity: selected ? 1 : Math.min(1, progress.value * 1.6) * fade.value,
     transform: [{ translateX: (progress.value - 1) * props.x }],
   }))
 
@@ -143,7 +147,7 @@ export function DifficultyExpander(props: {
 
   function collapse(): void {
     setOpen(false)
-    plate.set(withDelay(STAGGER_MS * props.difficulties.length, withTiming(0, { duration: CLOSE_MS })))
+    plate.set(withTiming(0, { duration: FADE_MS }))
   }
 
   return (
@@ -201,8 +205,6 @@ export function DifficultyExpander(props: {
                   open={open}
                   x={xs[index] ?? 0}
                   order={index}
-                  // 고른 배지가 가장 늦게 돌아온다. 다른 배지가 먼저 모여 사라진 뒤 고른 배지가 접힌 배지 자리에 앉는다.
-                  closeOrder={on ? props.difficulties.length : props.difficulties.length - 1 - index}
                   selected={on}
                   onClosed={on ? () => setShown(false) : undefined}
                 >
