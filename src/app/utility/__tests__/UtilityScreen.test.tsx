@@ -7,7 +7,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
-import { ITEM_SPLIT_TOOL_NAME } from '../tool-names'
+import { BOSS_PROFIT_CALCULATOR_TOOL_NAME, ITEM_SPLIT_TOOL_NAME } from '../tool-names'
 import { UtilityScreen } from '../UtilityScreen'
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
@@ -36,8 +36,10 @@ describe('UtilityScreen', () => {
     const view = await renderOverlay(<UtilityScreen />)
 
     await press(view.getByLabelText(ITEM_SPLIT_TOOL_NAME))
-
     expect(navigate).toHaveBeenCalledWith('UtilityItemSplit')
+
+    await press(view.getByLabelText(BOSS_PROFIT_CALCULATOR_TOOL_NAME))
+    expect(navigate).toHaveBeenCalledWith('UtilityBossProfitCalculator')
   })
 
   // RN 의 `Text` 는 한글을 글자 단위로 끊는다(`판매 분배금 계 / 산기`). 단어마다 `Text` 를 두고
@@ -45,8 +47,9 @@ describe('UtilityScreen', () => {
   it('타일 이름은 단어마다 쪼개져 있다. 줄바꿈이 단어 경계에서만 일어나도록', async () => {
     const view = await renderOverlay(<UtilityScreen />)
 
+    // `계산기` 는 두 타일에 다 있다.
     for (const word of ITEM_SPLIT_TOOL_NAME.split(' ')) {
-      expect(view.getByText(word)).toBeTruthy()
+      expect(view.getAllByText(word).length).toBeGreaterThan(0)
     }
     // 통째로 그리면 글자 단위로 끊긴다. 한 덩어리 노드가 있으면 안 된다.
     expect(view.queryByText(ITEM_SPLIT_TOOL_NAME)).toBeNull()

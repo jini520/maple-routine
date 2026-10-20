@@ -22,6 +22,8 @@ import { AppSettingsScreen } from '../app/settings/AppSettingsScreen'
 import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
 import { ItemSplitScreen } from '../app/utility/ItemSplitScreen'
+import { BossProfitCalculatorScreen } from '../app/utility/BossProfitCalculatorScreen'
+import { BossProfitCalculatorRecordsScreen } from '../app/utility/BossProfitCalculatorRecordsScreen'
 import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'
 import { LayerStack } from './LayerStack'
 import { PUSH_SCREEN_OPTIONS } from './push-screen-options'
@@ -58,6 +60,8 @@ const STACK_SCREENS = {
   AppSettings: AppSettingsScreen,
   SettingsNoticeDetail: SettingsNoticeDetailScreen,
   UtilityItemSplit: ItemSplitScreen,
+  UtilityBossProfitCalculator: BossProfitCalculatorScreen,
+  UtilityBossProfitCalculatorRecords: BossProfitCalculatorRecordsScreen,
 } as const satisfies Record<StackRouteName, React.ComponentType>
 
 /**

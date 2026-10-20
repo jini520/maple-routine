@@ -165,6 +165,10 @@ export type RootStackParamList = {
    * 쌓이는 하위 페이지이고, 뒤에 오는 도구들이 그대로 물려받는다.
    */
   UtilityItemSplit: undefined
+  /** 주간 보스 수익 계산기. 유틸리티의 둘째 도구다 */
+  UtilityBossProfitCalculator: undefined
+  /** 주간 보스 수익 계산기의 계산 기록. 기록을 누르면 계산기로 돌아간다 */
+  UtilityBossProfitCalculatorRecords: undefined
   /**
    * 캐릭터 관리. 두 층 + 드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어가 하위 페이지가 됐다.
    */
@@ -329,6 +333,18 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/utility/item-split',
     screen: 'ItemSplitScreen',
     target: { kind: 'push', route: 'UtilityItemSplit' },
+    origin: 'rn',
+  },
+  {
+    path: '/utility/boss-profit-calculator',
+    screen: 'BossProfitCalculatorScreen',
+    target: { kind: 'push', route: 'UtilityBossProfitCalculator' },
+    origin: 'rn',
+  },
+  {
+    path: '/utility/boss-profit-calculator/records',
+    screen: 'BossProfitCalculatorRecordsScreen',
+    target: { kind: 'push', route: 'UtilityBossProfitCalculatorRecords' },
     origin: 'rn',
   },
   {

@@ -43,6 +43,7 @@ import CloudDownload from 'lucide-react-native/icons/cloud-download'
 import Crosshair from 'lucide-react-native/icons/crosshair'
 import Crown from 'lucide-react-native/icons/crown'
 import Delete from 'lucide-react-native/icons/delete'
+import History from 'lucide-react-native/icons/history'
 import ExternalLink from 'lucide-react-native/icons/external-link'
 import Eye from 'lucide-react-native/icons/eye'
 import EyeOff from 'lucide-react-native/icons/eye-off'
@@ -65,6 +66,7 @@ import Moon from 'lucide-react-native/icons/moon'
 import PackageOpen from 'lucide-react-native/icons/package-open'
 import Pin from 'lucide-react-native/icons/pin'
 import Plus from 'lucide-react-native/icons/plus'
+import Trash2 from 'lucide-react-native/icons/trash-2'
 import RefreshCw from 'lucide-react-native/icons/refresh-cw'
 import RotateCcw from 'lucide-react-native/icons/rotate-ccw'
 import ScrollText from 'lucide-react-native/icons/scroll-text'
@@ -109,6 +111,10 @@ export const CastleIcon = withIconInterop(Castle)
 export const CrownIcon = withIconInterop(Crown)
 /** 숫자 판의 한 자리 지우개. `NumberPad`. lucide 의 `delete` 는 백스페이스 키 모양이다. */
 export const DeleteIcon = withIconInterop(Delete)
+/** 기록 목록을 여는 버튼. 주간 보스 수익 계산기의 머리. */
+export const HistoryIcon = withIconInterop(History)
+/** 기록 하나를 지우는 버튼. 주간 보스 수익 계산기의 계산 기록. */
+export const Trash2Icon = withIconInterop(Trash2)
 /** 선택 표식. `CacheClearConfirm` 체크박스 · `ThemeSelector` 선택 타일. */
 export const CheckIcon = withIconInterop(Check)
 /** 성공 토스트. `Toast`(success). lucide 실물 이름은 `circle-check-big` 다. */

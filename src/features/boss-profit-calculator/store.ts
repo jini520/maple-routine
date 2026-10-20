@@ -16,6 +16,7 @@ import {
 import { displayedBosses } from '../boss-scheduler/displayed-bosses'
 import { partySizeKey, useBossSchedulerStore } from '../boss-scheduler/store'
 import { useTrackingModeStore } from '../tracking-mode/store'
+import type { BossDifficulty } from '../../types'
 
 /** 저장 버튼의 두 갈래. 연 기록이 없으면 늘 `new` 다 */
 export type CalculatorSaveMode = 'overwrite' | 'new'
@@ -40,6 +41,23 @@ interface BossProfitCalculatorState {
   updateBoss: (ocid: string, bossKey: string, patch: Partial<Omit<CalculatorBoss, 'bossKey'>>) => void
 }
 
+/** 보스 관리에 이 보스 · 난이도의 파티 설정이 있으면 그 인원과 비율, 없으면 1인. 보스 선택에서 새로 고른 보스가 쓴다 */
+export function bossWithPartySetting(ocid: string, bossKey: string, difficulty: BossDifficulty): CalculatorBoss {
+  const scheduler = useBossSchedulerStore.getState()
+  const key = partySizeKey(ocid, bossKey, difficulty)
+  const columns = scheduler.partyShares[key]
+  return {
+    bossKey,
+    difficulty,
+    partySize: scheduler.partySizes[key] ?? 1,
+    shares: {
+      myShare: columns?.crystalMyShare ?? null,
+      sharesTotal: columns?.crystalSharesTotal ?? null,
+      splitFeePercent: columns?.splitFeePercent ?? null,
+    },
+  }
+}
+
 /** 보스 관리에 등록된 이 캐릭터의 주간 보스 · 난이도 · 파티 설정. 12개가 넘으면 몫이 큰 12개만 남긴다 */
 function bossesFromBossManage(ocid: string, now: Date): CalculatorBoss[] {
   const scheduler = useBossSchedulerStore.getState()
@@ -52,18 +70,7 @@ function bossesFromBossManage(ocid: string, now: Date): CalculatorBoss[] {
     // 계산기는 보스 하나에 난이도 하나다. 자동 모드는 등록 난이도가 없으면 처치한 난이도를 여럿 보일 수 있다.
     if (boss.bossKey === null || seen.has(boss.bossKey)) continue
     seen.add(boss.bossKey)
-    const key = partySizeKey(ocid, boss.bossKey, boss.difficulty)
-    const columns = scheduler.partyShares[key]
-    bosses.push({
-      bossKey: boss.bossKey,
-      difficulty: boss.difficulty,
-      partySize: scheduler.partySizes[key] ?? 1,
-      shares: {
-        myShare: columns?.crystalMyShare ?? null,
-        sharesTotal: columns?.crystalSharesTotal ?? null,
-        splitFeePercent: columns?.splitFeePercent ?? null,
-      },
-    })
+    bosses.push(bossWithPartySetting(ocid, boss.bossKey, boss.difficulty))
   }
   return keepTopByPayout(bosses, now)
 }

@@ -53,7 +53,7 @@ function difficulty(
   borderColor: string,
   textStyle: TextStyle,
   borderWidth = 1,
-): BadgeVariantStyle {
+): BadgeVariantStyle & Required<Pick<BadgeVariantStyle, 'gradient' | 'textStyle'>> {
   return { gradient, border: { borderWidth, borderColor }, textStyle, weight: 'bold', text: 'text-chip-sm' }
 }
 
@@ -111,4 +111,14 @@ export type BadgeDifficulty = BossDifficulty & BadgeVariant
  */
 export function difficultyOutlineColor(difficulty: BadgeDifficulty): ColorValue {
   return BADGE_VARIANT[difficulty].border?.borderColor ?? '#67717a'
+}
+
+/**
+ * 난이도 배지의 칠과 글자. 테두리 없이 같은 색을 다른 모양에 입힐 때 쓴다(보스 줄의 난이도 고르개).
+ *
+ * @example const { gradient, textStyle } = difficultyFill('hard')
+ */
+export function difficultyFill(difficulty: BadgeDifficulty): { gradient: readonly [string, string]; textStyle: TextStyle } {
+  const variant = BADGE_VARIANT[difficulty]
+  return { gradient: variant.gradient, textStyle: variant.textStyle }
 }

@@ -30,7 +30,7 @@ docs/
 | `cashbook` | [features/cashbook.md](./features/cashbook.md) | 수입 · 지출 캘린더와 손입력 | [[ADR-046]] · [[ADR-047]] · [[ADR-048]] · [[ADR-049]] |
 | `stats` | [features/stats.md](./features/stats.md) | 기간별 수익 · 지출 통계 | [[ADR-002]] |
 | `party-appointments` | [features/party-appointments.md](./features/party-appointments.md) | 파티 일정과 알림 | [[ADR-051]] |
-| `utility` | [features/utility.md](./features/utility.md) | 도구 목록 · 판매 분배금 계산기 · 주간 보스 수익 계산기(미구현) | [[ADR-001]] · [[ADR-074]] |
+| `utility` | [features/utility.md](./features/utility.md) | 도구 목록 · 판매 분배금 계산기 · 주간 보스 수익 계산기 | [[ADR-001]] · [[ADR-074]] |
 | `mvp-grade` | [features/mvp-grade.md](./features/mvp-grade.md) | MVP 등급과 수수료 | [[ADR-050]] |
 | `character` | [features/character.md](./features/character.md) | 추적 캐릭터 · 캐릭터 관리 · 선택 · 초상화 | [[ADR-028]] · [[ADR-029]] · [[ADR-030]] · [[ADR-031]] |
 | `auth` | [features/auth.md](./features/auth.md) | API 키 · 넥슨 로그인 | [[ADR-024]] · [[ADR-025]] |
