@@ -75,12 +75,16 @@ function bossesFromBossManage(ocid: string, now: Date): CalculatorBoss[] {
   return keepTopByPayout(bosses, now)
 }
 
-/** 기록에 있는 캐릭터는 기록 값, 기록 뒤에 추적을 시작한 캐릭터는 보스 관리 값 */
+/**
+ * 기록이 있으면 그 값이고, 기록에 없는 캐릭터(기록 뒤에 추적을 시작한 캐릭터)는 보스 없이 연다. 기록은 남긴 그때의 계산이다.
+ * 기록이 없으면 캐릭터마다 보스 관리 값이다.
+ */
 function bossesOfRecord(record: BossProfitCalculatorRecord | undefined, now: Date): Record<string, CalculatorBoss[]> {
   const byOcid: Record<string, CalculatorBoss[]> = {}
   for (const character of useBossSchedulerStore.getState().characters) {
     const saved = record?.characters.find((one) => one.ocid === character.ocid)
-    byOcid[character.ocid] = saved === undefined ? bossesFromBossManage(character.ocid, now) : saved.bosses
+    byOcid[character.ocid] =
+      record === undefined ? bossesFromBossManage(character.ocid, now) : (saved?.bosses ?? [])
   }
   return byOcid
 }

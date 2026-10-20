@@ -94,8 +94,8 @@ describe('처음 값', () => {
 
     expect(useBossProfitCalculatorStore.getState().openedId).toBe('new')
     expect(bossesOf('ocid-1')).toEqual(['kaling:normal:2'])
-    // 기록 뒤에 추적을 시작한 캐릭터는 기록에 없으니 보스 관리 값으로 채운다.
-    expect(bossesOf('ocid-2')).toEqual(['lucid:hard:1'])
+    // 기록은 남긴 그때의 계산이다. 기록 뒤에 추적을 시작한 캐릭터는 아무것도 계산하지 않는다.
+    expect(bossesOf('ocid-2')).toEqual([])
   })
 })
 

@@ -130,10 +130,10 @@ describe('BossProfitCalculatorScreen', () => {
     await press(view.getByLabelText('결과 저장'))
     expect(await getBossProfitCalculatorRecords()).toHaveLength(1)
     expect(mockShowSuccess).toHaveBeenCalledWith('결과를 저장했어요')
-    expect(view.queryByText('연 기록을 덮을까요?')).toBeNull()
+    expect(view.queryByText('기존 저장된 기록에 덮어쓸까요?')).toBeNull()
 
     await press(view.getByLabelText('결과 저장'))
-    expect(view.getByText('연 기록을 덮을까요?')).toBeTruthy()
+    expect(view.getByText('기존 저장된 기록에 덮어쓸까요?')).toBeTruthy()
     await press(view.getByText('새 기록으로'))
 
     expect(await getBossProfitCalculatorRecords()).toHaveLength(2)
