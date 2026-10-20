@@ -61,6 +61,7 @@ RootStack
 | MVP 등급 · 등급 이력 | `SettingsMvpGrade` · `SettingsMvpGradeHistory` |
 | 설정(더보기 머리의 톱니바퀴) | `AppSettings` |
 | 판매 분배금 계산기 | `UtilityItemSplit` |
+| 주간 보스 수익 계산기 · 계산 기록 | `UtilityBossProfitCalculator` · `UtilityBossProfitCalculatorRecords` |
 
 기능 설명 상세와 개발 노트 상세는 라우트 이름이 다르지만 같은 화면(`SettingsFeatureGuideScreen`)을 그린다.
 

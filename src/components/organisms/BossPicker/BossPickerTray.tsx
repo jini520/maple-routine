@@ -277,7 +277,8 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
    * 칸이 아직 화면 밖에 있기 때문이다(실측: 그 자리로 내려앉은 뒤 칸이 옆으로 미끄러져 들어왔다).
    */
   function aim(target: Flight): void {
-    const at = groups.findIndex((group) => group.ocid === target.boss.ocid)
+    // 묶지 않으면 줄이 하나뿐이다. 그 줄의 키는 캐릭터가 아니라서 ocid 로 찾으면 못 찾고, 초상이 출발 자리에 멈춘다.
+    const at = props.grouped ? groups.findIndex((group) => group.ocid === target.boss.ocid) : 0
     if (at < 0) return
     const widthOf = (index: number): number => {
       const group = groups[index]!

@@ -1,7 +1,7 @@
 # ADR-074 주간 보스 수익 계산기
 
-> ⚪ 미구현
-> 관련 소스: `app/utility/` · `features/boss-profit-calculator/` · `lib/boss/boss-profit-calculator.ts` · `storage/boss-profit-calculator-records.ts` · `native/uuid.ts`
+> 🟢 유효
+> 관련 소스: `app/utility/BossProfitCalculatorScreen.tsx` · `app/utility/BossProfitCalculatorRecordsScreen.tsx` · `app/utility/boss-profit-calculator/` · `components/molecules/DonutRing/` · `components/molecules/DifficultyExpander/` · `features/boss-profit-calculator/` · `lib/boss/boss-profit-calculator.ts` · `storage/boss-profit-calculator-records.ts` · `native/uuid.ts`
 
 ## 배경
 
@@ -37,7 +37,8 @@ push 한다. 이름은 `tool-names.ts` 에 한 번만 적고 타일과 화면 �
 
 계산기를 열면 가장 최근 기록으로 채운다. 기록이 없으면 캐릭터마다 보스 관리에 등록된 주간 보스 · 그 난이도 · 파티 설정
 (`boss_party_settings`)으로 채운다. 등록 보스는 보스 스케줄러와 같은 함수(`displayedBosses`)로 읽어 자동 · 수동 모드가
-같이 맞는다. 파티 설정이 없는 보스는 1인이다.
+같이 맞는다. 파티 설정이 없는 보스는 1인이다. 기록을 남긴 뒤에 추적을 시작한 캐릭터는 그 기록에 없으므로 보스 관리
+값으로 채운다. 비워 두면 그 캐릭터는 보스를 하나도 안 잡는 것처럼 보인다.
 
 보스 관리에 주간 보스가 12개보다 많으면 결정석 몫이 큰 순서로 12개만 남기고 나머지는 뺀다(사용자 결정). 자동 모드는
 게임에 등록한 보스를 그대로 가져와서 12개를 넘을 수 있다.
@@ -91,6 +92,8 @@ push 한다. 이름은 `tool-names.ts` 에 한 번만 적고 타일과 화면 �
 - 지금 고른 보스를 선택 줄에 담고 연다. 바닥 버튼은 `적용` 이다.
 - 12개를 고르면 나머지 타일이 흐려진다. 안내 문구는 두지 않는다. 선택 줄 머리에 `n / 12` 배지가 있다.
 - 월간 보스는 나오지 않는다.
+- 새로 고른 보스는 보스 관리에 그 보스 · 난이도의 파티 설정이 있으면 그 인원과 비율로, 없으면 1인으로 들어온다. 이미
+  있던 보스는 계산기의 값을 그대로 둔다. 계산기에서 고친 인원을 시트를 열 때마다 잃으면 안 되기 때문이다.
 - 선택 줄에는 캐릭터 얼굴 없이 보스만 선다. 줄은 늘 시트의 보스 출력 순서를 지키고, 사이에 끼는 보스를 고르면 이웃이
   벌어지며 그 자리에 앉는다. 길게 눌러 순서를 바꾸는 기능은 쓰지 않는다.
 - 시즌 보스가 열려 있고 캐릭터가 챌린저스 월드이면 시트 맨 위에 시즌 보스를 둔다. 시즌 보스는 솔로 보스라 파티
@@ -129,7 +132,12 @@ Expo SDK 의 공식 모듈이고, 패키지 하나로 동기로 부를 수 있�
 | `storage/__tests__/boss-profit-calculator-records.spec.ts` | 결정 13: 깨진 JSON 은 빈 목록, 형태가 맞지 않는 기록만 버리는지, 보스를 다 뺀 캐릭터도 읽는지 |
 | `storage/__tests__/cache-data.spec.ts` | 결정 13: 캐시 삭제에서 기록이 지켜지는지 |
 | `features/boss-profit-calculator/__tests__/store.spec.ts` | 결정 4 · 5 · 9 · 11 · 12 · 13: 첫 값을 마지막 기록 또는 보스 관리 값으로 채우는지, 고친 값이 보스 관리에 쓰이지 않는지, 캐릭터별 가져오기 · 초기화, 덮기와 새 기록 가르기, 새 기록의 id 가 uuid 인지, 연 기록을 지우면 연 기록이 없어지는지 |
-| `app/utility/__tests__/BossProfitCalculatorScreen.test.tsx` | 결정 6 · 8 · 11: 합계와 캐릭터별 금액, 난이도 펼침, 결과 저장의 두 갈래 |
+| `features/boss-profit-calculator/__tests__/picker.spec.ts` | 결정 2 · 10: 보스 선택에 월간 보스가 없는지, 시즌 보스가 챌린저스 월드에서만 서는지, 12개를 고르면 잠그되 시즌 보스와 고른 보스는 안 잠그는지, 고른 보스가 보스 표 순서로 들어가는지 |
+| `app/utility/__tests__/BossProfitCalculatorScreen.test.tsx` | 결정 4 · 6 · 8 · 9 · 11: 보스 관리 값으로 채운 합계와 캐릭터별 금액, 난이도를 펼쳐 바꾸면 몫이 바로 바뀌는지, 초기화, 결과 저장의 두 갈래 |
+| `app/utility/__tests__/CalculatorBossPickerSheet.test.tsx` | 결정 10: 지금 고른 보스를 담고 여는지, `n / 12` 배지, 12개를 고르면 나머지 타일이 잠기는지 |
+| `app/utility/__tests__/BossProfitCalculatorRecordsScreen.test.tsx` | 결정 11 · 12: 기록 제목이 저장 날짜와 시간인지, 연 기록 표시, 기록을 열면 계산기로 돌아가는지, 지우면 빠지는지 |
+| `components/molecules/DonutRing/__tests__/DonutRing.test.tsx` | 결정 6: 조각마다 그 색으로 그리는지, 조각이 없으면 회색 링, 좁은 조각의 모서리를 줄이는지 |
+| `components/molecules/DifficultyExpander/__tests__/DifficultyExpander.test.tsx` | 결정 8: 접힌 동안 고른 난이도만, 펼치면 모든 난이도와 흐린 나머지, 고르면 알리고 같은 것을 다시 누르면 알리지 않는지 |
 
 ## 번호 기록
 

@@ -7,7 +7,7 @@ import { bossKeyOfApiName } from '../../../lib/boss/bosses'
 import { partySizeKey, useBossSchedulerStore, type BossCharacterView } from '../../boss-scheduler/store'
 import { useTrackingModeStore } from '../../tracking-mode/store'
 import type { BossDifficulty } from '../../../types'
-import { useBossProfitCalculatorStore } from '../store'
+import { bossWithPartySetting, useBossProfitCalculatorStore } from '../store'
 
 const NOW = new Date('2026-10-20T12:00:00+09:00')
 const EVEN = { myShare: null, sharesTotal: null, splitFeePercent: null }
@@ -120,6 +120,24 @@ describe('고친 값', () => {
     ])
 
     expect(bossesOf('ocid-2')).toEqual(['lotus:hard:1', 'kaling:normal:1'])
+  })
+})
+
+describe('bossWithPartySetting', () => {
+  // 보스 선택에서 새로 고른 보스가 들고 오는 값.
+  it('보스 관리에 파티 설정이 있으면 그 인원과 비율, 없으면 1인이다', () => {
+    expect(bossWithPartySetting('ocid-1', 'kaling', 'normal')).toEqual({
+      bossKey: 'kaling',
+      difficulty: 'normal',
+      partySize: 3,
+      shares: { myShare: 2, sharesTotal: 5, splitFeePercent: 3 },
+    })
+    expect(bossWithPartySetting('ocid-2', 'kaling', 'normal')).toEqual({
+      bossKey: 'kaling',
+      difficulty: 'normal',
+      partySize: 1,
+      shares: EVEN,
+    })
   })
 })
 

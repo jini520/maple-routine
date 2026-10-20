@@ -10,17 +10,17 @@
  *
  * 도구를 더할 때는 아래 타일을 형제로 하나 더 놓는다. 그리고 `routes.ts` 한 줄,
  * `RootNavigator` 의 `STACK_SCREENS` 한 줄, `docs/features/utility.md`. 넷뿐이다. 목록을 데이터
- * 배열로 돌리지 않는 것은 아직 하나뿐이기 때문이고, 셋쯤 되면 그때 돌린다.
+ * 배열로 돌리지 않는 것은 아직 둘뿐이기 때문이고, 셋쯤 되면 그때 돌린다.
  */
 
 import { Pressable, View } from 'react-native'
 
-import { CalculatorIcon, Card, Text } from '../../components/atoms'
+import { CalculatorIcon, Card, SwordsIcon, Text } from '../../components/atoms'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
-import { ITEM_SPLIT_TOOL_NAME } from './tool-names'
+import { BOSS_PROFIT_CALCULATOR_TOOL_NAME, ITEM_SPLIT_TOOL_NAME } from './tool-names'
 
 /**
  * 타일 이름. 단어 단위로 줄바꿈한다.
@@ -79,6 +79,17 @@ export function UtilityScreen(): React.JSX.Element {
                 aria-hidden
               />
               <TileLabel text={ITEM_SPLIT_TOOL_NAME} />
+            </Card>
+          </Pressable>
+          <Pressable
+            role="button"
+            aria-label={BOSS_PROFIT_CALCULATOR_TOOL_NAME}
+            onPress={() => navigation.navigate('UtilityBossProfitCalculator')}
+            className="w-[48%]"
+          >
+            <Card className="aspect-[2/1] flex-row items-center gap-3 px-4">
+              <SwordsIcon className="h-7 w-7 shrink-0 text-text-muted" strokeWidth={1.75} aria-hidden />
+              <TileLabel text={BOSS_PROFIT_CALCULATOR_TOOL_NAME} />
             </Card>
           </Pressable>
         </View>
