@@ -1,7 +1,7 @@
 # ADR-074 주간 보스 수익 계산기
 
 > ⚪ 미구현
-> 관련 소스: `app/utility/` · `features/boss-profit-calculator/` · `lib/boss/boss-profit-calculator.ts` · `storage/boss-profit-calculator-records.ts`
+> 관련 소스: `app/utility/` · `features/boss-profit-calculator/` · `lib/boss/boss-profit-calculator.ts` · `storage/boss-profit-calculator-records.ts` · `native/uuid.ts`
 
 ## 배경
 
@@ -125,9 +125,10 @@ Expo SDK 의 공식 모듈이고, 패키지 하나로 동기로 부를 수 있�
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `lib/__tests__/boss-profit-calculator.test.ts` | 결정 2 · 3 · 4: 몫을 보스 수익과 같은 식으로 세는지, 12개가 넘으면 몫이 큰 12개만 남기는지, 시즌 보스를 12개에 세지 않는지, 억 단위 반올림 |
-| `storage/__tests__/boss-profit-calculator-records.test.ts` | 결정 13: 깨진 JSON 은 빈 목록, 형태가 맞지 않는 기록만 버리는지, 캐시 삭제에서 지켜지는지, 새 기록의 id 가 uuid 인지 |
-| `features/boss-profit-calculator/__tests__/store.test.ts` | 결정 4 · 5 · 9 · 11: 첫 값을 마지막 기록 또는 보스 관리 값으로 채우는지, 고친 값이 보스 관리에 쓰이지 않는지, 캐릭터별 가져오기 · 초기화, 덮기와 새 기록 가르기 |
+| `lib/__tests__/boss-profit-calculator.spec.ts` | 결정 2 · 3 · 4: 몫을 보스 수익과 같은 식으로 세는지, 12개가 넘으면 몫이 큰 12개만 남기는지, 시즌 보스를 12개에 세지 않는지, 억 단위 반올림 |
+| `storage/__tests__/boss-profit-calculator-records.spec.ts` | 결정 13: 깨진 JSON 은 빈 목록, 형태가 맞지 않는 기록만 버리는지, 보스를 다 뺀 캐릭터도 읽는지 |
+| `storage/__tests__/cache-data.spec.ts` | 결정 13: 캐시 삭제에서 기록이 지켜지는지 |
+| `features/boss-profit-calculator/__tests__/store.spec.ts` | 결정 4 · 5 · 9 · 11 · 12 · 13: 첫 값을 마지막 기록 또는 보스 관리 값으로 채우는지, 고친 값이 보스 관리에 쓰이지 않는지, 캐릭터별 가져오기 · 초기화, 덮기와 새 기록 가르기, 새 기록의 id 가 uuid 인지, 연 기록을 지우면 연 기록이 없어지는지 |
 | `app/utility/__tests__/BossProfitCalculatorScreen.test.tsx` | 결정 6 · 8 · 11: 합계와 캐릭터별 금액, 난이도 펼침, 결과 저장의 두 갈래 |
 
 ## 번호 기록

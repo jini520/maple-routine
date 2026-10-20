@@ -61,6 +61,7 @@ import * as storagePorts from '../storage/ports'
 import { installPorts, loadGameData } from '../boot'
 import { hydrateGameData } from '../features/game-data/query'
 import { rnBrowserPort } from '../native/adapters/rn-browser'
+import { rnUuidPort } from '../native/adapters/rn-uuid'
 import { rnLiveUpdatePort } from '../native/adapters/rn-live-update'
 import { rnAdsPort } from '../native/adapters/rn-ads'
 import { rnBackGesturePort } from '../native/adapters/rn-back-gesture'
@@ -93,6 +94,7 @@ const WIRED: [string, () => unknown, unknown][] = [
   ['getBackGesturePort', nativePorts.getBackGesturePort, rnBackGesturePort],
   ['getLiveUpdatePort', nativePorts.getLiveUpdatePort, rnLiveUpdatePort],
   ['getBrowserPort', nativePorts.getBrowserPort, rnBrowserPort],
+  ['getUuidPort', nativePorts.getUuidPort, rnUuidPort],
 ]
 
 function resetPorts(): void {
@@ -111,7 +113,7 @@ describe('installPorts()', () => {
       /^get[A-Za-z]+Port$/.test(key),
     )
 
-    expect(declared.length).toBe(15)
+    expect(declared.length).toBe(16)
     expect([...declared].sort()).toEqual(WIRED.map(([name]) => name).sort())
   })
 

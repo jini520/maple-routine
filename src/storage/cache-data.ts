@@ -36,6 +36,8 @@ const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.statsCumulativeStart,
   // 파티 약속. 사용자가 적은 것이라 지워지면 아무도 되살리지 못한다.
   STORAGE_KEYS.partyAppointments,
+  // 주간 보스 수익 계산기의 기록. 사용자가 남긴 것이라 지워지면 아무도 되살리지 못한다.
+  STORAGE_KEYS.bossProfitCalculatorRecords,
 ])
 
 // 삭제 단위는 2그룹이다. 사용자가 해결하려는 갈등은 "용량은 비우고 싶은데 복구 불가능한
