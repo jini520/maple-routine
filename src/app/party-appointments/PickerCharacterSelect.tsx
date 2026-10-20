@@ -69,7 +69,9 @@ export function PickerCharacterSelect(props: {
           <CharacterFace ocid={props.ocid} name={current?.name ?? ''} imageUrl={current?.imageUrl ?? null} />
           <Text className="text-15 font-bold text-text">{current?.name ?? ''}</Text>
           {current?.level != null && <Text className="text-xs text-text-muted">Lv.{current.level}</Text>}
-          <SelectChevron open={isOpen} />
+          <View className="ml-auto">
+            <SelectChevron open={isOpen} />
+          </View>
         </Pressable>
       )}
       renderOption={(option, isSelected) => {

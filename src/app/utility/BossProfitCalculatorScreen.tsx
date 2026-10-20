@@ -163,7 +163,12 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                 style={cardShadow}
               />
               <View className="pt-3.5">
-                <CharacterRail entries={railEntries} selectedOcid={selected.ocid} onSelect={(ocid) => void select(ocid)} />
+                <CharacterRail
+                  entries={railEntries}
+                  selectedOcid={selected.ocid}
+                  emptyRing="thick"
+                  onSelect={(ocid) => void select(ocid)}
+                />
               </View>
 
               {selectedBosses.length === 0 ? (

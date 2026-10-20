@@ -1,4 +1,4 @@
-# ADR-074 주간 보스 수익 계산기
+# ADR-074+077 주간 보스 수익 계산기
 
 > 🟢 유효
 > 관련 소스: `app/utility/BossProfitCalculatorScreen.tsx` · `app/utility/BossProfitCalculatorRecordsScreen.tsx` · `app/utility/boss-profit-calculator/` · `components/molecules/DonutRing/` · `components/molecules/DifficultyExpander/` · `features/boss-profit-calculator/` · `lib/boss/boss-profit-calculator.ts` · `storage/boss-profit-calculator-records.ts` · `native/uuid.ts`
@@ -65,14 +65,17 @@ push 한다. 이름은 `tool-names.ts` 에 한 번만 적고 타일과 화면 �
 ### 결정 7. 캐릭터는 초상화 레일로 고르고, 고른 캐릭터의 보스 목록만 보인다
 
 레일은 앱의 `CharacterRail` 이다. 원 아래 호를 따라 레벨과 이름을 적고, 진행 링 없이 고른 캐릭터에만 테마 색 링이 선다.
+링 두께는 보스 스케줄러 레일의 진행 링과 같은 3 이다(`emptyRing="thick"`, 사용자 지정). 보스 관리 · 컨텐츠 관리의 레일은 얇은
+빈 링 그대로다.
 레일 아래 캐릭터 줄에는 초상화 · 이름 · `보스 n · 금액` 과 `보스 선택` 버튼이 있다.
 
 ### 결정 8. 보스 줄 하나에서 난이도와 인원을 고른다
 
 - 첫 줄은 초상 · 이름(별칭) · 내 몫, 둘째 줄은 난이도와 인원이다. 줄 순서는 보스 표의 기준 순서(`bossReferenceOrder`)다.
-- 난이도는 고른 배지 하나에 오른쪽 화살표가 붙어 보인다. 누르면 배지가 그 자리에서 오른쪽으로 늘어나 전체 난이도가 같은
-  높이로 펼쳐진다. 팝오버가 아니라 배지가 넓어지는 것이고, 펼친 동안 옆의 스테퍼를 덮는다. 고르지 않은 난이도도 제 색을
-  흐리게 띤다. 펼치고 접을 때 폭이 늘고 줄어드는 애니메이션이 있다.
+- 난이도는 고른 배지 하나에 오른쪽 화살표가 붙어 보인다. 누르면 모든 난이도 배지가 고른 배지 자리에서 나와 오른쪽 제자리로
+  미끄러지며 펼쳐진다. 배지마다 조금씩 늦게 출발하고 스프링으로 멈춘다. 접을 때는 배지들이 고른 배지 자리로 모인 뒤 사라진다.
+  창의 폭만 넓히면 배지가 펼쳐지는 것이 아니라 가려진 것이 드러나는 것으로 보여서다(사용자 지적). 팝오버가 아니고, 펼친 줄은
+  옆의 스테퍼와 다른 UI 위에 떠서 잘리지 않는다. 고르지 않은 난이도도 제 색을 흐리게 띤다.
 - 인원은 `Stepper`(`sm`)로 바꾼다. 상한은 그 보스 · 난이도의 최대 인원(`getMaxPartySize`)이다. 스테퍼 왼쪽의 `변경` 은
   파티 모달을 열고, 거기서 비율 나누기로 바꾼다. 보스 수익 화면과 같은 방식이고, 공통 디자인을 다시 하기 전까지의 임시
   방식이다. 비율로 나누는 보스는 스테퍼 자리에 비율이 선다.
@@ -138,8 +141,10 @@ Expo SDK 의 공식 모듈이고, 패키지 하나로 동기로 부를 수 있�
 | `app/utility/__tests__/CalculatorBossPickerSheet.test.tsx` | 결정 10: 지금 고른 보스를 담고 여는지, `n / 12` 배지, 12개를 고르면 나머지 타일이 잠기는지 |
 | `app/utility/__tests__/BossProfitCalculatorRecordsScreen.test.tsx` | 결정 11 · 12: 기록 제목이 저장 날짜와 시간인지, 연 기록 표시, 기록을 열면 계산기로 돌아가는지, 지우면 빠지는지 |
 | `components/molecules/DonutRing/__tests__/DonutRing.test.tsx` | 결정 6: 조각마다 그 색으로 그리는지, 조각이 없으면 회색 링, 좁은 조각의 모서리를 줄이는지 |
-| `components/molecules/DifficultyExpander/__tests__/DifficultyExpander.test.tsx` | 결정 8: 접힌 동안 고른 난이도만, 펼치면 모든 난이도와 흐린 나머지, 고르면 알리고 같은 것을 다시 누르면 알리지 않는지 |
+| `components/molecules/DifficultyExpander/__tests__/DifficultyExpander.test.tsx` | 결정 8: 접힌 동안 고른 난이도만, 펼치면 모든 난이도와 흐린 나머지, 펼친 동안 형제 UI 보다 위에 서는지, 고르면 알리고 같은 것을 다시 누르면 알리지 않는지 |
+| `components/organisms/CharacterPortrait/__tests__/CharacterPortrait.test.tsx` | 결정 7: 굵은 빈 링이 진행 링과 같은 두께인지 |
 
 ## 번호 기록
 
 - ADR-074 (2026-10-20): 처음 작성(#193). 같은 날 구현 뒤 기록에 없는 캐릭터는 보스 없이 열도록 정했다
+- ADR-077 (2026-10-20): 결정 8 의 난이도 펼침을 배지가 미끄러져 나오는 애니메이션으로 바꾸고 펼친 줄이 다른 UI 위에 서게 했다. 결정 7 의 레일 링을 두께 3 으로 정했다

@@ -171,7 +171,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-048+070](./adr/ADR-048+070_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 |
 | [ADR-049](./adr/ADR-049_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
 | [ADR-050](./adr/ADR-050_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
-| [ADR-051+075](./adr/ADR-051+075_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
+| [ADR-051+075+076](./adr/ADR-051+075+076_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
 | [ADR-052](./adr/ADR-052_settings_screen.md) | 🟢 | settings | 더보기 · 설정 화면과 안내 |
 | [ADR-053+067](./adr/ADR-053+067_settings_cache-data.md) | 🟢 | settings | 캐시 데이터 삭제 |
 | [ADR-054](./adr/ADR-054_theme_tokens.md) | 🟢 | theme | 테마와 색 토큰 |
@@ -186,4 +186,4 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-063](./adr/ADR-063_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
 | [ADR-071](./adr/ADR-071_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 잘못 적은 값 빼기 · 관리 화면 |
-| [ADR-074](./adr/ADR-074_utility_boss-profit-calculator.md) | 🟢 | utility | 주간 보스 수익 계산기 |
+| [ADR-074+077](./adr/ADR-074+077_utility_boss-profit-calculator.md) | 🟢 | utility | 주간 보스 수익 계산기 |
