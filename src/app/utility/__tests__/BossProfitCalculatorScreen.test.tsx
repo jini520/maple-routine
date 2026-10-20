@@ -81,17 +81,36 @@ beforeEach(() => {
   mockShowSuccess.mockClear()
 })
 
+/** 고른 캐릭터(ocid-1)를 더 보기 메뉴의 보스 관리 값 가져오기로 채운다 */
+async function importSelected(view: Awaited<ReturnType<typeof renderOverlay>>): Promise<void> {
+  await press(view.getByLabelText('더 보기'))
+  await press(view.getByLabelText('보스 관리 값 가져오기'))
+}
+
 describe('BossProfitCalculatorScreen', () => {
-  it('보스 관리 값으로 채우고 합계와 캐릭터별 금액을 적는다', async () => {
+  // 캐릭터 하나만 따져 볼 때 다른 캐릭터의 값을 먼저 걷어 내지 않아도 되게 한다(사용자 결정).
+  it('처음 열면 모든 캐릭터가 비어 있고, 카드 머리에 안내와 보스 선택이 선다', async () => {
+    const view = await renderOverlay(<BossProfitCalculatorScreen />)
+
+    expect(view.getByText('2캐릭터 · 보스 0')).toBeTruthy()
+    expect(view.getByText('이 캐릭터가 잡을 보스를 선택하세요')).toBeTruthy()
+    expect(view.getByLabelText('보스 선택')).toBeTruthy()
+    expect(view.getByTestId('calculator-character-total').props.children).toBe('0')
+  })
+
+  it('보스 관리 값 가져오기는 고른 캐릭터만 채우고, 바닥에 그 캐릭터의 수익이 선다', async () => {
     const view = await renderOverlay(<BossProfitCalculatorScreen />)
     const now = new Date()
     const 루시드 = bossPayoutMeso({ bossKey: 'lucid', difficulty: 'hard', partySize: 1, shares: EVEN }, now)
     const 카링 = bossPayoutMeso({ bossKey: 'kaling', difficulty: 'normal', partySize: 3, shares: EVEN }, now)
-    const 윌 = bossPayoutMeso({ bossKey: 'will', difficulty: 'hard', partySize: 1, shares: EVEN }, now)
 
-    expect(view.getByTestId('calculator-total').props.children).toBe(formatMesoUnits(루시드 + 카링 + 윌))
+    await importSelected(view)
+
+    expect(view.getByText('2캐릭터 · 보스 2')).toBeTruthy()
+    expect(view.getByTestId('calculator-boss-count').props.children).toBe('2 / 12')
+    expect(view.getByTestId('calculator-character-total').props.children).toBe(formatMesoUnits(루시드 + 카링))
+    expect(view.getByTestId('calculator-total').props.children).toBe(formatMesoUnits(루시드 + 카링))
     expect(view.getByText(formatEok(루시드 + 카링))).toBeTruthy()
-    expect(view.getByText('2캐릭터 · 보스 3')).toBeTruthy()
     expect(view.getByTestId('calculator-boss-payout-kaling').props.children).toBe(formatMesoUnits(카링))
   })
 
@@ -101,12 +120,13 @@ describe('BossProfitCalculatorScreen', () => {
 
     const view = await renderOverlay(<BossProfitCalculatorScreen />)
 
-    expect(view.getByText('2캐릭터 · 보스 3')).toBeTruthy()
+    expect(view.getByText('2캐릭터 · 보스 0')).toBeTruthy()
   })
 
   // 금액은 값을 고칠 때마다 다시 센다. 계산 버튼이 없다.
   it('난이도를 펼쳐 바꾸면 그 줄의 몫이 바로 바뀐다', async () => {
     const view = await renderOverlay(<BossProfitCalculatorScreen />)
+    await importSelected(view)
 
     await press(view.getByLabelText('루시드 난이도 하드, 눌러서 바꾸기'))
     await press(view.getByLabelText('루시드 노멀'))
@@ -115,15 +135,20 @@ describe('BossProfitCalculatorScreen', () => {
     expect(view.getByTestId('calculator-boss-payout-lucid').props.children).toBe(formatMesoUnits(노멀))
   })
 
-  it('초기화하면 그 캐릭터는 보스를 고르라는 카드가 된다', async () => {
+  // 보스를 다 빼도 카드는 사라지지 않고 머리만 남는다. 지울 보스가 없으면 초기화를 두지 않는다.
+  it('초기화하면 카드가 머리만 남고, 빈 카드의 메뉴에는 초기화가 없다', async () => {
     const view = await renderOverlay(<BossProfitCalculatorScreen />)
+    await importSelected(view)
 
+    await press(view.getByLabelText('더 보기'))
     await press(view.getByLabelText('초기화'))
 
     expect(view.getByText('이 캐릭터가 잡을 보스를 선택하세요')).toBeTruthy()
+    await press(view.getByLabelText('더 보기'))
+    expect(view.queryByLabelText('초기화')).toBeNull()
   })
 
-  // 계산기는 늘 마지막 기록으로 열리므로, 묻지 않고 덮기만 하면 새 기록을 만들 방법이 없다.
+  // 기록을 연 뒤 묻지 않고 덮기만 하면 그 기록에서 고쳐 새 기록을 만들 방법이 없다.
   it('연 기록이 없으면 묻지 않고 남기고, 연 기록이 있으면 덮을지 새로 남길지 묻는다', async () => {
     const view = await renderOverlay(<BossProfitCalculatorScreen />)
 

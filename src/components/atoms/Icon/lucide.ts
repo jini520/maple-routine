@@ -43,6 +43,7 @@ import CloudDownload from 'lucide-react-native/icons/cloud-download'
 import Crosshair from 'lucide-react-native/icons/crosshair'
 import Crown from 'lucide-react-native/icons/crown'
 import Delete from 'lucide-react-native/icons/delete'
+import Ellipsis from 'lucide-react-native/icons/ellipsis'
 import History from 'lucide-react-native/icons/history'
 import ExternalLink from 'lucide-react-native/icons/external-link'
 import Eye from 'lucide-react-native/icons/eye'
@@ -111,6 +112,8 @@ export const CastleIcon = withIconInterop(Castle)
 export const CrownIcon = withIconInterop(Crown)
 /** 숫자 판의 한 자리 지우개. `NumberPad`. lucide 의 `delete` 는 백스페이스 키 모양이다. */
 export const DeleteIcon = withIconInterop(Delete)
+/** 더 보기 메뉴를 여는 버튼. 주간 보스 수익 계산기의 보스 카드 머리. */
+export const EllipsisIcon = withIconInterop(Ellipsis)
 /** 기록 목록을 여는 버튼. 주간 보스 수익 계산기의 머리. */
 export const HistoryIcon = withIconInterop(History)
 /** 기록 하나를 지우는 버튼. 주간 보스 수익 계산기의 계산 기록. */

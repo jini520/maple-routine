@@ -1,7 +1,8 @@
 /**
  * 계산기 맨 위의 합계 카드. 도넛은 캐릭터별 금액의 비중이고, 옆에 캐릭터별 이름 · 비율 · 금액, 아래 면에 합계가 있다.
  *
- * 조각 색은 테마 색이라 테마를 바꾸면 함께 바뀐다. 다섯 캐릭터까지는 모두 적고, 그보다 많으면 앞의 넷 뒤에 나머지를
+ * 조각 색은 테마 색이라 테마를 바꾸면 함께 바뀐다. 금액이 큰 캐릭터부터 늘어놓고 0 인 캐릭터는 그리지 않는다.
+ * 다섯 캐릭터까지는 모두 적고, 그보다 많으면 큰 넷 뒤에 나머지를
  * `그 외 n캐릭터` 한 줄로 묶어 누르면 팝오버로 보인다. 색만으로 캐릭터를 가르지 않도록 이름을 늘 함께 적는다.
  */
 import { useRef, useState } from 'react'
@@ -21,7 +22,7 @@ import type { ThemeDefinition } from '../../../types/theme'
 const MAX_NAMED = 5
 const NAMED_WHEN_GROUPED = 4
 
-/** 레일 순서대로 쓰는 조각 색. 묶음 줄은 마지막 색이다 */
+/** 금액 순서대로 쓰는 조각 색. 묶음 줄은 마지막 색이다 */
 function sliceColors(definition: ThemeDefinition): readonly string[] {
   return [definition.primary, definition.secondary, definition.third, definition.textMuted, definition.border]
 }
@@ -41,7 +42,12 @@ interface LegendRow {
   grouped?: readonly TotalCardCharacter[]
 }
 
-function legendRows(characters: readonly TotalCardCharacter[], colors: readonly string[]): LegendRow[] {
+/**
+ * 금액이 큰 캐릭터부터 늘어놓고 금액이 0 인 캐릭터는 뺀다. 모두 0 이면 빈 상태임을 보이려고 모든 캐릭터를 그대로 둔다.
+ */
+function legendRows(all: readonly TotalCardCharacter[], colors: readonly string[]): LegendRow[] {
+  const earning = all.filter((character) => character.meso > 0)
+  const characters = earning.length === 0 ? all : [...earning].sort((a, b) => b.meso - a.meso)
   const namedCount = characters.length <= MAX_NAMED ? characters.length : NAMED_WHEN_GROUPED
   const named = characters.slice(0, namedCount).map((character, index) => ({
     key: character.ocid,
@@ -68,7 +74,7 @@ function percentOf(meso: number, total: number): string {
 }
 
 export function TotalCard(props: {
-  /** 레일 순서 */
+  /** 레일 순서. 범례는 금액 순서로 다시 늘어놓는다 */
   characters: readonly TotalCardCharacter[]
   bossCount: number
   /** 레일에서 고른 캐릭터. 범례에서 그 줄만 굵다 */
