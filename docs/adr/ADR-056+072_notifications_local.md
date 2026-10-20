@@ -1,8 +1,8 @@
-# ADR-056 알림 예약과 공지 구독
+# ADR-056+072 알림 예약과 공지 구독
 
 > 🟢 유효
 > 옛 번호: ADR-004 · ADR-146 결정 1 · 2 · 5 · 6 · ADR-227 결정 5 · ADR-259 · ADR-278 · ADR-228 결정 2 · 3 · 정정 1 · 2 · ADR-247 결정 2 · 10 · 정정 1
-> 관련 소스: `features/local-notifications/` · `features/notice/store.ts` · `features/notice/topics.ts` · `features/notice/permission-gate.ts` · `native/adapters/rn-notifications.ts` · `native/adapters/notification-request.ts` · `native/adapters/rn-push.ts` · `app/settings/SettingsNoticeAlertsScreen.tsx` · `index.ts`
+> 관련 소스: `features/local-notifications/` · `features/notice/store.ts` · `features/notice/topics.ts` · `features/notice/permission-gate.ts` · `native/adapters/rn-notifications.ts` · `native/adapters/notification-request.ts` · `native/adapters/rn-push.ts` · `app/settings/SettingsNoticeAlertsScreen.tsx` · `index.ts` · `maple-routine-server` 의 `src/clients/fcm.client.ts`
 
 ## 배경
 
@@ -251,6 +251,18 @@ FCM 구독이 실패했는데 켜졌다고 저장하면 스위치는 켜져 있�
 - **스케줄러 구역**에는 파티 스케줄 알림 스위치가 있고, 그 아래 `미완료 스케줄 알림` · `주간 결산 알림` 은 스위치
   대신 `준비 중` 을 적는다. 켤 수 없는 스위치를 그려 두면 눌러 본 뒤에야 쓸 수 없다는 것을 알게 된다.
 
+### 결정 14. iOS 알림은 로컬 알림과 공지 푸시 모두 소리를 명시한다
+
+iOS 는 알림에 소리가 없으면 무음 알림으로 띄운다. 애플워치는 아이폰 알림을 받아 오지만, 무음 알림은 손목을
+울리지 않고 워치 알림 센터에만 쌓인다. 그래서 사용자는 알림이 오지 않았다고 느낀다(2026-10-20 실기기 관측).
+
+- 로컬 알림은 `toTriggerNotification` 이 `ios: { sound: 'default' }` 를 싣는다. notifee 는 iOS 에서 소리를 지정하지
+  않으면 무음으로 보낸다. 안드로이드는 결정 4 의 채널이 소리를 정하므로 여기서 따로 싣지 않는다.
+- 공지 푸시는 서버의 `FcmClient.send` 가 모든 메시지에 `apns.payload.aps.sound: 'default'` 를 싣는다. FCM 의
+  `notification` 페이로드만으로는 APNs 에 소리가 들어가지 않는다. 발송하는 곳이 이 함수 하나라 여기서 붙인다.
+
+소리를 넣으면 아이폰에서도 알림음이 난다. 무음 모드에서는 진동만 난다. 워치 진동만 따로 켜는 방법은 없다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -258,7 +270,7 @@ FCM 구독이 실패했는데 켜졌다고 저장하면 스위치는 켜져 있�
 | `features/local-notifications/__tests__/reconcile.spec.ts` | 결정 2 · 3: 원장과 계획의 차이만큼 예약 · 취소하는지, 시각과 문구가 같으면 아무것도 안 하는지, 문구만 바뀌어도 다시 예약하는지, 시각 순으로 정한 개수만큼만 예약하고 넘친 원장 항목을 취소하는지 본다. 같은 회차는 같은 id 이고 id 가 양의 정수인지 본다 |
 | `features/local-notifications/__tests__/run.spec.ts` | 결정 2 · 3 · 4: 파티 약속을 `party` 채널로 예약하고 원장에 적는지, 두 번 돌려도 다시 예약하지 않는지, 권한이 없거나 스위치가 꺼지면 취소하는지, 예약 실패는 원장에 남기지 않는지, 레지스트리에 없는 종류를 취소하는지 본다 |
 | `features/local-notifications/__tests__/use-notification-press.test.tsx` | 결정 6: 탭과 꺼진 앱의 첫 탭이 약속을 여는지, 같은 탭이 두 번 와도 한 번만 여는지, 다른 종류는 무시하는지 본다 |
-| `native/adapters/__tests__/notification-request.test.ts` | 결정 4 · 5: 옛 채널 id 와 소리를 유지하는지, id 가 왕복 손실 없이 바뀌고 정수가 아니면 던지는지, 지난 시각 · 지금 · `Invalid Date` 를 던지는지 본다 |
+| `native/adapters/__tests__/notification-request.test.ts` | 결정 4 · 5 · 14: 옛 채널 id 와 소리를 유지하는지, iOS 알림에 소리를 싣는지, id 가 왕복 손실 없이 바뀌고 정수가 아니면 던지는지, 지난 시각 · 지금 · `Invalid Date` 를 던지는지 본다 |
 | `native/adapters/__tests__/rn-notifications.test.ts` | 결정 4 · 5 · 6: 채널을 만든 뒤 예약하는지, 권한 조회가 팝업을 띄우지 않는지, 취소가 예약 때와 같은 id 로 떠 있는 알림까지 내리는지, 리스너를 달기 전에 온 백그라운드 탭을 쌓아 두었다가 넘기는지 본다 |
 | `native/adapters/__tests__/rn-push.test.ts` | 결정 7: 토픽 이름을 그대로 넘기는지, 실패를 삼키지 않는지, iOS 에서 APNs 토큰을 기다리고 끝내 없으면 읽을 수 있는 이유로 던지는지, 안드로이드는 기다리지 않는지 본다 |
 | `features/notice/__tests__/permission-gate.spec.ts` | 결정 9: 처음 한 번만 묻는지, 요청이 던져도 물은 것으로 남는지, 허용하면 기본 셋을 켜고 구독이 실패해도 던지지 않는지 본다 |
@@ -267,7 +279,9 @@ FCM 구독이 실패했는데 켜졌다고 저장하면 스위치는 켜져 있�
 | `storage/__tests__/notice-settings.spec.ts` | 결정 10: 저장이 실패하면 그대로 던지는지 본다 |
 | `app/settings/__tests__/SettingsNoticeAlertsScreen.test.tsx` | 결정 11 · 13: 전체 스위치가 계산 값이고 파티 알림까지 함께 움직이는지, 기기 설정 버튼과 권한 카드가 같은 함수를 부르는지, 권한 카드가 뜨는 조건과 안 뜨는 조건, 실패 이유를 적는지, 왕복을 기다리지 않고 그리는지, 파티 스위치가 맞게 보이는지, 스위치를 누르면 촉각이 나는지 본다 |
 | `app/settings/__tests__/notification-settings-link.spec.ts` | 결정 13: 안드로이드는 알림 설정 인텐트로, iOS 는 앱 설정으로 여는지 본다 |
+| `maple-routine-server` 의 `src/clients/fcm.client.spec.ts` | 결정 14: 보내는 메시지에 APNs 소리를 싣는지 본다 |
 
 ## 번호 기록
 
 - ADR-056 (2026-10-19): 옛 ADR-004 · 146 · 259 · 278 과 ADR-227 결정 5, ADR-228 · 247 의 구독 · 권한 결정을 합쳐 처음 작성
+- ADR-072 (2026-10-20): 결정 14 를 더했다. 그 전에는 iOS 알림에 소리가 없어 애플워치가 진동하지 않았다

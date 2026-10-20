@@ -114,6 +114,8 @@ export function toTriggerNotification(
       title: request.title,
       body: request.body,
       android: { channelId: channelFor(request).id },
+      // 빠지면 iOS 가 무음 알림으로 띄워 애플워치가 진동하지 않는다. 안드로이드 소리는 채널이 정한다.
+      ios: { sound: 'default' },
       ...(request.data === undefined ? {} : { data: request.data }),
     },
     trigger: { type: TriggerType.TIMESTAMP, timestamp },

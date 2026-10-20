@@ -70,6 +70,7 @@ describe('toTriggerNotification', () => {
       title: '주간 보스 리셋',
       body: '아직 안 잡은 보스가 있어요',
       android: { channelId: 'default' },
+      ios: { sound: 'default' },
     })
   })
 
