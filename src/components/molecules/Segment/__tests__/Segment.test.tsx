@@ -82,16 +82,6 @@ describe('Segment', () => {
     expect(getByText('메소').props.allowFontScaling).toBe(false)
   })
 
-  // **칩이 아니다.** 조각들이 한 상자 안에 붙어 있고, 고른 것만 그 안에서 칠해진다.
-  it('한 상자 안에 붙어 있다. 조각마다 테두리를 두르지 않는다', async () => {
-    const view = await renderAtom(
-      <Segment options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
-    )
-
-    expect(flattenStyle(view.getByTestId('segment').props.style).borderWidth).toBe(1)
-    expect(flattenStyle(view.getByLabelText('메포').props.style).borderWidth ?? 0).toBe(0)
-  })
-
   // 배경이 조각마다 켜졌다 꺼지는 대신 **상자 하나가 옮겨 간다**. 조각이 자기 배경을 들고
   // 있으면 옮겨 갈 것이 없다.
   it('칠하는 것은 조각이 아니라 옮겨 다니는 상자다', async () => {

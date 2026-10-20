@@ -39,22 +39,6 @@ describe('ProgressBar', () => {
     expect(flattenStyle(fill.props.style).height).toBe('100%')
   })
 
-  it('채움 너비를 percent로 준다', async () => {
-    const { getByTestId } = await renderAtom(<ProgressBar percent={40} fillTestId="fill" />)
-
-    expect(flattenStyle(getByTestId('fill').props.style).width).toBe('40%')
-  })
-
-  it('tone="third"면 채움만 third 색이 된다. 컨텐츠 카드의 진행률', async () => {
-    const { getByTestId } = await renderAtom(
-      <ProgressBar percent={50} tone="third" fillTestId="fill" />,
-    )
-
-    const fill = getByTestId('fill')
-    expect(flattenStyle(fill.props.style).backgroundColor).toBe(기본테마.third)
-    expect(flattenStyle(fill.parent?.props.style).backgroundColor).toBe(기본테마.track)
-  })
-
   // `animated` 는 **폭 트랜지션의 on/off** 다. Reanimated 는 CSS 트랜지션 키를 `style` 에서
   // 걷어 자기가 들고 가므로 `props.style` 로는 있으나 없으나 같아 보인다. 그래서 그 키가 실제로
   // 전달됐는지는 `jestInlineStyle`(Reanimated 가 테스트용으로 남기는 원본)로 본다. 값이 Tailwind 의

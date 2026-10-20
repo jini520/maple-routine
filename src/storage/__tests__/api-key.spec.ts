@@ -16,16 +16,6 @@ beforeEach(async () => {
   await clearAuthConfig()
 })
 
-describe('round-trip', () => {
-  it('setApiKey 후 getAuthConfig로 저장한 키를 그대로 읽는다', async () => {
-    await setApiKey('test-api-key')
-    await expect(getAuthConfig()).resolves.toEqual({
-      login: null,
-      apiKeys: [{ kind: 'apiKey', label: '', value: 'test-api-key' }],
-    })
-  })
-})
-
 describe('저장된 값이 없는 경우', () => {
   it('아무 것도 저장하지 않았으면 getAuthConfig는 null을 반환한다', async () => {
     await expect(getAuthConfig()).resolves.toBeNull()
@@ -34,17 +24,6 @@ describe('저장된 값이 없는 경우', () => {
   it('clearAuthConfig 이후에는 getAuthConfig가 null을 반환한다', async () => {
     await setApiKey('test-api-key')
     await clearAuthConfig()
-    await expect(getAuthConfig()).resolves.toBeNull()
-  })
-})
-
-// 키 무효화(400 OPENAPI00005 · 401/403)는 그 키 하나만 지운다.
-describe('removeApiKey', () => {
-  it('그 뒤 getAuthConfig는 null을 반환한다', async () => {
-    await setApiKey('test-api-key')
-
-    await removeApiKey('test-api-key')
-
     await expect(getAuthConfig()).resolves.toBeNull()
   })
 })

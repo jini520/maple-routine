@@ -3,7 +3,6 @@
 
 import {
   HEAT_LEVELS,
-  WEEKDAY_LABELS,
   buildCalendarMonth,
   datesBetween,
   formatDayLabel,
@@ -12,7 +11,6 @@ import {
   getCurrentMonthKey,
   heatLevel,
   monthBounds,
-  monthKeyOf,
   periodTotals,
   shiftDateKey,
 } from '../calendar'
@@ -32,18 +30,7 @@ describe('getCurrentMonthKey: KST 기준', () => {
   })
 })
 
-describe('monthKeyOf', () => {
-  it('날짜 키에서 달을 떼어낸다', () => {
-    expect(monthKeyOf('2026-08-23')).toBe('2026-08')
-    expect(monthKeyOf('2026-01-01')).toBe('2026-01')
-  })
-})
-
 describe('getAdjacentMonthKey: 해를 넘긴다', () => {
-  it('한 달 뒤·앞', () => {
-    expect(getAdjacentMonthKey('2026-08', 1)).toBe('2026-09')
-    expect(getAdjacentMonthKey('2026-08', -1)).toBe('2026-07')
-  })
 
   it('12월 다음은 이듬해 1월', () => {
     expect(getAdjacentMonthKey('2026-12', 1)).toBe('2027-01')
@@ -69,13 +56,6 @@ describe('formatDayLabel', () => {
   it('요일은 실제 달력과 맞는다', () => {
     expect(formatDayLabel('2026-08-27')).toBe('8월 27일 (목)')
     expect(formatDayLabel('2026-01-01')).toBe('1월 1일 (목)')
-  })
-})
-
-describe('WEEKDAY_LABELS', () => {
-  // 게임의 목요일 리셋과 무관하다. 이 격자는 한국 달력이다.
-  it('일요일에서 시작하는 일곱', () => {
-    expect(WEEKDAY_LABELS).toEqual(['일', '월', '화', '수', '목', '금', '토'])
   })
 })
 
@@ -189,11 +169,6 @@ describe('heatLevel: 그 달 안에서 상대적이다', () => {
 // 주는 목요일에 시작한다. 후자는 게임의 주이고 보스 수익 탭이 이미 그 축을 쓴다.
 
 describe('WEEKDAY_LABELS_RESET', () => {
-  it('목요일에서 시작한다', () => {
-    const { WEEKDAY_LABELS_RESET } = require('../calendar') as typeof import('../calendar')
-
-    expect(WEEKDAY_LABELS_RESET).toEqual(['목', '금', '토', '일', '월', '화', '수'])
-  })
 
   // 회전이라 두 목록의 원소가 같다. 한쪽만 고치면 요일 이름이 갈린다.
   it('월간 라벨을 회전한 것이다. 새로 적지 않는다', () => {

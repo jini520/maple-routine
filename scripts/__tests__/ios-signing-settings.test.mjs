@@ -9,7 +9,7 @@
  * `CODE_SIGN_IDENTITY` 의 레거시 문자열(`iPhone Developer`)은 더 늦게 드러난다. 아카이브는
  * 통과하고 `-exportArchive` 에서 error 90034 로 떨어진다.
  *
- * @see docs/trouble/2026-08-04-ios-appstore-signing.md
+ * @see docs/foundation/release.md
  */
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'

@@ -29,7 +29,7 @@ import {
 export function installNoopNativePorts(): void {
   // 테스트에서 링크를 눌러도 아무 창도 안 연다. 실제로 무엇으로 불렸는지는 화면 테스트가
   // 이 모듈을 목으로 바꿔 본다.
-  setBrowserPort({ open: async () => {} })
+  setBrowserPort({ open: async () => {}, openAuthSession: async () => null })
 
   // `matchMedia` 없는 환경의 폴백과 같다. 테스트 기본 환경은 `node` 라 문서도 미디어 쿼리도 없다.
   setColorSchemePort({ get: () => 'light' })

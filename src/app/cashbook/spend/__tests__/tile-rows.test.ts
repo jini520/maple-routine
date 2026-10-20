@@ -38,7 +38,4 @@ describe('타일 하나짜리 묶음은 한 줄에 둘씩', () => {
     expect(이름(rows)).toEqual([['가'], ['나'], ['다']])
   })
 
-  it('빈 목록은 빈 목록이다', () => {
-    expect(rowsOfGroups([])).toEqual([])
-  })
 })

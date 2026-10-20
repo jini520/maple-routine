@@ -1,46 +1,15 @@
 /**
- * 기간 네비게이션이 기대는 두 물음. **직전 기간 총액**과 **더 뒤로 갈 수 있나**.
+ * 기간 네비게이션이 기대는 물음. **이전·다음 기간이 어디인가**와 **더 뒤로 갈 수 있나**.
  *
  * 조회는 여기 없다. 창 동기화(`features/schedule-window`)가 진입할 때 창 안 기간을 다 채우므로
  * 이 파일이 API 를 부를 일이 사라졌다.
  */
 
-import { getComparisonPeriodKeys } from '../../lib/boss/boss-profit-delta'
 import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { resetWeekStartOf } from '../../lib/calendar'
-import {
-  findAdjacentPeriodKeyWithRecords,
-  getBossProfitRecords,
-  getMonthlyDefeatDates,
-} from '../../storage/boss-profit'
+import { findAdjacentPeriodKeyWithRecords, getMonthlyDefeatDates } from '../../storage/boss-profit'
 import type { BossCycle } from '../../types'
 import { withSqliteFallback } from './sqlite-guards'
-
-/**
- * 직전 기간 총 수익. SQLite 한 번이면 끝난다.
- *
- * `getComparisonPeriodKeys` 가 그 화면 총액 산식과 짝을 맞춘 키 목록을 준다. 월간 탭이면 직전
- * 달(monthly)과 그 달에 속한 주차들(weekly)이 함께 들어 있고 화면 총액도 그 둘을 더하므로,
- * cycle 로 거르지 않고 전부 합치는 것이 맞다.
- *
- * 기간 상태를 묻지 않는다. 기록이 없는 기간은 그냥 0 이다.
- */
-export async function loadPreviousPeriodTotal(
-  ocids: string[],
-  tab: BossCycle,
-  periodKey: string,
-): Promise<number> {
-  if (ocids.length === 0) {
-    return 0
-  }
-  // 결정석만 센다. 아이템 판매가는 그 주에 실제로 판 값이라 주마다 들쭉날쭉하고, 섞으면 증감이
-  // 이번 주 보스를 얼마나 돌았나 가 아니라 비싼 게 떴나 를 말하게 된다.
-  const records = await withSqliteFallback(
-    getBossProfitRecords(ocids, getComparisonPeriodKeys(tab, periodKey)),
-    [],
-  )
-  return records.reduce((sum, record) => sum + record.payoutMeso, 0)
-}
 
 /**
  * 이전 기간. **기록이 있는 가장 가까운 기간**이고 없으면 `null`(안 움직인다).

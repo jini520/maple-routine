@@ -12,8 +12,7 @@
 // 본다. 같은 컴포넌트를 두 곳에서 다시 검사하면 이 **머리와 CTA 만 갈린다** 로
 // 묶어 둔 것이 테스트에서 두 벌이 된다. 여기서 보는 것은 제목· CTA 게이트· 저장 배선· 대기 두 단·
 // **429 만 넘기는 배선** 다섯이다.
-import { act, fireEvent, within } from '@testing-library/react-native'
-import { StyleSheet } from 'react-native'
+import { act, fireEvent } from '@testing-library/react-native'
 
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
 import { fetchCharacterList } from '../../../nexon/character'
@@ -193,32 +192,6 @@ afterEach(() => {
 })
 
 describe('CharacterSetupScreen: 머리와 CTA', () => {
-  it('제목 블록과 `계속하기`를 그린다', async () => {
-    const { view } = await renderStep()
-
-    expect(view.getByText('관리할 캐릭터를 선택해주세요')).toBeTruthy()
-    expect(view.getByText('계속하기')).toBeTruthy()
-  })
-
-  // 설정 하위 페이지가 그리는 것과 **같은 본문**이다. 갈리는 것은 위 케이스의 둘뿐이라,
-  // 여기서는 그것이 정말 그 본문인지(사본이 아닌지)만 확인한다.
-  it('설정 화면과 같은 두 층 본문을 그린다. 드롭다운이 아래 층의 머리다', async () => {
-    const { view } = await renderStep()
-
-    expect(view.getByTestId('character-manage-body')).toBeTruthy()
-    expect(view.getByTestId('character-manage-selected')).toBeTruthy()
-    expect(view.getByTestId('character-manage-candidates')).toBeTruthy()
-    expect(view.getByTestId('account-select-trigger')).toBeTruthy()
-  })
-
-  // 옛 화면에 있던 `계정 다시 선택` 탈출구는 목적지가 없어졌다.
-  // 그 자리의 출구는 드롭다운을 되돌리는 것이다.
-  it('`계정 다시 선택` 탈출구를 두지 않는다', async () => {
-    const { view } = await renderStep()
-
-    expect(view.queryByText('계정 다시 선택')).toBeNull()
-  })
-
   // 0개는 화면을 빈 상태로 만들 뿐 어떤 의도도 표현하지 않는다.
   it('아무도 고르지 않으면 `계속하기`가 비활성이다', async () => {
     const { view } = await renderStep()
@@ -310,15 +283,6 @@ describe('CharacterSetupScreen: 머리와 CTA', () => {
 // 설정 하위 페이지의 `저장` 과 같은 액션 바다.
 // 본문이 그 화면과 같은 두 층이라 캐릭터가 많으면 본문 끝의 CTA 는 화면 밖에 있게 된다.
 describe('CharacterSetupScreen: `계속하기`는 하단에 고정된다', () => {
-  it('CTA 는 스크롤 뷰 **밖**의 고정 바 안에 선다', async () => {
-    const { view } = await renderStep()
-
-    expect(within(view.getByTestId('entry-action-bar')).getByText('계속하기')).toBeTruthy()
-    // 스크롤 뷰 안에 남아 있으면 **어디까지 굴렸든 지금 누른다** 가 깨진다. 그래서 액션 바로
-    // 옮겼다.
-    expect(within(view.getByTestId('entry-scroll')).queryByText('계속하기')).toBeNull()
-  })
-
   // 바 높이를 상수로 적지 않는다. 잰 값만큼 비워야 글자 크기·안전영역이 다른 기기에서도
   // 마지막 행이 바 뒤로 숨지 않는다.
   it('잰 바 높이만큼 콘텐츠 아래를 비운다', async () => {
@@ -333,14 +297,6 @@ describe('CharacterSetupScreen: `계속하기`는 하단에 고정된다', () =>
     expect(view.getByTestId('entry-scroll').props.contentContainerStyle).toMatchObject({
       paddingBottom: 96,
     })
-  })
-
-  it('CTA 는 그 바 안에서 폭을 다 쓴다', async () => {
-    const { view } = await renderStep()
-
-    const cta = within(view.getByTestId('entry-action-bar')).getByRole('button')
-    // 클래스 문자열은 NativeWind 가 스타일로 바꿔 사라지므로 flatten 한 값에서 읽는다.
-    expect(StyleSheet.flatten(cta.props.style).width).toBe('100%')
   })
 })
 

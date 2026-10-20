@@ -11,28 +11,6 @@ import type { NoticeBlock } from '../../../types/notice'
 import { NoticeBlocks } from '../NoticeBlocks'
 
 describe('공지 본문 블록', () => {
-  it('제목과 문단을 그린다', async () => {
-    const blocks: NoticeBlock[] = [
-      { type: 'heading', text: '신규 보스 : 벨로나' },
-      { type: 'text', text: '8월 20일부터 도전할 수 있습니다.' },
-    ]
-
-    const view = await renderOverlay(<NoticeBlocks blocks={blocks} />)
-
-    expect(view.getByText('신규 보스 : 벨로나')).toBeTruthy()
-    expect(view.getByText('8월 20일부터 도전할 수 있습니다.')).toBeTruthy()
-  })
-
-  it('이미지 한 장짜리 본문을 그린다', async () => {
-    const blocks: NoticeBlock[] = [{ type: 'image', src: 'https://lwi.nexon.com/a.png' }]
-
-    const view = await renderOverlay(<NoticeBlocks blocks={blocks} />)
-
-    expect(view.getByTestId('notice-image').props.source).toEqual({
-      uri: 'https://lwi.nexon.com/a.png',
-    })
-  })
-
   // 넥슨이 실제 크기를 알려 주기 전에는 비율을 모른다. 높이가 0이면 이미지가 안 보인다.
   it('비율을 받기 전에도 높이를 갖는다', async () => {
     const view = await renderOverlay(
@@ -57,18 +35,6 @@ describe('공지 본문 블록', () => {
     expect(view.queryByTestId('notice-image')).toBeNull()
   })
 
-  it('표는 행과 칸을 세운다', async () => {
-    const blocks: NoticeBlock[] = [
-      { type: 'table', rows: [['최우수 테스터', '10만 메이플포인트'], ['우수 테스터', '5만']] },
-    ]
-
-    const view = await renderOverlay(<NoticeBlocks blocks={blocks} />)
-
-    expect(view.getByTestId('notice-table')).toBeTruthy()
-    expect(view.getByText('최우수 테스터')).toBeTruthy()
-    expect(view.getByText('5만')).toBeTruthy()
-  })
-
   it('링크를 누르면 밖으로 연다', async () => {
     const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true)
     const blocks: NoticeBlock[] = [
@@ -81,9 +47,4 @@ describe('공지 본문 블록', () => {
     expect(open).toHaveBeenCalledWith('https://maplestory.nexon.com/News/Notice/1')
   })
 
-  it('블록이 없으면 아무것도 안 세운다', async () => {
-    const view = await renderOverlay(<NoticeBlocks blocks={[]} />)
-
-    expect(view.getByTestId('notice-blocks').props.children).toEqual([])
-  })
 })

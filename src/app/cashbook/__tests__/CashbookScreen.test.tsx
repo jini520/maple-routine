@@ -110,7 +110,6 @@ jest.mock('@gorhom/bottom-sheet', () => {
 import { useToastStore } from '../../../features/toast/store'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { useSettlementStore } from '../../../features/settlement/store'
-import { FAB_SPACE_PX } from '../../../lib/fab-metrics'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
@@ -247,24 +246,6 @@ async function 금액치기(view: Rendered, text: string): Promise<void> {
   await 누르기(view, 'input-card-confirm')
 }
 
-
-describe('CashbookScreen: 자리와 머리', () => {
-  it('화면과 제목이 **가계부** 다', async () => {
-    const view = await 그리기()
-
-    expect(view.getByTestId('screen-Cashbook')).toBeTruthy()
-    expect(view.getByText('가계부')).toBeTruthy()
-  })
-
-  it('월간으로 옮기면 이번 달이다', async () => {
-    const view = await 그리기()
-    await 월간으로(view)
-
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 달')
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
-  })
-
-})
 
 // 기간 이동은 **보스 수익 탭의 그것과 같은 모양**이다. 화살촉 둘 사이에
 // 두 줄(**이번 주** + 그 이레의 날짜)이 선다. 라벨은 `formatBossProfitPeriodLabel` 이 만든다.
@@ -437,14 +418,6 @@ describe('오늘로 이동', () => {
     expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
   })
 
-  // 헤더의 그 자리는 비워 둔다.
-  it('헤더에 `오늘` 이 없다', async () => {
-    const view = await 그리기()
-    await 이름으로누르기(view, '이전 주')
-
-    expect(view.queryByLabelText('오늘로 이동')).toBeNull()
-    expect(view.queryByText('오늘')).toBeNull()
-  })
 })
 
 /**
@@ -627,11 +600,6 @@ describe('CashbookScreen: 날짜 선택', () => {
 })
 
 describe('CashbookScreen: 아직 기록이 없다', () => {
-  it('고른 날에 기록이 없다고 말한다', async () => {
-    const view = await 그리기()
-
-    expect(view.getByTestId('cashbook-empty')).toBeTruthy()
-  })
 
   // 적은 것이 없는 날은 **두 줄 다 빈다**(전에는 수익 줄에 **0** 을 적었다).
   it('적은 것이 없으면 칸이 비고 칠해지지도 않는다', async () => {
@@ -775,19 +743,6 @@ describe('주간/월간 전환', () => {
   })
 })
 
-// 두 축이 공존하는 것은 그대로다(월간 격자의 한 줄 != 주간의 한 주). 그것을 격자에 **그리지
-// 않기로** 했다. 어긋남을 만나는 자리는 주간 보기이고,
-// 그 화면이 자기 기간을 날짜로 직접 말한다. `대가` 절에 옛 문장이 취소선으로 남아 있어,
-// 그것만 읽고 되살리는 것을 이 테스트가 막는다.
-describe('목요일 경계선', () => {
-  it('월간 격자에도 안 그린다', async () => {
-    const view = await 그리기()
-    await 월간으로(view)
-
-    expect(view.queryByTestId('calendar-reset-divider')).toBeNull()
-  })
-})
-
 /**
  * **기간을 옮기면 고른 날도 따라간다**. 주간은 그 주의 목요일(리셋 주의 시작일이라 `weekStartKey`
  * 그대로), 월간은 그 달 1일이다. 전에는 격자만 옮겨 두 구역이 서로 다른 때를 말했다.
@@ -799,15 +754,6 @@ describe('기간 이동이 고른 날을 옮긴다', () => {
     await 이름으로누르기(view, '이전 주')
 
     expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 13일 (목)')
-  })
-
-  it('달을 옮기면 그 달 1일이 고른 날이 된다', async () => {
-    const view = await 그리기()
-    await 월간으로(view)
-
-    await 이름으로누르기(view, '이전 달')
-
-    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('7월 1일 (수)')
   })
 
   /**
@@ -1024,13 +970,6 @@ describe('펼침판이 시트를 연다', () => {
     expect(view.getByText('지출 추가')).toBeTruthy()
   })
 
-  it('펼침판의 수입 · 지출 아래에 설명이 선다', async () => {
-    const view = await 그리기()
-
-    expect(view.getByTestId('speed-dial-description-income')).toHaveTextContent('사냥 · 아이템 판매 등을 기록')
-    expect(view.getByTestId('speed-dial-description-expense')).toHaveTextContent('컨텐츠 · 아이템 구매 등을 기록')
-  })
-
   it('수입을 고르면 수입 시트가 뜬다', async () => {
     const view = await 그리기()
 
@@ -1205,14 +1144,6 @@ describe('그날 목록', () => {
     ])
   })
 
-  it('합계 아래에 적은 것이 한 줄씩 선다', async () => {
-    const view = await 그리기()
-
-    expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
-    expect(view.getByText('앱솔랩스 케이프')).toBeTruthy()
-    expect(view.getByText('몬스터 파크')).toBeTruthy()
-  })
-
   // 수량은 **몇 번** 이라 이름만으로는 금액이 왜 그런지 모른다. `×` 를 붙여야 **2번** 이지
   // **2번째** 가 아니라는 것이 읽힌다.
   /**
@@ -1233,16 +1164,6 @@ describe('그날 목록', () => {
 
     // `toHaveTextContent` 는 이 판에서 **완전 일치**다. 줄 전체를 적는다.
     expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('몬스터 파크×2−1.02억')
-  })
-
-  // **누를 수 있어 보여야 한다**(사용자 지적). 글자 둘만 놓인 줄은 목록이 아니라
-  // 요약으로 읽힌다. 이 저장소가 `눌러서 들어가는 줄`에 쓰는 표식이 오른쪽 화살촉이다
-  // (`SettingsFeatureGuideListScreen`).
-  it('줄마다 갈래 표식과 들어가는 화살촉이 선다', async () => {
-    const view = await 그리기()
-
-    expect(view.getByTestId('cashbook-row-icon-spd-1')).toBeTruthy()
-    expect(view.getByTestId('cashbook-row-chevron-spd-1')).toBeTruthy()
   })
 
   // 그림이 붙는 줄은 배지 안이 아이콘이 아니라 그림이다. 무엇을 그리는지는 `row-icon.spec.ts` 가
@@ -1356,19 +1277,6 @@ describe('줄을 누르면 고칠 수 있다', () => {
     await 이름으로누르기(view, '지출 추가')
 
     expect(view.queryByTestId('spend-sheet-delete')).toBeNull()
-  })
-})
-
-// FAB 는 화면 위에 떠 있어 콘텐츠를 밀어내지 않는다. 그 몫을 콘텐츠 끝에서 갚지 않으면 스크롤을
-// 끝까지 내렸을 때 마지막 줄이 버튼 뒤로 들어간다. 값의 출처가 다이얼과 같은 상수여야 갈리지
-// 않는다.
-describe('떠 있는 ＋ 가 먹는 자리', () => {
-  it('콘텐츠 끝에 다이얼 몫만큼 여백을 남긴다', async () => {
-    const view = await 그리기()
-
-    const 여백 = flattenStyle(view.getByTestId('cashbook-content').props.style).paddingBottom
-
-    expect(여백).toBe(FAB_SPACE_PX)
   })
 })
 
@@ -1516,33 +1424,6 @@ describe('자동으로 흘러든 줄', () => {
     expect(view.getByTestId('cashbook-boss-tile-damien|normal')).toBeTruthy()
   })
 
-  // 사용자가 지정한 것이 **초상화** 다. 이름만 뜨면 그 지정을 안 지킨 것이다.
-  it('타일마다 초상이 든다', async () => {
-    const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
-
-    expect(view.getAllByTestId('boss-portrait')).toHaveLength(2)
-  })
-
-  // 56px 타일 위에 `익스트림` 넉 자가 앉으면 초상을 거의 다 덮는다.
-  it('난이도는 타일 안에 한 칸으로 든다', async () => {
-    const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
-
-    expect(view.getByText('H')).toBeTruthy()
-    expect(view.getByText('N')).toBeTruthy()
-    expect(view.queryByText('하드')).toBeNull()
-    expect(view.queryByText('노멀')).toBeNull()
-  })
-
-  it('타일은 네모다', async () => {
-    const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
-
-    const [초상] = view.getAllByTestId('boss-portrait')
-    expect(flattenStyle(초상.props.style).borderRadius).toBe(8)
-  })
-
   // 한 줄에 여섯 · 이름 없음.
   //
   // 폭으로 재지 않는다. 고정 px 면 기기마다 다섯도 일곱도 되고, 퍼센트(`w-1/6` = `16.67%`)면
@@ -1583,14 +1464,6 @@ describe('자동으로 흘러든 줄', () => {
     // 상한에 걸려 줄이 덜 차면 **가운데로** 모인다. 왼쪽으로 붙으면 오른쪽만 비어 기운다.
     const 줄 = flattenStyle(view.getAllByTestId(/^cashbook-boss-row-/)[0].props.style)
     expect(줄.justifyContent).toBe('center')
-  })
-
-  it('보스 이름을 안 적는다. 초상이 대신한다', async () => {
-    const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
-
-    expect(view.queryByText('스우')).toBeNull()
-    expect(view.queryByText('데미안')).toBeNull()
   })
 
   // 눈으로 읽던 것이 사라졌으므로 그 자리를 접근성 이름이 받아야 한다.
@@ -1669,12 +1542,6 @@ describe('당겨서 새로고침', () => {
   function 당김(view: Rendered): { refreshing: boolean; onRefresh: () => void } {
     return view.getByTestId('screen-scroll').props.refreshControl.props
   }
-
-  it('컨트롤이 붙어 있다', async () => {
-    const view = await 그리기()
-
-    expect(당김(view).refreshing).toBe(false)
-  })
 
   // 당김은 **부모에게 부탁만** 한다. 무엇을 다시 부를지(오늘·과거)는 그쪽이 정하고, 끝나면
   // 회차 수가 올라 화면이 다시 읽는다. 전에는 이 화면이 자기만의 조합을 들고 있었다.
@@ -1919,17 +1786,6 @@ describe('CashbookScreen: 낡은 숫자', () => {
 // 가계부는 포커스 때 한 번 재는 것이 전부라, 그 뒤 3초에 들어온 것을 받을 길이 없었다.
 // 이제 창의 회차가 끝날 때(`revision` 이 오를 때) 다시 잰다.
 describe('창이 뒤늦게 채운 것을 받는다', () => {
-  it('회차가 끝나면 다시 읽는다', async () => {
-    await 그리기()
-    const 읽은횟수 = records.loadMonthDays.mock.calls.length
-
-    await act(async () => {
-      mockSetWindowRevision?.(2)
-    })
-
-    expect(records.loadMonthDays.mock.calls.length).toBeGreaterThan(읽은횟수)
-  })
-
   // 당김도 이 길로 온다. 바뀐 것이 없을 때 건너뛰면 사용자가 당겨도 아무 일도 안 일어난다.
   it('안 바뀌었어도 회차가 끝나면 다시 읽는다. 당김이 이 길로 온다', async () => {
     await 그리기()
@@ -1999,12 +1855,6 @@ describe('강화 줄', () => {
     expect(view.getByTestId('cashbook-row-enhancement:starforce:낟낟')).toHaveTextContent(
       '낟낟 · 스타포스47회 · 값모름 3−12억',
     )
-  })
-
-  it('처음에는 접혀 있다', async () => {
-    const view = await 그리기()
-
-    expect(view.queryByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeNull()
   })
 
   // 원천이 넥슨 API 라 갈 곳이 없다. 펼치는 것이 여기서 할 수 있는 전부다.

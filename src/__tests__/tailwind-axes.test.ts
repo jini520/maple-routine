@@ -14,7 +14,6 @@ import path from 'node:path'
 const repoRoot = path.resolve(__dirname, '../..')
 
 const axes = require('../../tailwind-v4-axes.cjs') as {
-  SPACING_STEP: number
   theme: {
     spacing: Record<string, string>
     borderRadius: Record<string, string>
@@ -38,10 +37,6 @@ describe('Tailwind 메이저 배치', () => {
 })
 
 describe('v4 축 파생', () => {
-  it('간격 배수가 v4 기본값(0.25rem)이다', () => {
-    expect(axes.SPACING_STEP).toBe(0.25)
-  })
-
   // v3 고정 계단에는 없는 값들. 파생이 끊기면 클래스가 통째로 사라진다.
   it.each([
     ['4', '1rem'], // p-4. 화면 패딩(design-system **레이아웃**)

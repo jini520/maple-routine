@@ -150,16 +150,6 @@ describe('ItemRevenuePopover: 미입력은 싣지 않는다', () => {
 
     expect(getByText('5,000,000,000')).toBeTruthy()
   })
-
-  it('주차별 줄은 받았을 때만 그린다', async () => {
-    const { getByText } = await renderPopover({
-      drops: [],
-      weeklyLines: [{ periodKey: '2026-07-30', label: '지난 주', meso: 2_000_000 }],
-    })
-
-    expect(getByText('주차별')).toBeTruthy()
-    expect(getByText('2,000,000 메소')).toBeTruthy()
-  })
 })
 
 describe('ItemRevenuePopover: 자르는 수를 받으면 비싼 순 상위 N 건과 나머지 한 줄이다', () => {

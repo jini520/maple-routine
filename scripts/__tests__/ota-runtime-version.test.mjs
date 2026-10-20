@@ -6,7 +6,6 @@
 // 부팅할 때마다 「스토어 업데이트가 필요해요」를 본다. 그래서 수치로 못 박는다.
 import {
   IN_REVIEW_RUNTIME_VERSIONS,
-  PINNED_RUNTIME_VERSIONS,
   describePinMismatch,
   pinsForPlatforms,
   resolveAcceptedRuntimeVersions,
@@ -71,15 +70,6 @@ describe('describePinMismatch — 판정값과 다르면 멈춘다 ([[ADR-190]] 
 
   it('못박지 않은 플랫폼은 검사하지 않는다', () => {
     expect(describePinMismatch('ios', undefined, { runtimeVersion: COMPUTED.ios, appVersion: '1.0.6' })).toBeNull()
-  })
-})
-
-// 값은 우리가 정한 것이 아니라 바이너리에서 읽어 온 사실이다. 새 스토어 바이너리가 나오면 상수를
-// 고치는 것이 아니라 비운다.
-describe('PINNED_RUNTIME_VERSIONS: 못박은 스토어 바이너리의 지문', () => {
-  // 두 스토어의 1.0.8 이 트리 계산값과 같은 지문으로 게시됐다(iOS 2026-09-12 · 안드로이드 2026-09-13).
-  it('두 플랫폼 다 비었다', () => {
-    expect(PINNED_RUNTIME_VERSIONS).toEqual({})
   })
 })
 

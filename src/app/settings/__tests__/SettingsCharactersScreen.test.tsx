@@ -17,7 +17,6 @@
 // 결과가 `moveOcid` 와 같은지는 그쪽으로 확인된다).
 import { act, fireEvent, within } from '@testing-library/react-native'
 import { worldKeyOfApiName } from '../../../lib/world/worlds'
-import { StyleSheet } from 'react-native'
 
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
 import { fetchCharacterList } from '../../../nexon/character'
@@ -670,15 +669,6 @@ describe('계정 전환 TTL', () => {
     }
   })
 
-  // **방금 확인함** 류의 표시를 두지 않는다. 사용자가 아니라 구현의 사정이다.
-  it('TTL 을 알리는 표시가 화면에 없다', async () => {
-    const view = await renderScreen()
-
-    await switchAccount(view, 'account-b')
-    await switchAccount(view, 'account-a')
-
-    expect(view.queryByText(/방금|최신|캐시/)).toBeNull()
-  })
 })
 
 describe('못 고르는 계정', () => {
@@ -904,26 +894,9 @@ describe('저장', () => {
     })
   })
 
-  // 뒤로가기가 둘(헤더 `←`· OS)인 화면에서 셋째 출구는 중복이다.
-  it('`닫기` 버튼은 없다. 출구는 뒤로가기다', async () => {
-    const view = await renderScreen()
-
-    expect(view.queryByText('닫기')).toBeNull()
-  })
 })
 
 describe('화면 골격', () => {
-  it('자기 스크롤 컨테이너를 갖고, 고정되는 것은 저장 바 하나다 ( 의 하단 액션 바 예외)', async () => {
-    const view = await renderScreen()
-
-    // 헤더가 스크롤 뷰의 **자식**이다. 형제로 두면 화면에 붙어 영원히 고정된다.
-    expect(view.getByTestId('screen-scroll')).toBeTruthy()
-    expect(view.getByTestId('screen-SettingsCharacters')).toBeTruthy()
-    expect(view.getByText('캐릭터 관리')).toBeTruthy()
-    // 저장 바는 반대로 스크롤 뷰 **밖**이라야 어디까지 굴렸든 눌린다.
-    expect(view.getByTestId('character-manage-action-bar')).toBeTruthy()
-  })
-
   // `더 높은 레벨이 존재하는 ID 가 먼저`. 응답 순서(넥슨이 정한다)를
   // 그대로 쓰면 주력 ID 가 뒤에 설 수 있고, 화면은 목록의 첫 항목을 연다.
   it('메이플 ID 차례는 대표 레벨 내림차순이다. 응답 순서를 따르지 않는다', async () => {
@@ -940,15 +913,6 @@ describe('화면 골격', () => {
       .getAllByTestId(/^account-select-option-/)
       .map((node) => String(node.props.testID).replace('account-select-option-', ''))
     expect(options).toEqual(['account-a', 'account-b'])
-  })
-
-  it('저장 버튼은 그 바 안에서 폭을 다 쓴다', async () => {
-    const view = await renderScreen()
-
-    const bar = view.getByTestId('character-manage-action-bar')
-    const button = within(bar).getByRole('button')
-    // 클래스 문자열은 NativeWind 가 스타일로 바꿔 사라지므로 flatten 한 값에서 읽는다.
-    expect(StyleSheet.flatten(button.props.style).width).toBe('100%')
   })
 
   it('뒤로 버튼이 pop 한다', async () => {

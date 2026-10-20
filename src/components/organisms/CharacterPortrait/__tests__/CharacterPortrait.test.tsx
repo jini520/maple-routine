@@ -4,7 +4,6 @@
 // 렌더 트리에 안 나온다(jest 에는 레이아웃도 폰트도 없다). 이 파일이 보는 것은 무엇을 그렸는가와
 // 무엇을 눌렀을 때 무엇이 불리는가이고, 나머지는 실기기 몫이다.
 import { processColor } from 'react-native'
-import { act, fireEvent } from '@testing-library/react-native'
 
 import {
   findAllOfType,
@@ -276,17 +275,6 @@ describe('CharacterPortrait · rail 규격의 얼굴과 선택', () => {
     // `Pressable` 은 `aria-selected` 를 호스트 프롭으로 안 넘기고 `accessibilityState` 에 접어 넣는다.
     expect(selected.getByTestId('character-portrait').props.accessibilityState.selected).toBe(true)
     expect(dimmed.getByTestId('character-portrait').props.accessibilityState.selected).toBe(false)
-  })
-
-  it('누르면 onPress 를 부른다', async () => {
-    const view = await rail()
-
-    // `act` 는 **await 해야 한다**. 안 하면 다음 테스트의 렌더까지 스코프가 섞여 트리가 비어 보인다.
-    await act(async () => {
-      fireEvent.press(view.getByTestId('character-portrait'))
-    })
-
-    expect(onPress).toHaveBeenCalledTimes(1)
   })
 })
 

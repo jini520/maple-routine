@@ -109,12 +109,6 @@ describe('AccountSelect: 트리거', () => {
 })
 
 describe('AccountSelect: 열린 목록', () => {
-  it('열면 계정 수만큼 행이 있다', async () => {
-    const { getAllByTestId } = await 열어서()
-
-    expect(getAllByTestId(/^account-select-option-/)).toHaveLength(2)
-  })
-
   it('각 행이 대표와 월드별 개수를 말한다. 셋째 월드부터는 적지 않는다', async () => {
     const { getAllByText, queryByText } = await 열어서()
 

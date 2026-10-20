@@ -19,6 +19,7 @@ import {
   unitOfCurrency,
   type FreeCurrency,
 } from '../../../lib/cashbook/free-currency'
+import { CASH_QUICK_ADDS, POINT_AMOUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { AmountInput, CharacterField, FieldRow, TextField, useCountField } from '../sheet-fields'
@@ -143,6 +144,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
           icon={currency === 'meso' ? 'meso' : undefined}
           unit={unitOfCurrency(currency)}
           reading={currency === 'meso'}
+          chips={currency === 'cash' ? CASH_QUICK_ADDS : currency === 'point' ? POINT_AMOUNT_QUICK_ADDS : undefined}
           value={typedText}
           onChange={setTypedText}
         />

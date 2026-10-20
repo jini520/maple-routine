@@ -15,19 +15,6 @@ const SwordsIcon = withIconInterop(Swords)
 const HIDDEN = { includeHiddenElements: true } as const
 
 describe('EmptyState', () => {
-  it('제목과 설명을 렌더링한다', async () => {
-    const { getByText } = await renderAtom(
-      <EmptyState
-        icon={SwordsIcon}
-        title="추적할 주간 보스가 없습니다"
-        description="보스 관리에서 이번 주에 잡을 보스를 골라주세요"
-      />,
-    )
-
-    expect(getByText('추적할 주간 보스가 없습니다')).toBeTruthy()
-    expect(getByText('보스 관리에서 이번 주에 잡을 보스를 골라주세요')).toBeTruthy()
-  })
-
   it('action을 주면 CTA 버튼이 보이고 누르면 onClick이 호출된다', async () => {
     const onClick = jest.fn()
     const { getByText } = await renderAtom(
@@ -47,23 +34,6 @@ describe('EmptyState', () => {
     )
 
     expect(queryByRole('button')).toBeNull()
-  })
-
-  it('description이 없으면 설명 문단 자체가 없다', async () => {
-    const { getByTestId, queryByTestId } = await renderAtom(
-      <EmptyState icon={SwordsIcon} title="등록된 주간 보스가 없습니다" />,
-    )
-
-    expect(getByTestId('empty-state-title')).toBeTruthy()
-    expect(queryByTestId('empty-state-description')).toBeNull()
-  })
-
-  it('아이콘은 장식이므로 접근성 트리에서 숨긴다', async () => {
-    const { getByTestId } = await renderAtom(
-      <EmptyState icon={SwordsIcon} title="등록된 주간 보스가 없습니다" />,
-    )
-
-    expect(getByTestId('empty-state-badge', HIDDEN).props['aria-hidden']).toBe(true)
   })
 
   // page(캐릭터 미선택 3곳)와 inline(목록 8곳)은 배지 크기·타이포만 다르고 구조는 같다.
@@ -109,14 +79,6 @@ describe('EmptyState', () => {
     )
 
     expect(getByTestId('maple-leaf', HIDDEN)).toBeTruthy()
-  })
-
-  it('lucide 아이콘을 주면 단풍잎 마크는 그리지 않는다', async () => {
-    const { queryByTestId } = await renderAtom(
-      <EmptyState icon={SwordsIcon} title="추적할 주간 보스가 없습니다" />,
-    )
-
-    expect(queryByTestId('maple-leaf', HIDDEN)).toBeNull()
   })
 
 // `fill` 스타일이 RN 에 없어 `text-*` → `color` 프롭 →

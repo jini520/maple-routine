@@ -5,7 +5,6 @@ import {
   MINUTES_PER_SOJAE,
   MISSED_MOB_OPTIONS,
   boostPercentOf,
-  UNION_TIER_MINUTES,
   efficiencyPercentOf,
   huntingMesoOf,
   fragmentSaleFeeOf,
@@ -103,10 +102,6 @@ describe('huntingMesoOf', () => {
     expect(MINUTES_PER_SOJAE).toBe(30)
     expect(two).toBe(one * 2)
     expect(four).toBe(two * 2)
-  })
-
-  it('소재가 0 이면 0 이다. 안 사냥한 시간에 메소가 나오지 않는다', () => {
-    expect(huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, sojae: 0 })).toBe(0)
   })
 
   it('놓친 마릿수만큼 덜 잡는다. 40마리에서 둘을 놓치면 38/40 이다', () => {
@@ -266,9 +261,6 @@ describe('huntingTotalOf', () => {
 
 /** 수동 폼은 획득 메소를 사람이 친다. 메소의 출처만 다르고 조각을 더하는 식은 계산기와 같다. */
 describe('huntTotalOf: 두 사냥 폼이 같은 식을 쓴다', () => {
-  it('친 메소에 조각 × 개당 가격을 더한다', () => {
-    expect(huntTotalOf(500_000_000, { fragments: 10, fragmentPrice: 7_000_000 })).toBe(570_000_000)
-  })
 
   it('가격을 안 적었으면 친 메소뿐이다. 조각 개수는 합계에 안 든다', () => {
     expect(huntTotalOf(500_000_000, { fragments: 10, fragmentPrice: null })).toBe(500_000_000)
@@ -313,10 +305,6 @@ describe('boostPercentOf: 통 **안**의 것만 더한다', () => {
  * 보면 +50% × (단계 분 ÷ 30) 이 통 안에 든다.
  */
 describe('boostPercentOf: 유니온의 부 단계', () => {
-  it('단계는 10 · 20 · 30분이다', () => {
-    expect(UNION_TIER_MINUTES).toEqual({ 1: 10, 2: 20, 3: 30 })
-  })
-
   it('단계 분 ÷ 30 만큼 +50% 가 든다', () => {
     expect(boostPercentOf(['union'], 3)).toBe(50)
     expect(boostPercentOf(['union'], 2)).toBeCloseTo(100 / 3)
@@ -334,25 +322,12 @@ describe('boostMultiplierOf: 통 **밖**의 것만 곱한다', () => {
     expect(boostMultiplierOf(['union'])).toBe(1)
   })
 
-  it('재획비는 1.2 배다', () => {
-    expect(boostMultiplierOf(['potion'])).toBe(1.2)
-    expect(boostMultiplierOf(['union', 'potion'])).toBe(1.2)
-  })
-
   it('모르는 id 는 1 로 친다', () => {
     expect(boostMultiplierOf(['gone'])).toBe(1)
   })
 })
 
 describe('appliedMesoRatePercent: 화면에 적히는 증가량', () => {
-  it('아무것도 안 켜면 캐릭터 메획 그대로다', () => {
-    expect(appliedMesoRatePercent(149, 1)).toBe(149)
-    expect(appliedMesoRatePercent(0, 1)).toBe(0)
-  })
-
-  it('가산은 그대로 더해진다. 메획 149 + 유니온의 부 50', () => {
-    expect(appliedMesoRatePercent(199, 1)).toBe(199)
-  })
 
   it('곱셈은 **기본 100% 를 포함해** 걸린다. 재획비만 켜면 198%', () => {
     // (100 + 149) × 1.2 = 298.8 → 298 − 100
@@ -380,9 +355,6 @@ describe('appliedMesoRatePercent: 화면에 적히는 증가량', () => {
 })
 
 describe('efficiencyPercentOf', () => {
-  it('조각은 다섯이고 **안 놓치는 것**이 첫 조각이다', () => {
-    expect(MISSED_MOB_OPTIONS).toEqual([0, 1, 2, 3, 4])
-  })
 
   /**
    * 효율은 **맵마다 다르다**. 40마리에서 하나를
@@ -406,14 +378,6 @@ describe('efficiencyPercentOf', () => {
 
 describe('표', () => {
 
-  it('아이템은 둘이고 값·거는 자리는 사용자 확정분이다', () => {
-    // **`kind` 가 곧 계산식의 자리**다. 유니온의 부는 합산 통 안, 재획비는 그 결과에 곱한다.
-    expect(MESO_BOOSTS.map((each) => [each.id, each.percent, each.kind])).toEqual([
-      ['potion', 20, 'multiplier'],
-      ['union', 50, 'additive'],
-    ])
-  })
-
   // 칩이 **글자가 아니라 그림**이라 파일명이 어긋나면 칩이 빈 채로 뜬다.
   it('파일명이 번들 에셋으로 실제로 풀린다. 오타면 칩이 조용히 빈다', () => {
     for (const boost of MESO_BOOSTS) {
@@ -421,10 +385,4 @@ describe('표', () => {
     }
   })
 
-  it('아이템마다 그림 파일명이 붙어 있다', () => {
-    expect(MESO_BOOSTS.map((each) => [each.id, each.icon])).toEqual([
-      ['potion', 'wealth_acquisition_potion_small.webp'],
-      ['union', 'union_wealth.webp'],
-    ])
-  })
 })

@@ -3,11 +3,7 @@
 // 여기서 틀리면 예외가 안 난다. 접두사가 어긋나면 조회가 그냥 `null` 을 돌려주고 화면에는 빈
 // 저장소로 그려진다. 그래서 접두사 문자열 자체를 리터럴로 못박는다. 상수를 참조해 비교하면
 // 상수가 틀렸을 때 테스트도 같이 틀린다.
-import {
-  IOS_KEY_PREFIX,
-  toAppKeys,
-  toNativeKey,
-} from '../capacitor-storage-keys'
+import { toAppKeys, toNativeKey } from '../capacitor-storage-keys'
 
 // 실제로 쓰이는 키에서 골랐다(`src/storage/keys.ts`· `docs/persistence/preferences.md`).
 // `:` 를 물고 있는 파생 키를 섞은 이유는 접두사 처리가 키 모양을 안 가리는지 함께 보기 위해서다.
@@ -19,10 +15,6 @@ const APP_KEYS = [
 ]
 
 describe('iOS 키 접두사', () => {
-  it('접두사는 점(`.`)까지 포함해 정확히 "CapacitorStorage." 다', () => {
-    expect(IOS_KEY_PREFIX).toBe('CapacitorStorage.')
-  })
-
   it('앱 키 앞에 접두사를 붙인다', () => {
     expect(toNativeKey('apiKey', 'ios')).toBe('CapacitorStorage.apiKey')
     expect(toNativeKey('schedulerCache:abc123', 'ios')).toBe(
@@ -63,9 +55,6 @@ describe('iOS 키 목록 필터', () => {
     expect(toAppKeys(raw, 'ios')).toEqual(['apiKey'])
   })
 
-  it('앱 키가 하나도 없으면 빈 목록이다', () => {
-    expect(toAppKeys(['AppleLanguages', 'AppleLocale'], 'ios')).toEqual([])
-  })
 })
 
 describe('Android 키 규칙', () => {

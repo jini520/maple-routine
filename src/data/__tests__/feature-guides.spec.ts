@@ -3,7 +3,6 @@ import { join } from 'node:path'
 import { RELEASE_NOTES } from '../release-notes'
 import {
   FEATURE_GUIDES,
-  FEATURE_GUIDE_GROUP_LABELS,
   FEATURE_GUIDE_GROUP_ORDER,
   findFeatureGuide,
 } from '../feature-guides'
@@ -80,12 +79,6 @@ describe('feature-guides 형식', () => {
   it('한 안내의 groups 에 중복이 없다', () => {
     for (const guide of FEATURE_GUIDES) {
       expect(new Set(guide.groups).size, `${guide.id} 의 groups 에 중복`).toBe(guide.groups.length)
-    }
-  })
-
-  it('모든 그룹에 라벨이 있다', () => {
-    for (const group of FEATURE_GUIDE_GROUP_ORDER) {
-      expect(FEATURE_GUIDE_GROUP_LABELS[group]?.trim()).toBeTruthy()
     }
   })
 
@@ -200,18 +193,5 @@ describe('노트 항목 → 안내 참조 (정정 · 결정 7)', () => {
   it('같은 (안내, 마디) 를 두 노트 항목이 가리키지 않는다', () => {
     const keys = links.map((link) => `${link.guideId}#${link.sectionId ?? ''}`)
     expect(new Set(keys).size, `중복 참조: ${keys.join(', ')}`).toBe(keys.length)
-  })
-})
-
-describe('findFeatureGuide', () => {
-  it('있는 id 의 안내를 찾는다', () => {
-    const existing = FEATURE_GUIDES[0]
-    expect(existing, '안내가 하나도 없으면 이 테스트가 뜻을 잃는다').toBeDefined()
-    expect(findFeatureGuide(existing.id)).toBe(existing)
-  })
-
-  // `findReleaseNote` 와 같은 계약이다. "없다"의 판정은 호출부가 한다(화면은 목록으로 되돌린다).
-  it('없는 id 에는 던지지 않고 undefined 를 돌린다', () => {
-    expect(findFeatureGuide('없는-안내')).toBeUndefined()
   })
 })

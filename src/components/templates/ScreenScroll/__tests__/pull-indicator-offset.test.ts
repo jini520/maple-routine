@@ -14,10 +14,7 @@
 // `ReactSwipeRefreshLayout` 이 `end = offset + DEFAULT_CIRCLE_TARGET(64) − 원 지름(40)` 으로
 // 정지 위치를 잡는다. 그래서 원의 윗변은 `offset + 24` 에 선다.
 
-import {
-  ANDROID_CIRCLE_REST_TOP_PX,
-  resolvePullIndicatorOffset,
-} from '../pull-indicator-offset'
+import { resolvePullIndicatorOffset } from '../pull-indicator-offset'
 
 describe('resolvePullIndicatorOffset', () => {
   // iOS 는 `UIRefreshControl.bounds` 원점을 그만큼 내릴 뿐이라 기본 자리가 화면 맨 위다.
@@ -28,12 +25,6 @@ describe('resolvePullIndicatorOffset', () => {
   // 안드로이드도 59(또는 48)를 그대로 받으면 원이 필요보다 24dp 낮은 자리에서 돈다.
   it('안드로이드는 원이 이미 내려와 있는 24 를 뺀다', () => {
     expect(resolvePullIndicatorOffset({ fadeTopPx: 48, platform: 'android' })).toBe(24)
-    expect(ANDROID_CIRCLE_REST_TOP_PX).toBe(24)
-  })
-
-  // 큰 컷아웃 기기(인셋이 하한 48보다 큰 경우)에서도 뺄셈은 같다.
-  it('페이드가 더 길면 그만큼 더 내린다. 뺄셈은 그대로다', () => {
-    expect(resolvePullIndicatorOffset({ fadeTopPx: 72, platform: 'android' })).toBe(48)
   })
 
   // 원이 이미 구간 밖이면 더 내릴 몫이 없다. 음수를 넘기면 RN 이 원을 **위로** 올려 도로

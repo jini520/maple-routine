@@ -23,20 +23,6 @@ it('결산 중이면 시작 시각과 함께 준다', async () => {
   })
 })
 
-it('결산 중이 아니면 시작 시각이 없다', async () => {
-  jest.spyOn(global, 'fetch').mockResolvedValue(ok({ settling: false, startedAt: null }))
-
-  await expect(fetchSettlement()).resolves.toEqual({ settling: false, startedAt: null })
-})
-
-it('우리 서버의 주소로 부른다', async () => {
-  const spy = jest.spyOn(global, 'fetch').mockResolvedValue(ok({ settling: false, startedAt: null }))
-
-  await fetchSettlement()
-
-  expect(String(spy.mock.calls[0][0])).toContain('mapleroutine.store/v1/settlement')
-})
-
 it('네트워크가 실패하면 null', async () => {
   jest.spyOn(global, 'fetch').mockRejectedValue(new Error('offline'))
 

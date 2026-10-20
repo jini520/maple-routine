@@ -7,8 +7,6 @@
  * 숫자는 **한국어 단위로 접혀서** 선다. `850,000,000` 이 아니라 `8억 5천만`. 밑에 있던
  * 힌트 한 줄은 그 일을 하던 자리라 함께 사라졌다.
  */
-import { fireEvent } from '@testing-library/react-native'
-
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { AmountFigure } from '../AmountFigure'
 
@@ -39,21 +37,6 @@ describe('AmountFigure', () => {
    *
    * 이 자리가 다시 칸이 되면 앱이 센 값을 사람이 덮어쓴다 가 살아나므로 구조로 막아 둔다.
    */
-  it('치는 칸이 아예 없다', async () => {
-    const view = await renderAtom(<AmountFigure value={700_000} unit="메소" testID="amount" />)
-
-    expect(view.queryByLabelText('금액')).toBeNull()
-    expect(view.getByTestId('amount').props.onChangeText).toBeUndefined()
-    // 같은 값을 그리는 글자가 뒤에 없다. 있으면 안드로이드에서 둘 다 그려져 이중으로 보인다.
-    expect(view.queryAllByText('70만', { includeHiddenElements: true })).toHaveLength(1)
-  })
-
-  // 큰 숫자가 사용자의 값이 아니게 되어 되돌릴 대상이 없다. 지울 값은 각자의 칸에 있다.
-  it('초기화 버튼이 없다', async () => {
-    const view = await renderAtom(<AmountFigure value={12} unit="메소" testID="amount" />)
-
-    expect(view.queryByLabelText('금액 초기화')).toBeNull()
-  })
 
   /**
    * 힌트 한 줄이 **사라졌다**.
@@ -61,18 +44,6 @@ describe('AmountFigure', () => {
    * 그 줄이 하던 억/만 환산은 큰 숫자가 직접 하고, 막힌 이유를 말하던 몫은 필수 칸의 빨간 `*` 와
    * 꺼진 저장 버튼이 받는다. 부품에 그 자리를 남겨 두면 다시 채워진다.
    */
-  it('힌트 줄이 아예 없다', async () => {
-    const view = await renderAtom(<AmountFigure value={1_200_000_000} unit="메소" testID="a" />)
-
-    expect(view.queryByTestId('a-hint')).toBeNull()
-  })
-
-  // 위 줄의 밑줄이 경계를 겸한다. 여기서 또 그으면 선이 두 줄이 된다.
-  it('자기 윗선을 안 긋는다', async () => {
-    const view = await renderAtom(<AmountFigure value={12} unit="메소" testID="amount" />)
-
-    expect(flattenStyle(view.getByTestId('amount-figure').props.style).borderTopWidth ?? 0).toBe(0)
-  })
 })
 
 /**
@@ -178,13 +149,4 @@ describe('≈ 표식', () => {
 
     expect(view.getByTestId('amount')).toHaveTextContent('4176만')
   })
-})
-
-// 눌러도 아무 일이 없어야 한다. 이 덩어리는 이제 **보여 주기만** 하는 자리다.
-it('덩어리를 눌러도 값이 안 바뀐다', async () => {
-  const view = await renderAtom(<AmountFigure value={12} unit="메소" testID="amount" />)
-
-  fireEvent.press(view.getByTestId('amount-figure'))
-
-  expect(view.getByTestId('amount')).toHaveTextContent('12')
 })

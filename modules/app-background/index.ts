@@ -5,9 +5,8 @@ import { requireOptionalNativeModule } from 'expo'
  *
  * ## 왜 아직도 네이티브 코드가 필요한가
  *
- * 이 전환의 계획서는 `BackGesturePort` 를 *"삭제 — 네이티브 스택 기본"* 으로 적어 두었고
- * (`docs/migration/parity-inventory.md` §5), 세 메서드 중 둘은 실제로 그렇다(진행률·활성화는
- * react-navigation 이 OS 수준에서 한다). **`moveToBackground()` 하나만 남는다** — 탭 최상위에서
+ * `BackGesturePort` 의 세 메서드 중 둘(진행률·활성화)은 react-navigation 이 OS 수준에서 처리한다.
+ * **`moveToBackground()` 하나만 남는다** — 탭 최상위에서
  * 뒤로가기를 받았을 때 무엇을 할지는 내비게이션 라이브러리가 정해 주지 않는다.
  *
  * 그리고 그 자리의 기본값은 결정 18 이 거부한 것이다. RN 자신의 주석이 그렇게 적어 두었다

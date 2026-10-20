@@ -98,8 +98,6 @@ const WIRED: [string, () => unknown, unknown][] = [
 function resetPorts(): void {
   nativePorts.__resetNativePortsForTest()
   storagePorts.__resetStoragePortsForTest()
-  // 계정 범위는 포트가 아니라 모듈 스코프 값이라 전용 리셋이 없다. 기본값을 다시 넣는 것이
-  // 곧 리셋이다(그 setter 가 이 값의 전부라, 테스트용 뒷문을 따로 열 이유가 없다).
 }
 
 beforeEach(resetPorts)
@@ -145,13 +143,6 @@ describe('installPorts()', () => {
     }
   })
 
-  // 포트가 아니라 **제품 흐름**이지만 배선되는 자리·시점이 같다. 재개 파생이
-  // 이 값을 읽으므로 저장소를 처음 만지는 코드보다 먼저 놓여야 한다. 안 넣으면 core 의 기본값
-  // 'single' 이 그대로 서서 RN 온보딩이 **있지도 않은 계정 선택 단계**로 재개된다(조용히).
-  it('계정 범위를 all 로 주입한다. 주입 전 기본값은 single 이다', () => {
-
-    installPorts()
-  })
 })
 
 // 이 목록을 떠난 것이 셋이다. `ThemeAppearancePort`·`BackGesturePort`·`SystemBarsPort` 셋 다 이제 실구현이

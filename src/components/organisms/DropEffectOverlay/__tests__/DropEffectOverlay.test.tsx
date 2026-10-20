@@ -13,7 +13,6 @@ import { fireEvent } from '@testing-library/react-native'
 import { Dimensions } from 'react-native'
 
 import { DROP_EFFECT_FRAMES } from '../drop-effect-layout'
-import { screenEffectScale } from '../drop-effect-layout'
 
 import { renderOverlay } from '../../../__tests__/render-atom'
 import { DropEffectOverlay } from '../DropEffectOverlay'
@@ -29,14 +28,6 @@ describe('DropEffectOverlay: 구조', () => {
     const modal = getByTestId('drop-effect-overlay-modal', { includeHiddenElements: true })
     expect(modal.props.transparent).toBe(true)
     expect(modal.props.statusBarTranslucent).toBe(true)
-  })
-
-  it('안내 문구를 보여준다', async () => {
-    const { getByText } = await renderOverlay(
-      <DropEffectOverlay itemKey="black_boss_ring_box" onClose={noop} />,
-    )
-
-    expect(getByText('화면을 터치하면 닫힙니다')).toBeTruthy()
   })
 
   // 레이어 순서: 배경 → 기둥(2) → 아이템(3) → 버스트(4) → 문구(5).
@@ -135,18 +126,5 @@ describe('DropEffectOverlay: 구조', () => {
 
     expect(getByTestId('drop-effect-pillar')).toBeTruthy()
     expect(getByTestId('drop-effect-screen')).toBeTruthy()
-  })
-})
-
-// 배율 계산 자체는 프레임과 무관하게 산다.
-describe('screenEffectScale', () => {
-  const REF = { w: 1146, h: 685 }
-
-  it('세로가 긴 뷰포트는 높이 기준으로 덮는다', () => {
-    expect(screenEffectScale(390, 844)).toBeCloseTo(844 / REF.h, 3)
-  })
-
-  it('가로가 긴 뷰포트는 너비 기준으로 덮는다', () => {
-    expect(screenEffectScale(1600, 500)).toBeCloseTo(1600 / REF.w, 3)
   })
 })

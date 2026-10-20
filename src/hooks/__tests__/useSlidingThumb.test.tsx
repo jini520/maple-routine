@@ -29,10 +29,6 @@ describe('상자가 설 자리', () => {
     expect(nextThumbPlacement(서있음, undefined)).toBeNull()
   })
 
-  it('잰 자리를 그대로 받는다', () => {
-    expect(nextThumbPlacement(null, 자리)?.slot).toEqual(자리)
-  })
-
   // 미끄러짐은 여기서 저기로 갔다는 말이다. 열자마자 왼쪽 끝에서 달려오면 사용자가 안 누른
   // 이동을 보게 된다.
   it('처음 서는 자리에서는 안 미끄러진다', () => {

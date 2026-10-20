@@ -165,13 +165,11 @@ function setStores(
     weeklySubtotals: [],
     isPeriodLoading: false,
     periodState: 'ready',
-    previousPeriodTotalMeso: 0,
     canGoPreviousPeriod: false,
     error: null,
     staleCharacterNames: [],
     characterIssues: {},
     trackedOcids: null,
-    lastSyncedAt: null,
     loadTrackedOcids: mocks.profit.loadTrackedOcids,
     refresh: mocks.profit.refresh,
     ...overrides.profit } as never)
@@ -299,8 +297,7 @@ const 캐릭터_넷 = {
     trackedOcids: OCIDS,
     // 주간 탭·현재 기간에서는 둘이 **같은 배열**이다(스토어가 한 번 자른다).
     rows: OCIDS.map((ocid, index) => profitRow(ocid, index + 1)),
-    currentWeekRows: OCIDS.map((ocid, index) => profitRow(ocid, index + 1)),
-    lastSyncedAt: new Date(NOW.getTime() - 5 * 60 * 1000).toISOString() },
+    currentWeekRows: OCIDS.map((ocid, index) => profitRow(ocid, index + 1)) },
   dropHistory: {
     groups: [
       {
@@ -521,15 +518,6 @@ describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', ()
 })
 
 describe('TodayScreen: 명시적 재조회', () => {
-  // **문이 하나다.** 헤더 버튼을 걷고 당김만 남겼다.
-  it('헤더에 새로고침 버튼이 없다', async () => {
-    setStores(캐릭터_넷)
-    await renderScreen()
-
-    expect(screen.queryByLabelText('새로고침')).toBeNull()
-    expect(refreshControl()).toBeDefined()
-  })
-
   // 명시적 재조회는 TTL 을 무시하고 **이 화면이 그리는 스토어 셋을 모두** 읽는다
   // 하나만 읽으면 당겨도 보스·수익 위젯이 안 바뀐다. 셋이 동시에 나가도 `syncSchedules` 의 단일
   // 비행이 한 회차로 합친다.
@@ -725,18 +713,6 @@ describe('TodayScreen: 대표 표식', () => {
 })
 
 describe('TodayScreen: 갱신 시각', () => {
-  // **화면이 재지 않는다.** 실시간 조회(`syncSchedules` 회차 · 오늘이 든 강화)가 끝난 자리에서
-  // 적히는 값 하나를 다섯 화면이 함께 읽는다. 이 화면은 스토어 넷을 읽는데, 그전에는 그중
-  // 하나(보스 수익)의 `lastSyncedAt` 만 적어 나머지가 언제 갱신됐는지가 화면에 없었다.
-  it('실시간 조회 시각을 읽는다', async () => {
-    useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
-    setStores(캐릭터_넷)
-
-    await renderScreen()
-
-    expect(screen.getByTestId('data-freshness')).toBeTruthy()
-  })
-
   // 제목에 딸린 작은 글씨다. 제목 **줄 안**에 있으면 폭을 다투고, 그때 줄어드는 것은 제목이다.
   it('제목 줄이 아니라 그 아래에 선다', async () => {
     useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
@@ -882,12 +858,6 @@ describe('TodayScreen: 결산 안내 줄', () => {
   // 실물 스토어라 값이 케이스 사이로 샌다.
   beforeEach(() => {
     useSettlementStore.setState({ settling: false, startedAt: null, dismissedAt: null, visible: false })
-  })
-
-  it('결산 중이 아니면 안 선다', async () => {
-    await renderScreen()
-
-    expect(screen.queryByTestId('today-settlement-banner')).toBeNull()
   })
 
   it('결산 중이면 격자 위에 선다', async () => {

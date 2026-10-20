@@ -1,5 +1,5 @@
 /**
- * 테마 레지스트리. 등록된 테마 목록과 CSS 커스텀 프로퍼티 생성.
+ * 테마 레지스트리. 등록된 테마 목록과 테마 정의 조회.
  *
  * `storage/` 와 `features/` 가 함께 쓰므로 `lib/` 에 둔다.
  *
@@ -8,15 +8,7 @@
  */
 
 import jobThemesData from '../../data/job-themes.json'
-import type {
-  JobThemes,
-  ThemeBackground,
-  ThemeCategory,
-  ThemeDefinition,
-  ThemeName,
-} from '../../types/theme'
-import { deriveMediaScope } from './theme-derive'
-import { getThemeBackgroundUrl } from '../assets/asset-lookup'
+import type { JobThemes, ThemeCategory, ThemeDefinition, ThemeName } from '../../types/theme'
 
 const JOB_THEMES = jobThemesData as JobThemes
 
@@ -76,64 +68,4 @@ export function isThemeName(value: string): value is ThemeName {
 
 export function getThemeDefinition(name: ThemeName): ThemeDefinition {
   return JOB_THEMES[name]
-}
-
-/** `mediaInkMuted` → `media-ink-muted`. Tailwind 유틸이 참조하는 이름 규칙이다. */
-function toCustomPropertyName(token: string): string {
-  return `--color-${token.replace(/([a-z])([A-Z0-9])/g, '$1-$2').toLowerCase()}`
-}
-
-function declarations(entries: Readonly<Record<string, string>>, indent: string): string {
-  return Object.entries(entries)
-    .map(([token, value]) => `${indent}${toCustomPropertyName(token)}: ${value};`)
-    .join('\n')
-}
-
-/**
- * 배경 이미지 프로퍼티.
- *
- * 배경이 없는 테마는 **한 줄도 내지 않는다**. CSS 쪽 기본값(`--theme-bg-image` 미선언 →
- * `none`)이 그대로 살아 다른 테마의 그림이 안 바뀐다. 슬러그에 해당하는 파일이 없을 때도
- * 마찬가지다(에셋만 사라지고 테마는 산다).
- */
-function backgroundDeclarations(background: ThemeBackground | undefined): string[] {
-  if (background === undefined) return []
-
-  const url = getThemeBackgroundUrl(background.image)
-  if (url === null) return []
-
-  return [
-    `  --theme-bg-image: url("${url}");`,
-    `  --theme-bg-size: ${background.size};`,
-    `  --theme-bg-position: ${background.position};`,
-    `  --theme-bg-dim: ${background.dim};`,
-    `  --theme-bg-fade-top: ${background.fadeTop};`,
-  ]
-}
-
-/**
- * 한 테마의 `:root` + `.media-scope` 규칙.
- *
- * `.media-scope` 안에서 표면·텍스트를 `media-*` 로 다시 묶고 accent 틴트·잉크도 다시 선언한다.
- * 커스텀 프로퍼티는 선언된 요소에서 `var()` 가 해석되므로, 다시 선언하지 않으면 `:root` 의
- * `surface` 기준 값이 그대로 내려온다. 카드 안 배지가 AA 에 미달하던(레테 3.88:1) 원인이
- * 그것이다.
- */
-export function buildThemeCss(theme: ThemeDefinition): string {
-  // mode 는 색이 아니라 의도라, category 는 분류라, background 는 에셋이라 --color-* 로
-  // 내보내지 않는다.
-  const { mode, category, background, ...tokens } = theme
-  void mode
-  void category
-  const scope: Readonly<Record<string, string>> = deriveMediaScope(theme, theme.mode)
-
-  return [
-    ':root {',
-    declarations(tokens, '  '),
-    ...backgroundDeclarations(background),
-    '}',
-    '.media-scope {',
-    declarations(scope, '  '),
-    '}',
-  ].join('\n')
 }

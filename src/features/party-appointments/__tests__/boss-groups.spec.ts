@@ -17,10 +17,6 @@ describe('groupBossesByCharacter', () => {
     expect(keys(groups[0]!.bosses)).toEqual(['limbo', 'bardrix', 'kaling'])
     expect(keys(groups[1]!.bosses)).toEqual(['jupiter'])
   })
-
-  it('보스가 없으면 묶음도 없다', () => {
-    expect(groupBossesByCharacter([])).toEqual([])
-  })
 })
 
 describe('orderByCharacter', () => {

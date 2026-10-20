@@ -1,7 +1,7 @@
 import ExpoModulesCore
 
 /**
- 기존 사용자 데이터를 그대로 읽고 쓰는 모듈([[ADR-127]] 결정 5, `docs/migration/data.md` 결정 1).
+ 기존 사용자 데이터를 그대로 읽고 쓰는 모듈([[ADR-127]] 결정 5, `docs/persistence/capacitor-storage.md` 결정 1).
  복사도 변환도 하지 않는다 — `UserDefaults` 는 프레임워크가 아니라 앱 번들 ID 에 귀속되므로 같은
  `com.mapleroutine.app` 이면 Capacitor 가 쓰던 값이 그냥 읽힌다.
 

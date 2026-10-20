@@ -3,7 +3,6 @@
 // 블러 ×2 를 빼먹으면 그림자가 절반 크기로 나오고, 알파를 미리 안 곱하면 실효값이 세 배가 된다.
 // 둘 다 에러 없이 그려져서 화면에서는 원이 바보다 조금 진하다 로만 보인다.
 import { boxShadowOf } from '../shadow'
-import { FAB_SHADOW } from '../fab-metrics'
 
 /** 테마 `shadowColor` 의 모양. 8자리 hex 이고 끝 두 자리가 알파(`59` = 0.35)다. */
 const SHADOW_COLOR = '#00000059'
@@ -34,17 +33,5 @@ describe('boxShadowOf', () => {
 
   it('알파가 없는 색은 불투명으로 본다', () => {
     expect(boxShadowOf('#123456', { opacity: 0.5, radius: 1, y: 0 })).toBe('0px 0px 2px #12345680')
-  })
-})
-
-// 떠 있는 원 둘이 나눠 쓰는 값. 원이 알약보다 한 겹 위에 떠 있어 반경과 민 거리가 한 걸음 크다.
-describe('FAB_SHADOW', () => {
-  it('원의 그림자가 그 값에서 나온다', () => {
-    expect(boxShadowOf(SHADOW_COLOR, FAB_SHADOW)).toBe('0px 4px 24px #0000003a')
-  })
-
-  // 실효 알파는 하단바 알약과 같은 0.23 이다. 그 값은 실기기에서 고른 것이라 여기서 되짚는다.
-  it('실효 알파가 알약과 같다', () => {
-    expect(FAB_SHADOW.opacity).toBe(0.65)
   })
 })

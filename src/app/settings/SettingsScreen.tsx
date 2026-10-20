@@ -27,9 +27,9 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import type { TabParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { tapFeedback } from '../../native/haptics'
+import { readNoticeCopy } from '../../features/notice/notice-copy'
 import { emptyNoticeText } from '../../features/notice/notice-display'
 import { groupNoticesByKind, refreshNoticeKinds } from '../../features/notice/notice-feed'
-import { getNotices } from '../../storage/notices'
 import { NOTICE_KINDS, type Notice, type NoticeKind } from '../../types/notice'
 import { NoticeBannerRail } from './NoticeBannerRail'
 import { NoticeBannerSkeleton, NoticeLinesSkeleton } from './NoticeSkeleton'
@@ -181,7 +181,7 @@ export function SettingsScreen(): React.JSX.Element {
   useFocusEffect(
     useCallback(() => {
       let alive = true
-      void getNotices()
+      void readNoticeCopy()
         .then((copy) => {
           // 사본에 글이 있는 갈래만 그린다. 빈 갈래를 `[]` 로 내리면 아직 도는 조회를 두고
           // `없습니다` 를 말한다.

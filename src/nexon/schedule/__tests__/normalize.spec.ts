@@ -138,21 +138,6 @@ describe('normalizeSchedulerCharacterState', () => {
     })
   })
 
-  it('주간 quest_state 문자열도 일간과 동일하게 숫자로 파싱한다', () => {
-    const result = normalizeSchedulerCharacterState(baseWire, resolve)
-
-    expect(result.weeklyContents[0]).toEqual({
-      contentKey: 'epic_dungeon_nightmare_paradise',
-      apiName: '에픽 던전 : 악몽선경',
-      kind: 'contents',
-      isRegistered: true,
-      nowCount: 5,
-      maxCount: 0,
-      questState: null,
-    })
-    expect(result.weeklyContents[1].questState).toBe(0)
-  })
-
   // API 난이도 값이 곧 난이도 key 다. 보스 key 는 넘겨받은 함수가 원문 이름으로 찾는다.
   it('difficulty 는 영문 그대로 두고, cycle을 weekly/monthly로, 보스 key 를 resolver 로 채운다', () => {
     const result = normalizeSchedulerCharacterState(baseWire, resolve)
@@ -342,17 +327,6 @@ describe('normalizeSchedulerCharacterState: 등록 난이도 ≠ 처치 난이�
       isComplete: false,
       ownComplete: false,
     })
-  })
-
-  it('등록된 난이도 자체의 complete_flag가 true면 그대로 완료다(승격 로직과 무관)', () => {
-    const result = normalizeSchedulerCharacterState(
-      wireWith([
-        { content_name: '자쿰', difficulty: 'chaos', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'true' },
-      ]),
-      resolve,
-    )
-
-    expect(result.bossContents[0].isComplete).toBe(true)
   })
 })
 

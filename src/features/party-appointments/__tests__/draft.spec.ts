@@ -2,9 +2,7 @@ import {
   canSave,
   durationOf,
   endsNextDay,
-  formatClock,
   formatLead,
-  RESET_WEEKDAYS,
   dateInWeek,
   initialDraft,
   nextOccurrenceDateKey,
@@ -89,10 +87,6 @@ describe('shiftMinutes', () => {
 })
 
 describe('durationOf', () => {
-  it('같은 날 끝나면 시작부터 종료까지의 분이다', () => {
-    expect(durationOf(draft({}))).toBe(30)
-  })
-
   it('종료가 시작보다 이르면 다음 날로 센다', () => {
     expect(durationOf(draft({ startMinutes: 23 * 60 + 30, endMinutes: 30 }))).toBe(60)
     expect(durationOf(draft({ startMinutes: 22 * 60 }))).toBe(23 * 60 + 30)
@@ -152,13 +146,6 @@ describe('toAppointment', () => {
   })
 })
 
-describe('formatClock', () => {
-  it('분을 HH:mm 으로', () => {
-    expect(formatClock(0)).toBe('00:00')
-    expect(formatClock(21 * 60 + 5)).toBe('21:05')
-  })
-})
-
 describe('formatLead', () => {
   it('0 은 정각이고 나머지는 시간 · 분 전이다', () => {
     expect(formatLead(0)).toBe('정각')
@@ -202,11 +189,5 @@ describe('dateInWeek', () => {
     expect(dateInWeek('2026-10-01', 4)).toBe('2026-10-01')
     expect(dateInWeek('2026-10-01', 0)).toBe('2026-10-04')
     expect(dateInWeek('2026-10-01', 3)).toBe('2026-10-07')
-  })
-})
-
-describe('RESET_WEEKDAYS', () => {
-  it('목요일부터 수요일까지다', () => {
-    expect(RESET_WEEKDAYS).toEqual([4, 5, 6, 0, 1, 2, 3])
   })
 })

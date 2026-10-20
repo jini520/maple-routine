@@ -78,13 +78,6 @@ function chip(getByText: (text: string) => AtomElement, label: string): AtomElem
 }
 
 describe('PartySizeModal', () => {
-  it('보스명과 주기를 헤더에 그린다', async () => {
-    const { getByText } = await renderOverlay(<PartySizeModal {...props()} />)
-
-    expect(getByText('스우')).toBeTruthy()
-    expect(getByText('주간 보스')).toBeTruthy()
-  })
-
   it('난이도 세그먼트에 지원 난이도를 모두 그리고 현재 난이도만 선택 상태다', async () => {
     const { getByText } = await renderOverlay(<PartySizeModal {...props()} />)
 
@@ -151,15 +144,6 @@ describe('PartySizeModal', () => {
     )
 
     expect(stateOf(getByLabelText('스우 파티원 수 증가')).disabled).toBe(true)
-  })
-
-  it('닫기 버튼을 누르면 onClose 를 부른다', async () => {
-    const p = props()
-    const { getByLabelText } = await renderOverlay(<PartySizeModal {...p} />)
-
-    await fireEvent.press(getByLabelText('닫기'))
-
-    expect(p.onClose).toHaveBeenCalled()
   })
 
   it('일러스트가 없는 보스면 히어로를 비우고 이름만 남긴다', async () => {

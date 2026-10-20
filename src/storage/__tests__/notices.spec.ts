@@ -1,5 +1,5 @@
 import { installFakePreferences } from './fake-preferences'
-import { getNotices, removeNotice, replaceNotices } from '../notices'
+import { getNotices, replaceNotices } from '../notices'
 import type { Notice, NoticeKind } from '../../types/notice'
 
 let prefs = installFakePreferences()
@@ -14,16 +14,6 @@ function notice(id: string, publishedAt: string, kind: NoticeKind = 'app', body 
 }
 
 describe('공지 사본', () => {
-  it('저장된 것이 없으면 빈 배열', async () => {
-    await expect(getNotices()).resolves.toEqual([])
-  })
-
-  it('넣은 것을 읽는다', async () => {
-    await replaceNotices('app', [notice('a', '2026-09-01T00:00:00Z')])
-
-    await expect(getNotices()).resolves.toEqual([notice('a', '2026-09-01T00:00:00Z')])
-  })
-
   it('최근 발행순으로 정렬한다', async () => {
     await replaceNotices('app', [
       notice('old', '2026-09-01T00:00:00Z'),
@@ -95,23 +85,6 @@ describe('공지 사본', () => {
     await replaceNotices('app', [notice('a', '2026-09-01T00:00:00Z')])
 
     expect((await getNotices()).map((n) => n.id)).toEqual(['game-1', 'a'])
-  })
-
-  // 상세 조회가 404 를 받은 공지.
-  it('id 하나를 뺀다', async () => {
-    await replaceNotices('app', [notice('a', '2026-09-01T00:00:00Z'), notice('b', '2026-09-02T00:00:00Z')])
-
-    await removeNotice('b')
-
-    expect((await getNotices()).map((n) => n.id)).toEqual(['a'])
-  })
-
-  it('없는 id 를 빼도 사본은 그대로다', async () => {
-    await replaceNotices('app', [notice('a', '2026-09-01T00:00:00Z')])
-
-    await removeNotice('없다')
-
-    expect((await getNotices()).map((n) => n.id)).toEqual(['a'])
   })
 
   // 저장된 값이 깨져 있으면 화면이 못 서는 것보다 빈 목록이 낫다.

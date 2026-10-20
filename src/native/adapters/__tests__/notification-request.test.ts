@@ -11,7 +11,7 @@ jest.mock('@notifee/react-native', () => ({
   ...jest.requireActual('@notifee/react-native/dist/types/Trigger'),
 }))
 
-import { AndroidImportance, TriggerType } from '@notifee/react-native'
+import { TriggerType } from '@notifee/react-native'
 
 import {
   channelFor,
@@ -41,10 +41,6 @@ describe('채널', () => {
     expect(NOTIFICATION_CHANNEL.id).toBe('default')
   })
 
-  it('중요도가 Capacitor 와 같은 DEFAULT 다', () => {
-    expect(NOTIFICATION_CHANNEL.importance).toBe(AndroidImportance.DEFAULT)
-  })
-
   // notifee 의 기본값은 "소리 없음"이라 이 값을 빼면 채널이 통째로 무음이 된다.
   it('시스템 기본 알림음을 쓴다', () => {
     expect(NOTIFICATION_CHANNEL.sound).toBe('default')
@@ -52,10 +48,6 @@ describe('채널', () => {
 })
 
 describe('toNotificationId', () => {
-  it('숫자 ID 를 문자열로 바꾼다', () => {
-    expect(toNotificationId(42)).toBe('42')
-  })
-
   // `cancel(id)` 이 `schedule` 한 알림을 지목하려면 이 왕복이 성립해야 한다.
   it.each([0, 1, 42, -7, Number.MAX_SAFE_INTEGER])('%p 는 왕복 손실이 없다', (id) => {
     expect(Number(toNotificationId(id))).toBe(id)
@@ -111,15 +103,6 @@ describe('toTriggerNotification', () => {
 
 // 파티 약속 알림만 따로 끌 수 있게 채널을 둔다. 채널은 한 번 만들면 이름 · 중요도를 못 바꾼다.
 describe('파티 약속 채널', () => {
-  it('party 채널은 HIGH · 소리 있음이다', () => {
-    expect(PARTY_NOTIFICATION_CHANNEL).toMatchObject({
-      id: 'party',
-      name: '파티 스케줄',
-      importance: AndroidImportance.HIGH,
-      sound: 'default',
-    })
-  })
-
   it('요청이 party 를 고르면 그 채널로, 안 고르면 옛 채널로 간다', () => {
     expect(toTriggerNotification(request({ channel: 'party' }), NOW).notification.android?.channelId).toBe('party')
     expect(toTriggerNotification(request(), NOW).notification.android?.channelId).toBe('default')

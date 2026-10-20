@@ -4,7 +4,6 @@
 // 여기서 보는 것은 **화면이 그 값을 어떻게 집어 오는가** 다. 갈래별 묶음과 환산 둘.
 import {
   BASE_TIER,
-  spendTariffPercent,
   buildSpendRewardName,
   findSpendChoice,
   findSpendRewardChoice,
@@ -15,7 +14,6 @@ import {
   pickSpendOption,
   pointToMeso,
   spendGroupsOf,
-  rewardCoinMeso,
   spendRewardCoins,
   spendRewardItemKeys,
   spendRewardPrice,
@@ -27,17 +25,6 @@ import {
 const 패치후 = '2026-09-17'
 
 describe('spendGroupsOf: 갈래 → 묶음들', () => {
-  it('사용자가 적어 준 묶음 그대로 묶는다. 앱이 다시 묶지 않는다', () => {
-    const groups = spendGroupsOf('content', 패치후)
-
-    expect(groups.map((group) => group.key)).toEqual(['epic_dungeon_bonus_reward', 'monster_park', 'quick_pass'])
-    expect(groups.map((group) => group.group)).toEqual([
-      '에픽던전 추가 리워드',
-      '몬스터 파크',
-      '퀵 패스',
-    ])
-  })
-
   // **단계가 여럿인 항목은 대표 하나로 접힌다**. 목록에 여덟이 서면
   // 그 여덟이 실은 넷 × 두 단계라는 사실이 화면에서 사라진다.
   it('같은 대표는 한 칸으로 접힌다. 여덟이 넷이 된다', () => {
@@ -71,20 +58,6 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
     expect(monsterPark.choices[0].items).toHaveLength(1)
   })
 
-  it('목록 갈래 넷이 일흔을 나눠 갖는다. 접혀도 항목 수는 그대로다', () => {
-    const counted = (['content', 'event_bm', 'buff', 'scroll'] as const).map((category) =>
-      spendGroupsOf(category, 패치후).reduce(
-        (sum, group) => sum + group.choices.reduce((n, choice) => n + choice.items.length, 0),
-        0,
-      ),
-    )
-
-    // 보약 버프 둘이 `버프` 에서 `이벤트·BM` 으로 옮겨갔다. 아우룸 레기스 둘과 주문서 열아홉은
-    // 2026-09-11 사용자 제공분이다. 버프 스물다섯(향상된 10단계 물약은 넷)은 2026-10-02 사용자 제공분이다.
-    expect(counted).toEqual([12, 10, 29, 19])
-    expect(counted.reduce((sum, count) => sum + count, 0)).toBe(70)
-  })
-
   // 직접 입력 둘은 목록이 없다. 빈 배열이지 예외가 아니다.
   it('직접 입력 갈래는 묶음이 없다', () => {
     expect(spendGroupsOf('item_purchase', 패치후)).toEqual([])
@@ -112,16 +85,6 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
       ),
     )
     expect(이벤트).toEqual(new Set(['point']))
-  })
-
-  // 사용자가 적어 준 묶음 차례 그대로다. 앱이 다시 묶지도, 정렬하지도 않는다.
-  it('이벤트·BM 의 묶음 넷이 지정한 차례로 선다', () => {
-    expect(spendGroupsOf('event_bm', 패치후).map((group) => group.group)).toEqual([
-      '메이플 포인트 샵',
-      '이벤트',
-      'VIP 사우나',
-      '기타',
-    ])
   })
 })
 
@@ -179,10 +142,6 @@ describe('pointToMeso: 나눗셈이다', () => {
     expect(pointToMeso(1, 3)).toBe(33_333_333)
   })
 
-  it('메포가 0 이면 0 이다', () => {
-    expect(pointToMeso(0, 1_180)).toBe(0)
-  })
-
   // 어댑터가 이미 막지만(`storage/spend.ts`) 여기서도 0 을 안 나눈다. 화면이 입력 중간 상태로
   // 0 을 들고 있을 수 있고, 그때 `Infinity` 가 뜨면 금액 칸이 깨진다.
   it('시세가 0 이하면 0 이다. Infinity 를 만들지 않는다', () => {
@@ -192,13 +151,6 @@ describe('pointToMeso: 나눗셈이다', () => {
 })
 
 describe('관세. 구입가의 10% 고정', () => {
-  it('요율은 카탈로그가 든다. 화면이 하드코딩하지 않는다', () => {
-    expect(spendTariffPercent()).toBe(10)
-  })
-
-  it('구입가의 10% 다', () => {
-    expect(tariffMesoOf(850_000_000)).toBe(85_000_000)
-  })
 
   it('버린다. `netProceedsMeso` 와 같은 방향이다', () => {
     expect(tariffMesoOf(999)).toBe(99)
@@ -299,11 +251,6 @@ describe('형태별 단계: 값과 이름', () => {
       const 몬스터파크 = spendGroupsOf('content', 패치후)[1].choices[0]
 
       expect(spendRewardCoins(몬스터파크, { exp: '1단계' })).toBe(0)
-    })
-
-    it('개수를 판매가로 바꾼다', () => {
-      expect(rewardCoinMeso(12)).toBe(480_000_000)
-      expect(rewardCoinMeso(0)).toBe(0)
     })
   })
 

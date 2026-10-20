@@ -55,13 +55,6 @@ describe('권한', () => {
     await expect(rnNotificationsPort.requestPermission()).resolves.toBe(expected)
   })
 
-  // Android 13+ 의 POST_NOTIFICATIONS 런타임 권한은 notifee 가 이 호출 안에서 처리한다.
-  it('요청은 notifee.requestPermission 을 쓴다', async () => {
-    mocked.requestPermission.mockResolvedValue(settings(AuthorizationStatus.AUTHORIZED))
-    await rnNotificationsPort.requestPermission()
-    expect(mocked.requestPermission).toHaveBeenCalledTimes(1)
-  })
-
   // 조회는 권한 창을 띄우면 안 된다.
   it('조회는 설정만 읽는다', async () => {
     mocked.getNotificationSettings.mockResolvedValue(settings(AuthorizationStatus.DENIED))
@@ -125,18 +118,6 @@ describe('cancel', () => {
     await rnNotificationsPort.cancel(1234)
     expect(mocked.cancelNotification).toHaveBeenCalledWith('1234')
     expect(mocked.cancelTriggerNotification).not.toHaveBeenCalled()
-  })
-})
-
-describe('getPendingCount', () => {
-  it('아직 발화하지 않은 예약을 센다', async () => {
-    mocked.getTriggerNotificationIds.mockResolvedValue(['1', '2', '3'])
-    await expect(rnNotificationsPort.getPendingCount()).resolves.toBe(3)
-  })
-
-  it('예약이 없으면 0 이다', async () => {
-    mocked.getTriggerNotificationIds.mockResolvedValue([])
-    await expect(rnNotificationsPort.getPendingCount()).resolves.toBe(0)
   })
 })
 

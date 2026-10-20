@@ -1,5 +1,5 @@
 import { installFakePreferences } from './fake-preferences'
-import { getPartyAppointments, setPartyAppointments } from '../party-appointments'
+import { getPartyAppointments } from '../party-appointments'
 import type { PartyAppointment } from '../../types/party-appointment'
 
 const LIMBO: PartyAppointment = {
@@ -26,16 +26,6 @@ let prefs = installFakePreferences()
 
 beforeEach(() => {
   prefs = installFakePreferences()
-})
-
-it('한 번도 안 적었으면 빈 목록이다', async () => {
-  expect(await getPartyAppointments()).toEqual([])
-})
-
-it('적은 목록을 그대로 읽는다', async () => {
-  await setPartyAppointments([LIMBO])
-
-  expect(await getPartyAppointments()).toEqual([LIMBO])
 })
 
 it('깨진 JSON 이면 빈 목록이다', async () => {

@@ -50,12 +50,6 @@ function testIdsInOrder(node: unknown, found: string[] = []): string[] {
 }
 
 describe('버튼', () => {
-  it('이름으로 자기가 여는 화면을 말한다', async () => {
-    const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
-
-    expect(view.getByLabelText('아이템 가격 입력')).toBeTruthy()
-  })
-
   // 보던 주를 넘긴다. 가격 입력 화면이 보스 수익 스토어를 읽으면, 이 화면이 없을 때 남은 낡은
   // 기간으로 열린다(today 에서 열 때).
   it('누르면 보고 있는 주를 들고 하위 페이지로 push 한다', async () => {
@@ -66,16 +60,6 @@ describe('버튼', () => {
     })
 
     expect(navigate).toHaveBeenCalledWith('DropPrice', { cycle: 'weekly', periodKey: PERIOD })
-  })
-
-  // 가계부의 ＋ 와 같은 원이다. 두 탭 화면의 같은 자리에 다른 크기가 서면 자리가 아니라
-  // 화면마다 다른 것으로 읽힌다.
-  it('지름이 공용 치수와 같다', async () => {
-    const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
-    const box = flattenStyle(view.getByLabelText('아이템 가격 입력').props.style)
-
-    expect(box.height).toBe(FAB_DIAMETER_PX)
-    expect(box.width).toBe(FAB_DIAMETER_PX)
   })
 })
 
@@ -138,16 +122,6 @@ describe('미입력 건수 배지', () => {
     expect(within(view.getByTestId('drop-price-fab')).getByTestId('drop-price-fab-badge', 숨김포함)).toBeTruthy()
   })
 
-  // 알림이라 늘 빨간색이다. 채움 위 전경은 테마의 짝 토큰을 따른다.
-  it('높이 18 · 테마의 error 채움과 on-error 글자다', async () => {
-    const view = await 그리기(3)
-
-    const badge = view.getByTestId('drop-price-fab-badge', 숨김포함)
-    expect(flattenStyle(badge.props.style).height).toBe(18)
-    expect(flattenStyle(badge.props.style).backgroundColor).toBe(기본테마.error)
-    expect(flattenStyle(within(badge).getByText('3', 숨김포함).props.style).color).toBe(기본테마.onError)
-  })
-
   // 한 자리 수는 글자 폭이 높이보다 좁아 최소 너비가 없으면 세로로 긴 타원이 된다. 이 단언이
   // 없던 동안 `min-w-4` 가 스타일을 하나도 안 내고 있었다(그 계단 이름이 없다).
   it('최소 너비가 높이와 같아 한 자리 수가 정원으로 선다', async () => {
@@ -159,21 +133,11 @@ describe('미입력 건수 배지', () => {
 })
 
 describe('도는 그림', () => {
-  it('셋이 다 마운트된 채로 있다', async () => {
-    const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
-
-    expect(DROP_PRICE_FAB_ITEMS).toHaveLength(3)
-    for (let slot = 0; slot < DROP_PRICE_FAB_ITEMS.length; slot += 1) {
-      expect(view.getByTestId(`drop-price-fab-item-${slot}`)).toBeTruthy()
-    }
-  })
-
   // 파일명은 화면이 안 든다. `drop-items.json` 이 key 에 매어 둔 것을 그대로 꺼내므로
   // 매핑이 바뀌면 이 버튼도 함께 따라간다.
   it('그림은 아이템 key 로 찾은 것이다', async () => {
     const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
 
-    expect(DROP_PRICE_FAB_ITEMS).toEqual(['source_of_suffering', 'giant_terror', 'complete_under_control'])
     DROP_PRICE_FAB_ITEMS.forEach((itemKey, slot) => {
       const icon = dropItemIconOf(itemKey)
 

@@ -9,24 +9,6 @@ function 상태(): { done: number; total: number } {
   return { done, total }
 }
 
-it('시작하면 분모가 서고 분자는 0 이다', () => {
-  const 끝내기 = useRefreshProgress.getState().beginRound()
-  useRefreshProgress.getState().start(84)
-
-  expect(상태()).toEqual({ done: 0, total: 84 })
-  끝내기()
-})
-
-it('끝난 수를 그대로 싣는다', () => {
-  const 끝내기 = useRefreshProgress.getState().beginRound()
-  const slot = useRefreshProgress.getState().start(84)
-
-  useRefreshProgress.getState().advance(slot, 32)
-
-  expect(상태().done).toBe(32)
-  끝내기()
-})
-
 // 수집기가 여럿이다(스케줄러·창·히스토리). 각자 자기 몫을 더해 분모를 만든다.
 it('여러 수집기의 분모를 더한다', () => {
   const 끝내기 = useRefreshProgress.getState().beginRound()

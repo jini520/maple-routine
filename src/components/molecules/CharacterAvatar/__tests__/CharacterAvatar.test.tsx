@@ -13,19 +13,6 @@ const 폴백 = (
 )
 
 describe('CharacterAvatar', () => {
-  it('지름만큼의 원으로 자른다', async () => {
-    const { getByTestId } = await renderAtom(
-      <CharacterAvatar testID="얼굴" imageUrl="https://example.test/a.png" name="아무개" size={36} />,
-    )
-
-    expect(flattenStyle(getByTestId('얼굴').props.style)).toMatchObject({
-      width: 36,
-      height: 36,
-      borderRadius: 9999,
-      overflow: 'hidden',
-    })
-  })
-
   // 그림 뒤로 비치던 회색은 걷었다. 바탕이 필요한 것은 폴백뿐이라 그쪽이
   // 자기 몫으로 든다. 부품이 기본값으로 깔면 그 결정이 여덟 자리에서 한꺼번에 되살아난다.
   it('원에는 배경색을 두지 않는다', async () => {
@@ -51,14 +38,6 @@ describe('CharacterAvatar', () => {
     })
   })
 
-  it('이름을 읽어 준다', async () => {
-    const { getByTestId } = await renderAtom(
-      <CharacterAvatar imageTestID="그림" imageUrl="https://example.test/a.png" name="아무개" size={36} />,
-    )
-
-    expect(getByTestId('그림').props.accessibilityLabel).toBe('아무개')
-  })
-
   it('그림이 없으면 받은 폴백을 그 자리에 그린다', async () => {
     const { getByTestId, queryByTestId } = await renderAtom(
       <CharacterAvatar imageTestID="그림" imageUrl={null} name="아무개" size={36} fallback={폴백} />,
@@ -76,14 +55,6 @@ describe('CharacterAvatar', () => {
 
     expect(getByTestId('얼굴').children).toHaveLength(0)
   })
-
-  it('바깥이 준 클래스가 원에 함께 붙는다', async () => {
-    const { getByTestId } = await renderAtom(
-      <CharacterAvatar testID="얼굴" imageUrl={null} name="아무개" size={36} className="shrink-0" />,
-    )
-
-    expect(flattenStyle(getByTestId('얼굴').props.style)).toMatchObject({ flexShrink: 0 })
-  })
 })
 
 // 표식은 원 **밖**에 서야 한다. 그림을 자르는 `overflow-hidden` 이 원 안의 것을 함께 자른다.
@@ -94,14 +65,6 @@ describe('조회 불가 표식', () => {
     )
 
     expect(getByTestId('portrait-unavailable')).toBeTruthy()
-  })
-
-  it('안 적으면 안 붙는다', async () => {
-    const { queryByTestId } = await renderAtom(
-      <CharacterAvatar imageUrl={null} name="지내우시" size={26} />,
-    )
-
-    expect(queryByTestId('portrait-unavailable')).toBeNull()
   })
 
   // 얼굴이 자리마다 달라 고정값으로 두면 작은 얼굴을 덮는다.

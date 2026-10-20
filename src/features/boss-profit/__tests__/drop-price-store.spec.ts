@@ -208,17 +208,6 @@ describe('load: 그 주에 서는 월간 보스', () => {
     defeatedOn,
   })
 
-  it('주간 키로 열면 그 주가 속한 달의 키도 함께 읽는다', async () => {
-    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
-
-    await useDropPriceStore.getState().load(PERIOD)
-
-    expect(getBossDropRecordsMock).toHaveBeenCalledWith(
-      ['ocid-1'],
-      expect.arrayContaining([PERIOD, MONTH]),
-    )
-  })
-
   it('그 주에 잡은 월간 보스의 드롭이 목록에 든다', async () => {
     getBossDropRecordsMock.mockResolvedValue([월간드롭()])
     getBossProfitRecordsMock.mockResolvedValue([월간수익기록(그주의날)])
@@ -432,6 +421,19 @@ describe('savePrice · excludePrice', () => {
     expect(drops[1]).toEqual(
       expect.objectContaining({ itemKey: 'restraint_ring', boxOriginKey: 'red_boss_ring_box' }),
     )
+  })
+
+  // 비율 칸 값은 카드가 비율 씨앗으로 들고 온 것이다. 균등 기록에 남으면 수수료 계산이 비율 식으로 샌다.
+  it('기본으로 저장하면 내 비율 칸을 비운다', async () => {
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+    await useDropPriceStore.getState().load(PERIOD)
+    const target = useDropPriceStore.getState().groups[0].entries[0]
+
+    await useDropPriceStore.getState().savePrice(target, 1_200_000_000, { mode: 'even' as const, partySize: 3, myShare: 2, sharesTotal: 3 })
+
+    const [, , , , drops] = replaceBossDropRecordsMock.mock.calls[0]
+    expect(drops[0]).toEqual(expect.objectContaining({ priceSplitMode: 'even', pricePartySize: 3 }))
+    expect(drops[0].priceMyShare).toBeUndefined()
   })
 
   it('메모리의 드롭에 식별자가 없으면 저장소가 돌려준 식별자로 보낸다', async () => {

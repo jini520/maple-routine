@@ -12,14 +12,6 @@ import {
 } from '../scheduler/required-level'
 
 describe('참조표 조회', () => {
-  // 값은 절차로 들어온 사용자 제공분이다. 여기서 확인하는 것은 **읽어 오는가** 이지
-  // 값 자체가 아니다(값을 지키는 것은 `data/__tests__` 의 형태 검사다).
-  it('컨텐츠 key 로 요구 레벨을 찾는다. 일간·주간 둘 다', () => {
-    expect(contentRequiredLevel('monster_park')).toBe(105)
-    expect(contentRequiredLevel('epic_dungeon_aurum_regis')).toBe(290)
-    expect(contentRequiredLevel('unknown_content')).toBeNull()
-  })
-
   // 표에 없는 컨텐츠는 요구 레벨을 모른다. 모르는 것을 진행 불가로 단정하지 않는다.
   it('컨텐츠 key 가 없는 항목(null)은 요구 레벨이 없다', () => {
     expect(contentRequiredLevel(null)).toBeNull()

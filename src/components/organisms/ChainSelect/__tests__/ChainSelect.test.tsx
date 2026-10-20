@@ -59,14 +59,26 @@ describe('ChainSelect: 고른 것은 배지로, 남은 것은 자리표시자로
    * 방금 고른 값이 **어디에서 와서 어디에 놓였는지**를 눈이 따라가야 한다. 그래서 새 배지는
    * 고르는 자리인 오른쪽 끝에서 나와 제자리까지 미끄러진다.
    *
-   * 여기서 잴 수 있는 것은 그 애니메이션을 배지에 걸었는가 뿐이다. 실제로 오른쪽에서 오는지는
+   * 배지에 건 `entering` 을 직접 불러 출발점과 도착점을 본다. 화면에서 실제로 움직이는 것은
    * 리애니메이티드가 UI 스레드에서 하는 일이라 사람이 본다.
    */
   it('새 배지는 오른쪽에서 미끄러져 들어온다', async () => {
     const { getByTestId } = await renderOverlay(사슬({ character: 'ocid-1', region: null }))
     const 배지 = getByTestId('hunt-chain-badge-캐릭터').parent
+    let 줄 = 배지?.parent
+    while (줄 && typeof 줄.props.onLayout !== 'function') 줄 = 줄.parent
+    await act(async () => {
+      fireEvent(줄!, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 24 } } })
+    })
 
-    expect(typeof 배지?.props.entering).toBe('function')
+    const 도착 = 40
+    const 시작 = (배지?.props.entering as (v: object) => {
+      initialValues: { originX: number }
+      animations: { originX: unknown }
+    })({ targetOriginX: 도착, targetOriginY: 0, targetWidth: 60, targetHeight: 24 })
+
+    expect(시작.initialValues.originX).toBeGreaterThan(도착)
+    expect(시작.animations.originX).toMatchObject({ toValue: 도착 })
   })
 
   /**

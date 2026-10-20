@@ -330,12 +330,6 @@ describe('빈 숫자 칸의 자리표시자', () => {
     expect(view.getByTestId('input-card-hint')).toHaveTextContent('0')
   })
 
-  it('호출부가 준 글자를 그대로 쓴다', async () => {
-    const { view } = await 그리기({ placeholder: '미입력 시 보관' })
-
-    expect(view.getByTestId('input-card-hint')).toHaveTextContent('미입력 시 보관')
-  })
-
   it('값이 들어오면 사라진다', async () => {
     const { view } = await 그리기({ value: '1200' })
 

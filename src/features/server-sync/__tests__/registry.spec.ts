@@ -14,19 +14,6 @@ import { DROP_PRICE_KIND } from '../drop-price-sync'
 const SYNC_DIR = join(__dirname, '..')
 
 describe('전송 종류 레지스트리', () => {
-  it('지금 있는 종류는 드롭 가격 하나다', () => {
-    expect(Object.keys(SYNC_HANDLERS)).toEqual([DROP_PRICE_KIND])
-  })
-
-  it('표의 종류마다 함수 둘이 다 있다', () => {
-    for (const [kind, handler] of Object.entries(SYNC_HANDLERS)) {
-      expect(typeof handler.read).toBe('function')
-      expect(typeof handler.send).toBe('function')
-      // `kind` 가 빈 문자열이면 대기 표의 칸이 비어 고리가 못 찾는다.
-      expect(kind).not.toBe('')
-    }
-  })
-
   it('`enqueueServerSync` 에 넘기는 이름이 전부 표에 있다', () => {
     // 상수 이름으로 넘기는 것이 규약이다. 문자열을 손으로 적으면 오타가 **안 나감** 으로 조용히
     // 실패하고, 그 오타는 타입 검사에 안 걸린다.

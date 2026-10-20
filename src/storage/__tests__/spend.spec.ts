@@ -304,40 +304,6 @@ describe('getSpendRecordsBetween', () => {
     expect(row).toMatchObject({ itemKey: null, formItemKeys: { sol_erda: 'high_mountain_2' } })
   })
 
-  it('심볼 강화의 두 레벨을 되읽는다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          id: 'spd-5',
-          ocid: null,
-          spent_on: '2026-09-19',
-          category: '심볼 강화',
-          category_key: 'symbol',
-          item: '소멸의 여로 Lv.3 → 7',
-          item_key: 'road_of_vanishing',
-          form: null,
-          form_item_keys: null,
-          item_kind: null,
-          item_kind_key: null,
-          level_from: 3,
-          level_to: 7,
-          quantity: null,
-          meso_amount: 7_700_000,
-          tariff_meso: null,
-          point_amount: null,
-          point_per_100m_meso: null,
-          cash_amount: null,
-          memo: null,
-          recorded_at: '2026-09-19T05:00:00.000Z',
-        },
-      ],
-    })
-    const { getSpendRecordsBetween } = require('../spend') as typeof import('../spend')
-
-    const [row] = await getSpendRecordsBetween('2026-09-01', '2026-09-30')
-    expect(row).toMatchObject({ category: 'symbol', itemKey: 'road_of_vanishing', levelFrom: 3, levelTo: 7, quantity: null })
-  })
-
   it('값이 없으면 빈 배열이다', async () => {
     queryMock.mockResolvedValue({})
     const { getSpendRecordsBetween } = require('../spend') as typeof import('../spend')
@@ -355,13 +321,6 @@ describe('SPEND_CATEGORIES 와 카탈로그', () => {
     for (const category of new Set(spendCatalog.groups.map((group) => group.category))) {
       expect(keys).toContain(category)
     }
-  })
-
-  // 나머지 둘은 **직접 입력**이라 카탈로그에 항목이 없다.
-  it('직접 입력 둘은 카탈로그에 없다', () => {
-    const categories = spendCatalog.groups.map((group) => group.category)
-    expect(categories).not.toContain('item_purchase')
-    expect(categories).not.toContain('etc')
   })
 })
 

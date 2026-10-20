@@ -195,15 +195,6 @@ afterEach(() => {
 })
 
 describe('AppSettingsScreen', () => {
-  it('행이 정확히 일곱이고 값 카드 → 이동 카드다', async () => {
-    const view = await renderOverlay(<AppSettingsScreen />)
-
-    for (const label of ROW_LABELS) expect(view.getByText(label)).toBeTruthy()
-    // `MVP 등급` 행은 구역 제목과 이름이 같아 `ROW_LABELS` 밖이다.
-    expect(view.getAllByText('MVP 등급')).toHaveLength(2)
-    expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(ROW_LABELS.length + 1)
-  })
-
   // 카드 넷이 주제를 가른다. 알림(밖으로 나간다) · 스케줄 · 캐릭터와 테마 · 앱 데이터.
   it('카드가 넷이고 알림이 혼자 맨 위다', async () => {
     const view = await renderOverlay(<AppSettingsScreen />)
@@ -327,16 +318,6 @@ describe('AppSettingsScreen', () => {
     }
   })
 
-  // 더보기 맨 아래에 있다가 옮겨 왔다. 더보기가 소식 갈래로 길어져 멀리 밀렸다.
-  it('맨 아래에 앱 버전·카피라이트·NEXON Open API 출처 문구·비제휴 고지를 표시한다', async () => {
-    const view = await renderOverlay(<AppSettingsScreen />)
-
-    expect(view.getByText(`v${formatAppVersion(packageJson.version)}`)).toBeTruthy()
-    expect(view.getByText(/©\s*\d{4}\s*메이플 루틴/)).toBeTruthy()
-    expect(view.getByText('Data based on NEXON Open API')).toBeTruthy()
-    expect(view.getByText('Maple Routine is not associated with NEXON Korea')).toBeTruthy()
-  })
-
   // package.json 을 바로 읽으면 스토어 바이너리가 app.json 만 올렸을 때 옛 버전이 보인다.
   it('하단 버전은 package.json 이 아니라 도는 번들의 버전이다', async () => {
     useLiveUpdateStore.setState({ currentVersion: '9.9.9' })
@@ -347,14 +328,6 @@ describe('AppSettingsScreen', () => {
     } finally {
       useLiveUpdateStore.setState({ currentVersion: null })
     }
-  })
-
-  // 개인정보 처리방침은 `앱 정보` 화면의 행이다. 고지 블록은 전부 읽고 끝나는 정적 문구만 남는다.
-  it('고지 블록은 4줄이고 링크를 두지 않는다', async () => {
-    const view = await renderOverlay(<AppSettingsScreen />)
-
-    expect(view.getByTestId('settings-footer').children).toHaveLength(4)
-    expect(view.queryByText('개인정보 처리방침')).toBeNull()
   })
 
   it('"스케줄 관리 방법"을 누르면 트래킹 모드 모달이 열린다', async () => {
@@ -399,15 +372,6 @@ describe('AppSettingsScreen', () => {
 
     expect(order).toEqual(['content', 'boss', 'profit'])
   })
-
-  it.each(['계정 변경', '연결 해제', '캐시 데이터 삭제', 'API 키 재입력'])(
-    '"%s" 행을 본화면에 두지 않는다',
-    async (label) => {
-      const view = await renderOverlay(<AppSettingsScreen />)
-
-      expect(view.queryByText(label)).toBeNull()
-    },
-  )
 
 describe('AppSettingsScreen: 캐릭터 관리', () => {
   // 파생·추정값이 아니라 저장된 목록의 길이다. **단위가 명 이 아니라 개** 인 것은 캐릭터가

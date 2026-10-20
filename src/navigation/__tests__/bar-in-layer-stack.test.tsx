@@ -88,26 +88,6 @@ describe('채우지 못하는 아이콘은 활성일 때 굵어진다', () => {
     expect(active.some((width) => width > 1.5)).toBe(thicker)
   })
 
-  // 안쪽 선이 많은 달력 + 시계는 2.2 에서 선이 칸을 메워 뭉갠다. 한 단계 낮춘 1.8 이다.
-  it('파티 스케줄은 활성일 때 1.8, 다른 굵어지는 탭은 2.2 다', async () => {
-    await render(<NavigationHarness />)
-    await press('bar-group-schedule')
-    await press('bar-sub-Appointments')
-
-    expect(Math.max(...strokes('bar-sub-Appointments'))).toBe(1.8)
-
-    await press('bar-sub-Content')
-    expect(Math.max(...strokes('bar-sub-Content'))).toBe(2.2)
-  })
-
-  // 통계는 오르는 화살표(`TrendingUp`)다. 막대 그림에서 바꿨다(사용자).
-  it('통계 탭은 오르는 화살표 그림이다', async () => {
-    await render(<NavigationHarness />)
-    await press('bar-group-ledger')
-
-    expect(JSON.stringify(screen.getByTestId('bar-sub-Stats'))).toContain('M16 7h6v6')
-  })
-
   it('비활성은 어느 그림이든 기본 굵기다', async () => {
     await render(<NavigationHarness />)
 
@@ -183,21 +163,6 @@ describe('바는 **지금 페이지** 가 정하는 층을 그린다', () => {
     expect(screen.getByTestId('bar-back')).toBeTruthy()
  // 하위 행이 떴으면 그룹 행은 자리를 비운다. 한 줄에 두 층이 겹칠 수 없다.
     expect(screen.queryByTestId('bar-group-schedule')).toBeNull()
-  })
-
- // 헤더 버튼으로 열던 하위 페이지가 하위 행의 셋째 항목이 됐다. 여기서 물을
- // 것은 **바에 섰는가** 가 아니라 **눌러서 그 화면이 열리는가** 다(라우트 표만 고치고 내비게이터에
- // 안 꽂으면 바에는 서고 화면은 안 바뀐다. 2026-08-13 설정 탭 사고와 같은 부류).
-  // 보스 관리는 바에서 빠져 설정에서 여는 하위 페이지가 됐다. 스케줄러 하위 행은 파티 스케줄이 맨 앞이다.
-  it('스케줄 하위 행은 파티 스케줄 · 컨텐츠 · 보스이고 보스 관리가 없다', async () => {
-    await render(<NavigationHarness />)
-
-    await press('bar-group-schedule')
-
-    expect(screen.getByTestId('bar-sub-Appointments')).toBeTruthy()
-    expect(screen.getByTestId('bar-sub-Content')).toBeTruthy()
-    expect(screen.getByTestId('bar-sub-Boss')).toBeTruthy()
-    expect(screen.queryByTestId('bar-sub-BossManage')).toBeNull()
   })
 
   it('하위가 없는 그룹은 그룹 행을 유지한다. ← 도 안 선다', async () => {

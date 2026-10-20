@@ -96,7 +96,7 @@ export const rnAdsPort: AdsPort = {
     if (adId() === null) return false
 
     const ad = loadedAd
-    // 성공이든 실패든 이 광고는 소진됐다고 본다(core `showInterstitial` 의 `finally` 와 같은 판단).
+    // 성공이든 실패든 이 광고는 소진됐다고 본다.
     // 실패한 광고를 다시 띄우려 매달리면 같은 실패를 반복한다.
     loadedAd = null
     if (ad === null) return false

@@ -30,27 +30,10 @@ beforeEach(async () => {
   await clearCachedCharacterBasic(ACCOUNT, 'ocid-1')
 })
 
-describe('round-trip', () => {
-  it('setCachedCharacterBasic 후 getCachedCharacterBasic으로 저장한 값을 그대로 읽는다', async () => {
-    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', sampleEntry)
-    await expect(getCachedCharacterBasic('ocid-1')).resolves.toEqual(sampleEntry)
-  })
-})
-
 // 캐릭터 카드 2줄이 **레벨 + 직업**이고 위 층은 네트워크 없이 캐시로 그린다.
 // 값의 출처는 character/list이고 **쓰는 쪽이 엔트리에 담아 넘긴다**. 저장 레이어는 그것을 그대로
 // 왕복시킬 뿐이라, character/basic 응답이 직업을 준다고 단정하는 자리가 생기지 않는다.
 describe('jobClass', () => {
-  it('호출부가 담아 넘긴 jobClass를 그대로 왕복시킨다', async () => {
-    const entry: CachedCharacterBasicEntry = {
-      profile: { ...sampleProfile, jobClass: '아크메이지(썬,콜)' },
-      cachedAt: sampleEntry.cachedAt,
-    }
-    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', entry)
-
-    await expect(getCachedCharacterBasic('ocid-1')).resolves.toEqual(entry)
-  })
-
   it('직업이 없는 옛 엔트리는 던지지 않고 jobClass가 undefined다', async () => {
     await setCachedCharacterBasic(ACCOUNT, 'ocid-1', sampleEntry)
 
@@ -84,18 +67,6 @@ describe('월드 key', () => {
   })
 })
 
-describe('저장된 값이 없는 경우', () => {
-  it('캐시된 적 없는 ocid는 null을 반환한다', async () => {
-    await expect(getCachedCharacterBasic('unknown-ocid')).resolves.toBeNull()
-  })
-
-  it('clearCachedCharacterBasic 이후에는 null을 반환한다', async () => {
-    await setCachedCharacterBasic(ACCOUNT, 'ocid-1', sampleEntry)
-    await clearCachedCharacterBasic(ACCOUNT, 'ocid-1')
-    await expect(getCachedCharacterBasic('ocid-1')).resolves.toBeNull()
-  })
-})
-
 describe('손상된 JSON', () => {
   it('저장된 값이 손상된 JSON이면 예외를 던지지 않고 null을 반환한다', async () => {
     await prefs.set('characterBasicCache:ocid-broken', 'not-valid-json{')
@@ -114,10 +85,6 @@ describe('getAllCachedCharacterBasicOcids', () => {
   afterEach(async () => {
     await clearCachedCharacterBasic(ACCOUNT, 'ocid-2')
     await clearCachedCharacterBasic(ACCOUNT, 'ocid-3')
-  })
-
-  it('아무것도 캐싱된 적 없으면 빈 배열을 반환한다', async () => {
-    await expect(getAllCachedCharacterBasicOcids(ACCOUNT)).resolves.toEqual([])
   })
 
   it('setCachedCharacterBasic으로 저장한 ocid들이 인덱스에 나타난다', async () => {

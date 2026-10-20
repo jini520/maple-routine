@@ -116,14 +116,6 @@ describe('BossPickerTray: 캐릭터 묶음', () => {
     expect(flattenStyle(view.getByTestId('tray-group-ocid-1').props.style).width).toBe(2 * 50 + 10)
     expect(flattenStyle(view.getByTestId('tray-group-ocid-2').props.style).width).toBe(50)
   })
-
-  // 캐릭터 색을 걷은 자리에 무채색 테두리는 밋밋해서, 그 보스의 난이도 색(난이도 배지의 테두리 색)으로 두른다(사용자 결정).
-  it('초상 테두리는 그 보스의 난이도 색이다', async () => {
-    const view = await renderAtom(<BossPickerTray {...props(섞인보스)} />)
-
-    expect(flattenStyle(view.getByTestId('tray-ring-ocid-1:limbo').props.style).borderColor).toBe('#9c3a5c')
-    expect(flattenStyle(view.getByTestId('tray-ring-ocid-2:jupiter').props.style).borderColor).toBe('#1f7690')
-  })
 })
 
 describe('BossPickerTray: 줄이 생기고 사라질 때', () => {

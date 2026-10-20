@@ -127,14 +127,6 @@ describe('applyKnownUnavailable', () => {
     expect(views[0].items).toEqual([1, 2, 3])
   })
 
-  it('원장이 조용하면 안 건드린다', async () => {
-    getScheduleProbeLedgerMock.mockResolvedValue(원장(false))
-
-    const views = await applyKnownUnavailable([뷰('a')], (view) => view)
-
-    expect(views[0].error).toBeNull()
-  })
-
   it('빈 목록이면 조회조차 안 한다', async () => {
     await expect(applyKnownUnavailable([], (view) => view)).resolves.toEqual([])
     expect(getScheduleProbeLedgerMock).not.toHaveBeenCalled()

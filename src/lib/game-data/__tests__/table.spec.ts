@@ -1,12 +1,6 @@
 import { bundledTable, createTable, derive } from '../table'
 
 describe('createTable', () => {
-  it('처음에는 넘긴 값이다', () => {
-    const table = createTable({ rows: [1] })
-
-    expect(table.get()).toEqual({ rows: [1] })
-  })
-
   it('표를 바꾸고 구독자에게 알린다', () => {
     const table = createTable({ rows: [1] })
     const listener = jest.fn()

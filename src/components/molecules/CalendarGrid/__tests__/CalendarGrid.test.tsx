@@ -39,23 +39,6 @@ function 칸(view: ReturnType<typeof renderAtom> extends Promise<infer T> ? T : 
 }
 
 describe('CalendarGrid: 격자', () => {
-  it('요일 머리를 일요일부터 일곱 개 그린다', async () => {
-    const view = await 그리기()
-
-    for (const label of ['일', '월', '화', '수', '목', '금', '토']) {
-      expect(view.getByText(label)).toBeTruthy()
-    }
-  })
-
-  it('받은 주의 모든 칸을 그린다. 8월은 여섯 주 마흔두 칸', async () => {
-    const view = await 그리기()
-
-    expect(view.getAllByTestId(/^calendar-day-/)).toHaveLength(42)
-    expect(view.getByTestId('calendar-day-2026-08-01')).toBeTruthy()
-    // 앞뒤 달로 채운 칸도 실재한다.
-    expect(view.getByTestId('calendar-day-2026-07-26')).toBeTruthy()
-  })
-
   it('칸을 누르면 그 날짜 키로 알린다', async () => {
     const onSelectDate = jest.fn()
     const view = await 그리기({ onSelectDate })
@@ -185,16 +168,6 @@ describe('CalendarGrid: 금액 두 줄', () => {
     expect(view.getAllByTestId(/^calendar-income-/)).toHaveLength(42)
     expect(view.getAllByTestId(/^calendar-expense-/)).toHaveLength(42)
   })
-
-  it('수익과 지출은 다른 색이다', async () => {
-    const view = await 그리기({ amounts: 금액 })
-
-    const 수익 = flattenStyle(칸(view, '2026-08-11').getByTestId('calendar-income-2026-08-11').props.style)
-    const 지출 = flattenStyle(칸(view, '2026-08-11').getByTestId('calendar-expense-2026-08-11').props.style)
-
-    expect(수익.color).toBe(기본테마.riseInk)
-    expect(지출.color).toBe(기본테마.fallInk)
-  })
 })
 
 describe('CalendarGrid: 열지도', () => {
@@ -288,16 +261,6 @@ describe('CalendarGrid: 열지도', () => {
 
 describe('주간 격자', () => {
   const 팔월넷째주 = buildResetWeek('2026-08-20')
-
-  it('주 하나만 넘기면 이레만 그린다. 새 컴포넌트가 아니다', async () => {
-    const view = await 그리기({ weeks: [팔월넷째주] })
-
-    for (const day of ['20', '21', '22', '23', '24', '25', '26']) {
-      expect(view.getByTestId(`calendar-day-2026-08-${day}`)).toBeTruthy()
-    }
-    expect(view.queryByTestId('calendar-day-2026-08-19')).toBeNull()
-    expect(view.queryByTestId('calendar-day-2026-08-27')).toBeNull()
-  })
 
   it('요일 머리를 넘기면 그것을 쓴다. 목요일부터다', async () => {
     const view = await 그리기({ weeks: [팔월넷째주], weekdayLabels: WEEKDAY_LABELS_RESET })

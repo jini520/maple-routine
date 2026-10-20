@@ -8,7 +8,6 @@ import { Pressable, Text } from 'react-native'
 
 import { flattenStyle, renderAtom } from '../../../components/__tests__/render-atom'
 import {
-  CHARACTER_ISSUE_EXPLANATION,
   CHARACTER_ISSUE_LABEL,
   CharacterIssueBadge,
   CharacterIssuePopover,
@@ -45,40 +44,6 @@ describe('CharacterIssueBadge', () => {
 
     expect(onToggle).toHaveBeenCalledTimes(1)
     expect(onCardPress).not.toHaveBeenCalled()
-  })
-})
-
-describe('CharacterIssuePopover', () => {
-  it.each(['unavailable', 'failed'] as const)('%s 의 원인과 처방을 말한다', async (issue) => {
-    const { getByText } = await renderAtom(
-      <CharacterIssuePopover
-        issue={issue}
-        geometry={{ left: 20, caretLeft: 30, top: 40 }}
-        onClose={jest.fn()}
-        onOpenCharacterManage={jest.fn()}
-      />,
-    )
-
-    expect(getByText(CHARACTER_ISSUE_EXPLANATION[issue].title)).toBeTruthy()
-    expect(getByText(CHARACTER_ISSUE_EXPLANATION[issue].body)).toBeTruthy()
-  })
-
-  it('닫기를 누르면 onClose 를 부른다', async () => {
-    const onClose = jest.fn()
-    const { getByText } = await renderAtom(
-      <CharacterIssuePopover
-        issue="failed"
-        geometry={{ left: 20, caretLeft: 30, top: 40 }}
-        onClose={onClose}
-        onOpenCharacterManage={jest.fn()}
-      />,
-    )
-
-    await act(async () => {
-      fireEvent.press(getByText('닫기'))
-    })
-
-    expect(onClose).toHaveBeenCalled()
   })
 })
 

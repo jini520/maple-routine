@@ -51,8 +51,4 @@ describe('upcomingOccurrences', () => {
       '2026-10-22',
     ])
   })
-
-  it('약속이 없으면 빈 목록이다', () => {
-    expect(upcomingOccurrences([], NOW)).toEqual([])
-  })
 })

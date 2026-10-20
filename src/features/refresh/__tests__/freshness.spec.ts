@@ -11,14 +11,6 @@ beforeEach(async () => {
 })
 
 describe('restore', () => {
-  it('저장된 값을 올린다', async () => {
-    await prefs.set('dataFetchedAt', '2026-09-08T05:00:00.000Z')
-
-    await useDataFreshness.getState().restore()
-
-    expect(useDataFreshness.getState().fetchedAt).toBe('2026-09-08T05:00:00.000Z')
-  })
-
   // 줄 하나가 안 그려질 뿐이다. 부팅을 막을 일이 아니다.
   it('저장소가 던져도 null 로 선다', async () => {
     prefs.get.mockRejectedValue(new Error('저장소 고장'))

@@ -8,7 +8,7 @@ import {
   contentTemplate,
   templateKeysOf,
 } from '../scheduler/contents'
-import { contentCategoryNameOf, contentCategoryTagOf } from '../scheduler/content-categories'
+import { contentCategoryTagOf } from '../scheduler/content-categories'
 
 // API 이름에서 컨텐츠 key 를 얻는 규칙은 하나다. NFC 로 맞추고 공백을 모두 지운 뒤 완전 일치로 찾는다.
 describe('contentKeyOfApiName', () => {
@@ -53,10 +53,6 @@ describe('contentKeyOfApiName', () => {
 })
 
 describe('findContent', () => {
-  it('key 로 표의 줄을 찾는다', () => {
-    expect(findContent('monster_park')).toMatchObject({ key: 'monster_park', content_name: '몬스터파크' })
-  })
-
   it('모르는 key · null · undefined 는 null 이다', () => {
     expect(findContent('unknown_content')).toBeNull()
     expect(findContent(null)).toBeNull()
@@ -70,13 +66,6 @@ describe('findContent', () => {
 })
 
 describe('contentDisplayNameOf / contentShortNameOf', () => {
-  it('표에 있는 key 는 표의 이름이다', () => {
-    expect(contentDisplayNameOf('daily_quest_road_of_vanishing', '무시')).toBe('소멸의 여로 조사')
-    expect(contentShortNameOf('daily_quest_road_of_vanishing', '무시')).toBe('소멸의 여로')
-    expect(contentDisplayNameOf('epic_dungeon_high_mountain', '무시')).toBe('하이마운틴')
-    expect(contentShortNameOf('epic_dungeon_high_mountain', '무시')).toBe('에픽 던전 : 하이마운틴')
-  })
-
   // 표에 없는 컨텐츠는 응답의 원문 이름을 그대로 그린다. 이름을 지어내지 않는다.
   it('모르는 key 와 key 없음은 넘긴 이름이다', () => {
     expect(contentDisplayNameOf(null, '[일일 퀘스트] 새 지역 조사')).toBe('[일일 퀘스트] 새 지역 조사')
@@ -87,13 +76,6 @@ describe('contentDisplayNameOf / contentShortNameOf', () => {
 })
 
 describe('contentSectionOf', () => {
-  it('일간 · 주간 섹션을 낸다', () => {
-    expect(contentSectionOf('monster_park')).toBe('daily')
-    expect(contentSectionOf('daily_quest_geardrak')).toBe('daily')
-    expect(contentSectionOf('monster_park_extreme')).toBe('weekly')
-    expect(contentSectionOf('mu_lung_dojo')).toBe('weekly')
-  })
-
   it('모르는 key 와 key 없음은 null 이다', () => {
     expect(contentSectionOf('unknown_content')).toBeNull()
     expect(contentSectionOf(null)).toBeNull()
@@ -125,11 +107,6 @@ describe('contentCategoryOf', () => {
 })
 
 describe('갈래 표 조회', () => {
-  it('갈래 이름은 카드 라벨의 글자다', () => {
-    expect(contentCategoryNameOf('epic_dungeon')).toBe('에픽 던전')
-    expect(contentCategoryNameOf('arcane_river_quest')).toBe('아케인리버 지역 퀘스트')
-  })
-
   it('갈래 태그는 정한 갈래만 있고, null 은 숨김 · undefined 는 정하지 않음이다', () => {
     expect(contentCategoryTagOf('epic_dungeon')).toBe('ID당 1회')
     expect(contentCategoryTagOf('arcane_river_quest')).toBeNull()

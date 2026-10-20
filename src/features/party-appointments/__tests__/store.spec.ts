@@ -23,19 +23,6 @@ beforeEach(() => {
   usePartyAppointmentsStore.setState({ appointments: [], loaded: false })
 })
 
-it('불러오기 전에는 loaded 가 거짓이다', () => {
-  expect(usePartyAppointmentsStore.getState().loaded).toBe(false)
-})
-
-it('저장소의 약속을 불러온다', async () => {
-  await usePartyAppointmentsStore.getState().save([LIMBO])
-  usePartyAppointmentsStore.setState({ appointments: [], loaded: false })
-
-  await usePartyAppointmentsStore.getState().load()
-
-  expect(usePartyAppointmentsStore.getState()).toMatchObject({ appointments: [LIMBO], loaded: true })
-})
-
 it('저장하면 상태와 저장소가 함께 바뀐다', async () => {
   await usePartyAppointmentsStore.getState().save([LIMBO])
 

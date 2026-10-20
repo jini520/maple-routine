@@ -75,22 +75,3 @@ describe('__DEV__ 는 테스트 광고 쪽으로만 기운다', () => {
     expect(usesTestAds({ isDevBundle: false, adsTest: undefined })).toBe(false)
   })
 })
-
-describe('core 가 읽는 키를 채운다', () => {
-  // 키 이름이 어긋나면 아무 에러 없이 **모든 빌드가 실 광고**가 된다(빈 객체 = 스토어 빌드).
-  // 타입은 `Parameters<typeof shouldUseTestAds>[0]` 에서 뽑아 오므로 tsc 가 먼저 잡지만,
-  // 값이 실제로 실려 가는지는 여기서 본다.
-  it('환경 변수 값을 그대로 싣는다', () => {
-    expect(toAdsEnv({ isDevBundle: false, adsTest: '1', liveUpdateChannel: 'beta' })).toEqual({
-      VITE_ADS_TEST: '1',
-      VITE_LIVE_UPDATE_CHANNEL: 'beta',
-    })
-  })
-
-  it('없는 값을 지어내지 않는다', () => {
-    expect(toAdsEnv(STORE_BUILD)).toEqual({
-      VITE_ADS_TEST: undefined,
-      VITE_LIVE_UPDATE_CHANNEL: undefined,
-    })
-  })
-})

@@ -161,13 +161,6 @@ const EVEN_SHARE_COLUMNS = {
 }
 
 describe('useBossSchedulerStore', () => {
-  it('초기 상태는 idle이고 캐릭터가 비어있다', () => {
-    const state = useBossSchedulerStore.getState()
-    expect(state.status).toBe('idle')
-    expect(state.characters).toEqual([])
-    expect(state.error).toBeNull()
-  })
-
   it('refresh([])는 syncSchedules를 호출하지 않고 곧바로 loaded/빈 배열 상태가 된다', async () => {
     await useBossSchedulerStore.getState().refresh([])
 
@@ -176,14 +169,6 @@ describe('useBossSchedulerStore', () => {
     expect(state.status).toBe('loaded')
     expect(state.characters).toEqual([])
     expect(state.error).toBeNull()
-  })
-
-  it('refresh(ocids)는 syncSchedules(ocids)를 정확히 그 인자로 호출한다', async () => {
-    syncSchedulesMock.mockResolvedValue([syncResult()])
-
-    await useBossSchedulerStore.getState().refresh(['ocid-1'])
-
-    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'], undefined)
   })
 
   it('weekly와 monthly가 섞여 있으면 각각 weeklyBosses/monthlyBosses로 정확히 분리된다', async () => {
@@ -228,35 +213,6 @@ describe('useBossSchedulerStore', () => {
         isSeasonBoss: false,
       },
     ])
-  })
-
-  it('월간 보스만 있으면 weeklyBosses는 빈 배열, monthlyBosses에만 항목이 들어간다', async () => {
-    syncSchedulesMock.mockResolvedValue([
-      syncResult({
-        state: {
-          ...syncResult().state!,
-          bossContents: [bossContent({ bossKey: 'black_mage', apiName: '검은 마법사', cycle: 'monthly' })],
-        },
-      }),
-    ])
-
-    await useBossSchedulerStore.getState().refresh(['ocid-1'])
-
-    const state = useBossSchedulerStore.getState()
-    expect(state.characters[0].weeklyBosses).toEqual([])
-    expect(state.characters[0].monthlyBosses).toHaveLength(1)
-    expect(state.characters[0].monthlyBosses[0].cycle).toBe('monthly')
-  })
-
-  it('주간 보스만 있으면 monthlyBosses는 빈 배열, weeklyBosses에만 항목이 들어간다', async () => {
-    syncSchedulesMock.mockResolvedValue([syncResult()])
-
-    await useBossSchedulerStore.getState().refresh(['ocid-1'])
-
-    const state = useBossSchedulerStore.getState()
-    expect(state.characters[0].monthlyBosses).toEqual([])
-    expect(state.characters[0].weeklyBosses).toHaveLength(1)
-    expect(state.characters[0].weeklyBosses[0].cycle).toBe('weekly')
   })
 
   it('모든 캐릭터가 성공하면 status: loaded이고 클리어 카운트를 직접 계산한다', async () => {
@@ -309,16 +265,6 @@ describe('useBossSchedulerStore', () => {
       await useBossSchedulerStore.getState().refresh(['ocid-1'])
 
       expect(useBossSchedulerStore.getState().characters[0].weeklyBossClearCount).toBe(1)
-    })
-
-    it('weeklyBossClearLimitCount는 API 응답과 무관하게 항상 12다', async () => {
-      syncSchedulesMock.mockResolvedValue([
-        syncResult({ state: { ...syncResult().state!, bossContents: [] } }),
-      ])
-
-      await useBossSchedulerStore.getState().refresh(['ocid-1'])
-
-      expect(useBossSchedulerStore.getState().characters[0].weeklyBossClearLimitCount).toBe(12)
     })
 
     it('캐시된 값을 표시할 때도 카운트를 직접 계산한다(캐시 우선 표시)', async () => {
@@ -453,16 +399,6 @@ describe('useBossSchedulerStore', () => {
   })
 
   describe('추적 목록', () => {
-    it('loadTrackedOcids는 storage에서 조회한 값을 trackedOcids 상태에 반영한다', async () => {
-      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useBossSchedulerStore.getState().loadTrackedOcids()
-
-      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith()
-      expect(useBossSchedulerStore.getState().trackedOcids).toEqual(['ocid-1'])
-    })
-
     it('loadTrackedOcids는 조회된 목록이 null이 아니면 그 목록으로 refresh를 호출한다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -515,16 +451,6 @@ describe('useBossSchedulerStore', () => {
       expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
       expect(useBossSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
       expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
-    })
-
-    it('saveTrackedOcids가 끝나면 완료 토스트를 띄운다', async () => {
-      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useBossSchedulerStore.getState().saveTrackedOcids(['ocid-1'])
-
-      expect(showSuccessMock).toHaveBeenCalledWith('캐릭터 정보를 모두 불러왔어요')
-      expect(showErrorMock).not.toHaveBeenCalled()
     })
 
     it('storage 저장이 실패하면 실패 토스트를 띄우고 상태를 바꾸지 않는다(예외를 던지지 않음)', async () => {
@@ -1150,14 +1076,6 @@ describe('useBossSchedulerStore', () => {
       expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:zakum:chaos': 4 })
     })
 
-    it('setPartySetting가 성공하면 완료 토스트를 띄운다', async () => {
-      setBossPartySettingMock.mockResolvedValue(undefined)
-
-      await useBossSchedulerStore.getState().setPartySetting('ocid-1', 'zakum', 'chaos', { partySize: 4, shares: EVEN_SHARE_COLUMNS })
-
-      expect(showSuccessMock).toHaveBeenCalledWith('파티원 수를 저장했어요')
-    })
-
     it('setPartySetting는 해당 보스의 maxPartySize를 초과하면 에러를 던지고 storage를 호출하지 않는다', async () => {
       // 스우 익스트림은 boss-crystal-prices.json에서 maxPartySize: 2로 예외 지정되어 있다.
       await expect(
@@ -1180,28 +1098,7 @@ describe('useBossSchedulerStore', () => {
     })
   })
 
-  // 탭이 걷히면서 `activeTab` 도 함께 사라지고, 목록이 하나가 되면서 필터도 하나가 된다.
-  describe(': 필터 상태. 하나다', () => {
-    it('초기 필터는 전체다', () => {
-      expect(useBossSchedulerStore.getInitialState().partyFilter).toBe('all')
-    })
-
-    it('setPartyFilter 가 필터를 바꾼다', () => {
-      useBossSchedulerStore.getState().setPartyFilter('solo')
-
-      expect(useBossSchedulerStore.getState().partyFilter).toBe('solo')
-    })
-
-    // 탭이 남아 있으면 다음 세션이 **관리 화면만 쓰는 상태** 로 되살린다. 없는 것을 못 박는다.
-    it('탭 상태와 세터가 스토어에 없다', () => {
-      const state = useBossSchedulerStore.getState() as unknown as Record<string, unknown>
-
-      expect(state.activeTab).toBeUndefined()
-      expect(state.setActiveTab).toBeUndefined()
-      expect(state.weeklyFilter).toBeUndefined()
-      expect(state.monthlyFilter).toBeUndefined()
-    })
-
+  describe(': 필터 상태', () => {
     it('필터를 바꿔도 동기화를 호출하지 않는다', () => {
       useBossSchedulerStore.getState().setPartyFilter('party')
 

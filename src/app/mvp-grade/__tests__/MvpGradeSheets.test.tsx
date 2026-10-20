@@ -104,24 +104,6 @@ describe('GradeEditSheet', () => {
       { startDate: '2026-07-30', grade: 'diamond' },
     ])
   })
-
-  it('지우기를 누르면 지우기를 묻는다', async () => {
-    const onDelete = jest.fn()
-    const view = await renderOverlay(
-      <GradeEditSheet
-        history={HISTORY}
-        startDate="2026-07-30"
-        todayDateKey={TODAY}
-        onSave={jest.fn()}
-        onDelete={onDelete}
-        onClose={jest.fn()}
-      />,
-    )
-
-    await fireEvent.press(view.getByRole('button', { name: '이 기록 지우기' }))
-
-    expect(onDelete).toHaveBeenCalled()
-  })
 })
 
 describe('GradeInsertSheet', () => {

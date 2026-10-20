@@ -388,30 +388,6 @@ describe('hunt_meso_rate: 그때의 메소 획득량', () => {
 
     expect(record.hunt).toMatchObject({ mode: 'calculator', mesoRate: 0 })
   })
-
-  it('값이 있으면 그대로 읽는다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          id: 'inc-1',
-          earned_on: '2026-08-23',
-          category: '사냥',
-          category_key: 'hunting',
-          item: '밤의 길 3',
-          item_key: 'tallahart_road_of_night_3',
-          meso_amount: 1_200_000_000,
-          hunt_missed_mobs: 0,
-          hunt_meso_rate: 149,
-          recorded_at: '2026-08-23T05:00:00.000Z',
-        },
-      ],
-    })
-    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
-
-    const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
-
-    expect(record.hunt).toMatchObject({ mode: 'calculator', mesoRate: 149 })
-  })
 })
 
 // 수동 입력 칸
@@ -601,29 +577,6 @@ describe('quantity: 수입의 수량', () => {
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('quantity = ?')
     expect(values).toEqual(expect.arrayContaining([5]))
-  })
-
-  it('읽어 온다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          id: 'inc-1',
-          earned_on: '2026-08-23',
-          category: '기타',
-          category_key: 'etc',
-          item: '이벤트 보상',
-          item_key: null,
-          meso_amount: 300_000_000,
-          quantity: 3,
-          recorded_at: '2026-08-23T05:00:00.000Z',
-        },
-      ],
-    })
-    const { getIncomeRecordsBetween } = require('../income') as typeof import('../income')
-
-    const [record] = await getIncomeRecordsBetween('2026-08-20', '2026-08-26')
-
-    expect(record.quantity).toBe(3)
   })
 
   // 이 칸이 없던 시절의 행. 수량 1 로 열리고 총액이 곧 금액이다.

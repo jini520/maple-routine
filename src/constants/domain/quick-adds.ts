@@ -25,3 +25,27 @@ export const POINT_QUICK_ADDS = [
   { label: '+10', value: 10 },
   { label: '+1', value: 1 },
 ] as const
+
+/**
+ * 캐시로 낸 금액(원)의 눈금. **큰 것이 왼쪽이다**(사용자 지정).
+ *
+ * 메소 눈금을 그대로 두면 1만 원짜리를 치는 카드에 `+100억` 이 뜬다.
+ */
+export const CASH_QUICK_ADDS = [
+  { label: '+1만', value: 10_000 },
+  { label: '+5천', value: 5_000 },
+  { label: '+1천', value: 1_000 },
+  { label: '+100', value: 100 },
+] as const
+
+/**
+ * 메포로 낸 금액의 눈금. **큰 것이 왼쪽이다**(사용자 지정).
+ *
+ * 위 `POINT_QUICK_ADDS` 는 메포 시세를 치는 칸의 눈금이라 이 칸과 값이 다르다.
+ */
+export const POINT_AMOUNT_QUICK_ADDS = [
+  { label: '+500', value: 500 },
+  { label: '+100', value: 100 },
+  { label: '+10', value: 10 },
+  { label: '+1', value: 1 },
+] as const

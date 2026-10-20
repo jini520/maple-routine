@@ -35,6 +35,7 @@ export interface DropShare {
 
 import type { FeesValue } from '../../components/organisms/InputCard/InputCard'
 import { dropFeeFields } from './drop-fees'
+import { dropShareFieldsOf } from '../../lib/drop/drop-price'
 import { withSqliteTimeout } from './sqlite-guards'
 import { create } from 'zustand'
 import { toRecordedDrop } from './rows'
@@ -335,10 +336,7 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
     await writePrice(get, set, entry, {
       priceState: 'entered',
       priceMeso,
-      priceSplitMode: share.mode,
-      pricePartySize: share.partySize,
-      priceShare: share.sharesTotal,
-      priceMyShare: share.myShare,
+      ...dropShareFieldsOf(share),
       ...dropFeeFields(fees),
     })
   },

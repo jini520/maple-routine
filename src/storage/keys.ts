@@ -11,15 +11,12 @@ export const STORAGE_KEYS = {
   theme: 'theme',
   trackingMode: 'trackingMode',
   dropEffect: 'dropEffect',
-  // 전면광고 마지막 노출 시각. 앱 재시작을 넘어 간격을 재야 해서 영속 저장하지만,
-  // cache-data.ts의 KEEP_KEYS에는 **넣지 않는다**. 지워져도 광고가 한 번 더 뜰 뿐이고
-  // 보존해야 할 사용자 자산이 아니다.
-  lastAdShownAt: 'lastAdShownAt',
   // 마지막으로 실행된 OTA 번들 버전. 부팅 때 지금 도는 버전과 비교해 "방금
-  // 업데이트했다"를 판정한다. `lastAdShownAt`과 같은 이유로 cache-data.ts의 KEEP_KEYS에는
-  // **넣지 않는다**. 지워져도 다음 부팅이 조용히 다시 기록할 뿐이고, 그때 생기는 것은
-  // 거짓 안내가 아니라 안내 없음이다.
+  // 업데이트했다"를 판정한다. cache-data.ts의 KEEP_KEYS에는 **넣지 않는다**. 지워져도 다음
+  // 부팅이 조용히 다시 기록할 뿐이고, 그때 생기는 것은 거짓 안내가 아니라 안내 없음이다.
   lastRunBundleVersion: 'lastRunBundleVersion',
+  // 다시 띄운 뒤 한 번 띄울 알림. 캐시 삭제가 끝난 뒤에 쓰므로 `KEEP_KEYS` 에 안 넣는다.
+  pendingNotice: 'pendingNotice',
   // 이 기기에서 본 OS 키보드 높이. 입력 카드가 자체 숫자 판을 쓸지 정한다. `KEEP_KEYS` 에는 안
   // 넣는다. 지워져도 첫 실행 기본값으로 판정하다가 키보드가 한 번 뜨면 다시 채워진다.
   keyboardHeight: 'keyboardHeight',

@@ -72,13 +72,6 @@ describe('setBossPartyPeriodOverride', () => {
 })
 
 describe('getBossPartyPeriodOverride', () => {
-  it('그 조합의 줄이 없으면 null 이다', async () => {
-    const { getBossPartyPeriodOverride } =
-      require('../boss-party-period-overrides') as typeof import('../boss-party-period-overrides')
-
-    await expect(getBossPartyPeriodOverride('ocid-1', 'black_mage', 'extreme', '2026-W39')).resolves.toBeNull()
-  })
-
   it('줄이 있으면 칸을 그대로 읽는다', async () => {
     queryMock.mockResolvedValue({
       values: [

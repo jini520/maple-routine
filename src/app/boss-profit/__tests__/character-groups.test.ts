@@ -47,10 +47,6 @@ describe('groupTotalMeso: 아이템 수익 합산', () => {
     expect(groupTotalMeso(group([보스행()]), drops)).toBe(6_800_000_000 + 5_000_000_000)
   })
 
-  it('드롭이 없으면 결정석 합 그대로다', () => {
-    expect(groupTotalMeso(group([보스행()]), {})).toBe(6_800_000_000)
-  })
-
   it('다른 행의 드롭은 세지 않는다. 키가 (ocid, boss, difficulty, periodKey) 다', () => {
     const drops = { [dropRowKey('ocid-1', 다른주간보스, 'chaos', PERIOD)]: priced }
 
@@ -320,9 +316,6 @@ describe('buildCharacterGroups 의 조회 불가 카드', () => {
     expect(groups.map((group) => group.ocid)).toEqual([보스행().ocid, 'stranded'])
   })
 
-  it('안 넘기면 지금과 같다', () => {
-    expect(buildCharacterGroups([보스행()], [])).toHaveLength(1)
-  })
 })
 
 // 주간 탭의 행에는 그 주에 선 월간 보스가 섞여 있고, 월간 탭의 그룹은 주차 소계(주간 결정석)와

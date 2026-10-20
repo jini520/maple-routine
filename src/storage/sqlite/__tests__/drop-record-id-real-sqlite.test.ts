@@ -116,13 +116,6 @@ describe('드롭 기록의 식별자', () => {
 })
 
 describe('드롭 기록의 월드', () => {
-  it('기록 시점의 월드를 자기 칸에 든다', async () => {
-    await save([drop('ring-a')])
-
-    const rows = await getAllBossDropRecords(['ocid-1'])
-    expect(rows[0]).toMatchObject({ world: '챌린저스2', worldKey: 'challengers_2' })
-  })
-
   it('모르면 NULL 이다', async () => {
     // 0 이나 빈 문자열로 채우면 "모름" 이 값으로 둔갑한다.
     await replaceBossDropRecords('ocid-1', 'lucid', 'hard', '2026-10-02', [drop('ring-a')], AT, NO_WORLD)

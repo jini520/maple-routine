@@ -1,8 +1,6 @@
 import {
   RELEASE_NOTES,
-  RELEASE_NOTE_CATEGORY_LABELS,
   RELEASE_NOTE_CATEGORY_ORDER,
-  findReleaseNote,
 } from '../release-notes'
 
 // 릴리스 노트는 손으로 쓰는 파일이고, 그 형식을 배포 게이트가 읽는다.
@@ -61,12 +59,6 @@ describe('release-notes 형식', () => {
     }
   })
 
-  it('모든 카테고리에 라벨이 있다', () => {
-    for (const category of RELEASE_NOTE_CATEGORY_ORDER) {
-      expect(RELEASE_NOTE_CATEGORY_LABELS[category]?.trim()).toBeTruthy()
-    }
-  })
-
   it('모든 항목이 비어 있지 않은 items 를 갖고, text 가 공백만이 아니다', () => {
     for (const note of RELEASE_NOTES) {
       expect(note.items.length, `${note.version} 의 items 가 비어 있음`).toBeGreaterThan(0)
@@ -93,16 +85,5 @@ describe('release-notes 형식', () => {
   // (이미 발행됐고 다시 매니페스트에 실리지 않는다) 맨 앞 하나만 본다.
   it('최신 노트에는 highlights 가 있다. 다음 배포가 그것을 싣는다', () => {
     expect(RELEASE_NOTES[0].highlights?.length ?? 0).toBeGreaterThan(0)
-  })
-})
-
-describe('findReleaseNote', () => {
-  it('있는 버전의 노트를 찾는다', () => {
-    const existing = RELEASE_NOTES[0]
-    expect(findReleaseNote(existing.version)).toBe(existing)
-  })
-
-  it('없는 버전에는 던지지 않고 undefined 를 돌린다. "노트가 없다"의 판정은 호출부가 한다', () => {
-    expect(findReleaseNote('0.0.1')).toBeUndefined()
   })
 })

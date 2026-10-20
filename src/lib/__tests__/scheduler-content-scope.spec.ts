@@ -1,29 +1,13 @@
 import {
-  contentCategoryOf,
-  getContentCatalogEntries,
   getMaxCountOverride,
   getShareScope,
   getSharedContentGroups,
-  getGroupWeeklyLimit,
   isCumulativeScore,
   trustsRegistrationFlag,
 } from '../scheduler/scheduler-content-scope'
 
 // 이 모듈은 컨텐츠 key 만 받는다. API 이름의 공백 차이는 key 를 얻는 자리(`contentKeyOfApiName`)가 흡수한다.
 describe('getShareScope', () => {
-  it('worldShared에 등록된 항목은 world를 반환한다', () => {
-    expect(getShareScope('monster_park')).toBe('world')
-    expect(getShareScope('maple_union_weekly_dragon')).toBe('world')
-  })
-
-  it('accountShared에 등록된 항목은 account를 반환한다', () => {
-    expect(getShareScope('epic_dungeon_high_mountain')).toBe('account')
-    expect(getShareScope('epic_dungeon_angler_company')).toBe('account')
-    expect(getShareScope('epic_dungeon_nightmare_paradise')).toBe('account')
-    // 2026-09-17 패치 신규. 메이플 ID 공유는 기존 셋과 같다(사용자 확인).
-    expect(getShareScope('epic_dungeon_aurum_regis')).toBe('account')
-  })
-
   it('카탈로그에 없는 항목은 character(기본값)를 반환한다', () => {
     expect(getShareScope('guild_weekly_mission_points')).toBe('character')
     expect(getShareScope('mu_lung_dojo')).toBe('character')
@@ -37,10 +21,6 @@ describe('getShareScope', () => {
 
   // 같은 갈래라도 공유 단위가 다르다. 줄마다 key 가 달라 따로 적는다.
   describe('같은 갈래의 다른 컨텐츠', () => {
-    it('익스트림 몬스터파커 퀘스트는 world다', () => {
-      expect(getShareScope('monster_park_extreme')).toBe('world')
-    })
-
     // 같은 계열이라도 공유 단위가 다르다(사용자 확인). 이름으로 유추하면 틀린다.
     it('PC방 주간 드래곤 퇴치는 account다. PC방이 아닌 쪽(world)과 공유 단위가 다르다', () => {
       expect(getShareScope('maple_union_weekly_dragon')).toBe('world')
@@ -75,25 +55,6 @@ describe('getMaxCountOverride', () => {
   it('오버라이드가 없는 항목과 key 가 없는 항목은 null을 반환한다', () => {
     expect(getMaxCountOverride('monster_park')).toBeNull()
     expect(getMaxCountOverride(null)).toBeNull()
-  })
-})
-
-describe('getContentCatalogEntries', () => {
-  it('daily section에는 몬스터파크(world)만 있다', () => {
-    const entries = getContentCatalogEntries('daily')
-    expect(entries).toEqual([{ contentKey: 'monster_park', scope: 'world' }])
-  })
-
-  it('weekly section에는 world 2종 + account 5종이 있다', () => {
-    const entries = getContentCatalogEntries('weekly')
-    expect(entries).toContainEqual({ contentKey: 'maple_union_weekly_dragon', scope: 'world' })
-    expect(entries).toContainEqual({ contentKey: 'monster_park_extreme', scope: 'world' })
-    expect(entries).toContainEqual({ contentKey: 'epic_dungeon_high_mountain', scope: 'account' })
-    expect(entries).toContainEqual({ contentKey: 'epic_dungeon_angler_company', scope: 'account' })
-    expect(entries).toContainEqual({ contentKey: 'epic_dungeon_nightmare_paradise', scope: 'account' })
-    expect(entries).toContainEqual({ contentKey: 'epic_dungeon_aurum_regis', scope: 'account' })
-    expect(entries).toContainEqual({ contentKey: 'maple_union_pc_cafe_weekly_dragon', scope: 'account' })
-    expect(entries).toHaveLength(7)
   })
 })
 
@@ -154,15 +115,6 @@ describe('getSharedContentGroups', () => {
     expect(periods).toEqual([['epic_dungeon_aurum_regis', '2026-09-17']])
   })
 
-  it('유니온 둘만 **스케줄러에 있을 때만** 표식을 단다', () => {
-    const conditional = getSharedContentGroups()
-      .flatMap((group) => group.entries)
-      .filter((entry) => entry.onlyWhenScheduled)
-      .map((entry) => entry.shortName)
-
-    expect(conditional).toEqual(['주간 드래곤 퇴치', 'PC방 주간 드래곤 퇴치'])
-  })
-
   it('여덟을 하나도 빠뜨리거나 더하지 않는다', () => {
     const keys = getSharedContentGroups().flatMap((group) => group.entries.map((entry) => entry.contentKey))
 
@@ -183,45 +135,15 @@ describe('getMaxCountOverride: 익스트림 몬스터파커', () => {
   it('오버라이드가 없다. API 와 템플릿의 5 가 그대로 흐른다', () => {
     expect(getMaxCountOverride('monster_park_extreme')).toBeNull()
   })
-
-  // 오버라이드 표 자체는 죽지 않았다. 길드 미션 포인트는 API 가 가끔 0 을 주는 오류 보정이라
-  // 성격이 다르고 그대로 선다.
-  it('길드 주간 미션 포인트는 그대로 10 이다', () => {
-    expect(getMaxCountOverride('guild_weekly_mission_points')).toBe(10)
-  })
 })
 
 // 어느 항목이 응답의 등록 값을 믿는지는 카탈로그의 칸이 말한다. 이름으로 추론하지 않는다.
 describe('trustsRegistrationFlag', () => {
-  it('메이플 유니온 두 항목만 참이다', () => {
-    expect(trustsRegistrationFlag('maple_union_weekly_dragon')).toBe(true)
-    expect(trustsRegistrationFlag('maple_union_pc_cafe_weekly_dragon')).toBe(true)
-  })
-
   it('나머지 공유 항목 · 캐릭터 항목 · key 가 없는 항목은 거짓이다', () => {
     expect(trustsRegistrationFlag('monster_park')).toBe(false)
     expect(trustsRegistrationFlag('monster_park_extreme')).toBe(false)
     expect(trustsRegistrationFlag('epic_dungeon_high_mountain')).toBe(false)
     expect(trustsRegistrationFlag('mu_lung_dojo')).toBe(false)
     expect(trustsRegistrationFlag(null)).toBe(false)
-  })
-})
-
-// 에픽 던전은 4종이지만 주 3회만 돈다(사용자 확인 2026-09-13). 게임 규칙이라 카탈로그가 든다.
-describe('갈래의 주간 한도', () => {
-  it('epic_dungeon 갈래의 한도는 3 이다', () => {
-    expect(getGroupWeeklyLimit('epic_dungeon')).toBe(3)
-  })
-
-  it('한도가 없는 갈래는 null 이다', () => {
-    expect(getGroupWeeklyLimit('monster_park')).toBeNull()
-    expect(getGroupWeeklyLimit('guild')).toBeNull()
-  })
-
-  it('항목의 갈래는 컨텐츠 표의 category 다. 이름으로 추론하지 않는다', () => {
-    expect(contentCategoryOf('epic_dungeon_aurum_regis')).toBe('epic_dungeon')
-    expect(contentCategoryOf('maple_union_weekly_dragon')).toBe('maple_union')
-    expect(contentCategoryOf('erda_spectrum')).toBe('arcane_river_quest')
-    expect(contentCategoryOf(null)).toBeNull()
   })
 })

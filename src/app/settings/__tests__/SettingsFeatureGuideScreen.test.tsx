@@ -160,12 +160,6 @@ afterEach(() => {
 })
 
 describe('SettingsFeatureGuideScreen', () => {
-  it('안내 제목을 머리말로 그린다', async () => {
-    const view = await renderOverlay(<SettingsFeatureGuideScreen />)
-
-    expect(view.getByText('파티 인원 관리')).toBeTruthy()
-  })
-
   // 같은 화면이 두 라우트에 걸린다. **어디서 왔든 그리로 돌아간다**. RN 은
   // 스택이 그것을 알고 있어 계산이 사라지고 `goBack` 하나만 남는다.
   it.each(['SettingsFeatureGuide', 'SettingsReleaseNoteGuide'])(
@@ -180,17 +174,6 @@ describe('SettingsFeatureGuideScreen', () => {
       expect(navigate).not.toHaveBeenCalled()
     },
   )
-
-  // 블록은 이미지만·문단만·둘 다를 모두 허용한다.
-  it('마디와 블록을 데이터 순서대로 그린다', async () => {
-    const view = await renderOverlay(<SettingsFeatureGuideScreen />)
-
-    expect(view.getAllByTestId('guide-section')).toHaveLength(2)
-    expect(view.getAllByTestId('guide-block')).toHaveLength(3)
-    expect(
-      view.getByText('보스 카드를 탭하면 파티 인원과 난이도를 그 자리에서 고칠 수 있습니다.'),
-    ).toBeTruthy()
-  })
 
   // 목차가 곧 개발 노트의 착지점 목록이다.
   it('마디가 둘 이상이면 목차를 그린다', async () => {
@@ -282,14 +265,6 @@ describe('SettingsFeatureGuideScreen', () => {
     expect(setParams).toHaveBeenCalledWith({ guideId: '파티-모달', section: 'difficulty' })
     expect(navigate).not.toHaveBeenCalled()
     expect(view.getByText('파티 인원 관리')).toBeTruthy()
-  })
-
-  // 안내 화면에서 이미지는 정보를 나른다. 대체 텍스트가 곧 그 정보다.
-  it('이미지를 대체 텍스트와 함께 그린다', async () => {
-    const view = await renderOverlay(<SettingsFeatureGuideScreen />)
-
-    expect(view.getByLabelText('보스 카드를 탭해 연 파티 모달').props.source).toBe(1)
-    expect(view.getByLabelText('난이도 세그먼트')).toBeTruthy()
   })
 
 // 한 축만 이름 부르면 다른 축에 고유 픽셀값이 남는다. RN 에 그

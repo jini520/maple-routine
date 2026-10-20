@@ -4,8 +4,10 @@ import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from './sqlite/db'
 
 // 캐시 데이터 삭제. 인증·사용자 설정만 남기고 나머지 저장 데이터를 지운다.
 // trackingMode·dropEffect는 재조회로 복구되는 캐시가 아니라 사용자가 명시적으로 고른 취향 설정이라
-// theme과 같이 보존한다. 어떤 그룹을 골라도 이 5개는 삭제 대상이 아니다.
+// theme과 같이 보존한다. 어떤 그룹을 골라도 이 목록은 삭제 대상이 아니다.
 const KEEP_KEYS = new Set<string>([
+  // 인증 수단 목록. 지워지면 옛 `apiKey` 칸이 없는 설치본은 다시 띄운 뒤 로그인 화면으로 돌아간다.
+  STORAGE_KEYS.authMethods,
   STORAGE_KEYS.apiKey,
   STORAGE_KEYS.theme,
   STORAGE_KEYS.trackingMode,
@@ -52,15 +54,11 @@ const ALL_GROUPS: CacheDataSelection = { general: true, records: true }
 // 명시 목록을 갖는 쪽은 records 뿐이고 general 은 아래에서 차집합으로 파생된다. 두 그룹을 다
 // 열거하면 어느 그룹에도 안 잡히는 테이블이 생겨 영영 안 지워진다.
 //
-// period_checks 가 기록과 같은 그룹인 이유. 지금은 아무도 안 읽는 표지만(창 동기화가 조회 원장으로
-// 대체했다) 지워질 때 함께 지워져야 되살아나는 경로가 안 생긴다.
-//
 // 수익과 드롭을 더 쪼개지 않는 이유. 수익만 지우고 드롭이 남으면 고아 드롭 행이 되어 같은
 // 보스를 다시 잡을 때 예전 드롭이 되살아나 붙는다.
 export const RECORD_TABLE_NAMES: readonly string[] = [
   'boss_profit_records',
   'boss_drop_records',
-  'boss_profit_period_checks',
   // 강화 사용 내역이 기록 그룹인 이유. **어제 이전 날짜는 다시 안 부른다.** 지우면 그 날짜의
   // 지출을 되살릴 길이 0% 다. 원장도 같은 그룹이어야 표식만 남고 내역이 사라지는 상태가 안 생긴다.
   'enhancement_history',

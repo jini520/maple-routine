@@ -30,19 +30,9 @@ describe('agendaDays', () => {
     expect(days.map((day) => day.dateKey)).toEqual(['2026-10-01', '2026-10-04'])
     expect(days[0]!.occurrences.map((one) => one.appointment.id)).toEqual(['first', 'second'])
   })
-
-  it('약속이 없으면 빈 목록이다', () => {
-    expect(agendaDays([])).toEqual([])
-  })
 })
 
 describe('endClockOf', () => {
-  it('같은 날 끝나면 그 시각이다', () => {
-    const [occurrence] = occurrencesInWeek([appointment({ timeKst: '20:30', durationMinutes: 60 })], WEEK)
-
-    expect(endClockOf(occurrence!)).toBe('21:30')
-  })
-
   it('자정을 넘으면 시계 그대로 적는다', () => {
     const [midnight] = occurrencesInWeek([appointment({ timeKst: '23:30', durationMinutes: 30 })], WEEK)
     const after = occurrencesInWeek([appointment({ timeKst: '23:30', durationMinutes: 60 })], WEEK)[0]

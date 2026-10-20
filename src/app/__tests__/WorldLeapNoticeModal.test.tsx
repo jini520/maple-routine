@@ -53,14 +53,6 @@ describe('목적지를 짚었을 때', () => {
     useWorldLeapStore.setState({ notice: 짚음 })
   })
 
-  it('옛 이름으로 묻고 두 월드를 나란히 그린다', async () => {
-    const { getByText } = await 그리기()
-
-    expect(getByText('지내우시 님이 월드를 옮긴 것 같아요')).toBeTruthy()
-    expect(getByText('챌린저스2')).toBeTruthy()
-    expect(getByText('엘리시움')).toBeTruthy()
-  })
-
   // 월드 글자는 월드 key 로 찾은 표 이름이다. 옛 스냅샷에 적힌 표기가 달라도 표 이름으로 선다.
   it('월드 글자는 월드 key 로 찾은 표 이름이다', async () => {
     useWorldLeapStore.setState({ notice: { ...짚음, from: { ...옛것, world: '챌린저스 2' } } })

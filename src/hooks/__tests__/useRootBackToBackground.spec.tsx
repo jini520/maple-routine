@@ -99,26 +99,3 @@ describe('useRootBackToBackground', () => {
     expect(remove).toHaveBeenCalledTimes(1)
   })
 })
-
-// 판정은 `canGoBack` 하나다. 층이 진짜 스택이라 하위 층까지 거기 잡히므로 바가 자기 층 기록을
-// 따로 들고 알려 줄 것이 없다.
-describe('판정은 다시 하나다', () => {
-  // 하위 층에 서 있는 경우다. 층이 스택 한 단이라 `canGoBack` 이 참이고, 우리는 가로채지 않는다.
-  // react-navigation 이 pop 한다.
-  it('층이 남아 있으면 가로채지 않는다. 백그라운드로 보내지 않는다', async () => {
-    const pressBack = captureBackHandler()
-    await render(<Harness navigation={{ isReady: () => true, canGoBack: () => true }} />)
-
-    expect(pressBack()).toBe(false)
-    expect(mockMoveToBackground).not.toHaveBeenCalled()
-  })
-
-  // 여기까지 왔다는 것은 층도 하위 페이지도 남아 있지 않다는 뜻이다.
-  it('정말로 pop 할 것이 없을 때만 백그라운드로 간다', async () => {
-    const pressBack = captureBackHandler()
-    await render(<Harness navigation={{ isReady: () => true, canGoBack: () => false }} />)
-
-    expect(pressBack()).toBe(true)
-    expect(mockMoveToBackground).toHaveBeenCalledTimes(1)
-  })
-})

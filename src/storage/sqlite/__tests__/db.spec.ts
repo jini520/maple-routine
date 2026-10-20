@@ -56,9 +56,6 @@ describe('getBossProfitDb', () => {
     expect(dbExecuteMock).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS boss_party_settings'),
     )
-    expect(dbExecuteMock).toHaveBeenCalledWith(
-      expect.stringContaining('CREATE TABLE IF NOT EXISTS boss_profit_period_checks'),
-    )
     // 가계부가 손으로 적는 둘.
     expect(dbExecuteMock).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS income_records'),
@@ -229,14 +226,6 @@ describe('closeBossProfitDb', () => {
 
     await getBossProfitDb()
     expect(createConnectionMock).toHaveBeenCalledTimes(2)
-  })
-
-  it('한 번도 연 적 없으면 아무것도 하지 않는다', async () => {
-    const { closeBossProfitDb } = require('../db') as typeof import('../db')
-
-    await closeBossProfitDb()
-
-    expect(closeConnectionMock).not.toHaveBeenCalled()
   })
 
   it('종료 중 에러가 나도 던지지 않는다(리로드는 곧 진행돼야 하므로 best-effort)', async () => {

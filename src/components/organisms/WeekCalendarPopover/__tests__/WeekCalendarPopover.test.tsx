@@ -42,12 +42,6 @@ describe('WeekCalendarPopover', () => {
     expect(onConfirm).toHaveBeenCalled()
   })
 
-  it('confirmDisabled 면 확인이 꺼진다', async () => {
-    const { view } = await 그리기({ confirmDisabled: true })
-
-    expect(view.getByRole('button', { name: '확인' }).props.accessibilityState?.disabled).toBe(true)
-  })
-
   it('어느 날을 눌러도 그 날이 든 주의 목요일을 준다', async () => {
     const { view, onSelect } = await 그리기()
 

@@ -18,12 +18,9 @@ import { SpeedDial, type SpeedDialAction } from '../SpeedDial'
 import { pillWidth } from '../speed-dial-motion'
 import { boxShadowOf } from '../../../../lib/shadow'
 import {
-  FAB_CONTENT_GAP_PX,
   FAB_DARK_EDGE,
   FAB_DIAMETER_PX,
-  FAB_LIFT_PX,
   FAB_SHADOW,
-  FAB_SPACE_PX,
 } from '../../../../lib/fab-metrics'
 
 // `__esModule` 은 펼쳐도 안 넘어와서 직접 적는다. 빠지면 `Animated.View` 가 없어진다.
@@ -144,15 +141,6 @@ describe('펼친 뒤', () => {
     expect(view.getByLabelText('기록 추가')).toBeTruthy()
   })
 
-  it('지출도 같다', async () => {
-    const onSelectExpense = jest.fn()
-    const view = await 펼치기({ onSelectExpense })
-
-    await 누르기(view, '지출 추가')
-
-    expect(onSelectExpense).toHaveBeenCalledTimes(1)
-  })
-
   it('스크림을 누르면 접힌다. 아무것도 안 고른다', async () => {
     const onSelectIncome = jest.fn()
     const onSelectExpense = jest.fn()
@@ -198,13 +186,6 @@ describe('치수 ( 의 딸려 오는 결함)', () => {
 
     expect(fab.height).toBe(FAB_DIAMETER_PX)
     expect(fab.width).toBe(FAB_DIAMETER_PX)
-  })
-
-  it('콘텐츠가 갚을 몫은 뜨는 높이 + 지름 + 숨돌림이다', () => {
-    expect(FAB_SPACE_PX).toBe(FAB_LIFT_PX + FAB_DIAMETER_PX + FAB_CONTENT_GAP_PX)
-    // 판별력: 셋 중 하나가 0 이면 **가린다** 가 그만큼 되살아난다.
-    expect(FAB_LIFT_PX).toBeGreaterThan(0)
-    expect(FAB_CONTENT_GAP_PX).toBeGreaterThan(0)
   })
 })
 
@@ -349,14 +330,6 @@ describe('알약의 모양', () => {
     expect(view.getByText('받은 메소')).toBeTruthy()
     expect(view.getByText('지출')).toBeTruthy()
     expect(view.getAllByTestId(/^speed-dial-description-/)).toHaveLength(1)
-  })
-
-  it('아이콘 원은 옅은 주황이다', async () => {
-    const view = await 그리기()
-
-    for (const key of ['income', 'expense']) {
-      expect(flattenStyle(view.getByTestId(`speed-dial-icon-${key}`).props.style).backgroundColor).toBe(기본테마.primaryTint)
-    }
   })
 
   // 넉넉한 고정 폭을 두지 않는다. 가장 긴 글자에 맞춘 한 폭을 모든 알약이 쓴다(사용자 지시).

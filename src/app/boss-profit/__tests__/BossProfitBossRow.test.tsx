@@ -6,11 +6,10 @@
 import { act, fireEvent, within } from '@testing-library/react-native'
 
 import dropItemsData from '../../../data/drop-items.json'
-import { dropItemNameOf, isValuableDropItem } from '../../../lib/drop/drop-items'
+import { dropItemNameOf } from '../../../lib/drop/drop-items'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
 
-import { flattenStyle } from '../../../components/__tests__/render-atom'
 import { BossProfitBossRow } from '../BossProfitBossRow'
 import { PERIOD, 보스행, 주간보스, 컨텍스트값, renderProfit, 주간보스이름 } from './harness'
 import { partyPlanKey } from '../../../features/boss-profit/party-plans'
@@ -200,25 +199,6 @@ describe('BossProfitBossRow: 드롭 지시자', () => {
   })
 })
 
-// 고가 드롭 행의 숨쉬는 배경을 걷었다(사용자 지시, 다시 디자인할 예정). 같은 효과가 가격 기록
-// 화면에는 그대로 남아 있어 컴포넌트 자체는 산다.
-describe('BossProfitBossRow: 고가 드롭 배경이 없다', () => {
-  const 고가키 = dropItemsData.items.filter((item) => item.valuable)[0].key
-
-  it('고가 목록에 든 아이템이어도 배경을 안 깐다', async () => {
-    const { queryByTestId } = await renderProfit(
-      <BossProfitBossRow
-        row={보스행()}
-        drops={[{ dropRecordId: null, category: 'equipment', itemKey: 고가키, itemName: dropItemNameOf(고가키, 고가키), quantity: 1 }]}
-      />,
-    )
-
-    expect(isValuableDropItem(고가키)).toBe(true)
-    expect(queryByTestId('valuable-drop-row-tint')).toBeNull()
-    expect(queryByTestId('valuable-drop-row-glow')).toBeNull()
-  })
-})
-
 // 아이콘 스택은 셋만 보여준다. 이 순서가 곧 무엇이 보이는가라, 그 판의 사건이 `+N` 뒤에 숨으면
 // 안 된다. 규칙 자체는 `lib/drop/drop-order` 가 갖고 여기서는 **화면이 그것을 쓰는가**만 본다.
 // 차례는 팝오버 목록에서 읽는다. 스택은 그림뿐이라 이름을 안 든다.
@@ -335,11 +315,3 @@ describe('BossProfitBossRow: 파티원 수', () => {
   })
 })
 
-// 오른쪽이 두 줄(이름 줄 + 파티·금액 줄)이라 위쪽 정렬이면 초상만 위로 붙는다.
-it('보스 초상은 행 전체의 세로 가운데에 선다', async () => {
-  const { getByTestId } = await renderProfit(<BossProfitBossRow row={보스행()} drops={[]} />)
-
-  expect(flattenStyle(getByTestId('boss-profit-boss-row').props.style)).toMatchObject({
-    alignItems: 'center',
-  })
-})

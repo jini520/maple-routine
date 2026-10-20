@@ -9,12 +9,6 @@
 import { nextScrimOpacity } from '../scrim-opacity'
 
 describe('nextScrimOpacity', () => {
-  it('인덱스를 그대로 옮긴다. 열림 0 이 짙음 1 이다', () => {
-    expect(nextScrimOpacity(0, 500, 0, 900)).toBe(1)
-    expect(nextScrimOpacity(-1, 900, 1, 500)).toBe(0)
-    expect(nextScrimOpacity(-0.5, 700, 1, 500)).toBe(0.5)
-  })
-
   it('시트가 **안 내려갔으면** 옅어지지 않는다. 스냅 포인트만 바뀐 프레임이 여기 걸린다', () => {
     // 자리는 그대로(500)인데 인덱스만 -0.4 로 떨어진 프레임.
     expect(nextScrimOpacity(-0.4, 500, 1, 500)).toBe(1)

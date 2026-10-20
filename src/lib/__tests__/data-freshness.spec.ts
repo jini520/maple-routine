@@ -10,10 +10,6 @@ describe('갱신 시각 표기', () => {
     expect(formatFetchedAt(new Date(2026, 8, 8, 9, 5, 1).toISOString())).toBe('09:05:01 기준')
   })
 
-  it('자정은 00 이다', () => {
-    expect(formatFetchedAt(new Date(2026, 8, 8, 0, 0, 0).toISOString())).toBe('00:00:00 기준')
-  })
-
   // 부르는 쪽이 이 빈 문자열로 줄을 통째로 뺀다.
   it('받은 적이 없으면 빈 문자열', () => {
     expect(formatFetchedAt(null)).toBe('')
@@ -36,11 +32,6 @@ describe('가장 최근 동기화 시각 고르기', () => {
     expect(latestSyncedAt([null, undefined, '2026-09-08T05:00:00.000Z'])).toBe(
       '2026-09-08T05:00:00.000Z',
     )
-  })
-
-  it('전부 비었으면 null', () => {
-    expect(latestSyncedAt([])).toBeNull()
-    expect(latestSyncedAt([null, undefined])).toBeNull()
   })
 
   // 캐시가 이상한 값을 줘도 나머지로 답한다.

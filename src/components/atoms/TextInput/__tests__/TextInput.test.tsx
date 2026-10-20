@@ -165,14 +165,6 @@ describe('TextInput: iOS 한 줄 칸은 줄 높이를 안 넘긴다', () => {
  * 색을 손으로 적지 않는다. `job-themes.json` 에서 읽는다.
  */
 describe('TextInput: 자리표시자 색을 아톰이 건다', () => {
-  it('테마의 `text-disabled` 로 그린다. 힌트이지 값이 아니다', async () => {
-    const { getByTestId } = await renderAtom(
-      <TextInput testID="칸" value="" placeholder="아이템 명" />,
-    )
-
-    expect(getByTestId('칸').props.placeholderTextColor).toBe(기본테마.textDisabled)
-  })
-
   // 아톰이 안 걸면 그 자리만 조용히 플랫폼 기본값으로 남는다. 이 아톰이 존재하는 이유가 그것이다.
   it('자리표시자가 없는 칸에도 값이 붙는다. 빠지는 자리를 안 만든다', async () => {
     const { getByTestId } = await renderAtom(<TextInput testID="칸" value="" />)

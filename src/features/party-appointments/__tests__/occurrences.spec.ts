@@ -101,13 +101,6 @@ describe('occurrencesInWeek', () => {
     expect(next.overridden).toBe(false)
   })
 
-  it('끝나는 순간은 시작에 길이를 더한 것이다', () => {
-    const [one] = occurrencesInWeek([appointment({ durationMinutes: 45 })], WEEK)
-
-    expect(one.startsAt.toISOString()).toBe('2026-09-30T12:00:00.000Z')
-    expect(one.endsAt.toISOString()).toBe('2026-09-30T12:45:00.000Z')
-  })
-
   it('자정을 넘는 약속은 시작 날짜의 주에 선다', () => {
     const crossing = appointment({
       timeKst: '23:30',

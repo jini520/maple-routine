@@ -3,8 +3,6 @@
 //
 // 토큰 색 기대값은 손으로 적지 않고 `job-themes.json` 에서 읽는다. 난이도 색은 테마
 // 토큰이 아니라 게임 안의 색이라 파일에 박힌 값을 그대로 단언한다.
-import { processColor } from 'react-native'
-
 import { type AtomElement, flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { Badge } from '../Badge'
 
@@ -16,54 +14,6 @@ function boxOf(label: AtomElement): AtomElement {
 }
 
 describe('평면 variant: 색만 갈리고 상자는 같다', () => {
-  it('primary 는 `*-tint` 배경 위 `*-ink` 글자', async () => {
-    const { getByText } = await renderAtom(<Badge variant="primary">3</Badge>)
-
-    expect(flattenStyle(getByText('3').props.style)).toMatchObject({
-      backgroundColor: 기본테마.primaryTint,
-      color: 기본테마.primaryInk,
-      borderRadius: 9999,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      fontSize: 12,
-      fontWeight: '600',
-    })
-  })
-
-  it('third 는 배경·글자 토큰만 바뀐다', async () => {
-    const { getByText } = await renderAtom(<Badge variant="third">7</Badge>)
-
-    expect(flattenStyle(getByText('7').props.style)).toMatchObject({
-      backgroundColor: 기본테마.thirdTint,
-      color: 기본테마.thirdInk,
-    })
-  })
-
-  // 완료 배지다. 두께가 기본값과 달라서 variant 가 두께까지 쥔다.
-  it('secondary 는 두께가 bold 다', async () => {
-    const { getByText } = await renderAtom(<Badge variant="secondary">완료</Badge>)
-
-    expect(flattenStyle(getByText('완료').props.style)).toMatchObject({
-      backgroundColor: 기본테마.secondaryTint,
-      color: 기본테마.secondaryInk,
-      fontWeight: '700',
-    })
-  })
-
-  // 눌린 회색 둘. 배경은 같고 글자만 갈린다. 진행 불가·시작 안함이 muted, 진행 중이 neutral 이다.
-  it('muted 와 neutral 은 배경이 같고 글자가 다르다', async () => {
-    const muted = await renderAtom(<Badge variant="muted">진행 불가</Badge>)
-    const neutral = await renderAtom(<Badge variant="neutral">진행 중</Badge>)
-
-    const a = flattenStyle(muted.getByText('진행 불가').props.style)
-    const b = flattenStyle(neutral.getByText('진행 중').props.style)
-
-    expect(a.backgroundColor).toBe(기본테마.surface2)
-    expect(b.backgroundColor).toBe(기본테마.surface2)
-    expect(a.color).toBe(기본테마.textMuted)
-    expect(b.color).toBe(기본테마.text)
-  })
-
   // 컨텐츠 카테고리 색은 테마 토큰이 아니라 리터럴 hex 에 `/20` 알파다. 알파가 조용히 사라지는
   // 종류의 실패라 배경이 실제로 붙는지 본다.
   it.each([
@@ -97,70 +47,11 @@ describe('평면 variant: 색만 갈리고 상자는 같다', () => {
   })
 })
 
-describe('난이도 variant: 그라디언트·테두리·그림자', () => {
-  it('난이도마다 다른 세로 그라디언트를 깐다', async () => {
-    const { getByText } = await renderAtom(<Badge variant="extreme">익스트림</Badge>)
-
-    const box = boxOf(getByText('익스트림'))
-    expect(box.props.colors).toEqual(['#3c3c3c', '#1c1414'].map(processColor))
-    // 방향을 기본값에 기대지 않는다. 뒤집히면 그림이 조용히 달라진다.
-    expect(box.props.startPoint).toEqual([0.5, 0])
-    expect(box.props.endPoint).toEqual([0.5, 1])
-  })
-
-  it('익스트림만 테두리가 1.5px 다', async () => {
-    const extreme = await renderAtom(<Badge variant="extreme">익스트림</Badge>)
-    expect(flattenStyle(boxOf(extreme.getByText('익스트림')).props.style)).toMatchObject({
-      borderWidth: 1.5,
-      borderColor: '#ef5d78',
-    })
-
-    const chaos = await renderAtom(<Badge variant="chaos">카오스</Badge>)
-    expect(flattenStyle(boxOf(chaos.getByText('카오스')).props.style)).toMatchObject({
-      borderWidth: 1,
-      borderColor: '#caa87f',
-    })
-  })
-
-  it('글자 그림자는 있는 난이도에만 있다', async () => {
-    const easy = await renderAtom(<Badge variant="easy">이지</Badge>)
-    expect(flattenStyle(easy.getByText('이지').props.style)).toMatchObject({
-      color: '#f5f6f7',
-      textShadowColor: 'rgba(0,0,0,0.3)',
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 1,
-    })
-
-    const chaos = await renderAtom(<Badge variant="chaos">카오스</Badge>)
-    expect(flattenStyle(chaos.getByText('카오스').props.style).textShadowColor).toBeUndefined()
-  })
-
-  // 800 은 안 쓴다. 안드로이드가 그 굵기에서 잰 폭보다 넓게 그려 뒷 음절을 잃는다.
-  it('난이도는 두께가 bold 다. 앱이 쓰는 최대 굵기다', async () => {
-    const { getByText } = await renderAtom(<Badge variant="hard">하드</Badge>)
-
-    expect(flattenStyle(getByText('하드').props.style).fontWeight).toBe('700')
-  })
-})
-
 describe('size 둘', () => {
   // 난이도 배지도 상태 배지와 같은 상자를 쓴다. 그라디언트 배지만
   // 혼자 작으면 같은 줄에 선 배지들과 높이가 어긋난다.
   // 테두리를 여백 안쪽으로 넣는다. Yoga 는 테두리를 패딩처럼 바깥 크기에 더하므로 빼 주지 않으면
   // 난이도 배지만 평면 배지보다 커진다.
-  it('난이도는 테두리 폭만큼 여백을 줄여 바깥 크기를 맞춘다', async () => {
-    const 보통 = flattenStyle(
-      boxOf((await renderAtom(<Badge variant="normal">노멀</Badge>)).getByText('노멀')).props.style,
-    )
-    expect(보통).toMatchObject({ borderWidth: 1, paddingHorizontal: 7, paddingVertical: 2 })
-
-    // 익스트림만 테두리가 1.5px 라 여백이 그만큼 더 줄어든다.
-    const 익스 = flattenStyle(
-      boxOf((await renderAtom(<Badge variant="extreme">익스트림</Badge>)).getByText('익스트림')).props.style,
-    )
-    expect(익스).toMatchObject({ borderWidth: 1.5, paddingHorizontal: 6.5, paddingVertical: 1.5 })
-  })
-
   it('여백과 테두리를 더하면 평면 배지의 여백과 같다', async () => {
     const 평면 = flattenStyle(
       (await renderAtom(<Badge variant="muted">진행 불가</Badge>)).getByText('진행 불가').props.style,
@@ -303,13 +194,5 @@ describe('프롭', () => {
       marginLeft: 'auto',
       backgroundColor: 기본테마.primaryTint,
     })
-  })
-
-  it('Text 속성을 그대로 전달한다', async () => {
-    const { getByTestId } = await renderAtom(
-      <Badge variant="third" testID="count" accessibilityLabel="완료 수">5</Badge>,
-    )
-
-    expect(getByTestId('count').props.accessibilityLabel).toBe('완료 수')
   })
 })

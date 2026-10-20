@@ -83,7 +83,6 @@ import { sweepOrphanDrops } from './orphan-drops'
 import { useToastStore } from '../toast/store'
 import {
   canReachPreviousPeriod,
-  loadPreviousPeriodTotal,
   resolveNextPeriodKey,
   resolvePreviousPeriodKey,
 } from './period-navigation'
@@ -211,14 +210,6 @@ export interface BossProfitState {
    * 화면이 이것으로 **기록이 없어도 요약을 그린다**. 0 메소가 확정이 아니라 아직 덜 왔다는 뜻이다.
    */
   periodPendingAggregation: boolean
-  /**
-   * 직전 기간의 총 수익. 증감 칩의 비교 기준.
-   *
-   * 기록 합만 담는다. 조회한 적 없는 기간도 0 이라 이 값은 기간 상태 기계(`periodState`)와
-   * 무관하고, 화면은 이 숫자 하나만 보고 칩을 그린다. 대가로 0메소였다 와 모른다 가 구분되지
-   * 않는다.
-   */
-  previousPeriodTotalMeso: number
   canGoPreviousPeriod: boolean // 현재 선택된 기간에서 한 칸 더 과거로 이동할 수 있는지(#29). 이전 기간이 지금 조회 가능하거나 이미 캐시된 기록이 있을 때만 true. 조회 불가·레코드 없는 기간에 착지하는 것을 막는다.
   error: ScheduleSyncError | null
   staleCharacterNames: string[]
@@ -240,7 +231,6 @@ export interface BossProfitState {
    */
   unqueryableCards: CharacterCardStub[]
   trackedOcids: string[] | null
-  lastSyncedAt: string | null // 페이지 전체 기준 마지막으로 성공한 실시간 동기화 시각(ISO 8601). 컨텐츠/보스 스케줄러의 formatSyncedAt과 동일하게 새로고침 아이콘 옆에 표시
 }
 
 
@@ -972,10 +962,9 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
         : []
     // 서로 독립인 SQLite 조회라 병렬로 던진다. 직렬로 두면 조회 하나가 지연될 때마다
     // withSqliteFallback 의 5초 타임아웃이 줄줄이 더해진다.
-    const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
+    const [canGoPreviousPeriod, dropsByRowKey] = await Promise.all([
       canReachPreviousPeriod(tab, periodKey, displayOcids),
       loadDropsByRowKey(displayOcids, withCurrentPeriodRows(rows), now),
-      loadPreviousPeriodTotal(displayOcids, tab, periodKey),
     ])
     if (input.isStale()) return { kind: 'cancelled' }
     return {
@@ -996,7 +985,6 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
           lastOutcome: null,
         }),
         canGoPreviousPeriod,
-        previousPeriodTotalMeso,
         unqueryableCards,
       },
     }
@@ -1061,7 +1049,7 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
   // 정리 → 읽기 순서는 지키되 다른 둘과는 나란히 간다. 지운 것이 화면 맵에 남지 않으려면
   // `loadDropsByRowKey` 보다 앞이어야 하지만, 앞줄에 세워 직렬로 두면 기간을 옮길 때마다
   // 왕복이 하나 더 얹힌다. 그래서 그 갈래 안에서만 이어 붙인다.
-  const [canGoPreviousPeriod, dropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
+  const [canGoPreviousPeriod, dropsByRowKey] = await Promise.all([
     canReachPreviousPeriod(tab, periodKey, displayOcids),
     // 정리에는 **동기화 대상만** 넘긴다. 해제한 캐릭터는 동기화를 안 해 영원히 `믿을 수 있는
     // 캐릭터`가 못 되고, 넣는 순간 술어가 그들의 드롭을 고아로 읽는다.
@@ -1077,7 +1065,6 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
       notifyOrphanDropCleanup(removedDrops)
       return loadDropsByRowKey(displayOcids, withCurrentPeriodRows(rows), now)
     }),
-    loadPreviousPeriodTotal(displayOcids, tab, periodKey),
   ])
 
   // 캐릭터별 상태 → 이 화면의 상태. 기록 유무는 방금 읽은 rows 에서 본다(같은 조회를 두 번
@@ -1112,7 +1099,6 @@ async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuild
       periodState,
       periodPendingAggregation,
       canGoPreviousPeriod,
-      previousPeriodTotalMeso,
       // 지난 기간은 기록이 있으면 행으로 이미 서고, 없으면 그 주에 없었던 것이 맞다.
       unqueryableCards: [],
     },
@@ -1143,7 +1129,6 @@ function commitPeriod(
     periodState: snapshot.periodState,
     periodPendingAggregation: snapshot.periodPendingAggregation,
     canGoPreviousPeriod: snapshot.canGoPreviousPeriod,
-    previousPeriodTotalMeso: snapshot.previousPeriodTotalMeso,
     unqueryableCards: snapshot.unqueryableCards,
   })
 }
@@ -1259,7 +1244,6 @@ async function loadPeriod(
 
 const initialState: BossProfitState = {
   status: 'idle',
-  previousPeriodTotalMeso: 0,
   tab: 'weekly',
   periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
   rows: [],
@@ -1278,7 +1262,6 @@ const initialState: BossProfitState = {
   characterIssues: {},
   unqueryableCards: [],
   trackedOcids: null,
-  lastSyncedAt: null,
 }
 
 // 부팅 선하이드레이션과 화면 마운트가 같은 회차를 부르므로, 진행 중인 회차가 있으면 그 Promise 를
@@ -1391,11 +1374,6 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
 
     // `ocids` 는 동기화 대상이다. 그리는 것은 그보다 넓다. 기록을 남긴 캐릭터가 함께 든다.
     const displayOcids = await resolveDisplayOcids(ocids)
-
-    // 직전 기간 합계는 이 새로고침이 바꾸지 않는 값이다. 자동 기록은 현재 기간에만 쓴다. 그래서
-    // 한 번만 읽고 두 단계(캐시·동기화 완료)가 나눠 쓴다. 여기서 미리 던져 다른 조회와 겹치게
-    // 한다. 단계 사이에 끼워 넣으면 SQLite 지연 시 withSqliteFallback 의 5초 창이 하나 더 붙는다.
-    const previousPeriodTotalPromise = loadPreviousPeriodTotal(displayOcids, tab, currentPeriodKey)
 
     if (ocids.length === 0) {
       setLatestSyncSnapshot(
@@ -1563,20 +1541,9 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const cachedSyncedAts = cachedByOcid
       .map((entry) => entry.syncedAt)
       .filter((syncedAt): syncedAt is string => syncedAt !== null)
-    // 자동 진입의 건너뛰기와 **로컬 쓰기의 건너뛰기**를 갈라 둔다. 머리의 `기준` 시각은 앞엣것만
-    // 손댄다. 뒤엣것은 마지막 동기화 시각을 바꾼 일이 없으므로, 함께 쓰면 저장할 때마다 그 시각이
-    // 캐시의 옛 값으로 뒷걸음질한다.
     const autoSkipSync =
       options?.auto === true && hasSyncAttemptedThisRun() && isSyncFresh(cachedSyncedAts, ocids.length, now)
     const skipSync = options?.skipSync === true || autoSkipSync
-    // 건너뛴 진입의 n분 전 은 판정에 쓴 가장 오래된 캐시 syncedAt 이다. 지금 시각으로 채우면
-    // 하지 않은 동기화를 했다고 말하게 되고, null 로 두면 신선한 데이터를 보여주면서 동기화
-    // 기록 없음 이라 말하게 된다.
-    const oldestCachedSyncedAt = cachedSyncedAts.reduce<string | null>(
-      (oldest, syncedAt) =>
-        oldest === null || new Date(syncedAt).getTime() < new Date(oldest).getTime() ? syncedAt : oldest,
-      null,
-    )
 
     // 캐시 행에서 파생한 키만 쓰면 행이 없는 기간을 조회조차 안 해 되살릴 재료가 없다.
     // 동기화 분기와 같이 현재 주·달 키를 항상 포함한다.
@@ -1681,7 +1648,6 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           error: null,
           staleCharacterNames: [],
           characterIssues: cachedIssues,
-          lastSyncedAt: oldestCachedSyncedAt,
         })
         await loadPeriod(set, tab, viewedPeriodKey, ocids, now, myGeneration)
         return
@@ -1704,14 +1670,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
             )
           : []
 
-      // 캐시 단계가 그릴 것이 없으면 총 수익 헤드라인도 없으므로 비교 기준을 기다릴 이유가 없다.
-      // 판정은 복원까지 끝낸 최종 행으로 한다. 캐시 행이 0 이어도 기록에서 되살아난 행이 있으면
-      // 헤드라인이 있다. 건너뛰는 진입에는 이 값을 다시 채울 동기화 완료 단계가 없어, 행이
-      // 하나도 없어도 직전 기간 합계를 읽어야 증감 칩이 0 으로 굳지 않는다.
-      const [cachedDropsByRowKey, previousPeriodTotalMeso] = await Promise.all([
-        loadDropsByRowKey(displayOcids, cachedSortedRows, now),
-        cachedSortedRows.length > 0 || skipSync ? previousPeriodTotalPromise : Promise.resolve(0),
-      ])
+      const cachedDropsByRowKey = await loadDropsByRowKey(displayOcids, cachedSortedRows, now)
 
       // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
       // 캐시 우선 표시조차 화면에 반영하지 않는다. 더 최신 액션이 이미 진행 중이므로 그 결과가
@@ -1735,7 +1694,6 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         // 현재 기간은 실시간 동기화가 원천이라 집계를 기다리는 자리가 아니다.
         periodPendingAggregation: false,
         canGoPreviousPeriod,
-        previousPeriodTotalMeso,
         error: null,
         staleCharacterNames: [],
         characterIssues: cachedIssues,
@@ -1745,7 +1703,6 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           cachedSortedRows,
           cachedCharacterProfiles,
         ),
-        ...(autoSkipSync ? { lastSyncedAt: oldestCachedSyncedAt } : {}),
       })
       if (skipSync) return
     }
@@ -1916,12 +1873,6 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       notifyOrphanDropCleanup(removedDrops)
     }
 
-    // 실시간 동기화가 실제로 성공했으므로 마지막 동기화 시각을 기록한다. 세대 가드보다 앞에서
-    // 갱신해야 한다. 그 사이 다른 기간으로 이동해 아래 최종 set() 이 건너뛰어져도
-    // latestSyncSnapshot 은 이미 신선한 데이터로 갱신되므로, lastSyncedAt 이 함께 갱신되지
-    // 않으면 신선한 데이터를 보여주면서 동기화 기록 없음 이라 표시되는 불일치가 생긴다.
-    set({ lastSyncedAt: new Date().toISOString() })
-
     // 동기화·자동 기록은 위에서 다 끝났다. 보던 기간(지난 달)의 화면 반영은 loadPeriod 에
     // 넘긴다. 그 함수가 이미 과거 기간은 기록이 원천 을 알고 있어 새 렌더 경로를 만들 이유가 없다.
     if (refreshInPlace) {
@@ -1943,10 +1894,9 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
           )
         : []
 
-    const [liveDropsByRowKey, livePreviousPeriodTotalMeso, liveCanGoPreviousPeriod] =
+    const [liveDropsByRowKey, liveCanGoPreviousPeriod] =
       await Promise.all([
         loadDropsByRowKey(displayOcids, sortedRows, now),
-        previousPeriodTotalPromise,
         // **다시 잰다.** 위에서 잰 값은 조회 앞의 사실이고, 그 사이에 창 동기화가 지난 기간
         // 기록을 만들 수 있다. 낡은 값을 여기서 쓰면 기록이 생겼는데도 화살표가 꺼진 채로 굳는다.
         canReachPreviousPeriod(tab, currentPeriodKey, displayOcids),
@@ -1966,12 +1916,10 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       isPeriodLoading: false,
       periodState: sortedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
       canGoPreviousPeriod: liveCanGoPreviousPeriod,
-      previousPeriodTotalMeso: livePreviousPeriodTotalMeso,
       error: null,
       staleCharacterNames,
       characterIssues,
       unqueryableCards: buildUnqueryableCards(tab, strandedOcids, sortedRows, characterProfiles),
-      // lastSyncedAt은 위에서 세대 가드보다 먼저 갱신했다(중단돼도 시각이 남도록).
     })
 
     // 동기화가 스냅샷을 갈았으니 표의 판도 갈렸다. 창을 다시 채워 다음 이동이 안 기다리게 한다.

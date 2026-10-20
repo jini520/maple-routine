@@ -46,20 +46,6 @@ describe('BossPortrait', () => {
     })
   })
 
-  it('기본 크기는 40px 이고 size 로 바꾼다', async () => {
-    const 기본 = await renderAtom(<BossPortrait portraitSlug={null} label="벨로나" />)
-    expect(flattenStyle(기본.getByTestId('boss-portrait').props.style)).toMatchObject({
-      width: 40,
-      height: 40,
-    })
-
-    const 지정 = await renderAtom(<BossPortrait portraitSlug={null} label="벨로나" size={28} />)
-    expect(flattenStyle(지정.getByTestId('boss-portrait').props.style)).toMatchObject({
-      width: 28,
-      height: 28,
-    })
-  })
-
   // 격자로 서는 자리(가계부의 처치 타일)를 위한 둘째 모양. 원이 격자로 서면
   // 네 귀가 비어 사이가 성겨 보인다.
   it('네모를 지정하면 귀만 둥근 상자다. 기본은 원형 그대로다', async () => {

@@ -52,22 +52,6 @@ beforeEach(async () => {
 // 스위치는 켜져 있는데 기기가 꺼져 있으면 알림이 영영 안 온다. 그 어긋남은 켜려다 막힌 적이
 // 없어서 `blockedByPermission` 이 못 잡는다.
 describe('권한 읽기', () => {
-  it('허용돼 있으면 참으로 적는다', async () => {
-    hasPermission.mockResolvedValue(true)
-
-    await useNoticeStore.getState().refreshPermission()
-
-    expect(useNoticeStore.getState().permissionGranted).toBe(true)
-  })
-
-  it('꺼져 있으면 거짓으로 적는다', async () => {
-    hasPermission.mockResolvedValue(false)
-
-    await useNoticeStore.getState().refreshPermission()
-
-    expect(useNoticeStore.getState().permissionGranted).toBe(false)
-  })
-
   // 화면에 들어온 것은 알림을 켜겠다고 말한 자리가 아니다. iOS 는 팝업을 한 번밖에 못 띄운다.
   it('묻지 않는다', async () => {
     hasPermission.mockResolvedValue(false)

@@ -13,7 +13,7 @@ import { hexToOklch, oklchToHex, parseHex, toHex, withLightness } from '../lib/c
 import { THEME_TOKEN_KEYS, deriveMediaScope } from '../lib/theme/theme-derive'
 import type { ThemeDefinition } from '../types/theme'
 
-/** `mediaInkMuted` → `--color-media-ink-muted`. core 의 `toCustomPropertyName` 과 같은 규칙이다. */
+/** `mediaInkMuted` → `--color-media-ink-muted`. `tailwind.config.js` 가 참조하는 이름 규칙이다. */
 export function toColorVariableName(token: string): string {
   return `--color-${token.replace(/([a-z])([A-Z0-9])/g, '$1-$2').toLowerCase()}`
 }

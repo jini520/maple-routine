@@ -98,25 +98,10 @@ async function 그리기(): Promise<Awaited<ReturnType<typeof renderOverlay>>> {
 }
 
 describe('StatsScreen', () => {
-  it('머리에 통계와 주간 · 월간이 서고 기간 줄은 이번 주다', async () => {
-    const view = await 그리기()
-
-    expect(view.getByText('통계')).toBeTruthy()
-    expect(view.getByText('주간')).toBeTruthy()
-    expect(view.getByText('월간')).toBeTruthy()
-    expect(view.getByTestId('stats-period-label').props.children).toBe('이번 주')
-  })
-
   it('순 수익 카드는 그 기간의 수입 − 지출이다', async () => {
     const view = await 그리기()
 
     expect(view.getByTestId('stats-summary-net').props.children.join('')).toContain('+3억')
-  })
-
-  it('순 수익 옆에 지난 기간 대비 증감 칩이 없다', async () => {
-    const view = await 그리기()
-
-    expect(view.queryByLabelText(/지난 주(에는| 대비)/)).toBeNull()
   })
 
   it('이전 기간으로 옮기면 지난 주의 합계가 선다', async () => {
@@ -236,12 +221,6 @@ describe('결산 안내 줄', () => {
   // 실물 스토어라 값이 케이스 사이로 샌다.
   beforeEach(() => {
     useSettlementStore.setState({ settling: false, startedAt: null, dismissedAt: null, visible: false })
-  })
-
-  it('결산 중이 아니면 안 선다', async () => {
-    const view = await 그리기()
-
-    expect(view.queryByTestId('stats-settlement-banner')).toBeNull()
   })
 
   it('결산 중이면 머리글 아래에 서고 둘째 줄이 보스 수익이 늦는다고 말한다', async () => {

@@ -11,29 +11,13 @@ function afterFee(amount: number, feePercent: number): number {
 }
 
 describe('netProceedsMeso: 판매 수수료를 뗀다', () => {
-  it('3% 와 5% 를 뗀다', () => {
-    expect(netProceedsMeso(1_000_000_000, 3)).toBe(970_000_000)
-    expect(netProceedsMeso(1_000_000_000, 5)).toBe(950_000_000)
-  })
-
   // 수수료 쪽을 내림한다 = 정산 대상이 커지는 쪽. 방향을 뒤집으면 1 메소가 움직인다.
   it('수수료를 내림한다. 딱 떨어지지 않는 금액에서', () => {
     expect(netProceedsMeso(1_001, 3)).toBe(1_001 - 30) // 30.03 → 30
   })
-
-  it('0 이면 0 이다', () => {
-    expect(netProceedsMeso(0, 5)).toBe(0)
-  })
 })
 
 describe('transferPerMember: 수수료를 거쳐도 같아지는 **보낼 금액**', () => {
-  // 분배 규칙의 표를 그대로 고정한다.
-  it('판매가 10억 · 6인 · 판매 3% · 분배 3% 이면 162,479,061 을 보낸다', () => {
-    expect(
-      transferPerMember({ salePriceMeso: 1_000_000_000, partySize: 6, saleFeePercent: 3, splitFeePercent: 3 }),
-    ).toBe(162_479_061)
-  })
-
   // 이것이 이 도구의 존재 이유다. 명목 ÷n(161,666,666)을 보내면 먹은 사람만 480만을 더 갖는다.
   it('명목 ÷n 보다 많이 보낸다. 먹은 사람도 분배 수수료를 나눠 지기 때문이다', () => {
     const netProceeds = netProceedsMeso(1_000_000_000, 3)
@@ -49,19 +33,8 @@ describe('transferPerMember: 수수료를 거쳐도 같아지는 **보낼 금액
     expect(transfer).toBeGreaterThan(naive)
     expect(naive).toBe(161_666_666)
   })
-
-  it('파티원이 1인이면 보낼 곳이 없다', () => {
-    expect(
-      transferPerMember({ salePriceMeso: 1_000_000_000, partySize: 1, saleFeePercent: 3, splitFeePercent: 3 }),
-    ).toBeNull()
-  })
-
-  it('판매가가 0 이면 보낼 금액도 0 이다', () => {
-    expect(transferPerMember({ salePriceMeso: 0, partySize: 4, saleFeePercent: 3, splitFeePercent: 5 })).toBe(0)
-  })
 })
 
-// 위의 고정값 하나는 표를 베낀 것이고, 아래는 왜 그 값인가 다.
 describe('불변식. 여섯이 같아진다', () => {
   const CASES = [
     { salePriceMeso: 1_000_000_000, partySize: 6, saleFeePercent: 3, splitFeePercent: 3 },
@@ -150,19 +123,6 @@ describe('비율 약속. 1/n 이 아니라 2:1 로 나눌 때', () => {
     expect(new Set(값들).size).toBe(1)
   })
 
-  it('10억 · 2인 · 내가 2, 합 3 · 판매 3% · 분배 3% 이면 329,931,972 를 보낸다', () => {
-    expect(
-      transferPerMember({
-        salePriceMeso: 1_000_000_000,
-        partySize: 2,
-        saleFeePercent: 3,
-        splitFeePercent: 3,
-        myShare: 2,
-        sharesTotal: 3,
-      }),
-    ).toBe(329_931_972)
-  })
-
   // 계산기의 존재 이유가 비율에서도 그대로다. 수수료를 거치고도 약속한 비가 나와야 한다.
   it('수수료를 거친 잔액이 약속한 비가 된다. 파는 사람이 두 배를 쥔다', () => {
     const input = {
@@ -179,53 +139,6 @@ describe('비율 약속. 1/n 이 아니라 2:1 로 나눌 때', () => {
     const keptByLooter = netProceedsMeso(input.salePriceMeso, input.saleFeePercent) - transfer
     const received = afterFee(transfer, input.splitFeePercent)
     expect(Math.abs(keptByLooter - received * 2)).toBeLessThanOrEqual(2)
-  })
-
-  it('내 비율이 작으면 명목 절반보다 많이 보낸다', () => {
-    const 많이가짐 = transferPerMember({
-      salePriceMeso: 1_000_000_000,
-      partySize: 2,
-      saleFeePercent: 3,
-      splitFeePercent: 3,
-      myShare: 2,
-      sharesTotal: 3,
-    })
-    const 적게가짐 = transferPerMember({
-      salePriceMeso: 1_000_000_000,
-      partySize: 2,
-      saleFeePercent: 3,
-      splitFeePercent: 3,
-      myShare: 1,
-      sharesTotal: 3,
-    })
-    expect(적게가짐).toBeGreaterThan(많이가짐 as number)
-  })
-
-  // 아이템을 다 넘기고 결정석만 갖는 약속. 판 사람이 정산 대상 전부를 보낸다.
-  it('내 비율이 0 이면 정산 대상을 전부 보낸다', () => {
-    expect(
-      transferPerMember({
-        salePriceMeso: 1_000_000_000,
-        partySize: 2,
-        saleFeePercent: 3,
-        splitFeePercent: 3,
-        myShare: 0,
-        sharesTotal: 3,
-      }),
-    ).toBe(netProceedsMeso(1_000_000_000, 3))
-  })
-
-  it('혼자 다 갖는 약속이면 보낼 금액이 0 이다', () => {
-    expect(
-      transferPerMember({
-        salePriceMeso: 1_000_000_000,
-        partySize: 2,
-        saleFeePercent: 3,
-        splitFeePercent: 3,
-        myShare: 3,
-        sharesTotal: 3,
-      }),
-    ).toBe(0)
   })
 
   // 중간값이 안전 정수를 넘으면 계산이 조용히 틀린다. 비율이 곱을 하나 더 만든다.

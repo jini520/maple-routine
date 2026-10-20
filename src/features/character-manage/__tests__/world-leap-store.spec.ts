@@ -45,11 +45,6 @@ beforeEach(() => {
   })
 })
 
-it('짚은 것을 들고 있는다', () => {
-  useWorldLeapStore.getState().noticeWorldLeap(짚음)
-  expect(useWorldLeapStore.getState().notice).toEqual(짚음)
-})
-
 // 한 계정이 통째로 이전하면 후보가 여럿이다. 모달을 쌓으면 사용자가 같은 질문에 연달아 답한다.
 it('이미 하나를 들고 있으면 둘째를 안 받는다', () => {
   const 둘째: WorldLeapNotice = { ...짚음, from: { ...옛것, ocid: 'old-2' } }

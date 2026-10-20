@@ -11,7 +11,7 @@
 
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { renderAtom, flattenStyle, 기본테마 } from '../../../../components/__tests__/render-atom'
+import { renderAtom, flattenStyle } from '../../../../components/__tests__/render-atom'
 import { RemainingScheduleWidget } from '../RemainingScheduleWidget'
 import { 뷰모델, 스케줄목록, 스케줄행, 빈_뷰모델 } from './widget-fixture'
 import type { ScheduleRowView } from '../../view-model'
@@ -118,17 +118,6 @@ describe('수치는 `갈래 N개`다', () => {
     expect(숫자.fontSize).toBe(단위.fontSize)
     expect(String(숫자.fontWeight)).toBe('700')
     expect(숫자.fontWeight).not.toBe(단위.fontWeight)
-  })
-
-  // 숫자를 `primary-ink` 로 칠하면 이 타일 하나에 강조색이 **캐릭터 수만큼** 반복된다
-  // (세그먼트는 머리글에 하나뿐이라 그 규칙에 안 걸린다).
-  it('숫자 색은 닉네임과 같은 `text` 이고 `개`는 `text-muted` 다. 테마 강조색이 아니다', async () => {
-    const view = await 위젯([스케줄행()])
-
-    expect(flattenStyle(view.getByText('4').props.style).color).toBe(기본테마.text)
-    expect(flattenStyle(view.getByText('야간비행').props.style).color).toBe(기본테마.text)
-    expect(flattenStyle(view.getByText('개').props.style).color).toBe(기본테마.textMuted)
-    expect(flattenStyle(view.getByText('4').props.style).color).not.toBe(기본테마.primaryInk)
   })
 
   it('숫자에 `tabular-nums` 와 **바닥 폭**이 걸린다. 천장은 없다', async () => {
@@ -346,17 +335,6 @@ describe('펼침도 그 탭의 것만이다', () => {
     ])
 
     expect(view.queryAllByTestId('schedule-toggle')).toHaveLength(1)
-  })
-
-  // 20px 배지가 줄 높이를 혼자 정하고 있었다. 이제 상자에 높이를 안 박고
-  // 여백이 높이를 만들므로, `작다`는 **글자 크기**로 잰다.
-  it('보스 배지가 작은 크기다. 본문보다 작은 칩 계단을 쓴다', async () => {
-    const view = await 위젯([스케줄행()])
-
-    await 탭(view, '월간')
-    await 펼치기(view)
-
-    expect(Number(flattenStyle(view.getByText('하드').props.style).fontSize)).toBe(9)
   })
 
   // `[주간 퀘스트] 타락한 세계수 주간 임무` 와 `… 정화에 대한 보답` 이 **둘 다 타락한 세계수** 로

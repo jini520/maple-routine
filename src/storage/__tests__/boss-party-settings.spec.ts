@@ -109,27 +109,6 @@ describe('getBossPartySize', () => {
     await expect(getBossPartySize('ocid-1', 'black_mage', 'extreme')).resolves.toBeNull()
   })
 
-  it('조회 결과가 있으면 party_size를 반환한다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          ocid: 'ocid-1',
-          boss_key: 'black_mage',
-          boss: '검은 마법사',
-          difficulty: 'extreme',
-          party_size: 4,
-          crystal_my_share: null,
-          crystal_shares_total: null,
-          split_fee_percent: null,
-          updated_at: '2026-07-13T00:05:00.000Z',
-        },
-      ],
-    })
-    const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
-
-    await expect(getBossPartySize('ocid-1', 'black_mage', 'extreme')).resolves.toBe(4)
-  })
-
   it('ocid/boss/difficulty 조건으로 조회한다', async () => {
     queryMock.mockResolvedValue({ values: [] })
     const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')

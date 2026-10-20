@@ -1,8 +1,9 @@
 import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
 import { clearCacheData, getCacheDataSizes } from '../../storage/cache-data'
-import { setPendingNotice } from '../../storage/pending-notice'
+import { consumePendingNotice, setPendingNotice } from '../../storage/pending-notice'
 import { closeBossProfitDb } from '../../storage/sqlite/db'
 import { showSplashScreen } from '../../native/splash-screen'
+import { useToastStore } from '../toast/store'
 
 // 캐시 데이터 삭제의 오케스트레이션. 화면에서 이리로 옮겼다.
 //
@@ -42,7 +43,7 @@ export async function clearCacheDataAndReload(
     new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), CLEAR_TIMEOUT_MS)),
   ])
   if (outcome !== 'ok') {
-    setPendingNotice('cacheClearFailed')
+    await setPendingNotice('cacheClearFailed')
   }
   // 리로드가 JS 컨텍스트를 파괴하기 전에 SQLite 커넥션을 먼저 정상 종료한다. 안 그러면 네이티브
   // 쪽에 stale 커넥션이 남아 리로드 후 보스 수익 과거 기간 조회가 실패한다. 닫기는 던지지 않고
@@ -55,4 +56,15 @@ export async function clearCacheDataAndReload(
   // 주황 화면에 갇히고 그 화면에서는 터치도 죽는다.
   await showSplashScreen().catch(() => {})
   reload()
+}
+
+/**
+ * 지난 실행의 캐시 삭제가 실패했으면 오류 토스트를 띄우는 함수. 부팅이 한 번 부른다.
+ *
+ * 표시는 읽으면서 지워지므로 다시 불러도 토스트가 두 번 뜨지 않는다.
+ */
+export async function showPendingCacheClearNotice(): Promise<void> {
+  if ((await consumePendingNotice()) === 'cacheClearFailed') {
+    useToastStore.getState().showError('캐시를 일부만 삭제했습니다')
+  }
 }

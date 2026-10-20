@@ -1,199 +1,69 @@
-# 스플래시 (Splash Screen)
+# 스플래시
 
-> **범위**: 앱 실행 스플래시 한 장. 언제 뜨고, 무엇으로 그리고, 누가 내리는가.
-> **여기 없는 것**: 웹뷰 시절의 두 장 구조(네이티브 + DOM 커버), `SplashActivity` 비트맵, MIUI
-> force-dark 색 split 은 전부 캐패시터 앱의 것이고 저장소에서 사라졌다. 아래
-> [폐기된 정책](#폐기된-정책-history)에만 남는다.
-> **관련 문서**: [live-update.md](./live-update.md) ·
-> [../foundation/release.md](../foundation/release.md) · [theme.md](./theme.md)
+앱을 켜고 첫 화면이 그려지기 전까지 보이는 화면과 앱 아이콘을 다룬다. 스플래시는 OS 가 그리는 1겹과
+앱이 그리는 2겹으로 되어 있다. 왜 이렇게 만들었는지는 [[ADR-013]] 에 있다.
 
 ## 관련 소스
 
-| 구분 | 파일 | 하는 일 |
+| 파일 | 하는 일 |
+|---|---|
+| `app.json` 의 `expo-splash-screen` 블록 | 1겹의 색(라이트 `#FFFFFF` · 다크 `#000000`)과 투명 로고 |
+| `assets/splash-icon-none.png` | 1겹에 넣는 완전히 투명한 그림 |
+| `assets/splash-icon.png` | 2겹의 로고 |
+| `app/BootSplash.tsx` | 2겹. 그려지면 1겹을 내리고, 600ms 뒤에 사라진다 |
+| `app/AppShell.tsx` | 2겹을 형제 중 마지막에 두어 맨 위에 그린다 |
+| `index.ts` · `boot-splash.ts` | 스플래시 붙들기, 퇴장 페이드 끄기, 8초 실패 안전 타이머 |
+| `native/splash-screen.ts` · `native/adapters/rn-splash-screen.ts` | 스플래시를 내리는 포트 함수 `hideSplashScreen()` |
+| `app.config.js` 의 `withSplashWindowBackground` | 안드로이드 `AppTheme` 의 창 배경을 1겹과 같은 색으로 |
+| `android/app/src/main/res/values/colors.xml` · `values-night/colors.xml` | 1겹 색(`splashscreen_background`). 커밋된 네이티브 파일 |
+| `ios/app/Images.xcassets/SplashScreenBackground.colorset` | iOS 의 1겹 색 |
+| `scripts/make-app-icons.py` | 그림 한 장으로 앱 아이콘을 만든다 |
+
+## 앱을 켤 때 일어나는 일
+
+| 순서 | 화면 | 일어나는 일 |
 |---|---|---|
-| 설정 | `app.json` 의 `expo-splash-screen` 블록 | 1겹의 색. **로고는 없다**([[ADR-216]] 정정 1) |
-| 에셋 | `assets/splash-icon-none.png` | 1겹용 완전 투명 PNG. 플러그인이 아이콘 항목을 하드코딩해 **지울 수가 없어** 투명으로 비운다 |
-| 에셋 | `assets/splash-icon.png` | 로고. **2겹이 쓴다** |
-| 2겹 | `src/app/BootSplash.tsx` | 앱이 그리는 브랜드 화면. 애니메이션이 들어갈 자리 |
-| 산출물 | Android `values/colors.xml` 의 `splashscreen_background` | `expo prebuild` 가 내린다 |
-| 산출물 | iOS `Images.xcassets/SplashScreen{Background,Logo}` | 같다 |
-| 붙들기 | `index.ts` → `src/boot-splash.ts` | 붙들기와 실패 안전 타이머 |
-| 내리기 | `BootSplash` 의 `onLayout` | 정상 경로. **시계가 아니라 2겹이 그려졌다는 사실이 신호다** |
-| 포트 | `src/native/splash-screen.ts` · `adapters/rn-splash-screen.ts` | 내리는 자리를 하나로 모은다 |
+| 1 | 1겹(흰색 또는 검정) | OS 가 시작 창을 그린다. `index.ts` 가 스플래시를 붙들고 8초 타이머를 건다 |
+| 2 | 2겹(주황 + 로고) | `BootSplash` 가 그려지면 `onLayout` 이 1겹을 내린다 |
+| 3 | 2겹 | 1겹이 사라진 뒤부터 600ms 를 센다. 1겹이 2초 안에 안 사라져도 세기 시작한다 |
+| 4 | 앱 화면 | 2겹이 사라진다 |
 
-**관련 ADR**: [[ADR-138]](자산 파이프라인) · [[ADR-128]](RN 어댑터) · [[ADR-136]](앱 루트 바탕색) ·
-⛔ ADR-117 결정 3·4(실패 안전 타이머, 내리는 코드 한 곳. 🔗 로 살아남은 부분)
+부팅 렌더가 오류를 던지면 `ErrorBoundary` 가 스플래시를 내리고, 그것도 안 되면 8초 타이머가 내린다.
 
-## 정책: 지금은 네이티브 스플래시 **한 장**뿐이다 ([[ADR-128]] · [[ADR-138]])
+## 1겹의 색이나 그림을 바꿀 때
 
-> ⚠️ **[[ADR-216]] 이 이 한 장을 두 겹으로 바꾸는 중이다**(설계, 미구현). 아래는 그 전의 현행이다.
-> 애니메이션이 들어갈 자리가 지금 구조에 없다는 것이 그 ADR 의 출발점이고, 그 조사에서
-> **1겹을 내리는 타이머가 화면에 무엇이 그려졌는지 모른다**는 것이 드러났다. 아래
-> [내리기의 문제](#내리기의-문제-adr-216-이-고친다)를 함께 볼 것.
+1겹은 `app.json` 이 정하지만, 앱이 실제로 쓰는 값은 커밋된 네이티브 파일(`colors.xml` 두 개와 iOS colorset)
+에 있다. 둘을 함께 고쳐야 한다. `expo prebuild` 로 다시 만들 수도 있지만, prebuild 는 `android/` 와 `ios/` 를
+통째로 지우고 다시 만들어서 커밋하지 않은 파일과 손으로 고친 설정이 사라진다.
 
-RN 에는 문서(document)가 없어 덮을 DOM 커버라는 개념 자체가 없다. 스플래시는 OS 가 그리는 네이티브
-화면 하나이고, 앱이 하는 일은 **언제까지 띄워 두고 언제 내리는가** 둘뿐이다.
+| prebuild 가 지우는 것 | 증상 |
+|---|---|
+| `android/app/build.gradle` 의 릴리스 서명 블록 | release 가 서명 없이 나온다(`app-release-unsigned.apk`) |
+| `android/keystore.properties` | 서명 블록이 남아 있어도 키를 찾지 못한다 |
+| `ios/Pods/` | `pod install` 을 다시 돌려야 한다 |
 
-- **1겹의 색은 `app.json` 한 곳이 정한다**. `expo-splash-screen` 플러그인 블록:
-  `image: ./assets/splash-icon-none.png`(완전 투명) · `backgroundColor: #FFFFFF` ·
-  `dark.backgroundColor: #000000`. `expo prebuild` 가 이 값을 네이티브로 내린다
-  (Android `values/colors.xml` 과 `values-night/colors.xml` 의 `splashscreen_background`,
-  iOS `SplashScreenBackground.colorset`).
-- **1겹은 시스템 테마를 따라간다**([[ADR-216]] 결정 4 정정 2, 사용자 지정). 라이트에서 흰색,
-  다크에서 검정. 브랜드는 2겹이 든다.
-  **덤으로 MIUI/HyperOS force-dark 문제가 구조에서 사라진다** - 다크에서 1겹이 검정이라 **깎을
-  밝은 색이 없고**, 브랜드 주황은 전부 RN 뷰인 2겹으로 옮겨갔다. ⛔ [[ADR-025]] 의 색 split 이
-  풀려던 문제고 [[ADR-138]] 결정 4 가 대가로 받아들였던 것이다. **MIUI 실기기 미검증이다.**
-- **`app.json` 을 고쳤으면 `expo prebuild` 를 돌려야 반영된다**(네이티브가 커밋돼 있다). prebuild 는
-  **fingerprint 를 바꾸므로 OTA 재배포가 뒤따라야 한다**([[ADR-137]] 정정 2).
-- ⚠️ **prebuild 는 `android/` 를 통째로 지우고 다시 만든다**(로그의 `Clearing android`). 그래서
-  커밋 안 된 것 셋이 함께 사라진다(2026-09-04, 두 번 재현).
-  | 사라지는 것 | 증상 |
-  |---|---|
-  | `android/app/build.gradle` 의 릴리스 서명 블록([[ADR-091]]) | release 가 **서명 없이** 나온다 |
-  | `android/keystore.properties` | 같다. 블록이 살아 있어도 키를 못 찾는다 |
-  | `android/app/build/` 의 APK | 직전 빌드 산출물이 없어진다 |
-  prebuild 뒤 `git diff android/app/build.gradle` 을 보고, 산출물이
-  `app-release-unsigned.apk` 로 나왔으면 이것부터 의심할 것.
-- `values/styles.xml` 도 prebuild 산출물이다. `AppTheme` 을 손으로 고치면 다음 prebuild 가 지우므로
-  바꿀 것이 있으면 `app.config.js` 의 config plugin 으로 넣을 것.
+`values/styles.xml` 도 prebuild 가 만드는 파일이다. `AppTheme` 에 넣을 것이 있으면 `app.config.js` 의 config
+plugin 으로 넣는다.
 
-## 띄워 두기와 내리기
+`app.json` 과 `app.config.js` 의 해석 결과는 OTA 지문에 들어간다. 1겹을 바꾸면 지문이 바뀌므로, 지금 스토어에
+있는 바이너리는 그 뒤에 낸 OTA 를 받지 못한다. 스토어 빌드를 새로 내야 한다.
 
-**띄워 두는 호출은 React 트리 밖, 전역 스코프여야 한다.** `index.ts` 가 `registerRootComponent` **앞에서**
-`holdSplashUntilAppReady()`(`src/boot-splash.ts`)를 부르고, 그 안에서
-`SplashScreen.preventAutoHideAsync()` 를 호출한다. 라이브러리 문서가 컴포넌트·훅 안에서 부르지
-말라고 명시한다(늦으면 이미 내려간 뒤다). 안 부르면 스플래시가 첫 렌더 전에 스스로 사라져
-테마 복원 전 화면이 노출된다.
+2겹의 색과 로고 크기는 `BootSplash.tsx` 의 상수다.
 
-**내리는 주체는 셋이고, 셋 다 포트 `hideSplashScreen()` 하나를 지난다**([[ADR-117]] 결정 4 가 세운 규칙).
+## 앱 아이콘
 
-| 주체 | 자리 | 언제 |
-|---|---|---|
-| 정상 부팅 | `AppShell` 의 이펙트 타이머 | `MIN_SPLASH_MS`(1초) 경과 시점 |
-| 실패 안전 타이머 | `boot-splash.ts`, **트리 밖** | 8초(`SPLASH_FAILSAFE_MS`). 부팅 렌더가 끝내 오지 않을 때 |
-| `ErrorBoundary` 폴백 | 폴백 마운트 시 | 부팅 렌더가 던졌을 때 |
+원본은 `assets/pinkbeen_app_icon.png`(1024px) 한 장이다.
 
-실패 안전 타이머가 트리 밖에 있는 이유가 요점이다. 정상 경로 타이머는 **언마운트 클린업이
-취소하므로**, 렌더가 던지면 내릴 주체가 함께 죽어 브랜드색 화면에 갇힌다([[ADR-117]] 결정 3).
-
-## 내리기의 문제 ([[ADR-216]] 이 고친다)
-
-**이 타이머는 화면에 무엇이 그려졌는지 모른다.**
-
-```ts
-// src/app/AppShell.tsx:128
-const remaining = MIN_SPLASH_MS - (Date.now() - APP_START_MS)
+```
+python3 scripts/make-app-icons.py                         # 핑크빈
+python3 scripts/make-app-icons.py assets/belona_app_icon.png  # 다른 그림으로
 ```
 
-기준점 `APP_START_MS = Date.now()` 가 같은 파일 모듈 최상위라 앱 실행 시점이 아니라 **번들이
-평가되는 시점**이다. 실제 공식은 `번들 평가까지 걸린 시간 + 1초` 다.
+스크립트가 쓰는 파일은 다음과 같다.
 
-그래서 이 타이머가 보장하는 것은 스플래시가 1초 이상 보인다는 것뿐이고, **그것이 걷힐 때 아래에
-무엇이 있는지는 보장하지 않는다.** 지금 빈 화면이 안 보이는 것은 설계가 맞아서가 아니라 부팅이
-그 1초보다 빨랐던 것뿐이다. `expo-splash-screen` 문서도 `hide()` 에 같은 경고를 단다.
+- `assets/icon.png` · `assets/adaptive-icon.png`
+- `ios/app/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png`
+- `android/app/src/main/res/mipmap-*/` 의 `ic_launcher` · `ic_launcher_round` · `ic_launcher_foreground`
 
-여기에 OS 쪽 제약이 하나 더 겹친다. **안드로이드는 스플래시를 앱에 넘기는 데 제한 시간을 둔다.**
-그 안에 앱이 못 받으면 시스템이 그냥 걷어 가는데(logcat 의 `transferring splash screen timeout`),
-`AppTheme` 에 `android:windowBackground` 지정이 없어 그때 드러나는 것이 **검정**이다.
-
-계측(에뮬레이터 · **debug 빌드** · 2026-09-04, 1겹을 흰색 2겹을 노란색으로 갈라 녹화):
-
-| 구간 | 길이 | 정체 |
-|---|---|---|
-| 1.60 ~ 6.40s | 4.80s | 흰색. 1겹 |
-| 6.55 ~ 10.30s | **3.75s** | **검정** |
-| 10.65 ~ 12.40s | 1.75s | 노랑. 2겹 |
-
-**이 숫자는 못 쓴다.** debug 라 Metro 에서 번들을 받고 그래서 제한 시간에 걸렸다.
-
-**release 에서 재 봤더니 검정이 없다**(에뮬레이터 Pixel 8 API 36 · release · `pm clear` 후 · 2026-09-04).
-
-| | 기준선(시계로 내림) | 2겹 배선 후 |
-|---|---|---|
-| 주황 총 길이 | 1.80s | 2.43s |
-| **검정** | **0** | **0** |
-| `transferring splash screen timeout` | 없음 | 없음 |
-| `Displayed` | +1s621ms | +2s088ms |
-
-기준선의 1.80초는 `번들 평가 0.8초 + MIN_SPLASH_MS 1초` 다. 그러니까 **검정은 debug 산출물이었다.**
-Metro 가 12초에서 14초를 쓰는 바람에 OS 제한 시간에 걸린 것이고, 번들이 내장인 release 는 그 근처에도
-안 간다. debug 로는 이 확인을 할 수 없다. 그쪽은 매번 걸린다.
-
-**웹판과 갈린 것 셋**(근거는 `boot-splash.ts` 주석):
-
-- **가드가 없다.** 웹의 8초 타이머는 `#boot-cover` 가 아직 있을 때만 지웠는데, 그 가드가 막던 것은
-  ‘사용자가 마침 `지금 적용` 을 눌러 올라간 리로드 커버까지 지우는 것’이었다. RN 에는 그 커버가 없고
-  (`show()` 가 no-op), `hideAsync()` 는 이미 내려간 스플래시에 무해하다.
-- **덮는 범위가 좁다.** 웹 타이머는 앱 번들과 다른 스크립트라 번들이 통째로 깨져도 돌았다. RN 은
-  번들이 하나라 이 타이머가 구하는 것은 *"번들은 평가됐는데 React 가 끝내 마운트되지 않는"* 경우뿐이다.
-- **포트를 거친다.** `SplashScreen.hideAsync()` 를 직접 부르지 않는다. 내리는 자리가 늘어도 전부
-  같은 한 함수를 지나게 한다.
-
-**`show()` 는 no-op 이다**(`rn-splash-screen.ts`). 그 함수가 존재한 이유는 웹뷰 리로드 하나였는데
-(OTA 적용·캐시 초기화 직전 웹뷰 배경색을 덮는다) RN 에는 **문서를 다시 로드하는 일 자체가 없어**
-덮을 구간이 생기지 않는다. `preventAutoHideAsync()` 로 흉내 내는 것은 답이 아니다. 이미 내려간
-스플래시에는 아무 효과가 없어 화면은 그대로인데 호출부만 덮였다고 믿는다.
-
-## 아이콘·스플래시 자산 파이프라인 ([[ADR-138]], 2026-08-14)
-
-디자인은 이미 결정된 것이라 **다시 만들지 않고 옮겼다**. 바뀐 것은 만드는 도구뿐이다
-(`capacitor-assets` → `expo prebuild`).
-
-- **원천은 캐패시터 것을 읽었다**. 아이콘은 `resources/ios/icon.png`(루트 `icon-only.png` 가
-  **아니다**. 플랫폼 오버라이드가 우선이라 실제 출시본은 이쪽이었다), 스플래시 로크업은
-  `resources/splash.png` 에서 추출했다(`drawable/splash_icon_lockup.png` 는 옛 디자인이라 흰 워드마크가
-  흰 배경에서 안 보인다). 산출물은 `assets/` 세 장(`icon.png`·`adaptive-icon.png`·`splash-icon.png`).
-- **Android adaptive icon 은 여백을 소스에 넣는다**. `capacitor-assets` 는 XML 에서 fg/bg 를 둘 다
-  `inset 16.7%` 로 감쌌지만 **Expo 는 그 inset 을 안 넣는다**. 그래서 1024 캔버스 가운데에 아이콘을
-  **66.7%**(683px)로 얹어 두 파이프라인이 같은 비율에 도달하게 했다. 배경색은 아이콘 가장자리에서
-  **뽑는다**. 지금은 `#F0DAD6` 이고, 그림이 보이는 72dp 를 꽉 채우므로 그 색은 런처가 시차로
-  흔들 때만 보인다.
-
-> **아이콘이 핑크빈으로 바뀌었다**(2026-09-21, 사용자 지정 · 후보 셋 중 선택). 원천은
-> `assets/pinkbeen_app_icon.png` **1024px 한 장**이고 나머지는 전부 거기서 나온다
-> (`scripts/make-app-icons.py`). 처음 받은 512px 로 한 번 냈다가 사용자가 1024 로 갈아 줘 다시
-> 냈다. 확대본과 견주면 가장자리 대비가 28.1 → 34.6 으로 올랐다.
->
-> **후보 셋이 `assets/*_app_icon.png` 로 남아 있다**(핑크빈 · 벨로나 · 말레픽 스타). 대표는
-> 핑크빈이고 나머지 둘은 **사용자가 골라 바꾸는 대체 아이콘**으로 가는 것이 목표다. 다만
-> 2026-09-21 현재 **그 기능은 안 넣는다**(사용자 결정). 지금 저장소에 있는 것은 그림 원본뿐이고
-> 빌드에 실리는 것은 핑크빈 하나다.
->
-> 대체 아이콘을 넣게 되면 드는 것은 넷이다. iOS `CFBundleAlternateIcons` 등록 · 안드로이드
-> `activity-alias` 셋 · 고르는 화면과 고른 값 저장 · 산출물 3배. `scripts/make-app-icons.py` 가
-> 원본 경로를 인자로 받으므로 산출은 그대로 쓴다.
->
-> 견준 방법을 적어 둔다. **시뮬레이터 홈 화면에 셋을 나란히 세웠다.** 빌드한 `.app` 을 복사해
-> `Info.plist` 의 `CFBundleIdentifier` 를 `com.mapleroutine.iconcheck.<이름>` 으로 갈아 따로
-> 설치하면 진짜 앱과 그 데이터를 안 건드리고 한 화면에서 견줄 수 있다. 60pt 에서 무엇이 읽히는지는
-> 크게 띄운 그림으로는 안 보인다.
-- **Expo 에는 `capacitor-assets` 의 함정 셋이 없다**(플랫폼 오버라이드 우선 · adaptive inset 구조 ·
-  아이콘만 바꿀 때 스플래시 보호). `app.json` 한 곳을 읽고 아이콘·스플래시가 독립 항목이라 서로를
-  덮지 않는다.
-
-## 미검증
-
-- **실기기에서 스플래시가 실제로 뜨고 걷히는 것.** 지금까지 확인된 것은 빌드
-  (`expo prebuild` + `assembleDebug` · `pod install` + `xcodebuild`)와 포트 계약(jest)까지다.
-- **MIUI/HyperOS 다크에서 1겹이 검정으로 그대로 뜨는지.** [[ADR-216]] 결정 4 정정 2 가 구조로
-  풀었다고 보지만(깎을 밝은 색이 없다) 실기기로 안 봤다. 2겹의 주황이 RN 뷰라 안 깎이는 것도
-  같이 확인해야 한다.
-
-## 폐기된 정책 (history)
-
-- ~~Capacitor 플러그인 JS 브릿지 show/hide 로 스플래시 유지~~ → Android 는 플러그인 install 이 늦어 유지 안 됨(🗑 [[ADR-025]] 구현 중 폐기).
-- ~~HTML 부트 스플래시 이원화(네이티브+HTML 로고)~~ → 이중 로고 발생 → 폐기(🗑 [[ADR-025]]).
-- ~~Android 네이티브 스플래시를 무채색+아이콘 없음으로 축소하고 브랜드를 `index.html` HTML 레이어로 이전~~ → 실기기 2차 검증 전부 실패, 전체 폐기(🗑 [[ADR-028]],
-구현 없음). "WebView 레이어로 옮긴다"는 접근이 구조적으로 불가능했다.
-- ~~다크모드 색을 더 밝게 튜닝~~ → `#D06100` 이 force-dark 통과 상한임을 실기기 hue 스윕으로 확인(🗑 [[ADR-028]]).
-- ~~Capacitor/WebView 를 안 거치는 초경량 `SplashActivity` + 비트맵(`@drawable/splash`)을 진짜 런처로~~ → **다크모드 진짜 브랜드색 노출에 유일하게
-성공한 구조**였으나 Expo 로 넘어오지 않았다(🗑 [[ADR-029]] → [[ADR-138]]). 지금은 색 하나로 간다.
-- ~~라이트 `#FB8101` / 다크 `#D06100` `values-night` split, 단색 6곳 통일~~ → 한때 RN 은 `#F58B0F` 한 색이었고 `values-night/colors.xml`
-이 비어 있었다([[ADR-138]] 결정 4). 지금은 split 이 **다시 살아 있다** - 다만 브랜드색 두 가지가 아니라 흰색/검정이다([[ADR-216]] 결정 4 정정 2).
-- ~~WebView 배경을 오렌지로 두어 흰 깜빡임 제거(`capacitor.config` `backgroundColor`)~~ → 웹뷰가 없다. 앱 루트 바탕은 [[ADR-136]] 이 칠한다.
-- ~~DOM 커버(`#boot-cover` · `[data-splash-cover]`)와 `index.html` 인라인 8초 스크립트,
-`window.Capacitor?.Plugins?.SplashScreen?.hide()` 전역 브릿지~~ → RN 에는 문서가 없다. 8초 실패 안전 타이머만 `boot-splash.ts` 로 이사했다(⛔
-[[ADR-117]] 결정 3·4 중 살아남은 부분).
-- ~~iOS `SplashScreen.show()` 가 `isUserInteractionEnabled = false` 를 걸어 실패 시 터치까지 죽는다~~ → `expo-splash-screen` 은
-터치를 막지 않는다(`ErrorBoundary` 주석 참고). 그래서 ‘영구 벽돌’ 위험이 이 형태로는 없다.
+어댑티브 아이콘 배경색은 스크립트가 바꾸지 않는다. 그림을 바꾸면 `app.json` 의 `adaptiveIcon.backgroundColor`
+와 `values/colors.xml` 의 `iconBackground`(지금 `#F0DAD6`)를 그림 가장자리 색으로 직접 맞춘다.

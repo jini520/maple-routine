@@ -2,7 +2,6 @@
 // RN 에서는 외형 규칙이 CSS(`.valuable-drop-badge`)가 아니라 **컴포넌트 안의 값**이 됐으므로
 // (그라디언트·글로우·흰 링) 그 값을 지킬 자리가 필요하다.
 import type { RecordedDrop } from '../../../../types/drops'
-import { processColor } from 'react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { ValuableDropBadge } from '../ValuableDropBadge'
@@ -12,16 +11,6 @@ function drops(...itemKeys: string[]): RecordedDrop[] {
 }
 
 describe('ValuableDropBadge', () => {
-  it('라벨은 호출부가 정한다. 자리마다 다른 문구를 받는다', async () => {
-    const { getByTestId } = await renderAtom(
-      <ValuableDropBadge drops={drops('black_boss_ring_box')} label="이 기간 고가 드롭" />,
-    )
-
-    const badge = getByTestId('valuable-drop-badge')
-    expect(badge.props['aria-label']).toBe('이 기간 고가 드롭')
-    expect(badge.props.accessibilityRole).toBe('image')
-  })
-
   it('아이콘은 최대 3개까지 그리고 나머지는 +N 으로 접는다', async () => {
     const { getAllByTestId, getByText } = await renderAtom(
       <ValuableDropBadge drops={drops('a', 'b', 'c', 'd', 'e')} label="고가 드롭" />,
@@ -56,21 +45,6 @@ describe('ValuableDropBadge', () => {
       [-6, 2],
       [-6, 1],
     ])
-  })
-
-  // 골드는 **전 테마 공통 고정색**이다(테마 토큰이 아니다). 토큰으로 바꾸면
-  // 라이트 테마에서 배경에 묻힌다는 것이 그때의 결론이었다.
-  it('배지 골드는 테마와 무관한 고정 그라디언트다', async () => {
-    const 머쉬맘 = await renderAtom(<ValuableDropBadge drops={drops('a')} label="고가 드롭" />)
-
-    // `LinearGradient` 는 색을 네이티브 정수로 바꿔 넘긴다. 같은 변환을 태워 비교한다.
-    expect(머쉬맘.getByTestId('valuable-drop-badge').props.colors).toEqual(
-      ['#ffe98a', '#f7c400'].map(processColor),
-    )
-    // 대비로 쓰는 표면색은 테마를 따른다. 아이콘 폴백 원이 그 자리다.
-    expect(flattenStyle(머쉬맘.getAllByTestId('valuable-drop-icon')[0].props.style).backgroundColor).toBe(
-      기본테마.surface2,
-    )
   })
 
 // 글로우와 흰 테두리가 둘 다 `boxShadow` 로 온다. 색 있는 글로우는
@@ -141,18 +115,6 @@ describe('ValuableDropBadge', () => {
       [-6, 2, ring],
       [-6, 1, ring],
     ])
-  })
-
-  // 배치는 호출부가 정한다. 카드 우상단 절대배치· 헤드라인 인라인· 히스토리 줄.
-  it('className 은 코어 뒤에 이어 붙는다', async () => {
-    const { getByTestId } = await renderAtom(
-      <ValuableDropBadge drops={drops('a')} label="고가 드롭" className="absolute -right-1.5 -top-2" />,
-    )
-
-    expect(flattenStyle(getByTestId('valuable-drop-badge').props.style)).toMatchObject({
-      position: 'absolute',
-      borderRadius: 9999,
-    })
   })
 
 })

@@ -1,6 +1,6 @@
 /** 오래 걸리는 작업의 진행률 모달. 배지 · 제목 · 단위 · 단계는 작업이 주고, 막대 · 건수 · 퍼센트는 부품이 갖는다. */
 import { findAllOfType, renderOverlay, type TreeNode } from '../../../__tests__/render-atom'
-import { CrownIcon, UsersIcon } from '../../../atoms'
+import { CrownIcon } from '../../../atoms'
 import { TaskProgressModal } from '../TaskProgressModal'
 
 function progressValue(tree: unknown): number | undefined {
@@ -52,14 +52,6 @@ describe('TaskProgressModal', () => {
     )
 
     expect(view.queryByTestId('task-step-run')).toBeNull()
-  })
-
-  it('단위를 받는다', async () => {
-    const view = await renderOverlay(
-      <TaskProgressModal icon={UsersIcon} title="캐릭터 정보를 저장하고 있어요" done={2} total={5} unit="개" />,
-    )
-
-    expect(view.getByText('2 / 5개')).toBeTruthy()
   })
 
   it('총수가 0 이면 0% 다', async () => {

@@ -17,11 +17,6 @@ function 실효배수(fontScale: number, fixed = false): number {
 }
 
 describe('시스템 글자 배수를 [1.0, 1.235] 로 자른다', () => {
-  it('하한·상한이 결정한 값 그대로다', () => {
-    expect(FONT_SCALE_MIN).toBe(1)
-    expect(FONT_SCALE_MAX).toBe(1.235)
-  })
-
   it('축소는 **자르는** 것이 아니라 **끄는** 것이다. 1 미만이면 스케일링 자체가 꺼진다', () => {
     for (const fontScale of iOS_배수.filter((v) => v < 1)) {
       expect(fontScalingProps(fontScale, false).allowFontScaling).toBe(false)

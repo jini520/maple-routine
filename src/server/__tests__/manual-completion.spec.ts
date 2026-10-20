@@ -12,34 +12,10 @@ beforeEach(() => {
   jest.restoreAllMocks()
 })
 
-it('열린 보스를 목록으로 준다', async () => {
-  jest.spyOn(global, 'fetch').mockResolvedValue(
-    ok({
-      bosses: [
-        { boss: 'black_mage', from: '2026-09-01' },
-        { boss: 'meirin', from: '2026-09-17' },
-      ],
-    }),
-  )
-
-  await expect(fetchManualCompletionBosses()).resolves.toEqual([
-    { boss: 'black_mage', from: '2026-09-01' },
-    { boss: 'meirin', from: '2026-09-17' },
-  ])
-})
-
 it('열린 보스가 없으면 빈 목록이다', async () => {
   jest.spyOn(global, 'fetch').mockResolvedValue(ok({ bosses: [] }))
 
   await expect(fetchManualCompletionBosses()).resolves.toEqual([])
-})
-
-it('우리 서버의 주소로 부른다', async () => {
-  const spy = jest.spyOn(global, 'fetch').mockResolvedValue(ok({ bosses: [] }))
-
-  await fetchManualCompletionBosses()
-
-  expect(String(spy.mock.calls[0][0])).toContain('mapleroutine.store/v1/manual-completion')
 })
 
 it('네트워크가 실패하면 null', async () => {

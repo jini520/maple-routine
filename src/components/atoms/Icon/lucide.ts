@@ -13,10 +13,8 @@
  * @see src/lib/nativewind-interop.ts 등록의 원리와 매핑 근거
  */
 
-import ArrowDown from 'lucide-react-native/icons/arrow-down'
 import ArrowLeft from 'lucide-react-native/icons/arrow-left'
 import ArrowRight from 'lucide-react-native/icons/arrow-right'
-import ArrowUp from 'lucide-react-native/icons/arrow-up'
 import Ban from 'lucide-react-native/icons/ban'
 import Bell from 'lucide-react-native/icons/bell'
 import BellOff from 'lucide-react-native/icons/bell-off'
@@ -93,12 +91,10 @@ export const AlertCircleIcon = withIconInterop(CircleAlert)
 /** 실패·경고. `ErrorState` · `StaleBanner` · `ErrorBoundary`. */
 export const AlertTriangleIcon = withIconInterop(TriangleAlert)
 /** 직전 기간 대비 **감소**. 보스 수익 증감 칩. */
-export const ArrowDownIcon = withIconInterop(ArrowDown)
 /** 하위 페이지의 뒤로. 설정 하위 화면 다섯. */
 export const ArrowLeftIcon = withIconInterop(ArrowLeft)
 export const ArrowRightIcon = withIconInterop(ArrowRight)
 /** 직전 기간 대비 **증가**. 보스 수익 증감 칩. */
-export const ArrowUpIcon = withIconInterop(ArrowUp)
 /** 조회 불가 캐릭터. 보스 수익 `CharacterIssue`(영구 이슈 표식). */
 export const BanIcon = withIconInterop(Ban)
 /** 안내가 하나도 없을 때. `SettingsFeatureGuideListScreen` 빈 상태. */

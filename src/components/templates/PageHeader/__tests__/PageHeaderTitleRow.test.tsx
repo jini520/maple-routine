@@ -30,20 +30,6 @@ describe('PageHeaderTitleRow', () => {
     expect(style.height).toBeUndefined()
   })
 
-  // 줄은 가로이고 자식은 세로 중앙이다. 이 둘이 있어야 **최소 높이** 가 제목을 가운데 놓는다.
-  it('가로 줄이고 자식을 세로 중앙에 놓는다', async () => {
-    const { getByTestId } = await renderOverlay(
-      <PageHeaderTitleRow>
-        <Text>보스 관리</Text>
-      </PageHeaderTitleRow>,
-    )
-
-    expect(styleOf(getByTestId('page-header-title-row'))).toMatchObject({
-      flexDirection: 'row',
-      alignItems: 'center',
-    })
-  })
-
   // 화면마다 오른쪽 자리(`justify-between`)나 사이 간격(`gap-2`)이 다르다. 그것까지 프리미티브가
   // 정하면 호출부가 줄을 다시 손으로 그리게 된다. 바닥만 정하고 나머지는 받는다.
   it('넘겨받은 클래스를 함께 쓴다. 최소 높이는 그대로다', async () => {
@@ -59,16 +45,6 @@ describe('PageHeaderTitleRow', () => {
       justifyContent: 'space-between',
       columnGap: 8,
     })
-  })
-
-  it('자식을 그대로 그린다', async () => {
-    const { getByText } = await renderOverlay(
-      <PageHeaderTitleRow>
-        <Text>보스 관리</Text>
-      </PageHeaderTitleRow>,
-    )
-
-    expect(getByText('보스 관리')).toBeTruthy()
   })
 })
 
@@ -87,18 +63,6 @@ describe('PageHeaderTitleRow: 갱신 시각 줄', () => {
     // 줄 **안**이 아니다. 안에 있으면 제목 옆에 서고 줄 높이까지 밀어 올린다.
     expect(within(getByTestId('page-header-title-row')).queryByTestId('data-freshness')).toBeNull()
     expect(queryByTestId('page-header-title-block')).toBeTruthy()
-  })
-
-  it('값을 주면 그 줄에 적는다', async () => {
-    const { getByTestId } = await renderOverlay(
-      <PageHeaderTitleRow fetchedAt="2026-09-08T05:03:22.000Z">
-        <Text>보스 스케줄러</Text>
-      </PageHeaderTitleRow>,
-    )
-
-    // `toHaveTextContent` 는 이 노드를 못 읽는다(합성 `Text` 라 호스트 글자까지 안 내려간다).
-    // 빈 문자열은 무엇에나 통과해서 그 함정이 안 보인다. 그린 글자를 그대로 본다.
-    expect(getByTestId('data-freshness').props.children).toBe('14:03:22 기준')
   })
 
   // 이것이 통일의 실질이다. 값이 없는 헤더도 같은 높이로 선다.

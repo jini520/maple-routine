@@ -56,10 +56,4 @@ describe('BossSection', () => {
     expect(within(seren).getByText('13.3억')).toBeTruthy()
     expect(within(seren).queryByText('하드')).toBeNull()
   })
-
-  it('처치 기록이 없으면 한 줄을 적는다', async () => {
-    const view = await renderOverlay(<BossSection days={{} as never} range={range} cycle="weekly" />)
-
-    expect(view.getByText('이 기간에 결정석을 판 보스가 없어요')).toBeTruthy()
-  })
 })

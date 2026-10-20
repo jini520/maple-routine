@@ -2,8 +2,7 @@
  * 컨텐츠 스케줄러. 일간/주간 콘텐츠 진행 상태(`docs/features/content-scheduler.md`).
  *
  * **이 화면에 걸린 ADR 이 스물하나다.** 대부분은 화면에 안 보이는 판단이라(캐시 우선 표시 · 실패의
- * 목적지 · 빈 상태의 판정 시점) 아래 주석이 그 자리를 지목한다. 목록은
- * `docs/migration/parity-inventory.md` §2.3.
+ * 목적지 · 빈 상태의 판정 시점) 아래 주석이 그 자리를 지목한다.
  */
 import { useEffect } from 'react'
 import { Pressable, View } from 'react-native'

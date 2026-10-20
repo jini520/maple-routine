@@ -8,7 +8,7 @@ import { fetchNotice, fetchNotices } from '../../../server/notices'
 import { getAuthConfig } from '../../../storage/api-key'
 import type { Notice, NoticeKind } from '../../../types/notice'
 import { saveNoticeResponse } from '../notice-copy'
-import { fetchNoticeDetail, groupNoticesByKind, refreshNoticeKind, refreshNoticeKinds } from '../notice-feed'
+import { fetchNoticeDetail, refreshNoticeKind, refreshNoticeKinds } from '../notice-feed'
 import type { NexonCredential } from '../../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
@@ -200,15 +200,5 @@ describe('fetchNoticeDetail', () => {
     auth.mockResolvedValueOnce(null)
 
     await expect(fetchNoticeDetail('event-1')).resolves.toEqual({ status: 'failed' })
-  })
-})
-
-describe('groupNoticesByKind', () => {
-  it('분류마다 순서를 지켜 나눈다', () => {
-    const grouped = groupNoticesByKind([notice('a', 'game'), notice('b', 'event'), notice('c', 'game')])
-
-    expect(grouped.game.map((n) => n.id)).toEqual(['a', 'c'])
-    expect(grouped.event.map((n) => n.id)).toEqual(['b'])
-    expect(grouped.app).toEqual([])
   })
 })

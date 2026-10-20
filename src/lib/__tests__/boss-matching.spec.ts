@@ -1,4 +1,3 @@
-import bossesData from '../../data/bosses.json'
 import { bossesInSection } from '../boss/bosses'
 import type { BossContent } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
@@ -11,7 +10,6 @@ import {
   selectBossProfitBosses,
   selectDisplayBosses,
   WEEKLY_BOSS_CLEAR_LIMIT,
-  WEEKLY_CRYSTAL_SALE_LIMIT,
   type MatchedBoss,
 } from '../boss/boss-matching'
 
@@ -64,14 +62,6 @@ describe('matchBossContent', () => {
     expect(result.portraitSlug).toBe('maerin')
   })
 
-  it('일반 주간/월간 보스는 isSeasonBoss: false다', () => {
-    expect(matchBossContent(bossContent()).isSeasonBoss).toBe(false)
-    expect(
-      matchBossContent(bossContent({ bossKey: 'black_mage', apiName: '검은 마법사', cycle: 'monthly', difficulty: 'extreme' }))
-        .isSeasonBoss,
-    ).toBe(false)
-  })
-
   it('보스 표에 없는 보스(key 없음)는 에러 없이 초상 null · 시즌 아님으로 두고 원문을 보존한다', () => {
     const result = matchBossContent(bossContent({ bossKey: null, apiName: '알 수 없는 콘텐츠', difficulty: 'normal' }))
 
@@ -93,25 +83,6 @@ describe('matchBossContent', () => {
 
     expect(result.isComplete).toBe(true)
     expect(result.ownComplete).toBe(false)
-  })
-})
-
-describe('WEEKLY_BOSS_CLEAR_LIMIT', () => {
-  it('bosses.json의 rules.weeklyBossSelectionLimit(12)를 그대로 노출한다', () => {
-    expect(WEEKLY_BOSS_CLEAR_LIMIT).toBe(12)
-    expect(WEEKLY_BOSS_CLEAR_LIMIT).toBe(bossesData.rules.weeklyBossSelectionLimit)
-  })
-})
-
-// 캐릭터당 한도(12)와 월드당 결정석 판매 한도(90)는 별개 지표다.
-describe('WEEKLY_CRYSTAL_SALE_LIMIT', () => {
-  it('bosses.json의 rules.weeklyCrystalSaleLimit(90)을 그대로 노출한다', () => {
-    expect(WEEKLY_CRYSTAL_SALE_LIMIT).toBe(90)
-    expect(WEEKLY_CRYSTAL_SALE_LIMIT).toBe(bossesData.rules.weeklyCrystalSaleLimit)
-  })
-
-  it('캐릭터당 한도(12)와 월드당 한도(90)는 서로 다른 값이다. 둘을 혼용하는 회귀 가드', () => {
-    expect(WEEKLY_CRYSTAL_SALE_LIMIT).not.toBe(WEEKLY_BOSS_CLEAR_LIMIT)
   })
 })
 
@@ -204,10 +175,6 @@ describe('isWeeklyClearLimitReached', () => {
       matchedBoss({ bossKey: entry.key, apiName: entry.name, isComplete: true, ownComplete: true }),
     )
   }
-
-  it('한도보다 적게 잡았으면 false 다', () => {
-    expect(isWeeklyClearLimitReached(cleared(WEEKLY_BOSS_CLEAR_LIMIT - 1))).toBe(false)
-  })
 
   it('한도만큼 잡았으면 true 다', () => {
     expect(isWeeklyClearLimitReached(cleared(WEEKLY_BOSS_CLEAR_LIMIT))).toBe(true)

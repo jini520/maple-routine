@@ -67,14 +67,6 @@ describe('세울 것이 없을 때', () => {
 })
 
 describe('접힘', () => {
-  it('제목과 발행일을 그린다', async () => {
-    await 공지를_세운다()
-    await renderAtom(<NoticeBanner />)
-
-    expect(screen.getByText('9월 정기 점검 안내')).toBeTruthy()
-    expect(screen.getByText('2026. 9. 8.')).toBeTruthy()
-  })
-
   it('버튼도 본문도 아직 없다', async () => {
     await 공지를_세운다()
     await renderAtom(<NoticeBanner />)

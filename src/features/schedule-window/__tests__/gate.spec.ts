@@ -32,13 +32,6 @@ describe('mapWithLimit', () => {
     expect(peak).toBeLessThanOrEqual(3)
   })
 
-  it('빈 입력은 아무것도 안 부른다', async () => {
-    const task = jest.fn()
-
-    expect(await mapWithLimit([], 3, task)).toEqual([])
-    expect(task).not.toHaveBeenCalled()
-  })
-
   // 진행률의 분자다. **실패도 센다.** 사용자가 기다리는 것은 `시도가 몇 개 남았나` 이고,
   // 실패한 것은 다음 회차의 분모로 간다.
   it('작업이 끝날 때마다 끝난 수를 알린다', async () => {

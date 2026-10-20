@@ -1,427 +1,115 @@
-# SQLite — `boss_profit.db`
+# SQLite
 
-**`@op-engineering/op-sqlite`** 기반 단일 DB(`storage/sqlite/db.ts` + 어댑터 `storage/adapters/rn-sqlite.ts`). 보스 수익 관련 4개 테이블 + **가계부가 손으로 적는 둘**(`income_records`·`spend_records` — [[ADR-170]]·[[ADR-166]])이 여기에 있고, 나머지 데이터는 모두 [Preferences](./preferences.md)다 — "복합키로 upsert/조회가 잦은 기록형 데이터"만 관계형으로 뒀다. 손입력 둘은 **대리키**(`id`)라는 점에서 앞의 넷과 갈리고, 정책은 [features/cashbook.md](../features/cashbook.md) 가 든다.
+기록은 SQLite DB 하나(이름 `boss_profit`, 파일 `boss_profitSQLite.db`)에 있다. `@op-engineering/op-sqlite` 로 열고,
+파일은 Capacitor 앱이 쓰던 위치에 그대로 있다(`capacitor-storage.md`). 커넥션과 스키마 변경 규칙은 [[ADR-007]] 에
+있다.
 
-> **파일 자리는 캐패시터 시절 그대로다.** op-sqlite 를 고른 이유는 성능이 아니라 `location` 이다 —
-> 기존 DB 가 캐패시터 플러그인이 정한 경로에 있고, 자기 전용 디렉터리에만 파일을 만드는 라이브러리로는
-> 거기 닿을 수 없다(닿지 못하면 빈 DB 가 새로 생기고 사용자에게는 기록이 전부 사라진 것으로 보인다).
-> 경로 계산은 `storage/adapters/capacitor-sqlite-open.ts` 가 공유한다([migration/data.md](../migration/data.md) 결정 2).
+## 관련 소스
 
-## 스키마
-
-```mermaid
-erDiagram
-    boss_profit_records {
-        TEXT ocid PK
-        TEXT boss PK
-        TEXT difficulty PK
-        TEXT cycle
-        TEXT period_key PK
-        INTEGER party_size
-        INTEGER price_meso
-        INTEGER payout_meso
-        TEXT recorded_at
-        TEXT world
-        TEXT defeated_on
-        TEXT source
-    }
-    boss_party_settings {
-        TEXT ocid PK
-        TEXT boss PK
-        TEXT difficulty PK
-        INTEGER party_size
-        TEXT updated_at
-    }
-    boss_party_period_overrides {
-        TEXT ocid PK
-        TEXT boss_key PK
-        TEXT difficulty PK
-        TEXT period_key PK
-        INTEGER party_size
-        INTEGER crystal_my_share
-        INTEGER crystal_shares_total
-        INTEGER split_fee_percent
-        INTEGER split_fee_auto
-        TEXT updated_at
-    }
-    boss_profit_period_checks {
-        TEXT ocid PK
-        TEXT cycle PK
-        TEXT period_key PK
-        TEXT checked_at
-    }
-    boss_drop_records {
-        TEXT drop_record_id PK
-        TEXT ocid
-        TEXT boss
-        TEXT difficulty
-        TEXT period_key
-        INTEGER drop_index
-        TEXT category
-        TEXT item_name
-        TEXT slot            -- 죽은 칸. 2026-10-16 부터 안 적고 안 읽는다([[ADR-351]] 결정 2)
-        TEXT box_origin
-        INTEGER ring_level
-        INTEGER quantity
-        TEXT recorded_at
-        TEXT world
-        TEXT world_key
-        TEXT price_state
-        INTEGER price_meso
-        INTEGER price_share
-    }
-    character_profiles {
-        TEXT ocid PK
-        TEXT name
-        TEXT image_url
-        TEXT world
-        INTEGER level
-        TEXT job_class
-        TEXT updated_at
-    }
-    server_sync_queue {
-        TEXT id PK
-        TEXT kind
-        TEXT record_id
-        INTEGER attempts
-        TEXT last_error
-        TEXT created_at
-    }
-    boss_party_settings ||--o{ boss_profit_records : "파티원 수 기본값 시드"
-    boss_party_period_overrides ||--o{ boss_profit_records : "그 기간만의 파티원 수·비율. 설정보다 먼저 읽힌다"
-    boss_profit_records ||--o{ boss_drop_records : "같은 (ocid, boss, difficulty, period_key)"
-    character_profiles ||--o{ boss_profit_records : "같은 ocid. 행에 이름·얼굴을 붙인다"
-    boss_drop_records ||--o| server_sync_queue : "못 보낸 것만. record_id = drop_record_id"
-```
-
-> FOREIGN KEY 제약은 실제로 걸려 있지 않다 — 위 관계는 앱 코드가 `(ocid, boss, difficulty)`(파티 설정) / `(ocid, boss, difficulty, period_key)`(드롭 기록)로 논리적으로 조인하는 것뿐이다(`features/boss-profit/store.ts`가 완료 감지 시 `boss_party_settings`를 먼저 조회해 `boss_profit_records`의 기본 파티원 수로 쓴다). 제약이 없으므로 **한쪽만 지우면 고아 행이 남는다** — 캐시 삭제가 네 테이블을 함께 비워야 하는 이유다([[ADR-052]]).
-
-## 테이블별 역할
-
-### `boss_profit_records` — 기간별 수익 기록
-
-> **이 표와 `character_profiles` 는 월드 이름(`world`)과 함께 월드 key(`world_key`)를 든다**([[ADR-280]] 결정 15, 2026-09-15, 이슈 #446). `world` 는 적을 때의 API 이름이고, 결정석 집계와 월드 판정은 `world_key` 로 가른다. 둘 다 아는 값이 있을 때만 덮고(`COALESCE`), 월드가 빈 수익 기록을 채우는 보정(`fillMissingRecordWorlds`)도 둘을 함께 채운다. 기존 행은 DB 버전 6 이 `world` 로 채웠다.
-
-
-PK: `(ocid, boss_key, difficulty, period_key)`. **보스 key 와 난이도 key 가 기본키에 든다**([[ADR-280]] 결정 12, 2026-09-15, 이슈 #445). `boss` 는 적을 때의 보스 이름이고 보이는 이름은 key 로 보스 표에서 찾는다. 세 보스 표의 본문은 `storage/sqlite/boss-tables.ts` 한 벌을 CREATE 와 버전 4 가 함께 쓴다. 캐릭터가 특정 (보스, 난이도)를 특정 기간(`period_key`, 예: 주차)에 처치했을 때의 파티원 수·정가·실수령액 스냅샷.
-
-- **자동 생성**: 사용자가 화면에 들어오지 않아도, 스케줄러 동기화 응답에서 `complete_flag: true`인 (ocid, boss, difficulty, periodKey) 조합을 처음 만나는 순간 즉시 upsert된다([[ADR-014]]).
-- **`source` 칸은 누가 썼는지를 든다**([[ADR-293]] 결정 1, 구현 완료 2026-09-18). `auto` 는 동기화가 쓴 기록이고 `manual` 은 사용자가 직접 적은 완료다. 기본값은 `auto` 이고 기존 행은 `ensureColumn` 으로 빈 칸이 더해진다. 넥슨이 같은 난이도 완료를 주면 `manual` 이 `auto` 로 내려가고 날짜·파티 인원·금액은 그대로 남는다(결정 5). 수정과 취소는 `manual` 행에만 있다(결정 7).
-- **로컬 전용**: Nexon API는 최근 14일치만 조회 가능하므로, 장기 히스토리는 이 테이블에만 존재한다 — 삭제하면 서버 재동기화로도 복구 불가.
-- **파티원 수 기본값**: `boss_party_settings`에 같은 (ocid, boss, difficulty) 설정이 있으면 그 값을, 없으면 1(솔로)을 시딩한다([[ADR-019]]).
-- **`world` = 기록 시점의 월드 스냅샷**([[ADR-069]] 결정 1, nullable). 월드 리프가 **과거 주의 결정석 귀속을 소급 이동**시키는 것을 막는다 — 전에는 화면이 라이브 캐시(`getCachedCharacterBasic`)의 월드를 썼다. `NULL`은 "월드 모름"이고 월드별 집계에서 조용히 빠진다([[ADR-054]] 결정 5). 나중에 추가된 컬럼이라 이미 만들어진 DB에는 `CREATE TABLE IF NOT EXISTS`가 손대지 않는다 — `db.ts`의 `ensureColumn`이 `PRAGMA table_info`로 확인하고 없을 때만 `ALTER TABLE ... ADD COLUMN` 한다(SQLite에 `ADD COLUMN IF NOT EXISTS`가 없다).
-- **읽기 원천 규칙**: 기록이 있으면 `record.world`, 없으면(현재 기간의 미완료 placeholder) 캐시.
-- **송금 수수료가 자동인지를 든다**([[ADR-306]] 결정 6, 칸은 구현 완료 2026-09-22). `split_fee_auto`(1 이 자동)를 `ensureColumn` 으로 붙인다.
-  자동인 행은 등급 기록이 바뀔 때 `split_fee_percent` 와 `payout_meso` 가 새 요율로 다시 적힌다. `NULL` 은 수동이다.
-- **`defeated_on` = 처치 **날짜** (KST `YYYY-MM-DD`, nullable — [[ADR-172]]).** `period_key` 는 주(목요일)·달이라 «며칟날» 을 못 든다. 이 칸이 그것을 들고, **가계부 캘린더만** 읽는다. 값은 스케줄러 API 의 날짜별 응답을 훑어 «미완료 → 완료» 로 뒤집힌 날을 찾아 채운다(`features/boss-profit/defeat-dates.ts`). **NULL 은 «모름» 이고 월간 칸 집계에서 조용히 빠진다** — `world` 와 같은 모양이다([[ADR-069]] 결정 1). `world` 와 마찬가지로 나중에 더한 컬럼이라 **`ensureColumn` 이 함께 있어야 한다.** 키가 아니므로 옛 행을 옮기지 않는다.
-
-### `boss_party_settings` — 상시 파티 인원 설정
-PK: `(ocid, boss_key, difficulty)`. "이 캐릭터는 이 보스를 항상 N인 파티로 잡는다"는 사용자 설정. 완료 여부·기간과 무관한 상시 값이며, 보스 스케줄러 화면의 파티 배지·솔로/파티 필터와 보스 수익 계산기가 공유한다.
-
-- 삭제 API가 따로 없다 — 솔로로 되돌리려면 `party_size = 1`로 upsert한다("파티 관리" 설정과 솔로 취급이 값 레벨에서는 동일).
-- **송금 수수료가 자동인지를 든다**([[ADR-306]] 결정 6, 칸은 구현 완료 2026-09-22). `split_fee_auto` 가 1 이면 새 결정석 기록이 그 기록 날짜의
-  등급 요율로 적힌다. 비율로 바꿀 때의 기본이 자동이다([[ADR-305]] 결정 5 의 `NULL 은 3` 을 바꾼다).
-
-### `boss_party_period_overrides` — 그 기간만의 파티 인원·비율
-PK: `(ocid, boss_key, difficulty, period_key)`. 보스 수익 화면의 **미완료 행에서 고친 값**이 여기 산다([[ADR-313]] 결정 2). 칸은 `boss_party_settings` 와 같다.
-
-- **읽는 차례는 `override ?? setting` 이다.** 이 표에 줄이 있으면 그 기간은 파티 관리를 안 따라간다. 자동 기록(`features/boss-profit/auto-record`) · 창 백필(`features/schedule-window/records`) · 직접 완료 시트(`features/manual-completion/record`) 셋이 같은 차례로 읽는다.
-- **기록 표에 못 넣어서 표가 따로 있다.** `boss_profit_records` 에 줄이 생기면 그 조합은 완료로 읽히므로(`mergeRecordsIntoRows`), 미완료 행의 수정값을 거기 쓰면 잡지도 않은 보스가 완료로 선다.
-- 줄을 지우는 손질이 없다. 다음 기간은 `period_key` 가 달라 안 읽으므로 안 쓰이는 줄이 남아도 화면이 틀리지 않는다.
-- `RECORD_TABLE_NAMES` 에 **안 넣는다**. `boss_party_settings` 와 같은 무게라 캐시 비우기의 `일반` 이 함께 지운다.
-
-### `boss_profit_period_checks` — 기간 재조회 여부 마킹
-PK: `(ocid, cycle, period_key)`. "이 캐릭터의 이 기간은 이미 (재)조회해서 로컬에 반영했다"는 마킹 전용 테이블 — 컬럼 자체에는 수익 정보가 없다.
-
-- 보스 수익 화면의 기간 네비게이터가 과거로 이동할 때, 이 테이블에 체크 기록이 없는 기간만 `nexon/schedule`을 `date` 파라미터로 1회 재조회한다([[ADR-023]]). 한 번 체크되면 그 기간은 다시 재조회하지 않고 로컬 기록만 신뢰한다.
-
-### `boss_drop_records` — 기간별 드롭 기록
-PK: `drop_record_id`(v4 uuid, DB 버전 12 · [[ADR-342]] 결정 1). 표 자체는 [[ADR-038]]에서 도입했다. 한 보스가 여러 드롭을 가지므로 `drop_index`로 **같은 (보스, 난이도, 기간)에 여러 행**이 들어간다 — 위 세 테이블처럼 조합당 1행이 아니다. 처치 난이도가 나중에 확정·변경되면 그 난이도 키로 행을 옮기는 이관이 돈다([[ADR-069]] 결정 4 — 옛 난이도 키의 드롭을 확정 키로 옮기고 그 난이도에서 획득 불가한 항목은 삭제한다. 상세는 [../features/boss-profit.md](../features/boss-profit.md) "자동 기록").
-
-- **PK 가 uuid 한 칸인 이유는 옛 PK 의 조각 둘이 설계상 바뀌어서다.** `difficulty` 는 위 난이도 확정 이관이 옮기고, `drop_index` 는 `replaceBossDropRecords` 가 그룹을 다시 쓸 때마다 배열 자리로 다시 매긴다. 그 열쇠로 서버에 가격을 보내면 목록에서 하나를 뺀 뒤 **가격이 엉뚱한 아이템에 붙는다**. 옛 다섯 칸은 평범한 칸으로 남고 그 위에 인덱스 `boss_drop_records_group` 이 선다(종전에는 PK 가 곧 그 인덱스였다). **`UNIQUE` 가 아니다** — 한 행씩 고치는 사이에 `drop_index` 가 일시적으로 겹친다.
-- **⚠️ `drop_record_id` 를 새로 만드는 자리는 둘뿐이어야 한다.** `replaceBossDropRecords` 가 그룹을 다시 쓸 때 **기존 값을 물려주고**(아이템 신분 = `item_key` + `box_origin_key` + `ring_level`. 부위는 [[ADR-351]] 이 걷었다), 난이도 확정 이관은 행을 옮기며 **보존한다**. 어느 쪽이든 새로 만들면 서버에 같은 기록이 계속 쌓인다([[ADR-342]] 결정 2 — "이 문서의 유일한 함정이 그 두 자리다").
-- **값은 SQLite 가 만든다**(`storage/sqlite/uuid.ts` 의 `NEW_UUID_SQL`, `randomblob()` 식). JS 에서 안 만드는 이유는 Hermes 전역에 `crypto` 가 없고 네이티브 모듈을 들이면 스토어 빌드를 기다려야 해서다. SQLite 는 이미 번들에 있어 OTA 로 간다.
-- **기록 시점의 월드를 자기 칸으로 든다**(`world` · `world_key`, [[ADR-342]] 결정 3). 캐릭터가 삭제되거나 월드 리프된 뒤에도 그 기록이 어느 월드의 것인지 남는다. **짝인 수익 행에서 물려받지 않는다** — `defeated_on` 은 그렇게 했지만([[ADR-172]] 결정 6) 결정석 가격을 모르는 보스는 수익 행이 없어 물려받을 짝이 없다. 모르면 `NULL` 이고, **옛 행은 채우지 않는다**(현재 캐시의 월드로 채우면 리프한 캐릭터의 리프 전 드롭에 리프 후 월드가 박힌다).
-
-- **금액을 저장한다 — 기록 한 건에 붙는 실판매가다**([[ADR-124]] 결정 1·4, 이슈 #185). `price_state`(`'entered'`·`'excluded'`·`NULL`=미입력) · `price_meso`(입력한 판매가) · `price_share`(분배 인원 **스냅샷**). **상태를 금액의 유무로 추론하지 않는다** — 기록 안함과 미입력이 둘 다 "금액 없음"이라 구분이 사라진다. `slot`·`box_origin`·`ring_level`도 nullable이다(해당 카테고리가 아닌 드롭에는 값이 없다).
-  - **저장되는 상태는 셋이고 `'skipped'` 는 그중에 없다**(확인 2026-10-08 · `src/types/drops.ts` · `storage/boss-drops.ts`). 화면의 스킵은 "아직 안 팔렸다, 팔리면 그때 넣겠다" 라서 **상태를 바꾸지 않고 미입력(`NULL`)에 머문다** — 저장되는 값이 없다. `'excluded'`(기록 안함)는 "이 아이템은 값을 매길 만하지 않다" 는 다른 결정이고 그래서 저장된다.
-  - **`quantity` 는 항상 1 이다**(확인 2026-10-08). `BossDropSheet` 이 드롭을 만드는 자리 둘(`toggleNormal` · `applyBoxResult`)에서 `quantity: 1` 을 박고, 사용자가 바꿀 입력이 없다. 드롭 아이템에는 수량이 없다(사용자 확인 2026-10-08). 아이콘 우측 하단의 `N개` 배지는 **고정 드롭**(`FixedDropIcon`)의 읽기 전용 표시라 이 칸과 무관하다. **그래서 `price_meso` 를 단가로 환산할 일이 없다.**
-- **⚠️ `RecordedDrop` 변환기가 **셋**이다** — `lib/boss/boss-drops.ts`·`features/boss-profit/rows.ts`의 동명 함수 `toRecordedDrop` 둘, 그리고 `drops-loader.ts` `loadDropsByRowKey`(이제 `toRecordedDrop` 에 위임). 새 컬럼을 여기 더하지 않으면 **타입 에러 없이 통과하고 값만 조용히 사라진다** — [[ADR-124]] 구현 중 세 번째를 놓쳐 "기간을 왕복하면 가격이 사라지는" 버그가 났다(인라인 리터럴이라 이름으로 못 찾았다). 컬럼을 늘릴 땐 **이름이 아니라 `RecordedDrop` 을 만드는 자리**를 훑을 것.
-- **가격을 이 테이블에 둔 이유**([[ADR-124]] 결정 4): 난이도 확정 이관이 행을 통째로 옮기므로 가격이 **따라가고**, `pruneUnobtainableDrops` 탈락분의 가격이 **함께 사라지며**, 히스토리의 "원천은 이 테이블 하나"([[ADR-071]] 결정 1)가 유지된다. 가격 전용 테이블이면 셋 다 별도 코드가 된다.
-- **⚠️ `recorded_at`은 "언제 먹었는가"가 아니다 — 감사 필드다**([[ADR-071]] 결정 2). `replaceBossDropRecords`가 DELETE→INSERT로 그룹을 통째로 교체하며 **그룹 전체 행에 호출 시점을 박고**, `pruneUnobtainableDrops` 정리와 난이도 확정 이관도 `now`로 덮는다. 그래서 같은 (보스, 난이도, 기간)에 드롭 하나를 더 추가하면 기존 드롭들의 `recorded_at`까지 오늘로 갱신된다. **드롭이 일어난 시점을 알아야 하면 `period_key`를 쓴다**(주간=리셋일 `YYYY-MM-DD`, 월간=`YYYY-MM`, 불변). 시간순 정렬도 `period_key DESC, drop_index`이고 `recorded_at DESC`는 과거 기간 재편집 한 번에 순서가 뒤집힌다.
-- **아이템을 key 로 든다**([[ADR-280]] 결정 11, 2026-09-15, 이슈 #444). `item_key`(아이템 key) · `box_origin_key`(상자 결과면 상자의 아이템 key)와 그때 이름(`item_name` · `box_origin`)을 함께 적는다. 이름만 든 옛 행은 버전 3 이 key 를 채웠고, 못 찾은 행은 key 가 `NULL` 이다. **`RecordedDrop` 을 만드는 자리(아래 변환기 셋)가 두 key 칸을 빠뜨리면 기록의 key 가 조용히 사라진다.** 가격 칸과 같은 함정이다.
-- **고가 여부는 저장하지 않는다.** `isValuableDropItem`(`lib/drop/drop-items`)은 표시 시점 판정이라, 이 테이블에는 **선택 등록 가능한 모든 아이템**이 구분 없이 들어 있다 — 드롭 히스토리가 별도 테이블 없이 이 테이블만 읽는 근거다([[ADR-071]] 결정 1).
-- **날짜 컬럼이 없다 — 짝인 수익 행의 `defeated_on` 을 물려받는다**([[ADR-172]] 결정 6). «먹은 날» 이 맞는 축이고([[ADR-170]] 결정 4 ④), 두 벌로 박으면 갈라질 수 있는 값이 하나 는다. 수익 행이 없는 드롭(결정석 가격을 모르는 보스)은 물려받을 것이 없어 NULL 이다.
-- **판매 · 분배 수수료를 든다**([[ADR-306]] 결정 6 · 7, 구현 완료 2026-09-22). `sale_fee_percent` · `split_fee_percent` 두 칸과
-  자동인지를 드는 `sale_fee_auto` · `split_fee_auto`(1 이 자동)를 `ensureColumn` 으로 붙인다. `NULL` 은 수수료를 안 센 옛 행이다.
-  자동인 칸은 등급 기록이 바뀔 때 새 요율로 다시 적힌다. **`RecordedDrop` 을 만드는 자리 셋이 두 칸을 빠뜨리면
-  값이 조용히 사라진다**(위 가격 칸과 같은 함정).
-- **`boss_profit_records`와 짝을 이룬다**(같은 `(ocid, boss, difficulty, period_key)`). FK가 없으므로 수익 기록만 지우고 이걸 남기면 고아 행이 되고, 같은 보스를 같은 기간에 다시 처치하면 예전 드롭이 되살아나 붙는다([[ADR-052]]).
-
-### `character_profiles` — 캐릭터 이름·초상 스냅샷
-
-PK: `ocid`. 캐릭터 하나당 한 행. **기록에 이름과 얼굴을 붙이기 위해서만** 있다([[ADR-219]] 결정 1).
-
-- **`character-basic-cache` 와 값이 같고 수명이 다르다.** 그쪽은 5분 TTL 캐시이고 설정의 캐시
-  비우기 `일반` 그룹이 통째로 지운다. 이 표는 `RECORD_TABLE_NAMES` 에 들어 `기록` 그룹에서만
-  지워진다. 이름이 사라지면 `buildRowsFromRecords` 가 그 `ocid` 를 건너뛰어 **기록이 있어도 행이
-  안 선다**. 그래서 이 표를 지우는 것은 기록을 지우는 것과 같은 무게다.
-- **쓰는 자리는 `fetchCharacterBasicCached` 하나다.** 앱 전체의 `character/basic` 통과 지점이라,
-  한 번이라도 조회된 캐릭터는 추적을 해제해도 이름과 얼굴을 갖는다.
-- **읽을 때 자가 치유한다.** 이 표가 생기기 전 설치본은 표가 비어 있고 캐시만 차 있다.
-  `resolveDisplayProfiles` 가 표에 없는 `ocid` 만 캐시에서 읽어 표에 심는다([[ADR-219]] 결정 3).
-  별도 이관 단계를 두면 그때 이미 해제한 캐릭터는 훑을 목록에 없어 영영 안 옮겨진다.
-- **`image_url` 은 URL 만이다**([[ADR-219]] 결정 2, 사용자 지정). 이미지 파일은 안 내려받는다.
-  캐릭터 삭제 후 그 정적 주소가 사는지는 확인된 바 없고, 죽으면 얼굴만 이니셜 폴백이 된다.
-- **`job_class` 는 월드 이전 판정이 읽는다**([[ADR-253]] 결정 6). 옮겨간 캐릭터는 옛 `ocid` 로
-  아무것도 못 부르므로 이름·직업·레벨만으로 새 `ocid` 를 짚어야 하고, 이름 하나로는 유일하지 않다.
-  5분 캐시에 두면 캐시 비우기 한 번에 판정 재료가 사라진다.
-  못 봤나(0/1). 동기화가 끝나야 아는 사실이면 그 전까지 화면이 조회 불가 캐릭터에도 `0 메소` 를
-  그리는데, 그것은 0원을 벌었다는 단정이다. **`NULL`(아직 안 물어봤다)과 `0`(조회된다)을 가른다** -
-  둘을 합치면 새 캐릭터가 전부 조회된다로 시작한다. 쓰는 자리 둘: **`syncSchedules`**(`persistUnavailable`)
-  가 답 없는 추적 `ocid` 를 `1` 로 올리고 답한 `ocid` 를 `0` 으로 내리며, `fetchCharacterBasicCached` 도
-  성공하면 `0` 으로 내린다. **화면 스토어가 아니라 동기화가 쓴다** - 조회 불가는 캐릭터의 사실이라
-  특정 화면을 안 여는 사용자에게도 표가 차야 한다([[ADR-253]] 결정 8).
-- **이름은 마지막으로 안 이름이다.** 추적 중이면 동기화가 덮으므로 어긋남은 해제한 캐릭터에만
-  생긴다.
-
-### `character_world_leaps` - 월드 리프로 갈린 두 ocid 의 연결 ([[ADR-274]] 결정 4)
-
-PK: `from_ocid`. 칸은 `from_ocid`(옛 ocid) · `to_ocid`(새 ocid) · `linked_at`. 옛 ocid 하나당 한 행.
-
-- **리프한 기간의 중복 기록을 정리하는 데만 쓴다.** 리프 전 완료가 새 ocid 로 넘어와 같은 처치가 두
-  ocid 에 한 번씩 기록되면, 이 연결로 짝을 찾아 옛 기록을 지우고 드롭·파티원 수를 새 기록으로 옮긴다.
-- **쓰는 자리는 둘이다.** 리프 모달의 주 버튼(`useWorldLeapStore.confirm`, `confirmed` · `alreadyTracked`)과,
-  모달을 안 거친 리프를 `character_profiles` 의 이름·직업으로 찾는 대조다([[ADR-274]] 결정 5). 그 대조는
-  `character/list` 응답을 받은 자리에서 돌고 목록에 없는 쪽을 옛 ocid 로 적는다.
-- **행을 처음 쓸 때 보스별 파티원 수 설정을 한 번 복사한다**([[ADR-274]] 결정 4). 옛 ocid 의
-  `boss_party_settings` 를 새 ocid 로 옮겨 적고, 새 ocid 에 이미 있는 설정은 안 덮는다. 이 표에 행이
-  있다는 것이 복사를 이미 했다는 뜻이라 두 번 안 한다.
-- **`RECORD_TABLE_NAMES` 에 든다.** 옛 ocid 는 `character/list` 에서 빠져 이 연결을 되살릴 길이 없고,
-  기록과 수명이 같아야 기록은 남았는데 연결만 사라진 상태가 안 생긴다.
-
-### `enhancement_history` — 계정 단위 강화 사용 내역 ([[ADR-223]])
-
-큐브·스타포스·잠재 재설정·소울 잠재능력 재설정에 무엇을 썼는지. 넥슨의
-`history/{cube,starforce,potential,soul-potential}` 네 엔드포인트가 원천이고 **계정 단위**라 추적 목록 밖 캐릭터의 것도 함께 온다.
-
-`id` 가 자연키다. 응답의 줄마다 계정 전체에서 유일한 값이 붙어 있어 그것을 PK 로 쓴다.
-
-**`payload` 에 응답 줄을 통째로 남긴다.** 비용 표([[ADR-006]] 대상)가 아직 없어 지금은 메소를
-못 매기는데, **어제 이전 날짜는 다시 안 부르므로**(결정 1) 지금 안 남기면 표가 들어와도 셀 수
-없다. 나중에 `cost_meso` 를 채우는 일이 **조회가 아니라 계산**이 되도록 원본을 든다.
-
-| 칸 | 뜻 |
+| 파일 | 하는 일 |
 |---|---|
-| `id` | 응답 줄의 id. PK |
-| `kind` | `cube` · `starforce` · `potential` · `soul_potential`. 소울의 경로는 붙임표(`soul-potential`)이고 이 값은 밑줄이다([[ADR-300]] 결정 1) |
-| `date_key` | KST `YYYY-MM-DD`. `date_create` 에서 뽑는다. 가계부 칸이 이 값으로 선다 |
-| `created_at` | `date_create` 원본(타임존 포함) |
-| `character_name` | 이름만이다. **ocid 가 없다.** 얻으려면 캐릭터마다 한 콜이라 안 받는다 |
-| `target_item` | 강화한 장비의 API 이름 원문. 넷 다 준다. 펼친 강화 줄은 띄어쓰기가 살아 있는 이 글자를 보인다 |
-| `item_key` | 장비 key([[ADR-280]] 결정 14). 응답을 받는 자리가 `target_item` 을 NFC 뒤 공백 제거 · 완전 일치로 장비 표(`equipment-items.json`)에서 찾는다. **표에 없는 장비면 NULL 이고 행은 남는다.** 그런 장비에 쓴 큐브 · 잠재도 실제 지출이라서다 |
-| `item_level` | 그 장비의 레벨. **스타포스 · 소울 응답에는 없어서** 거기서는 NULL. 소울 비용은 레벨을 안 본다 |
-| `payload` | 응답 줄 원본 JSON |
-| `cost_meso` | 쓴 메소. **표가 오기 전까지 NULL** |
+| `storage/sqlite/db.ts` | 테이블 정의(`TABLE_DEFINITIONS`) · DB 열기와 닫기 · 칸 보강(`ensureColumn`) · `income_records` 재작성 |
+| `storage/sqlite/boss-tables.ts` | 보스 표 셋의 정의를 한 곳에 둔다. 정상 생성과 버전 4 재작성에서 함께 쓴다 · 드롭 그룹 인덱스 |
+| `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 13) |
+| `storage/sqlite/transaction.ts` | 쓰기 여럿을 트랜잭션 하나로 묶는 `inTransaction` |
+| `storage/sqlite/uuid.ts` | 행 식별자를 SQLite 가 만드는 식(`NEW_UUID_SQL`) |
+| `storage/adapters/rn-sqlite.ts` | `SqlitePort` 구현(op-sqlite) |
+| `storage/adapters/capacitor-sqlite-open.ts` | 파일 이름과 디렉터리 규칙 |
+| `storage/sqlite/__tests__/node-sqlite-port.ts` | 테스트용 `SqlitePort`. Node 내장 `node:sqlite` 로 실제 엔진을 돌린다 |
 
-**장비 레벨 표는 이 표의 투영이다**([[ADR-223]] 결정 3.7). 스타포스 응답에 `item_level` 이 없는데
-큐브·잠재는 주고 셋이 `target_item` 을 같은 이름 체계로 쓴다. 1년치 27,187건에서 한 이름에 두
-레벨이 붙은 적이 없어, 별도 표 없이 이렇게 찾는다. 스타포스 레벨은 장비 key 로 찾은 장비 표의 레벨이 먼저고,
-이 투영은 장비 표에 없는 장비(key 가 NULL)를 받는다. 그래서 이름으로 찾는다(`loadObservedItemLevels`).
+## 열 때 하는 일
 
-```sql
-SELECT target_item, MAX(item_level) AS item_level FROM enhancement_history
- WHERE item_level IS NOT NULL AND target_item <> '' GROUP BY target_item
-```
+`getBossProfitDb()` 를 처음 부르면 이 순서로 실행된다. 커넥션은 앱 전체에서 하나다.
 
-읽은 이름은 NFC 뒤 공백을 지운 글자로 맞춘다(`comparableEquipmentName`). 띄어쓰기만 다른 두 이름이 한 칸에 모이면 큰 레벨을 남긴다.
+1. 같은 이름의 커넥션이 남아 있으면 닫는다.
+2. `TABLE_DEFINITIONS` 의 `CREATE TABLE IF NOT EXISTS` 를 모두 실행한다.
+3. `income_records.meso_amount` 가 `NOT NULL` 이면 테이블을 다시 쓴다.
+4. `ensureColumn` 으로 나중에 생긴 칸을 옛 테이블에 더한다.
+5. `boss_drop_records` 의 `price_split_mode` 가 빈 행을 `even` 으로, `even` 행의 빈 `price_party_size` 를
+   `price_share` 로 채운다. 매번 실행되지만 빈 행이 없으면 아무것도 바꾸지 않는다.
+6. `user_version` 보다 큰 버전 이관을 차례로 실행한다.
+7. 드롭 그룹 인덱스 `boss_drop_records_group` 을 만든다.
 
-**읽을 때 찾는다.** 쓸 때 채우면 그 시점에 표에 없던 장비가 영영 NULL 로 남는다. 표가 자라면
-예전에 넣은 행도 함께 값을 얻어야 한다.
+열기는 10초, 닫기(`closeBossProfitDb`)는 5초 상한이 있다. OTA 적용과 캐시 데이터 삭제는 리로드 전에 닫는다.
 
-### `enhancement_history_checks` — 날짜별 조회 원장 ([[ADR-223]] 결정 1)
+## 테이블
 
-`(kind, date_key)` 하나가 키다. 계정 단위라 ocid 축이 없어 **하루가 4콜**이고 캐릭터 수를 안 곱한다.
-소울은 2026-09-17 부터만 부르므로 그 전 날짜는 3콜이고 행도 안 생긴다([[ADR-300]] 결정 4).
+FOREIGN KEY 제약은 걸려 있지 않다. 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서, 한쪽만 지우면 짝이
+없는 행이 남는다. 그래서 캐시 데이터 삭제는 기록 표들을 한 그룹으로 함께 지운다(`lifecycle.md`).
 
-| 칸 | 뜻 |
+`삭제 그룹` 의 `기록` 은 캐시 데이터 삭제의 `records` 그룹(`RECORD_TABLE_NAMES`)이고, `일반` 은 나머지다.
+
+| 테이블 | 기본키 | 담는 것 | 쓰는 곳 | 삭제 그룹 | 문서 |
+|---|---|---|---|---|---|
+| `boss_profit_records` | `(ocid, boss_key, difficulty, period_key)` | 기간별 보스 처치 한 건의 파티 인원 · 결정석 가격 · 받은 몫 · 처치 날짜 · 월드 | `storage/boss-profit.ts` | 기록 | `features/boss-profit.md` |
+| `boss_party_settings` | `(ocid, boss_key, difficulty)` | 캐릭터 · 보스마다 늘 쓰는 파티 인원과 분배 비율 | `storage/boss-party-settings.ts` | 일반 | `features/boss-scheduler.md` |
+| `boss_party_period_overrides` | `(ocid, boss_key, difficulty, period_key)` | 미완료 보스 행에서 고친 그 기간만의 파티 인원과 비율 | `storage/boss-party-period-overrides.ts` | 일반 | `features/boss-profit.md` |
+| `boss_drop_records` | `drop_record_id`(v4 uuid) | 기간별 드롭 아이템과 판매가 · 수수료 · 월드 | `storage/boss-drops.ts` | 기록 | `features/item-drop.md` |
+| `character_profiles` | `ocid` | 기록 옆에 보일 캐릭터 이름 · 초상 주소 · 월드 · 레벨 · 직업 | `storage/character-profiles.ts` | 기록 | `features/character.md` |
+| `character_world_leaps` | `from_ocid` | 월드 리프로 바뀐 옛 ocid 와 새 ocid 의 연결 | `storage/character-world-leaps.ts` | 기록 | `features/character.md` |
+| `enhancement_history` | `id` | 계정 단위 스타포스 · 큐브 · 잠재 재설정 사용 내역(응답 원문 `payload` 포함) | `storage/enhancement-history.ts` | 기록 | `features/cashbook.md` |
+| `enhancement_history_checks` | `(kind, date_key)` | 강화 내역을 날짜별로 조회했는지 기록 | `storage/enhancement-history.ts` | 기록 | `features/cashbook.md` |
+| `income_records` | `id` | 가계부에 손으로 적은 수입(아이템 판매 · 사냥 · 기타) | `storage/income.ts` | 기록 | `features/cashbook.md` |
+| `spend_records` | `id` | 가계부에 손으로 적은 지출 | `storage/spend.ts` | 기록 | `features/cashbook.md` |
+| `mvp_grade_history` | `(account_id, start_date)` | 메이플 ID 마다 MVP 등급과 시작 날짜 | `storage/mvp-grades.ts` | 기록 | `features/mvp-grade.md` |
+| `character_accounts` | `(ocid, name, account_id)` | 캐릭터가 어느 메이플 ID 에 속했는지와 처음 · 마지막으로 본 날 | `storage/character-accounts.ts` | 기록 | `features/mvp-grade.md` |
+| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 못 보낸 기록. 평소에는 비어 있다 | `storage/server-sync-queue.ts` | 일반 | [[ADR-018]] |
+
+### 칸
+
+`NN` 은 `NOT NULL` 이다. 각 칸의 뜻은 표마다의 문서와 `db.ts` · `boss-tables.ts` 의 DDL 주석에 있다.
+
+| 테이블 | 칸 |
 |---|---|
-| `next_cursor` | **1쪽의 커서.** 다시 불렀을 때 같으면 새 데이터가 없다는 뜻이라 나머지를 안 부른다 |
-| `settled` | 어제 이전이면 1. **아예 안 부른다** — 그 날짜의 데이터는 변할 수 없다(사용자 판단) |
+| `boss_profit_records` | `ocid` NN · `boss_key` NN · `boss` NN · `difficulty` NN · `cycle` NN · `period_key` NN · `party_size` NN · `price_meso` NN · `payout_meso` NN · `crystal_my_share` · `crystal_shares_total` · `split_fee_percent` · `split_fee_auto` · `recorded_at` NN · `world` · `world_key` · `defeated_on` · `source` |
+| `boss_party_settings` | `ocid` NN · `boss_key` NN · `boss` NN · `difficulty` NN · `party_size` NN · `crystal_my_share` · `crystal_shares_total` · `split_fee_percent` · `split_fee_auto` · `updated_at` NN |
+| `boss_party_period_overrides` | `ocid` NN · `boss_key` NN · `difficulty` NN · `period_key` NN · `party_size` NN · `crystal_my_share` · `crystal_shares_total` · `split_fee_percent` · `split_fee_auto` · `updated_at` NN |
+| `boss_drop_records` | `drop_record_id` NN · `ocid` NN · `boss_key` NN · `boss` NN · `difficulty` NN · `period_key` NN · `drop_index` NN · `category` NN · `item_key` · `item_name` NN · `slot` · `box_origin_key` · `box_origin` · `ring_level` · `quantity` NN · `recorded_at` NN · `world` · `world_key` · `price_state` · `price_meso` · `price_split_mode` · `price_party_size` · `price_share` · `price_my_share` · `sale_fee_percent` · `split_fee_percent` · `sale_fee_auto` · `split_fee_auto` |
+| `character_profiles` | `ocid` NN · `name` NN · `image_url` NN · `world` · `world_key` · `level` · `job_class` · `updated_at` NN |
+| `character_world_leaps` | `from_ocid` NN · `to_ocid` NN · `linked_at` NN |
+| `enhancement_history` | `id` NN · `kind` NN · `date_key` NN · `created_at` NN · `character_name` NN · `target_item` NN · `item_key` · `item_level` · `payload` NN · `cost_meso` |
+| `enhancement_history_checks` | `kind` NN · `date_key` NN · `next_cursor` · `settled` NN(기본 0) · `checked_at` NN |
+| `income_records` | `id` NN · `ocid` · `earned_on` NN · `category` NN · `category_key` · `item` · `item_key` · `meso_amount` · `sale_fee_percent` · `sale_fee_meso` · `sale_fee_auto` · `point_amount` · `point_per_100m_meso` · `cash_amount` · `quantity` · `item_kind_key` · `hunt_character_level` · `hunt_missed_mobs` · `hunt_boosts` · `hunt_sojae` · `hunt_fragments` · `hunt_fragment_price` · `hunt_meso_rate` · `hunt_typed_meso` · `hunt_fragments_deferred` · `hunt_union_tier` · `memo` · `recorded_at` NN |
+| `spend_records` | `id` NN · `ocid` · `spent_on` NN · `category` NN · `category_key` · `item` · `item_key` · `form` · `form_item_keys` · `item_kind` · `item_kind_key` · `level_from` · `level_to` · `quantity` · `meso_amount` · `tariff_meso` · `point_amount` · `point_per_100m_meso` · `cash_amount` · `memo` · `recorded_at` NN |
+| `mvp_grade_history` | `account_id` NN · `start_date` NN · `grade` · `updated_at` NN |
+| `character_accounts` | `ocid` NN · `name` NN · `account_id` NN · `first_seen_on` NN · `last_seen_on` NN |
+| `server_sync_queue` | `id` NN · `kind` NN · `record_id` NN UNIQUE · `attempts` NN(기본 0) · `last_error` · `created_at` NN |
 
-커서가 결정적임을 실측했다(2026-09-06). 같은 요청을 두 번 보내면 `next_cursor` 도 id 목록도
-응답 전체도 같다. 새 줄이 앞(최신)에 들어오면 1쪽의 경계가 밀리므로 커서가 바뀐다.
+`boss_drop_records` 의 옛 기본키 다섯 칸 `(ocid, boss_key, difficulty, period_key, drop_index)` 에는 인덱스
+`boss_drop_records_group` 이 있다. 유일 인덱스가 아니다. 한 행씩 고치는 동안 `drop_index` 가 잠깐 겹치기 때문이다.
 
-이 원장이 조회 원장(`schedule-probe-ledger`, preferences)과 갈리는 이유는 **창이 없기 때문**이다.
-그쪽은 14일 뒤 스스로 떨어지지만 이쪽은 날짜가 영구히 쌓인다. preferences 에 두면 한 계정의
-JSON 하나가 무한히 자란다.
+## 테이블이나 칸을 더할 때
 
-### `mvp_grade_history` - 메이플 ID 의 MVP 등급 이력 ([[ADR-306]] 결정 2, 구현 완료)
+1. `db.ts` 의 `TABLE_DEFINITIONS` 에 넣는다. 이 배열 밖에서 만들면 캐시 데이터 삭제와 용량 계산에서 빠진다.
+2. 칸을 더할 때는 `CREATE TABLE` 문과 `ensureColumn` 을 둘 다 고친다([[ADR-007]] 결정 4).
+3. 새 테이블이 다시 받을 수 없는 값이면 `storage/cache-data.ts` 의 `RECORD_TABLE_NAMES` 에 넣는다. 안 넣으면
+   `일반` 그룹으로 들어가 캐시 삭제 때 지워진다.
+4. 기존 행의 값을 옮겨야 하면 `migrations.ts` 의 `STEPS` 끝에 단계를 더하고 `DB_VERSION` 을 올린다.
+5. 기록을 앱 타입으로 바꾸는 함수(`RecordedDrop` 을 만드는 곳 등)에 새 칸을 빠뜨리면 타입 오류 없이 값만 사라진다.
+   이름이 아니라 그 타입을 만드는 곳을 모두 찾아 고친다.
 
-PK: `(account_id, start_date)`. 한 줄이 `(메이플 ID, 시작 날짜, 등급)` 이고 **`start_date` 는 늘 목요일**(주간 기간 키)이다.
-MVP 등급이 매주 목요일에 바뀌기 때문이다. 같은 주에 다시 고르면 덮는다.
-기록의 날짜에 맞는 등급은 그 날짜 이하에서 가장 늦은 `start_date` 의 것이고, 첫 줄보다 앞이면 등급이 없다.
-**`grade` 는 `NULL` 일 수 있다.** 첫 줄보다 앞선 기간을 끼워 넣으면 그 끝을 닫는 `등급 없음` 줄이고, 그 줄부터 다음 줄 전까지는
-첫 줄보다 앞선 것과 같이 등급이 없다([[ADR-306]] 결정 11).
-스타포스 비용을 읽을 때 계산하므로 이 이력이 과거 지출을 지킨다. **`RECORD_TABLE_NAMES` 에 든다.**
+## 버전 이관
 
-### `character_accounts` - 캐릭터의 메이플 ID 소속 ([[ADR-306]] 결정 3, 구현 완료)
-
-PK: `(ocid, name, account_id)`. 칸은 `first_seen_on` · `last_seen_on`(KST `YYYY-MM-DD`)이다. `character/list` 를 받는 모든 자리가
-쓰고, 볼 때마다 줄을 쌓지 않고 두 날짜를 넓힌다(`MIN` · `MAX`). 스타포스 줄은 이름만 들고 있어
-**이름으로** 찾고, 그래서 옛 이름을 지우지 않는다. `character_profiles` 는 이름을 덮어써 이 용도로 못 쓴다.
-**`RECORD_TABLE_NAMES` 에 든다.** 옛 이름과 지워진 캐릭터는 다시 받을 수 없다.
-
-### `server_sync_queue` - 서버로 못 보낸 것 ([[ADR-343]], 구현 완료 2026-10-09)
-
-PK: `id`(v4 uuid). **평소에 비어 있다.** 전송은 사용자가 값을 저장하는 그 자리에서 한 건 나가고
-([[ADR-342]] 결정 4) 실패한 것만 여기 줄이 남는다. 보낼 것을 찾으려고 기록 표를 훑지 않는다 -
-그쪽이 더 낭비다. 할 일만 들어서 **표 자체가 목록**이고 부분 인덱스가 필요 없다.
-
-| 칸 | 뜻 |
-|---|---|
-| `kind` | 어느 종류의 기록인가. **파생되지 않는다** - uuid 만 보고는 어느 표를 열어야 하는지 모른다. 지금 값은 `'drop-price'` 하나다 |
-| `record_id` | 그 기록의 uuid(`UNIQUE`). 드롭 가격이면 `boss_drop_records.drop_record_id` 다. **FK 가 아니다** - 기록이 지워진 뒤에도 줄이 남아야 하고, 그 상태가 곧 「서버에서 지워라」 다 |
-| `attempts` | 응답을 받은 횟수. 5 가 되면 줄을 버린다. **네트워크가 없으면 안 오른다** |
-| `last_error` | 마지막 거절. `HTTP 503` 같은 글자다 |
-
-- **값을 담지 않는다**([[ADR-343]] 결정 4). 보낼 때 원본에서 현재 값을 읽는다. 담으면 그 사이에 또 고친 경우 **중간 값이 서버로 간다.**
-- **작업 종류(올리기 · 지우기)를 적지 않는다**(결정 2). 원본이 있으면 올리기이고 없으면 지우기이므로 파생된다. 적으면 지워진 기록에 올리기가 남은 상태가 표현 가능해지고 제약으로는 못 막는다.
-- **한 기록에 줄은 하나다**(결정 1). 같은 것을 여러 번 고쳐도 줄이 하나이고, 보낼 때 현재 값을 읽으므로 마지막 값이 간다. 다시 넣어도 `attempts` 를 0 으로 **안 돌린다** - 사용자가 다시 저장했다는 것이 망이 나아졌다는 뜻은 아니고, 돌려 주면 서버가 영구히 거절하는 건이 무한히 재시도된다.
-- **`attempts` 는 응답을 받은 뒤에 적는다**(결정 5). 미리 적고 성공하면 되돌리는 모양이면 훑는 중에 앱이 꺼졌을 때 그 되돌리기가 못 돌아 한 번 켰다 끈 것이 시도로 남는다.
-- **`general` 그룹이다**(차집합 파생). 캐시를 비우면 아직 못 보낸 것이 사라지는데, 서버가 값을 모으는 목적이 통계라 한두 건이 빠지는 것은 문제가 아니다. 사용자의 기록은 기록 표에 남는다.
-
-## 새 테이블을 추가할 때
-
-**`storage/sqlite/db.ts`의 테이블 정의 배열(`[{ name, createSql }]`)에만 넣으면 스키마 생성·캐시 삭제 범위·용량 계산에 자동 반영된다** — 삭제 목록을 따로 관리하는 곳은 없다([[ADR-052]] 결정 2).
-
-> **새 테이블은 기본적으로 `general` 그룹이다.** 그 그룹이 차집합으로 파생되기 때문이다. 지우면
-> 되살릴 길이 없는 표라면 `cache-data.ts` 의 `RECORD_TABLE_NAMES` 에 **직접 적어야** 한다
-> (`character_profiles` 가 그렇다). `openBossProfitDb()`의 `CREATE TABLE` 실행과 `storage/cache-data.ts`의 `DELETE FROM`/용량 합산이 모두 이 배열 하나를 본다. 자세한 삭제 범위는 [lifecycle.md](./lifecycle.md)의 "삭제 범위: 연결 해제 vs 캐시 데이터 삭제" 참고.
-
-> 이 규칙이 생기기 전에는 `cache-data.ts`가 테이블 이름을 하드코딩한 별도 목록을 들고 있어, 나중에 추가된 `boss_drop_records`가 거기 빠진 채로 남았다(이 문서에도 같은 누락이 있었다).
-
-## 커넥션 라이프사이클과 운영상 주의사항
-
-`getBossProfitDb()`가 모듈 스코프에서 커넥션을 싱글턴으로 캐싱한다(`storage/sqlite/db.ts`). 아래 두 시점 모두 **JS 컨텍스트를 파괴하고 리로드**하는 이벤트라, 리로드 직전에 반드시 `closeBossProfitDb()`로 커넥션을 먼저 정상 종료해야 한다 — 그러지 않으면 네이티브 쪽에 stale 커넥션이 남아 리로드 후 첫 쿼리가 응답 없이 멈춘다(앱 업데이트 직후 과거 수익 데이터가 안 불러와지는 증상으로 2026-07-17 실사용자 보고, `storage/sqlite/db.ts`의 `closeBossProfitDb` 주석 참고).
-
-```mermaid
-sequenceDiagram
-    participant UI as 화면(설정/OTA 프롬프트)
-    participant DB as storage/sqlite/db.ts
-    participant Native as 네이티브 SQLite (op-sqlite)
-
-    UI->>DB: closeBossProfitDb()
-    DB->>Native: closeConnection(boss_profit)
-    UI->>UI: Updates.reloadAsync() 또는 캐시 삭제 후 리로드
-    Note over UI: JS 컨텍스트 파괴·재로드
-    UI->>DB: getBossProfitDb() (다음 쿼리가 최초 호출)
-    DB->>Native: isConnection() 확인 후 없으면 createConnection + open
-    DB->>Native: CREATE TABLE IF NOT EXISTS × 4 + ensureColumn + 버전 이관
-```
-
-이 패턴을 쓰는 두 곳:
-- `native/live-update.ts`의 `applyDownloadedLiveUpdate()` — OTA 번들 적용 직전
-- `features/settings/cache-data.ts`의 `clearCacheDataAndReload()` — 캐시 데이터 삭제 직후 리로드 직전(호출 화면은 `app/settings/SettingsAccountDataScreen`. 옛 `app/settings/CacheDataSection.tsx` 는 2026-08-09 [[ADR-118]] 개편에서 삭제됐고, 닫기 호출은 그때도 이 파일에 있었다)
-
-**닫기에는 5초 상한이 있고 여전히 던지지 않는다** ([[ADR-117]] 결정 5, 2026-08-08) — 여는 쪽 `withOpenTimeout`(10초)과 대칭이되 더 짧다(닫기는 파일 생성·마이그레이션이 없어 정상이면 수 ms). 상한이 없던 동안 이 호출은 **리로드 앞을 막는 유일한 맨몸 대기**였고, iOS 실기기 SQLite 무응답 전례가 둘이나 있는 상태에서(위 ADR-050 결정 2 · [[ADR-008]] 2026-07-17 정정) 그대로 매달리면 리로드에 도달하지 못한다. **타임아웃이 바꾸는 것은 *"실패로 끝난다"* 가 아니라 *"끝난다"*** 이고, 실패·타임아웃은 지금처럼 삼킨다(곧 리로드될 것이고 `openBossProfitDb` 의 stale 감지가 최후 폴백으로 남는다).
-
-**두 곳 모두 커버(스플래시)보다 닫기가 먼저다** ([[ADR-117]] 결정 1·8) — 커버를 먼저 올리면 닫기가 매달리는 동안 사용자가 브랜드색 화면에 갇히고 iOS 에서는 터치까지 죽는다(이슈 #175).
-
-### 커넥션 쪽 방어 — 우리가 못 끼워 넣는 경로가 있다 (⛔ ADR-050 결정 2·3, 지금도 유효)
-
-위 두 곳은 **우리가 리로드를 일으키는** 경우다. 웹뷰 시절에는 그 밖에 앱이 통제할 수 없는 리로드 경로가
-둘 있었고(두 손가락 동시 탭이 합성한 클릭이 `<a href>` 의 기본 동작을 흘린 것 · WebKit 콘텐츠 프로세스
-사망 후 Capacitor 가 자동으로 걸던 `webView.reload()`), 거기엔 `closeBossProfitDb()` 를 끼워 넣을 자리가
-없었다. **RN 에는 그 두 경로가 없다** — 문서도 웹뷰도 없다. 그런데도 **방어는 그대로 둔다**: 커넥션이
-에러 없이 멈추는 사고(iOS 실기기 전례 둘)는 리로드와 무관하게 성립한다.
-
-그래서 커넥션 쪽에도 방어가 있어야 한다 — `openBossProfitDb()`는 **타임아웃과 경쟁**시켜, 커넥션이 에러 없이 멈춰도 `dbPromise`를 비우고 다음 호출이 처음부터 다시 열게 한다(ADR-050 결정 2). 이 방어가 없으면 죽은 커넥션이 `dbPromise`에 영구 캐시되어 **앱을 재시작할 때까지** 모든 조회가 실패한다. 단 네이티브 브릿지 큐 자체가 막힌 경우엔 재시도 호출도 같은 큐에 서므로 회복되지 않는다.
-
-**조회 실패를 "기록 없음"으로 오인하지 말 것** — `features/boss-profit/store.ts`의 `withSqliteFallback`은 타임아웃을 빈 결과로 바꾸는데, 그 값을 "기록이 없다"로 읽으면 자동 기록이 `party_size = 1`로 **사용자가 저장한 값을 덮어쓴다**. `getBossProfitRecords` 조회는 폴백을 `null`로 두어 실패와 빈 결과를 구분하고, 실패면 자동 기록을 건너뛴다(ADR-050 결정 3).
-
-## 마이그레이션
-
-`openBossProfitDb()`가 커넥션을 열 때마다(앱 실행마다) 돈다. **수단이 셋**이고, 셋 다 «이미 됐으면 아무 일도 안 한다» 는 성질을 갖는다.
-
-| 수단 | 무엇을 바꾸나 | 어떻게 «이미 됐는가» 를 아나 |
+| 버전 | 함수 | 하는 일 |
 |---|---|---|
-| `ensureColumn` | 없는 **칸을 더한다** ([[ADR-069]] 결정 1) | `PRAGMA table_info` 에 그 이름이 있나 |
-| **테이블 재작성** | 칸의 **모양을 바꾼다**(`NOT NULL` 을 뗀다 — [[ADR-176]]) | `PRAGMA table_info` 의 `notnull` |
-| **버전 이관** | **값을 옮긴다**(옛 이름을 새 이름으로 · 이름으로 key 를 채운다) | `PRAGMA user_version` 이 그 버전 이상이다 |
+| 1 | `LEGACY_NAME_MIGRATIONS` | 이름이 바뀐 지출 분류 · 항목과 메이린 보스 이름을 새 이름으로 바꾼다 |
+| 2 | `fillCashbookKeys` | 가계부 기록에 분류 · 항목 · 종류 · 사냥터 key 를 채운다 |
+| 3 | `fillDropKeys` | 드롭 기록에 아이템 key · 상자 key 를 채운다 |
+| 4 | `rekeyBossTables` | 보스 표 셋의 기본키를 보스 key 로 다시 만든다 |
+| 5 | `fillEnhancementItemKeys` | 강화 내역에 장비 key 를 채운다 |
+| 6 | `fillWorldKeys` | 수익 기록 · 캐릭터 프로필에 월드 key 를 채운다 |
+| 7 | `rewind0917PrePatchPrices` | 09-17 패치 값으로 저장된 그 주의 결정석 가격을 옛 가격으로 되돌린다 |
+| 8 | `fixSwapped0917Prices` | 서로 바뀐 채 나간 두 새 가격을 고친다 |
+| 9 | `clearZeroHuntFragmentPrices` | 사냥 기록의 조각 가격 0 을 `NULL` 로 바꾼다 |
+| 10 | `dropDropShareColumns` | 파티 설정 · 수익 기록의 드롭 비율 칸 둘을 지운다 |
+| 11 | `fillUnreachableDefeatDates` | 날짜를 다시 알아낼 수 없는 보스 기록에 기간 첫날을 적는다 |
+| 12 | `rekeyDropRecordsByUuid` | 드롭 기록에 `drop_record_id` 를 채우고 그것을 기본키로 다시 만든다 |
+| 13 | `dropBossProfitPeriodChecks` | 읽는 코드가 없는 `boss_profit_period_checks` 표를 지운다. 조회했는지는 조회 원장이 답한다 |
 
-### 칸을 더한다 — `ensureColumn`
+못 찾는 이름은 key 만 비우고 행과 이름은 남긴다.
 
-SQLite 에 `ADD COLUMN IF NOT EXISTS` 가 없으므로 `PRAGMA table_info` 로 있는지 보고 없을 때만 `ALTER TABLE … ADD COLUMN` 한다(`ALTER` 를 try/catch 로 삼키면 다른 원인의 실패까지 숨는다). **`CREATE TABLE IF NOT EXISTS` 는 이미 만들어진 테이블에 칸을 더해주지 않는다** — 테이블을 세운 커밋과 칸을 더한 커밋이 갈리면 그 사이에 앱을 켠 기기는 칸이 모자란 테이블을 들고 있고, INSERT 는 모든 칸을 적으므로 **그 기록이 하나도 안 적힌다**(`spend_records.form` 이 실제로 그랬다 — 2026-08-25 실기 재현).
+## 행 식별자
 
-### 칸의 모양을 바꾼다 — 테이블 재작성 ([[ADR-176]], 이슈 #265)
-
-**`ALTER TABLE` 로는 기존 칸의 `NOT NULL` 을 못 뗀다.** `income_records.meso_amount` 가 그 자리였다 — 수입이 메소뿐이던 시절 `NOT NULL` 로 만들어졌는데([[ADR-170]] 결정 1), 정정 15 가 「기타」에 통화를 더하며 «메소로 번 것이 아니다» 를 `null` 로 적기 시작해 **메포·캐시 「기타」가 저장되지 않았다.** 그래서 한 트랜잭션 안에서 테이블을 다시 쓴다:
-
-```sql
-BEGIN;
-CREATE TABLE income_records_rebuild ( … 지금의 스키마 … );
-INSERT INTO income_records_rebuild (<옮길 칸>) SELECT <옮길 칸> FROM income_records;
-DROP TABLE income_records;
-ALTER TABLE income_records_rebuild RENAME TO income_records;
-COMMIT;
-```
-
-만질 때 **반드시 지켜야 하는 것 넷**:
-
-- **트랜잭션 밖으로 내지 말 것.** 「옛 테이블은 지워졌고 새 이름은 아직 없는」 상태가 파일에 남으면 그 기기의 수입 기록이 전부 사라진다. 던지면 `ROLLBACK` 하고 그대로 올려보낸다.
-- **옮길 칸은 `PRAGMA table_info` 로 읽은 «옛 테이블이 실제로 가진 칸»** 이다. `SELECT *` 는 `ensureColumn` 이 **뒤에** 붙인 칸 때문에 순서가 어긋나 값이 에러 없이 옆 칸으로 옮겨 앉고(수수료가 메포가 된다), 지금 스키마의 칸 목록을 박아 두면 그 칸이 아직 없는 옛 기기에서 던진다.
-- **`ensureColumn` 들보다 먼저** 돈다 — 재작성이 만드는 테이블은 지금의 DDL 전체라 칸이 이미 다 있다.
-- **DDL 본문은 한 벌**을 두 자리(정상 생성 · 재작성)가 쓴다. 두 벌로 두면 재작성이 옛 스키마를 다시 만드는 날이 온다.
-
-> **재작성이 생기면서 `CREATE TABLE` 문의 진실성이 처음으로 강제된다.** `ensureColumn` 만 있을 때는 CREATE 문이 낡아도 아무 일도 안 일어났고 — 실제로 통화 칸 셋([[ADR-170]] 정정 15)이 `ensureColumn` 에만 있고 CREATE 문에는 없는 채로 멀쩡히 돌았다 — 재작성이 그 테이블을 만들려는 순간에야 「칸이 없다」 로 드러난다. **이제 칸을 더할 때는 두 자리를 함께 고친다**: CREATE 문(새 설치 · 재작성)과 `ensureColumn`(기존 기기).
->
-> 예: `income_records.hunt_fragments_deferred`([[ADR-283]] 결정 2, 구현 완료 2026-09-16). 옛 행은 `NULL` 이라 옮길 값이 없어 버전을 안 올렸다.
->
-> 예: `spend_records.level_from` · `level_to`([[ADR-301]] 결정 6, 구현 완료 2026-09-19). 심볼 강화 기록의 강화 전 · 강화 후 레벨이다. 다른 갈래와 옛 행은 NULL 이라 버전을 안 올린다.
->
-> 예: `income_records.item_kind_key`([[ADR-325]] 결정 4). 아이템 판매의 종류다. 옛 판매 행은 NULL 이고 장비로 열어 값이 그대로 맞으므로 버전을 안 올린다.
->
-> 예: `income_records.hunt_union_tier`([[ADR-329]] 결정 5 · 6). 사냥 계산기 기록의 유니온의 부 단계(1 · 2 · 3)다. 옛 계산기 행은 NULL 이고 3단계로 읽어 금액이 그대로 맞으므로 버전을 안 올린다.
->
-> **칸을 안 쓰게 돼도 지우지 않는다.** 그 칸은 [[ADR-290]] 결정 3 뒤로 읽지도 쓰지도 않지만 CREATE 문과 `ensureColumn` 에 남아 있다. OTA 를 되돌리면 옛 번들의 `INSERT` 가 그 칸을 적는데, 칸이 없으면 그 표에 한 행도 안 적힌다.
-
-> **목으로는 못 잡는 결함이다.** 제약은 목이 흉내 내라고 배운 목록에 없다 — 그래서 `node:sqlite`(노드 내장, 새 의존성 0)로 `SqlitePort` 를 구현해 **진짜 엔진 위에서 한 번 태우는** 경로를 뒀다(`src/storage/sqlite/__tests__/`). 스키마 제약을 만질 때는 그 파일에 케이스를 더할 것.
-
-### 값을 옮긴다. 버전 이관 ([[ADR-280]] 결정 5 · 10, 구현 완료 2026-09-15, 이슈 #443)
-
-`runVersionedMigrations`(`storage/sqlite/migrations.ts`)가 `PRAGMA user_version` 에 마지막으로 돈 버전을 적고, 아직 안 돈 버전만 차례로 한 번씩 돌린다. 버전 하나가 한 트랜잭션이라 중간에 던지면 그 버전의 변경과 버전 번호가 함께 되돌아가 다음 부팅에 다시 돈다. 칸을 더하는 것은 이 모듈이 아니라 CREATE 문과 `ensureColumn` 이고, 이관은 칸이 다 선 뒤에 돈다.
-
-부팅마다 도는 멱등 `UPDATE` 로 두지 않는 이유는 둘이다. 뒤 버전이 앞 버전의 결과를 읽는다(버전 2 는 버전 1 이 옮긴 이름으로 key 를 찾는다). 그리고 key 를 못 찾아 비워 둔 행을 부팅마다 다시 찾지 않는다.
-
-| 버전 | 하는 일 |
-|---|---|
-| 1 | 이름을 바꾸며 옛 기록을 옮기던 `UPDATE` 일곱을 한 번 돌린다. 지출 다섯(갈래 `상점·편의` → `이벤트·BM`, 보약 버프 둘의 갈래, 농장 · 퀵패스 · 미호로이드 항목 이름)과 아래 메이린 둘이다 |
-| 2 | 가계부 기록에 key 를 채운다. `spend_records` 의 `category_key` · `item_key` · `form_item_keys` · `item_kind_key`, `income_records` 의 `category_key` · `item_key` 다. 이름으로 표를 찾고, 못 찾으면 key 를 비운 채 행을 남긴다([[ADR-280]] 결정 4) |
-| 4 | 보스 표 셋(`boss_profit_records` · `boss_party_settings` · `boss_drop_records`)을 다시 만들어 기본키의 `boss` 를 `boss_key` 로 바꾸고 한글 난이도를 key 로 옮긴다([[ADR-280]] 결정 12). 보스 key 는 `boss` 이름을 API 이름과 같은 규칙(NFC · 공백 제거)으로 찾는다. **보스를 못 찾는 행은 옮기지 않는다.** 기본키를 못 채우고, 표에 없는 보스는 기록하지 않는다는 결정과 같다 |
-| 3 | 드롭 기록에 key 를 채운다. `boss_drop_records` 의 `item_key` · `box_origin_key` 다([[ADR-280]] 결정 11). 이름은 NFC 로 맞추고 `drop-items.json` 에서 찾는다. 기본키에 아이템 이름이 없어 표를 다시 만들지 않는다. 드롭 기록은 key 를 채운 뒤에야 획득 판정을 돌린다 |
-| 5 | 강화 기록에 장비 key 를 채운다. `enhancement_history` 의 `item_key` 다([[ADR-280]] 결정 14). `target_item` 을 API 이름과 같은 규칙(NFC · 공백 제거)으로 `equipment-items.json` 에서 찾는다. 기본키가 응답의 `id` 라 표를 다시 만들지 않는다. **못 찾는 행은 key 만 비우고 남긴다** |
-| 6 | 수익 기록(`boss_profit_records`)과 캐릭터 프로필(`character_profiles`)에 월드 key 를 채운다([[ADR-280]] 결정 15). `world` 이름을 API 이름과 같은 규칙(NFC · 공백 제거)으로 `worlds.json` 에서 찾는다. 두 표 모두 기본키에 월드가 없어 표를 다시 만들지 않는다. `world` 가 NULL 인 행은 key 도 NULL 이다 |
-| 7 | 09-17 주 수익 기록 중 패치 전(`recorded_at` 이 09-17 10:00 KST 전)에 새 가격으로 굳은 행을 옛 가격과 분배액으로 되돌린다([[ADR-261]] 정정 2) |
-| 8 | 카링 노멀 `price_meso = 576,000,000` · 찬란한 흉성 노멀 `593,000,000` 으로 굳은 수익 기록을 인게임 가격과 분배액으로 고친다. 두 값이 가격표에서 서로 바뀌어 있었고, 옛 가격이 든 행은 안 건드린다([[ADR-261]] 정정 3) |
-| 9 | 사냥 기록(`category_key = 'hunting'`)의 `hunt_fragment_price = 0` 을 `NULL` 로 옮긴다. 가격 칸이 빈 기록이 조각 보관에 드는데, 그전까지 칸이 0 과 빈 칸을 못 갈랐다([[ADR-290]] 결정 4) |
-| 10 | `boss_party_settings` · `boss_profit_records` 에서 `drop_my_share` · `drop_shares_total` 을 `DROP COLUMN` 한다([[ADR-312]] 결정 2). 비율이 결정석에만 남아 쓰는 곳이 없다. **표 정의와 `ensureColumn` 목록에서도 빼야 한다** - 안 빼면 다음 부팅이 칸을 다시 붙인다. 값이 든 행은 그 값을 잃는다 |
-
-새 기기는 CREATE 뒤 빈 테이블에 버전 1 ~ 10 이 돌고 `user_version` 이 10 이 된다. 이관은 진짜 엔진(`db-real-sqlite.test.ts`) 위에서 테스트한다.
-
-```sql
-UPDATE boss_party_settings SET boss = '시즌 보스 메이린' WHERE boss = '메이린';
-UPDATE boss_profit_records SET boss = '시즌 보스 메이린' WHERE boss = '메이린';
-```
-
-메이린 둘은 표시명을 Nexon API 응답(`content_name: "시즌 보스 메이린"`)과 통일하며 보스 식별 키가 바뀐 데이터를 옛 키에서 새 키로 옮겨, 기존에 저장된 파티 설정·수익 기록이 고아 데이터가 되지 않게 한다(2026-07-22).
-
-## 웹 플랫폼
-
-~~`Capacitor.getPlatform() === 'web'`이면 `connection.initWebStore()`를 먼저 호출해 웹 스토리지 백엔드를 초기화한다(개발 서버에서 SQLite를 흉내 내는 경로)~~ — **웹 경로가 사라졌다**(RN 은 실기기·시뮬레이터뿐). 실기기(iOS/Android)에서는 이 호출을 건너뛰고 네이티브 SQLite를 바로 연다.
-
-## 폐기된 정책 (history)
-
-- ~~보스 표 셋의 기본키는 보스 이름과 한글 난이도다. 이름을 바꾸면 이름 이관 SQL 로 옮긴다(메이린)~~ → **보스 key 와 난이도 key 가 기본키다**([[ADR-280]] 결정 12, 2026-09-15, 이슈 #445).
-- ~~이름을 바꾸며 기록을 옮기는 `UPDATE … WHERE` 는 부팅마다 돈다. 걸리는 행이 없으면 no-op 이다~~ → **DB 버전 1 이
-  한 번 돈다**([[ADR-280]] 결정 5, 2026-09-15, 이슈 #443). 뒤 버전이 앞 버전의 결과를 읽어야 해서 차례가 필요했다.
+`boss_drop_records.drop_record_id` 같은 v4 uuid 는 JS 가 아니라 SQLite 가 `INSERT` 안에서 만든다
+(`NEW_UUID_SQL`, `randomblob()` 식). JS 전역에는 `crypto` 가 없고, 새 네이티브 모듈을 추가하면 스토어 빌드를 기다려야
+하기 때문이다. 같은 그룹을 다시 저장할 때 기존 값을 이어 쓰는 규칙은 [[ADR-018]] 에 있다.

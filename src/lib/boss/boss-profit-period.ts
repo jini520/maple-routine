@@ -388,7 +388,7 @@ export interface PeriodDataStateInput {
   hasRecords: boolean
   /**
    * 창이 그 기간의 어느 날을 **확정 관측했는가**. 조회해서 봤다는 뜻이지 조회 불가로 굳힌 것이
-   * 아니다. 전에는 `boss_profit_period_checks` 표가 이 답을 들었고 지금은 조회 원장이 든다.
+   * 아니다. 이 답은 조회 원장이 든다.
    */
   isObserved: boolean
   isQueryable: boolean

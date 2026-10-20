@@ -6,7 +6,7 @@
  * 전부 되살아난다. 목록 화면과 배너가 각자 정리하면 그 조건이 두 벌이 된다.
  */
 import { forgetDismissedNotice, keepDismissedNotices } from '../../storage/notice-banner'
-import { removeNotice, replaceNotices } from '../../storage/notices'
+import { getNotices, removeNotice, replaceNotices } from '../../storage/notices'
 import type { Notice, NoticeKind } from '../../types/notice'
 
 /**
@@ -24,4 +24,9 @@ export async function saveNoticeResponse(kind: NoticeKind, notices: readonly Not
 export async function forgetNotice(id: string): Promise<void> {
   await removeNotice(id)
   await forgetDismissedNotice(id)
+}
+
+/** 기기에 남은 소식 사본 전체. 화면이 조회를 기다리지 않고 먼저 그리는 데 쓴다. */
+export function readNoticeCopy(): Promise<Notice[]> {
+  return getNotices()
 }

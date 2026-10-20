@@ -3,10 +3,6 @@ import { placeDropdown, placePopover } from '../place-dropdown'
 const BASE = { windowHeight: 800, safeTop: 40, safeBottom: 30, edgeGap: 12 }
 
 describe('placeDropdown', () => {
-  it('간격이 없으면 목록이 트리거 자리에서 시작한다', () => {
-    expect(placeDropdown({ ...BASE, anchorTop: 100, anchorHeight: 40, contentHeight: 200 }).top).toBe(100)
-  })
-
   it('간격을 주면 트리거 아래로 그만큼 띄운다', () => {
     const placed = placeDropdown({ ...BASE, anchorTop: 100, anchorHeight: 40, contentHeight: 200, gap: 6 })
 

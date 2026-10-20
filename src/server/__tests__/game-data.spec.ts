@@ -45,14 +45,6 @@ it('칸마다 받은 표를 그대로 준다. 없는 칸은 null 이다', async 
   await expect(fetchGameData()).resolves.toEqual(칸({ bosses: 보스표, worlds: 월드표 }))
 })
 
-it('우리 서버의 game-data 주소로 부른다', async () => {
-  const spy = jest.spyOn(global, 'fetch').mockResolvedValue(ok({ bosses: 보스표 }))
-
-  await fetchGameData()
-
-  expect(String(spy.mock.calls[0][0])).toContain('mapleroutine.store/v1/game-data')
-})
-
 it('네트워크가 실패하면 null', async () => {
   jest.spyOn(global, 'fetch').mockRejectedValue(new Error('offline'))
 

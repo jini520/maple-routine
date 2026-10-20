@@ -197,13 +197,6 @@ describe('광고를 쓸 수 없는 플랫폼', () => {
   })
 })
 
-describe('initialize', () => {
-  it('네이티브에서는 SDK 를 초기화한다', async () => {
-    await rnAdsPort.initialize()
-    expect(mockInitialize).toHaveBeenCalledTimes(1)
-  })
-})
-
 describe('prepareInterstitial', () => {
   it('로드되면 true 다', async () => {
     mockLoadResult = 'loaded'

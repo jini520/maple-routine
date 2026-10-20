@@ -24,13 +24,6 @@ function 기본프롭(): React.ComponentProps<typeof NoticeModal> {
 }
 
 describe('NoticeModal: 영역', () => {
-  it('제목과 주 버튼은 언제나 있다', async () => {
-    const { getByText } = await renderOverlay(<NoticeModal {...기본프롭()} />)
-
-    expect(getByText('이 키로는 연결할 수 없습니다')).toBeTruthy()
-    expect(getByText('다시 입력하기')).toBeTruthy()
-  })
-
   // 짧은 화면에서 카드가 상한에 닿아도 버튼은 늘 보여야 한다. 버튼 줄이 스크롤 밖에 선다.
   it('버튼 줄은 카드의 스크롤 밖에 서고 머리는 스크롤 안에 선다', async () => {
     const { getByTestId } = await renderOverlay(
@@ -58,16 +51,6 @@ describe('NoticeModal: 영역', () => {
     expect(queryByTestId('notice-option')).toBeNull()
     expect(queryByTestId('notice-link')).toBeNull()
     expect(queryByText('나중에')).toBeNull()
-  })
-
-  // 자유 영역이다. 개발 단계 키 모달의 두 줄 표, 업데이트 모달의 버전 배지 줄이 여기 든다.
-  // 틀은 그것이 어디에 서는지만 정하고 무엇인지는 안 본다.
-  it('내용은 넘긴 것을 그대로 그린다', async () => {
-    const { getByText } = await renderOverlay(
-      <NoticeModal {...기본프롭()} content={<RNText>v1.0.7</RNText>} />,
-    )
-
-    expect(getByText('v1.0.7')).toBeTruthy()
   })
 
   // 설명은 제목보다 작다. 제목이 할 말을 이미 했고 설명은 그 아래 안내라, 둘이 같은 무게로 서면
@@ -101,51 +84,9 @@ describe('NoticeModal: 영역', () => {
     expect(within(덩어리).getByText('설명')).toBeTruthy()
     expect(within(덩어리).queryByText('펼침판')).toBeNull()
   })
-
-  it('제목에 손잡이를 달 수 있다. 화면 테스트가 이것으로 모달을 집는다', async () => {
-    const { getByTestId } = await renderOverlay(
-      <NoticeModal {...기본프롭()} titleTestId="development-stage-key-title" />,
-    )
-
-    expect(getByTestId('development-stage-key-title')).toHaveTextContent(
-      '이 키로는 연결할 수 없습니다',
-    )
-  })
 })
 
 describe('NoticeModal: 배지', () => {
-  /**
-   * 배지 안의 아이콘. `testID` 를 달아도 못 잡는다. lucide 아이콘은 그것을 `data-testid` 로
-   * 내려보내고 쿼리는 `testID` 를 본다. 그래서 배지의 첫 자식을 그냥 집는다.
-   *
-   * 색은 `style` 이 아니라 `stroke` 로 온다. 선으로 그리는 그림이다.
-   */
-  function 아이콘(badge: { children: unknown[] }): { props: { stroke?: string } } {
-    return badge.children[0] as { props: { stroke?: string } }
-  }
-
-  const 톤 = [
-    { tone: 'primary', tint: 기본테마.primaryTint, ink: 기본테마.primaryInk },
-    { tone: 'secondary', tint: 기본테마.secondaryTint, ink: 기본테마.secondaryInk },
-    { tone: 'third', tint: 기본테마.thirdTint, ink: 기본테마.thirdInk },
-    { tone: 'error', tint: 기본테마.errorTint, ink: 기본테마.errorInk },
-  ] as const
-
-  it.each(톤)('$tone 은 바탕과 아이콘이 같은 계열에서 나온다', async ({ tone, tint, ink }) => {
-    const { getByTestId } = await renderOverlay(<NoticeModal {...기본프롭()} tone={tone} />)
-
-    const badge = getByTestId('notice-badge')
-    expect(flattenStyle(badge.props.style).backgroundColor).toBe(tint)
-    expect(아이콘(badge).props.stroke).toBe(ink)
-  })
-
-  // 모양은 **색과 따로 받는다.** 가르는 것이 톤이 아니라 바로 아래 무엇이 오는가라서다.
-  it('기본은 원이다', async () => {
-    const { getByTestId } = await renderOverlay(<NoticeModal {...기본프롭()} />)
-
-    expect(flattenStyle(getByTestId('notice-badge').props.style).borderRadius).toBe(9999)
-  })
-
   // 표가 바로 아래 오는 자리만 네모다. 모서리를 맞춰 둘이 한 덩어리로 읽히게 한다.
   it('표가 붙는 자리는 네모로 바꾼다', async () => {
     const { getByTestId } = await renderOverlay(

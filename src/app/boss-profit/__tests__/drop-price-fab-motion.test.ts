@@ -5,7 +5,6 @@
 // 프레임으로는 붙들기 어렵다. `speed-dial-motion.ts` 가 같은 이유로 갈라져 있다.
 import {
   FAB_ITEM_BLUR,
-  FAB_ITEM_LOOP_MS,
   FAB_ITEM_MOVE_MS,
   FAB_ITEM_SLOTS,
   FAB_ITEM_STEP_MS,
@@ -111,10 +110,6 @@ describe('흐림의 세기', () => {
 })
 
 describe('시간', () => {
-  it('한 바퀴가 슬롯 수만큼의 걸음이다', () => {
-    expect(FAB_ITEM_LOOP_MS).toBe(FAB_ITEM_SLOTS * FAB_ITEM_STEP_MS)
-  })
-
   // 넘어가는 시간이 서 있는 시간보다 길면 무엇을 보고 있는지 알기 전에 다음 것이 온다.
   it('넘어가는 시간이 서 있는 시간보다 짧다', () => {
     expect(FAB_ITEM_MOVE_MS).toBeLessThan(FAB_ITEM_STEP_MS - FAB_ITEM_MOVE_MS)

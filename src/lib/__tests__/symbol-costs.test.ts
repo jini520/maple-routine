@@ -7,7 +7,6 @@ import {
   symbolCostsTable,
   symbolLevelsOf,
   symbolMenu,
-  symbolRecordName,
   symbolUpgradeCost,
 } from '../cashbook/symbol-costs'
 
@@ -39,10 +38,6 @@ describe('symbolUpgradeCost: 여러 단계를 한 번에 올린 비용', () => {
       .levelCosts.filter((row) => row.symbol === 'road_of_vanishing')
       .reduce((sum, row) => sum + row.costMeso, 0)
     expect(symbolUpgradeCost(심볼('road_of_vanishing'), 1, 20, 패치뒤)).toBe(여로비용)
-  })
-
-  it('두 레벨이 같으면 0 이다. 아직 안 올렸다', () => {
-    expect(symbolUpgradeCost(심볼('arcana'), 5, 5, 패치뒤)).toBe(0)
   })
 
   // 표가 서기 전 날짜에는 유효한 줄이 없다. 0 으로 세우면 저장이 거짓 금액으로 열린다.
@@ -139,11 +134,5 @@ describe('symbolLevelsOf: 넥슨 응답에서 심볼 key 별 레벨', () => {
         { symbol_name: null, symbol_level: 3 },
       ]),
     ).toEqual({})
-  })
-})
-
-describe('symbolRecordName: 기록 이름', () => {
-  it('지역 이름과 레벨 범위다(사용자 지정)', () => {
-    expect(symbolRecordName('소멸의 여로', 3, 7)).toBe('소멸의 여로 Lv.3 → 7')
   })
 })

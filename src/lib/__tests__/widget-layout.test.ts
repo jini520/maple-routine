@@ -26,10 +26,6 @@ describe('validateWidgetLayout: 손으로 적은 좌표를 지킨다', () => {
     expect(validateWidgetLayout(유효한_배치, sizes)).toEqual([])
   })
 
-  it('빈 배치도 유효하다', () => {
-    expect(validateWidgetLayout([], sizes)).toEqual([])
-  })
-
   it('겹치는 타일을 잡는다', () => {
     const violations = validateWidgetLayout(
       [
@@ -128,10 +124,6 @@ describe('validateWidgetLayout: 손으로 적은 좌표를 지킨다', () => {
 
 describe('resolveWidgetPositions: 좌표를 절대 위치로', () => {
   const metrics = resolveWidgetGridMetrics(360)
-
-  it('빈 배치는 높이 0 이다', () => {
-    expect(resolveWidgetPositions([], metrics, {})).toEqual({ tiles: [], containerHeightPx: 0 })
-  })
 
   it('칸과 간격으로 좌표를 만든다', () => {
     const { tiles } = resolveWidgetPositions(유효한_배치, metrics, {})
@@ -235,10 +227,6 @@ describe('omitHiddenTiles', () => {
     expect(result.map((placement) => placement.id)).toEqual(['대표', '초기화', '결정석', '수익'])
     expect(result.find((placement) => placement.id === '수익')?.row).toBe(2)
     expect(validateWidgetLayout(result, sizes)).toEqual([])
-  })
-
-  it('숨길 것이 없으면 배치 그대로다', () => {
-    expect(omitHiddenTiles(유효한_배치, new Set())).toEqual(유효한_배치)
   })
 
   // 옆 칸이 있는 타일을 빼면 그 자리가 빈 사각형으로 남는다.

@@ -1,0 +1,261 @@
+# ADR-060 공용 부품의 계층과 기본 부품
+
+> 🟢 유효
+> 옛 번호: ADR-066 · ADR-094 · ADR-178 정정 3 · ADR-195 · ADR-197 · ADR-198 · ADR-199 · ADR-200 · ADR-205 · ADR-207 · ADR-250 · ADR-252 · ADR-255 · ADR-260 · ADR-339
+> 관련 소스: `components/` · `lib/nativewind-interop.ts` · `hooks/useSlidingThumb.ts` · `native/adapters/rn-theme-appearance.ts`
+
+## 배경
+
+여러 화면이 함께 쓰는 부품은 `components/` 에 둔다. 같은 부품을 화면마다 따로 그리면 하나를 고쳐도
+나머지가 그대로 남는다. 실제로 배지가 다섯 곳에, 세그먼트 알약이 여섯 곳에, 스위치가 세 곳에 각자
+다른 값으로 그려져 있었다. 그래서 부품을 한 곳에 모으고, 새 부품이 어느 디렉터리에 들어갈지를
+규칙으로 정한다. NativeWind 와 RN 이 웹과 다르게 동작하는 부분도 부품 안에서 처리해, 호출부가
+신경 쓰지 않아도 되게 한다.
+
+## 결정
+
+### 결정 1. 부품은 계층 디렉터리 넷에 두고, 의존은 아래로만 흐른다
+
+`components/` 바로 아래에는 `atoms` · `molecules` · `organisms` · `templates` 넷만 둔다. 위 계층은
+아래 계층을 가져다 쓸 수 있지만 그 반대는 안 된다. `components/__tests__/layer-dependencies.test.ts` 가
+이 방향을 검사한다. 규칙이 문서에만 있으면 시간이 지나며 어긋나기 때문이다.
+
+| 계층 | 들어가는 것 |
+|---|---|
+| `atoms` | 상태가 없고 도메인을 모른다. 토큰과 자기 상자만 안다 |
+| `molecules` | atoms 만 조합해 프롭을 그린다. 다른 molecule 을 쓰지 않는다 |
+| `organisms` | 다른 molecule 을 조합하거나, 열고 닫기 · 선택 · 애니메이션처럼 시간이 걸리는 동작을 직접 관리한다 |
+| `templates` | 화면 셸. 스크롤 영역 · 헤더 · 배경처럼 깨지기 쉬운 배치를 맡는다 |
+
+도메인을 아는지와 파일 크기는 기준이 아니다. 이 앱의 부품은 거의 다 보스나 캐릭터 같은 도메인을
+알아서, 그것을 기준으로 나누면 molecule 에 남는 부품이 없다. 크기로 나누면 도형이 많은 단순 부품이 organism 이
+되고, 여러 molecule 을 얇게 엮은 부품이 molecule 로 남는다.
+
+화면에 아무것도 그리지 않는 배치용 코드는 `components/` 에 두지 않는다. 계층은 화면에 그리는 것들의
+순서이기 때문이다.
+
+### 결정 2. 부품이나 합성 패턴은 쓰는 곳이 둘 이상이거나 깨지기 쉬운 구조를 한 곳에 모을 때만 만든다
+
+compound component 나 render prop 은 둘 중 하나를 만족할 때만 쓴다. 실제 호출부가 두 곳 이상이거나,
+측정 · 겹침 순서처럼 깨지기 쉬운 구조를 한 곳에 모아 복사를 막을 때다. 둘 다 아니면 `children` 으로
+충분하다. 단일 사용 코드에 추상을 만들지 않는다는 규칙과 부딪히지 않게 하기 위해서다.
+
+### 결정 3. atoms 는 배럴 `atoms/index.ts` 하나로 내보낸다
+
+쓰는 쪽은 `import { Badge, Button, Text } from '../components/atoms'` 한 줄로 가져간다. 아톰마다 한
+줄씩 쓰면 같은 디렉터리 이름이 두 번 나오고(`Badge/Badge`) 경로 형식도 섞인다.
+
+- 배럴에는 컴포넌트와 그것을 쓰는 데 필요한 타입만 올린다. `FONT_SCALE_MAX` 같은 곁 파일의 값은 원래
+  경로로 가져간다. 배럴은 그 계층이 밖에 공개하는 목록이라 내부 값이 섞이면 무엇이 공개된 것인지
+  알기 어렵다.
+- atom 끼리는 배럴을 거치지 않고 곁 파일을 바로 가져온다. 배럴을 거치면 `index` → `Button` → `index`
+  순환이 생긴다. `src/__tests__/require-cycle-policy.test.ts` 가 순환을 잡는다.
+
+Metro 는 트리셰이킹을 하지 않아 배럴은 안 쓰는 것까지 번들에 넣는다. atoms 는 앱이 실제로 다 쓰는
+작은 부품뿐이라 상관없지만, lucide 처럼 수천 개를 내보내는 배럴은 쓰지 않는다(결정 7).
+
+### 결정 4. 버튼은 외형만 정하고, 스타일 표는 `variants.ts` 로 나눈다
+
+`Button` 의 변형 표에는 배경 · 테두리 · 여백 · 라운딩과 글자 색 · 크기 · 굵기만 있다. 폭 · 정렬 ·
+간격은 그 버튼이 어떻게 생겼는지가 아니라 화면에 어떻게 놓이는지의 문제라 호출부에 남긴다.
+라운딩만은 부품이 정한다(pill). 프롭으로 바꿀 수 있게 하면 카드 · 버튼 · 인풋의 라운딩을 다르게 둔 디자인 원칙이
+호출부에서 무너진다.
+
+- **상자 클래스와 글자 클래스를 두 벌로 둔다**(`BUTTON_VARIANT_CLASS` · `BUTTON_VARIANT_TEXT_CLASS`).
+  RN 에서는 `Pressable` 에 준 `text-*` · `font-*` 가 안쪽 `Text` 로 내려가지 않는다. 한 벌로 합치면
+  에러 없이 라벨의 색과 굵기만 사라진다. 그래서 호출부도 글자 유틸은 `textClassName` 으로 준다.
+- `hover:` 와 `type` 프롭은 두지 않는다. 터치 기기에는 hover 가 없고, RN 에는 폼 submit 이 없다.
+- `primary` 의 `text-base` 는 일부러 적은 값이다. RN `Text` 의 기본은 14px 라 적지 않으면 16px 보다
+  작아진다.
+
+스타일 표는 컴포넌트 파일 옆 `variants.ts` 에 둔다. 표가 길면 파일을 열었을 때 컴포넌트 코드보다
+클래스 문자열이 먼저 보이고, 컴포넌트 파일이 컴포넌트 아닌 값을 export 하면 fast refresh 가 전체
+리로드로 바뀐다(`react-refresh/only-export-components`). 그래서 그 값을 모듈 밖에서 쓸 때만
+곁 파일로 나눈다. 같은 파일 안에서만 쓰는 짧은 값은 지역 상수로 둔다. 타입은 `variants.ts` 에서
+만들고 컴포넌트 파일이 다시 내보내, 호출부의 import 경로는 하나로 유지한다.
+
+### 결정 5. 배지는 `Badge` 하나이고, 색 · 크기 · 두께를 프롭으로 받는다
+
+상태 · 카테고리 · 난이도 배지가 모두 `components/atoms/Badge` 를 쓴다. 배지 스타일을 정하는 파일이 하나뿐이라
+같은 줄에 놓인 배지들의 상자가 어긋나지 않는다.
+
+- **색은 variant 표(`BADGE_VARIANT`)가 정한다.** 토큰 쌍(`primary` · `third` · `secondary`), 회색
+  (`muted` · `neutral` · `disabled`), 테두리만(`outline` · `dashed`), `error`, 컨텐츠 카테고리 셋,
+  난이도 다섯이다. 난이도 배지는 게임 안의 색을 그대로 옮긴 그라디언트라 테마를 따르지 않고,
+  `LinearGradient` 로 그린다. 나머지는 `Text` 하나다.
+- **크기는 `default` 와 `mini` 둘이고, 높이를 고정하지 않고 여백으로 만든다.** 높이를 고정하면 평면
+  배지는 `Text` 하나라 글자를 세로 가운데로 맞출 방법이 없어 글자가 위로 쏠린다.
+- **테두리가 있는 배지는 테두리 폭만큼 여백을 줄인다.** RN 의 Yoga 는 테두리를 여백처럼 바깥 크기에
+  더해서, 줄이지 않으면 테두리 있는 배지만 커진다.
+- **두께는 variant 의 기본값을 `weight` 프롭으로 덮는다.** NativeWind 는 `font-semibold font-bold` 처럼
+  두 클래스가 충돌할 때 문자열 순서가 아니라 자기 우선순위로 고른다. 그래서 `className` 으로는 못 덮는다.
+- **글자 크기는 정해진 글자 크기 단계에서 고른다.** `default` 는 `chip`, `mini` 는 `chip-xs` 이다. 난이도 이름은
+  최대 네 글자라 `default` 에서만 한 단계 작은 `chip-sm` 을 쓴다. 줄 높이는 같아서 배지 높이는 그대로다.
+- `mini` 는 시스템 글자 크기를 스스로 따르지 않는다(`fixed`). today 위젯이나 가계부 처치 타일처럼
+  높이가 고정된 칸에 놓이기 때문이다. `default` 는 호출부가 정한다(결정 9).
+
+배지의 라벨(`DIFFICULTY_SHORT` · `QUEST_STATE_LABELS`)은 스타일이 아니라 도메인 데이터라 상수로 두고
+호출부가 고른다.
+
+### 결정 6. 써드파티 컴포넌트의 `className` 등록은 `lib/nativewind-interop.ts` 한 곳에서 한다
+
+NativeWind 는 `View` · `Text` · `Pressable` 같은 RN 기본 컴포넌트만 자동으로 처리한다. 그 밖의
+컴포넌트에 준 `className` 은 에러 없이 무시되고, 색과 크기만 없는 그림이 나온다. `cssInterop()` 은
+모듈을 불러올 때 등록하므로, 등록하는 곳이 여럿이면 어느 경로로 가져왔느냐에 따라 결과가
+달라진다. 그래서 등록과 다시 내보내기를 이 파일 하나에서 하고, 쓰는 쪽은 여기서만 가져온다.
+
+| 내보내는 것 | 매핑 |
+|---|---|
+| `Svg` | `text-*` → `color` 프롭(자식 도형의 `currentColor`), `h-*` · `w-*` → `width` · `height` |
+| `LinearGradient` | `className` → `style` |
+| `AnimatedView` | `className` → `style`. Reanimated 의 CSS 애니메이션(`transitionProperty` 등)은 애니메이션 컴포넌트에만 붙는다 |
+| `withIconInterop` | lucide 아이콘 하나를 등록한다 |
+
+`Path` · `Circle` 같은 자식 도형은 `className` 을 받지 않으므로 `react-native-svg` 에서 바로 가져와도 된다.
+
+### 결정 7. lucide 아이콘은 `atoms/Icon/lucide.ts` 만 가져온다
+
+`lucide-react-native` 를 직접 import 하는 곳은 이 파일 하나다. 아이콘마다 `withIconInterop` 으로
+등록한 뒤 다시 내보낸다. lucide 는 안쪽 `Svg` 를 라이브러리 코드 안에서 만들어서, 그 `Svg` 를
+등록해 둬도 그 `Svg` 에는 클래스가 적용되지 않는다. 그래서 아이콘 컴포넌트를 직접 등록한다.
+
+아이콘은 배럴이 아니라 아이콘별 경로(`lucide-react-native/icons/arrow-left`)로 가져온다. 배럴은
+1,900개를 모두 번들에 넣는다(같은 아이콘 여덟 개로 재면 5.5MB 대 3.7MB).
+
+lucide 아이콘에 준 `testID` 는 `data-testid` 로 바뀌어 테스트에서 찾을 수 없다. 테스트에서 아이콘을
+가리켜야 하면 감싸는 `View` 에 `testID` 를 준다.
+
+### 결정 8. 커스텀 아이콘은 `atoms/Icon/` 에 모으고, lucide 규격을 지킨다
+
+lucide 에 없는 그림이 필요한 기능을 대표하는 아이콘에만 직접 그린 아이콘을 쓴다. 지금은 수익
+(`ProfitIcon`), 하단바 설정 탭의 채운 톱니(`GearIcon`), 단풍잎(`MapleLeaf`) 셋이다. 파일 하나가
+아이콘 하나이고 `atoms/Icon/index.ts` 배럴로 내보낸다.
+
+- **`SvgFrame` 이 루트 요소 설정과 격자를, `IconSvg` 가 거기에 lucide 선 규격을 더한다.** lucide 규격은
+  24 격자 · `fill="none"` · `stroke="currentColor"` · 라운드 캡과 조인 · 기본 굵기 2 · 크기 폴백 24 다.
+  이 규격을 지켜야 같은 줄의 lucide 아이콘과 선 굵기와 크기가 맞는다. 단풍잎은 격자가 127×130 이고
+  면으로 채운 그림이라 `SvgFrame` 만 쓴다. 선 규격을 받으면 잎에 2px 윤곽선이 생긴다.
+- **크기 폴백 24 를 둔다.** 없으면 `className` 을 안 준 호출에서 SVG 기본값으로 크게 부푼다.
+- **겹침은 `clipPath` · `mask` 가 아니라 뒤 도형의 선을 끊어서 그린다.** 마스크는 `id` 가 필요한데
+  같은 아이콘을 한 화면에 여러 번 그리면 `id` 가 겹친다.
+- **프롭은 lucide 와 같은 형식(`IconProps`)이다.** react-navigation 은 `tabBarIcon` 에 색과 크기를
+  클래스가 아니라 값으로 넘긴다. 하단바에서 lucide 아이콘과 커스텀 아이콘을 바꿔 끼우려면 프롭 이름이
+  같아야 한다. 어디가 채워지는지는 아이콘마다 다르므로 각 아이콘의 주석에 적는다.
+
+움직이는 잎(스피너 둘)은 `atoms/Spinner/` 에 따로 둔다([[ADR-061]]). 아이콘인지가 아니라 움직이는지를
+기준으로 코드를 나눈다.
+
+### 결정 9. 놓이는 곳에 따라 상자 크기가 달라지는 부품은 `fixed` 를 호출부가 정한다
+
+글자가 시스템 글자 크기를 따를지는 상자가 글자를 따라 커지는지로 정한다([[ADR-063]]). 부품 하나가
+어떤 화면에서는 커지는 상자에, 어떤 화면에서는 높이가 고정된 칸에 놓이면 부품이 혼자 정할 수 없다.
+그런 부품은 `fixed` 프롭을 두고 호출부가 정한다. 기본값은 거짓(시스템 글자 크기를 따른다)이다.
+
+| 누가 정하나 | 언제 |
+|---|---|
+| 호출부가 `<Text fixed>` | 그 파일이 글자를 직접 그린다 |
+| 부품이 스스로 | 어디에 놓여도 상자가 고정이다(`Badge` 의 `mini`) |
+| 호출부가 부품에 `fixed` | 놓이는 곳마다 다르다(`Segment`) |
+
+`src/__tests__/font-scaling-policy.test.ts` 가 고정 칸 목록의 파일을 훑어, 그 안에서 `fixed` 를 받는
+부품을 쓸 때 `fixed` 를 빠뜨리지 않았는지 본다. 그 검사가 실제로 무언가를 보고 있는지도 따로 확인한다.
+
+### 결정 10. 세그먼트는 세 가지이고, 선택 배경이 미끄러진다
+
+| 부품 | 쓰는 곳 | 모습 |
+|---|---|---|
+| `molecules/Segment` | 폼 안 라벨-값 줄 · today 위젯 제목 줄 | 테두리 상자 안의 조각, 글자 11px, `bg-primary-tint` 상자 |
+| `molecules/TabSegment` | 화면 머리의 주기 · 필터 탭(보스 수익 · 가계부 · 통계 · 컨텐츠 · 보스 · 테마 고르기) | `bg-surface-2` 트랙 위에 `bg-surface` 썸, 글자 14px |
+| `molecules/DifficultySegment` | 보스 관리 · 파티 인원 모달 | 난이도 배지가 서로 떨어져 놓이고, 고르지 않은 배지는 `opacity-40` |
+
+`Segment` 와 `TabSegment` 는 고른 조각 뒤로 상자 하나가 미끄러진다(`useSlidingThumb`, 200ms ·
+`cubic-bezier(0.32, 0.72, 0, 1)`).
+
+- 조각 폭은 등분하지 않고 `onLayout` 으로 잰 값을 쓴다. 지금 조각 폭은 글자 길이가 정하기 때문이다.
+- 처음 그려질 때와 고른 것이 없다가 생길 때는 미끄러지지 않고 바로 제자리에 그려진다. 열자마자 상자가 달려오면
+  사용자가 누르지 않은 이동을 보게 된다. 모션 줄이기가 켜져 있어도 바로 제자리에 그려진다.
+- 글자색은 상자를 기다리지 않고 누르는 즉시 바뀐다. 기다리면 누른 조각이 잠깐 안 눌린 것처럼 보인다.
+- 지금 고른 번호는 `useRef` 에 두고, 어느 조각이 위치를 알려 오든 다시 계산한다. RN 은 레이아웃
+  이벤트를 그 레이아웃이 잡힐 때 붙어 있던 핸들러로 보내, 핸들러가 클로저로 잡아 둔 옛 번호를 쓰면 상자가 엉뚱한
+  조각에 남는다.
+- 이미 고른 조각을 다시 누르면 콜백도 촉각도 나지 않는다.
+
+`TabSegment` 는 색을 프롭으로 받지 않는다. 여섯 곳이 각자 그리던 것을 하나로 모으려고 만든 부품이라,
+색을 바꾸는 프롭을 두면 다음 화면이 또 색을 고르게 된다. 보이는 글자와 상태 값이 다른 화면을 위해 `labelOf`
+를 받고, 안 주면 값을 그대로 적는다. 화면 머리에서는 `PageHeaderTitleRow` 의 `trailing` 에 넣어 제목
+덩어리 오른쪽에 둔다([[ADR-063]]).
+
+### 결정 11. 스위치는 `atoms/Switch` 하나이고, iOS 는 시스템 스위치를 줄여 쓴다
+
+스위치가 필요한 화면은 모두 이 부품을 쓴다. 손으로 그리지 않는다. 프롭 · 스크린리더 계약(`role="switch"`
+· `aria-checked` · `aria-label`) · 선택 촉각은 부품 안에 있다. 호출부에서 촉각을 또 부르면 한 번 누르고
+두 번 울린다. 옆 글자를 눌러도 켜지고 꺼져야 하는 곳은 그 글자를 `children` 으로 넣는다.
+
+| | 안드로이드 | iOS |
+|---|---|---|
+| 그리는 것 | 직접 그린 트랙과 손잡이 | RN 기본 `Switch` 를 `transform: scale` 로 줄인 것 |
+| `sm` | 트랙 28×16 · 손잡이 12 | 36×16 |
+| `lg` | 트랙 44×24 · 손잡이 20 | 54×24 |
+| 색 | 꺼짐 `bg-surface-2` · 켜짐 `bg-primary` · 손잡이 `bg-surface` | 꺼짐 `surface2` · 켜짐 `primary` · 손잡이는 시스템 흰색 |
+| 손잡이 움직임 | `AnimatedView` 의 transform 트랜지션 200ms. 처음 그릴 때와 모션 줄이기에서는 안 움직인다. 트랙 색은 즉시 바뀐다 | 시스템이 움직인다 |
+
+안드로이드 기본 스위치는 디자인이 마음에 들지 않아 직접 그린다(사용자 결정). 손잡이가 가는 거리는
+`트랙 폭 − 손잡이 − 양끝 여백` 이라 세 값이 맞아야 하므로 `SWITCH_SIZE` 한 곳에 적는다.
+
+iOS 기본 스위치는 63×28 로 고정이라 `width` 로는 줄지 않고 `scale` 로만 줄일 수 있다. 줄여도 레이아웃 크기는
+그대로이고 RN 이 `alignSelf: 'flex-start'` 를 붙이므로, 줄인 크기의 고정 상자 안에 절대 위치로 놓는다.
+시스템 스위치가 누름을 직접 받게 둔다. iOS 26 의 누름 효과와 끌어서 켜기를 쓰려고 시스템 스위치를 고른
+것이기 때문이다.
+
+iOS 의 꺼진 트랙은 시스템이 반투명 색을 겹쳐 그려서 앱 테마가 아니라 OS 의 라이트 · 다크를 따른다.
+그래서 테마를 적용할 때 iOS 에서만 `Appearance.setColorScheme(mode)` 를 불러 창 전체의 라이트 · 다크를
+앱 테마에 맞춘다(`rn-theme-appearance.ts`). 키보드 · 알림창 같은 시스템 화면도 함께 앱 테마를 따른다.
+안드로이드에서 같은 함수는 화면을 다시 만들 수 있어 부르지 않는다.
+
+### 결정 12. 끌어서 순서 바꾸기는 `react-native-sortables` 를 쓴다
+
+캐릭터 관리의 순서 바꾸기는 `Sortable.Grid` 에 `columns={1}` 로 그린다(`organisms/CharacterManage/CharacterLayerGrid.tsx`).
+이 목록은 스크롤 뷰를 따로 두지 않고 화면의 `ScreenScroll` 안에 있다. 이 라이브러리는 직접 스크롤하지
+않고, 스크롤할 뷰를 `scrollableRef` 로 받아서 그 구조에 맞는다. 네이티브 코드가 없어 스토어
+바이너리 지문도 바뀌지 않는다.
+
+- `Sortable.Flex` 는 `alignItems: 'stretch'` 를 받지 않아 행이 이름 길이만큼만 넓어진다. 그래서 격자를 쓴다.
+- 기본값 넷을 끈다. `dragActivationDelay` 0(핸들이 따로 있어 기다릴 이유가 없다) · `activeItemScale` 1 ·
+  `inactiveItemOpacity` 1(흐림은 이 화면에서 이미 대표 캐릭터 표시에 쓴다) · `itemEntering` ·
+  `itemExiting` null.
+- 화면은 스크롤 뷰에 `tracksScrollOffset` 을 켠다. 안 켜면 iOS 는 스크롤이 멈출 때만 이벤트를 보내,
+  끄는 동안 읽는 오프셋이 옛 값으로 남는다.
+- 놓았을 때 저장되는 배열은 `moveOcid` 가 만든다. 끄는 동안 화면에 그려지는 순서는 라이브러리의
+  `reorderInsert` 가 만드므로, 둘이 다르면 손을 떼는 순간 목록이 튄다. 그래서 테스트가 모든 `(from, to)`
+  쌍에서 둘의 결과가 같은지 비교한다. 라이브러리에는 접근성 동작이 없어서 위로 · 아래로 옮기기 동작도
+  `moveOcid` 를 쓴다.
+
+### 결정 13. 큰 숫자와 단위는 같은 줄 높이로 위에서 맞춘다
+
+시트의 큰 숫자(`molecules/AmountFigure`)는 숫자 옆에 작은 단위(`메소`)가 붙는다. 기준선 정렬
+(`items-baseline`)에 기대면 Yoga 가 노드 종류마다 기준선을 다르게 잡아 단위가 떠 보였다. 그래서 줄을
+`items-start` 로 위에서 맞추고, 단위 줄 안에 숫자와 같은 크기의 폭 0 글자(`\u200B`)를 넣어 두 줄의 줄 높이와
+글꼴 지표를 같게 만든다. 두 글자 크기의 기준선 차이를 픽셀 상수로 적지 않는다. 그런 상수는 글꼴이 바뀌면
+조용히 어긋나기 때문이다. `AmountFigure` 는 숫자를 `Text` 하나로 그릴 뿐 입력을 받지 않는다. 입력은
+입력 카드가 받는다([[ADR-062]]).
+
+## 테스트
+
+| 파일 | 확인하는 것 |
+|---|---|
+| `components/__tests__/layer-dependencies.test.ts` | 결정 1: 상위 계층을 import 하지 않는지, 계층이 아래부터 끊기지 않는지, `components/` 바로 아래에 계층 디렉터리만 있는지 본다 |
+| `src/__tests__/require-cycle-policy.test.ts` | 결정 3: 배럴을 거친 순환 import 가 없는지 본다 |
+| `components/atoms/Button/__tests__/Button.test.tsx` | 결정 4: 상자 표에 글자 유틸이 없는지, `className` 은 상자에 `textClassName` 은 글자에 붙는지, 문자열 children 만 `Text` 로 감싸는지, `compact` 크기와 크기 표에 색이 없는지 본다 |
+| `components/atoms/Badge/__tests__/Badge.test.tsx` | 결정 5: 평면 variant 의 상자가 모두 같은지, 테두리 폭만큼 여백을 줄여 바깥 크기가 맞는지, 모든 variant 의 높이가 같은지, 높이를 못박지 않는지, `mini` 만 스스로 `fixed` 를 켜는지, `weight` 가 기본 두께를 덮는지 본다 |
+| `lib/__tests__/nativewind-interop.test.tsx` | 결정 6: `Svg` 의 `text-*` 가 `color` 프롭이 되고 크기 유틸이 상자 크기가 되는지, `LinearGradient` 의 `className` 이 style 로 바뀌는지 본다 |
+| `components/atoms/Icon/__tests__/` | 결정 8: lucide 규격으로 그리는지, 크기와 색이 `className` 에서 오고 안 주면 24 로 떨어지는지, 겹침에 `clipPath` · `mask` 를 쓰지 않는지, `fill` 을 줄 때만 정해진 도형이 채워지는지, 단풍잎 루트 요소에 선 규격이 없는지, 톱니 곡선이 lucide `settings` 와 같은지 본다 |
+| `src/__tests__/font-scaling-policy.test.ts` | 결정 9: 고정 칸이 `fixed` 를 받는 부품을 쓸 때 빠뜨리지 않는지 본다 |
+| `components/molecules/Segment/__tests__/` · `TabSegment/__tests__/` · `DifficultySegment/__tests__/` | 결정 10: 고른 것만 선택으로 읽히는지, 누르면 라벨이 아니라 값을 주는지, 고른 것을 다시 누르면 콜백과 촉각이 없는지, 상자가 칠하고 글자색은 상자를 기다리지 않는지, 상자가 터치를 막지 않는지, `Segment` 의 `fixed` 와 `disabled` 를 본다 |
+| `hooks/__tests__/useSlidingThumb.test.tsx` | 결정 10: 처음 그려질 때와 다시 나타날 때는 미끄러지지 않는지, 폭만 바뀌어도 옮긴 것으로 보는지, 옛 렌더의 핸들러로 새 위치가 와도 상자가 따라가는지, 옆 조각이 알려도 다시 계산하는지 본다 |
+| `components/atoms/Switch/__tests__/Switch.test.tsx` | 결정 11: 스크린리더 계약, 안드로이드 두 크기에서 손잡이가 가는 거리, 손잡이 트랜지션과 모션 줄이기, 트랙 색이 즉시 바뀌는지, 누르면 `onToggle` 과 촉각이 한 번씩 나는지, `children` 글자를 눌러도 켜지는지, iOS 의 상자 크기 · 값 · 누름을 본다 |
+| `components/molecules/AmountFigure/__tests__/AmountFigure.test.tsx` | 결정 13: 숫자와 단위가 같은 줄 높이를 쓰는지, 단위 줄에 숫자와 같은 크기의 글자가 들어 있는지, 숫자의 줄 상자가 글자보다 커서 위가 잘리지 않는지 본다 |
+| `hooks/__tests__/useSelectionDraft.spec.tsx` | 결정 12: `moveOcid` 가 모든 `(from, to)` 에서 라이브러리 `reorderInsert` 와 같은 배열을 내는지 본다 |
+
+## 번호 기록
+
+- ADR-060 (2026-10-19): 옛 ADR-066 · 094 · 195 · 197 · 198 · 199 · 200 · 205 · 207 · 250 · 252 · 255 · 260 · 339 와 옛 ADR-178 정정 3 을 합쳐 처음 작성

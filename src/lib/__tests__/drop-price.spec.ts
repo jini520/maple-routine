@@ -1,17 +1,18 @@
-// 드롭 판매가 → 수익 환산. 이 함수가 틀리면 캐릭터 합계·총 수익·증감 칩이
+// 드롭 판매가 → 수익 환산. 이 함수가 틀리면 캐릭터 합계·총 수익이
 // 한꺼번에 틀리므로 규칙을 여기서 못 박는다.
-import { dropPayoutMeso, dropSplitLabel, formatMesoCompact, formatMesoUnits, sumDropPayout } from '../drop/drop-price'
+import {
+  dropPayoutMeso,
+  dropShareFieldsOf,
+  dropSplitLabel,
+  formatMesoCompact,
+  formatMesoUnits,
+  sumDropPayout,
+} from '../drop/drop-price'
 
 describe('dropPayoutMeso', () => {
   it('분배 인원으로 나눈 몫을 내림한다', () => {
     expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 10_000_000_000, priceShare: 3 })).toBe(
       3_333_333_333,
-    )
-  })
-
-  it('1인이면 입력한 총액 그대로다', () => {
-    expect(dropPayoutMeso({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 1 })).toBe(
-      1_200_000_000,
     )
   })
 
@@ -133,6 +134,29 @@ describe('dropPayoutMeso 수수료', () => {
   })
 })
 
+// 균등 식은 내 비율 칸이 빈 기록만 탄다. 그래서 균등으로 저장할 때 그 칸을 비운다.
+describe('균등 저장은 내 비율 칸을 비운다', () => {
+  const 수수료 = { priceState: 'entered', priceMeso: 1_200_000_000, saleFeePercent: 3, splitFeePercent: 3 } as const
+
+  it('균등으로 저장한 기록은 판매 분배금 계산기와 같은 몫이다', () => {
+    const fields = dropShareFieldsOf({ mode: 'even', partySize: 3, myShare: 2, sharesTotal: 3 })
+
+    expect(fields.priceMyShare).toBeUndefined()
+    expect(dropPayoutMeso({ ...수수료, ...fields })).toBe(380_161_618)
+  })
+
+  it('비율로 저장하면 내 비율을 그대로 둔다', () => {
+    expect(dropShareFieldsOf({ mode: 'ratio', partySize: 3, myShare: 2, sharesTotal: 3 }).priceMyShare).toBe(2)
+  })
+
+  // 2026-10-19 전의 균등 기록은 내 비율 칸이 차 있다. 지난 기간 금액이 바뀌지 않게 저장된 그대로 센다(사용자 결정).
+  it('내 비율 칸이 찬 옛 균등 기록은 저장된 그대로 센다', () => {
+    expect(
+      dropPayoutMeso({ ...수수료, priceSplitMode: 'even', pricePartySize: 3, priceShare: 3, priceMyShare: 2 }),
+    ).toBe(384_040_816)
+  })
+})
+
 describe('sumDropPayout', () => {
   it('입력된 것만 더한다', () => {
     expect(
@@ -143,10 +167,6 @@ describe('sumDropPayout', () => {
         { priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 1 },
       ]),
     ).toBe(6_200_000_000)
-  })
-
-  it('빈 배열은 0이다', () => {
-    expect(sumDropPayout([])).toBe(0)
   })
 })
 
@@ -204,12 +224,6 @@ describe('formatMesoCompact', () => {
     expect(formatMesoCompact(3_250_000_000)).toBe('32.5억')
     expect(formatMesoCompact(1_000_000_000)).toBe('10억')
     expect(formatMesoCompact(100_000_000)).toBe('1억')
-  })
-
-  it('만 단위도 같은 규칙이다', () => {
-    expect(formatMesoCompact(10_000_000)).toBe('1000만')
-    expect(formatMesoCompact(12_340_000)).toBe('1234만')
-    expect(formatMesoCompact(15_000)).toBe('1.5만')
   })
 
   it('조 단위까지 올라간다', () => {

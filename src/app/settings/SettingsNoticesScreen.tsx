@@ -19,11 +19,11 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
+import { readNoticeCopy } from '../../features/notice/notice-copy'
 import { emptyNoticeText } from '../../features/notice/notice-display'
 import { refreshNoticeKinds } from '../../features/notice/notice-feed'
 import { useToastStore } from '../../features/toast/store'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
-import { getNotices } from '../../storage/notices'
 import { NOTICE_KINDS, type Notice, type NoticeKind } from '../../types/notice'
 import { NoticeBannerCard } from './NoticeBannerCard'
 import { NoticeLines } from './NoticeLines'
@@ -95,7 +95,7 @@ export function SettingsNoticesScreen(props: {
 
     // 사본이 먼저다. 네트워크를 기다리는 동안 빈 화면을 보여 주지 않는다.
     // 사본을 다 읽은 뒤에 부른다. 거꾸로면 늦게 끝난 사본 읽기가 방금 받은 목록을 덮는다.
-    void getNotices()
+    void readNoticeCopy()
       .then((copy) => {
         // 사본이 비었으면 `null` 인 채로 둔다. `[]` 로 내리면 아직 도는 조회를 두고 `없습니다` 를 말한다.
         const mine = copy.filter((n) => shown.includes(n.kind))

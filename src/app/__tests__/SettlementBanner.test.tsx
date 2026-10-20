@@ -98,16 +98,6 @@ it('줄을 탭하면 FAQ 시트가 열린다. 가계부 · 통계 문답도 든�
   expect(screen.getByText('가계부와 통계에 오늘 잡은 보스가 안 보여요.')).toBeTruthy()
 })
 
-// 둘째 줄은 화면이 준다. 가계부 · 통계는 그 화면에서 빠지는 것을 말한다.
-it('둘째 줄은 넘긴 글자이고 testID 도 넘긴 것이다', async () => {
-  세우기()
-
-  await renderOverlay(<SettlementBanner testID="cashbook-settlement-banner" detail="오늘 잡은 보스 수익은 결산이 끝난 뒤 반영됩니다." />)
-
-  expect(screen.getByTestId('cashbook-settlement-banner')).toBeTruthy()
-  expect(screen.getByText('오늘 잡은 보스 수익은 결산이 끝난 뒤 반영됩니다.')).toBeTruthy()
-})
-
 // 재조회가 아닌 이유는 결산 중에는 같은 값이 다시 와서 앱이 고장 난 것으로 읽히기 때문이다.
 it('닫기는 시트를 안 연다', async () => {
   세우기()

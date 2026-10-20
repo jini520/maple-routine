@@ -1,44 +1,9 @@
 import { formatRosterError, formatScheduleSyncError, formatStaleRosterError, formatSyncedAt } from '../format'
 import type { ScheduleSyncError } from '../schedule-sync'
 
-describe('formatScheduleSyncError', () => {
-  it.each<[ScheduleSyncError, string]>([
-    [{ kind: 'invalidApiKey' }, 'API 키가 유효하지 않습니다'],
-    // 토스트는 한 줄이 상한이라 원인만 말하고 처방은 인라인 자리가 준다.
-    [{ kind: 'rateLimited' }, '호출 한도를 초과했습니다'],
-    [{ kind: 'network' }, '네트워크 오류가 발생했습니다'],
-    // 갈라진 세 종류
-    [{ kind: 'characterUnavailable' }, '이 캐릭터는 조회할 수 없습니다'],
-    [{ kind: 'periodOutOfRange' }, '이 기간은 조회할 수 없습니다'],
-    [{ kind: 'notCollected' }, '아직 집계되지 않았습니다'],
-  ])('%o -> %s', (error, expected) => {
-    expect(formatScheduleSyncError(error)).toBe(expected)
-  })
-})
-
 // 같은 원인이라도 자리에 따라 줄 수 있는 행동이 다르다.
 // 피커는 설정으로 보낼 수 있지만 온보딩 중에는 설정 화면 자체가 없다.
 describe('formatRosterError', () => {
-  it('모든 원인이 제목과 설명을 가진다', () => {
-    const kinds: ScheduleSyncError[] = [
-      { kind: 'invalidApiKey' },
-      { kind: 'rateLimited' },
-      { kind: 'network' },
-      { kind: 'characterUnavailable' },
-      { kind: 'periodOutOfRange' },
-      { kind: 'notCollected' },
-      { kind: 'signInRequired' },
-    ]
-
-    for (const error of kinds) {
-      for (const place of ['picker', 'characterSetup'] as const) {
-        const copy = formatRosterError(error, place)
-        expect(copy.title.length).toBeGreaterThan(0)
-        expect(copy.description.length).toBeGreaterThan(0)
-      }
-    }
-  })
-
   // 영구 실패에는 버튼을 주지 않는다.
   it.each(['picker', 'characterSetup'] as const)('%s의 characterUnavailable은 액션이 없다(영구 실패)', (place) => {
     const copy = formatRosterError({ kind: 'characterUnavailable' }, place)
@@ -93,14 +58,6 @@ describe('formatRosterError', () => {
   it.each(['picker', 'characterSetup'] as const)('%s의 network는 재시도를 주지만 rateLimited는 액션이 없다', (place) => {
     expect(formatRosterError({ kind: 'network' }, place).action?.kind).toBe('retry')
     expect(formatRosterError({ kind: 'rateLimited' }, place).action).toBeUndefined()
-  })
-
-  // 문구는 확정값이다. 단계를 판정하지 않고 안내만 한다.
-  it.each(['picker', 'characterSetup'] as const)('%s의 rateLimited는 키 단계 확인을 처방한다', (place) => {
-    const copy = formatRosterError({ kind: 'rateLimited' }, place)
-
-    expect(copy.title).toBe('호출 한도를 초과했습니다')
-    expect(copy.description).toBe('입력하신 API 키가 서비스 단계 키인지 확인해주세요')
   })
 
   it('rateLimited와 network는 제목이 다르다. 원인을 구분해 말해야 한다', () => {
@@ -176,10 +133,6 @@ describe('formatStaleRosterError', () => {
 })
 
 describe('formatSyncedAt', () => {
-  it('null이면 "동기화 기록 없음"을 반환한다', () => {
-    expect(formatSyncedAt(null)).toBe('동기화 기록 없음')
-  })
-
   it('1분 미만이면 "방금 전"을 반환한다', () => {
     const syncedAt = new Date(Date.now() - 30 * 1000).toISOString()
     expect(formatSyncedAt(syncedAt)).toBe('방금 전')

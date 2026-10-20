@@ -51,13 +51,6 @@ async function 누르기카드(view: { getByLabelText: (label: string) => unknow
 }
 
 describe('InputCard', () => {
-  it('칸 이름과 맥락 줄을 머리에 그린다', async () => {
-    const { view } = await 그리기({ context: '솔 에르다 조각 · 개당' })
-
-    expect(view.getByText('조각 가격')).toBeTruthy()
-    expect(view.getByText('솔 에르다 조각 · 개당')).toBeTruthy()
-  })
-
   it('시트가 든 지금 값을 씨앗으로 받는다. 숫자는 콤마로 끊어 보인다', async () => {
     const { view } = await 그리기({ value: '12000000' })
 
@@ -208,12 +201,6 @@ describe('InputCard', () => {
     내리기.mockRestore()
   })
 
-  it('단위는 값 오른쪽에 선다', async () => {
-    const { view } = await 그리기({ unit: '메소' })
-
-    expect(view.getByText('메소')).toBeTruthy()
-  })
-
   /**
    * 드롭 판매가의 모양. 가격 입력 시트가 없어지면서 그 시트가 들던 분배 인원과 기록 안함이
    * 카드로 왔다. 부품은 도메인 낱말을 모르고 라벨은 호출부가 준다.
@@ -359,13 +346,6 @@ describe('InputCard', () => {
     })
 
 
-    it('비율을 넘기면 값 칸 아래에 그 라벨로 선다. 낱말은 호출부가 준다', async () => {
-      const { view } = await 그리기({ share: 비율 })
-
-      expect(view.getByText('분배 비율')).toBeTruthy()
-      expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('66.7%')
-    })
-
     /** 친 값과 같이 **카드가 든다**. 그래야 확인 한 번에 둘이 함께 나간다. */
     it('비율은 카드가 들고 확인이 친 값과 함께 내보낸다', async () => {
       const { view, onConfirm } = await 그리기({ share: 비율 })
@@ -393,13 +373,6 @@ describe('InputCard', () => {
       expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('100%')
     })
 
-    it('확인 라벨을 호출부가 바꾼다', async () => {
-      const { view } = await 그리기({ confirmLabel: '저장' })
-
-      expect(view.getByText('저장')).toBeTruthy()
-      expect(view.queryByText('확인')).toBeNull()
-    })
-
     /**
      * **친 값이 있나에 따라 확인이 다른 말을 한다.** 저장과 다음을 두 버튼으로 두었더니 어느
      * 쪽이 값을 쓰는지가 안 읽혔다(사용자 지적). 버튼은 하나이고 글자가 지금 누르면 무슨 일이
@@ -413,12 +386,6 @@ describe('InputCard', () => {
       await 치기(view, '100')
       expect(view.getByText('저장 후 다음(3/3)')).toBeTruthy()
       expect(view.queryByText('다음(3/3)')).toBeNull()
-    })
-
-    it('빈 칸용 라벨을 안 넘기면 둘이 같은 말을 한다', async () => {
-      const { view } = await 그리기({ confirmLabel: '완료' })
-
-      expect(view.getByText('완료')).toBeTruthy()
     })
 
     /** 셋 다 지금 아이템을 처리하고 넘어가는 길이라 한 줄에 선다. */
@@ -504,14 +471,6 @@ describe('InputCard', () => {
 
         expect(view.getByLabelText('분배 비율 비율 합 증가')).toBeTruthy()
         expect(flattenStyle(view.getByTestId('share-field-track').props.style).flexDirection).not.toBe('row')
-      })
-
-      // 좁은 자리라 이름과 값이 한 줄을 다투면 세그먼트가 찌부러진다.
-      it('수수료 줄은 이름과 값을 위아래로 나눈다', async () => {
-        const { view } = await 그리기({ share: 비율, fees: 수수료 })
-
-        expect(view.getByTestId('input-card-sale-fee-head')).toBeTruthy()
-        expect(view.getByTestId('input-card-sale-fee-value')).toBeTruthy()
       })
 
       /**

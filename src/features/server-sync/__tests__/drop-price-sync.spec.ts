@@ -10,7 +10,6 @@ import {
   dropPricePayloadOf,
   reportDropPrice,
   reportDropRemoved,
-  SERVER_PRICE_FROM,
   sendsToServer,
 } from '../drop-price-sync'
 import type { BossDropRecord } from '../../../storage/boss-drops'
@@ -73,17 +72,6 @@ beforeEach(() => {
 })
 
 describe('보내는 기간', () => {
-  it('기준 기간부터 보낸다', () => {
-    expect(sendsToServer(SERVER_PRICE_FROM)).toBe(true)
-    expect(sendsToServer('2026-10-22')).toBe(true)
-  })
-
-  it('기준보다 앞선 주는 안 보낸다', () => {
-    // 기능이 나간 뒤 시작된 기간만 보낸다. 지난 기간을 손으로 채운 기록도 여기서 빠진다.
-    expect(sendsToServer('2026-10-08')).toBe(false)
-    expect(sendsToServer('2026-09-10')).toBe(false)
-  })
-
   it('월간 열쇠도 같은 비교로 갈린다', () => {
     // 주간과 월간이 둘 다 `YYYY-MM` 으로 시작해 글자 비교가 성립한다.
     expect(sendsToServer('2026-11')).toBe(true)
@@ -157,11 +145,6 @@ describe('고리가 쓰는 읽기', () => {
   it('원본이 사라졌으면 null 이고 그것이 지우기 신호다', async () => {
     getBossDropRecordById.mockResolvedValue(null)
     expect(await dropPriceHandler.read('없는-id')).toBeNull()
-  })
-
-  it('원본이 있으면 지금 값을 읽는다. 표에 담아 둔 값이 아니다', async () => {
-    getBossDropRecordById.mockResolvedValue(record({ priceMeso: 3_000_000_000 }))
-    expect(await dropPriceHandler.read('id')).toMatchObject({ priceMeso: 3_000_000_000 })
   })
 })
 

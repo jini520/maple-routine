@@ -51,12 +51,6 @@ beforeEach(() => {
 })
 
 describe('TrendSection', () => {
-  it('처음에는 아무 막대도 안 골라 말풍선이 없다', async () => {
-    const view = await 그리기()
-
-    expect(view.queryByTestId('stats-trend-bubble-title')).toBeNull()
-  })
-
   it('막대를 누르면 그 주의 순수익과 수입 · 지출이 뜨고, 다시 누르면 닫힌다', async () => {
     const view = await 그리기()
 

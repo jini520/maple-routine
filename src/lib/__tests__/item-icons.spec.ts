@@ -3,39 +3,6 @@ import { assetUri } from '../../assets/__tests__/asset-uri'
 import { cashbookRowIconOf, dropItemIconOf, getItemIconUrlByFile, spendIconOf } from '../assets/asset-lookup'
 
 describe('dropItemIconOf', () => {
-  it('마스터 표에 그림이 있는 아이템은 그 파일로 조회된다 (홍옥의 보스 반지 상자 -> boss_ring_box_red.png)', () => {
-    const url = dropItemIconOf('red_boss_ring_box')
-
-    expect(url).not.toBeNull()
-    expect(assetUri(url)).toContain('boss_ring_box_red')
-  })
-
-  it('반지는 rings/ 하위 파일로 조회된다 (리스트레인트 링 -> Ring_of_Restraint.webp)', () => {
-    expect(assetUri(dropItemIconOf('restraint_ring'))).toContain('Ring_of_Restraint')
-  })
-
-  it('슬롯별 익셉셔널 해머는 각 슬롯 아이콘으로 조회된다', () => {
-    expect(assetUri(dropItemIconOf('exceptional_hammer_face_accessory'))).toContain('except_face_acc')
-    expect(assetUri(dropItemIconOf('exceptional_hammer_eye_accessory'))).toContain('except_eye_acc')
-    expect(assetUri(dropItemIconOf('exceptional_hammer_medal'))).toContain('except_merit')
-    expect(assetUri(dropItemIconOf('exceptional_hammer_earring'))).toContain('except_earring')
-    expect(assetUri(dropItemIconOf('exceptional_hammer_belt'))).toContain('except_belt')
-  })
-
-  it('기타(백옥 밖 저가치 반지 묶음)는 리밋 링 아이콘으로 조회된다', () => {
-    expect(assetUri(dropItemIconOf('other_ring'))).toContain('Limit_Ring')
-  })
-
-  it('반지 상자에도 드는 생명의 연마석은 whetstone 그림이다', () => {
-    expect(assetUri(dropItemIconOf('life_whetstone'))).toContain('whetstone_life')
-  })
-
-  it('주문서 교환권 3종은 각자의 아이콘으로 조회된다', () => {
-    expect(assetUri(dropItemIconOf('premium_accessory_scroll_voucher'))).toContain('premium_accessory_scroll_coupon')
-    expect(assetUri(dropItemIconOf('premium_pet_equipment_scroll_voucher'))).toContain('premium_petequip_scroll_coupon')
-    expect(assetUri(dropItemIconOf('magical_weapon_scroll_voucher'))).toContain('magical_weapon_scroll_coupon')
-  })
-
   // 그림 없는 줄 · 모르는 key · key 없는 옛 기록은 비운다. 비슷한 그림을 붙이면 틀린 것을 그린다.
   it('그림이 없거나 모르는 key 이거나 key 가 없으면 null 이다', () => {
     expect(dropItemIconOf('sol_erda_energy')).toBeNull()

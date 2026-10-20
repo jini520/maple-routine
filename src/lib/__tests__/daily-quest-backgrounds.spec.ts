@@ -1,5 +1,4 @@
 
-import { assetUri } from '../../assets/__tests__/asset-uri'
 import { getDailyQuestBackgroundUrl, getDailyQuestRegionCrop } from '../assets/asset-lookup'
 
 describe('getDailyQuestBackgroundUrl', () => {
@@ -7,22 +6,8 @@ describe('getDailyQuestBackgroundUrl', () => {
     expect(getDailyQuestBackgroundUrl(null)).toBeNull()
   })
 
-  it('실제로 존재하는 slug면 URL을 반환한다 (lacheln -> lacheln.webp)', () => {
-    const url = getDailyQuestBackgroundUrl('lacheln')
-
-    expect(url).not.toBeNull()
-    expect(assetUri(url)).toContain('lacheln')
-  })
-
   it('존재하지 않는 slug면 null을 반환한다', () => {
     expect(getDailyQuestBackgroundUrl('존재하지않는슬러그')).toBeNull()
-  })
-
-  it('jpg 파일도 조회된다 (flagRace -> flagRace.jpg)', () => {
-    const url = getDailyQuestBackgroundUrl('flagRace')
-
-    expect(url).not.toBeNull()
-    expect(assetUri(url)).toContain('flagRace')
   })
 })
 

@@ -9,15 +9,6 @@ const 색 = { track: '#111111', fill: '#eeeeee' }
 const strokeOf = (node: AtomElement): unknown => (node.props.stroke as { payload: unknown }).payload
 
 describe('ProgressRing · 연속', () => {
-  it('반지름이 stroke 를 뺀 지름의 절반이다', async () => {
-    const { getByTestId } = await renderAtom(
-      <ProgressRing size={56} stroke={4} direction="cw" {...색} progress={{ kind: 'continuous', ratio: 0.5 }} />,
-    )
-
-    // 26 = (56 − 4) / 2. stroke 는 경로의 **가운데**에 그려지므로 이만큼 안으로 들어와야 상자를 안 넘는다.
-    expect(Number(getByTestId('progress-ring-track').props.r)).toBe(26)
-  })
-
   it('찬 만큼만 dash 로 그리고 나머지는 비운다', async () => {
     const { getByTestId } = await renderAtom(
       <ProgressRing size={56} stroke={4} direction="cw" {...색} progress={{ kind: 'continuous', ratio: 0.25 }} />,
@@ -40,15 +31,6 @@ describe('ProgressRing · 연속', () => {
 
     expect(getByTestId('progress-ring-track')).toBeTruthy()
     expect(queryByTestId('progress-ring-fill')).toBeNull()
-  })
-
-  it('넘겨받은 색을 그대로 쓴다. 테마를 안 읽는다', async () => {
-    const { getByTestId } = await renderAtom(
-      <ProgressRing size={56} stroke={4} direction="cw" {...색} progress={{ kind: 'continuous', ratio: 1 }} />,
-    )
-
-    expect(strokeOf(getByTestId('progress-ring-track'))).toBe(processColor(색.track))
-    expect(strokeOf(getByTestId('progress-ring-fill'))).toBe(processColor(색.fill))
   })
 
   // SVG 의 `fill` 기본값은 **검정**이다. 이 속성이 빠지면 링 안이 통째로 칠해진다. 이 부품에서

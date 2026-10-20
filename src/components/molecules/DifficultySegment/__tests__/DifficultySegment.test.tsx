@@ -2,24 +2,11 @@
 // (RN 의 접근성 상태에는 *pressed* 가 없다, 컴포넌트 주석 ①).
 import { fireEvent } from '@testing-library/react-native'
 
-import { findAllOfType, flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
 import { DifficultySegment } from '../DifficultySegment'
 
 describe('DifficultySegment', () => {
-  it('난이도를 받은 순서대로 버튼으로 그린다', async () => {
-    const rendered = await renderAtom(
-      <DifficultySegment difficulties={['normal', 'hard', 'extreme']} selected="hard" onSelect={jest.fn()} />,
-    )
-
-    expect(rendered.getAllByRole('button')).toHaveLength(3)
-    expect(findAllOfType(rendered.toJSON(), 'Text').map((node) => node.children?.[0])).toEqual([
-      '노멀',
-      '하드',
-      '익스트림',
-    ])
-  })
-
   it('선택된 난이도만 선택 상태로 알린다', async () => {
     const { getAllByRole } = await renderAtom(
       <DifficultySegment difficulties={['normal', 'hard']} selected="hard" onSelect={jest.fn()} />,

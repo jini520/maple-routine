@@ -106,11 +106,6 @@ describe('getBackfillDateKeys (정정. -1일부터 -13일까지 순차 조회용
     expect(keys).toHaveLength(13)
   })
 
-  it('maxDaysBack을 넘겨 범위를 조정할 수 있다', () => {
-    const keys = getBackfillDateKeys(new Date('2026-07-21T10:00:00+09:00'), 3)
-    expect(keys).toEqual(['2026-07-20', '2026-07-19', '2026-07-18'])
-  })
-
   it('월/연 경계를 넘어서도 정확히 계산한다', () => {
     const keys = getBackfillDateKeys(new Date('2026-01-01T10:00:00+09:00'), 2)
     expect(keys).toEqual(['2025-12-31', '2025-12-30'])

@@ -7,17 +7,16 @@
 import { waitFor } from '@testing-library/react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
-import { forgetNotice } from '../../../features/notice/notice-copy'
+import { forgetNotice, readNoticeCopy } from '../../../features/notice/notice-copy'
 import { fetchNoticeDetail } from '../../../features/notice/notice-feed'
-import { getNotices } from '../../../storage/notices'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 import { SettingsNoticeDetailScreen } from '../SettingsNoticeDetailScreen'
 import type { Notice } from '../../../types/notice'
 
-jest.mock('../../../storage/notices', () => ({ __esModule: true, getNotices: jest.fn() }))
 jest.mock('../../../features/notice/notice-copy', () => ({
   __esModule: true,
   forgetNotice: jest.fn(async () => {}),
+  readNoticeCopy: jest.fn(),
 }))
 // 앱 공지는 서버, 넥슨 공지는 넥슨 상세다. 어디서 받는지는 받는 쪽 테스트가 본다.
 jest.mock('../../../features/notice/notice-feed', () => ({
@@ -29,7 +28,7 @@ jest.mock('../../../hooks/useSettingsNavigation', () => ({
   useSettingsNavigation: jest.fn(),
 }))
 
-const notices = jest.mocked(getNotices)
+const notices = jest.mocked(readNoticeCopy)
 const remote = jest.mocked(fetchNoticeDetail)
 const forget = jest.mocked(forgetNotice)
 

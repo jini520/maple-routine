@@ -1199,3 +1199,31 @@ describe('버전 이관: 다시 못 캐는 날짜 없는 보스 기록에 기간
   })
 })
 
+
+describe('버전 이관: 읽는 코드가 없는 재조회 표식 표를 지운다', () => {
+  function tableExists(name: string): boolean {
+    return real.inspect(
+      (db) => db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?`).get(name) !== undefined,
+    )
+  }
+
+  it('옛 기기에 남은 표를 지운다', async () => {
+    real.inspect((db) => {
+      db.exec(`CREATE TABLE boss_profit_period_checks (
+        ocid TEXT NOT NULL, cycle TEXT NOT NULL, period_key TEXT NOT NULL, checked_at TEXT NOT NULL,
+        PRIMARY KEY (ocid, cycle, period_key))`)
+      db.exec('PRAGMA user_version = 12')
+    })
+
+    await getBossProfitDb()
+
+    expect(tableExists('boss_profit_period_checks')).toBe(false)
+    expect(userVersion(real)).toBe(DB_VERSION)
+  })
+
+  it('새 기기에는 그 표가 아예 없다', async () => {
+    await getBossProfitDb()
+
+    expect(tableExists('boss_profit_period_checks')).toBe(false)
+  })
+})

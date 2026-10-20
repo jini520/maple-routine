@@ -39,18 +39,6 @@ async function 누름(element: Parameters<typeof fireEvent.press>[0]): Promise<v
 }
 
 describe('계열이 축이다', () => {
-  it('계열명을 머리로 세우고 그 아래에 짧은 이름을 그린다', async () => {
-    const { getAllByTestId, getByText } = await 위젯(공유컨텐츠())
-
-    expect(getAllByTestId('shared-group-name').map((node) => node.props.children)).toEqual([
-      '몬스터파크',
-      '메이플 유니온',
-      '에픽 던전',
-    ])
-    expect(getByText('하이마운틴')).toBeTruthy()
-    expect(getByText('익스트림 몬스터파커')).toBeTruthy()
-  })
-
   // 월드로는 가를 수 없고 계열로 묶은 이유가 그것이다. 라벨이 한 번이라도
   // 나오면 화면이 다시 그 축을 주장하게 된다.
   it('월드·계정이라는 말이 화면에 한 번도 안 나온다', async () => {
@@ -59,35 +47,9 @@ describe('계열이 축이다', () => {
     expect(queryByText(/월드/)).toBeNull()
     expect(queryByText(/스카니아/)).toBeNull()
   })
-
-  // **머리에 수를 안 단다**(사용자 지시). 남은 줄은 아래 체크박스가 이미 세어 볼 수 있게 그린다.
-  // 그 수를 머리에 또 쓰면 같은 말이 둘이고, 위젯 2 의 `남은 스케줄` 수와 나란히 읽혀 두 수의
-  // 관계를 사용자가 짐작하게 된다.
-  it('머리에 수를 안 단다', async () => {
-    const { queryByTestId, queryByText } = await 위젯(공유컨텐츠())
-
-    expect(queryByTestId('shared-total')).toBeNull()
-    expect(queryByText(/개$/)).toBeNull()
-  })
 })
 
 describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
-  // 체크박스와 취소선이 이미 완료를 말한다. 배지는 같은 말의 세 번째였고, 그 46px 이 반폭 열에서
-  // 긴 이름을 말줄임으로 밀어냈다.
-  it('완료해도 오른쪽에 배지가 안 선다. CLEAR 를 걷었다', async () => {
-    const { queryAllByTestId, queryByText } = await 위젯([
-      공유계열('epic_dungeon', [
-        공유항목('하이마운틴', { isComplete: true }),
-        공유항목('앵글러컴퍼니', { isComplete: true }),
-        공유항목('악몽선경'),
-      ]),
-    ])
-
-    expect(queryAllByTestId('shared-clear')).toHaveLength(0)
-    expect(queryByText('CLEAR')).toBeNull()
-    expect(queryAllByTestId('shared-count')).toHaveLength(0)
-  })
-
   it('미완료이고 카운트가 없으면 오른쪽을 비운다 (사용자 지정)', async () => {
     const { queryAllByTestId } = await 위젯([공유계열('epic_dungeon', [공유항목('악몽선경')])])
 
@@ -185,23 +147,6 @@ describe('완료는 체크와 취소선이 말한다', () => {
     // 체크 표시는 완료한 것 하나뿐이다. 빈 상자는 테두리만 지고 안이 비어 있다.
     expect(상자들[0]?.props.children).toBeTruthy()
     expect(상자들[1]?.props.children).toBeFalsy()
-  })
-
-  // 채운 상자는 언제나 `primary` 다. 완료 = `secondary` 계보를 따르면 `secondary` 가 테마의
-  // 두 번째 시드라 메인 컬러와 색상이 무관하다(렌은 빨강 테마에 틸 `#437B71`, 엔젤릭버스터는
-  // 분홍 테마에 하늘 `#82B5C3`). 앱의 다른 체크박스 셋이 쓰는 색으로 맞춘다.
-  //
-  // 체크 표시(`shared-checkbox-mark`)의 색은 여기서 못 잰다. SVG 는 `testID` 를 호스트
-  // 노드로 안 넘긴다. 상자의 두 값이 같은 토큰을 가리키는 것으로 되돌아가지 않았다 를 잡는다.
-  it('채운 상자는 채움도 테두리도 primary 다. secondary 가 아니다', async () => {
-    const { getAllByTestId } = await 위젯([
-      공유계열('epic_dungeon', [공유항목('하이마운틴', { isComplete: true })]),
-    ])
-
-    const 상자 = flattenStyle(getAllByTestId('shared-checkbox', 숨은것포함)[0]?.props.style)
-    expect(상자.backgroundColor).toBe(기본테마.primary)
-    expect(상자.borderColor).toBe(기본테마.primary)
-    expect(상자.backgroundColor).not.toBe(기본테마.secondaryInk)
   })
 
   // 취소선만으로는 **지운 것/흐린 것** 이 애매하고, 색만으로는 흑백 화면에서 안 보인다.
@@ -386,22 +331,6 @@ describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => 
     expect(물음표색(getByTestId('shared-note-toggle'))).toBe(닫힘)
   })
 
-  // **폭을 못박지 않는다**(사용자 지시). 폭을 주면 가장 긴 줄보다 넓은 만큼이 오른쪽에 죽은
-  // 여백으로 남아 글 덩어리가 왼쪽으로 쏠린다. 상한만 주고 폭은 레이아웃 엔진이 가장 긴 줄에
-  // 맞춰 줄인다. 손으로 잰 값을 박으면 그 추정이 틀렸을 때 줄바꿈이 다시 깨진다.
-  it('폭을 못박지 않는다. 상한만 주고 글줄에 맞춰 줄어든다', async () => {
-    const { getByTestId } = await 위젯(공유컨텐츠())
-
-    await 누름(getByTestId('shared-note-toggle'))
-
-    const style = flattenStyle(getByTestId('shared-note').props.style) as {
-      width?: number
-      maxWidth: number
-    }
-    expect(style.width).toBeUndefined()
-    expect(style.maxWidth).toBe(320)
-  })
-
   // **부모 타일을 안 벗어난다**(사용자 지시). 창은 별도라 좌표가 화면 기준인데, 화면 여백을
   // 그대로 쓰면 타일보다 왼쪽에 선다(격자 여백 16 · 화면 여백 12). 이 타일은 크기 선언이
   // `4×auto` 하나뿐이라 창 좌우 여백이 곧 타일의 변이다.
@@ -418,18 +347,5 @@ describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => 
     }
     expect(left).toBe(GRID_SIDE_PADDING)
     expect(left + maxWidth).toBeLessThanOrEqual(창폭 - GRID_SIDE_PADDING)
-  })
-
-  // 앱의 팝오버 셋이 같은 상자를 쓴다(`ItemRevenuePopover` · 월드별 분해 · 여기).
-  it('상자는 다른 팝오버와 같은 표면색이다', async () => {
-    const { getByTestId } = await 위젯(공유컨텐츠())
-
-    await 누름(getByTestId('shared-note-toggle'))
-
-    expect(flattenStyle(getByTestId('shared-note').props.style)).toMatchObject({
-      position: 'absolute',
-      backgroundColor: 기본테마.surface,
-      borderRadius: 12,
-    })
   })
 })

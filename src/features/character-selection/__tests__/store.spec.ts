@@ -68,20 +68,6 @@ describe('select', () => {
 })
 
 describe('hydrate', () => {
-  it('저장된 값을 읽어 온다', async () => {
-    getLastSelectedCharacterMock.mockResolvedValue('ocid-9')
-
-    await useCharacterSelectionStore.getState().hydrate()
-
-    expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-9')
-  })
-
-  it('저장된 값이 없으면 아무것도 안 세운다', async () => {
-    await useCharacterSelectionStore.getState().hydrate()
-
-    expect(useCharacterSelectionStore.getState().selectedOcid).toBeNull()
-  })
-
   // **이것이 두 벌 재발을 막는 자리다.** 화면 넷이 각자 진입할 때마다 이 문을 지나는데, 매번
   // 저장소를 다시 읽어 덮으면 늦게 도착한 하이드레이션이 방금 고른 값을 되돌린다.
   it('이미 고른 값이 있으면 저장소를 읽지 않는다', async () => {

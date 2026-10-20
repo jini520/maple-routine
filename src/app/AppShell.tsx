@@ -11,6 +11,7 @@ import { useAuthStore } from '../features/auth/store'
 import { useLiveUpdateStore } from '../features/live-update/store'
 import { useThemeStore } from '../features/theme/store'
 import { useTrackingModeStore } from '../features/tracking-mode/store'
+import { showPendingCacheClearNotice } from '../features/settings/cache-data'
 
 import { ToastStack } from '../components/organisms/Toast/ToastStack'
 import { AppNavigation } from '../navigation/AppNavigation'
@@ -172,6 +173,11 @@ export function AppShell(): React.JSX.Element {
     if (!isReady) return
     void runServerSync()
   }, [isReady])
+
+  // 지난 실행의 캐시 삭제가 실패했으면 알린다. 삭제 뒤 앱을 다시 띄우므로 그 자리에서는 못 알렸다.
+  useEffect(() => {
+    void showPendingCacheClearNotice()
+  }, [])
 
   // OTA 부팅 확인. 체크만 한다.
   //

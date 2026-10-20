@@ -53,10 +53,6 @@ describe('orderByTracked: 저장 배열 순서로 다시 세운다', () => {
     expect(orderByTracked([바, 아], ['a', 'zzz', 'b'])).toEqual([아, 바])
   })
 
-  it('빈 입력은 빈 결과다', () => {
-    expect(orderByTracked([], ['a', 'b'])).toEqual([])
-  })
-
   // 같은 ocid 가 두 번 오는 일은 없어야 하지만, 왔을 때 **개수가 줄면** 화면에서 카드가 사라진다.
   it('같은 ocid 가 겹쳐 와도 개수가 줄지 않는다', () => {
     const 겹침: 항목[] = [아, { ocid: 'a', characterName: '아(둘째)' }, 바]

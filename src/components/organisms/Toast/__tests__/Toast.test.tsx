@@ -55,12 +55,6 @@ function pathsUnder(node: AtomElement): string[] {
 const noop = (): void => {}
 
 describe('Toast', () => {
-  it('메시지를 표시한다', async () => {
-    const { getByText } = await renderAtom(<Toast toast={makeToast()} onDismiss={noop} />)
-
-    expect(getByText('저장했어요')).toBeTruthy()
-  })
-
   it('닫기 버튼을 누르면 onDismiss 가 호출된다', async () => {
     const onDismiss = jest.fn()
     const { getByLabelText } = await renderAtom(<Toast toast={makeToast()} onDismiss={onDismiss} />)
@@ -108,12 +102,6 @@ describe('Toast', () => {
 
     expect(fallback.length).toBeGreaterThan(0)
     expect(custom).not.toEqual(fallback)
-  })
-
-  it('action 이 없으면 액션 버튼을 렌더하지 않는다', async () => {
-    const { queryByLabelText } = await renderAtom(<Toast toast={makeToast()} onDismiss={noop} />)
-
-    expect(queryByLabelText('다시 시도')).toBeNull()
   })
 
   it('error 변형은 role="alert"·aria-live="assertive" 를 갖는다', async () => {

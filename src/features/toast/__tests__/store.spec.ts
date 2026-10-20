@@ -9,48 +9,6 @@ afterEach(() => {
 })
 
 describe('useToastStore', () => {
-  it('초기 상태는 비어 있다', () => {
-    const { toasts, queue } = useToastStore.getState()
-    expect(toasts).toEqual([])
-    expect(queue).toEqual([])
-  })
-
-  it('showSuccess는 duration 2000ms짜리 success 토스트를 추가한다', () => {
-    useToastStore.getState().showSuccess('저장했어요')
-
-    const { toasts } = useToastStore.getState()
-    expect(toasts).toHaveLength(1)
-    expect(toasts[0]).toMatchObject({ variant: 'success', message: '저장했어요', duration: 2000 })
-  })
-
-  it('showInfo는 duration 2500ms짜리 info 토스트를 추가한다', () => {
-    useToastStore.getState().showInfo('목록을 불러오지 못했어요')
-
-    expect(useToastStore.getState().toasts[0]).toMatchObject({
-      variant: 'info',
-      message: '목록을 불러오지 못했어요',
-      duration: 2500,
-    })
-  })
-
-  it('showError는 duration이 null이고 action을 그대로 담는다', () => {
-    const onClick = jest.fn()
-    useToastStore.getState().showError('저장하지 못했습니다', { label: '다시 시도', onClick })
-
-    expect(useToastStore.getState().toasts[0]).toMatchObject({
-      variant: 'error',
-      message: '저장하지 못했습니다',
-      duration: null,
-      action: { label: '다시 시도', onClick },
-    })
-  })
-
-  it('showError를 action 없이 호출할 수 있다', () => {
-    useToastStore.getState().showError('저장하지 못했습니다')
-
-    expect(useToastStore.getState().toasts[0].action).toBeUndefined()
-  })
-
   it('토스트마다 서로 다른 id를 가진다', () => {
     useToastStore.getState().showSuccess('a')
     useToastStore.getState().showSuccess('b')

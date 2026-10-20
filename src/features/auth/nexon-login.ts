@@ -3,7 +3,7 @@
  *
  * ```
  * 앱     서버에 시작을 요청한다. 서버가 짝을 만들어 authorizeUrl 과 redeemKey 를 준다
- * 앱     openAuthSessionAsync 로 그 주소를 연다
+ * 앱     인증 창(`openAuthSession`)으로 그 주소를 연다
  * 넥슨   로그인 · 동의
  * 넥슨   서버의 콜백으로 code 와 state 를 보낸다
  * 서버   짝을 집어 교환하고 세션을 봉해 둔 뒤 com.mapleroutine.app://oauth/callback?receipt= 로 돌려보낸다
@@ -14,15 +14,15 @@
  * 길을 가로챈 앱은 `redeemKey` 가 없고, 시작을 흉내 낸 앱은 `receipt` 가 없다. `state` 대조는 콜백을
  * 받는 서버가 한다.
  *
- * **`openAuthSessionAsync` 인 것이 결정이다.** iOS 에서는 ASWebAuthenticationSession 이라 콜백
- * URL 이 그 세션에만 돌아온다. 안드로이드는 스킴 인텐트로 돌아오고, 다음 스토어 빌드에서 App Link 로
- * 바꾼다(이슈 #635).
+ * **인증 창은 `openAuthSessionAsync` 로 정했다.** iOS 에서는 ASWebAuthenticationSession 이라 콜백
+ * URL 이 그 세션에만 돌아오기 때문이다. 안드로이드는 스킴 인텐트로 돌아오고, 다음 스토어 빌드에서
+ * App Link 로 바꾼다(이슈 #635). 이 호출은 브라우저 어댑터(`native/adapters/rn-browser.ts`)가 한다.
  *
  * **던지지 않는다.** 부르는 쪽이 화면이라, 실패를 예외로 내면 그 자리마다 try 가 선다.
  */
 import { Platform } from 'react-native'
-import { openAuthSessionAsync } from 'expo-web-browser'
 
+import { openAuthSession } from '../../native/browser'
 import { redeemNexonSession, startNexonLogin } from '../../server/nexon-auth'
 import { setNexonLogin } from '../../storage/api-key'
 import type { Platform as NexonPlatform } from '../../types/auth'
@@ -67,12 +67,12 @@ export async function signInWithNexon(): Promise<NexonSignInResult> {
   try {
     const started = await startNexonLogin(platformOf())
 
-    const result = await openAuthSessionAsync(started.authorizeUrl, REDIRECT_URI)
-    // 사용자가 창을 닫았다. `success` 가 아닌 것은 전부 여기다.
-    if (result.type !== 'success') return { kind: 'cancelled' }
+    const callbackUrl = await openAuthSession(started.authorizeUrl, REDIRECT_URI)
+    // 사용자가 창을 닫았다.
+    if (callbackUrl === null) return { kind: 'cancelled' }
 
     // 서버가 짝을 못 집었거나 넥슨이 동의를 거절로 끝내면 receipt 없이 돌아온다.
-    const receipt = new URL(result.url).searchParams.get('receipt')
+    const receipt = new URL(callbackUrl).searchParams.get('receipt')
     if (receipt === null || receipt === '') return { kind: 'failed' }
 
     const session = await redeemUntilSettled(started.redeemKey, receipt)

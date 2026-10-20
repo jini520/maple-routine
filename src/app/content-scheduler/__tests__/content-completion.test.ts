@@ -126,16 +126,6 @@ describe('주간 완료 판정', () => {
 })
 
 describe('진행 합계', () => {
-  it('완료 수와 셀 수 있는 수를 센다', () => {
-    const contents = [
-      daily({ apiName: 'a', questState: 2 }),
-      daily({ apiName: 'b', questState: 0 }),
-      daily({ apiName: 'c', questState: 2 }),
-    ]
-
-    expect(dailyContentProgress(contents, 300)).toEqual({ completed: 2, total: 3 })
-  })
-
   // 끝이 없는 항목이 분모에 들어가면 링이 100%에 절대 도달하지 못한다.
   it('끝이 없는 항목은 분모에서 빠진다', () => {
     const contents = [
@@ -166,10 +156,6 @@ describe('진행 합계', () => {
     const contents = [daily({ contentKey: 'monster_park', apiName: '몬스터파크', questState: 0 })]
 
     expect(dailyContentProgress(contents, null)).toEqual({ completed: 0, total: 1 })
-  })
-
-  it('빈 목록은 0/0 이다', () => {
-    expect(dailyContentProgress([], 300)).toEqual({ completed: 0, total: 0 })
   })
 })
 

@@ -1,5 +1,5 @@
 /**
- * 보스 관리 화면. 추적 편집(수동)과 파티 인원 설정을 하는 스케줄 그룹의 하위 탭.
+ * 보스 관리 화면. 추적 편집(수동)과 파티 인원 설정을 하는 푸시 화면.
  *
  * 행의 원형 `BossPortrait` 에는 프롭을 그대로 넘기기만 하고 계산을 갖지 않는다.
  */
@@ -359,7 +359,7 @@ export function BossManageScreen(): React.JSX.Element {
         ) : selected === null ? (
           <View className="px-4 pb-4">
             <Text className="text-sm text-text-muted">
-              캐릭터를 먼저 선택해주세요. 보스 스케줄러의 "캐릭터 관리"에서 추가할 수 있어요.
+              캐릭터를 먼저 선택해주세요. 설정의 ‘캐릭터 관리’에서 추가할 수 있어요.
             </Text>
           </View>
         ) : selected.error?.kind === 'characterUnavailable' ? (

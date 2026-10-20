@@ -137,10 +137,6 @@ describe('crystalPayoutMeso: 결정석에서 내가 쥐는 메소', () => {
     expect(다가짐).toBe(1_500_000_000 + 1_500_000_000 - 45_000_000)
     expect(다가짐 + 안가짐).toBe(2_955_000_000)
   })
-
-  it('가격이 0 이면 0 이다', () => {
-    expect(crystalPayoutMeso(0, 2, { myShare: 2, sharesTotal: 3, splitFeePercent: 3 })).toBe(0)
-  })
 })
 
 describe('formatSharePercent: 내 몫을 백분율로', () => {
@@ -160,10 +156,6 @@ describe('formatSharePercent: 내 몫을 백분율로', () => {
   // `나 : 나머지` 로 적으면 둘이 다른 값처럼 보인다. 같은 약속이다.
   it('같은 약속은 같은 글자다. 2:1 과 4:2', () => {
     expect(formatSharePercent(2, 3)).toBe(formatSharePercent(4, 6))
-  })
-
-  it('혼자 다 갖는 약속은 100% 다', () => {
-    expect(formatSharePercent(3, 3)).toBe('100%')
   })
 
   // 부동소수로 나누면 33.300000000000004 가 나온다.

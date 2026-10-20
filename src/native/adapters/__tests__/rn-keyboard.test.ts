@@ -81,13 +81,6 @@ describe('rnKeyboardPort', () => {
     unsubscribe()
   })
 
-  it('해제 함수를 돌려준다', async () => {
-    const unsubscribe = await rnKeyboardPort.addVisibilityListener(jest.fn())
-
-    expect(typeof unsubscribe).toBe('function')
-    unsubscribe()
-  })
-
   // 포트 시그니처가 Promise 라 호출부는 `await` 한다. RN `Keyboard.addListener` 는 동기지만 그
   // 차이가 밖으로 새면 안 된다.
   it('Promise 를 돌려준다', () => {

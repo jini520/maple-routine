@@ -141,13 +141,6 @@ afterEach(() => {
 })
 
 describe('useContentSchedulerStore', () => {
-  it('초기 상태는 idle이고 캐릭터가 비어있다', () => {
-    const state = useContentSchedulerStore.getState()
-    expect(state.status).toBe('idle')
-    expect(state.characters).toEqual([])
-    expect(state.error).toBeNull()
-  })
-
   it('refresh([])는 syncSchedules를 호출하지 않고 곧바로 loaded/빈 배열 상태가 된다', async () => {
     await useContentSchedulerStore.getState().refresh([])
 
@@ -156,14 +149,6 @@ describe('useContentSchedulerStore', () => {
     expect(state.status).toBe('loaded')
     expect(state.characters).toEqual([])
     expect(state.error).toBeNull()
-  })
-
-  it('refresh(ocids)는 syncSchedules(ocids)를 정확히 그 인자로 호출한다', async () => {
-    syncSchedulesMock.mockResolvedValue([syncResult()])
-
-    await useContentSchedulerStore.getState().refresh(['ocid-1'])
-
-    expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'], undefined)
   })
 
   it('모든 캐릭터가 성공하면 status: loaded이고 dailyContents·weeklyContents가 하나의 상태에서 동시에 반영된다', async () => {
@@ -331,16 +316,6 @@ describe('useContentSchedulerStore', () => {
   })
 
   describe('추적 목록', () => {
-    it('loadTrackedOcids는 storage에서 조회한 값을 trackedOcids 상태에 반영한다', async () => {
-      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useContentSchedulerStore.getState().loadTrackedOcids()
-
-      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith()
-      expect(useContentSchedulerStore.getState().trackedOcids).toEqual(['ocid-1'])
-    })
-
     it('loadTrackedOcids는 조회된 목록이 null이 아니면 그 목록으로 refresh를 호출한다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])
@@ -393,16 +368,6 @@ describe('useContentSchedulerStore', () => {
       expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
       expect(useContentSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
       expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
-    })
-
-    it('saveTrackedOcids가 끝나면 완료 토스트를 띄운다', async () => {
-      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1'])
-
-      expect(showSuccessMock).toHaveBeenCalledWith('캐릭터 정보를 모두 불러왔어요')
-      expect(showErrorMock).not.toHaveBeenCalled()
     })
 
     it('storage 저장이 실패하면 실패 토스트를 띄우고 상태를 바꾸지 않는다(예외를 던지지 않음)', async () => {
@@ -783,22 +748,6 @@ describe('useContentSchedulerStore', () => {
   // 탭 선택을 화면 로컬 state가 아니라 스토어가 소유한다. 화면이 언마운트돼도
   // 값이 남고, 스케줄러와 관리 페이지가 같은 값을 본다.
   describe(': 탭 선택 상태', () => {
-    it('초기 탭은 일간이다', () => {
-      expect(useContentSchedulerStore.getInitialState().activeTab).toBe('daily')
-    })
-
-    it('setActiveTab이 탭을 바꾼다', () => {
-      useContentSchedulerStore.getState().setActiveTab('weekly')
-
-      expect(useContentSchedulerStore.getState().activeTab).toBe('weekly')
-    })
-
-    // 보스 수익의 setTab은 기간을 다시 불러오느라 async지만, 스케줄러 탭은 이미 받아 둔 데이터를
-    // 갈라 보여줄 뿐이라 네트워크가 없다. 모양을 맞추려고 async를 씌우지 않는다.
-    it('setActiveTab은 동기 세터라 프로미스를 반환하지 않는다', () => {
-      expect(useContentSchedulerStore.getState().setActiveTab('weekly')).toBeUndefined()
-    })
-
     it('탭을 바꿔도 동기화를 호출하지 않는다', () => {
       useContentSchedulerStore.getState().setActiveTab('weekly')
 

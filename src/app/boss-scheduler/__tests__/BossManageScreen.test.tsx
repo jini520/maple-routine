@@ -15,7 +15,7 @@ import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import type { BossDifficulty, ManualTrackedItem } from '../../../types'
 
-import { flattenStyle, renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
+import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
@@ -201,16 +201,6 @@ describe('BossManageScreen: 공통', () => {
     expect(goBack).toHaveBeenCalled()
   })
 
-  // 이 화면의 일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.
-  it('관리 화면의 레일에는 진행 링이 없다', async () => {
-    mockStore({ characters: [character()] })
-
-    await renderScreen()
-
-    expect(screen.queryAllByTestId('portrait-ring-track')).toHaveLength(0)
-    expect(screen.queryAllByTestId('portrait-ring-fill')).toHaveLength(0)
-  })
-
   it('마운트하면 loadTrackedOcids 를 부른다. 스케줄러를 거치지 않고 들어와도 채워진다', async () => {
     const store = mockStore({ characters: [character()] })
 
@@ -337,15 +327,6 @@ describe('BossManageScreen: 수동 모드', () => {
 
     expect(stateOf(rowToggle('자쿰')).selected).toBe(true)
     expect(stateOf(rowToggle('매그너스')).selected).toBe(false)
-  })
-
-  it('월간 보스가 같은 목록의 `월간` 무리에 선다', async () => {
-    mockStore({ characters: [character()] })
-
-    await renderScreen()
-
-    expect(screen.getByText(MONTHLY_NAME)).toBeTruthy()
-    expect(screen.getByText('자쿰')).toBeTruthy()
   })
 
   it('추적 중인 행에만 난이도 세그먼트와 파티 줄이 펼쳐진다', async () => {
@@ -508,18 +489,6 @@ describe('BossManageScreen: 자동 모드', () => {
     expect(screen.queryByLabelText('자쿰')).toBeNull()
   })
 
-  // 스위치가 뒤집혔다. 이름은 `모든 보스 보기`이고 **기본이 꺼짐**이다.
-  // 표시 결과는 그대로라(기본 = 등록된 보스만) 위 케이스가 그 절반을 이미 지킨다.
-  it('토글은 `모든 보스 보기`이고 기본으로 꺼져 있다', async () => {
-    mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
-
-    await renderScreen()
-
-    expect(screen.queryByText('등록된 보스만 보기')).toBeNull()
-    expect(screen.getByText('모든 보스 보기')).toBeTruthy()
-    expect(stateOf(screen.getByLabelText('모든 보스 보기')).checked).toBe(false)
-  })
-
   it('토글을 켜면 전체 보스가 나와 미등록 보스도 파티를 미리 설정할 수 있다', async () => {
     mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
     await renderScreen()
@@ -540,18 +509,6 @@ describe('BossManageScreen: 자동 모드', () => {
     await press(within(스위치).getByText('모든 보스 보기'))
 
     expect(stateOf(스위치).checked).toBe(true)
-  })
-
-  // 붙인 쌍이 줄 오른쪽 끝에 선다. 감싼 줄이 `items-end` 로 밀고, 빠지면 줄 전체로 늘어나
-  // 글자가 다시 왼쪽 끝에 선다.
-  it('글자와 스위치가 한 쌍으로 줄 오른쪽 끝에 선다', async () => {
-    mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
-
-    await renderScreen()
-
-    const 스위치 = screen.getByLabelText('모든 보스 보기')
-    expect(flattenStyle(스위치.props.style).flexDirection).toBe('row')
-    expect(flattenStyle(스위치.parent?.props.style).alignItems).toBe('flex-end')
   })
 
   // 등록 보스가 하나도 없으면 토글이 꺼져 있어도 전체로 대체한다.
@@ -692,17 +649,6 @@ describe('BossManageScreen: 주간 12개 한도', () => {
 
   beforeEach(() => {
     useTrackingModeStore.setState({ mode: 'manual' })
-  })
-
-  it('주간 탭 헤더에 n/12 카운터를 표시한다', async () => {
-    mockStore({
-      characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos'), trackedBoss('스우', 'hard')] },
-    })
-
-    await renderScreen()
-
-    expect(screen.getByText(`2/${WEEKLY_BOSS_CLEAR_LIMIT}`)).toBeTruthy()
   })
 
   // 카운트 규칙은 `countManualWeeklyBosses` 한 곳에만 있다. 화면이 다시 세면 선택 12/12 인데

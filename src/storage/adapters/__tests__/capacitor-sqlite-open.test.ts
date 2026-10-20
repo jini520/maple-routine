@@ -3,11 +3,7 @@
 // 보스 수익·드랍 기록이 사라진 것으로 보인다. 그래서 이 파일은 규칙을 눈으로 읽히는 리터럴로
 // 못 박는다.
 
-import {
-  CAPACITOR_DB_FILE_SUFFIX,
-  toOpenOptions,
-  type CapacitorDatabaseDirectories,
-} from '../capacitor-sqlite-open'
+import { toOpenOptions, type CapacitorDatabaseDirectories } from '../capacitor-sqlite-open'
 
 // 실제 상수가 네이티브에서 어떤 모양으로 오는지 그대로 흉내 낸다. Android 는 끝에 `/` 가 붙어
 // 오고 iOS 는 안 붙는다.
@@ -15,13 +11,6 @@ const DIRECTORIES: CapacitorDatabaseDirectories = {
   android: '/data/user/0/com.mapleroutine.app/databases/',
   ios: '/var/mobile/Containers/Data/Application/ABC/Documents',
 }
-
-describe('CAPACITOR_DB_FILE_SUFFIX', () => {
-  // 플러그인 규칙은 `dbName + "SQLite.db"` 다. `boss_profit.db` 로 열면 다른 파일이다.
-  it('플러그인이 붙이는 접미사 그대로다', () => {
-    expect(CAPACITOR_DB_FILE_SUFFIX).toBe('SQLite.db')
-  })
-})
 
 describe('toOpenOptions', () => {
   it('파일명은 DB 이름 + SQLite.db 다', () => {

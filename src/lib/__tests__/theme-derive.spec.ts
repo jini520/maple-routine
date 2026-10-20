@@ -30,13 +30,6 @@ describe('deriveTheme: 스키마', () => {
     expect(THEME_TOKEN_KEYS).toHaveLength(38)
   })
 
-  it('시드로 준 accent 는 그대로 쓴다', () => {
-    const tokens = deriveTheme(LIGHT_SEED)
-    expect(tokens.primary).toBe('#F58B0F')
-    expect(tokens.secondary).toBe('#F7D00D')
-    expect(tokens.third).toBe('#CA763A')
-  })
-
   it('overrides 가 파생값을 이긴다', () => {
     const tokens = deriveTheme({ ...LIGHT_SEED, overrides: { bg: '#F2F0E2', text: '#241208' } })
     expect(tokens.bg).toBe('#F2F0E2')

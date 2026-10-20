@@ -7,6 +7,7 @@
 
 import {
   isInvalidApiKeyError,
+  NexonApiError,
   NexonBadRequestError,
   NexonNoCharacterError,
   NexonRateLimitError,
@@ -45,6 +46,10 @@ export type ScheduleSyncError =
 // `getCharacterPickerRoster` 의 catch 에서 이것을 통과시켜 loadError 로 내려준다.
 export function toScheduleSyncError(error: unknown, apiKey?: string): ScheduleSyncError {
   const 실은키 = apiKey === undefined ? {} : { apiKey }
+  // 앱에 든 개발자 키의 실패는 사용자가 고칠 수 없다. 키 탓으로 접으면 확인이 사용자의 API 키를 지운다.
+  if (error instanceof NexonApiError && error.developerKey !== undefined && isDeveloperKeyProblem(error)) {
+    return { kind: 'network' }
+  }
   // 401/403 만이 아니라 400 OPENAPI00005 도 무효 키다. 판정은 nexon/errors 한 곳.
   // **이 분기가 400 분기보다 앞이어야 한다**. 아래 NexonBadRequestError 검사에 먼저 걸리면
   // 00005 가 "모르는 400" 으로 network 에 흡수돼 원래 결함으로 되돌아간다.
@@ -79,4 +84,9 @@ export function toScheduleSyncError(error: unknown, apiKey?: string): ScheduleSy
     }
   }
   return { kind: 'network', ...실은키 }
+}
+
+/** 키 자체가 막힌 실패. 무효(401/403 · 400 `OPENAPI00005`)거나 한도 초과(429)다. */
+function isDeveloperKeyProblem(error: unknown): boolean {
+  return isInvalidApiKeyError(error) || error instanceof NexonRateLimitError
 }

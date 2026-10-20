@@ -48,14 +48,4 @@ describe('rnStatusBarPort', () => {
       'dark-content',
     ])
   })
-
-  it('두 입력이 서로 다른 값으로 간다', async () => {
-    const setBarStyle = spyOnSetBarStyle()
-
-    await rnStatusBarPort.setStyle(true)
-    await rnStatusBarPort.setStyle(false)
-
-    const [dark, light] = setBarStyle.mock.calls.map(([style]) => style)
-    expect(dark).not.toBe(light)
-  })
 })

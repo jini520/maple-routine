@@ -63,12 +63,6 @@ describe('토픽 구독', () => {
 // 앱이 뜰 때 시작해 비동기로 끝나므로, 그 사이에 누르면 구독이
 // `No APNS token specified before fetching FCM Token` 으로 던진다(실기기 관측 2026-09-10).
 describe('APNs 토큰을 기다린다', () => {
-  it('토큰이 있으면 바로 건다', async () => {
-    await rnPushPort.subscribe('notice-game')
-
-    expect(subscribe).toHaveBeenCalledWith(expect.anything(), 'notice-game')
-  })
-
   it('토큰이 늦게 오면 기다렸다 건다', async () => {
     apnsToken.mockResolvedValueOnce(null).mockResolvedValue('apns-token')
 

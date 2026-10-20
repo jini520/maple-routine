@@ -28,7 +28,7 @@ import { renderOverlay, type AtomElement } from '../../../components/__tests__/r
 import { SettingsScreen } from '../SettingsScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 import { refreshNoticeKinds } from '../../../features/notice/notice-feed'
-import { getNotices } from '../../../storage/notices'
+import { readNoticeCopy } from '../../../features/notice/notice-copy'
 import { hasNexonLogin } from '../../../features/auth/saved-key'
 import type { Notice, NoticeKind } from '../../../types/notice'
 
@@ -46,7 +46,11 @@ jest.mock('../../../features/tracking-mode/store', () => ({ useTrackingModeStore
 jest.mock('../../../features/settings/cache-data', () => ({ loadCacheDataSizes: jest.fn() }))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 // 소식은 사본을 먼저 그리고 분류마다 받은 것으로 바꾼다. 분류를 나누는 함수는 실물이다.
-jest.mock('../../../storage/notices', () => ({ __esModule: true, getNotices: jest.fn() }))
+jest.mock('../../../features/notice/notice-copy', () => ({
+  __esModule: true,
+  ...jest.requireActual('../../../features/notice/notice-copy'),
+  readNoticeCopy: jest.fn(),
+}))
 // 넥슨 로그인 버튼이 이 화면 맨 위에 선다. 화면은 `features/` 를 거치고 저장소·브라우저 세션은
 // 그 아래가 맡는다(CLAUDE.md CRITICAL).
 jest.mock('../../../features/auth/saved-key', () => ({ hasNexonLogin: jest.fn() }))
@@ -184,7 +188,7 @@ const mockedSignInWithNexon = (
     useAuthStore: (s: (v: { signInWithNexonAccount: jest.Mock }) => unknown) => unknown
   }
 ).useAuthStore((state) => state.signInWithNexonAccount) as jest.Mock
-const mockedGetNotices = jest.mocked(getNotices)
+const mockedReadNoticeCopy = jest.mocked(readNoticeCopy)
 const mockedRefreshKinds = jest.mocked(refreshNoticeKinds)
 
 /**
@@ -254,7 +258,7 @@ beforeEach(() => {
   mockLoadContentTracked.mockResolvedValue(undefined)
   mockLoadBossTracked.mockResolvedValue(undefined)
   mockLoadProfitTracked.mockResolvedValue(undefined)
-  mockedGetNotices.mockResolvedValue([])
+  mockedReadNoticeCopy.mockResolvedValue([])
   // 기본은 "영원히 받는 중". 받은 결과가 필요한 케이스만 따로 세운다.
   mockedRefreshKinds.mockReturnValue(new Promise(() => {}))
   // 기본은 "로그인이 아직 없다". 버튼이 서는 쪽이 통상 경로다.
@@ -478,7 +482,7 @@ describe('SettingsScreen: 소식 갈래', () => {
 
   // 보여줄 것이 있으면 기다리게 하지 않는다. 사본이 빈 갈래만 스켈레톤으로 남는다.
   it('사본에 글이 있는 갈래는 스켈레톤을 건너뛴다', async () => {
-    mockedGetNotices.mockResolvedValue([notice('app-1', 'app')])
+    mockedReadNoticeCopy.mockResolvedValue([notice('app-1', 'app')])
 
     const view = await renderOverlay(<SettingsScreen />)
 
@@ -495,7 +499,7 @@ describe('SettingsScreen: 소식 갈래', () => {
   })
 
   it('글 갈래는 최근 글을 앱 공지 3 · 게임 공지 3 · 업데이트 2 줄만 보인다', async () => {
-    mockedGetNotices.mockResolvedValue([
+    mockedReadNoticeCopy.mockResolvedValue([
       ...[1, 2, 3, 4].map((n) => notice(`app-${n}`, 'app')),
       ...[1, 2, 3, 4].map((n) => notice(`game-${n}`, 'game')),
       ...[1, 2, 3].map((n) => notice(`update-${n}`, 'update')),
@@ -510,7 +514,7 @@ describe('SettingsScreen: 소식 갈래', () => {
 
   // 사본이 먼저 서고, 받은 분류만 받은 것으로 바뀐다.
   it('사본을 먼저 그리고 받은 목록으로 바꾼다', async () => {
-    mockedGetNotices.mockResolvedValue([notice('game-old', 'game')])
+    mockedReadNoticeCopy.mockResolvedValue([notice('game-old', 'game')])
     let resolveGame: (value: Notice[]) => void = () => {}
     mockedRefreshKinds.mockImplementation(async (_kinds, onReceived) => {
       onReceived('game', await new Promise<Notice[]>((resolve) => (resolveGame = resolve)))
@@ -529,7 +533,7 @@ describe('SettingsScreen: 소식 갈래', () => {
   })
 
   it('실패한 분류는 사본이 그대로 선다', async () => {
-    mockedGetNotices.mockResolvedValue([notice('update-1', 'update')])
+    mockedReadNoticeCopy.mockResolvedValue([notice('update-1', 'update')])
     serveNotices({})
 
     const view = await renderOverlay(<SettingsScreen />)
@@ -539,7 +543,7 @@ describe('SettingsScreen: 소식 갈래', () => {
   })
 
   it('이벤트 · 캐시샵은 배너 줄이고 누르면 상세를 연다', async () => {
-    mockedGetNotices.mockResolvedValue([
+    mockedReadNoticeCopy.mockResolvedValue([
       notice('event-1', 'event', { thumbnailUrl: 'https://file.nexon.com/1' }),
       notice('cashshop-1', 'cashshop', { thumbnailUrl: 'https://file.nexon.com/2' }),
     ])
@@ -552,7 +556,7 @@ describe('SettingsScreen: 소식 갈래', () => {
   })
 
   it('글 줄을 누르면 상세를 연다', async () => {
-    mockedGetNotices.mockResolvedValue([notice('notice-20260915-1', 'app')])
+    mockedReadNoticeCopy.mockResolvedValue([notice('notice-20260915-1', 'app')])
 
     const view = await renderOverlay(<SettingsScreen />)
 

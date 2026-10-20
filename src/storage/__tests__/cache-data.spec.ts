@@ -12,7 +12,9 @@ import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from '../sqlite/db'
 // 한시적 core→app 참조. `features/settings/cache-data` 가 core 로 오면 상대
 // 경로로 돌아온다. 이 파일이 검사하는 `닫기 → 커버 → 리로드` 순서와 storage 쪽
 // 삭제 범위(058)는 같은 계약의 앞뒤라 떼어 놓지 않는다.
-import { clearCacheDataAndReload } from '../../features/settings/cache-data'
+import { clearCacheDataAndReload, showPendingCacheClearNotice } from '../../features/settings/cache-data'
+import { useToastStore } from '../../features/toast/store'
+import { getAuthConfig, setApiKey } from '../api-key'
 
 // 팩토리 밖 이름은 `mock` 접두만 끌어올 수 있고 팩토리가 여러 번 불릴 수 있어, **같은 목을
 // 돌려주는** 멱등 헬퍼로 둔다.
@@ -107,12 +109,9 @@ describe('그룹 ↔ 테이블 분할', () => {
     expect(GENERAL_TABLE_NAMES.filter((table) => records.has(table))).toEqual([])
   })
 
-  // 재조회 표식만 남고 기록이 사라지면 loadPeriod의 isPeriodChecked 가드가
-  // 백필을 건너뛰어, API가 아직 주는 최근 2주치마저 되살릴 수 없게 된다.
-  it('boss_profit_period_checks는 수익 기록과 같은 그룹이다', () => {
+  it('boss_drop_records는 수익 기록과 같은 그룹이다', () => {
     expect(RECORD_TABLE_NAMES).toContain('boss_profit_records')
     expect(RECORD_TABLE_NAMES).toContain('boss_drop_records')
-    expect(RECORD_TABLE_NAMES).toContain('boss_profit_period_checks')
   })
 
   // 기록이 아니라 설정이고, 어느 쪽으로 지워도 위험한 조합이 없다.
@@ -126,11 +125,6 @@ describe('그룹 ↔ 테이블 분할', () => {
   it('손입력 기록 둘은 `기록` 그룹이다. 지워지면 되살릴 길이 없다', () => {
     expect(RECORD_TABLE_NAMES).toContain('income_records')
     expect(RECORD_TABLE_NAMES).toContain('spend_records')
-  })
-
-  it('손입력 기록 둘은 일반 데이터 그룹에 없다', () => {
-    expect(GENERAL_TABLE_NAMES).not.toContain('income_records')
-    expect(GENERAL_TABLE_NAMES).not.toContain('spend_records')
   })
 
   // 이름이 없으면 기록에서 행을 못 만든다(ocid 는 사용자에게 아무 뜻도 없어 대신 안 적는다).
@@ -165,6 +159,16 @@ describe('clearCacheData', () => {
     expect(await prefs.get('theme')).toBe('렌')
     expect(await prefs.get('trackingMode')).toBe('manual')
     expect(await prefs.get('dropEffect')).toBe('off')
+  })
+
+  // 인증 수단은 `authMethods` 에 있다. 옛 `apiKey` 칸이 없는 설치본은 이것을 잃으면 로그인 화면으로 돌아간다.
+  it('인증 수단 목록을 남긴다. 옛 키 칸이 없어도 다시 띄운 앱이 로그인 상태다', async () => {
+    await prefs.remove('apiKey')
+    await setApiKey('새키', '본캐')
+
+    await clearCacheData({ general: true, records: false })
+
+    expect((await getAuthConfig())?.apiKeys.map((key) => key.value)).toEqual(['새키'])
   })
 
   it('보존 키는 어떤 그룹 조합에서도 남는다', async () => {
@@ -317,6 +321,27 @@ describe('clearCacheDataAndReload', () => {
 
   beforeEach(() => {
     callOrder.length = 0
+  })
+
+  // 다시 띄우면 지금 화면이 사라진다. 실패는 표시로 넘겨 다시 띄운 앱이 한 번만 알린다.
+  it('삭제가 실패하면 다시 띄운 뒤 오류 토스트를 한 번 띄운다', async () => {
+    mockDbExecuteMock.mockRejectedValueOnce(new Error('disk'))
+    useToastStore.setState({ toasts: [], queue: [] })
+
+    await clearCacheDataAndReload(ALL, jest.fn())
+    await showPendingCacheClearNotice()
+    await showPendingCacheClearNotice()
+
+    expect(useToastStore.getState().toasts.map((toast) => toast.message)).toEqual(['캐시를 일부만 삭제했습니다'])
+  })
+
+  it('삭제가 성공하면 아무것도 알리지 않는다', async () => {
+    useToastStore.setState({ toasts: [], queue: [] })
+
+    await clearCacheDataAndReload(ALL, jest.fn())
+    await showPendingCacheClearNotice()
+
+    expect(useToastStore.getState().toasts).toEqual([])
   })
 
   it('닫기 → 커버 → 리로드 순으로 부른다', async () => {

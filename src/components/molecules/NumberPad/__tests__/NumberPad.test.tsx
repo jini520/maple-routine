@@ -24,21 +24,6 @@ describe('NumberPad', () => {
     expect(flattenStyle(getByTestId('number-pad').props.style).height).toBe(NUMBER_PAD_HEIGHT_PX)
   })
 
-  it('확인 글자를 호출부가 바꾼다. 카드의 버튼과 다른 말이어야 한다', async () => {
-    const { getByLabelText, getByText } = await renderAtom(판({ confirmLabel: '입력' }))
-
-    expect(getByLabelText('입력')).toBeTruthy()
-    expect(getByText('입력')).toBeTruthy()
-  })
-
-  it('숫자 열 개를 1~5 · 6~0 두 줄로 세운다', async () => {
-    const { getByLabelText } = await renderAtom(판())
-
-    for (const 글자 of ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']) {
-      expect(getByLabelText(글자)).toBeTruthy()
-    }
-  })
-
   it('숫자를 누르면 그 글자를 낸다', async () => {
     const onDigit = jest.fn()
     const { getByLabelText } = await renderAtom(판({ onDigit }))

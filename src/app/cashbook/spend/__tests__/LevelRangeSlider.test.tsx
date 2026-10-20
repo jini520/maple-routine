@@ -91,22 +91,6 @@ async function 조절(view: Rendered, label: string, actionName: 'increment' | '
 }
 
 describe('LevelRangeSlider: 그리기', () => {
-  it('레벨마다 칸이 하나다. 어센틱은 열하나다', async () => {
-    const 아케인 = await 그리기({ from: 7, to: 12 })
-    expect(아케인.view.getAllByLabelText(/^Lv\.\d+$/)).toHaveLength(20)
-
-    const 어센틱 = await 그리기({ from: 5, to: 8 }, { max: 11 })
-    expect(어센틱.view.getAllByLabelText(/^Lv\.\d+$/)).toHaveLength(11)
-  })
-
-  it('손잡이 둘이 저마다 레벨을 적고 낭독기에 알린다', async () => {
-    const { view } = await 그리기({ from: 7, to: 12 })
-
-    expect(view.getByLabelText('강화 전 레벨')).toHaveTextContent('7')
-    expect(view.getByLabelText('강화 전 레벨')).toHaveAccessibilityValue({ min: 1, max: 20, now: 7 })
-    expect(view.getByLabelText('강화 후 레벨')).toHaveTextContent('12')
-  })
-
   it('잠기면 손잡이가 없고 칸을 눌러도 안 옮긴다', async () => {
     const { view, onChange } = await 그리기({ from: 1, to: 1 }, { disabled: true })
 

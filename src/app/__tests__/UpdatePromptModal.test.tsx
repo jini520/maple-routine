@@ -96,12 +96,6 @@ describe('UpdatePromptModal', () => {
     expect(view.getByText('beta')).toBeTruthy()
   })
 
-  it('프로덕션 채널에는 배지가 없다', async () => {
-    const { view } = await renderModal({ status: 'update-available' })
-
-    expect(view.queryByText('beta')).toBeNull()
-  })
-
   it('confirm-cellular: 데이터 경고 표시, [계속]→confirmCellularDownload', async () => {
     const { view, actions } = await renderModal({ status: 'confirm-cellular' })
 

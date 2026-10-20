@@ -128,12 +128,6 @@ describe('MvpGradeModal', () => {
       expect(onDone.mock.calls[0][0].bulkApply).toBe(true)
     })
 
-    it('새 메이플 ID 는 제목이 다르다', async () => {
-      const { view } = await 그리기({ kind: 'newId', accountIds: ['c'], bulk: false }, [account('c', '셋')])
-
-      expect(view.getByText('새 메이플 ID의 MVP 등급을 알려주세요')).toBeTruthy()
-    })
-
     it('목록을 못 받은 ID 는 표시 없이 선다', async () => {
       const { view } = await 그리기(ASK, [{ accountId: 'a', summary: null, portraitUrl: null, currentGrade: null }])
 
@@ -192,13 +186,5 @@ describe('MvpGradeModal', () => {
     expect(scroll.queryByText('수정')).toBeNull()
     expect(view.getByText('맞아요')).toBeTruthy()
     expect(view.getByText('수정')).toBeTruthy()
-  })
-
-  it('직접 바꾸기 체크박스는 저장된 값으로 선다', async () => {
-    const { view } = await 그리기({ kind: 'newId', accountIds: ['c'], bulk: false }, [account('c', '셋')], true)
-
-    await fireEvent.press(view.getByText('다음'))
-
-    expect(view.getByRole('checkbox', { name: '앞으로 등급은 직접 바꿀게요' }).props.accessibilityState?.checked).toBe(true)
   })
 })

@@ -16,7 +16,6 @@ import {
   mergeRecordsIntoRows,
   selectProfitDisplayBosses,
   sortRowsByOcidOrder,
-  sumRowsPayout,
   toRecordedDrop,
   type ProfitBoss,
 } from '../rows'
@@ -138,12 +137,6 @@ describe('buildBossProfitRow', () => {
     expect(buildBossProfitRow('o1', 캐릭터, 자쿰, new Date('2026-09-12T12:00:00+09:00')).priceMeso).toBe(8_080_000)
     expect(buildBossProfitRow('o1', 캐릭터, 자쿰, new Date('2026-09-18T12:00:00+09:00')).priceMeso).toBe(4_040_000)
   })
-
-  it('행의 월드 key 는 캐릭터 프로필의 것이다', () => {
-    const row = buildBossProfitRow('o1', { ...캐릭터, world: '엘리시움', worldKey: 'elysium' }, 자쿰, new Date('2026-09-12T12:00:00+09:00'))
-
-    expect([row.world, row.worldKey]).toEqual(['엘리시움', 'elysium'])
-  })
 })
 
 // 기록의 월드 스냅샷이 이긴다. 이름과 key 는 같은 출처에서 짝으로 온다. 섞으면 이름과 엠블럼 · 한도가 다른 월드를 가리킨다.
@@ -176,16 +169,6 @@ describe('buildRowFromRecord 의 월드', () => {
     const row = buildRowFromRecord({ ...기록, world: null, worldKey: null }, 지금캐릭터, now)
 
     expect([row.world, row.worldKey]).toEqual(['엘리시움', 'elysium'])
-  })
-})
-
-describe('sumRowsPayout', () => {
-  it('payoutMeso를 더한다', () => {
-    expect(sumRowsPayout([row({ payoutMeso: 100 }), row({ payoutMeso: 250 })])).toBe(350)
-  })
-
-  it('빈 배열은 0이다. "기록 없음"과 "0메소"를 호출부가 구분할 수 있게 던지지 않는다', () => {
-    expect(sumRowsPayout([])).toBe(0)
   })
 })
 
@@ -521,15 +504,6 @@ describe('dropShareSeedOf', () => {
       mode: 'even',
       partySize: 4,
       // 비율은 아직 고른 적이 없다. 카드가 쓰는 씨앗(`2 : 3`)이 그대로 놓인다.
-      myShare: 2,
-      sharesTotal: 3,
-    })
-  })
-
-  it('혼자여도 비율 씨앗은 인원을 안 따라간다', () => {
-    expect(dropShareSeedOf(1)).toEqual({
-      mode: 'even',
-      partySize: 1,
       myShare: 2,
       sharesTotal: 3,
     })

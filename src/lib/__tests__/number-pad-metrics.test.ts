@@ -1,9 +1,7 @@
 import {
   CARD_GAP_PX,
-  DEFAULT_KEYBOARD_PX,
   MIN_BOTTOM_INSET_PX,
   MIN_TOP_INSET_PX,
-  NUMBER_PAD_HEIGHT_PX,
   SAFE_MARGIN_PX,
   insetFloorPx,
   resolveNumberPadUse,
@@ -121,17 +119,5 @@ describe('인셋은 바닥을 두고 읽는다', () => {
   it('바닥보다 작으면 바닥을 쓴다', () => {
     expect(insetFloorPx(0, MIN_TOP_INSET_PX)).toBe(MIN_TOP_INSET_PX)
     expect(insetFloorPx(15, MIN_BOTTOM_INSET_PX)).toBe(MIN_BOTTOM_INSET_PX)
-  })
-})
-
-describe('판의 치수', () => {
-  it('두 줄 높이가 여백과 간격을 더한 값이다', () => {
-    // 키 44 두 줄 + 줄 사이 4 + 위아래 여백 6.
-    expect(NUMBER_PAD_HEIGHT_PX).toBe(104)
-  })
-
-  it('플랫폼마다 첫 실행 키보드 기본값이 있다', () => {
-    expect(DEFAULT_KEYBOARD_PX.android).toBe(372)
-    expect(DEFAULT_KEYBOARD_PX.ios).toBe(335)
   })
 })

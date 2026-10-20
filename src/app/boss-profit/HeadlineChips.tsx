@@ -1,25 +1,13 @@
 /**
- * 총 수익 헤드라인 옆의 칩 2종.
- *
- * 결정석 판매 한도 요약(월드별로 집계한다)과 직전 기간 대비 증감(상승 빨강·하락 파랑, 방향이
- * 없으면 테마 색). 둘 다 자기 상자 안에서 끝난다.
+ * 총 수익 헤드라인 옆의 결정석 판매 한도 요약 칩. 월드별로 집계한다.
  */
 import { Image, Pressable, View, useWindowDimensions } from 'react-native'
 
 import { getItemIconUrlByFile, worldEmblemUrl } from '../../lib/assets/asset-lookup'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
-import { computeProfitDelta, formatProfitDeltaBody, formatProfitDeltaLabel } from '../../lib/boss/boss-profit-delta'
-import { formatBossProfitPeriodLabel, getAdjacentPeriodKey } from '../../lib/boss/boss-profit-period'
-import type { BossCycle } from '../../types'
 import type { MonthlyCrystalsByWorld } from '../../features/boss-profit/monthly-crystals'
 
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  Text,
-} from '../../components/atoms'
+import { ChevronDownIcon, ChevronUpIcon, Text } from '../../components/atoms'
 import { PopoverLayer } from '../../components/molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { summarizeWorldCrystals } from './character-groups'
@@ -32,7 +20,7 @@ const BREAKDOWN_GAP = 6
 /** 상자 오른쪽 변과 화면 끝 사이에 남길 최소 여백. */
 const BREAKDOWN_EDGE_GAP = 12
 
-// 결정석 아이콘(주간/월간). 드랍 테이블 항목이 아니라 UI 표시 전용이라 `drop-items.json` 에
+// 결정석 아이콘(주간/월간). 드롭 표 항목이 아니라 UI 표시 전용이라 `drop-items.json` 에
 // 등록하지 않고 파일명으로 직접 조회한다. 파일이 없으면 null. 아이콘만 생략하고 숫자는 그대로 둔다.
 export const WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
 export const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_monthly.webp')
@@ -192,58 +180,5 @@ export function CrystalSummaryChip(props: {
         </PopoverLayer>
       )}
     </>
-  )
-}
-
-// 직전 기간 대비 증감 칩. 금액행 오른쪽에 붙는다. 라벨행이 아니라 금액행(아이콘 32px)이라
-// h-6 제약과 무관하고 헤더 높이가 늘지 않는다.
-//
-// 비교 기준(`previousMeso`)은 스토어가 기록 합만 넘긴 값이다. 조회한 적 없는 기간도 0 이라
-// 이 컴포넌트는 기간 상태를 전혀 보지 않는다.
-export function DeltaChip(props: {
-  totalMeso: number
-  previousMeso: number
-  tab: BossCycle
-  periodKey: string
-  now: Date
-}): React.JSX.Element {
-  const delta = computeProfitDelta(props.totalMeso, props.previousMeso)
-  const previousLabel = formatBossProfitPeriodLabel(
-    props.tab,
-    getAdjacentPeriodKey(props.tab, props.periodKey, 'prev'),
-    props.now,
-  ).primary
-
-  // 방향이 없는 상태(같음)에는 신호색을 쓰지 않는다. 빨강도 파랑도 거짓이다.
-  const tone =
-    delta.direction === 'same'
-      ? 'bg-primary-tint'
-      : delta.direction === 'up'
-        ? 'bg-rise-tint'
-        : 'bg-fall-tint'
-  const ink =
-    delta.direction === 'same'
-      ? 'text-primary-ink'
-      : delta.direction === 'up'
-        ? 'text-rise-ink'
-        : 'text-fall-ink'
-
-  return (
-    // 화살표·색은 의미를 전하지 못하므로 칩 전체에 문장을 준다. `leading-none` 이 없으면 글꼴
-    // line-height 가 실려 h-5 를 넘긴다.
-    <View
-      role="img"
-      aria-label={formatProfitDeltaLabel(delta, previousLabel)}
-      className={`ml-2 h-5 shrink-0 flex-row items-center gap-0.5 rounded-full px-1.5 ${tone}`}
-    >
-      {/* 'same' 에는 방향 표식을 그리지 않는다. 표기 "-" 자체가 표식이라 겹친다. */}
-      {delta.direction === 'up' && <ArrowUpIcon className={`h-2.5 w-2.5 shrink-0 ${ink}`} strokeWidth={3} aria-hidden />}
-      {delta.direction === 'down' && (
-        <ArrowDownIcon className={`h-2.5 w-2.5 shrink-0 ${ink}`} strokeWidth={3} aria-hidden />
-      )}
-      <Text className={`text-11 font-bold leading-none ${ink}`} style={TABULAR_NUMS}>
-        {formatProfitDeltaBody(delta)}
-      </Text>
-    </View>
   )
 }
