@@ -36,14 +36,15 @@ describe('TotalCard', () => {
     expect(view.queryByTestId('donut-slice-b')).toBeNull()
   })
 
-  // 모두 0 이면 빈 상태임을 보이려고 모든 캐릭터를 흐린 0억 으로 적는다.
-  it('모든 캐릭터가 0 이면 모두 적는다', async () => {
+  // 0 인 캐릭터는 예외 없이 그리지 않는다. 가운데 캐릭터 수도 금액이 있는 캐릭터만 센다(사용자 지정).
+  it('모든 캐릭터가 0 이면 범례를 비우고 가운데는 캐릭터 0 이다', async () => {
     const view = await renderOverlay(
       <TotalCard characters={characters(3).map((one) => ({ ...one, meso: 0 }))} bossCount={0} selectedOcid="ocid-1" />,
     )
 
-    expect(legendOrder(view)).toEqual(['ocid-1', 'ocid-2', 'ocid-3'])
+    expect(view.queryAllByTestId(/^calculator-legend-/)).toHaveLength(0)
     expect(view.getByTestId('donut-empty')).toBeTruthy()
+    expect(view.getByTestId('calculator-donut-count').props.children).toBe(0)
   })
 
   it('다섯 캐릭터면 모두 제 이름으로 적고 묶지 않는다', async () => {

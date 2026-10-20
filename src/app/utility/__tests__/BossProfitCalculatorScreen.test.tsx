@@ -81,10 +81,10 @@ beforeEach(() => {
   mockShowSuccess.mockClear()
 })
 
-/** 고른 캐릭터(ocid-1)를 더 보기 메뉴의 보스 관리 값 가져오기로 채운다 */
+/** 고른 캐릭터(ocid-1)를 더 보기 메뉴의 스케줄러 데이터 가져오기로 채운다 */
 async function importSelected(view: Awaited<ReturnType<typeof renderOverlay>>): Promise<void> {
   await press(view.getByLabelText('더 보기'))
-  await press(view.getByLabelText('보스 관리 값 가져오기'))
+  await press(view.getByLabelText('스케줄러 데이터 가져오기'))
 }
 
 describe('BossProfitCalculatorScreen', () => {
@@ -98,7 +98,7 @@ describe('BossProfitCalculatorScreen', () => {
     expect(view.getByTestId('calculator-character-total').props.children).toBe('0')
   })
 
-  it('보스 관리 값 가져오기는 고른 캐릭터만 채우고, 바닥에 그 캐릭터의 수익이 선다', async () => {
+  it('스케줄러 데이터 가져오기는 고른 캐릭터만 채우고, 바닥에 그 캐릭터의 수익이 선다', async () => {
     const view = await renderOverlay(<BossProfitCalculatorScreen />)
     const now = new Date()
     const 루시드 = bossPayoutMeso({ bossKey: 'lucid', difficulty: 'hard', partySize: 1, shares: EVEN }, now)
