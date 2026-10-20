@@ -1,5 +1,5 @@
 /**
- * 보스 고르기의 본문. 첫 줄에 캐릭터 자리와 `모든 보스` 토글, 그 아래 보스 타일 묶음.
+ * 보스 고르기의 본문. 캐릭터 자리와 `모든 보스` 토글, 그 아래 보스 타일 묶음.
  *
  * 묶음마다 흰 카드에 5열로 타일을 놓는다. 고른 타일은 초상 오른쪽 아래에 체크 원이 붙는다. 다시 누르면 빠진다.
  * 파티 스케줄과 주간 보스 수익 계산기가 함께 쓰고, 화면마다 다른 것(캐릭터 자리 · 묶음 · 잠긴 타일)은 여는 쪽이 넘긴다.
@@ -30,6 +30,8 @@ export interface BossPickerTileGroup {
 export interface BossPickerBodyProps {
   /** 첫 줄 왼쪽. 파티 스케줄은 캐릭터 드롭다운, 계산기는 바꿀 수 없는 캐릭터다 */
   character: React.ReactNode
+  /** `모든 보스` 토글을 캐릭터 아랫줄에 둔다. 파티 스케줄의 드롭다운은 화면 폭을 다 써야 해서 한 줄에 둘 수 없다 */
+  toggleBelow?: boolean
   groups: readonly BossPickerTileGroup[]
   isSelected: (tile: PickerTile) => boolean
   /** 고를 수 없는 타일. 흐리게 그리고 눌러도 부르지 않는다 */
@@ -151,15 +153,25 @@ function TileGroup(props: {
 
 export function BossPickerBody(props: BossPickerBodyProps): React.JSX.Element {
   const [showAll, setShowAll] = useState(false)
+  const toggle = (
+    <Switch on={showAll} label="모든 보스" onToggle={() => setShowAll(!showAll)} className="gap-2">
+      <Text className="text-xs font-semibold text-text-muted">모든 보스</Text>
+    </Switch>
+  )
 
   return (
     <View className="gap-3 px-4">
-      <View className="flex-row items-center justify-between gap-3">
-        <View className="min-w-0 flex-1">{props.character}</View>
-        <Switch on={showAll} label="모든 보스" onToggle={() => setShowAll(!showAll)} className="gap-2">
-          <Text className="text-xs font-semibold text-text-muted">모든 보스</Text>
-        </Switch>
-      </View>
+      {props.toggleBelow === true ? (
+        <>
+          <View testID="boss-picker-character-row">{props.character}</View>
+          <View className="items-end">{toggle}</View>
+        </>
+      ) : (
+        <View testID="boss-picker-character-row" className="flex-row items-center justify-between gap-3">
+          <View className="min-w-0 flex-1">{props.character}</View>
+          {toggle}
+        </View>
+      )}
       {props.groups
         .filter((group) => group.onlyWithAll !== true || showAll)
         .map((group) => (

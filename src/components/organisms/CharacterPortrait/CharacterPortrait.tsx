@@ -45,6 +45,8 @@ export interface RailPortraitProps extends CommonProps {
   level: number | null
   /** 0개면 링 없음, 1개면 온전한 원, 2개면 좌·우 반원. 셋 이상은 못 읽어서 안 받는다. */
   rings: [] | [PortraitRingProgress] | [PortraitRingProgress, PortraitRingProgress]
+  /** 링이 없을 때 세우는 빈 링의 두께. 기본 `thin`. `thick` 은 진행 링과 같은 두께다 */
+  emptyRing?: 'thin' | 'thick'
   /** 조회할 수 없게 된 캐릭터. 칸 아래에 `조회 불가` 가 붙고 레벨·진행도는 마지막으로 본 값이 된다. */
   unavailable?: boolean
   isSelected: boolean
@@ -169,7 +171,10 @@ function RailPortrait(props: RailPortraitProps): React.JSX.Element {
           viewBox={`0 0 ${PORTRAIT_RAIL.slotW} ${PORTRAIT_RAIL.slotH}`}
         >
           {props.rings.length === 0 && (
-            <EmptyRing color={props.isSelected ? definition.primary : definition.border} />
+            <EmptyRing
+              color={props.isSelected ? definition.primary : definition.border}
+              strokeWidth={props.emptyRing === 'thick' ? PORTRAIT_RAIL.ringStroke : PORTRAIT_RAIL.emptyRingStroke}
+            />
           )}
 
           {props.rings.length === 1 && (

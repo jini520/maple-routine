@@ -391,6 +391,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   const bossesBody = (
     <BossPickerBody
       character={<PickerCharacterSelect characters={picker.characters} ocid={picker.ocid} onSelect={picker.setOcid} />}
+      toggleBelow
       groups={[
         { key: 'party', label: '파티', tiles: picker.sections.party },
         { key: 'scheduler', label: '스케줄러', tiles: picker.sections.scheduler },

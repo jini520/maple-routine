@@ -1,5 +1,5 @@
 // 보스 고르기 본문. 파티 스케줄과 주간 보스 수익 계산기가 함께 쓴다.
-import { fireEvent } from '@testing-library/react-native'
+import { fireEvent, within } from '@testing-library/react-native'
 import { Text } from 'react-native'
 
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
@@ -28,6 +28,14 @@ describe('BossPickerBody', () => {
     const view = await renderAtom(<BossPickerBody {...props()} />)
 
     expect(view.getByText('낟낟')).toBeTruthy()
+    expect(view.getByLabelText('모든 보스')).toBeTruthy()
+  })
+
+  // 파티 스케줄은 드롭다운이 화면 폭을 다 쓴다. 토글을 한 줄에 두면 드롭다운이 좁아진다(사용자 지적).
+  it('토글을 아랫줄에 두라고 하면 캐릭터 줄에 토글이 없다', async () => {
+    const view = await renderAtom(<BossPickerBody {...props({ toggleBelow: true })} />)
+
+    expect(within(view.getByTestId('boss-picker-character-row')).queryByLabelText('모든 보스')).toBeNull()
     expect(view.getByLabelText('모든 보스')).toBeTruthy()
   })
 

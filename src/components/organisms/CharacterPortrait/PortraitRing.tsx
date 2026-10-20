@@ -50,7 +50,7 @@ function FullRing(props: { testID: string; color: string }): React.JSX.Element {
  * 얼굴 `View` 의 `borderWidth` 로 안 그리는 것은 그만큼 이미지가 안으로 밀려 그 칸의 얼굴만
  * 작아 보이기 때문이다.
  */
-export function EmptyRing(props: { color: string }): React.JSX.Element {
+export function EmptyRing(props: { color: string; strokeWidth: number }): React.JSX.Element {
   return (
     <Circle
       testID="portrait-empty-ring"
@@ -59,7 +59,7 @@ export function EmptyRing(props: { color: string }): React.JSX.Element {
       r={PORTRAIT_RAIL.ringR}
       fill="none"
       stroke={props.color}
-      strokeWidth={PORTRAIT_RAIL.emptyRingStroke}
+      strokeWidth={props.strokeWidth}
     />
   )
 }

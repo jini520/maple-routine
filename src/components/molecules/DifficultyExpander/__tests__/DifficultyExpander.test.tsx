@@ -30,6 +30,15 @@ describe('DifficultyExpander', () => {
     expect(flattenStyle(view.getByLabelText('스우 하드').props.style).opacity).toBeUndefined()
   })
 
+  // 펼친 줄이 옆의 스테퍼에 가려 잘리면 안 된다. RN 은 나중 형제를 위에 그리므로 이 부품이 형제보다 위에 서야 한다.
+  it('펼친 동안 형제 UI 보다 위에 선다', async () => {
+    const view = await render()
+
+    await fireEvent.press(view.getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
+
+    expect(flattenStyle(view.getByTestId('difficulty-expander').props.style).zIndex as number).toBeGreaterThan(0)
+  })
+
   it('펼친 뒤 고르면 그 난이도를 알린다', async () => {
     const onChange = jest.fn()
     const view = await render(onChange)
