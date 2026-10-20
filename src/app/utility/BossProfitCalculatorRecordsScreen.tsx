@@ -96,7 +96,7 @@ export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
                     role="button"
                     aria-label={`${title.date} ${title.time} 기록 열기`}
                     onPress={() => {
-                      openRecord(record.id, new Date())
+                      openRecord(record.id)
                       navigation.goBack()
                     }}
                     className="flex-1 gap-2 py-2.5 pl-[18px] pr-2 active:opacity-60"

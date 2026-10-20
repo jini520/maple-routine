@@ -12,7 +12,40 @@ function characters(count: number): TotalCardCharacter[] {
   }))
 }
 
+/** 범례 줄의 testID 차례 */
+function legendOrder(view: Awaited<ReturnType<typeof renderOverlay>>): string[] {
+  return view.getAllByTestId(/^calculator-legend-/).map((node) => String(node.props.testID).replace('calculator-legend-', ''))
+}
+
 describe('TotalCard', () => {
+  it('금액이 큰 캐릭터부터 늘어놓고, 금액이 0 인 캐릭터는 그리지 않는다', async () => {
+    const view = await renderOverlay(
+      <TotalCard
+        characters={[
+          { ocid: 'a', name: '가', meso: 100_000_000 },
+          { ocid: 'b', name: '나', meso: 0 },
+          { ocid: 'c', name: '다', meso: 300_000_000 },
+        ]}
+        bossCount={3}
+        selectedOcid="a"
+      />,
+    )
+
+    expect(legendOrder(view)).toEqual(['c', 'a'])
+    expect(view.queryByText('나')).toBeNull()
+    expect(view.queryByTestId('donut-slice-b')).toBeNull()
+  })
+
+  // 모두 0 이면 빈 상태임을 보이려고 모든 캐릭터를 흐린 0억 으로 적는다.
+  it('모든 캐릭터가 0 이면 모두 적는다', async () => {
+    const view = await renderOverlay(
+      <TotalCard characters={characters(3).map((one) => ({ ...one, meso: 0 }))} bossCount={0} selectedOcid="ocid-1" />,
+    )
+
+    expect(legendOrder(view)).toEqual(['ocid-1', 'ocid-2', 'ocid-3'])
+    expect(view.getByTestId('donut-empty')).toBeTruthy()
+  })
+
   it('다섯 캐릭터면 모두 제 이름으로 적고 묶지 않는다', async () => {
     const view = await renderOverlay(<TotalCard characters={characters(5)} bossCount={10} selectedOcid="ocid-1" />)
 

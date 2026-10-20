@@ -29,9 +29,9 @@ interface BossProfitCalculatorState {
   /** 지금 계산기에 띄운 기록. 저장할 때 덮을지 물을지 가른다 */
   openedId: string | null
   bossesByOcid: Record<string, CalculatorBoss[]>
-  /** 계산기를 열 때. 가장 최근 기록으로 채우고, 기록이 없으면 보스 관리 값이다 */
-  open: (now: Date) => Promise<void>
-  openRecord: (id: string, now: Date) => void
+  /** 계산기에 들어올 때. 모든 캐릭터가 빈 상태가 되고 기록 목록만 읽는다 */
+  open: () => Promise<void>
+  openRecord: (id: string) => void
   deleteRecord: (id: string) => Promise<void>
   save: (mode: CalculatorSaveMode, now: Date) => Promise<void>
   importFromBossManage: (ocid: string, now: Date) => void
@@ -75,16 +75,11 @@ function bossesFromBossManage(ocid: string, now: Date): CalculatorBoss[] {
   return keepTopByPayout(bosses, now)
 }
 
-/**
- * 기록이 있으면 그 값이고, 기록에 없는 캐릭터(기록 뒤에 추적을 시작한 캐릭터)는 보스 없이 연다. 기록은 남긴 그때의 계산이다.
- * 기록이 없으면 캐릭터마다 보스 관리 값이다.
- */
-function bossesOfRecord(record: BossProfitCalculatorRecord | undefined, now: Date): Record<string, CalculatorBoss[]> {
+/** 기록에 있는 캐릭터는 기록 값, 기록을 남긴 뒤에 추적을 시작한 캐릭터는 빈 상태. 기록은 남긴 그때의 계산이다 */
+function bossesOfRecord(record: BossProfitCalculatorRecord): Record<string, CalculatorBoss[]> {
   const byOcid: Record<string, CalculatorBoss[]> = {}
   for (const character of useBossSchedulerStore.getState().characters) {
-    const saved = record?.characters.find((one) => one.ocid === character.ocid)
-    byOcid[character.ocid] =
-      record === undefined ? bossesFromBossManage(character.ocid, now) : (saved?.bosses ?? [])
+    byOcid[character.ocid] = record.characters.find((one) => one.ocid === character.ocid)?.bosses ?? []
   }
   return byOcid
 }
@@ -99,16 +94,15 @@ export const useBossProfitCalculatorStore = create<BossProfitCalculatorState>()(
   openedId: null,
   bossesByOcid: {},
 
-  async open(now) {
-    const records = newestFirst(await getBossProfitCalculatorRecords())
-    const latest = records[0]
-    set({ loaded: true, records, openedId: latest?.id ?? null, bossesByOcid: bossesOfRecord(latest, now) })
+  async open() {
+    // 늘 빈 상태로 연다. 캐릭터 하나만 따져 볼 때 다른 캐릭터의 값을 먼저 걷어 내지 않아도 되게 하려는 것이다.
+    set({ loaded: true, records: newestFirst(await getBossProfitCalculatorRecords()), openedId: null, bossesByOcid: {} })
   },
 
-  openRecord(id, now) {
+  openRecord(id) {
     const record = get().records.find((one) => one.id === id)
     if (record === undefined) return
-    set({ openedId: id, bossesByOcid: bossesOfRecord(record, now) })
+    set({ openedId: id, bossesByOcid: bossesOfRecord(record) })
   },
 
   async deleteRecord(id) {

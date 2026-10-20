@@ -5,13 +5,14 @@
  * 상태와 기록은 `features/boss-profit-calculator` 가 들고, 여기서 고친 값은 보스 관리에 쓰지 않는다.
  * 금액은 값을 고칠 때마다 바로 다시 세므로 계산 버튼이 없다.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { FileTextIcon, HistoryIcon, PlusIcon, Text } from '../../components/atoms'
+import { Badge, EllipsisIcon, FileTextIcon, HistoryIcon, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { AnchoredPopover } from '../../components/molecules/Popover/Popover'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
@@ -27,9 +28,18 @@ import { useCharacterSelectionStore } from '../../features/character-selection/s
 import type { PickerTile } from '../../features/party-appointments/boss-picker'
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
+import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { bossPayoutMeso, totalPayoutMeso, type CalculatorBoss } from '../../lib/boss/boss-profit-calculator'
-import { activeDifficultiesNow, bossAliasOf, bossNameOf, bossPortraitSlugOf, getMaxPartySize } from '../../lib/boss/bosses'
+import {
+  activeDifficultiesNow,
+  bossAliasOf,
+  bossNameOf,
+  bossPortraitSlugOf,
+  getMaxPartySize,
+  isSeasonBoss,
+  WEEKLY_BOSS_CLEAR_LIMIT,
+} from '../../lib/boss/bosses'
 import { formatMesoUnits } from '../../lib/drop/drop-price'
 import { useBottomSafeAreaPx } from '../../lib/safe-area'
 import { boxShadowOf, type ShadowLayer } from '../../lib/shadow'
@@ -39,6 +49,9 @@ import { BossRow } from './boss-profit-calculator/BossRow'
 import { CalculatorBossPickerSheet } from './boss-profit-calculator/CalculatorBossPickerSheet'
 import { TotalCard } from './boss-profit-calculator/TotalCard'
 import { BOSS_PROFIT_CALCULATOR_TOOL_NAME } from './tool-names'
+
+/** 바닥 고정 영역이 내용 위로 드리우는 그림자. 구분선 대신 이것이 둘을 가른다 */
+const BAR_SHADOW: ShadowLayer = { opacity: 0.23, radius: 12, y: -10 }
 
 /** 면 카드의 그림자 두 겹. 테두리가 없어 이것이 카드를 바탕에서 띄운다 */
 const CARD_LIFT: readonly ShadowLayer[] = [
@@ -59,6 +72,9 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [partyBossKey, setPartyBossKey] = useState<string | null>(null)
   const [askingSave, setAskingSave] = useState(false)
+  const menuRef = useRef<View>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuAnchor, setMenuAnchor] = useState<PopoverAnchorRect | null>(null)
 
   // 보스 관리 값이 첫 값이 될 수 있어 스케줄러 스토어부터 채운다. 보스 관리 화면과 같다.
   useEffect(() => {
@@ -66,13 +82,17 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // 캐릭터를 읽은 뒤에 연다. 그 전에 열면 보스 관리 값으로 채울 캐릭터가 없다. 동기화가 실패해도(`error`)
-  // 스토어는 마지막으로 본 캐릭터를 들고 있으므로 그 값으로 연다.
+  // 화면에 들어올 때마다 모든 캐릭터가 빈 상태로 연다. 계산 기록 화면은 이 화면 위에 쌓여 다녀와도 다시 열리지 않는다.
+  // 캐릭터를 읽은 뒤에 연다. 동기화가 실패해도(`error`) 스토어는 마지막으로 본 캐릭터를 들고 있다.
   const schedulerSettled =
     scheduler.status === 'loaded' || scheduler.status === 'error' || scheduler.characters.length > 0
+  const openedHere = useRef(false)
+  const { open } = calculator
   useEffect(() => {
-    if (schedulerSettled && !calculator.loaded) void calculator.open(new Date())
-  }, [schedulerSettled, calculator])
+    if (!schedulerSettled || openedHere.current) return
+    openedHere.current = true
+    void open()
+  }, [schedulerSettled, open])
 
   const characters = orderByTracked(scheduler.characters, scheduler.trackedOcids ?? [])
   const selected = resolveSelectedCharacter(selectedOcid, characters)
@@ -113,6 +133,8 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
 
   const selectedName = selected === null ? '' : selected.characterName
   const selectedTotal = totalPayoutMeso(selectedBosses, now)
+  // 시즌 보스는 주간 12개 한도에 세지 않는다.
+  const countedBosses = selectedBosses.filter((boss) => !isSeasonBoss(boss.bossKey)).length
 
   return (
     <View className="flex-1">
@@ -162,7 +184,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                 selectedOcid={selected.ocid}
                 style={cardShadow}
               />
-              <View className="pt-3.5">
+              <View className="pb-4 pt-3.5">
                 <CharacterRail
                   entries={railEntries}
                   selectedOcid={selected.ocid}
@@ -171,79 +193,56 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                 />
               </View>
 
-              {selectedBosses.length === 0 ? (
-                <View className="mx-4 mt-1.5 flex-row items-center justify-between rounded-[22px] bg-surface p-[18px]" style={cardShadow}>
-                  <View className="flex-1">
-                    <Text className="text-15 font-bold text-text">{selectedName}</Text>
-                    <Text className="text-xs text-text-muted">이 캐릭터가 잡을 보스를 선택하세요</Text>
+              <View className="mx-4 rounded-[22px] bg-surface pb-1.5" style={cardShadow}>
+                {/* 보스가 있든 없든 같은 머리로 시작한다. 빈 상태와 보스가 있는 상태가 같은 카드라 화면이 덜 바뀐다. */}
+                <View className="flex-row items-center gap-2 pb-2.5 pl-4 pr-3 pt-3.5">
+                  <View className="flex-1 flex-row">
+                    {selectedBosses.length === 0 ? (
+                      <Text className="text-xs text-text-muted">이 캐릭터가 잡을 보스를 선택하세요</Text>
+                    ) : (
+                      <Badge testID="calculator-boss-count" variant="primary" style={TABULAR_NUMS}>
+                        {`${countedBosses} / ${WEEKLY_BOSS_CLEAR_LIMIT}`}
+                      </Badge>
+                    )}
                   </View>
                   <Pressable
                     role="button"
                     aria-label="보스 선택"
                     onPress={() => setPickerOpen(true)}
-                    className="h-10 justify-center rounded-full bg-primary-tint px-4 active:opacity-60"
+                    className="h-7 justify-center rounded-full bg-primary-tint px-[11px] active:opacity-60"
                   >
-                    <Text className="text-13 font-bold text-primary-ink">보스 선택</Text>
+                    <Text className="text-xs font-bold text-primary-ink">보스 선택</Text>
+                  </Pressable>
+                  <Pressable
+                    ref={menuRef}
+                    role="button"
+                    aria-label="더 보기"
+                    onPress={() => {
+                      setMenuOpen(true)
+                      menuRef.current?.measureInWindow((left, top, width, height) => setMenuAnchor({ left, top, width, height }))
+                    }}
+                    className="h-7 w-7 items-center justify-center rounded-full bg-bg active:opacity-60"
+                  >
+                    <EllipsisIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
                   </Pressable>
                 </View>
-              ) : (
-                <>
-                  <View className="flex-row items-center gap-2.5 pb-2.5 pl-5 pr-4 pt-1.5">
-                    <CharacterAvatar imageUrl={selected.imageUrl ?? null} name={selectedName} size={36} className="bg-surface-2" />
-                    <View className="flex-1">
-                      <Text className="text-15 font-bold text-text">{selectedName}</Text>
-                      <Text testID="calculator-character-summary" className="text-xs text-text-muted" style={TABULAR_NUMS}>
-                        보스 {selectedBosses.length} · {formatMesoUnits(selectedTotal)}
-                      </Text>
-                    </View>
-                    <Pressable
-                      role="button"
-                      aria-label="보스 선택"
-                      onPress={() => setPickerOpen(true)}
-                      className="h-9 flex-row items-center gap-1 rounded-full bg-primary-tint px-3.5 active:opacity-60"
-                    >
-                      <PlusIcon className="h-3.5 w-3.5 text-primary-ink" strokeWidth={2.5} aria-hidden />
-                      <Text className="text-13 font-bold text-primary-ink">보스 선택</Text>
-                    </Pressable>
-                  </View>
-                  <View className="mx-4 rounded-[22px] bg-surface py-1" style={cardShadow}>
-                    <View className="flex-row items-center justify-end gap-1 px-2 pt-1">
-                      <Pressable
-                        role="button"
-                        aria-label="보스 관리 값 가져오기"
-                        onPress={() => calculator.importFromBossManage(selected.ocid, new Date())}
-                        className="h-7 justify-center px-1.5 active:opacity-60"
-                      >
-                        <Text className="text-xs font-semibold text-text-muted">보스 관리 값 가져오기</Text>
-                      </Pressable>
-                      <Pressable
-                        role="button"
-                        aria-label="초기화"
-                        onPress={() => calculator.clearCharacter(selected.ocid)}
-                        className="h-7 justify-center px-1.5 active:opacity-60"
-                      >
-                        <Text className="text-xs font-semibold text-text-muted">초기화</Text>
-                      </Pressable>
-                    </View>
-                    {selectedBosses.map((boss) => (
-                      <BossRow
-                        key={boss.bossKey}
-                        boss={boss}
-                        payoutMeso={bossPayoutMeso(boss, now)}
-                        onChangeDifficulty={(difficulty) =>
-                          calculator.updateBoss(selected.ocid, boss.bossKey, {
-                            difficulty,
-                            // 난이도마다 최대 인원이 다르다. 넘는 인원은 그 난이도의 최대로 내린다.
-                            partySize: Math.min(boss.partySize, getMaxPartySize(boss.bossKey, difficulty)),
-                          })
-                        }
-                        onChangePartySize={(partySize) => calculator.updateBoss(selected.ocid, boss.bossKey, { partySize })}
-                        onOpenParty={() => setPartyBossKey(boss.bossKey)}
-                      />
-                    ))}
-                  </View>
-                </>
-              )}
+                {selectedBosses.map((boss) => (
+                  <BossRow
+                    key={boss.bossKey}
+                    boss={boss}
+                    payoutMeso={bossPayoutMeso(boss, now)}
+                    onChangeDifficulty={(difficulty) =>
+                      calculator.updateBoss(selected.ocid, boss.bossKey, {
+                        difficulty,
+                        // 난이도마다 최대 인원이 다르다. 넘는 인원은 그 난이도의 최대로 내린다.
+                        partySize: Math.min(boss.partySize, getMaxPartySize(boss.bossKey, difficulty)),
+                      })
+                    }
+                    onChangePartySize={(partySize) => calculator.updateBoss(selected.ocid, boss.bossKey, { partySize })}
+                    onOpenParty={() => setPartyBossKey(boss.bossKey)}
+                  />
+                ))}
+              </View>
             </>
           )}
         </View>
@@ -253,10 +252,22 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
       {calculator.loaded && selected !== null && (
         <View
           testID="calculator-save-bar"
-          className="absolute inset-x-0 bottom-0 bg-bg px-4 pt-3"
-          style={{ paddingBottom: bottomSafeAreaPx + 12 }}
+          className="absolute inset-x-0 bottom-0 gap-2.5 bg-bg px-4 pt-3"
+          style={{ paddingBottom: bottomSafeAreaPx + 12, boxShadow: boxShadowOf(definition.shadowColor, BAR_SHADOW) }}
           onLayout={(event) => setBarHeight(event.nativeEvent.layout.height)}
         >
+          {/* 어느 캐릭터의 카드를 보고 있든 그 캐릭터의 합이 늘 같은 자리에 보인다. */}
+          <View className="flex-row items-center gap-2 px-1 py-2">
+            <CharacterAvatar imageUrl={selected.imageUrl ?? null} name={selectedName} size={28} className="bg-surface-2" />
+            <Text className="text-13 font-semibold text-text">{selectedName} 주간 수익</Text>
+            <Text
+              testID="calculator-character-total"
+              className={`ml-auto text-lg font-bold ${selectedTotal === 0 ? 'text-text-disabled' : 'text-text'}`}
+              style={TABULAR_NUMS}
+            >
+              {formatMesoUnits(selectedTotal)}
+            </Text>
+          </View>
           <Pressable
             role="button"
             aria-label="결과 저장"
@@ -320,6 +331,49 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
           }}
           onClose={() => setPartyBossKey(null)}
         />
+      )}
+
+      {menuOpen && selected !== null && (
+        <AnchoredPopover
+          testID="calculator-boss-menu"
+          ariaLabel="보스 카드 메뉴"
+          closeLabel="메뉴 닫기"
+          anchor={menuAnchor}
+          onClose={() => {
+            setMenuOpen(false)
+            setMenuAnchor(null)
+          }}
+          width={184}
+          className="p-1.5"
+        >
+          <Pressable
+            role="menuitem"
+            aria-label="보스 관리 값 가져오기"
+            onPress={() => {
+              calculator.importFromBossManage(selected.ocid, new Date())
+              setMenuOpen(false)
+              setMenuAnchor(null)
+            }}
+            className="h-10 justify-center rounded-[10px] px-3 active:bg-bg"
+          >
+            <Text className="text-13 font-semibold text-text">보스 관리 값 가져오기</Text>
+          </Pressable>
+          {/* 지울 보스가 없으면 초기화를 두지 않는다. */}
+          {selectedBosses.length > 0 && (
+            <Pressable
+              role="menuitem"
+              aria-label="초기화"
+              onPress={() => {
+                calculator.clearCharacter(selected.ocid)
+                setMenuOpen(false)
+                setMenuAnchor(null)
+              }}
+              className="h-10 justify-center rounded-[10px] px-3 active:bg-bg"
+            >
+              <Text className="text-13 font-semibold text-error-ink">초기화</Text>
+            </Pressable>
+          )}
+        </AnchoredPopover>
       )}
 
       {askingSave && (
