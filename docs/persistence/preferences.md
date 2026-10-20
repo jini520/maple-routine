@@ -39,6 +39,7 @@
 | `notificationPermissionAsked` | `'yes'` | `notice-settings.ts` | 보존 | 알림 권한을 물어본 적 있는지. OS 상태로는 알 수 없다 |
 | `partyAlarmEnabled` | `'on'` · `'off'` | `party-appointment-settings.ts` | 보존 | 파티 약속 알림 스위치. 없으면 켜짐 |
 | `partyAppointments` | JSON `PartyAppointment[]` | `party-appointments.ts` | 보존 | 사용자가 적은 파티 약속 |
+| `bossProfitCalculatorRecords` | JSON `BossProfitCalculatorRecord[]` | `boss-profit-calculator-records.ts` | 보존 | 주간 보스 수익 계산기에서 저장한 기록. 금액 없이 보스 · 난이도 · 파티 값만 남긴다 |
 | `notificationLedger` | JSON `{ id, kind, fireAt, title, body }[]` | `notification-ledger.ts` | 보존 | 지금 예약해 둔 로컬 알림. OS 의 예약 목록은 읽을 수 없어서 따로 적는다 |
 | `notices` | JSON `Notice[]` | `notices.ts` | 지운다 | 공지 분류마다 마지막 서버 응답의 사본. 서버가 다시 준다 |
 | `dismissedNotices` | JSON 공지 id 배열(최근 50) | `notice-banner.ts` | 보존 | today 배너에서 닫은 공지. 닫았다는 사실은 기기에만 있다 |

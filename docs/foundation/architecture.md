@@ -91,6 +91,7 @@ src/
 | 광고 | `react-native-google-mobile-ads` | `native/adapters/rn-ads.ts`([[ADR-014]]) |
 | 인앱 브라우저 | `expo-web-browser` | `native/adapters/rn-browser.ts` |
 | 햅틱 | `expo-haptics` | `native/adapters/rn-haptics.ts` |
+| uuid | `expo-crypto` | `native/adapters/rn-uuid.ts`([[ADR-074]] 결정 13) |
 | 스플래시 · 상태바 · 시스템 바 · 키보드 · 뒤로 가기 · 색 모드 · 테마 표면 | Expo 모듈 · 로컬 모듈 `app-system-bars` · `app-background` | `native/adapters/rn-*.ts` |
 | 이미지 내보내기 | `react-native-view-shot` · `expo-sharing` · `expo-media-library` · `expo-file-system` | 아직 없다. 바이너리에만 들어 있다([[ADR-004]] 결정 4) |
 

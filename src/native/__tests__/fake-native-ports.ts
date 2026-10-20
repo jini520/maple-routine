@@ -12,6 +12,7 @@ import {
   setStatusBarPort,
   setSystemBarsPort,
   setThemeAppearancePort,
+  setUuidPort,
 } from '../ports'
 
 /**
@@ -30,6 +31,9 @@ export function installNoopNativePorts(): void {
   // 테스트에서 링크를 눌러도 아무 창도 안 연다. 실제로 무엇으로 불렸는지는 화면 테스트가
   // 이 모듈을 목으로 바꿔 본다.
   setBrowserPort({ open: async () => {}, openAuthSession: async () => null })
+
+  // 테스트 환경은 node 라 표준 함수로 진짜 uuid 를 만든다. 고정값이면 기록 둘이 같은 id 를 갖는다.
+  setUuidPort({ random: () => globalThis.crypto.randomUUID() })
 
   // `matchMedia` 없는 환경의 폴백과 같다. 테스트 기본 환경은 `node` 라 문서도 미디어 쿼리도 없다.
   setColorSchemePort({ get: () => 'light' })

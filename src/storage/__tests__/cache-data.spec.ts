@@ -196,6 +196,15 @@ describe('clearCacheData', () => {
     expect(await prefs.get('mvpLastCheckedWeek')).toBeNull()
   })
 
+  // 계산기 기록은 사용자가 남긴 것이라 재조회로 돌아오지 않는다.
+  it('주간 보스 수익 계산기 기록을 남긴다', async () => {
+    await prefs.set('bossProfitCalculatorRecords', '[]')
+
+    await clearCacheData({ general: true, records: true })
+
+    expect(await prefs.get('bossProfitCalculatorRecords')).toBe('[]')
+  })
+
   // 인자 없는 호출은 선택 삭제 도입 전과 같아야 한다(호출부 호환).
   it('인자 없이 호출하면 두 그룹을 모두 지운다', async () => {
     await clearCacheData()

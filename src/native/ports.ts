@@ -285,6 +285,11 @@ export interface BrowserPort {
   openAuthSession(url: string, redirectUrl: string): Promise<string | null>
 }
 
+/** 기록 id 로 쓰는 uuid(v4). Hermes 에 `crypto.randomUUID` 가 없어 네이티브 모듈이 만든다 */
+export interface UuidPort {
+  random(): string
+}
+
 /**
  * 포트 하나의 보관함. `storage/ports.ts` 와 같은 계약이다. 주입 전 접근은 던지고, 테스트는
  * 되돌릴 수 있다. 포트가 여럿이라 그 계약을 포트마다 손으로 베끼는 대신 한 곳에 두었다.
@@ -326,6 +331,7 @@ const pushSlot = createPortSlot<PushPort>('PushPort')
 const backGestureSlot = createPortSlot<BackGesturePort>('BackGesturePort')
 const liveUpdateSlot = createPortSlot<LiveUpdatePort>('LiveUpdatePort')
 const browserSlot = createPortSlot<BrowserPort>('BrowserPort')
+const uuidSlot = createPortSlot<UuidPort>('UuidPort')
 
 export const setColorSchemePort = colorSchemeSlot.set
 export const getColorSchemePort = colorSchemeSlot.get
@@ -366,6 +372,9 @@ export const getLiveUpdatePort = liveUpdateSlot.get
 export const setBrowserPort = browserSlot.set
 export const getBrowserPort = browserSlot.get
 
+export const setUuidPort = uuidSlot.set
+export const getUuidPort = uuidSlot.get
+
 /** 테스트 전용. 주입된 포트를 전부 비운다(`storage/ports.ts` 의 `__resetStoragePortsForTest` 관례). */
 export function __resetNativePortsForTest(): void {
   for (const slot of [
@@ -382,6 +391,7 @@ export function __resetNativePortsForTest(): void {
     backGestureSlot,
     liveUpdateSlot,
     browserSlot,
+    uuidSlot,
   ]) {
     slot.clear()
   }
