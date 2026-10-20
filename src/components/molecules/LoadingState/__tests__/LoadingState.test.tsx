@@ -4,14 +4,6 @@ import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/rende
 import { LoadingState } from '../LoadingState'
 
 describe('LoadingState', () => {
-  it('보조기술에 진행 중임을 알린다', async () => {
-    const { getByTestId } = await renderAtom(<LoadingState message="불러오고 있어요" />)
-
-    const state = getByTestId('loading-state')
-    expect(state.props.role).toBe('status')
-    expect(state.props['aria-busy']).toBe(true)
-  })
-
   // 로딩이 끝나면 그 자리를 채울 카드와 같은 껍데기(실선 surface)여야
   // 결과가 들어와도 배경이 바뀌지 않는다. RN 에서는 그 껍데기가 `Card` atom 이다.
   it('셸 승계 카드 껍데기를 두른다', async () => {

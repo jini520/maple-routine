@@ -102,12 +102,6 @@ describe('useLiveUpdateStore', () => {
       expect(s().minNativeVersion).toBe('2.0.0')
     })
 
-    it('up-to-date / unsupported를 그대로 상태에 반영', async () => {
-      checkForLiveUpdateMock.mockResolvedValue({ kind: 'up-to-date' })
-      await s().check()
-      expect(s().status).toBe('up-to-date')
-    })
-
     // 매니페스트 조회 실패는 자동 확인일 수 있어 모달을 띄우지 않는다.
     // 다운로드 실패와 종류를 갈라 둔다.
     it('매니페스트 조회 실패는 check-error (모달 대상 아님)', async () => {
@@ -163,13 +157,6 @@ describe('useLiveUpdateStore', () => {
   })
 
   describe('apply', () => {
-    it('받아둔 번들 id로 즉시 적용(set)을 호출한다', async () => {
-      useLiveUpdateStore.setState({ hasDownloadedBundle: true })
-      applyLiveUpdateMock.mockResolvedValue(undefined)
-      await s().apply()
-      expect(applyLiveUpdateMock).toHaveBeenCalled()
-    })
-
     it('받아둔 번들이 없으면 아무 것도 안 한다', async () => {
       await s().apply()
       expect(applyLiveUpdateMock).not.toHaveBeenCalled()

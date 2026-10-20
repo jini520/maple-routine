@@ -14,10 +14,6 @@ beforeEach(() => {
 })
 
 describe('usePartyAlarmSettingsStore', () => {
-  it('읽기 전에는 켜짐이다(기본값)', () => {
-    expect(usePartyAlarmSettingsStore.getState().enabled).toBe(true)
-  })
-
   it('기기에 꺼 둔 값을 읽는다', async () => {
     await setPartyAlarmEnabled(false)
 

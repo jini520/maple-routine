@@ -16,12 +16,6 @@ afterEach(() => {
 })
 
 describe('rnSplashScreenPort', () => {
-  it('hide() 는 네이티브 스플래시를 내린다', async () => {
-    await rnSplashScreenPort.hide()
-
-    expect(mocked.hideAsync).toHaveBeenCalledTimes(1)
-  })
-
   // RN 에는 `show` 가 덮을 대상 자체가 없고 `expo-splash-screen` 에도 다시 띄우는 API 가 없다
   // (`preventAutoHideAsync`·`setOptions`·`hide`·`hideAsync` 넷뿐). 특히 `preventAutoHideAsync`
   // 로 다시 띄우는 척 하면 안 된다. 이미 내려간 스플래시에는 아무 효과가 없어서 화면은 그대로

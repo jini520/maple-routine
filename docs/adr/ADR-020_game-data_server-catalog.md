@@ -156,7 +156,7 @@ MVP 등급, 포스 종류)은 Postgres ENUM 이다. 코드가 그 값으로 분�
 | `server/__tests__/game-data.spec.ts` | 결정 3: 칸마다 받은 표를 주고 없는 칸은 `null` 인지, 네트워크 실패 · 5xx · 객체가 아닌 응답이 `null` 인지, 계약을 어긴 칸과 `updatedAt` 이 `null` 인 칸만 `null` 인지, 선택 칸의 `null` 을 빠진 칸으로 통과시키는지 본다 |
 | `lib/game-data/__tests__/table.spec.ts` | 결정 4: 표를 바꾸면 구독자에게 알리고, 같은 객체면 알리지 않고, 구독을 풀면 더 알리지 않는지, `bundledTable` 이 계약을 어기면 던지는지, `derive` 가 표가 바뀐 뒤에만 다시 만드는지 본다 |
 | `lib/game-data/__tests__/sections.spec.ts` | 결정 4: 칸 열셋이 `GAME_DATA_SECTIONS` 와 같은 순서인지, 번들이 계약을 통과하고 다시 통과시켜도 같은지, 표를 덮으면 그 칸이 바뀌는지 본다 |
-| `storage/__tests__/query-persister.spec.ts` | 결정 3: `queryCache` 키 하나를 읽고 지우는지, 옛 보스 사본 키를 지우는지 본다 |
+| `storage/__tests__/query-persister.spec.ts` | 결정 3: 옛 보스 사본 키를 지우는지 본다 |
 | `src/data/__tests__/bundled-game-data.spec.ts` | 결정 7 · 8: 번들 열세 칸이 계약을 통과하는지, 드롭 아이템 · 지출 타일 · 심볼 · 월드 엠블럼 · 컨텐츠 배경 · 보스 초상 그림 파일이 에셋에 있는지 본다 |
 | `scripts/__tests__/sync-game-data.test.mjs` | 결정 5: 칸 열셋이 앱과 같은 순서인지, 파일 이름이 칸 이름의 kebab-case 인지, `updatedAt` 이 `null` 인 칸은 파일을 쓰지 않는지, 응답 그대로 쓰는지 본다 |
 

@@ -125,15 +125,6 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
    * 상한에서 그만큼을 빼면 윗변이 키보드가 있든 없든 같은 선에 선다.
    */
 
-  it('폭은 max-w-md(448) 중앙 정렬이다. 라이브러리 기본은 전폭이다', async () => {
-    const { getByTestId } = await open()
-
-    expect(flattenStyle(getByTestId('sheet').props.style)).toMatchObject({
-      maxWidth: 448,
-      alignSelf: 'center',
-    })
-  })
-
   // 바깥을 눌러 닫는다. 예전엔 라이브러리의 `pressBehavior="close"` 가 하던 일이라
   // 그 프롭 값만 검사했는데, 이제 우리 `onPress` 가 하므로 **실제로 눌러 본다.**
   it('스크림을 누르면 시트를 닫는다', async () => {

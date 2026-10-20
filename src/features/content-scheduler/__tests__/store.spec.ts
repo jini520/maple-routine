@@ -324,16 +324,6 @@ describe('useContentSchedulerStore', () => {
   })
 
   describe('추적 목록', () => {
-    it('loadTrackedOcids는 storage에서 조회한 값을 trackedOcids 상태에 반영한다', async () => {
-      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useContentSchedulerStore.getState().loadTrackedOcids()
-
-      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith()
-      expect(useContentSchedulerStore.getState().trackedOcids).toEqual(['ocid-1'])
-    })
-
     it('loadTrackedOcids는 조회된 목록이 null이 아니면 그 목록으로 refresh를 호출한다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])

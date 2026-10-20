@@ -254,11 +254,11 @@ API 키    API 키로 시작하기                        15px semibold        �
 | `features/schedule-sync/__tests__/to-schedule-sync-error.spec.ts` | 결정 2: 개발자 키로 난 무효 · 한도 초과가 키를 싣지 않은 `network` 인지 본다 |
 | `features/auth/__tests__/nexon-login.spec.ts` | 결정 3: 열쇠 둘로 세션을 받아 저장하는지, 서버가 준 주소와 등록한 스킴을 쓰는지, `pending` 이면 다시 묻되 끝이 있는지, `gone` 과 `receipt` 없는 콜백이 실패인지, 취소가 실패가 아닌지, 던지지 않는지 본다. 결정 4: 로그인 뒤에 키를 거두고, 거두지 못해도 성공인지 본다 |
 | `lib/__tests__/covered-keys.spec.ts` | 결정 4: ocid 집합이 같을 때만 지우는지, 다른 계정의 키는 두는지, 한쪽이 비어 있으면 지우지 않는지 본다 |
-| `components/molecules/NexonLoginButton/__tests__/NexonLoginButton.test.tsx` | 결정 5: 폭만 정하고 높이는 정하지 않는지, 받은 이미지를 그대로 쓰는지, 스크린리더 이름을 버튼이 갖는지 본다 |
+| `components/molecules/NexonLoginButton/__tests__/NexonLoginButton.test.tsx` | 결정 5: 폭만 정하고 높이는 정하지 않는지, 스크린리더 이름을 버튼이 갖는지 본다 |
 | `features/auth/__tests__/store.spec.ts` | 결정 6: 로그인 뒤 목록을 받아 진입 단계를 다시 판정하는지, 취소는 아무 일도 없는지, 실패를 알리는지, 목록을 못 받으면 앱을 열지 않는지 본다. 결정 10: 로그인만 지우는지, 서버 세션을 먼저 거두는지, 수단이 남는지에 따라 이동할 화면이 달라지는지 본다 |
 | `app/settings/__tests__/SettingsScreen.test.tsx` | 결정 6 · 9: 더보기 버튼이 로그인이 없을 때만 보이고, 입구가 꺼져 있으면 보이지 않는지 본다 |
 | `app/auth/__tests__/SignInScreen.test.tsx` | 결정 7: 머리 두 줄, 넥슨 블록이 키 블록보다 위에 있는지, 키 블록이 저장된 키가 있어도 접혀 있는지 본다. 결정 8: 소개 링크가 인앱 브라우저로 열리는지 본다. 결정 9: 입구가 꺼져 있으면 넥슨 블록이 없고 머리 문구가 바뀌며 키 블록이 펼쳐지는지 본다 |
-| `app/auth/__tests__/ApiKeyForm.test.tsx` | 결정 7: 접혀 있어도 머리 두 줄이 보이는지, 누를 때마다 펼치고 접는지, `collapsible` 이 `false` 면 펼친 채 누를 수 없는지 본다. 결정 8: 두 링크가 인앱 브라우저로 정한 주소를 열고 링크로 읽히는지 본다 |
+| `app/auth/__tests__/ApiKeyForm.test.tsx` | 결정 7: 처음에 접혀 있는지, 누를 때마다 펼치고 접는지, `collapsible` 이 `false` 면 펼친 채 누를 수 없는지 본다. 결정 8: 두 링크가 인앱 브라우저로 정한 주소를 열고 링크로 읽히는지 본다 |
 | `app/settings/__tests__/SettingsAccountDataScreen.test.tsx` | 결정 10: 로그아웃 줄이 로그인이 있을 때만 보이는지, 확인을 받은 뒤에만 로그인을 지우는지 본다 |
 
 ## 번호 기록

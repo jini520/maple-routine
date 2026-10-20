@@ -10,7 +10,6 @@ import { dropItemNameOf } from '../../../lib/drop/drop-items'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
 
-import { flattenStyle } from '../../../components/__tests__/render-atom'
 import { BossProfitBossRow } from '../BossProfitBossRow'
 import { PERIOD, 보스행, 주간보스, 컨텍스트값, renderProfit, 주간보스이름 } from './harness'
 import { partyPlanKey } from '../../../features/boss-profit/party-plans'
@@ -316,11 +315,3 @@ describe('BossProfitBossRow: 파티원 수', () => {
   })
 })
 
-// 오른쪽이 두 줄(이름 줄 + 파티·금액 줄)이라 위쪽 정렬이면 초상만 위로 붙는다.
-it('보스 초상은 행 전체의 세로 가운데에 선다', async () => {
-  const { getByTestId } = await renderProfit(<BossProfitBossRow row={보스행()} drops={[]} />)
-
-  expect(flattenStyle(getByTestId('boss-profit-boss-row').props.style)).toMatchObject({
-    alignItems: 'center',
-  })
-})

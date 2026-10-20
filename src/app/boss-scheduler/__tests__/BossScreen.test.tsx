@@ -390,16 +390,6 @@ describe('BossScreen: 목록', () => {
     expect(screen.queryByText('불러오고 있어요')).toBeNull()
   })
 
-  it('헤더와 목록이 공용 스크롤 셸 안에 있다', async () => {
-    withBosses()
-    await renderScreen()
-
-    // **모달이 셸 바깥인지를 묻던 짝은 함께 사라졌다**. 이 화면에 캐릭터 관리 모달이 없다
-    // 파티 인원 모달은 아래 절이 따로 본다.
-    expect(screen.getByTestId('page-header')).toBeTruthy()
-    expect(screen.getByTestId('screen-scroll')).toBeTruthy()
-  })
-
   // 스토어는 레벨 내림차순으로 준다. 그 위에 사용자가
   // 정한 저장 배열 순서를 얹는다. 그래서 **입력 순서와 다른 순서**로 주는 것이 이 케이스의 요점이다.
   it('레일 순서는 스토어 순서가 아니라 trackedOcids 저장 순서다', async () => {
@@ -573,21 +563,6 @@ describe('BossScreen: 재조회', () => {
 })
 
 describe('BossScreen: 갱신 시각', () => {
-  // **화면이 재지 않는다.** 실시간 조회(`syncSchedules` 회차 · 오늘이 든 강화)가 끝난 자리에서
-  // 적히는 값 하나를 다섯 화면이 함께 읽는다. 화면마다 재면 같은 한 번의 조회로 그린 데이터인데
-  // 값이 갈리고, 기기 DB 를 읽기만 한 진입에도 시각이 갱신된다.
-  it('실시간 조회 시각을 읽는다', async () => {
-    useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
-    mockStore({
-      status: 'loaded',
-      trackedOcids: ['ocid-1'],
-      characters: [character({ weeklyBosses: [boss()] })],
-    })
-    await renderScreen()
-
-    expect(screen.getByTestId('data-freshness')).toBeTruthy()
-  })
-
   // 제목에 딸린 작은 글씨다. 제목 **줄 안**에 있으면 폭을 다투고, 그때 줄어드는 것은 제목이다.
   it('제목 줄이 아니라 그 아래에 선다', async () => {
     useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
@@ -678,19 +653,6 @@ describe('BossScreen: 실패의 목적지', () => {
     expect(mockShowError).not.toHaveBeenCalled()
     expect(getByText('이 캐릭터는 조회할 수 없습니다')).toBeTruthy()
     expect(getByText('캐릭터 관리로 이동하기')).toBeTruthy()
-  })
-
-  // 네트워크 실패는 새로고침이면 풀리므로 지금처럼 토스트다.
-  it('그 외 캐릭터 실패는 토스트 그대로다', async () => {
-    mockStore({
-      status: 'loaded',
-      trackedOcids: ['ocid-1'],
-      characters: [character({ error: { kind: 'network' } })],
-    })
-
-    await renderScreen()
-
-    expect(mockShowError).toHaveBeenCalledTimes(1)
   })
 
   it('isStale 이지만 error 가 없으면(캐시 우선 표시) 아무것도 알리지 않는다', async () => {

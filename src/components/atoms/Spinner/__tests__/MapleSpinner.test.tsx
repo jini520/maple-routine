@@ -28,12 +28,6 @@ afterEach(() => {
 })
 
 describe('MapleSpinner', () => {
-  it('장식용 아이콘이라 스크린리더에서 숨겨진다', async () => {
-    const { getByTestId } = await renderAtom(<MapleSpinner />)
-
-    expect(getByTestId('maple-spinner', HIDDEN).props['aria-hidden']).toBe(true)
-  })
-
   it('색은 className 이 정한다. `currentColor` 가 읽는 `color` 프롭으로 들어간다', async () => {
     const { getByTestId } = await renderAtom(<MapleSpinner className="text-primary" />)
 

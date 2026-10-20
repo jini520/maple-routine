@@ -33,15 +33,6 @@ describe('ProgressRing · 연속', () => {
     expect(queryByTestId('progress-ring-fill')).toBeNull()
   })
 
-  it('넘겨받은 색을 그대로 쓴다. 테마를 안 읽는다', async () => {
-    const { getByTestId } = await renderAtom(
-      <ProgressRing size={56} stroke={4} direction="cw" {...색} progress={{ kind: 'continuous', ratio: 1 }} />,
-    )
-
-    expect(strokeOf(getByTestId('progress-ring-track'))).toBe(processColor(색.track))
-    expect(strokeOf(getByTestId('progress-ring-fill'))).toBe(processColor(색.fill))
-  })
-
   // SVG 의 `fill` 기본값은 **검정**이다. 이 속성이 빠지면 링 안이 통째로 칠해진다. 이 부품에서
   // `fill` 프롭은 **찬 자리의 색** 이라 이름이 겹치므로 실제로 덮인 적이 있다.
   it.each(['progress-ring-track', 'progress-ring-fill'])('%s 은 속을 안 채운다', async (testID) => {

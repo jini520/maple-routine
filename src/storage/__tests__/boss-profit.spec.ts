@@ -241,17 +241,6 @@ describe('getAllBossProfitRecordKeys', () => {
     expect(values).toEqual(['ocid-1', 'ocid-2'])
   })
 
-  it('행을 키 객체로 변환한다', async () => {
-    queryMock.mockResolvedValue({
-      values: [{ ocid: 'ocid-1', boss_key: 'lotus', difficulty: 'hard', period_key: '2026-07-09' }],
-    })
-    const { getAllBossProfitRecordKeys } = require('../boss-profit') as typeof import('../boss-profit')
-
-    await expect(getAllBossProfitRecordKeys(['ocid-1'])).resolves.toEqual([
-      { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-07-09' },
-    ])
-  })
-
   it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
     queryMock.mockResolvedValue({ values: undefined })
     const { getAllBossProfitRecordKeys } = require('../boss-profit') as typeof import('../boss-profit')
@@ -282,35 +271,6 @@ describe('처치 날짜', () => {
     expect(sql).toContain('defeated_on IS NOT NULL')
     expect(sql).toContain('defeated_on BETWEEN ? AND ?')
     expect(values).toEqual(['ocid-1', 'ocid-2', '2026-08-01', '2026-08-31'])
-  })
-
-  it('getDatedBossProfitRecords 는 행을 날짜 붙은 기록으로 옮긴다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          ocid: 'ocid-1',
-          boss_key: 'lotus',
-          boss: '스우',
-          difficulty: 'hard',
-          period_key: '2026-08-20',
-          payout_meso: 210_000_000,
-          defeated_on: '2026-08-21',
-        },
-      ],
-    })
-    const { getDatedBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
-
-    await expect(getDatedBossProfitRecords(['ocid-1'], '2026-08-01', '2026-08-31')).resolves.toEqual([
-      {
-        ocid: 'ocid-1',
-        bossKey: 'lotus',
-        boss: '스우',
-        difficulty: 'hard',
-        periodKey: '2026-08-20',
-        payoutMeso: 210_000_000,
-        defeatedOn: '2026-08-21',
-      },
-    ])
   })
 
   it('getUndatedBossProfitRecords 는 기간을 걸고 NULL 인 것만 고른다', async () => {

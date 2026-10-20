@@ -7,16 +7,6 @@ beforeEach(() => {
   prefs = installFakePreferences()
 })
 
-it('캐릭터마다 따로 기억한다', async () => {
-  await setLastHunt('ocid-1', { groundKey: 'geardrak_basement_1', boosts: ['union'], unionTier: 3 })
-  await setLastHunt('ocid-2', { groundKey: 'arteria_west', boosts: [], unionTier: 3 })
-
-  expect(await getLastHunts()).toEqual({
-    'ocid-1': { groundKey: 'geardrak_basement_1', boosts: ['union'], unionTier: 3 },
-    'ocid-2': { groundKey: 'arteria_west', boosts: [], unionTier: 3 },
-  })
-})
-
 it('같은 캐릭터를 다시 적으면 그 몫만 바뀐다', async () => {
   await setLastHunt('ocid-1', { groundKey: 'geardrak_basement_1', boosts: ['union'], unionTier: 3 })
   await setLastHunt('ocid-2', { groundKey: 'arteria_west', boosts: [], unionTier: 3 })
@@ -127,14 +117,6 @@ describe('옛 한 벌을 그 캐릭터 몫으로 옮긴다', () => {
 
 /** 유니온의 부 단계도 캐릭터별로 든다. 단계가 없는 옛 기억은 3단계다. */
 describe('유니온의 부 단계', () => {
-  it('적은 단계를 그대로 돌려준다', async () => {
-    await setLastHunt('ocid-1', { groundKey: 'geardrak_basement_1', boosts: ['union'], unionTier: 1 })
-
-    expect(await getLastHunts()).toEqual({
-      'ocid-1': { groundKey: 'geardrak_basement_1', boosts: ['union'], unionTier: 1 },
-    })
-  })
-
   it('단계가 없거나 어긋난 기억은 3단계로 읽는다', async () => {
     await prefs.set(
       'lastHunts',

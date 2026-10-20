@@ -135,7 +135,3 @@ describe('테두리와 높이', () => {
     expect(styleOf(view).minHeight).toBe(48)
   })
 })
-
-// 닫힌 줄 바탕은 흰 카드색(`surface`)이다.
-describe('바탕', () => {
-})

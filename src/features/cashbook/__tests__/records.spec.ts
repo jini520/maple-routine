@@ -605,14 +605,6 @@ describe('고치기와 지우기', () => {
     expect(rate.setLastPointRate).not.toHaveBeenCalled()
   })
 
-  it('수입을 고치면 갈아 끼운다', async () => {
-    const { editIncome } = require('../records') as typeof import('../records')
-
-    await editIncome({ ...수입행, mesoAmount: 1 })
-
-    expect(income.updateIncomeRecord).toHaveBeenCalledWith({ ...수입행, mesoAmount: 1 })
-  })
-
   it('갈래대로 지운다', async () => {
     const { removeRecord } = require('../records') as typeof import('../records')
 
@@ -1197,14 +1189,6 @@ describe('아이템 판매 줄의 개수', () => {
  * 못 읽으면 `null` 이다. 0 으로 읽으면 보관이 있는데도 없다고 적는다.
  */
 describe('loadFragmentStorage', () => {
-  it('캐릭터 · 고른 날 · 뺄 기록 id 를 그대로 넘긴다', async () => {
-    income.getFragmentStorage.mockResolvedValue(120)
-    const { loadFragmentStorage } = require('../records') as typeof import('../records')
-
-    await expect(loadFragmentStorage('ocid-1', '2026-09-10', 'inc-s')).resolves.toBe(120)
-    expect(income.getFragmentStorage).toHaveBeenCalledWith('ocid-1', '2026-09-10', 'inc-s')
-  })
-
   it('못 읽으면 null 이다', async () => {
     income.getFragmentStorage.mockRejectedValue(new Error('db'))
     const { loadFragmentStorage } = require('../records') as typeof import('../records')

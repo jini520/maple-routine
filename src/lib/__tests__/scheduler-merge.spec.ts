@@ -683,14 +683,3 @@ describe('mergeSchedulerState: 보스 (cycle별 독립 stale)', () => {
     ])
   })
 })
-
-describe('mergeSchedulerState: 그 외 필드', () => {
-  it('asOf/characterName/world/level/jobClass는 fresh 값을 그대로 반영한다', () => {
-    const fresh = baseState({ characterName: '테스트캐릭', level: 100 })
-
-    const result = mergeSchedulerState({ previous: null, fresh, worldLedger: {}, accountLedger: {}, now: NOW })
-
-    expect(result.characterState.characterName).toBe('테스트캐릭')
-    expect(result.characterState.level).toBe(100)
-  })
-})

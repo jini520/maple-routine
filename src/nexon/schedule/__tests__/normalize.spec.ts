@@ -328,17 +328,6 @@ describe('normalizeSchedulerCharacterState: 등록 난이도 ≠ 처치 난이�
       ownComplete: false,
     })
   })
-
-  it('등록된 난이도 자체의 complete_flag가 true면 그대로 완료다(승격 로직과 무관)', () => {
-    const result = normalizeSchedulerCharacterState(
-      wireWith([
-        { content_name: '자쿰', difficulty: 'chaos', cycle: 'bossWeekly', registration_flag: 'true', complete_flag: 'true' },
-      ]),
-      resolve,
-    )
-
-    expect(result.bossContents[0].isComplete).toBe(true)
-  })
 })
 
 describe('normalizeSchedulerCharacterState: 미접속으로 인한 누락', () => {

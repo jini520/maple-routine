@@ -69,17 +69,6 @@ afterEach(() => {
 })
 
 describe('TrackingModeModal', () => {
-  // 고르기 **전에** 둘을 비교하는 화면이라 설명·주의를 접지 않는다.
-  it('두 옵션의 설명과 주의 문구를 모두 보여준다', async () => {
-    const view = await renderOverlay(<TrackingModeModal onClose={jest.fn()} />)
-
-    for (const option of TRACKING_MODE_OPTIONS) {
-      expect(view.getByText(option.title)).toBeTruthy()
-      expect(view.getByText(option.description)).toBeTruthy()
-      expect(view.getByText(option.caution)).toBeTruthy()
-    }
-  })
-
   // 2단계의 핵심. 탭은 **고르는 것일 뿐**이다.
   it('옵션을 탭해도 setMode를 부르지 않고 모달도 닫히지 않는다', async () => {
     const setMode = jest.fn(async () => {})

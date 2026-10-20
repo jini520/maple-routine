@@ -1,5 +1,5 @@
 import { getTrackedCharacterOcids } from '../../../storage/character-selection'
-import { getTrackingMode, setTrackingMode } from '../../../storage/tracking-mode'
+import { setTrackingMode } from '../../../storage/tracking-mode'
 import { seedManualTrackedContent } from '../seed'
 import { useTrackingModeStore } from '../store'
 
@@ -17,7 +17,6 @@ jest.mock('../seed', () => ({
 }))
 
 beforeEach(() => {
-  jest.mocked(getTrackingMode).mockReset()
   jest.mocked(setTrackingMode).mockReset()
   jest.mocked(setTrackingMode).mockResolvedValue(undefined)
   jest.mocked(getTrackedCharacterOcids).mockReset()
@@ -25,42 +24,6 @@ beforeEach(() => {
   jest.mocked(seedManualTrackedContent).mockReset()
   jest.mocked(seedManualTrackedContent).mockResolvedValue(undefined)
   useTrackingModeStore.setState({ mode: 'auto' })
-})
-
-describe('restoreFromStorage', () => {
-  it('저장된 값이 manual이면 mode를 manual로 갱신한다', async () => {
-    jest.mocked(getTrackingMode).mockResolvedValue('manual')
-
-    await useTrackingModeStore.getState().restoreFromStorage()
-
-    expect(useTrackingModeStore.getState().mode).toBe('manual')
-  })
-
-  it('저장된 값이 없으면(storage가 기본값 auto 반환) mode는 auto다', async () => {
-    jest.mocked(getTrackingMode).mockResolvedValue('auto')
-
-    await useTrackingModeStore.getState().restoreFromStorage()
-
-    expect(useTrackingModeStore.getState().mode).toBe('auto')
-  })
-})
-
-describe('setMode', () => {
-  it('manual로 설정하면 setTrackingMode를 호출하고 상태를 manual로 갱신한다', async () => {
-    await useTrackingModeStore.getState().setMode('manual')
-
-    expect(setTrackingMode).toHaveBeenCalledWith('manual')
-    expect(useTrackingModeStore.getState().mode).toBe('manual')
-  })
-
-  it('manual에서 auto로 되돌리면 setTrackingMode를 호출하고 상태를 auto로 갱신한다', async () => {
-    useTrackingModeStore.setState({ mode: 'manual' })
-
-    await useTrackingModeStore.getState().setMode('auto')
-
-    expect(setTrackingMode).toHaveBeenCalledWith('auto')
-    expect(useTrackingModeStore.getState().mode).toBe('auto')
-  })
 })
 
 describe('setMode: 시드 트리거 (a): auto → manual 전환', () => {

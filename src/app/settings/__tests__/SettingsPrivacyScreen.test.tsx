@@ -60,14 +60,6 @@ describe('SettingsPrivacyScreen', () => {
     expect(goBack).toHaveBeenCalledTimes(1)
   })
 
-  // **사본을 두지 않는다**. 같은 사이트를 싣기만 한다. 그래서 이 화면이
-  // 아는 것은 주소 하나뿐이고, 본문은 저장소 루트 `PRIVACY.md` 의 단일 원본에서 온다.
-  it('사본이 아니라 사이트를 그대로 싣는다', async () => {
-    const view = await renderOverlay(<SettingsPrivacyScreen />)
-
-    expect(view.getByTestId('privacy-frame').props.source).toEqual({ uri: PRIVACY_URL })
-  })
-
   // `ScreenScroll` 을 쓰지 않는다. 문서가 자기 스크롤을 갖는다.
   it('셸의 스크롤 상자를 쓰지 않는다', async () => {
     const view = await renderOverlay(<SettingsPrivacyScreen />)

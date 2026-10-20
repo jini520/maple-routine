@@ -258,7 +258,7 @@ FCM 구독이 실패했는데 켜졌다고 저장하면 스위치는 켜져 있�
 | `features/local-notifications/__tests__/reconcile.spec.ts` | 결정 2 · 3: 원장과 계획의 차이만큼 예약 · 취소하는지, 시각과 문구가 같으면 아무것도 안 하는지, 문구만 바뀌어도 다시 예약하는지, 시각 순으로 정한 개수만큼만 예약하고 넘친 원장 항목을 취소하는지 본다. 같은 회차는 같은 id 이고 id 가 양의 정수인지 본다 |
 | `features/local-notifications/__tests__/run.spec.ts` | 결정 2 · 3 · 4: 파티 약속을 `party` 채널로 예약하고 원장에 적는지, 두 번 돌려도 다시 예약하지 않는지, 권한이 없거나 스위치가 꺼지면 취소하는지, 예약 실패는 원장에 남기지 않는지, 레지스트리에 없는 종류를 취소하는지 본다 |
 | `features/local-notifications/__tests__/use-notification-press.test.tsx` | 결정 6: 탭과 꺼진 앱의 첫 탭이 약속을 여는지, 같은 탭이 두 번 와도 한 번만 여는지, 다른 종류는 무시하는지 본다 |
-| `native/adapters/__tests__/notification-request.test.ts` | 결정 4 · 5: 옛 채널 id 와 소리를 유지하는지, `party` 채널이 HIGH 이고 소리가 있는지, id 가 왕복 손실 없이 바뀌고 정수가 아니면 던지는지, 지난 시각 · 지금 · `Invalid Date` 를 던지는지 본다 |
+| `native/adapters/__tests__/notification-request.test.ts` | 결정 4 · 5: 옛 채널 id 와 소리를 유지하는지, id 가 왕복 손실 없이 바뀌고 정수가 아니면 던지는지, 지난 시각 · 지금 · `Invalid Date` 를 던지는지 본다 |
 | `native/adapters/__tests__/rn-notifications.test.ts` | 결정 4 · 5 · 6: 채널을 만든 뒤 예약하는지, 권한 조회가 팝업을 띄우지 않는지, 취소가 예약 때와 같은 id 로 떠 있는 알림까지 내리는지, 리스너를 달기 전에 온 백그라운드 탭을 쌓아 두었다가 넘기는지 본다 |
 | `native/adapters/__tests__/rn-push.test.ts` | 결정 7: 토픽 이름을 그대로 넘기는지, 실패를 삼키지 않는지, iOS 에서 APNs 토큰을 기다리고 끝내 없으면 읽을 수 있는 이유로 던지는지, 안드로이드는 기다리지 않는지 본다 |
 | `features/notice/__tests__/topics.spec.ts` | 결정 8: 토픽 이름이 서버와 같은지, 앱 공지 토픽이 `notice` 인지, 분류 다섯이 한 줄씩 있는지 본다 |

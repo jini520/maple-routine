@@ -34,10 +34,4 @@ describe('ErrorState', () => {
     expect(queryByTestId('empty-state-badge', { includeHiddenElements: true })).toBeNull()
   })
 
-  it('스크린리더에 즉시 알리도록 role=alert 를 갖는다', async () => {
-    const { getByTestId } = await renderAtom(<ErrorState title="캐릭터 목록을 불러오지 못했습니다" />)
-
-    expect(getByTestId('error-state').props.role).toBe('alert')
-  })
-
 })

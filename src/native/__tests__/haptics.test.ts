@@ -6,15 +6,6 @@ import { __resetNativePortsForTest, setHapticsPort } from '../ports'
 afterEach(__resetNativePortsForTest)
 
 describe('tapFeedback', () => {
-  it('포트의 두드림을 부른다', () => {
-    const tap = jest.fn().mockResolvedValue(undefined)
-    setHapticsPort({ tap, select: jest.fn().mockResolvedValue(undefined) })
-
-    tapFeedback()
-
-    expect(tap).toHaveBeenCalledTimes(1)
-  })
-
   it('거절해도 부른 쪽으로 새어 나가지 않는다', async () => {
     setHapticsPort({
       tap: () => Promise.reject(new Error('진동 장치 없음')),

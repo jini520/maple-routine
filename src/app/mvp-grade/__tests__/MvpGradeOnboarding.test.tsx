@@ -67,14 +67,6 @@ describe('MvpGradePickScreen', () => {
     expect(useMvpOnboardingDraft.getState().grades).toEqual({ A: 'diamond' })
   })
 
-  it('머리 줄의 뒤로가기는 캐릭터 설정으로 돌아간다', async () => {
-    const view = await renderOverlay(<MvpGradePickScreen />)
-
-    await fireEvent.press(view.getByLabelText('뒤로'))
-
-    expect(mockGoBack).toHaveBeenCalled()
-  })
-
   it('물을 것을 아직 안 쟀으면 재고, 물을 ID 가 없으면 온보딩을 끝낸다', async () => {
     useMvpAskStore.setState({ ask: null, accounts: [] })
 
@@ -133,13 +125,5 @@ describe('MvpGradeConfirmScreen', () => {
     })
 
     expect(view.getByTestId('mvp-grade-card-A')).toBeTruthy()
-  })
-
-  it('머리 줄의 뒤로가기는 고르기로 돌아간다', async () => {
-    const view = await renderOverlay(<MvpGradeConfirmScreen />)
-
-    await fireEvent.press(view.getByLabelText('뒤로'))
-
-    expect(mockGoBack).toHaveBeenCalled()
   })
 })

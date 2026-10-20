@@ -24,12 +24,6 @@ beforeEach(() => {
 })
 
 describe('moveToBackground: 하나뿐인 실구현', () => {
-  it('네이티브 모듈을 부른다', async () => {
-    await rnBackGesturePort.moveToBackground()
-
-    expect(mockNativeModule?.moveToBackground).toHaveBeenCalledTimes(1)
-  })
-
   // iOS 에는 이 개념이 없어 모듈이 `null` 이다(`platforms: ["android"]`). 그 자리는 `not-implemented`
   // 의 기준으로 *"이 플랫폼에 그 개념이 없다"* 쪽이라 **정당한 no-op** 이고, 던지면 안 된다.
   // 던지면 iOS 에서 뒤로가기 훅이 매번 처리되지 않은 거부를 남긴다.

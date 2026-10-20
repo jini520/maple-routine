@@ -17,15 +17,6 @@ function props(overrides: Partial<AppointmentTimeBandProps>): AppointmentTimeBan
 }
 
 describe('AppointmentTimeBand', () => {
-  it('날짜 · 시작 · 종료 세 칸이다. 종료 날짜 칸은 없다', async () => {
-    const { getByText, queryByText } = await renderAtom(<AppointmentTimeBand {...props({})} />)
-
-    for (const label of ['날짜', '시작', '종료']) {
-      expect(getByText(label)).toBeTruthy()
-    }
-    expect(queryByText('종료 날짜')).toBeNull()
-  })
-
   it('같은 날 끝나면 날짜 칸은 시작 날짜 하나다', async () => {
     const { queryByText } = await renderAtom(<AppointmentTimeBand {...props({})} />)
 

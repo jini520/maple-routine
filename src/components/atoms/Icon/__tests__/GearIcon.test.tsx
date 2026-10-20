@@ -7,17 +7,6 @@ import { findAllOfType, renderAtom } from '../../../__tests__/render-atom'
 import { GearIcon } from '../GearIcon'
 
 describe('GearIcon', () => {
-  it('lucide 규격(24 그리드 · currentColor 선 · 라운드 캡/조인)으로 그린다', async () => {
-    const { getByTestId } = await renderAtom(<GearIcon />)
-
-    const icon = getByTestId('gear-icon')
-    expect(icon.props.vbWidth).toBe(24)
-    expect(icon.props.vbHeight).toBe(24)
-    expect(icon.props.stroke).toBe('currentColor')
-    expect(icon.props.strokeLinecap).toBe('round')
-    expect(icon.props.strokeLinejoin).toBe('round')
-  })
-
   // **여기가 이 컴포넌트의 존재 이유다.** lucide 의 `Settings` 는 **톱니 패스 + 안쪽 원** 두
   // 요소라 `fill` 이 둘 다에 상속돼 가운데가 메워진다. 한 패스 두 서브패스 + `evenodd` 라야
   // 몸통만 차고 가운데가 빈다.

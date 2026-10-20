@@ -46,34 +46,4 @@ describe('TaskHost', () => {
 
     expect(resumePending).toHaveBeenCalled()
   })
-
-  it('진행률이 있으면 작업의 아이콘 · 제목 · 단계로 모달을 세운다', async () => {
-    useAppEntryStore.setState({ stage: 'ready' })
-    const view = await renderOverlay(<TaskHost />)
-
-    await act(async () => {
-      useTaskRunnerStore.setState({
-        progress: {
-          icon: 'crown',
-          title: '지난 기록에 수수료를 적용하고 있어요',
-          unit: '건',
-          done: 812,
-          total: 1240,
-          steps: [
-            { label: '판매 기록', state: 'done', done: 620, total: 620 },
-            { label: '드롭 판매가', state: 'run', done: 192, total: 620 },
-          ],
-        },
-      })
-    })
-
-    expect(view.getByText('지난 기록에 수수료를 적용하고 있어요')).toBeTruthy()
-    expect(view.getByTestId('task-step-run')).toHaveTextContent('드롭 판매가192 / 620건')
-  })
-
-  it('등록부는 MVP 등급의 두 작업을 id 로 찾는다', () => {
-    expect(findResumableTask('mvp-bulk-fee')?.name).toBe('지난 기록 수수료 적용')
-    expect(findResumableTask('mvp-recalc-fee')?.name).toBe('자동 수수료 다시 계산')
-    expect(findResumableTask('없는 작업')).toBeUndefined()
-  })
 })

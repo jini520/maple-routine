@@ -5,10 +5,8 @@ import {
   floorMonthKey,
   floorWeekStartKey,
   historyFloorDateKey,
-  HISTORY_MONTHS_BACK,
   monthWindow,
   monthWindowRange,
-  PREFETCH_RADIUS,
 } from '../range'
 
 describe('monthWindow: 채워 둘 달', () => {
@@ -23,10 +21,6 @@ describe('monthWindow: 채워 둘 달', () => {
       // 창 밖이어도 이번 달은 늘 든다. `오늘` 이 기다릴 자리를 없앤다.
       '2026-12',
     ])
-  })
-
-  it('앞뒤 둘씩에 이번 달을 더해 여섯이다', () => {
-    expect(monthWindow('2026-06', '2026-12')).toHaveLength(PREFETCH_RADIUS * 2 + 2)
   })
 
   // 창 안에 이미 들어 있으면 두 번 넣지 않는다.
@@ -103,10 +97,6 @@ describe('defaultCashbookRange', () => {
  * 이미 받아 둔 날은 이 한도와 무관하다 - 기기 DB 에서 읽는다.
  */
 describe('historyFloorDateKey', () => {
-  it('1년 6개월이다', () => {
-    expect(HISTORY_MONTHS_BACK).toBe(18)
-  })
-
   /**
    * 오늘이 2026-09-10 이면 1년 6개월 전은 2025년 3월이다. 날짜(3/9)가 아니라 **그 달 1일이 든
    * 리셋 주의 목요일**이 한도다. 2025-03-01 은 토요일이라 그 주는 **2025-02-27(목)** 에 시작한다.

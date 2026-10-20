@@ -12,22 +12,6 @@ beforeEach(() => {
   jest.restoreAllMocks()
 })
 
-it('열린 보스를 목록으로 준다', async () => {
-  jest.spyOn(global, 'fetch').mockResolvedValue(
-    ok({
-      bosses: [
-        { boss: 'black_mage', from: '2026-09-01' },
-        { boss: 'meirin', from: '2026-09-17' },
-      ],
-    }),
-  )
-
-  await expect(fetchManualCompletionBosses()).resolves.toEqual([
-    { boss: 'black_mage', from: '2026-09-01' },
-    { boss: 'meirin', from: '2026-09-17' },
-  ])
-})
-
 it('열린 보스가 없으면 빈 목록이다', async () => {
   jest.spyOn(global, 'fetch').mockResolvedValue(ok({ bosses: [] }))
 

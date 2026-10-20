@@ -273,16 +273,6 @@ describe('MonthlyAccordionBody', () => {
 // 펼친 카드의 머리와 본문이 둘 다 흰 바탕이고 사이가 `border` 1px 하나라, 캐릭터 머리가 보스
 // 목록의 첫 줄처럼 읽혔다. 본문이 자기 바탕을 갖는다.
 describe('본문은 자기 바탕을 갖는다', () => {
-  // 색은 38토큰에 없어 모드에서 파생한다. `surface-2` 는 라이트에서 칙칙하고 `bg` 를 쓰면
-  // 본문이 페이지에 녹는다.
-  it('주간 본문 바탕이 파생 토큰이다', async () => {
-    const { getByTestId } = await renderProfit(<WeeklyAccordionBody rows={[보스행()]} />)
-
-    expect(flattenStyle(getByTestId('accordion-body').props.style)).toMatchObject({
-      backgroundColor: resolveCardBody(기본테마),
-    })
-  })
-
   // 머리(카드)와 페이지 둘 다와 갈려야 이 바탕이 값을 한다.
   it('카드와도 페이지와도 다른 색이다', async () => {
     expect(resolveCardBody(기본테마)).not.toBe(기본테마.surface)

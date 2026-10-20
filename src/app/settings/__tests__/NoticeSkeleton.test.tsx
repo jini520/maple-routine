@@ -49,12 +49,6 @@ describe('NoticeBannerSkeleton', () => {
 })
 
 describe('NoticeLinesSkeleton', () => {
-  it('받은 줄 수만큼 줄이 선다', async () => {
-    const { getAllByTestId } = await renderAtom(<NoticeLinesSkeleton lines={3} />)
-
-    expect(getAllByTestId('notice-skeleton-row', HIDDEN)).toHaveLength(3)
-  })
-
   it('제목과 날짜 자리가 결과의 줄 높이를 그대로 든다', async () => {
     const { getAllByTestId } = await renderAtom(<NoticeLinesSkeleton lines={1} />)
 

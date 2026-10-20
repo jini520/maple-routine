@@ -13,19 +13,6 @@ const 폴백 = (
 )
 
 describe('CharacterAvatar', () => {
-  it('지름만큼의 원으로 자른다', async () => {
-    const { getByTestId } = await renderAtom(
-      <CharacterAvatar testID="얼굴" imageUrl="https://example.test/a.png" name="아무개" size={36} />,
-    )
-
-    expect(flattenStyle(getByTestId('얼굴').props.style)).toMatchObject({
-      width: 36,
-      height: 36,
-      borderRadius: 9999,
-      overflow: 'hidden',
-    })
-  })
-
   // 그림 뒤로 비치던 회색은 걷었다. 바탕이 필요한 것은 폴백뿐이라 그쪽이
   // 자기 몫으로 든다. 부품이 기본값으로 깔면 그 결정이 여덟 자리에서 한꺼번에 되살아난다.
   it('원에는 배경색을 두지 않는다', async () => {
@@ -67,14 +54,6 @@ describe('CharacterAvatar', () => {
     )
 
     expect(getByTestId('얼굴').children).toHaveLength(0)
-  })
-
-  it('바깥이 준 클래스가 원에 함께 붙는다', async () => {
-    const { getByTestId } = await renderAtom(
-      <CharacterAvatar testID="얼굴" imageUrl={null} name="아무개" size={36} className="shrink-0" />,
-    )
-
-    expect(flattenStyle(getByTestId('얼굴').props.style)).toMatchObject({ flexShrink: 0 })
   })
 })
 

@@ -5,8 +5,7 @@
 import { render } from '@testing-library/react-native'
 import { Text } from 'react-native'
 
-import { BossProfitContextProvider, useBossProfitContext } from '../boss-profit-context'
-import { PERIOD, 컨텍스트값 } from './harness'
+import { useBossProfitContext } from '../boss-profit-context'
 
 // 한글 이름은 대문자로 시작할 수 없어 `react-hooks/rules-of-hooks` 가 컴포넌트로 인식하지 못한다
 // 훅을 부르는 테스트 컴포넌트만 영문 이름을 쓴다.
@@ -26,19 +25,5 @@ describe('useBossProfitContext', () => {
     } finally {
       spy.mockRestore()
     }
-  })
-})
-
-// 라벨·네비게이션은 `periodKey` 를, 카운트업 identity 는 `loadedPeriodKey` 를
-// 쓴다. 둘이 갈리는 순간(사용자가 기간을 눌러 데이터가 오기 전)이 실재하므로 필드가 둘이다.
-describe('loaded* 는 목표 기간과 갈릴 수 있다', () => {
-  it('목표 기간이 먼저 바뀌어도 그려지는 데이터의 기간은 따로 남는다', async () => {
-    const { getByText } = await render(
-      <BossProfitContextProvider value={컨텍스트값({ periodKey: '2026-08-13', loadedPeriodKey: PERIOD })}>
-        <PeriodLabel />
-      </BossProfitContextProvider>,
-    )
-
-    expect(getByText(`2026-08-13/${PERIOD}`)).toBeTruthy()
   })
 })

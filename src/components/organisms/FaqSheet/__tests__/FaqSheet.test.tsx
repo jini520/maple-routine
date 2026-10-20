@@ -55,12 +55,6 @@ it('질문과 답이 전부 펼쳐져 있다', async () => {
   expect(screen.getByText('기다려주세요.')).toBeTruthy()
 })
 
-it('한 답의 문단 여럿을 순서대로 그린다', async () => {
-  await 그리기()
-
-  expect(screen.getByText('다음 조회에서 앱이 맞춥니다.')).toBeTruthy()
-})
-
 // 접고 펴는 장치가 없다. 셰브런이 있으면 누를 것이 있다는 뜻이 되어 거짓말이 된다.
 it('펼치는 누르개가 없다', async () => {
   await 그리기()

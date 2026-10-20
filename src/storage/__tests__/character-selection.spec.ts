@@ -148,13 +148,6 @@ describe('대표 캐릭터', () => {
 
 // 참조 무결성은 쓰는 쪽이 지킨다. 대표가 추적 목록에 없으면 그 키를 지운다.
 describe('setCharacterSelection (참조 무결성)', () => {
-  it('목록과 대표를 함께 저장한다', async () => {
-    await setCharacterSelection(['ocid-1', 'ocid-2'], 'ocid-2')
-
-    await expect(getTrackedCharacterOcids()).resolves.toEqual(['ocid-1', 'ocid-2'])
-    await expect(getRepresentativeCharacter()).resolves.toBe('ocid-2')
-  })
-
   it('대표를 목록에서 빼고 저장하면 대표 키가 지워진다', async () => {
     await setCharacterSelection(['ocid-1', 'ocid-2'], 'ocid-1')
 

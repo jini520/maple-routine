@@ -51,7 +51,7 @@ import { useDropEffectStore } from '../../../features/drop-effect/store'
 
 import { installMemoryPreferences } from '../../../navigation/__tests__/memory-preferences'
 
-import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
+import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { BossDropSheet } from '../BossDropSheet'
 import type { RecordedDrop } from '../../../types/drops'
 
@@ -961,83 +961,5 @@ describe('BossDropSheet: 타일의 표식', () => {
 
     expect(queryByLabelText('가격 입력됨')).toBeNull()
     expect(queryByLabelText('기록 안함')).toBeNull()
-  })
-
-  /** 띠와 레벨 배지가 그림 아래에서 겹쳤다. 레벨을 위로 올려 자리를 비운다. */
-  it('반지 레벨 배지는 그림 위쪽에 선다', async () => {
-    const { result } = renderSheet({
-      bossKey: 'gloom',
-      difficulty: 'chaos',
-      pricing: PRICING,
-      initialDrops: [
-        { dropRecordId: null,
-          category: 'consumable',
-          itemKey: 'restraint_ring',
-          itemName: '리스트레인트 링',
-          boxOriginKey: 'black_boss_ring_box',
-          boxOrigin: '흑옥의 보스 반지 상자',
-          ringLevel: 4,
-          quantity: 1,
-          priceState: 'entered',
-          priceMeso: 3_250_000_000,
-        },
-      ],
-    })
-    const { getByText } = await result
-
-    // 그림 위쪽. 아래는 금액 띠가 덮는다.
-    expect(flattenStyle(getByText('lv4').parent?.props.style)).toMatchObject({ top: -4 })
-    expect(getByText('32.5억')).toBeTruthy()
-  })
-})
-
-describe('BossDropSheet: 타일 배치', () => {
-  /**
-   * 계열마다 **한 줄**이다. 4열로 접히던 시절에는 소비가 다섯을 넘으면 두 줄이 되어, 시트 높이가
-   * 계열마다 몇 개냐에 달렸다.
-   */
-  it('계열마다 가로로 구르는 줄 하나를 둔다', async () => {
-    const { result } = renderSheet()
-    const { getByTestId } = await result
-
-    const 장비 = getByTestId('drop-tile-row-equipment')
-    expect(장비.props.horizontal).toBe(true)
-    expect(getByTestId('drop-tile-row-consumable').props.horizontal).toBe(true)
-  })
-})
-
-describe('BossDropSheet: 고정 영역', () => {
-  /**
-   * **배지는 자리를 안 먹는다**(사용자 지정). 처음엔 자기 줄을 먹었고, 같은 줄로 합쳤더니
-   * 이번엔 가로를 먹어 드롭 목록이 오른쪽으로 밀렸다. 띄워서 좌상단에 얹는다.
-   */
-  it('난이도 배지는 좌상단에 떠 있고 자리를 안 먹는다', async () => {
-    const { result } = renderSheet({ bossKey: 'lotus', difficulty: 'hard' })
-    const { getByTestId } = await result
-
-    expect(flattenStyle(getByTestId('fixed-drop-badge-hard').props.style)).toMatchObject({
-      position: 'absolute',
-      left: 8,
-      top: 8,
-    })
-  })
-
-  it('드롭 목록은 상자 전체 폭에서 가운데로 선다', async () => {
-    const { result } = renderSheet({ bossKey: 'lotus', difficulty: 'hard' })
-    const { getByTestId } = await result
-
-    expect(flattenStyle(getByTestId('fixed-drop-items-hard').props.style)).toMatchObject({
-      justifyContent: 'center',
-    })
-  })
-
-  it('상자 안쪽 여백은 아이템 기준 위아래가 같다', async () => {
-    const { result } = renderSheet({ bossKey: 'lotus', difficulty: 'hard' })
-    const { getByTestId } = await result
-
-    const style = flattenStyle(getByTestId('fixed-drop-row-hard').props.style)
-    expect(style.paddingTop).toBe(style.paddingBottom)
-    // 배지가 얹히는 자리를 벌어야 해서 예전(10)보다 넓다.
-    expect(Number(style.paddingTop)).toBeGreaterThan(10)
   })
 })

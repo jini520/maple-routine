@@ -202,7 +202,7 @@ status 가 401 · 403 일 때다. 그 밖의 401 · 403 은 `NexonAuthError` 다
 | `features/auth/__tests__/use-api-key-notice.spec.tsx` | 결정 6: 세 원인만 넘기는지, 이미 넘긴 오류 객체는 다시 마운트해도 넘기지 않는지, 새 오류 객체는 다시 넘기는지 본다 |
 | `nexon/__tests__/key-stage.spec.ts` | 결정 3: 10건이 동시에 나가는지, 429 가 하나라도 있으면 개발 단계인지, 다른 실패는 판정하지 않고 던지지도 않는지 본다 |
 | `nexon/__tests__/is-invalid-api-key-error.spec.ts` | 결정 2: 401 · 403 · 400 `OPENAPI00005` 만 무효 키인지 본다 |
-| `app/auth/__tests__/DevelopmentStageKeyModal.test.tsx` | 결정 4: 제목과 두 줄 표, 주 버튼이 앱 밖으로 내보내지 않는지, 링크가 폼과 같은 주소인지, 오버레이와 뒤로가기로 닫히는지 본다 |
+| `app/auth/__tests__/DevelopmentStageKeyModal.test.tsx` | 결정 4: 주 버튼이 앱 밖으로 내보내지 않는지, 링크가 폼과 같은 주소인지, 오버레이와 뒤로가기로 닫히는지 본다 |
 | `app/auth/__tests__/ApiKeyNoticeModal.test.tsx` | 결정 5: 원인마다 문구가 맞는지, 확인을 눌러야만 진행되는지, 오버레이와 뒤로가기로 닫히지 않는지 본다 |
 | `app/auth/__tests__/SignInScreen.test.tsx` | 결정 3 · 4: 개발 단계 모달이 폼 위에 뜨고 폼이 뒤에 남는지, 다른 실패에는 그 모달이 뜨지 않는지 본다 |
 

@@ -245,14 +245,14 @@ iOS 의 꺼진 트랙은 시스템이 반투명 색을 겹쳐 그려서 앱 테�
 |---|---|
 | `components/__tests__/layer-dependencies.test.ts` | 결정 1: 상위 계층을 import 하지 않는지, 계층이 아래부터 끊기지 않는지, `components/` 바로 아래에 계층 디렉터리만 있는지 본다 |
 | `src/__tests__/require-cycle-policy.test.ts` | 결정 3: 배럴을 거친 순환 import 가 없는지 본다 |
-| `components/atoms/Button/__tests__/Button.test.tsx` | 결정 4: 상자 표에 글자 유틸이 없는지, `className` 은 상자에 `textClassName` 은 글자에 붙는지, 문자열 children 만 `Text` 로 감싸는지, 핸들러 · 비활성 · 버튼 시맨틱이 전달되는지, `compact` 크기와 크기 표에 색이 없는지 본다 |
-| `components/atoms/Badge/__tests__/Badge.test.tsx` | 결정 5: 평면 variant 의 상자가 모두 같은지, 난이도 그라디언트 · 테두리 · 글자 그림자, 테두리 폭만큼 여백을 줄여 바깥 크기가 맞는지, 모든 variant 의 높이가 같은지, 높이를 못박지 않는지, `mini` 만 스스로 `fixed` 를 켜는지, `weight` 가 기본 두께를 덮는지 본다 |
+| `components/atoms/Button/__tests__/Button.test.tsx` | 결정 4: 상자 표에 글자 유틸이 없는지, `className` 은 상자에 `textClassName` 은 글자에 붙는지, 문자열 children 만 `Text` 로 감싸는지, `compact` 크기와 크기 표에 색이 없는지 본다 |
+| `components/atoms/Badge/__tests__/Badge.test.tsx` | 결정 5: 평면 variant 의 상자가 모두 같은지, 테두리 폭만큼 여백을 줄여 바깥 크기가 맞는지, 모든 variant 의 높이가 같은지, 높이를 못박지 않는지, `mini` 만 스스로 `fixed` 를 켜는지, `weight` 가 기본 두께를 덮는지 본다 |
 | `lib/__tests__/nativewind-interop.test.tsx` | 결정 6: `Svg` 의 `text-*` 가 `color` 프롭이 되고 크기 유틸이 상자 크기가 되는지, `LinearGradient` 의 `className` 이 style 로 바뀌는지 본다 |
 | `components/atoms/Icon/__tests__/` | 결정 8: lucide 규격으로 그리는지, 크기와 색이 `className` 에서 오고 안 주면 24 로 떨어지는지, 겹침에 `clipPath` · `mask` 를 쓰지 않는지, `fill` 을 줄 때만 정해진 도형이 채워지는지, 단풍잎 루트 요소에 선 규격이 없는지, 톱니 곡선이 lucide `settings` 와 같은지 본다 |
 | `src/__tests__/font-scaling-policy.test.ts` | 결정 9: 고정 칸이 `fixed` 를 받는 부품을 쓸 때 빠뜨리지 않는지 본다 |
 | `components/molecules/Segment/__tests__/` · `TabSegment/__tests__/` · `DifficultySegment/__tests__/` | 결정 10: 고른 것만 선택으로 읽히는지, 누르면 라벨이 아니라 값을 주는지, 고른 것을 다시 누르면 콜백과 촉각이 없는지, 상자가 칠하고 글자색은 상자를 기다리지 않는지, 상자가 터치를 막지 않는지, `Segment` 의 `fixed` 와 `disabled` 를 본다 |
 | `hooks/__tests__/useSlidingThumb.test.tsx` | 결정 10: 처음 그려질 때와 다시 나타날 때는 미끄러지지 않는지, 폭만 바뀌어도 옮긴 것으로 보는지, 옛 렌더의 핸들러로 새 위치가 와도 상자가 따라가는지, 옆 조각이 알려도 다시 계산하는지 본다 |
-| `components/atoms/Switch/__tests__/Switch.test.tsx` | 결정 11: 스크린리더 계약, 안드로이드 두 크기의 치수와 꺼짐 색, 손잡이 트랜지션과 모션 줄이기, 트랙 색이 즉시 바뀌는지, 누르면 `onToggle` 과 촉각이 한 번씩 나는지, `children` 글자를 눌러도 켜지는지, iOS 의 값 · 색 · 누름을 본다 |
+| `components/atoms/Switch/__tests__/Switch.test.tsx` | 결정 11: 스크린리더 계약, 안드로이드 두 크기에서 손잡이가 가는 거리, 손잡이 트랜지션과 모션 줄이기, 트랙 색이 즉시 바뀌는지, 누르면 `onToggle` 과 촉각이 한 번씩 나는지, `children` 글자를 눌러도 켜지는지, iOS 의 상자 크기 · 값 · 누름을 본다 |
 | `components/molecules/AmountFigure/__tests__/AmountFigure.test.tsx` | 결정 13: 숫자와 단위가 같은 줄 높이를 쓰는지, 단위 줄에 숫자와 같은 크기의 글자가 들어 있는지, 숫자의 줄 상자가 글자보다 커서 위가 잘리지 않는지, 눌러도 값이 바뀌지 않는지 본다 |
 | `hooks/__tests__/useSelectionDraft.spec.tsx` | 결정 12: `moveOcid` 가 모든 `(from, to)` 에서 라이브러리 `reorderInsert` 와 같은 배열을 내는지 본다 |
 

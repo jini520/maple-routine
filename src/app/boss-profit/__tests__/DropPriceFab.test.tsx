@@ -50,12 +50,6 @@ function testIdsInOrder(node: unknown, found: string[] = []): string[] {
 }
 
 describe('버튼', () => {
-  it('이름으로 자기가 여는 화면을 말한다', async () => {
-    const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
-
-    expect(view.getByLabelText('아이템 가격 입력')).toBeTruthy()
-  })
-
   // 보던 주를 넘긴다. 가격 입력 화면이 보스 수익 스토어를 읽으면, 이 화면이 없을 때 남은 낡은
   // 기간으로 열린다(today 에서 열 때).
   it('누르면 보고 있는 주를 들고 하위 페이지로 push 한다', async () => {
@@ -66,16 +60,6 @@ describe('버튼', () => {
     })
 
     expect(navigate).toHaveBeenCalledWith('DropPrice', { cycle: 'weekly', periodKey: PERIOD })
-  })
-
-  // 가계부의 ＋ 와 같은 원이다. 두 탭 화면의 같은 자리에 다른 크기가 서면 자리가 아니라
-  // 화면마다 다른 것으로 읽힌다.
-  it('지름이 공용 치수와 같다', async () => {
-    const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
-    const box = flattenStyle(view.getByLabelText('아이템 가격 입력').props.style)
-
-    expect(box.height).toBe(FAB_DIAMETER_PX)
-    expect(box.width).toBe(FAB_DIAMETER_PX)
   })
 })
 

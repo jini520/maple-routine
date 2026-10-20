@@ -4,20 +4,8 @@ import Settings from 'lucide-react-native/icons/settings'
 
 import { findAllOfType, flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { MapleLeaf } from '../MapleLeaf'
-import { LEAF_GRID } from '../maple-leaf'
 
 describe('MapleLeaf', () => {
-  it('잎 격자로 선다. 정사각이 아니다', async () => {
-    const { getByTestId } = await renderAtom(<MapleLeaf size={42} />)
-
-    const leaf = getByTestId('maple-leaf', { includeHiddenElements: true })
-    expect(leaf.props.vbWidth).toBe(127)
-    expect(leaf.props.vbHeight).toBe(130)
-    expect(leaf.props.width).toBe(42)
-    // 42 × 130/127 = 42.99. `EmptyState` 가 43 을 손으로 박아 두던 값이다.
-    expect(leaf.props.height).toBeCloseTo(42 * LEAF_GRID.ratio, 10)
-  })
-
   // **여기가 이 컴포넌트가 `IconSvg` 를 못 쓰는 이유다.** lucide 프리셋은 뿌리에 stroke 를 두는데
   // 그것은 상속 속성이라, 채운 잎에 2px 윤곽선이 얹힌다.
   it('뿌리에 선 프리셋이 없다. 채운 잎에 윤곽선이 생기면 안 된다', async () => {

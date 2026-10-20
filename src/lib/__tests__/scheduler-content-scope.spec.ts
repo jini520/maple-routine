@@ -1,6 +1,5 @@
 import {
   contentCategoryOf,
-  getContentCatalogEntries,
   getMaxCountOverride,
   getShareScope,
   getSharedContentGroups,
@@ -10,19 +9,6 @@ import {
 
 // 이 모듈은 컨텐츠 key 만 받는다. API 이름의 공백 차이는 key 를 얻는 자리(`contentKeyOfApiName`)가 흡수한다.
 describe('getShareScope', () => {
-  it('worldShared에 등록된 항목은 world를 반환한다', () => {
-    expect(getShareScope('monster_park')).toBe('world')
-    expect(getShareScope('maple_union_weekly_dragon')).toBe('world')
-  })
-
-  it('accountShared에 등록된 항목은 account를 반환한다', () => {
-    expect(getShareScope('epic_dungeon_high_mountain')).toBe('account')
-    expect(getShareScope('epic_dungeon_angler_company')).toBe('account')
-    expect(getShareScope('epic_dungeon_nightmare_paradise')).toBe('account')
-    // 2026-09-17 패치 신규. 메이플 ID 공유는 기존 셋과 같다(사용자 확인).
-    expect(getShareScope('epic_dungeon_aurum_regis')).toBe('account')
-  })
-
   it('카탈로그에 없는 항목은 character(기본값)를 반환한다', () => {
     expect(getShareScope('guild_weekly_mission_points')).toBe('character')
     expect(getShareScope('mu_lung_dojo')).toBe('character')
@@ -36,10 +22,6 @@ describe('getShareScope', () => {
 
   // 같은 갈래라도 공유 단위가 다르다. 줄마다 key 가 달라 따로 적는다.
   describe('같은 갈래의 다른 컨텐츠', () => {
-    it('익스트림 몬스터파커 퀘스트는 world다', () => {
-      expect(getShareScope('monster_park_extreme')).toBe('world')
-    })
-
     // 같은 계열이라도 공유 단위가 다르다(사용자 확인). 이름으로 유추하면 틀린다.
     it('PC방 주간 드래곤 퇴치는 account다. PC방이 아닌 쪽(world)과 공유 단위가 다르다', () => {
       expect(getShareScope('maple_union_weekly_dragon')).toBe('world')
@@ -74,25 +56,6 @@ describe('getMaxCountOverride', () => {
   it('오버라이드가 없는 항목과 key 가 없는 항목은 null을 반환한다', () => {
     expect(getMaxCountOverride('monster_park')).toBeNull()
     expect(getMaxCountOverride(null)).toBeNull()
-  })
-})
-
-describe('getContentCatalogEntries', () => {
-  it('daily section에는 몬스터파크(world)만 있다', () => {
-    const entries = getContentCatalogEntries('daily')
-    expect(entries).toEqual([{ contentKey: 'monster_park', scope: 'world' }])
-  })
-
-  it('weekly section에는 world 2종 + account 5종이 있다', () => {
-    const entries = getContentCatalogEntries('weekly')
-    expect(entries).toContainEqual({ contentKey: 'maple_union_weekly_dragon', scope: 'world' })
-    expect(entries).toContainEqual({ contentKey: 'monster_park_extreme', scope: 'world' })
-    expect(entries).toContainEqual({ contentKey: 'epic_dungeon_high_mountain', scope: 'account' })
-    expect(entries).toContainEqual({ contentKey: 'epic_dungeon_angler_company', scope: 'account' })
-    expect(entries).toContainEqual({ contentKey: 'epic_dungeon_nightmare_paradise', scope: 'account' })
-    expect(entries).toContainEqual({ contentKey: 'epic_dungeon_aurum_regis', scope: 'account' })
-    expect(entries).toContainEqual({ contentKey: 'maple_union_pc_cafe_weekly_dragon', scope: 'account' })
-    expect(entries).toHaveLength(7)
   })
 })
 

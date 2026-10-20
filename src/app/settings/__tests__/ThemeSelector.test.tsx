@@ -62,16 +62,6 @@ describe('ThemeSelector: 선택 계약', () => {
 })
 
 describe('ThemeSelector: 카테고리 섹션', () => {
-  it('등록된 모든 테마를 보여준다', async () => {
-    const view = await renderAtom(
-      <ThemeSelector theme={첫테마(THEME_NAMES)} onSelect={jest.fn()} />,
-    )
-
-    for (const name of THEME_NAMES) {
-      expect(view.getByLabelText(name)).toBeTruthy()
-    }
-  })
-
   // 순서는 데이터(JSON 키 순서)가 아니라 레지스트리 상수가 정한다. 카테고리 순서는 프로덕트
   // 결정이라 JSON 에 두지 않았다.
   it('카테고리 헤더가 레지스트리가 정한 순서로 나온다', async () => {

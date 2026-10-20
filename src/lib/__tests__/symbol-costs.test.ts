@@ -7,7 +7,6 @@ import {
   symbolCostsTable,
   symbolLevelsOf,
   symbolMenu,
-  symbolRecordName,
   symbolUpgradeCost,
 } from '../cashbook/symbol-costs'
 
@@ -135,11 +134,5 @@ describe('symbolLevelsOf: 넥슨 응답에서 심볼 key 별 레벨', () => {
         { symbol_name: null, symbol_level: 3 },
       ]),
     ).toEqual({})
-  })
-})
-
-describe('symbolRecordName: 기록 이름', () => {
-  it('지역 이름과 레벨 범위다(사용자 지정)', () => {
-    expect(symbolRecordName('소멸의 여로', 3, 7)).toBe('소멸의 여로 Lv.3 → 7')
   })
 })

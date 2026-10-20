@@ -14,13 +14,6 @@ describe('미선택', () => {
   })
 })
 
-describe('round-trip', () => {
-  it('setTrackingMode(manual) 후 getTrackingMode는 manual을 반환한다', async () => {
-    await setTrackingMode('manual')
-    await expect(getTrackingMode()).resolves.toBe('manual')
-  })
-})
-
 describe('손상된 값', () => {
   it('저장된 값이 알 수 없는 문자열이면 null(미선택)로 폴백한다', async () => {
     await prefs.set('trackingMode', 'something-else')

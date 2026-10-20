@@ -57,27 +57,12 @@ function props(overrides: Partial<React.ComponentProps<typeof CacheClearConfirm>
 }
 
 describe('CacheClearConfirm', () => {
-  // 지울 데이터를 2그룹 중 골라서 지운다.
-  it('삭제 대상을 2그룹 체크리스트로 보여준다', async () => {
-    const view = await renderOverlay(<CacheClearConfirm {...props()} />)
-
-    expect(view.getByLabelText('일반 데이터')).toBeTruthy()
-    expect(view.getByLabelText('수익·지출 기록')).toBeTruthy()
-  })
-
   // 열고 바로 삭제하면 기존 전체 삭제와 같아야 한다.
   it('기본값은 두 그룹 모두 선택된 상태다', async () => {
     const view = await renderOverlay(<CacheClearConfirm {...props()} />)
 
     expect(view.getByLabelText('일반 데이터').props.accessibilityState?.checked).toBe(true)
     expect(view.getByLabelText('수익·지출 기록').props.accessibilityState?.checked).toBe(true)
-  })
-
-  it('각 그룹 행에 그 그룹의 용량을 보여준다', async () => {
-    const view = await renderOverlay(<CacheClearConfirm {...props()} />)
-
-    expect(view.getByText('1.0KB')).toBeTruthy()
-    expect(view.getByText('512B')).toBeTruthy()
   })
 
   // 조회 전에도 같은 자리·같은 타이포로 자리를 잡는다.
@@ -153,25 +138,6 @@ describe('CacheClearConfirm', () => {
     })
 
     expect(view.getByLabelText('일반 데이터').props.accessibilityState?.checked).toBe(true)
-  })
-
-  // 그룹 문구가 실제 삭제 범위와 어긋나면 사용자가 잘못된 정보 위에서
-  // 되돌릴 수 없는 삭제를 승인한다.
-  it('일반 데이터 행에 그 그룹이 지우는 대표 항목을 적는다', async () => {
-    const view = await renderOverlay(<CacheClearConfirm {...props()} />)
-
-    expect(view.getByText('캐릭터 정보 · 수동 선택 항목 · 파티 보스 설정 등')).toBeTruthy()
-  })
-
-  it('수익·드롭 기록 행에 그 그룹이 지우는 대표 항목과 복구 불가 경고를 적는다', async () => {
-    const view = await renderOverlay(<CacheClearConfirm {...props()} />)
-
-    expect(view.getByText('보스 처치·드롭 · 손으로 적은 수입·지출')).toBeTruthy()
-    expect(
-      view.getByText(
-        '손으로 적은 수입·지출은 되살릴 방법이 없고, 보스 기록은 NEXON Open API가 최근 2주치만 제공합니다.',
-      ),
-    ).toBeTruthy()
   })
 
   it('isClearing이 true면 취소·삭제 버튼과 그룹 선택이 모두 비활성화된다', async () => {

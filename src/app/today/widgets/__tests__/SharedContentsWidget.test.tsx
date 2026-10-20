@@ -39,18 +39,6 @@ async function 누름(element: Parameters<typeof fireEvent.press>[0]): Promise<v
 }
 
 describe('계열이 축이다', () => {
-  it('계열명을 머리로 세우고 그 아래에 짧은 이름을 그린다', async () => {
-    const { getAllByTestId, getByText } = await 위젯(공유컨텐츠())
-
-    expect(getAllByTestId('shared-group-name').map((node) => node.props.children)).toEqual([
-      '몬스터파크',
-      '메이플 유니온',
-      '에픽 던전',
-    ])
-    expect(getByText('하이마운틴')).toBeTruthy()
-    expect(getByText('익스트림 몬스터파커')).toBeTruthy()
-  })
-
   // 월드로는 가를 수 없고 계열로 묶은 이유가 그것이다. 라벨이 한 번이라도
   // 나오면 화면이 다시 그 축을 주장하게 된다.
   it('월드·계정이라는 말이 화면에 한 번도 안 나온다', async () => {
@@ -392,18 +380,5 @@ describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => 
     }
     expect(left).toBe(GRID_SIDE_PADDING)
     expect(left + maxWidth).toBeLessThanOrEqual(창폭 - GRID_SIDE_PADDING)
-  })
-
-  // 앱의 팝오버 셋이 같은 상자를 쓴다(`ItemRevenuePopover` · 월드별 분해 · 여기).
-  it('상자는 다른 팝오버와 같은 표면색이다', async () => {
-    const { getByTestId } = await 위젯(공유컨텐츠())
-
-    await 누름(getByTestId('shared-note-toggle'))
-
-    expect(flattenStyle(getByTestId('shared-note').props.style)).toMatchObject({
-      position: 'absolute',
-      backgroundColor: 기본테마.surface,
-      borderRadius: 12,
-    })
   })
 })

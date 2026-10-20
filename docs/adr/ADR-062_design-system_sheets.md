@@ -239,7 +239,7 @@ RN `TextInput` 은 높이를 내용에서 잰다. iOS 는 한글과 영문의 �
 |---|---|
 | `components/organisms/BottomBar/__tests__/BottomBarOverlay.test.tsx` | 결정 1: 슬롯이 호스트에 그려지고, 자기 화면이 초점을 잃으면 그리지 않는지 본다 |
 | `navigation/__tests__/bar-in-layer-stack.test.tsx` | 결정 1: 펼침판 스크림이 하단바보다 뒤에(위에) 그려지는지 본다 |
-| `components/organisms/BottomSheet/__tests__/BottomSheet.test.tsx` | 결정 2: `label` 전달, 상한이 상단 인셋을 따라가는지, 최소 높이 비율, 폭 상한, 스크림 탭으로 닫히는지, 이탈 애니메이션 뒤 부모에 알리는지, 머리 · 바닥 줄이 스크롤 밖에 놓이고 그 높이를 비워 두는지, 페이드가 가려진 쪽에만 그려지는지, 다크에서만 표면을 올리는지 본다. 결정 3: 단계 전환의 재질이 테마를 따르고 안드로이드는 표면색으로 덮는지 본다 |
+| `components/organisms/BottomSheet/__tests__/BottomSheet.test.tsx` | 결정 2: `label` 전달, 상한이 상단 인셋을 따라가는지, 최소 높이 비율, 스크림 탭으로 닫히는지, 이탈 애니메이션 뒤 부모에 알리는지, 머리 · 바닥 줄이 스크롤 밖에 놓이고 그 높이를 비워 두는지, 페이드가 가려진 쪽에만 그려지는지, 다크에서만 표면을 올리는지 본다. 결정 3: 단계 전환의 재질이 테마를 따르고 안드로이드는 표면색으로 덮는지 본다 |
 | `components/organisms/BottomSheet/__tests__/scrim-opacity.test.ts` · `step-dissolve.test.tsx` | 결정 3: 시트가 내려가지 않으면 스크림이 옅어지지 않는지, 단계를 그린 첫 커밋부터 흐림이 덮이는지 본다 |
 | `components/organisms/InputCard/__tests__/` | 결정 4 · 5: 확인 · 닫기 · 스크림 · 뒤로 가기가 값을 내보내거나 버리는지, 칩과 단위 읽기, 판정 전 키보드 막기, 판 경로의 초점과 커서, 콤마 앞뒤 편집, 판의 확인과 카드의 확인이 하는 일이 다른지, 다음 카드가 앞 카드의 값을 물고 오지 않는지 본다 |
 | `components/organisms/MesoPad/__tests__/` | 결정 5: 커서를 숫자 개수로 저장했다가 다시 찾는지, 숫자만 남기고 상한을 넘는 입력을 받지 않는지 본다 |
@@ -250,9 +250,9 @@ RN `TextInput` 은 높이를 내용에서 잰다. iOS 는 한글과 영문의 �
 | `components/organisms/NoticeModal/__tests__/NoticeModal.test.tsx` | 결정 8: 영역을 안 주면 공간도 없는지, 덩어리 간격, 버튼 줄이 스크롤 밖인지, 버튼마다 그 핸들러만 불리는지, `danger` 가 크기는 그대로 글자색만 바꾸는지 본다 |
 | `components/molecules/Popover/__tests__/Popover.test.tsx` · `lib/__tests__/place-dropdown.spec.ts` · `popover-anchor.spec.ts` | 결정 9: 닫는 영역과 내용이 같은 `Modal` 안인지, 재기 전에 숨겨지는지, 위 · 아래 · 가운데 고르기와 하단바 계산, 꼬리와 상자의 clamp 를 본다 |
 | `components/organisms/{CalendarPopover,WeekCalendarPopover}/__tests__/` | 결정 9: 확인 전에는 값을 안 내보내는지, 바깥을 누르면 버리는지, 위치 고르기를 본다 |
-| `components/organisms/FaqSheet/__tests__/FaqSheet.test.tsx` | 결정 10: 문답이 모두 펼쳐져 있고 펼치는 누르개가 없는지, 문단을 순서대로 그리는지 본다 |
+| `components/organisms/FaqSheet/__tests__/FaqSheet.test.tsx` | 결정 10: 문답이 모두 펼쳐져 있고 펼치는 누르개가 없는지 본다 |
 | `components/organisms/SpeedDial/__tests__/` | 결정 11 · 12: 솟는 차례와 펼치는 차례, 접기가 더 짧은지, 모션 줄이기, 같은 폭 계산, 닫힌 항목이 눌리지 않는지, 고르면 접고 알리는지, 그림자가 원 밖 뷰에 있고 다크에서만 헤어라인이 붙는지 본다 |
-| `lib/__tests__/shadow.test.ts` | 결정 12: 블러가 반경의 두 배인지, 알파를 미리 곱하는지, 원의 실효 알파가 하단바 알약과 같은지 본다 |
+| `lib/__tests__/shadow.test.ts` | 결정 12: 블러가 반경의 두 배인지, 알파를 미리 곱하는지 본다 |
 
 ## 번호 기록
 

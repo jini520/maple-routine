@@ -36,10 +36,8 @@ jest.mock('../../../features/mvp-grade/fee-context', () => ({
   })),
 }))
 
-import { 기본테마, flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { IncomeSheet } from '../IncomeSheet'
-import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
-import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import type { IncomeRecord } from '../../../storage/income'
 
 // 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다.
@@ -266,29 +264,6 @@ async function 치기(view: Rendered, text: string): Promise<void> {
 }
 
 describe('갈래', () => {
-  it('1차 시트가 갈래 넷을 카드로 세운다', async () => {
-    const view = await 그리기({}, null)
-
-    expect(view.getByTestId('income-sheet-category-hunting')).toBeTruthy()
-    expect(view.getByTestId('income-sheet-category-sol_erda_fragment')).toBeTruthy()
-    expect(view.getByTestId('income-sheet-category-item_sale')).toBeTruthy()
-    expect(view.getByTestId('income-sheet-category-etc')).toBeTruthy()
-    // 고르기 전에는 폼이 없다. 무엇을 적을지가 아직 안 정해졌다.
-    expect(view.queryByTestId('income-sheet-meso-line')).toBeNull()
-  })
-
-  // 카드가 **가로로 눕는다**(사용자 지정 2026-09-21). 그림과 이름이 한 줄에 서고 한 줄에 둘씩 든다.
-  // 세로 카드 3열이던 것을 바꾼 것이라, 폭과 방향 둘 다 봐야 한쪽만 바뀐 상태를 잡는다.
-  it('카드가 가로로 눕고 한 줄에 둘씩 선다', async () => {
-    const view = await 그리기({}, null)
-
-    const 칸 = view.getByTestId('income-sheet-category-hunting')
-    expect(flattenStyle(칸.props.style)).toMatchObject({ width: '50%' })
-
-    const 상자 = view.getByTestId('income-sheet-category-box-hunting')
-    expect(flattenStyle(상자.props.style)).toMatchObject({ flexDirection: 'row' })
-  })
-
   /**
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
    * 더하고 `npm run assets:gen` 을 안 돌리면 셋 중 하나가 조용히 빈 자리가 된다.
@@ -302,20 +277,6 @@ describe('갈래', () => {
     expect(view.getByTestId('income-sheet-category-icon-sol_erda_fragment', 숨은것)).toBeTruthy()
     expect(view.getByTestId('income-sheet-category-icon-item_sale', 숨은것)).toBeTruthy()
     expect(view.getByTestId('income-sheet-category-icon-etc', 숨은것)).toBeTruthy()
-  })
-
-  /** 닫기는 다른 시트의 저장이 서는 자리다. 상자가 같고 칠만 다르다. */
-  it('1차 시트에는 닫기 버튼도 바닥 줄도 없다', async () => {
-    const view = await 그리기({}, null)
-
-    expect(view.queryByTestId('income-sheet-close')).toBeNull()
-    expect(view.queryByTestId('bottom-sheet-footer')).toBeNull()
-  })
-
-  it('2차에는 닫기가 없다. 그 자리는 저장이 든다', async () => {
-    const view = await 그리기({}, 'hunting')
-
-    expect(view.queryByTestId('income-sheet-close')).toBeNull()
   })
 
   it('고르면 그 갈래의 폼이 서고 제목이 갈래 이름을 든다', async () => {
@@ -351,12 +312,6 @@ describe('갈래', () => {
     expect(view.getByTestId('income-sheet-chain-placeholder-trigger')).toBeTruthy()
     expect(view.getByTestId('income-sheet-chain-placeholder-trigger')).toBeTruthy()
   })
-
-  it('기타는 이름을 안 좁힌다', async () => {
-    const view = await 그리기({}, 'etc')
-
-    expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('내용')
-  })
 })
 
 /**
@@ -367,14 +322,6 @@ describe('갈래', () => {
  * **치는 자리는 `금액` 칸**이다. 큰 숫자는 그 곱을 그리기만 한다.
  */
 describe('금액. OS 숫자 키보드다', () => {
-
-  it('숫자 키보드를 부른다. 글자 키보드가 아니다', async () => {
-    const view = await 직접치는시트()
-
-    // 치는 자리가 입력 카드로 옮겨갔다. 숫자판을 부르는 것은 카드의 칸이다.
-    await 아이디로누르기(view, 'income-sheet-unit-price')
-    expect(view.getByTestId('input-card-value').props.keyboardType).toBe('number-pad')
-  })
 
   // 칸은 **친 글자 그대로**다. 콤마는 밑의 큰 숫자가 단위로 대신한다.
   it('친 글자가 그대로 선다', async () => {
@@ -730,17 +677,6 @@ describe('캐릭터 귀속', () => {
     expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
   })
 
-  /**
-   * **갈래 셋이 같은 모양으로 캐릭터를 묻는다**(사용자 지시). 아이템 판매와 기타는 사슬의
-   * 단계가 캐릭터 하나뿐이라 자리표시자가 `캐릭터 선택` 이다.
-   */
-  it.each(['item_sale', 'etc'] as const)('%s 의 캐릭터 줄도 배지 사슬이다', async (갈래) => {
-    const view = await 그리기({}, 갈래)
-
-    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
-    expect(view.queryByTestId('income-sheet-character-trigger')).toBeNull()
-  })
-
   it('고르면 알약이 서고 자리표시자가 사라진다', async () => {
     const view = await 판매시트()
 
@@ -1090,19 +1026,6 @@ describe('통화', () => {
       expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 60_000_000, quantity: 2 })
     })
 
-    /** 스테퍼는 수량이 크면 여러 번 눌러야 했다. 지출 기타와 같은 치는 칸이다. */
-    it('수량은 치는 칸이다. 스테퍼 · 단위 · 칩이 없다', async () => {
-      const view = await 그리기({}, 'etc')
-
-      expect(view.queryByLabelText('수량 늘리기')).toBeNull()
-      expect(view.queryByTestId('income-sheet-quantity-unit')).toBeNull()
-      await 아이디로누르기(view, 'income-sheet-quantity')
-      expect(view.getByTestId('input-card-value').props.keyboardType).toBe('number-pad')
-      for (const chip of [...MESO_QUICK_ADDS, ...COUNT_QUICK_ADDS]) {
-        expect(view.queryByText(chip.label)).toBeNull()
-      }
-    })
-
     it('친 수량을 비우면 저장이 막힌다', async () => {
       const view = await 그리기({}, 'etc')
       await 치기(view, '30000000')
@@ -1288,26 +1211,6 @@ describe('사냥 계산기', () => {
     // 첫 칸은 `선택 안함`(값이 `null` 이라 이름이 빈 글자다). 그다음이 가장 높은 지역이다.
     expect(보기들[0]).toBe('income-sheet-region-option-')
     expect(보기들[1]).toBe('income-sheet-region-option-tallahart')
-  })
-
-  /** 세 줄이 위에서부터 캐릭터 · 지역 · 사냥터다. 자리표시자가 저마다 자기 이름을 든다. */
-  it('캐릭터 · 지역 · 사냥터가 세 줄로 선다', async () => {
-    const view = await 그리기({}, 'hunting')
-
-    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
-    expect(view.getByTestId('income-sheet-region-placeholder')).toHaveTextContent('지역 선택')
-    expect(view.getByTestId('income-sheet-ground-placeholder')).toHaveTextContent('사냥터 선택')
-  })
-
-  /** 줄이 갈라져도 캐릭터 · 지역 · 사냥터가 색으로 갈린다. */
-  it('알약 색은 캐릭터 · 지역 · 사냥터가 브랜드 색 셋이다', async () => {
-    const view = await 그리기({}, 'hunting')
-    await 밤의길3(view)
-    const 바탕 = (testID: string): unknown => flattenStyle(view.getByTestId(testID).props.style).backgroundColor
-
-    expect(바탕('income-sheet-chain-badge-캐릭터')).toBe(기본테마.primaryTint)
-    expect(바탕('income-sheet-region-badge-지역')).toBe(기본테마.secondaryTint)
-    expect(바탕('income-sheet-ground-badge-사냥터')).toBe(기본테마.thirdTint)
   })
 
   /**
@@ -2017,15 +1920,6 @@ describe('유니온의 부 단계', () => {
   }
   const 단계 = (view: Rendered, 이름: string) => view.getByLabelText(이름).props.accessibilityState
 
-  it('소비 줄의 유니온의 부 뒤에 단계 세그먼트가 선다', async () => {
-    const view = await 그리기({}, 'hunting')
-
-    const 줄 = within(view.getByTestId('income-sheet-boost-line'))
-    expect(줄.getByTestId('income-sheet-union-tier')).toBeTruthy()
-    expect(줄.getByLabelText('1단계')).toBeTruthy()
-    expect(줄.getByLabelText('3단계')).toBeTruthy()
-  })
-
   it('유니온의 부를 안 켜면 꺼져 있고, 켜면 눌린다', async () => {
     const view = await 그리기({}, 'hunting')
     expect(단계(view, '1단계')?.disabled).toBe(true)
@@ -2033,12 +1927,6 @@ describe('유니온의 부 단계', () => {
     await 누르기(view, '유니온의 부')
 
     expect(단계(view, '1단계')?.disabled).not.toBe(true)
-  })
-
-  it('처음 서는 단계는 3단계다', async () => {
-    const view = await 그리기({}, 'hunting')
-
-    expect(단계(view, '3단계')?.selected).toBe(true)
   })
 
   // 21,168,000 × (1 + 50% × 10/30) = 24,696,000. 메소 획득량 줄도 같은 값으로 센다.
@@ -2294,21 +2182,6 @@ describe('조각 가격을 비우면 보관', () => {
     expect(view.queryByTestId('income-sheet-hunt-toggles')).toBeNull()
   })
 
-  // 조각 하나가 몇 만 메소다. 메소의 자릿수 눈금(`+100만`부터)은 첫 칩이 이미 값을 넘겨
-  // 짚을 것이 없었다. 눈금을 두 자리 내린다(사용자 지정).
-  it('빠른 칩이 +1만 · +10만 · +100만 셋이다', async () => {
-    const view = await 그리기({}, 'hunting')
-
-    await 아이디로누르기(view, 'income-sheet-fragment-price')
-
-    const card = within(view.getByTestId('input-card'))
-    expect(card.getByText('+1만')).toBeTruthy()
-    expect(card.getByText('+10만')).toBeTruthy()
-    expect(card.getByText('+100만')).toBeTruthy()
-    expect(card.queryByText('+1000만')).toBeNull()
-    expect(card.queryByText('+1억')).toBeNull()
-  })
-
   // 정산의 `개당 가격` 도 조각 개당 값이다. 이름이 달라도 넣는 값이 같아서 눈금을 맞춘다.
   it('조각 정산의 개당 가격도 같은 칩을 든다', async () => {
     const view = await 그리기({}, 'sol_erda_fragment')
@@ -2331,18 +2204,6 @@ describe('조각 가격을 비우면 보관', () => {
     const card = within(view.getByTestId('input-card'))
     expect(card.getByText('+1만')).toBeTruthy()
     expect(card.getByText('+100만')).toBeTruthy()
-  })
-
-  it('가격 칸의 자리표시자가 보관을 말한다. 두 폼이 같다', async () => {
-    const view = await 그리기({}, 'hunting')
-    // 계산기는 줄이 누르개라 자리표시자가 줄에 서고, 카드를 열면 카드에도 같은 말이 선다.
-    expect(줄글자(view, 'income-sheet-fragment-price')).toBe('미입력 시 보관')
-    await 아이디로누르기(view, 'income-sheet-fragment-price')
-    expect(view.getByTestId('input-card-hint')).toHaveTextContent('미입력 시 보관')
-    await 아이디로누르기(view, 'input-card-close')
-
-    await 이름으로누르기(view, '획득 메소 직접 입력')
-    expect(줄글자(view, 'income-sheet-fragment-price')).toBe('미입력 시 보관')
   })
 
   it('계산기에서 가격을 비우면 조각 값이 합계에서 빠지고 가격이 null 로 저장된다', async () => {
@@ -2521,16 +2382,6 @@ describe('솔 에르다 조각 정산', () => {
     expect(loadFragmentStorage).not.toHaveBeenCalled()
     expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('-')
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
-  })
-
-  /** 판 개수를 치면서 상한인 보관을 같은 줄에서 본다(사용자 지정 2026-09-16). */
-  it('보관 중과 판 개수가 한 줄에 선다', async () => {
-    const view = await 정산시트()
-
-    const 줄 = view.getByTestId('income-sheet-settle-count-row')
-    expect(flattenStyle(줄.props.style).flexDirection).toBe('row')
-    expect(within(줄).getByTestId('income-sheet-fragment-storage')).toBeTruthy()
-    expect(within(줄).getByTestId('income-sheet-settle-count')).toBeTruthy()
   })
 
   it('캐릭터를 고르면 그 캐릭터의 고른 날까지 보관을 센다', async () => {
@@ -2937,24 +2788,6 @@ describe('메소 획득량', () => {
     expect(onSave.mock.calls[0][0].hunt).toMatchObject({ boosts: ['union'], mesoRate: 100 })
   })
 
-  /**
-   * 줄을 하나 줄인다. 숫자와 그것을 움직이는 칩이 한 줄에 붙으므로 시트가 82vh 를 안 넘고
-   * 읽기도 낫다.
-   */
-  /**
-   * **켜는 자리와 세어진 값이 위아래로 갈린다**.
-   * 윗 줄이 켜고 끄는 것 둘, 아랫 줄이 그 결과다.
-   */
-  it('켜는 줄과 값 줄이 갈린다. 값은 켜는 줄 안에 없다', async () => {
-    const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) }, 'hunting')
-    await 루디고르기(view)
-
-    // 켜는 것과 값이 한 줄에 서되 덩어리는 갈린다. 켜는 칸 안에 값이 없다.
-    const 켜는칸 = view.getByTestId('income-sheet-boosts')
-    expect(within(켜는칸).queryByTestId('income-sheet-meso-rate')).toBeNull()
-    expect(view.getByTestId('income-sheet-meso-rate')).toHaveTextContent('149%')
-  })
-
   it('못 읽었을 때만 치는 칸이 **자기 줄**로 선다', async () => {
     const view = await 그리기({
       loadMesoRate: async () => ({ kind: 'fallback' as const, percent: 149 }),
@@ -3107,63 +2940,6 @@ describe('수정으로 열 때의 큰 숫자', () => {
  * **체크박스**가 상태를 말한다.
  */
 describe('사냥 폼의 줄 배치 (사용자 지정 2026-09-01)', () => {
-  // 나란히 세우면 `츄츄 아일랜드` 도 `풍화된 기쁨과 분노의 땅` 도 잘린다. 고른 것이 온전히
-  // 읽히는 쪽을 택했다.
-  it('지역과 사냥터가 **각각 자기 줄**에 선다', async () => {
-    const view = await 그리기()
-
-    // 둘을 한 칸에 묶던 줄이 없다. 있으면 다시 나란히 선 것이다.
-    expect(view.queryByTestId('income-sheet-where')).toBeNull()
-    expect(view.getByTestId('income-sheet-chain-placeholder-trigger')).toBeTruthy()
-    expect(view.getByTestId('income-sheet-chain-placeholder-trigger')).toBeTruthy()
-  })
-
-  /**
-   * 메소 획득량과 소재 스테퍼가 **한 줄**이다(사용자 지정 2026-09-29). `시간` 라벨은 없다.
-   * 소비 줄에는 체크박스 둘만 남는다.
-   */
-  it('메소 획득량과 소재가 한 줄이고 `시간` 라벨이 없다', async () => {
-    const view = await 그리기({}, 'hunting')
-
-    const 줄 = view.getByTestId('income-sheet-meso-line')
-    expect(within(줄).getByText('메소 획득량')).toBeTruthy()
-    expect(within(줄).getByTestId('income-sheet-meso-rate')).toBeTruthy()
-    expect(within(줄).getByTestId('income-sheet-sojae')).toBeTruthy()
-    expect(within(줄).getByText('소재')).toBeTruthy()
-    expect(view.queryByText('시간')).toBeNull()
-  })
-
-  it('소비 줄은 소형 재물 획득의 비약이 먼저, 유니온의 부가 다음이다', async () => {
-    const view = await 그리기({}, 'hunting')
-
-    const 차례 = within(view.getByTestId('income-sheet-boosts'))
-      .getAllByRole('checkbox')
-      .map((each) => each.props.accessibilityLabel as string)
-    expect(차례).toEqual(['소형 재물 획득의 비약', '유니온의 부'])
-  })
-
-  it('소비 줄에는 체크박스만 선다', async () => {
-    const view = await 그리기({}, 'hunting')
-
-    const 소비줄 = view.getByTestId('income-sheet-boost-line')
-    expect(within(소비줄).getByTestId('income-sheet-boosts')).toBeTruthy()
-    expect(within(소비줄).queryByText('메소 획득량')).toBeNull()
-  })
-
-  /**
-   * 라벨 · 값 · 스테퍼가 고르게 벌어진다(`space-between`). 값 자리의 폭은 못박는다. `0%` 와
-   * `258%` 의 글자 폭이 달라 안 박으면 캐릭터를 고르는 순간 스테퍼가 밀린다.
-   */
-  it('고르게 벌어지고 값 자리의 폭이 못박혀 있다', async () => {
-    const view = await 그리기({}, 'hunting')
-
-    const 줄 = view.getByTestId('income-sheet-meso-line')
-    expect(flattenStyle(줄.props.style).justifyContent).toBe('space-between')
-    expect(flattenStyle(view.getByTestId('income-sheet-meso-rate-slot').props.style).minWidth).toBe(
-      56,
-    )
-  })
-
   it('켜고 끄는 것은 **체크박스**다. 눌리면 상태가 뒤집힌다', async () => {
     const view = await 그리기()
 

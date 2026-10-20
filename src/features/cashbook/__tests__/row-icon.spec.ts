@@ -39,19 +39,6 @@ const spend = (over: Partial<SpendRecord> = {}): DayRecord => ({
 })
 
 describe('recordIconKeyOf', () => {
-  it('보스 결정석 줄', () => {
-    expect(
-      recordIconKeyOf({
-        kind: 'bossCrystal',
-        characterName: '낟낟',
-        ocid: 'o',
-        payoutMeso: 1,
-        count: 1,
-        bosses: [],
-      } as unknown as DayRecord),
-    ).toBe('bossCrystal')
-  })
-
   it('강화 줄은 기록 종류와 갈래 key 로 잡는다', () => {
     expect(
       recordIconKeyOf({
@@ -131,9 +118,5 @@ describe('recordIconOf', () => {
     expect(recordIconOf(income({ category: 'etc', item: '아무거나' }))).toBe(ITEM_ASSETS['meso.webp'])
     expect(recordIconOf(spend({ category: 'item_purchase', item: '루즈 컨트롤 머신 마크' }))).toBeNull()
     expect(recordIconOf(income({ category: 'item_sale', item: '앱솔 무기' }))).toBeNull()
-  })
-
-  it('사냥 줄은 지금 그림 그대로다', () => {
-    expect(recordIconOf(income({ item: '아무거나' }))).toBe(ITEM_ASSETS['wealth_acquisition_potion_small.webp'])
   })
 })

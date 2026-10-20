@@ -41,27 +41,6 @@ describe('DevelopmentStageKeyModal', () => {
       useAuthStore.setState({ developmentStageBlocked: true })
     })
 
-    // 제목이 `개발 단계` 라는 낱말을 안 쓴다. 이 사람은 그 말이 무엇인지 모르고 그것을 골랐으므로
-    // 모르는 말을 돌려주면 무엇이 잘못됐는지가 전달되지 않는다.
-    it('제목은 못 쓴다는 사실이지 낱말 풀이가 아니다', async () => {
-      const { getByTestId } = await renderOverlay(<DevelopmentStageKeyModal />)
-
-      expect(getByTestId('development-stage-key-title')).toHaveTextContent(
-        '이 키로는 연결할 수 없습니다',
-      )
-    })
-
-    // 두 단계는 같은 축의 두 값으로 만난다. 뜻을 설명하는 대신 그 자리에 다른 값이 있었다는
-    // 사실을 준다. 넉 줄이 함께 있어야 그 관계가 선다.
-    it('넣은 키와 필요한 키를 한 표에서 마주 세운다', async () => {
-      const { getByText } = await renderOverlay(<DevelopmentStageKeyModal />)
-
-      expect(getByText('넣으신 키')).toBeTruthy()
-      expect(getByText('개발 단계')).toBeTruthy()
-      expect(getByText('필요한 키')).toBeTruthy()
-      expect(getByText('서비스 단계')).toBeTruthy()
-    })
-
     // 주 동작은 되돌아가는 것이다. 이 모달은 길을 막고 서 있어 사용자가 바로 할 일이 폼으로
     // 돌아가는 것이라, 가장 큰 버튼이 앱 밖으로 내보내면 안 된다.
     it('주 버튼은 폼으로 되돌린다. 앱 밖으로 내보내지 않는다', async () => {

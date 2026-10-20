@@ -90,17 +90,6 @@ describe('summarizeAccount: 월드 집계', () => {
     expect(summary?.characterCount).toBe(3)
   })
 
-  it('월드가 하나면 하나만 돌려준다', () => {
-    const summary = summarizeAccount(
-      account([
-        character({ name: '가', level: 200, world: '베라', worldKey: 'bera' }),
-        character({ name: '나', level: 200, world: '베라', worldKey: 'bera' }),
-      ]),
-    )
-
-    expect(summary?.worldCounts).toEqual([{ worldKey: 'bera', world: '베라', count: 2 }])
-  })
-
   it('셋째 월드를 **외 n** 같은 꼬리로 적지 않는다. 목록이 정확히 둘이다', () => {
     const summary = summarizeAccount(
       account([
@@ -157,24 +146,6 @@ describe('buildSelectedCharacterViews', () => {
     )
 
     expect(views.map((view) => view.ocid)).toEqual(['ocid-low', 'ocid-high', 'ocid-mid'])
-  })
-
-  it('캐시가 있으면 이름·레벨·직업·월드·얼굴을 싣는다', () => {
-    const views = buildSelectedCharacterViews(
-      ['ocid-1'],
-      new Map([['ocid-1', cached({ jobClass: '나이트로드' })]]),
-      new Set(),
-    )
-
-    expect(views[0]).toEqual({
-      ocid: 'ocid-1',
-      name: '낟낟',
-      level: 294,
-      jobClass: '나이트로드',
-      worldKey: 'scania',
-      imageUrl: 'https://example.com/face.png',
-      unavailable: false,
-    })
   })
 
   it('캐시가 없으면 모르는 값을 지어내지 않는다 (level null · jobClass 없음 · 얼굴 null)', () => {

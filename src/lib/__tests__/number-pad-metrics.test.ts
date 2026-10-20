@@ -121,6 +121,3 @@ describe('인셋은 바닥을 두고 읽는다', () => {
     expect(insetFloorPx(15, MIN_BOTTOM_INSET_PX)).toBe(MIN_BOTTOM_INSET_PX)
   })
 })
-
-describe('판의 치수', () => {
-})

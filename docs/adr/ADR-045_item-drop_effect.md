@@ -163,7 +163,7 @@ RN 의 `<Image>` 에서 그림 소스를 아직 그려 보지 않은 장으로 �
 | `components/organisms/DropEffectOverlay/__tests__/drop-effect-layout.spec.ts` | 결정 5: 기준점 표의 길이가 단계별 장 수와 같고 값이 유한한 양수인지 본다. 결정 7: 장 목록이 빠짐없이 만들어지고 크기를 모르는 장은 빠지는지 본다 |
 | `components/organisms/DropEffectOverlay/__tests__/DropEffectOverlay.test.tsx` | 결정 2: 전체화면 모달로 뜨는지, 빛기둥과 버스트가 쌓이는 순서, 블렌드가 `zIndex` 를 가진 상자에 걸리는지, 처음에는 아이템이 안 보이는지, 누르기와 안드로이드 뒤로가기로 닫히는지, 프레임 에셋 네 단계가 있는지 본다 |
 | | 결정 8: 배경이 창 크기를 숫자로 받는지 본다 |
-| `storage/__tests__/drop-effect.spec.ts` · `features/drop-effect/__tests__/store.spec.ts` | 결정 3: 저장값이 없으면 켜짐인지, 끔을 저장하고 읽는지, 저장 실패를 그대로 던지는지, 스토어가 저장값을 읽어 오고 바꿀 때 저장하는지 본다 |
+| `storage/__tests__/drop-effect.spec.ts` | 결정 3: 저장값이 없으면 켜짐인지, 저장 실패를 그대로 던지는지 본다 |
 | `app/boss-profit/__tests__/CharacterAccordion.test.tsx` | 결정 10: 고가 아이템이면 테두리 · 그림자 · 배지가 함께 붙고, 고가가 아니거나 미완료 행이면 안 붙는지, 펼침과 움직임 줄이기에서 정적 그림자로 바뀌는지 본다 |
 | `components/molecules/ValuableDropBadge/__tests__/ValuableDropBadge.test.tsx` | 결정 10: 배지가 그림 셋과 `+N` 을 그리는지 본다 |
 

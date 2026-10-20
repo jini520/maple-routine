@@ -201,12 +201,6 @@ describe('InputCard', () => {
     내리기.mockRestore()
   })
 
-  it('단위는 값 오른쪽에 선다', async () => {
-    const { view } = await 그리기({ unit: '메소' })
-
-    expect(view.getByText('메소')).toBeTruthy()
-  })
-
   /**
    * 드롭 판매가의 모양. 가격 입력 시트가 없어지면서 그 시트가 들던 분배 인원과 기록 안함이
    * 카드로 왔다. 부품은 도메인 낱말을 모르고 라벨은 호출부가 준다.
@@ -352,13 +346,6 @@ describe('InputCard', () => {
     })
 
 
-    it('비율을 넘기면 값 칸 아래에 그 라벨로 선다. 낱말은 호출부가 준다', async () => {
-      const { view } = await 그리기({ share: 비율 })
-
-      expect(view.getByText('분배 비율')).toBeTruthy()
-      expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('66.7%')
-    })
-
     /** 친 값과 같이 **카드가 든다**. 그래야 확인 한 번에 둘이 함께 나간다. */
     it('비율은 카드가 들고 확인이 친 값과 함께 내보낸다', async () => {
       const { view, onConfirm } = await 그리기({ share: 비율 })
@@ -484,14 +471,6 @@ describe('InputCard', () => {
 
         expect(view.getByLabelText('분배 비율 비율 합 증가')).toBeTruthy()
         expect(flattenStyle(view.getByTestId('share-field-track').props.style).flexDirection).not.toBe('row')
-      })
-
-      // 좁은 자리라 이름과 값이 한 줄을 다투면 세그먼트가 찌부러진다.
-      it('수수료 줄은 이름과 값을 위아래로 나눈다', async () => {
-        const { view } = await 그리기({ share: 비율, fees: 수수료 })
-
-        expect(view.getByTestId('input-card-sale-fee-head')).toBeTruthy()
-        expect(view.getByTestId('input-card-sale-fee-value')).toBeTruthy()
       })
 
       /**

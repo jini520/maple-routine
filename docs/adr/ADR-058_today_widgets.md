@@ -518,14 +518,14 @@ ID 공유 컨텐츠` 타일에 한 줄씩 모은다.
 | `app/today/widgets/__tests__/ValuableDroughtWidget.test.tsx` | 결정 17: 문구를 마운트할 때 한 번만 고르는지, 0주만 바탕을 칠하는지, 기록이 없을 때 `0주째` 로 쓰지 않는지 본다 |
 | `app/today/widgets/__tests__/WeeklyBossProfitWidget.test.tsx` | 결정 10: 기록이 없으면 `0 메소` 와 미기록 한 줄을 그리는지 본다 |
 | | 결정 27: `4×auto` 가 4x3 과 같은 내용을 그리는지, 순위가 `1st` · `2nd` · `3rd` 이고 칸이 최소 너비에 한 줄인지 본다 |
-| `app/today/widgets/__tests__/SharedContentsWidget.test.tsx` | 결정 18: 월드 · 계정이라는 말이 나오지 않는지, `?` 팝오버가 다른 팝오버와 같은 창 · 같은 표면인지 본다 |
+| `app/today/widgets/__tests__/SharedContentsWidget.test.tsx` | 결정 18: 월드 · 계정이라는 말이 나오지 않는지, `?` 팝오버의 상자와 닫는 층이 같은 창에 있는지 본다 |
 | | 결정 24: 순서를 지키며 줄 수가 가장 비슷한 곳에서 두 열로 나누는지, 종류가 하나면 한 열인지, 완료한 줄에 체크 · 취소선 · 흐린 색이 함께 걸리는지, 채운 상자가 `primary` 인지, 체크박스를 누를 수 없는지, 횟수가 없으면 오른쪽을 비우는지 본다 |
 | | 결정 25: 에픽 던전 제목 줄에 `n/3` 이 줄 횟수와 같은 형태로 보이는지, 한도로 막힌 줄은 체크 없이 취소선만 긋는지 본다 |
 | `app/today/widgets/__tests__/RemainingScheduleWidget.test.tsx` | 결정 19: 한 번에 한 행만 열리는지, 탭을 바꾸면 닫히는지, `CLEAR` · 실패 행은 누를 수 없는지 본다 |
 | | 결정 23: 처음 탭이 일간이고 합계가 없는지, 값이 있는 종류만 이름과 함께 나오는지, 0 이면 `CLEAR` 이고 대상이 없던 캐릭터도 같은지, 끝낸 캐릭터가 남는지, 탭마다 남은 개수 순 · 동수면 관리 순서 · 실패는 맨 아래로 가는지, 숫자 칸이 너비 대신 최소 너비인지 본다 |
 | `app/today/widgets/__tests__/NextPartyScheduleWidget.test.tsx` | 결정 11: 이미 시작한 회차를 건너뛰는지, 누르면 그 회차를 열도록 남기는지 본다 |
 | `features/settlement/__tests__/store.spec.ts` | 결정 20 · 21: 서버를 못 받으면 줄을 띄우지 않는지, 겹쳐 불러도 한 번만 묻는지, 닫으면 그 결산 동안 안 뜨고 다음 결산에는 다시 뜨는지, 앱을 다시 켜도 닫은 것을 기억하는지 본다 |
-| `app/__tests__/SettlementBanner.test.tsx` | 결정 21 · 22: 문장 둘이 각자 한 줄인지, 닫기가 시트를 열지 않는지, 줄을 누르면 FAQ 가 열리는지, 둘째 줄을 화면이 넘긴 글자로 그리는지 본다 |
+| `app/__tests__/SettlementBanner.test.tsx` | 결정 21 · 22: 문장 둘이 각자 한 줄인지, 닫기가 시트를 열지 않는지, 줄을 누르면 FAQ 가 열리는지 본다 |
 
 ## 번호 기록
 

@@ -233,7 +233,7 @@ Expo 는 reanimated 를 4.5.1 로 고정하므로 `package.json` 의 `expo.insta
 | 파일 | 확인하는 것 |
 |---|---|
 | `src/__tests__/sticky-policy.test.ts` | 결정 1: 고정 영역을 만드는 속성이 소스에 들어오지 않는지 본다 |
-| `components/templates/ScreenScroll/__tests__/ScreenScroll.test.tsx` | 결정 1 · 2 · 4 · 7: 헤더가 스크롤 뷰의 자식인지, 배경을 칠하지 않고 튕김을 끄지 않는지, 헤더가 없을 때만 상자를 내리는지, 콘텐츠 간격이 `gap-2` 인지, 마스크가 스크롤 뷰를 감싸고 알파만 전달하는지, 겹칠 것이 없으면 마스크를 걸지 않는지, 하단 인셋이 들어가는 곳을 본다 |
+| `components/templates/ScreenScroll/__tests__/ScreenScroll.test.tsx` | 결정 1 · 2 · 4 · 7: 헤더가 스크롤 뷰의 자식인지, 배경을 칠하지 않고 튕김을 끄지 않는지, 헤더가 없을 때만 상자를 내리는지, 마스크가 스크롤 뷰를 감싸고 알파만 전달하는지, 겹칠 것이 없으면 마스크를 걸지 않는지, 하단 인셋이 들어가는 곳을 본다 |
 | `components/templates/PageHeader/__tests__/PageHeader.test.tsx` | 결정 2 · 7: 상단 안전영역만큼만 패딩을 주는지, 배경을 칠하지 않는지, 아래 여백이 없는지 본다 |
 | `lib/__tests__/top-safe-area.test.ts` · `bottom-safe-area.test.ts` | 결정 3: 안드로이드에서만 하한을 쓰고, 인셋이 더 크면 그대로 두는지, 결과가 인셋보다 작아지지 않는지 본다 |
 | `src/__tests__/top-safe-area-policy.test.ts` · `bottom-safe-area-policy.test.ts` | 결정 3: 화면이 `insets.top` · `insets.bottom` 을 직접 읽지 않는지, `ScreenScroll` 은 인셋과 하한을 둘 다 보는지 본다 |

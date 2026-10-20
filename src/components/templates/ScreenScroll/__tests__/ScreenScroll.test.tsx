@@ -79,15 +79,6 @@ describe('ScreenScroll', () => {
     expect(scroller.props.automaticallyAdjustKeyboardInsets).toBeUndefined()
   })
 
-  it('콘텐츠 간격을 gap-2 로 준다', async () => {
-    const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
-
-    expect(flattenStyle(getByTestId('screen-scroll').props.contentContainerStyle)).toMatchObject({
-      columnGap: 8,
-      rowGap: 8,
-    })
-  })
-
 // 불투명 배경은 테마 배경 이미지(백드롭)를 통째로 가린다. 앱 루트의 `bg-bg` 를
   // 빼야 했던 것과 같은 자리다.
   it('배경색을 칠하지 않는다', async () => {

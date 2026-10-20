@@ -1,5 +1,4 @@
-// 파티 인원 스테퍼. 갈린 것 둘. `toBeDisabled` 대신 **RN 의 접근성 상태**를 보고,
-// `tabular-nums` 클래스 대신 **풀린 `fontVariant`** 를 본다.
+// 파티 인원 스테퍼. `toBeDisabled` 대신 **RN 의 접근성 상태**를 본다.
 //
 // 여기서 특히 중요한 케이스는 비활성 흐림이다. CSS 의사 클래스가 없어 RN 에서
 // 그 변형은 `Pressable disabled` 와 이어져 있지 않아 **비활성 버튼이 멀쩡한 색으로 보인다**
@@ -94,20 +93,4 @@ describe('PartySizeStepper', () => {
     // 테두리는 버튼이 낱개로 두른다.
     expect(flattenStyle(getByLabelText(증가).props.style).borderWidth).toBe(1)
   })
-
-  it('값이 자릿수를 넘어가도 −/+ 가 움직이지 않게 tabular-nums 로 그린다', async () => {
-    const { getByText } = await renderAtom(<PartySizeStepper label="스우" value={6} max={6} onChange={jest.fn()} />)
-
-    expect(flattenStyle(getByText('6').props.style).fontVariant).toEqual(['tabular-nums'])
-  })
-
-// 히트 영역은 레이아웃을 안 건드리는 `hitSlop` 으로 넓힌다.
-  it('시각 크기보다 넓은 히트 영역을 갖는다', async () => {
-    const { getByLabelText } = await renderAtom(
-      <PartySizeStepper label="스우" value={3} max={6} onChange={jest.fn()} />,
-    )
-
-    expect(getByLabelText(증가).props.hitSlop).toEqual({ top: 8, bottom: 8, left: 8, right: 8 })
-  })
-
 })

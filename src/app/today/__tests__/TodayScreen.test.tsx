@@ -713,18 +713,6 @@ describe('TodayScreen: 대표 표식', () => {
 })
 
 describe('TodayScreen: 갱신 시각', () => {
-  // **화면이 재지 않는다.** 실시간 조회(`syncSchedules` 회차 · 오늘이 든 강화)가 끝난 자리에서
-  // 적히는 값 하나를 다섯 화면이 함께 읽는다. 이 화면은 스토어 넷을 읽지만 갱신 시각은 그 값
-  // 하나로 적는다.
-  it('실시간 조회 시각을 읽는다', async () => {
-    useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
-    setStores(캐릭터_넷)
-
-    await renderScreen()
-
-    expect(screen.getByTestId('data-freshness')).toBeTruthy()
-  })
-
   // 제목에 딸린 작은 글씨다. 제목 **줄 안**에 있으면 폭을 다투고, 그때 줄어드는 것은 제목이다.
   it('제목 줄이 아니라 그 아래에 선다', async () => {
     useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })

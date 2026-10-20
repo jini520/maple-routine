@@ -170,16 +170,16 @@
 | 파일 | 확인하는 것 |
 |---|---|
 | `storage/__tests__/tracking-mode.spec.ts` | 결정 1: 저장 값이 없거나 알 수 없는 값이면 자동으로 꾸미지 않고 `null` 인지 본다 |
-| `features/tracking-mode/__tests__/store.spec.ts` | 결정 1 · 5: 저장된 모드를 읽는지, 자동에서 수동으로 바꿀 때만 추적 캐릭터 전원을 한 번에 시드하는지 본다 |
+| `features/tracking-mode/__tests__/store.spec.ts` | 결정 5: 자동에서 수동으로 바꿀 때만 추적 캐릭터 전원을 한 번에 시드하는지 본다 |
 | `features/tracking-mode/__tests__/seed.spec.ts` | 결정 5: 등록된 항목만 일간 · 주간을 정해 넣는지, 표에 없는 컨텐츠 · 보스를 빼는지, 결과가 없으면 저장하지 않고 실패하는지, 여러 캐릭터를 한 번에 동기화하고 ocid 로 찾는지 본다 |
 | `features/tracking-mode/__tests__/seed-round-isolation.spec.ts` | 결정 5: 전환 시드에서 캐릭터마다 자기 스케줄로 채워지는지 본다 |
-| `storage/__tests__/manual-tracked-content.spec.ts` | 결정 3: 새 형식 항목이 그대로 읽히는지, 옛 `content` 항목과 이름 항목을 key 로 옮기고 못 찾으면 버리는지, 저장 실패를 그대로 전하는지 본다 |
+| `storage/__tests__/manual-tracked-content.spec.ts` | 결정 3: 옛 `content` 항목과 이름 항목을 key 로 옮기고 못 찾으면 버리는지, 저장 실패를 그대로 전하는지 본다 |
 | `lib/__tests__/manual-content-merge.spec.ts` | 결정 3 · 6: 수동 항목 값을 동기화 결과에서, 없으면 표 기본값에서 찾는지, 순서가 표 순서인지, 표에 없는 추적 항목도 버리지 않는지 본다 |
 | `features/content-scheduler/__tests__/displayed-contents.spec.ts` | 결정 2 · 6: 자동은 등록된 것만, 수동은 추적 목록대로 보여 주는지, 일간 · 주간이 섞이지 않는지, 표에 없는 컨텐츠의 처리, 수동 모드에서 시작 기간 전인 항목을 그리지만 않는지 본다 |
 | `features/content-scheduler/__tests__/store.spec.ts` | 결정 3: 추가할 때 `kind` 와 표의 `max_count` 를 저장하고 중복을 막는지, 삭제가 그 항목만 지우는지 본다. 결정 5: 수동 모드에서 새로 더한 캐릭터만 시드하는지 본다. 결정 8: 탭을 바꿔도 조회하지 않는지 본다 |
 | `app/content-scheduler/__tests__/ContentManageScreen.test.tsx` | 결정 7: 자동 모드면 뒤로 가는지, 표 전체를 보여 주고 추적 항목만 선택 상태인지, 누르면 지금 탭의 `kind` 로 추가 · 삭제하는지, 저장 실패 토스트, 시작 기간 전 컨텐츠를 빼는지 본다 |
 | `app/content-scheduler/__tests__/ContentScreen.test.tsx` | 결정 2 · 7: 수동 모드는 등록과 관계없이 추적 항목을 보여 주는지, `컨텐츠 관리` 와 빈 상태 버튼이 관리 화면을 열고 자동 모드에는 없는지 본다 |
-| `lib/__tests__/content-category.spec.ts` | 결정 7: 카테고리 묶음과 주간 카테고리 순서, 참고 배지의 우선순위를 본다 |
+| `lib/__tests__/content-category.spec.ts` | 결정 7: 카테고리 key 로 묶는지, 순서 목록에 있는 카테고리를 앞세우는지, 참고 배지의 우선순위를 본다 |
 | `app/settings/__tests__/TrackingModeModal.test.tsx` | 결정 9: 옵션을 눌러도 적용되지 않는지, 같은 모드면 `적용` 을 못 누르는지, 적용 중에는 모두 막히는지, 적용이 끝난 뒤에만 세 탭을 다시 읽는지 본다 |
 
 ## 번호 기록

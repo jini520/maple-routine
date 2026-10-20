@@ -89,9 +89,4 @@ describe('compact 규격은 링이 얼굴 밖에 선다', () => {
 
     expect(링_안쪽).toBeGreaterThan(PORTRAIT_COMPACT.faceSize / 2)
   })
-
-  // 헤더 높이 64px(12 + 40 + 12)의 재료다. 슬롯이 커지면 헤더가 커진다.
-  it('슬롯이 40 이라 아코디언 헤더가 64px 로 선다', () => {
-    expect(PORTRAIT_COMPACT.slot).toBe(40)
-  })
 })

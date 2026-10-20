@@ -264,9 +264,9 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 | | 결정 14: 주문서의 축 고르기 규칙과 수정 시 되살리기를 본다. 결정 15: 버프 두 묶음과 개당 가격 × 수량 · 거꾸로 계산하기를 본다. 결정 16: 심볼 목록 거르기 · 만렙 묶음 · 기본 범위 · 비용 합계와 저장 · 9월 17일 전 날짜 · 수정 시 되살리기를 본다 |
 | `app/cashbook/spend/__tests__/LevelRangeSlider.test.tsx` | 결정 16: 위치에서 레벨을 고르고, 손잡이가 서로를 못 넘고, 겹쳤을 때 끄는 방향이 손잡이를 고르고, 옮길 때만 햅틱이 나는지 본다 |
 | `app/cashbook/spend/__tests__/tile-rows.test.ts` | 결정 2: 타일 하나짜리 묶음 둘이 한 줄에 놓이고 셋이면 둘 + 하나인지 본다 |
-| `lib/__tests__/spend-catalog.test.ts` | 결정 12: 같은 타일의 단계가 한 칸으로 합쳐지고 묶음을 다시 묶지 않는지 본다. 결정 13: 형태별 단계의 값 · 이름 · key 왕복을 본다. 결정 14: 축 고르기 규칙 넷과 `optionItemOf` 를 본다 |
+| `lib/__tests__/spend-catalog.test.ts` | 결정 12: 같은 타일의 단계가 한 칸으로 합쳐지는지 본다. 결정 13: 형태별 단계의 값 · 이름 · key 왕복을 본다. 결정 14: 축 고르기 규칙 넷과 `optionItemOf` 를 본다 |
 | `lib/__tests__/symbol-costs.test.ts` | 결정 16: 여러 단계 비용의 합, 표 밖 레벨과 표 시작 전 날짜가 `null` 인지, 목록 거르기와 만렙 묶음, 넥슨 응답 이름 맞추기를 본다 |
-| `lib/__tests__/cashbook-categories.spec.ts` | 결정 2: 분류의 차례(수입의 기본이 사냥)와 카드 그림을 모두 찾는지 본다 |
+| `lib/__tests__/cashbook-categories.spec.ts` | 결정 2: 분류 카드의 그림을 모두 찾는지 본다 |
 
 ## 번호 기록
 

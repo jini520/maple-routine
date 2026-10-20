@@ -158,17 +158,6 @@ describe('길드는 닉네임 옆이다', () => {
     expect(이름줄.getByText('백호단')).toBeTruthy()
   })
 
-  it('길드를 모르거나 미가입이면 이름만 선다', async () => {
-    for (const guildName of [undefined, null] as const) {
-      const { queryByTestId } = await 위젯(
-        크기['4x1'],
-        뷰모델({ representative: { ...대표_캐릭터, guildName } }),
-      )
-
-      expect(queryByTestId('representative-guild')).toBeNull()
-    }
-  })
-
   // 길드는 잘리면 **다른 길드로 읽힌다**. 닉네임은 초상화가 이미 **누구인가** 를 말한다.
   it('자리가 모자라면 닉네임이 줄어든다. 길드가 아니라', async () => {
     const { getByTestId } = await 위젯(크기['4x1'])

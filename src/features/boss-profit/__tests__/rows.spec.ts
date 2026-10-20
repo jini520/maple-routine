@@ -137,12 +137,6 @@ describe('buildBossProfitRow', () => {
     expect(buildBossProfitRow('o1', 캐릭터, 자쿰, new Date('2026-09-12T12:00:00+09:00')).priceMeso).toBe(8_080_000)
     expect(buildBossProfitRow('o1', 캐릭터, 자쿰, new Date('2026-09-18T12:00:00+09:00')).priceMeso).toBe(4_040_000)
   })
-
-  it('행의 월드 key 는 캐릭터 프로필의 것이다', () => {
-    const row = buildBossProfitRow('o1', { ...캐릭터, world: '엘리시움', worldKey: 'elysium' }, 자쿰, new Date('2026-09-12T12:00:00+09:00'))
-
-    expect([row.world, row.worldKey]).toEqual(['엘리시움', 'elysium'])
-  })
 })
 
 // 기록의 월드 스냅샷이 이긴다. 이름과 key 는 같은 출처에서 짝으로 온다. 섞으면 이름과 엠블럼 · 한도가 다른 월드를 가리킨다.

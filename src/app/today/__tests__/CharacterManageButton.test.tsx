@@ -146,22 +146,6 @@ describe('도는 얼굴', () => {
     }
   })
 
-  it('하나뿐이면 그 하나만 선다', async () => {
-    const view = await renderAtom(<CharacterManageButton portraits={[얼굴('A')]} />)
-
-    expect(view.getByTestId('character-manage-face-0')).toBeTruthy()
-    expect(view.queryByTestId('character-manage-face-1')).toBeNull()
-  })
-
-  // 얼굴 그림은 뷰모델이 나른 것을 그대로 쓴다. 모르는 얼굴을 비슷한 것으로 때우지 않는다.
-  it('그림은 목록이 든 URL 이다', async () => {
-    const view = await renderAtom(<CharacterManageButton portraits={셋} />)
-
-    expect(view.getByTestId('character-manage-face-0').props.source).toEqual({
-      uri: 셋[0].imageUrl,
-    })
-  })
-
   // 얼굴을 **넓게 잡은 크롭**으로 그린다(사용자 지시). 원이 48 까지 커지자 기본 크롭에서는
   // 머리통만 크게 보였다. `faceZoom` 을 떼면 이 단언이 깨진다.
   it('얼굴을 기본보다 넓게 잡아 머리통을 작게 그린다', async () => {

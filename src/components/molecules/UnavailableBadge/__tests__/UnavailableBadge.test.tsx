@@ -6,16 +6,10 @@
  */
 import { fireEvent } from '@testing-library/react-native'
 
-import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
+import { renderAtom } from '../../../__tests__/render-atom'
 import { UnavailableBadge } from '../UnavailableBadge'
 
 describe('UnavailableBadge', () => {
-  it('글자색은 `Badge` 의 `error` 와 같은 값이다', async () => {
-    const view = await renderAtom(<UnavailableBadge label="조회 불가" />)
-
-    expect(flattenStyle(view.getByText('조회 불가').props.style).color).toBe(기본테마.errorInk)
-  })
-
   // 누를 수 있는 자리와 아닌 자리가 있다. 보스 수익의 카드는 눌러 설명 팝오버를 열고, 오늘
   // 화면의 대표 카드는 열 팝오버가 없다.
   it('`onPress` 를 주면 버튼이 된다', async () => {

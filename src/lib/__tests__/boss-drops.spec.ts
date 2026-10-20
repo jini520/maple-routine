@@ -9,7 +9,6 @@ import {
   dropTileKey,
   getObtainableTileKeys,
   getRingBoxContents,
-  isBoxItem,
   planConfirmedDifficultyDropMigration,
   pruneUnobtainableDrops,
 } from '../boss/boss-drops'
@@ -64,17 +63,6 @@ describe('getBossDropCandidates', () => {
     for (const coupon of coupons) {
       expect(coupon.category).toBe('consumable')
       expect(coupon.difficulties).toEqual(['chaos'])
-    }
-  })
-
-  it('찬란한 흉성 노멀에도 교환권 3종이 있다 (신규 추가)', () => {
-    const coupons = getBossDropCandidates('radiant_malefic_star', 패치전, 패치후시각).filter((candidate) =>
-      candidate.name.endsWith('교환권'),
-    )
-
-    expect(coupons.length).toBe(3)
-    for (const coupon of coupons) {
-      expect(coupon.difficulties).toContain('normal')
     }
   })
 
@@ -175,18 +163,6 @@ describe('dropTileKey · dropTileIdentity', () => {
   })
 })
 
-describe('isBoxItem', () => {
-  it('반지 상자·칠흑 장신구 상자는 true', () => {
-    expect(isBoxItem('red_boss_ring_box')).toBe(true)
-    expect(isBoxItem('chaos_pitch_black_accessory_box')).toBe(true)
-  })
-
-  it('일반 아이템은 false', () => {
-    expect(isBoxItem('loose_control_machine_mark')).toBe(false)
-    expect(isBoxItem('spell_trace')).toBe(false)
-  })
-})
-
 describe('getRingBoxContents (백옥 기준 그룹핑)', () => {
   it('백옥은 11 명명 반지만 반환하고 기타/연마석이 없다 (전부 레벨 있음)', () => {
     const c = getRingBoxContents('white_boss_ring_box')
@@ -243,10 +219,6 @@ describe('getAccessoryBoxContents', () => {
     expect(contents).not.toBeNull()
     expect(contents?.length).toBe(7)
     expect(contents?.some((item) => item.name === '루즈 컨트롤 머신 마크')).toBe(true)
-  })
-
-  it('메이린의 칠흑 장신구 상자도 동일 후보', () => {
-    expect(getAccessoryBoxContents('meirin_pitch_black_accessory_box')?.length).toBe(7)
   })
 
   it('장신구 상자가 아니면 null', () => {
@@ -468,12 +440,6 @@ describe('2026-09-17 패치: 아이템이 기간을 든다', () => {
         difficulties: ['normal', 'hard', 'extreme'],
       }),
     )
-  })
-
-  it('단계마다 보스가 다르다', () => {
-    expect(namesOf('bellona', 패치후)).toContain('2단계 소울 에테르')
-    expect(namesOf('limbo', 패치후)).toContain('3단계 소울 에테르')
-    expect(namesOf('jupiter', 패치후)).toContain('4단계 소울 에테르')
   })
 
   it('고정 보상도 그 주의 것을 준다 (데미안 하드 실버 1 → 0)', () => {

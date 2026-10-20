@@ -144,8 +144,8 @@
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `components/molecules/CharacterAvatar/__tests__/CharacterAvatar.test.tsx` | 결정 1: 지름만큼의 원으로 자르는지, 자르는 좌표가 `lib/face-crop` 의 표에서 오는지, 원에 기본 바탕색이 없는지 본다. 결정 2: 그림이 없으면 받은 폴백을 그리고, 폴백이 없으면 아무것도 그리지 않는지 본다. 결정 10: 바탕색이 바깥 상자가 아니라 원에 붙는지, 바깥 상자가 줄어들지 않는지 본다 |
-| `components/organisms/CharacterPortrait/__tests__/portrait-metrics.test.ts` | 결정 3 · 4: `rail` 에서 얼굴이 링 안에 있고 글자가 링에 닿지 않으며 모두 칸 안에 들어가는지, `compact` 링이 얼굴 밖에 있고 칸이 40 인지, 링을 안 그려도 링이 차지하는 공간이 남는지 본다 |
+| `components/molecules/CharacterAvatar/__tests__/CharacterAvatar.test.tsx` | 결정 1: 자르는 좌표가 `lib/face-crop` 의 표에서 오는지, 원에 기본 바탕색이 없는지 본다. 결정 2: 그림이 없으면 받은 폴백을 그리고, 폴백이 없으면 아무것도 그리지 않는지 본다. 결정 10: 바탕색이 바깥 상자가 아니라 원에 붙는지, 바깥 상자가 줄어들지 않는지 본다 |
+| `components/organisms/CharacterPortrait/__tests__/portrait-metrics.test.ts` | 결정 3 · 4: `rail` 에서 얼굴이 링 안에 있고 글자가 링에 닿지 않으며 모두 칸 안에 들어가는지, `compact` 링이 얼굴 밖에 있는지, 링을 안 그려도 링이 차지하는 공간이 남는지 본다 |
 | `components/organisms/CharacterPortrait/__tests__/portrait-arc.test.ts` | 결정 5: 글자 호를 왼쪽에서 오른쪽으로 그리는지 본다. 결정 6: 반원 둘이 12시에서 나뉘는지, 온전한 원이 반시계로 틈 없이 도는지, 길이 0 이면 경로가 없는지, 비율을 0 에서 1 로 자르고 셀 것이 없으면 0 인지 본다 |
 | `components/organisms/CharacterPortrait/__tests__/CharacterPortrait.test.tsx` | 결정 5: 레벨과 이름이 한 호를 6시 기준으로 나눠 쓰는지, 글자 속성이 같은지, 레벨을 모를 때 이름이 가운데로 가는지 본다. 결정 6 · 7: 링 개수에 따른 모양, 빈 링의 반지름 · 두께 · 색, 얼굴 테두리가 없는지 본다. 결정 10: 조회 불가 표식이 링보다 위에 그려지는지 본다. 결정 8: 그림이 있으면 바탕이 없고 머리글자 폴백에는 바탕이 있는지 본다. 결정 9: 칸 링의 색과 읽는 문구, 곡선 글자가 없는지 본다 |
 

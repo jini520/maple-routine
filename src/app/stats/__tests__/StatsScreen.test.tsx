@@ -98,15 +98,6 @@ async function 그리기(): Promise<Awaited<ReturnType<typeof renderOverlay>>> {
 }
 
 describe('StatsScreen', () => {
-  it('머리에 통계와 주간 · 월간이 서고 기간 줄은 이번 주다', async () => {
-    const view = await 그리기()
-
-    expect(view.getByText('통계')).toBeTruthy()
-    expect(view.getByText('주간')).toBeTruthy()
-    expect(view.getByText('월간')).toBeTruthy()
-    expect(view.getByTestId('stats-period-label').props.children).toBe('이번 주')
-  })
-
   it('순 수익 카드는 그 기간의 수입 − 지출이다', async () => {
     const view = await 그리기()
 

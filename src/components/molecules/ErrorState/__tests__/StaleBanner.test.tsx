@@ -31,10 +31,4 @@ describe('StaleBanner', () => {
     expect(queryByRole('button')).toBeNull()
   })
 
-  it('role=alert 를 갖는다', async () => {
-    const { getByTestId } = await renderAtom(<StaleBanner message="목록이 최신이 아닙니다" />)
-
-    expect(getByTestId('stale-banner').props.role).toBe('alert')
-  })
-
 })

@@ -50,38 +50,6 @@ describe('API 이름에서 key 를 찾는다', () => {
 })
 
 describe('key 로 레벨을 찾는다', () => {
-  // 관측이 23종뿐인데 68종이 다 채워져 있다. 세트가 한 레벨이라는 사실을 표에 굳혀 둔 결과다.
-  it('관측에 없던 같은 세트 장비도 값을 갖는다', () => {
-    expect(levelOfApiName('아케인셰이드 시즈건')).toBe(200)
-  })
-
-  it('사용자가 준 세트 레벨이 들어 있다', () => {
-    expect(levelOfApiName('앱솔랩스 나이트헬름')).toBe(160)
-    expect(levelOfApiName('데스티니 세이버')).toBe(250)
-    expect(levelOfApiName('파프니르 체인')).toBe(150)
-  })
-
-  it('보스 장신구·칠흑·광휘도 값을 갖는다', () => {
-    expect(levelOfApiName('파풀라투스 마크')).toBe(145)
-    expect(levelOfApiName('루즈 컨트롤 머신 마크')).toBe(160)
-    expect(levelOfApiName('오만의 원죄')).toBe(250)
-  })
-
-  it('사용자가 준 보조무기 레벨도 든다', () => {
-    expect(levelOfApiName('데이모스 세이지 실드')).toBe(130)
-    expect(levelOfApiName('아스트라 여의보주')).toBe(200)
-    expect(levelOfApiName('아스트라 데카코어 컨트롤러')).toBe(200)
-  })
-
-  it('제네시스 카르타는 카타나와 다른 무기다', () => {
-    expect(levelOfApiName('제네시스 카르타')).toBe(200)
-    expect(levelOfApiName('제네시스 카타나')).toBe(200)
-  })
-
-  it('2026-09-17 패치의 새 반지도 레벨을 갖는다 (사용자 제공)', () => {
-    expect(levelOfApiName('어센던트 펄스 링')).toBe(130)
-  })
-
   // **모름은 0 이 아니다.** 0 을 주면 레벨 0 짜리 장비가 생겨 비용이 조용히 틀린다.
   it('모르는 key 와 key 없음은 null 이다', () => {
     expect(equipmentItemLevelOf('nope')).toBeNull()

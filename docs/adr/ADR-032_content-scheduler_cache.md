@@ -157,7 +157,7 @@
 | `lib/__tests__/reset-clock.spec.ts` | 결정 6 · 8: KST 날짜와 주간 리셋을 기기 시간대와 관계없이 내는지, 지난 날짜 목록이 00:10 전후로 시작일을 바꾸는지 본다 |
 | `features/schedule-sync/__tests__/schedule-sync.spec.ts` | 결정 4: 원장을 각 캐릭터가 속한 계정 키로 읽고 쓰는지, 월드 key 가 없으면 월드 원장을 건드리지 않는지 본다 |
 | | 결정 8: 날짜를 한꺼번에 조회하는지, 채워진 날짜에서 멈추는지, 실패한 날짜를 건너뛰는지, 일찍 멈춰도 받은 날짜를 모두 기록하는지, 공유 항목만 남은 일간 섹션에도 조회하는지 본다 |
-| `storage/__tests__/shared-progress-cache.spec.ts` | 결정 9: 같은 원장에 칸을 더해도 기존 칸이 남는지, 월드 · 계정끼리 섞이지 않는지, 옛 이름 키와 옛 월드 키를 옮기는지 본다 |
+| `storage/__tests__/shared-progress-cache.spec.ts` | 결정 9: 같은 원장에 칸을 더해도 기존 칸이 남는지, 옛 이름 키와 옛 월드 키를 옮기는지 본다 |
 | `storage/__tests__/scheduler-cache.spec.ts` | 결정 9: 형식 번호가 다른 캐시를 버리는지, 손상된 값에서 예외 없이 `null` 인지 본다 |
 
 ## 번호 기록

@@ -182,7 +182,7 @@ server_sync_queue
 | | 결정 6: 사라진 기록이면 다시 읽지 않고 지우기를 보내는지 본다 |
 | | 결정 8: 응답이 없거나 거절되거나 신원이 없으면 대기 표에 쌓는지, 순회 함수가 표에 담은 값이 아니라 원본의 지금 값을 읽는지 본다 |
 | `features/server-sync/__tests__/sweep.spec.ts` | 결정 8: 보냈으면 줄을 지우는지, 원본이 없으면 지우기를 보내는지, 응답이 없으면 횟수를 안 올리는지, 거절이면 올리고 다섯 번째에 버리는지, 신원이 없으면 아무것도 안 하는지, 모르는 종류를 버리는지, 한 줄이 실패해도 끝까지 도는지 본다 |
-| `features/server-sync/__tests__/registry.spec.ts` | 결정 8: 레지스트리의 종류마다 함수 둘이 있는지, `enqueueServerSync` 에 넘기는 이름이 모두 레지스트리에 있는지, 대기 표에 줄을 넣는 코드가 이 디렉터리 밖에 없는지 본다 |
+| `features/server-sync/__tests__/registry.spec.ts` | 결정 8: `enqueueServerSync` 에 넘기는 이름이 모두 레지스트리에 있는지, 대기 표에 줄을 넣는 코드가 이 디렉터리 밖에 없는지 본다 |
 | 서버 `modules/drop-prices/*.spec.ts` | 결정 5 · 7: 상태와 가격의 짝, `status` 가 없으면 `completed` 인지, 같은 사람 안에서만 덮는지, 모르는 아이템 · 월드 key 를 400 으로 거절하는지, `DELETE` 가 `deleted` 로 표시하는지 본다 |
 
 ## 번호 기록

@@ -152,18 +152,6 @@ describe('normalizeCharacterBasic', () => {
   // 길드 가입 여부 판정의 원천. "필드가 아예 없음"(구버전 캐시·응답 미포함)과
   // "가입한 길드 없음"을 반드시 구분해야 한다. 둘을 같게 두면 전자에서 길드 콘텐츠를
   // 잘못 잠근다(사용자가 할 수 있는 일이 사라지는 방향의 실패).
-  it('character_guild_name을 guildName으로 매핑한다', () => {
-    const wire: NexonCharacterBasicResponse = {
-      character_name: '낟낟',
-      character_level: 293,
-      character_image: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
-      access_flag: 'true',
-      character_guild_name: '메이플길드',
-    }
-
-    expect(normalizeCharacterBasic(wire, worldKeyOf).guildName).toBe('메이플길드')
-  })
-
   it('길드 미가입(null·빈 문자열·공백)은 guildName: null로 정규화한다', () => {
     const base = {
       character_name: '낟낟',

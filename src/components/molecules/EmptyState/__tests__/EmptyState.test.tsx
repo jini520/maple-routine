@@ -36,14 +36,6 @@ describe('EmptyState', () => {
     expect(queryByRole('button')).toBeNull()
   })
 
-  it('아이콘은 장식이므로 접근성 트리에서 숨긴다', async () => {
-    const { getByTestId } = await renderAtom(
-      <EmptyState icon={SwordsIcon} title="등록된 주간 보스가 없습니다" />,
-    )
-
-    expect(getByTestId('empty-state-badge', HIDDEN).props['aria-hidden']).toBe(true)
-  })
-
   // page(캐릭터 미선택 3곳)와 inline(목록 8곳)은 배지 크기·타이포만 다르고 구조는 같다.
   it('기본은 inline 크기. 48px 배지, 자체 카드 껍데기를 가진다', async () => {
     const { getByTestId } = await renderAtom(

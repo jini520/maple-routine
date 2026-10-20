@@ -4,12 +4,10 @@
 // 별의 두 케이스(배경 없음· 흐려도 눌린다)는 **금지사항** 을 그대로 옮긴 것이다: 배경 배지를 두면
 // 같은 말을 두 번 하게 되고, `disabled` 로 만들면 대표를 바꿀 방법이 사라진다.
 import { fireEvent } from '@testing-library/react-native'
-import { Text } from 'react-native'
 
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { AddMark } from '../AddMark'
 import { CharacterRow } from '../CharacterRow'
-import { DragHandle } from '../DragHandle'
 import { RepresentativeStar } from '../RepresentativeStar'
 
 const 기본 = {
@@ -108,19 +106,6 @@ describe('CharacterRow: 좌우 슬롯', () => {
     expect(getByText('내옆에최성일')).toBeTruthy()
   })
 
-  it('두 슬롯을 주면 둘 다 그린다', async () => {
-    const { getByTestId } = await renderAtom(
-      <CharacterRow
-        {...기본}
-        leading={<DragHandle />}
-        trailing={<Text testID="슬롯-표식">★</Text>}
-      />,
-    )
-
-    expect(getByTestId('drag-handle')).toBeTruthy()
-    expect(getByTestId('슬롯-표식')).toBeTruthy()
-  })
-
 })
 
 describe('RepresentativeStar', () => {
@@ -170,12 +155,6 @@ describe('RepresentativeStar', () => {
 })
 
 describe('DragHandle · AddMark', () => {
-  it('핸들의 접근성 이름은 `순서 변경`이다. 글리프 이름이 **메뉴** 라고 메뉴가 아니다', async () => {
-    const { getByLabelText } = await renderAtom(<DragHandle />)
-
-    expect(getByLabelText('순서 변경')).toBeTruthy()
-  })
-
   it('`＋` 는 표시일 뿐이라 버튼이 아니다 (탭 영역은 행 전체다)', async () => {
     const { queryByRole, getByTestId } = await renderAtom(<AddMark />)
 

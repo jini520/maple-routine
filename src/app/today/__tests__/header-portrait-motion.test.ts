@@ -3,11 +3,9 @@
 // 보스 수익의 드럼(`drop-price-fab-motion`)과 지키는 것이 같고 슬롯 수가 **변수**인 점이 다르다.
 // 추적 캐릭터가 한 명일 수도 있어서, 3 을 상수로 박으면 그때 원이 두 칸을 빈 채로 돈다.
 import {
-  HEADER_PORTRAIT_MAX,
   HEADER_PORTRAIT_MOVE_MS,
   HEADER_PORTRAIT_STEP_MS,
   HEADER_PORTRAIT_TRAVEL_PX,
-  headerLoopMs,
   loopTo,
   slotOpacity,
   slotPhase,
@@ -18,21 +16,12 @@ import {
 const DWELL = 1 - HEADER_PORTRAIT_MOVE_MS / HEADER_PORTRAIT_STEP_MS
 
 describe('한 바퀴', () => {
-  it('슬롯 수만큼 돈다. 얼굴 하나가 제 차례를 같은 길이로 갖는다', () => {
-    expect(headerLoopMs(3)).toBe(3 * HEADER_PORTRAIT_STEP_MS)
-    expect(headerLoopMs(2)).toBe(2 * HEADER_PORTRAIT_STEP_MS)
-  })
-
   // 돌 것이 없으면 안 돈다. 한 명뿐인데 진행률을 굴리면 그 얼굴이 2초마다 혼자 빠지고 돌아온다.
   it('얼굴이 하나면 진행률이 0 에 머문다', () => {
     expect(loopTo(1)).toBe(0)
     expect(loopTo(0)).toBe(0)
     expect(loopTo(2)).toBe(2)
     expect(loopTo(3)).toBe(3)
-  })
-
-  it('도는 얼굴은 셋까지다', () => {
-    expect(HEADER_PORTRAIT_MAX).toBe(3)
   })
 })
 

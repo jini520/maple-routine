@@ -165,17 +165,17 @@ CTA 버튼은 문구가 가리키는 목적지가 앱 안에 있을 때만 단�
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `components/molecules/EmptyState/__tests__/EmptyState.test.tsx` | 결정 1: `action` 을 줄 때만 CTA 가 생기고 누르면 넘긴 함수를 부르는지, 배지가 접근성 트리에서 숨는지, 두 크기의 배지 · 껍데기 차이, `leaf` 가 단풍잎을 그리고 그 색이 `className` 에서 오는지 본다 |
-| `components/atoms/Spinner/__tests__/MapleSpinner.test.tsx` · `MapleSweepSpinner.test.tsx` | 결정 2: 스크린리더에서 숨는지, 색이 `className` 에서 `currentColor` 로 들어가는지, 마스크 램프가 user space 좌표이고 띠와 함께 움직이는지, 모션 줄이기면 애니메이션을 걸지 않는지 본다 |
+| `components/molecules/EmptyState/__tests__/EmptyState.test.tsx` | 결정 1: `action` 을 줄 때만 CTA 가 생기고 누르면 넘긴 함수를 부르는지, 두 크기의 배지 · 껍데기 차이, `leaf` 가 단풍잎을 그리고 그 색이 `className` 에서 오는지 본다 |
+| `components/atoms/Spinner/__tests__/MapleSpinner.test.tsx` · `MapleSweepSpinner.test.tsx` | 결정 2: 색이 `className` 에서 `currentColor` 로 들어가는지, 마스크 램프가 user space 좌표이고 띠와 함께 움직이는지, 모션 줄이기면 애니메이션을 걸지 않는지 본다 |
 | `components/atoms/Button/__tests__/` | 결정 3: `busy` 면 라벨을 가리고 스피너를 겹치는지, 스피너 색이 라벨 색과 같은 토큰인지 본다 |
-| `components/molecules/LoadingState/__tests__/LoadingState.test.tsx` | 결정 4: `role="status"` · `aria-busy` 를 내는지, 셸 카드로 감싸고 점선을 쓰지 않는지, `page` 가 32px 스피너와 최소 높이를 갖는지 본다 |
-| `components/atoms/Skeleton/__tests__/Skeleton.test.tsx` | 결정 4: 호출부가 준 `className` 과 `style` 이 함께 붙는지(`Animated.View` 가 `className` 을 버리는 문제), 모션 줄이기면 펄스를 걸지 않는지 본다 |
+| `components/molecules/LoadingState/__tests__/LoadingState.test.tsx` | 결정 4: 셸 카드로 감싸고 점선을 쓰지 않는지, `page` 가 32px 스피너와 최소 높이를 갖는지 본다 |
+| `components/atoms/Skeleton/__tests__/Skeleton.test.tsx` | 결정 4: 모션 줄이기면 펄스를 걸지 않는지 본다. 호출부가 준 `style` 이 남는지도 본다. reanimated `Animated.View` 에 준 정적 스타일은 오류 없이 사라지기 때문이다 |
 | `components/atoms/ProgressBar/__tests__/ProgressBar.test.tsx` | 결정 5: `thin` 이 트랙만 바꾸고 채움은 따라가는지, `animated` 일 때만 폭 트랜지션이 붙는지, `aria` 를 줄 때만 progressbar 역할을 내는지 본다 |
-| `components/molecules/ErrorState/__tests__/ErrorState.test.tsx` · `StaleBanner.test.tsx` | 결정 7: 버튼이 `action` 을 줄 때만 생기는지, 아이콘을 배지로 감싸지 않는지, `role="alert"` 인지 본다 |
+| `components/molecules/ErrorState/__tests__/ErrorState.test.tsx` · `StaleBanner.test.tsx` | 결정 7: 버튼이 `action` 을 줄 때만 생기는지, 아이콘을 배지로 감싸지 않는지 본다 |
 | `features/schedule-sync/__tests__/use-sync-error-toast.spec.tsx` | 결정 8: 같은 실패 객체로는 한 번만 띄우고 새 실패에는 다시 띄우는지 본다 |
 | `components/organisms/Toast/__tests__/` | 결정 8: 액션 버튼과 닫기, 스와이프로 닫기, 남은 시간 바와 모션 줄이기, 쌓이는 순서와 탭바 위 위치를 본다 |
 | `components/molecules/DataFreshness/__tests__/DataFreshness.test.tsx` · `lib/__tests__/data-freshness.spec.ts` | 결정 9: 표기가 `hh:mm:ss 기준` 인지, 값이 없거나 못 읽어도 글자만 비고 줄 높이는 그대로인지, 여러 값 중 가장 늦은 것을 고르고 못 읽는 값은 버리는지 본다 |
-| `features/refresh/__tests__/freshness.spec.ts` | 결정 9: 시각이 뒤로 가지 않는지, 저장된 값을 복원하는지 본다 |
+| `features/refresh/__tests__/freshness.spec.ts` | 결정 9: 시각이 뒤로 가지 않는지 본다 |
 | `hooks/__tests__/useLoopedValue.spec.tsx` | 결정 10: 보일 때만 돌고, 초점을 잃으면 멈추고, 되찾으면 다시 도는지, 내비게이터 밖에서는 보이는 것으로 보는지, 모션 줄이기면 돌지 않는지 본다 |
 
 ## 번호 기록

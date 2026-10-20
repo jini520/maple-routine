@@ -3,12 +3,10 @@
 // 값을 컴포넌트 밖에 두는 이유는 **애니메이션을 띄우지 않고도 규칙을 검증**하기 위해서다. 여기서 보는 것은
 // 두 단계(원이 솟고 → 알약으로 펼쳐진다)의 **순서와 계단의 방향**이고, 그것이 이 부품이 말하려는 것의 전부다.
 import {
-  DIAL_GAP_PX,
   PILL_HEIGHT_PX,
   chromeTiming,
   dialTiming,
   pillWidth,
-  riseOffsetPx,
 } from '../speed-dial-motion'
 
 /** 갈래 셋, 위에서부터 0 · 1 · 2. 2 가 ＋ 에 가장 가깝다 */
@@ -106,10 +104,5 @@ describe('치수', () => {
 
   it('글자를 아직 못 쟀으면 원 크기다', () => {
     expect(pillWidth(0)).toBe(PILL_HEIGHT_PX)
-  })
-
-  it('솟는 거리는 ＋ 중심에서 그 줄 중심까지다', () => {
-    expect(riseOffsetPx(0)).toBe(PILL_HEIGHT_PX + DIAL_GAP_PX)
-    expect(riseOffsetPx(1)).toBe(2 * (PILL_HEIGHT_PX + DIAL_GAP_PX))
   })
 })

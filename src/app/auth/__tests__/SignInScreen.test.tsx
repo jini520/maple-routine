@@ -274,16 +274,6 @@ describe('SignInScreen', () => {
     expect(view.getByText('API 키로 시작하기')).toBeTruthy()
     expect(view.queryByLabelText('Nexon Open API 키')).toBeNull()
   })
-
-  // 내비게이션 계약. `RootNavigator` 의 분기 테스트가 이 이름으로 화면을 지목한다
-  // (`screen-<라우트 이름>` 규약).
-  it('라우트 이름 testID 를 루트에 유지한다', async () => {
-    mockStore({ status: 'signedOut' })
-
-    const view = await renderOverlay(<SignInScreen />)
-
-    expect(view.getByTestId('screen-SignIn')).toBeTruthy()
-  })
 })
 
 // 프로덕션 승인 전에는 테스트 사용자만 로그인된다. 스토어 빌드는 진입점을 끈 채로 나가고

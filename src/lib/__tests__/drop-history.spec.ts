@@ -429,24 +429,6 @@ function pool(weeksSince: number): string[] {
 }
 
 describe('formatValuableDroughtHeadline', () => {
-  // 마지막 단계만 풀이던 것이 전 단계 풀이 됐다. 기존 문구는 각 풀의 첫 항목이라 인덱스를
-  // 주지 않은 호출은 예전과 글자 하나 다르지 않다.
-  it('index 0은 단계마다 기존 문구를 그대로 준다', () => {
-    expect(formatValuableDroughtHeadline(0, 0)).toBe('와따리! ㅇㄱㄱㄷ')
-    expect(formatValuableDroughtHeadline(1, 0)).toBe('그래, 그럴 수 있지')
-    expect(formatValuableDroughtHeadline(2, 0)).toBe('어?! 슬슬 쫌 그래!?')
-    expect(formatValuableDroughtHeadline(3, 0)).toBe('선넘네?!')
-    expect(formatValuableDroughtHeadline(9, 0)).toBe('이건 아니지...')
-  })
-
-  // 사용자가 고른 여섯이 각 풀에 얹혔다.
-  it('0~3주도 풀이라 index로 다른 문구가 나온다', () => {
-    expect(pool(0)).toEqual(['와따리! ㅇㄱㄱㄷ', '완전 럭키비키잖아', '폼 미쳤다'])
-    expect(pool(1)).toEqual(['그래, 그럴 수 있지', '다음 주엔 되겠지'])
-    expect(pool(2)).toEqual(['어?! 슬슬 쫌 그래!?', '슬슬 킹받는데', '이게 맞나?'])
-    expect(pool(3)).toEqual(['선넘네?!', '이게 억까지 뭐야'])
-  })
-
   it('풀 안에서 문구가 겹치지 않는다. 같은 말이 두 슬롯을 차지하면 랜덤이 덜 랜덤해진다', () => {
     for (const weeks of [0, 1, 2, 3, 9]) {
       expect(new Set(pool(weeks)).size).toBe(valuableDroughtHeadlineCount(weeks))

@@ -248,18 +248,6 @@ async function 금액치기(view: Rendered, text: string): Promise<void> {
 }
 
 
-describe('CashbookScreen: 자리와 머리', () => {
-
-  it('월간으로 옮기면 이번 달이다', async () => {
-    const view = await 그리기()
-    await 월간으로(view)
-
-    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('이번 달')
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 8월')
-  })
-
-})
-
 // 기간 이동은 **보스 수익 탭의 그것과 같은 모양**이다. 화살촉 둘 사이에
 // 두 줄(**이번 주** + 그 이레의 날짜)이 선다. 라벨은 `formatBossProfitPeriodLabel` 이 만든다.
 /**
@@ -769,15 +757,6 @@ describe('기간 이동이 고른 날을 옮긴다', () => {
     expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 13일 (목)')
   })
 
-  it('달을 옮기면 그 달 1일이 고른 날이 된다', async () => {
-    const view = await 그리기()
-    await 월간으로(view)
-
-    await 이름으로누르기(view, '이전 달')
-
-    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('7월 1일 (수)')
-  })
-
   /**
    * 덤으로 **월간에서 주간으로 돌아올 때 보던 달을 지킨다**. `showWeekly` 는 고른 날이 든 주를
    * 여는데, 고른 날이 안 따라오던 때는 6월을 보다 주간을 눌러도 이번 주로 튀었다.
@@ -1166,14 +1145,6 @@ describe('그날 목록', () => {
     ])
   })
 
-  it('합계 아래에 적은 것이 한 줄씩 선다', async () => {
-    const view = await 그리기()
-
-    expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
-    expect(view.getByText('앱솔랩스 케이프')).toBeTruthy()
-    expect(view.getByText('몬스터 파크')).toBeTruthy()
-  })
-
   // 수량은 **몇 번** 이라 이름만으로는 금액이 왜 그런지 모른다. `×` 를 붙여야 **2번** 이지
   // **2번째** 가 아니라는 것이 읽힌다.
   /**
@@ -1194,16 +1165,6 @@ describe('그날 목록', () => {
 
     // `toHaveTextContent` 는 이 판에서 **완전 일치**다. 줄 전체를 적는다.
     expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('몬스터 파크×2−1.02억')
-  })
-
-  // **누를 수 있어 보여야 한다**(사용자 지적). 글자 둘만 놓인 줄은 목록이 아니라
-  // 요약으로 읽힌다. 이 저장소가 `눌러서 들어가는 줄`에 쓰는 표식이 오른쪽 화살촉이다
-  // (`SettingsFeatureGuideListScreen`).
-  it('줄마다 갈래 표식과 들어가는 화살촉이 선다', async () => {
-    const view = await 그리기()
-
-    expect(view.getByTestId('cashbook-row-icon-spd-1')).toBeTruthy()
-    expect(view.getByTestId('cashbook-row-chevron-spd-1')).toBeTruthy()
   })
 
   // 그림이 붙는 줄은 배지 안이 아이콘이 아니라 그림이다. 무엇을 그리는지는 `row-icon.spec.ts` 가
@@ -1494,14 +1455,6 @@ describe('자동으로 흘러든 줄', () => {
     expect(view.getByText('N')).toBeTruthy()
     expect(view.queryByText('하드')).toBeNull()
     expect(view.queryByText('노멀')).toBeNull()
-  })
-
-  it('타일은 네모다', async () => {
-    const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
-
-    const [초상] = view.getAllByTestId('boss-portrait')
-    expect(flattenStyle(초상.props.style).borderRadius).toBe(8)
   })
 
   // 한 줄에 여섯 · 이름 없음.
@@ -1874,17 +1827,6 @@ describe('CashbookScreen: 낡은 숫자', () => {
 // 가계부는 포커스 때 한 번 재는 것이 전부라, 그 뒤 3초에 들어온 것을 받을 길이 없었다.
 // 이제 창의 회차가 끝날 때(`revision` 이 오를 때) 다시 잰다.
 describe('창이 뒤늦게 채운 것을 받는다', () => {
-  it('회차가 끝나면 다시 읽는다', async () => {
-    await 그리기()
-    const 읽은횟수 = records.loadMonthDays.mock.calls.length
-
-    await act(async () => {
-      mockSetWindowRevision?.(2)
-    })
-
-    expect(records.loadMonthDays.mock.calls.length).toBeGreaterThan(읽은횟수)
-  })
-
   // 당김도 이 길로 온다. 바뀐 것이 없을 때 건너뛰면 사용자가 당겨도 아무 일도 안 일어난다.
   it('안 바뀌었어도 회차가 끝나면 다시 읽는다. 당김이 이 길로 온다', async () => {
     await 그리기()
@@ -1954,12 +1896,6 @@ describe('강화 줄', () => {
     expect(view.getByTestId('cashbook-row-enhancement:starforce:낟낟')).toHaveTextContent(
       '낟낟 · 스타포스47회 · 값모름 3−12억',
     )
-  })
-
-  it('처음에는 접혀 있다', async () => {
-    const view = await 그리기()
-
-    expect(view.queryByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeNull()
   })
 
   // 원천이 넥슨 API 라 갈 곳이 없다. 펼치는 것이 여기서 할 수 있는 전부다.

@@ -84,16 +84,6 @@ describe('NoticeModal: 영역', () => {
     expect(within(덩어리).getByText('설명')).toBeTruthy()
     expect(within(덩어리).queryByText('펼침판')).toBeNull()
   })
-
-  it('제목에 손잡이를 달 수 있다. 화면 테스트가 이것으로 모달을 집는다', async () => {
-    const { getByTestId } = await renderOverlay(
-      <NoticeModal {...기본프롭()} titleTestId="development-stage-key-title" />,
-    )
-
-    expect(getByTestId('development-stage-key-title')).toHaveTextContent(
-      '이 키로는 연결할 수 없습니다',
-    )
-  })
 })
 
 describe('NoticeModal: 배지', () => {

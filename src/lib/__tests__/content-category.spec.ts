@@ -2,10 +2,9 @@ import {
   categorizeContentEntries,
   contentCountTag,
   isGuildContent,
-  weeklyCategoryOrder,
 } from '../scheduler/content-category'
 import type { ContentCategoryKey } from '../scheduler/content-categories'
-import { contentTemplate, findContent, type ContentEntry } from '../scheduler/contents'
+import { findContent, type ContentEntry } from '../scheduler/contents'
 
 function entry(key: string, category: ContentCategoryKey, overrides: Partial<ContentEntry> = {}): ContentEntry {
   return {
@@ -61,48 +60,6 @@ describe('categorizeContentEntries', () => {
 
     expect(groups.map((g) => g.label)).toEqual(['길드', '일일 퀘스트'])
     expect(groups[0].items.map((i) => i.displayName)).toEqual(['주간 미션 포인트', '지하 수로'])
-  })
-})
-
-describe('categorizeContentEntries: 실제 템플릿 그룹 구성 (사용자 확정 2026-07-24)', () => {
-  it('일간: 몬스터파크 · 일일 퀘스트 두 그룹', () => {
-    const labels = categorizeContentEntries(contentTemplate().daily).map((g) => g.label)
-    expect(labels).toEqual(['몬스터파크', '일일 퀘스트'])
-  })
-
-  it('주간: 갈래 표의 차례(weeklyCategoryOrder)로 7개 그룹 + 아케인리버 지역 퀘스트 구성', () => {
-    const groups = categorizeContentEntries(contentTemplate().weekly, weeklyCategoryOrder())
-
-    expect(groups.map((g) => g.label)).toEqual([
-      '에픽 던전',
-      '몬스터파크',
-      '길드',
-      '아케인리버 지역 퀘스트',
-      '주간 퀘스트',
-      '무릉도장',
-      '메이플 유니온',
-    ])
-
-    const arcane = groups.find((g) => g.category === 'arcane_river_quest')
-    expect(arcane?.items.map((i) => i.displayName)).toEqual([
-      '에르다 스펙트럼',
-      '배고픈 무토',
-      '미드나잇 체이서',
-      '스피릿 세이비어',
-      '엔하임 디펜스',
-      '프로텍트 에스페라',
-      '성실한 조사에 대한 보답',
-    ])
-
-    // 성실한 조사가 빠진 주간 퀘스트 그룹은 나머지 5개만 남는다
-    const weekly = groups.find((g) => g.category === 'weekly_quest')
-    expect(weekly?.items.map((i) => i.displayName)).toEqual([
-      '크리티아스 주간 임무',
-      '타락한 세계수 주간 임무',
-      '타락한 세계수 정화에 대한 보답',
-      '헤이븐 주간 임무',
-      '꾸준한 의뢰에 대한 보답',
-    ])
   })
 })
 

@@ -59,8 +59,3 @@ describe('PageHeader', () => {
     expect(style.paddingBottom ?? 0).toBe(0)
   })
 })
-
-// 경계 페이드는 두지 않는다. 실기기에서 띠가 엉뚱한 자리에 보였다. 남기는 것은 없다는 사실
-// 하나다.
-describe('경계 페이드', () => {
-})

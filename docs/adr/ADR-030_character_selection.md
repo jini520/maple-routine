@@ -137,10 +137,10 @@ ocid 대신 캐릭터를 돌려준다. 네 화면 모두 고른 ocid 를 구하�
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `features/character-selection/__tests__/store.spec.ts` | 결정 6: `select` 가 메모리와 저장소를 함께 바꾸는지, 구독하는 쪽이 모두 같은 값을 보는지 본다. 결정 7: 저장된 값을 불러오는지, 이미 고른 값이 있으면 저장소를 읽지 않는지, 여러 화면이 동시에 불러와도 결과가 같은지 본다 |
+| `features/character-selection/__tests__/store.spec.ts` | 결정 6: `select` 가 메모리와 저장소를 함께 바꾸는지, 구독하는 쪽이 모두 같은 값을 보는지 본다. 결정 7: 이미 고른 값이 있으면 저장소를 읽지 않는지, 여러 화면이 동시에 불러와도 결과가 같은지 본다 |
 | `features/character-selection/__tests__/selected-character.spec.ts` | 결정 8: 고른 캐릭터가 목록에 있을 때, 없을 때, 고른 적이 없을 때, 목록이 비었을 때 무엇을 돌려주는지 본다 |
 | `lib/__tests__/tracked-order.test.ts` | 결정 9: 저장 순서가 스토어 순서보다 우선하는지, 저장 목록에 없는 항목이 뒤에 남는지, 저장 목록에만 있는 ocid 가 칸을 만들지 않는지, 겹친 ocid 가 개수를 줄이지 않는지, 원본 배열과 항목 객체를 그대로 두는지 본다 |
-| `components/organisms/CharacterRail/__tests__/CharacterRail.test.tsx` | 결정 1 · 2: 칸을 누르면 그 ocid 로 `onSelect` 를 부르는지, 고른 칸만 또렷한지, 스크롤바 없이 가로로 스크롤되는지, 다른 캐릭터를 누를 때만 햅틱이 나는지 본다 |
+| `components/organisms/CharacterRail/__tests__/CharacterRail.test.tsx` | 결정 1 · 2: 칸을 누르면 그 ocid 로 `onSelect` 를 부르는지, 고른 칸만 또렷한지, 다른 캐릭터를 누를 때만 햅틱이 나는지 본다 |
 | `app/content-scheduler/__tests__/content-completion.test.ts` | 결정 4: 항목마다 완료 판정과 무릉도장을 분모에서 빼는 규칙을 본다 |
 | `app/content-scheduler/__tests__/ContentScreen.test.tsx` | 결정 1 · 4 · 9: 레일에서 누르면 고른 캐릭터가 바뀌는지, 링이 표시 목록과 같은 것을 세는지, 레일이 저장 순서대로 보이고 저장 목록에 없는 캐릭터가 사라지지 않는지 본다 |
 | `app/boss-scheduler/__tests__/BossScreen.test.tsx` | 결정 4: 처치 한도로 마감된 보스를 다 한 것으로 세는지 본다. 결정 9: 레일 순서를 본다 |

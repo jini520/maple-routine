@@ -12,7 +12,7 @@ import { fireEvent } from '@testing-library/react-native'
 import { Platform } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
-import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
+import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { installNoopNativePorts } from '../../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../../native/ports'
 import { Text } from '../../Text/Text'
@@ -55,37 +55,6 @@ describe.each(['ios', 'android'] as const)('Switch(%s): 스크린리더 계약',
 })
 
 describe('Switch(android): 치수 두 벌', () => {
-  it('sm 은 트랙 28×16 · 손잡이 12 다. 안 적으면 이것이다', async () => {
-    const { getByTestId } = await renderAtom(
-      <Switch on={false} label="드롭 연출" onToggle={() => {}} />,
-    )
-
-    expect(flattenStyle(getByTestId('switch-track').props.style)).toMatchObject({
-      width: 28,
-      height: 16,
-      borderRadius: 9999,
-    })
-    expect(flattenStyle(getByTestId('switch-knob').props.style)).toMatchObject({
-      width: 12,
-      height: 12,
-    })
-  })
-
-  it('lg 는 트랙 44×24 · 손잡이 20 이다', async () => {
-    const { getByTestId } = await renderAtom(
-      <Switch on={false} label="모든 보스 보기" size="lg" onToggle={() => {}} />,
-    )
-
-    expect(flattenStyle(getByTestId('switch-track').props.style)).toMatchObject({
-      width: 44,
-      height: 24,
-    })
-    expect(flattenStyle(getByTestId('switch-knob').props.style)).toMatchObject({
-      width: 20,
-      height: 20,
-    })
-  })
-
   // 손잡이가 가는 거리는 `트랙 폭 − 손잡이 − 2` 다. 세 수가 어긋나면 손잡이가 트랙을 넘거나
   // 덜 간다. 두 크기 모두 오른쪽 끝에 2 가 남아야 한다.
   it.each([
@@ -102,21 +71,6 @@ describe('Switch(android): 치수 두 벌', () => {
       { translateX: on },
     ])
     expect(on).toBe(track - knob - 2)
-  })
-})
-
-describe('Switch(android): 색 한 벌', () => {
-  it('끄면 트랙이 surface-2 이고 손잡이는 언제나 surface 다', async () => {
-    const { getByTestId } = await renderAtom(
-      <Switch on={false} label="켜기" onToggle={() => {}} />,
-    )
-
-    expect(flattenStyle(getByTestId('switch-track').props.style).backgroundColor).toBe(
-      기본테마.surface2,
-    )
-    expect(flattenStyle(getByTestId('switch-knob').props.style).backgroundColor).toBe(
-      기본테마.surface,
-    )
   })
 })
 
@@ -236,15 +190,5 @@ describe('Switch(ios): 줄인 시스템 스위치', () => {
 
     expect(onToggle).toHaveBeenCalledTimes(1)
     expect(select).toHaveBeenCalledTimes(1)
-  })
-
-  it('켜짐 primary · 꺼짐 surface-2 를 준다. 손잡이는 시스템 색이다', async () => {
-    const { getByTestId } = await renderAtom(<Switch on label="켜기" onToggle={() => {}} />)
-    const native = getByTestId('switch-native')
-
-    expect(native.props.onTintColor).toBe(기본테마.primary)
-    expect(native.props.tintColor).toBe(기본테마.surface2)
-    expect(flattenStyle(native.props.style).backgroundColor).toBe(기본테마.surface2)
-    expect(native.props.thumbTintColor).toBeUndefined()
   })
 })

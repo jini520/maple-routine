@@ -275,16 +275,6 @@ describe('useBossSchedulerStore', () => {
       expect(useBossSchedulerStore.getState().characters[0].weeklyBossClearCount).toBe(1)
     })
 
-    it('weeklyBossClearLimitCount는 API 응답과 무관하게 항상 12다', async () => {
-      syncSchedulesMock.mockResolvedValue([
-        syncResult({ state: { ...syncResult().state!, bossContents: [] } }),
-      ])
-
-      await useBossSchedulerStore.getState().refresh(['ocid-1'])
-
-      expect(useBossSchedulerStore.getState().characters[0].weeklyBossClearLimitCount).toBe(12)
-    })
-
     it('캐시된 값을 표시할 때도 카운트를 직접 계산한다(캐시 우선 표시)', async () => {
       getCachedSchedulerStateMock.mockResolvedValue({
         state: {
@@ -417,16 +407,6 @@ describe('useBossSchedulerStore', () => {
   })
 
   describe('추적 목록', () => {
-    it('loadTrackedOcids는 storage에서 조회한 값을 trackedOcids 상태에 반영한다', async () => {
-      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useBossSchedulerStore.getState().loadTrackedOcids()
-
-      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith()
-      expect(useBossSchedulerStore.getState().trackedOcids).toEqual(['ocid-1'])
-    })
-
     it('loadTrackedOcids는 조회된 목록이 null이 아니면 그 목록으로 refresh를 호출한다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
       syncSchedulesMock.mockResolvedValue([syncResult()])

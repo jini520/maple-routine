@@ -293,9 +293,8 @@ Preferences `lastRunBundleVersion` 과 지금 번들 버전을 비교한다(`con
 | `app/settings/__tests__/SettingsRow.test.tsx` · `SettingsLinkRow.test.tsx` | 결정 5: 배지와 chevron 이 함께 나오는지, 위험 색, 외부 링크가 주소를 열고 실패를 알리는지, 두 행의 글자가 같은지 본다 |
 | `app/settings/__tests__/SettingsAccountDataScreen.test.tsx` | 결정 7: 위험 행 둘이 한 카드에 chevron 없이 있는지, 넥슨 로그아웃이 보이는 조건과 확인, 고른 그룹을 넘기는지, 연결 해제가 확인을 거쳐 부르는지 본다 |
 | `app/settings/__tests__/DisconnectConfirm.test.tsx` | 결정 7: 버튼과 바깥 누름이 맞는 콜백을 부르는지, 처리 중 대기 상태를 본다 |
-| `features/settings/__tests__/store.spec.ts` | 결정 7: 연결 해제가 인증 스토어의 `signOut` 을 한 번 부르는지 본다 |
 | `app/settings/__tests__/SettingsAboutScreen.test.tsx` · `AppUpdateSection.test.tsx` | 결정 8: 업데이트 카드가 제목을 다시 그리지 않는지, 실행 중인 번들 버전, 미지원 상태, 개인정보 처리방침이 하위 화면을 여는지 본다 |
-| `app/settings/__tests__/SettingsPrivacyScreen.test.tsx` | 결정 8: 사이트를 그대로 보여 주는지, 즉시 실패와 8초 실패, 성공 뒤 타이머가 멈추는지, `브라우저로 열기` 를 본다 |
+| `app/settings/__tests__/SettingsPrivacyScreen.test.tsx` | 결정 8: 즉시 실패와 8초 실패, 성공 뒤 타이머가 멈추는지, `브라우저로 열기` 를 본다 |
 | `app/settings/__tests__/contact-mail.spec.ts` | 결정 9: 플랫폼별 OS 버전과 모델, 기기 정보 줄, 본문과 인코딩을 본다 |
 | `app/settings/__tests__/store-review-link.spec.ts` | 결정 10: 플랫폼별 리뷰 주소를 본다 |
 | `data/__tests__/release-notes.spec.ts` | 결정 11: 버전과 날짜 형식, 중복 없음, 내림차순, 카테고리, 빈 항목 없음, 최신 노트의 `highlights`, 없는 버전에 던지지 않는지 본다 |

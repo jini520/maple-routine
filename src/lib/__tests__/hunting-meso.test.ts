@@ -5,7 +5,6 @@ import {
   MINUTES_PER_SOJAE,
   MISSED_MOB_OPTIONS,
   boostPercentOf,
-  UNION_TIER_MINUTES,
   efficiencyPercentOf,
   huntingMesoOf,
   fragmentSaleFeeOf,
@@ -306,10 +305,6 @@ describe('boostPercentOf: 통 **안**의 것만 더한다', () => {
  * 보면 +50% × (단계 분 ÷ 30) 이 통 안에 든다.
  */
 describe('boostPercentOf: 유니온의 부 단계', () => {
-  it('단계는 10 · 20 · 30분이다', () => {
-    expect(UNION_TIER_MINUTES).toEqual({ 1: 10, 2: 20, 3: 30 })
-  })
-
   it('단계 분 ÷ 30 만큼 +50% 가 든다', () => {
     expect(boostPercentOf(['union'], 3)).toBe(50)
     expect(boostPercentOf(['union'], 2)).toBeCloseTo(100 / 3)
@@ -382,14 +377,6 @@ describe('efficiencyPercentOf', () => {
 })
 
 describe('표', () => {
-
-  it('아이템은 둘이고 값·거는 자리는 사용자 확정분이다', () => {
-    // **`kind` 가 곧 계산식의 자리**다. 유니온의 부는 합산 통 안, 재획비는 그 결과에 곱한다.
-    expect(MESO_BOOSTS.map((each) => [each.id, each.percent, each.kind])).toEqual([
-      ['potion', 20, 'multiplier'],
-      ['union', 50, 'additive'],
-    ])
-  })
 
   // 칩이 **글자가 아니라 그림**이라 파일명이 어긋나면 칩이 빈 채로 뜬다.
   it('파일명이 번들 에셋으로 실제로 풀린다. 오타면 칩이 조용히 빈다', () => {

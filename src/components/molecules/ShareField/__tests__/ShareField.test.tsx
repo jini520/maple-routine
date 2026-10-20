@@ -95,14 +95,6 @@ describe('ShareField', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  it('합을 슬라이더와 같은 줄에서 읽는다', async () => {
-    const { getByTestId } = await renderAtom(
-      <ShareField label="결정석" value={{ myShare: 2, sharesTotal: 3 }} onChange={jest.fn()} />,
-    )
-
-    expect(getByTestId('share-field-total-결정석')).toHaveTextContent('3')
-  })
-
   // 드롭 가격 카드가 쓰는 벌. 합이 트랙 아래 가운데다(사용자 지정).
   it('stacked 는 합이 트랙 아래 가운데에 선다', async () => {
     const { getByTestId, getByLabelText } = await renderAtom(

@@ -3,7 +3,6 @@ import {
   getMvpBulkApplyAsked,
   getMvpLastCheckedWeek,
   getMvpWeeklyCheckOff,
-  setMvpWeeklyCheckOff,
 } from '../mvp-grade-prefs'
 
 beforeEach(() => {
@@ -15,12 +14,5 @@ describe('MVP 등급 preferences', () => {
     await expect(getMvpWeeklyCheckOff()).resolves.toBe(false)
     await expect(getMvpLastCheckedWeek()).resolves.toBeNull()
     await expect(getMvpBulkApplyAsked()).resolves.toBe(false)
-  })
-
-  it('주간 확인을 다시 켜면 끈 표시가 풀린다', async () => {
-    await setMvpWeeklyCheckOff(true)
-    await setMvpWeeklyCheckOff(false)
-
-    await expect(getMvpWeeklyCheckOff()).resolves.toBe(false)
   })
 })

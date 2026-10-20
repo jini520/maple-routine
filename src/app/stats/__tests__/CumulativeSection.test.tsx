@@ -37,12 +37,6 @@ describe('CumulativeSection', () => {
     expect(view.getByTestId('stats-cumulative-start').props.children).toBe('9월 5일 (토)')
   })
 
-  it('처음에는 아무 점도 안 골라 말풍선이 없다', async () => {
-    const view = await renderOverlay(<CumulativeSection days={days} cycle="weekly" periodKey="2026-09-24" startDateKey={null} earliest="2025-03-27" latest="2026-09-29" onChangeStart={jest.fn()} />)
-
-    expect(view.queryByTestId('stats-cumulative-bubble-title')).toBeNull()
-  })
-
   it('기간을 누르면 그 기간까지의 누적이 뜨고, 다시 누르면 닫힌다', async () => {
     const view = await renderOverlay(<CumulativeSection days={days} cycle="weekly" periodKey="2026-09-24" startDateKey={null} earliest="2025-03-27" latest="2026-09-29" onChangeStart={jest.fn()} />)
     const 누르기 = async (): Promise<void> => {

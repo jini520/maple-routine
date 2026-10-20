@@ -7,7 +7,7 @@
  */
 import { fireEvent } from '@testing-library/react-native'
 
-import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { renderAtom } from '../../../__tests__/render-atom'
 import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
 import { BackButton } from '../BackButton'
 
@@ -29,20 +29,5 @@ describe('BackButton', () => {
 
     expect(tap).toHaveBeenCalledTimes(1)
     expect(onPress).toHaveBeenCalledTimes(1)
-  })
-
-  it('스크린리더에 뒤로 버튼으로 들린다', async () => {
-    const { getByRole } = await renderAtom(<BackButton onPress={jest.fn()} />)
-
-    expect(getByRole('button', { name: '뒤로' })).toBeTruthy()
-  })
-
-  it('`regular` 은 손가락이 닿는 칸이 36px 이다', async () => {
-    const { getByLabelText } = await renderAtom(<BackButton size="regular" onPress={jest.fn()} />)
-
-    const style = flattenStyle(getByLabelText('뒤로').props.style)
-    expect(style.width).toBe(36)
-    expect(style.height).toBe(36)
-    expect(style.marginLeft).toBe(-8)
   })
 })

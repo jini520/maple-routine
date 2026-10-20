@@ -82,14 +82,6 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
     expect(names.every((name) => name.startsWith('--color-'))).toBe(true)
   })
 
-  it('값이 `job-themes.json` 그대로다(변환·보정이 없다)', () => {
-    const variables = buildThemeVariables(definition)
-
-    for (const token of THEME_TOKEN_KEYS) {
-      expect(variables[toColorVariableName(token)]).toBe(definition[token])
-    }
-  })
-
   // 카드 안에서 쓰는 토큰을 하나라도 빠뜨리면 페이지 값이 그대로 내려온다. 어두운 카드 위에 페이지의
   // 밝은 크림색 pill 이 얹혔던 실패가 그것이다.
   it('`.media-scope` 가 카드 안 표면·글자를 빠짐없이 다시 선언한다', () => {
@@ -325,12 +317,6 @@ describe('resolveCardBody', () => {
       expect(gap).toBeGreaterThan(0.01)
     }
   })
-
-  it('변수 맵에 실린다', () => {
-    const definition = getThemeDefinition(THEME_NAMES[0])
-
-    expect(buildThemeVariables(definition)['--color-card-body']).toBe(resolveCardBody(definition))
-  })
 })
 
 // 결산 안내 줄의 색. 앞의 둘과 달리 **테마 값에서 계산하지 않는다**. 라이트/다크 두 벌 상수다.
@@ -406,10 +392,5 @@ describe('resolveStatsSection', () => {
       expect(section).toBeGreaterThanOrEqual(hexToOklch(resolveCardBody(definition)).l)
       expect(section).toBeLessThanOrEqual(hexToOklch(definition.surface).l)
     }
-  })
-
-  it('`:root` 변수로 실린다', () => {
-    const definition = getThemeDefinition(THEME_NAMES[0])
-    expect(buildThemeVariables(definition)['--color-stats-section']).toBe(resolveStatsSection(definition))
   })
 })

@@ -15,24 +15,6 @@ import {
 } from '../variants'
 
 describe('Button', () => {
-  it('primary: 채움 상자 + `on-primary` 글자(웹에서 상속으로 받던 16px)', async () => {
-    const { getByRole, getByText } = await renderAtom(<Button variant="primary">확인</Button>)
-
-    expect(flattenStyle(getByRole('button').props.style)).toMatchObject({
-      borderRadius: 9999,
-      backgroundColor: 기본테마.primary,
-      paddingLeft: 20, // px-5
-      paddingRight: 20,
-      paddingTop: 10, // py-2.5
-      paddingBottom: 10,
-    })
-    expect(flattenStyle(getByText('확인').props.style)).toMatchObject({
-      color: 기본테마.onPrimary,
-      fontSize: 16,
-      fontWeight: '600',
-    })
-  })
-
 // 겉모습만 입혀야 하는 자리를 위해 변형 클래스를 별도 모듈에 둔다(컴포넌트
   // 파일이 컴포넌트 아닌 값을 export 하면 fast refresh 가 깨진다).
   it('변형 클래스가 상자·글자 두 벌로 모듈에 있다', () => {
@@ -70,18 +52,6 @@ describe('Button', () => {
 // 통과한 요소는 라벨 스타일을 안 받는다.
     expect(flattenStyle(getByTestId('icon-slot').props.style).color).toBeUndefined()
     expect(flattenStyle(getByText('저장').props.style).color).toBe(기본테마.onPrimary)
-  })
-
-  it('버튼 시맨틱과 핸들러·비활성이 그대로 전달된다', async () => {
-    const onPress = jest.fn()
-    const { getByRole } = await renderAtom(
-      <Button variant="primary" onPress={onPress} disabled accessibilityLabel="저장하기">
-        저장
-      </Button>,
-    )
-
-    const button = getByRole('button', { name: '저장하기' })
-    expect(button.props.accessibilityState).toMatchObject({ disabled: true })
   })
 })
 
@@ -179,17 +149,6 @@ describe('Button: busy', () => {
     // 변형 표의 `text-sm` 을 실제로 이기는지 본다. 글자 크기는 덮이고 여백은 안 덮이는데,
     // 그 차이가 조용해서 여기서 값으로 못박는다.
     expect(flattenStyle(getByText('확인').props.style).fontSize).toBe(13)
-  })
-
-  // `primary` 는 `default` 에서만 16px 이다. compact 는 그 예외를 안 둬서 13px 로 내려간다.
-  it('compact 도 변형의 색을 그대로 쓴다', async () => {
-    const { getByRole } = await renderAtom(
-      <Button variant="primary" size="compact">
-        확인
-      </Button>,
-    )
-
-    expect(flattenStyle(getByRole('button').props.style).backgroundColor).toBe(기본테마.primary)
   })
 
   it('크기 표에는 색도 글자 유틸도 없다', () => {

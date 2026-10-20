@@ -222,9 +222,9 @@ text-muted → media-ink-muted
 |---|---|
 | `lib/__tests__/theme-registry.spec.ts` | 결정 1: 테마 목록이 JSON 키와 같은지, 기본 테마가 맨 앞인지, 분류 순서 다음 JSON 순서인지, 분류별 묶음과 빈 분류 감춤, 이름 확인을 본다. 결정 7: 카드 안 표면이 페이지로 새지 않는지, 완료 배지가 `시작 안함` 배지와 구별되는지 본다 |
 | `lib/__tests__/theme-derive.spec.ts` | 결정 3: 38개를 빠짐없이 만드는지, `overrides` 가 이기는지, 글자 AA, `on-*` 이 흑백이 아니고 색조를 띠는지, `X-ink` 가 원색을 지키고 안 보일 때만 고치는지, `track` 이 `surface-2` 인지 본다. 결정 4: 증감 색의 휴와 AA 를 본다. 결정 5: 대비 측정이 실패로 던지지 않고 목록을 내는지 본다. 결정 7: 미디어 스코프와 완료 배지를 본다 |
-| `theme/__tests__/theme-vars.test.ts` | 결정 6: 변수 이름 규칙, 값이 JSON 그대로인지, 배경이 변수로 새지 않는지, `tailwind.config.js` 와 이름이 맞물리는지를 본다. 결정 7: `.media-scope` 가 카드 안 표면 · 글자를 빠짐없이 다시 선언하는지 본다. 결정 8: 시트 스코프가 다크에서만 넷을 올리고 순서를 지키는지, 폭이 미디어 스코프와 같은지 본다. 결정 9: `panel-border` · `card-body` · `stats-section` · 결산 색을 본다 |
+| `theme/__tests__/theme-vars.test.ts` | 결정 6: 변수 이름 규칙, 배경이 변수로 새지 않는지, `tailwind.config.js` 와 이름이 맞물리는지를 본다. 결정 7: `.media-scope` 가 카드 안 표면 · 글자를 빠짐없이 다시 선언하는지 본다. 결정 8: 시트 스코프가 다크에서만 넷을 올리고 순서를 지키는지, 폭이 미디어 스코프와 같은지 본다. 결정 9: `panel-border` · `card-body` · `stats-section` · 결산 색을 본다 |
 | `theme/__tests__/ThemeProvider.test.tsx` | 결정 6: `className` 이 지금 테마 색으로 풀리는지, 테마를 바꾸면 따라가는지, 컨텍스트가 없으면 던지는지, 루트 바탕색을 본다. 결정 7: `MediaScope` 안의 기준을 본다 |
-| `storage/__tests__/theme.spec.ts` | 결정 1: 저장 전에는 `null` 이고, 저장한 테마를 읽고, 모르는 값은 `null` 인지 본다 |
+| `storage/__tests__/theme.spec.ts` | 결정 1: 모르는 값을 `null` 로 읽는지 본다 |
 | `app/settings/__tests__/ThemeSelector.test.tsx` | 결정 10: 선택 상태와 누름, 분류 제목 순서, 필터와 빈 분류 감춤, 타일이 그 테마 색으로 칠해지는지, 배경 그림을 읽지 않는지, 2열 폭을 본다 |
 | `app/settings/__tests__/ThemeModal.test.tsx` | 결정 10: 고르면 적용만 하고 닫히지 않는지, `완료` 와 바깥 누름, `완료` 가 스크롤 밖인지 본다 |
 

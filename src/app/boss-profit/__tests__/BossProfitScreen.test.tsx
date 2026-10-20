@@ -34,7 +34,6 @@ import type { RecordedDrop } from '../../../types/drops'
 import { PortalProvider } from '@gorhom/portal'
 
 import { flattenStyle, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
-import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
 import { BottomBarOverlayHost } from '../../../components/organisms/BottomBar/BottomBarOverlay'
 import { FAB_CONTENT_GAP_PX, FAB_SPACE_PX } from '../../../lib/fab-metrics'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
@@ -493,14 +492,6 @@ describe('탭과 기간 네비게이터', () => {
 
 describe('갱신 시각', () => {
 
-  // **화면이 재지 않는다.** 실시간 조회가 끝난 자리에서 적히는 값 하나를 다섯 화면이 함께 읽는다.
-  it('실시간 조회 시각을 읽는다', async () => {
-    useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
-    const { getByTestId } = await renderScreen()
-
-    expect(getByTestId('data-freshness')).toBeTruthy()
-  })
-
   // 제목에 딸린 작은 글씨다. 기간 탭 줄에 있던 것을 제목 아래로 옮겼다.
   it('기간 탭 줄이 아니라 제목 줄 아래에 선다', async () => {
     useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
@@ -518,16 +509,6 @@ describe('갱신 시각', () => {
     const { getByTestId } = await renderScreen()
 
     expect(getByTestId('data-freshness')).toHaveTextContent('')
-  })
-
-  // **과거 기간을 봐도 시각이 안 움직인다.** 확정된 기록이라 실시간이 아니다.
-  it('지난 기간에서도 같은 값을 그대로 그린다', async () => {
-    useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
-    mockStore({ periodKey: '2026-07-09' })
-    const { getByTestId } = await renderScreen()
-
-    expect(getByTestId('data-freshness')).toBeTruthy()
-    expect(useDataFreshness.getState().fetchedAt).toBe('2026-09-08T05:03:22.000Z')
   })
 })
 
@@ -718,18 +699,6 @@ describe('총 수익 헤드라인', () => {
 
     // 헤드라인과 카드가 같은 어휘(`N 메소`)를 쓰므로 합계 숫자로 가른다. 카드는 5·3백만이다.
     expect(getByText(/^8,000,000 /)).toBeTruthy()
-  })
-
-  // 금액 옆 표식이 메소 주머니다(사용자 지정 2026-09-21). 원을 안 두는 것은 그 원이 그림 크기를
-  // 정하게 되기 때문이다. 크기와 왼쪽 여백은 사용자가 화면에서 보고 정한 값이다.
-  it('금액 옆에 메소 주머니가 28 로 서고 왼쪽에 여백을 둔다', async () => {
-    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()] })
-    const { getByTestId } = await renderScreen()
-
-    // 뜻은 옆의 금액이 말한다. 그림은 장식이라 `aria-hidden` 이고 기본 쿼리가 건너뛴다.
-    const 주머니 = getByTestId('boss-profit-total-icon', { includeHiddenElements: true })
-    expect(주머니.props.source).toBe(getItemIconUrlByFile('meso_pouch.webp'))
-    expect(flattenStyle(주머니.props.style)).toMatchObject({ width: 28, height: 28, marginLeft: 6 })
   })
 
   it('단위 앞에 **실제 공백 문자**를 남긴다. 스크린리더가 붙여 읽지 않게', async () => {

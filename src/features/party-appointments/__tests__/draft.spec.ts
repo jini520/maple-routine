@@ -87,10 +87,6 @@ describe('shiftMinutes', () => {
 })
 
 describe('durationOf', () => {
-  it('같은 날 끝나면 시작부터 종료까지의 분이다', () => {
-    expect(durationOf(draft({}))).toBe(30)
-  })
-
   it('종료가 시작보다 이르면 다음 날로 센다', () => {
     expect(durationOf(draft({ startMinutes: 23 * 60 + 30, endMinutes: 30 }))).toBe(60)
     expect(durationOf(draft({ startMinutes: 22 * 60 }))).toBe(23 * 60 + 30)

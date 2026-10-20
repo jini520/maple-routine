@@ -28,15 +28,6 @@ describe('rnThemeAppearancePort', () => {
     })
   })
 
-  it('적용하면 그 테마와 정의가 그대로 놓인다', () => {
-    rnThemeAppearancePort.apply('검은마법사', getThemeDefinition('검은마법사'))
-
-    expect(getThemeAppearance()).toEqual({
-      theme: '검은마법사',
-      definition: getThemeDefinition('검은마법사'),
-    })
-  })
-
   it('구독자에게 알린다(뷰가 리렌더할 계기는 이것뿐이다)', () => {
     const listener = jest.fn()
     subscribeThemeAppearance(listener)

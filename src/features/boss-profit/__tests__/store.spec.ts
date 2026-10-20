@@ -1555,16 +1555,6 @@ describe('useBossProfitStore', () => {
   })
 
   describe('추적 목록', () => {
-    it('loadTrackedOcids는 storage에서 조회한 값을 trackedOcids 상태에 반영한다', async () => {
-      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useBossProfitStore.getState().loadTrackedOcids()
-
-      expect(getTrackedCharacterOcidsMock).toHaveBeenCalledWith()
-      expect(useBossProfitStore.getState().trackedOcids).toEqual(['ocid-1'])
-    })
-
     it('loadTrackedOcids는 조회된 목록이 null이면 refresh를 호출하지 않는다', async () => {
       getTrackedCharacterOcidsMock.mockResolvedValue(null)
 

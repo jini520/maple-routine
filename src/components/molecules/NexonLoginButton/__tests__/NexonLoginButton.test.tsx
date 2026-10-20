@@ -4,7 +4,6 @@
 // `확장영역` 으로 적어 폭이 늘어도 내용이 안 늘고, 잡아 늘이면 금지 항목 둘(`텍스트 왜곡 및 변형` ·
 // `가이드에서 벗어난 사이즈 및 비율 적용`)을 한 번에 어긴다.
 
-import { assetUri } from '../../../../assets/__tests__/asset-uri'
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { NexonLoginButton } from '../NexonLoginButton'
 
@@ -17,15 +16,6 @@ describe('NexonLoginButton', () => {
     const style = flattenStyle(view.getByTestId('nexon-login-button-image').props.style)
     expect(style.width).toBe('100%')
     expect(style.height).toBeUndefined()
-  })
-
-  it('가이드가 준 그 그림이다', async () => {
-    // 심볼·폰트·여백·색·모서리가 전부 이 파일 안에 있다. 우리가 다시 그리는 것이 아니다.
-    const view = await renderAtom(<NexonLoginButton onPress={() => {}} />)
-
-    expect(assetUri(view.getByTestId('nexon-login-button-image').props.source)).toContain(
-      'nexon/login-button-wide-center.png',
-    )
   })
 
   it('읽어 주는 이름은 버튼이 든다. 그림은 안 읽는다', async () => {

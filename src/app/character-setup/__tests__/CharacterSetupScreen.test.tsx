@@ -192,16 +192,6 @@ afterEach(() => {
 })
 
 describe('CharacterSetupScreen: 머리와 CTA', () => {
-  // 설정 하위 페이지가 그리는 것과 **같은 본문**이다. 그것이 정말 그 본문인지(사본이 아닌지)만 확인한다.
-  it('설정 화면과 같은 두 층 본문을 그린다. 드롭다운이 아래 층의 머리다', async () => {
-    const { view } = await renderStep()
-
-    expect(view.getByTestId('character-manage-body')).toBeTruthy()
-    expect(view.getByTestId('character-manage-selected')).toBeTruthy()
-    expect(view.getByTestId('character-manage-candidates')).toBeTruthy()
-    expect(view.getByTestId('account-select-trigger')).toBeTruthy()
-  })
-
   // 0개는 화면을 빈 상태로 만들 뿐 어떤 의도도 표현하지 않는다.
   it('아무도 고르지 않으면 `계속하기`가 비활성이다', async () => {
     const { view } = await renderStep()

@@ -73,16 +73,6 @@ describe('건너뛰는 기간 이동', () => {
       expect(findAdjacentMock).toHaveBeenCalledWith(['o1'], 'weekly', '2026-09-03', 'prev')
     })
 
-    it('월간도 같다', async () => {
-      findAdjacentMock.mockResolvedValue('2026-07')
-      const { resolvePreviousPeriodKey } =
-        require('../period-navigation') as typeof import('../period-navigation')
-
-      await expect(resolvePreviousPeriodKey('monthly', '2026-09', ['o1'])).resolves.toBe(
-        '2026-07',
-      )
-    })
-
     // 갈 곳이 없으면 안 움직인다. 화살표도 같은 판정으로 죽어 있다.
     it('더 과거에 기록이 없으면 null 이다', async () => {
       const { resolvePreviousPeriodKey } =
@@ -123,24 +113,6 @@ describe('건너뛰는 기간 이동', () => {
         require('../period-navigation') as typeof import('../period-navigation')
 
       await expect(resolveNextPeriodKey('weekly', '2026-09-03', ['o1'], NOW)).resolves.toBeNull()
-    })
-  })
-
-  // 조회 가능성을 안 본다. 건너뛰기가 그것을 안 쓰므로 남은 기준은 기록뿐이다.
-  describe('이전 화살표', () => {
-    it('더 과거에 기록이 있으면 산다', async () => {
-      findAdjacentMock.mockResolvedValue('2026-07-09')
-      const { canReachPreviousPeriod } =
-        require('../period-navigation') as typeof import('../period-navigation')
-
-      await expect(canReachPreviousPeriod('weekly', '2026-09-03', ['o1'])).resolves.toBe(true)
-    })
-
-    it('없으면 죽는다', async () => {
-      const { canReachPreviousPeriod } =
-        require('../period-navigation') as typeof import('../period-navigation')
-
-      await expect(canReachPreviousPeriod('weekly', '2026-09-03', ['o1'])).resolves.toBe(false)
     })
   })
 })

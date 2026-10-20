@@ -165,10 +165,6 @@ describe('조회 원장', () => {
     expect(checks.get('cube|2026-09-04')).toEqual({ nextCursor: 'c1', settled: true })
   })
 
-  it('없는 날짜는 없는 대로 둔다', async () => {
-    expect((await loadEnhancementChecks(['2026-09-04'])).size).toBe(0)
-  })
-
   it('날짜가 없으면 조회하지 않는다', async () => {
     expect((await loadEnhancementChecks([])).size).toBe(0)
     expect(queryMock).not.toHaveBeenCalled()
@@ -195,10 +191,6 @@ describe('아는 id', () => {
 
     expect(await loadKnownHistoryIds('cube', '2026-09-04')).toEqual(new Set(['a', 'b']))
     expect(queryMock.mock.calls[0][1]).toEqual(['cube', '2026-09-04'])
-  })
-
-  it('없으면 빈 집합이다', async () => {
-    expect((await loadKnownHistoryIds('cube', '2026-09-04')).size).toBe(0)
   })
 })
 

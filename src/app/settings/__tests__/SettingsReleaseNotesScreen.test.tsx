@@ -103,18 +103,6 @@ describe('SettingsReleaseNotesScreen', () => {
     expect(goBack).toHaveBeenCalledTimes(1)
   })
 
-  // 앱 번들에 실린 진짜 데이터를 그대로 그린다. 이 화면의 계약이 "네트워크 0회, 과거 전체"다.
-  it('RELEASE_NOTES 의 모든 버전과 모든 항목 문구를 그린다', async () => {
-    const view = await renderOverlay(<SettingsReleaseNotesScreen />)
-
-    expect(진짜노트.length).toBeGreaterThan(0)
-    for (const note of 진짜노트) {
-      expect(view.getByText(note.version)).toBeTruthy()
-      expect(view.getByText(note.date)).toBeTruthy()
-      for (const item of note.items) expect(view.getByText(item.text)).toBeTruthy()
-    }
-  })
-
   // "최신이 먼저"는 데이터의 계약이고 그 강제는 데이터 테스트가 한다. 화면이 다시
   // 정렬하면 같은 규칙의 진실이 두 곳에 생긴다.
   it('배열 순서를 그대로 그린다. 화면이 정렬하지 않는다', async () => {

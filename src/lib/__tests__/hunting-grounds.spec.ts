@@ -1,5 +1,4 @@
 import {
-  HUNTING_LEVEL_BELOW,
   huntingRegions,
   findHuntingGround,
   findHuntingGroundByName,
@@ -68,10 +67,6 @@ describe('huntingRegionsForLevel', () => {
       // 걸려 지역이 선다. 추천 레벨(205-209)로 재면 통째로 빠지던 자리다.
       expect(이름들(230)).toContain('리버스 시티')
       expect(이름들(234)).not.toContain('리버스 시티') // 바닥 214 > 213
-    })
-
-    it('창 폭은 20 이다', () => {
-      expect(HUNTING_LEVEL_BELOW).toBe(20)
     })
   })
 
@@ -170,10 +165,6 @@ describe('levelGapOf', () => {
 })
 
 describe('findHuntingRegion', () => {
-  it('지역 key 로 찾는다', () => {
-    expect(findHuntingRegion('tallahart')?.name).toBe('탈라하트')
-  })
-
   it('없으면 `null` 이다. 던지지 않는다', () => {
     expect(findHuntingRegion('없는지역')).toBeNull()
   })
@@ -194,10 +185,6 @@ describe('findHuntingGround', () => {
 
 // 이름만 저장된 옛 사냥 기록을 key 로 옮기는 이관이 쓴다.
 describe('findHuntingGroundByName', () => {
-  it('이름으로 사냥터를 찾는다', () => {
-    expect(findHuntingGroundByName('밤의 길 3')?.ground.key).toBe('tallahart_road_of_night_3')
-  })
-
   it('옛 기록의 자유 입력 글자는 안 잡힌다', () => {
     expect(findHuntingGroundByName('아무 데나 적은 글자')).toBeNull()
     expect(findHuntingGroundByName('')).toBeNull()

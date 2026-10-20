@@ -155,7 +155,7 @@ config plugin 으로 넣었다.
 | | 결정 5: 1겹이 사라진 뒤 600ms 가 지나야 걷히는지, 넘겨받기 전에는 시간이 흘러도 걷히지 않는지, 1겹이 아직 안 사라졌으면 시간을 세지 않는지, 1겹이 끝내 안 사라져도 상한이 지나면 걷히는지 본다 |
 | `__tests__/boot-splash.test.ts` | 결정 6: 페이드를 끄는지, 붙든 뒤에 설정하는지 본다 |
 | | 결정 8: 부팅 렌더가 오지 않으면 8초 뒤 타이머가 내리는지 본다 |
-| `native/adapters/__tests__/rn-splash-screen.test.ts` | 결정 9: `hide()` 가 `hideAsync()` 로 이어지는지, `show()` 가 스플래시 API 를 하나도 건드리지 않는지 본다 |
+| `native/adapters/__tests__/rn-splash-screen.test.ts` | 결정 9: `show()` 가 스플래시 API 를 하나도 건드리지 않는지 본다 |
 | `__tests__/boot-order.test.tsx` | 결정 1 · 4: 2겹이 셸의 트리에 있는지, 셸이 시간이 흘러도 스플래시를 내리지 않는지 본다 |
 | | 결정 7: 진입점이 `installPorts()` → `holdSplashUntilAppReady()` → `registerRootComponent` 순서로 부르는지 본다 |
 

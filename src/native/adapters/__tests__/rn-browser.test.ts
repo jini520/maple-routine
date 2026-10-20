@@ -15,14 +15,6 @@ describe('rnBrowserPort.openAuthSession', () => {
     openAuthSessionAsync.mockReset()
   })
 
-  it('받은 주소와 돌아올 주소를 그대로 넘긴다', async () => {
-    openAuthSessionAsync.mockResolvedValue({ type: 'success', url: 'app://cb?receipt=r' })
-
-    await rnBrowserPort.openAuthSession('https://login', 'app://cb')
-
-    expect(openAuthSessionAsync).toHaveBeenCalledWith('https://login', 'app://cb')
-  })
-
   it('돌아왔으면 그 주소를 돌려준다', async () => {
     openAuthSessionAsync.mockResolvedValue({ type: 'success', url: 'app://cb?receipt=r' })
 

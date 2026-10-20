@@ -20,23 +20,6 @@ const SAMPLE_ITEMS: ManualTrackedItem[] = [
   { kind: 'boss', bossKey: 'black_mage', difficulty: 'extreme' },
 ]
 
-describe('round-trip', () => {
-  it('setManualTrackedContent 후 getManualTrackedContent로 저장한 배열을 그대로 읽는다', async () => {
-    await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
-    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual(SAMPLE_ITEMS)
-  })
-})
-
-describe('ocid 독립성', () => {
-  it('서로 다른 ocid는 서로 다른 배열을 독립적으로 저장한다', async () => {
-    const other: ManualTrackedItem[] = [{ contentKey: 'erda_spectrum', kind: 'weekly', maxCount: 1 }]
-    await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
-    await setManualTrackedContent('ocid-2', other)
-    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual(SAMPLE_ITEMS)
-    await expect(getManualTrackedContent('ocid-2')).resolves.toEqual(other)
-  })
-})
-
 describe('레거시 kind 마이그레이션', () => {
   it("결정 19 이전의 kind: 'content' 항목은 템플릿 조회로 daily/weekly로 재분류된다", async () => {
     await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([

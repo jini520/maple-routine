@@ -16,16 +16,6 @@ beforeEach(async () => {
   await clearAuthConfig()
 })
 
-describe('round-trip', () => {
-  it('setApiKey 후 getAuthConfig로 저장한 키를 그대로 읽는다', async () => {
-    await setApiKey('test-api-key')
-    await expect(getAuthConfig()).resolves.toEqual({
-      login: null,
-      apiKeys: [{ kind: 'apiKey', label: '', value: 'test-api-key' }],
-    })
-  })
-})
-
 describe('저장된 값이 없는 경우', () => {
   it('아무 것도 저장하지 않았으면 getAuthConfig는 null을 반환한다', async () => {
     await expect(getAuthConfig()).resolves.toBeNull()

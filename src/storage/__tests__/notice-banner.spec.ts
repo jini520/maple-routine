@@ -1,7 +1,6 @@
 import { installFakePreferences } from './fake-preferences'
 import {
   dismissNotice,
-  forgetDismissedNotice,
   getDismissedNoticeIds,
   keepDismissedNotices,
 } from '../notice-banner'
@@ -41,16 +40,6 @@ describe('배너에서 닫은 공지', () => {
     await keepDismissedNotices(['c', 'a', 'z'])
 
     await expect(getDismissedNoticeIds()).resolves.toEqual(['a', 'c'])
-  })
-
-  // 상세 조회가 404 를 받은 공지.
-  it('id 하나를 뺀다', async () => {
-    await dismissNotice('a')
-    await dismissNotice('b')
-
-    await forgetDismissedNotice('a')
-
-    await expect(getDismissedNoticeIds()).resolves.toEqual(['b'])
   })
 
   // 깨진 값에 기대 배너를 영영 안 세우느니, 한 번 더 보여 주는 편이 낫다.

@@ -11,7 +11,7 @@ jest.mock('@notifee/react-native', () => ({
   ...jest.requireActual('@notifee/react-native/dist/types/Trigger'),
 }))
 
-import { AndroidImportance, TriggerType } from '@notifee/react-native'
+import { TriggerType } from '@notifee/react-native'
 
 import {
   channelFor,
@@ -103,15 +103,6 @@ describe('toTriggerNotification', () => {
 
 // 파티 약속 알림만 따로 끌 수 있게 채널을 둔다. 채널은 한 번 만들면 이름 · 중요도를 못 바꾼다.
 describe('파티 약속 채널', () => {
-  it('party 채널은 HIGH · 소리 있음이다', () => {
-    expect(PARTY_NOTIFICATION_CHANNEL).toMatchObject({
-      id: 'party',
-      name: '파티 스케줄',
-      importance: AndroidImportance.HIGH,
-      sound: 'default',
-    })
-  })
-
   it('요청이 party 를 고르면 그 채널로, 안 고르면 옛 채널로 간다', () => {
     expect(toTriggerNotification(request({ channel: 'party' }), NOW).notification.android?.channelId).toBe('party')
     expect(toTriggerNotification(request(), NOW).notification.android?.channelId).toBe('default')

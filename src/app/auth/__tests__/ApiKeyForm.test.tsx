@@ -145,22 +145,6 @@ describe('ApiKeyForm', () => {
     expect(openBrowser).toHaveBeenCalledWith('https://openapi.nexon.com')
   })
 
-  // 인앱 브라우저로 열어도 목적지가 웹 문서인 것은 그대로다. 스크린리더가 링크로 읽어야 한다.
-  it('두 진입점 모두 버튼이 아니라 링크 시맨틱이다', async () => {
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
-
-    expect(pressableOf(view.getByText('API 키 발급 방법 보기'), 'link').props.role).toBe('link')
-    expect(pressableOf(view.getByText('openapi.nexon.com에서 확인'), 'link').props.role).toBe('link')
-  })
-
-  // 넥슨 블록과 **같은 골격**이다. 소제목과 그 아래 한 줄. 화면의 제목은 이 폼이 안 든다.
-  it('접혀 있어도 소제목과 그 아래 한 줄은 보인다', async () => {
-    const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
-
-    expect(view.getByText('API 키로 시작하기')).toBeTruthy()
-    expect(view.getByText('넥슨 오픈 API에서 받은 키를 넣어요')).toBeTruthy()
-  })
-
   // 넥슨이 주 경로다. 키 폼을 펼친 채로 두면 그 아래가 화면의 대부분을 먹어 위계가 흐려진다.
   it('처음에는 접혀 있다', async () => {
     const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)

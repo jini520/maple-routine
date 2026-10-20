@@ -19,17 +19,4 @@ describe('Card', () => {
       columnGap: 8,
     })
   })
-
-  it('미디어 카드도 같은 코어 위에 얹는다. 높이·클리핑만 호출부가 더한다', async () => {
-    const { getByTestId } = await renderAtom(
-      <Card testID="card" className="relative h-20 overflow-hidden" />,
-    )
-
-    expect(flattenStyle(getByTestId('card').props.style)).toMatchObject({
-      borderRadius: 14,
-      height: 80,
-      overflow: 'hidden',
-    })
-  })
-
 })

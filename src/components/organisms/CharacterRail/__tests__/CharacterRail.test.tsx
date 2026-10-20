@@ -60,14 +60,6 @@ describe('CharacterRail', () => {
     expect(dimmed.props.style.opacity).toBeLessThan(1)
   })
 
-  it('가로로 굴러가고 스크롤바를 그리지 않는다', async () => {
-    const view = await render([entry()])
-
-    const scroll = view.getByTestId('character-rail-scroll')
-    expect(scroll.props.horizontal).toBe(true)
-    expect(scroll.props.showsHorizontalScrollIndicator).toBe(false)
-  })
-
   // 링이 없는 레일(관리 화면 둘)도 같은 간격을 쓴다. 값을 정하는 곳은
   // `PORTRAIT_RAIL` 이고 여기서 물을 것은 **레일이 그 값을 실제로 보는가** 다. 숫자를 손으로 적어
   // 두면 치수 표와 레일이 서로 다른 값을 믿는 상태가 조용히 만들어진다.

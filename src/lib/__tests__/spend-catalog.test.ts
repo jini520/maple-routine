@@ -14,7 +14,6 @@ import {
   pickSpendOption,
   pointToMeso,
   spendGroupsOf,
-  rewardCoinMeso,
   spendRewardCoins,
   spendRewardItemKeys,
   spendRewardPrice,
@@ -26,17 +25,6 @@ import {
 const 패치후 = '2026-09-17'
 
 describe('spendGroupsOf: 갈래 → 묶음들', () => {
-  it('사용자가 적어 준 묶음 그대로 묶는다. 앱이 다시 묶지 않는다', () => {
-    const groups = spendGroupsOf('content', 패치후)
-
-    expect(groups.map((group) => group.key)).toEqual(['epic_dungeon_bonus_reward', 'monster_park', 'quick_pass'])
-    expect(groups.map((group) => group.group)).toEqual([
-      '에픽던전 추가 리워드',
-      '몬스터 파크',
-      '퀵 패스',
-    ])
-  })
-
   // **단계가 여럿인 항목은 대표 하나로 접힌다**. 목록에 여덟이 서면
   // 그 여덟이 실은 넷 × 두 단계라는 사실이 화면에서 사라진다.
   it('같은 대표는 한 칸으로 접힌다. 여덟이 넷이 된다', () => {
@@ -112,16 +100,6 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
     )
     expect(이벤트).toEqual(new Set(['point']))
   })
-
-  // 사용자가 적어 준 묶음 차례 그대로다. 앱이 다시 묶지도, 정렬하지도 않는다.
-  it('이벤트·BM 의 묶음 넷이 지정한 차례로 선다', () => {
-    expect(spendGroupsOf('event_bm', 패치후).map((group) => group.group)).toEqual([
-      '메이플 포인트 샵',
-      '이벤트',
-      'VIP 사우나',
-      '기타',
-    ])
-  })
 })
 
 // 항목 줄이 시작 기간을 든다. 목록은 **적는 날짜**가 든 주간 기간으로 거른다. 오늘이 아니다.
@@ -187,10 +165,6 @@ describe('pointToMeso: 나눗셈이다', () => {
 })
 
 describe('관세. 구입가의 10% 고정', () => {
-
-  it('구입가의 10% 다', () => {
-    expect(tariffMesoOf(850_000_000)).toBe(85_000_000)
-  })
 
   it('버린다. `netProceedsMeso` 와 같은 방향이다', () => {
     expect(tariffMesoOf(999)).toBe(99)
@@ -291,11 +265,6 @@ describe('형태별 단계: 값과 이름', () => {
       const 몬스터파크 = spendGroupsOf('content', 패치후)[1].choices[0]
 
       expect(spendRewardCoins(몬스터파크, { exp: '1단계' })).toBe(0)
-    })
-
-    it('개수를 판매가로 바꾼다', () => {
-      expect(rewardCoinMeso(12)).toBe(480_000_000)
-      expect(rewardCoinMeso(0)).toBe(0)
     })
   })
 

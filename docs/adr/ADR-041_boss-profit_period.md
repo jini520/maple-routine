@@ -211,7 +211,7 @@ API 는 최근 14일만 주므로, 오래 쉬었다 돌아오면 그 사이 기�
 | 파일 | 확인하는 것 |
 |---|---|
 | `lib/__tests__/boss-profit-period.spec.ts` | 결정 1: 목요일 · 1일 경계, 기간 이름, 달 경계 주의 귀속을 본다. 결정 5: 상태 판정 순서와 화면 합치기 우선순위를 본다. 결정 7: `containsInProgressWeek` 가 달 경계 주의 지난 달에서만 참인지 본다 |
-| `features/boss-profit/__tests__/period-navigation.spec.ts` | 결정 2: 기록이 있는 기간으로 건너뛰는지, 월간 처치 주를 후보에 넣는지, 다음이 지금 기간을 넘지 않는지, 이전 화살표 판정이 같은지 본다 |
+| `features/boss-profit/__tests__/period-navigation.spec.ts` | 결정 2: 기록이 있는 기간으로 건너뛰는지, 월간 처치 주를 후보에 넣는지, 다음이 지금 기간을 넘지 않는지 본다 |
 | `storage/__tests__/boss-profit.spec.ts` | 결정 2: 이웃 기간을 SQL 하나로 찾고 월간은 두 축을 함께 보는지 본다 |
 | `app/boss-profit/__tests__/BossProfitScreen.test.tsx` | 결정 3: 겹화살표가 지금 기간에 흐려지고 이름이 주기를 따르는지, 화살표와 촉각을 본다. 결정 4: 개정 번호가 오를 때만 다시 읽는지 본다. 결정 5: 상태별 화면과 집계 전 요약을 본다. 결정 11: 언마운트하면 주간 · 이번 주로 돌리는지 본다 |
 | `src/__tests__/period-nav-padding.test.ts` | 결정 3: 세 화면의 기간 줄이 같은 `py-*` 를 쓰는지 본다 |

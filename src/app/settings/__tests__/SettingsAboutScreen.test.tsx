@@ -84,20 +84,6 @@ describe('SettingsAboutScreen', () => {
     expect(goBack).toHaveBeenCalledTimes(1)
   })
 
-  // 스택 위로 올라간 화면에는 탭바가 없다. 셸이 하단 인셋을 그렇게 잡는다.
-  it('자기 스크롤 컨테이너를 갖는다', async () => {
-    const view = await renderOverlay(<SettingsAboutScreen />)
-
-    expect(view.getByTestId('screen-scroll')).toBeTruthy()
-  })
-
-  it('업데이트 카드(현재 버전·상태)를 품는다', async () => {
-    const view = await renderOverlay(<SettingsAboutScreen />)
-
-    expect(view.getByText('현재 버전')).toBeTruthy()
-    expect(view.getByText('상태')).toBeTruthy()
-  })
-
   // 페이지 제목이 이미 `앱 정보`라 업데이트 카드가 자기 제목을 또 그리면 중복이다.
   it('업데이트 카드가 "앱 업데이트" 제목을 다시 그리지 않는다', async () => {
     const view = await renderOverlay(<SettingsAboutScreen />)

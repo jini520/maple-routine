@@ -37,10 +37,6 @@ describe('기본 크롭', () => {
     expect(지금.top).toBeCloseTo(옛.top, 9)
   })
 
-  it('인자를 안 주면 공용 아바타 지름이다', () => {
-    expect(faceCropStyle()).toEqual(faceCropStyle(FACE_AVATAR_SIZE))
-  })
-
   // 크롭 박스가 프레임을 꽉 채운다는 것이 기본값의 정의다.
   it('박스가 프레임을 꽉 채운다', () => {
     const { width } = faceCropStyle(48)

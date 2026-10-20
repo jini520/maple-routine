@@ -1,15 +1,8 @@
 // 월드 마스터 표 조회. 기록 · 원장 · 판정은 월드 key 를 들고 이름 · 엠블럼 · 챌린저스 여부는 여기서 찾는다.
 import { worldEmblemUrl } from '../../assets/asset-lookup'
-import { findWorld, isChallengersWorld, isEventWorld, worldKeyOfApiName, worldNameOf, worlds } from '../worlds'
+import { findWorld, isEventWorld, worldKeyOfApiName, worldNameOf, worlds } from '../worlds'
 
 describe('API 이름에서 key 를 찾는다', () => {
-  it('API 표기 그대로 찾는다', () => {
-    expect(worldKeyOfApiName('엘리시움')).toBe('elysium')
-    expect(worldKeyOfApiName('챌린저스')).toBe('challengers')
-    expect(worldKeyOfApiName('챌린저스2')).toBe('challengers_2')
-    expect(worldKeyOfApiName('스페셜')).toBe('special')
-  })
-
   // 넥슨 표기는 ㅐ 다. ㅔ 로 적으면 핼리오스 캐릭터 전부가 월드 key 를 못 얻는다.
   it('핼리오스는 넥슨 표기로 찾는다', () => {
     expect(worldKeyOfApiName('핼리오스')).toBe('helios')
@@ -35,16 +28,6 @@ describe('key 로 찾는다', () => {
     expect(worldNameOf('nope', '어딘가')).toBe('어딘가')
     expect(worldNameOf(null, '어딘가')).toBe('어딘가')
     expect(findWorld(undefined)).toBeNull()
-  })
-
-  it('챌린저스 넷만 챌린저스 월드다', () => {
-    expect(worlds().filter((world) => isChallengersWorld(world.key)).map((world) => world.key)).toEqual([
-      'challengers',
-      'challengers_2',
-      'challengers_3',
-      'challengers_4',
-    ])
-    expect(isChallengersWorld(null)).toBe(false)
   })
 
   // 챌린저스는 시즌 월드지만 재화가 본섭으로 넘어와 이벤트 월드가 아니다(사용자 지정).

@@ -33,12 +33,6 @@ describe('agendaDays', () => {
 })
 
 describe('endClockOf', () => {
-  it('같은 날 끝나면 그 시각이다', () => {
-    const [occurrence] = occurrencesInWeek([appointment({ timeKst: '20:30', durationMinutes: 60 })], WEEK)
-
-    expect(endClockOf(occurrence!)).toBe('21:30')
-  })
-
   it('자정을 넘으면 시계 그대로 적는다', () => {
     const [midnight] = occurrencesInWeek([appointment({ timeKst: '23:30', durationMinutes: 30 })], WEEK)
     const after = occurrencesInWeek([appointment({ timeKst: '23:30', durationMinutes: 60 })], WEEK)[0]

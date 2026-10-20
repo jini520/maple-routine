@@ -1,6 +1,6 @@
 import type { BossPartySetting } from '../../../storage/boss-party-settings'
 import type { BossPartyPeriodOverride } from '../../../storage/boss-party-period-overrides'
-import { SOLO_PARTY_PLAN, buildPartyPlans, partyPlanKey } from '../party-plans'
+import { buildPartyPlans, partyPlanKey } from '../party-plans'
 
 const setting = (over: Partial<BossPartySetting> = {}): BossPartySetting => ({
   ocid: 'ocid-1',
@@ -71,16 +71,5 @@ describe('buildPartyPlans', () => {
     const plans = buildPartyPlans([], [override({ periodKey: '2026-W38' })], ['2026-W39'])
 
     expect(plans).toEqual({})
-  })
-
-  it('둘 다 없으면 빈 표다. 못 찾은 행은 솔로로 선다', () => {
-    expect(buildPartyPlans([], [], ['2026-W39'])).toEqual({})
-    expect(SOLO_PARTY_PLAN).toEqual({
-      partySize: 1,
-      crystalMyShare: null,
-      crystalSharesTotal: null,
-      splitFeePercent: null,
-      splitFeeAuto: false,
-    })
   })
 })

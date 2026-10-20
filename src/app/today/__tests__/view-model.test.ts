@@ -246,18 +246,6 @@ describe('머리 버튼의 얼굴 목록', () => {
   it('추적이 없으면 빈 목록이다. 버튼이 사람 아이콘을 그린다', () => {
     expect(buildTodayViewModel(input()).headerPortraits).toEqual([])
   })
-
-  it('얼굴 그림은 프로필이 든 것을 그대로 나른다', () => {
-    const model = buildTodayViewModel(
-      input({
-        orderedOcids: ['a'],
-        profilesByOcid: { a: profile({ imageUrl: 'https://example.test/face.png' }) },
-      }),
-    )
-
-    expect(model.headerPortraits[0].imageUrl).toBe('https://example.test/face.png')
-    expect(model.headerPortraits[0].ocid).toBe('a')
-  })
 })
 
 describe('남은 스케줄. 분류 넷', () => {

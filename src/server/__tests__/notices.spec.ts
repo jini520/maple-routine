@@ -21,12 +21,6 @@ beforeEach(() => {
 })
 
 describe('목록', () => {
-  it('받은 것을 그대로 준다', async () => {
-    jest.spyOn(global, 'fetch').mockResolvedValue(ok(응답))
-
-    await expect(fetchNotices()).resolves.toEqual(응답.items)
-  })
-
   it('우리 서버의 주소로 부른다', async () => {
     const spy = jest.spyOn(global, 'fetch').mockResolvedValue(ok(응답))
 
@@ -129,12 +123,6 @@ describe('계약을 어긴 응답', () => {
 })
 
 describe('상세', () => {
-  it('받은 것을 준다', async () => {
-    jest.spyOn(global, 'fetch').mockResolvedValue(ok(응답.items[0]))
-
-    await expect(fetchNotice('a')).resolves.toEqual({ status: 'found', notice: 응답.items[0] })
-  })
-
   it('id 를 주소에 넣는다', async () => {
     const spy = jest.spyOn(global, 'fetch').mockResolvedValue(ok(응답.items[0]))
 

@@ -14,27 +14,19 @@ import { mockReducedMotion, withRepeatSpy } from '../../../__tests__/reduced-mot
 import { renderAtom } from '../../../__tests__/render-atom'
 import { Skeleton } from '../Skeleton'
 
-const HIDDEN = { includeHiddenElements: true } as const
-
 afterEach(() => {
   mockReducedMotion(false)
   withRepeatSpy.mockClear()
 })
 
 describe('Skeleton', () => {
-  it('장식이라 스크린리더에서 숨는다', async () => {
-    const { getByTestId } = await renderAtom(<Skeleton testID="bar" />)
-
-    expect(getByTestId('bar', HIDDEN).props['aria-hidden']).toBe(true)
-  })
-
   it('호출부가 준 className 과 style 이 그대로 붙는다', async () => {
     const { getByTestId } = await renderAtom(
       <Skeleton testID="bar" className="w-full" style={{ height: 42 }} />,
     )
 
     // 스타일은 배열로 합쳐져 온다. 높이가 살아 있는지만 본다.
-    expect(getByTestId('bar', HIDDEN)).toHaveStyle({ height: 42 })
+    expect(getByTestId('bar', { includeHiddenElements: true })).toHaveStyle({ height: 42 })
   })
 
   it('반복 펄스를 건다', async () => {

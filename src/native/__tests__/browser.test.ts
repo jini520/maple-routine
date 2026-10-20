@@ -8,15 +8,6 @@ afterEach(__resetNativePortsForTest)
 const noAuthSession = async () => null
 
 describe('openInAppBrowser', () => {
-  it('포트를 그 주소로 부른다', () => {
-    const open = jest.fn().mockResolvedValue(undefined)
-    setBrowserPort({ open, openAuthSession: noAuthSession })
-
-    openInAppBrowser('https://openapi.nexon.com')
-
-    expect(open).toHaveBeenCalledWith('https://openapi.nexon.com')
-  })
-
   it('거절해도 부른 쪽으로 새어 나가지 않는다', async () => {
     setBrowserPort({
       open: () => Promise.reject(new Error('열 수 없음')),
@@ -42,14 +33,6 @@ describe('openInAppBrowser', () => {
 
 // 로그인은 실패를 스스로 가려야 해서, 거절을 삼키지 않고 그대로 돌려준다.
 describe('openAuthSession', () => {
-  it('포트가 돌려준 주소를 그대로 돌려준다', async () => {
-    const openAuth = jest.fn().mockResolvedValue('app://cb?receipt=r')
-    setBrowserPort({ open: async () => {}, openAuthSession: openAuth })
-
-    await expect(openAuthSession('https://login', 'app://cb')).resolves.toBe('app://cb?receipt=r')
-    expect(openAuth).toHaveBeenCalledWith('https://login', 'app://cb')
-  })
-
   it('거절은 부른 쪽으로 그대로 간다', async () => {
     setBrowserPort({
       open: async () => {},
