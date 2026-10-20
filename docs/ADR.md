@@ -176,7 +176,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-053+067](./adr/ADR-053+067_settings_cache-data.md) | 🟢 | settings | 캐시 데이터 삭제 |
 | [ADR-054](./adr/ADR-054_theme_tokens.md) | 🟢 | theme | 테마와 색 토큰 |
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |
-| [ADR-056](./adr/ADR-056_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |
+| [ADR-056+072](./adr/ADR-056+072_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |
 | [ADR-057](./adr/ADR-057_notice_feed.md) | 🟢 | notice | 운영자 공지와 넥슨 공지 |
 | [ADR-058](./adr/ADR-058_today_widgets.md) | 🟢 | today | today 위젯 격자 |
 | [ADR-059](./adr/ADR-059_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |

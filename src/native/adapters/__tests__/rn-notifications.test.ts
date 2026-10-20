@@ -73,7 +73,7 @@ describe('schedule', () => {
       expect.objectContaining({ id: 'default', sound: 'default' }),
     )
     expect(mocked.createTriggerNotification).toHaveBeenCalledWith(
-      { id: '7', title: '제목', body: '본문', android: { channelId: 'default' } },
+      { id: '7', title: '제목', body: '본문', android: { channelId: 'default' }, ios: { sound: 'default' } },
       { type: TriggerType.TIMESTAMP, timestamp: scheduleAt.getTime() },
     )
     // 채널이 없으면 Android 는 알림을 아예 안 띄운다. 순서가 뒤집히면 첫 예약을 잃는다.
