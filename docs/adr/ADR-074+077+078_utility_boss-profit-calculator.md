@@ -1,4 +1,4 @@
-# ADR-074+077 주간 보스 수익 계산기
+# ADR-074+077+078 주간 보스 수익 계산기
 
 > 🟢 유효
 > 관련 소스: `app/utility/BossProfitCalculatorScreen.tsx` · `app/utility/BossProfitCalculatorRecordsScreen.tsx` · `app/utility/boss-profit-calculator/` · `components/molecules/DonutRing/` · `components/molecules/DifficultyExpander/` · `features/boss-profit-calculator/` · `lib/boss/boss-profit-calculator.ts` · `storage/boss-profit-calculator-records.ts` · `native/uuid.ts`
@@ -73,7 +73,8 @@ push 한다. 이름은 `tool-names.ts` 에 한 번만 적고 타일과 화면 �
 
 - 첫 줄은 초상 · 이름(별칭) · 내 몫, 둘째 줄은 난이도와 인원이다. 줄 순서는 보스 표의 기준 순서(`bossReferenceOrder`)다.
 - 난이도는 고른 배지 하나에 오른쪽 화살표가 붙어 보인다. 누르면 모든 난이도 배지가 고른 배지 자리에서 나와 오른쪽 제자리로
-  미끄러지며 펼쳐진다. 배지마다 조금씩 늦게 출발하고 스프링으로 멈춘다. 접을 때는 배지들이 고른 배지 자리로 모인 뒤 사라진다.
+  미끄러지며 펼쳐진다. 배지마다 조금씩 늦게 출발하고 스프링으로 멈춘다. 접을 때는 고르지 않은 배지가 그 자리에서 곧바로 투명해지고, 고른 배지만
+  접힌 배지 자리로 돌아간다. 배지들이 차례로 모여드는 것은 펼칠 때보다 길고 어수선하게 보였다(사용자 지적).
   창의 폭만 넓히면 배지가 펼쳐지는 것이 아니라 가려진 것이 드러나는 것으로 보여서다(사용자 지적). 팝오버가 아니고, 펼친 줄은
   옆의 스테퍼와 다른 UI 위에 떠서 잘리지 않는다. 고르지 않은 난이도도 제 색을 흐리게 띤다.
 - 인원은 `Stepper`(`sm`)로 바꾼다. 상한은 그 보스 · 난이도의 최대 인원(`getMaxPartySize`)이다. 스테퍼 왼쪽의 `변경` 은
@@ -148,3 +149,4 @@ Expo SDK 의 공식 모듈이고, 패키지 하나로 동기로 부를 수 있�
 
 - ADR-074 (2026-10-20): 처음 작성(#193). 같은 날 구현 뒤 기록에 없는 캐릭터는 보스 없이 열도록 정했다
 - ADR-077 (2026-10-20): 결정 8 의 난이도 펼침을 배지가 미끄러져 나오는 애니메이션으로 바꾸고 펼친 줄이 다른 UI 위에 서게 했다. 결정 7 의 레일 링을 두께 3 으로 정했다
+- ADR-078 (2026-10-20): 결정 8 의 접힘을 고르지 않은 배지는 곧바로 투명해지고 고른 배지만 제자리로 돌아가는 것으로 바꿨다
