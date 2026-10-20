@@ -168,7 +168,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-045](./adr/ADR-045_item-drop_effect.md) | 🟢 | item-drop | 고가 드롭 연출과 강조 |
 | [ADR-046](./adr/ADR-046_cashbook_calendar.md) | 🟢 | cashbook | 가계부 캘린더 |
 | [ADR-047](./adr/ADR-047_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 |
-| [ADR-048](./adr/ADR-048_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 |
+| [ADR-048+070](./adr/ADR-048+070_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 |
 | [ADR-049](./adr/ADR-049_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
 | [ADR-050](./adr/ADR-050_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
 | [ADR-051](./adr/ADR-051_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |

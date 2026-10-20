@@ -1,8 +1,8 @@
-# ADR-048 가계부 입력 시트
+# ADR-048+070 가계부 입력 시트
 
 > 🟢 유효
 > 옛 번호: ADR-170 결정 5 · 6 · 9 · 정정 9 · 14 · 17 · ADR-173 · ADR-178 · ADR-202 · ADR-203 · ADR-241 결정 1 · ADR-243 · ADR-244 · ADR-245 · ADR-262 · ADR-301 · ADR-325 결정 1 · 2 · 5 · ADR-327 · ADR-333 결정 5 · 6
-> 관련 소스: `app/cashbook/IncomeSheet.tsx` · `app/cashbook/SpendSheet.tsx` · `app/cashbook/CategoryPicker.tsx` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/` · `app/cashbook/spend/` · `app/cashbook/character-options.ts` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/symbol-costs.ts`
+> 관련 소스: `app/cashbook/IncomeSheet.tsx` · `app/cashbook/SpendSheet.tsx` · `app/cashbook/CategoryPicker.tsx` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/` · `app/cashbook/spend/` · `app/cashbook/character-options.ts` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/symbol-costs.ts` · `constants/domain/quick-adds.ts`
 
 ## 배경
 
@@ -83,6 +83,9 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 - 숫자 키보드를 부른다. 앞자리 0 은 입력을 마칠 때 지운다(`0000000000` → 빈 칸, `007` → `7`).
 - 빈 칸과 0 은 계산에서 같은 0 이다. 사냥의 조각 가격만 빈 칸과 0 을 구분한다([[ADR-049]] 결정 11).
 - 카드의 빠른 입력 칩은 칸이 세는 단위를 따른다. 메소 칸은 `+100만 ~ +100억`, 수량은 아래 결정 6 을 따른다.
+- 지출 `기타` 의 금액 칸은 고른 통화의 칩을 띄운다. 캐시는 `+1만 · +5천 · +1천 · +100`, 메포는 `+500 · +100 · +10 · +1`
+  이다(`CASH_QUICK_ADDS` · `POINT_AMOUNT_QUICK_ADDS`). 통화를 바꿔도 메소 칩이 남아 있으면 1만 원짜리를 치는 카드에
+  `+100억` 이 뜨기 때문이다.
 
 ### 결정 6. 수량은 1 에서 시작하고, 상한이 있는 항목만 스테퍼다
 
@@ -259,7 +262,7 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 | `app/cashbook/__tests__/IncomeSheet.test.tsx` | 결정 2 · 3: 분류 카드 넷과 그림, 분류를 고르면 폼과 제목이 바뀌고 다시 열면 빈 폼인지 본다. 결정 4 · 5: 금액 칸이 친 글자를 그대로 두고 앞자리를 지워도 나머지가 남는지, 큰 숫자가 단위로 줄여 적히는지 본다 |
 | | 결정 7: 기본이 계정 단위이고, 아이템 판매와 사냥 · 정산은 `선택 안함` 이 없는지 본다. 결정 8: 날짜를 바꾸면 그 날로 저장되고 친 값이 남는지, 범위 밖 날을 못 고르는지 본다. 결정 9: 판매 종류에 따라 금액 칸 · 수량이 바뀌고, 수수료를 단가 × 수량에서 떼어 저장하는지 본다 |
 | | 결정 10: 수정으로 열면 제목이 분류이고 판매 대금 · 단가를 거꾸로 계산하는지 본다. 결정 11: 통화 · 시세 · 금액 × 수량, 메포가 큰 숫자에서 메소로 바뀌되 저장은 친 메포와 시세인지, 값이 있는 칸으로 통화를 알아내는지 본다 |
-| `app/cashbook/__tests__/SpendSheet.test.tsx` | 결정 2: 분류 카드 일곱, 단계를 돌아가면 첫 화면이고 고르던 항목이 풀리는지 본다. 결정 6: 상한 항목의 스테퍼, 칩이 버프 · 주문서에만 있는지, 손대지 않은 1 이 빈 카드로 열리는지 본다. 결정 9: 종류 · 관세 · 단가 × 수량 · 종류를 바꿀 때 수량과 관세가 돌아가는지 본다 |
+| `app/cashbook/__tests__/SpendSheet.test.tsx` | 결정 2: 분류 카드 일곱, 단계를 돌아가면 첫 화면이고 고르던 항목이 풀리는지 본다. 결정 5: `기타` 의 금액 카드가 메소 · 캐시 · 메포마다 그 통화의 칩을 띄우고, 캐시 · 메포에는 메소 칩이 없는지 본다. 결정 6: 상한 항목의 스테퍼, 칩이 버프 · 주문서에만 있는지, 손대지 않은 1 이 빈 카드로 열리는지 본다. 결정 9: 종류 · 관세 · 단가 × 수량 · 종류를 바꿀 때 수량과 관세가 돌아가는지 본다 |
 | | 결정 10: 관세 기록을 다시 열어도 관세가 두 번 안 붙고, 옛 행은 장비로 열리는지 본다. 결정 12: 가격 채움, 시세 필수, 닫힌 묶음이 안 눌리는지, 상한 1 이면 수량 줄이 없는지 본다. 결정 13: 형태별 단계 · 0단계 저장 막힘 · 주화 줄과 합계, 시세 전에는 주화를 안 빼는지 본다 |
 | | 결정 14: 주문서의 축 고르기 규칙과 수정 시 되살리기를 본다. 결정 15: 버프 두 묶음과 개당 가격 × 수량 · 거꾸로 계산하기를 본다. 결정 16: 심볼 목록 거르기 · 만렙 묶음 · 기본 범위 · 비용 합계와 저장 · 9월 17일 전 날짜 · 수정 시 되살리기를 본다 |
 | `app/cashbook/spend/__tests__/LevelRangeSlider.test.tsx` | 결정 16: 위치에서 레벨을 고르고, 손잡이가 서로를 못 넘고, 겹쳤을 때 끄는 방향이 손잡이를 고르고, 옮길 때만 햅틱이 나는지 본다 |
@@ -271,3 +274,4 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 ## 번호 기록
 
 - ADR-048 (2026-10-19): 옛 ADR-173 · 178 · 202 · 203 · 243 · 244 · 245 · 262 · 301 · 327 과 옛 ADR-170 · 241 · 325 의 시트 결정, 옛 ADR-333 결정 5 · 6 을 합쳐 처음 작성
+- ADR-070 (2026-10-20): 결정 5 에 지출 `기타` 의 캐시 · 메포 금액 칩을 더했다. 그 전에는 통화와 상관없이 메소 칩이 떴다

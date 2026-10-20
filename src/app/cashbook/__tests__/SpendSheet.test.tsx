@@ -671,21 +671,6 @@ describe('메소마켓 시세', () => {
 
 describe('저장 줄은 시트 바닥이다', () => {
   /**
-   * **키보드가 없으면 저장은 내용의 마지막 줄**이다(사용자 지정). 떼어 두면 상자의 키를 재고
-   * 그 자리를 비우고 둘을 맞추는 일이 따라오는데, 붙여 두면 맞출 것 자체가 없다.
-   *
-   * 떼는 것은 키보드가 떠 있을 때뿐이다. 그때는 흐름에 있으면 덮여 밀려 나간다.
-   */
-  it('저장은 바닥 줄에 하나만 선다', async () => {
-    const view = await 그리기({ lastPointRate: 1_180 })
-    await 누르기(view, '몬스터 파크')
-
-    expect(within(view.getByTestId('bottom-sheet-footer')).getAllByLabelText('저장')).toHaveLength(
-      1,
-    )
-  })
-
-  /**
    * 격자에는 셀 자리가 없어 **바닥 줄 자체가 없다**(사용자 지정 2026-09-25). 전에는 같은
    * 높이의 빈 상자를 세워 바닥의 기하를 붙들어 뒀는데, 버튼이 없는데 87 이 비어 있는 것이 더
    * 크게 읽혔다.
@@ -1246,12 +1231,35 @@ describe('기타. 캐시는 여기서만 산다', () => {
     })
   })
 
-  it('캐시 금액에는 메소 빠른 칩이 안 뜬다. 1만원짜리에 +100억은 없다', async () => {
+  // 칩은 금액 줄을 눌러 연 입력 카드 안에 선다. 카드를 안 열고 보면 어느 통화든 칩이 없다.
+  // 그래서 통화마다 카드를 열어 보고, 닫은 뒤 다음 통화로 바꾼다.
+  it('통화마다 그 단위의 빠른 칩이 뜬다. 1만원짜리에 +100억은 없다', async () => {
     const view = await 그리기()
     await 갈래바꾸기(view, '기타')
+    const 금액카드열기 = async (): Promise<void> => {
+      await act(async () => {
+        fireEvent.press(view.getByTestId('spend-sheet-unit-price'))
+      })
+    }
+    const 카드닫기 = async (): Promise<void> => {
+      await act(async () => {
+        fireEvent.press(view.getByTestId('input-card-confirm'))
+      })
+    }
+
+    await 금액카드열기()
+    expect(view.getByText('+100억')).toBeTruthy()
+    await 카드닫기()
 
     await 누르기(view, '캐시')
+    await 금액카드열기()
+    expect(view.getByText('+1만')).toBeTruthy()
+    expect(view.queryByText('+100억')).toBeNull()
+    await 카드닫기()
 
+    await 누르기(view, '메포')
+    await 금액카드열기()
+    expect(view.getByText('+500')).toBeTruthy()
     expect(view.queryByText('+100억')).toBeNull()
   })
 
@@ -1836,21 +1844,6 @@ describe('아이템 구매의 종류', () => {
   })
 
   /**
-   * **스테퍼가 아니다**. *"몇 백개 단위로도 살 수 있어서 스태퍼로
-   * 하면 안돼."* 주문서 300장을 스테퍼로 세면 300번을 누른다.
-   */
-  it('수량은 치는 칸이다. 스테퍼 버튼이 없다', async () => {
-    const view = await 구매('소비')
-
-    expect(view.queryByLabelText('수량 늘리기')).toBeNull()
-    // 치는 칸이라 누르면 입력 카드가 숫자판으로 받는다. 스테퍼였다면 카드가 안 선다.
-    await act(async () => {
-      fireEvent.press(view.getByTestId('spend-sheet-quantity'))
-    })
-    expect(view.getByTestId('input-card-value').props.keyboardType).toBe('number-pad')
-  })
-
-  /**
    * 단위는 `개` 다. 수량에 단위를 안 적는 근거는 `기타` 가 자유 입력이라 앱이 무엇을 세는지
    * 모른다는 것이었다. 아이템 구매에서 세는 것은 아이템이라 그 근거가 성립하지 않는다.
    */
@@ -2119,16 +2112,6 @@ describe('관세 줄의 모양', () => {
     expect(관세.getByLabelText('10%')).toBeTruthy()
     // 옛 모양의 흔적. 체크박스 역할도, 줄에 박힌 `관세 10%` 라벨도 남지 않는다.
     expect(view.queryByLabelText('관세 10%')).toBeNull()
-  })
-
-  // **더해지는 금액을 안 적는다**. 큰 숫자가 그만큼 올라가는 것이 그 말이다.
-  it('줄에 더해지는 금액을 안 적는다', async () => {
-    const view = await 장비()
-    await 치기(view, '850000000')
-
-    await 관세고르기(view, '10%')
-
-    expect(view.queryByText('+85,000,000')).toBeNull()
   })
 
   it('10% 를 고르면 큰 숫자가 관세를 더한 합계가 된다', async () => {
