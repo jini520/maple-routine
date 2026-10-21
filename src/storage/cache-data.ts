@@ -1,5 +1,6 @@
 import { preferences } from './ports'
 import { STORAGE_KEYS } from './keys'
+import { SPLIT_COLUMN_NAMES } from './boss-periods'
 import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from './sqlite/db'
 
 // 캐시 데이터 삭제. 인증·사용자 설정만 남기고 나머지 저장 데이터를 지운다.
@@ -81,9 +82,46 @@ export const RECORD_TABLE_NAMES: readonly string[] = [
   'character_accounts',
 ]
 
+/**
+ * 보스 기록 표 셋. **한 표 안에 두 그룹이 섞여 있어 표를 통째로 지우지 않고 행 단위로 지운다.**
+ *
+ * 보스 관리 설정과 그 기간 값은 `일반`, 처치와 드롭은 `기록` 이다. 조합 행이 처치와 드롭의 부모라, 표를 통째로
+ * 지우면 외래키를 따라 `기록` 까지 사라진다.
+ */
+export const BOSS_TABLE_NAMES: readonly string[] = ['boss_parties', 'boss_party_periods', 'boss_drops']
+
+const NULL_SPLIT = SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')
+
+/** 처치와 드롭. 그 기간 값이 없는 기간 행은 함께 지운다. */
+const CLEAR_BOSS_RECORDS = [
+  'DELETE FROM boss_drops',
+  `DELETE FROM boss_party_periods WHERE status = 'cleared' OR split_mode IS NULL`,
+]
+
+/** 보스 관리 설정과 그 기간 값. 드롭이 남은 기간은 행을 남기고 분배 칸만 비운다. */
+const CLEAR_BOSS_GENERAL = [
+  `UPDATE boss_parties SET ${NULL_SPLIT}`,
+  `DELETE FROM boss_party_periods
+    WHERE status = 'open' AND NOT EXISTS (SELECT 1 FROM boss_drops WHERE period_id = boss_party_periods.id)`,
+  `UPDATE boss_party_periods SET ${NULL_SPLIT} WHERE status = 'open'`,
+]
+
+/** 설정도 기간도 없는 조합 행. 남기면 기록을 지웠는데 조합만 남는다. */
+const PRUNE_BOSS_PARTIES = `DELETE FROM boss_parties
+  WHERE split_mode IS NULL AND NOT EXISTS (SELECT 1 FROM boss_party_periods WHERE party_id = boss_parties.id)`
+
+/** 그룹마다 보스 표 셋에서 그 그룹에 드는 행. 크기를 셀 때 쓴다. */
+const BOSS_ROWS_OF_GROUP: Record<CacheDataGroupId, readonly string[]> = {
+  general: [
+    'SELECT * FROM boss_parties WHERE split_mode IS NOT NULL',
+    `SELECT * FROM boss_party_periods WHERE status = 'open' AND split_mode IS NOT NULL`,
+  ],
+  records: [`SELECT * FROM boss_party_periods WHERE status = 'cleared'`, 'SELECT * FROM boss_drops'],
+}
+
 // db.ts에 테이블이 추가되면 자동으로 여기 들어와 계속 삭제 대상으로 남는다.
 export const GENERAL_TABLE_NAMES: readonly string[] = BOSS_PROFIT_TABLE_NAMES.filter(
-  (table) => !RECORD_TABLE_NAMES.includes(table),
+  (table) => !RECORD_TABLE_NAMES.includes(table) && !BOSS_TABLE_NAMES.includes(table),
 )
 
 function tablesFor(selection: CacheDataSelection): readonly string[] {
@@ -111,6 +149,14 @@ export async function clearCacheData(selection: CacheDataSelection = ALL_GROUPS)
   for (const table of tables) {
     await db.execute(`DELETE FROM ${table};`)
   }
+  const bossStatements = [
+    ...(selection.records ? CLEAR_BOSS_RECORDS : []),
+    ...(selection.general ? CLEAR_BOSS_GENERAL : []),
+    PRUNE_BOSS_PARTIES,
+  ]
+  for (const statement of bossStatements) {
+    await db.execute(statement)
+  }
 }
 
 // 설정 화면의 "캐시 데이터 삭제" 행·확인 모달에 보여줄 근사치(바이트)를 그룹별로 낸다. 각 값은
@@ -127,8 +173,8 @@ export async function getCacheDataSizes(): Promise<Record<CacheDataGroupId, numb
   }
 
   const db = await getBossProfitDb()
-  general += await tableBytes(db, GENERAL_TABLE_NAMES)
-  const records = await tableBytes(db, RECORD_TABLE_NAMES)
+  general += await rowBytes(db, [...GENERAL_TABLE_NAMES.map((table) => `SELECT * FROM ${table}`), ...BOSS_ROWS_OF_GROUP.general])
+  const records = await rowBytes(db, [...RECORD_TABLE_NAMES.map((table) => `SELECT * FROM ${table}`), ...BOSS_ROWS_OF_GROUP.records])
 
   return { general, records }
 }
@@ -137,10 +183,10 @@ interface QueryableDb {
   query: (statement: string) => Promise<{ values?: unknown[] }>
 }
 
-async function tableBytes(db: QueryableDb, tables: readonly string[]): Promise<number> {
+async function rowBytes(db: QueryableDb, selects: readonly string[]): Promise<number> {
   let bytes = 0
-  for (const table of tables) {
-    const { values } = await db.query(`SELECT * FROM ${table}`)
+  for (const select of selects) {
+    const { values } = await db.query(select)
     for (const row of values ?? []) {
       for (const value of Object.values(row as Record<string, unknown>)) {
         bytes += byteLength(String(value ?? ''))

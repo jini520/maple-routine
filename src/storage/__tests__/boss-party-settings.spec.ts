@@ -1,187 +1,132 @@
-import type { BossPartySetting } from '../boss-party-settings'
+/// <reference types="node" />
+/**
+ * 보스 관리 설정 저장을 진짜 SQLite 로 태운다. 설정은 `boss_parties` 의 분배 칸이다. 처치나 드롭이 먼저
+ * 생겨 만들어진 조합 행은 분배 칸이 비어 있고, 그 행은 설정이 없는 것으로 읽혀야 한다(솔로).
+ */
+import {
+  type BossPartySetting,
+  copyMissingBossPartySettings,
+  getBossPartySetting,
+  getBossPartySettings,
+  getBossPartySize,
+  setBossPartySetting,
+} from '../boss-party-settings'
+import { upsertBossProfitRecord } from '../boss-profit'
+import { __resetStoragePortsForTest, setSqlitePort } from '../ports'
+import { closeBossProfitDb } from '../sqlite/db'
+import { createRealSqlite, type RealSqlite } from '../sqlite/__tests__/node-sqlite-port'
 
-jest.mock('../sqlite/db', () => ({
-  getBossProfitDb: jest.fn(),
-}))
-const { getBossProfitDb: getBossProfitDbMock } = jest.requireMock('../sqlite/db') as Record<string, jest.Mock>
-
-const runMock = jest.fn()
-const queryMock = jest.fn()
-
-const fakeDb = { run: runMock, query: queryMock }
+let real: RealSqlite
 
 beforeEach(() => {
-  runMock.mockReset().mockResolvedValue({ changes: { changes: 1 } })
-  queryMock.mockReset().mockResolvedValue({ values: [] })
-  getBossProfitDbMock.mockReset().mockResolvedValue(fakeDb)
+  real = createRealSqlite()
+  setSqlitePort(real.port)
 })
 
-const sampleSetting: BossPartySetting = {
-  ocid: 'ocid-1',
-  bossKey: 'black_mage',
-  difficulty: 'extreme',
-  partySize: 4,
-  crystalMyShare: null,
-  crystalSharesTotal: null,
-  splitFeePercent: null,
-  splitFeeAuto: false,
-  updatedAt: '2026-07-13T00:05:00.000Z',
+afterEach(async () => {
+  await closeBossProfitDb()
+  __resetStoragePortsForTest()
+  real.dispose()
+})
+
+const AT = '2026-10-03T00:00:00.000Z'
+
+function setting(over: Partial<BossPartySetting> = {}): BossPartySetting {
+  return {
+    ocid: 'ocid-1',
+    bossKey: 'lucid',
+    difficulty: 'hard',
+    partySize: 2,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
+    updatedAt: AT,
+    ...over,
+  }
+}
+
+/** 설정 없이 처치만 적어 분배 칸이 빈 조합 행을 만든다. */
+async function recordOnly(ocid: string): Promise<void> {
+  await upsertBossProfitRecord({
+    ocid, bossKey: 'lucid', boss: '', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-10-02',
+    partySize: 3, priceMeso: 10, payoutMeso: 5, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null,
+    recordedAt: AT, world: null, worldKey: null,
+  })
 }
 
 describe('setBossPartySetting', () => {
-  it('동일 키로 두 번 호출하면 ON CONFLICT DO UPDATE로 최신 값을 덮어쓴다 (멱등성)', async () => {
-    const { setBossPartySetting } = require('../boss-party-settings') as typeof import('../boss-party-settings')
+  it('같은 조합을 다시 쓰면 덮는다', async () => {
+    await setBossPartySetting(setting())
+    await setBossPartySetting(setting({ partySize: 4 }))
 
-    await setBossPartySetting({ ...sampleSetting, partySize: 4 })
-    await setBossPartySetting({ ...sampleSetting, partySize: 2, updatedAt: '2026-07-13T01:00:00.000Z' })
-
-    expect(runMock).toHaveBeenCalledTimes(2)
-
-    const [firstSql, firstValues] = runMock.mock.calls[0]
-    expect(firstSql).toContain('ON CONFLICT(ocid, boss_key, difficulty) DO UPDATE SET')
-    // 이름 칸에는 보스 표의 이름을 함께 적는다.
-    expect(firstValues).toEqual([
-      'ocid-1',
-      'black_mage',
-      '검은 마법사',
-      'extreme',
-      4,
-      null,
-      null,
-      null,
-      // 송금 수수료가 등급을 따라가나. 손으로 고른 값이라 비어 있다.
-      null,
-      '2026-07-13T00:05:00.000Z',
-    ])
-
-    const [secondSql, secondValues] = runMock.mock.calls[1]
-    expect(secondSql).toBe(firstSql)
-    expect(secondValues[4]).toBe(2)
-    expect(secondValues[9]).toBe('2026-07-13T01:00:00.000Z')
+    expect(await getBossPartySize('ocid-1', 'lucid', 'hard')).toBe(4)
+    expect(await getBossPartySettings(['ocid-1'])).toHaveLength(1)
   })
 
-  // 비율을 고치면 칸 셋이 함께 간다. 인원만 쓰고 비율을 두고 오면 화면과 DB 가 갈린다.
-  it('비율과 수수료율을 함께 쓴다', async () => {
-    const { setBossPartySetting } = require('../boss-party-settings') as typeof import('../boss-party-settings')
-
-    await setBossPartySetting({
-      ...sampleSetting,
-      partySize: 2,
-      crystalMyShare: 2,
-      crystalSharesTotal: 3,
-      splitFeePercent: 5,
+  it('비율과 수수료를 함께 쓰고, 균등으로 되돌리면 비율이 빈다', async () => {
+    await setBossPartySetting(setting({ crystalMyShare: 2, crystalSharesTotal: 5, splitFeePercent: 5, splitFeeAuto: true }))
+    expect(await getBossPartySetting('ocid-1', 'lucid', 'hard')).toMatchObject({
+      partySize: 2, crystalMyShare: 2, crystalSharesTotal: 5, splitFeePercent: 5, splitFeeAuto: true,
     })
 
-    const [sql, values] = runMock.mock.calls[0]
-    for (const column of [
-      'crystal_my_share',
-      'crystal_shares_total',
-      'split_fee_percent',
-    ]) {
-      expect(sql).toContain(column)
-    }
-    expect(values.slice(4, 8)).toEqual([2, 2, 3, 5])
+    await setBossPartySetting(setting())
+    expect(await getBossPartySetting('ocid-1', 'lucid', 'hard')).toMatchObject({ crystalMyShare: null, crystalSharesTotal: null, splitFeeAuto: false })
   })
 
-  // 균등으로 되돌리는 길은 NULL 로 덮는 것뿐이다. 지우는 API 를 따로 두지 않는다.
-  it('균등으로 되돌리면 비율 칸이 NULL 이 된다', async () => {
-    const { setBossPartySetting } = require('../boss-party-settings') as typeof import('../boss-party-settings')
+  it('처치가 먼저 만든 조합 행에도 설정을 쓸 수 있다', async () => {
+    await recordOnly('ocid-1')
+    await setBossPartySetting(setting({ partySize: 4 }))
 
-    await setBossPartySetting({ ...sampleSetting, crystalMyShare: null, crystalSharesTotal: null })
-
-    const [, values] = runMock.mock.calls[0]
-    expect(values.slice(5, 8)).toEqual([null, null, null])
+    expect(await getBossPartySize('ocid-1', 'lucid', 'hard')).toBe(4)
   })
 })
 
-describe('getBossPartySize', () => {
-  it('조회 결과가 없으면 null을 반환한다 (설정 없음 = 솔로)', async () => {
-    queryMock.mockResolvedValue({ values: [] })
-    const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
-
-    await expect(getBossPartySize('ocid-1', 'black_mage', 'extreme')).resolves.toBeNull()
+describe('설정이 없는 조합', () => {
+  it('행이 없으면 null 이다', async () => {
+    expect(await getBossPartySize('ocid-1', 'lucid', 'hard')).toBeNull()
+    expect(await getBossPartySetting('ocid-1', 'lucid', 'hard')).toBeNull()
   })
 
-  it('조회 결과가 undefined여도 null을 반환한다', async () => {
-    queryMock.mockResolvedValue({ values: undefined })
-    const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
+  it('처치나 드롭이 만든 분배 칸 빈 조합 행도 설정이 없는 것으로 읽는다', async () => {
+    await recordOnly('ocid-1')
 
-    await expect(getBossPartySize('ocid-1', 'black_mage', 'extreme')).resolves.toBeNull()
+    expect(await getBossPartySize('ocid-1', 'lucid', 'hard')).toBeNull()
+    expect(await getBossPartySetting('ocid-1', 'lucid', 'hard')).toBeNull()
+    expect(await getBossPartySettings(['ocid-1'])).toEqual([])
   })
 
-  it('ocid/boss/difficulty 조건으로 조회한다', async () => {
-    queryMock.mockResolvedValue({ values: [] })
-    const { getBossPartySize } = require('../boss-party-settings') as typeof import('../boss-party-settings')
-
-    await getBossPartySize('ocid-1', 'black_mage', 'extreme')
-
-    expect(queryMock).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE ocid = ? AND boss_key = ? AND difficulty = ?'),
-      ['ocid-1', 'black_mage', 'extreme'],
-    )
+  it('getBossPartySettings 는 빈 목록이면 조회하지 않는다', async () => {
+    expect(await getBossPartySettings([])).toEqual([])
   })
 })
 
-describe('getBossPartySettings', () => {
-  it('ocids가 빈 배열이면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getBossPartySettings } = require('../boss-party-settings') as typeof import('../boss-party-settings')
+describe('copyMissingBossPartySettings', () => {
+  it('새 캐릭터에 없는 설정만 옮긴다. 이미 정한 값은 안 덮는다', async () => {
+    await setBossPartySetting(setting({ ocid: 'old', bossKey: 'lucid', partySize: 3, crystalMyShare: 1, crystalSharesTotal: 3 }))
+    await setBossPartySetting(setting({ ocid: 'old', bossKey: 'will', partySize: 2 }))
+    await setBossPartySetting(setting({ ocid: 'new', bossKey: 'will', partySize: 6 }))
 
-    await expect(getBossPartySettings([])).resolves.toEqual([])
-    expect(getBossProfitDbMock).not.toHaveBeenCalled()
-    expect(queryMock).not.toHaveBeenCalled()
+    await copyMissingBossPartySettings('old', 'new', '2026-10-10T00:00:00.000Z')
+
+    const copied = Object.fromEntries((await getBossPartySettings(['new'])).map((row) => [row.bossKey, row]))
+    expect(copied.lucid).toMatchObject({ partySize: 3, crystalMyShare: 1, crystalSharesTotal: 3, updatedAt: '2026-10-10T00:00:00.000Z' })
+    expect(copied.will).toMatchObject({ partySize: 6 })
   })
 
-  it('ocid IN (...) 조건으로 조회해 BossPartySetting[]으로 변환한다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          ocid: 'ocid-1',
-          boss_key: 'black_mage',
-          boss: '검은 마법사',
-          difficulty: 'extreme',
-          party_size: 4,
-          crystal_my_share: null,
-          crystal_shares_total: null,
-          split_fee_percent: null,
-          updated_at: '2026-07-13T00:05:00.000Z',
-        },
-      ],
-    })
-    const { getBossPartySettings } = require('../boss-party-settings') as typeof import('../boss-party-settings')
+  it('처치가 먼저 만든 분배 칸 빈 조합 행은 채운다', async () => {
+    await setBossPartySetting(setting({ ocid: 'old', partySize: 3 }))
+    await recordOnly('new')
 
-    const result = await getBossPartySettings(['ocid-1', 'ocid-2'])
+    await copyMissingBossPartySettings('old', 'new', AT)
 
-    expect(queryMock).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE ocid IN (?, ?)'),
-      ['ocid-1', 'ocid-2'],
-    )
-    expect(result).toEqual([sampleSetting])
+    expect(await getBossPartySize('new', 'lucid', 'hard')).toBe(3)
   })
 
-  it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
-    queryMock.mockResolvedValue({ values: undefined })
-    const { getBossPartySettings } = require('../boss-party-settings') as typeof import('../boss-party-settings')
+  it('옛 캐릭터의 분배 칸 빈 조합 행은 옮기지 않는다', async () => {
+    await recordOnly('old')
 
-    await expect(getBossPartySettings(['ocid-1'])).resolves.toEqual([])
-  })
+    await copyMissingBossPartySettings('old', 'new', AT)
 
-  // 칸이 붙기 전에 쓰인 행은 그 칸이 아예 없다. undefined 를 그대로 실어 나르면 균등 판정이
-  // 갈린다.
-  it('비율 칸이 없는 옛 행은 null 로 읽는다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          ocid: 'ocid-1',
-          boss_key: 'black_mage',
-          boss: '검은 마법사',
-          difficulty: 'extreme',
-          party_size: 4,
-          updated_at: '2026-07-13T00:05:00.000Z',
-        },
-      ],
-    })
-    const { getBossPartySettings } = require('../boss-party-settings') as typeof import('../boss-party-settings')
-
-    await expect(getBossPartySettings(['ocid-1'])).resolves.toEqual([sampleSetting])
+    expect(real.inspect((db) => db.prepare(`SELECT count(*) AS n FROM boss_parties WHERE ocid = 'new'`).get())).toEqual({ n: 0 })
   })
 })

@@ -1,5 +1,6 @@
-import { bossNameOf } from '../lib/boss/bosses'
+import { SPLIT_COLUMN_NAMES, crystalSplitValues, numberOrNull } from './boss-periods'
 import { getBossProfitDb } from './sqlite/db'
+import { NEW_UUID_SQL } from './sqlite/uuid'
 
 /** 결정석 비율과 송금 수수료 칸. 비율이 `null` 이면 파티 인원으로 균등 분배다. 아이템 비율은 이 표에 없다 */
 export interface BossPartyShareColumns {
@@ -22,23 +23,20 @@ export interface BossPartySetting extends BossPartyShareColumns {
   updatedAt: string // ISO 8601
 }
 
-const SHARE_COLUMNS = [
-  'crystal_my_share',
-  'crystal_shares_total',
-  'split_fee_percent',
-  'split_fee_auto',
-] as const
-
+/**
+ * 보스 관리 설정은 조합 행(`boss_parties`)의 분배 칸이다. 처치나 드롭이 먼저 만든 조합 행은 분배 칸이 비어
+ * 있고, 그 행은 설정이 없는 것으로 읽는다.
+ */
 const UPSERT_SQL = `
-  INSERT INTO boss_party_settings
-    (ocid, boss_key, boss, difficulty, party_size, ${SHARE_COLUMNS.join(', ')}, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT(ocid, boss_key, difficulty) DO UPDATE SET
-    boss = excluded.boss,
-    party_size = excluded.party_size,
-    ${SHARE_COLUMNS.map((column) => `${column} = excluded.${column}`).join(',\n    ')},
+  INSERT INTO boss_parties (id, ocid, boss_key, difficulty, ${SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
+  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT (ocid, boss_key, difficulty) DO UPDATE SET
+    ${SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(',\n    ')},
     updated_at = excluded.updated_at
 `
+
+/** 설정이 있는 조합 행만 읽는 조건. */
+const HAS_SETTING = 'split_mode IS NOT NULL'
 
 /**
  * 파티 인원과 결정석 비율을 한 번에 쓴다.
@@ -48,25 +46,14 @@ const UPSERT_SQL = `
  */
 export async function setBossPartySetting(setting: BossPartySetting): Promise<void> {
   const db = await getBossProfitDb()
-  // 이름 칸은 적을 때의 이름이다. 기록 표들과 모양을 맞춘다.
   await db.run(UPSERT_SQL, [
     setting.ocid,
     setting.bossKey,
-    bossNameOf(setting.bossKey, setting.bossKey),
     setting.difficulty,
-    setting.partySize,
-    setting.crystalMyShare,
-    setting.crystalSharesTotal,
-    setting.splitFeePercent,
-    setting.splitFeeAuto === true ? 1 : null,
+    ...crystalSplitValues(setting),
+    setting.updatedAt,
     setting.updatedAt,
   ])
-}
-
-/** 칸이 붙기 전에 쓰인 행에는 그 칸이 없다. `undefined` 를 실어 나르면 균등 판정이 갈린다. */
-function shareColumn(row: Record<string, unknown>, column: string): number | null {
-  const value = row[column]
-  return typeof value === 'number' ? value : null
 }
 
 function rowToSetting(row: Record<string, unknown>): BossPartySetting {
@@ -75,9 +62,9 @@ function rowToSetting(row: Record<string, unknown>): BossPartySetting {
     bossKey: row.boss_key as string,
     difficulty: row.difficulty as string,
     partySize: row.party_size as number,
-    crystalMyShare: shareColumn(row, 'crystal_my_share'),
-    crystalSharesTotal: shareColumn(row, 'crystal_shares_total'),
-    splitFeePercent: shareColumn(row, 'split_fee_percent'),
+    crystalMyShare: numberOrNull(row.my_share),
+    crystalSharesTotal: numberOrNull(row.shares_total),
+    splitFeePercent: numberOrNull(row.split_fee_percent),
     splitFeeAuto: Number(row.split_fee_auto) === 1,
     updatedAt: row.updated_at as string,
   }
@@ -90,7 +77,7 @@ export async function getBossPartySize(
 ): Promise<number | null> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT * FROM boss_party_settings WHERE ocid = ? AND boss_key = ? AND difficulty = ?`,
+    `SELECT party_size FROM boss_parties WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND ${HAS_SETTING}`,
     [ocid, bossKey, difficulty],
   )
 
@@ -106,7 +93,7 @@ export async function getBossPartySetting(
 ): Promise<BossPartySetting | null> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT * FROM boss_party_settings WHERE ocid = ? AND boss_key = ? AND difficulty = ?`,
+    `SELECT * FROM boss_parties WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND ${HAS_SETTING}`,
     [ocid, bossKey, difficulty],
   )
 
@@ -115,7 +102,8 @@ export async function getBossPartySetting(
 }
 
 /**
- * 옛 캐릭터의 설정을 전부 새 캐릭터로 옮겨 적는다. **새 캐릭터에 이미 있는 설정은 안 덮는다.**
+ * 옛 캐릭터의 설정을 전부 새 캐릭터로 옮겨 적는다. **새 캐릭터에 이미 있는 설정은 안 덮는다.** 처치나 드롭이
+ * 먼저 만든 분배 칸 빈 조합 행은 설정이 없는 것이라 채운다.
  *
  * 월드 리프로 두 ocid 가 이어지는 순간 한 번 부른다. 새 캐릭터에서 사용자가 이미 정한 값이 이긴다.
  */
@@ -125,11 +113,15 @@ export async function copyMissingBossPartySettings(
   updatedAt: string,
 ): Promise<void> {
   const db = await getBossProfitDb()
-  const columns = SHARE_COLUMNS.join(', ')
+  const columns = SPLIT_COLUMN_NAMES.join(', ')
   await db.run(
-    `INSERT OR IGNORE INTO boss_party_settings (ocid, boss_key, boss, difficulty, party_size, ${columns}, updated_at)
-     SELECT ?, boss_key, boss, difficulty, party_size, ${columns}, ? FROM boss_party_settings WHERE ocid = ?`,
-    [toOcid, updatedAt, fromOcid],
+    `INSERT INTO boss_parties (id, ocid, boss_key, difficulty, ${columns}, created_at, updated_at)
+     SELECT ${NEW_UUID_SQL}, ?, boss_key, difficulty, ${columns}, ?, ? FROM boss_parties WHERE ocid = ? AND ${HAS_SETTING}
+     ON CONFLICT (ocid, boss_key, difficulty) DO UPDATE SET
+       ${SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(', ')},
+       updated_at = excluded.updated_at
+     WHERE boss_parties.split_mode IS NULL`,
+    [toOcid, updatedAt, updatedAt, fromOcid],
   )
 }
 
@@ -141,7 +133,7 @@ export async function getBossPartySettings(ocids: string[]): Promise<BossPartySe
   const db = await getBossProfitDb()
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT * FROM boss_party_settings WHERE ocid IN (${ocidPlaceholders})`,
+    `SELECT * FROM boss_parties WHERE ocid IN (${ocidPlaceholders}) AND ${HAS_SETTING}`,
     ocids,
   )
 

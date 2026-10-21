@@ -1,4 +1,14 @@
 import { bossNameOf } from '../lib/boss/bosses'
+import { dropItemNameOf } from '../lib/drop/drop-items'
+import { worldNameOf } from '../lib/world/worlds'
+import {
+  PERIOD_KEY_WHERE,
+  SPLIT_COLUMN_NAMES,
+  deletePeriodIfEmpty,
+  ensurePeriodId,
+  numberOrNull,
+  periodKeyValues,
+} from './boss-periods'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
 import { NEW_UUID_SQL } from './sqlite/uuid'
@@ -6,41 +16,43 @@ import { inTransaction } from './sqlite/transaction'
 import type { DropCategory, RecordedDrop } from '../types/drops'
 
 // 한 보스/기간의 드롭 집합은 시트에서 통째로 편집되므로 replace-all(DELETE→INSERT)이
-// 수정에 가장 단순하다. drop_index 다중 행으로 저장한다. `storage/boss-profit.ts` 어댑터 패턴을 미러한다.
+// 수정에 가장 단순하다. 드롭은 그 기간 행(`boss_party_periods`)을 가리킨다.
 //
-// **금액을 함께 저장한다**(반전). 기록 한 건에 붙는 실판매가다. 시세표가
-// 아니라 스냅샷이라 재평가 대상이 아니고, 같은 행에 두므로 난이도 확정 이관·prune 삭제가 가격까지
-// 함께 옮기고 지운다.
+// **금액을 함께 저장한다**. 기록 한 건에 붙는 실판매가다. 시세표가 아니라 스냅샷이라 재평가 대상이 아니고,
+// 같은 행에 두므로 난이도 확정 이관·prune 삭제가 가격까지 함께 옮기고 지운다.
 export interface BossDropRecord {
   /** 이 기록을 다시 가리키는 값. 저장 계층이 붙이고 그룹을 다시 저장해도 유지된다. */
   dropRecordId: string
   ocid: string
   /** 보스 key. 기본키에 든다. */
   bossKey: string
-  /** 적을 때의 보스 이름. */
+  /** 보스 이름. 저장하지 않고 읽을 때 key 로 찾는다. */
   boss: string
   /** 난이도 key. */
   difficulty: string
   periodKey: string
   dropIndex: number
   category: DropCategory
-  /** 아이템 key. 이름만 저장된 옛 행에서 이관이 못 찾았으면 `null` 이다. */
+  /** 아이템 key. 저장된 기록은 늘 있다. */
   itemKey: string | null
-  /** 적을 때의 이름. */
+  /** 아이템 이름. 저장하지 않고 읽을 때 key 로 찾는다. 표에 없는 key 면 key 다. */
   itemName: string
   /** 상자 결과면 상자의 아이템 key. */
   boxOriginKey: string | null
+  /** 상자 이름. `boxOriginKey` 로 찾는다. */
   boxOrigin: string | null
   ringLevel: number | null
+  /** 늘 1 이다. 저장하지 않는다. */
   quantity: number
+  /** 마지막으로 저장한 시각. */
   recordedAt: string // ISO 8601
-  /** 기록 시점의 월드 스냅샷. 모르면 `null`. */
+  /** 기록 시점의 월드 이름. 기간 행의 `world_key` 로 찾는다. 모르면 `null`. */
   world: string | null
-  /** 월드 key. `world` 가 `null` 이면 함께 `null`. */
+  /** 기간 행의 월드 key. */
   worldKey: string | null
-  /** `'entered'` · `'excluded'` · `null`(미입력). 상태를 금액 유무로 추론하지 않는다. */
+  /** 저장된 `record_status` 를 화면의 말로. `'entered'`(completed) · `'excluded'`(skipped) · `null`(pending). */
   priceState: 'entered' | 'excluded' | null
-  /** 입력한 판매가. */
+  /** 입력한 판매가. 값을 매긴 드롭만 있고 1 이상이다. */
   priceMeso: number | null
   /** `ratio` 의 비율 합. **기본은 이 칸을 안 본다.** */
   /** 어떻게 나눴나. **아래 두 칸의 뜻을 이 칸이 정한다.** 없으면 방식을 모르는 옛 기록이다. */
@@ -60,11 +72,13 @@ export interface BossDropRecord {
   splitFeeAuto: boolean
 }
 
+/** 드롭 상태. 서버 `drop_prices` 의 `record_status` 와 같은 값이다. */
+export type DropRecordStatus = 'pending' | 'completed' | 'skipped'
+
 /**
- * 기록할 월드. **한 번의 저장이 한 캐릭터·한 시점이라 드롭마다가 아니라 호출마다 하나다.**
+ * 기록할 월드. 기간 행에 한 번 적는다. 그 기간의 처치와 드롭이 같은 월드다.
  *
- * 짝인 수익 행에서 물려받지 않는다 - 결정석 가격을 모르는 보스는 수익 행이 없어 물려받을 짝이 없고,
- * 서버로 보내는 값이라 비면 그 기록을 못 쓴다.
+ * 이미 적힌 월드는 덮지 않는다. 기록 시점의 스냅샷이라 가격만 고치는 저장이 그것을 지우면 안 된다.
  */
 export interface DropWorld {
   name: string | null
@@ -74,39 +88,38 @@ export interface DropWorld {
 /** 월드를 모를 때. 지우기만 하는 호출도 이것을 쓴다(쓸 행이 없다). */
 export const NO_WORLD: DropWorld = { name: null, key: null }
 
-const DELETE_SQL = `
-  DELETE FROM boss_drop_records
-  WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?
-`
-
-/**
- * 한 행을 넣는다. **식별자는 넘겨받은 것이 있으면 그것을, 없으면 SQLite 가 만든 새 값을 쓴다.**
- *
- * `COALESCE` 로 가르는 것이 요점이다. 인자로 `null` 을 주면 그 자리에서 새 uuid 가 생기고, 값을
- * 주면 그것이 그대로 남는다. 두 경로를 SQL 하나로 묶어 분기를 안 만든다.
- */
 const INSERT_SQL = `
-  INSERT INTO boss_drop_records
-    (drop_record_id, ocid, boss_key, boss, difficulty, period_key, drop_index, category, item_key, item_name, box_origin_key,
-     box_origin, ring_level, quantity, recorded_at, world, world_key, price_state, price_meso, price_split_mode, price_party_size, price_share, price_my_share,
-     sale_fee_percent, split_fee_percent, sale_fee_auto, split_fee_auto)
-  VALUES (COALESCE(?, ${NEW_UUID_SQL}), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO boss_drops
+    (id, period_id, drop_index, category, item_key, box_origin_key, ring_level, record_status, price_meso, priced_at,
+     sale_fee_percent, sale_fee_auto, ${SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
+  VALUES (COALESCE(?, ${NEW_UUID_SQL}), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
-/** 다시 쓴 뒤 식별자를 차례대로 읽는다. 새로 생긴 값은 SQLite 가 만들어 여기서만 알 수 있다. */
-const SELECT_IDS_IN_ORDER_SQL = `
-  SELECT drop_record_id
-  FROM boss_drop_records
-  WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?
-  ORDER BY drop_index
-`
+/** 드롭을 읽는 SELECT. 별칭은 `d`(드롭) · `pe`(기간) · `pa`(조합)다. */
+const DROP_SELECT = `
+  SELECT d.*, pa.ocid, pa.boss_key, pa.difficulty, pe.period_key, pe.world_key
+    FROM boss_drops d
+    JOIN boss_party_periods pe ON pe.id = d.period_id
+    JOIN boss_parties pa ON pa.id = pe.party_id`
 
-/** 그룹 안에서 아이템 하나를 가리키는 값. 저장을 되풀이해도 같아야 식별자를 물려줄 수 있다. */
-const SELECT_GROUP_IDS_SQL = `
-  SELECT drop_record_id, world, world_key, item_key, item_name, box_origin_key, ring_level
-  FROM boss_drop_records
-  WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?
-`
+/** 이전 값을 이어 받을 때 읽는 칸. */
+interface PreviousDrop {
+  id: string
+  recordStatus: string
+  priceMeso: number | null
+  pricedAt: string | null
+  createdAt: string
+}
+
+function previousOf(row: Record<string, unknown>): PreviousDrop {
+  return {
+    id: row.id as string,
+    recordStatus: row.record_status as string,
+    priceMeso: numberOrNull(row.price_meso),
+    pricedAt: (row.priced_at as string | null | undefined) ?? null,
+    createdAt: row.created_at as string,
+  }
+}
 
 /**
  * 아이템의 신분. **같은 아이템이 일반 드롭과 상자 결과로 둘 들어올 수 있어** 아이템 key 하나로는
@@ -129,7 +142,7 @@ function identityOf(parts: {
 
 // 한 보스/기간의 드롭 집합을 통째로 교체한다(기존 삭제 후 0..n으로 재삽입). 빈 배열이면 삭제만.
 /**
- * `boss_drop_records` 가 바뀔 때마다 오르는 수. **이 테이블을 캐시하는 쪽이 **내 스냅샷이 낡았나** 를
+ * 드롭 기록이 바뀔 때마다 오르는 수. **이 테이블을 캐시하는 쪽이 **내 스냅샷이 낡았나** 를
  * 물을 수 있게** 하는 값이다.
  *
  * ## 왜 저장 계층에 있나
@@ -180,6 +193,29 @@ export function resetBossDropRecordsRevisionForTests(): void {
   recordsRevision = 0
 }
 
+/** 드롭의 분배 칸 여섯. 값을 매긴 드롭만 갖는다. 비율의 빈 칸은 1 로 채운다. */
+function dropSplitValues(drop: RecordedDrop): (string | number | null)[] {
+  const mode = drop.priceSplitMode ?? 'even'
+  const partySize = drop.pricePartySize ?? drop.priceShare ?? 1
+  return [
+    mode,
+    partySize,
+    mode === 'ratio' ? (drop.priceMyShare ?? 1) : null,
+    mode === 'ratio' ? (drop.priceShare ?? 1) : null,
+    drop.splitFeePercent ?? null,
+    drop.splitFeeAuto === true ? 1 : null,
+  ]
+}
+
+/**
+ * 0메소는 매긴 것이 아니다. 저장하면 앱은 매긴 것, 서버는 미입력으로 봐서 상태가 갈렸다.
+ */
+function statusOf(drop: RecordedDrop): DropRecordStatus {
+  if (drop.priceState === 'entered' && (drop.priceMeso ?? 0) > 0) return 'completed'
+  if (drop.priceState === 'excluded') return 'skipped'
+  return 'pending'
+}
+
 export async function replaceBossDropRecords(
   ocid: string,
   bossKey: string,
@@ -190,30 +226,34 @@ export async function replaceBossDropRecords(
   world: DropWorld,
 ): Promise<string[]> {
   const db = await getBossProfitDb()
+  const periodId = await ensurePeriodId(db, { ocid, bossKey, difficulty, periodKey }, recordedAt)
+  if (world.key !== null) {
+    await db.run('UPDATE boss_party_periods SET world_key = ? WHERE id = ? AND world_key IS NULL', [world.key, periodId])
+  }
 
   // **지우기 전에 식별자를 읽어 둔다.** 그룹을 통째로 바꾸는 저장이라, 안 읽으면 같은 아이템이
   // 매번 새 식별자를 받아 서버에 같은 기록이 계속 쌓인다.
-  const { values: before } = await db.query(SELECT_GROUP_IDS_SQL, [ocid, bossKey, difficulty, periodKey])
-  const kept = new Map<string, { id: string; world: string | null; worldKey: string | null }>()
+  const { values: before } = await db.query(
+    'SELECT id, item_key, box_origin_key, ring_level, record_status, price_meso, priced_at, created_at FROM boss_drops WHERE period_id = ?',
+    [periodId],
+  )
+  const kept = new Map<string, PreviousDrop>()
+  const byId = new Map<string, PreviousDrop>()
   for (const row of (before ?? []) as Record<string, unknown>[]) {
+    const previous = previousOf(row)
+    byId.set(previous.id, previous)
     kept.set(
       identityOf({
-        itemKey: row.item_key as string | null,
-        itemName: row.item_name as string,
+        itemKey: row.item_key as string,
+        itemName: '',
         boxOriginKey: row.box_origin_key as string | null,
         ringLevel: row.ring_level as number | null,
       }),
-      {
-        id: row.drop_record_id as string,
-        world: (row.world as string | null | undefined) ?? null,
-        worldKey: (row.world_key as string | null | undefined) ?? null,
-      },
+      previous,
     )
   }
 
-  await db.run(DELETE_SQL, [ocid, bossKey, difficulty, periodKey])
-  // 이름 칸은 적을 때의 이름이다. 수익 기록과 모양을 맞춘다.
-  const bossName = bossNameOf(bossKey, bossKey)
+  await db.run('DELETE FROM boss_drops WHERE period_id = ?', [periodId])
   for (let index = 0; index < drops.length; index++) {
     const drop = drops[index]
     // **드롭이 들고 온 식별자가 먼저다.** 난이도 확정 이관처럼 다른 그룹으로 옮기는 경로는 신분
@@ -225,41 +265,32 @@ export async function replaceBossDropRecords(
     const identity = identityOf(drop)
     const inherited = kept.get(identity)
     if (inherited !== undefined) kept.delete(identity)
+    const id = drop.dropRecordId ?? inherited?.id ?? null
+    const previous = (id === null ? undefined : byId.get(id)) ?? inherited
 
+    const status = statusOf(drop)
+    const completed = status === 'completed'
+    // 가격을 매긴 시각은 서버 시세의 거래 시각이다. 같은 값을 다시 저장해도 움직이면 안 된다.
+    const samePrice = previous?.recordStatus === 'completed' && previous.priceMeso === drop.priceMeso
     await db.run(INSERT_SQL, [
-      drop.dropRecordId ?? inherited?.id ?? null,
-      ocid,
-      bossKey,
-      bossName,
-      difficulty,
-      periodKey,
+      id,
+      periodId,
       index,
       drop.category,
       drop.itemKey,
-      drop.itemName,
       drop.boxOriginKey ?? null,
-      drop.boxOrigin ?? null,
       drop.ringLevel ?? null,
-      drop.quantity,
+      status,
+      completed ? drop.priceMeso! : null,
+      completed ? (samePrice ? previous!.pricedAt : recordedAt) : null,
+      completed ? (drop.saleFeePercent ?? null) : null,
+      completed && drop.saleFeeAuto === true ? 1 : null,
+      ...(completed ? dropSplitValues(drop) : SPLIT_COLUMN_NAMES.map(() => null)),
+      previous?.createdAt ?? recordedAt,
       recordedAt,
-      // **월드도 물려받는다.** 기록 시점의 스냅샷이라 가격만 고치는 저장이 그것을 지우면 안 된다.
-      // 가격 편집 경로는 월드를 모르고 `NO_WORLD` 를 넘긴다.
-      inherited?.world ?? world.name,
-      inherited?.worldKey ?? world.key,
-      // **미입력은 NULL 이다. 0 이 아니다.** 0 으로 넣으면 "0메소에 팔았다"가 되어
-      // 스킵·미입력과 구분이 사라진다.
-      drop.priceState ?? null,
-      drop.priceMeso ?? null,
-      drop.priceSplitMode ?? null,
-      drop.pricePartySize ?? null,
-      drop.priceShare ?? null,
-      drop.priceMyShare ?? null,
-      drop.saleFeePercent ?? null,
-      drop.splitFeePercent ?? null,
-      drop.saleFeeAuto === true ? 1 : null,
-      drop.splitFeeAuto === true ? 1 : null,
     ])
   }
+  if (drops.length === 0) await deletePeriodIfEmpty(db, periodId)
 
   // **삭제/삽입이 다 끝난 뒤**에 올린다. 중간에 던지면 테이블이 바뀌지 않은 채로 끝나므로
   // 그때 올리면 읽는 쪽이 헛되이 전 기간을 다시 읽는다.
@@ -268,46 +299,49 @@ export async function replaceBossDropRecords(
   // 드롭을 넘긴 차례 그대로의 식별자. 가격을 서버로 보내는 쪽이 이것으로 기록을 가리킨다.
   // 메모리의 드롭은 식별자가 없을 수 있고(시트에서 방금 적은 것), 그 값은 위 INSERT 에서 처음 생긴다.
   if (drops.length === 0) return []
-  const { values } = await db.query(SELECT_IDS_IN_ORDER_SQL, [ocid, bossKey, difficulty, periodKey])
-  return ((values ?? []) as Record<string, unknown>[]).map((row) => row.drop_record_id as string)
+  const { values } = await db.query('SELECT id FROM boss_drops WHERE period_id = ? ORDER BY drop_index', [periodId])
+  return ((values ?? []) as Record<string, unknown>[]).map((row) => row.id as string)
 }
 
-/** 저장된 상태 문자열을 도메인 값으로. 모르는 값은 미입력으로 떨어뜨린다(거짓 상태를 만들지 않는다). */
-function normalizePriceState(value: unknown): BossDropRecord['priceState'] {
-  if (value === 'entered') return 'entered'
-  if (value === 'excluded' || value === 'skipped') return 'excluded'
-  return null
+const PRICE_STATE_OF_STATUS: Record<DropRecordStatus, BossDropRecord['priceState']> = {
+  completed: 'entered',
+  skipped: 'excluded',
+  pending: null,
 }
 
 function rowToRecord(row: Record<string, unknown>): BossDropRecord {
+  const bossKey = row.boss_key as string
+  const itemKey = row.item_key as string
+  const boxOriginKey = (row.box_origin_key as string | null | undefined) ?? null
+  const worldKey = (row.world_key as string | null | undefined) ?? null
+  const recordStatus = row.record_status as DropRecordStatus
+  const splitMode = (row.split_mode as 'even' | 'ratio' | null | undefined) ?? null
   return {
-    dropRecordId: row.drop_record_id as string,
+    dropRecordId: row.id as string,
     ocid: row.ocid as string,
-    bossKey: row.boss_key as string,
-    boss: row.boss as string,
+    bossKey,
+    boss: bossNameOf(bossKey, bossKey),
     difficulty: row.difficulty as string,
     periodKey: row.period_key as string,
     dropIndex: row.drop_index as number,
     category: row.category as DropCategory,
-    itemKey: (row.item_key as string | null | undefined) ?? null,
-    itemName: row.item_name as string,
-    boxOriginKey: (row.box_origin_key as string | null | undefined) ?? null,
-    boxOrigin: (row.box_origin as string | null) ?? null,
-    ringLevel: (row.ring_level as number | null) ?? null,
-    quantity: row.quantity as number,
-    recordedAt: row.recorded_at as string,
-    world: (row.world as string | null | undefined) ?? null,
-    worldKey: (row.world_key as string | null | undefined) ?? null,
-    // 옛 값 `'skipped'` 는 지금의 `'excluded'`(기록 안함)와 같은 뜻이다. 이름만 갈렸다
-    // (정정, 2026-08-10). 읽을 때 흡수하므로 마이그레이션이 필요 없다.
-    priceState: normalizePriceState(row.price_state),
-    priceMeso: (row.price_meso as number | null | undefined) ?? null,
-    priceSplitMode: (row.price_split_mode as 'even' | 'ratio' | null | undefined) ?? null,
-    pricePartySize: (row.price_party_size as number | null | undefined) ?? null,
-    priceShare: (row.price_share as number | null | undefined) ?? null,
-    priceMyShare: (row.price_my_share as number | null | undefined) ?? null,
-    saleFeePercent: (row.sale_fee_percent as number | null | undefined) ?? null,
-    splitFeePercent: (row.split_fee_percent as number | null | undefined) ?? null,
+    itemKey,
+    itemName: dropItemNameOf(itemKey, itemKey),
+    boxOriginKey,
+    boxOrigin: boxOriginKey === null ? null : dropItemNameOf(boxOriginKey, boxOriginKey),
+    ringLevel: numberOrNull(row.ring_level),
+    quantity: 1,
+    recordedAt: row.updated_at as string,
+    world: worldKey === null ? null : worldNameOf(worldKey, worldKey),
+    worldKey,
+    priceState: PRICE_STATE_OF_STATUS[recordStatus],
+    priceMeso: numberOrNull(row.price_meso),
+    priceSplitMode: splitMode,
+    pricePartySize: numberOrNull(row.party_size),
+    priceShare: splitMode === 'ratio' ? numberOrNull(row.shares_total) : null,
+    priceMyShare: splitMode === 'ratio' ? numberOrNull(row.my_share) : null,
+    saleFeePercent: numberOrNull(row.sale_fee_percent),
+    splitFeePercent: numberOrNull(row.split_fee_percent),
     saleFeeAuto: Number(row.sale_fee_auto) === 1,
     splitFeeAuto: Number(row.split_fee_auto) === 1,
   }
@@ -325,7 +359,7 @@ export async function getBossDropRecords(
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const periodKeyPlaceholders = periodKeys.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT * FROM boss_drop_records WHERE ocid IN (${ocidPlaceholders}) AND period_key IN (${periodKeyPlaceholders}) ORDER BY drop_index`,
+    `${DROP_SELECT} WHERE pa.ocid IN (${ocidPlaceholders}) AND pe.period_key IN (${periodKeyPlaceholders}) ORDER BY d.drop_index`,
     [...ocids, ...periodKeys],
   )
 
@@ -340,9 +374,7 @@ export async function getBossDropRecords(
  */
 export async function getBossDropRecordById(dropRecordId: string): Promise<BossDropRecord | null> {
   const db = await getBossProfitDb()
-  const { values } = await db.query(`SELECT * FROM boss_drop_records WHERE drop_record_id = ?`, [
-    dropRecordId,
-  ])
+  const { values } = await db.query(`${DROP_SELECT} WHERE d.id = ?`, [dropRecordId])
   const row = (values ?? [])[0]
   return row === undefined ? null : rowToRecord(row as Record<string, unknown>)
 }
@@ -351,10 +383,15 @@ export async function getBossDropRecordById(dropRecordId: string): Promise<BossD
 export async function getAutoFeeDropRecords(): Promise<BossDropRecord[]> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT * FROM boss_drop_records WHERE sale_fee_auto = 1 OR split_fee_auto = 1 ORDER BY drop_index`,
+    `${DROP_SELECT} WHERE d.sale_fee_auto = 1 OR d.split_fee_auto = 1 ORDER BY d.drop_index`,
   )
   return (values ?? []).map(rowToRecord)
 }
+
+/** 키 넷과 `drop_index` 로 드롭 하나의 id 를 고르는 하위 질의. */
+const DROP_ID_OF_KEY = `(SELECT d.id FROM boss_drops d
+  JOIN boss_party_periods pe ON pe.id = d.period_id JOIN boss_parties pa ON pa.id = pe.party_id
+  WHERE ${PERIOD_KEY_WHERE} AND d.drop_index = ?)`
 
 export interface DropFeeUpdate {
   ocid: string
@@ -373,9 +410,9 @@ export async function updateDropFees(updates: readonly DropFeeUpdate[]): Promise
   await inTransaction(db, async () => {
     for (const update of updates) {
       await db.run(
-        `UPDATE boss_drop_records SET sale_fee_percent = ?, split_fee_percent = ?
-         WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ? AND drop_index = ?`,
-        [update.saleFeePercent, update.splitFeePercent, update.ocid, update.bossKey, update.difficulty, update.periodKey, update.dropIndex],
+        `UPDATE boss_drops SET sale_fee_percent = ?, split_fee_percent = ?
+         WHERE record_status = 'completed' AND id = ${DROP_ID_OF_KEY}`,
+        [update.saleFeePercent, update.splitFeePercent, ...periodKeyValues(update), update.dropIndex],
       )
     }
   })
@@ -386,9 +423,9 @@ export async function updateDropFees(updates: readonly DropFeeUpdate[]): Promise
 export async function getBulkFeeDropRecords(): Promise<BossDropRecord[]> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT * FROM boss_drop_records
-     WHERE price_state = 'entered' AND sale_fee_percent IS NULL AND split_fee_percent IS NULL
-     ORDER BY drop_index`,
+    `${DROP_SELECT}
+     WHERE d.record_status = 'completed' AND d.sale_fee_percent IS NULL AND d.split_fee_percent IS NULL
+     ORDER BY d.drop_index`,
   )
   return (values ?? []).map(rowToRecord)
 }
@@ -400,9 +437,9 @@ export async function applyAutoDropFees(updates: readonly DropFeeUpdate[]): Prom
   await inTransaction(db, async () => {
     for (const update of updates) {
       await db.run(
-        `UPDATE boss_drop_records SET sale_fee_percent = ?, split_fee_percent = ?, sale_fee_auto = 1, split_fee_auto = 1
-         WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ? AND drop_index = ?`,
-        [update.saleFeePercent, update.splitFeePercent, update.ocid, update.bossKey, update.difficulty, update.periodKey, update.dropIndex],
+        `UPDATE boss_drops SET sale_fee_percent = ?, split_fee_percent = ?, sale_fee_auto = 1, split_fee_auto = 1
+         WHERE record_status = 'completed' AND id = ${DROP_ID_OF_KEY}`,
+        [update.saleFeePercent, update.splitFeePercent, ...periodKeyValues(update), update.dropIndex],
       )
     }
   })
@@ -430,7 +467,8 @@ export async function getAllBossDropRecords(ocids: string[]): Promise<BossDropRe
   const db = await getBossProfitDb()
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT * FROM boss_drop_records WHERE ocid IN (${ocidPlaceholders}) ORDER BY period_key DESC, ocid, boss_key, difficulty, drop_index`,
+    `${DROP_SELECT} WHERE pa.ocid IN (${ocidPlaceholders})
+      ORDER BY pe.period_key DESC, pa.ocid, pa.boss_key, pa.difficulty, d.drop_index`,
     [...ocids],
   )
 

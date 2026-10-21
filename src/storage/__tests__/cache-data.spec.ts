@@ -3,6 +3,7 @@ import { waitFor } from '../../__tests__/wait-for'
 import { installFakePreferences } from './fake-preferences'
 import type { CacheDataSelection } from '../cache-data'
 import {
+  BOSS_TABLE_NAMES,
   RECORD_TABLE_NAMES,
   GENERAL_TABLE_NAMES,
   clearCacheData,
@@ -71,8 +72,11 @@ const KEEP_KEY_NAMES = [
   'notificationPermissionAsked',
 ]
 
+/** 표를 통째로 비운 문장. 보스 표 셋의 행 단위 문장은 세지 않는다. */
 function deleteCalls(): string[] {
-  return mockDbExecuteMock.mock.calls.map(([statement]) => statement)
+  return mockDbExecuteMock.mock.calls
+    .map(([statement]) => statement as string)
+    .filter((statement) => /^DELETE FROM \w+;$/.test(statement))
 }
 
 let prefs = installFakePreferences()
@@ -97,16 +101,16 @@ beforeEach(async () => {
 // 나머지 전부로 파생된다. 이 성질이 깨지면 새 테이블이 어느 그룹에도 안 잡혀 영영 안 지워진다
 //
 describe('그룹 ↔ 테이블 분할', () => {
-  it('두 그룹의 합집합이 db.ts가 정의한 테이블 전체와 같다', () => {
-    const union = new Set([...GENERAL_TABLE_NAMES, ...RECORD_TABLE_NAMES])
+  it('두 그룹과 행 단위로 지우는 보스 표 셋의 합집합이 db.ts가 정의한 테이블 전체와 같다', () => {
+    const union = new Set([...GENERAL_TABLE_NAMES, ...RECORD_TABLE_NAMES, ...BOSS_TABLE_NAMES])
 
     expect(union).toEqual(new Set(BOSS_PROFIT_TABLE_NAMES))
   })
 
-  it('두 그룹이 겹치지 않는다. 한 테이블은 정확히 한 그룹에만 속한다', () => {
-    const records = new Set<string>(RECORD_TABLE_NAMES)
+  it('세 분류가 겹치지 않는다. 한 테이블은 정확히 한 곳에만 속한다', () => {
+    const all = [...GENERAL_TABLE_NAMES, ...RECORD_TABLE_NAMES, ...BOSS_TABLE_NAMES]
 
-    expect(GENERAL_TABLE_NAMES.filter((table) => records.has(table))).toEqual([])
+    expect(new Set(all).size).toBe(all.length)
   })
 
   it('boss_drop_records는 수익 기록과 같은 그룹이다', () => {
@@ -213,11 +217,11 @@ describe('clearCacheData', () => {
     expect(await prefs.get('characterBasicCache:index')).toBeNull()
     expect(await prefs.get('trackedCharacters')).toBeNull()
     expect(await prefs.get('lastSelectedCharacter')).toBeNull()
-    for (const table of BOSS_PROFIT_TABLE_NAMES) {
+    for (const table of [...GENERAL_TABLE_NAMES, ...RECORD_TABLE_NAMES]) {
       expect(mockDbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
     }
-    // 목록에 없는 테이블까지 지우지 않는다(스키마 DROP·다른 DELETE 없음).
-    expect(mockDbExecuteMock).toHaveBeenCalledTimes(BOSS_PROFIT_TABLE_NAMES.length)
+    // 보스 표 셋은 통째로 지우지 않는다. 행 단위 삭제는 cache-data-boss.spec 이 본다.
+    expect(deleteCalls()).toHaveLength(GENERAL_TABLE_NAMES.length + RECORD_TABLE_NAMES.length)
   })
 
   describe('일반 데이터만 선택', () => {

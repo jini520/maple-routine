@@ -1,537 +1,279 @@
-import type { BossProfitRecord } from '../boss-profit'
+/// <reference types="node" />
+/**
+ * 처치 기록 저장을 진짜 SQLite 로 태운다. 처치 기록은 `boss_party_periods` 의 'cleared' 행이고, 같은 표에
+ * 그 기간 값과 드롭만 있는 'open' 행이 함께 있다. 읽기가 'open' 행을 처치로 세지 않는지가 요점이다.
+ */
+import {
+  type BossProfitRecord,
+  deleteBossProfitRecord,
+  fillMissingRecordWorlds,
+  findAdjacentPeriodKeyWithRecords,
+  getAllBossProfitRecordKeys,
+  getAutoFeeProfitRecords,
+  getBossProfitRecords,
+  getBossProfitRecordsRevision,
+  getDatedBossProfitRecords,
+  getEarliestBossProfitPeriodKeys,
+  getManualBossProfitRecordKeys,
+  getMonthlyDefeatDates,
+  getRecordedCharacterOcids,
+  getUndatedBossProfitRecords,
+  getWeeklyPeriodKeysWithRecords,
+  hasBossProfitRecordInPeriod,
+  markBossProfitRecordAuto,
+  resetBossProfitRecordsRevisionForTests,
+  setBossProfitDefeatedOn,
+  subscribeBossProfitRecordsRevision,
+  updateProfitSplitFees,
+  upsertBossProfitRecord,
+} from '../boss-profit'
+import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../boss-drops'
+import { setBossPartyPeriodOverride } from '../boss-party-period-overrides'
+import { setBossPartySetting } from '../boss-party-settings'
+import { __resetStoragePortsForTest, setSqlitePort } from '../ports'
+import { closeBossProfitDb } from '../sqlite/db'
+import { createRealSqlite, type RealSqlite } from '../sqlite/__tests__/node-sqlite-port'
 
-jest.mock('../sqlite/db', () => ({
-  getBossProfitDb: jest.fn(),
-}))
-const { getBossProfitDb: getBossProfitDbMock } = jest.requireMock('../sqlite/db') as Record<string, jest.Mock>
-
-const runMock = jest.fn()
-const queryMock = jest.fn()
-
-const fakeDb = { run: runMock, query: queryMock }
+let real: RealSqlite
 
 beforeEach(() => {
-  runMock.mockReset().mockResolvedValue({ changes: { changes: 1 } })
-  queryMock.mockReset().mockResolvedValue({ values: [] })
-  getBossProfitDbMock.mockReset().mockResolvedValue(fakeDb)
+  real = createRealSqlite()
+  setSqlitePort(real.port)
+  resetBossProfitRecordsRevisionForTests()
 })
 
-const sampleRecord: BossProfitRecord = {
-  ocid: 'ocid-1',
-  bossKey: 'black_mage',
-  boss: '검은 마법사',
-  difficulty: 'extreme',
-  cycle: 'monthly',
-  periodKey: '2026-07',
-  partySize: 2,
-  priceMeso: 1_000_000,
-  payoutMeso: 500_000,
-  crystalMyShare: null,
-  crystalSharesTotal: null,
-  splitFeePercent: null,
-  splitFeeAuto: false,
-  recordedAt: '2026-07-09T00:05:00.000Z',
-  world: null,
-  worldKey: null,
+afterEach(async () => {
+  await closeBossProfitDb()
+  __resetStoragePortsForTest()
+  real.dispose()
+})
+
+const AT = '2026-10-03T00:00:00.000Z'
+
+function record(over: Partial<BossProfitRecord> = {}): BossProfitRecord {
+  return {
+    ocid: 'ocid-1',
+    bossKey: 'black_mage',
+    boss: '검은 마법사',
+    difficulty: 'extreme',
+    cycle: 'weekly',
+    periodKey: '2026-10-02',
+    partySize: 2,
+    priceMeso: 1_000_000,
+    payoutMeso: 500_000,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
+    recordedAt: AT,
+    world: '엘리시움',
+    worldKey: 'elysium',
+    ...over,
+  }
+}
+
+const key = { ocid: 'ocid-1', bossKey: 'black_mage', difficulty: 'extreme', periodKey: '2026-10-02' }
+
+/** 같은 표의 'open' 행 둘. 처치가 아니므로 처치 읽기에 안 나와야 한다. */
+async function seedOpenRows(): Promise<void> {
+  await setBossPartyPeriodOverride({
+    ocid: 'ocid-1', bossKey: 'kalos', difficulty: 'normal', periodKey: '2026-10-09',
+    partySize: 3, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null, splitFeeAuto: true, updatedAt: AT,
+  })
+  await replaceBossDropRecords('ocid-2', 'seren', 'hard', '2026-09-25', [
+    { dropRecordId: null, category: 'fixed', itemKey: 'black_boss_ring_box', itemName: '', quantity: 1 },
+  ], AT, NO_WORLD)
 }
 
 describe('upsertBossProfitRecord', () => {
-  it('동일 키로 두 번 호출하면 ON CONFLICT DO UPDATE로 최신 값을 덮어쓴다', async () => {
-    const { upsertBossProfitRecord } = require('../boss-profit') as typeof import('../boss-profit')
+  it('같은 키로 다시 쓰면 값을 덮고, 월드를 모르는 쓰기는 적힌 월드를 지우지 않는다', async () => {
+    await upsertBossProfitRecord(record())
+    await upsertBossProfitRecord(record({ partySize: 3, payoutMeso: 333_333, world: null, worldKey: null }))
 
-    await upsertBossProfitRecord(sampleRecord)
-    await upsertBossProfitRecord({ ...sampleRecord, partySize: 3, payoutMeso: 333_333 })
-
-    expect(runMock).toHaveBeenCalledTimes(2)
-
-    const [firstSql, firstValues] = runMock.mock.calls[0]
-    expect(firstSql).toContain('ON CONFLICT(ocid, boss_key, difficulty, period_key) DO UPDATE SET')
-    expect(firstValues).toEqual([
-      'ocid-1',
-      'black_mage',
-      '검은 마법사',
-      'extreme',
-      'monthly',
-      '2026-07',
-      2,
-      1_000_000,
-      500_000,
-      // 결정석 비율 둘과 송금 수수료율. 균등이라 NULL 이다.
-      null,
-      null,
-      null,
-      // 송금 수수료가 등급을 따라가나. 손으로 고른 값이라 비어 있다.
-      null,
-      '2026-07-09T00:05:00.000Z',
-      null,
-      null,
-      // 출처. 안 주면 동기화가 쓴 것으로 본다.
-      'auto',
-    ])
-
-    const [secondSql, secondValues] = runMock.mock.calls[1]
-    expect(secondSql).toBe(firstSql)
-    expect(secondValues).toEqual([
-      'ocid-1',
-      'black_mage',
-      '검은 마법사',
-      'extreme',
-      'monthly',
-      '2026-07',
-      3,
-      1_000_000,
-      333_333,
-      null,
-      null,
-      null,
-      null,
-      '2026-07-09T00:05:00.000Z',
-      null,
-      null,
-      // 출처. 안 주면 동기화가 쓴 것으로 본다.
-      'auto',
-    ])
-  })
-})
-
-describe('getBossProfitRecords', () => {
-  it('ocids가 빈 배열이면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
-
-    await expect(getBossProfitRecords([], ['2026-07'])).resolves.toEqual([])
-    expect(getBossProfitDbMock).not.toHaveBeenCalled()
-    expect(queryMock).not.toHaveBeenCalled()
+    const [read] = await getBossProfitRecords(['ocid-1'], ['2026-10-02'])
+    expect(read).toMatchObject({ partySize: 3, payoutMeso: 333_333, worldKey: 'elysium', world: '엘리시움', source: 'auto' })
   })
 
-  it('periodKeys가 빈 배열이면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
+  it('이름은 저장하지 않고 key 로 찾아 채운다. 모르는 key 면 key 를 쓴다', async () => {
+    await upsertBossProfitRecord(record({ boss: '아무 이름' }))
+    await upsertBossProfitRecord(record({ bossKey: 'unknown_boss', boss: '아무 이름', world: null, worldKey: null }))
 
-    await expect(getBossProfitRecords(['ocid-1'], [])).resolves.toEqual([])
-    expect(getBossProfitDbMock).not.toHaveBeenCalled()
-    expect(queryMock).not.toHaveBeenCalled()
-  })
-
-  it('ocid IN (...)와 period_key IN (...) 조건으로 조회해 BossProfitRecord[]로 변환한다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          ocid: 'ocid-1',
-          boss_key: 'black_mage',
-          boss: '검은 마법사',
-          difficulty: 'extreme',
-          cycle: 'monthly',
-          period_key: '2026-07',
-          party_size: 2,
-          price_meso: 1_000_000,
-          payout_meso: 500_000,
-          recorded_at: '2026-07-09T00:05:00.000Z',
-        },
-      ],
-    })
-    const { getBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
-
-    const result = await getBossProfitRecords(['ocid-1', 'ocid-2'], ['2026-07'])
-
-    expect(queryMock).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'WHERE ocid IN (?, ?) AND period_key IN (?)',
-      ),
-      ['ocid-1', 'ocid-2', '2026-07'],
+    const rows = await getBossProfitRecords(['ocid-1'], ['2026-10-02'])
+    expect(rows.map((row) => [row.bossKey, row.boss, row.world])).toEqual(
+      expect.arrayContaining([['black_mage', '검은 마법사', '엘리시움'], ['unknown_boss', 'unknown_boss', null]]),
     )
-    // 읽으면 언제나 `defeatedOn` 이 붙는다. 쓸 때만 없다(`upsert` 가 그 칸을 안 건드린다).
-    expect(result).toEqual([{ ...sampleRecord, defeatedOn: null, source: 'auto' }])
   })
 
-  it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
-    queryMock.mockResolvedValue({ values: undefined })
-    const { getBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
+  it('결정석 비율을 적고 그대로 읽는다', async () => {
+    await upsertBossProfitRecord(record({ crystalMyShare: 2, crystalSharesTotal: 5, splitFeePercent: 5, splitFeeAuto: true }))
 
-    await expect(getBossProfitRecords(['ocid-1'], ['2026-07'])).resolves.toEqual([])
+    const [read] = await getBossProfitRecords(['ocid-1'], ['2026-10-02'])
+    expect(read).toMatchObject({ crystalMyShare: 2, crystalSharesTotal: 5, splitFeePercent: 5, splitFeeAuto: true })
+  })
+
+  it('그 기간만 고친 값이 있던 기간을 처치하면 처치 값으로 덮인다', async () => {
+    await setBossPartyPeriodOverride({ ...key, partySize: 4, crystalMyShare: 1, crystalSharesTotal: 4, splitFeePercent: null, updatedAt: AT })
+    await upsertBossProfitRecord(record({ partySize: 2 }))
+
+    const [read] = await getBossProfitRecords(['ocid-1'], ['2026-10-02'])
+    expect(read).toMatchObject({ partySize: 2, crystalMyShare: null, crystalSharesTotal: null })
+  })
+
+  it('처치 날짜는 안 건드린다. 동기화가 다시 돌아도 캐 놓은 날짜가 남는다', async () => {
+    await upsertBossProfitRecord(record())
+    await setBossProfitDefeatedOn(key, '2026-10-04')
+    await upsertBossProfitRecord(record({ payoutMeso: 1 }))
+
+    const [read] = await getBossProfitRecords(['ocid-1'], ['2026-10-02'])
+    expect(read.defeatedOn).toBe('2026-10-04')
   })
 })
 
-// 월드는 기록 시점 스냅샷이다. 파생값(캐시된 character/basic)으로 두면 월드
-// 리프가 모든 과거 주의 귀속을 소급 이동시킨다(분모 90 x 월드 수까지 바뀐다).
-describe('world 스냅샷', () => {
-  it('upsert가 world를 함께 쓰고, 아는 값이 없을 때는 기존 스냅샷을 지우지 않는다', async () => {
-    const { upsertBossProfitRecord } = require('../boss-profit') as typeof import('../boss-profit')
-
-    await upsertBossProfitRecord({ ...sampleRecord, world: '엘리시움', worldKey: 'elysium' })
-
-    const [sql, values] = runMock.mock.calls[0]
-    expect(values.slice(-3, -1)).toEqual(['엘리시움', 'elysium'])
-    // 파티원 수만 고치는 경로처럼 world를 모르고 upsert하는 경우가 있다. 그때 null로 덮어쓰면
-    // 이미 박아둔 스냅샷이 지워진다. 월드 key 도 같다.
-    expect(sql).toContain('world = COALESCE(excluded.world, boss_profit_records.world)')
-    expect(sql).toContain('world_key = COALESCE(excluded.world_key, boss_profit_records.world_key)')
+describe('처치 읽기는 open 행을 세지 않는다', () => {
+  beforeEach(async () => {
+    await seedOpenRows()
+    await upsertBossProfitRecord(record())
+    await upsertBossProfitRecord(record({ bossKey: 'lotus', difficulty: 'hard', cycle: 'monthly', periodKey: '2026-09', splitFeeAuto: true }))
   })
 
-  it('컬럼 도입 전 기록(world 없음)은 null로 정규화해 읽는다', async () => {
-    const { getBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          ocid: 'ocid-1',
-          boss_key: 'zakum',
-          boss: '자쿰',
-          difficulty: 'chaos',
-          cycle: 'weekly',
-          period_key: '2026-07-30',
-          party_size: 1,
-          price_meso: 8_080_000,
-          payout_meso: 8_080_000,
-          recorded_at: '2026-07-30T00:00:00.000Z',
-          // world 컬럼이 없던 시절의 행
-        },
-      ],
-    })
-
-    const [record] = await getBossProfitRecords(['ocid-1'], ['2026-07-30'])
-
-    expect(record.world).toBeNull()
-  })
-
-  it('fillMissingRecordWorlds는 비어 있는 기록만 채운다. 멱등이라 리프 후에도 과거를 덮지 않는다', async () => {
-    const { fillMissingRecordWorlds } = require('../boss-profit') as typeof import('../boss-profit')
-
-    await fillMissingRecordWorlds(
-      new Map([
-        ['ocid-1', { world: '엘리시움', worldKey: 'elysium' }],
-        ['ocid-2', { world: '베라', worldKey: 'bera' }],
-      ]),
+  it('getBossProfitRecords · getAllBossProfitRecordKeys', async () => {
+    expect(await getBossProfitRecords(['ocid-1', 'ocid-2'], ['2026-10-02', '2026-10-09', '2026-09-25'])).toHaveLength(1)
+    expect(await getAllBossProfitRecordKeys(['ocid-1', 'ocid-2'])).toEqual(
+      expect.arrayContaining([key, { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-09' }]),
     )
-
-    expect(runMock).toHaveBeenCalledTimes(2)
-    for (const [sql] of runMock.mock.calls) {
-      expect(sql).toContain('world IS NULL')
-      // 월드 이름과 key 를 한 번에 채운다. 이름만 채우면 집계가 그 기록을 월드 모름으로 뺀다.
-      expect(sql).toContain('world_key = ?')
-    }
-    expect(runMock.mock.calls[0][1]).toEqual(['엘리시움', 'elysium', 'ocid-1'])
+    expect(await getAllBossProfitRecordKeys(['ocid-1', 'ocid-2'])).toHaveLength(2)
   })
 
-  it('채울 월드가 없으면 DB를 건드리지 않는다', async () => {
-    const { fillMissingRecordWorlds } = require('../boss-profit') as typeof import('../boss-profit')
-
-    await fillMissingRecordWorlds(new Map())
-
-    expect(getBossProfitDbMock).not.toHaveBeenCalled()
-  })
-})
-
-// 히스토리가 "처치 난이도가 확정된 조합"을 알아야 획득 불가 기록을 거를 수 있다.
-// 수익 기록 행의 존재가 곧 확정이므로 키만 전 기간 조회한다.
-describe('getAllBossProfitRecordKeys', () => {
-  it('ocids가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getAllBossProfitRecordKeys } = require('../boss-profit') as typeof import('../boss-profit')
-
-    await expect(getAllBossProfitRecordKeys([])).resolves.toEqual([])
-    expect(getBossProfitDbMock).not.toHaveBeenCalled()
+  it('getWeeklyPeriodKeysWithRecords · findAdjacentPeriodKeyWithRecords', async () => {
+    expect(await getWeeklyPeriodKeysWithRecords(['ocid-1', 'ocid-2'], '2026-10')).toEqual(['2026-10-02'])
+    expect(await findAdjacentPeriodKeyWithRecords(['ocid-1', 'ocid-2'], 'weekly', '2026-10-30', 'prev')).toBe('2026-10-02')
+    expect(await findAdjacentPeriodKeyWithRecords(['ocid-1', 'ocid-2'], 'weekly', '2026-09-01', 'next')).toBe('2026-10-02')
+    expect(await findAdjacentPeriodKeyWithRecords(['ocid-1', 'ocid-2'], 'monthly', '2026-11', 'prev')).toBe('2026-10')
+    expect(await findAdjacentPeriodKeyWithRecords(['ocid-1'], 'weekly', '2026-10-02', 'next')).toBeNull()
   })
 
-  it('period_key 조건 없이 키 컬럼만 조회한다. 전체 행을 읽을 필요가 없다', async () => {
-    const { getAllBossProfitRecordKeys } = require('../boss-profit') as typeof import('../boss-profit')
-
-    await getAllBossProfitRecordKeys(['ocid-1', 'ocid-2'])
-
-    const [sql, values] = queryMock.mock.calls[0]
-    expect(sql).toContain('SELECT ocid, boss_key, difficulty, period_key FROM boss_profit_records')
-    expect(sql).toContain('WHERE ocid IN (?, ?)')
-    expect(sql).not.toContain('period_key IN')
-    expect(values).toEqual(['ocid-1', 'ocid-2'])
+  it('getUndatedBossProfitRecords · getEarliestBossProfitPeriodKeys · getAutoFeeProfitRecords', async () => {
+    expect((await getUndatedBossProfitRecords(['ocid-1', 'ocid-2'], ['2026-10-02', '2026-10-09', '2026-09-25'])).map((row) => row.bossKey))
+      .toEqual(['black_mage'])
+    expect(await getEarliestBossProfitPeriodKeys('ocid-2')).toEqual({})
+    expect(await getEarliestBossProfitPeriodKeys('ocid-1')).toEqual({ weekly: '2026-10-02', monthly: '2026-09' })
+    // 그 기간 값도 분배 수수료 자동 칸을 갖지만, 처치가 아니라 다시 셀 대상이 아니다.
+    expect((await getAutoFeeProfitRecords()).map((row) => row.bossKey)).toEqual(['lotus'])
   })
 
-  it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
-    queryMock.mockResolvedValue({ values: undefined })
-    const { getAllBossProfitRecordKeys } = require('../boss-profit') as typeof import('../boss-profit')
+  it('getRecordedCharacterOcids 는 처치나 드롭이 있는 캐릭터만 준다', async () => {
+    await setBossPartySetting({ ocid: 'ocid-3', bossKey: 'lucid', difficulty: 'hard', partySize: 2, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null, updatedAt: AT })
 
-    await expect(getAllBossProfitRecordKeys(['ocid-1'])).resolves.toEqual([])
+    expect((await getRecordedCharacterOcids()).sort()).toEqual(['ocid-1', 'ocid-2'])
   })
 })
 
-// 처치 날짜. `BossProfitRecord` 자체는 안 바뀐다(넣는 자리들이 날짜를 모른다).
-// 대신 **읽는 질문 둘**과 **채우는 쓰기 하나**가 는다.
 describe('처치 날짜', () => {
-  it('upsert 는 defeated_on 을 안 건드린다. 자동 기록이 캐 놓은 날짜를 지우면 안 된다', async () => {
-    const { upsertBossProfitRecord } = require('../boss-profit') as typeof import('../boss-profit')
+  it('날짜 범위로 자르고 모르는 날짜는 뺀다', async () => {
+    await upsertBossProfitRecord(record())
+    await upsertBossProfitRecord(record({ bossKey: 'lotus', difficulty: 'hard' }))
+    await setBossProfitDefeatedOn(key, '2026-10-04')
 
-    await upsertBossProfitRecord(sampleRecord)
-
-    const [sql] = runMock.mock.calls[0]
-    expect(sql).not.toContain('defeated_on')
+    expect(await getDatedBossProfitRecords(['ocid-1'], '2026-10-01', '2026-10-31')).toEqual([
+      { ocid: 'ocid-1', bossKey: 'black_mage', boss: '검은 마법사', difficulty: 'extreme', periodKey: '2026-10-02', payoutMeso: 500_000, defeatedOn: '2026-10-04' },
+    ])
+    expect(await getUndatedBossProfitRecords(['ocid-1'], ['2026-10-02'])).toEqual([
+      { ocid: 'ocid-1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-10-02' },
+    ])
   })
 
-  it('getDatedBossProfitRecords 는 날짜 범위로 자르고 NULL 을 뺀다', async () => {
-    const { getDatedBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
+  it('getMonthlyDefeatDates 는 월간 처치의 날짜만 중복 없이 준다', async () => {
+    const monthly = { ...key, periodKey: '2026-10' }
+    await upsertBossProfitRecord(record({ cycle: 'monthly', periodKey: '2026-10' }))
+    await setBossProfitDefeatedOn(monthly, '2026-10-05')
+    await upsertBossProfitRecord(record())
+    await setBossProfitDefeatedOn(key, '2026-10-04')
 
-    await getDatedBossProfitRecords(['ocid-1', 'ocid-2'], '2026-08-01', '2026-08-31')
-
-    const [sql, values] = queryMock.mock.calls[0]
-    expect(sql).toContain('WHERE ocid IN (?, ?)')
-    expect(sql).toContain('defeated_on IS NOT NULL')
-    expect(sql).toContain('defeated_on BETWEEN ? AND ?')
-    expect(values).toEqual(['ocid-1', 'ocid-2', '2026-08-01', '2026-08-31'])
+    expect(await getMonthlyDefeatDates(['ocid-1'])).toEqual(['2026-10-05'])
   })
 
-  it('getUndatedBossProfitRecords 는 기간을 걸고 NULL 인 것만 고른다', async () => {
-    const { getUndatedBossProfitRecords } = require('../boss-profit') as typeof import('../boss-profit')
-
-    await getUndatedBossProfitRecords(['ocid-1'], ['2026-08-20', '2026-08'])
-
-    const [sql, values] = queryMock.mock.calls[0]
-    expect(sql).toContain('defeated_on IS NULL')
-    expect(sql).toContain('period_key IN (?, ?)')
-    expect(values).toEqual(['ocid-1', '2026-08-20', '2026-08'])
-  })
-
-  it('빈 목록에는 조회를 안 던진다. IN () 은 문법 오류다', async () => {
-    const { getDatedBossProfitRecords, getUndatedBossProfitRecords } =
-      require('../boss-profit') as typeof import('../boss-profit')
-
-    await expect(getDatedBossProfitRecords([], '2026-08-01', '2026-08-31')).resolves.toEqual([])
-    await expect(getUndatedBossProfitRecords(['ocid-1'], [])).resolves.toEqual([])
-    expect(queryMock).not.toHaveBeenCalled()
-  })
-
-  it('setBossProfitDefeatedOn 은 키 넷으로 그 행 하나만 고친다', async () => {
-    const { setBossProfitDefeatedOn } = require('../boss-profit') as typeof import('../boss-profit')
-
-    await setBossProfitDefeatedOn(
-      { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-20' },
-      '2026-08-21',
-    )
-
-    const [sql, values] = runMock.mock.calls[0]
-    expect(sql).toContain('UPDATE boss_profit_records SET defeated_on = ?')
-    expect(sql).toContain('WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?')
-    expect(values).toEqual(['2026-08-21', 'ocid-1', 'lotus', 'hard', '2026-08-20'])
+  it('빈 목록이면 조회하지 않는다', async () => {
+    expect(await getDatedBossProfitRecords([], '2026-10-01', '2026-10-31')).toEqual([])
+    expect(await getUndatedBossProfitRecords(['ocid-1'], [])).toEqual([])
+    expect(await getBossProfitRecords([], ['2026-10-02'])).toEqual([])
   })
 })
 
-/**
- * 표가 바뀐 것을 **읽는 쪽이 물을 수 있어야 한다**. `boss_drop_records` 가
- * 먼저 갖고 있던 그 수를 이 표에도 단다.
- */
-describe('getBossProfitRecordsRevision', () => {
-  beforeEach(() => {
-    const { resetBossProfitRecordsRevisionForTests } =
-      require('../boss-profit') as typeof import('../boss-profit')
-    resetBossProfitRecordsRevisionForTests()
+describe('deleteBossProfitRecord', () => {
+  it('드롭이 없으면 기간 행을 지운다', async () => {
+    await upsertBossProfitRecord(record())
+    await deleteBossProfitRecord(key)
+
+    expect(await getBossProfitRecords(['ocid-1'], ['2026-10-02'])).toEqual([])
+    expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_party_periods').get())).toEqual({ n: 0 })
   })
 
-  it('쓰기 셋이 저마다 판을 올린다', async () => {
-    const {
-      fillMissingRecordWorlds,
-      getBossProfitRecordsRevision,
-      setBossProfitDefeatedOn,
-      upsertBossProfitRecord,
-    } = require('../boss-profit') as typeof import('../boss-profit')
+  it('드롭이 남아 있으면 처치만 걷고 그 기간은 보스 관리 설정을 따른다', async () => {
+    await upsertBossProfitRecord(record())
+    await replaceBossDropRecords('ocid-1', 'black_mage', 'extreme', '2026-10-02', [
+      { dropRecordId: null, category: 'fixed', itemKey: 'black_boss_ring_box', itemName: '', quantity: 1 },
+    ], AT, NO_WORLD)
 
-    expect(getBossProfitRecordsRevision()).toBe(0)
+    await deleteBossProfitRecord(key)
 
-    await upsertBossProfitRecord(sampleRecord)
-    expect(getBossProfitRecordsRevision()).toBe(1)
+    expect(await getBossProfitRecords(['ocid-1'], ['2026-10-02'])).toEqual([])
+    expect(await getBossDropRecords(['ocid-1'], ['2026-10-02'])).toHaveLength(1)
+    expect(real.inspect((db) => db.prepare('SELECT status, split_mode, price_meso, source FROM boss_party_periods').get()))
+      .toEqual({ status: 'open', split_mode: null, price_meso: null, source: null })
+  })
+})
 
-    await fillMissingRecordWorlds(new Map([['ocid-1', { world: '스카니아', worldKey: 'scania' }]]))
-    expect(getBossProfitRecordsRevision()).toBe(2)
+describe('기록 한 행을 고치는 쓰기', () => {
+  it('markBossProfitRecordAuto 는 직접 적은 완료만 auto 로 내린다', async () => {
+    await upsertBossProfitRecord(record({ source: 'manual' }))
+    expect(await getManualBossProfitRecordKeys(['ocid-1'], ['2026-10-02'])).toEqual([key])
 
-    await setBossProfitDefeatedOn(
-      { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-20' },
-      '2026-08-21',
-    )
+    await markBossProfitRecordAuto(key)
+
+    expect(await getManualBossProfitRecordKeys(['ocid-1'], ['2026-10-02'])).toEqual([])
+  })
+
+  it('updateProfitSplitFees 는 요율과 받은 몫을 함께 고친다', async () => {
+    await upsertBossProfitRecord(record({ splitFeeAuto: true }))
+    await updateProfitSplitFees([{ ...key, splitFeePercent: 5, payoutMeso: 480_000 }])
+
+    const [read] = await getBossProfitRecords(['ocid-1'], ['2026-10-02'])
+    expect(read).toMatchObject({ splitFeePercent: 5, payoutMeso: 480_000 })
+  })
+
+  it('fillMissingRecordWorlds 는 월드가 빈 처치만 채운다', async () => {
+    await upsertBossProfitRecord(record({ world: null, worldKey: null }))
+    await upsertBossProfitRecord(record({ bossKey: 'lotus', difficulty: 'hard', world: '스카니아', worldKey: 'scania' }))
+
+    await fillMissingRecordWorlds(new Map([['ocid-1', { world: '엘리시움', worldKey: 'elysium' }]]))
+
+    const rows = await getBossProfitRecords(['ocid-1'], ['2026-10-02'])
+    expect(Object.fromEntries(rows.map((row) => [row.bossKey, row.worldKey]))).toEqual({ black_mage: 'elysium', lotus: 'scania' })
+  })
+
+  it('hasBossProfitRecordInPeriod 는 난이도를 안 가린다', async () => {
+    await upsertBossProfitRecord(record())
+    expect(await hasBossProfitRecordInPeriod('ocid-1', 'black_mage', '2026-10-02')).toBe(true)
+    expect(await hasBossProfitRecordInPeriod('ocid-1', 'black_mage', '2026-10-09')).toBe(false)
+  })
+})
+
+describe('개정 수', () => {
+  it('쓰기마다 오르고 구독자를 부른다. 읽기로는 안 오른다', async () => {
+    const listener = jest.fn()
+    const unsubscribe = subscribeBossProfitRecordsRevision(listener)
+
+    await upsertBossProfitRecord(record())
+    await getBossProfitRecords(['ocid-1'], ['2026-10-02'])
+    await deleteBossProfitRecord(key)
+    unsubscribe()
+    await upsertBossProfitRecord(record())
+
     expect(getBossProfitRecordsRevision()).toBe(3)
-  })
-
-  it('읽기로는 안 오른다. 판은 **바뀌었나** 이지 **봤나** 가 아니다', async () => {
-    const { getBossProfitRecordsRevision, getDatedBossProfitRecords } =
-      require('../boss-profit') as typeof import('../boss-profit')
-
-    await getDatedBossProfitRecords(['ocid-1'], '2026-08-01', '2026-08-31')
-
-    expect(getBossProfitRecordsRevision()).toBe(0)
-  })
-
-  it('채울 월드가 없으면 안 오른다. 그 길은 SQL 을 한 줄도 안 던진다', async () => {
-    const { fillMissingRecordWorlds, getBossProfitRecordsRevision } =
-      require('../boss-profit') as typeof import('../boss-profit')
-
-    await fillMissingRecordWorlds(new Map())
-
-    expect(getBossProfitRecordsRevision()).toBe(0)
-  })
-
-  it('쓰기가 던지면 안 오른다. 표가 안 바뀌었는데 올리면 읽는 쪽이 헛일한다', async () => {
-    const { getBossProfitRecordsRevision, upsertBossProfitRecord } =
-      require('../boss-profit') as typeof import('../boss-profit')
-    runMock.mockRejectedValueOnce(new Error('database is locked'))
-
-    await expect(upsertBossProfitRecord(sampleRecord)).rejects.toThrow('database is locked')
-
-    expect(getBossProfitRecordsRevision()).toBe(0)
-  })
-})
-
-// 판이 바뀐 것을 물어볼 뿐 아니라 **알림을 받아야** 하는 쪽이 있다. 아이템 가격 입력 버튼의 배지는
-// 쓰기마다 그 주 창을 다시 채운다.
-describe('subscribeBossProfitRecordsRevision', () => {
-  it('판이 오를 때마다 구독자를 부른다', async () => {
-    const { subscribeBossProfitRecordsRevision, upsertBossProfitRecord, setBossProfitDefeatedOn } =
-      require('../boss-profit') as typeof import('../boss-profit')
-    const listener = jest.fn()
-    const unsubscribe = subscribeBossProfitRecordsRevision(listener)
-
-    await upsertBossProfitRecord(sampleRecord)
-    await setBossProfitDefeatedOn(
-      { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-20' },
-      '2026-08-21',
-    )
-
     expect(listener).toHaveBeenCalledTimes(2)
-    unsubscribe()
   })
 
-  // 직접 완료 취소가 이 길이다. 판만 오르고 알림이 없으면 구독하는 배지가 취소를 놓친다.
-  it('지우기도 구독자를 부른다', async () => {
-    const { subscribeBossProfitRecordsRevision, deleteBossProfitRecord } =
-      require('../boss-profit') as typeof import('../boss-profit')
-    const listener = jest.fn()
-    const unsubscribe = subscribeBossProfitRecordsRevision(listener)
-
-    await deleteBossProfitRecord({ ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-20' })
-
-    expect(listener).toHaveBeenCalledTimes(1)
-    unsubscribe()
-  })
-
-  it('쓰기가 던지면 안 부른다', async () => {
-    const { subscribeBossProfitRecordsRevision, upsertBossProfitRecord } =
-      require('../boss-profit') as typeof import('../boss-profit')
-    const listener = jest.fn()
-    const unsubscribe = subscribeBossProfitRecordsRevision(listener)
-    runMock.mockRejectedValueOnce(new Error('database is locked'))
-
-    await expect(upsertBossProfitRecord(sampleRecord)).rejects.toThrow('database is locked')
-
-    expect(listener).not.toHaveBeenCalled()
-    unsubscribe()
-  })
-
-  it('여러 건을 쓰는 반복 안에서는 판은 쓸 때마다 오르고 구독자는 끝날 때 한 번 부른다', async () => {
-    const { subscribeBossProfitRecordsRevision, upsertBossProfitRecord, getBossProfitRecordsRevision } =
-      require('../boss-profit') as typeof import('../boss-profit')
-    const { batchRecordWrites } = require('../record-revision-batch') as typeof import('../record-revision-batch')
-    const listener = jest.fn()
-    const unsubscribe = subscribeBossProfitRecordsRevision(listener)
-    const before = getBossProfitRecordsRevision()
-
-    await batchRecordWrites(async () => {
-      await upsertBossProfitRecord(sampleRecord)
-      await upsertBossProfitRecord(sampleRecord)
-      expect(getBossProfitRecordsRevision()).toBe(before + 2)
-      expect(listener).not.toHaveBeenCalled()
-    })
-
-    expect(listener).toHaveBeenCalledTimes(1)
-    unsubscribe()
-  })
-
-  it('구독을 풀면 더 안 부른다', async () => {
-    const { subscribeBossProfitRecordsRevision, upsertBossProfitRecord } =
-      require('../boss-profit') as typeof import('../boss-profit')
-    const listener = jest.fn()
-    subscribeBossProfitRecordsRevision(listener)()
-
-    await upsertBossProfitRecord(sampleRecord)
-
-    expect(listener).not.toHaveBeenCalled()
-  })
-})
-
-// 추적 목록이 아니라 기록 자신이 `누구의 것을 그릴까` 를 정하게 하는 값이다. 캐릭터를 관리
-// 목록에서 빼도 그 캐릭터가 남긴 기록은 화면에 계속 서야 한다.
-describe('getRecordedCharacterOcids', () => {
-  it('수익과 드롭 두 표를 한 번에 훑는다', async () => {
-    const { getRecordedCharacterOcids } = require('../boss-profit') as typeof import('../boss-profit')
-    queryMock.mockResolvedValue({ values: [{ ocid: 'ocid-1' }, { ocid: 'ocid-2' }] })
-
-    await expect(getRecordedCharacterOcids()).resolves.toEqual(['ocid-1', 'ocid-2'])
-
-    expect(queryMock).toHaveBeenCalledTimes(1)
-    const [sql] = queryMock.mock.calls[0]
-    expect(sql).toContain('boss_profit_records')
-    expect(sql).toContain('boss_drop_records')
-    expect(sql).toContain('UNION')
-  })
-
-})
-
-// 스케줄러 API 가 최근 14일만 주므로 오래 쉬었다 돌아오면 그 사이가 전부 조회 불가다. 화살표가
-// 한 칸씩 걸으면 2월 기록에 닿는 데 서른 번이 든다. 기록이 있는 가장 가까운 기간을 SQL 이 낸다.
-describe('findAdjacentPeriodKeyWithRecords', () => {
-  it('ocids 가 비면 DB 를 안 부르고 null 이다', async () => {
-    const { findAdjacentPeriodKeyWithRecords } =
-      require('../boss-profit') as typeof import('../boss-profit')
-
-    expect(await findAdjacentPeriodKeyWithRecords([], 'weekly', '2026-09-03', 'prev')).toBeNull()
-    expect(queryMock).not.toHaveBeenCalled()
-  })
-
-  // 키를 열거해 훑으면 목록이 몇 백 개가 된다. 부등호를 SQL 에 맡긴다.
-  it('주간은 그보다 앞선 키 중 가장 큰 것을 고른다', async () => {
-    queryMock.mockResolvedValue({ values: [{ period_key: '2026-02-12' }] })
-    const { findAdjacentPeriodKeyWithRecords } =
-      require('../boss-profit') as typeof import('../boss-profit')
-
-    const found = await findAdjacentPeriodKeyWithRecords(
-      ['o1'],
-      'weekly',
-      '2026-09-03',
-      'prev',
-    )
-
-    expect(found).toBe('2026-02-12')
-    const [sql, parameters] = queryMock.mock.calls[0] as [string, unknown[]]
-    expect(sql).toContain('MAX(period_key)')
-    expect(sql).toContain("cycle = 'weekly'")
-    expect(sql).toContain('period_key < ?')
-    expect(parameters).toEqual(['o1', '2026-09-03'])
-  })
-
-  it('다음 방향은 가장 작은 것을 고른다', async () => {
-    queryMock.mockResolvedValue({ values: [{ period_key: '2026-05-14' }] })
-    const { findAdjacentPeriodKeyWithRecords } =
-      require('../boss-profit') as typeof import('../boss-profit')
-
-    expect(await findAdjacentPeriodKeyWithRecords(['o1'], 'weekly', '2026-02-12', 'next')).toBe(
-      '2026-05-14',
-    )
-    const [sql] = queryMock.mock.calls[0] as [string]
-    expect(sql).toContain('MIN(period_key)')
-    expect(sql).toContain('period_key > ?')
-  })
-
-  // 월간 기록은 `YYYY-MM`, 주간 기록은 `YYYY-MM-DD` 라 앞 7자가 그 달이다. 둘 중 큰 쪽이 답이다.
-  it('월간은 두 축을 함께 보고 달 키로 돌려준다', async () => {
-    queryMock.mockResolvedValue({ values: [{ period_key: '2026-02' }] })
-    const { findAdjacentPeriodKeyWithRecords } =
-      require('../boss-profit') as typeof import('../boss-profit')
-
-    expect(await findAdjacentPeriodKeyWithRecords(['o1'], 'monthly', '2026-09', 'prev')).toBe(
-      '2026-02',
-    )
-    const [sql] = queryMock.mock.calls[0] as [string]
-    expect(sql).toContain("cycle = 'monthly'")
-    expect(sql).toContain('substr(period_key, 1, 7)')
-  })
-
-  // 갈 곳이 없으면 화살표가 죽어야 한다. SQL 의 MAX 는 행이 없으면 NULL 을 준다.
-  it('기록이 없으면 null 이다', async () => {
-    queryMock.mockResolvedValue({ values: [{ period_key: null }] })
-    const { findAdjacentPeriodKeyWithRecords } =
-      require('../boss-profit') as typeof import('../boss-profit')
-
-    expect(
-      await findAdjacentPeriodKeyWithRecords(['o1'], 'weekly', '2026-09-03', 'prev'),
-    ).toBeNull()
+  it('쓰기가 던지면 안 오른다', async () => {
+    await expect(upsertBossProfitRecord(record({ priceMeso: null as unknown as number }))).rejects.toThrow()
+    expect(getBossProfitRecordsRevision()).toBe(0)
   })
 })

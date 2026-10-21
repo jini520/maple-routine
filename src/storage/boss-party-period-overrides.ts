@@ -4,11 +4,22 @@
  * 한 줄이 있으면 그 (캐릭터, 보스, 난이도, 기간)은 파티 관리 설정을 안 따라간다. 읽는 자리는 전부
  * `override ?? setting` 차례다.
  *
- * 기록 표에 못 넣어서 표가 따로 있다. `boss_profit_records` 에 줄이 생기면 그 조합은 완료로 읽혀
- * (`mergeRecordsIntoRows`), 잡지도 않은 보스가 완료로 선다.
+ * 처치 기록과 같은 기간 행(`boss_party_periods`)의 분배 칸이다. 'open' 행이고, 처치하면 'cleared' 가 되며 처치
+ * 값으로 덮인다. 드롭만 있는 'open' 행은 분배 칸이 비어 있어 그 기간 값이 아니다.
  */
+import {
+  PERIODS_JOIN,
+  PERIOD_KEY_WHERE,
+  SPLIT_COLUMN_NAMES,
+  crystalSplitValues,
+  ensurePartyId,
+  cycleOfPeriodKey,
+  numberOrNull,
+  periodKeyValues,
+} from './boss-periods'
 import type { BossPartyShareColumns } from './boss-party-settings'
 import { getBossProfitDb } from './sqlite/db'
+import { NEW_UUID_SQL } from './sqlite/uuid'
 
 export interface BossPartyPeriodOverride extends BossPartyShareColumns {
   ocid: string
@@ -21,19 +32,24 @@ export interface BossPartyPeriodOverride extends BossPartyShareColumns {
   updatedAt: string // ISO 8601
 }
 
+/** 처치한 기간('cleared')은 건드리지 않는다. 처치 기록의 값이 그 기간의 값이다. */
 const UPSERT_SQL = `
-  INSERT INTO boss_party_period_overrides
-    (ocid, boss_key, difficulty, period_key, party_size,
-     crystal_my_share, crystal_shares_total, split_fee_percent, split_fee_auto, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT(ocid, boss_key, difficulty, period_key) DO UPDATE SET
-    party_size = excluded.party_size,
-    crystal_my_share = excluded.crystal_my_share,
-    crystal_shares_total = excluded.crystal_shares_total,
-    split_fee_percent = excluded.split_fee_percent,
-    split_fee_auto = excluded.split_fee_auto,
+  INSERT INTO boss_party_periods
+    (id, party_id, period_key, cycle, status, ${SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
+  VALUES (${NEW_UUID_SQL}, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT (party_id, period_key) DO UPDATE SET
+    ${SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(',\n    ')},
     updated_at = excluded.updated_at
+  WHERE boss_party_periods.status = 'open'
 `
+
+/** 그 기간 값인 행만 고르는 조건. */
+const HAS_OVERRIDE = `pe.status = 'open' AND pe.split_mode IS NOT NULL`
+
+const OVERRIDE_SELECT = `
+  SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.period_key, pe.party_size, pe.my_share, pe.shares_total,
+         pe.split_fee_percent, pe.split_fee_auto, pe.updated_at
+    FROM ${PERIODS_JOIN}`
 
 /**
  * 그 기간의 파티 인원과 비율을 한 번에 쓴다. 파티 관리 설정은 안 건드린다.
@@ -43,23 +59,15 @@ const UPSERT_SQL = `
  */
 export async function setBossPartyPeriodOverride(override: BossPartyPeriodOverride): Promise<void> {
   const db = await getBossProfitDb()
+  const partyId = await ensurePartyId(db, override.ocid, override.bossKey, override.difficulty, override.updatedAt)
   await db.run(UPSERT_SQL, [
-    override.ocid,
-    override.bossKey,
-    override.difficulty,
+    partyId,
     override.periodKey,
-    override.partySize,
-    override.crystalMyShare,
-    override.crystalSharesTotal,
-    override.splitFeePercent,
-    override.splitFeeAuto === true ? 1 : null,
+    cycleOfPeriodKey(override.periodKey),
+    ...crystalSplitValues(override),
+    override.updatedAt,
     override.updatedAt,
   ])
-}
-
-function shareColumn(row: Record<string, unknown>, column: string): number | null {
-  const value = row[column]
-  return typeof value === 'number' ? value : null
 }
 
 function rowToOverride(row: Record<string, unknown>): BossPartyPeriodOverride {
@@ -69,9 +77,9 @@ function rowToOverride(row: Record<string, unknown>): BossPartyPeriodOverride {
     difficulty: row.difficulty as string,
     periodKey: row.period_key as string,
     partySize: row.party_size as number,
-    crystalMyShare: shareColumn(row, 'crystal_my_share'),
-    crystalSharesTotal: shareColumn(row, 'crystal_shares_total'),
-    splitFeePercent: shareColumn(row, 'split_fee_percent'),
+    crystalMyShare: numberOrNull(row.my_share),
+    crystalSharesTotal: numberOrNull(row.shares_total),
+    splitFeePercent: numberOrNull(row.split_fee_percent),
     splitFeeAuto: Number(row.split_fee_auto) === 1,
     updatedAt: row.updated_at as string,
   }
@@ -86,9 +94,8 @@ export async function getBossPartyPeriodOverride(
 ): Promise<BossPartyPeriodOverride | null> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT * FROM boss_party_period_overrides
-     WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?`,
-    [ocid, bossKey, difficulty, periodKey],
+    `${OVERRIDE_SELECT} WHERE ${HAS_OVERRIDE} AND ${PERIOD_KEY_WHERE}`,
+    periodKeyValues({ ocid, bossKey, difficulty, periodKey }),
   )
 
   const row = values?.[0]
@@ -106,9 +113,10 @@ export async function getBossPartyPeriodOverrides(
 
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT * FROM boss_party_period_overrides
-     WHERE ocid IN (${ocids.map(() => '?').join(', ')})
-       AND period_key IN (${periodKeys.map(() => '?').join(', ')})`,
+    `${OVERRIDE_SELECT}
+     WHERE ${HAS_OVERRIDE}
+       AND pa.ocid IN (${ocids.map(() => '?').join(', ')})
+       AND pe.period_key IN (${periodKeys.map(() => '?').join(', ')})`,
     [...ocids, ...periodKeys],
   )
 

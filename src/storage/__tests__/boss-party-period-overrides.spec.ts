@@ -1,131 +1,91 @@
-import type { BossPartyPeriodOverride } from '../boss-party-period-overrides'
+/// <reference types="node" />
+/**
+ * 그 기간만 고친 값을 진짜 SQLite 로 태운다. 이 값은 `boss_party_periods` 의 'open' 행 분배 칸이다. 처치한
+ * 기간('cleared')과 드롭만 있는 기간(분배 칸이 빔)은 그 기간 값으로 읽히면 안 된다.
+ */
+import {
+  type BossPartyPeriodOverride,
+  getBossPartyPeriodOverride,
+  getBossPartyPeriodOverrides,
+  setBossPartyPeriodOverride,
+} from '../boss-party-period-overrides'
+import { NO_WORLD, replaceBossDropRecords } from '../boss-drops'
+import { getBossProfitRecords, upsertBossProfitRecord } from '../boss-profit'
+import { __resetStoragePortsForTest, setSqlitePort } from '../ports'
+import { closeBossProfitDb } from '../sqlite/db'
+import { createRealSqlite, type RealSqlite } from '../sqlite/__tests__/node-sqlite-port'
 
-jest.mock('../sqlite/db', () => ({
-  getBossProfitDb: jest.fn(),
-}))
-const { getBossProfitDb: getBossProfitDbMock } = jest.requireMock('../sqlite/db') as Record<string, jest.Mock>
-
-const runMock = jest.fn()
-const queryMock = jest.fn()
-
-const fakeDb = { run: runMock, query: queryMock }
+let real: RealSqlite
 
 beforeEach(() => {
-  runMock.mockReset().mockResolvedValue({ changes: { changes: 1 } })
-  queryMock.mockReset().mockResolvedValue({ values: [] })
-  getBossProfitDbMock.mockReset().mockResolvedValue(fakeDb)
+  real = createRealSqlite()
+  setSqlitePort(real.port)
 })
 
-const sample: BossPartyPeriodOverride = {
-  ocid: 'ocid-1',
-  bossKey: 'black_mage',
-  difficulty: 'extreme',
-  periodKey: '2026-W39',
-  partySize: 3,
-  crystalMyShare: null,
-  crystalSharesTotal: null,
-  splitFeePercent: null,
-  splitFeeAuto: false,
-  updatedAt: '2026-09-23T00:05:00.000Z',
+afterEach(async () => {
+  await closeBossProfitDb()
+  __resetStoragePortsForTest()
+  real.dispose()
+})
+
+const AT = '2026-10-03T00:00:00.000Z'
+
+function override(over: Partial<BossPartyPeriodOverride> = {}): BossPartyPeriodOverride {
+  return {
+    ocid: 'ocid-1',
+    bossKey: 'lucid',
+    difficulty: 'hard',
+    periodKey: '2026-10-02',
+    partySize: 3,
+    crystalMyShare: null,
+    crystalSharesTotal: null,
+    splitFeePercent: null,
+    updatedAt: AT,
+    ...over,
+  }
 }
 
 describe('setBossPartyPeriodOverride', () => {
-  it('같은 기간을 두 번 고치면 덮어쓴다', async () => {
-    const { setBossPartyPeriodOverride } =
-      require('../boss-party-period-overrides') as typeof import('../boss-party-period-overrides')
+  it('같은 기간을 다시 고치면 덮고, 비율과 자동 수수료를 함께 적는다', async () => {
+    await setBossPartyPeriodOverride(override())
+    await setBossPartyPeriodOverride(override({ partySize: 4, crystalMyShare: 1, crystalSharesTotal: 4, splitFeePercent: 5, splitFeeAuto: true }))
 
-    await setBossPartyPeriodOverride(sample)
-    await setBossPartyPeriodOverride({ ...sample, partySize: 2, updatedAt: '2026-09-23T01:00:00.000Z' })
-
-    const [sql, values] = runMock.mock.calls[0]
-    expect(sql).toContain('ON CONFLICT(ocid, boss_key, difficulty, period_key) DO UPDATE SET')
-    expect(values).toEqual([
-      'ocid-1',
-      'black_mage',
-      'extreme',
-      '2026-W39',
-      3,
-      null,
-      null,
-      null,
-      null,
-      '2026-09-23T00:05:00.000Z',
-    ])
-    expect(runMock.mock.calls[1][1][4]).toBe(2)
+    expect(await getBossPartyPeriodOverride('ocid-1', 'lucid', 'hard', '2026-10-02')).toEqual(
+      override({ partySize: 4, crystalMyShare: 1, crystalSharesTotal: 4, splitFeePercent: 5, splitFeeAuto: true }),
+    )
   })
 
-  it('비율과 자동 수수료를 함께 적는다', async () => {
-    const { setBossPartyPeriodOverride } =
-      require('../boss-party-period-overrides') as typeof import('../boss-party-period-overrides')
-
-    await setBossPartyPeriodOverride({
-      ...sample,
-      crystalMyShare: 2,
-      crystalSharesTotal: 3,
-      splitFeePercent: 5,
-      splitFeeAuto: true,
+  it('처치한 기간은 건드리지 않는다', async () => {
+    await upsertBossProfitRecord({
+      ocid: 'ocid-1', bossKey: 'lucid', boss: '', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-10-02',
+      partySize: 2, priceMeso: 10, payoutMeso: 5, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null,
+      recordedAt: AT, world: null, worldKey: null,
     })
 
-    const [, values] = runMock.mock.calls[0]
-    expect(values.slice(5, 9)).toEqual([2, 3, 5, 1])
-  })
-})
+    await setBossPartyPeriodOverride(override({ partySize: 6 }))
 
-describe('getBossPartyPeriodOverride', () => {
-  it('줄이 있으면 칸을 그대로 읽는다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          ocid: 'ocid-1',
-          boss_key: 'black_mage',
-          difficulty: 'extreme',
-          period_key: '2026-W39',
-          party_size: 3,
-          crystal_my_share: 2,
-          crystal_shares_total: 3,
-          split_fee_percent: 5,
-          split_fee_auto: 1,
-          updated_at: '2026-09-23T00:05:00.000Z',
-        },
-      ],
-    })
-    const { getBossPartyPeriodOverride } =
-      require('../boss-party-period-overrides') as typeof import('../boss-party-period-overrides')
-
-    await expect(getBossPartyPeriodOverride('ocid-1', 'black_mage', 'extreme', '2026-W39')).resolves.toEqual({
-      ocid: 'ocid-1',
-      bossKey: 'black_mage',
-      difficulty: 'extreme',
-      periodKey: '2026-W39',
-      partySize: 3,
-      crystalMyShare: 2,
-      crystalSharesTotal: 3,
-      splitFeePercent: 5,
-      splitFeeAuto: true,
-      updatedAt: '2026-09-23T00:05:00.000Z',
-    })
+    expect((await getBossProfitRecords(['ocid-1'], ['2026-10-02']))[0].partySize).toBe(2)
+    expect(await getBossPartyPeriodOverride('ocid-1', 'lucid', 'hard', '2026-10-02')).toBeNull()
   })
 })
 
 describe('getBossPartyPeriodOverrides', () => {
-  it('캐릭터도 기간도 비어 있으면 조회하지 않는다', async () => {
-    const { getBossPartyPeriodOverrides } =
-      require('../boss-party-period-overrides') as typeof import('../boss-party-period-overrides')
+  it('그 기간 값만 준다. 처치한 기간과 드롭만 있는 기간은 안 준다', async () => {
+    await setBossPartyPeriodOverride(override())
+    await setBossPartyPeriodOverride(override({ ocid: 'ocid-2', periodKey: '2026-10' }))
+    await replaceBossDropRecords('ocid-1', 'will', 'hard', '2026-10-02', [
+      { dropRecordId: null, category: 'fixed', itemKey: 'black_boss_ring_box', itemName: '', quantity: 1 },
+    ], AT, NO_WORLD)
 
-    await expect(getBossPartyPeriodOverrides([], ['2026-W39'])).resolves.toEqual([])
-    await expect(getBossPartyPeriodOverrides(['ocid-1'], [])).resolves.toEqual([])
-    expect(queryMock).not.toHaveBeenCalled()
+    const read = await getBossPartyPeriodOverrides(['ocid-1', 'ocid-2'], ['2026-10-02', '2026-10'])
+    expect(read.map((row) => [row.ocid, row.bossKey, row.periodKey])).toEqual(
+      expect.arrayContaining([['ocid-1', 'lucid', '2026-10-02'], ['ocid-2', 'lucid', '2026-10']]),
+    )
+    expect(read).toHaveLength(2)
   })
 
-  it('캐릭터 여럿과 기간 여럿을 한 번에 읽는다', async () => {
-    const { getBossPartyPeriodOverrides } =
-      require('../boss-party-period-overrides') as typeof import('../boss-party-period-overrides')
-
-    await getBossPartyPeriodOverrides(['ocid-1', 'ocid-2'], ['2026-W39', '2026-09'])
-
-    const [sql, values] = queryMock.mock.calls[0]
-    expect(sql).toContain('ocid IN (?, ?)')
-    expect(sql).toContain('period_key IN (?, ?)')
-    expect(values).toEqual(['ocid-1', 'ocid-2', '2026-W39', '2026-09'])
+  it('캐릭터나 기간이 비면 조회하지 않는다', async () => {
+    expect(await getBossPartyPeriodOverrides([], ['2026-10-02'])).toEqual([])
+    expect(await getBossPartyPeriodOverrides(['ocid-1'], [])).toEqual([])
   })
 })
