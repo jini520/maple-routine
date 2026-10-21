@@ -36,7 +36,7 @@ jest.mock('../../../features/mvp-grade/fee-context', () => ({
   })),
 }))
 
-import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
+import { 기본테마, flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { IncomeSheet } from '../IncomeSheet'
 import type { IncomeRecord } from '../../../storage/income'
 
@@ -1406,6 +1406,15 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-sojae')).toHaveTextContent('2')
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 42,336,000')
     expect(view.getByLabelText('소재 감소').props.accessibilityState?.disabled).toBe(false)
+  })
+
+  // 시트는 바탕을 `bg` 로 칠한다. 기본 스테퍼의 트랙도 `bg` 라 시트에 묻혀 알약이 안 보인다.
+  it('소재 스테퍼는 반전 색이라 트랙이 시트 바탕과 다르다', async () => {
+    const view = await 그리기()
+    await 밤의길3(view)
+
+    expect(flattenStyle(view.getByTestId('stepper-track').props.style).backgroundColor).toBe(기본테마.surface)
+    expect(flattenStyle(view.getByLabelText('소재 증가').props.style).backgroundColor).toBe(기본테마.bg)
   })
 
   /**
