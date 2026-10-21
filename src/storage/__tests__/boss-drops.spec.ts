@@ -1,528 +1,242 @@
+/// <reference types="node" />
+/**
+ * 드롭 저장을 진짜 SQLite 로 태운다. 드롭은 기간 행(`boss_party_periods`)을 가리키고, 상태는 서버와 같은
+ * `record_status` 다. 가격 · 분배 · 수수료는 값을 매긴 드롭만 갖는다.
+ */
+import {
+  applyAutoDropFees,
+  getAllBossDropRecords,
+  getAutoFeeDropRecords,
+  getBossDropRecordById,
+  getBossDropRecords,
+  getBossDropRecordsRevision,
+  getBulkFeeDropRecords,
+  type DropWorld,
+  NO_WORLD,
+  replaceBossDropRecords,
+  resetBossDropRecordsRevisionForTests,
+  subscribeBossDropRecordsRevision,
+  updateDropFees,
+} from '../boss-drops'
+import { setBossPartyPeriodOverride } from '../boss-party-period-overrides'
+import { __resetStoragePortsForTest, setSqlitePort } from '../ports'
+import { closeBossProfitDb } from '../sqlite/db'
+import { createRealSqlite, type RealSqlite } from '../sqlite/__tests__/node-sqlite-port'
 import type { RecordedDrop } from '../../types/drops'
 
-jest.mock('../sqlite/db', () => ({
-  getBossProfitDb: jest.fn(),
-}))
-const { getBossProfitDb: getBossProfitDbMock } = jest.requireMock('../sqlite/db') as Record<string, jest.Mock>
-
-const runMock = jest.fn()
-const queryMock = jest.fn()
-
-const fakeDb = { run: runMock, query: queryMock }
+let real: RealSqlite
 
 beforeEach(() => {
-  runMock.mockReset().mockResolvedValue({ changes: { changes: 1 } })
-  queryMock.mockReset().mockResolvedValue({ values: [] })
-  getBossProfitDbMock.mockReset().mockResolvedValue(fakeDb)
+  real = createRealSqlite()
+  setSqlitePort(real.port)
+  resetBossDropRecordsRevisionForTests()
 })
 
-const drops: RecordedDrop[] = [
-  { dropRecordId: null, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 },
-  { dropRecordId: null,
-    category: 'consumable',
-    itemKey: 'restraint_ring',
-    itemName: '리스트레인트 링',
-    boxOriginKey: 'red_boss_ring_box',
-    boxOrigin: '홍옥의 보스 반지 상자',
-    ringLevel: 3,
-    quantity: 1,
-  },
-]
+afterEach(async () => {
+  await closeBossProfitDb()
+  __resetStoragePortsForTest()
+  real.dispose()
+})
+
+const AT = '2026-10-03T00:00:00.000Z'
+const LATER = '2026-10-05T00:00:00.000Z'
+const WORLD = { name: '엘리시움', key: 'elysium' }
+const RING = 'black_boss_ring_box'
+
+function drop(itemKey: string, over: Partial<RecordedDrop> = {}): RecordedDrop {
+  return { dropRecordId: null, category: 'equipment', itemKey, itemName: '', quantity: 1, ...over }
+}
+
+const priced: Partial<RecordedDrop> = { priceState: 'entered', priceMeso: 1_000, priceSplitMode: 'even', pricePartySize: 2, priceShare: 3 }
+
+async function save(drops: RecordedDrop[], at = AT, world: DropWorld = WORLD, periodKey = '2026-10-02'): Promise<string[]> {
+  return replaceBossDropRecords('ocid-1', 'lucid', 'hard', periodKey, drops, at, world)
+}
+
+function storedStatus(): string[] {
+  return real.inspect((db) => (db.prepare('SELECT record_status FROM boss_drops ORDER BY drop_index').all() as { record_status: string }[]).map((row) => row.record_status))
+}
+
+function pricedAt(): string | null {
+  return real.inspect((db) => (db.prepare('SELECT priced_at FROM boss_drops').get() as { priced_at: string | null }).priced_at)
+}
+
+function periodRows(): unknown[] {
+  return real.inspect((db) => db.prepare('SELECT status, split_mode, world_key FROM boss_party_periods').all())
+}
 
 describe('replaceBossDropRecords', () => {
-  it('기존 행을 DELETE한 뒤 drop_index 0..n으로 다시 INSERT한다', async () => {
-    const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
+  it('넘긴 차례대로 drop_index 를 매기고, 식별자를 그 차례로 돌려준다', async () => {
+    const ids = await save([drop('a'), drop('b'), drop('c')])
 
-    await replaceBossDropRecords(
-      'ocid-1',
-      'lotus',
-      'hard',
-      '2026-W30',
-      drops,
-      '2026-07-26T00:00:00.000Z',
-      NO_WORLD,
-    )
-
-    expect(runMock).toHaveBeenCalledTimes(3) // 1 DELETE + 2 INSERT
-
-    const [delSql, delValues] = runMock.mock.calls[0]
-    expect(delSql).toContain('DELETE FROM boss_drop_records')
-    expect(delSql).toContain('WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?')
-    expect(delValues).toEqual(['ocid-1', 'lotus', 'hard', '2026-W30'])
-
-    const [insSql, insValues0] = runMock.mock.calls[1]
-    expect(insSql).toContain('INSERT INTO boss_drop_records')
-    expect(insValues0).toEqual([
-      // 식별자. 물려받을 것이 없어 `null` 이고 SQL 의 `COALESCE` 가 그 자리에서 만든다.
-      null,
-      'ocid-1',
-      'lotus',
-      // 이름 칸에는 보스 표의 이름을 함께 적는다.
-      '스우',
-      'hard',
-      '2026-W30',
-      0,
-      'equipment',
-      'loose_control_machine_mark',
-      '루즈 컨트롤 머신 마크',
-      null,
-      null,
-      null,
-      1,
-      '2026-07-26T00:00:00.000Z',
-      // 월드 스냅샷. `NO_WORLD` 를 넘겼고 물려받을 행도 없다.
-      null,
-      null,
-      null,
-      null,
-      // 분배 방식. 안 적으면 방식을 모르는 행이라 화면이 라벨을 안 그린다.
-      null,
-      // 기본의 인원. 비율 합과 칸이 다르다.
-      null,
-      null,
-      // 내 비율. 안 적으면 1 이라 균등이다.
-      null,
-      // 판매 · 분배 수수료와 자동인지. 안 적으면 수수료를 안 센 행이다.
-      null,
-      null,
-      null,
-      null,
-    ])
-
-    const [, insValues1] = runMock.mock.calls[2]
-    expect(insValues1).toEqual([
-      // 식별자. 물려받을 것이 없어 `null` 이고 SQL 의 `COALESCE` 가 그 자리에서 만든다.
-      null,
-      'ocid-1',
-      'lotus',
-      '스우',
-      'hard',
-      '2026-W30',
-      1,
-      'consumable',
-      'restraint_ring',
-      '리스트레인트 링',
-      'red_boss_ring_box',
-      '홍옥의 보스 반지 상자',
-      3,
-      1,
-      '2026-07-26T00:00:00.000Z',
-      // 월드 스냅샷. `NO_WORLD` 를 넘겼고 물려받을 행도 없다.
-      null,
-      null,
-      null,
-
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
+    const rows = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
+    expect(rows.map((row) => [row.itemKey, row.dropIndex, row.dropRecordId])).toEqual([
+      ['a', 0, ids[0]], ['b', 1, ids[1]], ['c', 2, ids[2]],
     ])
   })
 
-  it('다시 쓴 뒤 식별자를 넘긴 차례대로 돌려준다. 새 값은 INSERT 에서 생겨 저장 뒤에야 안다', async () => {
-    const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-    queryMock
-      .mockResolvedValueOnce({ values: [] }) // 물려줄 식별자 조회
-      .mockResolvedValueOnce({ values: [{ drop_record_id: 'id-0' }, { drop_record_id: 'id-1' }] })
+  it('다시 저장해도 같은 아이템은 식별자를 이어 받는다. 상자와 반지 레벨까지 같아야 같은 아이템이다', async () => {
+    await save([drop('a'), drop('a', { boxOriginKey: 'box', ringLevel: 3 })])
+    const before = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
 
-    const ids = await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z', NO_WORLD)
+    await save([drop('a', { boxOriginKey: 'box', ringLevel: 3 }), drop('a'), drop('b')])
 
-    expect(ids).toEqual(['id-0', 'id-1'])
-    const [sql, values] = queryMock.mock.calls[1]
-    expect(sql).toContain('ORDER BY drop_index')
-    expect(values).toEqual(['ocid-1', 'lotus', 'hard', '2026-W30'])
+    const after = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
+    expect(after[0].dropRecordId).toBe(before[1].dropRecordId)
+    expect(after[1].dropRecordId).toBe(before[0].dropRecordId)
+    expect([before[0].dropRecordId, before[1].dropRecordId]).not.toContain(after[2].dropRecordId)
   })
 
-  it('드롭이 비면 DELETE만 하고 INSERT하지 않는다', async () => {
-    const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
+  it('비우면 드롭을 지우고, 분배 값도 처치도 없는 기간 행까지 지운다', async () => {
+    await save([drop('a')])
+    expect(await save([])).toEqual([])
 
-    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', [], '2026-07-26T00:00:00.000Z', NO_WORLD)
+    expect(await getBossDropRecords(['ocid-1'], ['2026-10-02'])).toEqual([])
+    expect(periodRows()).toEqual([])
+  })
 
-    expect(runMock).toHaveBeenCalledTimes(1)
-    expect(runMock.mock.calls[0][0]).toContain('DELETE FROM boss_drop_records')
+  it('그 기간 값이 있는 기간은 드롭을 비워도 남긴다', async () => {
+    await setBossPartyPeriodOverride({
+      ocid: 'ocid-1', bossKey: 'lucid', difficulty: 'hard', periodKey: '2026-10-02',
+      partySize: 3, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null, updatedAt: AT,
+    })
+    await save([drop('a')])
+    await save([])
+
+    expect(periodRows()).toEqual([{ status: 'open', split_mode: 'even', world_key: 'elysium' }])
+  })
+
+  it('월드는 기간 행에 한 번 적고, 월드를 모르는 저장이 지우지 않는다', async () => {
+    await save([drop('a')])
+    await save([drop('a', priced)], LATER, NO_WORLD)
+
+    const [read] = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
+    expect(read).toMatchObject({ worldKey: 'elysium', world: '엘리시움' })
   })
 })
 
-// 아이템 가격 입력 버튼의 배지가 쓰기마다 그 주 창을 다시 채운다. 판을 물어보는 것만으로는 쓰기를
-// 알 수 없어서 알림을 받는다.
-describe('subscribeBossDropRecordsRevision', () => {
-  it('쓰기가 끝나면 구독자를 부른다', async () => {
-    const { NO_WORLD, replaceBossDropRecords, subscribeBossDropRecordsRevision } =
-      require('../boss-drops') as typeof import('../boss-drops')
+describe('가격 상태', () => {
+  it('매긴 드롭은 completed 이고 분배와 수수료를 함께 적는다', async () => {
+    await save([drop('a', { ...priced, priceSplitMode: 'ratio', pricePartySize: 3, priceShare: 5, priceMyShare: 2, saleFeePercent: 5, splitFeePercent: 3, saleFeeAuto: true })])
+
+    const [read] = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
+    expect(storedStatus()).toEqual(['completed'])
+    expect(read).toMatchObject({
+      priceState: 'entered', priceMeso: 1_000,
+      priceSplitMode: 'ratio', pricePartySize: 3, priceShare: 5, priceMyShare: 2,
+      saleFeePercent: 5, splitFeePercent: 3, saleFeeAuto: true, splitFeeAuto: false,
+    })
+  })
+
+  it('균등은 인원만 남긴다', async () => {
+    await save([drop('a', priced)])
+
+    const [read] = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
+    expect(read).toMatchObject({ priceSplitMode: 'even', pricePartySize: 2, priceShare: null, priceMyShare: null })
+  })
+
+  // 2026-10-19 전의 균등 기록은 내 비율 칸이 차 있고 그 칸으로 금액을 센다. 그룹을 다시 저장해도 지난 금액이 안 바뀌어야 한다.
+  it('균등인데 내 비율 칸이 찬 드롭은 다시 저장해도 그 칸을 지킨다', async () => {
+    const legacy = drop('a', { ...priced, priceMyShare: 2, saleFeePercent: 5 })
+    await save([legacy])
+    await save([legacy, drop('b')], LATER)
+
+    const [read] = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
+    expect(read).toMatchObject({ priceSplitMode: 'even', pricePartySize: 2, priceMyShare: 2 })
+  })
+
+  it('미입력은 pending, 기록 안 함은 skipped 이고 분배 칸을 버린다', async () => {
+    await save([drop('a', { priceSplitMode: 'even', pricePartySize: 2 }), drop('b', { priceState: 'excluded', priceSplitMode: 'even', pricePartySize: 2 })])
+
+    const rows = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
+    expect(storedStatus()).toEqual(['pending', 'skipped'])
+    expect(rows.map((row) => [row.priceState, row.priceMeso, row.priceSplitMode, row.pricePartySize])).toEqual([
+      [null, null, null, null],
+      ['excluded', null, null, null],
+    ])
+  })
+
+  it('0메소는 저장하지 않고 미입력으로 둔다', async () => {
+    await save([drop('a', { ...priced, priceMeso: 0 })])
+
+    const [read] = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
+    expect(storedStatus()).toEqual(['pending'])
+    expect(read.priceState).toBeNull()
+  })
+
+  it('가격을 매긴 시각은 가격이 바뀔 때만 움직인다', async () => {
+    await save([drop('a', priced)])
+    await save([drop('a', priced)], LATER)
+    expect(pricedAt()).toBe(AT)
+
+    await save([drop('a', { ...priced, priceMeso: 2_000 })], LATER)
+    expect(pricedAt()).toBe(LATER)
+  })
+
+  it('이름은 저장하지 않고 key 로 찾아 채운다. 수량은 늘 1 이다', async () => {
+    await save([drop(RING, { itemName: '아무 이름', boxOriginKey: RING })])
+
+    const [read] = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
+    expect(read).toMatchObject({ boss: '루시드', itemName: '흑옥의 보스 반지 상자', boxOrigin: '흑옥의 보스 반지 상자', quantity: 1 })
+  })
+})
+
+describe('읽기', () => {
+  it('getAllBossDropRecords 는 기간 내림차순 · drop_index 순이다', async () => {
+    await save([drop('a'), drop('b')], AT, WORLD, '2026-09-25')
+    await save([drop('c')], AT, WORLD, '2026-10-02')
+
+    expect((await getAllBossDropRecords(['ocid-1'])).map((row) => row.itemKey)).toEqual(['c', 'a', 'b'])
+    expect(await getAllBossDropRecords([])).toEqual([])
+  })
+
+  it('getBossDropRecordById 는 없으면 null 이다', async () => {
+    const [id] = await save([drop('a')])
+
+    expect((await getBossDropRecordById(id))?.itemKey).toBe('a')
+    expect(await getBossDropRecordById('nope')).toBeNull()
+  })
+
+  it('빈 목록이면 조회하지 않는다', async () => {
+    expect(await getBossDropRecords([], ['2026-10-02'])).toEqual([])
+    expect(await getBossDropRecords(['ocid-1'], [])).toEqual([])
+  })
+})
+
+describe('수수료', () => {
+  const where = { ocid: 'ocid-1', bossKey: 'lucid', difficulty: 'hard', periodKey: '2026-10-02' }
+
+  it('updateDropFees 는 요율만 고친다', async () => {
+    await save([drop('a', { ...priced, saleFeePercent: 3, splitFeePercent: 3, saleFeeAuto: true })])
+    expect((await getAutoFeeDropRecords()).map((row) => row.itemKey)).toEqual(['a'])
+
+    await updateDropFees([{ ...where, dropIndex: 0, saleFeePercent: 5, splitFeePercent: 5 }])
+
+    const [read] = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
+    expect(read).toMatchObject({ saleFeePercent: 5, splitFeePercent: 5, saleFeeAuto: true })
+  })
+
+  it('일괄 대상은 값을 매겼고 두 수수료가 다 빈 드롭이고, 적용하면 두 칸이 자동이 된다', async () => {
+    await save([drop('a', priced), drop('b'), drop('c', { ...priced, saleFeePercent: 3 })])
+    expect((await getBulkFeeDropRecords()).map((row) => row.itemKey)).toEqual(['a'])
+
+    await applyAutoDropFees([{ ...where, dropIndex: 0, saleFeePercent: 5, splitFeePercent: 3 }])
+
+    const [read] = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
+    expect(read).toMatchObject({ saleFeePercent: 5, splitFeePercent: 3, saleFeeAuto: true, splitFeeAuto: true })
+  })
+})
+
+describe('개정 수', () => {
+  it('쓰기가 끝나면 구독자를 부르고, 던지면 안 부른다', async () => {
     const listener = jest.fn()
     const unsubscribe = subscribeBossDropRecordsRevision(listener)
 
-    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z', NO_WORLD)
+    await save([drop('a')])
+    await expect(save([drop(null as unknown as string)])).rejects.toThrow()
+    unsubscribe()
 
+    expect(getBossDropRecordsRevision()).toBe(1)
     expect(listener).toHaveBeenCalledTimes(1)
-    unsubscribe()
-  })
-
-  it('쓰기가 던지면 안 부른다', async () => {
-    const { NO_WORLD, replaceBossDropRecords, subscribeBossDropRecordsRevision } =
-      require('../boss-drops') as typeof import('../boss-drops')
-    const listener = jest.fn()
-    const unsubscribe = subscribeBossDropRecordsRevision(listener)
-    runMock.mockRejectedValueOnce(new Error('database is locked'))
-
-    await expect(
-      replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z', NO_WORLD),
-    ).rejects.toThrow('database is locked')
-
-    expect(listener).not.toHaveBeenCalled()
-    unsubscribe()
-  })
-
-  it('여러 건을 쓰는 반복 안에서는 판은 쓸 때마다 오르고 구독자는 끝날 때 한 번 부른다', async () => {
-    const { NO_WORLD, getBossDropRecordsRevision, replaceBossDropRecords, subscribeBossDropRecordsRevision } =
-      require('../boss-drops') as typeof import('../boss-drops')
-    const { batchRecordWrites } = require('../record-revision-batch') as typeof import('../record-revision-batch')
-    const listener = jest.fn()
-    const unsubscribe = subscribeBossDropRecordsRevision(listener)
-    const before = getBossDropRecordsRevision()
-
-    await batchRecordWrites(async () => {
-      await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', drops, '2026-07-26T00:00:00.000Z', NO_WORLD)
-      await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W31', drops, '2026-07-26T00:00:00.000Z', NO_WORLD)
-      expect(getBossDropRecordsRevision()).toBe(before + 2)
-      expect(listener).not.toHaveBeenCalled()
-    })
-
-    expect(listener).toHaveBeenCalledTimes(1)
-    unsubscribe()
-  })
-
-  it('구독을 풀면 더 안 부른다', async () => {
-    const { NO_WORLD, replaceBossDropRecords, subscribeBossDropRecordsRevision } =
-      require('../boss-drops') as typeof import('../boss-drops')
-    const listener = jest.fn()
-    subscribeBossDropRecordsRevision(listener)()
-
-    await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-W30', [], '2026-07-26T00:00:00.000Z', NO_WORLD)
-
-    expect(listener).not.toHaveBeenCalled()
-  })
-})
-
-describe('getBossDropRecords', () => {
-  it('ocids가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    await expect(getBossDropRecords([], ['2026-W30'])).resolves.toEqual([])
-    expect(getBossProfitDbMock).not.toHaveBeenCalled()
-    expect(queryMock).not.toHaveBeenCalled()
-  })
-
-  it('periodKeys가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    await expect(getBossDropRecords(['ocid-1'], [])).resolves.toEqual([])
-    expect(getBossProfitDbMock).not.toHaveBeenCalled()
-  })
-
-  it('ocid IN (...)와 period_key IN (...) 조건으로 조회해 BossDropRecord[]로 변환한다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          ocid: 'ocid-1',
-          boss_key: 'lotus',
-          boss: '스우',
-          difficulty: 'hard',
-          period_key: '2026-W30',
-          drop_index: 1,
-          category: 'consumable',
-          item_key: 'restraint_ring',
-          item_name: '리스트레인트 링',
-          box_origin_key: 'red_boss_ring_box',
-          box_origin: '홍옥의 보스 반지 상자',
-          ring_level: 3,
-          quantity: 1,
-          drop_record_id: 'drop-1',
-          recorded_at: '2026-07-26T00:00:00.000Z',
-        },
-      ],
-    })
-    const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    const result = await getBossDropRecords(['ocid-1', 'ocid-2'], ['2026-W30'])
-
-    expect(queryMock).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE ocid IN (?, ?) AND period_key IN (?)'),
-      ['ocid-1', 'ocid-2', '2026-W30'],
-    )
-    expect(result).toEqual([
-      {
-        ocid: 'ocid-1',
-        bossKey: 'lotus',
-        boss: '스우',
-        difficulty: 'hard',
-        periodKey: '2026-W30',
-        dropIndex: 1,
-        dropRecordId: 'drop-1',
-        world: null,
-        worldKey: null,
-        category: 'consumable',
-        itemKey: 'restraint_ring',
-        itemName: '리스트레인트 링',
-        boxOriginKey: 'red_boss_ring_box',
-        boxOrigin: '홍옥의 보스 반지 상자',
-        ringLevel: 3,
-        quantity: 1,
-        recordedAt: '2026-07-26T00:00:00.000Z',
-        priceState: null,
-        priceMeso: null,
-        priceShare: null,
-        priceSplitMode: null,
-        pricePartySize: null,
-        priceMyShare: null,
-        saleFeePercent: null,
-        splitFeePercent: null,
-        saleFeeAuto: false,
-        splitFeeAuto: false,
-      },
-    ])
-  })
-
-  it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
-    queryMock.mockResolvedValue({ values: undefined })
-    const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    await expect(getBossDropRecords(['ocid-1'], ['2026-W30'])).resolves.toEqual([])
-  })
-})
-
-// 드롭 히스토리는 히스토리 전용 테이블이 아니라 이 테이블을 전 기간 조회한다.
-describe('getAllBossDropRecords', () => {
-  it('ocids가 비면 DB를 호출하지 않고 빈 배열을 반환한다', async () => {
-    const { getAllBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    await expect(getAllBossDropRecords([])).resolves.toEqual([])
-    expect(getBossProfitDbMock).not.toHaveBeenCalled()
-    expect(queryMock).not.toHaveBeenCalled()
-  })
-
-  it('period_key 조건 없이 ocid만 걸어 조회한다. "전 기간"을 볼 수단이다', async () => {
-    const { getAllBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    await getAllBossDropRecords(['ocid-1', 'ocid-2'])
-
-    const [sql, values] = queryMock.mock.calls[0]
-    expect(sql).toContain('WHERE ocid IN (?, ?)')
-    expect(sql).not.toContain('period_key IN')
-    expect(values).toEqual(['ocid-1', 'ocid-2'])
-  })
-
-  it('period_key DESC, drop_index 순으로 정렬한다. recorded_at은 그룹 재기록으로 뒤집힌다', async () => {
-    const { getAllBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    await getAllBossDropRecords(['ocid-1'])
-
-    const [sql] = queryMock.mock.calls[0]
-    expect(sql).toContain('ORDER BY period_key DESC')
-    expect(sql).toContain('drop_index')
-    expect(sql).not.toContain('recorded_at DESC')
-  })
-
-  it('행을 BossDropRecord[]로 변환한다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          ocid: 'ocid-1',
-          boss_key: 'lotus',
-          boss: '스우',
-          difficulty: 'hard',
-          period_key: '2026-07-09',
-          drop_index: 0,
-          category: 'equipment',
-          item_name: '루즈 컨트롤 머신 마크',
-          box_origin: null,
-          ring_level: null,
-          quantity: 1,
-          drop_record_id: 'drop-1',
-          recorded_at: '2026-07-26T00:00:00.000Z',
-        },
-      ],
-    })
-    const { getAllBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    await expect(getAllBossDropRecords(['ocid-1'])).resolves.toEqual([
-      {
-        ocid: 'ocid-1',
-        bossKey: 'lotus',
-        boss: '스우',
-        difficulty: 'hard',
-        periodKey: '2026-07-09',
-        dropIndex: 0,
-        dropRecordId: 'drop-1',
-        world: null,
-        worldKey: null,
-        category: 'equipment',
-        // key 칸이 없던 옛 행이다. 읽을 때 `null` 로 선다.
-        itemKey: null,
-        itemName: '루즈 컨트롤 머신 마크',
-        boxOriginKey: null,
-        boxOrigin: null,
-        ringLevel: null,
-        quantity: 1,
-        recordedAt: '2026-07-26T00:00:00.000Z',
-        priceState: null,
-        priceMeso: null,
-        priceShare: null,
-        priceSplitMode: null,
-        pricePartySize: null,
-        priceMyShare: null,
-        saleFeePercent: null,
-        splitFeePercent: null,
-        saleFeeAuto: false,
-        splitFeeAuto: false,
-      },
-    ])
-  })
-
-  it('조회 결과가 없으면 빈 배열을 반환한다', async () => {
-    queryMock.mockResolvedValue({ values: undefined })
-    const { getAllBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    await expect(getAllBossDropRecords(['ocid-1'])).resolves.toEqual([])
-  })
-})
-
-// 가격 컬럼 왕복. 저장한 값이 그대로 읽혀야 한다. 쓰기·읽기 어느 한쪽만
-// 컬럼을 알면 값이 조용히 사라진다.
-describe('가격 컬럼 왕복', () => {
-  it('INSERT 에 price_state·price_meso·price_share 를 함께 싣는다', async () => {
-    const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    await replaceBossDropRecords(
-      'ocid-1',
-      'lotus',
-      'hard',
-      '2026-08-06',
-      [
-        { dropRecordId: null,
-          category: 'equipment',
-          itemKey: 'loose_control_machine_mark',
-          itemName: '루즈 컨트롤 머신 마크',
-          quantity: 1,
-          priceState: 'entered',
-          priceMeso: 15_000_000_000,
-          priceShare: 3,
-        },
-      ],
-      '2026-08-10T00:00:00.000Z',
-      NO_WORLD,
-    )
-
-    const insert = runMock.mock.calls.find(([sql]) => String(sql).includes('INSERT'))
-    expect(insert?.[0]).toContain('price_state')
-    expect(insert?.[1]).toEqual(expect.arrayContaining(['entered', 15_000_000_000, 3]))
-  })
-
-  it('가격이 없는 드롭은 세 컬럼을 NULL 로 넣는다. 0 이 아니다', async () => {
-    const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    await replaceBossDropRecords(
-      'ocid-1',
-      'lotus',
-      'hard',
-      '2026-08-06',
-      [{ dropRecordId: null, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }],
-      '2026-08-10T00:00:00.000Z',
-      NO_WORLD,
-    )
-
-    const insert = runMock.mock.calls.find(([sql]) => String(sql).includes('INSERT'))
-    // 19~21 번째 자리가 가격 컬럼이다(식별자 하나와 월드 둘이 앞에 들어 밀렸다). 0 으로 넣으면
-    // "0메소에 팔았다"가 되어 미입력과 구분이 사라진다.
-    expect(insert?.[1].slice(18, 21)).toEqual([null, null, null])
-  })
-
-  it('조회 결과의 가격 컬럼을 BossDropRecord 로 옮긴다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          ocid: 'ocid-1',
-          boss_key: 'lotus',
-          boss: '스우',
-          difficulty: 'hard',
-          period_key: '2026-08-06',
-          drop_index: 0,
-          category: 'equipment',
-          item_name: '루즈 컨트롤 머신 마크',
-          box_origin: null,
-          ring_level: null,
-          quantity: 1,
-          drop_record_id: 'drop-1',
-          recorded_at: '2026-08-10T00:00:00.000Z',
-          price_state: 'entered',
-          price_meso: 15_000_000_000,
-          price_share: 3,
-        },
-      ],
-    })
-    const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    const [record] = await getBossDropRecords(['ocid-1'], ['2026-08-06'])
-
-    expect(record).toEqual(
-      expect.objectContaining({ priceState: 'entered', priceMeso: 15_000_000_000, priceShare: 3 }),
-    )
-  })
-})
-
-describe('드롭 수수료 칸', () => {
-  it('판매 · 분배 수수료와 자동인지를 적고 읽는다', async () => {
-    const { NO_WORLD, replaceBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    await replaceBossDropRecords(
-      'ocid-1',
-      'lotus',
-      'hard',
-      '2026-08-06',
-      [
-        { dropRecordId: null,
-          category: 'equipment',
-          itemKey: 'loose_control_machine_mark',
-          itemName: '루즈 컨트롤 머신 마크',
-          quantity: 1,
-          priceState: 'entered',
-          priceMeso: 1_000_000_000,
-          priceShare: 3,
-          saleFeePercent: 3,
-          splitFeePercent: 5,
-          saleFeeAuto: true,
-          splitFeeAuto: false,
-        },
-      ],
-      '2026-08-10T00:00:00.000Z',
-      NO_WORLD,
-    )
-
-    const insert = runMock.mock.calls.find(([sql]) => String(sql).includes('INSERT'))
-    expect(insert?.[0]).toContain('sale_fee_percent, split_fee_percent, sale_fee_auto, split_fee_auto')
-    expect(insert?.[1].slice(-4)).toEqual([3, 5, 1, null])
-  })
-
-  it('자동 칸의 1 만 자동으로 읽는다', async () => {
-    queryMock.mockResolvedValue({
-      values: [
-        {
-          ocid: 'ocid-1', boss_key: 'lotus', boss: '스우', difficulty: 'hard', period_key: '2026-08-06', drop_index: 0,
-          category: 'equipment', item_key: 'loose_control_machine_mark', item_name: '루즈 컨트롤 머신 마크',
-          box_origin_key: null, box_origin: null, ring_level: null, quantity: 1, recorded_at: '2026-08-10T00:00:00.000Z',
-          price_state: 'entered', price_meso: 1_000_000_000, price_share: 3, price_my_share: null,
-          sale_fee_percent: 3, split_fee_percent: 5, sale_fee_auto: 1, split_fee_auto: null,
-        },
-      ],
-    })
-    const { getBossDropRecords } = require('../boss-drops') as typeof import('../boss-drops')
-
-    const [record] = await getBossDropRecords(['ocid-1'], ['2026-08-06'])
-    expect(record).toMatchObject({ saleFeePercent: 3, splitFeePercent: 5, saleFeeAuto: true, splitFeeAuto: false })
   })
 })

@@ -331,11 +331,11 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     ).length
     const 지금매김 = edit !== undefined || target.priceState === 'entered'
 
-    /** 값을 쓰고 자리를 옮긴다. 빈 칸이면 아무것도 안 쓴다. */
+    /** 값을 쓰고 자리를 옮긴다. 빈 칸이나 0 이면 아무것도 안 쓴다. 0메소는 매긴 것이 아니다. */
     function move(to: number, next: string, share?: ShareValue, fees?: FeesValue): void {
       const 다음편집 = new Map(edits)
-      if (next !== '') {
-        const meso = mesoValueOf(next)
+      const meso = next === '' ? 0 : mesoValueOf(next)
+      if (meso > 0) {
         const 비율 = share ?? defaultShare
         applyPrice(target, {
           priceState: 'entered',
@@ -349,8 +349,6 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     }
 
     const [saleSeed, splitSeed] = dropFeeSeeds(target, edit?.fees)
-    // 값을 안 매긴 드롭의 분배 칸은 안 믿는다. DB 를 열 때마다 도는 백필이 방식 칸을 `even` 으로 채운다.
-    const 적힌분배 = target.priceState === 'entered' ? target : undefined
 
     openInputCard({
       // 머리가 그 아이템을 말한다. `판매 가격` 이라는 말은 이미 누른 버튼이 했다.
@@ -364,11 +362,11 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       share: {
         label: '분배 비율',
         // 열 때의 자리는 **적힌 방식**이 정한다. 숫자로 되짚으면 비율 33.3% 가 기본 3인으로 열린다.
-        mode: edit?.share.mode ?? 적힌분배?.priceSplitMode ?? defaultShare.mode,
+        mode: edit?.share.mode ?? target.priceSplitMode ?? defaultShare.mode,
         // 인원과 비율은 **칸이 다르다**. 한 칸에서 둘을 뿌리면 비율에서 고친 합이 인원을 덮는다.
-        partySize: edit?.share.partySize ?? 적힌분배?.pricePartySize ?? defaultShare.partySize,
-        myShare: edit?.share.myShare ?? 적힌분배?.priceMyShare ?? defaultShare.myShare,
-        sharesTotal: edit?.share.sharesTotal ?? 적힌분배?.priceShare ?? defaultShare.sharesTotal,
+        partySize: edit?.share.partySize ?? target.pricePartySize ?? defaultShare.partySize,
+        myShare: edit?.share.myShare ?? target.priceMyShare ?? defaultShare.myShare,
+        sharesTotal: edit?.share.sharesTotal ?? target.priceShare ?? defaultShare.sharesTotal,
         maxPartySize: getMaxPartySize(props.bossKey, selectedDifficulty),
       },
       fees: {

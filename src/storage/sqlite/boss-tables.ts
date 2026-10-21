@@ -1,9 +1,11 @@
 /**
- * 보스 기록 표 셋의 **본문 한 벌**. `CREATE TABLE` 이 두 자리에서 같은 것을 쓴다. `db.ts` 의 정의 배열(정상
- * 생성)과 `migrations.ts` 의 버전 4(기본키를 보스 key 로 다시 만들기). 두 벌로 두면 재작성이 옛 스키마를
- * 다시 만드는 날이 온다.
+ * 보스 기록 표의 본문.
  *
- * 세 표 모두 `boss_key` 가 기본키에 들고 `boss` 는 적을 때의 이름이다. `difficulty` 는 난이도 key 다.
+ * 앞의 셋은 **옛 표**다. 버전 14 가 새 표 셋으로 옮긴 뒤로는 읽고 쓰는 코드가 없다. 그래도 지금 모양 그대로
+ * 둔다. 버전 4 · 12 가 이 본문으로 표를 다시 만들고, 새 기기도 버전 1 부터 다 돌기 때문이다. 옛 코드가 새 DB 를
+ * 열어도 열리도록 표 자체도 남긴다. 옛 표는 v1.0.14 에서 지운다(#685).
+ *
+ * 뒤의 셋(`BOSS_PARTIES_BODY` · `BOSS_PARTY_PERIODS_BODY` · `BOSS_DROPS_BODY`)이 지금 쓰는 표다.
  */
 
 export const BOSS_PROFIT_RECORDS_BODY = `(
@@ -126,3 +128,99 @@ export const BOSS_KEYED_TABLES = [
   { name: 'boss_party_settings', body: BOSS_PARTY_SETTINGS_BODY },
   { name: 'boss_drop_records', body: BOSS_DROP_RECORDS_BODY },
 ] as const
+
+/**
+ * 분배 조건 여섯 칸. 세 표가 같은 칸을 쓴다.
+ *
+ * `split_mode` 가 `NULL` 이면 여섯 칸이 다 비어 있고, 조합 행에서는 보스 관리에서 정한 적이 없다는 뜻이다.
+ * 기간 행에서는 조합 행을 따른다는 뜻이다.
+ */
+const SPLIT_COLUMNS = `
+    -- 'even'(균등) · 'ratio'(비율). 비율 1:3 과 균등 3인은 두 수가 같아 이 칸 없이는 못 가른다.
+    split_mode TEXT CHECK (split_mode IN ('even', 'ratio')),
+    -- 파티 인원. 비율이어도 채운다.
+    party_size INTEGER,
+    -- 'ratio' 의 내 비율과 비율 합.
+    my_share INTEGER,
+    shares_total INTEGER,
+    -- 분배 수수료(%). NULL 은 3 이다.
+    split_fee_percent INTEGER,
+    -- 1 이면 분배 수수료가 등급을 따라간다.
+    split_fee_auto INTEGER`
+
+const SPLIT_CHECKS = `
+    CHECK ((split_mode IS NULL) = (party_size IS NULL)),
+    CHECK ((split_mode = 'ratio') = (my_share IS NOT NULL AND shares_total IS NOT NULL))`
+
+const TIME_COLUMNS = `
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL`
+
+/** 캐릭터 · 보스 · 난이도 조합. 보스 관리의 파티 설정이 여기 있다. */
+export const BOSS_PARTIES_BODY = `(
+    id TEXT NOT NULL PRIMARY KEY,
+    ocid TEXT NOT NULL,
+    boss_key TEXT NOT NULL,
+    difficulty TEXT NOT NULL,${SPLIT_COLUMNS},${TIME_COLUMNS},${SPLIT_CHECKS},
+    UNIQUE (ocid, boss_key, difficulty)
+  )`
+
+/**
+ * 조합 하나의 한 기간. 처치 기록과 그 기간만 고친 값이 한 행이다.
+ *
+ * `status` 가 'cleared' 면 처치한 기간이고 결정석 칸과 분배 칸이 다 차 있다. 'open' 이면 그 기간 값이나
+ * 드롭만 있다.
+ */
+export const BOSS_PARTY_PERIODS_BODY = `(
+    id TEXT NOT NULL PRIMARY KEY,
+    party_id TEXT NOT NULL REFERENCES boss_parties(id) ON DELETE CASCADE,
+    -- 주간 YYYY-MM-DD(목요일) · 월간 YYYY-MM.
+    period_key TEXT NOT NULL,
+    cycle TEXT NOT NULL CHECK (cycle IN ('weekly', 'monthly')),
+    -- 그 기간의 월드 스냅샷. 모르면 NULL 이다. 지금 캐시의 월드로 채우면 리프한 캐릭터의 과거가 옮겨간다.
+    world_key TEXT,
+    status TEXT NOT NULL CHECK (status IN ('open', 'cleared')),
+    price_meso INTEGER,
+    payout_meso INTEGER,
+    -- 처치 날짜(KST YYYY-MM-DD). 모르면 NULL 이다.
+    defeated_on TEXT,
+    -- 'auto'(동기화) · 'manual'(사용자가 직접 적은 완료).
+    source TEXT CHECK (source IN ('auto', 'manual')),${SPLIT_COLUMNS},${TIME_COLUMNS},${SPLIT_CHECKS},
+    CHECK ((status = 'cleared') = (price_meso IS NOT NULL AND payout_meso IS NOT NULL AND source IS NOT NULL AND split_mode IS NOT NULL)),
+    CHECK (status = 'cleared' OR defeated_on IS NULL),
+    UNIQUE (party_id, period_key)
+  )`
+
+/**
+ * 드롭 한 개와 판매가. 칸 이름과 상태 값이 서버 `drop_prices` 와 같다.
+ *
+ * 가격 · 분배 · 수수료는 'completed' 일 때만 있다. 0메소는 저장하지 않는다. 앱은 매긴 것으로, 서버는
+ * 미입력으로 봐서 상태가 갈렸다.
+ */
+export const BOSS_DROPS_BODY = `(
+    -- 서버로 보내는 drop_record_id 다.
+    id TEXT NOT NULL PRIMARY KEY,
+    period_id TEXT NOT NULL REFERENCES boss_party_periods(id) ON DELETE CASCADE,
+    -- 드롭 시트의 차례. 저장할 때마다 다시 매겨 잠깐 겹치므로 UNIQUE 를 걸지 않는다.
+    drop_index INTEGER NOT NULL,
+    category TEXT NOT NULL,
+    item_key TEXT NOT NULL,
+    -- 상자에서 나왔으면 그 상자의 아이템 key.
+    box_origin_key TEXT,
+    ring_level INTEGER,
+    record_status TEXT NOT NULL CHECK (record_status IN ('pending', 'completed', 'skipped')),
+    -- 판매 총액. 내 몫이 아니다.
+    price_meso INTEGER CHECK (price_meso IS NULL OR price_meso > 0),
+    -- 가격을 처음 적거나 바꾼 시각.
+    priced_at TEXT,
+    sale_fee_percent INTEGER,
+    sale_fee_auto INTEGER,${SPLIT_COLUMNS},${TIME_COLUMNS},${SPLIT_CHECKS},
+    CHECK ((record_status = 'completed') = (price_meso IS NOT NULL)),
+    CHECK ((record_status = 'completed') = (priced_at IS NOT NULL)),
+    CHECK ((record_status = 'completed') = (split_mode IS NOT NULL)),
+    CHECK (record_status = 'completed' OR (sale_fee_percent IS NULL AND sale_fee_auto IS NULL))
+  )`
+
+/** 기간 하나의 드롭을 찾는 인덱스. */
+export const BOSS_DROPS_PERIOD_INDEX =
+  'CREATE INDEX IF NOT EXISTS boss_drops_period ON boss_drops (period_id, drop_index)'

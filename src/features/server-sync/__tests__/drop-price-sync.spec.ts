@@ -126,11 +126,6 @@ describe('보낼 값', () => {
     })
   })
 
-  it('입력 상태인데 가격이 없거나 0 이면 pending 이다', () => {
-    expect(dropPricePayloadOf(record({ priceMeso: null }))).toMatchObject({ status: 'pending', priceMeso: null })
-    expect(dropPricePayloadOf(record({ priceMeso: 0 }))).toMatchObject({ status: 'pending', priceMeso: null })
-  })
-
   it('아이템 key 가 없으면 못 보낸다. 값이 null 인 유일한 경우다', () => {
     // 서버가 그 칸을 분포의 축으로 쓴다.
     expect(dropPricePayloadOf(record({ itemKey: null }))).toBeNull()

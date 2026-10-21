@@ -46,9 +46,8 @@ export function sendsToServer(periodKey: string): boolean {
 /**
  * 보낼 값. 기기의 가격 상태가 무엇이든 값을 만든다. `null` 이면 **서버에서 지운다.**
  *
- * 미입력은 `pending`, 기록 안함(`'excluded'`)은 `skipped` 다. 둘 다 기록은 있고 가격만 없는 것이라
- * 지우기로 보내면 올라간 적 없는 기록에 지우기가 나간다. 입력 상태인데 가격이 없거나 0 이면
- * 보낼 가격이 없으니 `pending` 이다.
+ * 상태는 저장된 `record_status` 그대로다. 화면의 말(`priceState`)로 읽었으니 이름만 되돌린다. 미입력과 기록
+ * 안함도 기록은 있고 가격만 없는 것이라, 지우기로 보내면 올라간 적 없는 기록에 지우기가 나간다.
  *
  * **`itemKey` 가 없는 기록만 `null` 이다.** 서버가 그 칸을 분포의 축으로 쓰므로 빈 값을 받을 수
  * 없다. 아이템 표에 없는 아이템이라 이관이 key 를 못 채운 옛 행이고, 기준 기간 뒤에 이 상태가
@@ -57,14 +56,14 @@ export function sendsToServer(periodKey: string): boolean {
 export function dropPricePayloadOf(record: BossDropRecord): DropPricePayload | null {
   if (record.itemKey === null || record.itemKey === '') return null
 
-  const priced = record.priceState === 'entered' && record.priceMeso !== null && record.priceMeso > 0
-  const status: DropRecordStatus = priced ? 'completed' : record.priceState === 'excluded' ? 'skipped' : 'pending'
+  const status: DropRecordStatus =
+    record.priceState === 'entered' ? 'completed' : record.priceState === 'excluded' ? 'skipped' : 'pending'
 
   return {
     dropRecordId: record.dropRecordId,
     itemKey: record.itemKey,
     status,
-    priceMeso: priced ? record.priceMeso : null,
+    priceMeso: status === 'completed' ? record.priceMeso : null,
     periodKey: record.periodKey,
     worldKey: record.worldKey,
     ringLevel: record.ringLevel,

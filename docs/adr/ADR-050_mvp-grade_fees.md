@@ -121,9 +121,9 @@ rounded   = round100(1000 + L³ × (S+1)^exp / divisor)
 - 다시 계산은 행을 다시 쓰는 방식이다. 자동 기록도 받은 금액(`meso_amount`)과 뗀 수수료를 행에 적어 두고, 등급
   이력이 바뀌면 새 요율로 다시 적는다. 집계는 `meso_amount` 한 칸만 더하므로, 볼 때 계산하게 바꾸면 집계 코드를
   모두 고쳐야 하기 때문이다.
-- 자동 여부는 행마다 적는다. `income_records.sale_fee_auto` · `boss_drop_records.sale_fee_auto` ·
-  `boss_drop_records.split_fee_auto` · `boss_party_settings.split_fee_auto` · `boss_profit_records.split_fee_auto`
-  (`INTEGER`, 1 이면 자동)다. `NULL` 은 이 칸이 생기기 전의 행이고 직접 고른 것으로 읽는다.
+- 자동 여부는 행마다 적는다. `income_records.sale_fee_auto` · `boss_drops.sale_fee_auto` ·
+  `boss_drops.split_fee_auto` · `boss_parties.split_fee_auto` · `boss_party_periods.split_fee_auto`
+  (`INTEGER`, 1 이면 자동)다([[ADR-078]]). `NULL` 은 이 칸이 생기기 전의 행이고 직접 고른 것으로 읽는다.
 
 수수료 줄(`FeeRow`)은 한 줄에 `수수료` 라벨, `자동` 체크박스, 값이 차례로 놓인다.
 
@@ -152,7 +152,7 @@ rounded   = round100(1000 + L³ × (S+1)^exp / divisor)
 - 송금 · 분배 수수료의 처음 값도 내 등급이다(사용자 결정). 실제로는 보내는 사람의 등급을 따르므로, 내가 받는
   쪽이거나 파티원이 드롭을 팔았으면 요율이 다를 수 있다. 고칠 수 있으니 처음 값은 언제나 내 등급으로 채우고,
   다르면 사용자가 체크박스를 끄고 고른다.
-- 파티 설정(`boss_party_settings`)이 자동이면, 새 결정석 기록은 그 기록 날짜의 등급 요율로 적히고
+- 파티 설정(`boss_parties` 의 분배 칸)이 자동이면, 새 결정석 기록은 그 기록 날짜의 등급 요율로 적히고
   `split_fee_auto` 가 1 이 된다. 모달은 이번 주 등급을 보여 준다. 설정은 앞으로 적힐 기록에 쓸 값이기 때문이다.
 - 보스 수익 행에서 연 모달은 그 기록 하나만 고친다. 명패와 요율은 그 기록 날짜의 등급이고, 체크박스를 끄면 그
   기록만 직접 고른 요율이 된다.
@@ -164,8 +164,8 @@ rounded   = round100(1000 + L³ × (S+1)^exp / divisor)
 드롭 아이템을 경매장에 팔 때 수수료가 한 번 나가고, 한 명이 팔아 파티원에게 나눠 보내면 송금할 때 한 번 더
 나간다. 판매 분배금 계산기와 같은 상황이다.
 
-- `boss_drop_records` 에 `sale_fee_percent` 와 `split_fee_percent` 두 칸이 있다. `NULL` 은 수수료를 계산하지 않던
-  옛 행이고, 예전 금액 그대로 읽힌다.
+- `boss_drops` 에 `sale_fee_percent` 와 `split_fee_percent` 두 칸이 있다. 두 칸은 가격을 매긴 드롭(`completed`)만
+  갖는다. 가격을 매겼는데 `NULL` 이면 수수료를 계산하지 않던 옛 행이고, 예전 금액 그대로 읽힌다.
 - 내 몫은 판매 수수료를 뗀 금액에서 보낼 금액을 거꾸로 구해 정한다(`lib/drop/drop-price.ts` 의 `dropPayoutMeso`).
   균등이면 내가 팔아 `인원 − 1` 명에게 보낸다. 혼자면 분배 수수료가 들지 않는다.
 - 비율로 나눌 때는 몫이 큰 쪽이 보낸다고 본다(사용자 지적). 내 몫이 25% 인데 내가 75% 를 보낸다고 계산하면

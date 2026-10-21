@@ -1,5 +1,19 @@
+import { bossNameOf } from '../lib/boss/bosses'
+import { worldNameOf } from '../lib/world/worlds'
+import {
+  PERIODS_JOIN,
+  PERIOD_ID_OF_KEY,
+  PERIOD_KEY_WHERE,
+  SPLIT_COLUMN_NAMES,
+  crystalSplitValues,
+  deletePeriodIfEmpty,
+  ensurePartyId,
+  numberOrNull,
+  periodKeyValues,
+} from './boss-periods'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
+import { NEW_UUID_SQL } from './sqlite/uuid'
 import { inTransaction } from './sqlite/transaction'
 import type { BossCycle } from '../types/scheduler'
 
@@ -7,7 +21,7 @@ export interface BossProfitRecord {
   ocid: string
   /** 보스 key. 기본키에 든다. */
   bossKey: string
-  /** 기록할 때의 보스 이름. 보이는 이름은 key 로 보스 표에서 찾고, 표에서 빠진 보스일 때만 이 값을 쓴다. */
+  /** 보스 이름. 저장하지 않고 읽을 때 key 로 보스 표에서 찾는다. 표에 없는 key 면 key 다. 쓸 때는 안 본다. */
   boss: string
   /** 난이도 key(`easy` 등). */
   difficulty: string
@@ -33,7 +47,7 @@ export interface BossProfitRecord {
    * 사실(사용자 확인)과 정면으로 어긋나므로 기록에 박아 고정한다.
    */
   world: string | null
-  /** 기록 시점의 월드 key. 집계는 이 값으로 가른다. `world` 가 `null` 이거나 월드 표에 없으면 `null` 이다 */
+  /** 기록 시점의 월드 key. 집계는 이 값으로 가른다. 저장되는 것은 이 값이고 `world` 는 읽을 때 이 값으로 찾는다 */
   worldKey: string | null
   /**
    * 며칟날 잡았나(KST `YYYY-MM-DD`). 모르면 `null`.
@@ -57,32 +71,31 @@ export interface BossProfitRecord {
 /** 기록을 쓴 주체. */
 export type BossProfitRecordSource = 'auto' | 'manual'
 
+/**
+ * 처치를 쓴다. 기간 행이 'open' 이어도(그 기간 값이나 드롭만 있음) 'cleared' 로 덮는다. 그 기간 값은 처치 값에
+ * 덮여 사라진다.
+ *
+ * 처치 날짜는 안 적는다. 월드는 아는 값이 있을 때만 덮는다. 파티원 수 수정처럼 월드를 모르는 경로에서
+ * 다시 써도(그때 `null` 을 넘긴다) 이미 박아 둔 스냅샷을 지우지 않는다.
+ */
 const UPSERT_SQL = `
-  INSERT INTO boss_profit_records
-    (ocid, boss_key, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso,
-     crystal_my_share, crystal_shares_total, split_fee_percent, split_fee_auto,
-     recorded_at, world, world_key, source)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT(ocid, boss_key, difficulty, period_key) DO UPDATE SET
-    source = excluded.source,
-    boss = excluded.boss,
+  INSERT INTO boss_party_periods
+    (id, party_id, period_key, cycle, world_key, status, price_meso, payout_meso, source,
+     ${SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
+  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, 'cleared', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT (party_id, period_key) DO UPDATE SET
+    status = 'cleared',
     cycle = excluded.cycle,
-    party_size = excluded.party_size,
+    world_key = COALESCE(excluded.world_key, boss_party_periods.world_key),
     price_meso = excluded.price_meso,
     payout_meso = excluded.payout_meso,
-    crystal_my_share = excluded.crystal_my_share,
-    crystal_shares_total = excluded.crystal_shares_total,
-    split_fee_percent = excluded.split_fee_percent,
-    split_fee_auto = excluded.split_fee_auto,
-    recorded_at = excluded.recorded_at,
-    -- 월드는 아는 값이 있을 때만 덮어쓴다. 파티원 수 수정처럼 월드를 모르는 경로에서 upsert가
-    -- 일어나도(그때 world를 null로 넘긴다) 이미 박아둔 스냅샷을 지우지 않는다.
-    world = COALESCE(excluded.world, boss_profit_records.world),
-    world_key = COALESCE(excluded.world_key, boss_profit_records.world_key)
+    source = excluded.source,
+    ${SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(',\n    ')},
+    updated_at = excluded.updated_at
 `
 
 /**
- * `boss_profit_records` 가 바뀔 때마다 오르는 수. **이 표를 캐시하는 쪽이 **내 스냅샷이 낡았나** 를
+ * 처치 기록이 바뀔 때마다 오르는 수. **이 표를 캐시하는 쪽이 **내 스냅샷이 낡았나** 를
  * 물을 수 있게** 하는 값이다. `storage/boss-drops` 의 그것과 같은 물건이고
  * 같은 규칙을 따른다.
  *
@@ -127,32 +140,27 @@ export function resetBossProfitRecordsRevisionForTests(): void {
 
 export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<void> {
   const db = await getBossProfitDb()
+  const partyId = await ensurePartyId(db, record.ocid, record.bossKey, record.difficulty, record.recordedAt)
   await db.run(UPSERT_SQL, [
-    record.ocid,
-    record.bossKey,
-    record.boss,
-    record.difficulty,
-    record.cycle,
+    partyId,
     record.periodKey,
-    record.partySize,
+    record.cycle,
+    record.worldKey,
     record.priceMeso,
     record.payoutMeso,
-    // SQLite 바인딩은 undefined 를 못 받는다. 칸이 없는 옛 픽스처도 NULL 로 떨어뜨린다.
-    record.crystalMyShare ?? null,
-    record.crystalSharesTotal ?? null,
-    record.splitFeePercent ?? null,
-    record.splitFeeAuto === true ? 1 : null,
-    record.recordedAt,
-    record.world,
-    record.worldKey,
     record.source ?? 'auto',
+    ...crystalSplitValues(record),
+    record.recordedAt,
+    record.recordedAt,
   ])
   // **쓰기가 끝난 뒤**에 올린다. 중간에 던지면 표가 안 바뀐 것이라, 그때 올리면 읽는 쪽이 헛일한다.
   bumpRecordsRevision()
 }
 
 const FILL_MISSING_WORLD_SQL = `
-  UPDATE boss_profit_records SET world = ?, world_key = ? WHERE ocid = ? AND world IS NULL
+  UPDATE boss_party_periods SET world_key = ?
+   WHERE status = 'cleared' AND world_key IS NULL
+     AND party_id IN (SELECT id FROM boss_parties WHERE ocid = ?)
 `
 
 /**
@@ -163,7 +171,7 @@ const FILL_MISSING_WORLD_SQL = `
  * 아직 실사용자가 없어(사용자 확인) 후자를 택했다. **배포 후에는 할 수 없는 선택이므로
  * 지금 하지 않으면 비용이 커진다.**
  *
- * `world IS NULL` 조건이 멱등성을 보장한다. 한 번 채워진 기록은 이후 호출에 걸리지 않으므로 리프
+ * `world_key IS NULL` 조건이 멱등성을 보장한다. 한 번 채워진 기록은 이후 호출에 걸리지 않으므로 리프
  * 후에 다시 실행돼도 과거 스냅샷을 덮어쓰지 않는다.
  */
 export async function fillMissingRecordWorlds(
@@ -173,33 +181,41 @@ export async function fillMissingRecordWorlds(
     return
   }
   const db = await getBossProfitDb()
-  for (const [ocid, { world, worldKey }] of worldByOcid) {
-    await db.run(FILL_MISSING_WORLD_SQL, [world, worldKey, ocid])
+  // 월드 표에 없는 월드는 key 가 없어 적을 값이 없다. 모름으로 남긴다.
+  for (const [ocid, { worldKey }] of worldByOcid) {
+    if (worldKey !== null) await db.run(FILL_MISSING_WORLD_SQL, [worldKey, ocid])
   }
   bumpRecordsRevision()
 }
 
+/** 처치 행을 읽는 SELECT. 결정석 비율은 비율 분배일 때만 있다. */
+const RECORD_SELECT = `
+  SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.cycle, pe.period_key, pe.party_size, pe.price_meso, pe.payout_meso,
+         pe.my_share, pe.shares_total, pe.split_fee_percent, pe.split_fee_auto, pe.updated_at, pe.world_key,
+         pe.defeated_on, pe.source
+    FROM ${PERIODS_JOIN}`
+
 function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
+  const bossKey = row.boss_key as string
+  const worldKey = (row.world_key as string | null | undefined) ?? null
   return {
     ocid: row.ocid as string,
-    bossKey: row.boss_key as string,
-    boss: row.boss as string,
+    bossKey,
+    boss: bossNameOf(bossKey, bossKey),
     difficulty: row.difficulty as string,
     cycle: row.cycle as BossCycle,
     periodKey: row.period_key as string,
     partySize: row.party_size as number,
     priceMeso: row.price_meso as number,
     payoutMeso: row.payout_meso as number,
-    crystalMyShare: (row.crystal_my_share as number | null | undefined) ?? null,
-    crystalSharesTotal: (row.crystal_shares_total as number | null | undefined) ?? null,
-    splitFeePercent: (row.split_fee_percent as number | null | undefined) ?? null,
+    crystalMyShare: numberOrNull(row.my_share),
+    crystalSharesTotal: numberOrNull(row.shares_total),
+    splitFeePercent: numberOrNull(row.split_fee_percent),
     splitFeeAuto: Number(row.split_fee_auto) === 1,
-    recordedAt: row.recorded_at as string,
-    // 컬럼을 더하기 전 기록에는 없다. undefined도 null로 정규화해 호출부가 한 형태만 다루게 한다.
-    world: (row.world as string | null | undefined) ?? null,
-    worldKey: (row.world_key as string | null | undefined) ?? null,
+    recordedAt: row.updated_at as string,
+    world: worldKey === null ? null : worldNameOf(worldKey, worldKey),
+    worldKey,
     defeatedOn: (row.defeated_on as string | null | undefined) ?? null,
-    // 칸이 생기기 전 기록은 `NULL` 이다. 그때는 전부 동기화가 쓴 것이었다.
     source: row.source === 'manual' ? 'manual' : 'auto',
   }
 }
@@ -219,7 +235,8 @@ function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
 export async function getRecordedCharacterOcids(): Promise<string[]> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT ocid FROM boss_profit_records UNION SELECT ocid FROM boss_drop_records`,
+    `SELECT DISTINCT pa.ocid FROM ${PERIODS_JOIN}
+      WHERE pe.status = 'cleared' OR EXISTS (SELECT 1 FROM boss_drops d WHERE d.period_id = pe.id)`,
   )
 
   return (values ?? []).map((row) => row.ocid as string)
@@ -237,7 +254,7 @@ export async function getBossProfitRecords(
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const periodKeyPlaceholders = periodKeys.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT * FROM boss_profit_records WHERE ocid IN (${ocidPlaceholders}) AND period_key IN (${periodKeyPlaceholders})`,
+    `${RECORD_SELECT} WHERE pe.status = 'cleared' AND pa.ocid IN (${ocidPlaceholders}) AND pe.period_key IN (${periodKeyPlaceholders})`,
     [...ocids, ...periodKeys],
   )
 
@@ -247,7 +264,7 @@ export async function getBossProfitRecords(
 /** 송금 수수료가 자동인 결정석 기록 전부. 등급 기록이 바뀌면 다시 셀 대상이다. */
 export async function getAutoFeeProfitRecords(): Promise<BossProfitRecord[]> {
   const db = await getBossProfitDb()
-  const { values } = await db.query(`SELECT * FROM boss_profit_records WHERE split_fee_auto = 1`)
+  const { values } = await db.query(`${RECORD_SELECT} WHERE pe.status = 'cleared' AND pe.split_fee_auto = 1`)
   return (values ?? []).map(rowToRecord)
 }
 
@@ -267,9 +284,9 @@ export async function updateProfitSplitFees(updates: readonly ProfitSplitFeeUpda
   await inTransaction(db, async () => {
     for (const update of updates) {
       await db.run(
-        `UPDATE boss_profit_records SET split_fee_percent = ?, payout_meso = ?
-         WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?`,
-        [update.splitFeePercent, update.payoutMeso, update.ocid, update.bossKey, update.difficulty, update.periodKey],
+        `UPDATE boss_party_periods SET split_fee_percent = ?, payout_meso = ?
+         WHERE status = 'cleared' AND id = ${PERIOD_ID_OF_KEY}`,
+        [update.splitFeePercent, update.payoutMeso, ...periodKeyValues(update)],
       )
     }
   })
@@ -295,9 +312,9 @@ export async function getWeeklyPeriodKeysWithRecords(
   const db = await getBossProfitDb()
   const placeholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT DISTINCT period_key FROM boss_profit_records
-     WHERE ocid IN (${placeholders}) AND cycle = 'weekly' AND substr(period_key, 1, 7) = ?
-     ORDER BY period_key`,
+    `SELECT DISTINCT pe.period_key FROM ${PERIODS_JOIN}
+     WHERE pe.status = 'cleared' AND pa.ocid IN (${placeholders}) AND pe.cycle = 'weekly' AND substr(pe.period_key, 1, 7) = ?
+     ORDER BY pe.period_key`,
     [...ocids, monthKey],
   )
 
@@ -335,16 +352,16 @@ export async function findAdjacentPeriodKeyWithRecords(
   // 월간은 두 축의 키가 모양이 달라 weekly 를 달로 접은 뒤 비교한다. 그래야 `MAX` 가 한 축에서만
   // 답을 고르지 않는다.
   const expression =
-    tab === 'monthly' ? `${pick}(substr(period_key, 1, 7))` : `${pick}(period_key)`
+    tab === 'monthly' ? `${pick}(substr(pe.period_key, 1, 7))` : `${pick}(pe.period_key)`
   const condition =
     tab === 'monthly'
-      ? `((cycle = 'monthly' AND period_key ${compare} ?) OR (cycle = 'weekly' AND substr(period_key, 1, 7) ${compare} ?))`
-      : `(cycle = 'weekly' AND period_key ${compare} ?)`
+      ? `((pe.cycle = 'monthly' AND pe.period_key ${compare} ?) OR (pe.cycle = 'weekly' AND substr(pe.period_key, 1, 7) ${compare} ?))`
+      : `(pe.cycle = 'weekly' AND pe.period_key ${compare} ?)`
   const parameters = tab === 'monthly' ? [...ocids, periodKey, periodKey] : [...ocids, periodKey]
 
   const { values } = await db.query(
-    `SELECT ${expression} AS period_key FROM boss_profit_records
-      WHERE ocid IN (${ocidPlaceholders}) AND ${condition}`,
+    `SELECT ${expression} AS period_key FROM ${PERIODS_JOIN}
+      WHERE pe.status = 'cleared' AND pa.ocid IN (${ocidPlaceholders}) AND ${condition}`,
     parameters,
   )
 
@@ -367,8 +384,8 @@ export async function getMonthlyDefeatDates(ocids: string[]): Promise<string[]> 
   const db = await getBossProfitDb()
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT DISTINCT defeated_on FROM boss_profit_records
-      WHERE ocid IN (${ocidPlaceholders}) AND cycle = 'monthly' AND defeated_on IS NOT NULL`,
+    `SELECT DISTINCT pe.defeated_on FROM ${PERIODS_JOIN}
+      WHERE pa.ocid IN (${ocidPlaceholders}) AND pe.cycle = 'monthly' AND pe.defeated_on IS NOT NULL`,
     [...ocids],
   )
 
@@ -377,7 +394,7 @@ export async function getMonthlyDefeatDates(ocids: string[]): Promise<string[]> 
     .filter((date): date is string => typeof date === 'string')
 }
 
-/** `boss_profit_records` 한 행을 식별하는 키(금액·파티원 수 없음). */
+/** 처치 기록 한 행을 식별하는 키(금액·파티원 수 없음). */
 export interface BossProfitRecordKey {
   ocid: string
   bossKey: string
@@ -391,7 +408,7 @@ export interface BossProfitRecordKey {
  * 드롭 히스토리는 "그 난이도에서 획득 불가한 기록"을 표시 단계에서 거르는데, **처치 난이도가 확정된
  * 조합에만** 걸어야 한다. 확정 전 행에 걸면 익스트림으로 등록해두고 하드를 잡은 경우처럼 나중에
  * 이관되어 살아남을 기록을 미리 숨긴다. 이 테이블에 행이 있다는 것이 곧 그
- * 확정이므로(자동 기록은 완료 행만 만든다) 키만 알면 된다.
+ * 확정이므로(처치한 기간만 'cleared' 다) 키만 알면 된다.
  */
 export async function getAllBossProfitRecordKeys(ocids: string[]): Promise<BossProfitRecordKey[]> {
   if (ocids.length === 0) {
@@ -401,7 +418,8 @@ export async function getAllBossProfitRecordKeys(ocids: string[]): Promise<BossP
   const db = await getBossProfitDb()
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT ocid, boss_key, difficulty, period_key FROM boss_profit_records WHERE ocid IN (${ocidPlaceholders})`,
+    `SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.period_key FROM ${PERIODS_JOIN}
+      WHERE pe.status = 'cleared' AND pa.ocid IN (${ocidPlaceholders})`,
     [...ocids],
   )
 
@@ -423,7 +441,7 @@ export async function getAllBossProfitRecordKeys(ocids: string[]): Promise<BossP
 export interface DatedBossProfitRecord {
   ocid: string
   bossKey: string
-  /** 기록할 때의 보스 이름. */
+  /** 보스 이름. 읽을 때 key 로 찾는다. */
   boss: string
   difficulty: string
   periodKey: string
@@ -451,11 +469,11 @@ export async function getDatedBossProfitRecords(
   const db = await getBossProfitDb()
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT ocid, boss_key, boss, difficulty, period_key, payout_meso, defeated_on
-       FROM boss_profit_records
-      WHERE ocid IN (${ocidPlaceholders})
-        AND defeated_on IS NOT NULL
-        AND defeated_on BETWEEN ? AND ?`,
+    `SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.period_key, pe.payout_meso, pe.defeated_on
+       FROM ${PERIODS_JOIN}
+      WHERE pa.ocid IN (${ocidPlaceholders})
+        AND pe.defeated_on IS NOT NULL
+        AND pe.defeated_on BETWEEN ? AND ?`,
     [...ocids, fromDateKey, toDateKey],
   )
 
@@ -464,7 +482,7 @@ export async function getDatedBossProfitRecords(
     return {
       ocid: record.ocid as string,
       bossKey: record.boss_key as string,
-      boss: record.boss as string,
+      boss: bossNameOf(record.boss_key as string, record.boss_key as string),
       difficulty: record.difficulty as string,
       periodKey: record.period_key as string,
       payoutMeso: record.payout_meso as number,
@@ -502,11 +520,12 @@ export async function getUndatedBossProfitRecords(
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const periodKeyPlaceholders = periodKeys.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT ocid, boss_key, boss, difficulty, cycle, period_key
-       FROM boss_profit_records
-      WHERE ocid IN (${ocidPlaceholders})
-        AND period_key IN (${periodKeyPlaceholders})
-        AND defeated_on IS NULL`,
+    `SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.cycle, pe.period_key
+       FROM ${PERIODS_JOIN}
+      WHERE pe.status = 'cleared'
+        AND pa.ocid IN (${ocidPlaceholders})
+        AND pe.period_key IN (${periodKeyPlaceholders})
+        AND pe.defeated_on IS NULL`,
     [...ocids, ...periodKeys],
   )
 
@@ -515,7 +534,7 @@ export async function getUndatedBossProfitRecords(
     return {
       ocid: record.ocid as string,
       bossKey: record.boss_key as string,
-      boss: record.boss as string,
+      boss: bossNameOf(record.boss_key as string, record.boss_key as string),
       difficulty: record.difficulty as string,
       cycle: record.cycle as BossCycle,
       periodKey: record.period_key as string,
@@ -534,7 +553,8 @@ export async function getEarliestBossProfitPeriodKeys(
 ): Promise<Partial<Record<BossCycle, string>>> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT cycle, MIN(period_key) AS period_key FROM boss_profit_records WHERE ocid = ? GROUP BY cycle`,
+    `SELECT pe.cycle, MIN(pe.period_key) AS period_key FROM ${PERIODS_JOIN}
+      WHERE pe.status = 'cleared' AND pa.ocid = ? GROUP BY pe.cycle`,
     [ocid],
   )
   const earliest: Partial<Record<BossCycle, string>> = {}
@@ -544,13 +564,29 @@ export async function getEarliestBossProfitPeriodKeys(
   return earliest
 }
 
-/** 기록 한 행을 지운다. 짝인 드롭은 안 건드리므로 부르는 쪽이 먼저 옮기거나 지운다. */
+/**
+ * 처치 한 행을 걷는다. 드롭이 남아 있으면 기간 행은 남기고 처치 칸과 분배 칸을 비운다. 그 기간은 보스 관리
+ * 설정을 따른다. 처치 전에 그 기간만 고쳐 둔 값은 처치할 때 덮여 돌아오지 않는다.
+ *
+ * 짝인 드롭은 안 건드리므로 부르는 쪽이 먼저 옮기거나 지운다.
+ */
 export async function deleteBossProfitRecord(key: BossProfitRecordKey): Promise<void> {
   const db = await getBossProfitDb()
-  await db.run(
-    `DELETE FROM boss_profit_records WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?`,
-    [key.ocid, key.bossKey, key.difficulty, key.periodKey],
+  const { values } = await db.query(
+    `SELECT pe.id FROM ${PERIODS_JOIN} WHERE pe.status = 'cleared' AND ${PERIOD_KEY_WHERE}`,
+    periodKeyValues(key),
   )
+  const periodId = (values ?? [])[0]?.id as string | undefined
+  if (periodId !== undefined) {
+    await db.run(
+      `UPDATE boss_party_periods
+          SET status = 'open', price_meso = NULL, payout_meso = NULL, defeated_on = NULL, source = NULL,
+              ${SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')}
+        WHERE id = ?`,
+      [periodId],
+    )
+    await deletePeriodIfEmpty(db, periodId)
+  }
   bumpRecordsRevision()
 }
 
@@ -567,9 +603,8 @@ export async function setBossProfitDefeatedOn(
 ): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(
-    `UPDATE boss_profit_records SET defeated_on = ?
-      WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ?`,
-    [defeatedOn, key.ocid, key.bossKey, key.difficulty, key.periodKey],
+    `UPDATE boss_party_periods SET defeated_on = ? WHERE status = 'cleared' AND id = ${PERIOD_ID_OF_KEY}`,
+    [defeatedOn, ...periodKeyValues(key)],
   )
   bumpRecordsRevision()
 }
@@ -586,9 +621,8 @@ export async function setBossProfitDefeatedOn(
 export async function markBossProfitRecordAuto(key: BossProfitRecordKey): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(
-    `UPDATE boss_profit_records SET source = 'auto'
-      WHERE ocid = ? AND boss_key = ? AND difficulty = ? AND period_key = ? AND source = 'manual'`,
-    [key.ocid, key.bossKey, key.difficulty, key.periodKey],
+    `UPDATE boss_party_periods SET source = 'auto' WHERE source = 'manual' AND id = ${PERIOD_ID_OF_KEY}`,
+    periodKeyValues(key),
   )
   // 바꾼 행이 없어도 판을 올린다. 포트의 `run` 이 바뀐 행 수를 안 돌려줘 물어볼 길이 없고, 판의
   // 뜻은 **이 표가 바뀌었을 수 있다** 라 한 번 더 읽는 쪽이 안전하다.
@@ -608,8 +642,8 @@ export async function hasBossProfitRecordInPeriod(
 ): Promise<boolean> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT 1 FROM boss_profit_records
-      WHERE ocid = ? AND boss_key = ? AND period_key = ? LIMIT 1`,
+    `SELECT 1 FROM ${PERIODS_JOIN}
+      WHERE pe.status = 'cleared' AND pa.ocid = ? AND pa.boss_key = ? AND pe.period_key = ? LIMIT 1`,
     [ocid, bossKey, periodKey],
   )
   return (values ?? []).length > 0
@@ -641,8 +675,8 @@ export async function getManualBossProfitRecordKeys(
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const periodPlaceholders = periodKeys.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT ocid, boss_key, difficulty, period_key FROM boss_profit_records
-      WHERE ocid IN (${ocidPlaceholders}) AND period_key IN (${periodPlaceholders}) AND source = 'manual'`,
+    `SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.period_key FROM ${PERIODS_JOIN}
+      WHERE pa.ocid IN (${ocidPlaceholders}) AND pe.period_key IN (${periodPlaceholders}) AND pe.source = 'manual'`,
     [...ocids, ...periodKeys],
   )
 

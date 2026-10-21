@@ -20,7 +20,6 @@ import { getBossPartySettings, setBossPartySetting } from '../../boss-party-sett
 import {
   getBossProfitRecords,
   getDatedBossProfitRecords,
-  setBossProfitDefeatedOn,
   upsertBossProfitRecord,
   type BossProfitRecord,
 } from '../../boss-profit'
@@ -560,8 +559,10 @@ describe('버전 이관: 드롭 기록에 아이템 key 를 채운다', () => {
 
     await getBossProfitDb()
 
-    const rows = await getAllBossDropRecords(['ocid-1'])
-    expect(rows.map((row) => [row.itemKey, row.boxOriginKey])).toEqual([
+    const rows = real.inspect((db) =>
+      db.prepare('SELECT item_key, box_origin_key FROM boss_drop_records ORDER BY drop_index').all() as Record<string, unknown>[],
+    )
+    expect(rows.map((row) => [row.item_key, row.box_origin_key])).toEqual([
       ['dreamy_belt', null],
       ['restraint_ring', 'green_boss_ring_box'],
       ['other_ring', 'green_boss_ring_box'],
@@ -571,15 +572,18 @@ describe('버전 이관: 드롭 기록에 아이템 key 를 채운다', () => {
     expect(userVersion(real)).toBe(DB_VERSION)
   })
 
-  // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름과 가격이 남는다.
-  it('못 찾는 이름은 key 만 비우고 행과 이름을 지킨다', async () => {
+  // 버전 3 은 못 찾은 이름을 지우지 않는다. key 만 비고 그때 이름이 남는다. 그 행은 버전 14 가 새 표로 옮기지 않는다.
+  it('못 찾는 이름은 key 만 비우고 행과 이름을 지킨다. 새 표로는 안 옮긴다', async () => {
     seedOldDrops()
 
     await getBossProfitDb()
 
-    const rows = await getAllBossDropRecords(['ocid-1'])
+    const rows = real.inspect((db) =>
+      db.prepare('SELECT item_key, item_name, box_origin_key, box_origin FROM boss_drop_records ORDER BY drop_index').all(),
+    )
     expect(rows).toHaveLength(5)
-    expect(rows[4]).toMatchObject({ itemKey: null, itemName: '익셉셔널 해머', boxOriginKey: null, boxOrigin: null })
+    expect(rows[4]).toEqual({ item_key: null, item_name: '익셉셔널 해머', box_origin_key: null, box_origin: null })
+    expect(await getAllBossDropRecords(['ocid-1'])).toHaveLength(4)
   })
 })
 
@@ -659,9 +663,11 @@ describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시
 
     await getBossProfitDb()
 
-    const rows = await getBossProfitRecords(['ocid-1'], ['2026-09-10', '2026-09'])
+    const rows = real.inspect((db) =>
+      db.prepare('SELECT boss_key, boss, difficulty, world, defeated_on FROM boss_profit_records').all() as Record<string, unknown>[],
+    )
     expect(
-      rows.map((row) => [row.bossKey, row.boss, row.difficulty, row.world, row.defeatedOn]).sort(),
+      rows.map((row) => [row.boss_key, row.boss, row.difficulty, row.world, row.defeated_on]).sort(),
     ).toEqual(
       [
         ['black_mage', '검은마법사', 'extreme', '챌린저스2', null],
@@ -677,19 +683,14 @@ describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시
 
     await getBossProfitDb()
 
-    expect((await getBossPartySettings(['ocid-1'])).map(({ bossKey, difficulty, partySize }) => [bossKey, difficulty, partySize])).toEqual([
-      ['meirin', 'hard', 1],
+    expect(real.inspect((db) => db.prepare('SELECT boss_key, difficulty, party_size FROM boss_party_settings').all())).toEqual([
+      { boss_key: 'meirin', difficulty: 'hard', party_size: 1 },
     ])
-    const [drop] = await getAllBossDropRecords(['ocid-1'])
-    expect(drop).toMatchObject({
-      bossKey: 'lucid',
-      boss: '루시드',
-      difficulty: 'hard',
-      itemKey: 'dreamy_belt',
-      priceState: 'entered',
-      priceMeso: 9000,
-      priceShare: 2,
-    })
+    expect(
+      real.inspect((db) =>
+        db.prepare('SELECT boss_key, boss, difficulty, item_key, price_state, price_meso, price_share FROM boss_drop_records').get(),
+      ),
+    ).toEqual({ boss_key: 'lucid', boss: '루시드', difficulty: 'hard', item_key: 'dreamy_belt', price_state: 'entered', price_meso: 9000, price_share: 2 })
   })
 
   // 새 기본키가 보스 key 라 이름 칸이 달라도 같은 행을 고친다.
@@ -868,6 +869,26 @@ async function rewindTo(version: number): Promise<void> {
   real.inspect((db) => db.exec(`PRAGMA user_version = ${version}`))
 }
 
+/**
+ * 옛 처치 기록 표에 행을 심는다. 저장 함수는 새 표에 쓰므로, 옛 버전 이관이 고치는 행은 이 길로 넣는다.
+ * 그 뒤 버전 14 가 고친 행을 새 표로 옮긴다.
+ */
+function seedOldProfit(record: BossProfitRecord, defeatedOn: string | null = null): void {
+  real.inspect((db) =>
+    db
+      .prepare(
+        `INSERT INTO boss_profit_records (ocid, boss_key, boss, difficulty, cycle, period_key, party_size, price_meso, payout_meso,
+           crystal_my_share, crystal_shares_total, split_fee_percent, recorded_at, world, world_key, defeated_on)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        record.ocid, record.bossKey, record.boss, record.difficulty, record.cycle, record.periodKey, record.partySize,
+        record.priceMeso, record.payoutMeso, record.crystalMyShare, record.crystalSharesTotal, record.splitFeePercent,
+        record.recordedAt, record.world, record.worldKey, defeatedOn,
+      ),
+  )
+}
+
 // OTA 1.0.10 의 가격표에서 두 새 가격이 서로 바뀌어 있었다. 틀린 값으로 굳은 행만 고친다.
 describe('버전 이관: 카링 노멀과 찬란한 흉성 노멀의 뒤바뀐 새 가격을 고친다', () => {
   function record(overrides: Partial<BossProfitRecord>): BossProfitRecord {
@@ -893,8 +914,8 @@ describe('버전 이관: 카링 노멀과 찬란한 흉성 노멀의 뒤바뀐 �
 
   it('틀린 새 가격이 든 행을 인게임 가격과 그 분배액으로 다시 적는다', async () => {
     await getBossProfitDb()
-    await upsertBossProfitRecord(record({ partySize: 2, priceMeso: 576_000_000, payoutMeso: 288_000_000 }))
-    await upsertBossProfitRecord(
+    seedOldProfit(record({ partySize: 2, priceMeso: 576_000_000, payoutMeso: 288_000_000 }))
+    seedOldProfit(
       record({
         bossKey: 'radiant_malefic_star',
         boss: '찬란한 흉성',
@@ -921,8 +942,8 @@ describe('버전 이관: 카링 노멀과 찬란한 흉성 노멀의 뒤바뀐 �
   // 10시 전에 굳었거나 버전 7 이 되돌린 행이다. 사용자가 옛 가격 행은 두라고 했다.
   it('옛 가격이 든 행과 다른 난이도 · 보스는 안 건드린다', async () => {
     await getBossProfitDb()
-    await upsertBossProfitRecord(record({ ocid: 'ocid-2', priceMeso: 678_000_000, payoutMeso: 678_000_000 }))
-    await upsertBossProfitRecord(
+    seedOldProfit(record({ ocid: 'ocid-2', priceMeso: 678_000_000, payoutMeso: 678_000_000 }))
+    seedOldProfit(
       record({
         ocid: 'ocid-2',
         bossKey: 'radiant_malefic_star',
@@ -935,7 +956,7 @@ describe('버전 이관: 카링 노멀과 찬란한 흉성 노멀의 뒤바뀐 �
       }),
     )
     // 난이도가 다르면 같은 값이어도 안 건드린다.
-    await upsertBossProfitRecord(
+    seedOldProfit(
       record({ ocid: 'ocid-2', difficulty: 'hard', priceMeso: 576_000_000, payoutMeso: 576_000_000 }),
     )
     await rewindTo(7)
@@ -1129,8 +1150,8 @@ describe('버전 이관: 다시 못 캐는 날짜 없는 보스 기록에 기간
 
   it('창보다 앞선 주의 날짜 없는 주간 기록은 그 주 목요일이다', async () => {
     await getBossProfitDb()
-    await upsertBossProfitRecord(record({ periodKey: '2026-08-27' }))
-    await upsertBossProfitRecord(record({ periodKey: '2026-09-10' }))
+    seedOldProfit(record({ periodKey: '2026-08-27' }))
+    seedOldProfit(record({ periodKey: '2026-09-10' }))
 
     const dates = await datesAfterMigration()
 
@@ -1142,8 +1163,8 @@ describe('버전 이관: 다시 못 캐는 날짜 없는 보스 기록에 기간
   // 동기화마다 날짜 캐기가 다시 보는 기록이다. 대신 날짜를 적으면 진짜 날을 찾을 길이 막힌다.
   it('조회 창에 걸친 주의 기록은 안 건드린다', async () => {
     await getBossProfitDb()
-    await upsertBossProfitRecord(record({ periodKey: '2026-09-17' }))
-    await upsertBossProfitRecord(record({ periodKey: '2026-09-24' }))
+    seedOldProfit(record({ periodKey: '2026-09-17' }))
+    seedOldProfit(record({ periodKey: '2026-09-24' }))
 
     const dates = await datesAfterMigration()
 
@@ -1153,16 +1174,8 @@ describe('버전 이관: 다시 못 캐는 날짜 없는 보스 기록에 기간
 
   it('이미 캐낸 날짜는 그대로다', async () => {
     await getBossProfitDb()
-    await upsertBossProfitRecord(record({ periodKey: '2026-08-27' }))
-    await setBossProfitDefeatedOn(
-      { ocid: 'ocid-1', bossKey: 'lucid', difficulty: 'hard', periodKey: '2026-08-27' },
-      '2026-08-30',
-    )
-    await upsertBossProfitRecord(record(blackMage('2026-08')))
-    await setBossProfitDefeatedOn(
-      { ocid: 'ocid-1', bossKey: 'black_mage', difficulty: 'hard', periodKey: '2026-08' },
-      '2026-08-03',
-    )
+    seedOldProfit(record({ periodKey: '2026-08-27' }), '2026-08-30')
+    seedOldProfit(record(blackMage('2026-08')), '2026-08-03')
 
     const dates = await datesAfterMigration()
 
@@ -1172,9 +1185,9 @@ describe('버전 이관: 다시 못 캐는 날짜 없는 보스 기록에 기간
 
   it('검은 마법사는 8월까지만 그 달 1일이고 9월은 안 건드린다', async () => {
     await getBossProfitDb()
-    await upsertBossProfitRecord(record(blackMage('2026-07')))
-    await upsertBossProfitRecord(record(blackMage('2026-08')))
-    await upsertBossProfitRecord(record(blackMage('2026-09')))
+    seedOldProfit(record(blackMage('2026-07')))
+    seedOldProfit(record(blackMage('2026-08')))
+    seedOldProfit(record(blackMage('2026-09')))
 
     const dates = await datesAfterMigration()
 
@@ -1185,8 +1198,8 @@ describe('버전 이관: 다시 못 캐는 날짜 없는 보스 기록에 기간
 
   it('적힌 기록은 가계부가 읽는 날짜 붙은 기록에 든다', async () => {
     await getBossProfitDb()
-    await upsertBossProfitRecord(record({ periodKey: '2026-08-27' }))
-    await upsertBossProfitRecord(record(blackMage('2026-08')))
+    seedOldProfit(record({ periodKey: '2026-08-27' }))
+    seedOldProfit(record(blackMage('2026-08')))
     expect(await getDatedBossProfitRecords(['ocid-1'], '2026-07-01', '2026-09-30')).toEqual([])
 
     await datesAfterMigration()

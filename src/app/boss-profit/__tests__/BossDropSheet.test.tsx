@@ -615,7 +615,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
 
   // DB 를 열 때마다 도는 백필이 가격 없는 드롭의 방식 칸도 `even` 으로 채운다. 그 값을 믿으면
   // 결정석 비율을 정해 둔 보스도 기본으로 열린다.
-  it('값을 안 매긴 드롭은 저장된 방식을 안 보고 처음 값으로 연다', async () => {
+  it('값을 안 매긴 드롭은 분배 처음 값으로 연다', async () => {
     const { result, onSave } = renderSheet({
       pricing: { ...PRICING, defaultShare: { mode: 'ratio', partySize: 2, myShare: 3, sharesTotal: 4 } },
       initialDrops: [
@@ -625,7 +625,6 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
           itemKey: 'loose_control_machine_mark',
           itemName: '루즈 컨트롤 머신 마크',
           quantity: 1,
-          priceSplitMode: 'even',
         },
       ],
     })
@@ -649,6 +648,34 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     expect(saved).toEqual(
       expect.objectContaining({ priceSplitMode: 'ratio', priceShare: 4, priceMyShare: 3, pricePartySize: 2 }),
     )
+  })
+
+  // 0메소는 매긴 것이 아니다. 저장하면 앱은 매긴 것, 서버는 미입력으로 봐서 상태가 갈렸다.
+  it('0 을 넣고 넘기면 값을 매기지 않는다', async () => {
+    const { result, onSave } = renderSheet({
+      pricing: PRICING,
+      initialDrops: [
+        { dropRecordId: null, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 },
+      ],
+    })
+    const { getByTestId, getByText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByText('가격 입력'))
+    })
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-card-value'), '0')
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('input-card-confirm'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText(/추가 완료/))
+    })
+
+    const [saved] = onSave.mock.calls[0][0]
+    expect(saved.priceState).toBeUndefined()
+    expect(saved.priceMeso).toBeUndefined()
   })
 
   it('카드의 기록 안함은 값 없이 그 결정만 쓴다', async () => {

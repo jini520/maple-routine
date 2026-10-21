@@ -33,7 +33,7 @@ import { BOSS_DROP_RECORDS_BODY, BOSS_KEYED_TABLES } from './boss-tables'
 import { NEW_UUID_SQL } from './uuid'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 13
+export const DB_VERSION = 14
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -378,6 +378,101 @@ async function dropBossProfitPeriodChecks(db: SqliteDbConnection): Promise<void>
   await db.execute('DROP TABLE IF EXISTS boss_profit_period_checks')
 }
 
+/** 옛 결정석 비율 두 칸을 새 분배 방식 칸으로. 비율이 비면 균등이다. */
+const splitModeOf = (myShare: string) => `CASE WHEN ${myShare} IS NULL THEN 'even' ELSE 'ratio' END`
+
+/**
+ * 보스 기록 표 넷을 새 표 셋으로 옮긴다. 옛 표는 지우지 않는다(v1.0.14 에서 지운다).
+ *
+ * - 조합 행은 설정 · 처치 · 그 기간 값 · 드롭에 나온 조합 전부다. 분배 칸은 설정에서만 온다.
+ * - 기간 행은 처치가 있으면 처치의 값으로 'cleared' 이고, 같은 기간의 그 기간 값은 버린다. 처치가 없으면
+ *   그 기간 값으로 'open' 이고, 그것도 없으면(드롭만 있음) 분배 칸이 빈 'open' 이다.
+ * - 월드가 없는 드롭은 같은 기간 처치의 월드를 쓴다. 처치할 때 적은 값이고 같은 ocid 의 같은 기간이라
+ *   같은 월드다.
+ * - 드롭 상태: 1메소 이상 'entered' 는 'completed', 'excluded' · 옛 'skipped' 는 'skipped', 나머지는
+ *   'pending' 이다. 'completed' 가 아니면 분배 · 수수료 칸을 버린다. 백필이 채운 값이라 뜻이 없다. 균등이어도 내 비율이
+ *   있으면 남긴다. 2026-10-19 전의 균등 기록은 그 칸으로 금액을 세서, 비우면 지난 금액이 바뀐다.
+ *   `priced_at` 은 따로 남은 값이 없어 `recorded_at` 이다.
+ * - `item_key` 가 없는 드롭은 옮기지 않는다.
+ */
+async function moveBossTablesToParties(db: SqliteDbConnection): Promise<void> {
+  await db.execute(`
+    INSERT INTO boss_parties
+      (id, ocid, boss_key, difficulty, split_mode, party_size, my_share, shares_total, split_fee_percent, split_fee_auto, created_at, updated_at)
+    SELECT ${NEW_UUID_SQL}, c.ocid, c.boss_key, c.difficulty,
+           CASE WHEN s.ocid IS NULL THEN NULL ELSE ${splitModeOf('s.crystal_my_share')} END,
+           s.party_size, s.crystal_my_share, s.crystal_shares_total, s.split_fee_percent, s.split_fee_auto,
+           coalesce(s.updated_at, c.first_at), coalesce(s.updated_at, c.first_at)
+      FROM (SELECT ocid, boss_key, difficulty, min(at) AS first_at FROM (
+              SELECT ocid, boss_key, difficulty, updated_at AS at FROM boss_party_settings
+              UNION ALL SELECT ocid, boss_key, difficulty, recorded_at FROM boss_profit_records
+              UNION ALL SELECT ocid, boss_key, difficulty, updated_at FROM boss_party_period_overrides
+              UNION ALL SELECT ocid, boss_key, difficulty, recorded_at FROM boss_drop_records
+                         WHERE item_key IS NOT NULL AND item_key <> '')
+            GROUP BY ocid, boss_key, difficulty) c
+      LEFT JOIN boss_party_settings s
+        ON s.ocid = c.ocid AND s.boss_key = c.boss_key AND s.difficulty = c.difficulty`)
+
+  await db.execute(`
+    INSERT INTO boss_party_periods
+      (id, party_id, period_key, cycle, world_key, status, price_meso, payout_meso, defeated_on, source,
+       split_mode, party_size, my_share, shares_total, split_fee_percent, split_fee_auto, created_at, updated_at)
+    SELECT ${NEW_UUID_SQL}, pa.id, k.period_key,
+           coalesce(p.cycle, CASE WHEN length(k.period_key) = 7 THEN 'monthly' ELSE 'weekly' END),
+           coalesce(p.world_key, (SELECT max(d.world_key) FROM boss_drop_records d
+                                   WHERE d.ocid = k.ocid AND d.boss_key = k.boss_key AND d.difficulty = k.difficulty
+                                     AND d.period_key = k.period_key)),
+           CASE WHEN p.ocid IS NOT NULL THEN 'cleared' ELSE 'open' END,
+           p.price_meso, p.payout_meso, p.defeated_on,
+           CASE WHEN p.ocid IS NOT NULL THEN coalesce(p.source, 'auto') END,
+           CASE WHEN p.ocid IS NOT NULL THEN ${splitModeOf('p.crystal_my_share')}
+                WHEN o.ocid IS NOT NULL THEN ${splitModeOf('o.crystal_my_share')} END,
+           CASE WHEN p.ocid IS NOT NULL THEN p.party_size ELSE o.party_size END,
+           CASE WHEN p.ocid IS NOT NULL THEN p.crystal_my_share ELSE o.crystal_my_share END,
+           CASE WHEN p.ocid IS NOT NULL THEN p.crystal_shares_total ELSE o.crystal_shares_total END,
+           CASE WHEN p.ocid IS NOT NULL THEN p.split_fee_percent ELSE o.split_fee_percent END,
+           CASE WHEN p.ocid IS NOT NULL THEN p.split_fee_auto ELSE o.split_fee_auto END,
+           coalesce(p.recorded_at, o.updated_at, k.first_at), coalesce(p.recorded_at, o.updated_at, k.first_at)
+      FROM (SELECT ocid, boss_key, difficulty, period_key, min(at) AS first_at FROM (
+              SELECT ocid, boss_key, difficulty, period_key, recorded_at AS at FROM boss_profit_records
+              UNION ALL SELECT ocid, boss_key, difficulty, period_key, updated_at FROM boss_party_period_overrides
+              UNION ALL SELECT ocid, boss_key, difficulty, period_key, recorded_at FROM boss_drop_records
+                         WHERE item_key IS NOT NULL AND item_key <> '')
+            GROUP BY ocid, boss_key, difficulty, period_key) k
+      JOIN boss_parties pa ON pa.ocid = k.ocid AND pa.boss_key = k.boss_key AND pa.difficulty = k.difficulty
+      LEFT JOIN boss_profit_records p
+        ON p.ocid = k.ocid AND p.boss_key = k.boss_key AND p.difficulty = k.difficulty AND p.period_key = k.period_key
+      LEFT JOIN boss_party_period_overrides o
+        ON o.ocid = k.ocid AND o.boss_key = k.boss_key AND o.difficulty = k.difficulty AND o.period_key = k.period_key`)
+
+  const priced = `(d.price_state = 'entered' AND d.price_meso > 0)`
+  const mode = `coalesce(d.price_split_mode, 'even')`
+  await db.execute(`
+    INSERT INTO boss_drops
+      (id, period_id, drop_index, category, item_key, box_origin_key, ring_level, record_status, price_meso, priced_at,
+       sale_fee_percent, sale_fee_auto, split_mode, party_size, my_share, shares_total, split_fee_percent, split_fee_auto,
+       created_at, updated_at)
+    SELECT d.drop_record_id, pe.id, d.drop_index, d.category, d.item_key, d.box_origin_key, d.ring_level,
+           CASE WHEN ${priced} THEN 'completed'
+                WHEN d.price_state IN ('excluded', 'skipped') THEN 'skipped'
+                ELSE 'pending' END,
+           CASE WHEN ${priced} THEN d.price_meso END,
+           CASE WHEN ${priced} THEN d.recorded_at END,
+           CASE WHEN ${priced} THEN d.sale_fee_percent END,
+           CASE WHEN ${priced} THEN d.sale_fee_auto END,
+           CASE WHEN ${priced} THEN ${mode} END,
+           CASE WHEN ${priced} THEN coalesce(d.price_party_size, d.price_share, 1) END,
+           CASE WHEN ${priced} THEN d.price_my_share END,
+           CASE WHEN ${priced} AND ${mode} = 'ratio' THEN d.price_share END,
+           CASE WHEN ${priced} THEN d.split_fee_percent END,
+           CASE WHEN ${priced} THEN d.split_fee_auto END,
+           d.recorded_at, d.recorded_at
+      FROM boss_drop_records d
+      JOIN boss_parties pa ON pa.ocid = d.ocid AND pa.boss_key = d.boss_key AND pa.difficulty = d.difficulty
+      JOIN boss_party_periods pe ON pe.party_id = pa.id AND pe.period_key = d.period_key
+     WHERE d.item_key IS NOT NULL AND d.item_key <> ''`)
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -394,6 +489,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   (db) => fillUnreachableDefeatDates(db, new Date()),
   rekeyDropRecordsByUuid,
   dropBossProfitPeriodChecks,
+  moveBossTablesToParties,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

@@ -22,32 +22,36 @@
 `getBossProfitDb()` 를 처음 부르면 이 순서로 실행된다. 커넥션은 앱 전체에서 하나다.
 
 1. 같은 이름의 커넥션이 남아 있으면 닫는다.
-2. `TABLE_DEFINITIONS` 의 `CREATE TABLE IF NOT EXISTS` 를 모두 실행한다.
-3. `income_records.meso_amount` 가 `NOT NULL` 이면 테이블을 다시 쓴다.
-4. `ensureColumn` 으로 나중에 생긴 칸을 옛 테이블에 더한다.
-5. `boss_drop_records` 의 `price_split_mode` 가 빈 행을 `even` 으로, `even` 행의 빈 `price_party_size` 를
-   `price_share` 로 채운다. 매번 실행되지만 빈 행이 없으면 아무것도 바꾸지 않는다.
-6. `user_version` 보다 큰 버전 이관을 차례로 실행한다.
-7. 드롭 그룹 인덱스 `boss_drop_records_group` 을 만든다.
+2. `PRAGMA foreign_keys = ON` 으로 외래키를 켠다. op-sqlite 는 기본이 꺼져 있어, 켜지 않으면 `ON DELETE CASCADE` 가
+   안 돈다. 트랜잭션 안에서는 이 문장이 먹지 않아 맨 앞에서 켠다.
+3. `TABLE_DEFINITIONS` 의 `CREATE TABLE IF NOT EXISTS` 를 모두 실행한다.
+4. `income_records.meso_amount` 가 `NOT NULL` 이면 테이블을 다시 쓴다.
+5. `ensureColumn` 으로 나중에 생긴 칸을 옛 테이블에 더한다.
+6. 옛 `boss_drop_records` 의 빈 `price_split_mode` 를 `even` 으로, `even` 행의 빈 `price_party_size` 를
+   `price_share` 로 채운다. 옛 표라 지금 코드는 읽지 않고, v1.0.14 에서 옛 표와 함께 걷는다(#685).
+7. `user_version` 보다 큰 버전 이관을 차례로 실행한다.
+8. 인덱스 `boss_drop_records_group`(옛 표)과 `boss_drops_period` 를 만든다.
 
 열기는 10초, 닫기(`closeBossProfitDb`)는 5초 상한이 있다. OTA 적용과 캐시 데이터 삭제는 리로드 전에 닫는다.
 
 ## 테이블
 
-FOREIGN KEY 제약은 걸려 있지 않다. 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서, 한쪽만 지우면 짝이
-없는 행이 남는다. 그래서 캐시 데이터 삭제는 기록 표들을 한 그룹으로 함께 지운다(`lifecycle.md`).
+외래키는 보스 기록 표 셋에만 있다. `boss_parties` → `boss_party_periods` → `boss_drops` 차례로 부모를 가리키고,
+부모를 지우면 자식도 지워진다(`ON DELETE CASCADE`). 다른 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서,
+한쪽만 지우면 짝이 없는 행이 남는다. 그래서 캐시 데이터 삭제는 기록 표들을 한 그룹으로 함께 지운다(`lifecycle.md`).
 
-보스 기록 표 넷(`boss_profit_records` · `boss_party_settings` · `boss_party_period_overrides` · `boss_drop_records`)은
-v1.0.13 에서 외래키로 이은 표 셋으로 다시 짠다([[ADR-078]], 미구현). 아래 표는 지금 구현된 모양이다.
+`삭제 그룹` 의 `기록` 은 캐시 데이터 삭제의 `records` 그룹(`RECORD_TABLE_NAMES`)이고, `일반` 은 나머지다. `행 단위` 는
+한 표에 두 그룹의 행이 섞여 있어 표를 통째로 지우지 않는 표다(`BOSS_TABLE_NAMES`).
 
-`삭제 그룹` 의 `기록` 은 캐시 데이터 삭제의 `records` 그룹(`RECORD_TABLE_NAMES`)이고, `일반` 은 나머지다.
+옛 보스 기록 표 넷(`boss_profit_records` · `boss_party_settings` · `boss_party_period_overrides` · `boss_drop_records`)은
+버전 14 가 새 표 셋으로 옮긴 뒤로 읽고 쓰는 코드가 없다. 옛 코드가 새 DB 를 열어도 열리도록 표를 남겨 두고, v1.0.14
+에서 지운다(#685). 그래서 아래 표에서 뺐다.
 
 | 테이블 | 기본키 | 담는 것 | 쓰는 곳 | 삭제 그룹 | 문서 |
 |---|---|---|---|---|---|
-| `boss_profit_records` | `(ocid, boss_key, difficulty, period_key)` | 기간별 보스 처치 한 건의 파티 인원 · 결정석 가격 · 받은 몫 · 처치 날짜 · 월드 | `storage/boss-profit.ts` | 기록 | `features/boss-profit.md` |
-| `boss_party_settings` | `(ocid, boss_key, difficulty)` | 캐릭터 · 보스마다 늘 쓰는 파티 인원과 분배 비율 | `storage/boss-party-settings.ts` | 일반 | `features/boss-scheduler.md` |
-| `boss_party_period_overrides` | `(ocid, boss_key, difficulty, period_key)` | 미완료 보스 행에서 고친 그 기간만의 파티 인원과 비율 | `storage/boss-party-period-overrides.ts` | 일반 | `features/boss-profit.md` |
-| `boss_drop_records` | `drop_record_id`(v4 uuid) | 기간별 드롭 아이템과 판매가 · 수수료 · 월드 | `storage/boss-drops.ts` | 기록 | `features/item-drop.md` |
+| `boss_parties` | `id`(uuid, `(ocid, boss_key, difficulty)` 는 UNIQUE) | 캐릭터 · 보스 · 난이도 조합. 분배 칸이 보스 관리의 파티 설정이고, 비어 있으면 정한 적이 없다 | `storage/boss-party-settings.ts` | 행 단위(설정은 일반) | [[ADR-078]] |
+| `boss_party_periods` | `id`(uuid, `(party_id, period_key)` 는 UNIQUE) | 조합 하나의 한 기간. `cleared` 면 처치 기록(결정석 가격 · 받은 몫 · 처치 날짜 · 분배)이고, `open` 이면 그 기간만 고친 분배 값이나 드롭만 있다. 월드도 여기 있다 | `storage/boss-profit.ts` · `storage/boss-party-period-overrides.ts` | 행 단위(처치는 기록, 그 기간 값은 일반) | [[ADR-078]] |
+| `boss_drops` | `id`(uuid, 서버의 `drop_record_id`) | 기간 행에 붙는 드롭 한 개와 판매가 · 분배 · 수수료. 상태는 서버와 같은 `record_status` | `storage/boss-drops.ts` | 행 단위(기록) | [[ADR-078]] |
 | `character_profiles` | `ocid` | 기록 옆에 보일 캐릭터 이름 · 초상 주소 · 월드 · 레벨 · 직업 | `storage/character-profiles.ts` | 기록 | `features/character.md` |
 | `character_world_leaps` | `from_ocid` | 월드 리프로 바뀐 옛 ocid 와 새 ocid 의 연결 | `storage/character-world-leaps.ts` | 기록 | `features/character.md` |
 | `enhancement_history` | `id` | 계정 단위 스타포스 · 큐브 · 잠재 재설정 사용 내역(응답 원문 `payload` 포함) | `storage/enhancement-history.ts` | 기록 | `features/cashbook.md` |
@@ -64,10 +68,9 @@ v1.0.13 에서 외래키로 이은 표 셋으로 다시 짠다([[ADR-078]], 미�
 
 | 테이블 | 칸 |
 |---|---|
-| `boss_profit_records` | `ocid` NN · `boss_key` NN · `boss` NN · `difficulty` NN · `cycle` NN · `period_key` NN · `party_size` NN · `price_meso` NN · `payout_meso` NN · `crystal_my_share` · `crystal_shares_total` · `split_fee_percent` · `split_fee_auto` · `recorded_at` NN · `world` · `world_key` · `defeated_on` · `source` |
-| `boss_party_settings` | `ocid` NN · `boss_key` NN · `boss` NN · `difficulty` NN · `party_size` NN · `crystal_my_share` · `crystal_shares_total` · `split_fee_percent` · `split_fee_auto` · `updated_at` NN |
-| `boss_party_period_overrides` | `ocid` NN · `boss_key` NN · `difficulty` NN · `period_key` NN · `party_size` NN · `crystal_my_share` · `crystal_shares_total` · `split_fee_percent` · `split_fee_auto` · `updated_at` NN |
-| `boss_drop_records` | `drop_record_id` NN · `ocid` NN · `boss_key` NN · `boss` NN · `difficulty` NN · `period_key` NN · `drop_index` NN · `category` NN · `item_key` · `item_name` NN · `slot` · `box_origin_key` · `box_origin` · `ring_level` · `quantity` NN · `recorded_at` NN · `world` · `world_key` · `price_state` · `price_meso` · `price_split_mode` · `price_party_size` · `price_share` · `price_my_share` · `sale_fee_percent` · `split_fee_percent` · `sale_fee_auto` · `split_fee_auto` |
+| `boss_parties` | `id` NN · `ocid` NN · `boss_key` NN · `difficulty` NN · 분배 조건 · `created_at` NN · `updated_at` NN |
+| `boss_party_periods` | `id` NN · `party_id` NN · `period_key` NN · `cycle` NN · `world_key` · `status` NN · `price_meso` · `payout_meso` · `defeated_on` · `source` · 분배 조건 · `created_at` NN · `updated_at` NN |
+| `boss_drops` | `id` NN · `period_id` NN · `drop_index` NN · `category` NN · `item_key` NN · `box_origin_key` · `ring_level` · `record_status` NN · `price_meso` · `priced_at` · `sale_fee_percent` · `sale_fee_auto` · 분배 조건 · `created_at` NN · `updated_at` NN |
 | `character_profiles` | `ocid` NN · `name` NN · `image_url` NN · `world` · `world_key` · `level` · `job_class` · `updated_at` NN |
 | `character_world_leaps` | `from_ocid` NN · `to_ocid` NN · `linked_at` NN |
 | `enhancement_history` | `id` NN · `kind` NN · `date_key` NN · `created_at` NN · `character_name` NN · `target_item` NN · `item_key` · `item_level` · `payload` NN · `cost_meso` |
@@ -78,8 +81,12 @@ v1.0.13 에서 외래키로 이은 표 셋으로 다시 짠다([[ADR-078]], 미�
 | `character_accounts` | `ocid` NN · `name` NN · `account_id` NN · `first_seen_on` NN · `last_seen_on` NN |
 | `server_sync_queue` | `id` NN · `kind` NN · `record_id` NN UNIQUE · `attempts` NN(기본 0) · `last_error` · `created_at` NN |
 
-`boss_drop_records` 의 옛 기본키 다섯 칸 `(ocid, boss_key, difficulty, period_key, drop_index)` 에는 인덱스
-`boss_drop_records_group` 이 있다. 유일 인덱스가 아니다. 한 행씩 고치는 동안 `drop_index` 가 잠깐 겹치기 때문이다([[ADR-077]] 결정 8).
+분배 조건은 세 표가 같이 쓰는 여섯 칸이다. `split_mode`(`even` · `ratio`) · `party_size` · `my_share` · `shares_total` ·
+`split_fee_percent` · `split_fee_auto`. 정의는 `boss-tables.ts` 한 곳에 있다. 이름은 저장하지 않는다. 보스 · 아이템 · 월드
+이름은 읽을 때 key 로 게임 데이터에서 찾는다([[ADR-078]] 결정 6).
+
+`boss_drops` 의 `(period_id, drop_index)` 에는 인덱스 `boss_drops_period` 가 있다. 유일 인덱스가 아니다. 한 행씩 고치는
+동안 `drop_index` 가 잠깐 겹치기 때문이다([[ADR-077]] 결정 8).
 
 ## 테이블이나 칸을 더할 때
 
@@ -110,11 +117,12 @@ v1.0.13 에서 외래키로 이은 표 셋으로 다시 짠다([[ADR-078]], 미�
 | 11 | `fillUnreachableDefeatDates` | 날짜를 다시 알아낼 수 없는 보스 기록에 기간 첫날을 적는다 |
 | 12 | `rekeyDropRecordsByUuid` | 드롭 기록에 `drop_record_id` 를 채우고 그것을 기본키로 다시 만든다 |
 | 13 | `dropBossProfitPeriodChecks` | 읽는 코드가 없는 `boss_profit_period_checks` 표를 지운다. 조회했는지는 조회 원장이 답한다 |
+| 14 | `moveBossTablesToParties` | 옛 보스 기록 표 넷의 행을 새 표 셋으로 옮긴다. 옛 표는 지우지 않는다([[ADR-078]] 결정 8) |
 
 못 찾는 이름은 key 만 비우고 행과 이름은 남긴다.
 
 ## 행 식별자
 
-`boss_drop_records.drop_record_id` 같은 v4 uuid 는 JS 가 아니라 SQLite 가 `INSERT` 안에서 만든다
+보스 기록 표 셋의 `id` 같은 v4 uuid 는 JS 가 아니라 SQLite 가 `INSERT` 안에서 만든다
 (`NEW_UUID_SQL`, `randomblob()` 식). JS 전역에는 `crypto` 가 없고, 새 네이티브 모듈을 추가하면 스토어 빌드를 기다려야
 하기 때문이다. 같은 그룹을 다시 저장할 때 기존 값을 이어 쓰는 규칙은 [[ADR-018]] 에 있다.
