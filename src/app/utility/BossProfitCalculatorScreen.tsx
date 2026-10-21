@@ -149,7 +149,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                   role="button"
                   aria-label="계산 기록"
                   onPress={() => navigation.navigate('UtilityBossProfitCalculatorRecords')}
-                  className="h-10 w-10 items-center justify-center rounded-full bg-surface-2 active:opacity-60"
+                  className="h-10 w-10 items-center justify-center active:opacity-60"
                 >
                   <HistoryIcon className="h-[19px] w-[19px] text-text" strokeWidth={2} aria-hidden />
                 </Pressable>
