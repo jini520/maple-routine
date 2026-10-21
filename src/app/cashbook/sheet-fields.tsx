@@ -321,6 +321,7 @@ export function QuantityStepper(props: {
   // 바닥은 1 이다. 수량도 소재도 0 이 뜻이 없다(0 소재를 돌았다는 말은 성립하지 않는다).
   return (
     <Stepper
+      size="sm"
       testID={props.testID}
       label={props.label}
       value={mesoValueOf(props.value)}

@@ -59,7 +59,7 @@
 | `BackButton` | 헤더의 `←` |
 | `CalendarGrid` · `DateSelect` · `TimeWheel` | 달력 격자 · 날짜 선택 버튼 · 시각 휠 |
 | `ShareField` · `PartyShareSummary` | 분배 비율 고르기 · 분배 요약 줄([[ADR-038]]) |
-| `Stepper` | `−` · 숫자 · `+` 고르개. 크기 `sm` · `md` · `lg`([[ADR-060]] 결정 14) |
+| `Stepper` | `−` · 숫자 · `+` 고르개. 크기 `sm` · `md` · `lg`, 연한 패널 위에서는 `tone="inverted"`([[ADR-060]] 결정 14) |
 | `BossPortrait` · `CharacterAvatar` | 보스 얼굴 · 캐릭터 얼굴 원 |
 | `CharacterGroupLabel` | 캐릭터별 묶음 왼쪽의 얼굴 · 이름 열 |
 | `DonutRing` | 비중 도넛. 조각 사이 틈 · 둥근 모서리, 조각이 없으면 회색 링([[ADR-074]] 결정 6) |

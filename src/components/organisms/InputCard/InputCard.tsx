@@ -805,6 +805,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                       // `ShareField` 는 방식을 모르는 부품이다. 여기는 늘 비율 쪽이다.
                       onChange={setRatio}
                       layout="stacked"
+                      stepperTone="inverted"
                     />
                   </View>
                 ) : (
@@ -832,6 +833,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                     <View testID="input-card-party-body" className="flex-1 items-center justify-center">
                       <Stepper
                         size="sm"
+                        tone="inverted"
                         label={`${props.share.label} 파티원 수`}
                         value={partySize}
                         max={props.share.maxPartySize ?? defaultMaxPartySize()}

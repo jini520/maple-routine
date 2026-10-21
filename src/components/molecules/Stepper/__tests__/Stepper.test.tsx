@@ -4,7 +4,7 @@
 // 버튼이 멀쩡해 보인다(에러 없이).
 import { fireEvent } from '@testing-library/react-native'
 
-import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { 기본테마, flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { Stepper } from '../Stepper'
 
 const 줄이기 = '스우 파티원 수 감소'
@@ -84,5 +84,21 @@ describe('Stepper', () => {
     expect(getByTestId('value').props.children).toBe('3')
     expect(flattenStyle(getByLabelText(줄이기).props.style).borderWidth).toBeUndefined()
     expect(flattenStyle(getByTestId('stepper-track').props.style).borderWidth).toBeUndefined()
+  })
+
+  // 연한 패널(bg)에 기본 스테퍼를 놓으면 트랙이 패널에 묻힌다. 반전은 두 색을 맞바꿔 알약을 살린다.
+  it('inverted 는 트랙과 버튼의 바탕색을 맞바꾼다', async () => {
+    const backgrounds = async (tone?: 'inverted') => {
+      const { getByTestId, getByLabelText } = await renderAtom(
+        <Stepper label="스우 파티원 수" value={3} max={6} onChange={jest.fn()} tone={tone} />,
+      )
+      return {
+        track: flattenStyle(getByTestId('stepper-track').props.style).backgroundColor,
+        button: flattenStyle(getByLabelText(늘리기).props.style).backgroundColor,
+      }
+    }
+
+    expect(await backgrounds()).toEqual({ track: 기본테마.bg, button: 기본테마.surface })
+    expect(await backgrounds('inverted')).toEqual({ track: 기본테마.surface, button: 기본테마.bg })
   })
 })

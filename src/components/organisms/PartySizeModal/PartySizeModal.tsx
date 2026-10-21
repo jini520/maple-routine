@@ -106,7 +106,13 @@ function ShareCard(props: {
     // **늘리지도 줄이지도 않는다.** 두 장이 가로로 서던 때의 `flex-1` 을 세로 스택에 두면
     // `flexBasis: 0` 이라 카드가 납작해지고, 밖으로 넘친 트랙과 합 버튼이 그대로 그려진다.
     <View testID="party-share-card" className="rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
-      <ShareField label={props.label} value={props.value} layout="wide" onChange={props.onChange} />
+      <ShareField
+        label={props.label}
+        value={props.value}
+        layout="wide"
+        stepperTone="inverted"
+        onChange={props.onChange}
+      />
     </View>
   )
 }
