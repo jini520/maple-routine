@@ -127,7 +127,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-004+065](./adr/ADR-004+065_architecture_local-first-adapters.md) | 🟢 | architecture | 기기 저장소와 네이티브 어댑터 경계 |
 | [ADR-005](./adr/ADR-005_architecture_react-native.md) | 🟢 | architecture | React Native 앱 하나로 만든다 |
 | [ADR-006+069](./adr/ADR-006+069_architecture_testing.md) | 🟢 | architecture | 테스트 러너와 테스트 작성 규칙 |
-| [ADR-007](./adr/ADR-007_persistence_sqlite.md) | 🟢 | persistence | SQLite 커넥션과 스키마 진화 |
+| [ADR-007+077](./adr/ADR-007+077_persistence_sqlite.md) | 🟢 | persistence | SQLite 커넥션 · 스키마 진화 · 기본키 |
 | [ADR-008](./adr/ADR-008_release_android-signing.md) | 🟢 | release | Android 릴리스 서명 |
 | [ADR-009](./adr/ADR-009_release_binary-size.md) | 🟢 | release | 에셋과 스토어 바이너리 크기 |
 | [ADR-010](./adr/ADR-010_release_ios-scene.md) | 🟢 | release | 화면 회전 잠금과 iOS 씬 |
