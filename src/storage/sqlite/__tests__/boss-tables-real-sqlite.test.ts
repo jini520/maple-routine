@@ -145,6 +145,18 @@ describe('버전 14: 보스 기록 테이블 넷을 셋으로 옮긴다', () => 
     ])
   })
 
+  // 2026-10-19 전의 균등 기록은 내 비율 칸이 차 있고, 수수료가 있으면 그 칸으로 금액을 센다(사용자 결정). 비우면 지난 금액이 바뀐다.
+  it('균등인데 내 비율 칸이 찬 옛 드롭은 그 칸을 지킨다', async () => {
+    await seedVersion13((db) => {
+      db.exec(`INSERT INTO boss_drop_records (${DROP_COLUMNS}) VALUES
+        ('old', 'F', 'lucid', '루시드', 'hard', '2026-09-24', 0, 'equipment', 'item_f', 'F', NULL, NULL, NULL, 1, '2026-09-25T00:00:00Z', NULL, NULL, 'entered', 1000, 'even', 3, 3, 2, 5, 3, 1, 1)`)
+    })
+    await getBossProfitDb()
+
+    expect(all(`SELECT split_mode, party_size, my_share, shares_total FROM boss_drops WHERE id = 'old'`))
+      .toEqual([{ split_mode: 'even', party_size: 3, my_share: 2, shares_total: null }])
+  })
+
   it('월드가 없는 드롭은 같은 기간 처치 기록의 월드를 물려받는다', async () => {
     await seedVersion13(seedEdgeCases)
     await getBossProfitDb()

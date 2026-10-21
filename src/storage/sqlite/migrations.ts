@@ -390,7 +390,8 @@ const splitModeOf = (myShare: string) => `CASE WHEN ${myShare} IS NULL THEN 'eve
  * - 월드가 없는 드롭은 같은 기간 처치의 월드를 쓴다. 처치할 때 적은 값이고 같은 ocid 의 같은 기간이라
  *   같은 월드다.
  * - 드롭 상태: 1메소 이상 'entered' 는 'completed', 'excluded' · 옛 'skipped' 는 'skipped', 나머지는
- *   'pending' 이다. 'completed' 가 아니면 분배 · 수수료 칸을 버린다. 백필이 채운 값이라 뜻이 없다.
+ *   'pending' 이다. 'completed' 가 아니면 분배 · 수수료 칸을 버린다. 백필이 채운 값이라 뜻이 없다. 균등이어도 내 비율이
+ *   있으면 남긴다. 2026-10-19 전의 균등 기록은 그 칸으로 금액을 세서, 비우면 지난 금액이 바뀐다.
  *   `priced_at` 은 따로 남은 값이 없어 `recorded_at` 이다.
  * - `item_key` 가 없는 드롭은 옮기지 않는다.
  */
@@ -461,7 +462,7 @@ async function moveBossTablesToParties(db: SqliteDbConnection): Promise<void> {
            CASE WHEN ${priced} THEN d.sale_fee_auto END,
            CASE WHEN ${priced} THEN ${mode} END,
            CASE WHEN ${priced} THEN coalesce(d.price_party_size, d.price_share, 1) END,
-           CASE WHEN ${priced} AND ${mode} = 'ratio' THEN d.price_my_share END,
+           CASE WHEN ${priced} THEN d.price_my_share END,
            CASE WHEN ${priced} AND ${mode} = 'ratio' THEN d.price_share END,
            CASE WHEN ${priced} THEN d.split_fee_percent END,
            CASE WHEN ${priced} THEN d.split_fee_auto END,

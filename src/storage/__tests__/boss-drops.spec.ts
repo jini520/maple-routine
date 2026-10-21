@@ -135,6 +135,16 @@ describe('가격 상태', () => {
     expect(read).toMatchObject({ priceSplitMode: 'even', pricePartySize: 2, priceShare: null, priceMyShare: null })
   })
 
+  // 2026-10-19 전의 균등 기록은 내 비율 칸이 차 있고 그 칸으로 금액을 센다. 그룹을 다시 저장해도 지난 금액이 안 바뀌어야 한다.
+  it('균등인데 내 비율 칸이 찬 드롭은 다시 저장해도 그 칸을 지킨다', async () => {
+    const legacy = drop('a', { ...priced, priceMyShare: 2, saleFeePercent: 5 })
+    await save([legacy])
+    await save([legacy, drop('b')], LATER)
+
+    const [read] = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
+    expect(read).toMatchObject({ priceSplitMode: 'even', pricePartySize: 2, priceMyShare: 2 })
+  })
+
   it('미입력은 pending, 기록 안 함은 skipped 이고 분배 칸을 버린다', async () => {
     await save([drop('a', { priceSplitMode: 'even', pricePartySize: 2 }), drop('b', { priceState: 'excluded', priceSplitMode: 'even', pricePartySize: 2 })])
 

@@ -193,14 +193,19 @@ export function resetBossDropRecordsRevisionForTests(): void {
   recordsRevision = 0
 }
 
-/** 드롭의 분배 칸 여섯. 값을 매긴 드롭만 갖는다. 비율의 빈 칸은 1 로 채운다. */
+/**
+ * 드롭의 분배 칸 여섯. 값을 매긴 드롭만 갖는다. 비율의 빈 칸은 1 로 채운다.
+ *
+ * 균등이어도 내 비율이 있으면 남긴다. 2026-10-19 전의 균등 기록은 그 칸으로 금액을 세고(`dropPayoutMeso`), 비우면 그룹을
+ * 다시 저장할 때 지난 금액이 바뀐다. 새로 매기는 균등은 그 칸을 안 들고 온다(`dropShareFieldsOf`).
+ */
 function dropSplitValues(drop: RecordedDrop): (string | number | null)[] {
   const mode = drop.priceSplitMode ?? 'even'
   const partySize = drop.pricePartySize ?? drop.priceShare ?? 1
   return [
     mode,
     partySize,
-    mode === 'ratio' ? (drop.priceMyShare ?? 1) : null,
+    mode === 'ratio' ? (drop.priceMyShare ?? 1) : (drop.priceMyShare ?? null),
     mode === 'ratio' ? (drop.priceShare ?? 1) : null,
     drop.splitFeePercent ?? null,
     drop.splitFeeAuto === true ? 1 : null,
@@ -359,7 +364,7 @@ function rowToRecord(row: Record<string, unknown>): BossDropRecord {
     priceSplitMode: splitMode,
     pricePartySize: numberOrNull(row.party_size),
     priceShare: splitMode === 'ratio' ? numberOrNull(row.shares_total) : null,
-    priceMyShare: splitMode === 'ratio' ? numberOrNull(row.my_share) : null,
+    priceMyShare: numberOrNull(row.my_share),
     saleFeePercent: numberOrNull(row.sale_fee_percent),
     splitFeePercent: numberOrNull(row.split_fee_percent),
     saleFeeAuto: Number(row.sale_fee_auto) === 1,
