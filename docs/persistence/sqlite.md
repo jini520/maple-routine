@@ -37,6 +37,9 @@
 FOREIGN KEY 제약은 걸려 있지 않다. 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서, 한쪽만 지우면 짝이
 없는 행이 남는다. 그래서 캐시 데이터 삭제는 기록 표들을 한 그룹으로 함께 지운다(`lifecycle.md`).
 
+보스 기록 표 넷(`boss_profit_records` · `boss_party_settings` · `boss_party_period_overrides` · `boss_drop_records`)은
+v1.0.13 에서 외래키로 이은 표 셋으로 다시 짠다([[ADR-078]], 미구현). 아래 표는 지금 구현된 모양이다.
+
 `삭제 그룹` 의 `기록` 은 캐시 데이터 삭제의 `records` 그룹(`RECORD_TABLE_NAMES`)이고, `일반` 은 나머지다.
 
 | 테이블 | 기본키 | 담는 것 | 쓰는 곳 | 삭제 그룹 | 문서 |
@@ -76,16 +79,18 @@ FOREIGN KEY 제약은 걸려 있지 않다. 표 사이의 관계는 앱 코드�
 | `server_sync_queue` | `id` NN · `kind` NN · `record_id` NN UNIQUE · `attempts` NN(기본 0) · `last_error` · `created_at` NN |
 
 `boss_drop_records` 의 옛 기본키 다섯 칸 `(ocid, boss_key, difficulty, period_key, drop_index)` 에는 인덱스
-`boss_drop_records_group` 이 있다. 유일 인덱스가 아니다. 한 행씩 고치는 동안 `drop_index` 가 잠깐 겹치기 때문이다.
+`boss_drop_records_group` 이 있다. 유일 인덱스가 아니다. 한 행씩 고치는 동안 `drop_index` 가 잠깐 겹치기 때문이다([[ADR-077]] 결정 8).
 
 ## 테이블이나 칸을 더할 때
 
 1. `db.ts` 의 `TABLE_DEFINITIONS` 에 넣는다. 이 배열 밖에서 만들면 캐시 데이터 삭제와 용량 계산에서 빠진다.
-2. 칸을 더할 때는 `CREATE TABLE` 문과 `ensureColumn` 을 둘 다 고친다([[ADR-007]] 결정 4).
-3. 새 테이블이 다시 받을 수 없는 값이면 `storage/cache-data.ts` 의 `RECORD_TABLE_NAMES` 에 넣는다. 안 넣으면
+2. 기본키는 uuid 한 칸으로 둔다. 같은 값의 행이 둘 있으면 안 되는 조합은 일반 인덱스가 아니라 `UNIQUE` 로 건다.
+   조회 속도는 같고 중복 행만 거절한다. 일반 인덱스는 고치는 동안 값이 잠깐 겹치는 칸에만 쓴다([[ADR-077]] 결정 8).
+3. 칸을 더할 때는 `CREATE TABLE` 문과 `ensureColumn` 을 둘 다 고친다([[ADR-007]] 결정 4).
+4. 새 테이블이 다시 받을 수 없는 값이면 `storage/cache-data.ts` 의 `RECORD_TABLE_NAMES` 에 넣는다. 안 넣으면
    `일반` 그룹으로 들어가 캐시 삭제 때 지워진다.
-4. 기존 행의 값을 옮겨야 하면 `migrations.ts` 의 `STEPS` 끝에 단계를 더하고 `DB_VERSION` 을 올린다.
-5. 기록을 앱 타입으로 바꾸는 함수(`RecordedDrop` 을 만드는 곳 등)에 새 칸을 빠뜨리면 타입 오류 없이 값만 사라진다.
+5. 기존 행의 값을 옮겨야 하면 `migrations.ts` 의 `STEPS` 끝에 단계를 더하고 `DB_VERSION` 을 올린다.
+6. 기록을 앱 타입으로 바꾸는 함수(`RecordedDrop` 을 만드는 곳 등)에 새 칸을 빠뜨리면 타입 오류 없이 값만 사라진다.
    이름이 아니라 그 타입을 만드는 곳을 모두 찾아 고친다.
 
 ## 버전 이관

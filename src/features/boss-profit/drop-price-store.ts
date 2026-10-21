@@ -36,9 +36,9 @@ export interface DropShare {
 import type { FeesValue } from '../../components/organisms/InputCard/InputCard'
 import { dropFeeFields } from './drop-fees'
 import { dropShareFieldsOf } from '../../lib/drop/drop-price'
-import { withSqliteTimeout } from './sqlite-guards'
+import { withSqliteFallback, withSqliteTimeout } from './sqlite-guards'
 import { create } from 'zustand'
-import { toRecordedDrop } from './rows'
+import { dropShareSeedOf, toRecordedDrop } from './rows'
 import { useBossProfitStore } from './store'
 import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import { reportDropPrice } from '../server-sync/drop-price-sync'
@@ -48,6 +48,11 @@ import {
   getRecordedCharacterOcids,
   getWeeklyPeriodKeysWithRecords,
 } from '../../storage/boss-profit'
+import type { BossProfitRecord } from '../../storage/boss-profit'
+import { getBossPartySettings } from '../../storage/boss-party-settings'
+import type { BossPartySetting } from '../../storage/boss-party-settings'
+import { getBossPartyPeriodOverrides } from '../../storage/boss-party-period-overrides'
+import type { BossPartyPeriodOverride } from '../../storage/boss-party-period-overrides'
 import { isMonthlyRowInWeek, monthsOfWeek } from '../../lib/boss/monthly-boss-week'
 import { bossRecordsStamp } from './period-cache'
 import { dropWindowPeriodKeys } from './period-window'
@@ -70,8 +75,8 @@ export interface DropPriceEntry {
   periodKey: string
   dropIndex: number
   drop: RecordedDrop
-  /** 분배 비율 고르개의 **기본값**. 합이 그 행의 파티원 수다. */
-  partySize: number
+  /** 값을 안 매긴 기록의 분배 **처음 값**. 처치 기록 · 그 기간만 고친 값 · 파티 설정 중 먼저 있는 것에서 온다. */
+  defaultShare: DropShare
 }
 
 export interface DropPriceGroup {
@@ -130,10 +135,37 @@ function saveGroupKey(entry: { ocid: string; bossKey: string; difficulty: string
   return `${entry.ocid}|${entry.bossKey}|${entry.difficulty}|${entry.periodKey}`
 }
 
+/**
+ * 드롭 묶음의 분배 처음 값을 고르는 함수. 처치 기록 → 그 기간만 고친 값 → 파티 설정 → 1인 기본 순서다.
+ *
+ * 처치를 기록할 때 고친 인원과 비율이 그 판을 가장 정확히 말해서 기록이 먼저다. 처치 전에 적은 드롭은
+ * 기록이 없으므로 보스 관리의 값으로 연다.
+ */
+function shareSeedResolver(
+  profitRecords: BossProfitRecord[],
+  overrides: BossPartyPeriodOverride[],
+  settings: BossPartySetting[],
+): (record: BossDropRecord) => DropShare {
+  const recorded = new Map(profitRecords.map((row) => [saveGroupKey(row), row] as const))
+  const overridden = new Map(overrides.map((row) => [saveGroupKey(row), row] as const))
+  // 파티 설정은 기간을 안 가른다.
+  const comboKey = (row: { ocid: string; bossKey: string; difficulty: string }) =>
+    `${row.ocid}|${row.bossKey}|${row.difficulty}`
+  const configured = new Map(settings.map((row) => [comboKey(row), row] as const))
+
+  return (record) => {
+    const source =
+      recorded.get(saveGroupKey(record)) ?? overridden.get(saveGroupKey(record)) ?? configured.get(comboKey(record))
+    return source === undefined
+      ? dropShareSeedOf(1, {})
+      : dropShareSeedOf(source.partySize, { myShare: source.crystalMyShare, sharesTotal: source.crystalSharesTotal })
+  }
+}
+
 function buildGroups(
   records: BossDropRecord[],
   characters: Map<string, { characterName: string; imageUrl: string | null }>,
-  partySizes: Map<string, number>,
+  shareSeedOf: (record: BossDropRecord) => DropShare,
 ): DropPriceGroup[] {
   const groups: DropPriceGroup[] = []
   const indexByOcid = new Map<string, number>()
@@ -159,7 +191,7 @@ function buildGroups(
       periodKey: record.periodKey,
       dropIndex: record.dropIndex,
       drop: toRecordedDrop(record),
-      partySize: partySizes.get(saveGroupKey(record)) ?? 1,
+      defaultShare: shareSeedOf(record),
     })
   }
 
@@ -239,9 +271,10 @@ async function fillWindowCache(periodKey: string): Promise<Map<string, DropPrice
   const queryKeys = [...new Set([...windowKeys, ...monthKeys])]
 
   try {
-    // 드롭과 수익 기록을 함께 읽는다. 후자는 **분배 인원 기본값(파티원 수)** 과, 월간 보스가
-    // 어느 주에 서는지를 정하는 처치 여부·처치일에 쓴다.
-    const [allDropRecords, profitRecords, weekLists] = await Promise.all([
+    // 드롭과 수익 기록을 함께 읽는다. 후자는 **분배 처음 값** 과, 월간 보스가 어느 주에 서는지를
+    // 정하는 처치 여부·처치일에 쓴다. 파티 설정 둘은 처치 전에 적은 드롭의 처음 값이다. 그 읽기가
+    // 실패하면 1인으로 연다. 처음 값 하나 때문에 가격을 못 매기는 것보다 낫다.
+    const [allDropRecords, profitRecords, weekLists, overrides, settings] = await Promise.all([
       withSqliteTimeout(getBossDropRecords(ocids, queryKeys)),
       withSqliteTimeout(getBossProfitRecords(ocids, queryKeys)),
       Promise.all(
@@ -249,12 +282,11 @@ async function fillWindowCache(periodKey: string): Promise<Map<string, DropPrice
           [monthKey, await withSqliteTimeout(getWeeklyPeriodKeysWithRecords(ocids, monthKey))] as const,
         ),
       ),
+      withSqliteFallback(getBossPartyPeriodOverrides(ocids, queryKeys), []),
+      withSqliteFallback(getBossPartySettings(ocids), []),
     ])
     const weeksByMonth = new Map(weekLists)
-
-    const partySizes = new Map(
-      profitRecords.map((record) => [saveGroupKey(record), record.partySize] as const),
-    )
+    const shareSeedOf = shareSeedResolver(profitRecords, overrides, settings)
 
     // 이름은 창 전체에 한 번만 묻는다. 기간마다 물으면 왕복이 창의 칸 수만큼 는다.
     const profiles = await resolveDisplayProfiles(allDropRecords.map((record) => record.ocid))
@@ -271,7 +303,7 @@ async function fillWindowCache(periodKey: string): Promise<Map<string, DropPrice
           (weekMonths.includes(record.periodKey) &&
             standsInWeek(record, key, profitRecords, weeksByMonth.get(record.periodKey) ?? [])),
       )
-      const groups = buildGroups(dropRecords, characters, partySizes)
+      const groups = buildGroups(dropRecords, characters, shareSeedOf)
       built.set(key, groups)
       windowCache.set(key, { groups, stamp })
     }

@@ -452,20 +452,26 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
 }
 
 /**
- * 드롭 가격 카드가 받는 분배 씨앗. 받은 파티 인원으로 균등하다. 아이템 비율은 한 벌로 안 두고 건마다 고른다.
+ * 드롭 가격 카드가 받는 분배 씨앗. 파티 인원과 결정석 비율에서 온다. 아이템 비율은 한 벌로 안 두고 건마다 고른다.
  *
- * 인원을 행이 아니라 인자로 받는 것은 미완료 행의 인원이 행에 없기 때문이다. 그 값은 파티 관리
- * 설정이나 그 기간에 갈라진 값에서 오고 화면이 이미 풀어 두었다.
+ * 인원과 비율을 행이 아니라 인자로 받는 것은 미완료 행의 값이 행에 없기 때문이다. 그 값은 처치 기록,
+ * 그 기간에 갈라진 값, 파티 관리 설정 중 하나에서 오고 부르는 쪽이 이미 골라 두었다.
  *
- * @example const defaultShare = dropShareSeedOf(partySize)
+ * @example const defaultShare = dropShareSeedOf(partySize, { myShare, sharesTotal })
  */
-export function dropShareSeedOf(partySize: number): {
-  mode: 'even'
+export function dropShareSeedOf(
+  partySize: number,
+  crystal: { myShare?: number | null; sharesTotal?: number | null },
+): {
+  mode: 'even' | 'ratio'
   partySize: number
   myShare: number
   sharesTotal: number
 } {
-  // 아직 안 나눈 새 기록은 **기본**이다. 이 값이 그대로 저장돼 다음에 열 때의 자리를 정한다.
-  // 비율 쪽은 아직 고른 적이 없으므로 카드가 자기 씨앗(`2 : 3`)을 놓는다.
+  // 같은 파티는 드롭도 결정석과 같은 약속으로 나누는 경우가 많다. 인원 칸은 비율이어도 채워 둔다.
+  if (crystal.myShare != null && crystal.sharesTotal != null) {
+    return { mode: 'ratio', partySize, myShare: crystal.myShare, sharesTotal: crystal.sharesTotal }
+  }
+  // 비율 쪽은 고른 적이 없으므로 카드가 자기 씨앗(`2 : 3`)을 놓는다.
   return { mode: 'even', partySize, myShare: 2, sharesTotal: 3 }
 }
