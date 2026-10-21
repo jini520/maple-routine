@@ -73,7 +73,7 @@ export interface BossDropRecord {
 }
 
 /** 드롭 상태. 서버 `drop_prices` 의 `record_status` 와 같은 값이다. */
-export type DropRecordStatus = 'pending' | 'completed' | 'skipped'
+type DropRecordStatus = 'pending' | 'completed' | 'skipped'
 
 /**
  * 기록할 월드. 기간 행에 한 번 적는다. 그 기간의 처치와 드롭이 같은 월드다.

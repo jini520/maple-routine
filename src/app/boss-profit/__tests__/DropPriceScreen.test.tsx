@@ -290,13 +290,12 @@ describe('DropPriceScreen: 값 매기기', () => {
 
   // DB 를 열 때마다 도는 백필이 가격 없는 드롭의 방식 칸도 `even` 으로 채운다. 그 값을 믿으면
   // 결정석 비율을 정해 둔 보스도 기본으로 열린다.
-  it('값을 안 매긴 드롭은 저장된 방식을 안 보고 처음 값으로 연다', async () => {
+  it('값을 안 매긴 드롭은 분배 처음 값으로 연다', async () => {
     mockStores({
       price: {
         groups: 그룹([
           항목({
             defaultShare: { mode: 'ratio', partySize: 2, myShare: 3, sharesTotal: 4 },
-            drop: 드롭({ priceSplitMode: 'even' }),
           }),
         ]),
       },
@@ -320,6 +319,23 @@ describe('DropPriceScreen: 값 매기기', () => {
       { mode: 'ratio', partySize: 2, myShare: 3, sharesTotal: 4 },
       expect.anything(),
     )
+  })
+
+  // 0메소는 매긴 것이 아니다. 저장하면 앱은 매긴 것, 서버는 미입력으로 봐서 상태가 갈렸다.
+  it('0 을 넣고 넘기면 저장하지 않는다', async () => {
+    const { getByLabelText, getByTestId } = await renderOverlay(<DropPriceScreen />)
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
+    })
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-card-value'), '0')
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('input-card-confirm'))
+    })
+
+    expect(savePrice).not.toHaveBeenCalled()
   })
 
   it('저장이 실패하면 토스트로 알린다. 조용히 삼키면 저장된 줄 알고 떠난다', async () => {
