@@ -25,14 +25,14 @@
 boss_parties          id · ocid · boss_key · difficulty · 분배 조건 · created_at · updated_at
   └ boss_party_periods  id · party_id · period_key · cycle · world_key · status
       │                 · price_meso · payout_meso · defeated_on · source · 분배 조건 · created_at · updated_at
-      └ 새 드롭 테이블     id · period_id · drop_index · category · item_key · box_origin_key · ring_level
+      └ boss_drops        id · period_id · drop_index · category · item_key · box_origin_key · ring_level
                         · record_status · price_meso · priced_at · 분배 조건 · sale_fee_percent · sale_fee_auto
                         · created_at · updated_at
 ```
 
 - `boss_parties` 는 옛 `boss_party_settings` 를 대신한다. 보스 관리에서 정하지 않은 조합도 처치나 드롭이 생기면 행이
   생긴다. 그 행은 분배 칸이 NULL 이고, 보스 관리에서 정한 적이 없다는 뜻이다.
-- `boss_party_periods` 는 옛 처치 기록과 그 기간 값을 한 행에 담는다. `status` 가 처치 여부를 가른다. 지금은 처치 기록
+- `boss_party_periods` 는 옛 처치 기록과 그 기간 값을 한 행에 담는다. `status` 가 처치 여부를 가른다(`cleared` 처치함 · `open` 그 기간 값이나 드롭만 있음). 지금은 처치 기록
   테이블에 행이 있는지로 완료를 판단한다.
 - 드롭은 `period_id` 하나로 보스 · 난이도 · 기간 · 월드를 찾는다. 처치 난이도가 확정되면 기간 행의 `party_id` 만 바꾼다.
 
@@ -106,8 +106,8 @@ NOT NULL 로 두면 처치도 설정도 없이 드롭만 있는 기간을 옮길
 
 ### 결정 9. 옛 테이블 넷은 v1.0.13 에서 지우지 않고, v1.0.14 에서 지운다
 
-옛 코드가 새 DB 를 열어도 DB 가 열리지 않는 일이 없어야 한다. 새 드롭 테이블은 옛 `boss_drop_records` 와 다른 이름으로
-만든다. 같은 이름이면 옛 코드의 `ensureColumn` · 인덱스 생성 · `INSERT` 가 새 테이블에서 실패한다. 이름은 구현 때 정한다.
+옛 코드가 새 DB 를 열어도 DB 가 열리지 않는 일이 없어야 한다. 새 드롭 테이블은 옛 `boss_drop_records` 와 다른 이름(`boss_drops`)으로
+만든다. 같은 이름이면 옛 코드의 `ensureColumn` · 인덱스 생성 · `INSERT` 가 새 테이블에서 실패한다.
 
 v1.0.13 은 스토어 바이너리로만 낸다. 바이너리에 든 번들이 새 코드라야, OTA 가 실패해 되돌아가도 옛 코드가 새 DB 를 열지
 않는다. 옛 테이블은 v1.0.14 에서 새 마이그레이션 버전으로 지운다(#685). 그때도 이관 단계와 옛 테이블 정의는 남긴다.

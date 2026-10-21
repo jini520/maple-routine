@@ -1,6 +1,15 @@
 import { getSqlitePort } from '../ports'
 import type { SqliteDbConnection } from '../ports'
-import { BOSS_DROP_RECORDS_BODY, BOSS_DROP_RECORDS_GROUP_INDEX, BOSS_PARTY_SETTINGS_BODY, BOSS_PROFIT_RECORDS_BODY } from './boss-tables'
+import {
+  BOSS_DROPS_BODY,
+  BOSS_DROPS_PERIOD_INDEX,
+  BOSS_DROP_RECORDS_BODY,
+  BOSS_DROP_RECORDS_GROUP_INDEX,
+  BOSS_PARTIES_BODY,
+  BOSS_PARTY_PERIODS_BODY,
+  BOSS_PARTY_SETTINGS_BODY,
+  BOSS_PROFIT_RECORDS_BODY,
+} from './boss-tables'
 import { runVersionedMigrations } from './migrations'
 
 const DB_NAME = 'boss_profit'
@@ -114,6 +123,19 @@ const TABLE_DEFINITIONS = [
   {
     name: 'boss_drop_records',
     createSql: `CREATE TABLE IF NOT EXISTS boss_drop_records ${BOSS_DROP_RECORDS_BODY}`,
+  },
+  // 보스 기록. 위 넷을 버전 14 가 옮긴 표다. 부모가 먼저 서야 외래키가 선다.
+  {
+    name: 'boss_parties',
+    createSql: `CREATE TABLE IF NOT EXISTS boss_parties ${BOSS_PARTIES_BODY}`,
+  },
+  {
+    name: 'boss_party_periods',
+    createSql: `CREATE TABLE IF NOT EXISTS boss_party_periods ${BOSS_PARTY_PERIODS_BODY}`,
+  },
+  {
+    name: 'boss_drops',
+    createSql: `CREATE TABLE IF NOT EXISTS boss_drops ${BOSS_DROPS_BODY}`,
   },
   // 캐릭터 이름·초상의 스냅샷. 캐릭터당 한 행이고 기록에 이름과 얼굴을 붙이는 데만 쓴다.
   // `character-basic-cache` 와 값이 같고 수명이 다르다. 그쪽은 5분 TTL 캐시이고 캐시 비우기의
@@ -404,6 +426,9 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   const db = await connection.createConnection(DB_NAME, 'no-encryption', 1)
 
   await db.open()
+  // op-sqlite 는 외래키가 기본으로 꺼져 있다. 켜지 않으면 ON DELETE CASCADE 가 안 돌고 테스트(node:sqlite)에서만 돈다.
+  // 트랜잭션 안에서는 이 문장이 안 먹으므로 여기서 켠다.
+  await db.execute('PRAGMA foreign_keys = ON')
   for (const table of TABLE_DEFINITIONS) {
     await db.execute(table.createSql)
   }
@@ -535,6 +560,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await runVersionedMigrations(db)
   // 기본키를 uuid 로 옮긴 뒤에 선다. 종전에는 기본키가 곧 이 인덱스였다.
   await db.execute(BOSS_DROP_RECORDS_GROUP_INDEX)
+  await db.execute(BOSS_DROPS_PERIOD_INDEX)
 
   return db
 }
