@@ -37,6 +37,9 @@
 FOREIGN KEY 제약은 걸려 있지 않다. 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서, 한쪽만 지우면 짝이
 없는 행이 남는다. 그래서 캐시 데이터 삭제는 기록 표들을 한 그룹으로 함께 지운다(`lifecycle.md`).
 
+보스 기록 표 넷(`boss_profit_records` · `boss_party_settings` · `boss_party_period_overrides` · `boss_drop_records`)은
+v1.0.13 에서 외래키로 이은 표 셋으로 다시 짠다([[ADR-078]], 미구현). 아래 표는 지금 구현된 모양이다.
+
 `삭제 그룹` 의 `기록` 은 캐시 데이터 삭제의 `records` 그룹(`RECORD_TABLE_NAMES`)이고, `일반` 은 나머지다.
 
 | 테이블 | 기본키 | 담는 것 | 쓰는 곳 | 삭제 그룹 | 문서 |
