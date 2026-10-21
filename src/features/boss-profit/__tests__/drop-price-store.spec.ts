@@ -67,6 +67,25 @@ jest.mock('../../character-profile/resolve', () => {
 })
 const { resolveDisplayProfiles: resolveDisplayProfilesMock } = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
 
+var mockPartySettings: Record<string, unknown>
+jest.mock('../../../storage/boss-party-settings', () => {
+  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
+  mockPartySettings = mockPartySettings ?? { getBossPartySettings: jest.fn() }
+  return mockPartySettings
+})
+const { getBossPartySettings: getBossPartySettingsMock } = jest.requireMock(
+  '../../../storage/boss-party-settings',
+) as Record<string, jest.Mock>
+var mockPeriodOverrides: Record<string, unknown>
+jest.mock('../../../storage/boss-party-period-overrides', () => {
+  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
+  mockPeriodOverrides = mockPeriodOverrides ?? { getBossPartyPeriodOverrides: jest.fn() }
+  return mockPeriodOverrides
+})
+const { getBossPartyPeriodOverrides: getBossPartyPeriodOverridesMock } = jest.requireMock(
+  '../../../storage/boss-party-period-overrides',
+) as Record<string, jest.Mock>
+
 const PERIOD = '2026-08-06'
 const MONTH = '2026-08'
 /** 그 주에 실제로 든 날. 주차 경계를 테스트가 베끼지 않게 표에서 뽑는다. */
@@ -116,6 +135,8 @@ beforeEach(async () => {
   getWeeklyPeriodKeysWithRecordsMock.mockReset().mockResolvedValue([])
   getTrackedCharacterOcidsMock.mockReset().mockResolvedValue(['ocid-1'])
   getRecordedCharacterOcidsMock.mockReset().mockResolvedValue([])
+  getBossPartySettingsMock.mockReset().mockResolvedValue([])
+  getBossPartyPeriodOverridesMock.mockReset().mockResolvedValue([])
   resolveDisplayProfilesMock
     .mockReset()
     .mockImplementation(async (ocids: readonly string[]) =>
@@ -159,17 +180,6 @@ describe('load', () => {
     )
   })
 
-  it('분배 인원 기본값은 그 행의 파티원 수다. 기록이 없으면 1인', async () => {
-    getBossProfitRecordsMock.mockResolvedValue([
-      { ocid: 'ocid-1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', periodKey: PERIOD, partySize: 3 },
-    ])
-    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
-
-    await useDropPriceStore.getState().load(PERIOD)
-
-    expect(useDropPriceStore.getState().groups[0].entries[0].partySize).toBe(3)
-  })
-
   it('이름을 모르는 캐릭터는 그룹을 만들지 않는다. ocid 를 이름 대신 쓰지 않는다', async () => {
     resolveDisplayProfilesMock.mockResolvedValue(new Map())
     const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
@@ -186,6 +196,64 @@ describe('load', () => {
     await useDropPriceStore.getState().load(PERIOD)
 
     expect(useDropPriceStore.getState().status).toBe('failed')
+  })
+})
+
+// 가격 카드의 분배 처음 값. 처치를 기록하기 전에 적은 드롭도 보스 관리의 파티 설정으로 열려야 한다.
+describe('load: 분배 처음 값', () => {
+  const 조합 = { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard' }
+
+  async function 처음값() {
+    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
+    await useDropPriceStore.getState().load(PERIOD)
+    return useDropPriceStore.getState().groups[0].entries[0].defaultShare
+  }
+
+  // 처치할 때 인원이나 비율을 고쳤다면 그 기록이 그 판을 가장 정확히 말한다.
+  it('처치 기록이 있으면 파티 설정보다 그 기록의 인원과 비율이 먼저다', async () => {
+    getBossProfitRecordsMock.mockResolvedValue([
+      { ...조합, boss: '스우', periodKey: PERIOD, partySize: 2, crystalMyShare: 3, crystalSharesTotal: 4 },
+    ])
+    getBossPartySettingsMock.mockResolvedValue([
+      { ...조합, partySize: 6, crystalMyShare: null, crystalSharesTotal: null },
+    ])
+
+    expect(await 처음값()).toEqual({ mode: 'ratio', partySize: 2, myShare: 3, sharesTotal: 4 })
+  })
+
+  it('처치 기록이 없으면 그 기간만 고친 값이 파티 설정보다 먼저다', async () => {
+    getBossPartyPeriodOverridesMock.mockResolvedValue([
+      { ...조합, periodKey: PERIOD, partySize: 4, crystalMyShare: null, crystalSharesTotal: null },
+    ])
+    getBossPartySettingsMock.mockResolvedValue([
+      { ...조합, partySize: 6, crystalMyShare: 1, crystalSharesTotal: 2 },
+    ])
+
+    expect(await 처음값()).toEqual({ mode: 'even', partySize: 4, myShare: 2, sharesTotal: 3 })
+  })
+
+  it('처치 기록도 그 기간 값도 없으면 보스 관리의 파티 설정으로 연다', async () => {
+    getBossPartyPeriodOverridesMock.mockResolvedValue([
+      // 다른 기간의 값은 이 기간에 안 쓴다.
+      { ...조합, periodKey: '2026-07-30', partySize: 4, crystalMyShare: null, crystalSharesTotal: null },
+    ])
+    getBossPartySettingsMock.mockResolvedValue([
+      { ...조합, partySize: 6, crystalMyShare: 1, crystalSharesTotal: 2 },
+    ])
+
+    expect(await 처음값()).toEqual({ mode: 'ratio', partySize: 6, myShare: 1, sharesTotal: 2 })
+  })
+
+  it('셋 다 없으면 1인 기본이다', async () => {
+    expect(await 처음값()).toEqual({ mode: 'even', partySize: 1, myShare: 2, sharesTotal: 3 })
+  })
+
+  // 처음 값 하나 때문에 가격을 못 매기는 것보다 1인으로 여는 편이 낫다.
+  it('파티 설정 읽기가 실패해도 화면은 열리고 1인 기본이다', async () => {
+    getBossPartySettingsMock.mockRejectedValue(new Error('SQLite 실패'))
+    getBossPartyPeriodOverridesMock.mockRejectedValue(new Error('SQLite 실패'))
+
+    expect(await 처음값()).toEqual({ mode: 'even', partySize: 1, myShare: 2, sharesTotal: 3 })
   })
 })
 

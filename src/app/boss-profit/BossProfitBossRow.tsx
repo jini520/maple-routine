@@ -425,11 +425,11 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           initialDrops={props.drops}
           onSave={(drops) => setBossDrops(row, drops)}
           onClose={() => setIsDropSheetOpen(false)}
-          // 기록한 자리에서 바로 값을 매긴다. 분배 기본값은 이 행의 파티원 수이고, 저장하면 그
-          // 값과 독립한다. 나중에 파티원 수를 고쳐도 이미 매긴 금액이 흔들리지 않는다.
+          // 기록한 자리에서 바로 값을 매긴다. 분배 기본값은 이 행의 파티 인원과 결정석 비율이고,
+          // 저장하면 그 값과 독립한다. 나중에 파티 설정을 고쳐도 이미 매긴 금액이 흔들리지 않는다.
           pricing={{
-            // 이 줄의 파티 인원으로 균등하다. 미완료 행은 파티 관리 값이 그 인원이다.
-            defaultShare: dropShareSeedOf(partySize),
+            // 미완료 행은 파티 관리 값(그 기간에 고쳤으면 그 값)이 이 줄의 인원과 비율이다.
+            defaultShare: dropShareSeedOf(partySize, rowShares),
             characterName: row.characterName,
             ocid: row.ocid,
           }}

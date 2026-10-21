@@ -254,17 +254,14 @@ export function DropPriceScreen(): React.JSX.Element {
         return
       }
       const meso = mesoValueOf(next)
-      const 몫 = share ?? {
-        mode: 'even' as const,
-        partySize: target.partySize,
-        myShare: 2,
-        sharesTotal: 3,
-      }
+      const 몫 = share ?? target.defaultShare
       const 다음편집 = new Map(edits).set(index, { meso, share: 몫, fees })
       void runWrite(() => savePrice(target, meso, 몫, fees), items, to, 다음편집)
     }
 
     const [saleSeed, splitSeed] = dropFeeSeeds(target.drop, edit?.fees)
+    // 값을 안 매긴 드롭의 분배 칸은 안 믿는다. DB 를 열 때마다 도는 백필이 방식 칸을 `even` 으로 채운다.
+    const 적힌분배 = target.drop.priceState === 'entered' ? target.drop : undefined
 
     openInputCard({
       // 머리가 그 아이템을 말한다. `판매 가격` 이라는 말은 이미 누른 행이 했다.
@@ -278,11 +275,11 @@ export function DropPriceScreen(): React.JSX.Element {
       share: {
         label: '분배 비율',
         // 열 때의 자리는 **적힌 방식**이 정한다. 숫자로 되짚으면 비율 33.3% 가 기본 3인으로 열린다.
-        mode: edit?.share.mode ?? target.drop.priceSplitMode ?? 'even',
+        mode: edit?.share.mode ?? 적힌분배?.priceSplitMode ?? target.defaultShare.mode,
         // 인원과 비율은 **칸이 다르다**. 한 칸에서 둘을 뿌리면 비율에서 고친 합이 인원을 덮는다.
-        partySize: edit?.share.partySize ?? target.drop.pricePartySize ?? target.partySize,
-        myShare: edit?.share.myShare ?? target.drop.priceMyShare ?? 2,
-        sharesTotal: edit?.share.sharesTotal ?? target.drop.priceShare ?? 3,
+        partySize: edit?.share.partySize ?? 적힌분배?.pricePartySize ?? target.defaultShare.partySize,
+        myShare: edit?.share.myShare ?? 적힌분배?.priceMyShare ?? target.defaultShare.myShare,
+        sharesTotal: edit?.share.sharesTotal ?? 적힌분배?.priceShare ?? target.defaultShare.sharesTotal,
         maxPartySize: getMaxPartySize(target.bossKey, target.difficulty),
       },
       fees: {

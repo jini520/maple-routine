@@ -495,17 +495,25 @@ it('mergeRecordsIntoRows 는 기록의 비율과 송금 수수료도 행에 싣�
   })
 })
 
-// 드롭 가격 카드의 씨앗. 비율은 결정석에만 있어 여기서는 그 행의 파티 인원으로 균등하다.
+// 드롭 가격 카드의 씨앗. 파티 설정의 인원과 결정석 비율에서 온다.
 // 인원과 비율은 **칸이 다르다**. 씨앗도 따로 놓는다 - 한 칸에서 둘을 뿌리면 비율에서 고친 합이
 // 기본의 인원을 덮는다(사용자 보고).
 describe('dropShareSeedOf', () => {
-  it('받은 파티 인원은 인원 칸에만 놓는다', () => {
-    expect(dropShareSeedOf(4)).toEqual({
+  it('결정석 비율이 없으면 기본으로 열고 비율 쪽은 카드의 씨앗이다', () => {
+    expect(dropShareSeedOf(4, { myShare: null, sharesTotal: null })).toEqual({
       mode: 'even',
       partySize: 4,
-      // 비율은 아직 고른 적이 없다. 카드가 쓰는 씨앗(`2 : 3`)이 그대로 놓인다.
       myShare: 2,
       sharesTotal: 3,
+    })
+  })
+
+  it('결정석 비율이 있으면 그 비율로 연다. 인원 칸은 그대로 파티 인원이다', () => {
+    expect(dropShareSeedOf(2, { myShare: 3, sharesTotal: 4 })).toEqual({
+      mode: 'ratio',
+      partySize: 2,
+      myShare: 3,
+      sharesTotal: 4,
     })
   })
 })

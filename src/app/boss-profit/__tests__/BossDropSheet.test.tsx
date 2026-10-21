@@ -613,6 +613,44 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     expect(saved.priceMyShare).toBeUndefined()
   })
 
+  // DB 를 열 때마다 도는 백필이 가격 없는 드롭의 방식 칸도 `even` 으로 채운다. 그 값을 믿으면
+  // 결정석 비율을 정해 둔 보스도 기본으로 열린다.
+  it('값을 안 매긴 드롭은 저장된 방식을 안 보고 처음 값으로 연다', async () => {
+    const { result, onSave } = renderSheet({
+      pricing: { ...PRICING, defaultShare: { mode: 'ratio', partySize: 2, myShare: 3, sharesTotal: 4 } },
+      initialDrops: [
+        {
+          dropRecordId: null,
+          category: 'equipment',
+          itemKey: 'loose_control_machine_mark',
+          itemName: '루즈 컨트롤 머신 마크',
+          quantity: 1,
+          priceSplitMode: 'even',
+        },
+      ],
+    })
+    const { getByTestId, getByText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByText('가격 입력'))
+    })
+    expect(getByTestId('share-field-ratio-분배 비율')).toBeTruthy()
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-card-value'), '100')
+    })
+    await act(async () => {
+      fireEvent.press(getByTestId('input-card-confirm'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText(/추가 완료/))
+    })
+
+    const [saved] = onSave.mock.calls[0][0]
+    expect(saved).toEqual(
+      expect.objectContaining({ priceSplitMode: 'ratio', priceShare: 4, priceMyShare: 3, pricePartySize: 2 }),
+    )
+  })
+
   it('카드의 기록 안함은 값 없이 그 결정만 쓴다', async () => {
     const { result, onSave } = renderSheet({ pricing: PRICING })
     const { getByLabelText, getByTestId, getByText, queryByLabelText } = await result
