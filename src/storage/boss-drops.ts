@@ -254,6 +254,26 @@ export async function replaceBossDropRecords(
   }
 
   await db.run('DELETE FROM boss_drops WHERE period_id = ?', [periodId])
+
+  // **다른 기간에 있던 식별자를 들고 온 드롭은 그 기간에서 옮겨 온다.** 난이도 확정 이관이 그렇다. 옛 행을
+  // 그대로 두면 같은 식별자를 넣는 순간 기본키가 부딪혀 저장이 실패하고, 뒤이어 옛 그룹을 비우는 쓰기가 드롭을
+  // 지운다.
+  const carriedIds = drops.map((drop) => drop.dropRecordId).filter((id): id is string => id !== null)
+  if (carriedIds.length > 0) {
+    const placeholders = carriedIds.map(() => '?').join(', ')
+    const { values: elsewhere } = await db.query(
+      `SELECT id, period_id, record_status, price_meso, priced_at, created_at FROM boss_drops WHERE id IN (${placeholders})`,
+      carriedIds,
+    )
+    const emptied = new Set<string>()
+    for (const row of (elsewhere ?? []) as Record<string, unknown>[]) {
+      byId.set(row.id as string, previousOf(row))
+      emptied.add(row.period_id as string)
+    }
+    await db.run(`DELETE FROM boss_drops WHERE id IN (${placeholders})`, carriedIds)
+    for (const otherPeriodId of emptied) await deletePeriodIfEmpty(db, otherPeriodId)
+  }
+
   for (let index = 0; index < drops.length; index++) {
     const drop = drops[index]
     // **드롭이 들고 온 식별자가 먼저다.** 난이도 확정 이관처럼 다른 그룹으로 옮기는 경로는 신분
