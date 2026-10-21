@@ -322,6 +322,8 @@ export function QuantityStepper(props: {
   return (
     <Stepper
       size="sm"
+      // 시트 바탕이 `bg` 라 기본 트랙이 묻힌다.
+      tone="inverted"
       testID={props.testID}
       label={props.label}
       value={mesoValueOf(props.value)}
