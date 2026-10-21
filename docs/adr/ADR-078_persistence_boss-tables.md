@@ -1,6 +1,6 @@
 # ADR-078 보스 기록 테이블 재설계
 
-> ⚪ 미구현
+> 🟢 유효
 > 관련 소스: `storage/sqlite/boss-tables.ts` · `storage/sqlite/db.ts` · `storage/sqlite/migrations.ts` · `storage/boss-profit.ts` · `storage/boss-drops.ts` · `storage/boss-party-settings.ts` · `storage/boss-party-period-overrides.ts` · `storage/cache-data.ts` · `features/server-sync/drop-price-sync.ts`
 
 ## 배경
@@ -68,11 +68,12 @@ NOT NULL 로 두면 처치도 설정도 없이 드롭만 있는 기간을 옮길
 
 ### 결정 5. 드롭은 서버 `drop_prices` 와 칸 이름 · 상태 값을 맞춘다
 
-- `record_status` 는 서버와 같은 `pending` · `completed` · `skipped` 다. 서버로 보낼 때 변환하지 않는다. 서버의 `deleted` 는
+- `record_status` 는 서버와 같은 `pending` · `completed` · `skipped` 다. 앱 타입은 화면의 말인 `priceState` 로 읽고, 서버로
+  보낼 때 이름만 되돌린다. 금액을 다시 따지지 않는다. 서버의 `deleted` 는
   서버에만 있는 삭제 표시라 앱에 두지 않는다. 앱은 행을 지우고 `DELETE` 를 보낸다.
 - `price_meso` · `priced_at` · 분배 조건 · 판매 수수료는 `completed` 일 때만 값이 있다(CHECK). 그래서 DB 를 열 때마다
-  가격 없는 드롭에 `price_split_mode = 'even'` 을 채우는 백필이 필요 없어지고, 값을 안 매긴 드롭의 분배 칸을 화면이 안 읽게
-  한 우회([[ADR-076]])도 걷는다.
+  가격 없는 드롭에 `price_split_mode = 'even'` 을 채우는 백필이 새 표에는 닿지 않고, 값을 안 매긴 드롭의 분배 칸을 화면이
+  안 읽게 한 우회([[ADR-076]])도 걷었다.
 - `priced_at` · `created_at` · `updated_at` 은 서버와 같은 이름이다.
 - 앱에만 있는 칸은 `drop_index` · `category` · `box_origin_key` 와 분배 · 수수료 칸이다. 분배 · 수수료는 내 몫을 세는
   재료라 서버로 보내지 않는다([[ADR-018]]).
@@ -80,7 +81,8 @@ NOT NULL 로 두면 처치도 설정도 없이 드롭만 있는 기간을 옮길
 ### 결정 6. 이름은 저장하지 않고 key 만 둔다
 
 `boss` · `item_name` · `box_origin` · `world` 를 지운다. 이름은 게임 데이터에서 key 로 찾는다(`bossNameOf` ·
-`dropItemNameOf` · `worldNameOf`). `item_key` 는 NOT NULL 이다. `quantity` 는 늘 1 이라 지우고, `slot` 은 2026-10-16
+`dropItemNameOf` · `worldNameOf`). 앱 타입(`BossProfitRecord.boss` · `BossDropRecord.itemName` 등)은 그대로 두고, 저장 함수가
+읽을 때 key 로 찾아 채운다. 그래서 화면 코드는 바뀌지 않는다. 표에 없는 key 면 key 문자열이 선다. `item_key` 는 NOT NULL 이다. `quantity` 는 늘 1 이라 지우고, `slot` 은 2026-10-16
 부터 안 쓰는 칸이라 지운다.
 
 그래서 **서버 게임 데이터의 key 는 지우지 않는다.** 대상은 보스 · 난이도 · 드롭 아이템 · 상자 · 월드다. 기록이 key 만
@@ -97,6 +99,9 @@ NOT NULL 로 두면 처치도 설정도 없이 드롭만 있는 기간을 옮길
 
 - 옛 `price_state`: `'entered'` 이고 1메소 이상이면 `completed`, `'excluded'` 와 옛 값 `'skipped'` 는 `skipped`, 나머지는
   `pending` 이다. `completed` 가 아닌 행의 분배 · 수수료 칸은 버린다. 백필이 채운 값이라 뜻이 없다.
+- 균등이어도 내 비율(`my_share`)이 있으면 남긴다. 2026-10-19 전의 균등 기록은 그 칸으로 금액을 센다([[ADR-044]] 결정 10).
+  비우면 수수료가 붙은 기록의 내 몫이 바뀐다. 그룹을 다시 저장할 때도 같은 이유로 남긴다. 실기기 드롭 85건의 금액이
+  이관 전후로 같은 것을 확인했다.
 - `completed` 의 `priced_at` 은 `recorded_at` 으로 채운다. 가격을 매긴 시각이 따로 남아 있지 않다.
 - 월드가 없는 드롭은 같은 기간 처치 기록의 `world_key` 를 물려받는다. 처치 기록의 월드는 처치할 때 적은 값이고, 리프하면
   ocid 가 새로 생기므로 같은 ocid 의 같은 기간은 같은 월드다. 실기기에서 77개가 해당하고 전부 10/15 주차 이전이라
@@ -124,22 +129,34 @@ v1.0.13 을 건너뛰고 올리는 기기가 그 단계를 거쳐야 하기 때�
   `boss_parties` · `boss_party_periods` 는 처치 기록의 부모라 통째로 지우면 기록이 사라진다.
 - **옛 마이그레이션 단계가 쓰는 테이블 정의를 이관 전용으로 고정한다.** 새 기기도 0단계부터 다 돌고, 버전 4 · 12 는
   `boss-tables.ts` 의 정의로 테이블을 다시 만든다. 그 정의를 새 모양으로 바꾸면 옛 단계가 깨진다.
-- **`db.ts` 가 DB 를 열 때마다 하는 옛 테이블 `ensureColumn` · 백필 · `boss_drop_records_group` 인덱스를 정리한다.**
-  실패하면 DB 가 안 열려 가계부 · 지출 · 강화 기록까지 멈춘다.
+- **옛 표의 `ensureColumn` · 백필 · `boss_drop_records_group` 인덱스는 옛 표와 함께 v1.0.14 까지 둔다.** 새 표는 이름이 달라
+  부딪히지 않는다. 옛 표를 지우는 날 함께 걷는다(#685). 하나라도 실패하면 DB 가 안 열려 가계부 · 지출 · 강화 기록까지
+  멈추므로, 옛 표만 지우고 이 문장을 남기면 안 된다.
 - **행이 있으면 완료로 읽던 함수는 `status` 로 거른다.** `getBossProfitRecords` · `getAllBossProfitRecordKeys` ·
   `getWeeklyPeriodKeysWithRecords` · `findAdjacentPeriodKeyWithRecords` · `getEarliestBossProfitPeriodKeys` ·
   `getUndatedBossProfitRecords` · `getAutoFeeProfitRecords` 등이다. 거르지 않으면 안 잡은 보스가 완료로 보인다.
 - **설정이 없으면 솔로라는 판정은 `boss_parties` 의 분배 칸이 NULL 인지로 한다.** `copyMissingBossPartySettings` 는 분배
   칸이 NULL 인 행을 채우는 `INSERT ... ON CONFLICT` 로 바꾼다.
-- **난이도 확정 · 직접 완료 취소 · 월드 리프 정리는 드롭을 다른 기간 행에 붙이는 것으로 바꾸고, 비어 남은 기간 행을
-  지운다.**
+- **난이도 확정 · 월드 리프 정리는 드롭을 다른 기간 행으로 옮기고, 비어 남은 기간 행을 지운다.** 옮기는 쪽은 새 그룹에
+  같은 식별자로 먼저 쓰고 옛 그룹을 나중에 비운다. 그래서 `replaceBossDropRecords` 는 다른 기간에 있던 식별자를 들고 온
+  드롭을 그 기간에서 걷어 온다. 걷지 않으면 기본키가 부딪혀 저장이 실패하고, 뒤이은 비우기가 드롭을 지운다. 옛 표에서도
+  버전 12 부터 이렇게 드롭이 사라지고 있었다.
 
 ## 테스트
 
-구현 전이다. 이관 리허설(옛 DB 를 새 테이블로 옮긴 뒤 옛 테이블 모양을 되짚어 원본과 행 단위로 비교)을
-`storage/sqlite/__tests__/` 의 실제 엔진 테스트로 옮긴다. 합성 경우(미입력 드롭 · 드롭만 있는 기간 · key 없는 드롭 ·
-비율 결정석 · 0메소 드롭 · 처치와 기간 값이 겹친 기간)를 함께 넣는다.
+모두 `node:sqlite` 로 실제 엔진을 돌린다.
+
+| 파일 | 확인하는 것 |
+|---|---|
+| `storage/sqlite/__tests__/boss-tables-real-sqlite.test.ts` | 결정 3 · 8: 옛 행을 심은 버전 13 기기에서 처치 · 설정 · 그 기간 값 · 드롭이 옮겨지는지, 드롭만 있는 기간이 분배 칸 빈 `open` 행이 되는지, 매기지 않은 드롭의 분배 칸을 버리는지, 0메소 드롭이 `pending` 인지, key 없는 드롭을 안 옮기는지, 월드를 물려받는지, 옛 표가 남는지, 이관이 한 번만 도는지 |
+| | 결정 1 · 5 · 10: 조합 행 `UNIQUE`, 외래키를 켜는 문장과 `CASCADE`, 값을 매긴 드롭만 가격 · 분배 칸을 갖는 CHECK |
+| `storage/__tests__/boss-profit.spec.ts` | 결정 1 · 4 · 10: 처치 읽기가 `open` 행을 세지 않는지, 처치를 걷으면 드롭이 남은 기간이 분배 칸 빈 `open` 이 되는지, 그 기간 값이 처치 값으로 덮이는지, 이름을 key 로 채우는지 |
+| `storage/__tests__/boss-party-settings.spec.ts` | 결정 10: 분배 칸 빈 조합 행을 설정 없음으로 읽는지, 설정 옮기기가 그 행을 채우고 이미 정한 값은 안 덮는지 |
+| `storage/__tests__/boss-party-period-overrides.spec.ts` | 결정 3: 처치한 기간과 드롭만 있는 기간을 그 기간 값으로 안 읽는지, 처치한 기간을 안 덮는지 |
+| `storage/__tests__/boss-drops.spec.ts` | 결정 5 · 6 · 7: 상태 값, 0메소를 `pending` 으로 두는지, 가격을 바꿀 때만 `priced_at` 이 움직이는지, 비우면 빈 기간 행을 지우는지, 이름을 key 로 채우는지 |
+| `storage/__tests__/cache-data-boss.spec.ts` | 결정 10: 캐시 삭제가 새 표 셋을 그룹마다 행 단위로 지우는지 |
+| `features/boss-profit/__tests__/drop-moves-real-sqlite.test.ts` | 결정 4 · 10: 난이도 확정 · 직접 완료 난이도 변경이 드롭을 식별자째 옮기고 옛 기간 행을 지우는지, 직접 완료 취소가 기간 행까지 지우는지 |
 
 ## 번호 기록
 
-- ADR-078 (2026-10-21): 보스 기록 테이블 재설계를 처음 작성(#686). 구현 전이다
+- ADR-078 (2026-10-21): 보스 기록 테이블 재설계를 처음 작성하고 구현했다(#686)

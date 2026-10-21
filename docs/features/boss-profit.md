@@ -1,8 +1,8 @@
 # 보스 수익
 
 처치한 보스의 결정석과 드롭 판매 수익을 캐릭터별로 보여 주는 화면이다. 수익·지출 그룹의 첫째 하위 탭이고,
-주간 · 월간으로 지난 기간을 오가며 볼 수 있다. 여기서 쓴 기록(`boss_profit_records`)은 가계부 · 통계 ·
-today 도 읽는다. 왜 이렇게 만들었는지는 [[ADR-040]] (기록) · [[ADR-041]] (기간) · [[ADR-042]] (금액 표시) ·
+주간 · 월간으로 지난 기간을 오가며 볼 수 있다. 여기서 쓴 처치 기록(`boss_party_periods` 의 `cleared` 행,
+[[ADR-078]])은 가계부 · 통계 · today 도 읽는다. 왜 이렇게 만들었는지는 [[ADR-040]] (기록) · [[ADR-041]] (기간) · [[ADR-042]] (금액 표시) ·
 [[ADR-043]] (화면 배치)에 있다.
 
 이 문서에 없는 것:
@@ -41,7 +41,8 @@ today 도 읽는다. 왜 이렇게 만들었는지는 [[ADR-040]] (기록) · [[
 | `features/boss-profit/use-period-error-toast.ts` | 기간 읽기 실패 토스트 |
 | `lib/boss/boss-profit-period.ts` | 기간 키 · 기간 이름 · 조회 가능 범위 · 기간 상태 판정 |
 | `lib/boss/monthly-boss-week.ts` | 월간 보스가 들어가는 주 |
-| `storage/boss-profit.ts` | SQLite `boss_profit_records` 읽기 · 쓰기 · 개정 수 |
+| `storage/boss-profit.ts` | 처치 기록(SQLite `boss_party_periods` 의 `cleared` 행) 읽기 · 쓰기 · 개정 수 |
+| `storage/boss-periods.ts` | 처치 · 그 기간 값 · 드롭 · 파티 설정이 같이 쓰는 조합 행(`boss_parties`) · 기간 행 도우미 |
 | `storage/character-world-leaps.ts` | 리프한 두 캐릭터의 연결(`character_world_leaps`) |
 | `navigation/bar-groups.ts` · `navigation/routes.ts` | 수익·지출 그룹의 첫 하위 탭(`Profit`, `/profit`) |
 

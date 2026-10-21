@@ -44,10 +44,15 @@
 
 | 그룹 | 지우는 것 |
 |---|---|
-| `general` | `KEEP_KEYS` 에 없는 Preferences 키 전부 + 기록 그룹이 아닌 테이블(`boss_party_settings` · `boss_party_period_overrides` · `server_sync_queue`) |
-| `records` | `RECORD_TABLE_NAMES` 의 테이블: `boss_profit_records` · `boss_drop_records` · `enhancement_history` · `enhancement_history_checks` · `income_records` · `spend_records` · `character_profiles` · `character_world_leaps` · `mvp_grade_history` · `character_accounts` |
+| `general` | `KEEP_KEYS` 에 없는 Preferences 키 전부 + 기록 그룹이 아닌 테이블(`server_sync_queue` 와 옛 보스 표 `boss_party_settings` · `boss_party_period_overrides`) + 보스 관리 설정과 그 기간만 고친 값(행 단위) |
+| `records` | `RECORD_TABLE_NAMES` 의 테이블: 옛 보스 표 `boss_profit_records` · `boss_drop_records` · `enhancement_history` · `enhancement_history_checks` · `income_records` · `spend_records` · `character_profiles` · `character_world_leaps` · `mvp_grade_history` · `character_accounts` + 보스 처치와 드롭(행 단위) |
 
-`general` 은 따로 목록이 없고, `KEEP_KEYS` 와 `RECORD_TABLE_NAMES` 에 들지 않은 나머지 전부다. 그래서 새 Preferences 키와 새 테이블은 따로 적지 않으면 `general` 에
+보스 기록 표 셋(`boss_parties` · `boss_party_periods` · `boss_drops`, `BOSS_TABLE_NAMES`)은 통째로 지우지 않고 행 단위로
+지운다. 한 표에 두 그룹의 행이 섞여 있고, 조합 행이 처치와 드롭의 부모라서 표를 통째로 지우면 외래키를 따라
+`records` 까지 사라지기 때문이다. `general` 은 분배 칸을 비우고, `records` 는 처치 · 드롭과 그것만 남은 기간 행을 지운다.
+어느 쪽이든 설정도 기간도 남지 않은 조합 행은 함께 지운다([[ADR-078]] 결정 10).
+
+`general` 은 따로 목록이 없고, `KEEP_KEYS` 와 `RECORD_TABLE_NAMES` · `BOSS_TABLE_NAMES` 에 들지 않은 나머지 전부다. 그래서 새 Preferences 키와 새 테이블은 따로 적지 않으면 `general` 에
 들어간다. 다시 받을 수 없는 값은 `KEEP_KEYS` 나 `RECORD_TABLE_NAMES` 에 직접 넣어야 한다. 테이블은 `DROP` 이 아니라
 `DELETE FROM` 으로 비우므로 스키마는 남는다. 설정 화면의 용량 표시는 각 그룹이 실제로 지우는 범위의 바이트를
 더한 근사값이다. 이렇게 나눈 이유는 [[ADR-053]] 에 있다.

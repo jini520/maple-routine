@@ -25,8 +25,8 @@
 | `lib/boss/manual-completion.ts` | 직접 완료가 그 기간에 열려 있는지, 직접 완료를 표시 목록에 더하기 |
 | `lib/boss/party-shares.ts` | 결정석 내 몫 계산, 비율 해석, 백분율 글자 |
 | `lib/boss/bosses.ts` | 보스 표 조회(이름 · 주기 · 난이도 · 인원 상한 · 유효 기간) |
-| `storage/boss-party-settings.ts` | 파티 설정(SQLite `boss_party_settings`) |
-| `storage/boss-party-period-overrides.ts` | 미완료 행에서 그 기간만 고친 파티 값(SQLite `boss_party_period_overrides`) |
+| `storage/boss-party-settings.ts` | 파티 설정(SQLite `boss_parties` 의 분배 칸) |
+| `storage/boss-party-period-overrides.ts` | 미완료 행에서 그 기간만 고친 파티 값(SQLite `boss_party_periods` 의 `open` 행 분배 칸) |
 | `storage/manual-completion-banner.ts` | 직접 완료 안내 줄을 닫은 주(Preferences `dismissedManualCompletion`) |
 | `components/organisms/PartySizeModal/` | 파티 인원 · 난이도 · 분배 모달 |
 | `components/molecules/PartyShareSummary/` | 파티 요약 배지와 `변경` |
@@ -109,9 +109,12 @@
 
 | 연 곳 | 저장하는 곳 |
 |---|---|
-| 보스 카드 · 보스 관리 | 파티 설정(`boss_party_settings`). 다음 기록부터 쓰인다 |
-| 보스 수익 완료 행 | 그 기록 한 건 |
-| 보스 수익 미완료 행 | 그 기간만 쓰는 값(`boss_party_period_overrides`) |
+| 보스 카드 · 보스 관리 | 파티 설정(`boss_parties` 의 분배 칸). 다음 기록부터 쓰인다 |
+| 보스 수익 완료 행 | 그 기록 한 건(`boss_party_periods` 의 `cleared` 행) |
+| 보스 수익 미완료 행 | 그 기간만 쓰는 값(`boss_party_periods` 의 `open` 행). 처치하면 그 기록의 값이 된다 |
+
+세 곳 모두 같은 분배 칸(`split_mode` · `party_size` · `my_share` · `shares_total` · `split_fee_percent` · `split_fee_auto`)을
+쓴다([[ADR-078]]).
 
 결정석 내 몫을 세는 식은 [[ADR-038]] 결정 7 에 있다.
 
