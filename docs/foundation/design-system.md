@@ -52,7 +52,7 @@
 | `ErrorState` · `StaleBanner` | 실패 상태 · 낡은 목록 위의 실패 배너 |
 | `DataFreshness` | 제목 아래 `hh:mm:ss 기준` 줄 |
 | `UnavailableBadge` | 값 대신 보이는 `조회 불가` 알약 |
-| `Segment` · `TabSegment` · `DifficultySegment` | 폼 안 세그먼트 · 화면 헤더 탭 · 난이도 고르기 |
+| `Segment` · `TabSegment` · `DifficultySegment` | 폼 안 세그먼트(크기 `sm` 23 · 기본 26 · `md` 31) · 화면 헤더 탭 · 난이도 고르기 |
 | `Popover` | `PopoverLayer` · `AnchoredPopover` |
 | `NumberPad` | 짧은 화면에서 숫자 칸이 쓰는 앱 판 |
 | `AmountFigure` | 시트의 큰 숫자. 칠 수 없다 |
@@ -74,8 +74,8 @@
 | 부품 | 하는 일 |
 |---|---|
 | `BottomSheet` | 바텀시트 껍데기. 다크에서 안쪽 표면을 한 칸 올린다 |
-| `InputCard` | 키보드 위에 뜨는 입력 카드. `InputCardHost` 는 앱 셸에 한 번만 둔다 |
-| `MesoPad` | 숫자 칸의 글자 처리와 커서 계산(`meso-pad.ts` · `meso-caret.ts`) |
+| `InputCard` | 키보드 위에 뜨는 입력 카드. `InputCardHost` 는 앱 셸에 한 번만 둔다. `unitKey` 를 넘기면 금액 단위 세그먼트(`기본` · `만` · `억`)가 선다([[ADR-082]] 결정 13) |
+| `MesoPad` | 숫자 칸의 글자 처리와 커서 계산, 금액 단위 환산(`meso-pad.ts` · `meso-caret.ts` · `meso-unit.ts`) |
 | `BossPicker` | 보스 고르기의 본문 · 선택 줄 · 난이도 팝오버. 파티 스케줄과 주간 보스 수익 계산기가 쓴다([[ADR-051]] 결정 13) |
 | `Modal` · `NoticeModal` | 가운데 모달 · 알림 모달 틀 |
 | `LoadingModal` · `TaskProgressModal` · `TaskResumeModal` | 불러오는 중 모달 · 오래 걸리는 작업 진행률 · 이어서 하기([[ADR-023]]) |
@@ -115,6 +115,7 @@
 | `features/refresh/freshness.ts` · `storage/data-freshness.ts` | 갱신 시각 값과 저장(Preferences `dataFetchedAt`) |
 | `features/refresh/progress.ts` | 갱신 진행률(`useRefreshProgress`) |
 | `features/input-card/store.ts` · `keyboard-height.ts` · `storage/keyboard-height.ts` | 입력 카드 열기 · 기기 키보드 높이 저장 |
+| `features/input-card/meso-unit.ts` · `storage/meso-unit.ts` | 금액 칸마다 고른 단위 기억 |
 | `theme/ThemeProvider.tsx` | 앱 루트 바탕색 |
 | `android/.../PreparedTextFlags.kt` | 안드로이드 `enablePreparedTextLayout` |
 

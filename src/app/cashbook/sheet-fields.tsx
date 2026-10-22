@@ -27,6 +27,7 @@ import { characterOptions } from './character-options'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { monthKeyOf } from '../../lib/calendar'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
+import type { MesoUnitKey } from '../../types/meso-unit'
 
 /**
  * 기본값 1 로 서는 수를 드는 훅. 수량 다섯과 사냥 계산기의 `소재` 가 쓴다.
@@ -165,6 +166,8 @@ export function AmountInput(props: {
   unit?: string
   /** 한국어 단위 읽기(`1200만`). 메소 금액에만 뜻이 있다. */
   reading?: boolean
+  /** 카드에 금액 단위 세그먼트를 세우고 고른 단위를 이 이름으로 기억한다. */
+  unitKey?: MesoUnitKey
   icon?: InputCardIcon
   chips?: readonly InputCardChip[]
   placeholder?: string
@@ -198,6 +201,7 @@ function openAmountCard(props: {
   context?: string
   unit?: string
   reading?: boolean
+  unitKey?: MesoUnitKey
   icon?: InputCardIcon
   chips?: readonly InputCardChip[]
   placeholder?: string
@@ -211,6 +215,7 @@ function openAmountCard(props: {
     icon: props.icon,
     unit: props.unit,
     reading: props.reading,
+    unitKey: props.unitKey,
     chips: props.chips ?? MESO_QUICK_ADDS,
     placeholder: props.placeholder,
     value: seed,

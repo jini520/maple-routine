@@ -6,6 +6,9 @@
  * 6  7  8  9  0  확인
  * ```
  *
+ * 소수점을 받는 카드는 윗줄 `⌫` 왼쪽에 `.` 이 더 선다. 줄을 늘리면 판이 높아져 짧은 화면에서
+ * 판을 띄우는 뜻이 없어지므로 열을 늘린다.
+ *
  * **OS 키보드가 아니라 값 칸에 딸린 판으로 읽혀야 한다.** 그래서 화면 전체 폭이 아니라 호출부가
  * 주는 폭에 맞춰 서고, 바탕과 테두리가 카드 안쪽 재질이다. 화면 바닥에 눕는 키보드 모양을 흉내
  * 내면 사용자가 OS 키보드로 착각해 시스템 동작(길게 눌러 기호 등)을 기대한다.
@@ -42,6 +45,10 @@ export interface NumberPadProps {
    * 카드의 버튼은 그 값을 기록에 넣는 일이다.
    */
   confirmLabel?: string
+  /** 소수점 키. 넘긴 판에만 선다. */
+  onDecimal?: () => void
+  /** 소수점 키를 잠근다. **없애지 않는다** - 단위를 바꿀 때마다 키 자리가 움직이면 손이 헛간다. */
+  decimalDisabled?: boolean
 }
 
 const 윗줄 = ['1', '2', '3', '4', '5'] as const
@@ -96,6 +103,27 @@ export function NumberPad(props: NumberPadProps): React.JSX.Element {
         {윗줄.map((digit) => (
           <DigitKey key={digit} digit={digit} onPress={props.onDigit} />
         ))}
+        {props.onDecimal !== undefined && (
+          <Pressable
+            testID="number-pad-decimal"
+            role="button"
+            aria-label="소수점"
+            aria-disabled={props.decimalDisabled === true}
+            /*
+              잠가도 **터치는 받는다.** \`disabled\` 로 두면 터치가 판 뒤의 카드로 넘어가, 카드의 빈 곳을
+              누른 것처럼 판이 내려간다.
+            */
+            onPress={() => {
+              if (props.decimalDisabled !== true) props.onDecimal?.()
+            }}
+            style={{ flexGrow: 1, flexBasis: 0 }}
+            className={`items-center justify-center rounded-[10px] bg-surface active:bg-surface-2${
+              props.decimalDisabled === true ? ' opacity-40' : ''
+            }`}
+          >
+            <Text className="text-xl font-bold text-text">.</Text>
+          </Pressable>
+        )}
         <Pressable
           testID="number-pad-backspace"
           role="button"
@@ -121,7 +149,8 @@ export function NumberPad(props: NumberPadProps): React.JSX.Element {
           role="button"
           aria-label={props.confirmLabel ?? '확인'}
           onPress={props.onConfirm}
-          style={{ flexGrow: 마지막_열_배수, flexBasis: 0 }}
+          // 윗줄에 소수점이 서면 그 한 칸 몫까지 넓어진다. 두 줄의 오른쪽 끝이 맞아야 판이 격자로 읽힌다.
+          style={{ flexGrow: props.onDecimal === undefined ? 마지막_열_배수 : 마지막_열_배수 + 1, flexBasis: 0 }}
           className="items-center justify-center rounded-[10px] bg-primary active:opacity-90"
         >
           <Text numberOfLines={1} className="text-13 font-bold text-on-primary">

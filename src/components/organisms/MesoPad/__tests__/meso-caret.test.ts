@@ -50,3 +50,11 @@ describe('사용자가 보고한 자리', () => {
     expect(caretAfterDigits('100,034,000,000', 6)).toBe(7)
   })
 })
+
+describe('소수점이 낀 금액', () => {
+  // 칸이 든 글자(`1234.5`)에도 소수점이 있어서, 소수점을 안 세면 소수부의 커서가 한 자리 밀린다.
+  it('소수점은 숫자처럼 세고 콤마만 건너뛴다', () => {
+    expect(digitsBefore('1,234.5', 7)).toBe(6)
+    expect(caretAfterDigits('1,234.5', 5)).toBe(6)
+  })
+})

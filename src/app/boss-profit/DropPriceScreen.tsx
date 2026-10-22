@@ -268,6 +268,7 @@ export function DropPriceScreen(): React.JSX.Element {
       icon: dropItemIconOf(target.drop.itemKey) ?? 'meso',
       unit: '메소',
       reading: true,
+      unitKey: 'dropPrice',
       chips: MESO_QUICK_ADDS,
       value: mesoTextOf(edit?.meso ?? target.drop.priceMeso ?? 0),
       share: {

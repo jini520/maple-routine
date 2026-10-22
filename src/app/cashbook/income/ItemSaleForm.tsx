@@ -166,6 +166,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
               icon: 'meso',
               unit: '메소',
               reading: true,
+              unitKey: 'itemSale',
               chips: MESO_QUICK_ADDS,
               value: typedText,
               onConfirm: (next) => setTypedText(settleMesoText(acceptMesoText(typedText, next))),

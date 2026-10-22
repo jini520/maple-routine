@@ -20,6 +20,8 @@ const AnimatedBox = Animated.createAnimatedComponent(View)
  * 상자 여백(`p-0.5`)까지 줄이면 미끄러지는 상자가 테두리에 붙어 눌린 조각이 잘려 보인다.
  */
 const SIZES = {
+  /** 줄 안의 **곁 고르개**. 입력 카드의 금액 단위와 수수료가 쓴다. 높이 23 이다. */
+  sm: { piece: 'px-2 py-px', label: 'text-11 leading-[15px]' },
   default: { piece: 'px-2.5 py-0.5', label: 'text-11' },
   /** 줄의 **주 고르개**. 파티 모달의 `분배` 가 쓴다. */
   md: { piece: 'px-3.5 py-1', label: 'text-xs' },
