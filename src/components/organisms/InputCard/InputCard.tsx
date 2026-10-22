@@ -46,8 +46,18 @@ import type { ImageAssetRef } from '../../../types/image-asset'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { Text, TextInput, XIcon } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { MAX_MESO, acceptMesoText, mesoTextOf, mesoValueOf } from '../MesoPad/meso-pad'
+import { MAX_MESO, mesoTextOf, mesoValueOf } from '../MesoPad/meso-pad'
 import { caretAfterDigits, digitsBefore } from '../MesoPad/meso-caret'
+import {
+  MESO_UNITS,
+  MESO_UNIT_LABELS,
+  acceptUnitText,
+  mesoTextOfUnit,
+  shownUnitText,
+  unitTextOf,
+} from '../MesoPad/meso-unit'
+import { mesoUnitOf, rememberMesoUnit } from '../../../features/input-card/meso-unit'
+import type { MesoUnit, MesoUnitKey } from '../../../types/meso-unit'
 import { useKeyboardShown } from '../../../hooks/useKeyboardShown'
 import { ShareField } from '../../molecules/ShareField/ShareField'
 import { Stepper } from '../../molecules/Stepper/Stepper'
@@ -191,6 +201,12 @@ export interface InputCardProps {
    * 자릿수가 작아 읽어 줄 것이 없고, 그 자리는 맥락 줄이 대신 진다.
    */
   reading?: boolean
+  /**
+   * 금액 단위(기본 · 만 · 억)를 고르는 세그먼트를 세우고, 고른 단위를 이 이름으로 기억한다.
+   *
+   * 넘겨도 `value` 와 확인이 주는 값은 **메소 글자**다. 단위는 카드 안에서만 산다.
+   */
+  unitKey?: MesoUnitKey
   /** 글자 칸. 글자판이 뜨고 값이 왼쪽 정렬이며 칩이 안 선다. */
   text?: boolean
   /** 값에 더하는 눈금. 글자 칸에서는 무시된다. */
@@ -267,8 +283,18 @@ function iconSourceOf(icon: InputCardIcon | undefined): ImageAssetRef | null {
   return icon
 }
 
+/** 세그먼트 글자에서 단위로. */
+const UNIT_BY_LABEL = Object.fromEntries(MESO_UNITS.map((unit) => [MESO_UNIT_LABELS[unit], unit])) as Record<
+  string,
+  MesoUnit
+>
+const UNIT_OPTIONS = MESO_UNITS.map((unit) => MESO_UNIT_LABELS[unit])
+
 export function InputCard(props: InputCardProps): React.JSX.Element {
-  const [draft, setDraft] = useState(props.value)
+  /** 칸이 치는 단위. 세그먼트가 없는 카드는 늘 기본이라 글자 규칙이 예전과 같다. */
+  const [unit, setUnit] = useState<MesoUnit>(() => (props.unitKey === undefined ? 'base' : mesoUnitOf(props.unitKey)))
+  /** 든 글자는 **고른 단위의 글자**다(`99.9`). 메소 글자로는 내보낼 때 옮긴다. */
+  const [draft, setDraft] = useState(() => unitTextOf(props.value, unit))
   /**
    * **인원과 비율 합을 따로 든다**(사용자 지정). 둘은 같은 자리에 같은 모양으로 서지만 세는 것이
    * 다르다. 인원은 몇 명이 나누나이고 합은 내 몫의 분모다. 한 값을 나눠 쓰면 `비율` 에서 합을
@@ -289,7 +315,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   const [seed, setSeed] = useState(props.seed)
   if (props.seed !== seed) {
     setSeed(props.seed)
-    setDraft(props.value)
+    setDraft(unitTextOf(props.value, unit))
     setPartySize(props.share?.partySize ?? 1)
     setRatio(ratioSeedOf(props.share))
     setUsesRatio(props.share?.mode === 'ratio')
@@ -375,8 +401,21 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    */
   const canType = usesPadPath ? padOpen : keyboardShown
 
-  /** 커서를 보일까. 칠 수 있을 때와 **판을 한 번도 안 올린 진입 직후**다. */
-  const showsCaret = canType || (usesPadPath && !padEverOpened)
+  /**
+   * OS 키보드가 한 번이라도 올라왔나. 판의 `padEverOpened` 와 같은 일을 OS 키보드 쪽에서 한다.
+   *
+   * 그리는 중에 바꾼다. 효과로 미루면 키보드가 뜬 첫 프레임에 이 값이 아직 거짓이다.
+   */
+  const [keyboardEverShown, setKeyboardEverShown] = useState(false)
+  if (keyboardShown && !keyboardEverShown) setKeyboardEverShown(true)
+
+  /**
+   * 커서를 보일까. 칠 수 있을 때와 **입력 수단이 한 번도 안 올라온 진입 직후**다.
+   *
+   * 진입 직후에 숨기면 안 된다. iOS 는 `caretHidden` 이 바뀌어도 커서를 다시 그리지 않아서(커서 자리를
+   * 묻는 것은 선택이 바뀔 때뿐이다), 숨긴 채로 선 칸은 키보드가 올라와도 한 글자를 칠 때까지 커서가 없다.
+   */
+  const showsCaret = canType || (usesPadPath ? !padEverOpened : !keyboardEverShown)
 
   /**
    * 판 바깥을 누르면 내려간다. **카드는 안 닫힌다.**
@@ -409,11 +448,14 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    * 칸에 보이는 글자. **숫자는 콤마로 끊는다**(사용자 지정). 자릿수가 커서 안 끊으면 억인지
    * 조인지 눈으로 세야 한다.
    *
-   * 들고 있는 값(`draft`)은 숫자만이다. 콤마는 보이는 자리에서만 붙이고, 돌아올 때 `acceptMesoText`
-   * 가 걷는다. `0` 을 빈 칸으로 접지 않는 것은 사냥의 조각 가격에서 **빈 칸은 보관이고 0 은 0 메소에
+   * 들고 있는 값(`draft`)은 숫자와 소수점뿐이다. 콤마는 보이는 자리에서 정수부에만 붙이고, 돌아올 때
+   * `acceptUnitText` 가 걷는다. `0` 을 빈 칸으로 접지 않는 것은 사냥의 조각 가격에서 **빈 칸은 보관이고 0 은 0 메소에
    * 판 것**이라 뜻이 갈리기 때문이다.
    */
-  const shown = isText || draft === '' ? draft : mesoValueOf(draft).toLocaleString()
+  const shown = isText ? draft : shownUnitText(draft)
+
+  /** 메소로 옮긴 지금 값. 읽기 · 칩 · 확인이 이것을 본다. */
+  const draftMeso = isText ? draft : mesoTextOfUnit(draft, unit)
 
   /**
    * 숫자 칸의 자리표시자를 **우리가 그린다**.
@@ -438,7 +480,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   const [caret, setCaret] = useState<{ start: number; end: number } | null>(null)
 
   /** 커서 앞에 숫자가 몇 개인가. 값을 넣고 지우는 자리가 이 수로 정해진다. */
-  const digitCaret = caret === null ? mesoTextOf(mesoValueOf(draft)).length : digitsBefore(shown, caret.start)
+  const digitCaret = digitsBefore(shown, caret === null ? shown.length : caret.start)
 
   /**
    * 값이 갈리는 순간 네이티브 칸이 들고 있는 자리. **한 번 쓰고 비운다.**
@@ -455,7 +497,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    * @param nativeAt 갈기 전 네이티브 칸의 커서. 뒤늦게 이 값이 오면 버린다.
    */
   function settleCaret(nextDraft: string, keepDigits: number, nativeAt: number): void {
-    const nextShown = nextDraft === '' ? '' : mesoValueOf(nextDraft).toLocaleString()
+    const nextShown = shownUnitText(nextDraft)
     const at = caretAfterDigits(nextShown, keepDigits)
     // 고른 자리와 같으면 버릴 것이 없다. 적어 두면 손으로 누른 그 자리를 잡아먹는다.
     staleCaret.current = nativeAt === at ? null : nativeAt
@@ -488,16 +530,16 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     const 콤마지움 =
       앞커서 > 0 && shown[앞커서 - 1] === ',' && `${shown.slice(0, 앞커서 - 1)}${shown.slice(앞커서)}` === next
     if (콤마지움 && 남길숫자 > 0) {
-      const digits = next.replace(/[^0-9]/g, '')
+      const digits = next.replace(/[^0-9.]/g, '')
       const 지운뒤 = `${digits.slice(0, 남길숫자 - 1)}${digits.slice(남길숫자)}`
-      const accepted = acceptMesoText(draft, 지운뒤)
+      const accepted = acceptUnitText(draft, 지운뒤, unit)
       setDraft(accepted)
       // 지운 자리가 곧 커서다. 네이티브는 콤마만 빠진 자리에 서 있다.
       settleCaret(accepted, 남길숫자 - 1, 새커서)
       return
     }
 
-    const accepted = acceptMesoText(draft, next)
+    const accepted = acceptUnitText(draft, next, unit)
     setDraft(accepted)
     // 칸이 칠 때 네이티브가 든 자리는 **방금 받은 날 글자 안**의 자리다.
     settleCaret(accepted, 남길숫자, 새커서)
@@ -505,9 +547,28 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
 
   function add(step: number, set = false): void {
     // 칩은 자리에 끼우는 것이 아니라 **값을 더하거나 바꾸는** 것이라 커서가 끝으로 간다.
-    const next = mesoTextOf(Math.min(MAX_MESO, set ? step : mesoValueOf(draft) + step))
+    // 칩은 **메소를 더한다**. 단위마다 눈금이 바뀌면 같은 칩이 화면마다 다른 금액이 된다.
+    const next = unitTextOf(mesoTextOf(Math.min(MAX_MESO, set ? step : mesoValueOf(draftMeso) + step)), unit)
     setDraft(next)
-    settleCaret(next, mesoTextOf(mesoValueOf(next)).length, caret?.start ?? shown.length)
+    settleCaret(next, next.length, caret?.start ?? shown.length)
+  }
+
+  /** 판의 키 하나를 커서 자리에 끼운다. 받을 수 없는 글자면 칸이 그대로다. */
+  function insertAtCaret(key: string): void {
+    const accepted = acceptUnitText(draft, `${draft.slice(0, digitCaret)}${key}${draft.slice(digitCaret)}`, unit)
+    setDraft(accepted)
+    // 판이 누를 때 네이티브가 든 자리는 **갈기 전 글자**의 커서다. 소수점부터 치면 `0.` 이라 두 자 늘어난다.
+    settleCaret(accepted, digitCaret + accepted.length - draft.length, caret?.start ?? shown.length)
+  }
+
+  /** 단위를 바꾼다. **값은 그대로**이고 칸의 숫자만 그 단위로 다시 적힌다. */
+  function changeUnit(nextUnit: MesoUnit): void {
+    if (props.unitKey === undefined) return
+    const next = unitTextOf(draftMeso, nextUnit)
+    setUnit(nextUnit)
+    setDraft(next)
+    rememberMesoUnit(props.unitKey, nextUnit)
+    settleCaret(next, next.length, caret?.start ?? shown.length)
   }
 
   /**
@@ -520,14 +581,14 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     if (to === undefined) return
     if (props.fees !== undefined) {
       const percentOf = (fee: FeeSeed) => (fee.auto ? (autoFee?.percent ?? null) : fee.percent)
-      to(draft, share, {
+      to(draftMeso, share, {
         saleFeePercent: percentOf(saleFee),
         saleFeeAuto: saleFee.auto,
         splitFeePercent: percentOf(splitFee),
         splitFeeAuto: splitFee.auto,
       })
-    } else if (props.share === undefined) to(draft)
-    else to(draft, share)
+    } else if (props.share === undefined) to(draftMeso)
+    else to(draftMeso, share)
   }
 
   /** 수수료 줄 하나. 끄는 순간 방금까지 자동이던 요율을 고른 채 선다. */
@@ -630,20 +691,40 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             </Pressable>
           </View>
 
+          {props.unitKey !== undefined && (
+            // 값 칸 위 오른쪽. 고른 단위가 값과 단위 글자가 선 오른쪽 끝에서 읽힌다.
+            <View testID="input-card-unit" className="mt-2 flex-row justify-end">
+              <Segment
+                options={UNIT_OPTIONS}
+                selected={MESO_UNIT_LABELS[unit]}
+                size="sm"
+                onSelect={(label) => changeUnit(UNIT_BY_LABEL[label] ?? 'base')}
+              />
+            </View>
+          )}
+
           {/*
-            읽기 칸은 값이 비어도 자리를 지킨다. 사라지면 첫 타건에 값이 왼쪽으로 밀린다.
-            글자 칸에는 읽어 줄 단위가 없어 그 자리를 아예 안 세운다.
+            **높이를 못박지 않고 여백으로 만든다.** 상자에 `h-14`, 안쪽 칸에 `h-9` 를 주면 둘의
+            가운데가 서로 어긋나 글자가 위로 붙었다(사용자 지적). 줄 높이가 상자를 정하게 두고
+            `min-h-14` 는 값이 짧아도 상자가 작아지지 않게 하는 바닥이다.
+
+            **단위 읽기는 상자 안 오른쪽 위에 못박는다.** 값 왼쪽에 두면 읽기와 값이 둘 다 길어질 때
+            (`9조 9999억 9999만 9999` 와 `9,999,999,999,999`) 겹쳤다. 그 자리만큼 위 여백을 늘려 값을
+            아래로 내린다. 값이 비어도 자리를 지켜 첫 타건에 값이 안 뛴다.
           */}
-          {/*
-          **높이를 못박지 않고 여백으로 만든다.** 상자에 `h-14`, 안쪽 칸에 `h-9` 를 주면 둘의
-          가운데가 서로 어긋나 글자가 위로 붙었다(사용자 지적). 위아래 여백을 같은 값으로 주고
-          줄 높이가 상자를 정하면 대칭이 구조로 보장된다. `min-h-14` 는 값이 짧아도 상자가
-          작아지지 않게 하는 바닥이다.
-        */}
-        <View className="mt-3 min-h-14 flex-row items-center gap-2 rounded-xl border-[1.5px] border-primary bg-bg px-3.5 py-2.5">
+          <View
+            className={`${props.unitKey === undefined ? 'mt-3' : 'mt-1.5'} relative min-h-14 flex-row items-center gap-2 rounded-xl border-[1.5px] border-primary bg-bg px-3.5 ${
+              props.reading === true ? 'pb-1 pt-[18px]' : 'py-2.5'
+            }`}
+          >
             {props.reading === true && (
-              <Text testID="input-card-reading" className="shrink-0 text-xs text-text-muted" style={TABULAR_NUMS}>
-                {draft === '' ? '' : formatMesoUnits(mesoValueOf(draft))}
+              <Text
+                testID="input-card-reading"
+                numberOfLines={1}
+                className="absolute right-3.5 top-1.5 text-11 text-text-muted"
+                style={TABULAR_NUMS}
+              >
+                {draftMeso === '' ? '' : formatMesoUnits(mesoValueOf(draftMeso))}
               </Text>
             )}
             <View className="relative flex-1">
@@ -706,7 +787,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 setCaret(next)
               }}
               onChangeText={change}
-              keyboardType={isText ? undefined : 'number-pad'}
+              // 단위 카드는 기본 단위에서도 소수점 키가 있는 판이다. 칸이 선 채로 판을 갈면 iOS 가 안 바꾼다.
+              keyboardType={isText ? undefined : props.unitKey === undefined ? 'number-pad' : 'decimal-pad'}
               placeholder={isText ? props.placeholder : undefined}
               /*
                 **자동 초점은 OS 키보드가 받는 칸에만 남는다**(사용자 지정). 그 카드는 열리는
@@ -745,7 +827,9 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             />
             </View>
             {props.unit !== undefined && (
-              <Text className="shrink-0 text-xs font-semibold text-text-muted">{props.unit}</Text>
+              <Text className="shrink-0 text-xs font-semibold text-text-muted">
+                {unit === 'base' ? props.unit : `${MESO_UNIT_LABELS[unit]} ${props.unit}`}
+              </Text>
             )}
           </View>
 
@@ -784,7 +868,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 <Segment
                   options={SPLIT_OPTIONS}
                   selected={usesRatio ? '비율' : '기본'}
-                  size="md"
+                  // 금액 단위 세그먼트가 선 카드라 한 단계 작게 둔다. 파티 인원 모달의 같은 줄은 `md` 다.
                   // 어느 쪽 수도 안 옮긴다. 둘이 각자 제 값을 들고 있어 돌아오면 그대로다.
                   onSelect={(option) => setUsesRatio(option === '비율')}
                 />
@@ -902,14 +986,10 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                     판도 **커서 자리에** 넣고 뺀다. 칸을 눌러 가운데로 옮긴 뒤 판을 누르면 그
                     자리에 들어가야 한다. 끝에만 붙이면 칸과 판이 다른 규칙을 갖게 된다.
                   */
-                  onDigit={(digit) => {
-                    const 앞 = draft.slice(0, digitCaret)
-                    const 뒤 = draft.slice(digitCaret)
-                    const accepted = acceptMesoText(draft, `${앞}${digit}${뒤}`)
-                    setDraft(accepted)
-                    // 판이 누를 때 네이티브가 든 자리는 **갈기 전 글자**의 커서다.
-                    settleCaret(accepted, digitCaret + 1, caret?.start ?? shown.length)
-                  }}
+                  onDigit={insertAtCaret}
+                  // 단위 카드에만 선다. 기본 단위에서는 잠가 두어 단위를 바꿔도 키 자리가 안 움직인다.
+                  onDecimal={props.unitKey === undefined ? undefined : () => insertAtCaret('.')}
+                  decimalDisabled={unit === 'base'}
                   onBackspace={() => {
                     if (digitCaret === 0) return
                     const next = `${draft.slice(0, digitCaret - 1)}${draft.slice(digitCaret)}`

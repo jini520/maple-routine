@@ -126,8 +126,10 @@ describe('FeeRow', () => {
     )
 
     const 높이 = (view: typeof 켬): unknown => flattenStyle(view.getByTestId('fee-value').props.style).height
-    expect(높이(켬)).toBe(26)
-    expect(높이(끔)).toBe(26)
+    // 세그먼트 쪽 높이다. `stacked` 는 입력 카드의 `sm` 세그먼트라 23 이다.
+    const 줄 = variant === 'stacked' ? 23 : 26
+    expect(높이(켬)).toBe(줄)
+    expect(높이(끔)).toBe(줄)
   })
 
   it('캐릭터를 고르기 전에는 자동의 값 자리가 빈다', async () => {

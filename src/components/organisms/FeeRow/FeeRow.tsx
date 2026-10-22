@@ -30,7 +30,7 @@ export function FeeRow<T extends string>(props: {
    * `field` 는 가계부 시트의 줄(아래 선), `compact` 는 파티 모달의 줄.
    *
    * `stacked` 는 드롭 가격 카드다. 이름과 `자동` 이 윗줄, 값이 아랫줄이라 판의 반쪽 너비에서도
-   * 세그먼트가 이름과 자리를 다투지 않는다.
+   * 세그먼트가 이름과 자리를 다투지 않는다. 카드의 금액 단위 세그먼트와 같은 `sm` 크기다.
    */
   variant?: 'field' | 'compact' | 'stacked'
   /**
@@ -55,13 +55,14 @@ export function FeeRow<T extends string>(props: {
       /*
         **값 줄 높이를 못박는다.** 자동을 켜고 끌 때 이 자리가 명패 + 요율(19)과 세그먼트(26)를
         오가는데, 안 못박으면 그 7px 만큼 아래의 버튼 줄과 옆 줄이 함께 흔들린다(사용자 지적).
-        26 은 세그먼트 쪽 높이다(조각 16 + `py-0.5` 4 + 상자 `p-0.5` 4 + 테두리 2).
+        26 은 세그먼트 쪽 높이다(조각 16 + `py-0.5` 4 + 상자 `p-0.5` 4 + 테두리 2). `stacked` 는
+        세그먼트가 `sm` 이라 23 이다.
 
         `field` 도 든다. 그 줄의 `min-h-7`(28)이 이 차이를 흡수할 것 같지만, RN 의 높이는 여백과
         테두리를 포함하므로 `pb-2` 8 과 테두리 1 을 뺀 19 만 값에 남는다. 그래서 세그먼트가 서는
         쪽만 줄을 35 로 밀어 올렸다.
       */
-      className={`flex-row items-center justify-end gap-1.5 h-[26px]${stacked ? '' : ' flex-1'}`}
+      className={`flex-row items-center justify-end gap-1.5 ${stacked ? 'h-[23px]' : 'h-[26px] flex-1'}`}
     >
       {props.auto ? (
         props.autoFee !== null ? (
@@ -77,7 +78,12 @@ export function FeeRow<T extends string>(props: {
           )
         )
       ) : (
-        <Segment options={props.options} selected={props.selected} onSelect={props.onSelect} />
+        <Segment
+          options={props.options}
+          selected={props.selected}
+          onSelect={props.onSelect}
+          size={stacked ? 'sm' : undefined}
+        />
       )}
     </View>
   )

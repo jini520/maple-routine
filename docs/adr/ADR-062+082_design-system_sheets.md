@@ -1,8 +1,8 @@
-# ADR-062 시트 · 모달 · 팝오버 · 입력 카드
+# ADR-062+082 시트 · 모달 · 팝오버 · 입력 카드
 
 > 🟢 유효
 > 옛 번호: ADR-039 결정 2 · 3 · ADR-170 정정 12 · 13 · ADR-179 결정 1 · 2 · 3 · 4 · 5 · ADR-180 · ADR-217 · ADR-239 · ADR-241 결정 5 · 정정 7 · ADR-244 · ADR-263 · ADR-285 · ADR-302 · ADR-315 · ADR-316 · ADR-332 · ADR-337 · ADR-338
-> 관련 소스: `components/organisms/{BottomSheet,Modal,NoticeModal,InputCard,MesoPad,FaqSheet,SpeedDial,CalendarPopover,WeekCalendarPopover,TimePopover}/` · `components/molecules/{Popover,NumberPad}/` · `components/organisms/BottomBar/BottomBarOverlay.tsx` · `hooks/usePopoverPlacement.ts` · `lib/{modal-metrics,number-pad-metrics,place-dropdown,popover-anchor,shadow,fab-metrics}.ts`
+> 관련 소스: `components/organisms/{BottomSheet,Modal,NoticeModal,InputCard,MesoPad,FaqSheet,SpeedDial,CalendarPopover,WeekCalendarPopover,TimePopover}/` · `components/molecules/{Popover,NumberPad}/` · `components/organisms/BottomBar/BottomBarOverlay.tsx` · `hooks/usePopoverPlacement.ts` · `components/molecules/Segment/` · `components/organisms/MesoPad/meso-unit.ts` · `lib/{modal-metrics,number-pad-metrics,place-dropdown,popover-anchor,shadow,fab-metrics}.ts` · `features/input-card/meso-unit.ts` · `storage/meso-unit.ts`
 
 ## 배경
 
@@ -98,7 +98,10 @@ RN 에서는 형제 중 나중에 그린 것이 위에 온다. `zIndex` 는 같�
   이미 나온다. 카드가 받는 것은 칸 이름 · 맥락 줄 · 현재 값 · 단위 · 칩 눈금 · 글자인지 숫자인지다.
 - **빠른 칩을 카드 안에 둔다.** 메소 금액은 `MESO_QUICK_ADDS`(`+100만` ~ `+100억`, 오름차순), 조각 개당
   값은 두 자리 내린 눈금, 시세는 `+1000` ~ `+1`, 개수는 `+10` · `+1` 이다. 글자 칸에는 칩이 없다.
-- 글자 칸은 왼쪽 정렬, 숫자 칸은 오른쪽 정렬이다. 메소 금액 칸 왼쪽에는 한국어 단위 읽기(`1200만`)가 보인다.
+- 글자 칸은 왼쪽 정렬, 숫자 칸은 오른쪽 정렬이다.
+- 메소 금액 칸에는 한국어 단위 읽기(`1200만`)가 **값 칸 안 오른쪽 위에** 작게 고정되어 있다. 숫자는 그 아래로
+  조금 내려 선다. 예전에는 읽기를 값 왼쪽에 두었는데, 읽기와 값이 둘 다 길어지면(`9조 9999억 9999만 9999` 와
+  `9,999,999,999,999`) 서로 겹쳤다.
 - 카드 머리 표식은 메소 칸이 `meso_pouch`, 조각 개수가 `sol_erda_fragment` 이고 나머지는 없다.
 - 키보드 높이는 `react-native-keyboard-controller` 로 따라간다. 앱 셸이 `KeyboardProvider` 를 둔다.
   라이브러리 값은 음수라 부호를 뒤집어 쓰고(`keyboard-offset.ts`), 카드 위치는 그 카드가 열려 있는 동안 받은 가장 큰
@@ -116,7 +119,7 @@ RN 에서는 형제 중 나중에 그린 것이 위에 온다. `zIndex` 는 같�
 분할 화면 · 큰 글자 배수가 모두 같은 규칙을 따른다. 카드 높이는 `onLayout` 으로 잰 그 카드의 값이다.
 
 - 글자 칸은 언제나 OS 키보드다. 한글 조합은 IME 가 해야 한다.
-- 판(`molecules/NumberPad`)은 `1~5 ⌫` · `6~0 확인` 두 줄이고 높이는 104 다. 값 칸 바로 아래에 뜨고 카드를
+- 판(`molecules/NumberPad`)은 `1~5 ⌫` · `6~0 확인` 두 줄이고 높이는 104 다. 단위 세그먼트가 있는 카드에서는 윗줄에 `.` 키가 하나 더 선다(결정 13). 값 칸 바로 아래에 뜨고 카드를
   밀어내지 않고 덮는다. 밀어내면 카드가 길어져 짧은 화면에 다시 안 들어간다. 그림자와 다크 테마의
   헤어라인으로 카드와 구분한다.
 - 칸은 초점을 유지하고 `showSoftInputOnFocus={false}` 로 OS 키보드만 막는다. 그래서 커서가 살아 있고
@@ -126,6 +129,9 @@ RN 에서는 형제 중 나중에 그린 것이 위에 온다. `zIndex` 는 같�
   밖으로 올라간다.
 - 판은 값 칸을 눌러야 올라온다. 값을 고치러 연 카드에서 지금 값을 보기 전에 아래가 덮이면 안 되기
   때문이다. 진입 직후에는 판이 없어도 커서를 보인다.
+- 커서는 칠 수 있을 때(판이나 OS 키보드가 떠 있을 때)만 보인다. 다만 입력 수단이 한 번도 올라오기 전인
+  진입 직후에는 숨기지 않는다. iOS 는 `caretHidden` 이 바뀌어도 커서를 다시 그리지 않아서, 숨긴 채로 선 칸은
+  키보드가 올라와도 한 글자를 칠 때까지 커서가 보이지 않았다.
 - 판의 `확인` 은 판만 내리고, 카드 버튼 `입력` 이 값을 내보낸다. 같은 글자가 두 번 보이지 않게 가계부
   카드의 버튼 글자를 `입력` 으로 정했다.
 - 키보드 높이는 `KeyboardPort` 가 알려 주고 `features/input-card/keyboard-height.ts` 가 본 것 중 가장 큰
@@ -233,6 +239,54 @@ RN `TextInput` 은 높이를 내용에서 잰다. iOS 는 한글과 영문의 �
 - 펼친 알약에는 그림자를 주지 않는다. 스크림만으로 떠 있다는 것이 보인다.
 - `elevation` 은 함께 주지 않는다. 안드로이드에서 그림자가 두 번 그려진다.
 
+### 결정 13. 금액 카드 일부는 단위(기본 · 만 · 억)를 골라 치고, 소수점을 받는다
+
+큰 금액을 넣을 때 0 을 여덟 개씩 세지 않게 하려고, 금액 카드 일부에 단위 세그먼트를 둔다. 99억 9천만은 이렇게 친다.
+
+| 고른 단위 | 칸에 치는 것 | 저장되는 메소 |
+|---|---|---|
+| 기본 | `9,990,000,000` | 9,990,000,000 |
+| 만 | `999,000` | 9,990,000,000 |
+| 억 | `99.9` | 9,990,000,000 |
+
+억 단위에서 `99.9` 같은 끝수를 적지 못하면 단위를 고른 뜻이 없어진다. 그래서 소수점을 함께 받는다.
+
+- **세그먼트를 둘 칸은 호출부가 정한다.** `InputCard` 에 `unitKey` 를 넘긴 카드에만 선다. 메포 · 개수 · % 칸에는
+  뜻이 없다. 지금 켠 칸은 다섯 종류다.
+
+  | `unitKey` | 칸 |
+  |---|---|
+  | `dropPrice` | 드롭 판매가(`DropPriceScreen` · `BossDropSheet`) |
+  | `itemSale` | 가계부 아이템 판매의 판매 대금 · 단가(`ItemSaleForm`) |
+  | `itemBuy` | 가계부 아이템 구매의 구매 비용 · 단가(`ItemBuyForm`) |
+  | `catalogUnitPrice` | 가계부 지출 항목의 개당 가격(`CatalogForm`) |
+  | `itemSplit` | 판매 분배금 계산기의 판매가(`ItemSplitScreen`). 입력 카드가 아니라 화면의 칸이라 세그먼트를 화면이 직접 단다 |
+
+  솔 에르다 조각의 개당 가격 · 조각 가격과 획득 메소, 기타 수익 · 지출의 금액에는 두지 않는다(사용자 지정).
+- **고른 단위는 칸마다 기기에 기억한다.** 다음에 그 칸을 열면 그 단위로 선다. 늘 억으로 치는 사용자가 매번 고르지
+  않아도 된다. 칸마다 따로 두는 것은, 드롭 판매가에서 억을 고른 뒤 개당 가격 칸까지 억으로 열리면 몇 만 메소를
+  칠 때마다 단위를 되돌려야 하기 때문이다. 카드를 열 때 동기로 읽어야 해서 `features/input-card/meso-unit.ts` 가
+  메모리에 한 벌 들고, 부팅 때 `storage/meso-unit.ts` 에서 채운다. 고르는 즉시 저장한다.
+- **소수는 1메소까지 받는다.** 만은 소수 4자리, 억은 8자리다. 그보다 긴 소수는 1메소보다 작아 받지 않는다.
+  상한 `MAX_MESO`(9,999,999,999,999)는 단위와 상관없이 메소로 환산한 값에 건다.
+- **환산은 곱셈이 아니라 소수점 자리를 옮기는 글자 연산으로 한다**(`MesoPad/meso-unit.ts`). `8.29 * 1e8` 은
+  828999999.9999999 라서 곱하면 1메소가 사라진다. `Math.round` 로 덮어도 자릿수가 커지면 다시 어긋난다.
+- **카드가 내보내는 값은 늘 메소 글자다.** `onConfirm` 을 받는 쪽은 단위를 모른다. 씨앗(`value`)도 메소 글자로
+  받고, 카드를 열 때 고른 단위로 나눠 보인다. 그래서 호출부는 `unitKey` 하나만 더한다.
+- **단위를 바꾸면 값은 그대로이고 칸의 숫자만 바뀐다.** `9,990,000,000` 을 친 채 억을 고르면 `99.9` 가 된다.
+- **빠른 추가 칩은 메소 값을 더한다.** 억 단위에서 `+1억` 을 누르면 칸의 수가 1 늘어난다. 칩 눈금이 단위마다
+  바뀌면 같은 칩이 화면마다 다른 금액이 된다.
+- **커서는 숫자와 소수점을 함께 센다**(`MesoPad/meso-caret.ts`). 콤마만 건너뛴다. 콤마는 정수부에만 넣고, 치는
+  중인 `99.` 은 접지 않고 그대로 보인다. 접으면 소수점을 칠 수 없다.
+- **자체 판(결정 5)에는 윗줄 `⌫` 왼쪽에 `.` 키를 둔다.** 줄을 늘리면 판이 152 가 되어, 짧은 화면에서 판을 띄우는
+  까닭과 어긋난다. 그래서 열을 하나 더하고 높이 104 는 그대로 둔다. 기본 단위에서는 `.` 을 흐리게 잠근다. 단위에
+  따라 키가 나타났다 사라지면 손에 익은 자리가 움직이기 때문이다. 단위 세그먼트가 없는 카드의 판에는 `.` 이 없다.
+  OS 키보드는 `decimal-pad` 다.
+- **모양.** 세그먼트는 값 칸 바로 위 오른쪽에 이름 없이 선다. 크기는 `Segment` 의 `sm`(높이 23, 글자 11)이다.
+  값 칸 오른쪽의 단위 글자는 `메소` · `만 메소` · `억 메소` 다.
+- 단위 세그먼트가 들어서며 드롭 판매가 카드의 다른 세그먼트를 줄였다. `분배 방식` 은 `md`(31)에서 기본(26)으로,
+  판매 · 분배 수수료는 기본에서 `sm` 으로 줄였다(사용자 지정). 파티 인원 모달의 같은 세그먼트는 그대로다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -241,9 +295,12 @@ RN `TextInput` 은 높이를 내용에서 잰다. iOS 는 한글과 영문의 �
 | `navigation/__tests__/bar-in-layer-stack.test.tsx` | 결정 1: 펼침판 스크림이 하단바보다 뒤에(위에) 그려지는지 본다 |
 | `components/organisms/BottomSheet/__tests__/BottomSheet.test.tsx` | 결정 2: `label` 전달, 상한이 상단 인셋을 따라가는지, 최소 높이 비율, 스크림 탭으로 닫히는지, 이탈 애니메이션 뒤 부모에 알리는지, 머리 · 바닥 줄이 스크롤 밖에 놓이고 그 높이를 비워 두는지, 페이드가 가려진 쪽에만 그려지는지, 다크에서만 표면을 올리는지 본다. 결정 3: 단계 전환의 재질이 테마를 따르고 안드로이드는 표면색으로 덮는지 본다 |
 | `components/organisms/BottomSheet/__tests__/scrim-opacity.test.ts` · `step-dissolve.test.tsx` | 결정 3: 시트가 내려가지 않으면 스크림이 옅어지지 않는지, 단계를 그린 첫 커밋부터 흐림이 덮이는지 본다 |
-| `components/organisms/InputCard/__tests__/` | 결정 4 · 5: 확인 · 닫기 · 스크림 · 뒤로 가기가 값을 내보내거나 버리는지, 칩과 단위 읽기, 판정 전 키보드 막기, 판 경로의 초점과 커서, 콤마 앞뒤 편집, 판의 확인과 카드의 확인이 하는 일이 다른지, 다음 카드가 앞 카드의 값을 물고 오지 않는지 본다 |
-| `components/organisms/MesoPad/__tests__/` | 결정 5: 커서를 숫자 개수로 저장했다가 다시 찾는지, 숫자만 남기고 상한을 넘는 입력을 받지 않는지 본다 |
-| `components/molecules/NumberPad/__tests__/NumberPad.test.tsx` · `lib/__tests__/number-pad-metrics.test.ts` | 결정 5: 판 높이가 판정과 같은 수인지, 판정 식이 경계에서 판 쪽으로 기우는지, 카드를 못 쟀으면 판 쪽인지 본다 |
+| `components/organisms/MesoPad/__tests__/meso-unit.test.ts` | 결정 13: 단위와 메소 글자를 곱셈 없이 양방향으로 옮기는지(`8.29` 억), 소수 자릿수와 상한, 소수점이 하나뿐인지, 치는 중의 `99.` 을 보이는 글자에서 접지 않는지 본다 |
+| `features/input-card/__tests__/meso-unit.test.ts` | 결정 13: 단위를 칸마다 따로 기억하고, 저장된 값을 부팅 때 읽어 오는지 본다 |
+| `components/organisms/InputCard/__tests__/` | 결정 4 · 5 · 13: 단위를 바꿔도 내보내는 메소가 그대로인지, 씨앗을 연 단위로 나눠 보이는지, 칩이 메소를 더하는지, 판의 `.` 키, 확인 · 닫기 · 스크림 · 뒤로 가기가 값을 내보내거나 버리는지, 칩과 단위 읽기, 판정 전 키보드 막기, 판 경로의 초점과 커서, 콤마 앞뒤 편집, 판의 확인과 카드의 확인이 하는 일이 다른지, 다음 카드가 앞 카드의 값을 물고 오지 않는지 본다 |
+| `components/organisms/MesoPad/__tests__/` | 결정 5 · 13: 커서를 숫자와 소수점 개수로 저장했다가 다시 찾는지, 숫자만 남기고 상한을 넘는 입력을 받지 않는지 본다 |
+| `components/molecules/NumberPad/__tests__/NumberPad.test.tsx` · `lib/__tests__/number-pad-metrics.test.ts` | 결정 5 · 13: `.` 키가 단위 카드에만 서고 잠기면 안 눌리는지, 판 높이가 판정과 같은 수인지, 판정 식이 경계에서 판 쪽으로 기우는지, 카드를 못 쟀으면 판 쪽인지 본다 |
+| `app/utility/__tests__/ItemSplitScreen.test.tsx` | 결정 13: 계산기 판매가를 억으로 쳐도 정산 금액이 메소로 맞는지, 고른 단위를 기억하는지 본다 |
 | `src/__tests__/text-input-height-policy.test.ts` | 결정 6: 모든 치는 칸의 `className` 에 높이가 있는지 본다 |
 | `components/atoms/TextInput/__tests__/TextInput.test.tsx` | 결정 6: 글자 칸은 `defaultValue` 로 심고 숫자 칸은 `value` 로 통제하는지, 기본 상자를 지우고 호출부 치수가 우선하는지, iOS 한 줄 칸만 줄 높이를 지우는지, 자리표시자 색을 주는지 본다 |
 | `components/organisms/Modal/__tests__/Modal.test.tsx` · `lib/__tests__/modal-metrics.test.ts` | 결정 7: 정렬마다 상한, `footer` 가 스크롤 밖에 놓이는지, 넘칠 때만 스크롤과 페이드가 생기는지, 바깥 탭과 뒤로 가기가 `onClose` 로 가는지 본다 |
@@ -257,3 +314,4 @@ RN `TextInput` 은 높이를 내용에서 잰다. iOS 는 한글과 영문의 �
 ## 번호 기록
 
 - ADR-062 (2026-10-19): 옛 ADR-180 · 217 · 239 · 244 · 263 · 285 · 302 · 315 · 316 · 332 · 337 · 338 과 옛 ADR-039 결정 2 · 3 · 옛 ADR-170 정정 12 · 13 · 옛 ADR-179 결정 1 · 2 · 3 · 4 · 5 · 옛 ADR-241 결정 5 · 정정 7 을 합쳐 처음 작성
+- ADR-082 (2026-10-22): 결정 13(금액 카드의 단위 세그먼트 · 소수점)을 더하고, 결정 4 의 단위 읽기 위치와 결정 5 의 판 키 · 진입 직후 커서를 고침(#628)

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 
 import { useDropEffectStore } from '../features/drop-effect/store'
 import { startKeyboardHeightRecorder } from '../features/input-card/keyboard-height'
+import { loadMesoUnits } from '../features/input-card/meso-unit'
 import { useDataFreshness } from '../features/refresh/freshness'
 import { useNoticeStore } from '../features/notice/store'
 import { requestNotificationReconcile } from '../features/local-notifications/run'
@@ -127,6 +128,11 @@ export function AppShell(): React.JSX.Element {
       unmounted = true
       remove?.()
     }
+  }, [])
+
+  // 금액 칸마다 고른 단위. 카드가 열릴 때 동기로 읽으므로 미리 채운다.
+  useEffect(() => {
+    void loadMesoUnits()
   }, [])
 
   // 구독 스위치가 저장된 값을 그리고, **복원이 끝난 뒤** 켜 둔 토픽을 다시 구독한다. 토픽 구독은

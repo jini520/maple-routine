@@ -53,6 +53,7 @@
 | `mvpOnboardingPending` | `'true'` | `mvp-grade-prefs.ts` | 지운다 | 온보딩의 MVP 등급 화면에 들어갔다는 표시. 시작하기를 마치면 지운다 |
 | `pendingTasks` | JSON `PendingTask[]` | `pending-tasks.ts` | 보존 | 끝나지 않은 기록 다시 쓰기 작업([[ADR-023]]) |
 | `keyboardHeight` | 숫자 문자열(px) | `keyboard-height.ts` | 지운다 | 이 기기의 OS 키보드 높이 |
+| `mesoUnits` | JSON `{ [unitKey]: 'base' \| 'man' \| 'eok' }` | `meso-unit.ts` | 보존 | 금액 칸마다 마지막으로 고른 단위([[ADR-082]] 결정 13). 사용자가 고른 설정이라 캐시와 함께 지우지 않는다. 모르는 칸 · 값은 `기본` 으로 읽는다 |
 | `lastPointRate` | 숫자 문자열 | `last-point-rate.ts` | 지운다 | 마지막으로 넣은 메이플 포인트 시세(1억 메소당) |
 | `lastHunts` | JSON `{ [ocid]: { groundKey, boosts, unionTier? } }` | `last-hunts.ts` | 지운다 | 캐릭터마다 마지막 사냥 |
 | `lastHuntSelection` · `lastHuntToggles` | JSON | `last-hunts.ts` | 지운다 | 옛 키. `lastHunts` 가 없을 때 한 번 읽어 옮기고 지운다 |

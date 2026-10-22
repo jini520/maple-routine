@@ -7,7 +7,7 @@
  * 계산은 전부 `lib/cashbook/item-split` 이 진다. 여기에는 어떤 입력이 그 인자로 가는가만 있다.
  *
  * 자체 키패드를 두지 않는다. 시트 안이 아니라 스크롤되는 전체 화면이라 키보드가 밀 것이 없다.
- * 자릿수 문제는 단위 칩으로 받는다.
+ * 자릿수 문제는 단위 칩과 금액 단위 세그먼트(기본 · 만 · 억)로 받는다.
  */
 
 import { useState } from 'react'
@@ -28,6 +28,18 @@ import {
   type FeePercent,
 } from '../../lib/cashbook/item-split'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
+import { Segment } from '../../components/molecules/Segment/Segment'
+import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
+import {
+  MESO_UNITS,
+  MESO_UNIT_LABELS,
+  acceptUnitText,
+  mesoTextOfUnit,
+  shownUnitText,
+  unitTextOf,
+} from '../../components/organisms/MesoPad/meso-unit'
+import { mesoUnitOf, rememberMesoUnit } from '../../features/input-card/meso-unit'
+import type { MesoUnit } from '../../types/meso-unit'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { ITEM_SPLIT_TOOL_NAME } from './tool-names'
@@ -45,13 +57,21 @@ const FEE_PERCENTS = [3, 5] as const satisfies readonly FeePercent[]
 const DEFAULT_PARTY_SIZE = 2
 const DEFAULT_FEE_PERCENT: FeePercent = 3
 
-/** 친 글자에서 금액을 읽는 파서. 숫자가 아닌 것은 흘리고 상한에서 멈춘다. */
-function parseMesoInput(text: string): number {
-  const digits = text.replace(/[^0-9]/g, '')
-  if (digits === '') return 0
-  const parsed = Number(digits)
-  if (!Number.isFinite(parsed)) return MAX_SALE_PRICE_MESO
-  return Math.min(parsed, MAX_SALE_PRICE_MESO)
+const UNIT_OPTIONS = MESO_UNITS.map((unit) => MESO_UNIT_LABELS[unit])
+
+/**
+ * 친 글자 중 칸에 남길 것. 숫자와 소수점만 흘리고, **상한을 넘으면 상한에서 멈춘다.**
+ *
+ * 입력 카드처럼 앞 글자로 되돌리지 않는 것은 이 칸이 붙여넣기도 받기 때문이다. 상한을 넘으면
+ * `N × 100` 이 안전 정수를 벗어나 계산이 조용히 틀린다.
+ */
+function acceptSalePrice(prev: string, text: string, unit: MesoUnit): string {
+  const accepted = acceptUnitText(prev, text, unit)
+  const int = text.replace(/[^0-9.]/g, '').split('.')[0] ?? ''
+  if (accepted === prev && int !== '' && Number(mesoTextOfUnit(int, unit)) > MAX_SALE_PRICE_MESO) {
+    return unitTextOf(String(MAX_SALE_PRICE_MESO), unit)
+  }
+  return accepted
 }
 
 function FeeToggle(props: {
@@ -97,7 +117,10 @@ function FeeToggle(props: {
 
 export function ItemSplitScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
-  const [salePriceMeso, setSalePriceMeso] = useState(0)
+  const [unit, setUnit] = useState<MesoUnit>(() => mesoUnitOf('itemSplit'))
+  /** 칸이 든 글자. **고른 단위의 글자**다(`99.9`). 셈은 메소로 옮긴 값으로 한다. */
+  const [saleText, setSaleText] = useState('')
+  const salePriceMeso = mesoValueOf(mesoTextOfUnit(saleText, unit))
   const [partySize, setPartySize] = useState(DEFAULT_PARTY_SIZE)
   // 비율 약속은 흔한 일이 아니라 스위치를 켜야 선다. 끄면 지금 그대로 파티원 수로 균등이다.
   const [shares, setShares] = useState<{ myShare: number; sharesTotal: number } | null>(null)
@@ -130,18 +153,33 @@ export function ItemSplitScreen(): React.JSX.Element {
         <Card className="gap-3 px-4 py-4">
           <View className="flex-row items-center justify-between">
             <Text className="text-xs font-semibold text-text-muted">판매가</Text>
-            {salePriceMeso > 0 && (
-              <Pressable role="button" aria-label="금액 초기화" onPress={() => setSalePriceMeso(0)}>
-                <Text className="text-xs font-medium text-text-muted">초기화</Text>
-              </Pressable>
-            )}
+            {/* 단위는 입력 칸 바로 위 오른쪽이다. 입력 카드의 단위 세그먼트와 같은 자리다. */}
+            <View className="flex-row items-center gap-3">
+              {salePriceMeso > 0 && (
+                <Pressable role="button" aria-label="금액 초기화" onPress={() => setSaleText('')}>
+                  <Text className="text-xs font-medium text-text-muted">초기화</Text>
+                </Pressable>
+              )}
+              <Segment
+                options={UNIT_OPTIONS}
+                selected={MESO_UNIT_LABELS[unit]}
+                size="sm"
+                onSelect={(label) => {
+                  const next = MESO_UNITS.find((candidate) => MESO_UNIT_LABELS[candidate] === label) ?? 'base'
+                  // 값은 그대로 두고 칸의 숫자만 그 단위로 다시 적는다.
+                  setSaleText(unitTextOf(mesoTextOfUnit(saleText, unit), next))
+                  setUnit(next)
+                  rememberMesoUnit('itemSplit', next)
+                }}
+              />
+            </View>
           </View>
 
           <TextInput
             aria-label="판매가"
-            value={salePriceMeso === 0 ? '' : salePriceMeso.toLocaleString()}
-            onChangeText={(text) => setSalePriceMeso(parseMesoInput(text))}
-            keyboardType="number-pad"
+            value={shownUnitText(saleText)}
+            onChangeText={(text) => setSaleText(acceptSalePrice(saleText, text, unit))}
+            keyboardType="decimal-pad"
             placeholder="0"
             className="h-12 rounded-[10px] border border-border bg-surface-2 px-3 text-right text-2xl font-bold text-text"
             style={TABULAR_NUMS}
@@ -162,8 +200,9 @@ export function ItemSplitScreen(): React.JSX.Element {
               <Pressable
                 key={chip.label}
                 role="button"
+                // 칩은 메소를 더한다. 억 단위에서 `+1억` 은 칸의 수를 1 올린다.
                 onPress={() =>
-                  setSalePriceMeso((current) => Math.min(current + chip.value, MAX_SALE_PRICE_MESO))
+                  setSaleText(unitTextOf(mesoTextOf(Math.min(salePriceMeso + chip.value, MAX_SALE_PRICE_MESO)), unit))
                 }
                 className="rounded-full border border-border bg-surface px-3 py-1.5"
               >

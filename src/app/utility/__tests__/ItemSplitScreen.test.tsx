@@ -9,6 +9,8 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { ItemSplitScreen } from '../ItemSplitScreen'
+import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
+import { __resetMesoUnitsForTest, mesoUnitOf } from '../../../features/input-card/meso-unit'
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
@@ -151,5 +153,49 @@ describe('ItemSplitScreen: 금액 입력', () => {
     await typeSalePrice(view, '99999999999999999')
 
     expect(view.getByLabelText('판매가').props.value).toBe('9,999,999,999,999')
+  })
+})
+
+describe('ItemSplitScreen: 판매가 단위', () => {
+  beforeEach(() => {
+    installFakePreferences()
+    __resetMesoUnitsForTest()
+  })
+
+  it('억으로 친 판매가도 메소로 셈한다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+
+    await press(view.getByLabelText('억'))
+    await typeSalePrice(view, '10')
+
+    expect(transferText(view)).toBe('492,385,786')
+  })
+
+  it('끝수를 소수로 친다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+
+    await press(view.getByLabelText('억'))
+    await typeSalePrice(view, '99.9')
+
+    expect(view.getByLabelText('판매가').props.value).toBe('99.9')
+    expect(view.getByTestId('item-split-sale-price-units').props.children).toBe('99억 9천만')
+  })
+
+  it('단위를 바꿔도 금액은 그대로다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+    await typeSalePrice(view, '1000000000')
+
+    await press(view.getByLabelText('억'))
+
+    expect(view.getByLabelText('판매가').props.value).toBe('10')
+    expect(transferText(view)).toBe('492,385,786')
+  })
+
+  it('고른 단위를 기억한다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+
+    await press(view.getByLabelText('만'))
+
+    expect(mesoUnitOf('itemSplit')).toBe('man')
   })
 })

@@ -542,6 +542,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
                 icon="meso"
                 unit="메소"
                 reading
+                unitKey="catalogUnitPrice"
                 value={priceText}
                 onChange={setPriceText}
               />

@@ -171,6 +171,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
           icon="meso"
           unit="메소"
           reading
+          unitKey="itemBuy"
           value={typedText}
           onChange={setTypedText}
         />

@@ -34,6 +34,8 @@ const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.mvpBulkApplyAsked,
   // 끝나지 않은 작업 표시. 지워지면 반쯤 바뀐 기록이 이어지지 않고 그대로 굳는다.
   STORAGE_KEYS.pendingTasks,
+  // 금액 칸마다 고른 단위. 사용자가 고른 것이라 지워지면 늘 억으로 치던 칸이 기본으로 돌아간다.
+  STORAGE_KEYS.mesoUnits,
   // 통계 누적 순수익의 시작 날짜. 사용자가 고른 값이라 지워지면 아무도 되살리지 못한다.
   STORAGE_KEYS.statsCumulativeStart,
   // 파티 약속. 사용자가 적은 것이라 지워지면 아무도 되살리지 못한다.

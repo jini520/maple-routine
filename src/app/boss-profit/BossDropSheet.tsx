@@ -357,6 +357,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       icon: dropItemIconOf(target.itemKey) ?? 'meso',
       unit: '메소',
       reading: true,
+      unitKey: 'dropPrice',
       chips: MESO_QUICK_ADDS,
       value: mesoTextOf(edit?.meso ?? target.priceMeso ?? 0),
       share: {
