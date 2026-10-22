@@ -52,6 +52,7 @@ import { NoticeBanner } from './NoticeBanner'
 import { SettlementBanner } from '../SettlementBanner'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
+import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 export function TodayScreen(): React.JSX.Element {
   const content = useContentSchedulerStore()
@@ -282,6 +283,7 @@ export function TodayScreen(): React.JSX.Element {
             결산 줄이 공지 배너 **위**다. 공지는 읽을거리이고 결산 줄은 지금 화면의 값이 왜 안 맞는지를
             말하므로, 그 줄이 값보다 먼저 와야 한다. */}
         <SettlementBanner testID="today-settlement-banner" detail={SETTLEMENT_BANNER_DETAIL_TODAY} />
+        <NexonMaintenanceBanner testID="today-maintenance-banner" />
         <ManualCompletionBanner />
         <NoticeBanner />
         {/* 좌우 16 은 앱 공통 `px-4` 라 화면의 래퍼가 준다. 격자가 또 주면 두 겹이 되는데,

@@ -77,6 +77,7 @@ import {
 import { CrystalSummaryChip } from './HeadlineChips'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
+import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 /** 주기 탭. 값은 스토어의 `tab` 이고 화면에는 라벨이 선다. */
 const BOSS_PROFIT_TABS = ['weekly', 'monthly'] as const
@@ -527,6 +528,7 @@ export function BossProfitScreen(): React.JSX.Element {
           // 오지 않는다.
           onRefresh={() => ledger.reload(['live', 'window'])}
         >
+          <NexonMaintenanceBanner testID="profit-maintenance-banner" />
           {periodSection}
 
           {/* 바닥 여백이 떠 있는 버튼의 몫이다. 버튼은 콘텐츠를 밀어내지 않아 여기서 갚지

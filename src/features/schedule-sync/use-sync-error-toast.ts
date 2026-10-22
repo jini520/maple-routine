@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useToastStore } from '../toast/store'
 import { useApiKeyNotice } from '../auth/use-api-key-notice'
 import { formatScheduleSyncError } from './format'
+import { isMaintenanceSyncError } from './errors'
 import type { ScheduleSyncError } from './schedule-sync'
 
 // 스케줄 동기화 실패를 토스트로 알리는 훅 둘.
@@ -54,6 +55,11 @@ export function useScheduleSyncErrorToast(
       error.kind === 'rateLimited' ||
       error.kind === 'signInRequired'
     ) {
+      return
+    }
+
+    // 점검은 화면 맨 위의 배너가 알린다.
+    if (isMaintenanceSyncError(error)) {
       return
     }
 

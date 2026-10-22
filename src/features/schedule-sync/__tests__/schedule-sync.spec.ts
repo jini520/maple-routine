@@ -13,6 +13,7 @@ import type {
 import {
   NexonAuthError,
   NexonBadRequestError,
+  NexonMaintenanceError,
   NexonNetworkError,
   NexonNoCharacterError,
   NexonRateLimitError,
@@ -533,6 +534,25 @@ describe('syncSchedules', () => {
     for (const result of results) {
       // 지울 키가 없다. 로그인으로 부르다 난 실패다.
       expect(result.error).toEqual({ kind: 'signInRequired' })
+      expect(result.isStale).toBe(true)
+    }
+  })
+
+  it.each([
+    ['game', 'gameMaintenance'],
+    ['api', 'apiMaintenance'],
+  ] as const)('프리플라이트가 %s 점검이면 이후 캐릭터는 부르지 않는다', async (scope, kind) => {
+    // 점검은 캐릭터가 아니라 넥슨 전체가 막힌 것이라 남은 캐릭터도 같은 실패를 받는다.
+    const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+    fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonMaintenanceError('점검', scope))
+    getCachedSchedulerStateMock.mockResolvedValue(null)
+
+    const results = await syncSchedules(['ocid-1', 'ocid-2'])
+
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
+    for (const result of results) {
+      expect(result.error?.kind).toBe(kind)
       expect(result.isStale).toBe(true)
     }
   })

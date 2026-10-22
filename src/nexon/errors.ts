@@ -90,6 +90,25 @@ export class NexonNoCharacterError extends NexonApiError {
   }
 }
 
+/** 무엇이 점검 중인가. `game` 은 메이플스토리 API 점검, `api` 는 넥슨 Open API 자체의 점검. */
+export type NexonMaintenanceScope = 'game' | 'api'
+
+/**
+ * 넥슨이 점검 중이라 답하지 않는다. 400 `OPENAPI00010`(메이플스토리 API 점검) · 503 `OPENAPI00011`(Open API 점검).
+ *
+ * 키 문제도 네트워크 문제도 아니고, 점검이 끝나면 스스로 풀린다. `NexonBadRequestError` 로 두면 모르는
+ * 400 으로 `network` 에 접혀 사용자가 연결을 확인하게 된다.
+ */
+export class NexonMaintenanceError extends NexonApiError {
+  readonly scope: NexonMaintenanceScope
+
+  constructor(message: string, scope: NexonMaintenanceScope, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'NexonMaintenanceError'
+    this.scope = scope
+  }
+}
+
 /**
  * 무효한 API 키인가. 이 판정은 여기 한 곳뿐이고
  * `toScheduleSyncError`·`toAuthError`·`toSettingsError` 셋이 첫 분기로 쓴다.

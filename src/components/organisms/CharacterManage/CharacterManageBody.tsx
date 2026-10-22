@@ -99,7 +99,8 @@ function CandidateNotice({
   // 먼저 오므로 예열이 끝난 정상 경로에서는 이쪽이 기본 분기다.
   if (manage.selectableCount > 0) {
     if (manage.rosterError !== null) {
-      const stale = formatStaleRosterError(manage.rosterError)
+      const stale = formatStaleRosterError(manage.rosterError, place)
+      if (stale === null) return null
       return (
         <StaleBanner
           message={stale.message}

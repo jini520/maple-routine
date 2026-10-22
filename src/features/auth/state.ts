@@ -13,6 +13,8 @@ export type AuthError =
   | { kind: 'rateLimited' } // 429
   | { kind: 'network' } // 네트워크/5xx/JSON 파싱 실패 등
   | { kind: 'storageWriteFailed' } // 로컬 저장 실패
+  | { kind: 'gameMaintenance' } // 400 OPENAPI00010
+  | { kind: 'apiMaintenance' } // 503 OPENAPI00011
 
 /**
  * 저장된 키로는 앞으로 갈 수 없게 된 원인.

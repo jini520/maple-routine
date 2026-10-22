@@ -38,6 +38,7 @@ import { getTrackingMode } from '../../storage/tracking-mode'
 import { type BossCycle, type BossDifficulty } from '../../types'
 import { compareByName } from '../../lib/character-order'
 import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
+import { isMaintenanceSyncError } from '../schedule-sync/errors'
 import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
 import { isSyncFresh } from '../../lib/scheduler/sync-freshness'
 import { isMonthlyRowInWeek, monthsOfWeek } from '../../lib/boss/monthly-boss-week'
@@ -1752,7 +1753,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       characterProfiles.set(result.ocid, profile)
 
       if (result.isStale) {
-        staleCharacterNames.push(result.characterName)
+        // 점검은 화면 맨 위의 배너가 알린다. 인원 수 토스트까지 띄우면 같은 일을 두 번 말한다.
+        if (!isMaintenanceSyncError(result.error)) staleCharacterNames.push(result.characterName)
         staleOcids.add(result.ocid)
         // 영구(조회 불가)와 일시(그 외)를 카드에서도 갈라 말한다. 전자는 재시도가 무의미하고 할
         // 수 있는 것이 추적 해제뿐이다.

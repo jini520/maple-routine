@@ -29,6 +29,9 @@ export function formatScheduleSyncError(error: ScheduleSyncError): string {
     // 키를 가리키면 안 된다. 키를 다시 넣어도 안 풀린다.
     case 'signInRequired':
       return '넥슨 로그인이 만료됐습니다'
+    case 'gameMaintenance':
+    case 'apiMaintenance':
+      return maintenanceTitleOf(error.kind)
     default:
       return assertNever(error)
   }
@@ -107,6 +110,14 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
         title: '넥슨 로그인이 만료됐습니다',
         description: '다시 로그인해주세요',
       }
+    // 피커는 화면 맨 위의 배너가 무엇이 점검 중인지 말한다. 온보딩은 배너가 없어 제목이 말한다.
+    // 기다리는 것 말고는 할 일이 없어 버튼이 없다.
+    case 'gameMaintenance':
+    case 'apiMaintenance':
+      return {
+        title: place === 'picker' ? '캐릭터 목록을 불러오지 못했습니다' : maintenanceTitleOf(error.kind),
+        description: '점검이 끝난 뒤 다시 불러와주세요',
+      }
     default:
       return assertNever(error)
   }
@@ -128,9 +139,8 @@ export interface StaleRosterErrorCopy {
   action?: { kind: 'retry'; label: string }
 }
 
-// place 를 받지 않는다. 401 의 설정 이동 액션이 사라지면서 6종이 두 자리에서 전부 같아졌다.
-// 자리별로 갈릴 것이 생기면 그때 `formatRosterError` 처럼 다시 받는다.
-export function formatStaleRosterError(error: ScheduleSyncError): StaleRosterErrorCopy {
+// place 는 점검 하나만 가른다. 피커는 화면 맨 위에 점검 배너가 서고 온보딩은 서지 않는다.
+export function formatStaleRosterError(error: ScheduleSyncError, place: RosterErrorPlace): StaleRosterErrorCopy | null {
   switch (error.kind) {
     // 재시도로는 절대 풀리지 않고 누를 것도 없다. 피커에서는 이 배너가 뜨는 순간 키 무효화가
     // 화면을 키 입력으로 보내고, 온보딩은 설정 화면 자체가 없어 원래 액션이 없었다.
@@ -153,9 +163,18 @@ export function formatStaleRosterError(error: ScheduleSyncError): StaleRosterErr
       return { message: '목록이 최신이 아닙니다', action: RETRY }
     case 'signInRequired':
       return { message: '넥슨 로그인이 만료되어 목록을 갱신하지 못했습니다' }
+    // 피커는 같은 화면 맨 위에 점검 배너가 선다. 한 줄을 더 얹으면 같은 일을 두 번 말한다.
+    case 'gameMaintenance':
+      return place === 'picker' ? null : { message: '메이플스토리 API 점검 중이라 목록을 갱신하지 못했습니다' }
+    case 'apiMaintenance':
+      return place === 'picker' ? null : { message: '넥슨 Open API 점검 중이라 목록을 갱신하지 못했습니다' }
     default:
       return assertNever(error)
   }
+}
+
+function maintenanceTitleOf(kind: 'gameMaintenance' | 'apiMaintenance'): string {
+  return kind === 'gameMaintenance' ? '메이플스토리 API 점검 중입니다' : '넥슨 Open API 점검 중입니다'
 }
 
 export function formatSyncedAt(syncedAt: string | null): string {

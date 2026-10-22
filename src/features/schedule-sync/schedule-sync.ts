@@ -23,7 +23,7 @@ import {
 } from '../../storage/shared-progress-cache'
 import type { MapleCharacter, SchedulerCharacterState, SharedProgressEntry } from '../../types'
 
-import { toScheduleSyncError } from './errors'
+import { isMaintenanceSyncError, toScheduleSyncError } from './errors'
 import type { ScheduleSyncError } from './errors'
 import { latestSyncedAt } from '../../lib/data-freshness'
 import { useDataFreshness } from '../refresh/freshness'
@@ -359,12 +359,13 @@ async function runSyncRound(
   let completed = 1
   onProgress?.(completed, total)
 
-  // 셋 다 **자격 한 벌 전체**가 막힌 것이라 남은 캐릭터도 똑같이 실패한다. 안 세우면 같은
-  // 실패를 N 번 더 부른다.
+  // 앞 셋은 **자격 한 벌 전체**가, 점검은 넥슨 전체가 막힌 것이라 남은 캐릭터도 똑같이 실패한다.
+  // 안 세우면 같은 실패를 N 번 더 부른다.
   const isGlobalFailure =
     firstResult.error?.kind === 'invalidApiKey' ||
     firstResult.error?.kind === 'rateLimited' ||
-    firstResult.error?.kind === 'signInRequired'
+    firstResult.error?.kind === 'signInRequired' ||
+    isMaintenanceSyncError(firstResult.error)
 
   if (isGlobalFailure) {
     const fallbackRest = await Promise.all(
@@ -372,7 +373,7 @@ async function runSyncRound(
     )
     completed += fallbackRest.length
     onProgress?.(completed, total)
-    // 401·429 다. 전원에 폴백 결과가 있어 답하지 않은 ocid 가 0개이므로, 이 길로도 조회 불가
+    // 401·429·점검이다. 전원에 폴백 결과가 있어 답하지 않은 ocid 가 0개이므로, 이 길로도 조회 불가
     // 표식이 잘못 서지 않는다. 그래도 부르는 것은 **되던 캐릭터의 표식을 내리기** 위해서다.
     await persistUnavailable(ocids, [firstResult, ...fallbackRest])
     return [firstResult, ...fallbackRest]

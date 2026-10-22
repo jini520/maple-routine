@@ -61,6 +61,7 @@ import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
+import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 const PARTY_FILTERS = ['all', 'solo', 'party'] as const satisfies readonly PartyFilter[]
 
@@ -508,6 +509,7 @@ export function BossScreen(): React.JSX.Element {
           </PageHeader>
         }
       >
+        <NexonMaintenanceBanner testID="boss-maintenance-banner" />
         {/* 캐릭터를 고르는 장치라 콘텐츠다. 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는
             동안 빈 줄이 셸의 자식 간격을 두 번 먹는다.
 

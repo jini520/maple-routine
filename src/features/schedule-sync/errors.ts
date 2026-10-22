@@ -9,6 +9,7 @@ import {
   isInvalidApiKeyError,
   NexonApiError,
   NexonBadRequestError,
+  NexonMaintenanceError,
   NexonNoCharacterError,
   NexonRateLimitError,
   NexonSignInRequiredError,
@@ -41,11 +42,23 @@ export type ScheduleSyncError =
   // 없다. 교차 타입을 유지하는 것은 소비자가 `error.apiKey` 를 종류마다 갈라 읽지 않게 하려는
   // 것뿐이다.
   | ({ kind: 'signInRequired' } & WithApiKey)
+  // 400 OPENAPI00010 · 503 OPENAPI00011. 넥슨이 점검 중이라 기다리면 풀린다. 화면 맨 위의 점검 배너가 알린다.
+  | ({ kind: 'gameMaintenance' } & WithApiKey)
+  | ({ kind: 'apiMaintenance' } & WithApiKey)
+
+/** 점검인가. 배너가 알리는 실패라 토스트 · 스탈 배너 · 인원 수 토스트가 이것으로 비켜선다. */
+export function isMaintenanceSyncError(error: ScheduleSyncError | null | undefined): boolean {
+  return error?.kind === 'gameMaintenance' || error?.kind === 'apiMaintenance'
+}
 
 // 호출부가 reject 를 원인으로 변환할 수 있게 export 한다. 피커·온보딩 스텝이
 // `getCharacterPickerRoster` 의 catch 에서 이것을 통과시켜 loadError 로 내려준다.
 export function toScheduleSyncError(error: unknown, apiKey?: string): ScheduleSyncError {
   const 실은키 = apiKey === undefined ? {} : { apiKey }
+  // 개발자 키 분기보다 앞이다. 점검은 키 탓이 아니라 개발자 키로 부른 회차도 같은 점검이다.
+  if (error instanceof NexonMaintenanceError) {
+    return { kind: error.scope === 'game' ? 'gameMaintenance' : 'apiMaintenance' }
+  }
   // 앱에 든 개발자 키의 실패는 사용자가 고칠 수 없다. 키 탓으로 접으면 확인이 사용자의 API 키를 지운다.
   if (error instanceof NexonApiError && error.developerKey !== undefined && isDeveloperKeyProblem(error)) {
     return { kind: 'network' }

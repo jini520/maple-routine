@@ -2,9 +2,11 @@ import {
   NexonApiError,
   NexonAuthError,
   NexonBadRequestError,
+  NexonMaintenanceError,
   NexonNetworkError,
   NexonRateLimitError,
   NexonSignInRequiredError,
+  type NexonMaintenanceScope,
 } from './errors'
 import { markDeveloperKeyDead, nextDeveloperKey } from './developer-keys'
 import type { StreamLine, StreamTask } from '../server/friends-stream'
@@ -146,6 +148,39 @@ export function setFriendsStream(stream: FriendsStream | null): void {
 /** 테스트가 갈아끼운다. 이름을 가른 것은 부팅 배선과 섞이지 않게 하려는 것이다. */
 export const setFriendsStreamForTest = setFriendsStream
 
+/**
+ * 점검 응답과 성공 응답을 받아 가는 쪽. **앱이 부팅 때 꽂는다**(`setFriendsStream` 과 같은 이유).
+ *
+ * 경로는 물음표 앞이다. 메이플스토리 API 점검은 경로마다 막히고 풀리는 것이 달라, 받는 쪽이 막혔던 경로를 기억한다.
+ */
+export interface MaintenanceReporter {
+  maintenance(scope: NexonMaintenanceScope, path: string): void
+  succeeded(path: string): void
+}
+
+let maintenanceReporter: MaintenanceReporter | null = null
+
+/** 부팅이 한 번 부른다. 테스트는 `null` 로 걷는다. */
+export function setMaintenanceReporter(reporter: MaintenanceReporter | null): void {
+  maintenanceReporter = reporter
+}
+
+/** 이 응답이 점검인가. 상태와 코드가 함께 맞아야 한다. 넥슨 문서의 짝이 그렇다. */
+function maintenanceScopeOf(status: number, code: string | null | undefined): NexonMaintenanceScope | null {
+  if (status === 400 && code === 'OPENAPI00010') return 'game'
+  if (status === 503 && code === 'OPENAPI00011') return 'api'
+  return null
+}
+
+/** 점검을 알리고 던질 에러를 만든다. 알림을 여기 두어야 직접 부른 것과 스트림이 빠짐없이 같이 알린다. */
+function maintenanceErrorOf(scope: NexonMaintenanceScope, path: string): NexonMaintenanceError {
+  maintenanceReporter?.maintenance(scope, bareOf(path))
+  return new NexonMaintenanceError(
+    scope === 'game' ? '메이플스토리 API 점검 중입니다 (OPENAPI00010)' : '넥슨 Open API 점검 중입니다 (OPENAPI00011)',
+    scope,
+  )
+}
+
 /** 경로와 쿼리를 서버 작업으로. 내역은 `date=`, 스케줄러는 `ocid=` 와 있으면 `date=` 를 든다. */
 function taskOf(path: string): StreamTask {
   const [bare, query = ''] = path.split('?')
@@ -191,7 +226,9 @@ function mergePages(bodies: readonly unknown[]): unknown {
 }
 
 /** `fail` 줄을 넥슨 에러 어휘로. 서버가 status 와 넥슨 코드를 그대로 전해 줘서 직접 부른 것과 같이 가른다. */
-function errorOfFail(status: number, code: string | undefined): NexonApiError {
+function errorOfFail(path: string, status: number, code: string | undefined): NexonApiError {
+  const scope = maintenanceScopeOf(status, code)
+  if (scope !== null) return maintenanceErrorOf(scope, path)
   if (status === 401 || status === 403) return new NexonSignInRequiredError('넥슨 로그인이 만료되었습니다')
   if (status === 429) return new NexonRateLimitError('Nexon API 호출 한도를 초과했습니다 (OPENAPI00007)')
   if (status === 400) {
@@ -224,7 +261,7 @@ async function requestViaStream<T>(path: string, session: string): Promise<T> {
 
   const mine = lines.filter((line) => isOf(line, task))
   const fail = mine.find((line) => line.t === 'fail')
-  if (fail !== undefined && fail.t === 'fail') throw errorOfFail(fail.status, fail.code)
+  if (fail !== undefined && fail.t === 'fail') throw errorOfFail(path, fail.status, fail.code)
 
   const pages = mine.filter((line) => line.t === 'page').map((line) => (line.t === 'page' ? line.body : null))
   const done = mine.some((line) => line.t === 'done')
@@ -235,6 +272,7 @@ async function requestViaStream<T>(path: string, session: string): Promise<T> {
     }
     throw new NexonNetworkError('프렌즈 조회가 끝나기 전에 끊겼습니다')
   }
+  maintenanceReporter?.succeeded(bareOf(path))
   return mergePages(pages) as T
 }
 
@@ -292,6 +330,8 @@ async function requestOnce<T>(path: string, credential: NexonCredential): Promis
   }
   if (response.status === 400) {
     const code = await readErrorCode(response)
+    const scope = maintenanceScopeOf(400, code)
+    if (scope !== null) throw 실어서(maintenanceErrorOf(scope, path))
     throw 실어서(
       new NexonBadRequestError(
         `Nexon API가 요청을 거부했습니다 (code: ${code ?? '알 수 없음'})`,
@@ -299,15 +339,23 @@ async function requestOnce<T>(path: string, credential: NexonCredential): Promis
       ),
     )
   }
+  if (response.status === 503) {
+    // 코드가 없는 503 은 아래로 내려가 종전대로 못 닿은 것이 된다.
+    const scope = maintenanceScopeOf(503, await readErrorCode(response))
+    if (scope !== null) throw 실어서(maintenanceErrorOf(scope, path))
+  }
   if (!response.ok) {
     throw 실어서(
       new NexonNetworkError(`Nexon API가 오류 응답을 반환했습니다 (status: ${response.status})`),
     )
   }
 
+  let body: T
   try {
-    return (await response.json()) as T
+    body = (await response.json()) as T
   } catch (error) {
     throw new NexonNetworkError('Nexon API 응답을 JSON으로 파싱하지 못했습니다', { cause: error })
   }
+  maintenanceReporter?.succeeded(bareOf(path))
+  return body
 }

@@ -28,6 +28,7 @@ import { NOTICE_KINDS, type Notice, type NoticeKind } from '../../types/notice'
 import { NoticeBannerCard } from './NoticeBannerCard'
 import { NoticeLines } from './NoticeLines'
 import { NoticeBannerCardSkeleton, NoticeLinesSkeleton } from './NoticeSkeleton'
+import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 function newestFirst(a: Notice, b: Notice): number {
   return b.publishedAt.localeCompare(a.publishedAt)
@@ -139,6 +140,7 @@ export function SettingsNoticesScreen(props: {
         </PageHeader>
       }
     >
+      <NexonMaintenanceBanner testID="notices-maintenance-banner" />
       <View className="gap-3 px-4 pb-4" testID="screen-SettingsNotices">
         {notices === null ? (
           <NoticesSkeleton bannerKind={bannerKind} />

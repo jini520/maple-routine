@@ -44,6 +44,7 @@ import { SettingsRow } from './SettingsRow'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 import { CONTACT_EMAIL, contactDeviceOf, contactMailUrl } from './contact-mail'
 import { storeReviewUrl } from './store-review-link'
+import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 /**
  * 소식 갈래 다섯. 순서는 사용자가 정했다.
@@ -239,6 +240,7 @@ export function SettingsScreen(): React.JSX.Element {
 
   return (
     <ScreenScroll onRefresh={refresh}>
+      <NexonMaintenanceBanner testID="settings-maintenance-banner" />
       {/* `screen-Settings` 는 나머지 세 탭 화면과 같은 관례다(`screen-Content`·`-Boss`·`-Profit`).
           이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
           설정 탭이 통째로 빠진 것을 아무도 못 잡았다(실기기 관측). */}
