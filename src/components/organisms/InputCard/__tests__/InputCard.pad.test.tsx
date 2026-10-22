@@ -485,11 +485,13 @@ describe('커서는 칠 수 있을 때만 보인다', () => {
     expect(view.getByTestId('input-card-value').props.caretHidden).toBe(true)
   })
 
-  it('OS 키보드 쪽은 키보드가 떠 있는 동안만 커서를 보인다', async () => {
+  // iOS 는 `caretHidden` 이 바뀌어도 커서를 다시 그리지 않는다. 숨긴 채로 서면 키보드가 올라와도
+  // 한 글자를 칠 때까지 커서가 안 보인다.
+  it('OS 키보드 쪽은 키보드가 오기 전에도 커서를 보이고, 내린 뒤에만 숨긴다', async () => {
     const { view } = await 그리기()
 
     await 재기(view, 들어가는_카드)
-    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(true)
+    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(false)
 
     await act(async () => {
       키보드(true)
@@ -502,14 +504,19 @@ describe('커서는 칠 수 있을 때만 보인다', () => {
     expect(view.getByTestId('input-card-value').props.caretHidden).toBe(true)
   })
 
-  it('글자 칸도 키보드를 따라간다. 판정을 기다릴 것이 없다', async () => {
+  it('글자 칸도 같은 규칙이다. 판정을 기다릴 것이 없다', async () => {
     const { view } = await 그리기({ text: true })
 
-    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(true)
+    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(false)
 
     await act(async () => {
       키보드(true)
     })
     expect(view.getByTestId('input-card-value').props.caretHidden).toBe(false)
+
+    await act(async () => {
+      키보드(false)
+    })
+    expect(view.getByTestId('input-card-value').props.caretHidden).toBe(true)
   })
 })

@@ -401,8 +401,21 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    */
   const canType = usesPadPath ? padOpen : keyboardShown
 
-  /** 커서를 보일까. 칠 수 있을 때와 **판을 한 번도 안 올린 진입 직후**다. */
-  const showsCaret = canType || (usesPadPath && !padEverOpened)
+  /**
+   * OS 키보드가 한 번이라도 올라왔나. 판의 `padEverOpened` 와 같은 일을 OS 키보드 쪽에서 한다.
+   *
+   * 그리는 중에 바꾼다. 효과로 미루면 키보드가 뜬 첫 프레임에 이 값이 아직 거짓이다.
+   */
+  const [keyboardEverShown, setKeyboardEverShown] = useState(false)
+  if (keyboardShown && !keyboardEverShown) setKeyboardEverShown(true)
+
+  /**
+   * 커서를 보일까. 칠 수 있을 때와 **입력 수단이 한 번도 안 올라온 진입 직후**다.
+   *
+   * 진입 직후에 숨기면 안 된다. iOS 는 `caretHidden` 이 바뀌어도 커서를 다시 그리지 않아서(커서 자리를
+   * 묻는 것은 선택이 바뀔 때뿐이다), 숨긴 채로 선 칸은 키보드가 올라와도 한 글자를 칠 때까지 커서가 없다.
+   */
+  const showsCaret = canType || (usesPadPath ? !padEverOpened : !keyboardEverShown)
 
   /**
    * 판 바깥을 누르면 내려간다. **카드는 안 닫힌다.**
