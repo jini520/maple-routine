@@ -18,15 +18,13 @@ const BOX_CLASS = 'flex-row items-center gap-1 rounded-full bg-error-tint px-2 p
  * // 누르면 설명 팝오버가 열리는 자리
  * <UnavailableBadge label="조회 불가" onPress={toggleIssue} />
  *
- * // 열 팝오버가 없는 자리. 칸에 묶여 있으면 `fixed` 를 함께 준다
- * <UnavailableBadge fixed label="조회 불가" />
+ * // 열 팝오버가 없는 자리
+ * <UnavailableBadge label="조회 불가" />
  */
 export function UnavailableBadge(props: {
   label: string
   /** 주면 버튼이 되고 안 주면 그림이다. 누를 곳이 없는 자리가 버튼으로 들리면 안 된다. */
   onPress?: () => void
-  /** 상자가 여백으로 자라므로 글자 배수를 끌지는 호출부가 정한다. */
-  fixed?: boolean
   className?: string
   testID?: string
 }): React.JSX.Element {
@@ -34,7 +32,7 @@ export function UnavailableBadge(props: {
   const inside = (
     <>
       <BanIcon className="h-3 w-3 text-error-ink" strokeWidth={2.5} aria-hidden />
-      <Text fixed={props.fixed} className="text-11 font-bold text-error-ink">
+      <Text className="text-11 font-bold text-error-ink">
         {props.label}
       </Text>
     </>

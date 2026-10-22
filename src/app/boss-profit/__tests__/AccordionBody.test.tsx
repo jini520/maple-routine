@@ -298,14 +298,6 @@ describe('주간 본문의 띠 둘', () => {
     expect(getByTestId('accordion-band-count').props.children).toBe(`1 / ${WEEKLY_BOSS_CLEAR_LIMIT}`)
   })
 
-  // 띠도 알약도 높이가 값이다(`h-[26px]` · `h-[18px]`). 안쪽 글자가 OS 글자 배수를 따라 커지면
-  // 그 높이를 넘어 잘린다. `fixed` 가 배수를 안 따르게 한다.
-  it('띠 알약의 글자는 OS 글자 배수를 안 따른다', async () => {
-    const { getByText } = await renderProfit(<WeeklyAccordionBody rows={[보스행()]} />)
-
-    expect(getByText('주간').props.allowFontScaling).toBe(false)
-  })
-
   // 오른쪽에 아무것도 안 적는다(사용자 지정). 그 줄이 한도 밖이라는 것은 띠가 갈라 놓은 것으로
   // 충분하고, 그 이상은 화면이 규칙을 설명하려 드는 것이다.
   it('월간 띠 오른쪽에는 수를 안 적는다', async () => {

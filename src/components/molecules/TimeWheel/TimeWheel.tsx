@@ -10,6 +10,7 @@ import { type Animated, View } from 'react-native'
 import { Text } from '../../atoms'
 import { selectionFeedback } from '../../../native/haptics'
 import { useThemeAppearance } from '../../../theme/context'
+import { useTextScale } from '../../../theme/text-scale'
 import { DayColumn, ScrollOffsetBridge } from './DayColumn'
 import { HOUR_VALUES, hoursFrom, minuteValues, snapMinute } from './time-wheel-values'
 
@@ -64,6 +65,7 @@ export function TimeWheel(props: TimeWheelProps): React.JSX.Element {
   const minute = snapMinute(props.minute, props.step)
   const { isDisabled, step } = props
 
+  const textScale = useTextScale()
   const textStyle = { color: definition.text, fontSize: 20, fontWeight: '600' as const }
   const common = {
     itemHeight: ITEM_HEIGHT,
@@ -83,7 +85,8 @@ export function TimeWheel(props: TimeWheelProps): React.JSX.Element {
       <Text
         style={[
           textStyle,
-          { textAlign: 'center', lineHeight: ITEM_HEIGHT },
+          // 칸 높이와 같아야 글자가 세로 가운데에 선다. atom 이 글자 배수를 곱하므로 미리 나눈다.
+          { textAlign: 'center', lineHeight: ITEM_HEIGHT / textScale },
           disabled && { color: definition.textDisabled },
         ]}
       >

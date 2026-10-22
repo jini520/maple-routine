@@ -29,9 +29,6 @@
 초상화는 이름 첫 글자를 쓴다. 부품이 한 가지를 고르면 다른 쪽이 조용히 바뀐다. 글자 크기도 쓰는 곳마다
 다르고 원 크기에서 계산되지 않아서, 폴백을 종류 이름으로 받지 않고 `fallback` 에 그릴 것을 그대로 받는다.
 
-폴백 글자가 호출하는 쪽 파일에 있으면 today 위젯처럼 글자 크기를 고정해야 하는 칸(`font-scaling-policy`
-의 `FIXED_BOX_PATHS`)의 규칙도 그 파일 안에서 지켜진다.
-
 ### 결정 3. 초상화는 규격 둘을 부품 하나가 받는다
 
 `organisms/CharacterPortrait` 의 `CharacterPortrait` 는 `variant` 로 규격을 고른다.

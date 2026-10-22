@@ -10,6 +10,7 @@ import { useAppEntryStore } from '../features/app-entry/store'
 import { useAuthStore } from '../features/auth/store'
 import { useLiveUpdateStore } from '../features/live-update/store'
 import { useThemeStore } from '../features/theme/store'
+import { useTextSizeStore } from '../features/text-size/store'
 import { useTrackingModeStore } from '../features/tracking-mode/store'
 import { showPendingCacheClearNotice } from '../features/settings/cache-data'
 
@@ -68,6 +69,7 @@ export function AppShell(): React.JSX.Element {
   const resolveEntryStage = useAppEntryStore((state) => state.resolveFromStorage)
   const restoreAuth = useAuthStore((state) => state.restoreFromStorage)
   const restoreTheme = useThemeStore((state) => state.restoreFromStorage)
+  const restoreTextSize = useTextSizeStore((state) => state.restoreFromStorage)
   const restoreTrackingMode = useTrackingModeStore((state) => state.restoreFromStorage)
   const restoreDropEffect = useDropEffectStore((state) => state.restoreFromStorage)
   const restoreNotice = useNoticeStore((state) => state.restore)
@@ -77,7 +79,7 @@ export function AppShell(): React.JSX.Element {
 
   const isReady = stage === 'ready'
 
-  // 여섯을 한 이펙트에 모으지 않는다. 스토어마다 독립이고, 합치면 앞의 하나가
+  // 복원을 한 이펙트에 모으지 않는다. 스토어마다 독립이고, 합치면 앞의 하나가
   // 던졌을 때 뒤가 통째로 안 돈다. deps 를 비운 것은 "마운트당 한 번"이 계약이라서다
   // (세터는 zustand 가 참조를 고정하지만, 그 사실에 기대지 않는다).
   //
@@ -95,6 +97,11 @@ export function AppShell(): React.JSX.Element {
 
   useEffect(() => {
     void restoreTheme()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    void restoreTextSize()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

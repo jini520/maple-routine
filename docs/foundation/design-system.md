@@ -30,7 +30,7 @@
 
 | 부품 | 하는 일 |
 |---|---|
-| `Text` · `TextInput` | 글자와 입력 칸. 글꼴, 시스템 글자 크기 상한, 입력 칸의 기본 상자를 채운다. `react-native` 의 `Text` · `TextInput` 은 이 둘만 가져온다 |
+| `Text` · `TextInput` | 글자와 입력 칸. 글꼴, 앱 글자 크기 배수, 입력 칸의 기본 상자를 채운다. `react-native` 의 `Text` · `TextInput` 은 이 둘만 가져온다 |
 | `Button` | 외형만 갖는 버튼. 변형은 `primary` · `outline` · `text` · `primaryOutline` · `tint` · `danger` · `dangerText`, 크기는 기본 · `compact`. `busy` 면 라벨을 가리고 스피너를 겹친다 |
 | `Badge` | 상태 · 카테고리 · 난이도 배지. 크기는 `default` · `mini` |
 | `Card` | 카드 껍데기(반경 14 · 테두리 · 표면색) |
@@ -105,7 +105,8 @@
 |---|---|
 | `lib/nativewind-interop.ts` | 써드파티 컴포넌트의 `className` 등록(`Svg` · `LinearGradient` · `AnimatedView` · `withIconInterop`) |
 | `typography.cjs` | 글자 크기 · 줄 높이 · 굵기 표 |
-| `components/atoms/Text/font-scaling.ts` · `app-font.ts` | 글자 배수 `[1.0, 1.235]` 계산 · 글꼴 이름과 기본 글자 스타일 |
+| `components/atoms/Text/font-scaling.ts` · `app-font.ts` | 글자 크기 · 줄 높이에 앱 배수 곱하기 · 글꼴 이름과 기본 글자 스타일 |
+| `lib/text-size.ts` · `theme/text-scale.ts` | 글자 크기 네 단계와 배수 · 지금 배수를 담는 한 칸 저장소(`useTextScale`) |
 | `lib/safe-area.ts` | 화면이 쓰는 위아래 안전영역 값(안드로이드 하한 48 · 34) |
 | `lib/image-aspect.ts` · `lib/image-crop.ts` | 이미지 두 축 지정 · 크롭 배치 |
 | `lib/modal-metrics.ts` · `lib/number-pad-metrics.ts` · `lib/place-dropdown.ts` · `lib/popover-anchor.ts` | 모달 상한 · 숫자 판 판정 · 드롭다운과 팝오버 위치 · 꼬리 위치 |
@@ -127,7 +128,7 @@
 | 상단 안전영역 | 헤더가 패딩으로 차지한다. 헤더가 없으면 셸이 상자를 내린다 |
 | 안전영역 페이드 | 위는 상단 안전영역, 아래는 하단 안전영역 + 하단바 몫의 절반에서 콘텐츠가 투명해진다 |
 | 하단 인셋 | 탭 화면은 하단바 몫까지 콘텐츠 여백. 안드로이드 하위 페이지는 내비 바 위에서 스크롤 상자가 끝난다 |
-| 글자 크기 | 시스템 배수를 1.0 ~ 1.235 로 자른다. 높이가 고정된 칸은 `fixed` 로 끈다 |
+| 글자 크기 | 시스템 배수는 끈다. 앱 설정의 배수(0.9 · 1.0 · 1.1 · 1.2)를 모든 글자의 크기와 줄 높이에 곱한다 |
 | 글꼴 | Pretendard. 굵기는 400 · 500 · 600 · 700 |
 
 ## 상태 표시
@@ -180,7 +181,7 @@
 |---|---|
 | `components/__tests__/layer-dependencies.test.ts` | 계층 의존 방향 |
 | `src/__tests__/require-cycle-policy.test.ts` | 배럴을 거친 순환 import |
-| `src/__tests__/font-scaling-policy.test.ts` | `Text` · `TextInput` 직접 import 금지, 고정 칸의 `fixed` |
+| `src/__tests__/font-scaling-policy.test.ts` | `Text` · `TextInput` 직접 import 금지, SVG 글자의 배수 |
 | `src/__tests__/typography-policy.test.ts` | 글자 크기 · 굵기 이름이 표에 있는가 |
 | `src/__tests__/text-input-height-policy.test.ts` | 치는 칸의 높이 |
 | `src/__tests__/sticky-policy.test.ts` | 고정 영역 금지 |

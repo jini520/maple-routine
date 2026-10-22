@@ -73,7 +73,7 @@ export function EpicDungeonCard(props: {
         {/* 진행 불가 · 마감이면 상태 배지를 **대체**한다(늘리지 않는다). 순서는 보스 카드와 같다.
             마감은 완료와 같은 상자라 카드 끝이 안 흔들린다. */}
         {props.isBlocked === true ? (
-          <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
+          <Badge variant="muted" className="shrink-0">진행 불가</Badge>
         ) : props.isWeeklyLimitClosed === true ? (
           <Badge variant="muted" weight="bold">
             마감
@@ -125,7 +125,7 @@ export function WeeklyRegionalContentCard(props: {
 
         {/* 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
-          <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
+          <Badge variant="muted" className="shrink-0">진행 불가</Badge>
         ) : (
           questState !== null && (
             <Badge variant={QUEST_STATE_VARIANT[questState]}>
@@ -167,7 +167,7 @@ export function WeeklyQuestCard(props: {
 
         {/* 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
-          <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
+          <Badge variant="muted" className="shrink-0">진행 불가</Badge>
         ) : (
           renderWeeklyQuestStatus(content)
         )}
@@ -352,7 +352,7 @@ export function renderWeeklyContentCard(
         <Text className="shrink text-sm text-text">
           {contentDisplayNameOf(content.contentKey, content.apiName)} · {content.nowCount}/{content.maxCount}
         </Text>
-        {isBlocked && <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>}
+        {isBlocked && <Badge variant="muted" className="shrink-0">진행 불가</Badge>}
       </View>
       {!isBlocked && content.maxCount > 0 && (
         <ProgressBar

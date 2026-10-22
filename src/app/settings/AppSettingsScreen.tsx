@@ -21,6 +21,8 @@ import { loadCacheDataSizes } from '../../features/settings/cache-data'
 import { TRACKING_MODE_LABELS } from '../../features/tracking-mode/copy'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useThemeStore } from '../../features/theme/store'
+import { useTextSizeStore } from '../../features/text-size/store'
+import { TEXT_SIZE_LABELS } from '../../lib/text-size'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { formatBytes } from '../../lib/format-bytes'
 import { formatAppVersion } from '../../lib/app-version'
@@ -36,6 +38,7 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { SettingsRow } from './SettingsRow'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
 import { SectionTitle } from './SectionTitle'
+import { TextSizeModal } from './TextSizeModal'
 import { ThemeModal } from './ThemeModal'
 import { TrackingModeModal } from './TrackingModeModal'
 import { ValueBadge } from './ValueBadge'
@@ -52,11 +55,13 @@ function SummaryValue(props: { children: React.ReactNode }): React.JSX.Element {
 export function AppSettingsScreen(): React.JSX.Element {
   const { mode: trackingMode } = useTrackingModeStore()
   const { theme } = useThemeStore()
+  const { size: textSize } = useTextSizeStore()
   const { trackedOcids } = useContentSchedulerStore()
   const navigation = useSettingsNavigation()
 
   const [trackingModeOpen, setTrackingModeOpen] = useState(false)
   const [themeOpen, setThemeOpen] = useState(false)
+  const [textSizeOpen, setTextSizeOpen] = useState(false)
   const [sizes, setSizes] = useState<CacheDataSizes | null>(null)
 
   // `계정 및 데이터` 행의 대표값. 들어가지 않고도 안을 짐작하게 한다. 실패는 자리표시(`- KB`).
@@ -98,7 +103,7 @@ export function AppSettingsScreen(): React.JSX.Element {
 
           {/* 값을 고르는 행. 배지(현재값) + chevron 병기. */}
           <View className="gap-2">
-            <SectionTitle>캐릭터 · 테마</SectionTitle>
+            <SectionTitle>캐릭터 · 테마 · 글자 크기</SectionTitle>
             <Card className="px-6" testID="app-settings-card">
               {/* 캐릭터 관리가 위다. 보스 수익과 스케줄러 둘이 빈 상태에서 미는 자리라 테마보다
                   자주 열린다. 배지는 추적 캐릭터 수이고 아직 못 읽었으면(`null`) 그리지 않는다 -
@@ -119,6 +124,13 @@ export function AppSettingsScreen(): React.JSX.Element {
                   label="테마"
                   onPress={() => setThemeOpen(true)}
                   rightContent={<ValueBadge>{theme}</ValueBadge>}
+                />
+              </View>
+              <View className={SETTINGS_ROW_DIVIDER_CLASS}>
+                <SettingsRow
+                  label="글자 크기"
+                  onPress={() => setTextSizeOpen(true)}
+                  rightContent={<ValueBadge>{TEXT_SIZE_LABELS[textSize]}</ValueBadge>}
                 />
               </View>
             </Card>
@@ -194,6 +206,7 @@ export function AppSettingsScreen(): React.JSX.Element {
 
       {trackingModeOpen && <TrackingModeModal onClose={() => setTrackingModeOpen(false)} />}
       {themeOpen && <ThemeModal onClose={() => setThemeOpen(false)} />}
+      {textSizeOpen && <TextSizeModal onClose={() => setTextSizeOpen(false)} />}
     </>
   )
 }

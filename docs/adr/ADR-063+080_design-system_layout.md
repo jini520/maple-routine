@@ -1,8 +1,8 @@
-# ADR-063 화면 틀 · 헤더 · 안전영역 · 글자
+# ADR-063+080 화면 틀 · 헤더 · 안전영역 · 글자
 
 > 🟢 유효
 > 옛 번호: ADR-099 · ADR-100 · ADR-120 결정 16 · 19 · ADR-131 · ADR-134 · ADR-135 · ADR-136 · ADR-139 · ADR-152 · ADR-196 · ADR-225 · ADR-232 · ADR-233 · ADR-322
-> 관련 소스: `components/templates/{ScreenScroll,PageHeader,EntryScroll}/` · `components/atoms/{Text,TextInput}/` · `lib/safe-area.ts` · `lib/image-aspect.ts` · `theme/ThemeProvider.tsx` · `typography.cjs`
+> 관련 소스: `components/templates/{ScreenScroll,PageHeader,EntryScroll}/` · `components/atoms/{Text,TextInput}/` · `lib/text-size.ts` · `theme/text-scale.ts` · `storage/text-size.ts` · `features/text-size/store.ts` · `app/settings/TextSizeModal.tsx` · `lib/safe-area.ts` · `lib/image-aspect.ts` · `theme/ThemeProvider.tsx` · `typography.cjs`
 
 ## 배경
 
@@ -177,26 +177,47 @@ iOS 는 글꼴 안의 Family 이름으로 찾아서 정적 파일을 쓰면 굵�
 `src/__tests__/typography-policy.test.ts` 가 표에 없는 `text-*` · `font-*`, 임의 크기 `text-[Npx]`, 줄
 높이가 빠진 항목을 잡는다. 표에 없는 이름은 에러 없이 사라지기 때문이다.
 
-### 결정 11. 시스템 글자 크기는 `[1.0, 1.235]` 안에서만 따른다
+### 결정 11. 글자 크기는 시스템 설정을 따르지 않고, 앱 안의 글자 크기 설정이 모든 글자에 배수를 곱한다 (사용자 지정)
 
-시스템 글자 크기를 그대로 따르면 작게 설정한 기기에서는 12px 글자가 10px 가까이로 줄고, 크게 설정한
-기기에서는 높이가 82 로 고정된 today 위젯 칸을 글자가 넘친다.
+시스템 글자 크기를 따르면 사용자마다 설정이 달라 같은 화면이 기기마다 다르게 깨진다. 실제로 시스템 글자를
+크게 둔 기기에서 통계의 순위 단상과 가계부 달력의 금액이 `...` 로 잘렸다(#633). 그리고 개발자가 그 기기의
+상태를 재현할 수 없어 화면을 확인할 수 없다. 그래서 시스템 배수는 끄고, 배수를 앱이 쥔다.
 
-- 하한 1.0: 작게 보는 것은 접근성 요구가 아니라 취향이라 설계 크기 아래로는 줄이지 않는다.
-- 상한 1.235: iOS 글자 크기 표의 XXL 칸이다. 그 다음 칸(1.353)부터는 글자가 위젯 칸을 넘친다.
-  접근성 큰 글자(1.786~)를 켠 사용자도 이 앱에서는 1.235 까지만 받는다.
+- **시스템 배수는 받지 않는다.** `Text` · `TextInput` atom 이 모든 글자에 `allowFontScaling={false}` 를 단다.
+  어느 기기 · 어느 설정에서도 글자는 설계한 크기에 앱 설정 배수만 곱한 크기로 그려진다.
+- **앱 설정은 네 단계다.** 설정 화면의 `글자 크기` 행에서 고른다([[ADR-052]] 결정 4).
 
-RN 에는 하한 프롭이 없어서 `allowFontScaling = fontScale >= 1`, `maxFontSizeMultiplier = 1.235` 두 줄로
-만든다. 1 미만이면 스케일링을 끄므로 정확히 1.0 이 된다. 하한을 1.0 이 아닌 값으로 바꾸면 이 방법을 쓸
-수 없다.
+  | 단계(`TextSize`) | 이름 | 배수 |
+  |---|---|---|
+  | `small` | 작게 | 0.9 |
+  | `default` | 기본 | 1.0 |
+  | `large` | 크게 | 1.1 |
+  | `xlarge` | 아주 크게 | 1.2 |
 
-이 두 프롭은 글자를 그리는 모든 곳에 붙어야 하므로 `components/atoms/Text` 와 `TextInput` 두 atom 만
+- **처음 값은 기본(1.0)이다.** 시스템에서 큰 글씨를 켠 사용자도 앱 설정을 따로 올려야 한다. 첫 실행 때 시스템
+  배수를 보고 처음 값을 정해 주지 않는다(사용자 지정).
+- **지금은 모든 글자가 배수를 받는다**(사용자 지정). today 위젯 · 하단바 · 캐릭터 초상 · 배지처럼 높이가 고정된
+  칸도 받는다. 받지 않을 곳은 나중에 사용자가 다시 정한다. 그래서 받지 않는 곳을 표시하던 `fixed` 프롭은 없앴다.
+- **atom 이 `fontSize` 와 `lineHeight` 에 배수를 직접 곱한다.** RN 에는 앱 전체 글자 배수를 바꾸는 프롭이 없고,
+  `allowFontScaling` · `maxFontSizeMultiplier` 는 시스템 배수에만 걸리기 때문이다. 줄 높이도 함께 곱한다. 안 곱하면
+  큰 단계에서 글자가 줄 상자에 잘린다.
+- **두 atom 은 `cssInterop(…, { className: 'style' })` 로 등록한다.** 그래야 `text-10` 같은 클래스가 `style` 의
+  숫자로 풀린 뒤 atom 에 들어와 곱할 수 있다. 등록하지 않으면 `className` 이 문자열인 채로 안쪽 `Text` 까지 가서
+  atom 은 크기를 모른다.
+- **크기가 없는 글자에는 곱하지 않는다.** 안쪽 `Text` 는 바깥 `Text` 의 크기를 물려받는데, 안쪽에 크기를 박으면
+  물려받기가 끊기고 바깥에서 이미 곱한 크기에 한 번 더 곱해진다.
+- **atom 을 거치지 않는 글자도 같은 배수를 받는다.** 통계 추이 차트의 축 글자와 캐릭터 초상 아래 이름은
+  `react-native-svg` 의 `Text` 로 그린다. 이 둘은 `useTextScale()` 로 배수를 읽어 `fontSize` 에 곱한다.
+
+배수를 곱하는 일은 글자를 그리는 모든 곳에 걸려야 하므로 `components/atoms/Text` 와 `TextInput` 두 atom 만
 `react-native` 의 `Text` · `TextInput` 을 가져온다. 다른 곳의 직접 import 는 ESLint `no-restricted-imports`
-와 `src/__tests__/font-scaling-policy.test.ts` 가 막는다. 하나라도 빠지면 그곳만 조용히 OS 배수를
-그대로 받기 때문이다.
+와 `src/__tests__/font-scaling-policy.test.ts` 가 막는다. 하나라도 빠지면 그곳만 조용히 시스템 배수를 받고
+앱 설정은 안 받는다.
 
-높이가 고정된 칸 안의 글자는 `<Text fixed>` 로 배수를 아예 끈다. today 위젯, 하단바 라벨, 캐릭터 초상의
-이니셜, `Badge` 의 `mini` 가 그렇다. 부품이 놓이는 곳에 따라 달라지는 경우는 [[ADR-060]] 에 있다.
+고른 단계는 `storage/text-size.ts` 에 저장한다. `features/text-size/store.ts` 가 부팅 때 읽어 배수를
+`theme/text-scale.ts` 의 한 칸 저장소에 놓고, atom 과 SVG 글자가 그 칸을 `useSyncExternalStore` 로 구독한다.
+설정에서 고르면 그 자리에서 모든 화면이 새 크기로 다시 그려진다. 한 칸 저장소를 따로 두는 이유는
+`components/` 가 `features/` 를 가져오지 못하기 때문이다. 저장된 값이 없거나 모르는 값이면 기본이다.
 
 ### 결정 12. 안드로이드는 `enablePreparedTextLayout` 을 켠다
 
@@ -244,9 +265,12 @@ Expo 는 reanimated 를 4.5.1 로 고정하므로 `package.json` 의 `expo.insta
 | `components/templates/PageHeader/__tests__/PageHeaderTitleRow.test.tsx` | 결정 6: 최소 높이만 주는지, 갱신 시각 줄을 제목 아래에 언제나 그리는지, 제목 영역에 간격이 없는지, `trailing` 을 주면 제목 쪽이 남는 폭을 차지하는지 본다 |
 | `lib/__tests__/image-aspect.test.ts` · `image-crop.test.ts` | 결정 9: 한 축을 주면 다른 축이 `undefined` 와 비율로 채워지는지, 고유 크기를 모르면 준 축만 돌려주는지, 크롭이 두 축을 모두 지정하는지 본다 |
 | `src/__tests__/typography-policy.test.ts` | 결정 10: 글자 크기 · 굵기 이름이 모두 표에 있고 임의 크기를 쓰지 않으며 표의 모든 크기가 줄 높이를 갖는지 본다 |
-| `components/atoms/Text/__tests__/font-scaling.test.ts` · `Text.test.tsx` · `TextInput/__tests__/TextInput.test.tsx` | 결정 11: 1 미만이면 스케일링을 끄고, 구간 안은 그대로, 위는 1.235 로 자르는지, `fixed` 는 언제나 1.0 인지, `className` 이 그대로 풀리는지 본다 |
-| `src/__tests__/font-scaling-policy.test.ts` | 결정 11: `Text` · `TextInput` 을 직접 가져오는 곳이 atom 뿐인지, 고정 칸의 `<Text>` 가 모두 `fixed` 를 다는지 본다 |
+| `components/atoms/Text/__tests__/font-scaling.test.ts` · `Text.test.tsx` · `TextInput/__tests__/TextInput.test.tsx` | 결정 11: 시스템 배수를 언제나 끄는지, 클래스로 준 크기와 줄 높이에 앱 배수를 곱하는지, 크기가 없는 글자는 그대로 두는지, 단계를 바꾸면 다시 그리는지 본다 |
+| `features/text-size/__tests__/store.spec.ts` | 결정 11: 저장된 단계를 부팅 때 읽어 배수를 놓는지, 저장된 값이 없거나 모르는 값이면 기본인지, 고르면 저장과 배수가 함께 바뀌는지 본다 |
+| `app/settings/__tests__/TextSizeModal.test.tsx` | 결정 11: 네 단계를 고를 수 있고, 고르면 미리보기 글과 화면이 바로 새 크기로 바뀌는지 본다 |
+| `src/__tests__/font-scaling-policy.test.ts` | 결정 11: `Text` · `TextInput` 을 직접 가져오는 곳이 atom 뿐인지, SVG 글자가 배수를 곱하는지 본다 |
 
 ## 번호 기록
 
 - ADR-063 (2026-10-19): 옛 ADR-099 · 100 · 131 · 134 · 135 · 136 · 139 · 152 · 196 · 225 · 232 · 233 · 322 와 옛 ADR-120 결정 16 · 19 를 합쳐 처음 작성
+- ADR-080 (2026-10-21): 결정 11 을 다시 썼다. 시스템 글자 크기를 끄고, 앱 안의 글자 크기 설정(네 단계)이 모든 글자에 배수를 곱한다. `fixed` 를 없앴다(#633)

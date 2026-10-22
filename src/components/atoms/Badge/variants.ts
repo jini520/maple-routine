@@ -81,12 +81,10 @@ export const BADGE_VARIANT = {
 /**
  * 높이를 안 못박는다. 여백이 높이를 만든다. 여백을 클래스가 아니라 값으로 쥐는 것은 테두리
  * 폭을 빼야 해서다. 글자는 칩 계단을 쓴다.
- *
- * `mini` 는 고정칸에만 놓여서 글자 배수를 안 따른다.
  */
 export const BADGE_SIZE = {
-  default: { padX: 8, padY: 3, text: 'text-chip', alwaysFixed: false },
-  mini: { padX: 6, padY: 2, text: 'text-chip-xs', alwaysFixed: true },
+  default: { padX: 8, padY: 3, text: 'text-chip' },
+  mini: { padX: 6, padY: 2, text: 'text-chip-xs' },
 } as const
 
 /** 클래스로는 못 덮는다. NativeWind 가 두께 충돌을 문자열 순서로 안 푼다. */

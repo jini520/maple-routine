@@ -4,7 +4,7 @@
  * **atom 끼리는 이 배럴을 거치지 않는다.** 곁 파일을 직접 가져온다. 배럴을
  * 거치면 순환이 생긴다(`index` → `Button` → `index`).
  *
- * **컴포넌트만 올린다.** 곁 파일의 값(`Text/font-scaling` 의 `FONT_SCALE_MAX` 같은 것)은 원래
+ * **컴포넌트만 올린다.** 곁 파일의 값(`Text/font-scaling` 의 `scaleTextStyle` 같은 것)은 원래
  * 경로로 가져간다. `Icon` 배럴이 `icon-base` 를 빼는 것과 같은 규칙이다.
  */
 export { AnimatedNumber } from './AnimatedNumber/AnimatedNumber'

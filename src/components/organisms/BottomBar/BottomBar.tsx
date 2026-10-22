@@ -291,7 +291,6 @@ function BarItem({
           strokeWidth={activeStroke(Icon, active)}
         />
         <Text
-          fixed
           numberOfLines={1}
           // `includeFontPadding` 은 안드로이드에서만 읽히는 값이고, 기본(참)일 때 글자 상자에
           // 폰트 메트릭 여백을 더해 iOS 보다 큰 상자를 만든다. 아이콘→라벨이 27 → 30px

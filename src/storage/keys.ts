@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   // 남은 값을 치우기 위해 이름만 남긴다(연결 해제·캐시 삭제가 지운다).
   legacySelectedAccountId: 'selectedAccountId',
   theme: 'theme',
+  textSize: 'textSize',
   trackingMode: 'trackingMode',
   dropEffect: 'dropEffect',
   // 마지막으로 실행된 OTA 번들 버전. 부팅 때 지금 도는 버전과 비교해 "방금

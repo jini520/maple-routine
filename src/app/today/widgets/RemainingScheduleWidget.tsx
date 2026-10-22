@@ -93,13 +93,13 @@ const LABEL_CLASS = 'text-[11.5px] leading-tight text-text-muted'
 function Amount(props: { label: string; count: number }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-0.5">
-      <Text fixed numberOfLines={1} className={LABEL_CLASS}>
+      <Text numberOfLines={1} className={LABEL_CLASS}>
         {props.label}
       </Text>
-      <Text fixed style={{ minWidth: VALUE_MIN_WIDTH_PX, ...TABULAR_NUMS }} className={VALUE_CLASS}>
+      <Text style={{ minWidth: VALUE_MIN_WIDTH_PX, ...TABULAR_NUMS }} className={VALUE_CLASS}>
         {String(props.count)}
       </Text>
-      <Text fixed className={LABEL_CLASS}>
+      <Text className={LABEL_CLASS}>
         개
       </Text>
     </View>
@@ -161,7 +161,6 @@ function Portrait(props: { row: ScheduleRowView }): React.JSX.Element {
 function NameChip(props: { name: string }): React.JSX.Element {
   return (
     <Text
-      fixed
       testID="schedule-detail-chip"
       numberOfLines={1}
       className="rounded-md bg-surface-2 px-1.5 py-0.5 text-11 leading-tight text-text"
@@ -184,7 +183,7 @@ function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
       <Badge variant={props.boss.difficulty} size="mini">
         {DIFFICULTY_NAME[props.boss.difficulty]}
       </Badge>
-      <Text fixed numberOfLines={1} className="text-11 leading-tight text-text">
+      <Text numberOfLines={1} className="text-11 leading-tight text-text">
         {props.boss.name}
       </Text>
     </View>
@@ -199,7 +198,7 @@ function DetailGroup(props: { label: string | null; children: React.ReactNode })
   return (
     <View className="gap-1">
       {props.label !== null && (
-        <Text fixed className="text-[10.5px] font-bold tracking-[.02em] text-text-muted">
+        <Text className="text-[10.5px] font-bold tracking-[.02em] text-text-muted">
           {props.label}
         </Text>
       )}
@@ -256,7 +255,6 @@ function ScheduleRow(props: {
     <View testID="schedule-row" className="flex-row items-center gap-2 py-1.5">
       <Portrait row={row} />
       <Text
-        fixed
         testID="schedule-name"
         numberOfLines={1}
         className="min-w-0 flex-1 text-13 font-semibold text-text"
@@ -318,11 +316,10 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
     <View testID="widget-remaining-schedule" className="p-3">
       {/* 제목 줄이 곧 탭 줄이다. 합계 `N개` 가 있던 자리에 세그먼트가 선다. */}
       <View className="flex-row items-center border-b border-border-strong pb-2">
-        <Text fixed className="text-11 font-bold text-text-muted">남은 스케줄</Text>
+        <Text className="text-11 font-bold text-text-muted">남은 스케줄</Text>
         <View className="ml-auto">
           <Segment
             // 타일 높이가 76 으로 못박혀 있어 글자가 커지면 알약이 타일을 넘는다.
-            fixed
             options={CYCLE_LABELS}
             selected={cycle}
             onSelect={(value) => {
@@ -335,7 +332,7 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
       </View>
 
       {data.schedule.length === 0 ? (
-        <Text fixed className="pt-2.5 text-13 text-text-muted">추적 중인 캐릭터가 없습니다</Text>
+        <Text className="pt-2.5 text-13 text-text-muted">추적 중인 캐릭터가 없습니다</Text>
       ) : (
         orderForCycle(data.schedule, cycle).map((row, index) => (
           <ScheduleRow

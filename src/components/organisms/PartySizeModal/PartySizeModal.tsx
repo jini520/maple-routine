@@ -272,7 +272,6 @@ export function PartySizeModal(props: {
                 options={SPLIT_OPTIONS}
                 selected={usesShares ? '비율' : '기본'}
                 size="md"
-                fixed
                 onSelect={(option) =>
                   setShares(
                     option === '기본'

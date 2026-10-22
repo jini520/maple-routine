@@ -9,6 +9,7 @@ import { useEffect, useMemo } from 'react'
 import { Animated, View } from 'react-native'
 
 import { Text } from '../../atoms'
+import { useTextScale } from '../../../theme/text-scale'
 
 /** 글자와 시 열 사이 */
 const DAY_COLUMN_GAP = 4
@@ -42,6 +43,7 @@ export interface DayColumnProps {
 
 export function DayColumn(props: DayColumnProps): React.JSX.Element {
   const { offset, boundary, itemHeight: h, nearY, farY } = props
+  const textScale = useTextScale()
   const motion = useMemo(() => {
     if (offset === null || boundary <= 0) return null
     const range = (from: number) => [(boundary + from) * h, (boundary + from + 1) * h, (boundary + from + 2) * h]
@@ -54,8 +56,9 @@ export function DayColumn(props: DayColumnProps): React.JSX.Element {
   }, [offset, boundary, h, nearY, farY])
 
   const slot = { position: 'absolute' as const, left: DAY_COLUMN_INSET, right: DAY_COLUMN_GAP, top: (props.pickerHeight - h) / 2, height: h }
+  // 줄 높이는 칸 높이와 같아야 휠 숫자와 같은 줄에 선다. atom 이 글자 배수를 곱하므로 미리 나눈다.
   const label = (text: string): React.JSX.Element => (
-    <Text className="text-right text-11 font-semibold text-text-muted" style={{ lineHeight: h }} numberOfLines={1}>
+    <Text className="text-right text-11 font-semibold text-text-muted" style={{ lineHeight: h / textScale }} numberOfLines={1}>
       {text}
     </Text>
   )

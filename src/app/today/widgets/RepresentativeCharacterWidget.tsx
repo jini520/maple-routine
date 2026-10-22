@@ -107,7 +107,6 @@ function NameLine(props: {
         </View>
       )}
       <Text
-        fixed
         testID="representative-name"
         numberOfLines={1}
         className={`min-w-0 shrink font-semibold leading-tight text-text ${spec.name}`}
@@ -118,7 +117,6 @@ function NameLine(props: {
           자리는 아니라 둘 다 비운다. */}
       {props.view.guildName !== undefined && props.view.guildName !== null && (
         <Text
-          fixed
           testID="representative-guild"
           numberOfLines={1}
           className={`shrink-0 leading-tight text-text-muted ${spec.guild}`}
@@ -140,12 +138,11 @@ function CaptionLine(props: {
 
   return (
     <View className={`flex-row items-center gap-1.5${props.center ? ' justify-center' : ''}`}>
-      <Text fixed className={`shrink-0 leading-tight text-text-muted ${spec.caption}`}>
+      <Text className={`shrink-0 leading-tight text-text-muted ${spec.caption}`}>
         {`Lv. ${props.view.level}`}
       </Text>
       {props.view.jobClass !== undefined && (
         <Text
-          fixed
           testID="representative-job"
           numberOfLines={1}
           className={`min-w-0 shrink leading-tight text-text-muted ${spec.caption}`}
@@ -189,7 +186,7 @@ function ExpBlock(props: {
         {/* 보스 수익의 금액 자리에 서는 것과 **같은 알약**이다(사용자 지정). 그쪽도 여기도
             금액을 말할 수 없어 그 칸을 대신 차지한 것이라 같은 말이 같은 그림으로 선다.
             누를 것은 없다. 이 카드에는 열 팝오버가 없다. */}
-        <UnavailableBadge fixed testID="representative-issue" label="조회 불가" />
+        <UnavailableBadge testID="representative-issue" label="조회 불가" />
       </View>
     )
   }
@@ -202,9 +199,8 @@ function ExpBlock(props: {
       className={compactColumn ? 'w-[100px] shrink-0 gap-1' : 'w-full gap-1'}
     >
       <View className="flex-row items-center gap-1">
-        <Text fixed className="text-11 font-semibold text-text-muted">EXP</Text>
+        <Text className="text-11 font-semibold text-text-muted">EXP</Text>
         <Text
-          fixed
           numberOfLines={1}
           style={TABULAR_NUMS}
           className="ml-auto text-11 font-semibold text-text"
@@ -239,7 +235,7 @@ export function RepresentativeCharacterWidget({ w, h, data }: WidgetProps): Reac
   if (view === null) {
     return (
       <View testID="widget-representative-character" className="flex-1 justify-center p-3">
-        <Text fixed className="text-13 text-text-muted">추적 중인 캐릭터가 없습니다</Text>
+        <Text className="text-13 text-text-muted">추적 중인 캐릭터가 없습니다</Text>
       </View>
     )
   }

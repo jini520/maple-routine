@@ -53,7 +53,6 @@ function CountBadge(props: { count: number; sizePx: number; textPx: number }): R
       style={{ width: props.sizePx, height: props.sizePx }}
     >
       <Text
-        fixed
         style={[TABULAR_NUMS, { fontSize: props.textPx }]}
         className="font-bold text-text"
         // 세 자리가 넘어도 배지 크기는 안 바뀐다. 원이 커지면 옆 글자가 밀린다.
@@ -70,7 +69,7 @@ function CountBadge(props: { count: number; sizePx: number; textPx: number }): R
 function Cta(props: { prefix?: string }): React.JSX.Element {
   return (
     <View testID="unpriced-cta" className="flex-row items-center gap-0.5">
-      <Text fixed numberOfLines={1} className="text-[11.5px] font-semibold text-text-muted">
+      <Text numberOfLines={1} className="text-[11.5px] font-semibold text-text-muted">
         {props.prefix === undefined ? CTA : `${props.prefix} · ${CTA}`}
       </Text>
       <ChevronRightIcon size={12} className="shrink-0 text-text-muted" />
@@ -86,7 +85,7 @@ function Cta(props: { prefix?: string }): React.JSX.Element {
  */
 function ItemRow(props: { drop: UnpricedDropView }): React.JSX.Element {
   return (
-    <Text fixed testID="unpriced-item" numberOfLines={1} className="text-xs text-text">
+    <Text testID="unpriced-item" numberOfLines={1} className="text-xs text-text">
       {props.drop.itemName}
       {props.drop.ringLevel !== undefined && ` ${props.drop.ringLevel}레벨`}
     </Text>
@@ -111,7 +110,7 @@ function DoneMark(props: { sizePx: number }): React.JSX.Element {
       className="shrink-0 items-center justify-center rounded-full bg-surface-2"
       style={{ width: props.sizePx, height: props.sizePx }}
     >
-      <Text fixed className="font-bold text-primary-ink" style={{ fontSize: props.sizePx * 0.45 }}>
+      <Text className="font-bold text-primary-ink" style={{ fontSize: props.sizePx * 0.45 }}>
         ✓
       </Text>
     </View>
@@ -126,7 +125,6 @@ function Done(props: { variant: Variant }): React.JSX.Element {
         {/* 타일 이름이 아니라 끝났다는 사실을 남긴다. 1x1 에는 라벨이 없어 이 한 줄이 무엇이
             0건인가 를 말하는 자리가 여기뿐이다. */}
         <Text
-          fixed
           testID="unpriced-done"
           numberOfLines={3}
           className="text-center text-10 leading-[11px] text-text-muted"
@@ -142,7 +140,6 @@ function Done(props: { variant: Variant }): React.JSX.Element {
       <View testID="widget-unpriced-drops" className="flex-1 items-center justify-center gap-2.5 p-3">
         <DoneMark sizePx={36} />
         <Text
-          fixed
           testID="unpriced-done"
           numberOfLines={2}
           className="text-center text-[11.5px] leading-[15px] text-text-muted"
@@ -158,8 +155,8 @@ function Done(props: { variant: Variant }): React.JSX.Element {
     <View testID="widget-unpriced-drops" className="flex-1 flex-row items-center gap-2.5 p-3">
       <DoneMark sizePx={32} />
       <View className="flex-1">
-        <Text fixed className="text-11 font-semibold text-text-muted">{TITLE}</Text>
-        <Text fixed testID="unpriced-done" numberOfLines={1} className="mt-0.5 text-11 text-text-muted">
+        <Text className="text-11 font-semibold text-text-muted">{TITLE}</Text>
+        <Text testID="unpriced-done" numberOfLines={1} className="mt-0.5 text-11 text-text-muted">
           {DONE_NOTE}
         </Text>
       </View>
@@ -176,10 +173,10 @@ export function UnpricedDropsWidget({ w, h, data }: WidgetProps): React.JSX.Elem
   if (variant === 'tiny') {
     return (
       <View testID="widget-unpriced-drops" className="flex-1 items-center justify-center gap-1 p-2">
-        <Text fixed style={TABULAR_NUMS} className="text-lg font-bold text-text">
+        <Text style={TABULAR_NUMS} className="text-lg font-bold text-text">
           {count}
         </Text>
-        <Text fixed numberOfLines={1} className="text-[9.5px] text-text-muted">
+        <Text numberOfLines={1} className="text-[9.5px] text-text-muted">
           {TITLE}
         </Text>
       </View>
@@ -195,7 +192,7 @@ export function UnpricedDropsWidget({ w, h, data }: WidgetProps): React.JSX.Elem
       <View testID="widget-unpriced-drops" className="flex-1 justify-center gap-2 p-3">
         <View className="flex-row items-center gap-2">
           <CountBadge count={count} sizePx={28} textPx={13} />
-          <Text fixed numberOfLines={1} className="min-w-0 flex-1 text-11 font-bold text-text-muted">
+          <Text numberOfLines={1} className="min-w-0 flex-1 text-11 font-bold text-text-muted">
             {TITLE}
           </Text>
         </View>
@@ -213,7 +210,7 @@ export function UnpricedDropsWidget({ w, h, data }: WidgetProps): React.JSX.Elem
     <View testID="widget-unpriced-drops" className="flex-1 flex-row items-center gap-2.5 p-3">
       <CountBadge count={count} sizePx={36} textPx={16} />
       <View className="min-w-0 flex-1 gap-0.5">
-        <Text fixed numberOfLines={1} className="text-xs font-bold text-text">
+        <Text numberOfLines={1} className="text-xs font-bold text-text">
           {TITLE}
         </Text>
         <Cta />

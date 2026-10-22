@@ -133,13 +133,15 @@ const ROW_LABELS = [
   '보스 관리',
   // `캐릭터 관리` **아래**. 이 자리가 계약이다.
   '테마',
+  // 테마 바로 아래(사용자 지정). 둘 다 화면 모양을 바꾸는 행이다.
+  '글자 크기',
   '스케줄 관리 방법',
   '계정 및 데이터',
   '앱 정보',
 ]
 
 /** 카드마다 달린 제목. 순서가 곧 화면 순서다(사용자 지정). */
-const SECTION_TITLES = ['알림', '캐릭터 · 테마', 'MVP 등급', '스케줄', '앱 데이터']
+const SECTION_TITLES = ['알림', '캐릭터 · 테마 · 글자 크기', 'MVP 등급', '스케줄', '앱 데이터']
 
 function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>> = {}): void {
   mockedUseThemeStore.mockReturnValue({
@@ -210,7 +212,7 @@ describe('AppSettingsScreen', () => {
       })
 
     expect(labelsIn(cards[0])).toEqual(['알림 설정'])
-    expect(labelsIn(cards[1])).toEqual(['캐릭터 관리', '보스 관리', '테마'])
+    expect(labelsIn(cards[1])).toEqual(['캐릭터 관리', '보스 관리', '테마', '글자 크기'])
     // 구역 제목과 행 이름이 같아 `ROW_LABELS` 로는 못 찾는다. 카드 안에서 본다.
     expect(within(cards[2]).getByText('MVP 등급')).toBeTruthy()
     expect(labelsIn(cards[3])).toEqual(['스케줄 관리 방법'])
@@ -226,7 +228,7 @@ describe('AppSettingsScreen', () => {
     // `MVP 등급` 은 제목과 행 이름이 같아 두 번 나온다. 처음 나온 자리로 순서를 본다.
     expect([...new Set(texts.filter((text) => SECTION_TITLES.includes(text)))]).toEqual(SECTION_TITLES)
     // 제목은 카드 **위**에 선다.
-    expect(texts.indexOf('캐릭터 · 테마')).toBeLessThan(texts.indexOf('캐릭터 관리'))
+    expect(texts.indexOf('캐릭터 · 테마 · 글자 크기')).toBeLessThan(texts.indexOf('캐릭터 관리'))
   })
 
   it('"MVP 등급" 행을 누르면 SettingsMvpGrade 로 민다', async () => {
@@ -248,6 +250,7 @@ describe('AppSettingsScreen', () => {
   it.each([
     ['스케줄 관리 방법', '수동'],
     ['테마', 다른테마],
+    ['글자 크기', '기본'],
   ])('"%s" 행에 현재값 배지와 chevron 이 함께 있다', async (label, value) => {
     mockTrackingModeStore({ mode: 'manual' })
     mockThemeStore({ theme: 다른테마 })

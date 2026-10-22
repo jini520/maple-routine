@@ -116,10 +116,13 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                     `w-full` 이 있어야 한다. 부모가 `items-center` 라 글자 폭만큼만 차지하면
                     `text-right` 가 걸릴 자리가 없다.
 
-                    빈 값이 `''` 가 아니라 **공백 한 칸**이다. 빈 문자열은 `Text` 높이를 0 으로 만든다. */}
+                    빈 값이 `''` 가 아니라 **공백 한 칸**이다. 빈 문자열은 `Text` 높이를 0 으로 만든다.
+
+                    칸보다 긴 금액은 글자를 줄여 한 줄에 넣는다. 자르면 끝자리가 사라져 값을 못 읽는다. */}
                 <Text
                   testID={`calendar-income-${day.dateKey}`}
                   numberOfLines={1}
+                  adjustsFontSizeToFit
                   // 날짜 원이 24px 인데 그 안의 숫자는 12px 이라 아래로 빈 자리가 남는다.
                   // 그만큼 당기되 다 없애지는 않는다. 붙여 버리면 날짜와 금액이 한 줄로 뭉친다.
                   className="-mt-0.5 w-full pr-2 text-right text-9 leading-3 text-rise-ink"
@@ -130,6 +133,7 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                 <Text
                   testID={`calendar-expense-${day.dateKey}`}
                   numberOfLines={1}
+                  adjustsFontSizeToFit
                   className="w-full pr-2 text-right text-9 leading-3 text-fall-ink"
                   style={TABULAR_NUMS}
                 >

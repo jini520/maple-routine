@@ -159,19 +159,6 @@ describe('글자 배수', () => {
     }
   })
 
-  it('mini 는 fixed 를 스스로 켠다', async () => {
-    const { getByText } = await renderAtom(<Badge variant="hard" size="mini">하드</Badge>)
-
-    expect(getByText('하드').props.allowFontScaling).toBe(false)
-  })
-
-  it('default 는 호출부가 정한다', async () => {
-    const 그냥 = await renderAtom(<Badge variant="muted">진행 불가</Badge>)
-    expect(그냥.getByText('진행 불가').props.allowFontScaling).not.toBe(false)
-
-    const 고정 = await renderAtom(<Badge variant="muted" fixed>진행 불가</Badge>)
-    expect(고정.getByText('진행 불가').props.allowFontScaling).toBe(false)
-  })
 })
 
 describe('프롭', () => {

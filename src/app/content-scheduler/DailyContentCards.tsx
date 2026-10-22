@@ -60,7 +60,7 @@ export function DailyQuestCard(props: {
 
         {/* 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
         {props.isBlocked === true ? (
-          <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
+          <Badge variant="muted" className="shrink-0">진행 불가</Badge>
         ) : (
           content.questState !== null && (
             <Badge variant={QUEST_STATE_VARIANT[content.questState]}>
@@ -108,7 +108,7 @@ export function MonsterParkCard(props: {
 
         {/* 진행 불가면 상태 배지를 **대체**한다(늘리지 않는다). */}
           {props.isBlocked === true ? (
-            <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
+            <Badge variant="muted" className="shrink-0">진행 불가</Badge>
           ) : (
             <Badge variant="third">
               {content.nowCount}/{content.maxCount}
@@ -153,7 +153,7 @@ export function renderDailyContentCard(
         <Text className="shrink text-sm text-text">
           {contentDisplayNameOf(content.contentKey, content.apiName)} · {content.nowCount}/{content.maxCount}
         </Text>
-        {isBlocked && <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>}
+        {isBlocked && <Badge variant="muted" className="shrink-0">진행 불가</Badge>}
       </View>
       {!isBlocked && content.maxCount > 0 && (
         <ProgressBar

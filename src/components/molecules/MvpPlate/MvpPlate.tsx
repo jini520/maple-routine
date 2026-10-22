@@ -21,7 +21,7 @@ export function MvpPlate(props: { grade: MvpGradeKey; height: number; testID?: s
         style={{ height: props.height }}
         className="items-center justify-center rounded-full bg-surface-2 px-2"
       >
-        <Text fixed className="text-11 font-semibold text-text-muted">
+        <Text className="text-11 font-semibold text-text-muted">
           {name}
         </Text>
       </View>

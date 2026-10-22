@@ -15,6 +15,7 @@ import type { StatsPeriodRange } from '../../features/stats/periods'
 import { weekOfMonthLabel } from '../../lib/boss/boss-profit-period'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { useThemeAppearance } from '../../theme/context'
+import { useTextScale } from '../../theme/text-scale'
 import type { BossCycle } from '../../types'
 import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
@@ -100,6 +101,7 @@ export const TrendSection = memo(function TrendSection(props: {
   /** 고른 막대. 어느 구간 · 보기에서 골랐는지 함께 들어, 그것이 바뀌면 고름이 풀린다 */
   const [picked, setPicked] = useState<{ scope: string; index: number } | null>(null)
   const [width, setWidth] = useState(312)
+  const textScale = useTextScale()
 
   const series = totalsSeries(props.days, props.trend)
   const lastPeriodKey = props.trend[props.trend.length - 1].periodKey
@@ -147,7 +149,7 @@ export const TrendSection = memo(function TrendSection(props: {
             />
           ))}
           {ticks.map((tick) => (
-            <SvgText key={`tick-${tick}`} x={AXIS_LEFT - 6} y={y(tick) + 3} fontSize={9} fill={definition.textDisabled} textAnchor="end">
+            <SvgText key={`tick-${tick}`} x={AXIS_LEFT - 6} y={y(tick) + 3} fontSize={9 * textScale} fill={definition.textDisabled} textAnchor="end">
               {net ? signed(tick) : formatMesoCompact(tick)}
             </SvgText>
           ))}
@@ -176,7 +178,7 @@ export const TrendSection = memo(function TrendSection(props: {
                 key={`x-${range.periodKey}-${row}`}
                 x={AXIS_LEFT + slot * index + slot / 2}
                 y={CHART_HEIGHT - 5 - (lines.length - 1 - row) * AXIS_LINE}
-                fontSize={9}
+                fontSize={9 * textScale}
                 fontWeight={index === selected ? '700' : '400'}
                 fill={index === selected ? definition.text : definition.textMuted}
                 textAnchor="middle"

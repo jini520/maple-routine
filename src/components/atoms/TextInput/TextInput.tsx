@@ -4,19 +4,21 @@
  * `react-native` 의 `TextInput` 직접 import 는 ESLint 와 `src/__tests__/font-scaling-policy.test.ts`
  * 가 막는다. **이 파일이 그 규칙의 예외 둘 중 하나다**(다른 하나는 `atoms/Text/Text.tsx`).
  */
+import { cssInterop } from 'nativewind'
 import {
   Platform,
   TextInput as RNTextInput,
-  useWindowDimensions,
+  StyleSheet,
   type TextInputProps as RNTextInputProps,
 } from 'react-native'
 
 import { useThemeAppearance } from '../../../theme/context'
+import { useTextScale } from '../../../theme/text-scale'
 import { BASE_TEXT_STYLE } from '../Text/app-font'
-import { fontScalingProps, type Clamped } from '../Text/font-scaling'
+import { scaleTextStyle } from '../Text/font-scaling'
 
-/** RN 의 `TextInputProps` 에서 배수 프롭 둘을 빼고 `fixed` 를 더한 것. */
-export type TextInputProps = Clamped<RNTextInputProps>
+/** RN 의 `TextInputProps` 에서 시스템 배수 프롭 둘을 뺀 것. 배수는 앱 설정이 정한다. */
+export type TextInputProps = Omit<RNTextInputProps, 'allowFontScaling' | 'maxFontSizeMultiplier'>
 
 /** 조합이 안 도는 키보드. 숫자만 나오므로 IME 가 조합 구간을 쥘 일이 없다. */
 /**
@@ -35,7 +37,7 @@ const NUMERIC_KEYBOARDS = new Set<RNTextInputProps['keyboardType']>([
 /**
  * 입력 칸 하나. `value`·`onChangeText` 를 평소처럼 준다. 호출부가 아래 넷을 안 고른다.
  *
- *  ① 시스템 글자 배수를 `[1.0, 1.235]` 로 자른다
+ *  ① 시스템 글자 배수 대신 설정의 글자 크기 배수를 곱한다
  *  ② 조합이 도는 칸은 `value` 대신 `defaultValue` 로 심는다
  *  ③ 자리표시자 색과 상자를 못박아 두 플랫폼을 맞춘다
  *  ④ iOS 한 줄 칸에는 줄 높이를 안 넘긴다.
@@ -57,12 +59,11 @@ const NUMERIC_KEYBOARDS = new Set<RNTextInputProps['keyboardType']>([
  * <TextInput aria-label="아이템" value={name} onChangeText={setName} placeholder="아이템 명" />
  */
 export function TextInput({
-  fixed = false,
   value,
   keyboardType,
   ...rest
 }: TextInputProps): React.JSX.Element {
-  const { fontScale } = useWindowDimensions()
+  const scale = useTextScale()
   const { definition } = useThemeAppearance()
 
   /**
@@ -79,13 +80,19 @@ export function TextInput({
       keyboardType={keyboardType}
       {...(numeric ? { value } : { defaultValue: value })}
       /** 플랫폼 기본 상자를 지우는 값. 배열 앞이라 호출부의 치수가 이긴다. */
-      style={[
-        { ...BASE_TEXT_STYLE, padding: 0, includeFontPadding: false, textAlignVertical: 'center' },
-        rest.style,
-        Platform.OS === 'ios' && rest.multiline !== true ? NO_LINE_HEIGHT : null,
-      ]}
-      /** 계산한 프롭이 뒤에 온다. 스프레드로 들어온 값이 클램프를 못 이기게. */
-      {...fontScalingProps(fontScale, fixed)}
+      style={scaleTextStyle(
+        StyleSheet.flatten([
+          { ...BASE_TEXT_STYLE, padding: 0, includeFontPadding: false, textAlignVertical: 'center' },
+          rest.style,
+          Platform.OS === 'ios' && rest.multiline !== true ? NO_LINE_HEIGHT : null,
+        ]),
+        scale,
+      )}
+      /** 스프레드 뒤라 호출부가 시스템 배수를 되살리지 못한다. */
+      allowFontScaling={false}
     />
   )
 }
+
+/** `className` 을 `style` 로 풀어 받는 등록. 안 하면 클래스로 준 크기를 몰라 배수를 못 곱한다. */
+cssInterop(TextInput, { className: 'style' })

@@ -124,7 +124,7 @@ function BossCard(props: {
                 보스를 완료로 두면 그 거짓이 보스 수익의 결정석 금액이 된다.
                 우선순위는 `진행 불가` → `마감` → `완료` 다. */}
             {props.isBlocked === true ? (
-              <Badge variant="muted" fixed className="shrink-0">진행 불가</Badge>
+              <Badge variant="muted" className="shrink-0">진행 불가</Badge>
             ) : boss.isWeeklyLimitClosed ? (
               // **완료와 같은 상자다.** 자리를 대신하는 배지라 크기가 다르면 카드 오른쪽 끝이
               // 흔들린다. 갈리는 것은 색뿐이다.

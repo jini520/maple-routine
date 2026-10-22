@@ -11,6 +11,7 @@ const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.authMethods,
   STORAGE_KEYS.apiKey,
   STORAGE_KEYS.theme,
+  STORAGE_KEYS.textSize,
   STORAGE_KEYS.trackingMode,
   STORAGE_KEYS.dropEffect,
   // 공지 구독. 지워지면 구독은 FCM 쪽에 남아 있는데 앱은 껐다고 믿어, 스위치가 꺼져 있는데

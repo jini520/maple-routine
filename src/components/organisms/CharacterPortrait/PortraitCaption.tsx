@@ -5,11 +5,11 @@
  */
 import { Defs, Path, TextPath, Text as SvgText } from 'react-native-svg'
 
+import { useTextScale } from '../../../theme/text-scale'
+
 import { portraitTextArcPath, portraitTextOffsetPercent } from './portrait-arc'
 import { PORTRAIT_RAIL } from './portrait-metrics'
 
-/** 레벨과 이름은 자리만 다르고 글자는 같다. 한 상수로 묶어야 한쪽만 바뀌지 않는다. */
-const FONT_PROPS = { fontSize: PORTRAIT_RAIL.textFontSize, fontWeight: '600' } as const
 
 export interface PortraitCaptionProps {
   /** 호의 id. 레일에 여러 벌이 떠서 화면 안에서 유일해야 한다. */
@@ -21,6 +21,10 @@ export interface PortraitCaptionProps {
 }
 
 export function PortraitCaption(props: PortraitCaptionProps): React.JSX.Element {
+  const textScale = useTextScale()
+  /** 레벨과 이름은 자리만 다르고 글자는 같다. 한 값으로 묶어야 한쪽만 바뀌지 않는다. */
+  const fontProps = { fontSize: PORTRAIT_RAIL.textFontSize * textScale, fontWeight: '600' } as const
+
   return (
     <>
       <Defs>
@@ -30,7 +34,7 @@ export function PortraitCaption(props: PortraitCaptionProps): React.JSX.Element 
       {props.level !== null && (
         <SvgText
           testID="portrait-level-text"
-          {...FONT_PROPS}
+          {...fontProps}
           fill={props.color}
           // `textAnchor` 는 `TextPath` 가 아니라 `Text` 에 붙는다. 자식에 주면 `react-native-svg` 가
           // 조용히 버린다.
@@ -44,7 +48,7 @@ export function PortraitCaption(props: PortraitCaptionProps): React.JSX.Element 
 
       <SvgText
         testID="portrait-name-text"
-        {...FONT_PROPS}
+        {...fontProps}
         fill={props.color}
         // 레벨을 모르면 이름 혼자라 치우칠 상대가 없다. 줄을 가운데에 앉힌다.
         textAnchor={props.level === null ? 'middle' : 'start'}
