@@ -10,7 +10,7 @@
 import { create } from 'zustand'
 import { fetchAndRecordCharacterList } from '../mvp-grade/character-list'
 import { probeApiKeyStage } from '../../nexon/key-stage'
-import { isInvalidApiKeyError, NexonRateLimitError } from '../../nexon/errors'
+import { isInvalidApiKeyError, NexonMaintenanceError, NexonRateLimitError } from '../../nexon/errors'
 import {
   clearAuthConfig,
   clearNexonLogin,
@@ -75,6 +75,9 @@ function toAuthError(error: unknown): AuthError {
   }
   if (error instanceof NexonRateLimitError) {
     return { kind: 'rateLimited' }
+  }
+  if (error instanceof NexonMaintenanceError) {
+    return { kind: error.scope === 'game' ? 'gameMaintenance' : 'apiMaintenance' }
   }
   return { kind: 'network' }
 }

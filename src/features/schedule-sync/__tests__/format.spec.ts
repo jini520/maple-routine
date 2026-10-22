@@ -88,7 +88,7 @@ describe('formatStaleRosterError', () => {
   // 하십시오체(~ㅂ니다)의 다른 활용이기 때문이다.
   it('7종 전부 문구가 있고 에러 어미 규칙(~습니다 / ~주세요)을 따른다', () => {
     for (const kind of KINDS) {
-      const copy = formatStaleRosterError({ kind })
+      const copy = formatStaleRosterError({ kind }, 'picker')!
       expect(copy.message.length).toBeGreaterThan(0)
       expect(copy.message).toMatch(/(습니다|아닙니다|주세요)$/)
     }
@@ -97,14 +97,14 @@ describe('formatStaleRosterError', () => {
   // 문구를 여기서 못 박는다. 화면이 이 함수를 부르므로 맞출 상대가 따로 없다.
   it('network 계열 3종은 현행 문구 + 다시 시도를 유지한다', () => {
     for (const kind of ['network', 'periodOutOfRange', 'notCollected'] as const) {
-      const copy = formatStaleRosterError({ kind })
+      const copy = formatStaleRosterError({ kind }, 'picker')!
       expect(copy.message).toBe('목록이 최신이 아닙니다')
       expect(copy.action).toEqual({ kind: 'retry', label: '다시 시도' })
     }
   })
 
   it('rateLimited는 액션 없이 키 단계 확인만 말한다', () => {
-    const copy = formatStaleRosterError({ kind: 'rateLimited' })
+    const copy = formatStaleRosterError({ kind: 'rateLimited' }, 'picker')!
 
     expect(copy.message).toContain('서비스 단계')
     expect(copy.action).toBeUndefined()
@@ -113,19 +113,19 @@ describe('formatStaleRosterError', () => {
   // 배너가 뜨는 순간 키 무효화가 화면을 키 입력으로 보내므로 누를 것이 없다.
   // 문구는 그대로다. 바뀐 것은 액션뿐이다.
   it('invalidApiKey는 문구를 유지하고 액션만 잃는다. 어디서도 설정으로 보내지 않는다', () => {
-    const copy = formatStaleRosterError({ kind: 'invalidApiKey' })
+    const copy = formatStaleRosterError({ kind: 'invalidApiKey' }, 'picker')!
 
     expect(copy.message).toBe('API 키가 유효하지 않아 목록을 갱신하지 못했습니다')
     expect(copy.action).toBeUndefined()
   })
 
   it('characterUnavailable은 영구 실패라 액션이 없다', () => {
-    expect(formatStaleRosterError({ kind: 'characterUnavailable' }).action).toBeUndefined()
+    expect(formatStaleRosterError({ kind: 'characterUnavailable' }, 'picker')!.action).toBeUndefined()
   })
 
   it('원인마다 문구가 갈린다: 401·429·characterUnavailable·network가 서로 다르다', () => {
     const messages = ['invalidApiKey', 'rateLimited', 'characterUnavailable', 'network'].map(
-      (kind) => formatStaleRosterError({ kind } as ScheduleSyncError).message,
+      (kind) => formatStaleRosterError({ kind } as ScheduleSyncError, 'picker')!.message,
     )
 
     expect(new Set(messages).size).toBe(4)
@@ -154,7 +154,7 @@ describe('로그인 만료 문구', () => {
   it('세 자리 모두 키가 아니라 로그인을 가리킨다', () => {
     const 토스트 = formatScheduleSyncError({ kind: 'signInRequired' })
     const 로스터 = formatRosterError({ kind: 'signInRequired' }, 'picker')
-    const 배너 = formatStaleRosterError({ kind: 'signInRequired' })
+    const 배너 = formatStaleRosterError({ kind: 'signInRequired' }, 'picker')!
 
     for (const text of [토스트, 로스터.title, 로스터.description, 배너.message]) {
       expect(text).toContain('로그인')
@@ -166,6 +166,48 @@ describe('로그인 만료 문구', () => {
     for (const place of ['picker', 'characterSetup'] as const) {
       expect(formatRosterError({ kind: 'signInRequired' }, place).action).toBeUndefined()
     }
-    expect(formatStaleRosterError({ kind: 'signInRequired' }).action).toBeUndefined()
+    expect(formatStaleRosterError({ kind: 'signInRequired' }, 'picker')!.action).toBeUndefined()
+  })
+})
+
+describe('Open API 점검 문구', () => {
+  const 점검 = ['gameMaintenance', 'apiMaintenance'] as const
+
+  // 피커는 화면 맨 위의 점검 배너가 무엇이 점검 중인지 말한다. 버튼은 어디에도 없다.
+  it('피커의 빈 자리는 목록을 못 불러온 것만 말한다', () => {
+    for (const kind of 점검) {
+      expect(formatRosterError({ kind }, 'picker')).toEqual({
+        title: '캐릭터 목록을 불러오지 못했습니다',
+        description: '점검이 끝난 뒤 다시 불러와주세요',
+      })
+    }
+  })
+
+  it('온보딩은 배너가 없어 무엇이 점검 중인지 제목이 말한다', () => {
+    expect(formatRosterError({ kind: 'gameMaintenance' }, 'characterSetup')).toEqual({
+      title: '메이플스토리 API 점검 중입니다',
+      description: '점검이 끝난 뒤 다시 불러와주세요',
+    })
+    expect(formatRosterError({ kind: 'apiMaintenance' }, 'characterSetup').title).toBe('넥슨 Open API 점검 중입니다')
+  })
+
+  it('피커의 스탈 배너는 서지 않는다. 같은 화면 맨 위에 점검 배너가 있다', () => {
+    for (const kind of 점검) {
+      expect(formatStaleRosterError({ kind }, 'picker')).toBeNull()
+    }
+  })
+
+  it('온보딩의 스탈 배너는 무엇이 점검 중인지 말하고 버튼이 없다', () => {
+    expect(formatStaleRosterError({ kind: 'gameMaintenance' }, 'characterSetup')).toEqual({
+      message: '메이플스토리 API 점검 중이라 목록을 갱신하지 못했습니다',
+    })
+    expect(formatStaleRosterError({ kind: 'apiMaintenance' }, 'characterSetup')).toEqual({
+      message: '넥슨 Open API 점검 중이라 목록을 갱신하지 못했습니다',
+    })
+  })
+
+  it('무엇이 점검 중인지 따로 말한다', () => {
+    expect(formatScheduleSyncError({ kind: 'gameMaintenance' })).toBe('메이플스토리 API 점검 중입니다')
+    expect(formatScheduleSyncError({ kind: 'apiMaintenance' })).toBe('넥슨 Open API 점검 중입니다')
   })
 })

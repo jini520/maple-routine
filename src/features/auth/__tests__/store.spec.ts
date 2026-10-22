@@ -3,6 +3,7 @@ import {
   NexonAuthError,
   NexonBadRequestError,
   NexonNetworkError,
+  NexonMaintenanceError,
   NexonRateLimitError,
 } from '../../../nexon/errors'
 import { initialAuthState } from '../state'
@@ -189,6 +190,9 @@ describe('useAuthStore.signIn', () => {
     // 토스트는 원인만. 처방은 인라인 자리가 준다.
     [new NexonRateLimitError('rate limited'), '호출 한도를 초과했습니다'],
     [new NexonNetworkError('network fail'), '네트워크 오류가 발생했습니다'],
+    // 키 입력 화면에는 점검 배너를 세울 자리가 없어 토스트로 알린다.
+    [new NexonMaintenanceError('점검', 'game'), '메이플스토리 API 점검 중입니다'],
+    [new NexonMaintenanceError('점검', 'api'), '넥슨 Open API 점검 중입니다'],
   ])('목록 조회 실패를 원인별 문구로 알린다 (%o)', async (error, expected) => {
     fetchCharacterListMock.mockRejectedValue(error)
 

@@ -1,8 +1,8 @@
-# ADR-022 실패를 알리는 방법과 기간 데이터 상태
+# ADR-022+081 실패를 알리는 방법과 기간 데이터 상태
 
 > 🟢 유효
 > 옛 번호: ADR-008 · ADR-065 결정 4 · 5 · ADR-068 · ADR-114 결정 2 · 3 · 4 · ADR-117 결정 6
-> 관련 소스: `nexon/http.ts` · `features/schedule-sync/errors.ts` · `features/schedule-sync/format.ts` · `features/schedule-sync/use-sync-error-toast.ts` · `components/molecules/ErrorState/StaleBanner.tsx` · `lib/boss/boss-profit-period.ts` · `app/boss-profit/CharacterIssue.tsx` · `features/boss-profit/sqlite-guards.ts` · `components/organisms/ErrorBoundary/`
+> 관련 소스: `nexon/http.ts` · `features/schedule-sync/errors.ts` · `features/schedule-sync/format.ts` · `features/schedule-sync/use-sync-error-toast.ts` · `components/molecules/ErrorState/StaleBanner.tsx` · `lib/boss/boss-profit-period.ts` · `app/boss-profit/CharacterIssue.tsx` · `features/nexon-maintenance/` · `app/NexonMaintenanceBanner.tsx` · `features/auth/store.ts` · `features/boss-profit/sqlite-guards.ts` · `components/organisms/ErrorBoundary/`
 
 ## 배경
 
@@ -25,8 +25,9 @@
 
 ### 결정 2. 실패의 원인을 버리지 않는다
 
-넥슨 호출이 던진 에러는 `toScheduleSyncError` 를 거쳐 일곱 종류(`ScheduleSyncError`)로 바뀐다. `invalidApiKey` ·
-`rateLimited` · `characterUnavailable` · `periodOutOfRange` · `notCollected` · `network` · `signInRequired` 다.
+넥슨 호출이 던진 에러는 `toScheduleSyncError` 를 거쳐 아홉 종류(`ScheduleSyncError`)로 바뀐다. `invalidApiKey` ·
+`rateLimited` · `characterUnavailable` · `periodOutOfRange` · `notCollected` · `network` · `signInRequired` ·
+`gameMaintenance` · `apiMaintenance` 다.
 `catch` 에서 `{ kind: 'network' }` 를 직접 만들면 401 과 429 가 화면까지 오지 못한다. 그래서 반드시 이 함수를
 거친다. 모르는 400 코드는 `network` 로 떨어진다. 넥슨이 코드 체계를 바꿔도 다시 시도를 권하는 쪽으로 동작하게
 하려는 것이다.
@@ -119,13 +120,68 @@
   폴백을 덮고 터치까지 막아서, `다시 시작` 버튼이 보이지도 눌리지도 않기 때문이다. 폴백을 위로 올리는 방법으로는
   터치가 막힌 것이 풀리지 않아서, 스플래시를 내리는 방법을 골랐다. 오류 보고 서비스는 없다.
 
+### 결정 8. Open API 점검은 화면 맨 위의 배너 하나로 알린다
+
+넥슨은 점검 중인 요청에 두 코드를 준다. 400 `OPENAPI00010` 은 메이플스토리 API 점검이고, 503 `OPENAPI00011` 은
+넥슨 Open API 자체의 점검이다. 넥슨 문서는 `00010` 을 `게임 점검 중` 이라고 적지만, 앱 문구는 게임이 점검 중이라고
+읽히지 않게 사용자가 정한 이름을 쓴다. 둘 다 키 문제도 네트워크 문제도 아니다. 그런데 `network` 로 접으면 사용자는
+`네트워크 오류가 발생했습니다` 를 보고 연결을 확인하게 되고, 기다리면 풀린다는 것은 알 수 없다. 그래서 두 코드를
+`gameMaintenance` · `apiMaintenance` 로 가르고, 무엇이 점검 중인지 각각 말한다. 둘을 한 종류로 묶지 않는 것은
+사용자가 정했다.
+
+- 판정은 `nexon/http.ts` 한 곳에서 한다. 400 · 503 응답 본문의 코드를 읽어 `NexonMaintenanceError` 를 던지고,
+  `scope` 에 `game` 또는 `api` 를 담는다. 프렌즈 스트림의 `fail` 줄도 같은 판정을 거친다. 서버가 넥슨 본문의
+  코드를 그대로 넘겨 주기 때문이다. 코드가 없는 503 은 지금처럼 `network` 다.
+- **알리는 방법은 배너 하나다.** 실패가 난 자리마다 문구를 따로 두면 자리마다 모양이 달라 화면이 깨진다. 그래서
+  점검은 결산 배너([[ADR-058]])와 같은 자리, 같은 모양의 띠(`NexonMaintenanceBanner`)로만 알린다. 첫 줄은
+  `메이플스토리 API 점검 중입니다.` 또는 `넥슨 Open API 점검 중입니다.` 이고, 둘째 줄은
+  `점검이 끝날 때까지 마지막으로 불러온 정보를 보여 줍니다.` 다. 아이콘은 렌치다. 다시 시도 버튼은 없다.
+  기다리는 것 말고는 할 일이 없기 때문이다.
+- 배너에서 `X` 가 아닌 곳을 누르면 `Open API 점검` FAQ 시트(`features/nexon-maintenance/faq.ts`)가 열린다. 결산 배너와
+  같은 방식이다. 문답은 셋이다. 무엇을 불러올 수 없는지, 기록이 사라지는지, 어떻게 해야 하는지다. 불러올 수 없는
+  것은 넥슨에서 받아 오는 정보 대부분이라고 넓게 적는다. 대부분의 기능이 마지막으로 불러온 기록을 기준으로 보여
+  실제 게임 속 데이터와 다를 수 있다는 것과, 앱에 저장된 기록(가계부 · 보스 수익 기록 · 통계)은 그대로 쓸 수 있다는
+  것도 함께 적는다. 점검 때 막히는 경로는 한 번 잰 것이라
+  점검마다 다를 수 있기 때문이다. 좁게 적으면 적지 않은 것이 막혔을 때 사용자는 앱이 틀렸다고 읽는다. 넓게 적는 것은
+  사용자가 정했다.
+- 배너는 넥슨 데이터를 읽는 화면 모두에 선다. today · 컨텐츠 · 보스 · 보스 수익 · 가계부 · 설정 · 공지 목록 ·
+  캐릭터 관리다. 지금은 실패를 알리지 않는 곳(today 의 위젯, 공지 목록)도 포함한다. 사냥 계산기의 메소 획득량은
+  시트 안에서 실패하지만 배너는 가계부 화면 맨 위에 선다. 셋 다 사용자가 정했다.
+- 점검 상태는 앱 전체에 하나다(`features/nexon-maintenance/store.ts`). `nexon/http.ts` 가 점검 응답과 성공 응답을
+  알리고(`setMaintenanceReporter`), 스토어가 그것으로 배너를 세우고 내린다. `nexon/` 이 `features/` 를 직접 부르면
+  계층이 거꾸로 서서, 부팅이 이 함수를 꽂는다.
+- 배너를 내리는 기준은 점검마다 다르다. Open API 점검은 모든 경로가 막히므로 어느 요청이든 성공하면 내린다. 메이플스토리 API 점검은
+  `character/list` 처럼 점검 중에도 200 인 경로가 있어서, 점검 응답을 받았던 경로가 다시 성공해야 내린다.
+- `X` 를 누르면 이번 점검 동안 모든 화면에서 배너를 닫는다. 같은 점검을 화면마다 다시 닫게 하지 않기 위해서다.
+  점검이 끝나 배너가 내려간 뒤 다음 점검이 오면 다시 선다.
+- 배너가 서는 화면에서는 점검을 다른 방법으로 다시 알리지 않는다. 동기화 실패 토스트, 보스 수익의
+  `일부 캐릭터를 불러오지 못했습니다 (N명)` 토스트, 캐릭터 관리의 스탈 배너가 점검일 때 뜨지 않는다. 캐릭터 관리에
+  목록이 하나도 없을 때의 `ErrorState` 는 `캐릭터 목록을 불러오지 못했습니다` / `점검이 끝난 뒤 다시 불러와주세요` 를
+  버튼 없이 보인다. 그 자리를 비워 둘 수 없기 때문이다.
+- 로그인 · 키 입력 · 캐릭터 설정(온보딩)에는 배너를 세울 자리가 없다. 그래서 그곳만 토스트와 문구로 무엇이 점검
+  중인지 말한다. 로그인 · 키 입력의 토스트는 `메이플스토리 API 점검 중입니다` · `넥슨 Open API 점검 중입니다` 다. 캐릭터
+  설정은 캐릭터 관리와 같은 본문(`CharacterManageBody`)을 쓰지만 `place` 가 다르다. `ErrorState` 의 제목이
+  `메이플스토리 API 점검 중입니다` · `넥슨 Open API 점검 중입니다` 이고, 목록이 남았을 때는 스탈 배너가
+  `메이플스토리 API 점검 중이라 목록을 갱신하지 못했습니다` · `넥슨 Open API 점검 중이라 목록을 갱신하지 못했습니다` 로 선다.
+  둘 다 버튼이 없다.
+- 동기화 회차에서 첫 캐릭터가 점검이면 나머지 캐릭터는 부르지 않고 캐시로 채운다. 점검은 캐릭터 하나가 아니라
+  넥슨 전체가 막힌 것이라 나머지도 같은 실패를 받기 때문이다([[ADR-021]] 결정 5).
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
 |---|---|
 | `features/schedule-sync/__tests__/to-schedule-sync-error.spec.ts` | 결정 2: 넥슨 에러가 일곱 종류로 맞게 바뀌는지, 모르는 400 이 `network` 로 가는지 본다 |
 | `features/schedule-sync/__tests__/format.spec.ts` | 결정 3: 원인마다 문구가 다른지, 문구가 `~습니다` · `~주세요` 로 끝나는지, 429 와 `characterUnavailable` 에 버튼이 없는지, `network` 계열만 `다시 시도` 를 갖는지 본다 |
-| `features/schedule-sync/__tests__/use-sync-error-toast.spec.tsx` | 결정 3: 401 · 429 · 로그인 만료에 토스트를 띄우지 않는지, `characterUnavailable` 토스트에 버튼이 없는지 본다 |
+| `features/schedule-sync/__tests__/use-sync-error-toast.spec.tsx` | 결정 3: 401 · 429 · 로그인 만료에 토스트를 띄우지 않는지, `characterUnavailable` 토스트에 버튼이 없는지 본다. 결정 8: 점검이면 토스트를 띄우지 않는지 본다 |
+| `nexon/__tests__/http.spec.ts` | 결정 8: 400 `OPENAPI00010` · 503 `OPENAPI00011` 이 `NexonMaintenanceError` 가 되는지, 코드 없는 503 은 그대로 네트워크 실패인지, 개발자 키를 빼지 않는지 본다 |
+| `features/schedule-sync/__tests__/schedule-sync.spec.ts` | 결정 8: 첫 캐릭터가 점검이면 나머지를 부르지 않는지 본다 |
+| `features/schedule-sync/__tests__/format.spec.ts`(Open API 점검 문구) | 결정 8: 캐릭터 관리는 스탈 배너가 안 서고 빈 자리에 버튼이 없는지, 온보딩은 무엇이 점검 중인지 말하는지 본다 |
+| `features/schedule-sync/__tests__/to-schedule-sync-error.spec.ts`(Open API 점검) | 결정 8: 두 점검이 따로 갈리는지, 개발자 키로 난 점검도 점검인지 본다 |
+| `features/auth/__tests__/store.spec.ts` | 결정 8: 키 입력에서 받은 점검을 무엇이 점검 중인지 말하는 토스트로 알리는지 본다 |
+| `features/boss-profit/__tests__/store.spec.ts` | 결정 8: 점검으로 못 받은 캐릭터가 인원 수 토스트에 안 들어가고 카드의 실패 표시는 남는지 본다 |
+| `app/__tests__/NexonMaintenanceBanner.test.tsx` | 결정 8: 점검이 아니면 안 서는지, 두 점검의 첫 줄이 다른지, `X` 가 닫기만 하고 시트를 안 여는지, 줄을 누르면 FAQ 시트가 열리는지 본다 |
+| `features/nexon-maintenance/__tests__/store.spec.ts` | 결정 8: 메이플스토리 API 점검은 막혔던 경로가 성공해야 내리고 Open API 점검은 어느 성공이든 내리는지, 닫은 배너가 다음 점검에 다시 서는지 본다 |
 | `lib/__tests__/boss-profit-period.spec.ts` | 결정 4: 한 캐릭터의 상태 판정 차례와, 여러 캐릭터를 합칠 때 기록 · 실패가 앞서고 모두 확인했을 때만 `confirmedEmpty` 인지 본다 |
 | `features/schedule-window/__tests__/records.spec.ts` | 결정 6: 쓰기가 던져도 뒤 기간과 다음 캐릭터를 계속 쓰는지 본다 |
 | `components/organisms/ErrorBoundary/__tests__/ErrorBoundary.test.tsx` | 결정 7: 예외가 나면 폴백이 보이는지, 버튼이 `다시 시작` 하나인지, 넘겨받은 재시작을 부르는지, 스플래시를 내리는지 본다 |
@@ -133,3 +189,4 @@
 ## 번호 기록
 
 - ADR-022 (2026-10-19): 옛 ADR-008 · 065 · 068 · 114 · 117(결정 6) 을 합쳐 처음 작성
+- ADR-081 (2026-10-22): 결정 8 을 더했다. Open API 점검(400 `OPENAPI00010` · 503 `OPENAPI00011`)을 `network` 에서 가르고 화면 맨 위 배너로 알린다(#482)

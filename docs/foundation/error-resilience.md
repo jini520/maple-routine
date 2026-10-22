@@ -8,9 +8,10 @@
 | 파일 | 하는 일 |
 |---|---|
 | `nexon/http.ts` | 넥슨 요청. 10초 시간 제한, 상태 코드와 400 본문 코드로 에러 클래스를 고른다 |
-| `features/schedule-sync/errors.ts` | `toScheduleSyncError` 가 에러를 일곱 종류(`ScheduleSyncError`)로 바꾼다 |
+| `features/schedule-sync/errors.ts` | `toScheduleSyncError` 가 에러를 아홉 종류(`ScheduleSyncError`)로 바꾼다 |
 | `features/schedule-sync/format.ts` | 종류마다 토스트 문구 · `ErrorState` 문구 · 스탈 배너 문구를 고른다 |
 | `features/schedule-sync/use-sync-error-toast.ts` | 동기화 실패 토스트. 일부 캐릭터만 실패하면 인원 수를 알린다 |
+| `features/nexon-maintenance/` · `app/NexonMaintenanceBanner.tsx` | Open API 점검 상태와 화면 맨 위의 점검 배너 |
 | `components/molecules/ErrorState/` | `ErrorState`(목록이 없을 때) · `StaleBanner`(목록이 남았을 때) |
 | `lib/boss/boss-profit-period.ts` | 기간 데이터 상태 판정(`resolvePeriodDataState` · `resolvePagePeriodState`) |
 | `app/boss-profit/CharacterIssue.tsx` | 동기화에 실패한 캐릭터 카드의 아이콘과 설명 팝오버 |
@@ -24,13 +25,14 @@
 
 | 실패 | 종류 | 보이는 것 |
 |---|---|---|
-| 네트워크 없음 · 10초 초과 · 5xx · JSON 이 아닌 응답 · 코드를 모르는 400 | `network` | 마지막 캐시를 그대로 그린다. 토스트 `네트워크 오류가 발생했습니다` + `다시 시도` |
+| 네트워크 없음 · 10초 초과 · 코드 없는 5xx · JSON 이 아닌 응답 · 코드를 모르는 400 | `network` | 마지막 캐시를 그대로 그린다. 토스트 `네트워크 오류가 발생했습니다` + `다시 시도` |
 | 401 · 403 · 400 `OPENAPI00005` | `invalidApiKey` | 닫을 수 없는 안내 모달([[ADR-024]]). 토스트는 없다 |
 | 429 `OPENAPI00007` | `rateLimited` | 닫을 수 없는 안내 모달([[ADR-024]]). 어디에도 `다시 시도` 가 없다 |
 | 로그인으로 부르다 받은 401 · 403 | `signInRequired` | 다시 로그인하라는 안내 모달([[ADR-024]]) |
 | 400 `OPENAPI00003` · 200 인데 캐릭터가 없음 | `characterUnavailable` | 영구 실패. 버튼 없이 알리고, 추적 해제 방법을 남긴다 |
 | 400 `OPENAPI00004` | `periodOutOfRange` | 그 기간을 `조회 불가` 로 표시한다 |
 | 400 `OPENAPI00009` | `notCollected` | 그 기간을 `집계 전` 으로 표시하고 다음 방문에 다시 받는다 |
+| 400 `OPENAPI00010` · 503 `OPENAPI00011` | `gameMaintenance` · `apiMaintenance` | 마지막 캐시를 그대로 그린다. 넥슨 데이터를 읽는 화면 맨 위에 점검 배너 하나만 세우고 토스트는 없다. 로그인 · 키 입력 · 캐릭터 설정만 토스트와 문구로 알린다([[ADR-081]] 결정 8) |
 | 관리 화면에서 추적 목록 저장 실패 | | 토스트 `추적 목록을 저장하지 못했습니다` |
 | API 키를 기기에 저장하지 못함 | | 토스트 `기기에 저장하지 못했습니다. 다시 시도해주세요` |
 | SQLite 가 5초 안에 답하지 않음 | | 읽기는 기본값으로 진행하고, 쓰기는 실패로 던져 다음에 다시 쓴다 |
@@ -42,7 +44,7 @@
 ## 문구와 버튼을 고르는 기준
 
 - 토스트는 한 줄에서 잘리므로 원인만 쓴다. 처방은 `ErrorState` 와 스탈 배너에 쓴다.
-- 버튼은 눌러서 풀리는 실패에만 둔다. 429 · `characterUnavailable` 에는 어디에도 버튼이 없다.
+- 버튼은 눌러서 풀리는 실패에만 둔다. 429 · `characterUnavailable` · 점검에는 어디에도 버튼이 없다.
 - 목록이 남아 있으면 목록을 지우지 않고 그 위에 스탈 배너를 얹는다.
 - 실패 문구는 `~습니다` · `~주세요` 로 끝낸다([[ADR-061]]).
 

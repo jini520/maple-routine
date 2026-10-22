@@ -2,12 +2,13 @@ import {
   isInvalidApiKeyError,
   NexonAuthError,
   NexonBadRequestError,
+  NexonMaintenanceError,
   NexonNetworkError,
   NexonRateLimitError,
   NexonSignInRequiredError,
 } from '../errors'
 import { __setDeveloperKeysForTest } from '../developer-keys'
-import { requestJson, setFriendsStreamForTest } from '../http'
+import { requestJson, setFriendsStreamForTest, setMaintenanceReporter } from '../http'
 import type { StreamLine } from '../../server/friends-stream'
 import type { NexonCredential } from '../../types/auth'
 
@@ -438,5 +439,75 @@ describe('requestJson: 로그인 만료는 키 무효와 다른 실패다', () =
     await expect(requestJson('/maplestory/v1/character/basic?ocid=x', 로그인)).rejects.toBeInstanceOf(
       NexonRateLimitError,
     )
+  })
+})
+
+describe('requestJson: Open API 점검', () => {
+  const 보고 = { maintenance: jest.fn(), succeeded: jest.fn() }
+
+  beforeEach(() => {
+    보고.maintenance.mockClear()
+    보고.succeeded.mockClear()
+    setMaintenanceReporter(보고)
+  })
+
+  afterEach(() => {
+    setMaintenanceReporter(null)
+    setFriendsStreamForTest(null)
+    __setDeveloperKeysForTest([])
+  })
+
+  it('400 OPENAPI00010 은 메이플스토리 API 점검이고, 503 OPENAPI00011 은 Open API 점검이다', async () => {
+    stubGlobal('fetch', jest.fn(async () => response(400, { error: { name: 'OPENAPI00010' } })))
+    await expect(requestJson('/maplestory/v1/character/basic?ocid=x', 자격('key'))).rejects.toMatchObject({
+      constructor: NexonMaintenanceError,
+      scope: 'game',
+    })
+
+    stubGlobal('fetch', jest.fn(async () => response(503, { error: { name: 'OPENAPI00011' } })))
+    await expect(requestJson('/maplestory/v1/character/basic?ocid=x', 자격('key'))).rejects.toMatchObject({
+      constructor: NexonMaintenanceError,
+      scope: 'api',
+    })
+  })
+
+  it('코드 없는 503 은 종전대로 못 닿은 것이다', async () => {
+    stubGlobal('fetch', jest.fn(async () => response(503, undefined)))
+
+    await expect(requestJson('/x', 자격('key'))).rejects.toBeInstanceOf(NexonNetworkError)
+    expect(보고.maintenance).not.toHaveBeenCalled()
+  })
+
+  it('점검과 성공을 물음표 앞 경로로 알린다', async () => {
+    stubGlobal('fetch', jest.fn(async () => response(400, { error: { name: 'OPENAPI00010' } })))
+    await requestJson('/maplestory/v1/character/basic?ocid=x', 자격('key')).catch(() => undefined)
+    expect(보고.maintenance).toHaveBeenCalledWith('game', '/maplestory/v1/character/basic')
+
+    stubGlobal('fetch', jest.fn(async () => response(200, { ok: true })))
+    await requestJson('/maplestory/v1/character/basic?ocid=x', 자격('key'))
+    expect(보고.succeeded).toHaveBeenCalledWith('/maplestory/v1/character/basic')
+  })
+
+  it('점검은 개발자 키 탓이 아니다. 키를 빼고 다시 부르지 않는다', async () => {
+    __setDeveloperKeysForTest(['개발키1', '개발키2'])
+    const fetcher = jest.fn(async () => response(400, { error: { name: 'OPENAPI00010' } }))
+    stubGlobal('fetch', fetcher)
+
+    await expect(
+      requestJson('/maplestory/v1/character/basic?ocid=x', { kind: 'login', value: '세션' }),
+    ).rejects.toBeInstanceOf(NexonMaintenanceError)
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
+
+  it('프렌즈 스트림의 fail 줄도 같은 점검으로 가르고 알린다', async () => {
+    const task = { kind: 'character-list' }
+    setFriendsStreamForTest(
+      jest.fn(async () => [{ t: 'fail', ...task, status: 503, code: 'OPENAPI00011' }, { t: 'end', reason: 'done' }] as StreamLine[]),
+    )
+
+    await expect(
+      requestJson('/maplestory/v1/character/list', { kind: 'login', value: '세션' }),
+    ).rejects.toMatchObject({ scope: 'api' })
+    expect(보고.maintenance).toHaveBeenCalledWith('api', '/maplestory/v1/character/list')
   })
 })

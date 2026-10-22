@@ -38,6 +38,7 @@ import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { renderDailyContentCard } from './DailyContentCards'
 import { renderWeeklyContentCard } from './WeeklyContentCards'
+import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 /** 주기 탭. 값은 스케줄러가 쓰는 주기이고 화면에는 라벨이 선다. */
 const CONTENT_TABS = ['daily', 'weekly'] as const
@@ -258,6 +259,7 @@ export function ContentScreen(): React.JSX.Element {
           </PageHeader>
         }
       >
+        <NexonMaintenanceBanner testID="content-maintenance-banner" />
         {/* 캐릭터를 고르는 장치라 콘텐츠다. 조건이 **줄 밖**에 있다. 안에 두면 캐릭터가 없는
             동안(첫 조회) 빈 줄이 남아 콘텐츠 간격을 두 번 먹는다.
 

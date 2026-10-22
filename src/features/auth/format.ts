@@ -17,5 +17,10 @@ export function formatAuthError(error: AuthError): string {
       return '네트워크 오류가 발생했습니다'
     case 'storageWriteFailed':
       return '기기에 저장하지 못했습니다. 다시 시도해주세요'
+    // 키 입력 화면에는 점검 배너를 세울 자리가 없어 이 토스트가 알린다.
+    case 'gameMaintenance':
+      return '메이플스토리 API 점검 중입니다'
+    case 'apiMaintenance':
+      return '넥슨 Open API 점검 중입니다'
   }
 }

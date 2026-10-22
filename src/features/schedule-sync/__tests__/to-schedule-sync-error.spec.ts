@@ -1,6 +1,7 @@
 import {
   NexonAuthError,
   NexonBadRequestError,
+  NexonMaintenanceError,
   NexonNetworkError,
   NexonNoCharacterError,
   NexonRateLimitError,
@@ -129,5 +130,19 @@ describe('개발자 키로 난 실패는 사용자의 키 탓이 아니다', () 
     ['429', () => 개발자키로(new NexonRateLimitError('x'))],
   ])('%s 는 network 이고 키를 싣지 않는다', (_label, make) => {
     expect(toScheduleSyncError(make())).toEqual({ kind: 'network' })
+  })
+})
+
+describe('toScheduleSyncError: Open API 점검', () => {
+  it('메이플스토리 API 점검과 Open API 점검을 따로 가른다', () => {
+    expect(toScheduleSyncError(new NexonMaintenanceError('x', 'game'))).toEqual({ kind: 'gameMaintenance' })
+    expect(toScheduleSyncError(new NexonMaintenanceError('x', 'api'))).toEqual({ kind: 'apiMaintenance' })
+  })
+
+  it('개발자 키로 부르다 난 점검도 같은 점검이다', () => {
+    const error = new NexonMaintenanceError('x', 'game')
+    error.developerKey = '개발키'
+
+    expect(toScheduleSyncError(error)).toEqual({ kind: 'gameMaintenance' })
   })
 })

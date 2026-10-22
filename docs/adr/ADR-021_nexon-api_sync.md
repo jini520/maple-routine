@@ -76,7 +76,9 @@
 | 400 `OPENAPI00004` | `periodOutOfRange` | 그 날짜를 조회할 수 없다 |
 | 400 `OPENAPI00009` | `notCollected` | 아직 집계 전이다. 시간이 지나면 풀린다 |
 | 우리 서버가 세션을 거절함 | `signInRequired` | 넥슨 로그인이 만료됐다. 키 문제가 아니다 |
-| 그 밖 | `network` | 네트워크 · 타임아웃 · 파싱 실패와 코드를 모르는 400 |
+| 400 `OPENAPI00010` | `gameMaintenance` | 메이플스토리 API 점검 중이다. 점검이 끝나면 풀린다 |
+| 503 `OPENAPI00011` | `apiMaintenance` | 넥슨 Open API 점검 중이다. 점검이 끝나면 풀린다 |
+| 그 밖 | `network` | 네트워크 · 타임아웃 · 파싱 실패와 코드를 모르는 400 · 코드 없는 503 |
 
 - 무효 키 판정은 `nexon/errors.ts` 의 `isInvalidApiKeyError` 한 곳에 있다. 무엇이 무효 키인지는 넥슨이 정하는
   사실 하나라서, 판정을 여러 곳에 복사하지 않는다. `toScheduleSyncError` 에서는 이 판정이 400 분기보다 먼저
@@ -108,7 +110,8 @@
 `syncSchedules(ocids)` 가 추적 캐릭터의 스케줄을 받는 회차 하나다.
 
 - 첫 캐릭터를 먼저 부른다. 그 결과가 `invalidApiKey` · `rateLimited` · `signInRequired` 면 자격 전체가 막힌
-  것이라, 나머지 캐릭터는 부르지 않고 캐시로 채운다. 아니면 나머지를 동시에 부른다. 자세한 실패 처리는
+  것이고, `gameMaintenance` · `apiMaintenance` 면 넥슨 전체가 막힌 것이다. 어느 쪽이든 나머지 캐릭터는 부르지
+  않고 캐시로 채운다([[ADR-081]] 결정 8). 아니면 나머지를 동시에 부른다. 자세한 실패 처리는
   [[ADR-022]] 에 있다.
 - 추적 캐릭터만 부른다. 계정의 캐릭터 전부를 부르면 추적하지 않는 캐릭터 때문에 느려진다.
 - 진행 중인 회차가 요청한 ocid 를 전부 포함하면 새 회차를 열지 않고 그 결과를 함께 받는다. 다 포함하지 못하면

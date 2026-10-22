@@ -1023,6 +1023,18 @@ describe('useBossProfitStore', () => {
     expect(useBossProfitStore.getState().staleCharacterNames).toEqual(['캐릭터1'])
   })
 
+  // 점검은 화면 맨 위의 배너가 알린다. 인원 수 토스트를 함께 띄우면 같은 일을 두 번 말한다.
+  it('점검으로 못 받은 캐릭터는 staleCharacterNames 에 넣지 않는다. 카드의 실패 표시는 남는다', async () => {
+    syncSchedulesMock.mockResolvedValue([
+      syncResult({ characterName: '캐릭터1', isStale: true, error: { kind: 'gameMaintenance' } }),
+    ])
+
+    await useBossProfitStore.getState().refresh(['ocid-1'])
+
+    expect(useBossProfitStore.getState().staleCharacterNames).toEqual([])
+    expect(useBossProfitStore.getState().characterIssues).toEqual({ 'ocid-1': 'failed' })
+  })
+
   it('저장된 기록이 있으면 refresh 후 partySize/payoutMeso가 복원된다(멱등성)', async () => {
     syncSchedulesMock.mockResolvedValue([syncResult()]) // 자쿰 카오스, priceMeso 8080000
 

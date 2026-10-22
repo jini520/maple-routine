@@ -114,6 +114,17 @@
 | `OPENAPI00005` | 400 | 무효한 API 키. 없는 키도, 넥슨에서 지운 키도 이 응답이다. 401 · 403 이 아니다 | 키를 바꿔야 한다 |
 | `OPENAPI00007` | 429 | 호출 한도 초과 | 시간이 지나면 |
 | `OPENAPI00009` | 400 | 아직 집계 전(오늘−1) | 시간이 지나면 풀린다 |
+| `OPENAPI00010` | 400 | 메이플스토리 API 점검 중. 넥슨 문서의 표기는 `게임 점검 중` 이다 | 점검이 끝나면 풀린다 |
+| `OPENAPI00011` | 503 | 넥슨 Open API 점검 중. 넥슨 문서에만 있고 아직 받아 본 적은 없다 | 점검이 끝나면 풀린다 |
+
+메이플스토리 API 점검 중에 모든 경로가 막히지는 않는다. 2026-10-22 정기 점검 중에 잰 결과다.
+
+| 경로 | 응답 |
+|---|---|
+| `character/basic` · `character/symbol-equipment` · `character/ability` · `user/union-raider` · `notice` · `notice-event` · `notice-update` · `notice-cashshop` | 400 `OPENAPI00010` |
+| `id` · `character/list` · `scheduler/character-state` · `history/*` · `date` 를 준 `character/basic` | 200 |
+
+그래서 메이플스토리 API 점검은 주로 메소 획득량과 공지에서 보이고, 스케줄 동기화와 캐릭터 목록은 그대로 돈다.
 
 이 표가 실패의 전부는 아니다. 캐릭터가 사라진 ocid 에 넥슨은 400 이 아니라 200 에 모든 칸이 `null` 인 본문을 준다.
 앱은 이것을 `NexonNoCharacterError` 로 바꾼다. 앱에서 이 코드들이 어떤 종류가 되는지는 [[ADR-021]] 결정 3 에 있다.

@@ -36,6 +36,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { useBottomSafeAreaPx } from '../../lib/safe-area'
 import { reloadTabStores } from './reload-tab-stores'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
+import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 export function SettingsCharactersScreen(): React.JSX.Element {
   const { saveTrackedOcids } = useContentSchedulerStore()
@@ -95,6 +96,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
           </PageHeader>
         }
       >
+        <NexonMaintenanceBanner testID="characters-maintenance-banner" />
         {/* `screen-<라우트 이름>` 은 나머지 하위 페이지와 같은 관례다. */}
         <View
           className="gap-4 px-4 pb-4"
