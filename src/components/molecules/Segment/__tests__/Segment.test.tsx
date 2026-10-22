@@ -64,24 +64,6 @@ describe('Segment', () => {
     expect(flattenStyle(getByTestId('segment').props.style).opacity).toBeCloseTo(0.4)
   })
 
-  // 이 부품은 상자가 자리마다 갈린다. 폼 안에서는 글자를 따라 커지고, 높이가 못박힌 today
-  // 타일 안에서는 못 커진다. 그래서 무시할지를 호출부가 정한다.
-  it('시스템 글자 크기를 기본으로 따른다', async () => {
-    const { getByText } = await renderAtom(
-      <Segment options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
-    )
-
-    expect(getByText('메소').props.allowFontScaling).toBe(true)
-  })
-
-  it('`fixed` 를 주면 안 따른다', async () => {
-    const { getByText } = await renderAtom(
-      <Segment fixed options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
-    )
-
-    expect(getByText('메소').props.allowFontScaling).toBe(false)
-  })
-
   // 배경이 조각마다 켜졌다 꺼지는 대신 **상자 하나가 옮겨 간다**. 조각이 자기 배경을 들고
   // 있으면 옮겨 갈 것이 없다.
   it('칠하는 것은 조각이 아니라 옮겨 다니는 상자다', async () => {

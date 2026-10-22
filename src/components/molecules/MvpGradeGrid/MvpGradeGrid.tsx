@@ -35,7 +35,7 @@ export function MvpGradeGrid(props: { selected: MvpGradeKey | null; onSelect: (g
                 }`}
               >
                 {source === null ? (
-                  <Text fixed className="text-10 font-semibold text-text-muted">
+                  <Text className="text-10 font-semibold text-text-muted">
                     일반
                   </Text>
                 ) : (
@@ -56,7 +56,7 @@ export function MvpGradeGrid(props: { selected: MvpGradeKey | null; onSelect: (g
                 />
               )}
             </View>
-            <Text fixed className={`text-10 ${on ? 'font-bold text-primary-ink' : 'font-medium text-text-muted'}`}>
+            <Text className={`text-10 ${on ? 'font-bold text-primary-ink' : 'font-medium text-text-muted'}`}>
               {grade.name}
             </Text>
           </Pressable>

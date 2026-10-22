@@ -91,8 +91,6 @@ Metro 는 트리셰이킹을 하지 않아 배럴은 안 쓰는 것까지 번들
   두 클래스가 충돌할 때 문자열 순서가 아니라 자기 우선순위로 고른다. 그래서 `className` 으로는 못 덮는다.
 - **글자 크기는 정해진 글자 크기 단계에서 고른다.** `default` 는 `chip`, `mini` 는 `chip-xs` 이다. 난이도 이름은
   최대 네 글자라 `default` 에서만 한 단계 작은 `chip-sm` 을 쓴다. 줄 높이는 같아서 배지 높이는 그대로다.
-- `mini` 는 시스템 글자 크기를 스스로 따르지 않는다(`fixed`). today 위젯이나 가계부 처치 타일처럼
-  높이가 고정된 칸에 놓이기 때문이다. `default` 는 호출부가 정한다(결정 9).
 
 배지의 라벨(`DIFFICULTY_SHORT` · `QUEST_STATE_LABELS`)은 스타일이 아니라 도메인 데이터라 상수로 두고
 호출부가 고른다.
@@ -144,21 +142,6 @@ lucide 에 없는 그림이 필요한 기능을 대표하는 아이콘에만 직
 
 움직이는 잎(스피너 둘)은 `atoms/Spinner/` 에 따로 둔다([[ADR-061]]). 아이콘인지가 아니라 움직이는지를
 기준으로 코드를 나눈다.
-
-### 결정 9. 놓이는 곳에 따라 상자 크기가 달라지는 부품은 `fixed` 를 호출부가 정한다
-
-글자가 시스템 글자 크기를 따를지는 상자가 글자를 따라 커지는지로 정한다([[ADR-063]]). 부품 하나가
-어떤 화면에서는 커지는 상자에, 어떤 화면에서는 높이가 고정된 칸에 놓이면 부품이 혼자 정할 수 없다.
-그런 부품은 `fixed` 프롭을 두고 호출부가 정한다. 기본값은 거짓(시스템 글자 크기를 따른다)이다.
-
-| 누가 정하나 | 언제 |
-|---|---|
-| 호출부가 `<Text fixed>` | 그 파일이 글자를 직접 그린다 |
-| 부품이 스스로 | 어디에 놓여도 상자가 고정이다(`Badge` 의 `mini`) |
-| 호출부가 부품에 `fixed` | 놓이는 곳마다 다르다(`Segment`) |
-
-`src/__tests__/font-scaling-policy.test.ts` 가 고정 칸 목록의 파일을 훑어, 그 안에서 `fixed` 를 받는
-부품을 쓸 때 `fixed` 를 빠뜨리지 않았는지 본다. 그 검사가 실제로 무언가를 보고 있는지도 따로 확인한다.
 
 ### 결정 10. 세그먼트는 세 가지이고, 선택 배경이 미끄러진다
 
@@ -279,11 +262,10 @@ iOS 의 꺼진 트랙은 시스템이 반투명 색을 겹쳐 그려서 앱 테�
 | `components/__tests__/layer-dependencies.test.ts` | 결정 1: 상위 계층을 import 하지 않는지, 계층이 아래부터 끊기지 않는지, `components/` 바로 아래에 계층 디렉터리만 있는지 본다 |
 | `src/__tests__/require-cycle-policy.test.ts` | 결정 3: 배럴을 거친 순환 import 가 없는지 본다 |
 | `components/atoms/Button/__tests__/Button.test.tsx` | 결정 4: 상자 표에 글자 유틸이 없는지, `className` 은 상자에 `textClassName` 은 글자에 붙는지, 문자열 children 만 `Text` 로 감싸는지, `compact` 크기와 크기 표에 색이 없는지 본다 |
-| `components/atoms/Badge/__tests__/Badge.test.tsx` | 결정 5: 평면 variant 의 상자가 모두 같은지, 테두리 폭만큼 여백을 줄여 바깥 크기가 맞는지, 모든 variant 의 높이가 같은지, 높이를 못박지 않는지, `mini` 만 스스로 `fixed` 를 켜는지, `weight` 가 기본 두께를 덮는지 본다 |
+| `components/atoms/Badge/__tests__/Badge.test.tsx` | 결정 5: 평면 variant 의 상자가 모두 같은지, 테두리 폭만큼 여백을 줄여 바깥 크기가 맞는지, 모든 variant 의 높이가 같은지, 높이를 못박지 않는지, `weight` 가 기본 두께를 덮는지 본다 |
 | `lib/__tests__/nativewind-interop.test.tsx` | 결정 6: `Svg` 의 `text-*` 가 `color` 프롭이 되고 크기 유틸이 상자 크기가 되는지, `LinearGradient` 의 `className` 이 style 로 바뀌는지 본다 |
 | `components/atoms/Icon/__tests__/` | 결정 8: lucide 규격으로 그리는지, 크기와 색이 `className` 에서 오고 안 주면 24 로 떨어지는지, 겹침에 `clipPath` · `mask` 를 쓰지 않는지, `fill` 을 줄 때만 정해진 도형이 채워지는지, 단풍잎 루트 요소에 선 규격이 없는지, 톱니 곡선이 lucide `settings` 와 같은지 본다 |
-| `src/__tests__/font-scaling-policy.test.ts` | 결정 9: 고정 칸이 `fixed` 를 받는 부품을 쓸 때 빠뜨리지 않는지 본다 |
-| `components/molecules/Segment/__tests__/` · `TabSegment/__tests__/` · `DifficultySegment/__tests__/` | 결정 10: 고른 것만 선택으로 읽히는지, 누르면 라벨이 아니라 값을 주는지, 고른 것을 다시 누르면 콜백과 촉각이 없는지, 상자가 칠하고 글자색은 상자를 기다리지 않는지, 상자가 터치를 막지 않는지, `Segment` 의 `fixed` 와 `disabled` 를 본다 |
+| `components/molecules/Segment/__tests__/` · `TabSegment/__tests__/` · `DifficultySegment/__tests__/` | 결정 10: 고른 것만 선택으로 읽히는지, 누르면 라벨이 아니라 값을 주는지, 고른 것을 다시 누르면 콜백과 촉각이 없는지, 상자가 칠하고 글자색은 상자를 기다리지 않는지, 상자가 터치를 막지 않는지, `Segment` 의 `disabled` 를 본다 |
 | `hooks/__tests__/useSlidingThumb.test.tsx` | 결정 10: 처음 그려질 때와 다시 나타날 때는 미끄러지지 않는지, 폭만 바뀌어도 옮긴 것으로 보는지, 옛 렌더의 핸들러로 새 위치가 와도 상자가 따라가는지, 옆 조각이 알려도 다시 계산하는지 본다 |
 | `components/atoms/Switch/__tests__/Switch.test.tsx` | 결정 11: 스크린리더 계약, 안드로이드 두 크기에서 손잡이가 가는 거리, 손잡이 트랜지션과 모션 줄이기, 트랙 색이 즉시 바뀌는지, 누르면 `onToggle` 과 촉각이 한 번씩 나는지, `children` 글자를 눌러도 켜지는지, iOS 의 상자 크기 · 값 · 누름을 본다 |
 | `components/molecules/AmountFigure/__tests__/AmountFigure.test.tsx` | 결정 13: 숫자와 단위가 같은 줄 높이를 쓰는지, 단위 줄에 숫자와 같은 크기의 글자가 들어 있는지, 숫자의 줄 상자가 글자보다 커서 위가 잘리지 않는지 본다 |
@@ -296,3 +278,4 @@ iOS 의 꺼진 트랙은 시스템이 반투명 색을 겹쳐 그려서 앱 테�
 - ADR-060 (2026-10-19): 옛 ADR-066 · 094 · 195 · 197 · 198 · 199 · 200 · 205 · 207 · 250 · 252 · 255 · 260 · 339 와 옛 ADR-178 정정 3 을 합쳐 처음 작성
 - ADR-073 (2026-10-20): 결정 14 를 더했다. 스테퍼 셋을 테두리 없는 `Stepper` 하나로 모았다(#668)
 - ADR-079 (2026-10-21): 결정 14 에 `inverted` 색 조합을 더하고, 가계부 시트의 수량을 `sm` 으로 줄이고 `inverted` 로 그린다
+- (2026-10-21) 결정 9 와 결정 5 의 `mini` 고정 글자를 지웠다. [[ADR-063]] 결정 11 이 `fixed` 를 없앴기 때문이다(#633)

@@ -26,13 +26,4 @@ describe('UnavailableBadge', () => {
 
     expect(view.queryByRole('button')).toBeNull()
   })
-
-  // 오늘 화면의 위젯은 칸에 묶여 있다. 상자가 여백으로 자라므로 호출부가 정한다.
-  it('글자 배수는 호출부가 정한다', async () => {
-    const 그냥 = await renderAtom(<UnavailableBadge label="조회 불가" />)
-    expect(그냥.getByText('조회 불가').props.allowFontScaling).not.toBe(false)
-
-    const 고정 = await renderAtom(<UnavailableBadge fixed label="조회 불가" />)
-    expect(고정.getByText('조회 불가').props.allowFontScaling).toBe(false)
-  })
 })

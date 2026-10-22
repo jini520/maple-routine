@@ -23,6 +23,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/SettingsFeatureGuideListScreen.tsx` · `SettingsFeatureGuideScreen.tsx` | 기능 설명 목록과 안내 상세 |
 | `app/settings/contact-mail.ts` · `store-review-link.ts` | 문의 메일 주소 · 스토어 리뷰 주소 |
 | `app/settings/ThemeModal.tsx` · `ThemeSelector.tsx` | 테마 고르기 |
+| `app/settings/TextSizeModal.tsx` | 글자 크기 고르기. 미리보기 글과 네 단계, 고르면 바로 적용된다 |
 | `app/settings/TrackingModeModal.tsx` · `TrackingModeSelector.tsx` | 스케줄 관리 방법 고르기 |
 | `app/settings/reload-tab-stores.ts` | 스케줄 관리 방법을 바꾼 뒤 컨텐츠 · 보스 · 수익 스토어를 차례로 다시 읽게 한다 |
 | `features/settings/store.ts` | 연결 해제 |
@@ -47,9 +48,10 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | 카드 제목 | 행 | 오른쪽 | 누르면 |
 |---|---|---|---|
 | `알림` | 알림 설정 | › | 알림 설정 화면 |
-| `캐릭터 · 테마` | 캐릭터 관리 | `3개` 배지 › | 캐릭터 관리 화면 |
+| `캐릭터 · 테마 · 글자 크기` | 캐릭터 관리 | `3개` 배지 › | 캐릭터 관리 화면 |
 | | 보스 관리 | › | 보스 관리 화면 |
 | | 테마 | 테마 이름 배지 › | 테마 모달 |
+| | 글자 크기 | `작게` · `기본` · `크게` · `아주 크게` 배지 › | 글자 크기 모달 |
 | `MVP 등급` | MVP 등급 | › | MVP 등급 목록 |
 | `스케줄` | 스케줄 관리 방법 | `자동` · `수동` 배지 › | 스케줄 관리 방법 모달 |
 | `앱 데이터` | 계정 및 데이터 | 캐시 총 용량 › | 계정 및 데이터 |

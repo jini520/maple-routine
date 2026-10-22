@@ -106,7 +106,7 @@ function WeeksChip(props: { weeksSince: number }): React.JSX.Element {
       testID="drought-weeks"
       className="shrink-0 rounded-full border border-border bg-surface-2 px-1.5 py-0.5"
     >
-      <Text fixed numberOfLines={1} className="text-11 font-bold text-text-muted">
+      <Text numberOfLines={1} className="text-11 font-bold text-text-muted">
         {weeksLabel(props.weeksSince)}
       </Text>
     </View>
@@ -136,7 +136,7 @@ function NoRecord(props: { variant: Variant }): React.JSX.Element {
     return (
       <View testID="widget-valuable-drought" className="flex-1 flex-row items-center gap-3 p-3">
         <BlankLeaf sizePx={24} />
-        <Text fixed testID="drought-no-record" numberOfLines={1} className="flex-1 text-xs text-text-muted">
+        <Text testID="drought-no-record" numberOfLines={1} className="flex-1 text-xs text-text-muted">
           {NO_RECORD_NOTE}
         </Text>
       </View>
@@ -148,7 +148,6 @@ function NoRecord(props: { variant: Variant }): React.JSX.Element {
       <View testID="widget-valuable-drought" className="flex-1 items-center justify-center gap-2.5 p-3">
         <BlankLeaf sizePx={44} />
         <Text
-          fixed
           testID="drought-no-record"
           numberOfLines={2}
           className="text-center text-[11.5px] leading-[15px] text-text-muted"
@@ -162,7 +161,7 @@ function NoRecord(props: { variant: Variant }): React.JSX.Element {
   return (
     <View testID="widget-valuable-drought" className="flex-1 flex-row items-center gap-2.5 p-3">
       <BlankLeaf sizePx={20} />
-      <Text fixed testID="drought-no-record" numberOfLines={2} className="flex-1 text-11 text-text-muted">
+      <Text testID="drought-no-record" numberOfLines={2} className="flex-1 text-11 text-text-muted">
         {NO_RECORD_NOTE}
       </Text>
     </View>
@@ -199,11 +198,10 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
         className={`flex-1 items-center justify-center gap-1.5 p-3 ${surface}`}
       >
         <Leaf tier={view.tier} sizePx={LEAF_PX.compact} />
-        <Text fixed testID="drought-headline" numberOfLines={1} className={`text-sm font-bold ${ink}`}>
+        <Text testID="drought-headline" numberOfLines={1} className={`text-sm font-bold ${ink}`}>
           {headline}
         </Text>
         <Text
-          fixed
           testID="drought-status"
           numberOfLines={1}
           className="text-[11.5px] text-text-muted"
@@ -222,7 +220,7 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
         className={`flex-1 flex-row items-center gap-2 p-3 ${surface}`}
       >
         <Leaf tier={view.tier} sizePx={LEAF_PX.mini} />
-        <Text fixed testID="drought-headline" numberOfLines={1} className={`min-w-0 flex-1 text-13 font-bold ${ink}`}>
+        <Text testID="drought-headline" numberOfLines={1} className={`min-w-0 flex-1 text-13 font-bold ${ink}`}>
           {headline}
         </Text>
         <WeeksChip weeksSince={view.weeksSince} />
@@ -238,10 +236,10 @@ export function ValuableDroughtWidget({ w, h, data }: WidgetProps): React.JSX.El
     >
       <Leaf tier={view.tier} sizePx={LEAF_PX.wide} />
       <View className="min-w-0 flex-1 gap-0.5">
-        <Text fixed testID="drought-headline" numberOfLines={1} className={`text-sm font-bold ${ink}`}>
+        <Text testID="drought-headline" numberOfLines={1} className={`text-sm font-bold ${ink}`}>
           {headline}
         </Text>
-        <Text fixed testID="drought-last" numberOfLines={1} className="text-[11.5px] text-text-muted">
+        <Text testID="drought-last" numberOfLines={1} className="text-[11.5px] text-text-muted">
           {lastLine(view)}
         </Text>
       </View>

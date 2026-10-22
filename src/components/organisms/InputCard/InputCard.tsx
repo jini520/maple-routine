@@ -785,7 +785,6 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                   options={SPLIT_OPTIONS}
                   selected={usesRatio ? '비율' : '기본'}
                   size="md"
-                  fixed
                   // 어느 쪽 수도 안 옮긴다. 둘이 각자 제 값을 들고 있어 돌아오면 그대로다.
                   onSelect={(option) => setUsesRatio(option === '비율')}
                 />

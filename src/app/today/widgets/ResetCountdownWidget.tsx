@@ -130,7 +130,7 @@ function elapsedPercent(countdown: ResetCountdown, remainingMs: number): number 
 
 function Label(props: { cycle: CycleKey; sizeClass: string }): React.JSX.Element {
   return (
-    <Text fixed testID={`reset-label-${props.cycle}`} className={`text-text-muted ${props.sizeClass}`}>
+    <Text testID={`reset-label-${props.cycle}`} className={`text-text-muted ${props.sizeClass}`}>
       {CYCLE_LABEL[props.cycle]}
     </Text>
   )
@@ -150,7 +150,6 @@ function Value(props: {
 }): React.JSX.Element {
   return (
     <Text
-      fixed
       testID={`reset-value-${props.cycle}`}
       numberOfLines={1}
       style={TABULAR_NUMS}
@@ -201,7 +200,7 @@ function Row(props: {
 }
 
 function Title(props: { sizeClass: string }): React.JSX.Element {
-  return <Text fixed className={`font-bold text-text-muted ${props.sizeClass}`}>{TITLE}</Text>
+  return <Text className={`font-bold text-text-muted ${props.sizeClass}`}>{TITLE}</Text>
 }
 
 export function ResetCountdownWidget({ w, h, data }: WidgetProps): React.JSX.Element {

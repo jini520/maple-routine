@@ -77,7 +77,7 @@ export function FeeRow<T extends string>(props: {
           )
         )
       ) : (
-        <Segment options={props.options} selected={props.selected} fixed onSelect={props.onSelect} />
+        <Segment options={props.options} selected={props.selected} onSelect={props.onSelect} />
       )}
     </View>
   )

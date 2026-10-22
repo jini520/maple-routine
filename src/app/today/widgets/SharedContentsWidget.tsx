@@ -33,7 +33,7 @@ const ITEM_HEIGHT_PX = 16
  * 기준으로 돌려주고, 그 캐릭터가 누구인지 구분할 신호가 응답에 없다.
  *
  * 줄바꿈을 넣지 않는다. 손으로 끊으면 줄이 짧아 상자도 그만큼 좁다. 글은 폭 상한까지 흐르고
- * 거기서 꺾인다. 글자는 `fixed` 라 시스템 배수로도 안 흔들린다.
+ * 거기서 꺾인다.
  */
 const SCOPE_NOTES = [
   ['에픽 던전과 메이플 유니온은', '메이플 ID 기준입니다.'],
@@ -117,8 +117,8 @@ function Checkbox(props: { checked: boolean }): React.JSX.Element {
 /** `n/max`. 줄의 진행과 계열 제목의 주간 한도가 같은 모양을 쓴다. */
 function CountValue(props: { count: { now: number; max: number }; testID: string }): React.JSX.Element {
   return (
-    <Text fixed testID={props.testID} style={TABULAR_NUMS} className="shrink-0 text-[11.5px] text-text-muted">
-      <Text fixed style={TABULAR_NUMS} className="text-[11.5px] font-bold text-text">
+    <Text testID={props.testID} style={TABULAR_NUMS} className="shrink-0 text-[11.5px] text-text-muted">
+      <Text style={TABULAR_NUMS} className="text-[11.5px] font-bold text-text">
         {String(props.count.now)}
       </Text>
       {`/${String(props.count.max)}`}
@@ -139,7 +139,6 @@ function SharedItemRow(props: { item: SharedContentItemView }): React.JSX.Elemen
     >
       <Checkbox checked={item.isComplete} />
       <Text
-        fixed
         testID="shared-item-name"
         numberOfLines={1}
         className={`min-w-0 flex-1 text-[11.5px] leading-tight ${
@@ -168,7 +167,7 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
   return (
     <View testID="widget-shared-contents" className="p-3">
       <View className="flex-row items-center border-b border-border-strong pb-2">
-        <Text fixed className="text-11 font-bold text-text-muted">계정 및 메이플 ID 공유 컨텐츠</Text>
+        <Text className="text-11 font-bold text-text-muted">계정 및 메이플 ID 공유 컨텐츠</Text>
         <Pressable
           ref={toggleRef}
           testID="shared-note-toggle"
@@ -203,7 +202,7 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
                     className={index === 0 ? '' : 'mt-2 border-t border-border pt-2'}
                   >
                     <View className="flex-row items-center justify-between gap-1.5">
-                      <Text fixed testID="shared-group-name" className="text-[12.5px] font-bold text-text">
+                      <Text testID="shared-group-name" className="text-[12.5px] font-bold text-text">
                         {group.label}
                       </Text>
                       {group.weeklyLimit !== null && (
@@ -263,7 +262,7 @@ function ScopeNotePopover(props: {
       >
         {SCOPE_NOTES.map(([subject, rule]) => (
           // iOS 기본값은 한글을 글자 단위로 끊어 낱말 가운데서 꺾는다
-          <Text key={subject} fixed lineBreakStrategyIOS="hangul-word" className="text-[11.5px] leading-snug text-text-muted">
+          <Text key={subject} lineBreakStrategyIOS="hangul-word" className="text-[11.5px] leading-snug text-text-muted">
             {`${subject} ${rule}`}
           </Text>
         ))}

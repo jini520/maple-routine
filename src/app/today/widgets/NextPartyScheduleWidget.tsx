@@ -61,24 +61,24 @@ export function NextPartyScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
       className="gap-2 p-3 active:opacity-60"
     >
       <View className="flex-row items-center justify-between">
-        <Text fixed className="text-10 font-bold text-text-muted">
+        <Text className="text-10 font-bold text-text-muted">
           {TITLE}
         </Text>
         <View className="flex-row items-center">
-          <Text fixed className="text-11 text-text-muted">
+          <Text className="text-11 text-text-muted">
             파티 스케줄
           </Text>
           <ChevronRightIcon className="h-3 w-3 text-text-muted" strokeWidth={2} aria-hidden />
         </View>
       </View>
       <View className="flex-row items-baseline">
-        <Text fixed className="text-15 font-bold text-text" style={TABULAR_NUMS}>
+        <Text className="text-15 font-bold text-text" style={TABULAR_NUMS}>
           {next.timeKst}
         </Text>
-        <Text fixed className="text-xs text-text-muted" style={TABULAR_NUMS}>
+        <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>
           {` ~ ${next.endClock} `}
         </Text>
-        <Text fixed className="text-11 font-bold text-primary-ink" style={TABULAR_NUMS}>
+        <Text className="text-11 font-bold text-primary-ink" style={TABULAR_NUMS}>
           {`${dayLabel(next.dateKey, todayKey)} · ${remainingLabel(next.startsAtMs - nowMs)}`}
         </Text>
       </View>

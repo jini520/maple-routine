@@ -42,7 +42,7 @@ export interface BadgeProps extends TextProps {
  * // 보스 난이도. variant 키가 난이도 key 그대로이고 글자는 한글 이름이다
  * <Badge variant={boss.difficulty}>{DIFFICULTY_NAME[boss.difficulty]}</Badge>
  *
- * // 고정칸(today 76px 타일 등)에 놓는 작은 배지. `fixed` 가 자동으로 켜진다
+ * // today 타일처럼 좁은 칸에 놓는 작은 배지
  * <Badge variant={boss.difficulty} size="mini">{DIFFICULTY_SHORT[boss.difficulty]}</Badge>
  *
  * // variant 기본 두께를 덮는다. 같은 색을 다른 두께로 쓰는 자리가 있다
@@ -53,7 +53,6 @@ export function Badge({
   size = 'default',
   weight,
   className,
-  fixed,
   style: styleProp,
   ...rest
 }: BadgeProps): React.JSX.Element {
@@ -61,7 +60,6 @@ export function Badge({
   const box = BADGE_SIZE[size]
   const textSize = size === 'default' ? (variantStyle.text ?? box.text) : box.text
   const text = `${textSize} ${BADGE_WEIGHT[weight ?? variantStyle.weight ?? 'semibold']}`
-  const scaling = fixed === true || box.alwaysFixed
 
   /**
    * 테두리를 여백 안쪽으로 넣는다. Yoga 가 테두리를 패딩처럼 바깥 크기에 더해서, 빼 주지 않으면
@@ -77,7 +75,6 @@ export function Badge({
     const base = `rounded-full ${variantStyle.className ?? ''} ${text}`
     return (
       <Text
-        fixed={scaling}
         className={className === undefined ? base : `${base} ${className}`}
         style={[boxStyle, styleProp]}
         {...rest}
@@ -95,7 +92,6 @@ export function Badge({
       style={{ ...variantStyle.border, ...boxStyle }}
     >
       <Text
-        fixed={scaling}
         className={`${text} tracking-[.03em]`}
         style={[variantStyle.textStyle, styleProp]}
         {...rest}

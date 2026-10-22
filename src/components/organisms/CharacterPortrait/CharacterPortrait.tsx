@@ -81,7 +81,7 @@ function InitialFallback(props: {
 }): React.JSX.Element {
   return (
     <View testID={props.testID} className="h-full w-full items-center justify-center bg-surface-2">
-      <Text fixed className={`font-bold text-text ${props.textClass}`}>
+      <Text className={`font-bold text-text ${props.textClass}`}>
         {props.name.charAt(0)}
       </Text>
     </View>

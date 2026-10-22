@@ -41,7 +41,7 @@ export function GradeTimelineRow(props: {
         <Text className="text-xs text-text-muted"> 부터</Text>
         {props.isNow && (
           <View className="ml-1.5 rounded-full bg-primary-tint px-1.5">
-            <Text fixed className="text-10 font-bold text-primary-ink">
+            <Text className="text-10 font-bold text-primary-ink">
               지금
             </Text>
           </View>
@@ -49,7 +49,7 @@ export function GradeTimelineRow(props: {
       </View>
       {entry.grade === null ? (
         <View className="h-[18px] shrink-0 items-center justify-center rounded-full bg-surface-2 px-2">
-          <Text fixed className="text-11 font-semibold text-text-muted">
+          <Text className="text-11 font-semibold text-text-muted">
             등급 없음
           </Text>
         </View>

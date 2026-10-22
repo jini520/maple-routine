@@ -111,12 +111,12 @@ function percentWidth(meso: number, sum: number): DimensionValue {
 
 function Amount(props: { meso: number; sizeClass: string }): React.JSX.Element {
   return (
-    <Text fixed testID="profit-amount" numberOfLines={1} className="text-text">
-      <Text fixed style={TABULAR_NUMS} className={`font-bold text-text ${props.sizeClass}`}>
+    <Text testID="profit-amount" numberOfLines={1} className="text-text">
+      <Text style={TABULAR_NUMS} className={`font-bold text-text ${props.sizeClass}`}>
         {formatMesoShort(props.meso)}
       </Text>
       {/* 숫자와 단위 사이는 마진이 아니라 **실제 공백 문자**다(트레이드오프). */}
-      <Text fixed className="text-xs font-semibold text-text-muted"> 메소</Text>
+      <Text className="text-xs font-semibold text-text-muted"> 메소</Text>
     </Text>
   )
 }
@@ -171,8 +171,8 @@ function Breakdown(props: {
       {splitOf(props.split).map((segment) => (
         <View key={segment.key} className="flex-row items-center gap-1">
           <View className={LEGEND_DOT_CLASS[segment.key]} />
-          <Text fixed className="text-11 text-text-muted">{SEGMENT_LABEL[segment.key]}</Text>
-          <Text fixed style={TABULAR_NUMS} className="text-11 font-semibold text-text">
+          <Text className="text-11 text-text-muted">{SEGMENT_LABEL[segment.key]}</Text>
+          <Text style={TABULAR_NUMS} className="text-11 font-semibold text-text">
             {formatMesoShort(segment.meso)}
           </Text>
         </View>
@@ -183,7 +183,7 @@ function Breakdown(props: {
 
 function Note(): React.JSX.Element {
   return (
-    <Text fixed testID="profit-note" numberOfLines={1} className="text-11 text-text-muted">
+    <Text testID="profit-note" numberOfLines={1} className="text-11 text-text-muted">
       {NO_RECORD_NOTE}
     </Text>
   )
@@ -234,7 +234,6 @@ function CharacterRow(props: {
       {props.rank !== undefined && (
         <>
           <Text
-            fixed
             testID="profit-character-rank"
             numberOfLines={1}
             style={{ minWidth: RANK_MIN_WIDTH_PX, ...TABULAR_NUMS }}
@@ -246,7 +245,6 @@ function CharacterRow(props: {
         </>
       )}
       <Text
-        fixed
         testID="profit-character-name"
         numberOfLines={1}
         className="min-w-0 flex-1 text-[12.5px] font-semibold text-text"
@@ -254,7 +252,7 @@ function CharacterRow(props: {
         {props.character.characterName}
       </Text>
       {props.withSplit && (
-        <Text fixed testID="profit-character-split" numberOfLines={1} className="shrink-0 text-11 text-text-muted">
+        <Text testID="profit-character-split" numberOfLines={1} className="shrink-0 text-11 text-text-muted">
           {splitOf(props.character)
             .map((segment) => `${SEGMENT_LABEL[segment.key]} ${formatMesoShort(segment.meso)}`)
             .join(' · ')}
@@ -262,7 +260,6 @@ function CharacterRow(props: {
       )}
       {/* 목록 행에는 `메소`를 안 붙인다. 머리가 이미 단위를 말했다. */}
       <Text
-        fixed
         testID="profit-character-total"
         style={TABULAR_NUMS}
         className="shrink-0 text-[12.5px] font-bold text-text"
@@ -295,7 +292,7 @@ function CharacterList(props: {
 }
 
 function PeriodLabel(): React.JSX.Element {
-  return <Text fixed className="text-11 font-bold text-text-muted">{PERIOD_LABEL}</Text>
+  return <Text className="text-11 font-bold text-text-muted">{PERIOD_LABEL}</Text>
 }
 
 /**
@@ -307,8 +304,8 @@ function PeriodLabel(): React.JSX.Element {
 function PeriodHeader(props: { range: string }): React.JSX.Element {
   return (
     <View testID="profit-period-header" className="flex-row items-baseline justify-between gap-2">
-      <Text fixed className="text-11 font-bold text-text-muted">{PERIOD_LABEL} 보스 수익</Text>
-      <Text fixed testID="profit-period-range" numberOfLines={1} className="shrink text-11 text-text-muted">
+      <Text className="text-11 font-bold text-text-muted">{PERIOD_LABEL} 보스 수익</Text>
+      <Text testID="profit-period-range" numberOfLines={1} className="shrink text-11 text-text-muted">
         {props.range}
       </Text>
     </View>

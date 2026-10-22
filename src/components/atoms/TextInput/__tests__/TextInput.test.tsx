@@ -3,7 +3,7 @@
 //
 // 시트 안에서의 초점 배선은 옆 파일(`TextInput.sheet.test.tsx`)이 본다.
 //
-// ## 배수는 `Dimensions.get('window')` 를 통해 흘려 넣는다
+// ## 시스템 배수는 `Dimensions.get('window')` 로 흘려 넣는다
 //
 // `useWindowDimensions` 는 초기값을 그 호출에서 얻으므로, 그 하나만 목으로 덮으면 시스템 글자
 // 크기가 그렇게 설정된 기기를 만들 수 있다. 훅 자체를 목으로 안 덮는 것은 `react-native` 의
@@ -11,7 +11,7 @@
 import { Dimensions, Platform } from 'react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
-import { FONT_SCALE_MAX } from '../../Text/font-scaling'
+import { __resetTextScaleForTest, setTextScale } from '../../../../theme/text-scale'
 import { TextInput } from '../TextInput'
 
 /** 시스템 글자 크기가 `fontScale` 로 설정된 기기. */
@@ -21,22 +21,22 @@ function 시스템_글자배수(fontScale: number): void {
 
 afterEach(() => {
   jest.restoreAllMocks()
+  __resetTextScaleForTest()
 })
 
-describe('TextInput: 같은 클램프를 받는다', () => {
-  it('작게 설정한 기기에서는 스케일링을 끈다', async () => {
-    시스템_글자배수(0.823)
+describe('TextInput: Text 와 같은 배수를 받는다', () => {
+  it.each([0.823, 2])('시스템 배수 %p 에서도 스케일링을 끈다', async (fontScale) => {
+    시스템_글자배수(fontScale)
     const { getByTestId } = await renderAtom(<TextInput testID="키" value="" />)
 
     expect(getByTestId('키').props.allowFontScaling).toBe(false)
   })
 
-  it('크게 설정한 기기에서는 상한을 건다', async () => {
-    시스템_글자배수(2)
-    const { getByTestId } = await renderAtom(<TextInput testID="키" value="" />)
+  it('className 으로 준 크기에 앱 배수를 곱한다', async () => {
+    setTextScale(1.2)
+    const { getByTestId } = await renderAtom(<TextInput testID="키" value="" className="text-base" />)
 
-    expect(getByTestId('키').props.allowFontScaling).toBe(true)
-    expect(getByTestId('키').props.maxFontSizeMultiplier).toBe(FONT_SCALE_MAX)
+    expect(flattenStyle(getByTestId('키').props.style).fontSize).toBeCloseTo(16 * 1.2)
   })
 })
 

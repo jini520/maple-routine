@@ -72,7 +72,6 @@ function SectionBand(props: { label: string; count?: string; monthly?: boolean }
     >
       <View className="h-[18px] justify-center rounded-full bg-surface px-[7px]">
         <Text
-          fixed
           className={`text-chip-sm font-bold ${
             monthly ? 'text-primary-ink' : 'text-text-muted'
           }`}
@@ -82,7 +81,6 @@ function SectionBand(props: { label: string; count?: string; monthly?: boolean }
       </View>
       {props.count !== undefined && (
         <Text
-          fixed
           testID="accordion-band-count"
           style={TABULAR_NUMS}
           className="ml-auto text-chip-sm font-bold text-text-disabled"
