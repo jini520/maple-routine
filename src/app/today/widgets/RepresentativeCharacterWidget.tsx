@@ -1,9 +1,9 @@
 /**
- * 위젯 1. 대표 캐릭터의 초상화 · 이름 · 레벨 · 직업 · 길드 · EXP 를 그리는 타일.
+ * 위젯 1. 대표 캐릭터의 전신 그림 · 이름 · 레벨 · 직업 · 길드 · EXP 를 그리는 타일.
  *
- * 초상화 오른쪽 열에 닉네임 줄 · 레벨 줄 · EXP 칸을 쌓는다. EXP 칸은 이 열과 같은 폭이다. 오른쪽 끝의
+ * 전신 그림 오른쪽 열에 닉네임 줄 · 레벨 줄 · EXP 칸을 쌓는다. EXP 칸은 이 열과 같은 폭이다. 오른쪽 끝의
  * 좁은 열에 두면 바가 짧아 진행이 잘 안 보인다. 자리가 모자라면 길드가 아니라 **닉네임이 줄어든다**.
- * 길드는 잘리면 다른 길드로 읽히고, 닉네임은 초상화가 이미 누구인지 말한다.
+ * 길드는 잘리면 다른 길드로 읽히고, 닉네임은 그림이 이미 누구인지 말한다.
  *
  * 없는 것은 안 그린다. `expRate` 가 없으면 EXP 칸 자체를 빼고(0% 바는 경험치가 0 으로 읽힌다),
  * 엠블럼 · 직업 · 길드도 모르면 그 자리를 비운다. `대표 없음` 상태는 없다. 미지정이면
@@ -21,15 +21,43 @@ import { worldNameOf } from '../../../lib/world/worlds'
 
 import { ProgressBar, Text } from '../../../components/atoms'
 import { UnavailableBadge } from '../../../components/molecules/UnavailableBadge/UnavailableBadge'
-import { CharacterAvatar } from '../../../components/molecules/CharacterAvatar/CharacterAvatar'
+import { UnavailableFaceMark } from '../../../components/molecules/CharacterAvatar/UnavailableFaceMark'
+import { FIGURE_BOX, figureCropStyle } from '../../../lib/figure-crop'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { RepresentativeView } from '../view-model'
 import type { WidgetProps } from './types'
 
-/** 초상화. 오른쪽 열이 세 줄(닉네임 · 레벨 · EXP 칸)이라 그 높이에 맞춘다 */
-const PORTRAIT_PX = 52
+/** 전신 그림 높이. 오른쪽 열이 세 줄(닉네임 · 레벨 · EXP 칸)이라 그 높이에 맞춘다 */
+const FIGURE_HEIGHT = 76
+const FIGURE_SCALE = FIGURE_HEIGHT / FIGURE_BOX.height
+/** 칸 좌우에서 잘라 내는 몫. 단상 칸은 무기가 들어갈 만큼 넓어 이 좁은 자리에서는 캐릭터 양옆이 빈다 */
+const FIGURE_SIDE_TRIM = 0.2
+const FIGURE_WIDTH = FIGURE_BOX.width * (1 - FIGURE_SIDE_TRIM * 2) * FIGURE_SCALE
+const FIGURE_CROP = figureCropStyle(FIGURE_SCALE, true)
+const MARK_PX = 16
 const EMBLEM_PX = 15
+
+/** 전신 그림. 통계 단상과 같은 칸을 자른다 */
+function Figure(props: { view: RepresentativeView }): React.JSX.Element {
+  return (
+    <View style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT }} className="shrink-0">
+      <View style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT, overflow: 'hidden' }}>
+        <Image
+          testID="representative-figure"
+          accessibilityLabel={props.view.name}
+          source={{ uri: props.view.imageUrl }}
+          style={{ position: 'absolute', ...FIGURE_CROP, left: FIGURE_CROP.left - FIGURE_BOX.width * FIGURE_SIDE_TRIM * FIGURE_SCALE }}
+        />
+      </View>
+      {props.view.unavailable && (
+        <View className="absolute bottom-0 right-0">
+          <UnavailableFaceMark size={MARK_PX} />
+        </View>
+      )}
+    </View>
+  )
+}
 
 function formatExpRate(rate: number): string {
   return `${rate.toFixed(3)}%`
@@ -123,14 +151,7 @@ export function RepresentativeCharacterWidget({ data }: WidgetProps): React.JSX.
 
   return (
     <View testID="widget-representative-character" className="grow flex-row items-center gap-3 p-3">
-      <CharacterAvatar
-        imageTestID="representative-face"
-        imageUrl={view.imageUrl}
-        name={view.name}
-        size={PORTRAIT_PX}
-        className="shrink-0"
-        unavailable={view.unavailable}
-      />
+      <Figure view={view} />
       <View testID="representative-lines" className="min-w-0 flex-1 gap-1.5">
         <View className="gap-0.5">
           <NameLine view={view} />
