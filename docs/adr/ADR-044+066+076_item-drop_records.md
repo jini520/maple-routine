@@ -420,8 +420,7 @@
 - 주 수에 따라 단계가 다섯이고(0 · 1 · 2 · 3 · 4주 이상), 단계가 문구와 단풍잎의 색 · 기울기를 함께 정한다. 값을
   따로 정하면 색은 슬픈데 문구는 신나는 어긋남이 생긴다. 문구 표는 `lib/drop/drop-history.ts` 의
   `VALUABLE_DROUGHT_TIERS`, 잎 색 · 기울기 · 투명도는 `constants/style/drought-tier-styles.ts` 의
-  `DROUGHT_TIER_STYLES` 이고 같은 순서를 쓴다. 잎 표는 today 의 드롭 가뭄 위젯과 함께 쓴다. 따로 두면 같은
-  단계가 두 화면에서 다른 색이 된다.
+  `DROUGHT_TIER_STYLES` 이고 같은 순서를 쓴다.
 - 문구는 사용자가 정했다. 구현하면서 표현을 다듬지 않는다. 단계마다 문구가 여러 개다.
 
 | 단계 | 문구 |
