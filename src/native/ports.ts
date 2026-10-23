@@ -268,6 +268,12 @@ export interface LiveUpdatePort {
   openStore(): void
 }
 
+/** 앱 안 창의 상단 막대 색과 버튼 색. 안드로이드는 `expo-web-browser` 가 상단 막대에 칠하지 않는다. */
+export interface BrowserColors {
+  toolbarColor: string
+  controlsColor: string
+}
+
 /**
  * 앱 안에서 웹 문서를 여는 창.
  *
@@ -275,8 +281,8 @@ export interface LiveUpdatePort {
  * 기본으로 들고 있어 어댑터가 감쌀 플랫폼 플러그인이 없다.
  */
 export interface BrowserPort {
-  /** 주소를 앱 안 창으로 연다. 닫힐 때까지 기다린다. */
-  open(url: string): Promise<void>
+  /** 주소를 앱 안 창으로 연다. 닫힐 때까지 기다린다. 못 열면 거절한다. */
+  open(url: string, colors: BrowserColors): Promise<void>
   /**
    * 로그인용 인증 창. `redirectUrl` 로 돌아온 주소를 돌려주고, 돌아오지 않고 닫히면 `null`.
    *

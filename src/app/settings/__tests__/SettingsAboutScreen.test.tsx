@@ -8,12 +8,13 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { useLiveUpdateStore } from '../../../features/live-update/store'
+import { openInAppBrowser } from '../../../native/browser'
 import { setLiveUpdatePort, type LiveUpdatePort } from '../../../native/ports'
 
 import packageJson from '../../../../package.json'
 import { formatAppVersion } from '../../../lib/app-version'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
-import { SettingsAboutScreen } from '../SettingsAboutScreen'
+import { PRIVACY_URL, SettingsAboutScreen } from '../SettingsAboutScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 /**
@@ -38,6 +39,7 @@ function installLiveUpdatePort(overrides: Partial<LiveUpdatePort> = {}): void {
 }
 
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
+jest.mock('../../../native/browser', () => ({ openInAppBrowser: jest.fn() }))
 
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)
 const navigate = jest.fn()
@@ -116,9 +118,8 @@ describe('SettingsAboutScreen', () => {
     expect(view.getByText(formatAppVersion(packageJson.version))).toBeTruthy()
   })
 
-  // 앱을 벗어나던 링크가 앱 안 하위 페이지가 됐다.
-  // 사본을 만드는 것이 아니라 같은 사이트를 싣는 것이라 "법적 문서를 두 벌로 만들지 않는다"는 그대로다.
-  it('개인정보 처리방침 행이 앱 밖으로 나가지 않고 하위 페이지를 민다', async () => {
+  // 사본을 두지 않고 사이트 원본을 인앱 브라우저로 연다. 앱을 떠나지 않으므로 외부 링크 행이 아니다.
+  it('개인정보 처리방침 행이 사이트를 인앱 브라우저로 연다', async () => {
     const view = await renderOverlay(<SettingsAboutScreen />)
 
     // 외부 링크 행이면 chevron 이 아니라 외부 링크 아이콘이 선다. 그 표식이 없어야 한다.
@@ -126,6 +127,7 @@ describe('SettingsAboutScreen', () => {
 
     await press(buttonOf(view, '개인정보 처리방침'))
 
-    expect(navigate).toHaveBeenCalledWith('SettingsPrivacy')
+    expect(openInAppBrowser).toHaveBeenCalledWith(PRIVACY_URL)
+    expect(navigate).not.toHaveBeenCalled()
   })
 })

@@ -217,7 +217,7 @@ iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다
 ### 개인정보 처리방침
 
 - 처리방침 원본은 `PRIVACY.md` 이고 `https://mapleroutine.store/privacy` 에 게시한다. 앱 안에서는 설정의
-  `SettingsPrivacyScreen` 이 보여 준다.
+  앱 정보 화면(`SettingsAboutScreen`)의 행이 인앱 브라우저로 연다.
 - 문의 주소는 `https://mapleroutine.store/support` 다.
 
 ### 수집 신고(Play 데이터 안전 · App Store 개인정보 라벨)

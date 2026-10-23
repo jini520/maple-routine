@@ -4,11 +4,13 @@
 // **이벤트·캐시샵 본문은 이미지 한 장뿐이다**(실측). 그래서 이미지를 못 그리면 그 두 분류는
 // 상세 화면이 통째로 빈칸이 된다.
 import { act, fireEvent } from '@testing-library/react-native'
-import { Linking } from 'react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { openInAppBrowser } from '../../../native/browser'
 import type { NoticeBlock } from '../../../types/notice'
 import { NoticeBlocks } from '../NoticeBlocks'
+
+jest.mock('../../../native/browser', () => ({ openInAppBrowser: jest.fn() }))
 
 describe('공지 본문 블록', () => {
   // 넥슨이 실제 크기를 알려 주기 전에는 비율을 모른다. 높이가 0이면 이미지가 안 보인다.
@@ -35,8 +37,7 @@ describe('공지 본문 블록', () => {
     expect(view.queryByTestId('notice-image')).toBeNull()
   })
 
-  it('링크를 누르면 밖으로 연다', async () => {
-    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true)
+  it('링크를 누르면 인앱 브라우저로 연다', async () => {
     const blocks: NoticeBlock[] = [
       { type: 'link', text: '[바로가기]', href: 'https://maplestory.nexon.com/News/Notice/1' },
     ]
@@ -44,7 +45,7 @@ describe('공지 본문 블록', () => {
     const view = await renderOverlay(<NoticeBlocks blocks={blocks} />)
     fireEvent.press(view.getByLabelText('[바로가기]'))
 
-    expect(open).toHaveBeenCalledWith('https://maplestory.nexon.com/News/Notice/1')
+    expect(openInAppBrowser).toHaveBeenCalledWith('https://maplestory.nexon.com/News/Notice/1')
   })
 
 })

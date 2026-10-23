@@ -55,7 +55,7 @@ RootStack
 | 드롭 히스토리 · 아이템 가격 입력 | `DropHistory` · `DropPrice` |
 | 기능 설명 목록 · 상세 | `SettingsFeatureGuideList` · `SettingsFeatureGuide` |
 | 개발 노트 목록 · 상세 | `SettingsReleaseNotes` · `SettingsReleaseNoteGuide` |
-| 계정 및 데이터 · 앱 정보 · 개인정보 처리방침 | `SettingsAccountData` · `SettingsAbout` · `SettingsPrivacy` |
+| 계정 및 데이터 · 앱 정보 | `SettingsAccountData` · `SettingsAbout` |
 | 캐릭터 관리 | `SettingsCharacters` |
 | 공지 목록 · 알림 설정 · 공지 상세 | `SettingsNotices` · `SettingsNoticeAlerts` · `SettingsNoticeDetail` |
 | MVP 등급 · 등급 이력 | `SettingsMvpGrade` · `SettingsMvpGradeHistory` |

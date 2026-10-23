@@ -36,7 +36,7 @@
 | `server/nexon-auth.ts` | 로그인 시작 · 세션 받기 · 세션 거두기 |
 | `storage/api-key.ts` | 인증 수단 목록 저장(`getAuthConfig` · `setApiKey` · `setNexonLogin` · `removeApiKey` · `clearNexonLogin` · `clearAuthConfig`) |
 | `components/molecules/NexonLoginButton/` | 넥슨이 준 이미지 한 장으로 만든 로그인 버튼 |
-| `native/browser.ts` | 로그인 화면의 바깥 링크를 인앱 브라우저로 연다 |
+| `native/browser.ts` | 앱이 여는 웹 주소를 인앱 브라우저로 연다. 못 열면 시스템 브라우저로 넘긴다 |
 | `app/settings/SettingsScreen.tsx` | 더보기 탭 맨 위 넥슨 로그인 버튼 |
 | `app/settings/SettingsAccountDataScreen.tsx` · `app/settings/SignOutConfirm.tsx` | 넥슨 로그아웃 줄과 확인 모달 |
 

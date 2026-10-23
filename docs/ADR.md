@@ -145,7 +145,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-022+081](./adr/ADR-022+081_error-resilience_failure-states.md) | 🟢 | error-resilience | 실패를 알리는 방법과 기간 데이터 상태 |
 | [ADR-023](./adr/ADR-023_error-resilience_resumable-task.md) | 🟢 | error-resilience | 이어서 하는 작업과 기록 판 알림 |
 | [ADR-024](./adr/ADR-024_auth_api-key.md) | 🟢 | auth | API 키 로그인과 키 재입력 |
-| [ADR-025+068](./adr/ADR-025+068_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
+| [ADR-025+068+083](./adr/ADR-025+068+083_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
 | [ADR-026](./adr/ADR-026_app-entry_onboarding.md) | 🟢 | app-entry | 온보딩 흐름 |
 | [ADR-027](./adr/ADR-027_app-entry_cold-start.md) | 🟢 | app-entry | 콜드 스타트 첫 화면 |
 | [ADR-028](./adr/ADR-028_character_tracking.md) | 🟢 | character | 추적 캐릭터 |

@@ -9,9 +9,10 @@
  * 자체이고, 가로를 꽉 채워 그린다.
  */
 import { useState } from 'react'
-import { Image, Linking, Pressable, ScrollView, View } from 'react-native'
+import { Image, Pressable, ScrollView, View } from 'react-native'
 
 import { ExternalLinkIcon, Text } from '../../components/atoms'
+import { openInAppBrowser } from '../../native/browser'
 import type { NoticeBlock } from '../../types/notice'
 
 /**
@@ -111,9 +112,7 @@ export function NoticeBlocks(props: { blocks: readonly NoticeBlock[] }): React.J
                 key={index}
                 role="link"
                 aria-label={block.text}
-                onPress={() => {
-                  void Linking.openURL(block.href).catch(() => undefined)
-                }}
+                onPress={() => openInAppBrowser(block.href)}
                 className="flex-row items-center gap-1.5"
               >
                 <Text className="text-sm text-primary">{block.text}</Text>

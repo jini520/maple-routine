@@ -15,9 +15,10 @@
  * 배치는 `organisms/NoticeModal` 이 갖는다. 이 파일이 정하는 것은 아이콘 · 톤 · 문구와 아래
  * 단계 표뿐이다.
  */
-import { Linking, View } from 'react-native'
+import { View } from 'react-native'
 
 import { useAuthStore } from '../../features/auth/store'
+import { openInAppBrowser } from '../../native/browser'
 
 import { KeyRoundIcon, Text } from '../../components/atoms'
 import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
@@ -74,7 +75,7 @@ export function DevelopmentStageKeyModal(): React.JSX.Element | null {
       action={{ label: '다시 입력하기', onPress: acknowledge }}
       link={{
         label: '발급 방법 자세히 보기',
-        onPress: () => void Linking.openURL(GUIDE_URL),
+        onPress: () => openInAppBrowser(GUIDE_URL),
       }}
       onClose={acknowledge}
       testId="development-stage-key-overlay"

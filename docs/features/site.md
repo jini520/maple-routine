@@ -16,7 +16,7 @@
 | `scripts/build-site.mjs` | `npm run build:site` → `dist-site/` |
 | `scripts/deploy-site.sh` | `npm run deploy:site`. 빌드하고 Oracle 로 올린다 |
 | `app/auth/api-key-links.ts` | 앱이 여는 가이드 주소와 넥슨 Open API 주소 |
-| `app/settings/SettingsPrivacyScreen.tsx` | 앱에서 `/privacy` 를 `WebView` 로 띄운다 |
+| `app/settings/SettingsAboutScreen.tsx` | 앱에서 `/privacy` 를 인앱 브라우저로 연다 |
 
 ## 페이지
 

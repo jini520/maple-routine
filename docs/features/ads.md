@@ -68,4 +68,4 @@
 
 광고 SDK 를 넣으면서 생긴 스토어 요건이다. Play 정책은 스토어 등록정보와 앱 안 양쪽에 링크를 요구한다.
 웹에는 `mapleroutine.store/privacy`([[ADR-015]])로 올려 두었다. 앱에서는 설정의 앱 정보 아래에 있는
-개인정보 처리방침 화면(`SettingsPrivacyScreen.tsx`)이 이 페이지를 `WebView` 로 띄운다.
+개인정보 처리방침 행(`SettingsAboutScreen.tsx`)이 이 페이지를 인앱 브라우저로 연다.

@@ -1,8 +1,31 @@
 import { rnBrowserPort } from '../rn-browser'
 
-jest.mock('expo-web-browser', () => ({ openBrowserAsync: jest.fn(), openAuthSessionAsync: jest.fn() }))
+jest.mock('expo-web-browser', () => ({
+  openBrowserAsync: jest.fn(),
+  openAuthSessionAsync: jest.fn(),
+  WebBrowserPresentationStyle: { PAGE_SHEET: 'pageSheet' },
+}))
 
-const { openAuthSessionAsync } = jest.requireMock('expo-web-browser') as Record<string, jest.Mock>
+const { openAuthSessionAsync, openBrowserAsync } = jest.requireMock('expo-web-browser') as Record<string, jest.Mock>
+
+// 넥슨 로그인 창(`ASWebAuthenticationSession`)이 카드 시트로 뜬다. 웹 문서 창도 같은 모양이어야 한다.
+// 라이브러리 기본값은 화면 전체를 덮는 `overFullScreen` 이다.
+describe('rnBrowserPort.open', () => {
+  it('로그인 창과 같은 카드 시트로 띄우고, 받은 색을 그대로 넘긴다', async () => {
+    openBrowserAsync.mockResolvedValue({ type: 'dismiss' })
+
+    await rnBrowserPort.open('https://mapleroutine.store/privacy', {
+      toolbarColor: '#111111',
+      controlsColor: '#222222',
+    })
+
+    expect(openBrowserAsync).toHaveBeenCalledWith('https://mapleroutine.store/privacy', {
+      toolbarColor: '#111111',
+      controlsColor: '#222222',
+      presentationStyle: 'pageSheet',
+    })
+  })
+})
 
 /**
  * 인증 세션의 결과를 돌아온 주소 하나로 줄이는 검사.
