@@ -9,7 +9,6 @@ import { MinusIcon, PlusIcon, Text } from '../../atoms'
 const SIZES = {
   sm: { button: 'h-6 w-6', icon: 'h-2.5 w-2.5', value: 'w-6 text-xs font-bold' },
   md: { button: 'h-8 w-8', icon: 'h-3 w-3', value: 'w-8 text-15 font-bold' },
-  lg: { button: 'h-9 w-9', icon: 'h-3.5 w-3.5', value: 'w-10 text-19 font-bold' },
 } as const
 
 /** 버튼이 트랙에서 떠 보이게 하는 옅은 그림자. 테두리를 쓰지 않으므로 이것이 버튼의 경계다. */

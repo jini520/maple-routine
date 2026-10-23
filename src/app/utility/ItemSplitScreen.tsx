@@ -232,7 +232,7 @@ export function ItemSplitScreen(): React.JSX.Element {
                 </View>
                 <View className="flex-1 items-center justify-center">
                   <Stepper
-                    size="lg"
+                    size="md"
                     label="분배 파티원 수"
                     value={partySize}
                     max={MAX_PARTY_SIZE}

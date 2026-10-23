@@ -14,8 +14,9 @@
 
 import { Image, Pressable, View } from 'react-native'
 
+import bossProfitIllustration from '../../assets/utility/boss-profit-calculator.webp'
 import itemSplitIllustration from '../../assets/utility/item-split.webp'
-import { SwordsIcon, Text } from '../../components/atoms'
+import { Text } from '../../components/atoms'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -41,9 +42,10 @@ const TOOL_PALETTES: Record<'itemSplit' | 'bossProfit', Record<ThemeMode, ToolPa
     light: { tint: '#E3DAFC', ink: '#4A3A9A' },
     dark: { tint: '#1E1A30', ink: '#D2C7FF' },
   },
+  // 몬스터도 보라라 계산기 카드와 갈리도록 왕관의 금빛이다.
   bossProfit: {
-    light: { tint: '#FFE3C6', ink: '#8A4510' },
-    dark: { tint: '#2A1A0E', ink: '#F8C89A' },
+    light: { tint: '#FFEFC7', ink: '#7A5300' },
+    dark: { tint: '#2A2210', ink: '#F3D58A' },
   },
 }
 
@@ -95,7 +97,7 @@ function ToolCard(props: {
       style={{ backgroundColor: props.palette.tint, paddingLeft: ILLUSTRATION_LANE }}
     >
       <View
-        className="absolute -top-[22px] left-1.5 opacity-30"
+        className="absolute inset-0 opacity-30"
         aria-hidden
         importantForAccessibility="no-hide-descendants"
       >
@@ -109,7 +111,6 @@ function ToolCard(props: {
 export function UtilityScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
   const mode = useThemeMode()
-  const bossProfitPalette = TOOL_PALETTES.bossProfit[mode]
 
   return (
     <View testID="screen-Utility" className="flex-1">
@@ -126,17 +127,25 @@ export function UtilityScreen(): React.JSX.Element {
           <ToolCard
             name={ITEM_SPLIT_TOOL_NAME}
             palette={TOOL_PALETTES.itemSplit[mode]}
-            // 원본 400×560. 카드(64)보다 크게 그려 위아래를 잘라 낸다.
+            // 원본 400×560. 카드(64)보다 크게 그려 위아래를 잘라 내고, 계산기 화면 부분이 보이게 둔다.
             illustration={
-              <Image source={itemSplitIllustration} style={{ width: 107, height: 150 }} />
+              <Image
+                source={itemSplitIllustration}
+                style={{ position: 'absolute', left: 6, top: -22, width: 107, height: 150 }}
+              />
             }
             onPress={() => navigation.navigate('UtilityItemSplit')}
           />
           <ToolCard
             name={BOSS_PROFIT_CALCULATOR_TOOL_NAME}
-            palette={bossProfitPalette}
-            // 일러스트를 받기 전 자리. 받으면 계산기처럼 `Image` 로 바꾼다.
-            illustration={<SwordsIcon size={110} color={bossProfitPalette.ink} strokeWidth={1.75} />}
+            palette={TOOL_PALETTES.bossProfit[mode]}
+            // 원본 정사각. 왕관과 눈이 보이도록 위에서 36 잘라 낸다.
+            illustration={
+              <Image
+                source={bossProfitIllustration}
+                style={{ position: 'absolute', left: 4, top: -36, width: 120, height: 120 }}
+              />
+            }
             onPress={() => navigation.navigate('UtilityBossProfitCalculator')}
           />
         </View>
