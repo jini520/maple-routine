@@ -38,11 +38,11 @@ interface ToolPalette {
  */
 const TOOL_PALETTES: Record<'itemSplit' | 'bossProfit', Record<ThemeMode, ToolPalette>> = {
   itemSplit: {
-    light: { tint: '#EFEAFE', ink: '#4A3A9A' },
+    light: { tint: '#E3DAFC', ink: '#4A3A9A' },
     dark: { tint: '#1E1A30', ink: '#D2C7FF' },
   },
   bossProfit: {
-    light: { tint: '#FFF0E0', ink: '#8A4510' },
+    light: { tint: '#FFE3C6', ink: '#8A4510' },
     dark: { tint: '#2A1A0E', ink: '#F8C89A' },
   },
 }
