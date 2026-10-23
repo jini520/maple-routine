@@ -40,7 +40,10 @@ export interface WidgetDefinition {
    * 것이 고장으로 읽힌다.
    */
   target?: WidgetTarget
-  /** 거짓이면 타일째 뺀다. 가로 전체 타일만 쓸 수 있다(옆 칸이 있으면 빈 칸이 남는다) */
-  isVisible?: (data: TodayViewModel) => boolean
+  /**
+   * 참이면 맨 아래 줄로 옮긴다. 보여 줄 것이 없을 때 다른 모양(등록 칸)으로 그리는 위젯이 쓴다. 가로 전체 타일만 쓸 수
+   * 있다(옆 칸이 있으면 빈 칸이 남는다)
+   */
+  placeLast?: (data: TodayViewModel) => boolean
   Component: React.ComponentType<WidgetProps>
 }

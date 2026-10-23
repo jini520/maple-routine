@@ -131,23 +131,27 @@ export function groupWidgetRows<T extends WidgetPlacement>(layout: readonly T[])
 }
 
 /**
- * 숨긴 타일을 빼고 그 아래 줄을 당긴 배치. 보여 줄 것이 없는 위젯이 타일째 숨을 때 쓴다.
+ * 고른 타일을 맨 아래 줄로 옮긴 배치. 그 타일이 있던 줄 아래는 한 줄씩 올라온다. 보여 줄 것이 없을 때 자리를
+ * 내주는 위젯이 쓴다(다음 파티 스케줄의 등록 칸).
  *
  * 가로 전체 타일만 받는다. 옆 칸이 있는 타일을 빼면 그 자리가 빈 칸으로 남는다.
  *
- * @param hiddenIds 숨길 위젯 id
+ * @param ids 옮길 위젯 id. 배치에 적힌 순서대로 맨 아래에 붙는다
  */
-export function omitHiddenTiles<T extends WidgetPlacement>(layout: readonly T[], hiddenIds: ReadonlySet<string>): T[] {
-  const hidden = layout.filter((placement) => hiddenIds.has(placement.id))
-  for (const placement of hidden) {
+export function moveTilesToEnd<T extends WidgetPlacement>(layout: readonly T[], ids: ReadonlySet<string>): T[] {
+  const moving = layout.filter((placement) => ids.has(placement.id))
+  if (moving.length === 0) return [...layout]
+  for (const placement of moving) {
     if (placement.w !== GRID_COLUMNS) {
-      throw new Error(`가로 전체가 아닌 타일은 숨길 수 없다: ${placement.id} (w ${placement.w})`)
+      throw new Error(`가로 전체가 아닌 타일은 옮길 수 없다: ${placement.id} (w ${placement.w})`)
     }
   }
-  return layout
-    .filter((placement) => !hiddenIds.has(placement.id))
+  const staying = layout
+    .filter((placement) => !ids.has(placement.id))
     .map((placement) => {
-      const lift = hidden.filter((gone) => gone.row < placement.row).length
+      const lift = moving.filter((gone) => gone.row < placement.row).length
       return lift === 0 ? placement : { ...placement, row: placement.row - lift }
     })
+  const lastRow = staying.reduce((max, placement) => Math.max(max, placement.row), -1)
+  return [...staying, ...moving.map((placement, index) => ({ ...placement, row: lastRow + 1 + index }))]
 }

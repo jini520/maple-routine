@@ -61,6 +61,8 @@ describe('WidgetGrid: 줄과 칸', () => {
     expect(줄의_타일(view, 3)).toEqual(['remaining-schedule'])
     expect(줄의_타일(view, 4)).toEqual(['weekly-income'])
     expect(줄의_타일(view, 5)).toEqual(['top-valuable-item', 'unpriced-drops'])
+    // 픽스처에는 파티 회차가 없어 다음 파티 스케줄이 맨 아래 줄에 선다.
+    expect(줄의_타일(view, 6)).toEqual(['next-party-schedule'])
   })
 
   // 가로를 다 쓰는 타일의 폭은 **창폭 − 좌우 여백** 이다. 2칸 둘은 사이에 간격 하나를 두고 줄을 나눠 쓴다.
@@ -87,7 +89,7 @@ describe('WidgetGrid: 줄과 칸', () => {
   })
 })
 
-// 다음 파티 스케줄은 보여 줄 회차가 없으면 타일째 숨고, 그 줄만큼 아래가 올라온다.
+// 다음 파티 스케줄은 보여 줄 회차가 없으면 맨 아래 줄로 내려가고, 그 줄만큼 아래가 올라온다.
 describe('다음 파티 스케줄 타일', () => {
   const 회차 = {
     appointmentId: 'p1',
@@ -100,11 +102,11 @@ describe('다음 파티 스케줄 타일', () => {
     repeats: false,
   }
 
-  it('회차가 없으면 타일이 없고 공유 컨텐츠가 그 줄에 선다', async () => {
+  it('회차가 없으면 맨 아래 줄로 가고 공유 컨텐츠가 그 줄에 선다', async () => {
     const view = await 격자()
 
-    expect(view.queryByTestId('widget-tile-next-party-schedule')).toBeNull()
     expect(줄의_타일(view, 2)).toEqual(['shared-contents'])
+    expect(줄의_타일(view, 6)).toEqual(['next-party-schedule'])
   })
 
   it('회차가 있으면 초기화까지 아래 줄에 서고 그 아래가 한 줄 내려간다', async () => {

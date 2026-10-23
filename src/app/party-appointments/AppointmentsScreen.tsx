@@ -64,7 +64,13 @@ export function AppointmentsScreen(): React.JSX.Element {
    */
   const loadAndOpenNotified = useCallback(async () => {
     await load()
-    const request = usePartyAppointmentOpenStore.getState().request
+    const { request, create } = usePartyAppointmentOpenStore.getState()
+    // today 위젯이 고른 갈래의 새 스케줄 시트. ＋ 메뉴에서 고른 것과 같다.
+    if (create !== null) {
+      usePartyAppointmentOpenStore.getState().clear()
+      setSheet(create)
+      return
+    }
     if (request === null) return
     usePartyAppointmentOpenStore.getState().clear()
     const found = findNotifiedOccurrence(usePartyAppointmentsStore.getState().appointments, request)
@@ -80,7 +86,7 @@ export function AppointmentsScreen(): React.JSX.Element {
   useEffect(
     () =>
       usePartyAppointmentOpenStore.subscribe((state) => {
-        if (state.request !== null) void loadAndOpenNotified()
+        if (state.request !== null || state.create !== null) void loadAndOpenNotified()
       }),
     [loadAndOpenNotified],
   )

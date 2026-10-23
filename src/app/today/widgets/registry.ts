@@ -30,7 +30,8 @@ export const WIDGETS: readonly WidgetDefinition[] = [
   {
     id: 'next-party-schedule',
     width: 4,
-    isVisible: (data) => data.nextParty.length > 0,
+    // 보여 줄 회차가 없으면 맨 아래 줄로 내려가 새 스케줄 등록 칸을 그린다.
+    placeLast: (data) => data.nextParty.length === 0,
     Component: NextPartyScheduleWidget,
   },
 ]

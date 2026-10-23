@@ -34,10 +34,10 @@ describe('기본 배치', () => {
   })
 })
 
-// 숨는 타일은 가로 전체여야 한다. 옆 칸이 있으면 빠진 자리가 빈 칸으로 남는다.
-describe('숨는 위젯', () => {
-  it('isVisible 이 있는 위젯은 가로 전체로 놓인다', () => {
-    for (const widget of WIDGETS.filter((one) => one.isVisible !== undefined)) {
+// 맨 아래로 옮겨지는 타일은 가로 전체여야 한다. 옆 칸이 있으면 빠진 자리가 빈 칸으로 남는다.
+describe('맨 아래로 옮겨지는 위젯', () => {
+  it('placeLast 가 있는 위젯은 가로 전체로 놓인다', () => {
+    for (const widget of WIDGETS.filter((one) => one.placeLast !== undefined)) {
       expect(TILE_LAYOUT.find((placement) => placement.id === widget.id)?.w).toBe(4)
     }
   })

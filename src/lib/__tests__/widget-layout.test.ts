@@ -1,7 +1,7 @@
 // 좌표 배치의 **검증과 묶기**. 배치를 손으로 적기로 한 이상 그
 // 실수는 반드시 나므로, 자동 패킹 대신 **검증** 을 산 값이 여기서 회수된다.
 
-import { groupWidgetRows, omitHiddenTiles, validateWidgetLayout, type WidgetPlacement } from '../today/widget-layout'
+import { groupWidgetRows, moveTilesToEnd, validateWidgetLayout, type WidgetPlacement } from '../today/widget-layout'
 
 const widths = {
   대표: 4,
@@ -103,18 +103,26 @@ describe('groupWidgetRows: 줄 단위로 묶는다', () => {
   })
 })
 
-// 보여 줄 것이 없는 위젯을 타일째 숨긴다. 가로 전체 타일만 숨겨 그 줄만큼 아래를 올리면 빈 자리가 안 남는다.
-describe('omitHiddenTiles', () => {
-  it('숨긴 가로 전체 타일을 빼고, 그 아래 줄을 한 줄 올린다', () => {
-    const result = omitHiddenTiles(유효한_배치, new Set(['스케줄']))
+// 보여 줄 것이 없을 때 맨 아래로 내려 다른 모양으로 그리는 위젯이 있다(다음 파티 스케줄의 등록 칸).
+describe('moveTilesToEnd', () => {
+  it('옮길 가로 전체 타일을 빼고 아래 줄을 한 줄 올린 뒤 맨 아래 줄에 붙인다', () => {
+    const result = moveTilesToEnd(유효한_배치, new Set(['스케줄']))
 
-    expect(result.map((placement) => placement.id)).toEqual(['대표', '초기화', '결정석', '수익'])
-    expect(result.find((placement) => placement.id === '수익')?.row).toBe(2)
+    expect(groupWidgetRows(result).map((row) => row.map((tile) => tile.id))).toEqual([
+      ['대표'],
+      ['초기화', '결정석'],
+      ['수익'],
+      ['스케줄'],
+    ])
     expect(validateWidgetLayout(result, widths)).toEqual([])
   })
 
+  it('옮길 것이 없으면 배치가 그대로다', () => {
+    expect(moveTilesToEnd(유효한_배치, new Set())).toEqual(유효한_배치)
+  })
+
   // 옆 칸이 있는 타일을 빼면 그 자리가 빈 칸으로 남는다.
-  it('가로 전체가 아닌 타일은 숨길 수 없다', () => {
-    expect(() => omitHiddenTiles(유효한_배치, new Set(['초기화']))).toThrow()
+  it('가로 전체가 아닌 타일은 옮길 수 없다', () => {
+    expect(() => moveTilesToEnd(유효한_배치, new Set(['초기화']))).toThrow()
   })
 })

@@ -15,7 +15,7 @@ import { Pressable, useWindowDimensions, View } from 'react-native'
 
 import { Card } from '../../components/atoms'
 import { resolveWidgetGridMetrics, tileWidthPx } from '../../lib/today/widget-grid-metrics'
-import { groupWidgetRows, omitHiddenTiles } from '../../lib/today/widget-layout'
+import { groupWidgetRows, moveTilesToEnd } from '../../lib/today/widget-layout'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import type { TodayViewModel } from './view-model'
@@ -33,11 +33,11 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
   const { width } = useWindowDimensions()
   const metrics = resolveWidgetGridMetrics(width)
 
-  // 보여 줄 것이 없는 위젯은 타일째 빼고 그 아래를 당긴다.
-  const hiddenIds = new Set(
-    WIDGETS.filter((widget) => widget.isVisible !== undefined && !widget.isVisible(data)).map((widget) => widget.id),
+  // 보여 줄 것이 없는 위젯은 맨 아래 줄로 내려 다른 모양으로 그린다.
+  const lastIds = new Set(
+    WIDGETS.filter((widget) => widget.placeLast !== undefined && widget.placeLast(data)).map((widget) => widget.id),
   )
-  const rows = groupWidgetRows(omitHiddenTiles(TILE_LAYOUT, hiddenIds))
+  const rows = groupWidgetRows(moveTilesToEnd(TILE_LAYOUT, lastIds))
 
   // 타일 탭은 today(그룹 행)에서 하위 층으로 한 층 내려가는 이동이라, 층이 스택이 된 뒤로는
   // 그냥 그 층을 여는 것으로 끝난다. 바 기록을 손으로 맞출 일이 없다.

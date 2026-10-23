@@ -86,7 +86,7 @@ beforeEach(() => {
   installNoopNativePorts()
   useTrackingModeStore.setState({ mode: 'manual' })
   useAppEntryStore.setState({ stage: 'signIn' })
-  usePartyAppointmentOpenStore.setState({ request: null })
+  usePartyAppointmentOpenStore.setState({ request: null, create: null })
 })
 
 async function 단계를_옮긴다(stage: 'signIn' | 'characterSetup' | 'ready'): Promise<void> {
@@ -178,5 +178,22 @@ describe('알림 탭이 여는 약속 상세', () => {
     expect(screen.getByTestId('screen-Appointments')).toBeTruthy()
     expect(screen.getByTestId('appointment-sheet-2099-01-01')).toBeTruthy()
     expect(usePartyAppointmentOpenStore.getState().request).toBeNull()
+  })
+})
+
+// today 의 다음 파티 스케줄 위젯이 회차가 없을 때 고른 갈래로 새 스케줄을 연다.
+describe('위젯이 여는 새 스케줄 시트', () => {
+  it('약속 화면으로 가서 새 스케줄 시트를 열고 요청을 비운다', async () => {
+    await setPartyAppointments([])
+    usePartyAppointmentOpenStore.getState().openCreate('weekly')
+    await render(<Harness />)
+
+    await 단계를_옮긴다('ready')
+    await act(async () => {})
+    await act(async () => {})
+
+    expect(screen.getByTestId('screen-Appointments')).toBeTruthy()
+    expect(screen.getByTestId('appointment-sheet-add')).toBeTruthy()
+    expect(usePartyAppointmentOpenStore.getState().create).toBeNull()
   })
 })

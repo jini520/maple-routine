@@ -740,7 +740,7 @@ describe('TodayScreen: 머리의 캐릭터 관리 버튼', () => {
 
 describe('TodayScreen: 격자', () => {
   // 데이터가 없다고 타일을 빼지 않는다. 콜드 스타트(스토어 전부 빈 값)에서도
-  // 전부 서고, 각자 자기 타일 안에서 빈 상태를 말한다. 다음 파티 스케줄만 회차가 없으면 빠진다.
+  // 전부 서고, 각자 자기 타일 안에서 빈 상태를 말한다. 다음 파티 스케줄은 회차가 없으면 맨 아래 줄의 등록 칸이다.
   it('스토어가 비어 있어도 위젯이 전부 선다', async () => {
     await renderScreen()
 
@@ -754,6 +754,7 @@ describe('TodayScreen: 격자', () => {
       'weekly-income',
       'top-valuable-item',
       'unpriced-drops',
+      'next-party-schedule',
     ]) {
       expect(screen.getByTestId(`widget-tile-${id}`)).toBeTruthy()
     }

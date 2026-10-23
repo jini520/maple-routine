@@ -228,6 +228,7 @@
 - 스케줄을 지웠거나 그 회차가 없으면 그 주 목록만 연다(`findNotifiedOccurrence`).
 - today 의 `다음 파티 스케줄` 위젯도 같은 값을 남겨 같은 방법으로 연다([[ADR-058]]). 위젯이 쓰는 다음 회차는
   `upcomingOccurrences` 가 찾는다.
+- 회차가 없을 때 today 위젯이 새 스케줄 시트를 여는 요청(`openCreate`)도 이 길을 쓴다. 그 결정은 [[ADR-058]] 결정 29 에 있다.
 
 ### 결정 12. 스케줄은 Preferences 의 JSON 한 칸에 둔다
 

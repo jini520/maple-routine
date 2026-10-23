@@ -20,7 +20,7 @@
 | `features/party-appointments/boss-groups.ts` · `boss-picker.ts` | 캐릭터 묶음 · 보스 추가의 타일 묶음과 고르기 |
 | `features/party-appointments/alarm-gate.ts` | 알림을 켤 때 · 저장할 때 권한과 스위치 확인 |
 | `features/party-appointments/notification.ts` · `notification-text.ts` | 레지스트리의 `party-appointment` 계획 · 알림 문구 |
-| `features/party-appointments/open-request.ts` | 알림이나 위젯에서 열 회차 |
+| `features/party-appointments/open-request.ts` | 알림이나 위젯에서 열 회차 · today 위젯이 고른 새 스케줄 갈래 |
 | `features/party-appointments/upcoming.ts` | 다음 회차들(today 위젯이 쓴다) |
 | `app/party-appointments/AppointmentsScreen.tsx` · `AppointmentAgenda.tsx` | 주 이동 줄 · 요일별 목록 · ＋ |
 | `app/party-appointments/AppointmentSheet.tsx` | 추가 · 상세 · 수정 시트와 보스 추가 단계 |
@@ -78,7 +78,8 @@
 | 문구 | `낟낟 파티 보스 스케줄이 곧 시작해요` / `21:00 낟낟 하드 림보 외 2마리 파티 10분 전이에요` |
 | 누르면 | 파티 스케줄 탭에서 그 회차가 속한 주를 열고 상세를 연다. 회차가 없으면 그 주만 연다 |
 
-today 의 `다음 파티 스케줄` 위젯도 시작 전인 가장 가까운 회차를 보여 주고, 누르면 같은 방법으로 상세를 연다.
+today 의 `다음 파티 스케줄` 위젯도 시작 전인 가장 가까운 회차를 보여 주고, 누르면 같은 방법으로 상세를 연다. 회차가 없으면
+위젯이 맨 아래 줄에서 `매주 반복` · `한 번만` 칸을 보여 주고, 누르면 이 탭에서 그 갈래의 새 스케줄 시트가 열린다.
 
 ## 저장
 
