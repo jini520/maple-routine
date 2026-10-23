@@ -12,6 +12,7 @@ import type { CharacterTotals } from '../../features/stats/aggregate'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { useTextScale } from '../../theme/text-scale'
 import { unknownCharacterAsset } from '../../lib/assets/asset-lookup'
+import { FIGURE_BOX, figureCropStyle } from '../../lib/figure-crop'
 import { podiumAmountScale, podiumBlockPadding, podiumNameLines } from './podium-name'
 import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
@@ -46,15 +47,7 @@ function Grow(props: {
 const TABS = ['순수익', '수익', '지출'] as const
 type Tab = (typeof TABS)[number]
 
-/**
- * 넥슨 전신 그림(300×300)에서 캐릭터가 서는 칸. 발끝이 y≈201 이라 그 아래 3px 까지 자른다.
- * 이 칸을 `PODIUM_FIGURE_WIDTH` 폭으로 줄여 세운다.
- */
-const LOOK_SIZE = 300
-const FIGURE_BOX = { left: 92, top: 104, width: 116, height: 100 }
-/** 흰 실루엣(180×180)에서 같은 크기로 서는 칸. 발끝이 y≈144 라 넥슨 그림과 같은 줄에 발이 닿는다 */
-const UNKNOWN_SIZE = 180
-const UNKNOWN_BOX = { left: 28.5, top: 47 }
+/** 전신 칸(`FIGURE_BOX`)을 이 폭으로 줄여 세운다 */
 const PODIUM_FIGURE_WIDTH = 72
 const FIGURE_SCALE = PODIUM_FIGURE_WIDTH / FIGURE_BOX.width
 /** 그림 칸이 단상 블록 위로 겹쳐 내려가는 높이. 발끝 아래가 잘리지 않고 블록 앞에 그려진다 */
@@ -77,8 +70,6 @@ function signed(meso: number): string {
 /** 단상 위 캐릭터. 그림 주소를 모르면 흰 실루엣이 같은 자리에 선다 */
 function Figure(props: { uri: string | undefined }): React.JSX.Element {
   const known = props.uri !== undefined
-  const size = known ? LOOK_SIZE : UNKNOWN_SIZE
-  const box = known ? FIGURE_BOX : UNKNOWN_BOX
   return (
     <View
       style={{ width: PODIUM_FIGURE_WIDTH, height: FIGURE_BOX.height * FIGURE_SCALE + FIGURE_OVERLAP, overflow: 'hidden' }}
@@ -86,13 +77,7 @@ function Figure(props: { uri: string | undefined }): React.JSX.Element {
       <Image
         testID={known ? 'stats-podium-image' : 'stats-podium-image-unknown'}
         source={known ? { uri: props.uri } : unknownCharacterAsset()}
-        style={{
-          position: 'absolute',
-          width: size * FIGURE_SCALE,
-          height: size * FIGURE_SCALE,
-          left: -box.left * FIGURE_SCALE,
-          top: -box.top * FIGURE_SCALE,
-        }}
+        style={{ position: 'absolute', ...figureCropStyle(FIGURE_SCALE, known) }}
       />
     </View>
   )
