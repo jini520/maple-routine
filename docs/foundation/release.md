@@ -261,8 +261,8 @@ python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA')
 - 앱에 없는 기능을 적지 않는다. 화면에서 눌러 확인한 것만 적는다.
 - 가격(`무료`) · 순위(`1위`) · 설치 유도(`지금 다운로드`) 문구를 넣지 않고, 다른 앱이나 플랫폼을 언급하지 않는다.
   HTML 이 적용되지 않으므로 불릿은 문자(`■` `▶` `•`)로 쓴다.
-- 넥슨 로그인은 문구에 쓰지 않는다. 1.0.12 바이너리에 꺼진 채로 들어 있기 때문이다
-  (`features/auth/nexon-login-enabled.ts` 의 `NEXON_LOGIN_ENABLED = false`). 로그인을 켜는 OTA 를 낼 때 자세한
+- 넥슨 로그인은 아직 문구에 쓰지 않는다. 1.0.12 바이너리에는 꺼진 채로 들어 있고, 켜는 값
+  (`features/auth/nexon-login-enabled.ts` 의 `NEXON_LOGIN_ENABLED = true`)은 OTA 로 나간다. 그 OTA 를 낼 때 자세한
   설명의 `회원가입이 없습니다` 와 심사 메모의 `[NO LOGIN ...]` 을 함께 고치고, App Store 의 계정 삭제 요건도 그때
   다시 본다.
 - 앱 안에서는 컨텐츠라고 부르지만 짧은 설명에서만 `숙제` 를 쓴다. 스토어에서는 `메이플 숙제` 로 검색하기
