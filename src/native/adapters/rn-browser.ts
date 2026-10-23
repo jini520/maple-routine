@@ -9,8 +9,8 @@ import type { BrowserPort } from '../ports'
  * iOS 에서는 ASWebAuthenticationSession 이고, 콜백 URL 이 그 세션에만 돌아온다.
  */
 export const rnBrowserPort: BrowserPort = {
-  async open(url) {
-    await openBrowserAsync(url)
+  async open(url, colors) {
+    await openBrowserAsync(url, colors)
   },
   async openAuthSession(url, redirectUrl) {
     const result = await openAuthSessionAsync(url, redirectUrl)

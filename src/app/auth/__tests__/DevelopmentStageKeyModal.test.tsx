@@ -7,24 +7,25 @@
 // 이 파일이 보는 것은 **문구와 배선**이지 마크업이 아니다. 골격이 `NoticeModal` 로 옮겨 가도
 // 그대로 통과해야 한다. 그러라고 옮기기 전에 먼저 썼다.
 import { fireEvent } from '@testing-library/react-native'
-import { Linking } from 'react-native'
 
 import { useAuthStore } from '../../../features/auth/store'
+import { openInAppBrowser } from '../../../native/browser'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { DevelopmentStageKeyModal } from '../DevelopmentStageKeyModal'
 import { GUIDE_URL } from '../api-key-links'
+
+jest.mock('../../../native/browser', () => ({ openInAppBrowser: jest.fn() }))
 
 let acknowledgeDevelopmentStageKey: jest.Mock
 
 beforeEach(() => {
   acknowledgeDevelopmentStageKey = jest.fn()
   useAuthStore.setState({ developmentStageBlocked: false, acknowledgeDevelopmentStageKey })
-  jest.spyOn(Linking, 'openURL').mockResolvedValue(true)
 })
 
 afterEach(() => {
-  jest.restoreAllMocks()
+  jest.clearAllMocks()
 })
 
 describe('DevelopmentStageKeyModal', () => {
@@ -49,17 +50,17 @@ describe('DevelopmentStageKeyModal', () => {
       await fireEvent.press(getByText('다시 입력하기'))
 
       expect(acknowledgeDevelopmentStageKey).toHaveBeenCalledTimes(1)
-      expect(Linking.openURL).not.toHaveBeenCalled()
+      expect(openInAppBrowser).not.toHaveBeenCalled()
     })
 
     // 발급 안내는 도움말이라 버튼 아래 인라인 링크로 내려간다. 폼이 이미 쓰는 주소와 같은 것을
-    // 써야 한다. 두 벌이 되면 안내 사이트를 옮기는 날 한쪽만 따라간다.
-    it('발급 안내 링크는 폼과 같은 주소로 나간다', async () => {
+    // 같은 방식으로 열어야 한다. 두 벌이 되면 안내 사이트를 옮기는 날 한쪽만 따라간다.
+    it('발급 안내 링크는 폼과 같은 주소를 인앱 브라우저로 연다', async () => {
       const { getByText } = await renderOverlay(<DevelopmentStageKeyModal />)
 
       await fireEvent.press(getByText('발급 방법 자세히 보기'))
 
-      expect(Linking.openURL).toHaveBeenCalledWith(GUIDE_URL)
+      expect(openInAppBrowser).toHaveBeenCalledWith(GUIDE_URL)
       expect(acknowledgeDevelopmentStageKey).not.toHaveBeenCalled()
     })
 

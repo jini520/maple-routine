@@ -1,8 +1,8 @@
-# ADR-025+068 넥슨 로그인
+# ADR-025+068+083 넥슨 로그인
 
 > 🟢 유효
 > 옛 번호: ADR-296 · ADR-318 · ADR-320 결정 3 · 4 · ADR-321 · ADR-334 결정 1 · 2 · 3 · 4
-> 관련 소스: `features/auth/nexon-login.ts` · `features/auth/prune-covered-keys.ts` · `features/auth/nexon-login-enabled.ts` · `app/auth/SignInScreen.tsx` · `components/molecules/NexonLoginButton/` · `lib/nexon-credential.ts` · `lib/covered-keys.ts` · `nexon/developer-keys.ts` · `server/nexon-auth.ts` · `storage/api-key.ts`
+> 관련 소스: `features/auth/nexon-login.ts` · `features/auth/prune-covered-keys.ts` · `features/auth/nexon-login-enabled.ts` · `app/auth/SignInScreen.tsx` · `components/molecules/NexonLoginButton/` · `native/browser.ts` · `lib/nexon-credential.ts` · `lib/covered-keys.ts` · `nexon/developer-keys.ts` · `server/nexon-auth.ts` · `storage/api-key.ts`
 
 ## 배경
 
@@ -181,18 +181,39 @@ API 키    API 키로 시작하기                        15px semibold        �
 더 있으면 무엇을 먼저 눌러야 하는지 색으로 구분되지 않는다. `API 키 발급 방법 보기` 도 버튼이 아니라 글자
 링크로 둔다.
 
-### 결정 8. 로그인 화면의 바깥 링크 셋은 인앱 브라우저로 연다
+### 결정 8. 앱이 여는 웹 주소는 인앱 브라우저로 연다 (사용자 지정)
 
-`게임 데이터 활용 로그인이란?` · `openapi.nexon.com에서 확인` · `API 키 발급 방법 보기` 세 링크는
-`native/browser.ts` 의 `openInAppBrowser` 로 연다. 그 안에서 `expo-web-browser` 의 `openBrowserAsync` 를
-부른다. 같은 크기와 색의 링크 셋 가운데 하나는 앱을 떠나고 둘은 떠나지 않으면, 누르기 전에는 어느 쪽인지 알
-수 없다. 그래서 한 화면에서는 같은 방식으로 연다.
+웹 주소(`https://`)를 여는 링크는 모두 `native/browser.ts` 의 `openInAppBrowser` 로 연다. 그 안에서
+`expo-web-browser` 의 `openBrowserAsync` 를 부른다. iOS 는 SFSafariViewController, 안드로이드는 Chrome Custom
+Tabs 다. 같은 크기와 색의 링크 가운데 어떤 것은 앱을 떠나고 어떤 것은 떠나지 않으면, 누르기 전에는 어느 쪽인지
+알 수 없다. 그래서 앱 전체에서 같은 방식으로 연다.
 
+| 링크 | 파일 |
+|---|---|
+| `게임 데이터 활용 로그인이란?` | `app/auth/SignInScreen.tsx` |
+| `openapi.nexon.com에서 확인` · `API 키 발급 방법 보기` | `app/auth/ApiKeyForm.tsx` |
+| `발급 방법 자세히 보기` | `app/auth/DevelopmentStageKeyModal.tsx` |
+| 개인정보 처리방침 | `app/settings/SettingsAboutScreen.tsx` |
+| 공지의 `자세히 보기` · 공지 본문 안 링크 | `app/settings/SettingsNoticeDetailScreen.tsx` · `NoticeBlocks.tsx` |
+
+- 웹 주소가 아닌 것은 인앱 브라우저가 열 수 없어 그대로 `Linking` 으로 연다. `문의하기`(`mailto:`) ·
+  `개발자 응원하기(앱 리뷰)`(스토어 앱) · 알림 설정의 앱 설정 이동(`Linking.openSettings()`) · 스토어 업데이트
+  이동이다.
+- 인앱 브라우저를 못 열면 시스템 브라우저(`Linking.openURL`)로 넘긴다. 안드로이드에 Custom Tabs 를 받는 브라우저가
+  없으면 `openBrowserAsync` 가 거절하는데, 그대로 삼키면 눌러도 아무 일이 안 일어난다. 시스템 브라우저도 못 열면
+  조용히 끝난다. 화면은 그대로 서 있어야 해서다.
+- iOS 에서 창이 이미 떠 있으면 `openBrowserAsync` 는 거절하지 않고 `locked` 로 끝난다. 그래서 두 번 눌러도 Safari 가
+  따로 열리지 않는다.
+- 창의 상단 막대는 지금 테마의 `bg`(`toolbarColor`), 버튼은 `primaryInk`(`controlsColor`)로 칠한다. 앱 머리와 같은
+  바탕이라 창이 앱의 하위 화면처럼 이어져 보인다. 테마는 누를 때의 것을 쓴다.
+- 안드로이드는 상단 막대 색이 바뀌지 않는다. `expo-web-browser` 57.0.3 의 안드로이드 코드가 `toolbarColor` 를 상단
+  막대가 아니라 보조 막대 색(`setSecondaryToolbarColor`)으로 넣기 때문이다. 패치는 하지 않았다(사용자 지정). 라이브러리를
+  고치면 네이티브 지문이 바뀌어 OTA 로 낼 수 없다.
+- 창이 열리지 않았을 때의 오류 화면은 우리가 그리지 않는다. 오프라인이면 인앱 브라우저가 자기 오류 페이지를 띄운다.
 - `app/` 에서 `expo-web-browser` 를 직접 부르지 않고 `native/` 어댑터를 거친다([[ADR-004]]).
 - 바깥 화살표 아이콘(`ExternalLinkIcon`)은 그대로 둔다. 없으면 링크라는 표시가 색 하나만 남는데,
   `primary-ink` 는 밝은 테마에서 바탕과의 대비가 낮아 누를 수 있다는 것이 잘 보이지 않는다.
 - 링크에는 `role="link"` 를 준다. 인앱 브라우저로 열어도 목적지는 웹 문서라서 스크린리더가 링크로 읽어야 한다.
-- 적용 범위는 로그인 화면뿐이다. 설정과 공지의 링크는 그대로 `Linking.openURL` 로 시스템 브라우저를 연다.
 
 ### 결정 9. 넥슨 로그인 입구는 상수 하나로 끄고 켠다. 지금은 켜져 있다
 
@@ -259,6 +280,7 @@ API 키    API 키로 시작하기                        15px semibold        �
 | `app/settings/__tests__/SettingsScreen.test.tsx` | 결정 6 · 9: 더보기 버튼이 로그인이 없을 때만 보이고, 입구가 꺼져 있으면 보이지 않는지 본다 |
 | `app/auth/__tests__/SignInScreen.test.tsx` | 결정 7: 머리 두 줄, 넥슨 블록이 키 블록보다 위에 있는지, 키 블록이 저장된 키가 있어도 접혀 있는지 본다. 결정 8: 소개 링크가 인앱 브라우저로 열리는지 본다. 결정 9: 입구가 꺼져 있으면 넥슨 블록이 없고 머리 문구가 바뀌며 키 블록이 펼쳐지는지 본다 |
 | `app/auth/__tests__/ApiKeyForm.test.tsx` | 결정 7: 처음에 접혀 있는지, 누를 때마다 펼치고 접는지, `collapsible` 이 `false` 면 펼친 채 누를 수 없는지 본다. 결정 8: 두 링크가 인앱 브라우저로 정한 주소를 열고 링크로 읽히는지 본다 |
+| `native/__tests__/browser.test.ts` | 결정 8: 창에 지금 테마의 색을 넘기는지, 못 열면 시스템 브라우저로 넘기는지, 그것도 못 열면 거절이 새지 않는지 본다 |
 | `app/settings/__tests__/SettingsAccountDataScreen.test.tsx` | 결정 10: 로그아웃 줄이 로그인이 있을 때만 보이는지, 확인을 받은 뒤에만 로그인을 지우는지 본다 |
 
 ## 번호 기록
@@ -266,3 +288,5 @@ API 키    API 키로 시작하기                        15px semibold        �
 - ADR-025 (2026-10-19): 옛 ADR-296 · 318 · 320 · 321 · 334 를 합쳐 처음 작성
 - ADR-068 (2026-10-19): 결정 2 에 401 · 403 을 받은 개발자 키도 빼는 것과, 개발자 키의 키 실패를 `network` 로
   보는 규칙을 더했다
+- ADR-083 (2026-10-23): 결정 8 을 로그인 화면에서 앱 전체의 웹 주소로 넓혔다. 못 열면 시스템 브라우저로 넘기고, 창 색을
+  테마에 맞춘다(#634)

@@ -163,9 +163,10 @@ chevron 이 있으면 누를 때 무언가 열리고, chevron 이 없는 위험 
 
 - `AppUpdateSection` 이 `현재 버전` · `상태` 표시 행과 `업데이트 확인` 버튼을 그린다. 화면 제목이 이미 `앱 정보` 라서
   카드가 스스로 제목을 그리지 않는다. 상태 문구는 `최신 버전입니다` 처럼 무엇이 최신인지 문장 안에서 읽히게 쓴다.
-- 개인정보 처리방침 행은 `SettingsPrivacy` 를 push 한다. 이 화면은 `mapleroutine.store/privacy` 를 `WebView` 로 보여 준다.
-  앱 안에 사본을 두지 않는다. 법적 문서가 두 벌이 되기 때문이다.
-- 즉시 실패는 `onError` 가 잡고, 응답 없이 멈춘 경우는 8초 뒤 실패로 본다. 실패하면 `브라우저로 열기` 를 준다.
+- 개인정보 처리방침 행은 `mapleroutine.store/privacy`(`PRIVACY_URL`)를 인앱 브라우저로 연다([[ADR-025]] 결정 8).
+  앱을 떠나지 않고 사이트 원본을 그대로 보여 준다. 앱 안에 사본을 두지 않는 것은 법적 문서가 두 벌이 되기 때문이다.
+- 행은 외부 링크 행(`SettingsLinkRow`)이 아니라 chevron 행(`SettingsRow`)이다. `SettingsLinkRow` 는 앱을 떠나는 링크에
+  쓰는데, 인앱 브라우저는 앱 위에 뜨고 닫으면 `앱 정보` 로 돌아온다.
 - Play 정책은 앱 안에 링크만 있으면 되고, 첫 화면에 둘 필요는 없다. 설정에서 두 번 누르면 열린다.
 
 ### 결정 9. 문의하기는 메일 앱을 연다. 서버로 보내지 않는다 (사용자 지정)
@@ -294,8 +295,7 @@ Preferences `lastRunBundleVersion` 과 지금 번들 버전을 비교한다(`con
 | `app/settings/__tests__/SettingsRow.test.tsx` · `SettingsLinkRow.test.tsx` | 결정 5: 배지와 chevron 이 함께 나오는지, 위험 색, 외부 링크가 주소를 열고 실패를 알리는지, 두 행의 글자가 같은지 본다 |
 | `app/settings/__tests__/SettingsAccountDataScreen.test.tsx` | 결정 7: 위험 행 둘이 한 카드에 chevron 없이 있는지, 넥슨 로그아웃이 보이는 조건과 확인, 고른 그룹을 넘기는지, 연결 해제가 확인을 거쳐 부르는지 본다 |
 | `app/settings/__tests__/DisconnectConfirm.test.tsx` | 결정 7: 버튼과 바깥 누름이 맞는 콜백을 부르는지, 처리 중 대기 상태를 본다 |
-| `app/settings/__tests__/SettingsAboutScreen.test.tsx` · `AppUpdateSection.test.tsx` | 결정 8: 실행 중인 번들 버전, 미지원 상태, 개인정보 처리방침이 하위 화면을 여는지 본다 |
-| `app/settings/__tests__/SettingsPrivacyScreen.test.tsx` | 결정 8: 즉시 실패와 8초 실패, 성공 뒤 타이머가 멈추는지, `브라우저로 열기` 를 본다 |
+| `app/settings/__tests__/SettingsAboutScreen.test.tsx` · `AppUpdateSection.test.tsx` | 결정 8: 실행 중인 번들 버전, 미지원 상태, 개인정보 처리방침이 인앱 브라우저로 열리는지 본다 |
 | `app/settings/__tests__/contact-mail.spec.ts` | 결정 9: 플랫폼별 OS 버전과 모델, 기기 정보 줄, 본문과 인코딩을 본다 |
 | `app/settings/__tests__/store-review-link.spec.ts` | 결정 10: 플랫폼별 리뷰 주소를 본다 |
 | `data/__tests__/release-notes.spec.ts` | 결정 11: 버전과 날짜 형식, 중복 없음, 내림차순, 카테고리, 빈 항목 없음, 최신 노트의 `highlights` 를 본다 |
@@ -309,3 +309,4 @@ Preferences `lastRunBundleVersion` 과 지금 번들 버전을 비교한다(`con
 
 - ADR-052 (2026-10-19): 옛 ADR-118 · 119 · 125 · 126 · 248 · 266 · 281 · 282 · 286 · 287 의 화면 결정을 합쳐 처음 작성
 - (2026-10-21) 결정 4 · 5 에 글자 크기 행을 더했다(#633)
+- (2026-10-23) 결정 8 의 개인정보 처리방침을 `WebView` 화면에서 인앱 브라우저로 바꾸고 `SettingsPrivacy` 를 걷었다(#634)

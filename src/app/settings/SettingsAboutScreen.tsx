@@ -1,5 +1,5 @@
 /**
- * 설정 하위 페이지 `앱 정보`. 현재 버전·상태·업데이트 확인과 개인정보 처리방침으로 가는 줄.
+ * 설정 하위 페이지 `앱 정보`. 현재 버전·상태·업데이트 확인과 개인정보 처리방침을 여는 줄.
  *
  * 골격은 다른 하위 페이지와 같다(`ScreenScroll` + `PageHeader` + 좌측 `ArrowLeft`).
  *
@@ -14,6 +14,7 @@ import { useEffect } from 'react'
 import { View } from 'react-native'
 
 import { useLiveUpdateStore } from '../../features/live-update/store'
+import { openInAppBrowser } from '../../native/browser'
 
 import packageJson from '../../../package.json'
 import { Card, Text } from '../../components/atoms'
@@ -24,6 +25,9 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { AppUpdateSection } from './AppUpdateSection'
 import { SettingsRow } from './SettingsRow'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
+
+/** 개인정보 처리방침 원본. 저장소 루트의 `PRIVACY.md` 를 사이트가 그린 것이다. */
+export const PRIVACY_URL = 'https://mapleroutine.store/privacy'
 
 export function SettingsAboutScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
@@ -64,16 +68,12 @@ export function SettingsAboutScreen(): React.JSX.Element {
           다만 요구하는 것은 "앱 안에 링크"이지 "첫 화면에 링크"가 아니라, 설정 고지 문구
           사이에서 이 화면의 행으로 내려왔다.
 
-          **앱을 벗어나지 않는다**. 사본을 만드는 것이 아니라 같은 사이트를
-          싣을 뿐이라 "법적 문서를 두 벌로 만들지 않는다"는 원칙은 그대로다. 그래서 외부 링크
-          행(`SettingsLinkRow`)이 아니라 **하위 페이지로 미는 행**이고, 이 앱에서 스택이 2단이
-          되는 자리가 여기뿐이다.
+          **앱을 벗어나지 않는다**. 사본을 두지 않고 사이트 원본을 인앱 브라우저로 열 뿐이라
+          "법적 문서를 두 벌로 만들지 않는다"는 원칙은 그대로다. 창을 닫으면 이 화면으로 돌아오므로
+          외부 링크 행(`SettingsLinkRow`)이 아니라 chevron 행이다.
         */}
         <Card className="px-6">
-          <SettingsRow
-            label="개인정보 처리방침"
-            onPress={() => navigation.navigate('SettingsPrivacy')}
-          />
+          <SettingsRow label="개인정보 처리방침" onPress={() => openInAppBrowser(PRIVACY_URL)} />
         </Card>
       </View>
     </ScreenScroll>

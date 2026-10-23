@@ -11,7 +11,7 @@
  * `공지를 찾을 수 없습니다` 를 그리고, 사본과 배너의 닫은 기록에서 뺀다.
  */
 import { useEffect, useState } from 'react'
-import { Linking, Pressable, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import {
   Card,
@@ -27,6 +27,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { formatNoticeDate } from '../../features/notice/format'
 import { forgetNotice, readNoticeCopy } from '../../features/notice/notice-copy'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
+import { openInAppBrowser } from '../../native/browser'
 import { NoticeBlocks } from './NoticeBlocks'
 import { fetchNoticeDetail } from '../../features/notice/notice-feed'
 import type { Notice } from '../../types/notice'
@@ -124,9 +125,7 @@ export function SettingsNoticeDetailScreen(props: {
               <Pressable
                 role="link"
                 aria-label="자세히 보기"
-                onPress={() => {
-                  void Linking.openURL(notice.link as string).catch(() => undefined)
-                }}
+                onPress={() => openInAppBrowser(notice.link as string)}
                 className="flex-row items-center gap-1.5"
               >
                 <Text className="text-sm font-semibold text-primary">자세히 보기</Text>

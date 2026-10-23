@@ -157,7 +157,6 @@ export type RootStackParamList = {
   SettingsReleaseNoteGuide: FeatureGuideParams
   SettingsAccountData: undefined
   SettingsAbout: undefined
-  SettingsPrivacy: undefined
   /**
    * 아이템 분배 계산기. 유틸리티의 첫 도구다.
    *
@@ -235,10 +234,6 @@ export interface RouteRow {
 
 /**
  * 웹 17행 + RN 6행. 행 수와 내용을 테스트가 고정한다. 화면이 늘면 여기도 함께 움직인다.
- *
- * `/settings/about/privacy` 는 `about` 의 자식이다. `/settings/privacy` 로 두면 about 이 즉시
- * 사라진 자리에 개인정보 처리방침이 밀려 들어와 밀려 나가는 화면 없이 배경만 바뀌는 프레임이
- * 보인다. 이 앱에서 스택이 2단이 되는 자리는 여기뿐이다.
  */
 export const ROUTE_TABLE: readonly RouteRow[] = [
   { path: '/', screen: 'ContentScreen', target: { kind: 'initial', route: 'Content' }, origin: 'web' },
@@ -315,12 +310,6 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     origin: 'web',
   },
   { path: '/settings/about', screen: 'SettingsAboutScreen', target: { kind: 'push', route: 'SettingsAbout' }, origin: 'web' },
-  {
-    path: '/settings/about/privacy',
-    screen: 'SettingsPrivacyScreen',
-    target: { kind: 'push', route: 'SettingsPrivacy' },
-    origin: 'web',
-  },
   // 여기부터 RN 에서 새로 생긴 화면. `path` 는 대조용이 아니라 이름표다. 탭 셋은 전부 진짜
   // 화면이다. today 는 위젯 격자 · 유틸리티는 도구 목록 · 가계부는 캘린더. 하위 페이지 둘도
   // 진짜 화면이다.

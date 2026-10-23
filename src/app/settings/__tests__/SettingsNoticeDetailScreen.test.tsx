@@ -4,12 +4,13 @@
 //    것을 그려야 해서다. 서버가 죽으면 사본이 열린다.
 // ② 못 찾는 경우가 정상 경로다. 20건 밖이거나 서버에서 지운 공지일 수 있다.
 // ③ 찾는 중과 없음을 가른다. 합치면 여는 순간 못 찾았다는 문구가 한 프레임 스친다.
-import { waitFor } from '@testing-library/react-native'
+import { fireEvent, waitFor } from '@testing-library/react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { forgetNotice, readNoticeCopy } from '../../../features/notice/notice-copy'
 import { fetchNoticeDetail } from '../../../features/notice/notice-feed'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
+import { openInAppBrowser } from '../../../native/browser'
 import { SettingsNoticeDetailScreen } from '../SettingsNoticeDetailScreen'
 import type { Notice } from '../../../types/notice'
 
@@ -23,6 +24,7 @@ jest.mock('../../../features/notice/notice-feed', () => ({
   __esModule: true,
   fetchNoticeDetail: jest.fn(async () => ({ status: 'failed' })),
 }))
+jest.mock('../../../native/browser', () => ({ openInAppBrowser: jest.fn() }))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({
   __esModule: true,
   useSettingsNavigation: jest.fn(),
@@ -81,13 +83,15 @@ describe('링크', () => {
     expect(view.queryByLabelText('자세히 보기')).toBeNull()
   })
 
-  it('있으면 그린다', async () => {
+  it('있으면 그리고, 누르면 인앱 브라우저로 연다', async () => {
     notices.mockResolvedValue([{ ...점검, link: 'https://example.com' }])
     const view = await renderOverlay(
       <SettingsNoticeDetailScreen route={{ params: { noticeId: 'a' } }} />,
     )
 
-    expect(view.getByLabelText('자세히 보기')).toBeTruthy()
+    fireEvent.press(view.getByLabelText('자세히 보기'))
+
+    expect(openInAppBrowser).toHaveBeenCalledWith('https://example.com')
   })
 })
 

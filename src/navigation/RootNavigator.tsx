@@ -19,7 +19,6 @@ import { SettingsNoticeAlertsScreen } from '../app/settings/SettingsNoticeAlerts
 import { SettingsMvpGradeScreen } from '../app/settings/SettingsMvpGradeScreen'
 import { SettingsMvpGradeHistoryScreen } from '../app/settings/SettingsMvpGradeHistoryScreen'
 import { AppSettingsScreen } from '../app/settings/AppSettingsScreen'
-import { SettingsPrivacyScreen } from '../app/settings/SettingsPrivacyScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
 import { ItemSplitScreen } from '../app/utility/ItemSplitScreen'
 import { BossProfitCalculatorScreen } from '../app/utility/BossProfitCalculatorScreen'
@@ -50,7 +49,6 @@ const STACK_SCREENS = {
   SettingsReleaseNoteGuide: SettingsFeatureGuideScreen,
   SettingsAccountData: SettingsAccountDataScreen,
   SettingsAbout: SettingsAboutScreen,
-  SettingsPrivacy: SettingsPrivacyScreen,
   SettingsCharacters: SettingsCharactersScreen,
   BossManage: BossManageScreen,
   SettingsNotices: SettingsNoticesScreen,

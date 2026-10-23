@@ -17,8 +17,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/SettingsRow.tsx` · `SettingsLinkRow.tsx` · `row-class.ts` · `ValueBadge.tsx` | 누르는 행 둘과 공통 골격 · 현재값 배지 |
 | `app/settings/SettingsAccountDataScreen.tsx` | 계정 및 데이터. 넥슨 로그아웃 · 캐시 데이터 삭제 · 연결 해제 |
 | `app/settings/CacheClearConfirm.tsx` · `DisconnectConfirm.tsx` · `SignOutConfirm.tsx` | 위험 동작 확인 창 |
-| `app/settings/SettingsAboutScreen.tsx` · `AppUpdateSection.tsx` | 앱 정보. 버전 · 상태 · 업데이트 확인 |
-| `app/settings/SettingsPrivacyScreen.tsx` | 개인정보 처리방침. `WebView` |
+| `app/settings/SettingsAboutScreen.tsx` · `AppUpdateSection.tsx` | 앱 정보. 버전 · 상태 · 업데이트 확인 · 개인정보 처리방침 주소(`PRIVACY_URL`) |
 | `app/settings/SettingsReleaseNotesScreen.tsx` | 개발 노트 |
 | `app/settings/SettingsFeatureGuideListScreen.tsx` · `SettingsFeatureGuideScreen.tsx` | 기능 설명 목록과 안내 상세 |
 | `app/settings/contact-mail.ts` · `store-review-link.ts` | 문의 메일 주소 · 스토어 리뷰 주소 |
@@ -68,8 +67,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `SettingsFeatureGuide` · `SettingsReleaseNoteGuide` | 기능 안내 | 목차(마디가 둘 이상일 때) · 이미지 · 문단. 두 라우트가 같은 화면이다 |
 | `SettingsReleaseNotes` | 개발 노트 | 버전마다 기능 → 개선 → 버그 묶음. `사용 중` · `스토어 업데이트 필요` 배지. 안내가 있는 항목만 눌린다 |
 | `SettingsAccountData` | 계정 및 데이터 | 넥슨 로그아웃(로그인이 있을 때) · 캐시 데이터 삭제 · 연결 해제. 모두 위험 색이고 확인 창을 거친다 |
-| `SettingsAbout` | 앱 정보 | 현재 버전 · 상태 · `업데이트 확인` · 개인정보 처리방침 |
-| `SettingsPrivacy` | 개인정보 처리방침 | `mapleroutine.store/privacy` 를 `WebView` 로 보여 준다. 실패하면 `브라우저로 열기` |
+| `SettingsAbout` | 앱 정보 | 현재 버전 · 상태 · `업데이트 확인` · 개인정보 처리방침(`mapleroutine.store/privacy` 를 인앱 브라우저로 연다) |
 
 개발 노트에는 업데이트를 적용하고 다시 시작했을 때 뜨는 `업데이트를 마쳤어요` 안내의 `자세히 보기` 로도 들어갈 수 있다.
 
