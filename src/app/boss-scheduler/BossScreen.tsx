@@ -45,7 +45,7 @@ import {
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
-import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
+import { Segment } from '../../components/molecules/Segment/Segment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 import {
@@ -495,7 +495,8 @@ export function BossScreen(): React.JSX.Element {
               trailing={
                 characters.length > 0 &&
                 selected !== null && (
-                  <TabSegment
+                  <Segment
+                    size="tab"
                     options={PARTY_FILTERS}
                     selected={partyFilter}
                     onSelect={setPartyFilter}

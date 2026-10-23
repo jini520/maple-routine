@@ -12,11 +12,17 @@ const SIZES = {
   lg: { button: 'h-9 w-9', icon: 'h-3.5 w-3.5', value: 'w-10 text-19 font-bold' },
 } as const
 
-/** 색 조합 둘. `inverted` 는 연한 `bg` 패널 위용이다. 기본 트랙은 그 패널과 같은 색이라 묻힌다. */
+/** 라이트의 색 조합 둘. `inverted` 는 연한 `bg` 패널 위용이다. 기본 트랙은 그 패널과 같은 색이라 묻힌다. */
 const TONES = {
   default: { track: 'bg-bg', button: 'bg-surface' },
   inverted: { track: 'bg-surface', button: 'bg-bg' },
 } as const
+
+/**
+ * 다크는 바탕과 상관없이 세그먼트와 같은 색이다. 다크의 카드 색은 트랙보다 어두워, 맞바꾸는 두 조합
+ * 모두 버튼이 트랙보다 가라앉는다.
+ */
+const DARK_TONE = { track: 'bg-surface-2', button: 'bg-control-thumb' } as const
 
 /** 버튼이 트랙에서 떠 보이게 하는 옅은 그림자. 테두리를 쓰지 않으므로 이것이 버튼의 경계다. */
 const BUTTON_SHADOW: ShadowLayer = { opacity: 0.3, radius: 1, y: 1 }
@@ -35,7 +41,7 @@ export function Stepper(props: {
   /** 더 못 올라가는 값. 없으면 `+` 를 막지 않는다. */
   max?: number
   size?: keyof typeof SIZES
-  /** 부모 바탕이 `bg` 면 `inverted`. */
+  /** 부모 바탕이 `bg` 면 `inverted`. 라이트에서만 듣는다. */
   tone?: keyof typeof TONES
   /** 주면 가운데 숫자를 눌러 직접 칠 수 있다. */
   onPressValue?: () => void
@@ -43,8 +49,8 @@ export function Stepper(props: {
   testID?: string
 }): React.JSX.Element {
   const size = SIZES[props.size ?? 'md']
-  const tone = TONES[props.tone ?? 'default']
   const { definition } = useThemeAppearance()
+  const tone = definition.mode === 'dark' ? DARK_TONE : TONES[props.tone ?? 'default']
   const min = props.min ?? 1
   const canDecrease = props.value > min
   const canIncrease = props.max === undefined || props.value < props.max

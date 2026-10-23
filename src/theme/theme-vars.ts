@@ -125,6 +125,49 @@ export function resolveStatsSection(definition: ThemeDefinition): string {
 }
 
 /**
+ * 세그먼트의 고른 칸 · 스테퍼 버튼(`thumb`)과 세그먼트의 고르지 않은 글자(`inkOff`).
+ *
+ * 둘 다 트랙(`surface-2`)에서 계산한다. 고른 칸은 라이트에서 카드 색이고, 다크에서는 트랙에
+ * 글자색을 섞어 트랙보다 밝게 띄운다. 다크의 카드 색은 트랙보다 어두워 고른 칸이 묻힌다.
+ * 고르지 않은 글자는 흐린 글자를 트랙 쪽으로 반쯤 섞는다. `textMuted` 가 밝은 테마에서 고르지
+ * 않은 칸이 고른 칸만큼 도드라졌다. 비율은 시안에서 사용자가 고른 값이다(2026-10-23).
+ *
+ * 시트 스코프는 올린 표면으로 다시 계산한다. 루트 값이 내려오면 다크 시트에서 트랙과 붙는다.
+ */
+export const CONTROL_TOKENS = {
+  thumb: 'control-thumb',
+  inkOff: 'control-ink-off',
+} as const
+
+export interface ControlColors {
+  thumb: string
+  inkOff: string
+}
+
+function controlColorsOf(
+  mode: ThemeDefinition['mode'],
+  surface: string,
+  track: string,
+  definition: ThemeDefinition,
+): ControlColors {
+  return {
+    thumb: mode === 'light' ? surface : mixSrgb(track, definition.text, 0.88),
+    inkOff: mixSrgb(definition.textMuted, track, 0.55),
+  }
+}
+
+export function resolveControlColors(definition: ThemeDefinition): ControlColors {
+  return controlColorsOf(definition.mode, definition.surface, definition.surface2, definition)
+}
+
+function controlVariables(colors: ControlColors): Record<string, string> {
+  return {
+    [toColorVariableName(CONTROL_TOKENS.thumb)]: colors.thumb,
+    [toColorVariableName(CONTROL_TOKENS.inkOff)]: colors.inkOff,
+  }
+}
+
+/**
  * 결산 안내 줄의 색 넷. **테마를 안 따라간다.**
  *
  * 앞의 둘(`panel-border` · `card-body`)과 같은 자리이지만 하는 일이 다르다. 저쪽은 테마 값에서
@@ -189,6 +232,7 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
   variables[toColorVariableName(PANEL_BORDER_TOKEN)] = resolvePanelBorder(definition)
   variables[toColorVariableName(CARD_BODY_TOKEN)] = resolveCardBody(definition)
   variables[toColorVariableName(STATS_SECTION_TOKEN)] = resolveStatsSection(definition)
+  Object.assign(variables, controlVariables(resolveControlColors(definition)))
 
   const settlement = resolveSettlementColors(definition)
   variables[toColorVariableName(SETTLEMENT_TOKENS.tint)] = settlement.tint
@@ -231,9 +275,16 @@ export function buildSheetScopeVariables(definition: ThemeDefinition): Record<st
   const lift = (hex: string): string =>
     definition.mode === 'dark' ? withLightness(hex, hexToOklch(hex).l + SHEET_LIFT) : hex
 
-  return Object.fromEntries(
+  const lifted = Object.fromEntries(
     SHEET_SCOPE_TOKENS.map((token) => [toColorVariableName(token), lift(definition[token])]),
   )
+  const controls = controlColorsOf(
+    definition.mode,
+    lift(definition.surface),
+    lift(definition.surface2),
+    definition,
+  )
+  return { ...lifted, ...controlVariables(controls) }
 }
 
 /**

@@ -50,7 +50,7 @@ import {
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
+import { Segment } from '../../components/molecules/Segment/Segment'
 import { tapFeedback } from '../../native/haptics'
 import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -349,7 +349,8 @@ export function BossProfitScreen(): React.JSX.Element {
             >
               보스 관리
             </Button>
-            <TabSegment
+            <Segment
+              size="tab"
               options={BOSS_PROFIT_TABS}
               selected={tab}
               onSelect={setTab}
