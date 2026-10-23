@@ -22,6 +22,7 @@ import type { CategoryTotal, StatsTotals } from '../../../features/stats/aggrega
 import { useAnchoredPopover } from '../../../hooks/useAnchoredPopover'
 import { formatMesoCompact, formatMesoSigned } from '../../../lib/cashbook/meso-compact'
 import { Svg } from '../../../lib/nativewind-interop'
+import { semiDonutGeometry } from '../../../lib/today/semi-donut'
 import { useThemeAppearance } from '../../../theme/context'
 import type { WeeklyIncomeCharacterView, WeeklyIncomeView } from '../view-model'
 import type { WidgetProps } from './types'
@@ -100,53 +101,21 @@ function rankOf(characters: readonly WeeklyIncomeCharacterView[], mode: Mode): W
     .slice(0, RANK_LABELS.length)
 }
 
-/** 반원 띠 하나. 각은 12시가 0 이고 왼쪽 끝이 −π/2, 오른쪽 끝이 π/2 다 */
-function arcPath(cx: number, cy: number, outer: number, inner: number, from: number, to: number): string {
-  const point = (radius: number, angle: number): string =>
-    `${(cx + radius * Math.sin(angle)).toFixed(2)} ${(cy - radius * Math.cos(angle)).toFixed(2)}`
-  return `M${point(outer, from)} A${outer} ${outer} 0 0 1 ${point(outer, to)} L${point(inner, to)} A${inner} ${inner} 0 0 0 ${point(inner, from)} Z`
-}
-
 /**
- * 모서리가 둥근 반원 도넛.
- *
- * 조각을 `CORNER` 만큼 안으로 줄여 그리고 같은 색의 `CORNER × 2` 굵기 선을 둘러 원래 크기로 되돌린다.
- * 선의 이음이 `round` 라 모서리가 둥글어진다. 조각 사이 틈은 각도로 뺀다.
+ * 모서리가 둥근 반원 도넛. 경로는 `semiDonutGeometry` 가 만든다. 같은 색의 `CORNER × 2` 굵기 선을 둘러 모서리를 둥글게 한다.
  */
 function SemiDonut(props: { slices: readonly Slice[]; trackColor: string; children: React.ReactNode }): React.JSX.Element {
-  const { width, thickness } = DONUT
-  const outer = width / 2 - 2
-  const inner = outer - thickness
-  const cx = width / 2
-  const cy = outer + 2
-  const mid = (outer + inner) / 2
-  const total = props.slices.reduce((sum, slice) => sum + slice.meso, 0)
-  const edge = CORNER / mid
-  const pad = (CORNER + SLICE_GAP / 2) / mid
-
-  let angle = -Math.PI / 2
-  const drawn =
-    total > 0
-      ? props.slices.flatMap((slice, index) => {
-          const span = (slice.meso / total) * Math.PI
-          const from = angle + (index === 0 ? edge : pad)
-          const to = angle + span - (index === props.slices.length - 1 ? edge : pad)
-          angle += span
-          return to > from ? [{ slice, d: arcPath(cx, cy, outer - CORNER, inner + CORNER, from, to) }] : []
-        })
-      : []
+  const shape = semiDonutGeometry(
+    props.slices.map((slice) => slice.meso),
+    { width: DONUT.width, thickness: DONUT.thickness, corner: CORNER, gap: SLICE_GAP },
+  )
+  const drawn = props.slices.flatMap((slice, index) => (shape.paths[index] ? [{ slice, d: shape.paths[index] }] : []))
 
   return (
-    <View style={{ width, height: cy + 2 }}>
-      <Svg width={width} height={cy + 2} viewBox={`0 0 ${width} ${cy + 2}`}>
+    <View style={{ width: DONUT.width, height: shape.height }}>
+      <Svg width={DONUT.width} height={shape.height} viewBox={`0 0 ${DONUT.width} ${shape.height}`}>
         {drawn.length === 0 ? (
-          <Path
-            d={arcPath(cx, cy, outer - CORNER, inner + CORNER, -Math.PI / 2 + edge, Math.PI / 2 - edge)}
-            fill={props.trackColor}
-            stroke={props.trackColor}
-            strokeWidth={CORNER * 2}
-            strokeLinejoin="round"
-          />
+          <Path d={shape.track} fill={props.trackColor} stroke={props.trackColor} strokeWidth={CORNER * 2} strokeLinejoin="round" />
         ) : (
           drawn.map(({ slice, d }) => (
             <Path
