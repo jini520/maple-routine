@@ -24,6 +24,19 @@ describe('semiDonutGeometry', () => {
     expect(바깥끝점(paths[1])).toEqual([cx + outer, cy])
   })
 
+  // 순 수익에서 지출이 0 이면 [수입, 0] 이다. 0 인 조각을 끝 조각으로 치면 수입 조각이 오른쪽 끝에서 틈만큼 짧아져 기운다.
+  it.each([
+    ['뒤가 0', [5, 0], 0],
+    ['앞이 0', [0, 5], 1],
+    ['앞뒤가 0', [0, 5, 0], 1],
+  ])('값이 0 인 조각은 빼고 계산한다: %s', (_이름, values, 그린조각) => {
+    const { paths, cx, cy, outer } = semiDonutGeometry(values, 치수)
+
+    expect(paths.filter((path) => path !== '')).toHaveLength(1)
+    expect(시작점(paths[그린조각])).toEqual([cx - outer, cy])
+    expect(바깥끝점(paths[그린조각])).toEqual([cx + outer, cy])
+  })
+
   it('조각이 없을 때 그리는 바탕 반원도 양 끝이 수평선이다', () => {
     const { track, cx, cy, outer } = semiDonutGeometry([], 치수)
 
