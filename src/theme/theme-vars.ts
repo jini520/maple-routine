@@ -9,7 +9,7 @@
  * NativeWind 는 못 찾은 변수를 버린다.
  */
 
-import { hexToOklch, oklchToHex, parseHex, toHex, withLightness } from '../lib/color'
+import { hexToOklch, oklchToHex, parseHex, toHex, withAlpha, withLightness } from '../lib/color'
 import { THEME_TOKEN_KEYS, deriveMediaScope } from '../lib/theme/theme-derive'
 import type { ThemeDefinition } from '../types/theme'
 
@@ -125,43 +125,43 @@ export function resolveStatsSection(definition: ThemeDefinition): string {
 }
 
 /**
- * 세그먼트의 고른 칸 · 스테퍼 버튼(`thumb`)과 세그먼트의 고르지 않은 글자(`inkOff`).
+ * 세그먼트 · 스테퍼의 트랙(`track`), 고른 칸 · 버튼(`thumb`), 세그먼트의 고르지 않은 글자(`inkOff`).
  *
- * 둘 다 트랙(`surface-2`)에서 계산한다. 고른 칸은 라이트에서 카드 색이고, 다크에서는 트랙에
- * 글자색을 섞어 트랙보다 밝게 띄운다. 다크의 카드 색은 트랙보다 어두워 고른 칸이 묻힌다.
- * 고르지 않은 글자는 흐린 글자를 트랙 쪽으로 반쯤 섞는다. `textMuted` 가 밝은 테마에서 고르지
- * 않은 칸이 고른 칸만큼 도드라졌다. 비율은 시안에서 사용자가 고른 값이다(2026-10-23).
+ * 트랙은 글자색 반투명이라 화면 바탕 · 카드 · 카드 안쪽 칸 어디에 놓여도 그 바탕보다 파여 보인다. 그래서 놓이는 자리마다
+ * 색을 따로 두지 않는다. 고른 칸은 라이트에서 카드 색이고(반투명 흰색은 밝은 트랙 위에서 안 뜬다), 다크에서 글자색
+ * 반투명이다(다크의 카드 색은 트랙보다 어둡다). 고르지 않은 글자는 흐린 글자를 카드 색 쪽으로 반쯤 섞는다. `textMuted` 가
+ * 밝은 테마에서 고르지 않은 칸이 도드라졌다. 비율은 시안에서 사용자가 고른 값이다(2026-10-23).
  *
- * 시트 스코프는 올린 표면으로 다시 계산한다. 루트 값이 내려오면 다크 시트에서 트랙과 붙는다.
+ * 시트 스코프는 올린 카드 색으로 다시 계산한다.
  */
 export const CONTROL_TOKENS = {
+  track: 'control-track',
   thumb: 'control-thumb',
   inkOff: 'control-ink-off',
 } as const
 
 export interface ControlColors {
+  track: string
   thumb: string
   inkOff: string
 }
 
-function controlColorsOf(
-  mode: ThemeDefinition['mode'],
-  surface: string,
-  track: string,
-  definition: ThemeDefinition,
-): ControlColors {
+function controlColorsOf(definition: ThemeDefinition, surface: string): ControlColors {
+  const light = definition.mode === 'light'
   return {
-    thumb: mode === 'light' ? surface : mixSrgb(track, definition.text, 0.88),
-    inkOff: mixSrgb(definition.textMuted, track, 0.55),
+    track: withAlpha(definition.text, light ? 0.04 : 0.07),
+    thumb: light ? surface : withAlpha(definition.text, 0.18),
+    inkOff: mixSrgb(definition.textMuted, surface, 0.55),
   }
 }
 
 export function resolveControlColors(definition: ThemeDefinition): ControlColors {
-  return controlColorsOf(definition.mode, definition.surface, definition.surface2, definition)
+  return controlColorsOf(definition, definition.surface)
 }
 
 function controlVariables(colors: ControlColors): Record<string, string> {
   return {
+    [toColorVariableName(CONTROL_TOKENS.track)]: colors.track,
     [toColorVariableName(CONTROL_TOKENS.thumb)]: colors.thumb,
     [toColorVariableName(CONTROL_TOKENS.inkOff)]: colors.inkOff,
   }
@@ -278,13 +278,7 @@ export function buildSheetScopeVariables(definition: ThemeDefinition): Record<st
   const lifted = Object.fromEntries(
     SHEET_SCOPE_TOKENS.map((token) => [toColorVariableName(token), lift(definition[token])]),
   )
-  const controls = controlColorsOf(
-    definition.mode,
-    lift(definition.surface),
-    lift(definition.surface2),
-    definition,
-  )
-  return { ...lifted, ...controlVariables(controls) }
+  return { ...lifted, ...controlVariables(controlColorsOf(definition, lift(definition.surface))) }
 }
 
 /**

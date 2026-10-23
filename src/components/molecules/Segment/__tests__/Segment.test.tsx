@@ -76,6 +76,10 @@ describe('Segment', () => {
     expect(flattenStyle(view.getByTestId('segment-thumb-fill').props.style).backgroundColor).toBe(
       resolveControlColors(기본테마).thumb,
     )
+    // 트랙은 반투명이라 화면 바탕 · 카드 · 카드 안쪽 칸 어디서나 파여 보인다.
+    expect(flattenStyle(view.getByTestId('segment').props.style).backgroundColor).toBe(
+      resolveControlColors(기본테마).track,
+    )
   })
 
   // 상자가 도착하기를 기다리면 누른 조각이 200ms 동안 안 눌린 것처럼 보인다.

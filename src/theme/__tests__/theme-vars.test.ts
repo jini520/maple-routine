@@ -58,6 +58,7 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
       [PANEL_BORDER_VARIABLE]: panelBorder,
       [toColorVariableName(CARD_BODY_TOKEN)]: cardBody,
       [toColorVariableName(STATS_SECTION_TOKEN)]: statsSection,
+      [toColorVariableName(CONTROL_TOKENS.track)]: controlTrack,
       [toColorVariableName(CONTROL_TOKENS.thumb)]: controlThumb,
       [toColorVariableName(CONTROL_TOKENS.inkOff)]: controlInkOff,
       ...rest
@@ -70,7 +71,7 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
     expect(panelBorder).toBe(resolvePanelBorder(definition))
     expect(cardBody).toBe(resolveCardBody(definition))
     expect(statsSection).toBe(resolveStatsSection(definition))
-    expect({ thumb: controlThumb, inkOff: controlInkOff }).toEqual(resolveControlColors(definition))
+    expect({ track: controlTrack, thumb: controlThumb, inkOff: controlInkOff }).toEqual(resolveControlColors(definition))
     expect(tokens).toEqual(
       Object.fromEntries(THEME_TOKEN_KEYS.map((token) => [toColorVariableName(token), definition[token]])),
     )
@@ -171,8 +172,12 @@ describe('`tailwind.config.js` 색 스케일', () => {
  */
 describe('시트 스코프. 다크에서만 표면 계열을 한 칸 올린다', () => {
   const SCOPED = ['--color-bg', '--color-surface', '--color-surface-2', '--color-track'] as const
-  /** 올린 표면에서 다시 계산하는 세그먼트 · 스테퍼 색. 루트 값이 내려오면 다크 시트에서 트랙과 붙는다. */
-  const CONTROL = [toColorVariableName(CONTROL_TOKENS.thumb), toColorVariableName(CONTROL_TOKENS.inkOff)]
+  /** 올린 카드 색에서 다시 계산하는 세그먼트 · 스테퍼 색. */
+  const CONTROL = [
+    toColorVariableName(CONTROL_TOKENS.track),
+    toColorVariableName(CONTROL_TOKENS.thumb),
+    toColorVariableName(CONTROL_TOKENS.inkOff),
+  ]
 
   it.each(THEME_NAMES as readonly ThemeName[])('%s 는 넷과 컨트롤 색을 빠짐없이 다시 선언한다', (name) => {
     expect(Object.keys(buildSheetScopeVariables(getThemeDefinition(name))).sort()).toEqual(
@@ -190,8 +195,9 @@ describe('시트 스코프. 다크에서만 표면 계열을 한 칸 올린다',
       '--color-surface': definition.surface,
       '--color-surface-2': definition.surface2,
       '--color-track': definition.track,
-      [CONTROL[0]!]: resolveControlColors(definition).thumb,
-      [CONTROL[1]!]: resolveControlColors(definition).inkOff,
+      [CONTROL[0]!]: resolveControlColors(definition).track,
+      [CONTROL[1]!]: resolveControlColors(definition).thumb,
+      [CONTROL[2]!]: resolveControlColors(definition).inkOff,
     })
   })
 
@@ -405,41 +411,57 @@ describe('resolveStatsSection', () => {
 })
 
 /**
- * 세그먼트 · 스테퍼의 색. 고른 칸(스테퍼 버튼)과 고르지 않은 글자.
+ * 세그먼트 · 스테퍼의 색. 트랙 · 고른 칸(스테퍼 버튼) · 고르지 않은 글자.
  *
- * 값이 아니라 **관계**를 지킨다. 고른 칸은 트랙보다 떠 보여야 하고(다크에서 카드 색을 쓰면 트랙보다
- * 어두워 묻혔다), 고르지 않은 글자는 흐린 글자보다 트랙에 가까워야 한다(밝은 `textMuted` 테마에서
- * 고르지 않은 칸이 도드라졌다). 시트 안에서도 같아야 한다.
+ * 값이 아니라 **관계**를 지킨다. 트랙은 반투명이라 어디에 놓여도 그 바탕보다 파여 보여야 하고, 고른 칸은 트랙보다
+ * 떠 보여야 한다(다크에서 카드 색을 쓰면 트랙보다 어두워 묻혔다). 고르지 않은 글자는 흐린 글자보다 카드 쪽으로
+ * 물러나야 한다(밝은 `textMuted` 테마에서 고르지 않은 칸이 도드라졌다). 시트 안에서도 같아야 한다.
  */
-describe('컨트롤 색. 고른 칸은 뜨고 고르지 않은 글자는 물러난다', () => {
-  const contrast = (a: string, b: string): number => {
-    const [x, y] = [hexToOklch(a).l, hexToOklch(b).l]
-    return Math.abs(x - y)
+describe('컨트롤 색. 트랙은 파이고 고른 칸은 뜨고 고르지 않은 글자는 물러난다', () => {
+  /** `rgba()` 또는 `#rrggbb` 를 바탕 위에 얹은 결과의 밝기(OKLCH L). */
+  const over = (color: string, under: string): number => {
+    const rgba = /rgba\((\d+), (\d+), (\d+), ([\d.]+)\)/.exec(color)
+    if (rgba === null) return hexToOklch(color).l
+    const [r, g, b, a] = rgba.slice(1).map(Number) as [number, number, number, number]
+    const base = [1, 3, 5].map((i) => parseInt(under.slice(i, i + 2), 16))
+    const hex = [r, g, b]
+      .map((c, i) => Math.round(c * a + base[i]! * (1 - a)).toString(16).padStart(2, '0'))
+      .join('')
+    return hexToOklch(`#${hex}`).l
   }
 
   describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
     const definition = getThemeDefinition(name)
     const sheet = buildSheetScopeVariables(definition)
     const scopes = [
-      ['화면', definition.surface, definition.surface2, resolveControlColors(definition)],
+      ['화면', definition, resolveControlColors(definition)],
       [
         '시트',
-        sheet['--color-surface']!,
-        sheet['--color-surface-2']!,
-        { thumb: sheet[toColorVariableName(CONTROL_TOKENS.thumb)]!, inkOff: sheet[toColorVariableName(CONTROL_TOKENS.inkOff)]! },
+        { ...definition, surface: sheet['--color-surface']!, bg: sheet['--color-bg']! },
+        {
+          track: sheet[toColorVariableName(CONTROL_TOKENS.track)]!,
+          thumb: sheet[toColorVariableName(CONTROL_TOKENS.thumb)]!,
+          inkOff: sheet[toColorVariableName(CONTROL_TOKENS.inkOff)]!,
+        },
       ],
     ] as const
 
-    it.each(scopes)('%s: 고른 칸이 트랙보다 밝다', (_, surface, track, control) => {
-      if (definition.mode === 'light') {
-        expect(control.thumb).toBe(surface)
-      } else {
-        expect(hexToOklch(control.thumb).l).toBeGreaterThan(hexToOklch(track).l)
+    it.each(scopes)('%s: 트랙은 화면 바탕 위에서도 카드 위에서도 바탕과 갈린다', (_, scope, control) => {
+      for (const under of [scope.bg, scope.surface]) {
+        expect(over(control.track, under)).not.toBeCloseTo(hexToOklch(under).l, 2)
       }
     })
 
-    it.each(scopes)('%s: 고르지 않은 글자가 흐린 글자보다 트랙에 가깝다', (_, __, track, control) => {
-      expect(contrast(control.inkOff, track)).toBeLessThan(contrast(definition.textMuted, track))
+    it.each(scopes)('%s: 카드 위에서 고른 칸이 트랙보다 밝다', (_, scope, control) => {
+      const track = over(control.track, scope.surface)
+      expect(over(control.thumb, scope.surface)).toBeGreaterThan(track)
+    })
+
+    it.each(scopes)('%s: 고르지 않은 글자가 흐린 글자보다 카드에 가깝다', (_, scope, control) => {
+      const card = hexToOklch(scope.surface).l
+      expect(Math.abs(hexToOklch(control.inkOff).l - card)).toBeLessThan(
+        Math.abs(hexToOklch(definition.textMuted).l - card),
+      )
     })
   })
 })

@@ -59,8 +59,8 @@ const colors = {
   'settlement-ink': 'var(--color-settlement-ink)',
   'settlement-ink-muted': 'var(--color-settlement-ink-muted)',
   'settlement-mark': 'var(--color-settlement-mark)',
-  // 세그먼트의 고른 칸 · 스테퍼 버튼, 세그먼트의 고르지 않은 글자. 트랙에서 계산한다
-  // (`theme-vars.ts` 의 `resolveControlColors`).
+  // 세그먼트 · 스테퍼의 트랙과 고른 칸, 세그먼트의 고르지 않은 글자(`theme-vars.ts` 의 `resolveControlColors`).
+  'control-track': 'var(--color-control-track)',
   'control-thumb': 'var(--color-control-thumb)',
   'control-ink-off': 'var(--color-control-ink-off)',
 }

@@ -12,18 +12,6 @@ const SIZES = {
   lg: { button: 'h-9 w-9', icon: 'h-3.5 w-3.5', value: 'w-10 text-19 font-bold' },
 } as const
 
-/** 라이트의 색 조합 둘. `inverted` 는 연한 `bg` 패널 위용이다. 기본 트랙은 그 패널과 같은 색이라 묻힌다. */
-const TONES = {
-  default: { track: 'bg-bg', button: 'bg-surface' },
-  inverted: { track: 'bg-surface', button: 'bg-bg' },
-} as const
-
-/**
- * 다크는 바탕과 상관없이 세그먼트와 같은 색이다. 다크의 카드 색은 트랙보다 어두워, 맞바꾸는 두 조합
- * 모두 버튼이 트랙보다 가라앉는다.
- */
-const DARK_TONE = { track: 'bg-surface-2', button: 'bg-control-thumb' } as const
-
 /** 버튼이 트랙에서 떠 보이게 하는 옅은 그림자. 테두리를 쓰지 않으므로 이것이 버튼의 경계다. */
 const BUTTON_SHADOW: ShadowLayer = { opacity: 0.3, radius: 1, y: 1 }
 
@@ -41,8 +29,6 @@ export function Stepper(props: {
   /** 더 못 올라가는 값. 없으면 `+` 를 막지 않는다. */
   max?: number
   size?: keyof typeof SIZES
-  /** 부모 바탕이 `bg` 면 `inverted`. 라이트에서만 듣는다. */
-  tone?: keyof typeof TONES
   /** 주면 가운데 숫자를 눌러 직접 칠 수 있다. */
   onPressValue?: () => void
   /** 가운데 숫자에 붙는다. 누를 수 있으면 누르는 칸에 붙는다. */
@@ -50,7 +36,6 @@ export function Stepper(props: {
 }): React.JSX.Element {
   const size = SIZES[props.size ?? 'md']
   const { definition } = useThemeAppearance()
-  const tone = definition.mode === 'dark' ? DARK_TONE : TONES[props.tone ?? 'default']
   const min = props.min ?? 1
   const canDecrease = props.value > min
   const canIncrease = props.max === undefined || props.value < props.max
@@ -71,7 +56,7 @@ export function Stepper(props: {
     // 가로 줄로 한 번 감싸 알약이 내용 폭만 차지하게 한다. 세로로 쌓는 부모가 트랙을 바로 늘이면 트랙만
     // 길어지고 버튼은 한쪽에 몰린다. `self-start` 로 막으면 가로 줄 부모 안에서 위로 붙는다.
     <View className="shrink-0 flex-row">
-      <View testID="stepper-track" className={`flex-row items-center rounded-full ${tone.track} p-0.5`}>
+      <View testID="stepper-track" className="flex-row items-center rounded-full bg-control-track p-0.5">
         <Pressable
           role="button"
           aria-label={`${props.label} 감소`}
@@ -80,7 +65,7 @@ export function Stepper(props: {
           hitSlop={HIT_SLOP}
           // RN 의 `disabled` 는 모양을 바꾸지 않는다. 흐리지 않으면 막힌 버튼이 멀쩡해 보인다.
           style={canDecrease ? buttonStyle : { ...buttonStyle, opacity: 0.4 }}
-          className={`${size.button} items-center justify-center rounded-full ${tone.button}`}
+          className={`${size.button} items-center justify-center rounded-full bg-control-thumb`}
         >
           <MinusIcon className={`${size.icon} text-text-muted`} strokeWidth={2.5} aria-hidden />
         </Pressable>
@@ -106,7 +91,7 @@ export function Stepper(props: {
           onPress={() => props.onChange(props.value + 1)}
           hitSlop={HIT_SLOP}
           style={canIncrease ? buttonStyle : { ...buttonStyle, opacity: 0.4 }}
-          className={`${size.button} items-center justify-center rounded-full ${tone.button}`}
+          className={`${size.button} items-center justify-center rounded-full bg-control-thumb`}
         >
           <PlusIcon className={`${size.icon} text-text-muted`} strokeWidth={2.5} aria-hidden />
         </Pressable>

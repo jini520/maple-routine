@@ -110,7 +110,6 @@ function ShareCard(props: {
         label={props.label}
         value={props.value}
         layout="wide"
-        stepperTone="inverted"
         onChange={props.onChange}
       />
     </View>
