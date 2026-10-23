@@ -12,7 +12,7 @@ import type { CharacterTotals } from '../../features/stats/aggregate'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { useTextScale } from '../../theme/text-scale'
 import { unknownCharacterAsset } from '../../lib/assets/asset-lookup'
-import { podiumNameLines } from './podium-name'
+import { podiumBlockPadding, podiumNameLines } from './podium-name'
 import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
 
@@ -59,12 +59,7 @@ const PODIUM_FIGURE_WIDTH = 72
 const FIGURE_SCALE = PODIUM_FIGURE_WIDTH / FIGURE_BOX.width
 /** 그림 칸이 단상 블록 위로 겹쳐 내려가는 높이. 발끝 아래가 잘리지 않고 블록 앞에 그려진다 */
 const FIGURE_OVERLAP = 16
-/**
- * 단상 블록이 내용보다 높은 만큼. 1 · 2 · 3위 차례다. 블록 높이를 값으로 박으면 글자 크기 단계가 커질 때
- * 금액이 블록 밖으로 밀려난다.
- */
-const BLOCK_STEPS = [24, 10, 0]
-/** `text-10` 의 줄 높이(`typography.cjs`). 닉네임 칸을 늘 두 줄로 잡아 이름 길이가 블록 높이를 안 바꾸게 */
+/** `text-10` 의 줄 높이(`typography.cjs`). 줄이 적은 블록을 이만큼씩 늘려 순위가 안 뒤집히게 */
 const NAME_LINE_HEIGHT = 15
 /** 화면에 서는 차례. 2위 · 1위 · 3위 */
 const PODIUM_ORDER = [1, 0, 2]
@@ -124,6 +119,7 @@ export const CharacterSection = memo(function CharacterSection(props: {
   const span = maxPositive + maxNegative || 1
   const zero = (maxNegative / span) * 100
   const podium = shown.slice(0, 3)
+  const nameLineCounts = podium.map((row) => podiumNameLines(row.name).length)
 
   return (
     <StatsSection
@@ -206,15 +202,12 @@ export const CharacterSection = memo(function CharacterSection(props: {
                 </View>
                 <View
                   className={`w-full items-center gap-px rounded-b-[3px] rounded-t-lg pt-1 ${first ? 'bg-primary-tint' : 'bg-surface-2'}`}
-                  style={{ paddingBottom: BLOCK_STEPS[rank] }}
+                  style={{ paddingBottom: podiumBlockPadding(nameLineCounts, rank, NAME_LINE_HEIGHT * textScale) }}
                 >
                   <Text className={`text-xs font-bold ${first ? 'text-primary-ink' : 'text-text-muted'}`}>{rank + 1}</Text>
                   {/* 줄은 `podiumNameLines` 가 나눈다. 폭을 블록보다 넓게 열어 네 자 이름이 조금 넘쳐도
                       RN 이 다시 꺾지 않게 한다. 넘친 만큼은 부모의 `items-center` 로 양옆에 고르게 나간다. */}
-                  <View
-                    className="items-center justify-center"
-                    style={{ width: '140%', minHeight: NAME_LINE_HEIGHT * 2 * textScale }}
-                  >
+                  <View className="items-center" style={{ width: '140%' }}>
                     <Text testID="stats-podium-name" className="text-center text-10 font-semibold text-text">
                       {podiumNameLines(row.name).join('\n')}
                     </Text>
