@@ -1,4 +1,4 @@
-import { openAuthSessionAsync, openBrowserAsync } from 'expo-web-browser'
+import { openAuthSessionAsync, openBrowserAsync, WebBrowserPresentationStyle } from 'expo-web-browser'
 
 import type { BrowserPort } from '../ports'
 
@@ -10,7 +10,8 @@ import type { BrowserPort } from '../ports'
  */
 export const rnBrowserPort: BrowserPort = {
   async open(url, colors) {
-    await openBrowserAsync(url, colors)
+    // iOS 는 넥슨 로그인 창처럼 카드 시트로 띄운다. 라이브러리 기본값은 화면 전체를 덮는다.
+    await openBrowserAsync(url, { ...colors, presentationStyle: WebBrowserPresentationStyle.PAGE_SHEET })
   },
   async openAuthSession(url, redirectUrl) {
     const result = await openAuthSessionAsync(url, redirectUrl)
