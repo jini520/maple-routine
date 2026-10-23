@@ -34,6 +34,8 @@ const FIGURE_SCALE = FIGURE_HEIGHT / FIGURE_BOX.height
 /** 칸 좌우에서 잘라 내는 몫. 단상 칸은 무기가 들어갈 만큼 넓어 이 좁은 자리에서는 캐릭터 양옆이 빈다 */
 const FIGURE_SIDE_TRIM = 0.2
 const FIGURE_WIDTH = FIGURE_BOX.width * (1 - FIGURE_SIDE_TRIM * 2) * FIGURE_SCALE
+/** 자르는 칸을 아래로 내리는 거리(그림 px). 넥슨 그림의 캐릭터는 칸 바닥(발끝)에 붙어 서서, 칸 그대로면 머리 위만 빈다 */
+const FIGURE_DROP = 10
 const FIGURE_CROP = figureCropStyle(FIGURE_SCALE, true)
 const MARK_PX = 16
 const EMBLEM_PX = 15
@@ -41,13 +43,19 @@ const EMBLEM_PX = 15
 /** 전신 그림. 통계 단상과 같은 칸을 자른다 */
 function Figure(props: { view: RepresentativeView }): React.JSX.Element {
   return (
-    <View style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT }} className="shrink-0">
+    // 왼쪽을 더 띄운다. 칸 좌우를 잘라 캐릭터가 카드 여백(12)에 거의 붙는다
+    <View style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT }} className="ml-2 shrink-0">
       <View style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT, overflow: 'hidden' }}>
         <Image
           testID="representative-figure"
           accessibilityLabel={props.view.name}
           source={{ uri: props.view.imageUrl }}
-          style={{ position: 'absolute', ...FIGURE_CROP, left: FIGURE_CROP.left - FIGURE_BOX.width * FIGURE_SIDE_TRIM * FIGURE_SCALE }}
+          style={{
+            position: 'absolute',
+            ...FIGURE_CROP,
+            left: FIGURE_CROP.left - FIGURE_BOX.width * FIGURE_SIDE_TRIM * FIGURE_SCALE,
+            top: FIGURE_CROP.top - FIGURE_DROP * FIGURE_SCALE,
+          }}
         />
       </View>
       {props.view.unavailable && (
