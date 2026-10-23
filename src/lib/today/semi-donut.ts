@@ -27,6 +27,10 @@ export interface SemiDonutGeometry {
   cy: number
   /** 경로의 바깥 반지름(둥근 모서리 선을 빼고) */
   outer: number
+  /** 안쪽 빈 반원의 꼭대기 높이(둥근 모서리 선까지 넣고) */
+  holeTop: number
+  /** 조각이 끝나는 바닥 높이(둥근 모서리 선까지 넣고) */
+  bottom: number
   /** 그림 높이 */
   height: number
 }
@@ -74,6 +78,8 @@ export function semiDonutGeometry(values: readonly number[], size: SemiDonutSize
     cx,
     cy,
     outer,
+    holeTop: cy - (inner - size.corner),
+    bottom: cy + size.corner,
     height: cy + size.corner + 2,
   }
 }

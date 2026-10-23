@@ -16,6 +16,7 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { CategoryTotal } from '../../features/stats/aggregate'
 import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
+import { SLICE_LIMIT, SLICE_OPACITY } from '../../lib/stats/slice-steps'
 import { useThemeAppearance } from '../../theme/context'
 import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
@@ -24,10 +25,6 @@ const AnimatedPath = Animated.createAnimatedComponent(Path)
 /** NativeWind 가 등록한 `Animated.View` 는 정적 스타일을 버려서(`Segment` 와 같은 함정) 따로 만든다 */
 const AnimatedBox = Animated.createAnimatedComponent(View)
 
-/** 조각이 되는 갈래 수. 넘는 것은 `그 외` 로 묶는다 */
-const SLICE_LIMIT = 4
-/** 진하기. 큰 조각이 가장 진하다 */
-const SLICE_OPACITY = [1, 0.72, 0.5, 0.32, 0.2]
 /** 안에 적을 수 있는 가장 좁은 조각(라디안) */
 const INSIDE_MIN_SPAN = 0.62
 /** 설계 좌표. 폭 300 기준이고 실제 폭에 맞춰 곱한다 */
