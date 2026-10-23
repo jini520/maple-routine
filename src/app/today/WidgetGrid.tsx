@@ -3,20 +3,19 @@
  *
  * 지키는 것 셋.
  *
- * ① **재지 않고 계산한다.** 치수는 창 폭 하나에서 나오고 좌표는 순수 함수가 푼다. 재면 첫 프레임이
- *    0 이고 그 0 이 그대로 좌표가 된다.
- * ② **`onLayout` 이 붙는 것은 `h: 'auto'` 타일뿐이다.** 그 값만 계산으로 안 나온다(캐릭터 수 ×
- *    행 높이는 내용의 함수다). auto 가 `w === 4` 에서만 허용되므로 옆 칸이 없어 겹칠 자리가 없다.
+ * ① **폭은 재지 않고 계산한다.** 칸 폭은 창 폭 하나에서 나온다. 재면 첫 프레임이 0 이다.
+ * ② **높이는 내용이 정하고, 같은 줄은 가장 높은 타일에 맞춘다.** 줄을 `flex-row` 로 두고 타일을
+ *    `stretch` 로 늘리면, 높이를 재거나 계산하지 않아도 줄 높이가 가장 높은 타일이 된다. 카드가
+ *    타일 높이를 채워야 나란히 놓인 카드의 아래 끝이 맞는다.
  * ③ **좌우 여백을 여기서 안 그린다.** 앱 공통 `px-4` 는 화면의 래퍼가 준다. 여기서 또 주면 두 겹이
- *    되는데 열 폭 계산은 `창폭 − 32` 를 전제로 서 있다.
+ *    되는데 칸 폭 계산은 `창폭 − 32` 를 전제로 서 있다.
  */
 
-import { useState } from 'react'
 import { Pressable, useWindowDimensions, View } from 'react-native'
 
 import { Card } from '../../components/atoms'
-import { resolveWidgetGridMetrics } from '../../lib/today/widget-grid-metrics'
-import { omitHiddenTiles, resolveWidgetPositions } from '../../lib/today/widget-layout'
+import { resolveWidgetGridMetrics, tileWidthPx } from '../../lib/today/widget-grid-metrics'
+import { groupWidgetRows, moveTilesToEnd } from '../../lib/today/widget-layout'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import type { TodayViewModel } from './view-model'
@@ -33,22 +32,12 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
   const navigation = useScreenNavigation()
   const { width } = useWindowDimensions()
   const metrics = resolveWidgetGridMetrics(width)
-  const [autoHeights, setAutoHeights] = useState<Readonly<Record<string, number>>>({})
 
-  // 보여 줄 것이 없는 위젯은 타일째 빼고 그 아래를 당긴다.
-  const hiddenIds = new Set(
-    WIDGETS.filter((widget) => widget.isVisible !== undefined && !widget.isVisible(data)).map((widget) => widget.id),
+  // 보여 줄 것이 없는 위젯은 맨 아래 줄로 내려 다른 모양으로 그린다.
+  const lastIds = new Set(
+    WIDGETS.filter((widget) => widget.placeLast !== undefined && widget.placeLast(data)).map((widget) => widget.id),
   )
-  const layout = omitHiddenTiles(TILE_LAYOUT, hiddenIds)
-  const { tiles, containerHeightPx } = resolveWidgetPositions(layout, metrics, autoHeights)
-  const tileById = new Map(tiles.map((tile) => [tile.id, tile]))
-
-  /** 같은 값이면 **같은 객체를 돌려준다**. 안 그러면 측정 → 렌더 → 측정으로 도는 고리가 된다. */
-  function measureAuto(id: string, heightPx: number): void {
-    setAutoHeights((current) =>
-      current[id] === heightPx ? current : { ...current, [id]: heightPx },
-    )
-  }
+  const rows = groupWidgetRows(moveTilesToEnd(TILE_LAYOUT, lastIds))
 
   // 타일 탭은 today(그룹 행)에서 하위 층으로 한 층 내려가는 이동이라, 층이 스택이 된 뒤로는
   // 그냥 그 층을 여는 것으로 끝난다. 바 기록을 손으로 맞출 일이 없다.
@@ -61,51 +50,37 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
   }
 
   return (
-    <View testID="widget-grid" style={{ height: containerHeightPx }}>
-      {layout.map((placement) => {
-        const { Component, target } = WIDGET_BY_ID[placement.id]
-        const tile = tileById.get(placement.id)
-        if (tile === undefined) return null
-
-        const isAuto = placement.h === 'auto'
-        // auto 타일은 **최소** 높이만 정하고 내용이 그 위로 자란다. 고정 높이를 주면 잰 값이 늘
-        // 그 값이라 아무것도 못 재고, 늘어나는 것과 스크롤하는 것은 다르다.
-        const box = isAuto ? { minHeight: tile.heightPx } : { height: tile.heightPx }
-
-        // `onLayout` 은 내용에 붙는다. 최소 높이를 진 상자에 붙이면 안 된다.
-        //
-        // 바깥 래퍼(= `minHeight` 를 진 `Card` 를 감싼 상자)를 재면 그 값이 `max(minHeight,
-        // 내용)` 이고 그것이 다시 다음 `minHeight` 가 되어 높이가 늘기만 하고 줄지 않는다.
-        // 아코디언을 한 번 펼쳤다 접으면 접힌 내용 위로 펼쳤을 때의 높이가 그대로 남는다.
-        //
-        // 안쪽에서 재면 그 고리가 끊긴다. 이 상자에는 최소 높이가 없어 언제나 내용의 높이다.
-        const widget = <Component w={placement.w} h={placement.h} data={data} />
-        const measured = isAuto ? (
-          <View
-            testID={`widget-measure-${placement.id}`}
-            onLayout={(event: { nativeEvent: { layout: { height: number } } }) => {
-              measureAuto(placement.id, event.nativeEvent.layout.height)
-            }}
-          >
-            {widget}
-          </View>
-        ) : (
-          widget
-        )
-
+    <View testID="widget-grid" style={{ gap: metrics.gapPx }}>
+      {rows.map((row, rowIndex) => {
+        let cursorPx = 0
         return (
-          <View
-            key={placement.id}
-            testID={`widget-tile-${placement.id}`}
-            style={{ position: 'absolute', left: tile.leftPx, top: tile.topPx, width: tile.widthPx }}
-          >
-            {target === undefined ? (
-              <Card style={box}>{measured}</Card>
-            ) : (
-              <Pressable role="button" onPress={() => open(target)}>
-                <Card style={box}>{measured}</Card>
-              </Pressable>
-            )}
+          <View key={row[0].id} testID={`widget-row-${rowIndex}`} style={{ flexDirection: 'row', alignItems: 'stretch' }}>
+            {row.map((placement) => {
+              const { Component, target } = WIDGET_BY_ID[placement.id]
+              const leftPx = placement.col * (metrics.colWidthPx + metrics.gapPx)
+              const widthPx = tileWidthPx(placement.w, metrics)
+              const marginLeft = leftPx - cursorPx
+              cursorPx = leftPx + widthPx
+
+              const card = (
+                <Card testID={`widget-card-${placement.id}`} style={{ flexGrow: 1 }}>
+                  <Component data={data} />
+                </Card>
+              )
+
+              return (
+                <View key={placement.id} testID={`widget-tile-${placement.id}`} style={{ width: widthPx, marginLeft }}>
+                  {target === undefined ? (
+                    card
+                  ) : (
+                    // 누르는 동안 흐리게 하지 않는다. 위젯 카드 하나가 통째로 흐려지면 다른 카드와 따로 논다.
+                    <Pressable role="button" onPress={() => open(target)} style={{ flexGrow: 1 }}>
+                      {card}
+                    </Pressable>
+                  )}
+                </View>
+              )
+            })}
           </View>
         )
       })}

@@ -72,30 +72,23 @@ export function cumulativeNet(series: readonly StatsTotals[]): number[] {
   return series.map((totals) => (sum += totals.netMeso))
 }
 
+interface CharacterEntry {
+  key: string
+  ocid: string | null
+  name: string
+  entry: DayRecord
+}
+
 /**
- * 캐릭터별 합계. 순 수익이 큰 순서다.
+ * 범위의 기록에 캐릭터 key 를 붙인 목록. 캐릭터별 합계와 캐릭터별 갈래가 같은 기준으로 나뉘도록 둘이 함께 쓴다.
  *
  * 캐릭터를 고르지 않은 손입력은 안 든다. 강화 기록은 이름만 들어, 지금 이름과 같은 캐릭터가 있으면
  * 거기 붙고 없으면(개명 전 이름) 그 이름으로 따로 선다. 가계부가 강화 줄을 이름으로 묶는 것과 같다.
  */
-export function characterTotalsBetween(byDate: DaysByDate, range: StatsRange): CharacterTotals[] {
+function characterEntriesBetween(byDate: DaysByDate, range: StatsRange): CharacterEntry[] {
   const entries = entriesBetween(byDate, range)
-  const rows = new Map<string, CharacterTotals>()
   const keyByName = new Map<string, string>()
-
-  const rowOf = (key: string, ocid: string | null, name: string): CharacterTotals => {
-    const existing = rows.get(key)
-    if (existing !== undefined) return existing
-    const created = { key, ocid, name, incomeMeso: 0, expenseMeso: 0, netMeso: 0 }
-    rows.set(key, created)
-    return created
-  }
-  const add = (row: CharacterTotals, entry: DayRecord): void => {
-    const meso = recordMesoOf(entry)
-    if (isExpense(entry)) row.expenseMeso += meso
-    else row.incomeMeso += meso
-    row.netMeso = row.incomeMeso - row.expenseMeso
-  }
+  const keyed: CharacterEntry[] = []
 
   // 강화 줄이 이름으로 붙을 자리를 먼저 세운다. 줄 차례와 상관없이 같은 결과가 나와야 한다.
   for (const entry of entries) {
@@ -103,16 +96,61 @@ export function characterTotalsBetween(byDate: DaysByDate, range: StatsRange): C
     const ocid = entry.kind === 'income' || entry.kind === 'spend' ? entry.record.ocid : entry.ocid
     if (ocid === null) continue
     const key = `ocid:${ocid}`
-    add(rowOf(key, ocid, entry.characterName), entry)
+    keyed.push({ key, ocid, name: entry.characterName, entry })
     if (entry.characterName !== '') keyByName.set(entry.characterName, key)
   }
   for (const entry of entries) {
     if (entry.kind !== 'enhancement') continue
-    const key = keyByName.get(entry.characterName) ?? `name:${entry.characterName}`
-    add(rows.get(key) ?? rowOf(key, null, entry.characterName), entry)
+    const key = keyByName.get(entry.characterName)
+    keyed.push(
+      key === undefined
+        ? { key: `name:${entry.characterName}`, ocid: null, name: entry.characterName, entry }
+        : { key, ocid: key.slice('ocid:'.length), name: entry.characterName, entry },
+    )
   }
+  return keyed
+}
 
+/** 캐릭터별 합계. 순 수익이 큰 순서다. 캐릭터를 가르는 기준은 `characterEntriesBetween` 에 있다. */
+export function characterTotalsBetween(byDate: DaysByDate, range: StatsRange): CharacterTotals[] {
+  const rows = new Map<string, CharacterTotals>()
+  for (const { key, ocid, name, entry } of characterEntriesBetween(byDate, range)) {
+    const row = rows.get(key) ?? { key, ocid, name, incomeMeso: 0, expenseMeso: 0, netMeso: 0 }
+    const meso = recordMesoOf(entry)
+    if (isExpense(entry)) row.expenseMeso += meso
+    else row.incomeMeso += meso
+    row.netMeso = row.incomeMeso - row.expenseMeso
+    rows.set(key, row)
+  }
   return [...rows.values()].sort((left, right) => right.netMeso - left.netMeso)
+}
+
+export interface CharacterCategories {
+  income: CategoryTotal[]
+  expense: CategoryTotal[]
+}
+
+/**
+ * 캐릭터별 수입 · 지출 갈래 합계. key 는 `characterTotalsBetween` 의 key 다. 갈래는 수입 내역 · 지출 내역의
+ * 조각과 같고, 조각 안의 줄(`parts`)은 안 든다. 큰 순서이고 0 인 갈래는 없다.
+ */
+export function characterCategoriesBetween(byDate: DaysByDate, range: StatsRange): Map<string, CharacterCategories> {
+  const sums = new Map<string, { income: Map<string, CategoryTotal>; expense: Map<string, CategoryTotal> }>()
+  for (const { key, entry } of characterEntriesBetween(byDate, range)) {
+    const character = sums.get(key) ?? { income: new Map(), expense: new Map() }
+    const side = isExpense(entry) ? character.expense : character.income
+    const { slice } = sliceOf(entry)
+    const total = side.get(slice.key) ?? { key: slice.key, name: slice.name, meso: 0 }
+    total.meso += recordMesoOf(entry)
+    side.set(slice.key, total)
+    sums.set(key, character)
+  }
+  return new Map(
+    [...sums].map(([key, sides]) => [
+      key,
+      { income: sortedNonZero(sides.income.values()), expense: sortedNonZero(sides.expense.values()) },
+    ]),
+  )
 }
 
 /** 결정석과 보스 드롭은 손입력 갈래 표에 없다. */

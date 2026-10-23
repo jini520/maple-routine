@@ -1,16 +1,12 @@
 /**
  * 위젯 규약. 레지스트리 하나가 위젯의 존재를 선언하고 배치는 그 id 를 가리킬 뿐이다.
  *
- * 위젯이 `w`·`h` 로 갈라 스스로 다르게 그린다. 같은 데이터를 다른 밀도로 말하는 것이지 큰
- * 타일이 작은 타일을 늘린 것이 아니다. 그래서 타일은 스스로 커지거나 줄지 않는다. 크기는
- * 배치가 주고 넘치면 자르거나 접는다. 타일 안 스크롤은 페이지 스크롤과 제스처를 두고 싸운다.
+ * 위젯은 폭 하나만 그린다. 높이는 내용이 정하고, 같은 줄의 위젯끼리는 격자가 가장 높은 것에 맞춘다.
+ * 타일 안에서 스크롤하지 않는다. 타일 안 스크롤은 페이지 스크롤과 제스처를 두고 싸운다.
  *
- * `sizes` 는 위젯이 선언하고 배치가 그것을 지킨다. `validateWidgetLayout` 이 그 약속을
- * 강제한다. 선언 안 한 크기를 받으면 위젯은 그리는 방법을 모른다. 배치가 코드 상수인 지금은
- * 아무도 안 쓰는 크기 선언이 남는데, 나중에 편집이 오면 그때 고를 크기가 이미 있어야 한다.
+ * `width` 는 위젯이 선언하고 배치가 그것을 지킨다. `validateWidgetLayout` 이 그 약속을 강제한다.
  */
 
-import type { WidgetHeight, WidgetSize } from '../../../lib/today/widget-layout'
 import type { TabRouteName } from '../../../navigation/routes'
 import type { TodayViewModel } from '../view-model'
 
@@ -18,12 +14,11 @@ export type WidgetId =
   | 'representative-character'
   | 'shared-contents'
   | 'remaining-schedule'
-  | 'weekly-boss-profit'
+  | 'weekly-income'
   | 'top-valuable-item'
   | 'crystal-limit'
   | 'reset-countdown'
   | 'unpriced-drops'
-  | 'valuable-drought'
   | 'next-party-schedule'
 
 /**
@@ -33,31 +28,22 @@ export type WidgetId =
 export type WidgetTarget = TabRouteName | 'DropPrice'
 
 export interface WidgetProps {
-  w: number
-  /**
-   * 선언한 값 그대로다. `'auto'` 를 숫자로 접지 않는다.
-   *
-   * 위젯이 갈라 그리는 기준이 내가 선언한 어느 크기인가 라, 선언에 없는 값(auto 타일의
-   * nominal 1)을 넘기면 그 분기가 가리키는 크기가 실제로는 존재하지 않는 크기가 된다.
-   */
-  h: WidgetHeight
-  /** 화면이 한 번 모아 나눠 주는 값. **위젯은 스토어를 모른다**. */
   data: TodayViewModel
 }
 
 export interface WidgetDefinition {
   id: WidgetId
-  /** 이 위젯이 감당하는 크기. 배치가 이 밖의 크기를 주면 검증이 잡는다. */
-  sizes: readonly WidgetSize[]
+  /** 그리는 폭(칸 수). 1..4 */
+  width: number
   /**
-   * 타일을 누르면 가는 곳. **없으면 누를 수 없는 타일이다**. 갈 데가 없는 것을 누를 수 있게 두면
-   * 무반응이 고장 으로 읽힌다.
+   * 타일을 누르면 갈 곳. 없으면 누를 수 없는 타일이다. 갈 곳이 없는데 누를 수 있으면 반응이 없는
+   * 것이 고장으로 읽힌다.
    */
   target?: WidgetTarget
   /**
-   * 보여 줄 것이 없으면 거짓. 거짓이면 격자가 타일째 빼고 그 아래를 당긴다. 없으면 늘 보인다.
-   * 가로 전체 타일만 쓸 수 있다. 옆 칸이 있으면 빠진 자리가 빈 사각형으로 남는다.
+   * 참이면 맨 아래 줄로 옮긴다. 보여 줄 것이 없을 때 다른 모양(등록 칸)으로 그리는 위젯이 쓴다. 가로 전체 타일만 쓸 수
+   * 있다(옆 칸이 있으면 빈 칸이 남는다)
    */
-  isVisible?: (data: TodayViewModel) => boolean
+  placeLast?: (data: TodayViewModel) => boolean
   Component: React.ComponentType<WidgetProps>
 }

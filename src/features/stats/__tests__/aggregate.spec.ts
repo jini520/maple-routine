@@ -4,6 +4,7 @@ import type { SpendRecord } from '../../../storage/spend'
 import {
   bossTotalsBetween,
   categoryTotalsBetween,
+  characterCategoriesBetween,
   characterTotalsBetween,
   cumulativeNet,
   totalsBetween,
@@ -170,6 +171,42 @@ describe('characterTotalsBetween', () => {
       { key: 'ocid:a', ocid: 'a', name: '낟낟', incomeMeso: 500, expenseMeso: 300, netMeso: 200 },
       { key: 'name:단풍라떼', ocid: null, name: '단풍라떼', incomeMeso: 0, expenseMeso: 40, netMeso: -40 },
     ])
+  })
+})
+
+// today 의 이번 주 수익 위젯이 캐릭터 줄을 누르면 띄우는 항목별 금액이다. 캐릭터를 가르는 기준은
+// characterTotalsBetween 과 같아야 한다. 다르면 줄의 금액과 팝오버의 합이 어긋난다.
+describe('characterCategoriesBetween', () => {
+  it('캐릭터마다 수입 · 지출 갈래별 합계를 큰 순서로 내고, 합은 그 캐릭터의 수입 · 지출과 같다', () => {
+    const byDate = {
+      '2026-09-24': [
+        crystal('a', '낟낟', 500),
+        dropSale('a', '낟낟', 100),
+        crystal('a', '낟낟', 200),
+        enhancement('낟낟', 'starforce', 300),
+        income('b', '낟넘', { category: 'hunting', mesoAmount: 70 }),
+        spend('b', '낟넘', { category: 'buff', mesoAmount: 20 }),
+        enhancement('단풍라떼', 'cube_reset', 40),
+      ],
+    }
+    const byKey = characterCategoriesBetween(byDate, WEEK)
+
+    expect(byKey.get('ocid:a')).toEqual({
+      income: [
+        { key: 'boss_crystal', name: '보스 결정석', meso: 700 },
+        { key: 'boss_drop', name: '보스 드롭', meso: 100 },
+      ],
+      expense: [{ key: 'enhancement:starforce', name: '스타포스', meso: 300 }],
+    })
+    expect(byKey.get('ocid:b')?.income.map((total) => total.key)).toEqual(['hunting'])
+    expect(byKey.get('ocid:b')?.expense.map((total) => total.key)).toEqual(['buff'])
+    expect(byKey.get('name:단풍라떼')?.expense.map((total) => total.meso)).toEqual([40])
+
+    for (const row of characterTotalsBetween(byDate, WEEK)) {
+      const categories = byKey.get(row.key)!
+      expect(categories.income.reduce((sum, total) => sum + total.meso, 0)).toBe(row.incomeMeso)
+      expect(categories.expense.reduce((sum, total) => sum + total.meso, 0)).toBe(row.expenseMeso)
+    }
   })
 })
 

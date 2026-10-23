@@ -84,9 +84,9 @@ export function AppNavigation(): React.JSX.Element {
   // 파티 약속 알림 탭은 약속 화면으로 보낸다. 공지와 같은 까닭으로 `Main` 이 선 뒤에 민다.
   // 상세 시트는 약속 화면이 요청을 보고 열고 요청을 비운다.
   useLocalNotificationPress()
-  const appointmentRequest = usePartyAppointmentOpenStore((state) => state.request)
+  const appointmentRequest = usePartyAppointmentOpenStore((state) => state.request !== null || state.create !== null)
   useEffect(() => {
-    if (appointmentRequest === null || !routeNames.includes('Main')) return
+    if (!appointmentRequest || !routeNames.includes('Main')) return
     const [name, nested] = tabNavigateArgs('Appointments')
     // 층 이름이 유니온이라 `navigate` 의 파라미터가 하나로 안 좁혀진다(`useOpenTab` 과 같은 대가).
     ;(navigationRef.navigate as (route: string, params: TabNavigateParams) => void)(name, nested)

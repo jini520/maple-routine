@@ -4,32 +4,23 @@
 // `validateWidgetLayout` 이 있지만 **지금 쓰는 배치가 그 검증을 통과하는가** 는
 // 아무도 안 묻고 있었다. 자동 패킹을 기각하며 산 값이 정확히 여기서 회수된다.
 
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { validateWidgetLayout } from '../../../lib/today/widget-layout'
 import { TILE_LAYOUT } from '../widgets/layout'
-import { WIDGETS, WIDGET_SIZES_BY_ID } from '../widgets/registry'
+import { WIDGETS, WIDGET_WIDTH_BY_ID } from '../widgets/registry'
 
 describe('기본 배치', () => {
-  it('검증 다섯을 전부 통과한다. 위반이 없다', () => {
-    expect(validateWidgetLayout(TILE_LAYOUT, WIDGET_SIZES_BY_ID)).toEqual([])
+  it('검증 넷을 전부 통과한다. 위반이 없다', () => {
+    expect(validateWidgetLayout(TILE_LAYOUT, WIDGET_WIDTH_BY_ID)).toEqual([])
   })
 
   it('레지스트리의 위젯 열이 배치에 정확히 한 번씩 등장한다', () => {
     const placedIds = TILE_LAYOUT.map((placement) => placement.id)
 
-    expect(WIDGETS).toHaveLength(10)
     expect([...placedIds].sort()).toEqual(WIDGETS.map((widget) => widget.id).sort())
     expect(new Set(placedIds).size).toBe(placedIds.length)
-  })
-
-  // 배치가 코드 상수라 선언만 남고 아무도 안 쓰는 크기가 생긴다. 그러니 선언된 크기 = 쓰이는
-  // 크기 로 적으면 안 되고 반대 방향만 참이다.
-  it('배치가 쓰는 크기는 전부 그 위젯이 선언한 것이다. 반대는 아니다', () => {
-    for (const placement of TILE_LAYOUT) {
-      expect(WIDGET_SIZES_BY_ID[placement.id]).toContainEqual({ w: placement.w, h: placement.h })
-    }
-
-    const declaredCount = WIDGETS.reduce((sum, widget) => sum + widget.sizes.length, 0)
-    expect(declaredCount).toBeGreaterThan(TILE_LAYOUT.length)
   })
 
   // 공유 컨텐츠가 `남은 스케줄` **위**에 선다. 먼저 치우면
@@ -41,21 +32,31 @@ describe('기본 배치', () => {
     expect(rowOf('shared-contents')).toBe(rowOf('remaining-schedule') - 1)
     expect(rowOf('shared-contents')).toBeGreaterThan(rowOf('crystal-limit'))
   })
+})
 
-  it('`h: auto` 를 선언한 위젯은 가로 4칸짜리 크기만 갖는다', () => {
-    for (const widget of WIDGETS) {
-      for (const size of widget.sizes) {
-        if (size.h === 'auto') expect(size.w).toBe(4)
-      }
+// 맨 아래로 옮겨지는 타일은 가로 전체여야 한다. 옆 칸이 있으면 빠진 자리가 빈 칸으로 남는다.
+describe('맨 아래로 옮겨지는 위젯', () => {
+  it('placeLast 가 있는 위젯은 가로 전체로 놓인다', () => {
+    for (const widget of WIDGETS.filter((one) => one.placeLast !== undefined)) {
+      expect(TILE_LAYOUT.find((placement) => placement.id === widget.id)?.w).toBe(4)
     }
   })
 })
 
-// 숨는 타일은 가로 전체여야 한다. 옆 칸이 있으면 빠진 자리가 빈 사각형으로 남는다.
-describe('숨는 위젯', () => {
-  it('isVisible 이 있는 위젯은 가로 전체로 놓인다', () => {
-    for (const widget of WIDGETS.filter((one) => one.isVisible !== undefined)) {
-      expect(TILE_LAYOUT.find((placement) => placement.id === widget.id)?.w).toBe(4)
+// 위젯 카드 하나가 통째로 흐려지면 다른 카드와 따로 논다(사용자 지정). NativeWind 가 렌더 뒤 `className` 을
+// 지워 렌더 결과로는 물을 수 없어서 소스로 묻는다.
+describe('누르는 동안 흐려지지 않는다', () => {
+  it('격자와 위젯 소스에 누름 흐려짐 클래스가 없다', () => {
+    const widgetsDir = join(__dirname, '..', 'widgets')
+    const files = [
+      join(__dirname, '..', 'WidgetGrid.tsx'),
+      ...readdirSync(widgetsDir)
+        .filter((name) => name.endsWith('.tsx'))
+        .map((name) => join(widgetsDir, name)),
+    ]
+
+    for (const file of files) {
+      expect([file, readFileSync(file, 'utf8')]).not.toEqual([file, expect.stringContaining('active:opacity')])
     }
   })
 })

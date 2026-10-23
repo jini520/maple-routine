@@ -13,10 +13,15 @@ import {
   type CharacterProfileSnapshot,
 } from '../../storage/character-profiles'
 import { historyFloorDateKey } from '../cashbook/range'
-import type { DaysByDate } from './aggregate'
+import type { DaysByDate, StatsRange } from './aggregate'
 
 export async function loadStatsDays(todayDateKey: string): Promise<DaysByDate> {
   return loadMonthDays(historyFloorDateKey(todayDateKey), todayDateKey)
+}
+
+/** 한 기간의 날짜별 줄. today 의 이번 주 수익이 그 주만 읽는다. 전 기간을 읽는 `loadStatsDays` 보다 가볍다. */
+export async function loadStatsDaysBetween(range: StatsRange): Promise<DaysByDate> {
+  return loadMonthDays(range.from, range.to)
 }
 
 /**

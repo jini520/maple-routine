@@ -17,7 +17,7 @@ import type { SharedContentGroupView } from '../../view-model'
 async function 위젯(
   sharedContents: SharedContentGroupView[],
 ): Promise<ReturnType<typeof renderOverlay>> {
-  return renderOverlay(<SharedContentsWidget w={4} h="auto" data={뷰모델({ sharedContents })} />)
+  return renderOverlay(<SharedContentsWidget data={뷰모델({ sharedContents })} />)
 }
 
 /** 테스트 하네스의 창 폭. 팝오버는 별도 창이라 좌표가 화면 기준이다. */

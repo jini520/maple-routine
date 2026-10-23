@@ -1,10 +1,6 @@
-// 대표 캐릭터 위젯. 이 파일이 묻는 것 셋.
-// ① 세 크기가 **같은 구조**를 그리는가 ② 모르는 것을 지어내지 않는가(EXP·엠블럼·직업·길드)
-// ③ 진행률이 API 가 준 소수 3자리 그대로인가(반올림하면 `99.999%` 가 `100%` 가 된다).
-//
-// **크기 셋을 전부 스냅샷으로 찍는다**. v1 배치가 쓰는 것은 4x1 하나뿐이라 나머지 둘은
-// 아무도 안 부르는 렌더 분기다. 그 분기를 지키는 것은 스냅샷뿐이고 그것이 그 결정의 대가이며,
-// 그래서 여기서 회수한다.
+// 대표 캐릭터 위젯. 이 파일이 묻는 것 둘.
+// ① 모르는 것을 지어내지 않는가(EXP·엠블럼·직업·길드)
+// ② 진행률이 API 가 준 소수 3자리 그대로인가(반올림하면 `99.999%` 가 `100%` 가 된다).
 
 import { within } from '@testing-library/react-native'
 
@@ -15,29 +11,17 @@ import {
 } from '../../../../components/__tests__/render-atom'
 import { RepresentativeCharacterWidget } from '../RepresentativeCharacterWidget'
 import { 대표_캐릭터, 뷰모델, 빈_뷰모델 } from './widget-fixture'
-import type { WidgetHeight } from '../../../../lib/today/widget-layout'
 
 const 채워진 = 뷰모델({ representative: 대표_캐릭터 })
 
-async function 위젯(
-  크기: { w: number; h: WidgetHeight },
-  data = 채워진,
-): Promise<ReturnType<typeof renderAtom>> {
-  return renderAtom(<RepresentativeCharacterWidget w={크기.w} h={크기.h} data={data} />)
+async function 위젯(data = 채워진): Promise<ReturnType<typeof renderAtom>> {
+  return renderAtom(<RepresentativeCharacterWidget data={data} />)
 }
-
-const 크기 = {
-  '4x1': { w: 4, h: 1 },
-  '4x2': { w: 4, h: 2 },
-  '2x2': { w: 2, h: 2 },
-} as const
 
 describe('모르는 것을 그리지 않는다', () => {
   // 0% 바를 그리면 **경험치가 0** 으로 읽힌다. 없는 것과 0 은 다르다.
   it('`expRate` 가 없으면 EXP 줄 자체가 없다', async () => {
-    const { queryByTestId, getByText } = await 위젯(
-      크기['4x1'],
-      뷰모델({ representative: { ...대표_캐릭터, expRate: undefined } }),
+    const { queryByTestId, getByText } = await 위젯(뷰모델({ representative: { ...대표_캐릭터, expRate: undefined } }),
     )
 
     expect(queryByTestId('representative-exp')).toBeNull()
@@ -46,9 +30,7 @@ describe('모르는 것을 그리지 않는다', () => {
   })
 
   it('`expRate` 가 0 이면 **그린다**. 0 은 아는 값이다', async () => {
-    const { getByTestId, getByText } = await 위젯(
-      크기['4x1'],
-      뷰모델({ representative: { ...대표_캐릭터, expRate: 0 } }),
+    const { getByTestId, getByText } = await 위젯(뷰모델({ representative: { ...대표_캐릭터, expRate: 0 } }),
     )
 
     expect(getByTestId('representative-exp')).toBeTruthy()
@@ -56,9 +38,7 @@ describe('모르는 것을 그리지 않는다', () => {
   })
 
   it('엠블럼이 없는 월드면 **엠블럼만** 빠진다', async () => {
-    const { queryByTestId, getByText } = await 위젯(
-      크기['4x1'],
-      뷰모델({ representative: { ...대표_캐릭터, worldKey: 'special' } }),
+    const { queryByTestId, getByText } = await 위젯(뷰모델({ representative: { ...대표_캐릭터, worldKey: 'special' } }),
     )
 
     expect(queryByTestId('representative-emblem')).toBeNull()
@@ -68,9 +48,7 @@ describe('모르는 것을 그리지 않는다', () => {
   })
 
   it('직업을 모르면 레벨만 선다 (옛 캐시 엔트리에는 `jobClass` 가 없다)', async () => {
-    const { queryByTestId, getByText } = await 위젯(
-      크기['4x1'],
-      뷰모델({ representative: { ...대표_캐릭터, jobClass: undefined } }),
+    const { queryByTestId, getByText } = await 위젯(뷰모델({ representative: { ...대표_캐릭터, jobClass: undefined } }),
     )
 
     expect(queryByTestId('representative-job')).toBeNull()
@@ -81,9 +59,7 @@ describe('모르는 것을 그리지 않는다', () => {
     ['미가입(null)', null],
     ['모름(undefined)', undefined],
   ])('길드가 %s 이면 그 줄이 없다', async (_이름, guildName) => {
-    const { queryByTestId } = await 위젯(
-      크기['4x1'],
-      뷰모델({ representative: { ...대표_캐릭터, guildName } }),
+    const { queryByTestId } = await 위젯(뷰모델({ representative: { ...대표_캐릭터, guildName } }),
     )
 
     expect(queryByTestId('representative-guild')).toBeNull()
@@ -93,16 +69,14 @@ describe('모르는 것을 그리지 않는다', () => {
 describe('EXP 표기', () => {
   // API 가 `"80.300"` 을 준다. 반올림하면 `99.999%` 가 `100%` 가 되어 **다 찼다** 고 거짓을 말한다.
   it('소수 3자리를 그대로 쓴다', async () => {
-    const { getByText } = await 위젯(
-      크기['4x1'],
-      뷰모델({ representative: { ...대표_캐릭터, expRate: 99.999 } }),
+    const { getByText } = await 위젯(뷰모델({ representative: { ...대표_캐릭터, expRate: 99.999 } }),
     )
 
     expect(getByText('99.999%')).toBeTruthy()
   })
 
   it('진행률 바가 그 값을 채운다', async () => {
-    const view = await 위젯(크기['4x1'])
+    const view = await 위젯()
 
     // 바는 `ProgressBar` atom 이 그리므로 여기서 묻는 것은 **넘긴 값이 그 비율인가** 다. 트리를 직접
     // 훑는 이유는 `ContentCards` 테스트가 적어 둔 것과 같다. 트랙이 `accessible` 없이
@@ -115,9 +89,20 @@ describe('EXP 표기', () => {
   })
 })
 
+// EXP 를 오른쪽 끝의 좁은 열에 두면 바가 짧아 진행이 잘 안 보인다. 닉네임 · 레벨 줄 아래에 같은 폭으로 둔다.
+describe('EXP 칸의 자리', () => {
+  it('EXP 칸은 닉네임 · 레벨 줄과 같은 열 안에 선다', async () => {
+    const view = await 위젯()
+    const 열 = within(view.getByTestId('representative-lines'))
+
+    expect(열.getByTestId('representative-name-line')).toBeTruthy()
+    expect(열.getByTestId('representative-exp')).toBeTruthy()
+  })
+})
+
 describe('**대표 없음** 은 추적 캐릭터가 없을 때뿐이다', () => {
   it('그때는 한 줄로 그 사실을 말한다. **임시 대표** 표시도 CTA 도 없다', async () => {
-    const { getByText, queryByTestId } = await 위젯(크기['4x1'], 빈_뷰모델)
+    const { getByText, queryByTestId } = await 위젯(빈_뷰모델)
 
     expect(getByText('추적 중인 캐릭터가 없습니다')).toBeTruthy()
     expect(queryByTestId('representative-exp')).toBeNull()
@@ -125,19 +110,10 @@ describe('**대표 없음** 은 추적 캐릭터가 없을 때뿐이다', () => 
   })
 })
 
-describe('2x2 는 잘리되 지우지 않는다', () => {
-  it('직업 줄이 한 줄로 잘린다. 158 폭의 한계다', async () => {
-    const { getByTestId } = await 위젯(크기['2x2'])
-
-    expect(getByTestId('representative-job').props.numberOfLines).toBe(1)
-  })
-})
-
 describe('길드는 닉네임 옆이다', () => {
-  // 셋째 줄에 혼자 서던 값이다. 4x1 은 내부 높이가 52 뿐이라 그 한 줄이 크고, 길드는 **누구인가** 의
-  // 일부지 별도 항목이 아니다.
-  it.each(Object.entries(크기))('%s: 닉네임과 길드가 같은 줄이다', async (_이름, 값) => {
-    const view = await 위젯(값)
+  // 길드는 **누구인가** 의 일부지 별도 항목이 아니다.
+  it('닉네임과 길드가 같은 줄이다', async () => {
+    const view = await 위젯()
     const 이름줄 = within(view.getByTestId('representative-name-line'))
 
     expect(이름줄.getByText('단풍루틴')).toBeTruthy()
@@ -146,7 +122,7 @@ describe('길드는 닉네임 옆이다', () => {
 
   // 길드는 잘리면 **다른 길드로 읽힌다**. 닉네임은 초상화가 이미 **누구인가** 를 말한다.
   it('자리가 모자라면 닉네임이 줄어든다. 길드가 아니라', async () => {
-    const { getByTestId } = await 위젯(크기['4x1'])
+    const { getByTestId } = await 위젯()
 
     expect(flattenStyle(getByTestId('representative-name').props.style).flexShrink).toBe(1)
     expect(flattenStyle(getByTestId('representative-guild').props.style).flexShrink).toBe(0)
@@ -160,14 +136,14 @@ describe('조회 불가 대표 캐릭터', () => {
 
   // EXP 는 조회를 못 한 순간 굳은 값이다. 바가 그대로 서 있으면 지금의 진행도로 읽힌다.
   it('EXP 바 자리에 배지가 선다', async () => {
-    const { getByTestId, queryByTestId } = await 위젯(크기['4x2'], 조회불가)
+    const { getByTestId, queryByTestId } = await 위젯(조회불가)
 
     expect(getByTestId('representative-issue')).toBeTruthy()
     expect(queryByTestId('representative-exp')).toBeNull()
   })
 
   it('멀쩡하면 EXP 바가 그대로다', async () => {
-    const { getByTestId, queryByTestId } = await 위젯(크기['4x2'])
+    const { getByTestId, queryByTestId } = await 위젯()
 
     expect(getByTestId('representative-exp')).toBeTruthy()
     expect(queryByTestId('representative-issue')).toBeNull()
@@ -175,7 +151,7 @@ describe('조회 불가 대표 캐릭터', () => {
 
   // 이름 옆은 비운다. 같은 말을 두 번 하고, 그 자리는 닉네임이 먼저 줄어드는 자리다.
   it('배지는 EXP 블록 안에만 하나 선다', async () => {
-    const { getAllByText, getByTestId } = await 위젯(크기['4x2'], 조회불가)
+    const { getAllByText, getByTestId } = await 위젯(조회불가)
 
     expect(getAllByText('조회 불가')).toHaveLength(1)
     expect(getByTestId('representative-issue-block')).toBeTruthy()
@@ -183,7 +159,7 @@ describe('조회 불가 대표 캐릭터', () => {
 
   // 아는 값까지 버리지 않는다. 이름·레벨은 그대로 서고 배지가 그 값의 나이를 말한다.
   it('이름은 그대로 그린다', async () => {
-    const { getByText } = await 위젯(크기['4x2'], 조회불가)
+    const { getByText } = await 위젯(조회불가)
 
     expect(getByText(대표_캐릭터.name)).toBeTruthy()
   })
@@ -192,16 +168,14 @@ describe('조회 불가 대표 캐릭터', () => {
 // 카드의 얼굴에도 표식이 붙는다. EXP 자리의 배지와 함께 선다.
 describe('조회 불가 대표의 얼굴', () => {
   it('얼굴에 표식이 붙는다', async () => {
-    const { getByTestId } = await 위젯(
-      크기['4x2'],
-      뷰모델({ representative: { ...대표_캐릭터, unavailable: true } }),
+    const { getByTestId } = await 위젯(뷰모델({ representative: { ...대표_캐릭터, unavailable: true } }),
     )
 
     expect(getByTestId('portrait-unavailable')).toBeTruthy()
   })
 
   it('멀쩡하면 안 붙는다', async () => {
-    const { queryByTestId } = await 위젯(크기['4x2'])
+    const { queryByTestId } = await 위젯()
 
     expect(queryByTestId('portrait-unavailable')).toBeNull()
   })

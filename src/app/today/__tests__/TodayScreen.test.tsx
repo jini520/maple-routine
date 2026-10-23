@@ -1,6 +1,6 @@
 // 첫 화면 `today`의 **배선**.
 //
-// 이 화면에는 판정이 한 줄도 없다. 조립은 `view-model.ts`(그 테스트), 그림은 위젯 여덟(각자의
+// 이 화면에는 판정이 한 줄도 없다. 조립은 `view-model.ts`(그 테스트), 그림은 위젯마다(각자의
 // 테스트), 좌표는 `WidgetGrid`(그 테스트)가 이미 본다. 그래서 여기서 묻는 것은 넷뿐이다.
 //
 // ① **어느 문으로 조회하는가**. 진입은 게이트가 있는 `loadTrackedOcids` 하나이고, 게이트를
@@ -8,7 +8,7 @@
 //    **게이트 자체는 여기서 못 본다**. 그것은 스토어 안의 계약이라 core 테스트가 지킨다. 화면이
 //    보장할 수 있는 것은 **어느 문을 쓰는가** 이고, 그 문이 바뀌면 TTL 이 통째로 사라진다.
 // ② **당김과 헤더 버튼이 같은 재조회인가**.
-// ③ **스토어가 비어도 서는가**. 콜드 스타트에 위젯 여덟이 전부 빈 상태로 선다.
+// ③ **스토어가 비어도 서는가**. 콜드 스타트에 위젯이 전부 빈 상태로 선다.
 // ④ **캐릭터 넷의 기본 배치**(스냅샷). 헤더 + 격자가 실제 값 위에서 함께 그려지는 것은 여기뿐이다.
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 
@@ -22,8 +22,7 @@ import {
   type ContentCharacterView } from '../../../features/content-scheduler/store'
 import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
-import { formatMesoShort } from '../../../lib/boss/boss-profit-delta'
-import { formatBossProfitPeriodLabel } from '../../../lib/boss/boss-profit-period'
+import { loadStatsDaysBetween } from '../../../features/stats/load'
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import type { DropHistoryPeriodGroup, DropHistoryRecord } from '../../../lib/drop/drop-history'
 import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
@@ -72,6 +71,11 @@ jest.mock('../../../storage/character-selection', () => ({
   getRepresentativeCharacter: jest.fn(),
   setRepresentativeCharacter: jest.fn() }))
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
+// 이번 주 수익이 읽는 가계부 기록. 그 주만 읽는가를 이 화면에서 본다.
+jest.mock('../../../features/stats/load', () => ({
+  ...jest.requireActual('../../../features/stats/load'),
+  loadStatsDaysBetween: jest.fn().mockResolvedValue({}),
+}))
 // 새로고침이 공지 배너의 서버 조회를 함께 탄다. 안 막으면 이 스위트가 실제 망으로 나간다.
 // 배너 자체의 동작은 `NoticeBanner.test.tsx` 와 `banner-store.spec.ts` 가 본다.
 jest.mock('../../../server/notices', () => ({
@@ -424,54 +428,13 @@ describe('TodayScreen: 진입 조회', () => {
 
 })
 
-// 수동 멤버십은 저장소 키 하나인데 스토어 둘이 각자 사본을 든다. 사본을 갱신하는 것은 각자
-// 자기 계열을 바꿀 때뿐이라 계열마다 주인이 정해져 있다. 두 계열을 한 화면에서 그리는 것은
-// 여기뿐이라 둘을 다 읽어야 한다.
-//
-// 보스 수익 스토어의 `rows` 는 사용자가 보고 있는 (탭, 기간)이고 이 화면이 그리는 것은 이번
-// 주다. 그 화면을 월간 탭으로 옮기기만 해도 위젯 3·5 가 함께 빈다. 이 화면은 그 네비게이션을
-// 모르는 채로 서야 한다.
-describe('TodayScreen: 수익 위젯이 읽는 값', () => {
-  it('보스 수익 화면이 월간 탭을 보고 있어도 이번 주 수익을 그린다', async () => {
-    setStores({
-      ...캐릭터_넷,
-      profit: {
-        ...캐릭터_넷.profit,
-        // 월간 탭을 보고 있는 상태. `rows` 에는 이번 주 행이 한 줄도 없다(`filterRowsForTab`).
-        tab: 'monthly',
-        rows: [],
-        dropsByRowKey: {} } })
-
+// 이번 주 수익은 통계와 같은 가계부 기록을 읽는다. 전 기간이 아니라 이번 주만 읽는다.
+describe('TodayScreen: 이번 주 수익이 읽는 기록', () => {
+  it('이번 주 범위만 읽는다', async () => {
     await renderScreen()
 
-    expect(screen.queryByText('아직 이번 주 기록이 없습니다')).toBeNull()
-    // 1 + 2 + 3 + 4 백만. 화면의 접기 규칙은 `formatMesoShort` 하나가 판다(총액과 결정석 분해가
-    // 같은 값이라 자리는 여럿이다).
-    expect(screen.getAllByText(formatMesoShort(10_000_000)).length).toBeGreaterThan(0)
-  })
-
-  // 제보(2026-10-04): 그 주에 잡은 월간 보스 수익이 이 위젯에만 안 들어갔다. 스토어가 자른
-  // 이번 주 행에 월간 행이 함께 들어 있고, 이 화면은 그것을 다시 거르지 않는다.
-  it('그 주에 잡은 월간 보스 수익도 더한다', async () => {
-    const 월간행: BossProfitRow = {
-      ...profitRow('ocid-1', 1),
-      bossKey: 'black_mage',
-      bossName: '검은 마법사',
-      difficulty: 'hard',
-      cycle: 'monthly',
-      periodKey: WEEK_KEY.slice(0, 7),
-      payoutMeso: 90_000_000,
-    }
-    setStores({
-      ...캐릭터_넷,
-      profit: {
-        ...캐릭터_넷.profit,
-        currentWeekRows: [...캐릭터_넷.profit.currentWeekRows, 월간행] } })
-
-    await renderScreen()
-
-    // 주간 1,000만 + 월간 9,000만.
-    expect(screen.getAllByText(formatMesoShort(100_000_000)).length).toBeGreaterThan(0)
+    // 2026-08-17(월) KST. 이번 주는 목요일 2026-08-13 부터 수요일 2026-08-19 까지다.
+    expect(jest.mocked(loadStatsDaysBetween)).toHaveBeenCalledWith({ from: '2026-08-13', to: '2026-08-19' })
   })
 })
 
@@ -777,8 +740,8 @@ describe('TodayScreen: 머리의 캐릭터 관리 버튼', () => {
 
 describe('TodayScreen: 격자', () => {
   // 데이터가 없다고 타일을 빼지 않는다. 콜드 스타트(스토어 전부 빈 값)에서도
-  // 여덟이 서고, 각자 자기 타일 안에서 빈 상태를 말한다.
-  it('스토어가 비어 있어도 위젯 여덟이 전부 선다', async () => {
+  // 전부 서고, 각자 자기 타일 안에서 빈 상태를 말한다. 다음 파티 스케줄은 회차가 없으면 맨 아래 줄의 등록 칸이다.
+  it('스토어가 비어 있어도 위젯이 전부 선다', async () => {
     await renderScreen()
 
     expect(screen.getByTestId('widget-grid')).toBeTruthy()
@@ -786,11 +749,12 @@ describe('TodayScreen: 격자', () => {
       'representative-character',
       'reset-countdown',
       'crystal-limit',
+      'shared-contents',
       'remaining-schedule',
-      'weekly-boss-profit',
+      'weekly-income',
       'top-valuable-item',
       'unpriced-drops',
-      'valuable-drought',
+      'next-party-schedule',
     ]) {
       expect(screen.getByTestId(`widget-tile-${id}`)).toBeTruthy()
     }
@@ -835,20 +799,16 @@ describe('TodayScreen: 초기화 경계', () => {
     expect(screen.getByTestId('reset-value-weekly').props.children).toBe('6일 23시간')
   })
 
-  it('주간 초기화가 지나면 보스 수익 타일의 기간 줄도 새 주를 말한다', async () => {
+  it('주간 초기화가 지나면 이번 주 수익이 새 주를 다시 읽는다', async () => {
     // 2026-08-19(수) 23:59:58 KST. 이번 주 키는 2026-08-13, 다음 주 키는 2026-08-20
     jest.setSystemTime(new Date('2026-08-19T14:59:58.000Z'))
     await renderScreen()
-    const 지난주 = formatBossProfitPeriodLabel('weekly', '2026-08-13', new Date()).secondary
-    expect(screen.getByText(지난주)).toBeTruthy()
 
     await act(async () => {
       jest.advanceTimersByTime(5 * 1000)
     })
 
-    const 새주 = formatBossProfitPeriodLabel('weekly', '2026-08-20', new Date()).secondary
-    expect(screen.getByText(새주)).toBeTruthy()
-    expect(screen.queryByText(지난주)).toBeNull()
+    expect(jest.mocked(loadStatsDaysBetween)).toHaveBeenLastCalledWith({ from: '2026-08-20', to: '2026-08-26' })
   })
 })
 

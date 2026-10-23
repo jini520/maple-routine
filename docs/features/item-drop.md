@@ -33,7 +33,7 @@
 | `lib/drop/drop-prompt.ts` | 시트 확인 줄의 문구 |
 | `lib/drop/price-card-labels.ts` | 가격 카드 확인 버튼의 글자 |
 | `lib/drop/drop-history.ts` | 히스토리의 기간 묶기 · 한 줄 문장 · 고가 미획득 단계와 문구 |
-| `constants/style/drought-tier-styles.ts` | 미획득 단계의 단풍잎 색 · 기울기. today 위젯과 함께 쓴다 |
+| `constants/style/drought-tier-styles.ts` | 미획득 단계의 단풍잎 색 · 기울기 |
 | `components/organisms/DropEffectOverlay/` | 전체화면 연출. 재생 상태(`drop-effect-player.ts`) · 기준점 표(`drop-effect-layout.ts`) · 장 위치(`frame-layout.ts`) |
 | `components/molecules/ValuableDropBadge/` | 고가 드롭 골드 배지 |
 | `scripts/measure-drop-effect-origins.py` | 빛기둥 기준점 표를 다시 재는 스크립트 |
