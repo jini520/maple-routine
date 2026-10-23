@@ -32,7 +32,7 @@ async function press(element: AtomElement): Promise<void> {
 }
 
 describe('UtilityScreen', () => {
-  it('계산기 타일을 그리고, 누르면 하위 페이지로 민다', async () => {
+  it('계산기 카드를 그리고, 누르면 하위 페이지로 민다', async () => {
     const view = await renderOverlay(<UtilityScreen />)
 
     await press(view.getByLabelText(ITEM_SPLIT_TOOL_NAME))
@@ -44,10 +44,10 @@ describe('UtilityScreen', () => {
 
   // RN 의 `Text` 는 한글을 글자 단위로 끊는다(`판매 분배금 계 / 산기`). 단어마다 `Text` 를 두고
   // flex 아이템으로 감싸 **아이템 경계에서만** 줄이 바뀌게 한 것이 이 계약이다.
-  it('타일 이름은 단어마다 쪼개져 있다. 줄바꿈이 단어 경계에서만 일어나도록', async () => {
+  it('카드 이름은 단어마다 쪼개져 있다. 줄바꿈이 단어 경계에서만 일어나도록', async () => {
     const view = await renderOverlay(<UtilityScreen />)
 
-    // `계산기` 는 두 타일에 다 있다.
+    // `계산기` 는 두 카드에 다 있다.
     for (const word of ITEM_SPLIT_TOOL_NAME.split(' ')) {
       expect(view.getAllByText(word).length).toBeGreaterThan(0)
     }
