@@ -110,11 +110,8 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                   </Text>
                 </View>
 
-                {/* 금액 두 줄은 **오른쪽 끝에 맞춘다**(사용자 지정). 가운데로 두면 자릿수가
-                    다른 위아래 두 수의 끝이 어긋나 한 칸 안에서 계단처럼 보인다.
-
-                    `w-full` 이 있어야 한다. 부모가 `items-center` 라 글자 폭만큼만 차지하면
-                    `text-right` 가 걸릴 자리가 없다.
+                {/* 금액 두 줄은 **가운데에 맞추고 좌우 여백을 같게 둔다**(사용자 지정). 한쪽만 비우면
+                    긴 금액이 반대쪽으로 넘쳐 칸 한쪽으로 쏠려 보인다.
 
                     빈 값이 `''` 가 아니라 **공백 한 칸**이다. 빈 문자열은 `Text` 높이를 0 으로 만든다.
 
@@ -125,7 +122,7 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                   adjustsFontSizeToFit
                   // 날짜 원이 24px 인데 그 안의 숫자는 12px 이라 아래로 빈 자리가 남는다.
                   // 그만큼 당기되 다 없애지는 않는다. 붙여 버리면 날짜와 금액이 한 줄로 뭉친다.
-                  className="-mt-0.5 w-full pr-2 text-right text-9 leading-3 text-rise-ink"
+                  className="-mt-0.5 w-full px-1 text-center text-9 leading-3 text-rise-ink"
                   style={TABULAR_NUMS}
                 >
                   {amounts.incomeMeso > 0 ? `+${formatMesoCompact(amounts.incomeMeso)}` : ' '}
@@ -134,7 +131,7 @@ export function CalendarGrid(props: CalendarGridProps): React.JSX.Element {
                   testID={`calendar-expense-${day.dateKey}`}
                   numberOfLines={1}
                   adjustsFontSizeToFit
-                  className="w-full pr-2 text-right text-9 leading-3 text-fall-ink"
+                  className="w-full px-1 text-center text-9 leading-3 text-fall-ink"
                   style={TABULAR_NUMS}
                 >
                   {amounts.expenseMeso > 0 ? `−${formatMesoCompact(amounts.expenseMeso)}` : ' '}

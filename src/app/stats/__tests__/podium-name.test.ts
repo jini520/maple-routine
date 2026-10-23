@@ -1,5 +1,5 @@
 // 단상 닉네임을 어디서 꺾는가(사용자 지정). 줄바꿈을 RN 에 맡기면 폭에 따라 `또뽀메/르` 처럼 한 자만 넘어간다.
-import { podiumNameLines } from '../podium-name'
+import { podiumBlockPadding, podiumNameLines } from '../podium-name'
 
 describe('podiumNameLines', () => {
   it.each(['렌', '지내우시', 'abcd'])('네 자까지(%p)는 블록을 조금 넘쳐도 한 줄이다', (name) => {
@@ -16,5 +16,17 @@ describe('podiumNameLines', () => {
 
   it('일곱 자 넘는 영문 이름도 두 줄을 넘지 않고, 앞줄이 하나 더 길다', () => {
     expect(podiumNameLines('MapleRoutine1')).toEqual(['MapleRo', 'utine1'])
+  })
+})
+
+// 블록마다 제 줄 수만 쓰면 1위가 한 줄이고 2위가 두 줄일 때 2위 블록이 더 높아진다.
+describe('podiumBlockPadding', () => {
+  const 줄높이 = 15 * 1.2
+  const 조합 = [1, 2].flatMap((a) => [1, 2].flatMap((b) => [1, 2].map((c) => [a, b, c])))
+
+  it.each(조합)('줄 수가 %p · %p · %p 여도 블록은 1 · 2 · 3위 차례로 낮아진다', (...lineCounts) => {
+    const 높이 = lineCounts.map((lines, rank) => lines * 줄높이 + podiumBlockPadding(lineCounts, rank, 줄높이))
+    expect(높이[0]).toBeGreaterThan(높이[1]!)
+    expect(높이[1]).toBeGreaterThan(높이[2]!)
   })
 })
