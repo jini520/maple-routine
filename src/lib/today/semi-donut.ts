@@ -18,7 +18,7 @@ export interface SemiDonutSize {
 }
 
 export interface SemiDonutGeometry {
-  /** 값마다 조각 경로. 너무 작아 틈보다 좁은 조각은 빈 문자열이다 */
+  /** 값마다 조각 경로. 값이 0 이거나 틈보다 좁은 조각은 빈 문자열이다 */
   paths: string[]
   /** 조각이 없을 때 그리는 바탕 반원 */
   track: string
@@ -51,13 +51,18 @@ export function semiDonutGeometry(values: readonly number[], size: SemiDonutSize
   const pad = (size.corner + size.gap / 2) / mid
   const total = values.reduce((sum, value) => sum + value, 0)
 
+  // 끝 조각은 값이 있는 조각 중에서 정한다. 0 인 조각을 끝으로 치면 옆 조각이 그 끝에서 틈만큼 짧아져 반원이 기운다.
+  const firstShown = values.findIndex((value) => value > 0)
+  const lastShown = values.length - 1 - [...values].reverse().findIndex((value) => value > 0)
+
   let angle = -Math.PI / 2
   const paths =
     total > 0
       ? values.map((value, index) => {
+          if (value <= 0) return ''
           const span = (value / total) * Math.PI
-          const from = angle + (index === 0 ? 0 : pad)
-          const to = angle + span - (index === values.length - 1 ? 0 : pad)
+          const from = angle + (index === firstShown ? 0 : pad)
+          const to = angle + span - (index === lastShown ? 0 : pad)
           angle += span
           return to > from ? arcPath(cx, cy, outer, inner, from, to) : ''
         })
