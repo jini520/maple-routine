@@ -55,7 +55,7 @@ export function TopValuableItemWidget({ data }: WidgetProps): React.JSX.Element 
 
   if (top === null) {
     return (
-      <View testID="widget-top-valuable-item" className="flex-1 flex-row items-center gap-2.5 p-3">
+      <View testID="widget-top-valuable-item" className="grow flex-row items-center gap-2.5 p-3">
         <IconSlot drop={null} />
         <Text testID="top-item-empty" numberOfLines={2} className="flex-1 text-11 text-text-muted">
           {EMPTY_NOTE}
@@ -65,7 +65,7 @@ export function TopValuableItemWidget({ data }: WidgetProps): React.JSX.Element 
   }
 
   return (
-    <View testID="widget-top-valuable-item" className="flex-1 flex-row items-center gap-2.5 p-3">
+    <View testID="widget-top-valuable-item" className="grow flex-row items-center gap-2.5 p-3">
       <IconSlot drop={top} />
       <View className="min-w-0 flex-1 gap-0.5">
         <Text className="text-10 font-bold text-text-muted">{TITLE}</Text>

@@ -60,3 +60,17 @@ describe('누르는 동안 흐려지지 않는다', () => {
     }
   })
 })
+
+// `flex-1` 은 기준 크기를 0 으로 잡는다. 같은 줄을 늘려 맞추며 카드 높이가 정해진 뒤 다시 배치되면 위젯 내용 높이가
+// 0 으로 계산되어 줄이 접힌다(데이터가 들어오거나 세그먼트를 바꾼 순간 실기기에서 실제로 접혔다). 렌더 결과로는 Yoga
+// 배치를 물을 수 없어 소스로 묻는다.
+describe('위젯 바깥 상자', () => {
+  it('`flex-1` 이 아니라 `grow` 로 카드를 채운다', () => {
+    const widgetsDir = join(__dirname, '..', 'widgets')
+    for (const name of readdirSync(widgetsDir).filter((one) => one.endsWith('Widget.tsx'))) {
+      const source = readFileSync(join(widgetsDir, name), 'utf8')
+      const roots = source.match(/testID="widget-[a-z-]+"[^>]*className="[^"]*"/g) ?? []
+      for (const root of roots) expect([name, root]).not.toEqual([name, expect.stringMatching(/className="[^"]*\bflex-1\b/)])
+    }
+  })
+})

@@ -40,7 +40,15 @@ async function 위젯(nextParty: NextPartyView[]) {
   return renderAtom(<NextPartyScheduleWidget data={뷰모델({ nextParty })} />)
 }
 
-beforeEach(() => usePartyAppointmentOpenStore.setState({ request: null, create: null }))
+// 시계를 낮(KST 12:00)에 고정한다. 실제 시각을 쓰면 밤에는 몇 시간 뒤 회차가 `내일` 로 넘어가 `오늘` 을 묻는 케이스가 깨진다.
+beforeEach(() => {
+  jest.useFakeTimers({ now: new Date('2026-10-23T03:00:00.000Z') })
+  usePartyAppointmentOpenStore.setState({ request: null, create: null })
+})
+
+afterEach(() => {
+  jest.useRealTimers()
+})
 
 describe('NextPartyScheduleWidget', () => {
   it('제목 · 시각 줄 · 캐릭터 묶음 · 알림 · 반복을 그린다', async () => {

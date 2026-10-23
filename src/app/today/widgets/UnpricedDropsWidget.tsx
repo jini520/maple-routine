@@ -30,7 +30,7 @@ export function UnpricedDropsWidget({ data }: WidgetProps): React.JSX.Element {
   const count = data.unpricedCount
 
   return (
-    <View testID="widget-unpriced-drops" className="flex-1 justify-center gap-2 p-3">
+    <View testID="widget-unpriced-drops" className="grow justify-center gap-2 p-3">
       {/* 제목 줄 높이를 건수 글자(15/22)에 맞춰 둔다. 0건이면 건수가 없어 줄이 낮아진다. */}
       <View testID="unpriced-head" className="min-h-[22px] flex-row items-baseline gap-2">
         <Text className="flex-1 text-10 font-bold text-text-muted">{TITLE}</Text>
