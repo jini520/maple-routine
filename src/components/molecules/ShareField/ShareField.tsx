@@ -41,6 +41,7 @@ export function ShareField(props: {
   const stacked = props.layout === 'stacked' || wide
   /** 트랙과 합이 위아래로 서는 벌. 본문의 주축이 세로라 트랙 높이를 flex 가 덮을 수 있다. */
   const column = stacked && !wide
+  const row = !stacked
   const [width, setWidth] = useState(0)
   /**
    * 끌기 중인가. 콜백은 렌더마다 새 제스처로 갈아 끼워지므로, 잡은 직후 다시 렌더되기 전에 온
@@ -84,7 +85,8 @@ export function ShareField(props: {
   const total = (
     <View className={column ? 'items-center' : undefined}>
       <Stepper
-        size="sm"
+        // 가로 한 줄(`row`)은 판매 분배금 계산기의 비율 칸이다. 옆 칸의 파티원 수 스테퍼와 같은 크기다.
+        size={row ? 'md' : 'sm'}
         testID={`share-field-total-${props.label}`}
         label={`${props.label} 비율 합`}
         value={sharesTotal}
@@ -134,7 +136,7 @@ export function ShareField(props: {
 
       {/* 막대와 합이 **한 줄**이다. 합을 아래 줄로 내리면 고르개 하나가 두 줄을 먹는데,
           결정석과 드롭이 나란히 서는 자리라 그 두 줄이 네 줄이 된다. */}
-      <View className={column ? 'gap-2' : 'flex-row items-center gap-2.5'}>
+      <View className={column ? 'gap-2' : row ? 'flex-row items-center gap-4' : 'flex-row items-center gap-2.5'}>
         <GestureDetector gesture={pan}>
           <View
             testID="share-field-track"

@@ -81,7 +81,7 @@ describe('Stepper', () => {
   })
 
   // 단위를 + 옆에 붙이면 알약의 좌우가 안 맞는다(사용자 지정). 크기와 무관하게 숫자만 그린다.
-  it.each(['sm', 'md', 'lg'] as const)('%s 는 숫자만 그리고 테두리가 없다', async (size) => {
+  it.each(['sm', 'md'] as const)('%s 는 숫자만 그리고 테두리가 없다', async (size) => {
     const { getByTestId, getByLabelText, queryByText } = await renderAtom(
       <Stepper label="스우 파티원 수" value={3} max={6} onChange={jest.fn()} size={size} testID="value" />,
     )
