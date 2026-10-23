@@ -8,13 +8,15 @@ import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
 import { rnThemeAppearancePort } from '../../../../native/adapters/rn-theme-appearance'
 import { __resetThemeAppearanceForTest } from '../../../../theme/appearance-store'
 import { resolveControlColors } from '../../../../theme/theme-vars'
-import { 기본테마, flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { Stepper } from '../Stepper'
 
 const 줄이기 = '스우 파티원 수 감소'
 const 늘리기 = '스우 파티원 수 증가'
 
 describe('Stepper', () => {
+  afterEach(__resetThemeAppearanceForTest)
+
   it('−/+ 로 1씩 바꾼다', async () => {
     const onChange = jest.fn()
     const { getByLabelText } = await renderAtom(
@@ -90,38 +92,15 @@ describe('Stepper', () => {
     expect(flattenStyle(getByTestId('stepper-track').props.style).borderWidth).toBeUndefined()
   })
 
-  // 연한 패널(bg)에 기본 스테퍼를 놓으면 트랙이 패널에 묻힌다. 반전은 두 색을 맞바꿔 알약을 살린다.
-  it('inverted 는 트랙과 버튼의 바탕색을 맞바꾼다', async () => {
-    const backgrounds = async (tone?: 'inverted') => {
-      const { getByTestId, getByLabelText } = await renderAtom(
-        <Stepper label="스우 파티원 수" value={3} max={6} onChange={jest.fn()} tone={tone} />,
-      )
-      return {
-        track: flattenStyle(getByTestId('stepper-track').props.style).backgroundColor,
-        button: flattenStyle(getByLabelText(늘리기).props.style).backgroundColor,
-      }
-    }
+  // 세그먼트와 같은 색이다. 트랙이 반투명이라 바탕에 따라 색을 맞바꿀 일이 없다.
+  it.each(['머쉬맘', '혼테일'] as const)('%s: 트랙과 버튼이 세그먼트와 같은 색이다', async (name) => {
+    rnThemeAppearancePort.apply(name, getThemeDefinition(name))
+    const { getByTestId, getByLabelText } = await renderAtom(
+      <Stepper label="스우 파티원 수" value={3} max={6} onChange={jest.fn()} />,
+    )
+    const control = resolveControlColors(getThemeDefinition(name))
 
-    expect(await backgrounds()).toEqual({ track: 기본테마.bg, button: 기본테마.surface })
-    expect(await backgrounds('inverted')).toEqual({ track: 기본테마.surface, button: 기본테마.bg })
-  })
-
-  // 다크는 바탕과 상관없이 세그먼트와 같은 색이다. 다크의 카드 색은 트랙보다 어두워, 맞바꾸는
-  // 두 조합 모두 버튼이 트랙보다 가라앉았다.
-  describe('다크', () => {
-    beforeEach(() => rnThemeAppearancePort.apply('혼테일', getThemeDefinition('혼테일')))
-    afterEach(__resetThemeAppearanceForTest)
-
-    it.each([undefined, 'inverted'] as const)('tone %s 도 트랙은 surface-2, 버튼은 고른 칸 색이다', async (tone) => {
-      const 테마 = getThemeDefinition('혼테일')
-      const { getByTestId, getByLabelText } = await renderAtom(
-        <Stepper label="스우 파티원 수" value={3} max={6} onChange={jest.fn()} tone={tone} />,
-      )
-
-      expect(flattenStyle(getByTestId('stepper-track').props.style).backgroundColor).toBe(테마.surface2)
-      expect(flattenStyle(getByLabelText(늘리기).props.style).backgroundColor).toBe(
-        resolveControlColors(테마).thumb,
-      )
-    })
+    expect(flattenStyle(getByTestId('stepper-track').props.style).backgroundColor).toBe(control.track)
+    expect(flattenStyle(getByLabelText(늘리기).props.style).backgroundColor).toBe(control.thumb)
   })
 })

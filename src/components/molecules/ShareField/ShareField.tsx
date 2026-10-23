@@ -34,8 +34,6 @@ export function ShareField(props: {
    * `'wide'` 는 카드가 판 폭을 다 쓰는 자리(파티 모달)다. 트랙이 넓어 합이 그 옆에 서고 카드가 한 줄 낮아진다.
    */
   layout?: 'row' | 'stacked' | 'wide'
-  /** 합 스테퍼의 색 조합. 이 칸은 흰 카드에도 연한 패널에도 서므로 부르는 쪽이 바탕을 보고 정한다. */
-  stepperTone?: 'default' | 'inverted'
   onChange: (next: Shares) => void
 }): React.JSX.Element {
   const wide = props.layout === 'wide'
@@ -87,7 +85,6 @@ export function ShareField(props: {
     <View className={column ? 'items-center' : undefined}>
       <Stepper
         size="sm"
-        tone={props.stepperTone}
         testID={`share-field-total-${props.label}`}
         label={`${props.label} 비율 합`}
         value={sharesTotal}

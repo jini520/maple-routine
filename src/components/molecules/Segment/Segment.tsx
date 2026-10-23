@@ -56,7 +56,7 @@ export function Segment<T extends string>(props: {
   return (
     <View
       testID="segment"
-      className={`flex-row items-center rounded-full bg-surface-2 p-0.5 ${size.track} ${
+      className={`flex-row items-center rounded-full bg-control-track p-0.5 ${size.track} ${
         props.disabled === true ? 'opacity-40' : ''
       }`}
     >
