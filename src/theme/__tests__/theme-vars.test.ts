@@ -18,6 +18,8 @@ import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
 import {
   CARD_BODY_TOKEN,
+  CARD_INSET_TOKEN,
+  resolveCardInset,
   CONTROL_TOKENS,
   resolveControlColors,
   STATS_SECTION_TOKEN,
@@ -58,6 +60,7 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
       [PANEL_BORDER_VARIABLE]: panelBorder,
       [toColorVariableName(CARD_BODY_TOKEN)]: cardBody,
       [toColorVariableName(STATS_SECTION_TOKEN)]: statsSection,
+      [toColorVariableName(CARD_INSET_TOKEN)]: cardInset,
       [toColorVariableName(CONTROL_TOKENS.track)]: controlTrack,
       [toColorVariableName(CONTROL_TOKENS.thumb)]: controlThumb,
       [toColorVariableName(CONTROL_TOKENS.inkOff)]: controlInkOff,
@@ -71,6 +74,7 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
     expect(panelBorder).toBe(resolvePanelBorder(definition))
     expect(cardBody).toBe(resolveCardBody(definition))
     expect(statsSection).toBe(resolveStatsSection(definition))
+    expect(cardInset).toBe(resolveCardInset(definition))
     expect({ track: controlTrack, thumb: controlThumb, inkOff: controlInkOff }).toEqual(resolveControlColors(definition))
     expect(tokens).toEqual(
       Object.fromEntries(THEME_TOKEN_KEYS.map((token) => [toColorVariableName(token), definition[token]])),
@@ -465,3 +469,30 @@ describe('컨트롤 색. 트랙은 파이고 고른 칸은 뜨고 고르지 않�
     })
   })
 })
+
+/**
+ * 카드 안에 한 번 더 칠하는 칸. 화면 바탕색이면 라이트에서 진하고 다크에서 카드와 붙었다.
+ */
+describe('카드 안쪽 칸. 카드와 갈리되 라이트에서는 바탕색보다 연하다', () => {
+  const overCard = (color: string, card: string): number => {
+    const rgba = /rgba\((\d+), (\d+), (\d+), ([\d.]+)\)/.exec(color)!
+    const [r, g, b, a] = rgba.slice(1).map(Number) as [number, number, number, number]
+    const base = [1, 3, 5].map((i) => parseInt(card.slice(i, i + 2), 16))
+    const hex = [r, g, b].map((c, i) => Math.round(c * a + base[i]! * (1 - a)).toString(16).padStart(2, '0')).join('')
+    return hexToOklch(`#${hex}`).l
+  }
+
+  it.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
+    const definition = getThemeDefinition(name)
+    const inset = overCard(resolveCardInset(definition), definition.surface)
+    const card = hexToOklch(definition.surface).l
+
+    if (definition.mode === 'light') {
+      expect(inset).toBeLessThan(card)
+      expect(inset).toBeGreaterThan(hexToOklch(definition.bg).l)
+    } else {
+      expect(inset).toBeGreaterThan(card)
+    }
+  })
+})
+

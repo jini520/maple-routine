@@ -59,6 +59,8 @@ const colors = {
   'settlement-ink': 'var(--color-settlement-ink)',
   'settlement-ink-muted': 'var(--color-settlement-ink-muted)',
   'settlement-mark': 'var(--color-settlement-mark)',
+  // 카드 안에 한 번 더 칠하는 칸(`theme-vars.ts` 의 `resolveCardInset`).
+  'card-inset': 'var(--color-card-inset)',
   // 세그먼트 · 스테퍼의 트랙과 고른 칸, 세그먼트의 고르지 않은 글자(`theme-vars.ts` 의 `resolveControlColors`).
   'control-track': 'var(--color-control-track)',
   'control-thumb': 'var(--color-control-thumb)',

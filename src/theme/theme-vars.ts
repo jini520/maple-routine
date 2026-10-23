@@ -125,6 +125,18 @@ export function resolveStatsSection(definition: ThemeDefinition): string {
 }
 
 /**
+ * 카드 안에 한 번 더 칠하는 칸(값 상자 · 칩 · 분배 칸). 화면 바탕색이면 라이트에서 진하고 다크에서 카드와 붙었다.
+ *
+ * 라이트는 카드 위에 바탕색 45%, 다크는 글자색 12% 를 얹는다. 반투명이라 시트처럼 카드 색이 달라지는 자리에서도
+ * 다시 계산할 것이 없다. 비율은 시안에서 사용자가 고른 값이다(2026-10-23).
+ */
+export const CARD_INSET_TOKEN = 'card-inset'
+
+export function resolveCardInset(definition: ThemeDefinition): string {
+  return definition.mode === 'light' ? withAlpha(definition.bg, 0.45) : withAlpha(definition.text, 0.12)
+}
+
+/**
  * 세그먼트 · 스테퍼의 트랙(`track`), 고른 칸 · 버튼(`thumb`), 세그먼트의 고르지 않은 글자(`inkOff`).
  *
  * 트랙은 글자색 반투명이라 화면 바탕 · 카드 · 카드 안쪽 칸 어디에 놓여도 그 바탕보다 파여 보인다. 그래서 놓이는 자리마다
@@ -232,6 +244,7 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
   variables[toColorVariableName(PANEL_BORDER_TOKEN)] = resolvePanelBorder(definition)
   variables[toColorVariableName(CARD_BODY_TOKEN)] = resolveCardBody(definition)
   variables[toColorVariableName(STATS_SECTION_TOKEN)] = resolveStatsSection(definition)
+  variables[toColorVariableName(CARD_INSET_TOKEN)] = resolveCardInset(definition)
   Object.assign(variables, controlVariables(resolveControlColors(definition)))
 
   const settlement = resolveSettlementColors(definition)
