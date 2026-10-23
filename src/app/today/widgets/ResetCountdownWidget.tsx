@@ -131,7 +131,7 @@ export function ResetCountdownWidget({ data }: WidgetProps): React.JSX.Element {
   const nowMs = useNowMs()
 
   return (
-    <View testID="widget-reset-countdown" className="flex-1 justify-center gap-1 px-3 py-2.5">
+    <View testID="widget-reset-countdown" className="grow justify-center gap-1 px-3 py-2.5">
       <Text className="text-10 font-bold text-text-muted">{TITLE}</Text>
       <View className="gap-0.5 rounded-lg bg-card-inset px-2 py-1">
         <Row cycle="daily" countdown={resets.daily} nowMs={nowMs} />

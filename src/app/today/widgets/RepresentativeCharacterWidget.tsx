@@ -115,14 +115,14 @@ export function RepresentativeCharacterWidget({ data }: WidgetProps): React.JSX.
 
   if (view === null) {
     return (
-      <View testID="widget-representative-character" className="flex-1 justify-center p-3">
+      <View testID="widget-representative-character" className="grow justify-center p-3">
         <Text className="text-13 text-text-muted">추적 중인 캐릭터가 없습니다</Text>
       </View>
     )
   }
 
   return (
-    <View testID="widget-representative-character" className="flex-1 flex-row items-center gap-3 p-3">
+    <View testID="widget-representative-character" className="grow flex-row items-center gap-3 p-3">
       <CharacterAvatar
         imageTestID="representative-face"
         imageUrl={view.imageUrl}
