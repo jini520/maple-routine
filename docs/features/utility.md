@@ -7,9 +7,10 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `app/utility/UtilityScreen.tsx` | 도구 목록(2열 타일) |
+| `app/utility/UtilityScreen.tsx` | 도구 목록(한 줄에 하나인 카드), 도구별 카드 색 |
+| `assets/utility/` | 도구 카드의 일러스트 |
 | `app/utility/ItemSplitScreen.tsx` | 판매 분배금 계산기 화면 |
-| `app/utility/tool-names.ts` | 도구 이름. 타일과 화면 제목이 같이 쓴다 |
+| `app/utility/tool-names.ts` | 도구 이름. 카드와 화면 제목이 같이 쓴다 |
 | `lib/cashbook/item-split.ts` | 보낼 금액 계산 |
 | `constants/domain/meso-quick-adds.ts` | 금액 단위 칩. 드롭 가격 입력과 같이 쓴다 |
 | `components/molecules/ShareField/` | 비율 입력. 보스 파티 설정과 같이 쓴다 |
@@ -25,15 +26,16 @@
 
 ## 도구 목록
 
-유틸리티 탭은 2열 타일 목록이다. 타일에는 아이콘과 이름만 있고, 누르면 도구 화면이 루트 스택에
-push 된다. 도구 화면이 열릴 때 하단바도 탭 화면과 함께 옆으로 사라지고, iOS 에서는 화면 왼쪽 끝을
+유틸리티 탭은 한 줄에 카드 하나씩 쌓는 도구 목록이다. 카드에는 도구 일러스트와 이름만 있고, 누르면 도구 화면이
+루트 스택에 push 된다. 일러스트는 카드 왼쪽에 흐리게 깔리고, 이름은 그 오른쪽 자리의 가운데에 온다. 카드 바탕과
+이름 색은 도구마다 정해져 있고 테마를 따르지 않는다. 밝게 · 어둡게만 갈린다. 색 값과 이유는 [[ADR-001]] 결정 10 에 있다. 도구 화면이 열릴 때 하단바도 탭 화면과 함께 옆으로 사라지고, iOS 에서는 화면 왼쪽 끝을
 밀어서 돌아올 수 있다.
 
 도구를 추가할 때 고칠 곳은 네 군데다.
 
 1. `routes.ts` 의 `ROUTE_TABLE` 에 한 줄(`origin: 'rn'`)
 2. `RootNavigator.tsx` 의 `STACK_SCREENS` 에 한 줄
-3. `UtilityScreen.tsx` 에 타일 하나
+3. `UtilityScreen.tsx` 에 카드 하나와 그 도구의 색(`TOOL_PALETTES`), `assets/utility/` 에 일러스트
 4. 이 문서와 ADR
 
 ## 판매 분배금 계산기
