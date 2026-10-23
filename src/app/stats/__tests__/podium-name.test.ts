@@ -1,5 +1,5 @@
 // 단상 닉네임을 어디서 꺾는가(사용자 지정). 줄바꿈을 RN 에 맡기면 폭에 따라 `또뽀메/르` 처럼 한 자만 넘어간다.
-import { podiumBlockPadding, podiumNameLines } from '../podium-name'
+import { podiumAmountScale, podiumBlockPadding, podiumNameLines } from '../podium-name'
 
 describe('podiumNameLines', () => {
   it.each(['렌', '지내우시', 'abcd'])('네 자까지(%p)는 블록을 조금 넘쳐도 한 줄이다', (name) => {
@@ -28,5 +28,21 @@ describe('podiumBlockPadding', () => {
     const 높이 = lineCounts.map((lines, rank) => lines * 줄높이 + podiumBlockPadding(lineCounts, rank, 줄높이))
     expect(높이[0]).toBeGreaterThan(높이[1]!)
     expect(높이[1]).toBeGreaterThan(높이[2]!)
+  })
+})
+
+// 한 블록만 줄이면 `+12.43억` 만 옆의 `+5.61억` 보다 작아 보인다(사용자 지정).
+describe('podiumAmountScale', () => {
+  it('가장 많이 줄여야 하는 금액의 비율을 고르고, 그 비율이면 셋 다 블록에 들어간다', () => {
+    const widths = [52, 40, 40]
+    const scale = podiumAmountScale(widths, 41)
+
+    expect(scale).toBeLessThan(1)
+    for (const width of widths) expect(width * scale).toBeLessThanOrEqual(41)
+  })
+
+  it('셋 다 들어가면 줄이지 않는다. 아직 못 잰 폭이 있어도 마찬가지다', () => {
+    expect(podiumAmountScale([30, 40], 41)).toBe(1)
+    expect(podiumAmountScale([], 0)).toBe(1)
   })
 })

@@ -88,4 +88,22 @@ describe('CharacterSection', () => {
     expect(figure.zIndex).toBeGreaterThan(0)
     expect(figure.marginBottom).toBeLessThan(0)
   })
+
+  // 한 블록만 줄이면 그 금액만 옆 금액보다 작아 보인다(사용자 지정).
+  it('한 금액만 블록보다 길어도 단상 금액 셋이 같은 크기로 줄어든다', async () => {
+    const view = await 그리기()
+    const 폭 = (width: number) => ({ nativeEvent: { layout: { x: 0, y: 0, width, height: 15 } } })
+
+    await act(async () => {
+      fireEvent(view.getAllByTestId('stats-podium-amount')[0]!, 'layout', 폭(45))
+      view.getAllByTestId('stats-podium-amount-measure', { includeHiddenElements: true }).forEach((measure, i) => {
+        fireEvent(measure, 'layout', 폭(i === 0 ? 60 : 30))
+      })
+    })
+
+    const sizes = view.getAllByTestId('stats-podium-amount').map((amount) => flattenStyle(amount.props.style).fontSize)
+    expect(new Set(sizes).size).toBe(1)
+    expect(sizes[0]).toBeLessThan(10)
+  })
 })
+

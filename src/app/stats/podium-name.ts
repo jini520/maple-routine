@@ -25,3 +25,17 @@ export function podiumBlockPadding(lineCounts: readonly number[], rank: number, 
   const most = Math.max(...lineCounts)
   return (BLOCK_STEPS[rank] ?? 0) + (most - (lineCounts[rank] ?? most)) * lineHeight
 }
+
+/**
+ * 단상 금액 셋에 함께 쓰는 글자 배수. 가장 많이 줄여야 하는 금액의 비율이라 셋이 같은 크기로 줄어든다.
+ * 한 블록만 줄이면 그 금액만 옆 금액보다 작아 보인다.
+ *
+ * @param naturalWidths 줄이지 않았을 때의 금액 폭. 아직 못 잰 금액은 빠져 있다
+ * @param available 블록 안에서 금액이 쓸 수 있는 폭
+ */
+export function podiumAmountScale(naturalWidths: readonly number[], available: number): number {
+  if (available <= 0) return 1
+  const ratio = Math.min(1, ...naturalWidths.map((width) => available / width))
+  // 소수 둘째 자리에서 내린다. 올림 오차로 몇 분의 1px 넘치면 RN 이 그 금액만 다시 줄인다.
+  return Math.floor(ratio * 100) / 100
+}

@@ -12,7 +12,7 @@ import type { CharacterTotals } from '../../features/stats/aggregate'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { useTextScale } from '../../theme/text-scale'
 import { unknownCharacterAsset } from '../../lib/assets/asset-lookup'
-import { podiumBlockPadding, podiumNameLines } from './podium-name'
+import { podiumAmountScale, podiumBlockPadding, podiumNameLines } from './podium-name'
 import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
 
@@ -61,6 +61,8 @@ const FIGURE_SCALE = PODIUM_FIGURE_WIDTH / FIGURE_BOX.width
 const FIGURE_OVERLAP = 16
 /** `text-10` 의 줄 높이(`typography.cjs`). 줄이 적은 블록을 이만큼씩 늘려 순위가 안 뒤집히게 */
 const NAME_LINE_HEIGHT = 15
+/** 단상 금액의 좌우 여백. 금액이 쓸 폭은 블록 폭에서 이 두 배를 뺀 것이다 */
+const AMOUNT_PAD = 2
 /** 화면에 서는 차례. 2위 · 1위 · 3위 */
 const PODIUM_ORDER = [1, 0, 2]
 
@@ -120,6 +122,13 @@ export const CharacterSection = memo(function CharacterSection(props: {
   const zero = (maxNegative / span) * 100
   const podium = shown.slice(0, 3)
   const nameLineCounts = podium.map((row) => podiumNameLines(row.name).length)
+  const amountOf = (row: CharacterTotals): string => (net ? signed(valueOf(row, tab)) : formatMesoCompact(valueOf(row, tab)))
+  const [amountWidths, setAmountWidths] = useState<Record<number, number>>({})
+  const [amountRoom, setAmountRoom] = useState(0)
+  const amountScale = podiumAmountScale(
+    podium.flatMap((_, rank) => amountWidths[rank] ?? []),
+    amountRoom - AMOUNT_PAD * 2,
+  )
 
   return (
     <StatsSection
@@ -175,6 +184,30 @@ export const CharacterSection = memo(function CharacterSection(props: {
         </View>
 
         <View className="w-[132px] flex-row items-end gap-0.5">
+          {/* 줄이지 않은 금액의 폭을 재는 보이지 않는 글자. 블록보다 넓은 곳에 두어야 잘리지 않은 폭이 나온다. */}
+          <View
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            className="absolute left-0 top-0 items-start opacity-0"
+            style={{ width: 400 }}
+          >
+            {podium.map((row, rank) => (
+              <Text
+                key={row.key}
+                testID="stats-podium-amount-measure"
+                numberOfLines={1}
+                className="text-10 font-bold"
+                style={TABULAR_NUMS}
+                onLayout={(event) => {
+                  const width = event.nativeEvent.layout.width
+                  setAmountWidths((widths) => (widths[rank] === width ? widths : { ...widths, [rank]: width }))
+                }}
+              >
+                {amountOf(row)}
+              </Text>
+            ))}
+          </View>
           {PODIUM_ORDER.map((rank) => {
             const row = podium[rank]
             if (row === undefined) return <View key={`empty-${rank}`} className="flex-1" />
@@ -212,13 +245,16 @@ export const CharacterSection = memo(function CharacterSection(props: {
                       {podiumNameLines(row.name).join('\n')}
                     </Text>
                   </View>
+                  {/* 크기는 `amountScale` 이 셋에 같게 정한다. `adjustsFontSizeToFit` 는 재기 전 첫 화면을 받친다. */}
                   <Text
+                    testID="stats-podium-amount"
                     numberOfLines={1}
                     adjustsFontSizeToFit
-                    className={`max-w-full px-0.5 text-10 font-bold ${tab === '지출' || value < 0 ? 'text-fall-ink' : 'text-rise-ink'}`}
-                    style={TABULAR_NUMS}
+                    className={`w-full text-center text-10 font-bold ${tab === '지출' || value < 0 ? 'text-fall-ink' : 'text-rise-ink'}`}
+                    style={[TABULAR_NUMS, { paddingHorizontal: AMOUNT_PAD, fontSize: 10 * amountScale }]}
+                    onLayout={(event) => setAmountRoom(event.nativeEvent.layout.width)}
                   >
-                    {net ? signed(value) : formatMesoCompact(value)}
+                    {amountOf(row)}
                   </Text>
                 </View>
               </View>
