@@ -230,10 +230,10 @@ describe('SettingsAccountDataScreen', () => {
 // 로그아웃은 연결 해제와 다르다. 지우는 것은 넥슨 로그인 하나이고 API 키와 내부 데이터는 남는다.
 /** 스토어가 내주는 로그아웃 액션. 모킹이 셀렉터라 꺼내 쓰는 길이 한 줄이 아니다. */
 function 로그아웃액션(): jest.Mock {
-  const { useAuthStore } = jest.requireMock('../../../features/auth/store') as {
+  const { useAuthStore: authStoreMock } = jest.requireMock('../../../features/auth/store') as {
     useAuthStore: (s: (v: { signOutNexonLogin: jest.Mock }) => unknown) => unknown
   }
-  return useAuthStore((state) => state.signOutNexonLogin) as jest.Mock
+  return authStoreMock((state) => state.signOutNexonLogin) as jest.Mock
 }
 
 describe('넥슨 로그아웃 행', () => {
