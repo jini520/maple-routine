@@ -155,8 +155,8 @@ function CapScroll(props: { children: ReactNode; surface?: string; testId: strin
  * 카드 껍데기(테두리·배경·패딩)를 갖는 패널. 모달 대부분이 이것을 쓴다.
  *
  * 스크림 위 테두리 톤다운은 `border-panel-border` 한 클래스다. 모드 분기는 `theme-vars.ts`
- * 에서 `definition.mode` 로 한 번 일어난다. `Card` atom 이 갖고 있는 `border-border` 를 이
- * 클래스가 덮는다.
+ * 에서 `definition.mode` 로 한 번 일어난다. `Card` atom 은 테두리가 없으므로 폭(`border`)도 여기서 준다.
+ * 스크림 위에 뜨는 패널이라 화면의 카드와 달리 테두리로 바깥과 가른다.
  */
 function ModalCard(props: ModalCardProps): React.JSX.Element {
   const maxHeight = useContext(MaxHeightContext)
@@ -165,7 +165,7 @@ function ModalCard(props: ModalCardProps): React.JSX.Element {
     <Card
       testID="modal-card"
       onStartShouldSetResponder={claimTouch}
-      className={`w-full ${props.maxWidth ?? 'max-w-sm'} border-panel-border ${
+      className={`w-full ${props.maxWidth ?? 'max-w-sm'} border border-panel-border ${
         props.tight === true ? 'px-6 pb-4 pt-6' : 'p-6'
       }`}
       style={{ maxHeight }}

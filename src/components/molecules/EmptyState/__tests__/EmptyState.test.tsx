@@ -51,7 +51,6 @@ describe('EmptyState', () => {
       width: 48,
     })
     expect(flattenStyle(getByTestId('empty-state').props.style)).toMatchObject({
-      borderWidth: 1,
       backgroundColor: 기본테마.surface,
     })
     expect(flattenStyle(getByTestId('empty-state-title').props.style).fontSize).toBe(14)

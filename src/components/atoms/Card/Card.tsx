@@ -1,6 +1,6 @@
 /**
  * 카드 atom. `design-system.md` 의 기본 컴포넌트 절이 정의한 카드를 코드로 승격한 것.
- * `rounded-[14px]` 를 쓰는 21곳의 공통 토큰이 정확히 이 넷이다.
+ * 테두리 없이 카드 색만 칠한다. 카드끼리는 바탕과 카드 색의 차이로 갈린다.
  *
  * 코어가 얇아 보이지만 `rounded-[14px]` 를 한곳에 모으는 것이 요점이다. 디자인 원칙 2가
  * "컴포넌트 성격별로 라운딩을 다르게"(카드 14px · 버튼 pill · 인풋 10px)라고 정해 뒀는데,
@@ -15,7 +15,7 @@
  */
 import { View, type ViewProps } from 'react-native'
 
-const CARD_CLASS = 'rounded-[14px] border border-border bg-surface'
+const CARD_CLASS = 'rounded-[14px] bg-surface'
 
 export type CardProps = ViewProps
 
