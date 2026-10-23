@@ -10,7 +10,7 @@
 
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
-import { Path } from 'react-native-svg'
+import { G, Path } from 'react-native-svg'
 
 import { Text } from '../../../components/atoms'
 import { CharacterAvatar } from '../../../components/molecules/CharacterAvatar/CharacterAvatar'
@@ -22,6 +22,7 @@ import type { CategoryTotal, StatsTotals } from '../../../features/stats/aggrega
 import { useAnchoredPopover } from '../../../hooks/useAnchoredPopover'
 import { formatMesoCompact, formatMesoSigned } from '../../../lib/cashbook/meso-compact'
 import { Svg } from '../../../lib/nativewind-interop'
+import { SLICE_LIMIT, SLICE_OPACITY } from '../../../lib/stats/slice-steps'
 import { semiDonutGeometry } from '../../../lib/today/semi-donut'
 import { useThemeAppearance } from '../../../theme/context'
 import type { WeeklyIncomeCharacterView, WeeklyIncomeView } from '../view-model'
@@ -32,11 +33,6 @@ type Mode = (typeof MODES)[number]
 
 const RANK_LABELS = ['1st', '2nd', '3rd'] as const
 const FACE_PX = 32
-
-/** 통계 도넛과 같은 진하기 계단. 큰 갈래가 진하다 */
-const SLICE_OPACITY = [1, 0.72, 0.5, 0.32, 0.2]
-/** 조각 수 상한. 넘으면 앞 넷과 `그 외 n` 으로 묶는다. 하나만 넘으면 묶지 않는다(통계 도넛과 같다) */
-const SLICE_LIMIT = 4
 
 const DONUT = { width: 168, thickness: 30 } as const
 /** 조각 모서리의 둥근 정도. 조각을 이만큼 안으로 줄이고 같은 색 선으로 두르면 모서리가 둥글어진다 */
@@ -103,6 +99,7 @@ function rankOf(characters: readonly WeeklyIncomeCharacterView[], mode: Mode): W
 
 /**
  * 모서리가 둥근 반원 도넛. 경로는 `semiDonutGeometry` 가 만든다. 같은 색의 `CORNER × 2` 굵기 선을 둘러 모서리를 둥글게 한다.
+ * 가운데 글자는 안쪽 빈 반원의 세로 가운데에 둔다.
  */
 function SemiDonut(props: { slices: readonly Slice[]; trackColor: string; children: React.ReactNode }): React.JSX.Element {
   const shape = semiDonutGeometry(
@@ -117,21 +114,19 @@ function SemiDonut(props: { slices: readonly Slice[]; trackColor: string; childr
         {drawn.length === 0 ? (
           <Path d={shape.track} fill={props.trackColor} stroke={props.trackColor} strokeWidth={CORNER * 2} strokeLinejoin="round" />
         ) : (
+          // 진하기는 G 에 준다. 면과 선에 따로 주면 겹친 띠가 두 번 칠해져 연한 조각에 진한 테두리가 생긴다
           drawn.map(({ slice, d }) => (
-            <Path
-              key={slice.key}
-              d={d}
-              fill={slice.color}
-              fillOpacity={slice.opacity}
-              stroke={slice.color}
-              strokeOpacity={slice.opacity}
-              strokeWidth={CORNER * 2}
-              strokeLinejoin="round"
-            />
+            <G key={slice.key} testID={`weekly-income-slice-${slice.key}`} opacity={slice.opacity}>
+              <Path d={d} fill={slice.color} stroke={slice.color} strokeWidth={CORNER * 2} strokeLinejoin="round" />
+            </G>
           ))
         )}
       </Svg>
-      <View pointerEvents="none" className="absolute inset-x-0 bottom-0 items-center">
+      <View
+        pointerEvents="none"
+        className="absolute inset-x-0 items-center justify-center"
+        style={{ top: shape.holeTop, height: shape.bottom - shape.holeTop }}
+      >
         {props.children}
       </View>
     </View>
