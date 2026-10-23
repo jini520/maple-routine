@@ -20,6 +20,7 @@ export type WidgetId =
   | 'reset-countdown'
   | 'unpriced-drops'
   | 'next-party-schedule'
+  | 'quick-links'
 
 /**
  * 탭 이름이거나 루트 스택 화면 `DropPrice`. 그 화면은 파라미터를 안 받으면 열리는 순간의 이번 주로

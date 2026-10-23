@@ -108,6 +108,8 @@ export const STORAGE_KEYS = {
   //
   // `KEEP_KEYS` 에 넣는다. 재조회로 복구되지 않는, 사용자가 고른 값이다.
   statsCumulativeStart: 'statsCumulativeStart',
+  // today 빠른 이동 구성(JSON `{ rows, ids }`). 사용자가 고른 것이라 `KEEP_KEYS` 에 넣는다.
+  quickLinks: 'quickLinks',
   // 페이지별 마지막 데이터 호출 시각. `{ today: ISO, content: ISO, … }` 한 칸이다.
   //
   // 키를 다섯으로 쪼개지 않는 것은 읽는 쪽이 언제나 다섯을 한 번에 필요로 해서다(부팅 때 한 번

@@ -1,7 +1,7 @@
 # today
 
-앱을 켜면 처음 보이는 화면이다. 4열 격자 위에 위젯 아홉 개를 놓아, 지금 할 일과 이번 주 결과를 요약해
-보여 준다. 왜 이렇게 만들었는지는 [[ADR-058]] 에 있다.
+앱을 켜면 처음 보이는 화면이다. 4열 격자 위에 위젯 열 개를 놓아, 지금 할 일과 이번 주 결과를 요약해
+보여 준다. 왜 이렇게 만들었는지는 [[ADR-058]] 에, 빠른 이동 위젯은 [[ADR-089]] 에 있다.
 
 ## 관련 소스
 
@@ -13,7 +13,11 @@
 | `app/today/widgets/registry.ts` | 위젯마다 그리는 폭 · 누르면 갈 곳 · 숨김 조건 |
 | `app/today/widgets/layout.ts` | 기본 배치 좌표(`TILE_LAYOUT`) |
 | `app/today/widgets/types.ts` | 위젯 id 와 프롭 형식 |
-| `app/today/widgets/*Widget.tsx` | 위젯 아홉 개 |
+| `app/today/widgets/*Widget.tsx` | 위젯 열 개 |
+| `app/today/quick-links.ts` | 빠른 이동 칸마다 가는 화면 · 아이콘과, 칸을 칠하는 색 |
+| `app/today/QuickLinksSheet.tsx` | 빠른 이동 편집 시트 |
+| `features/quick-links/config.ts` · `store.ts` | 빠른 이동의 화면 목록 · 기본 구성 · 구성을 바꾸는 함수와 스토어 |
+| `storage/quick-links.ts` | 빠른 이동 구성(Preferences `quickLinks`) |
 | `app/today/TodayLoadingModal.tsx` | 처음 불러오는 동안 띄우는 모달 |
 | `lib/today/widget-grid-metrics.ts` | 창 폭에서 열 폭 · 간격을 계산한다 |
 | `lib/today/widget-layout.ts` | 배치 검증(`validateWidgetLayout`) · 줄 묶기(`groupWidgetRows`) · 숨김(`omitHiddenTiles`) |
@@ -56,12 +60,13 @@ WidgetGrid            px-4 pt-2
 
 ```
 0  4칸  대표 캐릭터
-1  2칸  초기화 카운트다운        2칸  주간 결정석 판매 한도
-2  4칸  다음 파티 스케줄        보여 줄 회차가 없으면 맨 아래 줄로 간다
-3  4칸  계정 및 메이플 ID 공유 컨텐츠
-4  4칸  남은 스케줄
-5  4칸  이번 주 수익
-6  2칸  이번 주 최고가          2칸  가격 미입력
+1  4칸  빠른 이동
+2  2칸  초기화 카운트다운        2칸  주간 결정석 판매 한도
+3  4칸  다음 파티 스케줄        보여 줄 회차가 없으면 맨 아래 줄로 간다
+4  4칸  계정 및 메이플 ID 공유 컨텐츠
+5  4칸  남은 스케줄
+6  4칸  이번 주 수익
+7  2칸  이번 주 최고가          2칸  가격 미입력
 ```
 
 위젯을 더할 때는 `types.ts` 의 `WidgetId`, `registry.ts` 의 한 줄, `layout.ts` 의 좌표 한 줄을 고친다.
@@ -72,6 +77,7 @@ WidgetGrid            px-4 pt-2
 | id | 내용 | 폭 | 누르면 | 값의 출처 |
 |---|---|---|---|---|
 | `representative-character` | 초상화(52) 오른쪽에 월드 엠블럼 · 닉네임 · 길드, 레벨 · 직업, EXP 칸 | 4 | 없음 | `character-basic-cache` · 캐릭터 선택 스토어 |
+| `quick-links` | 사용자가 고른 화면으로 가는 칸. 한 줄 5칸 · 두 줄 10칸, 원 안의 아이콘과 9px 짧은 이름. 제목 줄의 `편집` 이 편집 시트를 연다 | 4 | 칸마다 그 화면 | 빠른 이동 스토어 |
 | `reset-countdown` | 일일 · 주간 초기화까지 남은 시간. 일일은 초까지 1초마다 | 2 | 없음 | 뷰모델의 `resets` |
 | `crystal-limit` | 첫 월드의 링(반시계)과 `N개 남음`, 나머지 월드는 한 줄 | 2 | 보스 수익 탭 | 보스 수익 스토어 `currentWeekRows` |
 | `next-party-schedule` | 시작 전인 가장 가까운 파티 회차 하나. 캐릭터마다 칸에 닉네임과 보스 줄. 회차가 없으면 맨 아래 줄에서 `매주 반복` · `한 번만` 등록 칸 | 4 | 회차 상세, 또는 고른 갈래의 새 스케줄 시트 | 파티 스케줄 스토어 |

@@ -38,6 +38,8 @@ const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.mesoUnits,
   // 통계 누적 순수익의 시작 날짜. 사용자가 고른 값이라 지워지면 아무도 되살리지 못한다.
   STORAGE_KEYS.statsCumulativeStart,
+  // today 빠른 이동 구성. 사용자가 고른 것이라 지워지면 기본 다섯 칸으로 돌아간다.
+  STORAGE_KEYS.quickLinks,
   // 파티 약속. 사용자가 적은 것이라 지워지면 아무도 되살리지 못한다.
   STORAGE_KEYS.partyAppointments,
   // 주간 보스 수익 계산기의 기록. 사용자가 남긴 것이라 지워지면 아무도 되살리지 못한다.

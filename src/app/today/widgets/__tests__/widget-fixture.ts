@@ -6,6 +6,7 @@
 // 조합이 곧 테스트 입력이다. 그 이득을 실제로 회수하려면 **전부 빈 상태** 하나가 있어야 하고, 각
 // 테스트는 자기가 보는 필드만 덮어쓴다.
 
+import { DEFAULT_QUICK_LINKS } from '../../../../features/quick-links/config'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../../lib/boss/boss-matching'
 import { contentCategoryNameOf, type ContentCategoryKey } from '../../../../lib/scheduler/content-categories'
 
@@ -46,6 +47,7 @@ export const 빈_뷰모델: TodayViewModel = {
     monthly: { atMs: 0, remainingMs: 0, periodMs: 31 * DAY_MS },
   },
   nextParty: [],
+  quickLinks: DEFAULT_QUICK_LINKS,
 }
 
 export function 뷰모델(부분: Partial<TodayViewModel>): TodayViewModel {

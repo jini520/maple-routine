@@ -1,4 +1,5 @@
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
+import { DEFAULT_QUICK_LINKS } from '../../../features/quick-links/config'
 import { bossesInSection, bossKeyOfApiName } from '../../../lib/boss/bosses'
 // today 뷰모델의 **조립 규칙**. 위젯이 스토어를 모르므로 화면이 값을 한
 // 번 모으는데, 그 조립을 순수 함수로 두면 **위젯이 한 줄도 없는 지금 로직 전부를 검증할 수 있다.**
@@ -177,6 +178,7 @@ function input(overrides: Partial<TodayViewModelInput> = {}): TodayViewModelInpu
     dropGroups: [],
     statsDays: {},
     partyAppointments: [],
+    quickLinks: DEFAULT_QUICK_LINKS,
     ...overrides,
   }
 }

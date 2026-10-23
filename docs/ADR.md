@@ -179,7 +179,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-056+072](./adr/ADR-056+072_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |
 | [ADR-057](./adr/ADR-057_notice_feed.md) | 🟢 | notice | 운영자 공지와 넥슨 공지 |
 | [ADR-058+087](./adr/ADR-058+087_today_widgets.md) | 🟢 | today | today 위젯 격자 |
-| [ADR-089](./adr/ADR-089_today_quick-links.md) | ⚪ | today | today 빠른 이동 |
+| [ADR-089](./adr/ADR-089_today_quick-links.md) | 🟢 | today | today 빠른 이동 |
 | [ADR-059](./adr/ADR-059_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
 | [ADR-060+073+079+085+088](./adr/ADR-060+073+079+085+088_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
 | [ADR-061](./adr/ADR-061_design-system_states.md) | 🟢 | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 표시 |

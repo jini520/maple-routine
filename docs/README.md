@@ -22,7 +22,7 @@ docs/
 
 | 카테고리 | 문서 | 다루는 것 | 결정 |
 |---|---|---|---|
-| `today` | [features/today.md](./features/today.md) | 첫 화면 위젯 격자 | [[ADR-058]] |
+| `today` | [features/today.md](./features/today.md) | 첫 화면 위젯 격자 · 빠른 이동 | [[ADR-058]] · [[ADR-089]] |
 | `content-scheduler` | [features/content-scheduler.md](./features/content-scheduler.md) | 일간 · 주간 컨텐츠 진행 | [[ADR-032]] · [[ADR-033]] · [[ADR-034]] · [[ADR-035]] |
 | `boss-scheduler` | [features/boss-scheduler.md](./features/boss-scheduler.md) | 보스 진행 · 파티 인원 · 보스 관리 | [[ADR-036]] · [[ADR-037]] · [[ADR-038]] · [[ADR-039]] |
 | `boss-profit` | [features/boss-profit.md](./features/boss-profit.md) | 보스 수익 기록과 기간 | [[ADR-040]] · [[ADR-041]] · [[ADR-042]] · [[ADR-043]] |

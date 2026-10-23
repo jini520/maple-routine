@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import { useDropEffectStore } from '../features/drop-effect/store'
+import { useQuickLinksStore } from '../features/quick-links/store'
 import { startKeyboardHeightRecorder } from '../features/input-card/keyboard-height'
 import { loadMesoUnits } from '../features/input-card/meso-unit'
 import { useDataFreshness } from '../features/refresh/freshness'
@@ -73,6 +74,7 @@ export function AppShell(): React.JSX.Element {
   const restoreTextSize = useTextSizeStore((state) => state.restoreFromStorage)
   const restoreTrackingMode = useTrackingModeStore((state) => state.restoreFromStorage)
   const restoreDropEffect = useDropEffectStore((state) => state.restoreFromStorage)
+  const restoreQuickLinks = useQuickLinksStore((state) => state.restoreFromStorage)
   const restoreNotice = useNoticeStore((state) => state.restore)
   const resubscribeNotice = useNoticeStore((state) => state.resubscribe)
   const restoreFreshness = useDataFreshness((state) => state.restore)
@@ -113,6 +115,11 @@ export function AppShell(): React.JSX.Element {
 
   useEffect(() => {
     void restoreDropEffect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    void restoreQuickLinks()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

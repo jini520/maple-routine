@@ -54,6 +54,7 @@ import { CharacterManageButton } from './CharacterManageButton'
 import { ManualCompletionBanner } from './ManualCompletionBanner'
 import { NoticeBanner } from './NoticeBanner'
 import { SettlementBanner } from '../SettlementBanner'
+import { useQuickLinksStore } from '../../features/quick-links/store'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
@@ -68,6 +69,7 @@ export function TodayScreen(): React.JSX.Element {
   const refreshNoticeBanner = useNoticeBannerStore((state) => state.refresh)
   const refreshManualCompletion = useManualCompletionStore((state) => state.refresh)
   const partyAppointments = usePartyAppointmentsStore((state) => state.appointments)
+  const quickLinks = useQuickLinksStore((state) => state.config)
   const loadPartyAppointments = usePartyAppointmentsStore((state) => state.load)
 
   // 프로필은 스토어가 아니라 저장소에서 온다(`character-basic-cache` 는 보스 수익·히스토리가 이미
@@ -237,6 +239,7 @@ export function TodayScreen(): React.JSX.Element {
     dropGroups: dropHistory.groups,
     statsDays,
     partyAppointments,
+    quickLinks,
   })
 
   /**
