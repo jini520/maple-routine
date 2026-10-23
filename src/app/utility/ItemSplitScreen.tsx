@@ -13,7 +13,7 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Card, Switch, Text, TextInput } from '../../components/atoms'
+import { Badge, Text, TextInput } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { ShareField } from '../../components/molecules/ShareField/ShareField'
 import { Stepper } from '../../components/molecules/Stepper/Stepper'
@@ -74,46 +74,32 @@ function acceptSalePrice(prev: string, text: string, unit: MesoUnit): string {
   return accepted
 }
 
-function FeeToggle(props: {
-  /** 판매·분배. 접근성 이름의 접두이기도 하다. */
-  label: string
+const FEE_OPTIONS = FEE_PERCENTS.map((percent) => `${percent}%` as const)
+
+/** 수수료 한 줄. 두 줄이 같은 글자(`3%` · `5%`)라 줄째 `testID` 로 가른다. */
+function FeeRow(props: {
+  /** 판매 · 분배 */
+  label: '판매' | '분배'
   value: FeePercent
   onChange: (next: FeePercent) => void
 }): React.JSX.Element {
   return (
-    <View className="flex-row items-center justify-between">
+    <View testID={`item-split-fee-${props.label}`} className="flex-row items-center justify-between">
       <Text className="text-sm text-text">{props.label}</Text>
-      <View className="flex-row gap-2">
-        {FEE_PERCENTS.map((percent) => {
-          const isSelected = props.value === percent
-          return (
-            <Pressable
-              key={percent}
-              role="button"
-              // RN 의 접근성 상태에 *pressed* 가 없다. 고른 것을 담을 수 있는 것은 `selected`
-              // 뿐이다(`DifficultySegment` ①과 같은 처방).
-              aria-selected={isSelected}
-              aria-label={`${props.label} 수수료 ${percent}%`}
-              onPress={() => {
-                if (!isSelected) props.onChange(percent)
-              }}
-              className={`min-w-[56px] items-center rounded-full border px-3 py-1.5 ${
-                isSelected ? 'border-primary bg-primary/10' : 'border-border bg-surface'
-              }`}
-            >
-              <Text
-                className={`text-sm font-semibold ${isSelected ? 'text-primary' : 'text-text-muted'}`}
-                style={TABULAR_NUMS}
-              >
-                {percent}%
-              </Text>
-            </Pressable>
-          )
-        })}
-      </View>
+      <Segment
+        options={FEE_OPTIONS}
+        selected={`${props.value}%`}
+        size="md"
+        onSelect={(option) => props.onChange(Number.parseInt(option, 10) as FeePercent)}
+      />
     </View>
   )
 }
+
+/** 테두리 없는 카드. 이 화면의 카드는 바탕색만으로 갈린다. */
+const CARD_CLASS = 'rounded-[14px] bg-surface'
+
+const SPLIT_OPTIONS = ['기본', '비율'] as const
 
 export function ItemSplitScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
@@ -122,7 +108,7 @@ export function ItemSplitScreen(): React.JSX.Element {
   const [saleText, setSaleText] = useState('')
   const salePriceMeso = mesoValueOf(mesoTextOfUnit(saleText, unit))
   const [partySize, setPartySize] = useState(DEFAULT_PARTY_SIZE)
-  // 비율 약속은 흔한 일이 아니라 스위치를 켜야 선다. 끄면 지금 그대로 파티원 수로 균등이다.
+  // `비율` 을 골라야 선다. `기본` 이면 파티원 수로 균등이다.
   const [shares, setShares] = useState<{ myShare: number; sharesTotal: number } | null>(null)
   const [saleFeePercent, setSaleFeePercent] = useState<FeePercent>(DEFAULT_FEE_PERCENT)
   const [splitFeePercent, setSplitFeePercent] = useState<FeePercent>(DEFAULT_FEE_PERCENT)
@@ -150,10 +136,10 @@ export function ItemSplitScreen(): React.JSX.Element {
       }
     >
       <View className="gap-4 px-4 pb-4" testID="screen-UtilityItemSplit">
-        <Card className="gap-3 px-4 py-4">
+        <View className={`${CARD_CLASS} gap-3 p-4`}>
           <View className="flex-row items-center justify-between">
-            <Text className="text-xs font-semibold text-text-muted">판매가</Text>
-            {/* 단위는 입력 칸 바로 위 오른쪽이다. 입력 카드의 단위 세그먼트와 같은 자리다. */}
+            <Text className="text-sm font-bold text-text">판매가</Text>
+            {/* 단위는 값 상자 바로 위 오른쪽이다. 입력 카드의 단위 세그먼트와 같은 자리다. */}
             <View className="flex-row items-center gap-3">
               {salePriceMeso > 0 && (
                 <Pressable role="button" aria-label="금액 초기화" onPress={() => setSaleText('')}>
@@ -175,27 +161,32 @@ export function ItemSplitScreen(): React.JSX.Element {
             </View>
           </View>
 
-          <TextInput
-            aria-label="판매가"
-            value={shownUnitText(saleText)}
-            onChangeText={(text) => setSaleText(acceptSalePrice(saleText, text, unit))}
-            keyboardType="decimal-pad"
-            placeholder="0"
-            className="h-12 rounded-[10px] border border-border bg-surface-2 px-3 text-right text-2xl font-bold text-text"
-            style={TABULAR_NUMS}
-          />
-          {/* 치는 동안 자릿수를 눈으로 세지 않게 한다. 확정 금액의 `toLocaleString()` 과
-              짝이다. 비어 있어도 줄을 그린다. 조건부로 그리면 첫 글자를 치는 순간 이 줄이
-              생기며 아래 카드가 통째로 밀린다. 빈 문자열은 줄 높이를 못 만들어 공백 한 칸을
-              넣는다. */}
-          <Text
-            testID="item-split-sale-price-units"
-            className="text-right text-xs text-text-muted"
-          >
-            {salePriceMeso > 0 ? formatMesoUnits(salePriceMeso) : ' '}
-          </Text>
+          {/* 입력 카드의 값 상자와 같은 모양이다. 단위 읽기를 상자 안 위 오른쪽에 겹쳐 두어, 값을 치기
+              시작해도 상자 높이가 안 바뀐다. 비어 있어도 공백 한 칸을 넣어 자리를 지킨다. */}
+          <View className="relative min-h-14 flex-row items-center gap-2 rounded-xl bg-card-inset px-3.5 pb-1 pt-[18px]">
+            <Text
+              testID="item-split-sale-price-units"
+              numberOfLines={1}
+              className="absolute right-3.5 top-1.5 text-11 text-text-muted"
+              style={TABULAR_NUMS}
+            >
+              {salePriceMeso > 0 ? formatMesoUnits(salePriceMeso) : ' '}
+            </Text>
+            <TextInput
+              aria-label="판매가"
+              value={shownUnitText(saleText)}
+              onChangeText={(text) => setSaleText(acceptSalePrice(saleText, text, unit))}
+              keyboardType="decimal-pad"
+              placeholder="0"
+              className="h-9 flex-1 text-right font-bold text-text"
+              style={[TABULAR_NUMS, { fontSize: 20 }]}
+            />
+            <Text className="shrink-0 text-xs font-semibold text-text-muted">
+              {unit === 'base' ? '메소' : `${MESO_UNIT_LABELS[unit]} 메소`}
+            </Text>
+          </View>
 
-          <View className="flex-row flex-wrap gap-2">
+          <View className="flex-row flex-wrap justify-end gap-1.5">
             {MESO_QUICK_ADDS.map((chip) => (
               <Pressable
                 key={chip.label}
@@ -204,55 +195,68 @@ export function ItemSplitScreen(): React.JSX.Element {
                 onPress={() =>
                   setSaleText(unitTextOf(mesoTextOf(Math.min(salePriceMeso + chip.value, MAX_SALE_PRICE_MESO)), unit))
                 }
-                className="rounded-full border border-border bg-surface px-3 py-1.5"
+                className="h-6 justify-center rounded-full bg-card-inset px-2"
               >
-                <Text className="text-xs font-medium text-text-muted">{chip.label}</Text>
+                <Text className="text-11 font-semibold text-text-muted" style={TABULAR_NUMS}>
+                  {chip.label}
+                </Text>
               </Pressable>
             ))}
           </View>
-        </Card>
+        </View>
 
-        <Card className="gap-3 px-4 py-4">
-          {/* 비율을 켜면 파티원 수가 사라진다. 비율은 `나 : 나머지` 라 두 쪽이고 인원이 식에
-              안 들어간다. */}
-          {shares === null && (
-            <>
-              <Text className="text-xs font-semibold text-text-muted">파티원 수</Text>
-              <Stepper
-                size="lg"
-                label="분배 파티원 수"
-                value={partySize}
-                max={MAX_PARTY_SIZE}
-                onChange={setPartySize}
-              />
-            </>
-          )}
+        <View className={`${CARD_CLASS} gap-3 p-4`}>
+          {/* 금액 단위 세그먼트에도 `기본` 이 있어 줄째 `testID` 로 가른다. */}
+          <View testID="item-split-split" className="flex-row items-center justify-between gap-2.5">
+            <Text className="text-13 font-bold text-text">분배 방식</Text>
+            <Segment
+              options={SPLIT_OPTIONS}
+              selected={shares === null ? '기본' : '비율'}
+              size="md"
+              // 반반으로 시작한다. 아무것도 약속하지 않은 상태다. 파티원 수는 그대로 들고 있다.
+              onSelect={(option) => setShares(option === '기본' ? null : { myShare: 1, sharesTotal: 2 })}
+            />
+          </View>
 
-          <Switch
-            on={shares !== null}
-            label="비율로 입력"
-            size="lg"
-            className="justify-between"
-            // 반반으로 시작한다. 아무것도 약속하지 않은 상태다.
-            onToggle={() => setShares(shares === null ? { myShare: 1, sharesTotal: 2 } : null)}
-          >
-            <Text className="text-xs font-semibold text-text-muted">비율로 입력</Text>
-          </Switch>
+          {/* 두 칸의 높이를 96 으로 못박는다. 다르면 세그먼트를 누를 때마다 아래 카드가 뛴다. */}
+          <View testID="item-split-split-body" className="h-24 rounded-[12px] bg-card-inset px-3 pb-3 pt-[11px]">
+            {shares === null ? (
+              <>
+                <View className="flex-row items-center justify-between gap-1.5">
+                  <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
+                    파티 인원
+                  </Text>
+                  <Badge variant="primary" size="mini" style={TABULAR_NUMS}>
+                    최대 {MAX_PARTY_SIZE}명
+                  </Badge>
+                </View>
+                <View className="flex-1 items-center justify-center">
+                  <Stepper
+                    size="lg"
+                    label="분배 파티원 수"
+                    value={partySize}
+                    max={MAX_PARTY_SIZE}
+                    onChange={setPartySize}
+                  />
+                </View>
+              </>
+            ) : (
+              // 받는 사람들의 비율은 나머지를 고르게 나눈 것으로 본다. 파는 사람이 아는 것은 자기
+              // 몫과 합뿐이다.
+              <ShareField label="내 몫" value={shares} onChange={setShares} />
+            )}
+          </View>
+        </View>
 
-          {/* 받는 사람들의 비율은 나머지를 고르게 나눈 것으로 본다. 파는 사람이 아는 것은 자기
-              몫과 합뿐이다. */}
-          {shares !== null && <ShareField label="내 몫" value={shares} onChange={setShares} />}
-        </Card>
-
-        <Card className="gap-3 px-4 py-4">
-          <Text className="text-xs font-semibold text-text-muted">경매장 수수료</Text>
+        <View className={`${CARD_CLASS} gap-3 p-4`}>
+          <Text className="text-13 font-bold text-text">경매장 수수료</Text>
           {/* MVP 실버 등급 이상이면 5% → 3%(사용자 확인). 판매와 분배를
               각각 고르는 것이 결정이다. 세 대표 상황 밖의 조합도 나온다. */}
-          <FeeToggle label="판매" value={saleFeePercent} onChange={setSaleFeePercent} />
-          <FeeToggle label="분배" value={splitFeePercent} onChange={setSplitFeePercent} />
-        </Card>
+          <FeeRow label="판매" value={saleFeePercent} onChange={setSaleFeePercent} />
+          <FeeRow label="분배" value={splitFeePercent} onChange={setSplitFeePercent} />
+        </View>
 
-        <Card className="items-center gap-1 px-4 py-5">
+        <View className={`${CARD_CLASS} items-center gap-1 px-4 py-5`}>
           <Text className="text-xs font-semibold text-text-muted">정산 금액</Text>
           {salePriceMeso === 0 ? (
             <Text className="pt-1 text-sm text-text-muted">판매가를 입력하세요</Text>
@@ -273,7 +277,7 @@ export function ItemSplitScreen(): React.JSX.Element {
               <Text className="text-xs text-text-muted">{formatMesoUnits(transfer)}</Text>
             </>
           )}
-        </Card>
+        </View>
       </View>
     </ScreenScroll>
   )

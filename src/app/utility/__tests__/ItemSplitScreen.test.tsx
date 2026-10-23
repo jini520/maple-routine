@@ -4,9 +4,9 @@
 // 어느 입력이 어느 인자로 가는가, 그리고 결과가 없는 두 자리(1인 파티· 판매가 0)에서 화면이
 // 숫자 대신 무엇을 말하는가.
 
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
-import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { ItemSplitScreen } from '../ItemSplitScreen'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
@@ -39,6 +39,11 @@ async function typeSalePrice(view: Rendered, digits: string): Promise<void> {
   await act(async () => {
     fireEvent.changeText(view.getByLabelText('판매가'), digits)
   })
+}
+
+/** 수수료 줄(`판매` · `분배`)의 세그먼트 조각. 두 줄이 같은 글자(`3%` · `5%`)를 쓴다. */
+function feeOption(view: Rendered, row: '판매' | '분배', percent: '3%' | '5%'): AtomElement {
+  return within(view.getByTestId(`item-split-fee-${row}`)).getByLabelText(percent)
 }
 
 function transferText(view: Rendered): string {
@@ -78,7 +83,7 @@ describe('ItemSplitScreen: 결과', () => {
     const view = await renderOverlay(<ItemSplitScreen />)
     await typeSalePrice(view, '1000000000')
 
-    await press(view.getByLabelText('분배 수수료 5%'))
+    await press(feeOption(view, '분배', '5%'))
 
     expect(transferText(view)).toBe('497,435,897')
   })
@@ -88,7 +93,7 @@ describe('ItemSplitScreen: 결과', () => {
     const view = await renderOverlay(<ItemSplitScreen />)
     await typeSalePrice(view, '1000000000')
 
-    await press(view.getByLabelText('판매 수수료 5%'))
+    await press(feeOption(view, '판매', '5%'))
 
     expect(transferText(view)).toBe('482,233,502')
   })
@@ -101,6 +106,36 @@ describe('ItemSplitScreen: 결과', () => {
 
     // 3인· 판매 3%· 분배 3%: ⌊97,000,000,000 / 297⌋
     expect(transferText(view)).toBe('326,599,326')
+  })
+})
+
+describe('ItemSplitScreen: 분배 방식', () => {
+  // 비율은 `나 : 나머지` 두 쪽이라 파티원 수가 식에 안 들어간다. 그래서 칸째 갈아 끼운다.
+  it('비율을 고르면 파티원 수 대신 내 몫을 받고, 기본으로 돌아오면 파티원 수가 그대로다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+    await press(view.getByLabelText('분배 파티원 수 증가'))
+
+    const split = within(view.getByTestId('item-split-split'))
+
+    await press(split.getByLabelText('비율'))
+    expect(view.queryByLabelText('분배 파티원 수 증가')).toBeNull()
+    expect(view.getByLabelText('내 몫 내 비율')).toBeTruthy()
+
+    await press(split.getByLabelText('기본'))
+    expect(view.queryByLabelText('내 몫 내 비율')).toBeNull()
+    expect(view.getByText('3')).toBeTruthy()
+  })
+
+  // 두 칸의 높이가 다르면 세그먼트를 누를 때마다 아래 카드가 위아래로 뛴다.
+  it('기본 칸과 비율 칸의 높이가 같다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+    const heightOf = (): unknown => flattenStyle(view.getByTestId('item-split-split-body').props.style).height
+
+    const base = heightOf()
+    await press(within(view.getByTestId('item-split-split')).getByLabelText('비율'))
+
+    expect(base).toBeDefined()
+    expect(heightOf()).toBe(base)
   })
 })
 
