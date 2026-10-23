@@ -16,6 +16,17 @@ function 바깥끝점(d: string): [number, number] {
   return [Number(parts[5]), Number(parts[6].replace('L', ''))]
 }
 
+/** 경로의 네 꼭짓점. 바깥 시작 · 바깥 끝 · 안쪽 끝 · 안쪽 시작 순이다 */
+function 꼭짓점(d: string): [number, number][] {
+  const numbers = d.replace(/[MLAZ]/g, ' ').trim().split(/\s+/).map(Number)
+  // M x y · A rx ry rot large sweep x y · L x y · A rx ry rot large sweep x y
+  return [[numbers[0], numbers[1]], [numbers[7], numbers[8]], [numbers[9], numbers[10]], [numbers[16], numbers[17]]]
+}
+
+function 거리(a: [number, number], b: [number, number]): number {
+  return Math.hypot(a[0] - b[0], a[1] - b[1])
+}
+
 describe('semiDonutGeometry', () => {
   it('첫 조각은 왼쪽 수평선에서, 마지막 조각은 오른쪽 수평선에서 끝난다', () => {
     const { paths, cx, cy, outer } = semiDonutGeometry([3, 1], 치수)
@@ -42,6 +53,17 @@ describe('semiDonutGeometry', () => {
 
     expect(시작점(track)).toEqual([cx - outer, cy])
     expect(바깥끝점(track)).toEqual([cx + outer, cy])
+  })
+
+  // 틈을 같은 각도로 벌리면 반지름이 큰 바깥쪽 틈이 안쪽보다 넓다.
+  it('조각 사이 틈은 바깥 호와 안쪽 호에서 폭이 같다', () => {
+    const { paths } = semiDonutGeometry([5, 3, 2], 치수)
+
+    for (const [왼쪽, 오른쪽] of [[paths[0], paths[1]], [paths[1], paths[2]]]) {
+      const [, 바깥끝, 안쪽끝] = 꼭짓점(왼쪽)
+      const [바깥시작, , , 안쪽시작] = 꼭짓점(오른쪽)
+      expect(거리(바깥끝, 바깥시작)).toBeCloseTo(거리(안쪽끝, 안쪽시작), 1)
+    }
   })
 
   // 둥근 모서리용 선이 수평선 아래로 `corner` 만큼 나온다. 높이가 그만큼 없으면 바닥이 잘린다.

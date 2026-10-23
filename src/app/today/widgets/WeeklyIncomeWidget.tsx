@@ -99,7 +99,6 @@ function rankOf(characters: readonly WeeklyIncomeCharacterView[], mode: Mode): W
 
 /**
  * 모서리가 둥근 반원 도넛. 경로는 `semiDonutGeometry` 가 만든다. 같은 색의 `CORNER × 2` 굵기 선을 둘러 모서리를 둥글게 한다.
- * 가운데 글자는 안쪽 빈 반원의 세로 가운데에 둔다.
  */
 function SemiDonut(props: { slices: readonly Slice[]; trackColor: string; children: React.ReactNode }): React.JSX.Element {
   const shape = semiDonutGeometry(
@@ -122,11 +121,7 @@ function SemiDonut(props: { slices: readonly Slice[]; trackColor: string; childr
           ))
         )}
       </Svg>
-      <View
-        pointerEvents="none"
-        className="absolute inset-x-0 items-center justify-center"
-        style={{ top: shape.holeTop, height: shape.bottom - shape.holeTop }}
-      >
+      <View pointerEvents="none" className="absolute inset-x-0 bottom-0 items-center">
         {props.children}
       </View>
     </View>
