@@ -17,6 +17,8 @@ import type { CharacterBasicProfile, DailyContent, WeeklyContent } from '../../.
 import { findContent } from '../../../lib/scheduler/contents'
 
 import { buildTodayViewModel, type TodayViewModelInput } from '../view-model'
+import { statsRanges } from '../../../features/stats/periods'
+import type { DayRecord } from '../../../features/cashbook/records'
 
 // 2026-08-17(월) 12:00 KST. 이 시점의 주간 기간 키는 직전 목요일인 2026-08-13 이다.
 const NOW = new Date('2026-08-17T03:00:00.000Z')
@@ -173,7 +175,7 @@ function input(overrides: Partial<TodayViewModelInput> = {}): TodayViewModelInpu
     profitRows: [],
     profitDropsByRowKey: {},
     dropGroups: [],
-    drought: null,
+    statsDays: {},
     partyAppointments: [],
     ...overrides,
   }
@@ -508,22 +510,6 @@ describe('남은 스케줄. 순서는 **관리 순서**뿐이다', () => {
     expect(model.schedule[0].syncIssue).toBe('failed')
   })
 
-  // 이 위젯이 답하는 것은 **이번 주에 얼마 벌었나** 다. 조회 불가 캐릭터는 그 숫자를 못 내므로
-  // 줄을 세우지 않는다(사용자 지정).
-  it('이번 주 보스 수익 목록에서 조회 불가 캐릭터를 뺀다', () => {
-    const model = buildTodayViewModel(
-      input({
-        orderedOcids: ['a'],
-        profilesByOcid: { a: profile({ name: '지내우시' }) },
-        contentCharacters: [
-          { ...withRemaining('a', 0), error: { kind: 'characterUnavailable' as const } },
-        ],
-      }),
-    )
-
-    expect(model.profit.topCharacters.map((view) => view.ocid)).not.toContain('a')
-  })
-
   // 대표 카드도 같은 시각에 알아야 EXP 바가 떴다가 배지로 바뀌지 않는다.
   it('대표 카드도 스케줄러 뷰로 판정한다', () => {
     const model = buildTodayViewModel(
@@ -628,150 +614,62 @@ describe('대표 캐릭터', () => {
   })
 })
 
-describe('주간 보스 수익', () => {
-  it('결정석과 아이템 판매가를 함께 더한다', () => {
-    const drops = { [`a|lotus|normal|${WEEK_KEY}`]: [{ dropRecordId: null,
-    category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 }] }
+// 통계 화면과 같은 집계 함수로 같은 주를 센다. 여기서는 그 함수를 이번 주 범위로 부르는지와,
+// 캐릭터 줄에 팝오버 갈래 · 그림이 붙는지를 본다. 집계 자체는 features/stats 의 테스트가 본다.
+describe('이번 주 수익', () => {
+  const week = statsRanges('weekly', WEEK_KEY).current
+  const crystalDay = (ocid: string, characterName: string, payoutMeso: number): DayRecord => ({
+    kind: 'bossCrystal',
+    ocid,
+    characterName,
+    payoutMeso,
+    count: 1,
+    bosses: [{ bossKey: 'lucid', bossName: '루시드', difficulty: 'hard', payoutMeso }],
+  })
+
+  it('이번 주 범위의 기록만 세고, 지난 주 기록은 안 든다', () => {
+    const lastWeek = statsRanges('weekly', WEEK_KEY).trend[0]
     const model = buildTodayViewModel(
       input({
-        orderedOcids: ['a'],
-        profitRows: [profitRow({ payoutMeso: 100 })],
-        profitDropsByRowKey: drops,
+        statsDays: {
+          [week.from]: [crystalDay('a', '단풍루틴', 500)],
+          [lastWeek.from]: [crystalDay('a', '단풍루틴', 900)],
+        },
       }),
     )
 
-    expect(model.profit.totalMeso).toBe(130)
-    expect(model.profit.hasRecords).toBe(true)
+    expect(model.weeklyIncome.totals).toEqual({ incomeMeso: 500, expenseMeso: 0, netMeso: 500 })
+    expect(model.weeklyIncome.income.map((total) => total.key)).toEqual(['boss_crystal'])
   })
 
-  it('기록이 하나도 없으면 0 이고 **미기록** 을 함께 말한다', () => {
-    const model = buildTodayViewModel(input())
-
-    expect(model.profit.totalMeso).toBe(0)
-    expect(model.profit.hasRecords).toBe(false)
-  })
-
-  // 자르는 일은 스토어(`currentWeekRows`)가 한다. 뷰모델이 기간을 다시 판정하면 그 자가 화면의
-  // 자와 갈려, 그 주에 잡은 월간 보스 수익이 today 에서만 사라진다(사용자 제보 2026-10-04).
-  it('받은 행을 그대로 더한다. 기간을 다시 판정하지 않는다', () => {
+  it('캐릭터 줄에 갈래별 합계와 프로필 그림을 싣는다', () => {
     const model = buildTodayViewModel(
       input({
-        orderedOcids: ['a'],
-        profitRows: [
-          profitRow({ payoutMeso: 100 }),
-          profitRow({
-            bossKey: 'black_mage',
-            bossName: '검은 마법사',
-            difficulty: 'hard',
-            cycle: 'monthly',
-            periodKey: MONTH_KEY,
-            defeatedOn: '2026-08-15',
-            payoutMeso: 500,
-          }),
-        ],
+        profilesByOcid: { a: profile({ imageUrl: 'https://example.test/a.png' }) },
+        statsDays: { [week.from]: [crystalDay('a', '단풍루틴', 500)] },
       }),
     )
 
-    expect(model.profit.totalMeso).toBe(600)
-    expect(model.profit.crystalMeso).toBe(600)
+    expect(model.weeklyIncome.characters).toEqual([
+      expect.objectContaining({
+        key: 'ocid:a',
+        imageUrl: 'https://example.test/a.png',
+        incomeMeso: 500,
+        income: [{ key: 'boss_crystal', name: '보스 결정석', meso: 500 }],
+        expense: [],
+      }),
+    ])
   })
 
-  // 월간 보스 드롭은 달 키로 저장된다. 행이 그 주에 섰으면 그 드롭도 이번 주 몫이다.
-  it('월간 보스 행의 드롭도 총액에 든다', () => {
-    const drops = {
-      [`a|black_mage|hard|${MONTH_KEY}`]: [
-        { dropRecordId: null,
-        category: 'equipment' as const, itemKey: null, itemName: '창세의 뱃지', quantity: 1, priceState: 'entered' as const, priceMeso: 90, priceShare: 1 },
-      ],
-    }
-    const model = buildTodayViewModel(
-      input({
-        orderedOcids: ['a'],
-        profitRows: [
-          profitRow({
-            bossKey: 'black_mage',
-            bossName: '검은 마법사',
-            difficulty: 'hard',
-            cycle: 'monthly',
-            periodKey: MONTH_KEY,
-            defeatedOn: '2026-08-15',
-            payoutMeso: 500,
-          }),
-        ],
-        profitDropsByRowKey: drops,
-      }),
-    )
-
-    expect(model.profit.itemMeso).toBe(90)
-    expect(model.profit.totalMeso).toBe(590)
-  })
-
-  // 아직 안 잡은 월간 보스는 이번 주에 미완료로 선다. 금액은 0 이다(`payoutMeso` 가 0).
-  it('미완료 월간 보스 행은 금액을 안 올린다', () => {
-    const model = buildTodayViewModel(
-      input({
-        orderedOcids: ['a'],
-        profitRows: [
-          profitRow({
-            bossKey: 'black_mage',
-            bossName: '검은 마법사',
-            cycle: 'monthly',
-            periodKey: MONTH_KEY,
-            isComplete: false,
-            payoutMeso: 0,
-          }),
-        ],
-      }),
-    )
-
-    expect(model.profit.totalMeso).toBe(0)
-    expect(model.profit.hasRecords).toBe(false)
-  })
-
-  it('캐릭터별 상위 셋을 금액 내림차순으로 담는다', () => {
-    const model = buildTodayViewModel(
-      input({
-        orderedOcids: ['a', 'b', 'c', 'd'],
-        profitRows: [
-          profitRow({ ocid: 'a', characterName: '가', payoutMeso: 10 }),
-          profitRow({ ocid: 'b', characterName: '나', payoutMeso: 40 }),
-          profitRow({ ocid: 'c', characterName: '다', payoutMeso: 30 }),
-          profitRow({ ocid: 'd', characterName: '라', payoutMeso: 20 }),
-        ],
-      }),
-    )
-
-    expect(model.profit.topCharacters.map((entry) => entry.ocid)).toEqual(['b', 'c', 'd'])
-    expect(model.profit.topCharacters[0].totalMeso).toBe(40)
-    expect(model.profit.totalMeso).toBe(100)
-  })
-
-  // 위젯 3의 스택 바가 읽는 값이다. 위젯은 스토어를 모르므로 총액만 주면 갈라 그릴 수 없다.
-  it('총액을 결정석과 아이템으로 가르고, 둘의 합이 총액이다', () => {
-    const drops = {
-      [`a|lotus|normal|${WEEK_KEY}`]: [
-        { dropRecordId: null,
-        category: 'equipment' as const, itemKey: null, itemName: '반지', quantity: 1, priceState: 'entered' as const, priceMeso: 60, priceShare: 2 },
-      ],
-    }
-    const model = buildTodayViewModel(
-      input({
-        orderedOcids: ['a'],
-        profitRows: [profitRow({ payoutMeso: 100 })],
-        profitDropsByRowKey: drops,
-      }),
-    )
-
-    expect(model.profit.crystalMeso).toBe(100)
-    expect(model.profit.itemMeso).toBe(30)
-    expect(model.profit.crystalMeso + model.profit.itemMeso).toBe(model.profit.totalMeso)
-    expect(model.profit.topCharacters[0].crystalMeso).toBe(100)
-    expect(model.profit.topCharacters[0].itemMeso).toBe(30)
+  // 읽기 전의 0 을 이번 주에 번 것이 없다 로 그리면 사실을 단정하게 된다.
+  it('기록을 아직 못 읽었으면 loading 이다', () => {
+    expect(buildTodayViewModel(input({ statsDays: null })).weeklyIncome.loading).toBe(true)
+    expect(buildTodayViewModel(input({ statsDays: {} })).weeklyIncome.loading).toBe(false)
   })
 })
 
 describe('최고가 아이템', () => {
-  it('기록된 판매가 순위이고 최대 다섯이다', () => {
+  it('기록된 판매가 중 가장 큰 것이다', () => {
     const priced = (itemName: string, priceMeso: number): DropHistoryRecord =>
       dropRecord({ itemName, priceState: 'entered', priceMeso })
     const model = buildTodayViewModel(
@@ -789,8 +687,7 @@ describe('최고가 아이템', () => {
       }),
     )
 
-    expect(model.topItem?.top.itemName).toBe('1위')
-    expect(model.topItem?.rest.map((entry) => entry.itemName)).toEqual(['2위', '3위', '4위', '5위'])
+    expect(model.topItem?.itemName).toBe('1위')
   })
 
   // today 가 답하는 질문은 **내가 얼마를 벌었나** 다. 총액으로 그리면 같은 화면의 `주간 보스 수익`
@@ -812,30 +709,7 @@ describe('최고가 아이템', () => {
       }),
     )
 
-    expect(model.topItem?.top.payoutMeso).toBe(300)
-    expect(model.topItem?.top.splitLabel).toBe('3인')
-  })
-
-  // 비율 `1 : 3` 과 균등 `3인` 은 저장된 두 수가 같다. 방식을 안 보면 비율이 인원으로 선다.
-  it('비율로 나눈 기록은 인원이 아니라 내 몫을 적는다', () => {
-    const model = buildTodayViewModel(
-      input({
-        dropGroups: [
-          dropGroup([
-            dropRecord({
-              itemName: '비율로 나눈 것',
-              priceState: 'entered',
-              priceMeso: 900,
-              priceSplitMode: 'ratio',
-              priceShare: 3,
-              priceMyShare: 1,
-            }),
-          ]),
-        ],
-      }),
-    )
-
-    expect(model.topItem?.top.splitLabel).toBe('33.3%')
+    expect(model.topItem?.payoutMeso).toBe(300)
   })
 
   it('순위도 분배 후 기준이다. 표시와 순위가 갈리면 1위가 더 작은 숫자를 단다', () => {
@@ -851,8 +725,8 @@ describe('최고가 아이템', () => {
       }),
     )
 
-    expect(model.topItem?.top.itemName).toBe('실수령 1위')
-    expect(model.topItem?.top.payoutMeso).toBe(600)
+    expect(model.topItem?.itemName).toBe('실수령 1위')
+    expect(model.topItem?.payoutMeso).toBe(600)
   })
 
   it('분배 인원이 없으면 단독이다. 나눈 적 없는 기록을 나누지 않는다', () => {
@@ -864,8 +738,7 @@ describe('최고가 아이템', () => {
       }),
     )
 
-    expect(model.topItem?.top.payoutMeso).toBe(500)
-    expect(model.topItem?.top.splitLabel).toBeNull()
+    expect(model.topItem?.payoutMeso).toBe(500)
   })
 
   // 값을 모르는 것을 **가장 싼 것** 으로 단정하지 않는다.
@@ -881,8 +754,7 @@ describe('최고가 아이템', () => {
       }),
     )
 
-    expect(model.topItem?.top.itemName).toBe('입력함')
-    expect(model.topItem?.rest).toEqual([])
+    expect(model.topItem?.itemName).toBe('입력함')
   })
 
   it('전부 미입력이면 최고가가 없고 미입력 건수가 남는다', () => {
@@ -950,7 +822,7 @@ describe('최고가 아이템', () => {
       }),
     )
 
-    expect(model.topItem?.top.itemName).toBe('창세의 뱃지')
+    expect(model.topItem?.itemName).toBe('창세의 뱃지')
     expect(model.unpricedCount).toBe(1)
   })
 
@@ -992,8 +864,8 @@ describe('최고가 아이템', () => {
     )
     const 없음 = buildTodayViewModel(input({ dropGroups: [dropGroup([기록])] }))
 
-    expect(있음.topItem?.top.characterName).toBe('단풍루틴')
-    expect(없음.topItem?.top.characterName).toBeUndefined()
+    expect(있음.topItem?.characterName).toBe('단풍루틴')
+    expect(없음.topItem?.characterName).toBeUndefined()
   })
 
   // 아이콘 조회(`dropItemIconOf(itemKey)`)가 쓴다. 빠지면 에러가 아니라 조용한 폴백 원이 된다.
@@ -1009,7 +881,7 @@ describe('최고가 아이템', () => {
       }),
     )
 
-    expect(model.topItem?.top).toMatchObject({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링' })
+    expect(model.topItem).toMatchObject({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링' })
   })
 
   // 이관이 이름을 못 찾은 옛 기록. 지우지 않고 적어 둔 이름으로 싣고, 그림은 폴백이다.
@@ -1022,7 +894,7 @@ describe('최고가 아이템', () => {
       }),
     )
 
-    expect(model.topItem?.top).toMatchObject({ itemKey: null, itemName: '익셉셔널 해머' })
+    expect(model.topItem).toMatchObject({ itemKey: null, itemName: '익셉셔널 해머' })
   })
 })
 
@@ -1061,25 +933,6 @@ describe('주간 결정석 판매 한도', () => {
     expect(model.crystalLimits).toEqual([
       { worldKey: 'challengers_2', world: '챌린저스2', cleared: 2, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
     ])
-  })
-})
-
-describe('아이템 드롭 가뭄', () => {
-  it('단계와 풀 크기를 함께 실어 화면이 인덱스만 고르게 한다', () => {
-    const model = buildTodayViewModel(
-      input({
-        drought: { periodKey: WEEK_KEY, cycle: 'weekly', weeksSince: 0, records: [dropRecord({ itemName: '칠흑의 보스 반지 상자' })] },
-      }),
-    )
-
-    expect(model.drought?.weeksSince).toBe(0)
-    expect(model.drought?.tier).toBe(0)
-    expect(model.drought?.headlineCount).toBeGreaterThan(1)
-    expect(model.drought?.itemsLabel).toBe('칠흑의 보스 반지 상자')
-  })
-
-  it('고가 기록이 한 번도 없으면 null 이다', () => {
-    expect(buildTodayViewModel(input()).drought).toBeNull()
   })
 })
 

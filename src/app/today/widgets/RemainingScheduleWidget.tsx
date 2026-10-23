@@ -163,7 +163,7 @@ function NameChip(props: { name: string }): React.JSX.Element {
     <Text
       testID="schedule-detail-chip"
       numberOfLines={1}
-      className="rounded-md bg-surface-2 px-1.5 py-0.5 text-11 leading-tight text-text"
+      className="rounded-md bg-surface px-1.5 py-0.5 text-11 leading-tight text-text"
     >
       {props.name}
     </Text>
@@ -242,7 +242,6 @@ function ScheduleDetail(props: { items: CycleItems; cycle: Cycle }): React.JSX.E
 function ScheduleRow(props: {
   row: ScheduleRowView
   cycle: Cycle
-  first: boolean
   expanded: boolean
   onToggle: () => void
 }): React.JSX.Element {
@@ -284,7 +283,8 @@ function ScheduleRow(props: {
   )
 
   return (
-    <View className={props.first ? '' : 'border-t border-border'}>
+    // 행마다 `card-inset` 칸 하나. 칸의 색이 행 사이 경계라 구분선을 긋지 않는다.
+    <View testID="schedule-row-cell" className="rounded-[10px] bg-card-inset px-2.5">
       {openable ? (
         <Pressable testID="schedule-toggle" role="button" aria-expanded={props.expanded} onPress={props.onToggle}>
           {head}
@@ -315,7 +315,7 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
   return (
     <View testID="widget-remaining-schedule" className="p-3">
       {/* 제목 줄이 곧 탭 줄이다. 합계 `N개` 가 있던 자리에 세그먼트가 선다. */}
-      <View className="flex-row items-center border-b border-border-strong pb-2">
+      <View className="flex-row items-center">
         <Text className="text-11 font-bold text-text-muted">남은 스케줄</Text>
         <View className="ml-auto">
           <Segment
@@ -334,18 +334,19 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
       {data.schedule.length === 0 ? (
         <Text className="pt-2.5 text-13 text-text-muted">추적 중인 캐릭터가 없습니다</Text>
       ) : (
-        orderForCycle(data.schedule, cycle).map((row, index) => (
-          <ScheduleRow
-            key={row.ocid}
-            row={row}
-            cycle={cycle}
-            first={index === 0}
-            expanded={expandedOcid === row.ocid}
-            // 열린 행을 다시 누르면 닫는다. 닫는 방법이 셰브런뿐이면 어디를 눌러야 닫히나 를
-            // 사용자가 배워야 한다.
-            onToggle={() => setExpandedOcid((current) => (current === row.ocid ? null : row.ocid))}
-          />
-        ))
+        <View className="gap-1.5 pt-2">
+          {orderForCycle(data.schedule, cycle).map((row) => (
+            <ScheduleRow
+              key={row.ocid}
+              row={row}
+              cycle={cycle}
+              expanded={expandedOcid === row.ocid}
+              // 열린 행을 다시 누르면 닫는다. 닫는 방법이 셰브런뿐이면 어디를 눌러야 닫히나 를
+              // 사용자가 배워야 한다.
+              onToggle={() => setExpandedOcid((current) => (current === row.ocid ? null : row.ocid))}
+            />
+          ))}
+        </View>
       )}
     </View>
   )

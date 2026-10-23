@@ -19,7 +19,7 @@ import type { ScheduleRowView } from '../../view-model'
 type 위젯화면 = Awaited<ReturnType<typeof renderAtom>>
 
 async function 위젯(schedule: ScheduleRowView[]): Promise<위젯화면> {
-  return renderAtom(<RemainingScheduleWidget w={4} h="auto" data={뷰모델({ schedule })} />)
+  return renderAtom(<RemainingScheduleWidget data={뷰모델({ schedule })} />)
 }
 
 /** 세그먼트는 `aria-label` 로 잡는다. 글자를 누르면 눌리는 것이 `Pressable` 인지가 안 보인다. */
@@ -245,7 +245,7 @@ describe('목록은 캐릭터 전부다', () => {
 
   it('추적 캐릭터가 없으면 그 사실을 말한다', async () => {
     const { getByText, queryByTestId } = await renderAtom(
-      <RemainingScheduleWidget w={4} h="auto" data={빈_뷰모델} />,
+      <RemainingScheduleWidget data={빈_뷰모델} />,
     )
 
     expect(getByText('추적 중인 캐릭터가 없습니다')).toBeTruthy()

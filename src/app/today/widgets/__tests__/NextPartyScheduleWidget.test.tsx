@@ -1,4 +1,4 @@
-// 위젯 10 다음 파티 스케줄. 파티 스케줄 페이지의 목록 카드를 안쪽 바탕 없이 옮긴 것이다.
+// 위젯 10 다음 파티 스케줄. 캐릭터마다 칸 하나에 닉네임과 보스 줄을 담는다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderAtom } from '../../../../components/__tests__/render-atom'
@@ -37,7 +37,7 @@ function 회차(startsInMs: number, overrides: Partial<NextPartyView> = {}): Nex
 }
 
 async function 위젯(nextParty: NextPartyView[]) {
-  return renderAtom(<NextPartyScheduleWidget w={4} h="auto" data={뷰모델({ nextParty })} />)
+  return renderAtom(<NextPartyScheduleWidget data={뷰모델({ nextParty })} />)
 }
 
 beforeEach(() => usePartyAppointmentOpenStore.setState({ request: null }))
@@ -65,6 +65,14 @@ describe('NextPartyScheduleWidget', () => {
     expect(view.queryByText('17:00')).toBeNull()
     expect(view.getByText('18:00')).toBeTruthy()
     expect(view.getByText('오늘 · 10분 뒤')).toBeTruthy()
+  })
+
+  // 폭 40 의 열에 초상화와 닉네임을 쌓으면 네 글자가 넘는 닉네임이 잘린다. 닉네임만 칸 머리에 적는다.
+  it('캐릭터 초상화 없이 캐릭터마다 칸 하나에 닉네임을 적는다', async () => {
+    const view = await 위젯([회차(60 * MINUTE_MS)])
+
+    expect(view.getAllByTestId('next-party-group')).toHaveLength(2)
+    expect(view.queryByTestId('character-group-face')).toBeNull()
   })
 
   it('누르면 그 회차를 열 약속으로 남긴다', async () => {

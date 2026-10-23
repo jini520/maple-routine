@@ -41,6 +41,10 @@ import { useContentSchedulerStore } from '../../features/content-scheduler/store
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { readCharacterProfiles, readRepresentativeProfile } from '../../features/character-profile/cached-profiles'
 import type { CharacterBasicProfile } from '../../types'
+import type { DaysByDate } from '../../features/stats/aggregate'
+import { loadStatsDaysBetween, statsDataRevision } from '../../features/stats/load'
+import { statsRanges } from '../../features/stats/periods'
+import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 
 import { Text } from '../../components/atoms'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
@@ -184,6 +188,29 @@ export function TodayScreen(): React.JSX.Element {
    * 번의 조회로 그린 데이터인데 값이 갈린다. 적는 자리는 `syncSchedules` 회차와 오늘이 든 강화
    * 조회 둘뿐이고, 기기 DB 읽기와 과거 기간 조회는 거기 안 닿는다.
    */
+  // 이번 주 수익은 통계와 같은 가계부 기록을 이번 주만 읽는다. `null` 은 아직 못 읽었다는 뜻이고,
+  // 위젯이 그때의 0 을 사실처럼 그리지 않는다. 주가 바뀌면(자정 렌더) 범위가 바뀌어 다시 읽는다.
+  const weekRange = statsRanges('weekly', getCurrentBossProfitPeriod('weekly', new Date()).periodKey).current
+  const [statsDays, setStatsDays] = useState<DaysByDate | null>(null)
+  const statsRevision = useRef<number | null>(null)
+  const [statsToken, setStatsToken] = useState(0)
+  useEffect(() => {
+    statsRevision.current = statsDataRevision()
+    let alive = true
+    void loadStatsDaysBetween({ from: weekRange.from, to: weekRange.to }).then((loaded) => {
+      if (alive) setStatsDays(loaded)
+    })
+    return () => {
+      alive = false
+    }
+  }, [statsToken, weekRange.from, weekRange.to])
+  // 가계부 · 강화 · 지출 기록이 다른 화면에서 바뀌었을 때만 다시 읽는다.
+  useFocusEffect(
+    useCallback(() => {
+      if (statsRevision.current !== statsDataRevision()) setStatsToken((token) => token + 1)
+    }, []),
+  )
+
   const fetchedAt = useDataFreshness((state) => state.fetchedAt)
 
   const viewModel = buildTodayViewModel({
@@ -208,7 +235,7 @@ export function TodayScreen(): React.JSX.Element {
     profitRows: profit.currentWeekRows,
     profitDropsByRowKey: profit.dropsByRowKey,
     dropGroups: dropHistory.groups,
-    drought: dropHistory.drought,
+    statsDays,
     partyAppointments,
   })
 
@@ -241,6 +268,8 @@ export function TodayScreen(): React.JSX.Element {
       // 배경에서 도착만 하고 안 탭한 공지는 기기에 없다. 그것이 첫 화면에 닿는 유일한 길이다.
       refreshNoticeBanner(),
     ])
+    // 방금 받은 보스 수익이 이번 주 수익에도 닿게 기록을 다시 읽는다.
+    setStatsToken((token) => token + 1)
 
     // 방금 끝난 동기화가 대표 캐릭터의 `character/basic` 을 5분 가드를 건너뛰고 다시 받아 캐시를
     // 갱신했다. 여기서 다시 읽지 않으면 그 EXP·레벨이 앱을 다시 켤 때까지 화면에 못 닿는다. 위

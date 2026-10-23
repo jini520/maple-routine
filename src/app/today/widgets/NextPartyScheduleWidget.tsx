@@ -1,5 +1,8 @@
 /**
- * 위젯 10. 시작 전인 가장 가까운 파티 스케줄 회차 하나. 파티 스케줄 페이지의 목록 카드를 안쪽 바탕 없이 옮긴 모양이다.
+ * 위젯 10. 시작 전인 가장 가까운 파티 스케줄 회차 하나.
+ *
+ * 캐릭터마다 `card-inset` 칸 하나를 두고 칸 머리 줄에 닉네임만 적는다. 초상화를 곁들인 폭 40 의 열에 두면
+ * 네 글자가 넘는 닉네임이 잘린다. 보스 줄과 알림 · 반복 줄은 파티 스케줄 목록 카드와 같은 부품이다.
  *
  * 분마다 스스로 시계를 읽는다. 남은 시간이 갈리고, 시작한 회차는 다음으로 넘어가야 해서다.
  * 누르면 파티 스케줄 탭으로 가서 그 회차의 상세 시트를 연다(알림을 눌렀을 때와 같은 길).
@@ -14,7 +17,7 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { usePartyAppointmentOpenStore } from '../../../features/party-appointments/open-request'
 import { shiftDateKey, WEEKDAY_LABELS } from '../../../lib/calendar'
 import { getCurrentKstDateKey } from '../../../lib/scheduler/reset-clock'
-import { OccurrenceBossGroups } from '../../party-appointments/OccurrenceBossGroups'
+import { OccurrenceBossLine, OccurrenceExtras } from '../../party-appointments/OccurrenceBossGroups'
 import type { WidgetProps } from './types'
 
 const TITLE = '다음 파티 스케줄'
@@ -58,7 +61,8 @@ export function NextPartyScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
       role="button"
       aria-label={`${TITLE} 열기`}
       onPress={() => usePartyAppointmentOpenStore.getState().open({ appointmentId: next.appointmentId, dateKey: next.dateKey })}
-      className="gap-2 p-3 active:opacity-60"
+      // 누르는 동안 흐리게 하지 않는다. 위젯 카드 하나가 통째로 흐려지면 다른 카드와 따로 논다.
+      className="gap-2 p-3"
     >
       <View className="flex-row items-center justify-between">
         <Text className="text-10 font-bold text-text-muted">
@@ -82,9 +86,19 @@ export function NextPartyScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
           {`${dayLabel(next.dateKey, todayKey)} · ${remainingLabel(next.startsAtMs - nowMs)}`}
         </Text>
       </View>
-      <View className="gap-2.5">
-        <OccurrenceBossGroups groups={next.groups} leadMinutes={next.leadMinutes} repeats={next.repeats} />
+      <View className="gap-1.5">
+        {next.groups.map((group) => (
+          <View key={group.ocid} testID="next-party-group" className="rounded-[10px] bg-card-inset px-2.5 py-2">
+            <Text numberOfLines={1} className="text-xs font-semibold text-text-muted">
+              {group.name}
+            </Text>
+            {group.bosses.map((boss) => (
+              <OccurrenceBossLine key={`${boss.ocid}:${boss.bossKey}`} boss={boss} />
+            ))}
+          </View>
+        ))}
       </View>
+      <OccurrenceExtras leadMinutes={next.leadMinutes} repeats={next.repeats} />
     </Pressable>
   )
 }

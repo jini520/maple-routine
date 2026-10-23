@@ -1,5 +1,5 @@
 /**
- * today 위젯의 **좌표 배치**. 검증과 해석.
+ * today 위젯의 **좌표 배치**. 검증과 줄 묶기.
  *
  * ## 왜 흐름이 아니라 좌표인가
  *
@@ -7,37 +7,21 @@
  * **검증할 것이 없어지기 때문**이다. 알고리즘은 늘 어딘가에 넣으므로 배치 실수가 실수로 드러나지
  * 않는다. 좌표를 손으로 적는 대신 그 실수를 여기서 잡는다.
  *
- * 행(shelf) 단위 배치도 아니다. 한 행의 높이가 하나면 `1x2`·`2x2` 같은 세로로 긴 타일이 원리적으로
- * 표현되지 않는다.
+ * 높이는 적지 않는다. 위젯 높이는 내용이 정하고, 같은 줄의 위젯끼리는 격자가 가장 높은 것에 맞춘다.
+ * 그래서 `row` 는 몇 번째 줄인가 만 뜻한다.
  *
- * **v1 에서 배치 배열은 코드 상수다.** 나중에 편집이 오면 배열만 저장소로 옮기고 이 검증 함수를
+ * **배치 배열은 코드 상수다.** 나중에 편집이 오면 배열만 저장소로 옮기고 이 검증 함수를
  * 그대로 재사용한다.
  */
-
-import { tileHeightPx, tileWidthPx, type WidgetGridMetrics } from './widget-grid-metrics'
-
-/**
- * 타일의 세로 크기. 행 수, 또는 **내용이 정하는 높이**.
- *
- * `'auto'` 는 높이를 미리 알 수 없다 는 뜻이고, 그 값은 `resolveWidgetPositions` 에 실측으로
- * 들어온다. 선언한 `h` 는 그때 **최소 높이**로 남는다.
- */
-export type WidgetHeight = number | 'auto'
 
 export interface WidgetPlacement {
   id: string
   /** 0..3 */
   col: number
+  /** 몇 번째 줄인가. 0 부터 빈 줄 없이 이어진다 */
   row: number
   /** 1..4 */
   w: number
-  h: WidgetHeight
-}
-
-/** 위젯이 감당한다고 선언한 크기 하나. */
-export interface WidgetSize {
-  w: number
-  h: WidgetHeight
 }
 
 export interface LayoutViolation {
@@ -45,51 +29,31 @@ export interface LayoutViolation {
   reason: string
 }
 
-/** `'auto'` 타일이 좌표계에서 차지하는 행 수. 선언한 `h` 가 없으므로 최소인 1이다. */
-const AUTO_NOMINAL_ROWS = 1
-
 const GRID_COLUMNS = 4
-
-function nominalRows(h: WidgetHeight): number {
-  return h === 'auto' ? AUTO_NOMINAL_ROWS : h
-}
-
-function formatSize(w: number, h: WidgetHeight): string {
-  return `${w}x${h}`
-}
 
 /**
  * 배치의 실수를 잡는 검사. **반환값이 빈 배열이면 유효한 배치다.**
  *
- * 검증 다섯. ① 겹치는 타일 없음 ② `col + w ≤ 4` ③ 통째로 빈 행 없음 ④ `(w, h)` 가 그 위젯이
- * 선언한 크기 안 ⑤ `h === 'auto'` 이면 `w === 4`.
+ * 검증 넷. ① 같은 줄에서 겹치는 타일 없음 ② `col + w ≤ 4` ③ 통째로 빈 줄 없음 ④ `w` 가 그 위젯이
+ * 선언한 폭.
  *
- * ④ 가 크기별로 다르게 그린다를 **약속으로 만드는** 자리다. 선언 안 한
- * 크기를 받으면 위젯은 그리는 방법을 모른다.
+ * @param widthById 위젯이 그리는 폭. 레지스트리에서 만든다
  */
 export function validateWidgetLayout(
   layout: readonly WidgetPlacement[],
-  sizesById: Readonly<Record<string, readonly WidgetSize[]>>,
+  widthById: Readonly<Record<string, number>>,
 ): LayoutViolation[] {
   const violations: LayoutViolation[] = []
 
   for (const placement of layout) {
-    const { id, col, w, h } = placement
+    const { id, col, w } = placement
 
     if (col + w > GRID_COLUMNS) {
       violations.push({ id, reason: `가로가 격자를 넘는다. col ${col} + w ${w} > ${GRID_COLUMNS}` })
     }
 
-    // 가로를 다 쓰면 **옆에 아무도 없으므로** 늘어난 만큼 아래 전부가 같은 값으로 내려가 겹침이
-    // 생길 수 없다. 좁은 타일에 auto 를 허용하면 옆 칸과 아래 칸이 서로 다른 만큼 밀려 좌표가
-    // 무너진다. 자동 패킹을 기각한 것과 같은 이유(**검증할 것이 없어진다**)가 여기서 되살아난다.
-    if (h === 'auto' && w !== GRID_COLUMNS) {
-      violations.push({ id, reason: `h: 'auto' 는 w === ${GRID_COLUMNS} 일 때만 쓸 수 있다. w ${w}` })
-    }
-
-    const declared = sizesById[id] ?? []
-    if (!declared.some((size) => size.w === w && size.h === h)) {
-      violations.push({ id, reason: `위젯이 선언하지 않은 크기다. ${formatSize(w, h)}` })
+    if (widthById[id] !== w) {
+      violations.push({ id, reason: `위젯이 선언하지 않은 폭이다. w ${w}` })
     }
   }
 
@@ -105,17 +69,14 @@ function findOverlaps(layout: readonly WidgetPlacement[]): LayoutViolation[] {
   const ownerByCell = new Map<string, string>()
 
   for (const placement of layout) {
-    const rows = nominalRows(placement.h)
     let collidedWith: string | null = null
 
-    for (let row = placement.row; row < placement.row + rows; row += 1) {
-      for (let col = placement.col; col < placement.col + placement.w; col += 1) {
-        const cell = `${col},${row}`
-        const owner = ownerByCell.get(cell)
+    for (let col = placement.col; col < placement.col + placement.w; col += 1) {
+      const cell = `${col},${placement.row}`
+      const owner = ownerByCell.get(cell)
 
-        if (owner === undefined) ownerByCell.set(cell, placement.id)
-        else collidedWith ??= owner
-      }
+      if (owner === undefined) ownerByCell.set(cell, placement.id)
+      else collidedWith ??= owner
     }
 
     if (collidedWith !== null) {
@@ -127,29 +88,22 @@ function findOverlaps(layout: readonly WidgetPlacement[]): LayoutViolation[] {
 }
 
 /**
- * 통째로 빈 행.
+ * 통째로 빈 줄.
  *
- * 위반은 **그 아래 첫 타일**의 것으로 적는다. 빈 행 자체는 주인이 없고, 실수는 언제나 그 아래
+ * 위반은 **그 아래 첫 타일**의 것으로 적는다. 빈 줄 자체는 주인이 없고, 실수는 언제나 그 아래
  * 타일의 `row` 를 밀어 놓고 위를 안 채운 것 이기 때문이다.
  */
 function findEmptyRows(layout: readonly WidgetPlacement[]): LayoutViolation[] {
   if (layout.length === 0) return []
 
-  const occupied = new Set<number>()
-  let lastRow = 0
-
-  for (const placement of layout) {
-    const rows = nominalRows(placement.h)
-    for (let row = placement.row; row < placement.row + rows; row += 1) occupied.add(row)
-    lastRow = Math.max(lastRow, placement.row + rows - 1)
-  }
-
+  const occupied = new Set(layout.map((placement) => placement.row))
+  const lastRow = Math.max(...occupied)
   const violations: LayoutViolation[] = []
 
   for (let row = 0; row <= lastRow; row += 1) {
     if (occupied.has(row)) continue
 
-    // 빈 행 아래에는 반드시 타일이 있다(`lastRow` 까지만 훑으므로).
+    // 빈 줄 아래에는 반드시 타일이 있다(`lastRow` 까지만 훑으므로).
     const below = layout
       .filter((placement) => placement.row > row)
       .reduce<WidgetPlacement | null>(
@@ -157,80 +111,29 @@ function findEmptyRows(layout: readonly WidgetPlacement[]): LayoutViolation[] {
         null,
       )
 
-    if (below !== null) violations.push({ id: below.id, reason: `위에 통째로 빈 행이 있다. ${row} 행` })
+    if (below !== null) violations.push({ id: below.id, reason: `위에 통째로 빈 줄이 있다. ${row} 줄` })
   }
 
   return violations
 }
 
-export interface ResolvedTile {
-  id: string
-  leftPx: number
-  topPx: number
-  widthPx: number
-  heightPx: number
-}
-
-/**
- * 좌표를 격자 컨테이너 안의 절대 위치로 푸는 계산.
- *
- * `'auto'` 타일이 최소 높이보다 커지면 그 아래(`row` 가 큰) 타일 전부를 그 초과분만큼 내린다.
- * `y = 적어 둔 y + Σ(위쪽 auto 타일들의 초과분)`. auto 는 `w === 4` 일 때만 허용되므로 그
- * 행에 옆 타일이 있을 수 없고, 그래서 아래 전부가 같은 값으로 내려간다 가 성립한다.
- *
- * `row` 를 재계산해 다시 채우지 않는다. 배치가 적어 둔 순서·자리를 그대로 지킨다.
- *
- * @param autoHeightsById `'auto'` 타일의 실측 높이(px). 없는 id 는 최소 높이로 친다.
- */
-export function resolveWidgetPositions(
-  layout: readonly WidgetPlacement[],
-  metrics: WidgetGridMetrics,
-  autoHeightsById: Readonly<Record<string, number>>,
-): { tiles: ResolvedTile[]; containerHeightPx: number } {
-  const overflows: { row: number; overflowPx: number }[] = []
-
+/** 줄 단위 묶음. 줄은 `row` 순서, 줄 안은 `col` 순서다. 격자가 줄마다 높이를 맞추려고 쓴다. */
+export function groupWidgetRows<T extends WidgetPlacement>(layout: readonly T[]): T[][] {
+  const rows = new Map<number, T[]>()
   for (const placement of layout) {
-    if (placement.h !== 'auto') continue
-
-    const minHeightPx = tileHeightPx(AUTO_NOMINAL_ROWS, metrics)
-    const measuredPx = autoHeightsById[placement.id] ?? minHeightPx
-    const overflowPx = Math.max(0, measuredPx - minHeightPx)
-
-    if (overflowPx > 0) overflows.push({ row: placement.row, overflowPx })
+    const row = rows.get(placement.row)
+    if (row === undefined) rows.set(placement.row, [placement])
+    else row.push(placement)
   }
-
-  const tiles = layout.map((placement) => {
-    const rows = nominalRows(placement.h)
-    const nominalHeightPx = tileHeightPx(rows, metrics)
-    // 선언한 `h` 는 **최소 높이**다. 실측이 그보다 작아도 줄이지 않는다.
-    const heightPx =
-      placement.h === 'auto'
-        ? Math.max(nominalHeightPx, autoHeightsById[placement.id] ?? nominalHeightPx)
-        : nominalHeightPx
-
-    const shiftPx = overflows
-      .filter((entry) => entry.row < placement.row)
-      .reduce((sum, entry) => sum + entry.overflowPx, 0)
-
-    return {
-      id: placement.id,
-      leftPx: placement.col * (metrics.colWidthPx + metrics.gapPx),
-      topPx: placement.row * (metrics.rowHeightPx + metrics.gapPx) + shiftPx,
-      widthPx: tileWidthPx(placement.w, metrics),
-      heightPx,
-    }
-  })
-
-  return {
-    tiles,
-    containerHeightPx: tiles.reduce((bottom, tile) => Math.max(bottom, tile.topPx + tile.heightPx), 0),
-  }
+  return [...rows.entries()]
+    .sort(([left], [right]) => left - right)
+    .map(([, row]) => [...row].sort((left, right) => left.col - right.col))
 }
 
 /**
- * 숨긴 타일을 빼고 그 아래 행을 당긴 배치. 보여 줄 것이 없는 위젯이 타일째 숨을 때 쓴다.
+ * 숨긴 타일을 빼고 그 아래 줄을 당긴 배치. 보여 줄 것이 없는 위젯이 타일째 숨을 때 쓴다.
  *
- * 가로 전체 타일만 받는다. 옆 칸이 있는 타일을 빼면 그 자리가 빈 사각형으로 남는다.
+ * 가로 전체 타일만 받는다. 옆 칸이 있는 타일을 빼면 그 자리가 빈 칸으로 남는다.
  *
  * @param hiddenIds 숨길 위젯 id
  */
@@ -244,9 +147,7 @@ export function omitHiddenTiles<T extends WidgetPlacement>(layout: readonly T[],
   return layout
     .filter((placement) => !hiddenIds.has(placement.id))
     .map((placement) => {
-      const lift = hidden
-        .filter((gone) => gone.row < placement.row)
-        .reduce((sum, gone) => sum + nominalRows(gone.h), 0)
+      const lift = hidden.filter((gone) => gone.row < placement.row).length
       return lift === 0 ? placement : { ...placement, row: placement.row - lift }
     })
 }

@@ -166,7 +166,7 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
 
   return (
     <View testID="widget-shared-contents" className="p-3">
-      <View className="flex-row items-center border-b border-border-strong pb-2">
+      <View className="flex-row items-center">
         <Text className="text-11 font-bold text-text-muted">계정 및 메이플 ID 공유 컨텐츠</Text>
         <Pressable
           ref={toggleRef}
@@ -189,18 +189,15 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
       {noteOpen && <ScopeNotePopover anchor={anchor} tileWidth={tileWidth} onClose={closeNote} />}
 
       {data.sharedContents.length > 0 && (
-        <View className="flex-row gap-3 pt-2">
+        <View className="flex-row gap-2 pt-2">
           {splitColumns(data.sharedContents)
             // 오른쪽이 비면 한 열이다. 반폭만 쓰면 그 자체가 여백이다.
             .filter((column) => column.length > 0)
             .map((column) => (
-              <View key={column[0]?.category} testID="shared-column" className="min-w-0 flex-1">
-                {column.map((group, index) => (
-                  <View
-                    key={group.category}
-                    testID="shared-group"
-                    className={index === 0 ? '' : 'mt-2 border-t border-border pt-2'}
-                  >
+              <View key={column[0]?.category} testID="shared-column" className="min-w-0 flex-1 gap-2">
+                {/* 갈래마다 `card-inset` 칸 하나. 칸의 색이 갈래 사이 경계라 구분선을 긋지 않는다. */}
+                {column.map((group) => (
+                  <View key={group.category} testID="shared-group" className="rounded-[10px] bg-card-inset px-2.5 py-2">
                     <View className="flex-row items-center justify-between gap-1.5">
                       <Text testID="shared-group-name" className="text-[12.5px] font-bold text-text">
                         {group.label}

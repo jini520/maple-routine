@@ -1,19 +1,17 @@
 /**
  * 위젯 1. 대표 캐릭터의 초상화 · 이름 · 레벨 · 직업 · 길드 · EXP 를 그리는 타일.
  *
- * 세 크기(`4x1` · `4x2` · `2x2`)가 같은 구조이고 갈리는 것은 밀도와 EXP 의 자리뿐이다. 자리가
- * 모자라면 길드가 아니라 **닉네임이 줄어든다**. 길드는 잘리면 다른 길드로 읽히고, 닉네임은
- * 초상화가 이미 누구인지 말한다.
+ * 초상화 오른쪽 열에 닉네임 줄 · 레벨 줄 · EXP 칸을 쌓는다. EXP 칸은 이 열과 같은 폭이다. 오른쪽 끝의
+ * 좁은 열에 두면 바가 짧아 진행이 잘 안 보인다. 자리가 모자라면 길드가 아니라 **닉네임이 줄어든다**.
+ * 길드는 잘리면 다른 길드로 읽히고, 닉네임은 초상화가 이미 누구인지 말한다.
  *
- * 없는 것은 안 그린다. `expRate` 가 없으면 EXP 줄 자체를 빼고(0% 바는 경험치가 0 으로 읽힌다),
+ * 없는 것은 안 그린다. `expRate` 가 없으면 EXP 칸 자체를 빼고(0% 바는 경험치가 0 으로 읽힌다),
  * 엠블럼 · 직업 · 길드도 모르면 그 자리를 비운다. `대표 없음` 상태는 없다. 미지정이면
  * `resolveDisplayRepresentative` 가 목록의 첫 번째를 세우고, `null` 은 추적 캐릭터가 하나도 없을
  * 때뿐이다.
  *
  * 진행률의 소수 3자리는 **API 가 준 그대로**다. 반올림하면 `99.999%` 가 `100%` 가 되어 다 찼다고
  * 거짓을 말한다.
- *
- * @see docs/features/today.md 위젯 정책
  */
 
 import { Image, View } from 'react-native'
@@ -26,82 +24,27 @@ import { UnavailableBadge } from '../../../components/molecules/UnavailableBadge
 import { CharacterAvatar } from '../../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { RepresentativeView } from '../view-model'
 import type { WidgetProps } from './types'
 
-/** 크기마다 갈리는 것은 **치수와 글자 크기**뿐이다. 그리는 순서·줄 구성은 셋이 같다. */
-const VARIANT = {
-  /** 4x1(기본). 내부 높이 52 에 초상화 44 가 들어간다. */
-  row: {
-    portraitPx: 44,
-    emblemPx: 15,
-    name: 'text-sm',
-    caption: 'text-[11.5px]',
-    guild: 'text-11',
-  },
-  /** 4x2. 같은 구조를 크게. EXP 바가 아래 전폭이다. */
-  large: {
-    portraitPx: 72,
-    emblemPx: 20,
-    name: 'text-19',
-    caption: 'text-sm',
-    guild: 'text-13',
-  },
-  /** 2x2. 가운데 정렬. 158 폭이라 **직업이 잘린다**(열린 질문). */
-  compact: {
-    portraitPx: 56,
-    emblemPx: 16,
-    name: 'text-15',
-    caption: 'text-[11.5px]',
-    guild: 'text-11',
-  },
-} as const
+/** 초상화. 오른쪽 열이 세 줄(닉네임 · 레벨 · EXP 칸)이라 그 높이에 맞춘다 */
+const PORTRAIT_PX = 52
+const EMBLEM_PX = 15
 
-type Variant = keyof typeof VARIANT
-
-function variantOf(w: number, h: WidgetHeight): Variant {
-  if (w === 2) return 'compact'
-  return h === 2 ? 'large' : 'row'
-}
-
-/** `"80.300%"`. API 가 준 소수 3자리를 그대로 둔다. */
 function formatExpRate(rate: number): string {
   return `${rate.toFixed(3)}%`
 }
 
-function Portrait(props: { view: RepresentativeView; sizePx: number }): React.JSX.Element {
-  return (
-    <CharacterAvatar
-      imageTestID="representative-face"
-      imageUrl={props.view.imageUrl}
-      name={props.view.name}
-      size={props.sizePx}
-      className="shrink-0"
-          unavailable={props.view.unavailable}
-    />
-  )
-}
-
-function NameLine(props: {
-  view: RepresentativeView
-  variant: Variant
-  center: boolean
-}): React.JSX.Element {
-  const spec = VARIANT[props.variant]
+function NameLine(props: { view: RepresentativeView }): React.JSX.Element {
   const emblem = worldEmblemUrl(props.view.worldKey)
-
   return (
-    <View
-      testID="representative-name-line"
-      className={`flex-row items-center gap-1${props.center ? ' justify-center' : ''}`}
-    >
+    <View testID="representative-name-line" className="flex-row items-center gap-1">
       {emblem !== null && (
         <View testID="representative-emblem" className="shrink-0">
           <Image
             accessibilityLabel={worldNameOf(props.view.worldKey, '')}
             source={emblem}
-            style={naturalAspectStyle(emblem, { height: spec.emblemPx })}
+            style={naturalAspectStyle(emblem, { height: EMBLEM_PX })}
             resizeMode="contain"
           />
         </View>
@@ -109,18 +52,14 @@ function NameLine(props: {
       <Text
         testID="representative-name"
         numberOfLines={1}
-        className={`min-w-0 shrink font-semibold leading-tight text-text ${spec.name}`}
+        className="min-w-0 shrink text-sm font-semibold leading-tight text-text"
       >
         {props.view.name}
       </Text>
       {/* 길드는 모르는 것(undefined)과 미가입(null)이 둘 다 그릴 것이 없다. 이 카드가 가르는
           자리는 아니라 둘 다 비운다. */}
       {props.view.guildName !== undefined && props.view.guildName !== null && (
-        <Text
-          testID="representative-guild"
-          numberOfLines={1}
-          className={`shrink-0 leading-tight text-text-muted ${spec.guild}`}
-        >
+        <Text testID="representative-guild" numberOfLines={1} className="shrink-0 text-11 leading-tight text-text-muted">
           {props.view.guildName}
         </Text>
       )}
@@ -128,24 +67,15 @@ function NameLine(props: {
   )
 }
 
-/** 2줄. `Lv. N` + 직업. 직업만 잘린다(레벨은 짧고 언제나 있다). */
-function CaptionLine(props: {
-  view: RepresentativeView
-  variant: Variant
-  center: boolean
-}): React.JSX.Element {
-  const spec = VARIANT[props.variant]
-
+function CaptionLine(props: { view: RepresentativeView }): React.JSX.Element {
   return (
-    <View className={`flex-row items-center gap-1.5${props.center ? ' justify-center' : ''}`}>
-      <Text className={`shrink-0 leading-tight text-text-muted ${spec.caption}`}>
-        {`Lv. ${props.view.level}`}
-      </Text>
+    <View className="flex-row items-center gap-1.5">
+      <Text className="shrink-0 text-[11.5px] leading-tight text-text-muted">{`Lv. ${props.view.level}`}</Text>
       {props.view.jobClass !== undefined && (
         <Text
           testID="representative-job"
           numberOfLines={1}
-          className={`min-w-0 shrink leading-tight text-text-muted ${spec.caption}`}
+          className="min-w-0 shrink text-[11.5px] leading-tight text-text-muted"
         >
           {props.view.jobClass}
         </Text>
@@ -154,35 +84,11 @@ function CaptionLine(props: {
   )
 }
 
-/**
- * EXP. 4x1 은 오른쪽 100px 열, 나머지는 아래 전폭.
- *
- * 100 은 70 에서 늘린 값이다. 바가 짧으면 진행률이 눈에 안 들어온다. 늘어난 30px 은 이름
- * 줄에서 가져오고, 그래서 닉네임이 먼저 줄어든다(`NameLine`).
- *
- * `null` 을 돌려주는 갈래가 곧 EXP 줄 자체가 없다 는 계약이다.
- */
-function ExpBlock(props: {
-  view: RepresentativeView
-  variant: Variant
-}): React.JSX.Element | null {
+function ExpBlock(props: { view: RepresentativeView }): React.JSX.Element | null {
   const rate = props.view.expRate
-  const compactColumn = props.variant === 'row'
-
-  // **조회 불가면 이 자리가 통째로 배지다.** EXP 는 조회를 못 한 순간 굳은 값이라, 바를 그대로
-  // 두면 지금의 진행도로 읽힌다. 자리를 비우지 않는 것은 카드 높이가 줄어 다른 위젯이 밀리기
-  // 때문이고, 이름 옆에 안 다는 것은 그 줄이 닉네임부터 줄어드는 자리라서다.
   if (props.view.unavailable) {
     return (
-      <View
-        testID="representative-issue-block"
-        // 오른쪽에 붙는다(사용자 지정). 다만 EXP 줄의 퍼센트와 **같은 끝에 두지 않는다** -
-        // 그쪽은 글자라 끝이 획에서 끝나고 이것은 칠해진 알약이라 면이 카드 끝까지 닿는다.
-        // 8px 을 물려 그 차이를 돌려준다(사용자 보고).
-        className={
-          compactColumn ? 'w-[100px] shrink-0 items-end pr-2' : 'w-full items-end pr-2'
-        }
-      >
+      <View testID="representative-issue-block" className="items-start rounded-[10px] bg-card-inset px-2.5 py-1.5">
         {/* 보스 수익의 금액 자리에 서는 것과 **같은 알약**이다(사용자 지정). 그쪽도 여기도
             금액을 말할 수 없어 그 칸을 대신 차지한 것이라 같은 말이 같은 그림으로 선다.
             누를 것은 없다. 이 카드에는 열 팝오버가 없다. */}
@@ -190,48 +96,23 @@ function ExpBlock(props: {
       </View>
     )
   }
-
   if (rate === undefined) return null
-
   return (
-    <View
-      testID="representative-exp"
-      className={compactColumn ? 'w-[100px] shrink-0 gap-1' : 'w-full gap-1'}
-    >
-      <View className="flex-row items-center gap-1">
-        <Text className="text-11 font-semibold text-text-muted">EXP</Text>
-        <Text
-          numberOfLines={1}
-          style={TABULAR_NUMS}
-          className="ml-auto text-11 font-semibold text-text"
-        >
-          {formatExpRate(rate)}
-        </Text>
+    <View testID="representative-exp" className="flex-row items-center gap-2 rounded-[10px] bg-card-inset px-2.5 py-1.5">
+      <Text className="text-11 font-semibold text-text-muted">EXP</Text>
+      <View className="min-w-0 flex-1">
+        <ProgressBar percent={rate} aria={{ now: rate, max: 100 }} />
       </View>
-      <ProgressBar percent={rate} aria={{ now: rate, max: 100 }} />
+      <Text numberOfLines={1} style={TABULAR_NUMS} className="text-11 font-semibold text-text">
+        {formatExpRate(rate)}
+      </Text>
     </View>
   )
 }
 
-function Lines(props: {
-  view: RepresentativeView
-  variant: Variant
-  center: boolean
-}): React.JSX.Element {
-  return (
-    <View className={`min-w-0 ${props.center ? 'w-full items-center' : 'flex-1'} gap-0.5`}>
-      <NameLine view={props.view} variant={props.variant} center={props.center} />
-      <CaptionLine view={props.view} variant={props.variant} center={props.center} />
-    </View>
-  )
-}
-
-export function RepresentativeCharacterWidget({ w, h, data }: WidgetProps): React.JSX.Element {
-  const variant = variantOf(w, h)
+export function RepresentativeCharacterWidget({ data }: WidgetProps): React.JSX.Element {
   const view = data.representative
 
-  // 이 자리는 대표를 안 골랐다 가 아니라 추적 캐릭터가 없다 다. CTA 를 두지 않는 것은 위젯이
-  // 사라지지도 커지지도 않기 때문이고, 그 안내는 스케줄러·설정이 이미 한다.
   if (view === null) {
     return (
       <View testID="widget-representative-character" className="flex-1 justify-center p-3">
@@ -240,34 +121,23 @@ export function RepresentativeCharacterWidget({ w, h, data }: WidgetProps): Reac
     )
   }
 
-  if (variant === 'compact') {
-    return (
-      // 간격이 8이면 세 줄 + EXP 가 164(2x2 높이)를 3px 넘긴다. 내용을 빼는 대신 간격을 줄인다.
-      <View testID="widget-representative-character" className="flex-1 items-center gap-1.5 p-3">
-        <Portrait view={view} sizePx={VARIANT.compact.portraitPx} />
-        <Lines view={view} variant="compact" center />
-        <ExpBlock view={view} variant="compact" />
-      </View>
-    )
-  }
-
-  if (variant === 'large') {
-    return (
-      <View testID="widget-representative-character" className="flex-1 justify-center gap-3 p-3">
-        <View className="flex-row items-center gap-3">
-          <Portrait view={view} sizePx={VARIANT.large.portraitPx} />
-          <Lines view={view} variant="large" center={false} />
-        </View>
-        <ExpBlock view={view} variant="large" />
-      </View>
-    )
-  }
-
   return (
-    <View testID="widget-representative-character" className="flex-1 flex-row items-center gap-2.5 p-3">
-      <Portrait view={view} sizePx={VARIANT.row.portraitPx} />
-      <Lines view={view} variant="row" center={false} />
-      <ExpBlock view={view} variant="row" />
+    <View testID="widget-representative-character" className="flex-1 flex-row items-center gap-3 p-3">
+      <CharacterAvatar
+        imageTestID="representative-face"
+        imageUrl={view.imageUrl}
+        name={view.name}
+        size={PORTRAIT_PX}
+        className="shrink-0"
+        unavailable={view.unavailable}
+      />
+      <View testID="representative-lines" className="min-w-0 flex-1 gap-1.5">
+        <View className="gap-0.5">
+          <NameLine view={view} />
+          <CaptionLine view={view} />
+        </View>
+        <ExpBlock view={view} />
+      </View>
     </View>
   )
 }

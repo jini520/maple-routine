@@ -7,10 +7,8 @@
  *
  * 미입력 건수는 여기서 말하지 않는다. 옆 타일(위젯 7)이 이미 들고 있다.
  *
- * 아이콘은 `dropItemIconOf(itemKey)` 로 묻는다. key 가 없거나 그림이 없는 것은 에러가 아니라 조용한
- * 폴백 원이다.
- *
- * @see docs/features/today.md 위젯 정책
+ * 아이콘은 `card-inset` 칸 위에 앉는다. key 가 없거나 그림이 없으면 빈 칸이 폴백이다. 다른 아이템 그림을
+ * 대신 세우면 그 아이템으로 읽힌다.
  */
 
 import { Image, View } from 'react-native'
@@ -20,191 +18,45 @@ import { dropItemIconOf } from '../../../lib/assets/asset-lookup'
 
 import { Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import type { WidgetHeight } from '../../../lib/today/widget-layout'
 import type { PricedDropView } from '../view-model'
 import type { WidgetProps } from './types'
 
-/** 기록이 없을 때의 한 줄. 건수는 위젯 7 의 몫이라 여기서 말하지 않는다. */
 const EMPTY_NOTE = '가격이 입력된 아이템이 없습니다'
-
 const TITLE = '이번 주 최고가'
 
-/** 4x2 · 2x2 · 2x1 · 1x1. 이름이 크기가 아니라 무엇을 그리는가 를 말한다. */
-type Variant = 'wide' | 'compact' | 'mini' | 'tiny'
+const SLOT_PX = 40
+const ICON_PX = 30
 
-function variantOf(w: number, h: WidgetHeight): Variant {
-  if (w === 4) return 'wide'
-  if (w === 1) return 'tiny'
-  return h === 2 ? 'compact' : 'mini'
-}
-
-function Icon(props: { drop: PricedDropView; sizePx: number }): React.JSX.Element {
-  const url = dropItemIconOf(props.drop.itemKey)
-
-  if (url === null) {
-    // `ItemRevenuePopover` 와 같은 폴백. 빈 상자다. 다른 아이템 그림을 대신 세우면 **이 아이템** 으로
-    // 읽힌다.
-    return (
-      <View
-        testID="top-item-icon-fallback"
-        className="shrink-0 rounded-md border border-border bg-surface-2"
-        style={{ width: props.sizePx, height: props.sizePx }}
-      />
-    )
-  }
-
-  return (
-    <Image
-      testID="top-item-icon"
-      accessibilityLabel={props.drop.itemName}
-      source={url}
-      resizeMode="contain"
-      className="shrink-0"
-      style={{ width: props.sizePx, height: props.sizePx }}
-    />
-  )
-}
-
-/** `12.0억 메소`. 1x1 만 단위를 버린다. */
-function Amount(props: { meso: number; sizeClass: string; unit: boolean }): React.JSX.Element {
-  return (
-    <Text testID="top-item-amount" numberOfLines={1} className="text-text">
-      <Text style={TABULAR_NUMS} className={`font-bold text-text ${props.sizeClass}`}>
-        {formatMesoShort(props.meso)}
-      </Text>
-      {props.unit && <Text className="text-11 font-semibold text-text-muted"> 메소</Text>}
-    </Text>
-  )
-}
-
-/** 아이템 이름. 한 줄이다. 두 줄로 접으면 행 높이가 데이터에 따라 흔들린다. */
-function ItemName(props: { drop: PricedDropView; sizeClass: string }): React.JSX.Element {
-  return (
-    <Text
-      testID="top-item-name"
-      numberOfLines={1}
-      className={`font-semibold text-text ${props.sizeClass}`}
-    >
-      {props.drop.itemName}
-      {props.drop.ringLevel !== undefined && ` ${props.drop.ringLevel}레벨`}
-    </Text>
-  )
-}
-
-/**
- * 캐릭터 · 보스.
- *
- * 캐릭터 이름은 프로필 캐시에 있을 때만 온다. 없으면 보스만 선다(ocid 를 대신 넣지 않는다).
- */
-/**
- * 2인 분배. 4x2 에만 선다.
- *
- * 금액이 분배 후 실수령액이라 사용자가 입력한 총액보다 작다. 그 차이를 설명하지 않으면
- * 숫자가 틀렸다 로 읽힌다.
- *
- * 2x2 아래로는 이 한 줄을 넣을 폭이 없다(158px 안에 아이콘 40 + 금액 78 이 이미 들어가 있다).
- * 억지로 넣으면 말줄임에 먹혀 `2인 분…` 이 되어 설명이 아니라 잡음이 된다.
- *
- * 안 나눴으면 그리지 않는다. 나눈 적이 없는데 `1인 분배` 라고 적으면 없는 사건을 말하는 것이다.
- *
- * **어떻게 나눴나는 층이 글자로 준다.** 여기서 수를 받아 `N인` 을 적으면 비율로 나눈 기록이
- * 인원으로 선다.
- */
-function ShareNote(props: { drop: PricedDropView }): React.JSX.Element | null {
-  if (props.drop.splitLabel === null) return null
-
-  return (
-    <Text testID="top-item-share" numberOfLines={1} className="text-[10.5px] text-text-disabled">
-      {`${props.drop.splitLabel} 분배`}
-    </Text>
-  )
-}
-
-function Origin(props: { drop: PricedDropView }): React.JSX.Element {
-  const parts = [props.drop.characterName, props.drop.boss].filter(
-    (part): part is string => part !== undefined,
-  )
-
-  return (
-    <Text testID="top-item-origin" numberOfLines={1} className="text-11 text-text-muted">
-      {parts.join(' · ')}
-    </Text>
-  )
-}
-
-/** 2~5위. 4x2 의 오른쪽 열만 쓴다. 항목이 모자라면 있는 만큼만 선다. */
-function RestList(props: { rest: PricedDropView[] }): React.JSX.Element | null {
-  if (props.rest.length === 0) return null
-
-  return (
-    <View testID="top-item-rest" className="gap-1">
-      {props.rest.map((drop, index) => (
-        <View
-          key={`${drop.ocid}|${drop.boss}|${drop.itemKey ?? drop.itemName}|${index}`}
-          testID="top-item-rest-row"
-          className="flex-row items-center gap-1.5"
-        >
-          <Icon drop={drop} sizePx={18} />
-          <Text numberOfLines={1} className="min-w-0 flex-1 text-[11.5px] text-text">
-            {drop.itemName}
-          </Text>
-          {/* 목록 행에는 단위를 안 붙인다. 왼쪽 1위가 이미 말했다. */}
-          <Text style={TABULAR_NUMS} className="shrink-0 text-[11.5px] font-bold text-text">
-            {formatMesoShort(drop.payoutMeso)}
-          </Text>
-        </View>
-      ))}
-    </View>
-  )
-}
-
-/**
- * 빈 상태. 채워진 상태의 골격을 그대로 쓴다.
- *
- * 글자만 남기면 자리가 무너져 타일이 비었다 가 아니라 타일이 고장났다 로 보인다. 아이콘이
- * 서던 자리에 같은 크기의 빈 슬롯을 세우면 값이 들어왔을 때 자리가 안 움직이고, 지금이 들어올
- * 곳이 있는데 아직 없다 로 읽힌다.
- *
- * 슬롯은 점선이다. 실선 상자는 내용이 있는 무엇으로 보이고, 점선은 그 자리가 비어 있다는
- * 관례다.
- */
-function EmptySlot(props: { sizePx: number }): React.JSX.Element {
+/** 아이콘 자리. 칸은 늘 서고 그림이 없으면 빈 칸이다 */
+function IconSlot(props: { drop: PricedDropView | null }): React.JSX.Element {
+  const url = props.drop === null ? null : dropItemIconOf(props.drop.itemKey)
   return (
     <View
-      testID="top-item-empty-slot"
-      className="shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-surface-2"
-      style={{ width: props.sizePx, height: props.sizePx }}
+      testID={props.drop !== null && url === null ? 'top-item-icon-fallback' : undefined}
+      className="shrink-0 items-center justify-center rounded-[10px] bg-card-inset"
+      style={{ width: SLOT_PX, height: SLOT_PX }}
     >
-      <Text className="font-bold text-text-disabled" style={{ fontSize: props.sizePx * 0.42 }}>
-        ―
-      </Text>
+      {url !== null && props.drop !== null && (
+        <Image
+          testID="top-item-icon"
+          accessibilityLabel={props.drop.itemName}
+          source={url}
+          resizeMode="contain"
+          style={{ width: ICON_PX, height: ICON_PX }}
+        />
+      )}
+      {props.drop === null && <Text className="text-sm font-bold text-text-disabled">―</Text>}
     </View>
   )
 }
 
-function Empty(props: { variant: Variant }): React.JSX.Element {
-  // 1x1 도 문구를 남긴다. 슬롯만 세우면 무엇이 없는지를 말하지 못해 타일이 그냥 고장난 것처럼
-  // 보인다. 이 크기의 채워진 상태에는 라벨이 없어서 더 그렇다.
-  if (props.variant === 'tiny') {
-    return (
-      <View testID="widget-top-valuable-item" className="flex-1 items-center justify-center gap-1.5 p-2">
-        <EmptySlot sizePx={22} />
-        <Text
-          testID="top-item-empty"
-          numberOfLines={3}
-          className="text-center text-10 leading-[11px] text-text-muted"
-        >
-          {EMPTY_NOTE}
-        </Text>
-      </View>
-    )
-  }
+export function TopValuableItemWidget({ data }: WidgetProps): React.JSX.Element {
+  const top = data.topItem
 
-  // 2x1 은 채워진 상태와 같은 **아이콘 좌 · 글자 우** 골격이라 값이 들어와도 줄이 안 흔들린다.
-  if (props.variant === 'mini') {
+  if (top === null) {
     return (
       <View testID="widget-top-valuable-item" className="flex-1 flex-row items-center gap-2.5 p-3">
-        <EmptySlot sizePx={32} />
+        <IconSlot drop={null} />
         <Text testID="top-item-empty" numberOfLines={2} className="flex-1 text-11 text-text-muted">
           {EMPTY_NOTE}
         </Text>
@@ -213,81 +65,16 @@ function Empty(props: { variant: Variant }): React.JSX.Element {
   }
 
   return (
-    <View testID="widget-top-valuable-item" className="flex-1 items-center justify-center gap-2.5 p-3">
-      <EmptySlot sizePx={36} />
-      <Text
-        testID="top-item-empty"
-        numberOfLines={2}
-        className="text-center text-[11.5px] leading-[15px] text-text-muted"
-      >
-        {EMPTY_NOTE}
-      </Text>
-    </View>
-  )
-}
-
-export function TopValuableItemWidget({ w, h, data }: WidgetProps): React.JSX.Element {
-  const variant = variantOf(w, h)
-  const view = data.topItem
-
-  if (view === null) return <Empty variant={variant} />
-
-  if (variant === 'tiny') {
-    return (
-      <View testID="widget-top-valuable-item" className="flex-1 items-center justify-center gap-1 p-2">
-        <Icon drop={view.top} sizePx={28} />
-        <Amount meso={view.top.payoutMeso} sizeClass="text-13" unit={false} />
-      </View>
-    )
-  }
-
-  if (variant === 'mini') {
-    return (
-      <View testID="widget-top-valuable-item" className="flex-1 flex-row items-center gap-2.5 p-3">
-        <Icon drop={view.top} sizePx={36} />
-        <View className="min-w-0 flex-1 gap-0.5">
-          <Text className="text-10 font-bold text-text-muted">{TITLE}</Text>
-          <Amount meso={view.top.payoutMeso} sizeClass="text-15" unit />
-        </View>
-      </View>
-    )
-  }
-
-  if (variant === 'compact') {
-    return (
-      <View testID="widget-top-valuable-item" className="flex-1 justify-center gap-2 p-3">
+    <View testID="widget-top-valuable-item" className="flex-1 flex-row items-center gap-2.5 p-3">
+      <IconSlot drop={top} />
+      <View className="min-w-0 flex-1 gap-0.5">
         <Text className="text-10 font-bold text-text-muted">{TITLE}</Text>
-        {/* 아이콘을 40 으로 줄여 `12.0억 메소` 가 **한 줄**에 들어간다. */}
-        <View className="flex-row items-center gap-2">
-          <Icon drop={view.top} sizePx={40} />
-          <View className="min-w-0 flex-1">
-            <Amount meso={view.top.payoutMeso} sizeClass="text-15" unit />
-          </View>
-        </View>
-        <View className="gap-0.5">
-          <ItemName drop={view.top} sizeClass="text-[12.5px]" />
-          <Origin drop={view.top} />
-        </View>
-      </View>
-    )
-  }
-
-  return (
-    <View testID="widget-top-valuable-item" className="flex-1 flex-row gap-3 p-3">
-      <View className="min-w-0 flex-1 justify-center gap-1">
-        <Text className="text-10 font-bold text-text-muted">{TITLE}</Text>
-        <View className="flex-row items-center gap-2">
-          <Icon drop={view.top} sizePx={44} />
-          <View className="min-w-0 flex-1 gap-0.5">
-            <Amount meso={view.top.payoutMeso} sizeClass="text-lg" unit />
-            <ItemName drop={view.top} sizeClass="text-[12.5px]" />
-            <Origin drop={view.top} />
-            <ShareNote drop={view.top} />
-          </View>
-        </View>
-      </View>
-      <View className="w-[44%] justify-center">
-        <RestList rest={view.rest} />
+        <Text testID="top-item-amount" numberOfLines={1} className="text-text">
+          <Text style={TABULAR_NUMS} className="text-15 font-bold text-text">
+            {formatMesoShort(top.payoutMeso)}
+          </Text>
+          <Text className="text-11 font-semibold text-text-muted"> 메소</Text>
+        </Text>
       </View>
     </View>
   )

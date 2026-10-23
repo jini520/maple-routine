@@ -1,16 +1,11 @@
 /**
- * 위젯 열의 표. 존재 · 크기 · 목적지를 한 자리에 둔다.
+ * 위젯 열의 표. 존재 · 폭 · 목적지를 한 자리에 둔다.
  *
  * 배치(`layout.ts`)는 id 만 가리키고 격자는 이 표에서 그림과 목적지를 찾는다. 그래서 위젯이 하나
  * 늘 때 손댈 곳이 표 한 줄과 배치 한 줄로 고정되고, 그 둘이 어긋나면 `validateWidgetLayout` 이
- * 잡는다(선언 안 한 크기 · 중복 · 겹침).
- *
- * 굵은 것이 기본 크기이고 나머지는 아직 아무도 안 쓴다. 그래도 선언해 두는 것은 나중에 편집이 오면
- * 그때 고를 크기가 이미 있어야 해서다. 대가는 아무도 안 부르는 렌더 분기가 스냅샷으로만 검증되는
- * 것이다.
+ * 잡는다(선언 안 한 폭 · 겹침 · 빈 줄).
  */
 
-import type { WidgetSize } from '../../../lib/today/widget-layout'
 import { CrystalLimitWidget } from './CrystalLimitWidget'
 import { NextPartyScheduleWidget } from './NextPartyScheduleWidget'
 import { RemainingScheduleWidget } from './RemainingScheduleWidget'
@@ -20,111 +15,21 @@ import { RepresentativeCharacterWidget } from './RepresentativeCharacterWidget'
 import { TopValuableItemWidget } from './TopValuableItemWidget'
 import type { WidgetDefinition, WidgetId } from './types'
 import { UnpricedDropsWidget } from './UnpricedDropsWidget'
-import { ValuableDroughtWidget } from './ValuableDroughtWidget'
-import { WeeklyBossProfitWidget } from './WeeklyBossProfitWidget'
+import { WeeklyIncomeWidget } from './WeeklyIncomeWidget'
 
 export const WIDGETS: readonly WidgetDefinition[] = [
+  { id: 'representative-character', width: 4, Component: RepresentativeCharacterWidget },
+  { id: 'shared-contents', width: 4, Component: SharedContentsWidget },
+  { id: 'remaining-schedule', width: 4, Component: RemainingScheduleWidget },
+  // 위젯 안에서 세그먼트와 캐릭터 줄을 누르므로 타일 전체는 누를 수 없다.
+  { id: 'weekly-income', width: 4, Component: WeeklyIncomeWidget },
+  { id: 'top-valuable-item', width: 2, target: 'DropPrice', Component: TopValuableItemWidget },
+  { id: 'crystal-limit', width: 2, target: 'Profit', Component: CrystalLimitWidget },
+  { id: 'reset-countdown', width: 2, Component: ResetCountdownWidget },
+  { id: 'unpriced-drops', width: 2, target: 'DropPrice', Component: UnpricedDropsWidget },
   {
-    id: 'representative-character',
-    sizes: [
-      { w: 4, h: 1 },
-      { w: 4, h: 2 },
-      { w: 2, h: 2 },
-    ],
-    // `target` 이 없다. 나중에 다른 화면으로 잇는다. 캐릭터 관리는 제목 줄 오른쪽 원이 연다.
-    Component: RepresentativeCharacterWidget,
-  },
-  {
-    // `남은 스케줄`과 같은 이유로 크기가 하나뿐이다. 계열 수와 줄 수가 데이터에서 나온다
-    // (유니온은 스케줄러에 있을 때만 그린다).
-    id: 'shared-contents',
-    sizes: [{ w: 4, h: 'auto' }],
-    // `target` 이 없다. 목적지가 열린 질문이라, 갈 데가 정해지기 전에 누를 수 있게 두면 무반응이
-    // 고장으로 읽힌다.
-    Component: SharedContentsWidget,
-  },
-  {
-    // 크기가 하나뿐인 위젯 둘 중 하나다. 캐릭터를 **전부** 출력하므로 높이를 미리 알 수 없고,
-    // `h: 'auto'` 는 가로를 다 쓰는 타일에만 허용된다.
-    id: 'remaining-schedule',
-    sizes: [{ w: 4, h: 'auto' }],
-    // `target` 이 없다. 행이 각자 눌려 아코디언을 여닫으므로 타일 전체를 감싼 누름 영역이 설 수
-    // 없고(중첩 `Pressable`), 컨텐츠 화면으로 보내던 경로도 함께 사라졌다. 하단바의 스케줄 →
-    // 컨텐츠가 이미 그 길이다.
-    Component: RemainingScheduleWidget,
-  },
-  {
-    // 높이를 내용이 정한다. 캐릭터가 셋뿐이라(상한 `TOP_CHARACTER_COUNT`) 자랄 수 있는 폭이
-    // 좁고, 고정 3행이면 캐릭터가 하나일 때 아래가 87px 빈다.
-    id: 'weekly-boss-profit',
-    sizes: [
-      { w: 4, h: 'auto' },
-      { w: 4, h: 3 },
-      { w: 4, h: 2 },
-      { w: 2, h: 2 },
-      { w: 2, h: 1 },
-    ],
-    target: 'Profit',
-    Component: WeeklyBossProfitWidget,
-  },
-  {
-    id: 'top-valuable-item',
-    sizes: [
-      { w: 2, h: 1 },
-      { w: 4, h: 2 },
-      { w: 2, h: 2 },
-      { w: 1, h: 1 },
-    ],
-    // 가리키는 것이 값을 매길 드롭이다.
-    target: 'DropPrice',
-    Component: TopValuableItemWidget,
-  },
-  {
-    id: 'crystal-limit',
-    sizes: [
-      { w: 2, h: 1 },
-      { w: 4, h: 1 },
-      { w: 2, h: 2 },
-      { w: 1, h: 1 },
-    ],
-    target: 'Profit',
-    Component: CrystalLimitWidget,
-  },
-  {
-    // 초기화 시각은 이 타일이 다 말하고, 더 볼 화면이 없다.
-    id: 'reset-countdown',
-    sizes: [
-      { w: 2, h: 1 },
-      { w: 2, h: 2 },
-      { w: 4, h: 1 },
-      { w: 1, h: 1 },
-    ],
-    Component: ResetCountdownWidget,
-  },
-  {
-    id: 'unpriced-drops',
-    sizes: [
-      { w: 2, h: 1 },
-      { w: 2, h: 2 },
-      { w: 1, h: 1 },
-    ],
-    target: 'DropPrice',
-    Component: UnpricedDropsWidget,
-  },
-  {
-    id: 'valuable-drought',
-    sizes: [
-      { w: 4, h: 1 },
-      { w: 2, h: 2 },
-      { w: 2, h: 1 },
-    ],
-    // `target` 이 없다. 가려던 드롭 히스토리는 진입점이 임시로 걷혀 있어 갈 수 없다.
-    Component: ValuableDroughtWidget,
-  },
-  {
-    // 파티 보스를 안 가는 사용자도 있어 보여 줄 회차가 없으면 타일째 숨는다. 누름은 위젯이 직접 받는다(그 회차의 상세까지 연다).
     id: 'next-party-schedule',
-    sizes: [{ w: 4, h: 'auto' }],
+    width: 4,
     isVisible: (data) => data.nextParty.length > 0,
     Component: NextPartyScheduleWidget,
   },
@@ -135,13 +40,11 @@ export const WIDGET_BY_ID: Readonly<Record<WidgetId, WidgetDefinition>> = Object
 ) as Record<WidgetId, WidgetDefinition>
 
 /**
- * 검증이 읽는 선언된 크기 표. 표에서 파생시킨다.
+ * 검증이 읽는 폭 표. 표에서 파생시킨다.
  *
  * `validateWidgetLayout` 이 레지스트리를 import 하지 않고 이 값을 인자로 받으므로(검증이
  * 순수 함수로 남는다), 그 인자를 손으로 적으면 같은 목록이 두 벌이 된다.
  */
-export const WIDGET_SIZES_BY_ID: Readonly<Record<WidgetId, readonly WidgetSize[]>> =
-  Object.fromEntries(WIDGETS.map((widget) => [widget.id, widget.sizes])) as Record<
-    WidgetId,
-    readonly WidgetSize[]
-  >
+export const WIDGET_WIDTH_BY_ID: Readonly<Record<WidgetId, number>> = Object.fromEntries(
+  WIDGETS.map((widget) => [widget.id, widget.width]),
+) as Record<WidgetId, number>

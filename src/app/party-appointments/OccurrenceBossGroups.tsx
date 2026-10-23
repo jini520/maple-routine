@@ -1,5 +1,6 @@
 /**
- * 회차 카드의 몸통. 캐릭터별 묶음(얼굴 · 이름 열 + 보스 줄)과 알림 · 반복 줄. 파티 스케줄 목록 카드와 today 위젯 10 이 함께 쓴다.
+ * 회차 카드의 몸통. 캐릭터별 묶음(얼굴 · 이름 열 + 보스 줄)과 알림 · 반복 줄. 파티 스케줄 목록 카드가 쓴다.
+ * today 의 다음 파티 스케줄 위젯은 묶음을 닉네임만으로 다르게 그리고, 보스 줄과 알림 · 반복 줄만 함께 쓴다.
  */
 import { View } from 'react-native'
 
@@ -25,7 +26,8 @@ export interface OccurrenceBossGroupsProps {
   repeats: boolean
 }
 
-function BossLine(props: { boss: PartyAppointmentBoss }): React.JSX.Element {
+/** 보스 한 줄. 초상화 · 이름 · 난이도 배지 */
+export function OccurrenceBossLine(props: { boss: PartyAppointmentBoss }): React.JSX.Element {
   const { boss } = props
   const name = bossAliasOf(boss.bossKey, boss.bossKey)
   return (
@@ -41,8 +43,29 @@ function BossLine(props: { boss: PartyAppointmentBoss }): React.JSX.Element {
   )
 }
 
-export function OccurrenceBossGroups(props: OccurrenceBossGroupsProps): React.JSX.Element {
+/** 알림 · 반복 줄. 둘 다 없으면 아무것도 안 그린다 */
+export function OccurrenceExtras(props: { leadMinutes: number | null; repeats: boolean }): React.JSX.Element | null {
   const hasAlarm = props.leadMinutes !== null
+  if (!hasAlarm && !props.repeats) return null
+  return (
+    <View className="flex-row gap-2.5">
+      {hasAlarm && (
+        <View className="flex-row items-center gap-1">
+          <BellIcon className="h-3 w-3 text-primary-ink" strokeWidth={2.2} aria-hidden />
+          <Text className="text-11 text-primary-ink">{formatLead(props.leadMinutes ?? 0)}</Text>
+        </View>
+      )}
+      {props.repeats && (
+        <View className="flex-row items-center gap-1">
+          <RepeatIcon className="h-3 w-3 text-text-muted" strokeWidth={2.2} aria-hidden />
+          <Text className="text-11 text-text-muted">매주</Text>
+        </View>
+      )}
+    </View>
+  )
+}
+
+export function OccurrenceBossGroups(props: OccurrenceBossGroupsProps): React.JSX.Element {
   return (
     <>
       {props.groups.map((group) => (
@@ -52,27 +75,12 @@ export function OccurrenceBossGroups(props: OccurrenceBossGroupsProps): React.JS
           </View>
           <View className="flex-1">
             {group.bosses.map((boss) => (
-              <BossLine key={`${boss.ocid}:${boss.bossKey}`} boss={boss} />
+              <OccurrenceBossLine key={`${boss.ocid}:${boss.bossKey}`} boss={boss} />
             ))}
           </View>
         </View>
       ))}
-      {(hasAlarm || props.repeats) && (
-        <View className="flex-row gap-2.5">
-          {hasAlarm && (
-            <View className="flex-row items-center gap-1">
-              <BellIcon className="h-3 w-3 text-primary-ink" strokeWidth={2.2} aria-hidden />
-              <Text className="text-11 text-primary-ink">{formatLead(props.leadMinutes ?? 0)}</Text>
-            </View>
-          )}
-          {props.repeats && (
-            <View className="flex-row items-center gap-1">
-              <RepeatIcon className="h-3 w-3 text-text-muted" strokeWidth={2.2} aria-hidden />
-              <Text className="text-11 text-text-muted">매주</Text>
-            </View>
-          )}
-        </View>
-      )}
+      <OccurrenceExtras leadMinutes={props.leadMinutes} repeats={props.repeats} />
     </>
   )
 }

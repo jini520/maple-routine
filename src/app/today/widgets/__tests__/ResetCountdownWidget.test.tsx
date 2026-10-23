@@ -1,26 +1,14 @@
-// 초기화 카운트다운 위젯. 이 파일이 지키는 것 넷.
+// 초기화 카운트다운 위젯. 이 파일이 지키는 것 셋.
 // ① **일일은 초까지 세고 1초마다 다시 그린다**(기준은 `atMs`. 틱을 세지 않는다)
-// ② **크기마다 무엇을 버리는지**(2x1 은 월간· 1x1 은 일일만 + 단위 하나)
+// ② **일일 · 주간 두 줄이고 월간은 없다**(월간은 대개 멀어 지금 급한 것이 아니다)
 // ③ **임박을 색으로 말하지 않는다**(값이 무엇이든 글자 스타일이 같다. 색이 확정되지 않았다)
-// ④ **누를 수 없는 타일이다**(목적지가 없다. 초기화 시각은 이 타일이 다 말한다)
-//
-// **네 크기를 전부 스냅샷으로 찍는다**. v1 배치가 쓰는 것은 2x1 하나뿐이라 나머지 셋은
-// 아무도 안 부르는 렌더 분기이고, 그 분기를 지키는 것은 스냅샷뿐이다.
 
 import { act } from '@testing-library/react-native'
 
-import { flattenStyle, renderAtom } from '../../../../components/__tests__/render-atom'
+import { renderAtom } from '../../../../components/__tests__/render-atom'
 import { ResetCountdownWidget } from '../ResetCountdownWidget'
 import { 뷰모델, 초기화 } from './widget-fixture'
 import type { TodayViewModel } from '../../view-model'
-import type { WidgetHeight } from '../../../../lib/today/widget-layout'
-
-const 크기 = {
-  '2x1': { w: 2, h: 1 },
-  '2x2': { w: 2, h: 2 },
-  '4x1': { w: 4, h: 1 },
-  '1x1': { w: 1, h: 1 },
-} as const
 
 const MINUTE_MS = 60 * 1000
 const HOUR_MS = 60 * MINUTE_MS
@@ -45,46 +33,32 @@ const 기본 = 뷰모델({
   ),
 })
 
-async function 위젯(
-  값: { w: number; h: WidgetHeight },
-  data: TodayViewModel = 기본,
-): Promise<ReturnType<typeof renderAtom>> {
-  return renderAtom(<ResetCountdownWidget w={값.w} h={값.h} data={data} />)
+async function 위젯(data: TodayViewModel = 기본): Promise<ReturnType<typeof renderAtom>> {
+  return renderAtom(<ResetCountdownWidget data={data} />)
 }
 
 describe('남은 시간 표기', () => {
-  it.each(Object.entries(크기))('%s: 일일은 어느 크기에서나 선다', async (_이름, 값) => {
-    const { getByTestId } = await 위젯(값)
-
-    expect(getByTestId('reset-value-daily')).toBeTruthy()
-  })
-
   it('일일은 초까지 센다', async () => {
-    const { getByText } = await 위젯(크기['2x1'])
+    const { getByText } = await 위젯()
 
     expect(getByText('12시간 34분 0초')).toBeTruthy()
   })
 
-  it('주간·월간은 분까지다. 수십 시간 남은 값에 초를 붙이면 글자만 길어진다', async () => {
-    const { getByText } = await 위젯(크기['2x2'])
+  it('주간은 분까지다. 수십 시간 남은 값에 초를 붙이면 글자만 길어진다', async () => {
+    const { getByText } = await 위젯()
 
     expect(getByText('2일 12시간')).toBeTruthy()
-    expect(getByText('13일 12시간')).toBeTruthy()
   })
 
   it('앞의 0 단위는 뗀다. `0시간 43분 12초` 가 아니다', async () => {
-    const { getByText } = await 위젯(
-      크기['2x1'],
-      뷰모델({ resets: 초기화(43 * MINUTE_MS + 12 * 1000, DAY_MS, DAY_MS) }),
+    const { getByText } = await 위젯(뷰모델({ resets: 초기화(43 * MINUTE_MS + 12 * 1000, DAY_MS, DAY_MS) }),
     )
 
     expect(getByText('43분 12초')).toBeTruthy()
   })
 
   it('한 시간이 안 남으면 주간은 분만 남는다', async () => {
-    const { getByText } = await 위젯(
-      크기['2x1'],
-      뷰모델({ resets: 초기화(DAY_MS, 43 * MINUTE_MS, DAY_MS) }),
+    const { getByText } = await 위젯(뷰모델({ resets: 초기화(DAY_MS, 43 * MINUTE_MS, DAY_MS) }),
     )
 
     expect(getByText('43분')).toBeTruthy()
@@ -92,9 +66,7 @@ describe('남은 시간 표기', () => {
 
   // 아직 안 왔다는 사실이 **0분** 으로 읽히면 안 된다. 다만 **초를 그리는 일일에는 안 쓴다**.
   it('**1분 미만** 은 주간·월간에만 남는다. 일일은 `20초` 라고 직접 말한다', async () => {
-    const { getByText, queryByText } = await 위젯(
-      크기['2x1'],
-      뷰모델({ resets: 초기화(20 * 1000, 20 * 1000, DAY_MS) }),
+    const { getByText, queryByText } = await 위젯(뷰모델({ resets: 초기화(20 * 1000, 20 * 1000, DAY_MS) }),
     )
 
     expect(getByText('20초')).toBeTruthy()
@@ -103,7 +75,7 @@ describe('남은 시간 표기', () => {
   })
 
   it('숫자 폭이 흔들리지 않게 `tabular-nums` 를 건다', async () => {
-    const { getByTestId } = await 위젯(크기['2x1'])
+    const { getByTestId } = await 위젯()
 
     expect(getByTestId('reset-value-daily').props.style).toMatchObject({
       fontVariant: ['tabular-nums'],
@@ -111,79 +83,22 @@ describe('남은 시간 표기', () => {
   })
 })
 
-describe('크기가 버리는 것', () => {
+describe('줄', () => {
   // 월간은 대개 멀어 지금 급한 것이 아니다.
-  it('2x1 은 일일·주간 두 줄이고 월간이 없다', async () => {
-    const { getByTestId, queryByTestId } = await 위젯(크기['2x1'])
+  it('일일 · 주간 두 줄이고 월간이 없다', async () => {
+    const { getByTestId, queryByTestId } = await 위젯()
 
     expect(getByTestId('reset-row-daily')).toBeTruthy()
     expect(getByTestId('reset-row-weekly')).toBeTruthy()
     expect(queryByTestId('reset-row-monthly')).toBeNull()
-  })
-
-  it('2x2 는 셋을 다 세우고 각각 진행 바를 단다', async () => {
-    const { getAllByTestId, getByTestId } = await 위젯(크기['2x2'])
-
-    expect(getByTestId('reset-row-monthly')).toBeTruthy()
-    expect(getAllByTestId('reset-bar-fill')).toHaveLength(3)
-  })
-
-  it('2x1 에는 진행 바가 없다', async () => {
-    const { queryByTestId } = await 위젯(크기['2x1'])
-
-    expect(queryByTestId('reset-bar-fill')).toBeNull()
-  })
-
-  it('4x1 은 셋을 가로로 세운다', async () => {
-    const { getAllByTestId, queryByTestId } = await 위젯(크기['4x1'])
-
-    expect(getAllByTestId(/^reset-cell-/)).toHaveLength(3)
-    expect(queryByTestId('reset-bar-fill')).toBeNull()
-  })
-
-  it('1x1 은 일일만 남고 값이 가장 큰 단위 하나로 접힌다', async () => {
-    const { getByText, queryByTestId } = await 위젯(크기['1x1'])
-
-    expect(getByText('12시간')).toBeTruthy()
-    expect(queryByTestId('reset-value-weekly')).toBeNull()
-    expect(queryByTestId('reset-value-monthly')).toBeNull()
-  })
-})
-
-describe('진행 바. 주기의 어디쯤인가', () => {
-  it('지난 몫만큼 찬다', async () => {
-    const { getAllByTestId } = await 위젯(
-      크기['2x2'],
-      // 하루 중 6시간 남음 = 75% 지났다.
-      뷰모델({ resets: 초기화(6 * HOUR_MS, 7 * DAY_MS, 31 * DAY_MS) }),
-    )
-
-    expect(flattenStyle(getAllByTestId('reset-bar-fill')[0].props.style).width).toBe('75%')
-  })
-
-  // 달마다 길이가 다르므로(28~31일) 분모를 위젯이 상수로 들 수 없다. 뷰모델이 함께 준다.
-  it('월간은 그 달의 길이를 분모로 쓴다', async () => {
-    const { getAllByTestId } = await 위젯(
-      크기['2x2'],
-      뷰모델({
-        resets: {
-          // 남은 시간은 이제 `atMs − 지금`(= atMs, 시계가 0 이므로)에서 나온다.
-          daily: { atMs: 0, remainingMs: 0, periodMs: DAY_MS },
-          weekly: { atMs: 0, remainingMs: 0, periodMs: 7 * DAY_MS },
-          monthly: { atMs: 14 * DAY_MS, remainingMs: 14 * DAY_MS, periodMs: 28 * DAY_MS },
-        },
-      }),
-    )
-
-    expect(flattenStyle(getAllByTestId('reset-bar-fill')[2].props.style).width).toBe('50%')
   })
 })
 
 describe('임박을 색으로 말하지 않는다', () => {
   // `error` 는 실패의 색이라 임박에 빌리면 그 뜻이 흐려진다. 색이 확정될 때까지 스타일이 안 갈린다.
   it('1분 미만이어도 글자 스타일이 여유 있을 때와 같다', async () => {
-    const 여유 = await 위젯(크기['2x1'])
-    const 임박 = await 위젯(크기['2x1'], 뷰모델({ resets: 초기화(20 * 1000, DAY_MS, DAY_MS) }))
+    const 여유 = await 위젯()
+    const 임박 = await 위젯(뷰모델({ resets: 초기화(20 * 1000, DAY_MS, DAY_MS) }))
 
     expect(임박.getByTestId('reset-value-daily').props.className).toBe(
       여유.getByTestId('reset-value-daily').props.className,
@@ -193,7 +108,7 @@ describe('임박을 색으로 말하지 않는다', () => {
 
 describe('1초마다 다시 그린다', () => {
   it('1초가 지나면 일일이 1초 줄어든다', async () => {
-    const { getByTestId } = await 위젯(크기['2x1'])
+    const { getByTestId } = await 위젯()
 
     expect(getByTestId('reset-value-daily').props.children).toBe('12시간 34분 0초')
 
@@ -208,7 +123,7 @@ describe('1초마다 다시 그린다', () => {
   // **틱을 세지 않는다.** 백그라운드에서 타이머가 눌려 몇 번을 못 세도, 절대 시각에서 빼면 다음
   // 렌더가 맞는 값을 준다. 틱 수로 세면 그만큼 조용히 뒤처진다.
   it('타이머가 눌려 한 번만 깨어나도 흐른 만큼 줄어든다', async () => {
-    const { getByTestId } = await 위젯(크기['2x1'])
+    const { getByTestId } = await 위젯()
 
     await act(async () => {
       jest.advanceTimersByTime(10 * 60 * 1000)
@@ -220,9 +135,7 @@ describe('1초마다 다시 그린다', () => {
   // 위젯은 받은 `atMs` 만 안다. 다음 주기로 넘기는 것은 화면이 경계에서 다시 렌더되는 일이고,
   // 그것은 `TodayScreen.test.tsx` 의 `초기화 경계` 가 본다. 여기는 그 렌더 전 한순간의 값이다.
   it('0 밑으로 내려가지 않는다. 지난 시각을 음수로 말하지 않는다', async () => {
-    const { getByTestId } = await 위젯(
-      크기['2x1'],
-      뷰모델({ resets: 초기화(2 * 1000, DAY_MS, DAY_MS) }),
+    const { getByTestId } = await 위젯(뷰모델({ resets: 초기화(2 * 1000, DAY_MS, DAY_MS) }),
     )
 
     await act(async () => {
@@ -238,7 +151,7 @@ describe('1초마다 다시 그린다', () => {
     const 건다 = jest.spyOn(globalThis, 'setInterval')
     const 걷는다 = jest.spyOn(globalThis, 'clearInterval')
 
-    const view = await 위젯(크기['2x1'])
+    const view = await 위젯()
     const 내_아이디 = 건다.mock.results.map((결과) => 결과.value)
     await act(async () => {
       view.unmount()
@@ -262,7 +175,7 @@ describe('KST 기준이다', () => {
 
     for (const tz of ['Asia/Seoul', 'UTC', 'America/New_York']) {
       process.env.TZ = tz
-      const { getByTestId } = await 위젯(크기['2x1'])
+      const { getByTestId } = await 위젯()
       결과.push(String(getByTestId('reset-value-daily').props.children))
     }
 

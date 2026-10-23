@@ -26,23 +26,18 @@ import { contentCategoryNameOf, type ContentCategoryKey } from '../../lib/schedu
 import { contentShortNameOf } from '../../lib/scheduler/contents'
 import { groupWeeklyLimitOf, isClosedByWeeklyLimit } from '../../lib/scheduler/group-weekly-limit'
 import {
-  formatBossProfitPeriodLabel,
   getAdjacentPeriodKey,
   getCurrentBossProfitPeriod,
   isEffectiveIn,
 } from '../../lib/boss/boss-profit-period'
 import {
-  formatValuableDroughtItems,
   getPeriodStartUtcMs,
-  getValuableDroughtTier,
-  valuableDroughtHeadlineCount,
   type DropHistoryPeriodGroup,
   type DropHistoryRecord,
-  type ValuableDroughtSummary,
 } from '../../lib/drop/drop-history'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
 import { bossNameOf } from '../../lib/boss/bosses'
-import { dropPayoutMeso, dropSplitLabel, sumDropPayout } from '../../lib/drop/drop-price'
+import { dropPayoutMeso } from '../../lib/drop/drop-price'
 import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../../lib/scheduler/reset-clock'
 import { HEADER_PORTRAIT_MAX } from './header-portrait-motion'
 import { endClockOf } from '../../features/party-appointments/agenda'
@@ -62,14 +57,17 @@ import type {
 import type { RecordedDrop } from '../../types/drops'
 
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
+import { buildCharacterGroups, summarizeWorldCrystals } from '../boss-profit/character-groups'
 import {
-  buildCharacterGroups,
-  collectGroupDrops,
-  collectPayableDrops,
-  groupTotalMeso,
-  sumPayout,
-  summarizeWorldCrystals,
-} from '../boss-profit/character-groups'
+  categoryTotalsBetween,
+  characterCategoriesBetween,
+  characterTotalsBetween,
+  totalsBetween,
+  type CategoryTotal,
+  type DaysByDate,
+  type StatsTotals,
+} from '../../features/stats/aggregate'
+import { statsRanges } from '../../features/stats/periods'
 import {
   displayedDailyContents,
   displayedWeeklyContents,
@@ -79,14 +77,6 @@ import { dailyContentCompletion, weeklyContentCompletion } from '../content-sche
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-/** 캐릭터별 수익 목록에 담는 캐릭터 수. 4x3 타일이 세 줄이다. */
-const TOP_CHARACTER_COUNT = 3
-
-/** 최고가 아이템 순위 길이. 4x2 타일이 1위 + 2~5위를 그린다. */
-const TOP_ITEM_COUNT = 5
-
-/** 가격 미입력 미리보기 길이. 2x2 타일이 이름 셋까지 세우고 나머지는 외 N건 이다. */
-const UNPRICED_PREVIEW_COUNT = 3
 
 /** 대표 캐릭터 카드가 그리는 것. 값이 없는 줄은 위젯이 그리지 않는다. */
 export interface RepresentativeView {
@@ -180,38 +170,26 @@ export interface SharedContentGroupView {
   weeklyLimit: { now: number; max: number } | null
 }
 
-/**
- * 총액을 가른 둘. 위젯 3의 스택 바와 분해 금액이 읽는 값이다.
- *
- * 위젯이 스토어를 모르므로 총액만 주면 갈라 그릴 방법이 없다. 그렇다고 여기서 새로 세지도
- * 않는다. 결정석은 `sumPayout`, 아이템은 `sumDropPayout` 이고 둘의 합이 곧 `groupTotalMeso`
- * 다(이번 주 계산에는 주차별 소계가 언제나 비어 있다).
- */
-export interface ProfitSplit {
-  /** 보스 행의 `payoutMeso` 합(드롭은 여기 안 든다). */
-  crystalMeso: number
-  /** 그 행들에 기록된 드롭 판매가의 분배 후 합. */
-  itemMeso: number
-}
-
-export interface WeeklyProfitCharacterView extends ProfitSplit {
-  ocid: string
-  characterName: string
+/** 이번 주 수익 위젯의 캐릭터 한 줄. 합계와 갈래는 통계 화면과 같은 집계 함수가 낸다. */
+export interface WeeklyIncomeCharacterView extends StatsTotals {
+  /** 통계의 캐릭터 key(`ocid:…` · `name:…`) */
+  key: string
+  name: string
   imageUrl: string | null
-  totalMeso: number
+  income: CategoryTotal[]
+  expense: CategoryTotal[]
 }
 
-export interface WeeklyProfitView extends ProfitSplit {
-  /** 결정석 + 아이템. 기록이 없으면 0 이다. */
-  totalMeso: number
-  /**
-   * 이번 주에 기록이 하나라도 있는가. `totalMeso` 가 0 인 두 경우(0메소를 벌었다 와 아직
-   * 아무것도 없다)를 위젯이 가를 근거가 이것뿐이다. 그 구분이 사라지면 큰 `0` 이 사실을 단정한다.
-   */
-  hasRecords: boolean
-  /** 기간 범위(8월 14일 ~ 8월 20일). 4x3 헤더만 쓴다. `formatBossProfitPeriodLabel` 의 `secondary`. */
-  periodRange: string
-  topCharacters: WeeklyProfitCharacterView[]
+export interface WeeklyIncomeView {
+  /** 기록을 아직 못 읽었다. 읽기 전의 0 을 사실처럼 그리지 않으려고 가른다 */
+  loading: boolean
+  totals: StatsTotals
+  /** 통계의 수입 내역 갈래. 큰 순서다 */
+  income: CategoryTotal[]
+  /** 통계의 지출 내역 갈래. 큰 순서다 */
+  expense: CategoryTotal[]
+  /** 이번 주 기록이 있는 캐릭터 전부. 순위는 위젯이 고른 세그먼트로 세운다 */
+  characters: WeeklyIncomeCharacterView[]
 }
 
 /**
@@ -250,20 +228,6 @@ export interface PricedDropView extends UnpricedDropView {
    * 순위 기준도 이 값이다. 표시와 순위가 갈리면 1위가 2위보다 작은 숫자를 달고 선다.
    */
   payoutMeso: number
-  /**
-   * 어떻게 나눴나를 적은 한 줄(`4인` · `33.3%`). 안 나눴거나 방식을 모르면 `null` 이고 화면이
-   * 그 줄을 생략한다.
-   *
-   * **수가 아니라 글자다.** 수로 내리면 화면이 그것을 인원으로 단정해, 비율로 나눈 기록이
-   * `3인 분배` 로 선다(비율 `1 : 3` 과 균등 `3인` 은 저장된 두 수가 같다).
-   */
-  splitLabel: string | null
-}
-
-export interface TopItemView {
-  top: PricedDropView
-  /** 2~5위. 4x2 타일만 쓴다. */
-  rest: PricedDropView[]
 }
 
 export interface CrystalLimitView {
@@ -273,26 +237,6 @@ export interface CrystalLimitView {
   world: string
   cleared: number
   limit: number
-}
-
-export interface DroughtView {
-  weeksSince: number
-  /** 잎 색·기울기를 고르는 단계(0 = 이번 주 획득). */
-  tier: number
-  /**
-   * 그 단계의 문구 개수. 무작위 인덱스는 위젯이 마운트당 한 번 고른다. `Math.random()` 이
-   * 여기 들어오면 이 파일이 순수 함수가 아니게 된다.
-   */
-  headlineCount: number
-  periodKey: string
-  cycle: BossCycle
-  /**
-   * 그 기간의 사람이 읽는 이름(`이번 주` · `7월 3주차`). 위젯이 만들 수 없다.
-   * `formatBossProfitPeriodLabel` 이 지금이 언제인가 를 받아야 이번 주 를 말할 수 있는데,
-   * 타일마다 시계를 읽으면 같은 화면의 두 타일이 다른 시각을 말한다.
-   */
-  periodLabel: string
-  itemsLabel: string
 }
 
 export interface ResetCountdown {
@@ -362,7 +306,8 @@ export interface TodayViewModelInput {
   profitDropsByRowKey: Readonly<Record<string, RecordedDrop[]>>
   /** 드롭 히스토리 스토어(전 기간). */
   dropGroups: readonly DropHistoryPeriodGroup[]
-  drought: ValuableDroughtSummary | null
+  /** 통계가 읽는 가계부 기록(날짜별). 이번 주를 품어야 한다. 아직 못 읽었으면 `null` */
+  statsDays: DaysByDate | null
   /** 파티 스케줄 스토어. 위젯 10. */
   partyAppointments: readonly PartyAppointment[]
 }
@@ -412,20 +357,12 @@ export interface TodayViewModel {
   sharedContents: SharedContentGroupView[]
   /** **캐릭터 관리 순서**의 목록. 남은 개수 많은 순은 탭을 아는 위젯이 세운다. */
   schedule: ScheduleRowView[]
-  profit: WeeklyProfitView
-  topItem: TopItemView | null
-  /** 이번 주 가격 미입력 드롭 건수. 위젯 7의 값이라 위젯 4 안에 넣지 않는다. */
+  weeklyIncome: WeeklyIncomeView
+  /** 이번 주 기록한 판매가 중 가장 큰 아이템 */
+  topItem: PricedDropView | null
+  /** 이번 주 가격 미입력 드롭 건수. 최고가 위젯 안에 넣지 않는다. */
   unpricedCount: number
-  /**
-   * 그중 앞 몇 건. 2x2 타일이 이름을 보여 준다. 값을 적어야지 보다 그 연마석 얼마에 팔았지 가
-   * 손을 움직이는 문장이라, 건수만으로는 그 문장을 만들 수 없다.
-   *
-   * 순서는 스토어가 준 순서 그대로다. 여기서 다시 정렬하면 무엇 기준으로 앞 셋인가 라는
-   * 주장이 생기는데, 미입력 건에는 비교할 값이 없다.
-   */
-  unpricedPreview: UnpricedDropView[]
   crystalLimits: CrystalLimitView[]
-  drought: DroughtView | null
   resets: ResetCountdownView
   /**
    * 지금 뒤에 시작하는 파티 스케줄 회차. 시작 순. 위젯 10 은 분마다 시계를 읽어 아직 시작하지 않은 맨 앞을 그린다.
@@ -449,13 +386,10 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
     headerPortraits: buildHeaderPortraits(input),
     sharedContents,
     schedule,
-    ...buildProfit(input, weeklyPeriodKey),
+    weeklyIncome: buildWeeklyIncome(input, weeklyPeriodKey),
     topItem: buildTopItem(weeklyDrops, input.profilesByOcid),
     unpricedCount: unpriced.length,
-    unpricedPreview: unpriced
-      .slice(0, UNPRICED_PREVIEW_COUNT)
-      .map((record) => toDropView(record, input.profilesByOcid)),
-    drought: buildDrought(input.drought, input.now),
+    crystalLimits: buildCrystalLimits(input),
     resets: buildResets(input.now),
     nextParty: buildNextParty(input),
   }
@@ -755,68 +689,38 @@ function remainingBosses(
     }))
 }
 
-function buildProfit(
-  input: TodayViewModelInput,
-  weeklyPeriodKey: string,
-): Pick<TodayViewModel, 'profit' | 'crystalLimits'> {
+function buildCrystalLimits(input: TodayViewModelInput): CrystalLimitView[] {
   // 스토어가 이번 주로 자른 행을 그대로 받는다. 여기서 다시 거르면 그 자가 보스 수익 화면의
   // 자와 갈려, 그 주에 잡은 월간 보스 수익이 이 화면에서만 사라진다(사용자 제보 2026-10-04).
-  const rows = [...input.profitRows]
   // 월간 탭에서만 채워지는 값이라 이번 주 계산에는 언제나 빈 배열이다.
-  const groups = buildCharacterGroups(rows, [])
-  const dropsByRowKey = input.profitDropsByRowKey as Record<string, RecordedDrop[]>
-  const issues = resolveCharacterIssues(input)
-
-  // **조회 불가 캐릭터는 이 위젯에 안 선다**(사용자 지정). 이 위젯이 답하는 것은 이번 주에 얼마
-  // 벌었나 하나이고, 그 숫자를 못 내는 줄은 답이 아니라 사정이다. 그 사정을 말하는 자리는 같은
-  // 화면의 남은 스케줄과 보스 수익 화면이 이미 갖고 있다.
-  //
-  // 거르는 자리가 여기라 **총액에서도 빠진다**. 그 캐릭터가 이미 기록한 수익이 있으면 그만큼
-  // 머리 숫자가 준다. 줄은 뺐는데 총액에는 남기면 목록의 합과 머리가 안 맞아, 사용자가 못 찾는
-  // 금액이 생긴다.
-  const characters = groups
-    .filter((group) => issues[group.ocid] !== 'unavailable')
-    .map((group) => ({
-    ocid: group.ocid,
-    characterName: group.characterName,
-    imageUrl: group.imageUrl,
-    totalMeso: groupTotalMeso(group, dropsByRowKey),
-    // 총액을 다시 세는 것이 아니라 **가르는** 것이다. `groupTotalMeso` 가 더하는 세 항 중 주차별
-    // 소계는 이번 주 계산에서 언제나 비어 있으므로(`buildCharacterGroups(rows, [])`) 둘의 합이
-    // 그대로 `totalMeso` 가 된다. 그래서 여기서 나오는 두 값은 총액과 어긋날 수 없다.
-    crystalMeso: sumPayout(group.bossRows),
-    // 금액이라 완료된 행의 것만 든다. 바로 아래 `hasRecords` 가 안 가르는 것과 짝이다.
-    itemMeso: sumDropPayout(collectPayableDrops(group, dropsByRowKey)),
+  const groups = buildCharacterGroups([...input.profitRows], [])
+  return summarizeWorldCrystals(groups).map((summary) => ({
+    worldKey: summary.worldKey,
+    world: summary.world,
+    cleared: summary.cleared,
+    limit: WEEKLY_CRYSTAL_SALE_LIMIT,
   }))
+}
 
-  // 여기는 **기록이 있나** 를 묻는다. 미완료 보스에 드롭을 적은 주를 아무것도 없는 주로 그리면
-  // 적은 사람이 그 기록을 찾을 자리가 없다. 그래서 금액과 달리 완료 여부로 안 가른다.
-  const hasRecords =
-    rows.some((row) => row.isComplete) ||
-    groups.some((group) => collectGroupDrops(group, dropsByRowKey).length > 0)
-
+/**
+ * 이번 주 수익. 통계 화면과 같은 집계 함수로 같은 주를 센다. 같은 주를 두 화면이 다르게 세면 안 된다.
+ *
+ * 그림은 프로필 캐시에서 찾는다. 이름으로만 남은 강화 기록(개명 전 이름)은 그림이 없다.
+ */
+function buildWeeklyIncome(input: TodayViewModelInput, weeklyPeriodKey: string): WeeklyIncomeView {
+  const range = statsRanges('weekly', weeklyPeriodKey).current
+  const days = input.statsDays ?? {}
+  const categories = characterCategoriesBetween(days, range)
   return {
-    profit: {
-      totalMeso: characters.reduce((sum, character) => sum + character.totalMeso, 0),
-      crystalMeso: characters.reduce((sum, character) => sum + character.crystalMeso, 0),
-      itemMeso: characters.reduce((sum, character) => sum + character.itemMeso, 0),
-      hasRecords,
-      periodRange: formatBossProfitPeriodLabel('weekly', weeklyPeriodKey, input.now).secondary,
-      topCharacters: orderByTracked(characters, input.orderedOcids)
-        .map((character, index) => ({ character, index }))
-        .sort((a, b) =>
-          a.character.totalMeso === b.character.totalMeso
-            ? a.index - b.index
-            : b.character.totalMeso - a.character.totalMeso,
-        )
-        .slice(0, TOP_CHARACTER_COUNT)
-        .map((entry) => entry.character),
-    },
-    crystalLimits: summarizeWorldCrystals(groups).map((summary) => ({
-      worldKey: summary.worldKey,
-      world: summary.world,
-      cleared: summary.cleared,
-      limit: WEEKLY_CRYSTAL_SALE_LIMIT,
+    loading: input.statsDays === null,
+    totals: totalsBetween(days, range),
+    income: categoryTotalsBetween(days, range, 'income'),
+    expense: categoryTotalsBetween(days, range, 'expense'),
+    characters: characterTotalsBetween(days, range).map((row) => ({
+      ...row,
+      imageUrl: row.ocid === null ? null : (input.profilesByOcid[row.ocid]?.imageUrl ?? null),
+      income: categories.get(row.key)?.income ?? [],
+      expense: categories.get(row.key)?.expense ?? [],
     })),
   }
 }
@@ -877,7 +781,7 @@ function toDropView(
 function buildTopItem(
   records: DropHistoryRecord[],
   profilesByOcid: Readonly<Record<string, CharacterBasicProfile>>,
-): TopItemView | null {
+): PricedDropView | null {
   // 가격을 아직 안 적은 기록은 순위에 넣지 않는다. 값을 모르는 것을 가장 싼 것으로 단정하는
   // 일이다. 합산(`dropPayoutMeso`)이 미입력을 0 으로 접는 것과는 다른 문제다. 합산은 더할 것이
   // 없다 이지만 순위는 비교했다 를 주장한다.
@@ -887,30 +791,12 @@ function buildTopItem(
       (record): PricedDropView => ({
         ...toDropView(record, profilesByOcid),
         // 분배는 여기서 다시 나누지 않는다. `dropPayoutMeso` 가 그 규칙(0 나눗셈 방어 포함)을
-        // 이미 갖고 있고, `주간 보스 수익`의 아이템 합(`sumDropPayout`)이 같은 함수를 쓴다.
+        // 이미 갖고 있고, 보스 수익 화면의 아이템 합(`sumDropPayout`)이 같은 함수를 쓴다.
         payoutMeso: dropPayoutMeso(record),
-        splitLabel: dropSplitLabel(record),
       }),
     )
     .sort((a, b) => b.payoutMeso - a.payoutMeso)
-    .slice(0, TOP_ITEM_COUNT)
-
-  if (priced.length === 0) return null
-  return { top: priced[0], rest: priced.slice(1) }
-}
-
-function buildDrought(summary: ValuableDroughtSummary | null, now: Date): DroughtView | null {
-  if (summary === null) return null
-  return {
-    weeksSince: summary.weeksSince,
-    tier: getValuableDroughtTier(summary.weeksSince),
-    headlineCount: valuableDroughtHeadlineCount(summary.weeksSince),
-    periodKey: summary.periodKey,
-    cycle: summary.cycle,
-    // 히스토리 화면과 같은 라벨 함수다. 두 자리가 같은 주를 다르게 부르면 안 된다.
-    periodLabel: formatBossProfitPeriodLabel(summary.cycle, summary.periodKey, now).primary,
-    itemsLabel: formatValuableDroughtItems(summary.records),
-  }
+  return priced[0] ?? null
 }
 
 /**

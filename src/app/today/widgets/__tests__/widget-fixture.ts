@@ -9,11 +9,8 @@
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../../lib/boss/boss-matching'
 import { contentCategoryNameOf, type ContentCategoryKey } from '../../../../lib/scheduler/content-categories'
 
-import { getValuableDroughtTier, valuableDroughtHeadlineCount } from '../../../../lib/drop/drop-history'
-
 import type {
   CrystalLimitView,
-  DroughtView,
   PricedDropView,
   RepresentativeView,
   ResetCountdown,
@@ -21,8 +18,8 @@ import type {
   SharedContentGroupView,
   SharedContentItemView,
   TodayViewModel,
-  UnpricedDropView,
-  WeeklyProfitCharacterView,
+  WeeklyIncomeCharacterView,
+  WeeklyIncomeView,
 } from '../../view-model'
 
 const HOUR_MS = 60 * 60 * 1000
@@ -33,19 +30,16 @@ export const 빈_뷰모델: TodayViewModel = {
   headerPortraits: [],
   sharedContents: [],
   schedule: [],
-  profit: {
-    totalMeso: 0,
-    crystalMeso: 0,
-    itemMeso: 0,
-    hasRecords: false,
-    periodRange: '8월 14일 ~ 8월 20일',
-    topCharacters: [],
+  weeklyIncome: {
+    loading: false,
+    totals: { incomeMeso: 0, expenseMeso: 0, netMeso: 0 },
+    income: [],
+    expense: [],
+    characters: [],
   },
   topItem: null,
   unpricedCount: 0,
-  unpricedPreview: [],
   crystalLimits: [],
-  drought: null,
   resets: {
     daily: { atMs: 0, remainingMs: 0, periodMs: DAY_MS },
     weekly: { atMs: 0, remainingMs: 0, periodMs: 7 * DAY_MS },
@@ -105,50 +99,6 @@ export function 스케줄목록(n: number): ScheduleRowView[] {
   )
 }
 
-/**
- * 수익 캐릭터 한 명. **결정석과 아이템이 서로 다른 값**이라 스택 바가 반반으로 그려지는 실수를
- * 테스트가 볼 수 있고, `formatMesoShort` 를 통과한 세 값(`20.0억`·`5.0억`·`25.0억`)도 서로 다르다.
- */
-export function 수익캐릭터(
-  부분: Partial<WeeklyProfitCharacterView> = {},
-): WeeklyProfitCharacterView {
-  const base = {
-    ocid: 'ocid-1',
-    characterName: '야간비행',
-    imageUrl: null,
-    crystalMeso: 2_000_000_000,
-    itemMeso: 500_000_000,
-  }
-  const merged = { ...base, ...부분 }
-
-  // 합계를 손으로 적게 하면 **둘의 합이 총액** 이라는 뷰모델의 계약이 픽스처에서 깨진다.
-  return {
-    ...merged,
-    totalMeso: 부분.totalMeso ?? merged.crystalMeso + merged.itemMeso,
-  }
-}
-
-/** 기록이 있는 한 주. 캐릭터 셋의 합이 그대로 타일의 총액이다. */
-export function 수익(캐릭터들: WeeklyProfitCharacterView[]): TodayViewModel['profit'] {
-  return {
-    totalMeso: 캐릭터들.reduce((sum, entry) => sum + entry.totalMeso, 0),
-    crystalMeso: 캐릭터들.reduce((sum, entry) => sum + entry.crystalMeso, 0),
-    itemMeso: 캐릭터들.reduce((sum, entry) => sum + entry.itemMeso, 0),
-    hasRecords: true,
-    periodRange: '8월 14일 ~ 8월 20일',
-    topCharacters: 캐릭터들,
-  }
-}
-
-/** 상위 셋. 금액이 내림차순이고 셋 다 다르다(뷰모델이 이미 정렬해 준 모양). */
-export function 수익캐릭터셋(): WeeklyProfitCharacterView[] {
-  return [
-    수익캐릭터({ ocid: 'ocid-1', characterName: '가', crystalMeso: 2_000_000_000, itemMeso: 500_000_000 }),
-    수익캐릭터({ ocid: 'ocid-2', characterName: '나', crystalMeso: 1_000_000_000, itemMeso: 300_000_000 }),
-    수익캐릭터({ ocid: 'ocid-3', characterName: '다', crystalMeso: 200_000_000, itemMeso: 0 }),
-  ]
-}
-
 /** 아이콘이 실제로 해석되는 key 를 기본값으로 둔다(마스터 표 `drop-items.json` 에 그림이 있는 반지). */
 export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
   return {
@@ -161,7 +111,6 @@ export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
     quantity: 1,
     category: 'equipment',
     payoutMeso: 12_000_000_000,
-    splitLabel: null,
     ...부분,
   }
 }
@@ -211,65 +160,6 @@ export function 초기화(
   }
 }
 
-/** 1위 + 2~5위. `restCount` 가 4보다 작으면 그만큼만 선다(4x2 의 모자라면 있는 만큼). */
-export function 최고가(restCount: number, 상위?: Partial<PricedDropView>): TodayViewModel['topItem'] {
-  return {
-    top: 드롭(상위),
-    rest: Array.from({ length: restCount }, (_, index) =>
-      드롭({
-        itemName: `${index + 2}위 아이템`,
-        payoutMeso: 1_000_000_000 - index * 100_000_000,
-      }),
-    ),
-  }
-}
-
-/**
- * 가격 미입력 한 벌. 건수와 미리보기는 **따로 준다.**
- *
- * 뷰모델이 앞 셋만 미리보기에 싣고 나머지는 건수에만 남기므로(외 N건), 픽스처가 둘을 묶어 버리면
- * 그 어긋남을 테스트가 만들 수 없다.
- */
-export function 미입력(
-  count: number,
-  이름들: string[] = [],
-): Pick<TodayViewModel, 'unpricedCount' | 'unpricedPreview'> {
-  return {
-    unpricedCount: count,
-    unpricedPreview: 이름들.map(
-      (itemName, index): UnpricedDropView => ({
-        ocid: `ocid-${index + 1}`,
-        characterName: '야간비행',
-        boss: '스우',
-        difficulty: 'normal',
-        itemName,
-        itemKey: null,
-        quantity: 1,
-        category: 'equipment',
-      }),
-    ),
-  }
-}
-
-/**
- * 가뭄 요약 한 벌. **단계는 손으로 적지 않는다.**
- *
- * `tier`·`headlineCount` 를 픽스처가 직접 쓰면 위젯이 `getValuableDroughtTier` 를 따르는가 를
- * 물을 수 없다(테스트가 답을 들고 와서 답을 맞추는 꼴이 된다). 뷰모델이 하는 것과 같은 파생을 한다.
- */
-export function 가뭄(weeksSince: number, 부분: Partial<DroughtView> = {}): DroughtView {
-  return {
-    weeksSince,
-    tier: getValuableDroughtTier(weeksSince),
-    headlineCount: valuableDroughtHeadlineCount(weeksSince),
-    periodKey: '2026-07-16',
-    cycle: 'weekly',
-    periodLabel: '7월 3주차',
-    itemsLabel: '생명의 연마석 외 1개',
-    ...부분,
-  }
-}
-
 /** 공유 컨텐츠 한 줄. 카운트가 없으면 `CLEAR`/빈칸으로 그려진다. */
 export function 공유항목(
   shortName: string,
@@ -303,5 +193,64 @@ export function 공유컨텐츠(): SharedContentGroupView[] {
       공유항목('앵글러컴퍼니', { isComplete: true }),
       공유항목('악몽선경'),
     ]),
+  ]
+}
+
+/**
+ * 이번 주 수익 캐릭터 한 명. 수익 갈래 둘 · 지출 갈래 하나이고, 합계는 갈래의 합에서 낸다.
+ *
+ * 합계를 손으로 적게 하면 줄의 금액과 팝오버의 합이 같다 는 뷰모델의 계약이 픽스처에서 깨진다.
+ */
+export function 수익캐릭터(
+  key: string,
+  name: string,
+  income: [string, number][],
+  expense: [string, number][],
+): WeeklyIncomeCharacterView {
+  const totals = (pairs: [string, number][]): number => pairs.reduce((sum, [, meso]) => sum + meso, 0)
+  return {
+    key,
+    name,
+    imageUrl: null,
+    incomeMeso: totals(income),
+    expenseMeso: totals(expense),
+    netMeso: totals(income) - totals(expense),
+    income: income.map(([category, meso]) => ({ key: category, name: category, meso })),
+    expense: expense.map(([category, meso]) => ({ key: category, name: category, meso })),
+  }
+}
+
+/** 기록이 있는 한 주. 캐릭터 셋의 갈래를 합친 것이 그대로 위젯의 갈래와 합계다. */
+export function 이번주수익(캐릭터들: WeeklyIncomeCharacterView[]): WeeklyIncomeView {
+  const merge = (side: 'income' | 'expense'): WeeklyIncomeView['income'] => {
+    const sums = new Map<string, number>()
+    for (const character of 캐릭터들) {
+      for (const total of character[side]) sums.set(total.key, (sums.get(total.key) ?? 0) + total.meso)
+    }
+    return [...sums]
+      .map(([key, meso]) => ({ key, name: key, meso }))
+      .sort((left, right) => right.meso - left.meso)
+  }
+  const incomeMeso = 캐릭터들.reduce((sum, character) => sum + character.incomeMeso, 0)
+  const expenseMeso = 캐릭터들.reduce((sum, character) => sum + character.expenseMeso, 0)
+  return {
+    loading: false,
+    totals: { incomeMeso, expenseMeso, netMeso: incomeMeso - expenseMeso },
+    income: merge('income'),
+    expense: merge('expense'),
+    characters: 캐릭터들,
+  }
+}
+
+/**
+ * 셋. 순 수익 · 수익 · 지출 순위가 서로 다르다. 세그먼트를 바꾸면 순위가 바뀌는지를 이름으로 물을 수 있다.
+ *
+ * 순 수익: 가(8억) · 나(5억) · 다(1억), 합 14억. 수익: 가(10억) · 다(6억) · 나(5억). 지출: 다(5억) · 가(2억), 나는 지출이 없다.
+ */
+export function 수익캐릭터셋(): WeeklyIncomeCharacterView[] {
+  return [
+    수익캐릭터('ocid:a', '가', [['보스 결정석', 800_000_000], ['사냥', 200_000_000]], [['스타포스', 200_000_000]]),
+    수익캐릭터('ocid:b', '나', [['보스 결정석', 500_000_000]], []),
+    수익캐릭터('ocid:c', '다', [['보스 드롭', 600_000_000]], [['큐브 재설정', 500_000_000]]),
   ]
 }
