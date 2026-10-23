@@ -72,7 +72,7 @@ function join(base: string, extra: string | undefined): string {
  *
  * @example
  * // 겉모습만 빌리는 자리. 시맨틱은 링크다.
- * <Button variant="outline" role="link" onPress={() => void Linking.openURL(GUIDE_URL)}>
+ * <Button variant="outline" role="link" onPress={() => openInAppBrowser(GUIDE_URL)}>
  *   API 키 발급 방법 보기
  * </Button>
  *
