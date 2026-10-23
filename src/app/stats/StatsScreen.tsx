@@ -8,7 +8,7 @@ import { useFocusEffect } from '@react-navigation/native'
 import { Pressable, View, useWindowDimensions, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
 
 import { ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, Text } from '../../components/atoms'
-import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
+import { Segment } from '../../components/molecules/Segment/Segment'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -219,7 +219,8 @@ export function StatsScreen(): React.JSX.Element {
             <PageHeaderTitleRow
               fetchedAt={fetchedAt}
               trailing={
-                <TabSegment
+                <Segment
+                  size="tab"
                   options={CYCLES}
                   selected={cycle}
                   onSelect={selectCycle}

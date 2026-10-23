@@ -21,7 +21,7 @@ import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
 
 const AnimatedPath = Animated.createAnimatedComponent(Path)
-/** NativeWind 가 등록한 `Animated.View` 는 정적 스타일을 버려서(`TabSegment` 와 같은 함정) 따로 만든다 */
+/** NativeWind 가 등록한 `Animated.View` 는 정적 스타일을 버려서(`Segment` 와 같은 함정) 따로 만든다 */
 const AnimatedBox = Animated.createAnimatedComponent(View)
 
 /** 조각이 되는 갈래 수. 넘는 것은 `그 외` 로 묶는다 */

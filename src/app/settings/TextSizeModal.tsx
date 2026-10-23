@@ -9,7 +9,7 @@ import { useTextSizeStore } from '../../features/text-size/store'
 import { TEXT_SIZE_LABELS, TEXT_SIZES } from '../../lib/text-size'
 
 import { Button, Text } from '../../components/atoms'
-import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
+import { Segment } from '../../components/molecules/Segment/Segment'
 import { Modal } from '../../components/organisms/Modal/Modal'
 
 /** 미리보기 글. 테스트가 이 글로 미리보기를 찾는다. */
@@ -40,7 +40,8 @@ export function TextSizeModal(props: TextSizeModalProps): React.JSX.Element {
         <View className="mb-4 rounded-xl bg-surface-2 px-4 py-3">
           <Text className="text-sm text-text">{TEXT_SIZE_PREVIEW}</Text>
         </View>
-        <TabSegment
+        <Segment
+          size="tab"
           options={TEXT_SIZES}
           selected={size}
           labelOf={(option) => TEXT_SIZE_LABELS[option]}

@@ -27,7 +27,7 @@ import { CharacterRail, type CharacterRailEntry } from '../../components/organis
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
+import { Segment } from '../../components/molecules/Segment/Segment'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -244,7 +244,8 @@ export function ContentScreen(): React.JSX.Element {
                 <View className="flex-row items-center gap-3">
                   {manualManageButton}
                   {characters.length > 0 && selected !== null && (
-                    <TabSegment
+                    <Segment
+                      size="tab"
                       options={CONTENT_TABS}
                       selected={activeTab}
                       onSelect={setActiveTab}

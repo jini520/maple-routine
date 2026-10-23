@@ -37,7 +37,7 @@ import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
-import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
+import { Segment } from '../../components/molecules/Segment/Segment'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -190,7 +190,8 @@ export function ContentManageScreen(): React.JSX.Element {
       {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다. */}
       {selected !== null && (
         <View className="px-4">
-          <TabSegment
+          <Segment
+            size="tab"
             options={CONTENT_TABS}
             selected={activeTab}
             onSelect={setActiveTab}

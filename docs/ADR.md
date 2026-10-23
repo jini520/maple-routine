@@ -180,7 +180,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-057](./adr/ADR-057_notice_feed.md) | 🟢 | notice | 운영자 공지와 넥슨 공지 |
 | [ADR-058](./adr/ADR-058_today_widgets.md) | 🟢 | today | today 위젯 격자 |
 | [ADR-059](./adr/ADR-059_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
-| [ADR-060+073+079](./adr/ADR-060+073+079_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
+| [ADR-060+073+079+085](./adr/ADR-060+073+079+085_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
 | [ADR-061](./adr/ADR-061_design-system_states.md) | 🟢 | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 표시 |
 | [ADR-062+082](./adr/ADR-062+082_design-system_sheets.md) | 🟢 | design-system | 시트 · 모달 · 팝오버 · 입력 카드 |
 | [ADR-063+080](./adr/ADR-063+080_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 |

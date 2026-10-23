@@ -44,7 +44,7 @@ import { CalendarGrid } from '../../components/molecules/CalendarGrid/CalendarGr
 import { DIFFICULTY_NAME, DIFFICULTY_SHORT } from '../../constants/domain/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
-import { TabSegment } from '../../components/molecules/TabSegment/TabSegment'
+import { Segment } from '../../components/molecules/Segment/Segment'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { FAB_SPACE_PX } from '../../lib/fab-metrics'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
@@ -1046,7 +1046,8 @@ export function CashbookScreen(): React.JSX.Element {
               fetchedAt={fetchedAt}
               trailing={
                 // 보스 수익이 이 자리에 두는 `보스 관리` 는 여기 없다. 세그먼트만 선다.
-                <TabSegment
+                <Segment
+                  size="tab"
                   options={PERIOD_TABS}
                   selected={isWeekly ? 'weekly' : 'monthly'}
                   onSelect={(value) => (value === 'weekly' ? showWeekly() : showMonthly())}

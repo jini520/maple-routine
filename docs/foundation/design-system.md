@@ -52,14 +52,14 @@
 | `ErrorState` · `StaleBanner` | 실패 상태 · 낡은 목록 위의 실패 배너 |
 | `DataFreshness` | 제목 아래 `hh:mm:ss 기준` 줄 |
 | `UnavailableBadge` | 값 대신 보이는 `조회 불가` 알약 |
-| `Segment` · `TabSegment` · `DifficultySegment` | 폼 안 세그먼트(크기 `sm` 23 · 기본 26 · `md` 31) · 화면 헤더 탭 · 난이도 고르기 |
+| `Segment` · `DifficultySegment` | 테두리 없는 세그먼트(크기 `sm` 23 · 기본 26 · `md` 31 · 화면 헤더 탭 `tab` 32) · 난이도 고르기 |
 | `Popover` | `PopoverLayer` · `AnchoredPopover` |
 | `NumberPad` | 짧은 화면에서 숫자 칸이 쓰는 앱 판 |
 | `AmountFigure` | 시트의 큰 숫자. 칠 수 없다 |
 | `BackButton` | 헤더의 `←` |
 | `CalendarGrid` · `DateSelect` · `TimeWheel` | 달력 격자 · 날짜 선택 버튼 · 시각 휠 |
 | `ShareField` · `PartyShareSummary` | 분배 비율 고르기 · 분배 요약 줄([[ADR-038]]) |
-| `Stepper` | `−` · 숫자 · `+` 고르개. 크기 `sm` · `md` · `lg`, 연한 패널 위에서는 `tone="inverted"`([[ADR-060]] 결정 14) |
+| `Stepper` | `−` · 숫자 · `+` 고르개. 크기 `sm` · `md` · `lg`. 라이트는 연한 패널 위에서 `tone="inverted"`, 다크는 세그먼트와 같은 색([[ADR-060]] 결정 14) |
 | `BossPortrait` · `CharacterAvatar` | 보스 얼굴 · 캐릭터 얼굴 원 |
 | `CharacterGroupLabel` | 캐릭터별 묶음 왼쪽의 얼굴 · 이름 열 |
 | `DonutRing` | 비중 도넛. 조각 사이 틈 · 둥근 모서리, 조각이 없으면 회색 링([[ADR-074]] 결정 6) |

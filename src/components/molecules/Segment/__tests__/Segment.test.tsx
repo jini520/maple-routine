@@ -8,6 +8,7 @@ import { fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
+import { resolveControlColors } from '../../../../theme/theme-vars'
 import { Segment } from '../Segment'
 
 describe('Segment', () => {
@@ -72,8 +73,8 @@ describe('Segment', () => {
     )
 
     expect(flattenStyle(view.getByLabelText('메소').props.style).backgroundColor).toBeUndefined()
-    expect(flattenStyle(view.getByTestId('segment-thumb').props.style).backgroundColor).toBe(
-      기본테마.primaryTint,
+    expect(flattenStyle(view.getByTestId('segment-thumb-fill').props.style).backgroundColor).toBe(
+      resolveControlColors(기본테마).thumb,
     )
   })
 
@@ -83,8 +84,8 @@ describe('Segment', () => {
       <Segment options={['메소', '메포']} selected="메소" onSelect={jest.fn()} />,
     )
 
-    expect(flattenStyle(view.getByText('메소').props.style).color).toBe(기본테마.primaryInk)
-    expect(flattenStyle(view.getByText('메포').props.style).color).toBe(기본테마.textMuted)
+    expect(flattenStyle(view.getByText('메소').props.style).color).toBe(기본테마.text)
+    expect(flattenStyle(view.getByText('메포').props.style).color).toBe(resolveControlColors(기본테마).inkOff)
   })
 
   // 상자는 그림일 뿐이라 손가락을 먹으면 안 된다. 고른 조각을 다시 누르는 일이 막힌다.
@@ -94,6 +95,33 @@ describe('Segment', () => {
     )
 
     expect(view.getByTestId('segment-thumb').props.pointerEvents).toBe('none')
+  })
+})
+
+describe('Segment 의 라벨', () => {
+  const 주기 = ['weekly', 'monthly'] as const
+  const 주기라벨: Record<(typeof 주기)[number], string> = { weekly: '주간', monthly: '월간' }
+
+  // 화면이 받는 것은 라벨이 아니라 **값**이다. 라벨을 돌려주면 호출부마다 되짚는 함수가 생긴다.
+  it('누르면 라벨이 아니라 값을 준다', async () => {
+    const onSelect = jest.fn()
+    const view = await renderAtom(
+      <Segment options={주기} selected="weekly" onSelect={onSelect} labelOf={(v) => 주기라벨[v]} />,
+    )
+
+    fireEvent.press(view.getByLabelText('월간'))
+
+    expect(onSelect).toHaveBeenCalledWith('monthly')
+  })
+
+  // 스크린리더가 듣는 이름도 눈으로 보는 글자와 같아야 한다. 값을 읽으면 `weekly` 가 들린다.
+  it('접근성 이름도 라벨이다', async () => {
+    const view = await renderAtom(
+      <Segment options={주기} selected="weekly" onSelect={jest.fn()} labelOf={(v) => 주기라벨[v]} />,
+    )
+
+    expect(view.queryByLabelText('weekly')).toBeNull()
+    expect(view.getByText('주간')).toBeTruthy()
   })
 })
 

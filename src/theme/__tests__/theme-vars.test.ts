@@ -18,6 +18,8 @@ import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
 import {
   CARD_BODY_TOKEN,
+  CONTROL_TOKENS,
+  resolveControlColors,
   STATS_SECTION_TOKEN,
   SETTLEMENT_TOKENS,
   resolveSettlementColors,
@@ -56,6 +58,8 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
       [PANEL_BORDER_VARIABLE]: panelBorder,
       [toColorVariableName(CARD_BODY_TOKEN)]: cardBody,
       [toColorVariableName(STATS_SECTION_TOKEN)]: statsSection,
+      [toColorVariableName(CONTROL_TOKENS.thumb)]: controlThumb,
+      [toColorVariableName(CONTROL_TOKENS.inkOff)]: controlInkOff,
       ...rest
     } = variables
     // 결산 줄의 넷도 38토큰이 아니다. 테마 값이 아니라 모드 상수라서다.
@@ -66,6 +70,7 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
     expect(panelBorder).toBe(resolvePanelBorder(definition))
     expect(cardBody).toBe(resolveCardBody(definition))
     expect(statsSection).toBe(resolveStatsSection(definition))
+    expect({ thumb: controlThumb, inkOff: controlInkOff }).toEqual(resolveControlColors(definition))
     expect(tokens).toEqual(
       Object.fromEntries(THEME_TOKEN_KEYS.map((token) => [toColorVariableName(token), definition[token]])),
     )
@@ -166,10 +171,12 @@ describe('`tailwind.config.js` 색 스케일', () => {
  */
 describe('시트 스코프. 다크에서만 표면 계열을 한 칸 올린다', () => {
   const SCOPED = ['--color-bg', '--color-surface', '--color-surface-2', '--color-track'] as const
+  /** 올린 표면에서 다시 계산하는 세그먼트 · 스테퍼 색. 루트 값이 내려오면 다크 시트에서 트랙과 붙는다. */
+  const CONTROL = [toColorVariableName(CONTROL_TOKENS.thumb), toColorVariableName(CONTROL_TOKENS.inkOff)]
 
-  it.each(THEME_NAMES as readonly ThemeName[])('%s 는 넷을 빠짐없이 다시 선언한다', (name) => {
+  it.each(THEME_NAMES as readonly ThemeName[])('%s 는 넷과 컨트롤 색을 빠짐없이 다시 선언한다', (name) => {
     expect(Object.keys(buildSheetScopeVariables(getThemeDefinition(name))).sort()).toEqual(
-      [...SCOPED].sort(),
+      [...SCOPED, ...CONTROL].sort(),
     )
   })
 
@@ -183,6 +190,8 @@ describe('시트 스코프. 다크에서만 표면 계열을 한 칸 올린다',
       '--color-surface': definition.surface,
       '--color-surface-2': definition.surface2,
       '--color-track': definition.track,
+      [CONTROL[0]!]: resolveControlColors(definition).thumb,
+      [CONTROL[1]!]: resolveControlColors(definition).inkOff,
     })
   })
 
@@ -392,5 +401,45 @@ describe('resolveStatsSection', () => {
       expect(section).toBeGreaterThanOrEqual(hexToOklch(resolveCardBody(definition)).l)
       expect(section).toBeLessThanOrEqual(hexToOklch(definition.surface).l)
     }
+  })
+})
+
+/**
+ * 세그먼트 · 스테퍼의 색. 고른 칸(스테퍼 버튼)과 고르지 않은 글자.
+ *
+ * 값이 아니라 **관계**를 지킨다. 고른 칸은 트랙보다 떠 보여야 하고(다크에서 카드 색을 쓰면 트랙보다
+ * 어두워 묻혔다), 고르지 않은 글자는 흐린 글자보다 트랙에 가까워야 한다(밝은 `textMuted` 테마에서
+ * 고르지 않은 칸이 도드라졌다). 시트 안에서도 같아야 한다.
+ */
+describe('컨트롤 색. 고른 칸은 뜨고 고르지 않은 글자는 물러난다', () => {
+  const contrast = (a: string, b: string): number => {
+    const [x, y] = [hexToOklch(a).l, hexToOklch(b).l]
+    return Math.abs(x - y)
+  }
+
+  describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
+    const definition = getThemeDefinition(name)
+    const sheet = buildSheetScopeVariables(definition)
+    const scopes = [
+      ['화면', definition.surface, definition.surface2, resolveControlColors(definition)],
+      [
+        '시트',
+        sheet['--color-surface']!,
+        sheet['--color-surface-2']!,
+        { thumb: sheet[toColorVariableName(CONTROL_TOKENS.thumb)]!, inkOff: sheet[toColorVariableName(CONTROL_TOKENS.inkOff)]! },
+      ],
+    ] as const
+
+    it.each(scopes)('%s: 고른 칸이 트랙보다 밝다', (_, surface, track, control) => {
+      if (definition.mode === 'light') {
+        expect(control.thumb).toBe(surface)
+      } else {
+        expect(hexToOklch(control.thumb).l).toBeGreaterThan(hexToOklch(track).l)
+      }
+    })
+
+    it.each(scopes)('%s: 고르지 않은 글자가 흐린 글자보다 트랙에 가깝다', (_, __, track, control) => {
+      expect(contrast(control.inkOff, track)).toBeLessThan(contrast(definition.textMuted, track))
+    })
   })
 })

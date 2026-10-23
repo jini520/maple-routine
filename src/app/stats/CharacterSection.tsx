@@ -18,7 +18,7 @@ import { StatsSection } from './StatsSection'
 
 /**
  * 애니메이션이 붙는 상자. NativeWind 가 등록한 `Animated.View` 는 정적 스타일과 애니메이션 스타일을 한
- * 배열로 받으면 정적 쪽을 버리고 `className` 도 안 먹는다(`TabSegment` 와 같은 함정). 그래서 따로 만든다.
+ * 배열로 받으면 정적 쪽을 버리고 `className` 도 안 먹는다(`Segment` 와 같은 함정). 그래서 따로 만든다.
  */
 const AnimatedBox = Animated.createAnimatedComponent(View)
 
