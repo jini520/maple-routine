@@ -76,7 +76,8 @@ function isAppointment(value: unknown): value is PartyAppointment {
     (value.leadMinutes === null || typeof value.leadMinutes === 'number') &&
     isSchedule(value.schedule) &&
     isRecord(value.exceptions) &&
-    Object.values(value.exceptions).every(isException)
+    Object.values(value.exceptions).every(isException) &&
+    (value.memo === undefined || typeof value.memo === 'string')
   )
 }
 

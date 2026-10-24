@@ -77,6 +77,7 @@ import Signal from 'lucide-react-native/icons/signal'
 import SlidersHorizontal from 'lucide-react-native/icons/sliders-horizontal'
 import Sparkles from 'lucide-react-native/icons/sparkles'
 import Star from 'lucide-react-native/icons/star'
+import StickyNote from 'lucide-react-native/icons/sticky-note'
 import Store from 'lucide-react-native/icons/store'
 import Sword from 'lucide-react-native/icons/sword'
 import Sun from 'lucide-react-native/icons/sun'
@@ -228,6 +229,8 @@ export const SlidersHorizontalIcon = withIconInterop(SlidersHorizontal)
 export const SparklesIcon = withIconInterop(Sparkles)
 /** 대표 캐릭터 표식. `CharacterRow/RepresentativeStar`. */
 export const StarIcon = withIconInterop(Star)
+/** 파티 스케줄의 메모. 회차 카드 · 시트의 메모 칸. */
+export const StickyNoteIcon = withIconInterop(StickyNote)
 /** 스토어 업데이트 필요. `UpdatePromptModal`(store-required). */
 export const StoreIcon = withIconInterop(Store)
 /** 장비 드롭 카테고리. `BossDropSheet`. 보스 스케줄러의 `Swords`(복수)와 다른 그림이다. */

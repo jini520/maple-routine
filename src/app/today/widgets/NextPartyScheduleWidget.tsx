@@ -14,6 +14,7 @@ import { Pressable, View } from 'react-native'
 
 import { CalendarPlusIcon, ChevronRightIcon, RepeatIcon, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
+import { remainingLabelOf } from '../../../features/party-appointments/agenda'
 import { usePartyAppointmentOpenStore, type PartyAppointmentCreateKind } from '../../../features/party-appointments/open-request'
 import { shiftDateKey, WEEKDAY_LABELS } from '../../../lib/calendar'
 import { getCurrentKstDateKey } from '../../../lib/scheduler/reset-clock'
@@ -22,8 +23,6 @@ import type { WidgetProps } from './types'
 
 const TITLE = '다음 파티 스케줄'
 const MINUTE_MS = 60_000
-const HOUR_MS = 60 * MINUTE_MS
-const DAY_MS = 24 * HOUR_MS
 
 /** `오늘` · `내일` · 그 밖은 `일 10/4` */
 function dayLabel(dateKey: string, todayKey: string): string {
@@ -31,16 +30,6 @@ function dayLabel(dateKey: string, todayKey: string): string {
   if (dateKey === shiftDateKey(todayKey, 1)) return '내일'
   const date = new Date(`${dateKey}T00:00:00Z`)
   return `${WEEKDAY_LABELS[date.getUTCDay()]} ${date.getUTCMonth() + 1}/${date.getUTCDate()}`
-}
-
-/** `n일 뒤` · `n시간 m분 뒤` · `n분 뒤` · 1분 미만은 `곧` */
-function remainingLabel(remainingMs: number): string {
-  if (remainingMs < MINUTE_MS) return '곧'
-  if (remainingMs >= DAY_MS) return `${Math.floor(remainingMs / DAY_MS)}일 뒤`
-  const hours = Math.floor(remainingMs / HOUR_MS)
-  const minutes = Math.floor((remainingMs % HOUR_MS) / MINUTE_MS)
-  if (hours === 0) return `${minutes}분 뒤`
-  return minutes === 0 ? `${hours}시간 뒤` : `${hours}시간 ${minutes}분 뒤`
 }
 
 /** 등록 칸 둘. 파티 스케줄 탭 ＋ 메뉴와 같은 이름 · 설명 · 아이콘이다 */
@@ -127,7 +116,7 @@ export function NextPartyScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
           {` ~ ${next.endClock} `}
         </Text>
         <Text className="text-11 font-bold text-primary-ink" style={TABULAR_NUMS}>
-          {`${dayLabel(next.dateKey, todayKey)} · ${remainingLabel(next.startsAtMs - nowMs)}`}
+          {`${dayLabel(next.dateKey, todayKey)} · ${remainingLabelOf(next.startsAtMs - nowMs)}`}
         </Text>
       </View>
       <View className="gap-1.5">

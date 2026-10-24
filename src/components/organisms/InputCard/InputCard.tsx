@@ -209,6 +209,12 @@ export interface InputCardProps {
   unitKey?: MesoUnitKey
   /** 글자 칸. 글자판이 뜨고 값이 왼쪽 정렬이며 칩이 안 선다. */
   text?: boolean
+  /**
+   * 여러 줄 글자 칸. `text` 와 함께 줄 때만 뜻이 있다. 메모 같은 긴 글.
+   *
+   * 세 줄 높이로 열리고 네 줄까지 자란 뒤 칸 안에서 스크롤한다. 리턴 키는 줄바꿈이고 값은 확인 버튼으로만 나간다.
+   */
+  multiline?: boolean
   /** 값에 더하는 눈금. 글자 칸에서는 무시된다. */
   chips?: readonly InputCardChip[]
   /**
@@ -290,6 +296,12 @@ const UNIT_BY_LABEL = Object.fromEntries(MESO_UNITS.map((unit) => [MESO_UNIT_LAB
 >
 const UNIT_OPTIONS = MESO_UNITS.map((unit) => MESO_UNIT_LABELS[unit])
 
+/** 여러 줄 칸의 줄 높이. 칸 높이와 줄 수 셈이 이 값 하나를 봐야 줄이 안 잘린다. */
+const MULTILINE_LINE_HEIGHT = 22
+/** 여러 줄 칸이 보이는 줄 수의 범위. 넷을 넘으면 카드가 키보드 위 공간을 넘어 화면 위로 나간다. */
+const MULTILINE_MIN_LINES = 3
+const MULTILINE_MAX_LINES = 4
+
 export function InputCard(props: InputCardProps): React.JSX.Element {
   /** 칸이 치는 단위. 세그먼트가 없는 카드는 늘 기본이라 글자 규칙이 예전과 같다. */
   const [unit, setUnit] = useState<MesoUnit>(() => (props.unitKey === undefined ? 'base' : mesoUnitOf(props.unitKey)))
@@ -338,6 +350,9 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   const splits = total > mine
 
   const isText = props.text === true
+  const isMultiline = isText && props.multiline === true
+  /** 여러 줄 칸이 지금 보이는 줄 수. 내용 높이를 받아 3 ~ 4 로 자른다. */
+  const [lines, setLines] = useState(MULTILINE_MIN_LINES)
 
   const { height: windowHeightPx } = useWindowDimensions()
   const insets = useSafeAreaInsets()
@@ -713,9 +728,10 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             아래로 내린다. 값이 비어도 자리를 지켜 첫 타건에 값이 안 뛴다.
           */}
           <View
-            className={`${props.unitKey === undefined ? 'mt-3' : 'mt-1.5'} relative min-h-14 flex-row items-center gap-2 rounded-xl border-[1.5px] border-primary bg-bg px-3.5 ${
-              props.reading === true ? 'pb-1 pt-[18px]' : 'py-2.5'
-            }`}
+            className={`${props.unitKey === undefined ? 'mt-3' : 'mt-1.5'} relative min-h-14 flex-row gap-2 rounded-xl border-[1.5px] border-primary bg-bg px-3.5 ${
+              // 여러 줄 칸은 위에 붙인다. 가운데에 두면 한 줄만 적은 글이 칸 가운데 떠 있다.
+              isMultiline ? 'items-start py-3' : 'items-center'
+            } ${props.reading === true ? 'pb-1 pt-[18px]' : isMultiline ? '' : 'py-2.5'}`}
           >
             {props.reading === true && (
               <Text
@@ -790,6 +806,15 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               // 단위 카드는 기본 단위에서도 소수점 키가 있는 판이다. 칸이 선 채로 판을 갈면 iOS 가 안 바꾼다.
               keyboardType={isText ? undefined : props.unitKey === undefined ? 'number-pad' : 'decimal-pad'}
               placeholder={isText ? props.placeholder : undefined}
+              multiline={isMultiline}
+              onContentSizeChange={
+                isMultiline
+                  ? (event) => {
+                      const contentLines = Math.round(event.nativeEvent.contentSize.height / MULTILINE_LINE_HEIGHT)
+                      setLines(Math.min(MULTILINE_MAX_LINES, Math.max(MULTILINE_MIN_LINES, contentLines)))
+                    }
+                  : undefined
+              }
               /*
                 **자동 초점은 OS 키보드가 받는 칸에만 남는다**(사용자 지정). 그 카드는 열리는
                 순간부터 키보드 위에 서서 자리가 한 번도 안 움직인다. 자동 초점을 빼면 카드가
@@ -821,9 +846,19 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 한글을 칠 때와 숫자를 칠 때 상자가 다른 높이가 된다. 36 + 위아래 여백 20 이 상자의
                 바닥 `min-h-14`(56)와 같아서 지금 보이는 모양은 안 바뀐다. 글자는 이 36 안에서
                 가운데 선다.
+
+                여러 줄 칸은 **보이는 줄 수 × 줄 높이**다(66 = 3 × 22, 88 = 4 × 22). 여러 줄에서는 줄 높이를
+                직접 줘야 줄 사이가 플랫폼마다 같다.
               */
-              className={`h-9 w-full text-text ${isText ? 'text-left font-semibold' : 'text-right font-bold'}`}
-              style={[isText ? null : TABULAR_NUMS, { fontSize: isText ? 16 : 20 }]}
+              className={`${isMultiline ? (lines === MULTILINE_MAX_LINES ? 'h-[88px]' : 'h-[66px]') : 'h-9'} w-full text-text ${
+                isText ? 'text-left font-semibold' : 'text-right font-bold'
+              }`}
+              style={[
+                isText ? null : TABULAR_NUMS,
+                { fontSize: isText ? 16 : 20 },
+                // 아톰의 기본 `textAlignVertical: 'center'` 를 이긴다. 안 이기면 안드로이드에서 글이 칸 가운데 뜬다.
+                isMultiline ? { lineHeight: MULTILINE_LINE_HEIGHT, textAlignVertical: 'top' } : null,
+              ]}
             />
             </View>
             {props.unit !== undefined && (

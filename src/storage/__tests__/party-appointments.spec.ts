@@ -42,6 +42,7 @@ it('모양이 틀린 항목은 그 항목만 버린다', async () => {
   const noDuration = { ...LIMBO, id: 'a6', durationMinutes: 0 }
   const oldShape = { ...LIMBO, id: 'a7', bosses: undefined, bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }
   // 걷어 낸 옛 예외(건너뛰기 · 날짜만 옮기기)는 모양이 틀린 것으로 본다.
+  const memoNotText = { ...LIMBO, id: 'a9', memo: 42 }
   const moveWithoutDuration = {
     ...LIMBO,
     id: 'a8',
@@ -49,8 +50,15 @@ it('모양이 틀린 항목은 그 항목만 버린다', async () => {
   }
   await prefs.set(
     'partyAppointments',
-    JSON.stringify([LIMBO, broken, noSchedule, noBosses, brokenBoss, noDuration, oldShape, moveWithoutDuration]),
+    JSON.stringify([LIMBO, broken, noSchedule, noBosses, brokenBoss, noDuration, oldShape, moveWithoutDuration, memoNotText]),
   )
 
   expect(await getPartyAppointments()).toEqual([LIMBO])
+})
+
+it('메모가 있는 항목은 메모째 읽는다', async () => {
+  const withMemo = { ...LIMBO, memo: '2번 방\n세렌 확인' }
+  await prefs.set('partyAppointments', JSON.stringify([withMemo]))
+
+  expect(await getPartyAppointments()).toEqual([withMemo])
 })

@@ -4,6 +4,8 @@
 import type { PartyAppointmentOccurrence } from '../../types/party-appointment'
 
 const MINUTE_MS = 60_000
+const HOUR_MS = 60 * MINUTE_MS
+const DAY_MS = 24 * HOUR_MS
 
 export interface AgendaDay {
   dateKey: string
@@ -43,4 +45,14 @@ export function endClockOf(occurrence: PartyAppointmentOccurrence): string {
 export function thisWeekJumpOf(weekStart: string, thisWeek: string): 'forward' | 'back' | 'none' {
   if (weekStart === thisWeek) return 'none'
   return weekStart < thisWeek ? 'forward' : 'back'
+}
+
+/** 시작까지 남은 시간. `n일 뒤` · `n시간 m분 뒤` · `n분 뒤` · 1분 미만은 `곧` */
+export function remainingLabelOf(remainingMs: number): string {
+  if (remainingMs < MINUTE_MS) return '곧'
+  if (remainingMs >= DAY_MS) return `${Math.floor(remainingMs / DAY_MS)}일 뒤`
+  const hours = Math.floor(remainingMs / HOUR_MS)
+  const minutes = Math.floor((remainingMs % HOUR_MS) / MINUTE_MS)
+  if (hours === 0) return `${minutes}분 뒤`
+  return minutes === 0 ? `${hours}시간 뒤` : `${hours}시간 ${minutes}분 뒤`
 }

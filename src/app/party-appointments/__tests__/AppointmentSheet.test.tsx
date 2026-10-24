@@ -277,3 +277,51 @@ describe('알림 체크 상자를 켤 때', () => {
     })
   })
 })
+
+describe('메모', () => {
+  const once: PartyAppointment = {
+    id: 'm1',
+    bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
+    members: [],
+    timeKst: '21:00',
+    durationMinutes: 30,
+    leadMinutes: null,
+    schedule: { type: 'once', dateKey: '2099-01-02' },
+    exceptions: {},
+  }
+
+  it('추가 시트는 메모 추가 칸으로 열리고, 입력 카드에 적은 메모를 본문 전체로 보여 준다', async () => {
+    const view = await 그리기({ repeats: false })
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('메모 추가'))
+    })
+    const card = view.getByTestId('input-card-value')
+    expect(card.props.multiline).toBe(true)
+    await act(async () => {
+      fireEvent.changeText(card, '2번 방\n세렌 확인\n칼로스 신호')
+    })
+    await act(async () => {
+      fireEvent.press(view.getByText('입력'))
+    })
+
+    expect(view.queryByLabelText('메모 추가')).toBeNull()
+    const body = view.getByTestId('appointment-memo-body')
+    expect(body.props.children).toBe('2번 방\n세렌 확인\n칼로스 신호')
+    // 두 줄로 자르지 않는다. 시트에서는 본문을 다 읽는다.
+    expect(body.props.numberOfLines).toBeUndefined()
+  })
+
+  it('상세 시트는 메모가 있으면 메모 타일을, 없으면 아무것도 두지 않는다', async () => {
+    const [withMemo] = occurrencesInWeek([{ ...once, memo: '2번 방' }], '2099-01-01')
+    const [withoutMemo] = occurrencesInWeek([once], '2099-01-01')
+
+    const shown = await 그리기({ target: { occurrence: withMemo!, weekStart: '2099-01-01' } })
+    expect(shown.getByTestId('appointment-memo-body').props.children).toBe('2번 방')
+    shown.unmount()
+
+    const hidden = await 그리기({ target: { occurrence: withoutMemo!, weekStart: '2099-01-01' } })
+    expect(hidden.queryByTestId('appointment-memo-body')).toBeNull()
+    expect(hidden.queryByLabelText('메모 추가')).toBeNull()
+  })
+})

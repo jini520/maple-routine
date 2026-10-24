@@ -32,6 +32,7 @@ function draft(overrides: Partial<AppointmentDraft>): AppointmentDraft {
     alarmOn: false,
     leadMinutes: 10,
     repeats: true,
+    memo: '',
     ...overrides,
   }
 }
@@ -56,6 +57,7 @@ describe('draftFromOccurrence', () => {
       alarmOn: true,
       leadMinutes: 10,
       repeats: true,
+      memo: '',
     })
   })
 
@@ -63,6 +65,22 @@ describe('draftFromOccurrence', () => {
     const [occurrence] = occurrencesInWeek([appointment({ leadMinutes: null })], WEEK)
 
     expect(draftFromOccurrence(occurrence!)).toMatchObject({ alarmOn: false, leadMinutes: 10 })
+  })
+})
+
+describe('draftFromOccurrence 의 메모', () => {
+  it('이 주만 바꾼 회차여도 메모는 약속의 것이다. 메모가 없던 약속은 빈 글자다', () => {
+    const weekly = appointment({
+      memo: '2번 방',
+      exceptions: {
+        [WEEK]: { type: 'override', dateKey: WEEK, timeKst: '22:00', durationMinutes: 60, bosses: [JUPITER], leadMinutes: null },
+      },
+    })
+    const [overridden] = occurrencesInWeek([weekly], WEEK)
+    const [plain] = occurrencesInWeek([appointment({})], WEEK)
+
+    expect(draftFromOccurrence(overridden!).memo).toBe('2번 방')
+    expect(draftFromOccurrence(plain!).memo).toBe('')
   })
 })
 
@@ -100,6 +118,23 @@ describe('applyEdit', () => {
       bosses: [JUPITER],
       leadMinutes: 30,
     })
+  })
+
+  it('이 주만 적용해도 메모는 약속 전체에 적고 예외에는 넣지 않는다', () => {
+    const weekly = appointment({ memo: '옛 메모' })
+
+    const [result] = applyEdit([weekly], weekly, WEEK, draft({ memo: '새 메모' }), { thisWeekOnly: true, newId: 'x' })
+
+    expect(result!.memo).toBe('새 메모')
+    expect(result!.exceptions[WEEK]).not.toHaveProperty('memo')
+  })
+
+  it('이 주만 적용하면서 메모를 지우면 약속의 메모가 사라진다', () => {
+    const weekly = appointment({ memo: '옛 메모' })
+
+    const [result] = applyEdit([weekly], weekly, WEEK, draft({ memo: '  ' }), { thisWeekOnly: true, newId: 'x' })
+
+    expect(result).not.toHaveProperty('memo')
   })
 
   it('앞으로 모두: 지난 주부터 이어 온 반복은 이 주 전까지로 끝내고 새 약속을 연다', () => {

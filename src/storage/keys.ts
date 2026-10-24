@@ -75,6 +75,10 @@ export const STORAGE_KEYS = {
   //
   // `KEEP_KEYS` 에 넣는다. 사용자가 끈 스위치가 캐시 삭제로 되살아나면 끈 약속 알림이 다시 온다.
   partyAlarmEnabled: 'partyAlarmEnabled',
+  // 파티 스케줄 화면에서 마지막으로 고른 보기 `list` · `board`. 없으면 목록이다.
+  //
+  // `KEEP_KEYS` 에 넣는다. 사용자가 고른 보기라 캐시 삭제로 목록으로 돌아가면 안 된다.
+  partyScheduleView: 'partyScheduleView',
   // 지금 기기에 예약해 둔 로컬 알림 `{ id, kind, fireAt, title, body }[]`. OS 는 예약 목록을 못 읽어 우리가 적는다.
   //
   // `KEEP_KEYS` 에 넣는다. 지우면 OS 에 남은 예약을 지목할 길이 없어 유령 알림이 된다.

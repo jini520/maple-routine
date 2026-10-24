@@ -41,6 +41,8 @@ export interface PartyAppointment {
   leadMinutes: number | null
   schedule: PartyAppointmentSchedule
   exceptions: Record<string, PartyAppointmentException>
+  /** 메모. 없으면 칸째 없다. 반복 약속의 모든 주가 같은 메모를 보여 주므로 주별 예외에는 두지 않는다 */
+  memo?: string
 }
 
 /** 한 주에 펼친 약속 하나 */

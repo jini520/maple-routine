@@ -1,6 +1,5 @@
 /**
- * 회차 카드의 몸통. 캐릭터별 묶음(얼굴 · 이름 열 + 보스 줄)과 알림 · 반복 줄. 파티 스케줄 목록 카드가 쓴다.
- * today 의 다음 파티 스케줄 위젯은 묶음을 닉네임만으로 다르게 그리고, 보스 줄과 알림 · 반복 줄만 함께 쓴다.
+ * 회차 카드의 보스 줄과 알림 · 반복 줄. 파티 스케줄의 회차 카드와 today 의 다음 파티 스케줄 위젯이 함께 쓴다.
  */
 import { View } from 'react-native'
 
@@ -11,20 +10,6 @@ import { formatLead } from '../../features/party-appointments/draft'
 import { bossAliasOf, bossPortraitSlugOf } from '../../lib/boss/bosses'
 import type { BossDifficulty } from '../../types'
 import type { PartyAppointmentBoss } from '../../types/party-appointment'
-import { CharacterGroupLabel } from '../../components/molecules/CharacterGroupLabel/CharacterGroupLabel'
-
-export interface OccurrenceBossGroup {
-  ocid: string
-  name: string
-  imageUrl: string | null
-  bosses: readonly PartyAppointmentBoss[]
-}
-
-export interface OccurrenceBossGroupsProps {
-  groups: readonly OccurrenceBossGroup[]
-  leadMinutes: number | null
-  repeats: boolean
-}
 
 /** 보스 한 줄. 초상화 · 이름 · 난이도 배지 */
 export function OccurrenceBossLine(props: { boss: PartyAppointmentBoss }): React.JSX.Element {
@@ -62,25 +47,5 @@ export function OccurrenceExtras(props: { leadMinutes: number | null; repeats: b
         </View>
       )}
     </View>
-  )
-}
-
-export function OccurrenceBossGroups(props: OccurrenceBossGroupsProps): React.JSX.Element {
-  return (
-    <>
-      {props.groups.map((group) => (
-        <View key={group.ocid} className="flex-row gap-1.5">
-          <View className="pt-[5px]">
-            <CharacterGroupLabel name={group.name} imageUrl={group.imageUrl} />
-          </View>
-          <View className="flex-1">
-            {group.bosses.map((boss) => (
-              <OccurrenceBossLine key={`${boss.ocid}:${boss.bossKey}`} boss={boss} />
-            ))}
-          </View>
-        </View>
-      ))}
-      <OccurrenceExtras leadMinutes={props.leadMinutes} repeats={props.repeats} />
-    </>
   )
 }

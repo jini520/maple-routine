@@ -21,6 +21,7 @@ import {
   canSave,
   dateInWeek,
   durationOf,
+  formatClock,
   initialDraft,
   newAppointmentId,
   nextOccurrenceDateKey,
@@ -40,12 +41,15 @@ import { orderByCharacter } from '../../features/party-appointments/boss-groups'
 import { checkAlarmGate, ensureNotificationPermission, type AlarmGateResult } from '../../features/party-appointments/alarm-gate'
 import { usePartyAlarmSettingsStore } from '../../features/party-appointments/alarm-settings'
 import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
+import { bossAliasOf } from '../../lib/boss/bosses'
 import { WEEKDAY_LABELS } from '../../lib/calendar'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import type { PartyAppointmentOccurrence } from '../../types/party-appointment'
+import { openInputCard } from '../../features/input-card/store'
 import { openNotificationSettings } from '../settings/notification-settings-link'
 import { AppointmentAlarmField } from './AppointmentAlarmField'
 import { AppointmentBossList } from './AppointmentBossList'
+import { AppointmentMemoField } from './AppointmentMemoField'
 import { AppointmentSummaryTiles } from './AppointmentSummaryTiles'
 import { AppointmentTimeBand } from './AppointmentTimeBand'
 import { BossDifficultyPopover } from '../../components/organisms/BossPicker/BossDifficultyPopover'
@@ -317,6 +321,21 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
     />
   )
 
+  function editMemo(): void {
+    const [first] = draft.bosses
+    const boss = first === undefined ? '' : ` · ${bossAliasOf(first.bossKey, first.bossKey)}`
+    const more = draft.bosses.length > 1 ? ` 외 ${draft.bosses.length - 1}마리` : ''
+    openInputCard({
+      label: '메모',
+      context: `${formatClock(draft.startMinutes)}${boss}${more}`,
+      text: true,
+      multiline: true,
+      placeholder: '파티 방 번호나 준비할 것',
+      value: draft.memo,
+      onConfirm: (memo) => update({ memo }),
+    })
+  }
+
   const formBody = (
     // 띠 · 보스 · 알림 사이 20, 알림과 바닥 줄 사이에 8 을 더 둔다.
     <View className="gap-5 pb-2">
@@ -358,6 +377,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
         }}
         onChangeLead={(leadMinutes) => update({ leadMinutes })}
       />
+      <AppointmentMemoField memo={draft.memo} onPress={editMemo} />
     </View>
   )
   const viewBody = (
@@ -386,6 +406,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
         repeats={draft.repeats}
         weekday={repeatWeekday ?? ''}
       />
+      <AppointmentMemoField readOnly memo={draft.memo} onPress={() => undefined} />
     </View>
   )
   const bossesBody = (
