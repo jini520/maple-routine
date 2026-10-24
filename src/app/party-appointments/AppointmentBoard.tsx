@@ -51,14 +51,14 @@ function startedOn(day: TimelineDay): PartyAppointmentOccurrence[] {
 
 function LaneStrip(props: { day: TimelineDay }): React.JSX.Element {
   return (
-    <View className="relative mx-1.5 mb-0.5 h-3 rounded bg-control-track">
+    <View testID="board-strip" className="relative mx-1.5 mb-0.5 h-3 rounded-full bg-control-track">
       {props.day.segments.map((segment) => (
         <View
           key={`${segment.key}:${segment.from}`}
           testID="board-strip-bar"
           // 30분짜리 회차는 260 폭에서 5px 남짓이다. 그보다 짧아도 보이게 바닥 폭을 둔다.
           style={{ left: percent(segment.from), width: percent(segment.to - segment.from), minWidth: 3 }}
-          className={`absolute bottom-0.5 top-0.5 rounded-sm ${STRIP_TONE_CLASS[segment.tone]}`}
+          className={`absolute bottom-0.5 top-0.5 rounded-full ${STRIP_TONE_CLASS[segment.tone]}`}
         />
       ))}
       {props.day.nowAt !== null && (

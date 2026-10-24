@@ -1,4 +1,5 @@
 import { fireEvent, within } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
 
 import { renderAtom } from '../../../components/__tests__/render-atom'
 import { occurrencesInWeek } from '../../../features/party-appointments/occurrences'
@@ -76,5 +77,15 @@ describe('AppointmentBoard', () => {
     await fireEvent.press(view.getByTestId('occurrence-card'))
 
     expect(onPressOccurrence).toHaveBeenCalledWith(expect.objectContaining({ dateKey: '2026-10-24' }))
+  })
+
+  // 앱에는 뾰족한 모서리를 두지 않는다(사용자 지정). 열 머리의 24시간 줄은 높이가 낮아 작은 반경이면 각져 보인다.
+  it('열 머리 24시간 줄의 바탕과 막대는 양 끝이 둥근 알약이다', async () => {
+    const view = await renderAtom(<AppointmentBoard {...props([once('a', '2026-10-24', '21:00')])} />)
+
+    const pieces = [...view.getAllByTestId('board-strip'), ...view.getAllByTestId('board-strip-bar')]
+    for (const piece of pieces) {
+      expect(StyleSheet.flatten(piece.props.style)?.borderRadius).toBe(9999)
+    }
   })
 })
