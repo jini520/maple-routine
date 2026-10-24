@@ -32,10 +32,8 @@ import {
   Badge,
   CalendarIcon,
   ChevronDownIcon,
-  ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
-  ChevronsRightIcon,
   ProfitIcon,
   ShoppingCartIcon,
   Text,
@@ -44,6 +42,7 @@ import { CalendarGrid } from '../../components/molecules/CalendarGrid/CalendarGr
 import { DIFFICULTY_NAME, DIFFICULTY_SHORT } from '../../constants/domain/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
+import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { FAB_SPACE_PX } from '../../lib/fab-metrics'
@@ -113,7 +112,6 @@ import { bossPortraitSlugOf } from '../../lib/boss/bosses'
 import { dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
-import { tapFeedback } from '../../native/haptics'
 import { useToastStore } from '../../features/toast/store'
 import { SETTLEMENT_BANNER_DETAIL_LEDGER } from '../../features/settlement/banner-text'
 import { SettlementBanner } from '../SettlementBanner'
@@ -129,41 +127,6 @@ const PERIOD_TABS = ['weekly', 'monthly'] as const
 const PERIOD_TAB_LABELS: Record<(typeof PERIOD_TABS)[number], string> = {
   weekly: '주간',
   monthly: '월간',
-}
-
-/**
- * 기간을 넘기는 화살표. 보스 수익의 기간 이동과 같은 치수·같은 죽는 법이다.
- *
- * 흐려지는 것을 JS 조건으로 준다. NativeWind 의 `disabled:` 는 웹 CSS 의사 클래스라
- * `Pressable disabled` 와 이어져 있지 않고, 남겨 두면 비활성 화살표가 멀쩡한 색으로 보인다.
- *
- * `aria-disabled` 를 `disabled` 와 같이 준다. 앞은 손가락을, 뒤는 스크린리더를 막는다.
- */
-function MonthArrow(props: {
-  label: string
-  icon: typeof ChevronLeftIcon
-  disabled?: boolean
-  onPress: () => void
-}): React.JSX.Element {
-  const Icon = props.icon
-  return (
-    <Pressable
-      role="button"
-      aria-label={props.label}
-      aria-disabled={props.disabled}
-      disabled={props.disabled}
-      // 화면은 그대로여도 보는 기간이 바뀐다. 꺼진 화살표는 누름 자체가 안 들어와 조용하다.
-      onPress={() => {
-        tapFeedback()
-        props.onPress()
-      }}
-      className={`h-7 w-7 items-center justify-center rounded-full border border-border${
-        props.disabled ? ' opacity-30' : ''
-      }`}
-    >
-      <Icon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
-    </Pressable>
-  )
 }
 
 /**
@@ -1075,67 +1038,23 @@ export function CashbookScreen(): React.JSX.Element {
           className="gap-4 px-4"
           style={{ paddingBottom: FAB_SPACE_PX }}
         >
-          <View
+          {/* 연도는 지난해일 때만 이름 앞에 붙는다. 월간은 이름이 이미 연도를 든다. */}
+          <PeriodStepper
             testID="cashbook-period-nav"
-            className="flex-row items-center justify-center gap-4 py-3"
-          >
-            {/* 오른쪽 겹화살표와 같은 폭. 기간 이름이 줄 가운데에 남는다. */}
-            <View className="h-7 w-7" />
-            {/* 이름이 모드를 따른다. 스크린리더가 무엇이 옮겨지는가 를 듣는다. */}
-            <MonthArrow
-              label={isWeekly ? '이전 주' : '이전 달'}
-              icon={ChevronLeftIcon}
-              disabled={isEarliest}
-              onPress={() => movePeriod(-1)}
-            />
-            {/* 윗줄이 상대 표현(`이번 주`·`지난 달`), 아랫줄이 언제나 정확한 날짜다. 라벨은
-                `formatBossProfitPeriodLabel` 을 그대로 부른다. 보스 수익 탭과 같은 `periodKey` 를
-                쓰므로 두 하위 탭이 한 어법으로 기간을 말하게 된다. */}
-
-            <View className="items-center">
-              {/* **자리를 안 밀어낸다**(사용자 지정). 줄로 끼우면 이 덩이가 한 줄만큼 커져
-                  격자와 그 아래가 통째로 내려간다. 흐름 밖에 두고 위 여백(`gap-4`)에 얹는다.
-                  가로 위치는 좌우를 안 주면 부모의 `items-center` 를 따른다. */}
-              {periodYear !== null && (
-                <Text
-                  testID="cashbook-period-year"
-                  className="absolute -top-3 text-10 text-text-muted"
-                  style={TABULAR_NUMS}
-                >
-                  {periodYear}
-                </Text>
-              )}
-              <Text
-                testID="cashbook-period-label"
-                className="text-sm font-semibold text-text"
-              >
-                {periodLabel.primary}
-              </Text>
-              <Text
-                testID="cashbook-period-range"
-                className="mt-0.5 text-xs text-text-muted"
-                style={TABULAR_NUMS}
-              >
-                {periodLabel.secondary}
-              </Text>
-            </View>
-            {/* 앞으로는 못 간다. 미래의 합계는 언제나 0 이라 아직 안 적었나 와 올 수 없는 곳인가 가
-                같은 화면으로 말해진다. */}
-            <MonthArrow
-              label={isWeekly ? '다음 주' : '다음 달'}
-              icon={ChevronRightIcon}
-              disabled={isLatest}
-              onPress={() => movePeriod(1)}
-            />
-            {/* 지금 기간이면 숨지 않고 흐리다. 숨기면 줄 폭이 바뀌어 기간 이름이 흔들린다. 이번 주
-                안에서 고른 날은 격자에서 오늘을 눌러 옮긴다. */}
-            <MonthArrow
-              label={isWeekly ? '이번 주로 이동' : '이번 달로 이동'}
-              icon={ChevronsRightIcon}
-              disabled={isLatest}
-              onPress={goToToday}
-            />
-          </View>
+            labelTestID="cashbook-period-label"
+            rangeTestID="cashbook-period-range"
+            yearTestID="cashbook-period-year"
+            primary={periodLabel.primary}
+            secondary={periodLabel.secondary}
+            year={periodYear}
+            prev={{ label: isWeekly ? '이전 주' : '이전 달', disabled: isEarliest, onPress: () => movePeriod(-1) }}
+            next={{ label: isWeekly ? '다음 주' : '다음 달', disabled: isLatest, onPress: () => movePeriod(1) }}
+            jumpForward={{
+              label: isWeekly ? '이번 주로 이동' : '이번 달로 이동',
+              disabled: isLatest,
+              onPress: goToToday,
+            }}
+          />
 
           {/* 합계는 이동 아래 · 격자 위다. 어느 기간인가 를 말한 줄 다음이 그 기간이 얼마인가 이고,
               그 둘이 격자를 받친다. */}

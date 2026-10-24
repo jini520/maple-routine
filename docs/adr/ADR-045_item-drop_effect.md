@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-038 결정 8 · 9 · 10 · ADR-040 결정 5 · 6 · ADR-045 · ADR-048 · ADR-103 · ADR-174
-> 관련 소스: `components/organisms/DropEffectOverlay/` · `features/drop-effect/store.ts` · `storage/drop-effect.ts` · `app/boss-profit/BossDropSheet.tsx` · `app/boss-profit/CharacterAccordion.tsx` · `app/boss-profit/valuable-card-glow.ts` · `lib/drop/drop-items.ts` · `scripts/measure-drop-effect-origins.py`
+> 관련 소스: `components/organisms/DropEffectOverlay/` · `features/drop-effect/store.ts` · `storage/drop-effect.ts` · `app/boss-profit/BossDropSheet.tsx` · `app/boss-profit/CharacterAccordion.tsx` · `lib/drop/drop-items.ts` · `scripts/measure-drop-effect-origins.py`
 
 ## 배경
 
@@ -24,8 +24,9 @@
 
 - 판정은 아이템 key 로 한다(`isValuableDropItem`). 상자에서 나온 결과는 상자가 아니라 나온 아이템으로 판정한다.
 - key 가 없는 옛 기록과 표에 없는 key 는 고가가 아니다. 무엇인지 모르는 것을 고가로 그리지 않는다.
-- 고가 골드(`#f7d00d`)는 테마와 관계없는 고정색이다. 고가라는 뜻이 테마마다 다른 색으로 달라지면 안 되기
-  때문이다. 그래서 테마 토큰으로 두지 않는다.
+- 고가 색은 테마와 관계없는 고정색이다. 고가라는 뜻이 테마마다 다른 색으로 달라지면 안 되기 때문이다. 그래서
+  테마 토큰으로 두지 않는다. 보스 수익은 빛기둥에서 뽑은 오로라 색([[ADR-092]] 결정 1)이고, 드롭 히스토리의 고가
+  표시는 고가 골드(`#f7d00d`)다.
 
 ### 결정 2. 고가 아이템을 새로 기록하면 전체화면 연출을 띄운다
 
@@ -45,7 +46,7 @@
 - 아이템은 2.6초 주기로 위아래 5px 씩 천천히 떠 있다. 움직임 줄이기를 켜면 떠 있는 움직임과 튀어나오는
   움직임을 모두 끈다.
 - 아래쪽에 `화면을 터치하면 닫힙니다` 를 적는다.
-- 연출은 RN `Modal` 이라 시트보다 위에 그려진다. 배경은 테마와 관계없는 고정색 방사 그라디언트다.
+- 연출은 RN `Modal` 이라 시트보다 위에 그려진다. 배경은 테마와 관계없는 고정색 방사 그라디언트 두 겹이다([[ADR-092]] 결정 8).
 - 프레임 그림은 검은 바탕 위의 빛이라 `mixBlendMode: 'screen'` 으로 겹친다. 이것이 없으면 검은 사각형이
   그대로 보인다. 블렌드는 `zIndex` 를 가진 바깥 상자에 건다. 안쪽에 걸면 그 상자가 만든 쌓임 맥락(stacking context)
   안에서만 섞여 배경과는 섞이지 않는다.
@@ -125,7 +126,7 @@ RN 의 `<Image>` 에서 그림 소스를 아직 그려 보지 않은 장으로 �
 안드로이드에서 연출 모달은 열리면서 크기가 두 번 바뀐다(내비게이션 바 인셋이 늦게 들어온다). 배경 SVG 를
 `100%` 로 두면 중간 크기에 고정되어, 화면 아래 46dp 로 뒤의 시트가 비쳤다.
 
-그래서 배경 크기를 `useWindowDimensions()` 의 숫자로 준다. 또 누르기 영역(`Pressable`)에 배경의 바깥색을 칠해,
+그래서 배경 크기를 `useWindowDimensions()` 의 숫자로 준다. 또 누르기 영역(`Pressable`)에 배경의 바탕색을 칠해,
 어떤 이유로 배경이 덮지 못한 곳이 생겨도 투명하게 뚫리지 않게 한다.
 
 ### 결정 9. 프레임 에셋은 압축본만 저장소에 둔다
@@ -137,20 +138,16 @@ RN 의 `<Image>` 에서 그림 소스를 아직 그려 보지 않은 장으로 �
 프레임 목록은 생성 파일(`assets/generated/drop-effect.ts`)이 파일 이름 앞의 숫자 순서로 만든다. 글자 순서로
 정렬하면 `10` 이 `2` 보다 앞에 온다.
 
-### 결정 10. 보스 수익 카드는 고가 아이템을 먹은 캐릭터를 골드로 강조한다
+### 결정 10. 보스 수익 카드는 고가 아이템을 먹은 캐릭터를 강조한다
 
 전체화면 연출은 한 번 보고 지나가므로, 지난 기록을 볼 때는 어느 캐릭터가 고가 아이템을 먹었는지 알 수 없다.
 그래서 보스 수익 목록에 계속 남는 강조를 둔다.
 
-- 그 기간에 완료한 보스 행의 기록에 고가 아이템이 있으면, 캐릭터 카드에 골드 테두리(2px, `#f7d00d`)와
-  은은하게 맥동하는 골드 그림자(2초 주기)가 붙는다. 미완료 행의 기록은 세지 않는다. 카드 총액과 같은 규칙이다.
-- 카드를 펼치거나 움직임 줄이기를 켜면 맥동을 멈추고 정적인 그림자만 남긴다. 테두리와 배지는 그대로 둔다.
-  강조를 다 없애면 펼친 카드가 밋밋해지기 때문이다.
-- 카드 오른쪽 위에 골드 배지(`ValuableDropBadge`)가 보인다. `Sparkles` 아이콘과 먹은 고가 아이템 그림 세 개,
-  나머지는 `+N` 이다. 총 수익 헤더에도 그 기간 전체의 고가 아이템으로 같은 배지(`이 기간 고가 드롭`)가 보인다.
+- 그 기간에 완료한 보스 행의 기록에 고가 아이템이 있을 때만 강조한다. 미완료 행의 기록은 세지 않는다. 카드 총액과
+  같은 규칙이다.
+- 총 수익 카드에도 그 기간 전체의 고가 아이템으로 같은 표시(`이 기간 고가 드롭`)가 선다.
 - 월간 탭에서는 주차 소계 행에 보스 행이 없어서, 월간 보스의 드롭만 강조에 잡힌다.
-- 웹 시절에는 테두리 빛이 회전했지만 RN 에는 원뿔 그라디언트가 없다. 그래서 웹에서 회전을 못 하는 환경에
-  보이던 골드 테두리를 그대로 그린다. 그림자 값은 `valuable-card-glow.ts` 에 있다.
+- 생김새(홀로그램 빛 · 아이템 표시 · 오로라 금액)는 [[ADR-092]] 결정 2~6 에 있다.
 
 ## 테스트
 
@@ -164,8 +161,7 @@ RN 의 `<Image>` 에서 그림 소스를 아직 그려 보지 않은 장으로 �
 | `components/organisms/DropEffectOverlay/__tests__/DropEffectOverlay.test.tsx` | 결정 2: 전체화면 모달로 뜨는지, 빛기둥과 버스트가 쌓이는 순서, 블렌드가 `zIndex` 를 가진 상자에 걸리는지, 처음에는 아이템이 안 보이는지, 누르기와 안드로이드 뒤로가기로 닫히는지, 프레임 에셋 네 단계가 있는지 본다 |
 | | 결정 8: 배경이 창 크기를 숫자로 받는지 본다 |
 | `storage/__tests__/drop-effect.spec.ts` | 결정 3: 저장 실패를 그대로 던지는지 본다 |
-| `app/boss-profit/__tests__/CharacterAccordion.test.tsx` | 결정 10: 고가 아이템이면 테두리 · 그림자 · 배지가 함께 붙고, 고가가 아니거나 미완료 행이면 안 붙는지, 펼침과 움직임 줄이기에서 정적 그림자로 바뀌는지 본다 |
-| `components/molecules/ValuableDropBadge/__tests__/ValuableDropBadge.test.tsx` | 결정 10: 배지가 그림 셋과 `+N` 을 그리는지 본다 |
+| `app/boss-profit/__tests__/CharacterAccordion.test.tsx` | 결정 10: 고가 아이템이면 강조가 붙고, 고가가 아니거나 미완료 행이면 안 붙는지 본다 |
 
 ## 번호 기록
 

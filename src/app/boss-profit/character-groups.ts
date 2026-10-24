@@ -186,6 +186,11 @@ export function collectPayableDrops(
   return group.bossRows.flatMap((row) => confirmedDropsOf(row, dropsByRowKey))
 }
 
+/** 이 행이 고가 드롭으로 빛나야 하나. 카드 강조와 같은 규칙이라 미완료 행의 드롭은 세지 않는다. */
+export function rowHasValuableDrop(row: CharacterGroup['bossRows'][number], drops: RecordedDrop[]): boolean {
+  return row.isComplete && drops.some((drop) => isValuableDropItem(drop.itemKey))
+}
+
 /**
  * 수익 내역 상자의 목록과 `아이템` 줄이 읽는 드롭. `groupTotalMeso` 와 같은 원천이다.
  *

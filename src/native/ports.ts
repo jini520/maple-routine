@@ -98,6 +98,22 @@ export interface HapticsPort {
   select(): Promise<void>
 }
 
+/** 폰의 기울기. x 는 좌우, y 는 앞뒤로 −1~1 이고 0 이 수평인 값. */
+export interface Tilt {
+  x: number
+  y: number
+}
+
+/**
+ * 기울기 구독. 고가 드롭 카드의 빛이 손의 움직임을 따라가게 하는 데 쓰는 포트.
+ *
+ * 센서가 없는 기기에서는 던지지 않고 값을 보내지 않는다. 빛이 한 자리에 서 있을 뿐 화면은 그대로 돈다.
+ */
+export interface TiltPort {
+  /** 해제 함수를 돌려준다. 받은 쪽이 언마운트에서 부르지 않으면 센서가 계속 돈다. */
+  subscribe(listener: (tilt: Tilt) => void): () => void
+}
+
 export interface KeyboardPort {
   /** 키보드 표시 여부 구독. 해제 함수를 돌려준다. 키보드가 없는 환경이면 no-op 해제 함수. */
   addVisibilityListener(onChange: (visible: boolean) => void): Promise<() => void>
@@ -331,6 +347,7 @@ const splashScreenSlot = createPortSlot<SplashScreenPort>('SplashScreenPort')
 const statusBarSlot = createPortSlot<StatusBarPort>('StatusBarPort')
 const systemBarsSlot = createPortSlot<SystemBarsPort>('SystemBarsPort')
 const hapticsSlot = createPortSlot<HapticsPort>('HapticsPort')
+const tiltSlot = createPortSlot<TiltPort>('TiltPort')
 const keyboardSlot = createPortSlot<KeyboardPort>('KeyboardPort')
 const notificationsSlot = createPortSlot<NotificationsPort>('NotificationsPort')
 const pushSlot = createPortSlot<PushPort>('PushPort')
@@ -359,6 +376,9 @@ export const getSystemBarsPort = systemBarsSlot.get
 
 export const setHapticsPort = hapticsSlot.set
 export const getHapticsPort = hapticsSlot.get
+
+export const setTiltPort = tiltSlot.set
+export const getTiltPort = tiltSlot.get
 
 export const setKeyboardPort = keyboardSlot.set
 export const getKeyboardPort = keyboardSlot.get
@@ -391,6 +411,7 @@ export function __resetNativePortsForTest(): void {
     statusBarSlot,
     systemBarsSlot,
     hapticsSlot,
+    tiltSlot,
     keyboardSlot,
     notificationsSlot,
     pushSlot,

@@ -20,20 +20,17 @@ beforeEach(() => {
 })
 
 describe('WeeklyAccordionBody', () => {
-// 마지막 행의 아래 테두리를 지우는 짝. RN 에 `:last-child` 가 없어 부모가 알려 준다.
-  // 테두리를 **빼지 않고 색만** 지우는 것이 요점이라 두께는 두 행이 같아야 한다.
-  it('보스 행을 순서대로 그리고 마지막 행만 테두리 색을 지운다', async () => {
+  // 행마다 칸 하나라 칸 색이 경계다. 선이 돌아오면 칸과 선이 경계를 두 번 긋는다.
+  it('보스 행을 순서대로 칸에 담고 행 사이에 선을 긋지 않는다', async () => {
     const rows = [보스행(), 보스행({ bossKey: 다른주간보스 })]
     const { getByLabelText, getAllByTestId } = await renderProfit(<WeeklyAccordionBody rows={rows} />)
 
     expect(getByLabelText(`${rows[0].bossName} 하드 드롭 아이템 관리`)).toBeTruthy()
     expect(getByLabelText(`${rows[1].bossName} 하드 드롭 아이템 관리`)).toBeTruthy()
 
-    const [first, last] = getAllByTestId('boss-profit-boss-row').map((node) => flattenStyle(node.props.style))
-    expect(first.borderBottomWidth).toBe(last.borderBottomWidth)
-    expect(first.borderBottomColor).not.toBe(last.borderBottomColor)
-    // NativeWind 가 `transparent` 를 8자리 hex 로 편다.
-    expect(last.borderBottomColor).toBe('#00000000')
+    for (const node of getAllByTestId('boss-profit-boss-row')) {
+      expect(flattenStyle(node.props.style).borderBottomWidth ?? 0).toBe(0)
+    }
   })
 
   it('행의 드롭은 (ocid, 보스, 난이도, 기간) 키로 찾아 넘긴다', async () => {

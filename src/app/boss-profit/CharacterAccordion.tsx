@@ -4,18 +4,12 @@
  * 화면과 나눈 것은 줄 수가 아니라 관심사다. 화면은 기간·탭·목록을 알고 이 카드는 펼침 상태와
  * 카드 안의 것들을 안다.
  *
- * 고가 드롭 강조가 셋으로 갈려 있다.
- *
- * ① 회전 샤인 링 대신 **정적 골드 2px 테두리**다. RN 에 conic-gradient 도 `mask-composite` 도 없다.
- * ② 글로우 맥동은 **`boxShadow` 두 겹의 교차 페이드**다. RN 이 그림자를 키프레임으로 보간하지
- *    않아서 파라미터를 못 굴린다. 두 끝점은 같고 중간만 알파 교차다.
- * ③ 모션 줄이기면 정적 테두리만 남는다.
+ * 고가 드롭을 먹은 카드는 테두리 대신 면 위를 떠다니는 오로라 빛(`HologramSheen`)으로 강조한다.
  *
  * @see docs/features/boss-profit.md 정책
  */
 import { useRef, useState } from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
-import { useReducedMotion } from 'react-native-reanimated'
+import { Pressable, View } from 'react-native'
 
 import { bossesInSection } from '../../lib/boss/bosses'
 import { sumDropPayout } from '../../lib/drop/drop-price'
@@ -23,8 +17,9 @@ import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 
 
 import { AnimatedNumber, ChevronDownIcon, ChevronUpIcon, Text } from '../../components/atoms'
-import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
-import { AnimatedView } from '../../lib/nativewind-interop'
+import { AuroraText } from '../../components/molecules/AuroraText/AuroraText'
+import { ValuableDropMark } from '../../components/molecules/ValuableDropMark/ValuableDropMark'
+import { HologramSheen } from '../../components/organisms/HologramSheen/HologramSheen'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { MonthlyAccordionBody, WeeklyAccordionBody } from './AccordionBody'
 import { ItemRevenueTrigger } from './ItemRevenueTrigger'
@@ -52,84 +47,10 @@ import {
 } from './character-groups'
 import { useAnchoredPopover, type PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
-import {
-  VALUABLE_CARD_GLOW_HIGH,
-  VALUABLE_CARD_GLOW_HIGH_FADE,
-  VALUABLE_CARD_GLOW_LOW,
-  VALUABLE_CARD_GLOW_LOW_FADE,
-  VALUABLE_CARD_GLOW_STATIC,
-  VALUABLE_CARD_RING_COLOR,
-  VALUABLE_CARD_RING_RADIUS,
-  VALUABLE_CARD_RING_WIDTH,
-} from './valuable-card-glow'
 
 /** 카드 수익 내역 상자에 싣는 아이템 건수. 나머지는 한 줄로 접는다. */
 const CARD_REVENUE_LIST_LIMIT = 5
 
-/**
- * 카드 강조. 글로우(카드 루트에 붙는 그림자 겹)와 링(셸 위에 얹는 골드 테두리)을 함께 낸다.
- *
- * 둘을 한 컴포넌트로 두지 않는 것은 붙는 자리가 다르기 때문이다. 글로우는 밖으로 번져야 해서
- * 잘리지 않는 카드 루트에, 링은 셸 모양을 따라야 해서 셸 안에 붙는다.
- */
-function ValuableCardGlow(props: { isExpanded: boolean }): React.JSX.Element {
-  const reduceMotion = useReducedMotion()
-
-  // 펼침과 모션 줄이기는 같은 그림에 도달한다. 정적 폴백 하나.
-  if (props.isExpanded || reduceMotion) {
-    return (
-      <View
-        testID="valuable-drop-card-glow-static"
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { borderRadius: 14, boxShadow: [...VALUABLE_CARD_GLOW_STATIC] }]}
-      />
-    )
-  }
-
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <AnimatedView
-        testID="valuable-drop-card-glow-low"
-        style={[StyleSheet.absoluteFill, { borderRadius: 14, boxShadow: [...VALUABLE_CARD_GLOW_LOW] }, VALUABLE_CARD_GLOW_LOW_FADE]}
-      />
-      <AnimatedView
-        testID="valuable-drop-card-glow-high"
-        style={[StyleSheet.absoluteFill, { borderRadius: 14, boxShadow: [...VALUABLE_CARD_GLOW_HIGH] }, VALUABLE_CARD_GLOW_HIGH_FADE]}
-      />
-    </View>
-  )
-}
-
-/**
- * 골드 테두리. 회전 샤인 링의 폴백 그림.
- *
- * 펼침 셸은 자식을 패딩 박스(반경 13 = 14 − 테두리 1)에서 자르므로 링도 13, 접힘 셸은
- * 테두리가 없어 14 다.
- */
-function ValuableCardRing(props: { isExpanded: boolean }): React.JSX.Element {
-  return (
-    <View
-      testID="valuable-drop-card-ring"
-      pointerEvents="none"
-      style={[
-        StyleSheet.absoluteFill,
-        {
-          borderWidth: VALUABLE_CARD_RING_WIDTH,
-          borderColor: VALUABLE_CARD_RING_COLOR,
-          borderRadius: props.isExpanded
-            ? VALUABLE_CARD_RING_RADIUS.expanded
-            : VALUABLE_CARD_RING_RADIUS.collapsed,
-        },
-      ]}
-    />
-  )
-}
-
-/**
- * 아이템 칩이 있을 때만 금액을 세로 스택으로 감싼다. 없으면 자식을 그대로 흘려보낸다.
- *
- * 값을 안 매긴 카드는 뷰가 한 겹도 늘지 않는다.
- */
 /**
  * 머리의 금액 상자. 아이템이 섞였을 때만 **금액 자체가 내역을 여는 버튼**이 된다.
  *
@@ -254,7 +175,7 @@ export function CharacterAccordion(props: {
    */
   const badgeIssue =
     tab === 'monthly' && props.issue === 'unavailable' ? undefined : props.issue
-  // 이 기간에 고가 아이템을 먹었을 때: 카드에 골드 링 + 글로우 + 우상단 획득 아이템 배지.
+  // 이 기간에 고가 아이템을 먹었을 때: 홀로그램 빛 + 머리 오른쪽 위 아이템 표시 + 오로라 금액.
   const valuableDrops = collectGroupValuableDrops(group, dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
   // 카드 금액(`groupTotalMeso`)과 같은 원천이어야 상자의 목록 · 아이템 줄 · 합계가 맞는다.
@@ -277,6 +198,13 @@ export function CharacterAccordion(props: {
   //
   // 월간 분모는 리터럴 1 이 아니라 보스 표의 월간 보스 종류 수다. 표는 켜는 동안 서버 응답으로 덮일 수
   // 있어 그릴 때 읽는다.
+  const amountText = (
+    <>
+      <AnimatedNumber identity={`character|${group.ocid}|${loadedTab}|${loadedPeriodKey}`} value={totalMeso} />
+      {' 메소'}
+    </>
+  )
+
   const clearProgress =
     tab === 'weekly'
       ? { cleared: countGroupClearedWeeklyBosses(group), total: WEEKLY_BOSS_CLEAR_LIMIT, cycle: tab }
@@ -320,10 +248,6 @@ export function CharacterAccordion(props: {
       testID="character-accordion"
       className={isIssueOpen ? 'relative z-[9]' : 'relative'}
     >
-      {/* 글로우는 셸 바깥이다. 셸은 펼침 상태에서 자식을 잘라내므로 안에 두면 밖으로 번지는
-          그림자가 잘린다. */}
-      {hasValuable && <ValuableCardGlow isExpanded={isExpanded} />}
-
       {props.issue !== undefined && isIssueOpen && (
         <CharacterIssuePopover
           issue={props.issue}
@@ -355,25 +279,10 @@ export function CharacterAccordion(props: {
         />
       )}
 
-      {/* 배지는 셸 바깥·카드 우상단이다. 펼침에도 같은 자리다. */}
-      {hasValuable && (
-        <ValuableDropBadge
-          drops={valuableDrops}
-          label="고가 드롭"
-          className="absolute -right-1.5 -top-2 z-10"
-        />
-      )}
-
-      <View
-        className={
-          isExpanded
-            ? 'overflow-hidden rounded-[14px] border border-border bg-surface'
-            : undefined
-        }
-      >
-        {/* 상하 패딩이 `p-4`(16)가 아니라 `py-3`(12)인 것은 아바타 슬롯이 진행 링 때문에
-            32 → 40px 로 커진 만큼 돌려받은 것이다. 헤더 높이는 링 도입 전과 같은 64px
-            (12 + 40 + 12). 좌우는 보스 행(`p-4`)과 맞춰 16px 유지. */}
+      {/* 머리와 본문을 한 셸이 감싸 펼쳐도 한 카드로 읽힌다. 빛은 셸의 첫 자식이라 바탕과 내용 사이에 깔리고,
+          펼치면 본문 바탕까지 덮는다. */}
+      <View testID="character-card-shell" className="rounded-[14px] bg-surface">
+        {hasValuable && <HologramSheen variant="card" testID="character-card-sheen" />}
         <CardHeader
           expandable={!cannotStateAmount}
           isExpanded={isExpanded}
@@ -384,11 +293,7 @@ export function CharacterAccordion(props: {
             setIsIssueOpen(false)
             setIsOpenedByUser((expanded) => !expanded)
           }}
-          className={
-            isExpanded
-              ? 'w-full flex-row items-center gap-3 bg-surface px-4 py-3'
-              : 'w-full flex-row items-center gap-3 rounded-[14px] border border-border bg-surface px-4 py-3'
-          }
+          className="w-full flex-row items-center gap-3 px-4 py-3"
         >
           <CharacterPortrait
             variant="compact"
@@ -407,38 +312,48 @@ export function CharacterAccordion(props: {
           {/* 숫자 표기(n/12)는 두지 않는다. 헤더 가로폭을 캐릭터명과 다투는 문제가 안 풀렸다.
               진행률은 아바타 링이 표현한다. */}
 
-          <MoneyBox
-            wrap={hasItemRevenue}
-            label={`${group.characterName} 아이템 수익 확인`}
-            isOpen={isItemPopoverOpen}
-            onPress={toggleItemPopover}
-            triggerRef={itemChipRef}
-          >
-            {/* 실패 배지의 절대배치 기준이자 팝오버 가로 위치의 기준 상자다. 아이템이 섞이면
-                금액 색이 달라진다. 새 색을 만들지 않고 보스 행과 같은 `primary-ink` 를 쓴다. */}
-            <View ref={moneyRef} className="relative flex-row items-center">
-              {cannotStateAmount ? (
-                <CharacterIssueAmount onToggle={toggleIssue} />
-              ) : (
-                <>
-                  {badgeIssue !== undefined && (
-                    <CharacterIssueBadge issue={badgeIssue} onToggle={toggleIssue} />
-                  )}
-                  <Text
-                    className={`text-sm font-bold ${hasItemRevenue ? 'text-primary-ink' : 'text-text'}`}
-                    style={TABULAR_NUMS}
-                  >
-                    <AnimatedNumber
-                      identity={`character|${group.ocid}|${loadedTab}|${loadedPeriodKey}`}
-                      value={totalMeso}
-                    />
-                    {' 메소'}
-                  </Text>
-                </>
-              )}
+          {/* 오른쪽 열은 위가 고가 드롭 표시, 아래가 금액이다. 고가 드롭이 없는 카드도 금액이 같은 줄에 서서
+              카드끼리 금액이 맞는다. */}
+          <View className="shrink-0 items-end gap-0.5">
+            <View className="h-[22px] justify-center">
+              {hasValuable && <ValuableDropMark drops={valuableDrops} label="고가 드롭" />}
             </View>
-
-          </MoneyBox>
+            <View className="h-[22px] justify-center">
+              <MoneyBox
+                wrap={hasItemRevenue}
+                label={`${group.characterName} 아이템 수익 확인`}
+                isOpen={isItemPopoverOpen}
+                onPress={toggleItemPopover}
+                triggerRef={itemChipRef}
+              >
+                {/* 실패 배지의 절대배치 기준이자 팝오버 가로 위치의 기준 상자다. 아이템이 섞이면
+                    금액 색이 달라진다. 새 색을 만들지 않고 보스 행과 같은 `primary-ink` 를 쓴다. */}
+                <View ref={moneyRef} className="relative flex-row items-center">
+                  {cannotStateAmount ? (
+                    <CharacterIssueAmount onToggle={toggleIssue} />
+                  ) : (
+                    <>
+                      {badgeIssue !== undefined && (
+                        <CharacterIssueBadge issue={badgeIssue} onToggle={toggleIssue} />
+                      )}
+                      {hasValuable ? (
+                        <AuroraText testID="character-amount-aurora" className="text-sm font-bold" style={TABULAR_NUMS}>
+                          {amountText}
+                        </AuroraText>
+                      ) : (
+                        <Text
+                          className={`text-sm font-bold ${hasItemRevenue ? 'text-primary-ink' : 'text-text'}`}
+                          style={TABULAR_NUMS}
+                        >
+                          {amountText}
+                        </Text>
+                      )}
+                    </>
+                  )}
+                </View>
+              </MoneyBox>
+            </View>
+          </View>
 
           {/* 펼칠 수 없는 카드에는 안 세운다. 눌러도 아무 일이 없는 셰브런은 거짓 어포던스다. */}
           {!cannotStateAmount &&
@@ -459,9 +374,6 @@ export function CharacterAccordion(props: {
               unavailable={props.issue === 'unavailable'}
             />
           ))}
-
-        {/* 링은 셸 **안**의 마지막 자식이라 콘텐츠 위에 그려진다. */}
-        {hasValuable && <ValuableCardRing isExpanded={isExpanded} />}
       </View>
     </View>
   )

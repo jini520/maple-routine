@@ -225,7 +225,7 @@ export const ShoppingCartIcon = withIconInterop(ShoppingCart)
 export const SignalIcon = withIconInterop(Signal)
 /** 솔로·파티 필터가 가린 빈 상태. `BossScreen`. */
 export const SlidersHorizontalIcon = withIconInterop(SlidersHorizontal)
-/** 고가 드롭 반짝임. `ValuableDropBadge` · 업데이트 완료 안내 `UpdatePromptModal`(updated). */
+/** 반짝임. 업데이트 완료 안내 `UpdatePromptModal`(updated). */
 export const SparklesIcon = withIconInterop(Sparkles)
 /** 대표 캐릭터 표식. `CharacterRow/RepresentativeStar`. */
 export const StarIcon = withIconInterop(Star)

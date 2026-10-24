@@ -23,6 +23,7 @@ import { ItemRevenueTrigger } from './ItemRevenueTrigger'
 import { useBossProfitContext } from './boss-profit-context'
 import { rowKey } from './character-groups'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
+import { InsetCell } from './InsetCell'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
 
 // 행동이 있는 상태에만 버튼을 준다. 남은 것은 failed(다시 시도) 하나이고 나머지는 금액 또는
@@ -36,17 +37,11 @@ export const SUBTOTAL_ACTION_LABEL: Partial<Record<WeeklySubtotalState, string>>
 }
 
 /**
- * 펼친 카드의 본문. 보스 목록이 **자기 바탕** 위에 앉는다.
+ * 펼친 카드의 본문. 행마다 칸 하나(`InsetCell`)에 담아 칸 색이 행 사이 경계가 되므로 선을 긋지 않는다.
  *
- * 머리와 본문이 둘 다 흰 바탕이고 사이가 `border` 1px 하나라, 캐릭터 머리가 보스 목록의 첫
- * 줄처럼 읽혔다. 보스 행에도 같은 두께의 같은 색 선이 깔려 있어 그 한 줄만 성격이 다르다는
- * 신호가 없었다.
- *
- * 색은 38토큰에 없어 모드에서 파생한다(`theme/theme-vars` 의 `resolveCardBody`). 라이트는
- * 배경보다 연한 파스텔, 다크는 배경보다 조금 밝은 톤온톤이다. `surface-2` 를 쓰면 라이트에서
- * 칙칙하고, `bg` 를 쓰면 본문이 페이지에 녹는다.
+ * 본문에 따로 바탕을 칠하지 않는다. 카드 셸 하나가 머리와 본문을 감싸고, 고가 드롭 카드는 그 바탕까지 빛난다.
  */
-export const ACCORDION_BODY_CLASS = 'border-t border-border bg-card-body'
+export const ACCORDION_BODY_CLASS = 'gap-1.5 px-3 pb-3'
 
 export const SUBTOTAL_STATIC_LABEL: Partial<Record<WeeklySubtotalState, string>> = {
   upcoming: '예정',
@@ -55,36 +50,17 @@ export const SUBTOTAL_STATIC_LABEL: Partial<Record<WeeklySubtotalState, string>>
 }
 
 /**
- * 무리의 머리. 알약 하나와 오른쪽 값 하나.
+ * 무리의 머리. 이름 하나와 오른쪽 값 하나인 작은 라벨 줄.
  *
- * 월간 띠는 `primary-tint` 바탕, 주간 띠는 `surface-2` 다. 알약은 둘 다 카드 흰색이라 바탕
- * 위에서 뜬다. **월간 오른쪽에는 아무것도 안 적는다**(사용자 지정). 그 줄이 주간 12·90 한도에
- * 안 든다는 것은 띠가 갈라 놓은 것으로 충분하고, 그 이상은 화면이 규칙을 설명하려 드는 것이다.
+ * **월간 오른쪽에는 아무것도 안 적는다**(사용자 지정). 그 줄이 주간 12 · 90 한도에 안 든다는 것은 무리를 갈라
+ * 놓은 것으로 충분하다.
  */
-function SectionBand(props: { label: string; count?: string; monthly?: boolean }): React.JSX.Element {
-  const monthly = props.monthly === true
+function SectionBand(props: { label: string; count?: string }): React.JSX.Element {
   return (
-    <View
-      testID="accordion-band"
-      className={`h-[26px] flex-row items-center border-b border-border px-4 ${
-        monthly ? 'bg-primary-tint' : 'bg-surface-2'
-      }`}
-    >
-      <View className="h-[18px] justify-center rounded-full bg-surface px-[7px]">
-        <Text
-          className={`text-chip-sm font-bold ${
-            monthly ? 'text-primary-ink' : 'text-text-muted'
-          }`}
-        >
-          {props.label}
-        </Text>
-      </View>
+    <View testID="accordion-band" className="flex-row items-center px-1 pt-1">
+      <Text className="text-11 font-bold text-text-muted">{props.label}</Text>
       {props.count !== undefined && (
-        <Text
-          testID="accordion-band-count"
-          style={TABULAR_NUMS}
-          className="ml-auto text-chip-sm font-bold text-text-disabled"
-        >
+        <Text testID="accordion-band-count" style={TABULAR_NUMS} className="ml-auto text-11 font-bold text-text-disabled">
           {props.count}
         </Text>
       )}
@@ -105,12 +81,11 @@ export function WeeklyAccordionBody(props: { rows: BossProfitRow[] }): React.JSX
   const weeklyRows = props.rows.filter((row) => row.cycle !== 'monthly')
   const cleared = weeklyRows.filter((row) => row.isComplete).length
 
-  function bossRow(row: BossProfitRow, isLast: boolean): React.JSX.Element {
+  function bossRow(row: BossProfitRow): React.JSX.Element {
     return (
       <BossProfitBossRow
         key={rowKey(row)}
         row={row}
-        isLast={isLast}
         drops={dropsByRowKey[dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)] ?? []}
       />
     )
@@ -118,11 +93,11 @@ export function WeeklyAccordionBody(props: { rows: BossProfitRow[] }): React.JSX
 
   return (
     <View testID="accordion-body" className={ACCORDION_BODY_CLASS}>
-      {monthlyRows.length > 0 && <SectionBand label="월간" monthly />}
-      {monthlyRows.map((row) => bossRow(row, false))}
+      {monthlyRows.length > 0 && <SectionBand label="월간" />}
+      {monthlyRows.map((row) => bossRow(row))}
 
       <SectionBand label="주간" count={`${cleared} / ${WEEKLY_BOSS_CLEAR_LIMIT}`} />
-      {weeklyRows.map((row, index) => bossRow(row, index === weeklyRows.length - 1))}
+      {weeklyRows.map((row) => bossRow(row))}
     </View>
   )
 }
@@ -173,12 +148,12 @@ export function WeeklySubtotalRow(props: {
   )
 
   return (
-    <View
+    <InsetCell
       testID="weekly-subtotal-row"
       className={
         staticLabel !== undefined
-          ? 'flex-row items-center gap-3 border-b border-border p-4 opacity-40'
-          : 'flex-row items-center gap-3 border-b border-border p-4'
+          ? 'flex-row items-center gap-3 px-3 py-2.5 opacity-40'
+          : 'flex-row items-center gap-3 px-3 py-2.5'
       }
     >
       <View className="flex-1">
@@ -258,7 +233,7 @@ export function WeeklySubtotalRow(props: {
           onClose={closeItemPopover}
         />
       )}
-    </View>
+    </InsetCell>
   )
 }
 
@@ -285,7 +260,7 @@ export function MonthlyAccordionBody(props: {
     <View testID="accordion-body" className={ACCORDION_BODY_CLASS}>
       {monthlyRows.length > 0 && (
         <>
-          <SectionBand label="월간 보스" monthly />
+          <SectionBand label="월간 보스" />
           {monthlyRows.map((row) => (
             <MonthlyBossViewRow
               key={rowKey(row)}
@@ -308,7 +283,6 @@ export function MonthlyAccordionBody(props: {
           ))}
         </>
       )}
-
     </View>
   )
 }

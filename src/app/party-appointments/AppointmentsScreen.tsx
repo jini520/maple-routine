@@ -6,23 +6,19 @@
  */
 import { useFocusEffect } from '@react-navigation/native'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Pressable, View, type ScrollView } from 'react-native'
+import { View, type ScrollView } from 'react-native'
 
 import {
   CalendarPlusIcon,
-  ChevronLeftIcon,
-  ChevronsLeftIcon,
-  ChevronRightIcon,
-  ChevronsRightIcon,
   RepeatIcon,
   Text,
 } from '../../components/atoms'
+import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { agendaDays, thisWeekJumpOf } from '../../features/party-appointments/agenda'
 import { findNotifiedOccurrence, usePartyAppointmentOpenStore } from '../../features/party-appointments/open-request'
@@ -46,7 +42,6 @@ import { ScheduleTimeline } from './ScheduleTimeline'
 /** 지난 약속을 가르는 시계가 한 번씩 도는 간격 */
 const NOW_TICK_MS = 60_000
 
-const ARROW_CLASS = 'h-7 w-7 items-center justify-center rounded-full border border-border'
 
 const VIEWS: readonly PartyScheduleView[] = ['list', 'board']
 const VIEW_LABELS: Record<PartyScheduleView, string> = { list: '목록', board: '보드' }
@@ -160,7 +155,6 @@ export function AppointmentsScreen(): React.JSX.Element {
   }
 
   function moveWeek(next: string): void {
-    tapFeedback()
     setWeekStart(next)
   }
 
@@ -192,51 +186,16 @@ export function AppointmentsScreen(): React.JSX.Element {
           style={{ paddingBottom: FAB_SPACE_PX }}
           onLayout={(event) => (listY.current.content = event.nativeEvent.layout.y)}
         >
-          <View className="flex-row items-center justify-center gap-4 px-4 py-3">
-            {/* 미래 주에서는 왼쪽 겹화살표로 이번 주에 돌아간다. 늘 서 있고 쓸 수 없으면 흐리게 막힌다. */}
-            <Pressable
-              role="button"
-              aria-label="이번 주로 이동"
-              aria-disabled={jump !== 'back'}
-              disabled={jump !== 'back'}
-              onPress={() => moveWeek(thisWeek)}
-              className={`${ARROW_CLASS}${jump !== 'back' ? ' opacity-30' : ''}`}
-            >
-              <ChevronsLeftIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
-            </Pressable>
-            <Pressable
-              role="button"
-              aria-label="이전 주"
-              onPress={() => moveWeek(shiftDateKey(weekStart, -7))}
-              className={ARROW_CLASS}
-            >
-              <ChevronLeftIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
-            </Pressable>
-            <View className="items-center">
-              <Text className="text-sm font-semibold text-text">{periodLabel.primary}</Text>
-              <Text className="mt-0.5 text-xs text-text-muted" style={TABULAR_NUMS}>
-                {periodLabel.secondary}
-              </Text>
-            </View>
-            <Pressable
-              role="button"
-              aria-label="다음 주"
-              onPress={() => moveWeek(shiftDateKey(weekStart, 7))}
-              className={ARROW_CLASS}
-            >
-              <ChevronRightIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
-            </Pressable>
-            {/* 지난 주에서는 오른쪽 겹화살표로 이번 주에 돌아간다. 늘 서 있고 쓸 수 없으면 흐리게 막힌다. */}
-            <Pressable
-              role="button"
-              aria-label="이번 주로 이동"
-              aria-disabled={jump !== 'forward'}
-              disabled={jump !== 'forward'}
-              onPress={() => moveWeek(thisWeek)}
-              className={`${ARROW_CLASS}${jump !== 'forward' ? ' opacity-30' : ''}`}
-            >
-              <ChevronsRightIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
-            </Pressable>
+          {/* 미래 주로도 갈 수 있어서 이번 주로 돌아오는 겹화살표가 양쪽에 있다. 쓸 수 없는 쪽은 흐리게 막힌다. */}
+          <View className="px-4">
+            <PeriodStepper
+              primary={periodLabel.primary}
+              secondary={periodLabel.secondary}
+              jumpBack={{ label: '이번 주로 이동', disabled: jump !== 'back', onPress: () => moveWeek(thisWeek) }}
+              prev={{ label: '이전 주', onPress: () => moveWeek(shiftDateKey(weekStart, -7)) }}
+              next={{ label: '다음 주', onPress: () => moveWeek(shiftDateKey(weekStart, 7)) }}
+              jumpForward={{ label: '이번 주로 이동', disabled: jump !== 'forward', onPress: () => moveWeek(thisWeek) }}
+            />
           </View>
 
           {/* 고른 보기를 읽기 전에 그리면 보드를 고른 사용자에게 목록이 한 번 스친다. */}

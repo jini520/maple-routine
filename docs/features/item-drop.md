@@ -17,7 +17,7 @@
 | `app/boss-profit/DropPriceScreen.tsx` | 아이템 가격 입력 화면(`DropPrice`, `/profit/prices`) |
 | `app/boss-profit/DropPriceFab.tsx` · `drop-price-fab-motion.ts` | 아이템 가격 입력으로 가는 떠 있는 버튼과 그 안에서 도는 그림의 값 |
 | `app/boss-profit/DropHistoryScreen.tsx` | 히스토리 화면(`DropHistory`, `/profit/drops`) |
-| `app/boss-profit/CharacterAccordion.tsx` · `valuable-card-glow.ts` | 고가 드롭 카드 강조(테두리 · 그림자 · 배지) |
+| `app/boss-profit/CharacterAccordion.tsx` · `components/organisms/HologramSheen/` | 고가 드롭 카드 강조(홀로그램 빛 · 아이템 표시 · 오로라 금액) |
 | `features/boss-profit/drops-loader.ts` | 기간의 드롭 읽기, 완료 행의 정리, 처치 난이도 확정 이관 |
 | `features/boss-profit/orphan-drops.ts` | 잡지 않은 보스에 남은 드롭 기록 정리 |
 | `features/boss-profit/drop-price-store.ts` | 가격 입력 화면의 상태와 가격 저장. 기간별 미입력 건수 |
@@ -35,7 +35,7 @@
 | `lib/drop/drop-history.ts` | 히스토리의 기간 묶기 · 한 줄 문장 · 고가 미획득 단계와 문구 |
 | `constants/style/drought-tier-styles.ts` | 미획득 단계의 단풍잎 색 · 기울기 |
 | `components/organisms/DropEffectOverlay/` | 전체화면 연출. 재생 상태(`drop-effect-player.ts`) · 기준점 표(`drop-effect-layout.ts`) · 장 위치(`frame-layout.ts`) |
-| `components/molecules/ValuableDropBadge/` | 고가 드롭 골드 배지 |
+| `components/molecules/ValuableDropMark/` · `components/molecules/AuroraText/` | 고가 드롭 표시(그림 셋과 나머지 `+N`) · 오로라 글자 |
 | `scripts/measure-drop-effect-origins.py` | 빛기둥 기준점 표를 다시 재는 스크립트 |
 | `src/data/boss-drops.json` · `drop-boxes.json` · `drop-items.json` | 드롭 표 · 상자 내용 · 드롭 아이템 표(이름 · 그림 · 고가 여부) |
 
@@ -146,8 +146,9 @@
 
 | 위치 | 표시 |
 |---|---|
-| 보스 수익 캐릭터 카드 | 골드 테두리, 맥동하는 골드 그림자(펼침 · 움직임 줄이기에서는 정지), 오른쪽 위 골드 배지(그림 셋과 `+N`) |
-| 보스 수익 총 수익 머리 | 그 기간 전체의 고가 드롭 배지 |
+| 보스 수익 캐릭터 카드 | 폰 기울기를 따라 면 위를 떠다니는 오로라 빛(펼치면 본문 바탕까지, 움직임 줄이기에서는 정지), 머리 오른쪽 위 아이템 표시(그림 셋과 나머지 `+N`), 오로라 금액 |
+| 보스 수익 보스 행 | 고가 아이템을 먹은 행 칸에 한 단계 약한 빛 |
+| 보스 수익 총 수익 카드 | 그 기간 전체의 고가 드롭 표시 |
 | 히스토리 | 고가 기록 줄의 아이템 이름 골드 배경 |
 
 완료한 보스 행의 기록만 강조 대상이다.

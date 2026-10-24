@@ -41,9 +41,6 @@ import {
   AnimatedNumber,
   Button,
   ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsRightIcon,
   ProfitIcon,
   Text,
 } from '../../components/atoms'
@@ -52,7 +49,8 @@ import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { tapFeedback } from '../../native/haptics'
-import { ValuableDropBadge } from '../../components/molecules/ValuableDropBadge/ValuableDropBadge'
+import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
+import { ValuableDropMark } from '../../components/molecules/ValuableDropMark/ValuableDropMark'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -365,157 +363,72 @@ export function BossProfitScreen(): React.JSX.Element {
   )
 
   // 기간을 고르고 그 기간의 총 수익을 말하는 덩어리. 헤더가 아니라 콘텐츠의 첫 블록이다.
-  // 안쪽 `gap-4` 는 옛 헤더가 쓰던 값 그대로라 보이는 간격이 안 바뀐다.
   const periodSection = (
-    <View className="gap-4 px-4">
-        <View className="flex-row items-center justify-center gap-4 py-3">
-          {/* 오른쪽 겹화살표와 같은 폭. 기간 이름이 줄 가운데에 남는다. */}
-          <View className="h-7 w-7" />
-          <Pressable
-            role="button"
-            aria-label="이전 기간"
-            aria-disabled={isPrevDisabled}
-            disabled={isPrevDisabled}
-            // 화면은 그대로여도 보는 기간이 바뀐다. 꺼진 화살표는 누름 자체가 안 들어와 조용하다.
-            onPress={() => {
-              tapFeedback()
-              goToPreviousPeriod()
-            }}
-            className={
-              isPrevDisabled
-                ? 'h-7 w-7 items-center justify-center rounded-full border border-border opacity-30'
-                : 'h-7 w-7 items-center justify-center rounded-full border border-border'
-            }
-          >
-            <ChevronLeftIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
-          </Pressable>
+    <View className="px-4">
+      <PeriodStepper
+        primary={periodLabel.primary}
+        secondary={periodLabel.secondary}
+        prev={{ label: '이전 기간', disabled: isPrevDisabled, onPress: goToPreviousPeriod }}
+        next={{ label: '다음 기간', disabled: !canGoNext, onPress: goToNextPeriod }}
+        jumpForward={{
+          label: tab === 'weekly' ? '이번 주로 이동' : '이번 달로 이동',
+          disabled: isOnCurrentPeriod,
+          onPress: () => void goToCurrentPeriod(),
+        }}
+      />
 
-          <View className="items-center">
-            <Text className="text-sm font-semibold text-text">
-              {periodLabel.primary}
-            </Text>
-            <Text className="mt-0.5 text-xs text-text-muted" style={TABULAR_NUMS}>
-              {periodLabel.secondary}
+      {/* 아직 집계 안 된 날이 있으면 기록이 없어도 그린다(사용자 지정). 그때의 0 메소는 확정이 아니라 아직 덜 온
+          것이라, 빈 상태로 갈아치우면 `없다` 로 읽힌다. */}
+      {!isPeriodLoading && (characterGroups.length > 0 || periodPendingAggregation) && (
+        <View testID="boss-profit-summary" className="gap-2 rounded-[14px] bg-surface p-3">
+          <View className="h-6 flex-row items-center">
+            <Text className="text-11 font-bold text-text-muted">{periodLabel.primary} 총 수익</Text>
+            {periodValuableDrops.length > 0 && (
+              <View className="ml-auto">
+                <ValuableDropMark drops={periodValuableDrops} label="이 기간 고가 드롭" />
+              </View>
+            )}
+          </View>
+
+          <View className="flex-row items-center gap-2.5">
+            {/* 그림이 없으면 그 자리를 비운다. 비슷한 것으로 때우지 않는다. */}
+            {MESO_POUCH_URL !== null && (
+              <Image
+                testID="boss-profit-total-icon"
+                source={MESO_POUCH_URL}
+                resizeMode="contain"
+                className="h-7 w-7 shrink-0"
+                aria-hidden
+              />
+            )}
+            {/* 숫자와 단위 사이에 실제 공백 문자를 남긴다. 마진만으로 띄우면 스크린리더가 `N메소` 로 이어 읽는다.
+                이 키에만 기간이 없다. 기간이 바뀌어도 같은 자리의 같은 뜻을 가진 숫자로 보고 굴린다. */}
+            <Text className="text-22 font-bold text-primary-ink" style={TABULAR_NUMS}>
+              <AnimatedNumber identity={`total|${loadedTab}`} value={totalMeso} />{' '}
+              <Text className="text-xs font-bold text-text-muted">메소</Text>
             </Text>
           </View>
 
-          {/* 최신 기간에선 다음 이동을 막는다. */}
-          <Pressable
-            role="button"
-            aria-label="다음 기간"
-            aria-disabled={!canGoNext}
-            disabled={!canGoNext}
-            onPress={() => {
-              tapFeedback()
-              goToNextPeriod()
-            }}
-            className={
-              !canGoNext
-                ? 'h-7 w-7 items-center justify-center rounded-full border border-border opacity-30'
-                : 'h-7 w-7 items-center justify-center rounded-full border border-border'
-            }
-          >
-            <ChevronRightIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
-          </Pressable>
-
-          {/* 지금 기간으로 건너뛴다. 지금 기간이면 숨지 않고 흐리다. 숨기면 줄 폭이 바뀌어 기간
-              이름이 흔들린다. */}
-          <Pressable
-            role="button"
-            aria-label={tab === 'weekly' ? '이번 주로 이동' : '이번 달로 이동'}
-            aria-disabled={isOnCurrentPeriod}
-            disabled={isOnCurrentPeriod}
-            onPress={() => {
-              tapFeedback()
-              void goToCurrentPeriod()
-            }}
-            className={
-              isOnCurrentPeriod
-                ? 'h-7 w-7 items-center justify-center rounded-full border border-border opacity-30'
-                : 'h-7 w-7 items-center justify-center rounded-full border border-border'
-            }
-          >
-            <ChevronsRightIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
-          </Pressable>
+          <View className="flex-row items-center gap-1.5">
+            {tab === 'weekly' ? (
+              <CrystalSummaryChip groups={characterGroups} monthlyByWorld={monthlyCrystalsUpToWeek ?? undefined} />
+            ) : (
+              <CrystalSummaryChip variant="monthly" groups={characterGroups} />
+            )}
+            <Pressable
+              ref={periodChipRef}
+              role="button"
+              aria-label="총 수익 자세히 보기"
+              aria-expanded={isPeriodPopoverOpen}
+              onPress={togglePeriodPopover}
+              className="ml-auto h-[30px] shrink-0 flex-row items-center gap-0.5 rounded-[10px] bg-card-inset px-2.5"
+            >
+              <Text className="text-11 font-semibold text-text-muted">자세히</Text>
+              <ChevronDownIcon className="h-3 w-3 shrink-0 text-text-muted" strokeWidth={2.5} aria-hidden />
+            </Pressable>
+          </View>
         </View>
-
-        {/* 총 수익 요약은 **카드가 아니라 헤드라인**이다. 아래 캐릭터 카드가 전부 같은
-            카드 셸이라 요약도 카드면 "동일한 흰 카드의 반복"으로 묻힌다.
-
-            **아직 집계 안 된 날이 있으면 기록이 없어도 그린다**(사용자 지정). 그때의 0 메소는
-            확정이 아니라 아직 덜 온 것이라, 빈 상태로 갈아치우면 `없다` 로 읽힌다. */}
-        {!isPeriodLoading && (characterGroups.length > 0 || periodPendingAggregation) && (
-          <View>
-            {/* 라벨행 높이를 `h-6`(24px)으로 명시 고정한다. 라벨(16px)이 우연히 정하는 값이면
-                그보다 큰 요소를 흐름에 넣는 순간 줄이 커진다. 그것이 24px 고가 드롭 배지를
-                흐름 밖으로 빼낸 이유다. */}
-            <View className="relative h-6 flex-row items-center">
-              <Text className="text-xs font-semibold tracking-wide text-text-muted">
-                {periodLabel.primary} 총 수익
-              </Text>
-              {/* 결정석 판매 현황은 라벨 텍스트 바로 옆이다. 우측 끝은 고가 드롭 배지의
-                  절대배치 자리라 침범하지 않는다. 주간 탭에만 서고 월간 몫도 이 칩이 든다. 월간
-                  보스가 주간 목록의 그 주에 서므로 그 주의 행이 월간 결정석을 이미 들고 있다. */}
-              {tab === 'weekly' ? (
-                <CrystalSummaryChip
-                  groups={characterGroups}
-                  monthlyByWorld={monthlyCrystalsUpToWeek ?? undefined}
-                />
-              ) : (
-                <CrystalSummaryChip variant="monthly" groups={characterGroups} />
-              )}
-              {periodValuableDrops.length > 0 && (
-                <ValuableDropBadge
-                  drops={periodValuableDrops}
-                  label="이 기간 고가 드롭"
-                  className="absolute right-0"
-                />
-              )}
-            </View>
-
-            <View className="mt-1.5 flex-row items-center gap-2.5">
-              {/* 그림이 없으면 그 자리를 비운다. 비슷한 것으로 때우지 않는다. */}
-              {MESO_POUCH_URL !== null && (
-                <Image
-                  testID="boss-profit-total-icon"
-                  source={MESO_POUCH_URL}
-                  resizeMode="contain"
-                  className="ml-1.5 h-7 w-7 shrink-0"
-                  aria-hidden
-                />
-              )}
-              {/* 단위는 별도 `Text` 로 격하하되 숫자와 사이에 **실제 공백 문자**를 남긴다. 마진만
-                  으로 띄우면 읽는 문자열이 "N메소"로 붙어 스크린리더가 이어 읽는다. */}
-              <Text
-                className="text-xl font-bold text-primary-ink"
-                style={TABULAR_NUMS}
-              >
-                {/* 이 키에만 기간이 없다. 기간이 바뀌어도 같은 자리의 같은 뜻을 가진 하나의
-                    숫자로 보고 굴린다. */}
-                <AnimatedNumber identity={`total|${loadedTab}`} value={totalMeso} />{' '}
-                <Text className="text-xs font-bold text-text-muted">메소</Text>
-              </Text>
-              <Pressable
-                ref={periodChipRef}
-                role="button"
-                aria-label="총 수익 자세히 보기"
-                aria-expanded={isPeriodPopoverOpen}
-                onPress={togglePeriodPopover}
-                className="ml-auto h-6 shrink-0 flex-row items-center gap-0.5 rounded-full border border-border px-2.5"
-              >
-                <Text className="text-11 font-semibold text-text-muted">자세히 보기</Text>
-                <ChevronDownIcon
-                  className="h-3 w-3 shrink-0 text-text-muted"
-                  strokeWidth={2.5}
-                  aria-hidden
-                />
-              </Pressable>
-            </View>
-
-            {/* 헤더 바닥 경계 = 카드 테두리 대체. 이 화면에 페이드가 없는 이유가 이 한 줄이다. */}
-            <View className="mt-3 h-px bg-border" aria-hidden />
-          </View>
-        )}
+      )}
     </View>
   )
 

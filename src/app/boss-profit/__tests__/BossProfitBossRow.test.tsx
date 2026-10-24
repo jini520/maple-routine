@@ -315,3 +315,33 @@ describe('BossProfitBossRow: 파티원 수', () => {
   })
 })
 
+
+describe('BossProfitBossRow: 미완료 행도 기존 동작 그대로', () => {
+  // 생김새만 바뀌고 동작은 그대로다(사용자 지정). 미완료 행도 드롭을 적고 인원을 고칠 수 있다.
+  it('`＋ 드롭 추가` 와 인원 `변경` 이 함께 선다', async () => {
+    const row = 보스행({ isComplete: false, payoutMeso: null })
+    const { getByText, getByLabelText } = await renderProfit(<BossProfitBossRow row={row} drops={[]} />)
+
+    expect(getByText('＋ 드롭 추가')).toBeTruthy()
+    expect(getByLabelText(`${row.characterName} ${row.bossName} 하드 파티 인원과 비율 변경`)).toBeTruthy()
+  })
+})
+
+describe('BossProfitBossRow: 고가 드롭 행의 약한 빛', () => {
+  const 고가 = dropItemsData.items.filter((item) => item.valuable)[0].key
+  const 고가드롭 = [{ itemKey: 고가, itemName: 고가 } as RecordedDrop]
+
+  it('완료한 행에 고가 아이템이 있을 때만 빛이 깔린다', async () => {
+    const valuable = await renderProfit(<BossProfitBossRow row={보스행()} drops={고가드롭} />)
+    expect(valuable.getByTestId('boss-row-sheen')).toBeTruthy()
+
+    const plain = await renderProfit(<BossProfitBossRow row={보스행()} drops={값매긴드롭} />)
+    expect(plain.queryByTestId('boss-row-sheen')).toBeNull()
+
+    // 카드 강조와 같은 규칙이다. 미완료 행의 드롭은 그 기간에 번 것이 아니다.
+    const incomplete = await renderProfit(
+      <BossProfitBossRow row={보스행({ isComplete: false, payoutMeso: null })} drops={고가드롭} />,
+    )
+    expect(incomplete.queryByTestId('boss-row-sheen')).toBeNull()
+  })
+})

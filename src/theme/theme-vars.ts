@@ -62,7 +62,7 @@ export function resolvePanelBorder(definition: ThemeDefinition): string {
 }
 
 /**
- * 펼친 캐릭터 카드의 **본문 바탕**. 보스 목록이 앉는 면이다.
+ * 카드 안에 한 단 다르게 앉는 면. 통계 보스 칸 · 시각 휠의 고른 줄 · 드롭다운 항목을 누르는 동안이 쓴다.
  *
  * 38토큰에는 이 자리에 맞는 색이 없다. 카드(`surface`)와도 페이지(`bg`)와도 갈려야 하는데
  * `surface-2` 는 그 조건은 만족하지만 라이트에서 칙칙한 청회색이고, `bg` 를 쓰면 본문이 페이지에

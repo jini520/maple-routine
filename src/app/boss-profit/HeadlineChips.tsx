@@ -1,5 +1,5 @@
 /**
- * 총 수익 헤드라인 옆의 결정석 판매 한도 요약 칩. 월드별로 집계한다.
+ * 총 수익 카드의 결정석 판매 칸. 월드별로 집계한다.
  */
 import { Image, Pressable, View, useWindowDimensions } from 'react-native'
 
@@ -25,17 +25,10 @@ const BREAKDOWN_EDGE_GAP = 12
 export const WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
 export const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_monthly.webp')
 
-// 총 수익 헤드라인의 결정석 판매 현황. 주간 탭 라벨행의 `{기간} 총 수익` 텍스트 바로 옆 칩이다.
-// 금액행 아래 새 줄로 두면 그 한 줄이 헤더를 그대로 높여 목록을 잠식한다.
+// 총 수익 카드 셋째 줄의 결정석 칸. 주간 90 한도 대비 주간 몫과 그 주에 잡은 월간 보스의 월간 몫을 칸 둘로 나눠 적는다.
+// 월간 몫은 한도가 없어 분모 없이 개수만 적고, 안 잡은 주에도 `0개` 로 선다.
 //
-// 칩 하나에 몫이 둘이다. 주간 90 한도 대비 주간 몫과, 그 주에 잡은 월간 보스의 월간 몫이다. 월간
-// 몫은 한도가 없어 분모 없이 개수만 적고, 안 잡은 주에도 `0개` 로 선다.
-//
-// 칩 높이는 라벨(text-xs = 16px)을 넘지 않아야 한다. 이 줄에 흐름으로 들어가는 요소가
-// 라벨행(h-6 = 24px)을 넘으면 라벨행이 튄다. 그것이 고가 드롭 배지(24px)를 절대배치로 빼낸
-// 이유이고, 그 배지가 우측 끝을 쓰므로 칩은 좌측(라벨 옆)에 붙는다.
-//
-// 월드별 분해는 흐름이 아니라 별도 네이티브 창의 팝오버로 띄운다. 펼쳐도 헤더 높이가 변하지 않는다.
+// 월드별 분해는 흐름이 아니라 별도 네이티브 창의 팝오버로 띄운다. 펼쳐도 카드 높이가 변하지 않는다.
 //
 // 월간 탭은 `variant="monthly"` 로 **월간 몫만** 싣는다. 주간 90 은 주마다의 한도라 한 달의 합에는 뜻이
 // 없다. 주간 탭의 월간 몫은 화면이 기록에서 센 **그 주까지의 그 달 누적**(`monthlyByWorld`)이다.
@@ -73,36 +66,44 @@ export function CrystalSummaryChip(props: {
     ? `월간 결정석 ${monthlyCleared}개`
     : `주간 결정석 판매 ${cleared} / ${limit}, 월간 결정석 ${monthlyCleared}개`
 
-  // 칩은 화면에 간단히만. 월드 수·월드명 같은 부가 표기는 팝오버로 넘긴다.
+  // 칸은 간단히만. 월드 수 · 월드명 같은 부가 표기는 팝오버로 넘긴다. 숫자와 단위 사이는 마진이 아니라 실제
+  // 공백 문자로 띄운다. 마진만으론 읽는 문자열이 `34/90` 으로 붙어 스크린리더가 이어 읽는다.
+  const cellClassName = 'h-[30px] flex-row items-center gap-1.5 rounded-[10px] bg-card-inset px-2.5'
+  const chevron = isExpandable ? (
+    isBreakdownOpen ? (
+      <ChevronUpIcon className="h-3 w-3 shrink-0 text-text-muted" strokeWidth={2.5} aria-hidden />
+    ) : (
+      <ChevronDownIcon className="h-3 w-3 shrink-0 text-text-muted" strokeWidth={2.5} aria-hidden />
+    )
+  ) : null
   const chipContent = (
     <>
-      {!monthlyOnly && WEEKLY_CRYSTAL_ICON_URL !== null && (
-        <Image source={WEEKLY_CRYSTAL_ICON_URL} resizeMode="contain" className="h-4 w-4 shrink-0" />
-      )}
-      {/* 숫자와 단위 사이는 마진이 아니라 실제 공백 문자로 띄운다. 마진만으론 읽는 문자열이
-          `34/90` 으로 붙어 스크린리더가 이어 읽는다. `개` 는 한국어 표기상 숫자에 붙으므로
-          공백을 넣지 않는다. */}
       {!monthlyOnly && (
-        <>
-          <Text className="text-xs font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
-            {cleared} <Text className="font-semibold opacity-70">/ {limit}</Text>
+        <View className={`flex-1 ${cellClassName}`}>
+          {WEEKLY_CRYSTAL_ICON_URL !== null && (
+            <Image source={WEEKLY_CRYSTAL_ICON_URL} resizeMode="contain" className="h-4 w-4 shrink-0" />
+          )}
+          <Text className="text-11 text-text-muted">주간 결정석</Text>
+          <Text className="ml-auto text-xs font-bold text-text" style={TABULAR_NUMS}>
+            {cleared} <Text className="font-semibold text-text-muted">/ {limit}</Text>
           </Text>
-          <Text className="text-xs font-semibold leading-none text-primary-ink opacity-70">·</Text>
-        </>
+        </View>
       )}
-      {MONTHLY_CRYSTAL_ICON_URL !== null && (
-        <Image source={MONTHLY_CRYSTAL_ICON_URL} resizeMode="contain" className="h-4 w-4 shrink-0" />
-      )}
-      <Text className="text-xs font-bold leading-none text-primary-ink" style={TABULAR_NUMS}>
-        {monthlyCleared}
-        <Text className="font-semibold opacity-70">개</Text>
-      </Text>
+      <View className={`${monthlyOnly ? 'flex-1 ' : ''}${cellClassName}`}>
+        {MONTHLY_CRYSTAL_ICON_URL !== null && (
+          <Image source={MONTHLY_CRYSTAL_ICON_URL} resizeMode="contain" className="h-4 w-4 shrink-0" />
+        )}
+        <Text className="text-11 text-text-muted">{monthlyOnly ? '월간 결정석' : '월간'}</Text>
+        {/* `개` 는 한국어 표기상 숫자에 붙으므로 공백을 넣지 않는다. */}
+        <Text className={`${monthlyOnly ? 'ml-auto ' : ''}text-xs font-bold text-text`} style={TABULAR_NUMS}>
+          {monthlyCleared}개
+        </Text>
+        {chevron}
+      </View>
     </>
   )
 
-  // h-5(20px). 라벨행이 h-6(24px)으로 고정돼 있으므로 그 안에 들어가기만 하면 된다.
-  // `leading-none` 과 함께 두어야 글꼴 line-height 가 칩 높이를 밀어 올리지 않는다.
-  const chipClassName = 'ml-2 h-5 shrink-0 flex-row items-center gap-1 rounded-full bg-primary-tint px-1.5'
+  const chipClassName = 'flex-1 flex-row items-center gap-1.5'
 
   // 단일 월드는 펼칠 것이 없어 버튼으로 두지 않는다. 수치만으로는 무엇의 비율인지 읽히지 않으므로
   // 칩 전체에 레이블 하나를 주고 아이콘은 장식으로 남긴다.
@@ -125,11 +126,6 @@ export function CrystalSummaryChip(props: {
         className={`z-20 ${chipClassName}`}
       >
         {chipContent}
-        {isBreakdownOpen ? (
-          <ChevronUpIcon className="h-3 w-3 shrink-0 text-primary-ink" strokeWidth={2.5} aria-hidden />
-        ) : (
-          <ChevronDownIcon className="h-3 w-3 shrink-0 text-primary-ink" strokeWidth={2.5} aria-hidden />
-        )}
       </Pressable>
       {isBreakdownOpen && (
         /*

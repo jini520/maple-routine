@@ -1,16 +1,16 @@
 # ADR-092 보스 수익 리디자인과 고가 드롭 홀로그램 강조
 
-> ⚪ 미구현
-> 관련 소스: `components/organisms/DropEffectOverlay/DropEffectOverlay.tsx` · `app/cashbook/CashbookScreen.tsx` · `app/stats/StatsScreen.tsx` · `app/party-appointments/AppointmentsScreen.tsx` · `app/boss-profit/BossProfitScreen.tsx` · `app/boss-profit/HeadlineChips.tsx` · `app/boss-profit/CharacterAccordion.tsx` · `app/boss-profit/AccordionBody.tsx` · `app/boss-profit/BossProfitBossRow.tsx` · `app/boss-profit/valuable-card-glow.ts` · `components/molecules/ValuableDropBadge/`
+> 🟢 유효
+> 관련 소스: `constants/style/aurora.ts` · `components/organisms/HologramSheen/` · `native/tilt.ts` · `native/adapters/rn-tilt.ts` · `components/molecules/ValuableDropMark/` · `components/molecules/AuroraText/` · `components/molecules/PeriodStepper/` · `components/organisms/DropEffectOverlay/DropEffectOverlay.tsx` · `app/boss-profit/BossProfitScreen.tsx` · `app/boss-profit/HeadlineChips.tsx` · `app/boss-profit/CharacterAccordion.tsx` · `app/boss-profit/AccordionBody.tsx` · `app/boss-profit/InsetCell.tsx` · `app/boss-profit/BossProfitBossRow.tsx` · `app/boss-profit/MonthlyBossViewRow.tsx` · `app/boss-profit/DropPriceScreen.tsx` · `app/cashbook/CashbookScreen.tsx` · `app/stats/StatsScreen.tsx` · `app/party-appointments/AppointmentsScreen.tsx`
 
 ## 배경
 
 보스 수익 화면을 새 디자인 원칙(테두리 없는 카드 · card-inset 칸)으로 다시 그리면서, 고가 드롭 강조도 다시 정했다(2026-10-24).
-지금은 고가 아이템을 먹은 캐릭터 카드에 골드 테두리 · 맥동 그림자 · 골드 알약 배지가 붙는다([[ADR-045]] 결정 10).
-새 원칙은 테두리를 쓰지 않으므로 테두리 대신 카드 면이 반짝이게 했고, 색은 골드에서 빛기둥 연출의 색으로 바꿨다.
+전에는 고가 아이템을 먹은 캐릭터 카드에 골드 테두리 · 맥동 그림자 · 골드 알약 배지가 붙었다. 새 원칙은 테두리를 쓰지 않으므로
+테두리 대신 카드 면이 반짝이게 했고, 색은 골드에서 빛기둥 연출의 색으로 바꿨다.
 
 시안은 아티팩트 캔버스 `보스 수익 리디자인 시안` 의 11번 판(전체 화면) · 12번 판(기간 스테퍼) · 6번 판(연출 배경 B안)에 있다.
-착수하면 결정 1~6 · 8 은 [[ADR-045]] 에, 결정 7 · 9 는 [[ADR-043]] 에, 결정 10 은 [[ADR-060]] 에 옮기고 이 파일을 걷는다.
+고가 드롭을 언제 강조하는지는 [[ADR-045]] 결정 10, 화면 배치의 나머지는 [[ADR-043]] 에 있다.
 
 ## 결정
 
@@ -34,32 +34,38 @@
 
 ### 결정 2. 고가 캐릭터 카드는 테두리 대신 면 위를 떠다니는 오로라 빛으로 강조한다
 
-골드 테두리와 맥동 그림자를 걷는다. 대신 둥근 오로라 빛 한 덩이(청록 · 연보라 · 분홍 방사 그라디언트)가 6초 주기로 카드 면 위를
-떠다닌다.
+둥근 오로라 빛 한 덩이(청록 · 연보라 · 분홍 방사 그라디언트)가 카드 면 위를 떠다닌다(`HologramSheen` 의 `card`).
 
 - 빛 층은 카드 바탕과 내용 사이에 둔다. 내용 위에 두면 글자까지 물들어 읽기 어렵다.
 - 라이트 테마는 보통 합성, 다크 테마는 `screen` 합성이다. 다크의 어두운 면에서는 빛이 더해지는 쪽으로만 보여야 하기 때문이다.
   드롭 연출이 이미 `mixBlendMode: 'screen'` 을 쓴다([[ADR-045]] 결정 2).
-- 빛 층은 카드 모양(반경 14)으로 자른다.
-- 빛은 폰 기울기를 따라 미끄러진다(사용자 지정). 홀로그램 카드처럼 보이려면 손의 움직임에 반응해야 하기 때문이다.
-  기울기는 `expo-sensors` 로 읽는다. 새 네이티브 의존성이라 지문이 바뀌므로 이 결정은 OTA 로 낼 수 없고 스토어 빌드로 낸다
-  (사용자 확인).
-- 움직임 줄이기를 켜면 빛을 한 자리에 멈춘다. 지금 골드 강조가 맥동을 멈추는 것과 같다([[ADR-045]] 결정 10).
+- 빛 층은 카드 모양(반경 14)으로 스스로 잘린다. 셸이 자르지 않아도 된다.
+- 빛은 폰 기울기를 따라 스프링으로 미끄러진다(사용자 지정). 홀로그램 카드처럼 보이려면 손의 움직임에 반응해야 하기 때문이다.
+  기울기는 `TiltPort`(`native/ports.ts`)로 읽고, RN 구현(`rn-tilt.ts`)이 `expo-sensors` 의 가속도계를 33ms 간격으로 구독한다.
+  센서가 없는 기기에서는 값이 오지 않아 빛이 가운데에 서 있다.
+- `expo-sensors` 는 새 네이티브 의존성이라 지문이 바뀐다. 이 결정은 OTA 로 낼 수 없고 스토어 빌드로 낸다(사용자 확인).
+  iOS `Info.plist` 에 `NSMotionUsageDescription` 을 적었다. `expo prebuild` 는 손으로 쓴 네이티브 파일을 지우므로 손으로 넣었다.
+- 구독은 상자 크기를 안 뒤에 시작하고 언마운트에서 놓는다. 놓지 않으면 카드가 사라진 뒤에도 센서가 돈다.
+- 움직임 줄이기를 켜면 구독하지 않고 빛을 가운데에 멈춘다.
 
 ### 결정 3. 펼친 카드는 본문 바탕까지 빛나고, 보스 행 칸은 빛을 받지 않는다
 
-펼치면 빛 층이 머리뿐 아니라 카드 전체를 덮는다(사용자 지정). 보스 행 칸은 card-inset 을 카드 색 위에 미리 합친 불투명 색으로
-칠한다. card-inset 은 반투명이라 그대로 두면 칸 위로 빛이 비친다. 그래서 빛은 칸 사이 바탕에만 보인다.
+펼치면 빛 층이 머리뿐 아니라 카드 전체를 덮는다(사용자 지정). 빛 층이 머리와 본문을 함께 감싸는 셸의 첫 자식이라서다.
+보스 행 칸(`InsetCell`)은 `bg-surface` 칸 안에 `bg-card-inset` 칸을 겹쳐 불투명하게 칠한다. card-inset 은 반투명이라 그대로 두면
+칸 위로 빛이 비친다. 그래서 빛은 칸 사이 바탕에만 보인다.
 
 ### 결정 4. 고가 드롭을 먹은 보스 행은 캐릭터 카드보다 한 단계 약한 같은 빛을 받는다
 
-그 행의 칸 안에 결정 2 와 같은 떠다니는 빛을 넣되, 세기는 60%, 빛 덩이는 더 작게, 주기는 9초로 느리게 한다(사용자 지정).
-같은 재질을 작게 되풀이해야, 카드가 빛나는 이유가 그 카드 안의 어느 보스인지 이어서 읽힌다. 세기를 낮춰 카드와 행의 위계를 지킨다.
+그 행의 칸 안에 결정 2 와 같은 빛을 넣되(`HologramSheen` 의 `row`), 세기는 60%, 빛 덩이는 더 작게, 기울기를 따라오는 스프링은
+더 느리게 한다(사용자 지정). 같은 재질을 작게 되풀이해야, 카드가 빛나는 이유가 그 카드 안의 어느 보스인지 이어서 읽힌다. 세기를
+낮춰 카드와 행의 위계를 지킨다.
+
+- 카드 강조와 같은 규칙이라, 완료한 행의 기록에 고가 아이템이 있을 때만 깐다(`rowHasValuableDrop`). 월간 보스 열람 행도 같다.
 
 ### 결정 5. 고가 드롭 표시는 알약 배지 대신 틀 없는 아이템 그림과 `+N` 이다
 
-`ValuableDropBadge` 의 골드 알약을 걷는다. 먹은 고가 아이템 그림을 틀 없이 늘어놓고, 그림마다 청록 빛(`drop-shadow`)이 번진다.
-그 뒤에 오로라 글자로 `+N` 만 적는다(사용자 지정).
+먹은 고가 아이템 그림을 틀 없이 늘어놓고, 그림마다 청록 빛이 번진다. 그 뒤에 오로라 글자로 `+N` 만 적는다(사용자 지정).
+부품은 `ValuableDropMark` 다. RN 에 `drop-shadow` 가 없어 빛은 그림 뒤의 작은 방사 그라디언트로 그린다. 그림은 겹치지 않는다.
 
 - 자리는 카드 머리 오른쪽 열의 윗줄이다. 펼친 카드 안 보스 행에서 드롭 아이콘이 서는 자리와 같다(사용자 지정). 카드 모서리에
   걸치는 자리는 시안에서 기각됐다.
@@ -74,7 +80,8 @@
 - 다크 테마는 파스텔 값(`#8CECE7` → `#A79FE1` → `#E5A3E0`)을 쓴다.
 - 라이트 테마는 같은 색상의 짙은 값(`#17799A` → `#4552B8` → `#8E3F99`)을 쓴다. 파스텔은 밝은 카드 위에서 4.5:1 대비가 나오지
   않기 때문이다.
-- RN 은 `MaskedView` 와 `expo-linear-gradient` 로 그린다. 둘 다 이미 의존성에 있어 지문이 바뀌지 않는다.
+- 부품은 `AuroraText` 다. `MaskedView` 와 `expo-linear-gradient` 로 그린다. 글자를 마스크용과 크기용으로 두 벌 그리는데,
+  `AnimatedNumber` 는 같은 기억에서 같은 시간 동안 굴러 두 벌이 어긋나지 않는다.
 
 ### 결정 7. 총 수익은 화면 바탕 위 헤드라인이 아니라 테두리 없는 카드 하나다
 
@@ -85,10 +92,10 @@
 |---|---|
 | 첫 줄 | `이번 주 총 수익` 라벨, 오른쪽 끝에 그 기간의 고가 드롭 표시 |
 | 둘째 줄 | 메소 주머니 그림과 총 금액 |
-| 셋째 줄 | card-inset 칸 둘(주간 결정석 `34 / 90` · 월간 `1개`)과 `자세히` 단추 |
+| 셋째 줄 | card-inset 칸 둘(주간 결정석 `34 / 90` · 월간 `1개`)과 `자세히` 단추. 월간 탭은 `월간 결정석` 칸 하나 |
 
-- 결정석 칩을 라벨 옆 알약에서 card-inset 칸으로 옮긴다. 칩이 라벨 줄에 끼어 있으면 고가 드롭 표시와 한 줄을 다툰다.
-- 기간 줄은 이름과 날짜를 한 줄에 왼쪽으로 붙인다. 화살표 단추는 테두리 없이 control-track 면으로 칠한다.
+- 결정석을 라벨 옆 알약에서 card-inset 칸으로 옮겼다(`CrystalSummaryChip`). 칩이 라벨 줄에 끼어 있으면 고가 드롭 표시와 한 줄을 다툰다.
+  월드가 둘 이상이면 칸 전체가 월드별 판매 현황을 여는 단추다.
 - 총 수익 카드의 고가 드롭 표시는 결정 5 와 같은 아이템 그림과 `+N` 이다(사용자 지정). 그 기간 전체의 고가 드롭을 센다.
 
 ### 결정 8. 고가 드롭 연출의 배경은 위 보라 · 아래 청록 두 겹이다
@@ -103,7 +110,7 @@
 | 바탕 | 전체 | `#04050b` |
 
 - 테마와 관계없는 고정색인 것은 그대로다([[ADR-045]] 결정 2).
-- 누르기 영역에 칠하는 바깥색은 바탕색 `#04050b` 로 바꾼다. 배경이 덮지 못한 곳이 뚫려 보이지 않게 하는 장치라 바탕과 같아야 한다
+- 누르기 영역에 칠하는 색도 바탕색 `#04050b` 다. 배경이 덮지 못한 곳이 뚫려 보이지 않게 하는 장치라 바탕과 같아야 한다
   ([[ADR-045]] 결정 8).
 
 ### 결정 9. 화면은 시안 11번 판을 기준으로 하고, 보스 행의 동작은 지금 그대로다
@@ -116,32 +123,35 @@
 - 보스 행의 동작과 그 동작을 여는 요소는 하나도 바꾸지 않는다(사용자 지정). 파티 인원 · 비율 줄(`PartyShareSummary` 와 `변경`),
   드롭 시트를 여는 이름 줄과 `＋ 드롭 추가`, `미완료` · `가격 미확정` 배지, 직접 완료 상자(`ManualCompletionButton`)와 `수정`,
   금액을 눌러 여는 수익 내역 상자가 모두 지금처럼 선다. 미완료 행도 흐리게 하지 않고 드롭 추가와 인원 변경이 그대로 된다.
-- 월간 탭은 따로 시안을 만들지 않는다(사용자 확인). 월간 보스 열람 행과 주차별 합계 줄도 같은 규칙(card-inset 칸 · 선 없음)을 따른다.
-  주차 줄은 한 줄짜리 칸을 쌓는다(시안 4번 판).
+- 월간 탭은 따로 시안을 만들지 않았다(사용자 확인). 월간 보스 열람 행과 주차별 합계 줄도 같은 규칙(card-inset 칸 · 선 없음)을 따른다.
+  주차 줄은 칸 안에서 이름과 날짜를 두 줄로 둔다. 시안처럼 한 줄에 두면 `10월 2주차` · 날짜 · 금액이 폭을 넘어 말줄임이 생긴다.
 
-### 결정 10. 기간 이동 줄은 네 화면이 공용 부품 하나를 쓴다
+### 결정 10. 기간 이동 줄은 다섯 화면이 공용 부품 하나를 쓴다
 
-보스 수익 · 가계부 · 통계 · 파티 스케줄이 같은 기간 이동 줄을 각자 복사해 그리고 있다. 보스 수익의 모양을 바꾸면 네 화면이 서로
-달라지므로, `components/molecules/PeriodStepper` 하나로 묶고 네 화면이 그것을 쓴다(사용자 지정).
+보스 수익 · 아이템 가격 입력 · 가계부 · 통계 · 파티 스케줄이 같은 기간 이동 줄을 각자 복사해 그리고 있었다. 보스 수익의 모양을 바꾸면
+화면끼리 달라지므로, `components/molecules/PeriodStepper` 하나로 묶고 다섯 화면이 그것을 쓴다(사용자 지정).
 
 - 이전 화살표 바로 옆에 기간 이름과 날짜를 한 줄로 두고, 다음 · 지금으로 이동 화살표는 오른쪽 끝에 둔다. 화살표는 테두리 없는
   control-track 원(28)이다.
-- 위아래 여백은 12 에서 16 으로 늘린다(사용자 지정).
+- 위아래 여백은 12 에서 16(`py-4`)으로 늘렸다(사용자 지정).
 - 화면마다 다른 점은 부품이 받는 값으로 남긴다. 가계부는 지난해일 때 연도를 이름 앞에 작은 글자로 붙인다. 파티 스케줄은 미래
-  주로 갈 수 있어 왼쪽에 이번 주로 돌아오는 겹화살표를 하나 더 받는다.
-- 쓸 수 없는 화살표는 숨기지 않고 흐리게 둔다. 숨기면 줄 폭이 바뀌어 기간 이름이 흔들린다. 지금 네 화면의 규칙 그대로다.
+  주로 갈 수 있어 왼쪽에 이번 주로 돌아오는 겹화살표를 하나 더 받는다. 아이템 가격 입력은 이전 · 다음만 받는다.
+- 이름과 날짜가 같은 글자면(월간의 지난 기간) 날짜를 한 번만 적는다.
+- 쓸 수 없는 화살표는 숨기지 않고 흐리게 막는다. 숨기면 줄 폭이 바뀌어 기간 이름이 흔들린다.
+- 촉각(`tapFeedback`)은 부품이 울린다. 화면마다 적으면 다음 화면이 빠뜨린다.
 
 ## 테스트
 
-착수할 때 아래를 만든다.
-
 | 파일 | 확인하는 것 |
 |---|---|
-| `app/boss-profit/__tests__/CharacterAccordion.test.tsx` | 결정 2 · 5: 고가 드롭이 있으면 빛 층 · 아이템 그림이 붙고, 넷 이상일 때만 그림 셋과 나머지 `+N` 이 서고, 없거나 미완료 행뿐이면 안 붙는지, 테두리가 더는 없는지 본다. 결정 3: 펼치면 빛 층이 카드 전체를 덮는지 본다 |
-| `app/boss-profit/__tests__/BossProfitBossRow.test.tsx` | 결정 4: 고가 아이템이 있는 행에만 약한 빛 층이 붙는지 본다 |
-| `app/boss-profit/__tests__/BossProfitScreen.test.tsx` | 결정 7: 총 수익이 카드 안에 서고, 그 아래 1px 선이 없는지 본다 |
-| `app/boss-profit/__tests__/BossProfitBossRow.test.tsx` | 결정 9: 미완료 행에도 `＋ 드롭 추가` 와 인원 · 비율 `변경` 이 서고 눌리는지 본다(지금 테스트가 이미 지키면 그대로 둔다) |
-| `components/molecules/PeriodStepper/__tests__/PeriodStepper.test.tsx` | 결정 10: 쓸 수 없는 화살표가 숨지 않고 막히는지, 연도 · 왼쪽 겹화살표가 받은 값이 있을 때만 서는지 본다 |
+| `components/organisms/HologramSheen/__tests__/HologramSheen.test.tsx` | 결정 2: 붙으면 기울기를 구독하고 떨어지면 놓는지, 움직임 줄이기면 구독하지 않는지 본다 |
+| `app/boss-profit/__tests__/CharacterAccordion.test.tsx` | 결정 2 · 5: 고가 드롭이 있으면 빛과 아이템 표시가 붙고 테두리가 없는지, 없거나 미완료 행뿐이면 안 붙는지 본다. 결정 3: 펼치면 빛이 본문을 감싸는 셸에 있는지 본다. 결정 6: 금액이 오로라 글자인지 본다 |
+| `app/boss-profit/__tests__/BossProfitBossRow.test.tsx` | 결정 4: 완료한 행에 고가 아이템이 있을 때만 약한 빛이 깔리는지 본다. 결정 9: 미완료 행에도 `＋ 드롭 추가` 와 인원 · 비율 `변경` 이 서는지 본다 |
+| `components/molecules/ValuableDropMark/__tests__/ValuableDropMark.test.tsx` | 결정 5: 그림이 셋까지이고 넷부터 나머지 개수를 `+N` 으로 적는지 본다 |
+| `app/boss-profit/__tests__/BossProfitScreen.test.tsx` | 결정 7: 총 수익의 금액 · 결정석 · `자세히` 가 한 카드에 있는지 본다 |
+| `app/boss-profit/__tests__/AccordionBody.test.tsx` | 결정 9: 행 사이에 선이 없는지 본다 |
+| `components/molecules/PeriodStepper/__tests__/PeriodStepper.test.tsx` | 결정 10: 쓸 수 없는 화살표가 숨지 않고 막히는지, 연도 · 겹화살표가 받은 값이 있을 때만 서는지, 같은 글자를 한 번만 적는지 본다 |
+| `src/__tests__/period-stepper-policy.test.ts` | 결정 10: 다섯 화면이 `PeriodStepper` 를 쓰고 화살표를 직접 그리지 않는지 본다 |
 
 ## 번호 기록
 

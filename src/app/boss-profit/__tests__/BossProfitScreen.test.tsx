@@ -769,6 +769,17 @@ describe('총 수익 헤드라인', () => {
     expect(getAllByText(/^7,000,000 /)).toHaveLength(2)
   })
 
+  // 총 수익은 화면 바탕 위 헤드라인이 아니라 카드 하나다. 금액 · 결정석 · 자세히가 한 카드에 모인다.
+  it('총 수익을 카드 하나에 담는다', async () => {
+    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()] })
+    const { getByTestId } = await renderScreen()
+
+    const summary = within(getByTestId('boss-profit-summary'))
+    expect(summary.getByText('메소')).toBeTruthy()
+    expect(summary.getByLabelText('총 수익 자세히 보기')).toBeTruthy()
+    expect(summary.getByText(/총 수익$/)).toBeTruthy()
+  })
+
   it('자세히 보기를 누르면 결정석·아이템·합계가 갈려 나온다', async () => {
     mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()] })
     const { getByLabelText, getByTestId, getByText } = await renderScreen()

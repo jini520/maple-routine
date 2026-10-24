@@ -278,22 +278,6 @@ describe('CashbookScreen: 연도 표시', () => {
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2025년 12월')
     expect(view.queryByTestId('cashbook-period-year')).toBeNull()
   })
-
-  /**
-   * **자리를 안 밀어낸다**(사용자 지정). 줄로 끼우면 이 덩이가 한 줄만큼 커져 격자와 그 아래가
-   * 통째로 내려간다. 흐름 밖(`position: absolute`)에 둔다.
-   */
-  it('흐름 밖에 서서 아래를 안 민다', async () => {
-    const view = await 그리기()
-    for (let count = 0; count < 34; count += 1) await 이름으로누르기(view, '이전 주')
-
-    const style = flattenStyle(view.getByTestId('cashbook-period-year').props.style)
-
-    expect(style.position).toBe('absolute')
-    // 위 여백(`gap-4` = 16px) 안에 든다. 그보다 크면 위 알약 줄을 침범한다.
-    expect(style.top).toBeLessThan(0)
-    expect(style.top).toBeGreaterThanOrEqual(-16)
-  })
 })
 
 describe('CashbookScreen: 기간 라벨', () => {
@@ -335,7 +319,7 @@ describe('CashbookScreen: 달 이동', () => {
 
     // 앞으로는 **이번 달까지만** 간다. 왕복은 과거 안에서 잰다.
     await 이름으로누르기(view, '이전 달')
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2026년 6월')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2026년 6월')
 
     await 이름으로누르기(view, '다음 달')
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('지난 달')
@@ -350,7 +334,8 @@ describe('CashbookScreen: 달 이동', () => {
     for (let count = 0; count < 8; count += 1) await 이름으로누르기(view, '이전 달')
 
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2025년 12월')
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2025년 12월')
+    // 이름이 곧 날짜라 날짜 칸을 따로 세우지 않는다.
+    expect(view.queryByTestId('cashbook-period-range')).toBeNull()
   })
 
   // 달을 옮기면 **고른 날도 그 달 1일로 간다**. 전에는 격자만 옮겨 격자는 7월인데 상세는
@@ -522,11 +507,11 @@ describe('뒤로는 조회 한도까지만', () => {
   it('월간은 한도인 달에서 `이전 달` 이 죽는다', async () => {
     const view = await 바닥달로(await 그리기())
 
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2025년 2월')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2025년 2월')
     expect(view.getByLabelText('이전 달').props.accessibilityState?.disabled).toBe(true)
 
     await 이름으로누르기(view, '이전 달')
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2025년 2월')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2025년 2월')
   }, 20_000)
 
   /**
@@ -557,7 +542,7 @@ describe('뒤로는 조회 한도까지만', () => {
 
     // 고른 날은 바뀐다. 막는 것은 **보는 기간** 이다.
     expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('1월 26일 (일)')
-    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('2025년 2월')
+    expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2025년 2월')
   }, 20_000)
 })
 

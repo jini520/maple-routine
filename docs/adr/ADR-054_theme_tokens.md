@@ -185,7 +185,7 @@ text-muted → media-ink-muted
 | 변수 | 만드는 방법 | 쓰는 곳 |
 |---|---|---|
 | `panel-border` | 라이트는 `border` 를 `text` 쪽으로 40% 섞는다(`in srgb`). 다크는 `border` 그대로 | 스크림 위 패널의 테두리 |
-| `card-body` | 라이트는 `bg` 와 `surface` 사이 명도에 `primary` 색상을 옅게, 다크는 `bg` 보다 명도 0.04 위 | 펼친 캐릭터 카드의 본문 바탕 |
+| `card-body` | 라이트는 `bg` 와 `surface` 사이 명도에 `primary` 색상을 옅게, 다크는 `bg` 보다 명도 0.04 위 | 통계 보스 칸 · 시각 휠의 고른 줄 · 드롭다운 항목을 누르는 동안 |
 | `stats-section` | `card-body` 와 `surface`(라이트) · `surface-2`(다크)를 섞는다 | 통계 카드([[ADR-002]]) |
 | `settlement-*` 넷 | 라이트 · 다크 상수 두 벌 | 결산 안내 줄 |
 
@@ -212,7 +212,7 @@ text-muted → media-ink-muted
 | 곳 | 값 | 이유 |
 |---|---|---|
 | 난이도 배지 | 다섯 난이도의 고정 색 | 게임 고유 색이라 테마를 따르면 뜻이 깨진다 |
-| 고가 드롭 카드의 빛 | `app/boss-profit/valuable-card-glow.ts` 의 골드 | 모든 테마에 같은 연출이다 |
+| 고가 드롭의 빛과 글자 | `constants/style/aurora.ts` 의 오로라 색([[ADR-092]] 결정 1) | 모든 테마에 같은 연출이다 |
 | 네이티브 스플래시 배경 | `#F58B0F` | 앱이 뜨기 전이라 고른 테마를 모른다 |
 | 결산 안내 줄 | 결정 9 | 앱 상태를 알린다 |
 

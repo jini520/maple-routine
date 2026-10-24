@@ -68,7 +68,9 @@
 | `FadedIllustration` | 카드 안 일러스트와 베일 |
 | `MvpGradeGrid` · `MvpPlate` | MVP 등급 고르기 · 등급 명패([[ADR-050]]) |
 | `NexonLoginButton` | 넥슨 로그인 버튼([[ADR-025]]) |
-| `ValuableDropBadge` | 고가 드롭 배지([[ADR-044]]) |
+| `ValuableDropMark` | 고가 드롭 표시. 그림 셋과 나머지 `+N`([[ADR-092]]) |
+| `AuroraText` | 오로라 그라디언트 글자([[ADR-092]]) |
+| `PeriodStepper` | 기간 이동 줄. 다섯 화면이 함께 쓴다([[ADR-092]] 결정 10) |
 
 ### organisms
 
@@ -90,6 +92,7 @@
 | `CharacterPortrait` · `CharacterRail` · `CharacterRow` · `CharacterManage` · `CharacterUnavailable` | 캐릭터 초상화 · 레일 · 행 · 관리 격자 · 조회 불가 안내([[ADR-029]] · [[ADR-031]]) |
 | `PartySizeModal` · `FeeRow` | 파티 인원 모달 · 수수료 줄([[ADR-038]] · [[ADR-050]]) |
 | `DropEffectOverlay` | 고가 드롭 연출([[ADR-045]]) |
+| `HologramSheen` | 고가 드롭 카드 · 보스 행 면 위를 떠다니는 오로라 빛. 폰 기울기(`TiltPort`)를 따른다([[ADR-092]]) |
 
 ### templates
 
@@ -208,5 +211,6 @@
 | `src/__tests__/page-header-title-row-policy.test.ts` | 제목 줄과 헤더 경계 |
 | `src/__tests__/{top,bottom}-safe-area-policy.test.ts` | 화면이 인셋을 직접 읽지 않는가 |
 | `src/__tests__/mask-policy.test.ts` | 마스크 라이브러리 패치 |
+| `src/__tests__/period-stepper-policy.test.ts` | 기간 이동 줄을 화면이 직접 그리지 않는가 |
 
 부품마다의 테스트는 각 ADR 의 `테스트` 표에 있다.
