@@ -37,7 +37,8 @@ export function OccurrenceCard(props: OccurrenceCardProps): React.JSX.Element {
       role="button"
       aria-label={`${occurrence.timeKst} 스케줄 상세`}
       onPress={props.onPress}
-      className={`gap-2 rounded-[14px] p-3 active:opacity-60 ${props.highlighted === true ? 'bg-primary-tint' : 'bg-surface'} ${
+      // 누르는 동안 흐리게 하지 않는다. 카드 하나가 통째로 흐려지면 다른 카드와 따로 논다.
+      className={`gap-2 rounded-[14px] p-3 ${props.highlighted === true ? 'bg-primary-tint' : 'bg-surface'} ${
         ended ? 'opacity-50' : ''
       }`}
     >
