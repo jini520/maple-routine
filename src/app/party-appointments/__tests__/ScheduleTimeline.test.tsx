@@ -1,4 +1,5 @@
 import { fireEvent, within } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
 
 import { renderAtom } from '../../../components/__tests__/render-atom'
 import { occurrencesInWeek } from '../../../features/party-appointments/occurrences'
@@ -68,6 +69,21 @@ describe('ScheduleTimeline', () => {
 
     const counts = view.getAllByTestId('timeline-row').map((row) => within(row).queryAllByTestId('timeline-row-band').length)
     expect(counts).toEqual([0, 0, 4, 0, 0, 0, 0])
+  })
+
+  // 앱에는 뾰족한 모서리를 두지 않는다(사용자 지정). 띠와 지금 선은 모서리가 각진 사각형으로 그리기 쉬운 자리다.
+  it('카드의 띠 · 오늘 줄 안의 띠 · 지금 선은 모서리가 둥글다', async () => {
+    const view = await renderAtom(<ScheduleTimeline {...props([])} />)
+
+    const pieces = [
+      ...view.getAllByTestId('timeline-band'),
+      ...view.getAllByTestId('timeline-row-band'),
+      ...view.getAllByTestId('timeline-now'),
+    ]
+    expect(pieces.length).toBeGreaterThan(0)
+    for (const piece of pieces) {
+      expect(StyleSheet.flatten(piece.props.style)?.borderRadius ?? 0).toBeGreaterThan(0)
+    }
   })
 
   it('막대를 누르면 그 회차의 열쇠로 부른다', async () => {

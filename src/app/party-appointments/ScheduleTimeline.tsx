@@ -68,7 +68,7 @@ function TimelineRow(props: {
             testID="timeline-row-band"
             pointerEvents="none"
             style={{ left: percent(hour / 24), width: percent(3 / 24) }}
-            className="absolute bottom-0 top-0 bg-control-track"
+            className="absolute bottom-0 top-0 rounded-md bg-control-track"
           />
         ))}
       {props.day.segments.map((segment) => (
@@ -89,7 +89,7 @@ function TimelineRow(props: {
           testID="timeline-now"
           pointerEvents="none"
           style={{ left: percent(props.day.nowAt) }}
-          className="absolute -bottom-0.5 -top-0.5 -ml-px w-0.5 bg-primary"
+          className="absolute -bottom-0.5 -top-0.5 -ml-px w-0.5 rounded-full bg-primary"
         />
       )}
     </View>
@@ -134,9 +134,10 @@ export function ScheduleTimeline(props: ScheduleTimelineProps): React.JSX.Elemen
           {BANDS.map((hour) => (
             <View
               key={hour}
+              testID="timeline-band"
               pointerEvents="none"
               style={{ left: percent(hour / 24), width: percent(3 / 24) }}
-              className="absolute bottom-0 top-0 bg-control-track"
+              className="absolute bottom-0 top-0 rounded-md bg-control-track"
             />
           ))}
           <View className="h-5">

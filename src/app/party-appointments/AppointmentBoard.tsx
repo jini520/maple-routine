@@ -65,7 +65,7 @@ function LaneStrip(props: { day: TimelineDay }): React.JSX.Element {
         <View
           testID="board-strip-now"
           style={{ left: percent(props.day.nowAt) }}
-          className="absolute -bottom-0.5 -top-0.5 -ml-px w-0.5 bg-primary"
+          className="absolute -bottom-0.5 -top-0.5 -ml-px w-0.5 rounded-full bg-primary"
         />
       )}
     </View>
