@@ -2,7 +2,8 @@
  * 난이도 고르개. 고른 배지 하나에 오른쪽 화살표가 붙어 있고, 누르면 모든 난이도 배지가 고른 배지 자리에서 나와 오른쪽
  * 제자리로 미끄러지며 펼쳐진다. 하나를 고르면 배지들이 고른 배지 자리로 모이며 접힌다.
  *
- * 팝오버가 아니다. 펼친 줄은 부모 줄 위에 겹쳐 서서 옆의 것(인원 스테퍼)을 덮는다. 그래서 부모는 이 부품을 줄의 왼쪽 끝에 둔다.
+ * 팝오버가 아니다. 펼친 줄은 부모 줄 위에 겹쳐 서서 옆의 것(인원 스테퍼)을 덮는다. 그래서 부모는 이 부품을 줄의 끝에 두고,
+ * 오른쪽 끝에 두면 `align="end"` 로 왼쪽을 향해 펼친다. 오른쪽으로 펼치면 화면 밖으로 넘친다.
  * 고르지 않은 난이도도 제 색을 흐리게 띤다. 회색으로 두면 어느 난이도가 무엇인지 글자를 읽어야 안다.
  */
 import { useEffect, useRef, useState } from 'react'
@@ -19,15 +20,18 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated'
 
-import { ChevronRightIcon, difficultyFill, Text } from '../../atoms'
+import { ChevronRightIcon, difficultyBadgeStyle, Text } from '../../atoms'
 import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { LinearGradient } from '../../../lib/nativewind-interop'
+import { selectionFeedback } from '../../../native/haptics'
 import { useThemeAppearance } from '../../../theme/context'
 import type { BossDifficulty } from '../../../types'
 
 /** 배지 높이와 사이 */
 const PILL_HEIGHT = 22
 const PILL_GAP = 2
+/** 펼친 줄 바탕이 배지 줄 밖으로 나오는 여백. 한쪽만 주면 바탕이 배지 줄과 어긋나 보인다 */
+const PLATE_PAD = 3
 /** 고르지 않은 난이도의 진하기 */
 const OFF_OPACITY = 0.35
 /** 배지마다 늦게 출발하는 간격. 한꺼번에 움직이면 펼쳐지는 것이 아니라 한 덩어리가 미끄러지는 것으로 보인다 */
@@ -66,14 +70,15 @@ function ChevronSlot(props: { color: string; shown: SharedValue<number> | number
  * 화살표가 줄어 사라지고, 돌아오는 동안 다시 자란다. 한순간에 생기고 사라지면 배지가 바뀌는 것으로 보인다.
  */
 function Pill(props: { difficulty: BossDifficulty; chevron?: SharedValue<number> | number }): React.JSX.Element {
-  const { gradient, textStyle } = difficultyFill(props.difficulty)
+  const { gradient, border, textStyle } = difficultyBadgeStyle(props.difficulty)
   return (
     <LinearGradient
+      testID={`difficulty-pill-${props.difficulty}`}
       colors={gradient}
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       className="flex-row items-center rounded-full"
-      style={{ height: PILL_HEIGHT, paddingLeft: 8, paddingRight: 6 }}
+      style={{ height: PILL_HEIGHT, paddingLeft: 8, paddingRight: 6, ...border }}
     >
       <Text className="text-chip-sm font-bold" style={textStyle}>
         {DIFFICULTY_NAME[props.difficulty]}
@@ -90,11 +95,13 @@ function SelectedPill(props: { difficulty: BossDifficulty; progress: SharedValue
   return <Pill difficulty={props.difficulty} chevron={chevron} />
 }
 
-/** 펼친 줄의 배지 하나. 고른 배지 자리(줄의 왼쪽 끝)에서 제자리로 미끄러져 나오고, 접을 때 그리로 돌아간다 */
+/** 펼친 줄의 배지 하나. 접힌 배지 자리에서 제자리로 미끄러져 나오고, 접을 때 그리로 돌아간다 */
 function SlidingPill(props: {
   open: boolean
   /** 제자리의 왼쪽 끝(줄 기준) */
   x: number
+  /** 접힌 배지의 왼쪽 끝(줄 기준). 배지들이 여기서 출발한다 */
+  from: number
   /** 펼칠 때 늦게 출발하는 차례 */
   order: number
   /** 고른 배지. 흐려지지 않고 접힌 배지 자리로 돌아가 접힌 배지와 바로 이어진다 */
@@ -137,7 +144,7 @@ function SlidingPill(props: {
 
   const style = useAnimatedStyle(() => ({
     opacity: selected ? 1 : Math.min(1, progress.value * 1.6) * fade.value,
-    transform: [{ translateX: (progress.value - 1) * props.x }],
+    transform: [{ translateX: (progress.value - 1) * (props.x - props.from) }],
   }))
 
   // 자리 · 모양은 바깥 View, 움직임만 Animated.View. 둘을 한 배열로 주면 정적 쪽이 버려진다.
@@ -154,7 +161,10 @@ export function DifficultyExpander(props: {
   difficulties: readonly BossDifficulty[]
   value: BossDifficulty
   onChange: (next: BossDifficulty) => void
+  /** 붙은 쪽. 기본 `start` 는 오른쪽으로, `end` 는 왼쪽으로 펼친다 */
+  align?: 'start' | 'end'
 }): React.JSX.Element {
+  const end = props.align === 'end'
   const { definition } = useThemeAppearance()
   const [open, setOpen] = useState(false)
   const [shown, setShown] = useState(false)
@@ -166,7 +176,12 @@ export function DifficultyExpander(props: {
     return acc
   }, [])
   const measured = widths.length === props.difficulties.length && widths.every((width) => width > 0)
-  const laneWidth = measured ? xs[xs.length - 1]! + widths[widths.length - 1]! + 6 : 0
+  const laneWidth = measured ? xs[xs.length - 1]! + widths[widths.length - 1]! : 0
+  // `end` 면 접힌 배지가 줄의 오른쪽 끝에 붙어 있다. 접힌 배지는 화살표 몫만큼 넓다.
+  const selectedIndex = props.difficulties.indexOf(props.value)
+  const homeOf = (index: number): number => xs[index] ?? 0
+  const from = end && measured ? laneWidth - (widths[selectedIndex] ?? 0) - CHEVRON_SIZE : 0
+  const edge = end ? { right: 0 } : { left: 0 }
 
   // 정적 값도 움직임 스타일 안에 둔다. 정적 스타일과 한 배열로 주면 정적 쪽이 버려진다.
   const plateStyle = useAnimatedStyle(() => ({ flex: 1, opacity: plate.value }))
@@ -190,12 +205,12 @@ export function DifficultyExpander(props: {
         aria-label={`${props.label} 난이도 ${DIFFICULTY_NAME[props.value]}, 눌러서 바꾸기`}
         onPress={expand}
         style={shown ? { opacity: 0 } : undefined}
-        className="self-start"
+        className={end ? 'self-end' : 'self-start'}
       >
         <Pill difficulty={props.value} chevron={1} />
       </Pressable>
 
-      <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, top: 0, width: LANE_WIDTH, height: PILL_HEIGHT }}>
+      <View pointerEvents="box-none" style={{ position: 'absolute', ...edge, top: 0, width: LANE_WIDTH, height: PILL_HEIGHT }}>
         {/* 배지마다 폭을 재는 줄. 보이지 않고 누를 수 없다. */}
         <View pointerEvents="none" aria-hidden className="flex-row opacity-0" style={{ gap: PILL_GAP }}>
           {props.difficulties.map((difficulty, index) => (
@@ -217,9 +232,12 @@ export function DifficultyExpander(props: {
         </View>
 
         {shown && (
-          <View role="radiogroup" aria-label={`${props.label} 난이도`} style={{ position: 'absolute', left: 0, top: 0, width: laneWidth, height: PILL_HEIGHT }}>
-            {/* 옆 UI 를 덮는 바탕. 배지 밖을 누르면 접는다. */}
-            <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, right: 0 }}>
+          <View testID="difficulty-expander-lane" role="radiogroup" aria-label={`${props.label} 난이도`} style={{ position: 'absolute', ...edge, top: 0, width: laneWidth, height: PILL_HEIGHT }}>
+            {/* 옆 UI 를 덮는 바탕. 배지 줄을 사방으로 같은 여백만큼 감싼다. 배지 밖을 누르면 접는다. */}
+            <View
+              testID="difficulty-expander-plate"
+              style={{ position: 'absolute', left: -PLATE_PAD, top: -PLATE_PAD, bottom: -PLATE_PAD, right: -PLATE_PAD }}
+            >
               <Animated.View style={plateStyle}>
                 <Pressable
                   aria-label={`${props.label} 난이도 닫기`}
@@ -235,7 +253,8 @@ export function DifficultyExpander(props: {
                 <SlidingPill
                   key={difficulty}
                   open={open}
-                  x={xs[index] ?? 0}
+                  x={homeOf(index)}
+                  from={from}
                   order={index}
                   selected={on}
                   onClosed={on ? () => setShown(false) : undefined}
@@ -246,7 +265,11 @@ export function DifficultyExpander(props: {
                     aria-checked={on}
                     aria-label={`${props.label} ${DIFFICULTY_NAME[difficulty]}`}
                     onPress={() => {
-                      if (!on) props.onChange(difficulty)
+                      // 두드림은 고른 값이 실제로 바뀔 때만이다.
+                      if (!on) {
+                        selectionFeedback()
+                        props.onChange(difficulty)
+                      }
                       collapse()
                     }}
                     style={on ? undefined : { opacity: OFF_OPACITY }}

@@ -188,7 +188,6 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                 <CharacterRail
                   entries={railEntries}
                   selectedOcid={selected.ocid}
-                  emptyRing="thick"
                   onSelect={(ocid) => void select(ocid)}
                 />
               </View>
@@ -315,9 +314,8 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
             crystalSharesTotal: partyBoss.shares.sharesTotal,
             splitFeePercent: partyBoss.shares.splitFeePercent,
           }}
-          // 난이도는 보스 줄의 고르개가 정한다. 모달에서 또 고치면 어느 쪽이 이기는지 흐려진다.
-          onSelectDifficulty={() => {}}
           // 값만 받아 계산기에 넣는다. 보스 관리의 파티 설정에는 쓰지 않는다.
+          // 난이도는 보스 줄의 고르개가 정한다. 그래서 모달은 난이도를 배지로만 보인다.
           onApply={(next) => {
             calculator.updateBoss(selected.ocid, partyBoss.bossKey, {
               partySize: next.partySize,

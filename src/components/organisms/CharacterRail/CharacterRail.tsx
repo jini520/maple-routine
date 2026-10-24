@@ -37,8 +37,6 @@ export interface CharacterRailProps {
   entries: CharacterRailEntry[]
   selectedOcid: string
   onSelect: (ocid: string) => void
-  /** 링이 없는 칸의 빈 링 두께. 기본 `thin` */
-  emptyRing?: 'thin' | 'thick'
 }
 
 /** 첫 칸과 마지막 칸이 서는 자리(px). 화면 좌우 여백과 같은 값이어야 옆 블록과 줄이 맞는다. */
@@ -65,7 +63,6 @@ export function CharacterRail(props: CharacterRailProps): React.JSX.Element {
             level={entry.level}
             imageUrl={entry.imageUrl}
             rings={entry.rings}
-            emptyRing={props.emptyRing}
             unavailable={entry.unavailable}
             isSelected={entry.ocid === props.selectedOcid}
             // 고른 캐릭터가 바뀔 때만 두드린다. 같은 캐릭터를 다시 눌러도 바뀌는 것이 없다.

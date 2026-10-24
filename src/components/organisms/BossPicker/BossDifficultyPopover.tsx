@@ -85,7 +85,7 @@ function Capsule(
     <View
       role="dialog"
       aria-label="난이도 고르기"
-      className="flex-row items-center gap-1 rounded-full border border-border bg-surface p-1 shadow-lg"
+      className="flex-row items-center gap-1 rounded-full bg-surface p-1 shadow-lg"
     >
       {props.difficulties.map((difficulty) => (
         <Pressable

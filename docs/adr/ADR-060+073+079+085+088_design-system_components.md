@@ -143,12 +143,11 @@ lucide 에 없는 그림이 필요한 기능을 대표하는 아이콘에만 직
 움직이는 잎(스피너 둘)은 `atoms/Spinner/` 에 따로 둔다([[ADR-061]]). 아이콘인지가 아니라 움직이는지를
 기준으로 코드를 나눈다.
 
-### 결정 10. 세그먼트는 두 가지이고, 선택 배경이 미끄러진다
+### 결정 10. 세그먼트는 하나이고, 선택 배경이 미끄러진다
 
 | 부품 | 쓰는 곳 | 모습 |
 |---|---|---|
 | `molecules/Segment` | 폼 안 라벨-값 줄 · today 위젯 제목 줄 · 화면 머리의 주기 · 필터 탭 | 테두리 없음. 반투명 트랙(`bg-control-track`) 위에 `bg-control-thumb` 상자가 그림자를 달고 뜬다. 고른 글자는 `text-text` 굵게, 고르지 않은 글자는 `text-control-ink-off` 보통 굵기 |
-| `molecules/DifficultySegment` | 보스 관리 · 파티 인원 모달 | 난이도 배지가 서로 떨어져 놓이고, 고르지 않은 배지는 `opacity-40` |
 
 예전에는 폼 안의 `Segment`(테두리 상자, 고른 조각은 `bg-primary-tint`)와 화면 머리의 `TabSegment`(테두리 없음)가 따로
 있었다. 하는 일이 같은데 생김새만 갈려 있었고, 앱의 테두리를 걷으면서 하나로 합쳤다(#343). 생김새는 `TabSegment` 쪽을
@@ -306,7 +305,7 @@ today 만 걷으면 같은 `Card` 를 쓰는 다른 화면과 카드 생김새�
 | `components/atoms/Badge/__tests__/Badge.test.tsx` | 결정 5: 평면 variant 의 상자가 모두 같은지, 테두리 폭만큼 여백을 줄여 바깥 크기가 맞는지, 모든 variant 의 높이가 같은지, 높이를 못박지 않는지, `weight` 가 기본 두께를 덮는지 본다 |
 | `lib/__tests__/nativewind-interop.test.tsx` | 결정 6: `Svg` 의 `text-*` 가 `color` 프롭이 되고 크기 유틸이 상자 크기가 되는지, `LinearGradient` 의 `className` 이 style 로 바뀌는지 본다 |
 | `components/atoms/Icon/__tests__/` | 결정 8: lucide 규격으로 그리는지, 크기와 색이 `className` 에서 오고 안 주면 24 로 떨어지는지, 겹침에 `clipPath` · `mask` 를 쓰지 않는지, `fill` 을 줄 때만 정해진 도형이 채워지는지, 단풍잎 루트 요소에 선 규격이 없는지, 톱니 곡선이 lucide `settings` 와 같은지 본다 |
-| `components/molecules/Segment/__tests__/` · `DifficultySegment/__tests__/` | 결정 10: 고른 것만 선택으로 읽히는지, 누르면 라벨이 아니라 값을 주는지, 접근성 이름이 라벨인지, 고른 것을 다시 누르면 콜백과 촉각이 없는지, 상자가 칠하고 글자색은 상자를 기다리지 않는지, 상자가 터치를 막지 않는지, `Segment` 의 `disabled` 를 본다 |
+| `components/molecules/Segment/__tests__/` | 결정 10: 고른 것만 선택으로 읽히는지, 누르면 라벨이 아니라 값을 주는지, 접근성 이름이 라벨인지, 고른 것을 다시 누르면 콜백과 촉각이 없는지, 상자가 칠하고 글자색은 상자를 기다리지 않는지, 상자가 터치를 막지 않는지, `Segment` 의 `disabled` 를 본다 |
 | `hooks/__tests__/useSlidingThumb.test.tsx` | 결정 10: 처음 그려질 때와 다시 나타날 때는 미끄러지지 않는지, 폭만 바뀌어도 옮긴 것으로 보는지, 옛 렌더의 핸들러로 새 위치가 와도 상자가 따라가는지, 옆 조각이 알려도 다시 계산하는지 본다 |
 | `components/atoms/Switch/__tests__/Switch.test.tsx` | 결정 11: 스크린리더 계약, 안드로이드 두 크기에서 손잡이가 가는 거리, 손잡이 트랜지션과 모션 줄이기, 트랙 색이 즉시 바뀌는지, 누르면 `onToggle` 과 촉각이 한 번씩 나는지, `children` 글자를 눌러도 켜지는지, iOS 의 상자 크기 · 값 · 누름을 본다 |
 | `components/molecules/AmountFigure/__tests__/AmountFigure.test.tsx` | 결정 13: 숫자와 단위가 같은 줄 높이를 쓰는지, 단위 줄에 숫자와 같은 크기의 글자가 들어 있는지, 숫자의 줄 상자가 글자보다 커서 위가 잘리지 않는지 본다 |

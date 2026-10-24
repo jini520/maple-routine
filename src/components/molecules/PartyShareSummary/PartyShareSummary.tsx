@@ -34,32 +34,39 @@ export function PartyShareSummary(props: {
   size?: keyof typeof SIZES
   /** 고칠 수 없는 행. 글자만 흐리게 서고 `변경` 이 사라진다. */
   disabled?: boolean
+  /** 줄이 붙은 쪽. 배지가 그 가장자리에 서고 `변경` 은 안쪽에 선다. 그래야 행마다 값의 자리가 맞는다 */
+  side?: 'start' | 'end'
   onPress: () => void
 }): React.JSX.Element {
   const size = SIZES[props.size ?? 'default']
   const crystalRatio = formatShareRatio(props.crystal)
+  const end = props.side === 'end'
+  const change =
+    props.disabled === true ? null : (
+      <Pressable
+        role="button"
+        aria-label={`${props.label} 파티 인원과 비율 변경`}
+        onPress={props.onPress}
+        hitSlop={HIT_SLOP}
+      >
+        {/* 조용한 글자 버튼이다. 이 줄의 주인공은 값이고 `변경` 은 곁들이다. 디자인 시스템의
+            Text 버튼과 같은 잉크(`초기화` 가 쓰는 것)를 쓴다. */}
+        <Text className="text-11 font-medium text-text-muted">변경</Text>
+      </Pressable>
+    )
 
   return (
     <View
       testID="party-share-summary"
       className={`flex-row items-center ${size.gap}${props.disabled === true ? ' opacity-40' : ''}`}
     >
+      {/* 읽는 차례도 보이는 차례와 같아야 해서 `flex-row-reverse` 로 뒤집지 않고 그리는 차례를 바꾼다. */}
+      {end && change}
       {/* 혼자면 인원을 세지도 않는다. `파티 1인` 은 파티가 아니다. */}
       <Badge testID="party-share-badge" variant="primary" size={size.badge} style={TABULAR_NUMS}>
         {crystalRatio ?? (props.partySize <= 1 ? '솔로' : `파티 ${props.partySize}인`)}
       </Badge>
-      {props.disabled !== true && (
-        <Pressable
-          role="button"
-          aria-label={`${props.label} 파티 인원과 비율 변경`}
-          onPress={props.onPress}
-          hitSlop={HIT_SLOP}
-        >
-          {/* 조용한 글자 버튼이다. 이 줄의 주인공은 값이고 `변경` 은 곁들이다. 디자인 시스템의
-              Text 버튼과 같은 잉크(`초기화` 가 쓰는 것)를 쓴다. */}
-          <Text className="text-11 font-medium text-text-muted">변경</Text>
-        </Pressable>
-      )}
+      {!end && change}
     </View>
   )
 }

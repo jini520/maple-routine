@@ -960,7 +960,7 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
   })
 
   // 자동 모드의 난이도 전환은 멤버십이 아니라 "편집 대상" 전환이다.
-  // 자쿰은 참조표에 카오스 하나뿐이라 세그먼트에 고를 것이 없다. 셋을 가진 스우로 연다.
+  // 자쿰은 참조표에 카오스 하나뿐이라 고르개에 고를 것이 없다. 셋을 가진 스우로 연다.
   it('자동 모드에서 난이도를 바꿔도 멤버십 API 를 부르지 않고 그 난이도의 인원을 편집한다', async () => {
     const store = mockStore({
       status: 'loaded',
@@ -976,7 +976,8 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
     await renderScreen()
     await press(screen.getByLabelText('스우 파티 설정'))
 
-    await press(button('익스트림'))
+    await press(screen.getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
+    await press(screen.getByLabelText('스우 익스트림'))
 
     expect(store.setManualBossDifficulty).not.toHaveBeenCalled()
 
@@ -999,13 +1000,14 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
     await renderScreen()
 
     await press(screen.getByLabelText('스우 파티 설정'))
-    await press(button('노멀'))
+    await press(screen.getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
+    await press(screen.getByLabelText('스우 노멀'))
     await press(screen.getByText('적용'))
 
     expect(store.setManualBossDifficulty).toHaveBeenCalledWith('ocid-1', 'lotus', 'normal')
   })
 
-  // 난이도도 적용에 묶인다(사용자 결정). 세그먼트를 만지는 것만으로 추적 목록이 바뀌면
+  // 난이도도 적용에 묶인다(사용자 결정). 고르개를 만지는 것만으로 추적 목록이 바뀌면
   // 값을 보려고 눌러 본 것이 저장이 된다.
   it('수동 모드에서도 적용 전에는 멤버십을 안 바꾼다', async () => {
     useTrackingModeStore.setState({ mode: 'manual' })
@@ -1020,7 +1022,8 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
     await renderScreen()
 
     await press(screen.getByLabelText('스우 파티 설정'))
-    await press(button('노멀'))
+    await press(screen.getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
+    await press(screen.getByLabelText('스우 노멀'))
     await press(screen.getByLabelText('닫기'))
 
     expect(store.setManualBossDifficulty).not.toHaveBeenCalled()

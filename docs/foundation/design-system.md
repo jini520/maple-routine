@@ -53,7 +53,7 @@
 | `ErrorState` · `StaleBanner` | 실패 상태 · 낡은 목록 위의 실패 배너 |
 | `DataFreshness` | 제목 아래 `hh:mm:ss 기준` 줄 |
 | `UnavailableBadge` | 값 대신 보이는 `조회 불가` 알약 |
-| `Segment` · `DifficultySegment` | 테두리 없는 세그먼트(크기 `sm` 23 · 기본 26 · `md` 31 · 화면 헤더 탭 `tab` 32) · 난이도 고르기 |
+| `Segment` | 테두리 없는 세그먼트(크기 `sm` 23 · 기본 26 · `md` 31 · 화면 헤더 탭 `tab` 32) |
 | `Popover` | `PopoverLayer` · `AnchoredPopover` |
 | `NumberPad` | 짧은 화면에서 숫자 칸이 쓰는 앱 판 |
 | `AmountFigure` | 시트의 큰 숫자. 칠 수 없다 |
@@ -64,7 +64,7 @@
 | `BossPortrait` · `CharacterAvatar` | 보스 얼굴 · 캐릭터 얼굴 원 |
 | `CharacterGroupLabel` | 캐릭터별 묶음 왼쪽의 얼굴 · 이름 열 |
 | `DonutRing` | 비중 도넛. 조각 사이 틈 · 둥근 모서리, 조각이 없으면 회색 링([[ADR-074]] 결정 6) |
-| `DifficultyExpander` | 고른 난이도 배지가 오른쪽으로 펼쳐져 모든 난이도가 되는 고르개([[ADR-074]] 결정 8) |
+| `DifficultyExpander` | 난이도를 고르는 곳 모두가 쓰는 고르개. 고른 난이도 배지가 펼쳐져 모든 난이도가 된다. 오른쪽 끝에 붙으면 `align="end"` 로 왼쪽으로 펼친다([[ADR-074]] 결정 8, [[ADR-093]] 결정 2 · 3) |
 | `FadedIllustration` | 카드 안 일러스트와 베일 |
 | `MvpGradeGrid` · `MvpPlate` | MVP 등급 고르기 · 등급 명패([[ADR-050]]) |
 | `NexonLoginButton` | 넥슨 로그인 버튼([[ADR-025]]) |

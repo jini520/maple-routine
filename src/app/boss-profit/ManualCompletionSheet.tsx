@@ -14,7 +14,7 @@ import { Badge, Text, MinusIcon, PlusIcon } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
 import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
-import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
+import { DifficultyExpander } from '../../components/molecules/DifficultyExpander/DifficultyExpander'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
@@ -161,10 +161,13 @@ export function ManualCompletionSheet(props: ManualCompletionSheetProps): React.
           </Row>
 
           <Row label="난이도">
-            <DifficultySegment
+            {/* 값이 줄 오른쪽 끝에 붙어 있어 왼쪽으로 펼친다. */}
+            <DifficultyExpander
+              label={row.bossName}
               difficulties={difficulties}
-              selected={difficulty}
-              onSelect={changeDifficulty}
+              value={difficulty}
+              onChange={changeDifficulty}
+              align="end"
             />
           </Row>
 

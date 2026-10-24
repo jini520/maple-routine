@@ -2,11 +2,19 @@
 import { fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { BADGE_VARIANT } from '../../../atoms/Badge/variants'
+import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
 import { DifficultyExpander } from '../DifficultyExpander'
 
-function render(onChange = jest.fn()) {
+function render(onChange = jest.fn(), align?: 'start' | 'end') {
   return renderAtom(
-    <DifficultyExpander label="스우" difficulties={['normal', 'hard', 'extreme']} value="hard" onChange={onChange} />,
+    <DifficultyExpander
+      label="스우"
+      difficulties={['normal', 'hard', 'extreme']}
+      value="hard"
+      onChange={onChange}
+      align={align}
+    />,
   )
 }
 
@@ -58,5 +66,65 @@ describe('DifficultyExpander', () => {
     await fireEvent.press(view.getByLabelText('스우 하드'))
 
     expect(onChange).not.toHaveBeenCalled()
+  })
+
+  // 카오스의 금테 · 익스트림의 붉은 테두리가 정식 디자인이다. 고르개만 테두리를 빼면 같은 난이도가 화면마다 달라 보인다.
+  it('배지가 난이도 배지(`Badge`)와 같은 테두리를 그린다', async () => {
+    const view = await render()
+
+    const pill = view.getAllByTestId('difficulty-pill-hard')[0]
+    expect(flattenStyle(pill.props.style)).toMatchObject(BADGE_VARIANT.hard.border)
+  })
+
+  // 바탕은 옆 UI 를 덮는다. 일러스트 위처럼 바탕이 드러나는 자리에서 한쪽만 넓으면 배지 줄과 어긋나 보인다.
+  it.each(['start', 'end'] as const)('펼친 줄 바탕이 배지 줄을 사방으로 같은 여백만큼 감싼다 (%s)', async (align) => {
+    const view = await render(jest.fn(), align)
+
+    await fireEvent.press(view.getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
+
+    const { left, right, top, bottom } = flattenStyle(view.getByTestId('difficulty-expander-plate').props.style)
+    expect(left).toBeLessThan(0)
+    expect([right, top, bottom]).toEqual([left, left, left])
+  })
+
+  // 줄 오른쪽 끝에 붙은 고르개가 오른쪽으로 펼치면 화면 밖으로 넘친다.
+  it('`end` 면 펼친 줄이 오른쪽 끝에 붙어 왼쪽으로 선다', async () => {
+    const view = await render(jest.fn(), 'end')
+
+    await fireEvent.press(view.getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
+
+    const lane = flattenStyle(view.getByTestId('difficulty-expander-lane').props.style)
+    expect(lane.right).toBe(0)
+    expect(lane.left).toBeUndefined()
+  })
+})
+
+// 선택이 실제로 바뀔 때만 손끝이 답한다. 같은 난이도를 다시 누르는 것은 바뀌는 것이 없다.
+describe('DifficultyExpander 의 촉각', () => {
+  const select = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    select.mockClear()
+    setHapticsPort({ tap: async () => {}, select })
+  })
+
+  afterEach(__resetNativePortsForTest)
+
+  it('다른 난이도를 고르면 한 번 난다', async () => {
+    const view = await render()
+
+    await fireEvent.press(view.getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
+    await fireEvent.press(view.getByLabelText('스우 익스트림'))
+
+    expect(select).toHaveBeenCalledTimes(1)
+  })
+
+  it('고른 난이도를 다시 누르면 안 난다', async () => {
+    const view = await render()
+
+    await fireEvent.press(view.getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
+    await fireEvent.press(view.getByLabelText('스우 하드'))
+
+    expect(select).not.toHaveBeenCalled()
   })
 })

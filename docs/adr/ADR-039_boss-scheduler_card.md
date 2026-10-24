@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-018 결정 4 · 5 · 6 · 8 · 9 · 정정 · ADR-019 결정 5 · ADR-121 결정 1 · 4 · ADR-187 결정 2 · 정정 1
-> 관련 소스: `app/boss-scheduler/BossScreen.tsx` 의 `BossCard` · `components/molecules/FadedIllustration/` · `components/molecules/BossPortrait/` · `components/molecules/DifficultySegment/` · `lib/assets/asset-lookup.ts`
+> 관련 소스: `app/boss-scheduler/BossScreen.tsx` 의 `BossCard` · `components/molecules/FadedIllustration/` · `components/molecules/BossPortrait/` · `lib/assets/asset-lookup.ts`
 
 ## 배경
 
@@ -77,16 +77,15 @@
 - 완료한 보스도 누를 수 있다. 파티 인원은 완료와 관계없는 값이다.
 - 보스 표에 없는 보스는 누를 수 없다. 파티 설정을 저장할 key 가 없기 때문이다.
 
-### 결정 7. 난이도 선택 칩은 고르지 않은 난이도도 같은 색 배지로 두고 흐리게만 한다
+### 결정 7. 난이도를 고를 때 고르지 않은 난이도도 같은 색 배지로 두고 흐리게만 한다
 
-파티 모달, 보스 관리 화면, 직접 완료 시트의 난이도 선택 칩은 모두 `DifficultySegment` 하나를 쓴다. 고르지 않은
-난이도도 같은 색의 난이도 배지로 그리고 불투명도만 40% 로 낮춘다. 고른 것과 안 고른 것은 선명도로만 구분한다.
-한 곳만 바꾸면 같은 칩이 화면마다 다르게 보이므로 함께 쓴다.
+난이도를 고르는 곳은 모두 난이도 고르개(`DifficultyExpander`) 하나를 쓴다([[ADR-093]] 결정 2). 펼치면 고르지 않은
+난이도도 같은 색의 난이도 배지로 그리고 불투명도만 낮춘다. 고른 것과 안 고른 것은 선명도로만 구분한다.
 
 메이플 사용자는 난이도를 색과 테두리로 알아본다(사용자 판단). 카오스의 금테, 익스트림의 붉은 테두리, 하드의
 분홍은 게임에서 늘 보는 것이라 흐려도 무엇인지 먼저 알아본다. 그래서 흐린 배지 안 글자의 대비가 낮은 것은
-받아들인다. 이 판단은 이 선택 칩에만 해당하고 다른 흐림 처리로 넓히지 않는다. 불투명도는 스크린리더에 영향이 없어
-글자와 `aria-pressed` 는 그대로 전달된다.
+받아들인다. 이 판단은 난이도 배지에만 해당하고 다른 흐림 처리로 넓히지 않는다. 불투명도는 스크린리더에 영향이 없어
+글자와 선택 상태는 그대로 전달된다.
 
 ## 테스트
 
@@ -96,9 +95,8 @@
 | | 결정 6: 카드를 누르면 모달이 열리는지, 완료한 보스도 열리는지, 보스 표에 없는 보스는 API 이름으로 나오고 누를 수 없는지 본다 |
 
 모달 크롭 표가 카드 표와 같은 보스를 갖는지는 `src/data/__tests__/boss-portrait-modal-crops.spec.ts` 가, 보스 표의
-`portraitSlug` 가 모두 일러스트 파일로 이어지는지는 `lib/__tests__/asset-slug-coverage.spec.ts` 가, 선택 칩의 흐림은
-공용 컴포넌트 테스트
-`components/molecules/DifficultySegment/__tests__/DifficultySegment.test.tsx` 가 확인한다.
+`portraitSlug` 가 모두 일러스트 파일로 이어지는지는 `lib/__tests__/asset-slug-coverage.spec.ts` 가, 고르지 않은 난이도의 흐림은
+`components/molecules/DifficultyExpander/__tests__/DifficultyExpander.test.tsx` 가 확인한다.
 
 ## 번호 기록
 
