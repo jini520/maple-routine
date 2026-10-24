@@ -55,20 +55,6 @@ describe('세그먼트', () => {
   })
 })
 
-describe('도넛 조각', () => {
-  // 면과 선에 진하기를 따로 주면 둘이 겹친 띠가 두 번 칠해져, 연한 조각에 진한 테두리가 생긴다.
-  it('진하기는 조각을 감싼 G 에만 주고, 면과 선에는 주지 않는다', async () => {
-    const view = await 위젯()
-    await 고르기(view, '수익')
-
-    const slices = view.getAllByTestId(/^weekly-income-slice-/)
-    expect(new Set(slices.map((slice) => slice.props.opacity)).size).toBeGreaterThan(1)
-    for (const slice of slices) {
-      expect(JSON.stringify(slice.props.children?.props ?? {})).not.toMatch(/fillOpacity|strokeOpacity/)
-    }
-  })
-})
-
 describe('캐릭터 줄의 팝오버', () => {
   it('순 수익에서는 그 캐릭터의 수익 갈래와 지출 갈래를 함께 띄운다', async () => {
     const view = await 위젯()

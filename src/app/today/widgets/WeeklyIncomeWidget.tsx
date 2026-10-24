@@ -5,12 +5,12 @@
  * 줄을 누르면 그 캐릭터가 어느 갈래에서 벌고 썼는지 팝오버로 띄운다. 위젯 안에서 누르는 것이 있으므로
  * 타일 전체는 누를 수 없다.
  *
- * 색은 통계와 같이 수익은 `rise-ink`, 지출은 `fall-ink` 한 색이고 갈래는 진하기로 가른다.
+ * 색은 통계와 같이 수익은 `rise-ink`, 지출은 `fall-ink` 한 색이고 갈래는 명도 단계로 가른다.
  */
 
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
-import { G, Path } from 'react-native-svg'
+import { Path } from 'react-native-svg'
 
 import { Text } from '../../../components/atoms'
 import { CharacterAvatar } from '../../../components/molecules/CharacterAvatar/CharacterAvatar'
@@ -22,7 +22,7 @@ import type { CategoryTotal, StatsTotals } from '../../../features/stats/aggrega
 import { useAnchoredPopover } from '../../../hooks/useAnchoredPopover'
 import { formatMesoCompact, formatMesoSigned } from '../../../lib/cashbook/meso-compact'
 import { Svg } from '../../../lib/nativewind-interop'
-import { SLICE_LIMIT, SLICE_OPACITY } from '../../../lib/stats/slice-steps'
+import { restSliceColor, SLICE_LIMIT, sliceColor } from '../../../lib/stats/slice-steps'
 import { semiDonutGeometry } from '../../../lib/today/semi-donut'
 import { useThemeAppearance } from '../../../theme/context'
 import type { WeeklyIncomeCharacterView, WeeklyIncomeView } from '../view-model'
@@ -45,7 +45,6 @@ interface Slice {
   name: string
   meso: number
   color: string
-  opacity: number
 }
 
 type Sign = '+' | '−' | null
@@ -62,14 +61,13 @@ function netText(meso: number): string {
 }
 
 /** 갈래를 조각으로. 다섯을 넘으면 앞 넷 뒤를 `그 외 n` 한 조각으로 묶는다 */
-function slicesOf(items: readonly CategoryTotal[], color: string, restColor: string): Slice[] {
+function slicesOf(items: readonly CategoryTotal[], color: string): Slice[] {
   const cut = items.length === SLICE_LIMIT + 1 ? items.length : SLICE_LIMIT
   const slices = items.slice(0, cut).map((item, index) => ({
     key: item.key,
     name: item.name,
     meso: item.meso,
-    color,
-    opacity: SLICE_OPACITY[index],
+    color: sliceColor(color, index),
   }))
   const rest = items.slice(cut)
   if (rest.length > 0) {
@@ -77,8 +75,7 @@ function slicesOf(items: readonly CategoryTotal[], color: string, restColor: str
       key: 'rest',
       name: `그 외 ${rest.length}`,
       meso: rest.reduce((sum, item) => sum + item.meso, 0),
-      color: restColor,
-      opacity: 1,
+      color: restSliceColor(color),
     })
   }
   return slices
@@ -105,7 +102,9 @@ function SemiDonut(props: { slices: readonly Slice[]; trackColor: string; childr
     props.slices.map((slice) => slice.meso),
     { width: DONUT.width, thickness: DONUT.thickness, corner: CORNER, gap: SLICE_GAP },
   )
-  const drawn = props.slices.flatMap((slice, index) => (shape.paths[index] ? [{ slice, d: shape.paths[index] }] : []))
+  const drawn = props.slices.flatMap((slice, index) =>
+    shape.paths[index] ? [{ slice, d: shape.paths[index], strokeWidth: shape.strokeWidths[index] }] : [],
+  )
 
   return (
     <View style={{ width: DONUT.width, height: shape.height }}>
@@ -113,11 +112,16 @@ function SemiDonut(props: { slices: readonly Slice[]; trackColor: string; childr
         {drawn.length === 0 ? (
           <Path d={shape.track} fill={props.trackColor} stroke={props.trackColor} strokeWidth={CORNER * 2} strokeLinejoin="round" />
         ) : (
-          // 진하기는 G 에 준다. 면과 선에 따로 주면 겹친 띠가 두 번 칠해져 연한 조각에 진한 테두리가 생긴다
-          drawn.map(({ slice, d }) => (
-            <G key={slice.key} testID={`weekly-income-slice-${slice.key}`} opacity={slice.opacity}>
-              <Path d={d} fill={slice.color} stroke={slice.color} strokeWidth={CORNER * 2} strokeLinejoin="round" />
-            </G>
+          drawn.map(({ slice, d, strokeWidth }) => (
+            <Path
+              key={slice.key}
+              testID={`weekly-income-slice-${slice.key}`}
+              d={d}
+              fill={slice.color}
+              stroke={slice.color}
+              strokeWidth={strokeWidth}
+              strokeLinejoin="round"
+            />
           ))
         )}
       </Svg>
@@ -131,7 +135,7 @@ function SemiDonut(props: { slices: readonly Slice[]; trackColor: string; childr
 function LegendRow(props: { slice: Slice; amount: string; ink?: string }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-1.5">
-      <View className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: props.slice.color, opacity: props.slice.opacity }} />
+      <View className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: props.slice.color }} />
       <Text className="text-11 text-text-muted">{props.slice.name}</Text>
       <Text style={[TABULAR_NUMS, props.ink === undefined ? undefined : { color: props.ink }]} className="ml-auto text-11 font-semibold text-text">
         {props.amount}
@@ -208,7 +212,7 @@ function RankRow(props: {
                 <View key={row.key} className="flex-row items-center gap-1.5">
                   <View
                     className="h-2 w-2 rounded-[2px]"
-                    style={{ backgroundColor: group.color, opacity: SLICE_OPACITY[Math.min(index, SLICE_OPACITY.length - 1)] }}
+                    style={{ backgroundColor: sliceColor(group.color, index) }}
                   />
                   <Text className="text-[11.5px] text-text">{row.name}</Text>
                   <Text style={TABULAR_NUMS} className="ml-auto pl-4 text-[11.5px] font-semibold text-text">
@@ -254,8 +258,8 @@ export function WeeklyIncomeWidget({ data }: WidgetProps): React.JSX.Element {
   let centerColor: string
   if (mode === '순 수익') {
     slices = [
-      { key: 'income', name: '수익', meso: totals.incomeMeso, color: rise, opacity: 1 },
-      { key: 'expense', name: '지출', meso: totals.expenseMeso, color: fall, opacity: 1 },
+      { key: 'income', name: '수익', meso: totals.incomeMeso, color: rise },
+      { key: 'expense', name: '지출', meso: totals.expenseMeso, color: fall },
     ]
     legend = [
       { slice: slices[0], amount: formatMesoSigned(totals.incomeMeso, '+'), ink: rise },
@@ -265,7 +269,7 @@ export function WeeklyIncomeWidget({ data }: WidgetProps): React.JSX.Element {
     centerColor = netColor
   } else {
     const income = mode === '수익'
-    slices = slicesOf(income ? view.income : view.expense, income ? rise : fall, definition.surface2)
+    slices = slicesOf(income ? view.income : view.expense, income ? rise : fall)
     legend = slices.map((slice) => ({ slice, amount: signedMeso(slice.meso, null) }))
     centerText = signedMeso(income ? totals.incomeMeso : totals.expenseMeso, income ? '+' : '−')
     centerColor = income ? rise : fall

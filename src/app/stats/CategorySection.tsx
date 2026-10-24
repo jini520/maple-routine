@@ -16,7 +16,8 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { CategoryTotal } from '../../features/stats/aggregate'
 import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
-import { SLICE_LIMIT, SLICE_OPACITY } from '../../lib/stats/slice-steps'
+import { restSliceColor, SLICE_LABEL_INK, SLICE_LIMIT, sliceColor } from '../../lib/stats/slice-steps'
+import { arcPath, semiDonutSpans, type SemiDonutSpan } from '../../lib/today/semi-donut'
 import { useThemeAppearance } from '../../theme/context'
 import { useRevealProgress } from './reveal'
 import { StatsSection } from './StatsSection'
@@ -32,12 +33,17 @@ const BASE = { width: 300, cx: 116, cy: 122, outer: 108, inner: 52 }
 /** 바깥 라벨(두 줄) 사이 간격과 높이. 글자는 화면 폭을 안 따라 커지므로 설계 좌표가 아니라 px 이다 */
 const LABEL_GAP = 32
 const LABEL_HEIGHT = 30
+/** 조각 모서리의 둥근 정도. 조각을 이만큼 안으로 줄이고 같은 색 선으로 두르면 모서리가 둥글어진다 */
+const CORNER = 8
+/** 조각 사이 틈(px) */
+const SLICE_GAP = 3
 
 interface Slice {
   key: string
   name: string
   meso: number
-  opacity: number
+  /** 큰 순서. 조각 색의 명도 단계다 */
+  step: number
   rest: boolean
   /** 누르면 팝오버에 뜨는 줄. 없으면 안 눌린다 */
   details: readonly CategoryTotal[]
@@ -51,7 +57,7 @@ function slicesOf(items: readonly CategoryTotal[]): Slice[] {
     key: item.key,
     name: item.name,
     meso: item.meso,
-    opacity: SLICE_OPACITY[index],
+    step: index,
     rest: false,
     details: item.parts ?? [],
   }))
@@ -60,7 +66,7 @@ function slicesOf(items: readonly CategoryTotal[]): Slice[] {
       key: 'rest',
       name: `그 외 ${rest.length}`,
       meso: rest.reduce((sum, item) => sum + item.meso, 0),
-      opacity: 1,
+      step: slices.length,
       rest: true,
       details: rest,
     })
@@ -68,17 +74,10 @@ function slicesOf(items: readonly CategoryTotal[]): Slice[] {
   return slices
 }
 
-function arcPath(cx: number, cy: number, outer: number, inner: number, from: number, to: number): string {
-  'worklet'
-  const point = (radius: number, angle: number): string =>
-    `${(cx + radius * Math.sin(angle)).toFixed(2)} ${(cy - radius * Math.cos(angle)).toFixed(2)}`
-  const large = to - from > Math.PI ? 1 : 0
-  return `M${point(outer, from)} A${outer} ${outer} 0 ${large} 1 ${point(outer, to)} L${point(inner, to)} A${inner} ${inner} 0 ${large} 0 ${point(inner, from)} Z`
-}
-
 /**
  * 왼쪽 끝에서 진행값만큼 자라는 조각. 쓸기를 `ClipPath` 로 내면 안드로이드에서 안 보인다. react-native-svg 가
  * 클립 안 도형이 바뀌어도 다시 그리지 않아 첫 프레임의 빈 클립에 굳는다. 그래서 조각 자신의 `d` 를 움직인다.
+ * 자라는 끝은 틈을 벌리지 않는다. 다 자란 뒤에만 옆 조각과의 틈만큼 깎는다.
  */
 function SweepSlice(props: {
   progress: SharedValue<number>
@@ -88,33 +87,35 @@ function SweepSlice(props: {
   inner: number
   from: number
   to: number
+  /** 양 끝을 반지름 선에서 안쪽으로 옮길 거리. 반원의 양 끝은 0 이다 */
+  cut: { from: number; to: number }
+  /** 둥근 정도. `outer` · `inner` 는 이만큼 줄인 경로 반지름이다 */
+  corner: number
   fill: string
-  fillOpacity: number
-  stroke: string
   onPress?: () => void
 }): React.JSX.Element {
-  const { progress, cx, cy, outer, inner, from, to } = props
+  const { progress, cx, cy, outer, inner, from, to, cut } = props
   const animatedProps = useAnimatedProps(() => {
     const end = Math.min(to, -Math.PI / 2 + Math.PI * progress.value)
-    return { d: end <= from ? 'M0 0' : arcPath(cx, cy, outer, inner, from, end) }
+    const endCut = end >= to ? cut.to : 0
+    // 안쪽 호가 각이 더 많이 깎이므로, 안쪽에서 양 끝이 엇갈리면 틈보다 좁은 조각이다
+    const left = end - from - Math.asin(cut.from / inner) - Math.asin(endCut / inner)
+    return { d: left <= 0 ? 'M0 0' : arcPath(cx, cy, outer, inner, from, end, { from: cut.from, to: endCut }) }
   })
   return (
     <AnimatedPath
       animatedProps={animatedProps}
       fill={props.fill}
-      fillOpacity={props.fillOpacity}
-      stroke={props.stroke}
-      strokeWidth={2}
+      stroke={props.fill}
+      strokeWidth={props.corner * 2}
       strokeLinejoin="round"
       onPress={props.onPress}
     />
   )
 }
 
-interface DrawnSlice {
+interface DrawnSlice extends SemiDonutSpan {
   slice: Slice
-  from: number
-  to: number
   mid: number
   span: number
 }
@@ -131,16 +132,16 @@ interface OutsideLabel extends DrawnSlice {
  */
 function layoutSlices(
   slices: readonly Slice[],
-  total: number,
-  box: { cx: number; cy: number; outer: number; height: number },
+  box: { cx: number; cy: number; outer: number; inner: number; height: number },
 ): { drawn: DrawnSlice[]; outside: OutsideLabel[] } {
-  const drawn: DrawnSlice[] = []
-  let angle = -Math.PI / 2
-  for (const slice of slices) {
-    const span = (slice.meso / total) * Math.PI
-    drawn.push({ slice, from: angle, to: angle + span, mid: angle + span / 2, span })
-    angle += span
-  }
+  const spans = semiDonutSpans(
+    slices.map((slice) => slice.meso),
+    { innerEdge: box.inner, corner: CORNER, gap: SLICE_GAP },
+  )
+  const drawn: DrawnSlice[] = slices.map((slice, index) => {
+    const { from, to, cut, corner } = spans[index]
+    return { slice, from, to, cut, corner, mid: (from + to) / 2, span: to - from }
+  })
 
   const outside: OutsideLabel[] = drawn
     .filter((part) => part.span < INSIDE_MIN_SPAN)
@@ -219,9 +220,9 @@ export const CategorySection = memo(function CategorySection(props: {
   const cy = BASE.cy * scale
   const outer = BASE.outer * scale
   const inner = BASE.inner * scale
-  const height = cy + 8
+  const height = cy + CORNER + 2
 
-  const { drawn, outside } = layoutSlices(slices, total, { cx, cy, outer, height })
+  const { drawn, outside } = layoutSlices(slices, { cx, cy, outer, inner, height })
   const labelX = cx + outer + 14 * scale
 
   const percent = (meso: number): string => `${Math.round((meso / total) * 100)}%`
@@ -272,19 +273,19 @@ export const CategorySection = memo(function CategorySection(props: {
     <StatsSection title={props.title} testID={`stats-category-${props.side}`}>
       <View style={{ height }} onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}>
         <Svg width={width} height={height}>
-          {drawn.map(({ slice, from, to }) => (
+          {drawn.map(({ slice, from, to, cut, corner }) => (
             <SweepSlice
               key={slice.key}
               progress={progress}
               cx={cx}
               cy={cy}
-              outer={outer}
-              inner={inner}
+              outer={outer - corner}
+              inner={inner + corner}
               from={from}
               to={to}
-              fill={slice.rest ? definition.surface2 : color}
-              fillOpacity={slice.rest ? 1 : slice.opacity}
-              stroke={definition.surface}
+              cut={cut}
+              corner={corner}
+              fill={slice.rest ? restSliceColor(color) : sliceColor(color, slice.step)}
               onPress={slice.details.length > 0 ? () => toggle(slice.key) : undefined}
             />
           ))}
@@ -304,7 +305,6 @@ export const CategorySection = memo(function CategorySection(props: {
           .filter((part) => part.span >= INSIDE_MIN_SPAN)
           .map(({ slice, mid }) => {
             const radius = (outer + inner) / 2
-            const ink = !slice.rest && slice.opacity >= 0.7 ? definition.surface : definition.text
             return (
               <View
                 key={`label-${slice.key}`}
@@ -316,7 +316,7 @@ export const CategorySection = memo(function CategorySection(props: {
                   transform: [{ translateX: '-50%' }, { translateY: '-50%' }],
                 }}
               >
-                {labelText(slice, true, ink)}
+                {labelText(slice, true, SLICE_LABEL_INK)}
               </View>
             )
           })}

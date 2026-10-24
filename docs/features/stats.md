@@ -10,7 +10,7 @@
 | `app/stats/StatsScreen.tsx` | 머리(주간 · 월간) · 기간 줄 · 카드 일곱. 읽은 표가 바뀌면 다시 읽는다 |
 | `app/stats/StatsSection.tsx` | 카드 틀 |
 | `app/stats/TrendSection.tsx` · `CharacterSection.tsx` · `CategorySection.tsx` · `BossSection.tsx` · `CumulativeSection.tsx` | 카드 |
-| `lib/stats/slice-steps.ts` | 도넛 조각의 진하기 단계와 조각 수 상한. today 이번 주 수익 도넛도 쓴다 |
+| `lib/stats/slice-steps.ts` | 도넛 조각의 명도 단계 · `그 외` 색 · 조각 안 글자색과 조각 수 상한. today 이번 주 수익 도넛도 쓴다 |
 | `app/stats/StatsSkeleton.tsx` | 값을 읽는 동안의 스켈레톤 |
 | `app/stats/reveal.ts` | 화면에 들어온 카드의 그래프를 자라게 하는 진행값 |
 | `features/stats/aggregate.ts` | 합계 · 추이 · 누적 · 캐릭터별 · 항목별 · 보스별 집계 |

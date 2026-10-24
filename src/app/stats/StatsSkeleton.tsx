@@ -83,7 +83,7 @@ function DonutChart(): React.JSX.Element {
   const inner = DONUT.inner * scale
   return (
     <View
-      style={{ height: cy + 8 }}
+      style={{ height: cy + 10 }}
       onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
     >
       <View className="absolute left-0 right-0 top-0 overflow-hidden" style={{ height: cy }}>
