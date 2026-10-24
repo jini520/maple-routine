@@ -113,7 +113,7 @@ import { useSettlementStore } from '../../../features/settlement/store'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
-import { BOSS_SLOT_MAX_PX, CashbookScreen } from '../CashbookScreen'
+import { BOSS_SLOT_GAP_PX, BOSS_SLOT_PX, CashbookScreen } from '../CashbookScreen'
 
 const records = jest.requireMock('../../../features/cashbook/records') as Record<string, jest.Mock>
 
@@ -1435,20 +1435,29 @@ describe('자동으로 흘러든 줄', () => {
     expect(within(마지막줄).getAllByTestId(/^cashbook-boss-slot-/)).toHaveLength(6)
   })
 
-  // 칸은 `flex-1` 여섯이라 남는 픽셀까지 Yoga 가 나눠 준다. 반올림으로 넘칠 자리가 없다.
-  // **상한이 붙는다**. 안 붙이면 넓은 기기에서 칸이 넓어진 만큼 타일 사이가 벌어진다.
-  it('칸은 폭을 안 들되 상한이 있다. 줄을 여섯이 나누고 그 이상은 안 벌어진다', async () => {
+  // 칸 폭이 고정이어야 배지 줄이 초상 아래에서 칸마다 같은 자리에 선다. 여섯 칸이 줄 카드 안에 들어가는 폭이다.
+  it('칸은 고정 폭이고 줄 가운데로 모인다', async () => {
     const view = await 그리기()
     await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
 
     const 칸 = flattenStyle(view.getByTestId('cashbook-boss-slot-lotus|hard').props.style)
-    expect(칸.width).toBeUndefined()
-    expect(칸.flexGrow).toBe(1)
-    expect(칸.maxWidth).toBe(BOSS_SLOT_MAX_PX)
+    expect(칸.width).toBe(BOSS_SLOT_PX)
 
-    // 상한에 걸려 줄이 덜 차면 **가운데로** 모인다. 왼쪽으로 붙으면 오른쪽만 비어 기운다.
+    // 줄이 덜 차면 **가운데로** 모인다. 왼쪽으로 붙으면 오른쪽만 비어 기운다.
     const 줄 = flattenStyle(view.getAllByTestId(/^cashbook-boss-row-/)[0].props.style)
     expect(줄.justifyContent).toBe('center')
+    expect(줄.columnGap ?? 줄.gap).toBe(BOSS_SLOT_GAP_PX)
+  })
+
+  // 한 글자(`H`)는 줄여 쓴 말을 풀어야 읽힌다. 배지가 초상 위에 겹치면 얼굴을 가린다.
+  it('난이도 배지는 초상 아래에 이름 전부로 선다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+
+    const 칸 = view.getByTestId('cashbook-boss-tile-lotus|hard')
+    expect(within(칸).getByText('하드')).toBeTruthy()
+    expect(within(칸).queryByText('H')).toBeNull()
+    expect(flattenStyle(view.getByTestId('cashbook-boss-badge-lotus|hard').props.style).position).toBeUndefined()
   })
 
   // 눈으로 읽던 것이 사라졌으므로 그 자리를 접근성 이름이 받아야 한다.
@@ -1460,21 +1469,15 @@ describe('자동으로 흘러든 줄', () => {
     expect(view.getByLabelText('노멀 데미안')).toBeTruthy()
   })
 
-  // 펼친 판은 줄과 **한 카드**여야 한다. 따로 선 상자로 보이면 **이 줄이 편 것** 이 끊긴다.
-  // NativeWind 가 이 클래스를 못 만들면 조용히 테두리가 남으므로 값으로 본다.
-  it('펼치면 줄과 판 사이의 선이 사라진다', async () => {
+  // 펼친 판은 줄과 **한 카드**여야 한다. 카드 밖에 따로 붙으면 둘 사이에 다시 경계 선이 필요해진다.
+  it('펼친 판은 테두리 없이 그 줄의 카드 안에 선다', async () => {
     const view = await 그리기()
-    const 줄 = view.getByTestId('cashbook-row-bossCrystal:ocid-1')
-
-    // 접혀 있으면 네 귀가 둥근 카드 하나다.
-    expect(flattenStyle(줄.props.style)).toMatchObject({ borderRadius: 12, borderWidth: 1 })
+    const 카드 = view.getByTestId('cashbook-row-card-bossCrystal:ocid-1')
+    expect(flattenStyle(카드.props.style).borderWidth).toBeUndefined()
 
     await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
 
-    // 펼치면 아래쪽 선이 0 이 되고 아래 두 귀가 각진다. 판이 그 자리를 잇는다.
-    const 펼친줄 = flattenStyle(줄.props.style)
-    expect(펼친줄).toMatchObject({ borderTopLeftRadius: 12, borderBottomWidth: 0 })
-    expect(펼친줄.borderRadius).toBeUndefined()
+    expect(within(카드).getByTestId('cashbook-row-bosses-bossCrystal:ocid-1')).toBeTruthy()
   })
 
   it('다시 누르면 접힌다', async () => {

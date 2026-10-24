@@ -39,13 +39,15 @@ import {
   Text,
 } from '../../components/atoms'
 import { CalendarGrid } from '../../components/molecules/CalendarGrid/CalendarGrid'
-import { DIFFICULTY_NAME, DIFFICULTY_SHORT } from '../../constants/domain/boss-difficulty'
+import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { FAB_SPACE_PX } from '../../lib/fab-metrics'
+import { PORTRAIT_SHADOW, boxShadowOf } from '../../lib/shadow'
+import { useThemeAppearance } from '../../theme/context'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -250,12 +252,9 @@ function PeriodSummary(props: {
  * 글자 둘(이름 · 금액)만 놓으면 줄이 목록이 아니라 요약으로 보인다. 바로 위 두 줄
  * (수입/지출 합계)이 정확히 그 모양이라 눈이 같은 것으로 묶는다. 셋으로 가른다.
  *
- * ① 상자를 준다. 합계는 배경 없는 줄, 기록은 `bg-surface` 카드.
+ * ① 줄마다 카드 하나. 합계도 카드 한 줄이지만 왼쪽이 색 점이라 표식 · 화살촉이 있는 줄과 갈린다.
  * ② 왼쪽에 갈래 표식. 수입은 `ProfitIcon`, 지출은 `ShoppingCartIcon`.
  * ③ 오른쪽에 화살촉. 눌러서 들어가는 줄에 이 저장소가 쓰는 표식 그대로다.
- *
- * 누를 때 흐려지는 것은 `active:` 로 준다. className 과 함수형 `style` 을 같이 주면
- * cssInterop 에서 정적 스타일이 통째로 사라진다.
  *
  * 캐시로 낸 지출만 원으로 적는다. 환산을 안 하므로 메소로 적을 값이 없다.
  *
@@ -264,23 +263,13 @@ function PeriodSummary(props: {
  * `⌄`/`⌃`(편다). 읽어 주는 이름도 함께 갈린다(`고치기` · `펼치기`/`접기` · `보스 수익에서 보기`).
  * 아이콘은 자동 줄 둘 다 수익이라 `ProfitIcon` 이다. 둘을 가르는 것은 그림이 아니라 이름이다.
  */
-/** 타일 한 변. **칸 폭과 무관하게 고정**이다. 칸은 줄을 여섯이 나눠 기기마다 넓다. */
-const BOSS_TILE_PX = 44
+/** 초상 한 변 · 칸 폭 · 칸 사이. 여섯 칸(44 × 6 + 6 × 5 = 294)이 가장 좁은 줄 카드 안에 들어가는 값이다. */
+const BOSS_PORTRAIT_PX = 40
+export const BOSS_SLOT_PX = 44
+export const BOSS_SLOT_GAP_PX = 6
 
 /** 한 줄에 서는 마리 수. 레이아웃의 결과가 아니라 여기서 정한다. */
 const BOSSES_PER_ROW = 6
-
-/**
- * 칸 폭의 상한. 타일 사이의 좌우 간격이 여기서 나온다(`상한 − 타일` = 8px, 줄 사이 간격과
- * 같은 값).
- *
- * 상한이 없으면 칸이 줄을 그냥 여섯으로 나눠 넓은 기기일수록 타일 사이가 벌어진다
- * (390dp 에서 12.7px, 430dp 에서 15.5px). 남는 폭은 줄 양끝으로 간다(`justify-center`).
- *
- * `flex-1` 을 안 버리고 상한만 얹는 것은 좁은 기기 때문이다. 320dp 에서는 칸이 상한보다
- * 좁아져야 여섯이 다 들어간다.
- */
-export const BOSS_SLOT_MAX_PX = BOSS_TILE_PX + 8
 
 function chunkBosses(bosses: readonly DefeatedBoss[]): DefeatedBoss[][] {
   const rows: DefeatedBoss[][] = []
@@ -293,69 +282,63 @@ function chunkBosses(bosses: readonly DefeatedBoss[]): DefeatedBoss[][] {
 /**
  * 펼친 결정석 줄의 타일 판. 그날 잡은 보스를 초상으로 편다.
  *
- * 새로 만든 그림이 0개다. 초상은 `BossPortrait`, 난이도는 `Badge`, 슬러그는 `bossPortraitSlugOf`.
- * 셋 다 보스 수익 탭의 보스 행이 쓰는 그것이다.
+ * 칸 모양은 파티 스케줄의 보스 선택 줄(`BossPickerTray`)과 같다. 원형 초상이 옅은 그림자로 뜨고, 그 아래에 난이도
+ * 이름 전부를 적은 배지가 선다. 같은 보스 묶음이 두 화면에서 다르게 생기지 않게 하려는 것이다.
  *
  * 마리당 금액은 안 적는다. 줄 머리가 합계를 이미 들고 있고, 마리당 금액은 파티원 수·정가와
  * 함께 봐야 뜻이 생긴다. 여기서 답하는 질문은 얼마 가 아니라 무엇 이다.
  *
- * 모양은 네모(`shape="square"`)다. 원이 격자로 서면 네 귀가 비어 사이가 성겨 보인다.
- * 난이도는 초상 위 왼쪽 아래에 겹친다. 따로 한 줄로 두면 타일 높이가 배지만큼 늘어 격자가
- * 세로로 성겨진다. 글자는 한 칸이다(`H`·`EX`). 색이 이미 난이도를 말한다.
+ * 한 줄에 여섯이고, 여섯씩 끊은 배열을 줄마다 그린다. 줄 묶음은 가운데에 서서 넓은 기기에서도 칸 사이가 6 이다.
  *
- * 한 줄에 여섯이고 폭으로 재지 않는다. `w-1/6` 은 `16.67%` 로 컴파일돼 여섯이면 100.02% 라
- * 마지막 하나가 다음 줄로 밀린다. 그래서 여섯씩 끊은 배열을 만들고 한 줄은 `flex-1` 칸
- * 여섯이다. `flex-1` 은 남는 픽셀까지 Yoga 가 나눠 줘 반올림으로 넘칠 자리가 없다.
- *
- * 초상은 칸 안에 가운데로 44px 고정이다. 넓은 기기에서 칸이 넓어져도 타일은 안 커지고,
- * 칸 상한(`BOSS_SLOT_MAX_PX`)이 남는 폭을 줄 양끝으로 보내 좌우 간격이 어디서나 8px 다.
- *
- * 이름은 없고 그 자리를 접근성 이름이 받는다(난이도 + 보스). 눈으로 읽던 것이 사라졌다고
- * 스크린리더에서도 사라지면 그것은 간략하게 가 아니라 없어짐 이다.
+ * 이름은 없고 그 자리를 접근성 이름이 받는다(난이도 + 보스).
  */
 function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBoss[] }): React.JSX.Element {
+  const { definition } = useThemeAppearance()
+  const shadow = boxShadowOf(definition.shadowColor, PORTRAIT_SHADOW)
   return (
     <View
       testID={`cashbook-row-bosses-${props.rowKey}`}
-      className="gap-y-2 rounded-b-xl border border-t-0 border-border bg-surface px-2 pb-2.5 pt-1.5"
+      className="mx-2.5 mb-2.5 gap-y-2.5 rounded-[10px] bg-card-inset pb-2.5 pt-3"
     >
       {chunkBosses(props.bosses).map((row, rowIndex) => (
         <View
           key={`${row[0].bossKey}|${row[0].difficulty}`}
           testID={`cashbook-boss-row-${rowIndex}`}
           className="flex-row justify-center"
+          style={{ gap: BOSS_SLOT_GAP_PX }}
         >
           {row.map((boss) => (
             <View
               key={`${boss.bossKey}|${boss.difficulty}`}
               testID={`cashbook-boss-slot-${boss.bossKey}|${boss.difficulty}`}
-              className="flex-1 items-center"
-              style={{ maxWidth: BOSS_SLOT_MAX_PX }}
+              className="items-center"
+              style={{ width: BOSS_SLOT_PX }}
             >
-              <View testID={`cashbook-boss-tile-${boss.bossKey}|${boss.difficulty}`}>
-                <BossPortrait
-                  portraitSlug={bossPortraitSlugOf(boss.bossKey)}
-                  // 이름 줄이 없으므로 그 정보는 여기서만 말한다.
-                  label={`${DIFFICULTY_NAME[boss.difficulty]} ${boss.bossName}`}
-                  size={BOSS_TILE_PX}
-                  shape="square"
-                />
-                <View className="absolute bottom-0.5 left-0.5">
+              <View testID={`cashbook-boss-tile-${boss.bossKey}|${boss.difficulty}`} className="items-center gap-1">
+                <View style={{ borderRadius: BOSS_PORTRAIT_PX / 2, boxShadow: shadow }}>
+                  <BossPortrait
+                    portraitSlug={bossPortraitSlugOf(boss.bossKey)}
+                    // 이름 줄이 없으므로 그 정보는 여기서만 말한다.
+                    label={`${DIFFICULTY_NAME[boss.difficulty]} ${boss.bossName}`}
+                    size={BOSS_PORTRAIT_PX}
+                  />
+                </View>
+                {/* 배지 줄은 칸 사이까지 쓴다. 칸 폭(44)에 가두면 `익스트림`(약 49)이 두 줄로 꺾인다. 이웃 배지와는 겹치지 않는다. */}
+                <View
+                  testID={`cashbook-boss-badge-${boss.bossKey}|${boss.difficulty}`}
+                  className="items-center"
+                  style={{ width: BOSS_SLOT_PX + BOSS_SLOT_GAP_PX, marginHorizontal: -BOSS_SLOT_GAP_PX / 2 }}
+                >
                   <Badge variant={boss.difficulty} size="mini">
-                    {DIFFICULTY_SHORT[boss.difficulty]}
+                    {DIFFICULTY_NAME[boss.difficulty]}
                   </Badge>
                 </View>
               </View>
             </View>
           ))}
-          {/* 덜 찬 줄을 빈 칸으로 채운다. 안 채우면 남은 둘이 반반씩 벌어져 앞줄과 격자가 안 맞는다. */}
+          {/* 덜 찬 줄을 빈 칸으로 채운다. 안 채우면 남은 칸이 가운데로 모여 앞줄과 격자가 안 맞는다. */}
           {Array.from({ length: BOSSES_PER_ROW - row.length }, (_, index) => (
-            <View
-              key={`empty-${index}`}
-              testID={`cashbook-boss-slot-empty-${index}`}
-              className="flex-1"
-              style={{ maxWidth: BOSS_SLOT_MAX_PX }}
-            />
+            <View key={`empty-${index}`} testID={`cashbook-boss-slot-empty-${index}`} style={{ width: BOSS_SLOT_PX }} />
           ))}
         </View>
       ))}
@@ -379,7 +362,7 @@ function EnhancedItemRows(props: {
   return (
     <View
       testID={`cashbook-row-items-${props.rowKey}`}
-      className="gap-y-1.5 rounded-b-xl border border-t-0 border-border bg-surface px-2.5 pb-2.5 pt-1.5"
+      className="mx-2.5 mb-2.5 gap-y-1.5 rounded-[10px] bg-card-inset px-2.5 py-2.5"
     >
       {props.items.map((item) => (
         <View
@@ -416,7 +399,7 @@ function SoldItemRows(props: { rowKey: string; items: readonly SoldItem[] }): Re
   return (
     <View
       testID={`cashbook-row-items-${props.rowKey}`}
-      className="gap-y-1.5 rounded-b-xl border border-t-0 border-border bg-surface px-2.5 pb-2.5 pt-1.5"
+      className="mx-2.5 mb-2.5 gap-y-1.5 rounded-[10px] bg-card-inset px-2.5 py-2.5"
     >
       {props.items.map((item, index) => {
         const icon = dropItemIconOf(item.itemKey)
@@ -440,6 +423,28 @@ function SoldItemRows(props: { rowKey: string; items: readonly SoldItem[] }): Re
           </View>
         )
       })}
+    </View>
+  )
+}
+
+/** 고른 날 합계 카드의 반쪽. 색 점 · 이름 · 금액이 한 줄이고 금액은 반쪽 오른쪽 끝에 맞춘다. */
+function DayTotalHalf(props: {
+  label: string
+  sign: '+' | '−'
+  amount: number
+  tone: 'rise' | 'fall'
+}): React.JSX.Element {
+  return (
+    <View className="min-w-0 flex-1 flex-row items-center gap-1.5">
+      <View className={`h-2 w-2 rounded-full ${props.tone === 'rise' ? 'bg-rise-ink' : 'bg-fall-ink'}`} />
+      <Text className="text-xs text-text-muted">{props.label}</Text>
+      <Text
+        numberOfLines={1}
+        className={`ml-auto shrink text-15 font-bold ${props.tone === 'rise' ? 'text-rise-ink' : 'text-fall-ink'}`}
+        style={TABULAR_NUMS}
+      >
+        {formatMesoSigned(props.amount, props.sign)}
+      </Text>
     </View>
   )
 }
@@ -477,7 +482,8 @@ function DayRecordRow(props: {
   const action = !expandable ? '고치기' : isOpen ? '접기' : '펼치기'
 
   return (
-    <View>
+    // 줄과 펼친 판이 테두리 없는 카드 하나다. 판이 카드 밖에 따로 붙으면 둘 사이에 다시 경계 선이 필요해진다.
+    <View testID={`cashbook-row-card-${rowKey}`} className="rounded-[14px] bg-surface">
       <Pressable
         role="button"
         testID={`cashbook-row-${rowKey}`}
@@ -486,26 +492,22 @@ function DayRecordRow(props: {
         aria-label={`${recordTitleOf(entry)} ${action}`}
         aria-expanded={expandable ? isOpen : undefined}
         onPress={props.onPress}
-        // 펼치면 한 카드가 된다. 아래 판과 테두리를 잇고 그 사이의 선을 지운다. 판이 따로 선
-        // 상자로 보이면 이 줄이 편 것 이라는 사실이 끊긴다.
-        className={`flex-row items-center gap-2 border border-border bg-surface py-2 pl-2 pr-1.5 active:opacity-60 ${
-          isOpen ? 'rounded-t-xl border-b-0' : 'rounded-xl'
-        }`}
+        className="flex-row items-center gap-2.5 py-3 pl-3 pr-2.5"
       >
-        {/* 자리는 그림이 있든 없든 **같은 24**다. 크기가 갈리면 줄 높이가 흔들려 목록이
+        {/* 자리는 그림이 있든 없든 **같은 28**다. 크기가 갈리면 줄 높이가 흔들려 목록이
             울퉁불퉁해진다.
 
             바탕은 아이콘일 때만 칠한다(사용자 지정). 선 아이콘은 색 있는 판이 있어야 표식으로
             읽히지만 게임 그림은 그 자체가 이미 그림이라, 뒤에 원을 깔면 두 그림이 겹쳐 보인다. */}
         <View
           testID={`cashbook-row-icon-${rowKey}`}
-          className={`h-6 w-6 items-center justify-center rounded-full ${
+          className={`h-7 w-7 items-center justify-center rounded-full ${
             rowIcon !== null ? '' : income ? 'bg-rise-tint' : 'bg-fall-tint'
           }`}
         >
           {rowIcon === null ? (
             <Icon
-              className={`h-3.5 w-3.5 ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
+              className={`h-4 w-4 ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
               strokeWidth={2}
               aria-hidden
             />
@@ -513,26 +515,29 @@ function DayRecordRow(props: {
             <Image
               testID={`cashbook-row-image-${rowKey}`}
               source={rowIcon}
-              className="h-5 w-5"
+              className="h-6 w-6"
               resizeMode="contain"
               aria-hidden
             />
           )}
         </View>
 
-        <Text numberOfLines={1} className="shrink text-xs text-text">
-          {recordTitleOf(entry)}
-        </Text>
-        {countLabel !== null && (
-          // 갈래마다 세는 것이 다르다(`×2` · `12마리` · `3건 · 미입력 2`). 그 분기는 화면이 아니라
-          // `recordCountLabelOf` 가 든다.
-          <Text numberOfLines={1} className="shrink-0 text-11 text-text-muted" style={TABULAR_NUMS}>
-            {countLabel}
+        {/* 셈은 이름 아래 둘째 줄이다. 이름 옆에 두면 긴 이름이 그만큼 더 잘린다. */}
+        <View className="min-w-0 flex-1">
+          <Text numberOfLines={1} className="text-13 font-medium text-text">
+            {recordTitleOf(entry)}
           </Text>
-        )}
+          {countLabel !== null && (
+            // 갈래마다 세는 것이 다르다(`×2` · `12마리` · `3건 · 미입력 2`). 그 분기는 화면이 아니라
+            // `recordCountLabelOf` 가 든다.
+            <Text numberOfLines={1} className="text-11 text-text-muted" style={TABULAR_NUMS}>
+              {countLabel}
+            </Text>
+          )}
+        </View>
 
         <Text
-          className={`ml-auto shrink-0 text-xs font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
+          className={`shrink-0 text-sm font-bold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
           style={TABULAR_NUMS}
         >
           {cash === null
@@ -1075,7 +1080,7 @@ export function CashbookScreen(): React.JSX.Element {
           />
 
           <View className="gap-2">
-            <Text testID="cashbook-selected-day" className="text-sm font-semibold text-text">
+            <Text testID="cashbook-selected-day" className="px-1 text-sm font-semibold text-text">
               {formatDayLabel(selectedDateKey)}
             </Text>
             {dayLoading ? null : dayRecords.length === 0 ? (
@@ -1087,24 +1092,17 @@ export function CashbookScreen(): React.JSX.Element {
                 />
               </View>
             ) : (
-              <View testID="cashbook-day-total" className="gap-1">
-                <View className="flex-row justify-between">
-                  <Text className="text-xs text-text-muted">수입</Text>
-                  <Text className="text-sm font-semibold text-rise-ink" style={TABULAR_NUMS}>
-                    {formatMesoSigned(selectedTotals.incomeMeso, '+')}
-                  </Text>
-                </View>
-                <View className="flex-row justify-between">
-                  <Text className="text-xs text-text-muted">지출</Text>
-                  <Text className="text-sm font-semibold text-fall-ink" style={TABULAR_NUMS}>
-                    {formatMesoSigned(selectedTotals.expenseMeso, '−')}
-                  </Text>
+              <View testID="cashbook-day-total" className="gap-1.5">
+                {/* 줄 카드와 같은 높이의 한 줄이라, 목록이 그만큼 올라와 고른 날의 줄이 스크롤 없이 더 보인다. */}
+                <View className="mb-1 flex-row gap-3 rounded-[14px] bg-surface px-3.5 py-3">
+                  <DayTotalHalf label="수입" sign="+" amount={selectedTotals.incomeMeso} tone="rise" />
+                  <DayTotalHalf label="지출" sign="−" amount={selectedTotals.expenseMeso} tone="fall" />
                 </View>
 
                 {dayRecords.length > 0 && (
                   // 합계 아래에 적은 것이 한 줄씩 선다. 접지 않는다. 같은 날 같은 것을 두 번
                   // 적은 것은 정상이고, 접으면 어느 쪽을 고치는지 못 고른다.
-                  <View className="mt-1.5 gap-1.5 border-t border-border pt-2">
+                  <View className="gap-1.5">
                     {dayRecords.map((entry) => (
                       <DayRecordRow
                         key={rowKeyOf(entry)}

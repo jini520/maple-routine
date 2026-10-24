@@ -46,3 +46,6 @@ export function boxShadowOf(shadowColor: string, { opacity, radius, y }: ShadowL
 
 /** 드롭다운을 펼친 목록의 그림자. 테두리가 없어 이것이 목록을 바탕에서 띄운다 */
 export const DROPDOWN_SHADOW: ShadowLayer = { opacity: 1, radius: 10, y: 4 }
+
+/** 바탕 위에 뜬 원형 보스 초상의 옅은 그림자. 보스 선택 줄과 가계부의 펼친 결정석 줄이 같이 쓴다 */
+export const PORTRAIT_SHADOW: ShadowLayer = { opacity: 0.35, radius: 3, y: 2 }
