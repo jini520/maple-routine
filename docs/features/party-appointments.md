@@ -16,13 +16,19 @@
 | `features/party-appointments/occurrences.ts` | 한 주의 회차 펼치기 |
 | `features/party-appointments/draft.ts` | 시트의 처음 값 · 시각 계산 · 저장 조건 · 스케줄로 바꾸기 |
 | `features/party-appointments/edit.ts` | 수정 · 삭제 |
-| `features/party-appointments/agenda.ts` | 요일별 묶기 · 종료 표기 · 이번 주로 돌아가는 방향 |
+| `features/party-appointments/agenda.ts` | 요일별 묶기 · 종료 표기 · 남은 시간 표기 · 이번 주로 돌아가는 방향 |
 | `features/party-appointments/boss-groups.ts` · `boss-picker.ts` | 캐릭터 묶음 · 보스 추가의 타일 묶음과 고르기 |
 | `features/party-appointments/alarm-gate.ts` | 알림을 켤 때 · 저장할 때 권한과 스위치 확인 |
 | `features/party-appointments/notification.ts` · `notification-text.ts` | 레지스트리의 `party-appointment` 계획 · 알림 문구 |
 | `features/party-appointments/open-request.ts` | 알림이나 위젯에서 열 회차 · today 위젯이 고른 새 스케줄 갈래 |
 | `features/party-appointments/upcoming.ts` | 다음 회차들(today 위젯이 쓴다) |
-| `app/party-appointments/AppointmentsScreen.tsx` · `AppointmentAgenda.tsx` | 주 이동 줄 · 요일별 목록 · ＋ |
+| `storage/party-schedule-view.ts` · `features/party-appointments/view-preference.ts` | 목록 · 보드 중 마지막으로 고른 보기 |
+| `features/party-appointments/timeline.ts` | 한 주를 0 ~ 24시 줄 일곱 개로 나누기 · 다음 · 끝난 톤 · 지금 선 |
+| `app/party-appointments/AppointmentsScreen.tsx` | 세그먼트 · 주 이동 줄 · 보기 고르기 · 막대에서 카드로 스크롤 · ＋ |
+| `app/party-appointments/ScheduleTimeline.tsx` · `AppointmentAgenda.tsx` | 목록 보기의 시간표 카드 · 요일별 목록 |
+| `app/party-appointments/AppointmentBoard.tsx` | 보드 보기의 요일 일곱 열 |
+| `app/party-appointments/OccurrenceCard.tsx` · `OccurrenceBossGroups.tsx` | 두 보기가 함께 쓰는 회차 카드 · 보스 줄과 알림 · 반복 줄 |
+| `app/party-appointments/AppointmentMemoField.tsx` | 시트의 메모 칸(누르면 여러 줄 입력 카드) · 상세의 메모 타일 |
 | `app/party-appointments/AppointmentSheet.tsx` | 추가 · 상세 · 수정 시트와 보스 추가 단계 |
 | `app/party-appointments/AppointmentTimeBand.tsx` · `AppointmentWeekdayTile.tsx` | 날짜 · 요일 · 시작 · 종료 타일 |
 | `app/party-appointments/AppointmentBossList.tsx` · `AppointmentAlarmField.tsx` · `AppointmentSummaryTiles.tsx` | 보스 목록 · 알림 칸 · 상세의 알림 · 반복 타일 |
@@ -40,24 +46,41 @@
 | `durationMinutes` | 시작부터 종료까지의 분. 1 이상 |
 | `leadMinutes` | 몇 분 전에 알릴지. `null` 은 알림 없음, 0 은 정각 |
 | `schedule` | `{ type: 'once', dateKey }` 또는 `{ type: 'weekly', weekday, fromWeek, untilWeek }`. `weekday` 는 0(일) ~ 6(토), 주는 리셋 주의 목요일이고 `untilWeek` 는 그 주를 포함하지 않는다 |
+| `memo` | 메모. 없으면 칸째 없다. 반복 스케줄은 모든 주에 같은 메모를 보이고, 주별 예외에는 넣지 않는다 |
 | `exceptions` | 반복 스케줄의 주별 예외. 키는 그 주의 목요일이고 값은 그 주 회차의 날짜 · 시각 · 길이 · 보스 · 알림 전체 |
 
 ## 화면
 
 | 부분 | 내용 | 누르면 |
 |---|---|---|
+| 세그먼트 | 헤더 오른쪽 `목록 \| 보드`. 마지막에 고른 보기로 연다 | 보기 바꾸기 |
 | 주 이동 줄 | `←` · 주 이름과 날짜 범위 · `→`, 이번 주로 돌아가는 `≪` · `≫` | 주 이동 |
-| 요일별 목록 | 스케줄 있는 날만 요일 머리, 시각 줄과 캐릭터별 보스 카드 | 카드: 상세 시트 |
-| 빈 상태 | `{주 이름} 파티 스케줄이 없어요` | |
 | ＋ | `매주 반복` · `한 번만` 두 항목 | 그 종류의 추가 시트 |
+
+### 목록 보기
+
+| 부분 | 내용 | 누르면 |
+|---|---|---|
+| 시간표 카드 | 0 ~ 24시 시간축. 처음에는 오늘 한 줄(`오늘 시간표`), 펼치면 요일 일곱 줄(`주간 시간표`). 다음 회차는 주황, 지금 선은 오늘 줄에만 | `주간 ⌄` · `오늘만 ⌃`: 펼치기 · 접기. 막대: 아래 목록의 그 회차 카드로 스크롤 |
+| 요일별 목록 | 스케줄 있는 날만 요일 머리, 그 아래 회차 카드(시각 줄 · 캐릭터마다 `card-inset` 칸 · 알림 · 반복 줄 · 메모 두 줄) | 카드: 상세 시트 |
+| 빈 상태 | `{주 이름} 파티 스케줄이 없어요` | |
+
+### 보드 보기
+
+요일 일곱 열(`목 → 수`)의 칸반이다. 폭 260 의 열을 가로로 넘기고, 이번 주면 오늘 열부터 보인다.
+
+| 부분 | 내용 | 누르면 |
+|---|---|---|
+| 열 머리 | 요일 · 날짜 · `오늘` 알약 · 회차 수, 그 아래 그 날의 0 ~ 24시 줄 | |
+| 열 몸통 | 목록 보기와 같은 회차 카드. 없으면 `스케줄 없음` | 카드: 상세 시트 |
 
 ## 시트
 
 | 시트 | 제목 | 내용 |
 |---|---|---|
-| 추가(한 번만) | `스케줄 추가` | 날짜 · 시작 · 종료 타일, 보스 목록, 알림, `저장` |
+| 추가(한 번만) | `스케줄 추가` | 날짜 · 시작 · 종료 타일, 보스 목록, 알림, 메모, `저장` |
 | 추가(매주 반복) | `반복 스케줄 추가` | 날짜 대신 요일 세그먼트(목 → 수) |
-| 상세 | `스케줄` | 읽기 모드. 알림 · 반복 타일, `수정` · `삭제`. 지난 주면 `지난 주 스케줄은 볼 수만 있어요` |
+| 상세 | `스케줄` | 읽기 모드. 알림 · 반복 타일, 메모(있을 때만), `수정` · `삭제`. 지난 주면 `지난 주 스케줄은 볼 수만 있어요` |
 | 수정 | `스케줄 수정` | 추가와 같고, 반복이면 `이 주만 적용하기` 체크박스 |
 | 보스 추가 | `보스 추가` | 캐릭터 드롭다운 · 그 아랫줄 `모든 보스` 토글 · `파티` · `스케줄러` · `모든 보스` 타일, `n개 선택됨` 줄 · `n개 추가` |
 
@@ -66,6 +89,7 @@
 - 날짜는 오늘부터 365일 뒤까지 고른다.
 - 알림은 `정각 · 10분 전 · 30분 전 · 1시간 전 · 직접` 이고, 켜면 처음 값은 `10분 전` 이다.
 - 알림을 켤 때와 알림을 단 채 저장할 때 기기 권한과 `파티 스케줄 알림` 스위치를 확인한다.
+- 메모는 길이 제한이 없다. 반복 스케줄을 `이 주만 적용하기` 로 고쳐도 메모는 스케줄 전체에 적용한다.
 
 ## 알림
 
@@ -87,3 +111,4 @@ today 의 `다음 파티 스케줄` 위젯도 시작 전인 가장 가까운 회
 |---|---|---|
 | `partyAppointments` | `PartyAppointment[]` | 남긴다 |
 | `partyAlarmEnabled` | `on` · `off`(없으면 켜짐) | 남긴다 |
+| `partyScheduleView` | `list` · `board`(없으면 목록) | 남긴다 |
