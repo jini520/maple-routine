@@ -44,6 +44,7 @@ import { endClockOf } from '../../features/party-appointments/agenda'
 import { groupBossesByCharacter } from '../../features/party-appointments/boss-groups'
 import { upcomingOccurrences } from '../../features/party-appointments/upcoming'
 import type { PartyAppointment, PartyAppointmentBoss } from '../../types/party-appointment'
+import type { QuickLinksConfig } from '../../types/quick-links'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type {
@@ -310,6 +311,8 @@ export interface TodayViewModelInput {
   statsDays: DaysByDate | null
   /** 파티 스케줄 스토어. 위젯 10. */
   partyAppointments: readonly PartyAppointment[]
+  /** 빠른 이동 스토어. 위젯이 스토어를 모르게 화면이 넘긴다. */
+  quickLinks: QuickLinksConfig
 }
 
 /** 다음 파티 스케줄의 캐릭터 묶음 하나 */
@@ -369,6 +372,8 @@ export interface TodayViewModel {
    * 비어 있으면 그 위젯이 타일째 숨는다.
    */
   nextParty: NextPartyView[]
+  /** 빠른 이동 구성. 스토어 값을 그대로 넘긴다 */
+  quickLinks: QuickLinksConfig
 }
 
 export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel {
@@ -392,6 +397,7 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
     crystalLimits: buildCrystalLimits(input),
     resets: buildResets(input.now),
     nextParty: buildNextParty(input),
+    quickLinks: input.quickLinks,
   }
 }
 

@@ -84,6 +84,11 @@ import Swords from 'lucide-react-native/icons/swords'
 import TriangleAlert from 'lucide-react-native/icons/triangle-alert'
 import Users from 'lucide-react-native/icons/users'
 import Wallet from 'lucide-react-native/icons/wallet'
+import BellRing from 'lucide-react-native/icons/bell-ring'
+import Calculator from 'lucide-react-native/icons/calculator'
+import Divide from 'lucide-react-native/icons/divide'
+import Hammer from 'lucide-react-native/icons/hammer'
+import UserRound from 'lucide-react-native/icons/user-round'
 import Wrench from 'lucide-react-native/icons/wrench'
 import X from 'lucide-react-native/icons/x'
 
@@ -235,6 +240,16 @@ export const SwordsIcon = withIconInterop(Swords)
 export const UsersIcon = withIconInterop(Users)
 
 export const WalletIcon = withIconInterop(Wallet)
+/** today 빠른 이동의 유틸리티 칸. 하단바의 `Wrench` 와 다른 그림이다(사용자 지정). */
+export const HammerIcon = withIconInterop(Hammer)
+/** today 빠른 이동의 판매 분배금 계산기 칸. */
+export const DivideIcon = withIconInterop(Divide)
+/** today 빠른 이동의 주간 보스 수익 계산기 칸. */
+export const CalculatorIcon = withIconInterop(Calculator)
+/** today 빠른 이동의 알림 설정 칸. 약속에 달린 알림(`Bell`)과 다른 그림이다. */
+export const BellRingIcon = withIconInterop(BellRing)
+/** today 빠른 이동의 캐릭터 관리 칸. 원 안의 얼굴(`CircleUserRound`)은 머리의 관리 버튼 몫이다. */
+export const UserRoundIcon = withIconInterop(UserRound)
 
 export const WrenchIcon = withIconInterop(Wrench)
 /** 통계 탭. */
