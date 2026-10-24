@@ -14,7 +14,7 @@ const MAX_ICONS = 3
 /** 그림 뒤 빛의 지름. 그림(20)보다 커야 가장자리로 번져 보인다. */
 const GLOW_SIZE = 30
 
-/** 그림 뒤에 번지는 청록 빛. RN 에 `drop-shadow` 가 없어 방사 그라디언트로 그린다. */
+/** 그림 뒤의 거의 안 보이는 오로라 빛. 그림을 덮지 않을 만큼만 옅게 깐다. RN 에 `drop-shadow` 가 없어 방사 그라디언트로 그린다. */
 function IconGlow(): React.JSX.Element {
   const id = useId()
   const r = GLOW_SIZE / 2
@@ -22,8 +22,9 @@ function IconGlow(): React.JSX.Element {
     <Svg width={GLOW_SIZE} height={GLOW_SIZE} style={{ position: 'absolute', left: -5, top: -5 }} pointerEvents="none">
       <Defs>
         <RadialGradient id={id} cx="50%" cy="50%" r="50%">
-          <Stop offset="0%" stopColor={AURORA.cyan} stopOpacity={0.55} />
-          <Stop offset="100%" stopColor={AURORA.cyan} stopOpacity={0} />
+          <Stop offset="0%" stopColor={AURORA.cyan} stopOpacity={0.18} />
+          <Stop offset="50%" stopColor={AURORA.lilac} stopOpacity={0.08} />
+          <Stop offset="100%" stopColor={AURORA.lilac} stopOpacity={0} />
         </RadialGradient>
       </Defs>
       <Circle cx={r} cy={r} r={r} fill={`url(#${id})`} />
