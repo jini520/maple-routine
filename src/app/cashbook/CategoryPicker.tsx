@@ -56,7 +56,7 @@ export function CategoryPicker<T extends string>(props: {
               aria-label={category.name}
               testID={`${props.testIdPrefix}-category-${category.key}`}
               onPress={() => props.onSelect(category.key)}
-              className="w-1/2 p-1 active:opacity-60"
+              className="w-1/2 p-1"
             >
               <View
                 testID={`${props.testIdPrefix}-category-box-${category.key}`}

@@ -99,7 +99,7 @@ export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
                       openRecord(record.id)
                       navigation.goBack()
                     }}
-                    className="flex-1 gap-2 py-2.5 pl-[18px] pr-2 active:opacity-60"
+                    className="flex-1 gap-2 py-2.5 pl-[18px] pr-2"
                   >
                     <View className="flex-row items-baseline gap-2">
                       <Text className="text-base font-bold text-text">{title.date}</Text>

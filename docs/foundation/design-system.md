@@ -178,6 +178,11 @@
 
 그리는 순서는 아래에서 위로 `화면 < 하단바 < 바 위 슬롯 < 안내 · 토스트 < 시트 < 입력 카드` 다.
 
+## 누름 표시
+
+누를 수 있는 카드는 누르는 동안 흐려지지 않는다(`active:opacity` 금지, 사용자 지정, [[ADR-095]] 결정 5). 카드 하나가
+통째로 흐려지면 그 카드만 다른 카드와 따로 논다. 작은 버튼 · 글자 링크 · 입력 칸은 카드가 아니라서 누름 표시를 그대로 둔다.
+
 ## 모서리
 
 앱에는 뾰족한 모서리를 되도록 두지 않는다(사용자 지정). 색을 칠한 조각은 작아도 모서리를 둥글게 깎는다.
@@ -202,6 +207,7 @@
 
 | 파일 | 지키는 규칙 |
 |---|---|
+| `src/__tests__/card-press-policy.test.ts` | 누를 수 있는 카드가 누르는 동안 흐려지지 않는가 |
 | `components/__tests__/layer-dependencies.test.ts` | 계층 의존 방향 |
 | `src/__tests__/require-cycle-policy.test.ts` | 배럴을 거친 순환 import |
 | `src/__tests__/font-scaling-policy.test.ts` | `Text` · `TextInput` 직접 import 금지, SVG 글자의 배수 |
