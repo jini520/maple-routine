@@ -1,4 +1,4 @@
-import { fireEvent } from '@testing-library/react-native'
+import { fireEvent, within } from '@testing-library/react-native'
 
 import { renderAtom } from '../../../components/__tests__/render-atom'
 import { occurrencesInWeek } from '../../../features/party-appointments/occurrences'
@@ -59,6 +59,15 @@ describe('ScheduleTimeline', () => {
     await fireEvent.press(view.getByRole('button', { name: '주간 시간표 펼치기' }))
 
     expect(view.getAllByTestId('timeline-now')).toHaveLength(1)
+  })
+
+  // 오늘 줄의 바탕은 불투명한 primary-tint 라 카드 전체에 깐 3시간 띠를 가린다. 그 줄에만 띠를 다시 그린다.
+  it('3시간 띠가 오늘 줄에도 보이고, 다른 줄에는 따로 그리지 않는다', async () => {
+    const view = await renderAtom(<ScheduleTimeline {...props([])} />)
+    await fireEvent.press(view.getByRole('button', { name: '주간 시간표 펼치기' }))
+
+    const counts = view.getAllByTestId('timeline-row').map((row) => within(row).queryAllByTestId('timeline-row-band').length)
+    expect(counts).toEqual([0, 0, 4, 0, 0, 0, 0])
   })
 
   it('막대를 누르면 그 회차의 열쇠로 부른다', async () => {
