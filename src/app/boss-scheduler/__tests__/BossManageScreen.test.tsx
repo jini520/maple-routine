@@ -67,6 +67,9 @@ const SEASON_NAME = bossesInSection('eventWeekly')[0].name
 const MONTHLY_NAME = bossesInSection('monthly')[0].name
 
 /** 보이는 이름에서 보스 key. 스토어 호출과 추적 항목은 key 를 든다. */
+/** 스크린리더에서 숨긴 꾸밈까지 찾는다. */
+const HIDDEN = { includeHiddenElements: true }
+
 const keyOf = (name: string): string => bossKeyOfApiName(name) ?? name
 
 function mockStore(overrides: Partial<Store> = {}): Store {
@@ -161,12 +164,10 @@ function stateOf(node: AtomElement): { selected?: boolean; disabled?: boolean; c
   }
 }
 
-/** 글자에서 위로 올라가 실제로 눌리는 조상을 찾는 도우미. */
-function button(label: string, index = 0): AtomElement {
-  let node: AtomElement | null = screen.getAllByText(label)[index]
-  while (node !== null && node.props.role !== 'button') node = node.parent
-  if (node === null) throw new Error(`버튼을 찾지 못했다: ${label}`)
-  return node
+/** 행의 난이도 고르개를 펼치고 그 난이도를 고른다. 접힌 동안에는 고른 난이도 하나만 보인다. */
+async function pickDifficulty(bossName: string, current: string, next: string): Promise<void> {
+  await press(screen.getByLabelText(`${bossName} 난이도 ${current}, 눌러서 바꾸기`))
+  await press(screen.getByLabelText(`${bossName} ${next}`))
 }
 
 beforeEach(() => {
@@ -329,7 +330,7 @@ describe('BossManageScreen: 수동 모드', () => {
     expect(stateOf(rowToggle('매그너스')).selected).toBe(false)
   })
 
-  it('추적 중인 행에만 난이도 세그먼트와 파티 줄이 펼쳐진다', async () => {
+  it('추적 중인 행에만 난이도 고르개와 파티 줄이 선다', async () => {
     mockStore({
       characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] },
@@ -337,8 +338,25 @@ describe('BossManageScreen: 수동 모드', () => {
 
     await renderScreen()
 
+    expect(screen.getByLabelText('스우 난이도 하드, 눌러서 바꾸기')).toBeTruthy()
     expect(screen.getByLabelText('스우 파티 인원과 비율 변경')).toBeTruthy()
+    expect(screen.queryByLabelText(/^자쿰 난이도 /)).toBeNull()
     expect(screen.queryByLabelText('자쿰 파티 인원과 비율 변경')).toBeNull()
+  })
+
+  // 추적은 초상화의 링과 체크로만 보인다. 행 테두리 · 바탕색으로 가르지 않는다. 초상은 꾸밈이라 읽히지 않는다.
+  it('추적 중인 행의 초상화에만 추적 표시가 붙는다', async () => {
+    mockStore({
+      characters: [character()],
+      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard'), trackedBoss('자쿰', 'chaos')] },
+    })
+
+    await renderScreen()
+
+    const row = (bossName: string): AtomElement => screen.getByTestId(`boss-manage-row-${keyOf(bossName)}`)
+    expect(within(row('스우')).getByTestId('boss-tracked-mark', HIDDEN)).toBeTruthy()
+    expect(within(row('자쿰')).getByTestId('boss-tracked-mark', HIDDEN)).toBeTruthy()
+    expect(within(row('매그너스')).queryByTestId('boss-tracked-mark', HIDDEN)).toBeNull()
   })
 
   it('미추적 보스를 탭하면 기본 난이도(등록 난이도 우선)로 addManualBoss 를 부른다', async () => {
@@ -385,7 +403,7 @@ describe('BossManageScreen: 수동 모드', () => {
     })
     await renderScreen()
 
-    await press(button('익스트림'))
+    await pickDifficulty('스우', '하드', '익스트림')
 
     expect(store.setManualBossDifficulty).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme')
     expect(store.removeManualBoss).not.toHaveBeenCalled()
@@ -485,8 +503,9 @@ describe('BossManageScreen: 자동 모드', () => {
     expect(screen.queryByText(/자동 모드에서는 목록이 게임 등록 기준이에요/)).toBeNull()
     expect(screen.getByText('자쿰')).toBeTruthy()
     expect(screen.queryByText('매그너스')).toBeNull()
-    // 수동 모드의 행 토글 버튼이 없다.
+    // 수동 모드의 행 토글 버튼과 추적 표시가 없다.
     expect(screen.queryByLabelText('자쿰')).toBeNull()
+    expect(screen.queryByTestId('boss-tracked-mark', HIDDEN)).toBeNull()
   })
 
   it('토글을 켜면 전체 보스가 나와 미등록 보스도 파티를 미리 설정할 수 있다', async () => {
@@ -499,14 +518,13 @@ describe('BossManageScreen: 자동 모드', () => {
     expect(stateOf(screen.getByLabelText('모든 보스 보기')).checked).toBe(true)
   })
 
-  // 글자가 스위치 밖 줄 왼쪽 끝에 있었다. 자리를 붙인 것만이 아니라 **누를 수 있는 표적이
-  // 넓어진 것**이 요점이라, 담김이 아니라 눌러서 켜지는 것으로 본다.
-  it('`모든 보스 보기` 글자가 스위치 안에 있어 글자를 눌러도 켜진다', async () => {
+  // 스위치만 표적이면 44x24 하나뿐이다. 줄의 글자를 눌러도 켜져야 한다.
+  it.each(['모든 보스 보기', '끄면 스케줄러에 등록한 보스만 보여요'])('`모든 보스 보기` 줄의 글자(%s)를 눌러도 켜진다', async (글자) => {
     mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
     await renderScreen()
     const 스위치 = screen.getByLabelText('모든 보스 보기')
 
-    await press(within(스위치).getByText('모든 보스 보기'))
+    await press(within(스위치).getByText(글자))
 
     expect(stateOf(스위치).checked).toBe(true)
   })
@@ -557,7 +575,7 @@ describe('BossManageScreen: 자동 모드', () => {
     })
     await renderScreen()
 
-    await press(button('익스트림'))
+    await pickDifficulty('스우', '하드', '익스트림')
 
     expect(store.setManualBossDifficulty).not.toHaveBeenCalled()
     expect(store.addManualBoss).not.toHaveBeenCalled()
@@ -593,13 +611,13 @@ describe('BossManageScreen: 자동 모드', () => {
     })
     await renderScreen()
 
-    await press(button('익스트림'))
-    expect(stateOf(button('익스트림')).selected).toBe(true)
+    await pickDifficulty('스우', '하드', '익스트림')
+    expect(screen.getByLabelText('스우 난이도 익스트림, 눌러서 바꾸기')).toBeTruthy()
 
     await press(screen.getAllByTestId('character-portrait')[1])
 
-    expect(stateOf(button('노멀')).selected).toBe(true)
-    expect(stateOf(button('익스트림')).selected).toBe(false)
+    expect(screen.getByLabelText('스우 난이도 노멀, 눌러서 바꾸기')).toBeTruthy()
+    expect(screen.queryByLabelText('스우 난이도 익스트림, 눌러서 바꾸기')).toBeNull()
   })
 
   // 표시만 틀리는 것이 아니다. 같은 값이 스테퍼로 흘러가 `partySizeKey` 의 다른 칸을 열고,
@@ -619,7 +637,7 @@ describe('BossManageScreen: 자동 모드', () => {
     })
     await renderScreen()
 
-    await press(button('익스트림'))
+    await pickDifficulty('스우', '하드', '익스트림')
     await press(screen.getAllByTestId('character-portrait')[1])
     await press(screen.getByLabelText('스우 파티 인원과 비율 변경'))
     await press(screen.getByLabelText('스우 파티원 수 증가'))

@@ -69,28 +69,38 @@ function stateOf(node: AtomElement): State {
   return (node.props.accessibilityState ?? {}) as State
 }
 
-/** 난이도 칩. 글자를 담은 `Text` 에서 위로 올라가 `role="button"` 인 첫 조상. */
-function chip(getByText: (text: string) => AtomElement, label: string): AtomElement {
-  let node: AtomElement | null = getByText(label)
-  while (node !== null && node.props.role !== 'button') node = node.parent
-  if (node === null) throw new Error(`칩을 찾지 못했다: ${label}`)
-  return node
+/** 난이도 고르개를 펼치고 그 난이도를 고른다. 고르개는 접힌 동안 고른 난이도 하나만 보인다. */
+async function pickDifficulty(getByLabelText: (label: string | RegExp) => AtomElement, name: string): Promise<void> {
+  await fireEvent.press(getByLabelText(/^스우 난이도 .+, 눌러서 바꾸기$/))
+  await fireEvent.press(getByLabelText(`스우 ${name}`))
 }
 
 describe('PartySizeModal', () => {
-  it('난이도 세그먼트에 지원 난이도를 모두 그리고 현재 난이도만 선택 상태다', async () => {
-    const { getByText } = await renderOverlay(<PartySizeModal {...props()} />)
+  it('난이도 고르개가 현재 난이도로 접혀 있고, 펼치면 지원 난이도를 모두 보인다', async () => {
+    const { getByLabelText, getAllByRole } = await renderOverlay(<PartySizeModal {...props()} />)
 
-    expect(stateOf(chip(getByText, '하드')).selected).toBe(true)
-    expect(stateOf(chip(getByText, '노멀')).selected).toBe(false)
-    expect(stateOf(chip(getByText, '익스트림')).selected).toBe(false)
+    await fireEvent.press(getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
+
+    expect(getAllByRole('radio')).toHaveLength(3)
+    expect(getByLabelText('스우 하드').props.accessibilityState.checked).toBe(true)
+  })
+
+  // 행이 난이도를 정하는 곳(보스 관리 · 보스 수익 행 · 계산기)에서 연 모달은 난이도를 바꿀 수 없다.
+  // 고르개를 세우면 눌러도 바뀌지 않는 고르개가 된다.
+  it('onSelectDifficulty 가 없으면 고르개 없이 난이도 배지만 선다', async () => {
+    const { getByText, queryByLabelText } = await renderOverlay(
+      <PartySizeModal {...props({ onSelectDifficulty: undefined })} />,
+    )
+
+    expect(getByText('하드')).toBeTruthy()
+    expect(queryByLabelText(/^스우 난이도 /)).toBeNull()
   })
 
   it('다른 난이도를 누르면 onSelectDifficulty 를 부른다', async () => {
     const p = props()
-    const { getByText } = await renderOverlay(<PartySizeModal {...p} />)
+    const { getByLabelText } = await renderOverlay(<PartySizeModal {...p} />)
 
-    await fireEvent.press(chip(getByText, '익스트림'))
+    await pickDifficulty(getByLabelText, '익스트림')
 
     expect(p.onSelectDifficulty).toHaveBeenCalledWith('extreme')
   })
@@ -197,12 +207,12 @@ describe('PartySizeModal', () => {
     expect(queryByTestId('faded-illustration', HIDDEN)).toBeNull()
   })
 
-  it('난이도가 하나뿐인 보스도 세그먼트를 그린다', async () => {
-    const { getByText } = await renderOverlay(
+  it('난이도가 하나뿐인 보스도 고르개를 그린다', async () => {
+    const { getByLabelText } = await renderOverlay(
       <PartySizeModal {...props({ difficulties: ['chaos'], difficulty: 'chaos' })} />,
     )
 
-    expect(stateOf(chip(getByText, '카오스')).selected).toBe(true)
+    expect(getByLabelText('스우 난이도 카오스, 눌러서 바꾸기')).toBeTruthy()
   })
 })
 
@@ -313,7 +323,7 @@ describe('분배 비율', () => {
     const { getByLabelText, getByText } = await renderOverlay(<DifficultyHost onApply={onApply} />)
 
     await fireEvent.press(getByLabelText('스우 파티원 수 증가'))
-    await fireEvent.press(chip(getByText, '익스트림'))
+    await pickDifficulty(getByLabelText, '익스트림')
     await fireEvent.press(getByText('적용'))
 
     expect(onApply).toHaveBeenCalledWith({ partySize: 2, shares: EVEN_SHARES })

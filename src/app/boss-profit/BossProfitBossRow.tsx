@@ -343,8 +343,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
               ? null
               : autoFeeFrom(gradeContext, row.ocid, row.defeatedOn ?? periodStartDateKey(row.periodKey))
           }
-          // 이 기록의 난이도는 처치가 정한 사실이다. 여기서 못 바꾼다.
-          onSelectDifficulty={() => {}}
+          // 이 기록의 난이도는 처치가 정한 사실이라 모달에서 못 바꾼다.
           onApply={(next) => void applyParty(next)}
           // 적용을 안 눌렀으면 고친 값은 버린다.
           onClose={() => setIsPartyModalOpen(false)}

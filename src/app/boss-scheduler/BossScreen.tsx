@@ -575,7 +575,7 @@ export function BossScreen(): React.JSX.Element {
                   testID={`boss-section-header-${section.cycle}`}
                   className="flex-row items-center justify-between gap-2"
                 >
-                  <Text className="text-sm font-semibold text-text">
+                  <Text className="text-sm font-normal text-text">
                     {section.cycle === 'weekly' ? '주간' : '월간'}
                   </Text>
                   {section.cycle === 'weekly' && (

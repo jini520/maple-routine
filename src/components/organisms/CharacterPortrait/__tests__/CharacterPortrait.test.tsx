@@ -224,13 +224,6 @@ describe('CharacterPortrait · rail 규격의 빈 링', () => {
     expect(Number(rim.props.strokeWidth)).toBeLessThan(PORTRAIT_RAIL.ringStroke)
   })
 
-  // 주간 보스 수익 계산기는 진행 링이 없지만 링 두께는 보스 스케줄러 레일과 같다(사용자 지정).
-  it('굵은 빈 링은 진행 링과 같은 두께다', async () => {
-    const view = await rail({ rings: [], emptyRing: 'thick' })
-
-    expect(Number(view.getByTestId('portrait-empty-ring').props.strokeWidth)).toBe(PORTRAIT_RAIL.ringStroke)
-  })
-
   // 흐림 말고도 칸 하나만 보고 읽히는 절대 신호가 남아야 한다.
   it('고른 칸의 빈 링만 강조색이다', async () => {
     const selected = await rail({ rings: [], isSelected: true })

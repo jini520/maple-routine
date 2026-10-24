@@ -28,9 +28,10 @@ import { StyleSheet } from 'react-native'
 import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg'
 
 import { Badge, Button, Text, XIcon } from '../../atoms'
+import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
-import { DifficultySegment } from '../../molecules/DifficultySegment/DifficultySegment'
+import { DifficultyExpander } from '../../molecules/DifficultyExpander/DifficultyExpander'
 import { FadedIllustration } from '../../molecules/FadedIllustration/FadedIllustration'
 import { Stepper } from '../../molecules/Stepper/Stepper'
 import { Segment } from '../../molecules/Segment/Segment'
@@ -136,8 +137,10 @@ export function PartySizeModal(props: {
   /**
    * 난이도를 골랐다. **저장하지 않는다.** 호출부는 자기 모달 상태만 옮겨 인원·상한·비율
    * 프롭을 그 난이도 것으로 바꿔 주고, 쓰는 일은 `onApply` 에서 한다.
+   *
+   * 안 주면 고르개 대신 난이도 배지만 선다. 행이 난이도를 정하는 곳에서 연 모달이다.
    */
-  onSelectDifficulty: (difficulty: BossDifficulty) => void
+  onSelectDifficulty?: (difficulty: BossDifficulty) => void
   /** 적용을 눌렀다. 이때 처음 값이 밖으로 나간다. 모달은 자기가 닫히는지 모른다. */
   onApply: (next: { partySize: number; shares: PartyModalShares }) => void
   /** 닫았다(X · 바깥 탭 · 뒤로가기). **고친 값은 버린다.** */
@@ -256,11 +259,18 @@ export function PartySizeModal(props: {
             <View className="absolute left-4 top-4 gap-1.5">
               <Text className="text-10 font-bold tracking-[.16em] text-text-muted">{props.cycleLabel}</Text>
               <Text className="text-22 font-bold tracking-[-.02em] text-text">{props.bossName}</Text>
-              <DifficultySegment
-                difficulties={props.difficulties}
-                selected={props.difficulty}
-                onSelect={props.onSelectDifficulty}
-              />
+              {props.onSelectDifficulty === undefined ? (
+                <View className="self-start">
+                  <Badge variant={props.difficulty}>{DIFFICULTY_NAME[props.difficulty]}</Badge>
+                </View>
+              ) : (
+                <DifficultyExpander
+                  label={props.bossName}
+                  difficulties={props.difficulties}
+                  value={props.difficulty}
+                  onChange={props.onSelectDifficulty}
+                />
+              )}
             </View>
           </View>
 

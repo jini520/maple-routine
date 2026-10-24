@@ -53,7 +53,7 @@ function difficulty(
   borderColor: string,
   textStyle: TextStyle,
   borderWidth = 1,
-): BadgeVariantStyle & Required<Pick<BadgeVariantStyle, 'gradient' | 'textStyle'>> {
+): BadgeVariantStyle & Required<Pick<BadgeVariantStyle, 'gradient' | 'border' | 'textStyle'>> {
   return { gradient, border: { borderWidth, borderColor }, textStyle, weight: 'bold', text: 'text-chip-sm' }
 }
 
@@ -112,11 +112,17 @@ export function difficultyOutlineColor(difficulty: BadgeDifficulty): ColorValue 
 }
 
 /**
- * 난이도 배지의 칠과 글자. 테두리 없이 같은 색을 다른 모양에 입힐 때 쓴다(보스 줄의 난이도 고르개).
+ * 난이도 배지의 칠 · 테두리 · 글자. `Badge` 가 아닌 모양에 같은 배지를 그릴 때 쓴다(난이도 고르개).
  *
- * @example const { gradient, textStyle } = difficultyFill('hard')
+ * 테두리를 빼지 않는다. 카오스의 금테와 익스트림의 붉은 테두리가 정식 디자인이다.
+ *
+ * @example const { gradient, border, textStyle } = difficultyBadgeStyle('hard')
  */
-export function difficultyFill(difficulty: BadgeDifficulty): { gradient: readonly [string, string]; textStyle: TextStyle } {
+export function difficultyBadgeStyle(difficulty: BadgeDifficulty): {
+  gradient: readonly [string, string]
+  border: Pick<ViewStyle, 'borderWidth' | 'borderColor'>
+  textStyle: TextStyle
+} {
   const variant = BADGE_VARIANT[difficulty]
-  return { gradient: variant.gradient, textStyle: variant.textStyle }
+  return { gradient: variant.gradient, border: variant.border, textStyle: variant.textStyle }
 }

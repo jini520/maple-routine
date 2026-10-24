@@ -26,11 +26,11 @@ import { useDataFreshness } from '../../features/refresh/freshness'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import type { BossDifficulty } from '../../types'
 
-import { Badge, Switch, Text } from '../../components/atoms'
+import { Badge, CheckIcon, Switch, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
-import { DifficultySegment } from '../../components/molecules/DifficultySegment/DifficultySegment'
+import { DifficultyExpander } from '../../components/molecules/DifficultyExpander/DifficultyExpander'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
@@ -44,9 +44,9 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 /** 주인이 다른 편집 표를 읽을 때 대신 주는 빈 표. 렌더마다 새 객체를 만들지 않는다. */
 const NO_DIFFICULTY_EDITS: Record<string, BossDifficulty> = {}
 
-// 수동 모드는 행 탭이 추적 토글이고 즉시 저장한다. 체크된 행에만 난이도와 스테퍼가 펼쳐진다.
-// 자동 모드는 체크 없이 파티 인원만 설정하고, 미등록 보스도 미리 설정할 수 있다.
-// 행은 두 줄이다. 첫 줄이 초상 + 보스명 + 파티 스테퍼, 둘째 줄이 난이도 세그먼트다.
+// 수동 모드는 행 탭이 추적 토글이고 즉시 저장한다. 추적 중인 행에만 난이도 고르개와 파티 요약이 선다.
+// 자동 모드는 추적 없이 파티만 설정하고, 미등록 보스도 미리 설정할 수 있다.
+// 초상 옆에 보스명과, 그 아래 고르개 · 파티 요약 한 줄을 쌓는다.
 /** 비율을 안 쓰는 파티. 설정이 없는 조합이 이 값을 그린다. */
 const NO_SHARES: BossPartyShareColumns = {
   crystalMyShare: null,
@@ -296,6 +296,7 @@ export function BossManageScreen(): React.JSX.Element {
           sharesTotal: columns.crystalSharesTotal,
           splitFeePercent: columns.splitFeePercent,
         }}
+        side="end"
         onPress={() => setPartyModal({ entry, difficulty })}
       />
     )
@@ -329,13 +330,12 @@ export function BossManageScreen(): React.JSX.Element {
         />
       )}
 
-      {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다.
+      {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다. 끄면 무엇이 걸러지는지 설명을 함께 적는다.
 
-          글자가 스위치 안이라 글자를 눌러도 토글된다. 스위치만 표적이면 44x24 하나뿐이다.
-          `자동 모드 안내 문구`는 두지 않는다. 화면이 이미 그것을 보여 준다(체크가 없고 스테퍼만
-          있다). `n/12` 카운터는 `주간` 섹션 헤더가 싣는다. */}
+          글자가 스위치 안이라 줄의 글자를 눌러도 토글된다. 스위치만 표적이면 44x24 하나뿐이다.
+          `n/12` 카운터는 `주간` 섹션 헤더가 싣는다. */}
       {selected !== null && mode === 'auto' && (
-        <View className="items-end px-4">
+        <View className="px-4">
           <Switch
             on={showAllBosses}
             label="모든 보스 보기"
@@ -343,9 +343,12 @@ export function BossManageScreen(): React.JSX.Element {
             onToggle={() => {
               setShowAllBosses((prev) => !prev)
             }}
-            className="gap-1.5"
+            className="justify-between gap-3 rounded-[14px] bg-surface px-3.5 py-3"
           >
-            <Text className="text-xs font-medium text-text-muted">모든 보스 보기</Text>
+            <View className="min-w-0 flex-1 gap-0.5">
+              <Text className="text-13 font-medium text-text">모든 보스 보기</Text>
+              <Text className="text-11 text-text-muted">끄면 스케줄러에 등록한 보스만 보여요</Text>
+            </View>
           </Switch>
         </View>
       )}
@@ -380,7 +383,7 @@ export function BossManageScreen(): React.JSX.Element {
                   testID={`boss-section-header-${section.cycle}`}
                   className="flex-row items-center justify-between gap-2"
                 >
-                  <Text className="text-sm font-semibold text-text">
+                  <Text className="text-sm font-normal text-text">
                     {section.cycle === 'weekly' ? '주간' : '월간'}
                   </Text>
                   {mode === 'manual' && section.cycle === 'weekly' && (
@@ -406,73 +409,64 @@ export function BossManageScreen(): React.JSX.Element {
               const autoDifficulty =
                 autoDifficultyByBoss[entry.key] ?? defaultDifficultyFor(entry.key, difficulties)
 
-              // 스테퍼·난이도가 펼쳐지는 활성 난이도: 수동은 추적 난이도, 자동은 행 난이도.
+              // 고르개 · 파티 요약이 서는 난이도: 수동은 추적 난이도, 자동은 행 난이도.
               const activeDifficulty = mode === 'manual' ? trackedDifficulty : autoDifficulty
-              const isExpanded = mode === 'auto' || isTracked
-
-              // 함께 흐려져 안 읽힌다.
-              // 흐림은 행 컨테이너가 아니라 안쪽 내용에만 건다. 컨테이너에 걸면 위에 얹는 안내까지
-              const rowClassName =
-                mode === 'manual' && isTracked
-                  ? 'rounded-[14px] border border-primary bg-primary-tint'
-                  : isLimitBlocked
-                    ? 'rounded-[14px] border border-border bg-surface opacity-40'
-                    : 'rounded-[14px] border border-border bg-surface'
-
-              const nameContent = (
-                <>
-                  <View aria-hidden>
-                    <BossPortrait portraitSlug={entry.portraitSlug} label={entry.name} size={44} />
-                  </View>
-                  <Text numberOfLines={1} className="min-w-0 flex-1 text-sm font-semibold text-text">
-                    {entry.name}
-                  </Text>
-                </>
-              )
 
               return (
-                <View key={entry.key} className={rowClassName}>
-                  {/* 1번째 줄: 초상화 + 보스명(수동은 추적 토글 버튼) + 파티 스테퍼(우상단) */}
-                  <View className="flex-row items-center gap-3 px-3 py-2.5">
-                    {mode === 'manual' ? (
-                      <Pressable
-                        role="button"
-                        aria-selected={isTracked}
-                        aria-label={entry.name}
-                        onPress={() => void handleToggleTracked(entry.key, difficulties)}
-                        className="min-w-0 flex-1 flex-row items-center gap-3"
-                      >
-                        {nameContent}
-                      </Pressable>
-                    ) : (
-                      <View className="min-w-0 flex-1 flex-row items-center gap-3">{nameContent}</View>
-                    )}
-                    {activeDifficulty !== null && renderPartySummary(entry, activeDifficulty)}
-                  </View>
-
-                  {/* 2번째 줄: 난이도 세그먼트 */}
-                  {isExpanded && (
-                    <View className="flex-row flex-wrap items-center gap-2 border-t border-border px-3 pb-2.5 pt-2.5">
-                      {mode === 'manual' && trackedDifficulty !== null ? (
-                        <DifficultySegment
-                          difficulties={difficulties}
-                          selected={trackedDifficulty}
-                          onSelect={(difficulty) => void handleSwitchDifficulty(entry.key, difficulty)}
-                        />
-                      ) : (
-                        <DifficultySegment
-                          difficulties={difficulties}
-                          selected={autoDifficulty}
-                          onSelect={(difficulty) =>
-                            setDifficultyEdit({
-                              ocid: selected?.ocid ?? null,
-                              byBoss: { ...autoDifficultyByBoss, [entry.key]: difficulty },
-                            })
-                          }
-                        />
-                      )}
-                    </View>
+                <View key={entry.key} testID={`boss-manage-row-${entry.key}`} className="rounded-[14px] bg-surface">
+                  {/* 수동 모드는 카드 전체가 추적 토글이다. 내용 뒤에 깔고, 내용은 고르개 · 파티 요약 밖의 누름을
+                      이 토글로 흘려보낸다. 고르개를 토글 안에 넣으면 스크린리더가 둘을 한 덩어리로 읽는다. */}
+                  {mode === 'manual' && (
+                    <Pressable
+                      role="button"
+                      aria-selected={isTracked}
+                      aria-label={entry.name}
+                      onPress={() => void handleToggleTracked(entry.key, difficulties)}
+                      className="absolute inset-0 rounded-[14px]"
+                    />
                   )}
+
+                  {/* 흐림은 카드가 아니라 안쪽 내용에만 건다. 카드에 걸면 위에 얹는 안내까지 함께 흐려진다. */}
+                  <View
+                    pointerEvents="box-none"
+                    className={`flex-row items-center gap-3 px-3.5 py-4${isLimitBlocked ? ' opacity-40' : ''}`}
+                  >
+                    <View aria-hidden pointerEvents="none">
+                      <BossPortrait portraitSlug={entry.portraitSlug} label={entry.name} size={44} />
+                      {isTracked && <TrackedMark />}
+                    </View>
+                    {activeDifficulty !== null ? (
+                      <View pointerEvents="box-none" className="min-w-0 flex-1 gap-2.5">
+                        <View pointerEvents="none">
+                          <Text numberOfLines={1} className="text-sm font-semibold text-text">
+                            {entry.name}
+                          </Text>
+                        </View>
+                        <View pointerEvents="box-none" className="flex-row items-center justify-between gap-2">
+                          <DifficultyExpander
+                            label={entry.name}
+                            difficulties={difficulties}
+                            value={activeDifficulty}
+                            onChange={(difficulty) =>
+                              mode === 'manual'
+                                ? void handleSwitchDifficulty(entry.key, difficulty)
+                                : setDifficultyEdit({
+                                    ocid: selected?.ocid ?? null,
+                                    byBoss: { ...autoDifficultyByBoss, [entry.key]: difficulty },
+                                  })
+                            }
+                          />
+                          {renderPartySummary(entry, activeDifficulty)}
+                        </View>
+                      </View>
+                    ) : (
+                      <View pointerEvents="none" className="min-w-0 flex-1">
+                        <Text numberOfLines={1} className="text-sm font-semibold text-text-muted">
+                          {entry.name}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
               )
                 })}
@@ -494,14 +488,28 @@ export function BossManageScreen(): React.JSX.Element {
           shares={modalShares}
           // 설정은 앞으로 적힐 기록의 약속이라 이번 주 등급을 보인다.
           autoFee={gradeContext === null ? null : autoFeeFrom(gradeContext, selected.ocid, getCurrentKstDateKey(new Date()))}
-          // 이 화면의 난이도는 행의 세그먼트가 정한다. 모달에서 또 고치면 어느 쪽이 이기는지
-          // 흐려진다.
-          onSelectDifficulty={() => {}}
+          // 난이도는 행의 고르개가 정한다. 그래서 모달은 난이도를 배지로만 보인다.
           onApply={(next) => void applyParty(next)}
           // 적용을 안 눌렀으면 고친 값은 버린다.
           onClose={() => setPartyModal(null)}
         />
       )}
     </ScreenScroll>
+  )
+}
+
+/**
+ * 추적 중인 보스의 초상 표시. 초상을 primary 링으로 두르고 오른쪽 아래에 체크를 얹는다.
+ *
+ * 링은 초상에서 2 떨어진다. 붙이면 초상 그림의 가장자리와 섞여 링으로 안 읽힌다.
+ */
+function TrackedMark(): React.JSX.Element {
+  return (
+    <>
+      <View testID="boss-tracked-mark" className="absolute -inset-1 rounded-full border-2 border-primary" />
+      <View className="absolute -bottom-[5px] -right-[5px] h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-surface bg-primary">
+        <CheckIcon className="h-[9px] w-[9px] text-on-primary" strokeWidth={3.5} />
+      </View>
+    </>
   )
 }

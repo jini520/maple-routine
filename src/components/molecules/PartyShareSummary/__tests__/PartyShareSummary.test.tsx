@@ -81,4 +81,18 @@ describe('PartyShareSummary', () => {
 
     expect(queryByLabelText('스우 파티 인원과 비율 변경')).toBeNull()
   })
+
+  // 배지가 행의 가장자리에 붙고 `변경` 은 그 안쪽에 선다. 그래야 행마다 값의 자리가 맞는다.
+  it('오른쪽에 붙으면 `변경` 이 배지 왼쪽에, 왼쪽에 붙으면 배지 오른쪽에 선다', async () => {
+    const 차례 = (view: Awaited<ReturnType<typeof renderAtom>>): string[] =>
+      view
+        .getByTestId('party-share-summary')
+        .children.map((node) => (typeof node !== 'string' && node.props.role === 'button' ? '변경' : '배지'))
+
+    const 오른쪽 = await renderAtom(<PartyShareSummary label="스우" partySize={2} crystal={EVEN} side="end" onPress={jest.fn()} />)
+    const 왼쪽 = await renderAtom(<PartyShareSummary label="스우" partySize={2} crystal={EVEN} onPress={jest.fn()} />)
+
+    expect(차례(오른쪽)).toEqual(['변경', '배지'])
+    expect(차례(왼쪽)).toEqual(['배지', '변경'])
+  })
 })

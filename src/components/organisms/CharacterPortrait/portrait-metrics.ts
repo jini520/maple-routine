@@ -22,8 +22,8 @@ export const PORTRAIT_RAIL = {
   /** stroke 중심선의 반지름. */
   ringR: 26,
   ringStroke: 3,
-  /** 링을 안 그리는 화면이 세우는 빈 링. 진행 링과 같은 두께면 안 찬 트랙으로 읽힌다. */
-  emptyRingStroke: 1,
+  /** 링을 안 그리는 화면이 세우는 빈 링. 진행 링과 같은 두께면 안 찬 트랙으로 읽혀 한 단 얇다. */
+  emptyRingStroke: 2,
   /** 반원 둘일 때만 12시·6시에서 비운다. 온전한 원에서는 틈이 결손으로 읽힌다. */
   ringGapDeg: 5,
   /** 이름과 레벨이 함께 도는 호 하나의 반지름. */

@@ -9,7 +9,7 @@
  */
 export { AnimatedNumber } from './AnimatedNumber/AnimatedNumber'
 export { Badge, type BadgeVariant } from './Badge/Badge'
-export { difficultyFill, difficultyOutlineColor } from './Badge/variants'
+export { difficultyBadgeStyle, difficultyOutlineColor } from './Badge/variants'
 export { Button } from './Button/Button'
 export { Card } from './Card/Card'
 export { CheckBox } from './CheckBox/CheckBox'
