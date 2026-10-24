@@ -60,6 +60,17 @@ function TimelineRow(props: {
       testID="timeline-row"
       className={`relative h-[30px] rounded-lg ${props.today ? 'bg-primary-tint' : 'bg-control-track'}`}
     >
+      {/* 오늘 줄의 바탕은 불투명해서 카드에 깐 띠를 가린다. 그 줄에만 띠를 다시 그린다. 다른 줄은 반투명이라 아래 띠가 비친다. */}
+      {props.today &&
+        BANDS.map((hour) => (
+          <View
+            key={hour}
+            testID="timeline-row-band"
+            pointerEvents="none"
+            style={{ left: percent(hour / 24), width: percent(3 / 24) }}
+            className="absolute bottom-0 top-0 bg-control-track"
+          />
+        ))}
       {props.day.segments.map((segment) => (
         <Pressable
           key={`${segment.key}:${segment.from}`}
