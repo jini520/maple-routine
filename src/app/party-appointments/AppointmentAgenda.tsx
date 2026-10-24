@@ -1,19 +1,20 @@
 /**
- * 파티 약속 보드의 요일별 목록. 약속이 있는 날만 요일 머리를 세우고 그 아래에 약속을 시작 순으로 쌓는다.
+ * 목록 보기의 요일별 목록. 스케줄이 있는 날만 요일 머리를 세우고 그 아래에 회차 카드를 시작 순으로 쌓는다.
  *
- * 약속 하나는 카드 위 시각 한 줄과 그 아래 보스 카드다. 카드 안의 보스는 캐릭터별로 묶고, 캐릭터 얼굴 · 이름은 묶음 왼쪽 열에 한 번만 적는다.
- * 그 주에 약속이 없으면 빈 상태를 둔다.
+ * 카드는 보드 보기와 같은 `OccurrenceCard` 다. 시간표 막대를 누르면 화면이 그 카드로 스크롤하도록, 카드마다 이 목록 안의
+ * 세로 자리를 알려 준다. 그 주에 스케줄이 없으면 빈 상태를 둔다.
  */
-import { Pressable, View } from 'react-native'
+import { useRef } from 'react'
+import { View } from 'react-native'
 
 import { CalendarClockIcon, Text } from '../../components/atoms'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
-import { endClockOf, type AgendaDay } from '../../features/party-appointments/agenda'
-import { groupBossesByCharacter } from '../../features/party-appointments/boss-groups'
+import type { AgendaDay } from '../../features/party-appointments/agenda'
+import { occurrenceKeyOf } from '../../features/party-appointments/timeline'
 import { WEEKDAY_LABELS } from '../../lib/calendar'
 import type { PartyAppointmentOccurrence } from '../../types/party-appointment'
-import { OccurrenceBossGroups } from './OccurrenceBossGroups'
+import { OccurrenceCard } from './OccurrenceCard'
 
 export interface AppointmentAgendaProps {
   days: AgendaDay[]
@@ -24,50 +25,11 @@ export interface AppointmentAgendaProps {
   nowMs: number
   /** 캐릭터 `ocid → 이름` */
   names: ReadonlyMap<string, string>
-  /** 캐릭터 `ocid → 얼굴 그림 URL` */
-  faces: ReadonlyMap<string, string | null>
+  /** 시간표 막대를 눌러 온 회차. 그 카드만 잠깐 강조한다 */
+  highlightedKey?: string | null
+  /** 카드의 세로 자리(이 목록 맨 위부터). 막대를 누르면 화면이 이 자리로 스크롤한다 */
+  onMeasureCard?: (key: string, y: number) => void
   onPressOccurrence: (occurrence: PartyAppointmentOccurrence) => void
-}
-
-function OccurrenceRow(props: {
-  occurrence: PartyAppointmentOccurrence
-  nowMs: number
-  names: ReadonlyMap<string, string>
-  faces: ReadonlyMap<string, string | null>
-  onPress: () => void
-}): React.JSX.Element {
-  const { occurrence } = props
-  const ended = occurrence.endsAt.getTime() <= props.nowMs
-  const repeats = occurrence.appointment.schedule.type === 'weekly'
-  return (
-    <Pressable
-      role="button"
-      aria-label={`${occurrence.timeKst} 스케줄 상세`}
-      onPress={props.onPress}
-      className={`gap-1 active:opacity-60 ${ended ? 'opacity-50' : ''}`}
-    >
-      {/* 시각은 카드 위 한 줄이다. 카드가 화면 폭을 다 써 보스 이름이 덜 잘린다. */}
-      <View className="flex-row items-baseline px-0.5">
-        <Text className="text-15 font-bold text-text" style={TABULAR_NUMS}>
-          {occurrence.timeKst}
-        </Text>
-        <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>
-          {` ~ ${endClockOf(occurrence)}`}
-        </Text>
-      </View>
-      <View className="gap-2.5 rounded-[14px] bg-surface px-3 py-2.5">
-        <OccurrenceBossGroups
-          groups={groupBossesByCharacter(occurrence.bosses).map((group) => ({
-            ...group,
-            name: props.names.get(group.ocid) ?? '',
-            imageUrl: props.faces.get(group.ocid) ?? null,
-          }))}
-          leadMinutes={occurrence.leadMinutes}
-          repeats={repeats}
-        />
-      </View>
-    </Pressable>
-  )
 }
 
 function DayHeader(props: { dateKey: string; today: boolean }): React.JSX.Element {
@@ -88,6 +50,16 @@ function DayHeader(props: { dateKey: string; today: boolean }): React.JSX.Elemen
 }
 
 export function AppointmentAgenda(props: AppointmentAgendaProps): React.JSX.Element {
+  // 카드의 `onLayout` 은 자기 날 상자 안의 자리라, 날 상자의 자리를 더해야 목록 안의 자리가 된다. 어느 쪽이 먼저 올지 몰라 둘 다 든다.
+  const dayY = useRef(new Map<string, number>())
+  const cardY = useRef(new Map<string, { dateKey: string; y: number }>())
+
+  function report(key: string): void {
+    const card = cardY.current.get(key)
+    const day = card === undefined ? undefined : dayY.current.get(card.dateKey)
+    if (card !== undefined && day !== undefined) props.onMeasureCard?.(key, day + card.y)
+  }
+
   if (props.days.length === 0) {
     return (
       <EmptyState
@@ -101,18 +73,36 @@ export function AppointmentAgenda(props: AppointmentAgendaProps): React.JSX.Elem
   return (
     <View className="gap-4">
       {props.days.map((day) => (
-        <View key={day.dateKey} className="gap-2">
+        <View
+          key={day.dateKey}
+          className="gap-2"
+          onLayout={(event) => {
+            dayY.current.set(day.dateKey, event.nativeEvent.layout.y)
+            day.occurrences.forEach((occurrence) => report(occurrenceKeyOf(occurrence)))
+          }}
+        >
           <DayHeader dateKey={day.dateKey} today={day.dateKey === props.todayKey} />
-          {day.occurrences.map((occurrence) => (
-            <OccurrenceRow
-              key={`${occurrence.appointment.id}:${occurrence.dateKey}`}
-              occurrence={occurrence}
-              nowMs={props.nowMs}
-              names={props.names}
-              faces={props.faces}
-              onPress={() => props.onPressOccurrence(occurrence)}
-            />
-          ))}
+          {day.occurrences.map((occurrence) => {
+            const key = occurrenceKeyOf(occurrence)
+            return (
+              <View
+                key={key}
+                onLayout={(event) => {
+                  cardY.current.set(key, { dateKey: day.dateKey, y: event.nativeEvent.layout.y })
+                  report(key)
+                }}
+              >
+                <OccurrenceCard
+                  occurrence={occurrence}
+                  names={props.names}
+                  nowMs={props.nowMs}
+                  todayKey={props.todayKey}
+                  highlighted={props.highlightedKey === key}
+                  onPress={() => props.onPressOccurrence(occurrence)}
+                />
+              </View>
+            )
+          })}
         </View>
       ))}
     </View>

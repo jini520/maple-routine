@@ -20,6 +20,8 @@ export interface AppointmentDraft {
   /** 알림을 꺼도 고른 값을 들고 있어, 다시 켜면 그 값으로 돌아온다 */
   leadMinutes: number
   repeats: boolean
+  /** 친 그대로의 메모. 앞뒤 공백은 저장할 때 걷는다 */
+  memo: string
 }
 
 /** 시각 휠 · 알림 휠의 분 단위 */
@@ -95,6 +97,7 @@ export function initialDraft(now: Date, repeats = false): AppointmentDraft {
     alarmOn: false,
     leadMinutes: DEFAULT_LEAD_MINUTES,
     repeats,
+    memo: '',
   }
 }
 
@@ -136,7 +139,14 @@ export function formatLead(leadMinutes: number): string {
   return `${parts.join(' ')} 전`
 }
 
+/** 저장할 메모. 공백만 남으면 없는 것이다 */
+export function memoOf(draft: AppointmentDraft): string | undefined {
+  const memo = draft.memo.trim()
+  return memo === '' ? undefined : memo
+}
+
 export function toAppointment(draft: AppointmentDraft, id: string): PartyAppointment {
+  const memo = memoOf(draft)
   return {
     id,
     bosses: draft.bosses,
@@ -153,6 +163,7 @@ export function toAppointment(draft: AppointmentDraft, id: string): PartyAppoint
         }
       : { type: 'once', dateKey: draft.startDateKey },
     exceptions: {},
+    ...(memo === undefined ? {} : { memo }),
   }
 }
 

@@ -1,11 +1,12 @@
 /**
- * 파티 약속 화면. 위에 주 스테퍼, 아래에 그 주의 요일별 목록이다.
+ * 파티 스케줄 화면. 헤더 오른쪽 세그먼트로 목록 · 보드 보기를 고르고, 위에 주 스테퍼가 있다.
  *
- * 약속을 누르면 상세 시트, 오른쪽 아래 ＋ 로 추가 시트가 열린다.
+ * 목록 보기는 24시간 시간표 카드와 요일별 목록이고, 보드 보기는 요일 일곱 열이다. 카드를 누르면 상세 시트,
+ * 오른쪽 아래 ＋ 로 추가 시트가 열린다. 시간표 막대를 누르면 목록의 그 카드로 스크롤해 잠깐 강조한다.
  */
 import { useFocusEffect } from '@react-navigation/native'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Pressable, View, type ScrollView } from 'react-native'
 
 import {
   CalendarPlusIcon,
@@ -16,6 +17,7 @@ import {
   RepeatIcon,
   Text,
 } from '../../components/atoms'
+import { Segment } from '../../components/molecules/Segment/Segment'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -26,18 +28,31 @@ import { agendaDays, thisWeekJumpOf } from '../../features/party-appointments/ag
 import { findNotifiedOccurrence, usePartyAppointmentOpenStore } from '../../features/party-appointments/open-request'
 import { occurrencesInWeek } from '../../features/party-appointments/occurrences'
 import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
+import { occurrenceKeyOf, weekTimeline } from '../../features/party-appointments/timeline'
+import { upcomingOccurrences } from '../../features/party-appointments/upcoming'
+import { usePartyScheduleViewStore, type PartyScheduleView } from '../../features/party-appointments/view-preference'
 import { formatBossProfitPeriodLabel } from '../../lib/boss/boss-profit-period'
 import { resetWeekStartOf, shiftDateKey } from '../../lib/calendar'
 import { FAB_SPACE_PX } from '../../lib/fab-metrics'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { tapFeedback } from '../../native/haptics'
 import { AppointmentAgenda } from './AppointmentAgenda'
+import { AppointmentBoard } from './AppointmentBoard'
 import { AppointmentSheet, type AppointmentSheetTarget } from './AppointmentSheet'
+import { ScheduleTimeline } from './ScheduleTimeline'
 
 /** 지난 약속을 가르는 시계가 한 번씩 도는 간격 */
 const NOW_TICK_MS = 60_000
 
 const ARROW_CLASS = 'h-7 w-7 items-center justify-center rounded-full border border-border'
+
+const VIEWS: readonly PartyScheduleView[] = ['list', 'board']
+const VIEW_LABELS: Record<PartyScheduleView, string> = { list: '목록', board: '보드' }
+
+/** 막대를 눌러 온 카드를 강조하는 시간 */
+const HIGHLIGHT_MS = 1200
+/** 카드로 스크롤할 때 카드 위에 남기는 여백 */
+const SCROLL_TOP_GAP = 12
 
 export function AppointmentsScreen(): React.JSX.Element {
   const appointments = usePartyAppointmentsStore((state) => state.appointments)
@@ -101,7 +116,42 @@ export function AppointmentsScreen(): React.JSX.Element {
     () => new Map(characters.map((character) => [character.ocid, character.characterName])),
     [characters],
   )
-  const days = useMemo(() => agendaDays(occurrencesInWeek(appointments, weekStart)), [appointments, weekStart])
+  const occurrences = useMemo(() => occurrencesInWeek(appointments, weekStart), [appointments, weekStart])
+  const days = useMemo(() => agendaDays(occurrences), [occurrences])
+  const nextKey = useMemo(() => {
+    const [next] = upcomingOccurrences(appointments, new Date(nowMs), 1)
+    return next === undefined ? null : occurrenceKeyOf(next)
+  }, [appointments, nowMs])
+  const timeline = useMemo(
+    () => weekTimeline(occurrences, weekStart, nowMs, nextKey),
+    [occurrences, weekStart, nowMs, nextKey],
+  )
+
+  const view = usePartyScheduleViewStore((state) => state.view)
+  const viewLoaded = usePartyScheduleViewStore((state) => state.loaded)
+  useEffect(() => {
+    if (!viewLoaded) void usePartyScheduleViewStore.getState().load()
+  }, [viewLoaded])
+
+  // 시간표 막대에서 목록 카드로 가는 자리. `onLayout` 은 부모 안의 자리라 겹친 상자 셋의 자리와 카드의 목록 안 자리를 더한다.
+  const scroller = useRef<ScrollView>(null)
+  const listY = useRef({ content: 0, block: 0, agenda: 0 })
+  const cardYs = useRef(new Map<string, number>())
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
+  useEffect(() => {
+    if (highlightedKey === null) return
+    const timer = setTimeout(() => setHighlightedKey(null), HIGHLIGHT_MS)
+    return () => clearTimeout(timer)
+  }, [highlightedKey])
+
+  function goToCard(key: string): void {
+    const y = cardYs.current.get(key)
+    if (y === undefined) return
+    tapFeedback()
+    const { content, block, agenda } = listY.current
+    scroller.current?.scrollTo({ y: Math.max(0, content + block + agenda + y - SCROLL_TOP_GAP), animated: true })
+    setHighlightedKey(key)
+  }
 
   function moveWeek(next: string): void {
     tapFeedback()
@@ -111,17 +161,32 @@ export function AppointmentsScreen(): React.JSX.Element {
   return (
     <View testID="screen-Appointments" className="flex-1">
       <ScreenScroll
+        ref={scroller}
         header={
           <PageHeader>
-            <PageHeaderTitleRow>
+            <PageHeaderTitleRow
+              trailing={
+                <Segment
+                  size="tab"
+                  options={VIEWS}
+                  selected={view}
+                  onSelect={(next) => usePartyScheduleViewStore.getState().setView(next)}
+                  labelOf={(value) => VIEW_LABELS[value]}
+                />
+              }
+            >
               <Text className="text-lg font-semibold text-text">파티 스케줄</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }
       >
         {/* 바닥 여백은 떠 있는 ＋ 의 몫이다. 하단바의 몫은 `ScreenScroll` 이 남긴다. */}
-        <View className="gap-1 px-4" style={{ paddingBottom: FAB_SPACE_PX }}>
-          <View className="flex-row items-center justify-center gap-4 py-3">
+        <View
+          className="gap-1"
+          style={{ paddingBottom: FAB_SPACE_PX }}
+          onLayout={(event) => (listY.current.content = event.nativeEvent.layout.y)}
+        >
+          <View className="flex-row items-center justify-center gap-4 px-4 py-3">
             {/* 미래 주에서는 왼쪽 겹화살표로 이번 주에 돌아간다. 늘 서 있고 쓸 수 없으면 흐리게 막힌다. */}
             <Pressable
               role="button"
@@ -168,15 +233,34 @@ export function AppointmentsScreen(): React.JSX.Element {
             </Pressable>
           </View>
 
-          <AppointmentAgenda
-            days={days}
-            todayKey={todayKey}
-            weekLabel={periodLabel.primary}
-            nowMs={nowMs}
-            names={names}
-            faces={faces}
-            onPressOccurrence={(occurrence) => setSheet({ occurrence, weekStart })}
-          />
+          {/* 고른 보기를 읽기 전에 그리면 보드를 고른 사용자에게 목록이 한 번 스친다. */}
+          {viewLoaded && view === 'list' && (
+            <View className="gap-4 px-4" onLayout={(event) => (listY.current.block = event.nativeEvent.layout.y)}>
+              <ScheduleTimeline days={timeline} todayKey={todayKey} onPressSegment={goToCard} />
+              <View onLayout={(event) => (listY.current.agenda = event.nativeEvent.layout.y)}>
+                <AppointmentAgenda
+                  days={days}
+                  todayKey={todayKey}
+                  weekLabel={periodLabel.primary}
+                  nowMs={nowMs}
+                  names={names}
+                  highlightedKey={highlightedKey}
+                  onMeasureCard={(key, y) => cardYs.current.set(key, y)}
+                  onPressOccurrence={(occurrence) => setSheet({ occurrence, weekStart })}
+                />
+              </View>
+            </View>
+          )}
+          {viewLoaded && view === 'board' && (
+            <AppointmentBoard
+              days={timeline}
+              todayKey={todayKey}
+              weekLabel={periodLabel.primary}
+              nowMs={nowMs}
+              names={names}
+              onPressOccurrence={(occurrence) => setSheet({ occurrence, weekStart })}
+            />
+          )}
         </View>
       </ScreenScroll>
       {/* 매주 반복이 위, ＋ 에 가까운 아래가 한 번만이다. */}

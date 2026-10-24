@@ -23,6 +23,8 @@ const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.notificationPermissionAsked,
   // 파티 약속 알림 스위치. 지워지면 사용자가 끈 약속 알림이 다시 온다.
   STORAGE_KEYS.partyAlarmEnabled,
+  // 파티 스케줄에서 고른 보기. 사용자가 고른 것이라 지워지면 늘 보드로 보던 화면이 목록으로 열린다.
+  STORAGE_KEYS.partyScheduleView,
   // 예약해 둔 로컬 알림. 지워지면 OS 에 남은 예약을 취소할 길이 없다.
   STORAGE_KEYS.notificationLedger,
   // today 배너에서 닫은 공지. 지워지면 사용자가 이미 닫은 공지가 첫 화면에 되살아난다.

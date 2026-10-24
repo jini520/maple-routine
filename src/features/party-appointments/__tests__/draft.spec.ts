@@ -24,6 +24,7 @@ function draft(overrides: Partial<AppointmentDraft>): AppointmentDraft {
     alarmOn: false,
     leadMinutes: 10,
     repeats: false,
+    memo: '',
     ...overrides,
   }
 }
@@ -143,6 +144,11 @@ describe('toAppointment', () => {
 
   it('알림이 켜져 있으면 고른 분을 적는다', () => {
     expect(toAppointment(draft({ alarmOn: true, leadMinutes: 75 }), 'id-3').leadMinutes).toBe(75)
+  })
+
+  it('메모는 앞뒤 공백을 걷어 적고, 공백만 남으면 칸째 적지 않는다', () => {
+    expect(toAppointment(draft({ memo: '  2번 방\n세렌 확인 \n' }), 'id-4').memo).toBe('2번 방\n세렌 확인')
+    expect(toAppointment(draft({ memo: ' \n ' }), 'id-5')).not.toHaveProperty('memo')
   })
 })
 

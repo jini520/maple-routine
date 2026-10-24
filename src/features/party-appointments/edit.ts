@@ -37,6 +37,7 @@ export function draftFromOccurrence(occurrence: PartyAppointmentOccurrence): App
     alarmOn: occurrence.leadMinutes !== null,
     leadMinutes: occurrence.leadMinutes ?? DEFAULT_LEAD_MINUTES,
     repeats: occurrence.appointment.schedule.type === 'weekly',
+    memo: occurrence.appointment.memo ?? '',
   }
 }
 
@@ -79,22 +80,24 @@ export function applyEdit(
 
   if (options.thisWeekOnly) {
     const edited = toAppointment(draft, target.id)
-    return replace([
-      {
-        ...target,
-        exceptions: {
-          ...target.exceptions,
-          [weekStart]: {
-            type: 'override',
-            dateKey: draft.startDateKey,
-            timeKst: edited.timeKst,
-            durationMinutes: durationOf(draft),
-            bosses: draft.bosses,
-            leadMinutes: edited.leadMinutes,
-          },
+    const next: PartyAppointment = {
+      ...target,
+      exceptions: {
+        ...target.exceptions,
+        [weekStart]: {
+          type: 'override',
+          dateKey: draft.startDateKey,
+          timeKst: edited.timeKst,
+          durationMinutes: durationOf(draft),
+          bosses: draft.bosses,
+          leadMinutes: edited.leadMinutes,
         },
       },
-    ])
+    }
+    // 메모는 스케줄마다 하나라 이 주만 고쳐도 약속 전체에 적는다.
+    if (edited.memo === undefined) delete next.memo
+    else next.memo = edited.memo
+    return replace([next])
   }
 
   // 앞으로 모두. 옛 주별 예외는 시각 · 보스가 바뀌면 뜻을 잃으므로 가져가지 않는다.

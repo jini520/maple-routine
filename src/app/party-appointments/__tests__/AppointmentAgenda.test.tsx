@@ -1,6 +1,7 @@
 import { fireEvent } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
 
-import { renderAtom } from '../../../components/__tests__/render-atom'
+import { renderAtom, 기본테마 } from '../../../components/__tests__/render-atom'
 import { agendaDays } from '../../../features/party-appointments/agenda'
 import { occurrencesInWeek } from '../../../features/party-appointments/occurrences'
 import type { PartyAppointment } from '../../../types/party-appointment'
@@ -22,7 +23,6 @@ function appointment(overrides: Partial<PartyAppointment>): PartyAppointment {
 
 const WEEK = '2026-10-01'
 const NAMES = new Map([['ocid-1', '낟낟'], ['ocid-2', '낟넘']])
-const FACES = new Map<string, string | null>([['ocid-1', null], ['ocid-2', null]])
 
 function props(appointments: PartyAppointment[], overrides: Partial<AppointmentAgendaProps> = {}): AppointmentAgendaProps {
   return {
@@ -31,7 +31,6 @@ function props(appointments: PartyAppointment[], overrides: Partial<AppointmentA
     weekLabel: '이번 주',
     nowMs: Date.parse('2026-10-01T20:00:00Z'),
     names: NAMES,
-    faces: FACES,
     onPressOccurrence: jest.fn(),
     ...overrides,
   }
@@ -75,6 +74,35 @@ describe('AppointmentAgenda', () => {
 
     expect(view.queryByText('매주')).toBeNull()
     expect(view.queryByText(/분 전$/)).toBeNull()
+  })
+
+  it('메모가 있으면 카드 맨 아래에 두 줄까지 적는다', async () => {
+    const view = await renderAtom(<AppointmentAgenda {...props([appointment({ memo: '2번 방\n세렌 확인\n칼로스 신호' })])} />)
+
+    expect(view.getByTestId('occurrence-card-memo').props.numberOfLines).toBe(2)
+  })
+
+  it('남은 시간은 오늘 아직 시작 전인 회차에만 붙는다', async () => {
+    // 지금은 10/2(금) 05:00 KST 다.
+    const today = appointment({ id: 't', schedule: { type: 'once', dateKey: '2026-10-02' } })
+    const tomorrow = appointment({ id: 'n', schedule: { type: 'once', dateKey: '2026-10-03' } })
+    const view = await renderAtom(<AppointmentAgenda {...props([today, tomorrow])} />)
+
+    expect(view.getByText('16시간 뒤')).toBeTruthy()
+    expect(view.queryAllByText(/뒤$/)).toHaveLength(1)
+  })
+
+  it('강조할 회차 카드만 강조 바탕이다', async () => {
+    const view = await renderAtom(
+      <AppointmentAgenda
+        {...props([appointment({}), appointment({ id: 'b', timeKst: '22:00' })], { highlightedKey: 'b:2026-10-01' })}
+      />,
+    )
+
+    const backgrounds = view
+      .getAllByTestId('occurrence-card')
+      .map((card) => StyleSheet.flatten(card.props.style)?.backgroundColor)
+    expect(backgrounds).toEqual([기본테마.surface, 기본테마.primaryTint])
   })
 
   it('약속을 누르면 그 회차로 부른다', async () => {
