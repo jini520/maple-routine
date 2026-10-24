@@ -13,7 +13,7 @@
 // ③ **stuck 헤더 하단 페이드**. 지나가는 콘텐츠가 없어 덮을 대상이 없다.
 // ④ **스크롤로 팝오버 닫기**. 이 팝오버는 `fixed` 가 아니라 카드 안 절대배치라 카드와 함께
 //    움직인다(닫을 이유가 사라졌다).
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { bossesInSection } from '../../../lib/boss/bosses'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
@@ -24,10 +24,6 @@ import type { RecordedDrop } from '../../../types/drops'
 
 import { CharacterAccordion } from '../CharacterAccordion'
 import { buildCharacterGroups } from '../character-groups'
-import {
-  VALUABLE_CARD_GLOW_STATIC,
-  VALUABLE_CARD_RING_RADIUS,
-} from '../valuable-card-glow'
 import { 다른주간보스, 월간보스, PERIOD, renderProfit, 보스행, 주간보스, 주차소계, 컨텍스트값, 주간보스이름 } from './harness'
 
 // 모션 줄이기는 분기로만 관측된다(`components/__tests__/reduced-motion.ts`).
@@ -117,16 +113,15 @@ describe('고가 드롭 강조', () => {
   const 고가드롭 = { [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [드롭({ itemKey: 고가아이템, itemName: 고가아이템 })] }
   const 평범한드롭 = { [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [드롭()] }
 
-  it('고가 아이템을 먹으면 골드 링·글로우·배지가 함께 붙는다', async () => {
-    const { getByTestId, getByLabelText } = await renderProfit(
+  it('고가 아이템을 먹으면 홀로그램 빛과 아이템 표시가 붙고, 테두리는 없다', async () => {
+    const { getByTestId, getByLabelText, queryByTestId } = await renderProfit(
       <CharacterAccordion group={그룹()} />,
       컨텍스트값({ dropsByRowKey: 고가드롭 }),
     )
 
-    expect(getByTestId('valuable-drop-card-ring')).toBeTruthy()
-    expect(getByTestId('valuable-drop-card-glow-low')).toBeTruthy()
-    expect(getByTestId('valuable-drop-card-glow-high')).toBeTruthy()
+    expect(getByTestId('character-card-sheen')).toBeTruthy()
     expect(getByLabelText('고가 드롭')).toBeTruthy()
+    expect(queryByTestId('valuable-drop-card-ring')).toBeNull()
   })
 
   it('고가가 아닌 드롭만 있으면 강조가 하나도 안 붙는다', async () => {
@@ -135,71 +130,44 @@ describe('고가 드롭 강조', () => {
       컨텍스트값({ dropsByRowKey: 평범한드롭 }),
     )
 
-    expect(queryByTestId('valuable-drop-card-ring')).toBeNull()
-    expect(queryByTestId('valuable-drop-card-glow-low')).toBeNull()
+    expect(queryByTestId('character-card-sheen')).toBeNull()
     expect(queryByLabelText('고가 드롭')).toBeNull()
   })
 
   // 카드 겉면은 그 안에 무엇이 있는지에 대한 주장이다. 미완료 행은 금액 자리에 `미완료` 를
-  // 세우므로, 같은 드롭이 카드를 두르면 펼쳐 봐도 없는 것을 겉면에서 주장하게 된다.
-  it('미완료 행의 고가 드롭이면 링·글로우·배지가 하나도 안 붙는다', async () => {
+  // 세우므로, 같은 드롭이 카드를 빛나게 하면 펼쳐 봐도 없는 것을 겉면에서 주장하게 된다.
+  it('미완료 행의 고가 드롭이면 빛도 표시도 안 붙는다', async () => {
     const { queryByTestId, queryByLabelText } = await renderProfit(
       <CharacterAccordion group={그룹([보스행({ isComplete: false, payoutMeso: null })])} />,
       컨텍스트값({ dropsByRowKey: 고가드롭 }),
     )
 
-    expect(queryByTestId('valuable-drop-card-ring')).toBeNull()
-    expect(queryByTestId('valuable-drop-card-glow-low')).toBeNull()
-    expect(queryByTestId('valuable-drop-card-glow-high')).toBeNull()
+    expect(queryByTestId('character-card-sheen')).toBeNull()
     expect(queryByLabelText('고가 드롭')).toBeNull()
   })
 
-  it('펼치면 링의 모서리 반경이 줄어든다', async () => {
+  it('펼치면 빛이 머리만이 아니라 본문까지 카드 전체를 덮는다', async () => {
     const { getByTestId, getByRole } = await renderProfit(
       <CharacterAccordion group={그룹()} />,
       컨텍스트값({ dropsByRowKey: 고가드롭 }),
     )
 
-    expect(getByTestId('valuable-drop-card-ring')).toHaveStyle({
-      borderRadius: VALUABLE_CARD_RING_RADIUS.collapsed,
-    })
-
     await act(async () => {
       fireEvent.press(getByRole('button', { expanded: false }))
     })
 
-    expect(getByTestId('valuable-drop-card-ring')).toHaveStyle({
-      borderRadius: VALUABLE_CARD_RING_RADIUS.expanded,
-    })
+    // 카드의 빛은 머리가 아니라 본문을 함께 감싸는 셸에 붙는다.
+    const shell = within(getByTestId('character-card-shell'))
+    expect(shell.getByTestId('character-card-sheen')).toBeTruthy()
+    expect(shell.getByTestId('accordion-body')).toBeTruthy()
   })
 
-  it('펼치면 맥동이 멈추고 정적 글로우만 남는다(결정 4). 링과 배지는 유지된다', async () => {
-    const { getByTestId, queryByTestId, getByRole, getByLabelText } = await renderProfit(
-      <CharacterAccordion group={그룹()} />,
-      컨텍스트값({ dropsByRowKey: 고가드롭 }),
-    )
+  it('고가 드롭이 있으면 금액을 오로라 글자로 칠한다', async () => {
+    const valuable = await renderProfit(<CharacterAccordion group={그룹()} />, 컨텍스트값({ dropsByRowKey: 고가드롭 }))
+    expect(valuable.getByTestId('character-amount-aurora')).toBeTruthy()
 
-    await act(async () => {
-      fireEvent.press(getByRole('button', { expanded: false }))
-    })
-
-    expect(queryByTestId('valuable-drop-card-glow-low')).toBeNull()
-    expect(getByTestId('valuable-drop-card-glow-static')).toHaveStyle({
-      boxShadow: [...VALUABLE_CARD_GLOW_STATIC],
-    })
-    expect(getByTestId('valuable-drop-card-ring')).toBeTruthy()
-    expect(getByLabelText('고가 드롭')).toBeTruthy()
-  })
-
-  it('모션을 끄면 접힘에서도 정적 글로우다. 펼침과 같은 그림에 도달한다', async () => {
-    mockReducedMotion(true)
-    const { getByTestId, queryByTestId } = await renderProfit(
-      <CharacterAccordion group={그룹()} />,
-      컨텍스트값({ dropsByRowKey: 고가드롭 }),
-    )
-
-    expect(getByTestId('valuable-drop-card-glow-static')).toBeTruthy()
-    expect(queryByTestId('valuable-drop-card-glow-high')).toBeNull()
+    const plain = await renderProfit(<CharacterAccordion group={그룹()} />, 컨텍스트값({ dropsByRowKey: 평범한드롭 }))
+    expect(plain.queryByTestId('character-amount-aurora')).toBeNull()
   })
 })
 

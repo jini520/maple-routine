@@ -46,8 +46,6 @@ import type { BossCycle } from '../../types/scheduler'
 
 import {
   Badge,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   PackageOpenIcon,
   ProfitIcon,
   Text,
@@ -56,11 +54,11 @@ import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
-import { tapFeedback } from '../../native/haptics'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
@@ -347,48 +345,21 @@ export function DropPriceScreen(): React.JSX.Element {
         {/* `screen-<라우트 이름>` 은 내비게이션 테스트가 그 라우트로 밀면 그 화면이 열리는가 를
             묻는 이름이다. */}
         <View testID="screen-DropPrice" className="gap-4 px-4 pb-6">
-          {/* 기간 네비게이터. 보스 수익 화면의 것을 그대로 옮겼다(같은 h-7 원형 버튼 + 가운데
-              2줄 라벨). 이 화면은 그 화면에서 보던 기간을 이어받아 열리므로 넘기는 손짓도
-              같아야 한다. */}
-          <View className="flex-row items-center justify-center gap-4 py-3">
-            <Pressable
-              role="button"
-              // 화면은 그대로여도 보는 기간이 바뀐다. 꺼진 화살표는 누름 자체가 안 들어와 조용하다.
-              onPress={() => {
-                tapFeedback()
-                setWeek(getAdjacentPeriodKey(cycle, week, 'prev'))
-              }}
-              disabled={isEarliestNavigablePeriod(cycle, week)}
-              aria-label="이전 기간"
-              className={`h-7 w-7 items-center justify-center rounded-full border border-border${
-                isEarliestNavigablePeriod(cycle, week) ? ' opacity-30' : ''
-              }`}
-            >
-              <ChevronLeftIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
-            </Pressable>
-
-            <View>
-              <Text className="text-center text-sm font-semibold text-text">{periodLabel.primary}</Text>
-              <Text className="mt-0.5 text-center text-xs text-text-muted" style={TABULAR_NUMS}>
-                {periodLabel.secondary}
-              </Text>
-            </View>
-
-            <Pressable
-              role="button"
-              onPress={() => {
-                tapFeedback()
-                setWeek(getAdjacentPeriodKey(cycle, week, 'next'))
-              }}
-              disabled={isLatestPeriod(cycle, week, now)}
-              aria-label="다음 기간"
-              className={`h-7 w-7 items-center justify-center rounded-full border border-border${
-                isLatestPeriod(cycle, week, now) ? ' opacity-30' : ''
-              }`}
-            >
-              <ChevronRightIcon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
-            </Pressable>
-          </View>
+          {/* 보스 수익 화면에서 보던 기간을 이어받아 열리므로 같은 기간 이동 줄을 쓴다. */}
+          <PeriodStepper
+            primary={periodLabel.primary}
+            secondary={periodLabel.secondary}
+            prev={{
+              label: '이전 기간',
+              disabled: isEarliestNavigablePeriod(cycle, week),
+              onPress: () => setWeek(getAdjacentPeriodKey(cycle, week, 'prev')),
+            }}
+            next={{
+              label: '다음 기간',
+              disabled: isLatestPeriod(cycle, week, now),
+              onPress: () => setWeek(getAdjacentPeriodKey(cycle, week, 'next')),
+            }}
+          />
 
           {status === 'failed' ? (
             // 실패를 빈 목록으로 위장하지 않는다.

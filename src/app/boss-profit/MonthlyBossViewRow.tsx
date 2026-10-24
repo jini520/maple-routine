@@ -21,6 +21,8 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { bossPortraitSlugOf } from '../../lib/boss/bosses'
 import { BOSS_PORTRAIT_SIZE, DropIndicator } from './BossProfitBossRow'
+import { rowHasValuableDrop } from './character-groups'
+import { InsetCell } from './InsetCell'
 import { ItemRevenueTrigger } from './ItemRevenueTrigger'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
@@ -57,9 +59,10 @@ export function MonthlyBossViewRow(props: {
 
   return (
     <>
-      <View
+      <InsetCell
         testID="monthly-boss-view-row"
-        className="flex-row items-center gap-3 border-b border-border p-4"
+        className="flex-row items-center gap-3 px-3 py-2.5"
+        sheen={rowHasValuableDrop(row, drops)}
       >
         <BossPortrait portraitSlug={bossPortraitSlugOf(row.bossKey)} label={row.bossName} size={BOSS_PORTRAIT_SIZE} />
 
@@ -106,7 +109,7 @@ export function MonthlyBossViewRow(props: {
             )}
           </View>
         </View>
-      </View>
+      </InsetCell>
 
       {isItemPopoverOpen && (
         <ItemRevenuePopover

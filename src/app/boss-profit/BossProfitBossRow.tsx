@@ -40,6 +40,8 @@ import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
 import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import { AlertTriangleIcon } from '../../components/atoms'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
+import { rowHasValuableDrop } from './character-groups'
+import { InsetCell } from './InsetCell'
 
 // BossPortrait의 size prop 기본값(40px, 기존 h-10 관례)과 동일하게 시작값을 맞춘다.
 export const BOSS_PORTRAIT_SIZE = 40
@@ -47,12 +49,6 @@ export const BOSS_PORTRAIT_SIZE = 40
 export interface BossProfitBossRowProps {
   row: BossProfitRow
   drops: RecordedDrop[]
-  /**
-   * 목록의 마지막 행인지. RN 에 `:last-child` 가 없어 목록을 아는 부모가 알려 준다.
-   *
-   * 테두리를 아예 빼지 않고 색만 지우는 것이 요점이다. 빼면 그 행만 1px 짧아진다.
-   */
-  isLast?: boolean
 }
 
 // 접힌 보스 행의 이름 라인 오른쪽에 붙는 드롭 지시자. 있으면 아이콘 스택+개수, 없으면
@@ -62,7 +58,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
     // 아이콘 스택(h-6)과 같은 슬롯이라 높이도 h-6으로 맞춘다. 패딩으로 높이를 만들면
     // 글꼴 line-height가 그대로 행 높이에 실려 드롭 유무로 행이 튄다.
     return (
-      <View className="ml-auto h-6 shrink-0 flex-row items-center rounded-full border border-dashed border-primary bg-primary-tint px-2.5">
+      <View className="ml-auto h-6 shrink-0 flex-row items-center rounded-full bg-primary-tint px-2.5">
         <Text className="text-11 font-bold text-primary-ink">＋ 드롭 추가</Text>
       </View>
     )
@@ -72,19 +68,16 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
   const extra = props.drops.length - shown.length
 
   return (
-    <View className="ml-auto shrink-0 flex-row items-center">
+    // 아이콘은 겹치지 않는다. 겹치면 무엇을 먹었는지 알아보기 어렵다.
+    <View className="ml-auto shrink-0 flex-row items-center gap-[3px]">
       {shown.map((drop, index) => {
         const url = dropItemIconOf(drop.itemKey)
         return (
-          <View
-            key={`${drop.itemKey ?? drop.itemName}-${index}`}
-            className="h-6 w-6 shrink-0"
-            style={{ marginLeft: index === 0 ? 0 : -2, zIndex: shown.length - index }}
-          >
+          <View key={`${drop.itemKey ?? drop.itemName}-${index}`} className="h-6 w-6 shrink-0">
             {url !== null ? (
               <Image source={url} resizeMode="contain" className="h-6 w-6" />
             ) : (
-              <View className="h-6 w-6 rounded-md border-[1.5px] border-card-body bg-surface-2" />
+              <View className="h-6 w-6 rounded-md bg-surface-2" />
             )}
             {/* 특수 스킬 반지(반지 상자 드릴다운 결과)만 등급이 기록된다. 드롭 시트
                 ItemThumb의 lv 뱃지와 같은 규칙. 절대배치라 이름 줄의 h-6 고정에는
@@ -98,11 +91,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
         )
       })}
       {extra > 0 && (
-        <View
-          testID="drop-stack-more"
-          className="h-6 w-6 items-center justify-center rounded-md border-[1.5px] border-card-body bg-surface-2"
-          style={{ marginLeft: -2, zIndex: 0 }}
-        >
+        <View testID="drop-stack-more" className="h-6 min-w-6 items-center justify-center rounded-md bg-control-track px-1">
           <Text className="text-10 font-bold text-text-muted">+{extra}</Text>
         </View>
       )}
@@ -243,14 +232,11 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   }
 
   return (
-    // 마지막 행도 테두리 "박스"는 남기고 색만 지운다.
-    <View
+    // 초상은 이름 줄이 아니라 **행 전체**의 세로 가운데다. `items-start` 면 오른쪽이 두 줄인 행에서 초상만 위로 붙는다.
+    <InsetCell
       testID="boss-profit-boss-row"
-      // 초상은 이름 줄이 아니라 **행 전체**의 세로 가운데다. `items-start` 면 오른쪽이 두 줄인
-      // 행에서 초상만 위로 붙는다.
-      className={`flex-row items-center gap-3 border-b p-4 ${
-        props.isLast === true ? 'border-b-transparent' : 'border-border'
-      }`}
+      className="flex-row items-center gap-3 px-3 py-2.5"
+      sheen={rowHasValuableDrop(row, props.drops)}
     >
       <BossPortrait portraitSlug={bossPortraitSlugOf(row.bossKey)} label={row.bossName} size={BOSS_PORTRAIT_SIZE} />
 
@@ -435,6 +421,6 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           }}
         />
       )}
-    </View>
+    </InsetCell>
   )
 }

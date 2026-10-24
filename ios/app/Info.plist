@@ -52,6 +52,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSMotionUsageDescription</key>
+	<string>폰을 기울이면 고가 드롭 카드의 빛이 따라 움직이게 할 때 씁니다.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>만든 보스 수익·가계부 이미지를 사진 앨범에 저장할 때 씁니다.</string>
 	<key>RCTNewArchEnabled</key>

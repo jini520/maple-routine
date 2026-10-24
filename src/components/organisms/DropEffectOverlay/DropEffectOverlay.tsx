@@ -44,11 +44,16 @@ const ITEM_SIZE_PX = 72
 /** DropEff 기둥만 아이템과 무관하게 세로 이동(양수 = 아래로). */
 const DROP_OFFSET_Y_PX = 8
 
-/** 배경 방사 그라디언트. 테마 밖 고정색. */
-const BACKDROP_INNER = '#1b0f29'
-const BACKDROP_OUTER = '#05010a'
-/** CSS `farthest-corner` 의 근사. */
-const BACKDROP_RADIUS = '70.7%'
+/**
+ * 배경. 테마 밖 고정색인 바탕 위에 아래 청록 · 위 보라 타원 두 겹을 깐다.
+ *
+ * 빛기둥이 하늘 · 청록이 주색이고 위로 갈수록 코발트 · 보라가 섞여서, 배경도 그 결을 따른다.
+ */
+const BACKDROP_BASE = '#04050b'
+const BACKDROP_GLOWS = [
+  { key: 'low', cy: '72%', color: '#0e2a3a' },
+  { key: 'high', cy: '28%', color: '#22163a' },
+] as const
 
 interface DropEffectOverlayProps {
   /** 드롭 아이템 key. 그림과 스크린리더 이름을 마스터 표에서 찾는다. */
@@ -226,7 +231,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
         onPress={handlePress}
         className="flex-1 overflow-hidden"
         // 그라디언트가 못 덮은 자리로 뒤(시트)가 비치지 않게, 바깥색을 바탕으로 깔아 둔다.
-        style={{ backgroundColor: BACKDROP_OUTER }}
+        style={{ backgroundColor: BACKDROP_BASE }}
       >
         <Svg
           testID="drop-effect-backdrop"
@@ -235,12 +240,24 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
           height={viewportH}
         >
           <Defs>
-            <RadialGradient id={gradientId} cx="50%" cy="50%" r={BACKDROP_RADIUS}>
-              <Stop offset="0%" stopColor={BACKDROP_INNER} />
-              <Stop offset="100%" stopColor={BACKDROP_OUTER} />
-            </RadialGradient>
+            {BACKDROP_GLOWS.map((glow) => (
+              <RadialGradient key={glow.key} id={`${gradientId}-${glow.key}`} cx="50%" cy={glow.cy} rx="70%" ry="45%">
+                <Stop offset="0%" stopColor={glow.color} />
+                <Stop offset="70%" stopColor={glow.color} stopOpacity={0} />
+              </RadialGradient>
+            ))}
           </Defs>
-          <Rect x="0" y="0" width={viewportW} height={viewportH} fill={`url(#${gradientId})`} />
+          <Rect x="0" y="0" width={viewportW} height={viewportH} fill={BACKDROP_BASE} />
+          {BACKDROP_GLOWS.map((glow) => (
+            <Rect
+              key={glow.key}
+              x="0"
+              y="0"
+              width={viewportW}
+              height={viewportH}
+              fill={`url(#${gradientId}-${glow.key})`}
+            />
+          ))}
         </Svg>
 
 

@@ -5,9 +5,10 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
-import { Pressable, View, useWindowDimensions, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
+import { View, useWindowDimensions, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
 
-import { ChevronLeftIcon, ChevronRightIcon, ChevronsRightIcon, Text } from '../../components/atoms'
+import { Text } from '../../components/atoms'
+import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -40,7 +41,6 @@ import {
 import { monthKeyOf } from '../../lib/calendar'
 import { formatMesoCompact, formatMesoSigned } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
-import { tapFeedback } from '../../native/haptics'
 import type { BossCycle } from '../../types'
 import { SettlementBanner } from '../SettlementBanner'
 import { BossSection } from './BossSection'
@@ -56,31 +56,6 @@ const CYCLES = ['weekly', 'monthly'] as const
 const CYCLE_LABELS: Record<BossCycle, string> = { weekly: '주간', monthly: '월간' }
 const NO_DAYS: DaysByDate = {}
 const NO_IMAGES: ReadonlyMap<string, string> = new Map()
-
-/** 기간 줄의 원형 버튼. 가계부 · 보스 수익과 같은 28px 원이다. */
-function PeriodArrow(props: {
-  label: string
-  icon: typeof ChevronLeftIcon
-  disabled: boolean
-  onPress: () => void
-}): React.JSX.Element {
-  const Icon = props.icon
-  return (
-    <Pressable
-      role="button"
-      aria-label={props.label}
-      aria-disabled={props.disabled}
-      disabled={props.disabled}
-      onPress={() => {
-        tapFeedback()
-        props.onPress()
-      }}
-      className={`h-7 w-7 items-center justify-center rounded-full border border-border${props.disabled ? ' opacity-30' : ''}`}
-    >
-      <Icon className="h-4 w-4 text-text" strokeWidth={2} aria-hidden />
-    </Pressable>
-  )
-}
 
 function signed(meso: number): string {
   return `${meso > 0 ? '+' : meso < 0 ? '−' : ''}${formatMesoCompact(Math.abs(meso))}`
@@ -244,35 +219,27 @@ export function StatsScreen(): React.JSX.Element {
             revealVisible()
           }}
         >
-          <View testID="stats-period-nav" className="flex-row items-center justify-center gap-4 py-3">
-            <View className="h-7 w-7" />
-            <PeriodArrow
-              label={`이전 ${unit}`}
-              icon={ChevronLeftIcon}
-              disabled={isEarliest}
-              onPress={() => setPeriodKey(getAdjacentPeriodKey(cycle, periodKey, 'prev'))}
-            />
-            <View className="items-center">
-              <Text testID="stats-period-label" className="text-sm font-semibold text-text">
-                {label.primary}
-              </Text>
-              <Text className="mt-0.5 text-xs text-text-muted" style={TABULAR_NUMS}>
-                {label.secondary}
-              </Text>
-            </View>
-            <PeriodArrow
-              label={`다음 ${unit}`}
-              icon={ChevronRightIcon}
-              disabled={isLatest}
-              onPress={() => setPeriodKey(getAdjacentPeriodKey(cycle, periodKey, 'next'))}
-            />
-            <PeriodArrow
-              label={cycle === 'weekly' ? '이번 주로 이동' : '이번 달로 이동'}
-              icon={ChevronsRightIcon}
-              disabled={isLatest}
-              onPress={() => setPeriodKey(getCurrentBossProfitPeriod(cycle, now).periodKey)}
-            />
-          </View>
+          <PeriodStepper
+            testID="stats-period-nav"
+            labelTestID="stats-period-label"
+            primary={label.primary}
+            secondary={label.secondary}
+            prev={{
+              label: `이전 ${unit}`,
+              disabled: isEarliest,
+              onPress: () => setPeriodKey(getAdjacentPeriodKey(cycle, periodKey, 'prev')),
+            }}
+            next={{
+              label: `다음 ${unit}`,
+              disabled: isLatest,
+              onPress: () => setPeriodKey(getAdjacentPeriodKey(cycle, periodKey, 'next')),
+            }}
+            jumpForward={{
+              label: cycle === 'weekly' ? '이번 주로 이동' : '이번 달로 이동',
+              disabled: isLatest,
+              onPress: () => setPeriodKey(getCurrentBossProfitPeriod(cycle, now).periodKey),
+            }}
+          />
 
           {loading ? (
             <StatsSkeleton />
