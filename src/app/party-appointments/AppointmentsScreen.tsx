@@ -34,11 +34,13 @@ import { usePartyScheduleViewStore, type PartyScheduleView } from '../../feature
 import { formatBossProfitPeriodLabel } from '../../lib/boss/boss-profit-period'
 import { resetWeekStartOf, shiftDateKey } from '../../lib/calendar'
 import { FAB_SPACE_PX } from '../../lib/fab-metrics'
+import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { tapFeedback } from '../../native/haptics'
 import { AppointmentAgenda } from './AppointmentAgenda'
 import { AppointmentBoard } from './AppointmentBoard'
 import { AppointmentSheet, type AppointmentSheetTarget } from './AppointmentSheet'
+import { cardScrollY } from './card-scroll-target'
 import { ScheduleTimeline } from './ScheduleTimeline'
 
 /** 지난 약속을 가르는 시계가 한 번씩 도는 간격 */
@@ -135,6 +137,7 @@ export function AppointmentsScreen(): React.JSX.Element {
 
   // 시간표 막대에서 목록 카드로 가는 자리. `onLayout` 은 부모 안의 자리라 겹친 상자 셋의 자리와 카드의 목록 안 자리를 더한다.
   const scroller = useRef<ScrollView>(null)
+  const topSafeAreaPx = useTopSafeAreaPx()
   const listY = useRef({ content: 0, block: 0, agenda: 0 })
   const cardYs = useRef(new Map<string, number>())
   const [highlightedKey, setHighlightedKey] = useState<string | null>(null)
@@ -149,7 +152,10 @@ export function AppointmentsScreen(): React.JSX.Element {
     if (y === undefined) return
     tapFeedback()
     const { content, block, agenda } = listY.current
-    scroller.current?.scrollTo({ y: Math.max(0, content + block + agenda + y - SCROLL_TOP_GAP), animated: true })
+    scroller.current?.scrollTo({
+      y: cardScrollY({ cardY: content + block + agenda + y, topSafeAreaPx, gapPx: SCROLL_TOP_GAP }),
+      animated: true,
+    })
     setHighlightedKey(key)
   }
 
