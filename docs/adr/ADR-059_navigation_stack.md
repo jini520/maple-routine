@@ -170,7 +170,7 @@ RootStack
 이동과 같은 햅틱을 낸다. 같은 바 안에서 누름마다 촉감이 다르면 헷갈린다.
 
 같은 기준을 앱 전체에 쓴다. 페이지 뒤로(`BackButton`), 기간 이동 화살표, 떠 있는 버튼(`SpeedDial` ·
-`DropPriceFab`)은 `tapFeedback()` 을, 세그먼트 둘(`Segment` · `DifficultySegment`)과 `Switch` ·
+`DropPriceFab`)은 `tapFeedback()` 을, `Segment` · 난이도 고르개(`DifficultyExpander`)와 `Switch` ·
 `CalendarGrid` · `CharacterRail` · 캐릭터 카드 순서 바꾸기는 `selectionFeedback()` 을 낸다. 이미 고른 값을 다시
 누르면 내지 않는다. 가능하면 부품 안에서 부른다. 호출하는 화면마다 적어 두면 새 화면에서 빠뜨리기 쉽다.
 
