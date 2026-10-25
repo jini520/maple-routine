@@ -43,8 +43,8 @@ const EMBLEM_PX = 15
 /** 전신 그림. 통계 단상과 같은 칸을 자른다 */
 function Figure(props: { view: RepresentativeView }): React.JSX.Element {
   return (
-    // 왼쪽을 더 띄운다. 칸 좌우를 잘라 캐릭터가 카드 여백(12)에 거의 붙는다
-    <View style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT }} className="ml-2 shrink-0">
+    // 왼쪽을 4 더 띄워 카드 끝에서 16 이다. 오른쪽 열과의 간격(16)과 같게 맞춘다(사용자 지정)
+    <View style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT }} className="ml-1 shrink-0">
       {/* 좌우를 뒤집어 캐릭터가 오른쪽 열(닉네임 · 레벨)을 바라보게 한다(사용자 지정). 자르는 몫이 좌우 같아 칸은 그대로다. */}
       <View
         testID="representative-figure-frame"
@@ -162,7 +162,7 @@ export function RepresentativeCharacterWidget({ data }: WidgetProps): React.JSX.
   }
 
   return (
-    <View testID="widget-representative-character" className="grow flex-row items-center gap-3 p-3">
+    <View testID="widget-representative-character" className="grow flex-row items-center gap-4 p-3">
       <Figure view={view} />
       <View testID="representative-lines" className="min-w-0 flex-1 gap-1.5">
         <View className="gap-0.5">
