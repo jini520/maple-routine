@@ -21,8 +21,9 @@ import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/m
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { spendTariffPercent, withTariffMeso } from '../../../lib/cashbook/spend-catalog'
 import {
-  ITEM_KINDS,
   countsQuantity,
+  hasTariff as kindHasTariff,
+  itemKinds,
   spendCategoryNameOf,
   itemKindNameOf,
   type ItemKindKey,
@@ -63,7 +64,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   const [hasTariff, setHasTariff] = useState(props.editing?.tariffMeso != null)
   /** `null` 은 종류 칸이 생기기 전 행이고 장비다. */
   const [itemKind, setItemKind] = useState<ItemKindKey>(
-    props.editing?.itemKind ?? ITEM_KINDS[0].key,
+    props.editing?.itemKind ?? itemKinds()[0]?.key ?? 'equipment',
   )
   const { saving, submit, remove } = useSpendSubmit(props)
 
@@ -86,7 +87,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
    * 남긴다. 수량이 1 이면 장비의 금액과 소비의 단가가 같은 값이라 거짓이 되지 않는다.
    */
   function selectItemKind(name: string): void {
-    const next = ITEM_KINDS.find((each) => each.name === name)?.key
+    const next = itemKinds().find((each) => each.name === name)?.key
     if (next === undefined) return
     setItemKind(next)
     resetQuantity()
@@ -156,7 +157,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
           축이다. */}
       <FieldRow label="종류" testID="spend-sheet-item-kind">
         <Segment
-          options={ITEM_KINDS.map((each) => each.name)}
+          options={itemKinds().map((each) => each.name)}
           selected={itemKindNameOf(itemKind)}
           onSelect={selectItemKind}
         />
@@ -183,7 +184,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         </Text>
       </FieldRow>
 
-      {!counts && (
+      {kindHasTariff(itemKind) && (
         /*
          * 관세도 라벨–값 줄이다. 시트에서 고르는 것은 전부 이 모양인데 관세만 큰 숫자 밑의
          * 맨몸 체크박스였다. 장비에만 선다. 끄는 것이 아니라 줄 자체가 없다. 있는데 못 누르면

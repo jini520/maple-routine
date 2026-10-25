@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 const GAME_DATA_URL = 'https://mapleroutine.store/v1/game-data'
 
-/** 칸 이름 열셋. 앱의 `GAME_DATA_SECTIONS`(`src/types/game-data.ts`)와 같은 차례다. */
+/** 칸 이름 열넷. 앱의 `GAME_DATA_SECTIONS`(`src/types/game-data.ts`)와 같은 차례다. */
 export const SECTIONS = [
   'bosses',
   'dropItems',
@@ -23,6 +23,7 @@ export const SECTIONS = [
   'crystalPrices',
   'worlds',
   'spendCatalog',
+  'cashbookCategories',
   'symbolCosts',
   'contents',
   'equipmentItems',

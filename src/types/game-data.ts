@@ -1,5 +1,5 @@
 /**
- * 우리 서버 `GET /v1/game-data` 의 칸 열셋. 칸 하나가 표 하나이고 번들 `src/data/<칸>.json` 과 기기 사본도 같은 모양이다.
+ * 우리 서버 `GET /v1/game-data` 의 칸 열넷. 칸 하나가 표 하나이고 번들 `src/data/<칸>.json` 과 기기 사본도 같은 모양이다.
  *
  * 응답은 전부 납작한 줄 표다. 보스 · 난이도 · 갈래로 묶거나 지역 안에 사냥터를 품는 것은 조회 모듈이 한다. 선택 칸은
  * 응답에서 `null` 이고 계약 검사(`parse`)를 거친 뒤에는 빠진 칸이다.
@@ -87,8 +87,10 @@ export interface SpendCatalogRules {
 export interface SpendGroupRow {
   key: string
   name: string
-  /** 갈래 key(`lib/cashbook/categories` 의 `SPEND_CATEGORIES`). 묶음마다 갈래가 하나다. */
+  /** 지출 갈래 key(`cashbookCategories` 칸). 묶음마다 갈래가 하나다. */
   category: string
+  /** 하루 목록 카드 첫 줄. */
+  cardTitle: string
   active: boolean
 }
 export interface SpendTileRow {
@@ -101,7 +103,10 @@ export interface SpendItemRow {
   key: string
   group: string
   tile: string
+  /** 원본 이름. 하루 목록 카드에도 선다. */
   name: string
+  /** 좁은 자리용으로 줄인 이름. 없으면 `name` 을 쓴다. */
+  shortName?: string
   tier?: string
   currency: 'point' | 'meso'
   /** `null` 은 경매장 값이라 적을 때 친다. */
@@ -119,8 +124,14 @@ export interface SpendItemOptionRow {
 }
 export interface SpendItemFormRow {
   item: string
-  /** 형태 key(`lib/cashbook/categories` 의 `SPEND_FORMS`). */
+  /** 형태 key(`SpendFormRow.key`). */
   form: string
+}
+export interface SpendFormRow {
+  /** 앱 코드가 이 값으로 갈린다(`exp` · `sol_erda`). */
+  key: string
+  /** 카드에도 이 이름이 선다. */
+  name: string
 }
 export interface SpendCatalogTable extends TableHead {
   rules: SpendCatalogRules
@@ -129,6 +140,33 @@ export interface SpendCatalogTable extends TableHead {
   items: SpendItemRow[]
   itemOptions: SpendItemOptionRow[]
   itemForms: SpendItemFormRow[]
+  forms: SpendFormRow[]
+}
+
+export interface CashbookCategoryRow {
+  entryType: 'income' | 'spend'
+  /** 기록이 든다. 앱이 입력 폼을 모르는 key 도 온다. */
+  key: string
+  name: string
+  /** 묶음이 없는 갈래의 하루 목록 카드 첫 줄. */
+  cardTitle: string
+  iconFile: string
+  /** 갈래 카드 한 줄. 빈 글자일 수 있다. */
+  description: string
+  /** 묶음이 없는 갈래의 수량 단위. */
+  unit?: string
+}
+export interface CashbookItemKindRow {
+  key: string
+  name: string
+  /** 수량 단위. 없으면 수량이 없다(장비). */
+  unit?: string
+  hasTariff: boolean
+}
+/** 갈래는 수입 · 지출 순서이고 그 안은 차례대로다. */
+export interface CashbookCategoriesTable extends TableHead {
+  categories: CashbookCategoryRow[]
+  itemKinds: CashbookItemKindRow[]
 }
 
 export interface SymbolGroupRow {
@@ -301,7 +339,7 @@ export interface HuntingGroundsTable extends TableHead {
   groundLevels: HuntingGroundLevelRow[]
 }
 
-/** 계약을 통과한 칸 열셋. 번들로 시작하므로 어느 칸도 비어 있지 않다. */
+/** 계약을 통과한 칸 열넷. 번들로 시작하므로 어느 칸도 비어 있지 않다. */
 export interface GameData {
   bosses: BossCatalog
   dropItems: DropItemsTable
@@ -310,6 +348,7 @@ export interface GameData {
   crystalPrices: CrystalPricesTable
   worlds: WorldsTable
   spendCatalog: SpendCatalogTable
+  cashbookCategories: CashbookCategoriesTable
   symbolCosts: SymbolCostsTable
   contents: ContentsTable
   equipmentItems: EquipmentItemsTable
@@ -320,7 +359,7 @@ export interface GameData {
 
 export type GameDataSection = keyof GameData
 
-/** 칸 이름 열셋. 응답 · 번들 파일 · 동기화 스크립트가 같은 차례로 든다. */
+/** 칸 이름 열넷. 응답 · 번들 파일 · 동기화 스크립트가 같은 차례로 든다. */
 export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'bosses',
   'dropItems',
@@ -329,6 +368,7 @@ export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'crystalPrices',
   'worlds',
   'spendCatalog',
+  'cashbookCategories',
   'symbolCosts',
   'contents',
   'equipmentItems',

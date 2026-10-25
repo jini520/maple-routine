@@ -19,7 +19,8 @@ import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
 import type { LastHunts } from '../../storage/last-hunts'
 import {
-  INCOME_CATEGORIES,
+  INCOME_CATEGORY_KEYS,
+  incomeCategories,
   incomeCategoryNameOf,
   type IncomeCategoryKey,
 } from '../../lib/cashbook/categories'
@@ -166,7 +167,8 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
     >
       {category === null ? (
         <CategoryPicker
-          categories={INCOME_CATEGORIES}
+          categories={incomeCategories()}
+          knownKeys={INCOME_CATEGORY_KEYS}
           testIdPrefix="income-sheet"
           onSelect={setCategory}
         />

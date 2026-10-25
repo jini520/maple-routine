@@ -1,7 +1,7 @@
 /**
- * 게임 데이터 표 열셋을 받고 · 기기에 저장하고 · 바뀌면 다시 그리는 자리. TanStack Query 하나로 한다.
+ * 게임 데이터 표 열넷을 받고 · 기기에 저장하고 · 바뀌면 다시 그리는 자리. TanStack Query 하나로 한다.
  *
- * 쿼리 하나(`['game-data']`)에 서버 응답 전체를 둔다. `initialData` 가 번들 열셋이라 켜는 순간 표가 서 있고, 켤 때
+ * 쿼리 하나(`['game-data']`)에 서버 응답 전체를 둔다. `initialData` 가 번들 열넷이라 켜는 순간 표가 서 있고, 켤 때
  * `hydrateGameData` 가 기기 사본을 복원한 뒤 한 번 받는다. 응답은 `null` 이 아닌 칸만 지금 값 위에 덮는다.
  *
  * React 밖의 조회 모듈은 쿼리를 모른다. 쿼리 캐시 구독 하나가 칸을 `lib/game-data/sections` 의 표로 넘기고,
@@ -112,7 +112,7 @@ export function useGameTable<K extends GameDataSection>(section: K): GameData[K]
   return useQuery({ ...gameDataQueryOptions, select: (data) => data[section] }, queryClient).data
 }
 
-/** 테스트 전용. 구독을 풀고 캐시를 비우고 표 열셋을 번들로 되돌린다. */
+/** 테스트 전용. 구독을 풀고 캐시를 비우고 표 열넷을 번들로 되돌린다. */
 export function __resetGameDataForTest(): void {
   disconnect?.()
   disconnect = null

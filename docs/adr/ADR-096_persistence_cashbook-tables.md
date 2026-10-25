@@ -114,7 +114,14 @@ cashbook_entries               id · ocid · entry_type · category_key · entry
 
 ## 테스트
 
-구현할 때 적는다.
+기록 표와 이관(결정 1 · 2 · 5 · 6 · 8)의 테스트는 구현할 때 적는다.
+
+| 파일 | 확인하는 것 |
+|---|---|
+| `lib/__tests__/cashbook-categories.spec.ts` | 결정 3 · 7: 갈래 칸이 수입 · 지출 구분이나 같은 쪽 key 가 겹치면 표 전체를 버리는지, 서버가 더한 갈래가 차례대로 서지만 앱이 폼을 모르면 못 고르는지, 이름은 서버 값을 따르고 옛 기록 이관은 그때 이름을 쓰는지, 수량 · 관세가 종류 표의 단위 · 관세 칸을 따르는지 |
+| `app/cashbook/__tests__/SpendSheet.test.tsx` | 결정 3: 서버가 더한 갈래는 1차 시트에 이름만 서고 못 누르는지 |
+| `storage/__tests__/spend.spec.ts` | 결정 3: 번들 지출 목록의 묶음이 모두 앱이 폼을 아는 지출 갈래를 가리키는지 |
+| 서버 `cashbook-categories.repository.spec.ts` · `spend-catalog.repository.spec.ts` · `seed-game-data.spec.ts` | 결정 3 · 4 · 7: 갈래는 수입 · 지출 안에서 차례를 매기고, 묶음은 지출 갈래만 가리키고, 카드 제목 · 줄인 이름 · 형태 이름을 내는지 |
 
 ## 번호 기록
 

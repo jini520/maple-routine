@@ -137,7 +137,7 @@ export const STORAGE_KEYS = {
   partyAppointments: 'partyAppointments',
   // 주간 보스 수익 계산기의 기록(JSON). 사용자가 남긴 것이라 아무도 되살려 주지 않는다. `KEEP_KEYS` 에 넣는다.
   bossProfitCalculatorRecords: 'bossProfitCalculatorRecords',
-  // 게임 데이터 표 열셋의 기기 사본. TanStack Query 의 캐시 전체(JSON 문자열 하나)다. 앱을 켜면 이것을
+  // 게임 데이터 표 열넷의 기기 사본. TanStack Query 의 캐시 전체(JSON 문자열 하나)다. 앱을 켜면 이것을
   // 복원한 뒤 서버를 한 번 받아 덮는다. 계약이 바뀌면 `GAME_DATA_CONTRACT` 가 달라 통째로 버린다.
   //
   // `KEEP_KEYS` 에는 안 넣는다. 지워져도 번들 사본이 서고 다음 조회가 다시 채운다.

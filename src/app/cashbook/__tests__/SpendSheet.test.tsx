@@ -27,7 +27,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 })
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
-import type { SpendCategoryKey, SpendFormKey } from '../../../lib/cashbook/categories'
+import { cashbookCategoriesTable, type SpendCategoryKey, type SpendFormKey } from '../../../lib/cashbook/categories'
 import { SpendSheet } from '../SpendSheet'
 import type { SpendRecord } from '../../../storage/spend'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
@@ -151,6 +151,28 @@ describe('갈래', () => {
     const 숨은것 = { includeHiddenElements: true }
     for (const key of Object.values(갈래key)) {
       expect(view.getByTestId(`spend-sheet-category-icon-${key}`, 숨은것)).toBeTruthy()
+    }
+  })
+
+  // 갈래는 서버 표가 들고 관리 화면에서 더한다. 앱에 폼이 없는 갈래를 누르면 빈 시트가 선다.
+  it('서버가 더한 갈래는 이름만 서고 눌러도 1차에 남는다', async () => {
+    const original = cashbookCategoriesTable.get()
+    const 지출 = original.categories.find((each) => each.entryType === 'spend')!
+    cashbookCategoriesTable.set({
+      ...original,
+      categories: [...original.categories, { ...지출, key: 'hexa_skill', name: '헥사 스킬 강화' }],
+    })
+    try {
+      const view = await 그리기({}, null)
+      await act(async () => {
+        fireEvent.press(view.getByTestId('spend-sheet-category-hexa_skill'))
+      })
+
+      expect(view.getByText('헥사 스킬 강화')).toBeTruthy()
+      expect(view.getByTestId('spend-sheet-category-hexa_skill')).toBeDisabled()
+      expect(view.getByTestId('spend-sheet-category-content')).toBeTruthy()
+    } finally {
+      cashbookCategoriesTable.set(original)
     }
   })
 
@@ -494,7 +516,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
     await 형태단계(view, '경험치', '1단계')
     await 누르기(view, '저장')
 
-    expect(onSave.mock.calls[0][0]).toMatchObject({ item: '하이마운틴 EXP 1단계', quantity: 1 })
+    expect(onSave.mock.calls[0][0]).toMatchObject({ item: '하이마운틴 경험치 1단계', quantity: 1 })
   })
 
   // 목록으로 돌아가면 고르던 것이 통째로 풀린다. 남으면 **대표는 몬스터 파크인데 저장되는 것은
@@ -726,7 +748,7 @@ describe('저장', () => {
       spentOn: '2026-08-23',
       category: 'content',
       // 고른 단계가 이름에 든다. 0단계인 솔 에르다는 안 적힌다.
-      item: '하이마운틴 EXP 2단계',
+      item: '하이마운틴 경험치 2단계',
       // 한 기록이 형태 둘을 함께 지므로 항목 key 하나가 아니라 형태별 항목 key 를 든다.
       itemKey: null,
       formItemKeys: { exp: 'high_mountain_2' },
@@ -803,7 +825,7 @@ describe('형태별 단계', () => {
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
-      item: '하이마운틴 EXP 1단계, 솔 2단계',
+      item: '하이마운틴 경험치 1단계, 솔 에르다 2단계',
       formItemKeys: { exp: 'high_mountain_1', sol_erda: 'high_mountain_2' },
       pointAmount: 37_500,
     })
@@ -829,7 +851,7 @@ describe('형태별 단계', () => {
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
-      item: '악몽선경 솔 2단계',
+      item: '악몽선경 솔 에르다 2단계',
       formItemKeys: { sol_erda: 'nightmare_paradise_2' },
     })
   })

@@ -25,7 +25,7 @@ const 월드표: WorldsTable = {
   worlds: [{ key: 'scania', name: '스카니아', emblem: 'scania', challengers: false, event: false }],
 }
 
-/** 칸 열셋 중 넘긴 것만 값이고 나머지는 null 인 응답. */
+/** 칸 열넷 중 넘긴 것만 값이고 나머지는 null 인 응답. */
 function 칸(received: Partial<GameDataResponse>): GameDataResponse {
   const response = Object.fromEntries(GAME_DATA_SECTIONS.map((section) => [section, null])) as GameDataResponse
   return { ...response, ...received }

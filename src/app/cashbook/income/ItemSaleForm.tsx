@@ -24,7 +24,7 @@ import { Segment } from '../../../components/molecules/Segment/Segment'
 import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { netProceedsMeso } from '../../../lib/cashbook/item-split'
 import { requiredCharacterOptions } from '../character-options'
-import { ITEM_KINDS, countsQuantity, itemKindNameOf, type ItemKindKey } from '../../../lib/cashbook/categories'
+import { countsQuantity, itemKindNameOf, itemKinds, type ItemKindKey } from '../../../lib/cashbook/categories'
 import { AmountInput, FieldRow, useCountField } from '../sheet-fields'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSaleFeeChoice } from './sale-fee'
@@ -40,7 +40,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   const [name, setName] = useState(props.editing?.item ?? '')
   /** `null` 은 종류 칸이 생기기 전 행이고 장비다. */
-  const [itemKind, setItemKind] = useState<ItemKindKey>(props.editing?.itemKind ?? ITEM_KINDS[0].key)
+  const [itemKind, setItemKind] = useState<ItemKindKey>(props.editing?.itemKind ?? itemKinds()[0]?.key ?? 'equipment')
   const { text: quantityText, pristine: quantityPristine, set: setQuantityText, reset: resetQuantity } =
     useCountField(props.editing?.quantity)
   /**
@@ -68,7 +68,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
 
   /** 종류를 바꾸면 수량은 1 로 돌아가고 친 금액은 남는다. 수량 1 이면 판매 대금과 단가가 같은 값이다. */
   function selectItemKind(name: string): void {
-    const next = ITEM_KINDS.find((each) => each.name === name)?.key
+    const next = itemKinds().find((each) => each.name === name)?.key
     if (next === undefined) return
     setItemKind(next)
     resetQuantity()
@@ -146,7 +146,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
 
       <FieldRow label="종류" testID="income-sheet-item-kind">
         <Segment
-          options={ITEM_KINDS.map((each) => each.name)}
+          options={itemKinds().map((each) => each.name)}
           selected={itemKindNameOf(itemKind)}
           onSelect={selectItemKind}
         />

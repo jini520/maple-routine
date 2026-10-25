@@ -1,5 +1,5 @@
 /// <reference types="node" />
-// 번들 열셋이 각 칸의 계약을 통과하고, 번들이 가리키는 그림 파일이 앱에 있는지 본다.
+// 번들 열넷이 각 칸의 계약을 통과하고, 번들이 가리키는 그림 파일이 앱에 있는지 본다.
 //
 // 값은 서버가 기준이라 여기서 못박지 않는다. 참조 · 기간 겹침 · 경계는 서버의 FK · CHECK · 쓰기 검사가 든다.
 // 그림은 서버가 파일명만 들고 앱 빌드가 파일을 들어, 서버가 새 파일명을 보내도 번들에 그림이 없으면 화면이
@@ -25,7 +25,7 @@ function itemIconExists(file: string): boolean {
   return existsSync(join(ASSETS, 'items', file)) || existsSync(join(ASSETS, 'items', 'rings', file))
 }
 
-describe('번들 열셋은 계약을 통과한다', () => {
+describe('번들 열넷은 계약을 통과한다', () => {
   it.each(GAME_DATA_SECTIONS)('%s', (section) => {
     const raw = bundledFileOf(section)
     const parsed = SECTIONS[section].parse(raw)
