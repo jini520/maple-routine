@@ -333,7 +333,7 @@ export const CategorySection = memo(function CategorySection(props: {
 
         <View className="absolute items-center" style={{ left: cx, top: cy - 34, transform: [{ translateX: '-50%' }] }}>
           <Text className="text-11 font-semibold text-text-muted">{label}</Text>
-          <Text testID="stats-category-total" className="text-lg font-bold text-text" style={TABULAR_NUMS}>
+          <Text testID="stats-category-total" className={`text-lg font-bold ${tone}`} style={TABULAR_NUMS}>
             {formatMesoCompact(total)}
           </Text>
         </View>

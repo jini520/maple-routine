@@ -75,7 +75,7 @@ const 수익안내: FeatureGuide = {
   id: 'drop-item-price',
   title: '아이템 가격 기록 방법',
   groups: ['profit'],
-  sections: [{ id: 'a', title: '마디', blocks: [{ text: '수익 설명' }] }],
+  sections: [{ id: 'a', title: '마디', blocks: [{ text: '수입 설명' }] }],
 }
 // `캐릭터 관리`처럼 **두 그룹에 서는** 안내. 사본이 아니라 같은 글 한 벌이다.
 const 공통안내: FeatureGuide = {
@@ -112,7 +112,7 @@ describe('SettingsFeatureGuideListScreen', () => {
   it('탭 순서는 데이터 순서가 아니라 정해진 순서다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)
 
-    expect(view.getAllByTestId('guide-group-tab').map(labelOf)).toEqual(['컨텐츠', '보스', '수익'])
+    expect(view.getAllByTestId('guide-group-tab').map(labelOf)).toEqual(['컨텐츠', '보스', '수입'])
   })
 
   // `ThemeSelector`·개발 노트의 카테고리 섹션과 같은 규칙. 거른 결과가 0이면 탭째 감춘다.
@@ -150,11 +150,11 @@ describe('SettingsFeatureGuideListScreen', () => {
   it('탭을 바꾸면 그 그룹의 안내로 갈아탄다', async () => {
     const view = await renderOverlay(<SettingsFeatureGuideListScreen />)
 
-    await press(climbTo(view, '수익', 'tab'))
+    await press(climbTo(view, '수입', 'tab'))
 
     expect(view.getByText('아이템 가격 기록 방법')).toBeTruthy()
     expect(view.queryByText('파티 인원 관리')).toBeNull()
-    expect(climbTo(view, '수익', 'tab').props.accessibilityState?.selected).toBe(true)
+    expect(climbTo(view, '수입', 'tab').props.accessibilityState?.selected).toBe(true)
     expect(climbTo(view, '보스', 'tab').props.accessibilityState?.selected).toBe(false)
   })
 

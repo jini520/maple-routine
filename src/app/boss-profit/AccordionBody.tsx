@@ -216,7 +216,7 @@ export function WeeklySubtotalRow(props: {
           // 이 주의 아이템을 낱개로 보려면 여기서 연다.
           <ItemRevenueTrigger
             ref={itemChipRef}
-            label={`${label.primary} 아이템 수익 확인`}
+            label={`${label.primary} 아이템 수입 확인`}
             isOpen={isItemPopoverOpen}
             onPress={toggleItemPopover}
           >

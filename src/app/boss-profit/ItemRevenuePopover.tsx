@@ -83,8 +83,8 @@ export function ItemRevenuePopover(props: {
   return (
     <AnchoredPopover
       testID="item-revenue-popover"
-      ariaLabel="아이템 수익"
-      closeLabel="아이템 수익 닫기"
+      ariaLabel="아이템 수입"
+      closeLabel="아이템 수입 닫기"
       anchor={props.anchor}
       width={ITEM_POPOVER_WIDTH}
       onClose={props.onClose}

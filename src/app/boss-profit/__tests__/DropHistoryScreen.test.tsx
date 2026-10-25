@@ -174,13 +174,13 @@ describe('DropHistoryScreen: 셸과 조회', () => {
     expect(load).toHaveBeenCalledTimes(2) // 마운트 1 + 탭 1
   })
 
-  it('기록이 없으면 빈 상태에서 보스 수익 화면으로 보낸다', async () => {
+  it('기록이 없으면 빈 상태에서 보스 수입 화면으로 보낸다', async () => {
     const { getByTestId, getByText } = await renderHistory()
 
     expect(getByTestId('empty-state')).toBeTruthy()
 
     await act(async () => {
-      fireEvent.press(getByText('보스 수익으로'))
+      fireEvent.press(getByText('보스 수입으로'))
     })
     expect(goBack).toHaveBeenCalled()
   })

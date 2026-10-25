@@ -228,7 +228,7 @@ function PeriodSummary(props: {
       <View testID="cashbook-summary-sources" className="shrink-0 items-end gap-1">
         <SourceRow
           testID="cashbook-summary-income"
-          label="수익"
+          label="수입"
           sign="+"
           amount={props.incomeMeso}
           tone="text-rise-ink"
@@ -439,7 +439,7 @@ function DayTotalHalf(props: {
       <Text className="text-xs text-text-muted">{props.label}</Text>
       <Text
         numberOfLines={1}
-        className={`ml-auto shrink text-15 font-bold ${props.tone === 'rise' ? 'text-rise-ink' : 'text-fall-ink'}`}
+        className={`ml-auto shrink text-sm font-semibold ${props.tone === 'rise' ? 'text-rise-ink' : 'text-fall-ink'}`}
         style={TABULAR_NUMS}
       >
         {formatMesoSigned(props.amount, props.sign)}
@@ -541,7 +541,7 @@ function DayRecordRow(props: {
         </View>
 
         <Text
-          className={`shrink-0 text-sm font-bold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
+          className={`shrink-0 text-13 font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
           style={TABULAR_NUMS}
         >
           {cash === null

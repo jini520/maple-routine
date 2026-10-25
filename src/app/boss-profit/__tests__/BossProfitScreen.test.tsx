@@ -249,7 +249,7 @@ describe('빈 상태', () => {
     const { queryByText, getByText } = await renderScreen()
 
     expect(queryByText('추적 중인 캐릭터가 없습니다')).toBeNull()
-    expect(getByText('보스 수익')).toBeTruthy()
+    expect(getByText('보스 수입')).toBeTruthy()
   })
 
   it('빈 배열이면 빈 상태만 보인다. 진입점은 두지 않는다', async () => {
@@ -618,7 +618,7 @@ describe('아직 집계 안 된 날이 있을 때', () => {
     mockStore({ status: 'loaded', periodPendingAggregation: true })
     const { getByText, queryByText } = await renderScreen()
 
-    expect(getByText(/총 수익$/)).toBeTruthy()
+    expect(getByText(/총 수입$/)).toBeTruthy()
     expect(queryByText('아직 처치한 보스가 없습니다')).toBeNull()
   })
 
@@ -689,7 +689,7 @@ describe('캐릭터 카드 순서', () => {
   })
 })
 
-describe('총 수익 헤드라인', () => {
+describe('총 수입 헤드라인', () => {
   it('여러 캐릭터의 합계가 하나의 숫자로 선다', async () => {
     mockStore({
       status: 'loaded',
@@ -770,14 +770,14 @@ describe('총 수익 헤드라인', () => {
   })
 
   // 총 수익은 화면 바탕 위 헤드라인이 아니라 카드 하나다. 금액 · 결정석 · 자세히가 한 카드에 모인다.
-  it('총 수익을 카드 하나에 담는다', async () => {
+  it('총 수입을 카드 하나에 담는다', async () => {
     mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()] })
     const { getByTestId } = await renderScreen()
 
     const summary = within(getByTestId('boss-profit-summary'))
     expect(summary.getByText('메소')).toBeTruthy()
-    expect(summary.getByLabelText('총 수익 자세히 보기')).toBeTruthy()
-    expect(summary.getByText(/총 수익$/)).toBeTruthy()
+    expect(summary.getByLabelText('총 수입 자세히 보기')).toBeTruthy()
+    expect(summary.getByText(/총 수입$/)).toBeTruthy()
   })
 
   it('자세히 보기를 누르면 결정석·아이템·합계가 갈려 나온다', async () => {
@@ -785,7 +785,7 @@ describe('총 수익 헤드라인', () => {
     const { getByLabelText, getByTestId, getByText } = await renderScreen()
 
     await act(async () => {
-      fireEvent.press(getByLabelText('총 수익 자세히 보기'))
+      fireEvent.press(getByLabelText('총 수입 자세히 보기'))
     })
 
     expect(getByTestId('item-revenue-popover')).toBeTruthy()
@@ -807,7 +807,7 @@ describe('총 수익 헤드라인', () => {
     const { getByLabelText, getByTestId } = await renderScreen()
 
     await act(async () => {
-      fireEvent.press(getByLabelText('총 수익 자세히 보기'))
+      fireEvent.press(getByLabelText('총 수입 자세히 보기'))
     })
 
     const popover = within(getByTestId('item-revenue-popover'))
@@ -825,7 +825,7 @@ describe('총 수익 헤드라인', () => {
     const { getByLabelText, getByTestId } = await renderScreen()
 
     await act(async () => {
-      fireEvent.press(getByLabelText('총 수익 자세히 보기'))
+      fireEvent.press(getByLabelText('총 수입 자세히 보기'))
     })
 
     const popover = within(getByTestId('item-revenue-popover'))
@@ -833,7 +833,7 @@ describe('총 수익 헤드라인', () => {
     expect(popover.queryByText('주간 결정석')).toBeNull()
   })
 
-  it('총 수익 상자는 모든 카드의 드롭에서 비싼 순 상위 10건과 나머지 한 줄이다', async () => {
+  it('총 수입 상자는 모든 카드의 드롭에서 비싼 순 상위 10건과 나머지 한 줄이다', async () => {
     const 값매김 = (itemName: string, 억: number): RecordedDrop =>
       드롭({ itemKey: null, itemName, priceState: 'entered', priceMeso: 억 * 100_000_000, priceShare: 1 })
     mockStore({
@@ -852,7 +852,7 @@ describe('총 수익 헤드라인', () => {
     const { getByLabelText, getByTestId } = await renderScreen()
 
     await act(async () => {
-      fireEvent.press(getByLabelText('총 수익 자세히 보기'))
+      fireEvent.press(getByLabelText('총 수입 자세히 보기'))
     })
 
     const popover = within(getByTestId('item-revenue-popover'))
@@ -867,7 +867,7 @@ describe('총 수익 헤드라인', () => {
   })
 
   // 상자는 주차 소계의 드롭에 월간 보스 행의 드롭을 더한다. 소계는 그 보스의 것을 안 담는다.
-  it('월간 탭의 총 수익 상자는 주차 소계와 월간 보스 행의 드롭을 함께 읽는다', async () => {
+  it('월간 탭의 총 수입 상자는 주차 소계와 월간 보스 행의 드롭을 함께 읽는다', async () => {
     const 월간드롭 = 드롭({ itemKey: null, itemName: '월간 아이템', priceState: 'entered', priceMeso: 4_000_000, priceShare: 1 })
     const 주간드롭 = 드롭({ itemKey: null, itemName: '주간 아이템', priceState: 'entered', priceMeso: 1_000_000, priceShare: 1 })
     mockStore({
@@ -883,7 +883,7 @@ describe('총 수익 헤드라인', () => {
     const { getByLabelText, getByTestId } = await renderScreen()
 
     await act(async () => {
-      fireEvent.press(getByLabelText('총 수익 자세히 보기'))
+      fireEvent.press(getByLabelText('총 수입 자세히 보기'))
     })
 
     const popover = within(getByTestId('item-revenue-popover'))
@@ -977,7 +977,7 @@ describe('월간 탭', () => {
       weeklySubtotals: [주차소계()] })
     const { getByText, getByLabelText, queryByLabelText } = await renderScreen()
 
-    expect(getByText(/총 수익$/)).toBeTruthy()
+    expect(getByText(/총 수입$/)).toBeTruthy()
     expect(getByLabelText('월간 결정석 1개')).toBeTruthy()
     expect(queryByLabelText(/주간 결정석 판매/)).toBeNull()
   })

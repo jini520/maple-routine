@@ -191,7 +191,7 @@ export function StatsSkeleton(): React.JSX.Element {
         <DonutChart />
       </StatsSection>
 
-      <StatsSection title="보스별 수익" trailing={<SegmentPill />}>
+      <StatsSection title="보스별 수입" trailing={<SegmentPill />}>
         <LineBar height={LINE.xl} className="h-5 w-28" />
         <View className="flex-row gap-2 overflow-hidden">
           {[0, 1, 2, 3].map((index) => (
@@ -201,7 +201,7 @@ export function StatsSkeleton(): React.JSX.Element {
         </View>
       </StatsSection>
 
-      <StatsSection title="누적 순수익">
+      <StatsSection title="누적 순 수익">
         <LineBar height={LINE['2xl']} className="h-6 w-36" />
         <Skeleton className="h-[26px] w-32" fillClassName="rounded-full" />
         <View style={{ paddingTop: CUMULATIVE.bubble }}>

@@ -28,7 +28,7 @@ import { useThemeAppearance } from '../../../theme/context'
 import type { WeeklyIncomeCharacterView, WeeklyIncomeView } from '../view-model'
 import type { WidgetProps } from './types'
 
-const MODES = ['순 수익', '수익', '지출'] as const
+const MODES = ['순 수익', '수입', '지출'] as const
 type Mode = (typeof MODES)[number]
 
 const RANK_LABELS = ['1st', '2nd', '3rd'] as const
@@ -83,7 +83,7 @@ function slicesOf(items: readonly CategoryTotal[], color: string): Slice[] {
 
 function modeValue(totals: StatsTotals, mode: Mode): number {
   if (mode === '순 수익') return totals.netMeso
-  return mode === '수익' ? totals.incomeMeso : totals.expenseMeso
+  return mode === '수입' ? totals.incomeMeso : totals.expenseMeso
 }
 
 /** 순위. 그 세그먼트의 값이 0 인 캐릭터는 안 선다. 0 을 세우면 없다 가 아니라 꼴찌 로 읽힌다 */
@@ -236,7 +236,7 @@ export function WeeklyIncomeWidget({ data }: WidgetProps): React.JSX.Element {
   const fall = definition.fallInk
 
   const incomeGroup = (character: WeeklyIncomeCharacterView): PopoverGroup => ({
-    label: '수익',
+    label: '수입',
     total: formatMesoSigned(character.incomeMeso, '+'),
     color: rise,
     rows: character.income,
@@ -258,7 +258,7 @@ export function WeeklyIncomeWidget({ data }: WidgetProps): React.JSX.Element {
   let centerColor: string
   if (mode === '순 수익') {
     slices = [
-      { key: 'income', name: '수익', meso: totals.incomeMeso, color: rise },
+      { key: 'income', name: '수입', meso: totals.incomeMeso, color: rise },
       { key: 'expense', name: '지출', meso: totals.expenseMeso, color: fall },
     ]
     legend = [
@@ -268,7 +268,7 @@ export function WeeklyIncomeWidget({ data }: WidgetProps): React.JSX.Element {
     centerText = netText(totals.netMeso)
     centerColor = netColor
   } else {
-    const income = mode === '수익'
+    const income = mode === '수입'
     slices = slicesOf(income ? view.income : view.expense, income ? rise : fall)
     legend = slices.map((slice) => ({ slice, amount: signedMeso(slice.meso, null) }))
     centerText = signedMeso(income ? totals.incomeMeso : totals.expenseMeso, income ? '+' : '−')
@@ -280,7 +280,7 @@ export function WeeklyIncomeWidget({ data }: WidgetProps): React.JSX.Element {
   return (
     <View testID="widget-weekly-income" className="gap-3 p-3.5">
       <View className="flex-row items-center justify-between">
-        <Text className="text-11 font-bold text-text-muted">이번 주 수익</Text>
+        <Text className="text-11 font-bold text-text-muted">이번 주 수입</Text>
         <Segment options={MODES} selected={mode} onSelect={setMode} />
       </View>
 
@@ -319,13 +319,13 @@ export function WeeklyIncomeWidget({ data }: WidgetProps): React.JSX.Element {
               amount={
                 mode === '순 수익'
                   ? netText(character.netMeso)
-                  : signedMeso(modeValue(character, mode), mode === '수익' ? '+' : '−')
+                  : signedMeso(modeValue(character, mode), mode === '수입' ? '+' : '−')
               }
-              ink={mode === '지출' ? fall : mode === '수익' ? rise : character.netMeso >= 0 ? rise : fall}
+              ink={mode === '지출' ? fall : mode === '수입' ? rise : character.netMeso >= 0 ? rise : fall}
               groups={
                 mode === '순 수익'
                   ? [incomeGroup(character), expenseGroup(character)].filter((group) => group.rows.length > 0)
-                  : mode === '수익'
+                  : mode === '수입'
                     ? [incomeGroup(character)]
                     : [expenseGroup(character)]
               }

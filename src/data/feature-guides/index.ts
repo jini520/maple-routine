@@ -46,7 +46,7 @@ import { characterManageGuide } from './shared/character-manage'
 export const FEATURE_GUIDE_GROUP_LABELS: Record<FeatureGuideGroup, string> = {
   content: '컨텐츠',
   boss: '보스',
-  profit: '수익',
+  profit: '수입',
   utility: '유틸리티',
   settings: '설정',
 }

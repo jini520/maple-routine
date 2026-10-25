@@ -306,7 +306,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           ) : (
             <ItemRevenueTrigger
               ref={itemChipRef}
-              label={`${row.bossName} 아이템 수익 확인`}
+              label={`${row.bossName} 아이템 수입 확인`}
               isOpen={isItemPopoverOpen}
               onPress={toggleItemPopover}
             >

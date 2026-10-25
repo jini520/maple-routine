@@ -37,7 +37,7 @@ export const BossSection = memo(function BossSection(props: {
 
   return (
     <StatsSection
-      title="보스별 수익"
+      title="보스별 수입"
       testID="stats-bosses"
       trailing={<Segment options={MODES} selected={mode} onSelect={setMode} />}
     >

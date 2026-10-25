@@ -24,7 +24,7 @@ export function DisconnectConfirm(props: DisconnectConfirmProps): React.JSX.Elem
       icon={AlertTriangleIcon}
       tone="error"
       title="연결을 해제할까요?"
-      description="API 키와 계정 연결이 해제되고 온보딩 화면으로 돌아갑니다. 보스 수익·드롭 기록은 삭제되지 않습니다."
+      description="API 키와 계정 연결이 해제되고 온보딩 화면으로 돌아갑니다. 보스 수입·드롭 기록은 삭제되지 않습니다."
       action={{ label: '취소', onPress: props.onCancel, disabled: props.isDisconnecting }}
       secondaryAction={{
         label: '연결 해제',

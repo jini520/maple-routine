@@ -59,12 +59,12 @@ export const BAR_GROUPS: readonly BarGroup[] = [
   },
   {
     id: 'ledger',
-    label: '수익·지출',
+    label: '수입·지출',
     page: null,
     layer: 'LedgerSubs',
     // 사냥 수익·지출은 가계부 안으로 들어간다. 같은 날의 같은 돈이 세 화면에 흩어지지 않게.
     subs: [
-      { page: 'Profit', label: '보스 수익' },
+      { page: 'Profit', label: '보스 수입' },
       { page: 'Cashbook', label: '가계부' },
       // 두 화면의 기록을 기간 단위로 모아 읽기만 한다.
       { page: 'Stats', label: '통계' },

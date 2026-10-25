@@ -41,7 +41,7 @@ const GROUPS: { id: CacheDataGroupId; label: string; detail: string; warning?: s
   },
   {
     id: 'records',
-    label: '수익·지출 기록',
+    label: '수입·지출 기록',
     detail: '보스 처치·드롭 · 손으로 적은 수입·지출',
     // **경고의 근거가 둘로 갈린다**. 보스 기록은 **API 가 2주치만 준다** 인데
     // 손입력 수입·지출은 **API 가 애초에 없다**. 더 강한 쪽을 앞에 둔다.
