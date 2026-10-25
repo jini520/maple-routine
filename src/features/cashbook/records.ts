@@ -17,16 +17,17 @@ import { bossNameOf } from '../../lib/boss/bosses'
 import type { CalendarAmounts, CalendarDayAmounts } from '../../lib/calendar'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
 import { dropPayoutMeso } from '../../lib/drop/drop-price'
-import { incomeCategoryNameOf, spendCategoryNameOf } from '../../lib/cashbook/categories'
+import { cashbookCategoryOf, countsQuantity, itemKindUnitOf, type ItemKindKey } from '../../lib/cashbook/categories'
 import {
   buildSpendRewardName,
   findSpendChoice,
   findSpendRewardChoice,
   pointToMeso,
   rewardCoinMeso,
+  spendGroupCardTitleOf,
   spendRewardCoins,
 } from '../../lib/cashbook/spend-catalog'
-import { findSymbol, symbolRecordName } from '../../lib/cashbook/symbol-costs'
+import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import { getBossDropRecords, getBossDropRecordsRevision } from '../../storage/boss-drops'
 import {
   getBossProfitRecordsRevision,
@@ -824,61 +825,128 @@ function toAutoRecords(
   return rows
 }
 
-const AUTO_LABELS: Record<AutoDayRecord['kind'], string> = {
+/** 원천 표의 줄은 손입력 갈래가 아니라 제목을 앱이 든다. */
+const AUTO_TITLES: Record<AutoDayRecord['kind'], string> = {
   bossCrystal: '보스 결정석',
-  dropSale: '아이템 판매',
-  // 강화 줄은 이 표를 안 쓴다. 갈래 표의 글자가 라벨이다(`recordTitleOf`).
+  dropSale: '보스 드롭 판매',
   enhancement: '강화',
 }
 
-/**
- * 줄에 적는 이름. 손입력은 항목이고 없으면 갈래 이름이다.
- *
- * 직접 입력에서 이름 칸을 비우는 것은 정상이라 이름 없는 기록이 실제로 생긴다. 그 줄을 비워
- * 두면 무엇인지 모르는 줄이 되는데 갈래는 언제나 있으므로 그것을 쓴다.
- *
- * 자동 줄은 캐릭터 · 갈래다. 이름을 모르면 갈래만 적는다. `ocid` 를 적으면 있지도 않은
- * 캐릭터를 만들어 낸다.
- */
-/**
- * 손입력 줄의 첫 칸. key 로 찾은 카탈로그의 지금 이름, 못 찾으면 적어 둔 이름, 그것도 없으면 갈래.
- *
- * 카탈로그 이름을 먼저 보는 것은 이름을 바꿔도 옛 기록이 따라오게 하려는 것이다. 에픽던전 리워드는
- * 형태별 항목 key 로 이름을 다시 만든다.
- *
- * 사냥만 갈래로 적는다. 거기 적힌 이름은 사냥터인데 그 줄이 답하는 것은 오늘 무엇으로
- * 벌었나 이고 어느 맵이었나 는 열어 봐야 뜻이 생기는 값이다. 대신 몇 소재를 돌았나 가 세는
- * 칸에 선다(`recordCountLabelOf`).
- */
-function manualLabelOf(entry: ManualDayRecord): string {
-  if (entry.kind === 'income') {
-    const categoryName = incomeCategoryNameOf(entry.record.category)
-    return entry.record.category === 'hunting' ? categoryName : (entry.record.item ?? categoryName)
+/** 하루 목록 카드의 두 줄. 둘째 줄이 없으면 `null` 이다. */
+export interface RecordCard {
+  title: string
+  detail: string | null
+}
+
+/** 천 단위 쉼표를 찍은 수량과 단위. `toLocaleString` 에 옵션을 안 주는 것은 Hermes 의 Intl 편차 때문이다. */
+function quantityText(quantity: number, unit: string | undefined): string {
+  return `${quantity.toLocaleString()}${unit ?? ''}`
+}
+
+/** 빈 조각을 뺀 나머지를 한 칸씩 띄워 잇는다. 다 비면 `null` 이다. */
+function joined(parts: ReadonlyArray<string | null | undefined>, separator = ' '): string | null {
+  const kept = parts.filter((part): part is string => part !== null && part !== undefined && part !== '')
+  return kept.length === 0 ? null : kept.join(separator)
+}
+
+/** 직접 친 이름 뒤에 종류 단위의 수량을 붙인다. 장비는 수량이 없다. */
+function tradedItemDetail(item: string | null, kind: ItemKindKey | null, quantity: number | null): string | null {
+  const counted = kind !== null && countsQuantity(kind) && quantity !== null
+  return joined([item, counted ? quantityText(quantity, itemKindUnitOf(kind)) : null])
+}
+
+/** 사냥에서 조각 가격을 적었으면 판 개수. 보관한 조각은 안 적는다. */
+function fragmentSaleText(record: IncomeRecord): string | null {
+  const hunt = record.hunt
+  if (hunt === null || hunt.fragmentPrice === null || hunt.fragments <= 0) return null
+  const fragment = cashbookCategoryOf('income', 'sol_erda_fragment')
+  return `${fragment?.name ?? '솔 에르다 조각'} ${quantityText(hunt.fragments, fragment?.unit)} 판매`
+}
+
+function incomeCard(record: IncomeRecord): RecordCard {
+  const category = cashbookCategoryOf('income', record.category)
+  const title = category?.cardTitle ?? record.category
+  switch (record.category) {
+    case 'hunting': {
+      const hunt = record.hunt
+      const done = hunt?.mode === 'calculator' ? quantityText(hunt.sojae, category?.unit) : '직접 입력'
+      return { title, detail: joined([done, fragmentSaleText(record)], ', ') }
+    }
+    case 'sol_erda_fragment':
+      return {
+        title,
+        detail: record.quantity === null ? null : `${category?.name ?? title} ${quantityText(record.quantity, category?.unit)} 판매`,
+      }
+    case 'item_sale':
+      return { title, detail: tradedItemDetail(record.item, record.itemKind ?? 'equipment', record.quantity) }
+    case 'etc':
+      return { title, detail: joined([record.item, etcQuantity(record.quantity, category?.unit)]) }
   }
-  const { category, itemKey, formItemKeys, item } = entry.record
-  if (category === 'symbol') return symbolLabelOf(entry.record) ?? item ?? spendCategoryNameOf(category)
-  const chosen = findSpendChoice(category, itemKey)?.item.name
-  const reward = findSpendRewardChoice(category, formItemKeys)
-  const rewardName = reward === null ? null : buildSpendRewardName(reward.choice, reward.tierByForm)
-  return chosen ?? rewardName ?? item ?? spendCategoryNameOf(category)
 }
 
-/** 심볼 강화 기록의 이름. 비용 표의 지금 이름과 두 레벨로 다시 만든다. 못 찾으면 `null`. */
-function symbolLabelOf(record: SpendRecord): string | null {
-  const found = findSymbol(record.itemKey)
-  if (found === null || record.levelFrom === null || record.levelTo === null) return null
-  return symbolRecordName(found.symbol.name, record.levelFrom, record.levelTo)
+/** 기타는 한 건을 적는 일이 대부분이라 2 이상일 때만 수량을 붙인다. */
+function etcQuantity(quantity: number | null, unit: string | undefined): string | null {
+  return quantity !== null && quantity > 1 ? quantityText(quantity, unit) : null
 }
 
-export function recordTitleOf(entry: DayRecord): string {
-  const label = isManualRecord(entry)
-    ? manualLabelOf(entry)
-    : entry.kind === 'enhancement'
-      ? enhancementCategoryNameOf(entry.category)
-      : AUTO_LABELS[entry.kind]
-  // 캐릭터가 붙어 있으면 이름이 앞에 선다. 보스 줄이 이미 쓰던 어법 그대로다. 손입력만 다르게
-  // 적으면 한 목록 안에 두 어법이 생긴다.
-  return entry.characterName === '' ? label : `${entry.characterName} · ${label}`
+function spendCard(record: SpendRecord): RecordCard {
+  const category = cashbookCategoryOf('spend', record.category)
+  const categoryTitle = category?.cardTitle ?? record.category
+  switch (record.category) {
+    case 'symbol': {
+      const found = findSymbol(record.itemKey)
+      const levels = record.levelFrom === null || record.levelTo === null ? null : `${record.levelFrom} → ${record.levelTo}`
+      return { title: categoryTitle, detail: found === null ? record.item : joined([found.symbol.name, levels]) }
+    }
+    case 'item_purchase':
+      return { title: categoryTitle, detail: tradedItemDetail(record.item, record.itemKind ?? 'equipment', record.quantity) }
+    case 'etc':
+      return { title: categoryTitle, detail: joined([record.item, etcQuantity(record.quantity, category?.unit)]) }
+    default: {
+      const reward = findSpendRewardChoice(record.category, record.formItemKeys)
+      if (reward !== null) {
+        const group = reward.choice.items[0]?.group
+        return {
+          title: (group === undefined ? null : spendGroupCardTitleOf(group)) ?? categoryTitle,
+          detail: buildSpendRewardName(reward.choice, reward.tierByForm),
+        }
+      }
+      const chosen = findSpendChoice(record.category, record.itemKey)
+      if (chosen === null) return { title: categoryTitle, detail: record.item }
+      const title = spendGroupCardTitleOf(chosen.item.group) ?? categoryTitle
+      return {
+        title,
+        // 항목 이름이 제목과 같으면(몬스터 파크) 수량만 적는다. 같은 글자가 두 줄에 서지 않게.
+        detail: joined([
+          chosen.item.name === title ? null : chosen.item.name,
+          record.quantity === null ? null : quantityText(record.quantity, chosen.item.unit),
+        ]),
+      }
+    }
+  }
+}
+
+function autoDetail(entry: AutoDayRecord): string {
+  if (entry.kind === 'bossCrystal') return `${entry.count}마리`
+  if (entry.kind === 'dropSale') return `${entry.count}건`
+  // 값을 못 매긴 건은 금액에 안 들어 있다. 그 사실을 줄이 말해야 합계가 적어 보이는 것이 고장으로 안 읽힌다.
+  const counted = `${enhancementCategoryNameOf(entry.category)} ${entry.count}회`
+  return entry.unpricedCount > 0 ? `${counted} · 값모름 ${entry.unpricedCount}` : counted
+}
+
+/**
+ * 하루 목록 카드의 두 줄(ADR 이 갈래마다의 규칙을 든다). 이름 · 카드 제목 · 단위는 서버 표에서 찾으므로, 관리 화면에서
+ * 고치면 옛 기록도 새 글자로 선다. key 로 못 찾으면 적어 둔 이름, 그것도 없으면 갈래 제목이다.
+ *
+ * 첫 줄 앞에는 캐릭터 이름이 붙는다. 계정 단위 기록이나 이름을 모르는 줄은 제목만 선다.
+ */
+export function recordCardOf(entry: DayRecord): RecordCard {
+  const card = isManualRecord(entry)
+    ? entry.kind === 'income'
+      ? incomeCard(entry.record)
+      : spendCard(entry.record)
+    : { title: AUTO_TITLES[entry.kind], detail: autoDetail(entry) }
+  return entry.characterName === '' ? card : { ...card, title: `${entry.characterName} · ${card.title}` }
 }
 
 /** 줄의 메소 축 금액. 캐시는 환산을 안 하므로 0 이다. */
@@ -923,52 +991,6 @@ export function dayTotalsOf(entries: readonly DayRecord[]): CalendarDayAmounts {
 export function recordCashOf(entry: DayRecord): number | null {
   if (entry.kind === 'spend') return entry.record.cashAmount
   return entry.kind === 'income' ? entry.record.cashAmount : null
-}
-
-/**
- * 이름과 금액 사이에 서는 작은 글자. 없으면 `null`.
- *
- * 갈래마다 세는 것이 다르다. 지출은 수량(`×2`. 맨 숫자는 2번째 로도 읽힌다), 결정석은 마리 수,
- * 판매는 판 건수다. 화면이 갈래별로 분기하지 않도록 여기서 한 문자열로 접는다.
- */
-export function recordCountLabelOf(entry: DayRecord): string | null {
-  if (entry.kind === 'spend') {
-    const { quantity } = entry.record
-    return quantity !== null && quantity > 1 ? `×${quantity}` : null
-  }
-  if (entry.kind === 'bossCrystal') {
-    return `${entry.count}마리`
-  }
-  if (entry.kind === 'dropSale') {
-    return `${entry.count}건`
-  }
-  if (entry.kind === 'enhancement') {
-    // 값을 못 매긴 건은 금액에 안 들어 있다. 그 사실을 줄이 말해야 합계가 적어 보이는 것이
-    // 고장으로 안 읽힌다.
-    return entry.unpricedCount > 0
-      ? `${entry.count}회 · 값모름 ${entry.unpricedCount}`
-      : `${entry.count}회`
-  }
-  /**
-   * 사냥은 몇 소재를 돌았나 다. 시트의 시간 줄이 세는 이름과 같은 글자라(1소재 = 30분) 한 수가
-   * 두 이름을 안 갖는다. 보스 줄의 n마리와 같은 자리·같은 모양이라 화면은 아무것도 안 가른다.
-   *
-   * 계산기로 적힌 행만 그 수를 안다. 수동으로 적은 행에는 소재 줄이 없어 칸이 안 선다.
-   */
-  // `!= null` 인 것은 옛 행이 `null` 이거나 칸이 아예 없을(`undefined`) 수 있어서다.
-  if (entry.kind === 'income' && entry.record.hunt?.mode === 'calculator') {
-    return `${entry.record.hunt.sojae}소재`
-  }
-  // 솔 에르다 조각 정산과 아이템 판매(소비 · 기타)는 판 개수다. 사냥 줄의 소재가 서는 자리와 같다.
-  // 장비 판매는 수량이 `null` 이라 안 선다.
-  if (
-    entry.kind === 'income' &&
-    (entry.record.category === 'sol_erda_fragment' || entry.record.category === 'item_sale') &&
-    entry.record.quantity !== null
-  ) {
-    return `${entry.record.quantity}개`
-  }
-  return null
 }
 
 /**

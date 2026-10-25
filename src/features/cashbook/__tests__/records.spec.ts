@@ -433,6 +433,14 @@ const 지출행 = {
   recordedAt: '2026-08-25T02:00:00.000Z',
 }
 
+/** 하루 목록 카드의 첫 줄 · 둘째 줄. */
+function titleOf(entry: import('../records').DayRecord): string {
+  return (require('../records') as typeof import('../records')).recordCardOf(entry).title
+}
+function detailOf(entry: import('../records').DayRecord): string | null {
+  return (require('../records') as typeof import('../records')).recordCardOf(entry).detail
+}
+
 describe('loadDayRecords: 그날 적은 것을 한 줄씩', () => {
   it('수입과 지출을 한 목록으로 접는다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([수입행])
@@ -471,99 +479,87 @@ describe('loadDayRecords: 그날 적은 것을 한 줄씩', () => {
   })
 })
 
-describe('줄에 적는 것', () => {
-  it('이름이 있으면 이름이다', () => {
-    const { recordTitleOf } = require('../records') as typeof import('../records')
+// 카드 두 줄의 규칙은 갈래마다 다르다. 이름 · 제목 · 단위는 서버 표에서 찾고, 사용자가 확정한 카드 이름표가 그 모양이다.
+describe('하루 목록 카드의 두 줄', () => {
+  const 카드 = (entry: import('../records').DayRecord) => [titleOf(entry), detailOf(entry)]
 
-    expect(recordTitleOf({ kind: 'spend', record: 지출행, characterName: '' })).toBe('몬스터 파크')
+  it('지출 목록 항목은 묶음 제목과 항목 이름 + 수량 단위다. 이름이 제목과 같으면 수량만 적는다', () => {
+    expect(카드({ kind: 'spend', record: 지출행, characterName: '루디' })).toEqual(['루디 · 몬스터 파크', '2회'])
+    expect(
+      카드({ kind: 'spend', record: { ...지출행, category: 'buff', itemKey: 'boss_killer_potion', quantity: 1 }, characterName: '' }),
+    ).toEqual(['버프(보스)', '보스 킬러 비약 1개'])
+    // 원본 이름이 선다. 시트 타일의 줄인 이름(블루베리 농장)이 아니다.
+    expect(
+      카드({ kind: 'spend', record: { ...지출행, category: 'event_bm', itemKey: 'blueberry_farm', quantity: 1 }, characterName: '' }),
+    ).toEqual(['메이플 포인트 샵', '블루베리 농장 입장권 1회'])
   })
 
-  /**
-   * **캐릭터가 붙어 있으면 이름이 앞에 선다**.
-   * 보스 줄이 이미 쓰던 어법 그대로다. 손입력만 다르게 적으면 한 목록에 두 어법이 생긴다.
-   */
-  it('캐릭터가 붙어 있으면 이름을 앞에 적는다', () => {
-    const { recordTitleOf } = require('../records') as typeof import('../records')
-
-    expect(recordTitleOf({ kind: 'spend', record: 지출행, characterName: '루디' })).toBe(
-      '루디 · 몬스터 파크',
-    )
-    // `사냥` 은 첫 칸이 갈래라(아래 describe) 이름이 보이는 갈래로 잰다.
+  it('에픽던전 리워드는 묶음 제목과 형태마다의 단계다', () => {
     expect(
-      recordTitleOf({
-        kind: 'income',
-        record: { ...수입행, category: 'item_sale' },
-        characterName: '아델',
-      }),
-    ).toBe('아델 · 엘리시움')
-  })
-
-  // 직접 입력에서 이름 칸을 비우면 이름이 없다. 빈 줄은 **무엇인지 모르는 줄** 이다.
-  it('이름이 없으면 갈래 이름을 대신 적는다', () => {
-    const { recordTitleOf } = require('../records') as typeof import('../records')
-
-    expect(
-      recordTitleOf({ kind: 'spend', record: { ...지출행, item: null, itemKey: null }, characterName: '' }),
-    ).toBe('컨텐츠')
-    expect(recordTitleOf({ kind: 'income', record: { ...수입행, item: null }, characterName: '' })).toBe('사냥')
-  })
-
-  // 기록은 key 로 카탈로그를 가리킨다. 카탈로그에서 이름을 바꾸면 옛 기록도 새 이름으로 선다.
-  it('항목 key 가 있으면 저장된 이름이 아니라 카탈로그의 지금 이름을 적는다', () => {
-    const { recordTitleOf } = require('../records') as typeof import('../records')
-
-    expect(
-      recordTitleOf({
+      카드({
         kind: 'spend',
-        record: { ...지출행, category: 'event_bm', item: '미호로이드 교환권', itemKey: 'mihoroid' },
+        record: { ...지출행, item: '옛 이름', itemKey: null, formItemKeys: { exp: 'high_mountain_2', sol_erda: 'high_mountain_1' } },
         characterName: '',
       }),
-    ).toBe('미호로이드')
+    ).toEqual(['에픽던전', '하이마운틴 경험치 2단계, 솔 에르다 1단계'])
   })
 
-  it('에픽던전 리워드는 형태별 항목 key 로 이름을 다시 만든다', () => {
-    const { recordTitleOf } = require('../records') as typeof import('../records')
+  it('심볼 강화는 갈래 제목과 심볼 이름 · 두 레벨이고, 심볼을 못 찾으면 적어 둔 이름이다', () => {
+    const 심볼행 = { ...지출행, category: 'symbol' as const, item: '옛 이름', itemKey: 'cernium', levelFrom: 7, levelTo: 10, quantity: null }
 
+    expect(카드({ kind: 'spend', record: 심볼행, characterName: '루디' })).toEqual(['루디 · 심볼강화', '세르니움 7 → 10'])
+    expect(카드({ kind: 'spend', record: { ...심볼행, itemKey: 'removed_symbol' }, characterName: '' })).toEqual(['심볼강화', '옛 이름'])
+  })
+
+  it('아이템 구매 · 판매는 직접 친 이름이고 소비 · 기타만 수량을 붙인다', () => {
+    const 구매 = { ...지출행, category: 'item_purchase' as const, item: '앱솔랩스 아처슈즈', itemKey: null, quantity: null, itemKind: 'equipment' as const }
+
+    expect(카드({ kind: 'spend', record: 구매, characterName: '' })).toEqual(['아이템 구매', '앱솔랩스 아처슈즈'])
+    expect(카드({ kind: 'spend', record: { ...구매, item: '마력의 돌', itemKind: 'consumable', quantity: 10 }, characterName: '' })).toEqual([
+      '아이템 구매',
+      '마력의 돌 10개',
+    ])
     expect(
-      recordTitleOf({
-        kind: 'spend',
-        record: {
-          ...지출행,
-          item: '옛 이름',
-          itemKey: null,
-          formItemKeys: { exp: 'high_mountain_2', sol_erda: 'high_mountain_1' },
-        },
-        characterName: '',
-      }),
-    ).toBe('하이마운틴 경험치 2단계, 솔 에르다 1단계')
+      카드({ kind: 'income', record: { ...수입행, category: 'item_sale', item: '마력의 돌', itemKind: 'etc', quantity: 3 }, characterName: '' }),
+    ).toEqual(['아이템 판매', '마력의 돌 3개'])
   })
 
-  // 심볼 강화는 선택 목록이 아니다. 비용 표의 지금 이름과 두 레벨로 이름을 다시 만든다.
-  it('심볼 강화는 심볼 key 와 두 레벨로 이름을 다시 만든다', () => {
-    const { recordTitleOf } = require('../records') as typeof import('../records')
-    const 심볼행 = {
-      ...지출행,
-      category: 'symbol' as const,
-      item: '옛 이름 Lv.3 → 7',
-      itemKey: 'road_of_vanishing',
-      levelFrom: 3,
-      levelTo: 7,
-      quantity: null,
+  it('기타는 직접 친 이름이고 수량이 2 이상일 때만 붙인다. 이름이 없으면 둘째 줄이 없다', () => {
+    const 기타 = { ...지출행, category: 'etc' as const, item: '모멘텀 프라임 패스', itemKey: null, quantity: 1 }
+
+    expect(카드({ kind: 'spend', record: 기타, characterName: '' })).toEqual(['기타', '모멘텀 프라임 패스'])
+    expect(카드({ kind: 'spend', record: { ...기타, quantity: 2 }, characterName: '' })).toEqual(['기타', '모멘텀 프라임 패스 2개'])
+    expect(카드({ kind: 'spend', record: { ...기타, item: null }, characterName: '' })).toEqual(['기타', null])
+  })
+
+  it('사냥은 소재 수이고, 조각 가격을 적었으면 판 개수를 잇는다. 계산기가 아니면 직접 입력이다', () => {
+    const 계산기 = {
+      ...수입행,
+      itemKey: 'tallahart_road_of_night_3',
+      hunt: {
+        mode: 'calculator' as const,
+        characterLevel: 285,
+        missedMobs: 0,
+        boosts: [],
+        sojae: 8,
+        fragments: 30,
+        fragmentPrice: null,
+        mesoRate: 0,
+        unionTier: 3 as const,
+      },
     }
 
-    expect(recordTitleOf({ kind: 'spend', record: 심볼행, characterName: '루디' })).toBe('루디 · 소멸의 여로 Lv.3 → 7')
-    expect(recordTitleOf({ kind: 'spend', record: { ...심볼행, itemKey: 'removed_symbol' }, characterName: '' })).toBe(
-      '옛 이름 Lv.3 → 7',
-    )
+    expect(카드({ kind: 'income', record: 계산기, characterName: '루디' })).toEqual(['루디 · 사냥', '8소재'])
+    expect(
+      카드({ kind: 'income', record: { ...계산기, hunt: { ...계산기.hunt, fragmentPrice: 5_000_000 } }, characterName: '' }),
+    ).toEqual(['사냥', '8소재, 솔 에르다 조각 30개 판매'])
+    expect(카드({ kind: 'income', record: 수입행, characterName: '' })).toEqual(['사냥', '직접 입력'])
   })
 
-  // 카탈로그에서 빠진 항목이다. 지우지 않고 그때 이름으로 선다.
-  it('key 로 못 찾으면 저장된 이름을 적는다', () => {
-    const { recordTitleOf } = require('../records') as typeof import('../records')
-
+  it('솔 에르다 조각 정산은 사냥 제목과 판 개수다', () => {
     expect(
-      recordTitleOf({ kind: 'spend', record: { ...지출행, item: '없어진 항목', itemKey: 'removed_item' }, characterName: '' }),
-    ).toBe('없어진 항목')
+      카드({ kind: 'income', record: { ...수입행, category: 'sol_erda_fragment', item: null, quantity: 120 }, characterName: '' }),
+    ).toEqual(['사냥', '솔 에르다 조각 120개 판매'])
   })
 })
 
@@ -695,23 +691,23 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   it('결정석과 판매를 갈라 두 줄로 세운다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록, 데미안기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭(), 드롭({ dropIndex: 1, priceState: null, priceMeso: null })])
-    const { loadDayRecords, recordTitleOf, recordMesoOf, recordCountLabelOf } =
+    const { loadDayRecords, recordMesoOf } =
       require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(rows.map(recordTitleOf)).toEqual(['루디 · 보스 결정석', '루디 · 아이템 판매'])
+    expect(rows.map(titleOf)).toEqual(['루디 · 보스 결정석', '루디 · 보스 드롭 판매'])
     expect(rows.map(recordMesoOf)).toEqual([3_600_000_000, 4_000_000_000])
-    expect(rows.map(recordCountLabelOf)).toEqual(['2마리', '1건'])
+    expect(rows.map(detailOf)).toEqual(['2마리', '1건'])
   })
 
   it('판매가 하나도 없으면 그 줄이 안 선다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
-    const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
+    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(rows.map(recordTitleOf)).toEqual(['루디 · 보스 결정석'])
+    expect(rows.map(titleOf)).toEqual(['루디 · 보스 결정석'])
   })
 
   /**
@@ -723,13 +719,13 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   it('미입력만 있으면 줄이 **안 선다**', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭({ priceState: null, priceMeso: null })])
-    const { loadDayRecords, recordTitleOf } =
+    const { loadDayRecords } =
       require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
     // 결정석 줄만 남는다.
-    expect(rows.map(recordTitleOf)).toEqual(['루디 · 보스 결정석'])
+    expect(rows.map(titleOf)).toEqual(['루디 · 보스 결정석'])
   })
 
   // 판 것이 하나라도 있으면 그 줄은 선다. 가계부는 판 것만 보여 줘 `미입력` 을 안 적는다.
@@ -739,12 +735,12 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
       드롭({ priceState: 'entered', priceMeso: 1_000_000 }),
       드롭({ itemKey: null, itemName: '칠흑의 보스 반지 상자', priceState: null, priceMeso: null }),
     ])
-    const { loadDayRecords, recordCountLabelOf } =
+    const { loadDayRecords } =
       require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(recordCountLabelOf(rows[1])).toBe('1건')
+    expect(detailOf(rows[1])).toBe('1건')
   })
 
   // 판매 줄을 펼치면 그날 판 아이템이 한 줄씩 뜬다. 값을 넣은 드롭만 들고 한 행이 한 줄이다.
@@ -802,15 +798,14 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
    */
   it('손입력 줄이 캐릭터 이름을 든다. 없으면 빈 문자열이다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([
-      // `사냥` 은 첫 칸이 갈래라(아래 describe) 이름이 보이는 갈래로 잰다.
       { id: 'i1', ocid: 'ocid-1', earnedOn: '2026-08-21', category: 'item_sale', item: '엘리시움', mesoAmount: 1, recordedAt: 'a' },
       { id: 'i2', ocid: null, earnedOn: '2026-08-21', category: 'item_sale', item: '리우', mesoAmount: 1, recordedAt: 'b' },
     ])
-    const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
+    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(rows.map(recordTitleOf)).toEqual(['루디 · 엘리시움', '리우'])
+    expect(rows.map(titleOf)).toEqual(['루디 · 아이템 판매', '아이템 판매'])
     // 같은 `ocid` 를 두 번 읽지 않는다. 표를 한 번에 찾는다.
     expect(profileLookup.resolveDisplayProfiles).toHaveBeenCalledTimes(1)
   })
@@ -830,9 +825,9 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   it('이름을 모르면 ocid 대신 `알 수 없음` 을 안 적는다. 표에도 캐시에도 없으면 갈래만 적는다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     profileLookup.resolveDisplayProfiles.mockResolvedValue(new Map())
-    const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
+    const { loadDayRecords } = require('../records') as typeof import('../records')
 
-    expect((await loadDayRecords('2026-08-21')).map(recordTitleOf)).toEqual(['보스 결정석'])
+    expect((await loadDayRecords('2026-08-21')).map(titleOf)).toEqual(['보스 결정석'])
   })
 
   // 캐릭터를 관리 목록에서 빼도 그날의 결정석·판매 줄은 남아야 한다. 같은 화면의 손입력 줄은
@@ -1052,25 +1047,25 @@ describe('사냥 줄의 이름과 셈', () => {
 
   it('첫 칸이 **사냥터가 아니라 갈래**다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([사냥기록])
-    const { loadDayRecords, recordTitleOf } = require('../records') as typeof import('../records')
+    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(rows.map(recordTitleOf)).toEqual(['루디 · 사냥'])
+    expect(rows.map(titleOf)).toEqual(['루디 · 사냥'])
   })
 
   it('**n소재**를 센다. 보스 줄의 `n마리`와 같은 자리다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([사냥기록])
-    const { loadDayRecords, recordCountLabelOf } =
+    const { loadDayRecords } =
       require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(recordCountLabelOf(rows[0])).toBe('2소재')
+    expect(detailOf(rows[0])).toBe('2소재')
   })
 
   // 수동으로 적은 행에는 소재 줄이 없다. 셀 것이 없으니 칸도 안 선다.
-  it('수동으로 적은 행은 세는 칸이 없다', async () => {
+  it('수동으로 적은 행은 직접 입력이라고 적는다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([
       {
         ...사냥기록,
@@ -1078,25 +1073,25 @@ describe('사냥 줄의 이름과 셈', () => {
         hunt: { mode: 'manual' as const, typedMeso: 41_760_000, fragments: 0, fragmentPrice: 0 },
       },
     ])
-    const { loadDayRecords, recordCountLabelOf, recordTitleOf } =
+    const { loadDayRecords } =
       require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(recordTitleOf(rows[0])).toBe('루디 · 사냥')
-    expect(recordCountLabelOf(rows[0])).toBeNull()
+    expect(titleOf(rows[0])).toBe('루디 · 사냥')
+    expect(detailOf(rows[0])).toBe('직접 입력')
   })
 
   //  이전에 적힌 사냥 행은 계산 입력이 없다. 셀 것이 없으니 칸도 안 선다.
-  it('계산기 이전 행은 세는 칸이 없다', async () => {
+  it('계산기 이전 행도 직접 입력이라고 적는다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([{ ...사냥기록, hunt: null }])
-    const { loadDayRecords, recordCountLabelOf, recordTitleOf } =
+    const { loadDayRecords } =
       require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(recordTitleOf(rows[0])).toBe('루디 · 사냥')
-    expect(recordCountLabelOf(rows[0])).toBeNull()
+    expect(titleOf(rows[0])).toBe('루디 · 사냥')
+    expect(detailOf(rows[0])).toBe('직접 입력')
   })
 })
 
@@ -1126,15 +1121,15 @@ describe('솔 에르다 조각 정산 줄', () => {
     recordedAt: '2026-08-21T01:00:00.000Z',
   }
 
-  it('이름은 캐릭터 · 솔 에르다 조각이고 판 개수를 센다', async () => {
+  it('제목은 캐릭터 · 사냥이고 판 개수를 센다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([정산기록])
-    const { loadDayRecords, recordCountLabelOf, recordTitleOf, recordMesoOf } =
+    const { loadDayRecords, recordMesoOf } =
       require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(recordTitleOf(rows[0])).toBe('루디 · 솔 에르다 조각')
-    expect(recordCountLabelOf(rows[0])).toBe('50개')
+    expect(titleOf(rows[0])).toBe('루디 · 사냥')
+    expect(detailOf(rows[0])).toBe('솔 에르다 조각 50개 판매')
     expect(recordMesoOf(rows[0])).toBe(400_000_000)
   })
 })
@@ -1164,22 +1159,22 @@ describe('아이템 판매 줄의 개수', () => {
 
   it('소비 · 기타는 판 개수를 센다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([판매기록])
-    const { loadDayRecords, recordCountLabelOf } = require('../records') as typeof import('../records')
+    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(recordCountLabelOf(rows[0])).toBe('100개')
+    expect(detailOf(rows[0])).toBe('파워 엘릭서 100개')
   })
 
-  it('장비와 옛 행은 수량이 없어 안 센다', async () => {
+  it('장비와 옛 행은 수량 없이 이름만 적는다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([
       { ...판매기록, itemKind: 'equipment' as const, quantity: null },
     ])
-    const { loadDayRecords, recordCountLabelOf } = require('../records') as typeof import('../records')
+    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
-    expect(recordCountLabelOf(rows[0])).toBeNull()
+    expect(detailOf(rows[0])).toBe('파워 엘릭서')
   })
 })
 
@@ -1409,12 +1404,11 @@ describe('강화 줄', () => {
   })
 
   it('건수 라벨이 값모름을 말한다', async () => {
-    const { recordCountLabelOf } = require('../records') as typeof import('../records')
     const [a] = await 줄들([강화(), 강화({ id: 'e2', itemLevel: null })])
     const [b] = await 줄들([강화()])
 
-    expect(recordCountLabelOf(a)).toBe('2회 · 값모름 1')
-    expect(recordCountLabelOf(b)).toBe('1회')
+    expect(detailOf(a)).toMatch(/ 2회 · 값모름 1$/)
+    expect(detailOf(b)).toMatch(/ 1회$/)
   })
 
   // 펼쳐서 보는 이유가 **어디에 썼나** 라서 이름순이면 그 답이 안 보인다.
@@ -1506,13 +1500,12 @@ describe('강화 줄', () => {
     ])
   })
 
-  it('제목에 이름과 갈래가 든다', async () => {
-    const { recordTitleOf } = require('../records') as typeof import('../records')
+  it('제목은 이름 · 강화이고 둘째 줄이 강화 분류를 든다', async () => {
     const [큐브줄] = await 줄들([강화()])
     const [잠재줄] = await 줄들([잠재('에디셔널 잠재능력 재설정')])
 
-    expect(recordTitleOf(큐브줄)).toBe('낟낟 · 큐브 재설정')
-    expect(recordTitleOf(잠재줄)).toBe('낟낟 · 에디셔널 잠재능력')
+    expect(titleOf(큐브줄)).toBe('낟낟 · 강화')
+    expect([detailOf(큐브줄), detailOf(잠재줄)].map((detail) => detail?.split(' ')[0])).toEqual(['큐브', '에디셔널'])
   })
 
   // 여기가 핵심이다. 자동 줄이라고 수익으로 세면 그날 합계가 두 배로 어긋난다.

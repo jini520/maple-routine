@@ -9,10 +9,9 @@ jest.mock('../../../features/cashbook/records', () => {
   return {
     // **순수 함수는 진짜를 쓴다**. 줄에 무엇이 적히나는 그 함수들이 정하고, 목으로 덮으면
     // 화면 테스트가 **화면이 무엇을 그리나** 를 못 본다.
-    recordTitleOf: actual.recordTitleOf,
+    recordCardOf: actual.recordCardOf,
     recordMesoOf: actual.recordMesoOf,
     recordCashOf: actual.recordCashOf,
-    recordCountLabelOf: actual.recordCountLabelOf,
     dayTotalsOf: actual.dayTotalsOf,
     isManualRecord: actual.isManualRecord,
     rowKeyOf: actual.rowKeyOf,
@@ -224,7 +223,7 @@ async function 월간으로(view: Rendered): Promise<void> {
   await 이름으로누르기(view, '월간')
 }
 
-async function 이름으로누르기(view: Rendered, label: string): Promise<void> {
+async function 이름으로누르기(view: Rendered, label: string | RegExp): Promise<void> {
   await act(async () => {
     fireEvent.press(view.getByLabelText(label))
   })
@@ -1141,14 +1140,14 @@ describe('그날 목록', () => {
     ])
     const view = await 그리기()
 
-    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('루디 · 몬스터 파크×2−1.02억')
+    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('루디 · 몬스터 파크2회−1.02억')
   })
 
   it('수량이 있으면 함께 적는다', async () => {
     const view = await 그리기()
 
     // `toHaveTextContent` 는 이 판에서 **완전 일치**다. 줄 전체를 적는다.
-    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('몬스터 파크×2−1.02억')
+    expect(view.getByTestId('cashbook-row-spd-1')).toHaveTextContent('몬스터 파크2회−1.02억')
   })
 
   // 그림이 붙는 줄은 배지 안이 아이콘이 아니라 그림이다. 무엇을 그리는지는 `row-icon.spec.ts` 가
@@ -1347,14 +1346,14 @@ describe('자동으로 흘러든 줄', () => {
       '루디 · 보스 결정석2마리+36억',
     )
     expect(view.getByTestId('cashbook-row-dropSale:ocid-1')).toHaveTextContent(
-      '루디 · 아이템 판매3건+40억',
+      '루디 · 보스 드롭 판매3건+40억',
     )
   })
 
   it('누르면 시트가 안 열린다. 여기서 못 고친다 (결정 8)', async () => {
     const view = await 그리기()
 
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+    await 이름으로누르기(view, /^루디 · 보스 결정석 .*펼치기$/)
 
     expect(view.queryByTestId('spend-sheet-date')).toBeNull()
     expect(view.queryByTestId('income-sheet-date')).toBeNull()
@@ -1366,7 +1365,7 @@ describe('자동으로 흘러든 줄', () => {
 
     expect(view.queryByTestId('cashbook-row-items-dropSale:ocid-1')).toBeNull()
 
-    await 이름으로누르기(view, '루디 · 아이템 판매 펼치기')
+    await 이름으로누르기(view, /^루디 · 보스 드롭 판매 .*펼치기$/)
 
     expect(mockOpenTab).not.toHaveBeenCalled()
     expect(view.getByTestId('cashbook-sold-item-dropSale:ocid-1-0')).toHaveTextContent('루즈 컨트롤 머신 마크+30억')
@@ -1377,7 +1376,7 @@ describe('자동으로 흘러든 줄', () => {
   // 그림은 보스 수익 드롭 시트와 같은 조회다. 못 찾으면 그림 자리 없이 이름부터 적는다(사용자 결정).
   it('판 아이템의 그림은 아이템 key 로 찾고 없으면 그림 자리가 없다', async () => {
     const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 아이템 판매 펼치기')
+    await 이름으로누르기(view, /^루디 · 보스 드롭 판매 .*펼치기$/)
 
     expect(view.getByTestId('cashbook-sold-item-image-dropSale:ocid-1-0', 숨은것까지)).toBeTruthy()
     expect(view.queryByTestId('cashbook-sold-item-image-dropSale:ocid-1-2', 숨은것까지)).toBeNull()
@@ -1385,12 +1384,12 @@ describe('자동으로 흘러든 줄', () => {
 
   it('판매 줄도 다시 누르면 접히고 날을 바꾸면 접힌다', async () => {
     const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 아이템 판매 펼치기')
-    await 이름으로누르기(view, '루디 · 아이템 판매 접기')
+    await 이름으로누르기(view, /^루디 · 보스 드롭 판매 .*펼치기$/)
+    await 이름으로누르기(view, /^루디 · 보스 드롭 판매 .*접기$/)
 
     expect(view.queryByTestId('cashbook-row-items-dropSale:ocid-1')).toBeNull()
 
-    await 이름으로누르기(view, '루디 · 아이템 판매 펼치기')
+    await 이름으로누르기(view, /^루디 · 보스 드롭 판매 .*펼치기$/)
     await 누르기(view, 'calendar-day-2026-08-25')
 
     expect(view.queryByTestId('cashbook-row-items-dropSale:ocid-1')).toBeNull()
@@ -1402,7 +1401,7 @@ describe('자동으로 흘러든 줄', () => {
 
     expect(view.queryByTestId('cashbook-row-bosses-bossCrystal:ocid-1')).toBeNull()
 
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+    await 이름으로누르기(view, /^루디 · 보스 결정석 .*펼치기$/)
 
     expect(mockOpenTab).not.toHaveBeenCalled()
     expect(view.getByTestId('cashbook-boss-tile-lotus|hard')).toBeTruthy()
@@ -1417,7 +1416,7 @@ describe('자동으로 흘러든 줄', () => {
   it('여덟 마리는 여섯 + 둘로 끊긴다', async () => {
     그날줄을(고른날, [{ ...결정석줄, count: 8, bosses: 보스여덟 }])
     const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+    await 이름으로누르기(view, /^루디 · 보스 결정석 .*펼치기$/)
 
     const 줄들 = view.getAllByTestId(/^cashbook-boss-row-/)
     expect(줄들).toHaveLength(2)
@@ -1429,7 +1428,7 @@ describe('자동으로 흘러든 줄', () => {
   it('덜 찬 마지막 줄은 빈 칸으로 채운다', async () => {
     그날줄을(고른날, [{ ...결정석줄, count: 8, bosses: 보스여덟 }])
     const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+    await 이름으로누르기(view, /^루디 · 보스 결정석 .*펼치기$/)
 
     const 마지막줄 = view.getAllByTestId(/^cashbook-boss-row-/)[1]
     expect(within(마지막줄).getAllByTestId(/^cashbook-boss-slot-/)).toHaveLength(6)
@@ -1438,7 +1437,7 @@ describe('자동으로 흘러든 줄', () => {
   // 칸 폭이 고정이어야 배지 줄이 초상 아래에서 칸마다 같은 자리에 선다. 여섯 칸이 줄 카드 안에 들어가는 폭이다.
   it('칸은 고정 폭이고 줄 가운데로 모인다', async () => {
     const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+    await 이름으로누르기(view, /^루디 · 보스 결정석 .*펼치기$/)
 
     const 칸 = flattenStyle(view.getByTestId('cashbook-boss-slot-lotus|hard').props.style)
     expect(칸.width).toBe(BOSS_SLOT_PX)
@@ -1452,7 +1451,7 @@ describe('자동으로 흘러든 줄', () => {
   // 한 글자(`H`)는 줄여 쓴 말을 풀어야 읽힌다. 배지가 초상 위에 겹치면 얼굴을 가린다.
   it('난이도 배지는 초상 아래에 이름 전부로 선다', async () => {
     const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+    await 이름으로누르기(view, /^루디 · 보스 결정석 .*펼치기$/)
 
     const 칸 = view.getByTestId('cashbook-boss-tile-lotus|hard')
     expect(within(칸).getByText('하드')).toBeTruthy()
@@ -1463,7 +1462,7 @@ describe('자동으로 흘러든 줄', () => {
   // 눈으로 읽던 것이 사라졌으므로 그 자리를 접근성 이름이 받아야 한다.
   it('읽어 주는 이름은 `난이도 + 보스`다', async () => {
     const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+    await 이름으로누르기(view, /^루디 · 보스 결정석 .*펼치기$/)
 
     expect(view.getByLabelText('하드 스우')).toBeTruthy()
     expect(view.getByLabelText('노멀 데미안')).toBeTruthy()
@@ -1475,15 +1474,15 @@ describe('자동으로 흘러든 줄', () => {
     const 카드 = view.getByTestId('cashbook-row-card-bossCrystal:ocid-1')
     expect(flattenStyle(카드.props.style).borderWidth).toBeUndefined()
 
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+    await 이름으로누르기(view, /^루디 · 보스 결정석 .*펼치기$/)
 
     expect(within(카드).getByTestId('cashbook-row-bosses-bossCrystal:ocid-1')).toBeTruthy()
   })
 
   it('다시 누르면 접힌다', async () => {
     const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
-    await 이름으로누르기(view, '루디 · 보스 결정석 접기')
+    await 이름으로누르기(view, /^루디 · 보스 결정석 .*펼치기$/)
+    await 이름으로누르기(view, /^루디 · 보스 결정석 .*접기$/)
 
     expect(view.queryByTestId('cashbook-row-bosses-bossCrystal:ocid-1')).toBeNull()
   })
@@ -1492,7 +1491,7 @@ describe('자동으로 흘러든 줄', () => {
   // 펼쳐진 채로 남는다.
   it('날을 바꾸면 접힌다', async () => {
     const view = await 그리기()
-    await 이름으로누르기(view, '루디 · 보스 결정석 펼치기')
+    await 이름으로누르기(view, /^루디 · 보스 결정석 .*펼치기$/)
 
     await 누르기(view, 'calendar-day-2026-08-25')
 
@@ -1823,7 +1822,7 @@ describe('강화 줄', () => {
     const view = await 그리기()
 
     expect(view.getByTestId('cashbook-row-enhancement:starforce:낟낟')).toHaveTextContent(
-      '낟낟 · 스타포스47회−12억',
+      '낟낟 · 강화스타포스 47회−12억',
     )
   })
 
@@ -1832,7 +1831,7 @@ describe('강화 줄', () => {
     const view = await 그리기()
 
     expect(view.getByTestId('cashbook-row-enhancement:additional_potential:낟낟')).toHaveTextContent(
-      '낟낟 · 에디셔널 잠재능력10회−7.4억',
+      '낟낟 · 강화에디셔널 잠재능력 10회−7.4억',
     )
   })
 
@@ -1841,7 +1840,7 @@ describe('강화 줄', () => {
     const view = await 그리기()
 
     expect(view.getByTestId('cashbook-row-enhancement:starforce:낟낟')).toHaveTextContent(
-      '낟낟 · 스타포스47회 · 값모름 3−12억',
+      '낟낟 · 강화스타포스 47회 · 값모름 3−12억',
     )
   })
 
@@ -1849,7 +1848,7 @@ describe('강화 줄', () => {
   it('누르면 그 자리에서 펼쳐진다. 탭을 안 옮긴다', async () => {
     const view = await 그리기()
 
-    await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
+    await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*펼치기$/)
 
     expect(view.getByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeTruthy()
     expect(mockOpenTab).not.toHaveBeenCalled()
@@ -1858,7 +1857,7 @@ describe('강화 줄', () => {
 
   it('무엇을 강화했는지 큰 금액부터 적는다', async () => {
     const view = await 그리기()
-    await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
+    await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*펼치기$/)
 
     expect(view.getByTestId('cashbook-item-row-arcane_umbra_knuckle')).toHaveTextContent(
       '아케인셰이드 클로32회−9.8억',
@@ -1872,8 +1871,8 @@ describe('강화 줄', () => {
   it('다른 갈래를 펼치면 앞의 것이 접힌다', async () => {
     const view = await 그리기()
 
-    await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
-    await 이름으로누르기(view, '낟낟 · 에디셔널 잠재능력 펼치기')
+    await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*펼치기$/)
+    await 이름으로누르기(view, /^낟낟 · 강화 에디셔널 잠재능력 .*펼치기$/)
 
     expect(view.queryByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeNull()
     expect(view.getByTestId('cashbook-row-items-enhancement:additional_potential:낟낟')).toBeTruthy()
@@ -1888,7 +1887,7 @@ describe('강화 줄', () => {
       },
     ])
     const view = await 그리기()
-    await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
+    await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*펼치기$/)
 
     expect(view.getByTestId('cashbook-item-row-왕푸')).toHaveTextContent('왕푸8회값 모름')
   })
@@ -1896,8 +1895,8 @@ describe('강화 줄', () => {
   it('다시 누르면 접힌다', async () => {
     const view = await 그리기()
 
-    await 이름으로누르기(view, '낟낟 · 스타포스 펼치기')
-    await 이름으로누르기(view, '낟낟 · 스타포스 접기')
+    await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*펼치기$/)
+    await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*접기$/)
 
     expect(view.queryByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeNull()
   })

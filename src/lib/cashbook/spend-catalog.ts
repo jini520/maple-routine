@@ -419,6 +419,11 @@ export function spendGroupOf(category: string, itemKey: string | null): { key: s
   return { key: found.item.group, name: catalog().groups.get(found.item.group)?.name ?? found.item.group }
 }
 
+/** 묶음의 하루 목록 카드 제목. 모르는 묶음은 `null` 이다. */
+export function spendGroupCardTitleOf(groupKey: string): string | null {
+  return catalog().groups.get(groupKey)?.cardTitle ?? null
+}
+
 /**
  * 안 사는 상태. 형태별 단계는 여기서 시작한다.
  *

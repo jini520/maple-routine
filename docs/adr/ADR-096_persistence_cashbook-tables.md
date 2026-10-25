@@ -1,6 +1,6 @@
 # ADR-096 가계부 기록 테이블 재설계
 
-> ⚪ 미구현
+> 🟢 유효
 > 관련 소스: `storage/sqlite/db.ts` · `storage/sqlite/cashbook-tables.ts` · `storage/sqlite/migrations.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` · `storage/spend.ts` · `storage/income.ts` · `features/cashbook/records.ts` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts`
 
 ## 배경
@@ -68,6 +68,22 @@ cashbook_entries               id · ocid · entry_type · category_key · entry
   확률이 하나뿐인 주문서도 확률을 이름에 남긴다(`매지컬 한손무기 공격력 주문서 100%` · `귀 장식 마력 주문서 10%`).
 - 에픽던전 리워드 형태도 같은 규칙이다. 원본 이름 `경험치` · `솔 에르다` 를 카드에도 쓴다
   (`악몽선경 경험치 1단계, 솔 에르다 1단계`, 사용자 지정).
+- 갈래마다 두 줄은 이렇게 선다(카드 이름표, 사용자 확정 2026-10-25). 첫 줄 앞에는 캐릭터 이름과 ` · ` 가 붙고, 계정 단위
+  기록은 제목만 선다. 수량은 천 단위 쉼표를 찍고 단위를 붙인다(`1,000포인트`).
+
+  | 기록 | 첫 줄 | 둘째 줄 |
+  |---|---|---|
+  | 지출 목록(컨텐츠 · 이벤트·BM · 버프 · 주문서) | 묶음 `card_title` | 항목 `name` + 수량 + 항목 `unit`. 항목 이름이 제목과 같으면 수량만(`몬스터 파크` / `7회`) |
+  | 에픽던전 추가 리워드 | 묶음 `card_title`(`에픽던전`) | 타일 이름 + 형태마다 `형태 이름 단계`, 쉼표로 잇는다. 0단계 형태는 안 적는다 |
+  | 심볼 강화 | 갈래 `card_title` | 심볼 이름 `강화 전 → 강화 후` |
+  | 아이템 구매 · 판매 | 갈래 `card_title` | 직접 친 이름. 소비 · 기타는 수량 + 종류 `unit` 을 붙인다 |
+  | 지출 · 수입 기타 | 갈래 `card_title` | 직접 친 이름. 수량이 2 이상일 때만 수량 + 단위를 붙인다 |
+  | 사냥(계산기) | 갈래 `card_title` | 소재 수 + 갈래 `unit`. 조각 가격을 적었으면 `, 솔 에르다 조각 n개 판매` 를 잇는다 |
+  | 사냥(직접 입력 · 계산 입력이 없던 옛 기록) | 갈래 `card_title` | `직접 입력`. 조각 가격을 적었으면 판매를 잇는다 |
+  | 솔 에르다 조각 정산 | 갈래 `card_title`(`사냥`) | `솔 에르다 조각 n개 판매` |
+  | 보스 결정석 · 보스 드롭 판매 · 강화 | 앱 상수 `보스 결정석` · `보스 드롭 판매` · `강화` | `n마리` · `n건` · 강화 분류 이름 + `n회` |
+
+  보스 결정석 · 드롭 판매 · 강화는 손입력 갈래가 아니라 원천 표의 줄이라 제목을 앱이 든다.
 - 이름을 서버에 두는 이유는 관리 화면에서 고치면 앱 업데이트 없이 바뀌기 때문이다(사용자 선택). 서버 작업을 함께 한다.
 - 갈래와 에픽던전 리워드 형태도 서버로 옮긴다(사용자 선택). 지금 서버에는 둘 다 enum(`spend_category` 넷 · `spend_form`
   둘)뿐이고 이름은 앱 상수(`SPEND_CATEGORIES` · `INCOME_CATEGORIES` · `SPEND_FORMS`)가 든다. 그래서 묶음이 없는 갈래의
@@ -114,10 +130,10 @@ cashbook_entries               id · ocid · entry_type · category_key · entry
 
 ## 테스트
 
-하루 목록 두 줄 카드(결정 3 · 4 의 화면)의 테스트는 구현할 때 적는다.
-
 | 파일 | 확인하는 것 |
 |---|---|
+| `features/cashbook/__tests__/records.spec.ts` | 결정 3 · 4: 갈래마다 카드 두 줄이 이름표대로 서는지(묶음 제목 · 원본 이름 · 수량 단위, 에픽던전 형태, 심볼 레벨, 종류 단위, 기타의 2 이상 수량, 사냥 소재와 조각 판매, 직접 입력) |
+| `app/cashbook/__tests__/CashbookScreen.test.tsx` | 결정 3: 줄이 두 줄을 그리고, 읽는 이름에 둘째 줄이 들어 제목이 같은 강화 줄끼리 갈리는지 |
 | `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` | 결정 5 · 6 · 8: 버전 14 기기의 옛 두 표에서 한 건도 안 잃고 값이 그대로 옮겨지는지, id 가 새 uuid 인지, key 없는 갈래를 기타로 옮기는지, 에픽던전 형태 둘이 품목 둘로 단계 단가대로 나뉘는지, 옛 표가 남고 이관이 한 번만 도는지 |
 | `storage/__tests__/spend.spec.ts` | 결정 1 · 2: 지출 모양별로 넣은 것이 그대로 되읽히는지, 형태 둘의 금액이 나뉘고 나머지가 첫 품목에 붙는지, key 가 있으면 이름을 안 적는지, 고치면 저장 시각이 그대로이고 품목이 갈리는지, 지우면 품목도 지워지는지, 수입 기록이 안 섞이는지 |
 | `storage/__tests__/income.spec.ts` | 결정 1 · 2: 수입 모양별로 넣은 것이 그대로 되읽히는지, 사냥은 소재 수를 품목 수량에 두고 계산 입력을 사냥 입력 표에 두는지, 조각 보관을 기록 표에서 세는지 |
@@ -130,3 +146,4 @@ cashbook_entries               id · ocid · entry_type · category_key · entry
 ## 번호 기록
 
 - ADR-096 (2026-10-25): 가계부 기록 테이블 재설계를 처음 작성했다(#670)
+- ADR-096 (2026-10-25): 기록 표 셋 · 버전 15 이관 · 서버 갈래 표 · 하루 목록 두 줄 카드를 구현했다
