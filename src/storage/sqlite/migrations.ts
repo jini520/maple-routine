@@ -577,6 +577,60 @@ async function moveCashbookRecordsToEntries(db: SqliteDbConnection): Promise<voi
   for (const row of income.values ?? []) {
     await insertEntry(db, incomeEntryOf(legacyIncomeRecordOf(row, await newId())))
   }
+  await assertCashbookTotalsMoved(db)
+}
+
+/**
+ * 옮긴 뒤 건수와 합계를 옛 표와 대조한다. 하나라도 다르면 던져 이 버전을 통째로 되돌린다. 손입력은 되살릴 API 가 없어
+ * 조용히 덜 옮긴 채로 버전을 올리는 것보다 DB 를 못 여는 편이 낫다. 옛 표와 이관 전 사본은 그대로 남는다.
+ */
+async function assertCashbookTotalsMoved(db: SqliteDbConnection): Promise<void> {
+  const one = async (sql: string): Promise<Row> => ((await db.query(sql)).values?.[0] ?? {}) as Row
+  const items = (type: string, columns: string) =>
+    one(`SELECT ${columns} FROM cashbook_entry_items i JOIN cashbook_entries e ON e.id = i.entry_id WHERE e.entry_type = '${type}'`)
+  const [oldSpend, newSpendHeads, newSpend, oldIncome, newIncomeHeads, newIncome, oldFragments, newFragments] = [
+    await one(`SELECT count(*) AS n, total(meso_amount) AS meso, total(point_amount) AS point, total(cash_amount) AS cash,
+                      total(tariff_meso) AS tariff FROM spend_records`),
+    await one(`SELECT count(*) AS n FROM cashbook_entries WHERE entry_type = 'spend'`),
+    await items('spend', 'total(i.amount_meso) AS meso, total(i.amount_point) AS point, total(i.amount_cash) AS cash, total(i.tariff_meso) AS tariff'),
+    await one(`SELECT count(*) AS n, total(meso_amount) AS meso, total(point_amount) AS point, total(cash_amount) AS cash,
+                      total(sale_fee_meso) AS fee FROM income_records`),
+    await one(`SELECT count(*) AS n FROM cashbook_entries WHERE entry_type = 'income'`),
+    await items('income', 'total(i.amount_meso) AS meso, total(i.amount_point) AS point, total(i.amount_cash) AS cash, total(i.sale_fee_meso) AS fee'),
+    await one(`SELECT total(hunt_fragments) AS fragments FROM income_records WHERE hunt_typed_meso IS NOT NULL OR hunt_missed_mobs IS NOT NULL`),
+    await one('SELECT total(fragments) AS fragments FROM cashbook_entry_hunt_inputs'),
+  ]
+  const pairs: Array<[string, unknown, unknown]> = [
+    ['지출 건수', oldSpend.n, newSpendHeads.n],
+    ['수입 건수', oldIncome.n, newIncomeHeads.n],
+    ...(['meso', 'point', 'cash', 'tariff'] as const).map((key): [string, unknown, unknown] => [`지출 ${key}`, oldSpend[key], newSpend[key]]),
+    ...(['meso', 'point', 'cash', 'fee'] as const).map((key): [string, unknown, unknown] => [`수입 ${key}`, oldIncome[key], newIncome[key]]),
+    ['사냥 조각', oldFragments.fragments, newFragments.fragments],
+  ]
+  // 빈 표의 합은 0 이다. 칸이 없거나 값이 안 오면 0 으로 읽는다.
+  const wrong = pairs.filter(([, before, after]) => (Number(before) || 0) !== (Number(after) || 0))
+  if (wrong.length > 0) {
+    throw new Error(`버전 15 이관이 옛 표와 다르다: ${wrong.map(([name, before, after]) => `${name} ${before} → ${after}`).join(', ')}`)
+  }
+}
+
+/**
+ * 손입력을 옮기는 버전 15 앞에 DB 파일을 통째로 떠 둔다. 같은 폴더의 `…-before-v15.db` 다.
+ *
+ * 이미 있으면 덮지 않는다. 한 번 실패하고 다시 여는 기기에서 사본이 첫 사본 그대로여야 하기 때문이다. 다른 이유로 못 뜨면
+ * 던져서 옮기지 않는다. 사본 없이 옮기지 않는다. 트랜잭션 안에서는 `VACUUM` 이 안 돌아 버전 루프 밖에서 부른다.
+ */
+async function backupBeforeCashbookMove(db: SqliteDbConnection, current: number): Promise<void> {
+  if (current < 1 || current >= 15) return
+  const { values } = await db.query('PRAGMA database_list')
+  const file = textOrNull((values ?? []).find((row) => row.name === 'main')?.file)
+  if (file === null || file === '') return
+  const target = `${file.replace(/\.db$/, '')}-before-v15.db`
+  try {
+    await db.execute(`VACUUM INTO '${target.replace(/'/g, "''")}'`)
+  } catch (error: unknown) {
+    if (!String(error).includes('already exists')) throw error
+  }
 }
 
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
@@ -611,6 +665,7 @@ async function userVersionOf(db: SqliteDbConnection): Promise<number> {
  */
 export async function runVersionedMigrations(db: SqliteDbConnection): Promise<void> {
   const current = await userVersionOf(db)
+  await backupBeforeCashbookMove(db, current)
   for (let version = current + 1; version <= DB_VERSION; version += 1) {
     await db.execute('BEGIN')
     try {

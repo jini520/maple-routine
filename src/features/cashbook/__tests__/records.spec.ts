@@ -491,7 +491,7 @@ describe('하루 목록 카드의 두 줄', () => {
     // 원본 이름이 선다. 시트 타일의 줄인 이름(블루베리 농장)이 아니다.
     expect(
       카드({ kind: 'spend', record: { ...지출행, category: 'event_bm', itemKey: 'blueberry_farm', quantity: 1 }, characterName: '' }),
-    ).toEqual(['메이플 포인트 샵', '블루베리 농장 입장권 1회'])
+    ).toEqual(['메이플 포인트 샵', '블루베리 농장 입장권 1개'])
   })
 
   it('에픽던전 리워드는 묶음 제목과 형태마다의 단계다', () => {

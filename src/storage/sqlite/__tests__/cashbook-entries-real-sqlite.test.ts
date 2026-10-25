@@ -5,7 +5,8 @@
  * 옛 행을 심고 버전 14 로 되돌린 뒤 다시 열어, 저장 함수로 되읽은 기록을 옛 값과 견준다. 손입력은 되살릴 API 가 없어
  * 한 건이라도 잃으면 끝이다.
  */
-import type { DatabaseSync } from 'node:sqlite'
+import { existsSync } from 'node:fs'
+import { DatabaseSync } from 'node:sqlite'
 
 import { getIncomeRecordsBetween } from '../../income'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
@@ -155,5 +156,56 @@ describe('버전 15: 가계부 손입력 두 표를 기록 표 셋으로 옮긴�
     expect(all('SELECT count(*) AS n FROM spend_records')).toEqual([{ n: 5 }])
     expect(all('SELECT count(*) AS n FROM income_records')).toEqual([{ n: 4 }])
     expect(all('SELECT count(*) AS n FROM cashbook_entries')).toEqual([{ n: 9 }])
+  })
+
+  /** 이관 전 사본의 경로. DB 파일 옆에 버전 이름을 붙여 둔다. */
+  function backupPath(): string {
+    const main = real.inspect((db) => (db.prepare('PRAGMA database_list').all() as Row[]).find((row) => row.name === 'main'))
+    return String(main!.file).replace(/\.db$/, '-before-v15.db')
+  }
+
+  // 손입력은 되살릴 API 가 없다. 옮기다 무엇이 틀려도 옮기기 전 DB 를 통째로 되돌릴 수 있어야 한다.
+  it('옮기기 전 DB 를 파일째 사본으로 남긴다. 새 DB 는 사본이 없다', async () => {
+    await getBossProfitDb()
+    expect(existsSync(backupPath())).toBe(false)
+    await closeBossProfitDb()
+    real.inspect((db) => {
+      seedDevice(db)
+      db.exec('PRAGMA user_version = 14')
+    })
+
+    await getBossProfitDb()
+
+    const backup = new DatabaseSync(backupPath(), { readOnly: true })
+    try {
+      expect((backup.prepare('PRAGMA user_version').get() as Row).user_version).toBe(14)
+      expect(backup.prepare('SELECT count(*) AS n FROM spend_records').get()).toEqual({ n: 5 })
+      expect(backup.prepare('SELECT count(*) AS n FROM cashbook_entries').get()).toEqual({ n: 0 })
+    } finally {
+      backup.close()
+    }
+  })
+
+  // 한 번 실패한 기기가 다음 부팅에 다시 옮길 때 사본이 반쯤 옮긴 DB 로 바뀌면 안 된다.
+  it('옮기다 실패하면 버전 14 와 옛 표 그대로 되돌아가고, 다시 열어도 처음 사본을 덮지 않는다', async () => {
+    await seedVersion14((db) => {
+      seedDevice(db)
+      db.exec(`UPDATE spend_records SET form_item_keys = '{깨진' WHERE id = 'mg1abc-x2'`)
+    })
+
+    await expect(getBossProfitDb()).rejects.toThrow()
+    await expect(getBossProfitDb()).rejects.toThrow()
+
+    expect(real.inspect((db) => (db.prepare('PRAGMA user_version').get() as Row).user_version)).toBe(14)
+    expect(all('SELECT count(*) AS n FROM cashbook_entries')).toEqual([{ n: 0 }])
+    expect(all('SELECT count(*) AS n FROM spend_records')).toEqual([{ n: 5 }])
+    const backup = new DatabaseSync(backupPath(), { readOnly: true })
+    try {
+      expect(backup.prepare(`SELECT form_item_keys FROM spend_records WHERE id = 'mg1abc-x2'`).get()).toEqual({
+        form_item_keys: '{깨진',
+      })
+    } finally {
+      backup.close()
+    }
   })
 })
