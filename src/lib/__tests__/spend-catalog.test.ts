@@ -258,12 +258,12 @@ describe('형태별 단계: 값과 이름', () => {
     // 하루 목록의 줄 이름이 이 글자다. 기록의 이름 칸에도 그때 이름으로 남는다.
     it('고른 단계를 형태 차례대로 적는다', () => {
       expect(buildSpendRewardName(하이마운틴, { exp: '1단계', sol_erda: '2단계' })).toBe(
-        '하이마운틴 EXP 1단계, 솔 2단계',
+        '하이마운틴 경험치 1단계, 솔 에르다 2단계',
       )
     })
 
     it('0단계인 형태는 안 적는다', () => {
-      expect(buildSpendRewardName(하이마운틴, { sol_erda: '2단계' })).toBe('하이마운틴 솔 2단계')
+      expect(buildSpendRewardName(하이마운틴, { sol_erda: '2단계' })).toBe('하이마운틴 솔 에르다 2단계')
     })
 
     // 산 것이 없는 지출은 지출이 아니다. 이름이 없는 것이 곧 **저장할 수 없다** 다.

@@ -15,25 +15,21 @@ import { Image, Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms'
 import { getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
+import type { CashbookCategory } from '../../lib/cashbook/categories'
 
 /** 카드 그림의 한 변. 이름과 나란히 한 줄에 선다. */
 const CARD_ICON_SIZE = 28
 
 export function CategoryPicker<T extends string>(props: {
-  /** 갈래 표(`lib/cashbook/categories.ts`). 그림은 `src/assets/items/` 의 파일명이다. */
-  categories: ReadonlyArray<{
-    readonly key: T
-    readonly name: string
-    readonly icon: string
-    /**
-     * 이름 아래 한 줄.
-     *
-     * **넘치면 말줄임표로 잘리게 둔다**(사용자 지정 2026-09-21). 기기마다 가로 비율이 달라 어떤
-     * 글자든 다 들어간다고 못 박을 수가 없다. 글자를 줄여 맞추지도, 두 줄로 흘리지도 않는다 -
-     * 둘 다 줄 수가 갈려 카드 높이가 기기마다 달라진다. 참고로 390 화면의 글자 폭은 115 다.
-     */
-    readonly description: string
-  }>
+  /**
+   * 갈래 표(`lib/cashbook/categories.ts`). 앱이 폼을 모르는 갈래(`known` 거짓)는 서기만 하고 못 누른다.
+   *
+   * 설명이 **넘치면 말줄임표로 잘리게 둔다**(사용자 지정 2026-09-21). 글자를 줄여 맞추지도, 두 줄로 흘리지도
+   * 않는다. 둘 다 줄 수가 갈려 카드 높이가 기기마다 달라진다. 참고로 390 화면의 글자 폭은 115 다.
+   */
+  categories: readonly CashbookCategory[]
+  /** 앱이 폼을 아는 key. `known` 인 갈래의 key 가 이 안에 있다. */
+  knownKeys: readonly T[]
   /** `testID` 뿌리. `income-sheet` · `spend-sheet`. */
   testIdPrefix: string
   onSelect: (category: T) => void
@@ -55,8 +51,13 @@ export function CategoryPicker<T extends string>(props: {
               role="button"
               aria-label={category.name}
               testID={`${props.testIdPrefix}-category-${category.key}`}
-              onPress={() => props.onSelect(category.key)}
-              className="w-1/2 p-1"
+              disabled={!category.known}
+              aria-disabled={!category.known}
+              onPress={() => {
+                const key = props.knownKeys.find((each) => each === category.key)
+                if (key !== undefined) props.onSelect(key)
+              }}
+              className={`w-1/2 p-1${category.known ? '' : ' opacity-40'}`}
             >
               <View
                 testID={`${props.testIdPrefix}-category-box-${category.key}`}

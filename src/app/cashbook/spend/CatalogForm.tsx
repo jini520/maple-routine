@@ -22,7 +22,7 @@ import { Segment } from '../../../components/molecules/Segment/Segment'
 import { formatMesoCompact } from '../../../lib/cashbook/meso-compact'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { getItemIconUrlByFile, spendIconOf } from '../../../lib/assets/asset-lookup'
-import { spendCategoryNameOf, spendFormOf } from '../../../lib/cashbook/categories'
+import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import {
   BASE_TIER,
   buildSpendRewardName,
@@ -35,6 +35,7 @@ import {
   pickSpendOption,
   pointToMeso,
   rewardCoinMeso,
+  spendFormOf,
   spendGroupsOf,
   spendRewardCoins,
   spendRewardItemKeys,

@@ -15,6 +15,7 @@ import bundled from '../../data/spend-catalog.json'
 import type {
   SpendCatalogRules,
   SpendCatalogTable,
+  SpendFormRow,
   SpendGroupRow,
   SpendItemFormRow,
   SpendItemOptionRow,
@@ -39,7 +40,7 @@ import {
   type Row,
 } from '../game-data/contract'
 import { bundledTable, derive } from '../game-data/table'
-import { SPEND_CATEGORIES, SPEND_FORMS, spendFormOf, type SpendCategoryKey } from './categories'
+import { SPEND_FORM_KEYS, type SpendCategoryKey } from './categories'
 
 /** 항목 줄. `from` · `until` 은 그 항목이 서는 기간이다(KST 날짜). */
 export interface SpendCatalogItem extends EffectivePeriod {
@@ -51,7 +52,10 @@ export interface SpendCatalogItem extends EffectivePeriod {
   readonly group: string
   /** 타일 key. 같은 타일의 항목이 목록에서 한 칸으로 접힌다. */
   readonly tile: string
+  /** 원본 이름. 하루 목록 카드에도 선다. */
   readonly name: string
+  /** 좁은 자리용으로 줄인 이름. 없으면 `name` 을 쓴다. */
+  readonly shortName?: string
   readonly currency: 'meso' | 'point'
   /** `null` 은 경매장 값이라 매번 다른 항목이고, 적을 때 개당 가격을 친다. */
   readonly unitPrice: number | null
@@ -138,8 +142,6 @@ export interface SpendCatalogGroup {
   readonly active: boolean
 }
 
-const SPEND_CATEGORY_KEYS = SPEND_CATEGORIES.map((category) => category.key)
-const SPEND_FORM_KEYS = SPEND_FORMS.map((form) => form.key)
 const CURRENCIES = ['point', 'meso'] as const
 
 function toRules(value: unknown): SpendCatalogRules | null {
@@ -149,10 +151,11 @@ function toRules(value: unknown): SpendCatalogRules | null {
   return { tariffPercent: value.tariffPercent, rewardCoinPriceMeso: value.rewardCoinPriceMeso }
 }
 
+// 갈래는 앱이 폼을 모르는 key 도 온다. 그 갈래는 시트에서 못 골라 묶음도 안 선다.
 function toGroup(row: Row): SpendGroupRow | null {
   if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isBoolean(row.active)) return null
-  if (!isOneOf(row.category, SPEND_CATEGORY_KEYS)) return null
-  return { key: row.key, name: row.name, category: row.category, active: row.active }
+  if (!isNonEmptyString(row.category) || !isNonEmptyString(row.cardTitle)) return null
+  return { key: row.key, name: row.name, category: row.category, cardTitle: row.cardTitle, active: row.active }
 }
 
 function toTile(row: Row): SpendTileRow | null {
@@ -168,17 +171,19 @@ function toItem(row: Row): SpendItemRow | null {
   if (!isNonEmptyString(row.name) || !isNonEmptyString(row.unit) || !isOneOf(row.currency, CURRENCIES)) return null
   // null 은 경매장 값이라 매번 다른 항목이다. 빠진 칸이 아니라 값이라 그대로 둔다.
   if (row.unitPrice !== null && !isNonNegativeInteger(row.unitPrice)) return null
+  const shortName = optional(row.shortName, isNonEmptyString)
   const tier = optional(row.tier, isNonEmptyString)
   const maxQuantity = optional(row.maxQuantity, isPositiveInteger)
   const rewardCoins = optional(row.rewardCoins, isPositiveInteger)
   const from = optional(row.from, isPeriodText)
   const until = optional(row.until, isPeriodText)
-  if (tier === false || maxQuantity === false || rewardCoins === false || from === false || until === false) return null
+  if (shortName === false || tier === false || maxQuantity === false || rewardCoins === false || from === false || until === false) return null
   return compact({
     key: row.key,
     group: row.group,
     tile: row.tile,
     name: row.name,
+    shortName,
     tier,
     currency: row.currency,
     unitPrice: row.unitPrice,
@@ -195,9 +200,14 @@ function toOption(row: Row): SpendItemOptionRow | null {
   return { item: row.item, axis: row.axis, value: row.value }
 }
 
-function toForm(row: Row): SpendItemFormRow | null {
+function toItemForm(row: Row): SpendItemFormRow | null {
   if (!isNonEmptyString(row.item) || !isOneOf(row.form, SPEND_FORM_KEYS)) return null
   return { item: row.item, form: row.form }
+}
+
+function toForm(row: Row): SpendFormRow | null {
+  if (!isOneOf(row.key, SPEND_FORM_KEYS) || !isNonEmptyString(row.name)) return null
+  return { key: row.key, name: row.name }
 }
 
 /** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */
@@ -210,14 +220,24 @@ export function parseSpendCatalog(value: unknown): SpendCatalogTable | null {
   const tiles = rowsOf(value.tiles, toTile)
   const items = rowsOf(value.items, toItem)
   const itemOptions = rowsOf(value.itemOptions, toOption, { allowEmpty: true })
-  const itemForms = rowsOf(value.itemForms, toForm, { allowEmpty: true })
-  if (rules === null || groups === null || tiles === null || items === null || itemOptions === null || itemForms === null) {
+  const itemForms = rowsOf(value.itemForms, toItemForm, { allowEmpty: true })
+  const forms = rowsOf(value.forms, toForm)
+  if (
+    rules === null ||
+    groups === null ||
+    tiles === null ||
+    items === null ||
+    itemOptions === null ||
+    itemForms === null ||
+    forms === null
+  ) {
     return null
   }
   if (!uniqueBy(groups, (group) => group.key) || !uniqueBy(tiles, (tile) => tile.key) || !uniqueBy(items, (item) => item.key)) {
     return null
   }
-  return { updatedAt, rules, groups, tiles, items, itemOptions, itemForms }
+  if (!uniqueBy(forms, (form) => form.key)) return null
+  return { updatedAt, rules, groups, tiles, items, itemOptions, itemForms, forms }
 }
 
 export const spendCatalogTable = bundledTable('spendCatalog', bundled, parseSpendCatalog)
@@ -259,6 +279,7 @@ const catalog = derive(spendCatalogTable, (table): CatalogIndex => {
       group: row.group,
       tile: row.tile,
       name: row.name,
+      shortName: row.shortName,
       currency: row.currency,
       unitPrice: row.unitPrice,
       unit: row.unit,
@@ -273,6 +294,20 @@ const catalog = derive(spendCatalogTable, (table): CatalogIndex => {
   )
   return { items, groups, tiles }
 })
+
+/** 형태 하나. 모르는 key 는 `null` 이다. 카탈로그가 적은 형태가 이름 표에 없을 수 있다. */
+export function spendFormOf(key: string): SpendFormRow | null {
+  return spendCatalogTable.get().forms.find((each) => each.key === key) ?? null
+}
+
+/**
+ * 이름만 저장된 옛 기록의 형태 이름 · 짧은 이름. 그때 기록에 적힌 글자라 서버 표가 아니라 여기 고정한다.
+ * 짧은 이름은 옛 하루 목록 줄 이름(`하이마운틴 EXP 1단계, 솔 2단계`)에 들어 있던 글자다.
+ */
+const LEGACY_FORMS = [
+  { key: 'exp', name: '경험치', shortName: 'EXP' },
+  { key: 'sol_erda', name: '솔 에르다', shortName: '솔' },
+] as const
 
 /** 관세율(%). **화면이 `* 1.1` 을 들면 게임 수치가 코드에 박히는 자리**가 된다. */
 export function spendTariffPercent(): number {
@@ -439,7 +474,7 @@ export function rewardCoinMeso(coins: number): number {
 }
 
 /**
- * 형태별 단계를 이은 이름. `하이마운틴 EXP 1단계, 솔 2단계`.
+ * 형태별 단계를 이은 이름. `하이마운틴 경험치 1단계, 솔 에르다 2단계`.
  *
  * 하루 목록의 줄 이름이고 기록의 이름 칸에 그때 이름으로도 남는다. **0단계는 안 적는다**. 안 산
  * 것이 적히면 그 줄이 산 것으로 읽힌다.
@@ -453,7 +488,7 @@ export function buildSpendRewardName(
   const parts = formsOf(choice).flatMap((form) => {
     const tier = tierByForm[form]
     if (tier === undefined || tier === BASE_TIER || itemOfTier(choice, tier) === undefined) return []
-    return [`${spendFormOf(form)?.shortName ?? form} ${tier}`]
+    return [`${spendFormOf(form)?.name ?? form} ${tier}`]
   })
   return parts.length === 0 ? null : `${choice.label} ${parts.join(', ')}`
 }
@@ -515,9 +550,10 @@ export function legacySpendKeysOf(
   if (itemName === null) return none
   for (const group of allSpendGroupsOf(category)) {
     for (const choice of group.choices) {
-      const item = choice.items.find((each) => each.name === itemName)
+      // 옛 기록은 그때 앱에 서 있던 이름이라, 원본 이름으로 바뀐 항목은 줄인 이름으로 남아 있다.
+      const item = choice.items.find((each) => each.name === itemName || each.shortName === itemName)
       if (item !== undefined) {
-        const form = SPEND_FORMS.find((each) => each.name === formName)
+        const form = LEGACY_FORMS.find((each) => each.name === formName)
         if (formName === null || form === undefined || !formsOf(choice).includes(form.key)) {
           return formsOf(choice).length > 0 ? none : { itemKey: item.key, formItemKeys: null }
         }
@@ -529,7 +565,9 @@ export function legacySpendKeysOf(
       const keys: Record<string, string> = {}
       for (const part of itemName.slice(choice.label.length + 1).split(', ')) {
         const cut = part.lastIndexOf(' ')
-        const form = forms.find((each) => (spendFormOf(each)?.shortName ?? each) === part.slice(0, cut))
+        const form = forms.find(
+          (each) => (LEGACY_FORMS.find((legacy) => legacy.key === each)?.shortName ?? each) === part.slice(0, cut),
+        )
         const found = cut < 0 || form === undefined ? undefined : itemOfTier(choice, part.slice(cut + 1))
         if (form === undefined || found === undefined) return none
         keys[form] = found.key

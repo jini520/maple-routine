@@ -21,7 +21,7 @@ import { View } from 'react-native'
 
 import { Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
-import { SPEND_CATEGORIES, type SpendCategoryKey } from '../../lib/cashbook/categories'
+import { SPEND_CATEGORY_KEYS, spendCategories, type SpendCategoryKey } from '../../lib/cashbook/categories'
 import type { SpendRecord } from '../../storage/spend'
 import { CategoryPicker } from './CategoryPicker'
 import { CatalogForm } from './spend/CatalogForm'
@@ -170,7 +170,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
     >
       {category === null || formProps === null ? (
           <CategoryPicker
-            categories={SPEND_CATEGORIES}
+            categories={spendCategories()}
+            knownKeys={SPEND_CATEGORY_KEYS}
             testIdPrefix="spend-sheet"
             onSelect={setCategory}
           />

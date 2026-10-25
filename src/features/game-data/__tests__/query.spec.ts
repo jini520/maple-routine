@@ -33,7 +33,7 @@ function 보스표(updatedAt: string, selectionLimit = 12): BossCatalog {
   }
 }
 
-/** 칸 열셋 중 넘긴 것만 값인 응답. */
+/** 칸 열넷 중 넘긴 것만 값인 응답. */
 function 응답(received: Partial<GameDataResponse>): GameDataResponse {
   const base = Object.fromEntries(GAME_DATA_SECTIONS.map((section) => [section, null])) as GameDataResponse
   return { ...base, ...received }

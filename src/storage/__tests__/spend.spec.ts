@@ -1,6 +1,6 @@
 // 지출 어댑터.
 import spendCatalog from '../../data/spend-catalog.json'
-import { SPEND_CATEGORIES } from '../../lib/cashbook/categories'
+import { spendCategories } from '../../lib/cashbook/categories'
 import type { SpendRecord } from '../spend'
 
 jest.mock('../sqlite/db', () => ({
@@ -312,11 +312,13 @@ describe('getSpendRecordsBetween', () => {
   })
 })
 
-describe('SPEND_CATEGORIES 와 카탈로그', () => {
-  // 갈래 key 가 **두 곳**에 산다. 목록을 갖는 넷은 카탈로그에도 있다. 어긋나면 고른 항목의 갈래가
-  // 기록의 갈래와 달라진다.
-  it('카탈로그가 아는 넷을 그대로 품는다', () => {
-    const keys = SPEND_CATEGORIES.map((each) => each.key)
+describe('지출 갈래 표와 카탈로그', () => {
+  // 갈래 key 가 **두 칸**에 산다. 목록을 갖는 묶음은 카탈로그에 있고 갈래는 갈래 칸에 있다. 어긋나면 그 묶음이
+  // 어느 시트에도 안 선다.
+  it('번들 카탈로그의 묶음은 모두 앱이 폼을 아는 지출 갈래를 가리킨다', () => {
+    const keys = spendCategories()
+      .filter((each) => each.known)
+      .map((each) => each.key)
 
     for (const category of new Set(spendCatalog.groups.map((group) => group.category))) {
       expect(keys).toContain(category)

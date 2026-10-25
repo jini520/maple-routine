@@ -23,7 +23,7 @@ const 월드표 = { updatedAt: '2026-10-16T15:07:54.435Z', worlds: [{ key: 'scan
 const 빈보스표 = { updatedAt: null, rules: { weeklyBossSelectionLimit: null, weeklyCrystalSaleLimit: null }, bosses: [] }
 
 describe('SECTIONS', () => {
-  it('앱의 칸 열셋과 같은 차례다', () => {
+  it('앱의 칸 열넷과 같은 차례다', () => {
     expect(SECTIONS).toEqual(GAME_DATA_SECTIONS)
   })
 

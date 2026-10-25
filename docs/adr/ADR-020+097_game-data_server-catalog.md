@@ -1,4 +1,4 @@
-# ADR-020 게임 데이터 서버 표
+# ADR-020+097 게임 데이터 서버 표
 
 > 🟢 유효
 > 옛 번호: ADR-341 · ADR-349 결정 1 · 2 · 5 · 6 · 정정 1 · 2 · 3 · 4 · ADR-350
@@ -12,7 +12,7 @@
 
 ## 결정
 
-### 결정 1. 게임 수치 열세 칸은 서버가 기준이고, 번들은 그 사본이다
+### 결정 1. 게임 수치 열네 칸은 서버가 기준이고, 번들은 그 사본이다
 
 | 칸 | 번들 파일 | 서버 표 |
 |---|---|---|
@@ -22,7 +22,8 @@
 | `dropBoxes` | `drop-boxes.json` | `drop_boxes` · `drop_box_contents` |
 | `crystalPrices` | `crystal-prices.json` | `boss_crystal_prices` |
 | `worlds` | `worlds.json` | `worlds` |
-| `spendCatalog` | `spend-catalog.json` | `spend_groups` · `spend_tiles` · `spend_items` · `spend_item_options` · `spend_item_forms` · `game_rules` |
+| `spendCatalog` | `spend-catalog.json` | `spend_groups` · `spend_tiles` · `spend_items` · `spend_item_options` · `spend_item_forms` · `spend_forms` · `game_rules` |
+| `cashbookCategories` | `cashbook-categories.json` | `cashbook_categories` · `cashbook_item_kinds` |
 | `symbolCosts` | `symbol-costs.json` | `symbol_groups` · `symbols` · `symbol_level_costs` |
 | `contents` | `contents.json` | `contents` · `content_categories` |
 | `equipmentItems` | `equipment-items.json` | `equipment_items` |
@@ -37,7 +38,7 @@
 기능 안내(`feature-guides/`)다. 이것들은 게임 수치가 아니라 번들에 있는 그림이나 앱 문구와 짝을 이룬다. 서버에서 먼저
 바뀌면 없는 그림을 가리키거나 엉뚱한 곳을 자른다.
 
-### 결정 2. 앱은 `GET /v1/game-data` 하나로 열세 칸을 한 번에 받는다
+### 결정 2. 앱은 `GET /v1/game-data` 하나로 열네 칸을 한 번에 받는다
 
 ```
 GET /v1/game-data
@@ -60,7 +61,7 @@ GET /v1/game-data
 받기 · 기기 사본 · 다시 그리기는 TanStack Query 가 맡는다(`features/game-data/query.ts`). 직접 짜면 재시도, 같은 요청
 합치기, 바뀐 칸만 다시 그리기를 따로 만들어야 한다.
 
-- 쿼리는 `['game-data']` 하나이고 응답 전체를 둔다. `initialData` 가 번들 열세 칸이라 켜는 순간부터 표가 채워져 있다.
+- 쿼리는 `['game-data']` 하나이고 응답 전체를 둔다. `initialData` 가 번들 열네 칸이라 켜는 순간부터 표가 채워져 있다.
 - 켤 때 `hydrateGameData` 가 기기 사본을 복원한 다음 서버에서 한 번 받는다. 응답에서 `null` 이 아닌 칸만 지금 값 위에
   덮는다. 실패하면 한 번 다시 시도하고, 그래도 안 되면 가지고 있던 값을 그대로 쓴다.
 - 켜 둔 동안은 다시 받지 않는다(`staleTime: Infinity`). 관리 화면에서 고친 값은 다음에 앱을 켤 때 기기에 반영된다.
@@ -81,7 +82,7 @@ GET /v1/game-data
 - 쿼리 캐시를 구독해 바뀐 칸을 표의 `set` 으로 넘긴다(`connectGameTables`). 그래서 React 밖의 조회 함수도 새 값을 읽는다.
 - 화면은 `useGameTable('bosses')` 처럼 칸 하나를 구독한다. 응답이 통째로 와도 바뀌지 않은 칸은 같은 객체를 유지하므로,
   바뀐 칸을 쓰는 화면만 다시 그린다.
-- 열세 칸의 표와 `parse` 는 `lib/game-data/sections.ts` 의 `SECTIONS` 에 모여 있다. 칸을 더하면 여기와
+- 열네 칸의 표와 `parse` 는 `lib/game-data/sections.ts` 의 `SECTIONS` 에 모여 있다. 칸을 더하면 여기와
   `types/game-data.ts` 에 한 줄씩 더한다.
 
 ### 결정 5. 빌드 전에 번들을 서버 값으로 다시 쓴다
@@ -131,9 +132,14 @@ GET /v1/game-data
 (`boss_difficulties` · `spend_item_options` · `spend_item_forms` · `symbol_level_costs` · `hunting_ground_levels`). 배열이나
 jsonb 칸 두 개에 나눠 두면 두 칸의 순서가 어긋나도 DB 가 잡지 못한다.
 
-값이 정해진 집합(보스 난이도 · 주기, 드롭 분류, 지출 분류 · 화폐 · 형태, 컨텐츠 분류 · 섹션 · 공유 범위, 잠재 종류 · 등급,
-MVP 등급, 포스 종류)은 Postgres ENUM 이다. 코드가 그 값으로 분기하기 때문에, 새 값은 앱 코드와 함께 마이그레이션으로
-더한다. ENUM 의 한글 이름(형태 · 분류 이름, 잠재 등급의 넥슨 표기)은 앱 상수로 둔다.
+값이 정해진 집합(보스 난이도 · 주기, 드롭 분류, 지출 화폐 · 형태, 가계부 수입 · 지출 구분, 컨텐츠 분류 · 섹션 · 공유 범위,
+잠재 종류 · 등급, MVP 등급, 포스 종류)은 Postgres ENUM 이다. 코드가 그 값으로 분기하기 때문에, 새 값은 앱 코드와 함께
+마이그레이션으로 더한다. ENUM 의 한글 이름(분류 이름, 잠재 등급의 넥슨 표기)은 앱 상수로 둔다.
+
+가계부는 예외다. 갈래 · 아이템 종류 · 에픽던전 형태의 이름 · 카드 제목 · 단위는 서버 표(`cashbook_categories` ·
+`cashbook_item_kinds` · `spend_forms`)가 든다([[ADR-096]] 결정 3 · 4 · 7). 하루 목록 카드의 이름을 앱 업데이트 없이
+고치려는 것이다. 갈래 key 는 관리 화면에서 더하므로 ENUM 이 아니라 글자이고, 앱은 입력 폼을 모르는 key 를 목록에 이름만
+세우고 못 고르게 한다. 형태 key 는 앱 코드가 갈려 ENUM 으로 남는다.
 
 ### 결정 10. 기간 칸은 KST 글자 그대로 둔다
 
@@ -158,11 +164,12 @@ MVP 등급, 포스 종류)은 Postgres ENUM 이다. 코드가 그 값으로 분�
 | | 결정 4: `useGameTable` 이 칸이 바뀔 때 다시 그리고, 안 바뀐 칸을 구독한 훅은 다시 그리지 않는지 본다 |
 | `server/__tests__/game-data.spec.ts` | 결정 3: 칸마다 받은 표를 주고 없는 칸은 `null` 인지, 네트워크 실패 · 5xx · 객체가 아닌 응답이 `null` 인지, 계약을 어긴 칸과 `updatedAt` 이 `null` 인 칸만 `null` 인지, 선택 칸의 `null` 을 빠진 칸으로 통과시키는지 본다 |
 | `lib/game-data/__tests__/table.spec.ts` | 결정 4: 표를 바꾸면 구독자에게 알리고, 같은 객체면 알리지 않고, 구독을 풀면 더 알리지 않는지, `bundledTable` 이 계약을 어기면 던지는지, `derive` 가 표가 바뀐 뒤에만 다시 만드는지 본다 |
-| `lib/game-data/__tests__/sections.spec.ts` | 결정 4: 칸 열셋이 `GAME_DATA_SECTIONS` 와 같은 순서인지, 번들이 계약을 통과하고 다시 통과시켜도 같은지, 표를 덮으면 그 칸이 바뀌는지 본다 |
+| `lib/game-data/__tests__/sections.spec.ts` | 결정 4: 칸 열넷이 `GAME_DATA_SECTIONS` 와 같은 순서인지, 번들이 계약을 통과하고 다시 통과시켜도 같은지, 표를 덮으면 그 칸이 바뀌는지 본다 |
 | `storage/__tests__/query-persister.spec.ts` | 결정 3: 옛 보스 사본 키를 지우는지 본다 |
-| `src/data/__tests__/bundled-game-data.spec.ts` | 결정 7 · 8: 번들 열세 칸이 계약을 통과하는지, 드롭 아이템 · 지출 타일 · 심볼 · 월드 엠블럼 · 컨텐츠 배경 · 보스 초상 그림 파일이 에셋에 있는지 본다 |
-| `scripts/__tests__/sync-game-data.test.mjs` | 결정 5: 칸 열셋이 앱과 같은 순서인지, 파일 이름이 칸 이름의 kebab-case 인지, `updatedAt` 이 `null` 인 칸은 파일을 쓰지 않는지, 응답 그대로 쓰는지 본다 |
+| `src/data/__tests__/bundled-game-data.spec.ts` | 결정 7 · 8: 번들 열네 칸이 계약을 통과하는지, 드롭 아이템 · 지출 타일 · 심볼 · 월드 엠블럼 · 컨텐츠 배경 · 보스 초상 그림 파일이 에셋에 있는지 본다 |
+| `scripts/__tests__/sync-game-data.test.mjs` | 결정 5: 칸 열넷이 앱과 같은 순서인지, 파일 이름이 칸 이름의 kebab-case 인지, `updatedAt` 이 `null` 인 칸은 파일을 쓰지 않는지, 응답 그대로 쓰는지 본다 |
 
 ## 번호 기록
 
 - ADR-020 (2026-10-19): 옛 ADR-341 · ADR-349 · ADR-350 을 합쳐 처음 작성
+- ADR-097 (2026-10-25): 가계부 갈래 · 아이템 종류 · 형태 이름을 서버 표로 옮기고 `cashbookCategories` 칸을 더했다(결정 1 · 9, [[ADR-096]])

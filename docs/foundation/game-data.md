@@ -11,18 +11,18 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `src/data/<칸>.json` | 게임 데이터 열세 칸의 번들 사본. 형식은 서버 응답의 그 칸과 같다 |
+| `src/data/<칸>.json` | 게임 데이터 열네 칸의 번들 사본. 형식은 서버 응답의 그 칸과 같다 |
 | `types/game-data.ts` | 칸 이름(`GAME_DATA_SECTIONS`)과 칸마다의 형식 |
 | `lib/game-data/table.ts` | 칸 하나의 현재 값(`createTable` · `bundledTable` · `derive`) |
-| `lib/game-data/sections.ts` | 칸 열셋의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
+| `lib/game-data/sections.ts` | 칸 열넷의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
 | `features/game-data/query.ts` | 켤 때 사본 복원과 서버 받기(`hydrateGameData`) · 칸 구독 훅(`useGameTable`) |
 | `server/game-data.ts` | `GET /v1/game-data` 를 칸마다 검사해 받는다 |
 | `storage/query-persister.ts` | 기기 사본(Preferences `queryCache`) |
-| `scripts/sync-game-data.mjs` | 빌드 전에 번들 열세 파일을 서버 값으로 다시 쓴다 |
+| `scripts/sync-game-data.mjs` | 빌드 전에 번들 열네 파일을 서버 값으로 다시 쓴다 |
 | `lib/boss/boss-profit-period.ts` | 줄의 유효 기간 판정(`isEffectiveIn` · `isEffectiveAnytimeIn`) |
 | `src/data/__tests__/bundled-game-data.spec.ts` | 번들이 계약을 통과하는지, 가리키는 그림 파일이 있는지 본다 |
 
-## 칸 열셋
+## 칸 열넷
 
 | 칸 · 번들 파일 | 담는 것 | 조회 모듈 | 관리 화면 |
 |---|---|---|---|
@@ -32,7 +32,8 @@
 | `dropBoxes` · `drop-boxes.json` | 개봉 결과를 직접 고르는 상자 7개(반지 상자 5 · 장신구 상자 2)의 레벨 범위와 후보 | `lib/boss/boss-drops` | `/admin/drop-boxes` |
 | `crystalPrices` · `crystal-prices.json` | 보스 · 난이도마다 결정석 가격 줄 106개. 한 조합에 기간 줄이 여럿일 수 있다 | `lib/boss/boss-crystal-prices` | `/admin/crystal-prices` |
 | `worlds` · `worlds.json` | 월드 19개의 key · 넥슨 표기 이름 · 엠블럼 · 챌린저스 여부 · 이벤트 월드 여부. 월드 key 마스터 표다 | `lib/world/worlds` | `/admin/worlds` |
-| `spendCatalog` · `spend-catalog.json` | 가계부 지출 목록. 묶음 12 · 타일 54 · 항목 70 과 항목의 축 값 · 형태, 규칙(관세율 · 세라자르 주화 가격) | `lib/cashbook/spend-catalog` | `/admin/spend-catalog` |
+| `spendCatalog` · `spend-catalog.json` | 가계부 지출 목록. 묶음 12(카드 제목) · 타일 54 · 항목 70(원본 이름 · 줄인 이름) 과 항목의 축 값 · 형태, 형태 이름 둘, 규칙(관세율 · 세라자르 주화 가격) | `lib/cashbook/spend-catalog` | `/admin/spend-catalog` |
+| `cashbookCategories` · `cashbook-categories.json` | 가계부 수입 · 지출 갈래 11개의 이름 · 카드 제목 · 그림 · 설명 · 단위와 아이템 종류 3개(장비 · 소비 · 기타)의 이름 · 단위 · 관세 여부 | `lib/cashbook/categories` | `/admin/cashbook-categories` |
 | `symbolCosts` · `symbol-costs.json` | 심볼 묶음 3 · 심볼 14 · 레벨별 강화 비용 줄 194개. 비용 줄에는 기간이 있다 | `lib/cashbook/symbol-costs` | `/admin/symbol-costs` |
 | `contents` · `contents.json` | 컨텐츠 분류 8 · 컨텐츠 41개의 넥슨 이름 · 표시 이름 · 배경 · 수동 모드 상한 · 요구 레벨 · 공유 범위 · 유효 기간. 컨텐츠 key 마스터 표다 | `lib/scheduler/contents` · `scheduler-content-scope` · `content-categories` | `/admin/contents` |
 | `equipmentItems` · `equipment-items.json` | 강화 비용을 매길 장비 467개의 key · 붙여 쓴 이름 · 착용 레벨. 장비 key 마스터 표다 | `lib/equipment/equipment-items` | `/admin/equipment-items` |
@@ -56,7 +57,7 @@
 
 ## 값이 기기에 반영되는 순서
 
-1. 켜는 순간 번들 열세 칸으로 표가 채워진다.
+1. 켜는 순간 번들 열네 칸으로 표가 채워진다.
 2. `hydrateGameData` 가 기기 사본(`queryCache`)을 복원한다. 사본의 계약 판이 `GAME_DATA_CONTRACT` 와 다르면 버린다.
 3. 서버에서 한 번 받아 `null` 이 아닌 칸만 덮고, 덮은 값을 사본에 저장한다. 실패하면 한 번 다시 시도하고 그래도 안 되면
    가지고 있던 값을 그대로 쓴다.
