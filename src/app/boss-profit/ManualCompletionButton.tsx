@@ -22,7 +22,7 @@ export function ManualCompletionButton(props: {
       role="button"
       aria-label={`${props.label} 완료 상태로 변경`}
       onPress={props.onPress}
-      className="mt-2 w-full flex-row items-center gap-2.5 rounded-xl bg-primary-tint px-3 py-2 active:opacity-60"
+      className="mt-2 w-full flex-row items-center gap-2.5 rounded-xl bg-primary-tint px-3 py-2"
     >
       <CheckCircle2Icon className="h-5 w-5 shrink-0 text-primary-ink" strokeWidth={1.75} aria-hidden />
 

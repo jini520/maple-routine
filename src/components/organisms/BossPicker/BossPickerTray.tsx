@@ -28,7 +28,7 @@ import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { groupBossesByCharacter, moveWithinGroup } from '../../../features/party-appointments/boss-groups'
 import { bossAliasOf, bossPortraitSlugOf } from '../../../lib/boss/bosses'
 import { selectionFeedback } from '../../../native/haptics'
-import { boxShadowOf, type ShadowLayer } from '../../../lib/shadow'
+import { PORTRAIT_SHADOW, boxShadowOf, type ShadowLayer } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
 import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
 import type { BossDifficulty } from '../../../types'
@@ -47,8 +47,6 @@ const GROUP_GAP = 12
 const GROUP_SPACE = GROUP_GAP * 2
 /** 바닥이 본문 위로 드리우는 그림자. 구분선 대신 이것이 둘을 가른다 */
 const TRAY_SHADOW: ShadowLayer = { opacity: 0.23, radius: 12, y: -10 }
-/** 선택 줄 초상의 옅은 그림자 */
-const ITEM_SHADOW: ShadowLayer = { opacity: 0.35, radius: 3, y: 2 }
 /** 묶음 왼쪽 얼굴 열과 초상 사이. 칸의 가로 자리가 열 폭 + 이만큼 오른쪽이다 */
 const LABEL_GAP = 8
 /**
@@ -265,7 +263,7 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
   const groups = props.grouped ? groupBossesByCharacter(picked) : [{ ocid: 'all', bosses: picked }]
   /** 묶음 머리 열이 차지하는 폭. 묶지 않으면 머리가 없다 */
   const labelSpace = props.grouped ? CHARACTER_LABEL_WIDTH + LABEL_GAP : 0
-  const itemShadow = boxShadowOf(definition.shadowColor, ITEM_SHADOW)
+  const itemShadow = boxShadowOf(definition.shadowColor, PORTRAIT_SHADOW)
   /** 묶음마다 잰 폭. 머리 이름이 칸보다 길면 묶음이 칸 줄보다 넓다 */
   const groupWidths = useRef(new Map<string, number>())
   /** 날아가는 동안 줄을 세워 둘 가로 스크롤 자리 */
