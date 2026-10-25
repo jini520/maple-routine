@@ -127,10 +127,11 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
 
     await getBossProfitDb()
 
+    // 버전 15 가 기록 표로 옮기며 id 를 uuid 로 바꾼다. 날짜로 찾는다.
     const rows = await getIncomeRecordsBetween('2026-08-01', '2026-08-31')
     expect(rows).toHaveLength(2)
-    expect(rows.find((row) => row.id === 'a1')).toEqual<IncomeRecord>({
-      id: 'a1',
+    expect(rows.find((row) => row.earnedOn === '2026-08-20')).toEqual<IncomeRecord>({
+      id: expect.any(String) as string,
       ocid: 'ocid-1',
       earnedOn: '2026-08-20',
       category: 'item_sale',
@@ -149,7 +150,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
       itemKind: null,
       recordedAt: '2026-08-20T12:00:00.000Z',
     })
-    expect(rows.find((row) => row.id === 'a2')?.mesoAmount).toBe(12_000_000)
+    expect(rows.find((row) => row.earnedOn === '2026-08-21')?.mesoAmount).toBe(12_000_000)
   })
 
   // 칸을 더한 커밋과 이 재작성이 또 갈린다. 수수료·통화·사냥 칸을 아직 못 받은 기기가 실제로
@@ -169,7 +170,6 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
     const rows = await getIncomeRecordsBetween('2026-08-01', '2026-08-31')
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({
-      id: 'old',
       item: '츄츄 아일랜드',
       mesoAmount: 900_000_000,
       saleFeePercent: null,
@@ -362,6 +362,12 @@ const OLD_SPEND_TABLE = `
   )
 `
 
+/** 옛 표의 행을 id 로. 버전 15 뒤에도 옛 표는 남는다. */
+function oldRowsById(table: 'spend_records' | 'income_records'): Map<string, Record<string, unknown>> {
+  const rows = real.inspect((db) => db.prepare(`SELECT * FROM ${table}`).all() as Record<string, unknown>[])
+  return new Map(rows.map((row) => [row.id as string, row]))
+}
+
 function userVersion(target: RealSqlite): number {
   return target.inspect((db) => (db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version)
 }
@@ -394,7 +400,8 @@ describe('심볼 강화의 레벨 두 칸', () => {
 
     await insertSpendRecord(심볼기록)
 
-    expect(await getSpendRecordsBetween('2026-09-19', '2026-09-19')).toEqual([심볼기록])
+    // 심볼 key 가 있어 이름은 안 적는다. 화면은 key 로 심볼 이름을 찾는다.
+    expect(await getSpendRecordsBetween('2026-09-19', '2026-09-19')).toEqual([{ ...심볼기록, item: null }])
   })
 
   it('레벨 칸이 없던 옛 기기의 테이블에도 적힌다. 옛 행의 두 칸은 NULL 이다', async () => {
@@ -410,7 +417,7 @@ describe('심볼 강화의 레벨 두 칸', () => {
     await insertSpendRecord(심볼기록)
 
     const rows = await getSpendRecordsBetween('2026-09-19', '2026-09-19')
-    expect(rows.find((row) => row.id === 'old')).toMatchObject({ levelFrom: null, levelTo: null })
+    expect(rows.find((row) => row.category === 'buff')).toMatchObject({ levelFrom: null, levelTo: null })
     expect(rows.find((row) => row.id === 'symbol')).toMatchObject({ levelFrom: 3, levelTo: 7 })
   })
 })
@@ -457,17 +464,17 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
 
     await getBossProfitDb()
 
-    const rows = await getSpendRecordsBetween('2026-08-01', '2026-08-31')
-    const byId = new Map(rows.map((row) => [row.id, row]))
-    expect(byId.get('buff')).toMatchObject({ category: 'buff', item: '세이람의 영약', itemKey: 'seiram_elixir' })
-    expect(byId.get('renamed-category')).toMatchObject({ category: 'event_bm', itemKey: 'nickname_change' })
-    expect(byId.get('renamed-item')).toMatchObject({ item: '미호로이드', itemKey: 'mihoroid' })
+    // 버전 2 의 결과는 옛 표에 남는다. 버전 15 가 기록 표로 옮기며 id 를 바꾸므로 옛 표에서 본다.
+    const byId = oldRowsById('spend_records')
+    expect(byId.get('buff')).toMatchObject({ category_key: 'buff', item: '세이람의 영약', item_key: 'seiram_elixir' })
+    expect(byId.get('renamed-category')).toMatchObject({ category_key: 'event_bm', item_key: 'nickname_change' })
+    expect(byId.get('renamed-item')).toMatchObject({ item: '미호로이드', item_key: 'mihoroid' })
     expect(byId.get('reward-joined')).toMatchObject({
-      itemKey: null,
-      formItemKeys: { exp: 'high_mountain_1', sol_erda: 'high_mountain_2' },
+      item_key: null,
+      form_item_keys: JSON.stringify({ exp: 'high_mountain_1', sol_erda: 'high_mountain_2' }),
     })
-    expect(byId.get('reward-split')).toMatchObject({ itemKey: null, formItemKeys: { exp: 'nightmare_paradise_2' } })
-    expect(byId.get('purchase')).toMatchObject({ category: 'item_purchase', itemKey: null, itemKind: 'consumable' })
+    expect(byId.get('reward-split')).toMatchObject({ item_key: null, form_item_keys: JSON.stringify({ exp: 'nightmare_paradise_2' }) })
+    expect(byId.get('purchase')).toMatchObject({ category_key: 'item_purchase', item_key: null, item_kind_key: 'consumable' })
     expect(userVersion(real)).toBe(DB_VERSION)
   })
 
@@ -477,14 +484,18 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
 
     await getBossProfitDb()
 
-    const rows = await getSpendRecordsBetween('2026-08-01', '2026-08-31')
-    expect(rows).toHaveLength(7)
-    expect(rows.find((row) => row.id === 'removed')).toMatchObject({
-      category: 'content',
+    const byId = oldRowsById('spend_records')
+    expect(byId.size).toBe(7)
+    expect(byId.get('removed')).toMatchObject({
+      category_key: 'content',
       item: '없어진 항목',
-      itemKey: null,
-      formItemKeys: null,
+      item_key: null,
+      form_item_keys: null,
     })
+    // 기록 표로 옮겨도 이름이 남는다. key 가 없어 화면이 이 글자를 쓴다.
+    const moved = await getSpendRecordsBetween('2026-08-01', '2026-08-31')
+    expect(moved).toHaveLength(7)
+    expect(moved.find((row) => row.item === '없어진 항목')).toMatchObject({ category: 'content', itemKey: null })
   })
 
   it('옛 수익 기록은 갈래 key 와 사냥터 key 를 채운다. 사냥터가 아닌 글자는 비운다', async () => {
@@ -492,11 +503,10 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
 
     await getBossProfitDb()
 
-    const rows = await getIncomeRecordsBetween('2026-08-01', '2026-08-31')
-    const byId = new Map(rows.map((row) => [row.id, row]))
-    expect(byId.get('ground')).toMatchObject({ category: 'hunting', item: '밤의 길 3', itemKey: 'tallahart_road_of_night_3' })
-    expect(byId.get('typed-ground')).toMatchObject({ category: 'hunting', item: '츄츄 아일랜드', itemKey: null })
-    expect(byId.get('sale')).toMatchObject({ category: 'item_sale', item: '앱솔 무기', itemKey: null })
+    const byId = oldRowsById('income_records')
+    expect(byId.get('ground')).toMatchObject({ category_key: 'hunting', item: '밤의 길 3', item_key: 'tallahart_road_of_night_3' })
+    expect(byId.get('typed-ground')).toMatchObject({ category_key: 'hunting', item: '츄츄 아일랜드', item_key: null })
+    expect(byId.get('sale')).toMatchObject({ category_key: 'item_sale', item: '앱솔 무기', item_key: null })
   })
 
   // 부팅마다 다시 돌면 못 찾아 비워 둔 행을 매번 다시 찾는다. 버전이 오르면 다시 안 돈다.
@@ -995,22 +1005,29 @@ describe('버전 이관: 사냥 기록의 조각 가격 0 을 안 적은 가격�
     recordedAt: '2026-09-10T05:00:00.000Z',
   }
 
+  /** 그때의 옛 표에 수동 사냥 한 줄. 저장 함수는 기록 표에 쓰므로 옛 버전 이관이 고치는 행은 이 길로 넣는다. */
+  function seedOldHunt(id: string, meso: number, fragments: number | null, price: number | null, deferred = false): void {
+    real.inspect((db) =>
+      db
+        .prepare(
+          `INSERT INTO income_records (id, ocid, earned_on, category, category_key, item, meso_amount, hunt_typed_meso,
+             hunt_fragments, hunt_fragment_price, hunt_fragments_deferred, recorded_at)
+           VALUES (?, 'ocid-adele', '2026-09-10', '사냥', 'hunting', ?, ?, ?, ?, ?, ?, '2026-09-10T05:00:00.000Z')`,
+        )
+        .run(id, fragments === null ? '엘리시움' : null, meso, fragments === null ? null : 1_000_000_000, fragments, price, deferred ? 1 : null),
+    )
+  }
+
   async function seed(): Promise<void> {
     await getBossProfitDb()
     // 체크를 켜고 적은 기록. 가격은 언제나 0 이었다.
-    await insertIncomeRecord({ ...hunt, id: 'checked' })
-    real.inspect((db) => db.exec(`UPDATE income_records SET hunt_fragments_deferred = 1 WHERE id = 'checked'`))
+    seedOldHunt('checked', 1_000_000_000, 80, 0, true)
     // 체크를 안 켜고 가격을 비운 기록.
-    await insertIncomeRecord({ ...hunt, id: 'unchecked', hunt: { ...hunt.hunt!, fragments: 40 } as IncomeRecord['hunt'] })
+    seedOldHunt('unchecked', 1_000_000_000, 40, 0)
     // 가격을 적은 기록.
-    await insertIncomeRecord({
-      ...hunt,
-      id: 'sold',
-      mesoAmount: 1_080_000_000,
-      hunt: { mode: 'manual', typedMeso: 1_000_000_000, fragments: 10, fragmentPrice: 8_000_000 },
-    })
+    seedOldHunt('sold', 1_080_000_000, 10, 8_000_000)
     // 계산기 도입 전 행. 사냥 칸이 전부 비어 있다.
-    await insertIncomeRecord({ ...hunt, id: 'legacy', item: '엘리시움', hunt: null })
+    seedOldHunt('legacy', 1_000_000_000, null, null)
     await rewindTo(8)
   }
 
@@ -1019,17 +1036,18 @@ describe('버전 이관: 사냥 기록의 조각 가격 0 을 안 적은 가격�
 
     await getBossProfitDb()
 
+    const byId = oldRowsById('income_records')
+    expect(byId.get('checked')?.hunt_fragment_price).toBeNull()
+    expect(byId.get('unchecked')?.hunt_fragment_price).toBeNull()
+    expect(byId.get('sold')?.hunt_fragment_price).toBe(8_000_000)
+    expect(byId.get('legacy')?.hunt_typed_meso).toBeNull()
+    // 기록 표로 옮긴 뒤에도 가격 칸과 금액이 그대로다.
     const rows = await getIncomeRecordsBetween('2026-09-10', '2026-09-10')
-    const byId = new Map(rows.map((row) => [row.id, row]))
-    expect(byId.get('checked')?.hunt?.fragmentPrice).toBeNull()
-    expect(byId.get('unchecked')?.hunt?.fragmentPrice).toBeNull()
-    expect(byId.get('sold')?.hunt?.fragmentPrice).toBe(8_000_000)
-    expect(byId.get('legacy')?.hunt).toBeNull()
-    expect(rows.map((row) => [row.id, row.mesoAmount]).sort()).toEqual([
-      ['checked', 1_000_000_000],
-      ['legacy', 1_000_000_000],
-      ['sold', 1_080_000_000],
-      ['unchecked', 1_000_000_000],
+    expect(rows.map((row) => [row.hunt?.fragmentPrice ?? 'none', row.mesoAmount]).sort()).toEqual([
+      [8_000_000, 1_080_000_000],
+      ['none', 1_000_000_000],
+      ['none', 1_000_000_000],
+      ['none', 1_000_000_000],
     ])
     expect(userVersion(real)).toBe(DB_VERSION)
   })

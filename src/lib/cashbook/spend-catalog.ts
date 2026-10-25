@@ -295,6 +295,11 @@ const catalog = derive(spendCatalogTable, (table): CatalogIndex => {
   return { items, groups, tiles }
 })
 
+/** key 로 찾은 항목. 기간을 안 본다. 기록이 가리키는 항목은 지우지 않으니 옛 기록도 찾는다. */
+export function spendItemOf(key: string): SpendCatalogItem | null {
+  return catalog().items.find((item) => item.key === key) ?? null
+}
+
 /** 형태 하나. 모르는 key 는 `null` 이다. 카탈로그가 적은 형태가 이름 표에 없을 수 있다. */
 export function spendFormOf(key: string): SpendFormRow | null {
   return spendCatalogTable.get().forms.find((each) => each.key === key) ?? null
@@ -412,6 +417,11 @@ export function spendGroupOf(category: string, itemKey: string | null): { key: s
   const found = findSpendChoice(category, itemKey)
   if (found === null) return null
   return { key: found.item.group, name: catalog().groups.get(found.item.group)?.name ?? found.item.group }
+}
+
+/** 묶음의 하루 목록 카드 제목. 모르는 묶음은 `null` 이다. */
+export function spendGroupCardTitleOf(groupKey: string): string | null {
+  return catalog().groups.get(groupKey)?.cardTitle ?? null
 }
 
 /**

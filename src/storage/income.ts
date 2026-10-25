@@ -1,8 +1,8 @@
 /**
- * 손입력 수입 어댑터.
+ * 손입력 수입 어댑터. 기록은 가계부 기록 표 셋(`cashbook-entries.ts`)에 `entry_type = 'income'` 으로 산다. 수입은
+ * 품목 하나이고, 사냥의 계산 입력은 사냥 입력 표에 따로 든다. 화면이 쓰는 모양(`IncomeRecord`)은 그대로다.
  *
- * 이 저장소 최초의 **대리키 테이블**이다. 손입력은 같은 날 같은 것을 두 번이 정상이라 자연키가
- * 성립하지 않는다. 그래서 `INSERT` 에 `ON CONFLICT` 가 없다. 덮어쓸 대상이 애초에 없다.
+ * 손입력은 같은 날 같은 것을 두 번이 정상이라 자연키가 성립하지 않는다. 기록마다 uuid 하나다.
  *
  * **`id` 와 `recordedAt` 은 호출부가 준다.** 어댑터가 만들면 `Math.random()` · `Date.now()` 가 이
  * 파일에 들어와 같은 입력에 같은 SQL 이 깨지고, 테스트가 값을 못 박을 수 없다.
@@ -10,9 +10,11 @@
  * 원천을 적는 칸이 없다. 이 테이블에 드는 것은 손입력 하나뿐이고 **테이블이 곧 원천**이다. 화면의
  * 배지는 여러 원천을 읽어 합칠 때 붙는 뷰 모델의 값이지 컬럼이 아니다.
  */
-import { incomeCategoryNameOf, type IncomeCategoryKey, type ItemKindKey } from '../lib/cashbook/categories'
-import { UNION_TIERS, type UnionTier } from '../lib/cashbook/hunting-meso'
+import type { IncomeCategoryKey, ItemKindKey } from '../lib/cashbook/categories'
+import type { UnionTier } from '../lib/cashbook/hunting-meso'
 import type { FeePercent } from '../lib/cashbook/item-split'
+import { deleteEntry, insertEntry, readEntries, replaceEntry } from './cashbook-entries'
+import { incomeEntryOf, incomeRecordOf } from './cashbook-entry-shape'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
 
@@ -22,9 +24,9 @@ export interface IncomeRecord {
   ocid: string | null
   /** `'YYYY-MM-DD'` KST. **사용자가 고른 날짜**라 캘린더 칸에 바로 선다. */
   earnedOn: string
-  /** 갈래 key. DB 에는 그때 이름(`category`)도 함께 적는다. */
+  /** 갈래 key. */
   category: IncomeCategoryKey
-  /** 그때의 이름. 판 것 / 사냥터 / 자유. 갈래가 이 칸의 **라벨만** 바꾼다. */
+  /** 직접 친 이름(판 것 · 자유). key 가 있는 기록(사냥터)은 저장하지 않고 읽으면 `null` 이다. */
   item: string | null
   /** 사냥 기록의 사냥터 key. 다른 갈래와 사냥터가 없는 사냥 기록은 `null` 이다. */
   itemKey: string | null
@@ -153,90 +155,6 @@ export interface HuntingCalculatorDetail {
   unionTier: UnionTier
 }
 
-/** 칸 하나를 숫자로. 없거나 `NULL` 이면 `null` 이다. */
-function numberOrNull(value: unknown): number | null {
-  return (value as number | null | undefined) ?? null
-}
-
-/**
- * 아홉 칸 ↔ 한 덩어리. 어느 모양인지는 **칸 둘이 가른다**.
- *
- * `hunt_typed_meso` 가 있으면 수동이고, 없는데 `hunt_missed_mobs` 가 있으면 계산기다. 둘 다 없으면
- *  이전에 적힌 행이라 `null` 이고, 그 행은 수동 입력 폼이 합계를 그대로 받아 연다.
- *
- * **친 메소가 `0` 이어도 수동이다.** 조각만 먹은 사냥이 그렇다. `0` 과 `NULL` 이 갈리는 자리라
- * `??` 로 접으면 그 행이 계산기 행으로 둔갑한다.
- */
-function rowToHunt(row: Record<string, unknown>): HuntingIncomeDetail | null {
-  const typedMeso = numberOrNull(row.hunt_typed_meso)
-  if (typedMeso !== null) {
-    return {
-      mode: 'manual',
-      typedMeso,
-      fragments: numberOrNull(row.hunt_fragments) ?? 0,
-      fragmentPrice: numberOrNull(row.hunt_fragment_price),
-    }
-  }
-
-  const missed = numberOrNull(row.hunt_missed_mobs)
-  if (missed === null) return null
-
-  const boosts = (row.hunt_boosts as string | null | undefined) ?? ''
-  return {
-    mode: 'calculator',
-    characterLevel: (row.hunt_character_level as number | null | undefined) ?? null,
-    missedMobs: missed,
-    boosts: boosts === '' ? [] : boosts.split(','),
-    sojae: (row.hunt_sojae as number | null | undefined) ?? 0,
-    fragments: (row.hunt_fragments as number | null | undefined) ?? 0,
-    // `0` 으로 접지 않는다. 0 은 0 메소에 판 것이고 `NULL` 은 보관이다.
-    fragmentPrice: numberOrNull(row.hunt_fragment_price),
-    // **`NULL` 은 이전 행**이고 0 으로 읽는다. 없는 값을 지어내면 옛 기록의 금액이
-    // 지금 세는 값과 안 맞는다.
-    mesoRate: (row.hunt_meso_rate as number | null | undefined) ?? 0,
-    unionTier: unionTierOf(row.hunt_union_tier),
-  }
-}
-
-function unionTierOf(value: unknown): UnionTier {
-  return UNION_TIERS.includes(value as UnionTier) ? (value as UnionTier) : 3
-}
-
-/**
- * 한 덩어리 → 칸 아홉. 없으면 전부 `null` 이다(다른 갈래의 행이 그렇다).
- *
- * **수동 행은 계산기 칸 넷을 비운다**. 0 을 채우면 그 행이 놓친 마릿수 0 으로
- * 센 행 처럼 읽힌다. 비어 있는 것이 곧 앱이 센 값이 아니라는 뜻이다.
- */
-function huntToValues(hunt: HuntingIncomeDetail | null): Array<number | string | null> {
-  if (hunt === null) return [null, null, null, null, null, null, null, null, null]
-  if (hunt.mode === 'manual') {
-    return [null, null, null, null, hunt.fragments, hunt.fragmentPrice, null, hunt.typedMeso, null]
-  }
-  return [
-    hunt.characterLevel,
-    hunt.missedMobs,
-    hunt.boosts.join(','),
-    hunt.sojae,
-    hunt.fragments,
-    hunt.fragmentPrice,
-    hunt.mesoRate,
-    null,
-    hunt.unionTier,
-  ]
-}
-
-const INSERT_SQL = `
-  INSERT INTO income_records
-    (id, ocid, earned_on, category, category_key, item, item_key, meso_amount,
-     sale_fee_percent, sale_fee_meso, sale_fee_auto,
-     point_amount, point_per_100m_meso, cash_amount, quantity,
-     hunt_character_level, hunt_missed_mobs, hunt_boosts, hunt_sojae, hunt_fragments,
-     hunt_fragment_price, hunt_meso_rate, hunt_typed_meso, hunt_union_tier, item_kind_key,
-     memo, recorded_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`
-
 /**
  * 수입 기록의 판. 이어서 하는 작업이 수수료를 고쳐 쓰면 오른다. 가계부가 포커스 때 이 판을 보고 다시 읽는다.
  * 시트의 쓰기는 가계부가 스스로 다시 읽어 판을 안 올린다.
@@ -253,95 +171,22 @@ function bumpIncomeRecordsRevision(): void {
 
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
   const db = await getBossProfitDb()
-  await db.run(INSERT_SQL, [
-    record.id,
-    record.ocid,
-    record.earnedOn,
-    incomeCategoryNameOf(record.category),
-    record.category,
-    record.item,
-    record.itemKey,
-    record.mesoAmount,
-    record.saleFeePercent,
-    record.saleFeeMeso,
-    record.saleFeeAuto ? 1 : null,
-    record.pointAmount,
-    record.pointPer100mMeso,
-    record.cashAmount,
-    record.quantity,
-    ...huntToValues(record.hunt),
-    record.itemKind,
-    record.memo,
-    record.recordedAt,
-  ])
+  await inTransaction(db, () => insertEntry(db, incomeEntryOf(record)))
 }
 
-/** 갈아 끼우기. 지출과 같은 계약이다. `recorded_at` 은 SET 에 없다. */
-const UPDATE_SQL = `
-  UPDATE income_records SET
-    ocid = ?, earned_on = ?, category = ?, category_key = ?, item = ?, item_key = ?, meso_amount = ?,
-    sale_fee_percent = ?, sale_fee_meso = ?, sale_fee_auto = ?,
-    point_amount = ?, point_per_100m_meso = ?, cash_amount = ?, quantity = ?,
-    hunt_character_level = ?, hunt_missed_mobs = ?, hunt_boosts = ?, hunt_sojae = ?,
-    hunt_fragments = ?, hunt_fragment_price = ?, hunt_meso_rate = ?, hunt_typed_meso = ?,
-    hunt_union_tier = ?, item_kind_key = ?, memo = ?
-  WHERE id = ?
-`
-
+/** 갈아 끼우기. 지출과 같은 계약이다. 저장 시각은 그대로다. */
 export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
   const db = await getBossProfitDb()
-  await db.run(UPDATE_SQL, [
-    record.ocid,
-    record.earnedOn,
-    incomeCategoryNameOf(record.category),
-    record.category,
-    record.item,
-    record.itemKey,
-    record.mesoAmount,
-    record.saleFeePercent,
-    record.saleFeeMeso,
-    record.saleFeeAuto ? 1 : null,
-    record.pointAmount,
-    record.pointPer100mMeso,
-    record.cashAmount,
-    record.quantity,
-    ...huntToValues(record.hunt),
-    record.itemKind,
-    record.memo,
-    record.id,
-  ])
+  await inTransaction(db, () => replaceEntry(db, incomeEntryOf(record), new Date()))
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteIncomeRecord(id: string): Promise<void> {
   const db = await getBossProfitDb()
-  await db.run(`DELETE FROM income_records WHERE id = ?`, [id])
+  await deleteEntry(db, id)
 }
 
-function rowToRecord(row: Record<string, unknown>): IncomeRecord {
-  return {
-    id: row.id as string,
-    // `undefined` 도 `null` 로 접어 호출부가 한 형태만 다루게 한다(`boss-profit.ts` 와 같은 처리).
-    ocid: (row.ocid as string | null | undefined) ?? null,
-    earnedOn: row.earned_on as string,
-    // key 칸은 DB 를 여는 버전 이관이 옛 행까지 채운다.
-    category: row.category_key as IncomeCategoryKey,
-    item: (row.item as string | null | undefined) ?? null,
-    itemKey: (row.item_key as string | null | undefined) ?? null,
-    mesoAmount: (row.meso_amount as number | null | undefined) ?? null,
-    saleFeePercent: (row.sale_fee_percent as FeePercent | null | undefined) ?? null,
-    saleFeeMeso: (row.sale_fee_meso as number | null | undefined) ?? null,
-    saleFeeAuto: Number(row.sale_fee_auto) === 1,
-    pointAmount: (row.point_amount as number | null | undefined) ?? null,
-    pointPer100mMeso: (row.point_per_100m_meso as number | null | undefined) ?? null,
-    cashAmount: (row.cash_amount as number | null | undefined) ?? null,
-    quantity: (row.quantity as number | null | undefined) ?? null,
-    itemKind: (row.item_kind_key as ItemKindKey | null | undefined) ?? null,
-    hunt: rowToHunt(row),
-    memo: (row.memo as string | null | undefined) ?? null,
-    recordedAt: row.recorded_at as string,
-  }
-}
+const INCOME = `e.entry_type = 'income'`
 
 /**
  * 날짜 범위의 기록. **두 끝을 포함**한다. 월간이든 주간이든 부르는 쪽이 범위만 정한다
@@ -350,25 +195,24 @@ function rowToRecord(row: Record<string, unknown>): IncomeRecord {
  * **`ocid` 로 거르지 않는다.** 가계부는 내가 번 돈 이지 이 캐릭터가 번 돈 이 아니라
  *  계정 단위 행과 캐릭터 행이 한 날에 함께 서야 한다.
  */
-
 export async function getIncomeRecordsBetween(
   fromDateKey: string,
   toDateKey: string,
 ): Promise<IncomeRecord[]> {
   const db = await getBossProfitDb()
-  const { values } = await db.query(
-    `SELECT * FROM income_records WHERE earned_on BETWEEN ? AND ?`,
-    [fromDateKey, toDateKey],
-  )
-
-  return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
+  const entries = await readEntries(db, `${INCOME} AND e.entry_date BETWEEN ? AND ?`, [fromDateKey, toDateKey])
+  return entries.map(incomeRecordOf)
 }
 
 /** 수수료가 자동인 기록 전부. 등급 기록이 바뀌면 다시 셀 대상이다. */
 export async function getAutoFeeIncomeRecords(): Promise<IncomeRecord[]> {
   const db = await getBossProfitDb()
-  const { values } = await db.query(`SELECT * FROM income_records WHERE sale_fee_auto = 1`)
-  return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
+  const entries = await readEntries(
+    db,
+    `${INCOME} AND EXISTS (SELECT 1 FROM cashbook_entry_items i WHERE i.entry_id = e.id AND i.sale_fee_auto = 1)`,
+    [],
+  )
+  return entries.map(incomeRecordOf)
 }
 
 /** 수수료 세 칸을 고쳐 쓰는 한 줄. 받는 돈이 뗀 몫과 함께 가야 합계가 맞는다. */
@@ -379,13 +223,16 @@ export interface IncomeSaleFeeUpdate {
   saleFeeMeso: number
 }
 
-/** 자동 수수료를 다시 셀 때 세 칸만 고쳐 쓴다. 조각 하나가 트랜잭션 하나다. */
+const UPDATE_FEE_SQL = `UPDATE cashbook_entry_items SET amount_meso = ?, sale_fee_percent = ?, sale_fee_meso = ?`
+const OF_INCOME_ENTRY = `WHERE entry_id = ? AND sort_order = 0`
+
+/** 자동 수수료를 다시 셀 때 세 칸만 고쳐 쓴다. 수입은 품목 하나다. 조각 하나가 트랜잭션 하나다. */
 export async function updateIncomeSaleFees(updates: readonly IncomeSaleFeeUpdate[]): Promise<void> {
   if (updates.length === 0) return
   const db = await getBossProfitDb()
   await inTransaction(db, async () => {
     for (const update of updates) {
-      await db.run(`UPDATE income_records SET meso_amount = ?, sale_fee_percent = ?, sale_fee_meso = ? WHERE id = ?`, [
+      await db.run(`${UPDATE_FEE_SQL} ${OF_INCOME_ENTRY}`, [
         update.mesoAmount,
         update.saleFeePercent,
         update.saleFeeMeso,
@@ -402,13 +249,16 @@ export async function updateIncomeSaleFees(updates: readonly IncomeSaleFeeUpdate
  */
 export async function getBulkFeeIncomeRecords(): Promise<IncomeRecord[]> {
   const db = await getBossProfitDb()
-  const { values } = await db.query(
-    `SELECT * FROM income_records
-     WHERE sale_fee_percent IS NULL
-       AND (category_key IN ('item_sale', 'sol_erda_fragment')
-            OR (category_key = 'hunting' AND hunt_fragment_price IS NOT NULL))`,
+  const entries = await readEntries(
+    db,
+    `${INCOME}
+     AND EXISTS (SELECT 1 FROM cashbook_entry_items i WHERE i.entry_id = e.id AND i.sort_order = 0 AND i.sale_fee_percent IS NULL)
+     AND (e.category_key IN ('item_sale', 'sol_erda_fragment')
+          OR (e.category_key = 'hunting'
+              AND EXISTS (SELECT 1 FROM cashbook_entry_hunt_inputs h WHERE h.entry_id = e.id AND h.fragment_price IS NOT NULL)))`,
+    [],
   )
-  return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
+  return entries.map(incomeRecordOf)
 }
 
 /** 일괄 적용. 세 칸을 적고 자동으로 바꾼다. 그 뒤 등급 기록을 고치면 함께 다시 센다. 조각 하나가 트랜잭션 하나다. */
@@ -417,10 +267,12 @@ export async function applyAutoIncomeSaleFees(updates: readonly IncomeSaleFeeUpd
   const db = await getBossProfitDb()
   await inTransaction(db, async () => {
     for (const update of updates) {
-      await db.run(
-        `UPDATE income_records SET meso_amount = ?, sale_fee_percent = ?, sale_fee_meso = ?, sale_fee_auto = 1 WHERE id = ?`,
-        [update.mesoAmount, update.saleFeePercent, update.saleFeeMeso, update.id],
-      )
+      await db.run(`${UPDATE_FEE_SQL}, sale_fee_auto = 1 ${OF_INCOME_ENTRY}`, [
+        update.mesoAmount,
+        update.saleFeePercent,
+        update.saleFeeMeso,
+        update.id,
+      ])
     }
   })
   bumpIncomeRecordsRevision()
@@ -442,13 +294,17 @@ export async function getFragmentStorage(
   excludeRecordId?: string,
 ): Promise<number> {
   const db = await getBossProfitDb()
+  const scope = `e.entry_type = 'income' AND e.ocid = ? AND e.entry_date <= ? AND e.id != ?`
+  const params = [ocid, onOrBeforeDateKey, excludeRecordId ?? '']
   const { values } = await db.query(
     `SELECT
-       COALESCE(SUM(CASE WHEN category_key = 'hunting' AND hunt_fragment_price IS NULL THEN hunt_fragments ELSE 0 END), 0)
-       - COALESCE(SUM(CASE WHEN category_key = 'sol_erda_fragment' THEN quantity ELSE 0 END), 0) AS stored
-     FROM income_records
-     WHERE ocid = ? AND earned_on <= ? AND id != ?`,
-    [ocid, onOrBeforeDateKey, excludeRecordId ?? ''],
+       (SELECT COALESCE(SUM(h.fragments), 0)
+          FROM cashbook_entries e JOIN cashbook_entry_hunt_inputs h ON h.entry_id = e.id
+         WHERE ${scope} AND e.category_key = 'hunting' AND h.fragment_price IS NULL)
+       - (SELECT COALESCE(SUM(i.quantity), 0)
+          FROM cashbook_entries e JOIN cashbook_entry_items i ON i.entry_id = e.id
+         WHERE ${scope} AND e.category_key = 'sol_erda_fragment') AS stored`,
+    [...params, ...params],
   )
   return Number((values?.[0] as { stored?: unknown } | undefined)?.stored ?? 0)
 }

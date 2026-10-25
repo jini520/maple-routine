@@ -10,7 +10,8 @@
 |---|---|
 | `storage/sqlite/db.ts` | 테이블 정의(`TABLE_DEFINITIONS`) · DB 열기와 닫기 · 칸 보강(`ensureColumn`) · `income_records` 재작성 |
 | `storage/sqlite/boss-tables.ts` | 보스 표 셋의 정의를 한 곳에 둔다. 정상 생성과 버전 4 재작성에서 함께 쓴다 · 드롭 그룹 인덱스 |
-| `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 13) |
+| `storage/sqlite/cashbook-tables.ts` | 가계부 기록 표 셋의 정의 · 날짜 인덱스 |
+| `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 15) |
 | `storage/sqlite/transaction.ts` | 쓰기 여럿을 트랜잭션 하나로 묶는 `inTransaction` |
 | `storage/sqlite/uuid.ts` | 행 식별자를 SQLite 가 만드는 식(`NEW_UUID_SQL`) |
 | `storage/adapters/rn-sqlite.ts` | `SqlitePort` 구현(op-sqlite) |
@@ -30,14 +31,15 @@
 6. 옛 `boss_drop_records` 의 빈 `price_split_mode` 를 `even` 으로, `even` 행의 빈 `price_party_size` 를
    `price_share` 로 채운다. 옛 표라 지금 코드는 읽지 않고, v1.0.14 에서 옛 표와 함께 걷는다(#685).
 7. `user_version` 보다 큰 버전 이관을 차례로 실행한다.
-8. 인덱스 `boss_drop_records_group`(옛 표)과 `boss_drops_period` 를 만든다.
+8. 인덱스 `boss_drop_records_group`(옛 표) · `boss_drops_period` · `cashbook_entries_entry_date` 를 만든다.
 
 열기는 10초, 닫기(`closeBossProfitDb`)는 5초 상한이 있다. OTA 적용과 캐시 데이터 삭제는 리로드 전에 닫는다.
 
 ## 테이블
 
-외래키는 보스 기록 표 셋에만 있다. `boss_parties` → `boss_party_periods` → `boss_drops` 차례로 부모를 가리키고,
-부모를 지우면 자식도 지워진다(`ON DELETE CASCADE`). 다른 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서,
+외래키는 보스 기록 표 셋과 가계부 기록 표 셋에만 있다. `boss_parties` → `boss_party_periods` → `boss_drops`, 그리고
+`cashbook_entries` → `cashbook_entry_items` · `cashbook_entry_hunt_inputs` 차례로 부모를 가리키고, 부모를 지우면 자식도
+지워진다(`ON DELETE CASCADE`). 다른 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서,
 한쪽만 지우면 짝이 없는 행이 남는다. 그래서 캐시 데이터 삭제는 기록 표들을 한 그룹으로 함께 지운다(`lifecycle.md`).
 
 `삭제 그룹` 의 `기록` 은 캐시 데이터 삭제의 `records` 그룹(`RECORD_TABLE_NAMES`)이고, `일반` 은 나머지다. `행 단위` 는
@@ -45,7 +47,8 @@
 
 옛 보스 기록 표 넷(`boss_profit_records` · `boss_party_settings` · `boss_party_period_overrides` · `boss_drop_records`)은
 버전 14 가 새 표 셋으로 옮긴 뒤로 읽고 쓰는 코드가 없다. 옛 코드가 새 DB 를 열어도 열리도록 표를 남겨 두고, v1.0.14
-에서 지운다(#685). 그래서 아래 표에서 뺐다.
+에서 지운다(#685). 옛 가계부 표 둘(`income_records` · `spend_records`)도 같다. 버전 15 가 기록 표 셋으로 옮겼고
+v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐다.
 
 | 테이블 | 기본키 | 담는 것 | 쓰는 곳 | 삭제 그룹 | 문서 |
 |---|---|---|---|---|---|
@@ -56,8 +59,9 @@
 | `character_world_leaps` | `from_ocid` | 월드 리프로 바뀐 옛 ocid 와 새 ocid 의 연결 | `storage/character-world-leaps.ts` | 기록 | `features/character.md` |
 | `enhancement_history` | `id` | 계정 단위 스타포스 · 큐브 · 잠재 재설정 사용 내역(응답 원문 `payload` 포함) | `storage/enhancement-history.ts` | 기록 | `features/cashbook.md` |
 | `enhancement_history_checks` | `(kind, date_key)` | 강화 내역을 날짜별로 조회했는지 기록 | `storage/enhancement-history.ts` | 기록 | `features/cashbook.md` |
-| `income_records` | `id` | 가계부에 손으로 적은 수입(아이템 판매 · 사냥 · 기타) | `storage/income.ts` | 기록 | `features/cashbook.md` |
-| `spend_records` | `id` | 가계부에 손으로 적은 지출 | `storage/spend.ts` | 기록 | `features/cashbook.md` |
+| `cashbook_entries` | `id`(uuid) | 가계부에 손으로 적은 수입 · 지출 한 건. 날짜 · 갈래 · 캐릭터 · 메모 | `storage/income.ts` · `storage/spend.ts` | 기록 | [[ADR-096]] |
+| `cashbook_entry_items` | `id`(uuid, `(entry_id, sort_order)` 는 UNIQUE) | 기록의 품목. 항목 key 또는 직접 친 이름, 수량 · 레벨, 금액 · 수수료 · 관세 | `storage/cashbook-entries.ts` | 기록 | [[ADR-096]] |
+| `cashbook_entry_hunt_inputs` | `id`(uuid, `entry_id` 는 UNIQUE) | 사냥 기록의 계산기 입력 | `storage/cashbook-entries.ts` | 기록 | [[ADR-096]] |
 | `mvp_grade_history` | `(account_id, start_date)` | 메이플 ID 마다 MVP 등급과 시작 날짜 | `storage/mvp-grades.ts` | 기록 | `features/mvp-grade.md` |
 | `character_accounts` | `(ocid, name, account_id)` | 캐릭터가 어느 메이플 ID 에 속했는지와 처음 · 마지막으로 본 날 | `storage/character-accounts.ts` | 기록 | `features/mvp-grade.md` |
 | `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 못 보낸 기록. 평소에는 비어 있다 | `storage/server-sync-queue.ts` | 일반 | [[ADR-018]] |
@@ -75,8 +79,9 @@
 | `character_world_leaps` | `from_ocid` NN · `to_ocid` NN · `linked_at` NN |
 | `enhancement_history` | `id` NN · `kind` NN · `date_key` NN · `created_at` NN · `character_name` NN · `target_item` NN · `item_key` · `item_level` · `payload` NN · `cost_meso` |
 | `enhancement_history_checks` | `kind` NN · `date_key` NN · `next_cursor` · `settled` NN(기본 0) · `checked_at` NN |
-| `income_records` | `id` NN · `ocid` · `earned_on` NN · `category` NN · `category_key` · `item` · `item_key` · `meso_amount` · `sale_fee_percent` · `sale_fee_meso` · `sale_fee_auto` · `point_amount` · `point_per_100m_meso` · `cash_amount` · `quantity` · `item_kind_key` · `hunt_character_level` · `hunt_missed_mobs` · `hunt_boosts` · `hunt_sojae` · `hunt_fragments` · `hunt_fragment_price` · `hunt_meso_rate` · `hunt_typed_meso` · `hunt_fragments_deferred` · `hunt_union_tier` · `memo` · `recorded_at` NN |
-| `spend_records` | `id` NN · `ocid` · `spent_on` NN · `category` NN · `category_key` · `item` · `item_key` · `form` · `form_item_keys` · `item_kind` · `item_kind_key` · `level_from` · `level_to` · `quantity` · `meso_amount` · `tariff_meso` · `point_amount` · `point_per_100m_meso` · `cash_amount` · `memo` · `recorded_at` NN |
+| `cashbook_entries` | `id` NN · `ocid` · `entry_type` NN(`income` · `spend`) · `category_key` NN · `entry_date` NN · `memo` · `created_at` NN · `updated_at` NN |
+| `cashbook_entry_items` | `id` NN · `entry_id` NN · `sort_order` NN · `item_key` · `item_name` · `form_key` · `item_kind_key` · `quantity` · `from_level` · `to_level` · `amount_meso` · `tariff_meso` · `sale_fee_percent` · `sale_fee_meso` · `sale_fee_auto` · `amount_point` · `point_per_100m_meso` · `amount_cash` |
+| `cashbook_entry_hunt_inputs` | `id` NN · `entry_id` NN UNIQUE · `character_level` · `missed_mobs` · `boosts` · `fragments` · `fragment_price` · `meso_rate` · `typed_meso` · `union_tier` |
 | `mvp_grade_history` | `account_id` NN · `start_date` NN · `grade` · `updated_at` NN |
 | `character_accounts` | `ocid` NN · `name` NN · `account_id` NN · `first_seen_on` NN · `last_seen_on` NN |
 | `server_sync_queue` | `id` NN · `kind` NN · `record_id` NN UNIQUE · `attempts` NN(기본 0) · `last_error` · `created_at` NN |

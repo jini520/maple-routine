@@ -1,20 +1,17 @@
 /**
- * 지출 어댑터.
+ * 지출 어댑터. 기록은 가계부 기록 표 셋(`cashbook-entries.ts`)에 `entry_type = 'spend'` 로 산다.
  *
- * 대리키·`ON CONFLICT` 없음·`id`/`recordedAt` 을 호출부가 주는 규약은 `income.ts` 와 같다.
- * 그쪽에 사유를 적어 뒀다.
+ * 화면이 쓰는 모양(`SpendRecord`)은 그대로 두고 여기서 기록 행 · 품목 행과 서로 옮긴다. 에픽던전 리워드는 형태마다
+ * 품목 하나이고, 나머지는 품목 하나다. `id` · `recordedAt` 을 호출부가 주는 규약은 `income.ts` 와 같다.
  *
  * 통화 칸이 셋이고 대개 둘은 비어 있다. 아이템 구매 한 건이 메소와 메포를 동시에 쓰기 때문에
- * 한 행 = 한 통화로는 표현이 안 된다. 희소 컬럼 셋이 그 대가이고, 대안(여러 행 + group_id)이
- * 지출 몇 건 을 거짓으로 만드는 것보다 낫다고 봤다.
+ * 한 행 = 한 통화로는 표현이 안 된다.
  */
-import {
-  spendCategoryNameOf,
-  itemKindNameOf,
-  type SpendCategoryKey,
-  type ItemKindKey,
-} from '../lib/cashbook/categories'
+import type { ItemKindKey, SpendCategoryKey } from '../lib/cashbook/categories'
+import { deleteEntry, insertEntry, readEntries, replaceEntry } from './cashbook-entries'
+import { spendEntryOf, spendRecordOf } from './cashbook-entry-shape'
 import { getBossProfitDb } from './sqlite/db'
+import { inTransaction } from './sqlite/transaction'
 
 export interface SpendRecord {
   id: string
@@ -22,11 +19,11 @@ export interface SpendRecord {
   ocid: string | null
   /** `'YYYY-MM-DD'` KST. */
   spentOn: string
-  /** 갈래 key. DB 에는 그때 이름(`category`)도 함께 적는다. */
+  /** 갈래 key. */
   category: SpendCategoryKey
   /**
-   * 그때의 이름. 목록에서 고른 항목 이름, 에픽던전 리워드의 이어 붙인 이름, 또는 직접 친 이름
-   * (`구매 아이템` · `내용`). 화면은 key 로 카탈로그를 찾고 못 찾을 때 이 글자를 쓴다.
+   * 직접 친 이름(`구매 아이템` · `내용`). key 가 있는 기록은 저장하지 않고 읽으면 `null` 이다. 화면은 key 로
+   * 참조표를 찾고 못 찾을 때 이 글자를 쓴다.
    */
   item: string | null
   /** 목록에서 고른 항목 key. 직접 친 기록과 에픽던전 리워드는 `null` 이다. */
@@ -83,42 +80,11 @@ export interface SpendRecord {
   recordedAt: string
 }
 
-const INSERT_SQL = `
-  INSERT INTO spend_records
-    (id, ocid, spent_on, category, category_key, item, item_key, form, form_item_keys,
-     item_kind, item_kind_key, quantity,
-     meso_amount, tariff_meso, point_amount, point_per_100m_meso, cash_amount,
-     memo, recorded_at, level_from, level_to)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`
-
-/**
- * 이름 칸과 key 칸의 값. 옛 `form` 칸은 더 안 쓴다(형태는 `form_item_keys` 가 든다).
- *
- * 이름 칸에 그때 이름을 함께 적는 것은 key 를 못 찾는 날(표에서 빠진 항목)에 기록이 보여 줄
- * 글자가 남게 하려는 것이다.
- */
-function identityValues(record: SpendRecord): Array<string | null> {
-  return [
-    spendCategoryNameOf(record.category),
-    record.category,
-    record.item,
-    record.itemKey,
-    null,
-    record.formItemKeys === null ? null : JSON.stringify(record.formItemKeys),
-    record.itemKind === null ? null : itemKindNameOf(record.itemKind),
-    record.itemKind,
-  ]
-}
-
 /**
  * 메포를 썼으면 시세가 있어야 한다는 검사.
  *
  * 화면이 막지만 저장소가 한 번 더 막는 것은 실패의 모양이 나쁘기 때문이다. 시세 없이 저장하면
- * 그 행은 영영 메소로 표시할 수 없는 행이 된다. 환율이 행에 박히므로 나중에 채울 수도 없고,
- * 메포는 모두 메소로 표기한다 는 정책이 그 행에서만 깨진다.
- *
- * 0 을 함께 막는 것은 환산이 나눗셈이라서다.
+ * 그 행은 영영 메소로 표시할 수 없는 행이 된다. 0 을 함께 막는 것은 환산이 나눗셈이라서다.
  */
 function assertPointRate(record: SpendRecord): void {
   if (record.pointAmount === null) {
@@ -143,115 +109,37 @@ export async function insertSpendRecord(record: SpendRecord): Promise<void> {
   assertPointRate(record)
 
   const db = await getBossProfitDb()
-  await db.run(INSERT_SQL, [
-    record.id,
-    record.ocid,
-    record.spentOn,
-    ...identityValues(record),
-    record.quantity,
-    record.mesoAmount,
-    record.tariffMeso,
-    record.pointAmount,
-    record.pointPer100mMeso,
-    record.cashAmount,
-    record.memo,
-    record.recordedAt,
-    record.levelFrom,
-    record.levelTo,
-  ])
+  await inTransaction(db, () => insertEntry(db, spendEntryOf(record)))
 }
 
 /**
- * 갈아 끼우기. **지우고 다시 넣지 않는다**.
- *
- * 지우고 넣으면 `id` 와 `recorded_at` 이 새것이 되는데, 그 둘은 언제 적었나 를 든 칸이라
- * **고친 시각이 적은 시각을 덮어쓴다.** 그래서 `SET` 에 `recorded_at` 이 없다. 적은 시각이지
- * 마지막으로 만진 시각이 아니다. 후자가 필요해지면 **칸을 새로 세운다**(있는 칸의 뜻을 바꾸면
- * 옛 행의 값이 조용히 거짓이 된다).
+ * 갈아 끼우기. **지우고 다시 넣지 않는다**. 지우고 넣으면 `id` 와 저장 시각이 새것이 되어 같은 날 안의 차례가
+ * 바뀐다. 넣을 때와 같은 검증을 탄다. 아니면 그 방어가 수정 쪽에서 반쪽이 된다.
  */
-const UPDATE_SQL = `
-  UPDATE spend_records SET
-    ocid = ?, spent_on = ?, category = ?, category_key = ?, item = ?, item_key = ?, form = ?,
-    form_item_keys = ?, item_kind = ?, item_kind_key = ?, quantity = ?,
-    meso_amount = ?, tariff_meso = ?, point_amount = ?, point_per_100m_meso = ?,
-    cash_amount = ?, memo = ?, level_from = ?, level_to = ?
-  WHERE id = ?
-`
-
-/** 넣을 때와 같은 검증을 탄다. 아니면 그 방어가 수정 쪽에서 반쪽이 된다. */
 export async function updateSpendRecord(record: SpendRecord): Promise<void> {
   spendRecordsRevision += 1
   assertPointRate(record)
 
   const db = await getBossProfitDb()
-  await db.run(UPDATE_SQL, [
-    record.ocid,
-    record.spentOn,
-    ...identityValues(record),
-    record.quantity,
-    record.mesoAmount,
-    record.tariffMeso,
-    record.pointAmount,
-    record.pointPer100mMeso,
-    record.cashAmount,
-    record.memo,
-    record.levelFrom,
-    record.levelTo,
-    record.id,
-  ])
+  await inTransaction(db, () => replaceEntry(db, spendEntryOf(record), new Date()))
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteSpendRecord(id: string): Promise<void> {
   spendRecordsRevision += 1
   const db = await getBossProfitDb()
-  await db.run(`DELETE FROM spend_records WHERE id = ?`, [id])
-}
-
-function nullable(value: unknown): number | null {
-  return (value as number | null | undefined) ?? null
-}
-
-/** 형태별 항목 key 칸. 앱이 쓴 JSON 이라 모양을 되묻지 않는다. */
-function parseFormItemKeys(value: unknown): Readonly<Record<string, string>> | null {
-  return typeof value === 'string' ? (JSON.parse(value) as Record<string, string>) : null
-}
-
-function rowToRecord(row: Record<string, unknown>): SpendRecord {
-  return {
-    id: row.id as string,
-    ocid: (row.ocid as string | null | undefined) ?? null,
-    spentOn: row.spent_on as string,
-    // key 칸은 DB 를 여는 버전 이관이 옛 행까지 채운다.
-    category: row.category_key as SpendCategoryKey,
-    item: (row.item as string | null | undefined) ?? null,
-    itemKey: (row.item_key as string | null | undefined) ?? null,
-    formItemKeys: parseFormItemKeys(row.form_item_keys),
-    itemKind: (row.item_kind_key as ItemKindKey | null | undefined) ?? null,
-    levelFrom: nullable(row.level_from),
-    levelTo: nullable(row.level_to),
-    quantity: nullable(row.quantity),
-    mesoAmount: nullable(row.meso_amount),
-    tariffMeso: nullable(row.tariff_meso),
-    pointAmount: nullable(row.point_amount),
-    pointPer100mMeso: nullable(row.point_per_100m_meso),
-    cashAmount: nullable(row.cash_amount),
-    memo: (row.memo as string | null | undefined) ?? null,
-    recordedAt: row.recorded_at as string,
-  }
+  await deleteEntry(db, id)
 }
 
 /** 날짜 범위의 기록. **두 끝을 포함**한다. `ocid` 로 거르지 않는 이유는 `income.ts` 와 같다. */
-
 export async function getSpendRecordsBetween(
   fromDateKey: string,
   toDateKey: string,
 ): Promise<SpendRecord[]> {
   const db = await getBossProfitDb()
-  const { values } = await db.query(`SELECT * FROM spend_records WHERE spent_on BETWEEN ? AND ?`, [
+  const entries = await readEntries(db, `e.entry_type = 'spend' AND e.entry_date BETWEEN ? AND ?`, [
     fromDateKey,
     toDateKey,
   ])
-
-  return (values ?? []).map((row) => rowToRecord(row as Record<string, unknown>))
+  return entries.map(spendRecordOf)
 }

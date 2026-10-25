@@ -93,10 +93,9 @@ import {
   editIncome,
   editSpend,
   removeRecord,
-  recordTitleOf,
+  recordCardOf,
   recordMesoOf,
   recordCashOf,
-  recordCountLabelOf,
   resolveTrackedDefeatDates,
   isManualRecord,
   rowKeyOf,
@@ -459,7 +458,7 @@ function DayRecordRow(props: {
   // 나가는 돈은 둘이다. 손으로 적은 지출과 강화 사용 내역. 결정석·판매는 들어오는 돈이다.
   const income = entry.kind !== 'spend' && entry.kind !== 'enhancement'
   const cash = recordCashOf(entry)
-  const countLabel = recordCountLabelOf(entry)
+  const card = recordCardOf(entry)
   const Icon = income ? ProfitIcon : ShoppingCartIcon
   // 화면 글자가 아니라 줄의 신원으로 찾는다. 손입력 줄은 이름을 적으면 그것이 뜨므로
   // 보이는 글자로 찾으면 이름을 적은 줄에서만 그림이 사라진다.
@@ -489,7 +488,8 @@ function DayRecordRow(props: {
         testID={`cashbook-row-${rowKey}`}
         // 자동 줄은 고치러 가는 것이 아니라 보러 가는 것이다. 읽어 주는 이름이 그 사실을 말해야
         // 눌렀더니 시트가 안 열린다 가 고장으로 읽히지 않는다.
-        aria-label={`${recordTitleOf(entry)} ${action}`}
+        // 둘째 줄까지 읽는다. 강화 줄은 제목이 모두 `강화` 라 둘째 줄이 있어야 줄이 갈린다.
+        aria-label={`${card.title}${card.detail === null ? '' : ` ${card.detail}`} ${action}`}
         aria-expanded={expandable ? isOpen : undefined}
         onPress={props.onPress}
         className="flex-row items-center gap-2.5 py-3 pl-3 pr-2.5"
@@ -522,16 +522,20 @@ function DayRecordRow(props: {
           )}
         </View>
 
-        {/* 셈은 이름 아래 둘째 줄이다. 이름 옆에 두면 긴 이름이 그만큼 더 잘린다. */}
+        {/* 첫 줄은 캐릭터 · 제목, 둘째 줄은 무엇을 얼마나다. 갈래마다 다른 규칙은 화면이 아니라
+            `recordCardOf` 가 든다. */}
         <View className="min-w-0 flex-1">
-          <Text numberOfLines={1} className="text-13 font-medium text-text">
-            {recordTitleOf(entry)}
+          <Text numberOfLines={1} testID={`cashbook-row-title-${rowKey}`} className="text-13 font-medium text-text">
+            {card.title}
           </Text>
-          {countLabel !== null && (
-            // 갈래마다 세는 것이 다르다(`×2` · `12마리` · `3건 · 미입력 2`). 그 분기는 화면이 아니라
-            // `recordCountLabelOf` 가 든다.
-            <Text numberOfLines={1} className="text-11 text-text-muted" style={TABULAR_NUMS}>
-              {countLabel}
+          {card.detail !== null && (
+            <Text
+              numberOfLines={1}
+              testID={`cashbook-row-detail-${rowKey}`}
+              className="text-11 text-text-muted"
+              style={TABULAR_NUMS}
+            >
+              {card.detail}
             </Text>
           )}
         </View>

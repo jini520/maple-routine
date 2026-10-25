@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-166 · ADR-170 결정 1 · 2 · 3 · 정정 9 · 15 · ADR-171 · ADR-280 결정 10 · ADR-202 결정 4 · 정정 2 · ADR-223 · ADR-300 · ADR-325 결정 3 · 4
-> 관련 소스: `storage/income.ts` · `storage/spend.ts` · `storage/enhancement-history.ts` · `features/cashbook/records.ts` · `features/enhancement-history/` · `lib/enhancement/` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/free-currency.ts` · `src/data/spend-catalog.json` · `src/data/enhancement-costs.json`
+> 관련 소스: `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` · `storage/enhancement-history.ts` · `features/cashbook/records.ts` · `features/enhancement-history/` · `lib/enhancement/` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/free-currency.ts` · `src/data/spend-catalog.json` · `src/data/enhancement-costs.json`
 
 ## 배경
 
@@ -43,25 +43,30 @@
 - **마지막으로 저장한 시세를 기억한다**(`lastPointRate`). 필수 칸이 매번 비어 있으면 입력이 번거롭다. 저장에
   성공한 뒤에만 기억하고, 수정으로 연 기록은 그 기록에 저장된 시세를 먼저 쓴다.
 
-### 결정 3. 지출은 `spend_records` 에 통화별 칸으로 저장한다
+### 결정 3. 지출은 가계부 기록 표에 통화별 칸으로 저장한다
+
+지출과 수입은 기록 표 셋(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs`)에 함께 산다. 표의 모양과
+옛 표에서 옮긴 방법은 [[ADR-096]] 에 있다. 지출 한 건은 기록 행 하나(`entry_type = 'spend'`)와 품목 행 하나 이상이다.
 
 | 칸 | 뜻 |
 |---|---|
-| `id` | 대리키. 같은 날 같은 것을 두 번 사는 것이 정상이라 자연키가 없다 |
-| `ocid` | `NULL` 이 기본이고 계정 단위다. 캐릭터를 고르면 그 캐릭터에 붙는다. 통화와 상관없다 |
-| `spent_on` | KST 날짜. 주 · 달은 읽을 때 자른다 |
-| `category` · `category_key` | 그때의 분류 이름과 분류 key |
-| `item` · `item_key` | 그때의 항목 이름과 참조표의 항목 key. 직접 친 기록은 key 가 없다 |
-| `form_item_keys` | 에픽던전 추가 리워드의 형태별 항목 key(JSON) |
-| `item_kind` · `item_kind_key` | 아이템 구매의 종류(장비 · 소비 · 기타). `NULL` 은 장비로 연다 |
-| `level_from` · `level_to` | 심볼 강화의 강화 전 · 후 레벨 |
-| `quantity` | 금액 = 단가 × 이 값. 단위 이름은 저장하지 않는다. 참조표에 항목별로 있다 |
-| `meso_amount` | 메소 총액. 관세를 포함한다 |
-| `tariff_meso` | 그중 관세분. 이미 총액에 들어 있으므로 합계에 다시 더하지 않는다 |
-| `point_amount` · `point_per_100m_meso` | 메포 원금과 그때의 시세 |
-| `cash_amount` | 캐시. 짝이 되는 환율 칸이 없다 |
+| 기록 `id` | uuid. 같은 날 같은 것을 두 번 사는 것이 정상이라 자연키가 없다 |
+| 기록 `ocid` | `NULL` 이 기본이고 계정 단위다. 캐릭터를 고르면 그 캐릭터에 붙는다. 통화와 상관없다 |
+| 기록 `entry_date` | KST 날짜. 주 · 달은 읽을 때 자른다 |
+| 기록 `category_key` | 분류 key. 이름은 서버 갈래 표에서 찾는다 |
+| 품목 `item_key` · `item_name` | 참조표의 항목 key, 또는 직접 친 이름. key 가 있으면 이름은 저장하지 않는다 |
+| 품목 `form_key` | 에픽던전 추가 리워드의 형태. 형태 둘을 사면 품목이 둘이다 |
+| 품목 `item_kind_key` | 아이템 구매의 종류(장비 · 소비 · 기타). `NULL` 은 장비로 연다 |
+| 품목 `from_level` · `to_level` | 심볼 강화의 강화 전 · 후 레벨 |
+| 품목 `quantity` | 금액 = 단가 × 이 값. 단위 이름은 저장하지 않는다. 서버 참조표가 든다 |
+| 품목 `amount_meso` | 메소 총액. 관세를 포함한다 |
+| 품목 `tariff_meso` | 그중 관세분. 이미 총액에 들어 있으므로 합계에 다시 더하지 않는다 |
+| 품목 `amount_point` · `point_per_100m_meso` | 메포 원금과 그때의 시세 |
+| 품목 `amount_cash` | 캐시. 짝이 되는 환율 칸이 없다 |
 
 쓰지 않는 통화 칸은 `NULL` 이다. 한 건이 메소와 다른 통화를 함께 쓸 수 있어서 한 행에 한 통화로는 표현이 안 된다.
+기록의 금액은 품목 금액의 합이다. 화면은 기록 모양(`SpendRecord`)으로 읽고 쓰며, 저장 함수가 표 행과 서로 옮긴다
+(`cashbook-entry-shape.ts`).
 
 **관세는 구입가의 10% 이고 메소로 낸다.** 요율은 참조표의 `rules.tariffPercent` 에 있고 나눗셈은 내림이다
 (`tariffMesoOf`). 그래도 관세분을 행에 따로 저장한다. 요율이 바뀌는 날 지난 기록의 관세가 따라 바뀌지 않게
@@ -70,8 +75,9 @@
 ### 결정 4. 지출 참조표는 사용자가 준 값이고, 분류 넷이 거기서 항목을 고른다
 
 지출 분류는 일곱이다. `컨텐츠 · 이벤트·BM · 버프 · 주문서` 넷은 참조표(`spend-catalog.json`)에서 항목을 고르고,
-`심볼 강화` 는 비용 표(`symbol-costs.json`)로 금액을 내며, `아이템 구매 · 기타` 둘은 직접 친다. 분류의 key ·
-이름 · 차례는 `lib/cashbook/categories.ts` 에 있다. 코드가 이 값으로 폼을 나누므로 key 를 타입으로 둔다.
+`심볼 강화` 는 비용 표(`symbol-costs.json`)로 금액을 내며, `아이템 구매 · 기타` 둘은 직접 친다. 분류의 이름 ·
+차례는 서버 갈래 표가 든다([[ADR-096]] 결정 3). 코드가 key 로 폼을 나누므로 key 목록은 `lib/cashbook/categories.ts` 에
+타입으로 둔다.
 
 참조표의 값(항목 · 가격 · 묶음 이름과 차례 · 수량 상한)은 모두 사용자가 준 것이다. 앱은 묶음을 다시 묶거나
 정렬하지 않는다.
@@ -102,16 +108,16 @@
 - 뺀 값이 음수면 음수 그대로 둔다. 0 에서 멈추면 그 줄과 그날 합계가 다르게 나온다.
 - 주화를 아직 안 팔았어도 뺀다. 지출은 산 날의 값으로 정하고, 판 날을 기다리지 않는다.
 
-### 결정 6. 수입은 `income_records` 에 따로 저장한다
+### 결정 6. 수입은 같은 기록 표에 `entry_type = 'income'` 으로 저장한다
 
-`spend_records` 와 합치지 않는다. 그 테이블은 관세 · 종류 · 레벨 같은 지출 전용 칸이 있고, 합치면 테이블
-이름부터 맞지 않게 된다. 이 테이블에는 손입력만 들어가므로 `source` 칸도 없다. 테이블이 곧 출처다.
+수입 한 건은 기록 행 하나와 품목 행 하나다. 사냥의 계산 입력은 사냥 입력 표(`cashbook_entry_hunt_inputs`)에 따로 든다
+([[ADR-096]] 결정 1). 이 표들에는 손입력만 들어가므로 `source` 칸이 없다. 표가 곧 출처다.
 
-수입 분류는 넷이다. `사냥 · 솔 에르다 조각 · 아이템 판매 · 기타` 이고 `[0]` 인 사냥이 기본이다. `기타` 는 다른 분류에
+수입 분류는 넷이다. `사냥 · 솔 에르다 조각 · 아이템 판매 · 기타` 이고 서버 갈래 표의 맨 앞인 사냥이 기본이다. `기타` 는 다른 분류에
 들어가지 않는 수입을 적는 곳이다. 이것이 없으면 그런 수입은 아예 기록할 수 없다.
 
 - **통화는 `기타` 에서만 고른다.** 이벤트 보상이 메포 · 캐시로도 들어오기 때문이다. 아이템 판매와 사냥은 메소뿐이다.
-  칸 이름은 지출과 같다(`point_amount` · `point_per_100m_meso` · `cash_amount`). 고르지 않은 통화의 칸은 `0` 이
+  칸은 지출과 같은 품목 칸이다(`amount_point` · `point_per_100m_meso` · `amount_cash`). 고르지 않은 통화의 칸은 `0` 이
   아니라 `NULL` 이다. 수정으로 열 때 값이 든 칸을 보고 통화를 되짚기 때문이다.
 - **`quantity` 를 저장한다**(`기타` 와 아이템 판매의 소비 · 기타). 총액만 남기면 수정으로 열 때 수량이 1 로 보이고
   금액 칸에 총액이 들어간다. 사용자가 적지 않은 값을 적은 값처럼 보여 주게 된다. 이 칸이 없던 옛 행은 수량 1 로 연다.
@@ -119,17 +125,18 @@
 
 ### 결정 7. 아이템 판매는 수수료를 뗀 값이 수입이고, 받은 돈과 뗀 몫을 함께 저장한다
 
-`meso_amount` 는 수수료를 뗀 받은 돈이다. 판매 대금을 넣으면 받지도 않은 돈이 수입으로 잡힌다. 수수료 계산은
+품목의 `amount_meso` 는 수수료를 뗀 받은 돈이다. 판매 대금을 넣으면 받지도 않은 돈이 수입으로 잡힌다. 수수료 계산은
 판매 분배금 계산기와 같은 `netProceedsMeso` 를 쓴다. 따로 계산하면 같은 판매가 두 화면에서 1 메소 차이 난다.
 
 뗀 몫(`sale_fee_meso`)과 요율(`sale_fee_percent`, `NULL` 은 없음)을 함께 저장한다. 내림이 섞여 있어 받은 돈과 요율만으로는
-판매 대금을 되짚을 수 없다. `판매 대금 = meso_amount + sale_fee_meso` 이면 정확히 맞는다. 종류가 소비 · 기타면 단가
+판매 대금을 되짚을 수 없다. `판매 대금 = amount_meso + sale_fee_meso` 이면 정확히 맞는다. 종류가 소비 · 기타면 단가
 × 수량 전체에서 떼고, 수정으로 열 때 단가는 `(받은 돈 + 뗀 몫) ÷ 수량` 이다. 종류는 `item_kind_key` 에 key 만 저장하고,
 `NULL` 인 옛 판매 행은 장비로 연다. 요율을 MVP 등급에서 자동으로 고르는 규칙은 [[ADR-050]] 에 있다.
 
-### 결정 8. 손입력 두 테이블과 강화 내역은 캐시 삭제가 지우지 않는다
+### 결정 8. 손입력 기록 표와 강화 내역은 캐시 삭제가 지우지 않는다
 
-`income_records` · `spend_records` · `enhancement_history` · `enhancement_history_checks` 가 `RECORD_TABLE_NAMES` 에
+기록 표 셋(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs`)과 옛 두 표(`income_records` ·
+`spend_records`), `enhancement_history` · `enhancement_history_checks` 가 `RECORD_TABLE_NAMES` 에
 들어 있다. 지워도 되는 표는 전체 표에서 이 목록을 뺀 나머지로 정해지므로, 이 목록에 없는 표는 자동으로 지워도 되는 표가 된다(`storage/cache-data.ts`). 손입력은
 사용자 말고는 출처가 없어 지우면 되살릴 수 없다.
 

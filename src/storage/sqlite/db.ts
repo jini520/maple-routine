@@ -10,6 +10,12 @@ import {
   BOSS_PARTY_SETTINGS_BODY,
   BOSS_PROFIT_RECORDS_BODY,
 } from './boss-tables'
+import {
+  CASHBOOK_ENTRIES_BODY,
+  CASHBOOK_ENTRIES_DATE_INDEX,
+  CASHBOOK_ENTRY_HUNT_INPUTS_BODY,
+  CASHBOOK_ENTRY_ITEMS_BODY,
+} from './cashbook-tables'
 import { runVersionedMigrations } from './migrations'
 
 const DB_NAME = 'boss_profit'
@@ -288,6 +294,20 @@ const TABLE_DEFINITIONS = [
     PRIMARY KEY (id)
 )`,
   },
+  // 가계부 손입력 기록. 위 둘을 버전 15 가 옮긴 표다. 부모가 먼저 서야 외래키가 선다. 옛 둘은 옛 코드가 새 DB 를
+  // 열어도 열리도록 v1.0.14 까지 남긴다.
+  {
+    name: 'cashbook_entries',
+    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entries ${CASHBOOK_ENTRIES_BODY}`,
+  },
+  {
+    name: 'cashbook_entry_items',
+    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_items ${CASHBOOK_ENTRY_ITEMS_BODY}`,
+  },
+  {
+    name: 'cashbook_entry_hunt_inputs',
+    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_hunt_inputs ${CASHBOOK_ENTRY_HUNT_INPUTS_BODY}`,
+  },
   // 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이라 `RECORD_TABLE_NAMES` 에 직접 적혀 있어야 한다.
   {
     name: 'mvp_grade_history',
@@ -561,6 +581,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // 기본키를 uuid 로 옮긴 뒤에 선다. 종전에는 기본키가 곧 이 인덱스였다.
   await db.execute(BOSS_DROP_RECORDS_GROUP_INDEX)
   await db.execute(BOSS_DROPS_PERIOD_INDEX)
+  await db.execute(CASHBOOK_ENTRIES_DATE_INDEX)
 
   return db
 }

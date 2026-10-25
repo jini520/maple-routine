@@ -155,6 +155,17 @@ export function itemKindNameOf(key: ItemKindKey): string {
   return itemKinds().find((each) => each.key === key)?.name ?? key
 }
 
+/** 갈래 하나. 표에 없는 key 는 `null` 이다. */
+export function cashbookCategoryOf(entryType: 'income' | 'spend', key: string): CashbookCategory | null {
+  const list = entryType === 'income' ? incomeCategories() : spendCategories()
+  return list.find((each) => each.key === key) ?? null
+}
+
+/** 아이템 종류의 수량 단위. 장비처럼 수량이 없으면 `undefined` 다. */
+export function itemKindUnitOf(kind: ItemKindKey): string | undefined {
+  return itemKinds().find((each) => each.key === kind)?.unit
+}
+
 /** 곱할 수량이 있는가. 단위가 있는 종류만 수량을 센다. */
 export function countsQuantity(kind: ItemKindKey): boolean {
   return itemKinds().find((each) => each.key === kind)?.unit !== undefined

@@ -52,7 +52,7 @@ const KEEP_KEYS = new Set<string>([
 // 기록은 남기고 싶다" 하나뿐이라, 그 축을 정확히 가르는 최소 분할만 둔다.
 //
 // **그룹 이름이 `bossRecords` 에서 `records` 로 넓어졌다**.
-// 가계부가 손으로 적는 둘(`income_records`·`spend_records`)이 같은 갈등의 같은 편에 서기 때문이다.
+// 가계부가 손으로 적는 기록(`cashbook_entries` 와 옛 `income_records`·`spend_records`)이 같은 갈등의 같은 편에 서기 때문이다.
 // 그리고 **보스 기록보다 더 복구 불가능하다**(보스는 API 가 최근 2주치라도 주는데 손입력은 0%다).
 // 3그룹으로 쪼개지 않는 것은 **갈등은 하나뿐이라 최소 분할만 둔다** 는 규칙 그대로다.
 export type CacheDataGroupId = 'general' | 'records'
@@ -77,6 +77,10 @@ export const RECORD_TABLE_NAMES: readonly string[] = [
   // 아래 차집합 파생이 이 둘을 **지워도 되는 것** 으로 끌어간다.
   'income_records',
   'spend_records',
+  // 위 둘을 옮긴 기록 표 셋. 품목 · 사냥 입력은 기록의 자식이라 기록과 같은 그룹이어야 고아가 안 생긴다.
+  'cashbook_entries',
+  'cashbook_entry_items',
+  'cashbook_entry_hunt_inputs',
   // 이름이 없으면 기록에서 행을 못 만든다(ocid 는 사용자에게 아무 뜻도 없어 대신 안 적는다).
   // 이 표를 `general` 로 두면 기록을 남긴 사용자가 이름 없는 기록을 받아, 지운 적 없는 과거
   // 수익이 화면에서 통째로 사라진다. 지우는 무게가 기록과 같아서 같은 그룹이다.

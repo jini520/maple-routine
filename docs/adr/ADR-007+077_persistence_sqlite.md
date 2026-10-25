@@ -105,7 +105,7 @@ COMMIT
 
 ### 결정 7. 값을 옮기는 이관은 `PRAGMA user_version` 으로 한 번씩만 돌린다
 
-`migrations.ts` 의 `STEPS` 에 이관이 버전 순서대로 들어 있고, `DB_VERSION`(지금 13)이 마지막 버전이다.
+`migrations.ts` 의 `STEPS` 에 이관이 버전 순서대로 들어 있고, `DB_VERSION`(지금 15)이 마지막 버전이다.
 `runVersionedMigrations` 는 `user_version` 보다 큰 버전만 차례로 돌리고, 버전마다 한 트랜잭션 안에서 이관과
 `PRAGMA user_version = N` 을 함께 실행한다. 중간에 던지면 그 버전의 변경과 버전 번호가 같이 되돌아가 다음
 부팅에 다시 돈다.
