@@ -118,10 +118,10 @@ rounded   = round100(1000 + L³ × (S+1)^exp / divisor)
   등급을 따라야 하기 때문이다. 기록 날짜에 등급이 없으면 `일반` 요율(5%)로 계산한다.
 - **직접 고른 요율**(`없음` · `3%` · `5%`)은 등급이 바뀌어도 그대로다. 직거래나 등급과 다른 요율로 판 기록이
   여기에 해당한다.
-- 다시 계산은 행을 다시 쓰는 방식이다. 자동 기록도 받은 금액(`meso_amount`)과 뗀 수수료를 행에 적어 두고, 등급
-  이력이 바뀌면 새 요율로 다시 적는다. 집계는 `meso_amount` 한 칸만 더하므로, 볼 때 계산하게 바꾸면 집계 코드를
+- 다시 계산은 행을 다시 쓰는 방식이다. 자동 기록도 받은 금액(가계부는 품목의 `amount_meso`)과 뗀 수수료를 행에 적어 두고, 등급
+  이력이 바뀌면 새 요율로 다시 적는다. 집계는 받은 금액 한 칸만 더하므로, 볼 때 계산하게 바꾸면 집계 코드를
   모두 고쳐야 하기 때문이다.
-- 자동 여부는 행마다 적는다. `income_records.sale_fee_auto` · `boss_drops.sale_fee_auto` ·
+- 자동 여부는 행마다 적는다. `cashbook_entry_items.sale_fee_auto`([[ADR-096]]) · `boss_drops.sale_fee_auto` ·
   `boss_drops.split_fee_auto` · `boss_parties.split_fee_auto` · `boss_party_periods.split_fee_auto`
   (`INTEGER`, 1 이면 자동)다([[ADR-078]]). `NULL` 은 이 칸이 생기기 전의 행이고 직접 고른 것으로 읽는다.
 
@@ -177,8 +177,8 @@ rounded   = round100(1000 + L³ × (S+1)^exp / divisor)
 솔 에르다 조각도 경매장에서 판다. 조각 정산 폼(`FragmentSettleForm`)과, 조각 가격을 적으면 판 것으로 보는 사냥
 폼 둘(`HuntCalculatorForm` · `HuntManualForm`)이 여기에 해당한다.
 
-- 아이템 판매와 같은 칸(`income_records.sale_fee_percent` · `sale_fee_meso`)을 쓴다.
-- 정산은 `판 개수 × 개당 가격` 이 판매 금액이고, 수수료를 뗀 값이 `meso_amount` 다.
+- 아이템 판매와 같은 품목 칸(`cashbook_entry_items.sale_fee_percent` · `sale_fee_meso`)을 쓴다.
+- 정산은 `판 개수 × 개당 가격` 이 판매 금액이고, 수수료를 뗀 값이 `amount_meso` 다.
 - 사냥은 조각으로 번 몫에만 수수료를 붙인다. 사냥으로 번 메소에는 붙이지 않는다.
 - 사냥 폼의 수수료 줄은 조각 가격을 적지 않아도 늘 보인다(사용자 지정). 가격을 적어야 보이게 했더니 사냥 수익에
   수수료 줄이 없는 것처럼 보였다. 가격이 비어 있으면 판 것이 없으므로 수수료 칸은 비워 저장하고 자동 여부만 남긴다.

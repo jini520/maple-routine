@@ -1,7 +1,7 @@
 # ADR-096 가계부 기록 테이블 재설계
 
 > ⚪ 미구현
-> 관련 소스: `storage/sqlite/db.ts` · `storage/sqlite/migrations.ts` · `storage/spend.ts` · `storage/income.ts` · `features/cashbook/records.ts` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts`
+> 관련 소스: `storage/sqlite/db.ts` · `storage/sqlite/cashbook-tables.ts` · `storage/sqlite/migrations.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` · `storage/spend.ts` · `storage/income.ts` · `features/cashbook/records.ts` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts`
 
 ## 배경
 
@@ -114,10 +114,14 @@ cashbook_entries               id · ocid · entry_type · category_key · entry
 
 ## 테스트
 
-기록 표와 이관(결정 1 · 2 · 5 · 6 · 8)의 테스트는 구현할 때 적는다.
+하루 목록 두 줄 카드(결정 3 · 4 의 화면)의 테스트는 구현할 때 적는다.
 
 | 파일 | 확인하는 것 |
 |---|---|
+| `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` | 결정 5 · 6 · 8: 버전 14 기기의 옛 두 표에서 한 건도 안 잃고 값이 그대로 옮겨지는지, id 가 새 uuid 인지, key 없는 갈래를 기타로 옮기는지, 에픽던전 형태 둘이 품목 둘로 단계 단가대로 나뉘는지, 옛 표가 남고 이관이 한 번만 도는지 |
+| `storage/__tests__/spend.spec.ts` | 결정 1 · 2: 지출 모양별로 넣은 것이 그대로 되읽히는지, 형태 둘의 금액이 나뉘고 나머지가 첫 품목에 붙는지, key 가 있으면 이름을 안 적는지, 고치면 저장 시각이 그대로이고 품목이 갈리는지, 지우면 품목도 지워지는지, 수입 기록이 안 섞이는지 |
+| `storage/__tests__/income.spec.ts` | 결정 1 · 2: 수입 모양별로 넣은 것이 그대로 되읽히는지, 사냥은 소재 수를 품목 수량에 두고 계산 입력을 사냥 입력 표에 두는지, 조각 보관을 기록 표에서 세는지 |
+| `storage/sqlite/__tests__/db-real-sqlite.test.ts` | 결정 6: 버전 15 앞의 이관(이름에서 key 채우기 · 조각 가격 0 옮기기)이 옛 표에서 그대로 도는지 |
 | `lib/__tests__/cashbook-categories.spec.ts` | 결정 3 · 7: 갈래 칸이 수입 · 지출 구분이나 같은 쪽 key 가 겹치면 표 전체를 버리는지, 서버가 더한 갈래가 차례대로 서지만 앱이 폼을 모르면 못 고르는지, 이름은 서버 값을 따르고 옛 기록 이관은 그때 이름을 쓰는지, 수량 · 관세가 종류 표의 단위 · 관세 칸을 따르는지 |
 | `app/cashbook/__tests__/SpendSheet.test.tsx` | 결정 3: 서버가 더한 갈래는 1차 시트에 이름만 서고 못 누르는지 |
 | `storage/__tests__/spend.spec.ts` | 결정 3: 번들 지출 목록의 묶음이 모두 앱이 폼을 아는 지출 갈래를 가리키는지 |

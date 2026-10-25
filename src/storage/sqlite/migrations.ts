@@ -28,12 +28,16 @@ import { dropItemKeyOfName } from '../../lib/drop/drop-items'
 import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
+import { insertEntry } from '../cashbook-entries'
+import { incomeEntryOf, spendEntryOf } from '../cashbook-entry-shape'
+import type { HuntingIncomeDetail, IncomeRecord } from '../income'
 import type { SqliteDbConnection } from '../ports'
+import type { SpendRecord } from '../spend'
 import { BOSS_DROP_RECORDS_BODY, BOSS_KEYED_TABLES } from './boss-tables'
 import { NEW_UUID_SQL } from './uuid'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 14
+export const DB_VERSION = 15
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -473,6 +477,108 @@ async function moveBossTablesToParties(db: SqliteDbConnection): Promise<void> {
      WHERE d.item_key IS NOT NULL AND d.item_key <> ''`)
 }
 
+function numberOrNull(value: unknown): number | null {
+  return (value as number | null | undefined) ?? null
+}
+
+/** 옛 지출 행을 지금 기록 모양으로. 그때의 칸 뜻 그대로 읽는다. id 는 새 uuid 다. */
+function legacySpendRecordOf(row: Row, id: string): SpendRecord {
+  const formItemKeys = textOrNull(row.form_item_keys)
+  return {
+    id,
+    ocid: textOrNull(row.ocid),
+    spentOn: row.spent_on as string,
+    // 버전 2 가 이름에서 key 를 채웠다. 못 찾은 행은 기타로 옮긴다. 버리면 그 지출이 가계부에서 사라진다.
+    category: (textOrNull(row.category_key) ?? 'etc') as SpendRecord['category'],
+    item: textOrNull(row.item),
+    itemKey: textOrNull(row.item_key),
+    formItemKeys: formItemKeys === null ? null : (JSON.parse(formItemKeys) as Record<string, string>),
+    itemKind: textOrNull(row.item_kind_key) as SpendRecord['itemKind'],
+    levelFrom: numberOrNull(row.level_from),
+    levelTo: numberOrNull(row.level_to),
+    quantity: numberOrNull(row.quantity),
+    mesoAmount: numberOrNull(row.meso_amount),
+    tariffMeso: numberOrNull(row.tariff_meso),
+    pointAmount: numberOrNull(row.point_amount),
+    pointPer100mMeso: numberOrNull(row.point_per_100m_meso),
+    cashAmount: numberOrNull(row.cash_amount),
+    memo: textOrNull(row.memo),
+    recordedAt: row.recorded_at as string,
+  }
+}
+
+/** 옛 수입 행의 사냥 칸 아홉. 수동은 친 메소가, 계산기는 놓친 마릿수가 가른다. 둘 다 없으면 `null` 이다. */
+function legacyHuntOf(row: Row): HuntingIncomeDetail | null {
+  const typedMeso = numberOrNull(row.hunt_typed_meso)
+  if (typedMeso !== null) {
+    return {
+      mode: 'manual',
+      typedMeso,
+      fragments: numberOrNull(row.hunt_fragments) ?? 0,
+      fragmentPrice: numberOrNull(row.hunt_fragment_price),
+    }
+  }
+  const missedMobs = numberOrNull(row.hunt_missed_mobs)
+  if (missedMobs === null) return null
+  const boosts = textOrNull(row.hunt_boosts) ?? ''
+  const unionTier = numberOrNull(row.hunt_union_tier)
+  return {
+    mode: 'calculator',
+    characterLevel: numberOrNull(row.hunt_character_level),
+    missedMobs,
+    boosts: boosts === '' ? [] : boosts.split(','),
+    sojae: numberOrNull(row.hunt_sojae) ?? 0,
+    fragments: numberOrNull(row.hunt_fragments) ?? 0,
+    fragmentPrice: numberOrNull(row.hunt_fragment_price),
+    mesoRate: numberOrNull(row.hunt_meso_rate) ?? 0,
+    unionTier: unionTier === 1 || unionTier === 2 ? unionTier : 3,
+  }
+}
+
+function legacyIncomeRecordOf(row: Row, id: string): IncomeRecord {
+  return {
+    id,
+    ocid: textOrNull(row.ocid),
+    earnedOn: row.earned_on as string,
+    category: (textOrNull(row.category_key) ?? 'etc') as IncomeRecord['category'],
+    item: textOrNull(row.item),
+    itemKey: textOrNull(row.item_key),
+    mesoAmount: numberOrNull(row.meso_amount),
+    pointAmount: numberOrNull(row.point_amount),
+    pointPer100mMeso: numberOrNull(row.point_per_100m_meso),
+    cashAmount: numberOrNull(row.cash_amount),
+    quantity: numberOrNull(row.quantity),
+    itemKind: textOrNull(row.item_kind_key) as IncomeRecord['itemKind'],
+    saleFeePercent: numberOrNull(row.sale_fee_percent) as IncomeRecord['saleFeePercent'],
+    saleFeeMeso: numberOrNull(row.sale_fee_meso),
+    saleFeeAuto: Number(row.sale_fee_auto) === 1,
+    hunt: legacyHuntOf(row),
+    memo: textOrNull(row.memo),
+    recordedAt: row.recorded_at as string,
+  }
+}
+
+/**
+ * 가계부 손입력 두 표를 기록 표 셋으로 옮긴다(버전 15). 옛 표는 옛 코드가 새 DB 를 열어도 열리도록 남긴다.
+ *
+ * 옛 id(`시각 + 난수`)는 새 uuid 로 바뀐다. 옛 id 를 가리키는 곳이 없다. 저장 함수와 같은 변환(`cashbook-entry-shape`)을
+ * 써서 옮긴 기록과 새로 적은 기록이 같은 모양이다. 에픽던전 형태 둘은 품목 둘로 나뉘고 금액은 단계 단가로 나뉜다.
+ */
+async function moveCashbookRecordsToEntries(db: SqliteDbConnection): Promise<void> {
+  const newId = async (): Promise<string> => {
+    const { values } = await db.query(`SELECT ${NEW_UUID_SQL} AS id`)
+    return (values?.[0] as { id: string }).id
+  }
+  const spend = await db.query('SELECT * FROM spend_records ORDER BY spent_on, recorded_at, id')
+  for (const row of spend.values ?? []) {
+    await insertEntry(db, spendEntryOf(legacySpendRecordOf(row, await newId())))
+  }
+  const income = await db.query('SELECT * FROM income_records ORDER BY earned_on, recorded_at, id')
+  for (const row of income.values ?? []) {
+    await insertEntry(db, incomeEntryOf(legacyIncomeRecordOf(row, await newId())))
+  }
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -490,6 +596,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   rekeyDropRecordsByUuid,
   dropBossProfitPeriodChecks,
   moveBossTablesToParties,
+  moveCashbookRecordsToEntries,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

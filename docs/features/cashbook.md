@@ -17,7 +17,7 @@
 | `features/cashbook/records.ts` | 저장 · 고치기 · 지우기, 원천 넷을 하루 단위로 합치기, 줄 이름 · 셈 · 금액, 그날 합계 |
 | `features/cashbook/row-icon.ts` | 하루 목록 줄의 그림 |
 | `features/ledger/useLedgerData.tsx` | 넥슨 API 회차를 관리하는 데이터 공급자. 화면은 범위를 알리고 다시 받아 달라고 요청한다 |
-| `storage/income.ts` · `storage/spend.ts` | `income_records` · `spend_records` |
+| `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` |
 | `storage/enhancement-history.ts` · `features/enhancement-history/` · `lib/enhancement/` | 강화 사용 내역 수집 · 비용 계산 · 지출 판정 |
 | `app/cashbook/IncomeSheet.tsx` · `SpendSheet.tsx` · `CategoryPicker.tsx` · `sheet-fields.tsx` | 두 시트와 공용 부품 |
 | `app/cashbook/income/` · `app/cashbook/spend/` | 분류별 폼 |
@@ -32,8 +32,8 @@
 
 | 원천 | 저장 위치 | 여기서 고치나 |
 |---|---|---|
-| 손으로 적은 지출 | `spend_records` | 예 |
-| 손으로 적은 수입 | `income_records` | 예 |
+| 손으로 적은 지출 | `cashbook_entries`(`entry_type = 'spend'`) | 예 |
+| 손으로 적은 수입 | `cashbook_entries`(`entry_type = 'income'`) | 예 |
 | 보스 결정석 | `boss_party_periods` 의 `cleared` 행(보스 수익 탭이 적는다) | 아니오. 누르면 그날 잡은 보스가 펼쳐진다([[ADR-047]] 결정 13) |
 | 아이템 판매 | `boss_drops`(보스 수익 탭이 적는다) | 아니오. 누르면 판 아이템이 펼쳐진다([[ADR-047]] 결정 13) |
 | 강화 사용 내역 | `enhancement_history`(넥슨 API 에서 받는다) | 아니오. 누르면 장비별 금액이 펼쳐진다 |

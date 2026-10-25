@@ -200,8 +200,8 @@
   없어서 빼고 센다(`incomeMesoOf` · `spendMesoOf`).
 - 강화 금액은 저장된 강화 응답으로 그때그때 계산한다(`enhancementCostOf`). `enhancement_history.cost_meso` 칸은
   비어 있다. 금액을 매기지 못한 기록은 합계에서 뺀다.
-- `spend_records.tariff_meso` 는 이미 `meso_amount` 에 들어 있어 더하지 않는다. `income_records.meso_amount` 는
-  수수료를 뺀 금액이다.
+- 지출의 관세(`tariff_meso`)는 이미 메소 총액에 들어 있어 더하지 않는다. 수입의 메소 금액은 수수료를 뺀
+  금액이다.
 - 보스 금액은 내 몫의 결정석이고, 완료하지 않은 보스 행은 빼고 센다.
 
 ### 결정 14. 기록은 한 번에 읽고, 집계는 순수 함수가 한다

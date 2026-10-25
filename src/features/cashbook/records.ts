@@ -59,6 +59,7 @@ import { starforceMvpDiscountResolver } from '../../lib/mvp/starforce'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
 import { comparableEquipmentName } from '../../lib/equipment/equipment-items'
 import { datesBetween } from '../../lib/calendar'
+import { randomUuid } from '../../native/uuid'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import { getLastHunts, setLastHunt, type LastHunt, type LastHunts } from '../../storage/last-hunts'
 import {
@@ -72,18 +73,9 @@ import {
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
 export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
 
-/**
- * 행 하나의 신원. 자연키가 없어서 필요하다. 손입력은 같은 날 같은 것을 두 번이 정상이다.
- *
- * `crypto.randomUUID` 를 안 쓰는 것은 Hermes 에 없기 때문이다. 충돌만 안 나면 되는 로컬 키라
- * 시각 + 난수로 충분하다.
- */
-function newRecordId(now: Date): string {
-  return `${now.getTime().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
-}
 
 export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void> {
-  await insertIncomeRecord({ ...draft, id: newRecordId(now), recordedAt: now.toISOString() })
+  await insertIncomeRecord({ ...draft, id: randomUuid(), recordedAt: now.toISOString() })
   // 저장이 성공한 뒤에만 기억한다.
   const remembered = lastHuntOf(draft)
   if (remembered !== null) await setLastHunt(remembered.ocid, remembered.hunt)
@@ -111,7 +103,7 @@ export function nextLastHunts(draft: IncomeDraft, current: LastHunts): LastHunts
 }
 
 export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
-  await insertSpendRecord({ ...draft, id: newRecordId(now), recordedAt: now.toISOString() })
+  await insertSpendRecord({ ...draft, id: randomUuid(), recordedAt: now.toISOString() })
   // 저장이 성공한 뒤에만 기억한다. 던진 입력의 시세를 다음 기본값으로 남기면 안 된다.
   if (draft.pointPer100mMeso !== null) {
     await setLastPointRate(draft.pointPer100mMeso)
