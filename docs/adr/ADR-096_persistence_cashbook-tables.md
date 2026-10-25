@@ -26,28 +26,31 @@
 
 ## 결정
 
-### 결정 1. 수입과 지출을 테이블 하나로 합치고, 수입과 지출은 `flow` 칸으로 가른다
+### 결정 1. 수입과 지출을 테이블 하나로 합치고, 수입과 지출은 `entry_type` 칸으로 가른다
 
 ```
-cashbook_records         id · ocid · flow · category_key · group_key · entry_date · memo · created_at · updated_at
-  ├ cashbook_record_lines  id · record_id · position · item_key · custom_name · form_key · item_kind_key
-  │                        · quantity · level_from · level_to · 금액 칸
-  └ cashbook_hunt_inputs   id · record_id · 사냥 계산기 입력
+cashbook_entries               id · ocid · entry_type · category_key · entry_date · memo · created_at · updated_at
+  ├ cashbook_entry_items       id · entry_id · sort_order · item_key · item_name · form_key · item_kind_key
+  │                            · quantity · from_level · to_level · 금액 칸
+  └ cashbook_entry_hunt_inputs id · entry_id · 사냥 계산기 입력
 ```
 
-- `flow` 는 `income` · `spend` 둘이다. 하루 목록과 기간 합계를 테이블 하나에서 읽으려고 합쳤다(사용자 선택).
-- `category_key` 는 `flow` 와 함께 읽는다. 기타(`etc`)가 수입과 지출 양쪽에 있기 때문이다.
+- `entry_type` 은 `income` · `spend` 둘이다. 하루 목록과 기간 합계를 테이블 하나에서 읽으려고 합쳤다(사용자 선택).
+- `category_key` 는 `entry_type` 과 함께 읽는다. 기타(`etc`)가 수입과 지출 양쪽에 있기 때문이다.
 - `entry_date` 는 돈이 오간 날(KST `YYYY-MM-DD`)이고, 시트에서 고르며 고칠 수 있다. 달력 칸 · 하루 목록 · 기간 합계가
   이 값으로 기록을 놓는다. `created_at` 은 저장한 시각이라 사용자가 못 고치고, 같은 날 안의 차례를 정한다. 이름은 서버의
   날짜 칸 규칙(`from_date` 처럼 `_date`)을 따랐다. 옛 `spent_on` · `earned_on` 을 옮긴다(사용자 지정).
-- 사냥 계산기 입력은 수입 사냥에만 있어서 `cashbook_hunt_inputs` 로 뺀다. 기록 하나에 0개나 1개다. 합친 테이블에 두면
+- 이름 규칙은 서버를 따른다(사용자 선택). 차례는 `sort_order`, 금액은 `amount_meso` · `amount_point` · `amount_cash` 처럼
+  `무엇_화폐` 꼴, 직접 친 품목 이름은 `item_name`, 심볼 레벨은 `from_level` · `to_level` 이다. 나중에 서버로 올릴 때(#507)
+  칸 이름을 다시 바꾸지 않아도 된다.
+- 사냥 계산기 입력은 수입 사냥에만 있어서 `cashbook_entry_hunt_inputs` 로 뺀다. 기록 하나에 0개나 1개다. 합친 테이블에 두면
   지출 행마다 빈 칸이 열 개 넘게 붙는다.
 - 보스 결정석 · 보스 드롭 판매 · 강화 지출은 원천 테이블(보스 기록 테이블 · `enhancement_history`)에 그대로 둔다. 카드는
   같은 두 줄 규칙으로 그린다.
 
-### 결정 2. 금액 · 수수료 · 관세는 품목 줄마다 둔다
+### 결정 2. 금액 · 수수료 · 관세는 품목마다 둔다
 
-기록 한 건의 금액은 그 기록에 딸린 줄의 금액을 더한 값이다. 기록 행에는 금액 칸을 두지 않는다. 두 곳에 두면 줄 합계와
+기록 한 건의 금액은 그 기록에 딸린 품목의 금액을 더한 값이다. 기록 행에는 금액 칸을 두지 않는다. 두 곳에 두면 줄 합계와
 기록 금액이 어긋날 수 있기 때문이다. 줄마다 두면 품목별 금액 표시나 품목별 통계를 나중에 더할 수 있다(사용자 선택).
 
 메소 · 포인트 · 포인트 시세 · 캐시 금액과 판매 수수료(`sale_fee_*`) · 구매 관세(`tariff_meso`)가 모두 줄의 칸이다.
@@ -56,7 +59,7 @@ cashbook_records         id · ocid · flow · category_key · group_key · entr
 ### 결정 3. 카드 이름은 서버 참조표에 두고, 기록은 key 와 숫자만 갖는다
 
 - 첫 줄 제목은 묶음의 `card_title` 이다. 묶음이 없는 갈래(심볼 강화 · 아이템 구매 · 기타 · 사냥 등)는 갈래의 제목을 쓴다.
-- 둘째 줄은 줄마다 항목의 `name`(직접 친 품목이면 `custom_name`)에 형태 · 단계 · 레벨 · 수량을 이어 적는다.
+- 둘째 줄은 줄마다 항목의 `name`(직접 친 품목이면 `item_name`)에 형태 · 단계 · 레벨 · 수량을 이어 적는다.
 - 항목의 `name` 은 원본 이름이다. 화면 자리가 좁아 줄여 쓰던 이름은 새 칸 `short_name` 에 따로 두고, 시트 타일처럼 좁은
   곳에서만 쓴다. 비어 있으면 `name` 을 쓴다. 카드 이름 칸을 따로 두지 않는 이유는 원본 이름이 곧 카드 이름이라 칸이
   겹치기 때문이다(사용자 지정 2026-10-25). 예를 들어 `블루베리 농장 입장권` 이 `name`, `블루베리 농장` 이 `short_name` 이다.
