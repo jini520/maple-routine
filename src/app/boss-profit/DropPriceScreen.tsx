@@ -374,7 +374,7 @@ export function DropPriceScreen(): React.JSX.Element {
             <EmptyState
               icon={PackageOpenIcon}
               title={`${cycle === 'weekly' ? '이 주' : '이 달'}에 기록된 아이템이 없습니다`}
-              description="보스 수익에서 아이템을 먼저 기록하면 여기서 값을 매길 수 있습니다"
+              description="보스 수입에서 아이템을 먼저 기록하면 여기서 값을 매길 수 있습니다"
             />
           ) : (
             <>
@@ -383,7 +383,7 @@ export function DropPriceScreen(): React.JSX.Element {
               <View>
                 <View className="h-6 flex-row items-center">
                   <Text className="text-xs font-semibold tracking-wide text-text-muted">
-                    {cycle === 'weekly' ? '이 주' : '이 달'} 아이템 수익
+                    {cycle === 'weekly' ? '이 주' : '이 달'} 아이템 수입
                   </Text>
                   {/* 가격을 **입력한** 것만 센다. 기록 안함은 값을 매기지 않기로 한 결정이고,
                       스킵은 아무것도 저장하지 않아 미입력에 머무른다. */}

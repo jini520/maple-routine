@@ -9,4 +9,4 @@ export const SETTLEMENT_BANNER_TITLE = '스케줄러 데이터를 결산 중입�
 
 export const SETTLEMENT_BANNER_DETAIL_TODAY = '일부 데이터가 갱신되지 않을 수 있습니다.'
 
-export const SETTLEMENT_BANNER_DETAIL_LEDGER = '오늘 잡은 보스 수익은 결산이 끝난 뒤 반영됩니다.'
+export const SETTLEMENT_BANNER_DETAIL_LEDGER = '오늘 잡은 보스 수입은 결산이 끝난 뒤 반영됩니다.'

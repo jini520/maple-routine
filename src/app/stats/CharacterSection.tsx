@@ -44,7 +44,7 @@ function Grow(props: {
   )
 }
 
-const TABS = ['순수익', '수익', '지출'] as const
+const TABS = ['순 수익', '수입', '지출'] as const
 type Tab = (typeof TABS)[number]
 
 /** 전신 칸(`FIGURE_BOX`)을 이 폭으로 줄여 세운다 */
@@ -60,7 +60,7 @@ const AMOUNT_PAD = 2
 const PODIUM_ORDER = [1, 0, 2]
 
 function valueOf(row: CharacterTotals, tab: Tab): number {
-  return tab === '순수익' ? row.netMeso : tab === '수익' ? row.incomeMeso : row.expenseMeso
+  return tab === '순 수익' ? row.netMeso : tab === '수입' ? row.incomeMeso : row.expenseMeso
 }
 
 function signed(meso: number): string {
@@ -92,9 +92,9 @@ export const CharacterSection = memo(function CharacterSection(props: {
   /** 바뀌면 막대가 다시 자란다. 화면이 기간으로 준다 */
   replayKey?: string
 }): React.JSX.Element {
-  const [tab, setTab] = useState<Tab>('순수익')
+  const [tab, setTab] = useState<Tab>('순 수익')
   const progress = useRevealProgress(props.revealed ?? true, `${props.replayKey ?? ''}|${tab}`)
-  const net = tab === '순수익'
+  const net = tab === '순 수익'
   const textScale = useTextScale()
 
   const shown = props.rows
@@ -125,7 +125,12 @@ export const CharacterSection = memo(function CharacterSection(props: {
         <View className="flex-1 gap-2">
           <View className="flex-row items-baseline gap-1.5">
             <Text className="text-11 text-text-muted">{tab}</Text>
-            <Text className="text-sm font-bold text-text" style={TABULAR_NUMS}>
+            <Text
+              testID="stats-characters-total"
+              // 수입은 붉은색, 지출은 파란색이다. 순 수익은 부호를 따른다.
+              className={`text-sm font-bold ${(net ? total >= 0 : tab !== '지출') ? 'text-rise-ink' : 'text-fall-ink'}`}
+              style={TABULAR_NUMS}
+            >
               {net ? signed(total) : formatMesoCompact(total)}
             </Text>
           </View>

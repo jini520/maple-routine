@@ -37,9 +37,9 @@ describe('세그먼트', () => {
     expect(순위(view)).toEqual(['가', '나', '다'])
   })
 
-  it('수익을 고르면 수익 합계와 수익 순위로 바뀐다', async () => {
+  it('수입을 고르면 수입 합계와 수입 순위로 바뀐다', async () => {
     const view = await 위젯()
-    await 고르기(view, '수익')
+    await 고르기(view, '수입')
 
     expect(view.getByTestId('weekly-income-total').props.children).toBe('+21억')
     expect(순위(view)).toEqual(['가', '다', '나'])
@@ -56,7 +56,7 @@ describe('세그먼트', () => {
 })
 
 describe('캐릭터 줄의 팝오버', () => {
-  it('순 수익에서는 그 캐릭터의 수익 갈래와 지출 갈래를 함께 띄운다', async () => {
+  it('순 수익에서는 그 캐릭터의 수입 갈래와 지출 갈래를 함께 띄운다', async () => {
     const view = await 위젯()
 
     await act(async () => {
@@ -69,9 +69,9 @@ describe('캐릭터 줄의 팝오버', () => {
     expect(within(popover).getByText('스타포스')).toBeTruthy()
   })
 
-  it('수익에서는 수익 갈래만 띄운다', async () => {
+  it('수입에서는 수입 갈래만 띄운다', async () => {
     const view = await 위젯()
-    await 고르기(view, '수익')
+    await 고르기(view, '수입')
 
     await act(async () => {
       fireEvent.press(view.getAllByTestId('weekly-income-rank')[0])

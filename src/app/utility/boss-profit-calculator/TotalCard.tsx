@@ -97,8 +97,8 @@ export function TotalCard(props: {
           slices={rows.map((row) => ({ key: row.key, value: row.meso, color: row.color }))}
           label={
             empty
-              ? '캐릭터별 수익 분포. 고른 보스가 없습니다'
-              : `캐릭터별 수익 분포. ${rows.map((row) => `${row.name} ${percentOf(row.meso, total)}`).join(', ')}`
+              ? '캐릭터별 수입 분포. 고른 보스가 없습니다'
+              : `캐릭터별 수입 분포. ${rows.map((row) => `${row.name} ${percentOf(row.meso, total)}`).join(', ')}`
           }
         >
           <Text className="text-11 font-semibold text-text-muted">캐릭터</Text>
@@ -154,7 +154,7 @@ export function TotalCard(props: {
       </View>
       <View className="-mx-1.5 gap-0.5 rounded-2xl bg-bg px-3 pb-3 pt-2.5">
         <View className="flex-row items-baseline justify-between gap-3">
-          <Text className="text-13 font-semibold text-text">주간 보스 예상 수익</Text>
+          <Text className="text-13 font-semibold text-text">주간 보스 예상 수입</Text>
           <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>
             {earningCount}캐릭터 · 보스 {props.bossCount}
           </Text>

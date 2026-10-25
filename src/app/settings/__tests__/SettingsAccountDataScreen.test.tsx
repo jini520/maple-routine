@@ -157,7 +157,7 @@ describe('SettingsAccountDataScreen', () => {
     const view = await renderOverlay(<SettingsAccountDataScreen />)
 
     await press(rowOf(view, '캐시 데이터 삭제'))
-    await press(view.getByLabelText('수익·지출 기록'))
+    await press(view.getByLabelText('수입·지출 기록'))
     await press(view.getByText(/^삭제/))
 
     expect(mockedClearAndReload).toHaveBeenCalledTimes(1)

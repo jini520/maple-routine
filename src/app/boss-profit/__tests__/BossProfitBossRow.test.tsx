@@ -122,7 +122,7 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
     const { getByText, queryByLabelText } = await renderProfit(<BossProfitBossRow row={보스행()} drops={[]} />)
 
     expect(getByText('6,800,000,000 메소')).toBeTruthy()
-    expect(queryByLabelText(`${주간보스이름} 아이템 수익 확인`)).toBeNull()
+    expect(queryByLabelText(`${주간보스이름} 아이템 수입 확인`)).toBeNull()
   })
 
   // 칩을 걷고 **금액 자체가 버튼**이 됐다(사용자 지시). 숫자만 남으면 눌린다는 것이 안 보이므로
@@ -134,7 +134,7 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
 
     // 결정석 68억 + 아이템 30억/3인 = 10억
     expect(getByText('7,800,000,000 메소')).toBeTruthy()
-    expect(getByLabelText(`${주간보스이름} 아이템 수익 확인`)).toBeTruthy()
+    expect(getByLabelText(`${주간보스이름} 아이템 수입 확인`)).toBeTruthy()
     expect(getByTestId('item-revenue-underline')).toBeTruthy()
     expect(queryByText(/^아이템 \+/)).toBeNull()
   })
@@ -146,7 +146,7 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
     )
 
     expect(queryByTestId('item-revenue-underline')).toBeNull()
-    expect(queryByLabelText(`${주간보스이름} 아이템 수익 확인`)).toBeNull()
+    expect(queryByLabelText(`${주간보스이름} 아이템 수입 확인`)).toBeNull()
   })
 
   // 값이 안 매겨진 드롭은 금액을 바꾸지 않는다. 칩도 서지 않는다.
@@ -159,7 +159,7 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
     )
 
     expect(getByText('6,800,000,000 메소')).toBeTruthy()
-    expect(queryByLabelText(`${주간보스이름} 아이템 수익 확인`)).toBeNull()
+    expect(queryByLabelText(`${주간보스이름} 아이템 수입 확인`)).toBeNull()
   })
 
   it('칩을 누르면 내역 팝오버가 뜬다', async () => {
@@ -169,7 +169,7 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
 
     expect(queryByTestId('item-revenue-popover')).toBeNull()
     await act(async () => {
-      fireEvent.press(getByLabelText(`${주간보스이름} 아이템 수익 확인`))
+      fireEvent.press(getByLabelText(`${주간보스이름} 아이템 수입 확인`))
     })
 
     expect(getByTestId('item-revenue-popover')).toBeTruthy()
@@ -212,7 +212,7 @@ describe('BossProfitBossRow: 아이템 차례', () => {
       <BossProfitBossRow row={보스행()} drops={drops} />,
     )
     await act(async () => {
-      fireEvent.press(getByLabelText(`${주간보스이름} 아이템 수익 확인`))
+      fireEvent.press(getByLabelText(`${주간보스이름} 아이템 수입 확인`))
     })
 
     // 이름 줄의 자식은 `[이름, 레벨 배지 또는 false]` 라 통째로 문자열로 만들면 안 된다.

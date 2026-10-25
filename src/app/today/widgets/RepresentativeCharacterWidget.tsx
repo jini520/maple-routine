@@ -45,7 +45,11 @@ function Figure(props: { view: RepresentativeView }): React.JSX.Element {
   return (
     // 왼쪽을 더 띄운다. 칸 좌우를 잘라 캐릭터가 카드 여백(12)에 거의 붙는다
     <View style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT }} className="ml-2 shrink-0">
-      <View style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT, overflow: 'hidden' }}>
+      {/* 좌우를 뒤집어 캐릭터가 오른쪽 열(닉네임 · 레벨)을 바라보게 한다(사용자 지정). 자르는 몫이 좌우 같아 칸은 그대로다. */}
+      <View
+        testID="representative-figure-frame"
+        style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT, overflow: 'hidden', transform: [{ scaleX: -1 }] }}
+      >
         <Image
           testID="representative-figure"
           accessibilityLabel={props.view.name}

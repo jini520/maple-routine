@@ -16,7 +16,7 @@ export const dropItemRecordGuide: FeatureGuide = {
         {
           image: {
             src: buttonImage,
-            alt: '보스 수익의 보스 한 줄. 난이도 칩과 보스 이름, 파티 인원 스테퍼, 오른쪽 위 ‘+ 드롭 추가’ 버튼',
+            alt: '보스 수입의 보스 한 줄. 난이도 칩과 보스 이름, 파티 인원 스테퍼, 오른쪽 위 ‘+ 드롭 추가’ 버튼',
           },
         },
         {

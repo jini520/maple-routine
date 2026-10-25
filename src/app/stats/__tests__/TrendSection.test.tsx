@@ -51,13 +51,13 @@ beforeEach(() => {
 })
 
 describe('TrendSection', () => {
-  it('막대를 누르면 그 주의 순수익과 수입 · 지출이 뜨고, 다시 누르면 닫힌다', async () => {
+  it('막대를 누르면 그 주의 순 수익과 수입 · 지출이 뜨고, 다시 누르면 닫힌다', async () => {
     const view = await 그리기()
 
     await 누르기(view, '9월 4주차 보기')
 
     expect(view.getByTestId('stats-trend-bubble-title').props.children).toBe('9월 4주차')
-    expect(view.getByTestId('stats-trend-bubble-value').props.children).toBe('순수익 +3억')
+    expect(view.getByTestId('stats-trend-bubble-value').props.children).toBe('순 수익 +3억')
     expect(view.getByTestId('stats-trend-bubble-sub').props.children).toBe('수입 5억 · 지출 2억')
 
     await 누르기(view, '9월 4주차 보기')
@@ -91,7 +91,7 @@ describe('TrendSection', () => {
     const view = await 그리기()
 
     // 여덟 주의 순수익 합은 +1억이다.
-    expect(view.getByTestId('stats-trend-average').props.children).toBe('8주 평균 순수익 +1,250만')
+    expect(view.getByTestId('stats-trend-average').props.children).toBe('8주 평균 순 수익 +1,250만')
   })
 })
 

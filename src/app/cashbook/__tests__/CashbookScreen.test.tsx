@@ -1646,7 +1646,7 @@ describe('기간 합계 세 칸', () => {
    * 값**이라 약하게 서고, 답인 순 수익만 크게 선다. 값을 박지 않고 **셋을 서로 견준다**: 지켜야 할
    * 것은 16px이 아니라 답이 재료보다 크다 는 관계다.
    */
-  it('순 수익이 수익·지출보다 크고 굵다', async () => {
+  it('순 수익이 수입·지출보다 크고 굵다', async () => {
     const view = await 그리기()
 
     const 수익 = flattenStyle(view.getByTestId('cashbook-summary-income').props.style)
@@ -1682,7 +1682,7 @@ describe('기간 합계 세 칸', () => {
     expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent(/^0$/)
   })
 
-  it('순 수익이 양수면 수익과 같은 색이다', async () => {
+  it('순 수익이 양수면 수입과 같은 색이다', async () => {
     칸금액을({
       '2026-08-21': { incomeMeso: 30_000_000, expenseMeso: 10_000_000 },
     })
@@ -2040,7 +2040,7 @@ describe('결산 안내 줄', () => {
     expect(view.queryByTestId('cashbook-settlement-banner')).toBeNull()
   })
 
-  it('결산 중이면 머리글 아래에 서고 둘째 줄이 보스 수익이 늦는다고 말한다', async () => {
+  it('결산 중이면 머리글 아래에 서고 둘째 줄이 보스 수입이 늦는다고 말한다', async () => {
     useSettlementStore.setState({
       settling: true,
       startedAt: '2026-10-18T15:00:00.000Z',
@@ -2051,6 +2051,6 @@ describe('결산 안내 줄', () => {
     const view = await 그리기()
 
     expect(view.getByTestId('cashbook-settlement-banner')).toBeTruthy()
-    expect(view.getByText('오늘 잡은 보스 수익은 결산이 끝난 뒤 반영됩니다.')).toBeTruthy()
+    expect(view.getByText('오늘 잡은 보스 수입은 결산이 끝난 뒤 반영됩니다.')).toBeTruthy()
   })
 })

@@ -55,7 +55,7 @@ describe('칸', () => {
     })
 
     const 줄 = [0, 1].map((index) => view.getByTestId(`quick-links-row-${index}`))
-    expect(줄[0]).toHaveTextContent(/^보스 수익통계보스 관리분배금 계산설정$/)
+    expect(줄[0]).toHaveTextContent(/^보스 수입통계보스 관리분배금 계산설정$/)
     expect(줄[1]).toHaveTextContent(/^보스공지$/)
   })
 

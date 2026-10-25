@@ -171,7 +171,7 @@ describe('고가 드롭 강조', () => {
   })
 })
 
-describe('아이템 수익', () => {
+describe('아이템 수입', () => {
   const 값매긴드롭 = {
     [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [
       드롭({ priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 1 }),
@@ -184,7 +184,7 @@ describe('아이템 수익', () => {
       컨텍스트값({ dropsByRowKey: 값매긴드롭 }),
     )
 
-    expect(getByLabelText('지내우시 아이템 수익 확인')).toBeTruthy()
+    expect(getByLabelText('지내우시 아이템 수입 확인')).toBeTruthy()
     expect(getByTestId('item-revenue-underline')).toBeTruthy()
     expect(queryByText(/^아이템 \+/)).toBeNull()
   })
@@ -196,7 +196,7 @@ describe('아이템 수익', () => {
       컨텍스트값({ dropsByRowKey: 미입력 }),
     )
 
-    expect(queryByLabelText('지내우시 아이템 수익 확인')).toBeNull()
+    expect(queryByLabelText('지내우시 아이템 수입 확인')).toBeNull()
   })
 
   it('`priceMeso` 는 있는데 `priceState` 가 없으면 여전히 칩이 없다. 여기가 값이 새는 자리다', async () => {
@@ -208,7 +208,7 @@ describe('아이템 수익', () => {
       컨텍스트값({ dropsByRowKey: 상태없음 }),
     )
 
-    expect(queryByLabelText('지내우시 아이템 수익 확인')).toBeNull()
+    expect(queryByLabelText('지내우시 아이템 수입 확인')).toBeNull()
   })
 
   it('스킵한 아이템은 칩을 만들지 않는다', async () => {
@@ -222,7 +222,7 @@ describe('아이템 수익', () => {
       컨텍스트값({ dropsByRowKey: 스킵 }),
     )
 
-    expect(queryByLabelText('지내우시 아이템 수익 확인')).toBeNull()
+    expect(queryByLabelText('지내우시 아이템 수입 확인')).toBeNull()
   })
 
   it('칩을 눌러도 아코디언이 펼쳐지지 않는다. 내역 상자만 뜬다', async () => {
@@ -232,7 +232,7 @@ describe('아이템 수익', () => {
     )
 
     await act(async () => {
-      fireEvent.press(getByLabelText('지내우시 아이템 수익 확인'))
+      fireEvent.press(getByLabelText('지내우시 아이템 수입 확인'))
     })
 
     expect(getByTestId('item-revenue-popover')).toBeTruthy()
@@ -240,7 +240,7 @@ describe('아이템 수익', () => {
   })
 })
 
-describe('카드 수익 내역 상자', () => {
+describe('카드 수입 내역 상자', () => {
   function 값매김(itemName: string, priceMeso: number): RecordedDrop {
     return 드롭({ itemKey: null, itemName, priceState: 'entered', priceMeso, priceShare: 1 })
   }
@@ -251,7 +251,7 @@ describe('카드 수익 내역 상자', () => {
   ): Promise<ReturnType<typeof renderProfit>> {
     const view = await renderProfit(<CharacterAccordion group={group} />, context)
     await act(async () => {
-      fireEvent.press(view.getByLabelText('지내우시 아이템 수익 확인'))
+      fireEvent.press(view.getByLabelText('지내우시 아이템 수입 확인'))
     })
     return view
   }
@@ -556,7 +556,7 @@ describe('조회 불가 카드의 얼굴', () => {
 describe('월간 탭의 조회 불가 카드', () => {
   const 월간컨텍스트 = 컨텍스트값({ tab: 'monthly' })
 
-  it('그 달 수익이 0이면 머리의 금액 자리에 배지가 선다', async () => {
+  it('그 달 수입이 0이면 머리의 금액 자리에 배지가 선다', async () => {
     const 빈달 = 그룹([], [주차소계({ state: 'confirmedEmpty', totalMeso: 0 })])
     const { getByTestId } = await renderProfit(
       <CharacterAccordion group={빈달} issue="unavailable" />,
@@ -567,7 +567,7 @@ describe('월간 탭의 조회 불가 카드', () => {
   })
 
   // 한 주라도 기록이 있으면 그 돈은 이미 받아 둔 사실이다. 배지로 덮으면 번 돈을 숨긴다.
-  it('한 주라도 수익이 있으면 머리는 금액을 그린다', async () => {
+  it('한 주라도 수입이 있으면 머리는 금액을 그린다', async () => {
     const 번달 = 그룹([], [주차소계({ state: 'recorded', totalMeso: 1_000 })])
     const { queryByTestId } = await renderProfit(
       <CharacterAccordion group={번달} issue="unavailable" />,

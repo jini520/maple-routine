@@ -303,10 +303,10 @@ export function DropHistoryScreen(): React.JSX.Element {
           <EmptyState
             icon={ScrollTextIcon}
             title="아직 기록된 드롭이 없습니다"
-            description="보스 수익 화면에서 보스를 눌러 드롭을 기록하면 여기에 쌓입니다"
+            description="보스 수입 화면에서 보스를 눌러 드롭을 기록하면 여기에 쌓입니다"
             // 이 화면은 언제나 그 탭이 민 것이라(딥링크 없음) pop 이 곧 그 목적지이고, 새로
             // push 하면 같은 화면이 스택에 두 겹 쌓인다.
-            action={{ label: '보스 수익으로', onClick: () => navigation.goBack() }}
+            action={{ label: '보스 수입으로', onClick: () => navigation.goBack() }}
           />
         )}
 

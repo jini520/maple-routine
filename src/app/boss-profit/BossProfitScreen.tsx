@@ -270,7 +270,7 @@ export function BossProfitScreen(): React.JSX.Element {
       <View testID="screen-Profit" className="flex-1 p-4" style={{ paddingTop: topSafeAreaPx }}>
         {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다. */}
         <PageHeaderTitleRow>
-          <Text className="text-lg font-semibold text-text">보스 수익</Text>
+          <Text className="text-lg font-semibold text-text">보스 수입</Text>
         </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
@@ -278,7 +278,7 @@ export function BossProfitScreen(): React.JSX.Element {
             size="page"
             icon="leaf"
             title="추적 중인 캐릭터가 없습니다"
-            description="설정에서 캐릭터를 선택하면 수익 현황을 확인할 수 있습니다"
+            description="설정에서 캐릭터를 선택하면 수입 현황을 확인할 수 있습니다"
             action={{
               label: '캐릭터 선택하러 가기',
               // 피커를 열어 둔 채로 설정 탭에 보낸다.
@@ -357,7 +357,7 @@ export function BossProfitScreen(): React.JSX.Element {
           </View>
         }
       >
-        <Text className="text-lg font-semibold text-text">보스 수익</Text>
+        <Text className="text-lg font-semibold text-text">보스 수입</Text>
       </PageHeaderTitleRow>
     </View>
   )
@@ -382,7 +382,7 @@ export function BossProfitScreen(): React.JSX.Element {
       {!isPeriodLoading && (characterGroups.length > 0 || periodPendingAggregation) && (
         <View testID="boss-profit-summary" className="gap-2 rounded-[14px] bg-surface p-3">
           <View className="h-6 flex-row items-center">
-            <Text className="text-11 font-bold text-text-muted">{periodLabel.primary} 총 수익</Text>
+            <Text className="text-11 font-bold text-text-muted">{periodLabel.primary} 총 수입</Text>
             {periodValuableDrops.length > 0 && (
               <View className="ml-auto">
                 <ValuableDropMark drops={periodValuableDrops} label="이 기간 고가 드롭" />
@@ -418,7 +418,7 @@ export function BossProfitScreen(): React.JSX.Element {
             <Pressable
               ref={periodChipRef}
               role="button"
-              aria-label="총 수익 자세히 보기"
+              aria-label="총 수입 자세히 보기"
               aria-expanded={isPeriodPopoverOpen}
               onPress={togglePeriodPopover}
               className="ml-auto h-[30px] shrink-0 flex-row items-center gap-0.5 rounded-[10px] bg-card-inset px-2.5"
@@ -481,7 +481,7 @@ export function BossProfitScreen(): React.JSX.Element {
                 <EmptyState
                   icon={ProfitIcon}
                   title="아직 처치한 보스가 없습니다"
-                  description="보스를 처치하면 수익이 자동으로 집계됩니다"
+                  description="보스를 처치하면 수입이 자동으로 집계됩니다"
                 />
               ))}
 

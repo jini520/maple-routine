@@ -48,7 +48,7 @@ export const SETTLEMENT_FAQ: readonly FaqItem[] = [
     answer: [
       {
         kind: 'paragraph',
-        text: '결산 중에는 처치 날짜를 결정할 수 없어 보스 수익 화면에만 보입니다. 결산이 끝나면 가계부와 통계에도 정상적으로 기록됩니다.',
+        text: '결산 중에는 처치 날짜를 결정할 수 없어 보스 수입 화면에만 보입니다. 결산이 끝나면 가계부와 통계에도 정상적으로 기록됩니다.',
       },
     ],
   },

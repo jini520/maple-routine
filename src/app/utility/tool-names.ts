@@ -8,4 +8,4 @@
  * 보이는 말이고, 식별자는 무엇을 계산하는가 라 축이 다르다.
  */
 export const ITEM_SPLIT_TOOL_NAME = '판매 분배금 계산기'
-export const BOSS_PROFIT_CALCULATOR_TOOL_NAME = '주간 보스 수익 계산기'
+export const BOSS_PROFIT_CALCULATOR_TOOL_NAME = '주간 보스 수입 계산기'

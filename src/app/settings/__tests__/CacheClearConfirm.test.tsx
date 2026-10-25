@@ -62,7 +62,7 @@ describe('CacheClearConfirm', () => {
     const view = await renderOverlay(<CacheClearConfirm {...props()} />)
 
     expect(view.getByLabelText('일반 데이터').props.accessibilityState?.checked).toBe(true)
-    expect(view.getByLabelText('수익·지출 기록').props.accessibilityState?.checked).toBe(true)
+    expect(view.getByLabelText('수입·지출 기록').props.accessibilityState?.checked).toBe(true)
   })
 
   // 조회 전에도 같은 자리·같은 타이포로 자리를 잡는다.
@@ -77,7 +77,7 @@ describe('CacheClearConfirm', () => {
 
     expect(view.getByText('삭제 (1.5KB)')).toBeTruthy()
 
-    await press(view.getByLabelText('수익·지출 기록'))
+    await press(view.getByLabelText('수입·지출 기록'))
 
     expect(view.getByText('삭제 (1.0KB)')).toBeTruthy()
   })
@@ -96,7 +96,7 @@ describe('CacheClearConfirm', () => {
     const view = await renderOverlay(<CacheClearConfirm {...props()} />)
 
     await press(view.getByLabelText('일반 데이터'))
-    await press(view.getByLabelText('수익·지출 기록'))
+    await press(view.getByLabelText('수입·지출 기록'))
 
     expect(confirmButton(view).props.accessibilityState?.disabled).toBe(true)
   })
@@ -105,7 +105,7 @@ describe('CacheClearConfirm', () => {
     const onConfirm = jest.fn()
     const view = await renderOverlay(<CacheClearConfirm {...props({ onConfirm })} />)
 
-    await press(view.getByLabelText('수익·지출 기록'))
+    await press(view.getByLabelText('수입·지출 기록'))
     await press(confirmButton(view))
 
     expect(onConfirm).toHaveBeenCalledWith({ general: true, records: false })

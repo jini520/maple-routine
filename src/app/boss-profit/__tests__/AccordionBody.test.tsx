@@ -142,7 +142,7 @@ describe('WeeklySubtotalRow: 상태마다 얼굴이 다르다', () => {
     )
 
     await act(async () => {
-      fireEvent.press(getByLabelText('이번 주 아이템 수익 확인'))
+      fireEvent.press(getByLabelText('이번 주 아이템 수입 확인'))
     })
 
     expect(getByTestId('item-revenue-popover')).toBeTruthy()
@@ -261,7 +261,7 @@ describe('MonthlyAccordionBody', () => {
       <MonthlyAccordionBody bossRows={[]} weeklySubtotals={[주차소계()]} />,
     )
 
-    expect(queryByText('월간 보스 수익')).toBeNull()
+    expect(queryByText('월간 보스 수입')).toBeNull()
   })
 })
 

@@ -321,7 +321,7 @@ export function CharacterAccordion(props: {
             <View className="h-[22px] justify-center">
               <MoneyBox
                 wrap={hasItemRevenue}
-                label={`${group.characterName} 아이템 수익 확인`}
+                label={`${group.characterName} 아이템 수입 확인`}
                 isOpen={isItemPopoverOpen}
                 onPress={toggleItemPopover}
                 triggerRef={itemChipRef}

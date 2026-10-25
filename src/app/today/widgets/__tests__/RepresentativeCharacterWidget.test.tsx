@@ -180,3 +180,11 @@ describe('조회 불가 대표의 얼굴', () => {
     expect(queryByTestId('portrait-unavailable')).toBeNull()
   })
 })
+
+describe('전신 그림', () => {
+  it('좌우를 뒤집어 그린다', async () => {
+    const view = await 위젯()
+
+    expect(flattenStyle(view.getByTestId('representative-figure-frame').props.style).transform).toEqual([{ scaleX: -1 }])
+  })
+})

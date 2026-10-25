@@ -85,7 +85,7 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
   const revealStyle = useAnimatedStyle(() => ({ width: width * progress.value }))
 
   return (
-    <StatsSection title="누적 순수익" testID="stats-cumulative">
+    <StatsSection title="누적 순 수익" testID="stats-cumulative">
       <View className="flex-row items-end gap-2">
         <Text testID="stats-cumulative-total" className={`text-2xl font-bold ${total >= 0 ? 'text-rise-ink' : 'text-fall-ink'}`} style={TABULAR_NUMS}>
           {signed(total)}{' '}
