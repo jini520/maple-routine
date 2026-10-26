@@ -197,4 +197,5 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-099](./adr/ADR-099_server-sync_records.md) | 🟢 | server-sync | 보스 처치 · 가계부 · 강화 합계의 최종값 서버 전송 |
 | [ADR-100](./adr/ADR-100_cashbook_enhancement-totals.md) | ⚪ | cashbook | 강화 합계 저장과 재계산 요청 |
 | [ADR-101](./adr/ADR-101_auth_multi-account.md) | ⚪ | auth | 다계정 |
+| [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | ⚪ | server-sync | 예상하지 못한 상황의 서버 로그 |
 | [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |

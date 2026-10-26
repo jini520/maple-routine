@@ -27,7 +27,7 @@ export async function getBackfillState(): Promise<BackfillState> {
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>
     const state: BackfillState = {}
-    for (const kind of ['bossClear', 'dropPrice', 'cashbookEntry'] as const) {
+    for (const kind of ['bossClear', 'dropPrice', 'cashbookEntry', 'enhancementTotal'] as const) {
       if (isProgress(parsed[kind])) state[kind] = parsed[kind]
     }
     return state

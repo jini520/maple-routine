@@ -141,29 +141,46 @@ export function soulPotentialResetCost(grade: string): number | null {
   return gradeKey === undefined ? null : (index().soulByGrade.get(gradeKey) ?? null)
 }
 
+/** 스타포스 1회 비용을 MVP 할인을 받는 몫과 받지 않는 몫으로 나눈 것. */
+export interface StarforceCostParts {
+  /** 이벤트 할인까지 붙인 시도 비용. MVP 할인은 화면에 보일 때 이 값에 붙인다 */
+  attemptMeso: number
+  /** 파괴 방지 추가분. 어떤 할인도 받지 않는다 */
+  destroyDefenceMeso: number
+}
+
 /**
- * 스타포스 1회 비용. 성수가 표를 벗어나면 `null`.
+ * 스타포스 1회 비용을 MVP 할인 전 두 몫으로. 성수가 표를 벗어나면 `null`.
  *
- * 파괴한 줄도 시도 비용만 센다. 복구비용은 안 센다. 응답이 장비를 이름으로만 가리켜서
- * 파괴 뒤 12성 재개가 복구인지 이름만 같은 다른 개체인지 가릴 수가 없다.
+ * 합계는 MVP 할인 전 값으로 저장하고 할인은 화면에 보일 때 붙인다. 그래서 등급 기간을 고쳐도 다시 받을 필요가 없다.
+ * 반올림한 값은 100 의 배수라 이벤트 할인을 붙여도 정수다.
  *
  * @param fromStar 시도 **전** 성수(`before_starforce_count`)
  * @param discountRate 이벤트 할인 백분율. 반올림 **뒤**에 깎는 것이라 순서를 바꾸면 값이 어긋난다.
  * @param destroyDefence 파괴 방지를 켰나. 추가분은 할인 전 값에 붙고 할인을 안 받는다.
- * @param mvpDiscountRate MVP 할인 백분율. 이벤트 할인에 곱하고, 둘을 곱한 뒤 한 번만 내림한다.
  */
-export function starforceCost(
+export function starforceCostParts(
   itemLevel: number,
   fromStar: number,
   discountRate = 0,
   destroyDefence = false,
-  mvpDiscountRate = 0,
-): number | null {
+): StarforceCostParts | null {
   const step = index().steps.get(fromStar)
   if (step === undefined) return null
   const { rules } = enhancementCostsTable.get()
   const raw = 1000 + (itemLevel ** 3 * (fromStar + 1) ** step.exponent) / step.divisor
   const rounded = Math.round(raw / 100) * 100
-  const surcharge = destroyDefence ? (rounded * rules.starforceDestroyDefenceSurchargePercent) / 100 : 0
-  return Math.floor((rounded * (100 - discountRate) * (100 - mvpDiscountRate)) / 10000) + surcharge
+  return {
+    attemptMeso: Math.floor((rounded * (100 - discountRate)) / 100),
+    destroyDefenceMeso: destroyDefence ? (rounded * rules.starforceDestroyDefenceSurchargePercent) / 100 : 0,
+  }
+}
+
+/**
+ * 합계의 두 몫에 MVP 할인을 붙인 금액. 시도 비용에 할인을 한 번 붙이고 내림한 뒤 파괴 방지 추가분을 더한다.
+ *
+ * 시도마다 내림하던 것이 합계에 한 번 내림하는 것으로 바뀌어 시도당 1 메소 이하가 다를 수 있다.
+ */
+export function withMvpDiscount(parts: StarforceCostParts, mvpDiscountRate: number): number {
+  return Math.floor((parts.attemptMeso * (100 - mvpDiscountRate)) / 100) + parts.destroyDefenceMeso
 }

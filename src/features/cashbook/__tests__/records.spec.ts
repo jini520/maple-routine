@@ -1,5 +1,6 @@
 // 가계부의 오케스트레이션.
 import type { IncomeDraft, SpendDraft } from '../records'
+import type { EnhancementTotal } from '../../../storage/enhancement-totals'
 
 
 jest.mock('../../../storage/income', () => ({
@@ -41,12 +42,11 @@ jest.mock('../../../storage/boss-drops', () => ({
 jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
 jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
-jest.mock('../../../storage/enhancement-history', () => ({
-  loadEnhancementHistory: jest.fn(),
-  loadObservedItemLevels: jest.fn(),
-  getEnhancementMonthRows: jest.fn(),
-}))
-jest.mock('../../../storage/event-world-names', () => ({ getEventWorldNames: jest.fn() }))
+jest.mock('../../../storage/enhancement-totals', () => ({ loadEnhancementTotals: jest.fn() }))
+jest.mock('../../enhancement-history/legacy-totals', () => ({ ensureEnhancementTotals: jest.fn() }))
+jest.mock('../../../storage/mvp-grades', () => ({ getMvpGradeHistories: jest.fn() }))
+jest.mock('../../../storage/character-accounts', () => ({ getCharacterAccountSightings: jest.fn() }))
+jest.mock('../../../lib/mvp/starforce', () => ({ starforceMvpDiscountResolver: jest.fn() }))
 
 const income = jest.requireMock('../../../storage/income') as Record<string, jest.Mock>
 const spend = jest.requireMock('../../../storage/spend') as Record<string, jest.Mock>
@@ -57,8 +57,11 @@ const bossDrops = jest.requireMock('../../../storage/boss-drops') as Record<stri
 const selection = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 const basicCache = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 const profileLookup = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
-const enhancement = jest.requireMock('../../../storage/enhancement-history') as Record<string, jest.Mock>
-const worldNames = jest.requireMock('../../../storage/event-world-names') as Record<string, jest.Mock>
+const enhancementTotals = jest.requireMock('../../../storage/enhancement-totals') as Record<string, jest.Mock>
+const legacyTotals = jest.requireMock('../../enhancement-history/legacy-totals') as Record<string, jest.Mock>
+const mvpGrades = jest.requireMock('../../../storage/mvp-grades') as Record<string, jest.Mock>
+const characterAccounts = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
+const mvp = jest.requireMock('../../../lib/mvp/starforce') as Record<string, jest.Mock>
 
 const 지금 = new Date('2026-08-23T05:00:00.000Z')
 
@@ -74,14 +77,15 @@ beforeEach(() => {
   selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
   bossProfit.getRecordedCharacterOcids.mockResolvedValue([])
   basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
-  enhancement.loadEnhancementHistory.mockResolvedValue([])
-  enhancement.loadObservedItemLevels.mockResolvedValue(new Map())
-  worldNames.getEventWorldNames.mockResolvedValue(new Set())
+  enhancementTotals.loadEnhancementTotals.mockResolvedValue([])
+  legacyTotals.ensureEnhancementTotals.mockResolvedValue(undefined)
+  mvpGrades.getMvpGradeHistories.mockResolvedValue(new Map())
+  characterAccounts.getCharacterAccountSightings.mockResolvedValue([])
+  mvp.starforceMvpDiscountResolver.mockReturnValue(() => 0)
   lastHunts.getLastHunts.mockResolvedValue({})
   income.getIncomeMonthRows.mockResolvedValue([])
   spend.getSpendMonthRows.mockResolvedValue([])
   bossProfit.getBossProfitMonthRows.mockResolvedValue([])
-  enhancement.getEnhancementMonthRows.mockResolvedValue([])
   profileLookup.resolveDisplayProfiles.mockImplementation(
     async (ocids: readonly string[]) =>
       new Map(
@@ -1219,23 +1223,31 @@ describe('cashbookDataRevision', () => {
   })
 })
 
-// 강화 사용 내역은 넷째 원천이다. 손입력 둘·보스 둘과 달리 **금액을 여기서 센다**.
-describe('강화 지출이 칸에 든다', () => {
-  const 큐브 = (over: Record<string, unknown> = {}) => ({
-    id: 'e1',
-    kind: 'cube' as const,
-    dateKey: '2026-08-23',
-    createdAt: '2026-08-23T10:00:00.000+09:00',
-    characterName: '낟낟',
-    targetItem: '아케인셰이드 클로',
-    itemKey: 'arcane_umbra_knuckle',
-    itemLevel: 150,
-    payload: {},
-    ...over,
-  })
+/** 기기 `enhancement_totals` 한 줄. 기본은 큐브 한 번 450,000 메소다. */
+const 합계 = (over: Partial<EnhancementTotal> = {}): EnhancementTotal => ({
+  id: 't1',
+  nexonAccountId: 'account-main',
+  historyDate: '2026-08-23',
+  characterName: '낟낟',
+  enhancementType: 'cube',
+  enhancementCategory: 'cube_reset',
+  itemGroup: 'key:arcane_umbra_knuckle',
+  itemKey: 'arcane_umbra_knuckle',
+  itemName: '아케인셰이드 클로',
+  attempts: 1,
+  attemptCostMeso: 450_000,
+  destroyDefenceCostMeso: 0,
+  eventWorld: false,
+  ...over,
+})
 
-  it('감정비용이 지출로 더해진다', async () => {
-    enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
+const 스타포스합계 = (over: Partial<EnhancementTotal> = {}) =>
+  합계({ enhancementType: 'starforce', enhancementCategory: 'starforce', ...over })
+
+// 강화 합계는 넷째 원천이다. 저장된 값은 MVP 할인 전이라 할인은 여기서 붙인다.
+describe('강화 지출이 칸에 든다', () => {
+  it('합계의 비용이 지출로 더해진다', async () => {
+    enhancementTotals.loadEnhancementTotals.mockResolvedValue([합계()])
 
     expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23']).toEqual({
       incomeMeso: 0,
@@ -1245,92 +1257,80 @@ describe('강화 지출이 칸에 든다', () => {
 
   it('손입력 지출과 한 칸에서 합쳐진다', async () => {
     spend.getSpendRecordsBetween.mockResolvedValue([{ ...메포지출, id: 'c', recordedAt: '' }])
-    enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
+    enhancementTotals.loadEnhancementTotals.mockResolvedValue([합계()])
 
     expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso)
       .toBe(2_542_372_881 - 320_000_000 + 450_000)
   })
 
-  /**
-   * 값을 못 매긴 줄을 0 으로 세우면 합계가 조용히 거짓이 된다.
-   *
-   * 그 줄은 **저장 단계에서 버려지므로** 새 기록에는 없다. 옛 행이 남아 있을 수 있어 읽는
-   * 쪽도 계속 막는다. 그 날에 줄은 있으므로 칸은 서되 금액이 0 이다.
-   */
-  it('레벨을 모르는 줄은 안 더한다', async () => {
-    enhancement.loadEnhancementHistory.mockResolvedValue([큐브({ itemLevel: null })])
+  // 판정하지 못한 줄을 세우면 이벤트 월드 지출까지 섞여 지출이 부푼다.
+  it('이벤트 월드 줄과 판정하지 못한 줄은 빠진다', async () => {
+    enhancementTotals.loadEnhancementTotals.mockResolvedValue([
+      합계({ eventWorld: true }),
+      합계({ id: 't2', characterName: '둘째', eventWorld: null }),
+    ])
 
-    expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23']).toEqual({
-      incomeMeso: 0,
-      expenseMeso: 0,
+    expect(await 칸금액('2026-08-01', '2026-08-31')).toEqual({})
+  })
+
+  // 파괴 방지 추가분은 MVP 할인을 받지 않는다. 두 몫을 따로 저장한 이유다.
+  it('스타포스는 그 캐릭터 · 날짜의 MVP 할인을 시도 비용에만 붙인다', async () => {
+    const asked: [string, string][] = []
+    mvp.starforceMvpDiscountResolver.mockReturnValue((name: string, dateKey: string) => {
+      asked.push([name, dateKey])
+      return 10
     })
+    enhancementTotals.loadEnhancementTotals.mockResolvedValue([
+      스타포스합계({ attemptCostMeso: 1_000_000, destroyDefenceCostMeso: 2_000_000 }),
+    ])
+
+    expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso).toBe(900_000 + 2_000_000)
+    expect(asked).toEqual([['낟낟', '2026-08-23']])
   })
 
-  it('스페셜 월드 캐릭터의 줄은 빠진다', async () => {
-    worldNames.getEventWorldNames.mockResolvedValue(new Set(['머리맨들맨둘']))
-    enhancement.loadEnhancementHistory.mockResolvedValue([큐브({ characterName: '머리맨들맨둘' })])
+  it('MVP 할인은 스타포스에만 붙는다', async () => {
+    mvp.starforceMvpDiscountResolver.mockReturnValue(() => 10)
+    enhancementTotals.loadEnhancementTotals.mockResolvedValue([합계()])
 
-    expect(await 칸금액('2026-08-01', '2026-08-31')).toEqual({})
+    expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso).toBe(450_000)
   })
 
-  // 이름 집합을 아직 못 받았으면 월드를 가릴 수가 없다. 세우면 지출이 두 배로 부푼다.
-  it('이름 집합을 못 받았으면 아무것도 안 더한다', async () => {
-    worldNames.getEventWorldNames.mockResolvedValue(null)
-    enhancement.loadEnhancementHistory.mockResolvedValue([큐브()])
+  // 옮기기 전에 읽으면 업데이트 직후 첫 화면에서 지난 강화 지출이 통째로 비어 보인다.
+  it('옛 원본을 합계로 옮긴 뒤에 범위를 읽는다', async () => {
+    const order: string[] = []
+    legacyTotals.ensureEnhancementTotals.mockImplementation(async () => {
+      order.push('move')
+    })
+    enhancementTotals.loadEnhancementTotals.mockImplementation(async () => {
+      order.push('load')
+      return []
+    })
 
-    expect(await 칸금액('2026-08-01', '2026-08-31')).toEqual({})
-  })
-
-  it('날짜 목록을 펴서 넘긴다', async () => {
     await 칸금액('2026-08-23', '2026-08-25')
 
-    expect(enhancement.loadEnhancementHistory).toHaveBeenCalledWith([
-      '2026-08-23',
-      '2026-08-24',
-      '2026-08-25',
-    ])
+    expect(order).toEqual(['move', 'load'])
+    expect(enhancementTotals.loadEnhancementTotals).toHaveBeenCalledWith('2026-08-23', '2026-08-25')
   })
 })
 
 // 자동 줄인데 지출이다. 앞의 둘(결정석·판매)과 갈리는 자리가 이것뿐이다.
 describe('강화 줄', () => {
-  const 강화 = (over: Record<string, unknown> = {}) => ({
-    id: 'e1',
-    kind: 'cube' as const,
-    dateKey: '2026-08-23',
-    createdAt: '2026-08-23T10:00:00.000+09:00',
-    characterName: '낟낟',
-    targetItem: '아케인셰이드 클로',
-    itemKey: 'arcane_umbra_knuckle',
-    itemLevel: 150,
-    payload: {},
-    ...over,
-  })
+  const 잠재합계 = (over: Partial<EnhancementTotal> = {}) =>
+    합계({ enhancementType: 'potential', enhancementCategory: 'potential', attemptCostMeso: 38_250_000, ...over })
 
-  const 잠재 = (type: string, over: Record<string, unknown> = {}) =>
-    강화({
-      kind: 'potential' as const,
-      itemLevel: 200,
-      payload: {
-        potential_type: type,
-        potential_option_grade: '유니크',
-        additional_potential_option_grade: '유니크',
-        // 비용은 사용 전 옵션의 등급으로 매긴다. 등급 칸은 오른 뒤 값이다.
-        before_potential_option: [{ value: 'STR : +9%', grade: '유니크' }],
-        before_additional_potential_option: [{ value: '공격력 : +9', grade: '유니크' }],
-      },
-      ...over,
-    })
-
-  async function 줄들(rows: ReturnType<typeof 강화>[]) {
-    enhancement.loadEnhancementHistory.mockResolvedValue(rows)
+  async function 줄들(rows: EnhancementTotal[]) {
+    enhancementTotals.loadEnhancementTotals.mockResolvedValue(rows)
     const { loadDayRecords } = require('../records') as typeof import('../records')
     return await loadDayRecords('2026-08-23')
   }
 
   // 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
-  it('캐릭터 하나에 갈래마다 한 줄로 접는다', async () => {
-    const rows = await 줄들([강화(), 강화({ id: 'e2' }), 강화({ id: 'e3', characterName: '풉품' })])
+  it('캐릭터 하나에 분류마다 한 줄로 접는다', async () => {
+    const rows = await 줄들([
+      합계(),
+      합계({ id: 't2', itemGroup: 'key:dea_sidus_earring', itemKey: 'dea_sidus_earring' }),
+      합계({ id: 't3', characterName: '풉품' }),
+    ])
 
     expect(rows.filter((row) => row.kind === 'enhancement')).toHaveLength(2)
   })
@@ -1338,10 +1338,10 @@ describe('강화 줄', () => {
   // 넷을 안 묶는다. 비용이 서는 방식이 아예 달라 묶으면 무엇에 썼는지가 한 숫자에 가려진다.
   it('큐브·스타포스·잠재능력·에디셔널을 따로 센다', async () => {
     const rows = await 줄들([
-      강화(),
-      강화({ id: 'e2', kind: 'starforce', itemLevel: null, payload: { before_starforce_count: 5, upgrade_item: '' } }),
-      잠재('잠재능력 재설정', { id: 'e3' }),
-      잠재('에디셔널 잠재능력 재설정', { id: 'e4' }),
+      합계(),
+      스타포스합계({ id: 't2' }),
+      잠재합계({ id: 't3' }),
+      잠재합계({ id: 't4', enhancementCategory: 'additional_potential' }),
     ])
 
     expect(
@@ -1349,47 +1349,33 @@ describe('강화 줄', () => {
     ).toEqual(['additional_potential', 'cube_reset', 'potential', 'starforce'])
   })
 
-  it('잠재는 종류가 응답에서 온다', async () => {
-    const rows = await 줄들([잠재('에디셔널 잠재능력 재설정')])
-
-    expect(rows[0]).toMatchObject({ category: 'additional_potential', payoutMeso: 74_800_000 })
-  })
-
-  it('금액과 횟수를 모은다', async () => {
-    const [row] = await 줄들([강화(), 강화({ id: 'e2' })])
+  it('장비별 합계의 금액과 횟수를 모은다', async () => {
+    const [row] = await 줄들([
+      합계({ attempts: 2, attemptCostMeso: 900_000 }),
+      합계({ id: 't2', itemGroup: 'key:dea_sidus_earring', itemKey: 'dea_sidus_earring', attemptCostMeso: 338_000 }),
+    ])
 
     expect(row).toMatchObject({
       kind: 'enhancement',
       category: 'cube_reset',
       characterName: '낟낟',
-      payoutMeso: 900_000,
-      count: 2,
-      unpricedCount: 0,
+      payoutMeso: 1_238_000,
+      count: 3,
     })
+    expect(detailOf(row)).toMatch(/ 3회$/)
   })
 
-  // 값을 못 매긴 건은 금액에 안 들어 있다. 그 사실을 줄이 말해야 한다.
-  it('값을 못 매긴 건은 건수만 센다', async () => {
-    const [row] = await 줄들([강화(), 강화({ id: 'e2', itemLevel: null })])
-
-    expect(row).toMatchObject({ payoutMeso: 450_000, count: 2, unpricedCount: 1 })
-  })
-
-  it('줄의 신원이 갈래와 이름이다. ocid 가 안 온다', async () => {
+  it('줄의 신원이 분류와 이름이다. ocid 가 안 온다', async () => {
     const { rowKeyOf } = require('../records') as typeof import('../records')
-    const [row] = await 줄들([강화()])
+    const [row] = await 줄들([합계()])
 
     expect(rowKeyOf(row)).toBe('enhancement:cube_reset:낟낟')
   })
 
-  // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 갈래를 고정 순서로 두면 그날 제일 많이 쓴
+  // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 분류를 고정 순서로 두면 그날 제일 많이 쓴
   // 것이 목록 가운데에 숨는다.
   it('캐릭터로 모으고 그 안에서 큰 금액이 위다', async () => {
-    const rows = await 줄들([
-      강화(),
-      잠재('잠재능력 재설정', { id: 'e2' }),
-      강화({ id: 'e3', characterName: '가가' }),
-    ])
+    const rows = await 줄들([합계(), 잠재합계({ id: 't2' }), 합계({ id: 't3', characterName: '가가' })])
 
     expect(
       rows.flatMap((row) =>
@@ -1398,116 +1384,54 @@ describe('강화 줄', () => {
     ).toEqual(['가가/cube_reset', '낟낟/potential', '낟낟/cube_reset'])
   })
 
-  // 금액까지 같으면 갈래 글자 순서다. key 순서로 가르면 전과 달리 큐브가 스타포스 앞에 선다.
-  it('금액이 같은 갈래 줄은 보이는 글자 순서다', async () => {
-    const rows = await 줄들([
-      강화({ itemLevel: null }),
-      강화({ id: 'e2', kind: 'starforce', itemLevel: null, itemKey: null, targetItem: '왕푸', payload: { before_starforce_count: 5, upgrade_item: '' } }),
-    ])
+  // 금액까지 같으면 분류 글자 순서다. key 순서로 가르면 전과 달리 큐브가 스타포스 앞에 선다.
+  it('금액이 같은 분류 줄은 보이는 글자 순서다', async () => {
+    const rows = await 줄들([합계(), 스타포스합계({ id: 't2' })])
 
     expect(rows.flatMap((row) => (row.kind === 'enhancement' ? [row.category] : []))).toEqual(['starforce', 'cube_reset'])
-  })
-
-  it('건수 라벨이 값모름을 말한다', async () => {
-    const [a] = await 줄들([강화(), 강화({ id: 'e2', itemLevel: null })])
-    const [b] = await 줄들([강화()])
-
-    expect(detailOf(a)).toMatch(/ 2회 · 값모름 1$/)
-    expect(detailOf(b)).toMatch(/ 1회$/)
   })
 
   // 펼쳐서 보는 이유가 **어디에 썼나** 라서 이름순이면 그 답이 안 보인다.
   it('만진 장비를 큰 금액부터 담는다', async () => {
     const [row] = await 줄들([
-      강화({ targetItem: '데아 시두스 이어링', itemKey: 'dea_sidus_earring', itemLevel: 130 }),
-      강화({ id: 'e2', targetItem: '아케인셰이드 클로', itemLevel: 200 }),
-      강화({ id: 'e3', targetItem: '아케인셰이드 클로', itemLevel: 200 }),
+      합계({ itemGroup: 'key:dea_sidus_earring', itemKey: 'dea_sidus_earring', itemName: '데아 시두스 이어링', attemptCostMeso: 338_000 }),
+      합계({ id: 't2', attempts: 2, attemptCostMeso: 1_600_000 }),
     ])
 
     expect(row.kind === 'enhancement' && row.items).toEqual([
-      { itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 2, costMeso: 1_600_000, unpricedCount: 0 },
-      { itemKey: 'dea_sidus_earring', targetItem: '데아 시두스 이어링', count: 1, costMeso: 338_000, unpricedCount: 0 },
-    ])
-  })
-
-  // 장비 칸은 key 로 묶는다. 띄어쓰기만 다른 같은 장비가 두 칸이 되지 않고, 이름은 처음 든 기록의 API 이름이다.
-  it('같은 장비 key 는 한 칸이고 처음 든 기록의 API 이름을 보인다', async () => {
-    const [row] = await 줄들([
-      강화({ targetItem: '아케인셰이드 클로', itemLevel: 200 }),
-      강화({ id: 'e2', targetItem: '아케인셰이드클로', itemLevel: 200 }),
-    ])
-
-    expect(row.kind === 'enhancement' && row.items.map((item) => [item.targetItem, item.count])).toEqual([
-      ['아케인셰이드 클로', 2],
-    ])
-  })
-
-  // 장비 표에 없는 장비는 key 가 없어 이름으로 묶는다. 그 이름도 API 이름과 같은 규칙으로 맞춘다.
-  it('장비 key 가 없으면 NFC 뒤 공백을 지운 이름으로 묶는다', async () => {
-    const [row] = await 줄들([
-      강화({ targetItem: '블랙 마법깃펜', itemKey: null, itemLevel: 150 }),
-      강화({ id: 'e2', targetItem: '블랙마법깃펜'.normalize('NFD'), itemKey: null, itemLevel: 150 }),
-    ])
-
-    expect(row.kind === 'enhancement' && row.items).toEqual([
-      { itemKey: null, targetItem: '블랙 마법깃펜', count: 2, costMeso: 900_000, unpricedCount: 0 },
-    ])
-  })
-
-  it('장비별로도 값 모름을 센다', async () => {
-    const [row] = await 줄들([
-      강화({ targetItem: '왕푸', itemKey: null, itemLevel: null }),
-      강화({ id: 'e2', targetItem: '왕푸', itemKey: null, itemLevel: null }),
-    ])
-
-    expect(row.kind === 'enhancement' && row.items).toEqual([
-      { itemKey: null, targetItem: '왕푸', count: 2, costMeso: 0, unpricedCount: 2 },
+      { itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 2, costMeso: 1_600_000 },
+      { itemKey: 'dea_sidus_earring', targetItem: '데아 시두스 이어링', count: 1, costMeso: 338_000 },
     ])
   })
 
   // 금액이 같으면 순서가 흔들리면 안 된다. 다시 그릴 때마다 줄이 자리를 바꾼다.
   it('금액이 같으면 건수로, 그것도 같으면 이름으로 가른다', async () => {
     const [row] = await 줄들([
-      강화({ targetItem: '나', itemKey: null, itemLevel: 150 }),
-      강화({ id: 'e2', targetItem: '가', itemKey: null, itemLevel: 150 }),
+      합계({ itemGroup: 'name:나', itemKey: null, itemName: '나' }),
+      합계({ id: 't2', itemGroup: 'name:가', itemKey: null, itemName: '가' }),
     ])
 
-    expect(row.kind === 'enhancement' && row.items.map((item) => item.targetItem)).toEqual([
-      '가',
-      '나',
-    ])
+    expect(row.kind === 'enhancement' && row.items.map((item) => item.targetItem)).toEqual(['가', '나'])
   })
 
   // 120 이하 장비의 큐브는 감정비용이 없고 강화권을 쓴 스타포스도 메소가 안 든다.
   // `낟넘 · 큐브 재설정 9회 −0` 같은 줄은 읽을 것이 없다(사용자 지정).
   it('한 푼도 안 쓴 줄은 안 세운다', async () => {
-    const rows = await 줄들([강화({ itemLevel: 100 }), 강화({ id: 'e2', itemLevel: 120 })])
-
-    expect(rows).toEqual([])
-  })
-
-  // 그때의 0 은 안 썼다가 아니라 모른다다. 숨기면 합계가 적어 보이는 것이 고장으로 읽힌다.
-  it('값을 못 매긴 건이 있으면 안 숨긴다', async () => {
-    const rows = await 줄들([강화({ itemLevel: null })])
-
-    expect(rows).toHaveLength(1)
-    expect(rows[0]).toMatchObject({ payoutMeso: 0, unpricedCount: 1 })
+    expect(await 줄들([합계({ attempts: 9, attemptCostMeso: 0 })])).toEqual([])
   })
 
   it('섞여 있으면 안 쓴 장비만 펼침에서 빠진다', async () => {
     const [row] = await 줄들([
-      강화({ targetItem: '아케인셰이드 클로', itemLevel: 200 }),
-      강화({ id: 'e2', targetItem: '초보자의 장갑', itemKey: null, itemLevel: 100 }),
+      합계(),
+      합계({ id: 't2', itemGroup: 'name:초보자의장갑', itemKey: null, itemName: '초보자의 장갑', attemptCostMeso: 0 }),
     ])
 
-    expect(row.kind === 'enhancement' && row.items.map((item) => item.targetItem)).toEqual([
-      '아케인셰이드 클로',
-    ])
+    expect(row.kind === 'enhancement' && row.items.map((item) => item.targetItem)).toEqual(['아케인셰이드 클로'])
   })
 
   it('제목은 이름 · 강화이고 둘째 줄이 강화 분류를 든다', async () => {
-    const [큐브줄] = await 줄들([강화()])
-    const [잠재줄] = await 줄들([잠재('에디셔널 잠재능력 재설정')])
+    const [큐브줄] = await 줄들([합계()])
+    const [잠재줄] = await 줄들([잠재합계({ enhancementCategory: 'additional_potential' })])
 
     expect(titleOf(큐브줄)).toBe('낟낟 · 강화')
     expect([detailOf(큐브줄), detailOf(잠재줄)].map((detail) => detail?.split(' ')[0])).toEqual(['큐브', '에디셔널'])
@@ -1516,7 +1440,7 @@ describe('강화 줄', () => {
   // 여기가 핵심이다. 자동 줄이라고 수익으로 세면 그날 합계가 두 배로 어긋난다.
   it('합계에서 지출로 센다', async () => {
     const { dayTotalsOf } = require('../records') as typeof import('../records')
-    const rows = await 줄들([강화()])
+    const rows = await 줄들([합계()])
 
     expect(dayTotalsOf(rows)).toEqual({ incomeMeso: 0, expenseMeso: 450_000 })
   })
@@ -1524,10 +1448,11 @@ describe('강화 줄', () => {
   // 칸에 적힌 수와 그 칸을 눌러 나온 수가 갈리면 안 된다.
   it('칸 금액과 상세 합계가 같은 수를 낸다', async () => {
     const { loadDayRecords, dayTotalsOf } = require('../records') as typeof import('../records')
-    enhancement.loadEnhancementHistory.mockResolvedValue([
-      강화(),
-      잠재('잠재능력 재설정', { id: 'e2' }),
-      강화({ id: 'e3', itemLevel: 200 }),
+    mvp.starforceMvpDiscountResolver.mockReturnValue(() => 10)
+    enhancementTotals.loadEnhancementTotals.mockResolvedValue([
+      합계(),
+      잠재합계({ id: 't2' }),
+      스타포스합계({ id: 't3', attemptCostMeso: 1_000_000, destroyDefenceCostMeso: 2_000_000 }),
     ])
 
     const cell = (await 칸금액('2026-08-23', '2026-08-23'))['2026-08-23']

@@ -48,19 +48,14 @@ import {
   updateIncomeRecord,
   type IncomeRecord,
 } from '../../storage/income'
-import { getEventWorldNames } from '../../storage/event-world-names'
-import {
-  loadEnhancementHistory,
-  loadObservedItemLevels,
-} from '../../storage/enhancement-history'
-import { toEnhancementSpending, type EnhancementSpendingRow } from '../enhancement-history/spending'
+import { ensureEnhancementTotals } from '../enhancement-history/legacy-totals'
 import { getMvpGradeHistories } from '../../storage/mvp-grades'
 import { getCharacterAccountSightings } from '../../storage/character-accounts'
 import type { MvpGradeEntry } from '../../lib/mvp/history'
 import { starforceMvpDiscountResolver } from '../../lib/mvp/starforce'
+import { withMvpDiscount } from '../../lib/enhancement/cost'
+import { loadEnhancementTotals } from '../../storage/enhancement-totals'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
-import { comparableEquipmentName } from '../../lib/equipment/equipment-items'
-import { datesBetween } from '../../lib/calendar'
 import { mainNexonAccountIdOf } from '../../lib/nexon-credential'
 import { randomUuid } from '../../native/uuid'
 import { getAuthConfig } from '../../storage/api-key'
@@ -305,26 +300,50 @@ async function loadBossDaySummaries(
   return [...summaries.values()]
 }
 
+/** 화면이 쓰는 강화 합계 한 줄. MVP 할인을 붙인 금액이다. */
+interface EnhancementSpending {
+  dateKey: string
+  characterName: string
+  category: EnhancementCategory
+  /** 장비 칸을 묶는 열쇠. 합계 표의 `item_group` 이다 */
+  itemGroup: string
+  itemKey: string | null
+  targetItem: string
+  attempts: number
+  costMeso: number
+}
+
 /**
- * 그 범위의 강화 사용 내역을 **금액이 붙은 줄**로.
+ * 그 범위의 강화 합계를 **금액이 붙은 줄**로. 스타포스는 그 날짜 · 그 캐릭터의 MVP 할인을 시도 비용에 붙인다.
  *
- * 이벤트 월드(스페셜) 줄은 여기서 걷힌다. 이름 집합을 아직 못 받았으면 월드를 모르는 줄을 전부
- * 뺀다. 가릴 수 없는 것을 세우면 지출이 두 배로 부푼다.
- *
- * 읽기가 실패하면 빈 목록이다. 칸이 지출을 빼고 보이지만 화면은 산다.
+ * 이벤트 월드 줄과 판정하지 못한 줄은 지출이 아니라 뺀다. 읽기가 실패하면 빈 목록이다. 칸이 지출을 빼고 보이지만 화면은 산다.
  */
-async function loadEnhancementSpending(
-  fromDateKey: string,
-  toDateKey: string,
-): Promise<EnhancementSpendingRow[]> {
-  const [entries, levels, eventNames, histories, sightings] = await Promise.all([
-    withSqliteFallback(loadEnhancementHistory(datesBetween(fromDateKey, toDateKey)), []),
-    withSqliteFallback(loadObservedItemLevels(), new Map<string, number>()),
-    getEventWorldNames().catch(() => null),
+async function loadEnhancementSpending(fromDateKey: string, toDateKey: string): Promise<EnhancementSpending[]> {
+  await ensureEnhancementTotals()
+  const [totals, histories, sightings] = await Promise.all([
+    withSqliteFallback(loadEnhancementTotals(fromDateKey, toDateKey), []),
     withSqliteFallback(getMvpGradeHistories(), new Map<string, MvpGradeEntry[]>()),
     withSqliteFallback(getCharacterAccountSightings(), []),
   ])
-  return toEnhancementSpending(entries, eventNames, levels, starforceMvpDiscountResolver(histories, sightings))
+  const mvpDiscountOf = starforceMvpDiscountResolver(histories, sightings)
+  return totals
+    .filter((total) => total.eventWorld === false)
+    .map((total) => ({
+      dateKey: total.historyDate,
+      characterName: total.characterName,
+      category: total.enhancementCategory,
+      itemGroup: total.itemGroup,
+      itemKey: total.itemKey,
+      targetItem: total.itemName,
+      attempts: total.attempts,
+      costMeso:
+        total.enhancementType === 'starforce'
+          ? withMvpDiscount(
+              { attemptMeso: total.attemptCostMeso, destroyDefenceMeso: total.destroyDefenceCostMeso },
+              mvpDiscountOf(total.characterName, total.historyDate),
+            )
+          : total.attemptCostMeso + total.destroyDefenceCostMeso,
+    }))
 }
 
 /**
@@ -409,10 +428,8 @@ export async function loadMonthDays(
   return byDate
 }
 
-function groupByDate(
-  rows: readonly EnhancementSpendingRow[],
-): Map<string, EnhancementSpendingRow[]> {
-  const byDate = new Map<string, EnhancementSpendingRow[]>()
+function groupByDate(rows: readonly EnhancementSpending[]): Map<string, EnhancementSpending[]> {
+  const byDate = new Map<string, EnhancementSpending[]>()
   for (const row of rows) {
     const bucket = byDate.get(row.dateKey)
     if (bucket === undefined) byDate.set(row.dateKey, [row])
@@ -608,12 +625,10 @@ export interface EnhancementDayRecord {
   category: EnhancementCategory
   /** 이름뿐이다 */
   characterName: string
-  /** 그날 쓴 메소. **값을 못 매긴 건은 안 들어 있다** */
+  /** 그날 쓴 메소. 스타포스는 MVP 할인을 붙인 값이다 */
   payoutMeso: number
-  /** 강화 횟수. 값을 못 매긴 것도 센다 */
+  /** 강화 횟수 */
   count: number
-  /** 값을 못 매긴 건수. 장비 레벨을 몰라 금액에서 빠졌다 */
-  unpricedCount: number
   /** 무엇을 강화했나. **비어 있지 않다.** 이 줄이 서는 조건이다 */
   items: readonly EnhancedItem[]
 }
@@ -625,9 +640,7 @@ export interface EnhancedItem {
   /** 이 칸에 처음 든 기록의 API 이름. 띄어쓰기가 살아 있다. 장비 표 이름은 붙여 써서 이 글자를 보인다 */
   targetItem: string
   count: number
-  /** 값을 못 매긴 건은 안 들어 있다 */
   costMeso: number
-  unpricedCount: number
 }
 
 /**
@@ -678,14 +691,11 @@ export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
  * 실제로 생긴다. 120 이하 장비의 큐브는 감정비용이 없고(통찰력 100 가정) 강화권을 쓴 스타포스도
  * 메소가 안 든다. 그런 날은 `낟넘 · 큐브 9회 −0` 같은 줄이 서는데 읽을 것이 없다.
  *
- * **값을 못 매긴 건이 있으면 안 숨긴다.** 그때의 0 은 안 썼다가 아니라 모른다이고, 그 사실을
- * 줄이 말해야 합계가 적어 보이는 것이 고장으로 안 읽힌다.
- *
  * 수익 줄은 안 본다. 결정석 0 원이어도 그날 무엇을 잡았는지가 그 줄에 있다.
  */
 function isEmptySpend(entry: DayRecord): boolean {
   if (entry.kind === 'enhancement') {
-    return entry.payoutMeso === 0 && entry.unpricedCount === 0
+    return entry.payoutMeso === 0
   }
   if (entry.kind === 'spend') {
     return spendMesoOf(entry.record) === 0 && (entry.record.cashAmount ?? 0) === 0
@@ -694,23 +704,12 @@ function isEmptySpend(entry: DayRecord): boolean {
 }
 
 /**
- * 강화 줄을 **캐릭터 하나에 하나**로 접는다. 이름순.
+ * 강화 합계를 **캐릭터 · 분류마다 한 줄**로 접는다. 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
  *
- * 종류를 안 가른다. 사용자가 보는 것은 그날 강화에 얼마 썼나 지 어느 강화였나 가 아니다.
- * 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
- *
- * 값을 못 매긴 줄은 **금액에서 빼고 건수만 센다**. 0 으로 세우면 합계가 조용히 거짓이 된다.
+ * 펼친 장비 칸은 합계 표의 `item_group` 으로 묶는다. 이름은 처음 든 합계의 API 이름이다.
  */
-function toEnhancementRecords(
-  rows: readonly EnhancementSpendingRow[],
-): EnhancementDayRecord[] {
-  const groups = new Map<
-    string,
-    { record: EnhancementDayRecord; items: Map<string, EnhancedItem> }
-  >()
-  // 장비 칸의 신원. 장비 key 이고, 장비 표에 없는 장비는 API 이름과 같은 규칙으로 맞춘 이름이다.
-  const itemIdentityOf = (row: EnhancementSpendingRow): string =>
-    row.itemKey !== null ? `key:${row.itemKey}` : `api:${comparableEquipmentName(row.targetItem)}`
+function toEnhancementRecords(rows: readonly EnhancementSpending[]): EnhancementDayRecord[] {
+  const groups = new Map<string, { record: EnhancementDayRecord; items: Map<string, EnhancedItem> }>()
   for (const row of rows) {
     const key = `${row.category}|${row.characterName}`
     let group = groups.get(key)
@@ -722,29 +721,19 @@ function toEnhancementRecords(
           characterName: row.characterName,
           payoutMeso: 0,
           count: 0,
-          unpricedCount: 0,
           items: [],
         },
         items: new Map(),
       }
       groups.set(key, group)
     }
-    group.record.count += 1
-    if (row.costMeso === null) group.record.unpricedCount += 1
-    else group.record.payoutMeso += row.costMeso
+    group.record.count += row.attempts
+    group.record.payoutMeso += row.costMeso
 
-    const identity = itemIdentityOf(row)
-    const item = group.items.get(identity) ?? {
-      itemKey: row.itemKey,
-      targetItem: row.targetItem,
-      count: 0,
-      costMeso: 0,
-      unpricedCount: 0,
-    }
-    item.count += 1
-    if (row.costMeso === null) item.unpricedCount += 1
-    else item.costMeso += row.costMeso
-    group.items.set(identity, item)
+    const item = group.items.get(row.itemGroup) ?? { itemKey: row.itemKey, targetItem: row.targetItem, count: 0, costMeso: 0 }
+    item.count += row.attempts
+    item.costMeso += row.costMeso
+    group.items.set(row.itemGroup, item)
   }
 
   return [...groups.values()]
@@ -754,7 +743,7 @@ function toEnhancementRecords(
       // 값이 같으면 건수로, 그것도 같으면 이름으로 가른다(순서가 흔들리면 안 된다).
       // 펼친 줄도 같다. 한 푼도 안 쓴 장비는 안 세운다.
       items: [...items.values()]
-        .filter((item) => item.costMeso > 0 || item.unpricedCount > 0)
+        .filter((item) => item.costMeso > 0)
         .sort(
         (left, right) =>
           right.costMeso - left.costMeso ||
@@ -941,9 +930,7 @@ function spendCard(record: SpendRecord): RecordCard {
 function autoDetail(entry: AutoDayRecord): string {
   if (entry.kind === 'bossCrystal') return `${entry.count}마리`
   if (entry.kind === 'dropSale') return `${entry.count}건`
-  // 값을 못 매긴 건은 금액에 안 들어 있다. 그 사실을 줄이 말해야 합계가 적어 보이는 것이 고장으로 안 읽힌다.
-  const counted = `${enhancementCategoryNameOf(entry.category)} ${entry.count}회`
-  return entry.unpricedCount > 0 ? `${counted} · 값모름 ${entry.unpricedCount}` : counted
+  return `${enhancementCategoryNameOf(entry.category)} ${entry.count}회`
 }
 
 /**

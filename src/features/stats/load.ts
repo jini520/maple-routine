@@ -4,7 +4,7 @@
  * 카드마다 따로 읽지 않는다. 누적 카드가 처음부터 더하므로 그 범위가 나머지 카드의 범위를 다 덮는다.
  */
 import { cashbookDataRevision, loadMonthDays } from '../cashbook/records'
-import { getEnhancementHistoryRevision } from '../../storage/enhancement-history'
+import { getEnhancementTotalsRevision } from '../../storage/enhancement-totals'
 import { getSpendRecordsRevision } from '../../storage/spend'
 import { getStatsCumulativeStart, setStatsCumulativeStart } from '../../storage/stats-cumulative-start'
 import {
@@ -57,7 +57,7 @@ export async function loadStatsImages(
  * 모두 단조 증가라 어느 쪽이 올라도 합이 달라진다. 같으면 다시 읽을 까닭이 없다.
  */
 export function statsDataRevision(): number {
-  return cashbookDataRevision() + getEnhancementHistoryRevision() + getSpendRecordsRevision()
+  return cashbookDataRevision() + getEnhancementTotalsRevision() + getSpendRecordsRevision()
 }
 
 /** 누적 순수익의 시작 날짜. 고른 적이 없으면 `null`(기록이 처음 있는 날부터) */

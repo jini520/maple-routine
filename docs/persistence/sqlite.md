@@ -58,9 +58,10 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `boss_drops` | `id`(uuid, 서버의 `drop_record_id`) | 기간 행에 붙는 드롭 한 개와 판매가 · 분배 · 수수료. 상태는 서버와 같은 `record_status` | `storage/boss-drops.ts` | 행 단위(기록) | [[ADR-078]] |
 | `character_profiles` | `id`(uuid, `ocid` 는 UNIQUE) | 기록 옆에 보일 캐릭터 이름 · 초상 주소 · 월드 · 레벨 · 직업 | `storage/character-profiles.ts` | 기록 | `features/character.md` |
 | `character_world_leaps` | `id`(uuid, `from_ocid` 는 UNIQUE) | 월드 리프로 바뀐 옛 ocid 와 새 ocid 의 연결 | `storage/character-world-leaps.ts` | 기록 | `features/character.md` |
-| `enhancement_history` | `id` | 계정 단위 스타포스 · 큐브 · 잠재 재설정 사용 내역(응답 원문 `payload` 포함) | `storage/enhancement-history.ts` | 기록 | `features/cashbook.md` |
+| `enhancement_totals` | `id`(uuid, `(nexon_account_id, history_date, character_name, enhancement_category, item_group)` 는 UNIQUE) | 강화 내역을 날짜 · 캐릭터 · 분류 · 장비별로 묶은 합계. 비용은 MVP 할인 전 두 몫이고 이벤트 월드 판정을 든다 | `storage/enhancement-totals.ts` | 기록 | [[ADR-100]] |
+| `enhancement_history` | `id` | 옛 강화 응답 원본. 합계로 옮기는 부팅 단계만 읽고 v1.0.14 에서 지운다 | `storage/enhancement-history.ts` | 기록 | [[ADR-100]] |
 | `enhancement_history_checks` | `id`(uuid, `(nexon_account_id, enhancement_type, history_date)` 는 UNIQUE) | 강화 내역을 넥슨 계정 · 날짜별로 조회했는지 기록 | `storage/enhancement-history.ts` | 기록 | `features/cashbook.md` |
-| `cashbook_entries` | `id`(uuid) | 가계부에 손으로 적은 수입 · 지출 한 건. 날짜 · 갈래 · 캐릭터 · 메모 | `storage/income.ts` · `storage/spend.ts` | 기록 | [[ADR-096]] |
+| `cashbook_entries` | `id`(uuid) | 가계부에 손으로 적은 수입 · 지출 한 건. 날짜 · 갈래 · 캐릭터 | `storage/income.ts` · `storage/spend.ts` | 기록 | [[ADR-096]] |
 | `cashbook_entry_items` | `id`(uuid, `(entry_id, sort_order)` 는 UNIQUE) | 기록의 품목. 항목 key 또는 직접 친 이름, 수량 · 레벨, 금액 · 수수료 · 관세 | `storage/cashbook-entries.ts` | 기록 | [[ADR-096]] |
 | `cashbook_entry_hunt_inputs` | `id`(uuid, `entry_id` 는 UNIQUE) | 사냥 기록의 계산기 입력 | `storage/cashbook-entries.ts` | 기록 | [[ADR-096]] |
 | `mvp_grade_history` | `id`(uuid, `(account_id, from_date)` 는 UNIQUE) | 메이플 ID 마다 MVP 등급과 시작 날짜 | `storage/mvp-grades.ts` | 기록 | `features/mvp-grade.md` |
@@ -80,6 +81,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `boss_drops` | `id` NN · `period_id` NN · `sort_order` NN · `category` NN · `item_key` NN · `box_origin_key` · `ring_level` · `record_status` NN · `price_meso` · `priced_at` · `sale_fee_percent` · `sale_fee_auto` · 분배 조건 · `created_at` NN · `updated_at` NN |
 | `character_profiles` | `id` NN · `ocid` NN UNIQUE · `name` NN · `image_url` NN · `world` · `world_key` · `level` · `job_class` · `updated_at` NN |
 | `character_world_leaps` | `id` NN · `from_ocid` NN UNIQUE · `to_ocid` NN · `linked_at` NN |
+| `enhancement_totals` | `id` NN · `nexon_account_id` NN · `history_date` NN · `character_name` NN · `enhancement_type` NN · `enhancement_category` NN · `item_group` NN · `item_key` · `item_name` NN · `attempts` NN · `attempt_cost_meso` NN · `destroy_defence_cost_meso` NN · `event_world`(1 이벤트 월드 · 0 아님 · `NULL` 모름) · `updated_at` NN |
 | `enhancement_history` | `id` NN · `kind` NN · `date_key` NN · `created_at` NN · `character_name` NN · `target_item` NN · `item_key` · `item_level` · `payload` NN · `cost_meso` |
 | `enhancement_history_checks` | `id` NN · `nexon_account_id` · `enhancement_type` NN · `history_date` NN · `next_cursor` · `settled` NN(기본 0) · `checked_at` NN |
 | `cashbook_entries` | `id` NN · `ocid` · `nexon_account_id` · `entry_type` NN(`income` · `spend`) · `category_key` NN · `entry_date` NN · `created_at` NN · `updated_at` NN |

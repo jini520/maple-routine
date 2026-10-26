@@ -11,6 +11,7 @@
 import { BOSS_CLEAR_RECORD_TYPE, bossClearHandler } from './boss-clear-sync'
 import { CASHBOOK_ENTRY_RECORD_TYPE, cashbookEntryHandler } from './cashbook-entry-sync'
 import { DROP_PRICE_RECORD_TYPE, dropPriceHandler } from './drop-price-sync'
+import { ENHANCEMENT_TOTAL_RECORD_TYPE, enhancementTotalHandler } from './enhancement-total-sync'
 import type { SyncHandler } from './sweep'
 
 /** 지금 보내는 종류. 이 이름이 대기 표의 `record_type` 칸에 그대로 들어간다. */
@@ -18,6 +19,7 @@ export type SyncRecordType =
   | typeof DROP_PRICE_RECORD_TYPE
   | typeof BOSS_CLEAR_RECORD_TYPE
   | typeof CASHBOOK_ENTRY_RECORD_TYPE
+  | typeof ENHANCEMENT_TOTAL_RECORD_TYPE
 
 /**
  * 종류마다 값의 모양이 달라 이 표는 그 모양을 잊는다.
@@ -33,4 +35,5 @@ export const SYNC_HANDLERS: Readonly<Record<SyncRecordType, SyncHandler<unknown>
   [DROP_PRICE_RECORD_TYPE]: anyValue(dropPriceHandler),
   [BOSS_CLEAR_RECORD_TYPE]: anyValue(bossClearHandler),
   [CASHBOOK_ENTRY_RECORD_TYPE]: anyValue(cashbookEntryHandler),
+  [ENHANCEMENT_TOTAL_RECORD_TYPE]: anyValue(enhancementTotalHandler),
 }

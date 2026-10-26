@@ -11,6 +11,7 @@ import { listRecordIdsAfter, type BackfillKind } from '../../storage/server-sync
 import { bossClearHandler, enqueueBossClears } from './boss-clear-sync'
 import { cashbookEntryHandler, enqueueCashbookEntries } from './cashbook-entry-sync'
 import { dropPriceHandler, enqueueDropPrices } from './drop-price-sync'
+import { enhancementTotalHandler, enqueueEnhancementTotals } from './enhancement-total-sync'
 
 /** 묶음 한 번의 건수. 서버의 상한과 같다. */
 export const BACKFILL_BATCH = 100
@@ -25,7 +26,7 @@ export interface BackfillKindSpec {
 }
 
 /**
- * 처치 · 드롭 · 가계부 차례. 드롭이 처치 기간 id 를 가리키므로 처치가 먼저다.
+ * 처치 · 드롭 · 가계부 · 강화 합계 차례. 드롭이 처치 기간 id 를 가리키므로 처치가 먼저다.
  *
  * 처리 함수는 부를 때 꺼낸다. 모듈을 읽을 때 꺼내면 종류 파일을 일부만 목으로 바꾼 테스트에서 빈 값을 집는다.
  */
@@ -47,6 +48,12 @@ export const BACKFILL_KINDS: readonly BackfillKindSpec[] = [
     path: RECORD_PATHS.cashbookEntry,
     read: (id) => cashbookEntryHandler.read(id),
     requeue: (ids, now) => enqueueCashbookEntries(ids, now),
+  },
+  {
+    kind: 'enhancementTotal',
+    path: RECORD_PATHS.enhancementTotal,
+    read: (id) => enhancementTotalHandler.read(id),
+    requeue: (ids, now) => enqueueEnhancementTotals(ids, now),
   },
 ]
 

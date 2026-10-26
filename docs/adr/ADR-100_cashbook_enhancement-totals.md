@@ -1,7 +1,7 @@
 # ADR-100 강화 내역을 계산한 합계로 저장하고, 다시 매길 기간은 환경 변수로 건다
 
 > ⚪ 미구현
-> 관련 소스: `storage/enhancement-history.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/spending.ts` · `storage/sqlite/migrations.ts`
+> 관련 소스: `features/enhancement-history/spending.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/legacy-totals.ts` · `storage/enhancement-totals.ts` · `storage/sqlite/enhancement-tables.ts` · `lib/enhancement/cost.ts` · `features/cashbook/records.ts` · `features/server-sync/enhancement-total-sync.ts`
 
 ## 배경
 
@@ -35,10 +35,17 @@ MVP 등급 기간을 고쳐도 강화 내역을 다시 받지 않기 위해서�
 - MVP 할인이 붙은 금액은 서버로 보내지 않는다([[ADR-099]] 결정 7). 기기가 할인 전 합계를 들고 있으므로 등급을 고쳐도
   서버에 물을 것이 없다.
 
-### 결정 3. 기존 기기는 DB 이관이 원본으로 합계를 만들고, 원본 표는 v1.0.14 에서 지운다
+### 결정 3. 기존 기기는 부팅 단계가 원본으로 합계를 만들고, 원본 표는 v1.0.14 에서 지운다
 
-이관은 #507 의 다음 DB 버전이다. 옛 `enhancement_history` 는 v1.0.13 에서 읽지 않은 채 두고 v1.0.14 에서 지운다(사용자 선택, #685).
-[[ADR-078]] 결정 9 와 같은 이유다.
+SQLite 버전 이관이 아니라 앱이 켜진 뒤 한 번 도는 단계(`ensureEnhancementTotals`)가 옮긴다. 이벤트 월드를 가리는 캐릭터 이름
+목록과 메인 넥슨 계정 id 가 Preferences 에 있어, DB 를 여는 자리에서는 읽을 수 없기 때문이다.
+
+- 옛 원본은 메인 계정의 자격으로 받은 것이라 메인 계정 id 로 적는다.
+- 수집기와 가계부가 합계를 읽기 전에 이 단계를 기다린다. 다 옮기면 Preferences `enhancementTotalsMoved` 에 적고 다시 돌지 않는다.
+- 메인 계정이나 이름 목록이 아직 없으면 옮기지 않고 다음 호출이 다시 본다. 이름 목록 없이 옮기면 판정이 빈 줄이 남는데, 옛
+  날짜는 굳어 있어 다시 받지 않으므로 그 지출이 영영 안 보이기 때문이다.
+- 옛 `enhancement_history` 는 v1.0.13 에서 이 단계만 읽고 두었다가 v1.0.14 에서 지운다(사용자 선택, #685). [[ADR-078]] 결정 9 와
+  같은 이유다.
 
 ### 결정 4. 다시 매길 기간은 `EXPO_PUBLIC_*` 환경 변수로 걸고, 끝나면 완료 표에 적는다
 
@@ -53,11 +60,66 @@ MVP 등급 기간을 고쳐도 강화 내역을 다시 받지 않기 위해서�
   여러 날로 흩어진다. 남은 날은 다음 회차가 이어 받고, 모든 날을 받은 회차에 완료를 적는다. 진행 바 분모에도 그 회차에
   받을 날만 넣는다. API 키 계정은 앱이 넥슨을 직접 부르므로 나누지 않는다.
 
+### 결정 5. 이벤트 월드인지는 저장할 때 판정해 합계 줄에 적는다
+
+이벤트 월드(스페셜) 캐릭터의 강화는 지출에서 뺀다([[ADR-047]] 결정 11). 원본을 버리면 읽을 때 응답을 다시 볼 수 없어,
+받는 회차가 판정해 합계 줄의 `event_world` 칸에 적는다(사용자 선택 2026-10-26).
+
+- 스타포스는 응답의 월드로, 큐브 · 잠재 · 소울은 그 회차에 받은 캐릭터 목록의 이름으로 판정한다. 판정 규칙은 지금과 같다.
+- 캐릭터 목록을 못 받은 회차의 큐브 · 잠재 · 소울 줄은 칸을 비운다(모름). 화면은 모름 줄을 지금처럼 지출에서 빼고, 그 날짜는
+  굳히지 않아 다음 회차가 다시 받아 칸을 채운다.
+- 전용 재화(`펄스 인핸서`) 줄과 값을 못 매기는 줄은 지금처럼 합계에 넣지 않는다.
+
+### 결정 6. 굳지 않은 날은 받을 때마다 그 날을 통째로 다시 받아 합계를 갈아 끼운다
+
+합계에는 응답 줄의 id 가 없어, 같은 줄을 두 번 받았는지 가릴 수 없다(사용자 선택). 그래서 오늘처럼 굳지 않은 날은 그 날의
+모든 쪽을 받아 합계를 다시 만들고, 그 계정 · 종류 · 날짜의 합계를 갈아 끼운다. 하루 기록은 보통 한 쪽(1000 줄) 안이라 호출이
+늘지 않는다. 결정 4 의 다시 매기기도 같은 방법으로 갈아 끼운다.
+
+- 갈아 끼울 때 같은 열쇠의 줄은 id 를 지킨다. 서버 사본을 그 id 로 덮기 때문이다. 다시 만든 합계에 없는 줄은 지우고 서버에서도
+  지운다.
+- 굳은 날은 지금처럼 다시 받지 않는다.
+
+### 결정 7. 서버로는 지출로 세는 합계 줄만 보낸다
+
+`event_world` 가 아님으로 판정된 줄만 보낸다(사용자 선택). 이벤트 월드 줄과 모름 줄은 보내지 않는다. 모름이던 줄이 다음 회차에
+아님으로 판정되면 그때 보낸다. 비용은 MVP 할인 전 두 칸이다(결정 2). 강화 합계를 서버로 보내는 일은 이 작업에 함께 넣는다
+(사용자 선택, [[ADR-099]] 결정 1 · 7).
+
+### 결정 8. 표
+
+```
+기기 enhancement_totals   id · nexon_account_id · history_date · character_name · enhancement_type · enhancement_category
+                          · item_group · item_key · item_name · attempts · attempt_cost_meso · destroy_defence_cost_meso
+                          · event_world · updated_at
+                          UNIQUE(nexon_account_id, history_date, character_name, enhancement_category, item_group)
+서버 enhancement_totals   id · user_id · identified_by · total_record_id · nexon_account_id · character_name · history_date
+                          · enhancement_category · item_key · item_name · attempts · attempt_cost_meso
+                          · destroy_defence_cost_meso · deleted_at · created_at · updated_at
+                          UNIQUE(user_id, total_record_id)
+```
+
+- `enhancement_type` 은 받은 API 종류(큐브 · 스타포스 · 잠재 · 소울)이고 갈아 끼우는 단위다. `enhancement_category` 는 화면의
+  분류 다섯(잠재를 본 · 에디셔널로 나눈다)이다.
+- `item_group` 은 장비 key, 없으면 NFC 정규화 뒤 공백을 지운 이름이다. 화면이 장비별로 펼치는 열쇠와 같다([[ADR-047]] 결정 12).
+- 합계 표는 처음부터 계정 칸을 든다. 옛 원본에서 옮긴 줄도 결정 3 의 단계가 메인 계정 id 를 바로 적어, 빈 글자 표시를 거치지
+  않는다.
+
 ## 테스트
 
-구현할 때 적는다.
+결정 4 는 #615 에서 구현한다. 그 전까지 이 ADR 은 ⚪ 이다.
+
+| 테스트 | 확인하는 것 |
+|---|---|
+| `features/enhancement-history/__tests__/spending.spec.ts` | 줄마다 비용 두 몫을 매기는 규칙(큐브 레벨 · 잠재와 소울은 사용 전 등급 · 스타포스 할인과 파괴 방지 · 표에 없는 장비는 값 없음), 날짜 · 캐릭터 · 분류 · 장비별로 묶기, 값 없는 줄과 전용 재화 줄 빼기, 이벤트 월드 판정 세 값(결정 1 · 2 · 5) |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 갈아 끼울 때 같은 열쇠의 id 를 지키고 사라진 줄의 id 를 돌려주는지, 비울 때 그 계정 · 종류 · 날짜만 지우는지, 옛 원본을 메인 계정 합계로 옮기고 이름 목록이 없으면 미루는지(결정 3 · 6) |
+| `features/enhancement-history/__tests__/collect.spec.ts` | 모든 쪽을 받아 한 합계로 갈아 끼우는지, 적은 줄과 지운 줄을 함께 서버 전송에 넘기는지, 목록을 못 받으면 판정을 비우고 굳히지 않는지(결정 5 · 6) |
+| `features/cashbook/__tests__/records.spec.ts` | 이벤트 월드 · 모름 줄을 지출에서 빼는지, MVP 할인을 스타포스 시도 비용에만 붙이는지, 옮기는 단계 뒤에 읽는지, 칸 금액과 상세 합계가 같은지(결정 2 · 3 · 5) |
+| `lib/enhancement/__tests__/cost.spec.ts` | 스타포스 비용을 두 몫으로 나누고 MVP 할인을 시도 비용에만 붙이는 계산(결정 2) |
+| `features/server-sync/__tests__/record-payloads.spec.ts` | 지출로 세는 줄만 할인 전 두 몫으로 싣고 나머지는 지우기로 보내는지(결정 7) |
 
 ## 번호 기록
 
 - ADR-100 (2026-10-26): 강화 합계 저장과 재계산 요청 결정을 처음 작성했다(#614 · #615). 같은 날 MVP 등급 변경 때 다시
-  받던 결정을 걷고, 할인 전 비용을 저장해 화면에서 할인을 붙이는 결정 2 로 바꿨다
+  받던 결정을 걷고, 할인 전 비용을 저장해 화면에서 할인을 붙이는 결정 2 로 바꿨다. 이어 이벤트 월드 판정 · 굳지 않은 날 갈아
+  끼우기 · 서버 전송 범위 · 표(결정 5 ~ 8)를 더했다. #614 를 구현하며 결정 3 의 옮기는 자리를 DB 이관에서 부팅 단계로 고쳤다

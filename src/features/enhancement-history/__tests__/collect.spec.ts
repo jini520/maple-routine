@@ -8,11 +8,11 @@ jest.mock('../../../storage/event-world-names', () => ({ saveEventWorldNames: je
 jest.mock('../../../storage/enhancement-history', () => ({
   checkKey: (kind: string, dateKey: string) => `${kind}|${dateKey}`,
   loadEnhancementChecks: jest.fn(),
-  loadKnownHistoryIds: jest.fn(),
-  loadObservedItemLevels: jest.fn(),
   markEnhancementChecked: jest.fn(),
-  saveEnhancementHistory: jest.fn(),
 }))
+jest.mock('../../../storage/enhancement-totals', () => ({ replaceEnhancementTotals: jest.fn() }))
+jest.mock('../../server-sync/report', () => ({ reportEnhancementTotals: jest.fn() }))
+jest.mock('../legacy-totals', () => ({ ensureEnhancementTotals: jest.fn() }))
 
 const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 const { fetchEnhancementHistory } = jest.requireMock('../../../nexon/history/client') as Record<string, jest.Mock>
@@ -20,6 +20,9 @@ const { fetchCharacterList } = jest.requireMock('../../../nexon/character') as R
 const store = jest.requireMock('../../../storage/enhancement-history') as Record<string, jest.Mock>
 const { saveEventWorldNames } = jest.requireMock('../../../storage/event-world-names') as Record<string, jest.Mock>
 const { fillLegacyAccountIds } = jest.requireMock('../../auth/legacy-account-ids') as Record<string, jest.Mock>
+const { replaceEnhancementTotals } = jest.requireMock('../../../storage/enhancement-totals') as Record<string, jest.Mock>
+const { reportEnhancementTotals } = jest.requireMock('../../server-sync/report') as Record<string, jest.Mock>
+const { ensureEnhancementTotals } = jest.requireMock('../legacy-totals') as Record<string, jest.Mock>
 
 const NOW = new Date('2026-09-06T12:00:00+09:00')
 const KINDS = ['cube', 'starforce', 'potential']
@@ -45,10 +48,10 @@ beforeEach(() => {
   ])
   fetchEnhancementHistory.mockReset().mockResolvedValue(page([]))
   store.loadEnhancementChecks.mockReset().mockResolvedValue(new Map())
-  store.loadKnownHistoryIds.mockReset().mockResolvedValue(new Set())
   store.markEnhancementChecked.mockReset().mockResolvedValue(undefined)
-  store.saveEnhancementHistory.mockReset().mockResolvedValue(undefined)
-  store.loadObservedItemLevels.mockReset().mockResolvedValue(new Map())
+  replaceEnhancementTotals.mockReset().mockResolvedValue({ writtenIds: [], removedIds: [] })
+  reportEnhancementTotals.mockReset().mockResolvedValue(undefined)
+  ensureEnhancementTotals.mockReset().mockResolvedValue(undefined)
   saveEventWorldNames.mockReset().mockResolvedValue(undefined)
 })
 
@@ -191,92 +194,33 @@ describe('수집', () => {
     )
   })
 
-  it('받은 줄을 넣는다', async () => {
-    fetchEnhancementHistory.mockResolvedValue(page(['a', 'b']))
-    await collectEnhancementHistory(['2026-09-05'], NOW)
-
-    expect(store.saveEnhancementHistory).toHaveBeenCalledWith('cube', expect.arrayContaining([
-      expect.objectContaining({ id: 'a' }),
-    ]))
-  })
-
-  /**
-   * **값을 못 매기는 줄은 버린다**(사용자 지정). 금액을 못 적는 줄은 목록에서 자리만 차지하고
-   * 합계에도 안 들어간다. 실제로 걸리는 것은 장비 레벨을 못 푸는 스타포스뿐이다.
-   */
-  it('값을 못 매기는 줄은 저장하지 않는다', async () => {
+  it('받은 줄을 합계로 묶어 그 날 그 종류를 바꿔 적는다', async () => {
     fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
-      Promise.resolve(kind === 'starforce' ? page(['sf']) : page([])),
+      Promise.resolve(kind === 'cube' ? page(['a', 'b']) : page([])),
     )
-
     await collectEnhancementHistory(['2026-09-05'], NOW)
 
-    // 스타포스 줄은 `before_starforce_count` 가 없어 값이 안 나온다.
-    expect(store.saveEnhancementHistory).toHaveBeenCalledWith('starforce', [])
+    expect(replaceEnhancementTotals).toHaveBeenCalledWith(
+      'account-key',
+      'cube',
+      '2026-09-05',
+      [expect.objectContaining({ itemKey: 'arcane_umbra_knuckle', attempts: 2, eventWorld: false })],
+      NOW,
+    )
   })
 
-  // 장비 key 는 응답을 받는 자리에서 얻는다. 매칭 함수는 장비 표 조회 모듈의 것이다.
-  it('장비 표로 key 를 얻는 매칭 함수를 넘긴다', async () => {
+  // 지운 줄도 보내야 서버에서 지워진다. 남은 줄만 보내면 사라진 합계가 서버에 남는다.
+  it('적은 줄과 지운 줄을 함께 서버 전송에 넘긴다', async () => {
+    replaceEnhancementTotals.mockImplementation((_account: string, kind: string) =>
+      Promise.resolve(kind === 'cube' ? { writtenIds: ['w'], removedIds: ['r'] } : { writtenIds: [], removedIds: [] }),
+    )
     await collectEnhancementHistory(['2026-09-05'], NOW)
 
-    const itemKeyOf = fetchEnhancementHistory.mock.calls[0][2] as (name: string) => string | null
-    expect(itemKeyOf('루즈 컨트롤 머신 마크')).toBe('loose_control_machine_mark')
-    expect(itemKeyOf('골드 히어로즈 엠블렘')).toBeNull()
+    expect(reportEnhancementTotals).toHaveBeenCalledWith(['w', 'r'], NOW)
   })
 
-  // 표에 없는 장비에 쓴 큐브도 실제 지출이다. 버리는 기준은 값을 매기는가 하나다.
-  it('장비 key 를 못 찾아도 값을 매길 수 있으면 저장한다', async () => {
-    fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
-      Promise.resolve(
-        kind === 'cube'
-          ? { rows: [{ ...page(['emblem']).rows[0], targetItem: '골드 히어로즈 엠블렘', itemKey: null, itemLevel: 100 }], nextCursor: null }
-          : page([]),
-      ),
-    )
-
-    await collectEnhancementHistory(['2026-09-05'], NOW)
-
-    expect(store.saveEnhancementHistory).toHaveBeenCalledWith('cube', [
-      expect.objectContaining({ id: 'emblem', itemKey: null }),
-    ])
-  })
-
-  // **0 은 모르는 것이 아니다.** 강화권은 메소가 안 드는 것이지 값을 못 매기는 것이 아니다.
-  it('값이 0 인 줄은 저장한다', async () => {
-    fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
-      Promise.resolve(
-        kind === 'starforce'
-          ? { rows: [{ ...page(['sf']).rows[0], payload: { upgrade_item: '카르마 스타포스 17성 강화권' } }], nextCursor: null }
-          : page([]),
-      ),
-    )
-
-    await collectEnhancementHistory(['2026-09-05'], NOW)
-
-    expect(store.saveEnhancementHistory).toHaveBeenCalledWith('starforce', [
-      expect.objectContaining({ id: 'sf' }),
-    ])
-  })
-
-  /**
-   * **버린 줄도 아는 줄이다.** 커서를 멈추는 판정은 받은 쪽 전체로 한다. 저장된 것만 보면
-   * 버려진 줄만 있는 쪽에서 영영 안 멈춰 쪽수를 끝까지 따라간다.
-   */
-  it('버린 줄만 있어도 아는 id 를 만나면 멈춘다', async () => {
-    store.loadKnownHistoryIds.mockResolvedValue(new Set(['sf']))
-    fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
-      Promise.resolve(kind === 'starforce' ? page(['sf'], 'c1') : page([])),
-    )
-
-    await collectEnhancementHistory(['2026-09-05'], NOW)
-
-    const starforceCalls = fetchEnhancementHistory.mock.calls.filter(
-      (call: unknown[]) => call[1] === 'starforce',
-    )
-    expect(starforceCalls).toHaveLength(1)
-  })
-
-  it('커서가 있으면 이어 받는다', async () => {
+  // 합계에는 응답 줄의 id 가 없어 이미 받은 쪽을 가릴 수 없다. 앞쪽에서 멈추면 그 날 합계가 모자란다.
+  it('커서가 있으면 끝까지 받아 모든 쪽을 한 합계로 묶는다', async () => {
     fetchEnhancementHistory.mockImplementation((_key, kind, _itemKeyOf, query) => {
       if (kind !== 'cube') return Promise.resolve(page([]))
       return Promise.resolve(query.cursor === undefined ? page(['a'], 'c1') : page(['b'], null))
@@ -286,20 +230,8 @@ describe('수집', () => {
 
     const cube = fetchEnhancementHistory.mock.calls.filter((call) => call[1] === 'cube')
     expect(cube.map((call) => call[3])).toEqual([{ dateKey: '2026-09-05' }, { cursor: 'c1' }])
-  })
-
-  // 커서를 따라가다 이미 넣은 줄을 만나면 그 아래는 다 들어 있다.
-  it('아는 id 를 만나면 멈춘다', async () => {
-    store.loadKnownHistoryIds.mockResolvedValue(new Set(['b']))
-    // 커서가 끊이지 않는다. 멈추는 것은 아는 id 뿐이다.
-    fetchEnhancementHistory.mockImplementation((_key, _kind, _itemKeyOf, query) =>
-      Promise.resolve(query.cursor === undefined ? page(['a'], 'c1') : page(['b'], 'c2')),
-    )
-
-    await collectEnhancementHistory(['2026-09-05'], NOW)
-
-    // 종류마다 2쪽씩. 3쪽째는 안 부른다.
-    expect(fetchEnhancementHistory).toHaveBeenCalledTimes(6)
+    const cubeTotals = replaceEnhancementTotals.mock.calls.find((call) => call[1] === 'cube')
+    expect(cubeTotals?.[3]).toEqual([expect.objectContaining({ attempts: 2 })])
   })
 
   // 안전핀. 커서가 영영 안 끊기고 아는 id 도 안 나오면 그 칸이 무한히 돈다.
@@ -344,12 +276,14 @@ describe('수집', () => {
     )
   })
 
-  it('그래도 줄은 받아 둔다. 사실은 사실이다', async () => {
+  // 합계는 적되 이벤트 월드 판정을 비운다. 비운 줄은 지출로 세지도 서버로 보내지도 않는다.
+  it('그래도 합계는 적는다. 이벤트 월드 판정은 비운다', async () => {
     fetchCharacterList.mockRejectedValue(new Error('boom'))
     fetchEnhancementHistory.mockResolvedValue(page(['a']))
     await collectEnhancementHistory(['2026-09-05'], NOW)
 
-    expect(store.saveEnhancementHistory).toHaveBeenCalled()
+    const cubeTotals = replaceEnhancementTotals.mock.calls.find((call) => call[1] === 'cube')
+    expect(cubeTotals?.[3]).toEqual([expect.objectContaining({ eventWorld: null })])
   })
 
   // 던지면 원장에 안 적혀 다음 회차가 다시 온다.

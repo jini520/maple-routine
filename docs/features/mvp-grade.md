@@ -16,7 +16,7 @@
 | `lib/mvp/history.ts` | 그 날의 등급 · 등급 변경 · 기간 추가 · 지우기 · 고치기 · 고를 수 있는 주 · 기간 추가의 설명 줄 |
 | `lib/mvp/membership.ts` | 이름이나 ocid 로 메이플 ID 소속 찾기 |
 | `lib/mvp/fees.ts` · `lib/mvp/starforce.ts` | 기록의 자동 요율 · 스타포스 줄의 MVP 할인 |
-| `lib/enhancement/cost.ts` | `starforceCost` 의 MVP 할인 |
+| `lib/enhancement/cost.ts` | 스타포스 시도 비용에 붙이는 MVP 할인(`withMvpDiscount`) |
 | `storage/mvp-grades.ts` | `mvp_grade_history` 읽기 · 쓰기 |
 | `storage/character-accounts.ts` | `character_accounts` 읽기 · 쓰기. 소속을 어느 넥슨 계정의 목록에서 봤는지도 적는다 |
 | `storage/mvp-grade-prefs.ts` | `mvpWeeklyCheckOff` · `mvpLastCheckedWeek` · `mvpBulkApplyAsked` · `mvpOnboardingPending` |

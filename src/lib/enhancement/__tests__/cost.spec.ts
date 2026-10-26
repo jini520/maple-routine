@@ -6,8 +6,15 @@ import {
   cubeAppraisalCost,
   potentialResetCost,
   soulPotentialResetCost,
-  starforceCost,
+  starforceCostParts,
+  withMvpDiscount,
 } from '../cost'
+
+/** 한 번의 시도 비용. 두 몫으로 나눈 뒤 MVP 할인을 붙인 값이 예전 한 번 계산과 같아야 한다. */
+function starforceCost(level: number, fromStar: number, discount = 0, destroyDefence = false, mvp = 0): number | null {
+  const parts = starforceCostParts(level, fromStar, discount, destroyDefence)
+  return parts === null ? null : withMvpDiscount(parts, mvp)
+}
 
 describe('큐브 감정비용', () => {
   // 사용자가 표로 준 여섯 값. 식 `20 * L^2` 이 이 여섯과 마지막 자리까지 맞아 식으로 접었다.
@@ -112,5 +119,19 @@ describe('스타포스 비용', () => {
   it('성수를 벗어나면 값이 없다', () => {
     expect(starforceCost(160, 30)).toBeNull()
     expect(starforceCost(160, -1)).toBeNull()
+  })
+})
+
+// 합계는 MVP 할인 전 두 몫으로 저장한다. 파괴 방지 추가분은 어떤 할인도 받지 않는다.
+describe('스타포스 비용의 두 몫', () => {
+  it('이벤트 할인은 시도 몫에만 붙고, 파괴 방지 추가분은 할인 전 값의 200% 다', () => {
+    expect(starforceCostParts(160, 17, 30, true)).toEqual({ attemptMeso: 46_839_170, destroyDefenceMeso: 133_826_200 })
+  })
+
+  it('합계에 MVP 할인을 한 번 붙이면 시도마다 붙인 합과 시도당 1 메소 안으로 같다', () => {
+    const one = starforceCostParts(200, 16, 30, true)!
+    const total = { attemptMeso: one.attemptMeso * 3, destroyDefenceMeso: one.destroyDefenceMeso * 3 }
+
+    expect(Math.abs(withMvpDiscount(total, 3) - withMvpDiscount(one, 3) * 3)).toBeLessThan(3)
   })
 })

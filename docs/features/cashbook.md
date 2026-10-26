@@ -18,7 +18,7 @@
 | `features/cashbook/row-icon.ts` | 하루 목록 줄의 그림 |
 | `features/ledger/useLedgerData.tsx` | 넥슨 API 회차를 관리하는 데이터 공급자. 화면은 범위를 알리고 다시 받아 달라고 요청한다 |
 | `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` |
-| `storage/enhancement-history.ts` · `features/enhancement-history/` · `lib/enhancement/` | 강화 사용 내역 수집 · 비용 계산 · 지출 판정 |
+| `storage/enhancement-totals.ts` · `storage/enhancement-history.ts` · `features/enhancement-history/` · `lib/enhancement/` | 강화 사용 내역 수집 · 비용 계산 · 합계 저장 · 지출 판정. 원장은 `enhancement-history.ts` 에 있다 |
 | `app/cashbook/IncomeSheet.tsx` · `SpendSheet.tsx` · `CategoryPicker.tsx` · `sheet-fields.tsx` | 두 시트와 공용 부품 |
 | `app/cashbook/income/` · `app/cashbook/spend/` | 분류별 폼 |
 | `lib/cashbook/categories.ts` | 지출 · 수입 분류, 아이템 종류, 에픽던전 형태의 key 와 이름 |
@@ -36,7 +36,7 @@
 | 손으로 적은 수입 | `cashbook_entries`(`entry_type = 'income'`) | 예 |
 | 보스 결정석 | `boss_party_periods` 의 `cleared` 행(보스 수익 탭이 적는다) | 아니오. 누르면 그날 잡은 보스가 펼쳐진다([[ADR-047]] 결정 13) |
 | 아이템 판매 | `boss_drops`(보스 수익 탭이 적는다) | 아니오. 누르면 판 아이템이 펼쳐진다([[ADR-047]] 결정 13) |
-| 강화 사용 내역 | `enhancement_history`(넥슨 API 에서 받는다) | 아니오. 누르면 장비별 금액이 펼쳐진다 |
+| 강화 사용 내역 | `enhancement_totals`(넥슨 API 에서 받아 합계로 저장한다) | 아니오. 누르면 장비별 금액이 펼쳐진다 |
 
 합계는 메소 기준이다. 메포는 시세로 메소로 바꿔 더하고, 캐시는 더하지 않고 하루 목록에서 `원` 으로 따로 적는다.
 
@@ -78,7 +78,7 @@
 |---|---|---|---|
 | 보스 결정석 | `캐릭터 · 보스 결정석` | `n마리` | 잡은 보스 초상이 펼쳐진다 |
 | 보스 드롭 판매 | `캐릭터 · 보스 드롭 판매` | `n건` | 판 아이템이 펼쳐진다 |
-| 강화 | `캐릭터 · 강화` | `큐브 재설정 n회` 등 다섯 분류, 값 모름이 있으면 `· 값모름 m` | 장비별 금액이 펼쳐진다 |
+| 강화 | `캐릭터 · 강화` | `큐브 재설정 n회` 등 다섯 분류 | 장비별 금액이 펼쳐진다 |
 | 지출 목록 항목 | `캐릭터 · 묶음 카드 제목` | `항목 이름 n단위`, 에픽던전은 `하이마운틴 경험치 1단계, 솔 에르다 2단계` | 채워진 지출 시트 |
 | 심볼 강화 · 아이템 구매 · 기타 | `캐릭터 · 갈래 카드 제목` | `세르니움 7 → 10` · 직접 친 이름(+ 수량) | 채워진 지출 시트 |
 | 사냥 | `캐릭터 · 사냥` | `n소재`(조각을 팔았으면 `, 솔 에르다 조각 n개 판매`), 직접 입력이면 `직접 입력` | 채워진 수입 시트 |

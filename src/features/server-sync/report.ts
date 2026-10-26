@@ -8,6 +8,7 @@ import type { BossProfitRecordKey } from '../../storage/boss-profit'
 import { findBossPeriodIds } from '../../storage/server-sync-sources'
 import { enqueueBossClears, enqueueBossClearsOf } from './boss-clear-sync'
 import { enqueueCashbookEntries } from './cashbook-entry-sync'
+import { enqueueEnhancementTotals } from './enhancement-total-sync'
 import { kickServerSync } from './kick'
 
 /** @param now 대기 표에 적는 시각. 테스트가 고정한다 */
@@ -25,6 +26,12 @@ export async function reportBossClearsOf(keys: readonly BossProfitRecordKey[], n
 export async function reportCashbookEntries(entryIds: readonly string[], now: Date): Promise<void> {
   await enqueueCashbookEntries(entryIds, now)
   if (entryIds.length > 0) void kickServerSync()
+}
+
+/** 강화 합계를 갈아 끼운 자리용. 새로 적은 줄과 지운 줄을 함께 넣는다. */
+export async function reportEnhancementTotals(ids: readonly string[], now: Date): Promise<void> {
+  await enqueueEnhancementTotals(ids, now)
+  if (ids.length > 0) void kickServerSync()
 }
 
 /**
