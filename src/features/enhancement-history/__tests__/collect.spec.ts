@@ -17,6 +17,7 @@ jest.mock('../../../storage/enhancement-recomputes', () => ({
   loadRecomputeProgress: jest.fn(),
   saveRecomputeProgress: jest.fn(),
 }))
+jest.mock('../anomalies', () => ({ ...jest.requireActual('../anomalies'), reportEnhancementAnomalies: jest.fn() }))
 jest.mock('../recompute', () => ({ ...jest.requireActual('../recompute'), RECOMPUTE_REQUESTS: [] }))
 
 const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
@@ -30,6 +31,7 @@ const { reportEnhancementTotals } = jest.requireMock('../../server-sync/report')
 const { ensureEnhancementTotals } = jest.requireMock('../legacy-totals') as Record<string, jest.Mock>
 const recomputes = jest.requireMock('../../../storage/enhancement-recomputes') as Record<string, jest.Mock>
 const { RECOMPUTE_REQUESTS } = jest.requireMock('../recompute') as { RECOMPUTE_REQUESTS: unknown[] }
+const { reportEnhancementAnomalies } = jest.requireMock('../anomalies') as Record<string, jest.Mock>
 const setRequests = (requests: unknown[]) => RECOMPUTE_REQUESTS.splice(0, RECOMPUTE_REQUESTS.length, ...requests)
 
 const NOW = new Date('2026-09-06T12:00:00+09:00')
@@ -63,6 +65,7 @@ beforeEach(() => {
   recomputes.loadRecomputeProgress.mockReset().mockResolvedValue(new Map())
   recomputes.saveRecomputeProgress.mockReset().mockResolvedValue(undefined)
   setRequests([])
+  reportEnhancementAnomalies.mockReset().mockResolvedValue(undefined)
   saveEventWorldNames.mockReset().mockResolvedValue(undefined)
 })
 
@@ -385,6 +388,35 @@ describe('다시 매기기 요청', () => {
 
     expect(fetchEnhancementHistory).not.toHaveBeenCalled()
     expect(recomputes.saveRecomputeProgress).toHaveBeenCalledWith('account-key', 'r1', null, true, NOW)
+  })
+})
+
+// 원본을 버리므로 빠진 줄은 받은 그 자리에서 알려야 원인을 볼 수 있다.
+describe('합계에서 빠진 줄 알리기', () => {
+  it('받은 날마다 빠진 줄을 세어 알린다', async () => {
+    // 이 줄은 시도 전 성수가 없어 비용을 못 매긴다.
+    fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
+      Promise.resolve(kind === 'starforce' ? page(['sf']) : page([])),
+    )
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    expect(reportEnhancementAnomalies).toHaveBeenCalledWith([
+      expect.objectContaining({ historyDate: '2026-09-05', enhancementType: 'starforce', anomalyType: 'no_star', rowCount: 1 }),
+    ])
+  })
+
+  it('목록을 못 받은 회차는 판정하지 못한 줄과 실패 이유를 알린다', async () => {
+    fetchCharacterList.mockRejectedValue(new Error('boom'))
+    fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
+      Promise.resolve(kind === 'cube' ? page(['a']) : page([])),
+    )
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    expect(reportEnhancementAnomalies).toHaveBeenCalledWith([
+      expect.objectContaining({ anomalyType: 'event_world_unknown', detail: 'Error: boom' }),
+    ])
   })
 })
 

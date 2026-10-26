@@ -12,6 +12,8 @@ import { isEnhancementTotalsMoved, markEnhancementTotalsMoved } from '../../stor
 import { getEventWorldNames } from '../../storage/event-world-names'
 import type { EnhancementKind } from '../../nexon/history/client'
 import { summarizeEnhancement } from './spending'
+import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
+import type { EnhancementAnomaly } from '../../types/server-records'
 
 let moving: Promise<void> | null = null
 
@@ -40,15 +42,19 @@ async function move(): Promise<void> {
     return
   }
   const now = new Date()
+  const anomalies: EnhancementAnomaly[] = []
   for (const dateKey of await listEnhancementHistoryDates()) {
     const entries = await loadEnhancementHistory([dateKey])
     for (const kind of ['cube', 'starforce', 'potential', 'soul_potential'] as const satisfies readonly EnhancementKind[]) {
       const ofKind = entries.filter((entry) => entry.kind === kind)
       if (ofKind.length === 0) continue
       await replaceEnhancementTotals(accountId, kind, dateKey, summarizeEnhancement(ofKind, eventNames), now)
+      anomalies.push(...enhancementAnomaliesOf(ofKind, eventNames, null))
     }
   }
   await markEnhancementTotalsMoved()
+  // 옮기며 빠진 줄도 원본을 버리기 전에 알린다. 표시를 먼저 적어, 보내기가 늦어도 옮기기를 다시 하지 않는다.
+  void reportEnhancementAnomalies(anomalies)
 }
 
 /** 테스트가 한 번 돈 상태를 지운다. */
