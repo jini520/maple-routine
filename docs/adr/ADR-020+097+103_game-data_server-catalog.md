@@ -87,6 +87,8 @@ GET /v1/game-data
   실제 값으로 돈다. fixture 는 서버가 바뀌어도 따라 바꾸지 않는다. 값을 고정한 테스트가 많기 때문이다.
 - 모듈 꼭대기에서 한 번 만들던 Map 과 정렬 목록은 `derive` 가 만든다. 표 객체가 바뀐 뒤 처음 읽을 때 다시 만든다.
   상수로 두면 모듈을 처음 불러온 순간의 값으로 굳는다.
+- 화면 · 기능 코드는 조회 함수를 모듈 최상위에서 부르지 않는다. 표는 빈 값으로 켜지므로 불러오는 순간의 조회는 빈 값으로
+  굳는다. 번들 시절에는 드러나지 않던 결함이라 정책 테스트가 지킨다.
 - 화면은 `useGameTable('bosses')` 처럼 칸 하나를 구독한다(`features/game-data/sync.ts`). 바뀌지 않은 칸은 같은 객체를
   유지하므로, 바뀐 칸을 쓰는 화면만 다시 그린다.
 - 열여섯 칸의 표와 `parse` 는 `lib/game-data/sections.ts` 의 `SECTIONS` 에 모여 있다. 칸을 더하면 여기와
@@ -260,6 +262,7 @@ jsonb 칸 두 개에 나눠 두면 두 칸의 순서가 어긋나도 DB 가 잡�
 | `lib/assets/__tests__/asset-files.spec.ts` | 결정 5: 파일 이름이 해시와 다르거나 크기가 없거나 경로가 겹치면 목록을 버리는지, NFD 경로도 찾는지 본다 |
 | `lib/assets/__tests__/image-crops.spec.ts` | 결정 15: 크롭 계산이 못 읽는 문법을 버리는지, 종류마다 다른 줄을 읽고 없으면 기본 크롭인지 본다 |
 | `lib/assets/__tests__/code-referenced-assets.spec.ts` | 결정 7: 코드가 이름으로 가리키는 그림이 그림 목록에 있는지 본다 |
+| `__tests__/game-data-module-scope-policy.test.ts` | 결정 4: `lib/` 의 표 조회 함수를 다른 파일이 모듈 최상위에서 부르지 않는지 구문 트리로 본다. jest 는 fixture 로 표를 처음부터 채워 기능 테스트로는 이 결함이 안 보인다 |
 | `lib/game-data/__tests__/table.spec.ts` | 결정 4: 표를 바꾸면 구독자에게 알리고, 같은 객체면 알리지 않고, 구독을 풀면 더 알리지 않는지, `derive` 가 표가 바뀐 뒤에만 다시 만드는지 본다 |
 | `lib/game-data/__tests__/sections.spec.ts` | 결정 4: 칸이 `GAME_DATA_SECTIONS` 와 같은 순서인지, fixture 가 계약을 통과하고 다시 통과시켜도 같은지, 표를 덮으면 그 칸이 바뀌는지 본다 |
 | `app/game-data/__tests__/GameDataLock.test.tsx` | 결정 16: 받는 단계 · 대기 단계, 두 데이터를 합친 MB 와 퍼센트, 받을 그림이 없을 때 끝난 단계, 실패 상태와 다시 시도를 본다 |

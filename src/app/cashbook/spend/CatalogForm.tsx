@@ -22,6 +22,7 @@ import { Segment } from '../../../components/molecules/Segment/Segment'
 import { formatMesoCompact } from '../../../lib/cashbook/meso-compact'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { getItemIconUrlByFile, spendIconOf } from '../../../lib/assets/asset-lookup'
+import type { ImageAssetRef } from '../../../types/image-asset'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import {
   BASE_TIER,
@@ -91,8 +92,13 @@ function capQuantityText(text: string, max: number | undefined): string {
 /** 타일 그림의 한 변. 1차 갈래 카드와 같은 수다. */
 const TILE_ICON_SIZE = 28
 
-/** 주화 줄의 그림. 참조표가 파일 이름을 들어서 화면이 그 이름을 안 적는다. */
-const COIN_ICON = getItemIconUrlByFile(SPEND_REWARD_COIN.icon)
+/**
+ * 주화 줄의 그림. 참조표가 파일 이름을 들어서 화면이 그 이름을 안 적는다. 부를 때 찾는다. 모듈 최상위에서 찾으면 그림 목록을
+ * 받기 전의 빈 값으로 굳는다.
+ */
+function coinIcon(): ImageAssetRef | null {
+  return getItemIconUrlByFile(SPEND_REWARD_COIN.icon)
+}
 
 /**
  * 주화 개수 자리의 바닥 폭. 개수는 이 자리의 **오른쪽 끝**에 붙는다.
@@ -477,9 +483,9 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
               testID="spend-sheet-coins"
               className="min-h-8 flex-row items-center gap-3 border-b border-border pb-2"
             >
-              {COIN_ICON !== null && (
+              {coinIcon() !== null && (
                 <Image
-                  source={COIN_ICON}
+                  source={coinIcon() ?? undefined}
                   className="h-6 w-6 shrink-0"
                   resizeMode="contain"
                   aria-label={SPEND_REWARD_COIN.name}

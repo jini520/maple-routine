@@ -157,9 +157,13 @@ export function characterCategoriesBetween(byDate: DaysByDate, range: StatsRange
 const BOSS_CRYSTAL = { key: 'boss_crystal', name: '보스 결정석' }
 const BOSS_DROP = { key: 'boss_drop', name: '보스 드롭' }
 /** 사냥과 솔 에르다 조각은 사냥이 낸 것이라 한 조각이고, 누르면 메소와 조각으로 나눈다 */
-const HUNTING = { key: 'hunting', name: incomeCategoryNameOf('hunting') }
+// 이름은 부를 때 갈래 표에서 찾는다. 모듈 최상위에서 찾으면 게임 데이터를 받기 전의 빈 이름으로 굳는다.
+const hunting = (): { key: string; name: string } => ({ key: 'hunting', name: incomeCategoryNameOf('hunting') })
 const HUNTING_MESO = { key: 'hunting_meso', name: '사냥 메소' }
-const SOL_ERDA_FRAGMENT = { key: 'sol_erda_fragment', name: incomeCategoryNameOf('sol_erda_fragment') }
+const solErdaFragment = (): { key: string; name: string } => ({
+  key: 'sol_erda_fragment',
+  name: incomeCategoryNameOf('sol_erda_fragment'),
+})
 /** 버프 갈래의 항목이 선택 목록에서 묶음을 못 찾을 때의 줄 */
 const UNKNOWN_BUFF_GROUP = { key: 'buff_etc', name: '기타' }
 /** 손으로 친 이름이 없는 기록의 줄 */
@@ -234,14 +238,14 @@ function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; part
       }
     case 'income': {
       const { category } = entry.record
-      if (category === 'sol_erda_fragment') return { slice: HUNTING, parts: [{ ...SOL_ERDA_FRAGMENT, meso }] }
+      if (category === 'sol_erda_fragment') return { slice: hunting(), parts: [{ ...solErdaFragment(), meso }] }
       if (category === 'hunting') {
         const fragmentMeso = fragmentMesoOf(entry.record)
         return {
-          slice: HUNTING,
+          slice: hunting(),
           parts: [
             { ...HUNTING_MESO, meso: meso - fragmentMeso },
-            { ...SOL_ERDA_FRAGMENT, meso: fragmentMeso },
+            { ...solErdaFragment(), meso: fragmentMeso },
           ],
         }
       }
