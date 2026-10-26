@@ -1,7 +1,7 @@
 /**
  * 지금 앱이 쓰는 보스 표. 번들 `bosses.json` 으로 시작하고 기기 사본과 서버 응답이 덮는다.
  *
- * `bosses.ts` 의 조회 함수가 전부 이 값을 읽는다. 덮는 흐름은 `features/game-data/query` 에 있다.
+ * `bosses.ts` 의 조회 함수가 전부 이 값을 읽는다. 덮는 흐름은 `features/game-data/sync` 에 있다.
  * 서버 응답과 기기 사본을 받는 자리가 같은 검사(`parseBossCatalog`)를 거친다.
  */
 import {
@@ -83,8 +83,8 @@ export function parseBossCatalog(value: unknown): BossCatalog | null {
 
 export const bossCatalogTable = gameTable('bosses', { updatedAt: null, rules: { weeklyBossSelectionLimit: 0, weeklyCrystalSaleLimit: 0, defaultMaxPartySize: 0 }, bosses: [] }, parseBossCatalog)
 
-/** 번들 사본이 계약을 통과한 값. 서버도 기기 사본도 없는 첫 실행이 이것으로 선다. */
-export const BUNDLED_BOSS_CATALOG: BossCatalog = bossCatalogTable.get()
+/** 표의 첫 값. 앱에서는 빈 표이고 jest 에서는 fixture 다. 테스트가 표를 되돌릴 때 쓴다. */
+export const INITIAL_BOSS_CATALOG: BossCatalog = bossCatalogTable.get()
 
 export function getBossCatalog(): BossCatalog {
   return bossCatalogTable.get()

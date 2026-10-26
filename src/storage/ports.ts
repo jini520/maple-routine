@@ -55,8 +55,32 @@ export interface SqlitePort {
   ): Promise<SqliteDbConnection>
 }
 
+/**
+ * 서버에서 받은 게임 데이터 그림을 두는 디렉터리. 파일 이름은 내용 해시(`<sha256>.<확장자>`)다.
+ *
+ * 받은 파일은 해시를 확인한 뒤에만 그 이름으로 둔다. 이름이 곧 내용이라, 이름이 있으면 내용도 맞다고 믿는다.
+ */
+export interface AssetFilesPort {
+  /** 디렉터리 주소. 끝에 `/` 가 붙는다. 화면은 이 주소에 파일 이름을 이어 그림을 연다 */
+  directoryUri(): string
+  /** 디렉터리에 있는 파일 이름 전부. 디렉터리가 없으면 빈 배열이다 */
+  list(): Promise<string[]>
+  /**
+   * `url` 을 받아 `fileName` 으로 둔다. 받은 내용의 sha256 이 다르면 지우고 던진다.
+   *
+   * @returns 받은 바이트 수
+   */
+  download(url: string, fileName: string, sha256: string): Promise<number>
+  remove(fileName: string): Promise<void>
+  /** 디렉터리를 통째로 지운다. 캐시 삭제가 부른다 */
+  clear(): Promise<void>
+  /** 디렉터리의 바이트 합. 캐시 용량이 센다 */
+  size(): Promise<number>
+}
+
 let preferencesPort: PreferencesPort | null = null
 let sqlitePort: SqlitePort | null = null
+let assetFilesPort: AssetFilesPort | null = null
 
 export function setPreferencesPort(port: PreferencesPort): void {
   preferencesPort = port
@@ -64,6 +88,17 @@ export function setPreferencesPort(port: PreferencesPort): void {
 
 export function setSqlitePort(port: SqlitePort): void {
   sqlitePort = port
+}
+
+export function setAssetFilesPort(port: AssetFilesPort): void {
+  assetFilesPort = port
+}
+
+export function getAssetFilesPort(): AssetFilesPort {
+  if (assetFilesPort === null) {
+    throw new Error('AssetFilesPort가 주입되지 않았습니다. 그림을 받기 전에 setAssetFilesPort()를 부르세요.')
+  }
+  return assetFilesPort
 }
 
 export function getPreferencesPort(): PreferencesPort {
@@ -99,4 +134,5 @@ export const preferences: PreferencesPort = {
 export function __resetStoragePortsForTest(): void {
   preferencesPort = null
   sqlitePort = null
+  assetFilesPort = null
 }

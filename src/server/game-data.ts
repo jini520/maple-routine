@@ -13,11 +13,9 @@ import { GAME_DATA_SECTIONS, type GameData, type GameDataResponse, type GameData
 const BASE_URL = 'https://mapleroutine.store/v1'
 
 /**
- * 얼마나 기다리나. 결산 조회와 같은 값이다.
- *
- * 이 값이 늦게 오면 화면에 늘어나는 것이 없다. 번들 사본으로 이미 서 있다.
+ * 얼마나 기다리나. 처음 켤 때는 이 응답을 받아야 잠금 화면이 풀리므로, 느린 망에서 수백 KB 를 받을 시간을 준다.
  */
-const TIMEOUT_MS = 4_000
+const TIMEOUT_MS = 15_000
 
 /** 칸 하나. 계약을 어겼거나 서버가 아직 비었으면 `null`. */
 function section<K extends GameDataSection>(key: K, value: unknown): GameData[K] | null {
@@ -34,18 +32,55 @@ export function parseGameDataResponse(body: unknown): GameDataResponse | null {
   return response as GameDataResponse
 }
 
-/** 못 받았거나 응답이 객체가 아니면 `null`. 칸마다의 실패는 그 칸의 `null` 이다. */
-export async function fetchGameData(): Promise<GameDataResponse | null> {
+export type GameDataFetch =
+  | { kind: 'not-modified' }
+  | {
+      kind: 'ok'
+      /** 다음 요청이 `If-None-Match` 로 보낼 값. 서버가 안 주면 `null` */
+      etag: string | null
+      /** 응답 본문의 글자 수. 잠금 화면이 받은 양으로 보인다 */
+      bytes: number
+      /** 칸마다 계약 검사를 거친 값 */
+      sections: GameDataResponse
+      /** 응답 원문의 칸. 기기 사본은 이것을 그대로 저장하고 켤 때 다시 검사한다 */
+      raw: Record<string, unknown>
+    }
+
+/**
+ * 못 받았거나 응답이 객체가 아니면 `null`. 칸마다의 실패는 그 칸의 `null` 이다.
+ *
+ * @param etag 가진 사본의 ETag. 주면 바뀐 것이 없을 때 서버가 304 로 몸 없이 답한다
+ */
+export async function fetchGameData(etag: string | null): Promise<GameDataFetch | null> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
   try {
-    const response = await fetch(`${BASE_URL}/game-data`, { signal: controller.signal })
+    const response = await fetch(`${BASE_URL}/game-data`, {
+      signal: controller.signal,
+      ...(etag === null ? {} : { headers: { 'If-None-Match': etag } }),
+    })
+    if (response.status === 304) return { kind: 'not-modified' }
     if (response.status !== 200) return null
-    return parseGameDataResponse((await response.json()) as unknown)
+    const text = await response.text()
+    const body = JSON.parse(text) as unknown
+    const sections = parseGameDataResponse(body)
+    if (sections === null) return null
+    return {
+      kind: 'ok',
+      etag: response.headers.get('etag'),
+      bytes: text.length,
+      sections,
+      raw: body as Record<string, unknown>,
+    }
   } catch {
     return null
   } finally {
     clearTimeout(timer)
   }
+}
+
+/** 그림 파일의 주소. 파일 이름은 그림 목록의 `file` 이다. */
+export function assetFileUrl(file: string): string {
+  return `https://mapleroutine.store/assets/${file}`
 }

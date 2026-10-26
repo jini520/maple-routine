@@ -9,7 +9,7 @@ import {
   findBoss,
 } from '../boss/bosses'
 import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../boss/boss-matching'
-import { BUNDLED_BOSS_CATALOG, setBossCatalog } from '../boss/catalog'
+import { INITIAL_BOSS_CATALOG, setBossCatalog } from '../boss/catalog'
 import type { BossCatalog } from '../../types/boss-catalog'
 
 // 보스 마스터 표 조회. 기록은 보스 key 를 들고 이름 · 주기 · 요구 레벨 · 초상은 여기서 찾는다.
@@ -79,7 +79,7 @@ describe('bosses: 표가 덮이면', () => {
   }
 
   afterEach(() => {
-    setBossCatalog(BUNDLED_BOSS_CATALOG)
+    setBossCatalog(INITIAL_BOSS_CATALOG)
   })
 
   it('조회 함수가 새 표를 읽는다. 묶음은 cycle 에서, 요구 레벨은 난이도 줄에서 만든다', () => {
@@ -123,7 +123,7 @@ describe('bosses: 표가 덮이면', () => {
 
   it('번들로 되돌리면 전부 원래대로다', () => {
     setBossCatalog(덮은표)
-    setBossCatalog(BUNDLED_BOSS_CATALOG)
+    setBossCatalog(INITIAL_BOSS_CATALOG)
 
     expect(BOSS_ENTRIES).toHaveLength(26)
     expect(findBoss('zakum')).not.toBeNull()

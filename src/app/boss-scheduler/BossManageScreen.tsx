@@ -13,7 +13,7 @@ import { BOSS_SECTION_ORDER } from '../../features/boss-scheduler/displayed-boss
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useToastStore } from '../../features/toast/store'
-import { useGameTable } from '../../features/game-data/query'
+import { useGameTable } from '../../features/game-data/sync'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { partySizeForShares } from '../../lib/boss/party-shares'
 import type { BossPartyShareColumns } from '../../storage/boss-party-settings'

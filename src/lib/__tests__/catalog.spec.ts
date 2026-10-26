@@ -1,6 +1,6 @@
 import bundled from '../../__fixtures__/game-data/bosses.json'
 import {
-  BUNDLED_BOSS_CATALOG,
+  INITIAL_BOSS_CATALOG,
   getBossCatalog,
   parseBossCatalog,
   setBossCatalog,
@@ -28,20 +28,20 @@ const 작은표: BossCatalog = {
 }
 
 afterEach(() => {
-  setBossCatalog(BUNDLED_BOSS_CATALOG)
+  setBossCatalog(INITIAL_BOSS_CATALOG)
 })
 
 // 번들 사본이 첫 표다. 서버도 기기 사본도 없는 첫 실행이 이것으로 선다.
 describe('getBossCatalog', () => {
   it('처음에는 계약을 통과한 번들 bosses.json 이다', () => {
-    expect(getBossCatalog()).toBe(BUNDLED_BOSS_CATALOG)
+    expect(getBossCatalog()).toBe(INITIAL_BOSS_CATALOG)
     expect(getBossCatalog()).toEqual(parseBossCatalog(bundled))
   })
 
   // 응답 그대로인 번들은 선택 칸을 null 로 든다. 통과한 값에서는 그 칸이 빠진다.
   it('번들 사본은 계약을 지킨다', () => {
     expect(parseBossCatalog(bundled)).not.toBeNull()
-    expect(bundled.bosses.length).toBe(BUNDLED_BOSS_CATALOG.bosses.length)
+    expect(bundled.bosses.length).toBe(INITIAL_BOSS_CATALOG.bosses.length)
   })
 })
 

@@ -31,36 +31,56 @@ function 칸(received: Partial<GameDataResponse>): GameDataResponse {
   return { ...response, ...received }
 }
 
-function ok(body: unknown): Response {
-  return { ok: true, status: 200, json: async () => body } as Response
+function ok(body: unknown, etag: string | null = '"e1"'): Response {
+  const text = JSON.stringify(body)
+  return {
+    ok: true,
+    status: 200,
+    headers: { get: (name: string) => (name.toLowerCase() === 'etag' ? etag : null) },
+    text: async () => text,
+  } as unknown as Response
 }
 
 beforeEach(() => {
   jest.restoreAllMocks()
 })
 
-it('칸마다 받은 표를 그대로 준다. 없는 칸은 null 이다', async () => {
+it('칸마다 받은 표를 그대로 주고, 응답 원문 · ETag · 바이트 수를 함께 준다. 없는 칸은 null 이다', async () => {
   jest.spyOn(global, 'fetch').mockResolvedValue(ok({ bosses: 보스표, worlds: 월드표 }))
 
-  await expect(fetchGameData()).resolves.toEqual(칸({ bosses: 보스표, worlds: 월드표 }))
+  const result = await fetchGameData(null)
+  expect(result).toEqual({
+    kind: 'ok',
+    etag: '"e1"',
+    bytes: JSON.stringify({ bosses: 보스표, worlds: 월드표 }).length,
+    sections: 칸({ bosses: 보스표, worlds: 월드표 }),
+    raw: { bosses: 보스표, worlds: 월드표 },
+  })
+})
+
+it('ETag 를 If-None-Match 로 보내고, 304 면 바뀐 것이 없다고 준다', async () => {
+  const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue({ ok: false, status: 304 } as Response)
+
+  await expect(fetchGameData('"e1"')).resolves.toEqual({ kind: 'not-modified' })
+  expect((fetchSpy.mock.calls[0]?.[1] as RequestInit).headers).toEqual({ 'If-None-Match': '"e1"' })
 })
 
 it('네트워크가 실패하면 null', async () => {
   jest.spyOn(global, 'fetch').mockRejectedValue(new Error('offline'))
 
-  await expect(fetchGameData()).resolves.toBeNull()
+  await expect(fetchGameData(null)).resolves.toBeNull()
 })
 
 it('5xx 도 null', async () => {
   jest.spyOn(global, 'fetch').mockResolvedValue({ ok: false, status: 502 } as Response)
 
-  await expect(fetchGameData()).resolves.toBeNull()
+  await expect(fetchGameData(null)).resolves.toBeNull()
 })
 
 it('응답이 객체가 아니면 null', async () => {
   jest.spyOn(global, 'fetch').mockResolvedValue(ok('표'))
 
-  await expect(fetchGameData()).resolves.toBeNull()
+  await expect(fetchGameData(null)).resolves.toBeNull()
 })
 
 describe('parseGameDataResponse', () => {

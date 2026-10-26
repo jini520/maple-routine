@@ -16,7 +16,7 @@ import {
 import type { ContentCategoryKey } from '../../lib/scheduler/content-categories'
 import type { ContentEntry } from '../../lib/scheduler/contents'
 import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
-import { useGameTable } from '../../features/game-data/query'
+import { useGameTable } from '../../features/game-data/sync'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
