@@ -24,6 +24,8 @@ export interface DropPricePayload {
   difficulty: string
   /** 어느 처치 기간의 드롭인가. 기기의 기간 행 id 다. 드롭은 처치하지 않은 기간에도 있다. */
   periodRecordId: string | null
+  /** 거래 시각. 판매가를 적은 시각이고 `completed` 만 값이 있다. 서버가 받은 시각을 쓰면 과거 올리기가 올린 날이 거래 날짜가 된다. */
+  pricedAt: string | null
 }
 
 /**

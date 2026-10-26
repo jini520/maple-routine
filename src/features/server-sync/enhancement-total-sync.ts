@@ -10,9 +10,10 @@ import type { SyncHandler } from './sweep'
 /** 대기 표의 `record_type` 칸에 들어가는 값. */
 export const ENHANCEMENT_TOTAL_RECORD_TYPE = 'enhancement-total'
 
-/** 합계 줄에서 서버로 보낼 값. 이벤트 월드거나 판정하지 못한 줄은 `null` 이고 서버에서 지운다. */
+/** 합계 줄에서 서버로 보낼 값. 이벤트 월드 · 판정하지 못한 줄 · 비용이 0 인 줄은 지출이 아니라 `null` 이고 서버에서 지운다. */
 export function enhancementTotalPayloadOf(total: EnhancementTotal): EnhancementTotalPayload | null {
   if (total.eventWorld !== false) return null
+  if (total.attemptCostMeso + total.destroyDefenceCostMeso === 0) return null
   return {
     totalRecordId: total.id,
     accountRecordId: total.nexonAccountId === '' ? null : total.nexonAccountId,

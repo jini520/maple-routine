@@ -155,6 +155,7 @@ describe('buildRowFromRecord 의 월드', () => {
     crystalSharesTotal: null,
     splitFeePercent: null,
     recordedAt: '2026-09-11T00:00:00.000Z',
+    pricedAt: null,
   }
   const 지금캐릭터 = { characterName: '낟낟', imageUrl: null, world: '엘리시움', worldKey: 'elysium' }
   const now = new Date('2026-09-12T12:00:00+09:00')
@@ -214,6 +215,7 @@ describe('toRecordedDrop: 가격 필드', () => {
     ringLevel: null,
     quantity: 1,
     recordedAt: '2026-08-10T00:00:00.000Z',
+    pricedAt: null,
     priceSplitMode: 'even' as const,
     pricePartySize: null,
     priceMyShare: null,
@@ -455,6 +457,7 @@ it('mergeRecordsIntoRows 는 기록의 처치 날짜도 행에 싣는다', () =>
     crystalSharesTotal: null,
     splitFeePercent: null,
     recordedAt: '2026-09-20T00:00:00.000Z',
+    pricedAt: null,
     world: null,
     worldKey: null,
     defeatedOn: '2026-09-19',
@@ -482,6 +485,7 @@ it('mergeRecordsIntoRows 는 기록의 비율과 송금 수수료도 행에 싣�
     splitFeePercent: 5,
     splitFeeAuto: true,
     recordedAt: '2026-07-10T00:00:00.000Z',
+    pricedAt: null,
     world: null,
     worldKey: null,
     defeatedOn: null,

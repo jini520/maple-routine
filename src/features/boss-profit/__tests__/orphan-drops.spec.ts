@@ -27,6 +27,7 @@ function record(overrides: Partial<BossDropRecord> = {}): BossDropRecord {
     ringLevel: null,
     quantity: 1,
     recordedAt: '2026-08-27T00:00:00.000Z',
+    pricedAt: null,
     priceState: null,
     priceMeso: null,
     priceSplitMode: 'even',

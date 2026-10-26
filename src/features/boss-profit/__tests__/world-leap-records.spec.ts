@@ -228,6 +228,7 @@ describe('cleanUpWorldLeapDuplicates', () => {
       ringLevel: null,
       quantity: 1,
       recordedAt: '2026-09-11T00:00:00.000Z',
+      pricedAt: null,
       priceState: null,
       priceMeso: null,
       priceSplitMode: 'even',
