@@ -39,6 +39,7 @@
 | `notificationPermissionAsked` | `'yes'` | `notice-settings.ts` | 보존 | 알림 권한을 물어본 적 있는지. OS 상태로는 알 수 없다 |
 | `partyAlarmEnabled` | `'on'` · `'off'` | `party-appointment-settings.ts` | 보존 | 파티 약속 알림 스위치. 없으면 켜짐 |
 | `partyAppointments` | JSON `PartyAppointment[]` | `party-appointments.ts` | 보존 | 사용자가 적은 파티 약속. `id` 는 uuid 이고, 옛 `시각 + 난수` id 는 읽을 때 uuid 로 바꿔 다시 저장한다([[ADR-098]] 결정 4) |
+| `serverBackfill` | JSON. 종류(`bossClear` · `dropPrice` · `cashbookEntry`)마다 마지막으로 보낸 기록 id 와 끝났는지 | `server-backfill.ts` | 지운다 | 업데이트 전 기록을 서버로 어디까지 올렸나. 지워지면 처음부터 다시 올리는데 서버가 기록 id 로 덮어 줄이 늘지 않는다([[ADR-099]] 결정 12) |
 | `partyScheduleView` | `'list'` · `'board'` | `party-schedule-view.ts` | 보존 | 파티 스케줄 화면에서 마지막으로 고른 보기. 없으면 목록 |
 | `bossProfitCalculatorRecords` | JSON `BossProfitCalculatorRecord[]` | `boss-profit-calculator-records.ts` | 보존 | 주간 보스 수익 계산기에서 저장한 기록. 금액 없이 보스 · 난이도 · 파티 값만 남긴다 |
 | `notificationLedger` | JSON `{ id, kind, fireAt, title, body }[]` | `notification-ledger.ts` | 보존 | 지금 예약해 둔 로컬 알림. OS 의 예약 목록은 읽을 수 없어서 따로 적는다 |

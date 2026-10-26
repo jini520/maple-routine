@@ -378,7 +378,6 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
         pointAmount: currency === 'point' ? amount : null,
         pointPer100mMeso: currency === 'point' ? rate : null,
         cashAmount: null,
-        memo: null,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })

@@ -85,7 +85,6 @@ export interface IncomeRecord {
    * 칸이 없어 새 행은 비고, 옛 행의 사냥터는 그대로 들고 간다.
    */
   hunt: HuntingIncomeDetail | null
-  memo: string | null
   recordedAt: string
 }
 

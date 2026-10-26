@@ -15,7 +15,6 @@ export interface EntryHead {
   entryType: EntryType
   categoryKey: string
   entryDate: string
-  memo: string | null
   createdAt: string
 }
 
@@ -132,8 +131,8 @@ async function writeChildren(db: SqliteDbConnection, entry: StoredEntry): Promis
 export async function insertEntry(db: SqliteDbConnection, entry: StoredEntry, nexonAccountId: string | null): Promise<void> {
   const { head } = entry
   await db.run(
-    `INSERT INTO cashbook_entries (id, ocid, nexon_account_id, entry_type, category_key, entry_date, memo, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO cashbook_entries (id, ocid, nexon_account_id, entry_type, category_key, entry_date, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       head.id,
       head.ocid,
@@ -141,7 +140,6 @@ export async function insertEntry(db: SqliteDbConnection, entry: StoredEntry, ne
       head.entryType,
       head.categoryKey,
       head.entryDate,
-      head.memo,
       head.createdAt,
       head.createdAt,
     ],
@@ -168,9 +166,9 @@ export async function replaceEntry(
   await db.run(
     `UPDATE cashbook_entries
         SET ocid = ?, nexon_account_id = CASE WHEN ? IS NULL THEN COALESCE(nexon_account_id, ?) END,
-            category_key = ?, entry_date = ?, memo = ?, updated_at = ?
+            category_key = ?, entry_date = ?, updated_at = ?
       WHERE id = ?`,
-    [head.ocid, head.ocid, nexonAccountId, head.categoryKey, head.entryDate, head.memo, now.toISOString(), head.id],
+    [head.ocid, head.ocid, nexonAccountId, head.categoryKey, head.entryDate, now.toISOString(), head.id],
   )
   await db.run(`DELETE FROM cashbook_entry_items WHERE entry_id = ?`, [head.id])
   await db.run(`DELETE FROM cashbook_entry_hunt_inputs WHERE entry_id = ?`, [head.id])
@@ -251,7 +249,6 @@ export async function readEntries(db: SqliteDbConnection, where: string, params:
       entryType: row.entry_type as EntryType,
       categoryKey: row.category_key as string,
       entryDate: row.entry_date as string,
-      memo: textOrNull(row.memo),
       createdAt: row.created_at as string,
     },
     items: itemsOf.get(row.id as string) ?? [{ ...EMPTY_ITEM }],

@@ -146,7 +146,6 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
       cashAmount: null,
       hunt: null,
       quantity: null,
-      memo: '메모',
       itemKind: null,
       recordedAt: '2026-08-20T12:00:00.000Z',
     })
@@ -239,7 +238,6 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
     itemKind: null,
     hunt: null,
     quantity: null,
-    memo: null,
     recordedAt: '2026-08-28T10:00:00.000Z',
   } as const
 
@@ -391,7 +389,6 @@ describe('심볼 강화의 레벨 두 칸', () => {
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
-    memo: null,
     recordedAt: '2026-09-19T10:00:00.000Z',
   }
 
@@ -1000,7 +997,6 @@ describe('버전 이관: 사냥 기록의 조각 가격 0 을 안 적은 가격�
     cashAmount: null,
     quantity: null,
     hunt: { mode: 'manual', typedMeso: 1_000_000_000, fragments: 80, fragmentPrice: 0 },
-    memo: null,
     itemKind: null,
     recordedAt: '2026-09-10T05:00:00.000Z',
   }

@@ -16,7 +16,6 @@ export const CASHBOOK_ENTRIES_BODY = `(
     category_key TEXT NOT NULL,
     -- 돈이 오간 날(KST YYYY-MM-DD). 사용자가 고르고 고칠 수 있다.
     entry_date TEXT NOT NULL,
-    memo TEXT,
     -- 저장한 시각. 같은 날 안의 차례가 이것이고 고쳐도 안 바뀐다.
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL

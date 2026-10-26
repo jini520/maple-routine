@@ -22,6 +22,8 @@ export interface DropPricePayload {
   boss: string
   /** 어느 난이도에서 얻었나. 난이도 key. 확정 전 난이도일 수 있고, 확정되면 다시 보낸다. */
   difficulty: string
+  /** 어느 처치 기간의 드롭인가. 기기의 기간 행 id 다. 드롭은 처치하지 않은 기간에도 있다. */
+  periodRecordId: string | null
 }
 
 /**

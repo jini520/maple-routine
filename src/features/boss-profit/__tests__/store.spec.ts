@@ -255,7 +255,7 @@ beforeEach(() => {
       getAdjacentPeriodKey(tab, key, direction),
   )
   getWeeklyPeriodKeysWithRecordsMock.mockResolvedValue([])
-  fillMissingRecordWorldsMock.mockResolvedValue(undefined)
+  fillMissingRecordWorldsMock.mockResolvedValue([])
   getBossDropRecordsMock.mockResolvedValue([])
   replaceBossDropRecordsMock.mockResolvedValue([])
   reportDropPriceMock.mockReset()
@@ -413,7 +413,7 @@ describe('setBossDrops', () => {
     expect(reportDropPriceMock).toHaveBeenCalledTimes(1)
     expect(reportDropPriceMock).toHaveBeenCalledWith('old-a', expect.any(Date))
     expect(reportDropRemovedMock).toHaveBeenCalledTimes(1)
-    expect(reportDropRemovedMock).toHaveBeenCalledWith('old-b', '2026-W30', expect.any(Date))
+    expect(reportDropRemovedMock).toHaveBeenCalledWith('old-b', expect.any(Date))
   })
 
   it('기록 안함도 보낸다. 서버의 그 줄이 skipped 가 된다', async () => {

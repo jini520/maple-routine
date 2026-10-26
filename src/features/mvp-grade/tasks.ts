@@ -6,9 +6,29 @@
 import type { ResumableTask, TaskStep } from '../resumable-task/task'
 import { applyAutoDropFees, updateDropFees } from '../../storage/boss-drops'
 import { updateProfitSplitFees } from '../../storage/boss-profit'
-import { applyAutoIncomeSaleFees, updateIncomeSaleFees } from '../../storage/income'
+import { applyAutoIncomeSaleFees, updateIncomeSaleFees, type IncomeSaleFeeUpdate } from '../../storage/income'
+import type { ProfitSplitFeeUpdate } from '../../storage/boss-profit'
+import { reportBossClearsOf, reportCashbookEntries } from '../server-sync/report'
 import { bulkDropUpdates, bulkIncomeUpdates } from './bulk-apply'
 import { recalcCrystalUpdates, recalcDropUpdates, recalcIncomeUpdates } from './recalculate-fees'
+
+/**
+ * 쓴 뒤 서버 사본도 고치게 대기 표에 넣는다. 금액이 바뀌는 기록만이다. 드롭 수수료는 서버로 안 보내므로 안 넣는다.
+ */
+const writeIncomeFees =
+  (write: (chunk: IncomeSaleFeeUpdate[]) => Promise<void>) =>
+  async (chunk: IncomeSaleFeeUpdate[]): Promise<void> => {
+    await write(chunk)
+    await reportCashbookEntries(
+      chunk.map((one) => one.id),
+      new Date(),
+    )
+  }
+
+async function writeSplitFees(chunk: ProfitSplitFeeUpdate[]): Promise<void> {
+  await updateProfitSplitFees(chunk)
+  await reportBossClearsOf(chunk, new Date())
+}
 
 /** 목록 함수가 남은 일을 세고, 앞에서 `limit` 개를 잘라 쓴다. 쓴 기록은 목록에서 빠져 다시 안 잡힌다. */
 function step<T>(label: string, sub: string | undefined, updates: () => Promise<T[]>, write: (chunk: T[]) => Promise<void>): TaskStep {
@@ -30,7 +50,7 @@ export const mvpBulkFeeTask: ResumableTask = {
   title: '지난 기록에 수수료를 적용하고 있어요',
   icon: 'crown',
   steps: [
-    step('판매 기록', '아이템 판매 · 조각 정산 · 사냥의 조각 몫', bulkIncomeUpdates, applyAutoIncomeSaleFees),
+    step('판매 기록', '아이템 판매 · 조각 정산 · 사냥의 조각 몫', bulkIncomeUpdates, writeIncomeFees(applyAutoIncomeSaleFees)),
     step('드롭 판매가', '판매 · 분배 수수료', bulkDropUpdates, applyAutoDropFees),
   ],
   doneToast: (count) => `지난 기록 ${count.toLocaleString()}건에 수수료를 적용했어요`,
@@ -42,9 +62,9 @@ export const mvpRecalcFeeTask: ResumableTask = {
   title: '자동 수수료를 다시 계산하고 있어요',
   icon: 'crown',
   steps: [
-    step('판매 기록', undefined, recalcIncomeUpdates, updateIncomeSaleFees),
+    step('판매 기록', undefined, recalcIncomeUpdates, writeIncomeFees(updateIncomeSaleFees)),
     step('드롭 판매가', undefined, recalcDropUpdates, updateDropFees),
-    step('결정석 분배', undefined, recalcCrystalUpdates, updateProfitSplitFees),
+    step('결정석 분배', undefined, recalcCrystalUpdates, writeSplitFees),
   ],
   doneToast: (count) => `자동 수수료 기록 ${count.toLocaleString()}건을 다시 계산했어요`,
 }

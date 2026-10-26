@@ -29,7 +29,7 @@
 ### 결정 1. 수입과 지출을 테이블 하나로 합치고, 수입과 지출은 `entry_type` 칸으로 가른다
 
 ```
-cashbook_entries               id · ocid · entry_type · category_key · entry_date · memo · created_at · updated_at
+cashbook_entries               id · ocid · nexon_account_id · entry_type · category_key · entry_date · created_at · updated_at
   ├ cashbook_entry_items       id · entry_id · sort_order · item_key · item_name · form_key · item_kind_key
   │                            · quantity · from_level · to_level · 금액 칸
   └ cashbook_entry_hunt_inputs id · entry_id · 사냥 계산기 입력
@@ -159,3 +159,4 @@ cashbook_entries               id · ocid · entry_type · category_key · entry
 - ADR-096 (2026-10-25): 가계부 기록 테이블 재설계를 처음 작성했다(#670)
 - ADR-096 (2026-10-25): 기록 표 셋 · 버전 15 이관 · 서버 갈래 표 · 하루 목록 두 줄 카드를 구현했다
 - ADR-096 (2026-10-25): 이관 전 사본과 이관 뒤 대조(결정 9)를 더했다. 실기기 데이터로 옛 · 새 코드의 하루 목록 235일 · 684줄 금액과 합계가 같은 것을 확인했다
+- ADR-096 (2026-10-26): 쓰지 않던 `memo` 칸을 지운 것([[ADR-099]] 결정 15)과 계정 칸([[ADR-098]] 결정 6)을 표 그림에 반영했다

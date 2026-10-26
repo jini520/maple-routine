@@ -20,6 +20,7 @@ import {
 } from '../../storage/boss-profit'
 import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import { reportDropPrice, reportDropRemoved } from '../server-sync/drop-price-sync'
+import { reportBossClears, reportBossClearsOf } from '../server-sync/report'
 import { crystalPayoutMeso, type PartyShares } from '../../lib/boss/party-shares'
 import { sumDropPayout } from '../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../types/drops'
@@ -1425,7 +1426,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     for (const [ocid, world] of worldByOcid) {
       if (world !== null) knownWorlds.set(ocid, { world, worldKey: worldKeyByOcid.get(ocid) ?? null })
     }
-    await withSqliteFallback(fillMissingRecordWorlds(knownWorlds), undefined)
+    const filledPeriodIds = await withSqliteFallback(fillMissingRecordWorlds(knownWorlds), [])
+    await reportBossClears(filledPeriodIds, new Date())
 
     // refresh 는 항상 현재 기간을 보여주므로 한 칸 더 과거로 갈 수 있는지도 함께 계산해 이전
     // 버튼 게이트를 세운다. **이 값은 캐시 단계까지만 쓴다.** 창 동기화가 화면을 안 막으려고
@@ -2110,6 +2112,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
         // 직접 적은 완료의 표식이 편집 한 번에 사라진다.
         source: row.source,
       })
+      await reportBossClearsOf([row], new Date())
     }
 
     const applyEdit = (candidate: BossProfitRow): BossProfitRow =>
@@ -2237,7 +2240,7 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     const savedIds = new Set(saved.map((drop) => drop.dropRecordId))
     for (const drop of get().dropsByRowKey[key] ?? []) {
       if (drop.dropRecordId === null || savedIds.has(drop.dropRecordId)) continue
-      void reportDropRemoved(drop.dropRecordId, row.periodKey, now)
+      void reportDropRemoved(drop.dropRecordId, now)
     }
 
     // dropsByRowKey 는 rows 와 독립된 상태라 setPartySize 와 달리 latestSyncSnapshot 이중 갱신이

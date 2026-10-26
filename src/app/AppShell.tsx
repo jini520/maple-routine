@@ -8,7 +8,7 @@ import { useDataFreshness } from '../features/refresh/freshness'
 import { useNoticeStore } from '../features/notice/store'
 import { requestNotificationReconcile } from '../features/local-notifications/run'
 import { fillLegacyAccountIds } from '../features/auth/legacy-account-ids'
-import { runServerSync } from '../features/server-sync/run'
+import { kickServerSync } from '../features/server-sync/kick'
 import { useAppEntryStore } from '../features/app-entry/store'
 import { useAuthStore } from '../features/auth/store'
 import { useLiveUpdateStore } from '../features/live-update/store'
@@ -192,7 +192,7 @@ export function AppShell(): React.JSX.Element {
   // 신원이 `null` 이라 한 회차가 통째로 헛돈다.
   useEffect(() => {
     if (!isReady) return
-    void runServerSync()
+    void kickServerSync()
   }, [isReady])
 
   // 계정 칸이 생기기 전의 행을 메인 넥슨 계정으로 채운다. 계정이 서는 `isReady` 뒤에 돈다.

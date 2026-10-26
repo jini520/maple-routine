@@ -7,6 +7,7 @@
  * 두 경로가 다른 것은 이 행의 출처가 지금의 사실인가 하나뿐이라, 그 자리만 술어로 주입받는다.
  */
 
+import { reportBossClearsOf } from '../server-sync/report'
 import { crystalPayoutMeso } from '../../lib/boss/party-shares'
 import { periodStartDateKey } from '../../lib/boss/boss-profit-period'
 import { lazyAutoFeePercent, settingSplitFee } from '../mvp-grade/auto-fee'
@@ -127,6 +128,7 @@ async function recordEachRow({
           }),
           undefined,
         )
+        await reportBossClearsOf([row], now)
       }
     }
 
@@ -200,6 +202,7 @@ async function recordEachRow({
       }),
       undefined,
     )
+    await reportBossClearsOf([row], now)
 
     autoRecordedRows.push({
       ...row,

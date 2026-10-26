@@ -116,7 +116,9 @@ async function seedVersion15(): Promise<void> {
       db.exec(`ALTER TABLE ${table} RENAME COLUMN ${next} TO ${previous}`)
     }
     db.exec('ALTER TABLE cashbook_entries DROP COLUMN nexon_account_id')
+    db.exec('ALTER TABLE cashbook_entries ADD COLUMN memo TEXT')
     seedDevice(db)
+    db.exec("UPDATE cashbook_entries SET memo = NULL")
     db.exec('PRAGMA user_version = 15')
   })
 }
@@ -137,6 +139,7 @@ describe('버전 16: 남은 다섯 표의 기본키를 uuid 로 옮기고 칸 �
     )
     expect(columnsOf('mvp_grade_history')).toContain('from_date')
     expect(columnsOf('cashbook_entries')).toContain('nexon_account_id')
+    expect(columnsOf('cashbook_entries')).not.toContain('memo')
     for (const [table, next] of RENAMED_COLUMNS) expect(columnsOf(table)).toContain(next)
   })
 
@@ -222,6 +225,15 @@ describe('버전 16: 남은 다섯 표의 기본키를 uuid 로 옮기고 칸 �
 
     expect(all('SELECT count(*) AS n FROM enhancement_history_checks')).toEqual([{ n: 2 }])
     await expect(db.run(insert, ['account-a'])).rejects.toThrow(/UNIQUE/)
+  })
+
+  // 입력 시트가 모두 null 로 적던 칸이다. 서버로도 보내지 않아 칸째 지운다.
+  it('버전 17 이 쓰지 않던 가계부 메모 칸을 지운다', async () => {
+    await seedVersion15()
+    await getBossProfitDb()
+
+    expect(columnsOf('cashbook_entries')).not.toContain('memo')
+    expect(all('SELECT count(*) AS n FROM cashbook_entries')).toEqual([{ n: 2 }])
   })
 
   it('한 번 돈 버전 16 은 다시 열어도 다시 돌지 않는다', async () => {

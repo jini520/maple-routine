@@ -92,7 +92,6 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
         pointAmount: currency === 'point' ? amount : null,
         pointPer100mMeso: currency === 'point' ? rate : null,
         cashAmount: currency === 'cash' ? amount : null,
-        memo: null,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })

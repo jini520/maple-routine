@@ -71,7 +71,6 @@ export function spendEntryOf(record: SpendRecord): StoredEntry {
       entryType: 'spend',
       categoryKey: record.category,
       entryDate: record.spentOn,
-      memo: record.memo,
       createdAt: record.recordedAt,
     },
     items: spendItemsOf(record),
@@ -105,7 +104,6 @@ export function spendRecordOf(entry: StoredEntry): SpendRecord {
     pointAmount: sumOf(entry.items, (item) => item.amountPoint),
     pointPer100mMeso: first.pointPer100mMeso,
     cashAmount: sumOf(entry.items, (item) => item.amountCash),
-    memo: entry.head.memo,
     recordedAt: entry.head.createdAt,
   }
 }
@@ -185,7 +183,6 @@ export function incomeEntryOf(record: IncomeRecord): StoredEntry {
       entryType: 'income',
       categoryKey: record.category,
       entryDate: record.earnedOn,
-      memo: record.memo,
       createdAt: record.recordedAt,
     },
     items: [
@@ -229,7 +226,6 @@ export function incomeRecordOf(entry: StoredEntry): IncomeRecord {
     saleFeeMeso: item.saleFeeMeso,
     saleFeeAuto: item.saleFeeAuto,
     hunt: huntOf(entry.hunt, hunting ? item.quantity : null),
-    memo: entry.head.memo,
     recordedAt: entry.head.createdAt,
   }
 }

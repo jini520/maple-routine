@@ -1,7 +1,7 @@
 # ADR-099 보스 처치 · 가계부 · 강화 합계의 최종값을 서버로 보낸다
 
-> ⚪ 미구현
-> 관련 소스: `features/server-sync/registry.ts` · `features/server-sync/drop-price-sync.ts` · `storage/server-sync-queue.ts`
+> 🟢 유효
+> 관련 소스: `features/server-sync/*` · `storage/server-sync-sources.ts` · `storage/server-backfill.ts` · `server/write.ts` · `server/records.ts` · 서버 `modules/boss-clears` · `modules/cashbook-entries` · `modules/users` · `modules/identity`
 
 ## 배경
 
@@ -40,8 +40,15 @@
 ### 결정 4. 저장할 때마다 다시 보내고, 지우면 `DELETE` 를 보낸다
 
 굳는 시점을 따로 두지 않는다(사용자 선택). 가계부는 날짜를 골라 적고 드롭은 지난 기간을 다시 고칠 수 있어서, 과거 값도
-언제든 바뀐다. 드롭 가격처럼 기기에 저장한 직후 한 건씩 보내고, 못 보낸 것은 대기 표(`server_sync_queue`)에 남겨 앱을
-켤 때 다시 보낸다([[ADR-018]] 결정 4 · 6 · 8). 종류마다 `registry.ts` 에 등록한다.
+언제든 바뀐다. 종류마다 `registry.ts` 에 등록한다.
+
+- 처치 · 가계부는 쓰는 자리가 바뀐 기록 id 를 대기 표(`server_sync_queue`)에 넣고 곧바로 전송을 깨운다(`report.ts`).
+  분배 수수료를 다시 매기면 수백 건이 한꺼번에 바뀌어, 건마다 바로 요청을 내면 몰리기 때문이다. 드롭 가격은 지금처럼 저장
+  직후 한 건씩 보내고 못 보낸 것만 대기 표에 남긴다([[ADR-018]] 결정 4 · 8).
+- 전송은 한 번에 한 회차만 돈다(`kick.ts`). 도는 중에 다시 깨우면 끝난 뒤 한 번 더 돈다. 두 회차가 겹치면 같은 줄을 두 번
+  보낸다.
+- 지우는 자리는 지우기 **전에** 기간 행 id 를 얻고 지운 **뒤에** 대기 표에 넣는다. 먼저 넣으면 전송이 지우기보다 앞서 돌아
+  남아 있는 처치를 서버에 다시 적는다. 처치가 아니게 된 기간(`open`)과 사라진 기록은 전송이 `DELETE` 로 보낸다.
 
 ### 결정 5. 전송은 끌 수 없다
 
@@ -49,7 +56,8 @@
 
 ### 결정 6. 이미 기기에 쌓인 기록은 업데이트 뒤 한 번 모두 올린다
 
-업데이트 뒤 처음 켤 때 세 종류의 기존 행을 대기 표에 모두 넣어 나눠 보낸다(사용자 선택). 서버 통계에 과거가 들어간다.
+업데이트 뒤 처음 켤 때부터 기존 기록을 올린다(사용자 선택). 서버 통계에 과거가 들어간다. 보내는 방법은 결정 12 의 묶음이고,
+드롭도 함께 올린다(결정 13).
 
 ### 결정 7. 캐릭터는 ocid 로 적고, 강화 합계만 캐릭터 이름으로 적는다
 
@@ -81,12 +89,100 @@
 - 강화 합계는 `nexon_account_id` 를 든다. 가계부 기록은 캐릭터가 없을 때만 든다. 보스 처치는 ocid 로 찾으므로 두지 않는다.
 - API 키로만 쓰던 사람이 나중에 그 키를 부계정으로 등록하면, 그 키의 계정과 기록을 메인 사람 밑으로 옮기고 옛 사람 줄은
   닫는다(사용자 선택). 통계에서 한 사람이 둘로 세이지 않게 하려는 것이다.
+  이 합치기는 부계정을 등록하는 경로가 생기는 다계정 작업([[ADR-101]])에서 만든다. 지금은 부계정을 등록할 길이 없다.
+
+### 결정 11. 기기의 넥슨 계정 id 는 쓰기 요청마다 신원 헤더 옆에 싣는다
+
+`x-nexon-account-id` 헤더에 메인 계정의 id([[ADR-098]] 결정 5)를 싣는다(사용자 선택 2026-10-26). 서버는 그 신원의
+`nexon_accounts` 줄에 이 id 를 적는다. 따로 등록하는 호출이 없어 앱이 등록했는지를 기억할 필요가 없다. 헤더가 없는
+옛 OTA 의 요청도 받는다. 그때는 계정 id 를 안 적을 뿐이다.
+
+### 결정 12. 과거 기록은 묶음 경로로 100 건씩 나눠 보낸다
+
+업데이트 직후 사용자마다 천여 건이 한 건씩 나가면 서버 요청이 몰린다(사용자 선택 2026-10-26). 그래서 종류마다 묶음
+경로를 두고, 앱을 켤 때 보내지 않은 기록을 100 건씩 보낸다.
+
+- 어디까지 보냈는지는 종류마다 마지막으로 보낸 기록 id 를 Preferences 에 적는다. 앱이 중간에 꺼져도 다음 회차가 그 뒤부터
+  잇는다. 다 보내면 그 종류는 끝으로 적고 다시 훑지 않는다.
+- 한 묶음이 실패하면 그 회차를 멈추고 다음에 앱을 켤 때 같은 자리부터 다시 보낸다. 서버는 기록 id 로 덮으므로 두 번 받아도
+  줄이 늘지 않는다.
+- 평소 저장은 지금처럼 한 건씩 보낸다. 과거를 보내는 동안 고친 기록은 한 건 전송이 따로 덮는다.
+
+### 결정 13. 드롭의 기준일을 걷고 과거 드롭도 올린다
+
+지금은 2026-10-15 이후 기간의 드롭만 보낸다(`SERVER_PRICE_FROM`). 이 기준을 걷고, 과거 드롭도 결정 12 의 묶음으로
+올린다(사용자 선택). 드롭 시세 통계에 과거 판매가가 들어간다. 드롭 줄에는 어느 처치 기간의 드롭인지 기기 기간 id 를
+더한다.
+
+### 결정 14. 가계부 key 는 글자 그대로 두고, 보스 · 난이도 · 월드는 드롭 가격처럼 서버 표의 줄로 바꿔 적는다
+
+- 가계부 품목의 key 는 갈래마다 다른 표(지출 항목 · 심볼 · 사냥터 · 아이템 종류)를 가리킨다. 외래키로 바꾸면 표에 없는
+  key 가 온 기록을 거절하게 되고, 거절된 기록은 5 회 뒤 버려진다. 그래서 `category_key` · `item_key` 를 글자로 둔다(사용자
+  선택). 게임 데이터 key 는 지우지 않으므로([[ADR-078]] 결정 6) 글자로 둬도 이름을 찾을 수 있다.
+- 보스 처치의 보스 · 난이도 · 월드는 `drop_prices` 와 같은 방식이다(사용자 지정). 보스 key 는 바뀔 일이 없기 때문이다.
+  보스 · 난이도는 `boss_difficulty_id` 로 바꿔 적고 표에 없으면 빈 칸이다. 월드는 `world_id` 로 바꿔 적고 표에 없으면
+  400 으로 거절한다.
+
+### 결정 15. 가계부 메모 칸을 없애고, 사냥 계산기 입력은 보내지 않는다
+
+- 기기의 `cashbook_entries.memo` 칸과 기록 타입의 `memo` 를 지운다(사용자 지정). 입력 시트 아홉이 모두 이 칸을 `null` 로
+  적고 화면에 입력하는 곳이 없다. 실기기에도 메모가 든 기록이 없었다(옛 표 둘 포함 0 건). 그래서 서버에도 칸을 두지 않는다.
+- 사냥 계산기 입력(`cashbook_entry_hunt_inputs`)은 보내지 않는다. 계산에 쓴 원본 값이고, 최종값은 품목의 금액이다.
+
+## 서버 표와 경로
+
+칸 이름은 [[ADR-098]] 결정 7 의 규칙이다. 기기 uuid 는 `무엇_record_id` 로 적고 사람 안에서만 유일하다.
+
+```
+users             id · deleted_at · created_at                         (nexon_uid · api_key_hash 는 nexon_accounts 로 옮긴다)
+nexon_accounts    id · user_id · identity_source(login · key) · nexon_uid UNIQUE · api_key_hash UNIQUE
+                  · account_record_id · created_at · updated_at        UNIQUE(user_id, account_record_id)
+boss_clears       id · user_id · identified_by · period_record_id · ocid · boss_difficulty_id · cycle · period_key
+                  · world_id · price_meso · payout_meso · split_mode · party_size · my_share · shares_total
+                  · split_fee_percent · defeated_date · source · deleted_at · created_at · updated_at
+                  UNIQUE(user_id, period_record_id)
+cashbook_entries  id · user_id · identified_by · entry_record_id · ocid · nexon_account_id · entry_type · category_key
+                  · entry_date · deleted_at · created_at · updated_at   UNIQUE(user_id, entry_record_id)
+  └ cashbook_entry_items  id · entry_id · sort_order · item_key · item_name · form_key · item_kind_key · quantity
+                  · from_level · to_level · amount_meso · tariff_meso · sale_fee_percent · sale_fee_meso · amount_point
+                  · point_per_100m_meso · amount_cash                   UNIQUE(entry_id, sort_order)
+drop_prices       (지금 칸) + period_record_id
+```
+
+| 경로 | 하는 일 |
+|---|---|
+| `POST /v1/boss-clears` · `DELETE /v1/boss-clears/:periodRecordId` | 처치 기간 한 건을 덮어 적거나 지운 것으로 표시한다. 처치를 취소하면 지운다 |
+| `POST /v1/cashbook-entries` · `DELETE /v1/cashbook-entries/:entryRecordId` | 가계부 기록 한 건과 품목. 품목은 통째로 갈아 끼운다 |
+| `POST /v1/boss-clears/batch` · `POST /v1/cashbook-entries/batch` · `POST /v1/drop-prices/batch` | 과거 기록 묶음. 한 번에 100 건까지 |
+
+- 지울 때는 줄을 남기고 `deleted_at` 을 적는다. 드롭 가격의 `deleted` 와 같은 이유다([[ADR-018]] 결정 6).
+- 잘못된 본문 하나가 묶음 전체를 막지 않도록, 묶음은 건마다 결과를 돌려주고 받을 수 있는 건은 받는다. 통째로 거절하면
+  앱이 같은 묶음을 계속 다시 보내 그 사용자의 과거 올리기가 멈춘다.
+- 묶음에서 실패한 건은 평소 대기 표에 넣는다(사용자 선택). 한 건씩 5 회 다시 보내고 그래도 안 되면 버린다. 서버를 고치면
+  다시 보낼 기회가 생긴다.
+
 
 ## 테스트
 
-구현할 때 적는다.
+강화 합계(결정 1 의 셋째 종류 · 결정 7 의 이름)는 #614 가 합계 표를 만든 뒤에 더한다. 아래는 처치 · 드롭 · 가계부다.
+
+| 파일 | 확인하는 것 |
+|---|---|
+| `features/server-sync/__tests__/backfill.spec.ts` | 결정 12: 종류마다 100 건씩 보내고 적게 읽히면 끝으로 적는지, 묶음이 실패하면 자리를 안 넘겨 다음 회차가 같은 자리부터 보내는지, 받지 못한 건만 대기 표로 보내는지, 끝난 종류를 건너뛰는지 |
+| `features/server-sync/__tests__/kick.spec.ts` | 결정 4: 도는 중에 다시 깨우면 겹쳐 돌지 않고 끝난 뒤 한 번 더 도는지 |
+| `features/server-sync/__tests__/record-payloads.spec.ts` | 결정 10 · 15: 캐릭터 없는 가계부 기록만 계정 id 를 싣고 사냥 입력을 안 싣는지, 값이 없으면 지우기를 보내는지 |
+| `features/server-sync/__tests__/drop-price-sync.spec.ts` | 결정 13: 옛 기간의 드롭도 보내고 기간 행 id 를 싣는지 |
+| `features/auth/__tests__/server-identity.spec.ts` | 결정 11: 신원 헤더 옆에 메인 계정 id 를 싣는지 |
+| `storage/sqlite/__tests__/server-sync-sources-real-sqlite.test.ts` | 결정 1 · 4: 처치한 기간만 처치로 읽고, 키로 취소된 기간도 찾고, 과거 올리기가 id 차례로 나눠 읽는지 |
+| `storage/sqlite/__tests__/record-keys-real-sqlite.test.ts` | 결정 15: 버전 17 이 메모 칸을 지우는지 |
+| `src/server/__tests__/write.spec.ts` | 결정 12: 묶음이 `/batch` 로 가고 건마다 결과를 돌려받는지 |
+| 서버 `users.repository.spec.ts` · `identity.guard.spec.ts` | 결정 10 · 11: 자격으로 사람 · 계정을 찾고 동시에 와도 사람이 하나인지, 헤더의 계정 id 를 적되 같은 사람의 다른 계정이 가진 id 는 안 적는지 |
+| 서버 `boss-clears.*.spec.ts` · `cashbook-entries.*.spec.ts` · `drop-prices.*.spec.ts` · `common/batch.spec.ts` | 결정 2 · 4 · 12 · 14: 같은 기록은 한 줄로 덮고 사람이 다르면 따로인지, 지우면 표시만 하고 다시 적으면 되살아나는지, 모르는 월드는 거절하고 모르는 보스는 빈 칸인지, 묶음이 틀린 건만 실패로 돌려주는지 |
 
 ## 번호 기록
 
 - ADR-099 (2026-10-26): 보스 처치 · 가계부 · 강화 합계를 서버로 보내는 결정을 처음 작성했다(#507). 같은 날 사람과
   넥슨 계정을 나누는 결정 10 과, 강화 합계를 MVP 할인 전 값으로 보내는 문단(결정 7)을 더했다
+- ADR-099 (2026-10-26): 계정 id 헤더(결정 11) · 과거 기록 묶음(결정 12) · 드롭 기준일 걷기(결정 13) · key 를 적는 방식(결정 14) ·
+  메모 칸 없애기와 보내지 않는 것(결정 15)과 서버 표 · 경로를 더했다
+- ADR-099 (2026-10-26): 처치 · 드롭 · 가계부 전송과 과거 올리기, 서버 사람 · 계정 분리를 구현했다. 강화 합계는 #614 뒤

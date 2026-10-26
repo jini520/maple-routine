@@ -12,7 +12,7 @@
 | `storage/sqlite/boss-tables.ts` | 보스 표 셋의 정의를 한 곳에 둔다. 정상 생성과 버전 4 재작성에서 함께 쓴다 · 드롭 그룹 인덱스 |
 | `storage/sqlite/cashbook-tables.ts` | 가계부 기록 표 셋의 정의 · 날짜 인덱스 |
 | `storage/sqlite/record-key-tables.ts` | 버전 16 이 uuid 기본키로 다시 쓴 다섯 표(캐릭터 · 월드 리프 · 강화 조회 기록 · MVP 등급 · 메이플 ID 소속)의 정의 |
-| `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 16) |
+| `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 17) |
 | `storage/sqlite/transaction.ts` | 쓰기 여럿을 트랜잭션 하나로 묶는 `inTransaction` |
 | `storage/sqlite/uuid.ts` | 행 식별자를 SQLite 가 만드는 식(`NEW_UUID_SQL`) |
 | `storage/adapters/rn-sqlite.ts` | `SqlitePort` 구현(op-sqlite) |
@@ -65,7 +65,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `cashbook_entry_hunt_inputs` | `id`(uuid, `entry_id` 는 UNIQUE) | 사냥 기록의 계산기 입력 | `storage/cashbook-entries.ts` | 기록 | [[ADR-096]] |
 | `mvp_grade_history` | `id`(uuid, `(account_id, from_date)` 는 UNIQUE) | 메이플 ID 마다 MVP 등급과 시작 날짜 | `storage/mvp-grades.ts` | 기록 | `features/mvp-grade.md` |
 | `character_accounts` | `id`(uuid, `(ocid, name, account_id)` 는 UNIQUE) | 캐릭터가 어느 메이플 ID 에 속했는지, 그것을 어느 넥슨 계정의 목록에서 봤는지와 처음 · 마지막으로 본 날 | `storage/character-accounts.ts` | 기록 | `features/mvp-grade.md` |
-| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 못 보낸 기록. 평소에는 비어 있다 | `storage/server-sync-queue.ts` | 일반 | [[ADR-018]] |
+| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 보낼 기록. 처치 · 가계부는 쓰는 자리가 넣고 곧바로 보내며, 드롭은 못 보낸 것만 남는다. 평소에는 비어 있다 | `storage/server-sync-queue.ts` | 일반 | [[ADR-018]] |
 
 ### 칸
 
@@ -82,7 +82,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `character_world_leaps` | `id` NN · `from_ocid` NN UNIQUE · `to_ocid` NN · `linked_at` NN |
 | `enhancement_history` | `id` NN · `kind` NN · `date_key` NN · `created_at` NN · `character_name` NN · `target_item` NN · `item_key` · `item_level` · `payload` NN · `cost_meso` |
 | `enhancement_history_checks` | `id` NN · `nexon_account_id` · `enhancement_type` NN · `history_date` NN · `next_cursor` · `settled` NN(기본 0) · `checked_at` NN |
-| `cashbook_entries` | `id` NN · `ocid` · `nexon_account_id` · `entry_type` NN(`income` · `spend`) · `category_key` NN · `entry_date` NN · `memo` · `created_at` NN · `updated_at` NN |
+| `cashbook_entries` | `id` NN · `ocid` · `nexon_account_id` · `entry_type` NN(`income` · `spend`) · `category_key` NN · `entry_date` NN · `created_at` NN · `updated_at` NN |
 | `cashbook_entry_items` | `id` NN · `entry_id` NN · `sort_order` NN · `item_key` · `item_name` · `form_key` · `item_kind_key` · `quantity` · `from_level` · `to_level` · `amount_meso` · `tariff_meso` · `sale_fee_percent` · `sale_fee_meso` · `sale_fee_auto` · `amount_point` · `point_per_100m_meso` · `amount_cash` |
 | `cashbook_entry_hunt_inputs` | `id` NN · `entry_id` NN UNIQUE · `character_level` · `missed_mobs` · `boosts` · `fragments` · `fragment_price_meso` · `meso_rate` · `typed_meso` · `union_tier` |
 | `mvp_grade_history` | `id` NN · `account_id` NN · `from_date` NN · `grade` · `updated_at` NN |
@@ -128,6 +128,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | 14 | `moveBossTablesToParties` | 옛 보스 기록 표 넷의 행을 새 표 셋으로 옮긴다. 옛 표는 지우지 않는다([[ADR-078]] 결정 8) |
 | 15 | `moveCashbookRecordsToEntries` | 옛 가계부 표 둘의 행을 기록 표 셋으로 옮긴다. 옮기기 전에 DB 를 파일째 떠 둔다([[ADR-096]] 결정 9) |
 | 16 | `moveRecordKeysToUuid` | 기본키가 값의 조합이던 다섯 표를 uuid 기본키로 다시 쓰고, 칸 이름을 서버 규칙에 맞춘다. 계정 칸이 생기기 전의 행은 계정 칸에 빈 글자를 적는다([[ADR-098]]) |
+| 17 | `dropCashbookMemo` | 입력 시트가 모두 비워 두던 가계부 메모 칸을 지운다([[ADR-099]] 결정 15) |
 
 못 찾는 이름은 key 만 비우고 행과 이름은 남긴다.
 

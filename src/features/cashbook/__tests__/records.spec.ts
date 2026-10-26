@@ -110,7 +110,6 @@ const 수입: IncomeDraft = {
   pointPer100mMeso: null,
   cashAmount: null,
   itemKind: null,
-  memo: null,
 }
 
 const 메포지출: SpendDraft = {
@@ -129,7 +128,6 @@ const 메포지출: SpendDraft = {
   pointAmount: 30_000,
   pointPer100mMeso: 1_180,
   cashAmount: null,
-  memo: null,
 }
 
 /**
@@ -420,7 +418,6 @@ const 수입행 = {
   pointAmount: null,
   pointPer100mMeso: null,
   cashAmount: null,
-  memo: null,
   recordedAt: '2026-08-25T01:00:00.000Z',
 }
 
@@ -441,7 +438,6 @@ const 지출행 = {
   pointAmount: 1_200,
   pointPer100mMeso: 1_180,
   cashAmount: null,
-  memo: null,
   recordedAt: '2026-08-25T02:00:00.000Z',
 }
 
@@ -942,7 +938,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
       {
         id: 's1', spentOn: '2026-08-21', category: 'content', item: '몬스터 파크', itemKey: 'monster_park', formItemKeys: null, itemKind: null, levelFrom: null, levelTo: null,
         quantity: 1, mesoAmount: 50_000_000, tariffMeso: null, pointAmount: 1_200,
-        pointPer100mMeso: 1_180, cashAmount: null, memo: null, recordedAt: 'b',
+        pointPer100mMeso: 1_180, cashAmount: null, recordedAt: 'b',
       },
     ])
     const { loadDayRecords, dayTotalsOf } = require('../records') as typeof import('../records')
@@ -1053,7 +1049,6 @@ describe('사냥 줄의 이름과 셈', () => {
       mesoRate: 149,
       unionTier: 3,
     },
-    memo: null,
     recordedAt: '2026-08-21T01:00:00.000Z',
   }
 
@@ -1129,7 +1124,6 @@ describe('솔 에르다 조각 정산 줄', () => {
     cashAmount: null,
     hunt: null,
     quantity: 50,
-    memo: null,
     recordedAt: '2026-08-21T01:00:00.000Z',
   }
 
@@ -1165,7 +1159,6 @@ describe('아이템 판매 줄의 개수', () => {
     cashAmount: null,
     hunt: null,
     quantity: 100,
-    memo: null,
     recordedAt: '2026-08-21T01:00:00.000Z',
   }
 

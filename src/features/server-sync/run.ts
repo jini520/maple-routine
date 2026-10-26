@@ -1,5 +1,5 @@
 /**
- * 부팅에 한 번 도는 자리. 저장소 어댑터와 레지스트리를 고리에 꽂는다.
+ * 부팅과 기록을 쓴 뒤에 도는 자리. 저장소 어댑터와 레지스트리를 고리에 꽂고, 대기 표를 비운 뒤 과거 올리기를 잇는다.
  *
  * **첫 화면을 막지 않는다.** 부르는 쪽이 `void` 로 띄우고 결과를 안 기다린다.
  */
@@ -9,6 +9,7 @@ import {
   removeServerSync,
 } from '../../storage/server-sync-queue'
 import { serverIdentityHeaders } from '../auth/server-identity'
+import { runBackfill } from './backfill'
 import { SYNC_HANDLERS } from './registry'
 import { sweepServerSync, type SweepResult } from './sweep'
 
@@ -20,13 +21,17 @@ import { sweepServerSync, type SweepResult } from './sweep'
  */
 export async function runServerSync(): Promise<SweepResult | null> {
   try {
-    return await sweepServerSync({
+    const result = await sweepServerSync({
       identity: serverIdentityHeaders,
       list: listServerSyncQueue,
       countAttempt: countServerSyncAttempt,
       remove: removeServerSync,
       handlers: SYNC_HANDLERS,
     })
+    // 대기 표를 먼저 비운다. 과거 올리기는 끝난 종류면 Preferences 한 번 읽고 끝난다.
+    const headers = await serverIdentityHeaders()
+    if (headers !== null) await runBackfill(headers, new Date())
+    return result
   } catch {
     return null
   }

@@ -54,7 +54,6 @@ const sale: IncomeRecord = {
   cashAmount: null,
   quantity: null,
   hunt: null,
-  memo: null,
   itemKind: null,
   recordedAt: '2026-08-23T05:00:00.000Z',
 }

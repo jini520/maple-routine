@@ -6,6 +6,7 @@
  * |---|---|
  * | `Authorization: Bearer <세션>` | 서버가 발급한 세션. 로그인한 사용자 |
  * | `x-api-key-hash` | API 키의 SHA-256. 키만 쓰는 사용자 |
+ * | `x-nexon-account-id` | 메인 넥슨 계정 id. 서버가 그 신원의 계정 줄에 적는다 |
  *
  * **세션이 있으면 키 해시를 안 싣는다.** 둘을 다 보내도 서버가 세션을 고르지만, 세션이 죽었을 때
  * 서버가 키 쪽으로 넘어가지 않고 재로그인을 요구한다 - 넘어가면 같은 사람의 기록이 두 열쇠로
@@ -26,11 +27,15 @@ export async function serverIdentityHeaders(): Promise<Record<string, string> | 
     return null
   }
 
-  const session = config?.login?.session
-  if (typeof session === 'string' && session !== '') return { Authorization: `Bearer ${session}` }
+  const login = config?.login
+  if (login != null && login.session !== '') {
+    return { Authorization: `Bearer ${login.session}`, 'x-nexon-account-id': login.id }
+  }
 
-  const key = config?.apiKeys[0]?.value
-  if (typeof key === 'string' && key !== '') return { 'x-api-key-hash': apiKeyHashHex(key) }
+  const key = config?.apiKeys[0]
+  if (key !== undefined && key.value !== '') {
+    return { 'x-api-key-hash': apiKeyHashHex(key.value), 'x-nexon-account-id': key.id }
+  }
 
   return null
 }

@@ -14,6 +14,7 @@
  * 부르는 자리가 둘이라(보스 수익 동기화 뒤 · 가계부 진입) 겹침을 둘이 막는다. 조회 원장이 이미 본
  * 날짜를 들고, `inFlight` 가 같은 순간에 두 번 도는 것을 막는다.
  */
+import { reportBossClearsOf } from '../server-sync/report'
 import { currentCredential } from '../auth/current-credential'
 import type { NexonCredential } from '../../types/auth'
 import {
@@ -416,6 +417,7 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
       if (defeatedOn === null) continue
 
       await withSqliteFallback(setBossProfitDefeatedOn(candidate, defeatedOn), undefined)
+      await reportBossClearsOf([candidate], new Date())
       dated += 1
     }
   })
