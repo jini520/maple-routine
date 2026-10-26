@@ -34,11 +34,10 @@ features/* · app/*  →  storage/*.ts  →  storage/ports.ts  →  storage/adap
 | 성격 | 예 | 잃으면 |
 |---|---|---|
 | 사용자가 고른 설정 | `theme` · `trackingMode` · `dropEffect` · 알림 스위치 | 다시 고르면 된다. 대부분 캐시 삭제에서 남긴다 |
-| 동기화 캐시 | `schedulerCache:{ocid}` · `characterBasicCache:{ocid}` · `queryCache` | 다음 조회가 다시 채운다 |
+| 동기화 캐시 | `schedulerCache:{ocid}` · `characterBasicCache:{ocid}` · 게임 데이터 사본(`game_data_sections` · `game_data_meta`) · 받은 그림 | 다음 조회가 다시 채운다. 게임 데이터는 잠금 화면이 다시 받는다 |
 | 기기에만 있는 기록 | 보스 수익 · 드롭 · 가계부 · 파티 약속 · MVP 등급 이력 | 되살릴 방법이 없다. 넥슨 API 는 최근 기간만 준다 |
 
 ## 여기서 다루지 않는 것
 
-- `src/data/*.json`(보스 표 · 결정석 가격 · 드롭 표). 앱 번들에 들어 있는 읽기 전용 데이터다. 서버에서 받은 사본만
-  `queryCache` 로 저장된다([[ADR-019]] · [[ADR-020]]).
+- 게임 데이터의 형식과 받는 순서. 사본 표 둘은 `sqlite.md` 에 있고, 받는 방법은 [[ADR-020]] 에 있다.
 - zustand 스토어. 저장소를 읽어 메모리에 올린 것이라 앱을 끄면 사라진다.

@@ -31,18 +31,19 @@
 ### 결정 3. 일러스트를 자르는 값은 쓰는 곳마다 따로 둔다
 
 보스 일러스트는 인물의 구도와 여백이 저마다 달라서, 값 하나로는 모든 보스의 얼굴이 잘 보이지 않는다. 그래서
-보스마다 `size` · `position` 을 적은 크롭 표를 둔다. 같은 일러스트가 세 곳에 쓰이고, 표도 셋이다.
+보스마다 `size` · `position` 을 적은 크롭 표를 둔다. 표는 서버 게임 데이터의 `imageCrops` 칸 하나다. 같은 일러스트가
+세 곳에 쓰이므로, 크롭도 쓰는 곳마다 `kind` 를 달리해 따로 둔다.
 
-| 표 | 쓰는 곳 |
+| `kind` | 쓰는 곳 |
 |---|---|
-| `src/data/boss-portrait-crops.json` | 보스 카드(`getBossPortraitCrop`) |
-| `src/data/boss-portrait-icon-crops.json` | 원형 초상화 `BossPortrait`(`getBossPortraitIconCrop`) |
-| `src/data/boss-portrait-modal-crops.json` | 파티 모달 헤더의 띠(`getBossPortraitModalCrop`) |
+| `boss_portrait` | 보스 카드(`getBossPortraitCrop`) |
+| `boss_portrait_icon` | 원형 초상화 `BossPortrait`(`getBossPortraitIconCrop`) |
+| `boss_portrait_modal` | 파티 모달 헤더의 띠(`getBossPortraitModalCrop`) |
 
-- 키는 `portraitSlug` 이고, 표에 없으면 `cover` · `center` 를 쓴다.
-- 넓은 사각형, 작은 원, 좁고 높은 띠는 맞는 크롭이 서로 다르다. 표를 같이 쓰면 한 곳을 맞출 때마다 다른 곳의
+- 키는 `kind` 와 `portraitSlug` 이고, 표에 없으면 `cover` · `center` 를 쓴다.
+- 넓은 사각형, 작은 원, 좁고 높은 띠는 맞는 크롭이 서로 다르다. 크롭을 같이 쓰면 한 곳을 맞출 때마다 다른 곳의
   크롭도 함께 바뀐다.
-- 값은 이미지를 보고 정해야 하므로 AI 가 미리 채우지 않는다. 사용자가 일러스트를 넣을 때 직접 넣는다. 게임 수치
+- 값은 이미지를 보고 정해야 하므로 AI 가 미리 채우지 않는다. 사용자가 관리 화면(`/admin/assets`)에서 직접 넣는다. 게임 수치
   데이터는 아니지만 같은 이유로 손대지 않는다([[ADR-019]]).
 
 ### 결정 4. 카드 왼쪽에는 난이도 · 이름 · 파티 인원을 둔다
@@ -94,8 +95,8 @@
 | `app/boss-scheduler/__tests__/BossScreen.test.tsx` | 결정 4: 2인 이상인 카드에만 `n인` 배지가 붙는지 본다. 결정 5: 완료한 보스에만 `완료` 가 붙는지, 한도를 채우면 미처치 카드에 `마감` 이 붙는지, `마감` 이 `완료` 와 같은 크기인지 본다 |
 | | 결정 6: 카드를 누르면 모달이 열리는지, 완료한 보스도 열리는지, 보스 표에 없는 보스는 API 이름으로 나오고 누를 수 없는지 본다 |
 
-모달 크롭 표가 카드 표와 같은 보스를 갖는지는 `src/data/__tests__/boss-portrait-modal-crops.spec.ts` 가, 보스 표의
-`portraitSlug` 가 모두 일러스트 파일로 이어지는지는 `lib/__tests__/asset-slug-coverage.spec.ts` 가, 고르지 않은 난이도의 흐림은
+같은 `portraitSlug` 라도 `kind` 마다 다른 크롭을 읽고 표에 없으면 `cover` · `center` 인지는
+`lib/assets/__tests__/image-crops.spec.ts` 가, 고르지 않은 난이도의 흐림은
 `components/molecules/DifficultyExpander/__tests__/DifficultyExpander.test.tsx` 가 확인한다.
 
 ## 번호 기록

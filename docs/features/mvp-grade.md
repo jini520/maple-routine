@@ -11,8 +11,7 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `src/data/mvp-grades.json` | 등급 일곱의 경매장 수수료 · 스타포스 할인 |
-| `lib/mvp/grades.ts` | 요율 조회 · 등급이 없을 때의 요율 · 가장 높은 등급 · 혜택 한 줄 |
+| `lib/mvp/grades.ts` | 등급 일곱의 경매장 수수료 · 스타포스 할인 표(서버 게임 데이터의 `mvpGrades` 칸) · 요율 조회 · 등급이 없을 때의 요율 · 가장 높은 등급 · 혜택 한 줄 |
 | `lib/mvp/history.ts` | 그 날의 등급 · 등급 변경 · 기간 추가 · 지우기 · 고치기 · 고를 수 있는 주 · 기간 추가의 설명 줄 |
 | `lib/mvp/membership.ts` | 이름이나 ocid 로 메이플 ID 소속 찾기 |
 | `lib/mvp/fees.ts` · `lib/mvp/starforce.ts` | 기록의 자동 요율 · 스타포스 줄의 MVP 할인 |
@@ -34,7 +33,7 @@
 | `app/settings/SettingsMvpGradeScreen.tsx` · `SettingsMvpGradeHistoryScreen.tsx` | 설정의 목록 페이지 · ID 이력 페이지 |
 | `components/molecules/MvpGradeGrid` · `MvpPlate` | 7칸 격자 · 명패 |
 | `components/organisms/FeeRow` · `WeekCalendarPopover` | 수수료 줄 · 주 고르기 달력 |
-| `src/assets/mvp/*.webp` | 명패 여섯. 일반은 그림이 없다 |
+| `lib/assets/asset-lookup.ts` 의 `mvpPlateAsset` | 명패 여섯. 서버 그림 목록의 `mvp/` 에서 찾는다. 일반은 그림이 없다 |
 
 ## 등급과 혜택
 

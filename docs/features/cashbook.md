@@ -22,9 +22,9 @@
 | `app/cashbook/IncomeSheet.tsx` · `SpendSheet.tsx` · `CategoryPicker.tsx` · `sheet-fields.tsx` | 두 시트와 공용 부품 |
 | `app/cashbook/income/` · `app/cashbook/spend/` | 분류별 폼 |
 | `lib/cashbook/categories.ts` | 지출 · 수입 분류, 아이템 종류, 에픽던전 형태의 key 와 이름 |
-| `lib/cashbook/spend-catalog.ts` · `src/data/spend-catalog.json` | 지출 참조표 · 메포 환산 · 관세 · 주화 |
-| `lib/cashbook/symbol-costs.ts` · `src/data/symbol-costs.json` | 심볼 강화 비용 |
-| `lib/cashbook/hunting-grounds.ts` · `lib/cashbook/hunting-meso.ts` · `src/data/hunting-grounds.json` | 사냥터 참조표와 사냥 메소 계산 |
+| `lib/cashbook/spend-catalog.ts` | 지출 참조표(서버 게임 데이터의 `spendCatalog` 칸) · 메포 환산 · 관세 · 주화 |
+| `lib/cashbook/symbol-costs.ts` | 심볼 강화 비용(`symbolCosts` 칸) |
+| `lib/cashbook/hunting-grounds.ts` · `lib/cashbook/hunting-meso.ts` | 사냥터 참조표(`huntingGrounds` 칸)와 사냥 메소 계산 |
 | `lib/cashbook/meso-rate.ts` · `features/cashbook/meso-rate.ts` · `storage/meso-rate-cache.ts` | 캐릭터 메소 획득량 |
 | `storage/last-hunts.ts` · `storage/last-point-rate.ts` | 캐릭터별 마지막 사냥 · 마지막 시세 |
 

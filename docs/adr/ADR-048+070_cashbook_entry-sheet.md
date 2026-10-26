@@ -239,7 +239,7 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 ### 결정 16. 심볼 강화는 심볼 드롭다운과 레벨 칸 슬라이더로 적는다
 
 심볼은 레벨 한 단계마다 비용이 달라서 단가 × 수량으로 계산할 수 없다. 그래서 목록 분류가 아니라 자기
-폼(`spend/SymbolForm`)이 있고, 비용은 `symbol-costs.json` 에서 강화 전 레벨 단계부터 강화 후 레벨 바로 앞 단계까지
+폼(`spend/SymbolForm`)이 있고, 비용은 서버 게임 데이터의 `symbolCosts` 칸에서 강화 전 레벨 단계부터 강화 후 레벨 바로 앞 단계까지
 더한다(`symbolUpgradeCost`). 분류 카드를 누르면 바로 폼이 열린다. 줄은 캐릭터 · 심볼 · 레벨 · 금액이다.
 
 - **심볼은 그림이 붙은 드롭다운으로 고른다.** 처음에는 `심볼 선택` 으로 비어 있고, 그동안 레벨 줄이 잠기며 `심볼을

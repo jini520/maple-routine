@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-166 · ADR-170 결정 1 · 2 · 3 · 정정 9 · 15 · ADR-171 · ADR-280 결정 10 · ADR-202 결정 4 · 정정 2 · ADR-223 · ADR-300 · ADR-325 결정 3 · 4
-> 관련 소스: `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` · `storage/enhancement-history.ts` · `storage/enhancement-totals.ts` · `features/cashbook/records.ts` · `features/enhancement-history/` · `lib/enhancement/` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/free-currency.ts` · `src/data/spend-catalog.json` · `src/data/enhancement-costs.json`
+> 관련 소스: `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` · `storage/enhancement-history.ts` · `storage/enhancement-totals.ts` · `features/cashbook/records.ts` · `features/enhancement-history/` · `lib/enhancement/` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/free-currency.ts`
 
 ## 배경
 
@@ -74,8 +74,8 @@
 
 ### 결정 4. 지출 참조표는 사용자가 준 값이고, 분류 넷이 거기서 항목을 고른다
 
-지출 분류는 일곱이다. `컨텐츠 · 이벤트·BM · 버프 · 주문서` 넷은 참조표(`spend-catalog.json`)에서 항목을 고르고,
-`심볼 강화` 는 비용 표(`symbol-costs.json`)로 금액을 내며, `아이템 구매 · 기타` 둘은 직접 친다. 분류의 이름 ·
+지출 분류는 일곱이다. `컨텐츠 · 이벤트·BM · 버프 · 주문서` 넷은 참조표(서버 게임 데이터의 `spendCatalog` 칸)에서 항목을 고르고,
+`심볼 강화` 는 비용 표(`symbolCosts` 칸)로 금액을 내며, `아이템 구매 · 기타` 둘은 직접 친다. 분류의 이름 ·
 차례는 서버 갈래 표가 든다([[ADR-096]] 결정 3). 코드가 key 로 폼을 나누므로 key 목록은 `lib/cashbook/categories.ts` 에
 타입으로 둔다.
 
@@ -162,7 +162,7 @@
 
 ### 결정 10. 강화 비용은 받을 때 매겨 MVP 할인 전 두 몫으로 저장하고, 모르면 0 이 아니라 `null` 이다
 
-비용 규칙은 사용자가 준 값으로 `enhancement-costs.json` 에 있고, 식은 `lib/enhancement/cost.ts` 에 있다.
+비용 규칙은 사용자가 준 값으로 서버 게임 데이터의 `enhancementCosts` 칸에 있고, 식은 `lib/enhancement/cost.ts` 에 있다.
 
 | 종류 | 무엇으로 정하나 | 값 |
 |---|---|---|
@@ -185,7 +185,7 @@ base = round100(1000 + L³ × (성수+1)^지수 ÷ 나눗수)
 - **재설정 비용은 누르기 전 등급으로 매긴다.** 응답의 등급 칸은 등급이 오른 뒤의 값이라 쓰지 않고, 사용 전 옵션
   (`before_…_option`)의 등급 중 가장 높은 것을 쓴다(`gradeBeforeReset`). 사용 전 옵션이 비었거나 모르는 등급이면
   `null` 이다.
-- **스타포스 응답에는 장비 레벨이 없다.** 장비 표(`equipment-items.json`)에서 장비 key 로만 찾고, 없으면 `null` 이다.
+- **스타포스 응답에는 장비 레벨이 없다.** 장비 표(서버 게임 데이터의 `equipmentItems` 칸)에서 장비 key 로만 찾고, 없으면 `null` 이다.
 - **파괴 뒤 복구 비용은 세지 않는다.** 응답이 장비를 이름으로만 가리켜서, 파괴 뒤에 다시 올리는 줄이 복구한 그
   장비인지 이름만 같은 다른 장비인지 구분할 수 없다. 파괴된 줄은 시도 비용만 센다.
 - **값을 못 매기는 줄은 합계에 넣지 않는다**(`summarizeEnhancement`). 건수에도 안 넣는다. 0 으로 세면 합계가 티 나지
@@ -272,8 +272,8 @@ API 는 잠재 둘을 한 엔드포인트로 주지만 비용 표가 아예 달�
 SQL 을 더해야 했다. 그래서 기록에 key 를 함께 저장한다.
 
 - **key 를 정의하는 곳은 셋이다.** 분류 · 아이템 종류 · 에픽던전 형태는 코드가 폼을 나누는 고정 목록이라
-  `lib/cashbook/categories.ts` 에 있다. 묶음 · 타일 · 항목의 key 와 타일 그림은 `spend-catalog.json` 에, 지역 · 사냥터
-  key 는 `hunting-grounds.json` 에 있다. 사냥터 key 는 이름을 영어로 옮긴 것이다(사용자 결정).
+  `lib/cashbook/categories.ts` 에 있다. 묶음 · 타일 · 항목의 key 와 타일 그림은 서버 게임 데이터의 `spendCatalog` 칸에, 지역 ·
+  사냥터 key 는 `huntingGrounds` 칸에 있다. 사냥터 key 는 이름을 영어로 옮긴 것이다(사용자 결정).
 - **기록의 key 칸.** 지출은 `category_key` · `item_key` · `form_item_keys` · `item_kind_key`, 수입은 `category_key` ·
   `item_key`(사냥터) · `item_kind_key` 다. 직접 친 기록은 `item_key` 가 없다. 단계와 축 값은 key 를 따로 두지 않는다.
   항목 key 하나로 그 항목의 `tier` · `options` 를 되찾는다.

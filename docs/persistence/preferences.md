@@ -63,8 +63,7 @@
 | `eventWorldNames` | JSON 이름 배열 | `event-world-names.ts` | 지운다 | 이벤트 월드 캐릭터 이름. 값이 없는 것(아직 못 받음)과 빈 배열(그런 캐릭터가 없음)을 구분한다 |
 | `lastRunBundleVersion` | 버전 문자열 | `last-run-bundle-version.ts` | 지운다 | 마지막으로 실행한 OTA 번들 버전. 방금 업데이트했는지 판단한다 |
 | `pendingNotice` | `'cacheClearFailed'` | `pending-notice.ts` | 지운다 | 캐시 삭제가 실패했다는 표시. 삭제가 끝난 뒤에 쓰고, 다시 띄운 앱이 읽으면서 지운다([[ADR-053]] 결정 5) |
-| `queryCache` | JSON 문자열(TanStack Query 캐시 전체) | `query-persister.ts` | 지운다 | 게임 데이터 표의 기기 사본([[ADR-020]]) |
-| `bossCatalog` | JSON | `query-persister.ts` | 지운다 | 옛 키. 읽지 않고 켤 때 지운다 |
+| `queryCache` · `bossCatalog` | JSON | `game-data-copy.ts` | 지운다 | 1.0.13 전 게임 데이터 사본의 옛 키. 읽지 않고 켤 때 지운다. 사본은 이제 SQLite 에 있다([[ADR-020]] 결정 3) |
 
 ## 캐릭터 · 계정 · 월드마다 달라지는 키
 

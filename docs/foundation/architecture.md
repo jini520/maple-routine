@@ -77,7 +77,7 @@ src/
 | 무엇 | 어디 |
 |---|---|
 | 화면과 기능의 클라이언트 상태(선택 캐릭터 · 테마 · 인증 · 동기화 결과) | `features/*/store.ts` 의 zustand 스토어 |
-| 서버에 원본이 있는 게임 데이터 표 | `features/game-data/query.ts` 의 TanStack Query. `storage/query-persister.ts` 가 Preferences 에 저장한다([[ADR-020]]) |
+| 서버에 원본이 있는 게임 데이터 표 | `lib/game-data/` 의 표. `features/game-data/sync.ts` 가 받아 `storage/game-data-copy.ts`(SQLite)와 문서 디렉터리에 둔다([[ADR-020]]) |
 | 기기에 남는 값 | `storage/`. 키와 스키마는 `persistence/` 문서에 있다 |
 
 ## 네이티브 기능
