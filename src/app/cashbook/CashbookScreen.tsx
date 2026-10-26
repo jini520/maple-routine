@@ -350,9 +350,6 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
  *
  * 결정석처럼 타일을 안 쓴다. 장비에는 초상이 없고 사용자가 여기서 보려는 것이 **어디에 썼나**
  * 라서, 이름과 금액이 한 줄에 나란히 서는 쪽이 답을 바로 준다.
- *
- * 값을 못 매긴 건은 금액에 안 들어 있다. 그 장비만 통째로 모를 수 있어(레벨을 모르는 장비)
- * 그때는 금액 자리에 `값 모름` 이 선다. `0` 을 적으면 공짜로 강화한 것이 된다.
  */
 function EnhancedItemRows(props: {
   rowKey: string
@@ -374,12 +371,10 @@ function EnhancedItemRows(props: {
             {item.targetItem}
           </Text>
           <Text numberOfLines={1} className="shrink-0 text-10 text-text-disabled" style={TABULAR_NUMS}>
-            {item.unpricedCount > 0 && item.count > item.unpricedCount
-              ? `${item.count}회 · 값모름 ${item.unpricedCount}`
-              : `${item.count}회`}
+            {`${item.count}회`}
           </Text>
           <Text className="ml-auto shrink-0 text-11 font-medium text-fall-ink" style={TABULAR_NUMS}>
-            {item.count === item.unpricedCount ? '값 모름' : formatMesoSigned(item.costMeso, '−')}
+            {formatMesoSigned(item.costMeso, '−')}
           </Text>
         </View>
       ))}

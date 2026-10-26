@@ -94,3 +94,18 @@ it('끝난 종류는 건너뛰고, 보낼 값이 없는 기록은 빼고 보내�
   expect(post.mock.calls.map(([, path, items]) => [path, items])).toEqual([['/dropPrice', [{ id: 'd-1' }]]])
   expect(state().dropPrice).toEqual({ after: 'd-2skip', done: true })
 })
+
+// 강화 합계는 옛 원본을 옮기는 부팅 단계가 만든다. 옮기기 전에 훑으면 빈 표를 끝으로 적고, 옮긴 줄을 영영 안 올린다.
+it('준비되지 않은 종류는 읽지도 적지도 않고, 준비된 뒤의 회차가 처음부터 올린다', async () => {
+  const { deps, post, state } = setup({ cashbookEntry: ids('c', 2) })
+  let ready = false
+  deps.kinds = deps.kinds.map((spec) => (spec.kind === 'cashbookEntry' ? { ...spec, ready: async () => ready } : spec))
+
+  await runBackfill(HEADERS, NOW, deps)
+  expect(state().cashbookEntry).toBeUndefined()
+  expect(post).not.toHaveBeenCalled()
+
+  ready = true
+  await runBackfill(HEADERS, NOW, deps)
+  expect(state().cashbookEntry).toEqual({ after: 'c-001', done: true })
+})

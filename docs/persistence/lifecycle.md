@@ -45,7 +45,7 @@
 | 그룹 | 지우는 것 |
 |---|---|
 | `general` | `KEEP_KEYS` 에 없는 Preferences 키 전부 + 기록 그룹이 아닌 테이블(`server_sync_queue` 와 옛 보스 표 `boss_party_settings` · `boss_party_period_overrides`) + 보스 관리 설정과 그 기간만 고친 값(행 단위) |
-| `records` | `RECORD_TABLE_NAMES` 의 테이블: 옛 보스 표 `boss_profit_records` · `boss_drop_records` · `enhancement_history` · `enhancement_history_checks` · `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · 옛 `income_records` · `spend_records` · `character_profiles` · `character_world_leaps` · `mvp_grade_history` · `character_accounts` + 보스 처치와 드롭(행 단위) |
+| `records` | `RECORD_TABLE_NAMES` 의 테이블: 옛 보스 표 `boss_profit_records` · `boss_drop_records` · `enhancement_totals` · 옛 `enhancement_history` · `enhancement_history_checks` · `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · 옛 `income_records` · `spend_records` · `character_profiles` · `character_world_leaps` · `mvp_grade_history` · `character_accounts` + 보스 처치와 드롭(행 단위) |
 
 보스 기록 표 셋(`boss_parties` · `boss_party_periods` · `boss_drops`, `BOSS_TABLE_NAMES`)은 통째로 지우지 않고 행 단위로
 지운다. 한 표에 두 그룹의 행이 섞여 있고, 조합 행이 처치와 드롭의 부모라서 표를 통째로 지우면 외래키를 따라

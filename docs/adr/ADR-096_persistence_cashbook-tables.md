@@ -47,7 +47,7 @@ cashbook_entries               id · ocid · nexon_account_id · entry_type · c
   한 기록의 품목은 모두 같은 묶음이다.
 - 사냥 계산기 입력은 수입 사냥에만 있어서 `cashbook_entry_hunt_inputs` 로 뺀다. 기록 하나에 0개나 1개다. 합친 테이블에 두면
   지출 행마다 빈 칸이 열 개 넘게 붙는다.
-- 보스 결정석 · 보스 드롭 판매 · 강화 지출은 원천 테이블(보스 기록 테이블 · `enhancement_history`)에 그대로 둔다. 카드는
+- 보스 결정석 · 보스 드롭 판매 · 강화 지출은 원천 테이블(보스 기록 테이블 · `enhancement_totals`)에 그대로 둔다. 카드는
   같은 두 줄 규칙으로 그린다.
 
 ### 결정 2. 금액 · 수수료 · 관세는 품목마다 둔다

@@ -16,6 +16,7 @@ import {
   CASHBOOK_ENTRY_HUNT_INPUTS_BODY,
   CASHBOOK_ENTRY_ITEMS_BODY,
 } from './cashbook-tables'
+import { ENHANCEMENT_TOTALS_BODY, ENHANCEMENT_TOTALS_DATE_INDEX } from './enhancement-tables'
 import { runVersionedMigrations } from './migrations'
 import {
   CHARACTER_ACCOUNTS_BODY,
@@ -206,6 +207,11 @@ const TABLE_DEFINITIONS = [
   // 조회 원장(`schedule-probe-ledger`, preferences)과 갈리는 이유는 **창이 없기 때문**이다.
   // 그쪽은 14일 뒤 스스로 떨어지지만 이쪽은 날짜가 영구히 쌓여, preferences 에 두면 JSON 하나가
   // 무한히 자란다.
+  // 강화 내역의 날짜 · 캐릭터 · 분류 · 장비별 합계. 응답 원본은 저장하지 않는다. 다시 받을 수 있는 기간이 2년이라 기록이다.
+  {
+    name: 'enhancement_totals',
+    createSql: `CREATE TABLE IF NOT EXISTS enhancement_totals ${ENHANCEMENT_TOTALS_BODY}`,
+  },
   {
     name: 'enhancement_history_checks',
     createSql: `CREATE TABLE IF NOT EXISTS enhancement_history_checks ${ENHANCEMENT_HISTORY_CHECKS_BODY}`,
@@ -547,6 +553,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await db.execute(BOSS_DROP_RECORDS_GROUP_INDEX)
   await db.execute(BOSS_DROPS_PERIOD_INDEX)
   await db.execute(CASHBOOK_ENTRIES_DATE_INDEX)
+  await db.execute(ENHANCEMENT_TOTALS_DATE_INDEX)
 
   return db
 }

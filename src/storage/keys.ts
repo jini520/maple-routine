@@ -138,6 +138,9 @@ export const STORAGE_KEYS = {
   // 과거 기록을 서버로 어디까지 올렸나(종류마다 마지막으로 보낸 id 와 끝났는지). `KEEP_KEYS` 에는 안 넣는다.
   // 지워지면 처음부터 다시 올리는데, 서버가 기록 id 로 덮으므로 줄이 늘지 않는다.
   serverBackfill: 'serverBackfill',
+  // 옛 강화 원본 표를 합계로 옮겼나. `KEEP_KEYS` 에는 안 넣는다. 지워지면 다시 옮기는데, 원본에 있는 날짜만 같은 값으로
+  // 갈아 끼우므로 결과가 같다. 원본 표는 v1.0.14 에서 지운다.
+  enhancementTotalsMoved: 'enhancementTotalsMoved',
   // 주간 보스 수익 계산기의 기록(JSON). 사용자가 남긴 것이라 아무도 되살려 주지 않는다. `KEEP_KEYS` 에 넣는다.
   bossProfitCalculatorRecords: 'bossProfitCalculatorRecords',
   // 게임 데이터 표 열넷의 기기 사본. TanStack Query 의 캐시 전체(JSON 문자열 하나)다. 앱을 켜면 이것을

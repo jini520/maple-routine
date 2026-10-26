@@ -57,5 +57,24 @@ export interface CashbookEntryPayload {
   items: CashbookEntryItemPayload[]
 }
 
+/**
+ * 서버로 보내는 강화 합계 한 줄. 서버의 `enhancement_totals` 와 칸이 맞는다. 비용은 MVP 할인 전 두 몫이다.
+ *
+ * 강화 내역은 넥슨이 캐릭터 이름만 줘서 ocid 대신 이름을 싣는다.
+ */
+export interface EnhancementTotalPayload {
+  totalRecordId: string
+  /** 받은 자격의 넥슨 계정 id */
+  accountRecordId: string | null
+  characterName: string
+  historyDate: string
+  enhancementCategory: string
+  itemKey: string | null
+  itemName: string
+  attempts: number
+  attemptCostMeso: number
+  destroyDefenceCostMeso: number
+}
+
 /** 묶음의 한 건 결과. 실패한 건만 평소 대기 표에 넣는다. */
 export type BatchItemResult = { recordId: string | null; ok: true } | { recordId: string | null; ok: false; reason: string }

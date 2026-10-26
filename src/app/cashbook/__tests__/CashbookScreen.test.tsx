@@ -1793,10 +1793,9 @@ describe('강화 줄', () => {
     characterName: '낟낟',
     payoutMeso: 1_200_000_000,
     count: 47,
-    unpricedCount: 0,
     items: [
-      { itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 32, costMeso: 980_000_000, unpricedCount: 0 },
-      { itemKey: 'dea_sidus_earring', targetItem: '데아 시두스 이어링', count: 15, costMeso: 220_000_000, unpricedCount: 0 },
+      { itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 32, costMeso: 980_000_000 },
+      { itemKey: 'dea_sidus_earring', targetItem: '데아 시두스 이어링', count: 15, costMeso: 220_000_000 },
     ],
   }
   const 에디셔널줄 = {
@@ -1805,8 +1804,7 @@ describe('강화 줄', () => {
     characterName: '낟낟',
     payoutMeso: 740_000_000,
     count: 10,
-    unpricedCount: 0,
-    items: [{ itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 10, costMeso: 740_000_000, unpricedCount: 0 }],
+    items: [{ itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 10, costMeso: 740_000_000 }],
   }
 
   beforeEach(() => {
@@ -1830,15 +1828,6 @@ describe('강화 줄', () => {
 
     expect(view.getByTestId('cashbook-row-enhancement:additional_potential:낟낟')).toHaveTextContent(
       '낟낟 · 강화에디셔널 잠재능력 10회−7.4억',
-    )
-  })
-
-  it('값모름이 있으면 건수 옆에 선다', async () => {
-    그날줄을(고른날, [{ ...스타포스줄, unpricedCount: 3 }])
-    const view = await 그리기()
-
-    expect(view.getByTestId('cashbook-row-enhancement:starforce:낟낟')).toHaveTextContent(
-      '낟낟 · 강화스타포스 47회 · 값모름 3−12억',
     )
   })
 
@@ -1874,20 +1863,6 @@ describe('강화 줄', () => {
 
     expect(view.queryByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeNull()
     expect(view.getByTestId('cashbook-row-items-enhancement:additional_potential:낟낟')).toBeTruthy()
-  })
-
-  // 0 을 적으면 공짜로 강화한 것이 된다.
-  it('그 장비를 통째로 모르면 금액 자리가 값 모름 이다', async () => {
-    그날줄을(고른날, [
-      {
-        ...스타포스줄,
-        items: [{ itemKey: null, targetItem: '왕푸', count: 8, costMeso: 0, unpricedCount: 8 }],
-      },
-    ])
-    const view = await 그리기()
-    await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*펼치기$/)
-
-    expect(view.getByTestId('cashbook-item-row-왕푸')).toHaveTextContent('왕푸8회값 모름')
   })
 
   it('다시 누르면 접힌다', async () => {

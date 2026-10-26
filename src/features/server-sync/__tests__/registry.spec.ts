@@ -12,6 +12,7 @@ import { SYNC_HANDLERS } from '../registry'
 import { BOSS_CLEAR_RECORD_TYPE } from '../boss-clear-sync'
 import { CASHBOOK_ENTRY_RECORD_TYPE } from '../cashbook-entry-sync'
 import { DROP_PRICE_RECORD_TYPE } from '../drop-price-sync'
+import { ENHANCEMENT_TOTAL_RECORD_TYPE } from '../enhancement-total-sync'
 
 const SYNC_DIR = join(__dirname, '..')
 
@@ -24,6 +25,7 @@ describe('전송 종류 레지스트리', () => {
       ['DROP_PRICE_RECORD_TYPE', DROP_PRICE_RECORD_TYPE],
       ['BOSS_CLEAR_RECORD_TYPE', BOSS_CLEAR_RECORD_TYPE],
       ['CASHBOOK_ENTRY_RECORD_TYPE', CASHBOOK_ENTRY_RECORD_TYPE],
+      ['ENHANCEMENT_TOTAL_RECORD_TYPE', ENHANCEMENT_TOTAL_RECORD_TYPE],
     ])
 
     const callers: { file: string; argument: string }[] = []

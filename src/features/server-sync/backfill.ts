@@ -6,11 +6,14 @@
  */
 import { postBatch, type BatchSendResult } from '../../server/write'
 import { RECORD_PATHS } from '../../server/records'
+import { isEnhancementTotalsMoved } from '../../storage/enhancement-totals-moved'
 import { getBackfillState, setBackfillState, type BackfillState } from '../../storage/server-backfill'
 import { listRecordIdsAfter, type BackfillKind } from '../../storage/server-sync-sources'
 import { bossClearHandler, enqueueBossClears } from './boss-clear-sync'
 import { cashbookEntryHandler, enqueueCashbookEntries } from './cashbook-entry-sync'
 import { dropPriceHandler, enqueueDropPrices } from './drop-price-sync'
+import { enhancementTotalHandler, enqueueEnhancementTotals } from './enhancement-total-sync'
+import { ensureEnhancementTotals } from '../enhancement-history/legacy-totals'
 
 /** 묶음 한 번의 건수. 서버의 상한과 같다. */
 export const BACKFILL_BATCH = 100
@@ -22,10 +25,12 @@ export interface BackfillKindSpec {
   read: (recordId: string) => Promise<unknown>
   /** 서버가 받지 못한 건을 평소 대기 표에 넣는다. */
   requeue: (recordIds: readonly string[], now: Date) => Promise<void>
+  /** 거짓이면 이번 회차에 이 종류를 건너뛴다. 진행도 적지 않는다. 표가 다 차기 전에 훑으면 빈 표를 끝으로 적는다 */
+  ready?: () => Promise<boolean>
 }
 
 /**
- * 처치 · 드롭 · 가계부 차례. 드롭이 처치 기간 id 를 가리키므로 처치가 먼저다.
+ * 처치 · 드롭 · 가계부 · 강화 합계 차례. 드롭이 처치 기간 id 를 가리키므로 처치가 먼저다.
  *
  * 처리 함수는 부를 때 꺼낸다. 모듈을 읽을 때 꺼내면 종류 파일을 일부만 목으로 바꾼 테스트에서 빈 값을 집는다.
  */
@@ -47,6 +52,17 @@ export const BACKFILL_KINDS: readonly BackfillKindSpec[] = [
     path: RECORD_PATHS.cashbookEntry,
     read: (id) => cashbookEntryHandler.read(id),
     requeue: (ids, now) => enqueueCashbookEntries(ids, now),
+  },
+  {
+    kind: 'enhancementTotal',
+    path: RECORD_PATHS.enhancementTotal,
+    read: (id) => enhancementTotalHandler.read(id),
+    requeue: (ids, now) => enqueueEnhancementTotals(ids, now),
+    // 옛 원본을 옮기는 부팅 단계가 이 표를 채운다. 앱을 켜자마자 도는 회차는 그보다 먼저 온다.
+    ready: async () => {
+      await ensureEnhancementTotals()
+      return isEnhancementTotalsMoved()
+    },
   },
 ]
 
@@ -80,6 +96,7 @@ export async function runBackfill(
 ): Promise<void> {
   const state = await deps.getState()
   for (const spec of deps.kinds) {
+    if (spec.ready !== undefined && !(await spec.ready())) continue
     let progress = state[spec.kind] ?? { after: '', done: false }
     while (!progress.done) {
       const ids = await deps.list(spec.kind, progress.after, BACKFILL_BATCH)

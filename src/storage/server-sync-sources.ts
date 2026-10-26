@@ -109,12 +109,14 @@ export async function getCashbookEntrySource(entryId: string): Promise<CashbookE
 }
 
 /** 과거 올리기가 나눠 읽는 종류. 표와 조건이 종류마다 다르다. */
-export type BackfillKind = 'bossClear' | 'dropPrice' | 'cashbookEntry'
+export type BackfillKind = 'bossClear' | 'dropPrice' | 'cashbookEntry' | 'enhancementTotal'
 
 const BACKFILL_QUERIES: Record<BackfillKind, string> = {
   bossClear: `SELECT id FROM boss_party_periods WHERE clear_status = 'cleared' AND id > ? ORDER BY id LIMIT ?`,
   dropPrice: 'SELECT id FROM boss_drops WHERE id > ? ORDER BY id LIMIT ?',
   cashbookEntry: 'SELECT id FROM cashbook_entries WHERE id > ? ORDER BY id LIMIT ?',
+  // 지출로 세는 줄만 보낸다. 이벤트 월드와 판정 못 한 줄은 서버에 두지 않는다.
+  enhancementTotal: 'SELECT id FROM enhancement_totals WHERE event_world = 0 AND id > ? ORDER BY id LIMIT ?',
 }
 
 /**

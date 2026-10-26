@@ -94,8 +94,7 @@ function enhancement(characterName: string, category: 'starforce' | 'cube_reset'
     characterName,
     payoutMeso,
     count: 1,
-    unpricedCount: 0,
-    items: [{ itemKey: null, targetItem: '아케인셰이드 투구', count: 1, costMeso: payoutMeso, unpricedCount: 0 }],
+    items: [{ itemKey: null, targetItem: '아케인셰이드 투구', count: 1, costMeso: payoutMeso }],
   }
 }
 
