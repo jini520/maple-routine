@@ -4,7 +4,6 @@
  * 기록 · 원장 · 판정은 월드 key 를 들고, 보이는 이름 · 엠블럼 · 챌린저스 여부 · 이벤트 월드 여부는 이 표에서 찾는다.
  * API 이름에서 key 를 얻는 규칙도 여기 하나다(`worldKeyOfApiName`).
  */
-import bundled from '../../data/worlds.json'
 import type { WorldRow, WorldsTable } from '../../types/game-data'
 import {
   compact,
@@ -17,7 +16,7 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { bundledTable, derive } from '../game-data/table'
+import { gameTable, derive } from '../game-data/table'
 
 export type WorldEntry = WorldRow
 
@@ -39,7 +38,7 @@ export function parseWorlds(value: unknown): WorldsTable | null {
   return { updatedAt, worlds }
 }
 
-export const worldsTable = bundledTable('worlds', bundled, parseWorlds)
+export const worldsTable = gameTable('worlds', { updatedAt: null, worlds: [] }, parseWorlds)
 
 /** API 이름을 맞추는 규칙. NFC 로 맞추고 공백을 모두 지운다. 보스 · 컨텐츠 · 강화와 같다. */
 function comparableName(name: string): string {

@@ -1,0 +1,689 @@
+{
+  "updatedAt": "2026-10-26T14:16:02.000Z",
+  "crops": [
+    {
+      "kind": "boss_portrait",
+      "slug": "zakum",
+      "size": "100% auto",
+      "position": "50% 45%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "magnus",
+      "size": "100% auto",
+      "position": "50% 40%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "papulatus",
+      "size": "100% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "vonBon",
+      "size": "100% auto",
+      "position": "50% 50%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "pierre",
+      "size": "100% auto",
+      "position": "50% 50%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "crimsonQueen",
+      "size": "100% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "vellum",
+      "size": "100% auto",
+      "position": "50% 60%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "lotus",
+      "size": "100% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "damien",
+      "size": "100% auto",
+      "position": "30% 50%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "slime",
+      "size": "100% auto",
+      "position": "50% 50%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "lucid",
+      "size": "100% auto",
+      "position": "50% 60%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "will",
+      "size": "100% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "gloom",
+      "size": "100% auto",
+      "position": "50% 30%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "verusHilla",
+      "size": "100% auto",
+      "position": "50% 40%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "darknell",
+      "size": "100% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "seren",
+      "size": "120% auto",
+      "position": "50% 45%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "kalos",
+      "size": "100% auto",
+      "position": "50% 75%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "adversary",
+      "size": "100% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "kaling",
+      "size": "90% auto",
+      "position": "0% 38%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "maleficStar",
+      "size": "100% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "bellona",
+      "size": "95% auto",
+      "position": "0% 33%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "limbo",
+      "size": "100% auto",
+      "position": "50% 65%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "bardrix",
+      "size": "100% auto",
+      "position": "50% 40%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "jupiter",
+      "size": "100% auto",
+      "position": "50% 40%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "maerin",
+      "size": "100% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "blackMage",
+      "size": "100% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "ancientGodMitra",
+      "size": "150% auto",
+      "position": "50% 50%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "senya",
+      "size": "150% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "baekyeon",
+      "size": "150% auto",
+      "position": "30% 40%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "lesa",
+      "size": "115% auto",
+      "position": "40% 35%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "arcanus",
+      "size": "70% auto",
+      "position": "66% 29%"
+    },
+    {
+      "kind": "boss_portrait",
+      "slug": "armorDragon",
+      "size": "80% auto",
+      "position": "130% 27%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "zakum",
+      "size": "220% auto",
+      "position": "60% 40%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "magnus",
+      "size": "280% auto",
+      "position": "40% 20%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "papulatus",
+      "size": "410% auto",
+      "position": "50% 30%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "vonBon",
+      "size": "250% auto",
+      "position": "30% 35%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "pierre",
+      "size": "240% auto",
+      "position": "45% 45%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "crimsonQueen",
+      "size": "330% auto",
+      "position": "55% 15%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "vellum",
+      "size": "170% auto",
+      "position": "15% 50%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "lotus",
+      "size": "250% auto",
+      "position": "45% 20%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "damien",
+      "size": "250% auto",
+      "position": "45% 35%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "slime",
+      "size": "200% auto",
+      "position": "40% 50%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "lucid",
+      "size": "230% auto",
+      "position": "35% 45%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "will",
+      "size": "270% auto",
+      "position": "35% 5%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "gloom",
+      "size": "160% auto",
+      "position": "45% 40%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "verusHilla",
+      "size": "250% auto",
+      "position": "45% 15%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "darknell",
+      "size": "250% auto",
+      "position": "50% 15%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "seren",
+      "size": "330% auto",
+      "position": "50% 40%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "kalos",
+      "size": "210% auto",
+      "position": "40% 65%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "adversary",
+      "size": "210% auto",
+      "position": "40% 35%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "kaling",
+      "size": "250% auto",
+      "position": "55% 35%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "maleficStar",
+      "size": "250% auto",
+      "position": "40% 25%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "bellona",
+      "size": "250% auto",
+      "position": "50% 30%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "limbo",
+      "size": "240% auto",
+      "position": "30% 60%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "bardrix",
+      "size": "230% auto",
+      "position": "25% 30%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "jupiter",
+      "size": "200% auto",
+      "position": "45% 25%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "maerin",
+      "size": "180% auto",
+      "position": "50% 30%"
+    },
+    {
+      "kind": "boss_portrait_icon",
+      "slug": "blackMage",
+      "size": "240% auto",
+      "position": "20% 20%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "zakum",
+      "size": "149% auto",
+      "position": "50% 45%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "magnus",
+      "size": "149% auto",
+      "position": "50% 40%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "papulatus",
+      "size": "149% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "vonBon",
+      "size": "149% auto",
+      "position": "20% 50%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "pierre",
+      "size": "149% auto",
+      "position": "20% 50%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "crimsonQueen",
+      "size": "149% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "vellum",
+      "size": "129% auto",
+      "position": "-20% 70%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "lotus",
+      "size": "149% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "damien",
+      "size": "149% auto",
+      "position": "30% 50%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "slime",
+      "size": "149% auto",
+      "position": "30% 50%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "lucid",
+      "size": "149% auto",
+      "position": "20% 60%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "will",
+      "size": "179% auto",
+      "position": "30% 30%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "gloom",
+      "size": "149% auto",
+      "position": "50% 30%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "verusHilla",
+      "size": "149% auto",
+      "position": "40% 40%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "darknell",
+      "size": "149% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "seren",
+      "size": "179% auto",
+      "position": "50% 45%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "kalos",
+      "size": "149% auto",
+      "position": "20% 75%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "adversary",
+      "size": "149% auto",
+      "position": "20% 35%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "kaling",
+      "size": "134% auto",
+      "position": "60% 38%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "maleficStar",
+      "size": "149% auto",
+      "position": "30% 35%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "bellona",
+      "size": "142% auto",
+      "position": "40% 33%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "limbo",
+      "size": "149% auto",
+      "position": "30% 65%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "bardrix",
+      "size": "149% auto",
+      "position": "0% 40%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "jupiter",
+      "size": "149% auto",
+      "position": "40% 40%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "maerin",
+      "size": "149% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "blackMage",
+      "size": "149% auto",
+      "position": "20% 35%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "ancientGodMitra",
+      "size": "224% auto",
+      "position": "50% 50%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "senya",
+      "size": "224% auto",
+      "position": "50% 35%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "baekyeon",
+      "size": "224% auto",
+      "position": "30% 40%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "lesa",
+      "size": "172% auto",
+      "position": "40% 35%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "arcanus",
+      "size": "104% auto",
+      "position": "66% 29%"
+    },
+    {
+      "kind": "boss_portrait_modal",
+      "slug": "armorDragon",
+      "size": "119% auto",
+      "position": "130% 27%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "roadOfVanishing",
+      "size": "210% auto",
+      "position": "105% 95%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "chewChew",
+      "size": "230% auto",
+      "position": "65% 70%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "lacheln",
+      "size": "310% auto",
+      "position": "0% 45%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "arcana",
+      "size": "200% auto",
+      "position": "100% 65%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "morass",
+      "size": "170% auto",
+      "position": "0% 80%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "esfera",
+      "size": "280% auto",
+      "position": "60% 60%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "moonBridge",
+      "size": "190% auto",
+      "position": "0% 60%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "theLabyrinthOfSuffering",
+      "size": "120% auto",
+      "position": "0% 50%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "limen",
+      "size": "140% auto",
+      "position": "25% 50%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "cernium",
+      "size": "220% auto",
+      "position": "50% 40%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "Arcs",
+      "size": "220% auto",
+      "position": "20% 35%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "odium",
+      "size": "250% auto",
+      "position": "50% 50%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "dowonkyung",
+      "size": "170% auto",
+      "position": "50% 65%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "arteria",
+      "size": "180% auto",
+      "position": "50% 45%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "carcion",
+      "size": "190% auto",
+      "position": "45% 45%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "tallahart",
+      "size": "260% auto",
+      "position": "0% 70%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "geardrak",
+      "size": "220% auto",
+      "position": "70% 60%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "monsterPark",
+      "size": "250% auto",
+      "position": "5% 60%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "hallOfHeroes",
+      "size": "200% auto",
+      "position": "15% 55%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "flagRace",
+      "size": "180% auto",
+      "position": "70% 65%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "critias",
+      "size": "140% auto",
+      "position": "79% 87%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "fallenWorldTree",
+      "size": "170% auto",
+      "position": "110% 100%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "haven",
+      "size": "170% auto",
+      "position": "93% 67%"
+    },
+    {
+      "kind": "daily_quest_region",
+      "slug": "muruengRaid",
+      "size": "200% auto",
+      "position": "91% 93%"
+    }
+  ]
+}

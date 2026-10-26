@@ -4,7 +4,6 @@
  * `bosses.ts` 의 조회 함수가 전부 이 값을 읽는다. 덮는 흐름은 `features/game-data/query` 에 있다.
  * 서버 응답과 기기 사본을 받는 자리가 같은 검사(`parseBossCatalog`)를 거친다.
  */
-import bundled from '../../data/bosses.json'
 import {
   BOSS_CATALOG_CYCLES,
   type BossCatalog,
@@ -26,7 +25,7 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { bundledTable } from '../game-data/table'
+import { gameTable } from '../game-data/table'
 
 function toDifficulty(row: Row): BossCatalogDifficulty | null {
   if (!isOneOf(row.difficulty, BOSS_DIFFICULTIES) || !isPositiveInteger(row.requiredLevel)) return null
@@ -82,7 +81,7 @@ export function parseBossCatalog(value: unknown): BossCatalog | null {
   return { updatedAt, rules, bosses }
 }
 
-export const bossCatalogTable = bundledTable('bosses', bundled, parseBossCatalog)
+export const bossCatalogTable = gameTable('bosses', { updatedAt: null, rules: { weeklyBossSelectionLimit: 0, weeklyCrystalSaleLimit: 0, defaultMaxPartySize: 0 }, bosses: [] }, parseBossCatalog)
 
 /** 번들 사본이 계약을 통과한 값. 서버도 기기 사본도 없는 첫 실행이 이것으로 선다. */
 export const BUNDLED_BOSS_CATALOG: BossCatalog = bossCatalogTable.get()

@@ -4,7 +4,6 @@
  * 레벨마다 값이 달라 `unitPrice` × 수량으로 못 내므로 선택 목록(`spend-catalog`)과 따로 산다. 비용은 결정석
  * 가격처럼 레벨마다 기간 줄이고, 적는 날짜가 든 주간 기간이 줄을 고른다.
  */
-import bundled from '../../data/symbol-costs.json'
 import type { SymbolCostsTable, SymbolGroupRow, SymbolLevelCostRow, SymbolRow } from '../../types/game-data'
 import { isEffectiveIn } from '../boss/boss-profit-period'
 import { resetWeekStartOf } from '../calendar'
@@ -21,7 +20,7 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { bundledTable, derive } from '../game-data/table'
+import { gameTable, derive } from '../game-data/table'
 
 export interface SymbolCost {
   /** 기록의 `item_key`. 사냥터 표의 지역 key 와 같은 글자다. */
@@ -83,7 +82,7 @@ export function parseSymbolCosts(value: unknown): SymbolCostsTable | null {
   return { updatedAt, groups, symbols, levelCosts }
 }
 
-export const symbolCostsTable = bundledTable('symbolCosts', bundled, parseSymbolCosts)
+export const symbolCostsTable = gameTable('symbolCosts', { updatedAt: null, groups: [], symbols: [], levelCosts: [] }, parseSymbolCosts)
 
 const index = derive(symbolCostsTable, (table) => {
   const groups: SymbolCostGroup[] = table.groups.map((group) => ({

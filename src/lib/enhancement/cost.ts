@@ -7,7 +7,6 @@
  *
  * @see docs/persistence/sqlite.md `enhancement_history`
  */
-import bundled from '../../data/enhancement-costs.json'
 import {
   POTENTIAL_GRADES,
   POTENTIAL_RESET_TYPES,
@@ -29,7 +28,7 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { bundledTable, derive } from '../game-data/table'
+import { gameTable, derive } from '../game-data/table'
 
 /** 응답의 `potential_type` 글자 → 표의 종류 key. 이 둘 말고는 안 온다(1년치 4,507건 실측). */
 const RESET_TYPE_KEYS: Record<string, PotentialResetTypeKey | undefined> = {
@@ -88,7 +87,7 @@ export function parseEnhancementCosts(value: unknown): EnhancementCostsTable | n
   return { updatedAt, rules, potentialResetCosts, soulPotentialResetCosts, starforceSteps }
 }
 
-export const enhancementCostsTable = bundledTable('enhancementCosts', bundled, parseEnhancementCosts)
+export const enhancementCostsTable = gameTable('enhancementCosts', { updatedAt: null, rules: { cubeAppraisalFreeMaxLevel: 0, cubeAppraisalCoefficient: 0, starforceDestroyDefenceSurchargePercent: 0 }, potentialResetCosts: [], soulPotentialResetCosts: [], starforceSteps: [] }, parseEnhancementCosts)
 
 const index = derive(enhancementCostsTable, (table) => {
   // 종류 · 등급마다 레벨 구간 줄을 minLevel 내림차순으로. 처음 걸리는 줄이 그 레벨의 줄이다.

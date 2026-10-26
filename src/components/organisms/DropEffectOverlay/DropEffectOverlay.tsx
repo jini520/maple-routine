@@ -19,7 +19,7 @@ import { Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
 
 import { dropItemIconOf } from '../../../lib/assets/asset-lookup'
 import { findDropItem } from '../../../lib/drop/drop-items'
-import { DROP_EFFECT_FRAMES, screenEffectScale } from './drop-effect-layout'
+import { dropEffectFrames, screenEffectScale } from './drop-effect-layout'
 
 import { AnimatedView, Svg } from '../../../lib/nativewind-interop'
 import { Text } from '../../atoms'
@@ -131,15 +131,10 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
   const reduceMotion = useReducedMotion()
   const { width: viewportW, height: viewportH } = useWindowDimensions()
 
-  const counts: DropEffectFrameCounts = useMemo(
-    () => ({
-      screen: DROP_EFFECT_FRAMES.screen.length,
-      pre: DROP_EFFECT_FRAMES.pre.length,
-      loop: DROP_EFFECT_FRAMES.loop.length,
-      end: DROP_EFFECT_FRAMES.end.length,
-    }),
-    [],
-  )
+  const counts: DropEffectFrameCounts = useMemo(() => {
+    const frames = dropEffectFrames()
+    return { screen: frames.screen.length, pre: frames.pre.length, loop: frames.loop.length, end: frames.end.length }
+  }, [])
 
   // 스프라이트 층. 전 프레임을 마운트해 두고 보이는 것만 켠다.
   const pillarFrames = useMemo(() => buildPillarFrames(bitmapSizeOf), [])

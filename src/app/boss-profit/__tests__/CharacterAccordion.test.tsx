@@ -17,7 +17,7 @@ import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { bossesInSection } from '../../../lib/boss/bosses'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
-import dropItemsData from '../../../data/drop-items.json'
+import dropItemsData from '../../../__fixtures__/game-data/drop-items.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import { dropRowKey } from '../../../features/boss-profit/store'
 import type { RecordedDrop } from '../../../types/drops'

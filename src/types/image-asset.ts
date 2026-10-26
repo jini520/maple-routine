@@ -7,4 +7,10 @@
  * 갈라야 하는 것은 목록도 조회 함수도 아니고 **에셋 참조란 무엇인가 한 줄**뿐이다. 에셋 목록
  * (`assets/generated/*.ts`)에는 평범한 ESM import 만 있고 값이 무엇이 되는지는 번들러가 정한다.
  */
-export type ImageAssetRef = string
+export type ImageAssetRef = string | DownloadedImage
+
+export interface DownloadedImage {
+  uri: string
+  width: number
+  height: number
+}

@@ -12,7 +12,7 @@
 import { fireEvent } from '@testing-library/react-native'
 import { Dimensions } from 'react-native'
 
-import { DROP_EFFECT_FRAMES } from '../drop-effect-layout'
+import { dropEffectFrames } from '../drop-effect-layout'
 
 import { renderOverlay } from '../../../__tests__/render-atom'
 import { DropEffectOverlay } from '../DropEffectOverlay'
@@ -116,9 +116,9 @@ describe('DropEffectOverlay: 구조', () => {
   // 것이 `frame-layout.ts` 의 계약이므로(크기 없이 그리면 프레임마다 최대 26px 튄다)
   // 여기서는 **자리와 계약**만 보고, 재생 순서는 `drop-effect-player.test.ts` 가 본다.
   it('프레임 에셋이 네 단계 다 있고, 기둥·ScreenEff 자리가 서 있다', async () => {
-    expect(DROP_EFFECT_FRAMES.screen.length).toBeGreaterThan(0)
-    expect(DROP_EFFECT_FRAMES.loop.length).toBeGreaterThan(0)
-    expect(DROP_EFFECT_FRAMES.end.length).toBeGreaterThan(0)
+    expect(dropEffectFrames().screen.length).toBeGreaterThan(0)
+    expect(dropEffectFrames().loop.length).toBeGreaterThan(0)
+    expect(dropEffectFrames().end.length).toBeGreaterThan(0)
 
     const { getByTestId } = await renderOverlay(
       <DropEffectOverlay itemKey="black_boss_ring_box" onClose={noop} />,

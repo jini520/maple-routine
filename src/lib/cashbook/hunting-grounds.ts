@@ -10,7 +10,6 @@
  * 기록은 사냥터 key 만 적고 지역을 안 적는다. 그래서 `findHuntingGround` 가 사냥터와 지역을
  * **함께** 돌려준다. 부르는 쪽이 지역을 다시 찾게 두면 그 조회가 화면마다 한 벌씩 생긴다.
  */
-import bundled from '../../data/hunting-grounds.json'
 import type {
   HuntingGroundLevelRow,
   HuntingGroundRow,
@@ -29,7 +28,7 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { bundledTable, derive } from '../game-data/table'
+import { gameTable, derive } from '../game-data/table'
 
 const FORCE_TYPES = ['arcane', 'authentic'] as const
 
@@ -68,7 +67,7 @@ export function parseHuntingGrounds(value: unknown): HuntingGroundsTable | null 
   return { updatedAt, regions, grounds, groundLevels }
 }
 
-export const huntingGroundsTable = bundledTable('huntingGrounds', bundled, parseHuntingGrounds)
+export const huntingGroundsTable = gameTable('huntingGrounds', { updatedAt: null, regions: [], grounds: [], groundLevels: [] }, parseHuntingGrounds)
 
 /** 줄 표를 지역 → 사냥터 → 레벨로 묶은 것. 차례는 표에 적힌 그대로다(사용자가 매긴 순서라 정렬하지 않는다). */
 const regions = derive(huntingGroundsTable, (table): readonly HuntingRegion[] => {

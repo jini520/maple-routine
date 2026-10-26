@@ -5,7 +5,7 @@
 // "0원 벌었다"가 같은 화면이 된다.
 import { act, fireEvent, within } from '@testing-library/react-native'
 
-import dropItemsData from '../../../data/drop-items.json'
+import dropItemsData from '../../../__fixtures__/game-data/drop-items.json'
 import { dropItemNameOf } from '../../../lib/drop/drop-items'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'

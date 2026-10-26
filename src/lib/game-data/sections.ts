@@ -6,6 +6,8 @@
  * `types/game-data` 의 `GameData` 에 칸 하나가 는다.
  */
 import type { GameData, GameDataSection } from '../../types/game-data'
+import { assetFilesTable, parseAssetFiles } from '../assets/asset-files'
+import { imageCropsTable, parseImageCrops } from '../assets/image-crops'
 import { bossDropsTable, dropBoxesTable, parseBossDrops, parseDropBoxes } from '../boss/boss-drops'
 import { crystalPricesTable, parseCrystalPrices } from '../boss/boss-crystal-prices'
 import { bossCatalogTable, parseBossCatalog } from '../boss/catalog'
@@ -47,6 +49,8 @@ export const SECTIONS: { readonly [K in GameDataSection]: GameDataSectionEntry<G
   enhancementCosts: { table: enhancementCostsTable, parse: parseEnhancementCosts },
   mvpGrades: { table: mvpGradesTable, parse: parseMvpGrades },
   huntingGrounds: { table: huntingGroundsTable, parse: parseHuntingGrounds },
+  assets: { table: assetFilesTable, parse: parseAssetFiles },
+  imageCrops: { table: imageCropsTable, parse: parseImageCrops },
 }
 
 /** 지금 표 열넷의 값. 켜는 순간 부르면 번들이고, 그 뒤로는 사본 · 서버가 덮은 값이다. */

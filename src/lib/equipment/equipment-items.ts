@@ -4,10 +4,9 @@
  * 강화 기록은 장비 key 를 들고 착용 레벨은 이 표에서 찾는다. 스타포스 비용이 레벨에 좌우되는데 스타포스 응답에는
  * `item_level` 이 없어서다. API 이름에서 key 를 얻는 규칙도 여기 하나다(`equipmentItemKeyOfApiName`).
  */
-import bundled from '../../data/equipment-items.json'
 import type { EquipmentItemRow, EquipmentItemsTable } from '../../types/game-data'
 import { isNonEmptyString, isPositiveInteger, isRow, rowsOf, uniqueBy, updatedAtOf, type Row } from '../game-data/contract'
-import { bundledTable, derive } from '../game-data/table'
+import { gameTable, derive } from '../game-data/table'
 
 export type EquipmentItem = EquipmentItemRow
 
@@ -28,7 +27,7 @@ export function parseEquipmentItems(value: unknown): EquipmentItemsTable | null 
   return { updatedAt, items }
 }
 
-export const equipmentItemsTable = bundledTable('equipmentItems', bundled, parseEquipmentItems)
+export const equipmentItemsTable = gameTable('equipmentItems', { updatedAt: null, items: [] }, parseEquipmentItems)
 
 /**
  * API 이름을 맞추는 규칙. NFC 로 맞추고 공백을 모두 지운다. API 는 띄어 주고 표는 붙여 쓴다.

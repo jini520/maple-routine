@@ -33,7 +33,7 @@ export function UnknownCharacterFace(props: UnknownCharacterFaceProps): React.JS
       className="h-full w-full"
     >
       <Image
-        source={unknownCharacterAsset()}
+        source={unknownCharacterAsset() ?? undefined}
         style={{
           position: 'absolute',
           width: SILHOUETTE_SIZE * scale,

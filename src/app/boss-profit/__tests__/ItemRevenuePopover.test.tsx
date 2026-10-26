@@ -8,7 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import type { RecordedDrop } from '../../../types/drops'
 
-import dropItemsData from '../../../data/drop-items.json'
+import dropItemsData from '../../../__fixtures__/game-data/drop-items.json'
 import { dropItemNameOf } from '../../../lib/drop/drop-items'
 import { flattenStyle, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { ThemeProvider } from '../../../theme/ThemeProvider'

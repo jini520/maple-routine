@@ -76,7 +76,7 @@ function Figure(props: { uri: string | undefined }): React.JSX.Element {
     >
       <Image
         testID={known ? 'stats-podium-image' : 'stats-podium-image-unknown'}
-        source={known ? { uri: props.uri } : unknownCharacterAsset()}
+        source={known ? { uri: props.uri } : (unknownCharacterAsset() ?? undefined)}
         style={{ position: 'absolute', ...figureCropStyle(FIGURE_SCALE, known) }}
       />
     </View>

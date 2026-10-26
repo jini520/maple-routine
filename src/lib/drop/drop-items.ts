@@ -4,7 +4,6 @@
  * 기록과 다른 표는 key 를 들고, 보이는 이름 · 그림 · 고가 여부는 이 표에서 찾는다. 이름을 바꿔도 옛 기록이
  * 따라온다. 고가 판정도 여기다. 세트 소속이 아니라 줄의 `valuable` 한 칸이다.
  */
-import bundled from '../../data/drop-items.json'
 import type { DropItemRow, DropItemsTable } from '../../types/game-data'
 import {
   compact,
@@ -17,7 +16,7 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { bundledTable, derive } from '../game-data/table'
+import { gameTable, derive } from '../game-data/table'
 
 export type DropItem = DropItemRow
 
@@ -38,7 +37,7 @@ export function parseDropItems(value: unknown): DropItemsTable | null {
   return { updatedAt, items }
 }
 
-export const dropItemsTable = bundledTable('dropItems', bundled, parseDropItems)
+export const dropItemsTable = gameTable('dropItems', { updatedAt: null, items: [] }, parseDropItems)
 
 const index = derive(dropItemsTable, (table) => ({
   byKey: new Map(table.items.map((item) => [item.key, item])),

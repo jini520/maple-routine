@@ -1,4 +1,4 @@
-import bundled from '../../data/bosses.json'
+import bundled from '../../__fixtures__/game-data/bosses.json'
 import {
   BUNDLED_BOSS_CATALOG,
   getBossCatalog,

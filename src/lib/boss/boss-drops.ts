@@ -4,8 +4,6 @@
  * 응답은 보스 · 난이도 · 갈래 · 아이템이 한 줄인 납작한 표다. 여기서 보스마다 난이도 정규 차례의 보상 묶음으로
  * 묶어 지금 코드가 읽던 모양을 만든다. 함수가 받는 `boss` 는 보스 key 이고 난이도는 난이도 key 다.
  */
-import bundledBossDrops from '../../data/boss-drops.json'
-import bundledDropBoxes from '../../data/drop-boxes.json'
 import {
   DROP_CATEGORIES,
   SELECTABLE_DROP_CATEGORIES,
@@ -30,7 +28,7 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { bundledTable, derive } from '../game-data/table'
+import { gameTable, derive } from '../game-data/table'
 import { isEffectiveAnytimeIn, isEffectiveIn } from './boss-profit-period'
 
 function toReward(row: Row): BossDropRow | null {
@@ -81,8 +79,8 @@ export function parseDropBoxes(value: unknown): DropBoxesTable | null {
   return { updatedAt, boxes }
 }
 
-export const bossDropsTable = bundledTable('bossDrops', bundledBossDrops, parseBossDrops)
-export const dropBoxesTable = bundledTable('dropBoxes', bundledDropBoxes, parseDropBoxes)
+export const bossDropsTable = gameTable('bossDrops', { updatedAt: null, rewards: [] }, parseBossDrops)
+export const dropBoxesTable = gameTable('dropBoxes', { updatedAt: null, boxes: [] }, parseDropBoxes)
 
 // BOSS_DIFFICULTIES 정규 순서 인덱스(미상 난이도는 뒤로).
 function difficultyOrder(difficulty: string): number {
