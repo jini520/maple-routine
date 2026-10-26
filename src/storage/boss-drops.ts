@@ -46,6 +46,8 @@ export interface BossDropRecord {
   quantity: number
   /** 마지막으로 저장한 시각. */
   recordedAt: string // ISO 8601
+  /** 판매가를 적은 시각. 같은 값을 다시 저장하면 그대로다. 판매가가 없으면 `null` */
+  pricedAt: string | null
   /** 기록 시점의 월드 이름. 기간 행의 `world_key` 로 찾는다. 모르면 `null`. */
   world: string | null
   /** 기간 행의 월드 key. */
@@ -357,6 +359,7 @@ function rowToRecord(row: Record<string, unknown>): BossDropRecord {
     ringLevel: numberOrNull(row.ring_level),
     quantity: 1,
     recordedAt: row.updated_at as string,
+    pricedAt: (row.priced_at as string | null | undefined) ?? null,
     world: worldKey === null ? null : worldNameOf(worldKey, worldKey),
     worldKey,
     priceState: PRICE_STATE_OF_STATUS[recordStatus],

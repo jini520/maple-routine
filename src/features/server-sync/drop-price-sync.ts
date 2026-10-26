@@ -48,6 +48,7 @@ export function dropPricePayloadOf(record: BossDropRecord, periodRecordId: strin
     boss: record.bossKey,
     difficulty: record.difficulty,
     periodRecordId,
+    pricedAt: status === 'completed' ? record.pricedAt : null,
   }
 }
 

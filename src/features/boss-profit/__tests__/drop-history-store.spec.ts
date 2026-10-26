@@ -69,6 +69,7 @@ function dropRecord(overrides: Partial<BossDropRecord>): BossDropRecord {
     quantity: 1,
     // 히스토리는 이 값을 쓰지 않는다. 그룹 재기록으로 덮이는 감사 필드다.
     recordedAt: '2026-07-31T00:00:00.000Z',
+    pricedAt: null,
     ...overrides,
   }
 }

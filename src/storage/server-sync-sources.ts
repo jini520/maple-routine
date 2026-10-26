@@ -115,8 +115,9 @@ const BACKFILL_QUERIES: Record<BackfillKind, string> = {
   bossClear: `SELECT id FROM boss_party_periods WHERE clear_status = 'cleared' AND id > ? ORDER BY id LIMIT ?`,
   dropPrice: 'SELECT id FROM boss_drops WHERE id > ? ORDER BY id LIMIT ?',
   cashbookEntry: 'SELECT id FROM cashbook_entries WHERE id > ? ORDER BY id LIMIT ?',
-  // 지출로 세는 줄만 보낸다. 이벤트 월드와 판정 못 한 줄은 서버에 두지 않는다.
-  enhancementTotal: 'SELECT id FROM enhancement_totals WHERE event_world = 0 AND id > ? ORDER BY id LIMIT ?',
+  // 지출로 세는 줄만 보낸다. 이벤트 월드 · 판정 못 한 줄 · 비용이 0 인 줄은 서버에 두지 않는다.
+  enhancementTotal:
+    'SELECT id FROM enhancement_totals WHERE event_world = 0 AND attempt_cost_meso + destroy_defence_cost_meso > 0 AND id > ? ORDER BY id LIMIT ?',
 }
 
 /**

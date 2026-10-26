@@ -48,6 +48,7 @@ function record(over: Partial<BossDropRecord> = {}): BossDropRecord {
     ringLevel: 4,
     quantity: 1,
     recordedAt: NOW.toISOString(),
+    pricedAt: '2026-08-10T09:18:34.156Z',
     world: '챌린저스2',
     worldKey: 'challengers_2',
     priceState: 'entered',
@@ -84,6 +85,7 @@ describe('보낼 값', () => {
       boss: 'lucid',
       difficulty: 'hard',
       periodRecordId: 'period-1',
+      pricedAt: '2026-08-10T09:18:34.156Z',
     })
   })
 
@@ -101,6 +103,7 @@ describe('보낼 값', () => {
       'periodKey',
       'periodRecordId',
       'priceMeso',
+      'pricedAt',
       'ringLevel',
       'status',
       'worldKey',
@@ -118,6 +121,12 @@ describe('보낼 값', () => {
       status: 'pending',
       priceMeso: null,
     })
+  })
+
+  // 서버는 이 시각을 거래 날짜로 쓴다. 과거 올리기가 올린 날이 거래 날짜가 되면 시세가 오늘로 몰린다.
+  it('거래 시각은 판매가를 적은 기록에만 기기 값 그대로 싣는다', () => {
+    expect(dropPricePayloadOf(record({ priceState: null, priceMeso: null }), 'period-1')?.pricedAt).toBeNull()
+    expect(dropPricePayloadOf(record({ priceState: 'excluded', priceMeso: null }), 'period-1')?.pricedAt).toBeNull()
   })
 
   it('아이템 key 가 없으면 못 보낸다. 값이 null 인 유일한 경우다', () => {

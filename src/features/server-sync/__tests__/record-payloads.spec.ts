@@ -72,4 +72,10 @@ describe('강화 합계', () => {
     expect(enhancementTotalPayloadOf({ ...total, eventWorld: true })).toBeNull()
     expect(enhancementTotalPayloadOf({ ...total, eventWorld: null })).toBeNull()
   })
+
+  // 강화권 · 120 레벨 이하 큐브는 메소가 안 들어 지출이 아니다. 횟수만 있는 줄이 통계를 흐린다.
+  it('비용이 0 인 줄은 보내지 않는다. 파괴 방지 비용만 있어도 보낸다', () => {
+    expect(enhancementTotalPayloadOf({ ...total, attemptCostMeso: 0, destroyDefenceCostMeso: 0 })).toBeNull()
+    expect(enhancementTotalPayloadOf({ ...total, attemptCostMeso: 0 })).not.toBeNull()
+  })
 })
