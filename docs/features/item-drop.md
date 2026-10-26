@@ -157,7 +157,7 @@
 
 | 저장소 | 내용 |
 |---|---|
-| SQLite `boss_drops` | 드롭 기록 한 건이 한 행. 묶음은 기간 행(`period_id`)이고 차례는 `drop_index`, 행 식별자는 uuid `id` 다. 아이템 key · 상자 key · 반지 레벨, 상태(`record_status`) · 금액 · 가격을 매긴 시각 · 분배 방식 · 인원 · 비율 · 수수료. 가격부터 수수료까지는 `completed` 일 때만 있다. 캐릭터 · 보스 · 난이도 · 기간 · 월드는 기간 행(`boss_party_periods`)과 조합 행(`boss_parties`)에서 읽는다. 이름은 저장하지 않고 key 로 찾는다 |
+| SQLite `boss_drops` | 드롭 기록 한 건이 한 행. 묶음은 기간 행(`period_id`)이고 차례는 `sort_order`, 행 식별자는 uuid `id` 다. 아이템 key · 상자 key · 반지 레벨, 상태(`record_status`) · 금액 · 가격을 매긴 시각 · 분배 방식 · 인원 · 비율 · 수수료. 가격부터 수수료까지는 `completed` 일 때만 있다. 캐릭터 · 보스 · 난이도 · 기간 · 월드는 기간 행(`boss_party_periods`)과 조합 행(`boss_parties`)에서 읽는다. 이름은 저장하지 않고 key 로 찾는다 |
 | Preferences `dropEffect` | 연출 켜기(`on`) · 끄기(`off`). 없으면 켜짐 |
 
 기록이 지워지는 경우는 넷이다. 시트에서 고칠 때, 완료 행에서 처치 난이도로 못 얻는 기록을 정리할 때([[ADR-044]] 결정 8),

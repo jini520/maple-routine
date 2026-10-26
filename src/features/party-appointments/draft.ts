@@ -6,6 +6,7 @@
  */
 import { resetWeekStartOf, shiftDateKey } from '../../lib/calendar'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
+import { randomUuid } from '../../native/uuid'
 import type { PartyAppointment, PartyAppointmentBoss } from '../../types/party-appointment'
 
 export interface AppointmentDraft {
@@ -175,10 +176,7 @@ export function moveItem<T>(list: readonly T[], from: number, to: number): T[] {
   return next
 }
 
-/**
- * 새 약속의 id. `crypto.randomUUID` 는 Hermes 에 없다. 기기 안에서만 겹치지 않으면 되는 키라
- * 시각과 난수로 충분하다.
- */
-export function newAppointmentId(now: Date): string {
-  return `${now.getTime().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+/** 새 약속의 id(uuid). 앱의 기록 id 는 모두 uuid 다. */
+export function newAppointmentId(): string {
+  return randomUuid()
 }

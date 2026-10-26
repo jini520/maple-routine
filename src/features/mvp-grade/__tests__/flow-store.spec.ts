@@ -47,7 +47,7 @@ beforeEach(() => {
   m(prefs.getMvpBulkApplyAsked).mockResolvedValue(false)
   m(getBulkFeeIncomeRecords).mockResolvedValue([{ id: 'x' }])
   m(getBulkFeeDropRecords).mockResolvedValue([])
-  m(getAuthConfig).mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key' }] })
+  m(getAuthConfig).mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key' }] })
   m(fetchAndRecordCharacterList).mockResolvedValue([
     { accountId: 'A', characters: [{ ocid: 'a1', name: '에이', world: '스카니아', worldKey: 'scania', jobClass: '비숍', level: 280 }] },
   ])

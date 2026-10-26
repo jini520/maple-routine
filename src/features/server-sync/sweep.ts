@@ -6,7 +6,7 @@
  *
  * ```
  * 표의 줄마다
- *   그 kind 의 읽기 함수를 부른다
+ *   그 종류의 읽기 함수를 부른다
  *     값이 오면  → 보내기
  *     null 이면  → 삭제 요청  (원본이 없으면 지우기다. 작업 종류를 칸으로 안 적는다)
  *   보냈다            → 줄을 지운다
@@ -75,7 +75,7 @@ export async function sweepServerSync(deps: SweepDeps): Promise<SweepResult> {
   const result: SweepResult = { ...EMPTY }
 
   for (const entry of entries) {
-    const handler = deps.handlers[entry.kind]
+    const handler = deps.handlers[entry.recordType]
 
     // 레지스트리에 없는 종류다. 두면 줄이 영원히 쌓이고 조용히 안 나간다.
     if (handler === undefined) {

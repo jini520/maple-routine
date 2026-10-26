@@ -13,7 +13,7 @@ import type { StreamLine } from '../../server/friends-stream'
 import type { NexonCredential } from '../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
-const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
+const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accountId: null })
 
 // 전역을 잠시 갈아 끼우는 도우미. 원래 값을 기억해 두고
 // `unstubAllGlobals` 가 되돌린다.
@@ -128,7 +128,7 @@ describe('requestJson: 자격 객체', () => {
     const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, { ok: true }))
     stubGlobal('fetch', fetcher)
 
-    await requestJson('/x', { kind: 'apiKey', value: '내키' })
+    await requestJson('/x', { type: 'key', value: '내키', accountId: null })
 
     const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
     expect(headers['x-nxopen-api-key']).toBe('내키')
@@ -139,7 +139,7 @@ describe('requestJson: 자격 객체', () => {
     const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, { ok: true }))
     stubGlobal('fetch', fetcher)
 
-    await requestJson('/x', { kind: 'apiKey', value: '내키' })
+    await requestJson('/x', { type: 'key', value: '내키', accountId: null })
 
     const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
     expect(Object.keys(headers)).toEqual(['x-nxopen-api-key'])
@@ -150,7 +150,7 @@ describe('requestJson: 자격 객체', () => {
 // API 키면 지금처럼 앱이 넥슨을 직접 부른다. 가르는 판정이 이 파일 밖으로 새면 안 된다.
 describe('requestJson: 로그인 자격의 프렌즈 경로는 서버 스트림으로 간다', () => {
   // 앱은 토큰을 안 든다. 넥슨 보안 가이드라인이 액세스 토큰을 서버에서만 관리하라고 적어서다.
-  const 로그인 = { kind: 'login', value: '내세션' } as const
+  const 로그인 = { type: 'login', value: '내세션', accountId: null } as const
 
   function 잡는스트림(lines: StreamLine[] | (() => Promise<StreamLine[]>)) {
     const stream = jest.fn(typeof lines === 'function' ? lines : async () => lines)
@@ -279,7 +279,7 @@ describe('requestJson: 로그인 자격의 프렌즈 경로는 서버 스트림�
     const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, { ok: true }))
     stubGlobal('fetch', fetcher)
 
-    await requestJson('/maplestory/v1/character/list', { kind: 'apiKey', value: '내키' })
+    await requestJson('/maplestory/v1/character/list', { type: 'key', value: '내키', accountId: null })
 
     expect(stream).not.toHaveBeenCalled()
     const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
@@ -290,7 +290,7 @@ describe('requestJson: 로그인 자격의 프렌즈 경로는 서버 스트림�
 
 describe('requestJson: 로그인은 프렌즈 밖 경로를 개발자 키로 부른다', () => {
   // Open ID 가 안 여는 경로다. 로그인 사용자는 자기 키가 없으니 번들에 박은 키로 부른다.
-  const 로그인 = { kind: 'login', value: '내세션' } as const
+  const 로그인 = { type: 'login', value: '내세션', accountId: null } as const
   const 밖 = '/maplestory/v1/character/basic?ocid=x'
 
   afterEach(() => {
@@ -384,7 +384,7 @@ describe('requestJson: 로그인은 프렌즈 밖 경로를 개발자 키로 부
     const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => response(200, {}))
     stubGlobal('fetch', fetcher)
 
-    await requestJson(밖, { kind: 'apiKey', value: '내키' })
+    await requestJson(밖, { type: 'key', value: '내키', accountId: null })
 
     const headers = fetcher.mock.calls[0]?.[1]?.headers as Record<string, string>
     expect(headers['x-nxopen-api-key']).toBe('내키')
@@ -392,7 +392,7 @@ describe('requestJson: 로그인은 프렌즈 밖 경로를 개발자 키로 부
 })
 
 describe('requestJson: 로그인 만료는 키 무효와 다른 실패다', () => {
-  const 로그인 = { kind: 'login', value: '내세션' } as const
+  const 로그인 = { type: 'login', value: '내세션', accountId: null } as const
   const 거절 = (status: number) =>
     setFriendsStreamForTest(async () => {
       throw Object.assign(new Error('rejected'), { status })
@@ -494,7 +494,7 @@ describe('requestJson: Open API 점검', () => {
     stubGlobal('fetch', fetcher)
 
     await expect(
-      requestJson('/maplestory/v1/character/basic?ocid=x', { kind: 'login', value: '세션' }),
+      requestJson('/maplestory/v1/character/basic?ocid=x', { type: 'login', value: '세션', accountId: null }),
     ).rejects.toBeInstanceOf(NexonMaintenanceError)
     expect(fetcher).toHaveBeenCalledTimes(1)
   })
@@ -506,7 +506,7 @@ describe('requestJson: Open API 점검', () => {
     )
 
     await expect(
-      requestJson('/maplestory/v1/character/list', { kind: 'login', value: '세션' }),
+      requestJson('/maplestory/v1/character/list', { type: 'login', value: '세션', accountId: null }),
     ).rejects.toMatchObject({ scope: 'api' })
     expect(보고.maintenance).toHaveBeenCalledWith('api', '/maplestory/v1/character/list')
   })

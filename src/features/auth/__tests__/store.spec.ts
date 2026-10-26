@@ -39,6 +39,7 @@ jest.mock('../../../server/nexon-auth', () => ({ revokeNexonSession: jest.fn() }
 jest.mock('../../server-sync/forget', () => ({ forgetServerData: jest.fn() }))
 jest.mock('../nexon-login', () => ({ signInWithNexon: jest.fn() }))
 jest.mock('../current-credential', () => ({ currentCredential: jest.fn() }))
+jest.mock('../reentry-account-id', () => ({ reusableNexonAccountId: jest.fn() }))
 const { signInWithNexon: signInWithNexonMock } = jest.requireMock('../nexon-login') as Record<string, jest.Mock>
 const { currentCredential: currentCredentialMock } = jest.requireMock('../current-credential') as Record<string, jest.Mock>
 const { revokeNexonSession: revokeNexonSessionMock } = jest.requireMock('../../../server/nexon-auth') as Record<string, jest.Mock>
@@ -65,7 +66,7 @@ import { useAuthStore } from '../store'
 import type { NexonCredential } from '../../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
-const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
+const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accountId: null })
 
 function account(accountId: string): MapleAccount {
   return {
@@ -83,8 +84,11 @@ function account(accountId: string): MapleAccount {
   }
 }
 
+const { reusableNexonAccountId } = jest.requireMock('../reentry-account-id') as Record<string, jest.Mock>
+
 beforeEach(() => {
   useAuthStore.setState(initialAuthState)
+  reusableNexonAccountId.mockReset().mockResolvedValue(null)
   setApiKeyMock.mockResolvedValue(undefined)
   clearAuthConfigMock.mockResolvedValue(undefined)
   removeApiKeyMock.mockResolvedValue(undefined)
@@ -93,7 +97,7 @@ beforeEach(() => {
   resolveAfterSignInMock.mockResolvedValue(undefined)
   // 판정이 안 서는 것이 통상 경로다. 서는 경우만 그 테스트가 직접 세운다.
   probeApiKeyStageMock.mockResolvedValue('undetermined')
-  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
+  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
 })
 
 afterEach(() => {
@@ -113,7 +117,7 @@ describe('useAuthStore.restoreFromStorage', () => {
   })
 
   it('저장된 키가 있으면 signedIn 이 된다. 네트워크는 안 탄다', async () => {
-    getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
+    getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
 
     await useAuthStore.getState().restoreFromStorage()
 
@@ -368,7 +372,7 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
     '%s. 수단이 남아 있으면 알림만 닫고 앱은 그대로 선다',
     async (kind) => {
       primeNoticed(kind)
-      지운뒤남는것({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: '살아있는키' }] })
+      지운뒤남는것({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '살아있는키' }] })
 
       await useAuthStore.getState().confirmApiKeyNotice()
 
@@ -383,7 +387,7 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
   // 로그인이 만료됐는데 API 키를 지우면 멀쩡한 키를, 여럿이면 다른 넥슨 계정의 키까지 잃는다.
   it('signInRequired 는 로그인만 뗀다. API 키는 안 건드린다', async () => {
     primeNoticed('signInRequired')
-    지운뒤남는것({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: '키' }] })
+    지운뒤남는것({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '키' }] })
 
     await useAuthStore.getState().confirmApiKeyNotice()
 
@@ -414,7 +418,7 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
   // 다른 넥슨 계정의 키까지 잃는 일이다.
   it('실린 키가 있으면 그 키만 지운다', async () => {
     primeNoticed('invalid', '죽은키')
-    지운뒤남는것({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: '산키' }] })
+    지운뒤남는것({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '산키' }] })
 
     await useAuthStore.getState().confirmApiKeyNotice()
 
@@ -609,8 +613,22 @@ describe('useAuthStore.signIn: 개발 단계 키를 문 앞에서 막는다', ()
 
     await useAuthStore.getState().signIn('key-1')
 
-    expect(setApiKeyMock).toHaveBeenCalledWith('key-1')
+    expect(setApiKeyMock).toHaveBeenCalledWith('key-1', '', undefined)
     expect(useAuthStore.getState().error).toBeNull()
+  })
+})
+
+// 키를 다시 받아 넣으면 그 키의 메이플 ID 가 속했던 옛 넥슨 계정을 잇는다. 그래야 그 계정의 기록이 이어진다.
+describe('useAuthStore.signIn: 다시 받은 키가 옛 계정을 잇는다', () => {
+  it('목록으로 찾은 옛 계정 id 로 키를 저장한다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+    probeApiKeyStageMock.mockResolvedValue('undetermined')
+    reusableNexonAccountId.mockResolvedValue('account-old')
+
+    await useAuthStore.getState().signIn('key-1')
+
+    expect(reusableNexonAccountId).toHaveBeenCalledWith([account('acc-1')])
+    expect(setApiKeyMock).toHaveBeenCalledWith('key-1', '', 'account-old')
   })
 })
 
@@ -623,7 +641,7 @@ describe('useAuthStore.signOutNexonLogin', () => {
   it('넥슨 로그인만 뗀다. 연결 해제 경로를 안 탄다', async () => {
     primeSignedIn()
     getAuthConfigMock.mockResolvedValue({
-      login: { kind: 'login', session: '세션' },
+      login: { type: 'login', id: 'account-login', session: '세션' },
       apiKeys: [],
     })
 
@@ -637,7 +655,7 @@ describe('useAuthStore.signOutNexonLogin', () => {
   it('서버 세션도 거둔다. **기기에서 지우기 전에** 묻는다', async () => {
     primeSignedIn()
     getAuthConfigMock.mockResolvedValue({
-      login: { kind: 'login', session: '세션값' },
+      login: { type: 'login', id: 'account-login', session: '세션값' },
       apiKeys: [],
     })
 
@@ -649,7 +667,7 @@ describe('useAuthStore.signOutNexonLogin', () => {
   it('수단이 하나도 안 남으면 로그인 화면으로 보낸다', async () => {
     primeSignedIn()
     getAuthConfigMock
-      .mockResolvedValueOnce({ login: { kind: 'login', session: '세션' }, apiKeys: [] })
+      .mockResolvedValueOnce({ login: { type: 'login', id: 'account-login', session: '세션' }, apiKeys: [] })
       .mockResolvedValueOnce(null)
 
     await useAuthStore.getState().signOutNexonLogin()
@@ -662,8 +680,8 @@ describe('useAuthStore.signOutNexonLogin', () => {
     // 다른 넥슨 계정의 키다. 로그인을 뗐다고 그 계정 캐릭터까지 잃으면 안 된다.
     primeSignedIn()
     getAuthConfigMock
-      .mockResolvedValueOnce({ login: { kind: 'login', session: '세션' }, apiKeys: [{ kind: 'apiKey', label: '', value: '키' }] })
-      .mockResolvedValueOnce({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: '키' }] })
+      .mockResolvedValueOnce({ login: { type: 'login', id: 'account-login', session: '세션' }, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '키' }] })
+      .mockResolvedValueOnce({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '키' }] })
 
     await useAuthStore.getState().signOutNexonLogin()
 
@@ -673,7 +691,7 @@ describe('useAuthStore.signOutNexonLogin', () => {
 
   it('로그인이 없으면 서버에 안 묻는다', async () => {
     primeSignedIn()
-    getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: '키' }] })
+    getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '키' }] })
 
     await useAuthStore.getState().signOutNexonLogin()
 
@@ -686,7 +704,7 @@ describe('useAuthStore.signOutNexonLogin', () => {
 describe('useAuthStore.signInWithNexonAccount', () => {
   beforeEach(() => {
     signInWithNexonMock.mockResolvedValue({ kind: 'signedIn' })
-    currentCredentialMock.mockResolvedValue({ kind: 'login', value: '토큰' })
+    currentCredentialMock.mockResolvedValue({ type: 'login', value: '토큰', accountId: null })
     fetchCharacterListMock.mockResolvedValue([account('acc-1')])
   })
 

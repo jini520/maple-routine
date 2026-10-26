@@ -104,24 +104,24 @@ export function getSpendRecordsRevision(): number {
   return spendRecordsRevision
 }
 
-export async function insertSpendRecord(record: SpendRecord): Promise<void> {
+export async function insertSpendRecord(record: SpendRecord, nexonAccountId: string | null = null): Promise<void> {
   spendRecordsRevision += 1
   assertPointRate(record)
 
   const db = await getBossProfitDb()
-  await inTransaction(db, () => insertEntry(db, spendEntryOf(record)))
+  await inTransaction(db, () => insertEntry(db, spendEntryOf(record), nexonAccountId))
 }
 
 /**
  * 갈아 끼우기. **지우고 다시 넣지 않는다**. 지우고 넣으면 `id` 와 저장 시각이 새것이 되어 같은 날 안의 차례가
  * 바뀐다. 넣을 때와 같은 검증을 탄다. 아니면 그 방어가 수정 쪽에서 반쪽이 된다.
  */
-export async function updateSpendRecord(record: SpendRecord): Promise<void> {
+export async function updateSpendRecord(record: SpendRecord, nexonAccountId: string | null = null): Promise<void> {
   spendRecordsRevision += 1
   assertPointRate(record)
 
   const db = await getBossProfitDb()
-  await inTransaction(db, () => replaceEntry(db, spendEntryOf(record), new Date()))
+  await inTransaction(db, () => replaceEntry(db, spendEntryOf(record), new Date(), nexonAccountId))
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */

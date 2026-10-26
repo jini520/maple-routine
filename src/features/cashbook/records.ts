@@ -60,7 +60,9 @@ import { starforceMvpDiscountResolver } from '../../lib/mvp/starforce'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
 import { comparableEquipmentName } from '../../lib/equipment/equipment-items'
 import { datesBetween } from '../../lib/calendar'
+import { mainNexonAccountIdOf } from '../../lib/nexon-credential'
 import { randomUuid } from '../../native/uuid'
+import { getAuthConfig } from '../../storage/api-key'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import { getLastHunts, setLastHunt, type LastHunt, type LastHunts } from '../../storage/last-hunts'
 import {
@@ -75,8 +77,13 @@ export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
 export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
 
 
+/** 캐릭터 없는 기록이 속할 넥슨 계정. 계정을 고르는 화면이 생기기 전까지는 메인 계정이다. */
+async function entryAccountId(): Promise<string | null> {
+  return mainNexonAccountIdOf(await getAuthConfig().catch(() => null))
+}
+
 export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void> {
-  await insertIncomeRecord({ ...draft, id: randomUuid(), recordedAt: now.toISOString() })
+  await insertIncomeRecord({ ...draft, id: randomUuid(), recordedAt: now.toISOString() }, await entryAccountId())
   // 저장이 성공한 뒤에만 기억한다.
   const remembered = lastHuntOf(draft)
   if (remembered !== null) await setLastHunt(remembered.ocid, remembered.hunt)
@@ -104,7 +111,7 @@ export function nextLastHunts(draft: IncomeDraft, current: LastHunts): LastHunts
 }
 
 export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
-  await insertSpendRecord({ ...draft, id: randomUuid(), recordedAt: now.toISOString() })
+  await insertSpendRecord({ ...draft, id: randomUuid(), recordedAt: now.toISOString() }, await entryAccountId())
   // 저장이 성공한 뒤에만 기억한다. 던진 입력의 시세를 다음 기본값으로 남기면 안 된다.
   if (draft.pointPer100mMeso !== null) {
     await setLastPointRate(draft.pointPer100mMeso)
@@ -1013,14 +1020,14 @@ export function loadFragmentStorage(
 
 /** 고치기. `recordedAt` 은 안 바뀐다. 시세를 기억하는 순서는 넣을 때와 같다. 성공한 뒤에만. */
 export async function editSpend(record: SpendRecord): Promise<void> {
-  await updateSpendRecord(record)
+  await updateSpendRecord(record, await entryAccountId())
   if (record.pointPer100mMeso !== null) {
     await setLastPointRate(record.pointPer100mMeso)
   }
 }
 
 export async function editIncome(record: IncomeRecord): Promise<void> {
-  await updateIncomeRecord(record)
+  await updateIncomeRecord(record, await entryAccountId())
 }
 
 /** 지우기. 갈래가 어느 테이블인지를 안다. 손입력만 받는다. */

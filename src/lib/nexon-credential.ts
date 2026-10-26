@@ -18,10 +18,19 @@ import type { NexonAuthConfig, NexonCredential } from '../types/auth'
 
 export function credentialOf(config: NexonAuthConfig | null): NexonCredential | null {
   const login = config?.login
-  if (login != null) return { kind: 'login', value: login.session }
+  if (login != null) return { type: 'login', value: login.session, accountId: login.id }
 
   const key = config?.apiKeys[0]
-  return key === undefined ? null : { kind: 'apiKey', value: key.value }
+  return key === undefined ? null : { type: 'key', value: key.value, accountId: key.id }
+}
+
+/**
+ * 메인 넥슨 계정의 id. 로그인이 있으면 로그인, 없으면 첫 번째 키다. `credentialOf` 가 고르는 자격과 같은 계정이다.
+ *
+ * 계정 칸이 생기기 전의 기록은 모두 이 계정의 자격으로 받았다.
+ */
+export function mainNexonAccountIdOf(config: NexonAuthConfig | null): string | null {
+  return credentialOf(config)?.accountId ?? null
 }
 
 /**
@@ -32,16 +41,18 @@ export function credentialOf(config: NexonAuthConfig | null): NexonCredential | 
  */
 export function loginCredentialOf(config: NexonAuthConfig | null): NexonCredential | null {
   const login = config?.login
-  return login == null ? null : { kind: 'login', value: login.session }
+  return login == null ? null : { type: 'login', value: login.session, accountId: login.id }
 }
 
 /**
  * 사용자가 방금 친 키로 자격을 만든다. **저장 전이라 설정이 아직 없다.**
  *
  * 로그인 폼이 검증과 단계 재기에 쓴다. 저장은 그 둘을 통과한 뒤에 한다.
+ *
+ * @param accountId 저장된 키면 그 넥슨 계정 id. 저장 전이면 계정이 없어 `null` 이다
  */
-export function apiKeyCredential(value: string): NexonCredential {
-  return { kind: 'apiKey', value }
+export function apiKeyCredential(value: string, accountId: string | null = null): NexonCredential {
+  return { type: 'key', value, accountId }
 }
 
 /**
@@ -51,5 +62,5 @@ export function apiKeyCredential(value: string): NexonCredential {
  * 없으므로 안 싣는다.
  */
 export function apiKeyValueOf(credential: NexonCredential): string | undefined {
-  return credential.kind === 'apiKey' ? credential.value : undefined
+  return credential.type === 'key' ? credential.value : undefined
 }

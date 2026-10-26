@@ -34,10 +34,17 @@ import type { HuntingIncomeDetail, IncomeRecord } from '../income'
 import type { SqliteDbConnection } from '../ports'
 import type { SpendRecord } from '../spend'
 import { BOSS_DROP_RECORDS_BODY, BOSS_KEYED_TABLES } from './boss-tables'
+import {
+  CHARACTER_ACCOUNTS_BODY,
+  CHARACTER_PROFILES_BODY,
+  CHARACTER_WORLD_LEAPS_BODY,
+  ENHANCEMENT_HISTORY_CHECKS_BODY,
+  MVP_GRADE_HISTORY_BODY,
+} from './record-key-tables'
 import { NEW_UUID_SQL } from './uuid'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 15
+export const DB_VERSION = 16
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -419,7 +426,7 @@ async function moveBossTablesToParties(db: SqliteDbConnection): Promise<void> {
 
   await db.execute(`
     INSERT INTO boss_party_periods
-      (id, party_id, period_key, cycle, world_key, status, price_meso, payout_meso, defeated_on, source,
+      (id, party_id, period_key, cycle, world_key, clear_status, price_meso, payout_meso, defeated_date, source,
        split_mode, party_size, my_share, shares_total, split_fee_percent, split_fee_auto, created_at, updated_at)
     SELECT ${NEW_UUID_SQL}, pa.id, k.period_key,
            coalesce(p.cycle, CASE WHEN length(k.period_key) = 7 THEN 'monthly' ELSE 'weekly' END),
@@ -453,7 +460,7 @@ async function moveBossTablesToParties(db: SqliteDbConnection): Promise<void> {
   const mode = `coalesce(d.price_split_mode, 'even')`
   await db.execute(`
     INSERT INTO boss_drops
-      (id, period_id, drop_index, category, item_key, box_origin_key, ring_level, record_status, price_meso, priced_at,
+      (id, period_id, sort_order, category, item_key, box_origin_key, ring_level, record_status, price_meso, priced_at,
        sale_fee_percent, sale_fee_auto, split_mode, party_size, my_share, shares_total, split_fee_percent, split_fee_auto,
        created_at, updated_at)
     SELECT d.drop_record_id, pe.id, d.drop_index, d.category, d.item_key, d.box_origin_key, d.ring_level,
@@ -571,11 +578,11 @@ async function moveCashbookRecordsToEntries(db: SqliteDbConnection): Promise<voi
   }
   const spend = await db.query('SELECT * FROM spend_records ORDER BY spent_on, recorded_at, id')
   for (const row of spend.values ?? []) {
-    await insertEntry(db, spendEntryOf(legacySpendRecordOf(row, await newId())))
+    await insertEntry(db, spendEntryOf(legacySpendRecordOf(row, await newId())), null)
   }
   const income = await db.query('SELECT * FROM income_records ORDER BY earned_on, recorded_at, id')
   for (const row of income.values ?? []) {
-    await insertEntry(db, incomeEntryOf(legacyIncomeRecordOf(row, await newId())))
+    await insertEntry(db, incomeEntryOf(legacyIncomeRecordOf(row, await newId())), null)
   }
   await assertCashbookTotalsMoved(db)
 }
@@ -633,6 +640,95 @@ async function backupBeforeCashbookMove(db: SqliteDbConnection, current: number)
   }
 }
 
+/**
+ * 다섯 표를 옮길 때 새 칸마다 옛 표에서 읽을 식. 옛 기본키는 `UNIQUE` 가 되고 `id` 는 새 표의 기본값이 채운다.
+ *
+ * 계정 칸의 빈 글자는 버전 16 전에 메인 계정으로 받은 행이라는 표시다. 계정 id 는 Preferences 에 있어 이관에서 못 읽는다.
+ */
+const RECORD_KEY_TABLES: ReadonlyArray<{ table: string; body: string; columns: Record<string, string> }> = [
+  {
+    table: 'character_profiles',
+    body: CHARACTER_PROFILES_BODY,
+    columns: {
+      ocid: 'ocid', name: 'name', image_url: 'image_url', world: 'world', world_key: 'world_key', level: 'level',
+      job_class: 'job_class', updated_at: 'updated_at',
+    },
+  },
+  {
+    table: 'character_world_leaps',
+    body: CHARACTER_WORLD_LEAPS_BODY,
+    columns: { from_ocid: 'from_ocid', to_ocid: 'to_ocid', linked_at: 'linked_at' },
+  },
+  {
+    table: 'enhancement_history_checks',
+    body: ENHANCEMENT_HISTORY_CHECKS_BODY,
+    columns: {
+      nexon_account_id: "''", enhancement_type: 'kind', history_date: 'date_key', next_cursor: 'next_cursor',
+      settled: 'settled', checked_at: 'checked_at',
+    },
+  },
+  {
+    table: 'mvp_grade_history',
+    body: MVP_GRADE_HISTORY_BODY,
+    columns: { account_id: 'account_id', from_date: 'start_date', grade: 'grade', updated_at: 'updated_at' },
+  },
+  {
+    table: 'character_accounts',
+    body: CHARACTER_ACCOUNTS_BODY,
+    columns: {
+      ocid: 'ocid', name: 'name', account_id: 'account_id', nexon_account_id: "''", first_seen_date: 'first_seen_on',
+      last_seen_date: 'last_seen_on',
+    },
+  },
+]
+
+/** 버전 16 이 이름만 바꾸는 칸. `[표, 옛 이름, 새 이름]` */
+const RENAMED_COLUMNS: ReadonlyArray<readonly [string, string, string]> = [
+  ['boss_party_periods', 'status', 'clear_status'],
+  ['boss_party_periods', 'defeated_on', 'defeated_date'],
+  ['boss_drops', 'drop_index', 'sort_order'],
+  ['cashbook_entry_hunt_inputs', 'fragment_price', 'fragment_price_meso'],
+  ['server_sync_queue', 'kind', 'record_type'],
+]
+
+async function columnsOf(db: SqliteDbConnection, table: string): Promise<Set<string>> {
+  const { values } = await db.query(`PRAGMA table_info(${table})`)
+  return new Set((values ?? []).map((row) => String(row.name)))
+}
+
+async function countOf(db: SqliteDbConnection, table: string): Promise<number> {
+  const { values } = await db.query(`SELECT count(*) AS n FROM ${table}`)
+  return Number(values?.[0]?.n ?? 0)
+}
+
+/**
+ * 기본키가 값의 조합이던 다섯 표를 uuid 기본키로 다시 쓰고, 칸 이름을 서버 규칙에 맞춘다.
+ *
+ * 이미 `id` 가 있는 표는 지금 DDL 로 만들어진 것이라 건너뛴다. 옮긴 뒤 건수가 다르면 던져 버전 16 을 통째로 되돌린다.
+ * MVP 등급과 소속은 사용자가 적었거나 다시 받을 수 없는 값이다.
+ */
+async function moveRecordKeysToUuid(db: SqliteDbConnection): Promise<void> {
+  for (const { table, body, columns } of RECORD_KEY_TABLES) {
+    if ((await columnsOf(db, table)).has('id')) continue
+    const rebuilt = `${table}_v16`
+    await db.execute(`CREATE TABLE ${rebuilt} ${body}`)
+    await db.execute(
+      `INSERT INTO ${rebuilt} (${Object.keys(columns).join(', ')}) SELECT ${Object.values(columns).join(', ')} FROM ${table}`,
+    )
+    const before = await countOf(db, table)
+    const after = await countOf(db, rebuilt)
+    if (before !== after) throw new Error(`버전 16 이관이 ${table} 의 행을 잃었다: ${before} → ${after}`)
+    await db.execute(`DROP TABLE ${table}`)
+    await db.execute(`ALTER TABLE ${rebuilt} RENAME TO ${table}`)
+  }
+  for (const [table, previous, next] of RENAMED_COLUMNS) {
+    if ((await columnsOf(db, table)).has(previous)) {
+      await db.execute(`ALTER TABLE ${table} RENAME COLUMN ${previous} TO ${next}`)
+    }
+  }
+  await db.run(`UPDATE cashbook_entries SET nexon_account_id = '' WHERE ocid IS NULL AND nexon_account_id IS NULL`)
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -651,6 +747,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   dropBossProfitPeriodChecks,
   moveBossTablesToParties,
   moveCashbookRecordsToEntries,
+  moveRecordKeysToUuid,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

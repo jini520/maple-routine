@@ -19,7 +19,7 @@ export const MAX_SYNC_ATTEMPTS = 5
 /** 보낼 것 하나. */
 export interface SyncQueueEntry {
   id: string
-  kind: string
+  recordType: string
   recordId: string
   /** 응답을 받은 횟수. 네트워크가 없던 회차는 안 센다. */
   attempts: number
@@ -34,32 +34,32 @@ export interface SyncQueueEntry {
  * 아니고, 돌려 주면 서버가 영구히 거절하는 건이 무한히 재시도된다.
  */
 const ENQUEUE_SQL = `
-  INSERT INTO server_sync_queue (id, kind, record_id, created_at)
+  INSERT INTO server_sync_queue (id, record_type, record_id, created_at)
   VALUES (${NEW_UUID_SQL}, ?, ?, ?)
   ON CONFLICT(record_id) DO NOTHING
 `
 
 export async function enqueueServerSync(
-  kind: string,
+  recordType: string,
   recordId: string,
   createdAt: string,
 ): Promise<void> {
   const db = await getBossProfitDb()
-  await db.run(ENQUEUE_SQL, [kind, recordId, createdAt])
+  await db.run(ENQUEUE_SQL, [recordType, recordId, createdAt])
 }
 
 /** 표에 든 것 전부. 할 일만 들어서 조건이 필요 없다. 오래된 것부터 보낸다. */
 export async function listServerSyncQueue(): Promise<SyncQueueEntry[]> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT id, kind, record_id, attempts, last_error, created_at
+    `SELECT id, record_type, record_id, attempts, last_error, created_at
        FROM server_sync_queue ORDER BY created_at, id`,
   )
 
   return (values ?? []).map((row) => {
     const one = row as {
       id: string
-      kind: string
+      record_type: string
       record_id: string
       attempts: number
       last_error: string | null
@@ -67,7 +67,7 @@ export async function listServerSyncQueue(): Promise<SyncQueueEntry[]> {
     }
     return {
       id: one.id,
-      kind: one.kind,
+      recordType: one.record_type,
       recordId: one.record_id,
       attempts: one.attempts,
       lastError: one.last_error,

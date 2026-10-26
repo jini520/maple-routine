@@ -4,6 +4,7 @@
  * 깨진 JSON 은 빈 목록으로 읽고, 모양이 틀린 항목은 그 항목만 버린다. 한 항목 때문에 목록 전체를
  * 잃으면 사용자가 적은 약속이 한꺼번에 사라진다.
  */
+import { randomUuid } from '../native/uuid'
 import { STORAGE_KEYS } from './keys'
 import { preferences } from './ports'
 import type {
@@ -81,15 +82,27 @@ function isAppointment(value: unknown): value is PartyAppointment {
   )
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+
+/**
+ * 약속 목록. 옛 설치본의 `시각 + 난수` id 는 uuid 로 바꿔 한 번 다시 저장한다.
+ *
+ * 예약해 둔 알림은 약속 id 로 만든 id 라, 다음 재조정이 옛 알림을 취소하고 새 id 로 다시 예약한다.
+ */
 export async function getPartyAppointments(): Promise<PartyAppointment[]> {
   const raw = await preferences.get(STORAGE_KEYS.partyAppointments)
   if (raw === null) return []
+  let appointments: PartyAppointment[]
   try {
     const parsed: unknown = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed.filter(isAppointment) : []
+    appointments = Array.isArray(parsed) ? parsed.filter(isAppointment) : []
   } catch {
     return []
   }
+  if (appointments.every((one) => UUID.test(one.id))) return appointments
+  const upgraded = appointments.map((one) => (UUID.test(one.id) ? one : { ...one, id: randomUuid() }))
+  await setPartyAppointments(upgraded)
+  return upgraded
 }
 
 export async function setPartyAppointments(appointments: readonly PartyAppointment[]): Promise<void> {

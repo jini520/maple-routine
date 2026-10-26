@@ -217,8 +217,8 @@ describe('deleteBossProfitRecord', () => {
 
     expect(await getBossProfitRecords(['ocid-1'], ['2026-10-02'])).toEqual([])
     expect(await getBossDropRecords(['ocid-1'], ['2026-10-02'])).toHaveLength(1)
-    expect(real.inspect((db) => db.prepare('SELECT status, split_mode, price_meso, source FROM boss_party_periods').get()))
-      .toEqual({ status: 'open', split_mode: null, price_meso: null, source: null })
+    expect(real.inspect((db) => db.prepare('SELECT clear_status, split_mode, price_meso, source FROM boss_party_periods').get()))
+      .toEqual({ clear_status: 'open', split_mode: null, price_meso: null, source: null })
   })
 })
 

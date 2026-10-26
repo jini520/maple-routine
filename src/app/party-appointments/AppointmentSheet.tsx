@@ -166,7 +166,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   async function persist(values: AppointmentDraft): Promise<void> {
     setSaving(true)
     try {
-      const id = newAppointmentId(new Date())
+      const id = newAppointmentId()
       await save(
         target === undefined
           ? [...appointments, toAppointment(values, id)]

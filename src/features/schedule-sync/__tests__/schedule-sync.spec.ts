@@ -99,7 +99,7 @@ import {
 import type { NexonCredential } from '../../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
-const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
+const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accountId: 'account-key' })
 
 function mockCharacter(ocid: string): MapleCharacter {
   return {
@@ -173,7 +173,7 @@ beforeEach(async () => {
   refreshSettlementMock.mockReset().mockResolvedValue(undefined)
   useRefreshProgress.getState().resetForTests()
   prefs = installFakePreferences()
-  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
+  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
   getCachedSchedulerStateMock.mockResolvedValue(null)
   setCachedSchedulerStateMock.mockResolvedValue(undefined)
   saveCharacterProfileMock.mockResolvedValue(undefined)
@@ -1536,7 +1536,7 @@ describe('syncSchedules', () => {
 
     // RN 은 계정을 고르는 단계가 없어 selectedAccountId 가 영영 null 이다.
     it('selectedAccountId 가 없어도 동기화한다. 계정을 고른 적 없는 설치본', async () => {
-      getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
+      getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
       fetchCharacterListMock.mockResolvedValue([account('acc-9', [mockCharacter('ocid-1')])])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
 

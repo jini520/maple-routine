@@ -84,9 +84,9 @@ function seedEdgeCases(db: DatabaseSync): void {
 const LEGACY_PROFIT = `
   SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.cycle, pe.period_key, pe.party_size, pe.price_meso, pe.payout_meso,
          pe.my_share AS crystal_my_share, pe.shares_total AS crystal_shares_total, pe.split_fee_percent, pe.split_fee_auto,
-         pe.created_at AS recorded_at, pe.world_key, pe.defeated_on, pe.source
+         pe.created_at AS recorded_at, pe.world_key, pe.defeated_date AS defeated_on, pe.source
     FROM boss_party_periods pe JOIN boss_parties pa ON pa.id = pe.party_id
-   WHERE pe.status = 'cleared' ORDER BY pa.ocid`
+   WHERE pe.clear_status = 'cleared' ORDER BY pa.ocid`
 
 describe('버전 14: 보스 기록 테이블 넷을 셋으로 옮긴다', () => {
   it('처치 기록은 값 그대로 cleared 기간 행이 되고, source 가 비었으면 auto 다', async () => {
@@ -99,7 +99,7 @@ describe('버전 14: 보스 기록 테이블 넷을 셋으로 옮긴다', () => 
       // 같은 기간의 그 기간 값은 처치 기록에 합쳐진다. 처치 기록의 값이 이긴다.
       { ocid: 'E', boss_key: 'kalos', difficulty: 'normal', cycle: 'weekly', period_key: '2026-09-24', party_size: 2, price_meso: 50, payout_meso: 30, crystal_my_share: 2, crystal_shares_total: 3, split_fee_percent: 3, split_fee_auto: 1, recorded_at: '2026-09-26T00:00:00Z', world_key: 'elysium', defeated_on: null, source: 'auto' },
     ])
-    expect(all(`SELECT split_mode FROM boss_party_periods WHERE status = 'cleared' ORDER BY created_at`).map((row) => row.split_mode))
+    expect(all(`SELECT split_mode FROM boss_party_periods WHERE clear_status = 'cleared' ORDER BY created_at`).map((row) => row.split_mode))
       .toEqual(['ratio', 'ratio', 'even'])
   })
 
@@ -122,7 +122,7 @@ describe('버전 14: 보스 기록 테이블 넷을 셋으로 옮긴다', () => 
 
     expect(all(`SELECT pa.ocid, pe.period_key, pe.cycle, pe.world_key, pe.split_mode, pe.party_size, pe.price_meso, pe.source
                   FROM boss_party_periods pe JOIN boss_parties pa ON pa.id = pe.party_id
-                 WHERE pe.status = 'open' ORDER BY pa.ocid`)).toEqual([
+                 WHERE pe.clear_status = 'open' ORDER BY pa.ocid`)).toEqual([
       { ocid: 'B', period_key: '2026-10-09', cycle: 'weekly', world_key: null, split_mode: null, party_size: null, price_meso: null, source: null },
       { ocid: 'C', period_key: '2026-10-16', cycle: 'weekly', world_key: null, split_mode: 'even', party_size: 4, price_meso: null, source: null },
     ])
@@ -132,16 +132,16 @@ describe('버전 14: 보스 기록 테이블 넷을 셋으로 옮긴다', () => 
     await seedVersion13(seedEdgeCases)
     await getBossProfitDb()
 
-    expect(all(`SELECT d.id, pa.ocid, pe.period_key, d.drop_index, d.item_key, d.box_origin_key, d.ring_level, d.record_status, d.price_meso, d.priced_at,
+    expect(all(`SELECT d.id, pa.ocid, pe.period_key, d.sort_order, d.item_key, d.box_origin_key, d.ring_level, d.record_status, d.price_meso, d.priced_at,
                        d.split_mode, d.party_size, d.my_share, d.shares_total, d.sale_fee_percent, d.split_fee_percent, d.sale_fee_auto, d.created_at
                   FROM boss_drops d JOIN boss_party_periods pe ON pe.id = d.period_id JOIN boss_parties pa ON pa.id = pe.party_id
                  ORDER BY d.id`)).toEqual([
-      { id: 'd1', ocid: 'A', period_key: '2026-10-02', drop_index: 0, item_key: 'item_a', box_origin_key: null, ring_level: null, record_status: 'pending', price_meso: null, priced_at: null, split_mode: null, party_size: null, my_share: null, shares_total: null, sale_fee_percent: null, split_fee_percent: null, sale_fee_auto: null, created_at: '2026-10-03T00:00:00Z' },
-      { id: 'd2', ocid: 'A', period_key: '2026-10-02', drop_index: 1, item_key: 'item_b', box_origin_key: 'box_x', ring_level: 3, record_status: 'completed', price_meso: 5000, priced_at: '2026-10-03T00:00:00Z', split_mode: 'ratio', party_size: 3, my_share: 2, shares_total: 5, sale_fee_percent: 5, split_fee_percent: 3, sale_fee_auto: 1, created_at: '2026-10-03T00:00:00Z' },
-      { id: 'd3', ocid: 'A', period_key: '2026-10-02', drop_index: 2, item_key: 'item_c', box_origin_key: null, ring_level: null, record_status: 'skipped', price_meso: null, priced_at: null, split_mode: null, party_size: null, my_share: null, shares_total: null, sale_fee_percent: null, split_fee_percent: null, sale_fee_auto: null, created_at: '2026-10-03T00:00:00Z' },
-      { id: 'd4', ocid: 'B', period_key: '2026-10-09', drop_index: 0, item_key: 'item_d', box_origin_key: null, ring_level: null, record_status: 'completed', price_meso: 700, priced_at: '2026-10-10T00:00:00Z', split_mode: 'even', party_size: 2, my_share: null, shares_total: null, sale_fee_percent: null, split_fee_percent: null, sale_fee_auto: null, created_at: '2026-10-10T00:00:00Z' },
+      { id: 'd1', ocid: 'A', period_key: '2026-10-02', sort_order: 0, item_key: 'item_a', box_origin_key: null, ring_level: null, record_status: 'pending', price_meso: null, priced_at: null, split_mode: null, party_size: null, my_share: null, shares_total: null, sale_fee_percent: null, split_fee_percent: null, sale_fee_auto: null, created_at: '2026-10-03T00:00:00Z' },
+      { id: 'd2', ocid: 'A', period_key: '2026-10-02', sort_order: 1, item_key: 'item_b', box_origin_key: 'box_x', ring_level: 3, record_status: 'completed', price_meso: 5000, priced_at: '2026-10-03T00:00:00Z', split_mode: 'ratio', party_size: 3, my_share: 2, shares_total: 5, sale_fee_percent: 5, split_fee_percent: 3, sale_fee_auto: 1, created_at: '2026-10-03T00:00:00Z' },
+      { id: 'd3', ocid: 'A', period_key: '2026-10-02', sort_order: 2, item_key: 'item_c', box_origin_key: null, ring_level: null, record_status: 'skipped', price_meso: null, priced_at: null, split_mode: null, party_size: null, my_share: null, shares_total: null, sale_fee_percent: null, split_fee_percent: null, sale_fee_auto: null, created_at: '2026-10-03T00:00:00Z' },
+      { id: 'd4', ocid: 'B', period_key: '2026-10-09', sort_order: 0, item_key: 'item_d', box_origin_key: null, ring_level: null, record_status: 'completed', price_meso: 700, priced_at: '2026-10-10T00:00:00Z', split_mode: 'even', party_size: 2, my_share: null, shares_total: null, sale_fee_percent: null, split_fee_percent: null, sale_fee_auto: null, created_at: '2026-10-10T00:00:00Z' },
       // 0메소로 매긴 드롭은 미입력이다. 서버도 그렇게 받았다.
-      { id: 'd6', ocid: 'D', period_key: '2026-10', drop_index: 1, item_key: 'item_e', box_origin_key: null, ring_level: null, record_status: 'pending', price_meso: null, priced_at: null, split_mode: null, party_size: null, my_share: null, shares_total: null, sale_fee_percent: null, split_fee_percent: null, sale_fee_auto: null, created_at: '2026-10-05T00:00:00Z' },
+      { id: 'd6', ocid: 'D', period_key: '2026-10', sort_order: 1, item_key: 'item_e', box_origin_key: null, ring_level: null, record_status: 'pending', price_meso: null, priced_at: null, split_mode: null, party_size: null, my_share: null, shares_total: null, sale_fee_percent: null, split_fee_percent: null, sale_fee_auto: null, created_at: '2026-10-05T00:00:00Z' },
     ])
   })
 
@@ -199,9 +199,9 @@ describe('새 테이블의 제약', () => {
   it('기기에서도 외래키를 켜서, 조합 행을 지우면 기간 행과 드롭이 함께 지워진다', async () => {
     await party('p1')
     const db = await getBossProfitDb()
-    await db.execute(`INSERT INTO boss_party_periods (id, party_id, period_key, cycle, status, created_at, updated_at)
+    await db.execute(`INSERT INTO boss_party_periods (id, party_id, period_key, cycle, clear_status, created_at, updated_at)
       VALUES ('pe1', 'p1', '2026-10-02', 'weekly', 'open', 't', 't')`)
-    await db.execute(`INSERT INTO boss_drops (id, period_id, drop_index, category, item_key, record_status, created_at, updated_at)
+    await db.execute(`INSERT INTO boss_drops (id, period_id, sort_order, category, item_key, record_status, created_at, updated_at)
       VALUES ('d1', 'pe1', 0, 'equipment', 'ring', 'pending', 't', 't')`)
 
     await db.execute(`DELETE FROM boss_parties WHERE id = 'p1'`)
@@ -215,12 +215,12 @@ describe('새 테이블의 제약', () => {
   it('값을 매긴 드롭만 가격과 분배 칸을 가진다', async () => {
     await party('p1')
     const db = await getBossProfitDb()
-    await db.execute(`INSERT INTO boss_party_periods (id, party_id, period_key, cycle, status, created_at, updated_at)
+    await db.execute(`INSERT INTO boss_party_periods (id, party_id, period_key, cycle, clear_status, created_at, updated_at)
       VALUES ('pe1', 'p1', '2026-10-02', 'weekly', 'open', 't', 't')`)
 
-    await expect(db.execute(`INSERT INTO boss_drops (id, period_id, drop_index, category, item_key, record_status, split_mode, party_size, created_at, updated_at)
+    await expect(db.execute(`INSERT INTO boss_drops (id, period_id, sort_order, category, item_key, record_status, split_mode, party_size, created_at, updated_at)
       VALUES ('d1', 'pe1', 0, 'equipment', 'ring', 'pending', 'even', 1, 't', 't')`)).rejects.toThrow(/CHECK/)
-    await expect(db.execute(`INSERT INTO boss_drops (id, period_id, drop_index, category, item_key, record_status, price_meso, priced_at, created_at, updated_at)
+    await expect(db.execute(`INSERT INTO boss_drops (id, period_id, sort_order, category, item_key, record_status, price_meso, priced_at, created_at, updated_at)
       VALUES ('d2', 'pe1', 0, 'equipment', 'ring', 'completed', 0, 't', 't', 't')`)).rejects.toThrow(/CHECK/)
   })
 })

@@ -161,7 +161,7 @@ beforeEach(() => {
   rosterFailure = undefined
   accountsFailure = undefined
 
-  mockedGetAuthConfig.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey' as const, label: '', value: 'key' }] })
+  mockedGetAuthConfig.mockResolvedValue({ login: null, apiKeys: [{ type: 'key' as const, id: 'account-key', label: '', value: 'key' }] })
   mockedFetchCharacterList.mockImplementation(async () => {
     if (accountsFailure !== undefined) throw accountsFailure
     return [계정A]

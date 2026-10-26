@@ -14,7 +14,7 @@ const HEADERS = { 'x-api-key-hash': 'a'.repeat(64) }
 function entry(over: Partial<SyncQueueEntry> = {}): SyncQueueEntry {
   return {
     id: 'queue-1',
-    kind: 'drop-price',
+    recordType: 'drop-price',
     recordId: 'record-1',
     attempts: 0,
     lastError: null,
@@ -162,7 +162,7 @@ describe('서버 전송 대기 표 훑기', () => {
 
   it('레지스트리에 없는 종류는 버린다', async () => {
     // 두면 그 종류의 줄이 영원히 쌓이고 조용히 안 나간다.
-    const one = spy({ entries: [entry({ kind: '아직-없는-종류' })] })
+    const one = spy({ entries: [entry({ recordType: '아직-없는-종류' })] })
     const result = await sweepServerSync(one.deps)
 
     expect(result.dropped).toBe(1)

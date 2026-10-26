@@ -19,6 +19,9 @@ jest.mock('../../../storage/spend', () => ({
   getSpendMonthRows: jest.fn(),
 }))
 jest.mock('../../../storage/last-point-rate', () => ({ setLastPointRate: jest.fn() }))
+jest.mock('../../../storage/api-key', () => ({
+  getAuthConfig: jest.fn(async () => ({ login: { type: 'login', id: 'account-main', session: 's' }, apiKeys: [] })),
+}))
 jest.mock('../../../storage/last-hunts', () => ({
   setLastHunt: jest.fn(),
   getLastHunts: jest.fn(),
@@ -149,6 +152,15 @@ describe('행의 신원은 여기서 만든다', () => {
     expect(income.insertIncomeRecord.mock.calls[0][0]).toMatchObject({
       recordedAt: '2026-08-23T05:00:00.000Z',
     })
+  })
+
+  // 캐릭터 없는 기록이 속할 계정이다. 계정을 고르는 화면이 생기기 전까지는 메인 계정이다.
+  it('메인 넥슨 계정 id 를 함께 넘긴다', async () => {
+    const { recordIncome } = require('../records') as typeof import('../records')
+
+    await recordIncome(수입, 지금)
+
+    expect(income.insertIncomeRecord.mock.calls[0][1]).toBe('account-main')
   })
 
   // 손입력은 **같은 날 같은 것을 두 번** 이 정상이라 자연키가 없다.
@@ -588,7 +600,7 @@ describe('고치기와 지우기', () => {
 
     await editSpend({ ...지출행, quantity: 3 })
 
-    expect(spend.updateSpendRecord).toHaveBeenCalledWith({ ...지출행, quantity: 3 })
+    expect(spend.updateSpendRecord).toHaveBeenCalledWith({ ...지출행, quantity: 3 }, 'account-main')
     expect(rate.setLastPointRate).toHaveBeenCalledWith(1_180)
   })
 

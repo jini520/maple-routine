@@ -23,8 +23,8 @@ export async function pruneCoveredApiKeys(): Promise<void> {
   if (config?.login == null || config.apiKeys.length === 0) return
 
   const sources = await Promise.all([
-    accountsOf({ kind: 'login', value: config.login.session }),
-    ...config.apiKeys.map((key) => accountsOf({ kind: 'apiKey', value: key.value })),
+    accountsOf({ type: 'login', value: config.login.session, accountId: config.login.id }),
+    ...config.apiKeys.map((key) => accountsOf({ type: 'key', value: key.value, accountId: key.id })),
   ])
 
   for (const value of apiKeysCoveredByLogin(sources)) {

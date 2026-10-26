@@ -90,7 +90,7 @@ export const NO_WORLD: DropWorld = { name: null, key: null }
 
 const INSERT_SQL = `
   INSERT INTO boss_drops
-    (id, period_id, drop_index, category, item_key, box_origin_key, ring_level, record_status, price_meso, priced_at,
+    (id, period_id, sort_order, category, item_key, box_origin_key, ring_level, record_status, price_meso, priced_at,
      sale_fee_percent, sale_fee_auto, ${SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
   VALUES (COALESCE(?, ${NEW_UUID_SQL}), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
@@ -324,7 +324,7 @@ export async function replaceBossDropRecords(
   // 드롭을 넘긴 차례 그대로의 식별자. 가격을 서버로 보내는 쪽이 이것으로 기록을 가리킨다.
   // 메모리의 드롭은 식별자가 없을 수 있고(시트에서 방금 적은 것), 그 값은 위 INSERT 에서 처음 생긴다.
   if (drops.length === 0) return []
-  const { values } = await db.query('SELECT id FROM boss_drops WHERE period_id = ? ORDER BY drop_index', [periodId])
+  const { values } = await db.query('SELECT id FROM boss_drops WHERE period_id = ? ORDER BY sort_order', [periodId])
   return ((values ?? []) as Record<string, unknown>[]).map((row) => row.id as string)
 }
 
@@ -348,7 +348,7 @@ function rowToRecord(row: Record<string, unknown>): BossDropRecord {
     boss: bossNameOf(bossKey, bossKey),
     difficulty: row.difficulty as string,
     periodKey: row.period_key as string,
-    dropIndex: row.drop_index as number,
+    dropIndex: row.sort_order as number,
     category: row.category as DropCategory,
     itemKey,
     itemName: dropItemNameOf(itemKey, itemKey),
@@ -384,7 +384,7 @@ export async function getBossDropRecords(
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const periodKeyPlaceholders = periodKeys.map(() => '?').join(', ')
   const { values } = await db.query(
-    `${DROP_SELECT} WHERE pa.ocid IN (${ocidPlaceholders}) AND pe.period_key IN (${periodKeyPlaceholders}) ORDER BY d.drop_index`,
+    `${DROP_SELECT} WHERE pa.ocid IN (${ocidPlaceholders}) AND pe.period_key IN (${periodKeyPlaceholders}) ORDER BY d.sort_order`,
     [...ocids, ...periodKeys],
   )
 
@@ -408,15 +408,15 @@ export async function getBossDropRecordById(dropRecordId: string): Promise<BossD
 export async function getAutoFeeDropRecords(): Promise<BossDropRecord[]> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `${DROP_SELECT} WHERE d.sale_fee_auto = 1 OR d.split_fee_auto = 1 ORDER BY d.drop_index`,
+    `${DROP_SELECT} WHERE d.sale_fee_auto = 1 OR d.split_fee_auto = 1 ORDER BY d.sort_order`,
   )
   return (values ?? []).map(rowToRecord)
 }
 
-/** 키 넷과 `drop_index` 로 드롭 하나의 id 를 고르는 하위 질의. */
+/** 키 넷과 `sort_order` 로 드롭 하나의 id 를 고르는 하위 질의. */
 const DROP_ID_OF_KEY = `(SELECT d.id FROM boss_drops d
   JOIN boss_party_periods pe ON pe.id = d.period_id JOIN boss_parties pa ON pa.id = pe.party_id
-  WHERE ${PERIOD_KEY_WHERE} AND d.drop_index = ?)`
+  WHERE ${PERIOD_KEY_WHERE} AND d.sort_order = ?)`
 
 export interface DropFeeUpdate {
   ocid: string
@@ -450,7 +450,7 @@ export async function getBulkFeeDropRecords(): Promise<BossDropRecord[]> {
   const { values } = await db.query(
     `${DROP_SELECT}
      WHERE d.record_status = 'completed' AND d.sale_fee_percent IS NULL AND d.split_fee_percent IS NULL
-     ORDER BY d.drop_index`,
+     ORDER BY d.sort_order`,
   )
   return (values ?? []).map(rowToRecord)
 }
@@ -476,7 +476,7 @@ export async function applyAutoDropFees(updates: readonly DropFeeUpdate[]): Prom
  * 테이블 없이 이 테이블 하나만 보고 동작하는 근거다. `getBossDropRecords` 는 `periodKeys` 가
  * 필수라 지금 보고 있는 기간 밖을 조회할 수단이 없다.
  *
- * 정렬은 `period_key DESC, drop_index` 다. `recorded_at` 은 replace-all·prune·난이도 이관이
+ * 정렬은 `period_key DESC, sort_order` 다. `recorded_at` 은 replace-all·prune·난이도 이관이
  * 그룹 전체를 호출 시점으로 덮어쓰므로 시간순 기준이 될 수 없다. 같은 기간 안에서 보스가
  * 섞이지 않게 `ocid`·`boss`·`difficulty` 까지 정렬 키에 넣어 순서를 완전히 결정한다.
  *
@@ -493,7 +493,7 @@ export async function getAllBossDropRecords(ocids: string[]): Promise<BossDropRe
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
     `${DROP_SELECT} WHERE pa.ocid IN (${ocidPlaceholders})
-      ORDER BY pe.period_key DESC, pa.ocid, pa.boss_key, pa.difficulty, d.drop_index`,
+      ORDER BY pe.period_key DESC, pa.ocid, pa.boss_key, pa.difficulty, d.sort_order`,
     [...ocids],
   )
 

@@ -24,21 +24,21 @@
 ```
 boss_parties          id · ocid · boss_key · difficulty · 분배 조건 · created_at · updated_at
   └ boss_party_periods  id · party_id · period_key · cycle · world_key · status
-      │                 · price_meso · payout_meso · defeated_on · source · 분배 조건 · created_at · updated_at
-      └ boss_drops        id · period_id · drop_index · category · item_key · box_origin_key · ring_level
+      │                 · price_meso · payout_meso · defeated_date · source · 분배 조건 · created_at · updated_at
+      └ boss_drops        id · period_id · sort_order · category · item_key · box_origin_key · ring_level
                         · record_status · price_meso · priced_at · 분배 조건 · sale_fee_percent · sale_fee_auto
                         · created_at · updated_at
 ```
 
 - `boss_parties` 는 옛 `boss_party_settings` 를 대신한다. 보스 관리에서 정하지 않은 조합도 처치나 드롭이 생기면 행이
   생긴다. 그 행은 분배 칸이 NULL 이고, 보스 관리에서 정한 적이 없다는 뜻이다.
-- `boss_party_periods` 는 옛 처치 기록과 그 기간 값을 한 행에 담는다. `status` 가 처치 여부를 가른다(`cleared` 처치함 · `open` 그 기간 값이나 드롭만 있음). 지금은 처치 기록
+- `boss_party_periods` 는 옛 처치 기록과 그 기간 값을 한 행에 담는다. `clear_status` 가 처치 여부를 가른다(`cleared` 처치함 · `open` 그 기간 값이나 드롭만 있음). 지금은 처치 기록
   테이블에 행이 있는지로 완료를 판단한다.
 - 드롭은 `period_id` 하나로 보스 · 난이도 · 기간 · 월드를 찾는다. 처치 난이도가 확정되면 기간 행의 `party_id` 만 바꾼다.
 
 기본키와 유일성은 [[ADR-077]] 결정 8 을 따른다. `boss_parties (ocid, boss_key, difficulty)` 와
 `boss_party_periods (party_id, period_key)` 는 `UNIQUE` 다. 같은 기간 행이 둘 생기면 드롭이 두 행에 나뉘어 붙기 때문이다.
-드롭의 `(period_id, drop_index)` 는 일반 인덱스다.
+드롭의 `(period_id, sort_order)` 는 일반 인덱스다.
 
 ### 결정 2. 분배 조건 6칸과 시각 2칸은 한 곳에서 정의해 세 테이블이 같이 쓴다
 
@@ -75,7 +75,7 @@ NOT NULL 로 두면 처치도 설정도 없이 드롭만 있는 기간을 옮길
   가격 없는 드롭에 `price_split_mode = 'even'` 을 채우는 백필이 새 표에는 닿지 않고, 값을 안 매긴 드롭의 분배 칸을 화면이
   안 읽게 한 우회([[ADR-076]])도 걷었다.
 - `priced_at` · `created_at` · `updated_at` 은 서버와 같은 이름이다.
-- 앱에만 있는 칸은 `drop_index` · `category` · `box_origin_key` 와 분배 · 수수료 칸이다. 분배 · 수수료는 내 몫을 세는
+- 앱에만 있는 칸은 `sort_order` · `category` · `box_origin_key` 와 분배 · 수수료 칸이다. 분배 · 수수료는 내 몫을 세는
   재료라 서버로 보내지 않는다([[ADR-018]]).
 
 ### 결정 6. 이름은 저장하지 않고 key 만 둔다
@@ -132,7 +132,7 @@ v1.0.13 을 건너뛰고 올리는 기기가 그 단계를 거쳐야 하기 때�
 - **옛 표의 `ensureColumn` · 백필 · `boss_drop_records_group` 인덱스는 옛 표와 함께 v1.0.14 까지 둔다.** 새 표는 이름이 달라
   부딪히지 않는다. 옛 표를 지우는 날 함께 걷는다(#685). 하나라도 실패하면 DB 가 안 열려 가계부 · 지출 · 강화 기록까지
   멈추므로, 옛 표만 지우고 이 문장을 남기면 안 된다.
-- **행이 있으면 완료로 읽던 함수는 `status` 로 거른다.** `getBossProfitRecords` · `getAllBossProfitRecordKeys` ·
+- **행이 있으면 완료로 읽던 함수는 `clear_status` 로 거른다.** `getBossProfitRecords` · `getAllBossProfitRecordKeys` ·
   `getWeeklyPeriodKeysWithRecords` · `findAdjacentPeriodKeyWithRecords` · `getEarliestBossProfitPeriodKeys` ·
   `getUndatedBossProfitRecords` · `getAutoFeeProfitRecords` 등이다. 거르지 않으면 안 잡은 보스가 완료로 보인다.
 - **설정이 없으면 솔로라는 판정은 `boss_parties` 의 분배 칸이 NULL 인지로 한다.** `copyMissingBossPartySettings` 는 분배

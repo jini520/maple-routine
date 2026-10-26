@@ -28,7 +28,7 @@
 
 | 키 | 값 | 어댑터 | 캐시 삭제 | 메모 |
 |---|---|---|---|---|
-| `authMethods` | JSON. 넥슨 로그인 0 ~ 1개 + 이름 붙은 API 키 목록 | `api-key.ts` | 보존 | 저장된 인증 수단 전부 |
+| `authMethods` | JSON. 넥슨 로그인 0 ~ 1개 + 이름 붙은 API 키 목록. 수단마다 `type`(`login` · `key`)과 넥슨 계정 id(`id`, uuid)를 든다 | `api-key.ts` | 보존 | 저장된 인증 수단 전부. `kind` 와 id 가 없는 옛 칸은 읽을 때 id 를 붙여 한 번 다시 적는다([[ADR-098]] 결정 5 · 7) |
 | `apiKey` | 문자열 | `api-key.ts` | 보존 | 옛 설치본의 API 키 하나. `authMethods` 가 없을 때만 읽어 목록에 넣고, 읽은 뒤에도 지우지 않는다. 지우는 곳은 연결 해제뿐이다 |
 | `selectedAccountId` | 문자열 | `api-key.ts` · `character-basic-cache.ts` | 지운다 | 옛 키. 아무도 쓰지 않고, 연결 해제와 캐시 삭제가 지운다 |
 | `theme` | 테마 이름(`job-themes.json` 의 키) | `theme.ts` | 보존 | |
@@ -38,7 +38,7 @@
 | `noticeSubscriptions` | JSON `{ app, game, updateEvent, cashshop }` | `notice-settings.ts` | 보존 | 공지 토픽 구독 넷. 지워지면 FCM 구독은 남았는데 스위치는 꺼진 상태가 된다 |
 | `notificationPermissionAsked` | `'yes'` | `notice-settings.ts` | 보존 | 알림 권한을 물어본 적 있는지. OS 상태로는 알 수 없다 |
 | `partyAlarmEnabled` | `'on'` · `'off'` | `party-appointment-settings.ts` | 보존 | 파티 약속 알림 스위치. 없으면 켜짐 |
-| `partyAppointments` | JSON `PartyAppointment[]` | `party-appointments.ts` | 보존 | 사용자가 적은 파티 약속 |
+| `partyAppointments` | JSON `PartyAppointment[]` | `party-appointments.ts` | 보존 | 사용자가 적은 파티 약속. `id` 는 uuid 이고, 옛 `시각 + 난수` id 는 읽을 때 uuid 로 바꿔 다시 저장한다([[ADR-098]] 결정 4) |
 | `partyScheduleView` | `'list'` · `'board'` | `party-schedule-view.ts` | 보존 | 파티 스케줄 화면에서 마지막으로 고른 보기. 없으면 목록 |
 | `bossProfitCalculatorRecords` | JSON `BossProfitCalculatorRecord[]` | `boss-profit-calculator-records.ts` | 보존 | 주간 보스 수익 계산기에서 저장한 기록. 금액 없이 보스 · 난이도 · 파티 값만 남긴다 |
 | `notificationLedger` | JSON `{ id, kind, fireAt, title, body }[]` | `notification-ledger.ts` | 보존 | 지금 예약해 둔 로컬 알림. OS 의 예약 목록은 읽을 수 없어서 따로 적는다 |

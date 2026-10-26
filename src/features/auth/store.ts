@@ -26,6 +26,7 @@ import { formatAuthError } from './format'
 import { apiKeyCredential } from '../../lib/nexon-credential'
 import { signInWithNexon } from './nexon-login'
 import { currentCredential } from './current-credential'
+import { reusableNexonAccountId } from './reentry-account-id'
 import {
   authReducer,
   initialAuthState,
@@ -122,7 +123,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
     // try 밖이면 미처리 rejection 이라 저장이 실패해도 아무 일도 안 일어난 것처럼 보인다.
     try {
-      await setApiKey(apiKey)
+      await setApiKey(apiKey, '', (await reusableNexonAccountId(accounts)) ?? undefined)
     } catch {
       const authError = { kind: 'storageWriteFailed' } as const
       useToastStore.getState().showError(formatAuthError(authError))

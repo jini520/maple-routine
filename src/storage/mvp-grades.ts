@@ -11,13 +11,13 @@ import { getBossProfitDb } from './sqlite/db'
 export async function getMvpGradeHistories(): Promise<Map<string, MvpGradeEntry[]>> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT account_id, start_date, grade FROM mvp_grade_history ORDER BY account_id, start_date`,
+    `SELECT account_id, from_date, grade FROM mvp_grade_history ORDER BY account_id, from_date`,
   )
   const histories = new Map<string, MvpGradeEntry[]>()
   for (const row of values ?? []) {
     const accountId = row.account_id as string
     const entries = histories.get(accountId) ?? []
-    entries.push({ startDate: row.start_date as string, grade: (row.grade as MvpGradeKey | null) ?? null })
+    entries.push({ startDate: row.from_date as string, grade: (row.grade as MvpGradeKey | null) ?? null })
     histories.set(accountId, entries)
   }
   return histories
@@ -35,7 +35,7 @@ export async function replaceMvpGradeHistory(
     await db.run(`DELETE FROM mvp_grade_history WHERE account_id = ?`, [accountId])
     for (const entry of entries) {
       await db.run(
-        `INSERT INTO mvp_grade_history (account_id, start_date, grade, updated_at) VALUES (?, ?, ?, ?)`,
+        `INSERT INTO mvp_grade_history (account_id, from_date, grade, updated_at) VALUES (?, ?, ?, ?)`,
         [accountId, entry.startDate, entry.grade, updatedAt],
       )
     }

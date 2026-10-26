@@ -2,7 +2,7 @@ import { fetchSymbolEquipment } from '../client'
 import type { NexonCredential } from '../../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
-const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
+const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accountId: null })
 
 const 원래fetch = globalThis.fetch
 

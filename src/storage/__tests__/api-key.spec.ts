@@ -66,8 +66,8 @@ describe('인증 수단 목록', () => {
 
     const config = await getAuthConfig()
     expect(config?.apiKeys).toEqual([
-      { kind: 'apiKey', label: '본계정', value: '키-가' },
-      { kind: 'apiKey', label: '부계정', value: '키-나' },
+      { type: 'key', id: expect.any(String), label: '본계정', value: '키-가' },
+      { type: 'key', id: expect.any(String), label: '부계정', value: '키-나' },
     ])
   })
 
@@ -77,7 +77,7 @@ describe('인증 수단 목록', () => {
     await setApiKey('키-가', '고친 이름')
 
     const config = await getAuthConfig()
-    expect(config?.apiKeys).toEqual([{ kind: 'apiKey', label: '고친 이름', value: '키-가' }])
+    expect(config?.apiKeys).toEqual([{ type: 'key', id: expect.any(String), label: '고친 이름', value: '키-가' }])
   })
 
   it('이름을 안 주면 비어 있다. 짓지 않는다', async () => {
@@ -103,7 +103,7 @@ describe('옛 설치본의 키를 이어받는다', () => {
     await prefs.set(STORAGE_KEYS.apiKey, '옛키')
 
     const config = await getAuthConfig()
-    expect(config?.apiKeys).toEqual([{ kind: 'apiKey', label: '', value: '옛키' }])
+    expect(config?.apiKeys).toEqual([{ type: 'key', id: expect.any(String), label: '', value: '옛키' }])
   })
 
   it('옛 칸을 지우지 않는다. 구버전으로 되돌아가도 키를 잃지 않아야 한다', async () => {
@@ -123,7 +123,7 @@ describe('옛 설치본의 키를 이어받는다', () => {
     await prefs.set(STORAGE_KEYS.apiKey, '옛키')
 
     const config = await getAuthConfig()
-    expect(config?.apiKeys).toEqual([{ kind: 'apiKey', label: '이름', value: '새키' }])
+    expect(config?.apiKeys).toEqual([{ type: 'key', id: expect.any(String), label: '이름', value: '새키' }])
   })
 
   it('새 칸이 깨져 있으면 옛 칸으로 물러난다', async () => {
@@ -131,7 +131,7 @@ describe('옛 설치본의 키를 이어받는다', () => {
     await prefs.set(STORAGE_KEYS.authMethods, '{망가진 json')
     await prefs.set(STORAGE_KEYS.apiKey, '옛키')
 
-    expect((await getAuthConfig())?.apiKeys).toEqual([{ kind: 'apiKey', label: '', value: '옛키' }])
+    expect((await getAuthConfig())?.apiKeys).toEqual([{ type: 'key', id: expect.any(String), label: '', value: '옛키' }])
   })
 })
 
@@ -144,7 +144,7 @@ describe('무효화된 키 하나만 지운다', () => {
     await removeApiKey('죽은키')
 
     expect((await getAuthConfig())?.apiKeys).toEqual([
-      { kind: 'apiKey', label: '부계정', value: '산키' },
+      { type: 'key', id: expect.any(String), label: '부계정', value: '산키' },
     ])
   })
 
@@ -198,7 +198,7 @@ describe('옛 설치본의 로그인 칸', () => {
       }),
     )
 
-    expect((await getAuthConfig())?.login).toEqual({ kind: 'login', session: '옛세션' })
+    expect((await getAuthConfig())?.login).toEqual({ type: 'login', id: expect.any(String), session: '옛세션' })
   })
 
   it('세션이 없는 로그인 칸은 없는 것이다', async () => {
@@ -213,7 +213,7 @@ describe('넥슨 로그인 자리', () => {
     await setNexonLogin(로그인('세션-가'))
 
     const config = await getAuthConfig()
-    expect(config?.login).toEqual({ kind: 'login', session: '세션-가' })
+    expect(config?.login).toEqual({ type: 'login', id: expect.any(String), session: '세션-가' })
     expect(config?.apiKeys).toEqual([])
   })
 
@@ -221,7 +221,7 @@ describe('넥슨 로그인 자리', () => {
     await setNexonLogin(로그인('세션-가'))
     await setNexonLogin(로그인('세션-나'))
 
-    expect((await getAuthConfig())?.login).toMatchObject({ kind: 'login', session: '세션-나' })
+    expect((await getAuthConfig())?.login).toMatchObject({ type: 'login', id: expect.any(String), session: '세션-나' })
   })
 
   it('로그인을 붙여도 키는 안 건드린다', async () => {
@@ -231,7 +231,7 @@ describe('넥슨 로그인 자리', () => {
     await setNexonLogin(로그인('세션-가'))
 
     expect((await getAuthConfig())?.apiKeys).toEqual([
-      { kind: 'apiKey', label: '본계정', value: '키-가' },
+      { type: 'key', id: expect.any(String), label: '본계정', value: '키-가' },
     ])
   })
 
@@ -240,7 +240,7 @@ describe('넥슨 로그인 자리', () => {
 
     await setApiKey('키-가')
 
-    expect((await getAuthConfig())?.login).toMatchObject({ kind: 'login', session: '세션-가' })
+    expect((await getAuthConfig())?.login).toMatchObject({ type: 'login', id: expect.any(String), session: '세션-가' })
   })
 
   it('로그인을 떼면 키는 남는다', async () => {
@@ -269,7 +269,7 @@ describe('넥슨 로그인 자리', () => {
 
     await removeApiKey('키-가')
 
-    expect((await getAuthConfig())?.login).toMatchObject({ kind: 'login', session: '세션-가' })
+    expect((await getAuthConfig())?.login).toMatchObject({ type: 'login', id: expect.any(String), session: '세션-가' })
   })
 
   it('연결 해제는 로그인까지 버린다', async () => {
@@ -283,3 +283,54 @@ describe('넥슨 로그인 자리', () => {
 
 // 액세스 토큰은 30분이라 세션보다 훨씬 자주 바뀐다. 그때 세션까지 다시 쓰면 갈아끼우는 값이
 // 둘이 되고, 한쪽만 써지는 순간이 생긴다.
+// 계정을 가리키는 것은 키 값이 아니라 수단의 id 다. 키를 다시 받아도 같은 계정이면 기록이 이어져야 한다.
+describe('넥슨 계정 id', () => {
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+
+  it('id 가 없는 옛 수단은 읽을 때 id 를 받고 type 으로 옮겨 다시 저장된다. 두 번째 읽기는 같은 id 다', async () => {
+    await prefs.set(
+      STORAGE_KEYS.authMethods,
+      JSON.stringify({ login: { kind: 'login', session: '세션' }, apiKeys: [{ kind: 'apiKey', label: '부', value: '키' }] }),
+    )
+
+    const first = await getAuthConfig()
+    const second = await getAuthConfig()
+
+    expect(first?.login?.id).toMatch(UUID)
+    expect(first?.apiKeys[0]?.id).toMatch(UUID)
+    expect(first?.login?.id).not.toBe(first?.apiKeys[0]?.id)
+    expect(second).toEqual(first)
+    expect(JSON.parse((await prefs.get(STORAGE_KEYS.authMethods)) ?? '{}')).toEqual({
+      login: { type: 'login', id: first?.login?.id, session: '세션' },
+      apiKeys: [{ type: 'key', id: first?.apiKeys[0]?.id, label: '부', value: '키' }],
+    })
+  })
+
+  it('옛 apiKey 칸에서 올린 키도 id 를 받아 새 칸에 적힌다. 옛 칸은 남는다', async () => {
+    await prefs.set(STORAGE_KEYS.apiKey, '옛키')
+
+    const first = await getAuthConfig()
+
+    expect((await getAuthConfig())?.apiKeys[0]?.id).toBe(first?.apiKeys[0]?.id)
+    await expect(prefs.get(STORAGE_KEYS.apiKey)).resolves.toBe('옛키')
+  })
+
+  it('같은 키를 다시 넣거나 다시 로그인해도 id 는 그대로다', async () => {
+    await setApiKey('키-가', '본계정')
+    await setNexonLogin(로그인('세션-가'))
+    const before = await getAuthConfig()
+
+    await setApiKey('키-가', '고친 이름')
+    await setNexonLogin(로그인('세션-나'))
+    const after = await getAuthConfig()
+
+    expect(after?.apiKeys[0]?.id).toBe(before?.apiKeys[0]?.id)
+    expect(after?.login?.id).toBe(before?.login?.id)
+  })
+
+  it('새 키에 계정 id 를 넘기면 그 id 를 쓴다. 다시 받은 키가 옛 계정을 잇는 길이다', async () => {
+    await setApiKey('다시-받은-키', '', 'account-old')
+
+    expect((await getAuthConfig())?.apiKeys[0]).toEqual({ type: 'key', id: 'account-old', label: '', value: '다시-받은-키' })
+  })
+})

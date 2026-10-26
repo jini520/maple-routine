@@ -3,9 +3,9 @@
 import { apiKeysCoveredByLogin } from '../covered-keys'
 import type { MapleAccount } from '../../types'
 
-const 로그인 = { kind: 'login', value: '세션' } as const
-const 키가 = { kind: 'apiKey', value: '키-가' } as const
-const 키나 = { kind: 'apiKey', value: '키-나' } as const
+const 로그인 = { type: 'login', value: '세션', accountId: null } as const
+const 키가 = { type: 'key', value: '키-가', accountId: null } as const
+const 키나 = { type: 'key', value: '키-나', accountId: null } as const
 
 function 계정(accountId: string, ...ocids: string[]): MapleAccount {
   return {

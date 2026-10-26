@@ -27,14 +27,17 @@
 | `features/auth/nexon-login-enabled.ts` | `NEXON_LOGIN_ENABLED`. 넥슨 로그인 입구를 켜고 끈다 |
 | `features/auth/saved-key.ts` | 저장된 첫 키 읽기 · 넥슨 로그인이 있는지 확인 |
 | `features/auth/current-credential.ts` | 넥슨을 부르기 직전에 저장된 설정에서 자격을 고른다 |
+| `features/auth/reentry-account-id.ts` | 새로 넣는 키가 이을 옛 넥슨 계정 id 를 메이플 ID 로 찾는다([[ADR-098]] 결정 5) |
+| `features/auth/legacy-account-ids.ts` | 계정 칸이 생기기 전의 행을 메인 넥슨 계정으로 채우는 부팅 단계([[ADR-098]] 결정 6) |
 | `features/auth/server-identity.ts` | 우리 서버에 보낼 신원 헤더(`Authorization: Bearer` 또는 `x-api-key-hash`) |
-| `lib/nexon-credential.ts` | 저장된 설정에서 자격을 고르는 순수 함수 |
+| `lib/nexon-credential.ts` | 저장된 설정에서 자격과 메인 넥슨 계정 id 를 고르는 순수 함수 |
 | `lib/covered-keys.ts` | 로그인이 모두 포함하는 키를 고르는 판정 |
 | `nexon/key-stage.ts` | 키가 개발 단계인지 확인하는 판정(`probeApiKeyStage`) |
 | `nexon/errors.ts` | `isInvalidApiKeyError` · `NexonSignInRequiredError` |
 | `nexon/developer-keys.ts` | 로그인 사용자가 프렌즈 밖 경로에 쓰는 개발자 키 둘 |
 | `server/nexon-auth.ts` | 로그인 시작 · 세션 받기 · 세션 거두기 |
-| `storage/api-key.ts` | 인증 수단 목록 저장(`getAuthConfig` · `setApiKey` · `setNexonLogin` · `removeApiKey` · `clearNexonLogin` · `clearAuthConfig`) |
+| `storage/api-key.ts` | 인증 수단 목록 저장(`getAuthConfig` · `setApiKey` · `setNexonLogin` · `removeApiKey` · `clearNexonLogin` · `clearAuthConfig`). 수단마다 넥슨 계정 id 를 든다 |
+| `storage/nexon-account-ids.ts` | 옛 행의 빈 계정 칸을 메인 계정 id 로 채운다 |
 | `components/molecules/NexonLoginButton/` | 넥슨이 준 이미지 한 장으로 만든 로그인 버튼 |
 | `native/browser.ts` | 앱이 여는 웹 주소를 인앱 브라우저로 연다. 못 열면 시스템 브라우저로 넘긴다 |
 | `app/settings/SettingsScreen.tsx` | 더보기 탭 맨 위 넥슨 로그인 버튼 |

@@ -168,7 +168,7 @@ export const BOSS_PARTIES_BODY = `(
 /**
  * 조합 하나의 한 기간. 처치 기록과 그 기간만 고친 값이 한 행이다.
  *
- * `status` 가 'cleared' 면 처치한 기간이고 결정석 칸과 분배 칸이 다 차 있다. 'open' 이면 그 기간 값이나
+ * `clear_status` 가 'cleared' 면 처치한 기간이고 결정석 칸과 분배 칸이 다 차 있다. 'open' 이면 그 기간 값이나
  * 드롭만 있다.
  */
 export const BOSS_PARTY_PERIODS_BODY = `(
@@ -179,15 +179,15 @@ export const BOSS_PARTY_PERIODS_BODY = `(
     cycle TEXT NOT NULL CHECK (cycle IN ('weekly', 'monthly')),
     -- 그 기간의 월드 스냅샷. 모르면 NULL 이다. 지금 캐시의 월드로 채우면 리프한 캐릭터의 과거가 옮겨간다.
     world_key TEXT,
-    status TEXT NOT NULL CHECK (status IN ('open', 'cleared')),
+    clear_status TEXT NOT NULL CHECK (clear_status IN ('open', 'cleared')),
     price_meso INTEGER,
     payout_meso INTEGER,
     -- 처치 날짜(KST YYYY-MM-DD). 모르면 NULL 이다.
-    defeated_on TEXT,
+    defeated_date TEXT,
     -- 'auto'(동기화) · 'manual'(사용자가 직접 적은 완료).
     source TEXT CHECK (source IN ('auto', 'manual')),${SPLIT_COLUMNS},${TIME_COLUMNS},${SPLIT_CHECKS},
-    CHECK ((status = 'cleared') = (price_meso IS NOT NULL AND payout_meso IS NOT NULL AND source IS NOT NULL AND split_mode IS NOT NULL)),
-    CHECK (status = 'cleared' OR defeated_on IS NULL),
+    CHECK ((clear_status = 'cleared') = (price_meso IS NOT NULL AND payout_meso IS NOT NULL AND source IS NOT NULL AND split_mode IS NOT NULL)),
+    CHECK (clear_status = 'cleared' OR defeated_date IS NULL),
     UNIQUE (party_id, period_key)
   )`
 
@@ -202,7 +202,7 @@ export const BOSS_DROPS_BODY = `(
     id TEXT NOT NULL PRIMARY KEY,
     period_id TEXT NOT NULL REFERENCES boss_party_periods(id) ON DELETE CASCADE,
     -- 드롭 시트의 차례. 저장할 때마다 다시 매겨 잠깐 겹치므로 UNIQUE 를 걸지 않는다.
-    drop_index INTEGER NOT NULL,
+    sort_order INTEGER NOT NULL,
     category TEXT NOT NULL,
     item_key TEXT NOT NULL,
     -- 상자에서 나왔으면 그 상자의 아이템 key.
@@ -223,4 +223,4 @@ export const BOSS_DROPS_BODY = `(
 
 /** 기간 하나의 드롭을 찾는 인덱스. */
 export const BOSS_DROPS_PERIOD_INDEX =
-  'CREATE INDEX IF NOT EXISTS boss_drops_period ON boss_drops (period_id, drop_index)'
+  'CREATE INDEX IF NOT EXISTS boss_drops_period ON boss_drops (period_id, sort_order)'

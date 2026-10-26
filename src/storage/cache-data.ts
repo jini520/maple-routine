@@ -106,15 +106,15 @@ const NULL_SPLIT = SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join('
 /** 처치와 드롭. 그 기간 값이 없는 기간 행은 함께 지운다. */
 const CLEAR_BOSS_RECORDS = [
   'DELETE FROM boss_drops',
-  `DELETE FROM boss_party_periods WHERE status = 'cleared' OR split_mode IS NULL`,
+  `DELETE FROM boss_party_periods WHERE clear_status = 'cleared' OR split_mode IS NULL`,
 ]
 
 /** 보스 관리 설정과 그 기간 값. 드롭이 남은 기간은 행을 남기고 분배 칸만 비운다. */
 const CLEAR_BOSS_GENERAL = [
   `UPDATE boss_parties SET ${NULL_SPLIT}`,
   `DELETE FROM boss_party_periods
-    WHERE status = 'open' AND NOT EXISTS (SELECT 1 FROM boss_drops WHERE period_id = boss_party_periods.id)`,
-  `UPDATE boss_party_periods SET ${NULL_SPLIT} WHERE status = 'open'`,
+    WHERE clear_status = 'open' AND NOT EXISTS (SELECT 1 FROM boss_drops WHERE period_id = boss_party_periods.id)`,
+  `UPDATE boss_party_periods SET ${NULL_SPLIT} WHERE clear_status = 'open'`,
 ]
 
 /** 설정도 기간도 없는 조합 행. 남기면 기록을 지웠는데 조합만 남는다. */
@@ -125,9 +125,9 @@ const PRUNE_BOSS_PARTIES = `DELETE FROM boss_parties
 const BOSS_ROWS_OF_GROUP: Record<CacheDataGroupId, readonly string[]> = {
   general: [
     'SELECT * FROM boss_parties WHERE split_mode IS NOT NULL',
-    `SELECT * FROM boss_party_periods WHERE status = 'open' AND split_mode IS NOT NULL`,
+    `SELECT * FROM boss_party_periods WHERE clear_status = 'open' AND split_mode IS NOT NULL`,
   ],
-  records: [`SELECT * FROM boss_party_periods WHERE status = 'cleared'`, 'SELECT * FROM boss_drops'],
+  records: [`SELECT * FROM boss_party_periods WHERE clear_status = 'cleared'`, 'SELECT * FROM boss_drops'],
 }
 
 // db.ts에 테이블이 추가되면 자동으로 여기 들어와 계속 삭제 대상으로 남는다.

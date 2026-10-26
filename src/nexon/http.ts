@@ -70,7 +70,7 @@ interface Route {
  */
 function routeOf(path: string, credential: NexonCredential): Route {
   const url = `${API_BASE_URL}${path}`
-  if (credential.kind === 'apiKey') {
+  if (credential.type === 'key') {
     return { url, headers: { 'x-nxopen-api-key': credential.value }, developerKey: null }
   }
 
@@ -98,7 +98,7 @@ function bareOf(path: string): string {
  * @param credential `lib/nexon-credential` 의 `credentialOf` 가 고른다
  */
 export async function requestJson<T>(path: string, credential: NexonCredential): Promise<T> {
-  if (credential.kind === 'login' && FRIENDS_PATHS.includes(bareOf(path))) {
+  if (credential.type === 'login' && FRIENDS_PATHS.includes(bareOf(path))) {
     return requestViaStream<T>(path, credential.value)
   }
   try {
@@ -320,7 +320,7 @@ async function requestOnce<T>(path: string, credential: NexonCredential): Promis
     // 탓할 키가 없고, 사용자가 할 일은 키 재입력이 아니라 재로그인이다. 개발자 키로 부른 회차는
     // **키가 죽은 것**이라 이쪽이 아니다.
     throw 실어서(
-      credential.kind === 'login' && developerKey === null
+      credential.type === 'login' && developerKey === null
         ? new NexonSignInRequiredError('넥슨 로그인이 만료되었습니다')
         : new NexonAuthError('Nexon API 키가 유효하지 않습니다'),
     )

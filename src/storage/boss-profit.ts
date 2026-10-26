@@ -80,11 +80,11 @@ export type BossProfitRecordSource = 'auto' | 'manual'
  */
 const UPSERT_SQL = `
   INSERT INTO boss_party_periods
-    (id, party_id, period_key, cycle, world_key, status, price_meso, payout_meso, source,
+    (id, party_id, period_key, cycle, world_key, clear_status, price_meso, payout_meso, source,
      ${SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
   VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, 'cleared', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT (party_id, period_key) DO UPDATE SET
-    status = 'cleared',
+    clear_status = 'cleared',
     cycle = excluded.cycle,
     world_key = COALESCE(excluded.world_key, boss_party_periods.world_key),
     price_meso = excluded.price_meso,
@@ -159,7 +159,7 @@ export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<
 
 const FILL_MISSING_WORLD_SQL = `
   UPDATE boss_party_periods SET world_key = ?
-   WHERE status = 'cleared' AND world_key IS NULL
+   WHERE clear_status = 'cleared' AND world_key IS NULL
      AND party_id IN (SELECT id FROM boss_parties WHERE ocid = ?)
 `
 
@@ -192,7 +192,7 @@ export async function fillMissingRecordWorlds(
 const RECORD_SELECT = `
   SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.cycle, pe.period_key, pe.party_size, pe.price_meso, pe.payout_meso,
          pe.my_share, pe.shares_total, pe.split_fee_percent, pe.split_fee_auto, pe.updated_at, pe.world_key,
-         pe.defeated_on, pe.source
+         pe.defeated_date, pe.source
     FROM ${PERIODS_JOIN}`
 
 function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
@@ -215,7 +215,7 @@ function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
     recordedAt: row.updated_at as string,
     world: worldKey === null ? null : worldNameOf(worldKey, worldKey),
     worldKey,
-    defeatedOn: (row.defeated_on as string | null | undefined) ?? null,
+    defeatedOn: (row.defeated_date as string | null | undefined) ?? null,
     source: row.source === 'manual' ? 'manual' : 'auto',
   }
 }
@@ -236,7 +236,7 @@ export async function getRecordedCharacterOcids(): Promise<string[]> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
     `SELECT DISTINCT pa.ocid FROM ${PERIODS_JOIN}
-      WHERE pe.status = 'cleared' OR EXISTS (SELECT 1 FROM boss_drops d WHERE d.period_id = pe.id)`,
+      WHERE pe.clear_status = 'cleared' OR EXISTS (SELECT 1 FROM boss_drops d WHERE d.period_id = pe.id)`,
   )
 
   return (values ?? []).map((row) => row.ocid as string)
@@ -254,7 +254,7 @@ export async function getBossProfitRecords(
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const periodKeyPlaceholders = periodKeys.map(() => '?').join(', ')
   const { values } = await db.query(
-    `${RECORD_SELECT} WHERE pe.status = 'cleared' AND pa.ocid IN (${ocidPlaceholders}) AND pe.period_key IN (${periodKeyPlaceholders})`,
+    `${RECORD_SELECT} WHERE pe.clear_status = 'cleared' AND pa.ocid IN (${ocidPlaceholders}) AND pe.period_key IN (${periodKeyPlaceholders})`,
     [...ocids, ...periodKeys],
   )
 
@@ -264,7 +264,7 @@ export async function getBossProfitRecords(
 /** 송금 수수료가 자동인 결정석 기록 전부. 등급 기록이 바뀌면 다시 셀 대상이다. */
 export async function getAutoFeeProfitRecords(): Promise<BossProfitRecord[]> {
   const db = await getBossProfitDb()
-  const { values } = await db.query(`${RECORD_SELECT} WHERE pe.status = 'cleared' AND pe.split_fee_auto = 1`)
+  const { values } = await db.query(`${RECORD_SELECT} WHERE pe.clear_status = 'cleared' AND pe.split_fee_auto = 1`)
   return (values ?? []).map(rowToRecord)
 }
 
@@ -285,7 +285,7 @@ export async function updateProfitSplitFees(updates: readonly ProfitSplitFeeUpda
     for (const update of updates) {
       await db.run(
         `UPDATE boss_party_periods SET split_fee_percent = ?, payout_meso = ?
-         WHERE status = 'cleared' AND id = ${PERIOD_ID_OF_KEY}`,
+         WHERE clear_status = 'cleared' AND id = ${PERIOD_ID_OF_KEY}`,
         [update.splitFeePercent, update.payoutMeso, ...periodKeyValues(update)],
       )
     }
@@ -313,7 +313,7 @@ export async function getWeeklyPeriodKeysWithRecords(
   const placeholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
     `SELECT DISTINCT pe.period_key FROM ${PERIODS_JOIN}
-     WHERE pe.status = 'cleared' AND pa.ocid IN (${placeholders}) AND pe.cycle = 'weekly' AND substr(pe.period_key, 1, 7) = ?
+     WHERE pe.clear_status = 'cleared' AND pa.ocid IN (${placeholders}) AND pe.cycle = 'weekly' AND substr(pe.period_key, 1, 7) = ?
      ORDER BY pe.period_key`,
     [...ocids, monthKey],
   )
@@ -361,7 +361,7 @@ export async function findAdjacentPeriodKeyWithRecords(
 
   const { values } = await db.query(
     `SELECT ${expression} AS period_key FROM ${PERIODS_JOIN}
-      WHERE pe.status = 'cleared' AND pa.ocid IN (${ocidPlaceholders}) AND ${condition}`,
+      WHERE pe.clear_status = 'cleared' AND pa.ocid IN (${ocidPlaceholders}) AND ${condition}`,
     parameters,
   )
 
@@ -384,13 +384,13 @@ export async function getMonthlyDefeatDates(ocids: string[]): Promise<string[]> 
   const db = await getBossProfitDb()
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT DISTINCT pe.defeated_on FROM ${PERIODS_JOIN}
-      WHERE pa.ocid IN (${ocidPlaceholders}) AND pe.cycle = 'monthly' AND pe.defeated_on IS NOT NULL`,
+    `SELECT DISTINCT pe.defeated_date FROM ${PERIODS_JOIN}
+      WHERE pa.ocid IN (${ocidPlaceholders}) AND pe.cycle = 'monthly' AND pe.defeated_date IS NOT NULL`,
     [...ocids],
   )
 
   return (values ?? [])
-    .map((row) => (row as Record<string, unknown>).defeated_on)
+    .map((row) => (row as Record<string, unknown>).defeated_date)
     .filter((date): date is string => typeof date === 'string')
 }
 
@@ -419,7 +419,7 @@ export async function getAllBossProfitRecordKeys(ocids: string[]): Promise<BossP
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
     `SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.period_key FROM ${PERIODS_JOIN}
-      WHERE pe.status = 'cleared' AND pa.ocid IN (${ocidPlaceholders})`,
+      WHERE pe.clear_status = 'cleared' AND pa.ocid IN (${ocidPlaceholders})`,
     [...ocids],
   )
 
@@ -435,7 +435,7 @@ export async function getAllBossProfitRecordKeys(ocids: string[]): Promise<BossP
  * 날짜가 붙은 수익 기록. **가계부 캘린더가 읽는 모양**.
  *
  * `BossProfitRecord` 를 안 쓰는 이유는 필요한 칸이 다르기 때문이다. 캘린더는 누가 · 무엇을 ·
- * 며칟날 · 얼마 만 쓰고 파티원 수·정가·월드는 안 본다. 그리고 `defeated_on IS NOT NULL` 로 걸러
+ * 며칟날 · 얼마 만 쓰고 파티원 수·정가·월드는 안 본다. 그리고 `defeated_date IS NOT NULL` 로 걸러
  * 읽으므로 **여기서 그 칸은 nullable 이 아니다**. 화면이 모름 분기를 들 필요가 없다.
  */
 export interface DatedBossProfitRecord {
@@ -452,7 +452,7 @@ export interface DatedBossProfitRecord {
 /**
  * 이 날짜 범위(**두 끝 포함**)에 잡은 것으로 **밝혀진** 기록.
  *
- * 날짜를 모르는 기록(`defeated_on IS NULL`)은 **안 나온다.** 그것을 어느 칸에 얹으면 그 순간
+ * 날짜를 모르는 기록(`defeated_date IS NULL`)은 **안 나온다.** 그것을 어느 칸에 얹으면 그 순간
  * 거짓 날짜가 되기 때문이다. 주간 보기에서는 `period_key` 로 제자리에 서므로
  * 잃는 것은 월간 칸뿐이다.
  */
@@ -469,11 +469,11 @@ export async function getDatedBossProfitRecords(
   const db = await getBossProfitDb()
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.period_key, pe.payout_meso, pe.defeated_on
+    `SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.period_key, pe.payout_meso, pe.defeated_date
        FROM ${PERIODS_JOIN}
       WHERE pa.ocid IN (${ocidPlaceholders})
-        AND pe.defeated_on IS NOT NULL
-        AND pe.defeated_on BETWEEN ? AND ?`,
+        AND pe.defeated_date IS NOT NULL
+        AND pe.defeated_date BETWEEN ? AND ?`,
     [...ocids, fromDateKey, toDateKey],
   )
 
@@ -486,7 +486,7 @@ export async function getDatedBossProfitRecords(
       difficulty: record.difficulty as string,
       periodKey: record.period_key as string,
       payoutMeso: record.payout_meso as number,
-      defeatedOn: record.defeated_on as string,
+      defeatedOn: record.defeated_date as string,
     }
   })
 }
@@ -522,10 +522,10 @@ export async function getUndatedBossProfitRecords(
   const { values } = await db.query(
     `SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.cycle, pe.period_key
        FROM ${PERIODS_JOIN}
-      WHERE pe.status = 'cleared'
+      WHERE pe.clear_status = 'cleared'
         AND pa.ocid IN (${ocidPlaceholders})
         AND pe.period_key IN (${periodKeyPlaceholders})
-        AND pe.defeated_on IS NULL`,
+        AND pe.defeated_date IS NULL`,
     [...ocids, ...periodKeys],
   )
 
@@ -554,7 +554,7 @@ export async function getEarliestBossProfitPeriodKeys(
   const db = await getBossProfitDb()
   const { values } = await db.query(
     `SELECT pe.cycle, MIN(pe.period_key) AS period_key FROM ${PERIODS_JOIN}
-      WHERE pe.status = 'cleared' AND pa.ocid = ? GROUP BY pe.cycle`,
+      WHERE pe.clear_status = 'cleared' AND pa.ocid = ? GROUP BY pe.cycle`,
     [ocid],
   )
   const earliest: Partial<Record<BossCycle, string>> = {}
@@ -573,14 +573,14 @@ export async function getEarliestBossProfitPeriodKeys(
 export async function deleteBossProfitRecord(key: BossProfitRecordKey): Promise<void> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT pe.id FROM ${PERIODS_JOIN} WHERE pe.status = 'cleared' AND ${PERIOD_KEY_WHERE}`,
+    `SELECT pe.id FROM ${PERIODS_JOIN} WHERE pe.clear_status = 'cleared' AND ${PERIOD_KEY_WHERE}`,
     periodKeyValues(key),
   )
   const periodId = (values ?? [])[0]?.id as string | undefined
   if (periodId !== undefined) {
     await db.run(
       `UPDATE boss_party_periods
-          SET status = 'open', price_meso = NULL, payout_meso = NULL, defeated_on = NULL, source = NULL,
+          SET clear_status = 'open', price_meso = NULL, payout_meso = NULL, defeated_date = NULL, source = NULL,
               ${SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')}
         WHERE id = ?`,
       [periodId],
@@ -603,7 +603,7 @@ export async function setBossProfitDefeatedOn(
 ): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(
-    `UPDATE boss_party_periods SET defeated_on = ? WHERE status = 'cleared' AND id = ${PERIOD_ID_OF_KEY}`,
+    `UPDATE boss_party_periods SET defeated_date = ? WHERE clear_status = 'cleared' AND id = ${PERIOD_ID_OF_KEY}`,
     [defeatedOn, ...periodKeyValues(key)],
   )
   bumpRecordsRevision()
@@ -643,7 +643,7 @@ export async function hasBossProfitRecordInPeriod(
   const db = await getBossProfitDb()
   const { values } = await db.query(
     `SELECT 1 FROM ${PERIODS_JOIN}
-      WHERE pe.status = 'cleared' AND pa.ocid = ? AND pa.boss_key = ? AND pe.period_key = ? LIMIT 1`,
+      WHERE pe.clear_status = 'cleared' AND pa.ocid = ? AND pa.boss_key = ? AND pe.period_key = ? LIMIT 1`,
     [ocid, bossKey, periodKey],
   )
   return (values ?? []).length > 0

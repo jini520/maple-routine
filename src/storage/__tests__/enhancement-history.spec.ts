@@ -155,33 +155,34 @@ describe('관측된 장비 레벨', () => {
 })
 
 describe('조회 원장', () => {
-  it('종류와 날짜로 찾는다', async () => {
+  it('그 계정의 종류와 날짜로 찾는다', async () => {
     queryMock.mockResolvedValue({
-      values: [{ kind: 'cube', date_key: '2026-09-04', next_cursor: 'c1', settled: 1 }],
+      values: [{ enhancement_type: 'cube', history_date: '2026-09-04', next_cursor: 'c1', settled: 1 }],
     })
 
-    const checks = await loadEnhancementChecks(['2026-09-04'])
+    const checks = await loadEnhancementChecks('account-a', ['2026-09-04'])
 
     expect(checks.get('cube|2026-09-04')).toEqual({ nextCursor: 'c1', settled: true })
+    expect(queryMock.mock.calls[0][1]).toEqual(['account-a', '2026-09-04'])
   })
 
   it('날짜가 없으면 조회하지 않는다', async () => {
-    expect((await loadEnhancementChecks([])).size).toBe(0)
+    expect((await loadEnhancementChecks('account-a', [])).size).toBe(0)
     expect(queryMock).not.toHaveBeenCalled()
   })
 
   it('굳힘을 적는다', async () => {
-    await markEnhancementChecked('cube', '2026-09-04', 'c1', true, '2026-09-06T00:00:00.000Z')
+    await markEnhancementChecked('account-a', 'cube', '2026-09-04', 'c1', true, '2026-09-06T00:00:00.000Z')
 
     const [sql, values] = runMock.mock.calls[0]
     expect(sql).toContain('INSERT INTO enhancement_history_checks')
-    expect(values).toEqual(['cube', '2026-09-04', 'c1', 1, '2026-09-06T00:00:00.000Z'])
+    expect(values).toEqual(['account-a', 'cube', '2026-09-04', 'c1', 1, '2026-09-06T00:00:00.000Z'])
   })
 
   it('안 굳힌 것도 적는다. 커서를 다음 회차가 이어받는다', async () => {
-    await markEnhancementChecked('cube', '2026-09-06', null, false, '2026-09-06T00:00:00.000Z')
+    await markEnhancementChecked('account-a', 'cube', '2026-09-06', null, false, '2026-09-06T00:00:00.000Z')
 
-    expect(runMock.mock.calls[0][1]).toEqual(['cube', '2026-09-06', null, 0, '2026-09-06T00:00:00.000Z'])
+    expect(runMock.mock.calls[0][1]).toEqual(['account-a', 'cube', '2026-09-06', null, 0, '2026-09-06T00:00:00.000Z'])
   })
 })
 

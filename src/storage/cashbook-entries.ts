@@ -83,7 +83,7 @@ const INSERT_ITEM_SQL = `
 
 const INSERT_HUNT_SQL = `
   INSERT INTO cashbook_entry_hunt_inputs
-    (id, entry_id, character_level, missed_mobs, boosts, fragments, fragment_price, meso_rate, typed_meso, union_tier)
+    (id, entry_id, character_level, missed_mobs, boosts, fragments, fragment_price_meso, meso_rate, typed_meso, union_tier)
   VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
@@ -124,13 +124,27 @@ async function writeChildren(db: SqliteDbConnection, entry: StoredEntry): Promis
   ])
 }
 
-/** 부르는 쪽이 트랜잭션으로 감싼다. 품목이 기록 행과 함께 서야 한다. */
-export async function insertEntry(db: SqliteDbConnection, entry: StoredEntry): Promise<void> {
+/**
+ * 부르는 쪽이 트랜잭션으로 감싼다. 품목이 기록 행과 함께 서야 한다.
+ *
+ * @param nexonAccountId 캐릭터가 없는 기록이 속할 넥슨 계정 id. 캐릭터가 있는 기록은 ocid 로 계정을 찾으므로 적지 않는다
+ */
+export async function insertEntry(db: SqliteDbConnection, entry: StoredEntry, nexonAccountId: string | null): Promise<void> {
   const { head } = entry
   await db.run(
-    `INSERT INTO cashbook_entries (id, ocid, entry_type, category_key, entry_date, memo, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [head.id, head.ocid, head.entryType, head.categoryKey, head.entryDate, head.memo, head.createdAt, head.createdAt],
+    `INSERT INTO cashbook_entries (id, ocid, nexon_account_id, entry_type, category_key, entry_date, memo, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      head.id,
+      head.ocid,
+      head.ocid === null ? nexonAccountId : null,
+      head.entryType,
+      head.categoryKey,
+      head.entryDate,
+      head.memo,
+      head.createdAt,
+      head.createdAt,
+    ],
   )
   await writeChildren(db, entry)
 }
@@ -139,13 +153,24 @@ export async function insertEntry(db: SqliteDbConnection, entry: StoredEntry): P
  * 갈아 끼우기. 기록 행은 고치고 품목 · 사냥 입력은 지우고 다시 쓴다. `created_at` 은 그대로라 같은 날 안의 차례가
  * 안 바뀐다. 부르는 쪽이 트랜잭션으로 감싼다.
  *
+ * 캐릭터 없는 기록은 처음 속한 넥슨 계정을 지킨다. 계정이 없던 기록만 넘긴 계정을 받는다.
+ *
  * @param now 마지막으로 고친 시각
+ * @param nexonAccountId 계정이 없는 캐릭터 없는 기록이 받을 넥슨 계정 id
  */
-export async function replaceEntry(db: SqliteDbConnection, entry: StoredEntry, now: Date): Promise<void> {
+export async function replaceEntry(
+  db: SqliteDbConnection,
+  entry: StoredEntry,
+  now: Date,
+  nexonAccountId: string | null,
+): Promise<void> {
   const { head } = entry
   await db.run(
-    `UPDATE cashbook_entries SET ocid = ?, category_key = ?, entry_date = ?, memo = ?, updated_at = ? WHERE id = ?`,
-    [head.ocid, head.categoryKey, head.entryDate, head.memo, now.toISOString(), head.id],
+    `UPDATE cashbook_entries
+        SET ocid = ?, nexon_account_id = CASE WHEN ? IS NULL THEN COALESCE(nexon_account_id, ?) END,
+            category_key = ?, entry_date = ?, memo = ?, updated_at = ?
+      WHERE id = ?`,
+    [head.ocid, head.ocid, nexonAccountId, head.categoryKey, head.entryDate, head.memo, now.toISOString(), head.id],
   )
   await db.run(`DELETE FROM cashbook_entry_items WHERE entry_id = ?`, [head.id])
   await db.run(`DELETE FROM cashbook_entry_hunt_inputs WHERE entry_id = ?`, [head.id])
@@ -191,7 +216,7 @@ function huntOf(row: Record<string, unknown>): EntryHunt {
     missedMobs: numberOrNull(row.missed_mobs),
     boosts: textOrNull(row.boosts),
     fragments: numberOrNull(row.fragments),
-    fragmentPrice: numberOrNull(row.fragment_price),
+    fragmentPrice: numberOrNull(row.fragment_price_meso),
     mesoRate: numberOrNull(row.meso_rate),
     typedMeso: numberOrNull(row.typed_meso),
     unionTier: numberOrNull(row.union_tier),

@@ -199,6 +199,8 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_drop_records ADD COLUMN world TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN world_key TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN drop_record_id TEXT',
+      // 계정 단위 기록이 어느 넥슨 계정의 것인지.
+      'ALTER TABLE cashbook_entries ADD COLUMN nexon_account_id TEXT',
     ])
   })
 
@@ -252,6 +254,7 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'split_fee_auto' },
             { name: 'world' },
             { name: 'drop_record_id' },
+            { name: 'nexon_account_id' },
           ]
         : []
 

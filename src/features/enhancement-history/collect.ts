@@ -8,6 +8,7 @@
  * 작업 **안쪽** 일이라 밖에서는 1이다.
  */
 import { currentCredential } from '../auth/current-credential'
+import { fillLegacyAccountIds } from '../auth/legacy-account-ids'
 import type { NexonCredential } from '../../types/auth'
 import { fetchAndRecordCharacterList } from '../mvp-grade/character-list'
 import type { EnhancementHistoryRow, EnhancementKind } from '../../nexon/history/client'
@@ -57,17 +58,21 @@ export type HistoryProgress = (done: number, total: number) => void
  * 부를 `(종류, 날짜)` 를 센다. **콜이 한 건도 안 나간다.**
  *
  * 굳은 칸은 뺀다. 그래서 지난 달 두 번째 방문이 0콜이다. 오늘은 굳을 수 없어 언제나 든다.
+ * 조회 기록은 넥슨 계정마다 따로다. 계정 칸이 생기기 전의 기록을 메인 계정으로 채운 뒤에 읽는다.
  *
+ * @param nexonAccountId 부를 자격의 넥슨 계정 id
  * @param todayDateKey KST `YYYY-MM-DD`. 이보다 뒤는 아직 없는 날이라 안 부른다
  */
 export async function planEnhancementHistory(
+  nexonAccountId: string,
   dateKeys: readonly string[],
   todayDateKey: string,
 ): Promise<EnhancementHistoryJob[]> {
   const days = dateKeys.filter((dateKey) => dateKey <= todayDateKey)
   if (days.length === 0) return []
 
-  const checks = await loadEnhancementChecks(days)
+  await fillLegacyAccountIds()
+  const checks = await loadEnhancementChecks(nexonAccountId, days)
   const jobs: EnhancementHistoryJob[] = []
   for (const dateKey of days) {
     for (const kind of kindsOn(dateKey)) {
@@ -105,8 +110,10 @@ export async function measureEnhancementHistory(
   dateKeys: readonly string[],
   now: Date,
 ): Promise<HistoryPlanSize> {
+  const accountId = (await currentCredential())?.accountId ?? null
+  if (accountId === null) return { total: 0, hasPast: false }
   const todayDateKey = getCurrentKstDateKey(now)
-  const jobs = await planEnhancementHistory(dateKeys, todayDateKey)
+  const jobs = await planEnhancementHistory(accountId, dateKeys, todayDateKey)
   return {
     total: jobs.length,
     hasPast: jobs.some((job) => job.dateKey !== todayDateKey),
@@ -179,13 +186,14 @@ export async function collectEnhancementHistory(
   onProgress?: HistoryProgress,
 ): Promise<void> {
   const credential = await currentCredential()
-  if (credential === null) {
+  const accountId = credential?.accountId ?? null
+  if (credential === null || accountId === null) {
     onProgress?.(0, 0)
     return
   }
 
   const todayDateKey = getCurrentKstDateKey(now)
-  const jobs = await planEnhancementHistory(dateKeys, todayDateKey)
+  const jobs = await planEnhancementHistory(accountId, dateKeys, todayDateKey)
 
   // 분모가 여기서 확정된다. 부를 것이 없어도 한 번은 알린다(화면이 바를 안 그리게).
   onProgress?.(0, jobs.length)
@@ -217,7 +225,7 @@ export async function collectEnhancementHistory(
     async (job) => {
       const firstCursor = await collectOne(credential, job, observedLevels)
       const settled = job.dateKey < todayDateKey && eventNames !== null
-      await markEnhancementChecked(job.kind, job.dateKey, firstCursor, settled, checkedAt)
+      await markEnhancementChecked(accountId, job.kind, job.dateKey, firstCursor, settled, checkedAt)
     },
     (done) => onProgress?.(done, jobs.length),
   )

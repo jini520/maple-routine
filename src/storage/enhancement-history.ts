@@ -175,20 +175,21 @@ export async function loadKnownHistoryIds(
 
 /** 키는 `checkKey` 가 만든다. 없는 날짜는 **없는 대로** 둔다. 안 부른 것과 빈 날은 다르다. */
 export async function loadEnhancementChecks(
+  nexonAccountId: string,
   dateKeys: readonly string[],
 ): Promise<Map<string, EnhancementCheck>> {
   if (dateKeys.length === 0) return new Map()
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT kind, date_key, next_cursor, settled
+    `SELECT enhancement_type, history_date, next_cursor, settled
        FROM enhancement_history_checks
-      WHERE date_key IN (${dateKeys.map(() => '?').join(', ')})`,
-    [...dateKeys],
+      WHERE nexon_account_id = ? AND history_date IN (${dateKeys.map(() => '?').join(', ')})`,
+    [nexonAccountId, ...dateKeys],
   )
 
   const checks = new Map<string, EnhancementCheck>()
   for (const row of values ?? []) {
-    checks.set(checkKey(row.kind as EnhancementKind, String(row.date_key)), {
+    checks.set(checkKey(row.enhancement_type as EnhancementKind, String(row.history_date)), {
       nextCursor: typeof row.next_cursor === 'string' ? row.next_cursor : null,
       settled: row.settled === 1,
     })
@@ -199,10 +200,12 @@ export async function loadEnhancementChecks(
 /**
  * 한 칸을 적는다.
  *
+ * @param nexonAccountId 조회한 자격의 넥슨 계정 id
  * @param settled 참이면 다시 안 부른다. **월드를 모르는 회차는 거짓으로 둔다** - 그 날짜의 지출을
  *   가릴 수가 없어 다음 회차가 다시 와야 한다.
  */
 export async function markEnhancementChecked(
+  nexonAccountId: string,
   kind: EnhancementKind,
   dateKey: string,
   nextCursor: string | null,
@@ -211,12 +214,12 @@ export async function markEnhancementChecked(
 ): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(
-    `INSERT INTO enhancement_history_checks (kind, date_key, next_cursor, settled, checked_at)
-     VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(kind, date_key) DO UPDATE SET
+    `INSERT INTO enhancement_history_checks (nexon_account_id, enhancement_type, history_date, next_cursor, settled, checked_at)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(nexon_account_id, enhancement_type, history_date) DO UPDATE SET
        next_cursor = excluded.next_cursor,
        settled = excluded.settled,
        checked_at = excluded.checked_at`,
-    [kind, dateKey, nextCursor, settled ? 1 : 0, checkedAt],
+    [nexonAccountId, kind, dateKey, nextCursor, settled ? 1 : 0, checkedAt],
   )
 }
