@@ -58,7 +58,7 @@ export async function ensurePartyId(
 export async function ensurePeriodId(db: SqliteDbConnection, key: BossPeriodKey, at: string): Promise<string> {
   const partyId = await ensurePartyId(db, key.ocid, key.bossKey, key.difficulty, at)
   await db.run(
-    `INSERT INTO boss_party_periods (id, party_id, period_key, cycle, status, created_at, updated_at)
+    `INSERT INTO boss_party_periods (id, party_id, period_key, cycle, clear_status, created_at, updated_at)
      VALUES (${NEW_UUID_SQL}, ?, ?, ?, 'open', ?, ?)
      ON CONFLICT (party_id, period_key) DO NOTHING`,
     [partyId, key.periodKey, cycleOfPeriodKey(key.periodKey), at, at],
@@ -76,7 +76,7 @@ export async function ensurePeriodId(db: SqliteDbConnection, key: BossPeriodKey,
 export async function deletePeriodIfEmpty(db: SqliteDbConnection, periodId: string): Promise<void> {
   await db.run(
     `DELETE FROM boss_party_periods
-      WHERE id = ? AND status = 'open' AND split_mode IS NULL
+      WHERE id = ? AND clear_status = 'open' AND split_mode IS NULL
         AND NOT EXISTS (SELECT 1 FROM boss_drops WHERE period_id = boss_party_periods.id)`,
     [periodId],
   )

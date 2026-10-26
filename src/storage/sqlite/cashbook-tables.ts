@@ -9,6 +9,8 @@ export const CASHBOOK_ENTRIES_BODY = `(
     id TEXT PRIMARY KEY,
     -- NULL 은 계정 단위 기록이다.
     ocid TEXT,
+    -- 계정 단위 기록이 어느 넥슨 계정의 것인지. 캐릭터가 있는 기록은 ocid 로 계정을 찾아 NULL 이다.
+    nexon_account_id TEXT,
     entry_type TEXT NOT NULL CHECK (entry_type IN ('income', 'spend')),
     -- 갈래 key. 기타가 수입 · 지출 양쪽에 있어 entry_type 과 함께 읽는다.
     category_key TEXT NOT NULL,
@@ -61,7 +63,7 @@ export const CASHBOOK_ENTRY_HUNT_INPUTS_BODY = `(
     boosts TEXT,
     fragments INTEGER,
     -- NULL 은 가격을 안 적은 조각이라 캐릭터 보관에 든다. 0 은 0 메소에 판 것이다.
-    fragment_price INTEGER,
+    fragment_price_meso INTEGER,
     meso_rate INTEGER,
     -- NULL 이 아니면 직접 입력 사냥의 친 메소다.
     typed_meso INTEGER,

@@ -24,7 +24,7 @@ import { deriveEntryStage } from '../stage'
 
 beforeEach(() => {
   // 기본값 = 앱이 열리는 상태
-  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key-1' }] })
+  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
   getTrackingModeMock.mockResolvedValue('auto')
   getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
   setTrackingModeMock.mockResolvedValue(undefined)

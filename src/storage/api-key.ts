@@ -4,27 +4,52 @@
  * PreferencesPort는 평문 저장이며 Keychain/Keystore 수준 암호화를 보장하지 않는다. 강화된 보안
  * 저장 도입은 이후 별도 task로 미룬다.
  */
+import { randomUuid } from '../native/uuid'
 import { preferences } from './ports'
-import type { NexonApiKeyMethod, NexonAuthConfig } from '../types'
+import type { NexonApiKeyMethod, NexonAuthConfig, NexonLoginMethod } from '../types'
 import { STORAGE_KEYS } from './keys'
 
 interface StoredShape {
-  login: NexonAuthConfig['login']
+  login: NexonLoginMethod | null
   apiKeys: NexonApiKeyMethod[]
 }
 
-/** 저장된 로그인 칸. 세션만 든다. 옛 설치본이 적어 둔 액세스 토큰 칸은 읽으면서 버린다. */
-function loginOf(value: unknown): NexonAuthConfig['login'] {
-  if (typeof value !== 'object' || value === null) return null
-  const one = value as Record<string, unknown>
-  if (one.kind !== 'login' || typeof one.session !== 'string' || one.session === '') return null
-  return { kind: 'login', session: one.session }
+/** 읽은 칸과, 옛 모양이라 다시 적어야 하는지. */
+interface Parsed {
+  shape: StoredShape
+  outdated: boolean
 }
 
-function isApiKeyMethod(value: unknown): value is NexonApiKeyMethod {
-  if (typeof value !== 'object' || value === null) return false
-  const one = value as Record<string, unknown>
-  return one.kind === 'apiKey' && typeof one.value === 'string' && typeof one.label === 'string'
+function recordOf(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null
+}
+
+/** 옛 칸은 `kind` 와 `apiKey` 이고 id 가 없다. 그런 칸은 다시 적어야 한다. */
+function isCurrent(one: Record<string, unknown>, type: 'login' | 'key'): boolean {
+  return one.type === type && typeof one.id === 'string' && one.id !== ''
+}
+
+/** 저장된 로그인 칸. 세션만 든다. 옛 설치본이 적어 둔 액세스 토큰 칸은 읽으면서 버린다. */
+function loginOf(value: unknown): { login: NexonLoginMethod | null; outdated: boolean } {
+  const one = recordOf(value)
+  if (one === null || (one.type !== 'login' && one.kind !== 'login')) return { login: null, outdated: false }
+  if (typeof one.session !== 'string' || one.session === '') return { login: null, outdated: false }
+  const current = isCurrent(one, 'login')
+  return {
+    login: { type: 'login', id: current ? (one.id as string) : randomUuid(), session: one.session },
+    outdated: !current,
+  }
+}
+
+function keyOf(value: unknown): { key: NexonApiKeyMethod; outdated: boolean } | null {
+  const one = recordOf(value)
+  if (one === null || (one.type !== 'key' && one.kind !== 'apiKey')) return null
+  if (typeof one.value !== 'string' || typeof one.label !== 'string') return null
+  const current = isCurrent(one, 'key')
+  return {
+    key: { type: 'key', id: current ? (one.id as string) : randomUuid(), label: one.label, value: one.value },
+    outdated: !current,
+  }
 }
 
 /**
@@ -32,16 +57,16 @@ function isApiKeyMethod(value: unknown): value is NexonApiKeyMethod {
  *
  * 저장이 중간에 끊겼거나 손으로 고쳐졌을 수 있다. 그때 던지면 키를 통째로 잃는다.
  */
-function parse(raw: string | null): StoredShape | null {
+function parse(raw: string | null): Parsed | null {
   if (raw === null) return null
   try {
-    const value: unknown = JSON.parse(raw)
-    if (typeof value !== 'object' || value === null) return null
-    const shape = value as Record<string, unknown>
-    if (!Array.isArray(shape.apiKeys)) return null
+    const shape = recordOf(JSON.parse(raw))
+    if (shape === null || !Array.isArray(shape.apiKeys)) return null
+    const login = loginOf(shape.login)
+    const keys = shape.apiKeys.map(keyOf).filter((one) => one !== null)
     return {
-      login: loginOf(shape.login),
-      apiKeys: shape.apiKeys.filter(isApiKeyMethod),
+      shape: { login: login.login, apiKeys: keys.map((one) => one.key) },
+      outdated: login.outdated || keys.some((one) => one.outdated),
     }
   } catch {
     return null
@@ -53,16 +78,41 @@ function parse(raw: string | null): StoredShape | null {
  *
  * 구버전으로 되돌아가도 키를 잃지 않아야 한다. 치우는 것은 연결 해제 한 자리뿐이다.
  */
-async function liftLegacy(): Promise<StoredShape | null> {
+async function liftLegacy(): Promise<Parsed | null> {
   const legacy = await preferences.get(STORAGE_KEYS.apiKey)
   if (legacy === null || legacy === '') return null
   // 이름을 짓지 않는다. 우리가 지어낸 것이 사용자가 붙인 것처럼 보이면 안 된다.
-  return { login: null, apiKeys: [{ kind: 'apiKey', label: '', value: legacy }] }
+  return { shape: { login: null, apiKeys: [{ type: 'key', id: randomUuid(), label: '', value: legacy }] }, outdated: true }
+}
+
+async function readStored(): Promise<Parsed | null> {
+  return parse(await preferences.get(STORAGE_KEYS.authMethods)) ?? (await liftLegacy())
+}
+
+/** 옛 칸을 옮기는 중인 읽기. 동시에 읽은 둘이 서로 다른 id 를 지어 적으면 계정 id 가 갈린다. */
+let upgrading: Promise<StoredShape | null> | null = null
+
+/**
+ * 옛 칸이면 id 를 붙이고 `type` 으로 옮겨 한 번 다시 적는다. id 는 넥슨 계정을 가리키므로 읽을 때마다 바뀌면 안 된다.
+ */
+async function loadShape(): Promise<StoredShape | null> {
+  const parsed = await readStored()
+  if (parsed === null) return null
+  if (!parsed.outdated) return parsed.shape
+  upgrading ??= (async () => {
+    const again = await readStored()
+    if (again === null) return null
+    if (again.outdated) await write(again.shape)
+    return again.shape
+  })().finally(() => {
+    upgrading = null
+  })
+  return upgrading
 }
 
 /** 수단이 하나도 없으면 `null`. 그때 앱은 로그인 화면을 세운다. */
 export async function getAuthConfig(): Promise<NexonAuthConfig | null> {
-  const stored = parse(await preferences.get(STORAGE_KEYS.authMethods)) ?? (await liftLegacy())
+  const stored = await loadShape()
   if (stored === null) return null
   if (stored.login === null && stored.apiKeys.length === 0) return null
   return stored
@@ -78,12 +128,13 @@ async function write(shape: StoredShape): Promise<void> {
  * 키 재입력 경로에서 같은 키를 다시 넣는 일이 흔하다. 늘어나면 목록이 지저분해진다.
  *
  * @param label 목록에서 구분하는 이름. 안 주면 빈 문자열이고 우리가 짓지 않는다
+ * @param accountId 다시 받은 키가 이을 옛 넥슨 계정 id. 안 주면 새 계정이다
  */
-export async function setApiKey(apiKey: string, label = ''): Promise<void> {
+export async function setApiKey(apiKey: string, label = '', accountId?: string): Promise<void> {
   const current = (await getAuthConfig()) ?? { login: null, apiKeys: [] }
   const next = current.apiKeys.some((one) => one.value === apiKey)
     ? current.apiKeys.map((one) => (one.value === apiKey ? { ...one, label } : one))
-    : [...current.apiKeys, { kind: 'apiKey' as const, label, value: apiKey }]
+    : [...current.apiKeys, { type: 'key' as const, id: accountId ?? randomUuid(), label, value: apiKey }]
 
   await write({ login: current.login, apiKeys: next })
 }
@@ -96,7 +147,10 @@ export async function setApiKey(apiKey: string, label = ''): Promise<void> {
  */
 export async function setNexonLogin(login: { session: string }): Promise<void> {
   const current = (await getAuthConfig()) ?? { login: null, apiKeys: [] }
-  await write({ login: { kind: 'login', session: login.session }, apiKeys: current.apiKeys })
+  await write({
+    login: { type: 'login', id: current.login?.id ?? randomUuid(), session: login.session },
+    apiKeys: current.apiKeys,
+  })
 }
 
 /**

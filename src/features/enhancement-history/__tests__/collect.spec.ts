@@ -1,6 +1,7 @@
 import { collectEnhancementHistory, measureEnhancementHistory, planEnhancementHistory } from '../collect'
 
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
+jest.mock('../../auth/legacy-account-ids', () => ({ fillLegacyAccountIds: jest.fn() }))
 jest.mock('../../../nexon/history/client', () => ({ fetchEnhancementHistory: jest.fn() }))
 jest.mock('../../../nexon/character', () => ({ fetchCharacterList: jest.fn() }))
 jest.mock('../../../storage/event-world-names', () => ({ saveEventWorldNames: jest.fn() }))
@@ -18,6 +19,7 @@ const { fetchEnhancementHistory } = jest.requireMock('../../../nexon/history/cli
 const { fetchCharacterList } = jest.requireMock('../../../nexon/character') as Record<string, jest.Mock>
 const store = jest.requireMock('../../../storage/enhancement-history') as Record<string, jest.Mock>
 const { saveEventWorldNames } = jest.requireMock('../../../storage/event-world-names') as Record<string, jest.Mock>
+const { fillLegacyAccountIds } = jest.requireMock('../../auth/legacy-account-ids') as Record<string, jest.Mock>
 
 const NOW = new Date('2026-09-06T12:00:00+09:00')
 const KINDS = ['cube', 'starforce', 'potential']
@@ -37,7 +39,7 @@ const page = (ids: string[], nextCursor: string | null = null) => ({
 })
 
 beforeEach(() => {
-  getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'k' }] })
+  getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'k' }] })
   fetchCharacterList.mockReset().mockResolvedValue([
     { accountId: 'a', characters: [{ ocid: '1', name: '머리맨들맨둘', world: '스페셜', worldKey: 'special', jobClass: '', level: 1 }] },
   ])
@@ -52,8 +54,25 @@ beforeEach(() => {
 
 describe('계획', () => {
   // 분모가 여기서 확정된다. 콜은 한 건도 안 나간다.
+  // 채우기 전에 읽으면 옛 조회 기록이 안 보여 이미 받은 날짜를 모두 다시 받는다.
+  it('옛 조회 기록을 메인 계정으로 채운 뒤에 그 계정의 기록을 읽는다', async () => {
+    const order: string[] = []
+    fillLegacyAccountIds.mockImplementation(async () => {
+      order.push('fill')
+    })
+    store.loadEnhancementChecks.mockImplementation(async () => {
+      order.push('load')
+      return new Map()
+    })
+
+    await planEnhancementHistory('account-key', ['2026-09-05'], '2026-09-06')
+
+    expect(order).toEqual(['fill', 'load'])
+    expect(store.loadEnhancementChecks).toHaveBeenCalledWith('account-key', ['2026-09-05'])
+  })
+
   it('날짜마다 세 종류를 센다', async () => {
-    expect(await planEnhancementHistory(['2026-09-04', '2026-09-05'], '2026-09-06')).toHaveLength(6)
+    expect(await planEnhancementHistory('account-key', ['2026-09-04', '2026-09-05'], '2026-09-06')).toHaveLength(6)
     expect(fetchEnhancementHistory).not.toHaveBeenCalled()
   })
 
@@ -62,7 +81,7 @@ describe('계획', () => {
       new Map(KINDS.map((kind) => [`${kind}|2026-09-04`, { nextCursor: null, settled: true }])),
     )
 
-    expect(await planEnhancementHistory(['2026-09-04', '2026-09-05'], '2026-09-06')).toHaveLength(3)
+    expect(await planEnhancementHistory('account-key', ['2026-09-04', '2026-09-05'], '2026-09-06')).toHaveLength(3)
   })
 
   // 오늘은 굳을 수 없다. 원장에 settled 가 서 있어도 다시 센다.
@@ -71,16 +90,16 @@ describe('계획', () => {
       new Map(KINDS.map((kind) => [`${kind}|2026-09-06`, { nextCursor: 'c', settled: true }])),
     )
 
-    expect(await planEnhancementHistory(['2026-09-06'], '2026-09-06')).toHaveLength(3)
+    expect(await planEnhancementHistory('account-key', ['2026-09-06'], '2026-09-06')).toHaveLength(3)
   })
 
   it('내일 이후는 안 센다', async () => {
-    expect(await planEnhancementHistory(['2026-09-07'], '2026-09-06')).toHaveLength(0)
+    expect(await planEnhancementHistory('account-key', ['2026-09-07'], '2026-09-06')).toHaveLength(0)
   })
 
   // 소울 잠재능력은 2026-09-17 패치로 생겼다. 그 전 날짜는 부를 것이 없다.
   it('소울은 2026-09-17 부터만 센다', async () => {
-    const jobs = await planEnhancementHistory(['2026-09-16', '2026-09-17'], '2026-09-19')
+    const jobs = await planEnhancementHistory('account-key', ['2026-09-16', '2026-09-17'], '2026-09-19')
 
     expect(jobs.filter((job) => job.kind === 'soul_potential')).toEqual([
       { kind: 'soul_potential', dateKey: '2026-09-17' },
@@ -296,7 +315,7 @@ describe('수집', () => {
     await collectEnhancementHistory(['2026-09-05'], NOW)
 
     expect(store.markEnhancementChecked).toHaveBeenCalledWith(
-      'cube', '2026-09-05', null, true, expect.any(String),
+      'account-key', 'cube', '2026-09-05', null, true, expect.any(String),
     )
   })
 
@@ -304,7 +323,7 @@ describe('수집', () => {
     await collectEnhancementHistory(['2026-09-06'], NOW)
 
     expect(store.markEnhancementChecked).toHaveBeenCalledWith(
-      'cube', '2026-09-06', null, false, expect.any(String),
+      'account-key', 'cube', '2026-09-06', null, false, expect.any(String),
     )
   })
 
@@ -321,7 +340,7 @@ describe('수집', () => {
     await collectEnhancementHistory(['2026-09-05'], NOW)
 
     expect(store.markEnhancementChecked).toHaveBeenCalledWith(
-      'cube', '2026-09-05', null, false, expect.any(String),
+      'account-key', 'cube', '2026-09-05', null, false, expect.any(String),
     )
   })
 

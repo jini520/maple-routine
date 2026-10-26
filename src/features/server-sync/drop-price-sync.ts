@@ -17,8 +17,8 @@ import type { DropPricePayload, DropRecordStatus } from '../../types/drop-price'
 import { serverIdentityHeaders } from '../auth/server-identity'
 import type { SyncHandler } from './sweep'
 
-/** 대기 표의 `kind` 칸에 들어가는 값. */
-export const DROP_PRICE_KIND = 'drop-price'
+/** 대기 표의 `record_type` 칸에 들어가는 값. */
+export const DROP_PRICE_RECORD_TYPE = 'drop-price'
 
 /**
  * **이 기간부터 보낸다.** 기능이 나간 뒤 시작된 기간만 보내기로 했다.
@@ -133,12 +133,12 @@ async function sendOrQueue(
 
   // 밝힐 수단이 없다. 키를 지웠거나 로그인 전이라 지금은 못 보내고, 생기면 고리가 집어 간다.
   if (headers === null) {
-    await enqueueServerSync(DROP_PRICE_KIND, dropRecordId, now.toISOString())
+    await enqueueServerSync(DROP_PRICE_RECORD_TYPE, dropRecordId, now.toISOString())
     return
   }
 
   const result = await send(headers)
   if (result.outcome !== 'sent') {
-    await enqueueServerSync(DROP_PRICE_KIND, dropRecordId, now.toISOString())
+    await enqueueServerSync(DROP_PRICE_RECORD_TYPE, dropRecordId, now.toISOString())
   }
 }

@@ -7,7 +7,7 @@ import { fetchAndRecordCharacterList } from '../character-list'
 import type { NexonCredential } from '../../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
-const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
+const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accountId: 'account-key' })
 
 const fetchMock = fetchCharacterList as jest.Mock
 const recordMock = recordCharacterAccounts as jest.Mock
@@ -22,13 +22,13 @@ beforeEach(() => {
 })
 
 describe('fetchAndRecordCharacterList', () => {
-  it('받은 목록을 그대로 돌려주고 소속을 KST 오늘 날짜로 적는다', async () => {
+  it('받은 목록을 그대로 돌려주고 소속을 KST 오늘 날짜와 그 자격의 넥슨 계정으로 적는다', async () => {
     // 2026-09-22 23:30 UTC 는 KST 로 9월 23일이다
     const accounts = await fetchAndRecordCharacterList(자격('key'), new Date('2026-09-22T23:30:00Z'))
 
     expect(accounts).toBe(ACCOUNTS)
     expect(fetchMock).toHaveBeenCalledWith(자격('key'), expect.any(Function))
-    expect(recordMock).toHaveBeenCalledWith(ACCOUNTS, '2026-09-23')
+    expect(recordMock).toHaveBeenCalledWith(ACCOUNTS, '2026-09-23', 'account-key')
   })
 
   it('소속을 못 적어도 목록은 받는다', async () => {

@@ -12,6 +12,6 @@ import type { MapleAccount } from '../../types'
 export async function fetchAndRecordCharacterList(credential: NexonCredential, now: Date = new Date()): Promise<MapleAccount[]> {
   const accounts = await fetchCharacterList(credential, worldKeyOfApiName)
   // 소속 기록이 실패해도 목록을 받은 자리는 그대로 간다.
-  void recordCharacterAccounts(accounts, getCurrentKstDateKey(now)).catch(() => undefined)
+  void recordCharacterAccounts(accounts, getCurrentKstDateKey(now), credential.accountId).catch(() => undefined)
   return accounts
 }

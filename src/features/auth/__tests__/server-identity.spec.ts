@@ -7,13 +7,13 @@ jest.mock('../../../lib/crypto/api-key-hash', () => ({ apiKeyHashHex: (key: stri
 const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
 it('로그인이 있으면 Authorization: Bearer 하나만 싣는다', async () => {
-  getAuthConfig.mockResolvedValue({ login: { kind: 'login', session: 'S' }, apiKeys: [{ kind: 'apiKey', label: '', value: '키' }] })
+  getAuthConfig.mockResolvedValue({ login: { type: 'login', id: 'account-login', session: 'S' }, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '키' }] })
 
   await expect(serverIdentityHeaders()).resolves.toEqual({ Authorization: 'Bearer S' })
 })
 
 it('키만 있으면 첫 키의 해시를 싣는다', async () => {
-  getAuthConfig.mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: '키1' }, { kind: 'apiKey', label: '', value: '키2' }] })
+  getAuthConfig.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '키1' }, { type: 'key', id: 'account-key', label: '', value: '키2' }] })
 
   await expect(serverIdentityHeaders()).resolves.toEqual({ 'x-api-key-hash': '해시(키1)' })
 })

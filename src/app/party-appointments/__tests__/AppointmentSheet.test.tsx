@@ -23,6 +23,7 @@ import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { usePartyAlarmSettingsStore } from '../../../features/party-appointments/alarm-settings'
 import { usePartyAppointmentsStore } from '../../../features/party-appointments/store'
 import { __resetNativePortsForTest, setNotificationsPort } from '../../../native/ports'
+import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { setNotificationPermissionAsked } from '../../../storage/notice-settings'
 import { occurrencesInWeek } from '../../../features/party-appointments/occurrences'
@@ -52,7 +53,7 @@ describe('추가 시트', () => {
 
 describe('수정 시트', () => {
   const weekly: PartyAppointment = {
-    id: 'a1',
+    id: '3f2b6c1e-8d4a-4c2f-9b1e-5a7d0c9e2f41',
     bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
     members: [],
     timeKst: '21:00',
@@ -160,7 +161,10 @@ describe('알림 체크 상자를 켤 때', () => {
     usePartyAlarmSettingsStore.setState({ enabled: true, loaded: true })
   })
 
-  afterEach(__resetNativePortsForTest)
+  afterEach(() => {
+    __resetNativePortsForTest()
+    installNoopNativePorts()
+  })
 
   async function 켜기(view: Awaited<ReturnType<typeof 그리기>>): Promise<void> {
     await act(async () => {
@@ -209,7 +213,7 @@ describe('알림 체크 상자를 켤 때', () => {
   // 저장할 때 같은 차례를 저장할 값으로 한 번 더 본다(정정 22).
   describe('저장할 때', () => {
     const weekly: PartyAppointment = {
-      id: 'a1',
+      id: '3f2b6c1e-8d4a-4c2f-9b1e-5a7d0c9e2f41',
       bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
       members: [],
       timeKst: '21:00',
@@ -280,7 +284,7 @@ describe('알림 체크 상자를 켤 때', () => {
 
 describe('메모', () => {
   const once: PartyAppointment = {
-    id: 'm1',
+    id: '7a1d2e3f-4b5c-4d6e-8f70-1a2b3c4d5e6f',
     bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
     members: [],
     timeKst: '21:00',

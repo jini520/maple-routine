@@ -7,12 +7,14 @@
  */
 export type NexonCredential =
   | {
-      kind: 'apiKey'
+      type: 'key'
       /** `x-nxopen-api-key` 헤더로 넥슨에 그대로 실린다. */
       value: string
+      /** 이 자격의 넥슨 계정 id. 저장 전에 검증하는 키는 아직 계정이 없어 `null` 이다. */
+      accountId: string | null
     }
   | {
-      kind: 'login'
+      type: 'login'
       /**
        * 우리 서버가 발급한 세션. `Authorization: Bearer` 로 **우리 서버**에 간다.
        *
@@ -20,6 +22,7 @@ export type NexonCredential =
        * 이 세션으로 사람을 가려 대신 부른다.
        */
       value: string
+      accountId: string | null
     }
 
 /**
@@ -29,7 +32,9 @@ export type NexonCredential =
  * 않으므로 사용자가 안 붙였으면 빈 문자열이다.
  */
 export interface NexonApiKeyMethod {
-  kind: 'apiKey'
+  type: 'key'
+  /** 넥슨 계정 id(uuid). 키 값이 아니라 이 값이 계정을 가리킨다. 키를 다시 받아도 같은 계정이면 그대로다 */
+  id: string
   label: string
   value: string
 }
@@ -49,7 +54,9 @@ export type Platform = 'ios' | 'android'
  * 앱이 직접 부른다.
  */
 export interface NexonLoginMethod {
-  kind: 'login'
+  type: 'login'
+  /** 넥슨 계정 id(uuid). 다시 로그인해도 그대로다 */
+  id: string
   /** 서버가 발급한 세션. 갱신 토큰 14일이 지나면 서버가 지우고 앱은 401 을 받는다. */
   session: string
 }

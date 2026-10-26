@@ -202,7 +202,7 @@ export function confirmedDropKey(
  * 기록을 기간별로 묶어 최신 기간이 먼저 오게 정렬한 목록.
  *
  * 같은 기간 안의 순서는 입력 순서를 그대로 보존한다. 조회 SQL(`period_key DESC, ocid, boss_key,
- * difficulty, drop_index`)이 정한 순서가 표시 순서이고, `Array.prototype.sort` 는 안정 정렬이라
+ * difficulty, sort_order`)이 정한 순서가 표시 순서이고, `Array.prototype.sort` 는 안정 정렬이라
  * 기간 단위로 재배열해도 그룹 내부가 흐트러지지 않는다.
  */
 export function groupDropRecordsByPeriod(records: DropHistoryRecord[]): DropHistoryPeriodGroup[] {

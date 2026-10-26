@@ -89,7 +89,7 @@ export async function migrateDropsToConfirmedDifficulty(
 }
 
 // rows에 등장하는 periodKey들의 드롭 기록을 dropRowKey → RecordedDrop[]로 묶어 반환한다.
-// getBossDropRecords는 ORDER BY drop_index라 추가 순서가 보존된다.
+// getBossDropRecords는 ORDER BY sort_order라 추가 순서가 보존된다.
 export async function loadDropsByRowKey(
   ocids: string[],
   rows: BossProfitRow[],

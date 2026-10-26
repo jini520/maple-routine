@@ -9,7 +9,7 @@ const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record
 function 설정(login: Record<string, unknown> | null, ...keys: string[]) {
   return {
     login,
-    apiKeys: keys.map((value) => ({ kind: 'apiKey' as const, label: '', value })),
+    apiKeys: keys.map((value) => ({ type: 'key' as const, id: `account-${value}`, label: '', value })),
   }
 }
 
@@ -19,15 +19,15 @@ beforeEach(() => {
 
 describe('로그인이 있으면 세션이다', () => {
   it('값은 서버 세션이고 넥슨 토큰이 아니다', async () => {
-    getAuthConfig.mockResolvedValue(설정({ kind: 'login', session: '세션' }))
+    getAuthConfig.mockResolvedValue(설정({ type: 'login', id: 'account-login', session: '세션' }))
 
-    await expect(currentCredential()).resolves.toEqual({ kind: 'login', value: '세션' })
+    await expect(currentCredential()).resolves.toEqual({ type: 'login', value: '세션', accountId: 'account-login' })
   })
 
   it('키가 함께 있어도 로그인이 이긴다', async () => {
-    getAuthConfig.mockResolvedValue(설정({ kind: 'login', session: '세션' }, '키'))
+    getAuthConfig.mockResolvedValue(설정({ type: 'login', id: 'account-login', session: '세션' }, '키'))
 
-    await expect(currentCredential()).resolves.toEqual({ kind: 'login', value: '세션' })
+    await expect(currentCredential()).resolves.toEqual({ type: 'login', value: '세션', accountId: 'account-login' })
   })
 })
 
@@ -35,7 +35,7 @@ describe('로그인이 없으면 키다', () => {
   it('키만 있으면 첫 키다', async () => {
     getAuthConfig.mockResolvedValue(설정(null, '키1', '키2'))
 
-    await expect(currentCredential()).resolves.toEqual({ kind: 'apiKey', value: '키1' })
+    await expect(currentCredential()).resolves.toEqual({ type: 'key', value: '키1', accountId: 'account-키1' })
   })
 
   it('수단이 없으면 null 이다', async () => {

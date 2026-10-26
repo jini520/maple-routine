@@ -5,7 +5,7 @@
  * 나가는 것**(기록 안함 · 미입력은 상태를 달아 올린다), 그리고 **전송 실패가 대기 표에 안 남는 것**이다.
  */
 import {
-  DROP_PRICE_KIND,
+  DROP_PRICE_RECORD_TYPE,
   dropPriceHandler,
   dropPricePayloadOf,
   reportDropPrice,
@@ -182,7 +182,7 @@ describe('저장 자리의 전송', () => {
     sendDropPrice.mockResolvedValue({ outcome: 'no-response' })
     await reportDropPrice(ID, NOW)
 
-    expect(enqueueServerSync).toHaveBeenCalledWith(DROP_PRICE_KIND, ID, NOW.toISOString())
+    expect(enqueueServerSync).toHaveBeenCalledWith(DROP_PRICE_RECORD_TYPE, ID, NOW.toISOString())
   })
 
   it('서버가 거절해도 대기 표에 쌓는다. 횟수는 고리가 센다', async () => {
@@ -234,7 +234,7 @@ describe('기록이 사라진 자리의 전송', () => {
     deleteDropPrice.mockResolvedValue({ outcome: 'no-response' })
     await reportDropRemoved(ID, '2026-10-15', NOW)
 
-    expect(enqueueServerSync).toHaveBeenCalledWith(DROP_PRICE_KIND, ID, NOW.toISOString())
+    expect(enqueueServerSync).toHaveBeenCalledWith(DROP_PRICE_RECORD_TYPE, ID, NOW.toISOString())
   })
 
   it('밝힐 수단이 없으면 보내지 않고 쌓아만 둔다', async () => {

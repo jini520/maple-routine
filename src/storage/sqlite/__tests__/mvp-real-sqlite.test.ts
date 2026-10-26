@@ -67,9 +67,9 @@ describe('character_accounts', () => {
   ]
 
   it('같은 캐릭터를 다시 보면 처음 본 날과 마지막으로 본 날만 넓힌다', async () => {
-    await recordCharacterAccounts(accounts('루디'), '2026-09-10')
-    await recordCharacterAccounts(accounts('루디'), '2026-09-22')
-    await recordCharacterAccounts(accounts('루디'), '2026-09-15')
+    await recordCharacterAccounts(accounts('루디'), '2026-09-10', null)
+    await recordCharacterAccounts(accounts('루디'), '2026-09-22', null)
+    await recordCharacterAccounts(accounts('루디'), '2026-09-15', null)
 
     expect(await getCharacterAccountSightings()).toEqual([
       { ocid: 'x', name: '루디', accountId: 'A', firstSeenOn: '2026-09-10', lastSeenOn: '2026-09-22' },
@@ -77,8 +77,8 @@ describe('character_accounts', () => {
   })
 
   it('이름을 바꾸면 옛 이름의 줄을 지우지 않고 새 줄을 더한다', async () => {
-    await recordCharacterAccounts(accounts('루디'), '2026-09-10')
-    await recordCharacterAccounts(accounts('루디2'), '2026-09-22')
+    await recordCharacterAccounts(accounts('루디'), '2026-09-10', null)
+    await recordCharacterAccounts(accounts('루디2'), '2026-09-22', null)
 
     const names = (await getCharacterAccountSightings()).map((row) => row.name).sort()
     expect(names).toEqual(['루디', '루디2'])

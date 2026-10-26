@@ -8,25 +8,25 @@ function 설정(login: string | null, ...keys: string[]): NexonAuthConfig {
     login:
       login === null
         ? null
-        : { kind: 'login', session: login },
-    apiKeys: keys.map((value) => ({ kind: 'apiKey' as const, label: '', value })),
+        : { type: 'login', id: 'account-login', session: login },
+    apiKeys: keys.map((value) => ({ type: 'key' as const, id: 'account-key', label: '', value })),
   }
 }
 
 describe('credentialOf', () => {
   it('키만 있으면 키다', () => {
-    expect(credentialOf(설정(null, '키-가'))).toEqual({ kind: 'apiKey', value: '키-가' })
+    expect(credentialOf(설정(null, '키-가'))).toEqual({ type: 'key', value: '키-가', accountId: 'account-key' })
   })
 
   it('로그인만 있으면 서버 세션이다', () => {
     // 종전에는 여기서 null 을 돌려줬다. 그래서 키를 거둔 사용자의 조회가 전부 죽었다.
-    expect(credentialOf(설정('액세스'))).toEqual({ kind: 'login', value: '액세스' })
+    expect(credentialOf(설정('액세스'))).toEqual({ type: 'login', value: '액세스', accountId: 'account-login' })
   })
 
   it('둘 다 있으면 로그인이 이긴다', () => {
     // 로그인을 붙이면 같은 계정의 키는 거둬진다. 남아 있는 키는 다른 넥슨 계정의 것이고,
     // 그것을 어느 메이플 ID 에 쓸지는 아직 아무도 안 정한다(열린 질문).
-    expect(credentialOf(설정('액세스', '키-가'))).toEqual({ kind: 'login', value: '액세스' })
+    expect(credentialOf(설정('액세스', '키-가'))).toEqual({ type: 'login', value: '액세스', accountId: 'account-login' })
   })
 
   it('수단이 없으면 null 이다', () => {
@@ -35,7 +35,7 @@ describe('credentialOf', () => {
   })
 
   it('키가 여럿이면 첫 키다', () => {
-    expect(credentialOf(설정(null, '키-가', '키-나'))).toEqual({ kind: 'apiKey', value: '키-가' })
+    expect(credentialOf(설정(null, '키-가', '키-나'))).toEqual({ type: 'key', value: '키-가', accountId: 'account-key' })
   })
 })
 
@@ -45,13 +45,13 @@ describe('apiKeyValueOf', () => {
   })
 
   it('로그인이면 없다. 지울 키가 없다', () => {
-    expect(apiKeyValueOf({ kind: 'login', value: '액세스' })).toBeUndefined()
+    expect(apiKeyValueOf({ type: 'login', value: '액세스', accountId: null })).toBeUndefined()
   })
 })
 
 describe('loginCredentialOf', () => {
   it('로그인이 있으면 액세스 토큰이다', () => {
-    expect(loginCredentialOf(설정('액세스', '키-가'))).toEqual({ kind: 'login', value: '액세스' })
+    expect(loginCredentialOf(설정('액세스', '키-가'))).toEqual({ type: 'login', value: '액세스', accountId: 'account-login' })
   })
 
   it('없으면 null 이다', () => {

@@ -49,7 +49,7 @@ const { refreshSettlement: refreshSettlementMock } = jest.requireMock('../../set
 
 
 beforeEach(() => {
-  getAuthConfigMock.mockReset().mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'key' }] })
+  getAuthConfigMock.mockReset().mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key' }] })
   getUndatedMock.mockReset().mockResolvedValue([])
   setDefeatedOnMock.mockReset().mockResolvedValue(undefined)
   getLedgerMock.mockReset().mockResolvedValue({ unavailable: false, dates: {} })

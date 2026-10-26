@@ -1,7 +1,7 @@
 /**
  * **만드는 쪽과 레지스트리가 같은 집합인가.**
  *
- * 종류를 레지스트리에 안 더하면 대기 표에 줄은 쌓이고 조용히 안 나간다. 고리가 모르는 `kind` 를
+ * 종류를 레지스트리에 안 더하면 대기 표에 줄은 쌓이고 조용히 안 나간다. 고리가 모르는 `record_type` 를
  * 버리게 해 두었지만, 그러면 **버리는 것이 정상 동작처럼 보여** 빠뜨린 것을 알아낼 길이 없다.
  * 그래서 줄을 만드는 자리가 쓰는 이름이 전부 이 표에 있는지 여기서 본다.
  */
@@ -9,7 +9,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { SYNC_HANDLERS } from '../registry'
-import { DROP_PRICE_KIND } from '../drop-price-sync'
+import { DROP_PRICE_RECORD_TYPE } from '../drop-price-sync'
 
 const SYNC_DIR = join(__dirname, '..')
 
@@ -18,7 +18,7 @@ describe('전송 종류 레지스트리', () => {
     // 상수 이름으로 넘기는 것이 규약이다. 문자열을 손으로 적으면 오타가 **안 나감** 으로 조용히
     // 실패하고, 그 오타는 타입 검사에 안 걸린다.
     const kinds = new Set(Object.keys(SYNC_HANDLERS))
-    const constants = new Map<string, string>([['DROP_PRICE_KIND', DROP_PRICE_KIND]])
+    const constants = new Map<string, string>([['DROP_PRICE_RECORD_TYPE', DROP_PRICE_RECORD_TYPE]])
 
     const callers: { file: string; argument: string }[] = []
     for (const name of readdirSync(SYNC_DIR)) {

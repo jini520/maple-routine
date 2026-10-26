@@ -35,16 +35,16 @@ export interface BossPartyPeriodOverride extends BossPartyShareColumns {
 /** 처치한 기간('cleared')은 건드리지 않는다. 처치 기록의 값이 그 기간의 값이다. */
 const UPSERT_SQL = `
   INSERT INTO boss_party_periods
-    (id, party_id, period_key, cycle, status, ${SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
+    (id, party_id, period_key, cycle, clear_status, ${SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
   VALUES (${NEW_UUID_SQL}, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT (party_id, period_key) DO UPDATE SET
     ${SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(',\n    ')},
     updated_at = excluded.updated_at
-  WHERE boss_party_periods.status = 'open'
+  WHERE boss_party_periods.clear_status = 'open'
 `
 
 /** 그 기간 값인 행만 고르는 조건. */
-const HAS_OVERRIDE = `pe.status = 'open' AND pe.split_mode IS NOT NULL`
+const HAS_OVERRIDE = `pe.clear_status = 'open' AND pe.split_mode IS NOT NULL`
 
 const OVERRIDE_SELECT = `
   SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.period_key, pe.party_size, pe.my_share, pe.shares_total,

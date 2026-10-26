@@ -7,6 +7,7 @@ import { loadMesoUnits } from '../features/input-card/meso-unit'
 import { useDataFreshness } from '../features/refresh/freshness'
 import { useNoticeStore } from '../features/notice/store'
 import { requestNotificationReconcile } from '../features/local-notifications/run'
+import { fillLegacyAccountIds } from '../features/auth/legacy-account-ids'
 import { runServerSync } from '../features/server-sync/run'
 import { useAppEntryStore } from '../features/app-entry/store'
 import { useAuthStore } from '../features/auth/store'
@@ -192,6 +193,12 @@ export function AppShell(): React.JSX.Element {
   useEffect(() => {
     if (!isReady) return
     void runServerSync()
+  }, [isReady])
+
+  // 계정 칸이 생기기 전의 행을 메인 넥슨 계정으로 채운다. 계정이 서는 `isReady` 뒤에 돈다.
+  useEffect(() => {
+    if (!isReady) return
+    void fillLegacyAccountIds()
   }, [isReady])
 
   // 지난 실행의 캐시 삭제가 실패했으면 알린다. 삭제 뒤 앱을 다시 띄우므로 그 자리에서는 못 알렸다.

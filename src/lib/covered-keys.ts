@@ -24,14 +24,14 @@ function ocidsOf(source: CredentialAccounts): Set<string> {
  * 목록이다. 빈 집합을 **전부 덮는다** 로 읽으면 조회가 실패한 회차에 멀쩡한 키가 사라진다.
  */
 export function apiKeysCoveredByLogin(sources: readonly CredentialAccounts[]): string[] {
-  const login = sources.find((one) => one.credential.kind === 'login')
+  const login = sources.find((one) => one.credential.type === 'login')
   if (login === undefined) return []
 
   const loginOcids = ocidsOf(login)
   if (loginOcids.size === 0) return []
 
   return sources
-    .filter((one) => one.credential.kind === 'apiKey')
+    .filter((one) => one.credential.type === 'key')
     .filter((one) => {
       const keyOcids = ocidsOf(one)
       if (keyOcids.size === 0) return false

@@ -344,7 +344,7 @@ export function planConfirmedDifficultyDropMigration(
     .map(toRecordedDrop)
   const seenTiles = new Set(existing.map(dropTileIdentity))
 
-  // SQLite는 `ORDER BY drop_index` 만 보장하므로 난이도가 섞이면 순서가 미정이다. 정규 난이도
+  // SQLite는 `ORDER BY sort_order` 만 보장하므로 난이도가 섞이면 순서가 미정이다. 정규 난이도
   // 순서로 정렬해 이관 결과가 실행마다 같게 한다. 겹치는 타일에서 어느 쪽이 남는지도 이 순서가 정한다.
   const migrated = pruneUnobtainableDrops(
     boss,

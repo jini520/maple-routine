@@ -4,7 +4,7 @@ import type { ScheduleNameResolvers } from '../normalize'
 import type { NexonCredential } from '../../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
-const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
+const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accountId: null })
 
 // 전역을 잠시 갈아 끼우는 도우미. 원래 값을 기억해 두고
 // `unstubAllGlobals` 가 되돌린다.

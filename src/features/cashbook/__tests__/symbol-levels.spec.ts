@@ -2,7 +2,7 @@
 import type { NexonCredential } from '../../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
-const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
+const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accountId: 'account-key' })
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../nexon/symbol-levels', () => ({ fetchSymbolEquipment: jest.fn() }))
 
@@ -12,7 +12,7 @@ const { fetchSymbolEquipment } = jest.requireMock('../../../nexon/symbol-levels'
 const { loadSymbolLevels } = require('../symbol-levels') as typeof import('../symbol-levels')
 
 beforeEach(() => {
-  getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'api-key' }] })
+  getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'api-key' }] })
   fetchSymbolEquipment.mockReset().mockResolvedValue([
     { symbol_name: '아케인심볼 : 소멸의 여로', symbol_level: 20 },
     { symbol_name: '어센틱심볼 : 세르니움', symbol_level: 4 },

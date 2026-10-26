@@ -17,6 +17,13 @@ import {
   CASHBOOK_ENTRY_ITEMS_BODY,
 } from './cashbook-tables'
 import { runVersionedMigrations } from './migrations'
+import {
+  CHARACTER_ACCOUNTS_BODY,
+  CHARACTER_PROFILES_BODY,
+  CHARACTER_WORLD_LEAPS_BODY,
+  ENHANCEMENT_HISTORY_CHECKS_BODY,
+  MVP_GRADE_HISTORY_BODY,
+} from './record-key-tables'
 
 const DB_NAME = 'boss_profit'
 
@@ -150,31 +157,13 @@ const TABLE_DEFINITIONS = [
   // (아래 차집합 파생은 새 테이블을 `general` 로 끌어간다).
   {
     name: 'character_profiles',
-    createSql: `CREATE TABLE IF NOT EXISTS character_profiles (
-    ocid TEXT NOT NULL,
-    name TEXT NOT NULL,
-    image_url TEXT NOT NULL,
-    -- 모르면 NULL. 0 이나 빈 문자열로 채우면 '모름' 이 값으로 둔갑한다.
-    world TEXT,
-    -- 월드 key. world 가 NULL 이면 함께 NULL 이다.
-    world_key TEXT,
-    level INTEGER,
-    -- 월드 이전 판정이 읽는다. 이름만으로는 옮겨간 캐릭터를 짚을 수 없어 직업이 유일성을 세운다.
-    job_class TEXT,
-    updated_at TEXT NOT NULL,
-    PRIMARY KEY (ocid)
-)`,
+    createSql: `CREATE TABLE IF NOT EXISTS character_profiles ${CHARACTER_PROFILES_BODY}`,
   },
   // 월드 리프로 갈린 옛 ocid → 새 ocid 연결. 리프한 기간의 중복 기록을 지우는 데만 쓴다.
   // 옛 ocid 는 목록에서 빠져 되살릴 길이 없어 `RECORD_TABLE_NAMES` 에 **직접 적혀 있어야 한다**.
   {
     name: 'character_world_leaps',
-    createSql: `CREATE TABLE IF NOT EXISTS character_world_leaps (
-    from_ocid TEXT NOT NULL,
-    to_ocid TEXT NOT NULL,
-    linked_at TEXT NOT NULL,
-    PRIMARY KEY (from_ocid)
-)`,
+    createSql: `CREATE TABLE IF NOT EXISTS character_world_leaps ${CHARACTER_WORLD_LEAPS_BODY}`,
   },
   // 계정 단위 강화 사용 내역. 큐브·스타포스·잠재 재설정에 무엇을 썼나.
   //
@@ -219,17 +208,7 @@ const TABLE_DEFINITIONS = [
   // 무한히 자란다.
   {
     name: 'enhancement_history_checks',
-    createSql: `CREATE TABLE IF NOT EXISTS enhancement_history_checks (
-    kind TEXT NOT NULL,
-    date_key TEXT NOT NULL,
-    -- **1쪽의 커서.** 다시 불렀을 때 같으면 새 데이터가 없다는 뜻이라 나머지를 안 부른다.
-    -- 그 날에 아무것도 안 했으면 응답에 커서가 없어 NULL 이다.
-    next_cursor TEXT,
-    -- 어제 이전이면 1. **아예 안 부른다** - 그 날짜의 데이터는 변할 수 없다.
-    settled INTEGER NOT NULL DEFAULT 0,
-    checked_at TEXT NOT NULL,
-    PRIMARY KEY (kind, date_key)
-)`,
+    createSql: `CREATE TABLE IF NOT EXISTS enhancement_history_checks ${ENHANCEMENT_HISTORY_CHECKS_BODY}`,
   },
   // 가계부가 **손으로 적는** 둘. 앞의 넷과 갈리는 성질이 셋이다:
   //  ① **대리키다.** 앞의 넷은 자연키 복합 PK 인데 손입력은 **같은 날 같은 것을 두 번** 이 정상이라
@@ -311,15 +290,7 @@ const TABLE_DEFINITIONS = [
   // 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이라 `RECORD_TABLE_NAMES` 에 직접 적혀 있어야 한다.
   {
     name: 'mvp_grade_history',
-    createSql: `CREATE TABLE IF NOT EXISTS mvp_grade_history (
-    account_id TEXT NOT NULL,
-    -- 그 주의 목요일 YYYY-MM-DD. MVP 등급이 매주 목요일에 바뀐다.
-    start_date TEXT NOT NULL,
-    -- 등급 key. NULL 은 등급 없음이고 첫 기록 앞에 끼워 넣은 기간을 닫는 줄이다.
-    grade TEXT,
-    updated_at TEXT NOT NULL,
-    PRIMARY KEY (account_id, start_date)
-)`,
+    createSql: `CREATE TABLE IF NOT EXISTS mvp_grade_history ${MVP_GRADE_HISTORY_BODY}`,
   },
   // 캐릭터의 메이플 ID 소속. 스타포스 줄은 이름만 들어 옛 이름을 지우면 안 된다.
   // 옛 이름과 지운 캐릭터는 다시 받을 수 없어 `RECORD_TABLE_NAMES` 에 직접 적혀 있어야 한다.
@@ -333,7 +304,7 @@ const TABLE_DEFINITIONS = [
     createSql: `CREATE TABLE IF NOT EXISTS server_sync_queue (
     id TEXT NOT NULL,
     -- 어느 종류의 기록인가. **파생되지 않는다** - uuid 만 보고는 어느 표를 열어야 하는지 모른다.
-    kind TEXT NOT NULL,
+    record_type TEXT NOT NULL,
     -- 그 기록의 uuid. 한 기록에 줄은 하나다(같은 것을 여러 번 고쳐도).
     record_id TEXT NOT NULL UNIQUE,
     -- 응답을 받은 횟수. 5 가 되면 버린다. **네트워크가 없으면 안 오른다.**
@@ -345,15 +316,7 @@ const TABLE_DEFINITIONS = [
   },
   {
     name: 'character_accounts',
-    createSql: `CREATE TABLE IF NOT EXISTS character_accounts (
-    ocid TEXT NOT NULL,
-    name TEXT NOT NULL,
-    account_id TEXT NOT NULL,
-    -- KST YYYY-MM-DD. 볼 때마다 줄을 쌓지 않고 두 날짜를 넓힌다.
-    first_seen_on TEXT NOT NULL,
-    last_seen_on TEXT NOT NULL,
-    PRIMARY KEY (ocid, name, account_id)
-)`,
+    createSql: `CREATE TABLE IF NOT EXISTS character_accounts ${CHARACTER_ACCOUNTS_BODY}`,
   },
 ] as const
 
@@ -576,6 +539,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // 이 기록을 다시 가리키는 값. **칸만 여기서 더하고 값과 기본키는 버전 12 가 옮긴다** -
   // SQLite 는 ALTER TABLE 로 기본키를 못 바꿔서 표를 다시 써야 한다.
   await ensureColumn(db, 'boss_drop_records', 'drop_record_id', 'TEXT')
+  // 계정 단위 기록이 어느 넥슨 계정의 것인지. 버전 15 에서 만든 표에는 CREATE 가 안 붙인다. 옛 행은 버전 16 이 표시한다.
+  await ensureColumn(db, 'cashbook_entries', 'nexon_account_id', 'TEXT')
   // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
   await runVersionedMigrations(db)
   // 기본키를 uuid 로 옮긴 뒤에 선다. 종전에는 기본키가 곧 이 인덱스였다.

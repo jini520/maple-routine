@@ -8,7 +8,7 @@ import { usePartyAppointmentsStore } from '../store'
 import type { PartyAppointment } from '../../../types/party-appointment'
 
 const LIMBO: PartyAppointment = {
-  id: 'a1',
+  id: '3f2b6c1e-8d4a-4c2f-9b1e-5a7d0c9e2f41',
   bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
   members: [],
   timeKst: '21:00',

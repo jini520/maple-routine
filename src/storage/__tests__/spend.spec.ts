@@ -195,6 +195,32 @@ describe('고치기 · 지우기', () => {
   })
 })
 
+// 캐릭터 없는 기록은 ocid 로 계정을 찾을 수 없어 넥슨 계정을 직접 든다. 다계정이면 그 계정의 기록으로 갈린다.
+describe('캐릭터 없는 기록의 넥슨 계정', () => {
+  it('캐릭터 없는 기록만 계정을 적고, 캐릭터가 있는 기록은 비워 둔다', async () => {
+    await insertSpendRecord(mesoSpend, 'account-a')
+    await insertSpendRecord({ ...rewardSpend, ocid: 'ocid-1' }, 'account-a')
+
+    expect(all('SELECT id, nexon_account_id FROM cashbook_entries ORDER BY id')).toEqual([
+      { id: mesoSpend.id, nexon_account_id: 'account-a' },
+      { id: rewardSpend.id, nexon_account_id: null },
+    ])
+  })
+
+  it('고쳐도 처음 속한 계정을 지키고, 캐릭터를 고르면 계정 칸을 비운다', async () => {
+    await insertSpendRecord(mesoSpend, 'account-a')
+
+    await updateSpendRecord({ ...mesoSpend, memo: '고침' }, 'account-b')
+    expect(all('SELECT nexon_account_id FROM cashbook_entries')).toEqual([{ nexon_account_id: 'account-a' }])
+
+    await updateSpendRecord({ ...mesoSpend, ocid: 'ocid-1' }, 'account-b')
+    expect(all('SELECT nexon_account_id FROM cashbook_entries')).toEqual([{ nexon_account_id: null }])
+
+    await updateSpendRecord(mesoSpend, 'account-b')
+    expect(all('SELECT nexon_account_id FROM cashbook_entries')).toEqual([{ nexon_account_id: 'account-b' }])
+  })
+})
+
 describe('getSpendRecordsBetween', () => {
   it('두 끝을 포함하는 날짜 범위의 지출만 읽는다. 수입 기록은 안 섞인다', async () => {
     for (const [index, spentOn] of ['2026-08-01', '2026-08-15', '2026-08-31', '2026-09-01'].entries()) {

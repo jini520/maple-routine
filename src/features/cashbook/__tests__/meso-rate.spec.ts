@@ -2,7 +2,7 @@
 import type { NexonCredential } from '../../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
-const 자격 = (value: string): NexonCredential => ({ kind: 'apiKey', value })
+const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accountId: 'account-key' })
 //
 // 화면은 `nexon/` 도 `storage/` 도 직접 안 부른다(CLAUDE.md CRITICAL). 그 셋을 잇는 이 자리만
 // 검증하면 된다.
@@ -26,7 +26,7 @@ const { getCachedCharacterBasic } = jest.requireMock(
 const { loadMesoRate } = require('../meso-rate') as typeof import('../meso-rate')
 
 beforeEach(() => {
-  getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ kind: 'apiKey', label: '', value: 'api-key' }] })
+  getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'api-key' }] })
   getCachedMesoRate.mockReset().mockResolvedValue(null)
   setCachedMesoRate.mockReset().mockResolvedValue(undefined)
   fetchMesoRate.mockReset().mockResolvedValue(149)

@@ -169,15 +169,15 @@ function bumpIncomeRecordsRevision(): void {
   incomeRecordsRevision += 1
 }
 
-export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
+export async function insertIncomeRecord(record: IncomeRecord, nexonAccountId: string | null = null): Promise<void> {
   const db = await getBossProfitDb()
-  await inTransaction(db, () => insertEntry(db, incomeEntryOf(record)))
+  await inTransaction(db, () => insertEntry(db, incomeEntryOf(record), nexonAccountId))
 }
 
 /** 갈아 끼우기. 지출과 같은 계약이다. 저장 시각은 그대로다. */
-export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
+export async function updateIncomeRecord(record: IncomeRecord, nexonAccountId: string | null = null): Promise<void> {
   const db = await getBossProfitDb()
-  await inTransaction(db, () => replaceEntry(db, incomeEntryOf(record), new Date()))
+  await inTransaction(db, () => replaceEntry(db, incomeEntryOf(record), new Date(), nexonAccountId))
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
@@ -255,7 +255,7 @@ export async function getBulkFeeIncomeRecords(): Promise<IncomeRecord[]> {
      AND EXISTS (SELECT 1 FROM cashbook_entry_items i WHERE i.entry_id = e.id AND i.sort_order = 0 AND i.sale_fee_percent IS NULL)
      AND (e.category_key IN ('item_sale', 'sol_erda_fragment')
           OR (e.category_key = 'hunting'
-              AND EXISTS (SELECT 1 FROM cashbook_entry_hunt_inputs h WHERE h.entry_id = e.id AND h.fragment_price IS NOT NULL)))`,
+              AND EXISTS (SELECT 1 FROM cashbook_entry_hunt_inputs h WHERE h.entry_id = e.id AND h.fragment_price_meso IS NOT NULL)))`,
     [],
   )
   return entries.map(incomeRecordOf)
@@ -300,7 +300,7 @@ export async function getFragmentStorage(
     `SELECT
        (SELECT COALESCE(SUM(h.fragments), 0)
           FROM cashbook_entries e JOIN cashbook_entry_hunt_inputs h ON h.entry_id = e.id
-         WHERE ${scope} AND e.category_key = 'hunting' AND h.fragment_price IS NULL)
+         WHERE ${scope} AND e.category_key = 'hunting' AND h.fragment_price_meso IS NULL)
        - (SELECT COALESCE(SUM(i.quantity), 0)
           FROM cashbook_entries e JOIN cashbook_entry_items i ON i.entry_id = e.id
          WHERE ${scope} AND e.category_key = 'sol_erda_fragment') AS stored`,

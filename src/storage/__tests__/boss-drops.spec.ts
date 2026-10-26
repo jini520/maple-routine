@@ -54,7 +54,7 @@ async function save(drops: RecordedDrop[], at = AT, world: DropWorld = WORLD, pe
 }
 
 function storedStatus(): string[] {
-  return real.inspect((db) => (db.prepare('SELECT record_status FROM boss_drops ORDER BY drop_index').all() as { record_status: string }[]).map((row) => row.record_status))
+  return real.inspect((db) => (db.prepare('SELECT record_status FROM boss_drops ORDER BY sort_order').all() as { record_status: string }[]).map((row) => row.record_status))
 }
 
 function pricedAt(): string | null {
@@ -62,11 +62,11 @@ function pricedAt(): string | null {
 }
 
 function periodRows(): unknown[] {
-  return real.inspect((db) => db.prepare('SELECT status, split_mode, world_key FROM boss_party_periods').all())
+  return real.inspect((db) => db.prepare('SELECT clear_status, split_mode, world_key FROM boss_party_periods').all())
 }
 
 describe('replaceBossDropRecords', () => {
-  it('넘긴 차례대로 drop_index 를 매기고, 식별자를 그 차례로 돌려준다', async () => {
+  it('넘긴 차례대로 sort_order 를 매기고, 식별자를 그 차례로 돌려준다', async () => {
     const ids = await save([drop('a'), drop('b'), drop('c')])
 
     const rows = await getBossDropRecords(['ocid-1'], ['2026-10-02'])
@@ -103,7 +103,7 @@ describe('replaceBossDropRecords', () => {
     await save([drop('a')])
     await save([])
 
-    expect(periodRows()).toEqual([{ status: 'open', split_mode: 'even', world_key: 'elysium' }])
+    expect(periodRows()).toEqual([{ clear_status: 'open', split_mode: 'even', world_key: 'elysium' }])
   })
 
   it('월드는 기간 행에 한 번 적고, 월드를 모르는 저장이 지우지 않는다', async () => {
@@ -182,7 +182,7 @@ describe('가격 상태', () => {
 })
 
 describe('읽기', () => {
-  it('getAllBossDropRecords 는 기간 내림차순 · drop_index 순이다', async () => {
+  it('getAllBossDropRecords 는 기간 내림차순 · sort_order 순이다', async () => {
     await save([drop('a'), drop('b')], AT, WORLD, '2026-09-25')
     await save([drop('c')], AT, WORLD, '2026-10-02')
 
