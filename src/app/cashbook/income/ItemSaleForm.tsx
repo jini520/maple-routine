@@ -99,7 +99,6 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
         quantity: counts ? quantity : null,
         itemKind,
         hunt: null,
-        memo: null,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })

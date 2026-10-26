@@ -59,7 +59,6 @@ const sale: IncomeRecord = {
   saleFeeMeso: 250_000_000,
   saleFeeAuto: true,
   hunt: null,
-  memo: '메모',
   recordedAt: '2026-08-20T12:00:00.000Z',
 }
 
@@ -75,7 +74,6 @@ const calculatorHunt: IncomeRecord = {
   saleFeePercent: null,
   saleFeeMeso: null,
   saleFeeAuto: false,
-  memo: null,
   hunt: {
     mode: 'calculator',
     characterLevel: 285,

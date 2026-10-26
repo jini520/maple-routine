@@ -85,7 +85,7 @@ describe('버전 15: 가계부 손입력 두 표를 기록 표 셋으로 옮긴�
       records.map((record) => Object.fromEntries(Object.entries(record).filter(([key]) => key !== 'id')))
     expect(withoutId(spend)).toEqual([
       // key 가 있는 기록은 이름을 안 옮긴다. 화면은 key 로 이름을 찾는다.
-      expect.objectContaining({ recordedAt: '2026-10-01T01:00:00.000Z', category: 'buff', item: null, itemKey: 'seiram_elixir', quantity: 2, mesoAmount: 4_000_000, memo: '메모' }),
+      expect.objectContaining({ recordedAt: '2026-10-01T01:00:00.000Z', category: 'buff', item: null, itemKey: 'seiram_elixir', quantity: 2, mesoAmount: 4_000_000 }),
       expect.objectContaining({
         ocid: 'ocid-1',
         category: 'content',
@@ -128,7 +128,6 @@ describe('버전 15: 가계부 손입력 두 표를 기록 표 셋으로 옮긴�
         saleFeePercent: 5,
         saleFeeMeso: 50_000_000,
         saleFeeAuto: true,
-        memo: '판매',
       }),
       expect.objectContaining({ category: 'sol_erda_fragment', quantity: 20, mesoAmount: 400_000_000, hunt: null }),
     ])

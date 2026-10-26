@@ -171,7 +171,7 @@ function 칸금액을(amounts: Record<string, { incomeMeso: number; expenseMeso:
         record: {
           id: `s-${dateKey}`, spentOn: dateKey, category: 'etc', item: null, itemKey: null, formItemKeys: null,
           itemKind: null, quantity: null, mesoAmount: amount.expenseMeso, tariffMeso: null,
-          pointAmount: null, pointPer100mMeso: null, cashAmount: null, memo: null,
+          pointAmount: null, pointPer100mMeso: null, cashAmount: null,
           recordedAt: dateKey,
         },
       },
@@ -1095,7 +1095,6 @@ const 그날수입 = {
   pointAmount: null,
   pointPer100mMeso: null,
   cashAmount: null,
-  memo: null,
   recordedAt: '2026-08-23T01:00:00.000Z',
 }
 
@@ -1113,7 +1112,6 @@ const 그날지출 = {
   pointAmount: 1_200,
   pointPer100mMeso: 1_180,
   cashAmount: null,
-  memo: null,
   recordedAt: '2026-08-23T02:00:00.000Z',
 }
 

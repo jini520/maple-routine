@@ -120,7 +120,7 @@ it('확정 난이도에서 못 얻어 걷힌 드롭은 지우기를 보낸다', 
   ], NOW)
 
   expect(reportMock).not.toHaveBeenCalled()
-  expect(removedMock).toHaveBeenCalledWith('pruned', PERIOD, NOW)
+  expect(removedMock).toHaveBeenCalledWith('pruned', NOW)
 })
 
 it('옮길 것이 없으면 아무것도 안 보낸다', async () => {

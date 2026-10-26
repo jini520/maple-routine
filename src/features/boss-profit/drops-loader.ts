@@ -84,7 +84,7 @@ export async function migrateDropsToConfirmedDifficulty(
   }
   // 남은 것은 확정 난이도에서 못 얻거나 같은 타일이 이미 있어 걷힌 드롭이다.
   for (const removedId of staleIds) {
-    void reportDropRemoved(removedId, row.periodKey, now)
+    void reportDropRemoved(removedId, now)
   }
 }
 
@@ -134,7 +134,7 @@ export async function loadDropsByRowKey(
         const keptIds = new Set(pruned.map((drop) => drop.dropRecordId))
         for (const drop of drops) {
           if (drop.dropRecordId === null || keptIds.has(drop.dropRecordId)) continue
-          void reportDropRemoved(drop.dropRecordId, row.periodKey, now)
+          void reportDropRemoved(drop.dropRecordId, now)
         }
       }
     }

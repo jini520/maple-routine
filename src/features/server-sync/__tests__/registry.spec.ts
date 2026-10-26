@@ -9,6 +9,8 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { SYNC_HANDLERS } from '../registry'
+import { BOSS_CLEAR_RECORD_TYPE } from '../boss-clear-sync'
+import { CASHBOOK_ENTRY_RECORD_TYPE } from '../cashbook-entry-sync'
 import { DROP_PRICE_RECORD_TYPE } from '../drop-price-sync'
 
 const SYNC_DIR = join(__dirname, '..')
@@ -18,7 +20,11 @@ describe('전송 종류 레지스트리', () => {
     // 상수 이름으로 넘기는 것이 규약이다. 문자열을 손으로 적으면 오타가 **안 나감** 으로 조용히
     // 실패하고, 그 오타는 타입 검사에 안 걸린다.
     const kinds = new Set(Object.keys(SYNC_HANDLERS))
-    const constants = new Map<string, string>([['DROP_PRICE_RECORD_TYPE', DROP_PRICE_RECORD_TYPE]])
+    const constants = new Map<string, string>([
+      ['DROP_PRICE_RECORD_TYPE', DROP_PRICE_RECORD_TYPE],
+      ['BOSS_CLEAR_RECORD_TYPE', BOSS_CLEAR_RECORD_TYPE],
+      ['CASHBOOK_ENTRY_RECORD_TYPE', CASHBOOK_ENTRY_RECORD_TYPE],
+    ])
 
     const callers: { file: string; argument: string }[] = []
     for (const name of readdirSync(SYNC_DIR)) {

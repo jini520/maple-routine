@@ -7,6 +7,7 @@
  * 금액은 여기서 계산한다. 그 기간의 가격 줄과 파티 인원으로 `floor(priceMeso / partySize)` 이고,
  * 자동 기록이 쓰는 식과 같은 것이다.
  */
+import { bossPeriodIdsOf, reportBossClears, reportBossClearsOf } from '../server-sync/report'
 import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
 import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import { getBossPartySize } from '../../storage/boss-party-settings'
@@ -121,6 +122,7 @@ export async function saveManualCompletion(input: ManualCompletionInput, now: Da
     },
     input.defeatedOn,
   )
+  await reportBossClearsOf([input], now)
 
   if (!changedDifficulty) return
 
@@ -137,12 +139,15 @@ export async function saveManualCompletion(input: ManualCompletionInput, now: Da
     drops,
     now,
   )
-  await deleteBossProfitRecord({
+  const previous: BossProfitRecordKey = {
     ocid: input.ocid,
     bossKey: input.bossKey,
     difficulty: input.previousDifficulty as BossDifficulty,
     periodKey: input.periodKey,
-  })
+  }
+  const previousPeriodIds = await bossPeriodIdsOf([previous])
+  await deleteBossProfitRecord(previous)
+  await reportBossClears(previousPeriodIds, now)
 }
 
 /**
@@ -160,5 +165,7 @@ export async function cancelManualCompletion(key: BossProfitRecordKey, now: Date
     now.toISOString(),
     NO_WORLD,
   )
+  const periodIds = await bossPeriodIdsOf([key])
   await deleteBossProfitRecord(key)
+  await reportBossClears(periodIds, now)
 }

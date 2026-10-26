@@ -112,7 +112,6 @@ export function EtcForm(
         quantity,
         hunt: null,
         itemKind: null,
-        memo: null,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })

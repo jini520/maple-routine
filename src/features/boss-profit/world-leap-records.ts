@@ -4,6 +4,7 @@
  * 리프 전 완료가 새 ocid 로 넘어와 자동 기록이 같은 처치를 한 번 더 쓴다. 기록 키가 ocid 를 품어
  * upsert 가 그 중복을 못 막으므로, 짝을 찾아 옛 기록을 지우고 새 기록 하나로 센다.
  */
+import { bossPeriodIdsOf, reportBossClears, reportBossClearsOf } from '../server-sync/report'
 import { dropTileIdentity } from '../../lib/boss/boss-drops'
 import { NO_WORLD, getBossDropRecords, replaceBossDropRecords, type BossDropRecord } from '../../storage/boss-drops'
 import {
@@ -146,11 +147,15 @@ async function cleanUpLink(link: CharacterWorldLeap, now: Date): Promise<number>
     }
     if (keptChanged) {
       await upsertBossProfitRecord(kept)
+      await reportBossClearsOf([kept], new Date())
     }
     if (staleDrops.length > 0) {
       await replaceBossDropRecords(stale.ocid, stale.bossKey, stale.difficulty, stale.periodKey, [], recordedAt, NO_WORLD)
     }
+    // 지우고 나면 키로 기간 행을 못 찾는다. 지우기 전에 id 를 얻고, 지운 뒤에 대기 표에 넣어 서버에서도 지운다.
+    const stalePeriodIds = await bossPeriodIdsOf([stale])
     await deleteBossProfitRecord(stale)
+    await reportBossClears(stalePeriodIds, new Date())
   }
   return pairs.length
 }

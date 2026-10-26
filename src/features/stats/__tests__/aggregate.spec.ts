@@ -29,7 +29,6 @@ function incomeRecord(overrides: Partial<IncomeRecord>): IncomeRecord {
     saleFeeMeso: null,
     saleFeeAuto: false,
     hunt: null,
-    memo: null,
     recordedAt: '2026-09-24T00:00:00.000Z',
     ...overrides,
   }
@@ -53,7 +52,6 @@ function spendRecord(overrides: Partial<SpendRecord>): SpendRecord {
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
-    memo: null,
     recordedAt: '2026-09-24T00:00:00.000Z',
     ...overrides,
   } as SpendRecord

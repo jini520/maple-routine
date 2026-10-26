@@ -10,6 +10,7 @@
  * ③ 여러 원천을 하루로 접는다. 캘린더 칸이 받는 `CalendarAmounts` 를 만든다. 원천이 넷이고
  *    (손입력 둘 · 보스 결정석 · 아이템 판매) 뒤의 둘은 여기서 못 고친다.
  */
+import { reportCashbookEntries } from '../server-sync/report'
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
 import type { BossDifficulty } from '../../types'
 import { compareBossOrder } from '../../lib/boss/boss-matching'
@@ -83,7 +84,9 @@ async function entryAccountId(): Promise<string | null> {
 }
 
 export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void> {
-  await insertIncomeRecord({ ...draft, id: randomUuid(), recordedAt: now.toISOString() }, await entryAccountId())
+  const id = randomUuid()
+  await insertIncomeRecord({ ...draft, id, recordedAt: now.toISOString() }, await entryAccountId())
+  await reportCashbookEntries([id], now)
   // 저장이 성공한 뒤에만 기억한다.
   const remembered = lastHuntOf(draft)
   if (remembered !== null) await setLastHunt(remembered.ocid, remembered.hunt)
@@ -111,7 +114,9 @@ export function nextLastHunts(draft: IncomeDraft, current: LastHunts): LastHunts
 }
 
 export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
-  await insertSpendRecord({ ...draft, id: randomUuid(), recordedAt: now.toISOString() }, await entryAccountId())
+  const id = randomUuid()
+  await insertSpendRecord({ ...draft, id, recordedAt: now.toISOString() }, await entryAccountId())
+  await reportCashbookEntries([id], now)
   // 저장이 성공한 뒤에만 기억한다. 던진 입력의 시세를 다음 기본값으로 남기면 안 된다.
   if (draft.pointPer100mMeso !== null) {
     await setLastPointRate(draft.pointPer100mMeso)
@@ -1021,6 +1026,7 @@ export function loadFragmentStorage(
 /** 고치기. `recordedAt` 은 안 바뀐다. 시세를 기억하는 순서는 넣을 때와 같다. 성공한 뒤에만. */
 export async function editSpend(record: SpendRecord): Promise<void> {
   await updateSpendRecord(record, await entryAccountId())
+  await reportCashbookEntries([record.id], new Date())
   if (record.pointPer100mMeso !== null) {
     await setLastPointRate(record.pointPer100mMeso)
   }
@@ -1028,13 +1034,13 @@ export async function editSpend(record: SpendRecord): Promise<void> {
 
 export async function editIncome(record: IncomeRecord): Promise<void> {
   await updateIncomeRecord(record, await entryAccountId())
+  await reportCashbookEntries([record.id], new Date())
 }
 
 /** 지우기. 갈래가 어느 테이블인지를 안다. 손입력만 받는다. */
 export async function removeRecord(entry: ManualDayRecord): Promise<void> {
-  if (entry.kind === 'spend') {
-    await deleteSpendRecord(entry.record.id)
-    return
-  }
-  await deleteIncomeRecord(entry.record.id)
+  if (entry.kind === 'spend') await deleteSpendRecord(entry.record.id)
+  else await deleteIncomeRecord(entry.record.id)
+  // 지운 뒤에 넣는다. 전송이 기록을 못 찾아 서버에서도 지운다.
+  await reportCashbookEntries([entry.record.id], new Date())
 }

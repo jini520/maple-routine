@@ -220,7 +220,6 @@ const 옛사냥행 = {
   cashAmount: null,
   hunt: null,
   quantity: null,
-  memo: null,
   recordedAt: '2026-08-23T01:00:00.000Z',
 }
 
@@ -650,7 +649,6 @@ describe('저장', () => {
       hunt: null,
       // `기타`는 금액 × 수량이고 수량 기본값이 1 이다.
       quantity: 1,
-      memo: null,
     })
   })
 
@@ -739,7 +737,6 @@ describe('수정 모드', () => {
     // 계산기 이전의 행이다.
     hunt: null,
     quantity: null,
-    memo: null,
     recordedAt: '2026-08-23T01:00:00.000Z',
   }
 
@@ -879,7 +876,6 @@ describe('아이템 판매의 종류', () => {
         cashAmount: null,
         hunt: null,
         quantity: 100,
-        memo: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
       },
       onDelete: jest.fn(),
@@ -1055,7 +1051,6 @@ describe('통화', () => {
           cashAmount: null,
           hunt: null,
           quantity: 2,
-          memo: null,
           itemKind: null,
           recordedAt: '2026-08-23T05:00:00.000Z',
         },
@@ -1087,7 +1082,6 @@ describe('통화', () => {
           cashAmount: null,
           hunt: null,
           quantity: null,
-          memo: null,
           itemKind: null,
           recordedAt: '2026-08-23T05:00:00.000Z',
         },
@@ -1117,7 +1111,6 @@ describe('통화', () => {
         cashAmount: null,
         hunt: null,
         quantity: null,
-        memo: null,
         itemKind: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
       },
@@ -1699,7 +1692,6 @@ describe('사냥 계산기', () => {
           mesoRate: 161,
           unionTier: 3,
         },
-        memo: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
       },
       onDelete: jest.fn(),
@@ -2415,7 +2407,6 @@ describe('솔 에르다 조각 정산', () => {
       cashAmount: null,
       quantity: 50,
       hunt: null,
-      memo: null,
     })
   })
 
@@ -2856,7 +2847,6 @@ describe('메소 획득량', () => {
           mesoRate: 161,
           unionTier: 3,
         },
-        memo: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
       },
       onDelete: jest.fn(),
@@ -2893,7 +2883,6 @@ describe('수정으로 열 때의 큰 숫자', () => {
       cashAmount: null,
       hunt: null,
       quantity: null,
-      memo: null,
       recordedAt: '2026-08-23T01:00:00.000Z',
     }
   }
@@ -3016,7 +3005,6 @@ describe('날짜 바꾸기', () => {
         cashAmount: null,
         hunt: null,
         quantity: null,
-        memo: null,
         itemKind: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
       },

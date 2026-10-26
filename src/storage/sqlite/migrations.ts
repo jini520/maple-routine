@@ -44,7 +44,7 @@ import {
 import { NEW_UUID_SQL } from './uuid'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 16
+export const DB_VERSION = 17
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -509,7 +509,6 @@ function legacySpendRecordOf(row: Row, id: string): SpendRecord {
     pointAmount: numberOrNull(row.point_amount),
     pointPer100mMeso: numberOrNull(row.point_per_100m_meso),
     cashAmount: numberOrNull(row.cash_amount),
-    memo: textOrNull(row.memo),
     recordedAt: row.recorded_at as string,
   }
 }
@@ -560,7 +559,6 @@ function legacyIncomeRecordOf(row: Row, id: string): IncomeRecord {
     saleFeeMeso: numberOrNull(row.sale_fee_meso),
     saleFeeAuto: Number(row.sale_fee_auto) === 1,
     hunt: legacyHuntOf(row),
-    memo: textOrNull(row.memo),
     recordedAt: row.recorded_at as string,
   }
 }
@@ -729,6 +727,13 @@ async function moveRecordKeysToUuid(db: SqliteDbConnection): Promise<void> {
   await db.run(`UPDATE cashbook_entries SET nexon_account_id = '' WHERE ocid IS NULL AND nexon_account_id IS NULL`)
 }
 
+/** 쓰지 않던 가계부 메모 칸을 지운다. 입력 시트가 모두 null 로 적었고 서버로도 보내지 않는다. */
+async function dropCashbookMemo(db: SqliteDbConnection): Promise<void> {
+  if ((await columnsOf(db, 'cashbook_entries')).has('memo')) {
+    await db.execute('ALTER TABLE cashbook_entries DROP COLUMN memo')
+  }
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -748,6 +753,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   moveBossTablesToParties,
   moveCashbookRecordsToEntries,
   moveRecordKeysToUuid,
+  dropCashbookMemo,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

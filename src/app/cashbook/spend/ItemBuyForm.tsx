@@ -119,7 +119,6 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
-        memo: null,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })

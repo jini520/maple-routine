@@ -12,7 +12,7 @@ function 수입(dateKey: string, meso: number): unknown {
     record: {
       id: `i-${dateKey}`, ocid: null, earnedOn: dateKey, category: 'etc', item: null, itemKey: null,
       mesoAmount: meso, pointAmount: null, pointPer100mMeso: null, cashAmount: null, quantity: null,
-      itemKind: null, saleFeePercent: null, saleFeeMeso: null, saleFeeAuto: false, hunt: null, memo: null,
+      itemKind: null, saleFeePercent: null, saleFeeMeso: null, saleFeeAuto: false, hunt: null,
       recordedAt: dateKey,
     },
   }
@@ -25,7 +25,7 @@ function 지출(dateKey: string, meso: number): unknown {
     record: {
       id: `s-${dateKey}`, ocid: null, spentOn: dateKey, category: 'etc', item: null, itemKey: null,
       formItemKeys: null, itemKind: null, levelFrom: null, levelTo: null, quantity: null, mesoAmount: meso,
-      tariffMeso: null, pointAmount: null, pointPer100mMeso: null, cashAmount: null, memo: null,
+      tariffMeso: null, pointAmount: null, pointPer100mMeso: null, cashAmount: null,
       recordedAt: dateKey,
     },
   }

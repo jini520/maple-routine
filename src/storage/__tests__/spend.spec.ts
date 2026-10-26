@@ -55,7 +55,6 @@ const mesoSpend: SpendRecord = {
   pointAmount: null,
   pointPer100mMeso: null,
   cashAmount: null,
-  memo: null,
   recordedAt: '2026-08-23T05:00:00.000Z',
 }
 
@@ -102,7 +101,6 @@ describe('넣은 지출을 같은 모양으로 되읽는다', () => {
         ocid: 'ocid-1',
         mesoAmount: null,
         cashAmount: 33_000,
-        memo: '시즌',
       },
     ],
   ])('%s', async (_, record) => {
@@ -210,7 +208,7 @@ describe('캐릭터 없는 기록의 넥슨 계정', () => {
   it('고쳐도 처음 속한 계정을 지키고, 캐릭터를 고르면 계정 칸을 비운다', async () => {
     await insertSpendRecord(mesoSpend, 'account-a')
 
-    await updateSpendRecord({ ...mesoSpend, memo: '고침' }, 'account-b')
+    await updateSpendRecord({ ...mesoSpend}, 'account-b')
     expect(all('SELECT nexon_account_id FROM cashbook_entries')).toEqual([{ nexon_account_id: 'account-a' }])
 
     await updateSpendRecord({ ...mesoSpend, ocid: 'ocid-1' }, 'account-b')

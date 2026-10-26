@@ -106,7 +106,6 @@ export function FragmentSettleForm(
         quantity: count,
         hunt: null,
         itemKind: null,
-        memo: null,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })

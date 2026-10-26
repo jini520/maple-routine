@@ -76,7 +76,6 @@ export interface SpendRecord {
    * 값을 매기는 것처럼 읽힌다.** 정확도의 문제가 아니라 무엇을 정상으로 보이게 하는가의 문제다.
    */
   cashAmount: number | null
-  memo: string | null
   recordedAt: string
 }
 

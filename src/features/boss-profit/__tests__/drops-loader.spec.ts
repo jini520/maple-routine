@@ -172,7 +172,7 @@ describe('loadDropsByRowKey: 가격 생존', () => {
     await loadDropsByRowKey(['ocid-1'], [row()], now)
 
     expect(reportDropRemovedMock).toHaveBeenCalledTimes(1)
-    expect(reportDropRemovedMock).toHaveBeenCalledWith('pruned-id', PERIOD, now)
+    expect(reportDropRemovedMock).toHaveBeenCalledWith('pruned-id', now)
   })
 
   // 행마다 다시 쓸 수 있다. 쓰기마다 알리면 판을 구독하는 화면이 그만큼 다시 그려진다.

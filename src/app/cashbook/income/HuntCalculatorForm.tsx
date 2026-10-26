@@ -526,7 +526,6 @@ export function HuntCalculatorForm(
           unionTier,
         },
         itemKind: null,
-        memo: null,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })

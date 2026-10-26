@@ -8,11 +8,16 @@
  * 새 종류를 더할 때 손댈 곳은 세 줄이다 - `SyncRecordType` 에 이름, 이 표에 한 줄, 그리고 그 종류의
  * 파일에 함수 둘.
  */
+import { BOSS_CLEAR_RECORD_TYPE, bossClearHandler } from './boss-clear-sync'
+import { CASHBOOK_ENTRY_RECORD_TYPE, cashbookEntryHandler } from './cashbook-entry-sync'
 import { DROP_PRICE_RECORD_TYPE, dropPriceHandler } from './drop-price-sync'
 import type { SyncHandler } from './sweep'
 
 /** 지금 보내는 종류. 이 이름이 대기 표의 `record_type` 칸에 그대로 들어간다. */
-export type SyncRecordType = typeof DROP_PRICE_RECORD_TYPE
+export type SyncRecordType =
+  | typeof DROP_PRICE_RECORD_TYPE
+  | typeof BOSS_CLEAR_RECORD_TYPE
+  | typeof CASHBOOK_ENTRY_RECORD_TYPE
 
 /**
  * 종류마다 값의 모양이 달라 이 표는 그 모양을 잊는다.
@@ -26,4 +31,6 @@ function anyValue<Value>(handler: SyncHandler<Value>): SyncHandler<unknown> {
 
 export const SYNC_HANDLERS: Readonly<Record<SyncRecordType, SyncHandler<unknown>>> = {
   [DROP_PRICE_RECORD_TYPE]: anyValue(dropPriceHandler),
+  [BOSS_CLEAR_RECORD_TYPE]: anyValue(bossClearHandler),
+  [CASHBOOK_ENTRY_RECORD_TYPE]: anyValue(cashbookEntryHandler),
 }
