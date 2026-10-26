@@ -16,6 +16,11 @@ import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 jest.mock('../../api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../event-world-names', () => ({ getEventWorldNames: jest.fn() }))
+// 옮기기가 빠진 줄을 서버에 알린다. 테스트에서 운영 서버로 요청이 나가면 안 된다.
+jest.mock('../../../features/enhancement-history/anomalies', () => ({
+  ...jest.requireActual('../../../features/enhancement-history/anomalies'),
+  reportEnhancementAnomalies: jest.fn(),
+}))
 jest.mock('../../enhancement-totals-moved', () => ({
   isEnhancementTotalsMoved: jest.fn(),
   markEnhancementTotalsMoved: jest.fn(),

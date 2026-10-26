@@ -20,6 +20,7 @@ import { checkKey, loadEnhancementChecks, markEnhancementChecked } from '../../s
 import { replaceEnhancementTotals } from '../../storage/enhancement-totals'
 import { reportEnhancementTotals } from '../server-sync/report'
 import { summarizeEnhancement } from './spending'
+import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
 import { eventWorldCharacterNames } from '../../lib/enhancement/world'
 import { SOUL_POTENTIAL_FROM } from '../../lib/enhancement/cost'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
@@ -235,6 +236,7 @@ export async function collectEnhancementHistory(
   }
 
   // 목록을 못 받은 것과 스페셜 캐릭터가 없는 것은 다르다. 앞은 null, 뒤는 빈 집합이다.
+  let listError: string | null = null
   const eventNames = await fetchAndRecordCharacterList(credential)
     .then(async (accounts) => {
       const names = eventWorldCharacterNames(accounts)
@@ -242,7 +244,10 @@ export async function collectEnhancementHistory(
       await saveEventWorldNames(names).catch(() => undefined)
       return names
     })
-    .catch(() => null)
+    .catch((error: unknown) => {
+      listError = String(error)
+      return null
+    })
 
   const checkedAt = now.toISOString()
   const results = await mapWithLimit(
@@ -250,10 +255,9 @@ export async function collectEnhancementHistory(
     HISTORY_CALL_LIMIT,
     async (job) => {
       const { firstCursor, rows } = await fetchDay(credential, job)
-      const totals = summarizeEnhancement(
-        rows.map((row) => ({ ...row, kind: job.kind })),
-        eventNames,
-      )
+      const sources = rows.map((row) => ({ ...row, kind: job.kind }))
+      const totals = summarizeEnhancement(sources, eventNames)
+      await reportEnhancementAnomalies(enhancementAnomaliesOf(sources, eventNames, listError))
       const { writtenIds, removedIds } = await replaceEnhancementTotals(accountId, job.kind, job.dateKey, totals, now)
       await reportEnhancementTotals([...writtenIds, ...removedIds], now)
       // 목록을 못 받은 회차는 이벤트 월드를 가리지 못한 줄이 있어 굳히지 않는다. 다음 회차가 다시 받아 판정을 채운다.

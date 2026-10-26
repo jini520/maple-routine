@@ -82,7 +82,7 @@ function text(payload: unknown, key: string): string {
  */
 const SPECIAL_CURRENCY = new Set(['펄스 인핸서'])
 
-function usesSpecialCurrency(entry: EnhancementSource): boolean {
+export function usesSpecialCurrency(entry: EnhancementSource): boolean {
   return (
     SPECIAL_CURRENCY.has(text(entry.payload, 'cube_type')) ||
     SPECIAL_CURRENCY.has(text(entry.payload, 'upgrade_item'))
@@ -178,6 +178,39 @@ export function enhancementCostPartsOf(entry: EnhancementSource): StarforceCostP
   return cost === null ? null : { attemptMeso: cost, destroyDefenceMeso: 0 }
 }
 
+/** 값을 못 매긴 이유. 서버에 알려 운영자가 원인을 본다. */
+export type UnpricedReason = 'no_level' | 'no_grade' | 'no_star' | 'no_type' | 'no_cost'
+
+/**
+ * 이 줄의 비용을 못 매긴 이유. 매길 수 있으면 `null`. `enhancementCostPartsOf` 가 막히는 차례 그대로 묻는다.
+ */
+export function unpricedReasonOf(entry: EnhancementSource): UnpricedReason | null {
+  if (enhancementCostPartsOf(entry) !== null) return null
+  if (entry.kind === 'starforce') {
+    if (equipmentItemLevelOf(entry.itemKey) === null) return 'no_level'
+    return typeof field(entry.payload, 'before_starforce_count') === 'number' ? 'no_cost' : 'no_star'
+  }
+  if (entry.kind === 'cube') return entry.itemLevel === null ? 'no_level' : 'no_cost'
+  if (entry.kind === 'potential') {
+    const type = text(entry.payload, 'potential_type')
+    if (type !== '잠재능력 재설정' && type !== '에디셔널 잠재능력 재설정') return 'no_type'
+    if (entry.itemLevel === null) return 'no_level'
+    const optionsKey = type === '잠재능력 재설정' ? 'before_potential_option' : 'before_additional_potential_option'
+    return gradeBeforeReset(entry.payload, optionsKey) === null ? 'no_grade' : 'no_cost'
+  }
+  return gradeBeforeReset(entry.payload, 'before_soul_potential_option') === null ? 'no_grade' : 'no_cost'
+}
+
+/**
+ * 이 줄이 이벤트 월드인가. 스타포스는 응답의 월드로, 그 밖은 캐릭터 목록의 이름으로 판정한다. 판정하지 못하면 `null`.
+ *
+ * @param eventNames 스페셜 캐릭터 이름. 목록을 못 받았으면 `null`
+ */
+export function eventWorldOf(entry: EnhancementSource, eventNames: ReadonlySet<string> | null): boolean | null {
+  const spending = isSpendingRecord(worldKeyOf(entry), entry.characterName, eventNames)
+  return spending === null ? null : !spending
+}
+
 /** 장비별로 묶는 열쇠. 장비 key 와 이름이 같은 글자여도 섞이지 않게 앞에 표시를 단다. */
 export function itemGroupOf(itemKey: string | null, targetItem: string): string {
   return itemKey !== null ? `key:${itemKey}` : `name:${comparableEquipmentName(targetItem)}`
@@ -203,7 +236,6 @@ export function summarizeEnhancement(
     const category = categoryOf(entry)
     const itemGroup = itemGroupOf(entry.itemKey, entry.targetItem)
     const key = [entry.dateKey, entry.characterName, category, itemGroup].join('|')
-    const spending = isSpendingRecord(worldKeyOf(entry), entry.characterName, eventNames)
     const total = totals.get(key) ?? {
       historyDate: entry.dateKey,
       characterName: entry.characterName,
@@ -215,7 +247,7 @@ export function summarizeEnhancement(
       attempts: 0,
       attemptCostMeso: 0,
       destroyDefenceCostMeso: 0,
-      eventWorld: spending === null ? null : !spending,
+      eventWorld: eventWorldOf(entry, eventNames),
     }
     total.attempts += 1
     total.attemptCostMeso += parts.attemptMeso
