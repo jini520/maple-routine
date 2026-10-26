@@ -1,6 +1,7 @@
 
 import { waitFor } from '../../__tests__/wait-for'
 import { installFakePreferences } from './fake-preferences'
+import { setAssetFilesPort } from '../ports'
 import type { CacheDataSelection } from '../cache-data'
 import {
   BOSS_TABLE_NAMES,
@@ -81,6 +82,16 @@ function deleteCalls(): string[] {
 
 let prefs = installFakePreferences()
 
+/** 받은 게임 데이터 그림 디렉터리. 일반 그룹이 지우고 센다. */
+const assetFiles = {
+  directoryUri: () => 'file:///docs/game-assets/',
+  list: jest.fn(async () => []),
+  download: jest.fn(),
+  remove: jest.fn(),
+  clear: jest.fn(async () => {}),
+  size: jest.fn(async () => 0),
+}
+
 beforeEach(async () => {
   prefs = installFakePreferences()
   await prefs.set('apiKey', 'test-key')
@@ -95,6 +106,7 @@ beforeEach(async () => {
   await prefs.set('lastSelectedCharacter', 'ocid-1')
   dbQueryMock.mockResolvedValue({ values: [] })
   jest.clearAllMocks()
+  setAssetFilesPort(assetFiles)
 })
 
 // 그룹 정의는 열거가 아니라 차집합이다. records만 명시 목록이고 general은
@@ -245,6 +257,13 @@ describe('clearCacheData', () => {
       }
       expect(deleteCalls()).toHaveLength(GENERAL_TABLE_NAMES.length)
     })
+
+    // 다시 받을 수 있는 서버 그림이라 일반 데이터다. 지우면 다음에 켤 때 잠금 화면이 다시 받는다.
+    it('받은 게임 데이터 그림 디렉터리를 지운다', async () => {
+      await clearCacheData({ general: true, records: false })
+
+      expect(assetFiles.clear).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('수익·드롭 기록만 선택', () => {
@@ -256,6 +275,7 @@ describe('clearCacheData', () => {
       expect(await prefs.get('trackedCharacters')).toBe('[]')
       expect(await prefs.get('lastSelectedCharacter')).toBe('ocid-1')
       expect(prefs.remove).not.toHaveBeenCalled()
+      expect(assetFiles.clear).not.toHaveBeenCalled()
     })
 
     it('수익·드롭 기록 테이블만 비운다', async () => {
@@ -283,13 +303,15 @@ describe('clearCacheData', () => {
 
 describe('getCacheDataSizes', () => {
   it('보존 키를 제외한 Preferences 바이트 수를 일반 그룹에 합산한다', async () => {
+    assetFiles.size.mockResolvedValueOnce(1000)
     const sizes = await getCacheDataSizes()
 
     // schedulerCache:ocid-1 '{}'(2) + characterBasicCache:index '[]'(2)
     // + trackedCharacters '[]'(2) + lastSelectedCharacter 'ocid-1'(6) = 12.
     // 보존 키(apiKey·selectedAccountId·theme·trackingMode·dropEffect)는 삭제되지 않으므로 제외.
     // trackingMode 'manual'(6)·dropEffect 'off'(3)를 seed해도 합계가 늘지 않아야 한다.
-    expect(sizes.general).toBe(12)
+    // 받은 그림 디렉터리 1000 바이트도 일반 그룹이다.
+    expect(sizes.general).toBe(12 + 1000)
   })
 
   it('SQLite 각 테이블 행의 바이트 수를 그 테이블이 속한 그룹에 합산한다', async () => {
