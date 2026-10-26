@@ -52,7 +52,7 @@ it('칸마다 받은 표를 그대로 주고, 응답 원문 · ETag · 바이트
   expect(result).toEqual({
     kind: 'ok',
     etag: '"e1"',
-    bytes: JSON.stringify({ bosses: 보스표, worlds: 월드표 }).length,
+    bytes: new TextEncoder().encode(JSON.stringify({ bosses: 보스표, worlds: 월드표 })).length,
     sections: 칸({ bosses: 보스표, worlds: 월드표 }),
     raw: { bosses: 보스표, worlds: 월드표 },
   })

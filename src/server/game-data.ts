@@ -38,7 +38,7 @@ export type GameDataFetch =
       kind: 'ok'
       /** 다음 요청이 `If-None-Match` 로 보낼 값. 서버가 안 주면 `null` */
       etag: string | null
-      /** 응답 본문의 글자 수. 잠금 화면이 받은 양으로 보인다 */
+      /** 응답 본문의 UTF-8 바이트 수. 잠금 화면이 받은 양으로 보인다. 글자 수로 세면 한글 한 글자가 1 이라 적게 나온다 */
       bytes: number
       /** 칸마다 계약 검사를 거친 값 */
       sections: GameDataResponse
@@ -69,7 +69,7 @@ export async function fetchGameData(etag: string | null): Promise<GameDataFetch 
     return {
       kind: 'ok',
       etag: response.headers.get('etag'),
-      bytes: text.length,
+      bytes: new TextEncoder().encode(text).length,
       sections,
       raw: body as Record<string, unknown>,
     }
