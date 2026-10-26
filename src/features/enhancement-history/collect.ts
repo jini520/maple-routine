@@ -24,6 +24,9 @@ import { eventWorldCharacterNames } from '../../lib/enhancement/world'
 import { SOUL_POTENTIAL_FROM } from '../../lib/enhancement/cost'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { mapWithLimit } from '../schedule-window/gate'
+import { historyFloorDateKey } from '../cashbook/range'
+import { loadRecomputeProgress, saveRecomputeProgress } from '../../storage/enhancement-recomputes'
+import { RECOMPUTE_REQUESTS, recomputeDatesOf, type RecomputeRequest } from './recompute'
 
 /** 네 종류. 순서가 진행 표시에 보이지 않으므로 아무래도 된다. */
 export const ENHANCEMENT_KINDS: readonly EnhancementKind[] = ['cube', 'starforce', 'potential', 'soul_potential']
@@ -46,6 +49,20 @@ export interface EnhancementHistoryJob {
   dateKey: string
 }
 
+/**
+ * 넥슨 로그인 계정이 한 회차에 다시 받는 날 수. 그 계정의 강화 내역은 서버 스트림을 거쳐, 요청을 걸면 모든 로그인 사용자가
+ * 그 기간을 한꺼번에 서버로 받는다. 나눠 받아 부하를 여러 날로 흩는다.
+ */
+export const LOGIN_RECOMPUTE_DAYS = 7
+
+/** 이번 회차에 다시 받는 요청 하나의 날들. */
+interface RecomputeChunk {
+  request: RecomputeRequest
+  dates: string[]
+  /** 이 날들을 받으면 요청이 끝난다 */
+  last: boolean
+}
+
 /** 진행. **분모는 한 콜도 나가기 전에 확정**되고 도는 중에 안 늘어난다. */
 export type HistoryProgress = (done: number, total: number) => void
 
@@ -55,30 +72,76 @@ export type HistoryProgress = (done: number, total: number) => void
  *
  * 굳은 칸은 뺀다. 그래서 지난 달 두 번째 방문이 0콜이다. 오늘은 굳을 수 없어 언제나 든다.
  * 조회 기록은 넥슨 계정마다 따로다. 계정 칸이 생기기 전의 기록을 메인 계정으로 채운 뒤에 읽는다.
+ * 끝나지 않은 다시 매기기 요청의 날은 굳었어도 든다. 화면 범위 밖이어도 든다.
  *
  * @param nexonAccountId 부를 자격의 넥슨 계정 id
  * @param todayDateKey KST `YYYY-MM-DD`. 이보다 뒤는 아직 없는 날이라 안 부른다
+ * @param recomputeDays 한 회차에 다시 받는 날 수의 한도. 넥슨 로그인 계정만 있다
  */
 export async function planEnhancementHistory(
   nexonAccountId: string,
   dateKeys: readonly string[],
   todayDateKey: string,
+  recomputeDays: number | null = null,
 ): Promise<EnhancementHistoryJob[]> {
+  return (await planRound(nexonAccountId, dateKeys, todayDateKey, recomputeDays)).jobs
+}
+
+async function planRound(
+  nexonAccountId: string,
+  dateKeys: readonly string[],
+  todayDateKey: string,
+  recomputeDays: number | null,
+): Promise<{ jobs: EnhancementHistoryJob[]; chunks: RecomputeChunk[] }> {
   const days = dateKeys.filter((dateKey) => dateKey <= todayDateKey)
-  if (days.length === 0) return []
+  const chunks = await recomputeChunks(nexonAccountId, todayDateKey, recomputeDays)
+  if (days.length === 0 && chunks.length === 0) return { jobs: [], chunks }
 
   await fillLegacyAccountIds()
   await ensureEnhancementTotals()
   const checks = await loadEnhancementChecks(nexonAccountId, days)
   const jobs: EnhancementHistoryJob[] = []
+  const planned = new Set<string>()
+  const add = (kind: EnhancementKind, dateKey: string) => {
+    if (planned.has(checkKey(kind, dateKey))) return
+    planned.add(checkKey(kind, dateKey))
+    jobs.push({ kind, dateKey })
+  }
   for (const dateKey of days) {
     for (const kind of kindsOn(dateKey)) {
       const check = checks.get(checkKey(kind, dateKey))
       if (dateKey < todayDateKey && check?.settled === true) continue
-      jobs.push({ kind, dateKey })
+      add(kind, dateKey)
     }
   }
-  return jobs
+  for (const chunk of chunks) {
+    for (const dateKey of chunk.dates) {
+      for (const kind of kindsOn(dateKey)) if (chunk.request.kinds.includes(kind)) add(kind, dateKey)
+    }
+  }
+  return { jobs, chunks }
+}
+
+/** 끝나지 않은 요청마다 이번 회차에 받을 날. 받을 날이 없어도 끝을 적어야 해서 목록에 든다. */
+async function recomputeChunks(
+  nexonAccountId: string,
+  todayDateKey: string,
+  recomputeDays: number | null,
+): Promise<RecomputeChunk[]> {
+  if (RECOMPUTE_REQUESTS.length === 0) return []
+  const progress = await loadRecomputeProgress(nexonAccountId)
+  const floor = historyFloorDateKey(todayDateKey)
+  return RECOMPUTE_REQUESTS.flatMap((request) => {
+    const done = progress.get(request.id)
+    if (done?.completed === true) return []
+    const { dates, last } = recomputeDatesOf(request, done?.doneThroughDate ?? null, floor, todayDateKey, recomputeDays)
+    return [{ request, dates, last }]
+  })
+}
+
+/** 이 자격이 한 회차에 다시 받는 날 수의 한도. */
+function recomputeDaysOf(credential: NexonCredential): number | null {
+  return credential.type === 'login' ? LOGIN_RECOMPUTE_DAYS : null
 }
 
 /** 회차를 시작하기 전에 원장만 읽어 낸 크기. **콜이 한 건도 안 나간다.** */
@@ -107,10 +170,11 @@ export async function measureEnhancementHistory(
   dateKeys: readonly string[],
   now: Date,
 ): Promise<HistoryPlanSize> {
-  const accountId = (await currentCredential())?.accountId ?? null
-  if (accountId === null) return { total: 0, hasPast: false }
+  const credential = await currentCredential()
+  const accountId = credential?.accountId ?? null
+  if (credential === null || accountId === null) return { total: 0, hasPast: false }
   const todayDateKey = getCurrentKstDateKey(now)
-  const jobs = await planEnhancementHistory(accountId, dateKeys, todayDateKey)
+  const jobs = await planEnhancementHistory(accountId, dateKeys, todayDateKey, recomputeDaysOf(credential))
   return {
     total: jobs.length,
     hasPast: jobs.some((job) => job.dateKey !== todayDateKey),
@@ -161,11 +225,14 @@ export async function collectEnhancementHistory(
   }
 
   const todayDateKey = getCurrentKstDateKey(now)
-  const jobs = await planEnhancementHistory(accountId, dateKeys, todayDateKey)
+  const { jobs, chunks } = await planRound(accountId, dateKeys, todayDateKey, recomputeDaysOf(credential))
 
   // 분모가 여기서 확정된다. 부를 것이 없어도 한 번은 알린다(화면이 바를 안 그리게).
   onProgress?.(0, jobs.length)
-  if (jobs.length === 0) return
+  if (jobs.length === 0) {
+    await saveRecomputes(accountId, chunks, new Set(), now)
+    return
+  }
 
   // 목록을 못 받은 것과 스페셜 캐릭터가 없는 것은 다르다. 앞은 null, 뒤는 빈 집합이다.
   const eventNames = await fetchAndRecordCharacterList(credential)
@@ -178,7 +245,7 @@ export async function collectEnhancementHistory(
     .catch(() => null)
 
   const checkedAt = now.toISOString()
-  await mapWithLimit(
+  const results = await mapWithLimit(
     jobs,
     HISTORY_CALL_LIMIT,
     async (job) => {
@@ -192,7 +259,30 @@ export async function collectEnhancementHistory(
       // 목록을 못 받은 회차는 이벤트 월드를 가리지 못한 줄이 있어 굳히지 않는다. 다음 회차가 다시 받아 판정을 채운다.
       const settled = job.dateKey < todayDateKey && eventNames !== null
       await markEnhancementChecked(accountId, job.kind, job.dateKey, firstCursor, settled, checkedAt)
+      return true
     },
     (done) => onProgress?.(done, jobs.length),
   )
+  const failed = new Set(jobs.flatMap((job, index) => (results[index] === true ? [] : [checkKey(job.kind, job.dateKey)])))
+  await saveRecomputes(accountId, chunks, failed, now)
+}
+
+/**
+ * 요청마다 진행을 적는다. 이번 회차의 날이 하나라도 실패한 요청은 적지 않아 다음 회차가 같은 날부터 다시 받는다.
+ *
+ * @param failed 실패한 일의 `checkKey`
+ */
+async function saveRecomputes(
+  accountId: string,
+  chunks: readonly RecomputeChunk[],
+  failed: ReadonlySet<string>,
+  now: Date,
+): Promise<void> {
+  for (const { request, dates, last } of chunks) {
+    const ok = dates.every((dateKey) =>
+      kindsOn(dateKey).every((kind) => !request.kinds.includes(kind) || !failed.has(checkKey(kind, dateKey))),
+    )
+    if (!ok) continue
+    await saveRecomputeProgress(accountId, request.id, dates.at(-1) ?? null, last, now).catch(() => undefined)
+  }
 }

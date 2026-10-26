@@ -34,3 +34,19 @@ export const ENHANCEMENT_TOTALS_BODY = `(
 /** 날짜 범위로 읽는다. */
 export const ENHANCEMENT_TOTALS_DATE_INDEX =
   'CREATE INDEX IF NOT EXISTS enhancement_totals_date ON enhancement_totals (history_date)'
+
+/**
+ * 강화 비용 다시 매기기 요청의 진행. 넥슨 계정 · 요청마다 한 줄이다. 강화 내역이 계정 단위라 계정마다 다시 받는다.
+ */
+export const ENHANCEMENT_RECOMPUTES_BODY = `(
+    id TEXT NOT NULL PRIMARY KEY DEFAULT (${NEW_UUID_SQL}),
+    nexon_account_id TEXT NOT NULL,
+    -- 환경 변수 요청의 id.
+    request_key TEXT NOT NULL,
+    -- 다시 받은 마지막 날. 다음 회차가 그 뒤부터 잇는다.
+    done_through_date TEXT,
+    -- 요청의 마지막 날까지 받은 시각. 적히면 다시 돌지 않는다.
+    completed_at TEXT,
+    updated_at TEXT NOT NULL,
+    UNIQUE (nexon_account_id, request_key)
+  )`

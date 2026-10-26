@@ -16,7 +16,11 @@ import {
   CASHBOOK_ENTRY_HUNT_INPUTS_BODY,
   CASHBOOK_ENTRY_ITEMS_BODY,
 } from './cashbook-tables'
-import { ENHANCEMENT_TOTALS_BODY, ENHANCEMENT_TOTALS_DATE_INDEX } from './enhancement-tables'
+import {
+  ENHANCEMENT_RECOMPUTES_BODY,
+  ENHANCEMENT_TOTALS_BODY,
+  ENHANCEMENT_TOTALS_DATE_INDEX,
+} from './enhancement-tables'
 import { runVersionedMigrations } from './migrations'
 import {
   CHARACTER_ACCOUNTS_BODY,
@@ -202,16 +206,21 @@ const TABLE_DEFINITIONS = [
     PRIMARY KEY (id)
 )`,
   },
-  // 날짜별 조회 원장. 계정 단위라 ocid 축이 없어 하루가 3콜이다.
-  //
-  // 조회 원장(`schedule-probe-ledger`, preferences)과 갈리는 이유는 **창이 없기 때문**이다.
-  // 그쪽은 14일 뒤 스스로 떨어지지만 이쪽은 날짜가 영구히 쌓여, preferences 에 두면 JSON 하나가
-  // 무한히 자란다.
   // 강화 내역의 날짜 · 캐릭터 · 분류 · 장비별 합계. 응답 원본은 저장하지 않는다. 다시 받을 수 있는 기간이 2년이라 기록이다.
   {
     name: 'enhancement_totals',
     createSql: `CREATE TABLE IF NOT EXISTS enhancement_totals ${ENHANCEMENT_TOTALS_BODY}`,
   },
+  // 다시 매기기 요청의 진행. 지워지면 끝난 요청을 처음부터 다시 받아 넥슨 · 서버 호출이 다시 몰린다. 그래서 기록이다.
+  {
+    name: 'enhancement_recomputes',
+    createSql: `CREATE TABLE IF NOT EXISTS enhancement_recomputes ${ENHANCEMENT_RECOMPUTES_BODY}`,
+  },
+  // 날짜별 조회 원장. 계정 단위라 ocid 축이 없어 하루가 3콜이다.
+  //
+  // 조회 원장(`schedule-probe-ledger`, preferences)과 갈리는 이유는 **창이 없기 때문**이다.
+  // 그쪽은 14일 뒤 스스로 떨어지지만 이쪽은 날짜가 영구히 쌓여, preferences 에 두면 JSON 하나가
+  // 무한히 자란다.
   {
     name: 'enhancement_history_checks',
     createSql: `CREATE TABLE IF NOT EXISTS enhancement_history_checks ${ENHANCEMENT_HISTORY_CHECKS_BODY}`,

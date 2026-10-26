@@ -13,6 +13,11 @@ jest.mock('../../../storage/enhancement-history', () => ({
 jest.mock('../../../storage/enhancement-totals', () => ({ replaceEnhancementTotals: jest.fn() }))
 jest.mock('../../server-sync/report', () => ({ reportEnhancementTotals: jest.fn() }))
 jest.mock('../legacy-totals', () => ({ ensureEnhancementTotals: jest.fn() }))
+jest.mock('../../../storage/enhancement-recomputes', () => ({
+  loadRecomputeProgress: jest.fn(),
+  saveRecomputeProgress: jest.fn(),
+}))
+jest.mock('../recompute', () => ({ ...jest.requireActual('../recompute'), RECOMPUTE_REQUESTS: [] }))
 
 const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 const { fetchEnhancementHistory } = jest.requireMock('../../../nexon/history/client') as Record<string, jest.Mock>
@@ -23,6 +28,9 @@ const { fillLegacyAccountIds } = jest.requireMock('../../auth/legacy-account-ids
 const { replaceEnhancementTotals } = jest.requireMock('../../../storage/enhancement-totals') as Record<string, jest.Mock>
 const { reportEnhancementTotals } = jest.requireMock('../../server-sync/report') as Record<string, jest.Mock>
 const { ensureEnhancementTotals } = jest.requireMock('../legacy-totals') as Record<string, jest.Mock>
+const recomputes = jest.requireMock('../../../storage/enhancement-recomputes') as Record<string, jest.Mock>
+const { RECOMPUTE_REQUESTS } = jest.requireMock('../recompute') as { RECOMPUTE_REQUESTS: unknown[] }
+const setRequests = (requests: unknown[]) => RECOMPUTE_REQUESTS.splice(0, RECOMPUTE_REQUESTS.length, ...requests)
 
 const NOW = new Date('2026-09-06T12:00:00+09:00')
 const KINDS = ['cube', 'starforce', 'potential']
@@ -52,6 +60,9 @@ beforeEach(() => {
   replaceEnhancementTotals.mockReset().mockResolvedValue({ writtenIds: [], removedIds: [] })
   reportEnhancementTotals.mockReset().mockResolvedValue(undefined)
   ensureEnhancementTotals.mockReset().mockResolvedValue(undefined)
+  recomputes.loadRecomputeProgress.mockReset().mockResolvedValue(new Map())
+  recomputes.saveRecomputeProgress.mockReset().mockResolvedValue(undefined)
+  setRequests([])
   saveEventWorldNames.mockReset().mockResolvedValue(undefined)
 })
 
@@ -306,3 +317,74 @@ describe('수집', () => {
     expect(seen).toEqual([[0, 0]])
   })
 })
+
+// 계산 코드나 비용 표를 고친 기간은 굳은 날이라도 넥슨 API 에서 다시 받아야 지난 합계가 바뀐다.
+describe('다시 매기기 요청', () => {
+  const cubeRequest = (from: string, to: string) => ({ id: 'r1', from, to, kinds: ['cube'] })
+  const settledDay = (dateKey: string) =>
+    new Map(KINDS.map((kind) => [`${kind}|${dateKey}`, { nextCursor: null, settled: true }]))
+
+  it('굳은 날도 요청이면 다시 받고 분모에 든다', async () => {
+    store.loadEnhancementChecks.mockResolvedValue(settledDay('2026-09-04'))
+    setRequests([cubeRequest('2026-09-04', '2026-09-04')])
+
+    const jobs = await planEnhancementHistory('account-key', ['2026-09-05'], '2026-09-06')
+
+    expect(jobs).toHaveLength(4)
+    expect(jobs).toContainEqual({ kind: 'cube', dateKey: '2026-09-04' })
+  })
+
+  it('화면 범위의 일과 겹치면 한 번만 받는다', async () => {
+    setRequests([cubeRequest('2026-09-05', '2026-09-05')])
+
+    expect(await planEnhancementHistory('account-key', ['2026-09-05'], '2026-09-06')).toHaveLength(3)
+  })
+
+  it('끝난 요청은 다시 돌지 않는다', async () => {
+    recomputes.loadRecomputeProgress.mockResolvedValue(new Map([['r1', { doneThroughDate: '2026-09-04', completed: true }]]))
+    setRequests([cubeRequest('2026-09-04', '2026-09-04')])
+
+    expect(await planEnhancementHistory('account-key', ['2026-09-05'], '2026-09-06')).toHaveLength(3)
+  })
+
+  it('요청의 날을 모두 받으면 마지막 날과 끝을 적는다', async () => {
+    setRequests([cubeRequest('2026-09-03', '2026-09-04')])
+
+    await collectEnhancementHistory([], NOW)
+
+    expect(recomputes.saveRecomputeProgress).toHaveBeenCalledWith('account-key', 'r1', '2026-09-04', true, NOW)
+  })
+
+  // 적으면 실패한 날을 다시 받을 계기가 사라진다.
+  it('하루라도 실패하면 진행을 적지 않는다', async () => {
+    setRequests([cubeRequest('2026-09-03', '2026-09-04')])
+    fetchEnhancementHistory.mockImplementation((_key, _kind, _itemKeyOf, query) =>
+      query.dateKey === '2026-09-03' ? Promise.reject(new Error('boom')) : Promise.resolve(page([])),
+    )
+
+    await collectEnhancementHistory([], NOW)
+
+    expect(recomputes.saveRecomputeProgress).not.toHaveBeenCalled()
+  })
+
+  // 로그인 계정의 강화 내역은 서버 스트림을 거친다. 모든 사용자가 같은 날 긴 기간을 받으면 서버에 몰린다.
+  it('넥슨 로그인 계정은 한 회차에 7일만 받고 끝을 적지 않는다', async () => {
+    getAuthConfig.mockResolvedValue({ login: { id: 'account-login', session: 's' }, apiKeys: [] })
+    setRequests([cubeRequest('2026-08-01', '2026-08-20')])
+
+    await collectEnhancementHistory([], NOW)
+
+    expect(fetchEnhancementHistory.mock.calls.map((call) => call[3].dateKey)).toHaveLength(7)
+    expect(recomputes.saveRecomputeProgress).toHaveBeenCalledWith('account-login', 'r1', '2026-08-07', false, NOW)
+  })
+
+  it('기간이 통째로 조회 하한 앞이면 받지 않고 끝을 적는다', async () => {
+    setRequests([cubeRequest('2020-01-01', '2020-01-02')])
+
+    await collectEnhancementHistory([], NOW)
+
+    expect(fetchEnhancementHistory).not.toHaveBeenCalled()
+    expect(recomputes.saveRecomputeProgress).toHaveBeenCalledWith('account-key', 'r1', null, true, NOW)
+  })
+})
+
