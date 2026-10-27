@@ -60,7 +60,7 @@ src/
 
 `index.ts` 가 모듈 최상위에서 이 순서로 부른다.
 
-1. `installPorts()` 가 포트 열아홉(저장소 둘 · 네이티브 열일곱)을 주입한다. 주입 전에 포트를 쓰면 던지므로 가장
+1. `installPorts()` 가 포트 열여덟(저장소 둘 · 네이티브 열여섯)을 주입한다. 주입 전에 포트를 쓰면 던지므로 가장
    먼저 부른다([[ADR-004]] 결정 2).
 2. `loadGameData()` 가 기기 사본과 서버 응답으로 게임 데이터 표를 덮어쓴다. Preferences 를 읽으므로 포트 주입 뒤다.
    결과는 기다리지 않는다([[ADR-020]]).
@@ -92,7 +92,6 @@ src/
 | 인앱 브라우저 | `expo-web-browser` | `native/adapters/rn-browser.ts` |
 | 햅틱 | `expo-haptics` | `native/adapters/rn-haptics.ts` |
 | 앱 안 리뷰 요청 | `expo-store-review` | `native/adapters/rn-store-review.ts`([[ADR-052]] 결정 10) |
-| 기울기 | `expo-sensors`(가속도계) | `native/adapters/rn-tilt.ts`([[ADR-092]] 결정 2) |
 | uuid | `expo-crypto` | `native/adapters/rn-uuid.ts`([[ADR-074]] 결정 13) |
 | 스플래시 · 상태바 · 시스템 바 · 키보드 · 뒤로 가기 · 색 모드 · 테마 표면 | Expo 모듈 · 로컬 모듈 `app-system-bars` · `app-background` | `native/adapters/rn-*.ts` |
 | 이미지 내보내기 | `react-native-view-shot` · `expo-sharing` · `expo-media-library` · `expo-file-system` | 아직 없다. 바이너리에만 들어 있다([[ADR-004]] 결정 4) |

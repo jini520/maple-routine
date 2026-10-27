@@ -93,7 +93,7 @@
 | `CharacterPortrait` · `CharacterRail` · `CharacterRow` · `CharacterManage` · `CharacterUnavailable` | 캐릭터 초상화 · 레일 · 행 · 관리 격자 · 조회 불가 안내([[ADR-029]] · [[ADR-031]]) |
 | `PartySizeModal` · `FeeRow` | 파티 인원 모달 · 수수료 줄([[ADR-038]] · [[ADR-050]]) |
 | `DropEffectOverlay` | 고가 드롭 연출([[ADR-045]]) |
-| `HologramSheen` | 고가 드롭 카드 · 보스 행 면 위를 도는 오로라 빛. 폰 기울기(`TiltPort`)가 빛을 더 민다([[ADR-092]]) |
+| `HologramSheen` | 고가 드롭 카드 · 보스 행 전면에 깔리는 오로라 금속빛. 금속 띠와 오로라 띠가 5초 경로를 따라 엇갈려 흐른다([[ADR-092]] 결정 2) |
 
 ### templates
 

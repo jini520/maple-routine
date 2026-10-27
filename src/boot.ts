@@ -4,7 +4,6 @@ import {
   setColorSchemePort,
   setBrowserPort,
   setHapticsPort,
-  setTiltPort,
   setStoreReviewPort,
   setKeyboardPort,
   setLiveUpdatePort,
@@ -26,7 +25,6 @@ import { rnAdsPort } from './native/adapters/rn-ads'
 import { rnBackGesturePort } from './native/adapters/rn-back-gesture'
 import { rnColorSchemePort } from './native/adapters/rn-color-scheme'
 import { rnHapticsPort } from './native/adapters/rn-haptics'
-import { rnTiltPort } from './native/adapters/rn-tilt'
 import { rnStoreReviewPort } from './native/adapters/rn-store-review'
 import { rnKeyboardPort } from './native/adapters/rn-keyboard'
 import { rnNotificationsPort } from './native/adapters/rn-notifications'
@@ -78,8 +76,6 @@ import { rnAssetFilesPort } from './storage/adapters/rn-asset-files'
  * 열다섯째가 `HapticsPort` 다(`rn-haptics.ts`). 두드림 하나뿐이고, 그 하나를 두 플랫폼이
  * 서로 다른 API 로 낸다.
  *
- * `TiltPort` 는 기울기 구독 하나다(`rn-tilt.ts`). 센서가 없는 기기에서는 던지지 않고 값을 보내지 않는다.
- *
  * `StoreReviewPort` 는 앱 안 리뷰 팝업 하나다(`rn-store-review.ts`). 쓸 수 없는 기기에서는 아무것도 하지 않는다.
  *
  * 그 목록을 먼저 떠난 것이 셋이다:
@@ -103,7 +99,6 @@ export function installPorts(): void {
   setBackGesturePort(rnBackGesturePort)
   setColorSchemePort(rnColorSchemePort)
   setHapticsPort(rnHapticsPort)
-  setTiltPort(rnTiltPort)
   setStoreReviewPort(rnStoreReviewPort)
   setKeyboardPort(rnKeyboardPort)
   setNotificationsPort(rnNotificationsPort)
