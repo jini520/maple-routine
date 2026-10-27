@@ -11,7 +11,7 @@ import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../boss-dr
 import { getBossPartyPeriodOverrides, setBossPartyPeriodOverride } from '../boss-party-period-overrides'
 import { getBossPartySettings, setBossPartySetting } from '../boss-party-settings'
 import { getBossProfitRecords, upsertBossProfitRecord } from '../boss-profit'
-import { __resetStoragePortsForTest, setSqlitePort } from '../ports'
+import { __resetStoragePortsForTest, setAssetFilesPort, setSqlitePort } from '../ports'
 import { closeBossProfitDb } from '../sqlite/db'
 import { createRealSqlite, type RealSqlite } from '../sqlite/__tests__/node-sqlite-port'
 
@@ -21,6 +21,15 @@ beforeEach(() => {
   real = createRealSqlite()
   setSqlitePort(real.port)
   installFakePreferences()
+  // 받은 그림 디렉터리는 이 파일의 관심사가 아니다. 비어 있는 것으로 둔다.
+  setAssetFilesPort({
+    directoryUri: () => 'file:///docs/game-assets/',
+    list: async () => [],
+    download: async () => 0,
+    remove: async () => {},
+    clear: async () => {},
+    size: async () => 0,
+  })
 })
 
 afterEach(async () => {

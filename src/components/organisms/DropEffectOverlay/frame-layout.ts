@@ -15,7 +15,7 @@
  * 순수해야 검사할 수 있다.
  */
 
-import { DROP_EFFECT_FRAMES } from './drop-effect-layout'
+import { dropEffectFrames } from './drop-effect-layout'
 import {
   DROP_EFFECT_ORIGINS,
   DROP_PILLAR_SCALE,
@@ -99,7 +99,7 @@ type SizeOf = (source: ImageAssetRef) => FrameBitmapSize | null
 export function buildPillarFrames(sizeOf: SizeOf): SpriteFrame[] {
   const phases: DropEffectPhase[] = ['pre', 'loop', 'end']
   return phases.flatMap((phase) =>
-    DROP_EFFECT_FRAMES[phase].flatMap((source, i) => {
+    dropEffectFrames()[phase].flatMap((source, i) => {
       const placement = placeDropFrame(
         DROP_EFFECT_ORIGINS[phase][i] ?? [0, 0],
         DROP_PILLAR_SCALE,
@@ -112,7 +112,7 @@ export function buildPillarFrames(sizeOf: SizeOf): SpriteFrame[] {
 
 /** ScreenEff 16장. 전 프레임 같은 배율로 화면 중앙. */
 export function buildScreenFrames(scale: number, sizeOf: SizeOf): SpriteFrame[] {
-  return DROP_EFFECT_FRAMES.screen.flatMap((source, i) => {
+  return dropEffectFrames().screen.flatMap((source, i) => {
     const placement = centerDropFrame(scale, sizeOf(source))
     return placement === null ? [] : [{ key: `screen-${i}`, source, placement }]
   })

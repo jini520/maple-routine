@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-006 · ADR-151 결정 2 · 3 · ADR-261 · ADR-280 결정 1 · 2 · 3 · 4 · 7 · 9
-> 관련 소스: `src/data/` · `lib/boss/boss-profit-period.ts` 의 `isEffectiveIn` · `isEffectiveAnytimeIn` · `lib/boss/` · `lib/drop/` · `lib/cashbook/` · `lib/scheduler/` · `lib/world/` · `lib/equipment/` · `storage/sqlite/migrations.ts`
+> 관련 소스: `lib/game-data/` · `lib/boss/boss-profit-period.ts` 의 `isEffectiveIn` · `isEffectiveAnytimeIn` · `lib/boss/` · `lib/drop/` · `lib/cashbook/` · `lib/scheduler/` · `lib/world/` · `lib/equipment/` · `storage/sqlite/migrations.ts`
 
 ## 배경
 
@@ -18,8 +18,8 @@
 결정석 가격 · 드롭 표 · 상자 내용물 · 파티 인원 상한 · 강화 비용 같은 게임 수치는 도메인을 아는 사용자가 확인한
 값만 넣는다. AI 가 추정한 값을 넣지 않는다. 틀린 수치는 에러 없이 화면과 기록에 그대로 들어가서, 나중에 찾기 어렵다.
 
-값을 바꾸는 곳은 서버 관리 화면이다([[ADR-020]]). 사용자가 목록에 주지 않은 기존 값은 바꾸지 않는다. 값은 데이터
-파일과 서버 표에만 두고 코드에 박지 않는다. 예를 들어 기본 파티 인원 상한도 코드 상수가 아니라 보스 표의
+값을 바꾸는 곳은 서버 관리 화면이다([[ADR-020]]). 사용자가 목록에 주지 않은 기존 값은 바꾸지 않는다. 값은 서버
+표에만 두고 코드에 박지 않는다. 예를 들어 기본 파티 인원 상한도 코드 상수가 아니라 보스 표의
 `rules.defaultMaxPartySize` 다.
 
 ### 결정 2. 데이터와 기록은 이름이 아니라 key 로 서로를 가리킨다
@@ -29,9 +29,9 @@ key 는 영문 snake_case 이고(`black_mage` · `high_mountain`), 한글 이름
 같은 이름이 있을 수 있는 사냥터는 지역 key 를 앞에 붙인다(`reverse_city_underground_track_1`). 새 key 를 정할 때는
 사용자에게 이름과 key 의 짝을 보여 확인받는다.
 
-묶음마다 마스터 표 하나에 key · 이름 · 그림 파일 이름을 적는다. 보스는 `bosses.json`, 드롭 아이템은 `drop-items.json`,
-컨텐츠는 `contents.json`, 장비는 `equipment-items.json`, 월드는 `worlds.json` 이다. 드롭 표 · 상자 · 가격표 같은 다른
-데이터는 key 로만 가리킨다. 이름을 바꿀 때 한 줄만 고치면 되고, 파일끼리 이름이 어긋날 일이 없다.
+묶음마다 마스터 표 하나에 key · 이름 · 그림 파일 이름을 적는다. 서버 게임 데이터의 칸으로 보스는 `bosses`, 드롭 아이템은
+`dropItems`, 컨텐츠는 `contents`, 장비는 `equipmentItems`, 월드는 `worlds` 다. 드롭 표 · 상자 · 가격표 같은 다른
+데이터는 key 로만 가리킨다. 이름을 바꿀 때 한 줄만 고치면 되고, 표끼리 이름이 어긋날 일이 없다.
 
 보스 초상 slug(`portraitSlug`)나 컨텐츠 배경(`backgroundMap`) 같은 그림용 key 는 식별 key 와 따로 둔다. 그림 하나를
 여러 식별 key 가 같이 쓸 수 있어서다.
@@ -112,9 +112,9 @@ key 를 얻지 못하면 key 는 `null` 로 두고 원래 이름을 그대로 �
 
 ### 결정 10. 보스의 메소 보상은 결정석 가격이고, 드롭 표에는 넣지 않는다
 
-넥슨 원본의 고정 보상에는 강렬한 힘의 결정 · 메소 · 마일리지가 섞여 있다. 셋 다 드롭 표(`boss-drops.json`)에 넣지 않는다.
+넥슨 원본의 고정 보상에는 강렬한 힘의 결정 · 메소 · 마일리지가 섞여 있다. 셋 다 드롭 표(서버 게임 데이터의 `bossDrops` 칸)에 넣지 않는다.
 
-- 메소는 결정석을 팔면 들어오는 돈이라 결정석 가격(`crystal-prices.json` 의 `priceMeso`)으로 넣는다(사용자 확인).
+- 메소는 결정석을 팔면 들어오는 돈이라 결정석 가격(`crystalPrices` 칸의 `priceMeso`)으로 넣는다(사용자 확인).
   드롭 표에 또 적으면 같은 돈이 두 곳에서 세어져 수익 화면에 두 배로 잡힌다.
 - 강렬한 힘의 결정은 바로 결정석 가격 표가 다루는 대상이라 드롭 표에 넣지 않는다.
 - 마일리지는 어느 보스에도 적지 않는다. 적기 시작하면 모든 보스를 한 번에 채워야 보스끼리 어긋나지 않는다.
@@ -125,7 +125,7 @@ key 를 얻지 못하면 key 는 `null` 로 두고 원래 이름을 그대로 �
 
 | 그림 | 이름 |
 |---|---|
-| 보스 초상(`assets/bosses/`) | `portraitSlug` 와 같은 영문 camelCase(`bellona.webp`) |
+| 보스 초상(서버 그림 목록의 `bosses/`) | `portraitSlug` 와 같은 영문 camelCase(`bellona.webp`) |
 | 보스 전용 고정 보상 조각 | `frag_eternel_<보스>` |
 | 에테르넬 방어구 상자 | `box_eternel_<보스>` |
 | 광휘 · 칠흑 보스 세트 | `bright_boss_<부위>` · `dark_boss_<부위>` |

@@ -3,7 +3,7 @@
  * 지출 어댑터를 진짜 SQLite 로 태운다. 지출은 가계부 기록 표 셋에 `entry_type = 'spend'` 로 산다. 화면이 쓰는 모양
  * (`SpendRecord`)으로 넣은 것이 같은 모양으로 되읽히는지, 품목 행이 어떻게 갈리는지 본다.
  */
-import spendCatalog from '../../data/spend-catalog.json'
+import spendCatalog from '../../__fixtures__/game-data/spend-catalog.json'
 import { spendCategories } from '../../lib/cashbook/categories'
 import { __resetStoragePortsForTest, setSqlitePort } from '../ports'
 import {

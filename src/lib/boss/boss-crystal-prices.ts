@@ -3,7 +3,6 @@
  *
  * 파티 인원 상한은 여기 없다. 보스 표의 난이도 줄이 들고 `lib/boss/bosses` 의 `getMaxPartySize` 가 읽는다.
  */
-import bundled from '../../data/crystal-prices.json'
 import type { CrystalPriceRow, CrystalPricesTable } from '../../types/game-data'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
 import {
@@ -18,7 +17,7 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { bundledTable, derive } from '../game-data/table'
+import { gameTable, derive } from '../game-data/table'
 import { isEffectiveAnytimeIn, isEffectiveIn } from './boss-profit-period'
 
 export type CrystalPriceEntry = CrystalPriceRow
@@ -42,7 +41,7 @@ export function parseCrystalPrices(value: unknown): CrystalPricesTable | null {
   return { updatedAt, prices }
 }
 
-export const crystalPricesTable = bundledTable('crystalPrices', bundled, parseCrystalPrices)
+export const crystalPricesTable = gameTable('crystalPrices', { updatedAt: null, prices: [] }, parseCrystalPrices)
 
 function pairKey(bossKey: string, difficulty: string): string {
   return `${bossKey}|${difficulty}`

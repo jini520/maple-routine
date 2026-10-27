@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-175 · ADR-177 · ADR-201 · ADR-283 · ADR-288 · ADR-290 · ADR-328 · ADR-329
-> 관련 소스: `app/cashbook/income/HuntCalculatorForm.tsx` · `app/cashbook/income/HuntManualForm.tsx` · `app/cashbook/income/FragmentSettleForm.tsx` · `app/cashbook/income/form-shared.tsx` · `lib/cashbook/hunting-meso.ts` · `lib/cashbook/hunting-grounds.ts` · `lib/cashbook/meso-rate.ts` · `features/cashbook/meso-rate.ts` · `nexon/meso-rate/` · `storage/meso-rate-cache.ts` · `storage/last-hunts.ts` · `src/data/hunting-grounds.json`
+> 관련 소스: `app/cashbook/income/HuntCalculatorForm.tsx` · `app/cashbook/income/HuntManualForm.tsx` · `app/cashbook/income/FragmentSettleForm.tsx` · `app/cashbook/income/form-shared.tsx` · `lib/cashbook/hunting-meso.ts` · `lib/cashbook/hunting-grounds.ts` · `lib/cashbook/meso-rate.ts` · `features/cashbook/meso-rate.ts` · `nexon/meso-rate/` · `storage/meso-rate-cache.ts` · `storage/last-hunts.ts`
 
 ## 배경
 
@@ -31,7 +31,7 @@
 
 ### 결정 2. 사냥터 참조표는 사용자가 준 값이다
 
-`hunting-grounds.json` 에 지역 21 · 사냥터 408 이 있다(아케인 리버 · 그란디스). 지역은 `key` · 이름 · `forceType`
+서버 게임 데이터의 `huntingGrounds` 칸에 지역 21 · 사냥터 408 이 있다(아케인 리버 · 그란디스). 지역은 `key` · 이름 · `forceType`
 (`arcane` · `authentic`)을, 사냥터는 `key` · 지역 · 이름 · 포스 요구치 · 마릿수를, `groundLevels` 는 사냥터마다 몬스터
 레벨을 담는다. 레벨이 둘인 사냥터가 있어 레벨은 따로 줄을 둔다. 사냥터 key 가 전역에서 유일해서 기록은 사냥터 key 만
 저장하고 지역은 그 key 에서 찾는다(`findHuntingGround`).

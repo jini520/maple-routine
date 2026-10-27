@@ -339,7 +339,40 @@ export interface HuntingGroundsTable extends TableHead {
   groundLevels: HuntingGroundLevelRow[]
 }
 
-/** 계약을 통과한 칸 열넷. 번들로 시작하므로 어느 칸도 비어 있지 않다. */
+/** 서버 그림 한 장. 앱은 `path` 로 찾고 기기에는 `file`(내용 해시 이름)로 둔다. */
+export interface AssetFileRow {
+  /** 서버 경로. `bosses/bellona.webp` 처럼 디렉터리와 파일 이름이다 */
+  path: string
+  /** `<sha256>.<확장자>`. 서버 `/assets/` 아래와 기기 디렉터리의 이름이다 */
+  file: string
+  sha256: string
+  /** 바이트 */
+  size: number
+  width: number
+  height: number
+}
+export interface AssetFilesTable extends TableHead {
+  files: AssetFileRow[]
+}
+
+/** 크롭 표의 종류. 같은 그림도 놓이는 자리마다 잘 보이는 곳이 달라 표가 갈린다. */
+export const IMAGE_CROP_KINDS = ['boss_portrait', 'boss_portrait_icon', 'boss_portrait_modal', 'daily_quest_region'] as const
+export type ImageCropKind = (typeof IMAGE_CROP_KINDS)[number]
+
+export interface ImageCropRow {
+  kind: ImageCropKind
+  /** 보스는 `portraitSlug`, 지역은 `backgroundMap` 의 값 */
+  slug: string
+  /** CSS `background-size` 문법(`120% auto`) */
+  size: string
+  /** CSS `background-position` 문법(`50% 40%`) */
+  position: string
+}
+export interface ImageCropsTable extends TableHead {
+  crops: ImageCropRow[]
+}
+
+/** 계약을 통과한 칸 열여섯. */
 export interface GameData {
   bosses: BossCatalog
   dropItems: DropItemsTable
@@ -355,11 +388,13 @@ export interface GameData {
   enhancementCosts: EnhancementCostsTable
   mvpGrades: MvpGradesTable
   huntingGrounds: HuntingGroundsTable
+  assets: AssetFilesTable
+  imageCrops: ImageCropsTable
 }
 
 export type GameDataSection = keyof GameData
 
-/** 칸 이름 열넷. 응답 · 번들 파일 · 동기화 스크립트가 같은 차례로 든다. */
+/** 칸 이름 열여섯. 응답과 기기 사본이 같은 차례로 든다. */
 export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'bosses',
   'dropItems',
@@ -375,6 +410,8 @@ export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'enhancementCosts',
   'mvpGrades',
   'huntingGrounds',
+  'assets',
+  'imageCrops',
 ]
 
 /** 서버 응답을 칸마다 검사한 결과. 못 받았거나 계약을 어겼거나 서버가 아직 안 넣은 칸은 `null` 이다. */

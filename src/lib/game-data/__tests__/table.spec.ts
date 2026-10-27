@@ -1,4 +1,4 @@
-import { bundledTable, createTable, derive } from '../table'
+import { createTable, derive } from '../table'
 
 describe('createTable', () => {
   it('표를 바꾸고 구독자에게 알린다', () => {
@@ -31,21 +31,6 @@ describe('createTable', () => {
     table.set({ rows: [2] })
 
     expect(listener).not.toHaveBeenCalled()
-  })
-})
-
-describe('bundledTable', () => {
-  const parse = (value: unknown): { rows: number[] } | null =>
-    typeof value === 'object' && value !== null && Array.isArray((value as { rows?: unknown }).rows)
-      ? { rows: (value as { rows: number[] }).rows }
-      : null
-
-  it('계약을 통과한 값으로 표를 세운다. 모르는 칸은 빠진다', () => {
-    expect(bundledTable('rows', { rows: [1], note: '덤' }, parse).get()).toEqual({ rows: [1] })
-  })
-
-  it('번들이 계약을 어기면 던진다', () => {
-    expect(() => bundledTable('rows', { rows: '표' }, parse)).toThrow('번들 rows 이 계약을 어겼습니다')
   })
 })
 

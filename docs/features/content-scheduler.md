@@ -38,7 +38,7 @@ API 동기화와 진입 재조회는 [[ADR-021]], 실패를 알리는 방법은 
 | `storage/scheduler-cache.ts` · `storage/shared-progress-cache.ts` | 캐릭터 캐시, 월드 · 계정 원장 |
 | `storage/manual-tracked-content.ts` · `storage/tracking-mode.ts` | 추적 목록, 추적 모드 |
 | `app/settings/TrackingModeModal.tsx` · `TrackingModeSelector.tsx` | 설정의 모드 전환 모달 |
-| `src/data/contents.json` | 컨텐츠 표. 서버 게임 데이터의 `contents` 사본 |
+| `lib/scheduler/contents.ts` | 컨텐츠 표. 서버 게임 데이터의 `contents` 칸 |
 
 ## 저장하는 것
 

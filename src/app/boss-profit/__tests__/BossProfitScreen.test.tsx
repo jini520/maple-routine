@@ -19,7 +19,7 @@ import { render } from '@testing-library/react-native'
 import { ScrollView } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
-import dropItemsData from '../../../data/drop-items.json'
+import dropItemsData from '../../../__fixtures__/game-data/drop-items.json'
 import {
   useBossProfitStore,
   type BossProfitRow,

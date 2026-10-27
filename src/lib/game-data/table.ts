@@ -1,9 +1,13 @@
 /**
- * 게임 데이터 표 하나의 현재 값. 번들로 시작하고 기기 사본 · 서버 응답이 덮는다.
+ * 게임 데이터 표 하나의 현재 값. 빈 표로 시작하고 기기 사본 · 서버 응답이 덮는다.
  *
- * 조회 모듈은 `get` 으로 읽고, 받는 흐름(`features/game-data/query`)이 `set` 으로 덮는다. 보스의 `catalog.ts` 가
- * 처음 세운 모양을 표 열넷이 같이 쓴다. 표가 서버에서 왔는지 번들인지 부르는 쪽은 모른다.
+ * 조회 모듈은 `get` 으로 읽고, 받는 흐름(`features/game-data/sync`)이 `set` 으로 덮는다. 보스의 `catalog.ts` 가
+ * 처음 세운 모양을 표 열여섯이 같이 쓴다.
  */
+import type { GameDataSection } from '../../types/game-data'
+// jest 의 moduleNameMapper 는 import 글자를 본다. `./initial` 이면 `/game-data/initial$` 에 안 걸려 fixture 로 바뀌지 않는다.
+import { initialTable } from '../game-data/initial'
+
 export interface GameTable<T> {
   get(): T
   /** 표를 통째로 바꾸고 구독자에게 알린다. 같은 객체면 아무 일도 없다. */
@@ -32,17 +36,15 @@ export function createTable<T>(initial: T): GameTable<T> {
 }
 
 /**
- * 번들 JSON 으로 표를 세운다. 그 칸의 계약 검사를 통과한 값이 초기값이라 응답의 `null` 은 코드에서 빠진 칸이다.
+ * 칸 하나의 표. 앱은 빈 표로 켜고, 기기 사본이나 서버 응답이 채운다. 다 받기 전에는 잠금 화면이 화면을 열지 않는다.
  *
- * 번들이 계약을 어기면 켜는 순간 던진다. 동기화 스크립트가 쓴 파일이고 `bundled-game-data.spec` 이 같은 검사를
- * 하므로 여기서 던지는 것은 빌드가 깨진 것이다.
+ * 첫 값은 `initialTable` 이 정한다. jest 는 그 모듈을 fixture 판으로 바꿔 끼워 테스트가 실제 게임 데이터로 돈다.
  *
- * @param name 칸 이름. 던질 때 어느 파일인지 적는다
+ * @param name 칸 이름
+ * @param empty 받기 전의 값
  */
-export function bundledTable<T>(name: string, raw: unknown, parse: (value: unknown) => T | null): GameTable<T> {
-  const value = parse(raw)
-  if (value === null) throw new Error(`번들 ${name} 이 계약을 어겼습니다`)
-  return createTable(value)
+export function gameTable<T>(name: GameDataSection, empty: T, parse: (value: unknown) => T | null): GameTable<T> {
+  return createTable(initialTable(name, empty, parse))
 }
 
 /**

@@ -15,8 +15,8 @@ import {
   setThemeAppearancePort,
   setUuidPort,
 } from './native/ports'
-import { setPreferencesPort, setSqlitePort } from './storage/ports'
-import { hydrateGameData } from './features/game-data/query'
+import { setAssetFilesPort, setPreferencesPort, setSqlitePort } from './storage/ports'
+import { startGameData } from './features/game-data/sync'
 import { nexonMaintenanceReporter } from './features/nexon-maintenance/store'
 import { setFriendsStream, setMaintenanceReporter } from './nexon/http'
 import { streamFriends } from './server/friends-stream'
@@ -38,6 +38,7 @@ import { rnUuidPort } from './native/adapters/rn-uuid'
 import { rnLiveUpdatePort } from './native/adapters/rn-live-update'
 import { rnPreferencesPort } from './storage/adapters/rn-preferences'
 import { rnSqlitePort } from './storage/adapters/rn-sqlite'
+import { rnAssetFilesPort } from './storage/adapters/rn-asset-files'
 
 /**
  * 포트 15종을 한 번에 주입한다(인터페이스와 구현이
@@ -91,6 +92,7 @@ export function installPorts(): void {
   // 저장소 먼저. 웹 쪽 `main.tsx` 와 같은 순서다(기술적 의존은 없고, 두 앱을 나란히 읽기 위한 것).
   setPreferencesPort(rnPreferencesPort)
   setSqlitePort(rnSqlitePort)
+  setAssetFilesPort(rnAssetFilesPort)
 
   // RN 구현이 있는 열하나.
   setAdsPort(rnAdsPort)
@@ -118,11 +120,10 @@ export function installPorts(): void {
 }
 
 /**
- * 게임 데이터 표 열넷을 기기 사본과 서버 응답으로 덮는 부팅 곁가지. 포트 주입 뒤에 부른다. 저장소를 읽기 때문이다.
+ * 게임 데이터 사본을 읽고, 없으면 잠금 화면 뒤에서 받는 부팅 곁가지. 포트 주입 뒤에 부른다. 저장소를 읽기 때문이다.
  *
- * 첫 화면을 막지 않는다. `void` 로 띄우고 결과를 안 기다린다. 못 받으면 번들 사본 그대로라 늦어도
- * 화면에 모자라는 것이 없다.
+ * 결과를 안 기다린다. 화면은 `features/game-data/sync` 의 상태를 구독해 다 받기 전에는 잠금 화면을 그린다.
  */
 export function loadGameData(): void {
-  void hydrateGameData()
+  void startGameData()
 }

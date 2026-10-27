@@ -32,7 +32,7 @@
 | `components/organisms/PartySizeModal/` | 파티 인원 · 난이도 · 분배 모달 |
 | `components/molecules/PartyShareSummary/` | 파티 요약 배지와 `변경` |
 | `components/molecules/DifficultyExpander/` | 난이도 고르개. 파티 모달 · 보스 관리 · 직접 완료 시트가 쓴다 |
-| `src/data/boss-portrait-crops.json` · `boss-portrait-icon-crops.json` · `boss-portrait-modal-crops.json` | 일러스트 크롭 표(카드 · 원형 초상화 · 모달 띠) |
+| `lib/assets/image-crops.ts` | 일러스트 크롭 표. 서버 게임 데이터의 `imageCrops` 칸에서 `boss_portrait` · `boss_portrait_icon` · `boss_portrait_modal`(카드 · 원형 초상화 · 모달 띠) |
 | `navigation/routes.ts` | `BossManage` 화면과 옛 경로 `/boss/manage` |
 
 ## 보스 스케줄러 화면

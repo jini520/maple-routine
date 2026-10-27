@@ -1,5 +1,5 @@
 // 아이콘 스택은 셋만 보여준다. 이 순서가 곧 **무엇이 보이는가**다.
-import dropItemsData from '../../data/drop-items.json'
+import dropItemsData from '../../__fixtures__/game-data/drop-items.json'
 import type { RecordedDrop } from '../../types/drops'
 import { sortDropsForDisplay, takeTopDropsByPayout } from '../drop/drop-order'
 

@@ -1,4 +1,4 @@
-import bundled from '../../data/cashbook-categories.json'
+import bundled from '../../__fixtures__/game-data/cashbook-categories.json'
 import { getItemIconUrlByFile } from '../assets/asset-lookup'
 import {
   cashbookCategoriesTable,

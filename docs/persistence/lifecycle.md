@@ -25,7 +25,8 @@
 | 공지(`useNoticeStore.restore`) | 구독 상태. 읽은 뒤 켜 둔 토픽을 다시 구독한다 |
 | 데이터 시각(`useDataFreshness.restore`) | `dataFetchedAt` |
 
-그보다 먼저 `index.ts` 의 `loadGameData()` 가 `queryCache` 를 읽어 게임 데이터 표를 덮어쓴다. 탭 스토어(컨텐츠 ·
+그보다 먼저 `index.ts` 의 `loadGameData()` 가 SQLite 의 게임 데이터 사본을 읽어 표를 세운다. 사본이 없으면 잠금 화면 뒤에서 받고,
+위의 복원은 다 받은 뒤에 마운트되는 `ReadyShell` 에서 돈다(테마는 잠금 화면도 그려야 해서 먼저 돈다). 탭 스토어(컨텐츠 ·
 보스 · 보스 수익)는 앱이 준비된 뒤 `prehydrate` 가 차례로 읽는다([[ADR-027]]). 그 밖의 값은 화면이 처음 열릴 때 그
 기능의 스토어가 읽는다.
 

@@ -37,7 +37,6 @@
 | `components/organisms/DropEffectOverlay/` | 전체화면 연출. 재생 상태(`drop-effect-player.ts`) · 기준점 표(`drop-effect-layout.ts`) · 장 위치(`frame-layout.ts`) |
 | `components/molecules/ValuableDropMark/` · `components/molecules/AuroraText/` | 고가 드롭 표시(그림 셋과 나머지 `+N`) · 오로라 글자 |
 | `scripts/measure-drop-effect-origins.py` | 빛기둥 기준점 표를 다시 재는 스크립트 |
-| `src/data/boss-drops.json` · `drop-boxes.json` · `drop-items.json` | 드롭 표 · 상자 내용 · 드롭 아이템 표(이름 · 그림 · 고가 여부) |
 
 ## 드롭 기록 시트
 
@@ -64,7 +63,7 @@
 | 생명의 보스 반지 상자 | 반지 9종 또는 생명의 연마석. 연마석은 레벨 없이 기록 |
 | 혼돈 · 메이린의 칠흑 장신구 상자 | 장신구 7종 중 하나. 레벨 없음 |
 
-레벨 범위는 상자마다 `drop-boxes.json` 이 정한다. `이 결과로 기록` 을 누르면 시트로 돌아온다.
+레벨 범위는 상자마다 서버 게임 데이터의 `dropBoxes` 칸이 정한다. `이 결과로 기록` 을 누르면 시트로 돌아온다.
 
 ### 확인 줄 문구
 

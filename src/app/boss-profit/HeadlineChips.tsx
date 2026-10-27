@@ -20,10 +20,6 @@ const BREAKDOWN_GAP = 6
 /** 상자 오른쪽 변과 화면 끝 사이에 남길 최소 여백. */
 const BREAKDOWN_EDGE_GAP = 12
 
-// 결정석 아이콘(주간/월간). 드롭 표 항목이 아니라 UI 표시 전용이라 `drop-items.json` 에
-// 등록하지 않고 파일명으로 직접 조회한다. 파일이 없으면 null. 아이콘만 생략하고 숫자는 그대로 둔다.
-export const WEEKLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
-export const MONTHLY_CRYSTAL_ICON_URL = getItemIconUrlByFile('intense_power_crystal_monthly.webp')
 
 // 총 수익 카드 셋째 줄의 결정석 칸. 주간 90 한도 대비 주간 몫과 그 주에 잡은 월간 보스의 월간 몫을 칸 둘로 나눠 적는다.
 // 월간 몫은 한도가 없어 분모 없이 개수만 적고, 안 잡은 주에도 `0개` 로 선다.
@@ -76,12 +72,16 @@ export function CrystalSummaryChip(props: {
       <ChevronDownIcon className="h-3 w-3 shrink-0 text-text-muted" strokeWidth={2.5} aria-hidden />
     )
   ) : null
+  // 결정석 아이콘(주간/월간). 드롭 표 항목이 아니라 UI 표시 전용이라 파일 이름으로 직접 찾는다. 없으면 아이콘만 생략한다.
+  // 렌더 안에서 찾는다. 모듈 최상위에서 찾으면 그림 목록을 받기 전의 빈 값으로 굳는다.
+  const weeklyCrystalIcon = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
+  const monthlyCrystalIcon = getItemIconUrlByFile('intense_power_crystal_monthly.webp')
   const chipContent = (
     <>
       {!monthlyOnly && (
         <View className={`flex-1 ${cellClassName}`}>
-          {WEEKLY_CRYSTAL_ICON_URL !== null && (
-            <Image source={WEEKLY_CRYSTAL_ICON_URL} resizeMode="contain" className="h-4 w-4 shrink-0" />
+          {weeklyCrystalIcon !== null && (
+            <Image source={weeklyCrystalIcon} resizeMode="contain" className="h-4 w-4 shrink-0" />
           )}
           <Text className="text-11 text-text-muted">주간 결정석</Text>
           <Text className="ml-auto text-xs font-bold text-text" style={TABULAR_NUMS}>
@@ -90,8 +90,8 @@ export function CrystalSummaryChip(props: {
         </View>
       )}
       <View className={`${monthlyOnly ? 'flex-1 ' : ''}${cellClassName}`}>
-        {MONTHLY_CRYSTAL_ICON_URL !== null && (
-          <Image source={MONTHLY_CRYSTAL_ICON_URL} resizeMode="contain" className="h-4 w-4 shrink-0" />
+        {monthlyCrystalIcon !== null && (
+          <Image source={monthlyCrystalIcon} resizeMode="contain" className="h-4 w-4 shrink-0" />
         )}
         <Text className="text-11 text-text-muted">{monthlyOnly ? '월간 결정석' : '월간'}</Text>
         {/* `개` 는 한국어 표기상 숫자에 붙으므로 공백을 넣지 않는다. */}

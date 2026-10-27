@@ -68,6 +68,8 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `mvp_grade_history` | `id`(uuid, `(account_id, from_date)` 는 UNIQUE) | 메이플 ID 마다 MVP 등급과 시작 날짜 | `storage/mvp-grades.ts` | 기록 | `features/mvp-grade.md` |
 | `character_accounts` | `id`(uuid, `(ocid, name, account_id)` 는 UNIQUE) | 캐릭터가 어느 메이플 ID 에 속했는지, 그것을 어느 넥슨 계정의 목록에서 봤는지와 처음 · 마지막으로 본 날 | `storage/character-accounts.ts` | 기록 | `features/mvp-grade.md` |
 | `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 보낼 기록. 처치 · 가계부는 쓰는 자리가 넣고 곧바로 보내며, 드롭은 못 보낸 것만 남는다. 평소에는 비어 있다 | `storage/server-sync-queue.ts` | 일반 | [[ADR-018]] |
+| `game_data_sections` | `id`(uuid, `section` 은 UNIQUE) | 게임 데이터 사본의 칸 하나. 서버 응답의 그 칸 JSON 을 그대로 든다 | `storage/game-data-copy.ts` | 일반 | [[ADR-020]] |
+| `game_data_meta` | `id`(uuid, `key` 는 UNIQUE) | 사본의 표식(계약 판 · ETag). 칸과 한 트랜잭션으로 쓰고, 있으면 다 받은 사본이다 | `storage/game-data-copy.ts` | 일반 | [[ADR-020]] |
 
 ### 칸
 
@@ -92,6 +94,8 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `mvp_grade_history` | `id` NN · `account_id` NN · `from_date` NN · `grade` · `updated_at` NN |
 | `character_accounts` | `id` NN · `ocid` NN · `name` NN · `account_id` NN · `nexon_account_id` · `first_seen_date` NN · `last_seen_date` NN |
 | `server_sync_queue` | `id` NN · `record_type` NN · `record_id` NN UNIQUE · `attempts` NN(기본 0) · `last_error` · `created_at` NN |
+| `game_data_sections` | `id` NN · `section` NN UNIQUE · `body` NN |
+| `game_data_meta` | `id` NN · `key` NN UNIQUE · `value` NN |
 
 분배 조건은 세 표가 같이 쓰는 여섯 칸이다. `split_mode`(`even` · `ratio`) · `party_size` · `my_share` · `shares_total` ·
 `split_fee_percent` · `split_fee_auto`. 정의는 `boss-tables.ts` 한 곳에 있다. 이름은 저장하지 않는다. 보스 · 아이템 · 월드

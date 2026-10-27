@@ -8,8 +8,9 @@
  * 여기에는 값과 타입만 둔다. `.mjs` 스크립트가 Node 의 타입 스트리핑으로 이 `.ts` 를 그대로
  * import 하므로 런타임 의존이 있으면 그 경로가 깨진다.
  *
- * `dirs` 의 경로는 `src/assets/` 기준이고 하위 디렉터리를 훑지 않는다. 그래서 `maps/` 와
- * `maps/icons/` 가 서로 다른 목록으로 남는다.
+ * `dirs` 의 경로는 `src/assets/` 기준이고 하위 디렉터리를 훑지 않는다.
+ *
+ * 번들에 남은 그림은 테마 배경뿐이다. 게임 데이터 그림은 서버에서 받는다(`lib/assets/asset-files.ts`).
  */
 
 /** 키를 파일 이름에서 뽑는 방법. */
@@ -40,52 +41,6 @@ export interface AssetGroup {
 
 export const ASSET_GROUPS: AssetGroup[] = [
   {
-    file: 'bosses',
-    exportName: 'BOSS_PORTRAIT_ASSETS',
-    kind: 'record',
-    key: 'slug',
-    dirs: ['bosses'],
-    extensions: ['webp', 'png'],
-    purpose: '보스 일러스트. `lib/boss-icons.ts` 가 `portraitSlug` 로 찾는다',
-  },
-  {
-    file: 'items',
-    exportName: 'ITEM_ASSETS',
-    kind: 'record',
-    key: 'fileName',
-    dirs: ['items', 'items/rings'],
-    extensions: ['png', 'webp'],
-    purpose:
-      '아이템·반지 아이콘. `lib/item-icons.ts` 가 `iconFile`(확장자 포함)로 찾는다',
-  },
-  {
-    file: 'worlds',
-    exportName: 'WORLD_EMBLEM_ASSETS',
-    kind: 'record',
-    key: 'slug',
-    dirs: ['worlds'],
-    extensions: ['png', 'webp'],
-    purpose: '월드 엠블럼. `lib/assets/asset-lookup.ts` 의 `worldEmblemUrl` 이 `worlds.json` 의 `emblem` 으로 찾는다',
-  },
-  {
-    file: 'characters',
-    exportName: 'CHARACTER_ASSETS',
-    kind: 'record',
-    key: 'slug',
-    dirs: ['characters'],
-    extensions: ['webp'],
-    purpose: '캐릭터 그림을 모를 때 서는 자리 그림. `lib/assets/asset-lookup.ts` 의 `unknownCharacterAsset` 이 찾는다',
-  },
-  {
-    file: 'mvp',
-    exportName: 'MVP_PLATE_ASSETS',
-    kind: 'record',
-    key: 'slug',
-    dirs: ['mvp'],
-    extensions: ['webp'],
-    purpose: 'MVP 등급 명패. `lib/assets/asset-lookup.ts` 의 `mvpPlateAsset` 이 등급 key 로 찾는다. 일반은 그림이 없다',
-  },
-  {
     file: 'themes',
     exportName: 'THEME_BACKGROUND_ASSETS',
     kind: 'record',
@@ -93,41 +48,5 @@ export const ASSET_GROUPS: AssetGroup[] = [
     dirs: ['themes'],
     extensions: ['webp', 'jpg', 'png'],
     purpose: '테마 배경 이미지. `lib/theme-backgrounds.ts`',
-  },
-  {
-    file: 'maps',
-    exportName: 'DAILY_QUEST_BACKGROUND_ASSETS',
-    kind: 'record',
-    key: 'slug',
-    dirs: ['maps'],
-    extensions: ['webp', 'jpg', 'png'],
-    purpose: '일일/주간 콘텐츠 카드 지역 배경. `lib/daily-quest-backgrounds.ts`',
-  },
-  {
-    file: 'map-icons',
-    exportName: 'DAILY_QUEST_ICON_ASSETS',
-    kind: 'record',
-    key: 'slug',
-    dirs: ['maps/icons'],
-    extensions: ['png', 'webp'],
-    purpose: '지역 아이콘. `lib/daily-quest-icons.ts`(배경과 같은 슬러그를 쓴다)',
-  },
-  {
-    file: 'force',
-    exportName: 'FORCE_ASSETS',
-    kind: 'record',
-    key: 'slug',
-    dirs: ['force'],
-    extensions: ['png', 'webp'],
-    purpose: '아케인/어센틱 포스 배지 그림. `lib/force-icons.ts`',
-  },
-  {
-    file: 'drop-effect',
-    exportName: 'DROP_EFFECT_ASSETS',
-    kind: 'frames',
-    key: 'slug',
-    dirs: ['drop-effect/screen', 'drop-effect/pre', 'drop-effect/loop', 'drop-effect/end'],
-    extensions: ['jpg', 'webp'],
-    purpose: '고가 드롭 연출 프레임. `lib/drop-effect-frames.ts`',
   },
 ]

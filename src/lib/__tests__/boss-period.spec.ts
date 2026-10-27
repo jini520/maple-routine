@@ -1,14 +1,14 @@
 // 보스의 유효 기간. 시즌이 끝난 시즌 보스가 다음 챌린저스 월드에 서지 않게 하는 판정이다.
 import { activeBossesInSection, activeDifficultiesOf, isBossActiveIn, withOwnDifficulty } from '../boss/bosses'
-import { BUNDLED_BOSS_CATALOG, parseBossCatalog, setBossCatalog } from '../boss/catalog'
+import { INITIAL_BOSS_CATALOG, parseBossCatalog, setBossCatalog } from '../boss/catalog'
 import type { BossCatalog } from '../../types/boss-catalog'
 
 /** 메이린의 기간을 넘긴 값으로 바꾼 표. 번들은 서버가 적은 시즌 끝(2026-09-16)을 들어 먼저 비운다. */
 function withMeirinUntil(until: string | undefined, from?: string): BossCatalog {
   return {
-    ...BUNDLED_BOSS_CATALOG,
+    ...INITIAL_BOSS_CATALOG,
     updatedAt: '2026-10-16T00:00:00.000Z',
-    bosses: BUNDLED_BOSS_CATALOG.bosses.map((boss) =>
+    bosses: INITIAL_BOSS_CATALOG.bosses.map((boss) =>
       boss.key === 'meirin'
         ? { ...boss, from: undefined, until: undefined, ...(from === undefined ? {} : { from }), ...(until === undefined ? {} : { until }) }
         : boss,
@@ -17,7 +17,7 @@ function withMeirinUntil(until: string | undefined, from?: string): BossCatalog 
 }
 
 afterEach(() => {
-  setBossCatalog(BUNDLED_BOSS_CATALOG)
+  setBossCatalog(INITIAL_BOSS_CATALOG)
 })
 
 describe('isBossActiveIn', () => {
@@ -86,9 +86,9 @@ describe('parseBossCatalog: 유효 기간', () => {
 /** 스우 익스트림이 시작을 들게 바꾼 표. */
 function withLotusExtremeFrom(from: string): BossCatalog {
   return {
-    ...BUNDLED_BOSS_CATALOG,
+    ...INITIAL_BOSS_CATALOG,
     updatedAt: '2026-10-16T00:00:00.000Z',
-    bosses: BUNDLED_BOSS_CATALOG.bosses.map((boss) =>
+    bosses: INITIAL_BOSS_CATALOG.bosses.map((boss) =>
       boss.key === 'lotus'
         ? { ...boss, difficulties: boss.difficulties.map((d) => (d.difficulty === 'extreme' ? { ...d, from } : d)) }
         : boss,
@@ -109,9 +109,9 @@ describe('난이도의 유효 기간', () => {
   // 보스 10-11 ~ 10-23 에 하드만 10-12 ~ 10-21 이면 하드는 후자, 나머지는 전자다. 겹치는 범위가 아니라 덮어쓰기다.
   it('난이도의 기간이 보스의 기간을 칸마다 덮는다. 난이도의 끝이 보스의 끝보다 뒤면 그 난이도만 더 산다', () => {
     const table: BossCatalog = {
-      ...BUNDLED_BOSS_CATALOG,
+      ...INITIAL_BOSS_CATALOG,
       updatedAt: 'x',
-      bosses: BUNDLED_BOSS_CATALOG.bosses.map((boss) =>
+      bosses: INITIAL_BOSS_CATALOG.bosses.map((boss) =>
         boss.key === 'lotus'
           ? {
               ...boss,

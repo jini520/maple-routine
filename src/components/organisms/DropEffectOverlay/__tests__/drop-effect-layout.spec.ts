@@ -1,4 +1,4 @@
-import { DROP_EFFECT_FRAMES, DROP_EFFECT_ORIGINS } from '../drop-effect-layout'
+import { dropEffectFrames, DROP_EFFECT_ORIGINS } from '../drop-effect-layout'
 import { buildPillarFrames, buildScreenFrames } from '../frame-layout'
 
 const PHASES = ['pre', 'loop', 'end'] as const
@@ -7,7 +7,7 @@ describe('DROP_EFFECT_ORIGINS', () => {
   // 테이블은 에셋 비트맵에서 잰 값이라 프레임과 인덱스로만 묶여 있다. 에셋을 다시 export 해
   // 프레임 수가 바뀌면 기둥이 엉뚱한 위치로 튀므로, 조용히 어긋나지 않게 개수를 고정한다.
   it.each(PHASES)('%s: origin 개수가 실제 프레임 수와 일치한다', (phase) => {
-    expect(DROP_EFFECT_ORIGINS[phase]).toHaveLength(DROP_EFFECT_FRAMES[phase].length)
+    expect(DROP_EFFECT_ORIGINS[phase]).toHaveLength(dropEffectFrames()[phase].length)
     expect(DROP_EFFECT_ORIGINS[phase].length).toBeGreaterThan(0)
   })
 
@@ -31,13 +31,13 @@ describe('스프라이트 프레임 목록', () => {
   it('기둥은 pre·loop·end 를 모두 담고 키가 겹치지 않는다', () => {
     const frames = buildPillarFrames(sizeOf)
     expect(frames).toHaveLength(
-      DROP_EFFECT_FRAMES.pre.length + DROP_EFFECT_FRAMES.loop.length + DROP_EFFECT_FRAMES.end.length,
+      dropEffectFrames().pre.length + dropEffectFrames().loop.length + dropEffectFrames().end.length,
     )
     expect(new Set(frames.map((f) => f.key)).size).toBe(frames.length)
   })
 
   it('버스트는 screen 전 장을 담는다', () => {
-    expect(buildScreenFrames(1.28, sizeOf)).toHaveLength(DROP_EFFECT_FRAMES.screen.length)
+    expect(buildScreenFrames(1.28, sizeOf)).toHaveLength(dropEffectFrames().screen.length)
   })
 
   // 크기를 모르는 프레임은 그리지 않는 계약이 그대로다(`frame-layout.ts`).

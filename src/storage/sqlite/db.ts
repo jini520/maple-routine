@@ -21,6 +21,7 @@ import {
   ENHANCEMENT_TOTALS_BODY,
   ENHANCEMENT_TOTALS_DATE_INDEX,
 } from './enhancement-tables'
+import { GAME_DATA_META_BODY, GAME_DATA_SECTIONS_BODY } from './game-data-tables'
 import { runVersionedMigrations } from './migrations'
 import {
   CHARACTER_ACCOUNTS_BODY,
@@ -332,6 +333,15 @@ const TABLE_DEFINITIONS = [
   {
     name: 'character_accounts',
     createSql: `CREATE TABLE IF NOT EXISTS character_accounts ${CHARACTER_ACCOUNTS_BODY}`,
+  },
+  // 게임 데이터 사본. 서버에서 다시 받을 수 있어 `general` 그룹이다. 지우면 다음에 켤 때 잠금 화면이 다시 받는다.
+  {
+    name: 'game_data_sections',
+    createSql: `CREATE TABLE IF NOT EXISTS game_data_sections ${GAME_DATA_SECTIONS_BODY}`,
+  },
+  {
+    name: 'game_data_meta',
+    createSql: `CREATE TABLE IF NOT EXISTS game_data_meta ${GAME_DATA_META_BODY}`,
   },
 ] as const
 

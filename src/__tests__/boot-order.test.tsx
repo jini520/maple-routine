@@ -154,6 +154,20 @@ jest.mock('../navigation/AppNavigation', () => {
 jest.mock('../app/mvp-grade/MvpGradeHost', () => ({ __esModule: true, MvpGradeHost: () => null }))
 jest.mock('../app/resumable-task/TaskHost', () => ({ __esModule: true, TaskHost: () => null }))
 
+// 게임 데이터 받기는 자기 테스트가 따로 있다. 여기서는 준비 상태만 바꿔 끼운다.
+const mockGameData = { phase: 'ready' }
+jest.mock('../features/game-data/sync', () => ({
+  __esModule: true,
+  useGameDataStatus: () => ({
+    phase: mockGameData.phase,
+    progress: { dataBytes: null, imageBytes: 0, imageTotal: 0 },
+  }),
+  refreshGameData: jest.fn(async () => {
+    mockCalls.push('refresh:gameData')
+  }),
+  retryGameData: jest.fn(async () => {}),
+}))
+
 import { AppShell } from '../app/AppShell'
 import { renderOverlay } from '../components/__tests__/render-atom'
 
@@ -163,6 +177,7 @@ describe('① 셸이 무엇을 언제 하는가', () => {
   beforeEach(() => {
     mockCalls.length = 0
     mockEntry.stage = 'ready'
+    mockGameData.phase = 'ready'
     jest.useFakeTimers()
   })
 
@@ -223,6 +238,18 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     expect(mockCalls).not.toContain('hideSplash')
   })
 
+  // 빈 표를 읽은 이펙트가 엉뚱한 일을 하지 않게, 게임 데이터가 준비되기 전에는 앱의 나머지를 마운트하지 않는다.
+  // 테마 복원과 OTA 확인은 기다리지 않는다. 잠금 화면이 테마로 그려지고, 잠금이 안 풀리는 결함도 OTA 로 고쳐야 한다.
+  it('게임 데이터가 준비되기 전에는 잠금 화면만 서고, 테마 복원과 OTA 확인만 돈다', async () => {
+    mockGameData.phase = 'downloading'
+    const view = await renderOverlay(<AppShell />)
+    await act(async () => {})
+
+    expect(view.getByTestId('game-data-lock')).toBeTruthy()
+    expect(view.queryByText('navigation')).toBeNull()
+    expect(mockCalls.sort()).toEqual(['checkOnBoot', 'restore:theme'])
+  })
+
   // 2겹이 트리에 없으면 내릴 주체가 사라져 실패 안전 타이머(8초)까지 스플래시가 남는다.
   it('2겹이 셸의 트리에 있다', async () => {
     const view = await renderOverlay(<AppShell />)
@@ -261,7 +288,7 @@ describe('① 셸이 무엇을 언제 하는가', () => {
         }
       })
 
-      expect(mockCalls).toEqual(['resubscribe:notice'])
+      expect(mockCalls.sort()).toEqual(['refresh:gameData', 'resubscribe:notice'])
     } finally {
       spy.mockRestore()
       if (currentState !== undefined) Object.defineProperty(AppState, 'currentState', currentState)

@@ -87,15 +87,10 @@ const BOSS_PROFIT_TAB_LABELS: Record<(typeof BOSS_PROFIT_TABS)[number], string> 
 /** 총 수익 내역 상자에 싣는 아이템 건수. 나머지는 한 줄로 접는다. */
 const PERIOD_REVENUE_LIST_LIMIT = 10
 
-/**
- * 총 수익 금액 옆 표식. 입력 카드의 메소 표식과 같은 그림이다.
- *
- * **원 안에 넣지 않는다.** 32x31 픽셀 아트라 원에 가둬 두면 그 원이 크기를 정하게 된다.
- * 파일이 없으면 `null` 이고 그때는 자리를 비운다.
- */
-const MESO_POUCH_URL = getItemIconUrlByFile('meso_pouch.webp')
-
 export function BossProfitScreen(): React.JSX.Element {
+  // 총 수익 금액 옆 표식. 입력 카드의 메소 표식과 같은 그림이다. 원 안에 넣지 않는다. 32x31 픽셀 아트라 원에 가두면 그
+  // 원이 크기를 정하게 된다. 렌더 안에서 찾는다. 모듈 최상위에서 찾으면 그림 목록을 받기 전의 빈 값으로 굳는다.
+  const mesoPouchIcon = getItemIconUrlByFile('meso_pouch.webp')
   const {
     status,
     tab,
@@ -392,10 +387,10 @@ export function BossProfitScreen(): React.JSX.Element {
 
           <View className="flex-row items-center gap-2.5">
             {/* 그림이 없으면 그 자리를 비운다. 비슷한 것으로 때우지 않는다. */}
-            {MESO_POUCH_URL !== null && (
+            {mesoPouchIcon !== null && (
               <Image
                 testID="boss-profit-total-icon"
-                source={MESO_POUCH_URL}
+                source={mesoPouchIcon}
                 resizeMode="contain"
                 className="h-7 w-7 shrink-0"
                 aria-hidden

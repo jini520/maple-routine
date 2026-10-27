@@ -6,7 +6,6 @@
  * `ContentEntry` 를 만드는 것도 여기다. 수동 모드 기본값 중 `registration_flag` · `now_count` · `quest_state` 는
  * 표에 없고 `type` 이 정한다.
  */
-import bundled from '../../data/contents.json'
 import {
   CONTENT_CATEGORY_KEYS,
   type ContentCategoryKey,
@@ -31,7 +30,7 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { bundledTable, derive } from '../game-data/table'
+import { gameTable, derive } from '../game-data/table'
 
 export type { ContentSection }
 
@@ -139,7 +138,7 @@ export function parseContents(value: unknown): ContentsTable | null {
   return { updatedAt, categories, contents }
 }
 
-export const contentsTable = bundledTable('contents', bundled, parseContents)
+export const contentsTable = gameTable('contents', { updatedAt: null, categories: [], contents: [] }, parseContents)
 
 /** 줄 하나를 지금 코드가 읽는 모양으로. 수동 모드 기본값 셋은 표에 없고 `type` 이 정한다. */
 function toEntry(row: ContentRow): ContentEntry {

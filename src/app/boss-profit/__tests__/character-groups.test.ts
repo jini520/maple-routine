@@ -7,7 +7,7 @@ import { dropRowKey } from '../../../features/boss-profit/store'
 import type { BossProfitRow } from '../../../features/boss-profit/store'
 import type { RecordedDrop } from '../../../types/drops'
 
-import dropItemsData from '../../../data/drop-items.json'
+import dropItemsData from '../../../__fixtures__/game-data/drop-items.json'
 
 import {
   buildCharacterGroups,

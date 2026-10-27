@@ -613,18 +613,18 @@ describe('직접 적은 완료', () => {
 })
 
 describe('selectProfitDisplayBosses: 유효 기간', () => {
-  const { BUNDLED_BOSS_CATALOG, setBossCatalog } = require('../../../lib/boss/catalog') as typeof import('../../../lib/boss/catalog')
+  const { INITIAL_BOSS_CATALOG, setBossCatalog } = require('../../../lib/boss/catalog') as typeof import('../../../lib/boss/catalog')
   const SEASON_KEY = 'meirin'
 
   afterEach(() => {
-    setBossCatalog(BUNDLED_BOSS_CATALOG)
+    setBossCatalog(INITIAL_BOSS_CATALOG)
   })
 
   it('끝 뒤의 기간에는 시즌 보스 행을 안 세우고, 끝 전 기간에는 세운다', () => {
     setBossCatalog({
-      ...BUNDLED_BOSS_CATALOG,
+      ...INITIAL_BOSS_CATALOG,
       updatedAt: 'x',
-      bosses: BUNDLED_BOSS_CATALOG.bosses.map((b) => (b.key === SEASON_KEY ? { ...b, until: '2026-10-22' } : b)),
+      bosses: INITIAL_BOSS_CATALOG.bosses.map((b) => (b.key === SEASON_KEY ? { ...b, until: '2026-10-22' } : b)),
     })
     const killed = {
       bossKey: SEASON_KEY,

@@ -4,11 +4,12 @@
 // 아니고, 스토어 목 없이 같은 계약을
 // 그대로 볼 수 있기 때문이다(화면 쪽 계약은 `ContentScreen.test.tsx` 가 따로 본다).
 //
-// **그림은 `testUri` 로 본다.** jest 에서 번들 에셋은 숫자가 아니라 `{ testUri }` 대역이라
+// **그림은 서버 경로로 본다.** `assetUri` 가 받은 그림의 파일 이름을 그림 목록에서 경로로 되짚는다.
 // *"어느 파일로 해석됐는가"* 를 그 문자열로 묻는다.
 // 그림이 실재하는지를 묻는 질문이다.
 import type { DailyContent, WeeklyContent } from '../../../types'
 
+import { assetUri } from '../../../assets/__tests__/asset-uri'
 import { findAllOfType, renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
 import { renderDailyContentCard } from '../DailyContentCards'
 import { renderWeeklyContentCard } from '../WeeklyContentCards'
@@ -49,7 +50,7 @@ function artUri(view: Awaited<ReturnType<typeof renderAtom>>): string | null {
   const image = art.children.find(
     (child): child is AtomElement => typeof child !== 'string' && child.props.source !== undefined,
   )
-  return (image?.props.source as { testUri?: string } | undefined)?.testUri ?? null
+  return image === undefined ? null : assetUri(image.props.source) || null
 }
 
 /**

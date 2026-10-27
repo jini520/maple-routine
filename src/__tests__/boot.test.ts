@@ -50,16 +50,16 @@ jest.mock('react-native-google-mobile-ads', () => ({
 }))
 
 // 게임 데이터 표 덮기는 네트워크와 저장소를 만지는 곁가지다. 여기서 보는 것은 배선뿐이라 몸통을 비운다.
-jest.mock('../features/game-data/query', () => ({
+jest.mock('../features/game-data/sync', () => ({
   __esModule: true,
-  hydrateGameData: jest.fn(async () => {}),
+  startGameData: jest.fn(async () => {}),
 }))
 
 import * as nativePorts from '../native/ports'
 import * as storagePorts from '../storage/ports'
 
 import { installPorts, loadGameData } from '../boot'
-import { hydrateGameData } from '../features/game-data/query'
+import { startGameData } from '../features/game-data/sync'
 import { rnBrowserPort } from '../native/adapters/rn-browser'
 import { rnUuidPort } from '../native/adapters/rn-uuid'
 import { rnLiveUpdatePort } from '../native/adapters/rn-live-update'
@@ -77,11 +77,13 @@ import { rnPushPort } from '../native/adapters/rn-push'
 import { rnThemeAppearancePort } from '../native/adapters/rn-theme-appearance'
 import { rnPreferencesPort } from '../storage/adapters/rn-preferences'
 import { rnSqlitePort } from '../storage/adapters/rn-sqlite'
+import { rnAssetFilesPort } from '../storage/adapters/rn-asset-files'
 
 /** 배선표. `[core 의 게터 이름, 게터, 들어가야 할 어댑터]`. */
 const WIRED: [string, () => unknown, unknown][] = [
   ['getPreferencesPort', storagePorts.getPreferencesPort, rnPreferencesPort],
   ['getSqlitePort', storagePorts.getSqlitePort, rnSqlitePort],
+  ['getAssetFilesPort', storagePorts.getAssetFilesPort, rnAssetFilesPort],
   ['getAdsPort', nativePorts.getAdsPort, rnAdsPort],
   ['getColorSchemePort', nativePorts.getColorSchemePort, rnColorSchemePort],
   ['getHapticsPort', nativePorts.getHapticsPort, rnHapticsPort],
@@ -115,7 +117,7 @@ describe('installPorts()', () => {
       /^get[A-Za-z]+Port$/.test(key),
     )
 
-    expect(declared.length).toBe(17)
+    expect(declared.length).toBe(18)
     expect([...declared].sort()).toEqual(WIRED.map(([name]) => name).sort())
   })
 
@@ -172,6 +174,6 @@ describe('loadGameData()', () => {
   it('게임 데이터 표 덮기를 띄우고 기다리지 않는다', () => {
     expect(loadGameData()).toBeUndefined()
 
-    expect(hydrateGameData).toHaveBeenCalledTimes(1)
+    expect(startGameData).toHaveBeenCalledTimes(1)
   })
 })

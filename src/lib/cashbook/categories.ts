@@ -8,7 +8,6 @@
  * key 목록은 여기 코드에 남는다. 앱이 그 key 로 입력 폼을 가르기 때문이다. 서버가 더한 갈래는 key 가 이 목록에
  * 없어 목록에 이름만 서고 못 고른다. 앱에 그 폼이 생길 때까지다.
  */
-import bundled from '../../data/cashbook-categories.json'
 import type { CashbookCategoriesTable, CashbookCategoryRow, CashbookItemKindRow } from '../../types/game-data'
 import {
   compact,
@@ -22,7 +21,7 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { bundledTable, derive } from '../game-data/table'
+import { gameTable, derive } from '../game-data/table'
 
 /** 앱이 입력 폼을 아는 지출 갈래. 차례는 서버 표가 정한다. */
 export const SPEND_CATEGORY_KEYS = ['content', 'event_bm', 'buff', 'scroll', 'symbol', 'item_purchase', 'etc'] as const
@@ -105,7 +104,7 @@ export function parseCashbookCategories(value: unknown): CashbookCategoriesTable
   return { updatedAt, categories, itemKinds }
 }
 
-export const cashbookCategoriesTable = bundledTable('cashbookCategories', bundled, parseCashbookCategories)
+export const cashbookCategoriesTable = gameTable('cashbookCategories', { updatedAt: null, categories: [], itemKinds: [] }, parseCashbookCategories)
 
 function categoryOf<K extends string>(row: CashbookCategoryRow, knownKeys: readonly K[]): CashbookCategory {
   return compact({

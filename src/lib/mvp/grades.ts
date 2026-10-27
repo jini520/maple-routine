@@ -1,8 +1,7 @@
 /** MVP 등급 표(`mvpGrades` 칸) 조회. */
-import bundled from '../../data/mvp-grades.json'
 import { MVP_GRADE_KEYS, type MvpGradeKey, type MvpGradeRow, type MvpGradesTable } from '../../types/game-data'
 import { isInteger, isNonEmptyString, isOneOf, isRow, rowsOf, uniqueBy, updatedAtOf, type Row } from '../game-data/contract'
-import { bundledTable, derive } from '../game-data/table'
+import { gameTable, derive } from '../game-data/table'
 
 export type { MvpGradeKey }
 export type MvpGrade = MvpGradeRow
@@ -37,7 +36,7 @@ export function parseMvpGrades(value: unknown): MvpGradesTable | null {
   return { updatedAt, grades }
 }
 
-export const mvpGradesTable = bundledTable('mvpGrades', bundled, parseMvpGrades)
+export const mvpGradesTable = gameTable('mvpGrades', { updatedAt: null, grades: [] }, parseMvpGrades)
 
 /** 등급 전부. 낮은 등급부터이고 이 차례가 높낮이다. */
 export function mvpGrades(): readonly MvpGrade[] {

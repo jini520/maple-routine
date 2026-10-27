@@ -12,7 +12,7 @@ import {
 import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { bossesInSection, bossKeyOfApiName } from '../../../lib/boss/bosses'
-import { BUNDLED_BOSS_CATALOG, setBossCatalog } from '../../../lib/boss/catalog'
+import { INITIAL_BOSS_CATALOG, setBossCatalog } from '../../../lib/boss/catalog'
 import type { BossCatalog } from '../../../types/boss-catalog'
 import { WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../../lib/boss/boss-matching'
 
@@ -23,8 +23,8 @@ import { BossScreen } from '../BossScreen'
 /** 시즌이 끝난 메이린을 다시 연 표. 번들은 서버가 적은 시즌 끝(2026-09-16)을 들어 지금 기간에는 안 선다. */
 function withMeirinOpen(): BossCatalog {
   return {
-    ...BUNDLED_BOSS_CATALOG,
-    bosses: BUNDLED_BOSS_CATALOG.bosses.map((boss) =>
+    ...INITIAL_BOSS_CATALOG,
+    bosses: INITIAL_BOSS_CATALOG.bosses.map((boss) =>
       boss.key === 'meirin' ? { ...boss, from: undefined, until: undefined } : boss,
     ),
   }
@@ -35,7 +35,7 @@ beforeEach(() => {
 })
 
 afterAll(() => {
-  setBossCatalog(BUNDLED_BOSS_CATALOG)
+  setBossCatalog(INITIAL_BOSS_CATALOG)
 })
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데

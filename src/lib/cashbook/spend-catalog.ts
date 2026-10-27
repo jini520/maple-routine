@@ -11,7 +11,6 @@
  *
  * 나눗셈은 둘 다 버린다. 이 저장소의 돈 계산이 그렇다.
  */
-import bundled from '../../data/spend-catalog.json'
 import type {
   SpendCatalogRules,
   SpendCatalogTable,
@@ -39,7 +38,7 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { bundledTable, derive } from '../game-data/table'
+import { gameTable, derive } from '../game-data/table'
 import { SPEND_FORM_KEYS, type SpendCategoryKey } from './categories'
 
 /** 항목 줄. `from` · `until` 은 그 항목이 서는 기간이다(KST 날짜). */
@@ -240,7 +239,7 @@ export function parseSpendCatalog(value: unknown): SpendCatalogTable | null {
   return { updatedAt, rules, groups, tiles, items, itemOptions, itemForms, forms }
 }
 
-export const spendCatalogTable = bundledTable('spendCatalog', bundled, parseSpendCatalog)
+export const spendCatalogTable = gameTable('spendCatalog', { updatedAt: null, rules: { tariffPercent: 0, rewardCoinPriceMeso: 0 }, groups: [], tiles: [], items: [], itemOptions: [], itemForms: [], forms: [] }, parseSpendCatalog)
 
 interface CatalogIndex {
   /** 항목 줄에 축 값과 형태를 붙인 것. 차례는 표의 차례다. */

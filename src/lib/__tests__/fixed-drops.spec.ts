@@ -1,6 +1,5 @@
 /// <reference types="node" />
-import { existsSync } from 'node:fs'
-import {  join } from 'node:path'
+import { getItemIconUrlByFile } from '../assets/asset-lookup'
 import {
   SOL_ERDA_DENOMINATIONS,
   SOL_ERDA_ENERGY_KEY,
@@ -8,7 +7,6 @@ import {
   getFixedDropIcons,
   parseFixedAmount } from '../drop/fixed-drops'
 
-const itemsDir = join(__dirname, '../../assets/items')
 
 describe('parseFixedAmount', () => {
   it('"N개" 형식에서 개수를 뽑는다', () => {
@@ -35,9 +33,10 @@ describe('decomposeSolErda', () => {
       { iconFile: 'sole_10.png', count: 5 },
     ])
   })
-  it('모든 단위 아이콘 파일이 assets/items/에 실제로 존재한다', () => {
+  // 코드가 이름으로 적은 그림이다. 서버는 이 이름을 모르므로 오타가 나면 그림만 빠진다.
+  it('모든 단위 아이콘이 서버 그림 목록에 있다', () => {
     for (const d of SOL_ERDA_DENOMINATIONS) {
-      expect(existsSync(join(itemsDir, d.iconFile)), `${d.iconFile} 누락`).toBe(true)
+      expect([d.iconFile, getItemIconUrlByFile(d.iconFile)]).not.toContain(null)
     }
   })
 })

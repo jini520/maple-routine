@@ -1,5 +1,5 @@
 // 계산기의 보스 선택에 늘어놓을 보스와 12개 한도.
-import { BUNDLED_BOSS_CATALOG, setBossCatalog } from '../../../lib/boss/catalog'
+import { INITIAL_BOSS_CATALOG, setBossCatalog } from '../../../lib/boss/catalog'
 import { bossCycleOf } from '../../../lib/boss/bosses'
 import type { CalculatorBoss } from '../../../lib/boss/boss-profit-calculator'
 import { calculatorPickerSections, isPickLocked, toggleCalculatorPick } from '../picker'
@@ -14,15 +14,15 @@ function picked(bossKey: string): CalculatorBoss {
 /** 시즌이 끝난 메이린을 다시 연 표 */
 function openMeirin(): void {
   setBossCatalog({
-    ...BUNDLED_BOSS_CATALOG,
-    bosses: BUNDLED_BOSS_CATALOG.bosses.map((boss) =>
+    ...INITIAL_BOSS_CATALOG,
+    bosses: INITIAL_BOSS_CATALOG.bosses.map((boss) =>
       boss.key === 'meirin' ? { ...boss, from: undefined, until: undefined } : boss,
     ),
   })
 }
 
 afterEach(() => {
-  setBossCatalog(BUNDLED_BOSS_CATALOG)
+  setBossCatalog(INITIAL_BOSS_CATALOG)
 })
 
 describe('calculatorPickerSections', () => {

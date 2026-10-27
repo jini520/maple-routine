@@ -20,6 +20,8 @@ import { showPendingCacheClearNotice } from '../features/settings/cache-data'
 import { ToastStack } from '../components/organisms/Toast/ToastStack'
 import { AppNavigation } from '../navigation/AppNavigation'
 import { BootSplash } from './BootSplash'
+import { GameDataLock } from './game-data/GameDataLock'
+import { refreshGameData, useGameDataStatus } from '../features/game-data/sync'
 import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdrop'
 import { ApiKeyNoticeModal } from './auth/ApiKeyNoticeModal'
 import { MvpGradeHost } from './mvp-grade/MvpGradeHost'
@@ -39,7 +41,10 @@ import { useReturnToForeground } from '../hooks/useReturnToForeground'
  * 1. **포트 주입**. 이 파일 밖이다(`index.ts` → `boot.ts`, 1단계). 아래 어느 것보다 먼저다.
  * 2. **스플래시 붙들기**. 이것도 이 파일 밖이다(`index.ts` → `boot-splash.ts`). 전역 스코프여야
  *    한다(`expo-splash-screen` 이 명시).
- * 3. **저장소 복원 다섯**(인증·진입 단계·테마·트래킹 모드·드롭 연출). 서로 독립이라 순서가 없다. 각자
+ * 3. **게임 데이터 잠금**. 테마 · 글자 크기 복원과 OTA 확인을 뺀 나머지는 게임 데이터가 준비된 뒤에 마운트한다
+ *    (`ReadyShell`). 빈 표를 읽은 이펙트가 엉뚱한 일을 하지 않게 하기 위해서다. 알림 예약 맞추기가 빈 컨텐츠 표를 읽으면
+ *    예약을 전부 지운다. 준비 전에는 `GameDataLock` 이 선다.
+ * 3-1. **저장소 복원 다섯**(인증·진입 단계·테마·트래킹 모드·드롭 연출). 서로 독립이라 순서가 없다. 각자
  *    각자 자기 이펙트를 갖는다. 하나가 던져도 나머지가 돈다.
  * 4. **광고 SDK 초기화**. 실패해도 던지지 않아 부팅을 막지 않는다.
  * 5. **탭 스토어 선하이드레이션**. 앱이 열린 뒤에만.
@@ -67,12 +72,10 @@ import { useReturnToForeground } from '../hooks/useReturnToForeground'
  * 셸이 렌더 중에 던지면 그 자신은 커밋되지 않아야 하고, 그러려면 경계가
  * **바깥**이어야 한다. 다만 RN 에서는 그 바깥이 프로바이더보다 **안**이다(그쪽 근거는 `App.tsx`).
  */
-export function AppShell(): React.JSX.Element {
+function ReadyShell(): React.JSX.Element {
   const stage = useAppEntryStore((state) => state.stage)
   const resolveEntryStage = useAppEntryStore((state) => state.resolveFromStorage)
   const restoreAuth = useAuthStore((state) => state.restoreFromStorage)
-  const restoreTheme = useThemeStore((state) => state.restoreFromStorage)
-  const restoreTextSize = useTextSizeStore((state) => state.restoreFromStorage)
   const restoreTrackingMode = useTrackingModeStore((state) => state.restoreFromStorage)
   const restoreDropEffect = useDropEffectStore((state) => state.restoreFromStorage)
   const restoreQuickLinks = useQuickLinksStore((state) => state.restoreFromStorage)
@@ -96,16 +99,6 @@ export function AppShell(): React.JSX.Element {
 
   useEffect(() => {
     void resolveEntryStage()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    void restoreTheme()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    void restoreTextSize()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -211,16 +204,8 @@ export function AppShell(): React.JSX.Element {
   // `void` 인 것이 요점이다. 확인은 곁가지라 실패해도 앱은 떠야 한다. 스토어가 실패를
   // `check-error` 로 삼켜 던지지 않지만, 여기서 await 하지 않는 것으로 부팅이 네트워크를
   // 기다리지 않는다 를 구조로 못박는다.
-  useEffect(() => {
-    void useLiveUpdateStore.getState().checkOnBoot()
-  }, [])
-
   return (
     <>
-      {/* 테마 벽지. **첫 자식이어야 한다.** RN 은 형제 순서가 곧 그리는 순서다.
-          배경을 선언하지 않은
-          테마에서는 아무것도 그리지 않는다. */}
-      <ThemeBackdrop />
       <AppNavigation />
       {/* MVP 등급을 묻는 모달. 키 안내 모달보다 앞이라 둘이 겹치면 키 안내가 위에 선다. */}
       <MvpGradeHost />
@@ -233,6 +218,45 @@ export function AppShell(): React.JSX.Element {
       {/* 토스트는 자기가 놓인 자리에 절대 배치로 그린다. 여기가 `ThemeProvider` 의 화면 채움
           View 직속이라 탭바 위에 뜬다. */}
       <ToastStack hasTabBar={isReady && !isKeyboardVisible} />
+    </>
+  )
+}
+
+/** 백그라운드에서 돌아올 때 서버 값이 바뀌었는지 묻는다. 잠겨 있으면 아무것도 안 한다. */
+function refreshOnReturn(): void {
+  void refreshGameData()
+}
+
+export function AppShell(): React.JSX.Element {
+  const restoreTheme = useThemeStore((state) => state.restoreFromStorage)
+  const restoreTextSize = useTextSizeStore((state) => state.restoreFromStorage)
+  const gameData = useGameDataStatus()
+
+  // 잠금 화면도 테마로 그리므로 게임 데이터를 기다리지 않는다.
+  useEffect(() => {
+    void restoreTheme()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    void restoreTextSize()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // OTA 확인도 기다리지 않는다. 잠금이 풀리지 않는 결함이 나가도 OTA 로 고칠 수 있어야 한다.
+  useEffect(() => {
+    void useLiveUpdateStore.getState().checkOnBoot()
+  }, [])
+
+  useReturnToForeground(refreshOnReturn)
+
+  return (
+    <>
+      {/* 테마 벽지. **첫 자식이어야 한다.** RN 은 형제 순서가 곧 그리는 순서다.
+          배경을 선언하지 않은
+          테마에서는 아무것도 그리지 않는다. */}
+      <ThemeBackdrop />
+      {gameData.phase === 'ready' ? <ReadyShell /> : <GameDataLock status={gameData} />}
       {/* 스플래시의 두 번째 겹. **형제 중 마지막이라 맨 위에 그려진다.** 이 층이 그려졌다는
           사실이 네이티브 스플래시를 내리는 신호라, 순서가 뒤집히면 그 사이가 빈다. */}
       <BootSplash />

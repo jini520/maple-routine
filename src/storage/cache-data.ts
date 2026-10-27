@@ -1,4 +1,4 @@
-import { preferences } from './ports'
+import { getAssetFilesPort, preferences } from './ports'
 import { STORAGE_KEYS } from './keys'
 import { SPLIT_COLUMN_NAMES } from './boss-periods'
 import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from './sqlite/db'
@@ -153,6 +153,8 @@ export async function clearCacheData(selection: CacheDataSelection = ALL_GROUPS)
     await Promise.all(
       keys.filter((key) => !KEEP_KEYS.has(key)).map((key) => preferences.remove(key)),
     )
+    // 받은 게임 데이터 그림. 서버에서 다시 받을 수 있다. 사본 표와 함께 지워지므로 다음에 켤 때 잠금 화면이 다시 받는다.
+    await getAssetFilesPort().clear()
   }
 
   const tables = tablesFor(selection)
@@ -186,6 +188,8 @@ export async function getCacheDataSizes(): Promise<Record<CacheDataGroupId, numb
     const value = await preferences.get(key)
     if (value !== null) general += byteLength(value)
   }
+
+  general += await getAssetFilesPort().size()
 
   const db = await getBossProfitDb()
   general += await rowBytes(db, [...GENERAL_TABLE_NAMES.map((table) => `SELECT * FROM ${table}`), ...BOSS_ROWS_OF_GROUP.general])

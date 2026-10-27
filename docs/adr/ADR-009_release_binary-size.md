@@ -28,14 +28,17 @@
 품질 q95 는 사용자가 비교 화면을 보고 정했다. WebP 로 바꿔도 커지는 작은 아이콘은 PNG 로 남겼다. WebP
 컨테이너 크기가 줄어드는 양보다 크기 때문이다.
 
+`themes/` 를 뺀 디렉터리의 그림은 이제 번들이 아니라 서버 그림 표에 같은 경로로 있다([[ADR-020]] 결정 14). 앱이 처음 켤 때
+받는 양이 그만큼이라, 관리 화면에서 그림을 올릴 때도 이 형식을 따른다.
+
 ### 결정 2. 그림 목록은 빌드 때가 아니라 커밋할 때 만든다
 
 `scripts/generate-asset-manifest.mjs`(`npm run assets:gen`)가 `src/assets/asset-groups.ts` 의 표대로 디렉터리를
 훑어 `src/assets/generated/*.ts` 를 쓰고, 그 파일을 커밋한다. 생성물에는 평범한 ESM import 만 있다.
 
 ```ts
-import a0 from '../worlds/arcane.png'
-export const WORLD_EMBLEM_ASSETS: Record<string, ImageAssetRef> = { "arcane": a0, … }
+import a0 from '../themes/blackmage-background.webp'
+export const THEME_BACKGROUND_ASSETS: Record<string, ImageAssetRef> = { "blackmage-background": a0, … }
 ```
 
 빌드 때 디렉터리를 훑는 API(`import.meta.glob`)는 Vite 에만 있고 Metro 에는 없다. Metro 의
@@ -117,9 +120,8 @@ R8 은 리플렉션으로만 호출되는 코드를 지울 수 있고, 그런 �
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `src/assets/generated/__tests__/asset-manifest.spec.ts` | 결정 2: `asset-groups.ts` 의 그룹이 모두 생성물로 있는지, 각 생성물의 키 집합이 지금 디렉터리의 파일과 같은지, 드롭 연출 단계마다 프레임 개수가 파일 수와 같은지, 프레임이 숫자 순서이고 빠진 번호가 없는지 본다 |
+| `src/assets/generated/__tests__/asset-manifest.spec.ts` | 결정 2: `asset-groups.ts` 의 그룹이 모두 생성물로 있는지, 각 생성물의 키 집합이 지금 디렉터리의 파일과 같은지 본다 |
 | `src/__tests__/vite-only-api-policy.test.ts` | 결정 2: 제품 코드에 `import.meta.glob` 이 남아 있지 않은지 본다. 되살아나면 Metro 에서 모듈을 읽는 순간 죽는다 |
-| `src/lib/__tests__/asset-slug-coverage.spec.ts` | 결정 1 · 4: `bosses.json` 의 `portraitSlug` 와 일일 퀘스트 지역 슬러그가 하나도 빠짐없이 그림으로 해석되는지 본다. 테마 배경을 선언한 테마가 생기면 그 슬러그도 본다(지금은 0종이라 건너뛴다). 포맷을 바꾸거나 파일을 지워도 코드는 그대로라 오류 없이 대체 그림이 뜨기 때문에 둔다 |
 
 결정 5 ~ 8 은 빌드 설정이라 테스트가 없다. 릴리스마다 산출물로 확인한다(`foundation/release.md`).
 

@@ -56,6 +56,11 @@ module.exports = {
   // 없으면 *"install is not a function"* 으로 죽는다). 라이브러리가 공식으로 주는 파일이다.
   setupFiles: [...expoPreset.setupFiles, require.resolve('react-native-gesture-handler/jestSetup')],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  // 앱은 게임 데이터 표를 빈 값으로 켜고 서버에서 받는다. 테스트는 이 모듈을 fixture 판으로 바꿔 실제 값으로 돈다.
+  moduleNameMapper: {
+    ...expoPreset.moduleNameMapper,
+    '/game-data/initial$': '<rootDir>/src/__fixtures__/game-data/initial.ts',
+  },
   transformIgnorePatterns: expoPreset.transformIgnorePatterns.map((pattern) =>
     pattern.includes(NEGATIVE_LOOKAHEAD)
       ? pattern.replace(NEGATIVE_LOOKAHEAD, `${NEGATIVE_LOOKAHEAD}${ESM_ONLY_DEPS.join('|')}|`)
