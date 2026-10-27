@@ -57,6 +57,7 @@ import KeyRound from 'lucide-react-native/icons/key-round'
 import LayoutGrid from 'lucide-react-native/icons/layout-grid'
 import LayoutDashboard from 'lucide-react-native/icons/layout-dashboard'
 import ListChecks from 'lucide-react-native/icons/list-checks'
+import Lock from 'lucide-react-native/icons/lock'
 import MapPin from 'lucide-react-native/icons/map-pin'
 import Megaphone from 'lucide-react-native/icons/megaphone'
 import Medal from 'lucide-react-native/icons/medal'
@@ -179,6 +180,8 @@ export const LayoutGridIcon = withIconInterop(LayoutGrid)
 export const LayoutDashboardIcon = withIconInterop(LayoutDashboard)
 
 export const ListChecksIcon = withIconInterop(ListChecks)
+/** 넥슨 로그인으로만 쓸 수 있는 기능. `ApiKeyWarningModal` 의 첫 칸. */
+export const LockIcon = withIconInterop(Lock)
 /** 일일/주간 퀘스트 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const MapPinIcon = withIconInterop(MapPin)
 /** 운영자 공지. today 배너의 배지. 두루마리는 읽을 것 이라 목록 쪽이고 이쪽은 알린다 이다. */

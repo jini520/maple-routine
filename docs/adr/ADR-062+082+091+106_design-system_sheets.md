@@ -345,7 +345,7 @@ RN `TextInput` 은 높이를 내용에서 잰다. iOS 는 한글과 영문의 �
 | `components/organisms/SpeedDial/__tests__/` | 결정 11 · 12: 솟는 차례와 펼치는 차례, 접기가 더 짧은지, 모션 줄이기, 같은 폭 계산, 닫힌 항목이 눌리지 않는지, 고르면 접고 알리는지, 그림자가 원 밖 뷰에 있고 다크에서만 헤어라인이 붙는지 본다 |
 | `lib/__tests__/shadow.test.ts` | 결정 12: 블러가 반경의 두 배인지, 알파를 미리 곱하는지 본다 |
 | `components/organisms/TopSheet/__tests__/top-sheet-drag.test.ts` | 결정 15: 끈 거리가 멀수록 덜 따라오고 한계를 넘지 않는지, 위로 충분히 밀거나 빠르게 밀 때만 닫는지, 스크림이 위로 민 만큼만 옅어지는지 본다 |
-| `components/organisms/TopSheet/__tests__/TopSheet.test.tsx` | 결정 15: 스크림 탭과 뒤로가기가 닫힘을 거쳐 부모에 알리는지, 상한이 키보드 위에 남은 높이를 따르는지, 다크에서만 표면을 올리는지 본다 |
+| `components/organisms/TopSheet/__tests__/TopSheet.test.tsx` | 결정 15: 스크림 탭과 뒤로가기가 나가는 움직임을 거쳐 부모에 한 번만 알리는지, 상한이 키보드 위에 남은 높이를 따르는지 본다 |
 
 ## 번호 기록
 
