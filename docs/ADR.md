@@ -166,7 +166,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-042](./adr/ADR-042_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 |
 | [ADR-043](./adr/ADR-043_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |
 | [ADR-092](./adr/ADR-092_boss-profit_redesign.md) | 🟢 | boss-profit | 보스 수익 리디자인과 고가 드롭 홀로그램 강조 |
-| [ADR-044+066+076](./adr/ADR-044+066+076_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
+| [ADR-044+066+076+111](./adr/ADR-044+066+076+111_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
 | [ADR-045](./adr/ADR-045_item-drop_effect.md) | 🟢 | item-drop | 고가 드롭 연출과 강조 |
 | [ADR-046](./adr/ADR-046_cashbook_calendar.md) | 🟢 | cashbook | 가계부 캘린더 |
 | [ADR-047](./adr/ADR-047_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 |
