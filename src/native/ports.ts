@@ -114,6 +114,16 @@ export interface TiltPort {
   subscribe(listener: (tilt: Tilt) => void): () => void
 }
 
+/**
+ * OS 의 앱 안 리뷰 팝업.
+ *
+ * 띄웠는지는 돌려받지 못한다. OS 가 할당량에 따라 조용히 무시하고, 리뷰를 썼는지도 알려 주지 않는다.
+ */
+export interface StoreReviewPort {
+  /** 이 기기에서 쓸 수 없으면 아무것도 하지 않는다. */
+  request(): Promise<void>
+}
+
 export interface KeyboardPort {
   /** 키보드 표시 여부 구독. 해제 함수를 돌려준다. 키보드가 없는 환경이면 no-op 해제 함수. */
   addVisibilityListener(onChange: (visible: boolean) => void): Promise<() => void>
@@ -348,6 +358,7 @@ const statusBarSlot = createPortSlot<StatusBarPort>('StatusBarPort')
 const systemBarsSlot = createPortSlot<SystemBarsPort>('SystemBarsPort')
 const hapticsSlot = createPortSlot<HapticsPort>('HapticsPort')
 const tiltSlot = createPortSlot<TiltPort>('TiltPort')
+const storeReviewSlot = createPortSlot<StoreReviewPort>('StoreReviewPort')
 const keyboardSlot = createPortSlot<KeyboardPort>('KeyboardPort')
 const notificationsSlot = createPortSlot<NotificationsPort>('NotificationsPort')
 const pushSlot = createPortSlot<PushPort>('PushPort')
@@ -379,6 +390,9 @@ export const getHapticsPort = hapticsSlot.get
 
 export const setTiltPort = tiltSlot.set
 export const getTiltPort = tiltSlot.get
+
+export const setStoreReviewPort = storeReviewSlot.set
+export const getStoreReviewPort = storeReviewSlot.get
 
 export const setKeyboardPort = keyboardSlot.set
 export const getKeyboardPort = keyboardSlot.get
@@ -412,6 +426,7 @@ export function __resetNativePortsForTest(): void {
     systemBarsSlot,
     hapticsSlot,
     tiltSlot,
+    storeReviewSlot,
     keyboardSlot,
     notificationsSlot,
     pushSlot,

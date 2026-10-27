@@ -21,6 +21,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/SettingsReleaseNotesScreen.tsx` | 개발 노트 |
 | `app/settings/SettingsFeatureGuideListScreen.tsx` · `SettingsFeatureGuideScreen.tsx` | 기능 설명 목록과 안내 상세 |
 | `app/settings/contact-mail.ts` · `store-review-link.ts` | 문의 메일 주소 · 스토어 리뷰 주소 |
+| `features/app-review/request.ts` · `storage/app-review.ts` · `native/store-review.ts` | 저장 뒤 앱 안 리뷰 요청. 요청 조건 판단 · 기록 칸 · OS 팝업 호출 |
 | `app/settings/ThemeModal.tsx` · `ThemeSelector.tsx` | 테마 고르기 |
 | `app/settings/TextSizeModal.tsx` | 글자 크기 고르기. 미리보기 글과 네 단계, 고르면 바로 적용된다 |
 | `app/settings/TrackingModeModal.tsx` · `TrackingModeSelector.tsx` | 스케줄 관리 방법 고르기 |
@@ -41,6 +42,21 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 - 머리 오른쪽 톱니바퀴가 설정을 연다.
 - 당겨서 새로고침하면 다섯 분류를 다시 받는다. 모두 실패했을 때만 `소식을 불러오지 못했습니다` 가 뜬다.
 - 받기 전의 분류는 스켈레톤으로, 받아 봤는데 없는 분류는 빈 문구 카드로 보인다.
+
+## 앱 리뷰 요청
+
+리뷰는 두 곳에서 받는다. 더보기의 `개발자 응원하기(앱 리뷰)` 는 스토어로 보내고, 핵심 작업을 저장한 뒤에는 OS 의 리뷰
+팝업을 부른다([[ADR-052]] 결정 10). 앱 안 요청은 1.0.13 스토어 바이너리부터 있다.
+
+| 조건 | 값 | 이유 |
+|---|---|---|
+| 세는 저장 | 드롭 기록 · 가계부 기록 · 보스 직접 완료 | 앱을 써 본 사람에게 묻는다. 지우기 · 취소 · 드롭을 전부 뺀 저장은 세지 않는다 |
+| 저장 횟수 | 4번 이상 | Apple 예제의 값 |
+| 첫 실행 뒤 | 3일 | 써 본 뒤에 평가하게 한다. 이 바이너리를 처음 실행한 날부터 센다 |
+| 마지막 요청 뒤 | 90일 | iOS 는 1년에 세 번까지 띄우고, Play 는 한 달 안에 다시 부르면 안 뜰 수 있다 |
+| 저장 뒤 대기 | 2초 | 시트가 닫히는 화면을 막지 않는다. 고가 드롭 연출이 재생 중이면 닫힌 뒤 2초 |
+
+팝업이 떴는지 · 리뷰를 썼는지는 앱이 모른다. 그래서 요청한 날을 마지막 요청일로 적고 화면은 바꾸지 않는다.
 
 ## 설정
 

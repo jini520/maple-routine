@@ -9,6 +9,7 @@ import {
   setNotificationsPort,
   setPushPort,
   setSplashScreenPort,
+  setStoreReviewPort,
   setStatusBarPort,
   setSystemBarsPort,
   setThemeAppearancePort,
@@ -65,6 +66,9 @@ export function installNoopNativePorts(): void {
   // 두드림은 눈에 안 보이므로 no-op 으로 둔다. 실제로 부르는지는 배선 테스트가 자기 목을
   // 꽂아서 본다(`bar-in-layer-stack.test.tsx`).
   setHapticsPort({ tap: async () => {}, select: async () => {} })
+
+  // 리뷰 팝업은 눈에 안 보이는 OS 창이라 no-op 으로 둔다. 언제 부르는지는 `app-review/request.spec.ts` 가 자기 목으로 본다.
+  setStoreReviewPort({ request: async () => {} })
 
   setNotificationsPort({
     requestPermission: async () => false,

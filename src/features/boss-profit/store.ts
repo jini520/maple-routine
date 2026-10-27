@@ -83,6 +83,7 @@ import { getLastWindowFailures } from '../schedule-window/window'
 import { loadDropsByRowKey } from './drops-loader'
 import { sweepOrphanDrops } from './orphan-drops'
 import { useToastStore } from '../toast/store'
+import { countCoreSave } from '../app-review/request'
 import {
   canReachPreviousPeriod,
   resolveNextPeriodKey,
@@ -2246,6 +2247,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     // dropsByRowKey 는 rows 와 독립된 상태라 setPartySize 와 달리 latestSyncSnapshot 이중 갱신이
     // 필요 없다. 탭 전환·기간 이동 시 loadPeriod 가 DB 에서 다시 로드한다.
     set({ dropsByRowKey: { ...get().dropsByRowKey, [key]: saved } })
+    // 드롭을 전부 뺀 저장은 지우기라 리뷰 요청의 셈에 넣지 않는다.
+    if (saved.length > 0) countCoreSave()
   },
 
   applyExternalDropEdit(ocid, bossKey, difficulty, periodKey, drops) {

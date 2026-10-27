@@ -47,6 +47,7 @@ jest.mock('../../enhancement-history/legacy-totals', () => ({ ensureEnhancementT
 jest.mock('../../../storage/mvp-grades', () => ({ getMvpGradeHistories: jest.fn() }))
 jest.mock('../../../storage/character-accounts', () => ({ getCharacterAccountSightings: jest.fn() }))
 jest.mock('../../../lib/mvp/starforce', () => ({ starforceMvpDiscountResolver: jest.fn() }))
+jest.mock('../../app-review/request', () => ({ countCoreSave: jest.fn() }))
 
 const income = jest.requireMock('../../../storage/income') as Record<string, jest.Mock>
 const spend = jest.requireMock('../../../storage/spend') as Record<string, jest.Mock>
@@ -58,6 +59,7 @@ const selection = jest.requireMock('../../../storage/character-selection') as Re
 const basicCache = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 const profileLookup = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
 const enhancementTotals = jest.requireMock('../../../storage/enhancement-totals') as Record<string, jest.Mock>
+const appReview = jest.requireMock('../../app-review/request') as Record<string, jest.Mock>
 const legacyTotals = jest.requireMock('../../enhancement-history/legacy-totals') as Record<string, jest.Mock>
 const mvpGrades = jest.requireMock('../../../storage/mvp-grades') as Record<string, jest.Mock>
 const characterAccounts = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
@@ -174,6 +176,27 @@ describe('행의 신원은 여기서 만든다', () => {
 
     const [first, second] = income.insertIncomeRecord.mock.calls.map((call) => call[0].id)
     expect(first).not.toBe(second)
+  })
+})
+
+// 리뷰 요청은 저장이 성공한 기록만 센다. 실패한 저장을 세면 기록이 없는 사람에게 묻는다.
+describe('리뷰 요청의 저장 횟수', () => {
+  it('수입 · 지출 저장이 성공하면 한 번씩 센다', async () => {
+    const { recordIncome, recordSpend } = require('../records') as typeof import('../records')
+
+    await recordIncome(수입, 지금)
+    await recordSpend(메포지출, 지금)
+
+    expect(appReview.countCoreSave).toHaveBeenCalledTimes(2)
+  })
+
+  it('저장이 실패하면 세지 않는다', async () => {
+    spend.insertSpendRecord.mockRejectedValueOnce(new Error('저장'))
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await expect(recordSpend(메포지출, 지금)).rejects.toThrow()
+
+    expect(appReview.countCoreSave).not.toHaveBeenCalled()
   })
 })
 
