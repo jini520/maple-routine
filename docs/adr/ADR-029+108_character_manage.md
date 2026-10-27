@@ -1,8 +1,8 @@
-# ADR-029 캐릭터 관리 화면
+# ADR-029+108 캐릭터 관리 화면
 
 > 🟢 유효
 > 옛 번호: ADR-043 · ADR-068 결정 4 · ADR-140 · ADR-144 · ADR-208 · ADR-213 · ADR-264 · ADR-275
-> 관련 소스: `app/settings/SettingsCharactersScreen.tsx` · `components/organisms/CharacterManage/` · `components/organisms/CharacterRow/` · `components/organisms/AccountSelect/` · `hooks/useCharacterManage.ts` · `hooks/useAccountRosters.ts` · `hooks/useKnownProfiles.ts` · `hooks/useSelectionDraft.ts` · `features/character-manage/derivations.ts` · `features/character-manage/grid-split.ts` · `app/today/CharacterManageButton.tsx` · `app/settings/reload-tab-stores.ts`
+> 관련 소스: `app/settings/SettingsCharactersScreen.tsx` · `components/organisms/CharacterManage/` · `components/organisms/CharacterRow/` · `components/organisms/AccountSelect/` · `components/templates/EntryScroll/` · `hooks/useCharacterManage.ts` · `hooks/useAccountRosters.ts` · `hooks/useKnownProfiles.ts` · `hooks/useSelectionDraft.ts` · `features/character-manage/derivations.ts` · `features/character-manage/grid-split.ts` · `app/today/CharacterManageButton.tsx` · `app/settings/reload-tab-stores.ts`
 
 ## 배경
 
@@ -90,6 +90,11 @@ push 한다. 두 스케줄러의 헤더에는 캐릭터 관리 버튼이 없다.
 대표를 고르지 않았을 때 첫 번째 캐릭터에 임시 표시를 하지 않는다. 미지정일 때 첫 번째를 쓰는 규칙은 값
 규칙으로만 남아 있고([[ADR-030]]), 이 화면이 그것을 미리 설명하면 무엇에 영향을 주는지 사용자가 되묻게
 된다. 대표인 캐릭터를 `✕` 로 빼면 대표가 없는 상태가 된다.
+
+**별과 `✕` 의 누름 영역은 겹치지 않는다**(#757). 둘은 각각 40×44 의 실제 상자이고 간격 없이 붙어 선다.
+그림(20px)은 상자 가운데에 놓는다. 전에는 그림 크기의 버튼을 사방 12 씩 `hitSlop` 으로 늘리고 4 간격으로
+붙여, 두 영역이 20 겹쳤다. 겹친 곳은 나중에 그려진 `✕` 가 터치를 가져가서, 별을 누르려다 `✕` 가 눌리는 일이
+잦았다. 위아래로만 `hitSlop` 을 주고 좌우로는 주지 않는다.
 
 ### 결정 5. 순서는 위 목록의 핸들로 끌어서 바꾼다
 
@@ -234,6 +239,28 @@ today 에서 캐릭터 관리로 가려면 설정 안쪽까지 들어가야 했�
 - 계정 요약 · 위 목록 뷰 · 대표 판정 같은 파생값은 `features/character-manage/derivations.ts` 의 순수
   함수가 만든다. 화면에서 다시 계산하지 않는다.
 
+### 결정 13. 층마다 카드 하나로 그리고, 카드는 격자 안에서 조각으로 나눠 그린다
+
+두 층(`선택된 캐릭터` · `캐릭터 추가`)은 각각 테두리 없는 카드(`bg-surface`) 하나에 담고, 행은 그 안의
+`card-inset` 칸이다(사용자 지정 2026-10-27, #757). 행마다 테두리 카드를 두던 모양을 새 디자인 원칙(테두리 없음 ·
+카드 안 칸은 `card-inset`)으로 바꾼 것이다.
+
+두 층은 한 격자의 형제라(결정 3) 층을 바깥 상자로 감쌀 수 없다. 그래서 카드를 조각으로 나눠 그린다.
+
+| 조각 | 그리는 곳 |
+|---|---|
+| 위 카드의 윗부분(모서리 · `선택된 캐릭터` · 개수) | 격자 밖 위 |
+| 행 하나(카드색 띠 + 안쪽 `card-inset` 칸) | 격자의 행 칸. 위아래 행이 모두 같은 조각이다 |
+| 위 카드의 아랫부분 · 두 카드 사이 여백 · 아래 카드의 윗부분(계정 드롭다운 · `캐릭터 추가`) | 구분자 |
+| 아래 카드의 아랫부분(대기 · 실패 화면 포함) | 격자 밖 아래 |
+
+- 행 조각이 모두 같아서 첫 행 · 끝 행 표시가 필요 없다. 카드를 끌거나 층을 옮겨도 조각이 그대로 맞물린다.
+- 격자의 행 간격은 0 이다. 간격을 두면 카드색 띠가 끊긴다. 행 사이 여백은 조각 안의 여백(위아래 3)이 만든다.
+- 계정 드롭다운 단추도 아래 카드 안의 `card-inset` 칸이다. 펼친 목록은 지금처럼 카드색 판으로 뜬다.
+- 후보 행의 `＋` 는 `primary-tint` 원 안의 `primary-ink` 더하기다. 카드 전체가 누르는 자리라는 점은 그대로다.
+- 대표 별은 `primary-ink` 로 채운다(결정 4).
+- 저장 바(설정)와 `계속하기` 바(온보딩) 위의 구분선은 걷는다. 바 바탕(`bg`)이 이미 내용과 가른다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -245,7 +272,8 @@ today 에서 캐릭터 관리로 가려면 설정 안쪽까지 들어가야 했�
 | `hooks/__tests__/useKnownProfiles.spec.tsx` · `useKnownProfiles-cache-index.spec.tsx` | 결정 7: 캐시가 이기는지, 캐시가 모르면 후보가 채우는지, 모르는 것을 기억하지 않는지, 같은 ocid 를 다시 읽지 않는지, 원장이 실패해도 조회 불가로 몰지 않는지 본다 |
 | `features/character-manage/__tests__/derivations.spec.ts` | 결정 2 · 6: 월드 집계(많은 순 둘), 계정 대표와 계정 순서, 위 목록 뷰가 모르는 값을 지어내지 않는지, 대표 판정 둘이 서로 다른 답을 내는지 본다 |
 | `features/character-manage/__tests__/grid-split.spec.ts` | 결정 3: 구분자 앞이 고른 것인지, 구분자가 없으면 아무것도 바꾸지 않는지 본다 |
-| `components/organisms/CharacterManage/__tests__/CharacterLayerGrid.test.tsx` | 결정 5: 끄는 동안 촉각이 나는 때를 본다 |
+| `components/organisms/CharacterManage/__tests__/CharacterLayerGrid.test.tsx` | 결정 5: 끄는 동안 촉각이 나는 때를 본다. 결정 13: 격자의 행 간격이 0 이고 행 조각이 카드색 띠 안에 `card-inset` 칸을 두는지 본다 |
+| `components/organisms/CharacterRow/__tests__/` | 결정 4: 별과 `✕` 가 좌우 `hitSlop` 없이 각자 40×44 상자인지 본다 |
 | `features/content-scheduler/__tests__/store.spec.ts` | 결정 9: 빼기만 하면 조회하지 않고, 더하면 더한 캐릭터만 조회하는지 본다 |
 | `app/today/__tests__/CharacterManageButton.test.tsx` · `header-portrait-motion.test.ts` · `view-model.test.ts` | 결정 10: 누르면 push 하는지, 얼굴이 원보다 작게 앉고 원이 얼굴을 자르는지, 바탕이 라이트에서 흰색 · 다크에서 검정인지, 얼굴을 넓게 자르는지, 사람 아이콘, 움직임 줄이기, 얼굴 차례와 불투명도, 대표가 첫 번째인지 본다 |
 | `features/character-selection/__tests__/store.spec.ts` · `app/today/__tests__/TodayScreen.test.tsx` 의 `TodayScreen: 대표 표식` | 결정 11: 복원 · 미지정과 안 읽음 구분 · 늦게 온 복원이 덮지 않는지 · 메모리 먼저 쓰기, today 가 다시 마운트하지 않고도 새 대표를 그리는지 본다 |
@@ -253,3 +281,4 @@ today 에서 캐릭터 관리로 가려면 설정 안쪽까지 들어가야 했�
 ## 번호 기록
 
 - ADR-029 (2026-10-19): 옛 ADR-043 · 068 · 140 · 144 · 208 · 213 · 264 · 275 를 합쳐 처음 작성. 옛 ADR-107 은 모달과 함께 코드가 사라져 옮기지 않았다
+- ADR-108 (2026-10-27): 결정 13(층마다 카드 하나 · 격자 안 조각)을 더하고, 결정 4 에 별과 `✕` 의 누름 영역을 겹치지 않게 하는 규칙을 더했다(#757)
