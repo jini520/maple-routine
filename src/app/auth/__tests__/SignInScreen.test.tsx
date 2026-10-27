@@ -8,6 +8,7 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { useAuthStore } from '../../../features/auth/store'
+import { keepWords } from '../../../lib/keep-words'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { openInAppBrowser } from '../../../native/browser'
@@ -158,7 +159,7 @@ describe('SignInScreen: 경고 모달', () => {
     await openWarning(view)
 
     expect(view.getByText('API 키로 시작할까요?')).toBeTruthy()
-    expect(view.getByText('일부 기능은 넥슨 로그인으로만 쓸 수 있어요')).toBeTruthy()
+    expect(view.getByText(keepWords('일부 기능은 넥슨 로그인으로만 쓸 수 있어요'))).toBeTruthy()
     expect(view.queryByLabelText('Nexon Open API 키')).toBeNull()
   })
 
