@@ -63,7 +63,7 @@ export function TopSheet(props: {
   const shown = useSharedValue(reduceMotion ? 1 : 0)
   const dragX = useSharedValue(0)
   const dragY = useSharedValue(0)
-  /** 손가락이 위아래로 간 거리. 시트는 위로 안 움직이므로 스크림은 이 값을 따른다. */
+  /** 손가락이 위아래로 간 거리. 스크림은 이 값을 따른다. */
   const fingerY = useSharedValue(0)
   /** 나갈 때 화면 밖으로 밀어낼 거리. 잰 시트 높이에서 정한다. */
   const sheetHeight = useSharedValue(windowHeight)

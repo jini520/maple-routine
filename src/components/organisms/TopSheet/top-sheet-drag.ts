@@ -31,10 +31,10 @@ function resist(distance: number, limit: number): number {
 }
 
 /**
- * 끈 거리를 시트가 따라가는 거리로 바꾼다. 멀리 끌수록 덜 따라오고 방향마다의 한계에 다가가기만 한다.
+ * 끈 거리를 시트가 따라가는 거리로 바꾼다.
  *
- * 위로는 움직이지 않는다. 시트 위는 상단 안전영역이라, 따라가면 상태바 · 노치 자리를 침범한다. 위로 미는 몸짓은
- * 닫기로만 쓰고, 그동안의 표시는 스크림이 맡는다.
+ * 위로는 손가락을 그대로 따라간다. 위로 미는 것은 시트를 닫는 몸짓이라 막지 않는다(사용자 지정). 좌우와 아래는
+ * 닫는 몸짓이 아니라서 정말 약간만 따라오고, 멀리 끌수록 덜 따라와 방향마다의 한계에 다가가기만 한다.
  *
  * @param distanceX 손가락이 움직인 가로 거리
  * @param distanceY 손가락이 움직인 세로 거리. 위가 음수
@@ -43,7 +43,7 @@ export function dragOffset(distanceX: number, distanceY: number): { x: number; y
   'worklet'
   return {
     x: resist(distanceX, DRAG_SIDE_LIMIT_PX),
-    y: distanceY > 0 ? resist(distanceY, DRAG_AWAY_LIMIT_PX) : 0,
+    y: distanceY > 0 ? resist(distanceY, DRAG_AWAY_LIMIT_PX) : distanceY,
   }
 }
 
@@ -59,7 +59,7 @@ export function shouldCloseOnRelease(distanceY: number, velocityY: number): bool
 }
 
 /**
- * 끄는 동안의 스크림 불투명도 배수(0 ~ 1). 시트는 위로 움직이지 않으므로 손가락이 위로 간 거리로 잰다.
+ * 끄는 동안의 스크림 불투명도 배수(0 ~ 1). 위로 민 만큼 옅어진다.
  *
  * @param distanceY 손가락이 움직인 세로 거리. 위가 음수
  */

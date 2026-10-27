@@ -29,8 +29,7 @@ export function ApiKeySheet(props: {
           <Text className="flex-1 text-base font-semibold text-text">API 키로 시작하기</Text>
           <Badge
             variant="error"
-            size="sm"
-            icon={<AlertTriangleIcon className="h-2.5 w-2.5 text-error-ink" strokeWidth={2.25} aria-hidden />}
+            icon={<AlertTriangleIcon className="h-3 w-3 text-error-ink" strokeWidth={2} aria-hidden />}
           >
             일부 기능 제한
           </Badge>

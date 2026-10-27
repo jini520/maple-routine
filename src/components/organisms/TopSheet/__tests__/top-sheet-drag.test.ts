@@ -16,8 +16,9 @@ describe('dragOffset', () => {
     expect(DRAG_SIDE_LIMIT_PX).toBeLessThan(10)
   })
 
-  it('위로는 움직이지 않는다. 상단 안전영역을 침범하지 않는다', () => {
-    expect(dragOffset(0, -500).y).toBe(0)
+  // 위로 미는 것은 시트를 닫는 몸짓이라, 막지 않고 손가락을 그대로 따라간다(사용자 지정).
+  it('위로는 손가락을 그대로 따라간다', () => {
+    expect(dragOffset(0, -500).y).toBe(-500)
   })
 
   it('아래로는 아주 조금만 움직이고, 멀리 끌수록 덜 따라온다', () => {
