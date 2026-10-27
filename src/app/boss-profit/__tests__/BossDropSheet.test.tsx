@@ -29,6 +29,8 @@ jest.mock('../../../components/organisms/DropEffectOverlay/DropEffectOverlay', (
   }
 })
 
+jest.mock('../../../features/app-review/request', () => ({ holdReviewRequest: jest.fn() }))
+
 jest.mock('@gorhom/bottom-sheet', () => {
   const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
   const React = jest.requireActual<typeof import('react')>('react')
@@ -251,6 +253,24 @@ describe('BossDropSheet: 드롭 연출', () => {
     })
 
     expect(getByTestId('drop-effect-overlay-modal')).toBeTruthy()
+  })
+
+  // 연출 위에 리뷰 팝업이 뜨면 연출을 가린다. 연출이 서 있는 동안만 미루고, 시트가 닫히면 풀어 준다.
+  it('연출이 서 있는 동안 리뷰 요청을 미루고, 시트가 닫히면 푼다', async () => {
+    const { holdReviewRequest } = jest.requireMock('../../../features/app-review/request') as { holdReviewRequest: jest.Mock }
+    const release = jest.fn()
+    holdReviewRequest.mockReset().mockReturnValue(release)
+    const { result } = renderSheet()
+    const { getByLabelText, unmount } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
+    })
+    expect(holdReviewRequest).toHaveBeenCalledTimes(1)
+    expect(release).not.toHaveBeenCalled()
+
+    await unmount()
+    expect(release).toHaveBeenCalledTimes(1)
   })
 })
 

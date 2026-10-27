@@ -9,7 +9,7 @@ import type { FeesValue, ShareValue } from '../../components/organisms/InputCard
 import { dropFeeFields, dropFeeSeeds } from '../../features/boss-profit/drop-fees'
 import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
 import { periodStartDateKey } from '../../lib/boss/boss-profit-period'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Image, Pressable, ScrollView, View } from 'react-native'
 
 import {
@@ -23,6 +23,7 @@ import {
   isBoxItem,
 } from '../../lib/boss/boss-drops'
 import { useDropEffectStore } from '../../features/drop-effect/store'
+import { holdReviewRequest } from '../../features/app-review/request'
 import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/drop/fixed-drops'
 import { dropItemIconOf, getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
 import { dropItemNameOf, isValuableDropItem } from '../../lib/drop/drop-items'
@@ -202,6 +203,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   const [effect, setEffect] = useState<{ itemKey: string } | null>(null)
   const effectEnabled = useDropEffectStore((state) => state.enabled)
   const setEffectEnabled = useDropEffectStore((state) => state.setEnabled)
+  // 연출 위에 리뷰 팝업이 뜨면 연출을 가린다. 연출이 닫히거나 시트가 닫힐 때 푼다.
+  const isEffectShown = effect !== null
+  useEffect(() => (isEffectShown ? holdReviewRequest() : undefined), [isEffectShown])
 
   // 난이도별 표시: 장비·소비는 아이템 key 로 통합된 후보에서 현재 난이도만 필터, 고정은 현재
   // 난이도 그룹만. 통합 후보는 등장 난이도(difficulties)를 담고 있어 그대로 필터에 쓴다.

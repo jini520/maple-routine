@@ -27,6 +27,7 @@ import { ApiKeyNoticeModal } from './auth/ApiKeyNoticeModal'
 import { MvpGradeHost } from './mvp-grade/MvpGradeHost'
 import { TaskHost } from './resumable-task/TaskHost'
 import { prehydrateTabStores } from './prehydrate'
+import { recordFirstLaunch } from '../features/app-review/request'
 import { useKeyboardVisible } from '../hooks/useKeyboardVisible'
 import { useReturnToForeground } from '../hooks/useReturnToForeground'
 
@@ -246,6 +247,11 @@ export function AppShell(): React.JSX.Element {
   // OTA 확인도 기다리지 않는다. 잠금이 풀리지 않는 결함이 나가도 OTA 로 고칠 수 있어야 한다.
   useEffect(() => {
     void useLiveUpdateStore.getState().checkOnBoot()
+  }, [])
+
+  // 리뷰 요청의 첫 실행 3일은 이 바이너리를 처음 켠 날부터 센다.
+  useEffect(() => {
+    void recordFirstLaunch()
   }, [])
 
   useReturnToForeground(refreshOnReturn)

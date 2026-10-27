@@ -127,6 +127,7 @@ const { getBossDropRecords: getBossDropRecordsMock, replaceBossDropRecords: repl
 // 월드 리프한 기간의 중복 기록 정리. 자동 기록 뒤에 불리고, 지운 것이 있으면 기록을 다시 읽는가만 본다.
 jest.mock('../world-leap-records', () => ({ cleanUpWorldLeapDuplicates: jest.fn() }))
 // 서버 전송은 다른 기능이 소유한다(`features/server-sync`). 여기서는 **부르는지만** 본다.
+jest.mock('../../app-review/request', () => ({ countCoreSave: jest.fn() }))
 jest.mock('../../server-sync/drop-price-sync', () => ({ reportDropPrice: jest.fn(), reportDropRemoved: jest.fn() }))
 const { reportDropPrice: reportDropPriceMock, reportDropRemoved: reportDropRemovedMock } = jest.requireMock('../../server-sync/drop-price-sync') as Record<string, jest.Mock>
 const { cleanUpWorldLeapDuplicates: cleanUpWorldLeapMock } = jest.requireMock('../world-leap-records') as Record<string, jest.Mock>
@@ -425,6 +426,24 @@ describe('setBossDrops', () => {
     )
 
     expect(reportDropPriceMock).toHaveBeenCalledWith('id-0', expect.any(Date))
+  })
+
+  // 리뷰 요청은 기록한 저장만 센다. 드롭을 전부 뺀 저장은 지우기다.
+  it('드롭이 있는 저장은 리뷰 요청의 저장 횟수로 세고, 전부 뺀 저장은 세지 않는다', async () => {
+    const countCoreSave = (jest.requireMock('../../app-review/request') as { countCoreSave: jest.Mock }).countCoreSave
+    countCoreSave.mockClear()
+    useBossProfitStore.setState({ status: 'loaded', rows: [sampleRow], dropsByRowKey: {} })
+    replaceBossDropRecordsMock.mockResolvedValue(['id-0'])
+    const key = { ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-W30' } as const
+
+    await useBossProfitStore.getState().setBossDrops(key, [
+      { dropRecordId: null, category: 'equipment' as const, itemKey: 'restraint_ring', itemName: '리스트레인트 링', quantity: 1 },
+    ])
+    expect(countCoreSave).toHaveBeenCalledTimes(1)
+
+    replaceBossDropRecordsMock.mockResolvedValue([])
+    await useBossProfitStore.getState().setBossDrops(key, [])
+    expect(countCoreSave).toHaveBeenCalledTimes(1)
   })
 
   it('존재하지 않는 행이면 에러를 던지고 DB를 건드리지 않는다', async () => {

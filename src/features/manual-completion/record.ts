@@ -24,6 +24,7 @@ import { withSqliteFallback } from '../boss-profit/sqlite-guards'
 
 import { crystalPayoutMeso, type PartyShares } from '../../lib/boss/party-shares'
 import { lazyAutoFeePercent } from '../mvp-grade/auto-fee'
+import { countCoreSave } from '../app-review/request'
 
 export interface ManualCompletionInput {
   ocid: string
@@ -123,6 +124,7 @@ export async function saveManualCompletion(input: ManualCompletionInput, now: Da
     input.defeatedOn,
   )
   await reportBossClearsOf([input], now)
+  countCoreSave()
 
   if (!changedDifficulty) return
 

@@ -4,14 +4,17 @@ jest.mock('../../../storage/boss-profit', () => ({
   deleteBossProfitRecord: jest.fn(),
 }))
 jest.mock('../../mvp-grade/fee-context', () => ({ loadFeeContext: jest.fn() }))
+jest.mock('../../app-review/request', () => ({ countCoreSave: jest.fn() }))
 
 import { upsertBossProfitRecord } from '../../../storage/boss-profit'
 import { loadFeeContext } from '../../mvp-grade/fee-context'
+import { countCoreSave } from '../../app-review/request'
 import { saveManualCompletion } from '../record'
 
 const upsertMock = upsertBossProfitRecord as jest.Mock
 
 beforeEach(() => {
+  ;(countCoreSave as jest.Mock).mockClear()
   upsertMock.mockReset().mockResolvedValue(undefined)
   ;(loadFeeContext as jest.Mock).mockReset().mockResolvedValue({
     histories: new Map([['A', [{ startDate: '2026-09-10', grade: 'gold' }]]]),
@@ -50,5 +53,24 @@ describe('saveManualCompletion 의 송금 수수료', () => {
     )
 
     expect(upsertMock).toHaveBeenCalledWith(expect.objectContaining({ splitFeePercent: 5, splitFeeAuto: false }))
+  })
+})
+
+// 리뷰 요청은 저장이 성공한 기록만 센다. 실패한 저장을 세면 기록이 없는 사람에게 묻는다.
+describe('saveManualCompletion 과 리뷰 요청의 저장 횟수', () => {
+  const shares = { myShare: 1, sharesTotal: 2, splitFeePercent: 5 }
+
+  it('저장이 성공하면 한 번 센다', async () => {
+    await saveManualCompletion({ ...input, shares }, new Date('2026-09-18T12:00:00Z'))
+
+    expect(countCoreSave).toHaveBeenCalledTimes(1)
+  })
+
+  it('저장이 실패하면 세지 않는다', async () => {
+    upsertMock.mockRejectedValueOnce(new Error('저장'))
+
+    await expect(saveManualCompletion({ ...input, shares }, new Date('2026-09-18T12:00:00Z'))).rejects.toThrow()
+
+    expect(countCoreSave).not.toHaveBeenCalled()
   })
 })

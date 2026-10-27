@@ -14,6 +14,8 @@ const KEEP_KEYS = new Set<string>([
   STORAGE_KEYS.textSize,
   STORAGE_KEYS.trackingMode,
   STORAGE_KEYS.dropEffect,
+  // 리뷰 요청 기록. 지워지면 90일 간격을 처음부터 다시 세서 한 달 안에 다시 묻는다.
+  STORAGE_KEYS.appReview,
   // 공지 구독. 지워지면 구독은 FCM 쪽에 남아 있는데 앱은 껐다고 믿어, 스위치가 꺼져 있는데
   // 알림이 오는 상태가 된다.
   STORAGE_KEYS.noticeSubscribed,

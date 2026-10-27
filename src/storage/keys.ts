@@ -12,6 +12,10 @@ export const STORAGE_KEYS = {
   textSize: 'textSize',
   trackingMode: 'trackingMode',
   dropEffect: 'dropEffect',
+  // 앱 안 리뷰 요청의 기록. 첫 실행일 · 핵심 저장 횟수 · 마지막 요청일 JSON 한 칸이다.
+  //
+  // `KEEP_KEYS` 에 넣는다. 지워지면 90일 간격을 처음부터 다시 세서 Play 에서 한 달 안에 다시 묻는다.
+  appReview: 'appReview',
   // 마지막으로 실행된 OTA 번들 버전. 부팅 때 지금 도는 버전과 비교해 "방금
   // 업데이트했다"를 판정한다. cache-data.ts의 KEEP_KEYS에는 **넣지 않는다**. 지워져도 다음
   // 부팅이 조용히 다시 기록할 뿐이고, 그때 생기는 것은 거짓 안내가 아니라 안내 없음이다.
