@@ -4,7 +4,7 @@
  * 화면과 나눈 것은 줄 수가 아니라 관심사다. 화면은 기간·탭·목록을 알고 이 카드는 펼침 상태와
  * 카드 안의 것들을 안다.
  *
- * 고가 드롭을 먹은 카드는 테두리 대신 면 위를 떠다니는 오로라 빛(`HologramSheen`)으로 강조한다.
+ * 고가 드롭을 먹은 카드는 테두리 대신 카드 전면의 오로라 금속빛(`HologramSheen`)으로 강조한다. 빛만 저절로 흐르고 카드는 고정이다.
  *
  * @see docs/features/boss-profit.md 정책
  */
@@ -20,6 +20,7 @@ import { AnimatedNumber, ChevronDownIcon, ChevronUpIcon, Text } from '../../comp
 import { AuroraText } from '../../components/molecules/AuroraText/AuroraText'
 import { ValuableDropMark } from '../../components/molecules/ValuableDropMark/ValuableDropMark'
 import { HologramSheen } from '../../components/organisms/HologramSheen/HologramSheen'
+import { useHoloMotion } from '../../components/organisms/HologramSheen/holo-motion'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { MonthlyAccordionBody, WeeklyAccordionBody } from './AccordionBody'
 import { ItemRevenueTrigger } from './ItemRevenueTrigger'
@@ -178,6 +179,7 @@ export function CharacterAccordion(props: {
   // 이 기간에 고가 아이템을 먹었을 때: 홀로그램 빛 + 머리 오른쪽 위 아이템 표시 + 오로라 금액.
   const valuableDrops = collectGroupValuableDrops(group, dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
+  const holoMotion = useHoloMotion(hasValuable)
   // 카드 금액(`groupTotalMeso`)과 같은 원천이어야 상자의 목록 · 아이템 줄 · 합계가 맞는다.
   const groupDrops = collectRevenueDrops(group, dropsByRowKey)
   const itemTotal = sumDropPayout(groupDrops)
@@ -282,7 +284,7 @@ export function CharacterAccordion(props: {
       {/* 머리와 본문을 한 셸이 감싸 펼쳐도 한 카드로 읽힌다. 빛은 셸의 첫 자식이라 바탕과 내용 사이에 깔리고,
           펼치면 본문 바탕까지 덮는다. */}
       <View testID="character-card-shell" className="rounded-[14px] bg-surface">
-        {hasValuable && <HologramSheen variant="card" testID="character-card-sheen" />}
+        {hasValuable && <HologramSheen variant="card" motion={holoMotion} testID="character-card-sheen" />}
         <CardHeader
           expandable={!cannotStateAmount}
           isExpanded={isExpanded}

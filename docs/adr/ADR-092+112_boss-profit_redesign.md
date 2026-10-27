@@ -1,7 +1,7 @@
 # ADR-092+112 보스 수익 리디자인과 고가 드롭 홀로그램 강조
 
 > 🟢 유효
-> 관련 소스: `constants/style/aurora.ts` · `components/organisms/HologramSheen/` · `native/tilt.ts` · `native/adapters/rn-tilt.ts` · `components/molecules/ValuableDropMark/` · `components/molecules/AuroraText/` · `components/molecules/PeriodStepper/` · `components/organisms/DropEffectOverlay/DropEffectOverlay.tsx` · `app/boss-profit/BossProfitScreen.tsx` · `app/boss-profit/HeadlineChips.tsx` · `app/boss-profit/CharacterAccordion.tsx` · `app/boss-profit/AccordionBody.tsx` · `app/boss-profit/InsetCell.tsx` · `app/boss-profit/BossProfitBossRow.tsx` · `app/boss-profit/MonthlyBossViewRow.tsx` · `app/boss-profit/DropPriceScreen.tsx` · `app/cashbook/CashbookScreen.tsx` · `app/stats/StatsScreen.tsx` · `app/party-appointments/AppointmentsScreen.tsx`
+> 관련 소스: `constants/style/aurora.ts` · `components/organisms/HologramSheen/HologramSheen.tsx` · `components/organisms/HologramSheen/holo-motion.ts` · `components/molecules/ValuableDropMark/` · `components/molecules/AuroraText/` · `components/molecules/PeriodStepper/` · `components/organisms/DropEffectOverlay/DropEffectOverlay.tsx` · `app/boss-profit/BossProfitScreen.tsx` · `app/boss-profit/HeadlineChips.tsx` · `app/boss-profit/CharacterAccordion.tsx` · `app/boss-profit/AccordionBody.tsx` · `app/boss-profit/InsetCell.tsx` · `app/boss-profit/BossProfitBossRow.tsx` · `app/boss-profit/MonthlyBossViewRow.tsx` · `app/boss-profit/DropPriceScreen.tsx` · `app/cashbook/CashbookScreen.tsx` · `app/stats/StatsScreen.tsx` · `app/party-appointments/AppointmentsScreen.tsx`
 
 ## 배경
 
@@ -32,50 +32,51 @@
 - 지금의 고가 골드(`#f7d00d`)처럼 테마와 관계없는 고정색이다. 고가라는 뜻이 테마마다 다른 색이 되면 안 되기 때문이다.
 - 연출과 목록 강조가 같은 색이어야 먹은 순간 본 빛과 목록에 남은 표시가 같은 것으로 읽힌다.
 
-### 결정 2. 고가 캐릭터 카드는 테두리 대신 면 위를 도는 오로라 빛으로 강조하고, 기울기가 그 빛을 민다
+### 결정 2. 고가 캐릭터 카드는 테두리 대신 카드 전면이 오로라 금속빛으로 반짝이고, 그 빛은 저절로 흐른다
 
-큰 오로라 빛 덩이(청록 · 연보라 · 분홍 방사 그라디언트)가 6초에 한 바퀴씩 카드 둘레를 돌고, 폰을 기울이면 그 방향으로 조금 더
-밀린다(`HologramSheen` 의 `card`, 시안 11번 판, 사용자 지정). 기울기에만 맡기면 들고 있는 동안 빛이 거의 서 있어 변화가 느껴지지
-않았다. 그래서 늘 도는 움직임이 기본이고 기울기는 그 위에 얹는다.
+카드 전면에 은색 금속 띠와 오로라 색 띠를 겹쳐 깔고, 두 띠가 서로 다른 방향으로 천천히 미끄러진다(`HologramSheen`, 시안 `고가 드롭
+홀로 시안` 의 A 판 `오로라 금속`, 사용자 지정, #754). 레퍼런스는 pokemon-cards-css 의 `shiny-v` 카드다. 빛 덩이 하나가 도는 방식은
+기각됐다. 빛 덩이에서 먼 곳은 늘 약해서, 펼친 긴 카드에서 효과가 한쪽에만 보였다. 무늬(격자 · 점 · 결)도 넣지 않는다(사용자 지정).
 
-- 빛의 크기 · 색 · 경로 · 구간 곡선은 시안의 CSS 값을 그대로 옮겼다. 그라디언트 그림은 상자의 가로 2.2배 · 세로 3.2배이고, 경로는
-  `background-position` 다섯 자리(처음과 끝이 같다)를 `ease-in-out` 으로 잇는다.
+| 층 | 모양 | 움직임 |
+|---|---|---|
+| 금속 띠 | 133° 방향으로 반복하는 은색 띠. 430px 마다 어두운색 → 중간색 → 밝은색 → 중간색 → 어두운색 | 경로의 좌우 값에 150px, 위아래 값에 30px |
+| 오로라 띠 | 세로로 반복하는 결정 1 의 일곱 색. 한 색에 40px | 경로의 좌우 값에 20px, 위아래 값에 180px |
 
-- 빛 층은 카드 바탕과 내용 사이에 둔다. 내용 위에 두면 글자까지 물들어 읽기 어렵다.
-- 라이트 테마는 보통 합성, 다크 테마는 `screen` 합성이다. 다크의 어두운 면에서는 빛이 더해지는 쪽으로만 보여야 하기 때문이다.
-  드롭 연출이 이미 `mixBlendMode: 'screen'` 을 쓴다([[ADR-045]] 결정 2).
-- 빛 층은 카드 모양(반경 14)으로 스스로 잘린다. 셸이 자르지 않아도 된다.
-- 기울기는 빛을 상자 폭의 25% 까지 스프링으로 더 민다(사용자 지정). 홀로그램 카드처럼 보이려면 손의 움직임에 반응해야 하기 때문이다.
-  폰을 30° 기울이면 이 끝에 닿는다(사용자 지정, #754). 90° 에서 끝에 닿게 두었더니, 손으로 기울이는 15° 쯤에서는 빛이 20px 남짓만
-  밀려서 도는 움직임에 묻혀 보이지 않았다.
-  좌우 기울기는 그대로 쓰고, 앞뒤 기울기는 천천히 따라가는 기준값과의 차이만 쓴다. 폰을 세워 들면 앞뒤 값이 늘 −1 가까이라
-  그대로 쓰면 빛이 한쪽에 붙어 있다. 기준값은 몇 초에 걸쳐 따라온다. 2초 안에 따라오면 기울인 효과가 금방 사라진다.
-  기울기는 `TiltPort`(`native/ports.ts`)로 읽고, RN 구현(`rn-tilt.ts`)이 `expo-sensors` 의 가속도계를 33ms 간격으로 구독한다.
-  안드로이드 가속도계는 iOS 와 부호가 반대라서, 어댑터가 iOS 쪽으로 맞춰 내보낸다. 맞추지 않으면 두 플랫폼에서 빛이 반대로 밀린다.
-  센서가 없는 기기에서는 값이 오지 않아 빛이 도는 경로만 따른다.
-- `expo-sensors` 는 새 네이티브 의존성이라 지문이 바뀐다. 이 결정은 OTA 로 낼 수 없고 스토어 빌드로 낸다(사용자 확인).
-  iOS `Info.plist` 에 `NSMotionUsageDescription` 을 적었다. `expo prebuild` 는 손으로 쓴 네이티브 파일을 지우므로 손으로 넣었다.
-- 구독은 상자 크기를 안 뒤에 시작하고 언마운트에서 놓는다. 놓지 않으면 카드가 사라진 뒤에도 센서가 돈다.
-- 움직임 줄이기를 켜면 돌지 않고 경로의 첫 자리에 멈추며, 기울기도 구독하지 않는다.
+- 움직임은 5초에 한 바퀴 도는 경로 하나다(사용자 지정, 6초에서 살짝 빠르게). 폰 기울기는 쓰지 않는다(사용자 지정). 경로는 다섯 자리(처음과 끝이 같다)를
+  `ease-in-out` 으로 잇고, 좌우 · 위아래 값은 −0.7~0.7 이다.
+- 반복 애니메이션은 매 바퀴 시작한 값으로 되돌아간다. 그래서 늘 0 에서 출발시킨다. 중간 값에서 다시 시작하면 바퀴마다 경로
+  중간으로 튀어 끊겨 보였다.
+- 곡선은 경로의 구간마다 건다. 시간 전체에 걸면 경로가 꺾이는 자리마다 멈칫해 끊겨 보인다.
+- 오로라 띠는 `color` 합성으로 금속 띠 위에 얹는다(시안 비교 `오로라 금속 테마 비교` 의 A, 사용자 지정). 금속 띠의 밝기 위에
+  오로라의 색조와 채도가 그대로 남는다. `hue` 합성은 채도를 금속 띠에서 가져와, 거의 회색인 금속 위에서 오로라가 회색이 됐다.
+- 두 띠를 묶은 층은 다크 테마에서 `screen`, 라이트 테마에서 `multiply` 로 카드에 합성한다. 다크 카드는 검정에 가깝고 라이트 카드는
+  흰색에 가까워, 두 합성 모두 결과가 효과 층의 색을 따른다. `color-dodge` 는 카드 바탕색을 키워 혼테일(바탕 `#190707`)에서 붉게 보였다.
 
-### 결정 3. 펼친 카드는 본문 바탕까지 빛나고, 보스 행 칸은 빛을 받지 않는다
+| 테마 | 어두운색 | 중간색 | 밝은색 | 합성 |
+|---|---|---|---|---|
+| 다크 | `#0E152E` | `#8FA3A3` | `#A3CCCC` | `screen` |
+| 라이트 | `#919AAC` | `#D2D8DA` | `#FFFFFF` | `multiply` |
 
-펼치면 빛 층이 머리뿐 아니라 카드 전체를 덮는다(사용자 지정). 빛 층이 머리와 본문을 함께 감싸는 셸의 첫 자식이라서다.
+- 세기는 경로를 따라 15% 에서 45% 사이를 오간다(사용자 지정, 시안에서 과하다고 해 줄인 값). 경로가 가운데를 지날 때 차분하고 끝으로
+  갈 때 금속빛이 짙어져야 반사처럼 보이기 때문이다. 세기는 좌우 · 위아래 값의 절댓값 평균을 따른다.
+- 카드는 고정이다(사용자 지정). 움직이는 것은 효과 층의 두 띠뿐이다. 카드가 기울면 목록의 카드가 들썩여 읽기 어렵다.
+- 효과 층은 카드 바탕과 내용 사이에 둔다(사용자 지정). 보스 행 칸 위로 올라오지 않아야 하기 때문이다(결정 3).
+- 시안은 CSS `filter` 로 대비 · 채도를 올렸다. RN 의 `filter` 는 iOS 에서 대비 · 채도를 그리지 않아 쓰지 않는다. `color` 합성이 그 몫이다.
+- 움직임 줄이기를 켜면 경로의 첫 자리에 멈춘다.
 
-펼친 카드에는 빛 덩이가 여러 개 엇갈려 돈다(사용자 지정, #754). 빛 층은 높이를 150px 쯤의 띠로 나누고, 띠마다 결정 2 의 빛을
-하나씩 띠 크기에 맞춰 놓는다. 띠마다 경로의 출발 자리가 달라 같은 순간에 서로 다른 자리에 있다.
+### 결정 3. 펼친 카드는 본문 바탕까지 빛나고, 보스 행 칸은 카드의 빛을 받지 않는다
 
-- 띠가 없을 때는 빛 그림을 상자 높이의 3.2배로 잡아서, 펼친 카드(높이 600)에서 빛의 중심이 카드 밖까지 나갔다. 그래서 늘 한쪽
-  가장자리만 빛났고, 큰 카드 안에 둥근 빛 하나만 보였다.
-- 띠를 머리 높이(70px 쯤)로 잘게 나누면 빛 여덟 개가 겹쳐 카드 전체가 한 색으로 물든다. 150px 이면 빛 하나하나가 보인다.
-- 접힌 카드와 보스 행은 높이가 띠 하나보다 낮아 빛이 하나다. 지금 모양 그대로다.
-보스 행 칸(`InsetCell`)은 `bg-surface` 칸 안에 `bg-card-inset` 칸을 겹쳐 불투명하게 칠한다. card-inset 은 반투명이라 그대로 두면
-칸 위로 빛이 비친다. 그래서 빛은 칸 사이 바탕에만 보인다.
+펼치면 효과 층이 머리뿐 아니라 카드 전체를 덮는다(사용자 지정). 효과 층이 머리와 본문을 함께 감싸는 셸의 첫 자식이라서다.
+띠의 간격은 px 로 정해져 있어, 카드가 길어져도 위에서 아래까지 같은 굵기의 띠가 같은 세기로 지나간다.
 
-### 결정 4. 고가 드롭을 먹은 보스 행은 캐릭터 카드보다 한 단계 약한 같은 빛을 받는다
+보스 행 칸(`InsetCell`)은 `bg-surface` 칸 안에 `bg-card-inset` 칸을 겹쳐 불투명하게 칠한다(사용자 지정). card-inset 은 반투명이라
+그대로 두면 칸 위로 카드의 효과가 비친다. 그래서 카드의 효과는 머리와 칸 사이 바탕에만 보인다.
 
-그 행의 칸 안에 결정 2 와 같은 빛을 넣되(`HologramSheen` 의 `row`), 세기는 60%, 빛은 더 작게, 한 바퀴는 9초로 느리게 한다(사용자 지정). 같은 재질을 작게 되풀이해야, 카드가 빛나는 이유가 그 카드 안의 어느 보스인지 이어서 읽힌다. 세기를
-낮춰 카드와 행의 위계를 지킨다.
+### 결정 4. 고가 드롭을 먹은 보스 행은 캐릭터 카드보다 약한 같은 효과를 받는다
+
+그 행의 칸 안에 결정 2 와 같은 오로라 금속을 깔되, 세기는 카드의 60% 로 낮춘다(사용자 지정). 같은 재질을 되풀이해야, 카드가 빛나는
+이유가 그 카드 안의 어느 보스인지 이어서 읽힌다. 세기를 낮춰 카드와 행의 위계를 지킨다.
 
 - 카드 강조와 같은 규칙이라, 완료한 행의 기록에 고가 아이템이 있을 때만 깐다(`rowHasValuableDrop`). 월간 보스 열람 행도 같다.
 
@@ -159,8 +160,6 @@
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `components/organisms/HologramSheen/__tests__/HologramSheen.test.tsx` | 결정 2: 붙으면 기울기를 구독하고 떨어지면 놓는지, 움직임 줄이기면 구독하지 않는지 본다. 결정 3: 접힌 높이는 빛이 하나이고 펼친 높이는 띠마다 하나씩 늘어나는지 본다 |
-| `native/adapters/__tests__/rn-tilt.test.ts` | 결정 2: 안드로이드 값의 부호만 iOS 쪽으로 뒤집고 iOS 값은 그대로 두는지 본다 |
 | `app/boss-profit/__tests__/CharacterAccordion.test.tsx` | 결정 2 · 5: 고가 드롭이 있으면 빛과 아이템 표시가 붙고 테두리가 없는지, 없거나 미완료 행뿐이면 안 붙는지 본다. 결정 3: 펼치면 빛이 본문을 감싸는 셸에 있는지 본다. 결정 6: 금액이 오로라 글자인지 본다 |
 | `app/boss-profit/__tests__/BossProfitBossRow.test.tsx` | 결정 4: 완료한 행에 고가 아이템이 있을 때만 약한 빛이 깔리는지 본다. 결정 9: 미완료 행에도 `＋ 드롭 추가` 와 인원 · 비율 `변경` 이 서는지 본다 |
 | `components/molecules/ValuableDropMark/__tests__/ValuableDropMark.test.tsx` | 결정 5: 그림이 셋까지이고 넷부터 나머지 개수를 `+N` 으로 적는지 본다 |
@@ -172,4 +171,4 @@
 ## 번호 기록
 
 - ADR-092 (2026-10-24): 보스 수익 리디자인 시안에서 처음 작성
-- ADR-112 (2026-10-27): 펼친 카드에 빛을 띠마다 하나씩 엇갈려 돌리고, 기울기는 30° 에서 끝에 닿게 하고 안드로이드 부호를 맞췄다(#754)
+- ADR-112 (2026-10-27): 빛 덩이를 걷고 카드 전면의 오로라 금속(금속 띠 · 오로라 띠)으로 바꿨다. 폰 기울기와 `expo-sensors` 를 걷고 5초 경로 애니메이션만 남겼다(#754)
