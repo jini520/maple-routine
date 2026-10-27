@@ -83,21 +83,21 @@ describe('size 둘', () => {
     expect(flattenStyle(평면.getByText('진행 불가').props.style).fontSize).toBe(12)
     expect(flattenStyle(난이도.getByText('하드').props.style).fontSize).toBe(10)
 
-    // `mini` 는 더 좁은 자리를 위한 것이라 variant 의 10px 에 안 밀린다.
-    const 작게 = await renderAtom(<Badge variant="hard" size="mini">하드</Badge>)
+    // `xs` 는 더 좁은 자리를 위한 것이라 variant 의 10px 에 안 밀린다.
+    const 작게 = await renderAtom(<Badge variant="hard" size="xs">하드</Badge>)
     expect(flattenStyle(작게.getByText('하드').props.style).fontSize).toBe(9)
   })
 
-  it('mini 는 높이와 글자만 줄인다. 색은 한 값도 안 갈린다', async () => {
+  it('xs 는 높이와 글자만 줄인다. 색은 한 값도 안 갈린다', async () => {
     const 기본 = await renderAtom(<Badge variant="chaos">카오스</Badge>)
-    const 작게 = await renderAtom(<Badge variant="chaos" size="mini">카오스</Badge>)
+    const 작게 = await renderAtom(<Badge variant="chaos" size="xs">카오스</Badge>)
 
     const 상자 = (v: Awaited<ReturnType<typeof renderAtom>>): Record<string, unknown> =>
       flattenStyle(boxOf(v.getByText('카오스')).props.style) as Record<string, unknown>
     const 글자 = (v: Awaited<ReturnType<typeof renderAtom>>): Record<string, unknown> =>
       flattenStyle(v.getByText('카오스').props.style) as Record<string, unknown>
 
-    // 둘 다 여백이 높이를 만든다. mini 는 여백과 글자가 더 작다.
+    // 둘 다 여백이 높이를 만든다. xs 는 여백과 글자가 더 작다.
     expect(Number(상자(작게).paddingVertical)).toBeLessThan(Number(상자(기본).paddingVertical))
     expect(Number(글자(작게).fontSize)).toBeLessThan(Number(글자(기본).fontSize))
     expect(글자(작게).color).toBe(글자(기본).color)
@@ -144,7 +144,7 @@ describe('글자 배수', () => {
   // 높이를 못박지 않는다. 상자에 높이만 박으면 평면 배지는 `<Text>` 하나라 글자가 위로 쏠린다.
   // 여백이 높이를 만들면 그 일이 없다.
   it('어느 크기도 높이를 못박지 않는다', async () => {
-    for (const size of ['default', 'mini'] as const) {
+    for (const size of ['md', 'sm', 'xs'] as const) {
       const 평면 = flattenStyle(
         (await renderAtom(<Badge variant="secondary" size={size}>CLEAR</Badge>)).getByText('CLEAR')
           .props.style,
@@ -191,7 +191,7 @@ describe('아이콘', () => {
   // 글자 밖으로 꺼내 둘을 한 줄에 세운다. 상자 값(여백 · 배경 · 테두리)이 글자에 남으면 안쪽에 상자가 하나 더 생긴다.
   it('아이콘과 글자가 한 줄에 서고, 상자는 둘을 감싼 쪽만 갖는다', async () => {
     const { getByText, getByTestId } = await renderAtom(
-      <Badge variant="error" size="mini" icon={<View testID="badge-icon" />}>
+      <Badge variant="error" size="xs" icon={<View testID="badge-icon" />}>
         일부 기능 제한
       </Badge>,
     )

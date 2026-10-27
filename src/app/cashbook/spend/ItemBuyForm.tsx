@@ -155,7 +155,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
       {/* 종류가 나머지 둘을 정한다. 세그먼트인 것은 통화와 같은 이유다. 갈래가 아니라 값의
           축이다. */}
       <FieldRow label="종류" testID="spend-sheet-item-kind">
-        <Segment
+        <Segment size="sm"
           options={itemKinds().map((each) => each.name)}
           selected={itemKindNameOf(itemKind)}
           onSelect={selectItemKind}
@@ -192,7 +192,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
          * 더해지는 금액을 안 적는다. 큰 숫자가 그만큼 올라간다.
          */
         <FieldRow label="관세" testID="spend-sheet-tariff">
-          <Segment
+          <Segment size="sm"
             options={tariffOptions()}
             selected={hasTariff ? tariffOptions()[1] : tariffOptions()[0]}
             onSelect={(option) => setHasTariff(option !== '없음')}

@@ -21,7 +21,7 @@ export function OccurrenceBossLine(props: { boss: PartyAppointmentBoss }): React
       <Text className="shrink text-13 font-semibold text-text" numberOfLines={1}>
         {name}
       </Text>
-      <Badge variant={boss.difficulty as BossDifficulty} size="mini">
+      <Badge variant={boss.difficulty as BossDifficulty} size="xs">
         {DIFFICULTY_NAME[boss.difficulty as BossDifficulty] ?? boss.difficulty}
       </Badge>
     </View>

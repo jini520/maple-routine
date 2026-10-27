@@ -32,8 +32,8 @@
 | 부품 | 하는 일 |
 |---|---|
 | `Text` · `TextInput` | 글자와 입력 칸. 글꼴, 앱 글자 크기 배수, 입력 칸의 기본 상자를 채운다. `react-native` 의 `Text` · `TextInput` 은 이 둘만 가져온다 |
-| `Button` | 외형만 갖는 버튼. 변형은 `primary` · `outline` · `text` · `primaryOutline` · `tint` · `danger` · `dangerText`, 크기는 기본 · `compact`. `busy` 면 라벨을 가리고 스피너를 겹친다 |
-| `Badge` | 상태 · 카테고리 · 난이도 배지. 크기는 `default` · `mini` |
+| `Button` | 외형만 갖는 버튼. 변형은 `primary` · `outline` · `text` · `primaryOutline` · `tint` · `danger` · `dangerText`, 크기는 `sm` · `md`(기본). `busy` 면 라벨을 가리고 스피너를 겹친다 |
+| `Badge` | 상태 · 카테고리 · 난이도 배지. 크기는 `xs` · `sm` · `md`, 아이콘을 받는다 |
 | `Card` | 카드 껍데기(반경 14 · 표면색). 테두리는 없다([[ADR-060]] 결정 16) |
 | `CheckBox` | 체크박스 네모 |
 | `Switch` | 스위치. 크기 `sm` · `lg`. iOS 는 시스템 스위치를 줄여 쓴다 |
@@ -53,11 +53,11 @@
 | `ErrorState` · `StaleBanner` | 실패 상태 · 낡은 목록 위의 실패 배너 |
 | `DataFreshness` | 제목 아래 `hh:mm:ss 기준` 줄 |
 | `UnavailableBadge` | 값 대신 보이는 `조회 불가` 알약 |
-| `Segment` | 테두리 없는 세그먼트(크기 `sm` 23 · 기본 26 · `md` 31 · 화면 헤더 탭 `tab` 32) |
+| `Segment` | 테두리 없는 세그먼트(크기 `sm` 26 · `md` 28 · 화면 헤더 탭 `lg` 32) |
 | `Popover` | `PopoverLayer` · `AnchoredPopover` |
 | `NumberPad` | 짧은 화면에서 숫자 칸이 쓰는 앱 판 |
 | `AmountFigure` | 시트의 큰 숫자. 칠 수 없다 |
-| `BackButton` | 헤더의 `←` |
+| `BackButton` | 헤더의 `←`. 크기는 하나(28px · 흐린 화살표) |
 | `CalendarGrid` · `DateSelect` · `TimeWheel` | 달력 격자 · 날짜 선택 버튼 · 시각 휠 |
 | `ShareField` · `PartyShareSummary` | 분배 비율 고르기 · 분배 요약 줄([[ADR-038]]) |
 | `Stepper` | `−` · 숫자 · `+` 고르개. 크기 `sm` · `md`. 색은 세그먼트와 같아 어디에 놓여도 같다([[ADR-060]] 결정 14) |

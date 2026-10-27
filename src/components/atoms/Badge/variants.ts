@@ -20,7 +20,7 @@ export interface BadgeVariantStyle {
   textStyle?: TextStyle
   /** 테두리를 클래스로 그리는 variant 가 여백에서 뺄 폭. 색이 테마 토큰이라 값으로 못 준다. */
   borderWidth?: number
-  /** `default` 의 글자 크기를 덮는다. `mini` 는 안 먹는다. */
+  /** `md` 의 글자 크기를 덮는다. `sm` · `xs` 에는 안 먹는다. */
   text?: string
   /** 안 적으면 `semibold` 다. */
   weight?: BadgeWeight
@@ -83,8 +83,9 @@ export const BADGE_VARIANT = {
  * 폭을 빼야 해서다. 글자는 칩 계단을 쓴다.
  */
 export const BADGE_SIZE = {
-  default: { padX: 8, padY: 3, text: 'text-chip' },
-  mini: { padX: 6, padY: 2, text: 'text-chip-xs' },
+  md: { padX: 8, padY: 3, text: 'text-chip' },
+  sm: { padX: 8, padY: 3, text: 'text-chip-sm' },
+  xs: { padX: 6, padY: 2, text: 'text-chip-xs' },
 } as const
 
 /** 클래스로는 못 덮는다. NativeWind 가 두께 충돌을 문자열 순서로 안 푼다. */
@@ -95,7 +96,7 @@ export const BADGE_WEIGHT = {
 
 /** 색 이름. 난이도는 key(`easy`·`normal`·`hard`·`chaos`·`extreme`)가 그대로 키다. */
 export type BadgeVariant = keyof typeof BADGE_VARIANT
-/** `default` 아니면 `mini`. 높이가 아니라 여백과 글자 크기가 갈린다. */
+/** `md` · `sm` · `xs`. 높이가 아니라 여백과 글자 크기가 갈린다. */
 export type BadgeSize = keyof typeof BADGE_SIZE
 /** variant 의 기본 두께를 덮는 값. */
 export type BadgeWeight = keyof typeof BADGE_WEIGHT

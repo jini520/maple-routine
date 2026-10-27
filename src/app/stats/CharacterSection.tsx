@@ -119,7 +119,7 @@ export const CharacterSection = memo(function CharacterSection(props: {
     <StatsSection
       title="캐릭터별"
       testID="stats-characters"
-      trailing={<Segment options={TABS} selected={tab} onSelect={setTab} />}
+      trailing={<Segment size="sm" options={TABS} selected={tab} onSelect={setTab} />}
     >
       <View className="flex-row items-end gap-2">
         <View className="flex-1 gap-2">

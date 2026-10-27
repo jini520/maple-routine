@@ -161,7 +161,7 @@ function FlyingPortrait(props: {
             size={TILE_PORTRAIT}
           />
           <View style={{ position: 'absolute', bottom: -6, left: 0, right: 0, alignItems: 'center' }}>
-            <Badge variant={flight.boss.difficulty as BossDifficulty} size="mini">
+            <Badge variant={flight.boss.difficulty as BossDifficulty} size="xs">
               {DIFFICULTY_NAME[flight.boss.difficulty as BossDifficulty] ?? flight.boss.difficulty}
             </Badge>
           </View>
@@ -228,7 +228,7 @@ function TrayItem(props: {
         >
           <BossPortrait portraitSlug={bossPortraitSlugOf(boss.bossKey)} label={name} size={ITEM_PORTRAIT} />
         </View>
-        <Badge variant={boss.difficulty as BossDifficulty} size="mini">
+        <Badge variant={boss.difficulty as BossDifficulty} size="xs">
           {DIFFICULTY_NAME[boss.difficulty as BossDifficulty] ?? boss.difficulty}
         </Badge>
         </View>

@@ -91,7 +91,7 @@ export function NoticeBanner(): React.JSX.Element | null {
           <View className="mt-1.5 flex-row items-center justify-end gap-1">
             <Button
               variant="text"
-              size="compact"
+              size="sm"
               hitSlop={BUTTON_HIT_SLOP}
               onPress={() => {
                 // 실패는 삼킨다. 저장이 안 되면 배너가 그대로 남고, 그것이 곧 사용자에게 보이는 결과다.
@@ -102,7 +102,7 @@ export function NoticeBanner(): React.JSX.Element | null {
             </Button>
             <Button
               variant="primaryOutline"
-              size="compact"
+              size="sm"
               hitSlop={BUTTON_HIT_SLOP}
               onPress={() => navigation.navigate('SettingsNoticeDetail', { noticeId: notice.id })}
             >

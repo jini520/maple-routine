@@ -52,12 +52,12 @@ export const BUTTON_VARIANT_CLASS = {
  * 특이도가 같아, 이어 붙인 순서가 아니라 생성된 CSS 순서가 이긴다. 그 순서는 테일윈드가 정하므로
  * 덮으려는 쪽이 질 수 있고 그때 아무 에러도 안 난다.
  *
- * `compact` 는 카드나 배너 **안에** 끼는 버튼 자리다. 32px 라 권장 타깃 44px 아래이므로
+ * `sm` 은 카드나 배너 **안에** 끼는 버튼 자리다. 32px 라 권장 타깃 44px 아래이므로
  * 호출부가 `hitSlop` 으로 손가락 자리를 되돌려 줄 것.
  */
 export const BUTTON_SIZE_CLASS = {
-  default: 'px-5 py-2.5',
-  compact: 'px-3.5 py-1.5',
+  md: 'px-5 py-2.5',
+  sm: 'px-3.5 py-1.5',
 } as const
 
 /** 버튼 변형 일곱. 상자 표의 키가 곧 이 타입이다. */
@@ -74,21 +74,21 @@ export type ButtonSize = keyof typeof BUTTON_SIZE_CLASS
  * **어느 쪽이 이길지가 클래스 이름 쌍마다 갈리므로 덮어쓰기에 기대지 않는다.** 한 벌만
  * 내보내면 겹칠 일이 없다.
  *
- * `primary` 만 `default` 에서 16px 인 것은 웹 `<button>` 이 그 크기를 상속으로 받고 있었기
- * 때문이다. `compact` 는 그 예외를 안 둔다 - 좁은 자리에 끼는 버튼이라 변형별로 갈릴 이유가 없다.
+ * `primary` 만 `md` 에서 16px 인 것은 웹 `<button>` 이 그 크기를 상속으로 받고 있었기
+ * 때문이다. `sm` 은 그 예외를 안 둔다 - 좁은 자리에 끼는 버튼이라 변형별로 갈릴 이유가 없다.
  *
  * @param variant 외형
  * @param size 여백 크기
  */
 export function buttonTextSizeClass(variant: ButtonVariant, size: ButtonSize): string {
-  if (size === 'compact') return 'text-13'
+  if (size === 'sm') return 'text-13'
   return variant === 'primary' ? 'text-base' : 'text-sm'
 }
 
 /**
  * 변형별 **글자** 클래스. `Button` 이 라벨을 감싸는 `Text` 에 준다. 굵기와 색만 있다.
  *
- * 크기는 `buttonTextSizeClass` 가 따로 낸다. 여기 같이 적으면 `compact` 가 그것을 못 덮는다.
+ * 크기는 `buttonTextSizeClass` 가 따로 낸다. 여기 같이 적으면 `sm` 이 그것을 못 덮는다.
  */
 export const BUTTON_VARIANT_TEXT_CLASS = {
   primary: 'font-semibold text-on-primary',

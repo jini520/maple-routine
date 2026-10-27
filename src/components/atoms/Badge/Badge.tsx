@@ -25,7 +25,7 @@ export type { BadgeDifficulty, BadgeSize, BadgeVariant, BadgeWeight } from './va
 export interface BadgeProps extends TextProps {
   /** 색. 난이도 배지는 난이도 key 를 그대로 넣는다. */
   variant: BadgeVariant
-  /** 안 적으면 `default`. 고정칸에 놓는 작은 배지만 `mini` 다. */
+  /** 안 적으면 `md`. 좁은 칸에 놓는 작은 배지는 `xs` 다. */
   size?: BadgeSize
   /** variant 의 기본 두께를 덮는다. */
   weight?: BadgeWeight
@@ -48,14 +48,14 @@ export interface BadgeProps extends TextProps {
  * <Badge variant={boss.difficulty}>{DIFFICULTY_NAME[boss.difficulty]}</Badge>
  *
  * // today 타일처럼 좁은 칸에 놓는 작은 배지
- * <Badge variant={boss.difficulty} size="mini">{DIFFICULTY_SHORT[boss.difficulty]}</Badge>
+ * <Badge variant={boss.difficulty} size="xs">{DIFFICULTY_SHORT[boss.difficulty]}</Badge>
  *
  * // variant 기본 두께를 덮는다. 같은 색을 다른 두께로 쓰는 자리가 있다
  * <Badge variant="muted" weight="bold">마감</Badge>
  */
 export function Badge({
   variant,
-  size = 'default',
+  size = 'md',
   weight,
   className,
   style: styleProp,
@@ -64,7 +64,7 @@ export function Badge({
 }: BadgeProps): React.JSX.Element {
   const variantStyle: BadgeVariantStyle = BADGE_VARIANT[variant]
   const box = BADGE_SIZE[size]
-  const textSize = size === 'default' ? (variantStyle.text ?? box.text) : box.text
+  const textSize = size === 'md' ? (variantStyle.text ?? box.text) : box.text
   const text = `${textSize} ${BADGE_WEIGHT[weight ?? variantStyle.weight ?? 'semibold']}`
 
   /**
@@ -83,7 +83,7 @@ export function Badge({
     const classes = (variantStyle.className ?? '').split(' ')
     const inkClass = classes.filter((name) => name.startsWith('text-')).join(' ')
     const boxClass = classes.filter((name) => !name.startsWith('text-')).join(' ')
-    const base = `flex-row items-center ${size === 'mini' ? 'gap-0.5' : 'gap-1'} rounded-full ${boxClass}`
+    const base = `flex-row items-center ${size === 'xs' ? 'gap-0.5' : 'gap-1'} rounded-full ${boxClass}`
     return (
       <View className={className === undefined ? base : `${base} ${className}`} style={boxStyle}>
         {icon}
@@ -109,7 +109,7 @@ export function Badge({
       /** 방향을 기본값에 기대지 않는다. 뒤집히면 그림이 조용히 달라진다. */
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
-      className={`flex-row items-center rounded-full${icon === undefined ? '' : size === 'mini' ? ' gap-0.5' : ' gap-1'}${className === undefined ? '' : ` ${className}`}`}
+      className={`flex-row items-center rounded-full${icon === undefined ? '' : size === 'xs' ? ' gap-0.5' : ' gap-1'}${className === undefined ? '' : ` ${className}`}`}
       style={{ ...variantStyle.border, ...boxStyle }}
     >
       {icon}

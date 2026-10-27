@@ -267,7 +267,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           <PartyShareSummary
             label={`${row.characterName} ${row.bossName} ${DIFFICULTY_NAME[row.difficulty]}`}
             partySize={partySize}
-            size="compact"
+            size="sm"
             // 완료 행의 결정석은 **이 기록이 굳힌 값**이다. 금액을 그 비율로 셌으므로 지금
             // 설정을 그리면 옆의 금액과 다른 말을 한다. 미완료 행은 굳힌 금액이 없어 반대다.
             crystal={rowShares}

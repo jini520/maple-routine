@@ -191,7 +191,7 @@ export function ContentManageScreen(): React.JSX.Element {
       {selected !== null && (
         <View className="px-4">
           <Segment
-            size="tab"
+            size="lg" className="self-start"
             options={CONTENT_TABS}
             selected={activeTab}
             onSelect={setActiveTab}

@@ -179,7 +179,7 @@ function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
 // 크기가 `sm` 인 것은 여기가 시트 머리의 작은 줄이라 그 줄의 글자와 키가 맞아야 해서다.
 function EffectToggle(props: { on: boolean; onToggle: () => void }): React.JSX.Element {
   return (
-    <Switch
+    <Switch size="sm"
       on={props.on}
       label="드롭 연출"
       onToggle={props.onToggle}

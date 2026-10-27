@@ -117,9 +117,9 @@ describe('Button: busy', () => {
     }
   })
 
-  it('compact: 상자가 14/6 으로 줄고 라벨이 13px 이 된다', async () => {
+  it('sm: 상자가 14/6 으로 줄고 라벨이 13px 이 된다', async () => {
     const { getByRole, getByText } = await renderAtom(
-      <Button variant="primary" size="compact">
+      <Button variant="primary" size="sm">
         확인
       </Button>,
     )
