@@ -1,11 +1,17 @@
 /**
- * 상단 시트를 끌 때의 셈. 손가락을 얼마나 따라갈지, 놓으면 닫을지, 스크림을 얼마나 옅게 할지, 시트가 얼마나 클 수 있는지.
+ * 상단 시트를 끌 때의 셈. 시트가 얼마나 따라갈지, 놓으면 닫을지, 스크림을 얼마나 옅게 할지, 시트가 얼마나 클 수 있는지.
  *
  * UI 스레드의 제스처 콜백과 애니메이션 스타일에서 부르므로 모두 worklet 이다.
  */
 
-/** 끈 거리가 끝없이 커져도 시트가 따라가는 한계. */
-export const DRAG_LIMIT_PX = 120
+/**
+ * 좌우로 시트가 따라가는 한계. 시트와 화면 옆 사이(10)보다 작아야 시트가 화면 옆 가장자리를 넘지 않는다.
+ * 정말 약간만 움직인다(사용자 지정).
+ */
+export const DRAG_SIDE_LIMIT_PX = 6
+
+/** 위에서 내려온 시트가 아래(화면 안쪽)로 따라가는 한계. */
+export const DRAG_AWAY_LIMIT_PX = 10
 
 /** 놓았을 때 이만큼 위로 밀려 있으면 닫는다. 끈 거리(손가락)로 잰다. */
 export const CLOSE_DISTANCE_PX = 80
@@ -19,14 +25,26 @@ const SCRIM_FADE_PX = 200
 /** 시트와 키보드(또는 하단 안전영역) 사이. */
 export const TOP_SHEET_BOTTOM_GAP_PX = 8
 
-/**
- * 끈 거리를 시트가 따라가는 거리로 바꾼다. 멀리 끌수록 덜 따라오고 `DRAG_LIMIT_PX` 에 다가가기만 한다.
- *
- * @param distance 손가락이 움직인 거리. 부호가 방향이다
- */
-export function resistDrag(distance: number): number {
+function resist(distance: number, limit: number): number {
   'worklet'
-  return (DRAG_LIMIT_PX * distance) / (DRAG_LIMIT_PX + Math.abs(distance))
+  return (limit * distance) / (limit + Math.abs(distance))
+}
+
+/**
+ * 끈 거리를 시트가 따라가는 거리로 바꾼다. 멀리 끌수록 덜 따라오고 방향마다의 한계에 다가가기만 한다.
+ *
+ * 위로는 움직이지 않는다. 시트 위는 상단 안전영역이라, 따라가면 상태바 · 노치 자리를 침범한다. 위로 미는 몸짓은
+ * 닫기로만 쓰고, 그동안의 표시는 스크림이 맡는다.
+ *
+ * @param distanceX 손가락이 움직인 가로 거리
+ * @param distanceY 손가락이 움직인 세로 거리. 위가 음수
+ */
+export function dragOffset(distanceX: number, distanceY: number): { x: number; y: number } {
+  'worklet'
+  return {
+    x: resist(distanceX, DRAG_SIDE_LIMIT_PX),
+    y: distanceY > 0 ? resist(distanceY, DRAG_AWAY_LIMIT_PX) : 0,
+  }
 }
 
 /**
@@ -41,14 +59,14 @@ export function shouldCloseOnRelease(distanceY: number, velocityY: number): bool
 }
 
 /**
- * 끄는 동안의 스크림 불투명도 배수(0 ~ 1).
+ * 끄는 동안의 스크림 불투명도 배수(0 ~ 1). 시트는 위로 움직이지 않으므로 손가락이 위로 간 거리로 잰다.
  *
- * @param translateY 시트가 실제로 옮겨진 세로 거리. 위가 음수
+ * @param distanceY 손가락이 움직인 세로 거리. 위가 음수
  */
-export function scrimOpacityFor(translateY: number): number {
+export function scrimOpacityFor(distanceY: number): number {
   'worklet'
-  if (translateY >= 0) return 1
-  return Math.max(0, 1 + translateY / SCRIM_FADE_PX)
+  if (distanceY >= 0) return 1
+  return Math.max(0, 1 + distanceY / SCRIM_FADE_PX)
 }
 
 /**

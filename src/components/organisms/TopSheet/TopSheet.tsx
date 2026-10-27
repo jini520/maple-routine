@@ -29,7 +29,10 @@ import { useSafeAreaFrame } from 'react-native-safe-area-context'
 import { useBottomSafeAreaPx, useTopSafeAreaPx } from '../../../lib/safe-area'
 import { useThemeAppearance } from '../../../theme/context'
 import { buildSheetScopeVariables } from '../../../theme/theme-vars'
-import { resistDrag, scrimOpacityFor, shouldCloseOnRelease, topSheetMaxHeight } from './top-sheet-drag'
+import { dragOffset, scrimOpacityFor, shouldCloseOnRelease, topSheetMaxHeight } from './top-sheet-drag'
+
+// 이 앱의 `Animated.View` 는 NativeWind 가 감싸 둔 컴포넌트라 애니메이션 스타일이 조용히 버려진다. 따로 만든다.
+const AnimatedBox = Animated.createAnimatedComponent(View)
 
 /** 화면 좌우와 시트 사이. */
 const SIDE_GAP_PX = 10
@@ -60,6 +63,8 @@ export function TopSheet(props: {
   const shown = useSharedValue(reduceMotion ? 1 : 0)
   const dragX = useSharedValue(0)
   const dragY = useSharedValue(0)
+  /** 손가락이 위아래로 간 거리. 시트는 위로 안 움직이므로 스크림은 이 값을 따른다. */
+  const fingerY = useSharedValue(0)
   /** 나갈 때 화면 밖으로 밀어낼 거리. 잰 시트 높이에서 정한다. */
   const sheetHeight = useSharedValue(windowHeight)
   // 스크림을 두 번 누르거나 뒤로가기와 겹쳐도 부모에 한 번만 알린다. 제스처 콜백도 이 값을 거치므로 ref 가 아니라 공유 값이다.
@@ -93,13 +98,16 @@ export function TopSheet(props: {
 
   const pan = Gesture.Pan()
     .onUpdate((event) => {
-      dragX.set(resistDrag(event.translationX))
-      dragY.set(resistDrag(event.translationY))
+      const offset = dragOffset(event.translationX, event.translationY)
+      dragX.set(offset.x)
+      dragY.set(offset.y)
+      fingerY.set(event.translationY)
     })
     .onEnd((event) => {
       if (shouldCloseOnRelease(event.translationY, event.velocityY)) runOnJS(close)()
       dragX.set(withSpring(0, SNAP_BACK))
       dragY.set(withSpring(0, SNAP_BACK))
+      fingerY.set(withSpring(0, SNAP_BACK))
     })
 
   // 위치까지 이 스타일 하나에 둔다. 애니메이션 뷰에 정적 스타일을 함께 주면 정적 쪽이 조용히 버려진다.
@@ -126,12 +134,12 @@ export function TopSheet(props: {
     right: 0,
     bottom: 0,
     left: 0,
-    opacity: shown.get() * scrimOpacityFor(dragY.get()),
+    opacity: shown.get() * scrimOpacityFor(fingerY.get()),
   }))
 
   return (
     <View testID={`${testId}-layer`} className="absolute inset-0" pointerEvents="box-none">
-      <Animated.View style={scrimStyle}>
+      <AnimatedBox style={scrimStyle}>
         <Pressable
           testID={`${testId}-scrim`}
           accessibilityRole="button"
@@ -139,9 +147,9 @@ export function TopSheet(props: {
           onPress={close}
           className="flex-1 bg-scrim"
         />
-      </Animated.View>
+      </AnimatedBox>
       <GestureDetector gesture={pan}>
-        <Animated.View testID={testId} accessibilityLabel={props.label} accessibilityViewIsModal style={sheetStyle}>
+        <AnimatedBox testID={testId} accessibilityLabel={props.label} accessibilityViewIsModal style={sheetStyle}>
           <View
             style={vars(buildSheetScopeVariables(definition))}
             className="overflow-hidden rounded-[28px] bg-surface"
@@ -156,7 +164,7 @@ export function TopSheet(props: {
               <View className="mt-4 h-[5px] w-9 self-center rounded-full bg-text-disabled" />
             </ScrollView>
           </View>
-        </Animated.View>
+        </AnimatedBox>
       </GestureDetector>
     </View>
   )

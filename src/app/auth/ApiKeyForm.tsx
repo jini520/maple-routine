@@ -21,8 +21,6 @@ export interface ApiKeyFormProps {
   onSubmit: (apiKey: string) => void
   /** 처음 채울 키. 온보딩에서 로그인 화면으로 돌아왔을 때 저장된 키다 */
   initialApiKey?: string
-  /** 서자마자 입력칸에 초점을 줄지. 시트는 키를 치려고 연 것이라 준다 */
-  autoFocus?: boolean
 }
 
 export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
@@ -64,7 +62,6 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
             autoCapitalize="none"
             autoCorrect={false}
             spellCheck={false}
-            autoFocus={props.autoFocus}
             className="h-12 w-full rounded-[10px] bg-card-inset px-3.5 pr-11 text-base text-text"
           />
           <Pressable
