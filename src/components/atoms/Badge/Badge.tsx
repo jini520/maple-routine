@@ -4,6 +4,9 @@
  * 색·크기·두께를 정하는 표는 `variants.ts` 에 있다. 여기 있는 것은 그 표를
  * 상자와 글자로 푸는 코드다.
  */
+import type { ReactNode } from 'react'
+import { View } from 'react-native'
+
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { Text, type TextProps } from '../Text/Text'
 import {
@@ -26,6 +29,8 @@ export interface BadgeProps extends TextProps {
   size?: BadgeSize
   /** variant 의 기본 두께를 덮는다. */
   weight?: BadgeWeight
+  /** 글자 앞에 서는 아이콘. 색은 호출부가 variant 의 글자색으로 준다 */
+  icon?: ReactNode
 }
 
 /**
@@ -54,6 +59,7 @@ export function Badge({
   weight,
   className,
   style: styleProp,
+  icon,
   ...rest
 }: BadgeProps): React.JSX.Element {
   const variantStyle: BadgeVariantStyle = BADGE_VARIANT[variant]
@@ -69,6 +75,21 @@ export function Badge({
   const boxStyle = {
     paddingHorizontal: box.padX - inset,
     paddingVertical: box.padY - inset,
+  }
+
+  if (variantStyle.gradient === undefined && icon !== undefined) {
+    // 아이콘을 글자 안에 끼우면 기준선을 따라 위아래로 어긋난다. 상자를 글자 밖으로 꺼내 둘을 한 줄에 세운다.
+    // 글자에는 글자색만 남긴다. 배경 · 테두리까지 남기면 안쪽에 상자가 하나 더 생긴다.
+    const classes = (variantStyle.className ?? '').split(' ')
+    const inkClass = classes.filter((name) => name.startsWith('text-')).join(' ')
+    const boxClass = classes.filter((name) => !name.startsWith('text-')).join(' ')
+    const base = `flex-row items-center ${size === 'xs' ? 'gap-0.5' : 'gap-1'} rounded-full ${boxClass}`
+    return (
+      <View className={className === undefined ? base : `${base} ${className}`} style={boxStyle}>
+        {icon}
+        <Text className={`${inkClass} ${text}`} style={styleProp} {...rest} />
+      </View>
+    )
   }
 
   if (variantStyle.gradient === undefined) {
@@ -88,9 +109,10 @@ export function Badge({
       /** 방향을 기본값에 기대지 않는다. 뒤집히면 그림이 조용히 달라진다. */
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
-      className={`flex-row items-center rounded-full${className === undefined ? '' : ` ${className}`}`}
+      className={`flex-row items-center rounded-full${icon === undefined ? '' : size === 'xs' ? ' gap-0.5' : ' gap-1'}${className === undefined ? '' : ` ${className}`}`}
       style={{ ...variantStyle.border, ...boxStyle }}
     >
+      {icon}
       <Text
         className={`${text} tracking-[.03em]`}
         style={[variantStyle.textStyle, styleProp]}

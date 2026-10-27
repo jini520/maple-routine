@@ -3,6 +3,8 @@
 //
 // 토큰 색 기대값은 손으로 적지 않고 `job-themes.json` 에서 읽는다. 난이도 색은 테마
 // 토큰이 아니라 게임 안의 색이라 파일에 박힌 값을 그대로 단언한다.
+import { View } from 'react-native'
+
 import { type AtomElement, flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { Badge } from '../Badge'
 
@@ -181,5 +183,44 @@ describe('프롭', () => {
       marginLeft: 'auto',
       backgroundColor: 기본테마.primaryTint,
     })
+  })
+})
+
+describe('아이콘', () => {
+  // 평면 배지는 `Text` 하나라 아이콘을 글자 안에 끼우면 기준선을 따라 위아래로 어긋난다. 그래서 아이콘을 주면 상자를
+  // 글자 밖으로 꺼내 둘을 한 줄에 세운다. 상자 값(여백 · 배경 · 테두리)이 글자에 남으면 안쪽에 상자가 하나 더 생긴다.
+  it('아이콘과 글자가 한 줄에 서고, 상자는 둘을 감싼 쪽만 갖는다', async () => {
+    const { getByText, getByTestId } = await renderAtom(
+      <Badge variant="error" size="xs" icon={<View testID="badge-icon" />}>
+        일부 기능 제한
+      </Badge>,
+    )
+    const label = getByText('일부 기능 제한')
+    const box = boxOf(label)
+
+    expect(getByTestId('badge-icon').parent).toBe(box)
+    expect(flattenStyle(box.props.style)).toMatchObject({
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 기본테마.errorTint,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    })
+    const text = flattenStyle(label.props.style)
+    expect(text.color).toBe(기본테마.errorInk)
+    expect(text.backgroundColor).toBeUndefined()
+    expect(text.paddingHorizontal).toBeUndefined()
+  })
+
+  it('테두리 배지도 테두리는 상자에만 있다', async () => {
+    const { getByText } = await renderAtom(
+      <Badge variant="outline" icon={<View />}>
+        라벨
+      </Badge>,
+    )
+    const label = getByText('라벨')
+
+    expect(flattenStyle(boxOf(label).props.style).borderWidth).toBe(1)
+    expect(flattenStyle(label.props.style).borderWidth).toBeUndefined()
   })
 })

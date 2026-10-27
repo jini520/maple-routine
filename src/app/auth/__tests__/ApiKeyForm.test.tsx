@@ -7,7 +7,7 @@
 // ② `type="password"` → **`secureTextEntry`** 프롭을 본다.
 // ③ `getByRole('link', …)` + `href` → **`openInAppBrowser` 가 무엇으로 불렸는가**. RN 에 `href` 가
 //  없으므로 링크의 계약은 "그 주소를 연다" 하나뿐이고 이 지키려는 것도 그것이다.
-// ④ `toBeDisabled`·`aria-busy`·`aria-expanded` 속성 대신 **`accessibilityState`** 를 본다.
+// ④ `toBeDisabled`·`aria-busy` 속성 대신 **`accessibilityState`** 를 본다.
 //    `Pressable` 이 그 셋을 호스트 뷰에 그대로 넘기지 않고 그 객체로 접는다.
 // ⑤ Enter 제출 → `await fireEvent(input, 'submitEditing')`.
 import { fireEvent } from '@testing-library/react-native'
@@ -38,34 +38,21 @@ function submitButton(view: Rendered): AtomElement {
   return pressableOf(view.getByText(/^확인( 중)?$/), 'button')
 }
 
-/** 폼은 접힌 채로 선다. 안을 만지는 케이스는 머리를 눌러 연다. */
-async function expand(view: Rendered): Promise<void> {
-  await fireEvent.press(view.getByText('API 키로 시작하기'))
-}
-
-/** 렌더하고 바로 펼친다. */
-async function renderExpanded(element: React.ReactElement): Promise<Rendered> {
-  const view = await renderAtom(element)
-  await expand(view)
-  return view
-}
-
 /**
  * `Pressable` 이 접어 넣는 접근성 상태. `disabled`·`aria-busy` 를 프롭으로 직접 읽을 수 없다
  * (호스트 `View` 로 그대로 넘기지 않고 `accessibilityState` 로 접는다).
  */
-function stateOf(node: AtomElement): { disabled?: boolean; busy?: boolean; expanded?: boolean } {
+function stateOf(node: AtomElement): { disabled?: boolean; busy?: boolean } {
   return (node.props.accessibilityState ?? {}) as {
     disabled?: boolean
     busy?: boolean
-    expanded?: boolean
   }
 }
 
 describe('ApiKeyForm', () => {
   it('입력 후 제출하면 onSubmit이 입력값으로 호출된다', async () => {
     const onSubmit = jest.fn()
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={onSubmit} />)
+    const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={onSubmit} />)
 
     await fireEvent.changeText(view.getByLabelText('Nexon Open API 키'), 'test-api-key-123')
     await fireEvent.press(submitButton(view))
@@ -75,7 +62,7 @@ describe('ApiKeyForm', () => {
 
   it('앞뒤 공백은 잘라내고, 값이 비면 제출하지 않는다', async () => {
     const onSubmit = jest.fn()
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={onSubmit} />)
+    const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={onSubmit} />)
     const input = view.getByLabelText('Nexon Open API 키')
 
     await fireEvent.changeText(input, '   ')
@@ -88,13 +75,13 @@ describe('ApiKeyForm', () => {
   })
 
   it('isSubmitting이면 제출 버튼이 비활성화된다', async () => {
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={true} onSubmit={jest.fn()} />)
+    const view = await renderAtom(<ApiKeyForm isSubmitting={true} onSubmit={jest.fn()} />)
 
     expect(stateOf(submitButton(view)).disabled).toBe(true)
   })
 
   it('isSubmitting이면 스피너가 라벨을 덮는다. 라벨은 폭과 스크린리더를 위해 남는다', async () => {
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={true} onSubmit={jest.fn()} />)
+    const view = await renderAtom(<ApiKeyForm isSubmitting={true} onSubmit={jest.fn()} />)
 
     // 라벨을 지우지 않고 가린다. 지우면 버튼 폭이 줄고 스크린리더가 읽을
     // 것이 없다.
@@ -106,7 +93,7 @@ describe('ApiKeyForm', () => {
 
   it('isSubmitting이면 키보드 완료 키로도 onSubmit이 다시 호출되지 않는다', async () => {
     const onSubmit = jest.fn()
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={true} onSubmit={onSubmit} />)
+    const view = await renderAtom(<ApiKeyForm isSubmitting={true} onSubmit={onSubmit} />)
     const input = view.getByLabelText('Nexon Open API 키')
 
     await fireEvent.changeText(input, 'test-api-key-123')
@@ -117,7 +104,7 @@ describe('ApiKeyForm', () => {
 
   it('키보드 완료 키로도 제출된다', async () => {
     const onSubmit = jest.fn()
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={onSubmit} />)
+    const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={onSubmit} />)
     const input = view.getByLabelText('Nexon Open API 키')
 
     await fireEvent.changeText(input, 'test-api-key-123')
@@ -129,7 +116,7 @@ describe('ApiKeyForm', () => {
   //  후속: 발급 절차는 안내 사이트가 담당하고 앱은 링크만 준다. 처음 쓰는
   // 사용자를 넥슨 첫 화면에 떨궈 놓지 않도록 가이드가 1차 경로다.
   it('API 키 발급 가이드를 1차 경로로 제공한다', async () => {
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
+    const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
 
     await fireEvent.press(pressableOf(view.getByText('API 키 발급 방법 보기'), 'link'))
 
@@ -138,51 +125,17 @@ describe('ApiKeyForm', () => {
 
   // 이미 키를 발급받은 사용자에게 7단계 안내를 경유시키지 않는다. 가이드와 별개의 진입점.
   it('openapi.nexon.com 바로 가기도 함께 제공한다', async () => {
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
+    const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
 
     await fireEvent.press(pressableOf(view.getByText('openapi.nexon.com에서 확인'), 'link'))
 
     expect(openBrowser).toHaveBeenCalledWith('https://openapi.nexon.com')
   })
 
-  // 넥슨이 주 경로다. 키 폼을 펼친 채로 두면 그 아래가 화면의 대부분을 먹어 위계가 흐려진다.
-  it('처음에는 접혀 있다', async () => {
-    const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
-
-    expect(view.queryByLabelText('Nexon Open API 키')).toBeNull()
-    expect(view.queryByText('확인')).toBeNull()
-  })
-
-  it('머리를 누르면 펼쳐지고 다시 누르면 접힌다', async () => {
-    const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
-    const header = pressableOf(view.getByText('API 키로 시작하기'), 'button')
-
-    expect(stateOf(header).expanded).toBe(false)
-
-    await fireEvent.press(header)
-    expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
-    expect(stateOf(pressableOf(view.getByText('API 키로 시작하기'), 'button')).expanded).toBe(true)
-
-    await fireEvent.press(view.getByText('API 키로 시작하기'))
-    expect(view.queryByLabelText('Nexon Open API 키')).toBeNull()
-  })
-
-  // 넥슨 로그인이 꺼진 빌드에서는 키가 유일한 경로다. 접어 두면 한 번 더 눌러야 입력칸이 나온다.
-  it('collapsible 이 false 면 펼친 채로 서고 머리는 누를 수 없는 제목이다', async () => {
-    const view = await renderAtom(
-      <ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} collapsible={false} />,
-    )
-
-    expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
-    expect(view.getByText('API 키로 시작하기')).toBeTruthy()
-    expect(view.queryByTestId('accordion-chevron')).toBeNull()
-    expect(() => pressableOf(view.getByText('API 키로 시작하기'), 'button')).toThrow()
-  })
-
   // 키는 손으로 치는 값이 아니라 붙여넣는 긴 문자열이라, 가려 두면 잘못 붙여넣었는지 확인할
   // 방법이 없다(실패해도 401 토스트만 뜬다).
   it('기본은 키를 가리고, 토글하면 보여준다', async () => {
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
+    const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
     const input = view.getByLabelText('Nexon Open API 키')
 
     expect(input.props.secureTextEntry).toBe(true)
@@ -197,7 +150,7 @@ describe('ApiKeyForm', () => {
   // type 이 text 가 되는 구간이 생기므로. 모바일 키보드가 첫 글자를 대문자로 바꾸면
   // 조용히 틀린 키가 된다.
   it('키 입력란은 자동 대문자·자동 수정·맞춤법 검사를 끈다', async () => {
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
+    const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={jest.fn()} />)
 
     const input = view.getByLabelText('Nexon Open API 키')
     expect(input.props.autoCapitalize).toBe('none')
@@ -209,7 +162,7 @@ describe('ApiKeyForm', () => {
   // 제출 경로를 건드리지 않는다는 사실은 그대로 지켜야 한다.
   it('표시 토글은 제출을 일으키지 않는다', async () => {
     const onSubmit = jest.fn()
-    const view = await renderExpanded(<ApiKeyForm isSubmitting={false} onSubmit={onSubmit} />)
+    const view = await renderAtom(<ApiKeyForm isSubmitting={false} onSubmit={onSubmit} />)
 
     await fireEvent.changeText(view.getByLabelText('Nexon Open API 키'), 'test-api-key-123')
     await fireEvent.press(view.getByLabelText('키 표시'))

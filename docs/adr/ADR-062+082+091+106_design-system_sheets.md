@@ -1,8 +1,8 @@
-# ADR-062+082+091 시트 · 모달 · 팝오버 · 입력 카드
+# ADR-062+082+091+106 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드
 
 > 🟢 유효
 > 옛 번호: ADR-039 결정 2 · 3 · ADR-170 정정 12 · 13 · ADR-179 결정 1 · 2 · 3 · 4 · 5 · ADR-180 · ADR-217 · ADR-239 · ADR-241 결정 5 · 정정 7 · ADR-244 · ADR-263 · ADR-285 · ADR-302 · ADR-315 · ADR-316 · ADR-332 · ADR-337 · ADR-338
-> 관련 소스: `components/organisms/{BottomSheet,Modal,NoticeModal,InputCard,MesoPad,FaqSheet,SpeedDial,CalendarPopover,WeekCalendarPopover,TimePopover}/` · `components/molecules/{Popover,NumberPad}/` · `components/organisms/BottomBar/BottomBarOverlay.tsx` · `hooks/usePopoverPlacement.ts` · `components/molecules/Segment/` · `components/organisms/MesoPad/meso-unit.ts` · `lib/{modal-metrics,number-pad-metrics,place-dropdown,popover-anchor,shadow,fab-metrics}.ts` · `features/input-card/meso-unit.ts` · `storage/meso-unit.ts`
+> 관련 소스: `components/organisms/{BottomSheet,TopSheet,Modal,NoticeModal,InputCard,MesoPad,FaqSheet,SpeedDial,CalendarPopover,WeekCalendarPopover,TimePopover}/` · `components/molecules/{Popover,NumberPad}/` · `components/organisms/BottomBar/BottomBarOverlay.tsx` · `hooks/usePopoverPlacement.ts` · `components/molecules/Segment/` · `components/organisms/MesoPad/meso-unit.ts` · `lib/{modal-metrics,number-pad-metrics,place-dropdown,popover-anchor,shadow,fab-metrics}.ts` · `features/input-card/meso-unit.ts` · `storage/meso-unit.ts`
 
 ## 배경
 
@@ -82,9 +82,9 @@ RN 에서는 형제 중 나중에 그린 것이 위에 온다. `zIndex` 는 같�
 - 스크림은 시트가 실제로 내려갈 때만 옅어진다(`scrim-opacity.ts`). 내용이 커질 때 라이브러리가 한 프레임
   동안 인덱스를 음수로 보내어, 그대로 따르면 배경이 한 번 번쩍인다.
 
-### 결정 4. 시트는 키보드를 보지 않는다. 치는 칸은 입력 카드가 받는다
+### 결정 4. 바텀시트는 키보드를 보지 않는다. 치는 칸은 입력 카드가 받는다
 
-시트 안의 칸은 값을 보여 주는 누르개이고, 누르면 `features/input-card/store` 의 `openInputCard` 로 칸을
+바텀시트 안의 칸은 값을 보여 주는 누르개이고, 누르면 `features/input-card/store` 의 `openInputCard` 로 칸을
 맡긴다. 실제 `TextInput` 은 키보드 위에 뜨는 `organisms/InputCard` 에만 있다. 그래서 시트는 키보드가
 떠도 움직이거나 줄지 않는다. 시트와 키보드가 같은 공간을 다투면 줄이 하나 늘 때마다 키보드 처리가
 부딪혔기 때문이다.
@@ -298,6 +298,30 @@ RN `TextInput` 은 높이를 내용에서 잰다. iOS 는 한글과 영문의 �
 - 칸 높이는 결정 6 대로 칸이 갖는다. 보이는 줄 수(3 ~ 4)에 줄 높이를 곱한 값이다.
 - 글자 크기는 한 줄 글자 칸과 같은 16 이다.
 
+### 결정 15. 위에서 내려오는 시트는 `TopSheet` 하나이고, 치는 칸을 직접 품는다
+
+키를 치는 시트처럼 키보드와 함께 써야 하는 시트는 `organisms/TopSheet` 로 연다(#757). 키보드는 화면 아래에서 올라오므로
+위에서 내려오는 시트와 자리를 다투지 않는다. 그래서 바텀시트와 달리 입력 카드를 거치지 않고 `TextInput` 을 시트 안에
+그대로 둔다(결정 4 의 예외).
+
+- **떠 있는 모양이다.** 좌우로 10, 위로는 상단 안전영역만큼 떨어지고, 네 모서리가 모두 28 로 둥글다. 그랩 핸들은 시트
+  아래쪽 가운데에 있다. 바텀시트를 위아래로 뒤집은 모양이고, 바텀시트도 같은 모양으로 바꿀 예정이다(사용자 지정).
+- **표면은 바텀시트와 같다.** 다크에서 표면 계열을 한 칸 올리고(`buildSheetScopeVariables`), 테두리는 긋지 않는다.
+- **위로는 손가락을 그대로 따라간다.** 위로 미는 것은 시트를 닫는 몸짓이라 상단 안전영역에서 막지 않는다(사용자 지정).
+  위로 충분히 밀거나 빠르게 밀어 올리면 닫히고, 아니면 스프링으로 제자리에 돌아온다. 위로 민 만큼 스크림이 옅어진다.
+- **좌우와 아래로는 정말 약간만 따라왔다가 돌아온다**(사용자 지정, `top-sheet-drag.ts`). 닫는 몸짓이 아니기 때문이다.
+  좌우로는 화면 옆 여백(10)보다 덜(6) 움직여 옆 가장자리를 넘지 않고, 아래(화면 안쪽)로는 10 까지만 따라온다. 살짝 끈
+  것에 바로 반응하지 않게 처음부터 끈 거리의 1/10 만 따라오고, 멀리 끌수록 그보다 덜 따라온다.
+- **닫는 방법은 셋이다.** 위로 밀기 · 스크림 탭 · 안드로이드 뒤로가기다. 닫히는 애니메이션이 끝난 뒤 부모에 알린다.
+  부모가 조건부로 마운트하면 열린다. 바텀시트와 같은 계약이다.
+- **높이는 내용이 정하고, 상한은 키보드 위에 남은 높이다**(창 높이 − 키보드 높이 − 상단 안전영역 − 8). 넘치면 시트 안이
+  스크롤된다. 키보드 높이는 입력 카드와 같은 `keyboard-offset.ts` 로 잰다. 기기 목록으로 상한을 정하지 않는 것은
+  결정 5 와 같은 이유다.
+- **화면 위에 덮는 층으로 그린다.** RN `Modal` 에 넣지 않는다. 안드로이드에서 `Modal` 은 별도 창이라 앱 셸의
+  `KeyboardProvider` 가 재는 키보드 높이가 그 창 안까지 오는지 보장할 수 없다. 그래서 호출부가 화면 루트에 둔다.
+  하단바가 있는 화면에서 쓰려면 하단바 위로 올리는 층이 따로 필요하다. 지금은 하단바가 없는 로그인 화면만 쓴다.
+- 모션 줄이기(`useReducedMotion`)면 들어오고 나가는 움직임 없이 바로 서고 사라진다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -322,9 +346,12 @@ RN `TextInput` 은 높이를 내용에서 잰다. iOS 는 한글과 영문의 �
 | `components/organisms/FaqSheet/__tests__/FaqSheet.test.tsx` | 결정 10: 문답이 모두 펼쳐져 있고 펼치는 누르개가 없는지 본다 |
 | `components/organisms/SpeedDial/__tests__/` | 결정 11 · 12: 솟는 차례와 펼치는 차례, 접기가 더 짧은지, 모션 줄이기, 같은 폭 계산, 닫힌 항목이 눌리지 않는지, 고르면 접고 알리는지, 그림자가 원 밖 뷰에 있고 다크에서만 헤어라인이 붙는지 본다 |
 | `lib/__tests__/shadow.test.ts` | 결정 12: 블러가 반경의 두 배인지, 알파를 미리 곱하는지 본다 |
+| `components/organisms/TopSheet/__tests__/top-sheet-drag.test.ts` | 결정 15: 좌우 · 아래로는 살짝 끌어도 끈 거리의 1/8 도 안 움직이는지, 좌우는 옆 여백보다 덜 움직이는지, 위로는 손가락을 그대로 따라가는지, 아래로는 한계 안에서 멀수록 덜 따라오는지, 위로 충분히 밀거나 빠르게 밀 때만 닫는지, 스크림이 손가락을 위로 민 만큼만 옅어지는지 본다 |
+| `components/organisms/TopSheet/__tests__/TopSheet.test.tsx` | 결정 15: 스크림 탭과 뒤로가기가 나가는 움직임을 거쳐 부모에 한 번만 알리는지, 상한이 키보드 위에 남은 높이를 따르는지 본다 |
 
 ## 번호 기록
 
 - ADR-062 (2026-10-19): 옛 ADR-180 · 217 · 239 · 244 · 263 · 285 · 302 · 315 · 316 · 332 · 337 · 338 과 옛 ADR-039 결정 2 · 3 · 옛 ADR-170 정정 12 · 13 · 옛 ADR-179 결정 1 · 2 · 3 · 4 · 5 · 옛 ADR-241 결정 5 · 정정 7 을 합쳐 처음 작성
 - ADR-082 (2026-10-22): 결정 13(금액 카드의 단위 세그먼트 · 소수점)을 더하고, 결정 4 의 단위 읽기 위치와 결정 5 의 판 키 · 진입 직후 커서를 고침(#628)
 - ADR-091 (2026-10-24): 결정 14(여러 줄 글자 칸)를 더함
+- ADR-106 (2026-10-27): 결정 15(위에서 내려오는 `TopSheet`)를 더하고, 결정 4 를 바텀시트로 좁혔다(#757)
