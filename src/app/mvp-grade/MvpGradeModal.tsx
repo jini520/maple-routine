@@ -148,6 +148,7 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
                   floorWeek={floorWeek}
                   thisWeek={thisWeek}
                   onStart={(week) => setStarts({ ...starts, [account.accountId]: week })}
+                  inModal
                 />
               ) : (
                 <MvpConfirmCard
@@ -156,6 +157,7 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
                   grade={gradeOf(account)}
                   start={changedOf(account) ? startOf(account) : null}
                   startLabel={startLabel}
+                  inModal
                 />
               ),
             )}

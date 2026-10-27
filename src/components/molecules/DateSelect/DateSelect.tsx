@@ -51,7 +51,8 @@ export const DateSelect = forwardRef<View, DateSelectProps>(function DateSelect(
         </View>
       )}
 
-      <View className="flex-row items-center gap-1.5 rounded-full border border-border px-2.5 py-1">
+      {/* 스테퍼 트랙과 같은 반투명 바탕이라 놓이는 자리마다 색을 고르지 않는다. */}
+      <View testID="date-select-pill" className="flex-row items-center gap-1.5 rounded-full bg-control-track px-2.5 py-1">
         <CalendarIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden />
         <Text
           testID={props.testID}
