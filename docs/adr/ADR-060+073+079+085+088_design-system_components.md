@@ -91,6 +91,9 @@ Metro 는 트리셰이킹을 하지 않아 배럴은 안 쓰는 것까지 번들
   두 클래스가 충돌할 때 문자열 순서가 아니라 자기 우선순위로 고른다. 그래서 `className` 으로는 못 덮는다.
 - **글자 크기는 정해진 글자 크기 단계에서 고른다.** `default` 는 `chip`, `mini` 는 `chip-xs` 이다. 난이도 이름은
   최대 네 글자라 `default` 에서만 한 단계 작은 `chip-sm` 을 쓴다. 줄 높이는 같아서 배지 높이는 그대로다.
+- **아이콘은 `icon` 프롭으로 받는다.** 아이콘을 주면 상자를 글자 밖의 가로 줄로 꺼내 아이콘과 글자를 나란히 세운다.
+  평면 배지는 `Text` 하나라 아이콘을 글자 안에 끼우면 기준선을 따라 위아래로 어긋나기 때문이다. 글자에는 글자색만 남기고
+  배경 · 테두리는 상자에만 둔다. 둘 다 남기면 안쪽에 상자가 하나 더 생긴다. 아이콘 색은 호출부가 variant 의 글자색으로 준다.
 
 배지의 라벨(`DIFFICULTY_SHORT` · `QUEST_STATE_LABELS`)은 스타일이 아니라 도메인 데이터라 상수로 두고
 호출부가 고른다.
@@ -302,7 +305,7 @@ today 만 걷으면 같은 `Card` 를 쓰는 다른 화면과 카드 생김새�
 | `components/__tests__/layer-dependencies.test.ts` | 결정 1: 상위 계층을 import 하지 않는지, 계층이 아래부터 끊기지 않는지, `components/` 바로 아래에 계층 디렉터리만 있는지 본다 |
 | `src/__tests__/require-cycle-policy.test.ts` | 결정 3: 배럴을 거친 순환 import 가 없는지 본다 |
 | `components/atoms/Button/__tests__/Button.test.tsx` | 결정 4: 상자 표에 글자 유틸이 없는지, `className` 은 상자에 `textClassName` 은 글자에 붙는지, 문자열 children 만 `Text` 로 감싸는지, `compact` 크기와 크기 표에 색이 없는지 본다 |
-| `components/atoms/Badge/__tests__/Badge.test.tsx` | 결정 5: 평면 variant 의 상자가 모두 같은지, 테두리 폭만큼 여백을 줄여 바깥 크기가 맞는지, 모든 variant 의 높이가 같은지, 높이를 못박지 않는지, `weight` 가 기본 두께를 덮는지 본다 |
+| `components/atoms/Badge/__tests__/Badge.test.tsx` | 결정 5: 평면 variant 의 상자가 모두 같은지, 테두리 폭만큼 여백을 줄여 바깥 크기가 맞는지, 모든 variant 의 높이가 같은지, 높이를 못박지 않는지, `weight` 가 기본 두께를 덮는지, 아이콘을 주면 아이콘과 글자가 한 줄에 서고 상자 값이 바깥에만 있는지 본다 |
 | `lib/__tests__/nativewind-interop.test.tsx` | 결정 6: `Svg` 의 `text-*` 가 `color` 프롭이 되고 크기 유틸이 상자 크기가 되는지, `LinearGradient` 의 `className` 이 style 로 바뀌는지 본다 |
 | `components/atoms/Icon/__tests__/` | 결정 8: lucide 규격으로 그리는지, 크기와 색이 `className` 에서 오고 안 주면 24 로 떨어지는지, 겹침에 `clipPath` · `mask` 를 쓰지 않는지, `fill` 을 줄 때만 정해진 도형이 채워지는지, 단풍잎 루트 요소에 선 규격이 없는지, 톱니 곡선이 lucide `settings` 와 같은지 본다 |
 | `components/molecules/Segment/__tests__/` | 결정 10: 고른 것만 선택으로 읽히는지, 누르면 라벨이 아니라 값을 주는지, 접근성 이름이 라벨인지, 고른 것을 다시 누르면 콜백과 촉각이 없는지, 상자가 칠하고 글자색은 상자를 기다리지 않는지, 상자가 터치를 막지 않는지, `Segment` 의 `disabled` 를 본다 |
@@ -320,3 +323,4 @@ today 만 걷으면 같은 `Card` 를 쓰는 다른 화면과 카드 생김새�
 - (2026-10-21) 결정 9 와 결정 5 의 `mini` 고정 글자를 지웠다. [[ADR-063]] 결정 11 이 `fixed` 를 없앴기 때문이다(#633)
 - ADR-085 (2026-10-23): 결정 10 에서 `TabSegment` 를 `Segment` 에 합치고, 테두리를 걷어 생김새를 `TabSegment` 쪽으로 통일했다. 크기 `tab` 과 테마 값에서 만드는 색 셋(`control-track` · `control-thumb` · `control-ink-off`)을 더했다. 결정 14 에서 스테퍼를 세그먼트와 같은 색으로 칠하고 `tone` 을 없앴다. 결정 15 를 더했다. 결정 14 의 `lg` 를 걷고 판매 분배금 계산기를 `md` 로 맞췄다(#343)
 - ADR-088 (2026-10-23): 결정 16 을 더했다. `Card` atom 의 테두리를 걷고 모달 패널만 테두리를 직접 준다. 결정 15 의 쓰는 곳에 today 위젯을 더했다(#349)
+- (2026-10-27) 결정 5 에 배지 아이콘(`icon` 프롭)을 더했다(#757)

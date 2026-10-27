@@ -8,7 +8,7 @@
  */
 import { View } from 'react-native'
 
-import { AlertTriangleIcon, KeyRoundIcon, Text } from '../../components/atoms'
+import { AlertTriangleIcon, Badge, KeyRoundIcon, Text } from '../../components/atoms'
 import { TopSheet } from '../../components/organisms/TopSheet/TopSheet'
 import { ApiKeyForm } from './ApiKeyForm'
 
@@ -27,11 +27,13 @@ export function ApiKeySheet(props: {
             <KeyRoundIcon className="h-4 w-4 text-primary-ink" strokeWidth={1.75} aria-hidden />
           </View>
           <Text className="flex-1 text-base font-semibold text-text">API 키로 시작하기</Text>
-          {/* 경고 삼각형이 든 알약이라 `Badge` 를 쓰지 않는다. 배지 부품은 글자만 받는다. */}
-          <View className="flex-row items-center gap-1 rounded-full bg-error-tint px-2 py-1">
-            <AlertTriangleIcon className="h-3 w-3 text-error-ink" strokeWidth={2} aria-hidden />
-            <Text className="text-11 font-semibold text-error-ink">일부 기능 제한</Text>
-          </View>
+          <Badge
+            variant="error"
+            size="mini"
+            icon={<AlertTriangleIcon className="h-2.5 w-2.5 text-error-ink" strokeWidth={2.25} aria-hidden />}
+          >
+            일부 기능 제한
+          </Badge>
         </View>
         <ApiKeyForm
           isSubmitting={props.isSubmitting}
