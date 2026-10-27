@@ -10,8 +10,8 @@
  * **보스 수익에서 보던 기간을 주기까지 통째로 이어받는다.** 주 단위로만 열면 월간 보스 드롭에 닿을
  * 길이 없다. 그 기록의 `period_key` 가 `YYYY-MM` 이라 어느 주차 조회에도 안 걸린다.
  *
- * **미입력은 0원이 아니다.** 상태 pill 이 색이 아니라 형태로 가르고(채움 · 회색 · 점선) 미입력 행의
- * 금액 자리는 비운다.
+ * **미입력은 0원이 아니다.** 상태 표시가 색이 아니라 형태로 가르고(tint 알약 · surface 알약 · 바탕 없는
+ * 글자) 미입력 행의 금액 자리는 비운다.
  *
  * @see docs/features/boss-profit.md 정책
  */
@@ -47,7 +47,7 @@ import type { BossCycle } from '../../types/scheduler'
 import {
   Badge,
   PackageOpenIcon,
-  ProfitIcon,
+  PlusIcon,
   Text,
 } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
@@ -68,6 +68,7 @@ import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
 import { getMaxPartySize } from '../../lib/boss/bosses'
+import { getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
 
 /** 한 연쇄 안에서 매긴 값. 스토어를 다시 읽어도 이전으로 돌아가면 이 값이 보인다. */
 interface PriceEdit {
@@ -81,7 +82,7 @@ function characterTotal(group: DropPriceGroup): number {
 }
 
 /**
- * 상태 pill. 세 상태를 색이 아니라 형태로 가른다(채움 / 회색 / 점선).
+ * 상태 표시. 세 상태를 색이 아니라 형태로 가른다(tint 알약 / surface 알약 / 바탕 없는 글자).
  *
  * 미입력 자리에 `0` 을 쓰지 않는다. `entered` 가 아니면 금액을 아예 그리지 않고 `입력`·
  * `기록 안함` 이라는 말이 선다. 값을 모르는 것과 0원인 것은 다른 사실이다.
@@ -103,21 +104,40 @@ function PriceStatePill(props: { drop: RecordedDrop }): React.JSX.Element {
   }
   if (drop.priceState === 'excluded') {
     return (
-      <View className="h-[26px] shrink-0 justify-center rounded-full bg-surface-2 px-2.5">
+      // surface 는 card-inset 칸 위에서 알약이 보이게 하는 색이다.
+      <View className="h-[26px] shrink-0 justify-center rounded-full bg-surface px-2.5">
         <Text className="text-[12.5px] font-semibold text-text-disabled">기록 안함</Text>
       </View>
     )
   }
   return (
-    <View className="h-[26px] shrink-0 justify-center rounded-full border border-dashed border-border px-2.5">
-      <Text className="text-[12.5px] font-semibold text-text-disabled">입력</Text>
+    <View className="h-[26px] shrink-0 flex-row items-center gap-0.5 pl-2 pr-1">
+      <PlusIcon className="h-[13px] w-[13px] text-primary-ink" strokeWidth={2.5} aria-hidden />
+      <Text className="text-[12.5px] font-bold text-primary-ink">입력</Text>
+    </View>
+  )
+}
+
+/** 요약 카드의 건수 칸. 수가 위, 상태 이름이 아래. */
+function SummaryCount(props: {
+  testID: string
+  label: string
+  count: number
+  /** 수 글자색 클래스. */
+  tone: string
+}): React.JSX.Element {
+  return (
+    <View testID={props.testID} className="flex-1 rounded-[10px] bg-card-inset px-2.5 py-1.5">
+      <Text className={`text-sm font-bold ${props.tone}`} style={TABULAR_NUMS}>
+        {props.count}건
+      </Text>
+      <Text className="text-10 text-text-muted">{props.label}</Text>
     </View>
   )
 }
 
 function EntryRow(props: {
   entry: DropPriceEntry
-  isLast: boolean
   onSelect: () => void
 }): React.JSX.Element {
   const { drop } = props.entry
@@ -132,48 +152,42 @@ function EntryRow(props: {
   const shareLabel = split === null ? '' : ` · ${split}`
 
   return (
-    // RN 에 `:last-child` 가 없어 목록을 아는 부모가 알려 준다. 테두리를 아예 빼지 않고 색만
-    // 지우는 것이 요점이다.
-    <View>
-      {/* 행 전체가 버튼이다. 입력이든 수정이든 같은 자리를 누른다. */}
-      <Pressable
-        role="button"
-        onPress={props.onSelect}
-        aria-label={`${itemName} 가격 입력`}
-        className={`flex-row items-center gap-3 border-b p-4 ${
-          props.isLast ? 'border-b-transparent' : 'border-border'
-        }`}
-      >
-        {iconUrl !== null ? (
-          <Image source={iconUrl} resizeMode="contain" className="h-8 w-8 shrink-0" />
-        ) : (
-          <View className="h-8 w-8 shrink-0 rounded-md border border-border bg-surface-2" />
-        )}
-        <View className="min-w-0 flex-1">
-          <View className="flex-row items-center gap-1.5">
-            <Text numberOfLines={1} className="shrink text-[13.5px] font-semibold text-text">
-              {itemName}
-              {drop.ringLevel !== undefined && ` ${drop.ringLevel}레벨`}
+    // 칸 전체가 버튼이다. 입력이든 수정이든 같은 자리를 누른다. 칸 색이 기록 사이 경계라 선을 긋지 않는다.
+    <Pressable
+      role="button"
+      onPress={props.onSelect}
+      aria-label={`${itemName} 가격 입력`}
+      className="flex-row items-center gap-2.5 rounded-[10px] bg-card-inset px-3 py-2.5"
+    >
+      {iconUrl !== null ? (
+        <Image source={iconUrl} resizeMode="contain" className="h-8 w-8 shrink-0" />
+      ) : (
+        <View className="h-8 w-8 shrink-0 rounded-md bg-surface-2" />
+      )}
+      <View className="min-w-0 flex-1">
+        <View className="flex-row items-center gap-1.5">
+          <Text numberOfLines={1} className="shrink text-[13.5px] font-semibold text-text">
+            {itemName}
+            {drop.ringLevel !== undefined && ` ${drop.ringLevel}레벨`}
+          </Text>
+          {drop.quantity > 1 && (
+            <Text className="shrink-0 text-11 text-text-muted" style={TABULAR_NUMS}>
+              ×{drop.quantity}
             </Text>
-            {drop.quantity > 1 && (
-              <Text className="shrink-0 text-11 text-text-muted" style={TABULAR_NUMS}>
-                ×{drop.quantity}
-              </Text>
-            )}
-          </View>
-          <View className="mt-1 flex-row items-center gap-1.5">
-            <Badge variant={props.entry.difficulty}>
-              {DIFFICULTY_NAME[props.entry.difficulty]}
-            </Badge>
-            <Text numberOfLines={1} className="shrink text-11 text-text-muted">
-              {props.entry.bossName}
-              {shareLabel}
-            </Text>
-          </View>
+          )}
         </View>
-        <PriceStatePill drop={drop} />
-      </Pressable>
-    </View>
+        <View className="mt-1 flex-row items-center gap-1.5">
+          <Badge variant={props.entry.difficulty}>
+            {DIFFICULTY_NAME[props.entry.difficulty]}
+          </Badge>
+          <Text numberOfLines={1} className="shrink text-11 text-text-muted">
+            {props.entry.bossName}
+            {shareLabel}
+          </Text>
+        </View>
+      </View>
+      <PriceStatePill drop={drop} />
+    </Pressable>
   )
 }
 
@@ -201,6 +215,7 @@ export function DropPriceScreen(): React.JSX.Element {
   const entered = allEntries.filter((entry) => entry.drop.priceState === 'entered').length
   const excluded = allEntries.filter((entry) => entry.drop.priceState === 'excluded').length
   const unpriced = allEntries.length - entered - excluded
+  const mesoPouchIcon = getItemIconUrlByFile('meso_pouch.webp')
   const periodLabel = formatBossProfitPeriodLabel(cycle, week, now)
   /**
    * **이 기간을 읽었나.** `status` 만 보면 지난번 기간의 `ready` 를 이번 기간의 사실로 읽는다.
@@ -378,34 +393,29 @@ export function DropPriceScreen(): React.JSX.Element {
             />
           ) : (
             <>
-              {/* 요약은 카드가 아니라 헤드라인이다. 아래가 전부 같은 카드 셸이라 요약도 카드면
-                  흰 카드의 반복으로 묻힌다. */}
-              <View>
-                <View className="h-6 flex-row items-center">
-                  <Text className="text-xs font-semibold tracking-wide text-text-muted">
-                    {cycle === 'weekly' ? '이 주' : '이 달'} 아이템 수입
-                  </Text>
-                  {/* 가격을 **입력한** 것만 센다. 기록 안함은 값을 매기지 않기로 한 결정이고,
-                      스킵은 아무것도 저장하지 않아 미입력에 머무른다. */}
-                  <Text className="ml-auto text-xs text-text-muted" style={TABULAR_NUMS}>
-                    {entered}건
-                  </Text>
-                </View>
-                <View className="mt-1.5 flex-row items-center gap-2.5">
-                  <View className="h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint">
-                    <ProfitIcon className="h-[18px] w-[18px] text-primary-ink" strokeWidth={2} aria-hidden />
-                  </View>
+              <View testID="drop-price-summary" className="gap-2 rounded-[14px] bg-surface p-3">
+                <Text className="text-11 font-bold text-text-muted">
+                  {cycle === 'weekly' ? '이 주' : '이 달'} 아이템 수입
+                </Text>
+                <View className="flex-row items-center gap-2.5">
+                  {/* 그림이 없으면 그 자리를 비운다. 비슷한 것으로 때우지 않는다. */}
+                  {mesoPouchIcon !== null && (
+                    <Image source={mesoPouchIcon} resizeMode="contain" className="h-7 w-7 shrink-0" aria-hidden />
+                  )}
                   {/* 단위 앞의 실제 공백은 남긴다. 마진만으로 띄우면 읽는 값이 `N메소` 로 붙어
                       스크린리더가 이어 읽는다. */}
-                  <Text
-                    className="text-xl font-bold text-primary-ink"
-                    style={TABULAR_NUMS}
-                  >
+                  <Text className="text-22 font-bold text-primary-ink" style={TABULAR_NUMS}>
                     {total.toLocaleString()}{' '}
                     <Text className="text-xs font-bold text-text-muted">메소</Text>
                   </Text>
                 </View>
-                <View className="mt-3 h-px bg-border" aria-hidden />
+                {/* 입력은 가격을 **입력한** 것만 센다. 기록 안함은 값을 매기지 않기로 한 결정이고,
+                    스킵은 아무것도 저장하지 않아 미입력에 머무른다. */}
+                <View className="flex-row gap-1.5">
+                  <SummaryCount testID="drop-price-count-entered" label="입력" count={entered} tone="text-text" />
+                  <SummaryCount testID="drop-price-count-unpriced" label="미입력" count={unpriced} tone="text-primary-ink" />
+                  <SummaryCount testID="drop-price-count-excluded" label="기록 안함" count={excluded} tone="text-text-disabled" />
+                </View>
               </View>
 
               {/* CTA 는 요약 **바로 아래**다. 목록 끝에 두면 기록이 열 건만 넘어도 손이 닿지 않는다. */}
@@ -422,12 +432,9 @@ export function DropPriceScreen(): React.JSX.Element {
               )}
 
               {groups.map((group) => (
-                <View
-                  key={group.ocid}
-                  className="overflow-hidden rounded-[14px] border border-border bg-surface"
-                >
+                <View key={group.ocid} className="rounded-[14px] bg-surface">
                   {/* 캐릭터 머리. 보스 수익 아코디언 헤더와 같은 짜임(아바타 32 + 이름 + 금액). */}
-                  <View className="flex-row items-center gap-3 border-b border-border p-4">
+                  <View className="flex-row items-center gap-3 px-4 py-3">
                     <CharacterAvatar
                       imageUrl={group.imageUrl}
                       name={group.characterName}
@@ -448,14 +455,9 @@ export function DropPriceScreen(): React.JSX.Element {
                       {characterTotal(group).toLocaleString()} 메소
                     </Text>
                   </View>
-                  <View>
-                    {group.entries.map((entry, index) => (
-                      <EntryRow
-                        key={entry.id}
-                        entry={entry}
-                        isLast={index === group.entries.length - 1}
-                        onSelect={() => openPriceCard([entry], 0)}
-                      />
+                  <View className="gap-1.5 px-3 pb-3">
+                    {group.entries.map((entry) => (
+                      <EntryRow key={entry.id} entry={entry} onSelect={() => openPriceCard([entry], 0)} />
                     ))}
                   </View>
                 </View>

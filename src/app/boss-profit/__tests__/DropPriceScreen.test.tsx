@@ -400,12 +400,13 @@ describe('DropPriceScreen: 미입력 ≠ 0원', () => {
         ]),
       },
     })
-    const { getByText } = await renderOverlay(<DropPriceScreen />)
+    const { getByText, getByTestId, getByLabelText } = await renderOverlay(<DropPriceScreen />)
 
-    expect(getByText('기록 안함')).toBeTruthy()
-    // 기록 안함은 **가격을 입력한 것이 아니다**. 요약의 `n건` 에서 빠진다.
-    expect(getByText('0건')).toBeTruthy()
-    // 미입력 카운트에서도 빠진다. 그 수를 말하는 자리는 이제 CTA 하나다.
+    expect(within(getByLabelText('루즈 컨트롤 머신 마크 가격 입력')).getByText('기록 안함')).toBeTruthy()
+    // 기록 안함은 **가격을 입력한 것이 아니다**. 요약의 `입력` 칸에서 빠진다.
+    expect(within(getByTestId('drop-price-count-entered')).getByText('0건')).toBeTruthy()
+    // 미입력 칸에서도 빠진다.
+    expect(within(getByTestId('drop-price-count-unpriced')).getByText('1건')).toBeTruthy()
     expect(getByText('미입력 1건 이어서 입력')).toBeTruthy()
   })
 
@@ -443,18 +444,23 @@ describe('DropPriceScreen: 미입력 ≠ 0원', () => {
     expect(queryByText(/1인$/)).toBeNull()
   })
 
-  it('요약 오른쪽은 가격을 입력한 개수 하나다', async () => {
+  // 세 칸이 한 상태씩만 센다. 기록 안함이 입력으로, 0메소 직전값이 입력으로 새면 칸끼리 합이 어긋난다.
+  it('요약 칸 셋은 입력 · 미입력 · 기록 안함을 서로 섞지 않고 센다', async () => {
     mockStores({
       price: {
         groups: 그룹([
           항목({ drop: 드롭({ priceState: 'entered', priceMeso: 100, priceShare: 1 }) }),
           항목({ id: 'second', dropIndex: 1, drop: 드롭({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링' }) }),
+          항목({ id: 'third', dropIndex: 2, drop: 드롭({ itemKey: 'exceptional_hammer', itemName: '익셉셔널 해머', priceMeso: 9_000 }) }),
+          항목({ id: 'fourth', dropIndex: 3, drop: 드롭({ itemKey: 'guardian_angel_ring', itemName: '가디언 엔젤 링', priceState: 'excluded' }) }),
         ]),
       },
     })
-    const { getByText } = await renderOverlay(<DropPriceScreen />)
+    const { getByTestId } = await renderOverlay(<DropPriceScreen />)
 
-    expect(getByText('1건')).toBeTruthy()
+    expect(within(getByTestId('drop-price-count-entered')).getByText('1건')).toBeTruthy()
+    expect(within(getByTestId('drop-price-count-unpriced')).getByText('2건')).toBeTruthy()
+    expect(within(getByTestId('drop-price-count-excluded')).getByText('1건')).toBeTruthy()
   })
 })
 
