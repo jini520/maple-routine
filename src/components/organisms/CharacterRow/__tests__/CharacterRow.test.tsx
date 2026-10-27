@@ -8,6 +8,7 @@ import { fireEvent } from '@testing-library/react-native'
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { AddMark } from '../AddMark'
 import { CharacterRow } from '../CharacterRow'
+import { RemoveButton } from '../RemoveButton'
 import { RepresentativeStar } from '../RepresentativeStar'
 
 const 기본 = {
@@ -169,5 +170,21 @@ describe('조회 불가 행의 얼굴', () => {
     const { getByTestId } = await renderAtom(<CharacterRow {...기본} unavailable />)
 
     expect(getByTestId('portrait-unavailable')).toBeTruthy()
+  })
+})
+
+// 별과 `✕` 는 나란히 선다. 둘을 그림 크기로 두고 `hitSlop` 으로 늘리면 두 영역이 겹치고, 겹친 곳은 나중에 그려진 `✕` 가
+// 가져가서 별을 누르려다 `✕` 가 눌렸다. 각자 실제 상자로 키우고 좌우로는 늘리지 않는다.
+describe('별 · ✕ 의 누름 영역', () => {
+  it('각자 40×44 상자이고 좌우로 hitSlop 을 주지 않는다', async () => {
+    const 별 = await renderAtom(<RepresentativeStar label="낟낟" filled={false} onPress={jest.fn()} />)
+    const 빼기 = await renderAtom(<RemoveButton label="낟낟" onPress={jest.fn()} />)
+
+    for (const button of [별.getByRole('button'), 빼기.getByRole('button')]) {
+      expect(flattenStyle(button.props.style)).toMatchObject({ width: 40, height: 44 })
+      const slop = (button.props.hitSlop ?? {}) as { left?: number; right?: number }
+      expect(slop.left ?? 0).toBe(0)
+      expect(slop.right ?? 0).toBe(0)
+    }
   })
 })
