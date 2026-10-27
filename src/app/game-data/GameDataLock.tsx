@@ -99,7 +99,7 @@ function Confirm(props: { progress: GameDataProgress }): React.JSX.Element {
 
   return (
     <View className="gap-4">
-      <Header title="추가 리소스 다운로드" description="앱에 필요한 데이터를 다운로드 합니다" />
+      <Header title="추가 리소스 다운로드" description="필요한 데이터를 다운로드 합니다" />
       <View className="gap-1.5">
         <SizeRow label="게임 데이터" bytes={dataBytes} />
         <SizeRow label="이미지 데이터" bytes={known ? imageTotal : null} />
