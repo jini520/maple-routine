@@ -91,6 +91,7 @@ src/
 | 광고 | `react-native-google-mobile-ads` | `native/adapters/rn-ads.ts`([[ADR-014]]) |
 | 인앱 브라우저 | `expo-web-browser` | `native/adapters/rn-browser.ts` |
 | 햅틱 | `expo-haptics` | `native/adapters/rn-haptics.ts` |
+| 앱 안 리뷰 요청 | `expo-store-review` | `native/adapters/rn-store-review.ts`([[ADR-052]] 결정 10) |
 | 기울기 | `expo-sensors`(가속도계) | `native/adapters/rn-tilt.ts`([[ADR-092]] 결정 2) |
 | uuid | `expo-crypto` | `native/adapters/rn-uuid.ts`([[ADR-074]] 결정 13) |
 | 스플래시 · 상태바 · 시스템 바 · 키보드 · 뒤로 가기 · 색 모드 · 테마 표면 | Expo 모듈 · 로컬 모듈 `app-system-bars` · `app-background` | `native/adapters/rn-*.ts` |

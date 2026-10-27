@@ -1,8 +1,8 @@
-# ADR-052 더보기 · 설정 화면과 안내
+# ADR-052+104 더보기 · 설정 화면과 안내 · 앱 안 리뷰 요청
 
 > 🟢 유효
 > 옛 번호: ADR-118 · ADR-119 · ADR-125 · ADR-126 결정 1 ~ 7 · ADR-248 결정 1 · ADR-266 결정 2 · 3 · ADR-281 · ADR-282 결정 10 · ADR-286 · ADR-287
-> 관련 소스: `app/settings/` · `features/settings/` · `src/data/release-notes.ts` · `src/data/feature-guides/` · `types/release-notes.ts` · `types/feature-guides.ts` · `features/live-update/store.ts` · `app/UpdatePromptModal.tsx`
+> 관련 소스: `app/settings/` · `features/settings/` · `src/data/release-notes.ts` · `src/data/feature-guides/` · `types/release-notes.ts` · `types/feature-guides.ts` · `features/live-update/store.ts` · `app/UpdatePromptModal.tsx` · `features/app-review/` · `storage/app-review.ts` · `native/store-review.ts` · `native/adapters/rn-store-review.ts` · 이슈 #663
 
 ## 배경
 
@@ -186,10 +186,9 @@ chevron 이 있으면 누를 때 무언가 열리고, chevron 이 없는 위험 
 - 메일 앱을 열지 못하면 `메일 앱을 열지 못했습니다. support.mapleroutine@gmail.com 으로 보내 주세요` 토스트만 띄운다. 주소
   복사는 두지 않았다(사용자 지정).
 
-### 결정 10. 앱 리뷰는 스토어 리뷰 링크로 연다 (사용자 지정)
+### 결정 10. 앱 리뷰는 두 가지로 받는다. 더보기의 스토어 링크와 저장 뒤 앱 안 요청이다 (사용자 지정)
 
-`storeReviewUrl` 이 플랫폼마다 주소를 낸다. 앱 안 리뷰 팝업(`SKStoreReviewController`)은 네이티브 모듈이라 지문을 바꾸므로
-쓰지 않는다.
+**더보기의 링크.** `개발자 응원하기(앱 리뷰)` 행은 `storeReviewUrl` 이 플랫폼마다 낸 주소를 연다.
 
 ```
 ios      itms-apps://apps.apple.com/app/id6797579391?action=write-review
@@ -197,7 +196,32 @@ android  market://details?id=com.mapleroutine.app
 ```
 
 Play 는 리뷰 작성 화면으로 바로 가는 주소가 없어 스토어 페이지까지 간다. 행 이름은 뜻(응원)을 앞에, 가는 곳(앱 리뷰)을
-괄호에 적는다.
+괄호에 적는다. 이 행은 앱 안 요청이 생겨도 그대로 둔다. Google 지침은 버튼으로 리뷰를 받을 때 스토어로 보내라고 한다.
+버튼이 팝업을 부르면 할당량을 다 쓴 사용자에게는 아무것도 뜨지 않기 때문이다.
+
+**앱 안 요청.** 핵심 작업을 저장한 뒤 OS 의 리뷰 팝업을 부른다. 플레이 스토어 검색 순서는 평점과 리뷰 수의 영향을
+받는데, 앱이 직접 늘릴 수 있는 값이 이 둘이다. 라이브러리는 `expo-store-review` 다. iOS 는 `SKStoreReviewController`,
+안드로이드는 Play In-App Review API 를 부른다.
+
+- **센다.** 드롭 기록(`setBossDrops`) · 가계부 기록(`recordIncome` · `recordSpend`) · 보스 직접 완료
+  (`saveManualCompletion`)의 저장이 성공했을 때 한 번씩 센다. 지우기 · 취소는 세지 않는다. 드롭을 전부 빼고 저장한
+  것도 지우기라 세지 않는다(사용자 결정).
+- **요청한다.** 아래 셋이 모두 맞으면 저장하고 2초 뒤에 요청한다. 2초는 저장 직후 시트가 닫히는 화면을 막지 않기 위한
+  값이다(Apple 예제).
+  - 저장이 모두 합쳐 4번 이상이다. 4는 Apple 예제의 값이다.
+  - 처음 실행한 날에서 3일이 지났다. 써 본 뒤에 평가하게 하기 위해서다. 설치 날짜는 앱이 알 수 없으므로 이 기능이
+    들어간 바이너리를 처음 실행한 날을 적는다. 그래서 기존 사용자도 업데이트하고 3일 뒤부터 요청을 받는다.
+  - 마지막 요청에서 90일이 지났다. iOS 는 365일에 세 번까지만 띄우고, Play 는 한 달 안에 다시 부르면 안 뜰 수 있다.
+    버전마다 한 번 묻지 않는 이유는 OTA 로 버전이 자주 오르기 때문이다.
+- **미룬다.** 고가 드롭 연출(`DropEffectOverlay`)이 재생 중이면 연출이 닫힌 뒤 2초를 다시 기다린다.
+- 요청한 날을 마지막 요청일로 적는다. 팝업이 실제로 떴는지는 앱이 알 수 없다. 사용자가 리뷰를 썼는지도 알 수 없으므로,
+  요청 결과로 화면이나 상태를 바꾸지 않는다.
+- 팝업 앞에 "앱이 마음에 드세요?" 같은 질문을 두지 않는다. Google 지침이 금지하고, 만족한 사람만 골라 리뷰로 보내는
+  것은 App Store 심사 지침 5.6.1 위반이다. 팝업 모양과 문구는 OS 가 정하고, 앱이 그 위를 덮거나 코드로 닫지 않는다.
+- 첫 실행일 · 저장 횟수 · 마지막 요청일은 Preferences 의 `appReview` 칸 하나에 둔다. 캐시 데이터 삭제에서 남긴다
+  (사용자 결정). 지우면 90일 간격을 처음부터 다시 세서, Play 에서 한 달 안에 다시 요청할 수 있다.
+- `expo-store-review` 는 네이티브 모듈이라 런타임 지문을 바꾼다. 그래서 앱 안 요청은 OTA 로 낼 수 없고 1.0.13 스토어
+  바이너리로 낸다.
 
 ### 결정 11. 릴리스 노트의 원본은 `src/data/release-notes.ts` 하나다
 
@@ -298,6 +322,9 @@ Preferences `lastRunBundleVersion` 과 지금 번들 버전을 비교한다(`con
 | `app/settings/__tests__/SettingsAboutScreen.test.tsx` · `AppUpdateSection.test.tsx` | 결정 8: 실행 중인 번들 버전, 미지원 상태, 개인정보 처리방침이 인앱 브라우저로 열리는지 본다 |
 | `app/settings/__tests__/contact-mail.spec.ts` | 결정 9: 플랫폼별 OS 버전과 모델, 기기 정보 줄, 본문과 인코딩을 본다 |
 | `app/settings/__tests__/store-review-link.spec.ts` | 결정 10: 플랫폼별 리뷰 주소를 본다 |
+| `features/app-review/__tests__/request.spec.ts` | 결정 10: 저장 4번째에 처음 요청하는지, 첫 실행 3일 · 마지막 요청 90일 경계, 2초 대기, 연출이 닫힐 때까지 미루는지 본다 |
+| `features/cashbook/__tests__/records.spec.ts` · `features/manual-completion/__tests__/record.spec.ts` · `features/boss-profit/__tests__/store.spec.ts` | 결정 10: 세 저장이 성공했을 때만 리뷰 요청의 셈에 넣고, 실패한 저장과 드롭을 전부 뺀 저장은 세지 않는지 본다 |
+| `app/boss-profit/__tests__/BossDropSheet.test.tsx` | 결정 10: 고가 드롭 연출이 서 있는 동안 리뷰 요청을 미루고 시트가 닫히면 푸는지 본다 |
 | `data/__tests__/release-notes.spec.ts` | 결정 11: 버전과 날짜 형식, 중복 없음, 내림차순, 카테고리, 빈 항목 없음, 최신 노트의 `highlights` 를 본다 |
 | `app/settings/__tests__/SettingsReleaseNotesScreen.test.tsx` | 결정 12: 배열 순서, 카테고리 묶음과 순서, 빈 묶음, `사용 중` 배지 기준, `스토어 업데이트 필요`, `guideId` 항목만 눌리는지 본다 |
 | `data/__tests__/feature-guides.spec.ts` | 결정 14: 파일과 목록이 일대일인지, id 중복, 그룹, 노트가 가리키는 안내와 마디가 실재하는지 본다 |
@@ -310,3 +337,4 @@ Preferences `lastRunBundleVersion` 과 지금 번들 버전을 비교한다(`con
 - ADR-052 (2026-10-19): 옛 ADR-118 · 119 · 125 · 126 · 248 · 266 · 281 · 282 · 286 · 287 의 화면 결정을 합쳐 처음 작성
 - (2026-10-21) 결정 4 · 5 에 글자 크기 행을 더했다(#633)
 - (2026-10-23) 결정 8 의 개인정보 처리방침을 `WebView` 화면에서 인앱 브라우저로 바꾸고 `SettingsPrivacy` 를 걷었다(#634)
+- ADR-104 (2026-10-27): 결정 10 에 저장 뒤 앱 안 리뷰 요청을 더해 다시 썼다(이슈 #663)

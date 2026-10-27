@@ -175,7 +175,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-095](./adr/ADR-095_cashbook_redesign.md) | 🟢 | cashbook | 가계부 고른 날 목록과 기간 이동 줄 리디자인 |
 | [ADR-050](./adr/ADR-050_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
 | [ADR-051+075+090](./adr/ADR-051+075+090_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
-| [ADR-052](./adr/ADR-052_settings_screen.md) | 🟢 | settings | 더보기 · 설정 화면과 안내 |
+| [ADR-052+104](./adr/ADR-052+104_settings_screen.md) | 🟢 | settings | 더보기 · 설정 화면과 안내 · 앱 안 리뷰 요청 |
 | [ADR-053+067](./adr/ADR-053+067_settings_cache-data.md) | 🟢 | settings | 캐시 데이터 삭제 |
 | [ADR-054](./adr/ADR-054_theme_tokens.md) | 🟢 | theme | 테마와 색 토큰 |
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |

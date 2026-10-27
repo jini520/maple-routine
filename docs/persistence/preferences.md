@@ -41,6 +41,7 @@
 | `partyAppointments` | JSON `PartyAppointment[]` | `party-appointments.ts` | 보존 | 사용자가 적은 파티 약속. `id` 는 uuid 이고, 옛 `시각 + 난수` id 는 읽을 때 uuid 로 바꿔 다시 저장한다([[ADR-098]] 결정 4) |
 | `serverBackfill` | JSON. 종류(`bossClear` · `dropPrice` · `cashbookEntry` · `enhancementTotal`)마다 마지막으로 보낸 기록 id 와 끝났는지 | `server-backfill.ts` | 지운다 | 업데이트 전 기록을 서버로 어디까지 올렸나. 지워지면 처음부터 다시 올리는데 서버가 기록 id 로 덮어 줄이 늘지 않는다([[ADR-099]] 결정 12) |
 | `enhancementTotalsMoved` | `'1'` | `enhancement-totals-moved.ts` | 보존 | 옛 강화 원본(`enhancement_history`)을 합계로 옮겼는지. 지워지면 다시 옮기며 업데이트 뒤 새로 받은 날의 합계를 옛 원본으로 덮는다([[ADR-100]] 결정 3) |
+| `appReview` | JSON `{ firstLaunchAt, saveCount, lastRequestedAt }`. 시각은 ISO, `lastRequestedAt` 은 요청 전이면 `null` | `app-review.ts` | 보존 | 앱 안 리뷰 요청의 기록([[ADR-052]] 결정 10). 지워지면 90일 간격을 처음부터 다시 센다 |
 | `partyScheduleView` | `'list'` · `'board'` | `party-schedule-view.ts` | 보존 | 파티 스케줄 화면에서 마지막으로 고른 보기. 없으면 목록 |
 | `bossProfitCalculatorRecords` | JSON `BossProfitCalculatorRecord[]` | `boss-profit-calculator-records.ts` | 보존 | 주간 보스 수익 계산기에서 저장한 기록. 금액 없이 보스 · 난이도 · 파티 값만 남긴다 |
 | `notificationLedger` | JSON `{ id, kind, fireAt, title, body }[]` | `notification-ledger.ts` | 보존 | 지금 예약해 둔 로컬 알림. OS 의 예약 목록은 읽을 수 없어서 따로 적는다 |
