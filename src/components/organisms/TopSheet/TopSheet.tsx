@@ -41,6 +41,11 @@ const ENTER = { duration: 320, easing: Easing.out(Easing.cubic) }
 const EXIT = { duration: 220, easing: Easing.in(Easing.cubic) }
 /** 끌다 놓았을 때 제자리로 튕겨 돌아오는 스프링. */
 const SNAP_BACK = { damping: 16, stiffness: 220, mass: 0.8 }
+/**
+ * 놓았을 때 스크림이 원래 진하기로 돌아오는 시간. 스프링을 쓰면 0 을 지나쳐 위로 민 것으로 읽혀,
+ * 놓는 순간 화면이 잠깐 밝아졌다 어두워진다.
+ */
+const SCRIM_BACK = { duration: 200, easing: Easing.out(Easing.cubic) }
 
 export function TopSheet(props: {
   /** 스크린리더가 읽는 시트 이름. 기본값을 두면 다음 시트가 그 이름을 물려받는다 */
@@ -107,7 +112,7 @@ export function TopSheet(props: {
       if (shouldCloseOnRelease(event.translationY, event.velocityY)) runOnJS(close)()
       dragX.set(withSpring(0, SNAP_BACK))
       dragY.set(withSpring(0, SNAP_BACK))
-      fingerY.set(withSpring(0, SNAP_BACK))
+      fingerY.set(withTiming(0, SCRIM_BACK))
     })
 
   // 위치까지 이 스타일 하나에 둔다. 애니메이션 뷰에 정적 스타일을 함께 주면 정적 쪽이 조용히 버려진다.

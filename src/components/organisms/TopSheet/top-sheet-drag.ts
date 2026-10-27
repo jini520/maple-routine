@@ -13,6 +13,9 @@ export const DRAG_SIDE_LIMIT_PX = 6
 /** 위에서 내려온 시트가 아래(화면 안쪽)로 따라가는 한계. */
 export const DRAG_AWAY_LIMIT_PX = 10
 
+/** 좌우 · 아래로 끈 거리 가운데 시트가 따라가는 몫. 살짝 끈 것에 바로 반응하지 않게 한다(사용자 지정). */
+const DRAG_GAIN = 0.1
+
 /** 놓았을 때 이만큼 위로 밀려 있으면 닫는다. 끈 거리(손가락)로 잰다. */
 export const CLOSE_DISTANCE_PX = 80
 
@@ -27,14 +30,15 @@ export const TOP_SHEET_BOTTOM_GAP_PX = 8
 
 function resist(distance: number, limit: number): number {
   'worklet'
-  return (limit * distance) / (limit + Math.abs(distance))
+  const followed = distance * DRAG_GAIN
+  return (limit * followed) / (limit + Math.abs(followed))
 }
 
 /**
  * 끈 거리를 시트가 따라가는 거리로 바꾼다.
  *
  * 위로는 손가락을 그대로 따라간다. 위로 미는 것은 시트를 닫는 몸짓이라 막지 않는다(사용자 지정). 좌우와 아래는
- * 닫는 몸짓이 아니라서 정말 약간만 따라오고, 멀리 끌수록 덜 따라와 방향마다의 한계에 다가가기만 한다.
+ * 닫는 몸짓이 아니라서 끈 거리의 일부만 따라오고, 멀리 끌수록 덜 따라와 방향마다의 한계에 다가가기만 한다.
  *
  * @param distanceX 손가락이 움직인 가로 거리
  * @param distanceY 손가락이 움직인 세로 거리. 위가 음수

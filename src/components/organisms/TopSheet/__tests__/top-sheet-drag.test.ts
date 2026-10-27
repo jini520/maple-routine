@@ -21,6 +21,13 @@ describe('dragOffset', () => {
     expect(dragOffset(0, -500).y).toBe(-500)
   })
 
+  // 살짝 끈 것에 바로 반응하지 않게 처음부터 끈 거리의 일부만 따라온다(사용자 지정).
+  it('좌우 · 아래로는 살짝 끌어도 끈 거리의 1/8 도 안 움직인다', () => {
+    expect(Math.abs(dragOffset(20, 0).x)).toBeLessThan(20 / 8)
+    expect(Math.abs(dragOffset(-20, 0).x)).toBeLessThan(20 / 8)
+    expect(dragOffset(0, 20).y).toBeLessThan(20 / 8)
+  })
+
   it('아래로는 아주 조금만 움직이고, 멀리 끌수록 덜 따라온다', () => {
     expect(dragOffset(0, 10_000).y).toBeLessThan(DRAG_AWAY_LIMIT_PX)
     expect(dragOffset(0, 200).y / 200).toBeLessThan(dragOffset(0, 20).y / 20)
