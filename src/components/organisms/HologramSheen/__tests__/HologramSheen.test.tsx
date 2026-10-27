@@ -13,9 +13,9 @@ jest.mock('react-native-reanimated', () =>
 import { mockReducedMotion } from '../../../__tests__/reduced-motion'
 
 /** 크기를 알아야 빛을 얼마나 옮길지 정하므로, 구독은 첫 레이아웃 뒤에 시작한다. */
-async function layout(view: Awaited<ReturnType<typeof renderAtom>>): Promise<void> {
+async function layout(view: Awaited<ReturnType<typeof renderAtom>>, height = 68): Promise<void> {
   await act(async () => {
-    fireEvent(view.getByTestId('hologram-sheen'), 'layout', { nativeEvent: { layout: { width: 320, height: 68 } } })
+    fireEvent(view.getByTestId('hologram-sheen'), 'layout', { nativeEvent: { layout: { width: 320, height } } })
   })
 }
 
@@ -51,5 +51,15 @@ describe('HologramSheen', () => {
 
     expect(subscribe).not.toHaveBeenCalled()
     expect(view.getByTestId('hologram-sheen')).toBeTruthy()
+  })
+
+  it('접힌 높이는 빛이 하나이고, 펼친 높이는 띠마다 하나씩 늘어난다', async () => {
+    const view = await renderAtom(<HologramSheen variant="card" />)
+    await layout(view)
+    expect(view.getAllByTestId('hologram-sheen-light')).toHaveLength(1)
+
+    // 빛 하나로 큰 카드를 덮으면 빛의 중심이 카드 밖까지 나가 한쪽 가장자리만 빛난다.
+    await layout(view, 600)
+    expect(view.getAllByTestId('hologram-sheen-light')).toHaveLength(4)
   })
 })

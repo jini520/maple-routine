@@ -3,6 +3,7 @@ import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
 import {
   Easing,
   interpolate,
+  type SharedValue,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -62,16 +63,27 @@ const EASE_IN_OUT = Easing.bezier(0.42, 0, 0.58, 1)
 /** 다크의 어두운 면에서는 `screen` 으로 빛이 더해지기만 해서, 같은 불투명도면 라이트보다 세 보인다. */
 const DARK_STRENGTH = 0.8
 
-/** 기울기 1 일 때 빛을 더 미는 거리(상자 폭의 배수). 도는 경로 위에 손의 움직임을 얹는다. */
+/** 빛을 끝까지 밀었을 때의 거리(상자 폭의 배수). 도는 경로 위에 손의 움직임을 얹는다. */
 const TILT_REACH = 0.25
-/** 폰을 세워 들면 앞뒤 값이 늘 −1 가까이라, 천천히 따라가는 기준값과의 차이만 기울기로 쓴다. */
-const BASELINE_FOLLOW = 0.02
+/** 빛이 끝까지 밀리는 기울기(30°, 단위 g). 90° 에 맞추면 손으로 기울이는 15° 쯤에서 빛이 거의 안 밀린다. */
+const TILT_FULL = Math.sin(Math.PI / 6)
+/** 폰을 세워 들면 앞뒤 값이 늘 −1 가까이라, 천천히 따라가는 기준값과의 차이만 기울기로 쓴다. 빨리 따라오면 기울인 효과가 바로 사라진다. */
+const BASELINE_FOLLOW = 0.005
 const TILT_SPRING = { damping: 18, stiffness: 90 }
+
+/** 빛 하나가 맡는 높이. 펼친 카드는 이 띠마다 빛을 하나씩 둔다. 더 잘게 나누면 빛이 겹쳐 카드가 한 색으로 물든다. */
+const BAND_HEIGHT = 150
+/** 이웃한 띠의 빛이 경로에서 떨어진 거리(구간 수). 같은 자리에 있으면 빛 여럿이 한 덩이로 움직인다. */
+const BAND_PHASE = 1.3
+
+function clampUnit(value: number): number {
+  return Math.max(-1, Math.min(1, value))
+}
 
 /**
  * 고가 드롭 카드 · 보스 행 면 위를 도는 오로라 빛. 정해진 경로를 계속 돌고, 폰을 기울이면 그 방향으로 조금 더 밀리는 층.
  *
- * 부모의 바탕과 내용 사이에 둔다. 내용 위에 두면 글자까지 물든다. 움직임 줄이기면 경로의 첫 자리에 멈추고 기울기도 읽지 않는다.
+ * 펼친 카드처럼 높은 상자는 띠마다 빛을 하나씩 두고 엇갈려 돌린다. 부모의 바탕과 내용 사이에 둔다. 내용 위에 두면 글자까지 물든다. 움직임 줄이기면 경로의 첫 자리에 멈추고 기울기도 읽지 않는다.
  *
  * @example
  * <View className="bg-surface rounded-[14px]">
@@ -102,35 +114,18 @@ export function HologramSheen(props: { variant: keyof typeof VARIANTS; testID?: 
     )
   }, [reduceMotion, variant, progress])
 
+  const bands = Math.max(1, Math.round(size.height / BAND_HEIGHT))
+  const band = { width: size.width, height: size.height / bands }
+
   useEffect(() => {
-    if (reduceMotion || size.width === 0) return
+    if (reduceMotion || band.width === 0) return
     let baseline: number | null = null
     return subscribeTilt((tilt) => {
       baseline = baseline === null ? tilt.y : baseline + (tilt.y - baseline) * BASELINE_FOLLOW
-      tiltX.value = withSpring(tilt.x * size.width * TILT_REACH, TILT_SPRING)
-      tiltY.value = withSpring(-(tilt.y - baseline) * size.height * TILT_REACH * 2, TILT_SPRING)
+      tiltX.value = withSpring(clampUnit(tilt.x / TILT_FULL) * band.width * TILT_REACH, TILT_SPRING)
+      tiltY.value = withSpring(-clampUnit((tilt.y - baseline) / TILT_FULL) * band.height * TILT_REACH * 2, TILT_SPRING)
     })
-  }, [reduceMotion, size.width, size.height, tiltX, tiltY])
-
-  const imageW = size.width * variant.scale.x
-  const imageH = size.height * variant.scale.y
-  const blobRadius = variant.reach * Math.hypot(imageW / 2, imageH / 2)
-  const { width, height } = size
-
-  const blobStyle = useAnimatedStyle(() => {
-    const steps = PATH_X.map((_, index) => index)
-    const px = interpolate(progress.value, steps, PATH_X)
-    const py = interpolate(progress.value, steps, PATH_Y)
-    // CSS `background-position: p%` 는 그림의 왼쪽 위를 (상자 − 그림) × p 에 둔다. 빛의 중심은 그림의 가운데다.
-    const centerX = (width - imageW) * px + imageW / 2
-    const centerY = (height - imageH) * py + imageH / 2
-    return {
-      transform: [
-        { translateX: centerX - blobRadius + tiltX.value },
-        { translateY: centerY - blobRadius + tiltY.value },
-      ],
-    }
-  })
+  }, [reduceMotion, band.width, band.height, tiltX, tiltY])
 
   return (
     <View
@@ -150,20 +145,70 @@ export function HologramSheen(props: { variant: keyof typeof VARIANTS; testID?: 
         },
       ]}
     >
-      {blobRadius > 0 && (
-        <AnimatedView style={[{ position: 'absolute', left: 0, top: 0, width: blobRadius * 2, height: blobRadius * 2 }, blobStyle]}>
-          <Svg width={blobRadius * 2} height={blobRadius * 2}>
-            <Defs>
-              <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
-                {variant.stops.map((stop) => (
-                  <Stop key={stop.offset} offset={stop.offset} stopColor={stop.color} stopOpacity={stop.opacity} />
-                ))}
-              </RadialGradient>
-            </Defs>
-            <Circle cx={blobRadius} cy={blobRadius} r={blobRadius} fill={`url(#${gradientId})`} />
-          </Svg>
-        </AnimatedView>
-      )}
+      {band.width > 0 &&
+        Array.from({ length: bands }, (_, index) => (
+          <SheenLight
+            key={index}
+            variant={variant}
+            band={band}
+            index={index}
+            gradientId={`${gradientId}-${index}`}
+            progress={progress}
+            tiltX={tiltX}
+            tiltY={tiltY}
+          />
+        ))}
     </View>
+  )
+}
+
+/** 띠 하나를 맡아 경로를 도는 빛 덩이 하나. 띠 번호만큼 경로의 앞선 자리에서 출발한다. */
+function SheenLight(props: {
+  variant: (typeof VARIANTS)[keyof typeof VARIANTS]
+  band: { width: number; height: number }
+  index: number
+  gradientId: string
+  progress: SharedValue<number>
+  tiltX: SharedValue<number>
+  tiltY: SharedValue<number>
+}): React.JSX.Element {
+  const { variant, band, index, progress, tiltX, tiltY } = props
+  const imageW = band.width * variant.scale.x
+  const imageH = band.height * variant.scale.y
+  const blobRadius = variant.reach * Math.hypot(imageW / 2, imageH / 2)
+  const top = band.height * index
+
+  const blobStyle = useAnimatedStyle(() => {
+    const steps = PATH_X.map((_, step) => step)
+    const at = (progress.value + index * BAND_PHASE) % SEGMENTS
+    const px = interpolate(at, steps, PATH_X)
+    const py = interpolate(at, steps, PATH_Y)
+    // CSS `background-position: p%` 는 그림의 왼쪽 위를 (상자 − 그림) × p 에 둔다. 빛의 중심은 그림의 가운데다.
+    const centerX = (band.width - imageW) * px + imageW / 2
+    const centerY = top + (band.height - imageH) * py + imageH / 2
+    return {
+      transform: [
+        { translateX: centerX - blobRadius + tiltX.value },
+        { translateY: centerY - blobRadius + tiltY.value },
+      ],
+    }
+  })
+
+  return (
+    <AnimatedView
+      testID="hologram-sheen-light"
+      style={[{ position: 'absolute', left: 0, top: 0, width: blobRadius * 2, height: blobRadius * 2 }, blobStyle]}
+    >
+      <Svg width={blobRadius * 2} height={blobRadius * 2}>
+        <Defs>
+          <RadialGradient id={props.gradientId} cx="50%" cy="50%" r="50%">
+            {variant.stops.map((stop) => (
+              <Stop key={stop.offset} offset={stop.offset} stopColor={stop.color} stopOpacity={stop.opacity} />
+            ))}
+          </RadialGradient>
+        </Defs>
+        <Circle cx={blobRadius} cy={blobRadius} r={blobRadius} fill={`url(#${props.gradientId})`} />
+      </Svg>
+    </AnimatedView>
   )
 }

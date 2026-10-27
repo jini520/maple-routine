@@ -1,4 +1,4 @@
-# ADR-092 보스 수익 리디자인과 고가 드롭 홀로그램 강조
+# ADR-092+112 보스 수익 리디자인과 고가 드롭 홀로그램 강조
 
 > 🟢 유효
 > 관련 소스: `constants/style/aurora.ts` · `components/organisms/HologramSheen/` · `native/tilt.ts` · `native/adapters/rn-tilt.ts` · `components/molecules/ValuableDropMark/` · `components/molecules/AuroraText/` · `components/molecules/PeriodStepper/` · `components/organisms/DropEffectOverlay/DropEffectOverlay.tsx` · `app/boss-profit/BossProfitScreen.tsx` · `app/boss-profit/HeadlineChips.tsx` · `app/boss-profit/CharacterAccordion.tsx` · `app/boss-profit/AccordionBody.tsx` · `app/boss-profit/InsetCell.tsx` · `app/boss-profit/BossProfitBossRow.tsx` · `app/boss-profit/MonthlyBossViewRow.tsx` · `app/boss-profit/DropPriceScreen.tsx` · `app/cashbook/CashbookScreen.tsx` · `app/stats/StatsScreen.tsx` · `app/party-appointments/AppointmentsScreen.tsx`
@@ -46,9 +46,12 @@
   드롭 연출이 이미 `mixBlendMode: 'screen'` 을 쓴다([[ADR-045]] 결정 2).
 - 빛 층은 카드 모양(반경 14)으로 스스로 잘린다. 셸이 자르지 않아도 된다.
 - 기울기는 빛을 상자 폭의 25% 까지 스프링으로 더 민다(사용자 지정). 홀로그램 카드처럼 보이려면 손의 움직임에 반응해야 하기 때문이다.
+  폰을 30° 기울이면 이 끝에 닿는다(사용자 지정, #754). 90° 에서 끝에 닿게 두었더니, 손으로 기울이는 15° 쯤에서는 빛이 20px 남짓만
+  밀려서 도는 움직임에 묻혀 보이지 않았다.
   좌우 기울기는 그대로 쓰고, 앞뒤 기울기는 천천히 따라가는 기준값과의 차이만 쓴다. 폰을 세워 들면 앞뒤 값이 늘 −1 가까이라
-  그대로 쓰면 빛이 한쪽에 붙어 있다.
+  그대로 쓰면 빛이 한쪽에 붙어 있다. 기준값은 몇 초에 걸쳐 따라온다. 2초 안에 따라오면 기울인 효과가 금방 사라진다.
   기울기는 `TiltPort`(`native/ports.ts`)로 읽고, RN 구현(`rn-tilt.ts`)이 `expo-sensors` 의 가속도계를 33ms 간격으로 구독한다.
+  안드로이드 가속도계는 iOS 와 부호가 반대라서, 어댑터가 iOS 쪽으로 맞춰 내보낸다. 맞추지 않으면 두 플랫폼에서 빛이 반대로 밀린다.
   센서가 없는 기기에서는 값이 오지 않아 빛이 도는 경로만 따른다.
 - `expo-sensors` 는 새 네이티브 의존성이라 지문이 바뀐다. 이 결정은 OTA 로 낼 수 없고 스토어 빌드로 낸다(사용자 확인).
   iOS `Info.plist` 에 `NSMotionUsageDescription` 을 적었다. `expo prebuild` 는 손으로 쓴 네이티브 파일을 지우므로 손으로 넣었다.
@@ -58,6 +61,14 @@
 ### 결정 3. 펼친 카드는 본문 바탕까지 빛나고, 보스 행 칸은 빛을 받지 않는다
 
 펼치면 빛 층이 머리뿐 아니라 카드 전체를 덮는다(사용자 지정). 빛 층이 머리와 본문을 함께 감싸는 셸의 첫 자식이라서다.
+
+펼친 카드에는 빛 덩이가 여러 개 엇갈려 돈다(사용자 지정, #754). 빛 층은 높이를 150px 쯤의 띠로 나누고, 띠마다 결정 2 의 빛을
+하나씩 띠 크기에 맞춰 놓는다. 띠마다 경로의 출발 자리가 달라 같은 순간에 서로 다른 자리에 있다.
+
+- 띠가 없을 때는 빛 그림을 상자 높이의 3.2배로 잡아서, 펼친 카드(높이 600)에서 빛의 중심이 카드 밖까지 나갔다. 그래서 늘 한쪽
+  가장자리만 빛났고, 큰 카드 안에 둥근 빛 하나만 보였다.
+- 띠를 머리 높이(70px 쯤)로 잘게 나누면 빛 여덟 개가 겹쳐 카드 전체가 한 색으로 물든다. 150px 이면 빛 하나하나가 보인다.
+- 접힌 카드와 보스 행은 높이가 띠 하나보다 낮아 빛이 하나다. 지금 모양 그대로다.
 보스 행 칸(`InsetCell`)은 `bg-surface` 칸 안에 `bg-card-inset` 칸을 겹쳐 불투명하게 칠한다. card-inset 은 반투명이라 그대로 두면
 칸 위로 빛이 비친다. 그래서 빛은 칸 사이 바탕에만 보인다.
 
@@ -148,7 +159,8 @@
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `components/organisms/HologramSheen/__tests__/HologramSheen.test.tsx` | 결정 2: 붙으면 기울기를 구독하고 떨어지면 놓는지, 움직임 줄이기면 구독하지 않는지 본다 |
+| `components/organisms/HologramSheen/__tests__/HologramSheen.test.tsx` | 결정 2: 붙으면 기울기를 구독하고 떨어지면 놓는지, 움직임 줄이기면 구독하지 않는지 본다. 결정 3: 접힌 높이는 빛이 하나이고 펼친 높이는 띠마다 하나씩 늘어나는지 본다 |
+| `native/adapters/__tests__/rn-tilt.test.ts` | 결정 2: 안드로이드 값의 부호만 iOS 쪽으로 뒤집고 iOS 값은 그대로 두는지 본다 |
 | `app/boss-profit/__tests__/CharacterAccordion.test.tsx` | 결정 2 · 5: 고가 드롭이 있으면 빛과 아이템 표시가 붙고 테두리가 없는지, 없거나 미완료 행뿐이면 안 붙는지 본다. 결정 3: 펼치면 빛이 본문을 감싸는 셸에 있는지 본다. 결정 6: 금액이 오로라 글자인지 본다 |
 | `app/boss-profit/__tests__/BossProfitBossRow.test.tsx` | 결정 4: 완료한 행에 고가 아이템이 있을 때만 약한 빛이 깔리는지 본다. 결정 9: 미완료 행에도 `＋ 드롭 추가` 와 인원 · 비율 `변경` 이 서는지 본다 |
 | `components/molecules/ValuableDropMark/__tests__/ValuableDropMark.test.tsx` | 결정 5: 그림이 셋까지이고 넷부터 나머지 개수를 `+N` 으로 적는지 본다 |
@@ -160,3 +172,4 @@
 ## 번호 기록
 
 - ADR-092 (2026-10-24): 보스 수익 리디자인 시안에서 처음 작성
+- ADR-112 (2026-10-27): 펼친 카드에 빛을 띠마다 하나씩 엇갈려 돌리고, 기울기는 30° 에서 끝에 닿게 하고 안드로이드 부호를 맞췄다(#754)
