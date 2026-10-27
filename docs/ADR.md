@@ -149,7 +149,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-026](./adr/ADR-026_app-entry_onboarding.md) | 🟢 | app-entry | 온보딩 흐름 |
 | [ADR-027](./adr/ADR-027_app-entry_cold-start.md) | 🟢 | app-entry | 콜드 스타트 첫 화면 |
 | [ADR-028](./adr/ADR-028_character_tracking.md) | 🟢 | character | 추적 캐릭터 |
-| [ADR-029](./adr/ADR-029_character_manage.md) | 🟢 | character | 캐릭터 관리 화면 |
+| [ADR-029+108](./adr/ADR-029+108_character_manage.md) | 🟢 | character | 캐릭터 관리 화면 |
 | [ADR-030](./adr/ADR-030_character_selection.md) | 🟢 | character | 캐릭터 선택 |
 | [ADR-031](./adr/ADR-031_character_portrait.md) | 🟢 | character | 캐릭터 초상화 |
 | [ADR-032](./adr/ADR-032_content-scheduler_cache.md) | 🟢 | content-scheduler | 스케줄러 응답 병합과 캐시 |

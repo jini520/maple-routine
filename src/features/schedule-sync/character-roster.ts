@@ -342,6 +342,7 @@ export async function getCharacterPickerRoster(
             imageUrl: cached.profile.imageUrl,
             world: cached.profile.world,
             worldKey: cached.profile.worldKey,
+            ...(cached.profile.jobClass === undefined ? {} : { jobClass: cached.profile.jobClass }),
             ...(known === 'unavailable' ? { unavailable: true } : {}),
           }
         }),
@@ -387,6 +388,7 @@ export async function getCharacterPickerRoster(
         imageUrl: cached.profile.imageUrl,
         world: character.world,
         worldKey: character.worldKey,
+        jobClass: character.jobClass,
         ...(known === 'unavailable' ? { unavailable: true } : {}),
       })
     }),
@@ -424,6 +426,7 @@ export async function getCharacterPickerRoster(
             imageUrl: profile.imageUrl,
             world: character.world,
             worldKey: character.worldKey,
+            jobClass: character.jobClass,
             ...(eligibility === 'unavailable' ? { unavailable: true } : {}),
           })
         } else {
@@ -447,6 +450,7 @@ export async function getCharacterPickerRoster(
               imageUrl: null,
               world: character.world,
               worldKey: character.worldKey,
+              jobClass: character.jobClass,
               unavailable: true,
             })
           } else {

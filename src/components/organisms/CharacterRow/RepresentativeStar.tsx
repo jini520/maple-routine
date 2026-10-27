@@ -17,9 +17,6 @@ import { Pressable } from 'react-native'
 import { StarIcon } from '../../atoms'
 import { useThemeAppearance } from '../../../theme/context'
 
-/** 시각 크기(20px)와 권장 타깃(44px)의 차이를 사방으로 나눠 채운다(`Stepper` 와 같은 처방). */
-const HIT_SLOP = { top: 12, bottom: 12, left: 12, right: 12 }
-
 export interface RepresentativeStarProps {
   /** 접근성 이름 접두. 목록에서 어느 행의 별인지 구분한다(캐릭터 이름). */
   label: string
@@ -38,8 +35,8 @@ export function RepresentativeStar(props: RepresentativeStarProps): React.JSX.El
       aria-selected={props.filled}
       aria-label={`${props.label} 대표 캐릭터`}
       onPress={props.onPress}
-      hitSlop={HIT_SLOP}
-      className={`shrink-0 items-center justify-center${props.dimmed === true ? ' opacity-40' : ''}`}
+      // 누름 영역은 `hitSlop` 이 아니라 실제 상자다. 옆의 `✕` 와 나란히 서서, 늘린 영역이 겹치면 겹친 곳을 `✕` 가 가져간다.
+      className={`h-11 w-10 shrink-0 items-center justify-center${props.dimmed === true ? ' opacity-40' : ''}`}
     >
       <StarIcon
         className={props.filled ? 'h-5 w-5 text-primary-ink' : 'h-5 w-5 text-text-muted'}

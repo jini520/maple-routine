@@ -52,6 +52,7 @@ import Flag from 'lucide-react-native/icons/flag'
 import FlaskConical from 'lucide-react-native/icons/flask-conical'
 import Gamepad2 from 'lucide-react-native/icons/gamepad-2'
 import Gauge from 'lucide-react-native/icons/gauge'
+import GripVertical from 'lucide-react-native/icons/grip-vertical'
 import Info from 'lucide-react-native/icons/info'
 import KeyRound from 'lucide-react-native/icons/key-round'
 import LayoutGrid from 'lucide-react-native/icons/layout-grid'
@@ -170,6 +171,8 @@ export const FlaskConicalIcon = withIconInterop(FlaskConical)
 export const Gamepad2Icon = withIconInterop(Gamepad2)
 /** 호출 한도 초과. `ApiKeyNoticeModal`(rateLimited). 타이머 계열을 피한 근거는 그 파일에 있다. */
 export const GaugeIcon = withIconInterop(Gauge)
+/** 끌기 핸들. `CharacterRow/DragHandle`. 점을 채워 그린다. */
+export const GripVerticalIcon = withIconInterop(GripVertical)
 /** 정보 톤. 업데이트 모달 · 추적 방식 고르개 · 정보 토스트 `Toast`(info). */
 export const InfoIcon = withIconInterop(Info)
 /** API 키 무효. `ApiKeyNoticeModal`(invalid). */
@@ -188,10 +191,7 @@ export const MapPinIcon = withIconInterop(MapPin)
 export const MegaphoneIcon = withIconInterop(Megaphone)
 /** 무릉도장 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const MedalIcon = withIconInterop(Medal)
-/**
- * 끌기 핸들. `CharacterRow/DragHandle`. 이름이 메뉴 인 글리프지만 여기서
- * 뜻하는 것은 순서 변경이다. 뜻은 자리와 접근성 이름이 진다.
- */
+/** 설정 탭. `BottomBar`. */
 export const MenuIcon = withIconInterop(Menu)
 /** 하나 줄이기. `Stepper`. */
 export const MinusIcon = withIconInterop(Minus)

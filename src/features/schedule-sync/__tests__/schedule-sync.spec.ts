@@ -1665,8 +1665,45 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
           imageUrl: basicProfile({ name: '캐싱된캐릭', level: 180 }).imageUrl,
           world: '베라',
           worldKey: 'bera',
+          jobClass: '렌',
         },
       ])
+    })
+  })
+
+  // 후보 행 2줄의 직업. 목록 전 stub 은 캐시가 기억하는 직업을, 목록 뒤에는 `character/list` 가 준 직업을 싣는다.
+  describe('후보 항목의 직업', () => {
+    it('목록 응답 전 stub 은 캐시의 직업을 싣는다', async () => {
+      fetchCharacterListMock.mockImplementation(() => new Promise(() => {}))
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
+      getCachedCharacterBasicMock.mockResolvedValue({
+        profile: basicProfile({ name: '캐싱된캐릭', level: 180, jobClass: '아크메이지(썬,콜)' }),
+        cachedAt: STALE_CACHED_AT,
+      })
+
+      const onUpdate = jest.fn()
+      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+
+      await waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      const stub = onUpdate.mock.calls[0][0] as CharacterPickerEntry[]
+      expect(stub[0]?.jobClass).toBe('아크메이지(썬,콜)')
+    })
+
+    it('목록 응답 뒤에는 캐시가 직업을 몰라도 character/list 의 직업을 싣는다', async () => {
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
+      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      getCachedCharacterBasicMock.mockResolvedValue({
+        profile: basicProfile({ name: '캐싱된캐릭', level: 180 }),
+        cachedAt: STALE_CACHED_AT,
+      })
+      fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
+
+      const onUpdate = jest.fn()
+      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+
+      await waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      const live = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
+      expect(live[0]?.jobClass).toBe('렌')
     })
   })
 
@@ -1868,6 +1905,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
         imageUrl: null,
         world: '베라',
         worldKey: 'bera',
+        jobClass: '렌',
         unavailable: true,
       })
       expect(emitted.find((entry) => entry.ocid === 'ocid-1')?.unavailable).toBeUndefined()
@@ -1961,7 +1999,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     // mockCharacter/list 응답 이후 방출도 캐시 값(+ world)을 그대로 유지한다
     await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
     expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
-      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라', worldKey: 'bera' },
+      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라', worldKey: 'bera', jobClass: '렌' },
     ])
   })
 
@@ -2168,7 +2206,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
     expect(last).toEqual([
-      { ocid: 'ocid-1', name: '최신캐릭', level: 293, imageUrl: basicProfile({ name: '최신캐릭', level: 293 }).imageUrl, world: '베라', worldKey: 'bera' },
+      { ocid: 'ocid-1', name: '최신캐릭', level: 293, imageUrl: basicProfile({ name: '최신캐릭', level: 293 }).imageUrl, world: '베라', worldKey: 'bera', jobClass: '렌' },
     ])
     // 캐시 인덱스는 계정별이라 accountId가 첫 인자다.
     expect(setCachedCharacterBasicMock).toHaveBeenCalledWith(
@@ -2203,6 +2241,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
         imageUrl: basicProfile({ name: '방금받음', level: 293 }).imageUrl,
         world: '베라',
         worldKey: 'bera',
+        jobClass: '렌',
       },
     ])
   })
@@ -2265,7 +2304,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
     const last = onUpdate.mock.calls.at(-1)?.[0]
     expect(last).toEqual([
-      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라', worldKey: 'bera' },
+      { ocid: 'ocid-1', name: '캐시캐릭', level: 150, imageUrl: basicProfile({ name: '캐시캐릭', level: 150 }).imageUrl, world: '베라', worldKey: 'bera', jobClass: '렌' },
     ])
   })
 
@@ -2338,8 +2377,8 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
       expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(4)
       expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
-        { ocid: 'ocid-1', name: '최신-1', level: 250, imageUrl: basicProfile({ name: '최신-1', level: 250 }).imageUrl, world: '베라', worldKey: 'bera' },
-        { ocid: 'ocid-2', name: '최신-2', level: 240, imageUrl: basicProfile({ name: '최신-2', level: 240 }).imageUrl, world: '베라', worldKey: 'bera' },
+        { ocid: 'ocid-1', name: '최신-1', level: 250, imageUrl: basicProfile({ name: '최신-1', level: 250 }).imageUrl, world: '베라', worldKey: 'bera', jobClass: '렌' },
+        { ocid: 'ocid-2', name: '최신-2', level: 240, imageUrl: basicProfile({ name: '최신-2', level: 240 }).imageUrl, world: '베라', worldKey: 'bera', jobClass: '렌' },
       ])
     })
 
@@ -2374,8 +2413,8 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       await promise
 
       expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
-        { ocid: 'ocid-1', name: '캐릭1', level: 250, imageUrl: basicProfile({ name: '캐릭1', level: 250 }).imageUrl, world: '베라', worldKey: 'bera' },
-        { ocid: 'ocid-2', name: '캐릭2', level: 240, imageUrl: basicProfile({ name: '캐릭2', level: 240 }).imageUrl, world: '베라', worldKey: 'bera' },
+        { ocid: 'ocid-1', name: '캐릭1', level: 250, imageUrl: basicProfile({ name: '캐릭1', level: 250 }).imageUrl, world: '베라', worldKey: 'bera', jobClass: '렌' },
+        { ocid: 'ocid-2', name: '캐릭2', level: 240, imageUrl: basicProfile({ name: '캐릭2', level: 240 }).imageUrl, world: '베라', worldKey: 'bera', jobClass: '렌' },
       ])
     })
 

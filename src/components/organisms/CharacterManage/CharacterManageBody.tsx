@@ -19,6 +19,7 @@
 import { View } from 'react-native'
 import type { ScrollView } from 'react-native'
 import type { AnimatedRef } from 'react-native-reanimated'
+import { useSharedValue } from 'react-native-reanimated'
 
 import {
   formatRosterError,
@@ -28,6 +29,8 @@ import {
 import { useAuthStore } from '../../../features/auth/store'
 
 import { MapleSweepSpinner, Text } from '../../atoms'
+import { CardBackdrop } from './CardBackdrop'
+import { CARD_GAP, UPPER_CARD_TAIL } from './card-backdrop-frames'
 import { CharacterLayerGrid } from './CharacterLayerGrid'
 import { EmptyState } from '../../molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../molecules/ErrorState/ErrorState'
@@ -71,7 +74,7 @@ function Waiting(props: { label: string }): React.JSX.Element {
 }
 
 function SectionLabel(props: { children: React.ReactNode }): React.JSX.Element {
-  return <Text className="text-sm font-medium text-text-muted">{props.children}</Text>
+  return <Text className="text-13 font-semibold text-text">{props.children}</Text>
 }
 
 function Notice(props: { children: React.ReactNode }): React.JSX.Element {
@@ -143,6 +146,9 @@ export function CharacterManageBody({
   scrollableRef,
   place,
 }: CharacterManageBodyProps): React.JSX.Element {
+  const headerHeight = useSharedValue(0)
+  const separatorTop = useSharedValue<number | null>(null)
+
   // 계정을 하나도 못 고르면 본문 전체가 이 화면이다(넷째 줄).
   if (!manage.isAccountsLoading && manage.accountsError === null && manage.accounts.length === 0) {
     return (
@@ -164,11 +170,20 @@ export function CharacterManageBody({
   }
 
   return (
-    <View testID="character-manage-body" className="gap-4">
-      {/* 격자 밖 위에 남는다. 안에 넣으면 첫 칸이 고정 항목이 되어 맨 위로 옮기려는 카드가
+    <View testID="character-manage-body">
+      <CardBackdrop headerHeight={headerHeight} separatorTop={separatorTop} />
+
+      {/* 위 카드의 머리글. 격자 밖 위에 남는다. 안에 넣으면 첫 칸이 고정 항목이 되어 맨 위로 옮기려는 카드가
           설 자리를 잃는다. */}
-      <View testID="character-manage-selected">
-        <SectionLabel>선택된 캐릭터 {manage.selectedOcids.length}개</SectionLabel>
+      <View
+        testID="character-manage-selected"
+        className="flex-row items-center justify-between px-4 pb-[5px] pt-3"
+        onLayout={(event) => {
+          headerHeight.set(event.nativeEvent.layout.height)
+        }}
+      >
+        <SectionLabel>선택된 캐릭터</SectionLabel>
+        <Text className="text-xs font-semibold text-primary-ink">{manage.selectedOcids.length}개</Text>
       </View>
 
       {/* 두 층이 한 격자다. 층을 넘는 것이 재배열이라 그 움직임을 라이브러리가 잇는다. */}
@@ -177,39 +192,45 @@ export function CharacterManageBody({
         candidates={manage.candidates}
         representativeOcid={manage.representativeOcid}
         scrollableRef={scrollableRef}
+        separatorTop={separatorTop}
         onOrderChange={manage.replaceSelection}
         onAdd={manage.addCharacter}
         onRemove={manage.removeCharacter}
         onSelectRepresentative={manage.setRepresentative}
         separator={
-          <View testID="character-manage-divider" className="gap-4 pb-2 pt-2">
-            <View className="h-px bg-border" />
-            {manage.isAccountsLoading && manage.accounts.length === 0 ? (
-              <Waiting label="메이플 ID 를 불러오고 있어요" />
-            ) : manage.accounts.length === 0 ? (
-              // 계정 목록 자체가 실패했다. 드롭다운도 후보도 세울 수 없어 이 자리 하나로 답한다.
-              <AccountsError manage={manage} place={place} />
-            ) : (
-              <View className="gap-2">
-                {manage.selectedAccountId !== null && (
-                  <AccountSelect
-                    accounts={manage.accounts}
-                    selectedAccountId={manage.selectedAccountId}
-                    portraitByAccountId={manage.portraitByAccountId}
-                    onSelect={manage.selectAccount}
-                  />
-                )}
-                {/* 라벨 오른쪽의 `{n}개 중 {m}개 표시` 는 두지 않는다. 그 줄이 답하던 질문(왜 12개가
-                    아니라 7개인가)은 이 화면에서 물을 수 없는 질문이다. */}
-                <SectionLabel>캐릭터 추가</SectionLabel>
-              </View>
-            )}
+          <View testID="character-manage-divider">
+            {/* 위 카드의 꼬리와 두 카드 사이 여백. 선을 긋지 않고 카드 둘로 층을 가른다. 높이는 카드 바탕과 같은 값이다. */}
+            <View style={{ height: UPPER_CARD_TAIL + CARD_GAP }} />
+            <View className="gap-1.5 px-3 pb-[3px] pt-3">
+              {manage.isAccountsLoading && manage.accounts.length === 0 ? (
+                <Waiting label="메이플 ID 를 불러오고 있어요" />
+              ) : manage.accounts.length === 0 ? (
+                // 계정 목록 자체가 실패했다. 드롭다운도 후보도 세울 수 없어 이 자리 하나로 답한다.
+                <AccountsError manage={manage} place={place} />
+              ) : (
+                <View className="gap-2">
+                  {manage.selectedAccountId !== null && (
+                    <AccountSelect
+                      accounts={manage.accounts}
+                      selectedAccountId={manage.selectedAccountId}
+                      portraitByAccountId={manage.portraitByAccountId}
+                      onSelect={manage.selectAccount}
+                    />
+                  )}
+                  {/* 라벨 오른쪽의 `{n}개 중 {m}개 표시` 는 두지 않는다. 그 줄이 답하던 질문(왜 12개가
+                      아니라 7개인가)은 이 화면에서 물을 수 없는 질문이다. */}
+                  <View className="px-1 pt-1.5">
+                    <SectionLabel>캐릭터 추가</SectionLabel>
+                  </View>
+                </View>
+              )}
+            </View>
           </View>
         }
       />
 
-      {/* 후보 행이 없을 때만 무언가 그린다. 행이 있으면 격자가 이미 그렸다. */}
-      <View testID="character-manage-candidates">
+      {/* 아래 카드의 아래 끝. 후보 행이 없을 때만 그 안에 무언가 그린다. */}
+      <View testID="character-manage-candidates" className="px-3 pb-3 pt-[3px]">
         <CandidateNotice manage={manage} place={place} />
       </View>
     </View>
