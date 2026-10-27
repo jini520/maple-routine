@@ -27,6 +27,7 @@ import { __resetStoragePortsForTest, setAssetFilesPort, type AssetFilesPort } fr
 import type { GameData } from '../../../types/game-data'
 import {
   __resetGameDataSyncForTest,
+  confirmGameData,
   getGameDataStatus,
   refreshGameData,
   retryGameData,
@@ -76,6 +77,20 @@ function fakeFiles(initial: string[] = []): AssetFilesPort & { names: Set<string
 
 let files: ReturnType<typeof fakeFiles>
 
+/** 확인 패널에 크기가 서면 `확인` 을 누르며 받기가 끝날 때까지 기다리는 도우미. */
+async function 확인하며(run: () => Promise<void>): Promise<void> {
+  let finished = false
+  const done = run().then(() => {
+    finished = true
+  })
+  while (!finished) {
+    const now = getGameDataStatus()
+    if (now.phase === 'confirm' && now.progress.dataBytes !== null) confirmGameData()
+    await new Promise((resolve) => setImmediate(resolve))
+  }
+  await done
+}
+
 beforeEach(() => {
   jest.clearAllMocks()
   __resetGameDataSyncForTest()
@@ -93,10 +108,28 @@ afterAll(() => {
 })
 
 describe('처음 켤 때 (사본 없음)', () => {
+  it('게임 데이터만 받고 받을 크기를 보인 채 확인을 기다린다. 확인하기 전에는 그림을 받지 않는다', async () => {
+    fetchRemote.mockResolvedValue(응답([file('bosses/a.webp', SHA_A, 300), file('items/b.webp', SHA_B, 700)]))
+    files = fakeFiles([`${SHA_A}.webp`])
+    setAssetFilesPort(files)
+
+    const started = startGameData()
+    for (let i = 0; i < 20; i += 1) await new Promise((resolve) => setImmediate(resolve))
+
+    // 이미 있는 그림은 받을 크기에서 뺀다.
+    expect(getGameDataStatus()).toEqual({ phase: 'confirm', progress: { dataBytes: 1000, imageBytes: 0, imageTotal: 700 } })
+    expect(files.downloads).toEqual([])
+    expect(saveCopy).not.toHaveBeenCalled()
+
+    confirmGameData()
+    await started
+    expect(getGameDataStatus().phase).toBe('ready')
+  })
+
   it('잠그고 받는다. 그림을 다 받은 뒤 사본을 쓰고 표를 바꾸고 풀린다', async () => {
     fetchRemote.mockResolvedValue(응답([file('bosses/a.webp', SHA_A), file('items/b.webp', SHA_B)]))
 
-    await startGameData()
+    await 확인하며(startGameData)
 
     expect(fetchRemote).toHaveBeenCalledWith(null)
     expect(files.downloads.sort()).toEqual([`https://test/assets/${SHA_A}.webp`, `https://test/assets/${SHA_B}.webp`])
@@ -106,12 +139,12 @@ describe('처음 켤 때 (사본 없음)', () => {
     expect(getGameDataStatus().phase).toBe('ready')
   })
 
-  it('그림 하나라도 못 받으면 실패로 남고 사본도 표도 그대로다. 다시 시도하면 받는다', async () => {
+  it('그림 하나라도 못 받으면 실패로 남고 사본도 표도 그대로다. 다시 시도하면 묻지 않고 받는다', async () => {
     fetchRemote.mockResolvedValue(응답([file('bosses/a.webp', SHA_A)]))
     jest.mocked(files.download).mockRejectedValueOnce(new Error('offline'))
     const before = currentGameData()
 
-    await startGameData()
+    await 확인하며(startGameData)
 
     expect(getGameDataStatus().phase).toBe('failed')
     expect(saveCopy).not.toHaveBeenCalled()
@@ -138,7 +171,7 @@ describe('처음 켤 때 (사본 없음)', () => {
     files = fakeFiles([`${SHA_A}.webp`])
     setAssetFilesPort(files)
 
-    await startGameData()
+    await 확인하며(startGameData)
 
     // 이미 있는 그림은 다시 받지 않고 받을 양에서도 뺀다.
     expect(files.downloads).toEqual([`https://test/assets/${SHA_B}.webp`])
@@ -194,7 +227,7 @@ describe('사본이 있을 때', () => {
     loadCopy.mockResolvedValue(copy('옛 판'))
     fetchRemote.mockResolvedValue(응답([file('bosses/a.webp', SHA_A)]))
 
-    await startGameData()
+    await 확인하며(startGameData)
 
     expect(clearCopy).toHaveBeenCalled()
     expect(fetchRemote).toHaveBeenCalledWith(null)

@@ -2,7 +2,8 @@
  * 게임 데이터와 그림을 받아 기기에 두고 표를 바꾸는 흐름.
  *
  * - 켤 때 기기 사본이 있으면 그것으로 표를 세우고 바로 연다. 그 뒤 ETag 로 서버에 묻고, 바뀌었으면 조용히 받는다.
- * - 사본이 없거나 계약 판이 다르면 잠근다(`phase` 가 `ready` 가 아니다). 다 받으면 풀린다.
+ * - 사본이 없거나 계약 판이 다르면 잠근다(`phase` 가 `ready` 가 아니다). 게임 데이터를 받아 받을 크기를 보이고, `확인` 뒤에
+ *   그림을 받는다. 다 받으면 풀린다.
  * - 데이터와 그림을 다 받은 뒤 사본을 한 트랜잭션으로 쓰고, 그다음 표를 한 번에 바꾼다. 데이터만 새것이고 그림은 옛것인
  *   상태를 화면에 내지 않는다.
  */
@@ -20,8 +21,8 @@ import {
 import { getAssetFilesPort } from '../../storage/ports'
 import { GAME_DATA_SECTIONS, type AssetFilesTable, type GameData, type GameDataSection } from '../../types/game-data'
 
-/** `checking` 은 사본을 읽는 짧은 순간이다. `ready` 가 아니면 화면을 열지 않는다. */
-export type GameDataPhase = 'checking' | 'downloading' | 'failed' | 'ready'
+/** `checking` 은 사본을 읽는 짧은 순간이다. `confirm` 은 받기 전 확인이다. `ready` 가 아니면 화면을 열지 않는다. */
+export type GameDataPhase = 'checking' | 'confirm' | 'downloading' | 'failed' | 'ready'
 
 export interface GameDataProgress {
   /** 받은 게임 데이터 바이트. 아직 받는 중이면 `null` */
@@ -46,6 +47,9 @@ let status: GameDataStatus = { phase: 'checking', progress: NO_PROGRESS }
 const listeners = new Set<() => void>()
 let etag: string | null = null
 let running: Promise<void> | null = null
+/** 한 번 확인하면 `다시 시도` 는 다시 묻지 않는다. */
+let confirmed = false
+let resolveConfirm: (() => void) | null = null
 
 function setStatus(next: GameDataStatus): void {
   status = next
@@ -96,12 +100,23 @@ function apply(data: GameData): void {
   for (const key of GAME_DATA_SECTIONS) (SECTIONS[key].table as { set(next: unknown): void }).set(data[key])
 }
 
-/** 기기에 없는 그림을 받는다. 하나라도 실패하면 던진다. */
-async function downloadImages(assets: AssetFilesTable, onBytes: (bytes: number, total: number) => void): Promise<void> {
+/** 기기에 없는 그림. 같은 파일을 가리키는 경로가 여럿이면 한 번만 센다. */
+async function missingImages(assets: AssetFilesTable): Promise<AssetFilesTable['files']> {
+  const present = new Set(await getAssetFilesPort().list())
+  return [...new Map(assets.files.filter((f) => !present.has(f.file)).map((f) => [f.file, f])).values()]
+}
+
+function bytesOf(files: AssetFilesTable['files']): number {
+  return files.reduce((sum, f) => sum + f.size, 0)
+}
+
+/** 그림을 받는다. 하나라도 실패하면 던진다. */
+async function downloadImages(
+  needed: AssetFilesTable['files'],
+  onBytes: (bytes: number, total: number) => void,
+): Promise<void> {
   const port = getAssetFilesPort()
-  const present = new Set(await port.list())
-  const needed = [...new Map(assets.files.filter((f) => !present.has(f.file)).map((f) => [f.file, f])).values()]
-  const total = needed.reduce((sum, f) => sum + f.size, 0)
+  const total = bytesOf(needed)
   let done = 0
   onBytes(0, total)
   let next = 0
@@ -131,15 +146,23 @@ async function pruneImages(assets: AssetFilesTable): Promise<void> {
 function download(locked: boolean): Promise<void> {
   if (running !== null) return running
   running = (async () => {
-    if (locked) setStatus({ phase: 'downloading', progress: NO_PROGRESS })
+    if (locked) setStatus({ phase: confirmed ? 'downloading' : 'confirm', progress: NO_PROGRESS })
     try {
       const result = await fetchGameData(locked ? null : etag)
       if (result === null) throw new Error('게임 데이터를 받지 못했습니다')
       if (result.kind === 'not-modified') return
       const data = parseAll(result.sections)
       if (data === null) throw new Error('게임 데이터가 계약을 어겼습니다')
+      const needed = await missingImages(data.assets)
+      if (locked && !confirmed) {
+        setStatus({ phase: 'confirm', progress: { dataBytes: result.bytes, imageBytes: 0, imageTotal: bytesOf(needed) } })
+        await new Promise<void>((resolve) => {
+          resolveConfirm = resolve
+        })
+        confirmed = true
+      }
       if (locked) setStatus({ phase: 'downloading', progress: { ...NO_PROGRESS, dataBytes: result.bytes } })
-      await downloadImages(data.assets, (imageBytes, imageTotal) => {
+      await downloadImages(needed, (imageBytes, imageTotal) => {
         if (locked) setStatus({ phase: 'downloading', progress: { dataBytes: result.bytes, imageBytes, imageTotal } })
       })
       const raw = Object.fromEntries(GAME_DATA_SECTIONS.map((key) => [key, result.raw[key]]))
@@ -178,6 +201,13 @@ export async function startGameData(): Promise<void> {
   await download(true)
 }
 
+/** 받기 전 확인 패널의 `확인`. 크기를 보이기 전에 누르면 아무것도 안 한다. */
+export function confirmGameData(): void {
+  const resolve = resolveConfirm
+  resolveConfirm = null
+  resolve?.()
+}
+
 /** 잠금 화면의 `다시 시도`. */
 export function retryGameData(): Promise<void> {
   return download(true)
@@ -202,5 +232,7 @@ export function __resetGameDataSyncForTest(): void {
   listeners.clear()
   etag = null
   running = null
+  confirmed = false
+  resolveConfirm = null
   apply(INITIAL_GAME_DATA)
 }

@@ -1,12 +1,13 @@
 jest.mock('../../../features/game-data/sync', () => ({
   __esModule: true,
   retryGameData: jest.fn(async () => {}),
+  confirmGameData: jest.fn(),
 }))
 
 import { fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
-import { retryGameData, type GameDataStatus } from '../../../features/game-data/sync'
+import { confirmGameData, retryGameData, type GameDataStatus } from '../../../features/game-data/sync'
 import { GameDataLock } from '../GameDataLock'
 
 const status = (phase: GameDataStatus['phase'], progress: Partial<GameDataStatus['progress']> = {}): GameDataStatus => ({
@@ -15,6 +16,29 @@ const status = (phase: GameDataStatus['phase'], progress: Partial<GameDataStatus
 })
 
 describe('GameDataLock', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('받기 전에는 두 데이터의 크기와 합계를 보이고 확인을 부른다', async () => {
+    const view = await renderOverlay(
+      <GameDataLock status={status('confirm', { dataBytes: 359_044, imageTotal: 5_105_760 })} />,
+    )
+
+    expect(view.getByText('추가 리소스 다운로드')).toBeTruthy()
+    expect(view.getByText('0.4MB')).toBeTruthy()
+    expect(view.getByText('5.1MB')).toBeTruthy()
+    expect(view.getByText('모두 5.5MB')).toBeTruthy()
+    fireEvent.press(view.getByText('확인'))
+    expect(confirmGameData).toHaveBeenCalledTimes(1)
+  })
+
+  it('게임 데이터를 받기 전이라 크기를 모르면 확인을 누를 수 없다', async () => {
+    const view = await renderOverlay(<GameDataLock status={status('confirm')} />)
+
+    expect(view.queryByText(/모두/)).toBeNull()
+    fireEvent.press(view.getByText('확인'))
+    expect(confirmGameData).not.toHaveBeenCalled()
+  })
+
   it('게임 데이터를 받는 동안은 그 줄만 돌고 이미지 데이터는 대기다', async () => {
     const view = await renderOverlay(<GameDataLock status={status('downloading')} />)
 

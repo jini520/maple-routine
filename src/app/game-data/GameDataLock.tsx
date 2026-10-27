@@ -1,6 +1,8 @@
 /**
  * 게임 데이터를 다 받기 전에 앱을 가리는 잠금 화면. 테마 바탕 위에 스크림을 깔고 패널 하나를 띄운다.
  *
+ * 처음 받을 때는 먼저 확인 패널을 띄운다. 받을 크기를 보이고 `확인` 을 눌러야 그림을 받는다.
+ *
  * 패널은 테두리가 없다. 다크에서는 바텀시트처럼 표면을 한 단 올려(`buildSheetScopeVariables`) 스크림과 가른다.
  * 단계는 게임 데이터 · 이미지 데이터 둘이고 크기(MB)로 센다. 이미지 장 수로 세면 큰 지도와 작은 아이콘이 같은 한 칸이라
  * 막대가 받는 시간과 어긋난다.
@@ -8,10 +10,15 @@
 import { vars } from 'nativewind'
 import { View } from 'react-native'
 
-import { CheckIcon, CloudDownloadIcon, ProgressBar, RingSpinner, Text } from '../../components/atoms'
+import { Button, CheckIcon, CloudDownloadIcon, ProgressBar, RingSpinner, Text } from '../../components/atoms'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
-import { retryGameData, type GameDataProgress, type GameDataStatus } from '../../features/game-data/sync'
+import {
+  confirmGameData,
+  retryGameData,
+  type GameDataProgress,
+  type GameDataStatus,
+} from '../../features/game-data/sync'
 import { useThemeAppearance } from '../../theme/context'
 import { buildSheetScopeVariables } from '../../theme/theme-vars'
 
@@ -56,6 +63,67 @@ function StepRow(props: { id: string; label: string; state: StepState; right?: s
   )
 }
 
+function Header(props: { title: string; description: string }): React.JSX.Element {
+  return (
+    <View className="flex-row items-center gap-3">
+      <View className="h-10 w-10 items-center justify-center rounded-full bg-primary-tint">
+        <CloudDownloadIcon className="h-5 w-5 text-primary-ink" strokeWidth={1.75} aria-hidden />
+      </View>
+      <View className="flex-1 gap-0.5">
+        <Text className="text-base font-semibold text-text">{props.title}</Text>
+        <Text className="text-xs text-text-muted">{props.description}</Text>
+      </View>
+    </View>
+  )
+}
+
+function SizeRow(props: { label: string; bytes: number | null }): React.JSX.Element {
+  return (
+    <View className="flex-row items-center gap-2.5 rounded-[10px] bg-card-inset px-3 py-2.5">
+      <Text className="flex-1 text-13 text-text">{props.label}</Text>
+      {props.bytes === null ? (
+        <RingSpinner size={14} />
+      ) : (
+        <Text className="text-xs font-semibold text-text" style={TABULAR_NUMS}>
+          {`${mb(props.bytes)}MB`}
+        </Text>
+      )}
+    </View>
+  )
+}
+
+/** 받기 전 확인. 게임 데이터를 받는 동안은 크기를 몰라 `확인` 을 막는다. */
+function Confirm(props: { progress: GameDataProgress }): React.JSX.Element {
+  const { dataBytes, imageTotal } = props.progress
+  const known = dataBytes !== null
+
+  return (
+    <View className="gap-4">
+      <Header title="추가 리소스 다운로드" description="앱에 필요한 데이터를 다운로드 합니다" />
+      <View className="gap-1.5">
+        <SizeRow label="게임 데이터" bytes={dataBytes} />
+        <SizeRow label="이미지 데이터" bytes={known ? imageTotal : null} />
+      </View>
+      <View className="flex-row items-center justify-between px-0.5">
+        <Text className="text-xs text-text-muted">받을 크기</Text>
+        {known && (
+          <Text className="text-xs font-semibold text-primary-ink" style={TABULAR_NUMS}>
+            {`모두 ${mb(dataBytes + imageTotal)}MB`}
+          </Text>
+        )}
+      </View>
+      <Button
+        variant="primary"
+        disabled={!known}
+        onPress={confirmGameData}
+        className={`w-full flex-row items-center justify-center${known ? '' : ' opacity-50'}`}
+      >
+        확인
+      </Button>
+    </View>
+  )
+}
+
 function Progress(props: { progress: GameDataProgress }): React.JSX.Element {
   const { dataBytes, imageBytes, imageTotal } = props.progress
   const dataKnown = dataBytes !== null
@@ -66,15 +134,7 @@ function Progress(props: { progress: GameDataProgress }): React.JSX.Element {
 
   return (
     <View className="gap-4">
-      <View className="flex-row items-center gap-3">
-        <View className="h-10 w-10 items-center justify-center rounded-full bg-primary-tint">
-          <CloudDownloadIcon className="h-5 w-5 text-primary-ink" strokeWidth={1.75} aria-hidden />
-        </View>
-        <View className="flex-1 gap-0.5">
-          <Text className="text-base font-semibold text-text">게임 데이터를 받고 있어요</Text>
-          <Text className="text-xs text-text-muted">처음 한 번만 받아요</Text>
-        </View>
-      </View>
+      <Header title="게임 데이터를 받고 있어요" description="처음 한 번만 받아요" />
 
       <View className="gap-1.5">
         <StepRow
@@ -121,6 +181,8 @@ export function GameDataLock(props: { status: GameDataStatus }): React.JSX.Eleme
               description="네트워크 연결을 확인한 뒤 다시 시도해주세요."
               action={{ label: '다시 시도', onClick: () => void retryGameData() }}
             />
+          ) : props.status.phase === 'confirm' ? (
+            <Confirm progress={props.status.progress} />
           ) : (
             <Progress progress={props.status.progress} />
           )}
