@@ -1,6 +1,9 @@
 /**
  * MVP 등급을 묻는 두 자리(today 위 모달 · 온보딩 화면)가 함께 쓰는 카드와 체크박스. 메이플 ID 하나가 카드 하나다.
  *
+ * 카드에는 테두리가 없다. 온보딩에서는 화면 위의 카드(`bg-surface`)이고, 모달에서는 패널이 이미 카드라 `card-inset` 칸이다.
+ * 칸 안의 칸은 그 반대 색으로 칠한다(`inModal`).
+ *
  * @see docs/features/mvp-grade.md 모달 모양
  */
 import { useState } from 'react'
@@ -22,6 +25,11 @@ import { mvpBenefitText, type MvpGradeKey } from '../../lib/mvp/grades'
 function Identity(props: { account: MvpAskAccount }): React.JSX.Element {
   if (props.account.summary === null) return <Text className="text-sm text-text">메이플 ID</Text>
   return <AccountRow summary={props.account.summary} portraitUrl={props.account.portraitUrl} />
+}
+
+/** 카드 바탕과 그 안의 칸 바탕. 모달 안에서는 바깥이 칸이라 안쪽을 카드 색으로 뒤집는다. */
+function tonesOf(inModal: boolean | undefined): { card: string; inner: string } {
+  return inModal === true ? { card: 'bg-card-inset', inner: 'bg-surface' } : { card: 'bg-surface', inner: 'bg-card-inset' }
 }
 
 /** 확인 카드의 라벨–값 한 줄. */
@@ -48,7 +56,7 @@ function StartWeekRow(props: {
   const [draft, setDraft] = useState(props.week)
 
   return (
-    <View className="flex-row items-center justify-between gap-2">
+    <View className="flex-row items-center justify-between gap-2 px-1">
       <Text className="text-xs text-text-muted">{props.label}</Text>
       <DateSelect
         ref={ref}
@@ -83,7 +91,8 @@ function StartWeekRow(props: {
 }
 
 /**
- * 고르기 카드. ID 표시 · 7칸 격자 · 혜택 한 줄 · 적용 시작 주.
+ * 고르기 카드. ID 표시 · 7칸 격자 · 혜택 한 줄 · 적용 시작 주. 화면 위에서는 ID 표시를 칸에 담고, 모달에서는 바깥이 이미
+ * 칸이라 칸 없이 둔다.
  *
  * @example <MvpPickCard account={account} grade={grade} onGrade={setGrade} start={week} ... />
  */
@@ -98,13 +107,18 @@ export function MvpPickCard(props: {
   floorWeek: string
   thisWeek: string
   onStart: (week: string) => void
+  /** today 위 모달 안에 놓인다 */
+  inModal?: boolean
 }): React.JSX.Element {
   const { account } = props
+  const tones = tonesOf(props.inModal)
   return (
-    <View testID={`mvp-grade-card-${account.accountId}`} className="gap-3 rounded-[12px] border border-border p-3">
-      <Identity account={account} />
+    <View testID={`mvp-grade-card-${account.accountId}`} className={`gap-2.5 rounded-[14px] p-3 ${tones.card}`}>
+      <View className={props.inModal === true ? 'px-0.5' : `rounded-[10px] px-2.5 py-2 ${tones.inner}`}>
+        <Identity account={account} />
+      </View>
       <MvpGradeGrid selected={props.grade} onSelect={props.onGrade} />
-      <Text className="text-xs text-text-muted">{mvpBenefitText(props.grade)}</Text>
+      <Text className="px-1 text-xs text-text-muted">{mvpBenefitText(props.grade)}</Text>
       {props.start !== null && (
         <StartWeekRow
           testID={`mvp-grade-start-${account.accountId}`}
@@ -119,18 +133,23 @@ export function MvpPickCard(props: {
   )
 }
 
-/** 확인 카드. ID 표시 아래 라벨과 값 세 줄(등급 · 혜택 · 적용 시작 주). */
+/** 확인 카드. 칸 없는 ID 표시 아래, 칸 하나에 라벨과 값 세 줄(등급 · 혜택 · 적용 시작 주). */
 export function MvpConfirmCard(props: {
   account: MvpAskAccount
   grade: MvpGradeKey
   /** 적용 시작 주. `null` 이면 그 줄이 안 선다 */
   start: string | null
   startLabel: string
+  /** today 위 모달 안에 놓인다 */
+  inModal?: boolean
 }): React.JSX.Element {
+  const tones = tonesOf(props.inModal)
   return (
-    <View testID={`mvp-grade-card-${props.account.accountId}`} className="gap-2.5 rounded-[12px] border border-border p-3">
-      <Identity account={props.account} />
-      <View className="gap-2 border-t border-border pt-2.5">
+    <View testID={`mvp-grade-card-${props.account.accountId}`} className={`gap-3 rounded-[14px] p-3 ${tones.card}`}>
+      <View className="px-0.5">
+        <Identity account={props.account} />
+      </View>
+      <View className={`gap-2 rounded-[10px] px-3 py-2.5 ${tones.inner}`}>
         <ConfirmRow label="등급">
           <MvpPlate grade={props.grade} height={20} />
         </ConfirmRow>

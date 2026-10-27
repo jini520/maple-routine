@@ -173,7 +173,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-048+070](./adr/ADR-048+070_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 |
 | [ADR-049](./adr/ADR-049_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
 | [ADR-095](./adr/ADR-095_cashbook_redesign.md) | 🟢 | cashbook | 가계부 고른 날 목록과 기간 이동 줄 리디자인 |
-| [ADR-050](./adr/ADR-050_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
+| [ADR-050+110](./adr/ADR-050+110_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
 | [ADR-051+075+090](./adr/ADR-051+075+090_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
 | [ADR-052+104](./adr/ADR-052+104_settings_screen.md) | 🟢 | settings | 더보기 · 설정 화면과 안내 · 앱 안 리뷰 요청 |
 | [ADR-053+067](./adr/ADR-053+067_settings_cache-data.md) | 🟢 | settings | 캐시 데이터 삭제 |
@@ -184,7 +184,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-058+087](./adr/ADR-058+087_today_widgets.md) | 🟢 | today | today 위젯 격자 |
 | [ADR-089](./adr/ADR-089_today_quick-links.md) | 🟢 | today | today 빠른 이동 |
 | [ADR-059](./adr/ADR-059_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
-| [ADR-060+073+079+085+088+107](./adr/ADR-060+073+079+085+088+107_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
+| [ADR-060+073+079+085+088+107+109](./adr/ADR-060+073+079+085+088+107+109_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
 | [ADR-061](./adr/ADR-061_design-system_states.md) | 🟢 | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 표시 |
 | [ADR-062+082+091+106](./adr/ADR-062+082+091+106_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 |
 | [ADR-063+080](./adr/ADR-063+080_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 |
