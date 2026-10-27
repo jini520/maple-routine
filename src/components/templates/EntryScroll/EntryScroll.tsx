@@ -101,7 +101,7 @@ export function EntryScroll({
       {footer !== undefined && (
         <View
           testID="entry-action-bar"
-          className="absolute inset-x-0 bottom-0 border-t border-border bg-bg px-4 pt-3"
+          className="absolute inset-x-0 bottom-0 bg-bg px-4 pt-3"
           style={{ paddingBottom: bottomSafeAreaPx + 12 }}
           onLayout={(event) => setActionBarHeightPx(event.nativeEvent.layout.height)}
         >

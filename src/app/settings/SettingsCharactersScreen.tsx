@@ -115,7 +115,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
           이 바가 먹는다. 스크롤포트는 `ScreenScroll` 이 이미 자기 몫을 뺐다. */}
       <View
         testID="character-manage-action-bar"
-        className="absolute inset-x-0 bottom-0 border-t border-border bg-bg px-4 pt-3"
+        className="absolute inset-x-0 bottom-0 bg-bg px-4 pt-3"
         style={{ paddingBottom: bottomSafeAreaPx + 12 }}
         onLayout={(event) => setActionBarHeightPx(event.nativeEvent.layout.height)}
       >

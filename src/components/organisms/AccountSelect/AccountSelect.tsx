@@ -172,7 +172,8 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
         role="button"
         aria-expanded={isOpen}
         onPress={open}
-        className={`rounded-[14px] bg-surface ${ROW_PADDING}`}
+        // 캐릭터 관리의 `캐릭터 추가` 카드 안에 서는 칸이라 `card-inset` 으로 칠한다.
+        className={`rounded-[10px] bg-card-inset ${ROW_PADDING}`}
       >
         <AccountRow
           summary={selected}

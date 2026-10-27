@@ -18,9 +18,9 @@
  */
 import { View } from 'react-native'
 import type { ScrollView } from 'react-native'
-import type { AnimatedRef } from 'react-native-reanimated'
-import Sortable from 'react-native-sortables'
-import { runOnJS } from 'react-native-reanimated'
+import type { AnimatedRef, SharedValue } from 'react-native-reanimated'
+import Sortable, { useCommonValuesContext } from 'react-native-sortables'
+import { runOnJS, useFrameCallback } from 'react-native-reanimated'
 
 import type { SelectedCharacterView } from '../../../features/character-manage/derivations'
 import { SEPARATOR_KEY, selectedFromOrder } from '../../../features/character-manage/grid-split'
@@ -56,6 +56,8 @@ export interface CharacterLayerGridProps {
   scrollableRef: AnimatedRef<ScrollView>
   /** 구분자 칸에 그릴 것. 구분선 · 계정 드롭다운 · `캐릭터 추가` 라벨이 여기 든다. */
   separator: React.ReactNode
+  /** 구분자 칸의 지금 위치를 받을 값. 카드 바탕이 이것을 따라간다. */
+  separatorTop: SharedValue<number | null>
   /** 격자가 준 순서에서 선택된 것만 뽑아 넘긴다. 셋(순서·추가·해제)이 이 문 하나다. */
   onOrderChange: (selectedOcids: string[]) => void
   /** 누르기로 옮길 때. 끌기와 같은 결과를 낸다. */
@@ -75,7 +77,8 @@ export function CharacterLayerGrid(props: CharacterLayerGridProps): React.JSX.El
   return (
     <Sortable.Grid
       columns={1}
-      rowGap={8}
+      // 행 사이 여백은 행 감싸개(`RowPadding`)가 맡는다.
+      rowGap={0}
       data={cells}
       keyExtractor={(cell) => cell.key}
       customHandle
@@ -116,36 +119,71 @@ export function CharacterLayerGrid(props: CharacterLayerGridProps): React.JSX.El
       renderItem={({ item, index }) => {
         if (item.kind === 'separator') {
           // 고정 항목. 이 모드가 아니면 다른 카드가 이것을 밀어내 두 층의 경계가 사라진다.
-          return <Sortable.Handle mode="fixed-order">{props.separator}</Sortable.Handle>
+          return (
+            <Sortable.Handle mode="fixed-order">
+              <SeparatorTracker target={props.separatorTop} />
+              {props.separator}
+            </Sortable.Handle>
+          )
         }
         if (item.kind === 'selected') {
           return (
-            <SelectedRow
-              testID={SELECTED_ROW_TEST_ID}
-              view={item.view}
-              index={index}
-              count={selectedCount}
-              isRepresentative={props.representativeOcid === item.view.ocid}
-              // 하나가 채워지면 나머지는 흐려진다. 비활성이 아니라 톤만 낮춘다.
-              dimmed={
-                props.representativeOcid !== null && props.representativeOcid !== item.view.ocid
-              }
-              onMove={(from, to) => props.onOrderChange(moved(props.views, from, to))}
-              onRemove={props.onRemove}
-              onSelectRepresentative={props.onSelectRepresentative}
-            />
+            <RowPadding>
+              <SelectedRow
+                testID={SELECTED_ROW_TEST_ID}
+                view={item.view}
+                index={index}
+                count={selectedCount}
+                isRepresentative={props.representativeOcid === item.view.ocid}
+                // 하나가 채워지면 나머지는 흐려진다. 비활성이 아니라 톤만 낮춘다.
+                dimmed={
+                  props.representativeOcid !== null && props.representativeOcid !== item.view.ocid
+                }
+                onMove={(from, to) => props.onOrderChange(moved(props.views, from, to))}
+                onRemove={props.onRemove}
+                onSelectRepresentative={props.onSelectRepresentative}
+              />
+            </RowPadding>
           )
         }
         return (
-          <CandidateRow
-            testID={CANDIDATE_ROW_TEST_ID}
-            entry={item.entry}
-            onAdd={props.onAdd}
-          />
+          <RowPadding>
+            <CandidateRow testID={CANDIDATE_ROW_TEST_ID} entry={item.entry} onAdd={props.onAdd} />
+          </RowPadding>
         )
       }}
     />
   )
+}
+
+/**
+ * 행 감싸개. 위아래 여백(3)이 행 사이 간격, 좌우 여백(12)이 카드 안쪽 여백이다.
+ * 카드색을 칠하지 않는다. 칠하면 층을 옮기는 행의 바탕이 두 카드 사이 여백을 메운다.
+ */
+function RowPadding(props: { children: React.ReactNode }): React.JSX.Element {
+  return (
+    <View testID="character-manage-row-padding" className="px-3 py-[3px]">
+      {props.children}
+    </View>
+  )
+}
+
+/**
+ * 구분자 칸의 지금 위치를 밖으로 넘기는 칸. 칸이 미끄러지는 동안에도 같은 프레임의 값을 넘긴다.
+ *
+ * 라이브러리가 칸 위치를 기록 안의 값으로 들고 있어, reaction 은 그 안의 변화를 못 잡는다. 그래서 프레임마다 읽고
+ * 바뀌었을 때만 쓴다.
+ */
+function SeparatorTracker(props: { target: SharedValue<number | null> }): null {
+  const { itemCurrentPositions } = useCommonValuesContext()
+  const { target } = props
+
+  useFrameCallback(() => {
+    const top = itemCurrentPositions.value[SEPARATOR_KEY]?.value?.y ?? null
+    if (top !== target.get()) target.set(top)
+  })
+
+  return null
 }
 
 /** 접근성 액션이 만드는 새 순서. 끌기가 `onDragEnd` 로 내는 것과 같은 모양으로 맞춘다. */
@@ -212,7 +250,7 @@ function SelectedRow(props: SelectedRowProps): React.JSX.Element {
         </Sortable.Handle>
       }
       trailing={
-        <View className="shrink-0 flex-row items-center gap-1">
+        <View className="shrink-0 flex-row items-center">
           <RepresentativeStar
             label={view.name}
             filled={props.isRepresentative}

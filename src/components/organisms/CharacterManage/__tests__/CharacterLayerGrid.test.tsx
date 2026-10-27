@@ -7,7 +7,9 @@
  * `app/settings/__tests__/SettingsCharactersScreen.test.tsx` 가 진짜 라이브러리로 붙든다.
  */
 import { act, render } from '@testing-library/react-native'
-import { useAnimatedRef } from 'react-native-reanimated'
+
+import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { useAnimatedRef, useSharedValue } from 'react-native-reanimated'
 import type { ScrollView } from 'react-native'
 
 import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
@@ -16,6 +18,7 @@ import { CharacterLayerGrid } from '../CharacterLayerGrid'
 interface GridProps {
   onOrderChange: () => void
   onDragEnd: (params: { indexToKey: string[] }) => void
+  renderItem: (params: { item: unknown; index: number }) => React.ReactElement
 }
 
 let 격자프롭: GridProps | null = null
@@ -36,6 +39,7 @@ const select = jest.fn(async () => undefined)
 
 function Harness(): React.JSX.Element {
   const scrollableRef = useAnimatedRef<ScrollView>()
+  const separatorTop = useSharedValue<number | null>(null)
 
   return (
     <CharacterLayerGrid
@@ -44,6 +48,7 @@ function Harness(): React.JSX.Element {
       representativeOcid={null}
       scrollableRef={scrollableRef}
       separator={null}
+      separatorTop={separatorTop}
       onOrderChange={jest.fn()}
       onAdd={jest.fn()}
       onRemove={jest.fn()}
@@ -84,5 +89,25 @@ describe('순서를 끄는 동안의 촉각', () => {
 
     expect(select).not.toHaveBeenCalled()
     expect(tap).not.toHaveBeenCalled()
+  })
+})
+
+// 카드 바탕은 격자 뒤에 따로 깔린다. 행이 카드색을 칠하면 층을 옮기는 행의 바탕이 두 카드 사이 여백을 메운다.
+describe('CharacterLayerGrid: 층마다 카드 하나', () => {
+  it('행 감싸개는 카드 안쪽 여백만 두고 카드색을 칠하지 않는다', async () => {
+    await act(async () => {
+      render(<Harness />)
+    })
+    const 후보 = {
+      kind: 'candidate',
+      key: 'ocid-1',
+      entry: { ocid: 'ocid-1', name: '맨돌이', level: 240, imageUrl: null },
+    }
+
+    const { getByTestId } = await renderAtom(격자프롭!.renderItem({ item: 후보, index: 0 }))
+    const style = flattenStyle(getByTestId('character-manage-row-padding').props.style)
+
+    expect(style).toMatchObject({ paddingLeft: 12, paddingRight: 12 })
+    expect(style.backgroundColor).toBeUndefined()
   })
 })

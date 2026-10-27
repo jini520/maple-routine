@@ -275,7 +275,8 @@ describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
 
     const view = await renderScreen()
 
-    expect(view.getByText('선택된 캐릭터 1개')).toBeTruthy()
+    expect(view.getByText('선택된 캐릭터')).toBeTruthy()
+    expect(view.getByText('1개')).toBeTruthy()
     expect(namesIn(view, 'character-manage-selected')).toEqual(['낟낟'])
     expect(namesIn(view, 'character-manage-candidates')).toEqual(['달의아이', '별헤는밤'])
   })

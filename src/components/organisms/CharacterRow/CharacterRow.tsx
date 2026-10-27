@@ -28,7 +28,8 @@ import { Text } from '../../atoms'
 // 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다. 이 파일이 자기 표를 들면 같은 얼굴이 드롭다운 행과
 // 다르게 잘린다. 값(48px 크롭 · 36px 아바타)은 이 앱의 다른 초상화들이 이미 쓰던 것이다.
 
-const ROW_CLASS = 'flex-row items-center gap-2 rounded-[14px] border border-border bg-surface px-2.5 py-2'
+// 카드 안의 칸이라 테두리 없이 `card-inset` 으로 칠한다. 카드 바탕은 캐릭터 관리 본문이 격자 뒤에 따로 깐다.
+const ROW_CLASS = 'flex-row items-center gap-2 rounded-[10px] bg-card-inset py-1 pl-2 pr-1'
 
 /** 2줄에 설 글자. 아무것도 모르면 `null` 이고, 그때 그 줄은 아예 그려지지 않는다. */
 function captionText(level: number | null, jobClass: string | undefined): string | null {
