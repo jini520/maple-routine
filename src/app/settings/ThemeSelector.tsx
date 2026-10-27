@@ -46,7 +46,7 @@ export function ThemeSelector(props: ThemeSelectorProps): React.JSX.Element {
   return (
     <View className="gap-4">
       {/* 값이 곧 보이는 글자라 `labelOf` 를 안 준다. */}
-      <Segment size="tab" options={MODE_FILTERS} selected={filter} onSelect={setFilter} />
+      <Segment size="lg" className="self-start" options={MODE_FILTERS} selected={filter} onSelect={setFilter} />
 
       {groupThemesByCategory(visible).map((group) => (
         <View key={group.category} className="gap-2">

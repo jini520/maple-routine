@@ -14,18 +14,8 @@ import { tapFeedback } from '../../../native/haptics'
  * @example
  * <BackButton onPress={() => navigation.goBack()} />
  */
-export function BackButton(props: {
-  onPress: () => void
-  /**
-   * 손가락이 닿는 칸과 화살표 색. 옮겨오기 전 열다섯 자리가 이 두 가지였고 그대로 남겼다.
-   *
-   * `compact` 는 28px 에 흐린 화살표(설정 하위 화면들과 컨텐츠 관리 · 아이템 분배).
-   * `regular` 는 36px 에 진한 화살표(가격 입력 · 히스토리).
-   */
-  size?: 'compact' | 'regular'
-}): React.JSX.Element {
-  const isRegular = props.size === 'regular'
-
+export function BackButton(props: { onPress: () => void }): React.JSX.Element {
+  // 화면 머리의 뒤로가기는 어디서나 같은 역할이라 모양이 하나다(28px · 흐린 화살표).
   return (
     <Pressable
       role="button"
@@ -34,10 +24,10 @@ export function BackButton(props: {
         tapFeedback()
         props.onPress()
       }}
-      className={isRegular ? '-ml-2 h-9 w-9 items-center justify-center' : '-ml-1 p-1'}
+      className="-ml-1 p-1"
     >
       <ArrowLeftIcon
-        className={`h-5 w-5 ${isRegular ? 'text-text' : 'text-text-muted'}`}
+        className="h-5 w-5 text-text-muted"
         strokeWidth={2}
         aria-hidden
       />

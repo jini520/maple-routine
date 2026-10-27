@@ -462,7 +462,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
           */}
           {forms.map((each) => (
             <FieldRow key={each} label={spendFormOf(each)?.name ?? each} testID={`spend-sheet-form-${each}`}>
-              <Segment
+              <Segment size="sm"
                 options={tierOptions}
                 selected={tierByForm[each] ?? BASE_TIER}
                 onSelect={(tier) => setTierByForm((prev) => ({ ...prev, [each]: tier }))}
@@ -517,7 +517,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
           {choice !== null &&
             axes.map((each) => (
               <FieldRow key={each.axis} label={each.axis} testID={`spend-sheet-option-${each.axis}`}>
-                <Segment
+                <Segment size="sm"
                   options={each.values}
                   selected={optionByAxis[each.axis] ?? null}
                   disabled={!isOptionAxisOpen(choice, optionByAxis, each.axis)}
@@ -528,7 +528,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
 
           {tiers.length > 0 && (
             <FieldRow label="단계">
-              <Segment
+              <Segment size="sm"
                 options={tiers.map(tierNameOf)}
                 selected={item === null ? null : tierNameOf(item)}
                 onSelect={(label) => {

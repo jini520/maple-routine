@@ -39,7 +39,7 @@ export const BossSection = memo(function BossSection(props: {
     <StatsSection
       title="보스별 수입"
       testID="stats-bosses"
-      trailing={<Segment options={MODES} selected={mode} onSelect={setMode} />}
+      trailing={<Segment size="sm" options={MODES} selected={mode} onSelect={setMode} />}
     >
       {rows.length === 0 ? (
         <Text className="py-6 text-center text-xs text-text-muted">이 기간에 결정석을 판 보스가 없어요</Text>
@@ -69,7 +69,7 @@ export const BossSection = memo(function BossSection(props: {
                   />
                   {row.difficulty !== null && (
                     <View className="absolute" style={{ bottom: -BADGE_HALF }}>
-                      <Badge variant={row.difficulty} size="mini">
+                      <Badge variant={row.difficulty} size="xs">
                         {DIFFICULTY_NAME[row.difficulty]}
                       </Badge>
                     </View>

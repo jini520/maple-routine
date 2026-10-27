@@ -900,7 +900,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             <View className="mt-3 gap-2.5">
               <View className="flex-row items-center justify-between gap-2.5">
                 <Text className="text-13 font-bold text-text">분배 방식</Text>
-                <Segment
+                <Segment size="sm"
                   options={SPLIT_OPTIONS}
                   selected={usesRatio ? '비율' : '기본'}
                   // 금액 단위 세그먼트가 선 카드라 한 단계 작게 둔다. 파티 인원 모달의 같은 줄은 `md` 다.
@@ -942,7 +942,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                       <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
                         파티 인원
                       </Text>
-                      <Badge variant="primary" size="mini" style={TABULAR_NUMS}>
+                      <Badge variant="primary" size="xs" style={TABULAR_NUMS}>
                         최대 {props.share.maxPartySize ?? defaultMaxPartySize()}명
                       </Badge>
                     </View>

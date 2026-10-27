@@ -334,7 +334,7 @@ export function BossProfitScreen(): React.JSX.Element {
           <View className="flex-row items-center gap-1">
             <Button
               variant="text"
-              size="compact"
+              size="sm"
               onPress={() => {
                 tapFeedback()
                 navigation.navigate('BossManage')
@@ -343,7 +343,7 @@ export function BossProfitScreen(): React.JSX.Element {
               보스 관리
             </Button>
             <Segment
-              size="tab"
+              size="lg" className="self-start"
               options={BOSS_PROFIT_TABS}
               selected={tab}
               onSelect={setTab}

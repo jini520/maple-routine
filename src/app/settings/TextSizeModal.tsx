@@ -41,7 +41,7 @@ export function TextSizeModal(props: TextSizeModalProps): React.JSX.Element {
           <Text className="text-sm text-text">{TEXT_SIZE_PREVIEW}</Text>
         </View>
         <Segment
-          size="tab"
+          size="lg" className="self-start"
           options={TEXT_SIZES}
           selected={size}
           labelOf={(option) => TEXT_SIZE_LABELS[option]}

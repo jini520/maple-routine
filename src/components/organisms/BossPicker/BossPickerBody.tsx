@@ -154,7 +154,7 @@ function TileGroup(props: {
 export function BossPickerBody(props: BossPickerBodyProps): React.JSX.Element {
   const [showAll, setShowAll] = useState(false)
   const toggle = (
-    <Switch on={showAll} label="모든 보스" onToggle={() => setShowAll(!showAll)} className="gap-2">
+    <Switch size="sm" on={showAll} label="모든 보스" onToggle={() => setShowAll(!showAll)} className="gap-2">
       <Text className="text-xs font-semibold text-text-muted">모든 보스</Text>
     </Switch>
   )

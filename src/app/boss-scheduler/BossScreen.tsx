@@ -496,7 +496,7 @@ export function BossScreen(): React.JSX.Element {
                 characters.length > 0 &&
                 selected !== null && (
                   <Segment
-                    size="tab"
+                    size="lg" className="self-start"
                     options={PARTY_FILTERS}
                     selected={partyFilter}
                     onSelect={setPartyFilter}

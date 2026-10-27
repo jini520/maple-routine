@@ -110,7 +110,7 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
                 끄거나 채널·방해 금지를 손보러 가려는 사용자에게는 앱 안에 길이 없었다. */}
             <Button
               variant="text"
-              size="compact"
+              size="sm"
               aria-label="OS 알림 설정 열기"
               onPress={() => {
                 void openNotificationSettings(Platform.OS).catch(() => undefined)
@@ -131,7 +131,6 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
             <Switch
               on={on}
               label="알림 받기"
-              size="lg"
               className="ml-auto"
               onToggle={() => {
                 // 켜면 기본 묶음이 켜지고 끄면 전부 꺼진다.
@@ -185,7 +184,6 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
               <Switch
                 on={shown[topic.key]}
                 label={`${topic.label} 알림`}
-                size="lg"
                 className="ml-auto"
                 onToggle={() => {
                   report(setSubscribed(topic.key, !shown[topic.key]))
@@ -205,7 +203,6 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
               <Switch
                 on={partyAlarmOn}
                 label="파티 스케줄 알림"
-                size="lg"
                 className="ml-auto"
                 onToggle={() => {
                   void setPartyAlarm(!partyAlarmOn)

@@ -167,7 +167,7 @@ export function AppointmentsScreen(): React.JSX.Element {
             <PageHeaderTitleRow
               trailing={
                 <Segment
-                  size="tab"
+                  size="lg" className="self-start"
                   options={VIEWS}
                   selected={view}
                   onSelect={(next) => usePartyScheduleViewStore.getState().setView(next)}

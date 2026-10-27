@@ -336,7 +336,7 @@ export function DropPriceScreen(): React.JSX.Element {
           // 안전영역을 `useTopSafeAreaPx()` 로 받는 것도 같다.
           <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
             <PageHeaderTitleRow className="gap-1">
-              <BackButton size="regular" onPress={() => navigation.goBack()} />
+              <BackButton onPress={() => navigation.goBack()} />
               <Text className="text-lg font-semibold text-text">아이템 가격 입력</Text>
             </PageHeaderTitleRow>
           </View>

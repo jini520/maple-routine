@@ -26,7 +26,7 @@ export interface ButtonProps extends Omit<PressableProps, 'children'> {
   /** 외형. 변형이 정하는 것은 색·테두리·글자이고 여백도 자리도 안 정한다. */
   variant: ButtonVariant
   /**
-   * 여백과 라벨 크기. 카드나 배너 안에 끼는 버튼이 `compact` 다.
+   * 여백과 라벨 크기. 카드나 배너 안에 끼는 버튼이 `sm` 이다.
    *
    * `className` 으로 여백을 주는 길이 막혀 있어 프롭이다. 같은 속성끼리는 이어 붙인 순서가
    * 아니라 생성된 CSS 순서가 이겨서 조용히 안 덮인다.
@@ -84,7 +84,7 @@ function join(base: string, extra: string | undefined): string {
  *
  * @example
  * // 배너 안에 끼는 자리. 32px 라 손가락 자리는 `hitSlop` 이 되돌려 준다.
- * <Button variant="primaryOutline" size="compact" hitSlop={{ top: 6, bottom: 6 }} onPress={openDetail}>
+ * <Button variant="primaryOutline" size="sm" hitSlop={{ top: 6, bottom: 6 }} onPress={openDetail}>
  *   자세히 보기
  * </Button>
  *
@@ -96,7 +96,7 @@ function join(base: string, extra: string | undefined): string {
  */
 export function Button({
   variant,
-  size = 'default',
+  size = 'md',
   className,
   textClassName,
   busy = false,

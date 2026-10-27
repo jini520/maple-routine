@@ -266,7 +266,7 @@ export function DropHistoryScreen(): React.JSX.Element {
         // 이어야 가격 화면과 나란히 열릴 때 제목 높이가 안 갈린다. 그 값이 `useTopSafeAreaPx()` 다.
         <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
           <PageHeaderTitleRow className="gap-1">
-            <BackButton size="regular" onPress={() => navigation.goBack()} />
+            <BackButton onPress={() => navigation.goBack()} />
             <Text className="text-lg font-semibold text-text">히스토리</Text>
           </PageHeaderTitleRow>
         </View>

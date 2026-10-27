@@ -195,7 +195,7 @@ export function StatsScreen(): React.JSX.Element {
               fetchedAt={fetchedAt}
               trailing={
                 <Segment
-                  size="tab"
+                  size="lg" className="self-start"
                   options={CYCLES}
                   selected={cycle}
                   onSelect={selectCycle}

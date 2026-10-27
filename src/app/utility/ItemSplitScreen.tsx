@@ -226,7 +226,7 @@ export function ItemSplitScreen(): React.JSX.Element {
                   <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
                     파티 인원
                   </Text>
-                  <Badge variant="primary" size="mini" style={TABULAR_NUMS}>
+                  <Badge variant="primary" size="xs" style={TABULAR_NUMS}>
                     최대 {MAX_PARTY_SIZE}명
                   </Badge>
                 </View>

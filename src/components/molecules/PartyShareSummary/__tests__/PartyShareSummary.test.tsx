@@ -39,13 +39,13 @@ describe('PartyShareSummary', () => {
   })
 
   // 두 크기가 같은 수를 말한다. 카드만 반올림하면 같은 비율이 화면마다 다른 수로 보인다(사용자 지정).
-  it('compact 도 소수 첫째 자리까지 적는다', async () => {
+  it('sm 도 소수 첫째 자리까지 적는다', async () => {
     const 작은 = await renderAtom(
       <PartyShareSummary
         label="스우"
         partySize={2}
         crystal={이대일}
-        size="compact"
+        size="sm"
         onPress={jest.fn()}
       />,
     )
@@ -54,7 +54,7 @@ describe('PartyShareSummary', () => {
   })
 
   // 보스 수익 카드는 금액과 한 줄을 나눠 쓴다. 이 줄이 커지면 카드가 통째로 커진다.
-  it('compact 는 배지를 줄인다', async () => {
+  it('sm 은 배지를 줄인다', async () => {
     const 기본 = await renderAtom(
       <PartyShareSummary label="스우" partySize={2} crystal={이대일} onPress={jest.fn()} />,
     )
@@ -63,7 +63,7 @@ describe('PartyShareSummary', () => {
         label="스우"
         partySize={2}
         crystal={이대일}
-        size="compact"
+        size="sm"
         onPress={jest.fn()}
       />,
     )
