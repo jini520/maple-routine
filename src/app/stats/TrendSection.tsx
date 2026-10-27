@@ -132,7 +132,7 @@ export const TrendSection = memo(function TrendSection(props: {
     <StatsSection
       title="추이"
       testID="stats-trend"
-      trailing={<Segment options={MODES} selected={mode} onSelect={setMode} />}
+      trailing={<Segment size="sm" options={MODES} selected={mode} onSelect={setMode} />}
     >
       <View style={{ paddingTop: BUBBLE_SPACE }} onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}>
         <Svg width={width} height={CHART_HEIGHT}>

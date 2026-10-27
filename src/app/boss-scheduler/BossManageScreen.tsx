@@ -339,7 +339,6 @@ export function BossManageScreen(): React.JSX.Element {
           <Switch
             on={showAllBosses}
             label="모든 보스 보기"
-            size="lg"
             onToggle={() => {
               setShowAllBosses((prev) => !prev)
             }}

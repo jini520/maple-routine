@@ -24,18 +24,17 @@ const THUMB_SHADOW = {
 } as const
 
 /**
- * 크기 네 벌. 상자 여백은 그대로 두고 **조각과 글자만** 키운다.
+ * 크기 세 벌. 상자 여백은 그대로 두고 **조각과 글자만** 키운다.
  *
  * 상자 여백(`p-0.5`)까지 줄이면 미끄러지는 상자가 트랙 끝에 붙어 눌린 조각이 잘려 보인다.
  */
 const SIZES = {
-  /** 줄 안의 **곁 고르개**. 입력 카드의 금액 단위와 수수료가 쓴다. 높이 23 이다. */
-  sm: { piece: 'px-2 py-px', label: 'text-11 leading-[15px]', track: '' },
-  default: { piece: 'px-2.5 py-0.5', label: 'text-11', track: '' },
-  /** 줄의 **주 고르개**. 파티 모달의 `분배` 가 쓴다. */
-  md: { piece: 'px-3.5 py-1', label: 'text-xs', track: '' },
-  /** 화면 머리의 주기 · 필터 탭. 세로로 쌓는 부모 안에서 트랙이 폭을 다 먹지 않게 `self-start` 다. */
-  tab: { piece: 'px-3.5 py-1', label: 'text-sm', track: 'self-start' },
+  /** 폼 줄 · 금액 단위 · 수수료 같은 줄 안의 고르개. 높이 26 이다. */
+  sm: { piece: 'px-2.5 py-0.5', label: 'text-11' },
+  /** 계산기 · 파티 모달의 주 고르개. 분배 방식 · 수수료. */
+  md: { piece: 'px-3 py-0.5', label: 'text-xs' },
+  /** 화면 머리의 주기 · 필터 탭. */
+  lg: { piece: 'px-3.5 py-1', label: 'text-sm' },
 } as const
 
 export function Segment<T extends string>(props: {
@@ -48,15 +47,17 @@ export function Segment<T extends string>(props: {
   /** 잠긴 줄. 상자째 흐리고 조각이 안 눌린다. 고를 값이 남은 항목에 없을 때 쓴다. */
   disabled?: boolean
   size?: keyof typeof SIZES
+  /** 트랙의 배치. 화면 머리 탭은 부모 폭으로 늘지 않게 `self-start` 를 준다 */
+  className?: string
 }): React.JSX.Element {
-  const size = SIZES[props.size ?? 'default']
+  const size = SIZES[props.size ?? 'md']
   const selectedIndex = props.selected === null ? -1 : props.options.indexOf(props.selected)
   const thumb = useSlidingThumb(selectedIndex)
 
   return (
     <View
       testID="segment"
-      className={`flex-row items-center rounded-full bg-control-track p-0.5 ${size.track} ${
+      className={`flex-row items-center rounded-full bg-control-track p-0.5 ${props.className ?? ''} ${
         props.disabled === true ? 'opacity-40' : ''
       }`}
     >

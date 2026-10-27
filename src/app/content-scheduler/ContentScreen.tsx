@@ -245,7 +245,7 @@ export function ContentScreen(): React.JSX.Element {
                   {manualManageButton}
                   {characters.length > 0 && selected !== null && (
                     <Segment
-                      size="tab"
+                      size="lg" className="self-start"
                       options={CONTENT_TABS}
                       selected={activeTab}
                       onSelect={setActiveTab}

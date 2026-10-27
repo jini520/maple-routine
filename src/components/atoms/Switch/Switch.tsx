@@ -7,10 +7,10 @@
  *
  * @example
  * // 행 왼쪽에 글자가 따로 서는 자리
- * <Switch on={on} label="알림 받기" size="lg" onToggle={toggle} className="ml-auto" />
+ * <Switch on={on} label="알림 받기" onToggle={toggle} className="ml-auto" />
  *
  * // 글자를 눌러도 토글돼야 하는 자리. 글자 크기는 자리마다 달라 호출부가 정한다
- * <Switch on={showAll} label="모든 보스 보기" size="lg" onToggle={toggle} className="gap-1.5">
+ * <Switch on={showAll} label="모든 보스 보기" size="sm" onToggle={toggle} className="gap-1.5">
  *   <Text className="text-xs font-medium text-text-muted">모든 보스 보기</Text>
  * </Switch>
  */
@@ -29,14 +29,14 @@ import { useThemeAppearance } from '../../../theme/context'
  */
 const SWITCH_SIZE = {
   sm: { track: 'h-4 w-7', knob: 'h-3 w-3', travel: 14 },
-  lg: { track: 'h-6 w-11', knob: 'h-5 w-5', travel: 22 },
+  md: { track: 'h-6 w-11', knob: 'h-5 w-5', travel: 22 },
 } as const
 
 /** iOS 26 시스템 스위치의 고정 크기(pt). `width` · `height` 로는 안 줄어 배율로만 준다. */
 const IOS_NATIVE = { width: 63, height: 28 }
 
 /** iOS 갈래의 보이는 높이(pt). 안드로이드 트랙과 같아 줄 높이가 안 바뀐다. */
-const IOS_SWITCH_SIZE = { sm: 16, lg: 24 } as const
+const IOS_SWITCH_SIZE = { sm: 16, md: 24 } as const
 
 /**
  * 손잡이가 미끄러지는 트랜지션. 세그먼트의 미끄러지는 상자(`useSlidingThumb`)와 같은 시간·곡선.
@@ -79,9 +79,9 @@ export function Switch(props: SwitchProps): React.JSX.Element {
     >
       {props.children}
       {Platform.OS === 'ios' ? (
-        <IosSwitch on={props.on} size={props.size ?? 'sm'} onPress={press} />
+        <IosSwitch on={props.on} size={props.size ?? 'md'} onPress={press} />
       ) : (
-        <DrawnSwitch on={props.on} size={props.size ?? 'sm'} />
+        <DrawnSwitch on={props.on} size={props.size ?? 'md'} />
       )}
     </Pressable>
   )

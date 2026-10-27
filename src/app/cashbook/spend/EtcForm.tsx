@@ -127,7 +127,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
 
       {/* 통화는 갈래가 아니라 금액의 축이라 세그먼트다. 칩으로 두면 갈래 칩과 한 무리로 읽힌다. */}
       <FieldRow label="통화">
-        <Segment
+        <Segment size="sm"
           options={FREE_CURRENCY_LABELS}
           selected={labelOfCurrency(currency)}
           onSelect={(label) => setCurrency(currencyOfLabel(label))}

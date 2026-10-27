@@ -71,7 +71,6 @@ export function SettingsMvpGradeScreen(): React.JSX.Element {
                 <Switch
                   on={!weeklyOff}
                   label="매주 등급 확인"
-                  size="lg"
                   className="ml-auto"
                   onToggle={() => void useMvpGradeSettingsStore.getState().setWeeklyCheck(weeklyOff)}
                 />

@@ -281,7 +281,7 @@ export function WeeklyIncomeWidget({ data }: WidgetProps): React.JSX.Element {
     <View testID="widget-weekly-income" className="gap-3 p-3.5">
       <View className="flex-row items-center justify-between">
         <Text className="text-11 font-bold text-text-muted">이번 주 수입</Text>
-        <Segment options={MODES} selected={mode} onSelect={setMode} />
+        <Segment size="sm" options={MODES} selected={mode} onSelect={setMode} />
       </View>
 
       <View className="flex-row items-center gap-3.5">

@@ -328,7 +328,7 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
                   className="items-center"
                   style={{ width: BOSS_SLOT_PX + BOSS_SLOT_GAP_PX, marginHorizontal: -BOSS_SLOT_GAP_PX / 2 }}
                 >
-                  <Badge variant={boss.difficulty} size="mini">
+                  <Badge variant={boss.difficulty} size="xs">
                     {DIFFICULTY_NAME[boss.difficulty]}
                   </Badge>
                 </View>
@@ -1014,7 +1014,7 @@ export function CashbookScreen(): React.JSX.Element {
               trailing={
                 // 보스 수익이 이 자리에 두는 `보스 관리` 는 여기 없다. 세그먼트만 선다.
                 <Segment
-                  size="tab"
+                  size="lg" className="self-start"
                   options={PERIOD_TABS}
                   selected={isWeekly ? 'weekly' : 'monthly'}
                   onSelect={(value) => (value === 'weekly' ? showWeekly() : showMonthly())}

@@ -144,7 +144,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
       </FieldRow>
 
       <FieldRow label="종류" testID="income-sheet-item-kind">
-        <Segment
+        <Segment size="sm"
           options={itemKinds().map((each) => each.name)}
           selected={itemKindNameOf(itemKind)}
           onSelect={selectItemKind}

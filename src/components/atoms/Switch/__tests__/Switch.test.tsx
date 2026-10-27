@@ -58,8 +58,8 @@ describe('Switch(android): 치수 두 벌', () => {
   // 손잡이가 가는 거리는 `트랙 폭 − 손잡이 − 2` 다. 세 수가 어긋나면 손잡이가 트랙을 넘거나
   // 덜 간다. 두 크기 모두 오른쪽 끝에 2 가 남아야 한다.
   it.each([
-    { size: undefined, track: 28, knob: 12, on: 14 },
-    { size: 'lg' as const, track: 44, knob: 20, on: 22 },
+    { size: 'sm' as const, track: 28, knob: 12, on: 14 },
+    { size: undefined, track: 44, knob: 20, on: 22 },
   ])('$size 손잡이는 2 에서 $on 으로 간다', async ({ size, track, knob, on }) => {
     const 꺼짐 = await renderAtom(<Switch on={false} label="켜기" size={size} onToggle={() => {}} />)
     expect(flattenStyle(꺼짐.getByTestId('switch-knob').props.style).transform).toEqual([
@@ -132,7 +132,7 @@ describe.each(['ios', 'android'] as const)('Switch(%s): 누름', (os) => {
   it('children 으로 넣은 글자를 눌러도 토글된다', async () => {
     const onToggle = jest.fn()
     const { getByText } = await renderAtom(
-      <Switch on={false} label="모든 보스 보기" size="lg" onToggle={onToggle}>
+      <Switch on={false} label="모든 보스 보기" onToggle={onToggle}>
         <Text className="text-xs font-medium text-text-muted">모든 보스 보기</Text>
       </Switch>,
     )
@@ -151,8 +151,8 @@ describe('Switch(ios): 줄인 시스템 스위치', () => {
   // 높이를 안드로이드 갈래와 같게 줄여 줄 높이가 안 바뀐다. 시스템 스위치는 63×28 고정이라
   // 배율로만 준다. 줄이기가 가운데 기준이라 이 자리여야 보이는 그림이 박스에 딱 맞는다.
   it.each([
-    { size: undefined, box: { width: 36, height: 16 }, scale: 16 / 28, left: -13.5, top: -6 },
-    { size: 'lg' as const, box: { width: 54, height: 24 }, scale: 24 / 28, left: -4.5, top: -2 },
+    { size: 'sm' as const, box: { width: 36, height: 16 }, scale: 16 / 28, left: -13.5, top: -6 },
+    { size: undefined, box: { width: 54, height: 24 }, scale: 24 / 28, left: -4.5, top: -2 },
   ])('$size 는 $box.width×$box.height 박스에 줄여 넣는다', async ({ size, box, scale, left, top }) => {
     const { getByTestId, queryByTestId } = await renderAtom(
       <Switch on={false} label="켜기" size={size} onToggle={() => {}} />,

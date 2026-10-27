@@ -82,7 +82,7 @@ export function FeeRow<T extends string>(props: {
           options={props.options}
           selected={props.selected}
           onSelect={props.onSelect}
-          size={stacked ? 'sm' : undefined}
+          size="sm"
         />
       )}
     </View>

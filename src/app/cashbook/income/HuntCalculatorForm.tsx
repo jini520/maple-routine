@@ -619,7 +619,7 @@ export function HuntCalculatorForm(
         고를 때 생기면 아래가 밀린다. 사냥터 전에는 40마리 기준 글자를 흐리게 적고 못 누른다.
       */}
       <FieldRow label="사냥 효율" testID="income-sheet-efficiency">
-        <Segment
+        <Segment size="sm"
           options={MISSED_MOB_OPTIONS.map((missed) => `${efficiencyPercentOf(efficiencyMobs, missed)}%`)}
           selected={`${efficiencyPercentOf(efficiencyMobs, missedMobs)}%`}
           disabled={huntGround === null}
@@ -651,7 +651,7 @@ export function HuntCalculatorForm(
           ))}
           {/* 유니온의 부가 배열 끝이라 이 자리가 곧 그 체크박스 옆이다. 안 켜면 흐리고 못 누른다. */}
           <View testID="income-sheet-union-tier">
-            <Segment
+            <Segment size="sm"
               options={UNION_TIERS.map((tier) => `${tier}단계`)}
               selected={`${unionTier}단계`}
               disabled={!boosts.includes('union')}

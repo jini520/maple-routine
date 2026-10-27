@@ -129,7 +129,7 @@ function StatusBadge(props: { testID: string; tone: 'clear' | 'issue'; label: st
   return (
     <Badge
       variant={props.tone === 'clear' ? 'secondary' : 'error'}
-      size="mini"
+      size="xs"
       weight="bold"
       testID={props.testID}
       className="shrink-0"
@@ -180,7 +180,7 @@ function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
   return (
     <View testID="schedule-detail-boss" className="flex-row items-center gap-1">
       {/* 작은 크기. 20px 배지가 줄 높이를 혼자 정하고 있었다. */}
-      <Badge variant={props.boss.difficulty} size="mini">
+      <Badge variant={props.boss.difficulty} size="xs">
         {DIFFICULTY_NAME[props.boss.difficulty]}
       </Badge>
       <Text numberOfLines={1} className="text-11 leading-tight text-text">

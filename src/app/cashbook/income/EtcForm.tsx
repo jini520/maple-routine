@@ -143,7 +143,7 @@ export function EtcForm(
       >
         <Text className="shrink-0 text-xs text-text-muted">통화</Text>
         <View className="flex-1 flex-row items-center justify-end">
-          <Segment
+          <Segment size="sm"
             options={FREE_CURRENCY_LABELS}
             selected={labelOfCurrency(currency)}
             onSelect={(label) => setCurrency(currencyOfLabel(label))}
