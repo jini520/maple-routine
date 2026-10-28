@@ -1,7 +1,7 @@
 {
   "name": "maple-routine",
   "private": true,
-  "version": "1.0.12+5",
+  "version": "1.0.12+6",
   "main": "index.ts",
   "expo": {
     "install": {
