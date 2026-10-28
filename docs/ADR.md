@@ -177,7 +177,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-051+075+090](./adr/ADR-051+075+090_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
 | [ADR-052+104+114](./adr/ADR-052+104+114_settings_screen.md) | 🟢 | settings | 더보기 · 설정 화면과 안내 · 앱 안 리뷰 요청 · 카드 안 칸 |
 | [ADR-053+067](./adr/ADR-053+067_settings_cache-data.md) | 🟢 | settings | 캐시 데이터 삭제 |
-| [ADR-054](./adr/ADR-054_theme_tokens.md) | 🟢 | theme | 테마와 색 토큰 |
+| [ADR-054+115](./adr/ADR-054+115_theme_tokens.md) | 🟢 | theme | 테마와 색 토큰 · 테마 페이지 |
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |
 | [ADR-056+072](./adr/ADR-056+072_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |
 | [ADR-057](./adr/ADR-057_notice_feed.md) | 🟢 | notice | 운영자 공지와 넥슨 공지 |
@@ -187,7 +187,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-060+073+079+085+088+107+109](./adr/ADR-060+073+079+085+088+107+109_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
 | [ADR-061](./adr/ADR-061_design-system_states.md) | 🟢 | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 표시 |
 | [ADR-062+082+091+106](./adr/ADR-062+082+091+106_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 |
-| [ADR-063+080+113](./adr/ADR-063+080+113_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 · 화면 배율 |
+| [ADR-063+080+113+116](./adr/ADR-063+080+113+116_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 · 화면 배율 · 글자 크기 페이지 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
 | [ADR-071](./adr/ADR-071_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 잘못 적은 값 빼기 · 관리 화면 |
 | [ADR-074](./adr/ADR-074_utility_boss-profit-calculator.md) | 🟢 | utility | 주간 보스 수익 계산기 |
