@@ -125,7 +125,7 @@ function AccountCard(props: {
       </View>
       {current !== undefined && (
         <View className="rounded-[10px] bg-card-inset px-3">
-          <GradeTimelineRow entry={current} isNow connector={false} />
+          <GradeTimelineRow entry={current} isNow connector={false} plateHeight={16} />
         </View>
       )}
       <Pressable

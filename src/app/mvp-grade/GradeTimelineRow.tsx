@@ -18,6 +18,8 @@ export function GradeTimelineRow(props: {
   isNow: boolean
   /** 아래 줄로 잇는 선. 마지막 줄은 없다 */
   connector: boolean
+  /** 명패 높이. 목록 화면의 지금 줄과 이력 타임라인이 다르다 */
+  plateHeight: number
   onPress?: () => void
 }): React.JSX.Element {
   const { entry } = props
@@ -54,8 +56,7 @@ export function GradeTimelineRow(props: {
           </Text>
         </View>
       ) : (
-        // 18 이면 폭이 87 이라 칸 안에서 날짜가 줄바꿈된다.
-        <MvpPlate grade={entry.grade} height={14} />
+        <MvpPlate grade={entry.grade} height={props.plateHeight} />
       )}
       {props.onPress !== undefined && (
         <ChevronRightIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />

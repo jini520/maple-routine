@@ -331,9 +331,13 @@ Preferences `lastRunBundleVersion` 과 지금 번들 버전을 비교한다(`con
 
 - `등급 변경` 버튼은 테두리 알약 대신 `card-inset` 으로 칠한 알약이다. 테두리를 쓰지 않는 원칙이 버튼에도 같다.
 - 등급 이력 타임라인은 칸으로 나누지 않는다. 줄 사이의 세로선은 경계가 아니라 이력을 시간 순서로 잇는 표시라 그대로 둔다.
-- 날짜 줄(지금 등급 줄과 타임라인 줄)의 MVP 명패는 높이 14 다(사용자 지정). 명패 그림은 243×50 이라 높이 18 이면 폭이 87 이고,
-  칸 안에서 `10월 1일 (목) 부터 · 지금` 옆에 들어가지 못해 날짜가 줄바꿈됐다. 등급 이력 화면의 `지금 등급` 명패는 높이 24 에서 18 로
-  줄인다(사용자 지정, 2026-10-28). 24 는 너무 크다고 사용자가 지적했다.
+- 날짜 줄의 MVP 명패는 MVP 등급 목록의 지금 줄이 높이 16, 등급 이력 타임라인이 15 다(사용자 지정, 2026-10-28). 처음에는 두 줄 모두
+  14 로 줄였다. 명패 그림이 243×50 이라 시안의 좁은 칸에서 높이 18(폭 87)이면 `10월 1일 (목) 부터 · 지금` 이 줄바꿈됐기 때문이다.
+  실기기에서 14 가 작다고 해 다시 키웠다. 높이는 `GradeTimelineRow` 의 `plateHeight` 로 줄마다 넘긴다.
+- 등급 이력 화면의 `지금 등급` 명패는 높이 24 에서 18 로 줄인다(사용자 지정). 24 는 너무 크다고 사용자가 지적했다.
+- 그림이 없는 일반 등급은 `MvpPlate` 가 그림 명패와 같은 높이 · 폭 비율(243:50) · 모서리 4 의 `surface-2` 판에 `일반` 을 적는다(사용자 지정).
+  전에는 넘겨받은 높이의 둥근 알약이었는데, 높이 14 에서 줄 높이 16 인 `text-11` 이 눌려 찌그러졌다. 그래서 판이 16 보다 낮으면 글자를
+  `text-10`(줄 높이 15)으로 그린다. `Badge` 는 쓰지 않는다. `Badge` 는 둥근 알약이고 여백을 스스로 정해서 그림 명패와 모양을 맞출 수 없다.
 - 바꾸지 않는 것은 카드 위 제목 줄(`SectionTitle` · `NoticeSectionHeader`), 현재값 배지(`ValueBadge`), 스위치, 고지 네 줄이다.
 - 기능 설명 목록(`SettingsFeatureGuideListScreen`)은 이번에 바꾸지 않는다(사용자 지정). 그래서 그 화면이 쓰는 행 사이 선
   (`SETTINGS_ROW_DIVIDER_CLASS`)은 남는다.
@@ -359,6 +363,7 @@ Preferences `lastRunBundleVersion` 과 지금 번들 버전을 비교한다(`con
 | `app/settings/__tests__/SettingsFeatureGuideListScreen.test.tsx` · `SettingsFeatureGuideScreen.test.tsx` | 결정 14: 탭 순서와 감춤, 여러 그룹 안내, 목차, 마디 스크롤, 이미지, 두 라우트, 없는 `guideId` 를 본다 |
 
 | `app/settings/__tests__/SettingsRow.test.tsx` · `SettingsLinkRow.test.tsx` · `AppSettingsScreen.test.tsx` · `SettingsScreen.test.tsx` · `NoticeSkeleton.test.tsx` · `SettingsNoticeAlertsScreen.test.tsx` · `AppUpdateSection.test.tsx` · `SettingsReleaseNotesScreen.test.tsx` · `SettingsMvpGradeScreens.test.tsx` | 결정 15: 행 · 글 · 묶음이 `card-inset` 칸인지, 카드 안에 선이 없는지, 글 줄 스켈레톤도 선이 없는지, `등급 변경` 에 테두리가 없는지 본다 |
+| `components/molecules/MvpPlate/__tests__/MvpPlate.test.tsx` | 결정 15: 일반 판이 그림 명패와 같은 높이 · 폭 비율 · 모서리인지, 쓰는 높이(15 · 16 · 18 · 20)에서 글자 줄이 판보다 높지 않은지 본다 |
 
 결정 13 의 모달 동작과 완료 판정은 업데이트 모달 테스트가 본다([[ADR-012]]).
 

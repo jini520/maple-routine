@@ -119,6 +119,7 @@ export function SettingsMvpGradeHistoryScreen(props: {
                             entry={entry}
                             isNow={index === 0}
                             connector={index < newestFirst.length - 1}
+                            plateHeight={15}
                             onPress={() => setSheet({ kind: 'edit', startDate: entry.startDate })}
                           />
                         </Fragment>
