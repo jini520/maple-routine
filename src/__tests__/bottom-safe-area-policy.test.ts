@@ -29,11 +29,13 @@ const SRC = join(__dirname, '..')
  *
  * `EntryScroll` 이 여기 있는 것은 진입 화면들의 하단(콘텐츠 몫· 고정 액션 바)을
  * 그 셸이 갖기 때문이다. `*Screen.tsx` 가 아니라서, 안 적으면 이 가드의 **사각**이 된다.
+ * `SettingsActionBar` 도 같은 이유다. 설정 하위 페이지(캐릭터 관리 · 테마 · 글자 크기)의 고정 버튼 바가 하단을 갖는다.
  */
 const SHELLS = [
   join(SRC, 'components', 'organisms', 'BottomBar', 'BottomBar.tsx'),
   join(SRC, 'components', 'organisms', 'Toast', 'ToastStack.tsx'),
   join(SRC, 'components', 'templates', 'EntryScroll', 'EntryScroll.tsx'),
+  join(SRC, 'app', 'settings', 'SettingsActionBar.tsx'),
 ]
 
 /**
@@ -84,11 +86,10 @@ describe('하단 안전영역은 한 자리에서 나온다', () => {
   it('검사 대상을 실제로 찾는다', () => {
     // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
     expect(files.length).toBeGreaterThan(15)
-    // 셸 셋(온보딩 단계 셸이 여기 든다) + 자기 `paddingBottom` 을 직접 주는
-    // 화면 둘(처리방침· 캐릭터 관리).
+    // 셸 넷(온보딩 단계 셸이 여기 든다) + 자기 `paddingBottom` 을 직접 주는 화면 하나(주간 보스 수익 계산기).
     expect(
       files.filter((file) => file.source.includes('useBottomSafeAreaPx')).length,
-    ).toBeGreaterThanOrEqual(SHELLS.length + 2)
+    ).toBeGreaterThanOrEqual(SHELLS.length + 1)
   })
 
   it('화면 하단은 `insets.bottom` 을 직접 읽지 않는다', () => {

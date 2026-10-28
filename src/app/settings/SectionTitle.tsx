@@ -8,10 +8,10 @@ import { View } from 'react-native'
 
 import { Text } from '../../components/atoms'
 
-export function SectionTitle(props: { children: string }): React.JSX.Element {
+export function SectionTitle(props: { children: string; testID?: string }): React.JSX.Element {
   return (
     <View className="px-1">
-      <Text className="text-sm font-semibold text-text">{props.children}</Text>
+      <Text testID={props.testID} className="text-sm font-semibold text-text">{props.children}</Text>
     </View>
   )
 }

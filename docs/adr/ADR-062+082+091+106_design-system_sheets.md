@@ -176,7 +176,7 @@ RN `TextInput` 은 높이를 내용에서 잰다. iOS 는 한글과 영문의 �
   한다. 파괴 동작은 `secondaryAction` 에 `danger` 를 켜서 `Button` 의 `dangerText` 변형으로 낸다. 크기는
   부 버튼과 같고 글자색만 테마의 `error-ink` 다. 테마에 따라 빨강이 아닐 수 있는데(레테는 로즈) 그것이
   의도다. 다른 실패 표시와 같은 색을 써야 하기 때문이다.
-- 고르는 화면인 `ThemeModal` · `TrackingModeModal` 은 이 틀을 쓰지 않는다. 배지가 없고 본문이 선택기다.
+- 고르는 화면인 `TrackingModeModal` 은 이 틀을 쓰지 않는다. 배지가 없고 본문이 선택기다.
 
 ### 결정 9. 팝오버는 `molecules/Popover` 가 띄우고, 닫는 영역은 화면 전체를 덮는다
 

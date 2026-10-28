@@ -44,6 +44,7 @@ import Crown from 'lucide-react-native/icons/crown'
 import Delete from 'lucide-react-native/icons/delete'
 import Ellipsis from 'lucide-react-native/icons/ellipsis'
 import History from 'lucide-react-native/icons/history'
+import ImageGlyph from 'lucide-react-native/icons/image'
 import ExternalLink from 'lucide-react-native/icons/external-link'
 import Eye from 'lucide-react-native/icons/eye'
 import EyeOff from 'lucide-react-native/icons/eye-off'
@@ -122,9 +123,11 @@ export const DeleteIcon = withIconInterop(Delete)
 export const EllipsisIcon = withIconInterop(Ellipsis)
 /** 기록 목록을 여는 버튼. 주간 보스 수익 계산기의 머리. */
 export const HistoryIcon = withIconInterop(History)
+/** 배경 그림이 있는 테마 표식. `ThemeSelector` 칸. RN 의 `Image` 와 겹치지 않게 `ImageGlyph` 로 가져온다. */
+export const ImageIcon = withIconInterop(ImageGlyph)
 /** 기록 하나를 지우는 버튼. 주간 보스 수익 계산기의 계산 기록. */
 export const Trash2Icon = withIconInterop(Trash2)
-/** 선택 표식. `CacheClearConfirm` 체크박스 · `ThemeSelector` 선택 타일. */
+/** 선택 표식. `CacheClearConfirm` 체크박스 · `ThemeSelector` 고른 칸. */
 export const CheckIcon = withIconInterop(Check)
 /** 성공 토스트. `Toast`(success). lucide 실물 이름은 `circle-check-big` 다. */
 export const CheckCircle2Icon = withIconInterop(CircleCheckBig)
@@ -195,7 +198,7 @@ export const MedalIcon = withIconInterop(Medal)
 export const MenuIcon = withIconInterop(Menu)
 /** 하나 줄이기. `Stepper`. */
 export const MinusIcon = withIconInterop(Minus)
-/** 다크 테마 표식. `ThemeSelector` 타일. */
+/** 다크 테마 표식. `ThemeSelector` 칸. */
 export const MoonIcon = withIconInterop(Moon)
 
 /**
@@ -238,7 +241,7 @@ export const StickyNoteIcon = withIconInterop(StickyNote)
 export const StoreIcon = withIconInterop(Store)
 /** 장비 드롭 카테고리. `BossDropSheet`. 보스 스케줄러의 `Swords`(복수)와 다른 그림이다. */
 export const SwordIcon = withIconInterop(Sword)
-/** 라이트 테마 표식. `ThemeSelector` 타일. */
+/** 라이트 테마 표식. `ThemeSelector` 칸. */
 export const SunIcon = withIconInterop(Sun)
 /** 몬스터파크 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const SwordsIcon = withIconInterop(Swords)

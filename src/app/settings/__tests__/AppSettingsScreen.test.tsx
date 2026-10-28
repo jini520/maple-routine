@@ -268,12 +268,15 @@ describe('AppSettingsScreen', () => {
     expect(hasChevron(row)).toBe(true)
   })
 
-  it('"테마"를 누르면 테마 선택 모달이 열린다', async () => {
+  it.each([
+    ['테마', 'SettingsTheme'],
+    ['글자 크기', 'SettingsTextSize'],
+  ])('"%s"를 누르면 %s 페이지를 연다', async (label, route) => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
-    await press(rowOf(view, '테마'))
+    await press(rowOf(view, label))
 
-    expect(view.getByTestId('theme-modal-overlay')).toBeTruthy()
+    expect(navigate).toHaveBeenCalledWith(route)
   })
 
   it('"계정 및 데이터" 우측에 캐시 총 용량(두 그룹의 합)을 표시한다', async () => {

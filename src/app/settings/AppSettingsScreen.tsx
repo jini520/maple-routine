@@ -38,8 +38,6 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { SettingsRow } from './SettingsRow'
 import { SETTINGS_CARD_CLASS } from './row-class'
 import { SectionTitle } from './SectionTitle'
-import { TextSizeModal } from './TextSizeModal'
-import { ThemeModal } from './ThemeModal'
 import { TrackingModeModal } from './TrackingModeModal'
 import { ValueBadge } from './ValueBadge'
 
@@ -60,8 +58,6 @@ export function AppSettingsScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
 
   const [trackingModeOpen, setTrackingModeOpen] = useState(false)
-  const [themeOpen, setThemeOpen] = useState(false)
-  const [textSizeOpen, setTextSizeOpen] = useState(false)
   const [sizes, setSizes] = useState<CacheDataSizes | null>(null)
 
   // `계정 및 데이터` 행의 대표값. 들어가지 않고도 안을 짐작하게 한다. 실패는 자리표시(`- KB`).
@@ -119,12 +115,12 @@ export function AppSettingsScreen(): React.JSX.Element {
               <SettingsRow label="보스 관리" onPress={() => navigation.navigate('BossManage')} />
               <SettingsRow
                 label="테마"
-                onPress={() => setThemeOpen(true)}
+                onPress={() => navigation.navigate('SettingsTheme')}
                 rightContent={<ValueBadge>{theme}</ValueBadge>}
               />
               <SettingsRow
                 label="글자 크기"
-                onPress={() => setTextSizeOpen(true)}
+                onPress={() => navigation.navigate('SettingsTextSize')}
                 rightContent={<ValueBadge>{TEXT_SIZE_LABELS[textSize]}</ValueBadge>}
               />
             </Card>
@@ -197,8 +193,6 @@ export function AppSettingsScreen(): React.JSX.Element {
       </ScreenScroll>
 
       {trackingModeOpen && <TrackingModeModal onClose={() => setTrackingModeOpen(false)} />}
-      {themeOpen && <ThemeModal onClose={() => setThemeOpen(false)} />}
-      {textSizeOpen && <TextSizeModal onClose={() => setTextSizeOpen(false)} />}
     </>
   )
 }

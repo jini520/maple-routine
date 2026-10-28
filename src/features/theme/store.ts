@@ -25,10 +25,17 @@ function resolveSystemTheme(): ThemeName {
  * 상태바·내비바 명암은 여기 남는다. 다크 테마면 밝은 글리프라는 판단이 플랫폼과 무관해서다.
  */
 function applyTheme(theme: ThemeName): void {
-  const definition = getThemeDefinition(theme)
-  getThemeAppearancePort().apply(theme, definition)
+  getThemeAppearancePort().apply(theme, getThemeDefinition(theme))
+  showSystemBarsOf(theme)
+}
 
-  const isDark = definition.mode === 'dark'
+/**
+ * 상태바 · 내비바 명암만 그 테마에 맞춘다. 앱의 색은 그대로다.
+ *
+ * 테마 페이지는 적용 전의 테마로 화면을 다 덮으므로 명암도 그 테마를 따라야 글리프가 보인다. 나갈 때는 지금 테마로 다시 부른다.
+ */
+export function showSystemBarsOf(theme: ThemeName): void {
+  const isDark = getThemeDefinition(theme).mode === 'dark'
   void setStatusBarStyle(isDark)
   void setNavigationBarStyle(isDark)
 }

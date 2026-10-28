@@ -16,6 +16,8 @@ import { SettingsFeatureGuideScreen } from '../app/settings/SettingsFeatureGuide
 import { SettingsNoticeDetailScreen } from '../app/settings/SettingsNoticeDetailScreen'
 import { SettingsNoticesScreen } from '../app/settings/SettingsNoticesScreen'
 import { SettingsNoticeAlertsScreen } from '../app/settings/SettingsNoticeAlertsScreen'
+import { SettingsTextSizeScreen } from '../app/settings/SettingsTextSizeScreen'
+import { SettingsThemeScreen } from '../app/settings/SettingsThemeScreen'
 import { SettingsMvpGradeScreen } from '../app/settings/SettingsMvpGradeScreen'
 import { SettingsMvpGradeHistoryScreen } from '../app/settings/SettingsMvpGradeHistoryScreen'
 import { AppSettingsScreen } from '../app/settings/AppSettingsScreen'
@@ -51,6 +53,8 @@ const STACK_SCREENS = {
   SettingsAbout: SettingsAboutScreen,
   SettingsCharacters: SettingsCharactersScreen,
   BossManage: BossManageScreen,
+  SettingsTheme: SettingsThemeScreen,
+  SettingsTextSize: SettingsTextSizeScreen,
   SettingsNotices: SettingsNoticesScreen,
   SettingsNoticeAlerts: SettingsNoticeAlertsScreen,
   SettingsMvpGrade: SettingsMvpGradeScreen,

@@ -33,8 +33,8 @@ import { TaskProgressModal } from '../../components/organisms/TaskProgressModal/
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { useBottomSafeAreaPx } from '../../lib/safe-area'
 import { reloadTabStores } from './reload-tab-stores'
+import { SettingsActionBar } from './SettingsActionBar'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
@@ -48,9 +48,6 @@ export function SettingsCharactersScreen(): React.JSX.Element {
   // 컨트롤러에 실으면 그 객체가 ref 를 품어 읽는 자리마다 `react-hooks/refs` 에 걸린다.
   const scrollableRef = useAnimatedRef<ScrollView>()
   const [saveProgress, setSaveProgress] = useState<{ completed: number; total: number } | null>(null)
-  // 하단 액션 바가 안전영역을 먹는다(아래). 그 **안전영역** 은 인셋이 아니라 하한이 깔린 값이다
-  // 이 화면만 인셋으로 두면 하위 페이지들과 바닥 여백이 갈린다.
-  const bottomSafeAreaPx = useBottomSafeAreaPx()
   // 고정 바가 덮는 높이. 잰 값이 오기 전에는 0이라 마지막 행이 한 프레임 가려질 수 있지만, 그
   // 프레임은 바가 그려지는 바로 그 프레임이라 사용자가 스크롤을 시작하기 전이다.
   const [actionBarHeightPx, setActionBarHeightPx] = useState(0)
@@ -110,15 +107,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
         </View>
       </ScreenScroll>
 
-      {/* 스크롤 뷰의 형제이자 절대 배치라 굴러가지 않는다. 불투명해야 하는 것은 콘텐츠가 이
-          아래를 지나가기 때문이고, 색은 카드가 아니라 페이지 바닥이라 `bg-bg` 다. 안전영역은
-          이 바가 먹는다. 스크롤포트는 `ScreenScroll` 이 이미 자기 몫을 뺐다. */}
-      <View
-        testID="character-manage-action-bar"
-        className="absolute inset-x-0 bottom-0 bg-bg px-4 pt-3"
-        style={{ paddingBottom: bottomSafeAreaPx + 12 }}
-        onLayout={(event) => setActionBarHeightPx(event.nativeEvent.layout.height)}
-      >
+      <SettingsActionBar testID="character-manage-action-bar" onHeight={setActionBarHeightPx}>
         <Button
           variant="primary"
           onPress={() => {
@@ -131,7 +120,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
         >
           저장
         </Button>
-      </View>
+      </SettingsActionBar>
 
       {saveProgress !== null && (
         <TaskProgressModal

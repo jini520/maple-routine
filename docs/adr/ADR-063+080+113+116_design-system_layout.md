@@ -1,8 +1,8 @@
-# ADR-063+080+113 화면 틀 · 헤더 · 안전영역 · 글자 · 화면 배율
+# ADR-063+080+113+116 화면 틀 · 헤더 · 안전영역 · 글자 · 화면 배율
 
 > 🟢 유효
 > 옛 번호: ADR-099 · ADR-100 · ADR-120 결정 16 · 19 · ADR-131 · ADR-134 · ADR-135 · ADR-136 · ADR-139 · ADR-152 · ADR-196 · ADR-225 · ADR-232 · ADR-233 · ADR-322
-> 관련 소스: `components/templates/{ScreenScroll,PageHeader,EntryScroll}/` · `components/atoms/{Text,TextInput}/` · `lib/text-size.ts` · `theme/text-scale.ts` · `storage/text-size.ts` · `features/text-size/store.ts` · `app/settings/TextSizeModal.tsx` · `lib/safe-area.ts` · `lib/image-aspect.ts` · `theme/ThemeProvider.tsx` · `typography.cjs` · `android/.../PhysicalDensity.kt`
+> 관련 소스: `components/templates/{ScreenScroll,PageHeader,EntryScroll}/` · `components/atoms/{Text,TextInput}/` · `lib/text-size.ts` · `theme/text-scale.ts` · `storage/text-size.ts` · `features/text-size/store.ts` · `app/settings/SettingsTextSizeScreen.tsx` · `app/settings/TextSizeSlider.tsx` · `lib/safe-area.ts` · `lib/image-aspect.ts` · `theme/ThemeProvider.tsx` · `typography.cjs` · `android/.../PhysicalDensity.kt`
 
 ## 배경
 
@@ -185,7 +185,7 @@ iOS 는 글꼴 안의 Family 이름으로 찾아서 정적 파일을 쓰면 굵�
 
 - **시스템 배수는 받지 않는다.** `Text` · `TextInput` atom 이 모든 글자에 `allowFontScaling={false}` 를 단다.
   글자는 설계한 크기에 앱 설정 배수만 곱한 크기로 그려진다. 좁은 화면에서는 그 배수에 상한이 걸린다(결정 17).
-- **앱 설정은 네 단계다.** 설정 화면의 `글자 크기` 행에서 고른다([[ADR-052]] 결정 4).
+- **앱 설정은 네 단계다.** 설정 화면의 `글자 크기` 행이 여는 글자 크기 페이지에서 고른다([[ADR-052]] 결정 4). 고르는 모양은 아래 `글자 크기 페이지` 에 있다.
 
   | 단계(`TextSize`) | 이름 | 배수 |
   |---|---|---|
@@ -216,8 +216,30 @@ iOS 는 글꼴 안의 Family 이름으로 찾아서 정적 파일을 쓰면 굵�
 
 고른 단계는 `storage/text-size.ts` 에 저장한다. `features/text-size/store.ts` 가 부팅 때 읽어 배수를
 `theme/text-scale.ts` 의 한 칸 저장소에 놓고, atom 과 SVG 글자가 그 칸을 `useSyncExternalStore` 로 구독한다.
-설정에서 고르면 그 자리에서 모든 화면이 새 크기로 다시 그려진다. 한 칸 저장소를 따로 두는 이유는
+글자 크기 페이지에서 `적용` 을 누르면 그 자리에서 모든 화면이 새 크기로 다시 그려진다. 한 칸 저장소를 따로 두는 이유는
 `components/` 가 `features/` 를 가져오지 못하기 때문이다. 저장된 값이 없거나 모르는 값이면 기본이다.
+
+#### 글자 크기 페이지 (사용자 지정)
+
+`설정 > 글자 크기` 가 `SettingsTextSize` 페이지를 push 한다. 전에는 모달이었다. 테마와 함께 설정의 다른 하위 페이지와 같은 모양으로
+옮겼다(#749). 시안은 아티팩트 캔버스 `테마 모달 시안 (#749)` 의 `글자 크기 페이지 E` 와 `미리보기 P2 한 칸` 이다.
+
+- 위 카드는 `미리보기` 다. `card-inset` 칸 하나에 글자 역할 넷을 각자의 크기로 한 줄씩 쓴다. 화면 제목(18) · 행 이름과 본문(14) ·
+  배지와 보조 글자(12) · 위젯 제목(10)이고, 줄 사이는 12 다. 줄 오른쪽에는 그 단계에서 실제로 쓰는 크기를 숫자로 적는다.
+  글자마다 크기가 다르고 단계는 그 모두에 같은 배수를 곱한다는 것을 함께 보이려는 것이다. 문장 하나로 설명하면 `모든 글자가
+  이 크기로 보인다` 처럼 틀린 말이 되기 쉽다.
+- 아래 카드는 네 칸 슬라이더(`TextSizeSlider`)다. 양 끝에 작은 `가` 와 큰 `가` 를 두고, 눈금 아래에 단계 이름을 쓴다. 트랙은
+  폭을 네 칸으로 똑같이 나누고, 눈금은 칸 가운데에 선다. 손잡이를 끌면 손가락이 든 칸의 눈금으로 옮겨 가고, 칸을 지날 때마다 그
+  단계로 바뀌며 `selectionFeedback()` 촉각을 낸다([[ADR-059]] 결정 10). 칸(눈금과 단계 이름)을 누르면 그 단계로 간다. 가계부의
+  레벨 칸 슬라이더(`LevelRangeSlider`)와 같은 방식이다.
+- 슬라이더는 이미 쓰는 `react-native-gesture-handler` 와 `react-native-reanimated` 로 직접 그린다(사용자 지정). 새 라이브러리를
+  더하면 지문이 바뀌고, 네이티브 슬라이더는 눈금 점과 단계 이름을 그리지 못한다. 쓰는 곳이 이 페이지 하나라 `components/` 가 아니라
+  `app/settings/` 에 둔다([[ADR-060]] 결정 2).
+- 단계를 바꾸면 이 페이지만 그 크기로 다시 그려진다. 페이지를 `TextScaleScope` 로 감싸서, 그 안의 글자만 고른 배수를 받는다.
+  좁은 화면의 상한(결정 17)은 페이지 안에서도 그대로 걸린다.
+- 앱 전체에 적용하는 것은 화면 아래에 고정한 `적용` 버튼이다. 누르면 저장하고 적용한 뒤 설정으로 돌아간다. 고른 단계가 지금
+  단계와 같으면 꺼진다. 눈금을 지날 때마다 앱 전체를 다시 그리면 끄는 동안 화면이 버벅인다.
+- `적용` 을 누르지 않고 나가면 고른 단계는 버린다. 묻지 않는다.
 
 ### 결정 12. 안드로이드는 `enablePreparedTextLayout` 을 켠다
 
@@ -331,7 +353,9 @@ densityDpi = 실제 밀도 ÷ 153.33 × 160 × (지금 densityDpi ÷ 공장값 d
 | `src/__tests__/typography-policy.test.ts` | 결정 10: 글자 크기 · 굵기 이름이 모두 표에 있고 임의 크기를 쓰지 않으며 표의 모든 크기가 줄 높이를 갖는지 본다 |
 | `components/atoms/Text/__tests__/font-scaling.test.ts` · `Text.test.tsx` · `TextInput/__tests__/TextInput.test.tsx` | 결정 11: 시스템 배수를 언제나 끄는지, 클래스로 준 크기와 줄 높이에 앱 배수를 곱하는지, 크기가 없는 글자는 그대로 두는지, 단계를 바꾸면 다시 그리는지 본다 |
 | `features/text-size/__tests__/store.spec.ts` | 결정 11: 저장된 단계를 부팅 때 읽어 배수를 놓는지, 저장된 값이 없거나 모르는 값이면 기본인지, 고르면 저장과 배수가 함께 바뀌는지 본다 |
-| `app/settings/__tests__/TextSizeModal.test.tsx` | 결정 11: 네 단계를 고를 수 있고, 고르면 미리보기 글과 화면이 바로 새 크기로 바뀌는지 본다 |
+| `app/settings/__tests__/SettingsTextSizeScreen.test.tsx` | 결정 11: 단계를 바꾸면 미리보기 글자와 숫자만 새 크기가 되고 저장된 단계는 그대로인지, `적용` 이 같은 단계에서 꺼지는지, `적용` 이 저장하고 돌아가는지 본다 |
+| `app/settings/__tests__/TextSizeSlider.test.tsx` | 결정 11: 눈금 · 단계 이름을 누르면 그 단계를 주는지, 끌어서 눈금을 지날 때만 부르는지, 고른 단계를 다시 누르면 부르지 않는지, 접근성 증감 동작을 본다 |
+| `theme/__tests__/text-scale.test.tsx` | 결정 11: `TextScaleScope` 안의 글자만 준 배수를 받고, 상한은 그 안에서도 걸리는지 본다 |
 | `src/__tests__/font-scaling-policy.test.ts` | 결정 11: `Text` · `TextInput` 을 직접 가져오는 곳이 atom 뿐인지, SVG 글자가 배수를 곱하는지 본다 |
 | `lib/__tests__/text-size.test.ts` | 결정 17: 폭 320 · 360 · 402 에서 네 단계의 배수가 상한에 맞게 잘리는지, 넓은 화면에서는 고른 배수를 그대로 주는지 본다 |
 | 실기기 확인 | 결정 15 · 16: 갤럭시 Z Flip3 에서 화면 크기를 기본 · 키움으로 두고 켰을 때와 켠 채 바꿨을 때 앱이 화면을 꽉 채우는지, 글자 끝이 잘리지 않는지 본다. JVM 테스트 환경이 없어 Kotlin 은 기기로 확인한다 |
@@ -341,3 +365,4 @@ densityDpi = 실제 밀도 ÷ 153.33 × 160 × (지금 densityDpi ÷ 공장값 d
 - ADR-063 (2026-10-19): 옛 ADR-099 · 100 · 131 · 134 · 135 · 136 · 139 · 152 · 196 · 225 · 232 · 233 · 322 와 옛 ADR-120 결정 16 · 19 를 합쳐 처음 작성
 - ADR-080 (2026-10-21): 결정 11 을 다시 썼다. 시스템 글자 크기를 끄고, 앱 안의 글자 크기 설정(네 단계)이 모든 글자에 배수를 곱한다. `fixed` 를 없앴다(#633)
 - ADR-113 (2026-10-28): 결정 15 · 16 · 17 을 더했다. 안드로이드 dp 의 실제 길이를 아이폰 pt 에 맞추고, 화면 폭 하한 320 과 글자 배수 상한(폭 ÷ 360)을 둔다(#750)
+- ADR-116 (2026-10-28): 결정 11 에 글자 크기 페이지를 더했다. 모달 대신 페이지에서 고르고, 페이지 안에서만 미리 바꾼 뒤 `적용` 으로 앱 전체에 적용한다(#749)
