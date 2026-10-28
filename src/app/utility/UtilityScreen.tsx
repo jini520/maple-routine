@@ -93,7 +93,7 @@ function ToolCard(props: {
       // 그러지 않으면 스크린리더가 **판매** **분배금** **계산기** 를 따로 읽는다.
       aria-label={props.name}
       onPress={props.onPress}
-      className="h-16 flex-row items-center overflow-hidden rounded-[14px] pr-[18px]"
+      className="h-20 flex-row items-center overflow-hidden rounded-[14px] pr-[18px]"
       style={{ backgroundColor: props.palette.tint, paddingLeft: ILLUSTRATION_LANE }}
     >
       <View
@@ -127,11 +127,11 @@ export function UtilityScreen(): React.JSX.Element {
           <ToolCard
             name={ITEM_SPLIT_TOOL_NAME}
             palette={TOOL_PALETTES.itemSplit[mode]}
-            // 원본 400×560. 카드(64)보다 크게 그려 위아래를 잘라 내고, 계산기 화면 부분이 보이게 둔다.
+            // 원본 400×560. 카드(80)보다 크게 그려 위아래를 잘라 내고, 계산기 화면 부분이 보이게 둔다.
             illustration={
               <Image
                 source={itemSplitIllustration}
-                style={{ position: 'absolute', left: 6, top: -22, width: 107, height: 150 }}
+                style={{ position: 'absolute', left: 6, top: -14, width: 107, height: 150 }}
               />
             }
             onPress={() => navigation.navigate('UtilityItemSplit')}
@@ -139,11 +139,11 @@ export function UtilityScreen(): React.JSX.Element {
           <ToolCard
             name={BOSS_PROFIT_CALCULATOR_TOOL_NAME}
             palette={TOOL_PALETTES.bossProfit[mode]}
-            // 원본 정사각. 왕관과 눈이 보이도록 위에서 36 잘라 낸다.
+            // 원본 정사각. 왕관과 눈이 보이도록 위에서 28 잘라 낸다.
             illustration={
               <Image
                 source={bossProfitIllustration}
-                style={{ position: 'absolute', left: 4, top: -36, width: 120, height: 120 }}
+                style={{ position: 'absolute', left: 4, top: -28, width: 120, height: 120 }}
               />
             }
             onPress={() => navigation.navigate('UtilityBossProfitCalculator')}
