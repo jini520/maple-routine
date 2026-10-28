@@ -2,6 +2,7 @@ import { Pressable, View } from 'react-native'
 
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { boxShadowOf, type ShadowLayer } from '../../../lib/shadow'
+import { selectionFeedback } from '../../../native/haptics'
 import { useThemeAppearance } from '../../../theme/context'
 import { MinusIcon, PlusIcon, Text } from '../../atoms'
 
@@ -39,6 +40,10 @@ export function Stepper(props: {
   const canDecrease = props.value > min
   const canIncrease = props.max === undefined || props.value < props.max
   const buttonStyle = { boxShadow: boxShadowOf(definition.shadowColor, BUTTON_SHADOW) }
+  const step = (next: number) => {
+    selectionFeedback()
+    props.onChange(next)
+  }
 
   const pressableValue = props.onPressValue !== undefined
   const value = (
@@ -60,7 +65,7 @@ export function Stepper(props: {
           role="button"
           aria-label={`${props.label} 감소`}
           disabled={!canDecrease}
-          onPress={() => props.onChange(props.value - 1)}
+          onPress={() => step(props.value - 1)}
           hitSlop={HIT_SLOP}
           // RN 의 `disabled` 는 모양을 바꾸지 않는다. 흐리지 않으면 막힌 버튼이 멀쩡해 보인다.
           style={canDecrease ? buttonStyle : { ...buttonStyle, opacity: 0.4 }}
@@ -87,7 +92,7 @@ export function Stepper(props: {
           role="button"
           aria-label={`${props.label} 증가`}
           disabled={!canIncrease}
-          onPress={() => props.onChange(props.value + 1)}
+          onPress={() => step(props.value + 1)}
           hitSlop={HIT_SLOP}
           style={canIncrease ? buttonStyle : { ...buttonStyle, opacity: 0.4 }}
           className={`${size.button} items-center justify-center rounded-full bg-control-thumb`}

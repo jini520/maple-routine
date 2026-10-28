@@ -6,6 +6,7 @@ import { fireEvent } from '@testing-library/react-native'
 
 import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
 import { rnThemeAppearancePort } from '../../../../native/adapters/rn-theme-appearance'
+import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
 import { __resetThemeAppearanceForTest } from '../../../../theme/appearance-store'
 import { resolveControlColors } from '../../../../theme/theme-vars'
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
@@ -102,5 +103,38 @@ describe('Stepper', () => {
 
     expect(flattenStyle(getByTestId('stepper-track').props.style).backgroundColor).toBe(control.track)
     expect(flattenStyle(getByLabelText(늘리기).props.style).backgroundColor).toBe(control.thumb)
+  })
+})
+
+// 값이 바뀔 때만 손끝이 답한다. 끝값에서 막힌 버튼은 바뀌는 것이 없다.
+describe('Stepper 의 촉각', () => {
+  const select = jest.fn(async () => undefined)
+
+  beforeEach(() => {
+    select.mockClear()
+    setHapticsPort({ tap: async () => {}, select })
+  })
+
+  afterEach(__resetNativePortsForTest)
+
+  it('− · + 로 값이 바뀔 때마다 한 번씩 난다', async () => {
+    const { getByLabelText } = await renderAtom(
+      <Stepper label="스우 파티원 수" value={3} max={6} onChange={jest.fn()} />,
+    )
+
+    await fireEvent.press(getByLabelText(늘리기))
+    await fireEvent.press(getByLabelText(줄이기))
+
+    expect(select).toHaveBeenCalledTimes(2)
+  })
+
+  it('막힌 버튼을 누르면 안 난다', async () => {
+    const { getByLabelText } = await renderAtom(
+      <Stepper label="스우 파티원 수" value={6} max={6} onChange={jest.fn()} />,
+    )
+
+    await fireEvent.press(getByLabelText(늘리기))
+
+    expect(select).not.toHaveBeenCalled()
   })
 })
