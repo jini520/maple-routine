@@ -358,7 +358,7 @@ Preferences `lastRunBundleVersion` 과 지금 번들 버전을 비교한다(`con
 | `data/__tests__/feature-guides.spec.ts` | 결정 14: 파일과 목록이 일대일인지, id 중복, 그룹, 노트가 가리키는 안내와 마디가 실재하는지 본다 |
 | `app/settings/__tests__/SettingsFeatureGuideListScreen.test.tsx` · `SettingsFeatureGuideScreen.test.tsx` | 결정 14: 탭 순서와 감춤, 여러 그룹 안내, 목차, 마디 스크롤, 이미지, 두 라우트, 없는 `guideId` 를 본다 |
 
-| `app/settings/__tests__/AppSettingsScreen.test.tsx` · `SettingsScreen.test.tsx` · `SettingsNoticeAlertsScreen.test.tsx` · `AppUpdateSection.test.tsx` · `SettingsReleaseNotesScreen.test.tsx` · `SettingsMvpGradeScreens.test.tsx` | 결정 15: 카드 안의 행 · 글 · 묶음 칸에 선이 없는지, `등급 변경` 에 테두리가 없는지 본다 |
+| `app/settings/__tests__/SettingsRow.test.tsx` · `SettingsLinkRow.test.tsx` · `AppSettingsScreen.test.tsx` · `SettingsScreen.test.tsx` · `NoticeSkeleton.test.tsx` · `SettingsNoticeAlertsScreen.test.tsx` · `AppUpdateSection.test.tsx` · `SettingsReleaseNotesScreen.test.tsx` · `SettingsMvpGradeScreens.test.tsx` | 결정 15: 행 · 글 · 묶음이 `card-inset` 칸인지, 카드 안에 선이 없는지, 글 줄 스켈레톤도 선이 없는지, `등급 변경` 에 테두리가 없는지 본다 |
 
 결정 13 의 모달 동작과 완료 판정은 업데이트 모달 테스트가 본다([[ADR-012]]).
 

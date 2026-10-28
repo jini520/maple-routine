@@ -60,37 +60,38 @@ export function SettingsMvpGradeHistoryScreen(props: {
         <View className="gap-4 px-4 pb-4" testID="screen-SettingsMvpGradeHistory">
           {account !== undefined && (
             <>
-              <Card className="px-5 py-4">
-                <View className="gap-3">
+              <Card className="gap-2 p-3">
+                <View className="px-1 pt-0.5">
                   {account.summary === null ? (
                     <Text className="text-sm text-text">메이플 ID</Text>
                   ) : (
                     <AccountRow summary={account.summary} portraitUrl={account.portraitUrl} />
                   )}
-                  {current !== undefined && (
-                    <View testID="mvp-grade-now" className="gap-1.5 border-t border-border pt-3">
-                      <View className="flex-row items-center justify-between gap-2">
-                        <Text className="text-xs text-text-muted">지금 등급</Text>
-                        {current.grade === null ? (
-                          <Text className="text-xs text-text-muted">등급 없음</Text>
-                        ) : (
-                          <MvpPlate grade={current.grade} height={24} />
-                        )}
-                      </View>
-                      {current.grade !== null && (
-                        <Text className="self-end text-xs text-text-muted">{mvpBenefitText(current.grade)}</Text>
-                      )}
-                      <Text className="self-end text-11 text-text-muted">{formatDayLabel(current.startDate)}부터</Text>
-                    </View>
-                  )}
-                  <Pressable
-                    role="button"
-                    onPress={() => setSheet({ kind: 'change' })}
-                    className="items-center rounded-full border border-border px-4 py-2"
-                  >
-                    <Text className="text-13 font-semibold text-text">등급 변경</Text>
-                  </Pressable>
                 </View>
+                {current !== undefined && (
+                  <View testID="mvp-grade-now" className="gap-1.5 rounded-[10px] bg-card-inset px-3 py-2.5">
+                    <View className="flex-row items-center justify-between gap-2">
+                      <Text className="text-xs text-text-muted">지금 등급</Text>
+                      {current.grade === null ? (
+                        <Text className="text-xs text-text-muted">등급 없음</Text>
+                      ) : (
+                        <MvpPlate grade={current.grade} height={18} />
+                      )}
+                    </View>
+                    {current.grade !== null && (
+                      <Text className="self-end text-xs text-text-muted">{mvpBenefitText(current.grade)}</Text>
+                    )}
+                    <Text className="self-end text-11 text-text-muted">{formatDayLabel(current.startDate)}부터</Text>
+                  </View>
+                )}
+                {/* 테두리 알약 대신 칸 색으로 칠한다. 테두리를 쓰지 않는 원칙이 버튼에도 같다. */}
+                <Pressable
+                  role="button"
+                  onPress={() => setSheet({ kind: 'change' })}
+                  className="items-center rounded-full bg-card-inset px-4 py-2"
+                >
+                  <Text className="text-13 font-semibold text-text">등급 변경</Text>
+                </Pressable>
               </Card>
 
               <View className="gap-2">

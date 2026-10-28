@@ -6,6 +6,7 @@
 import { renderAtom } from '../../../components/__tests__/render-atom'
 import { noticeBannerRatio } from '../../../features/notice/notice-display'
 import { NoticeBannerCardSkeleton, NoticeBannerSkeleton, NoticeLinesSkeleton } from '../NoticeSkeleton'
+import { topLinesIn } from './row-lines'
 
 const HIDDEN = { includeHiddenElements: true } as const
 
@@ -48,6 +49,13 @@ describe('NoticeLinesSkeleton', () => {
     expect(getAllByTestId('notice-skeleton-date', HIDDEN)[0]).toHaveStyle({
       height: lineHeightOf('xs'),
     })
+  })
+
+  // 결과(`NoticeLines`)가 칸으로 갈리므로 자리도 칸으로 갈린다. 선이 남으면 도착할 때 경계 모양이 바뀐다.
+  it('줄 사이에 선을 긋지 않는다', async () => {
+    const view = await renderAtom(<NoticeLinesSkeleton lines={3} />)
+
+    expect(topLinesIn(view.toJSON())).toBe(0)
   })
 })
 

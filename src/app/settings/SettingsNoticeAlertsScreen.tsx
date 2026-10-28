@@ -21,7 +21,7 @@ import { anySubscribed, NOTICE_TOPICS } from '../../features/notice/topics'
 import { usePartyAlarmSettingsStore } from '../../features/party-appointments/alarm-settings'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { openNotificationSettings } from './notification-settings-link'
-import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
+import { SETTINGS_CARD_CLASS, SETTINGS_NOTE_CELL_CLASS, SETTINGS_SWITCH_ROW_CLASS } from './row-class'
 
 /**
  * 아직 못 만든 알림들. **보이되 못 켠다.**
@@ -125,8 +125,8 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
       <View className="gap-3 px-4 pb-4" testID="screen-SettingsNoticeAlerts">
         {/* 전체 스위치. 이것이 꺼져 있으면 아래 넷을 아예 안 그린다 - 못 쓰는 스위치를 흐리게
             세워 두면 사용자가 그것을 눌러 보고 나서야 못 쓴다는 것을 안다. */}
-        <Card className="px-6">
-          <View className="flex-row items-center py-4">
+        <Card className={SETTINGS_CARD_CLASS}>
+          <View className={SETTINGS_SWITCH_ROW_CLASS}>
             <Text className="shrink text-sm text-text">알림 받기</Text>
             <Switch
               on={on}
@@ -143,8 +143,8 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
 
         {/* 못 켠 이유를 그대로 적는다. 스위치가 조용히 안 켜지는 것보다 낫다. */}
         {failure !== null && (
-          <Card className="px-6">
-            <View className="py-4">
+          <Card className={SETTINGS_CARD_CLASS}>
+            <View className={SETTINGS_NOTE_CELL_CLASS}>
               <Text className="text-sm text-error-ink">알림을 켜지 못했어요</Text>
               <Text className="text-xs text-text-disabled">{failure}</Text>
             </View>
@@ -155,14 +155,14 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
             안내가 그 안에 있으면 화면이 아무 말도 안 하고 사용자는 스위치가 안 켜지는 것만 본다.
             iOS 는 여기서 팝업을 다시 못 띄우므로 OS 설정으로 보내는 것 말고 할 수 있는 일이 없다. */}
         {deviceBlocked && (
-          <Card className="px-6">
+          <Card className={SETTINGS_CARD_CLASS}>
             <Pressable
               role="button"
               aria-label="알림 권한 설정 열기"
               onPress={() => {
                 void openNotificationSettings(Platform.OS).catch(() => undefined)
               }}
-              className="py-4"
+              className={SETTINGS_NOTE_CELL_CLASS}
             >
               <Text className="text-sm text-error-ink">기기에서 알림이 꺼져 있어요</Text>
               <Text className="text-xs text-text-disabled">
@@ -174,11 +174,11 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
 
         {on && <SectionLabel>일반</SectionLabel>}
         {on && (
-          <Card className="px-6">
-            {NOTICE_TOPICS.map((topic, index) => (
+          <Card className={SETTINGS_CARD_CLASS}>
+            {NOTICE_TOPICS.map((topic) => (
             <View
               key={topic.key}
-              className={`flex-row items-center py-4 ${index === 0 ? '' : SETTINGS_ROW_DIVIDER_CLASS}`}
+              className={SETTINGS_SWITCH_ROW_CLASS}
             >
               <Text className="shrink text-sm text-text">{topic.label}</Text>
               <Switch
@@ -197,8 +197,8 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
 
         {on && <SectionLabel>스케줄러</SectionLabel>}
         {on && (
-          <Card className="px-6">
-            <View className="flex-row items-center py-4">
+          <Card className={SETTINGS_CARD_CLASS}>
+            <View className={SETTINGS_SWITCH_ROW_CLASS}>
               <Text className="shrink text-sm text-text">파티 스케줄 알림</Text>
               <Switch
                 on={partyAlarmOn}
@@ -210,7 +210,7 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
               />
             </View>
             {SCHEDULER_ALERTS.map((alert) => (
-              <View key={alert.key} className={`flex-row items-center py-4 ${SETTINGS_ROW_DIVIDER_CLASS}`}>
+              <View key={alert.key} className="flex-row items-center rounded-[10px] bg-card-inset p-3.5">
                 <Text className="shrink text-sm text-text-disabled">{alert.label}</Text>
                 {/* 스위치 자리에 `준비 중` 을 세운다. 못 켜는 스위치를 그려 두면 사용자가 눌러
                     보고 나서야 못 쓴다는 것을 알고, 그 사이 화면은 고장으로 읽힌다. */}

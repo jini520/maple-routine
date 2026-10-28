@@ -23,6 +23,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { AppUpdateSection } from './AppUpdateSection'
+import { SETTINGS_CARD_CLASS } from './row-class'
 import { SettingsRow } from './SettingsRow'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
@@ -72,7 +73,7 @@ export function SettingsAboutScreen(): React.JSX.Element {
           "법적 문서를 두 벌로 만들지 않는다"는 원칙은 그대로다. 창을 닫으면 이 화면으로 돌아오므로
           외부 링크 행(`SettingsLinkRow`)이 아니라 chevron 행이다.
         */}
-        <Card className="px-6">
+        <Card className={SETTINGS_CARD_CLASS}>
           <SettingsRow label="개인정보 처리방침" onPress={() => openInAppBrowser(PRIVACY_URL)} />
         </Card>
       </View>

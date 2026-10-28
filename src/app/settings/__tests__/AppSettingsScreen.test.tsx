@@ -23,6 +23,7 @@ import packageJson from '../../../../package.json'
 import { formatAppVersion } from '../../../lib/app-version'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { AppSettingsScreen } from '../AppSettingsScreen'
+import { topLinesIn } from './row-lines'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
@@ -217,6 +218,12 @@ describe('AppSettingsScreen', () => {
     expect(within(cards[2]).getByText('MVP 등급')).toBeTruthy()
     expect(labelsIn(cards[3])).toEqual(['스케줄 관리 방법'])
     expect(labelsIn(cards[4])).toEqual(['계정 및 데이터', '앱 정보'])
+  })
+
+  it('카드 안의 행 사이에 선을 긋지 않는다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    expect(topLinesIn(view.toJSON())).toBe(0)
   })
 
   // 카드 경계만으로는 여기서 무리가 갈린다는 말밖에 못 한다. 그 무리가 무엇인지 알려면 행 이름을

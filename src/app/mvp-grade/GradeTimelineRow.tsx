@@ -54,7 +54,8 @@ export function GradeTimelineRow(props: {
           </Text>
         </View>
       ) : (
-        <MvpPlate grade={entry.grade} height={18} />
+        // 18 이면 폭이 87 이라 칸 안에서 날짜가 줄바꿈된다.
+        <MvpPlate grade={entry.grade} height={14} />
       )}
       {props.onPress !== undefined && (
         <ChevronRightIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
