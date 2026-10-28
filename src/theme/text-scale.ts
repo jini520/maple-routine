@@ -4,7 +4,7 @@
  * `components/` 는 `features/` 를 가져오지 못해서 스토어 대신 이 칸을 구독한다. 초기값 1 은 저장된 단계를
  * 읽기 전의 기본 단계다.
  */
-import { useSyncExternalStore } from 'react'
+import { createContext, createElement, useContext, useSyncExternalStore, type ReactNode } from 'react'
 import { useWindowDimensions } from 'react-native'
 
 import { capTextScale } from '../lib/text-size'
@@ -30,10 +30,24 @@ export function setTextScale(scale: number): void {
   for (const listener of [...listeners]) listener()
 }
 
+/** 안쪽 글자만 다른 배수로 그리는 자리. 없으면 `null` 이라 지금 배수를 쓴다. */
+const ScopedTextScale = createContext<number | null>(null)
+
+/**
+ * 안쪽 글자에 지금 배수 대신 `scale` 을 곱하는 스코프. 글자 크기 페이지가 적용 전의 단계를 보여 줄 때 쓴다.
+ *
+ * @example <TextScaleScope scale={TEXT_SIZE_SCALE[draft]}>{page}</TextScaleScope>
+ */
+export function TextScaleScope(props: { scale: number; children: ReactNode }): React.JSX.Element {
+  return createElement(ScopedTextScale.Provider, { value: props.scale }, props.children)
+}
+
 /** 글자 크기에 곱할 배수. 고른 단계에 화면 폭으로 상한을 걸고, 단계나 폭이 바뀌면 다시 그리게 하는 훅. */
 export function useTextScale(): number {
   const { width } = useWindowDimensions()
-  return capTextScale(useSyncExternalStore(subscribe, getTextScale), width)
+  const scoped = useContext(ScopedTextScale)
+  const current = useSyncExternalStore(subscribe, getTextScale)
+  return capTextScale(scoped ?? current, width)
 }
 
 /** 테스트 격리용. */

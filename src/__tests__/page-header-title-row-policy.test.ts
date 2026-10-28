@@ -10,7 +10,7 @@
 //
 // ## 경계는 **화면인가** 다
 //
-// 같은 글자 스타일을 모달(`ThemeModal`·`TrackingModeModal`·`DisconnectConfirm`)과 진입 화면
+// 같은 글자 스타일을 모달(`TrackingModeModal`·`DisconnectConfirm`)과 진입 화면
 // (`ApiKeyForm`·`CharacterSetupScreen`)도 쓰는데, **그 제목은 페이지 헤더가
 // 아니다**. 모달은 자기 판의 머리이고 진입 화면에는 헤더 줄 자체가 없다(범위표의
 // `제외`와 같은 경계다).

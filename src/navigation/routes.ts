@@ -174,6 +174,10 @@ export type RootStackParamList = {
   SettingsCharacters: undefined
   /** 보스 관리. 스케줄러 하위 탭이던 것이 설정에서 여는 하위 페이지가 됐다 */
   BossManage: undefined
+  /** 테마. 고르면 이 페이지만 바뀌고 `적용` 으로 앱 전체에 적용한다 */
+  SettingsTheme: undefined
+  /** 글자 크기. 고르면 이 페이지만 바뀌고 `적용` 으로 앱 전체에 적용한다 */
+  SettingsTextSize: undefined
   /**
    * 공지 목록. **분류를 받아 그것만 그린다.**
    *
@@ -340,6 +344,18 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/settings/characters',
     screen: 'SettingsCharactersScreen',
     target: { kind: 'push', route: 'SettingsCharacters' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/theme',
+    screen: 'SettingsThemeScreen',
+    target: { kind: 'push', route: 'SettingsTheme' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/text-size',
+    screen: 'SettingsTextSizeScreen',
+    target: { kind: 'push', route: 'SettingsTextSize' },
     origin: 'rn',
   },
   {
