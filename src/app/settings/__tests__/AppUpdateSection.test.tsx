@@ -16,6 +16,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 import type { LiveUpdateStatus } from '../../../features/live-update/store'
 
 import { renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
+import { topLinesIn } from './row-lines'
 import {
   AppUpdateSection,
   type AppUpdateSectionState,
@@ -63,6 +64,12 @@ function render(
 }
 
 describe('AppUpdateSection', () => {
+  it('표시 행과 버튼 사이에 선을 긋지 않는다', async () => {
+    const view = await render()
+
+    expect(topLinesIn(view.toJSON())).toBe(0)
+  })
+
 // `currentVersion === null` 이면 폴백 값을 쓴다. 그 경로만
   // 남아 호출부가 값을 넘긴다(`SettingsAboutScreen`). 값을 지어내지 않고 분기 하나로 좁힌 것이다.
   it('currentVersion 이 없으면 fallbackVersion 을 쓴다', async () => {

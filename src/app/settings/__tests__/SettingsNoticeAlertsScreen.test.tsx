@@ -4,6 +4,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { Platform } from 'react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { topLinesIn } from './row-lines'
 import { useNoticeStore } from '../../../features/notice/store'
 import { usePartyAlarmSettingsStore } from '../../../features/party-appointments/alarm-settings'
 import { NOTICE_TOPICS } from '../../../features/notice/topics'
@@ -95,6 +96,13 @@ describe('전체 스위치', () => {
     for (const topic of NOTICE_TOPICS) {
       expect(view.getByLabelText(`${topic.label} 알림`)).toBeTruthy()
     }
+  })
+
+  it('스위치 행 사이에 선을 긋지 않는다', async () => {
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.getByLabelText(`${NOTICE_TOPICS[0].label} 알림`)).toBeTruthy()
+    expect(topLinesIn(view.toJSON())).toBe(0)
   })
 
   it('끄는 쪽으로 부른다', async () => {

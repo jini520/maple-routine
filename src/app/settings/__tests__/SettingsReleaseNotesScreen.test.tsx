@@ -20,7 +20,8 @@ import type { ReleaseNote } from '../../../types'
 import { useLiveUpdateStore } from '../../../features/live-update/store'
 import packageJson from '../../../../package.json'
 import { baseAppVersion } from '../../../lib/app-version'
-import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, 기본테마, type AtomElement } from '../../../components/__tests__/render-atom'
+import { resolveCardInset } from '../../../theme/theme-vars'
 import { SettingsReleaseNotesScreen } from '../SettingsReleaseNotesScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
@@ -166,6 +167,27 @@ describe('SettingsReleaseNotesScreen', () => {
     expect(textsIn(groups[0])).toContain('새 기능')
     expect(textsIn(groups[1])).toContain('나아진 것')
     expect(textsIn(groups[2])).toContain('고친 것')
+  })
+
+  // 버전 줄은 카드 머리이고 묶음이 칸 하나씩이다. 칸 색이 묶음 사이 경계다.
+  it('묶음마다 card-inset 칸에 담는다', async () => {
+    setNotes([
+      {
+        version: '1.0.4',
+        date: '2026-08-20',
+        items: [
+          { category: 'feature', text: '새 기능' },
+          { category: 'fix', text: '고친 것' },
+        ],
+      },
+    ])
+    const view = await renderOverlay(<SettingsReleaseNotesScreen />)
+
+    const groups = view.getAllByTestId('release-note-group')
+    expect(groups).toHaveLength(2)
+    for (const group of groups) {
+      expect(flattenStyle(group.props.style).backgroundColor).toBe(resolveCardInset(기본테마))
+    }
   })
 
   // `ThemeSelector` 의 카테고리 섹션과 같은 규칙. 거른 결과가 0이면 헤더째 감춘다.

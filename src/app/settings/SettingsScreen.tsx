@@ -41,7 +41,7 @@ import { NoticeLines } from './NoticeLines'
 import { SectionTitle } from './SectionTitle'
 import { SettingsLinkRow } from './SettingsLinkRow'
 import { SettingsRow } from './SettingsRow'
-import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
+import { SETTINGS_CARD_CLASS } from './row-class'
 import { CONTACT_EMAIL, contactDeviceOf, contactMailUrl } from './contact-mail'
 import { storeReviewUrl } from './store-review-link'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
@@ -301,37 +301,31 @@ export function SettingsScreen(): React.JSX.Element {
               제목은 `가이드 및 문의` 다(사용자 지정). 앞 둘이 가이드이고 뒤 둘이 문의다. */}
           <View className="gap-2">
             <SectionTitle>가이드 및 문의</SectionTitle>
-            <Card className="px-6" testID="settings-card">
+            <Card className={SETTINGS_CARD_CLASS} testID="settings-card">
               {/* `기능 설명` 이 `개발 노트` 위다. 이 앱을 어떻게 쓰나 가 무엇이 바뀌었나 보다
                   자주 묻는 질문이고 설명의 원천도 이쪽이다. */}
               <SettingsRow
                 label="기능 설명"
                 onPress={() => navigation.navigate('SettingsFeatureGuideList')}
               />
-              <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-                <SettingsRow
-                  label="개발 노트"
-                  onPress={() => navigation.navigate('SettingsReleaseNotes')}
-                />
-              </View>
+              <SettingsRow
+                label="개발 노트"
+                onPress={() => navigation.navigate('SettingsReleaseNotes')}
+              />
               {/* 앱을 떠나 메일·스토어로 가는 행 둘이라 오른쪽이 chevron 이 아니라 외부 링크
                   표식이다. chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는 앱을 떠나 버린다.
 
                   문의는 응원보다 자주 써서 위다. 메일 앱이 안 열리면 주소를 적은 토스트로만
                   알린다(복사는 없다). */}
-              <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-                <SettingsLinkRow
-                  label="문의하기"
-                  href={contactMailUrl(contactDeviceOf(Platform, displayedVersion))}
-                  onOpenFailed={() =>
-                    useToastStore.getState().showError(`메일 앱을 열지 못했습니다. ${CONTACT_EMAIL} 으로 보내 주세요`)
-                  }
-                />
-              </View>
+              <SettingsLinkRow
+                label="문의하기"
+                href={contactMailUrl(contactDeviceOf(Platform, displayedVersion))}
+                onOpenFailed={() =>
+                  useToastStore.getState().showError(`메일 앱을 열지 못했습니다. ${CONTACT_EMAIL} 으로 보내 주세요`)
+                }
+              />
               {/* 평생 한 번 누르는 것이라 맨 아래다. */}
-              <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-                <SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href={storeReviewUrl(Platform.OS)} />
-              </View>
+              <SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href={storeReviewUrl(Platform.OS)} />
             </Card>
           </View>
         </View>

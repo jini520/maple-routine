@@ -28,7 +28,9 @@ jest.mock('../../../lib/scheduler/reset-clock', () => ({
 var mockNavigate: jest.Mock
 mockNavigate = jest.fn()
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, 기본테마 } from '../../../components/__tests__/render-atom'
+import { resolveCardInset } from '../../../theme/theme-vars'
+import { topLinesIn } from './row-lines'
 import { useMvpGradeSettingsStore, type MvpGradeAccountView } from '../../../features/mvp-grade/settings-store'
 import { SettingsMvpGradeScreen } from '../SettingsMvpGradeScreen'
 import { SettingsMvpGradeHistoryScreen } from '../SettingsMvpGradeHistoryScreen'
@@ -95,6 +97,12 @@ describe('SettingsMvpGradeScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('SettingsMvpGradeHistory', { accountId: 'A' })
   })
 
+  it('ID 카드 안의 줄 사이에 선을 긋지 않는다', async () => {
+    const view = await renderOverlay(<SettingsMvpGradeScreen />)
+
+    expect(topLinesIn(view.getByTestId('mvp-grade-account-A'))).toBe(0)
+  })
+
   it('변경을 누르면 등급 변경 시트가 열리고 저장하면 이력을 적는다', async () => {
     const view = await renderOverlay(<SettingsMvpGradeScreen />)
 
@@ -132,6 +140,19 @@ describe('SettingsMvpGradeHistoryScreen', () => {
     expect(top.getByLabelText('MVP 다이아')).toBeTruthy()
     expect(top.getByText('경매장 수수료 3% · 스타포스 10% 할인')).toBeTruthy()
     expect(top.getByText('9월 17일 (목)부터')).toBeTruthy()
+  })
+
+  // 테두리를 쓰지 않는 원칙이 버튼에도 같다. 테두리 알약 대신 칸 색으로 칠한다.
+  it('지금 등급은 칸에 담고, 등급 변경은 테두리 없이 card-inset 으로 칠한다', async () => {
+    const view = await 그리기()
+
+    expect(flattenStyle(view.getByTestId('mvp-grade-now').props.style).backgroundColor).toBe(resolveCardInset(기본테마))
+    let button = view.getByText('등급 변경') as { props: Record<string, unknown>; parent: unknown } | null
+    while (button !== null && button.props.role !== 'button') button = button.parent as typeof button
+    const style = flattenStyle(button?.props.style)
+    expect(style.borderWidth ?? 0).toBe(0)
+    expect(style.backgroundColor).toBe(resolveCardInset(기본테마))
+    expect(topLinesIn(view.toJSON())).toBe(0)
   })
 
   it('이력은 최신부터 서고, 해가 바뀌는 자리에 연도 줄이 서고, 빈 줄은 등급 없음이다', async () => {

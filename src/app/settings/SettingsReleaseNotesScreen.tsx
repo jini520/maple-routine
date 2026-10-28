@@ -60,8 +60,9 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
           <EmptyState icon={FileTextIcon} title="아직 기록된 변경 내역이 없습니다" />
         ) : (
           RELEASE_NOTES.map((note) => (
-            <Card key={note.version} testID="release-note" className="gap-3 p-4">
-              <View className="flex-row items-center gap-2">
+            <Card key={note.version} testID="release-note" className="gap-1.5 px-2 pb-2 pt-3.5">
+              {/* 버전 줄은 칸 없이 카드 머리다. 아래 묶음 칸이 모두 이 버전의 것이다. */}
+              <View className="flex-row items-center gap-2 px-2 pb-1">
                 <Text
                   testID="release-note-version"
                   style={TABULAR_NUMS}
@@ -85,7 +86,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                 if (items.length === 0) return null
 
                 return (
-                  <View key={category} testID="release-note-group" className="gap-1">
+                  <View key={category} testID="release-note-group" className="gap-1 rounded-[10px] bg-card-inset px-3 py-2.5">
                     <Text className="text-xs font-semibold text-text-muted">
                       {RELEASE_NOTE_CATEGORY_LABELS[category]}
                     </Text>

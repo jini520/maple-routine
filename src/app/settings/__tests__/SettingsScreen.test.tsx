@@ -24,7 +24,9 @@ import packageJson from '../../../../package.json'
 import { formatAppVersion } from '../../../lib/app-version'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
-import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, 기본테마, type AtomElement } from '../../../components/__tests__/render-atom'
+import { resolveCardInset } from '../../../theme/theme-vars'
+import { topLinesIn } from './row-lines'
 import { SettingsScreen } from '../SettingsScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 import { refreshNoticeKinds } from '../../../features/notice/notice-feed'
@@ -510,6 +512,18 @@ describe('SettingsScreen: 소식 갈래', () => {
     await waitFor(() => expect(view.getAllByTestId('notice-row')).toHaveLength(8))
     expect(view.queryByText('제목 app-4')).toBeNull()
     expect(view.queryByText('제목 update-3')).toBeNull()
+  })
+
+  it('글 줄과 읽는 행은 card-inset 칸이고 그 사이에 선을 긋지 않는다', async () => {
+    mockedReadNoticeCopy.mockResolvedValue([1, 2, 3].map((n) => notice(`app-${n}`, 'app')))
+
+    const view = await renderOverlay(<SettingsScreen />)
+
+    await waitFor(() => expect(view.getAllByTestId('notice-row')).toHaveLength(3))
+    for (const row of view.getAllByTestId('notice-row')) {
+      expect(flattenStyle(row.props.style).backgroundColor).toBe(resolveCardInset(기본테마))
+    }
+    expect(topLinesIn(view.toJSON())).toBe(0)
   })
 
   // 사본이 먼저 서고, 받은 분류만 받은 것으로 바뀐다.

@@ -15,6 +15,7 @@ import {
   기본테마,
   type AtomElement,
 } from '../../../components/__tests__/render-atom'
+import { resolveCardInset } from '../../../theme/theme-vars'
 import { SettingsRow } from '../SettingsRow'
 
 type Rendered = Awaited<ReturnType<typeof renderAtom>>
@@ -79,5 +80,12 @@ describe('SettingsRow', () => {
     const view = await renderAtom(<SettingsRow label="연결 해제" onPress={jest.fn()} danger />)
 
     expect(flattenStyle(view.getByText('연결 해제').props.style).color).toBe(기본테마.errorInk)
+  })
+
+  // 행이 카드 안의 칸이다. 칸 색이 행 사이 경계라 카드가 선을 긋지 않는다.
+  it('행은 card-inset 칸으로 칠한다', async () => {
+    const view = await renderAtom(<SettingsRow label="테마" onPress={jest.fn()} />)
+
+    expect(flattenStyle(rowOf(view, '테마').props.style).backgroundColor).toBe(resolveCardInset(기본테마))
   })
 })

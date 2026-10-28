@@ -13,8 +13,10 @@ import { Linking } from 'react-native'
 import {
   flattenStyle,
   renderAtom,
+  기본테마,
   type AtomElement,
 } from '../../../components/__tests__/render-atom'
+import { resolveCardInset } from '../../../theme/theme-vars'
 import { SettingsLinkRow } from '../SettingsLinkRow'
 import { SettingsRow } from '../SettingsRow'
 
@@ -79,5 +81,11 @@ describe('SettingsLinkRow', () => {
     expect(flattenStyle(view.getByText('링크행').props.style)).toEqual(
       flattenStyle(view.getByText('버튼행').props.style),
     )
+  })
+
+  it('행은 SettingsRow 와 같은 card-inset 칸이다', async () => {
+    const view = await renderAtom(<SettingsLinkRow label="문의하기" href="mailto:x" />)
+
+    expect(flattenStyle(linkOf(view, '문의하기').props.style).backgroundColor).toBe(resolveCardInset(기본테마))
   })
 })

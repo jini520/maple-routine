@@ -14,7 +14,7 @@ import type { LiveUpdateStatus, LiveUpdateStore } from '../../features/live-upda
 import { formatAppVersion } from '../../lib/app-version'
 
 import { Badge, Button, Card, Text } from '../../components/atoms'
-import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
+import { SETTINGS_CARD_CLASS, SETTINGS_ROW_CLASS } from './row-class'
 
 /** 이 카드가 **읽는** 것. core 스토어에서 그대로 뽑아 두 벌이 되지 않게 한다. */
 export type AppUpdateSectionState = Pick<
@@ -75,8 +75,8 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
         : 'text-sm text-text-muted'
 
   return (
-    <Card className="px-6">
-      <View className="flex-row items-center justify-between py-4">
+    <Card className={SETTINGS_CARD_CLASS}>
+      <View className={SETTINGS_ROW_CLASS}>
         <Text className="text-sm font-medium text-text">현재 버전</Text>
         <View className="flex-row items-center gap-2">
           {state.channel === 'beta' && (
@@ -86,15 +86,14 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
         </View>
       </View>
 
-      <View
-        className={`${SETTINGS_ROW_DIVIDER_CLASS} flex-row items-center justify-between py-4`}
-      >
+      <View className={SETTINGS_ROW_CLASS}>
         <Text className="text-sm font-medium text-text">상태</Text>
         <Text className={highlight}>{statusText[state.status]}</Text>
       </View>
 
       {!isUnsupported && (
-        <View className={`${SETTINGS_ROW_DIVIDER_CLASS} py-4`}>
+        // 버튼은 칸이 아니라 칸 아래에 선다. 누르는 것이 표시 행과 같은 칸에 담기면 값처럼 읽힌다.
+        <View className="pb-0.5 pt-1.5">
           <Button
             variant="primary"
             onPress={() => {

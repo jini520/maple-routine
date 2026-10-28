@@ -3,14 +3,14 @@
  *
  * **결과와 같은 치수로 서는 것이 전부다.** 어긋나면 내용이 도착할 때 아래가 밀리고, 그 밀림을
  * 없애려고 만든 부품이라 그때 존재 이유가 없다. 배너는 `NoticeBannerArt` 와 같은 비율, 글 줄은
- * `NoticeLines` 와 같은 줄 수·줄 높이·구분선이다. 그 둘을 고칠 때 이 파일도 함께 고칠 것.
+ * `NoticeLines` 와 같은 줄 수·줄 높이·칸이다. 그 둘을 고칠 때 이 파일도 함께 고칠 것.
  */
 import { View } from 'react-native'
 
 import { Card, Skeleton } from '../../components/atoms'
 import { noticeBannerRatio } from '../../features/notice/notice-display'
 import type { NoticeKind } from '../../types/notice'
-import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
+import { NOTICE_LINE_CLASS, SETTINGS_CARD_CLASS } from './row-class'
 
 /**
  * `NoticeLines` 한 줄의 글자 줄 높이(px). `typography.cjs` 의 `sm`·`xs` 와 같아야 한다.
@@ -41,7 +41,7 @@ export function NoticeBannerSkeleton(props: { kind: NoticeKind }): React.JSX.Ele
 /** 한 줄. 제목과 날짜가 각자 자기 글자의 줄 높이를 상자로 든다. */
 function SkeletonRow(): React.JSX.Element {
   return (
-    <View testID="notice-skeleton-row" className="gap-0.5 py-3">
+    <View testID="notice-skeleton-row" className={NOTICE_LINE_CLASS}>
       <View testID="notice-skeleton-title" style={{ height: TITLE_HEIGHT }} className="justify-center">
         {/* 막대는 줄 높이보다 낮다. 상자를 꽉 채우면 글자가 아니라 덩어리로 읽힌다. */}
         <Skeleton className="h-3 w-4/5" />
@@ -60,11 +60,9 @@ function SkeletonRow(): React.JSX.Element {
  */
 export function NoticeLinesSkeleton(props: { lines: number }): React.JSX.Element {
   return (
-    <Card testID="notice-lines-skeleton" role="status" aria-busy className="px-5">
+    <Card testID="notice-lines-skeleton" role="status" aria-busy className={SETTINGS_CARD_CLASS}>
       {Array.from({ length: props.lines }, (_, index) => (
-        <View key={index} className={index === 0 ? '' : SETTINGS_ROW_DIVIDER_CLASS}>
-          <SkeletonRow />
-        </View>
+        <SkeletonRow key={index} />
       ))}
     </Card>
   )

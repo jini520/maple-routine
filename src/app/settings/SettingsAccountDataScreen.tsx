@@ -30,7 +30,7 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { CacheClearConfirm } from './CacheClearConfirm'
 import { DisconnectConfirm } from './DisconnectConfirm'
 import { SignOutConfirm } from './SignOutConfirm'
-import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
+import { SETTINGS_CARD_CLASS } from './row-class'
 import { SettingsRow } from './SettingsRow'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
@@ -115,7 +115,7 @@ export function SettingsAccountDataScreen(
             지우는 것은 넥슨 로그인 하나이고 API 키와 내부 데이터는 남는다.
           */}
           {showSignOut && (
-            <Card className="px-6">
+            <Card className={SETTINGS_CARD_CLASS}>
               <SettingsRow
                 label="넥슨 로그아웃"
                 onPress={() => setIsSignOutOpen(true)}
@@ -124,7 +124,7 @@ export function SettingsAccountDataScreen(
             </Card>
           )}
 
-          <Card className="px-6" testID="settings-card">
+          <Card className={SETTINGS_CARD_CLASS} testID="settings-card">
             <SettingsRow
               label="캐시 데이터 삭제"
               onPress={() => setIsCacheClearOpen(true)}
@@ -138,19 +138,17 @@ export function SettingsAccountDataScreen(
                 </Text>
               }
             />
-            <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-              <SettingsRow
-                label="연결 해제"
-                onPress={() => setIsDisconnectOpen(true)}
-                danger
-                showChevron={false}
-              />
-            </View>
+            <SettingsRow
+              label="연결 해제"
+              onPress={() => setIsDisconnectOpen(true)}
+              danger
+              showChevron={false}
+            />
           </Card>
         </View>
       </ScreenScroll>
 
-      {/* 모달은 카드 밖이자 스크롤 상자 밖의 형제다. 카드 안에 두면 구분선이 하나 더 그려진다. */}
+      {/* 모달은 카드 밖이자 스크롤 상자 밖의 형제다. 화면 위에 뜨는 것이라 어느 카드에도 속하지 않는다. */}
       <SignOutConfirm
         isOpen={isSignOutOpen}
         isSigningOut={isSigningOut}

@@ -36,7 +36,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { SettingsRow } from './SettingsRow'
-import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
+import { SETTINGS_CARD_CLASS } from './row-class'
 import { SectionTitle } from './SectionTitle'
 import { TextSizeModal } from './TextSizeModal'
 import { ThemeModal } from './ThemeModal'
@@ -93,7 +93,7 @@ export function AppSettingsScreen(): React.JSX.Element {
               다르다 - 나머지는 앱 안에서만 도는 값이고 이것은 기기에 알림이 뜨느냐를 정한다. */}
           <View className="gap-2">
             <SectionTitle>알림</SectionTitle>
-            <Card className="px-6" testID="app-settings-card">
+            <Card className={SETTINGS_CARD_CLASS} testID="app-settings-card">
               <SettingsRow
                 label="알림 설정"
                 onPress={() => navigation.navigate('SettingsNoticeAlerts')}
@@ -104,7 +104,7 @@ export function AppSettingsScreen(): React.JSX.Element {
           {/* 값을 고르는 행. 배지(현재값) + chevron 병기. */}
           <View className="gap-2">
             <SectionTitle>캐릭터 · 테마 · 글자 크기</SectionTitle>
-            <Card className="px-6" testID="app-settings-card">
+            <Card className={SETTINGS_CARD_CLASS} testID="app-settings-card">
               {/* 캐릭터 관리가 위다. 보스 수익과 스케줄러 둘이 빈 상태에서 미는 자리라 테마보다
                   자주 열린다. 배지는 추적 캐릭터 수이고 아직 못 읽었으면(`null`) 그리지 않는다 -
                   `null` 은 0개가 아니다. 단위가 명 이 아니라 개 인 것은 캐릭터가 사람이 아니어서다. */}
@@ -116,30 +116,24 @@ export function AppSettingsScreen(): React.JSX.Element {
                 }
               />
               {/* 스케줄러 하위 바에서 빠진 보스 관리. 캐릭터 관리 다음 줄이다(사용자 지정). */}
-              <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-                <SettingsRow label="보스 관리" onPress={() => navigation.navigate('BossManage')} />
-              </View>
-              <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-                <SettingsRow
-                  label="테마"
-                  onPress={() => setThemeOpen(true)}
-                  rightContent={<ValueBadge>{theme}</ValueBadge>}
-                />
-              </View>
-              <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-                <SettingsRow
-                  label="글자 크기"
-                  onPress={() => setTextSizeOpen(true)}
-                  rightContent={<ValueBadge>{TEXT_SIZE_LABELS[textSize]}</ValueBadge>}
-                />
-              </View>
+              <SettingsRow label="보스 관리" onPress={() => navigation.navigate('BossManage')} />
+              <SettingsRow
+                label="테마"
+                onPress={() => setThemeOpen(true)}
+                rightContent={<ValueBadge>{theme}</ValueBadge>}
+              />
+              <SettingsRow
+                label="글자 크기"
+                onPress={() => setTextSizeOpen(true)}
+                rightContent={<ValueBadge>{TEXT_SIZE_LABELS[textSize]}</ValueBadge>}
+              />
             </Card>
           </View>
 
           {/* 계정마다 받은 등급이라 캐릭터 바로 아래 선다. 수수료와 스타포스 비용이 이 값을 따른다. */}
           <View className="gap-2">
             <SectionTitle>MVP 등급</SectionTitle>
-            <Card className="px-6" testID="app-settings-card">
+            <Card className={SETTINGS_CARD_CLASS} testID="app-settings-card">
               <SettingsRow label="MVP 등급" onPress={() => navigation.navigate('SettingsMvpGrade')} />
             </Card>
           </View>
@@ -149,7 +143,7 @@ export function AppSettingsScreen(): React.JSX.Element {
               한 카드에 두면 제목이 둘을 다 덮는 말이어야 하는데, 그 말이 `설정` 밖에 없다. */}
           <View className="gap-2">
             <SectionTitle>스케줄</SectionTitle>
-            <Card className="px-6" testID="app-settings-card">
+            <Card className={SETTINGS_CARD_CLASS} testID="app-settings-card">
               <SettingsRow
                 label="스케줄 관리 방법"
                 onPress={() => setTrackingModeOpen(true)}
@@ -161,7 +155,7 @@ export function AppSettingsScreen(): React.JSX.Element {
           {/* 화면이 넘어가는 행. 대표값(있으면) + chevron. */}
           <View className="gap-2">
             <SectionTitle>앱 데이터</SectionTitle>
-            <Card className="px-6" testID="app-settings-card">
+            <Card className={SETTINGS_CARD_CLASS} testID="app-settings-card">
               <SettingsRow
                 label="계정 및 데이터"
                 onPress={() => navigation.navigate('SettingsAccountData')}
@@ -172,13 +166,11 @@ export function AppSettingsScreen(): React.JSX.Element {
                   </SummaryValue>
                 }
               />
-              <View className={SETTINGS_ROW_DIVIDER_CLASS}>
-                <SettingsRow
-                  label="앱 정보"
-                  onPress={() => navigation.navigate('SettingsAbout')}
-                  rightContent={<SummaryValue>{displayedVersion}</SummaryValue>}
-                />
-              </View>
+              <SettingsRow
+                label="앱 정보"
+                onPress={() => navigation.navigate('SettingsAbout')}
+                rightContent={<SummaryValue>{displayedVersion}</SummaryValue>}
+              />
             </Card>
           </View>
 

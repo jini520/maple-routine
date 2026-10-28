@@ -20,6 +20,7 @@ import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { GradeChangeSheet } from '../mvp-grade/MvpGradeSheets'
 import { GradeTimelineRow } from '../mvp-grade/GradeTimelineRow'
+import { SETTINGS_CARD_CLASS, SETTINGS_SWITCH_ROW_CLASS } from './row-class'
 
 export function SettingsMvpGradeScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
@@ -65,8 +66,8 @@ export function SettingsMvpGradeScreen(): React.JSX.Element {
             ))}
 
           <View className="gap-1.5">
-            <Card className="px-6">
-              <View className="flex-row items-center py-4">
+            <Card className={SETTINGS_CARD_CLASS}>
+              <View className={SETTINGS_SWITCH_ROW_CLASS}>
                 <Text className="shrink text-sm text-text">매주 등급 확인</Text>
                 <Switch
                   on={!weeklyOff}
@@ -110,8 +111,9 @@ function AccountCard(props: {
   )
 
   return (
-    <Card className="px-5 py-4" testID={`mvp-grade-account-${account.accountId}`}>
-      <View className="gap-2.5">
+    <Card className="gap-1.5 p-3" testID={`mvp-grade-account-${account.accountId}`}>
+      {/* ID 표시는 칸 없이 카드 머리다. 아래 두 칸이 이 ID 의 것이라는 것을 머리가 말한다. */}
+      <View className="px-1 pb-1 pt-0.5">
         {account.summary === null ? (
           <View className="flex-row items-center justify-between gap-2.5">
             <Text className="text-sm text-text">메이플 ID</Text>
@@ -120,20 +122,20 @@ function AccountCard(props: {
         ) : (
           <AccountRow summary={account.summary} portraitUrl={account.portraitUrl} trailing={change} />
         )}
-        {current !== undefined && (
-          <View className="border-t border-border pt-1">
-            <GradeTimelineRow entry={current} isNow connector={false} />
-          </View>
-        )}
-        <Pressable
-          role="button"
-          onPress={props.onOpenHistory}
-          className="flex-row items-center justify-between border-t border-border pb-0.5 pt-2.5"
-        >
-          <Text className="text-xs font-semibold text-text-muted">이력 {account.history.length}건 보기</Text>
-          <ChevronRightIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
-        </Pressable>
       </View>
+      {current !== undefined && (
+        <View className="rounded-[10px] bg-card-inset px-3">
+          <GradeTimelineRow entry={current} isNow connector={false} plateHeight={16} />
+        </View>
+      )}
+      <Pressable
+        role="button"
+        onPress={props.onOpenHistory}
+        className="flex-row items-center justify-between rounded-[10px] bg-card-inset px-3 py-2.5"
+      >
+        <Text className="text-xs font-semibold text-text-muted">이력 {account.history.length}건 보기</Text>
+        <ChevronRightIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
+      </Pressable>
     </Card>
   )
 }
