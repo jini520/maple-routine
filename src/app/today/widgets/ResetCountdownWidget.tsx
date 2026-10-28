@@ -106,19 +106,22 @@ function remainingOf(countdown: ResetCountdown, nowMs: number): number {
 /**
  * 한 줄. 라벨과 값이 한 줄에 서고, 값이 오른쪽 끝에 붙는다(세로로 훑을 때 숫자가 같은 x 에 온다).
  *
+ * 좁은 화면에서 값이 넘치면 글자를 줄여 한 줄에 맞춘다. 줄이지 않으면 라벨 쪽으로 밀려 `일일12시간` 처럼 붙는다.
+ *
  * 값의 `className` 이 남은 시간에 따라 갈리지 않는다. 임박을 색으로 말하지 않는 것이 이 타일의 규칙이다.
  */
 function Row(props: { cycle: CycleKey; countdown: ResetCountdown; nowMs: number }): React.JSX.Element {
   return (
-    <View testID={`reset-row-${props.cycle}`} className="flex-row items-baseline">
+    <View testID={`reset-row-${props.cycle}`} className="flex-row items-baseline gap-2">
       <Text testID={`reset-label-${props.cycle}`} className="text-[11.5px] text-text-muted">
         {CYCLE_LABEL[props.cycle]}
       </Text>
       <Text
         testID={`reset-value-${props.cycle}`}
         numberOfLines={1}
+        adjustsFontSizeToFit
         style={TABULAR_NUMS}
-        className="ml-auto text-[12.5px] font-bold text-text"
+        className="ml-auto shrink text-[12.5px] font-bold text-text"
       >
         {formatResetRemaining(remainingOf(props.countdown, props.nowMs), props.cycle === 'daily' ? 'second' : 'minute')}
       </Text>

@@ -57,7 +57,7 @@ export function TopValuableItemWidget({ data }: WidgetProps): React.JSX.Element 
     return (
       <View testID="widget-top-valuable-item" className="grow flex-row items-center gap-2.5 p-3">
         <IconSlot drop={null} />
-        <Text testID="top-item-empty" numberOfLines={2} className="flex-1 text-11 text-text-muted">
+        <Text testID="top-item-empty" numberOfLines={3} className="flex-1 text-11 text-text-muted">
           {EMPTY_NOTE}
         </Text>
       </View>
