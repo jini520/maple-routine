@@ -78,6 +78,10 @@ beforeEach(() => {
   jest.mocked(setManualTrackedContent).mockResolvedValue(undefined)
 })
 
+afterEach(() => {
+  jest.useRealTimers()
+})
+
 describe('seedManualTrackedContent', () => {
   it('최신 동기화 결과에서 등록된(isRegistered) 항목만 일간/주간 구분과 함께 저장한다', async () => {
     jest.mocked(syncSchedules).mockResolvedValue([
@@ -158,6 +162,9 @@ describe('seedManualTrackedContent', () => {
   })
 
   it('챌린저스 월드는 등록된 시즌 보스를 시드에 담는다', async () => {
+    // 메이린 시즌(06-18 ~ 09-16) 안에서 본다. 실제 오늘이면 시즌이 끝나 유효 기간 판정에 걸린다.
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-08-01T12:00:00+09:00'))
     jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(
         buildState({

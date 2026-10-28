@@ -70,6 +70,7 @@ import { rnHapticsPort } from '../native/adapters/rn-haptics'
 import { rnKeyboardPort } from '../native/adapters/rn-keyboard'
 import { rnNotificationsPort } from '../native/adapters/rn-notifications'
 import { rnSplashScreenPort } from '../native/adapters/rn-splash-screen'
+import { rnStoreReviewPort } from '../native/adapters/rn-store-review'
 import { rnStatusBarPort } from '../native/adapters/rn-status-bar'
 import { rnSystemBarsPort } from '../native/adapters/rn-system-bars'
 import { rnPushPort } from '../native/adapters/rn-push'
@@ -97,6 +98,7 @@ const WIRED: [string, () => unknown, unknown][] = [
   ['getLiveUpdatePort', nativePorts.getLiveUpdatePort, rnLiveUpdatePort],
   ['getBrowserPort', nativePorts.getBrowserPort, rnBrowserPort],
   ['getUuidPort', nativePorts.getUuidPort, rnUuidPort],
+  ['getStoreReviewPort', nativePorts.getStoreReviewPort, rnStoreReviewPort],
 ]
 
 function resetPorts(): void {
@@ -115,7 +117,7 @@ describe('installPorts()', () => {
       /^get[A-Za-z]+Port$/.test(key),
     )
 
-    expect(declared.length).toBe(17)
+    expect(declared.length).toBe(18)
     expect([...declared].sort()).toEqual(WIRED.map(([name]) => name).sort())
   })
 
