@@ -153,8 +153,9 @@ describe('알림 탭이 여는 공지 상세', () => {
 
 // 파티 약속 알림을 누르면 약속 화면으로 가서 그 회차의 상세를 연다.
 describe('알림 탭이 여는 약속 상세', () => {
+  // id 는 uuid 꼴이어야 한다. 아니면 저장소가 읽을 때 새 uuid 로 바꿔 알림의 id 와 어긋난다.
   const 약속 = {
-    id: 'a1',
+    id: '00000000-0000-4000-8000-000000000001',
     bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
     members: [],
     timeKst: '21:00',
@@ -166,7 +167,7 @@ describe('알림 탭이 여는 약속 상세', () => {
 
   it('앱이 열리기 전에는 붙들었다가 열리면 약속 화면으로 가서 상세를 연다', async () => {
     await setPartyAppointments([약속])
-    usePartyAppointmentOpenStore.getState().open({ appointmentId: 'a1', dateKey: '2099-01-01' })
+    usePartyAppointmentOpenStore.getState().open({ appointmentId: 약속.id, dateKey: '2099-01-01' })
     await render(<Harness />)
     expect(screen.queryByTestId('screen-Appointments')).toBeNull()
 
