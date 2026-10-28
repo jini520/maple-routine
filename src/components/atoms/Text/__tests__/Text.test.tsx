@@ -32,6 +32,14 @@ describe('Text: 시스템 글자 크기를 따르지 않는다', () => {
 })
 
 describe('Text: 앱 글자 배수를 크기와 줄 높이에 곱한다', () => {
+  it('좁은 화면에서는 화면 폭 ÷ 360 까지만 곱한다', async () => {
+    jest.spyOn(Dimensions, 'get').mockReturnValue({ width: 320, height: 640, scale: 3, fontScale: 1 })
+    setTextScale(1.2)
+    const { getByText } = await renderAtom(<Text className="text-sm">보스</Text>)
+
+    expect(flattenStyle(getByText('보스').props.style).fontSize).toBeCloseTo((14 * 320) / 360)
+  })
+
   it('className 으로 준 크기와 줄 높이에 곱한다', async () => {
     setTextScale(1.2)
     const { getByText } = await renderAtom(<Text className="text-sm font-semibold">보스</Text>)

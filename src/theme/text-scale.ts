@@ -5,6 +5,9 @@
  * 읽기 전의 기본 단계다.
  */
 import { useSyncExternalStore } from 'react'
+import { useWindowDimensions } from 'react-native'
+
+import { capTextScale } from '../lib/text-size'
 
 let current = 1
 const listeners = new Set<() => void>()
@@ -27,9 +30,10 @@ export function setTextScale(scale: number): void {
   for (const listener of [...listeners]) listener()
 }
 
-/** 글자 크기에 곱할 배수. 설정에서 단계를 바꾸면 그 자리에서 다시 그리게 하는 훅. */
+/** 글자 크기에 곱할 배수. 고른 단계에 화면 폭으로 상한을 걸고, 단계나 폭이 바뀌면 다시 그리게 하는 훅. */
 export function useTextScale(): number {
-  return useSyncExternalStore(subscribe, getTextScale)
+  const { width } = useWindowDimensions()
+  return capTextScale(useSyncExternalStore(subscribe, getTextScale), width)
 }
 
 /** 테스트 격리용. */
