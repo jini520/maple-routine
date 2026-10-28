@@ -335,7 +335,8 @@ Preferences `lastRunBundleVersion` 과 지금 번들 버전을 비교한다(`con
   14 로 줄였다. 명패 그림이 243×50 이라 시안의 좁은 칸에서 높이 18(폭 87)이면 `10월 1일 (목) 부터 · 지금` 이 줄바꿈됐기 때문이다.
   실기기에서 14 가 작다고 해 다시 키웠다. 높이는 `GradeTimelineRow` 의 `plateHeight` 로 줄마다 넘긴다.
 - 등급 이력 화면의 `지금 등급` 명패는 높이 24 에서 18 로 줄인다(사용자 지정). 24 는 너무 크다고 사용자가 지적했다.
-- 그림이 없는 일반 등급은 `MvpPlate` 가 그림 명패와 같은 높이 · 폭 비율(243:50) · 모서리 4 의 `surface-2` 판에 `일반` 을 적는다(사용자 지정).
+- 그림이 없는 일반 등급은 `MvpPlate` 가 그림 명패와 같은 높이 · 모서리 4 의 `surface-2` 판에 `일반` 을 적는다(사용자 지정). 폭은 글자와
+  좌우 여백 6 이 정한다. 그림 명패의 폭 비율까지 맞추면 짧은 글자 양옆이 너무 비었다(사용자 지적).
   전에는 넘겨받은 높이의 둥근 알약이었는데, 높이 14 에서 줄 높이 16 인 `text-11` 이 눌려 찌그러졌다. 그래서 판이 16 보다 낮으면 글자를
   `text-10`(줄 높이 15)으로 그린다. `Badge` 는 쓰지 않는다. `Badge` 는 둥근 알약이고 여백을 스스로 정해서 그림 명패와 모양을 맞출 수 없다.
 - 바꾸지 않는 것은 카드 위 제목 줄(`SectionTitle` · `NoticeSectionHeader`), 현재값 배지(`ValueBadge`), 스위치, 고지 네 줄이다.
@@ -363,7 +364,7 @@ Preferences `lastRunBundleVersion` 과 지금 번들 버전을 비교한다(`con
 | `app/settings/__tests__/SettingsFeatureGuideListScreen.test.tsx` · `SettingsFeatureGuideScreen.test.tsx` | 결정 14: 탭 순서와 감춤, 여러 그룹 안내, 목차, 마디 스크롤, 이미지, 두 라우트, 없는 `guideId` 를 본다 |
 
 | `app/settings/__tests__/SettingsRow.test.tsx` · `SettingsLinkRow.test.tsx` · `AppSettingsScreen.test.tsx` · `SettingsScreen.test.tsx` · `NoticeSkeleton.test.tsx` · `SettingsNoticeAlertsScreen.test.tsx` · `AppUpdateSection.test.tsx` · `SettingsReleaseNotesScreen.test.tsx` · `SettingsMvpGradeScreens.test.tsx` | 결정 15: 행 · 글 · 묶음이 `card-inset` 칸인지, 카드 안에 선이 없는지, 글 줄 스켈레톤도 선이 없는지, `등급 변경` 에 테두리가 없는지 본다 |
-| `components/molecules/MvpPlate/__tests__/MvpPlate.test.tsx` | 결정 15: 일반 판이 그림 명패와 같은 높이 · 폭 비율 · 모서리인지, 쓰는 높이(15 · 16 · 18 · 20)에서 글자 줄이 판보다 높지 않은지 본다 |
+| `components/molecules/MvpPlate/__tests__/MvpPlate.test.tsx` | 결정 15: 일반 판이 그림 명패와 같은 높이 · 모서리인지, 쓰는 높이(15 · 16 · 18 · 20)에서 글자 줄이 판보다 높지 않은지 본다 |
 
 결정 13 의 모달 동작과 완료 판정은 업데이트 모달 테스트가 본다([[ADR-012]]).
 

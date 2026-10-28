@@ -4,13 +4,12 @@ import { MvpPlate } from '../MvpPlate'
 
 describe('MvpPlate', () => {
   // 그림 명패와 판 모양이 다르면 이력 줄에서 일반만 다른 부품처럼 보인다.
-  it('일반은 그림 명패와 같은 높이 · 폭 비율 · 모서리의 글자 판이다', async () => {
+  it('일반은 그림 명패와 같은 높이 · 모서리의 글자 판이다', async () => {
     const view = await renderAtom(<MvpPlate grade="normal" height={15} />)
 
     const plate = flattenStyle(view.getByLabelText('MVP 일반').props.style)
     expect(view.getByText('일반')).toBeTruthy()
     expect(plate.height).toBe(15)
-    expect(plate.width).toBeCloseTo((15 * 243) / 50)
     expect(plate.borderRadius).toBe(4)
   })
 
