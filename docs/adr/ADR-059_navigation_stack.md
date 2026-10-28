@@ -171,8 +171,9 @@ RootStack
 
 같은 기준을 앱 전체에 쓴다. 페이지 뒤로(`BackButton`), 기간 이동 화살표, 떠 있는 버튼(`SpeedDial` ·
 `DropPriceFab`)은 `tapFeedback()` 을, `Segment` · 난이도 고르개(`DifficultyExpander`)와 `Switch` ·
-`CalendarGrid` · `CharacterRail` · 캐릭터 카드 순서 바꾸기는 `selectionFeedback()` 을 낸다. 이미 고른 값을 다시
-누르면 내지 않는다. 가능하면 부품 안에서 부른다. 호출하는 화면마다 적어 두면 새 화면에서 빠뜨리기 쉽다.
+`CalendarGrid` · `CharacterRail` · 캐릭터 카드 순서 바꾸기와 `Stepper` 의 `−` · `+` 는 `selectionFeedback()` 을 낸다.
+이미 고른 값을 다시 누르면 내지 않는다. `Stepper` 가 최솟값 · 최댓값에 닿으면 그쪽 버튼이 막혀 누름이 없으므로
+햅틱도 없다. 값이 바뀌지 않았는데 울리면 거짓 신호가 된다. 가능하면 부품 안에서 부른다. 호출하는 화면마다 적어 두면 새 화면에서 빠뜨리기 쉽다.
 
 안드로이드에서 `impactAsync` · `selectionAsync` 를 쓰지 않는다. 그쪽 구현은 진동 모터를 직접 돌려서, 사용자가
 시스템 설정에서 촉각 피드백을 꺼도 울린다. `Segment_Tick` 대신 `Clock_Tick` 을 쓰는 것은 `Segment_Tick` 이
@@ -257,6 +258,7 @@ iOS 26 이상에서는 바와 알약, ← 원판을 `expo-glass-effect` 의 `Gla
 | | 결정 10: 탭 이동과 ← 에서만 햅틱이 나고 활성 탭 재누름과 맨 위 스크롤에는 나지 않는지 본다 |
 | | 결정 11: 바의 폭과 높이가 `resolveBottomBarMetrics` 에서 오는지, 상한에서 가운데에 놓이는지 본다 |
 | | 결정 12: 유리가 앱 테마를 따르는지, ← 원판이 누름 영역 밖에 있는지, 폴백이 불투명 캡슐인지, 그림자가 `boxShadow` 로만 가는지, 라벨이 폰트 여백을 끄는지, 채우는 아이콘과 굵히는 아이콘이 나뉘는지 본다 |
+| `components/molecules/Stepper/__tests__/Stepper.test.tsx` | 결정 10: `−` · `+` 로 값이 바뀔 때마다 `selectionFeedback()` 이 한 번씩 나는지, 막힌 버튼을 누르면 안 나는지 본다 |
 | `components/organisms/BottomBar/__tests__/double-tap.test.ts` | 결정 9: 같은 항목 · 간격 안일 때만 더블탭으로 잡히는지, 간격 끝은 포함하고 그 다음은 제외하는지 본다 |
 | `navigation/__tests__/scroll-to-top.test.ts` · `hooks/__tests__/useScrollToTop.spec.tsx` | 결정 9: 이름으로 등록한 화면만 움직이는지, 옛 등록을 해제해도 새 등록이 남는지, 내비게이터 밖에서 예외를 던지지 않는지 본다 |
 | `lib/__tests__/bottom-bar-metrics.test.ts` | 결정 11: 402pt 에서 높이 72 인지, 폭이 넓을수록 높이가 줄지 않는지, 좁으면 최소 높이에서 멈추는지, 폭 상한에서 높이도 멈추는지, 남는 폭을 좌우로 나누는지, 콘텐츠 여백이 바 높이에서 나오는지 본다 |
