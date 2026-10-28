@@ -1,8 +1,8 @@
-# ADR-063+080 화면 틀 · 헤더 · 안전영역 · 글자
+# ADR-063+080+113 화면 틀 · 헤더 · 안전영역 · 글자 · 화면 배율
 
 > 🟢 유효
 > 옛 번호: ADR-099 · ADR-100 · ADR-120 결정 16 · 19 · ADR-131 · ADR-134 · ADR-135 · ADR-136 · ADR-139 · ADR-152 · ADR-196 · ADR-225 · ADR-232 · ADR-233 · ADR-322
-> 관련 소스: `components/templates/{ScreenScroll,PageHeader,EntryScroll}/` · `components/atoms/{Text,TextInput}/` · `lib/text-size.ts` · `theme/text-scale.ts` · `storage/text-size.ts` · `features/text-size/store.ts` · `app/settings/TextSizeModal.tsx` · `lib/safe-area.ts` · `lib/image-aspect.ts` · `theme/ThemeProvider.tsx` · `typography.cjs`
+> 관련 소스: `components/templates/{ScreenScroll,PageHeader,EntryScroll}/` · `components/atoms/{Text,TextInput}/` · `lib/text-size.ts` · `theme/text-scale.ts` · `storage/text-size.ts` · `features/text-size/store.ts` · `app/settings/TextSizeModal.tsx` · `lib/safe-area.ts` · `lib/image-aspect.ts` · `theme/ThemeProvider.tsx` · `typography.cjs` · `android/.../PhysicalDensity.kt`
 
 ## 배경
 
@@ -184,7 +184,7 @@ iOS 는 글꼴 안의 Family 이름으로 찾아서 정적 파일을 쓰면 굵�
 상태를 재현할 수 없어 화면을 확인할 수 없다. 그래서 시스템 배수는 끄고, 배수를 앱이 쥔다.
 
 - **시스템 배수는 받지 않는다.** `Text` · `TextInput` atom 이 모든 글자에 `allowFontScaling={false}` 를 단다.
-  어느 기기 · 어느 설정에서도 글자는 설계한 크기에 앱 설정 배수만 곱한 크기로 그려진다.
+  글자는 설계한 크기에 앱 설정 배수만 곱한 크기로 그려진다. 좁은 화면에서는 그 배수에 상한이 걸린다(결정 17).
 - **앱 설정은 네 단계다.** 설정 화면의 `글자 크기` 행에서 고른다([[ADR-052]] 결정 4).
 
   | 단계(`TextSize`) | 이름 | 배수 |
@@ -224,7 +224,7 @@ iOS 는 글꼴 안의 Family 이름으로 찾아서 정적 파일을 쓰면 굵�
 안드로이드에서 `지난 달` 이 `지난` 으로, `주간` 이 `주` 로 잘려 보였다. RN 이 글자를 잴 때 만든 레이아웃을
 버리고 그릴 때 `TextView` 가 줄바꿈을 다시 계산하는데, 두 번째 계산이 1px 더 필요하면 마지막 음절이 다음
 줄로 넘어가 한 줄 높이 상자에 가려진다. 이 플래그를 켜면 잰 레이아웃을 그대로 그려서 두 번째 계산이
-없어진다. `PreparedTextFlags.kt` 가 이 플래그만 켜고, `MainApplication` 이 `loadReactNative` 뒤에
+없어진다. `AppFeatureFlags.kt` 가 이 플래그를 켜고, `MainApplication` 이 `loadReactNative` 뒤에
 `dangerouslyForceOverride` 로 건다.
 
 그래서 라벨 폭을 값으로 고정하지 않는다. 플래그를 끄면 잘림이 다시 생기므로, 그때는 폭 고정도 함께
@@ -249,6 +249,70 @@ Expo 는 reanimated 를 4.5.1 로 고정하므로 `package.json` 의 `expo.insta
 `expo install --fix` 가 결함이 있는 버전으로 되돌린다. 칸을 다시 마운트하는 우회책은 쓰지 않는다. 빈도만
 줄 뿐 값이 지워지는 원인은 그대로 남기 때문이다.
 
+### 결정 15. 안드로이드는 1dp 의 실제 길이를 아이폰 1pt 에 맞춘다
+
+안드로이드는 화면의 실제 밀도와 상관없이 정해진 등급(480 이면 3배)으로 dp 를 픽셀로 바꾼다. 그래서 같은
+16dp 글자도 기기마다 실제 크기가 다르다. 갤럭시 Z Flip3 는 실제 밀도가 약 426ppi 인데 480 등급이라, 1dp 가
+0.179mm 다. 아이폰 17 Pro 의 1pt 는 0.166mm 라서, 같은 화면이 갤럭시에서 약 8% 크게 보였다(#750). 픽셀로
+잰 글자 크기는 두 기기가 같았으므로 글꼴 파일 탓이 아니다.
+
+그래서 앱이 쓰는 배율을 실제 밀도로 다시 계산한다. 글자만 줄이지 않고 dp 자체를 고치므로 글자 · 아이콘 · 여백이
+함께 아이폰과 같은 실제 크기가 된다. 계산과 적용은 `PhysicalDensity.kt` 한 곳에 있다.
+
+- **context 를 만들 때 `densityDpi` 를 덮어쓴다.** `MainApplication` 과 `MainActivity` 의 `attachBaseContext` 가
+  `createConfigurationContext` 로 감싼다. 이미 만든 `DisplayMetrics` 를 나중에 고쳐 쓰면 시스템이 액티비티를 띄운
+  직후 되돌리고, `react-native-screens` 처럼 그 값을 직접 읽는 라이브러리가 화면을 작게 잡았다. 설정으로 덮어쓰면
+  시스템 설정이 바뀌어도 그 값이 남는다.
+- **RN 의 화면 지표는 따로 맞춘다.** RN 은 레이아웃 배율을 `Display.getRealMetrics` 에서 읽는데, 그 값은 context 와
+  상관없이 시스템 배율이다. 그래서 `DisplayMetricsHolder` 에 고친 배율을 넣는다. Fabric 은 시작할 때 한 번 배율을
+  받으므로 `loadReactNative` 앞에서 넣는다. 키보드 높이를 재는 `react-native-keyboard-controller` 는
+  `Resources.getSystem()` 을 읽으므로 그 값도 맞추고, 시스템 설정이 바뀌면 다시 맞춘다.
+- **RN 플래그 `enableFontScaleChangesUpdatingLayout` 을 끈다.** 켜 두면 RN 이 루트 뷰를 만들 때와 설정이 바뀔 때
+  화면 지표를 시스템 값으로 다시 읽어 고친 배율을 되돌린다. 이 플래그는 시스템 글자 크기 변경을 레이아웃에
+  반영하는 일을 하는데, 앱은 시스템 글자 크기를 따르지 않으므로(결정 11) 필요 없다. `AppFeatureFlags.kt` 가 끈다.
+- **앱을 켠 채 화면 크기를 바꾸면 프로세스를 다시 띄운다.** 앱 context 와 RN 은 시작할 때 받은 배율을 바꾸지
+  못한다. 새로 뜬 액티비티의 배율이 앱 context 와 다르면 `MainActivity` 가 앱을 다시 시작한다. 그대로 두면 화면이
+  85% 크기로만 그려졌다.
+
+```
+densityDpi = 실제 밀도 ÷ 153.33 × 160 × (지금 densityDpi ÷ 공장값 densityDpi)
+```
+
+- **기준은 아이폰 17 Pro 다.** 460ppi 에 3배라 1인치에 153.33pt 다(사용자 지정).
+- **실제 밀도는 `DisplayMetrics.xdpi` 와 `ydpi` 의 평균이다.** 하드웨어 값이라 화면 크기 설정에 따라 바뀌지 않는다.
+- **사용자가 바꾼 화면 크기는 살린다.** 삼성 `화면 크기` 같은 시스템 확대는 `densityDpi` 를 바꾼다. 지금 값을
+  공장값(`DENSITY_DEVICE_STABLE`)으로 나눈 비율을 곱해 그 확대를 그대로 둔다. 아이폰도 `디스플레이 확대` 를 앱이
+  끌 수 없으므로, 두 플랫폼 모두 시스템 확대를 따르는 것으로 맞춘다.
+- **실제 밀도가 이상하면 덮어쓰지 않는다.** 실제 밀도를 틀리게 알려 주는 기기가 있다. `xdpi` 와 `ydpi` 가 10%
+  넘게 다르거나, 계산한 값이 공장값의 0.75~1.25배를 벗어나면 시스템 값을 그대로 쓴다. 결정 16 의 하한은 이때도 건다.
+
+아이폰은 pt 가 이미 기준이라 할 일이 없다. 네이티브 변경이라 OTA 로는 바꿀 수 없다.
+
+### 결정 16. 화면 폭은 320 아래로 내려가지 않는다
+
+시스템 확대를 크게 키우면 앱이 쓰는 화면 폭이 줄어 배치가 깨진다. 그래서 안드로이드는 결정 15 의 값이 화면
+폭을 320dp 보다 좁게 만들면 `densityDpi` 를 폭이 320 이 되는 값에서 멈춘다. 확대는 그 한도까지만 받는다.
+
+아이폰은 `디스플레이 확대` 를 앱이 막을 수 없다. 그래서 모든 화면은 폭 320 에서 깨지지 않게 만든다. 두 플랫폼을
+이 폭 하나로 확인한다.
+
+### 결정 17. 글자 배수는 화면 폭 ÷ 360 을 넘지 않는다
+
+화면 폭이 좁은데 글자 크기 설정까지 키우면 한 줄 라벨이 넘치고 값이 서로 붙는다. 그래서 atom 이 곱하는
+배수에 상한을 둔다.
+
+```
+글자 배수 = min(설정에서 고른 배수, 화면 폭 ÷ 360)
+```
+
+화면 폭을 글자 배수로 나눈 값이 360 아래로 내려가지 않는다. 다시 말해 어떤 설정에서도 글자는 폭 360 화면의
+기본 크기 글자보다 빽빽하게 놓이지 않는다. 넓은 화면에서는 고른 배수가 그대로 들어간다. 폭은 RN 의
+`useWindowDimensions()` 로 읽으므로 두 플랫폼이 같은 계산을 한다. 아이폰 `디스플레이 확대` 도 폭을 줄이므로
+같은 상한에 걸린다.
+
+상한은 `theme/text-scale.ts` 의 `useTextScale()` 이 건다. atom 과 SVG 글자가 모두 이 훅으로 배수를 받으므로
+한 곳에서 걸면 모든 글자에 걸린다. 계산은 `lib/text-size.ts` 의 `capTextScale` 이다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -269,8 +333,11 @@ Expo 는 reanimated 를 4.5.1 로 고정하므로 `package.json` 의 `expo.insta
 | `features/text-size/__tests__/store.spec.ts` | 결정 11: 저장된 단계를 부팅 때 읽어 배수를 놓는지, 저장된 값이 없거나 모르는 값이면 기본인지, 고르면 저장과 배수가 함께 바뀌는지 본다 |
 | `app/settings/__tests__/TextSizeModal.test.tsx` | 결정 11: 네 단계를 고를 수 있고, 고르면 미리보기 글과 화면이 바로 새 크기로 바뀌는지 본다 |
 | `src/__tests__/font-scaling-policy.test.ts` | 결정 11: `Text` · `TextInput` 을 직접 가져오는 곳이 atom 뿐인지, SVG 글자가 배수를 곱하는지 본다 |
+| `lib/__tests__/text-size.test.ts` | 결정 17: 폭 320 · 360 · 402 에서 네 단계의 배수가 상한에 맞게 잘리는지, 넓은 화면에서는 고른 배수를 그대로 주는지 본다 |
+| 실기기 확인 | 결정 15 · 16: 갤럭시 Z Flip3 에서 화면 크기를 기본 · 키움으로 두고 켰을 때와 켠 채 바꿨을 때 앱이 화면을 꽉 채우는지, 글자 끝이 잘리지 않는지 본다. JVM 테스트 환경이 없어 Kotlin 은 기기로 확인한다 |
 
 ## 번호 기록
 
 - ADR-063 (2026-10-19): 옛 ADR-099 · 100 · 131 · 134 · 135 · 136 · 139 · 152 · 196 · 225 · 232 · 233 · 322 와 옛 ADR-120 결정 16 · 19 를 합쳐 처음 작성
 - ADR-080 (2026-10-21): 결정 11 을 다시 썼다. 시스템 글자 크기를 끄고, 앱 안의 글자 크기 설정(네 단계)이 모든 글자에 배수를 곱한다. `fixed` 를 없앴다(#633)
+- ADR-113 (2026-10-28): 결정 15 · 16 · 17 을 더했다. 안드로이드 dp 의 실제 길이를 아이폰 pt 에 맞추고, 화면 폭 하한 320 과 글자 배수 상한(폭 ÷ 360)을 둔다(#750)

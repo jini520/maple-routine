@@ -3,6 +3,7 @@ import com.facebook.react.common.assets.ReactFontManager
 import com.facebook.react.internal.featureflags.ReactNativeFeatureFlags
 
 import android.app.Application
+import android.content.Context
 import android.content.res.Configuration
 
 import com.facebook.react.PackageList
@@ -17,6 +18,10 @@ import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ExpoReactHostFactory
 
 class MainApplication : Application(), ReactApplication {
+
+  override fun attachBaseContext(base: Context) {
+    super.attachBaseContext(PhysicalDensity.wrap(base))
+  }
 
   override val reactHost: ReactHost by lazy {
     ExpoReactHostFactory.getDefaultReactHost(
@@ -39,10 +44,11 @@ class MainApplication : Application(), ReactApplication {
     } catch (e: IllegalArgumentException) {
       ReleaseLevel.STABLE
     }
+    // RN 이 화면 배율을 처음 읽기 전에 걸어야 Fabric 이 고친 배율로 시작한다
+    PhysicalDensity.syncReactNative(this)
     loadReactNative(this)
-    // 글자를 두 번 계산하지 않게 한다. 릴리스 등급 오버라이드가 loadReactNative 안에서 걸리므로
-    // 그 뒤에 덮어야 한다.
-    ReactNativeFeatureFlags.dangerouslyForceOverride(PreparedTextFlags())
+    // 릴리스 등급 오버라이드가 loadReactNative 안에서 걸리므로 그 뒤에 덮어야 한다.
+    ReactNativeFeatureFlags.dangerouslyForceOverride(AppFeatureFlags())
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
   }
 

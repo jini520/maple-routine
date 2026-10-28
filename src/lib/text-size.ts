@@ -21,3 +21,17 @@ export const TEXT_SIZE_LABELS: Record<TextSize, string> = {
 export function isTextSize(value: string): value is TextSize {
   return (TEXT_SIZES as readonly string[]).includes(value)
 }
+
+/** 글자 배수의 상한을 정하는 폭. 화면 폭을 배수로 나눈 값이 이보다 작아지면 한 줄 라벨이 넘친다 */
+export const TEXT_REFERENCE_WIDTH = 360
+
+/**
+ * 화면 폭으로 상한을 건 글자 배수. 좁은 화면에서 큰 단계를 골라도 배치가 깨지지 않게 하는 값.
+ *
+ * @param scale 설정에서 고른 단계의 배수
+ * @param windowWidth 앱이 쓰는 화면 폭(dp · pt). 0 이면 아직 모르는 것이라 자르지 않는다
+ */
+export function capTextScale(scale: number, windowWidth: number): number {
+  if (windowWidth <= 0) return scale
+  return Math.min(scale, windowWidth / TEXT_REFERENCE_WIDTH)
+}
