@@ -123,6 +123,11 @@ unzip -p android/app/build/outputs/bundle/release/app-release.aab base/assets/fi
 `소유자: CN=MapleRoutine, O=Maple Routine, L=Seoul, ST=Seoul, C=KR` 이 나오면 업로드 키로 서명된 것이다. 아무것도
 안 나오면 `keystore.properties` 를 못 읽은 것이다.
 
+Android 빌드를 한 번도 하지 않은 트리(새 워크트리 등)에서는 첫 빌드가 다른 지문을 넣는다. 지문은 빌드 초반에
+계산되는데, 그 뒤 빌드가 `android/` 와 `node_modules/expo-updates/expo-updates-gradle-plugin/` 안에 산출물을
+만들고, 그 산출물도 지문 재료다. 스토어 바이너리는 산출물이 이미 있는 트리에서 빌드됐다. 첫 빌드의 지문이 다르면
+`createReleaseUpdatesResources` 를 지우고 한 번 더 빌드한다(1.0.12+6 에서 확인).
+
 R8 이 켜져 있으므로 릴리스 빌드를 실기기에 깔고 주요 화면을 모두 눌러 본 뒤에 올린다([[ADR-009]] 결정 7).
 debug 빌드에서는 R8 이 돌지 않아 문제가 재현되지 않는다. 이전 OTA 번들이 임베드 번들을 가릴 수 있으니,
 확인할 때는 새 `versionCode` 로 깔아 OTA 상태를 초기화한다.
