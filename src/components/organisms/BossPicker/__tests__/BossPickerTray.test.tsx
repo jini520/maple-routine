@@ -25,6 +25,19 @@ jest.mock('react-native-sortables', () => {
   }
 })
 
+// gesture-handler 의 ScrollView 만 `gesture-<testID>` 를 단 View 로 감싼다. 호스트 요소로는 RN ScrollView 와 구별되지 않기 때문이다.
+jest.mock('react-native-gesture-handler', () => {
+  const actual = jest.requireActual<typeof import('react-native-gesture-handler')>('react-native-gesture-handler')
+  const { ScrollView, View } = jest.requireActual<typeof import('react-native')>('react-native')
+  const React = jest.requireActual<typeof import('react')>('react')
+  return {
+    ...actual,
+    ScrollView: React.forwardRef<InstanceType<typeof ScrollView>, { testID?: string }>((props, ref) =>
+      React.createElement(View, { testID: `gesture-${props.testID}` }, React.createElement(ScrollView, { ...props, ref })),
+    ),
+  }
+})
+
 const 고른보스: PartyAppointmentBoss[] = [
   { bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' },
   { bossKey: 'bardrix', difficulty: 'hard', ocid: 'ocid-1' },
@@ -187,5 +200,14 @@ describe('BossPickerTray: 테두리 없는 바닥', () => {
     expect(view.getByText('2개 선택됨')).toBeTruthy()
     expect(view.getByText('적용')).toBeTruthy()
     expect(flattenStyle(view.getByTestId('tray-surface').props.style).borderTopWidth).toBeUndefined()
+  })
+})
+
+describe('BossPickerTray: 가로 스크롤', () => {
+  // 트레이는 시트 footer 에 서고, footer 도 시트의 Pan 제스처 아래에 있다. RN 기본 ScrollView 면 안드로이드에서 가로 스와이프를 뺏긴다.
+  it('선택 줄은 gesture-handler 의 ScrollView 다', async () => {
+    const { getByTestId } = await renderAtom(<BossPickerTray {...props(고른보스)} />)
+
+    expect(getByTestId('gesture-tray-scroll')).toBeTruthy()
   })
 })

@@ -10,7 +10,8 @@ import { dropFeeFields, dropFeeSeeds } from '../../features/boss-profit/drop-fee
 import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
 import { periodStartDateKey } from '../../lib/boss/boss-profit-period'
 import { useEffect, useState } from 'react'
-import { Image, Pressable, ScrollView, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
+import { ScrollView } from 'react-native-gesture-handler'
 
 import {
   dropTileKey,
@@ -570,12 +571,16 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
 
                         가로 여백을 `contentContainer` 가 아니라 바깥에서 지운다(`-mx-4 px-4`).
                         그래야 굴러 나간 타일이 시트 가장자리까지 간다.
+
+                        gesture-handler 의 ScrollView 를 쓴다. RN 기본 것은 안드로이드에서 시트의
+                        Pan 제스처가 가로 스와이프를 가져가 굴러가지 않는다. NativeWind 가 이
+                        컴포넌트의 `className` 을 모르므로 여백은 `style` 로 준다.
                       */}
                       <ScrollView
                         testID={`drop-tile-row-${category}`}
                         horizontal
                         showsHorizontalScrollIndicator={false}
-                        className="-mx-4"
+                        style={{ marginHorizontal: -16 }}
                         contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
                       >
                         {(byCategory.get(category) ?? []).map((candidate) => {

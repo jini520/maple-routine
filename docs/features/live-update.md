@@ -100,6 +100,11 @@ Cloudflare Worker 가, 번들과 에셋은 GitHub Releases `live-update-rn` 이 
    | `ios/.xcode.env.local` | ios |
    | `ios/app.xcodeproj/project.xcworkspace/` | ios |
 
+   옛 커밋으로 워크트리를 만들어 `npm ci` 로 node_modules 를 새로 깔았다면
+   `node_modules/@react-native-masked-view/masked-view/android/src/main/AndroidManifest.xml` 도 원래 체크아웃에서
+   복사한다. 새로 깐 파일에는 `package` 속성이 있고 원래 체크아웃의 파일에는 없다. 스토어 바이너리는 속성이 없는
+   쪽으로 빌드됐고, 이 파일 하나로 두 지문이 함께 바뀐다(1.0.12+6 에서 확인).
+
 6. 스토어 심사 중인 바이너리가 있으면 그 지문을 `IN_REVIEW_RUNTIME_VERSIONS` 에 넣어 둔다
    ([[ADR-011]] 결정 6). 넣지 않고 발행하면 심사 담당자의 앱이 잠긴다.
 7. `PINNED_RUNTIME_VERSIONS` 는 비어 있어야 한다. 값이 있으면 스크립트가 멈춘다([[ADR-011]] 결정 7).

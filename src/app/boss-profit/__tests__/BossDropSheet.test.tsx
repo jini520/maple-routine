@@ -29,6 +29,18 @@ jest.mock('../../../components/organisms/DropEffectOverlay/DropEffectOverlay', (
   }
 })
 
+// gesture-handler 의 ScrollView 만 `gesture-<testID>` 를 단 View 로 감싼다. 호스트 요소로는 RN ScrollView 와 구별되지 않기 때문이다.
+jest.mock('react-native-gesture-handler', () => {
+  const actual = jest.requireActual<typeof import('react-native-gesture-handler')>('react-native-gesture-handler')
+  const { ScrollView, View } = jest.requireActual<typeof import('react-native')>('react-native')
+  const React = jest.requireActual<typeof import('react')>('react')
+  return {
+    ...actual,
+    ScrollView: (props: { testID?: string }) =>
+      React.createElement(View, { testID: `gesture-${props.testID}` }, React.createElement(ScrollView, props)),
+  }
+})
+
 jest.mock('../../../features/app-review/request', () => ({ holdReviewRequest: jest.fn() }))
 
 jest.mock('@gorhom/bottom-sheet', () => {
@@ -136,6 +148,15 @@ describe('BossDropSheet: 타일 선택', () => {
 
     expect(getByText('고정')).toBeTruthy()
     expect(onSave).toHaveBeenCalledWith([])
+  })
+
+  // 안드로이드에서만 보이는 결함이라 jest 에서는 스와이프를 재현할 수 없다. 대신 줄이 어느 ScrollView 인지를 본다.
+  it('타일 줄은 gesture-handler 의 ScrollView 라서 시트 제스처에 가로 스와이프를 뺏기지 않는다', async () => {
+    const { result } = renderSheet()
+    const { getByTestId } = await result
+
+    expect(getByTestId('gesture-drop-tile-row-equipment')).toBeTruthy()
+    expect(getByTestId('gesture-drop-tile-row-consumable')).toBeTruthy()
   })
 })
 

@@ -7,7 +7,7 @@
  * 드러낸다. 칸을 길게 누르면 떠서 **같은 묶음 안에서** 좌우로 끌어 차례를 바꾸고, 누르면 난이도 팝오버가 열린다.
  */
 import { useEffect, useRef, useState } from 'react'
-import { Modal, Pressable, View } from 'react-native'
+import { Modal, Pressable, View, type ScrollView } from 'react-native'
 import Animated, {
   Easing,
   FadeInDown,
@@ -19,6 +19,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated'
+import { ScrollView as GestureScrollView } from 'react-native-gesture-handler'
 import Sortable from 'react-native-sortables'
 
 import { Badge, Text } from '../../atoms'
@@ -47,6 +48,9 @@ const GROUP_GAP = 12
 const GROUP_SPACE = GROUP_GAP * 2
 /** 바닥이 본문 위로 드리우는 그림자. 구분선 대신 이것이 둘을 가른다 */
 const TRAY_SHADOW: ShadowLayer = { opacity: 0.23, radius: 12, y: -10 }
+
+/** 선택 줄의 스크롤. RN 기본 ScrollView 면 안드로이드에서 시트의 Pan 제스처가 가로 스와이프를 가져간다 */
+const TrayScrollView = Animated.createAnimatedComponent(GestureScrollView)
 /** 묶음 왼쪽 얼굴 열과 초상 사이. 칸의 가로 자리가 열 폭 + 이만큼 오른쪽이다 */
 const LABEL_GAP = 8
 /**
@@ -238,7 +242,7 @@ function TrayItem(props: {
 }
 
 export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
-  const scrollRef = useAnimatedRef<Animated.ScrollView>()
+  const scrollRef = useAnimatedRef<ScrollView>()
   const [from, setFrom] = useState<{ id: number; rect: PopoverAnchorRect } | null>(null)
   const [target, setTarget] = useState<{ id: number; x: number; y: number } | null>(null)
   const { flight, picked } = props
@@ -356,8 +360,9 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
               <Text className="text-11 text-text-muted">초상화를 눌러 난이도 변경 · 제거</Text>
             </View>
             <View ref={rowRef}>
-              <Animated.ScrollView
+              <TrayScrollView
                 ref={scrollRef}
+                testID="tray-scroll"
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: ROW_PAD, paddingTop: ROW_TOP, paddingBottom: 20 }}
@@ -420,7 +425,7 @@ export function BossPickerTray(props: BossPickerTrayProps): React.JSX.Element {
                     </View>
                   ))}
                 </View>
-              </Animated.ScrollView>
+              </TrayScrollView>
             </View>
           </View>
         </Animated.View>
