@@ -41,6 +41,7 @@ import {
   FlaskConicalIcon,
   PackageOpenIcon,
   PinIcon,
+  QuestionMarkIcon,
   SwordIcon,
   Switch,
   Text,
@@ -601,7 +602,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                     aria-hidden
                                     className="absolute -bottom-[5px] -right-[5px] h-4 w-4 items-center justify-center rounded-full bg-surface-2"
                                   >
-                                    <Text className="text-10 font-extrabold leading-none text-text-muted">?</Text>
+                                    <QuestionMarkIcon className="h-2.5 w-2.5 text-text-muted" aria-hidden />
                                   </View>
                                 )}
                                 <TileLabel drop={boxDrop ?? normalDrop} />
