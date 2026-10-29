@@ -2,7 +2,7 @@
  * 월드 리프로 갈린 **옛 ocid → 새 ocid** 연결. 옛 ocid 하나당 한 행.
  *
  * 리프한 기간에 같은 처치가 두 ocid 로 한 번씩 기록되면 이 연결로 짝을 찾아 옛 기록을 지운다.
- * 옛 ocid 는 `character/list` 에서 빠져 연결을 되살릴 길이 없어 `RECORD_TABLE_NAMES` 에 든다.
+ * 옛 ocid 는 `character/list` 에서 빠져 연결을 되살릴 길이 없어 데이터 삭제가 지우지 않는다.
  *
  * @see docs/persistence/sqlite.md `character_world_leaps`
  */

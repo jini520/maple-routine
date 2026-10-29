@@ -6,7 +6,7 @@ export const STORAGE_KEYS = {
   // 한다. 치우는 것은 연결 해제 한 자리뿐이다.
   apiKey: 'apiKey',
   // 레거시. 계정 선택 단계가 사라져 아무도 읽고 쓰지 않는다. 옛 설치본에
-  // 남은 값을 치우기 위해 이름만 남긴다(연결 해제·캐시 삭제가 지운다).
+  // 남은 값을 치우기 위해 이름만 남긴다(연결 해제가 지운다).
   legacySelectedAccountId: 'selectedAccountId',
   theme: 'theme',
   textSize: 'textSize',
@@ -14,31 +14,29 @@ export const STORAGE_KEYS = {
   dropEffect: 'dropEffect',
   // 앱 안 리뷰 요청의 기록. 첫 실행일 · 핵심 저장 횟수 · 마지막 요청일 JSON 한 칸이다.
   //
-  // `KEEP_KEYS` 에 넣는다. 지워지면 90일 간격을 처음부터 다시 세서 Play 에서 한 달 안에 다시 묻는다.
+  // 데이터 삭제 그룹에 넣지 말 것. 지워지면 90일 간격을 처음부터 다시 세서 Play 에서 한 달 안에 다시 묻는다.
   appReview: 'appReview',
   // 마지막으로 실행된 OTA 번들 버전. 부팅 때 지금 도는 버전과 비교해 "방금
-  // 업데이트했다"를 판정한다. cache-data.ts의 KEEP_KEYS에는 **넣지 않는다**. 지워져도 다음
-  // 부팅이 조용히 다시 기록할 뿐이고, 그때 생기는 것은 거짓 안내가 아니라 안내 없음이다.
+  // 업데이트했다"를 판정한다.
   lastRunBundleVersion: 'lastRunBundleVersion',
-  // 다시 띄운 뒤 한 번 띄울 알림. 캐시 삭제가 끝난 뒤에 쓰므로 `KEEP_KEYS` 에 안 넣는다.
+  // 다시 띄운 뒤 한 번 띄울 알림.
   pendingNotice: 'pendingNotice',
-  // 이 기기에서 본 OS 키보드 높이. 입력 카드가 자체 숫자 판을 쓸지 정한다. `KEEP_KEYS` 에는 안
-  // 넣는다. 지워져도 첫 실행 기본값으로 판정하다가 키보드가 한 번 뜨면 다시 채워진다.
+  // 이 기기에서 본 OS 키보드 높이. 입력 카드가 자체 숫자 판을 쓸지 정한다.
   keyboardHeight: 'keyboardHeight',
-  // 금액 칸마다 마지막으로 고른 단위(기본 · 만 · 억). 사용자가 고른 것이라 `KEEP_KEYS` 에 넣는다.
+  // 금액 칸마다 마지막으로 고른 단위(기본 · 만 · 억). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   mesoUnits: 'mesoUnits',
   // 마지막으로 넣은 메소마켓 시세(1억 메소당 메포). 메포 지출은 시세가 필수인데 그 칸이 매번
   // 비어 있으면 입력이 막힌다. 금액은 매번 다르지만 시세는 좀처럼 안 바뀌므로 기억하는 쪽이
   // 맞다. 드롭 판매가가 금액을 일부러 안 기억하는 것과 경계가 자주 바뀌는가 로 갈린다.
   //
-  // `KEEP_KEYS` 에는 안 넣는다. 지워져도 다음 입력이 다시 채우고, 그때 생기는 것은 거짓 값이
+  // 데이터 삭제의 `manual` 그룹이 지운다. 지워져도 다음 입력이 다시 채우고, 그때 생기는 것은 거짓 값이
   // 아니라 한 번 더 물어보기다. 지난 기록의 시세는 이미 그 행에 박혀 있어 영향이 없다.
   lastPointRate: 'lastPointRate',
   // 캐릭터별 마지막 사냥. `{ [ocid]: { groundKey, boosts } }` JSON 한 칸이고 사냥 계산기에서 캐릭터를
   // 고르면 그 몫이 선다.
   //
-  // `KEEP_KEYS` 에는 안 넣는다. 한 번 적으면 다시 생기는 값이고 지워지면 캐릭터를 골라도 빈 칸이 설
-  // 뿐이다.
+  // 데이터 삭제의 `manual` 그룹이 지운다. 한 번 적으면 다시 생기는 값이고 지워지면 캐릭터를 골라도 빈
+  // 칸이 설 뿐이다.
   lastHunts: 'lastHunts',
   // 옛 한 벌 둘. `lastHunts` 가 없을 때 한 번 읽어 그 캐릭터 몫으로 옮기고 지운다.
   lastHuntSelection: 'lastHuntSelection',
@@ -54,7 +52,7 @@ export const STORAGE_KEYS = {
   eventWorldNames: 'eventWorldNames',
   // 공지 토픽 구독 여부. 켠 사람만 받는다. 기본은 꺼짐이고, 알림 권한을 허용하는 순간 켜진다.
   //
-  // `KEEP_KEYS` 에 넣는다. 지워지면 구독은 FCM 쪽에 남아 있는데 앱은 껐다고 믿어, 스위치가
+  // 데이터 삭제 그룹에 넣지 말 것. 지워지면 구독은 FCM 쪽에 남아 있는데 앱은 껐다고 믿어, 스위치가
   // 꺼져 있는데 알림이 오는 상태가 된다.
   noticeSubscribed: 'noticeSubscribed',
   // 구독 토글 넷의 상태. `{ app, game, updateEvent, cashshop }` JSON 한 칸이다.
@@ -65,27 +63,27 @@ export const STORAGE_KEYS = {
   // 이 칸이 없으면 위 `noticeSubscribed` 에서 `app` 만 물려받는다. 토글이 하나였던 시절의
   // 값이고, 그것이 앱 공지 자리로 이어진다.
   //
-  // `KEEP_KEYS` 에 넣는다. 지워지면 구독은 FCM 쪽에 남아 있는데 앱은 껐다고 믿어, 스위치가
+  // 데이터 삭제 그룹에 넣지 말 것. 지워지면 구독은 FCM 쪽에 남아 있는데 앱은 껐다고 믿어, 스위치가
   // 꺼져 있는데 알림이 오는 상태가 된다.
   noticeSubscriptions: 'noticeSubscriptions',
   // 알림 권한을 **물어본 적 있는가**. OS 에 물어서는 이 값을 알 수 없다. 안드로이드의 `denied` 는
   // 거부했다와 아직 안 물었다를 구분해 주지 않는 상태가 있고, 그것을 안 물었다로 읽으면 거부한
   // 사용자에게 팝업이 계속 뜬다.
   //
-  // `KEEP_KEYS` 에 넣는다. 지워지면 iOS 에서 다시 묻게 되는데, 그 시스템 팝업은 이미 답한
+  // 데이터 삭제 그룹에 넣지 말 것. 지워지면 iOS 에서 다시 묻게 되는데, 그 시스템 팝업은 이미 답한
   // 사용자에게 두 번째로는 아예 안 뜬다. 그래서 사용자는 아무 일도 안 일어난 것을 본다.
   notificationPermissionAsked: 'notificationPermissionAsked',
   // 파티 약속 알림 스위치(설정 > 알림 설정). 없으면 켜짐이다.
   //
-  // `KEEP_KEYS` 에 넣는다. 사용자가 끈 스위치가 캐시 삭제로 되살아나면 끈 약속 알림이 다시 온다.
+  // 데이터 삭제 그룹에 넣지 말 것. 사용자가 끈 스위치가 지워져 되살아나면 끈 약속 알림이 다시 온다.
   partyAlarmEnabled: 'partyAlarmEnabled',
   // 파티 스케줄 화면에서 마지막으로 고른 보기 `list` · `board`. 없으면 목록이다.
   //
-  // `KEEP_KEYS` 에 넣는다. 사용자가 고른 보기라 캐시 삭제로 목록으로 돌아가면 안 된다.
+  // 데이터 삭제 그룹에 넣지 말 것. 사용자가 고른 보기라 지워져 목록으로 돌아가면 안 된다.
   partyScheduleView: 'partyScheduleView',
   // 지금 기기에 예약해 둔 로컬 알림 `{ id, kind, fireAt, title, body }[]`. OS 는 예약 목록을 못 읽어 우리가 적는다.
   //
-  // `KEEP_KEYS` 에 넣는다. 지우면 OS 에 남은 예약을 지목할 길이 없어 유령 알림이 된다.
+  // 데이터 삭제 그룹에 넣지 말 것. 지우면 OS 에 남은 예약을 지목할 길이 없어 유령 알림이 된다.
   notificationLedger: 'notificationLedger',
   // 공지의 사본. 분류마다 마지막 서버 응답(최대 20건)을 한 JSON 배열에 함께 둔다. 서버가 죽어도
   // 마지막으로 받은 것은 열려야 해서 남긴다.
@@ -93,7 +91,7 @@ export const STORAGE_KEYS = {
   // today 배너에서 닫은 공지 id. 최근 50건의 JSON 배열이다. 닫은 것은 배너이지 공지가 아니라
   // 설정의 목록·상세에는 그대로 보인다. 앱 공지 조회가 성공하면 서버에 없는 id 가 빠진다.
   //
-  // `KEEP_KEYS` 에 넣는다. `notices` 는 지워도 서버가 다시 주지만 **닫았다는 사실은 기기에만
+  // 데이터 삭제 그룹에 넣지 말 것. `notices` 는 지워도 서버가 다시 주지만 **닫았다는 사실은 기기에만
   // 있어** 아무도 복원해 주지 않는다. 지워지면 이미 닫은 공지가 첫 화면에 되살아난다.
   dismissedNotices: 'dismissedNotices',
   // 결산 안내 줄을 닫을 때 기억하는 **그 결산의 시작 시각**(서버가 준 ISO 한 칸). 서버가 주는
@@ -101,51 +99,41 @@ export const STORAGE_KEYS = {
   //
   // 열쇠가 **닫았다** 라는 불리언이 아니라 시작 시각인 이유는, 결산이 끝나는 순간 앱이 꺼져
   // 있어도 다음 밤에 다시 서야 하기 때문이다. 불리언이면 그것을 지울 사람이 없다.
-  //
-  // `KEEP_KEYS` 에는 안 넣는다. 지워지면 이번 밤 결산 줄이 한 번 더 설 뿐이고, 그것은 거짓이
-  // 아니라 이미 읽은 안내를 다시 보는 일이다.
   dismissedSettlement: 'dismissedSettlement',
   // 직접 완료 안내 줄을 닫을 때 기억하는 **그때의 주간 기간 키**(목요일 `YYYY-MM-DD`).
   // 지금 주간 키가 이 값과 같으면 줄을 안 세우고, 주가 바뀌면 다시 선다.
   //
   // 주간이 기준인 것은 월간 보스만 열려 있어도 주가 바뀌면 다시 물을 일이기 때문이다.
-  //
-  // `KEEP_KEYS` 에는 안 넣는다. 지워져도 이번 주에 줄이 한 번 더 설 뿐이다.
   dismissedManualCompletion: 'dismissedManualCompletion',
   // 통계의 누적 순수익이 더하기 시작하는 날(KST `YYYY-MM-DD`). 없으면 기록이 처음 있는 날부터다.
   //
-  // `KEEP_KEYS` 에 넣는다. 재조회로 복구되지 않는, 사용자가 고른 값이다.
+  // 데이터 삭제 그룹에 넣지 말 것. 재조회로 복구되지 않는, 사용자가 고른 값이다.
   statsCumulativeStart: 'statsCumulativeStart',
-  // today 빠른 이동 구성(JSON `{ rows, ids }`). 사용자가 고른 것이라 `KEEP_KEYS` 에 넣는다.
+  // today 빠른 이동 구성(JSON `{ rows, ids }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   quickLinks: 'quickLinks',
   // 페이지별 마지막 데이터 호출 시각. `{ today: ISO, content: ISO, … }` 한 칸이다.
   //
   // 키를 다섯으로 쪼개지 않는 것은 읽는 쪽이 언제나 다섯을 한 번에 필요로 해서다(부팅 때 한 번
   // 읽어 스토어에 올린다).
-  //
-  // `KEEP_KEYS` 에 **안 넣는다**. 이 값은 캐시가 언제 것인가 라서 캐시와 함께 지워지는 것이
-  // 맞다. 캐시를 비웠는데 시각만 남으면 새로 받은 데이터에 옛 시각이 붙는다.
   dataFetchedAt: 'dataFetchedAt',
-  // MVP 등급 주간 확인을 끈 체크박스(`앞으로 등급은 직접 바꿀게요`). `KEEP_KEYS` 에 넣는다.
+  // MVP 등급 주간 확인을 끈 체크박스(`앞으로 등급은 직접 바꿀게요`). 데이터 삭제 그룹에 넣지 말 것.
   mvpWeeklyCheckOff: 'mvpWeeklyCheckOff',
-  // 마지막으로 등급을 확인한 주의 기간 키(목요일 `YYYY-MM-DD`). 지워져도 한 번 더 물을 뿐이라 `KEEP_KEYS` 밖이다.
+  // 마지막으로 등급을 확인한 주의 기간 키(목요일 `YYYY-MM-DD`).
   mvpLastCheckedWeek: 'mvpLastCheckedWeek',
-  // 기존 사용자의 첫 흐름을 마쳤다는 표시. 일괄 적용 체크박스를 다시 안 세운다. `KEEP_KEYS` 에 넣는다.
+  // 기존 사용자의 첫 흐름을 마쳤다는 표시. 일괄 적용 체크박스를 다시 안 세운다. 데이터 삭제 그룹에 넣지 말 것.
   mvpBulkApplyAsked: 'mvpBulkApplyAsked',
   // 캐릭터 설정을 마치고 온보딩 MVP 등급 화면에 들어갔다는 표시. 시작하기를 마치면 지운다. 등급 이력이 없는 것만으로는
   // 온보딩 중인 사용자와 업데이트한 기존 사용자를 못 가른다.
   mvpOnboardingPending: 'mvpOnboardingPending',
-  // 끝나지 않은 작업 표시. 지워지면 반쯤 바뀐 기록이 그대로 굳는다. `KEEP_KEYS` 에 넣는다.
+  // 끝나지 않은 작업 표시. 지워지면 반쯤 바뀐 기록이 그대로 굳는다. 데이터 삭제 그룹에 넣지 말 것.
   pendingTasks: 'pendingTasks',
-  // 파티 약속 목록(JSON). 사용자가 적은 것이라 아무도 되살려 주지 않는다. `KEEP_KEYS` 에 넣는다.
+  // 파티 약속 목록(JSON). 사용자가 적은 것이라 아무도 되살려 주지 않는다. 데이터 삭제 그룹에 넣지 말 것.
   partyAppointments: 'partyAppointments',
-  // 과거 기록을 서버로 어디까지 올렸나(종류마다 마지막으로 보낸 id 와 끝났는지). `KEEP_KEYS` 에는 안 넣는다.
-  // 지워지면 처음부터 다시 올리는데, 서버가 기록 id 로 덮으므로 줄이 늘지 않는다.
+  // 과거 기록을 서버로 어디까지 올렸나(종류마다 마지막으로 보낸 id 와 끝났는지).
   serverBackfill: 'serverBackfill',
-  // 옛 강화 원본 표를 합계로 옮겼나. `KEEP_KEYS` 에는 안 넣는다. 지워지면 다시 옮기는데, 원본에 있는 날짜만 같은 값으로
-  // 갈아 끼우므로 결과가 같다. 원본 표는 v1.0.14 에서 지운다.
+  // 옛 강화 원본 표를 합계로 옮겼나. 원본 표는 v1.0.14 에서 지운다.
   enhancementTotalsMoved: 'enhancementTotalsMoved',
-  // 주간 보스 수익 계산기의 기록(JSON). 사용자가 남긴 것이라 아무도 되살려 주지 않는다. `KEEP_KEYS` 에 넣는다.
+  // 주간 보스 수익 계산기의 기록(JSON). 사용자가 남긴 것이라 아무도 되살려 주지 않는다. 데이터 삭제 그룹에 넣지 말 것.
   bossProfitCalculatorRecords: 'bossProfitCalculatorRecords',
   // 1.0.13 전의 게임 데이터 사본(TanStack Query 캐시). 사본은 이제 SQLite 에 있어 안 읽고 켤 때 지우기만 한다.
   queryCache: 'queryCache',

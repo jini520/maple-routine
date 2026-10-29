@@ -18,9 +18,8 @@ export interface PreferencesPort {
   set(key: string, value: string): Promise<void>
   remove(key: string): Promise<void>
   /**
-   * 저장된 전체 키. **선택 사항이 아니다**. `storage/cache-data.ts` 가 이 목록을 훑어 캐시 삭제
-   * 범위와 용량을 계산한다. 빠지면 설정의 캐시 삭제·계정 데이터
-   * 삭제가 죽는다.
+   * 저장된 전체 키. **선택 사항이 아니다**. 데이터 삭제(`storage/cache-data.ts`)가 이 목록에서
+   * `manual` 그룹의 접두사 키를 찾고 건수를 센다. 빠지면 그 그룹이 아무것도 안 지운다.
    */
   keys(): Promise<string[]>
 }
@@ -72,10 +71,6 @@ export interface AssetFilesPort {
    */
   download(url: string, fileName: string, sha256: string): Promise<number>
   remove(fileName: string): Promise<void>
-  /** 디렉터리를 통째로 지운다. 캐시 삭제가 부른다 */
-  clear(): Promise<void>
-  /** 디렉터리의 바이트 합. 캐시 용량이 센다 */
-  size(): Promise<number>
 }
 
 let preferencesPort: PreferencesPort | null = null

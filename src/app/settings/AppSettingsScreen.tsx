@@ -13,18 +13,15 @@
  * 눌러서 값을 고르는 행이고(모달이 뜨거나 화면이 넘어간다), `앱 데이터` 는 안을 미리 보여 주는
  * 대표값을 단 이동 행이다.
  */
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { View } from 'react-native'
 
-import type { CacheDataSizes } from '../../features/settings/cache-data'
-import { loadCacheDataSizes } from '../../features/settings/cache-data'
 import { TRACKING_MODE_LABELS } from '../../features/tracking-mode/copy'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useThemeStore } from '../../features/theme/store'
 import { useTextSizeStore } from '../../features/text-size/store'
 import { TEXT_SIZE_LABELS } from '../../lib/text-size'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
-import { formatBytes } from '../../lib/format-bytes'
 import { formatAppVersion } from '../../lib/app-version'
 
 import { useRunningAppVersion } from '../../features/live-update/use-running-app-version'
@@ -58,18 +55,8 @@ export function AppSettingsScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
 
   const [trackingModeOpen, setTrackingModeOpen] = useState(false)
-  const [sizes, setSizes] = useState<CacheDataSizes | null>(null)
-
-  // `계정 및 데이터` 행의 대표값. 들어가지 않고도 안을 짐작하게 한다. 실패는 자리표시(`- KB`).
-  useEffect(() => {
-    loadCacheDataSizes()
-      .then(setSizes)
-      .catch(() => {})
-  }, [])
 
   const displayedVersion = formatAppVersion(useRunningAppVersion())
-  // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다.
-  const totalCacheBytes = sizes === null ? null : sizes.general + sizes.records
 
   return (
     <>
@@ -155,12 +142,6 @@ export function AppSettingsScreen(): React.JSX.Element {
               <SettingsRow
                 label="계정 및 데이터"
                 onPress={() => navigation.navigate('SettingsAccountData')}
-                rightContent={
-                  // 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다.
-                  <SummaryValue>
-                    {totalCacheBytes !== null ? formatBytes(totalCacheBytes) : '- KB'}
-                  </SummaryValue>
-                }
               />
               <SettingsRow
                 label="앱 정보"

@@ -32,8 +32,8 @@ export const rnPreferencesPort: PreferencesPort = {
   async remove(key) {
     await CapacitorStorage.removeValue(toNativeKey(key, platform))
   },
-  // `cache-data.ts` 가 이 목록을 훑어 캐시 삭제 범위와 용량을 낸다.
-  // 빠지거나 빈 배열을 돌려주면 설정의 `캐시 삭제`·`계정 데이터 삭제`가 조용히 아무 일도 안 한다.
+  // 데이터 삭제(`cache-data.ts`)가 이 목록에서 `manual` 그룹의 접두사 키를 찾는다.
+  // 빠지거나 빈 배열을 돌려주면 그 그룹이 조용히 아무것도 안 지운다.
   async keys() {
     return toAppKeys(await CapacitorStorage.getAllKeys(), platform)
   },

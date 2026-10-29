@@ -1,24 +1,24 @@
-import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
-import { clearCacheData, getCacheDataSizes } from '../../storage/cache-data'
+import type { CacheDataCounts, CacheDataSelection } from '../../storage/cache-data'
+import { clearCacheData, getCacheDataCounts } from '../../storage/cache-data'
 import { consumePendingNotice, setPendingNotice } from '../../storage/pending-notice'
 import { closeBossProfitDb } from '../../storage/sqlite/db'
 import { showSplashScreen } from '../../native/splash-screen'
 import { useToastStore } from '../toast/store'
 
-// 캐시 데이터 삭제의 오케스트레이션. 화면에서 이리로 옮겼다.
+// 데이터 삭제의 오케스트레이션. 화면에서 이리로 옮겼다.
 //
 // 화면이 `storage/cache-data`·`storage/pending-notice`·`storage/sqlite/db`·`native/splash-screen`
 // 을 직접 부르고 있었다. 화면은 `features/` 를 거치고 저장소·네이티브 접근은 어댑터가 맡는다.
-// 화면에는 UI 상태(모달 열림·삭제 중·용량 표시)만 남는다.
+// 화면에는 UI 상태(모달 열림·삭제 중·건수 표시)만 남는다.
 
 /** 삭제가 끝나지 않아도(hang) 모달이 "삭제 중"에 갇히지 않도록 경쟁시키는 상한. */
 const CLEAR_TIMEOUT_MS = 10_000
 
-export type CacheDataSizes = Record<CacheDataGroupId, number>
+export type { CacheDataCounts }
 
-/** 그룹별 캐시 용량. 실패는 호출부가 자리표시(`- KB`)로 처리하도록 그대로 던진다. */
-export async function loadCacheDataSizes(): Promise<CacheDataSizes> {
-  return getCacheDataSizes()
+/** 그룹마다 지울 기록의 건수. 실패는 호출부가 자리표시로 처리하도록 그대로 던진다. */
+export async function loadCacheDataCounts(): Promise<CacheDataCounts> {
+  return getCacheDataCounts()
 }
 
 /**
@@ -59,12 +59,12 @@ export async function clearCacheDataAndReload(
 }
 
 /**
- * 지난 실행의 캐시 삭제가 실패했으면 오류 토스트를 띄우는 함수. 부팅이 한 번 부른다.
+ * 지난 실행의 데이터 삭제가 실패했으면 오류 토스트를 띄우는 함수. 부팅이 한 번 부른다.
  *
  * 표시는 읽으면서 지워지므로 다시 불러도 토스트가 두 번 뜨지 않는다.
  */
 export async function showPendingCacheClearNotice(): Promise<void> {
   if ((await consumePendingNotice()) === 'cacheClearFailed') {
-    useToastStore.getState().showError('캐시를 일부만 삭제했습니다')
+    useToastStore.getState().showError('데이터를 일부만 삭제했습니다')
   }
 }

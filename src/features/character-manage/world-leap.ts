@@ -14,8 +14,7 @@ import type { MapleCharacter } from '../../types'
 /**
  * 이전이 일어나기 전 그 캐릭터에 대해 **마지막으로 아는 것**.
  *
- * 출처는 `character_profiles`(지워지지 않는 스냅샷)다. 5분 TTL 캐시에서 읽으면 캐시 비우기 한
- * 번에 판정 재료가 사라진다.
+ * 출처는 `character_profiles`(지워지지 않는 스냅샷)다.
  *
  * `level`·`jobClass` 가 `null` 일 수 있는 것은 스냅샷이 그것을 모를 수 있어서다. 둘의 처지는
  * 다르다(아래 `detectWorldLeap`).

@@ -15,13 +15,15 @@
 // 같은 역할·상태가 있다(선택 카드들이 `aria-selected` 로 갈아탄 것과 다른 자리다).
 import { useState } from 'react'
 import { act, fireEvent } from '@testing-library/react-native'
+import { Text as RNText } from 'react-native'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { CacheClearConfirm } from '../CacheClearConfirm'
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
-const SIZES = { general: 1024, records: 512 }
+const COUNTS = { manualCharacters: 10, bossClears: 1154, bossDrops: 87, cashbookEntries: 154, enhancementDays: 244 }
+const NONE = { manual: false, boss: false, cashbook: false, enhancement: false }
 
 /** 누르고 다시 그려질 때까지 기다리는 도우미. */
 async function press(element: AtomElement): Promise<void> {
@@ -37,119 +39,83 @@ function buttonOf(view: Rendered, label: string): AtomElement {
   return node
 }
 
-/** 삭제 버튼은 선택 용량을 함께 적으므로("삭제 (1.5KB)") 접두로 잡는다. */
-function confirmButton(view: Rendered): AtomElement {
-  let node: AtomElement | null = view.getByText(/^삭제/)
-  while (node !== null && node.props.role !== 'button') node = node.parent
-  if (node === null) throw new Error('삭제 버튼을 찾지 못했다')
-  return node
-}
-
 function props(overrides: Partial<React.ComponentProps<typeof CacheClearConfirm>> = {}) {
   return {
     isOpen: true,
     isClearing: false,
-    sizes: SIZES,
+    counts: COUNTS,
     onConfirm: jest.fn(),
     onCancel: jest.fn(),
     ...overrides,
   }
 }
 
+const LABELS = ['수동 선택 항목', '보스 처치·드롭 아이템 기록', '가계부', '강화']
+
 describe('CacheClearConfirm', () => {
-  // 열고 바로 삭제하면 기존 전체 삭제와 같아야 한다.
-  it('기본값은 두 그룹 모두 선택된 상태다', async () => {
+  // 지우는 것이 되살릴 수 없거나 다시 받는 데 호출이 몰리는 기록이라, 열고 바로 누른 한 번에 무엇도 지워지면 안 된다.
+  it('처음에는 모든 칸이 해제되어 있고 삭제를 누를 수 없다', async () => {
     const view = await renderOverlay(<CacheClearConfirm {...props()} />)
 
-    expect(view.getByLabelText('일반 데이터').props.accessibilityState?.checked).toBe(true)
-    expect(view.getByLabelText('수입·지출 기록').props.accessibilityState?.checked).toBe(true)
+    for (const label of LABELS) expect(view.getByLabelText(label).props.accessibilityState?.checked).toBe(false)
+    expect(buttonOf(view, '삭제').props.accessibilityState?.disabled).toBe(true)
   })
 
-  // 조회 전에도 같은 자리·같은 타이포로 자리를 잡는다.
-  it('용량을 아직 모르면(null) 각 그룹에 "- KB" 자리표시를 보여준다', async () => {
-    const view = await renderOverlay(<CacheClearConfirm {...props({ sizes: null })} />)
-
-    expect(view.getAllByText('- KB')).toHaveLength(2)
-  })
-
-  it('선택한 그룹의 용량 합계를 삭제 버튼에 보여준다', async () => {
-    const view = await renderOverlay(<CacheClearConfirm {...props()} />)
-
-    expect(view.getByText('삭제 (1.5KB)')).toBeTruthy()
-
-    await press(view.getByLabelText('수입·지출 기록'))
-
-    expect(view.getByText('삭제 (1.0KB)')).toBeTruthy()
-  })
-
-  it('그룹을 누르면 선택이 토글된다', async () => {
-    const view = await renderOverlay(<CacheClearConfirm {...props()} />)
-
-    await press(view.getByLabelText('일반 데이터'))
-    expect(view.getByLabelText('일반 데이터').props.accessibilityState?.checked).toBe(false)
-
-    await press(view.getByLabelText('일반 데이터'))
-    expect(view.getByLabelText('일반 데이터').props.accessibilityState?.checked).toBe(true)
-  })
-
-  it('아무 그룹도 선택하지 않으면 삭제 버튼이 비활성화된다', async () => {
-    const view = await renderOverlay(<CacheClearConfirm {...props()} />)
-
-    await press(view.getByLabelText('일반 데이터'))
-    await press(view.getByLabelText('수입·지출 기록'))
-
-    expect(confirmButton(view).props.accessibilityState?.disabled).toBe(true)
-  })
-
-  it('삭제 버튼을 누르면 선택한 그룹을 onConfirm에 넘긴다', async () => {
+  it('고른 그룹만 넘긴다', async () => {
     const onConfirm = jest.fn()
     const view = await renderOverlay(<CacheClearConfirm {...props({ onConfirm })} />)
 
-    await press(view.getByLabelText('수입·지출 기록'))
-    await press(confirmButton(view))
+    await press(view.getByLabelText('가계부'))
+    await press(view.getByLabelText('강화'))
+    await press(buttonOf(view, '삭제'))
 
-    expect(onConfirm).toHaveBeenCalledWith({ general: true, records: false })
+    expect(onConfirm).toHaveBeenCalledWith({ ...NONE, cashbook: true, enhancement: true })
   })
 
-  // 지난번에 해제해둔 체크가 남아 있으면 "열고 바로 삭제"가 사람마다 다른
-  // 범위를 지운다.
-  //
-  // `rerender` 를 쓰지 않고 **부모가 `isOpen` 을 들고 있게** 한다. RNTL 의 `rerender` 는 넘긴
-  // 요소로 루트를 통째로 갈아치워 `renderOverlay` 가 두른 프로바이더가 사라진다(`Modal` 이
-  // `useSafeAreaInsets` 에서 즉시 던진다). 실제 호출부(`SettingsAccountDataScreen`)도 이 모달을
-  // 늘 마운트해 두고 `isOpen` 만 바꾸므로, 이 모양이 그 자리와도 같다.
-  it('닫았다 다시 열면 선택이 기본값(전체)으로 돌아온다', async () => {
-    let setOpen: (value: boolean) => void = () => {}
-    function Host(): React.JSX.Element {
+  it('고른 칸을 다시 누르면 풀리고, 다 풀면 삭제가 다시 꺼진다', async () => {
+    const view = await renderOverlay(<CacheClearConfirm {...props()} />)
+
+    await press(view.getByLabelText('가계부'))
+    expect(buttonOf(view, '삭제').props.accessibilityState?.disabled).toBe(false)
+    await press(view.getByLabelText('가계부'))
+
+    expect(buttonOf(view, '삭제').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  // 지난번 선택이 남으면 열고 바로 누른 한 번에 그 그룹이 지워진다.
+  it('닫았다 다시 열면 모두 해제된 상태로 돌아온다', async () => {
+    function Harness(): React.JSX.Element {
       const [isOpen, setIsOpen] = useState(true)
-      setOpen = setIsOpen
-      return <CacheClearConfirm {...props({ isOpen })} />
+      return (
+        <>
+          <CacheClearConfirm {...props({ isOpen })} />
+          <RNText onPress={() => setIsOpen((open) => !open)}>토글</RNText>
+        </>
+      )
     }
-    const view = await renderOverlay(<Host />)
+    const view = await renderOverlay(<Harness />)
 
-    await press(view.getByLabelText('일반 데이터'))
-    expect(view.getByLabelText('일반 데이터').props.accessibilityState?.checked).toBe(false)
+    await press(view.getByLabelText('보스 처치·드롭 아이템 기록'))
+    await press(view.getByText('토글'))
+    await press(view.getByText('토글'))
 
-    await act(async () => {
-      setOpen(false)
-    })
-    await act(async () => {
-      setOpen(true)
-    })
-
-    expect(view.getByLabelText('일반 데이터').props.accessibilityState?.checked).toBe(true)
+    expect(view.getByLabelText('보스 처치·드롭 아이템 기록').props.accessibilityState?.checked).toBe(false)
   })
 
-  it('isClearing이 true면 취소·삭제 버튼과 그룹 선택이 모두 비활성화된다', async () => {
+  // 보스 칸은 건수를 설명 줄에 쓰므로 오른쪽에 다시 적지 않는다.
+  it('보스 칸은 처치 · 드롭 건수를 설명 줄에만 적는다', async () => {
+    const view = await renderOverlay(<CacheClearConfirm {...props()} />)
+
+    expect(view.getByText('보스 처치 1,154건·드롭 아이템 87건 포함')).toBeTruthy()
+    expect(view.queryByText('1,154건')).toBeNull()
+  })
+
+  it('지우는 동안 칸과 두 버튼이 모두 꺼진다', async () => {
     const view = await renderOverlay(<CacheClearConfirm {...props({ isClearing: true })} />)
 
     expect(buttonOf(view, '취소').props.accessibilityState?.disabled).toBe(true)
-    expect(view.getByLabelText('일반 데이터').props.accessibilityState?.disabled).toBe(true)
-    // 스피너가 라벨을 덮고 라벨은 그대로 남는다.
-    expect(confirmButton(view).props.accessibilityState).toMatchObject({
-      disabled: true,
-      busy: true,
-    })
+    expect(view.getByLabelText('가계부').props.accessibilityState?.disabled).toBe(true)
+    expect(buttonOf(view, '삭제').props.accessibilityState).toMatchObject({ disabled: true, busy: true })
   })
 
   it('취소 버튼을 누르면 onCancel이 호출된다', async () => {

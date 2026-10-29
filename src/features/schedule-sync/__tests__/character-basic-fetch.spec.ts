@@ -52,7 +52,7 @@ beforeEach(async () => {
 })
 
 // 이 함수가 앱 전체의 `character/basic` 통과 지점이라, 여기 한 줄이면 한 번이라도 조회된
-// 캐릭터는 추적을 해제해도 이름과 얼굴을 갖는다. 캐시는 5분 TTL 이고 캐시 비우기가 지운다.
+// 캐릭터는 추적을 해제해도 이름과 얼굴을 갖는다.
 describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다', () => {
   it('네트워크로 받으면 스냅샷을 쓴다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(

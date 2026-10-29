@@ -198,10 +198,10 @@ describe('getBossProfitDb', () => {
   })
 })
 
-// 삭제 대상 테이블 목록의 단일 진실 공급원은 db.ts의 테이블 정의 배열 하나다.
+// 테이블 목록의 단일 진실 공급원은 db.ts의 테이블 정의 배열 하나다.
 // 정의 배열을 순회해 CREATE하므로 구조적으로 drift가 어렵지만, 배열을 거치지 않고 db.execute에
 // CREATE 문을 직접 끼워 넣는 경우까지 잡기 위해 소스 자체를 읽어 대조한다. 여기서 누락되면
-// 캐시 데이터 삭제·용량 계산이 그 테이블을 조용히 빠뜨린다(boss_drop_records가 그랬다).
+// 이름 목록이 그 테이블을 조용히 빠뜨린다(boss_drop_records가 그랬다).
 describe('BOSS_PROFIT_TABLE_NAMES', () => {
   it('db.ts가 만드는 모든 테이블이 export된 이름 목록에 들어 있다', async () => {
     const { BOSS_PROFIT_TABLE_NAMES } = require('../db') as typeof import('../db')

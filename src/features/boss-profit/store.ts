@@ -456,8 +456,7 @@ async function resolveDisplayOcids(trackedOcids: string[]): Promise<string[]> {
 // 캐릭터 목록 위치가 API 응답 이후 갑자기 바뀌어 보인다. 레벨 내림차순(동레벨이면 이름순)으로
 // 항상 같은 순서를 계산해 캐시 우선 표시부터 과거 기간 조회까지 전부 이 순서를 따르게 한다.
 //
-// 프로필의 출처는 지워지지 않는 스냅샷이다. 5분 TTL 캐시에서 읽으면 설정의 캐시 비우기 한 번에
-// 과거 행이 이름을 잃고 통째로 사라진다. 조회는 ocid 마다가 아니라 한 번이다. 캐시는 ocid
+// 프로필의 출처는 지워지지 않는 스냅샷이다. 조회는 ocid 마다가 아니라 한 번이다. 캐시는 ocid
 // 하나가 네이티브 호출 하나라 해제한 캐릭터까지 세면 목록이 길어질수록 왕복이 그만큼 늘었다.
 // world 는 정렬에 참여하지 않는다.
 async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterInfo[]> {

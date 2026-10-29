@@ -12,7 +12,6 @@
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { Linking, Platform } from 'react-native'
 
-import { loadCacheDataSizes } from '../../../features/settings/cache-data'
 import { useThemeStore } from '../../../features/theme/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
@@ -43,9 +42,6 @@ const mockLoadProfitTracked = jest.fn()
 
 jest.mock('../../../features/theme/store', () => ({ useThemeStore: jest.fn() }))
 jest.mock('../../../features/tracking-mode/store', () => ({ useTrackingModeStore: jest.fn() }))
-// 본화면이 대표값으로 캐시 총 용량을 읽는다. 화면은 `features/` 를 거치고
-// 저장소·SQLite 는 그 아래가 맡는다(CLAUDE.md CRITICAL).
-jest.mock('../../../features/settings/cache-data', () => ({ loadCacheDataSizes: jest.fn() }))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 // 소식은 사본을 먼저 그리고 분류마다 받은 것으로 바꾼다. 분류를 나누는 함수는 실물이다.
 jest.mock('../../../features/notice/notice-copy', () => ({
@@ -117,7 +113,6 @@ jest.mock('@react-navigation/native', () => ({
 
 const mockedUseThemeStore = jest.mocked(useThemeStore)
 const mockedUseTrackingModeStore = jest.mocked(useTrackingModeStore)
-const mockedLoadCacheDataSizes = jest.mocked(loadCacheDataSizes)
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)
 const mockedContentStore = jest.mocked(useContentSchedulerStore)
 const mockedRoster = mockGetRoster as unknown as jest.MockedFunction<typeof getCharacterPickerRoster>
@@ -253,8 +248,6 @@ beforeEach(() => {
     goBack: jest.fn(),
     setParams,
   } as unknown as ReturnType<typeof useSettingsNavigation>)
-  // 기본은 "영원히 조회 중"자리표시(`- KB`)가 기본 상태라, 값이 필요한 케이스만 따로 세운다.
-  mockedLoadCacheDataSizes.mockReturnValue(new Promise(() => {}))
   // 로스터도 기본은 "영원히 조회 중"케이스가 필요할 때 `deferredRoster` 로 갈아 세운다.
   mockedRoster.mockReturnValue(new Promise(() => {}))
   mockLoadContentTracked.mockResolvedValue(undefined)

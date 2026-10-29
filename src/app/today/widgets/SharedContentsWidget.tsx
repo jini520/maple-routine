@@ -91,7 +91,7 @@ function splitColumns(
  *
  * 채운 상자는 `primary` 다. 완료 계보(`secondary`)는 테마의 두 번째 시드라 메인 컬러와 색상(H)이
  * 아예 무관해, 빨강 테마에 틸이 앉으면 테마 밖의 색으로 읽힌다. 앱의 다른 체크박스 셋(설정
- * 캐시 비우기 · 가계부 사냥 입력 · 테마 선택)이 전부 이 색이다.
+ * 데이터 삭제 · 가계부 사냥 입력 · 테마 선택)이 전부 이 색이다.
  */
 function Checkbox(props: { checked: boolean }): React.JSX.Element {
   return (

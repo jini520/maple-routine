@@ -70,6 +70,7 @@ import PackageOpen from 'lucide-react-native/icons/package-open'
 import Pencil from 'lucide-react-native/icons/pencil'
 import Pin from 'lucide-react-native/icons/pin'
 import Plus from 'lucide-react-native/icons/plus'
+import Trash from 'lucide-react-native/icons/trash'
 import Trash2 from 'lucide-react-native/icons/trash-2'
 import RefreshCw from 'lucide-react-native/icons/refresh-cw'
 import RotateCcw from 'lucide-react-native/icons/rotate-ccw'
@@ -127,7 +128,9 @@ export const HistoryIcon = withIconInterop(History)
 export const ImageIcon = withIconInterop(ImageGlyph)
 /** 기록 하나를 지우는 버튼. 주간 보스 수익 계산기의 계산 기록. */
 export const Trash2Icon = withIconInterop(Trash2)
-/** 선택 표식. `CacheClearConfirm` 체크박스 · `ThemeSelector` 고른 칸. */
+/** 데이터 삭제 확인 창의 머리 배지. */
+export const TrashIcon = withIconInterop(Trash)
+/** 선택 표식. `CheckBox` · `ThemeSelector` 고른 칸. */
 export const CheckIcon = withIconInterop(Check)
 /** 성공 토스트. `Toast`(success). lucide 실물 이름은 `circle-check-big` 다. */
 export const CheckCircle2Icon = withIconInterop(CircleCheckBig)

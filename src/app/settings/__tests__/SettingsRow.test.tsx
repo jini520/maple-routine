@@ -57,7 +57,7 @@ describe('SettingsRow', () => {
   it('showChevron이 false면 rightContent만 남고 chevron은 없다', async () => {
     const view = await renderAtom(
       <SettingsRow
-        label="캐시 데이터 삭제"
+        label="데이터 삭제"
         onPress={jest.fn()}
         showChevron={false}
         rightContent={<Text>1.5MB</Text>}

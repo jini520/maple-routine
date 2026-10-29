@@ -1,5 +1,5 @@
 /**
- * today 빠른 이동의 구성(JSON 한 칸). 사용자가 고른 것이라 캐시 삭제에서 남긴다.
+ * today 빠른 이동의 구성(JSON 한 칸). 사용자가 고른 것이라 데이터 삭제가 지우지 않는다.
  */
 import type { QuickLinksConfig } from '../types/quick-links'
 import { STORAGE_KEYS } from './keys'

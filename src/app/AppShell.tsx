@@ -195,7 +195,7 @@ function ReadyShell(): React.JSX.Element {
     void fillLegacyAccountIds()
   }, [isReady])
 
-  // 지난 실행의 캐시 삭제가 실패했으면 알린다. 삭제 뒤 앱을 다시 띄우므로 그 자리에서는 못 알렸다.
+  // 지난 실행의 데이터 삭제가 실패했으면 알린다. 삭제 뒤 앱을 다시 띄우므로 그 자리에서는 못 알렸다.
   useEffect(() => {
     void showPendingCacheClearNotice()
   }, [])

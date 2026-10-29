@@ -53,13 +53,4 @@ export const rnAssetFilesPort: AssetFilesPort = {
     const file = new File(directory, fileName)
     if (file.exists) file.delete()
   },
-  async clear() {
-    const directory = directoryOf()
-    if (directory.exists) directory.delete()
-  },
-  async size() {
-    const directory = directoryOf()
-    if (!directory.exists) return 0
-    return directory.size ?? 0
-  },
 }

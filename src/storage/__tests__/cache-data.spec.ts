@@ -1,436 +1,226 @@
+/// <reference types="node" />
+/**
+ * 데이터 삭제가 고른 그룹의 목록만 지우는지 진짜 SQLite 와 가짜 Preferences 로 본다.
+ *
+ * 목록에 없는 것은 어떤 선택에서도 남아야 한다. 화면에 적지 않은 것을 함께 지우면 사용자가 모르는 것을 잃는다.
+ */
+import { installFakePreferences, type FakePreferences } from './fake-preferences'
+import { clearCacheData, getCacheDataCounts, type CacheDataSelection } from '../cache-data'
+import { __resetStoragePortsForTest, setSqlitePort } from '../ports'
+import { closeBossProfitDb, getBossProfitDb } from '../sqlite/db'
+import { createRealSqlite, type RealSqlite } from '../sqlite/__tests__/node-sqlite-port'
 
-import { waitFor } from '../../__tests__/wait-for'
-import { installFakePreferences } from './fake-preferences'
-import { setAssetFilesPort } from '../ports'
-import type { CacheDataSelection } from '../cache-data'
-import {
-  BOSS_TABLE_NAMES,
-  RECORD_TABLE_NAMES,
-  GENERAL_TABLE_NAMES,
-  clearCacheData,
-  getCacheDataSizes,
-} from '../cache-data'
-import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from '../sqlite/db'
-// 한시적 core→app 참조. `features/settings/cache-data` 가 core 로 오면 상대
-// 경로로 돌아온다. 이 파일이 검사하는 `닫기 → 커버 → 리로드` 순서와 storage 쪽
-// 삭제 범위(058)는 같은 계약의 앞뒤라 떼어 놓지 않는다.
-import { clearCacheDataAndReload, showPendingCacheClearNotice } from '../../features/settings/cache-data'
-import { useToastStore } from '../../features/toast/store'
-import { getAuthConfig, setApiKey } from '../api-key'
+let real: RealSqlite
+let prefs: FakePreferences
 
-// 팩토리 밖 이름은 `mock` 접두만 끌어올 수 있고 팩토리가 여러 번 불릴 수 있어, **같은 목을
-// 돌려주는** 멱등 헬퍼로 둔다.
-var mockCallOrder: string[] | undefined
-var mockShared: Record<string, jest.Mock> | undefined
+beforeEach(async () => {
+  real = createRealSqlite()
+  setSqlitePort(real.port)
+  prefs = installFakePreferences()
+  await getBossProfitDb()
+})
 
-/** 함수들도 같은 인스턴스로 돌려주는 가짜 DB. 테스트가 그 위에 단언하므로 매번 새로 만들면 안 된다. */
-function mockDb(name: string): jest.Mock {
-  const shared = (mockShared = mockShared ?? {})
-  shared[name] = shared[name] ?? jest.fn()
-  return shared[name]
+afterEach(async () => {
+  await closeBossProfitDb()
+  __resetStoragePortsForTest()
+  real.dispose()
+})
+
+const NONE: CacheDataSelection = { manual: false, boss: false, cashbook: false, enhancement: false }
+const ALL: CacheDataSelection = { manual: true, boss: true, cashbook: true, enhancement: true }
+
+let seq = 0
+
+/** CHECK 제약이 있는 칸은 아무 글자나 못 넣어 맞는 값을 준다. */
+const CHECKED_VALUES: Record<string, string> = { entry_type: 'income' }
+
+/** NOT NULL 칸만 채운 줄 하나를 넣는다. 이 파일은 줄이 남았는가 만 보므로 값의 뜻은 따지지 않는다. */
+function insertRow(table: string, values: Record<string, string | number> = {}): void {
+  real.inspect((db) => {
+    const columns = db.prepare(`PRAGMA table_info(${table})`).all() as {
+      name: string
+      type: string
+      notnull: number
+      dflt_value: unknown
+      pk: number
+    }[]
+    const row: Record<string, string | number> = {}
+    for (const column of columns) {
+      if (column.name in values) {
+        row[column.name] = values[column.name]!
+        continue
+      }
+      if ((column.notnull === 0 && column.pk === 0) || column.dflt_value !== null) continue
+      if (column.name in CHECKED_VALUES) {
+        row[column.name] = CHECKED_VALUES[column.name]!
+        continue
+      }
+      seq += 1
+      row[column.name] = /INT|REAL|NUM/i.test(column.type) ? seq : `${column.name}-${seq}`
+    }
+    const names = Object.keys(row)
+    // 부모 줄 없이 자식 줄만 넣으므로 이 연결에서만 외래키 검사를 끈다. 앱 연결은 그대로 켜져 있다.
+    db.exec('PRAGMA foreign_keys = OFF')
+    db.prepare(`INSERT INTO ${table} (${names.join(', ')}) VALUES (${names.map(() => '?').join(', ')})`).run(
+      ...names.map((name) => row[name]!),
+    )
+    db.exec('PRAGMA foreign_keys = ON')
+  })
 }
 
-function mockOnce(name: string, label: string): jest.Mock {
-  const order = (mockCallOrder = mockCallOrder ?? [])
-  const shared = (mockShared = mockShared ?? {})
-  shared[name] =
-    shared[name] ??
-    jest.fn(async () => {
-      order.push(label)
-    })
-  return shared[name]
+function count(table: string): number {
+  return real.inspect((db) => (db.prepare(`SELECT count(*) AS n FROM ${table}`).get() as { n: number }).n)
 }
 
-// clearCacheDataAndReload의 "닫기 → 커버 → 리로드" 순서를 잡기 위한 공유 호출 기록.
-// 각 mock이 호출되는 시점에 이름을 push하므로 배열 자체가 곧 실행 순서다. toHaveBeenCalled로는
-// 순서가 안 잡히고, 이 step이 고치는 것이 정확히 순서다.
-// 삭제 대상 테이블 목록은 db.ts가 단일 진실 공급원이므로, 커넥션(getBossProfitDb)만
-// 가짜로 바꾸고 BOSS_PROFIT_TABLE_NAMES는 실제 값을 그대로 쓴다. 목록까지 모킹하면 "실제 테이블
-// 전부를 지우는가"를 검증하지 못한다.
-jest.mock('../sqlite/db', () => ({
-  ...jest.requireActual<typeof import('../sqlite/db')>('../sqlite/db'),
-  getBossProfitDb: jest.fn(async () => ({ execute: mockDb('execute'), query: mockDb('query') })),
-  closeBossProfitDb: mockOnce('close', 'close'),
-}))
+const MANUAL_KEYS = [
+  'manualTrackedContent:o1',
+  'worldSharedProgress:scania',
+  'accountSharedProgress:a1',
+  'lastHunts',
+  'lastHuntSelection',
+  'lastHuntToggles',
+  'lastPointRate',
+]
 
-// 위 import와 같은 한시적 참조다. `features/settings/cache-data` 가 부르는 그 모듈을 가리켜야
-// 목이 걸린다(경로가 어긋나면 실물이 로드돼 커버가 진짜로 올라간다).
-jest.mock('../../native/splash-screen', () => ({ showSplashScreen: mockOnce('splash', 'cover') }))
-
-const mockDbExecuteMock = mockDb('execute')
-const dbQueryMock = mockDb('query')
-const mockCloseDbMock = mockOnce('close', 'close')
-const mockShowSplashMock = mockOnce('splash', 'cover')
-const callOrder = (mockCallOrder = mockCallOrder ?? [])
-
-
-const KEEP_KEY_NAMES = [
+const KEPT_KEYS = [
+  'authMethods',
   'apiKey',
   'theme',
   'trackingMode',
-  'dropEffect',
-  'noticeSubscribed',
-  'notificationPermissionAsked',
+  'trackedCharacters',
+  'representativeCharacter',
+  'enhancementTotalsMoved',
+  'partyAppointments',
+  'schedulerCache:o1',
+  'scheduleProbe:o1',
+  'characterBasicCache:o1',
+  'mesoRateCache:o1',
+  'dataFetchedAt',
+  'notices',
+  'serverBackfill',
+  'lastRunBundleVersion',
 ]
 
-/** 표를 통째로 비운 문장. 보스 표 셋의 행 단위 문장은 세지 않는다. */
-function deleteCalls(): string[] {
-  return mockDbExecuteMock.mock.calls
-    .map(([statement]) => statement as string)
-    .filter((statement) => /^DELETE FROM \w+;$/.test(statement))
+const KEPT_TABLES = [
+  'game_data_sections',
+  'character_profiles',
+  'character_accounts',
+  'mvp_grade_history',
+  'enhancement_history',
+  'income_records',
+  'spend_records',
+]
+
+async function seedAll(): Promise<void> {
+  for (const key of [...MANUAL_KEYS, ...KEPT_KEYS]) await prefs.set(key, 'v')
+  for (const table of [
+    'cashbook_entries',
+    'cashbook_entry_items',
+    'enhancement_totals',
+    'enhancement_history_checks',
+    'server_sync_queue',
+    ...KEPT_TABLES,
+  ]) {
+    insertRow(table)
+  }
 }
 
-let prefs = installFakePreferences()
-
-/** 받은 게임 데이터 그림 디렉터리. 일반 그룹이 지우고 센다. */
-const assetFiles = {
-  directoryUri: () => 'file:///docs/game-assets/',
-  list: jest.fn(async () => []),
-  download: jest.fn(),
-  remove: jest.fn(),
-  clear: jest.fn(async () => {}),
-  size: jest.fn(async () => 0),
+async function remainingKeys(): Promise<string[]> {
+  return (await prefs.keys()).sort()
 }
-
-beforeEach(async () => {
-  prefs = installFakePreferences()
-  await prefs.set('apiKey', 'test-key')
-  await prefs.set('theme', '렌')
-  await prefs.set('trackingMode', 'manual')
-  await prefs.set('dropEffect', 'off')
-  await prefs.set('noticeSubscribed', 'on')
-  await prefs.set('notificationPermissionAsked', 'yes')
-  await prefs.set('schedulerCache:ocid-1', '{}')
-  await prefs.set('characterBasicCache:index', '[]')
-  await prefs.set('trackedCharacters', '[]')
-  await prefs.set('lastSelectedCharacter', 'ocid-1')
-  dbQueryMock.mockResolvedValue({ values: [] })
-  jest.clearAllMocks()
-  setAssetFilesPort(assetFiles)
-})
-
-// 그룹 정의는 열거가 아니라 차집합이다. records만 명시 목록이고 general은
-// 나머지 전부로 파생된다. 이 성질이 깨지면 새 테이블이 어느 그룹에도 안 잡혀 영영 안 지워진다
-//
-describe('그룹 ↔ 테이블 분할', () => {
-  it('두 그룹과 행 단위로 지우는 보스 표 셋의 합집합이 db.ts가 정의한 테이블 전체와 같다', () => {
-    const union = new Set([...GENERAL_TABLE_NAMES, ...RECORD_TABLE_NAMES, ...BOSS_TABLE_NAMES])
-
-    expect(union).toEqual(new Set(BOSS_PROFIT_TABLE_NAMES))
-  })
-
-  it('세 분류가 겹치지 않는다. 한 테이블은 정확히 한 곳에만 속한다', () => {
-    const all = [...GENERAL_TABLE_NAMES, ...RECORD_TABLE_NAMES, ...BOSS_TABLE_NAMES]
-
-    expect(new Set(all).size).toBe(all.length)
-  })
-
-  it('boss_drop_records는 수익 기록과 같은 그룹이다', () => {
-    expect(RECORD_TABLE_NAMES).toContain('boss_profit_records')
-    expect(RECORD_TABLE_NAMES).toContain('boss_drop_records')
-  })
-
-  // 기록이 아니라 설정이고, 어느 쪽으로 지워도 위험한 조합이 없다.
-  it('boss_party_settings는 일반 데이터 그룹이다', () => {
-    expect(GENERAL_TABLE_NAMES).toContain('boss_party_settings')
-  })
-
-  // 그룹 이름이 `bossRecords` 에서 `records` 로 넓어진
-  // 이유가 이 둘이다. 손입력이 유일한 원천이라 **API 로 되살릴 길이 0%** 이고, 아무것도 안 하면
-  // 차집합 파생 때문에 **지워도 되는 것**(general)으로 끌려간다.
-  it('손입력 기록 둘은 `기록` 그룹이다. 지워지면 되살릴 길이 없다', () => {
-    expect(RECORD_TABLE_NAMES).toContain('income_records')
-    expect(RECORD_TABLE_NAMES).toContain('spend_records')
-  })
-
-  // 이름이 없으면 기록에서 행을 못 만든다(ocid 는 사용자에게 아무 뜻도 없어 대신 안 적는다).
-  // `일반` 만 지운 사용자가 지운 적 없는 과거 수익을 통째로 잃는다.
-  it('캐릭터 프로필 스냅샷도 `기록` 그룹이다. 이름이 없으면 기록이 화면에서 사라진다', () => {
-    expect(RECORD_TABLE_NAMES).toContain('character_profiles')
-    expect(GENERAL_TABLE_NAMES).not.toContain('character_profiles')
-  })
-
-  // 기록을 정리하는 데만 쓰는 연결이고, 옛 ocid 는 목록에서 빠져 되살릴 길이 없다.
-  it('월드 리프 연결도 `기록` 그룹이다. 기록만 남고 연결이 사라지면 중복을 못 지운다', () => {
-    expect(RECORD_TABLE_NAMES).toContain('character_world_leaps')
-    expect(GENERAL_TABLE_NAMES).not.toContain('character_world_leaps')
-  })
-
-  // 사용자가 적은 값과, 옛 이름 · 지운 캐릭터처럼 다시 받을 수 없는 소속이다.
-  it('MVP 등급 이력과 캐릭터 소속도 `기록` 그룹이다', () => {
-    expect(RECORD_TABLE_NAMES).toContain('mvp_grade_history')
-    expect(RECORD_TABLE_NAMES).toContain('character_accounts')
-    expect(GENERAL_TABLE_NAMES).not.toContain('mvp_grade_history')
-    expect(GENERAL_TABLE_NAMES).not.toContain('character_accounts')
-  })
-})
 
 describe('clearCacheData', () => {
-  // trackingMode·dropEffect는 재조회로 복구되는 캐시가 아니라 사용자가 고른
-  // 취향 설정이라, theme과 같이 캐시 삭제에도 보존한다.
-  it('보존 키 여섯은 남긴다', async () => {
-    await clearCacheData()
+  it('아무 그룹도 고르지 않으면 아무것도 지우지 않는다', async () => {
+    await seedAll()
+    const before = real.statements.length
 
-    expect(await prefs.get('apiKey')).toBe('test-key')
-    expect(await prefs.get('theme')).toBe('렌')
-    expect(await prefs.get('trackingMode')).toBe('manual')
-    expect(await prefs.get('dropEffect')).toBe('off')
+    await clearCacheData(NONE)
+
+    expect(real.statements.slice(before).filter((statement) => /DELETE|UPDATE|VACUUM/.test(statement))).toEqual([])
+    expect(await remainingKeys()).toEqual([...MANUAL_KEYS, ...KEPT_KEYS].sort())
   })
 
-  // 인증 수단은 `authMethods` 에 있다. 옛 `apiKey` 칸이 없는 설치본은 이것을 잃으면 로그인 화면으로 돌아간다.
-  it('인증 수단 목록을 남긴다. 옛 키 칸이 없어도 다시 띄운 앱이 로그인 상태다', async () => {
-    await prefs.remove('apiKey')
-    await setApiKey('새키', '본캐')
+  it('수동 선택 항목은 그 키만 지우고 표는 기록을 건드리지 않는다', async () => {
+    await seedAll()
 
-    await clearCacheData({ general: true, records: false })
+    await clearCacheData({ ...NONE, manual: true })
 
-    expect((await getAuthConfig())?.apiKeys.map((key) => key.value)).toEqual(['새키'])
+    expect(await remainingKeys()).toEqual([...KEPT_KEYS].sort())
+    expect([count('cashbook_entries'), count('enhancement_totals')]).toEqual([1, 1])
   })
 
-  it('보존 키는 어떤 그룹 조합에서도 남는다', async () => {
-    await clearCacheData({ general: true, records: true })
-    await clearCacheData({ general: true, records: false })
-    await clearCacheData({ general: false, records: true })
+  it('가계부는 가계부 표만 비운다', async () => {
+    await seedAll()
 
-    for (const key of KEEP_KEY_NAMES) {
-      expect(await prefs.get(key)).not.toBeNull()
-    }
+    await clearCacheData({ ...NONE, cashbook: true })
+
+    expect([count('cashbook_entries'), count('cashbook_entry_items')]).toEqual([0, 0])
+    expect([count('enhancement_totals'), count('enhancement_history_checks')]).toEqual([1, 1])
+    expect(await remainingKeys()).toEqual([...MANUAL_KEYS, ...KEPT_KEYS].sort())
   })
 
-  // 주간 확인을 끈 체크박스와 일괄 적용을 물었다는 표시는 사용자가 만든 값이다. 지워지면 끈 확인이
-  // 되살아나거나, 체크박스를 끄고 넘긴 빈 수수료 행이 다시 일괄 적용 대상이 된다.
-  // 마지막으로 확인한 주는 지워져도 한 번 더 물을 뿐이라 지운다.
-  it('MVP 주간 확인 끄기와 일괄 적용 물음 표시는 남기고 마지막 확인 주는 지운다', async () => {
-    await prefs.set('mvpWeeklyCheckOff', 'true')
-    await prefs.set('mvpBulkApplyAsked', 'true')
-    await prefs.set('mvpLastCheckedWeek', '2026-09-17')
+  // 확인 기록만 남으면 그 날짜를 다시 부르지 않아 합계가 빈 채로 굳는다.
+  it('강화는 합계와 확인 기록을 함께 비운다', async () => {
+    await seedAll()
 
-    await clearCacheData({ general: true, records: false })
+    await clearCacheData({ ...NONE, enhancement: true })
 
-    expect(await prefs.get('mvpWeeklyCheckOff')).toBe('true')
-    expect(await prefs.get('mvpBulkApplyAsked')).toBe('true')
-    expect(await prefs.get('mvpLastCheckedWeek')).toBeNull()
+    expect([count('enhancement_totals'), count('enhancement_history_checks')]).toEqual([0, 0])
+    expect(count('cashbook_entries')).toBe(1)
   })
 
-  // 계산기 기록은 사용자가 남긴 것이라 재조회로 돌아오지 않는다.
-  it('주간 보스 수익 계산기 기록을 남긴다', async () => {
-    await prefs.set('bossProfitCalculatorRecords', '[]')
+  it('네 그룹을 다 골라도 목록에 없는 키 · 표는 남는다', async () => {
+    await seedAll()
 
-    await clearCacheData({ general: true, records: true })
+    await clearCacheData(ALL)
 
-    expect(await prefs.get('bossProfitCalculatorRecords')).toBe('[]')
+    expect(await remainingKeys()).toEqual([...KEPT_KEYS].sort())
+    expect(KEPT_TABLES.map(count)).toEqual(KEPT_TABLES.map(() => 1))
   })
 
-  // 인자 없는 호출은 선택 삭제 도입 전과 같아야 한다(호출부 호환).
-  it('인자 없이 호출하면 두 그룹을 모두 지운다', async () => {
-    await clearCacheData()
+  // 대기 표가 남으면 방금 지운 기록마다 지우기 요청이 서버로 간다. 서버 사본은 남긴다.
+  it('어느 그룹을 골라도 서버 전송 대기 표를 비운다', async () => {
+    await seedAll()
 
-    expect(await prefs.get('schedulerCache:ocid-1')).toBeNull()
-    expect(await prefs.get('characterBasicCache:index')).toBeNull()
-    expect(await prefs.get('trackedCharacters')).toBeNull()
-    expect(await prefs.get('lastSelectedCharacter')).toBeNull()
-    for (const table of [...GENERAL_TABLE_NAMES, ...RECORD_TABLE_NAMES]) {
-      expect(mockDbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
-    }
-    // 보스 표 셋은 통째로 지우지 않는다. 행 단위 삭제는 cache-data-boss.spec 이 본다.
-    expect(deleteCalls()).toHaveLength(GENERAL_TABLE_NAMES.length + RECORD_TABLE_NAMES.length)
+    await clearCacheData({ ...NONE, cashbook: true })
+
+    expect(count('server_sync_queue')).toBe(0)
   })
 
-  describe('일반 데이터만 선택', () => {
-    it('보존 키를 제외한 Preferences를 모두 지운다', async () => {
-      await clearCacheData({ general: true, records: false })
+  it('표 지우기가 중간에 실패하면 앞에서 지운 표도 되돌아간다', async () => {
+    await seedAll()
+    // 강화 표 하나를 없애 그 문장에서 실패하게 한다. 가계부 표는 그보다 앞에서 지워진다.
+    real.inspect((db) => db.exec('DROP TABLE enhancement_recomputes'))
 
-      expect(await prefs.get('schedulerCache:ocid-1')).toBeNull()
-      expect(await prefs.get('characterBasicCache:index')).toBeNull()
-      expect(await prefs.get('trackedCharacters')).toBeNull()
-      expect(await prefs.get('lastSelectedCharacter')).toBeNull()
-    })
+    await expect(clearCacheData({ ...NONE, cashbook: true, enhancement: true })).rejects.toThrow()
 
-    it('일반 그룹 테이블만 비우고 수익·드롭 기록은 건드리지 않는다', async () => {
-      await clearCacheData({ general: true, records: false })
-
-      for (const table of GENERAL_TABLE_NAMES) {
-        expect(mockDbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
-      }
-      for (const table of RECORD_TABLE_NAMES) {
-        expect(mockDbExecuteMock).not.toHaveBeenCalledWith(`DELETE FROM ${table};`)
-      }
-      expect(deleteCalls()).toHaveLength(GENERAL_TABLE_NAMES.length)
-    })
-
-    // 다시 받을 수 있는 서버 그림이라 일반 데이터다. 지우면 다음에 켤 때 잠금 화면이 다시 받는다.
-    it('받은 게임 데이터 그림 디렉터리를 지운다', async () => {
-      await clearCacheData({ general: true, records: false })
-
-      expect(assetFiles.clear).toHaveBeenCalledTimes(1)
-    })
+    expect([count('cashbook_entries'), count('enhancement_totals')]).toEqual([1, 1])
   })
 
-  describe('수익·드롭 기록만 선택', () => {
-    it('Preferences는 한 개도 지우지 않는다', async () => {
-      await clearCacheData({ general: false, records: true })
+  // 행을 지워도 SQLite 는 그 공간을 파일 안에 남긴다. 트랜잭션 안에서는 VACUUM 이 돌지 않는다.
+  it('지운 뒤 트랜잭션 밖에서 VACUUM 을 부른다', async () => {
+    await seedAll()
+    const before = real.statements.length
 
-      expect(await prefs.get('schedulerCache:ocid-1')).toBe('{}')
-      expect(await prefs.get('characterBasicCache:index')).toBe('[]')
-      expect(await prefs.get('trackedCharacters')).toBe('[]')
-      expect(await prefs.get('lastSelectedCharacter')).toBe('ocid-1')
-      expect(prefs.remove).not.toHaveBeenCalled()
-      expect(assetFiles.clear).not.toHaveBeenCalled()
-    })
+    await clearCacheData({ ...NONE, cashbook: true })
 
-    it('수익·드롭 기록 테이블만 비운다', async () => {
-      await clearCacheData({ general: false, records: true })
-
-      for (const table of RECORD_TABLE_NAMES) {
-        expect(mockDbExecuteMock).toHaveBeenCalledWith(`DELETE FROM ${table};`)
-      }
-      for (const table of GENERAL_TABLE_NAMES) {
-        expect(mockDbExecuteMock).not.toHaveBeenCalledWith(`DELETE FROM ${table};`)
-      }
-      expect(deleteCalls()).toHaveLength(RECORD_TABLE_NAMES.length)
-    })
-  })
-
-  it('아무 그룹도 선택하지 않으면 아무것도 지우지 않는다', async () => {
-    await clearCacheData({ general: false, records: false })
-
-    expect(prefs.remove).not.toHaveBeenCalled()
-    expect(mockDbExecuteMock).not.toHaveBeenCalled()
-    // 지울 것이 없으면 커넥션도 열지 않는다.
-    expect(getBossProfitDb).not.toHaveBeenCalled()
+    const after = real.statements.slice(before)
+    expect(after.indexOf('VACUUM')).toBeGreaterThan(after.indexOf('COMMIT'))
   })
 })
 
-describe('getCacheDataSizes', () => {
-  it('보존 키를 제외한 Preferences 바이트 수를 일반 그룹에 합산한다', async () => {
-    assetFiles.size.mockResolvedValueOnce(1000)
-    const sizes = await getCacheDataSizes()
+describe('getCacheDataCounts', () => {
+  it('그룹마다 지울 기록의 건수를 센다', async () => {
+    await prefs.set('manualTrackedContent:o1', '[]')
+    await prefs.set('manualTrackedContent:o2', '[]')
+    insertRow('cashbook_entries')
+    insertRow('cashbook_entries')
+    insertRow('enhancement_totals', { history_date: '2026-10-01' })
+    insertRow('enhancement_totals', { history_date: '2026-10-01' })
+    insertRow('enhancement_totals', { history_date: '2026-10-02' })
 
-    // schedulerCache:ocid-1 '{}'(2) + characterBasicCache:index '[]'(2)
-    // + trackedCharacters '[]'(2) + lastSelectedCharacter 'ocid-1'(6) = 12.
-    // 보존 키(apiKey·selectedAccountId·theme·trackingMode·dropEffect)는 삭제되지 않으므로 제외.
-    // trackingMode 'manual'(6)·dropEffect 'off'(3)를 seed해도 합계가 늘지 않아야 한다.
-    // 받은 그림 디렉터리 1000 바이트도 일반 그룹이다.
-    expect(sizes.general).toBe(12 + 1000)
-  })
+    const counts = await getCacheDataCounts()
 
-  it('SQLite 각 테이블 행의 바이트 수를 그 테이블이 속한 그룹에 합산한다', async () => {
-    dbQueryMock.mockImplementation(async (sql: string) => {
-      if (sql.includes('boss_profit_records')) {
-        return { values: [{ ocid: 'ocid-1', boss: '자쿰' }] }
-      }
-      if (sql.includes('boss_party_settings')) {
-        return { values: [{ ocid: 'ocid-2' }] }
-      }
-      return { values: [] }
-    })
-
-    const sizes = await getCacheDataSizes()
-
-    const recordBytes = new TextEncoder().encode('ocid-1').length + new TextEncoder().encode('자쿰').length
-    expect(sizes.records).toBe(recordBytes)
-    // 일반 그룹 = Preferences 12 + boss_party_settings의 'ocid-2'(6)
-    expect(sizes.general).toBe(12 + new TextEncoder().encode('ocid-2').length)
-  })
-
-  it('보존 키만 남아 있으면 일반 그룹이 0이다', async () => {
-    const keys = await prefs.keys()
-    await Promise.all(
-      keys.filter((key) => !KEEP_KEY_NAMES.includes(key)).map((key) => prefs.remove(key)),
-    )
-
-    const sizes = await getCacheDataSizes()
-
-    expect(sizes.general).toBe(0)
-    expect(sizes.records).toBe(0)
-  })
-})
-
-// 캐시 삭제 경로는 OTA 적용 경로와 **같은 결함**을 갖고 있었다: 커버를 먼저
-// 올린 뒤 매달릴 수 있는 닫기를 돌고, 화면을 되살리는 일(reload)이 그 뒤에 있었다. 닫기가 응답하지
-// 않으면 리로드에 도달하지 못하고 브랜드 주황 커버만 남는다.
-// 여기서 고치는 것은 순서 하나뿐이다. 실패 UX는 만들지 않는다(항상 리로드하고
-// 실패는 pendingNotice로 부팅 후에 알린다).
-describe('clearCacheDataAndReload', () => {
-  const ALL: CacheDataSelection = { general: true, records: true }
-
-  beforeEach(() => {
-    callOrder.length = 0
-  })
-
-  // 다시 띄우면 지금 화면이 사라진다. 실패는 표시로 넘겨 다시 띄운 앱이 한 번만 알린다.
-  it('삭제가 실패하면 다시 띄운 뒤 오류 토스트를 한 번 띄운다', async () => {
-    mockDbExecuteMock.mockRejectedValueOnce(new Error('disk'))
-    useToastStore.setState({ toasts: [], queue: [] })
-
-    await clearCacheDataAndReload(ALL, jest.fn())
-    await showPendingCacheClearNotice()
-    await showPendingCacheClearNotice()
-
-    expect(useToastStore.getState().toasts.map((toast) => toast.message)).toEqual(['캐시를 일부만 삭제했습니다'])
-  })
-
-  it('삭제가 성공하면 아무것도 알리지 않는다', async () => {
-    useToastStore.setState({ toasts: [], queue: [] })
-
-    await clearCacheDataAndReload(ALL, jest.fn())
-    await showPendingCacheClearNotice()
-
-    expect(useToastStore.getState().toasts).toEqual([])
-  })
-
-  it('닫기 → 커버 → 리로드 순으로 부른다', async () => {
-    const reload = jest.fn(() => {
-      callOrder.push('reload')
-    })
-
-    await clearCacheDataAndReload(ALL, reload)
-
-    expect(callOrder).toEqual(['close', 'cover', 'reload'])
-  })
-
-  // 이 순서의 값은 여기서 드러난다. 닫기가 매달리는 동안 화면이 가려져 있지 않다(그 구간이
-  // 정확히 사용자가 주황 화면에 갇히던 자리다). 커버는 리로드 직전에만 올라간다.
-  it('닫기가 끝나기 전에는 커버를 올리지 않는다', async () => {
-    let finishClose: () => void = () => {}
-    mockCloseDbMock.mockImplementationOnce(
-      () =>
-        new Promise<void>((resolve) => {
-          finishClose = () => {
-            callOrder.push('close')
-            resolve()
-          }
-        }),
-    )
-    const reload = jest.fn(() => {
-      callOrder.push('reload')
-    })
-
-    const pending = clearCacheDataAndReload(ALL, reload)
-    await waitFor(() => {
-      expect(mockCloseDbMock).toHaveBeenCalled()
-    })
-
-    expect(mockShowSplashMock).not.toHaveBeenCalled()
-    expect(reload).not.toHaveBeenCalled()
-
-    finishClose()
-    await pending
-
-    expect(callOrder).toEqual(['close', 'cover', 'reload'])
-  })
-
-  // 커버는 시각적 장치일 뿐이라, 그것이 실패했다고 리로드를 막으면 본말전도다
-  // (2026-07-17 추가의 "스플래시 표시가 실패해도 진행한다"가 그대로 유효하다).
-  it('커버 표시가 실패해도 리로드한다', async () => {
-    mockShowSplashMock.mockRejectedValueOnce(new Error('splash failed'))
-    const reload = jest.fn(() => {
-      callOrder.push('reload')
-    })
-
-    await clearCacheDataAndReload(ALL, reload)
-
-    expect(reload).toHaveBeenCalledOnce()
-    expect(callOrder).toEqual(['close', 'reload'])
+    expect(counts).toEqual({ manualCharacters: 2, bossClears: 0, bossDrops: 0, cashbookEntries: 2, enhancementDays: 2 })
   })
 })
