@@ -47,6 +47,7 @@
     "expo-font": "~57.0.2",
     "expo-glass-effect": "~57.0.1",
     "expo-haptics": "~57.0.2",
+    "expo-image": "~57.0.5",
     "expo-linear-gradient": "~57.0.1",
     "expo-media-library": "~57.0.5",
     "expo-screen-corner-radius": "1.1.0",

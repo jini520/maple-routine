@@ -30,7 +30,7 @@ describe('공지 본문 블록', () => {
     )
 
     await act(async () => {
-      fireEvent(view.getByTestId('notice-image'), 'error')
+      fireEvent(view.getByTestId('notice-image'), 'error', { nativeEvent: { error: 'not found' } })
     })
 
     expect(view.getByTestId('notice-image-failed')).toBeTruthy()

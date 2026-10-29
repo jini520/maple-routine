@@ -8,8 +8,9 @@
  * 이벤트와 캐시샵 본문은 **이미지 한 장뿐**이다(실측). 그래서 이미지가 곁들이가 아니라 본문
  * 자체이고, 가로를 꽉 채워 그린다.
  */
+import { Image } from 'expo-image'
 import { useState } from 'react'
-import { Image, Pressable, ScrollView, View } from 'react-native'
+import { Pressable, ScrollView, View } from 'react-native'
 
 import { ExternalLinkIcon, Text } from '../../components/atoms'
 import { openInAppBrowser } from '../../native/browser'
@@ -19,14 +20,14 @@ import type { NoticeBlock } from '../../types/notice'
  * 원격 이미지 한 장. **비율을 받아 오기 전까지 자리를 잡아 둔다.**
  *
  * 넥슨 배너는 가로 876px 이고 세로가 제각각이라 상수로 못 박는다. `onLoad` 가 실제 크기를
- * 주므로 그때 비율을 고친다. 초기값이 없으면 높이가 0이라 이미지가 안 보이고, 너무 크게
+ * 주므로 그때 비율을 고친다. 받는 동안은 `placeholder`(목록의 배너 그림)를 그 자리에 깐다. 초기값이 없으면 높이가 0이라 이미지가 안 보이고, 너무 크게
  * 잡으면 로드 뒤에 화면이 크게 튄다.
  *
  * **못 받으면 못 받았다고 말한다.** 그냥 두면 자리만 잡아 둔 빈칸이 남는데, 이벤트·캐시샵은
  * 본문이 이미지 한 장뿐이라 그 빈칸이 곧 `본문이 없는 공지` 로 읽힌다. 실패하는 길이 여럿이다 -
  * 넥슨이 지운 이미지 · 망 끊김 · 한 장에 2MB 를 넘는 배너(실측 2.3MB).
  */
-function NoticeImage(props: { src: string }): React.JSX.Element {
+function NoticeImage(props: { src: string; placeholder?: string }): React.JSX.Element {
   const [ratio, setRatio] = useState(876 / 400)
   const [failed, setFailed] = useState(false)
 
@@ -46,10 +47,14 @@ function NoticeImage(props: { src: string }): React.JSX.Element {
       testID="notice-image"
       accessibilityIgnoresInvertColors
       source={{ uri: props.src }}
+      placeholder={props.placeholder === undefined ? undefined : { uri: props.placeholder }}
+      placeholderContentFit="contain"
+      cachePolicy="disk"
       style={{ width: '100%', aspectRatio: ratio }}
-      resizeMode="contain"
+      contentFit="contain"
+      transition={150}
       onLoad={(event) => {
-        const { width, height } = event.nativeEvent.source
+        const { width, height } = event.source
         if (width > 0 && height > 0) setRatio(width / height)
       }}
       onError={() => setFailed(true)}
@@ -83,7 +88,16 @@ function NoticeTable(props: { rows: string[][] }): React.JSX.Element {
   )
 }
 
-export function NoticeBlocks(props: { blocks: readonly NoticeBlock[] }): React.JSX.Element {
+export function NoticeBlocks(props: {
+  blocks: readonly NoticeBlock[]
+  /** 첫 그림을 받는 동안 깔 그림 주소. 이벤트 · 캐시샵 목록의 배너 그림. */
+  placeholder?: string
+  /** 그림만 화면 폭 전체로 그리고 글자 블록에는 양옆 여백을 주는가. 부르는 쪽이 여백 없이 둘 때 켠다. */
+  bleed?: boolean
+}): React.JSX.Element {
+  const firstImage = props.blocks.findIndex((block) => block.type === 'image')
+  const inset = props.bleed === true ? 'px-4' : ''
+
   return (
     <View className="gap-3" testID="notice-blocks">
       {props.blocks.map((block, index) => {
@@ -93,19 +107,25 @@ export function NoticeBlocks(props: { blocks: readonly NoticeBlock[] }): React.J
             return (
               <Text
                 key={index}
-                className={`text-sm font-semibold text-text ${index === 0 ? '' : 'pt-2'}`}
+                className={`text-sm font-semibold text-text ${index === 0 ? '' : 'pt-2'} ${inset}`}
               >
                 {block.text}
               </Text>
             )
           case 'text':
             return (
-              <Text key={index} className="text-sm leading-5 text-text">
+              <Text key={index} className={`text-sm leading-5 text-text ${inset}`}>
                 {block.text}
               </Text>
             )
           case 'image':
-            return <NoticeImage key={index} src={block.src} />
+            return (
+              <NoticeImage
+                key={index}
+                src={block.src}
+                placeholder={index === firstImage ? props.placeholder : undefined}
+              />
+            )
           case 'link':
             return (
               <Pressable
@@ -113,14 +133,18 @@ export function NoticeBlocks(props: { blocks: readonly NoticeBlock[] }): React.J
                 role="link"
                 aria-label={block.text}
                 onPress={() => openInAppBrowser(block.href)}
-                className="flex-row items-center gap-1.5"
+                className={`flex-row items-center gap-1.5 ${inset}`}
               >
                 <Text className="text-sm text-primary">{block.text}</Text>
                 <ExternalLinkIcon className="h-3.5 w-3.5 text-primary" strokeWidth={2} aria-hidden />
               </Pressable>
             )
           case 'table':
-            return <NoticeTable key={index} rows={block.rows} />
+            return (
+              <View key={index} className={inset}>
+                <NoticeTable rows={block.rows} />
+              </View>
+            )
         }
       })}
     </View>

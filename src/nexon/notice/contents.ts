@@ -4,6 +4,8 @@
  * 아는 태그만 통과하고 나머지는 글자만 남긴다.
  *
  * - 이벤트 · 캐시샵 본문은 `<img>` 한 장이라 글자가 0자다. 태그를 걷어 평문으로 만들면 빈 본문이 된다.
+ * - 화면에 안 보이는 요소는 안의 글자째 버린다. 이벤트 · 캐시샵은 그림 위에 투명 글자를 겹쳐 두는데, 앱은 겹치지
+ *   않으므로 남기면 그림 아래에 줄지어 선다.
  * - 공지 · 업데이트는 스마트에디터가 글자를 span 수백 개로 쪼갠다. 조각 사이에 공백을 넣으면 `GM 소리` 가
  *   되고, 문단 경계를 안 살리면 앞 문단의 끝과 다음 문단의 시작이 붙는다.
  */
@@ -15,6 +17,15 @@ const MAX_BLOCKS = 2000
 /** 내용째 버리는 것들. 안에 든 글자가 본문이 아니다. */
 const DROP_WITH_CONTENT = /<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi
 const COMMENT = /<!--[\s\S]*?-->/g
+
+/** 닫는 태그가 없는 태그. 열린 태그 짝을 셀 때 빼야 한다. */
+const VOID_TAGS = new Set(['area', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'wbr'])
+
+/** 그려지지 않는 요소의 `style`. `opacity: 0.5` 는 보이므로 0 만 잡는다. */
+const HIDDEN_STYLE = /(?:^|;)\s*(?:opacity\s*:\s*0(?:\.0+)?|display\s*:\s*none|visibility\s*:\s*hidden)\s*(?:;|!|$)/i
+
+/** 스마트에디터 목차. 링크가 문서 안 위치(`#toc_…`)라 앱에서 갈 곳이 없고, 본문에 같은 목록이 또 있다. */
+const DROPPED_CLASS = /(?:^|\s)se-table-of-contents(?:\s|$)/
 
 const ENTITIES: Record<string, string> = {
   nbsp: ' ',
@@ -66,6 +77,48 @@ function safeUrl(raw: string | null): string | null {
   return /^https:\/\//i.test(url) ? url : null
 }
 
+function isDropped(tag: string): boolean {
+  const style = attribute(tag, 'style')
+  if (style !== null && HIDDEN_STYLE.test(style)) return true
+  const className = attribute(tag, 'class')
+  return className !== null && DROPPED_CLASS.test(className)
+}
+
+/**
+ * 버릴 요소를 안의 내용째 걷어 낸 HTML. 같은 이름의 태그 짝을 세어 그 요소가 닫히는 곳까지 지운다.
+ *
+ * 끝까지 닫히지 않으면 지우지 않는다. 그 뒤의 본문이 통째로 사라지는 것보다 글자가 몇 개 남는 쪽이 낫다.
+ */
+function dropHidden(html: string): string {
+  const tagPattern = /<(\/?)([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g
+  let out = ''
+  let kept = 0
+
+  for (let match = tagPattern.exec(html); match !== null; match = tagPattern.exec(html)) {
+    const name = (match[2] ?? '').toLowerCase()
+    if (match[1] === '/' || VOID_TAGS.has(name) || match[0].endsWith('/>') || !isDropped(match[0])) continue
+
+    let depth = 1
+    const inner = new RegExp(`<(/?)${name}\\b[^>]*>`, 'gi')
+    inner.lastIndex = tagPattern.lastIndex
+    let end = -1
+    for (let next = inner.exec(html); next !== null; next = inner.exec(html)) {
+      depth += next[1] === '/' ? -1 : 1
+      if (depth === 0) {
+        end = inner.lastIndex
+        break
+      }
+    }
+    if (end === -1) continue
+
+    out += html.slice(kept, match.index)
+    kept = end
+    tagPattern.lastIndex = end
+  }
+
+  return out + html.slice(kept)
+}
+
 /** 문단 · 제목 · 표 칸을 가르는 태그. 닫힐 때 지금까지 모은 글자가 한 덩어리가 된다. */
 const BLOCK_TAGS = new Set(['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote'])
 
@@ -75,7 +128,7 @@ const BLOCK_TAGS = new Set(['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li'
  * @param html 넥슨 상세 응답의 `contents`
  */
 export function parseContents(html: string): NoticeBlock[] {
-  const source = html.replace(DROP_WITH_CONTENT, ' ').replace(COMMENT, ' ')
+  const source = dropHidden(html.replace(DROP_WITH_CONTENT, ' ').replace(COMMENT, ' '))
 
   const blocks: NoticeBlock[] = []
   let buffer = ''
