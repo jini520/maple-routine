@@ -67,6 +67,8 @@ export function AnchoredPopover(props: {
   testID: string
   /** 고정 폭. 안 주면 내용이 정하고 화면 안쪽이 상한이다 */
   width?: number
+  /** 상자가 화면 끝에서 띄울 거리. 기본 12. 화면 여백보다 안쪽 타일에 붙은 팝오버가 그 타일 변을 준다 */
+  edgeGap?: number
   /** 상자의 안쪽 여백 등 */
   className?: string
   children: ReactNode
@@ -74,6 +76,7 @@ export function AnchoredPopover(props: {
   const { width: windowWidth } = useWindowDimensions()
   const { definition } = useThemeAppearance()
   const { anchor } = props
+  const edgeGap = props.edgeGap ?? EDGE_GAP
   const placement = usePopoverPlacement(anchor, POPOVER_GAP)
   const [measuredWidth, setMeasuredWidth] = useState<number | null>(null)
   const boxWidth = props.width ?? measuredWidth ?? 0
@@ -82,7 +85,7 @@ export function AnchoredPopover(props: {
     containerWidth: windowWidth,
     anchorCenterX: anchor === null ? 0 : anchor.left + anchor.width / 2,
     popoverWidth: boxWidth,
-    edgeGap: EDGE_GAP,
+    edgeGap,
     caretSize: CARET_SIZE,
   })
   const center = placement.side === 'center'
@@ -108,7 +111,7 @@ export function AnchoredPopover(props: {
             left: !hasWidth ? 0 : center ? (windowWidth - boxWidth) / 2 : geometry.left,
             top: placement.top,
             width: props.width,
-            maxWidth: windowWidth - EDGE_GAP * 2,
+            maxWidth: windowWidth - edgeGap * 2,
             opacity: shown ? undefined : 0,
           },
         ]}

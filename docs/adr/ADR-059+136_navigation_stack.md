@@ -255,7 +255,7 @@ iOS 26 이상에서는 바와 알약, ← 원판을 `expo-glass-effect` 의 `Gla
 | `navigation/__tests__/tab-navigate.test.ts` | 결정 6: 페이지 이름이 맞는 레이어를 거치는지, 파라미터가 가장 안쪽 화면에 붙는지 본다 |
 | `hooks/__tests__/useOpenTab.spec.tsx` | 결정 5: 하위 레이어에서 그룹 페이지로 갈 때만 `popToTop` 을 보내고, 바닥에서는 보내지 않는지, 이동은 언제나 하는지 본다 |
 | `hooks/__tests__/useRootBackToBackground.spec.tsx` | 결정 8: 뺄 것이 없을 때만 백그라운드로 보내는지, 레이어가 남아 있으면 넘기는지, 준비 전에는 판정하지 않는지 본다 |
-| `navigation/__tests__/bar-in-layer-stack.test.tsx` | 결정 3 · 5: 실제 내비게이터 위에서 행과 ← 가 바뀌는지, ← 가 그룹에 들어오기 전 화면으로 돌아가는지 본다 |
+| `navigation/__tests__/bar-in-layer-stack.test.tsx` | 결정 3 · 5: 실제 내비게이터 위에서 행과 ← 가 바뀌는지, ← 가 그룹에 들어오기 전 화면으로 돌아가는지 본다. 결정 12: 바에 테두리가 없는지 본다 |
 | | 결정 9: 활성 탭 두 번 누름이 지금 페이지 이름으로 맨 위 스크롤을 부르는지, 세 번 누름과 다른 탭에서 넘어온 직후 누름이 더블탭으로 잡히지 않는지 본다 |
 | | 결정 10: 탭 이동과 ← 에서만 햅틱이 나고 활성 탭 재누름과 맨 위 스크롤에는 나지 않는지 본다 |
 | | 결정 11: 바의 폭과 높이가 `resolveBottomBarMetrics` 에서 오는지, 상한에서 가운데에 놓이는지 본다 |

@@ -3,6 +3,7 @@
  * 막대로 그린다. 막대를 누르면 그 막대만 진해지고 값이 말풍선으로 뜬다. 고르지 않으면 모든 막대가 진하다.
  */
 import { memo, useState } from 'react'
+import { vars } from 'nativewind'
 import { Pressable, View, type LayoutChangeEvent } from 'react-native'
 import Animated, { useAnimatedProps, type SharedValue } from 'react-native-reanimated'
 import Svg, { Line, Rect, Text as SvgText } from 'react-native-svg'
@@ -10,6 +11,7 @@ import Svg, { Line, Rect, Text as SvgText } from 'react-native-svg'
 import { Text } from '../../components/atoms'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
+import { buildPopoverScopeVariables } from '../../theme/theme-vars'
 import { totalsSeries, type DaysByDate, type StatsTotals } from '../../features/stats/aggregate'
 import type { StatsPeriodRange } from '../../features/stats/periods'
 import { weekOfMonthLabel } from '../../lib/boss/boss-profit-period'
@@ -204,15 +206,18 @@ export const TrendSection = memo(function TrendSection(props: {
 
         {pickedTotals !== null && (
           <View
+            testID="stats-trend-bubble"
             pointerEvents="none"
-            className="absolute top-0 rounded-[10px] border border-border bg-surface px-2 py-1 shadow-sm"
-            style={
+            // 팝오버와 같은 면이다. 테두리 없이 그림자로 뜨고, 다크에서는 한 단 더 올린다.
+            className="absolute top-0 rounded-[10px] bg-surface px-2 py-1 shadow-lg"
+            style={[
+              vars(buildPopoverScopeVariables(definition)),
               bubbleAlign === 'left'
                 ? { left: 0 }
                 : bubbleAlign === 'right'
                   ? { right: 0 }
-                  : { left: bubbleX, transform: [{ translateX: '-50%' }] }
-            }
+                  : { left: bubbleX, transform: [{ translateX: '-50%' }] },
+            ]}
           >
             <Text testID="stats-trend-bubble-title" className="text-10 text-text-muted">
               {bubbleTitle(props.cycle, props.trend[selected!].periodKey)}

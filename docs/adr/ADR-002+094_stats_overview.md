@@ -262,7 +262,7 @@ react-native-svg 는 `ClipPath` 안 도형이 바뀌어도 다시 그리지 않�
 | `lib/__tests__/semi-donut.test.ts` | 결정 8: 좁은 조각이 모서리를 줄이고 최소 폭을 받아 사라지지 않는지, 그만큼을 넓은 조각에서 덜어 합이 반원인지 본다 |
 | `lib/stats/__tests__/slice-steps.test.ts` | 결정 8: 여섯 테마의 수입 · 지출 모든 단계와 `그 외` 에서 흰 글자 대비가 4.5 이상인지 본다. 테마 색을 바꿔도 조각 안 글자가 읽히는지 지키는 테스트다 |
 | `app/stats/__tests__/BossSection.test.tsx` | 결정 10: 난이도별 타일의 순서 · 배지 · 처치 횟수와, 보스별로 합칠 때 배지가 없는지 본다 |
-| `app/stats/__tests__/CumulativeSection.test.tsx` | 결정 11: 누적 값과 시작 날짜 표시, 말풍선을 열고 닫는 동작, 0 선 위아래 색을 본다. 결정 16: 드러내기를 `ClipPath` 로 하지 않는지 본다 |
+| `app/stats/__tests__/CumulativeSection.test.tsx` | 결정 11: 누적 값과 시작 날짜 표시, 말풍선을 열고 닫는 동작과 말풍선에 테두리가 없는지([[ADR-062]] 결정 9), 0 선 위아래 색을 본다. 결정 16: 드러내기를 `ClipPath` 로 하지 않는지 본다 |
 | `app/stats/__tests__/reveal.test.ts` | 결정 16: 화면에 들어온 카드만, 한 번씩만 드러내는지 본다 |
 
 ## 번호 기록

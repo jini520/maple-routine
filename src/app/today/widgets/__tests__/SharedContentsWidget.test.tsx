@@ -335,17 +335,22 @@ describe('머리의 `?`. 계열마다 다른 표시 기준을 말한다', () => 
   // 그대로 쓰면 타일보다 왼쪽에 선다(격자 여백 16 · 화면 여백 12). 이 타일은 크기 선언이
   // `4×auto` 하나뿐이라 창 좌우 여백이 곧 타일의 변이다.
   //
-  // 실제 폭은 상한 이하라, 상한으로 재면 그보다 넉넉한 경계를 본 것이다.
+  // 공용 팝오버 상자에 화면 끝 여백으로 타일 변(16)을 넘긴다. 가장 넓게 재도 그 변 안에 선다.
   it('상자가 타일 좌우 변을 안 넘는다', async () => {
     const { getByTestId } = await 위젯(공유컨텐츠())
 
     await 누름(getByTestId('shared-note-toggle'))
+    const 폭 = 창폭 - GRID_SIDE_PADDING * 2
+    await act(async () => {
+      fireEvent(getByTestId('shared-note'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 폭, height: 60 } } })
+    })
 
     const { left, maxWidth } = flattenStyle(getByTestId('shared-note').props.style) as {
       left: number
       maxWidth: number
     }
-    expect(left).toBe(GRID_SIDE_PADDING)
-    expect(left + maxWidth).toBeLessThanOrEqual(창폭 - GRID_SIDE_PADDING)
+    expect(left).toBeGreaterThanOrEqual(GRID_SIDE_PADDING)
+    expect(left + 폭).toBeLessThanOrEqual(창폭 - GRID_SIDE_PADDING)
+    expect(maxWidth).toBeLessThanOrEqual(창폭 - GRID_SIDE_PADDING * 2)
   })
 })

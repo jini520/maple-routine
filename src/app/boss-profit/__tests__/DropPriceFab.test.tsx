@@ -4,13 +4,12 @@
 // 여기서 보는 것은 **무엇이 어디에 섰고 누르면 어디로 가는가** 다.
 import { act, fireEvent, within } from '@testing-library/react-native'
 
-import { StyleSheet } from 'react-native'
 
 import { flattenStyle, renderOverlay, 기본테마 } from '../../../components/__tests__/render-atom'
 import { getThemeDefinition } from '../../../lib/theme/theme-registry'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../theme/appearance-store'
 import { boxShadowOf } from '../../../lib/shadow'
-import { FAB_DIAMETER_PX, FAB_SHADOW } from '../../../lib/fab-metrics'
+import { FAB_SHADOW } from '../../../lib/fab-metrics'
 import { dropItemIconOf } from '../../../lib/assets/asset-lookup'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'

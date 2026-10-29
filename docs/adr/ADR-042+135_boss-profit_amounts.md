@@ -244,11 +244,12 @@
 |---|---|
 | `app/boss-profit/__tests__/character-groups.test.ts` | 결정 1: 드롭 키로 그 행의 드롭만 더하고 스킵 · 미입력을 빼는지, 금액 모르는 행이 0 인지 본다. 결정 3: 월간 보스를 잡아도 주간 몫이 그대로인지, 월드 key 로 구분하는지 본다. 결정 7 · 8: 상자의 원천과 월간 몫을 본다 |
 | `app/boss-profit/__tests__/BossProfitScreen.test.tsx` | 결정 2: 총 수익 합, 단위 앞 공백, 미입력 · 미완료가 총액을 안 움직이는지, 고가 드롭 표시를 본다. 결정 7 · 8: 총 수익 상자의 상위 10건과 결정석 두 줄을 본다. 결정 12: 지난 기간 카드에 표식이 없는지 본다 |
-| `app/boss-profit/__tests__/HeadlineChips.test.tsx` | 결정 3 · 5: 칩이 보이는 조건, 두 몫을 함께 읽는지, 복수 월드 분모와 펼친 줄, 칩 수가 줄의 합인지, 닫는 버튼과 내용이 같은 창인지 본다. 결정 4: 누적 수가 오면 그 수를 보여 주는지 본다 |
+| `app/boss-profit/__tests__/HeadlineChips.test.tsx` | 결정 3 · 5: 칩이 보이는 조건, 두 몫을 함께 읽는지, 복수 월드 분모와 펼친 줄, 칩 수가 줄의 합인지, 펼친 줄이 두 몫을 읽는 이름으로 말하는지, 닫는 층과 내용이 같은 창인지 본다. 결정 4: 누적 수가 오면 그 수를 보여 주는지 본다 |
 | `features/boss-profit/__tests__/monthly-crystals.spec.ts` | 결정 4: 1명 · 2명 예시, 보는 주 뒤를 안 세는지, 달 경계 주, 날짜 모르는 기록, 개정 수가 바뀌면 다시 세는지 본다 |
 | `app/boss-profit/__tests__/CharacterAccordion.test.tsx` | 결정 6: 탭마다 링의 분모를 본다. 결정 7: 카드 상자의 상위 5건과 월간 원천을 본다. 결정 11: 조회 불가 카드가 안 펼쳐지고 배지가 눌리는지, 금액이 있으면 펼쳐지는지 본다 |
 | `components/organisms/CharacterPortrait/__tests__/CharacterPortrait.test.tsx` | 결정 6: 주간 링이 12칸이고 이름으로 진행률을 읽는지 본다 |
-| `app/boss-profit/__tests__/ItemRevenuePopover.test.tsx` | 결정 7: 미입력 · 기록 안함을 빼는지, 자르는 목록의 순서와 `외 N건` 줄, 빈 목록 문구를 본다. 결정 8: 결정석이 두 줄로 나뉘고 합계가 맞는지 본다 |
+| `app/boss-profit/__tests__/ItemRevenuePopover.test.tsx` | 결정 7: 미입력 · 기록 안함을 빼는지, 자르는 목록의 순서와 `외 N건` 줄, 빈 목록 문구, 묶음 사이에 구분선이 없는지 본다. 결정 8: 결정석이 두 줄로 나뉘고 합계가 맞는지 본다 |
+| `app/boss-profit/__tests__/CharacterIssue.test.tsx` | 결정 11: 조회 불가면 `캐릭터 관리로 이동` 버튼이 서고 실패면 안 서는지, `닫기` 버튼 없이 바깥을 누르면 닫히는지, 배지를 눌러도 카드가 안 펼쳐지는지 본다 |
 | `features/boss-profit/__tests__/use-unpriced-drop-count.spec.tsx` · `app/boss-profit/__tests__/DropPriceFab.test.tsx` | 결정 9: 못 셌으면 `null`, 다시 세는 동안과 실패 시 직전 수, `9+` 와 접근성 이름을 본다 |
 | `features/boss-profit/__tests__/record-write-burst.spec.tsx` | 결정 9: 여러 건을 쓰는 동안 버튼이 한 번만 다시 그려지는지 본다 |
 | `hooks/__tests__/useCountUp.spec.tsx` | 결정 10: 굴러가는 중에 목표가 바뀌면 지금 값에서 다시 출발하는지, 마운트 때 기억에서 출발하는지, 키가 바뀌면 바로 바뀌는지 본다 |

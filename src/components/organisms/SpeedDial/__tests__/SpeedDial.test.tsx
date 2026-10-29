@@ -3,7 +3,6 @@
 // **움직임은 여기서 안 본다**. 값은 `speed-dial-motion.ts` 가 들고 그쪽 테스트가 붙든다. 여기서
 // 보는 것은 **무엇이 눌리고 무엇이 안 눌리는가** 다.
 import { act, fireEvent } from '@testing-library/react-native'
-import { StyleSheet } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import { flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'

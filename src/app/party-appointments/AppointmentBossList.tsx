@@ -13,8 +13,6 @@ import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortra
 import { DragHandle } from '../../components/organisms/CharacterRow/DragHandle'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { groupBossesByCharacter, moveWithinGroup } from '../../features/party-appointments/boss-groups'
-import { mixOklab } from '../../lib/color'
-import { useThemeAppearance } from '../../theme/context'
 import { bossAliasOf, bossPortraitSlugOf } from '../../lib/boss/bosses'
 import { selectionFeedback } from '../../native/haptics'
 import type { BossDifficulty } from '../../types'
@@ -59,9 +57,6 @@ const ROW_CLASS = 'h-[46px] flex-row items-center gap-2 rounded-[10px] bg-surfac
 
 export function AppointmentBossList(props: AppointmentBossListProps): React.JSX.Element {
   const { bosses } = props
-  const { definition } = useThemeAppearance()
-  // 주황 글자색을 시트 바탕 쪽으로 반쯤 섞은 점선. 글자보다 한 단계 옅어 버튼 테두리로만 읽힌다.
-  const dashColor = mixOklab(definition.primaryInk, definition.surface, 0.55)
   const readOnly = props.readOnly === true
   const groups = groupBossesByCharacter(bosses)
 
@@ -125,13 +120,12 @@ export function AppointmentBossList(props: AppointmentBossListProps): React.JSX.
         </View>
       ))}
       {!readOnly && (
-        // 보스 줄과 같은 크기의 점선 빈 칸. 여기에 줄이 하나 더 들어온다는 뜻이다.
+        // 보스 줄과 같은 크기의 칸. 여기에 줄이 하나 더 들어온다는 뜻이다. 테두리 대신 card-inset 면으로 보스 줄과 가른다.
         <Pressable
           role="button"
           aria-label="보스 추가"
           onPress={props.onAdd}
-          style={{ borderWidth: 1.5, borderStyle: 'dashed', borderColor: dashColor }}
-          className="mt-1 h-[46px] flex-row items-center justify-center gap-1.5 rounded-[10px] active:opacity-60"
+          className="mt-1 h-[46px] flex-row items-center justify-center gap-1.5 rounded-[10px] bg-card-inset active:opacity-60"
         >
           <PlusIcon className="h-3.5 w-3.5 text-primary-ink" strokeWidth={2.6} aria-hidden />
           <Text className="text-13 font-bold text-primary-ink">보스 추가</Text>
