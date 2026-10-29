@@ -8,6 +8,7 @@ import { useDataFreshness } from '../features/refresh/freshness'
 import { useNoticeStore } from '../features/notice/store'
 import { requestNotificationReconcile } from '../features/local-notifications/run'
 import { fillLegacyAccountIds } from '../features/auth/legacy-account-ids'
+import { dropEmptyMvpGradeRows } from '../features/mvp-grade/empty-rows'
 import { kickServerSync } from '../features/server-sync/kick'
 import { useAppEntryStore } from '../features/app-entry/store'
 import { useAuthStore } from '../features/auth/store'
@@ -193,6 +194,13 @@ function ReadyShell(): React.JSX.Element {
   useEffect(() => {
     if (!isReady) return
     void fillLegacyAccountIds()
+  }, [isReady])
+
+  // 옛 판이 남긴 MVP 등급 빈 줄을 지운다. 지우면 자동 수수료 다시 계산이 돌아 작업 진행을 띄울 수 있는 `isReady` 뒤에 돈다.
+  // 실패해도 빈 줄은 읽을 때 건너뛰므로 다음 부팅에 다시 돌면 된다.
+  useEffect(() => {
+    if (!isReady) return
+    dropEmptyMvpGradeRows().catch(() => {})
   }, [isReady])
 
   // 지난 실행의 데이터 삭제가 실패했으면 알린다. 삭제 뒤 앱을 다시 띄우므로 그 자리에서는 못 알렸다.

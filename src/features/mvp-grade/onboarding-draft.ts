@@ -9,13 +9,13 @@ import type { MvpGradeKey } from '../../lib/mvp/grades'
 
 interface MvpOnboardingDraftState {
   grades: Record<string, MvpGradeKey>
-  /** ID 마다 적용 시작 주(목요일) */
+  /** ID 마다 적용 시작일 */
   starts: Record<string, string>
   weeklyOff: boolean
   /** 어느 ID 들로 채웠나. 같은 ID 들이면 다시 채우지 않아 뒤로 갔다 와도 고르던 값이 남는다 */
   seededFor: string | null
   /** 처음 고르는 값. 등급은 일반, 시작 주는 이번 주, 직접 바꾸기는 저장된 값 */
-  seed: (accountIds: readonly string[], thisWeek: string, weeklyOff: boolean) => void
+  seed: (accountIds: readonly string[], today: string, weeklyOff: boolean) => void
   setGrade: (accountId: string, grade: MvpGradeKey) => void
   setStart: (accountId: string, week: string) => void
   setWeeklyOff: (weeklyOff: boolean) => void
@@ -26,13 +26,13 @@ export const useMvpOnboardingDraft = create<MvpOnboardingDraftState>()((set, get
   starts: {},
   weeklyOff: false,
   seededFor: null,
-  seed(accountIds, thisWeek, weeklyOff) {
+  seed(accountIds, today, weeklyOff) {
     const key = accountIds.join(',')
     if (get().seededFor === key) return
     set({
       seededFor: key,
       grades: Object.fromEntries(accountIds.map((id) => [id, 'normal' as const])),
-      starts: Object.fromEntries(accountIds.map((id) => [id, thisWeek])),
+      starts: Object.fromEntries(accountIds.map((id) => [id, today])),
       weeklyOff,
     })
   },

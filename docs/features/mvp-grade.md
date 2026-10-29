@@ -12,11 +12,11 @@
 | 파일 | 하는 일 |
 |---|---|
 | `lib/mvp/grades.ts` | 등급 일곱의 경매장 수수료 · 스타포스 할인 표(서버 게임 데이터의 `mvpGrades` 칸) · 요율 조회 · 등급이 없을 때의 요율 · 가장 높은 등급 · 혜택 한 줄 |
-| `lib/mvp/history.ts` | 그 날의 등급 · 등급 변경 · 기간 추가 · 지우기 · 고치기 · 고를 수 있는 주 · 기간 추가의 설명 줄 |
+| `lib/mvp/history.ts` | 그 날의 등급 · 등급 변경 · 지우기 · 고치기 · 고치기에서 고를 수 있는 날 |
 | `lib/mvp/membership.ts` | 이름이나 ocid 로 메이플 ID 소속 찾기 |
 | `lib/mvp/fees.ts` · `lib/mvp/starforce.ts` | 기록의 자동 요율 · 스타포스 줄의 MVP 할인 |
 | `lib/enhancement/cost.ts` | 스타포스 시도 비용에 붙이는 MVP 할인(`withMvpDiscount`) |
-| `storage/mvp-grades.ts` | `mvp_grade_history` 읽기 · 쓰기 |
+| `storage/mvp-grades.ts` | `mvp_grade_history` 읽기 · 쓰기 · 옛 등급 빈 줄 지우기 |
 | `storage/character-accounts.ts` | `character_accounts` 읽기 · 쓰기. 소속을 어느 넥슨 계정의 목록에서 봤는지도 적는다 |
 | `storage/mvp-grade-prefs.ts` | `mvpWeeklyCheckOff` · `mvpLastCheckedWeek` · `mvpBulkApplyAsked` · `mvpOnboardingPending` |
 | `features/mvp-grade/character-list.ts` | `character/list` 를 받고 소속을 기록한다. 목록을 받는 곳은 모두 이것을 부른다 |
@@ -25,14 +25,15 @@
 | `features/mvp-grade/store.ts` · `fee-context.ts` · `auto-fee.ts` | 화면이 읽는 등급 정보 · 폼마다의 자동 요율 |
 | `features/mvp-grade/bulk-apply.ts` · `recalculate-fees.ts` · `tasks.ts` | 일괄 적용과 다시 계산의 대상 목록, 이어서 하는 작업 둘 |
 | `features/mvp-grade/after-change.ts` | 등급 이력을 바꾼 뒤 등급 정보를 다시 읽고 다시 계산을 돌린다 |
+| `features/mvp-grade/empty-rows.ts` | 앱을 켤 때 옛 판이 남긴 등급 빈 줄을 지우고, 지웠으면 다시 계산을 돌린다 |
 | `features/mvp-grade/settings-store.ts` | 설정 목록과 ID 이력 페이지가 함께 읽는 상태 |
 | `features/mvp-grade/onboarding.ts` · `onboarding-draft.ts` | 온보딩에서 MVP 화면으로 갈지 · 두 화면이 함께 쓰는 고르던 값 |
 | `app/mvp-grade/MvpGradeHost.tsx` · `MvpGradeModal.tsx` · `MvpGradeCards.tsx` | `AppShell` 의 모달과 고르기 · 확인 카드 |
 | `app/mvp-grade/MvpGradeOnboarding.tsx` | 온보딩의 고르기 · 확인 화면 |
-| `app/mvp-grade/MvpGradeSheets.tsx` · `GradeTimelineRow.tsx` | 등급 변경 · 기록 고치기 · 기록 추가 시트와 타임라인 한 줄 |
+| `app/mvp-grade/MvpGradeSheets.tsx` · `GradeTimelineRow.tsx` | 등급 변경 · 기록 고치기 시트와 타임라인 한 줄 |
 | `app/settings/SettingsMvpGradeScreen.tsx` · `SettingsMvpGradeHistoryScreen.tsx` | 설정의 목록 페이지 · ID 이력 페이지 |
 | `components/molecules/MvpGradeGrid` · `MvpPlate` | 7칸 격자 · 명패 |
-| `components/organisms/FeeRow` · `WeekCalendarPopover` | 수수료 줄 · 주 고르기 달력 |
+| `components/organisms/FeeRow` · `CalendarPopover` | 수수료 줄 · 시작 날짜를 고르는 달력 |
 | `lib/assets/asset-lookup.ts` 의 `mvpPlateAsset` | 명패 여섯. 서버 그림 목록의 `mvp/` 에서 찾는다. 일반은 그림이 없다 |
 
 ## 등급과 혜택
@@ -53,7 +54,7 @@
 
 | 저장 | 내용 | 데이터 삭제 |
 |---|---|---|
-| SQLite `mvp_grade_history` | 메이플 ID 마다 `(시작 주의 목요일, 등급)` 줄. 등급이 빈 줄도 있다 | 남긴다 |
+| SQLite `mvp_grade_history` | 메이플 ID 마다 `(시작 날짜, 등급)` 줄. 시작 날짜는 등급을 달성한 날이고 아무 요일이나 된다 | 남긴다 |
 | SQLite `character_accounts` | `(ocid, 이름, 메이플 ID)` 와 처음 본 날 · 마지막으로 본 날 | 남긴다 |
 | `mvpWeeklyCheckOff` | `앞으로 등급은 직접 바꿀게요` | 남긴다 |
 | `mvpLastCheckedWeek` | 마지막으로 확인한 주 | 남긴다 |
@@ -63,7 +64,7 @@
 ## 기록의 등급을 찾는 순서
 
 1. 기록의 캐릭터가 속한 메이플 ID 를 찾는다. 스타포스 줄은 이름으로, 나머지는 ocid 로 찾는다.
-2. 찾았으면 그 ID 의 이력에서 기록 날짜가 든 주 이하의 가장 늦은 줄을 쓴다.
+2. 찾았으면 그 ID 의 이력에서 기록 날짜 이하의 가장 늦은 줄을 쓴다.
 3. 소속을 모르면 그 날짜에 등급이 있는 ID 가운데 가장 높은 등급을 쓴다.
 4. 등급이 없으면 스타포스는 할인 없이, 자동 수수료는 일반 요율(5%)로 계산한다.
 
@@ -104,7 +105,8 @@
 | 페이지 | 보여 주는 것 | 누르면 |
 |---|---|---|
 | 목록 | ID 마다 지금 등급 한 줄과 `이력 N건 보기`, 맨 아래 `매주 등급 확인` 스위치 | `변경`: 등급 변경 시트 · `이력 N건 보기`: ID 이력 페이지 |
-| ID 이력 | 지금 등급 · 혜택 · 시작 날짜, 연도로 나눈 타임라인 | `등급 변경`: 등급 변경 시트 · 줄: 기록 고치기 시트 · `+ 추가`: 기록 추가 시트 |
+| ID 이력 | 지금 등급 · 혜택 · 시작 날짜, 연도로 나눈 타임라인 | `등급 변경`: 등급 변경 시트 · 줄: 기록 고치기 시트 |
 
-기록 추가는 지난주까지의 닫힌 기간을 끼워 넣는다. 종료 주 다음 주부터는 그 기간을 감싸던 등급이 다시
-이어지고, 첫 기록보다 앞이면 `등급 없음` 이 된다. 자세한 규칙은 [[ADR-050]] 결정 14 에 있다.
+등급은 달성한 날부터 바뀌므로 시작 날짜는 아무 요일이나 된다. 한 등급은 다음 기록의 전날까지 이어지고, 등급이 빈
+기간은 없다. 지난 기간 하나만 다른 등급이었으면 등급 변경으로 그 기간의 첫날과 다음 날을 차례로 적는다. 자세한 규칙은
+[[ADR-050]] 결정 2 · 14 에 있다.

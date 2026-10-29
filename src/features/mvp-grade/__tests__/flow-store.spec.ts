@@ -162,7 +162,7 @@ describe('complete', () => {
     await useMvpAskStore.getState().evaluate(NOW)
 
     await useMvpAskStore.getState().complete(
-      { choices: [{ accountId: 'A', grade: 'diamond', startWeek: '2026-09-10', changed: true }], weeklyOff: false, bulkApply: false },
+      { choices: [{ accountId: 'A', grade: 'diamond', startDate: '2026-09-10', changed: true }], weeklyOff: false, bulkApply: false },
       NOW,
     )
 
@@ -180,7 +180,7 @@ describe('complete', () => {
     })
 
     await useMvpAskStore.getState().complete(
-      { choices: [{ accountId: 'A', grade: 'gold', startWeek: '2026-09-17', changed: true }], weeklyOff: false, bulkApply: false },
+      { choices: [{ accountId: 'A', grade: 'gold', startDate: '2026-09-17', changed: true }], weeklyOff: false, bulkApply: false },
       NOW,
     )
 
@@ -191,7 +191,7 @@ describe('complete', () => {
     await useMvpAskStore.getState().evaluate(NOW)
 
     await useMvpAskStore.getState().complete(
-      { choices: [{ accountId: 'A', grade: 'silver', startWeek: '2026-09-17', changed: true }], weeklyOff: true, bulkApply: true },
+      { choices: [{ accountId: 'A', grade: 'silver', startDate: '2026-09-17', changed: true }], weeklyOff: true, bulkApply: true },
       NOW,
     )
 
@@ -206,7 +206,7 @@ describe('complete', () => {
     expect(useMvpAskStore.getState().ask).toEqual({ kind: 'weekly', accountIds: ['A'] })
 
     await useMvpAskStore.getState().complete(
-      { choices: [{ accountId: 'A', grade: 'gold', startWeek: '2026-09-17', changed: false }], weeklyOff: false, bulkApply: false },
+      { choices: [{ accountId: 'A', grade: 'gold', startDate: '2026-09-17', changed: false }], weeklyOff: false, bulkApply: false },
       NOW,
     )
 
@@ -222,7 +222,7 @@ describe('complete', () => {
     expect(useMvpAskStore.getState().ask).toMatchObject({ bulk: false })
 
     await useMvpAskStore.getState().complete(
-      { choices: [{ accountId: 'A', grade: 'normal', startWeek: '2026-09-17', changed: true }], weeklyOff: false, bulkApply: false },
+      { choices: [{ accountId: 'A', grade: 'normal', startDate: '2026-09-17', changed: true }], weeklyOff: false, bulkApply: false },
       NOW,
     )
 

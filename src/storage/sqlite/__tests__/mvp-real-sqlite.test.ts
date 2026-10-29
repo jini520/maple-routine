@@ -2,11 +2,11 @@
 /**
  * MVP 등급 이력과 캐릭터 소속 표를 진짜 SQLite 로 태우는 자리.
  *
- * 등급 없음(`NULL`) 줄의 왕복과 `MIN` · `MAX` 로 넓히는 upsert 는 엔진이 판정하는 것이라 목으로는 못 본다.
+ * 옛 판이 남긴 등급 빈(`NULL`) 줄의 처리와 `MIN` · `MAX` 로 넓히는 upsert 는 엔진이 판정하는 것이라 목으로는 못 본다.
  */
-import { closeBossProfitDb } from '../db'
+import { closeBossProfitDb, getBossProfitDb } from '../db'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
-import { getMvpGradeHistories, replaceMvpGradeHistory } from '../../mvp-grades'
+import { deleteEmptyMvpGradeRows, getMvpGradeHistories, replaceMvpGradeHistory } from '../../mvp-grades'
 import { getCharacterAccountSightings, recordCharacterAccounts } from '../../character-accounts'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
@@ -43,14 +43,30 @@ describe('mvp_grade_history', () => {
     expect(histories.get('B')).toEqual([{ startDate: '2026-09-17', grade: 'normal' }])
   })
 
-  it('등급 없음 줄이 NULL 로 오간다', async () => {
-    await replaceMvpGradeHistory('A', [
-      { startDate: '2026-05-07', grade: 'red' },
-      { startDate: '2026-05-21', grade: null },
-      { startDate: '2026-06-11', grade: 'silver' },
-    ], '2026-09-22T00:00:00.000Z')
+  describe('옛 판이 남긴 등급 빈 줄', () => {
+    beforeEach(async () => {
+      await replaceMvpGradeHistory('A', [
+        { startDate: '2026-05-07', grade: 'red' },
+        { startDate: '2026-06-11', grade: 'silver' },
+      ], '2026-09-22T00:00:00.000Z')
+      const db = await getBossProfitDb()
+      await db.run(
+        `INSERT INTO mvp_grade_history (account_id, from_date, grade, updated_at) VALUES ('A', '2026-05-21', NULL, '2026-09-22T00:00:00.000Z')`,
+      )
+    })
 
-    expect((await getMvpGradeHistories()).get('A')?.[1]).toEqual({ startDate: '2026-05-21', grade: null })
+    it('읽을 때 건너뛴다', async () => {
+      expect((await getMvpGradeHistories()).get('A')).toEqual([
+        { startDate: '2026-05-07', grade: 'red' },
+        { startDate: '2026-06-11', grade: 'silver' },
+      ])
+    })
+
+    it('빈 줄만 지우고 지운 수를 돌려준다', async () => {
+      expect(await deleteEmptyMvpGradeRows()).toBe(1)
+      expect(await deleteEmptyMvpGradeRows()).toBe(0)
+      expect((await getMvpGradeHistories()).get('A')).toHaveLength(2)
+    })
   })
 
   it('빈 이력으로 바꾸면 그 ID 가 목록에서 빠진다', async () => {

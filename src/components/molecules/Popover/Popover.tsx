@@ -7,10 +7,13 @@
  */
 import { useState, type ReactNode } from 'react'
 import { Modal, Pressable, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native'
+import { vars } from 'nativewind'
 
 import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
 import { usePopoverPlacement } from '../../../hooks/usePopoverPlacement'
 import { anchorPopover } from '../../../lib/popover-anchor'
+import { useThemeAppearance } from '../../../theme/context'
+import { buildPopoverScopeVariables } from '../../../theme/theme-vars'
 
 const EDGE_GAP = 12
 const CARET_SIZE = 8
@@ -69,6 +72,7 @@ export function AnchoredPopover(props: {
   children: ReactNode
 }): React.JSX.Element {
   const { width: windowWidth } = useWindowDimensions()
+  const { definition } = useThemeAppearance()
   const { anchor } = props
   const placement = usePopoverPlacement(anchor, POPOVER_GAP)
   const [measuredWidth, setMeasuredWidth] = useState<number | null>(null)
@@ -97,15 +101,18 @@ export function AnchoredPopover(props: {
         role="dialog"
         aria-label={props.ariaLabel}
         onLayout={onLayout}
-        style={{
-          // 내용 폭을 재기 전에는 왼쪽 끝에 둔다. 오른쪽에 두고 재면 남은 폭에 맞춰 줄이 접힌 폭을 잰다.
-          left: !hasWidth ? 0 : center ? (windowWidth - boxWidth) / 2 : geometry.left,
-          top: placement.top,
-          width: props.width,
-          maxWidth: windowWidth - EDGE_GAP * 2,
-          opacity: shown ? undefined : 0,
-        }}
-        className={`absolute rounded-[12px] border border-border bg-surface shadow-lg ${props.className ?? ''}`}
+        style={[
+          vars(buildPopoverScopeVariables(definition)),
+          {
+            // 내용 폭을 재기 전에는 왼쪽 끝에 둔다. 오른쪽에 두고 재면 남은 폭에 맞춰 줄이 접힌 폭을 잰다.
+            left: !hasWidth ? 0 : center ? (windowWidth - boxWidth) / 2 : geometry.left,
+            top: placement.top,
+            width: props.width,
+            maxWidth: windowWidth - EDGE_GAP * 2,
+            opacity: shown ? undefined : 0,
+          },
+        ]}
+        className={`absolute rounded-[12px] bg-surface shadow-lg ${props.className ?? ''}`}
       >
         {!center && (
           <View
@@ -117,9 +124,7 @@ export function AnchoredPopover(props: {
               height: CARET_SIZE,
               ...(placement.side === 'below' ? { top: -4 } : { bottom: -4 }),
             }}
-            className={`absolute rotate-45 border-border bg-surface ${
-              placement.side === 'below' ? 'border-l border-t' : 'border-b border-r'
-            }`}
+            className="absolute rotate-45 bg-surface"
           />
         )}
         {props.children}

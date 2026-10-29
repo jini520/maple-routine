@@ -1,4 +1,4 @@
-/** 설정 이력 상세의 바텀시트 셋. 등급 변경 · 기록 고치기 · 기록 추가. */
+/** 설정 이력 상세의 바텀시트 둘. 등급 변경 · 기록 고치기. */
 import type { ReactNode } from 'react'
 import { fireEvent } from '@testing-library/react-native'
 
@@ -23,7 +23,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import type { MvpGradeEntry } from '../../../lib/mvp/history'
-import { GradeChangeSheet, GradeEditSheet, GradeInsertSheet } from '../MvpGradeSheets'
+import { GradeChangeSheet, GradeEditSheet } from '../MvpGradeSheets'
 
 const TODAY = '2026-09-22'
 // 6/11 실버 · 7/30 골드. 지금 기록은 7/30 골드다.
@@ -37,55 +37,66 @@ function 저장(view: Awaited<ReturnType<typeof renderOverlay>>) {
 }
 
 describe('GradeChangeSheet', () => {
-  it('이번 주와 지금 등급으로 열리고, 고른 등급을 그 주부터 적는다', async () => {
+  it('오늘과 지금 등급으로 열리고, 고른 등급을 그 날부터 적는다', async () => {
     const onSave = jest.fn(async () => {})
     const view = await renderOverlay(
       <GradeChangeSheet history={HISTORY} todayDateKey={TODAY} onSave={onSave} onClose={jest.fn()} />,
     )
 
     expect(view.getByText('등급 변경')).toBeTruthy()
-    expect(view.getByTestId('mvp-grade-sheet-week')).toHaveTextContent('9월 17일 (목)')
+    expect(view.getByTestId('mvp-grade-sheet-date')).toHaveTextContent('9월 22일 (화)')
     expect(view.getByLabelText('골드').props.accessibilityState?.selected).toBe(true)
-    expect(view.getByText('선택한 주부터 새 등급으로 계산해요.')).toBeTruthy()
+    expect(view.getByText('선택한 날부터 새 등급으로 계산해요.')).toBeTruthy()
 
     await fireEvent.press(view.getByLabelText('레드'))
     await fireEvent.press(저장(view))
 
-    expect(onSave).toHaveBeenCalledWith([...HISTORY, { startDate: '2026-09-17', grade: 'red' }])
+    expect(onSave).toHaveBeenCalledWith([...HISTORY, { startDate: '2026-09-22', grade: 'red' }])
   })
 
-  it('주는 지금 기록이 시작된 주부터 이번 주까지 고른다', async () => {
+  // 따로 있던 기록 추가 시트를 합쳤다. 지난 날을 고르면 그 날부터 다음 기록 전날까지 그 등급이다.
+  it('오늘 뒤는 못 고르고, 지난 날을 고르면 그 날부터 적는다', async () => {
+    const onSave = jest.fn(async () => {})
     const view = await renderOverlay(
-      <GradeChangeSheet history={HISTORY} todayDateKey={TODAY} onSave={jest.fn()} onClose={jest.fn()} />,
+      <GradeChangeSheet history={HISTORY} todayDateKey={TODAY} onSave={onSave} onClose={jest.fn()} />,
     )
 
-    await fireEvent.press(view.getByLabelText('시작 주 고르기'))
-
-    expect(view.getByLabelText('2026-09-08').props.accessibilityState?.disabled).toBe(false)
-    expect(view.getByLabelText('2026-09-24').props.accessibilityState?.disabled).toBe(true)
-  })
-
-  it('주를 눌러도 확인해야 바뀌고, 바깥을 누르면 버린다', async () => {
-    const view = await renderOverlay(
-      <GradeChangeSheet history={HISTORY} todayDateKey={TODAY} onSave={jest.fn()} onClose={jest.fn()} />,
-    )
-
-    await fireEvent.press(view.getByLabelText('시작 주 고르기'))
-    await fireEvent.press(view.getByLabelText('2026-09-08'))
-    await fireEvent.press(view.getByLabelText('주 고르기 닫기'))
-    expect(view.getByTestId('mvp-grade-sheet-week')).toHaveTextContent('9월 17일 (목)')
-
-    await fireEvent.press(view.getByLabelText('시작 주 고르기'))
-    await fireEvent.press(view.getByLabelText('2026-09-08'))
+    await fireEvent.press(view.getByLabelText('시작일 고르기'))
+    expect(view.getByLabelText('2026-09-23').props.accessibilityState?.disabled).toBe(true)
+    await fireEvent.press(view.getByLabelText('지난달'))
+    await fireEvent.press(view.getByLabelText('지난달'))
+    await fireEvent.press(view.getByLabelText('2026-07-05'))
     await fireEvent.press(view.getByRole('button', { name: '확인' }))
-    expect(view.getByTestId('mvp-grade-sheet-week')).toHaveTextContent('9월 3일 (목)')
+    await fireEvent.press(view.getByLabelText('레드'))
+    await fireEvent.press(저장(view))
+
+    expect(onSave).toHaveBeenCalledWith([
+      { startDate: '2026-06-11', grade: 'silver' },
+      { startDate: '2026-07-05', grade: 'red' },
+      { startDate: '2026-07-30', grade: 'gold' },
+    ])
+  })
+
+  it('날을 눌러도 확인해야 바뀌고, 바깥을 누르면 버린다', async () => {
+    const view = await renderOverlay(
+      <GradeChangeSheet history={HISTORY} todayDateKey={TODAY} onSave={jest.fn()} onClose={jest.fn()} />,
+    )
+
+    await fireEvent.press(view.getByLabelText('시작일 고르기'))
+    await fireEvent.press(view.getByLabelText('2026-09-20'))
+    await fireEvent.press(view.getByLabelText('날짜 고르기 닫기'))
+    expect(view.getByTestId('mvp-grade-sheet-date')).toHaveTextContent('9월 22일 (화)')
+
+    await fireEvent.press(view.getByLabelText('시작일 고르기'))
+    await fireEvent.press(view.getByLabelText('2026-09-20'))
+    await fireEvent.press(view.getByRole('button', { name: '확인' }))
+    expect(view.getByTestId('mvp-grade-sheet-date')).toHaveTextContent('9월 20일 (일)')
   })
 })
 
 describe('GradeEditSheet', () => {
-  it('그 기록의 주와 등급으로 열리고 고친 값을 적는다', async () => {
-    const onSave = jest.fn(async () => {})
-    const view = await renderOverlay(
+  function 고치기(onSave = jest.fn(async () => {})) {
+    return renderOverlay(
       <GradeEditSheet
         history={HISTORY}
         startDate="2026-07-30"
@@ -95,10 +106,15 @@ describe('GradeEditSheet', () => {
         onClose={jest.fn()}
       />,
     )
+  }
+
+  it('그 기록의 날과 등급으로 열리고 고친 값을 적는다', async () => {
+    const onSave = jest.fn(async () => {})
+    const view = await 고치기(onSave)
 
     expect(view.getByText('등급 기록 고치기')).toBeTruthy()
-    expect(view.getByTestId('mvp-grade-sheet-week')).toHaveTextContent('7월 30일 (목)')
-    expect(view.getByText('이 주부터 다음 기록 전까지 이 등급으로 계산해요.')).toBeTruthy()
+    expect(view.getByTestId('mvp-grade-sheet-date')).toHaveTextContent('7월 30일 (목)')
+    expect(view.getByText('이 날부터 다음 기록 전까지 이 등급으로 계산해요.')).toBeTruthy()
 
     await fireEvent.press(view.getByLabelText('다이아'))
     await fireEvent.press(저장(view))
@@ -108,56 +124,14 @@ describe('GradeEditSheet', () => {
       { startDate: '2026-07-30', grade: 'diamond' },
     ])
   })
-})
 
-describe('GradeInsertSheet', () => {
-  it('기간을 고르기 전에는 저장이 꺼져 있고 무엇을 고를지 말한다', async () => {
-    const view = await renderOverlay(
-      <GradeInsertSheet history={HISTORY} todayDateKey={TODAY} onSave={jest.fn()} onClose={jest.fn()} />,
-    )
+  it('앞 기록 다음 날부터 고를 수 있다', async () => {
+    const view = await 고치기()
 
-    expect(view.getByText('기록 추가')).toBeTruthy()
-    expect(view.getByTestId('mvp-grade-sheet-week')).toHaveTextContent('기간 선택')
-    expect(view.getByText('시작 주와 종료 주를 골라 주세요. 지난주까지 고를 수 있어요.')).toBeTruthy()
-    expect(저장(view).props.accessibilityState?.disabled).toBe(true)
-  })
-
-  it('시작 주를 고르면 종료 주 탭으로 넘어가고, 둘 다 고르면 기간과 다시 이어지는 등급을 말한다', async () => {
-    const onSave = jest.fn(async () => {})
-    const view = await renderOverlay(
-      <GradeInsertSheet history={HISTORY} todayDateKey={TODAY} onSave={onSave} onClose={jest.fn()} />,
-    )
-
-    await fireEvent.press(view.getByLabelText('기간 고르기'))
-    expect(view.getByTestId('week-calendar-tab-start').props.accessibilityState?.selected).toBe(true)
-    // 달력은 지난주의 달(9월)로 열린다
+    await fireEvent.press(view.getByLabelText('시작일 고르기'))
     await fireEvent.press(view.getByLabelText('지난달'))
-    await fireEvent.press(view.getByLabelText('지난달'))
-    // 7/30 은 기록이 있는 주라 시작 주로 못 고른다
-    expect(view.getByLabelText('2026-07-31').props.accessibilityState?.disabled).toBe(true)
-    await fireEvent.press(view.getByLabelText('2026-07-03'))
-    expect(view.getByTestId('week-calendar-tab-end').props.accessibilityState?.selected).toBe(true)
-    // 종료 주는 다음 기록(7/30)의 앞 주까지다
-    expect(view.getByLabelText('2026-07-31').props.accessibilityState?.disabled).toBe(true)
-    await fireEvent.press(view.getByLabelText('2026-07-12'))
-    // 종료 주를 골라도 확인 전에는 닫히지 않고 시트에 반영되지 않는다
-    expect(view.getByTestId('week-calendar-popover')).toBeTruthy()
-    expect(view.getByTestId('mvp-grade-sheet-week')).toHaveTextContent('기간 선택')
-    await fireEvent.press(view.getByRole('button', { name: '확인' }))
 
-    expect(view.queryByTestId('week-calendar-popover')).toBeNull()
-    expect(view.getByTestId('mvp-grade-sheet-week')).toHaveTextContent('7월 2일 ~ 7월 15일')
-    await fireEvent.press(view.getByLabelText('레드'))
-    expect(
-      view.getByText('7월 2일 (목)부터 7월 15일 (수)까지 레드로 계산해요. 7월 16일부터는 다시 실버예요.'),
-    ).toBeTruthy()
-
-    await fireEvent.press(저장(view))
-    expect(onSave).toHaveBeenCalledWith([
-      { startDate: '2026-06-11', grade: 'silver' },
-      { startDate: '2026-07-02', grade: 'red' },
-      { startDate: '2026-07-16', grade: 'silver' },
-      { startDate: '2026-07-30', grade: 'gold' },
-    ])
+    expect(view.getByLabelText('2026-06-11').props.accessibilityState?.disabled).toBe(true)
+    expect(view.getByLabelText('2026-06-12').props.accessibilityState?.disabled).toBe(false)
   })
 })

@@ -85,7 +85,7 @@
 | `BossPicker` | 보스 고르기의 본문 · 선택 줄 · 난이도 팝오버. 파티 스케줄과 주간 보스 수익 계산기가 쓴다([[ADR-051]] 결정 13) |
 | `Modal` · `NoticeModal` | 가운데 모달(테두리 없는 패널 `Modal.Card` · 껍데기 `ModalSurface`) · 알림 모달 틀([[ADR-062]] 결정 8) |
 | `LoadingModal` · `TaskProgressModal` · `TaskResumeModal` | 불러오는 중 모달 · 오래 걸리는 작업 진행률 · 이어서 하기([[ADR-023]]) |
-| `CalendarPopover` · `WeekCalendarPopover` · `TimePopover` | 날짜 · 주 · 시각 팝오버 |
+| `CalendarPopover` · `TimePopover` | 날짜 · 시각 팝오버 |
 | `SelectField` · `AccountSelect` | 드롭다운 · 메이플 ID 드롭다운 |
 | `FaqSheet` | 설명용 바텀시트 |
 | `SpeedDial` | 펼치는 ＋ |

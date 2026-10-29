@@ -15,9 +15,11 @@ export async function getMvpGradeHistories(): Promise<Map<string, MvpGradeEntry[
   )
   const histories = new Map<string, MvpGradeEntry[]>()
   for (const row of values ?? []) {
+    // 옛 판이 남긴 등급 빈 줄. 앱을 켤 때 지우지만 그보다 먼저 읽는 화면이 있다.
+    if (row.grade === null) continue
     const accountId = row.account_id as string
     const entries = histories.get(accountId) ?? []
-    entries.push({ startDate: row.from_date as string, grade: (row.grade as MvpGradeKey | null) ?? null })
+    entries.push({ startDate: row.from_date as string, grade: row.grade as MvpGradeKey })
     histories.set(accountId, entries)
   }
   return histories
@@ -44,4 +46,13 @@ export async function replaceMvpGradeHistory(
     await db.execute('ROLLBACK')
     throw error
   }
+}
+
+/** 옛 판이 첫 기록 앞에 기간을 끼워 넣으며 남긴 등급 빈 줄을 지운다. 지운 수를 돌려준다. */
+export async function deleteEmptyMvpGradeRows(): Promise<number> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(`SELECT count(*) AS n FROM mvp_grade_history WHERE grade IS NULL`)
+  const count = Number(values?.[0]?.n ?? 0)
+  if (count > 0) await db.run(`DELETE FROM mvp_grade_history WHERE grade IS NULL`)
+  return count
 }

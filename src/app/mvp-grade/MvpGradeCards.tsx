@@ -14,7 +14,7 @@ import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
 import { MvpGradeGrid } from '../../components/molecules/MvpGradeGrid/MvpGradeGrid'
 import { MvpPlate } from '../../components/molecules/MvpPlate/MvpPlate'
 import { AccountRow } from '../../components/organisms/AccountSelect/AccountSelect'
-import { WeekCalendarPopover } from '../../components/organisms/WeekCalendarPopover/WeekCalendarPopover'
+import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { MvpAskAccount } from '../../features/mvp-grade/flow-store'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
@@ -42,46 +42,42 @@ function ConfirmRow(props: { label: string; children: React.ReactNode }): React.
   )
 }
 
-/** 적용 시작 주 한 줄. 누르면 주 고르기 달력이 열린다. */
-function StartWeekRow(props: {
+/** 적용 시작일 한 줄. 누르면 날짜 달력이 열린다. */
+function StartDateRow(props: {
   testID: string
   label: string
-  week: string
+  dateKey: string
   min: string
   max: string
-  onChange: (week: string) => void
+  onChange: (dateKey: string) => void
 }): React.JSX.Element {
   const { ref, isOpen, anchor, toggle, close } = useAnchoredPopover()
-  const [monthKey, setMonthKey] = useState(monthKeyOf(props.week))
-  const [draft, setDraft] = useState(props.week)
+  const [monthKey, setMonthKey] = useState(monthKeyOf(props.dateKey))
 
   return (
     <View className="flex-row items-center justify-between gap-2 px-1">
       <Text className="text-xs text-text-muted">{props.label}</Text>
       <DateSelect
         ref={ref}
-        dateKey={props.week}
+        dateKey={props.dateKey}
         label={props.label}
         onPress={() => {
-          setDraft(props.week)
+          setMonthKey(monthKeyOf(props.dateKey))
           toggle()
         }}
         testID={props.testID}
       />
       {isOpen && (
-        <WeekCalendarPopover
-          selection={{ start: draft, end: draft }}
-          isSelectable={(week) => week >= props.min && week <= props.max}
+        <CalendarPopover
+          selected={props.dateKey}
           min={props.min}
           max={props.max}
           monthKey={monthKey}
           onChangeMonth={setMonthKey}
-          onSelect={setDraft}
-          onConfirm={() => {
-            props.onChange(draft)
+          onConfirm={(next) => {
+            props.onChange(next)
             close()
           }}
-          caption="선택한 주"
           anchor={anchor}
           onClose={close}
         />
@@ -91,22 +87,22 @@ function StartWeekRow(props: {
 }
 
 /**
- * 고르기 카드. ID 표시 · 7칸 격자 · 혜택 한 줄 · 적용 시작 주. 화면 위에서는 ID 표시를 칸에 담고, 모달에서는 바깥이 이미
+ * 고르기 카드. ID 표시 · 7칸 격자 · 혜택 한 줄 · 적용 시작일. 화면 위에서는 ID 표시를 칸에 담고, 모달에서는 바깥이 이미
  * 칸이라 칸 없이 둔다.
  *
- * @example <MvpPickCard account={account} grade={grade} onGrade={setGrade} start={week} ... />
+ * @example <MvpPickCard account={account} grade={grade} onGrade={setGrade} start={startDate} ... />
  */
 export function MvpPickCard(props: {
   account: MvpAskAccount
   grade: MvpGradeKey
   onGrade: (grade: MvpGradeKey) => void
-  /** 적용 시작 주. `null` 이면 그 줄이 안 선다(주간 확인에서 안 바꾼 ID) */
+  /** 적용 시작일. `null` 이면 그 줄이 안 선다(주간 확인에서 안 바꾼 ID) */
   start: string | null
   startLabel: string
-  /** 고를 수 있는 가장 이른 주와 이번 주 */
-  floorWeek: string
-  thisWeek: string
-  onStart: (week: string) => void
+  /** 고를 수 있는 가장 이른 날과 오늘 */
+  floorDate: string
+  today: string
+  onStart: (dateKey: string) => void
   /** today 위 모달 안에 놓인다 */
   inModal?: boolean
 }): React.JSX.Element {
@@ -120,12 +116,12 @@ export function MvpPickCard(props: {
       <MvpGradeGrid selected={props.grade} onSelect={props.onGrade} />
       <Text className="px-1 text-xs text-text-muted">{mvpBenefitText(props.grade)}</Text>
       {props.start !== null && (
-        <StartWeekRow
+        <StartDateRow
           testID={`mvp-grade-start-${account.accountId}`}
           label={props.startLabel}
-          week={props.start}
-          min={props.floorWeek}
-          max={props.thisWeek}
+          dateKey={props.start}
+          min={props.floorDate}
+          max={props.today}
           onChange={props.onStart}
         />
       )}
@@ -133,11 +129,11 @@ export function MvpPickCard(props: {
   )
 }
 
-/** 확인 카드. 칸 없는 ID 표시 아래, 칸 하나에 라벨과 값 세 줄(등급 · 혜택 · 적용 시작 주). */
+/** 확인 카드. 칸 없는 ID 표시 아래, 칸 하나에 라벨과 값 세 줄(등급 · 혜택 · 적용 시작일). */
 export function MvpConfirmCard(props: {
   account: MvpAskAccount
   grade: MvpGradeKey
-  /** 적용 시작 주. `null` 이면 그 줄이 안 선다 */
+  /** 적용 시작일. `null` 이면 그 줄이 안 선다 */
   start: string | null
   startLabel: string
   /** today 위 모달 안에 놓인다 */

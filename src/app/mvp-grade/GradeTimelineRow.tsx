@@ -9,7 +9,7 @@ import type { MvpGradeEntry } from '../../lib/mvp/history'
 
 /**
  * 등급 이력 타임라인의 한 줄. 점 · `시작 날짜 부터` · 명패. 지금 기록은 채운 점과 `지금` 칩이다.
- * 누를 수 있으면 오른쪽에 화살표가 서고, 등급이 빈 줄은 명패 자리에 `등급 없음` 알약이 선다.
+ * 누를 수 있으면 오른쪽에 화살표가 선다.
  *
  * @example <GradeTimelineRow entry={entry} isNow connector onPress={() => edit(entry.startDate)} />
  */
@@ -23,7 +23,7 @@ export function GradeTimelineRow(props: {
   onPress?: () => void
 }): React.JSX.Element {
   const { entry } = props
-  const name = findMvpGrade(entry.grade)?.name ?? '등급 없음'
+  const name = findMvpGrade(entry.grade)?.name ?? ''
 
   const body = (
     <>
@@ -49,15 +49,7 @@ export function GradeTimelineRow(props: {
           </View>
         )}
       </View>
-      {entry.grade === null ? (
-        <View className="h-[18px] shrink-0 items-center justify-center rounded-full bg-surface-2 px-2">
-          <Text className="text-11 font-semibold text-text-muted">
-            등급 없음
-          </Text>
-        </View>
-      ) : (
-        <MvpPlate grade={entry.grade} height={props.plateHeight} />
-      )}
+      <MvpPlate grade={entry.grade} height={props.plateHeight} />
       {props.onPress !== undefined && (
         <ChevronRightIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
       )}

@@ -7,7 +7,6 @@ import type { MvpAskAccount } from '../../../features/mvp-grade/flow-store'
 import { MvpGradeModal } from '../MvpGradeModal'
 
 const TODAY = '2026-09-22'
-const THIS_WEEK = '2026-09-17'
 
 function account(accountId: string, name: string, currentGrade: MvpAskAccount['currentGrade'] = null): MvpAskAccount {
   return {
@@ -46,11 +45,11 @@ describe('MvpGradeModal', () => {
       expect(카드(view, 'a').getByText('스카니아 Lv.280 하나')).toBeTruthy()
       expect(카드(view, 'a').getByLabelText('일반').props.accessibilityState?.selected).toBe(true)
       expect(카드(view, 'a').getByText('경매장 수수료 5% · 스타포스 할인 없음')).toBeTruthy()
-      expect(카드(view, 'a').getByText('적용 시작 주')).toBeTruthy()
-      expect(카드(view, 'a').getByTestId('mvp-grade-start-a')).toHaveTextContent('9월 17일 (목)')
+      expect(카드(view, 'a').getByText('적용 시작일')).toBeTruthy()
+      expect(카드(view, 'a').getByTestId('mvp-grade-start-a')).toHaveTextContent('9월 22일 (화)')
     })
 
-    it('다음을 누르면 확인 화면이 고른 등급 · 혜택 · 적용 시작 주를 보인다', async () => {
+    it('다음을 누르면 확인 화면이 고른 등급 · 혜택 · 적용 시작일을 보인다', async () => {
       const { view } = await 그리기(ASK, [account('a', '하나'), account('b', '둘')])
 
       await fireEvent.press(카드(view, 'a').getByLabelText('다이아'))
@@ -60,7 +59,7 @@ describe('MvpGradeModal', () => {
       expect(view.getByText('이 등급이 맞나요?')).toBeTruthy()
       expect(카드(view, 'a').getByLabelText('MVP 다이아')).toBeTruthy()
       expect(카드(view, 'a').getByText('경매장 수수료 3% · 스타포스 10% 할인')).toBeTruthy()
-      expect(카드(view, 'a').getByText('9월 17일 (목)')).toBeTruthy()
+      expect(카드(view, 'a').getByText('9월 22일 (화)')).toBeTruthy()
       expect(카드(view, 'b').getByText('일반')).toBeTruthy()
     })
 
@@ -75,7 +74,7 @@ describe('MvpGradeModal', () => {
       expect(카드(view, 'a').getByLabelText('골드').props.accessibilityState?.selected).toBe(true)
     })
 
-    it('맞아요를 누르면 ID 마다 등급과 시작 주를 돌려준다', async () => {
+    it('맞아요를 누르면 ID 마다 등급과 시작일을 돌려준다', async () => {
       const { view, onDone } = await 그리기(ASK, [account('a', '하나'), account('b', '둘')])
 
       await fireEvent.press(카드(view, 'a').getByLabelText('레드'))
@@ -85,28 +84,29 @@ describe('MvpGradeModal', () => {
 
       expect(onDone).toHaveBeenCalledWith({
         choices: [
-          { accountId: 'a', grade: 'red', startWeek: THIS_WEEK, changed: true },
-          { accountId: 'b', grade: 'normal', startWeek: THIS_WEEK, changed: true },
+          { accountId: 'a', grade: 'red', startDate: TODAY, changed: true },
+          { accountId: 'b', grade: 'normal', startDate: TODAY, changed: true },
         ],
         weeklyOff: true,
         bulkApply: false,
       })
     })
 
-    it('적용 시작 주는 가계부가 갈 수 있는 가장 이른 주부터 이번 주까지 고른다', async () => {
+    // 등급은 달성한 날부터라 주 중간의 날도 그대로 받는다.
+    it('적용 시작일은 오늘까지 아무 날이나 고른다', async () => {
       const { view, onDone } = await 그리기(ASK, [account('a', '하나')])
 
-      await fireEvent.press(카드(view, 'a').getByLabelText('적용 시작 주 고르기'))
-      expect(view.getByTestId('week-calendar-popover')).toBeTruthy()
-      expect(view.getByLabelText('2026-09-24').props.accessibilityState?.disabled).toBe(true)
-      await fireEvent.press(view.getByLabelText('2026-09-08'))
+      await fireEvent.press(카드(view, 'a').getByLabelText('적용 시작일 고르기'))
+      expect(view.getByTestId('calendar-popover')).toBeTruthy()
+      expect(view.getByLabelText('2026-09-23').props.accessibilityState?.disabled).toBe(true)
+      await fireEvent.press(view.getByLabelText('2026-09-20'))
       await fireEvent.press(view.getByRole('button', { name: '확인' }))
 
-      expect(view.queryByTestId('week-calendar-popover')).toBeNull()
-      expect(카드(view, 'a').getByTestId('mvp-grade-start-a')).toHaveTextContent('9월 3일 (목)')
+      expect(view.queryByTestId('calendar-popover')).toBeNull()
+      expect(카드(view, 'a').getByTestId('mvp-grade-start-a')).toHaveTextContent('9월 20일 (일)')
       await fireEvent.press(view.getByText('다음'))
       await fireEvent.press(view.getByText('맞아요'))
-      expect(onDone.mock.calls[0][0].choices[0].startWeek).toBe('2026-09-03')
+      expect(onDone.mock.calls[0][0].choices[0].startDate).toBe('2026-09-20')
     })
 
     it('지난 기록이 없으면 일괄 적용 체크박스가 안 선다', async () => {
@@ -138,33 +138,33 @@ describe('MvpGradeModal', () => {
   describe('주간 확인', () => {
     const ASK: MvpAsk = { kind: 'weekly', accountIds: ['a', 'b'] }
 
-    it('확인 화면이 먼저 서고 지금 등급을 보인다. 시작 주 줄은 없다', async () => {
+    it('확인 화면이 먼저 서고 지금 등급을 보인다. 시작일 줄은 없다', async () => {
       const { view } = await 그리기(ASK, [account('a', '하나', 'diamond'), account('b', '둘', 'silver')])
 
       expect(view.getByText('이번 주 MVP 등급이 맞나요?')).toBeTruthy()
       expect(카드(view, 'a').getByLabelText('MVP 다이아')).toBeTruthy()
-      expect(view.queryByText('바뀐 등급 적용 시작 주')).toBeNull()
+      expect(view.queryByText('바뀐 등급 적용 시작일')).toBeNull()
     })
 
-    it('수정에서 등급을 바꾼 ID 에만 시작 주 줄이 선다', async () => {
+    it('수정에서 등급을 바꾼 ID 에만 시작일 줄이 선다', async () => {
       const { view, onDone } = await 그리기(ASK, [account('a', '하나', 'diamond'), account('b', '둘', 'silver')])
 
       await fireEvent.press(view.getByText('수정'))
       expect(view.getByText('바뀐 등급을 골라 주세요')).toBeTruthy()
-      expect(view.queryByText('바뀐 등급 적용 시작 주')).toBeNull()
+      expect(view.queryByText('바뀐 등급 적용 시작일')).toBeNull()
 
       await fireEvent.press(카드(view, 'b').getByLabelText('골드'))
-      expect(카드(view, 'b').getByText('바뀐 등급 적용 시작 주')).toBeTruthy()
-      expect(카드(view, 'a').queryByText('바뀐 등급 적용 시작 주')).toBeNull()
+      expect(카드(view, 'b').getByText('바뀐 등급 적용 시작일')).toBeTruthy()
+      expect(카드(view, 'a').queryByText('바뀐 등급 적용 시작일')).toBeNull()
 
       await fireEvent.press(view.getByText('다음'))
-      expect(카드(view, 'b').getByText('바뀐 등급 적용 시작 주')).toBeTruthy()
+      expect(카드(view, 'b').getByText('바뀐 등급 적용 시작일')).toBeTruthy()
       await fireEvent.press(view.getByText('맞아요'))
 
       expect(onDone).toHaveBeenCalledWith({
         choices: [
-          { accountId: 'a', grade: 'diamond', startWeek: THIS_WEEK, changed: false },
-          { accountId: 'b', grade: 'gold', startWeek: THIS_WEEK, changed: true },
+          { accountId: 'a', grade: 'diamond', startDate: TODAY, changed: false },
+          { accountId: 'b', grade: 'gold', startDate: TODAY, changed: true },
         ],
         weeklyOff: false,
         bulkApply: false,
