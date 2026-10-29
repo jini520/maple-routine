@@ -22,6 +22,23 @@ describe('공지 본문 블록', () => {
     expect(view.getByTestId('notice-image').props.style.aspectRatio).toBeGreaterThan(0)
   })
 
+  // 그림 한 장이 수 MB 라 받는 데 수 초가 걸린다. 그동안 빈칸이면 본문이 없는 공지로 읽힌다.
+  it('받는 동안만 스켈레톤이 선다', async () => {
+    const view = await renderOverlay(
+      <NoticeBlocks blocks={[{ type: 'image', src: 'https://x.test/a.png' }]} />,
+    )
+
+    expect(view.getByTestId('notice-image-skeleton', { includeHiddenElements: true })).toBeTruthy()
+
+    await act(async () => {
+      fireEvent(view.getByTestId('notice-image'), 'load', {
+        nativeEvent: { cacheType: 'none', source: { url: 'https://x.test/a.png', width: 876, height: 4000 } },
+      })
+    })
+
+    expect(view.queryByTestId('notice-image-skeleton', { includeHiddenElements: true })).toBeNull()
+  })
+
   // 그냥 두면 자리만 잡은 빈칸이 남는다. 이벤트·캐시샵은 본문이 이미지 한 장뿐이라 그 빈칸이
   // 곧 `본문이 없는 공지` 로 읽힌다.
   it('못 받은 이미지는 못 받았다고 말한다', async () => {
@@ -30,7 +47,7 @@ describe('공지 본문 블록', () => {
     )
 
     await act(async () => {
-      fireEvent(view.getByTestId('notice-image'), 'error')
+      fireEvent(view.getByTestId('notice-image'), 'error', { nativeEvent: { error: 'not found' } })
     })
 
     expect(view.getByTestId('notice-image-failed')).toBeTruthy()

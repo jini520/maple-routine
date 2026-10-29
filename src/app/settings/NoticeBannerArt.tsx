@@ -4,8 +4,9 @@
  * 그림을 받은 뒤 비율을 재면 목록이 그림마다 한 번씩 흔들린다. 넥슨 썸네일은 분류마다 크기가 하나라(이벤트 285×120 ·
  * 캐시샵 443×130 실측) 비율을 미리 정하고, 크기가 바뀌어도 잘리지 않게 `contain` 으로 그린다.
  */
+import { Image } from 'expo-image'
 import { useState } from 'react'
-import { Image, View } from 'react-native'
+import { View } from 'react-native'
 
 import { noticeBannerRatio } from '../../features/notice/notice-display'
 import type { Notice } from '../../types/notice'
@@ -25,7 +26,8 @@ export function NoticeBannerArt(props: { notice: Notice }): React.JSX.Element {
           testID="notice-banner-image"
           accessibilityIgnoresInvertColors
           source={{ uri: url }}
-          resizeMode="contain"
+          contentFit="contain"
+          cachePolicy="memory-disk"
           style={{ width: '100%', height: '100%' }}
           onError={() => setFailedUrl(url)}
         />

@@ -123,4 +123,44 @@ describe('parseContents', () => {
 
     expect(parseContents(html)).toHaveLength(2000)
   })
+
+  // 넥슨이 그림 속 글자를 검색되게 하려고 그림 위에 겹친 투명 글자다. 앱은 겹치지 않으니 그림 아래에 줄지어 선다.
+  it('그림 위의 투명 글자를 버린다', () => {
+    // 실제 event/detail?notice_id=1404 에서 잘라 왔다(style 은 줄였다).
+    const html =
+      '<div class="gen_container"><img src="https://lwi.nexon.com/a.png">' +
+      '<p class="b_srch" style="position: absolute; top: 8.20%; opacity: 0; color: transparent;">이벤트 기간</p>' +
+      '<p class="b_srch" style="position: absolute;opacity:0">이벤트 <span>참여</span> 대상</p></div>'
+
+    expect(parseContents(html)).toEqual([{ type: 'image', src: 'https://lwi.nexon.com/a.png' }])
+  })
+
+  it('반투명은 보이는 글자라 남긴다', () => {
+    expect(parseContents('<p style="opacity: 0.5">흐린 안내</p>')).toEqual([{ type: 'text', text: '흐린 안내' }])
+  })
+
+  // 본문 안에 `목차` 목록이 따로 있고, 이 목차의 링크는 문서 안 위치라 앱에서 갈 곳이 없다.
+  it('업데이트 맨 위의 스마트에디터 목차를 버린다', () => {
+    const html =
+      '<div class="se-div se-table-of-contents"><ul><li><p><span>1.</span><a href="#toc_a"><span>퍼스널 버닝</span></a></p></li>' +
+      '<li><div><p>2.</p></div></li></ul></div><p>안녕하세요 용사님</p>'
+
+    expect(parseContents(html)).toEqual([{ type: 'text', text: '안녕하세요 용사님' }])
+  })
+
+  it('버리는 요소 안에 같은 태그가 겹쳐도 짝이 맞는 곳에서 멈춘다', () => {
+    const html = '<div style="display:none"><div>숨은 글</div><div>또 숨은 글</div></div><div>보이는 글</div>'
+
+    expect(parseContents(html)).toEqual([{ type: 'text', text: '보이는 글' }])
+  })
+
+  // 뒤의 본문이 통째로 사라지는 것보다 글자가 몇 개 남는 쪽이 낫다.
+  it('버릴 요소가 닫히지 않으면 뒤의 본문을 지우지 않는다', () => {
+    const html = '<div style="visibility: hidden"><p>숨은 글</p><p>본문</p>'
+
+    expect(parseContents(html)).toEqual([
+      { type: 'text', text: '숨은 글' },
+      { type: 'text', text: '본문' },
+    ])
+  })
 })

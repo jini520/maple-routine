@@ -177,7 +177,7 @@ export function SettingsNoticeDetailScreen(props: {
         <View className="gap-3 pb-4" testID="screen-SettingsNoticeDetail">
           <NoticeMetaRow notice={found} />
           {found.blocks !== undefined ? (
-            <NoticeBlocks blocks={found.blocks} />
+            <NoticeBlocks blocks={found.blocks} bleed />
           ) : (
             <View className="px-4">
               <NoticeBody notice={found} settled={settled} />

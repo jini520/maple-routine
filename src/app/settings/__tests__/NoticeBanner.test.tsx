@@ -77,7 +77,7 @@ describe('NoticeBannerRail', () => {
     const view = await renderOverlay(<NoticeBannerRail notices={[banner(1)]} onOpen={jest.fn()} />)
 
     await act(async () => {
-      fireEvent(view.getByTestId('notice-banner-image'), 'error')
+      fireEvent(view.getByTestId('notice-banner-image'), 'error', { nativeEvent: { error: 'not found' } })
     })
 
     expect(view.queryByTestId('notice-banner-image')).toBeNull()
