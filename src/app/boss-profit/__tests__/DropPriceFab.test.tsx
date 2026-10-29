@@ -10,7 +10,7 @@ import { flattenStyle, renderOverlay, 기본테마 } from '../../../components/_
 import { getThemeDefinition } from '../../../lib/theme/theme-registry'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../theme/appearance-store'
 import { boxShadowOf } from '../../../lib/shadow'
-import { FAB_DARK_EDGE, FAB_DIAMETER_PX, FAB_SHADOW } from '../../../lib/fab-metrics'
+import { FAB_DIAMETER_PX, FAB_SHADOW } from '../../../lib/fab-metrics'
 import { dropItemIconOf } from '../../../lib/assets/asset-lookup'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
@@ -219,15 +219,12 @@ describe('떠 있는 원의 입체감', () => {
     ).toBeUndefined()
   })
 
-  it('다크에서는 흰 헤어라인이 원에 붙는다', async () => {
+  it('다크에서도 원에 테두리가 없다', async () => {
     setThemeAppearance('검은마법사', getThemeDefinition('검은마법사'))
 
     const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
-    const circle = flattenStyle(view.getByLabelText('아이템 가격 입력').props.style)
 
-    expect(circle.borderWidth).toBe(StyleSheet.hairlineWidth)
-    expect(circle.borderColor).toBe(FAB_DARK_EDGE)
-    expect(circle.height).toBe(FAB_DIAMETER_PX)
+    expect(flattenStyle(view.getByLabelText('아이템 가격 입력').props.style).borderWidth).toBeUndefined()
   })
 })
 

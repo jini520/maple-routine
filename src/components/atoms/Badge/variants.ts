@@ -18,8 +18,6 @@ export interface BadgeVariantStyle {
   border?: Pick<ViewStyle, 'borderWidth' | 'borderColor'>
   /** 클래스로 못 주는 글자색·그림자. 그라디언트 배지만 쓴다. */
   textStyle?: TextStyle
-  /** 테두리를 클래스로 그리는 variant 가 여백에서 뺄 폭. 색이 테마 토큰이라 값으로 못 준다. */
-  borderWidth?: number
   /** `md` 의 글자 크기를 덮는다. `sm` · `xs` 에는 안 먹는다. */
   text?: string
   /** 안 적으면 `semibold` 다. */
@@ -57,16 +55,14 @@ function difficulty(
   return { gradient, border: { borderWidth, borderColor }, textStyle, weight: 'bold', text: 'text-chip-sm' }
 }
 
-/** 색·테두리·그림자 17종. 난이도 key 가 그대로 키라 `variant={boss.difficulty}` 로 쓴다. 글자는 `DIFFICULTY_NAME` 이다. */
+/** 색·테두리·그림자 15종. 난이도 key 가 그대로 키라 `variant={boss.difficulty}` 로 쓴다. 글자는 `DIFFICULTY_NAME` 이다. */
 export const BADGE_VARIANT = {
   primary: { className: 'bg-primary-tint text-primary-ink' },
   third: { className: 'bg-third-tint text-third-ink' },
   secondary: { className: 'bg-secondary-tint text-secondary-ink', weight: 'bold' },
   muted: { className: 'bg-surface-2 text-text-muted' },
   neutral: { className: 'bg-surface-2 text-text' },
-  outline: { className: 'border border-border text-text-muted', borderWidth: 1 },
   disabled: { className: 'bg-surface-2 text-text-disabled' },
-  dashed: { className: 'border border-dashed border-border text-text-disabled', borderWidth: 1 },
   error: { className: 'bg-error-tint text-error-ink' },
   epicDungeon: { className: 'bg-[#4DD2FF]/20 text-[#4DD2FF]' },
   mapleUnion: { className: 'bg-[#FFC93C]/20 text-[#FFC93C]' },

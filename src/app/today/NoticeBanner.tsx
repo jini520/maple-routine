@@ -101,7 +101,7 @@ export function NoticeBanner(): React.JSX.Element | null {
               다시 보지 않기
             </Button>
             <Button
-              variant="primaryOutline"
+              variant="soft"
               size="sm"
               hitSlop={BUTTON_HIT_SLOP}
               onPress={() => navigation.navigate('SettingsNoticeDetail', { noticeId: notice.id })}

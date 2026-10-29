@@ -1,9 +1,12 @@
 // 숫자 판. 스크린리더가 격자를 읽어야 하므로 **키마다 이름**이 있는지를 본다.
 // 높이는 판정하는 쪽(`lib/number-pad-metrics`)과 같은 수여야 해서 상수를 베끼지 않고 가져다 쓴다.
-import { fireEvent } from '@testing-library/react-native'
+import { act, fireEvent } from '@testing-library/react-native'
 
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { NUMBER_PAD_HEIGHT_PX } from '../../../../lib/number-pad-metrics'
+import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
+import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../../theme/appearance-store'
+import { buildPopoverScopeVariables } from '../../../../theme/theme-vars'
 import { NumberPad } from '../NumberPad'
 
 function 판(props: Partial<React.ComponentProps<typeof NumberPad>> = {}): React.JSX.Element {
@@ -70,5 +73,22 @@ describe('NumberPad', () => {
     const { queryByLabelText } = await renderAtom(판())
 
     expect(queryByLabelText('소수점')).toBeNull()
+  })
+})
+
+// 판은 카드를 덮고 뜬다. 테두리 없이 그림자로 가르고, 다크에서는 팝오버처럼 시트보다 한 단 더 올린 면이다.
+describe('NumberPad 의 면', () => {
+  afterEach(__resetThemeAppearanceForTest)
+
+  it('다크에서 테두리 없이 팝오버와 같은 올린 면으로 선다', async () => {
+    const 검은마법사 = getThemeDefinition('검은마법사')
+    const { getByTestId } = await renderAtom(판())
+    await act(async () => {
+      setThemeAppearance('검은마법사', 검은마법사)
+    })
+    const pad = flattenStyle(getByTestId('number-pad').props.style)
+
+    expect(pad.borderWidth ?? 0).toBe(0)
+    expect(pad.backgroundColor).toBe(buildPopoverScopeVariables(검은마법사)['--color-bg'])
   })
 })

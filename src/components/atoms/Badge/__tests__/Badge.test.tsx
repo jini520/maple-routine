@@ -59,13 +59,6 @@ describe('size 둘', () => {
       (await renderAtom(<Badge variant="muted">진행 불가</Badge>)).getByText('진행 불가').props.style,
     ) as Record<string, number>
 
-    // 테두리를 클래스로 그리는 outline 도 같은 계약이다.
-    const 아웃라인 = flattenStyle(
-      (await renderAtom(<Badge variant="outline">v1.0.7</Badge>)).getByText('v1.0.7').props.style,
-    ) as Record<string, number>
-    expect(아웃라인.paddingVertical).toBe(평면.paddingVertical - 1)
-    expect(아웃라인.paddingHorizontal).toBe(평면.paddingHorizontal - 1)
-
     for (const variant of ['easy', 'normal', 'hard', 'chaos', 'extreme'] as const) {
       const 상자 = flattenStyle(
         boxOf((await renderAtom(<Badge variant={variant}>{variant}</Badge>)).getByText(variant)).props.style,
@@ -119,7 +112,7 @@ describe('높이는 variant 를 안 탄다', () => {
       ) as Record<string, number>,
     )
 
-    for (const variant of ['primary', 'secondary', 'outline', 'dashed', 'guild'] as const) {
+    for (const variant of ['primary', 'secondary', 'third', 'guild'] as const) {
       const s = flattenStyle(
         (await renderAtom(<Badge variant={variant}>칸</Badge>)).getByText('칸').props.style,
       ) as Record<string, number>
@@ -210,17 +203,5 @@ describe('아이콘', () => {
     expect(text.color).toBe(기본테마.errorInk)
     expect(text.backgroundColor).toBeUndefined()
     expect(text.paddingHorizontal).toBeUndefined()
-  })
-
-  it('테두리 배지도 테두리는 상자에만 있다', async () => {
-    const { getByText } = await renderAtom(
-      <Badge variant="outline" icon={<View />}>
-        라벨
-      </Badge>,
-    )
-    const label = getByText('라벨')
-
-    expect(flattenStyle(boxOf(label).props.style).borderWidth).toBe(1)
-    expect(flattenStyle(label.props.style).borderWidth).toBeUndefined()
   })
 })

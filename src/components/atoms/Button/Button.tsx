@@ -72,7 +72,7 @@ function join(base: string, extra: string | undefined): string {
  *
  * @example
  * // 겉모습만 빌리는 자리. 시맨틱은 링크다.
- * <Button variant="outline" role="link" onPress={() => openInAppBrowser(GUIDE_URL)}>
+ * <Button variant="tint" role="link" onPress={() => openInAppBrowser(GUIDE_URL)}>
  *   API 키 발급 방법 보기
  * </Button>
  *
@@ -84,7 +84,7 @@ function join(base: string, extra: string | undefined): string {
  *
  * @example
  * // 배너 안에 끼는 자리. 32px 라 손가락 자리는 `hitSlop` 이 되돌려 준다.
- * <Button variant="primaryOutline" size="sm" hitSlop={{ top: 6, bottom: 6 }} onPress={openDetail}>
+ * <Button variant="soft" size="sm" hitSlop={{ top: 6, bottom: 6 }} onPress={openDetail}>
  *   자세히 보기
  * </Button>
  *

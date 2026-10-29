@@ -18,7 +18,6 @@ import { SpeedDial, type SpeedDialAction } from '../SpeedDial'
 import { pillWidth } from '../speed-dial-motion'
 import { boxShadowOf } from '../../../../lib/shadow'
 import {
-  FAB_DARK_EDGE,
   FAB_DIAMETER_PX,
   FAB_SHADOW,
 } from '../../../../lib/fab-metrics'
@@ -258,18 +257,13 @@ describe('떠 있는 원의 입체감', () => {
     expect(flattenStyle(view.getByLabelText('기록 추가').props.style).borderWidth).toBeUndefined()
   })
 
-  // 어두운 바탕에서는 그림자가 거의 안 보인다. 하단바가 라이트 그림자 · 다크 테두리로 가른 것과
-  // 같은 자리다. 테두리는 크기가 박힌 **원 자신**이 든다(바깥 뷰에 주면 두께만큼 커진다).
-  it('다크에서는 흰 헤어라인이 원에 붙는다', async () => {
+  // 테두리 없이 면으로 가른다. 다크에서 그림자가 약해도 테마색 원은 어두운 바탕과 갈린다.
+  it('다크에서도 원에 테두리가 없다', async () => {
     setThemeAppearance('검은마법사', getThemeDefinition('검은마법사'))
 
     const view = await 그리기()
-    const circle = flattenStyle(view.getByLabelText('기록 추가').props.style)
 
-    expect(circle.borderWidth).toBe(StyleSheet.hairlineWidth)
-    expect(circle.borderColor).toBe(FAB_DARK_EDGE)
-    // 지름은 그대로다. 테두리가 안쪽에 그려져 자리가 안 움직인다.
-    expect(circle.height).toBe(FAB_DIAMETER_PX)
+    expect(flattenStyle(view.getByLabelText('기록 추가').props.style).borderWidth).toBeUndefined()
   })
 
   // 사용자 결정. 스크림 위의 흰 알약이라 떠 있음은 스크림이 이미 만든다.

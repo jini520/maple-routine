@@ -7,7 +7,7 @@
 // 모듈을 아무도 import 하지 않으므로 그 단언은 배선이 되살아나도 초록이다. 지금 그 자리를 지키는
 // 것은 소스를 훑는 `src/__tests__/interstitial-policy.test.ts` 다.
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native'
-import { Dimensions } from 'react-native'
+import { Dimensions, StyleSheet } from 'react-native'
 import { isLiquidGlassAvailable } from 'expo-glass-effect'
 import { useAppEntryStore } from '../../features/app-entry/store'
 
@@ -142,6 +142,13 @@ describe('유리가 앱 테마를 따른다', () => {
 
     expect(screen.getByTestId('bar-glass').props.colorScheme).toBe(mode)
   })
+})
+
+// 바와 페이지는 선이 아니라 그림자로 가른다. 앱의 다른 판들처럼 테두리를 걷었다.
+it('바에 테두리가 없다', async () => {
+  await render(<NavigationHarness />)
+
+  expect(StyleSheet.flatten(screen.getByTestId('bottom-bar').props.style).borderWidth).toBeUndefined()
 })
 
 describe('바는 **지금 페이지** 가 정하는 층을 그린다', () => {

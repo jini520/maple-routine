@@ -1,5 +1,5 @@
 /**
- * 버튼 변형 일곱의 **외형 표**. `design-system.md` 의 `기본 컴포넌트` 절이 규정한 것을 코드로 옮긴
+ * 버튼 변형 다섯의 **외형 표**. `design-system.md` 의 `기본 컴포넌트` 절이 규정한 것을 코드로 옮긴
  * 것이다.
  *
  * `Button.tsx` 와 파일이 나뉘어 있다. 스타일 표와 컴포넌트 코드를 섞지 않는다.
@@ -12,30 +12,24 @@
  * 라운딩이 pill 로 고정인 것은 디자인 원칙 2 를 코드가 지키기 위해서다
  * (카드 14px · 버튼 pill · 인풋 10px).
  *
- * 여백은 `BUTTON_SIZE_CLASS` 가 갖는다. 여섯이 전부 같은 값을 적고 있었으니 변형의 성질이 아니다.
+ * 여백은 `BUTTON_SIZE_CLASS` 가 갖는다. 변형마다 같은 값을 적고 있었으니 변형의 성질이 아니다.
  */
 export const BUTTON_VARIANT_CLASS = {
   primary: 'rounded-full bg-primary',
-  /** 주 CTA 옆이나 아래에 서는 부 동작. `danger` 와 같은 테두리 pill 이되 색이 중립이다. */
-  outline: 'rounded-full border border-border',
   text: 'rounded-full',
   /**
-   * 테마색 테두리 pill 에 테마색 글자. `outline` 과 같은 자리에 서되 선도 글자도 `primary` 계열이다.
-   *
-   * ⚠️ **밝은 테마에서 대비가 낮다**(사용자 결정). `primary-ink` 를 표면에 얹은 값이
-   * 머쉬맘 2.38 · 엔젤릭버스터 2.26 · 검은마법사 3.96 으로 AA(4.5)에 못 미친다. 색을 맞추는 쪽을
-   * 택한 것이므로 **밝은 테마에서 옅게 보이는 것은 알고 둔 것**이고, 안 읽힌다는 보고가 오면
-   * 고칠 자리는 이 두 줄이 아니라 `primary-ink` 파생 규칙이다.
-   */
-  primaryOutline: 'rounded-full border border-primary',
-  /**
-   * 주 동작이되 채운 알약보다 한 단 약한 자리. `outline` 과 같은 자리에 서되 테두리 대신 옅은 면이다.
+   * 주 동작이되 채운 알약보다 한 단 약한 자리. 테두리 대신 옅은 면이다.
    *
    * 글자색이 `primary-ink` 가 아닌 것이 이 변형의 핵심이다. 옅은 틴트 위에 같은 계열 잉크를 얹으면
    * 테마에 따라 명도 대비가 1.6 까지 떨어져 글자가 안 읽힌다(머쉬맘 실측).
    */
   tint: 'rounded-full bg-primary-tint',
-  danger: 'rounded-full border border-error',
+  /**
+   * `tint` 와 같은 면에 테마색 글자. `새 공지` 배지와 같은 짝이라 그 곁에 서는 버튼이 쓴다.
+   *
+   * ⚠️ **밝은 테마에서 대비가 낮다**(사용자 결정). 머쉬맘 · 엔젤릭버스터에서 글자가 옅게 보이는 것은 알고 둔 것이다.
+   */
+  soft: 'rounded-full bg-primary-tint',
   /**
    * 되돌릴 수 없는 동작을 **작게** 내리는 자리. 상자는 `text` 와 같고 글자색만 갈린다.
    *
@@ -60,7 +54,7 @@ export const BUTTON_SIZE_CLASS = {
   sm: 'px-3.5 py-1.5',
 } as const
 
-/** 버튼 변형 일곱. 상자 표의 키가 곧 이 타입이다. */
+/** 버튼 변형 다섯. 상자 표의 키가 곧 이 타입이다. 테두리만 있는 변형은 두지 않는다. */
 export type ButtonVariant = keyof typeof BUTTON_VARIANT_CLASS
 
 /** 버튼 크기 둘. 여백 표의 키가 곧 이 타입이다. */
@@ -92,11 +86,9 @@ export function buttonTextSizeClass(variant: ButtonVariant, size: ButtonSize): s
  */
 export const BUTTON_VARIANT_TEXT_CLASS = {
   primary: 'font-semibold text-on-primary',
-  outline: 'font-semibold text-text',
   text: 'font-medium text-text-muted',
-  primaryOutline: 'font-semibold text-primary-ink',
   tint: 'font-semibold text-text',
-  danger: 'font-semibold text-error-ink',
+  soft: 'font-semibold text-primary-ink',
   dangerText: 'font-medium text-error-ink',
 } as const
 
@@ -108,10 +100,8 @@ export const BUTTON_VARIANT_TEXT_CLASS = {
  */
 export const BUTTON_VARIANT_SPINNER_CLASS = {
   primary: 'text-on-primary',
-  outline: 'text-text',
   text: 'text-text-muted',
-  primaryOutline: 'text-primary-ink',
   tint: 'text-text',
-  danger: 'text-error-ink',
+  soft: 'text-primary-ink',
   dangerText: 'text-error-ink',
 } as const
