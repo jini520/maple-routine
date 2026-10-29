@@ -138,7 +138,7 @@ export function incomeCategories(): readonly CashbookCategory[] {
 
 /**
  * 수입 시트에서 고르는 갈래. 사냥 전리품 판매가 있으면 솔 에르다 조각 카드를 뺀다. 조각 정산이 그 갈래의 조각 칸으로
- * 옮겨 갔기 때문이다. 그 갈래가 서버 표에 없으면 조각 카드가 그대로 선다. 옛 앱도 같은 표를 읽어 서버가 조각 줄을 못 지운다.
+ * 옮겨 갔기 때문이다. 그 갈래가 서버 표에 없으면 조각 카드가 그대로 선다. 숨기면 조각 정산을 적을 곳이 사라진다.
  */
 export function incomePickerCategories(): readonly CashbookCategory[] {
   const list = incomeCategories()
