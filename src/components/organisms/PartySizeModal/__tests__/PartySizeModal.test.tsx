@@ -9,9 +9,12 @@
 // `aria-pressed` → **`accessibilityState.selected`**(`DifficultySegment` 가 `aria-selected` 를
 //   쓴다. RN 접근성 상태에 *pressed* 가 없다).
 import { useState } from 'react'
-import { fireEvent } from '@testing-library/react-native'
+import { act, fireEvent } from '@testing-library/react-native'
 
-import { findAllOfType, flattenStyle, renderOverlay, type AtomElement } from '../../../__tests__/render-atom'
+import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
+import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../../theme/appearance-store'
+import { buildSheetScopeVariables } from '../../../../theme/theme-vars'
+import { findAllOfType, flattenStyle, renderOverlay, 기본테마, type AtomElement } from '../../../__tests__/render-atom'
 import { PartySizeModal } from '../PartySizeModal'
 
 /** 아트·베일은 `aria-hidden` 이라 기본 질의에서 빠진다(장식이라 그것이 옳다). */
@@ -341,4 +344,32 @@ it('비율 카드는 세로로 늘거나 줄지 않는다', async () => {
   )
 
   expect(flattenStyle(getByTestId('party-share-card').props.style).flex).toBeUndefined()
+})
+
+// 다른 가운데 모달과 같은 패널이다. 테두리 없이 바탕색 차이로만 스크림과 갈리고, 다크에서는 표면을 한 칸 올려 가장자리가 스크림에 안 묻힌다.
+describe('패널', () => {
+  const 검은마법사 = getThemeDefinition('검은마법사')
+
+  beforeEach(__resetThemeAppearanceForTest)
+  afterEach(__resetThemeAppearanceForTest)
+
+  it('테두리가 없다', async () => {
+    const { getByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
+
+    expect(flattenStyle(getByTestId('party-size-panel').props.style).borderWidth ?? 0).toBe(0)
+  })
+
+  it('다크에서는 표면을 올린 값으로 칠하고 라이트에서는 그대로 둔다', async () => {
+    const { getByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
+    expect(flattenStyle(getByTestId('party-size-panel').props.style).backgroundColor).toBe(기본테마.surface)
+
+    await act(async () => {
+      setThemeAppearance('검은마법사', 검은마법사)
+    })
+
+    const lifted = buildSheetScopeVariables(검은마법사)['--color-surface']
+    expect(flattenStyle(getByTestId('party-size-panel').props.style).backgroundColor).toBe(lifted)
+    // 이 단언에 판별력이 있으려면 올린 값이 원래 값과 달라야 한다.
+    expect(lifted).not.toBe(검은마법사.surface)
+  })
 })

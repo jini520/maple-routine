@@ -20,6 +20,7 @@
  */
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
+import { vars } from 'nativewind'
 
 import { getBossPortraitModalCrop, getBossPortraitUrl } from '../../../lib/assets/asset-lookup'
 import type { BossDifficulty } from '../../../types'
@@ -31,6 +32,7 @@ import { Badge, Button, Text, XIcon } from '../../atoms'
 import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
+import { buildSheetScopeVariables } from '../../../theme/theme-vars'
 import { DifficultyExpander } from '../../molecules/DifficultyExpander/DifficultyExpander'
 import { FadedIllustration } from '../../molecules/FadedIllustration/FadedIllustration'
 import { Stepper } from '../../molecules/Stepper/Stepper'
@@ -175,8 +177,10 @@ export function PartySizeModal(props: {
   const autoFee = props.autoFee ?? null
 
   // 그림이 판 위에 바로 앉는다. 덧칠할 색이 `mediaSurface` 가 아니라 판의 `surface` 다.
+  // 다크에서는 판이 한 칸 올린 표면이라 베일도 그 값이어야 띠 끝에 이음선이 안 남는다.
   const { definition } = useThemeAppearance()
-  const surface = definition.surface
+  const panelScope = buildSheetScopeVariables(definition)
+  const surface = panelScope['--color-surface']
 
   const portraitUrl = getBossPortraitUrl(props.portraitSlug)
   // **띠 전용 표다**(`boss-portrait-modal-crops.json`). 카드 표와 갈라 둔 것은 띠가 카드보다 좁고
@@ -190,189 +194,191 @@ export function PartySizeModal(props: {
       {/* 폭 320. 일러스트 띠와 카드 둘이 나란히 서려면 288 로는 트랙이 안 남는다.
           `max-w-xs` 는 못박은 값이라 360 기기에서도 폭이 같다. */}
       <Modal.Panel maxWidth="max-w-xs">
-        {/* 스크림 위 테두리 톤다운을 이 View 가 직접 쓴다. RN 에는 `.panel-on-scrim-parent > *`
-            짝이 없다. */}
-        <View className="overflow-hidden rounded-[14px] border border-panel-border bg-surface">
-          <View className="relative h-[104px] overflow-hidden">
-            {/* 그림이 오른쪽 띠에만 선다. 감싸는 View 가 크기를 가진 절대 상자라 안쪽의
-                `absolute inset-0` 이 그 띠를 기준으로 풀린다.
+        {/* 다른 가운데 모달(`ModalSurface`)과 같은 판이다. 테두리 없이 다크에서만 표면을 한 칸 올린다.
+            변수는 바깥 층에서 다시 선언하고 색은 안쪽 층이 칠한다. 같은 층이면 옛 값으로 풀린다. */}
+        <View style={vars(panelScope)}>
+          <View testID="party-size-panel" className="overflow-hidden rounded-[14px] bg-surface">
+            <View className="relative h-[104px] overflow-hidden">
+              {/* 그림이 오른쪽 띠에만 선다. 감싸는 View 가 크기를 가진 절대 상자라 안쪽의
+                  `absolute inset-0` 이 그 띠를 기준으로 풀린다.
 
-                **`overflow-hidden` 이 필수다.** 크롭은 이미지를 상자보다 크게 그려 창을 옮기는
-                방식이라, 안 자르면 남는 부분이 띠 밖으로 흘러 글자를 덮는다. 베일은 띠 안만
-                덮으므로 그 부분은 생그림 사각형으로 남는다(실기기에서 드러났다). */}
-            <View
-              testID="party-modal-art"
-              pointerEvents="none"
-              className="absolute inset-y-0 right-0 overflow-hidden"
-              style={{ width: ART_WIDTH }}
-            >
-              <FadedIllustration source={portraitUrl} crop={crop} veil={false} opacity={ART_OPACITY} />
+                  **`overflow-hidden` 이 필수다.** 크롭은 이미지를 상자보다 크게 그려 창을 옮기는
+                  방식이라, 안 자르면 남는 부분이 띠 밖으로 흘러 글자를 덮는다. 베일은 띠 안만
+                  덮으므로 그 부분은 생그림 사각형으로 남는다(실기기에서 드러났다). */}
+              <View
+                testID="party-modal-art"
+                pointerEvents="none"
+                className="absolute inset-y-0 right-0 overflow-hidden"
+                style={{ width: ART_WIDTH }}
+              >
+                <FadedIllustration source={portraitUrl} crop={crop} veil={false} opacity={ART_OPACITY} />
 
-              {/* 베일 셋을 겹친다. **가로와 세로는 직선**이고, 둘이 만나는 왼쪽 아래
-                  모서리만 둥글게 깎는다.
+                {/* 베일 셋을 겹친다. **가로와 세로는 직선**이고, 둘이 만나는 왼쪽 아래
+                    모서리만 둥글게 깎는다.
 
-                  타원 하나로 덮어 봤더니 위·오른쪽까지 휘어 어색했다(사용자 지적). 직선 둘만
-                  겹치면 이번엔 그 모서리가 각지게 접힌다. 셋째가 그 자리만 메운다.
+                    타원 하나로 덮어 봤더니 위·오른쪽까지 휘어 어색했다(사용자 지적). 직선 둘만
+                    겹치면 이번엔 그 모서리가 각지게 접힌다. 셋째가 그 자리만 메운다.
 
-                  겹치는 순서는 상관없다. 알파가 `1-(1-가로)(1-세로)(1-모서리)` 로 쌓여서 어느
-                  하나가 다 덮으면 그 자리는 판 표면색이다.
+                    겹치는 순서는 상관없다. 알파가 `1-(1-가로)(1-세로)(1-모서리)` 로 쌓여서 어느
+                    하나가 다 덮으면 그 자리는 판 표면색이다.
 
-                  **왼쪽 끝과 아래 끝은 완전히 덮여야 한다.** 덜 덮이면 띠가 끝나는 자리에
-                  이음선이 남는다. 글자 자리(판 왼쪽 155)에 옅게 깔리는 것은 감수한 것이다. */}
-              <Svg aria-hidden pointerEvents="none" style={StyleSheet.absoluteFill}>
-                <Defs>
-                  {/* 가로. 왼쪽 5% 부터 완전히 덮고 58% 에서 걷힌다. */}
-                  <LinearGradient id={VEIL_H} x1="0" y1="0" x2="1" y2="0">
-                    <Stop offset="0.05" stopColor={surface} stopOpacity={1} />
-                    <Stop offset="0.58" stopColor={surface} stopOpacity={0} />
-                  </LinearGradient>
-                  {/* 세로. 머리와 본문 사이에 선이 없어 그림이 본문으로 그대로 이어진다. */}
-                  <LinearGradient id={VEIL_V} x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0.55" stopColor={surface} stopOpacity={0} />
-                    <Stop offset="1" stopColor={surface} stopOpacity={1} />
-                  </LinearGradient>
-                  {/* 모서리. 왼쪽 아래 귀퉁이에서만 퍼져 각진 접힘을 깎는다. */}
-                  <RadialGradient id={VEIL_CORNER} cx="0%" cy="100%" rx="34%" ry="30%">
-                    <Stop offset="0" stopColor={surface} stopOpacity={1} />
-                    <Stop offset="1" stopColor={surface} stopOpacity={0} />
-                  </RadialGradient>
-                </Defs>
-                <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_H})`} />
-                <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_V})`} />
-                <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_CORNER})`} />
-              </Svg>
+                    **왼쪽 끝과 아래 끝은 완전히 덮여야 한다.** 덜 덮이면 띠가 끝나는 자리에
+                    이음선이 남는다. 글자 자리(판 왼쪽 155)에 옅게 깔리는 것은 감수한 것이다. */}
+                <Svg aria-hidden pointerEvents="none" style={StyleSheet.absoluteFill}>
+                  <Defs>
+                    {/* 가로. 왼쪽 5% 부터 완전히 덮고 58% 에서 걷힌다. */}
+                    <LinearGradient id={VEIL_H} x1="0" y1="0" x2="1" y2="0">
+                      <Stop offset="0.05" stopColor={surface} stopOpacity={1} />
+                      <Stop offset="0.58" stopColor={surface} stopOpacity={0} />
+                    </LinearGradient>
+                    {/* 세로. 머리와 본문 사이에 선이 없어 그림이 본문으로 그대로 이어진다. */}
+                    <LinearGradient id={VEIL_V} x1="0" y1="0" x2="0" y2="1">
+                      <Stop offset="0.55" stopColor={surface} stopOpacity={0} />
+                      <Stop offset="1" stopColor={surface} stopOpacity={1} />
+                    </LinearGradient>
+                    {/* 모서리. 왼쪽 아래 귀퉁이에서만 퍼져 각진 접힘을 깎는다. */}
+                    <RadialGradient id={VEIL_CORNER} cx="0%" cy="100%" rx="34%" ry="30%">
+                      <Stop offset="0" stopColor={surface} stopOpacity={1} />
+                      <Stop offset="1" stopColor={surface} stopOpacity={0} />
+                    </RadialGradient>
+                  </Defs>
+                  <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_H})`} />
+                  <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_V})`} />
+                  <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_CORNER})`} />
+                </Svg>
+              </View>
+
+              {/* 다른 모달의 닫기와 같은 상자·같은 아이콘이다(`InputCard`: 44 · `h-5`). 칠한 원을
+                  안 두르는 것도 그쪽과 같다. 그림이 이 자리까지 안 올라와 눌러 줄 일이 없다. */}
+              <Pressable
+                testID="party-size-modal-close"
+                role="button"
+                onPress={props.onClose}
+                aria-label="닫기"
+                className="absolute right-1.5 top-1.5 h-11 w-11 items-center justify-center"
+              >
+                <XIcon className="h-5 w-5 text-text-muted" aria-hidden />
+              </Pressable>
+
+              {/* 글자는 전부 왼쪽이다. 그림 위에 안 앉으므로 그림자를 안 쓴다. */}
+              <View className="absolute left-4 top-4 gap-1.5">
+                <Text className="text-10 font-bold tracking-[.16em] text-text-muted">{props.cycleLabel}</Text>
+                <Text className="text-22 font-bold tracking-[-.02em] text-text">{props.bossName}</Text>
+                {props.onSelectDifficulty === undefined ? (
+                  <View className="self-start">
+                    <Badge variant={props.difficulty}>{DIFFICULTY_NAME[props.difficulty]}</Badge>
+                  </View>
+                ) : (
+                  <DifficultyExpander
+                    label={props.bossName}
+                    difficulties={props.difficulties}
+                    value={props.difficulty}
+                    onChange={props.onSelectDifficulty}
+                  />
+                )}
+              </View>
             </View>
 
-            {/* 다른 모달의 닫기와 같은 상자·같은 아이콘이다(`InputCard`: 44 · `h-5`). 칠한 원을
-                안 두르는 것도 그쪽과 같다. 그림이 이 자리까지 안 올라와 눌러 줄 일이 없다. */}
-            <Pressable
-              testID="party-size-modal-close"
-              role="button"
-              onPress={props.onClose}
-              aria-label="닫기"
-              className="absolute right-1.5 top-1.5 h-11 w-11 items-center justify-center"
-            >
-              <XIcon className="h-5 w-5 text-text-muted" aria-hidden />
-            </Pressable>
-
-            {/* 글자는 전부 왼쪽이다. 그림 위에 안 앉으므로 그림자를 안 쓴다. */}
-            <View className="absolute left-4 top-4 gap-1.5">
-              <Text className="text-10 font-bold tracking-[.16em] text-text-muted">{props.cycleLabel}</Text>
-              <Text className="text-22 font-bold tracking-[-.02em] text-text">{props.bossName}</Text>
-              {props.onSelectDifficulty === undefined ? (
-                <View className="self-start">
-                  <Badge variant={props.difficulty}>{DIFFICULTY_NAME[props.difficulty]}</Badge>
-                </View>
-              ) : (
-                <DifficultyExpander
-                  label={props.bossName}
-                  difficulties={props.difficulties}
-                  value={props.difficulty}
-                  onChange={props.onSelectDifficulty}
-                />
-              )}
-            </View>
-          </View>
-
-          <View className="gap-3.5 p-4">
-            <View className="flex-row items-center justify-between gap-2.5">
-              <Text className="text-13 font-bold text-text">분배 방식</Text>
-              <Segment
-                options={SPLIT_OPTIONS}
-                selected={usesShares ? '비율' : '기본'}
-                size="md"
-                onSelect={(option) =>
-                  setShares(
-                    option === '기본'
-                      ? NO_SHARES
-                      : {
-                          crystalMyShare: SEED_SHARES.myShare,
-                          crystalSharesTotal: SEED_SHARES.sharesTotal,
-                          // 비율로 바꿀 때 송금 수수료는 자동으로 시작한다(내 등급 요율).
-                          splitFeePercent: null,
-                          splitFeeAuto: true,
-                        },
-                  )
-                }
-              />
-            </View>
-
-            {usesShares ? (
-              <>
-                {/* 카드 한 장이다. 아이템 비율은 건마다 값이 달라 드롭 가격 카드가 받는다. */}
-                <ShareCard
-                  label="결정석"
-                  value={crystal}
-                  onChange={(next) =>
-                    setShares({
-                      ...draft.shares,
-                      crystalMyShare: next.myShare,
-                      crystalSharesTotal: next.sharesTotal,
-                    })
-                  }
-                />
-
-                <FeeRow
-                  variant="compact"
-                  label="수수료"
-                  auto={splitFeeAuto}
-                  onAutoChange={(auto) =>
-                    // 끄는 순간 방금까지 자동이던 요율을 고른 채 선다.
-                    setShares({
-                      ...draft.shares,
-                      splitFeeAuto: auto,
-                      splitFeePercent: !auto && autoFee !== null ? autoFee.percent : draft.shares.splitFeePercent,
-                    })
-                  }
-                  autoFee={autoFee}
-                  options={FEE_OPTIONS}
-                  selected={`${splitFeePercent}%` as (typeof FEE_OPTIONS)[number]}
-                  onSelect={(option) =>
-                    setShares({ ...draft.shares, splitFeeAuto: false, splitFeePercent: Number.parseInt(option, 10) })
-                  }
-                />
-              </>
-            ) : (
-              /* 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서
-                 말한다. */
+            <View className="gap-3.5 p-4">
               <View className="flex-row items-center justify-between gap-2.5">
-                <View className="flex-row items-center gap-2">
-                  {/* 줄 높이를 글꼴 자연 상자(11 × 1.19 ≈ 13)에 붙인다. `text-11` 의 기본 16 은
-                      iOS 에서 남는 여유가 전부 글자 **위**로 가서(기준선이 `줄높이 − descent`)
-                      글자가 3px 내려앉고, 옆의 배지만 위로 붙어 보인다. */}
-                  <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
-                    파티 인원
-                  </Text>
-                  <Badge variant="primary" size="xs" style={TABULAR_NUMS}>
-                    최대 {props.maxPartySize}명
-                  </Badge>
-                </View>
-                <Stepper
-                  label={`${props.bossName} 파티원 수`}
-                  value={draft.partySize}
-                  max={props.maxPartySize}
-                  onChange={(next) => setDraft((prev) => ({ ...prev, partySize: next }))}
+                <Text className="text-13 font-bold text-text">분배 방식</Text>
+                <Segment
+                  options={SPLIT_OPTIONS}
+                  selected={usesShares ? '비율' : '기본'}
+                  size="md"
+                  onSelect={(option) =>
+                    setShares(
+                      option === '기본'
+                        ? NO_SHARES
+                        : {
+                            crystalMyShare: SEED_SHARES.myShare,
+                            crystalSharesTotal: SEED_SHARES.sharesTotal,
+                            // 비율로 바꿀 때 송금 수수료는 자동으로 시작한다(내 등급 요율).
+                            splitFeePercent: null,
+                            splitFeeAuto: true,
+                          },
+                    )
+                  }
                 />
               </View>
-            )}
 
-            {/* 으뜸 동작. 다른 모달(`NoticeModal`)과 같은 `Button` atom · 같은 전폭이다.
-                위 여백이 고치는 자리와 끝내는 자리를 가른다. */}
-            <Button
-              variant="primary"
-              testID="party-size-modal-apply"
-              onPress={() =>
-                props.onApply(
-                  // 자동이면 요율은 그 등급 요율로 내보낸다. 보스 수익 행이 이 값으로 그 기록을 다시 센다.
-                  splitFeeAuto
-                    ? { ...draft, shares: { ...draft.shares, splitFeePercent: autoFee?.percent ?? draft.shares.splitFeePercent } }
-                    : draft,
-                )
-              }
-              className="mt-1 w-full items-center"
-            >
-              적용
-            </Button>
+              {usesShares ? (
+                <>
+                  {/* 카드 한 장이다. 아이템 비율은 건마다 값이 달라 드롭 가격 카드가 받는다. */}
+                  <ShareCard
+                    label="결정석"
+                    value={crystal}
+                    onChange={(next) =>
+                      setShares({
+                        ...draft.shares,
+                        crystalMyShare: next.myShare,
+                        crystalSharesTotal: next.sharesTotal,
+                      })
+                    }
+                  />
+
+                  <FeeRow
+                    variant="compact"
+                    label="수수료"
+                    auto={splitFeeAuto}
+                    onAutoChange={(auto) =>
+                      // 끄는 순간 방금까지 자동이던 요율을 고른 채 선다.
+                      setShares({
+                        ...draft.shares,
+                        splitFeeAuto: auto,
+                        splitFeePercent: !auto && autoFee !== null ? autoFee.percent : draft.shares.splitFeePercent,
+                      })
+                    }
+                    autoFee={autoFee}
+                    options={FEE_OPTIONS}
+                    selected={`${splitFeePercent}%` as (typeof FEE_OPTIONS)[number]}
+                    onSelect={(option) =>
+                      setShares({ ...draft.shares, splitFeeAuto: false, splitFeePercent: Number.parseInt(option, 10) })
+                    }
+                  />
+                </>
+              ) : (
+                /* 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서
+                   말한다. */
+                <View className="flex-row items-center justify-between gap-2.5">
+                  <View className="flex-row items-center gap-2">
+                    {/* 줄 높이를 글꼴 자연 상자(11 × 1.19 ≈ 13)에 붙인다. `text-11` 의 기본 16 은
+                        iOS 에서 남는 여유가 전부 글자 **위**로 가서(기준선이 `줄높이 − descent`)
+                        글자가 3px 내려앉고, 옆의 배지만 위로 붙어 보인다. */}
+                    <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
+                      파티 인원
+                    </Text>
+                    <Badge variant="primary" size="xs" style={TABULAR_NUMS}>
+                      최대 {props.maxPartySize}명
+                    </Badge>
+                  </View>
+                  <Stepper
+                    label={`${props.bossName} 파티원 수`}
+                    value={draft.partySize}
+                    max={props.maxPartySize}
+                    onChange={(next) => setDraft((prev) => ({ ...prev, partySize: next }))}
+                  />
+                </View>
+              )}
+
+              {/* 으뜸 동작. 다른 모달(`NoticeModal`)과 같은 `Button` atom · 같은 전폭이다.
+                  위 여백이 고치는 자리와 끝내는 자리를 가른다. */}
+              <Button
+                variant="primary"
+                testID="party-size-modal-apply"
+                onPress={() =>
+                  props.onApply(
+                    // 자동이면 요율은 그 등급 요율로 내보낸다. 보스 수익 행이 이 값으로 그 기록을 다시 센다.
+                    splitFeeAuto
+                      ? { ...draft, shares: { ...draft.shares, splitFeePercent: autoFee?.percent ?? draft.shares.splitFeePercent } }
+                      : draft,
+                  )
+                }
+                className="mt-1 w-full items-center"
+              >
+                적용
+              </Button>
+            </View>
           </View>
         </View>
       </Modal.Panel>
