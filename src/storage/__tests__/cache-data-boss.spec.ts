@@ -1,17 +1,17 @@
 /// <reference types="node" />
 /**
- * 캐시 데이터 삭제가 보스 기록 새 표 셋을 행 단위로 지우는지 진짜 SQLite 로 본다.
+ * 데이터 삭제가 보스 기록 새 표 셋을 행 단위로 지우는지 진짜 SQLite 로 본다.
  *
- * 한 표 안에 두 그룹이 섞여 있다. 보스 관리 설정과 그 기간 값은 `일반`, 처치와 드롭은 `기록` 이다. 표를 통째로
- * 지우면 외래키를 따라 다른 그룹의 행까지 사라진다.
+ * 한 표 안에 두 그룹이 섞여 있다. 보스 관리 설정과 그 기간 값은 `수동 선택 항목`, 처치와 드롭은 `보스 처치 · 드롭` 이다.
+ * 표를 통째로 지우면 외래키를 따라 다른 그룹의 행까지 사라진다.
  */
 import { installFakePreferences } from './fake-preferences'
-import { clearCacheData, getCacheDataSizes } from '../cache-data'
+import { clearCacheData, getCacheDataCounts } from '../cache-data'
 import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../boss-drops'
 import { getBossPartyPeriodOverrides, setBossPartyPeriodOverride } from '../boss-party-period-overrides'
 import { getBossPartySettings, setBossPartySetting } from '../boss-party-settings'
 import { getBossProfitRecords, upsertBossProfitRecord } from '../boss-profit'
-import { __resetStoragePortsForTest, setAssetFilesPort, setSqlitePort } from '../ports'
+import { __resetStoragePortsForTest, setSqlitePort } from '../ports'
 import { closeBossProfitDb } from '../sqlite/db'
 import { createRealSqlite, type RealSqlite } from '../sqlite/__tests__/node-sqlite-port'
 
@@ -21,15 +21,6 @@ beforeEach(() => {
   real = createRealSqlite()
   setSqlitePort(real.port)
   installFakePreferences()
-  // 받은 그림 디렉터리는 이 파일의 관심사가 아니다. 비어 있는 것으로 둔다.
-  setAssetFilesPort({
-    directoryUri: () => 'file:///docs/game-assets/',
-    list: async () => [],
-    download: async () => 0,
-    remove: async () => {},
-    clear: async () => {},
-    size: async () => 0,
-  })
 })
 
 afterEach(async () => {
@@ -63,11 +54,13 @@ function count(table: string): number {
   return real.inspect((db) => (db.prepare(`SELECT count(*) AS n FROM ${table}`).get() as { n: number }).n)
 }
 
-describe('보스 기록 새 표 셋의 캐시 삭제', () => {
-  it('일반만 지우면 보스 관리 설정과 그 기간 값만 사라지고 처치와 드롭은 남는다', async () => {
+const NONE = { manual: false, boss: false, cashbook: false, enhancement: false }
+
+describe('보스 기록 새 표 셋의 데이터 삭제', () => {
+  it('수동 선택 항목만 지우면 보스 관리 설정과 그 기간 값만 사라지고 처치와 드롭은 남는다', async () => {
     await seed()
 
-    await clearCacheData({ general: true, records: false })
+    await clearCacheData({ ...NONE, manual: true })
 
     expect(await getBossPartySettings(['o'])).toEqual([])
     expect(await getBossPartyPeriodOverrides(['o'], PERIODS)).toEqual([])
@@ -75,10 +68,10 @@ describe('보스 기록 새 표 셋의 캐시 삭제', () => {
     expect(await getBossDropRecords(['o'], PERIODS)).toHaveLength(2)
   })
 
-  it('기록만 지우면 처치와 드롭만 사라지고 보스 관리 설정과 그 기간 값은 남는다', async () => {
+  it('보스 처치 · 드롭만 지우면 처치와 드롭만 사라지고 보스 관리 설정과 그 기간 값은 남는다', async () => {
     await seed()
 
-    await clearCacheData({ general: false, records: true })
+    await clearCacheData({ ...NONE, boss: true })
 
     expect(await getBossProfitRecords(['o'], PERIODS)).toEqual([])
     expect(await getBossDropRecords(['o'], PERIODS)).toEqual([])
@@ -92,20 +85,16 @@ describe('보스 기록 새 표 셋의 캐시 삭제', () => {
   it('둘 다 지우면 세 표가 빈다', async () => {
     await seed()
 
-    await clearCacheData({ general: true, records: true })
+    await clearCacheData({ ...NONE, manual: true, boss: true })
 
     expect([count('boss_parties'), count('boss_party_periods'), count('boss_drops')]).toEqual([0, 0, 0])
   })
 
-  it('크기는 행이 속한 그룹에 센다', async () => {
-    const before = await getCacheDataSizes()
+  it('처치와 드롭의 건수를 센다', async () => {
     await seed()
-    const after = await getCacheDataSizes()
 
-    expect(after.general).toBeGreaterThan(before.general)
-    expect(after.records).toBeGreaterThan(before.records)
+    const counts = await getCacheDataCounts()
 
-    await clearCacheData({ general: false, records: true })
-    expect((await getCacheDataSizes()).records).toBe(before.records)
+    expect([counts.bossClears, counts.bossDrops]).toEqual([1, 2])
   })
 })

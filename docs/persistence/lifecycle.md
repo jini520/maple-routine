@@ -8,7 +8,7 @@
 |---|---|
 | `app/AppShell.tsx` | 부팅 때 설정을 읽어 스토어에 넣는다 |
 | `app/prehydrate.ts` · `features/prehydrate.ts` | 탭 스토어 선하이드레이션 |
-| `storage/cache-data.ts` | 캐시 데이터 삭제 · 그룹별 용량 계산 |
+| `storage/cache-data.ts` | 데이터 삭제 · 그룹마다 지울 건수 계산 |
 | `features/settings/cache-data.ts` | 삭제 → DB 닫기 → 리로드 순서 |
 | `storage/api-key.ts` 의 `clearAuthConfig` · `features/auth/store.ts` | 연결 해제 |
 | `storage/sqlite/db.ts` 의 `closeBossProfitDb` | 리로드 전 DB 닫기 |
@@ -30,36 +30,44 @@
 보스 · 보스 수익)는 앱이 준비된 뒤 `prehydrate` 가 차례로 읽는다([[ADR-027]]). 그 밖의 값은 화면이 처음 열릴 때 그
 기능의 스토어가 읽는다.
 
-## 삭제: 연결 해제와 캐시 데이터 삭제
+## 삭제: 연결 해제와 데이터 삭제
 
-설정에 지우는 동작이 둘 있다. 이름은 비슷하지만 지우는 범위가 거의 반대다.
+설정에 지우는 동작이 둘 있다. 둘이 지우는 범위는 겹치지 않는다.
 
-| | 연결 해제 | 캐시 데이터 삭제 |
+| | 연결 해제 | 데이터 삭제 |
 |---|---|---|
-| 어디서 | 더보기 → 설정 → 계정 및 데이터 | 더보기 → 설정 → 계정 및 데이터 → 캐시 데이터 삭제 |
+| 어디서 | 더보기 → 설정 → 계정 및 데이터 | 더보기 → 설정 → 계정 및 데이터 → 데이터 삭제 |
 | 지우는 것 | Preferences 의 `authMethods` · `apiKey` · `selectedAccountId` 셋. 넥슨 세션이 있으면 서버 세션도 끊는다 | 고른 그룹(아래 표) |
-| 기록 | 그대로 둔다 | `기록` 그룹을 고르면 지운다. 되살릴 수 없다 |
+| 기록 | 그대로 둔다 | 고른 그룹의 기록을 지운다. 강화는 다시 받고, 나머지는 되살릴 수 없거나 최근 기간만 다시 받는다([[ADR-053]] 결정 1) |
 | 결과 | 로그인 화면으로 돌아간다 | 앱을 리로드한다 |
 
-캐시 데이터 삭제는 그룹 둘 중에서 고른다. 처음에는 둘 다 골라져 있다.
+데이터 삭제는 그룹 넷 중에서 고른다. 처음에는 아무것도 골라져 있지 않다. 지우는 것이 되살릴 수 없거나 다시 받는 데 호출이 몰리는 기록이라서,
+확인 창을 열고 바로 누른 한 번에 아무것도 지워지지 않게 하려는 것이다.
 
 | 그룹 | 지우는 것 |
 |---|---|
-| `general` | `KEEP_KEYS` 에 없는 Preferences 키 전부 + 기록 그룹이 아닌 테이블(`server_sync_queue` 와 옛 보스 표 `boss_party_settings` · `boss_party_period_overrides`) + 보스 관리 설정과 그 기간만 고친 값(행 단위) |
-| `records` | `RECORD_TABLE_NAMES` 의 테이블: 옛 보스 표 `boss_profit_records` · `boss_drop_records` · `enhancement_totals` · `enhancement_recomputes` · 옛 `enhancement_history` · `enhancement_history_checks` · `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · 옛 `income_records` · `spend_records` · `character_profiles` · `character_world_leaps` · `mvp_grade_history` · `character_accounts` + 보스 처치와 드롭(행 단위) |
+| `manual`(수동 선택 항목) | Preferences 의 `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` + 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값, 행 단위) |
+| `boss`(보스 처치 · 드롭) | 보스 기록 표 셋의 처치 · 드롭 행(행 단위) |
+| `cashbook`(가계부) | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` |
+| `enhancement`(강화) | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` |
 
 보스 기록 표 셋(`boss_parties` · `boss_party_periods` · `boss_drops`, `BOSS_TABLE_NAMES`)은 통째로 지우지 않고 행 단위로
 지운다. 한 표에 두 그룹의 행이 섞여 있고, 조합 행이 처치와 드롭의 부모라서 표를 통째로 지우면 외래키를 따라
-`records` 까지 사라지기 때문이다. `general` 은 분배 칸을 비우고, `records` 는 처치 · 드롭과 그것만 남은 기간 행을 지운다.
-어느 쪽이든 설정도 기간도 남지 않은 조합 행은 함께 지운다([[ADR-078]] 결정 10).
+처치 · 드롭까지 사라지기 때문이다. `manual` 은 분배 칸을 비우고, `boss` 는 처치 · 드롭과 그것만 남은 기간 행을 지운다.
+어느 쪽이든 분배 칸도 기간도 남지 않은 조합 행은 함께 지운다([[ADR-078]] 결정 10).
 
-`general` 은 따로 목록이 없고, `KEEP_KEYS` 와 `RECORD_TABLE_NAMES` · `BOSS_TABLE_NAMES` 에 들지 않은 나머지 전부다. 그래서 새 Preferences 키와 새 테이블은 따로 적지 않으면 `general` 에
-들어간다. 다시 받을 수 없는 값은 `KEEP_KEYS` 나 `RECORD_TABLE_NAMES` 에 직접 넣어야 한다. 테이블은 `DROP` 이 아니라
-`DELETE FROM` 으로 비우므로 스키마는 남는다. 설정 화면의 용량 표시는 각 그룹이 실제로 지우는 범위의 바이트를
-더한 근사값이다. 이렇게 나눈 이유는 [[ADR-053]] 에 있다.
+그룹 목록에 없는 키와 테이블은 어떤 선택에서도 남긴다. 사용자가 그룹 이름을 보고 고르는 기능이라, 화면에 적지 않은 것을
+함께 지우면 사용자가 모르는 것을 잃기 때문이다. 게임 데이터 사본과 받은 그림, 조회 캐시, 캐릭터 이력, 이전 버전 사본 표,
+추적 캐릭터, 인증과 사용자 설정이 여기에 든다. 새 Preferences 키와 새 테이블은 그룹 목록에 더해야만 지워진다.
 
-캐시를 지우면 추적 모드는 남지만 추적 캐릭터와 수동 추적 항목은 지워진다. 캐릭터를 다시 고르면 수동 추적
-항목이 기본값으로 다시 만들어지고, 사용자가 바꿔 둔 항목은 기본값으로 돌아간다.
+어느 그룹을 골라도 서버 전송 대기 표(`server_sync_queue`)는 비운다. 대기 표는 원본 기록이 없는 줄을 서버에 지우기
+요청으로 보낸다. 대기 표를 남기면 방금 지운 기록들의 지우기 요청이 서버로 간다. 서버에 올린 데이터는 지우지 않는다.
+
+테이블은 `DROP` 이 아니라 `DELETE FROM` 으로 비우므로 스키마는 남는다. 표 지우기는 트랜잭션 하나로 묶어, 중간에 실패하면
+아무 표도 지워지지 않는다. 끝나면 `VACUUM` 으로 DB 파일을 다시 써서 지운 행이 차지하던 공간을 돌려준다. 확인 창은
+용량 대신 그룹마다 지울 기록의 건수를 보인다. 이렇게 정한 이유는 [[ADR-053]] 에 있다.
+
+데이터를 지워도 추적 모드와 추적 캐릭터는 남는다. `수동 선택 항목` 을 고르면 캐릭터마다 고른 수동 추적 항목이 지워진다.
 
 ## 리로드까지 하는 삭제
 
@@ -81,5 +89,5 @@ OTA 적용도 같은 이유로 리로드 전에 DB 를 닫는다([[ADR-011]]).
 | 예약된 로컬 알림 | OS 알림 스케줄러(notifee) | 예약 내용을 다시 읽을 수 없어서 `notificationLedger` 에 따로 적는다([[ADR-056]]) |
 | 받은 OTA 번들 | `expo-updates` 의 파일 저장소 | 지금 실행 중인 번들의 정보만 읽는다 |
 
-둘 다 캐시 데이터 삭제 범위 밖이다. `notificationLedger` 는 `KEEP_KEYS` 에 있어 캐시 삭제 뒤에도 남는다. 지우면 OS
+둘 다 데이터 삭제 범위 밖이다. `notificationLedger` 도 데이터 삭제의 그룹 목록에 없어 남는다. 지우면 OS
 에 남은 예약을 지목해 취소할 방법이 없다.

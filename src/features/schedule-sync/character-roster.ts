@@ -222,8 +222,7 @@ export async function probeStrandedTrackedCharacters(
     return
   }
 
-  // 판정 재료는 **지워지지 않는 스냅샷**이 먼저다. 5분 TTL 캐시만 보면 설정의 캐시 비우기 한
-  // 번에 이 캐릭터를 영영 못 짚는다.
+  // 판정 재료는 **지워지지 않는 스냅샷**이 먼저다.
   const profiles = await getCharacterProfiles(unavailable)
   await Promise.all(
     unavailable.map(async (ocid) => {

@@ -48,7 +48,6 @@ Cloudflare Worker 가, 번들과 에셋은 GitHub Releases `live-update-rn` 이 
 `updated` 는 부팅 때 `lastRunBundleVersion` 과 지금 버전을 `isNewerVersion` 으로 비교해 정한다. 저장된
 값이 없으면 띄우지 않고, 버전이 내려갔으면(자동 롤백) 띄우지 않는다. 새 번들이 또 있으면
 `update-available` 이 먼저다. 이 판정과 `자세히 보기` 는 [[ADR-052]] 의 릴리스 노트 결정을 따른다.
-`lastRunBundleVersion` 은 캐시 삭제 때 지워지는 키다([[ADR-053]]). 지워지면 안내가 한 번 안 뜰 뿐이다.
 
 화면에 보이는 버전은 OTA 번들이면 매니페스트 `extra.appVersion`, 스토어 바이너리의 번들이면 바이너리
 버전이다([[ADR-011]] 결정 10).

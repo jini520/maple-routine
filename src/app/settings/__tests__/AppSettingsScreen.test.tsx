@@ -11,7 +11,6 @@
 //    들어와도 같은 곳으로 민다. 조회·저장·401/429 배선은 `SettingsCharactersScreen` 이 갖는다.
 import { act, fireEvent, within } from '@testing-library/react-native'
 
-import { loadCacheDataSizes } from '../../../features/settings/cache-data'
 import { useThemeStore } from '../../../features/theme/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
@@ -35,9 +34,6 @@ const mockLoadProfitTracked = jest.fn()
 
 jest.mock('../../../features/theme/store', () => ({ useThemeStore: jest.fn() }))
 jest.mock('../../../features/tracking-mode/store', () => ({ useTrackingModeStore: jest.fn() }))
-// 본화면이 대표값으로 캐시 총 용량을 읽는다. 화면은 `features/` 를 거치고
-// 저장소·SQLite 는 그 아래가 맡는다(CLAUDE.md CRITICAL).
-jest.mock('../../../features/settings/cache-data', () => ({ loadCacheDataSizes: jest.fn() }))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 
 // 저장은 컨텐츠 스케줄러 스토어의 액션을 그대로 부른다(세 번째 사본 금지).
@@ -79,7 +75,6 @@ jest.mock('@react-navigation/native', () => ({
 
 const mockedUseThemeStore = jest.mocked(useThemeStore)
 const mockedUseTrackingModeStore = jest.mocked(useTrackingModeStore)
-const mockedLoadCacheDataSizes = jest.mocked(loadCacheDataSizes)
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)
 const mockedContentStore = jest.mocked(useContentSchedulerStore)
 const mockedRoster = mockGetRoster as unknown as jest.MockedFunction<typeof getCharacterPickerRoster>
@@ -184,8 +179,6 @@ beforeEach(() => {
     goBack: jest.fn(),
     setParams,
   } as unknown as ReturnType<typeof useSettingsNavigation>)
-  // 기본은 "영원히 조회 중"자리표시(`- KB`)가 기본 상태라, 값이 필요한 케이스만 따로 세운다.
-  mockedLoadCacheDataSizes.mockReturnValue(new Promise(() => {}))
   // 로스터도 기본은 "영원히 조회 중"케이스가 필요할 때 `deferredRoster` 로 갈아 세운다.
   mockedRoster.mockReturnValue(new Promise(() => {}))
   mockLoadContentTracked.mockResolvedValue(undefined)
@@ -277,29 +270,6 @@ describe('AppSettingsScreen', () => {
     await press(rowOf(view, label))
 
     expect(navigate).toHaveBeenCalledWith(route)
-  })
-
-  it('"계정 및 데이터" 우측에 캐시 총 용량(두 그룹의 합)을 표시한다', async () => {
-    mockedLoadCacheDataSizes.mockResolvedValue({ general: 1024 * 1024, records: 1024 * 512 })
-    const view = await renderOverlay(<AppSettingsScreen />)
-
-    expect(await view.findByText('1.5MB')).toBeTruthy()
-  })
-
-  it('캐시 용량 조회 전에는 "- KB" 로 자리를 잡는다', async () => {
-    const view = await renderOverlay(<AppSettingsScreen />)
-
-    expect(view.getByText('- KB')).toBeTruthy()
-  })
-
-  it('캐시 용량 조회가 실패해도 "- KB" 로 남고 화면은 그대로다', async () => {
-    mockedLoadCacheDataSizes.mockRejectedValue(new Error('storage down'))
-    const view = await renderOverlay(<AppSettingsScreen />)
-
-    await act(async () => {})
-
-    expect(view.getByText('- KB')).toBeTruthy()
-    expect(view.getByText('계정 및 데이터')).toBeTruthy()
   })
 
   it('"앱 정보" 우측에 앱 버전을 표시한다', async () => {

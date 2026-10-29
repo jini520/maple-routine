@@ -1,113 +1,38 @@
-import { getAssetFilesPort, preferences } from './ports'
+import { preferences } from './ports'
 import { STORAGE_KEYS } from './keys'
 import { SPLIT_COLUMN_NAMES } from './boss-periods'
-import { BOSS_PROFIT_TABLE_NAMES, getBossProfitDb } from './sqlite/db'
+import { getBossProfitDb } from './sqlite/db'
+import { inTransaction } from './sqlite/transaction'
 
-// 캐시 데이터 삭제. 인증·사용자 설정만 남기고 나머지 저장 데이터를 지운다.
-// trackingMode·dropEffect는 재조회로 복구되는 캐시가 아니라 사용자가 명시적으로 고른 취향 설정이라
-// theme과 같이 보존한다. 어떤 그룹을 골라도 이 목록은 삭제 대상이 아니다.
-const KEEP_KEYS = new Set<string>([
-  // 인증 수단 목록. 지워지면 옛 `apiKey` 칸이 없는 설치본은 다시 띄운 뒤 로그인 화면으로 돌아간다.
-  STORAGE_KEYS.authMethods,
-  STORAGE_KEYS.apiKey,
-  STORAGE_KEYS.theme,
-  STORAGE_KEYS.textSize,
-  STORAGE_KEYS.trackingMode,
-  STORAGE_KEYS.dropEffect,
-  // 리뷰 요청 기록. 지워지면 90일 간격을 처음부터 다시 세서 한 달 안에 다시 묻는다.
-  STORAGE_KEYS.appReview,
-  // 공지 구독. 지워지면 구독은 FCM 쪽에 남아 있는데 앱은 껐다고 믿어, 스위치가 꺼져 있는데
-  // 알림이 오는 상태가 된다.
-  STORAGE_KEYS.noticeSubscribed,
-  STORAGE_KEYS.noticeSubscriptions,
-  // 권한을 물었다는 사실. 지워지면 iOS 에서 다시 묻게 되는데, 그 시스템 팝업은 이미 답한
-  // 사용자에게 두 번째로는 아예 안 뜬다. 그래서 사용자는 아무 일도 안 일어난 것을 본다.
-  STORAGE_KEYS.notificationPermissionAsked,
-  // 파티 약속 알림 스위치. 지워지면 사용자가 끈 약속 알림이 다시 온다.
-  STORAGE_KEYS.partyAlarmEnabled,
-  // 파티 스케줄에서 고른 보기. 사용자가 고른 것이라 지워지면 늘 보드로 보던 화면이 목록으로 열린다.
-  STORAGE_KEYS.partyScheduleView,
-  // 예약해 둔 로컬 알림. 지워지면 OS 에 남은 예약을 취소할 길이 없다.
-  STORAGE_KEYS.notificationLedger,
-  // today 배너에서 닫은 공지. 지워지면 사용자가 이미 닫은 공지가 첫 화면에 되살아난다.
-  // 받은 공지 자체(`notices`)는 서버가 다시 주지만 닫았다는 사실은 기기에만 있다.
-  STORAGE_KEYS.dismissedNotices,
-  // 주간 확인을 끈 체크박스. 지워지면 끈 확인이 되살아난다.
-  STORAGE_KEYS.mvpWeeklyCheckOff,
-  // 일괄 적용을 물었다는 표시. 지워지면 체크박스를 끄고 넘긴 빈 수수료 행이 다시 대상이 된다.
-  STORAGE_KEYS.mvpBulkApplyAsked,
-  // 끝나지 않은 작업 표시. 지워지면 반쯤 바뀐 기록이 이어지지 않고 그대로 굳는다.
-  STORAGE_KEYS.pendingTasks,
-  // 옛 강화 원본을 합계로 옮겼다는 표시. 지워지면 다시 옮기며, 업데이트 뒤 새로 받은 날의 합계를 옛 원본으로 덮는다.
-  STORAGE_KEYS.enhancementTotalsMoved,
-  // 금액 칸마다 고른 단위. 사용자가 고른 것이라 지워지면 늘 억으로 치던 칸이 기본으로 돌아간다.
-  STORAGE_KEYS.mesoUnits,
-  // 통계 누적 순수익의 시작 날짜. 사용자가 고른 값이라 지워지면 아무도 되살리지 못한다.
-  STORAGE_KEYS.statsCumulativeStart,
-  // today 빠른 이동 구성. 사용자가 고른 것이라 지워지면 기본 다섯 칸으로 돌아간다.
-  STORAGE_KEYS.quickLinks,
-  // 파티 약속. 사용자가 적은 것이라 지워지면 아무도 되살리지 못한다.
-  STORAGE_KEYS.partyAppointments,
-  // 주간 보스 수익 계산기의 기록. 사용자가 남긴 것이라 지워지면 아무도 되살리지 못한다.
-  STORAGE_KEYS.bossProfitCalculatorRecords,
-])
-
-// 삭제 단위는 2그룹이다. 사용자가 해결하려는 갈등은 "용량은 비우고 싶은데 복구 불가능한
-// 기록은 남기고 싶다" 하나뿐이라, 그 축을 정확히 가르는 최소 분할만 둔다.
-//
-// **그룹 이름이 `bossRecords` 에서 `records` 로 넓어졌다**.
-// 가계부가 손으로 적는 기록(`cashbook_entries` 와 옛 `income_records`·`spend_records`)이 같은 갈등의 같은 편에 서기 때문이다.
-// 그리고 **보스 기록보다 더 복구 불가능하다**(보스는 API 가 최근 2주치라도 주는데 손입력은 0%다).
-// 3그룹으로 쪼개지 않는 것은 **갈등은 하나뿐이라 최소 분할만 둔다** 는 규칙 그대로다.
-export type CacheDataGroupId = 'general' | 'records'
+// 데이터 삭제. 사용자가 고른 그룹이 목록으로 든 키와 표만 지운다. 목록에 없는 것은 어떤 선택에서도 남는다.
+// 화면에 적지 않은 것을 함께 지우면 사용자가 모르는 것을 잃는다. 새 키 · 새 표는 그룹 목록에 더해야만 지워진다.
+export type CacheDataGroupId = 'manual' | 'boss' | 'cashbook' | 'enhancement'
 
 export type CacheDataSelection = Record<CacheDataGroupId, boolean>
 
-const ALL_GROUPS: CacheDataSelection = { general: true, records: true }
+/** 수동 선택 항목의 키. 캐릭터 · 월드 · 계정마다 붙는 것은 접두사로 적는다. */
+const MANUAL_KEY_PREFIXES = ['manualTrackedContent:', 'worldSharedProgress:', 'accountSharedProgress:']
+const MANUAL_KEYS = new Set<string>([
+  STORAGE_KEYS.lastHunts,
+  STORAGE_KEYS.lastHuntSelection,
+  STORAGE_KEYS.lastHuntToggles,
+  STORAGE_KEYS.lastPointRate,
+])
 
-// 명시 목록을 갖는 쪽은 records 뿐이고 general 은 아래에서 차집합으로 파생된다. 두 그룹을 다
-// 열거하면 어느 그룹에도 안 잡히는 테이블이 생겨 영영 안 지워진다.
-//
-// 수익과 드롭을 더 쪼개지 않는 이유. 수익만 지우고 드롭이 남으면 고아 드롭 행이 되어 같은
-// 보스를 다시 잡을 때 예전 드롭이 되살아나 붙는다.
-export const RECORD_TABLE_NAMES: readonly string[] = [
-  'boss_profit_records',
-  'boss_drop_records',
-  // 강화 사용 내역이 기록 그룹인 이유. **어제 이전 날짜는 다시 안 부른다.** 지우면 그 날짜의
-  // 지출을 되살릴 길이 0% 다. 원장도 같은 그룹이어야 표식만 남고 내역이 사라지는 상태가 안 생긴다.
-  'enhancement_history',
-  'enhancement_totals',
-  'enhancement_recomputes',
-  'enhancement_history_checks',
-  // 손입력에서만 오는 값이라 API 로 되살릴 길이 **0%** 다. 여기 안 넣으면
-  // 아래 차집합 파생이 이 둘을 **지워도 되는 것** 으로 끌어간다.
-  'income_records',
-  'spend_records',
-  // 위 둘을 옮긴 기록 표 셋. 품목 · 사냥 입력은 기록의 자식이라 기록과 같은 그룹이어야 고아가 안 생긴다.
-  'cashbook_entries',
-  'cashbook_entry_items',
-  'cashbook_entry_hunt_inputs',
-  // 이름이 없으면 기록에서 행을 못 만든다(ocid 는 사용자에게 아무 뜻도 없어 대신 안 적는다).
-  // 이 표를 `general` 로 두면 기록을 남긴 사용자가 이름 없는 기록을 받아, 지운 적 없는 과거
-  // 수익이 화면에서 통째로 사라진다. 지우는 무게가 기록과 같아서 같은 그룹이다.
-  'character_profiles',
-  // 리프한 기간의 중복 기록을 지우는 연결이다. 기록만 남고 연결이 사라지면 두 번 센 채로 굳는다.
-  'character_world_leaps',
-  // 사용자가 적은 등급 이력. 지우면 지난 스타포스와 자동 수수료가 등급 없이 선다.
-  'mvp_grade_history',
-  // 옛 이름과 지운 캐릭터의 소속은 다시 받을 수 없다.
-  'character_accounts',
-]
+function isManualKey(key: string): boolean {
+  return MANUAL_KEYS.has(key) || MANUAL_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))
+}
 
-/**
- * 보스 기록 표 셋. **한 표 안에 두 그룹이 섞여 있어 표를 통째로 지우지 않고 행 단위로 지운다.**
- *
- * 보스 관리 설정과 그 기간 값은 `일반`, 처치와 드롭은 `기록` 이다. 조합 행이 처치와 드롭의 부모라, 표를 통째로
- * 지우면 외래키를 따라 `기록` 까지 사라진다.
- */
-export const BOSS_TABLE_NAMES: readonly string[] = ['boss_parties', 'boss_party_periods', 'boss_drops']
+// 품목 · 사냥 입력은 기록의 자식이라 기록과 함께 지워야 고아가 안 생긴다.
+const CASHBOOK_TABLES = ['cashbook_entries', 'cashbook_entry_items', 'cashbook_entry_hunt_inputs']
+
+// 확인 기록만 남으면 그 날짜를 다시 부르지 않아 합계가 빈 채로 굳는다. 셋을 함께 지워야 다시 받는다.
+const ENHANCEMENT_TABLES = ['enhancement_totals', 'enhancement_history_checks', 'enhancement_recomputes']
 
 const NULL_SPLIT = SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')
+
+// 보스 기록 표 셋은 한 표에 두 그룹의 행이 섞여 있어 행 단위로 지운다. 조합 행이 처치와 드롭의 부모라 표를 통째로
+// 지우면 외래키를 따라 다른 그룹까지 사라진다.
 
 /** 처치와 드롭. 그 기간 값이 없는 기간 행은 함께 지운다. */
 const CLEAR_BOSS_RECORDS = [
@@ -115,8 +40,8 @@ const CLEAR_BOSS_RECORDS = [
   `DELETE FROM boss_party_periods WHERE clear_status = 'cleared' OR split_mode IS NULL`,
 ]
 
-/** 보스 관리 설정과 그 기간 값. 드롭이 남은 기간은 행을 남기고 분배 칸만 비운다. */
-const CLEAR_BOSS_GENERAL = [
+/** 파티 분배 설정과 그 기간 값. 드롭이 남은 기간은 행을 남기고 분배 칸만 비운다. */
+const CLEAR_BOSS_SPLITS = [
   `UPDATE boss_parties SET ${NULL_SPLIT}`,
   `DELETE FROM boss_party_periods
     WHERE clear_status = 'open' AND NOT EXISTS (SELECT 1 FROM boss_drops WHERE period_id = boss_party_periods.id)`,
@@ -127,96 +52,59 @@ const CLEAR_BOSS_GENERAL = [
 const PRUNE_BOSS_PARTIES = `DELETE FROM boss_parties
   WHERE split_mode IS NULL AND NOT EXISTS (SELECT 1 FROM boss_party_periods WHERE party_id = boss_parties.id)`
 
-/** 그룹마다 보스 표 셋에서 그 그룹에 드는 행. 크기를 셀 때 쓴다. */
-const BOSS_ROWS_OF_GROUP: Record<CacheDataGroupId, readonly string[]> = {
-  general: [
-    'SELECT * FROM boss_parties WHERE split_mode IS NOT NULL',
-    `SELECT * FROM boss_party_periods WHERE clear_status = 'open' AND split_mode IS NOT NULL`,
-  ],
-  records: [`SELECT * FROM boss_party_periods WHERE clear_status = 'cleared'`, 'SELECT * FROM boss_drops'],
-}
-
-// db.ts에 테이블이 추가되면 자동으로 여기 들어와 계속 삭제 대상으로 남는다.
-export const GENERAL_TABLE_NAMES: readonly string[] = BOSS_PROFIT_TABLE_NAMES.filter(
-  (table) => !RECORD_TABLE_NAMES.includes(table) && !BOSS_TABLE_NAMES.includes(table),
-)
-
-function tablesFor(selection: CacheDataSelection): readonly string[] {
+function statementsFor(selection: CacheDataSelection): string[] {
   return [
-    ...(selection.general ? GENERAL_TABLE_NAMES : []),
-    ...(selection.records ? RECORD_TABLE_NAMES : []),
+    ...(selection.cashbook ? CASHBOOK_TABLES.map((table) => `DELETE FROM ${table}`) : []),
+    ...(selection.enhancement ? ENHANCEMENT_TABLES.map((table) => `DELETE FROM ${table}`) : []),
+    ...(selection.boss ? CLEAR_BOSS_RECORDS : []),
+    ...(selection.manual ? CLEAR_BOSS_SPLITS : []),
+    ...(selection.boss || selection.manual ? [PRUNE_BOSS_PARTIES] : []),
+    // 대기 표가 남으면 방금 지운 기록마다 서버로 지우기 요청이 간다. 서버 사본은 남긴다.
+    'DELETE FROM server_sync_queue',
   ]
 }
 
-// 선택한 그룹만 지운다. 인자를 생략하면 두 그룹 모두. 선택 삭제 도입 전과 같은 전체 삭제다.
-export async function clearCacheData(selection: CacheDataSelection = ALL_GROUPS): Promise<void> {
-  if (selection.general) {
+/** 고른 그룹만 지운다. 표는 트랜잭션 하나로 지우고, 끝나면 `VACUUM` 으로 파일을 줄인다. */
+export async function clearCacheData(selection: CacheDataSelection): Promise<void> {
+  if (!Object.values(selection).some(Boolean)) return
+
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    for (const statement of statementsFor(selection)) await db.execute(statement)
+  })
+  // Preferences 는 트랜잭션에 들지 못해 표가 다 지워진 뒤에 지운다. 표 지우기가 실패하면 아무것도 안 지워진다.
+  if (selection.manual) {
     const keys = await preferences.keys()
-    await Promise.all(
-      keys.filter((key) => !KEEP_KEYS.has(key)).map((key) => preferences.remove(key)),
-    )
-    // 받은 게임 데이터 그림. 서버에서 다시 받을 수 있다. 사본 표와 함께 지워지므로 다음에 켤 때 잠금 화면이 다시 받는다.
-    await getAssetFilesPort().clear()
+    await Promise.all(keys.filter(isManualKey).map((key) => preferences.remove(key)))
   }
-
-  const tables = tablesFor(selection)
-  if (tables.length === 0) {
-    return
-  }
-
-  const db = await getBossProfitDb()
-  for (const table of tables) {
-    await db.execute(`DELETE FROM ${table};`)
-  }
-  const bossStatements = [
-    ...(selection.records ? CLEAR_BOSS_RECORDS : []),
-    ...(selection.general ? CLEAR_BOSS_GENERAL : []),
-    PRUNE_BOSS_PARTIES,
-  ]
-  for (const statement of bossStatements) {
-    await db.execute(statement)
-  }
+  // 행을 지워도 SQLite 는 그 공간을 파일 안에 빈 칸으로 남긴다. 트랜잭션 안에서는 돌지 않는다.
+  await db.execute('VACUUM')
 }
 
-// 설정 화면의 "캐시 데이터 삭제" 행·확인 모달에 보여줄 근사치(바이트)를 그룹별로 낸다. 각 값은
-// 그 그룹이 실제로 지우는 것과 동일한 범위만 합산하므로, 사용자는 "무엇을 포기하면 얼마가
-// 비는지"를 보고 고를 수 있다. 행에 쓰는 총합은 두 값의 합으로 파생한다.
-export async function getCacheDataSizes(): Promise<Record<CacheDataGroupId, number>> {
-  let general = 0
+/** 칸마다 보일 건수. 그 그룹을 지우면 사라지는 기록의 수다. */
+export interface CacheDataCounts {
+  /** 수동 추적 항목이 있는 캐릭터 수 */
+  manualCharacters: number
+  bossClears: number
+  bossDrops: number
+  cashbookEntries: number
+  /** 강화 합계가 있는 날 수 */
+  enhancementDays: number
+}
 
+export async function getCacheDataCounts(): Promise<CacheDataCounts> {
   const keys = await preferences.keys()
-  for (const key of keys) {
-    if (KEEP_KEYS.has(key)) continue
-    const value = await preferences.get(key)
-    if (value !== null) general += byteLength(value)
-  }
-
-  general += await getAssetFilesPort().size()
-
   const db = await getBossProfitDb()
-  general += await rowBytes(db, [...GENERAL_TABLE_NAMES.map((table) => `SELECT * FROM ${table}`), ...BOSS_ROWS_OF_GROUP.general])
-  const records = await rowBytes(db, [...RECORD_TABLE_NAMES.map((table) => `SELECT * FROM ${table}`), ...BOSS_ROWS_OF_GROUP.records])
-
-  return { general, records }
-}
-
-interface QueryableDb {
-  query: (statement: string) => Promise<{ values?: unknown[] }>
-}
-
-async function rowBytes(db: QueryableDb, selects: readonly string[]): Promise<number> {
-  let bytes = 0
-  for (const select of selects) {
-    const { values } = await db.query(select)
-    for (const row of values ?? []) {
-      for (const value of Object.values(row as Record<string, unknown>)) {
-        bytes += byteLength(String(value ?? ''))
-      }
-    }
+  const scalar = async (statement: string): Promise<number> => {
+    const { values } = await db.query(statement)
+    return Number((values?.[0] as { n?: unknown } | undefined)?.n ?? 0)
   }
-  return bytes
-}
 
-function byteLength(text: string): number {
-  return new TextEncoder().encode(text).length
+  return {
+    manualCharacters: keys.filter((key) => key.startsWith('manualTrackedContent:')).length,
+    bossClears: await scalar(`SELECT count(*) AS n FROM boss_party_periods WHERE clear_status = 'cleared'`),
+    bossDrops: await scalar('SELECT count(*) AS n FROM boss_drops'),
+    cashbookEntries: await scalar('SELECT count(*) AS n FROM cashbook_entries'),
+    enhancementDays: await scalar('SELECT count(DISTINCT history_date) AS n FROM enhancement_totals'),
+  }
 }

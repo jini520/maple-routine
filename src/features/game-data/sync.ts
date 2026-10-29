@@ -219,9 +219,7 @@ export function refreshGameData(): Promise<void> {
   return download(false)
 }
 
-/**
- * 캐시 삭제 뒤. 사본과 그림을 지웠으니 다음에 켤 때 잠금 화면이 다시 받는다. 지금 표는 그대로 둔다.
- */
+/** 기억한 ETag 를 버리는 함수. 다음 받기는 바뀌었나를 묻지 않고 전부 받는다. */
 export function forgetGameDataEtag(): void {
   etag = null
 }

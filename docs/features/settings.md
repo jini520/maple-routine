@@ -1,7 +1,7 @@
 # 더보기 · 설정
 
 하단 바의 넷째 탭 `더보기` 와, 그 머리의 톱니바퀴가 여는 `설정` 이다. 더보기는 소식과 안내를 읽는 화면이고, 값을 바꾸는
-행은 모두 설정에 있다. 이렇게 나눈 이유는 [[ADR-052]], 캐시 데이터 삭제는 [[ADR-053]] 에 있다.
+행은 모두 설정에 있다. 이렇게 나눈 이유는 [[ADR-052]], 데이터 삭제는 [[ADR-053]] 에 있다.
 
 캐릭터 관리는 `features/character.md`([[ADR-029]]), 소식 목록과 상세는 [[ADR-057]], 알림 설정 화면은 [[ADR-056]],
 MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기는 `features/theme.md`([[ADR-054]]) 에 있다.
@@ -15,7 +15,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/SectionTitle.tsx` | 카드 제목 줄. 두 화면이 함께 쓴다 |
 | `app/settings/NoticeSkeleton.tsx` | 소식을 받기 전의 스켈레톤 |
 | `app/settings/SettingsRow.tsx` · `SettingsLinkRow.tsx` · `row-class.ts` · `ValueBadge.tsx` | 누르는 행 둘과 공통 골격 · 현재값 배지 |
-| `app/settings/SettingsAccountDataScreen.tsx` | 계정 및 데이터. 넥슨 로그아웃 · 캐시 데이터 삭제 · 연결 해제 |
+| `app/settings/SettingsAccountDataScreen.tsx` | 계정 및 데이터. 넥슨 로그아웃 · 데이터 삭제 · 연결 해제 |
 | `app/settings/CacheClearConfirm.tsx` · `DisconnectConfirm.tsx` · `SignOutConfirm.tsx` | 위험 동작 확인 창 |
 | `app/settings/SettingsAboutScreen.tsx` · `AppUpdateSection.tsx` | 앱 정보. 버전 · 상태 · 업데이트 확인 · 개인정보 처리방침 주소(`PRIVACY_URL`) |
 | `app/settings/SettingsReleaseNotesScreen.tsx` | 개발 노트 |
@@ -28,7 +28,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/TrackingModeModal.tsx` · `TrackingModeSelector.tsx` | 스케줄 관리 방법 고르기 |
 | `app/settings/reload-tab-stores.ts` | 스케줄 관리 방법을 바꾼 뒤 컨텐츠 · 보스 · 수익 스토어를 차례로 다시 읽게 한다 |
 | `features/settings/store.ts` | 연결 해제 |
-| `features/settings/cache-data.ts` · `storage/cache-data.ts` | 캐시 용량 · 삭제 · 다시 띄우기 |
+| `features/settings/cache-data.ts` · `storage/cache-data.ts` | 데이터 삭제 그룹 · 건수 · 삭제 · 다시 띄우기 |
 | `src/data/release-notes.ts` · `types/release-notes.ts` | 버전별 변경 목록과 업데이트 모달의 핵심 줄 |
 | `src/data/feature-guides/` · `types/feature-guides.ts` · `src/assets/guide/` | 기능 안내. 안내 하나가 파일 하나 |
 
@@ -70,7 +70,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | | 글자 크기 | `작게` · `기본` · `크게` · `아주 크게` 배지 › | 글자 크기 페이지 |
 | `MVP 등급` | MVP 등급 | › | MVP 등급 목록 |
 | `스케줄` | 스케줄 관리 방법 | `자동` · `수동` 배지 › | 스케줄 관리 방법 모달 |
-| `앱 데이터` | 계정 및 데이터 | 캐시 총 용량 › | 계정 및 데이터 |
+| `앱 데이터` | 계정 및 데이터 | › | 계정 및 데이터 |
 | | 앱 정보 | 앱 버전 › | 앱 정보 |
 
 맨 아래에 버전 · `© {연도} 메이플 루틴` · `Data based on NEXON Open API` · `Maple Routine is not associated with NEXON Korea`
@@ -83,7 +83,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `SettingsFeatureGuideList` | 기능 설명 | 그룹 탭(`컨텐츠 · 보스 · 수익 · 유틸리티 · 설정`, 안내 없는 그룹은 감춘다)과 안내 목록 |
 | `SettingsFeatureGuide` · `SettingsReleaseNoteGuide` | 기능 안내 | 목차(마디가 둘 이상일 때) · 이미지 · 문단. 두 라우트가 같은 화면이다 |
 | `SettingsReleaseNotes` | 개발 노트 | 버전마다 기능 → 개선 → 버그 묶음. `사용 중` · `스토어 업데이트 필요` 배지. 안내가 있는 항목만 눌린다 |
-| `SettingsAccountData` | 계정 및 데이터 | 넥슨 로그아웃(로그인이 있을 때) · 캐시 데이터 삭제 · 연결 해제. 모두 위험 색이고 확인 창을 거친다 |
+| `SettingsAccountData` | 계정 및 데이터 | 넥슨 로그아웃(로그인이 있을 때) · 데이터 삭제 · 연결 해제. 모두 위험 색이고 확인 창을 거친다 |
 | `SettingsAbout` | 앱 정보 | 현재 버전 · 상태 · `업데이트 확인` · 개인정보 처리방침(`mapleroutine.store/privacy` 를 인앱 브라우저로 연다) |
 
 개발 노트에는 업데이트를 적용하고 다시 시작했을 때 뜨는 `업데이트를 마쳤어요` 안내의 `자세히 보기` 로도 들어갈 수 있다.

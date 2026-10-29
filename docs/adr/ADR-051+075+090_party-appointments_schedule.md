@@ -270,7 +270,7 @@
 
 ### 결정 12. 스케줄은 Preferences 의 JSON 한 칸에 둔다
 
-| 키 | 값 | 캐시 삭제 |
+| 키 | 값 | 데이터 삭제 |
 |---|---|---|
 | `partyAppointments` | `PartyAppointment[]` | 남긴다. 사용자가 적은 것이라 되살릴 수 없다 |
 | `partyAlarmEnabled` | `on` · `off` | 남긴다. 사용자가 끈 알림이 다시 오면 안 된다 |

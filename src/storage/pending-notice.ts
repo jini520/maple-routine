@@ -4,7 +4,7 @@ import { STORAGE_KEYS } from './keys'
 /**
  * 앱을 다시 띄운 뒤 한 번 보여 줄 알림.
  *
- * 캐시 데이터 삭제는 실패해도 앱을 다시 띄운다(clearCacheData → closeBossProfitDb → 스플래시 → reload).
+ * 데이터 삭제는 실패해도 앱을 다시 띄운다(clearCacheData → closeBossProfitDb → 스플래시 → reload).
  * 다시 띄우면 지금 화면이 사라져 그 자리에서 토스트를 띄울 수 없다. 그래서 표시를 남기고 부팅이 읽는다.
  *
  * Preferences 에 두는 이유는 React Native 에 `sessionStorage` 가 없어서다. 표시를 남기자마자 다시 띄우므로

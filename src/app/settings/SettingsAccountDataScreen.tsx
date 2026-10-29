@@ -1,10 +1,10 @@
 /**
- * 설정 하위 페이지 `계정 및 데이터`. 캐시 삭제와 연결 해제 둘을 담는 화면.
+ * 설정 하위 페이지 `계정 및 데이터`. 데이터 삭제와 연결 해제 둘을 담는 화면.
  *
  * 카드가 하나다. 계정을 바꾸는 일이 캐릭터 관리의 드롭다운 안으로 들어가 이 화면에 계정 변경이
  * 없다. 카드 경계를 남기는 것은 위험 색 라벨 둘을 담는 그릇이 계속 필요해서다.
  *
- * **캐시 삭제 범위는 이 파일에 없다.** 화면은 불리언 둘을 넘길 뿐이고 어떤 키와 어떤 테이블이
+ * **데이터 삭제 범위는 이 파일에 없다.** 화면은 그룹마다 고른 여부를 넘길 뿐이고 어떤 키와 어떤 테이블이
  * 지워지는지는 `storage/cache-data.ts` 가 혼자 정한다.
  *
  * @see docs/features/settings.md 정책
@@ -13,12 +13,11 @@ import { useEffect, useState } from 'react'
 import { View } from 'react-native'
 import { reloadAppAsync } from 'expo'
 
-import type { CacheDataSizes } from '../../features/settings/cache-data'
-import { clearCacheDataAndReload, loadCacheDataSizes } from '../../features/settings/cache-data'
+import type { CacheDataCounts } from '../../features/settings/cache-data'
+import { clearCacheDataAndReload, loadCacheDataCounts } from '../../features/settings/cache-data'
 import { useSettingsStore } from '../../features/settings/store'
 import { useAuthStore } from '../../features/auth/store'
 import { hasNexonLogin } from '../../features/auth/saved-key'
-import { formatBytes } from '../../lib/format-bytes'
 import type { CacheDataSelection } from '../../storage/cache-data'
 
 import { Card, Text } from '../../components/atoms'
@@ -26,7 +25,6 @@ import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { CacheClearConfirm } from './CacheClearConfirm'
 import { DisconnectConfirm } from './DisconnectConfirm'
 import { SignOutConfirm } from './SignOutConfirm'
@@ -47,7 +45,7 @@ export function SettingsAccountDataScreen(
 
   const [isCacheClearOpen, setIsCacheClearOpen] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
-  const [sizes, setSizes] = useState<CacheDataSizes | null>(null)
+  const [counts, setCounts] = useState<CacheDataCounts | null>(null)
   const [isDisconnectOpen, setIsDisconnectOpen] = useState(false)
   const [isDisconnecting, setIsDisconnecting] = useState(false)
   // 로그인이 없으면 뗄 것이 없다. 모르는 동안에도 안 세운다 - 세웠다 지우면 행이 하나 튄다.
@@ -57,8 +55,8 @@ export function SettingsAccountDataScreen(
   const signOutNexonLogin = useAuthStore((state) => state.signOutNexonLogin)
 
   useEffect(() => {
-    loadCacheDataSizes()
-      .then(setSizes)
+    loadCacheDataCounts()
+      .then(setCounts)
       .catch(() => {})
   }, [])
 
@@ -72,14 +70,11 @@ export function SettingsAccountDataScreen(
     }
   }, [])
 
-  // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다.
-  const totalBytes = sizes === null ? null : sizes.general + sizes.records
-
   async function handleClear(selection: CacheDataSelection): Promise<void> {
     setIsClearing(true)
     await clearCacheDataAndReload(
       selection,
-      props.reload ?? (() => void reloadAppAsync('캐시 데이터 삭제')),
+      props.reload ?? (() => void reloadAppAsync('데이터 삭제')),
     )
   }
 
@@ -126,17 +121,10 @@ export function SettingsAccountDataScreen(
 
           <Card className={SETTINGS_CARD_CLASS} testID="settings-card">
             <SettingsRow
-              label="캐시 데이터 삭제"
+              label="데이터 삭제"
               onPress={() => setIsCacheClearOpen(true)}
               danger
               showChevron={false}
-              // 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다(빈 문자열이면
-              // 값이 툭 나타나며 행이 밀린다).
-              rightContent={
-                <Text style={TABULAR_NUMS} className="text-sm text-text-muted">
-                  {totalBytes !== null ? formatBytes(totalBytes) : '- KB'}
-                </Text>
-              }
             />
             <SettingsRow
               label="연결 해제"
@@ -161,7 +149,7 @@ export function SettingsAccountDataScreen(
       <CacheClearConfirm
         isOpen={isCacheClearOpen}
         isClearing={isClearing}
-        sizes={sizes}
+        counts={counts}
         onConfirm={(selection) => {
           void handleClear(selection)
         }}

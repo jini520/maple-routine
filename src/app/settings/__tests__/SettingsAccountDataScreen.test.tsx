@@ -15,7 +15,7 @@
 //    아래 카드 케이스가 진다.
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
 
-import { clearCacheDataAndReload, loadCacheDataSizes } from '../../../features/settings/cache-data'
+import { clearCacheDataAndReload, loadCacheDataCounts } from '../../../features/settings/cache-data'
 import { useSettingsStore } from '../../../features/settings/store'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
@@ -24,7 +24,7 @@ import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 jest.mock('../../../features/settings/store', () => ({ useSettingsStore: jest.fn() }))
 jest.mock('../../../features/settings/cache-data', () => ({
-  loadCacheDataSizes: jest.fn(),
+  loadCacheDataCounts: jest.fn(),
   clearCacheDataAndReload: jest.fn(async () => {}),
 }))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
@@ -36,7 +36,7 @@ jest.mock('../../../features/auth/store', () => {
 })
 const { hasNexonLogin: mockedHasNexonLogin } = jest.requireMock('../../../features/auth/saved-key') as Record<string, jest.Mock>
 const mockedStore = jest.mocked(useSettingsStore)
-const mockedLoadSizes = jest.mocked(loadCacheDataSizes)
+const mockedLoadCounts = jest.mocked(loadCacheDataCounts)
 const mockedClearAndReload = jest.mocked(clearCacheDataAndReload)
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)
 const goBack = jest.fn()
@@ -96,7 +96,7 @@ beforeEach(() => {
     navigate: jest.fn(),
     goBack,
   } as unknown as ReturnType<typeof useSettingsNavigation>)
-  mockedLoadSizes.mockReturnValue(new Promise(() => {}))
+  mockedLoadCounts.mockReturnValue(new Promise(() => {}))
   // 기본은 로그인 없음. 행이 서는 케이스만 따로 세운다.
   mockedHasNexonLogin.mockResolvedValue(false)
 })
@@ -125,53 +125,28 @@ describe('SettingsAccountDataScreen', () => {
 
     expect(view.queryByText('계정 변경')).toBeNull()
     expect(view.getAllByTestId('settings-card')).toHaveLength(1)
-    expect(cardOf(view, '연결 해제')).toBe(cardOf(view, '캐시 데이터 삭제'))
+    expect(cardOf(view, '연결 해제')).toBe(cardOf(view, '데이터 삭제'))
   })
 
   // chevron 이 있으면 누르면 무언가 열리고, 없는 위험 색 행은 누르면 지운다.
   it('위험 색 행 둘에는 chevron 이 없다', async () => {
     const view = await renderOverlay(<SettingsAccountDataScreen />)
 
-    expect(hasChevron(rowOf(view, '캐시 데이터 삭제'))).toBe(false)
+    expect(hasChevron(rowOf(view, '데이터 삭제'))).toBe(false)
     expect(hasChevron(rowOf(view, '연결 해제'))).toBe(false)
   })
 
-  // 행에 쓰는 총합은 그룹별 용량의 합으로 파생한다.
-  it('마운트 시 조회한 그룹별 용량의 합을 사람이 읽을 수 있는 단위로 보여준다', async () => {
-    mockedLoadSizes.mockResolvedValue({ general: 1024, records: 512 })
-    const view = await renderOverlay(<SettingsAccountDataScreen />)
-
-    expect(await view.findByText('1.5KB')).toBeTruthy()
-  })
-
-  // 조회 전에도 값과 같은 폭·타이포로 자리를 잡는다.
-  it('용량 조회 전에는 "- KB" 자리표시를 보여준다', async () => {
-    const view = await renderOverlay(<SettingsAccountDataScreen />)
-
-    expect(view.getByText('- KB')).toBeTruthy()
-  })
-
-  // **범위는 이 화면이 정하지 않는다**. 고른 두 불리언을 그대로 넘기고,
+  // **범위는 이 화면이 정하지 않는다**. 그룹마다 고른 여부를 그대로 넘기고,
   // 어떤 키·테이블이 지워지는지는 core 의 `storage/cache-data` 가 혼자 정한다.
   it('모달에서 고른 그룹을 그대로 core 로 넘긴다', async () => {
     const view = await renderOverlay(<SettingsAccountDataScreen />)
 
-    await press(rowOf(view, '캐시 데이터 삭제'))
-    await press(view.getByLabelText('수입·지출 기록'))
+    await press(rowOf(view, '데이터 삭제'))
+    await press(view.getByLabelText('가계부'))
     await press(view.getByText(/^삭제/))
 
     expect(mockedClearAndReload).toHaveBeenCalledTimes(1)
-    expect(mockedClearAndReload.mock.calls[0][0]).toEqual({ general: true, records: false })
-  })
-
-  // 기본이 전체 선택이라 열고 바로 삭제하면 기존 전체 삭제와 같다.
-  it('열고 바로 삭제하면 두 그룹 모두 넘어간다', async () => {
-    const view = await renderOverlay(<SettingsAccountDataScreen />)
-
-    await press(rowOf(view, '캐시 데이터 삭제'))
-    await press(view.getByText(/^삭제/))
-
-    expect(mockedClearAndReload.mock.calls[0][0]).toEqual({ general: true, records: true })
+    expect(mockedClearAndReload.mock.calls[0][0]).toEqual({ manual: false, boss: false, cashbook: true, enhancement: false })
   })
 
   // 리로드 실행부는 **주입 가능**하다. 기본값은 지금 도는 번들의 재실행이다.
@@ -179,7 +154,8 @@ describe('SettingsAccountDataScreen', () => {
     const reload = jest.fn()
     const view = await renderOverlay(<SettingsAccountDataScreen reload={reload} />)
 
-    await press(rowOf(view, '캐시 데이터 삭제'))
+    await press(rowOf(view, '데이터 삭제'))
+    await press(view.getByLabelText('가계부'))
     await press(view.getByText(/^삭제/))
 
     expect(mockedClearAndReload.mock.calls[0][1]).toBe(reload)
@@ -190,7 +166,8 @@ describe('SettingsAccountDataScreen', () => {
     mockedClearAndReload.mockReturnValue(new Promise(() => {}))
     const view = await renderOverlay(<SettingsAccountDataScreen />)
 
-    await press(rowOf(view, '캐시 데이터 삭제'))
+    await press(rowOf(view, '데이터 삭제'))
+    await press(view.getByLabelText('가계부'))
     await press(view.getByText(/^삭제/))
 
     expect(view.getByTestId('button-busy', { includeHiddenElements: true })).toBeTruthy()

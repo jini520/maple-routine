@@ -107,7 +107,7 @@ today 의 `다음 파티 스케줄` 위젯도 시작 전인 가장 가까운 회
 
 ## 저장
 
-| 키 | 값 | 캐시 삭제 |
+| 키 | 값 | 데이터 삭제 |
 |---|---|---|
 | `partyAppointments` | `PartyAppointment[]` | 남긴다 |
 | `partyAlarmEnabled` | `on` · `off`(없으면 켜짐) | 남긴다 |

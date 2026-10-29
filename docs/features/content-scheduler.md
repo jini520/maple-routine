@@ -42,12 +42,12 @@ API 동기화와 진입 재조회는 [[ADR-021]], 실패를 알리는 방법은 
 
 ## 저장하는 것
 
-| 키 | 내용 | 캐시 삭제 때 |
+| 키 | 내용 | 데이터 삭제 |
 |---|---|---|
-| `schedulerCache:{ocid}` | 병합된 스케줄러 상태와 동기화 시각 | 지운다 |
-| `worldSharedProgress:{worldKey}` | 월드 공유 컨텐츠 원장 | 지운다 |
-| `accountSharedProgress:{accountId}` | 계정 공유 컨텐츠 원장 | 지운다 |
-| `manualTrackedContent:{ocid}` | 수동 추적 목록 | 지운다 |
+| `schedulerCache:{ocid}` | 병합된 스케줄러 상태와 동기화 시각 | 남긴다 |
+| `worldSharedProgress:{worldKey}` | 월드 공유 컨텐츠 원장 | 지운다 (수동 선택 항목) |
+| `accountSharedProgress:{accountId}` | 계정 공유 컨텐츠 원장 | 지운다 (수동 선택 항목) |
+| `manualTrackedContent:{ocid}` | 수동 추적 목록 | 지운다 (수동 선택 항목) |
 | `trackingMode` | `auto` · `manual` | 남긴다 |
 
 ## 스케줄러 화면

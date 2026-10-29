@@ -2523,7 +2523,7 @@ describe('useBossProfitStore', () => {
       expect(useBossProfitStore.getState().periodKey).toBe(현재)
     })
 
-    // 캐시 데이터 삭제 직후 재현. 진입하자마자 이전 기간을 누르면 refresh 가 아직
+    // 데이터 삭제 직후 재현. 진입하자마자 이전 기간을 누르면 refresh 가 아직
     // syncSchedules 에 매여 있어 창이 시작도 안 했다. 그때 `도는 중이면 기다린다` 만으로는
     // 안 기다리고 기록 0건을 그대로 실패로 그린다. 사용자 보고: 다시 시도하면 정상.
     it('goToPreviousPeriod: 관측이 없는 조회 가능 기간은 창을 채우고 기다린다', async () => {

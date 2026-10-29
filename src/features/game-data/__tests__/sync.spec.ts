@@ -70,8 +70,6 @@ function fakeFiles(initial: string[] = []): AssetFilesPort & { names: Set<string
     remove: jest.fn(async (fileName: string) => {
       names.delete(fileName)
     }),
-    clear: jest.fn(),
-    size: jest.fn(),
   }
 }
 

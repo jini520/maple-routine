@@ -103,9 +103,9 @@ const INCOME_RECORDS_BODY = `(
     PRIMARY KEY (id)
   )`
 
-// 이 DB의 테이블 정의는 여기 하나뿐이다. openBossProfitDb가 이 배열을 순회해 스키마를 만들고,
-// storage/cache-data.ts가 아래 이름 배열로 캐시 삭제 범위·용량을 계산한다. 새 테이블은 여기에만
-// 추가하면 세 곳에 자동 반영된다.
+// 이 DB의 테이블 정의는 여기 하나뿐이다. openBossProfitDb가 이 배열을 순회해 스키마를 만든다.
+// 데이터 삭제(storage/cache-data.ts)는 이 배열을 쓰지 않고 그룹마다 적은 표 목록으로 지운다.
+// 새 테이블은 그 목록에 더해야만 지워진다.
 const TABLE_DEFINITIONS = [
   {
     name: 'boss_profit_records',
@@ -157,16 +157,15 @@ const TABLE_DEFINITIONS = [
     createSql: `CREATE TABLE IF NOT EXISTS boss_drops ${BOSS_DROPS_BODY}`,
   },
   // 캐릭터 이름·초상의 스냅샷. 캐릭터당 한 행이고 기록에 이름과 얼굴을 붙이는 데만 쓴다.
-  // `character-basic-cache` 와 값이 같고 수명이 다르다. 그쪽은 5분 TTL 캐시이고 캐시 비우기의
-  // `일반` 그룹이 통째로 지운다. 이름이 사라지면 기록에서 행을 만드는 자리가 그 ocid 를 건너뛰어
-  // 기록이 있어도 화면에서 사라지므로, 이 표는 `RECORD_TABLE_NAMES` 에 **직접 적혀 있어야 한다**
-  // (아래 차집합 파생은 새 테이블을 `general` 로 끌어간다).
+  // `character-basic-cache` 와 값이 같고 수명이 다르다. 그쪽은 5분 TTL 캐시다. 이름이 사라지면
+  // 기록에서 행을 만드는 자리가 그 ocid 를 건너뛰어 기록이 있어도 화면에서 사라지므로, 데이터
+  // 삭제가 이 표를 지우지 않는다.
   {
     name: 'character_profiles',
     createSql: `CREATE TABLE IF NOT EXISTS character_profiles ${CHARACTER_PROFILES_BODY}`,
   },
   // 월드 리프로 갈린 옛 ocid → 새 ocid 연결. 리프한 기간의 중복 기록을 지우는 데만 쓴다.
-  // 옛 ocid 는 목록에서 빠져 되살릴 길이 없어 `RECORD_TABLE_NAMES` 에 **직접 적혀 있어야 한다**.
+  // 옛 ocid 는 목록에서 빠져 되살릴 길이 없어 데이터 삭제가 지우지 않는다.
   {
     name: 'character_world_leaps',
     createSql: `CREATE TABLE IF NOT EXISTS character_world_leaps ${CHARACTER_WORLD_LEAPS_BODY}`,
@@ -231,8 +230,7 @@ const TABLE_DEFINITIONS = [
   //     자연키가 성립하지 않는다.
   //  ② **날짜가 참이다.** 사용자가 직접 고르므로 `period_key`(주·월)가 아니라 날짜를 든다.
   //     그래서 캘린더 칸에 바로 설 수 있다(보스 기록은 #239 를 기다린다).
-  //  ③ **API 가 없다.** 되살릴 길이 0% 라 `RECORD_TABLE_NAMES` 에 반드시 들어야 한다
-  //     (`storage/cache-data.ts`. 안 넣으면 차집합 파생으로 **지워도 되는 것** 에 끌려간다).
+  //  ③ **API 가 없다.** 되살릴 길이 0% 라 데이터 삭제가 지우지 않는다.
   {
     name: 'income_records',
     createSql: `CREATE TABLE IF NOT EXISTS income_records ${INCOME_RECORDS_BODY}`,
@@ -303,18 +301,18 @@ const TABLE_DEFINITIONS = [
     name: 'cashbook_entry_hunt_inputs',
     createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_hunt_inputs ${CASHBOOK_ENTRY_HUNT_INPUTS_BODY}`,
   },
-  // 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이라 `RECORD_TABLE_NAMES` 에 직접 적혀 있어야 한다.
+  // 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이라 데이터 삭제가 지우지 않는다.
   {
     name: 'mvp_grade_history',
     createSql: `CREATE TABLE IF NOT EXISTS mvp_grade_history ${MVP_GRADE_HISTORY_BODY}`,
   },
   // 캐릭터의 메이플 ID 소속. 스타포스 줄은 이름만 들어 옛 이름을 지우면 안 된다.
-  // 옛 이름과 지운 캐릭터는 다시 받을 수 없어 `RECORD_TABLE_NAMES` 에 직접 적혀 있어야 한다.
+  // 옛 이름과 지운 캐릭터는 다시 받을 수 없어 데이터 삭제가 지우지 않는다.
   // 서버로 못 보낸 것만 든다. 평소에 비어 있다 - 전송은 사용자가 값을 저장하는 그 자리에서
   // 한 건 나가고, 실패한 것만 여기 줄이 남는다. 할 일만 들어서 표 자체가 목록이 된다.
   //
-  // **`general` 그룹이다**(차집합 파생). 캐시를 비우면 아직 못 보낸 것이 사라지는데, 서버가 값을
-  // 모으는 목적이 통계라 한두 건이 빠지는 것은 문제가 아니다. 사용자의 기록은 기록 표에 남는다.
+  // **데이터 삭제가 어떤 그룹을 골라도 비운다.** 남기면 방금 지운 기록마다 서버로 지우기 요청이
+  // 간다. 아직 못 보낸 것도 사라지는데, 서버가 값을 모으는 목적이 통계라 한두 건이 빠지는 것은 문제가 아니다.
   {
     name: 'server_sync_queue',
     createSql: `CREATE TABLE IF NOT EXISTS server_sync_queue (
@@ -334,7 +332,7 @@ const TABLE_DEFINITIONS = [
     name: 'character_accounts',
     createSql: `CREATE TABLE IF NOT EXISTS character_accounts ${CHARACTER_ACCOUNTS_BODY}`,
   },
-  // 게임 데이터 사본. 서버에서 다시 받을 수 있어 `general` 그룹이다. 지우면 다음에 켤 때 잠금 화면이 다시 받는다.
+  // 게임 데이터 사본. 데이터 삭제가 지우지 않는다. 지우면 다음에 켤 때 잠금 화면이 다시 받아야 한다.
   {
     name: 'game_data_sections',
     createSql: `CREATE TABLE IF NOT EXISTS game_data_sections ${GAME_DATA_SECTIONS_BODY}`,
@@ -642,7 +640,7 @@ export async function closeBossProfitDb(): Promise<void> {
   // 뒤(성공이든 실패든)에만 dbPromise를 비워, 그 전까지는 동시 호출도 이 커넥션을 그대로 재사용하게 한다.
   try {
     // 닫기가 응답하지 않으면 이 함수는 영원히 resolve하지 않고, 호출부 둘(OTA 적용의
-    // CapacitorUpdater.set·캐시 삭제의 reload)이 **그 뒤에 화면을 되살리는 일을 하므로** 그 리로드에
+    // CapacitorUpdater.set·데이터 삭제의 reload)이 **그 뒤에 화면을 되살리는 일을 하므로** 그 리로드에
     // 영영 도달하지 못한다. 커버만 남는 "주황 스플래시 무한"이 그것이다. 대기 구간
     // 전체(dbPromise 대기 + closeConnection)를 한 번에 감싼다. 여는 쪽이 매달리면 닫기도 그 앞에서
     // 매달리므로 closeConnection만 감싸면 상한이 보장되지 않는다.

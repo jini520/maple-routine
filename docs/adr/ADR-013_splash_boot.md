@@ -114,7 +114,7 @@ installPorts() → loadGameData() → holdSplashUntilAppReady() → registerRoot
 
 `showSplashScreen()` 은 아무 일도 하지 않는다(`rnSplashScreenPort.show()`). `expo-splash-screen` 에는 스플래시를
 다시 띄우는 API 가 없다. `preventAutoHideAsync()` 로 흉내 내면 이미 내려간 스플래시에는 효과가 없어서,
-화면은 그대로인데 부른 쪽은 화면을 가렸다고 믿게 된다. OTA 적용(`native/live-update.ts`)과 캐시 삭제
+화면은 그대로인데 부른 쪽은 화면을 가렸다고 믿게 된다. OTA 적용(`native/live-update.ts`)과 데이터 삭제
 (`features/settings/cache-data.ts`)가 아직 이 함수를 부르지만 화면에는 변화가 없다.
 
 ### 결정 10. 안드로이드는 1겹이 걷힌 아래를 1겹과 같은 색으로 칠한다

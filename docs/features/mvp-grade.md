@@ -51,14 +51,14 @@
 
 ## 저장하는 것
 
-| 저장 | 내용 | 캐시 삭제 |
+| 저장 | 내용 | 데이터 삭제 |
 |---|---|---|
-| SQLite `mvp_grade_history` | 메이플 ID 마다 `(시작 주의 목요일, 등급)` 줄. 등급이 빈 줄도 있다 | 남긴다(`기록` 그룹) |
-| SQLite `character_accounts` | `(ocid, 이름, 메이플 ID)` 와 처음 본 날 · 마지막으로 본 날 | 남긴다(`기록` 그룹) |
+| SQLite `mvp_grade_history` | 메이플 ID 마다 `(시작 주의 목요일, 등급)` 줄. 등급이 빈 줄도 있다 | 남긴다 |
+| SQLite `character_accounts` | `(ocid, 이름, 메이플 ID)` 와 처음 본 날 · 마지막으로 본 날 | 남긴다 |
 | `mvpWeeklyCheckOff` | `앞으로 등급은 직접 바꿀게요` | 남긴다 |
-| `mvpLastCheckedWeek` | 마지막으로 확인한 주 | 지운다 |
+| `mvpLastCheckedWeek` | 마지막으로 확인한 주 | 남긴다 |
 | `mvpBulkApplyAsked` | 일괄 적용을 물었는지 | 남긴다 |
-| `mvpOnboardingPending` | 온보딩 MVP 화면에 들어갔는지 | 지운다 |
+| `mvpOnboardingPending` | 온보딩 MVP 화면에 들어갔는지 | 남긴다 |
 
 ## 기록의 등급을 찾는 순서
 

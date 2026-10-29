@@ -55,7 +55,7 @@ describe('rnPreferencesPort (iOS)', () => {
     expect(mockStore.size).toBe(0)
   })
 
-  // 이 목록이 곧 캐시 삭제 범위다. 남의 UserDefaults 키가 섞이면 그것까지 지운다.
+  // 데이터 삭제가 이 목록에서 지울 키를 찾는다. 접두사가 붙은 채면 키 이름이 안 맞아 아무것도 못 지운다.
   it('keys() 는 앱 키만, 접두사를 뗀 채로 돌려준다', async () => {
     mockStore.set('AppleLanguages', '["ko-KR"]')
     mockStore.set('CapacitorStorage.apiKey', 'live_abc')
