@@ -69,12 +69,12 @@ export function NoticeLinesSkeleton(props: { lines: number }): React.JSX.Element
 }
 
 /**
- * `NoticeBannerCard` 의 제목 · 기간 줄 높이(px). `typography.cjs` 의 `13`·`xs` 와 같아야 한다.
+ * `NoticeBannerCard` 의 제목 · 기간 줄 높이(px). `typography.cjs` 의 `sm`·`xs` 와 같아야 한다.
  *
- * 여백(`px-3.5 pb-2 pt-2.5` · `pb-2 pt-1.5`)은 아래에서 **그 카드와 같은 문자열**을 쓴다. 값을
+ * 여백(`gap-1 px-3.5 pb-3 pt-2.5`)은 아래에서 **그 카드와 같은 문자열**을 쓴다. 값을
  * 옮겨 적으면 한쪽만 바뀐다.
  */
-const CARD_TITLE_HEIGHT = 19
+const CARD_TITLE_HEIGHT = 20
 const CARD_PERIOD_HEIGHT = 17
 
 /**
@@ -92,15 +92,13 @@ export function NoticeBannerCardSkeleton(props: { kind: NoticeKind }): React.JSX
         fillClassName="rounded-none"
         style={{ aspectRatio: noticeBannerRatio(props.kind) }}
       />
-      {/* 여백은 `NoticeBannerCard` 의 제목 줄과 같은 문자열이다. */}
-      <View className="items-center px-3.5 pb-2 pt-2.5">
+      {/* 여백은 `NoticeBannerCard` 의 글자 묶음과 같은 문자열이다. */}
+      <View className="gap-1 px-3.5 pb-3 pt-2.5">
         <View testID="notice-card-skeleton-title" style={{ height: CARD_TITLE_HEIGHT }} className="justify-center">
           <Skeleton className="h-3 w-40" />
         </View>
-      </View>
-      {/* 기간 줄. 이벤트는 넥슨이 기간을 주고 캐시샵은 없으면 `상시 판매` 라, 이 줄이 빠지는 카드는
-          드물다. 빼 두면 있는 쪽이 도착할 때마다 밀린다. */}
-      <View className="mx-3.5 flex-row items-center justify-center gap-1 border-t border-border pb-2 pt-1.5">
+        {/* 기간 줄. 이벤트는 넥슨이 기간을 주고 캐시샵은 없으면 `상시 판매` 라, 이 줄이 빠지는 카드는
+            드물다. 빼 두면 있는 쪽이 도착할 때마다 밀린다. */}
         <View testID="notice-card-skeleton-period" style={{ height: CARD_PERIOD_HEIGHT }} className="justify-center">
           <Skeleton className="h-2.5 w-28" />
         </View>

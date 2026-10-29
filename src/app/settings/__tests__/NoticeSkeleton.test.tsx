@@ -72,8 +72,8 @@ describe('NoticeBannerCardSkeleton', () => {
   it('제목과 기간 자리가 결과의 줄 높이를 그대로 든다', async () => {
     const { getByTestId } = await renderAtom(<NoticeBannerCardSkeleton kind="cashshop" />)
 
-    // `NoticeBannerCard` 의 제목은 `text-13`, 기간은 `text-xs` 다.
-    expect(getByTestId('notice-card-skeleton-title', HIDDEN)).toHaveStyle({ height: lineHeightOf('13') })
+    // `NoticeBannerCard` 의 제목은 `text-sm`, 기간은 `text-xs` 다.
+    expect(getByTestId('notice-card-skeleton-title', HIDDEN)).toHaveStyle({ height: lineHeightOf('sm') })
     expect(getByTestId('notice-card-skeleton-period', HIDDEN)).toHaveStyle({ height: lineHeightOf('xs') })
   })
 })

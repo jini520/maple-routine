@@ -201,3 +201,52 @@ describe('본문이 빈 공지', () => {
     expect(view.queryByTestId('notice-body-pending')).toBeNull()
   })
 })
+
+// 다섯 분류가 모두 `공지사항` 이면 무슨 글을 열었는지 본문을 읽어야 안다.
+describe('헤더 제목', () => {
+  it('공지 제목을 헤더에 한 번만 적는다', async () => {
+    const view = await renderOverlay(<SettingsNoticeDetailScreen route={{ params: { noticeId: 'a' } }} />)
+
+    expect(view.getAllByText('점검 안내')).toHaveLength(1)
+    expect(view.queryByText('공지사항')).toBeNull()
+  })
+
+  it('찾지 못하면 공지사항 으로 돌아간다', async () => {
+    const view = await renderOverlay(<SettingsNoticeDetailScreen route={{ params: { noticeId: '없다' } }} />)
+
+    expect(view.getByText('공지사항')).toBeTruthy()
+  })
+})
+
+// 이벤트 · 캐시샵 사용자가 알고 싶은 것은 언제 올렸나가 아니라 언제까지 하는가다.
+describe('날짜', () => {
+  const 이벤트: Notice = {
+    id: 'event-1',
+    kind: 'event',
+    title: '할로윈 출석 체크',
+    body: '',
+    publishedAt: '2026-10-23T03:00:00Z',
+    startsAt: '2026-10-22T15:00:00Z',
+    endsAt: '2026-11-12T14:59:00Z',
+  }
+
+  it('글 공지는 발행일이다', async () => {
+    const view = await renderOverlay(<SettingsNoticeDetailScreen route={{ params: { noticeId: 'a' } }} />)
+
+    expect(view.getByTestId('notice-date')).toHaveTextContent('2026. 9. 7.')
+  })
+
+  it('이벤트는 기간이다', async () => {
+    notices.mockResolvedValue([이벤트])
+    const view = await renderOverlay(<SettingsNoticeDetailScreen route={{ params: { noticeId: 'event-1' } }} />)
+
+    expect(view.getByTestId('notice-date')).toHaveTextContent('2026.10.23 ~ 2026.11.12')
+  })
+
+  it('기간이 없는 이벤트는 발행일로 돌아간다', async () => {
+    notices.mockResolvedValue([{ ...이벤트, startsAt: undefined, endsAt: undefined }])
+    const view = await renderOverlay(<SettingsNoticeDetailScreen route={{ params: { noticeId: 'event-1' } }} />)
+
+    expect(view.getByTestId('notice-date')).toHaveTextContent('2026. 10. 23.')
+  })
+})
