@@ -5,6 +5,7 @@
  * 무엇을 고르게 할 것인가다. 난이도 필터, 장비·소비 타일, 읽기 전용 고정 드롭, 상자 드릴다운,
  * 그리고 기록 직후의 가격 물음.
  */
+import { SheetActionButton } from '../../components/organisms/BottomSheet/SheetActionButton'
 import type { FeesValue, ShareValue } from '../../components/organisms/InputCard/InputCard'
 import { dropFeeFields, dropFeeSeeds } from '../../features/boss-profit/drop-fees'
 import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
@@ -508,18 +509,13 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                   </Pressable>
                 </View>
               )}
-              <Pressable
-                role="button"
+              <SheetActionButton
+                label={`추가 완료${selected.length > 0 ? ` · ${selected.length}개` : ''}`}
                 onPress={() => {
                   props.onSave(selected)
                   props.onClose()
                 }}
-                className="w-full items-center rounded-xl bg-primary py-3"
-              >
-                <Text className="text-sm font-bold text-on-primary">
-                  추가 완료{selected.length > 0 ? ` · ${selected.length}개` : ''}
-                </Text>
-              </Pressable>
+              />
     </View>
   )
 

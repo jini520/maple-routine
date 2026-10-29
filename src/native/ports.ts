@@ -301,6 +301,11 @@ export interface BrowserPort {
   openAuthSession(url: string, redirectUrl: string): Promise<string | null>
 }
 
+/** 화면 모서리 반경(pt). 바텀시트가 아래 모서리를 화면 곡률과 동심원으로 맞출 때 읽는다. 모르면 `null`, 각진 화면은 0 */
+export interface ScreenCornersPort {
+  radius(): number | null
+}
+
 /** 기록 id 로 쓰는 uuid(v4). Hermes 에 `crypto.randomUUID` 가 없어 네이티브 모듈이 만든다 */
 export interface UuidPort {
   random(): string
@@ -349,6 +354,7 @@ const backGestureSlot = createPortSlot<BackGesturePort>('BackGesturePort')
 const liveUpdateSlot = createPortSlot<LiveUpdatePort>('LiveUpdatePort')
 const browserSlot = createPortSlot<BrowserPort>('BrowserPort')
 const uuidSlot = createPortSlot<UuidPort>('UuidPort')
+const screenCornersSlot = createPortSlot<ScreenCornersPort>('ScreenCornersPort')
 
 export const setColorSchemePort = colorSchemeSlot.set
 export const getColorSchemePort = colorSchemeSlot.get
@@ -395,6 +401,9 @@ export const getBrowserPort = browserSlot.get
 export const setUuidPort = uuidSlot.set
 export const getUuidPort = uuidSlot.get
 
+export const setScreenCornersPort = screenCornersSlot.set
+export const getScreenCornersPort = screenCornersSlot.get
+
 /** 테스트 전용. 주입된 포트를 전부 비운다(`storage/ports.ts` 의 `__resetStoragePortsForTest` 관례). */
 export function __resetNativePortsForTest(): void {
   for (const slot of [
@@ -413,6 +422,7 @@ export function __resetNativePortsForTest(): void {
     liveUpdateSlot,
     browserSlot,
     uuidSlot,
+    screenCornersSlot,
   ]) {
     slot.clear()
   }

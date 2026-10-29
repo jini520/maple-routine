@@ -109,6 +109,8 @@ export interface SelectFieldProps {
    * `SelectChevron` 을 둔다.
    */
   renderTrigger?: (open: () => void, isOpen: boolean) => React.ReactNode
+  /** `renderTrigger` 를 두르는 상자의 클래스. 없으면 `surface` 상자다. 가계부 시트의 칸이 `card-inset` 칸으로 바꾼다 */
+  boxClassName?: string
   /** 조금 더 높은 줄. 시트 바탕 위에 바로 서는 자리(보스 추가) */
   tall?: boolean
 }
@@ -251,7 +253,11 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           <SelectChevron open={isOpen} />
         </Pressable>
       ) : (
-        <View ref={triggerRef} testID={`${props.testID}-trigger`} className={triggerBoxClass(props.tall === true)}>
+        <View
+          ref={triggerRef}
+          testID={`${props.testID}-trigger`}
+          className={props.boxClassName ?? triggerBoxClass(props.tall === true)}
+        >
           {props.renderTrigger(open, isOpen)}
         </View>
       )}

@@ -4,6 +4,7 @@
  * 갈래마다 폼이 따로 서지만 캐릭터를 고르는 줄과 저장·삭제 줄은 전부 똑같다. 여러 벌로 갈리면
  * 한쪽만 고쳐지는 자리가 생기므로 한 벌만 둔다. 조각 두 줄도 사냥 폼 둘이 나눠 쓴다.
  */
+import { SheetActionButton } from '../../../components/organisms/BottomSheet/SheetActionButton'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Pressable } from 'react-native'
 
@@ -142,21 +143,11 @@ export function SaveRow(props: {
 }): React.JSX.Element {
   return (
     <>
-      <Pressable
-        role="button"
-        aria-label={props.editing ? '수정' : '저장'}
+      <SheetActionButton
+        label={props.editing ? '수정' : '저장'}
         disabled={!props.canSave || props.saving}
         onPress={props.onSave}
-        // 지출 시트의 저장·1차 시트의 닫기와 같은 칠이다. `rise-ink` 는 수익을 말하는 색이라
-        // 테마를 바꿔도 주황 계열에 머물렀다.
-        className={`items-center rounded-xl py-3 ${props.canSave ? 'bg-primary' : 'bg-surface-2'}`}
-      >
-        <Text
-          className={`text-sm font-bold ${props.canSave ? 'text-on-primary' : 'text-text-disabled'}`}
-        >
-          {props.editing ? '수정' : '저장'}
-        </Text>
-      </Pressable>
+      />
 
       {props.editing && props.onDelete !== undefined && (
         // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)

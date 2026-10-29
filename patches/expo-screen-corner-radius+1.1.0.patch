@@ -1,0 +1,35 @@
+diff --git a/node_modules/expo-screen-corner-radius/ios/ExpoScreenCornerRadiusModule.swift b/node_modules/expo-screen-corner-radius/ios/ExpoScreenCornerRadiusModule.swift
+index a0ba47e..eff89eb 100644
+--- a/node_modules/expo-screen-corner-radius/ios/ExpoScreenCornerRadiusModule.swift
++++ b/node_modules/expo-screen-corner-radius/ios/ExpoScreenCornerRadiusModule.swift
+@@ -24,7 +24,7 @@ public class ExpoScreenCornerRadiusModule: Module {
+     let idiom = UIDevice.current.userInterfaceIdiom
+ 
+     if idiom == .phone {
+-      return iphoneRadii[model]
++      return iphoneRadii[model] ?? previousSeriesRadius(model)
+     } else if idiom == .pad {
+       return ipadRadii[model]
+     }
+@@ -46,6 +46,21 @@ public class ExpoScreenCornerRadiusModule: Module {
+ 
+ typealias CornerData = [String: Double]
+ 
++/// 표에 없는 새 아이폰의 반경. 같은 자리의 직전 계열 값이다(iPhone19,3 → iPhone18,3). 그 자리가 없으면 그 계열의 가장 큰 값이다.
++func previousSeriesRadius(_ model: String) -> Double? {
++  guard model.hasPrefix("iPhone") else { return nil }
++  let parts = model.dropFirst("iPhone".count).split(separator: ",")
++  guard parts.count == 2, let major = Int(parts[0]), let minor = Int(parts[1]) else { return nil }
++  var series = major - 1
++  while series >= 10 {
++    if let radius = iphoneRadii["iPhone\(series),\(minor)"] { return radius }
++    let siblings = iphoneRadii.filter { $0.key.hasPrefix("iPhone\(series),") }
++    if let largest = siblings.values.max() { return largest }
++    series -= 1
++  }
++  return nil
++}
++
+ let iphoneRadii: CornerData = [
+     "iPhone1,1": 0,
+     "iPhone1,2": 0,

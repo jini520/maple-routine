@@ -4,12 +4,13 @@
  * 머리줄 · 시세 줄 · 저장·삭제 줄은 갈래가 안 바꾼다. 세 벌로 갈리면 한쪽만 고쳐지는 자리가
  * 생기므로 한 벌만 둔다. 캐릭터 줄은 수입 시트와도 같은 것이라 `../sheet-fields` 에 산다.
  */
+import { SheetActionButton } from '../../../components/organisms/BottomSheet/SheetActionButton'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { ChevronLeftIcon, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { SheetDateField } from '../sheet-fields'
+import { FIELD_CELL_CLASS, SheetDateField } from '../sheet-fields'
 import { mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { openInputCard } from '../../../features/input-card/store'
 import { POINT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
@@ -148,7 +149,7 @@ export function RateRow(props: {
   valid: boolean
 }): React.JSX.Element {
   return (
-    <View className="min-h-7 flex-row items-center gap-2 border-b border-border pb-2">
+    <View className={FIELD_CELL_CLASS}>
       <Text className="shrink-0 text-xs text-text-muted">
         시세 · 1억당
         <Text testID="spend-sheet-required" className="text-error-ink">
@@ -264,23 +265,11 @@ export function SaveRow(props: {
 }): React.JSX.Element {
   return (
     <>
-      <Pressable
-        role="button"
-        // 보이는 글자와 같아야 한다. 화면은 `수정` 인데 읽어 주는 것이 `저장` 이면 그 둘은
-        // 다른 버튼이 된다.
-        aria-label={props.editing ? '수정' : '저장'}
+      <SheetActionButton
+        label={props.editing ? '수정' : '저장'}
         disabled={!props.canSave || props.saving}
         onPress={props.onSave}
-        className={`items-center rounded-xl py-3 ${props.canSave ? 'bg-primary' : 'bg-surface-2'}`}
-      >
-        <Text
-          className={`text-sm font-bold ${
-            props.canSave ? 'text-on-primary' : 'text-text-disabled'
-          }`}
-        >
-          {props.editing ? '수정' : '저장'}
-        </Text>
-      </Pressable>
+      />
 
       {props.editing && props.onDelete !== undefined && (
         <Pressable

@@ -4,6 +4,7 @@ import {
   setColorSchemePort,
   setBrowserPort,
   setHapticsPort,
+  setScreenCornersPort,
   setStoreReviewPort,
   setKeyboardPort,
   setLiveUpdatePort,
@@ -25,6 +26,7 @@ import { rnAdsPort } from './native/adapters/rn-ads'
 import { rnBackGesturePort } from './native/adapters/rn-back-gesture'
 import { rnColorSchemePort } from './native/adapters/rn-color-scheme'
 import { rnHapticsPort } from './native/adapters/rn-haptics'
+import { rnScreenCornersPort } from './native/adapters/rn-screen-corners'
 import { rnStoreReviewPort } from './native/adapters/rn-store-review'
 import { rnKeyboardPort } from './native/adapters/rn-keyboard'
 import { rnNotificationsPort } from './native/adapters/rn-notifications'
@@ -94,11 +96,12 @@ export function installPorts(): void {
   setSqlitePort(rnSqlitePort)
   setAssetFilesPort(rnAssetFilesPort)
 
-  // RN 구현이 있는 열하나.
+  // RN 구현이 있는 열둘.
   setAdsPort(rnAdsPort)
   setBackGesturePort(rnBackGesturePort)
   setColorSchemePort(rnColorSchemePort)
   setHapticsPort(rnHapticsPort)
+  setScreenCornersPort(rnScreenCornersPort)
   setStoreReviewPort(rnStoreReviewPort)
   setKeyboardPort(rnKeyboardPort)
   setNotificationsPort(rnNotificationsPort)

@@ -28,7 +28,7 @@ import {
   itemKindNameOf,
   type ItemKindKey,
 } from '../../../lib/cashbook/categories'
-import { AmountInput, CharacterField, FieldRow, TextField, useCountField } from '../sheet-fields'
+import { AmountInput, CharacterField, FieldCard, FieldRow, TextField, useCountField } from '../sheet-fields'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
@@ -135,95 +135,97 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
 
   return (
     <>
-      <CharacterField
-        characters={props.characters}
-        selected={ocid}
-        onSelect={setOcid}
-        testID="spend-sheet-chain"
-      />
-
-      <FieldRow label="구매 아이템" labelTestID="spend-sheet-name-label">
-        <TextField
-          testID="spend-sheet-name"
-          label="구매 아이템"
-          placeholder="아이템 명"
-          value={name}
-          onChange={setName}
+      <FieldCard>
+        <CharacterField
+          characters={props.characters}
+          selected={ocid}
+          onSelect={setOcid}
+          testID="spend-sheet-chain"
         />
-      </FieldRow>
 
-      {/* 종류가 나머지 둘을 정한다. 세그먼트인 것은 통화와 같은 이유다. 갈래가 아니라 값의
-          축이다. */}
-      <FieldRow label="종류" testID="spend-sheet-item-kind">
-        <Segment size="sm"
-          options={itemKinds().map((each) => each.name)}
-          selected={itemKindNameOf(itemKind)}
-          onSelect={selectItemKind}
-        />
-      </FieldRow>
-
-      {/* 늘 선다. 자리가 `종류` 바로 밑이라 장비의 줄 차례가 `종류 · 구매 비용 · 관세` 가 된다. */}
-      <FieldRow label={counts ? '단가' : '구매 비용'}>
-        <AmountInput
-          testID="spend-sheet-unit-price"
-          label={counts ? '단가' : '구매 비용'}
-          context={name === '' ? undefined : name}
-          icon="meso"
-          unit="메소"
-          reading
-          unitKey="itemBuy"
-          value={typedText}
-          onChange={setTypedText}
-        />
-        <Text
-          testID="spend-sheet-unit-price-unit"
-          className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
-        >
-          메소
-        </Text>
-      </FieldRow>
-
-      {kindHasTariff(itemKind) && (
-        /*
-         * 관세도 라벨–값 줄이다. 시트에서 고르는 것은 전부 이 모양인데 관세만 큰 숫자 밑의
-         * 맨몸 체크박스였다. 장비에만 선다. 끄는 것이 아니라 줄 자체가 없다. 있는데 못 누르면
-         * 왜 못 누르나 를 새로 묻게 된다.
-         *
-         * 더해지는 금액을 안 적는다. 큰 숫자가 그만큼 올라간다.
-         */
-        <FieldRow label="관세" testID="spend-sheet-tariff">
-          <Segment size="sm"
-            options={tariffOptions()}
-            selected={hasTariff ? tariffOptions()[1] : tariffOptions()[0]}
-            onSelect={(option) => setHasTariff(option !== '없음')}
+        <FieldRow label="구매 아이템" labelTestID="spend-sheet-name-label">
+          <TextField
+            testID="spend-sheet-name"
+            label="구매 아이템"
+            placeholder="아이템 명"
+            value={name}
+            onChange={setName}
           />
         </FieldRow>
-      )}
 
-      {counts && (
-        // 스테퍼가 아니라 치는 칸이다. 주문서 300장을 스테퍼로 세면 300번을 누른다.
-        //
-        // 단위는 개다. 여기서 세는 것은 아이템이라 단위를 적을 수 있다. `기타` 는 자유 입력이라
-        // 앱이 무엇을 세는지 몰라 그대로 비어 있다.
-        <FieldRow label="수량">
+        {/* 종류가 나머지 둘을 정한다. 세그먼트인 것은 통화와 같은 이유다. 갈래가 아니라 값의
+            축이다. */}
+        <FieldRow label="종류" testID="spend-sheet-item-kind">
+          <Segment size="sm"
+            options={itemKinds().map((each) => each.name)}
+            selected={itemKindNameOf(itemKind)}
+            onSelect={selectItemKind}
+          />
+        </FieldRow>
+
+        {/* 늘 선다. 자리가 `종류` 바로 밑이라 장비의 줄 차례가 `종류 · 구매 비용 · 관세` 가 된다. */}
+        <FieldRow label={counts ? '단가' : '구매 비용'}>
           <AmountInput
-            testID="spend-sheet-quantity"
-            label="수량"
+            testID="spend-sheet-unit-price"
+            label={counts ? '단가' : '구매 비용'}
             context={name === '' ? undefined : name}
-            unit="개"
-            chips={COUNT_QUICK_ADDS}
-            value={quantityText}
-            pristine={quantityPristine}
-            onChange={setQuantityText}
+            icon="meso"
+            unit="메소"
+            reading
+            unitKey="itemBuy"
+            value={typedText}
+            onChange={setTypedText}
           />
           <Text
-            testID="spend-sheet-quantity-unit"
+            testID="spend-sheet-unit-price-unit"
             className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
           >
-            개
+            메소
           </Text>
         </FieldRow>
-      )}
+
+        {kindHasTariff(itemKind) && (
+          /*
+           * 관세도 라벨–값 줄이다. 시트에서 고르는 것은 전부 이 모양인데 관세만 큰 숫자 밑의
+           * 맨몸 체크박스였다. 장비에만 선다. 끄는 것이 아니라 줄 자체가 없다. 있는데 못 누르면
+           * 왜 못 누르나 를 새로 묻게 된다.
+           *
+           * 더해지는 금액을 안 적는다. 큰 숫자가 그만큼 올라간다.
+           */
+          <FieldRow label="관세" testID="spend-sheet-tariff">
+            <Segment size="sm"
+              options={tariffOptions()}
+              selected={hasTariff ? tariffOptions()[1] : tariffOptions()[0]}
+              onSelect={(option) => setHasTariff(option !== '없음')}
+            />
+          </FieldRow>
+        )}
+
+        {counts && (
+          // 스테퍼가 아니라 치는 칸이다. 주문서 300장을 스테퍼로 세면 300번을 누른다.
+          //
+          // 단위는 개다. 여기서 세는 것은 아이템이라 단위를 적을 수 있다. `기타` 는 자유 입력이라
+          // 앱이 무엇을 세는지 몰라 그대로 비어 있다.
+          <FieldRow label="수량">
+            <AmountInput
+              testID="spend-sheet-quantity"
+              label="수량"
+              context={name === '' ? undefined : name}
+              unit="개"
+              chips={COUNT_QUICK_ADDS}
+              value={quantityText}
+              pristine={quantityPristine}
+              onChange={setQuantityText}
+            />
+            <Text
+              testID="spend-sheet-quantity-unit"
+              className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
+            >
+              개
+            </Text>
+          </FieldRow>
+        )}
+      </FieldCard>
 
       <AmountFigure
         // 어디서도 못 친다. 관세를 더한 값을 바로 그린다. 더해지는 금액을 따로 안 적는 것은

@@ -21,7 +21,7 @@ import {
   symbolRecordName,
   symbolUpgradeCost,
 } from '../../../lib/cashbook/symbol-costs'
-import { CharacterField } from '../sheet-fields'
+import { CharacterField, FIELD_CELL_CLASS, FieldCard } from '../sheet-fields'
 import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { type LevelRange } from './level-range'
 import { LevelRangeSlider } from './LevelRangeSlider'
@@ -122,79 +122,82 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
 
   return (
     <>
-      <CharacterField characters={props.characters} selected={ocid} onSelect={selectCharacter} testID="spend-sheet-chain" />
+      <FieldCard>
+        <CharacterField characters={props.characters} selected={ocid} onSelect={selectCharacter} testID="spend-sheet-chain" />
 
-      <SelectField
-        label="심볼"
-        options={options}
-        selected={symbolKey}
-        onSelect={selectSymbol}
-        testID="spend-sheet-symbol"
-        renderTrigger={(open, isOpen) => (
-          <Pressable
-            role="button"
-            aria-label="심볼"
-            testID="spend-sheet-symbol"
-            onPress={open}
-            className="min-h-6 flex-1 flex-row items-center gap-3 active:opacity-60"
-          >
-            <Text className="shrink-0 text-xs text-text-muted">심볼</Text>
-            <View className="ml-auto shrink flex-row items-center gap-1.5">
-              {icon !== null && (
-                <Image
-                  testID="spend-sheet-symbol-icon"
-                  source={icon}
-                  resizeMode="contain"
-                  style={{ width: 22, height: 22 }}
-                />
-              )}
-              <Text numberOfLines={1} className={`shrink text-sm ${found === null ? 'text-text-disabled' : 'text-text'}`}>
-                {found === null ? '심볼 선택' : found.symbol.name}
-              </Text>
-            </View>
-            <SelectChevron open={isOpen} />
-          </Pressable>
-        )}
-        renderOption={(option, isSelected) => {
-          const symbol = findSymbol(option.value)?.symbol
-          const optionIcon = symbol === undefined ? null : getItemIconUrlByFile(symbol.icon)
-          return (
-            <View className="flex-row items-center gap-2.5">
-              {optionIcon !== null && (
-                <Image source={optionIcon} resizeMode="contain" style={{ width: 26, height: 26 }} />
-              )}
-              <Text numberOfLines={1} className={`text-sm ${isSelected ? 'font-semibold text-primary-ink' : 'text-text'}`}>
-                {option.label}
-              </Text>
-            </View>
-          )
-        }}
-      />
-
-      <View className="gap-2 border-b border-border pb-2">
-        <View className="min-h-7 flex-row items-center justify-between">
-          <Text className="text-xs text-text-muted">레벨</Text>
-          {found === null ? (
-            <Text className="text-xs text-text-disabled">심볼을 먼저 고르세요</Text>
-          ) : (
-            <View className="flex-row items-center gap-1.5">
-              <Text className="text-sm font-bold text-text" style={TABULAR_NUMS}>
-                {`Lv.${range.from} → Lv.${range.to}`}
-              </Text>
-              <Text className="rounded-full bg-primary-tint px-2 py-0.5 text-11 font-bold text-primary-ink" style={TABULAR_NUMS}>
-                {`${range.to - range.from}단계`}
-              </Text>
-            </View>
+        <SelectField
+          label="심볼"
+          options={options}
+          selected={symbolKey}
+          onSelect={selectSymbol}
+          testID="spend-sheet-symbol"
+          boxClassName={FIELD_CELL_CLASS}
+          renderTrigger={(open, isOpen) => (
+            <Pressable
+              role="button"
+              aria-label="심볼"
+              testID="spend-sheet-symbol"
+              onPress={open}
+              className="min-h-6 flex-1 flex-row items-center gap-3 active:opacity-60"
+            >
+              <Text className="shrink-0 text-xs text-text-muted">심볼</Text>
+              <View className="ml-auto shrink flex-row items-center gap-1.5">
+                {icon !== null && (
+                  <Image
+                    testID="spend-sheet-symbol-icon"
+                    source={icon}
+                    resizeMode="contain"
+                    style={{ width: 22, height: 22 }}
+                  />
+                )}
+                <Text numberOfLines={1} className={`shrink text-sm ${found === null ? 'text-text-disabled' : 'text-text'}`}>
+                  {found === null ? '심볼 선택' : found.symbol.name}
+                </Text>
+              </View>
+              <SelectChevron open={isOpen} />
+            </Pressable>
           )}
-        </View>
-        <LevelRangeSlider
-          max={found?.group.maxLevel ?? 20}
-          from={range.from}
-          to={range.to}
-          disabled={found === null}
-          onChange={setRange}
+          renderOption={(option, isSelected) => {
+            const symbol = findSymbol(option.value)?.symbol
+            const optionIcon = symbol === undefined ? null : getItemIconUrlByFile(symbol.icon)
+            return (
+              <View className="flex-row items-center gap-2.5">
+                {optionIcon !== null && (
+                  <Image source={optionIcon} resizeMode="contain" style={{ width: 26, height: 26 }} />
+                )}
+                <Text numberOfLines={1} className={`text-sm ${isSelected ? 'font-semibold text-primary-ink' : 'text-text'}`}>
+                  {option.label}
+                </Text>
+              </View>
+            )
+          }}
         />
-      </View>
+
+        <View className={`${FIELD_CELL_CLASS} flex-col items-stretch gap-2`}>
+          <View className="min-h-7 flex-row items-center justify-between">
+            <Text className="text-xs text-text-muted">레벨</Text>
+            {found === null ? (
+              <Text className="text-xs text-text-disabled">심볼을 먼저 고르세요</Text>
+            ) : (
+              <View className="flex-row items-center gap-1.5">
+                <Text className="text-sm font-bold text-text" style={TABULAR_NUMS}>
+                  {`Lv.${range.from} → Lv.${range.to}`}
+                </Text>
+                <Text className="rounded-full bg-primary-tint px-2 py-0.5 text-11 font-bold text-primary-ink" style={TABULAR_NUMS}>
+                  {`${range.to - range.from}단계`}
+                </Text>
+              </View>
+            )}
+          </View>
+          <LevelRangeSlider
+            max={found?.group.maxLevel ?? 20}
+            from={range.from}
+            to={range.to}
+            disabled={found === null}
+            onChange={setRange}
+          />
+        </View>
+      </FieldCard>
 
       <AmountFigure value={amount} unit="메소" testID="spend-sheet-amount" />
     </>

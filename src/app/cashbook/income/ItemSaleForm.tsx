@@ -19,13 +19,12 @@ import { Pressable } from 'react-native'
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
-import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { netProceedsMeso } from '../../../lib/cashbook/item-split'
 import { requiredCharacterOptions } from '../character-options'
 import { countsQuantity, itemKindNameOf, itemKinds, type ItemKindKey } from '../../../lib/cashbook/categories'
-import { AmountInput, FieldRow, useCountField } from '../sheet-fields'
+import { AmountInput, FieldCard, FieldRow, SelectRow, useCountField } from '../sheet-fields'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSaleFeeChoice } from './sale-fee'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
@@ -105,111 +104,110 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
 
   return (
     <>
-      <ChainSelect
-        testID="income-sheet-chain"
-        steps={[
-          {
-            name: '캐릭터',
-            options: requiredCharacterOptions(props.characters),
-            selected: ocid,
-            onSelect: setOcid,
-          },
-        ]}
-      />
-
-      <FieldRow label="판매 아이템" labelTestID="income-sheet-name-label">
-        {/* 누르면 입력 카드가 글자판으로 받는다. 카드 안에서는 왼쪽 정렬이라 끝 공백이 보인다. */}
-        <Pressable
-          testID="income-sheet-name"
-          role="button"
-          aria-label="판매 아이템"
-          onPress={() =>
-            openInputCard({
-              label: '판매 아이템',
-              text: true,
-              placeholder: '아이템 명',
-              value: name,
-              onConfirm: setName,
-            })
-          }
-          className="h-5 flex-1"
-        >
-          <Text
-            numberOfLines={1}
-            className={`text-right text-sm ${name === '' ? 'text-text-disabled' : 'text-text'}`}
-          >
-            {name === '' ? '아이템 명' : name}
-          </Text>
-        </Pressable>
-      </FieldRow>
-
-      <FieldRow label="종류" testID="income-sheet-item-kind">
-        <Segment size="sm"
-          options={itemKinds().map((each) => each.name)}
-          selected={itemKindNameOf(itemKind)}
-          onSelect={selectItemKind}
+      <FieldCard>
+        <SelectRow
+          testID="income-sheet-chain"
+          label="캐릭터"
+          placeholder="캐릭터 선택"
+          options={requiredCharacterOptions(props.characters)}
+          selected={ocid}
+          onSelect={setOcid}
         />
-      </FieldRow>
 
-      {/* 치는 자리는 여기다. 큰 숫자는 합계라 못 친다. 이름 아래에 서는 것은 계산 차례
-          그대로이기 때문이다. 무엇을 · 얼마에 · 몇 개 · 몇 % 떼고 → 합계. */}
-      <FieldRow label={amountLabel}>
-        <Pressable
-          testID="income-sheet-gross"
-          role="button"
-          aria-label={amountLabel}
-          onPress={() =>
-            openInputCard({
-              label: amountLabel,
-              context: name === '' ? undefined : name,
-              icon: 'meso',
-              unit: '메소',
-              reading: true,
-              unitKey: 'itemSale',
-              chips: MESO_QUICK_ADDS,
-              value: typedText,
-              onConfirm: (next) => setTypedText(settleMesoText(acceptMesoText(typedText, next))),
-            })
-          }
-          className="h-5 flex-1"
-        >
-          <Text
-            className={`text-right text-sm font-semibold ${
-              typedText === '' ? 'text-text-disabled' : 'text-text'
-            }`}
-            style={TABULAR_NUMS}
+        <FieldRow label="판매 아이템" labelTestID="income-sheet-name-label">
+          {/* 누르면 입력 카드가 글자판으로 받는다. 카드 안에서는 왼쪽 정렬이라 끝 공백이 보인다. */}
+          <Pressable
+            testID="income-sheet-name"
+            role="button"
+            aria-label="판매 아이템"
+            onPress={() =>
+              openInputCard({
+                label: '판매 아이템',
+                text: true,
+                placeholder: '아이템 명',
+                value: name,
+                onConfirm: setName,
+              })
+            }
+            className="h-5 flex-1"
           >
-            {typedText === '' ? '0' : mesoValueOf(typedText).toLocaleString()}
-          </Text>
-        </Pressable>
-        {/* 큰 숫자는 수수료를 뗀 합계라 이 줄과 축이 같은지 헷갈린다. 둘 다 메소라는 것을
-            여기서 말한다. */}
-        <Text
-          testID="income-sheet-gross-unit"
-          className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
-        >
-          메소
-        </Text>
-      </FieldRow>
-
-      {counts && (
-        // 스테퍼가 아니라 치는 칸이다. 아이템 구매의 수량 칸과 같은 모양이다.
-        <FieldRow label="수량">
-          <AmountInput
-            testID="income-sheet-quantity"
-            label="수량"
-            context={name === '' ? undefined : name}
-            unit="개"
-            chips={COUNT_QUICK_ADDS}
-            value={quantityText}
-            pristine={quantityPristine}
-            onChange={setQuantityText}
-          />
-          <Text className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted">개</Text>
+            <Text
+              numberOfLines={1}
+              className={`text-right text-sm ${name === '' ? 'text-text-disabled' : 'text-text'}`}
+            >
+              {name === '' ? '아이템 명' : name}
+            </Text>
+          </Pressable>
         </FieldRow>
-      )}
 
-      <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
+        <FieldRow label="종류" testID="income-sheet-item-kind">
+          <Segment size="sm"
+            options={itemKinds().map((each) => each.name)}
+            selected={itemKindNameOf(itemKind)}
+            onSelect={selectItemKind}
+          />
+        </FieldRow>
+
+        {/* 치는 자리는 여기다. 큰 숫자는 합계라 못 친다. 이름 아래에 서는 것은 계산 차례
+            그대로이기 때문이다. 무엇을 · 얼마에 · 몇 개 · 몇 % 떼고 → 합계. */}
+        <FieldRow label={amountLabel}>
+          <Pressable
+            testID="income-sheet-gross"
+            role="button"
+            aria-label={amountLabel}
+            onPress={() =>
+              openInputCard({
+                label: amountLabel,
+                context: name === '' ? undefined : name,
+                icon: 'meso',
+                unit: '메소',
+                reading: true,
+                unitKey: 'itemSale',
+                chips: MESO_QUICK_ADDS,
+                value: typedText,
+                onConfirm: (next) => setTypedText(settleMesoText(acceptMesoText(typedText, next))),
+              })
+            }
+            className="h-5 flex-1"
+          >
+            <Text
+              className={`text-right text-sm font-semibold ${
+                typedText === '' ? 'text-text-disabled' : 'text-text'
+              }`}
+              style={TABULAR_NUMS}
+            >
+              {typedText === '' ? '0' : mesoValueOf(typedText).toLocaleString()}
+            </Text>
+          </Pressable>
+          {/* 큰 숫자는 수수료를 뗀 합계라 이 줄과 축이 같은지 헷갈린다. 둘 다 메소라는 것을
+              여기서 말한다. */}
+          <Text
+            testID="income-sheet-gross-unit"
+            className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
+          >
+            메소
+          </Text>
+        </FieldRow>
+
+        {counts && (
+          // 스테퍼가 아니라 치는 칸이다. 아이템 구매의 수량 칸과 같은 모양이다.
+          <FieldRow label="수량">
+            <AmountInput
+              testID="income-sheet-quantity"
+              label="수량"
+              context={name === '' ? undefined : name}
+              unit="개"
+              chips={COUNT_QUICK_ADDS}
+              value={quantityText}
+              pristine={quantityPristine}
+              onChange={setQuantityText}
+            />
+            <Text className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted">개</Text>
+          </FieldRow>
+        )}
+
+        <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
+      </FieldCard>
 
       <AmountFigure
         // 아이템 판매의 큰 숫자는 합계다. 수수료를 뗀 값이고 앱이 세므로 못 친다.

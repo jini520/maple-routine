@@ -67,6 +67,7 @@ import { rnAdsPort } from '../native/adapters/rn-ads'
 import { rnBackGesturePort } from '../native/adapters/rn-back-gesture'
 import { rnColorSchemePort } from '../native/adapters/rn-color-scheme'
 import { rnHapticsPort } from '../native/adapters/rn-haptics'
+import { rnScreenCornersPort } from '../native/adapters/rn-screen-corners'
 import { rnKeyboardPort } from '../native/adapters/rn-keyboard'
 import { rnNotificationsPort } from '../native/adapters/rn-notifications'
 import { rnSplashScreenPort } from '../native/adapters/rn-splash-screen'
@@ -87,6 +88,7 @@ const WIRED: [string, () => unknown, unknown][] = [
   ['getAdsPort', nativePorts.getAdsPort, rnAdsPort],
   ['getColorSchemePort', nativePorts.getColorSchemePort, rnColorSchemePort],
   ['getHapticsPort', nativePorts.getHapticsPort, rnHapticsPort],
+  ['getScreenCornersPort', nativePorts.getScreenCornersPort, rnScreenCornersPort],
   ['getKeyboardPort', nativePorts.getKeyboardPort, rnKeyboardPort],
   ['getNotificationsPort', nativePorts.getNotificationsPort, rnNotificationsPort],
   ['getPushPort', nativePorts.getPushPort, rnPushPort],
@@ -117,7 +119,7 @@ describe('installPorts()', () => {
       /^get[A-Za-z]+Port$/.test(key),
     )
 
-    expect(declared.length).toBe(18)
+    expect(declared.length).toBe(19)
     expect([...declared].sort()).toEqual(WIRED.map(([name]) => name).sort())
   })
 

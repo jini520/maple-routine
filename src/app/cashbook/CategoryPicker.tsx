@@ -4,7 +4,8 @@
  * 수입과 지출이 **한 벌을 쓴다**. 갈래를 고르면 그 갈래의 폼이 같은 시트에서 열린다. 그래서
  * 2차에는 갈래 칩이 없고, 갈래를 바꾸는 일은 여기로 돌아오는 일이 된다.
  *
- * 카드는 **가로로 눕고 한 줄에 둘**이다(사용자 지정 2026-09-21). 그림 옆에 이름이 서고, 갈래 표가
+ * 갈래는 **가로로 눕고 한 줄에 둘**이다(사용자 지정 2026-09-21). 갈래 전체가 테두리 없는 카드 하나이고, 갈래마다
+ * 그 안의 `card-inset` 칸이다(사용자 선택 2026-10-28). 폼의 칸 카드와 같은 모양이라 두 단계가 한 시트로 읽힌다. 그림 옆에 이름이 서고, 갈래 표가
  * 그 아래 갈래 표의 `description` 이 한 줄 더 선다. 카드가 92 에서 56 으로 낮아진다. 갈래가 일곱인 지출은 줄이 셋에서 넷으로 늘지만, 줄당 높이가 더 많이 줄어 시트 전체는
  * 짧아진다.
  *
@@ -41,8 +42,8 @@ export function CategoryPicker<T extends string>(props: {
     */
     <View className="px-4">
       {/* 퍼센트 폭과 `gap` 을 섞으면 한 줄의 마지막 칸이 다음 줄로 밀린다. 간격은 자식의
-          패딩이 만들고 바깥의 `-mx-1` 이 그만큼을 되돌린다(항목 타일 격자와 같은 방식). */}
-      <View className="-mx-1 flex-row flex-wrap">
+          패딩(2)이 만든다. 카드 안쪽 여백 4 와 더해 가장자리는 6, 칸 사이는 4 다. */}
+      <View className="flex-row flex-wrap rounded-[14px] bg-surface p-1">
         {props.categories.map((category) => {
           const icon = getItemIconUrlByFile(category.icon)
           return (
@@ -57,11 +58,11 @@ export function CategoryPicker<T extends string>(props: {
                 const key = props.knownKeys.find((each) => each === category.key)
                 if (key !== undefined) props.onSelect(key)
               }}
-              className={`w-1/2 p-1${category.known ? '' : ' opacity-40'}`}
+              className={`w-1/2 p-0.5${category.known ? '' : ' opacity-40'}`}
             >
               <View
                 testID={`${props.testIdPrefix}-category-box-${category.key}`}
-                className="h-[56px] flex-row items-center gap-2 rounded-[14px] border border-border bg-surface px-3"
+                className="h-[52px] flex-row items-center gap-2 rounded-[10px] bg-card-inset px-2.5"
               >
                 {/* 그림을 못 찾으면 자리만 지킨다. 카드 높이가 갈래마다 갈리지 않게. */}
                 {icon === null ? (

@@ -11,6 +11,7 @@
  * `+ 보스 추가` 는 같은 시트 안에서 단계를 바꾼다(`stepKey`). 보스 추가 단계는 머리 · 본문 · 바닥을 통째로
  * 갈아 끼우고, `n개 추가` 로 돌아오면 고른 목록이 시트의 보스 목록이 된다.
  */
+import { SheetActionButton } from '../../components/organisms/BottomSheet/SheetActionButton'
 import { useEffect, useState } from 'react'
 import { Platform, Pressable, View } from 'react-native'
 
@@ -240,9 +241,8 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   ) : (
     // 다른 시트와 같은 바닥. 전폭 주 버튼 아래에 되돌릴 수 없는 동작을 작은 빨간 글자로 둔다.
     <View className="gap-1">
-      <Pressable
-        role="button"
-        aria-label="수정"
+      <SheetActionButton
+        label="수정"
         onPress={() => {
           if (target !== undefined && schedule?.type === 'weekly') {
             // 이 주만 고친 회차는 이 주만 적용하기를 켠 채 고친 날짜로 연다. 아니면 앞으로 모두이고 약속의 반복 요일에서 시작한다.
@@ -252,10 +252,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
           }
           setStep('form')
         }}
-        className="items-center rounded-xl bg-primary py-3 active:opacity-80"
-      >
-        <Text className="text-sm font-bold text-on-primary">수정</Text>
-      </Pressable>
+      />
       <Pressable role="button" aria-label="삭제" onPress={() => setConfirmingDelete(true)} className="items-center py-2">
         <Text className="text-xs font-semibold text-error-ink">삭제</Text>
       </Pressable>
@@ -289,15 +286,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
           </Text>
         </Pressable>
       )}
-      <Pressable
-        role="button"
-        aria-label="저장"
-        disabled={!savable}
-        onPress={() => void submit()}
-        className={`items-center rounded-xl py-3 ${savable ? 'bg-primary' : 'bg-surface-2'}`}
-      >
-        <Text className={`text-sm font-bold ${savable ? 'text-on-primary' : 'text-text-disabled'}`}>저장</Text>
-      </Pressable>
+      <SheetActionButton label="저장" disabled={!savable} onPress={() => void submit()} />
     </View>
   )
   const bossesFooter = (

@@ -50,7 +50,7 @@ import {
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
-import { AmountInput, CharacterField, FieldRow, QuantityStepper, useCountField } from '../sheet-fields'
+import { AmountInput, CharacterField, FIELD_CELL_CLASS, FieldCard, FieldRow, QuantityStepper, useCountField } from '../sheet-fields'
 import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import type { SpendRecord } from '../../../storage/spend'
 import { rowsOfGroups } from './tile-rows'
@@ -127,11 +127,11 @@ function ItemTile(props: {
       aria-label={props.label}
       aria-selected={props.selected}
       disabled={props.disabled}
-      className={`w-1/2 p-1 ${props.disabled === true ? 'opacity-40' : ''}`}
+      className={`w-1/2 p-0.5 ${props.disabled === true ? 'opacity-40' : ''}`}
       onPress={props.onPress}
     >
       {/*
-        1차 갈래 카드와 **같은 상자**다(사용자 지정 2026-09-21). 이름이 제목이고 가격이 그
+        1차 갈래 칸과 **같은 상자**다(사용자 지정 2026-09-21 · 2026-10-28). 이름이 제목이고 가격이 그
         아래 설명 줄이라, 두 단계가 같은 격자로 읽힌다. 치수는 `CategoryPicker` 를 따른다.
 
         그림 자리가 둘이던 것(타일 왼쪽 끝 · 이름 바로 옆)이 여기서 하나가 됐다. 가로 상자에서는
@@ -139,8 +139,8 @@ function ItemTile(props: {
       */}
       <View
         testID={`spend-tile-box-${props.tileKey}`}
-        className={`h-[56px] flex-row items-center gap-2 rounded-[14px] border px-3 ${
-          props.selected ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
+        className={`h-[52px] flex-row items-center gap-2 rounded-[10px] px-2.5 ${
+          props.selected ? 'bg-primary-tint' : 'bg-card-inset'
         }`}
       >
         {icon !== null && (
@@ -416,17 +416,18 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
               {/*
                 이름과 타일이 **같은 칸 폭**을 쓴다. 짝지은 줄에서는 이름 둘이 타일 둘 바로
                 위에 각각 서고, 타일은 2열 격자의 1열·2열 자리 그대로다(폭도 간격도 같다).
+                이름 줄의 여백(4 + 2)은 아래 카드의 안쪽 여백과 타일 패딩의 합이다.
               */}
-              <View className="-mx-1 flex-row">
+              <View className="flex-row px-1">
                 {row.map((group) => (
-                  <View key={group.key} className={row.length === 2 ? 'w-1/2 px-1' : 'px-1'}>
+                  <View key={group.key} className={row.length === 2 ? 'w-1/2 px-0.5' : 'px-0.5'}>
                     <GroupLabel groupKey={group.key} group={group.group} active={group.active} />
                   </View>
                 ))}
               </View>
-              {/* 퍼센트 폭과 `gap` 을 섞으면 마지막 칸이 밀린다. 간격은 자식 패딩이 만들고
-                  바깥의 음수 마진이 그 둘레 몫을 되돌린다. */}
-              <View className="-mx-1 -mb-1 flex-row flex-wrap">
+              {/* 퍼센트 폭과 `gap` 을 섞으면 마지막 칸이 밀린다. 간격은 자식 패딩(2)이 만들고,
+                  카드 안쪽 여백 4 와 더해 가장자리 6 · 칸 사이 4 다(갈래 카드와 같다). */}
+              <View className="flex-row flex-wrap rounded-[14px] bg-surface p-1">
                 {row.flatMap((group) =>
                   group.choices.map((each) => (
                     <ItemTile
@@ -449,146 +450,148 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
       ) : (
         // 고른 뒤. 라벨–값 줄들이 서고 **합계가 저장 바로 위**에 선다.
         <>
-          <CharacterField
-            characters={props.characters}
-            selected={ocid}
-            onSelect={setOcid}
-            testID="spend-sheet-chain"
-          />
+          <FieldCard>
+            <CharacterField
+              characters={props.characters}
+              selected={ocid}
+              onSelect={setOcid}
+              testID="spend-sheet-chain"
+            />
 
-          {/*
-            형태마다 한 줄이고 단계는 0단계에서 시작한다. 0단계는 클리어하면 그냥 받는 기본
-            보상이라 안 산 상태이고, 그래서 전부 0단계면 저장이 막힌다.
-          */}
-          {forms.map((each) => (
-            <FieldRow key={each} label={spendFormOf(each)?.name ?? each} testID={`spend-sheet-form-${each}`}>
-              <Segment size="sm"
-                options={tierOptions}
-                selected={tierByForm[each] ?? BASE_TIER}
-                onSelect={(tier) => setTierByForm((prev) => ({ ...prev, [each]: tier }))}
-              />
-            </FieldRow>
-          ))}
-
-          {givesCoins && (
-            /*
-             * 주화 줄. 개수와 **그 개수를 판 메소**를 적는다(사용자 지정). 판매가가 있어야
-             * 합계가 왜 줄었는지가 이 줄에서 읽힌다. 개수만 적으면 40,000,000 곱셈을 사람이 한다.
-             *
-             * 이름 자리를 그림이 진다. 수입 시트의 솔 에르다 조각 줄과 같은 방식이고, 글자 여섯
-             * 자 폭이 값으로 간다. 0단계뿐이어도 `0개` 로 서 있다. 단계를 고를 때 줄이 새로
-             * 끼어들면 그 아래가 통째로 밀린다.
-             */
-            <View
-              testID="spend-sheet-coins"
-              className="min-h-8 flex-row items-center gap-3 border-b border-border pb-2"
-            >
-              {coinIcon() !== null && (
-                <Image
-                  source={coinIcon() ?? undefined}
-                  className="h-6 w-6 shrink-0"
-                  resizeMode="contain"
-                  aria-label={SPEND_REWARD_COIN.name}
-                />
-              )}
-              <View className="flex-row items-baseline justify-end gap-1" style={COIN_COUNT_SLOT}>
-                <Text
-                  className={`text-sm font-semibold ${coins === 0 ? 'text-text-disabled' : 'text-text'}`}
-                  style={TABULAR_NUMS}
-                >
-                  {coins}
-                </Text>
-                <Text className="text-xs text-text-muted">개</Text>
-              </View>
-              <Text className="shrink-0 text-xs text-text-muted">주화 판매</Text>
-              <View className="ml-auto flex-row items-baseline gap-1">
-                <Text
-                  className={`text-sm font-semibold ${coins === 0 ? 'text-text-disabled' : 'text-text'}`}
-                  style={TABULAR_NUMS}
-                >
-                  {formatMesoUnits(rewardCoinMeso(coins))}
-                </Text>
-                <Text className="text-xs text-text-muted">메소</Text>
-              </View>
-            </View>
-          )}
-
-          {/* 축마다 한 줄이고 처음에는 아무것도 안 골랐다. 남은 항목이 그 축을 안 가지면 잠긴다. */}
-          {choice !== null &&
-            axes.map((each) => (
-              <FieldRow key={each.axis} label={each.axis} testID={`spend-sheet-option-${each.axis}`}>
+            {/*
+              형태마다 한 줄이고 단계는 0단계에서 시작한다. 0단계는 클리어하면 그냥 받는 기본
+              보상이라 안 산 상태이고, 그래서 전부 0단계면 저장이 막힌다.
+            */}
+            {forms.map((each) => (
+              <FieldRow key={each} label={spendFormOf(each)?.name ?? each} testID={`spend-sheet-form-${each}`}>
                 <Segment size="sm"
-                  options={each.values}
-                  selected={optionByAxis[each.axis] ?? null}
-                  disabled={!isOptionAxisOpen(choice, optionByAxis, each.axis)}
-                  onSelect={(value) => selectOption(each.axis, value)}
+                  options={tierOptions}
+                  selected={tierByForm[each] ?? BASE_TIER}
+                  onSelect={(tier) => setTierByForm((prev) => ({ ...prev, [each]: tier }))}
                 />
               </FieldRow>
             ))}
 
-          {tiers.length > 0 && (
-            <FieldRow label="단계">
-              <Segment size="sm"
-                options={tiers.map(tierNameOf)}
-                selected={item === null ? null : tierNameOf(item)}
-                onSelect={(label) => {
-                  const next = tiers.find((each) => tierNameOf(each) === label)
-                  if (next !== undefined) selectItem(next)
-                }}
-              />
-            </FieldRow>
-          )}
+            {givesCoins && (
+              /*
+               * 주화 줄. 개수와 **그 개수를 판 메소**를 적는다(사용자 지정). 판매가가 있어야
+               * 합계가 왜 줄었는지가 이 줄에서 읽힌다. 개수만 적으면 40,000,000 곱셈을 사람이 한다.
+               *
+               * 이름 자리를 그림이 진다. 수입 시트의 솔 에르다 조각 줄과 같은 방식이고, 글자 여섯
+               * 자 폭이 값으로 간다. 0단계뿐이어도 `0개` 로 서 있다. 단계를 고를 때 줄이 새로
+               * 끼어들면 그 아래가 통째로 밀린다.
+               */
+              <View
+                testID="spend-sheet-coins"
+                className={FIELD_CELL_CLASS}
+              >
+                {coinIcon() !== null && (
+                  <Image
+                    source={coinIcon() ?? undefined}
+                    className="h-6 w-6 shrink-0"
+                    resizeMode="contain"
+                    aria-label={SPEND_REWARD_COIN.name}
+                  />
+                )}
+                <View className="flex-row items-baseline justify-end gap-1" style={COIN_COUNT_SLOT}>
+                  <Text
+                    className={`text-sm font-semibold ${coins === 0 ? 'text-text-disabled' : 'text-text'}`}
+                    style={TABULAR_NUMS}
+                  >
+                    {coins}
+                  </Text>
+                  <Text className="text-xs text-text-muted">개</Text>
+                </View>
+                <Text className="shrink-0 text-xs text-text-muted">주화 판매</Text>
+                <View className="ml-auto flex-row items-baseline gap-1">
+                  <Text
+                    className={`text-sm font-semibold ${coins === 0 ? 'text-text-disabled' : 'text-text'}`}
+                    style={TABULAR_NUMS}
+                  >
+                    {formatMesoUnits(rewardCoinMeso(coins))}
+                  </Text>
+                  <Text className="text-xs text-text-muted">메소</Text>
+                </View>
+              </View>
+            )}
 
-          {typesPrice && (
-            <FieldRow label="개당 가격">
-              <AmountInput
-                testID="spend-sheet-unit-price"
-                label="개당 가격"
-                context={item?.name ?? choice?.label}
-                icon="meso"
-                unit="메소"
-                reading
-                unitKey="catalogUnitPrice"
-                value={priceText}
-                onChange={setPriceText}
-              />
-              <Text className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted">메소</Text>
-            </FieldRow>
-          )}
+            {/* 축마다 한 줄이고 처음에는 아무것도 안 골랐다. 남은 항목이 그 축을 안 가지면 잠긴다. */}
+            {choice !== null &&
+              axes.map((each) => (
+                <FieldRow key={each.axis} label={each.axis} testID={`spend-sheet-option-${each.axis}`}>
+                  <Segment size="sm"
+                    options={each.values}
+                    selected={optionByAxis[each.axis] ?? null}
+                    disabled={!isOptionAxisOpen(choice, optionByAxis, each.axis)}
+                    onSelect={(value) => selectOption(each.axis, value)}
+                  />
+                </FieldRow>
+              ))}
 
-          {scope !== null && scope.maxQuantity !== 1 && (
-            /*
-             * 단위·상한은 대표가 안다. 단계를 고르기 전에도 선다. 상한이 1 이면 안 세운다.
-             * 1 밖에 못 치는 칸은 고칠 수 있다 는 거짓말이다.
-             *
-             * 상한이 있으면 스테퍼, 없으면 치는 칸이다. 상한이 없는 수량은 클 수 있어 스테퍼가 안 맞는다.
-             */
-            <FieldRow label="수량">
-              {scope.maxQuantity !== undefined ? (
-                <QuantityStepper
-                  testID="spend-sheet-quantity"
-                  label="수량"
-                  context={item?.name ?? choice?.label}
-                  max={scope.maxQuantity}
-                  value={quantityText}
-                  pristine={quantityPristine}
-                  onChange={(next) => setQuantityText(capQuantityText(next, scope.maxQuantity))}
+            {tiers.length > 0 && (
+              <FieldRow label="단계">
+                <Segment size="sm"
+                  options={tiers.map(tierNameOf)}
+                  selected={item === null ? null : tierNameOf(item)}
+                  onSelect={(label) => {
+                    const next = tiers.find((each) => tierNameOf(each) === label)
+                    if (next !== undefined) selectItem(next)
+                  }}
                 />
-              ) : (
+              </FieldRow>
+            )}
+
+            {typesPrice && (
+              <FieldRow label="개당 가격">
                 <AmountInput
-                  testID="spend-sheet-quantity"
-                  label="수량"
+                  testID="spend-sheet-unit-price"
+                  label="개당 가격"
                   context={item?.name ?? choice?.label}
-                  chips={quantityChips}
-                  value={quantityText}
-                  pristine={quantityPristine}
-                  onChange={setQuantityText}
+                  icon="meso"
+                  unit="메소"
+                  reading
+                  unitKey="catalogUnitPrice"
+                  value={priceText}
+                  onChange={setPriceText}
                 />
-              )}
-            </FieldRow>
-          )}
+                <Text className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted">메소</Text>
+              </FieldRow>
+            )}
 
-          {usesPoint && <RateRow value={rateText} onChange={setRateText} valid={rate !== null} />}
+            {scope !== null && scope.maxQuantity !== 1 && (
+              /*
+               * 단위·상한은 대표가 안다. 단계를 고르기 전에도 선다. 상한이 1 이면 안 세운다.
+               * 1 밖에 못 치는 칸은 고칠 수 있다 는 거짓말이다.
+               *
+               * 상한이 있으면 스테퍼, 없으면 치는 칸이다. 상한이 없는 수량은 클 수 있어 스테퍼가 안 맞는다.
+               */
+              <FieldRow label="수량">
+                {scope.maxQuantity !== undefined ? (
+                  <QuantityStepper
+                    testID="spend-sheet-quantity"
+                    label="수량"
+                    context={item?.name ?? choice?.label}
+                    max={scope.maxQuantity}
+                    value={quantityText}
+                    pristine={quantityPristine}
+                    onChange={(next) => setQuantityText(capQuantityText(next, scope.maxQuantity))}
+                  />
+                ) : (
+                  <AmountInput
+                    testID="spend-sheet-quantity"
+                    label="수량"
+                    context={item?.name ?? choice?.label}
+                    chips={quantityChips}
+                    value={quantityText}
+                    pristine={quantityPristine}
+                    onChange={setQuantityText}
+                  />
+                )}
+              </FieldRow>
+            )}
+
+            {usesPoint && <RateRow value={rateText} onChange={setRateText} valid={rate !== null} />}
+          </FieldCard>
 
           {scope !== null && (
             /*

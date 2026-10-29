@@ -49,6 +49,9 @@ require('./src/native/__tests__/fake-native-ports').installNoopNativePorts()
 // 안 걸면 입력 카드를 그리는 스위트가 import 단계에서 통째로 죽는다.
 jest.mock('react-native-keyboard-controller', () => require('react-native-keyboard-controller/jest'))
 
+// 화면 모서리 반경도 네이티브 모듈이다. jest 에는 없어 앱 부팅을 그리는 스위트가 import 단계에서 죽는다. 반경을 모르는 기기로 둔다.
+jest.mock('expo-screen-corner-radius', () => ({ getCornerRadiusSync: () => null, getCornerRadius: async () => null }))
+
 // ② `expect(값, '메시지')` — **vitest 에는 있고 jest 에는 없다.**
 //
 //    옮겨 온 테스트 170곳이 이 두 번째 인자로 «어느 항목에서 틀렸는지» 를 말한다

@@ -23,7 +23,7 @@ import {
 } from '../../../lib/cashbook/free-currency'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { AmountInput, CharacterField, FieldRow, TextField, useCountField } from '../sheet-fields'
+import { AmountInput, CharacterField, FIELD_CELL_CLASS, FieldCard, FieldRow, TextField, useCountField } from '../sheet-fields'
 import { openInputCard } from '../../../features/input-card/store'
 import { POINT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
@@ -118,116 +118,118 @@ export function EtcForm(
 
   return (
     <>
-      <CharacterField
-        characters={props.characters}
-        selected={ocid}
-        onSelect={setOcid}
-        testID="income-sheet-chain"
-      />
-
-      <FieldRow label="내용" labelTestID="income-sheet-name-label">
-        <TextField
-          testID="income-sheet-name"
-          label="내용"
-          placeholder="내용"
-          value={name}
-          onChange={setName}
+      <FieldCard>
+        <CharacterField
+          characters={props.characters}
+          selected={ocid}
+          onSelect={setOcid}
+          testID="income-sheet-chain"
         />
-      </FieldRow>
 
-      {/* 통화는 갈래가 아니라 금액의 축이라 세그먼트다. 지출 시트의 그 줄과 같은 모양·같은
-          자리다. */}
-      <View
-        testID="income-sheet-currency"
-        className="min-h-7 flex-row items-center gap-3 border-b border-border pb-2"
-      >
-        <Text className="shrink-0 text-xs text-text-muted">통화</Text>
-        <View className="flex-1 flex-row items-center justify-end">
-          <Segment size="sm"
-            options={FREE_CURRENCY_LABELS}
-            selected={labelOfCurrency(currency)}
-            onSelect={(label) => setCurrency(currencyOfLabel(label))}
+        <FieldRow label="내용" labelTestID="income-sheet-name-label">
+          <TextField
+            testID="income-sheet-name"
+            label="내용"
+            placeholder="내용"
+            value={name}
+            onChange={setName}
           />
-        </View>
-      </View>
+        </FieldRow>
 
-      {/* **통화 밑**이다. 무엇으로 받았는지를 정한 다음에 얼마인지를 친다(지출 시트와 같은 차례). */}
-      <FieldRow label="금액">
-        <AmountInput
-          testID="income-sheet-unit-price"
-          label="금액"
-          context={name === '' ? undefined : name}
-          icon={currency === 'meso' ? 'meso' : undefined}
-          unit={unitOfCurrency(currency)}
-          reading={currency === 'meso'}
-          value={typedText}
-          onChange={setTypedText}
-        />
-        {/* 숫자만 있으면 무엇으로 받은 것인지 줄에서 사라진다. 이 줄이 묻는 것은 얼마인가 라
-            라벨이 아니라 단위다. 캐시는 `원` 이고 큰 숫자와 같은 말이 된다. */}
-        <Text
-          testID="income-sheet-unit-price-unit"
-          className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
+        {/* 통화는 갈래가 아니라 금액의 축이라 세그먼트다. 지출 시트의 그 줄과 같은 모양·같은
+            자리다. */}
+        <View
+          testID="income-sheet-currency"
+          className={FIELD_CELL_CLASS}
         >
-          {unitOfCurrency(currency)}
-        </Text>
-      </FieldRow>
-
-      {/* 스테퍼가 아니라 치는 칸이다. 수량이 크면 스테퍼는 여러 번 눌러야 한다. 단위는 자유 입력이라
-          무엇을 세는지 몰라 안 적는다. `chips` 를 안 주면 메소 칩이 서므로 빈 배열을 넘긴다. */}
-      <FieldRow label="수량">
-        <AmountInput
-          testID="income-sheet-quantity"
-          label="수량"
-          context={name === '' ? undefined : name}
-          chips={[]}
-          value={quantityText}
-          pristine={quantityPristine}
-          onChange={setQuantityText}
-        />
-      </FieldRow>
-
-      {usesPoint && (
-        // 메포를 메소 축으로 옮기는 값. **1억 메소당 메포**다.
-        <View className="min-h-7 flex-row items-center gap-2 border-b border-border pb-2">
-          <Text className="shrink-0 text-xs text-text-muted">
-            시세 · 1억당
-            <Text testID="income-sheet-required" className="text-error-ink">
-              {' *'}
-            </Text>
-          </Text>
+          <Text className="shrink-0 text-xs text-text-muted">통화</Text>
           <View className="flex-1 flex-row items-center justify-end">
-            <Pressable
-              testID="income-sheet-rate"
-              role="button"
-              aria-label="시세 · 1억당"
-              onPress={() =>
-                openInputCard({
-                  label: '시세 · 1억당',
-                  context: '메소마켓에서 1억 메소를 사는 메포',
-                  required: true,
-                  unit: '메포',
-                  chips: POINT_QUICK_ADDS,
-                  placeholder: '메소마켓 시세',
-                  value: rateText,
-                  onConfirm: setRateText,
-                })
-              }
-              className="h-5 flex-1"
-            >
-              <Text
-                className={`text-right text-sm font-semibold ${
-                  rateText === '' ? 'text-text-disabled' : rate !== null ? 'text-text' : 'text-error-ink'
-                }`}
-                style={TABULAR_NUMS}
-              >
-                {rateText === '' ? '메소마켓 시세' : mesoValueOf(rateText).toLocaleString()}
-              </Text>
-            </Pressable>
-            <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메포</Text>
+            <Segment size="sm"
+              options={FREE_CURRENCY_LABELS}
+              selected={labelOfCurrency(currency)}
+              onSelect={(label) => setCurrency(currencyOfLabel(label))}
+            />
           </View>
         </View>
-      )}
+
+        {/* **통화 밑**이다. 무엇으로 받았는지를 정한 다음에 얼마인지를 친다(지출 시트와 같은 차례). */}
+        <FieldRow label="금액">
+          <AmountInput
+            testID="income-sheet-unit-price"
+            label="금액"
+            context={name === '' ? undefined : name}
+            icon={currency === 'meso' ? 'meso' : undefined}
+            unit={unitOfCurrency(currency)}
+            reading={currency === 'meso'}
+            value={typedText}
+            onChange={setTypedText}
+          />
+          {/* 숫자만 있으면 무엇으로 받은 것인지 줄에서 사라진다. 이 줄이 묻는 것은 얼마인가 라
+              라벨이 아니라 단위다. 캐시는 `원` 이고 큰 숫자와 같은 말이 된다. */}
+          <Text
+            testID="income-sheet-unit-price-unit"
+            className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
+          >
+            {unitOfCurrency(currency)}
+          </Text>
+        </FieldRow>
+
+        {/* 스테퍼가 아니라 치는 칸이다. 수량이 크면 스테퍼는 여러 번 눌러야 한다. 단위는 자유 입력이라
+            무엇을 세는지 몰라 안 적는다. `chips` 를 안 주면 메소 칩이 서므로 빈 배열을 넘긴다. */}
+        <FieldRow label="수량">
+          <AmountInput
+            testID="income-sheet-quantity"
+            label="수량"
+            context={name === '' ? undefined : name}
+            chips={[]}
+            value={quantityText}
+            pristine={quantityPristine}
+            onChange={setQuantityText}
+          />
+        </FieldRow>
+
+        {usesPoint && (
+          // 메포를 메소 축으로 옮기는 값. **1억 메소당 메포**다.
+          <View className={FIELD_CELL_CLASS}>
+            <Text className="shrink-0 text-xs text-text-muted">
+              시세 · 1억당
+              <Text testID="income-sheet-required" className="text-error-ink">
+                {' *'}
+              </Text>
+            </Text>
+            <View className="flex-1 flex-row items-center justify-end">
+              <Pressable
+                testID="income-sheet-rate"
+                role="button"
+                aria-label="시세 · 1억당"
+                onPress={() =>
+                  openInputCard({
+                    label: '시세 · 1억당',
+                    context: '메소마켓에서 1억 메소를 사는 메포',
+                    required: true,
+                    unit: '메포',
+                    chips: POINT_QUICK_ADDS,
+                    placeholder: '메소마켓 시세',
+                    value: rateText,
+                    onConfirm: setRateText,
+                  })
+                }
+                className="h-5 flex-1"
+              >
+                <Text
+                  className={`text-right text-sm font-semibold ${
+                    rateText === '' ? 'text-text-disabled' : rate !== null ? 'text-text' : 'text-error-ink'
+                  }`}
+                  style={TABULAR_NUMS}
+                >
+                  {rateText === '' ? '메소마켓 시세' : mesoValueOf(rateText).toLocaleString()}
+                </Text>
+              </Pressable>
+              <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메포</Text>
+            </View>
+          </View>
+        )}
+      </FieldCard>
 
       <AmountFigure
         // **합계이고 못 친다**. 사람이 치는 것은 금액 한 개 값이지 합계가 아니다.

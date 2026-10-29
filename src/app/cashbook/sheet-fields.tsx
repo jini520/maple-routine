@@ -1,5 +1,5 @@
 /**
- * 두 시트가 함께 쓰는 폼 부품 셋.
+ * 두 시트가 함께 쓰는 폼 부품.
  *
  * 지출·수입 시트는 뼈대가 같다. 라벨–값 줄과 스테퍼는 그 뼈대의 부품이라 한 벌만 둔다.
  *
@@ -13,7 +13,11 @@ import { Text } from '../../components/atoms'
 import { Stepper } from '../../components/molecules/Stepper/Stepper'
 import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
 import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
-import { ChainSelect } from '../../components/organisms/ChainSelect/ChainSelect'
+import {
+  SelectChevron,
+  SelectField,
+  type SelectOption,
+} from '../../components/organisms/SelectField/SelectField'
 import {
   acceptMesoText,
   mesoTextOf,
@@ -110,14 +114,87 @@ export function SheetDateField(props: {
 }
 
 /**
- * 캐릭터 줄. 두 시트의 폼 여섯이 함께 쓴다.
+ * 폼 칸 하나의 상자. `FieldRow` 와 직접 그리는 칸이 같은 값을 쓴다.
  *
- * 안 고르면 자리표시자가 `캐릭터 선택` 이고 고르면 그 이름이 알약으로 선다. 목록 맨 앞의
- * `선택 안함` 은 되돌리는 자리이고 그 상태가 계정 단위(`ocid = null`)다.
+ * 높이 44 는 세그먼트(26)가 선 칸과 글자만 선 칸을 같게 맞추는 값이다. 수수료 줄은 `자동` 을 켜고 끌 때 둘을 오간다.
+ */
+export const FIELD_CELL_CLASS = 'min-h-11 flex-row items-center gap-3 rounded-[10px] bg-card-inset px-3 py-2'
+
+/**
+ * 폼의 칸을 담는 테두리 없는 카드. 칸 사이 간격 4 가 경계라 줄 사이에 선이 없다.
  *
- * 사냥 폼의 캐릭터·지역·사냥터와 **같은 부품**이다. 여기서는 단계가 캐릭터 하나뿐이라 줄 수가
- * 줄지는 않는다. 같은 모양인 것이 값이다. 한 시트의 갈래들이 첫 줄에서 저마다 다른 모양으로
- * 캐릭터를 물으면 갈래를 옮길 때마다 다른 화면으로 읽힌다.
+ * 큰 숫자(`AmountFigure`)는 이 카드 밖, 바로 아래에 둔다. 친 값과 앱이 센 합계를 자리로 가른다.
+ */
+export function FieldCard(props: { children: React.ReactNode; testID?: string }): React.JSX.Element {
+  return (
+    <View testID={props.testID} className="gap-1 rounded-[14px] bg-surface p-1.5">
+      {props.children}
+    </View>
+  )
+}
+
+/**
+ * 목록에서 값 하나를 고르는 칸. 칸 이름 · 고른 값 · 펼침 화살표가 한 줄이다.
+ *
+ * 고른 값은 다른 칸의 값과 같은 글자다. `null` 이거나 목록에 없는 값이면 자리표시자가 흐리게 선다.
+ *
+ * @example
+ * <SelectRow testID="income-sheet-region" label="지역" placeholder="지역 선택"
+ *   options={regionOptions} selected={regionKey} onSelect={selectRegion} />
+ */
+export function SelectRow(props: {
+  label: string
+  placeholder: string
+  options: readonly SelectOption[]
+  selected: string | null
+  onSelect: (next: string | null) => void
+  /** `{testID}-open` · `{testID}-value` · `{testID}-option-{value}` */
+  testID: string
+  renderOption?: (option: SelectOption, isSelected: boolean) => React.ReactNode
+  /** 칸 안 둘째 줄. 사냥터 칸의 포스 · 레벨 · 마릿수 캡슐 */
+  below?: React.ReactNode
+}): React.JSX.Element {
+  const chosen =
+    props.selected === null ? undefined : props.options.find((option) => option.value === props.selected)
+  return (
+    <SelectField
+      label={props.label}
+      options={props.options}
+      selected={props.selected}
+      onSelect={props.onSelect}
+      testID={props.testID}
+      renderOption={props.renderOption}
+      boxClassName={`${FIELD_CELL_CLASS} flex-col items-stretch gap-2`}
+      renderTrigger={(open, isOpen) => (
+        <>
+          <Pressable
+            testID={`${props.testID}-open`}
+            role="button"
+            aria-label={props.label}
+            onPress={open}
+            className="min-h-7 flex-row items-center gap-3 active:opacity-60"
+          >
+            <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
+            <Text
+              testID={`${props.testID}-value`}
+              numberOfLines={1}
+              className={`flex-1 text-right text-sm ${chosen === undefined ? 'text-text-disabled' : 'text-text'}`}
+            >
+              {chosen?.label ?? props.placeholder}
+            </Text>
+            <SelectChevron open={isOpen} />
+          </Pressable>
+          {props.below}
+        </>
+      )}
+    />
+  )
+}
+
+/**
+ * 캐릭터 칸. 두 시트의 폼이 함께 쓴다.
+ *
+ * 목록 맨 앞의 `선택 안함` 은 되돌리는 자리이고 그 상태가 계정 단위(`ocid = null`)다.
  *
  * 폼 안에 사는 것은 갈래를 옮기면 폼이 언마운트되어 고른 것이 함께 사라지기 때문이다.
  * 껍데기에 두면 그것만 남아 **갈래를 옮겼는데 캐릭터는 그대로** 가 된다.
@@ -126,20 +203,17 @@ export function CharacterField(props: {
   characters: ReadonlyArray<{ ocid: string; name: string }>
   selected: string | null
   onSelect: (next: string | null) => void
-  /** `{testID}-badge-캐릭터` · `{testID}-option-{ocid}`. 두 시트가 자기 이름을 준다. */
+  /** 두 시트가 자기 이름을 준다. */
   testID: string
 }): React.JSX.Element {
   return (
-    <ChainSelect
+    <SelectRow
       testID={props.testID}
-      steps={[
-        {
-          name: '캐릭터',
-          options: characterOptions(props.characters),
-          selected: props.selected,
-          onSelect: props.onSelect,
-        },
-      ]}
+      label="캐릭터"
+      placeholder="캐릭터 선택"
+      options={characterOptions(props.characters)}
+      selected={props.selected}
+      onSelect={props.onSelect}
     />
   )
 }
@@ -269,9 +343,9 @@ export function TextField(props: {
 }
 
 /**
- * 라벨–값 한 줄. 큰 숫자 위는 전부 이 모양이다.
+ * 라벨–값 칸 하나. `FieldCard` 안의 칸은 전부 이 모양이다.
  *
- * 축이 하나로 정리되는 것이 이 줄의 일이다. 라벨–값, 오른쪽 큰 숫자, 오른쪽 칩이 번갈아
+ * 축이 하나로 정리되는 것이 이 칸의 일이다. 라벨–값, 오른쪽 큰 숫자, 오른쪽 칩이 번갈아
  * 나오면 눈이 좌우로 튄다.
  */
 export function FieldRow(props: {
@@ -281,10 +355,7 @@ export function FieldRow(props: {
   labelTestID?: string
 }): React.JSX.Element {
   return (
-    <View
-      testID={props.testID}
-      className="min-h-7 flex-row items-center gap-3 border-b border-border pb-2"
-    >
+    <View testID={props.testID} className={FIELD_CELL_CLASS}>
       <Text testID={props.labelTestID} className="shrink-0 text-xs text-text-muted">
         {props.label}
       </Text>

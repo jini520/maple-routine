@@ -7,6 +7,7 @@
  * 고칠 때는 같은 시트가 값을 물고 열리고 바닥에 `완료 취소` 가 한 줄 더 선다. 취소는 확인 창을
  * 거치는데, 그 기록의 드롭도 함께 지워지기 때문이다.
  */
+import { SheetActionButton } from '../../components/organisms/BottomSheet/SheetActionButton'
 import { useEffect, useRef, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
@@ -122,23 +123,11 @@ export function ManualCompletionSheet(props: ManualCompletionSheetProps): React.
         }
         footer={
           <>
-            <Pressable
-              role="button"
-              aria-label={props.mode === 'edit' ? '수정' : '완료 상태로 변경'}
+            <SheetActionButton
+              label={props.mode === 'edit' ? '수정' : '완료 상태로 변경'}
               disabled={priceMeso === null || saving}
               onPress={() => void save()}
-              className={`items-center rounded-xl py-3 ${
-                priceMeso === null ? 'bg-surface-2' : 'bg-primary'
-              }`}
-            >
-              <Text
-                className={`text-sm font-bold ${
-                  priceMeso === null ? 'text-text-disabled' : 'text-on-primary'
-                }`}
-              >
-                {props.mode === 'edit' ? '수정' : '완료 상태로 변경'}
-              </Text>
-            </Pressable>
+            />
 
             {/* 취소는 **버튼처럼 안 생겼다.** 되돌릴 수 없는 일이라 두 번 눌러야 닿는다(가계부
                 삭제와 같은 규칙). */}
