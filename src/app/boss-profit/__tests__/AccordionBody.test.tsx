@@ -56,7 +56,7 @@ describe('WeeklyAccordionBody', () => {
       }),
     )
 
-    expect(getByTestId('item-revenue-underline')).toBeTruthy()
+    expect(getByTestId('item-revenue-mark')).toBeTruthy()
   })
 })
 

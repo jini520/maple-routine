@@ -11,8 +11,8 @@
 // ② **배지 sticky 레일**(`h-0` + `top`). 레일이 sticky 와 함께 사라졌다. 남은 계약은
 //    "배지가 셸 바깥·카드 우상단" 이고 그것은 본다.
 // ③ **stuck 헤더 하단 페이드**. 지나가는 콘텐츠가 없어 덮을 대상이 없다.
-// ④ **스크롤로 팝오버 닫기**. 이 팝오버는 `fixed` 가 아니라 카드 안 절대배치라 카드와 함께
-//    움직인다(닫을 이유가 사라졌다).
+// ④ **스크롤로 팝오버 닫기**. 이 팝오버는 별도 창의 공용 팝오버라 화면을 덮고, 바깥을 누르면
+//    닫힌다(스크롤로 닫을 이유가 사라졌다).
 import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { bossesInSection } from '../../../lib/boss/bosses'
@@ -185,7 +185,7 @@ describe('아이템 수입', () => {
     )
 
     expect(getByLabelText('지내우시 아이템 수입 확인')).toBeTruthy()
-    expect(getByTestId('item-revenue-underline')).toBeTruthy()
+    expect(getByTestId('item-revenue-mark')).toBeTruthy()
     expect(queryByText(/^아이템 \+/)).toBeNull()
   })
 

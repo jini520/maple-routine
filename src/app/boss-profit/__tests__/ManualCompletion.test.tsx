@@ -146,7 +146,7 @@ describe('시트', () => {
     const view = await renderProfit(<BossProfitBossRow row={미완료행()} drops={[]} />, 컨텍스트값({ now: NOW }))
     await press(view, `${주간보스이름} 완료 상태로 변경`)
 
-    await press(view, '파티 인원 늘리기')
+    await press(view, '파티 인원 증가')
     await press(view, '완료 상태로 변경')
 
     expect(saveManualCompletion).toHaveBeenCalledWith(

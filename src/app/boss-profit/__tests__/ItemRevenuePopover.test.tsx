@@ -10,7 +10,7 @@ import type { RecordedDrop } from '../../../types/drops'
 
 import dropItemsData from '../../../__fixtures__/game-data/drop-items.json'
 import { dropItemNameOf } from '../../../lib/drop/drop-items'
-import { flattenStyle, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
+import { findAllOfType, flattenStyle, 테스트_안전영역 } from '../../../components/__tests__/render-atom'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { ItemRevenuePopover } from '../ItemRevenuePopover'
 
@@ -130,6 +130,16 @@ describe('ItemRevenuePopover: 미입력은 싣지 않는다', () => {
     expect(getByText('가격을 입력한 아이템이 없어요')).toBeTruthy()
     // 아이템이 0이라 결정석 줄과 합계 줄이 같은 숫자다. 둘 다 있어야 맞다.
     expect(getAllByText('5,000,000')).toHaveLength(2)
+  })
+
+  // 팝오버 안에는 선을 긋지 않는다. 결정석 묶음은 card-inset 칸이 가른다.
+  it('묶음 사이에 구분선이 없다', async () => {
+    const view = await renderPopover({ drops: [], crystalMeso: 5_000_000, itemMeso: 0 })
+    const lines = findAllOfType(view.toJSON(), 'View').filter(
+      (node) => Number(flattenStyle(node.props.style).borderTopWidth ?? 0) > 0,
+    )
+
+    expect(lines).toHaveLength(0)
   })
 
   // 기록이 없는 기간과 미입력만 있는 기간이 같은 문장을 쓴다. 옛 문구는 뒤쪽에서 거짓이었다.

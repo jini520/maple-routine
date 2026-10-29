@@ -8,7 +8,7 @@
  *
  * @see docs/features/boss-profit.md 정책
  */
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { bossesInSection } from '../../lib/boss/bosses'
@@ -30,12 +30,7 @@ import {
   CharacterIssueAmount,
   CharacterIssueBadge,
   CharacterIssuePopover,
-  resolveIssueAnchor,
-  ISSUE_POPOVER_EDGE_GAP,
-  ISSUE_POPOVER_TOP,
-  ISSUE_POPOVER_WIDTH,
   type CharacterIssue,
-  type IssuePopoverGeometry,
 } from './CharacterIssue'
 import {
   collectRevenueDrops,
@@ -46,7 +41,7 @@ import {
   monthlyCrystalMesoOf,
   type CharacterGroup,
 } from './character-groups'
-import { useAnchoredPopover, type PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
+import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
 
 /** 카드 수익 내역 상자에 싣는 아이템 건수. 나머지는 한 줄로 접는다. */
@@ -55,7 +50,7 @@ const CARD_REVENUE_LIST_LIMIT = 5
 /**
  * 머리의 금액 상자. 아이템이 섞였을 때만 **금액 자체가 내역을 여는 버튼**이 된다.
  *
- * 감싸는 갈래가 따로 있는 것은 실패 배지의 절대배치 기준(`moneyRef`)이 안쪽 상자여야 하기
+ * 감싸는 갈래가 따로 있는 것은 실패 배지의 절대배치 기준(금액 칸)이 안쪽 상자여야 하기
  * 때문이다. 아이템이 없으면 래퍼를 아예 안 만들어 그 행의 트리가 안 달라진다.
  */
 function MoneyBox({
@@ -124,18 +119,14 @@ export function CharacterAccordion(props: {
 }): React.JSX.Element {
   const { tab, loadedTab, loadedPeriodKey, dropsByRowKey } = useBossProfitContext()
   const [isOpenedByUser, setIsOpenedByUser] = useState(false)
-  // 아이콘만으로는 원인을 말할 수 없어, 탭하면 설명 팝오버를 연다.
-  const [isIssueOpen, setIsIssueOpen] = useState(false)
-  const [issueGeometry, setIssueGeometry] = useState<IssuePopoverGeometry>({
-    left: ISSUE_POPOVER_EDGE_GAP,
-    caretLeft: ISSUE_POPOVER_WIDTH / 2,
-    top: ISSUE_POPOVER_TOP,
-  })
-  // 팝오버 가로 위치를 정하려면 카드와 금액 두 상자가 필요하다. 금액 폭이 자릿수에 따라 변해
-  // 배지의 x 를 고정값으로 알 수 없다. state 가 아니라 ref 인 것은 이 값을 렌더가 읽지 않기
-  // 때문이다. 재는 일은 배지를 탭한 뒤에만 일어난다.
-  const cardRef = useRef<View | null>(null)
-  const moneyRef = useRef<View | null>(null)
+  // 아이콘만으로는 원인을 말할 수 없어, 탭하면 설명 팝오버를 연다. 금액 칸을 재서 그 아래에 꼬리를 댄다.
+  const {
+    ref: issueAnchorRef,
+    isOpen: isIssueOpen,
+    anchor: issueAnchor,
+    toggle: toggleIssue,
+    close: closeIssue,
+  } = useAnchoredPopover()
   const {
     ref: itemChipRef,
     isOpen: isItemPopoverOpen,
@@ -212,54 +203,19 @@ export function CharacterAccordion(props: {
       ? { cleared: countGroupClearedWeeklyBosses(group), total: WEEKLY_BOSS_CLEAR_LIMIT, cycle: tab }
       : { cleared: countGroupClearedMonthlyBosses(group), total: bossesInSection('monthly').length, cycle: tab }
 
-  /**
-   * 배지를 탭하면 두 상자를 재서 팝오버를 앉힌다.
-   *
-   * 측정이 오기 전에도 팝오버는 뜬다. `resolveIssueAnchor` 의 기본 기하(왼쪽 끝)로 서 있다가
-   * 다음 프레임에 제자리를 잡는다.
-   */
-  function toggleIssue(): void {
-    if (isIssueOpen) {
-      setIsIssueOpen(false)
-      return
-    }
-    setIsIssueOpen(true)
-    const card = cardRef.current
-    const money = moneyRef.current
-    if (card === null || money === null) return
-    card.measureInWindow((cx, cy, cw, ch) => {
-      const cardRect: PopoverAnchorRect = { left: cx, top: cy, width: cw, height: ch }
-      money.measureInWindow((mx, my, mw, mh) => {
-        // 트리거 모양을 함께 넘긴다. 원형은 금액 왼쪽 위에 떠 있고 알약은 금액 칸을 통째로
-        // 차지해, 꼬리가 가리킬 x 와 팝오버가 설 y 가 서로 다르다.
-        setIssueGeometry(
-          resolveIssueAnchor(
-            cardRect,
-            { left: mx, top: my, width: mw, height: mh },
-            cannotStateAmount ? 'amount' : 'dot',
-          ),
-        )
-      })
-    })
-  }
-
   return (
     // 형제 순서가 곧 그리는 순서이고 `zIndex` 도 부모 안에서만 겨루므로 그 격리가 기본값이다.
-    <View
-      ref={cardRef}
-      testID="character-accordion"
-      className={isIssueOpen ? 'relative z-[9]' : 'relative'}
-    >
+    <View testID="character-accordion" className="relative">
       {props.issue !== undefined && isIssueOpen && (
         <CharacterIssuePopover
           issue={props.issue}
-          geometry={issueGeometry}
-          onClose={() => setIsIssueOpen(false)}
+          anchor={issueAnchor}
+          onClose={closeIssue}
           onOpenCharacterManage={
             props.onOpenCharacterManage === undefined
               ? undefined
               : () => {
-                  setIsIssueOpen(false)
+                  closeIssue()
                   props.onOpenCharacterManage?.()
                 }
           }
@@ -290,9 +246,8 @@ export function CharacterAccordion(props: {
           isExpanded={isExpanded}
           // 접기는 **상태만 바꾼다.** 여기에 스크롤 조작을 다시 넣지 말 것.
           onPress={() => {
-            // 카드를 여닫으면 설명 팝오버를 닫는다. 펼침이 레이아웃을 바꿔 열기 직전에 잰 위치가
-            // 낡은 값이 되고, 헤더 탭은 팝오버 바깥 탭으로 잡히지도 않는다.
-            setIsIssueOpen(false)
+            // 카드를 여닫으면 설명 팝오버를 닫는다. 펼침이 레이아웃을 바꿔 열기 직전에 잰 위치가 낡은 값이 된다.
+            closeIssue()
             setIsOpenedByUser((expanded) => !expanded)
           }}
           className="w-full flex-row items-center gap-3 px-4 py-3"
@@ -328,9 +283,9 @@ export function CharacterAccordion(props: {
                 onPress={toggleItemPopover}
                 triggerRef={itemChipRef}
               >
-                {/* 실패 배지의 절대배치 기준이자 팝오버 가로 위치의 기준 상자다. 아이템이 섞이면
+                {/* 실패 배지의 절대배치 기준이자 설명 팝오버가 꼬리를 대는 상자다. 아이템이 섞이면
                     금액 색이 달라진다. 새 색을 만들지 않고 보스 행과 같은 `primary-ink` 를 쓴다. */}
-                <View ref={moneyRef} className="relative flex-row items-center">
+                <View ref={issueAnchorRef} className="relative flex-row items-center">
                   {cannotStateAmount ? (
                     <CharacterIssueAmount onToggle={toggleIssue} />
                   ) : (

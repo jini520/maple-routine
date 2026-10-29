@@ -135,17 +135,17 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
     // 결정석 68억 + 아이템 30억/3인 = 10억
     expect(getByText('7,800,000,000 메소')).toBeTruthy()
     expect(getByLabelText(`${주간보스이름} 아이템 수입 확인`)).toBeTruthy()
-    expect(getByTestId('item-revenue-underline')).toBeTruthy()
+    expect(getByTestId('item-revenue-mark')).toBeTruthy()
     expect(queryByText(/^아이템 \+/)).toBeNull()
   })
 
   // 결정석뿐인 줄은 열어도 볼 것이 없다. 어포던스가 붙으면 거짓말이다.
-  it('아이템이 없으면 밑줄도 버튼도 없다', async () => {
+  it('아이템이 없으면 화살표도 버튼도 없다', async () => {
     const { queryByTestId, queryByLabelText } = await renderProfit(
       <BossProfitBossRow row={보스행()} drops={[]} />,
     )
 
-    expect(queryByTestId('item-revenue-underline')).toBeNull()
+    expect(queryByTestId('item-revenue-mark')).toBeNull()
     expect(queryByLabelText(`${주간보스이름} 아이템 수입 확인`)).toBeNull()
   })
 

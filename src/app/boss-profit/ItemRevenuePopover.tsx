@@ -142,7 +142,7 @@ export function ItemRevenuePopover(props: {
         </ScrollView>
       )}
       {props.weeklyLines !== undefined && props.weeklyLines.length > 0 && (
-        <View className="mt-2 gap-1 border-t border-border pt-2">
+        <View className="mt-2 gap-1 rounded-[10px] bg-card-inset px-2.5 py-2">
           <Text className="text-10 font-bold tracking-wide text-text-muted">주차별</Text>
           {props.weeklyLines.map((line) => (
             <View key={line.periodKey} className="flex-row items-center justify-between">
@@ -154,7 +154,8 @@ export function ItemRevenuePopover(props: {
           ))}
         </View>
       )}
-      <View className="mt-2 gap-1 border-t border-border pt-2">
+      {/* 묶음은 선이 아니라 card-inset 칸이 가른다. 합계는 칸 밖 굵은 줄이다. */}
+      <View className="mt-1.5 gap-1 rounded-[10px] bg-card-inset px-2.5 py-2">
         {crystalLines.map((line) => (
           <View key={line.label} className="flex-row items-center justify-between">
             <Text className="text-11 text-text-muted">{line.label}</Text>
@@ -170,12 +171,12 @@ export function ItemRevenuePopover(props: {
             {props.itemMeso.toLocaleString()}
           </Text>
         </View>
-        <View className="flex-row items-center justify-between border-t border-border pt-1">
-          <Text className="text-11 font-semibold text-text-muted">합계</Text>
-          <Text className="text-11 font-bold text-text" style={TABULAR_NUMS}>
-            {(props.crystalMeso + props.itemMeso).toLocaleString()}
-          </Text>
-        </View>
+      </View>
+      <View className="mt-1.5 flex-row items-center justify-between px-2.5">
+        <Text className="text-11 font-semibold text-text-muted">합계</Text>
+        <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
+          {(props.crystalMeso + props.itemMeso).toLocaleString()}
+        </Text>
       </View>
     </AnchoredPopover>
   )

@@ -1,30 +1,24 @@
 /**
  * 총 수익 카드의 결정석 판매 칸. 월드별로 집계한다.
  */
-import { Image, Pressable, View, useWindowDimensions } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 import { getItemIconUrlByFile, worldEmblemUrl } from '../../lib/assets/asset-lookup'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
 import type { MonthlyCrystalsByWorld } from '../../features/boss-profit/monthly-crystals'
 
 import { ChevronDownIcon, ChevronUpIcon, Text } from '../../components/atoms'
-import { PopoverLayer } from '../../components/molecules/Popover/Popover'
+import { AnchoredPopover } from '../../components/molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { summarizeWorldCrystals } from './character-groups'
 import type { CharacterGroup } from './character-groups'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
-import { usePopoverPlacement } from '../../hooks/usePopoverPlacement'
-
-/** 칩 밑변과 상자 윗변 사이. 흐름 안에 있던 시절의 `mt-1.5` 를 그대로 옮긴 값. */
-const BREAKDOWN_GAP = 6
-/** 상자 오른쪽 변과 화면 끝 사이에 남길 최소 여백. */
-const BREAKDOWN_EDGE_GAP = 12
 
 
 // 총 수익 카드 셋째 줄의 결정석 칸. 주간 90 한도 대비 주간 몫과 그 주에 잡은 월간 보스의 월간 몫을 칸 둘로 나눠 적는다.
 // 월간 몫은 한도가 없어 분모 없이 개수만 적고, 안 잡은 주에도 `0개` 로 선다.
 //
-// 월드별 분해는 흐름이 아니라 별도 네이티브 창의 팝오버로 띄운다. 펼쳐도 카드 높이가 변하지 않는다.
+// 월드별 분해는 흐름이 아니라 공용 팝오버(별도 네이티브 창)로 띄운다. 펼쳐도 카드 높이가 변하지 않는다.
 //
 // 월간 탭은 `variant="monthly"` 로 **월간 몫만** 싣는다. 주간 90 은 주마다의 한도라 한 달의 합에는 뜻이
 // 없다. 주간 탭의 월간 몫은 화면이 기록에서 센 **그 주까지의 그 달 누적**(`monthlyByWorld`)이다.
@@ -44,8 +38,6 @@ export function CrystalSummaryChip(props: {
     toggle: toggleBreakdown,
     close: closeBreakdown,
   } = useAnchoredPopover()
-  const { width: windowWidth } = useWindowDimensions()
-  const placement = usePopoverPlacement(anchor, BREAKDOWN_GAP)
 
   const worlds = summarizeWorldCrystals(props.groups, props.monthlyByWorld)
   // 월드를 아는 캐릭터가 하나도 없으면(구버전 캐시만 있는 경우) 대비할 한도가 없다. 반대로 월드는
@@ -128,52 +120,58 @@ export function CrystalSummaryChip(props: {
         {chipContent}
       </Pressable>
       {isBreakdownOpen && (
-        /*
-          닫는 층과 내용이 **같은 창에** 있어야 한다. RN 의 `Modal` 은 앱 루트 뷰와 다른 네이티브
-          창이라 항상 그 위이고, `zIndex` 는 같은 트리의 형제끼리만 순서를 정한다. 닫기 층만
-          여기 넣고 내용을 트리에 두면 내용에 `z-20` 을 줘도 투명한 닫기 층이 그 위에 깔린다.
-          그러면 상자 안을 누르는 것이 전부 닫기로 먹힌다.
-
-          펼쳐도 헤더 높이가 안 변하는 것은 그대로다. 별도 창이라 흐름에 아예 없다.
-        */
-        <PopoverLayer closeLabel="월드별 결정석 판매 현황 닫기" onClose={closeBreakdown}>
-          {/* 바깥 탭으로 닫는다. **스크림이 없다**. 뒤를 덮으면 비교 대상인 헤드라인이 함께 어두워진다. */}
-          <View
-            testID="world-crystal-breakdown"
-            onLayout={placement.onLayout}
-            style={{
-              left: anchor?.left ?? 0,
-              // 칩 위아래 중 빈 공간이 넓은 쪽에 선다
-              top: placement.top,
-              // 폭은 내용이 정하므로(`min-w-[168px]`) 상한만 준다. 월드 이름이 길어도 화면 밖으로
-              // 안 나간다.
-              maxWidth: windowWidth - (anchor?.left ?? 0) - BREAKDOWN_EDGE_GAP,
-            }}
-            // 칩과 상자 높이를 재기 전에는 그리되 안 보인다. 0,0 에 한 프레임 번쩍이는 것을 막는다.
-            className={`absolute min-w-[168px] rounded-[12px] border border-border bg-surface p-2 shadow-lg${
-              placement.measured ? '' : ' opacity-0'
-            }`}
-          >
-            <Text className="px-1 pb-1.5 text-11 font-bold tracking-wide text-text-muted">월드별 판매 현황</Text>
-            <View className="gap-1">
-              {worlds.map((summary) => {
-                const emblemUrl = worldEmblemUrl(summary.worldKey)
-                return (
-                  <View key={summary.worldKey} className="flex-row items-center gap-1.5 px-1">
-                    {emblemUrl !== null && <Image source={emblemUrl} className="h-4 w-4 shrink-0" resizeMode="contain" />}
-                    <Text className="text-xs text-text-muted">{summary.world}</Text>
-                    {/* 칩에 두 몫이 있으니 펼친 줄도 월드마다 두 몫을 함께 말한다. */}
-                    <Text className="ml-auto pl-3 text-xs font-semibold text-text" style={TABULAR_NUMS}>
-                      {monthlyOnly
-                        ? `월간 ${summary.monthlyCleared}개`
-                        : `${summary.cleared} / ${WEEKLY_CRYSTAL_SALE_LIMIT} | 월간 ${summary.monthlyCleared}개`}
+        // 바깥 탭으로 닫는다. 공용 상자는 가운데로 옮길 때만 스크림을 깔아서, 평소에는 비교 대상인 헤드라인이 안 어두워진다.
+        <AnchoredPopover
+          testID="world-crystal-breakdown"
+          ariaLabel="월드별 결정석 판매 현황"
+          closeLabel="월드별 결정석 판매 현황 닫기"
+          anchor={anchor}
+          onClose={closeBreakdown}
+          className="p-3"
+        >
+          <Text className="mb-2 text-11 font-bold tracking-wide text-text-muted">월드별 판매 현황</Text>
+          <View className="gap-1">
+            {worlds.map((summary) => {
+              const emblemUrl = worldEmblemUrl(summary.worldKey)
+              // 줄은 그림이 주간 · 월간을 말해 숫자만 적는다. 읽는 이름은 두 몫을 말로 푼다.
+              const rowLabel = monthlyOnly
+                ? `${summary.world} 월간 결정석 ${summary.monthlyCleared}개`
+                : `${summary.world} 주간 결정석 ${summary.cleared} / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 ${summary.monthlyCleared}개`
+              return (
+                <View
+                  key={summary.worldKey}
+                  accessible
+                  aria-label={rowLabel}
+                  className="flex-row items-center gap-1.5 rounded-[10px] bg-card-inset px-2 py-1.5"
+                >
+                  {emblemUrl !== null && <Image source={emblemUrl} className="h-3.5 w-3.5 shrink-0" resizeMode="contain" />}
+                  <Text className="mr-3 shrink grow text-xs text-text" numberOfLines={1}>
+                    {summary.world}
+                  </Text>
+                  {!monthlyOnly && (
+                    <View className="flex-row items-center gap-0.5">
+                      {weeklyCrystalIcon !== null && (
+                        <Image source={weeklyCrystalIcon} resizeMode="contain" className="h-4 w-3.5 shrink-0" />
+                      )}
+                      <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
+                        {summary.cleared}
+                        <Text className="text-11 font-medium text-text-muted">/{WEEKLY_CRYSTAL_SALE_LIMIT}</Text>
+                      </Text>
+                    </View>
+                  )}
+                  <View className={`flex-row items-center gap-0.5${monthlyOnly ? '' : ' ml-2'}`}>
+                    {monthlyCrystalIcon !== null && (
+                      <Image source={monthlyCrystalIcon} resizeMode="contain" className="h-4 w-3.5 shrink-0" />
+                    )}
+                    <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
+                      {summary.monthlyCleared}
                     </Text>
                   </View>
-                )
-              })}
-            </View>
+                </View>
+              )
+            })}
           </View>
-        </PopoverLayer>
+        </AnchoredPopover>
       )}
     </>
   )
