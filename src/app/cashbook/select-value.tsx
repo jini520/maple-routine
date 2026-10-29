@@ -16,15 +16,12 @@ export interface SelectDecor {
   iconSize: number
   /** 이름 앞의 `Lv.n`. 모르면 안 선다. */
   level?: number | null
-  /** 목록 줄 왼쪽 끝에만 서는 글자. 닫힌 줄에는 아래에 같은 값의 줄이 따로 있어 적지 않는다. */
+  /** 목록 줄 오른쪽 끝에만 서는 글자. 닫힌 줄에는 아래에 같은 값의 줄이 따로 있어 적지 않는다. */
   listNote?: string | null
 }
 
-/** 목록 줄의 오른쪽 끝을 닫힌 줄의 값 끝에 맞추는 안쪽 여백. 화살표 폭 16 과 간격 12 를 뺀 값이다. */
-export const LIST_ALIGN_PADDING = 'pr-6'
-
 /**
- * 아이콘 · 레벨 · 이름을 오른쪽에 붙여 세운다.
+ * 아이콘 · 레벨 · 이름을 한 줄로 세운다. 닫힌 줄은 오른쪽, 목록 줄은 왼쪽에 놓인다.
  *
  * @param tone `value` 는 닫힌 줄과 고르지 않은 목록 줄, `selected` 는 고른 목록 줄, `muted` 는 자리표시자와 `선택 안함`
  */
