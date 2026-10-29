@@ -13,7 +13,7 @@
 | `types/game-data.ts` | 칸 이름(`GAME_DATA_SECTIONS`)과 칸마다의 형식 |
 | `lib/game-data/table.ts` | 칸 하나의 현재 값(`gameTable` · `createTable` · `derive`) |
 | `lib/game-data/initial.ts` | 표의 첫 값. 앱은 빈 표이고, jest 는 `src/__fixtures__/game-data/initial.ts` 로 바꿔 fixture 로 시작한다 |
-| `lib/game-data/sections.ts` | 칸 열여섯의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
+| `lib/game-data/sections.ts` | 칸 열일곱의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
 | `lib/assets/asset-files.ts` | 그림 목록(`assets` 칸)과 받은 그림의 `{ uri, width, height }` |
 | `lib/assets/image-crops.ts` | 크롭 표(`imageCrops` 칸) |
 | `lib/assets/asset-lookup.ts` | 이름표를 그림 · 크롭으로 바꾸는 조회 |
@@ -22,10 +22,10 @@
 | `server/game-data.ts` | `GET /v1/game-data` 를 ETag 와 함께 받고 칸마다 검사한다 |
 | `storage/game-data-copy.ts` | 기기 사본(SQLite `game_data_sections` · `game_data_meta`) |
 | `storage/adapters/rn-asset-files.ts` | 그림 파일(문서 디렉터리 `game-assets/`) |
-| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 열여섯. 운영 서버 응답을 떠 둔 것이다 |
+| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 열일곱. 운영 서버 응답을 떠 둔 것이다 |
 | `lib/boss/boss-profit-period.ts` | 줄의 유효 기간 판정(`isEffectiveIn` · `isEffectiveAnytimeIn`) |
 
-## 칸 열여섯
+## 칸 열일곱
 
 | 칸 | 담는 것 | 조회 모듈 | 관리 화면 |
 |---|---|---|---|
@@ -43,6 +43,7 @@
 | `enhancementCosts` | 잠재 재설정 비용 32줄 · 소울 잠재 재설정 비용 4줄 · 스타포스 단계 30줄과 규칙 셋. 식은 `lib/enhancement/cost.ts` 에 있다 | `lib/enhancement/cost` | `/admin/enhancement-costs` |
 | `mvpGrades` | MVP 등급 7개의 경매장 수수료와 스타포스 할인. 순서가 등급의 높낮이다 | `lib/mvp/grades` | `/admin/mvp-grades` |
 | `huntingGrounds` | 사냥 지역 21 · 사냥터 408 · 몬스터 레벨 줄 460. 계산 상수는 `lib/cashbook/hunting-meso.ts` 에 있다 | `lib/cashbook/hunting-grounds` | `/admin/hunting-grounds` |
+| `huntLoot` | 가계부 사냥 전리품 판매의 아이템 5개(조각 1 · 소비 2 · 이벤트 2)의 key · 분류 · 이름 · 그림 · NPC 개당 가격 · 유효 기간 | `lib/cashbook/hunt-loot` | `/admin/hunt-loot` |
 | `assets` | 앱이 받는 그림 약 350장의 경로 · 내용 해시 · 바이트 · 가로 · 세로 | `lib/assets/asset-files` | `/admin/assets` |
 | `imageCrops` | 보스 초상(카드 · 원형 아이콘 · 파티 모달 띠)과 컨텐츠 지역 지도의 크롭 | `lib/assets/image-crops` | `/admin/assets` |
 
@@ -61,7 +62,7 @@
 
 ## 값이 기기에 반영되는 순서
 
-1. 켤 때 `startGameData` 가 기기 사본을 읽는다. 계약 판이 `GAME_DATA_CONTRACT` 와 같고 칸 열여섯이 계약을 지키면 표를
+1. 켤 때 `startGameData` 가 기기 사본을 읽는다. 계약 판이 `GAME_DATA_CONTRACT` 와 같고 칸 열일곱이 계약을 지키면 표를
    세우고 바로 연다.
 2. 사본이 없거나 읽을 수 없으면 잠금 화면을 세우고 게임 데이터를 받는다. 받을 크기를 보여 주고 `확인` 을 기다린다
    (`confirmGameData`). 확인하면 기기에 없는 그림을 받고, 다 받으면 사본을
@@ -79,12 +80,13 @@
 
 ## 유효 기간
 
-결정석 가격 · 드롭 표 · 심볼 비용 · 지출 항목 · 컨텐츠 · 보스 · 보스 난이도 줄에 `from` · `until` 칸이 있다. 값은 KST
+결정석 가격 · 드롭 표 · 심볼 비용 · 지출 항목 · 컨텐츠 · 보스 · 보스 난이도 · 사냥 전리품 줄에 `from` · `until` 칸이 있다. 값은 KST
 `YYYY-MM-DD` 또는 `YYYY-MM-DDTHH:mm` 이다.
 
 | 판정 | 쓰는 곳 |
 |---|---|
 | `isEffectiveIn(row, periodKey, now)`. 기간 첫날로 보고, 경계에 첫날 안의 시각이 있을 때만 시계를 본다 | 가격 고르기 · 드롭 후보와 고정 보상 표시 · 컨텐츠 목록 · 지출 타일 · 보스와 난이도 표시 |
 | `isEffectiveAnytimeIn(row, periodKey)`. 그 기간 어느 때라도 유효했으면 참 | 얻을 수 없는 드롭 기록을 지우는 판정 |
+| `huntLootOn(dateKey)`. 시트의 날짜가 `from` 이상이고 `until` 보다 앞이면 참. 사냥 전리품은 기간이 아니라 적는 날 하나로 가른다 | 사냥 전리품 판매 폼의 이벤트 아이템 |
 
 값이 바뀌면 옛 줄을 지우지 않고 `until` 로 닫고 새 줄을 연다. 관리 화면에서 새 가격을 열면 지금 줄이 닫힌다.

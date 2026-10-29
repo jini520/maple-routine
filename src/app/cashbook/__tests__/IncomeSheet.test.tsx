@@ -42,6 +42,7 @@ jest.mock('../../../features/mvp-grade/fee-context', () => ({
 
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { IncomeSheet } from '../IncomeSheet'
+import { cashbookCategoriesTable } from '../../../lib/cashbook/categories'
 import type { IncomeRecord } from '../../../storage/income'
 
 // 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다.
@@ -63,7 +64,7 @@ const 캐릭터둘 = [
  */
 async function 그리기(
   overrides: Partial<React.ComponentProps<typeof IncomeSheet>> = {},
-  pick: 'hunting' | 'sol_erda_fragment' | 'item_sale' | 'etc' | null = 'hunting',
+  pick: 'hunting' | 'sol_erda_fragment' | 'hunt_loot_sale' | 'item_sale' | 'etc' | null = 'hunting',
 ) {
   const view = await 시트열기(overrides)
   if (pick !== null && overrides.editing === undefined) {
@@ -102,6 +103,7 @@ async function 시트열기(overrides: Partial<React.ComponentProps<typeof Incom
       // 보관이 없는 상태가 기본이다. 정산을 보는 케이스만 값을 준다.
       loadFragmentStorage={async () => 0}
       onSave={jest.fn()}
+      onSaveMany={jest.fn()}
       onClose={jest.fn()}
       {...overrides}
     />,
@@ -2551,6 +2553,177 @@ describe('솔 에르다 조각 정산', () => {
     await 이름으로누르기(view, '수정')
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ mesoAmount: 400_000_000, quantity: 50, category: 'sol_erda_fragment' }),
+    )
+  })
+})
+
+/**
+ * 사냥 전리품 판매(이슈 #747). 조각 정산을 조각 칸으로 합치고, 소비 · 이벤트 아이템을 한 번에 여럿 적는다.
+ *
+ * 갈래 줄은 1.0.13 출시 때 서버 표에 더해져 fixture 에 없다. 그래서 솔 에르다 조각 줄을 본떠 더한 표로 연다.
+ */
+describe('사냥 전리품 판매', () => {
+  const 원래표 = cashbookCategoriesTable.get()
+  beforeEach(() => {
+    const 조각 = 원래표.categories.find((each) => each.key === 'sol_erda_fragment')!
+    cashbookCategoriesTable.set({
+      ...원래표,
+      categories: [...원래표.categories, { ...조각, key: 'hunt_loot_sale', name: '사냥 전리품 판매' }],
+    })
+  })
+  afterEach(() => cashbookCategoriesTable.set(원래표))
+
+  /** 이벤트 돋보기 둘은 2026-10-22 부터 11-18 까지다. 그 안의 날로 연다. */
+  const 이벤트날 = { dateKey: '2026-10-29', todayDateKey: '2026-10-29' }
+
+  async function 전리품시트(overrides: Partial<React.ComponentProps<typeof IncomeSheet>> = {}): Promise<Rendered> {
+    const view = await 그리기(overrides, 'hunt_loot_sale')
+    await 사슬고르기(view, 'ocid-1')
+    return view
+  }
+
+  function 분류들(view: Rendered): string[] {
+    return within(view.getByTestId('income-sheet-loot-kind'))
+      .getAllByRole('button')
+      .map((each) => String(each.props.accessibilityLabel))
+  }
+
+  it('고르는 시트에 솔 에르다 조각 카드 대신 사냥 전리품 판매가 선다', async () => {
+    const view = await 그리기({}, null)
+
+    expect(view.getByTestId('income-sheet-category-hunt_loot_sale')).toBeTruthy()
+    expect(view.queryByTestId('income-sheet-category-sol_erda_fragment')).toBeNull()
+  })
+
+  /** 고를 것이 하나뿐인 칸은 쓸모가 없다. 흐리게 막지 않고 뺀다(사용자 지정 2026-10-29). */
+  it('열린 이벤트가 없으면 분류가 조각 · 소비 둘이고 이벤트 기간에는 셋이다', async () => {
+    expect(분류들(await 전리품시트())).toEqual(['조각', '소비'])
+    expect(분류들(await 전리품시트(이벤트날))).toEqual(['조각', '소비', '이벤트'])
+  })
+
+  it('소비는 개수만 치고 NPC 가격으로 금액을 세며, 친 아이템만 수수료 없이 한 줄씩 저장한다', async () => {
+    const onSaveMany = jest.fn()
+    const view = await 전리품시트({ onSaveMany })
+    await 누르기(view, '소비')
+
+    await 아이디로치기(view, 'income-sheet-loot-count-reindeer_milk', '300')
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('82만 5000')
+    await 아이디로치기(view, 'income-sheet-loot-count-sunset_dew', '120')
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('143만 7000')
+    expect(view.queryByTestId('income-sheet-fee')).toBeNull()
+
+    await 아이디로치기(view, 'income-sheet-loot-count-sunset_dew', '')
+    await 이름으로누르기(view, '저장')
+
+    expect(onSaveMany).toHaveBeenCalledWith([
+      {
+        ocid: 'ocid-1',
+        earnedOn: '2026-08-23',
+        category: 'hunt_loot_sale',
+        item: null,
+        itemKey: 'reindeer_milk',
+        mesoAmount: 825_000,
+        saleFeePercent: null,
+        saleFeeMeso: null,
+        saleFeeAuto: false,
+        pointAmount: null,
+        pointPer100mMeso: null,
+        cashAmount: null,
+        quantity: 300,
+        itemKind: null,
+        hunt: null,
+      },
+    ])
+  })
+
+  it('아무 아이템도 안 치면 저장이 꺼진다', async () => {
+    const view = await 전리품시트()
+    await 누르기(view, '소비')
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('이벤트는 아이템마다 단가와 개수를 치고, 수수료를 아이템마다 떼어 한 줄씩 저장한다', async () => {
+    const onSaveMany = jest.fn()
+    const view = await 전리품시트({ ...이벤트날, onSaveMany })
+    await 누르기(view, '이벤트')
+
+    await 아이디로치기(view, 'income-sheet-loot-price-suspicious_magnifier', '1000000')
+    await 아이디로치기(view, 'income-sheet-loot-count-suspicious_magnifier', '30')
+    await 아이디로치기(view, 'income-sheet-loot-price-detective_yeti_suspicious_magnifier', '3000000')
+    await 아이디로치기(view, 'income-sheet-loot-count-detective_yeti_suspicious_magnifier', '10')
+    // 6000만에서 다이아 요율 3% 를 뗀다
+    expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('5820만')
+    await 이름으로누르기(view, '저장')
+
+    expect(onSaveMany.mock.calls[0][0]).toEqual([
+      expect.objectContaining({
+        itemKey: 'suspicious_magnifier',
+        quantity: 30,
+        mesoAmount: 29_100_000,
+        saleFeePercent: 3,
+        saleFeeMeso: 900_000,
+        saleFeeAuto: true,
+      }),
+      expect.objectContaining({
+        itemKey: 'detective_yeti_suspicious_magnifier',
+        quantity: 10,
+        mesoAmount: 29_100_000,
+        saleFeeMeso: 900_000,
+      }),
+    ])
+  })
+
+  it('이벤트 아이템은 개수만 치고 단가가 비면 저장이 꺼진다', async () => {
+    const view = await 전리품시트(이벤트날)
+    await 누르기(view, '이벤트')
+
+    await 아이디로치기(view, 'income-sheet-loot-count-suspicious_magnifier', '30')
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  /** 조각 칸은 옛 조각 정산 그대로라 기록도 솔 에르다 조각 갈래다. 이미 적힌 정산 기록을 옮길 일이 없다. */
+  it('조각 칸은 보유 개수를 보이고 솔 에르다 조각 갈래로 한 줄 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 전리품시트({ onSave, loadFragmentStorage: async () => 120 })
+
+    expect(view.getByText('보유')).toBeTruthy()
+    expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('120개')
+    await 아이디로치기(view, 'income-sheet-settle-count', '50')
+    await 아이디로치기(view, 'income-sheet-settle-price', '8000000')
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ category: 'sol_erda_fragment', quantity: 50, mesoAmount: 388_000_000 }),
+    )
+  })
+
+  it('수정으로 열면 그 아이템 하나만 서고 분류 줄이 없으며 한 줄을 고친다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({
+      editing: {
+        ...옛사냥행,
+        id: 'inc-loot',
+        ocid: 'ocid-1',
+        category: 'hunt_loot_sale',
+        item: null,
+        itemKey: 'sunset_dew',
+        mesoAmount: 612_000,
+        quantity: 120,
+      },
+      onDelete: jest.fn(),
+      onSave,
+    })
+
+    expect(view.queryByTestId('income-sheet-loot-kind')).toBeNull()
+    expect(view.queryByTestId('income-sheet-loot-count-reindeer_milk')).toBeNull()
+    expect(줄글자(view, 'income-sheet-loot-count-sunset_dew')).toBe('120')
+    await 아이디로치기(view, 'income-sheet-loot-count-sunset_dew', '100')
+    await 이름으로누르기(view, '수정')
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ category: 'hunt_loot_sale', itemKey: 'sunset_dew', quantity: 100, mesoAmount: 510_000 }),
     )
   })
 })

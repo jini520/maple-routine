@@ -5,6 +5,7 @@
  */
 import { dayTotalsOf, recordMesoOf, type DayRecord } from '../cashbook/records'
 import { incomeCategoryNameOf, spendCategoryNameOf } from '../../lib/cashbook/categories'
+import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
 import { findSpendChoice, findSpendRewardChoice, spendGroupOf } from '../../lib/cashbook/spend-catalog'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import type { IncomeRecord } from '../../storage/income'
@@ -156,7 +157,7 @@ export function characterCategoriesBetween(byDate: DaysByDate, range: StatsRange
 /** 결정석과 보스 드롭은 손입력 갈래 표에 없다. */
 const BOSS_CRYSTAL = { key: 'boss_crystal', name: '보스 결정석' }
 const BOSS_DROP = { key: 'boss_drop', name: '보스 드롭' }
-/** 사냥과 솔 에르다 조각은 사냥이 낸 것이라 한 조각이고, 누르면 메소와 조각으로 나눈다 */
+/** 사냥과 솔 에르다 조각 · 사냥 전리품 판매는 사냥이 낸 것이라 한 조각이고, 누르면 메소와 아이템으로 나눈다 */
 // 이름은 부를 때 갈래 표에서 찾는다. 모듈 최상위에서 찾으면 게임 데이터를 받기 전의 빈 이름으로 굳는다.
 const hunting = (): { key: string; name: string } => ({ key: 'hunting', name: incomeCategoryNameOf('hunting') })
 const HUNTING_MESO = { key: 'hunting_meso', name: '사냥 메소' }
@@ -239,6 +240,11 @@ function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; part
     case 'income': {
       const { category } = entry.record
       if (category === 'sol_erda_fragment') return { slice: hunting(), parts: [{ ...solErdaFragment(), meso }] }
+      if (category === 'hunt_loot_sale') {
+        const { itemKey } = entry.record
+        const name = findHuntLoot(itemKey)?.name ?? incomeCategoryNameOf(category)
+        return { slice: hunting(), parts: [{ key: `hunt_loot:${itemKey ?? ''}`, name, meso }] }
+      }
       if (category === 'hunting') {
         const fragmentMeso = fragmentMesoOf(entry.record)
         return {

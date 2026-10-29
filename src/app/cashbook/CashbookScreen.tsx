@@ -88,6 +88,7 @@ import {
   loadFragmentStorage,
   loadTrackedCharacters,
   recordIncome,
+  recordIncomes,
   recordSpend,
   loadDayRecords,
   editIncome,
@@ -776,6 +777,16 @@ export function CashbookScreen(): React.JSX.Element {
     setReloadToken((token) => token + 1)
   }
 
+  async function saveIncomes(drafts: readonly IncomeDraft[]): Promise<void> {
+    try {
+      await recordIncomes(drafts, new Date())
+    } catch (error) {
+      useToastStore.getState().showError('수입을 적지 못했습니다')
+      throw error
+    }
+    setReloadToken((token) => token + 1)
+  }
+
   async function saveSpend(draft: SpendDraft): Promise<void> {
     try {
       await recordSpend(draft, new Date())
@@ -1159,6 +1170,7 @@ export function CashbookScreen(): React.JSX.Element {
           onSave={
             typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveIncome
           }
+          onSaveMany={saveIncomes}
           onDelete={typeof sheet === 'object' ? () => deleteEntry(sheet) : undefined}
           onClose={() => setSheet(null)}
         />

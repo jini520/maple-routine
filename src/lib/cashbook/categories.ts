@@ -28,7 +28,7 @@ export const SPEND_CATEGORY_KEYS = ['content', 'event_bm', 'buff', 'scroll', 'sy
 export type SpendCategoryKey = (typeof SPEND_CATEGORY_KEYS)[number]
 
 /** 앱이 입력 폼을 아는 수익 갈래. 서버 표의 맨 앞이 기본 갈래다. */
-export const INCOME_CATEGORY_KEYS = ['hunting', 'sol_erda_fragment', 'item_sale', 'etc'] as const
+export const INCOME_CATEGORY_KEYS = ['hunting', 'sol_erda_fragment', 'hunt_loot_sale', 'item_sale', 'etc'] as const
 export type IncomeCategoryKey = (typeof INCOME_CATEGORY_KEYS)[number]
 
 /** 아이템 구매 · 판매의 종류. 게임 인벤토리 탭이다. 수량 · 관세는 서버 표의 단위 · 관세 칸이 가른다. */
@@ -134,6 +134,16 @@ export function spendCategories(): readonly CashbookCategory[] {
 /** 수익 갈래. **차례가 곧 화면**이고 앱이 아는 첫 갈래가 기본 갈래다. */
 export function incomeCategories(): readonly CashbookCategory[] {
   return index().income
+}
+
+/**
+ * 수입 시트에서 고르는 갈래. 사냥 전리품 판매가 있으면 솔 에르다 조각 카드를 뺀다. 조각 정산이 그 갈래의 조각 칸으로
+ * 옮겨 갔기 때문이다. 그 갈래가 서버 표에 없으면 조각 카드가 그대로 선다. 옛 앱도 같은 표를 읽어 서버가 조각 줄을 못 지운다.
+ */
+export function incomePickerCategories(): readonly CashbookCategory[] {
+  const list = incomeCategories()
+  if (!list.some((each) => each.key === 'hunt_loot_sale')) return list
+  return list.filter((each) => each.key !== 'sol_erda_fragment')
 }
 
 /** 아이템 종류. 앱이 모르는 key 는 뺀다. 수량 · 관세를 가를 수 없어서다. */

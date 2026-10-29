@@ -11,25 +11,36 @@ import type { IncomeDraft } from '../app/cashbook/income/form-shared'
  */
 export function useSheetSubmit(props: {
   onSave: (draft: IncomeDraft) => void | Promise<void>
+  /** 여러 건을 한 번에. 사냥 전리품 판매가 아이템마다 한 줄씩 적는다. */
+  onSaveMany?: (drafts: readonly IncomeDraft[]) => void | Promise<void>
   onDelete?: () => void | Promise<void>
   onClose: () => void
 }): {
   saving: boolean
   submit: (draft: IncomeDraft) => Promise<void>
+  submitMany: (drafts: readonly IncomeDraft[]) => Promise<void>
   remove: () => Promise<void>
 } {
   const [saving, setSaving] = useState(false)
 
-  async function submit(draft: IncomeDraft): Promise<void> {
+  async function run(save: () => void | Promise<void>): Promise<void> {
     if (saving) return
     setSaving(true)
     try {
-      await props.onSave(draft)
+      await save()
     } catch {
       setSaving(false)
       return
     }
     props.onClose()
+  }
+
+  function submit(draft: IncomeDraft): Promise<void> {
+    return run(() => props.onSave(draft))
+  }
+
+  function submitMany(drafts: readonly IncomeDraft[]): Promise<void> {
+    return run(() => props.onSaveMany?.(drafts))
   }
 
   async function remove(): Promise<void> {
@@ -44,5 +55,5 @@ export function useSheetSubmit(props: {
     props.onClose()
   }
 
-  return { saving, submit, remove }
+  return { saving, submit, submitMany, remove }
 }

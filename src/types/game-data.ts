@@ -317,6 +317,25 @@ export interface MvpGradesTable extends TableHead {
   grades: MvpGradeRow[]
 }
 
+export const HUNT_LOOT_KINDS = ['fragment', 'consumable', 'event'] as const
+export type HuntLootKind = (typeof HUNT_LOOT_KINDS)[number]
+
+/** 사냥 전리품 판매의 아이템. `from` · `until` 은 이벤트 아이템이 서는 기간이다(KST 날짜). */
+export interface HuntLootRow {
+  key: string
+  kind: HuntLootKind
+  name: string
+  iconFile: string
+  /** 소비 아이템의 NPC 개당 가격. 소비에만 있고 소비에는 반드시 있다. */
+  npcPriceMeso: number | null
+  from?: string
+  until?: string
+}
+export interface HuntLootTable extends TableHead {
+  /** 이 차례가 폼의 차례다. */
+  items: HuntLootRow[]
+}
+
 export interface HuntingRegionRow {
   key: string
   name: string
@@ -372,7 +391,7 @@ export interface ImageCropsTable extends TableHead {
   crops: ImageCropRow[]
 }
 
-/** 계약을 통과한 칸 열여섯. */
+/** 계약을 통과한 칸 열일곱. */
 export interface GameData {
   bosses: BossCatalog
   dropItems: DropItemsTable
@@ -388,13 +407,14 @@ export interface GameData {
   enhancementCosts: EnhancementCostsTable
   mvpGrades: MvpGradesTable
   huntingGrounds: HuntingGroundsTable
+  huntLoot: HuntLootTable
   assets: AssetFilesTable
   imageCrops: ImageCropsTable
 }
 
 export type GameDataSection = keyof GameData
 
-/** 칸 이름 열여섯. 응답과 기기 사본이 같은 차례로 든다. */
+/** 칸 이름 열일곱. 응답과 기기 사본이 같은 차례로 든다. */
 export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'bosses',
   'dropItems',
@@ -410,6 +430,7 @@ export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'enhancementCosts',
   'mvpGrades',
   'huntingGrounds',
+  'huntLoot',
   'assets',
   'imageCrops',
 ]

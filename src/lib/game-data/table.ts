@@ -2,7 +2,7 @@
  * 게임 데이터 표 하나의 현재 값. 빈 표로 시작하고 기기 사본 · 서버 응답이 덮는다.
  *
  * 조회 모듈은 `get` 으로 읽고, 받는 흐름(`features/game-data/sync`)이 `set` 으로 덮는다. 보스의 `catalog.ts` 가
- * 처음 세운 모양을 표 열여섯이 같이 쓴다.
+ * 처음 세운 모양을 표 열일곱이 같이 쓴다.
  */
 import type { GameDataSection } from '../../types/game-data'
 // jest 의 moduleNameMapper 는 import 글자를 본다. `./initial` 이면 `/game-data/initial$` 에 안 걸려 fixture 로 바뀌지 않는다.

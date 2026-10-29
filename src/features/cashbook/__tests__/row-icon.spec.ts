@@ -96,6 +96,16 @@ describe('recordIconOf', () => {
     expect(recordIconOf(spend({ category: 'event_bm', itemKey: 'nickname_change' }))).toBe(getItemIconUrlByFile('npc_mr_newname.webp'))
   })
 
+  // 갈래 그림 하나로 그리면 순록의 우유와 돋보기 줄이 같은 그림이 된다.
+  it('사냥 전리품 판매는 전리품 표에서 찾은 그 아이템의 그림이다', () => {
+    expect(recordIconOf(income({ category: 'hunt_loot_sale', itemKey: 'reindeer_milk' }))).toBe(
+      getItemIconUrlByFile('reindeer_milk.webp'),
+    )
+    expect(recordIconOf(income({ category: 'hunt_loot_sale', itemKey: 'suspicious_magnifier' }))).toBe(
+      getItemIconUrlByFile('suspicious_magnifier.webp'),
+    )
+  })
+
   // 선택 목록이 아니라 비용 표에서 심볼을 되짚는다.
   it('심볼 강화는 고른 심볼의 그림이다', () => {
     expect(recordIconOf(spend({ category: 'symbol', itemKey: 'cernium', levelFrom: 1, levelTo: 2 }))).toBe(

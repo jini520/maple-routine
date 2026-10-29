@@ -20,19 +20,20 @@ import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
 import type { LastHunts } from '../../storage/last-hunts'
 import {
   INCOME_CATEGORY_KEYS,
-  incomeCategories,
   incomeCategoryNameOf,
+  incomePickerCategories,
   type IncomeCategoryKey,
 } from '../../lib/cashbook/categories'
 import type { HuntInputMode, IncomeRecord } from '../../storage/income'
 import { CategoryPicker } from './CategoryPicker'
 import { SheetDateField } from './sheet-fields'
 import { EtcForm } from './income/EtcForm'
-import { FragmentSettleForm, type LoadFragmentStorage } from './income/FragmentSettleForm'
+import { type LoadFragmentStorage } from './income/FragmentSettleForm'
+import { HuntLootSaleForm } from './income/HuntLootSaleForm'
 import { HuntCalculatorForm } from './income/HuntCalculatorForm'
 import { ItemSaleForm } from './income/ItemSaleForm'
 import { HuntManualForm } from './income/HuntManualForm'
-import { SaveRow, type IncomeFormProps, type SaveSlot, type SheetCharacter } from './income/form-shared'
+import { SaveRow, type IncomeDraft, type IncomeFormProps, type SaveSlot, type SheetCharacter } from './income/form-shared'
 
 export type { IncomeDraft } from './income/form-shared'
 
@@ -59,7 +60,7 @@ export interface IncomeSheetProps {
   loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
   /** 캐릭터별 마지막 사냥. 사냥 계산기에서 캐릭터를 고르면 그 몫이 선다. 화면이 읽어서 넘긴다. */
   lastHunts: LastHunts
-  /** 솔 에르다 조각 보관 개수 조회. 정산 폼이 쓰고 화면이 넘긴다. */
+  /** 솔 에르다 조각 보관 개수 조회. 사냥 전리품 판매의 조각 칸이 쓰고 화면이 넘긴다. */
   loadFragmentStorage: LoadFragmentStorage
   /**
    * 고칠 기록. 있으면 **수정 모드**다. 머리와 버튼 글자가 갈리고 삭제가 선다.
@@ -68,6 +69,8 @@ export interface IncomeSheetProps {
   onDelete?: () => void | Promise<void>
   /** 던지면 **안 닫는다**. 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
   onSave: IncomeFormProps['onSave']
+  /** 여러 건을 한 번에. 사냥 전리품 판매가 아이템마다 한 줄씩 적는다. 계약은 `onSave` 와 같다. */
+  onSaveMany: (drafts: readonly IncomeDraft[]) => void | Promise<void>
   onClose: () => void
 }
 
@@ -167,7 +170,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
     >
       {category === null ? (
         <CategoryPicker
-          categories={incomeCategories()}
+          categories={incomePickerCategories()}
           knownKeys={INCOME_CATEGORY_KEYS}
           testIdPrefix="income-sheet"
           onSelect={setCategory}
@@ -230,9 +233,14 @@ function IncomeForm(
     formProps: IncomeFormProps
   },
 ): React.JSX.Element {
-  if (props.category === 'sol_erda_fragment') {
+  if (props.category === 'sol_erda_fragment' || props.category === 'hunt_loot_sale') {
     return (
-      <FragmentSettleForm {...props.formProps} loadFragmentStorage={props.loadFragmentStorage} />
+      <HuntLootSaleForm
+        {...props.formProps}
+        category={props.category}
+        loadFragmentStorage={props.loadFragmentStorage}
+        onSaveMany={props.onSaveMany}
+      />
     )
   }
   if (props.category === 'item_sale') return <ItemSaleForm {...props.formProps} />
