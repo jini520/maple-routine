@@ -133,12 +133,15 @@
 × 수량 전체에서 떼고, 수정으로 열 때 단가는 `(받은 돈 + 뗀 몫) ÷ 수량` 이다. 종류는 `item_kind_key` 에 key 만 저장하고,
 `NULL` 인 옛 판매 행은 장비로 연다. 요율을 MVP 등급에서 자동으로 고르는 규칙은 [[ADR-050]] 에 있다.
 
-### 결정 8. 손입력 기록 표와 강화 내역은 캐시 삭제가 지우지 않는다
+### 결정 8. 손입력 기록 표와 강화 내역은 사용자가 그 그룹을 골랐을 때만 데이터 삭제가 지운다
 
-기록 표 셋(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs`)과 옛 두 표(`income_records` ·
-`spend_records`), `enhancement_totals` · `enhancement_history` · `enhancement_history_checks` 가 `RECORD_TABLE_NAMES` 에
-들어 있다. 지워도 되는 표는 전체 표에서 이 목록을 뺀 나머지로 정해지므로, 이 목록에 없는 표는 자동으로 지워도 되는 표가 된다(`storage/cache-data.ts`). 손입력은
-사용자 말고는 출처가 없어 지우면 되살릴 수 없다.
+데이터 삭제는 기록 표 셋(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs`)을 `가계부` 그룹을
+골랐을 때만 지운다. `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` 는 `강화` 그룹을 골랐을
+때만 지운다([[ADR-053]] 결정 1). 확인 창은 아무 그룹도 고르지 않은 채 열린다. 손입력은 사용자 말고는 출처가 없어
+지우면 되살릴 수 없기 때문이다.
+
+옛 두 표(`income_records` · `spend_records`)와 옛 `enhancement_history` 는 어떤 그룹도 지우지 않는다. 지금 코드가 읽지
+않는 표이고, v1.0.14 에서 코드가 표를 지운다.
 
 ### 결정 9. 강화 사용 내역은 계정 단위로 날짜마다 받고, 어제까지의 날짜는 다시 받지 않는다
 

@@ -35,7 +35,7 @@ docs/
 | `character` | [features/character.md](./features/character.md) | 추적 캐릭터 · 캐릭터 관리 · 선택 · 초상화 | [[ADR-028]] · [[ADR-029]] · [[ADR-030]] · [[ADR-031]] |
 | `auth` | [features/auth.md](./features/auth.md) | API 키 · 넥슨 로그인 | [[ADR-024]] · [[ADR-025]] |
 | `app-entry` | [features/app-entry.md](./features/app-entry.md) | 온보딩 · 첫 화면 | [[ADR-026]] · [[ADR-027]] |
-| `settings` | [features/settings.md](./features/settings.md) | 더보기 · 설정 · 캐시 삭제 | [[ADR-052]] · [[ADR-053]] |
+| `settings` | [features/settings.md](./features/settings.md) | 더보기 · 설정 · 데이터 삭제 | [[ADR-052]] · [[ADR-053]] |
 | `theme` | [features/theme.md](./features/theme.md) | 테마 · 색 토큰 · 배경 그림 | [[ADR-054]] · [[ADR-055]] |
 | `notice` | [features/notice.md](./features/notice.md) | 운영자 공지 · 넥슨 공지 | [[ADR-057]] |
 | `notifications` | [features/notifications.md](./features/notifications.md) | 로컬 알림 · 공지 푸시 | [[ADR-056]] |

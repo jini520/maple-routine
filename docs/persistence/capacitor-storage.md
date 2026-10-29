@@ -31,7 +31,7 @@ Capacitor 로 만든 예전 앱을 쓰던 사용자의 데이터를, 지금 앱�
 | iOS | `UserDefaults.standard` | `CapacitorStorage.` + 앱 키 |
 
 iOS 의 `UserDefaults.standard` 는 시스템도 같이 쓴다. 그래서 키 목록을 돌려줄 때 `CapacitorStorage.` 로 시작하는 키만
-남기고 접두사를 뗀다. 거르지 않으면 `AppleLanguages` 같은 남의 키가 캐시 삭제 범위와 용량에 섞인다. 점이 없는
+남기고 접두사를 뗀다. 거르지 않으면 `AppleLanguages` 같은 남의 키가 앱의 키 목록에 섞인다. 점이 없는
 `CapacitorStorage` 나 `CapacitorStorageBackup.` 처럼 비슷하기만 한 키도 거른다.
 
 값은 모두 문자열이다. Capacitor 의 Preferences API 가 문자열만 받았고, 앱이 구조 있는 값을 `JSON.stringify` 해서

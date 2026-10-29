@@ -80,7 +80,7 @@ iOS 는 로컬 알림과 공지 푸시 모두 기본 알림음(`default`)을 싣
 
 ## 저장
 
-| 키 | 값 | 캐시 삭제 시 |
+| 키 | 값 | 데이터 삭제 |
 |---|---|---|
 | `notificationLedger` | 예약해 둔 로컬 알림 `{ id, kind, fireAt, title, body }[]` | 남긴다 |
 | `noticeSubscriptions` | 공지 스위치 다섯 `{ app, game, update, event, cashshop }` | 남긴다 |

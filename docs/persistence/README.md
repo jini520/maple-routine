@@ -7,7 +7,7 @@
 |---|---|
 | [preferences.md](./preferences.md) | Key-Value 저장소의 키 전부 |
 | [sqlite.md](./sqlite.md) | SQLite 테이블 · 칸 · 버전 이관 |
-| [lifecycle.md](./lifecycle.md) | 언제 읽고, 쓰고, 지우는가(부팅 · 캐시 데이터 삭제 · 연결 해제 · 리로드) |
+| [lifecycle.md](./lifecycle.md) | 언제 읽고, 쓰고, 지우는가(부팅 · 데이터 삭제 · 연결 해제 · 리로드) |
 | [capacitor-storage.md](./capacitor-storage.md) | Capacitor 앱이 남긴 저장소를 그대로 여는 규칙 |
 
 ## 저장소 셋
@@ -33,7 +33,7 @@ features/* · app/*  →  storage/*.ts  →  storage/ports.ts  →  storage/adap
 
 | 성격 | 예 | 잃으면 |
 |---|---|---|
-| 사용자가 고른 설정 | `theme` · `trackingMode` · `dropEffect` · 알림 스위치 | 다시 고르면 된다. 대부분 캐시 삭제에서 남긴다 |
+| 사용자가 고른 설정 | `theme` · `trackingMode` · `dropEffect` · 알림 스위치 | 다시 고르면 된다. 데이터 삭제에서 남긴다 |
 | 동기화 캐시 | `schedulerCache:{ocid}` · `characterBasicCache:{ocid}` · 게임 데이터 사본(`game_data_sections` · `game_data_meta`) · 받은 그림 | 다음 조회가 다시 채운다. 게임 데이터는 잠금 화면이 다시 받는다 |
 | 기기에만 있는 기록 | 보스 수익 · 드롭 · 가계부 · 파티 약속 · MVP 등급 이력 | 되살릴 방법이 없다. 넥슨 API 는 최근 기간만 준다 |
 

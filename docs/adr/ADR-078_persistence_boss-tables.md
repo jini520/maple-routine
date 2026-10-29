@@ -125,8 +125,8 @@ v1.0.13 을 건너뛰고 올리는 기기가 그 단계를 거쳐야 하기 때�
 - **`PRAGMA foreign_keys = ON` 을 DB 를 열 때 켠다.** 기기(op-sqlite)는 기본이 꺼져 있고 테스트(`node:sqlite`)는 켜져
   있어서, 켜지 않으면 테스트에서만 `ON DELETE CASCADE` 가 돈다. 켜면 테이블을 다시 만드는 이관([[ADR-007]] 결정 5)은
   트랜잭션 밖에서 외래키를 끄고 해야 한다. 부모 테이블을 `DROP` 하면 자식 행이 함께 지워지기 때문이다.
-- **캐시 데이터 삭제를 행 단위로 한다.** `cache-data.ts` 는 기록 그룹 목록에 없는 테이블을 `일반` 으로 통째로 지운다.
-  `boss_parties` · `boss_party_periods` 는 처치 기록의 부모라 통째로 지우면 기록이 사라진다.
+- **데이터 삭제를 행 단위로 한다.** 한 표에 `수동 선택 항목` 그룹의 분배 칸과 `보스 처치 · 드롭` 그룹의 행이 섞여 있다.
+  `boss_parties` · `boss_party_periods` 는 처치 기록의 부모라 통째로 지우면 고르지 않은 그룹의 기록까지 사라진다.
 - **옛 마이그레이션 단계가 쓰는 테이블 정의를 이관 전용으로 고정한다.** 새 기기도 0단계부터 다 돌고, 버전 4 · 12 는
   `boss-tables.ts` 의 정의로 테이블을 다시 만든다. 그 정의를 새 모양으로 바꾸면 옛 단계가 깨진다.
 - **옛 표의 `ensureColumn` · 백필 · `boss_drop_records_group` 인덱스는 옛 표와 함께 v1.0.14 까지 둔다.** 새 표는 이름이 달라
@@ -154,7 +154,7 @@ v1.0.13 을 건너뛰고 올리는 기기가 그 단계를 거쳐야 하기 때�
 | `storage/__tests__/boss-party-settings.spec.ts` | 결정 10: 분배 칸 빈 조합 행을 설정 없음으로 읽는지, 설정 옮기기가 그 행을 채우고 이미 정한 값은 안 덮는지 |
 | `storage/__tests__/boss-party-period-overrides.spec.ts` | 결정 3: 처치한 기간과 드롭만 있는 기간을 그 기간 값으로 안 읽는지, 처치한 기간을 안 덮는지 |
 | `storage/__tests__/boss-drops.spec.ts` | 결정 5 · 6 · 7: 상태 값, 0메소를 `pending` 으로 두는지, 가격을 바꿀 때만 `priced_at` 이 움직이는지, 비우면 빈 기간 행을 지우는지, 이름을 key 로 채우는지 |
-| `storage/__tests__/cache-data-boss.spec.ts` | 결정 10: 캐시 삭제가 새 표 셋을 그룹마다 행 단위로 지우는지 |
+| `storage/__tests__/cache-data-boss.spec.ts` | 결정 10: 데이터 삭제가 새 표 셋을 그룹마다 행 단위로 지우는지 |
 | `features/boss-profit/__tests__/drop-moves-real-sqlite.test.ts` | 결정 4 · 10: 난이도 확정 · 직접 완료 난이도 변경이 드롭을 식별자째 옮기고 옛 기간 행을 지우는지, 직접 완료 취소가 기간 행까지 지우는지 |
 
 ## 번호 기록
