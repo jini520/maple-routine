@@ -15,9 +15,8 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/SectionTitle.tsx` | 카드 제목 줄. 두 화면이 함께 쓴다 |
 | `app/settings/NoticeSkeleton.tsx` | 소식을 받기 전의 스켈레톤 |
 | `app/settings/SettingsRow.tsx` · `SettingsLinkRow.tsx` · `row-class.ts` · `ValueBadge.tsx` | 누르는 행 둘과 공통 골격 · 현재값 배지 |
-| `app/settings/SettingsAccountDataScreen.tsx` | 계정 및 데이터. 넥슨 로그아웃 · 데이터 삭제 · 연결 해제 |
 | `app/settings/CacheClearConfirm.tsx` · `DisconnectConfirm.tsx` · `SignOutConfirm.tsx` | 위험 동작 확인 창 |
-| `app/settings/SettingsAboutScreen.tsx` · `AppUpdateSection.tsx` | 앱 정보. 버전 · 상태 · 업데이트 확인 · 개인정보 처리방침 주소(`PRIVACY_URL`) |
+| `app/settings/SettingsAboutScreen.tsx` · `AppUpdateSection.tsx` | 앱 정보 및 계정. 버전 · 상태 · 업데이트 확인 · 개인정보 처리방침 주소(`PRIVACY_URL`) · 넥슨 로그아웃 · 데이터 삭제 · 연결 해제 |
 | `app/settings/SettingsReleaseNotesScreen.tsx` | 개발 노트 |
 | `app/settings/SettingsFeatureGuideListScreen.tsx` · `SettingsFeatureGuideScreen.tsx` | 기능 설명 목록과 안내 상세 |
 | `app/settings/contact-mail.ts` · `store-review-link.ts` | 문의 메일 주소 · 스토어 리뷰 주소 |
@@ -70,8 +69,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | | 글자 크기 | `작게` · `기본` · `크게` · `아주 크게` 배지 › | 글자 크기 페이지 |
 | `MVP 등급` | MVP 등급 | › | MVP 등급 목록 |
 | `스케줄` | 스케줄 관리 방법 | `자동` · `수동` 배지 › | 스케줄 관리 방법 모달 |
-| `앱 데이터` | 계정 및 데이터 | › | 계정 및 데이터 |
-| | 앱 정보 | 앱 버전 › | 앱 정보 |
+| `앱 데이터` | 앱 정보 및 계정 | 앱 버전 › | 앱 정보 및 계정 |
 
 맨 아래에 버전 · `© {연도} 메이플 루틴` · `Data based on NEXON Open API` · `Maple Routine is not associated with NEXON Korea`
 네 줄이 있다.
@@ -83,8 +81,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `SettingsFeatureGuideList` | 기능 설명 | 그룹 탭(`컨텐츠 · 보스 · 수익 · 유틸리티 · 설정`, 안내 없는 그룹은 감춘다)과 안내 목록 |
 | `SettingsFeatureGuide` · `SettingsReleaseNoteGuide` | 기능 안내 | 목차(마디가 둘 이상일 때) · 이미지 · 문단. 두 라우트가 같은 화면이다 |
 | `SettingsReleaseNotes` | 개발 노트 | 버전마다 기능 → 개선 → 버그 묶음. `사용 중` · `스토어 업데이트 필요` 배지. 안내가 있는 항목만 눌린다 |
-| `SettingsAccountData` | 계정 및 데이터 | 넥슨 로그아웃(로그인이 있을 때) · 데이터 삭제 · 연결 해제. 모두 위험 색이고 확인 창을 거친다 |
-| `SettingsAbout` | 앱 정보 | 현재 버전 · 상태 · `업데이트 확인` · 개인정보 처리방침(`mapleroutine.store/privacy` 를 인앱 브라우저로 연다) |
+| `SettingsAbout` | 앱 정보 및 계정 | `앱 정보` 묶음에 현재 버전 · 상태 · `업데이트 확인` · 개인정보 처리방침(`mapleroutine.store/privacy` 를 인앱 브라우저로 연다). `계정` 묶음에 넥슨 로그아웃(로그인이 있을 때) · 데이터 삭제 · 연결 해제. 계정 행은 확인 창을 거친다 |
 
 개발 노트에는 업데이트를 적용하고 다시 시작했을 때 뜨는 `업데이트를 마쳤어요` 안내의 `자세히 보기` 로도 들어갈 수 있다.
 
@@ -103,7 +100,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 카드는 테두리 없는 `Card` 이고, 그 안의 행은 하나씩 `card-inset` 칸에 담긴다. 칸 사이는 간격 4 이고 선은 긋지 않는다. 칸 색이 행 사이
 경계이기 때문이다([[ADR-052]] 결정 15).
 
-- 더보기 · 설정 · 계정 및 데이터 · 앱 정보 · 알림 설정 · MVP 등급 · MVP 등급 이력 · 개발 노트, 그리고 더보기와 소식 목록의 글 줄이 이 모양이다.
+- 더보기 · 설정 · 앱 정보 및 계정 · 알림 설정 · MVP 등급 · MVP 등급 이력 · 개발 노트, 그리고 더보기와 소식 목록의 글 줄이 이 모양이다.
 - ID 표시(MVP 등급)와 버전 줄(개발 노트)은 칸 없이 카드 머리에 선다.
 - 기능 설명 목록은 아직 행 사이에 선을 긋는다.
 

@@ -2,11 +2,11 @@
 
 > 🟢 유효
 > 옛 번호: ADR-052 · ADR-058 · ADR-117 결정 8
-> 관련 소스: `storage/cache-data.ts` · `storage/sqlite/db.ts` · `storage/pending-notice.ts` · `features/settings/cache-data.ts` · `app/settings/CacheClearConfirm.tsx` · `app/settings/SettingsAccountDataScreen.tsx`
+> 관련 소스: `storage/cache-data.ts` · `storage/sqlite/db.ts` · `storage/pending-notice.ts` · `features/settings/cache-data.ts` · `app/settings/CacheClearConfirm.tsx` · `app/settings/SettingsAboutScreen.tsx`
 
 ## 배경
 
-`설정 > 계정 및 데이터 > 데이터 삭제` 는 기기에 쌓인 기록과 수동 선택 항목을 사용자가 골라 지우는 기능이다.
+`설정 > 앱 정보 및 계정 > 데이터 삭제` 는 기기에 쌓인 기록과 수동 선택 항목을 사용자가 골라 지우는 기능이다.
 
 처음에는 저장 공간을 비우는 `캐시 데이터 삭제` 였다. 남길 것만 목록으로 적고 나머지를 지워서, 다시 받으면 되는 조회
 캐시와 지우면 앱을 쓸 수 없는 게임 데이터까지 함께 지웠다. 그런데 기기 데이터를 재 보니 지울 수 있는 기록은 모두 합쳐
@@ -138,7 +138,7 @@ OTA 적용과 같은 순서다.
 | `storage/__tests__/cache-data-boss.spec.ts` | 결정 1: 보스 기록 표 셋에서 `manual` 만 지우면 분배 칸만, `boss` 만 지우면 처치와 드롭만 사라지는지, 둘 다 지우면 세 표가 비는지 본다. 결정 4: 처치 · 드롭 건수를 세는지 본다 |
 | `features/settings/__tests__/cache-data.spec.ts` | 결정 5: 닫기 → 덮기 → 다시 띄우기 순서, 닫기가 끝나기 전에는 덮지 않는지, 덮기 실패에도 다시 띄우는지, 삭제가 실패하면 다시 띄운 뒤 오류 토스트가 한 번만 뜨는지 본다 |
 | `app/settings/__tests__/CacheClearConfirm.test.tsx` | 결정 3: 칸이 처음에 모두 해제되어 있고 삭제를 누를 수 없는지, 고른 그룹만 넘기는지, 다 풀면 삭제가 다시 꺼지는지, 다시 열면 해제 상태인지, 보스 건수를 설명 줄에만 적는지, 지우는 동안 모두 꺼지는지 본다 |
-| `app/settings/__tests__/SettingsAccountDataScreen.test.tsx` | 결정 3 · 5: 고른 그룹을 그대로 넘기는지, 다시 띄우는 함수를 넘기는지 본다 |
+| `app/settings/__tests__/SettingsAboutScreen.test.tsx` | 결정 3 · 5: 고른 그룹을 그대로 넘기는지, 다시 띄우는 함수를 넘기는지 본다 |
 
 ## 번호 기록
 
