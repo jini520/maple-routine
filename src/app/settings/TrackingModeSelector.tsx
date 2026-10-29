@@ -10,7 +10,10 @@ import { Pressable, View } from 'react-native'
 import { TRACKING_MODE_OPTIONS } from '../../features/tracking-mode/copy'
 import type { TrackingMode } from '../../storage/tracking-mode'
 
-import { Gamepad2Icon, InfoIcon, ListChecksIcon, Text } from '../../components/atoms'
+import { withAlpha } from '../../lib/color'
+import { useThemeAppearance } from '../../theme/context'
+
+import { CheckIcon, Gamepad2Icon, InfoIcon, ListChecksIcon, Text } from '../../components/atoms'
 
 export interface TrackingModeSelectorProps {
   mode: TrackingMode
@@ -24,8 +27,9 @@ export interface TrackingModeSelectorProps {
 const OPTION_ICONS = { auto: Gamepad2Icon, manual: ListChecksIcon } as const
 
 export function TrackingModeSelector(props: TrackingModeSelectorProps): React.JSX.Element {
+  const { definition } = useThemeAppearance()
   return (
-    <View className="gap-2">
+    <View className="gap-1.5">
       {TRACKING_MODE_OPTIONS.map((option) => {
         const isSelected = props.mode === option.mode
         const Icon = OPTION_ICONS[option.mode]
@@ -36,26 +40,30 @@ export function TrackingModeSelector(props: TrackingModeSelectorProps): React.JS
             aria-selected={isSelected}
             disabled={props.isApplying}
             onPress={() => props.onSelect(option.mode)}
-            className={`rounded-[10px] border px-4 py-3 ${
-              isSelected ? 'border-primary bg-primary-tint' : 'border-border'
-            }${props.isApplying ? ' opacity-50' : ''}`}
+            // 고른 칸은 테두리 대신 `primary-tint` 바탕으로 가린다. 패널 안 칸에는 테두리를 긋지 않는다.
+            className={`gap-1.5 rounded-[10px] px-3 py-2.5 ${isSelected ? 'bg-primary-tint' : 'bg-card-inset'}${
+              props.isApplying ? ' opacity-50' : ''
+            }`}
           >
-            <View className="flex-row items-start gap-3">
-              <Icon className="h-5 w-5 flex-none text-primary-ink" aria-hidden />
-              <View className="min-w-0 flex-1">
-                <Text className="text-sm font-semibold text-text">{option.title}</Text>
-                <Text className="mt-0.5 text-sm text-text-muted">{option.description}</Text>
+            <View className="flex-row items-start gap-2.5">
+              <Icon className="mt-px h-[18px] w-[18px] flex-none text-primary-ink" aria-hidden />
+              <View className="min-w-0 flex-1 gap-px">
+                <Text className="text-13 font-semibold text-text">{option.title}</Text>
+                <Text className="text-xs text-text-muted">{option.description}</Text>
               </View>
+              {/* 원은 여럿 중 하나를 고르는 표시다. 체크박스의 네모와 갈린다. */}
+              {isSelected ? (
+                <View className="h-[18px] w-[18px] items-center justify-center rounded-full bg-primary">
+                  <CheckIcon className="h-3 w-3 text-on-primary" strokeWidth={2.5} aria-hidden />
+                </View>
+              ) : (
+                <View className="h-[18px] w-[18px] rounded-full" style={{ backgroundColor: withAlpha(definition.text, 0.14) }} />
+              )}
             </View>
-            {/* 고칠 수 없는 알려진 제약이라 실패(error)가 아니라 고지다. 조회 불가 고지와
-                같은 정보 톤을 카드 안 크기로 승계한다. */}
-            <View className="mt-2 flex-row items-start gap-1.5 rounded-[8px] bg-info-tint px-2.5 py-1.5">
-              <InfoIcon
-                className="mt-px h-3.5 w-3.5 flex-none text-info-ink"
-                strokeWidth={1.75}
-                aria-hidden
-              />
-              <Text className="min-w-0 flex-1 text-xs text-info-ink">{option.caution}</Text>
+            {/* 고칠 수 없는 알려진 제약이라 실패(error)가 아니라 고지다. */}
+            <View className="flex-row items-start gap-1.5 pl-7">
+              <InfoIcon className="mt-0.5 h-[13px] w-[13px] flex-none text-text-muted" strokeWidth={2} aria-hidden />
+              <Text className="min-w-0 flex-1 text-xs text-text-muted">{option.caution}</Text>
             </View>
           </Pressable>
         )

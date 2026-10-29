@@ -81,7 +81,8 @@ describe('UpdatePromptModal', () => {
 
     expect(view.getByText('새 업데이트가 있어요')).toBeTruthy()
     expect(view.getByText('v1.0.4')).toBeTruthy()
-    expect(view.getByText('다운로드 크기 2.0MB')).toBeTruthy()
+    expect(view.getByText('다운로드 크기')).toBeTruthy()
+    expect(view.getByText('2.0MB')).toBeTruthy()
 
     await fireEvent.press(view.getByText('다운로드'))
     expect(actions.startDownload).toHaveBeenCalledTimes(1)
@@ -100,7 +101,8 @@ describe('UpdatePromptModal', () => {
     const { view, actions } = await renderModal({ status: 'confirm-cellular' })
 
     expect(view.getByText('모바일 데이터를 사용해요')).toBeTruthy()
-    expect(view.getByText('다운로드 크기 2.0MB')).toBeTruthy()
+    expect(view.getByText('다운로드 크기')).toBeTruthy()
+    expect(view.getByText('2.0MB')).toBeTruthy()
 
     await fireEvent.press(view.getByText('계속'))
     expect(actions.confirmCellularDownload).toHaveBeenCalledTimes(1)
@@ -185,7 +187,7 @@ describe('UpdatePromptModal', () => {
     })
 
     expect(view.getByText('스토어 업데이트가 필요해요')).toBeTruthy()
-    expect(view.getByText('1.2.0')).toBeTruthy()
+    expect(view.getByText('1.2.0 이상 필요')).toBeTruthy()
 
     await fireEvent.press(view.getByText('스토어로 이동'))
     expect(actions.openStore).toHaveBeenCalledTimes(1)

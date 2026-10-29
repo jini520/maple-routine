@@ -18,7 +18,8 @@ import { Pressable, View } from 'react-native'
 import { formatBytes } from '../../lib/format-bytes'
 import type { CacheDataGroupId, CacheDataSelection } from '../../storage/cache-data'
 
-import { AlertTriangleIcon, CheckIcon, Text } from '../../components/atoms'
+import { AlertTriangleIcon, CheckBox, Text } from '../../components/atoms'
+import { INSET_ROW_CLASS } from '../../components/molecules/InsetRow/InsetRow'
 import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
@@ -82,7 +83,7 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
       // 다시 해야 한다. 그래서 그룹을 가려 말하지 않는다.
       description="지운 데이터는 되돌릴 수 없습니다. 지울 것을 골라주세요."
       option={
-        <View className="border-t border-border">
+        <View className="gap-1.5">
           {GROUPS.map((group) => {
             const isSelected = selection[group.id]
             return (
@@ -97,40 +98,22 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
                 onPress={() => {
                   setSelection((prev) => ({ ...prev, [group.id]: !prev[group.id] }))
                 }}
-                className={`w-full flex-row items-start gap-3 border-b border-border py-3${
-                  props.isClearing ? ' opacity-50' : ''
-                }`}
+                className={`flex-row items-start gap-2.5 ${INSET_ROW_CLASS}${props.isClearing ? ' opacity-50' : ''}`}
               >
-                <View
-                  aria-hidden
-                  className={
-                    isSelected
-                      ? 'mt-0.5 h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] bg-primary'
-                      : 'mt-0.5 h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-border'
-                  }
-                >
-                  {isSelected && (
-                    <CheckIcon className="h-[13px] w-[13px] text-on-primary" strokeWidth={3} />
-                  )}
+                <View className="mt-px">
+                  <CheckBox checked={isSelected} />
                 </View>
-
-                <View className="min-w-0 flex-1">
-                  <View className="flex-row items-center justify-between gap-3">
-                    <Text className="text-sm font-semibold text-text">{group.label}</Text>
+                <View className="min-w-0 flex-1 gap-0.5">
+                  <View className="flex-row items-center justify-between gap-2">
+                    <Text className="text-13 font-semibold text-text">{group.label}</Text>
                     {/* 조회 전에도 같은 자리·같은 타이포로 자리표시를 둬야
                         값이 들어올 때 행 레이아웃이 점프하지 않는다. */}
-                    <Text style={TABULAR_NUMS} className="shrink-0 text-sm text-text-muted">
+                    <Text style={TABULAR_NUMS} className="shrink-0 text-xs font-semibold text-text">
                       {sizes !== null ? formatBytes(sizes[group.id]) : '- KB'}
                     </Text>
                   </View>
-                  <Text className="mt-1 text-xs leading-relaxed text-text-muted">
-                    {group.detail}
-                  </Text>
-                  {group.warning !== undefined && (
-                    <Text className="mt-1 text-xs leading-relaxed text-error-ink">
-                      {group.warning}
-                    </Text>
-                  )}
+                  <Text className="text-xs text-text-muted">{group.detail}</Text>
+                  {group.warning !== undefined && <Text className="text-xs text-error-ink">{group.warning}</Text>}
                 </View>
               </Pressable>
             )

@@ -7,7 +7,8 @@ import { View } from 'react-native'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { TrackingMode } from '../../storage/tracking-mode'
 
-import { Button, Text } from '../../components/atoms'
+import { Button, ListChecksIcon } from '../../components/atoms'
+import { ModalHeader } from '../../components/molecules/ModalHeader/ModalHeader'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { reloadTabStores } from './reload-tab-stores'
 import { TrackingModeSelector } from './TrackingModeSelector'
@@ -47,20 +48,12 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
         if (!isApplying) props.onClose()
       }}
       testId="tracking-mode-modal-overlay"
+      align="center"
     >
       <Modal.Card
         footer={
-          // 설정의 다른 확정 모달(DisconnectConfirm/CacheClearConfirm)과 같은 골격.
-          // 다른 것은 색뿐. 모드 전환은 파괴적 동작이 아니라 진행 동작이라 border-error 가 아니다.
-          <View className="mt-4 flex-row justify-end gap-2">
-            <Button
-              variant="text"
-              disabled={isApplying}
-              onPress={props.onClose}
-              className={isApplying ? 'opacity-50' : undefined}
-            >
-              취소
-            </Button>
+          // 설정의 다른 확정 모달과 같은 버튼 줄이다. 모드 전환은 파괴적 동작이 아니라 진행 동작이라 위험 색이 아니다.
+          <View className="mt-4 gap-1">
             <Button
               variant="primary"
               // 바뀐 것이 없으면 누를 것도 없다. 닫기는 취소·오버레이가 맡는다.
@@ -69,21 +62,31 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
               onPress={() => {
                 void handleApply()
               }}
-              className={`flex-row items-center justify-center${
-                isUnchanged || isApplying ? ' opacity-50' : ''
-              }`}
-              textClassName="text-sm"
+              className={`w-full items-center${isUnchanged || isApplying ? ' opacity-50' : ''}`}
             >
               적용
+            </Button>
+            <Button
+              variant="text"
+              size="sm"
+              disabled={isApplying}
+              onPress={props.onClose}
+              className={`self-center${isApplying ? ' opacity-50' : ''}`}
+            >
+              취소
             </Button>
           </View>
         }
       >
-        <View className="mb-4 gap-1">
-          <Text className="text-lg font-semibold text-text">스케줄 관리 방법</Text>
-          <Text className="text-sm text-text-muted">진행 상황을 어떻게 관리할지 선택해주세요.</Text>
+        <View className="gap-4">
+          <ModalHeader
+            icon={ListChecksIcon}
+            tone="primary"
+            title="스케줄 관리 방법"
+            description="진행 상황을 어떻게 관리할지 선택해주세요."
+          />
+          <TrackingModeSelector mode={selected} isApplying={isApplying} onSelect={setSelected} />
         </View>
-        <TrackingModeSelector mode={selected} isApplying={isApplying} onSelect={setSelected} />
       </Modal.Card>
     </Modal>
   )
