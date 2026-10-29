@@ -18,19 +18,20 @@
 
 ### 결정 1. 지우는 단위는 네 그룹이고, 그룹마다 지우는 것을 목록으로 적는다 (사용자 확정)
 
-| 그룹(`CacheDataGroupId`) | 화면 이름 | Preferences | SQLite |
-|---|---|---|---|
-| `manual` | 수동 선택 항목 | `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` | 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값) |
-| `boss` | 보스 처치 · 드롭 | 없음 | 보스 기록 표 셋의 처치 · 드롭 행 |
-| `cashbook` | 가계부 | 없음 | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` |
-| `enhancement` | 강화 | 없음 | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` |
+| 그룹(`CacheDataGroupId`) | 화면 이름 | Preferences | SQLite | 지운 뒤 |
+|---|---|---|---|---|
+| `manual` | 수동 선택 항목 | `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` | 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값) | 사용자가 다시 고른다 |
+| `boss` | 보스 처치 · 드롭 | 없음 | 보스 기록 표 셋의 처치 · 드롭 행 | 넥슨 API 가 최근 2주치 처치만 다시 준다. 드롭은 되살릴 수 없다 |
+| `cashbook` | 가계부 | 없음 | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` | 손으로 적은 기록이라 되살릴 수 없다 |
+| `enhancement` | 강화 | 없음 | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` | 가계부 · 통계에서 그 달을 볼 때 넥슨 API 에서 다시 받는다. 조회 한도(약 18개월, `HISTORY_MONTHS_BACK`)보다 이른 날은 다시 받을 수 없다 |
 
 - 지울 것을 그룹마다 목록으로 적고, 목록에 없는 키와 표는 지우지 않는다. 이 기능은 사용자가 이름을 보고 고르는 기능이라,
   화면에 적지 않은 것을 함께 지우면 사용자가 모르는 것을 잃는다. 새 키나 새 표는 그룹 목록에 더해야만 지워진다.
 - 처치와 드롭은 한 그룹이다. 처치만 지우고 드롭이 남으면, 같은 캐릭터가 같은 보스를 같은 기간에 다시 잡을 때 지웠다고 생각한
   옛 드롭이 새 기록에 붙는다.
-- 강화 합계와 그 확인 기록(`enhancement_history_checks`) · 다시 매기기 진행(`enhancement_recomputes`)은 한 그룹이다. 확인
-  기록만 남으면 그 날짜를 다시 조회하지 않아 합계가 빈 채로 굳는다.
+- 강화 합계와 그 확인 기록(`enhancement_history_checks`) · 다시 매기기 진행(`enhancement_recomputes`)은 한 그룹이다. 수집은
+  확인 기록이 있는 지난 날짜를 다시 부르지 않는다. 그래서 확인 기록만 남으면 합계가 빈 채로 굳고, 둘을 함께 지워야 그 날짜를
+  다시 받는다. 다시 받을 때는 날짜 × 종류만큼 넥슨 API 를 부른다.
 - 보스 기록 표 셋(`BOSS_TABLE_NAMES`)은 표를 통째로 지우지 않고 행 단위로 지운다([[ADR-078]] 결정 10). 한 표에 `manual` 의
   분배 칸과 `boss` 의 처치 · 드롭 행이 섞여 있기 때문이다. 조합 행은 처치와 드롭의 부모라, 표를 통째로 지우면 외래키를 따라
   처치 · 드롭까지 사라진다.
@@ -58,9 +59,9 @@
 - 제목은 `데이터를 삭제할까요?`, 설명은 `지운 데이터는 되돌릴 수 없습니다. 지울 것을 골라주세요.` 다. 설정의 행 이름도
   `데이터 삭제` 다. 지우는 것이 다시 받는 캐시가 아니라 기록이기 때문이다.
 - 본문은 그룹마다 체크 칸 하나(`role="checkbox"`, 칸 전체를 누를 수 있다)다. 칸마다 그룹 이름 · 대표 항목 · 건수가 있고,
-  되살릴 수 없는 그룹에는 경고가 붙는다.
-- 처음에는 모두 해제되어 있다. 지우는 것이 모두 되돌릴 수 없는 기록이라, 열고 바로 누른 한 번에 무엇도 지워지지 않아야
-  한다. 창을 닫았다 다시 열어도 해제된 상태로 돌아간다.
+  칸마다 지운 뒤 어떻게 되는지를 위 표대로 한 줄 붙인다.
+- 처음에는 모두 해제되어 있다. 지우는 것이 되살릴 수 없거나, 다시 받는 데 호출이 몰리는 기록이라, 열고 바로 누른 한 번에
+  무엇도 지워지지 않아야 한다. 창을 닫았다 다시 열어도 해제된 상태로 돌아간다.
 - 하나도 고르지 않으면 삭제 버튼이 꺼진다.
 - 큰 버튼은 `취소` 다. 되돌릴 수 없는 동작이라 안전한 쪽을 크게 둔다. `삭제` 는 그 아래 위험 색 글자 버튼이다.
 - 지우는 동안에는 두 버튼과 체크 칸이 꺼진다. 삭제 버튼은 라벨을 유지한 채 대기 상태가 된다.
