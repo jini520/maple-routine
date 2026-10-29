@@ -4,9 +4,8 @@
  * `‹ ›` 화살표로 하루씩 옮기던 자리를 대신한다. 화살표는 먼 날로 갈 때 여러 번 눌러야 하고, 지금
  * 고른 날이 어느 달인지도 안 말한다. 누르면 달력이 열린다(`CalendarPopover`).
  *
- * 왼쪽 `변경` 글자와 그 아래 점선이 **바꿀 수 있다**는 말을 한다. 알약만 두면 값처럼 읽혀 아무도
- * 안 누른다(사용자 확인 2026-09-18). 점선을 글자 밑줄이 아니라 뷰로 그리는 것은 RN 이 글자에
- * 점선을 못 긋기 때문이고, 아이템 수익 금액이 쓰는 그 방식이다.
+ * 알약 끝의 아래 화살표가 **바꿀 수 있다**는 말을 한다. 알약만 두면 값처럼 읽혀 아무도 안 누른다.
+ * 화살표는 앱의 드롭다운과 같은 신호라 누르면 무언가 열린다고 읽힌다.
  *
  * @example
  * <DateSelect ref={anchorRef} dateKey="2026-09-18" label="잡은 날" onPress={popover.toggle} />
@@ -14,7 +13,7 @@
 import { forwardRef } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { CalendarIcon, Text } from '../../atoms'
+import { CalendarIcon, ChevronDownIcon, Text } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { formatDayLabel } from '../../../lib/calendar'
 
@@ -30,8 +29,6 @@ export interface DateSelectProps {
   text?: string
   /** 아직 안 고른 자리라 흐린 글자로 적는다 */
   placeholder?: boolean
-  /** 왼쪽 `변경` 글자를 세우나. 기본은 세운다. 통계 누적의 시작 날짜처럼 알약만 두는 자리가 끈다 */
-  showChangeLabel?: boolean
 }
 
 export const DateSelect = forwardRef<View, DateSelectProps>(function DateSelect(props, ref) {
@@ -41,18 +38,10 @@ export const DateSelect = forwardRef<View, DateSelectProps>(function DateSelect(
       role="button"
       aria-label={`${props.label} 고르기`}
       onPress={props.onPress}
-      className="shrink-0 flex-row items-center gap-2 active:opacity-60"
+      className="shrink-0 active:opacity-60"
     >
-      {props.showChangeLabel !== false && (
-        <View className="items-center">
-          <Text className="text-xs font-semibold text-text-muted">변경</Text>
-          {/* 글자 바로 아래 1px. 점선은 뷰로 그린다(RN 은 글자에 점선을 못 긋는다). */}
-          <View className="mt-px w-full border-b border-dashed border-text-muted" />
-        </View>
-      )}
-
       {/* 스테퍼 트랙과 같은 반투명 바탕이라 놓이는 자리마다 색을 고르지 않는다. */}
-      <View testID="date-select-pill" className="flex-row items-center gap-1.5 rounded-full bg-control-track px-2.5 py-1">
+      <View testID="date-select-pill" className="flex-row items-center gap-1.5 rounded-full bg-control-track py-1 pl-2.5 pr-2">
         <CalendarIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden />
         <Text
           testID={props.testID}
@@ -61,6 +50,7 @@ export const DateSelect = forwardRef<View, DateSelectProps>(function DateSelect(
         >
           {props.text ?? formatDayLabel(props.dateKey)}
         </Text>
+        <ChevronDownIcon className="h-3 w-3 text-text-muted" strokeWidth={2.25} aria-hidden />
       </View>
     </Pressable>
   )
