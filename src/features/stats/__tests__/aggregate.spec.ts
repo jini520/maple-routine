@@ -276,6 +276,30 @@ describe('categoryTotalsBetween', () => {
     ])
   })
 
+  // 사냥이 낸 돈을 한 조각에 모은다(사용자 선택 2026-10-29). 같은 아이템의 판매는 한 줄로 더한다.
+  it('사냥 전리품 판매도 사냥 갈래이고 아이템 이름으로 나눈다', () => {
+    const byDate = {
+      '2026-09-24': [
+        income(null, '', { category: 'sol_erda_fragment', mesoAmount: 200 }),
+        income(null, '', { category: 'hunt_loot_sale', itemKey: 'reindeer_milk', mesoAmount: 30 }),
+        income(null, '', { category: 'hunt_loot_sale', itemKey: 'reindeer_milk', mesoAmount: 20 }),
+        income(null, '', { category: 'hunt_loot_sale', itemKey: 'suspicious_magnifier', mesoAmount: 100 }),
+      ],
+    }
+    expect(categoryTotalsBetween(byDate, WEEK, 'income')).toEqual([
+      {
+        key: 'hunting',
+        name: '사냥',
+        meso: 350,
+        parts: [
+          { key: 'sol_erda_fragment', name: '솔 에르다 조각', meso: 200 },
+          { key: 'hunt_loot:suspicious_magnifier', name: '수상한 돋보기', meso: 100 },
+          { key: 'hunt_loot:reindeer_milk', name: '순록의 우유', meso: 50 },
+        ],
+      },
+    ])
+  })
+
   it('버프는 한 갈래이고 선택 목록의 묶음(보스 버프 · 사냥 버프)으로 나눈다', () => {
     const byDate = {
       '2026-09-24': [

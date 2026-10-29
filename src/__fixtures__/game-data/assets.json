@@ -2768,6 +2768,38 @@
       "size": 650,
       "width": 46,
       "height": 50
+    },
+    {
+      "path": "items/detective_yeti_suspicious_magnifier.webp",
+      "file": "b7c2c2db7d08100c67b11ef0fb1df97660c870ba06ee092a1853e3e5ee2fd34a.webp",
+      "sha256": "b7c2c2db7d08100c67b11ef0fb1df97660c870ba06ee092a1853e3e5ee2fd34a",
+      "size": 1502,
+      "width": 41,
+      "height": 38
+    },
+    {
+      "path": "items/reindeer_milk.webp",
+      "file": "bc1e5fe9ea8e4a050dab816bcd85c0635c95dab6213c7c56cced8d89a045062e.webp",
+      "sha256": "bc1e5fe9ea8e4a050dab816bcd85c0635c95dab6213c7c56cced8d89a045062e",
+      "size": 308,
+      "width": 28,
+      "height": 28
+    },
+    {
+      "path": "items/sunset_dew.webp",
+      "file": "b22144566263361c47840fc2c68538bd70e828c8503442b4a98ca88b1b1eab9c.webp",
+      "sha256": "b22144566263361c47840fc2c68538bd70e828c8503442b4a98ca88b1b1eab9c",
+      "size": 622,
+      "width": 31,
+      "height": 33
+    },
+    {
+      "path": "items/suspicious_magnifier.webp",
+      "file": "8ff81bbae6b0a1964f45701c8a9313b378bb04d4865074335d1e29052a689578.webp",
+      "sha256": "8ff81bbae6b0a1964f45701c8a9313b378bb04d4865074335d1e29052a689578",
+      "size": 624,
+      "width": 29,
+      "height": 27
     }
   ]
 }

@@ -7,7 +7,8 @@
  * 그림이 없는 갈래도 열쇠는 낸다. 무엇을 그릴지는 조회표(`cashbookRowIconOf`)가 정하므로
  * 나중에 그림을 붙일 때 고치는 것이 표 한 줄이다.
  */
-import { cashbookRowIconOf, spendIconOf } from '../../lib/assets/asset-lookup'
+import { cashbookRowIconOf, getItemIconUrlByFile, spendIconOf } from '../../lib/assets/asset-lookup'
+import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
 import { findSpendChoice, findSpendRewardChoice } from '../../lib/cashbook/spend-catalog'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import type { ImageAssetRef } from '../../types/image-asset'
@@ -28,7 +29,7 @@ export function recordIconKeyOf(entry: DayRecord): string {
  * 타일을 되짚고 시트 타일과 같은 `spendIconOf` 로 찾는다. 시트와 줄이 한 조회를 써야 시트에서 본 그림과 목록의 그림이
  * 갈리지 않는다. 그림 없는 타일이면 `null` 이다. 비슷한 그림을 붙이면 틀린 것을 그린다.
  *
- * 나머지 줄은 `recordIconKeyOf` 의 열쇠로 찾는다. 목록 갈래의 열쇠(`spend:buff` 등)는 조회표에 없어, 타일을 되짚지
+ * 사냥 전리품 판매는 전리품 표에서 그 아이템의 그림을 찾는다. 나머지 줄은 `recordIconKeyOf` 의 열쇠로 찾는다. 목록 갈래의 열쇠(`spend:buff` 등)는 조회표에 없어, 타일을 되짚지
  * 못한 옛 기록도 `null` 이다.
  */
 export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
@@ -41,6 +42,11 @@ export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
     }
     const choice = findSpendChoice(category, itemKey)?.choice ?? findSpendRewardChoice(category, formItemKeys)?.choice
     if (choice !== undefined) return spendIconOf(choice.icon)
+  }
+  // 사냥 전리품 판매는 아이템마다 한 줄이라 그 아이템의 그림이다.
+  if (entry.kind === 'income' && entry.record.category === 'hunt_loot_sale') {
+    const loot = findHuntLoot(entry.record.itemKey)
+    if (loot !== null) return getItemIconUrlByFile(loot.iconFile)
   }
   return cashbookRowIconOf(recordIconKeyOf(entry))
 }

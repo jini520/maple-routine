@@ -1,14 +1,13 @@
 /**
- * 솔 에르다 조각 정산 폼. 사냥에서 가격을 나중에 입력으로 보관한 조각을 판 날에 적는다.
+ * 솔 에르다 조각 정산 칸. 사냥 전리품 판매의 `조각` 칸이고, 사냥에서 가격을 나중에 입력으로 보관한 조각을 판 날에 적는다.
  *
  * 보관은 캐릭터별이고 시트 머리에서 고른 날까지 쌓인 것만 센다. 그래서 캐릭터가 필수이고, 날짜나
  * 캐릭터를 바꾸면 다시 센다. 보관 개수는 저장하지 않고 기록에서 세며 그 조회는 화면이 넘긴다.
  *
- * 금액은 `판 개수 × 개당 가격` 에서 판매 수수료를 뗀 값이다. 판 개수는 `quantity` 칸에 담아 수정으로 열 때
- * 단가를 `(받은 돈 + 뗀 몫) ÷ 판 개수` 로 되짚는다.
+ * 금액은 `개수 × 개당 가격` 에서 판매 수수료를 뗀 값이다. 개수는 `quantity` 칸에 담아 수정으로 열 때
+ * 단가를 `(받은 돈 + 뗀 몫) ÷ 개수` 로 되짚는다. 기록의 갈래는 `sol_erda_fragment` 그대로라 이미 적힌 정산 기록과 같다.
  */
 import { useEffect, useState } from 'react'
-import { View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
@@ -16,12 +15,12 @@ import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/m
 import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { netProceedsMeso } from '../../../lib/cashbook/item-split'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { requiredCharacterOptions } from '../character-options'
-import { AmountInput, FIELD_CELL_CLASS, FieldCard, FieldRow, SelectRow } from '../sheet-fields'
+import { AmountInput, FieldCard } from '../sheet-fields'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSaleFeeChoice } from './sale-fee'
+import { LootBlock, LootLine } from './loot-block'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 
 /** 보관 개수를 읽는 함수. 못 읽으면 `null` 이다. 뺄 기록 id 는 수정 중인 정산 기록이다. */
@@ -33,12 +32,19 @@ export type LoadFragmentStorage = (
 
 export function FragmentSettleForm(
   props: IncomeFormProps & {
+    /** 고른 캐릭터. 캐릭터 줄은 분류를 바꿔도 남게 사냥 전리품 판매 폼이 든다. */
+    ocid: string | null
+    /** 카드 맨 위에 서는 캐릭터 · 분류 줄. */
+    head: React.ReactNode
+    /** 블록 머리의 그림 · 이름. 사냥 전리품 표의 조각 줄이다. */
+    iconFile: string
+    name: string
     /** 보관 개수 조회. 폼은 `storage/` 를 모른다. */
     loadFragmentStorage: LoadFragmentStorage
   },
 ): React.JSX.Element {
   const editing = props.editing !== undefined
-  const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
+  const { ocid } = props
   const [countText, setCountText] = useState(mesoTextOf(props.editing?.quantity ?? 0))
   /** 친 단가를 되짚는다. 받은 돈은 수수료를 뗀 값이라 뗀 몫을 더해 나눈다. `quantity` 가 없으면 빈 칸이다. */
   const [priceText, setPriceText] = useState(() => {
@@ -77,10 +83,10 @@ export function FragmentSettleForm(
   const price = mesoValueOf(priceText)
   const gross = count * price
   const amount = fee.percent === null ? gross : netProceedsMeso(gross, fee.percent)
-  /** 판 개수 칩. `모두` 는 보관 개수로 바꾸고, 보관을 모르거나 0 이하면 넣을 값이 없어 안 선다. */
+  /** 개수 칩. `모두` 는 보관 개수로 바꾸고, 보관을 모르거나 0 이하면 넣을 값이 없어 안 선다. */
   const countChips =
     storage !== null && storage > 0 ? [{ label: '모두', value: storage, set: true }, ...COUNT_QUICK_ADDS] : COUNT_QUICK_ADDS
-  /** 보관이 있어야 하고 판 개수는 1 부터 보관까지다. */
+  /** 보관이 있어야 하고 개수는 1 부터 보관까지다. */
   const canSave = storage !== null && count >= 1 && count <= storage && price > 0 && fee.ready
 
   useSaveSlot(props.setSave, {
@@ -112,58 +118,51 @@ export function FragmentSettleForm(
   return (
     <>
       <FieldCard>
-        <SelectRow
-          testID="income-sheet-chain"
-          label="캐릭터"
-          placeholder="캐릭터 선택"
-          options={requiredCharacterOptions(props.characters)}
-          selected={ocid}
-          onSelect={setOcid}
-        />
+        {props.head}
 
-        {/* 판 개수를 치면서 상한인 보관을 같은 줄에서 본다(사용자 지정). */}
-        <View
-          testID="income-sheet-settle-count-row"
-          className={FIELD_CELL_CLASS}
+        {/* 개수를 치면서 상한인 보유 개수를 같은 블록 머리에서 본다(사용자 지정 2026-10-29). */}
+        <LootBlock
+          iconFile={props.iconFile}
+          name={props.name}
+          right={
+            <>
+              <Text className="text-11 text-text-muted">보유</Text>
+              <Text
+                testID="income-sheet-fragment-storage"
+                className="text-xs font-medium text-text"
+                style={TABULAR_NUMS}
+              >
+                {storage === null ? '-' : `${storage}개`}
+              </Text>
+            </>
+          }
         >
-          <Text className="shrink-0 text-xs text-text-muted">보관 중</Text>
-          <Text
-            testID="income-sheet-fragment-storage"
-            className="shrink-0 text-sm font-semibold text-text"
-            style={TABULAR_NUMS}
-          >
-            {storage === null ? '-' : `${storage}개`}
-          </Text>
-          <Text className="ml-auto shrink-0 text-xs text-text-muted">판 개수</Text>
-          <View className="w-16 flex-row items-center">
+          <LootLine label="개당 가격" unit="메소">
+            <AmountInput
+              testID="income-sheet-settle-price"
+              label="개당 가격"
+              context={props.name}
+              icon="meso"
+              unit="메소"
+              reading
+              chips={FRAGMENT_PRICE_QUICK_ADDS}
+              value={priceText}
+              onChange={setPriceText}
+            />
+          </LootLine>
+          <LootLine label="개수" unit="개">
             <AmountInput
               testID="income-sheet-settle-count"
-              label="판 개수"
-              context="솔 에르다 조각"
+              label="개수"
+              context={props.name}
               icon="fragment"
               unit="개"
               chips={countChips}
               value={countText}
               onChange={setCountText}
             />
-          </View>
-          <Text className="-ml-1.5 shrink-0 text-xs text-text-muted">개</Text>
-        </View>
-
-        <FieldRow label="개당 가격">
-          <AmountInput
-            testID="income-sheet-settle-price"
-            label="개당 가격"
-            context="솔 에르다 조각"
-            icon="meso"
-            unit="메소"
-            reading
-            chips={FRAGMENT_PRICE_QUICK_ADDS}
-            value={priceText}
-            onChange={setPriceText}
-          />
-          <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
-        </FieldRow>
+          </LootLine>
+        </LootBlock>
 
         <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
       </FieldCard>

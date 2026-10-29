@@ -6,6 +6,7 @@ import {
   hasTariff,
   incomeCategories,
   incomeCategoryKeyOfName,
+  incomePickerCategories,
   itemKindNameOf,
   parseCashbookCategories,
   spendCategories,
@@ -83,5 +84,24 @@ describe('가계부 갈래 표', () => {
 
     expect([countsQuantity('consumable'), hasTariff('consumable')]).toEqual([false, true])
     expect(itemKindNameOf('consumable')).toBe('소모품')
+  })
+
+  /**
+   * 조각 정산은 사냥 전리품 판매의 조각 칸으로 옮겼다. 그 갈래 줄은 1.0.13 출시 때 서버에 더해지고, 그 전에 조각 카드를
+   * 숨기면 조각 정산을 적을 곳이 사라진다.
+   */
+  it('사냥 전리품 판매 갈래가 서버 표에 있을 때만 고르는 시트에서 솔 에르다 조각 카드를 뺀다', () => {
+    expect(incomePickerCategories().map((each) => each.key)).toContain('sol_erda_fragment')
+
+    const fragment = bundled.categories.find((each) => each.key === 'sol_erda_fragment')!
+    withCategories([
+      ...bundled.categories,
+      { ...fragment, key: 'hunt_loot_sale', name: '사냥 전리품 판매', cardTitle: '사냥 전리품 판매' },
+    ])
+
+    const keys = incomePickerCategories().map((each) => each.key)
+    expect(keys).toContain('hunt_loot_sale')
+    expect(keys).not.toContain('sol_erda_fragment')
+    expect(incomePickerCategories().find((each) => each.key === 'hunt_loot_sale')?.known).toBe(true)
   })
 })

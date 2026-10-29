@@ -17,6 +17,7 @@ import dropItems from './drop-items.json'
 import enhancementCosts from './enhancement-costs.json'
 import equipmentItems from './equipment-items.json'
 import huntingGrounds from './hunting-grounds.json'
+import huntLoot from './hunt-loot.json'
 import imageCrops from './image-crops.json'
 import mvpGrades from './mvp-grades.json'
 import spendCatalog from './spend-catalog.json'
@@ -38,6 +39,7 @@ const FIXTURES: Record<GameDataSection, unknown> = {
   enhancementCosts,
   mvpGrades,
   huntingGrounds,
+  huntLoot,
   assets,
   imageCrops,
 }

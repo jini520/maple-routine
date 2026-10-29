@@ -46,6 +46,7 @@ import {
   getIncomeRecordsBetween,
   getIncomeRecordsRevision,
   insertIncomeRecord,
+  insertIncomeRecords,
   updateIncomeRecord,
   type IncomeRecord,
 } from '../../storage/income'
@@ -57,6 +58,7 @@ import { starforceMvpDiscountResolver } from '../../lib/mvp/starforce'
 import { withMvpDiscount } from '../../lib/enhancement/cost'
 import { loadEnhancementTotals } from '../../storage/enhancement-totals'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
+import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
 import { mainNexonAccountIdOf } from '../../lib/nexon-credential'
 import { randomUuid } from '../../native/uuid'
 import { getAuthConfig } from '../../storage/api-key'
@@ -87,6 +89,17 @@ export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void>
   // 저장이 성공한 뒤에만 기억한다.
   const remembered = lastHuntOf(draft)
   if (remembered !== null) await setLastHunt(remembered.ocid, remembered.hunt)
+}
+
+/** 여러 건을 한 번에 적는다. 하나라도 못 적으면 아무것도 안 남는다. 사냥 전리품 판매가 아이템마다 한 줄씩 적는다. */
+export async function recordIncomes(drafts: readonly IncomeDraft[], now: Date): Promise<void> {
+  const records = drafts.map((draft) => ({ ...draft, id: randomUuid(), recordedAt: now.toISOString() }))
+  await insertIncomeRecords(records, await entryAccountId())
+  await reportCashbookEntries(
+    records.map((record) => record.id),
+    now,
+  )
+  countCoreSave()
 }
 
 /**
@@ -880,6 +893,10 @@ function incomeCard(record: IncomeRecord): RecordCard {
         title,
         detail: record.quantity === null ? null : `${category?.name ?? title} ${quantityText(record.quantity, category?.unit)} 판매`,
       }
+    case 'hunt_loot_sale': {
+      const name = findHuntLoot(record.itemKey)?.name ?? category?.name ?? title
+      return { title, detail: record.quantity === null ? name : `${name} ${quantityText(record.quantity, '개')} 판매` }
+    }
     case 'item_sale':
       return { title, detail: tradedItemDetail(record.item, record.itemKind ?? 'equipment', record.quantity) }
     case 'etc':

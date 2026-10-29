@@ -84,7 +84,7 @@ export function useGameTable<K extends GameDataSection>(section: K): GameData[K]
   return useSyncExternalStore(table.subscribe, table.get)
 }
 
-/** 칸 열여섯이 전부 계약을 지키면 그 값, 하나라도 어기거나 빠지면 `null`. 표 하나가 빈 채로 화면을 열 수 없다. */
+/** 칸 열일곱이 전부 계약을 지키면 그 값, 하나라도 어기거나 빠지면 `null`. 표 하나가 빈 채로 화면을 열 수 없다. */
 function parseAll(sections: Partial<Record<GameDataSection, unknown>>): GameData | null {
   const data: Partial<Record<GameDataSection, unknown>> = {}
   for (const key of GAME_DATA_SECTIONS) {
@@ -95,7 +95,7 @@ function parseAll(sections: Partial<Record<GameDataSection, unknown>>): GameData
   return data as GameData
 }
 
-/** 표 열여섯을 한 번에 바꾼다. 사이에 렌더가 끼지 않게 같은 틱에서 돈다. */
+/** 표 열일곱을 한 번에 바꾼다. 사이에 렌더가 끼지 않게 같은 틱에서 돈다. */
 function apply(data: GameData): void {
   for (const key of GAME_DATA_SECTIONS) (SECTIONS[key].table as { set(next: unknown): void }).set(data[key])
 }

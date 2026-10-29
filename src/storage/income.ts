@@ -173,6 +173,17 @@ export async function insertIncomeRecord(record: IncomeRecord, nexonAccountId: s
   await inTransaction(db, () => insertEntry(db, incomeEntryOf(record), nexonAccountId))
 }
 
+/** 여러 건을 한 트랜잭션으로 넣는다. 하나라도 못 넣으면 아무것도 안 남는다. */
+export async function insertIncomeRecords(
+  records: readonly IncomeRecord[],
+  nexonAccountId: string | null = null,
+): Promise<void> {
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    for (const record of records) await insertEntry(db, incomeEntryOf(record), nexonAccountId)
+  })
+}
+
 /** 갈아 끼우기. 지출과 같은 계약이다. 저장 시각은 그대로다. */
 export async function updateIncomeRecord(record: IncomeRecord, nexonAccountId: string | null = null): Promise<void> {
   const db = await getBossProfitDb()

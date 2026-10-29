@@ -1,7 +1,7 @@
 # ADR-117 사냥 전리품 판매
 
-> ⚪ 미구현
-> 관련 소스: `app/cashbook/income/` · `lib/cashbook/categories.ts` · `features/stats/aggregate.ts`
+> 🟢 유효
+> 관련 소스: `app/cashbook/income/HuntLootSaleForm.tsx` · `app/cashbook/income/FragmentSettleForm.tsx` · `lib/cashbook/hunt-loot.ts` · `lib/cashbook/categories.ts` · `features/stats/aggregate.ts` · `storage/income.ts`
 
 ## 배경
 
@@ -55,10 +55,15 @@
 
 ## 테스트
 
-서버 저장소(`maple-routine-server`)의 테스트다. 앱 쪽은 구현할 때 적는다.
+앞의 다섯 줄은 앱, 뒤의 세 줄은 서버 저장소(`maple-routine-server`)의 테스트다.
 
 | 파일 | 확인하는 것 |
 |---|---|
+| `app/cashbook/__tests__/IncomeSheet.test.tsx` (`사냥 전리품 판매`) | 결정 1 · 3 · 4 · 5: 고르는 시트에 조각 카드 대신 이 갈래가 서는지, 열린 이벤트가 없으면 분류가 조각 · 소비 둘인지, 소비는 NPC 가격으로 수수료 없이 · 이벤트는 아이템마다 수수료를 떼어 친 아이템만 한 줄씩 저장하는지, 조각 칸이 보유를 보이고 `sol_erda_fragment` 로 저장하는지, 수정은 그 아이템 하나만 여는지 본다. 같은 파일의 `솔 에르다 조각 정산` 이 조각 칸의 보유 · 개수 상한 · 단가 되짚기를 본다 |
+| `lib/__tests__/hunt-loot.spec.ts` | 결정 2 · 4: NPC 가격이 분류와 안 맞으면 표를 버리는지, 이벤트 아이템이 시작 날부터 끝 날 전날까지만 서는지, 끝난 아이템도 key 로 찾는지 본다 |
+| `lib/__tests__/cashbook-categories.spec.ts` | 결정 1: 서버 표에 이 갈래가 있을 때만 조각 카드를 빼는지 본다 |
+| `storage/sqlite/__tests__/income-batch-real-sqlite.test.ts` | 결정 5: 여러 건을 한 번에 넣고, 하나라도 못 넣으면 아무것도 안 남는지 진짜 SQLite 로 본다 |
+| `features/stats/__tests__/aggregate.spec.ts` · `features/cashbook/__tests__/records.spec.ts` · `features/cashbook/__tests__/row-icon.spec.ts` | 결정 6: 판매 금액이 `사냥` 조각 안에서 아이템 이름으로 나뉘는지, 하루 상세 줄이 아이템 이름 · 개수와 그 아이템의 그림인지 본다 |
 | `src/modules/hunt-loot/hunt-loot.repository.spec.ts` | 결정 2: 더한 차례로 내고 고치기가 key · 분류를 안 바꾸는지, 차례를 옮기는지, NPC 가격이 분류와 안 맞으면 표의 CHECK 가 막아 `HuntLootPriceShape` 가 되는지 진짜 Postgres 로 본다 |
 | `src/modules/admin/admin.controller.spec.ts` (`사냥 전리품`) | 결정 2: 관리 API 가 NPC 가격이 분류와 안 맞거나 기간이 거꾸로이거나 그림이 그림 표에 없으면 400 으로 막고 리포지토리를 안 부르는지, 같은 key 는 409 · 모르는 key 는 404 인지 본다 |
 | `src/cli/seed-game-data.spec.ts` | 결정 2: 씨앗이 빈 표만 채우고, 소비인데 NPC 가격이 없는 씨앗은 던지는지 본다 |

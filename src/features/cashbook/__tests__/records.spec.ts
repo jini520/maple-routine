@@ -5,6 +5,7 @@ import type { EnhancementTotal } from '../../../storage/enhancement-totals'
 
 jest.mock('../../../storage/income', () => ({
   insertIncomeRecord: jest.fn(),
+  insertIncomeRecords: jest.fn(),
   updateIncomeRecord: jest.fn(),
   deleteIncomeRecord: jest.fn(),
   getIncomeRecordsBetween: jest.fn(),
@@ -176,6 +177,25 @@ describe('행의 신원은 여기서 만든다', () => {
 
     const [first, second] = income.insertIncomeRecord.mock.calls.map((call) => call[0].id)
     expect(first).not.toBe(second)
+  })
+})
+
+// 사냥 전리품 판매는 한 번에 여러 아이템을 적고 아이템마다 한 줄이다.
+describe('recordIncomes', () => {
+  it('한 번에 넣고 줄마다 다른 id 와 같은 저장 시각을 박으며, 리뷰 요청은 한 번만 센다', async () => {
+    const { recordIncomes } = require('../records') as typeof import('../records')
+
+    await recordIncomes([수입, { ...수입, mesoAmount: 1 }], 지금)
+
+    expect(income.insertIncomeRecords).toHaveBeenCalledTimes(1)
+    const [records, accountId] = income.insertIncomeRecords.mock.calls[0]
+    expect(records.map((record: { recordedAt: string }) => record.recordedAt)).toEqual([
+      '2026-08-23T05:00:00.000Z',
+      '2026-08-23T05:00:00.000Z',
+    ])
+    expect(records[0].id).not.toBe(records[1].id)
+    expect(accountId).toBe('account-main')
+    expect(appReview.countCoreSave).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -595,6 +615,12 @@ describe('하루 목록 카드의 두 줄', () => {
     expect(
       카드({ kind: 'income', record: { ...수입행, category: 'sol_erda_fragment', item: null, quantity: 120 }, characterName: '' }),
     ).toEqual(['사냥', '솔 에르다 조각 120개 판매'])
+  })
+
+  // 아이템마다 한 줄로 저장해서 줄마다 무엇을 팔았는지가 선다. 이름은 기록이 아니라 전리품 표의 key 로 찾는다.
+  it('사냥 전리품 판매는 전리품 표에서 찾은 아이템 이름과 판 개수다', () => {
+    const 전리품 = { ...수입행, category: 'hunt_loot_sale' as const, item: null, itemKey: 'reindeer_milk', quantity: 300 }
+    expect(detailOf({ kind: 'income', record: 전리품, characterName: '' })).toBe('순록의 우유 300개 판매')
   })
 })
 
