@@ -76,7 +76,7 @@
 
 | 부품 | 하는 일 |
 |---|---|
-| `BottomSheet` | 바텀시트 껍데기. 다크에서 안쪽 표면을 한 칸 올린다 |
+| `BottomSheet` | 바텀시트 껍데기. 상단 시트를 뒤집은 떠 있는 모양이고, 다크에서 안쪽 표면을 한 칸 올린다 |
 | `TopSheet` | 위에서 내려오는 떠 있는 시트. 끌면 늘어났다 돌아오고, 치는 칸을 직접 품는다([[ADR-062]] 결정 15) |
 | `InputCard` | 키보드 위에 뜨는 입력 카드. `InputCardHost` 는 앱 셸에 한 번만 둔다. `unitKey` 를 넘기면 금액 단위 세그먼트(`기본` · `만` · `억`)가 선다([[ADR-082]] 결정 13). `multiline` 이면 세 줄로 열려 네 줄까지 자라는 글자 칸이다([[ADR-091]] 결정 14) |
 | `MesoPad` | 숫자 칸의 글자 처리와 커서 계산, 금액 단위 환산(`meso-pad.ts` · `meso-caret.ts` · `meso-unit.ts`) |
@@ -84,7 +84,7 @@
 | `Modal` · `NoticeModal` | 가운데 모달 · 알림 모달 틀 |
 | `LoadingModal` · `TaskProgressModal` · `TaskResumeModal` | 불러오는 중 모달 · 오래 걸리는 작업 진행률 · 이어서 하기([[ADR-023]]) |
 | `CalendarPopover` · `WeekCalendarPopover` · `TimePopover` | 날짜 · 주 · 시각 팝오버 |
-| `SelectField` · `ChainSelect` · `AccountSelect` | 드롭다운 · 값 여럿을 이어서 고르는 드롭다운 · 메이플 ID 드롭다운 |
+| `SelectField` · `AccountSelect` | 드롭다운 · 메이플 ID 드롭다운 |
 | `FaqSheet` | 설명용 바텀시트 |
 | `SpeedDial` | 펼치는 ＋ |
 | `Toast` | 토스트와 쌓기(`ToastStack`) |

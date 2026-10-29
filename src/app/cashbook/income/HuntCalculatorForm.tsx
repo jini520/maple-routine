@@ -52,8 +52,7 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import type { LastHunt, LastHunts } from '../../../storage/last-hunts'
-import { FieldRow, QuantityStepper, useCountField } from '../sheet-fields'
-import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
+import { FIELD_CELL_CLASS, FieldCard, FieldRow, QuantityStepper, SelectRow, useCountField } from '../sheet-fields'
 import { requiredCharacterOptions } from '../character-options'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
@@ -134,32 +133,36 @@ function ForceBadge(props: { region: HuntingRegion; force: number }): React.JSX.
 }
 
 /**
- * 고른 사냥터의 포스 · 레벨 · 마릿수. 사냥터 줄 왼쪽에 서는 캡슐 하나다.
+ * 고른 사냥터의 포스 · 레벨 · 마릿수. 사냥터 칸의 둘째 줄 오른쪽에 서는 캡슐 하나다.
  *
  * 칸을 세로 선으로 나눈다. 셋이 한 사냥터의 정보라는 것을 모양이 말한다. 마릿수는 **잡는**
- * 마릿수라 사냥 효율에서 놓친 만큼 준다.
+ * 마릿수라 사냥 효율에서 놓친 만큼 준다. 사냥터를 안 골랐으면 세 값이 `-` 로 선다. 캡슐을 걷으면
+ * 고르는 순간 칸이 높아져 아래 줄이 밀린다.
  */
 function GroundSummary(props: {
-  region: HuntingRegion
-  ground: HuntingGround
-  killedMobs: number
+  chosen: { region: HuntingRegion; ground: HuntingGround; killedMobs: number } | null
 }): React.JSX.Element {
+  const { chosen } = props
   return (
     <View
       testID="income-sheet-ground-summary"
-      className="shrink-0 flex-row items-center rounded-full bg-surface-2 px-1 py-0.5"
+      className="shrink-0 flex-row items-center self-end rounded-full bg-surface-2 px-1 py-0.5"
     >
       <View className="px-1.5">
-        <ForceMark region={props.region} force={props.ground.force} />
+        {chosen === null ? (
+          <Text className="text-11 text-text-disabled">-</Text>
+        ) : (
+          <ForceMark region={chosen.region} force={chosen.ground.force} />
+        )}
       </View>
       <View className="border-l border-border px-1.5">
-        <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
-          {levelLabelOf(props.ground)}
+        <Text className={`text-11 ${chosen === null ? 'text-text-disabled' : 'text-text-muted'}`} style={TABULAR_NUMS}>
+          {chosen === null ? 'lv.-' : levelLabelOf(chosen.ground)}
         </Text>
       </View>
       <View className="border-l border-border px-1.5">
-        <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
-          <Text testID="income-sheet-killed-mobs">{props.killedMobs}</Text>마리
+        <Text className={`text-11 ${chosen === null ? 'text-text-disabled' : 'text-text-muted'}`} style={TABULAR_NUMS}>
+          <Text testID="income-sheet-killed-mobs">{chosen === null ? '-' : chosen.killedMobs}</Text>마리
         </Text>
       </View>
     </View>
@@ -532,251 +535,241 @@ export function HuntCalculatorForm(
 
   return (
     <>
-      {/*
-        캐릭터 · 지역 · 사냥터가 한 줄씩이다. 한 단계짜리 사슬 셋이라 색이 단계 차례로 안 갈려
-        `toneOffset` 으로 줄마다 다음 색을 입힌다.
-      */}
-      <ChainSelect
-        testID="income-sheet-chain"
-        steps={[
-          {
-            name: '캐릭터',
-            options: requiredCharacterOptions(props.characters),
-            selected: ocid,
-            onSelect: selectCharacter,
-          },
-        ]}
-      />
-      <ChainSelect
-        testID="income-sheet-region"
-        toneOffset={1}
-        steps={[
-          {
-            name: '지역',
-            // 캐릭터가 없으면 고를 지역을 안 준다. 캐릭터 없이 적힌 옛 기록의 지역만 알약으로 남긴다.
-            options:
-              ocid === null
-                ? [
-                    { value: null, label: '캐릭터를 먼저 고르세요' },
-                    ...(huntRegion === null ? [] : [{ value: huntRegion.key, label: huntRegion.name }]),
-                  ]
-                : [
-                    { value: null, label: '선택 안함' },
-                    ...huntRegions.map((region) => ({ value: region.key, label: region.name })),
-                  ],
-            selected: regionKey,
-            onSelect: selectRegion,
-          },
-        ]}
-      />
-      <ChainSelect
-        testID="income-sheet-ground"
-        toneOffset={2}
-        leading={
-          huntRegion === null || huntGround === null ? null : (
-            <GroundSummary
-              region={huntRegion}
-              ground={huntGround}
-              killedMobs={killedMobsOf(huntGround.mobs, missedMobs)}
-            />
-          )
-        }
-        steps={[
-          {
-            name: '사냥터',
-            options:
-              huntRegion === null
-                ? [{ value: null, label: '지역을 먼저 고르세요' }]
-                : [
-                    { value: null, label: '선택 안함' },
-                    ...huntGrounds.map((ground) => ({ value: ground.key, label: ground.name })),
-                  ],
-            selected: groundKey,
-            onSelect: setGroundKey,
-            // 목록 한 줄에 포스 배지·레벨·마릿수가 함께 선다.
-            renderOption: (option: SelectOption, isSelected: boolean) => {
-              const ground =
-                huntRegion === null || option.value === null
-                  ? null
-                  : (huntRegion.grounds.find((each) => each.key === option.value) ?? null)
-              return ground === null || huntRegion === null ? (
-                <Text
-                  numberOfLines={1}
-                  className={`text-sm ${isSelected ? 'font-semibold text-primary-ink' : 'text-text'}`}
-                >
-                  {option.label}
-                </Text>
-              ) : (
-                <GroundOptionRow region={huntRegion} ground={ground} isSelected={isSelected} />
-              )
-            },
-          },
-        ]}
-      />
-
-      {/*
-        효율 조각은 맵이 정한다. 40마리의 −1 은 98%, 22마리의 −1 은 95% 다. 줄은 늘 선다. 사냥터를
-        고를 때 생기면 아래가 밀린다. 사냥터 전에는 40마리 기준 글자를 흐리게 적고 못 누른다.
-      */}
-      <FieldRow label="사냥 효율" testID="income-sheet-efficiency">
-        <Segment size="sm"
-          options={MISSED_MOB_OPTIONS.map((missed) => `${efficiencyPercentOf(efficiencyMobs, missed)}%`)}
-          selected={`${efficiencyPercentOf(efficiencyMobs, missedMobs)}%`}
-          disabled={huntGround === null}
-          onSelect={(option) => {
-            const picked = MISSED_MOB_OPTIONS.find(
-              (missed) => `${efficiencyPercentOf(efficiencyMobs, missed)}%` === option,
-            )
-            if (picked !== undefined) setMissedMobs(picked)
-          }}
+      <FieldCard>
+        {/* 캐릭터 · 지역 · 사냥터가 한 칸씩이다. 앞을 골라야 뒤의 목록이 선다. */}
+        <SelectRow
+          testID="income-sheet-chain"
+          label="캐릭터"
+          placeholder="캐릭터 선택"
+          options={requiredCharacterOptions(props.characters)}
+          selected={ocid}
+          onSelect={selectCharacter}
         />
-      </FieldRow>
+        <SelectRow
+          testID="income-sheet-region"
+          label="지역"
+          placeholder="지역 선택"
+          // 캐릭터가 없으면 고를 지역을 안 준다. 캐릭터 없이 적힌 옛 기록의 지역만 값으로 남긴다.
+          options={
+            ocid === null
+              ? [
+                  { value: null, label: '캐릭터를 먼저 고르세요' },
+                  ...(huntRegion === null ? [] : [{ value: huntRegion.key, label: huntRegion.name }]),
+                ]
+              : [
+                  { value: null, label: '선택 안함' },
+                  ...huntRegions.map((region) => ({ value: region.key, label: region.name })),
+                ]
+          }
+          selected={regionKey}
+          onSelect={selectRegion}
+        />
+        <SelectRow
+          testID="income-sheet-ground"
+          label="사냥터"
+          placeholder="사냥터 선택"
+          options={
+            huntRegion === null
+              ? [{ value: null, label: '지역을 먼저 고르세요' }]
+              : [
+                  { value: null, label: '선택 안함' },
+                  ...huntGrounds.map((ground) => ({ value: ground.key, label: ground.name })),
+                ]
+          }
+          selected={groundKey}
+          onSelect={setGroundKey}
+          // 목록 한 줄에 포스 배지·레벨·마릿수가 함께 선다.
+          renderOption={(option: SelectOption, isSelected: boolean) => {
+            const ground =
+              huntRegion === null || option.value === null
+                ? null
+                : (huntRegion.grounds.find((each) => each.key === option.value) ?? null)
+            return ground === null || huntRegion === null ? (
+              <Text
+                numberOfLines={1}
+                className={`text-sm ${isSelected ? 'font-semibold text-primary-ink' : 'text-text'}`}
+              >
+                {option.label}
+              </Text>
+            ) : (
+              <GroundOptionRow region={huntRegion} ground={ground} isSelected={isSelected} />
+            )
+          }}
+          below={
+            <GroundSummary
+              chosen={
+                huntRegion === null || huntGround === null
+                  ? null
+                  : { region: huntRegion, ground: huntGround, killedMobs: killedMobsOf(huntGround.mobs, missedMobs) }
+              }
+            />
+          }
+        />
 
-      {/* 켜는 아이템. 켜면 아래 줄의 메소 획득량이 오른다. */}
-      <View
-        testID="income-sheet-boost-line"
-        className="min-h-8 flex-row items-center justify-between border-b border-border pb-2"
-      >
-        <Text className="shrink-0 text-xs text-text-muted">소비</Text>
-        <View testID="income-sheet-boosts" className="flex-row items-center gap-3.5">
-          {MESO_BOOSTS.map((boost) => (
-            <BoostToggle
-              key={boost.id}
-              label={boost.label}
-              icon={getItemIconUrlByFile(boost.icon)}
-              testID={`income-sheet-boost-icon-${boost.id}`}
-              selected={boosts.includes(boost.id)}
-              onPress={() => toggleBoost(boost.id)}
-            />
-          ))}
-          {/* 유니온의 부가 배열 끝이라 이 자리가 곧 그 체크박스 옆이다. 안 켜면 흐리고 못 누른다. */}
-          <View testID="income-sheet-union-tier">
-            <Segment size="sm"
-              options={UNION_TIERS.map((tier) => `${tier}단계`)}
-              selected={`${unionTier}단계`}
-              disabled={!boosts.includes('union')}
-              onSelect={(option) => {
-                const picked = UNION_TIERS.find((tier) => `${tier}단계` === option)
-                if (picked !== undefined) setUnionTier(picked)
-              }}
-            />
+        {/*
+          효율 조각은 맵이 정한다. 40마리의 −1 은 98%, 22마리의 −1 은 95% 다. 줄은 늘 선다. 사냥터를
+          고를 때 생기면 아래가 밀린다. 사냥터 전에는 40마리 기준 글자를 흐리게 적고 못 누른다.
+        */}
+        <FieldRow label="사냥 효율" testID="income-sheet-efficiency">
+          <Segment size="sm"
+            options={MISSED_MOB_OPTIONS.map((missed) => `${efficiencyPercentOf(efficiencyMobs, missed)}%`)}
+            selected={`${efficiencyPercentOf(efficiencyMobs, missedMobs)}%`}
+            disabled={huntGround === null}
+            onSelect={(option) => {
+              const picked = MISSED_MOB_OPTIONS.find(
+                (missed) => `${efficiencyPercentOf(efficiencyMobs, missed)}%` === option,
+              )
+              if (picked !== undefined) setMissedMobs(picked)
+            }}
+          />
+        </FieldRow>
+
+        {/* 켜는 아이템. 켜면 아래 줄의 메소 획득량이 오른다. */}
+        <View
+          testID="income-sheet-boost-line"
+          className={`${FIELD_CELL_CLASS} justify-between`}
+        >
+          <Text className="shrink-0 text-xs text-text-muted">소비</Text>
+          <View testID="income-sheet-boosts" className="flex-row items-center gap-3.5">
+            {MESO_BOOSTS.map((boost) => (
+              <BoostToggle
+                key={boost.id}
+                label={boost.label}
+                icon={getItemIconUrlByFile(boost.icon)}
+                testID={`income-sheet-boost-icon-${boost.id}`}
+                selected={boosts.includes(boost.id)}
+                onPress={() => toggleBoost(boost.id)}
+              />
+            ))}
+            {/* 유니온의 부가 배열 끝이라 이 자리가 곧 그 체크박스 옆이다. 안 켜면 흐리고 못 누른다. */}
+            <View testID="income-sheet-union-tier">
+              <Segment size="sm"
+                options={UNION_TIERS.map((tier) => `${tier}단계`)}
+                selected={`${unionTier}단계`}
+                disabled={!boosts.includes('union')}
+                onSelect={(option) => {
+                  const picked = UNION_TIERS.find((tier) => `${tier}단계` === option)
+                  if (picked !== undefined) setUnionTier(picked)
+                }}
+              />
+            </View>
           </View>
         </View>
-      </View>
 
-      {/*
-        메소 획득량과 소재가 한 줄이다(사용자 지정). 라벨 · 값 · 스테퍼가 `space-between` 으로 벌어진다.
-        `소재`는 사용자가 실제로 세는 단위다. 하나가 30분.
-      */}
-      <View
-        testID="income-sheet-meso-line"
-        className="min-h-8 flex-row items-center justify-between border-b border-border pb-2"
-      >
-        <Text className="shrink-0 text-xs text-text-muted">메소 획득량</Text>
-        {/* 값 자리의 폭을 못박는다. `0%` 와 `258%` 의 글자 폭이 달라 안 박으면 캐릭터를 고르는 순간 스테퍼가 밀린다. */}
-        <View
-          testID="income-sheet-meso-rate-slot"
-          style={MESO_RATE_SLOT}
-          className="flex-row items-center justify-end"
-        >
-            {ocid !== null && mesoRate.kind === 'fallback' ? (
-              /*
-                누르면 입력 카드가 캐릭터 메획을 받는다. 줄에 보이는 것은 결과(`appliedRate`)다.
-                치는 값은 캐릭터 메획이라 결과를 고치게 두면 친 수에 아이템이 한 번 더 붙는다.
-              */
-              <Pressable
-                testID="income-sheet-meso-rate-input"
-                role="button"
-                aria-label="메소 획득량"
-                onPress={() => editField('mesoRate')}
-                className="flex-row items-baseline"
-              >
-                <Text className="text-sm font-semibold text-text" style={TABULAR_NUMS}>
-                  {appliedRate}
-                </Text>
-                <Text className="ml-1.5 shrink-0 text-xs text-text-muted">%</Text>
-              </Pressable>
-            ) : (
-              <Text
-                testID="income-sheet-meso-rate"
-                className="text-sm font-semibold text-text"
-                style={TABULAR_NUMS}
-              >
-                {mesoRate.kind === 'loading' ? '…' : `${appliedRate}%`}
-              </Text>
-            )}
-        </View>
-        <View className="flex-row items-center">
-          {/* 0 · 빈 칸은 메소가 0 이라 저장이 꺼진다. 0 소재를 돌았다는 말은 성립하지 않는다. */}
-          <QuantityStepper
-            testID="income-sheet-sojae"
-            label="소재"
-            context="하나가 30분"
-            value={sojaeText}
-            pristine={sojaePristine}
-            onChange={setSojaeText}
-          />
-          <Text className="ml-2 shrink-0 text-xs text-text-muted">소재</Text>
-        </View>
-      </View>
-
-      {/*
-        조각은 개수와 가격을 한 줄에서 받는다. 이름은 그림이 진다. `솔 에르다 조각` 여섯 글자가
-        빠지고 그 폭이 두 칸에 간다. 치는 칸에 자기 테두리를 안 준다. 밑줄 하나가 줄의 경계다.
-      */}
-      <View className="min-h-8 flex-row items-center gap-2.5 border-b border-border pb-2">
-        {fragmentIcon !== null && (
-          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-          <Image
-            source={fragmentIcon}
-            className="h-6 w-6 shrink-0"
-            resizeMode="contain"
-            aria-label="솔 에르다 조각"
-          />
-        )}
         {/*
-          누르면 입력 카드가 그 칸 하나를 받는다. 값이 비면 자리표시자가 그 자리에 선다.
-          폭을 못박는 것은 자릿수가 늘어도 줄이 안 움직이게 하기 위해서다.
+          메소 획득량과 소재가 한 줄이다(사용자 지정). 라벨 · 값 · 스테퍼가 `space-between` 으로 벌어진다.
+          `소재`는 사용자가 실제로 세는 단위다. 하나가 30분.
         */}
-        <Pressable
-          testID="income-sheet-fragments"
-          role="button"
-          aria-label="솔 에르다 조각"
-          onPress={() => editField('fragments')}
-          className="shrink-0 flex-row items-baseline gap-1"
+        <View
+          testID="income-sheet-meso-line"
+          className={`${FIELD_CELL_CLASS} justify-between`}
         >
-          <Text
-            className={`w-[52px] text-right text-sm font-semibold ${
-              fragmentsText === '' ? 'text-text-disabled' : 'text-text'
-            }`}
-            style={TABULAR_NUMS}
+          <Text className="shrink-0 text-xs text-text-muted">메소 획득량</Text>
+          {/* 값 자리의 폭을 못박는다. `0%` 와 `258%` 의 글자 폭이 달라 안 박으면 캐릭터를 고르는 순간 스테퍼가 밀린다. */}
+          <View
+            testID="income-sheet-meso-rate-slot"
+            style={MESO_RATE_SLOT}
+            className="flex-row items-center justify-end"
           >
-            {fragmentsText === '' ? '0' : mesoValueOf(fragmentsText).toLocaleString()}
-          </Text>
-          <Text className="text-xs text-text-muted">개</Text>
-        </Pressable>
-        <Pressable
-          testID="income-sheet-fragment-price"
-          role="button"
-          aria-label="조각 가격"
-          onPress={() => editField('fragmentPrice')}
-          className="ml-auto min-w-0 flex-1 flex-row items-baseline justify-end gap-1.5"
-        >
-          <Text
-            numberOfLines={1}
-            className={`shrink text-right text-sm font-semibold ${
-              fragmentPriceText === '' ? 'text-text-disabled' : 'text-text'
-            }`}
-            style={TABULAR_NUMS}
-          >
-            {fragmentPriceText === '' ? '미입력 시 보관' : mesoValueOf(fragmentPriceText).toLocaleString()}
-          </Text>
-          <Text className="shrink-0 text-xs text-text-muted">메소</Text>
-        </Pressable>
-      </View>
+              {ocid !== null && mesoRate.kind === 'fallback' ? (
+                /*
+                  누르면 입력 카드가 캐릭터 메획을 받는다. 줄에 보이는 것은 결과(`appliedRate`)다.
+                  치는 값은 캐릭터 메획이라 결과를 고치게 두면 친 수에 아이템이 한 번 더 붙는다.
+                */
+                <Pressable
+                  testID="income-sheet-meso-rate-input"
+                  role="button"
+                  aria-label="메소 획득량"
+                  onPress={() => editField('mesoRate')}
+                  className="flex-row items-baseline"
+                >
+                  <Text className="text-sm font-semibold text-text" style={TABULAR_NUMS}>
+                    {appliedRate}
+                  </Text>
+                  <Text className="ml-1.5 shrink-0 text-xs text-text-muted">%</Text>
+                </Pressable>
+              ) : (
+                <Text
+                  testID="income-sheet-meso-rate"
+                  className="text-sm font-semibold text-text"
+                  style={TABULAR_NUMS}
+                >
+                  {mesoRate.kind === 'loading' ? '…' : `${appliedRate}%`}
+                </Text>
+              )}
+          </View>
+          <View className="flex-row items-center">
+            {/* 0 · 빈 칸은 메소가 0 이라 저장이 꺼진다. 0 소재를 돌았다는 말은 성립하지 않는다. */}
+            <QuantityStepper
+              testID="income-sheet-sojae"
+              label="소재"
+              context="하나가 30분"
+              value={sojaeText}
+              pristine={sojaePristine}
+              onChange={setSojaeText}
+            />
+            <Text className="ml-2 shrink-0 text-xs text-text-muted">소재</Text>
+          </View>
+        </View>
 
-      {/* 조각 가격을 안 적어도 선다. 비면 판 것이 없어 떼는 돈이 0 이다. */}
-      <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
+        {/*
+          조각은 개수와 가격을 한 줄에서 받는다. 이름은 그림이 진다. `솔 에르다 조각` 여섯 글자가
+          빠지고 그 폭이 두 칸에 간다. 치는 칸에 자기 테두리를 안 준다. 밑줄 하나가 줄의 경계다.
+        */}
+        <View className={FIELD_CELL_CLASS}>
+          {fragmentIcon !== null && (
+            // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+            <Image
+              source={fragmentIcon}
+              className="h-6 w-6 shrink-0"
+              resizeMode="contain"
+              aria-label="솔 에르다 조각"
+            />
+          )}
+          {/*
+            누르면 입력 카드가 그 칸 하나를 받는다. 값이 비면 자리표시자가 그 자리에 선다.
+            폭을 못박는 것은 자릿수가 늘어도 줄이 안 움직이게 하기 위해서다.
+          */}
+          <Pressable
+            testID="income-sheet-fragments"
+            role="button"
+            aria-label="솔 에르다 조각"
+            onPress={() => editField('fragments')}
+            className="shrink-0 flex-row items-baseline gap-1"
+          >
+            <Text
+              className={`w-[52px] text-right text-sm font-semibold ${
+                fragmentsText === '' ? 'text-text-disabled' : 'text-text'
+              }`}
+              style={TABULAR_NUMS}
+            >
+              {fragmentsText === '' ? '0' : mesoValueOf(fragmentsText).toLocaleString()}
+            </Text>
+            <Text className="text-xs text-text-muted">개</Text>
+          </Pressable>
+          <Pressable
+            testID="income-sheet-fragment-price"
+            role="button"
+            aria-label="조각 가격"
+            onPress={() => editField('fragmentPrice')}
+            className="ml-auto min-w-0 flex-1 flex-row items-baseline justify-end gap-1.5"
+          >
+            <Text
+              numberOfLines={1}
+              className={`shrink text-right text-sm font-semibold ${
+                fragmentPriceText === '' ? 'text-text-disabled' : 'text-text'
+              }`}
+              style={TABULAR_NUMS}
+            >
+              {fragmentPriceText === '' ? '미입력 시 보관' : mesoValueOf(fragmentPriceText).toLocaleString()}
+            </Text>
+            <Text className="shrink-0 text-xs text-text-muted">메소</Text>
+          </Pressable>
+        </View>
+
+        {/* 조각 가격을 안 적어도 선다. 비면 판 것이 없어 떼는 돈이 0 이다. */}
+        <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
+      </FieldCard>
 
       {/*
         못 치는 값이 총액 덩어리로 들어왔다. 자기 줄을 쓰면 줄 28 에 갭 12 를 지는데 여기서는

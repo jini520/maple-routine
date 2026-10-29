@@ -20,6 +20,10 @@ jest.mock('@gorhom/bottom-sheet', () => {
       React.createElement(ReactNative.View, props),
     // 넘긴 것을 그대로 돌려준다. 시트가 무엇을 넘겼는지는 프롭에서 본다.
     useBottomSheetTimingConfigs: (config: unknown) => config,
+    useBottomSheetInternal: () =>
+      jest.requireActual<typeof import('../../../components/__tests__/bottom-sheet-internal-fake')>(
+        '../../../components/__tests__/bottom-sheet-internal-fake',
+      ).fakeBottomSheetInternal(),
     BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
   }
 })
@@ -234,15 +238,12 @@ const 사슬들 = ['income-sheet-chain', 'income-sheet-region', 'income-sheet-gr
  */
 async function 사슬고르기(view: Rendered, value: string): Promise<void> {
   for (const 사슬 of 사슬들) {
-    for (const 여는곳 of [`${사슬}-placeholder-trigger`, `${사슬}-last-trigger`]) {
-      if (view.queryByTestId(여는곳) === null) continue
-      await 아이디로누르기(view, 여는곳)
-      if (view.queryByTestId(`${사슬}-option-${value}`) !== null) {
-        await 아이디로누르기(view, `${사슬}-option-${value}`)
-        return
-      }
-      await 아이디로누르기(view, `${사슬}-backdrop`)
+    await 아이디로누르기(view, `${사슬}-open`)
+    if (view.queryByTestId(`${사슬}-option-${value}`) !== null) {
+      await 아이디로누르기(view, `${사슬}-option-${value}`)
+      return
     }
+    await 아이디로누르기(view, `${사슬}-backdrop`)
   }
   throw new Error(`고르는 줄에서 ${value} 를 못 찾았다`)
 }
@@ -308,8 +309,8 @@ describe('갈래', () => {
     const view = await 그리기({}, 'hunting')
 
     expect(view.queryByTestId('income-sheet-name-label')).toBeNull()
-    expect(view.getByTestId('income-sheet-chain-placeholder-trigger')).toBeTruthy()
-    expect(view.getByTestId('income-sheet-chain-placeholder-trigger')).toBeTruthy()
+    expect(view.getByTestId('income-sheet-chain-open')).toBeTruthy()
+    expect(view.getByTestId('income-sheet-chain-open')).toBeTruthy()
   })
 })
 
@@ -672,16 +673,16 @@ describe('캐릭터 귀속', () => {
   it('기본이 선택 안함 이다', async () => {
     const view = await 그리기()
 
-    expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
+    expect(view.getByTestId('income-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
   })
 
-  it('고르면 알약이 서고 자리표시자가 사라진다', async () => {
+  it('고르면 칸에 이름이 서고 자리표시자가 사라진다', async () => {
     const view = await 판매시트()
 
     await 사슬고르기(view, 'ocid-1')
 
-    expect(view.getByTestId('income-sheet-chain-badge-캐릭터')).toHaveTextContent('루디')
-    expect(view.queryByTestId('income-sheet-chain-placeholder')).toBeNull()
+    expect(view.getByTestId('income-sheet-chain-value')).toHaveTextContent('루디')
+    expect(view.getByTestId('income-sheet-chain-value')).not.toHaveTextContent('캐릭터 선택')
   })
 
   it('고르면 그 캐릭터로 저장한다', async () => {
@@ -707,7 +708,7 @@ describe('캐릭터 귀속', () => {
   // 수수료 요율을 캐릭터가 속한 ID 의 등급에서 찾는다. 계정 단위로 적을 수 없다.
   it('아이템 판매는 캐릭터 목록에 선택 안함이 없다', async () => {
     const view = await 판매시트()
-    await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
+    await 아이디로누르기(view, 'income-sheet-chain-open')
 
     expect(view.queryByTestId('income-sheet-chain-option-null')).toBeNull()
     expect(view.queryByText('선택 안함')).toBeNull()
@@ -754,7 +755,7 @@ describe('수정 모드', () => {
 
     expect(view.getByTestId('income-sheet-name-label')).toHaveTextContent('판매 아이템')
     expect(줄글자(view, 'income-sheet-gross')).toBe('1,200,000,000')
-    expect(view.getByTestId('income-sheet-chain-placeholder')).toHaveTextContent('캐릭터 선택')
+    expect(view.getByTestId('income-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
     // 종류 칸이 없던 옛 행은 장비다. 수량이 없어 친 금액이 곧 판매 대금이다.
     expect(
       within(view.getByTestId('income-sheet-item-kind')).getByLabelText('장비').props.accessibilityState
@@ -1151,11 +1152,11 @@ describe('갈래마다 자기 폼', () => {
   it('다시 연 시트는 빈 폼이다. 고른 캐릭터가 안 남는다', async () => {
     const 먼저 = await 그리기({}, 'hunting')
     await 루디고르기(먼저)
-    expect(먼저.getByTestId('income-sheet-chain-badge-캐릭터')).toHaveTextContent('루디')
+    expect(먼저.getByTestId('income-sheet-chain-value')).toHaveTextContent('루디')
 
     const 다시 = await 그리기({}, 'hunting')
 
-    expect(다시.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
+    expect(다시.getByTestId('income-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
   })
 
   it('다른 갈래를 열면 그 갈래의 값도 비어 있다', async () => {
@@ -1182,7 +1183,7 @@ describe('사냥 계산기', () => {
     const view = await 그리기({}, 'hunting')
     // 루디는 294. 탈라하트(몬스터 290-294)는 들고 츄츄 아일랜드(210-219)는 안 든다.
     await 루디고르기(view)
-    await 아이디로누르기(view, 'income-sheet-region-placeholder-trigger')
+    await 아이디로누르기(view, 'income-sheet-region-open')
 
     expect(view.getByTestId('income-sheet-region-option-tallahart')).toBeTruthy()
     expect(view.queryByTestId('income-sheet-region-option-chew_chew')).toBeNull()
@@ -1195,7 +1196,7 @@ describe('사냥 계산기', () => {
   it('지역은 높은 데가 먼저 선다', async () => {
     const view = await 그리기({}, 'hunting')
     await 루디고르기(view)
-    await 아이디로누르기(view, 'income-sheet-region-placeholder-trigger')
+    await 아이디로누르기(view, 'income-sheet-region-open')
 
     const 보기들 = view
       .getAllByTestId(/^income-sheet-region-option-/)
@@ -1212,7 +1213,7 @@ describe('사냥 계산기', () => {
    */
   it('캐릭터를 안 고르면 지역 목록에 못 간다', async () => {
     const view = await 그리기({}, 'hunting')
-    await 아이디로누르기(view, 'income-sheet-region-placeholder-trigger')
+    await 아이디로누르기(view, 'income-sheet-region-open')
 
     expect(view.getByText('캐릭터를 먼저 고르세요')).toBeTruthy()
     expect(view.queryByTestId('income-sheet-region-option-tallahart')).toBeNull()
@@ -1221,14 +1222,14 @@ describe('사냥 계산기', () => {
   it('지역을 안 고르면 사냥터 목록에 못 간다', async () => {
     const view = await 그리기({}, 'hunting')
     await 루디고르기(view)
-    await 아이디로누르기(view, 'income-sheet-ground-placeholder-trigger')
+    await 아이디로누르기(view, 'income-sheet-ground-open')
 
     expect(view.getByText('지역을 먼저 고르세요')).toBeTruthy()
   })
 
   it('사냥 캐릭터 목록에 `선택 안함` 이 없다', async () => {
     const view = await 그리기({}, 'hunting')
-    await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
+    await 아이디로누르기(view, 'income-sheet-chain-open')
 
     expect(view.getByTestId('income-sheet-chain-option-ocid-1')).toBeTruthy()
     expect(view.queryByTestId('income-sheet-chain-option-')).toBeNull()
@@ -1245,13 +1246,13 @@ describe('사냥 계산기', () => {
   it('기억이 없는 캐릭터로 바꾸면 지역 · 사냥터가 **풀린다**', async () => {
     const view = await 그리기()
     await 밤의길3(view)
-    expect(view.getByTestId('income-sheet-ground-badge-사냥터')).toHaveTextContent('밤의 길 3')
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('밤의 길 3')
 
     await 사슬고르기(view, 'ocid-2')
 
     // 풀린 증거는 자리표시자다. 두 줄이 다시 자기 이름을 든다.
-    expect(view.getByTestId('income-sheet-region-placeholder')).toHaveTextContent('지역 선택')
-    expect(view.getByTestId('income-sheet-ground-placeholder')).toHaveTextContent('사냥터 선택')
+    expect(view.getByTestId('income-sheet-region-value')).toHaveTextContent('지역 선택')
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('사냥터 선택')
   })
 
   /**
@@ -1262,23 +1263,23 @@ describe('사냥 계산기', () => {
     const view = await 그리기()
     await 밤의길3(view)
 
-    await 아이디로누르기(view, 'income-sheet-region-last-trigger')
+    await 아이디로누르기(view, 'income-sheet-region-open')
     await 아이디로누르기(view, 'income-sheet-region-option-')
 
-    expect(view.getByTestId('income-sheet-chain-badge-캐릭터')).toHaveTextContent('루디')
-    expect(view.getByTestId('income-sheet-region-placeholder')).toHaveTextContent('지역 선택')
-    expect(view.getByTestId('income-sheet-ground-placeholder')).toHaveTextContent('사냥터 선택')
+    expect(view.getByTestId('income-sheet-chain-value')).toHaveTextContent('루디')
+    expect(view.getByTestId('income-sheet-region-value')).toHaveTextContent('지역 선택')
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('사냥터 선택')
   })
 
   it('사냥터를 `선택 안함` 으로 되돌리면 사냥터만 풀린다', async () => {
     const view = await 그리기()
     await 밤의길3(view)
 
-    await 아이디로누르기(view, 'income-sheet-ground-last-trigger')
+    await 아이디로누르기(view, 'income-sheet-ground-open')
     await 아이디로누르기(view, 'income-sheet-ground-option-')
 
-    expect(view.getByTestId('income-sheet-region-badge-지역')).toHaveTextContent('탈라하트')
-    expect(view.getByTestId('income-sheet-ground-placeholder')).toHaveTextContent('사냥터 선택')
+    expect(view.getByTestId('income-sheet-region-value')).toHaveTextContent('탈라하트')
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('사냥터 선택')
   })
 
   /**
@@ -1289,10 +1290,10 @@ describe('사냥 계산기', () => {
     const view = await 그리기()
     await 루디고르기(view)
 
-    await 아이디로누르기(view, 'income-sheet-region-placeholder-trigger')
+    await 아이디로누르기(view, 'income-sheet-region-open')
     await 아이디로누르기(view, 'income-sheet-region-option-')
 
-    expect(view.getByTestId('income-sheet-region-placeholder')).toHaveTextContent('지역 선택')
+    expect(view.getByTestId('income-sheet-region-value')).toHaveTextContent('지역 선택')
   })
 
   it('지역을 옮기면 사냥터가 풀린다. 남의 맵으로 계산이 돌지 않는다', async () => {
@@ -1302,9 +1303,9 @@ describe('사냥 계산기', () => {
     // 오디움은 루디(294)의 바닥(274)에 걸쳐 목록에 남는다.
     await 사슬고르기(view, 'odium')
 
-    // 걷힌 것이 자리표시자로 되돌아오는 것이 곧 알림이다. 알약이 사라진다.
-    expect(view.queryByTestId('income-sheet-ground-badge-사냥터')).toBeNull()
-    expect(view.getByTestId('income-sheet-ground-placeholder')).toHaveTextContent('사냥터 선택')
+    // 걷힌 것이 자리표시자로 되돌아오는 것이 곧 알림이다. 고른 이름이 사라진다.
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('사냥터 선택')
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('사냥터 선택')
   })
 
   it('사냥터를 고르면 **획득 메소가 선다**. 사용자가 준 그 예시다', async () => {
@@ -1316,25 +1317,26 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 21,168,000')
   })
 
-  /** 따로 서던 줄은 없다. 셋이 사냥터 줄 왼쪽 캡슐 하나에 선다. 여는 누르개 밖이다. */
-  it('고른 사냥터의 포스 · 레벨 · 마릿수가 사냥터 줄 캡슐에 선다', async () => {
+  /** 따로 서던 줄은 없다. 셋이 사냥터 칸 둘째 줄의 캡슐 하나에 선다. 여는 누르개 밖이다. */
+  it('고른 사냥터의 포스 · 레벨 · 마릿수가 사냥터 칸 캡슐에 선다', async () => {
     const view = await 그리기()
     await 밤의길3(view)
 
     const 캡슐 = view.getByTestId('income-sheet-ground-summary')
     expect(캡슐).toHaveTextContent('700lv.29440마리')
-    expect(within(view.getByTestId('income-sheet-ground-last-trigger')).queryByTestId('income-sheet-ground-summary')).toBeNull()
+    expect(within(view.getByTestId('income-sheet-ground-open')).queryByTestId('income-sheet-ground-summary')).toBeNull()
     // 읽어 주는 이름은 그림이 있든 없든 온전한 말이다.
     expect(within(캡슐).getByLabelText('어센틱 포스 700')).toBeTruthy()
     expect(view.queryByTestId('income-sheet-ground-detail')).toBeNull()
   })
 
-  it('사냥터를 안 골랐으면 캡슐이 없다', async () => {
+  /** 캡슐을 걷으면 사냥터를 고르는 순간 칸이 높아져 아래 줄이 밀린다. */
+  it('사냥터를 안 골랐으면 캡슐의 세 값이 - 로 선다', async () => {
     const view = await 그리기({}, 'hunting')
     await 루디고르기(view)
     await 사슬고르기(view, 'tallahart')
 
-    expect(view.queryByTestId('income-sheet-ground-summary')).toBeNull()
+    expect(view.getByTestId('income-sheet-ground-summary')).toHaveTextContent('-lv.--마리')
   })
 
   it('소재를 치면 메소가 그만큼 는다. 하나가 30분이다 (결정 7)', async () => {
@@ -1451,7 +1453,7 @@ describe('사냥 계산기', () => {
     const view = await 그리기({}, 'hunting')
     await 루디고르기(view) // 294
     await 사슬고르기(view, 'odium')
-    await 아이디로누르기(view, 'income-sheet-ground-placeholder-trigger')
+    await 아이디로누르기(view, 'income-sheet-ground-open')
 
     const 이름들 = view
       .getAllByTestId(/^income-sheet-ground-option-/)
@@ -1697,8 +1699,8 @@ describe('사냥 계산기', () => {
       onDelete: jest.fn(),
     })
 
-    expect(view.getByTestId('income-sheet-region-badge-지역')).toHaveTextContent('탈라하트')
-    expect(view.getByTestId('income-sheet-ground-badge-사냥터')).toHaveTextContent('밤의 길 3')
+    expect(view.getByTestId('income-sheet-region-value')).toHaveTextContent('탈라하트')
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('밤의 길 3')
     // 저장된 것은 **셋을 놓쳤다** 이고, 40마리 맵이라 글자가 93% 로 선다.
     expect(view.getByLabelText('93%').props.accessibilityState?.selected).toBe(true)
     expect(view.getByTestId('income-sheet-killed-mobs')).toHaveTextContent('37')
@@ -1731,7 +1733,7 @@ describe('사냥 계산기', () => {
       onDelete: jest.fn(),
     })
 
-    expect(view.getByTestId('income-sheet-chain-placeholder-trigger')).toBeTruthy()
+    expect(view.getByTestId('income-sheet-chain-open')).toBeTruthy()
     expect(view.queryByLabelText('획득 메소 직접 입력')).toBeNull()
   })
 })
@@ -1759,8 +1761,8 @@ describe('캐릭터를 고르면 그 캐릭터의 마지막 사냥이 선다', (
 
     await 사슬고르기(view, 'ocid-1')
 
-    expect(view.getByTestId('income-sheet-region-badge-지역')).toHaveTextContent('탈라하트')
-    expect(view.getByTestId('income-sheet-ground-badge-사냥터')).toHaveTextContent('밤의 길 3')
+    expect(view.getByTestId('income-sheet-region-value')).toHaveTextContent('탈라하트')
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('밤의 길 3')
     expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(true)
     expect(view.getByLabelText('소형 재물 획득의 비약').props.accessibilityState?.checked).toBe(false)
     // 21,168,000 × 1.5. 되살린 사냥터와 아이템으로 금액까지 선다.
@@ -1773,8 +1775,8 @@ describe('캐릭터를 고르면 그 캐릭터의 마지막 사냥이 선다', (
 
     await 사슬고르기(view, 'ocid-2')
 
-    expect(view.getByTestId('income-sheet-region-badge-지역')).toHaveTextContent('츄츄 아일랜드')
-    expect(view.getByTestId('income-sheet-ground-badge-사냥터')).toHaveTextContent('알록달록 숲지대 1')
+    expect(view.getByTestId('income-sheet-region-value')).toHaveTextContent('츄츄 아일랜드')
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('알록달록 숲지대 1')
     expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(false)
   })
 
@@ -1785,7 +1787,7 @@ describe('캐릭터를 고르면 그 캐릭터의 마지막 사냥이 선다', (
 
     await 사슬고르기(view, 'ocid-1')
 
-    expect(view.getByTestId('income-sheet-ground-badge-사냥터')).toHaveTextContent('밤의 길 3')
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('밤의 길 3')
   })
 
   it('기억이 없는 캐릭터로 바꾸면 지역 · 사냥터 · 켠 아이템을 비운다', async () => {
@@ -1794,8 +1796,8 @@ describe('캐릭터를 고르면 그 캐릭터의 마지막 사냥이 선다', (
 
     await 사슬고르기(view, 'ocid-2')
 
-    expect(view.getByTestId('income-sheet-region-placeholder')).toHaveTextContent('지역 선택')
-    expect(view.getByTestId('income-sheet-ground-placeholder')).toHaveTextContent('사냥터 선택')
+    expect(view.getByTestId('income-sheet-region-value')).toHaveTextContent('지역 선택')
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('사냥터 선택')
     expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(false)
   })
 
@@ -1808,13 +1810,13 @@ describe('캐릭터를 고르면 그 캐릭터의 마지막 사냥이 선다', (
 
     await 사슬고르기(view, 'ocid-1')
 
-    expect(view.getByTestId('income-sheet-ground-badge-사냥터')).toHaveTextContent('밤의 길 4')
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('밤의 길 4')
     expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(false)
   })
 
   /**
    * 창의 바닥이 몬스터 레벨 −20 이라 20 이상 레벨업하면 지난 지역이 목록에서 빠진다. 그 값을
-   * 세우면 목록에 없는 값을 든 줄이 되어 알약도 자리표시자도 안 선다. 아델은 210 이다.
+   * 세우면 목록에 없는 값을 든 줄이 되어 이름도 자리표시자도 안 선다. 아델은 210 이다.
    */
   it.each([
     ['그 레벨로 못 가는 지역', 'tallahart_road_of_night_3'],
@@ -1824,8 +1826,8 @@ describe('캐릭터를 고르면 그 캐릭터의 마지막 사냥이 선다', (
 
     await 사슬고르기(view, 'ocid-2')
 
-    expect(view.getByTestId('income-sheet-region-placeholder')).toHaveTextContent('지역 선택')
-    expect(view.getByTestId('income-sheet-ground-placeholder')).toHaveTextContent('사냥터 선택')
+    expect(view.getByTestId('income-sheet-region-value')).toHaveTextContent('지역 선택')
+    expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('사냥터 선택')
     expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(false)
   })
 
@@ -1848,7 +1850,7 @@ describe('캐릭터를 고르면 그 캐릭터의 마지막 사냥이 선다', (
   it('캐릭터를 고르기 전에는 아무것도 안 선다', async () => {
     const view = await 그리기({ lastHunts: 기억 }, 'hunting')
 
-    expect(view.getByTestId('income-sheet-region-placeholder')).toHaveTextContent('지역 선택')
+    expect(view.getByTestId('income-sheet-region-value')).toHaveTextContent('지역 선택')
     expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(false)
   })
 
@@ -1876,7 +1878,7 @@ describe('캐릭터를 고르면 그 캐릭터의 마지막 사냥이 선다', (
     it('열 때는 기록에 박힌 값이 선다', async () => {
       const view = await 그리기({ lastHunts: 기억, editing: 수정기록, onDelete: jest.fn() })
 
-      expect(view.getByTestId('income-sheet-ground-badge-사냥터')).toHaveTextContent('밤의 길 4')
+      expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('밤의 길 4')
       expect(view.getByLabelText('유니온의 부').props.accessibilityState?.checked).toBe(false)
     })
 
@@ -1885,7 +1887,7 @@ describe('캐릭터를 고르면 그 캐릭터의 마지막 사냥이 선다', (
 
       await 사슬고르기(view, 'ocid-2')
 
-      expect(view.getByTestId('income-sheet-ground-badge-사냥터')).toHaveTextContent('알록달록 숲지대 1')
+      expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('알록달록 숲지대 1')
       expect(view.getByLabelText('수정').props.accessibilityState?.disabled).not.toBe(true)
     })
 
@@ -1894,7 +1896,7 @@ describe('캐릭터를 고르면 그 캐릭터의 마지막 사냥이 선다', (
 
       await 사슬고르기(view, 'ocid-2')
 
-      expect(view.getByTestId('income-sheet-ground-placeholder')).toHaveTextContent('사냥터 선택')
+      expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('사냥터 선택')
       expect(view.getByLabelText('수정').props.accessibilityState?.disabled).toBe(true)
     })
   })
@@ -2006,7 +2008,7 @@ describe('사냥 수동 입력', () => {
 
   it('켜면 계산기 줄이 걷히고 획득 메소가 치는 칸이 된다 (결정 1)', async () => {
     const view = await 그리기({}, 'hunting')
-    expect(view.getByTestId('income-sheet-chain-placeholder-trigger')).toBeTruthy()
+    expect(view.getByTestId('income-sheet-chain-open')).toBeTruthy()
 
     await 직접입력켜기(view)
 
@@ -2318,7 +2320,7 @@ describe('사냥 기록의 캐릭터', () => {
     const view = await 그리기({}, 'hunting')
     await 이름으로누르기(view, '획득 메소 직접 입력')
 
-    await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
+    await 아이디로누르기(view, 'income-sheet-chain-open')
 
     expect(view.getByTestId('income-sheet-chain-option-ocid-1')).toBeTruthy()
     expect(view.queryByTestId('income-sheet-chain-option-')).toBeNull()
@@ -2327,7 +2329,7 @@ describe('사냥 기록의 캐릭터', () => {
   it('캐릭터 없이 적힌 옛 사냥 기록은 캐릭터가 빈 채 열리고 저장이 꺼져 있다', async () => {
     const view = await 그리기({ editing: 옛사냥행, onDelete: jest.fn() })
 
-    expect(view.queryByTestId('income-sheet-chain-badge-캐릭터')).toBeNull()
+    expect(view.getByTestId('income-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
     expect(view.getByLabelText('수정').props.accessibilityState?.disabled).toBe(true)
   })
 })
@@ -2355,7 +2357,7 @@ describe('솔 에르다 조각 정산', () => {
   it('캐릭터 목록에 `선택 안함` 이 없다', async () => {
     const view = await 정산시트()
 
-    await 아이디로누르기(view, 'income-sheet-chain-placeholder-trigger')
+    await 아이디로누르기(view, 'income-sheet-chain-open')
 
     expect(view.getByTestId('income-sheet-chain-option-ocid-1')).toBeTruthy()
     expect(view.queryByTestId('income-sheet-chain-option-')).toBeNull()

@@ -1,11 +1,12 @@
 /**
- * 화면 하단에서 올라오는 시트. `@gorhom/bottom-sheet` 을 감싼 껍데기.
+ * 화면 하단에서 올라오는 떠 있는 시트. `@gorhom/bottom-sheet` 을 감싼 껍데기.
  *
  * 여는 법은 조건부 마운트. 마운트하면 열리고 `onClose` 를 받아 언마운트하면 닫힌다. `onClose` 는
  * 이탈 애니메이션이 끝난 뒤에 온다. 스크림을 누르거나 아래로 끌어도 닫힌다.
  *
- * 높이는 내용이 정하고 상단 안전영역 바로 아래가 상한이다. 시트는 키보드를 안 본다. 폭은 448 중앙
- * 정렬. 스크롤은 이 껍데기가 갖는다.
+ * 상단 시트를 위아래로 뒤집은 모양이다. 화면 옆 · 아래에서 떨어져 떠 있고 네 모서리가 둥글며, 끌기도 같은 규칙이다.
+ * 높이는 내용이 정하고 상단 안전영역 바로 아래가 상한이다. 시트는 키보드를 안 본다. 폭은 448 을 넘지 않는다.
+ * 스크롤은 이 껍데기가 갖는다.
  *
  * `header` 와 `footer` 를 주면 그 둘은 스크롤 밖에 고정된다. 라이브러리가 시트 키를 스크롤
  * **내용** 높이로 정하므로 둘의 높이만큼을 스크롤 내용의 여백이 비워 준다. 그래서 바닥 줄을
@@ -16,7 +17,7 @@
  * @example
  * {열림 ? <BottomSheet label="수입 기록" onClose={() => setState(null)}>{내용}</BottomSheet> : null}
  */
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Platform, Pressable, View } from 'react-native'
 import Animated, {
   Easing,
@@ -24,6 +25,7 @@ import Animated, {
   useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
+  withSpring,
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated'
@@ -31,9 +33,11 @@ import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-cont
 import {
   BottomSheetModal,
   BottomSheetScrollView,
+  useBottomSheetInternal,
   useBottomSheetTimingConfigs,
+  useGestureEventsHandlersDefault,
   type BottomSheetBackdropProps,
-  type BottomSheetBackgroundProps,
+  type GestureEventsHandlersHookType,
 } from '@gorhom/bottom-sheet'
 
 import { vars } from 'nativewind'
@@ -46,6 +50,16 @@ import { buildSheetScopeVariables } from '../../../theme/theme-vars'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { nextScrimOpacity } from './scrim-opacity'
 import { useStepDissolve } from './step-dissolve'
+import {
+  bottomSheetDragOffset,
+  floatingLayerHeight,
+  SHEET_SIDE_GAP_PX,
+  SHEET_RADIUS,
+  SNAP_BACK,
+  sheetShape,
+} from './bottom-sheet-drag'
+import { screenCornerRadius } from '../../../native/screen-corners'
+import { SheetFooterInset } from './sheet-footer-inset'
 
 /**
  * 시트가 위로 갈 수 있는 끝. **상단 안전영역 바로 아래까지**다(사용자 지정 2026-09-24).
@@ -56,33 +70,20 @@ import { useStepDissolve } from './step-dissolve'
  * 84dp 가 돌아온다.
  *
  * 화면 높이에 비례하지 않는 것이 요점이다. 피해야 하는 것은 **노치와 상태바**이지 화면의 몇
- * 퍼센트가 아니다.
+ * 퍼센트가 아니다. 시트가 떠 있으므로 아래 간격도 뺀다.
  */
-function maxSheetHeight(frameHeight: number, topInset: number): number {
-  return frameHeight - topInset
+function maxSheetHeight(frameHeight: number, topInset: number, bottomGap: number): number {
+  return frameHeight - topInset - bottomGap
 }
 /**
- * 시트 바탕을 내용 상자 **아래로 더 깔아 두는 길이**.
- *
- * 긴 단계에서 짧은 단계로 갈 때 시트 **바닥이 화면 바닥에서 떨어진다.** 라이브러리가 내용 상자
- * 높이와 시트 자리를 각각 애니메이션하는데, 높이는 잰 값이 바뀌는 즉시 UI 스레드에서 줄기
- * 시작하고 자리는 몇 프레임 뒤에 출발한다. 그 사이 **자리 + 높이**가 화면 높이에 못 미쳐 상자
- * 아래로 뒤 화면이 비친다(실기기에서 330px 까지 벌어지는 것을 프레임으로 확인).
- *
- * 바탕은 몸통을 채우는 **절대 배치 뷰**라, 그 `bottom` 을 이만큼 음수로 주면 상자보다 아래까지
- * 깔린다. 그 틈이 늘 시트색으로 덮인다. 평상시에는 화면 밖이라 안 보인다. 360×640dp 기준 최악이
- * 화면 높이만큼이라 넉넉히 잡는다.
- *
- * 몸통에 `paddingBottom` 을 주는 길은 안 된다 - 절대 배치의 기준이 **안쪽 상자**라 바탕이 그만큼
- * 짧아진다(실기기에서 그렇게 났다).
+ * 끄는 동안 바탕과 내용을 함께 옮기는 층. `Animated.View` 에 정적 스타일을 섞으면 NativeWind 가 정적 쪽을 버려서
+ * `View` 를 감싸 만든다.
  */
-const UNDERLAP = 640
+const DragLayer = Animated.createAnimatedComponent(View)
 /** 시트 최대 너비. 넘으면 중앙 정렬로 남는다. */
 const MAX_WIDTH = 448
 /** 그랩 핸들이 차지하는 높이. 스크롤 내용의 `paddingTop` 이 이 값을 되돌려 준다. */
 const HANDLE_HEIGHT = 24
-/** 시트 위 모서리. 머리 층도 같은 값을 써야 덧댄 판으로 안 보인다. */
-const SHEET_RADIUS = 20
 /**
  * 단계가 갈려 자리를 옮기는 시간.
  *
@@ -253,7 +254,7 @@ interface BottomSheetProps {
  * (60fps 녹화에서 확인). 층과 훅을 함께 여기 두면 훅의 첫 호출이 곧 마운트라, 그때 이미 1 인
  * 값을 첫 프레임이 받는다.
  */
-function StepVeil(props: { onDone: () => void; surface: string }): React.JSX.Element {
+function StepVeil(props: { onDone: () => void; surface: string; bottomRadius: number }): React.JSX.Element {
   /**
    * 재질은 **앱 테마가 고른다**. 기본값 `'default'` 는 OS 외형을 따라가 다크 OS 에서 검게 깔린다
    * (라이트 테마 시트가 통째로 어두워졌다).
@@ -295,7 +296,7 @@ function StepVeil(props: { onDone: () => void; surface: string }): React.JSX.Ele
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       /*
-        **시트와 같은 모서리로 자른다.** 흐림 층은 네모라 그냥 얹으면 둥근 위 모서리 자리에
+        **시트와 같은 모서리로 자른다.** 흐림 층은 네모라 그냥 얹으면 둥근 모서리 자리에
         각진 모서리가 생겼다 사라진다(사용자 지적). 자르는 것은 바깥 상자가 한다.
         `BlurView` 자신에게 반경을 주면 iOS 의 시각 효과 뷰가 그것을 안 따른다.
       */
@@ -306,8 +307,7 @@ function StepVeil(props: { onDone: () => void; surface: string }): React.JSX.Ele
         right: 0,
         bottom: 0,
         zIndex: VEIL_LAYER,
-        borderTopLeftRadius: SHEET_RADIUS,
-        borderTopRightRadius: SHEET_RADIUS,
+        ...sheetCorners(props.bottomRadius),
         overflow: 'hidden',
       }}
     >
@@ -329,6 +329,77 @@ function StepVeil(props: { onDone: () => void; surface: string }): React.JSX.Ele
   )
 }
 
+/**
+ * 시트 네 모서리. 위는 28, 아래는 화면 곡률과 동심원인 반경이다. 바탕 · 내용 · 흐림 층이 같은 값을 써야 덧댄 판으로 안 보인다.
+ */
+function sheetCorners(bottomRadius: number) {
+  return {
+    borderTopLeftRadius: SHEET_RADIUS,
+    borderTopRightRadius: SHEET_RADIUS,
+    borderBottomLeftRadius: bottomRadius,
+    borderBottomRightRadius: bottomRadius,
+  }
+}
+
+/** 바탕 · 내용 층이 함께 쓰는 값. 옆 간격 · 아래 모서리와 끄는 동안 따라간 거리다. */
+interface FloatingLayer {
+  sideGap: number
+  bottomRadius: number
+  dragX: SharedValue<number>
+  dragY: SharedValue<number>
+}
+
+/**
+ * 떠 있는 시트의 층 스타일. 끄는 동안 함께 움직이고, 내용 높이가 바뀌는 동안에는 바닥을 떠 있는 자리에 붙든다.
+ *
+ * @param fill 내용 층이면 참. 흐름 안에서 몸통을 채운다. 바탕은 절대 배치다
+ */
+function useFloatingLayerStyle(layer: FloatingLayer, fill: boolean) {
+  const { animatedAnimationState, animatedLayoutState, animatedPosition } = useBottomSheetInternal()
+  const { sideGap, dragX, dragY } = layer
+  return useAnimatedStyle(() => {
+    const height = floatingLayerHeight(
+      animatedAnimationState.get(),
+      animatedLayoutState.get().containerHeight,
+      animatedPosition.get(),
+    )
+    const transform = [{ translateX: dragX.get() }, { translateY: dragY.get() }]
+    if (fill) {
+      return height === null
+        ? { flex: 1, marginHorizontal: sideGap, transform }
+        : { flex: 0, height, marginHorizontal: sideGap, transform }
+    }
+    return height === null
+      ? { position: 'absolute', top: 0, bottom: 0, left: sideGap, right: sideGap, transform }
+      : { position: 'absolute', top: 0, height, left: sideGap, right: sideGap, transform }
+  })
+}
+
+/** 시트 바탕. 라이브러리 몸통이 아니라 이 층이 옆 간격 · 모서리 · 색을 진다. */
+function SheetBackground(props: { layer: FloatingLayer; color: string }): React.JSX.Element {
+  const style = useFloatingLayerStyle(props.layer, false)
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}>
+      <DragLayer style={style}>
+        <View style={{ flex: 1, backgroundColor: props.color, ...sheetCorners(props.layer.bottomRadius) }} />
+      </DragLayer>
+    </View>
+  )
+}
+
+/**
+ * 시트 내용 층. 시트 모양으로 자른다. 붙드는 동안 내용 상자보다 짧거나 길어지는데, 자르지 않으면 넘친 내용이 둥근 바닥
+ * 밖으로 보인다.
+ */
+function SheetLayer(props: { layer: FloatingLayer; children: ReactNode }): React.JSX.Element {
+  const style = useFloatingLayerStyle(props.layer, true)
+  return (
+    <DragLayer testID="bottom-sheet-body" style={style}>
+      <View style={{ flex: 1, overflow: 'hidden', ...sheetCorners(props.layer.bottomRadius) }}>{props.children}</View>
+    </DragLayer>
+  )
+}
+
 export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   const ref = useRef<BottomSheetModal>(null)
   const step = useStepDissolve(props.stepKey)
@@ -340,6 +411,58 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   /** 시트 안에서만 표면 계열을 한 칸 올린 변수 묶음. 껍데기 색과 내용 스코프가 여기서 함께 나온다. */
   const sheetScope = buildSheetScopeVariables(definition)
   const sheetSurface = sheetScope['--color-bg']!
+  /** 화면 반경은 실행 중에 안 바뀐다. 안드로이드는 창이 붙은 뒤에 읽혀야 해서 모듈 최상위가 아니라 열 때 한 번 읽는다. */
+  const [screenRadius] = useState(() => screenCornerRadius())
+  const { bottomGap, bottomRadius, bottomPadding, contentPadding, buttonGap } = useMemo(
+    () => sheetShape(screenRadius, insets.bottom),
+    [screenRadius, insets.bottom],
+  )
+  /**
+   * 시트와 화면 옆 사이. 넓은 화면은 폭이 448 을 넘지 않게 더 띄운다.
+   *
+   * 라이브러리 몸통에는 못 준다. 몸통의 `Animated.View` 에서 NativeWind 가 넘겨준 정적 스타일을 버려 실기기에서 안 먹었다.
+   * 그래서 바탕과 내용 두 층에 같은 값을 준다.
+   */
+  const sideGap = Math.max(SHEET_SIDE_GAP_PX, (frame.width - MAX_WIDTH) / 2)
+
+  /** 끄는 동안 시트가 좌우 · 위로 따라간 거리. 바탕과 내용이 같은 값으로 움직인다. */
+  const dragX = useSharedValue(0)
+  const dragY = useSharedValue(0)
+  /**
+   * 라이브러리의 기본 끌기 처리 위에 끈 거리를 받는 몫을 얹는다. 라이브러리가 몸통 위치를 `transform` 으로 덮어써서
+   * 시트를 바깥에서 옮길 수 없기 때문이다. 처리기가 렌더마다 새것이면 제스처가 다시 만들어지므로 한 번만 만든다.
+   */
+  const gestureEventsHandlersHook = useMemo<GestureEventsHandlersHookType>(
+    () =>
+      function useSheetDragHandlers() {
+        const base = useGestureEventsHandlersDefault()
+        return {
+          ...base,
+          handleOnChange(source, payload) {
+            'worklet'
+            base.handleOnChange(source, payload)
+            const offset = bottomSheetDragOffset(payload.translationX, payload.translationY)
+            dragX.set(offset.x)
+            dragY.set(offset.y)
+          },
+          // 둘 다에서 돌려놓는다. 라이브러리는 정상 종료(`onEnd`) 뒤의 `onFinalize` 를 처리기까지 넘기지 않아, 한쪽에만 두면
+          // 놓은 뒤에도 시트가 옆으로 밀린 채 남았다(실기기).
+          handleOnEnd(source, payload) {
+            'worklet'
+            base.handleOnEnd(source, payload)
+            dragX.set(withSpring(0, SNAP_BACK))
+            dragY.set(withSpring(0, SNAP_BACK))
+          },
+          handleOnFinalize(source, payload) {
+            'worklet'
+            base.handleOnFinalize(source, payload)
+            dragX.set(withSpring(0, SNAP_BACK))
+            dragY.set(withSpring(0, SNAP_BACK))
+          },
+        }
+      },
+    [dragX, dragY],
+  )
 
   /** 고정된 머리가 차지한 높이. 흐름 밖이라 스크롤 내용의 `paddingTop` 이 이만큼을 되돌려 준다. */
   const [headerHeight, setHeaderHeight] = useState(0)
@@ -376,19 +499,20 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   }, [])
 
   /**
-   * 시트 바탕. 기본 바탕을 그대로 쓰되 **아래로 더 내린다**(`UNDERLAP`).
+   * 시트 바탕. 기본 바탕을 그대로 쓰되 끄는 동안 내용과 함께 움직인다.
    *
-   * 라이브러리는 바탕에 `top`·`bottom` 을 직접 못 주게 타입으로 막아 뒀다(`backgroundStyle`).
+   * 라이브러리는 바탕에 `transform` 을 직접 못 주게 타입으로 막아 뒀다(`backgroundStyle`).
    * 바탕 부품을 갈아 끼우는 것이 그 규칙 안에서 같은 일을 하는 길이다.
    */
   const renderBackground = useCallback(
-    (backgroundProps: BottomSheetBackgroundProps) => (
-      <View
-        pointerEvents="none"
-        style={[backgroundProps.style, { bottom: -UNDERLAP }]}
+    // 라이브러리가 주는 바탕 스타일은 몸통을 꽉 채우는 절대 배치라 쓰지 않는다. 바닥을 붙들 때 높이를 직접 정해야 해서다.
+    () => (
+      <SheetBackground
+        layer={{ sideGap, bottomRadius, dragX, dragY }}
+        color={buildSheetScopeVariables(definition)['--color-bg']!}
       />
     ),
-    [],
+    [sideGap, bottomRadius, dragX, dragY, definition],
   )
 
   const renderBackdrop = useCallback(
@@ -426,18 +550,18 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         애초에 없다. 아래로 끌어 닫는 길은 그대로다.
       */
       overDragResistanceFactor={0}
-      maxDynamicContentSize={maxSheetHeight(frame.height, insets.top)}
+      maxDynamicContentSize={maxSheetHeight(frame.height, insets.top, bottomGap)}
+      // 떠 있는 시트. 아래 간격은 하단 안전영역이고 옆 간격보다 작지 않다.
+      detached
+      bottomInset={bottomGap}
+      gestureEventsHandlersHook={gestureEventsHandlersHook}
       animationConfigs={move}
       backdropComponent={renderBackdrop}
       backgroundComponent={renderBackground}
       accessibilityLabel={props.label}
-      style={{ maxWidth: MAX_WIDTH, width: '100%', alignSelf: 'center' }}
-      backgroundStyle={{
-        backgroundColor: sheetSurface,
-        borderTopLeftRadius: SHEET_RADIUS,
-        borderTopRightRadius: SHEET_RADIUS,
-      }}
+      backgroundStyle={{ backgroundColor: sheetSurface, ...sheetCorners(bottomRadius) }}
     >
+      <SheetLayer layer={{ sideGap, bottomRadius, dragX, dragY }}>
       {/*
         그랩 핸들. 라이브러리 기본 핸들도 `handleComponent` 슬롯도 안 그려져서 첫 자식으로 직접 놓는다.
         핸들을 잡고 끄는 제스처는 없고 내용을 끌어 닫는 경로만 남는다.
@@ -464,7 +588,8 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       >
         <View
           testID="bottom-sheet-handle"
-          style={{ height: 4, width: 36, borderRadius: 2, backgroundColor: definition.borderStrong }}
+          // 상단 시트의 핸들과 같은 모양이다.
+          style={{ height: 5, width: 36, borderRadius: 2.5, backgroundColor: definition.textDisabled }}
         />
       </View>
 
@@ -532,11 +657,11 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
             **내용** 높이 하나로 정하므로, 이 몫이 곧 바닥 줄이 설 자리다. 안 비우면 마지막
             줄이 줄 뒤로 들어간다.
 
-            인셋은 여기 없다. 바닥 줄이 자기 안에서 진다(줄이 화면 맨 아래에 붙으므로).
+            바닥 줄이 없으면 내용을 아래 모서리 곡선 위로 올린다. 내용은 버튼처럼 곡선에 맞춰 깎을 수 없다.
           */
           paddingBottom:
             props.footer === undefined
-              ? insets.bottom + 16
+              ? contentPadding
               : footerHeight > 0
                 ? footerHeight
                 : FOOTER_GUESS,
@@ -624,18 +749,26 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
             onLayout={(event) => setFooterHeight(event.nativeEvent.layout.height)}
             style={{
               backgroundColor: sheetSurface,
+              // 시트 아래 모서리와 같은 값. 네모면 둥근 모서리 자리에 각진 귀퉁이가 선다.
+              borderBottomLeftRadius: bottomRadius,
+              borderBottomRightRadius: bottomRadius,
               paddingHorizontal: 16,
               paddingTop: 12,
-              paddingBottom: insets.bottom + 16,
+              paddingBottom: bottomPadding,
             }}
           >
-            <View style={vars(sheetScope)}>{props.footer}</View>
+            <SheetFooterInset.Provider value={buttonGap}>
+              <View style={vars(sheetScope)}>{props.footer}</View>
+            </SheetFooterInset.Provider>
           </View>
         </View>
       )}
 
       {/* 갈아 드는 흐림. 머리·내용·바닥 줄을 통째로 덮으므로 층 셋보다 위다. */}
-      {step.busy && <StepVeil key={step.turn} surface={sheetSurface} onDone={step.done} />}
+      {step.busy && (
+        <StepVeil key={step.turn} surface={sheetSurface} bottomRadius={bottomRadius} onDone={step.done} />
+      )}
+      </SheetLayer>
     </BottomSheetModal>
   )
 }

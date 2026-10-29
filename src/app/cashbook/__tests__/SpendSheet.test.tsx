@@ -22,6 +22,10 @@ jest.mock('@gorhom/bottom-sheet', () => {
       React.createElement(ReactNative.View, props),
     // 넘긴 것을 그대로 돌려준다. 시트가 무엇을 넘겼는지는 프롭에서 본다.
     useBottomSheetTimingConfigs: (config: unknown) => config,
+    useBottomSheetInternal: () =>
+      jest.requireActual<typeof import('../../../components/__tests__/bottom-sheet-internal-fake')>(
+        '../../../components/__tests__/bottom-sheet-internal-fake',
+      ).fakeBottomSheetInternal(),
     BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
   }
 })
@@ -1377,7 +1381,7 @@ describe('캐릭터 귀속', () => {
   it('타일 격자에는 안 선다', async () => {
     const view = await 그리기()
 
-    expect(view.queryByTestId('spend-sheet-chain-placeholder-trigger')).toBeNull()
+    expect(view.queryByTestId('spend-sheet-chain-open')).toBeNull()
   })
 
   it('목록 갈래에서도 고를 수 있다. 대표를 고른 뒤에 선다', async () => {
@@ -1385,18 +1389,18 @@ describe('캐릭터 귀속', () => {
 
     await 누르기(view, '하이마운틴')
 
-    expect(view.getByTestId('spend-sheet-chain-placeholder-trigger')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-chain-open')).toBeTruthy()
   })
 
-  it('고르면 그 캐릭터로 저장하고 이름이 알약으로 선다', async () => {
+  it('고르면 그 캐릭터로 저장하고 이름이 칸에 선다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
     await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '1200000000')
 
-    await 아이디로누르기(view, 'spend-sheet-chain-placeholder-trigger')
+    await 아이디로누르기(view, 'spend-sheet-chain-open')
     await 아이디로누르기(view, 'spend-sheet-chain-option-ocid-2')
-    expect(view.getByTestId('spend-sheet-chain-badge-캐릭터')).toHaveTextContent('아델')
+    expect(view.getByTestId('spend-sheet-chain-value')).toHaveTextContent('아델')
 
     await 누르기(view, '저장')
 
@@ -1619,7 +1623,7 @@ describe('수정 모드', () => {
 
     expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
     expect(줄글자(view, 'spend-sheet-rate')).toBe('1,180')
-    expect(view.getByTestId('spend-sheet-chain-placeholder-trigger')).toBeTruthy()
+    expect(view.getByTestId('spend-sheet-chain-open')).toBeTruthy()
   })
 
   /**
@@ -2372,8 +2376,7 @@ describe('심볼 강화', () => {
   }
 
   async function 캐릭터고르기(view: Rendered, ocid: string): Promise<void> {
-    const 알약 = view.queryByTestId('spend-sheet-chain-badge-캐릭터')
-    await 아이디로누르기(view, 알약 === null ? 'spend-sheet-chain-placeholder-trigger' : 'spend-sheet-chain-badge-캐릭터')
+    await 아이디로누르기(view, 'spend-sheet-chain-open')
     await 아이디로누르기(view, `spend-sheet-chain-option-${ocid}`)
   }
 

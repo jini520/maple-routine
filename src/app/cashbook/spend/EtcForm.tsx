@@ -22,7 +22,7 @@ import {
 import { CASH_QUICK_ADDS, POINT_AMOUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
-import { AmountInput, CharacterField, FieldRow, TextField, useCountField } from '../sheet-fields'
+import { AmountInput, CharacterField, FieldCard, FieldRow, TextField, useCountField } from '../sheet-fields'
 import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 
@@ -108,70 +108,72 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
 
   return (
     <>
-      <CharacterField
-        characters={props.characters}
-        selected={ocid}
-        onSelect={setOcid}
-        testID="spend-sheet-chain"
-      />
-
-      <FieldRow label="내용" labelTestID="spend-sheet-name-label">
-        <TextField
-          testID="spend-sheet-name"
-          label="내용"
-          placeholder="내용"
-          value={name}
-          onChange={setName}
+      <FieldCard>
+        <CharacterField
+          characters={props.characters}
+          selected={ocid}
+          onSelect={setOcid}
+          testID="spend-sheet-chain"
         />
-      </FieldRow>
 
-      {/* 통화는 갈래가 아니라 금액의 축이라 세그먼트다. 칩으로 두면 갈래 칩과 한 무리로 읽힌다. */}
-      <FieldRow label="통화">
-        <Segment size="sm"
-          options={FREE_CURRENCY_LABELS}
-          selected={labelOfCurrency(currency)}
-          onSelect={(label) => setCurrency(currencyOfLabel(label))}
-        />
-      </FieldRow>
+        <FieldRow label="내용" labelTestID="spend-sheet-name-label">
+          <TextField
+            testID="spend-sheet-name"
+            label="내용"
+            placeholder="내용"
+            value={name}
+            onChange={setName}
+          />
+        </FieldRow>
 
-      {/* **통화 밑**이다. 무엇으로 내는지를 정한 다음에 얼마인지를 친다. */}
-      <FieldRow label="금액">
-        <AmountInput
-          testID="spend-sheet-unit-price"
-          label="금액"
-          context={name === '' ? undefined : name}
-          icon={currency === 'meso' ? 'meso' : undefined}
-          unit={unitOfCurrency(currency)}
-          reading={currency === 'meso'}
-          chips={currency === 'cash' ? CASH_QUICK_ADDS : currency === 'point' ? POINT_AMOUNT_QUICK_ADDS : undefined}
-          value={typedText}
-          onChange={setTypedText}
-        />
-        {/* 통화를 고르는 자리라 숫자만 있으면 무엇으로 낸 것인지 줄에서 사라진다. 큰 숫자가
-            이미 하는 일을 이 줄도 한다. */}
-        <Text
-          testID="spend-sheet-unit-price-unit"
-          className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
-        >
-          {labelOfCurrency(currency)}
-        </Text>
-      </FieldRow>
+        {/* 통화는 갈래가 아니라 금액의 축이라 세그먼트다. 칩으로 두면 갈래 칩과 한 무리로 읽힌다. */}
+        <FieldRow label="통화">
+          <Segment size="sm"
+            options={FREE_CURRENCY_LABELS}
+            selected={labelOfCurrency(currency)}
+            onSelect={(label) => setCurrency(currencyOfLabel(label))}
+          />
+        </FieldRow>
 
-      {/* 스테퍼가 아니라 치는 칸이다. 수량이 크면 스테퍼는 여러 번 눌러야 한다. 단위는 자유 입력이라
-          무엇을 세는지 몰라 안 적는다. `chips` 를 안 주면 메소 칩이 서므로 빈 배열을 넘긴다. */}
-      <FieldRow label="수량">
-        <AmountInput
-          testID="spend-sheet-quantity"
-          label="수량"
-          context={name === '' ? undefined : name}
-          chips={[]}
-          value={quantityText}
-          pristine={quantityPristine}
-          onChange={setQuantityText}
-        />
-      </FieldRow>
+        {/* **통화 밑**이다. 무엇으로 내는지를 정한 다음에 얼마인지를 친다. */}
+        <FieldRow label="금액">
+          <AmountInput
+            testID="spend-sheet-unit-price"
+            label="금액"
+            context={name === '' ? undefined : name}
+            icon={currency === 'meso' ? 'meso' : undefined}
+            unit={unitOfCurrency(currency)}
+            reading={currency === 'meso'}
+            chips={currency === 'cash' ? CASH_QUICK_ADDS : currency === 'point' ? POINT_AMOUNT_QUICK_ADDS : undefined}
+            value={typedText}
+            onChange={setTypedText}
+          />
+          {/* 통화를 고르는 자리라 숫자만 있으면 무엇으로 낸 것인지 줄에서 사라진다. 큰 숫자가
+              이미 하는 일을 이 줄도 한다. */}
+          <Text
+            testID="spend-sheet-unit-price-unit"
+            className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
+          >
+            {labelOfCurrency(currency)}
+          </Text>
+        </FieldRow>
 
-      {usesPoint && <RateRow value={rateText} onChange={setRateText} valid={rate !== null} />}
+        {/* 스테퍼가 아니라 치는 칸이다. 수량이 크면 스테퍼는 여러 번 눌러야 한다. 단위는 자유 입력이라
+            무엇을 세는지 몰라 안 적는다. `chips` 를 안 주면 메소 칩이 서므로 빈 배열을 넘긴다. */}
+        <FieldRow label="수량">
+          <AmountInput
+            testID="spend-sheet-quantity"
+            label="수량"
+            context={name === '' ? undefined : name}
+            chips={[]}
+            value={quantityText}
+            pristine={quantityPristine}
+            onChange={setQuantityText}
+          />
+        </FieldRow>
+
+        {usesPoint && <RateRow value={rateText} onChange={setRateText} valid={rate !== null} />}
+      </FieldCard>
 
       <AmountFigure
         value={currency === 'cash' ? amount : totalMeso}

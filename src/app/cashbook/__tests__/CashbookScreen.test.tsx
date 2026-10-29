@@ -102,6 +102,10 @@ jest.mock('@gorhom/bottom-sheet', () => {
       React.createElement(ReactNative.View, props),
     // 넘긴 것을 그대로 돌려준다. 시트가 무엇을 넘겼는지는 프롭에서 본다.
     useBottomSheetTimingConfigs: (config: unknown) => config,
+    useBottomSheetInternal: () =>
+      jest.requireActual<typeof import('../../../components/__tests__/bottom-sheet-internal-fake')>(
+        '../../../components/__tests__/bottom-sheet-internal-fake',
+      ).fakeBottomSheetInternal(),
     BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
   }
 })

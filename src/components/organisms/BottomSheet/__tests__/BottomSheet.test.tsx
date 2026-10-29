@@ -35,6 +35,10 @@ jest.mock('@gorhom/bottom-sheet', () => {
     }),
     // 넘긴 것을 그대로 돌려준다. 시트가 무엇을 넘겼는지는 프롭에서 본다.
     useBottomSheetTimingConfigs: (config: unknown) => config,
+    useBottomSheetInternal: () =>
+      jest.requireActual<typeof import('../../../__tests__/bottom-sheet-internal-fake')>(
+        '../../../__tests__/bottom-sheet-internal-fake',
+      ).fakeBottomSheetInternal(),
     BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
   }
 })
@@ -47,6 +51,11 @@ import {
 } from '../../../../theme/appearance-store'
 import { buildSheetScopeVariables } from '../../../../theme/theme-vars'
 import { BottomSheet } from '../BottomSheet'
+import { setScreenCornersPort } from '../../../../native/ports'
+import { installNoopNativePorts } from '../../../../native/__tests__/fake-native-ports'
+
+// 동심원 경우가 꽂은 반경을 다음 케이스가 물려받지 않게 기본값(모름)으로 되돌린다.
+afterEach(() => installNoopNativePorts())
 
 const noop = (): void => {}
 
@@ -89,8 +98,8 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
 
     expect(sheet.props.snapPoints).toBeUndefined()
     expect(sheet.props.enableDynamicSizing).toBe(true)
-    // 테스트 프레임 높이 844 − 상단 인셋 59. 화면의 몇 퍼센트가 아니라 **노치를 피한 만큼**이다.
-    expect(sheet.props.maxDynamicContentSize).toBeCloseTo(844 - 59)
+    // 테스트 프레임 높이 844 − 상단 인셋 59 − 아래 간격 34. 화면의 몇 퍼센트가 아니라 **노치와 홈 막대를 피한 만큼**이다.
+    expect(sheet.props.maxDynamicContentSize).toBeCloseTo(844 - 59 - 34)
   })
 
   it('최소 높이 비율을 주면 스크롤 내용이 화면 높이의 그 비율보다 작아지지 않는다', async () => {
@@ -111,13 +120,49 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     expect((getByTestId('boss-drop-sheet').props.contentContainerStyle as { minHeight?: number }).minHeight).toBeUndefined()
   })
 
-  it('상한이 상단 인셋을 따라간다. 노치가 두꺼운 기기는 그만큼 낮아진다', async () => {
+  it('상한이 상단 인셋을 따라간다. 하단 인셋이 0 이면 아래 간격은 10 이다', async () => {
     const { getByTestId } = await open({
       frame: { x: 0, y: 0, width: 390, height: 844 },
       insets: { top: 24, left: 0, right: 0, bottom: 0 },
     })
 
-    expect(getByTestId('sheet').props.maxDynamicContentSize).toBeCloseTo(844 - 24)
+    expect(getByTestId('sheet').props.bottomInset).toBe(10)
+    expect(getByTestId('sheet').props.maxDynamicContentSize).toBeCloseTo(844 - 24 - 10)
+  })
+
+  /**
+   * 화면 모서리가 둥근 기기. 옆 · 아래 간격이 같고 아래 모서리가 화면 곡률과 동심원이다. 홈 막대가 시트 위에 겹치므로
+   * 바닥 여백이 그만큼을 비운다.
+   */
+  it('화면 반경을 알면 아래 모서리를 화면 곡률과 동심원으로 맞춘다', async () => {
+    setScreenCornersPort({ radius: () => 62 })
+    const view = await renderOverlay(
+      <BottomSheet onClose={noop} testId="boss-drop-sheet" label="드롭 아이템 기록">
+        <Text>시트 내용</Text>
+      </BottomSheet>,
+    )
+    const sheet = view.getByTestId('sheet')
+    const 바탕 = flattenStyle(sheet.props.backgroundStyle)
+
+    expect(sheet.props.bottomInset).toBe(10)
+    expect(바탕.borderTopLeftRadius).toBe(28)
+    expect(바탕.borderBottomLeftRadius).toBe(52)
+    // 바닥 줄 없이 내용만 있는 시트라 곡선 위로 내용을 올린다(아래 모서리 반경).
+    expect((view.getByTestId('boss-drop-sheet').props.contentContainerStyle as { paddingBottom: number }).paddingBottom).toBe(52)
+  })
+
+  /** 화면 반경을 모르는 기기. 상단 시트를 뒤집은 모양이다. 옆 · 바닥에 붙지 않고, 네 모서리가 같다. */
+  it('시트는 화면 옆과 하단 안전영역에서 떨어져 떠 있고 네 모서리가 모두 둥글다', async () => {
+    const { getByTestId } = await open()
+    const sheet = getByTestId('sheet')
+    const 바탕 = flattenStyle(sheet.props.backgroundStyle)
+
+    expect(sheet.props.detached).toBe(true)
+    expect(sheet.props.bottomInset).toBe(34)
+    // 라이브러리 몸통이 아니라 우리 내용 층이 옆 간격을 진다. 몸통에 준 정적 스타일은 실기기에서 버려졌다.
+    expect(flattenStyle(getByTestId('bottom-sheet-body').props.style).marginHorizontal).toBe(10)
+    expect(바탕.borderBottomLeftRadius).toBe(바탕.borderTopLeftRadius)
+    expect(바탕.borderBottomRightRadius).toBe(바탕.borderTopRightRadius)
   })
 
   /**
@@ -279,7 +324,7 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
     ).toBe(44 + 12 + 16)
   })
 
-  // 단계가 갈려 줄이 사라지면 비워 둘 것도 없다. 남는 것은 인셋(34)과 숨돌림(16)뿐이다.
+  // 단계가 갈려 줄이 사라지면 비워 둘 것도 없다. 남는 것은 내용을 아래 모서리 곡선 위로 올리는 여백(28)뿐이다.
   /**
    * 페이드는 **가릴 것이 있을 때만** 뜬다.
    *
@@ -345,7 +390,7 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
     expect(
       (view.getByTestId('income-sheet').props.contentContainerStyle as { paddingBottom: number })
         .paddingBottom,
-    ).toBe(34 + 16)
+    ).toBe(28)
   })
 
   /**

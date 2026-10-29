@@ -13,12 +13,11 @@ import { View } from 'react-native'
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
-import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
 import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { netProceedsMeso } from '../../../lib/cashbook/item-split'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { requiredCharacterOptions } from '../character-options'
-import { AmountInput, FieldRow } from '../sheet-fields'
+import { AmountInput, FIELD_CELL_CLASS, FieldCard, FieldRow, SelectRow } from '../sheet-fields'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
@@ -112,63 +111,62 @@ export function FragmentSettleForm(
 
   return (
     <>
-      <ChainSelect
-        testID="income-sheet-chain"
-        steps={[
-          {
-            name: '캐릭터',
-            options: requiredCharacterOptions(props.characters),
-            selected: ocid,
-            onSelect: setOcid,
-          },
-        ]}
-      />
-
-      {/* 판 개수를 치면서 상한인 보관을 같은 줄에서 본다(사용자 지정). */}
-      <View
-        testID="income-sheet-settle-count-row"
-        className="min-h-7 flex-row items-center gap-3 border-b border-border pb-2"
-      >
-        <Text className="shrink-0 text-xs text-text-muted">보관 중</Text>
-        <Text
-          testID="income-sheet-fragment-storage"
-          className="shrink-0 text-sm font-semibold text-text"
-          style={TABULAR_NUMS}
-        >
-          {storage === null ? '-' : `${storage}개`}
-        </Text>
-        <Text className="ml-auto shrink-0 text-xs text-text-muted">판 개수</Text>
-        <View className="w-16 flex-row items-center">
-          <AmountInput
-            testID="income-sheet-settle-count"
-            label="판 개수"
-            context="솔 에르다 조각"
-            icon="fragment"
-            unit="개"
-            chips={countChips}
-            value={countText}
-            onChange={setCountText}
-          />
-        </View>
-        <Text className="-ml-1.5 shrink-0 text-xs text-text-muted">개</Text>
-      </View>
-
-      <FieldRow label="개당 가격">
-        <AmountInput
-          testID="income-sheet-settle-price"
-          label="개당 가격"
-          context="솔 에르다 조각"
-          icon="meso"
-          unit="메소"
-          reading
-          chips={FRAGMENT_PRICE_QUICK_ADDS}
-          value={priceText}
-          onChange={setPriceText}
+      <FieldCard>
+        <SelectRow
+          testID="income-sheet-chain"
+          label="캐릭터"
+          placeholder="캐릭터 선택"
+          options={requiredCharacterOptions(props.characters)}
+          selected={ocid}
+          onSelect={setOcid}
         />
-        <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
-      </FieldRow>
 
-      <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
+        {/* 판 개수를 치면서 상한인 보관을 같은 줄에서 본다(사용자 지정). */}
+        <View
+          testID="income-sheet-settle-count-row"
+          className={FIELD_CELL_CLASS}
+        >
+          <Text className="shrink-0 text-xs text-text-muted">보관 중</Text>
+          <Text
+            testID="income-sheet-fragment-storage"
+            className="shrink-0 text-sm font-semibold text-text"
+            style={TABULAR_NUMS}
+          >
+            {storage === null ? '-' : `${storage}개`}
+          </Text>
+          <Text className="ml-auto shrink-0 text-xs text-text-muted">판 개수</Text>
+          <View className="w-16 flex-row items-center">
+            <AmountInput
+              testID="income-sheet-settle-count"
+              label="판 개수"
+              context="솔 에르다 조각"
+              icon="fragment"
+              unit="개"
+              chips={countChips}
+              value={countText}
+              onChange={setCountText}
+            />
+          </View>
+          <Text className="-ml-1.5 shrink-0 text-xs text-text-muted">개</Text>
+        </View>
+
+        <FieldRow label="개당 가격">
+          <AmountInput
+            testID="income-sheet-settle-price"
+            label="개당 가격"
+            context="솔 에르다 조각"
+            icon="meso"
+            unit="메소"
+            reading
+            chips={FRAGMENT_PRICE_QUICK_ADDS}
+            value={priceText}
+            onChange={setPriceText}
+          />
+          <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
+        </FieldRow>
+
+        <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
+      </FieldCard>
 
       <AmountFigure value={amount} unit="메소" testID="income-sheet-amount" />
     </>

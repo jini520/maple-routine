@@ -8,6 +8,7 @@ import {
   setLiveUpdatePort,
   setNotificationsPort,
   setPushPort,
+  setScreenCornersPort,
   setSplashScreenPort,
   setStoreReviewPort,
   setStatusBarPort,
@@ -35,6 +36,9 @@ export function installNoopNativePorts(): void {
 
   // 테스트 환경은 node 라 표준 함수로 진짜 uuid 를 만든다. 고정값이면 기록 둘이 같은 id 를 갖는다.
   setUuidPort({ random: () => globalThis.crypto.randomUUID() })
+
+  // 화면 반경을 모른다. 바텀시트는 동심원이 아니라 안전영역 위에 뜨는 기본 모양으로 그려진다.
+  setScreenCornersPort({ radius: () => null })
 
   // `matchMedia` 없는 환경의 폴백과 같다. 테스트 기본 환경은 `node` 라 문서도 미디어 쿼리도 없다.
   setColorSchemePort({ get: () => 'light' })

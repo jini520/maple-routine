@@ -24,14 +24,13 @@ import {
 } from '../../../components/organisms/MesoPad/meso-pad'
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { ChainSelect } from '../../../components/organisms/ChainSelect/ChainSelect'
 import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
 import { fragmentSaleFeeOf, huntTotalOf } from '../../../lib/cashbook/hunting-meso'
 import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { useSaleFeeChoice } from './sale-fee'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { requiredCharacterOptions } from '../character-options'
-import { AmountInput, FieldRow } from '../sheet-fields'
+import { AmountInput, FIELD_CELL_CLASS, FieldCard, FieldRow, SelectRow } from '../sheet-fields'
 import { openInputCard } from '../../../features/input-card/store'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
@@ -117,109 +116,108 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
         없다. 고르는 자리의 모양은 계산기와 같다. 자리표시자가 이름을 말하고 고른 것은 알약이 된다.
         단계가 하나라 알약도 하나다.
       */}
-      <ChainSelect
-        testID="income-sheet-chain"
-        steps={[
-          {
-            name: '캐릭터',
-            options: requiredCharacterOptions(props.characters),
-            selected: ocid,
-            onSelect: setOcid,
-          },
-        ]}
-      />
-
-      {/* 계산기에서는 앱이 세어 못 치는 줄이다. 여기서는 그 줄이 치는 칸이 된다. 같은 자리·
-          같은 라벨이라 두 폼을 오갈 때 눈이 안 미끄러진다. */}
-      <FieldRow label="획득 메소">
-        <AmountInput
-          testID="income-sheet-hunt-meso"
-          label="획득 메소"
-          icon="meso"
-          unit="메소"
-          reading
-          value={typedMesoText}
-          onChange={setTypedMesoText}
+      <FieldCard>
+        <SelectRow
+          testID="income-sheet-chain"
+          label="캐릭터"
+          placeholder="캐릭터 선택"
+          options={requiredCharacterOptions(props.characters)}
+          selected={ocid}
+          onSelect={setOcid}
         />
-        <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
-      </FieldRow>
 
-      {/* 계산기와 같은 줄이다. 이름은 그림이 지고 개수와 가격이 한 줄에 선다. */}
-      <View className="min-h-8 flex-row items-center gap-2.5 border-b border-border pb-2">
-        {fragmentIcon !== null && (
-          // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
-          <Image
-            source={fragmentIcon}
-            className="h-6 w-6 shrink-0"
-            resizeMode="contain"
-            aria-label="솔 에르다 조각"
+        {/* 계산기에서는 앱이 세어 못 치는 줄이다. 여기서는 그 줄이 치는 칸이 된다. 같은 자리·
+            같은 라벨이라 두 폼을 오갈 때 눈이 안 미끄러진다. */}
+        <FieldRow label="획득 메소">
+          <AmountInput
+            testID="income-sheet-hunt-meso"
+            label="획득 메소"
+            icon="meso"
+            unit="메소"
+            reading
+            value={typedMesoText}
+            onChange={setTypedMesoText}
           />
-        )}
-        <Pressable
-          testID="income-sheet-fragments"
-          role="button"
-          aria-label="솔 에르다 조각"
-          onPress={() =>
-            openInputCard({
-              label: '조각 개수',
-              context: '솔 에르다 조각',
-              icon: 'fragment',
-              unit: '개',
-              chips: COUNT_QUICK_ADDS,
-              value: fragmentsText,
-              onConfirm: (next) => setFragmentsText(settleMesoText(acceptMesoText(fragmentsText, next))),
-            })
-          }
-          className="shrink-0 flex-row items-baseline gap-1"
-        >
-          <Text
-            className={`w-[52px] text-right text-sm font-semibold ${
-              fragmentsText === '' ? 'text-text-disabled' : 'text-text'
-            }`}
-            style={TABULAR_NUMS}
-          >
-            {fragmentsText === '' ? '0' : mesoValueOf(fragmentsText).toLocaleString()}
-          </Text>
-          <Text className="text-xs text-text-muted">개</Text>
-        </Pressable>
-        <Pressable
-          testID="income-sheet-fragment-price"
-          role="button"
-          aria-label="조각 가격"
-          onPress={() =>
-            openInputCard({
-              label: '조각 가격',
-              context: '솔 에르다 조각 · 개당',
-              icon: 'meso',
-              unit: '메소',
-              reading: true,
-              chips: FRAGMENT_PRICE_QUICK_ADDS,
-              placeholder: '미입력 시 보관',
-              value: fragmentPriceText,
-              // 0 을 빈 칸으로 접지 않는다. 빈 칸은 보관이고 0 은 0 메소에 판 것이다.
-              onConfirm: (next) =>
-                setFragmentPriceText(
-                  optionalMesoTextOf(optionalMesoValueOf(acceptMesoText(fragmentPriceText, next))),
-                ),
-            })
-          }
-          className="ml-auto min-w-0 flex-1 flex-row items-baseline justify-end gap-1.5"
-        >
-          <Text
-            numberOfLines={1}
-            className={`shrink text-right text-sm font-semibold ${
-              fragmentPriceText === '' ? 'text-text-disabled' : 'text-text'
-            }`}
-            style={TABULAR_NUMS}
-          >
-            {fragmentPriceText === '' ? '미입력 시 보관' : mesoValueOf(fragmentPriceText).toLocaleString()}
-          </Text>
-          <Text className="shrink-0 text-xs text-text-muted">메소</Text>
-        </Pressable>
-      </View>
+          <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
+        </FieldRow>
 
-      {/* 조각 가격을 안 적어도 선다. 비면 판 것이 없어 떼는 돈이 0 이다. */}
-      <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
+        {/* 계산기와 같은 줄이다. 이름은 그림이 지고 개수와 가격이 한 줄에 선다. */}
+        <View className={FIELD_CELL_CLASS}>
+          {fragmentIcon !== null && (
+            // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
+            <Image
+              source={fragmentIcon}
+              className="h-6 w-6 shrink-0"
+              resizeMode="contain"
+              aria-label="솔 에르다 조각"
+            />
+          )}
+          <Pressable
+            testID="income-sheet-fragments"
+            role="button"
+            aria-label="솔 에르다 조각"
+            onPress={() =>
+              openInputCard({
+                label: '조각 개수',
+                context: '솔 에르다 조각',
+                icon: 'fragment',
+                unit: '개',
+                chips: COUNT_QUICK_ADDS,
+                value: fragmentsText,
+                onConfirm: (next) => setFragmentsText(settleMesoText(acceptMesoText(fragmentsText, next))),
+              })
+            }
+            className="shrink-0 flex-row items-baseline gap-1"
+          >
+            <Text
+              className={`w-[52px] text-right text-sm font-semibold ${
+                fragmentsText === '' ? 'text-text-disabled' : 'text-text'
+              }`}
+              style={TABULAR_NUMS}
+            >
+              {fragmentsText === '' ? '0' : mesoValueOf(fragmentsText).toLocaleString()}
+            </Text>
+            <Text className="text-xs text-text-muted">개</Text>
+          </Pressable>
+          <Pressable
+            testID="income-sheet-fragment-price"
+            role="button"
+            aria-label="조각 가격"
+            onPress={() =>
+              openInputCard({
+                label: '조각 가격',
+                context: '솔 에르다 조각 · 개당',
+                icon: 'meso',
+                unit: '메소',
+                reading: true,
+                chips: FRAGMENT_PRICE_QUICK_ADDS,
+                placeholder: '미입력 시 보관',
+                value: fragmentPriceText,
+                // 0 을 빈 칸으로 접지 않는다. 빈 칸은 보관이고 0 은 0 메소에 판 것이다.
+                onConfirm: (next) =>
+                  setFragmentPriceText(
+                    optionalMesoTextOf(optionalMesoValueOf(acceptMesoText(fragmentPriceText, next))),
+                  ),
+              })
+            }
+            className="ml-auto min-w-0 flex-1 flex-row items-baseline justify-end gap-1.5"
+          >
+            <Text
+              numberOfLines={1}
+              className={`shrink text-right text-sm font-semibold ${
+                fragmentPriceText === '' ? 'text-text-disabled' : 'text-text'
+              }`}
+              style={TABULAR_NUMS}
+            >
+              {fragmentPriceText === '' ? '미입력 시 보관' : mesoValueOf(fragmentPriceText).toLocaleString()}
+            </Text>
+            <Text className="shrink-0 text-xs text-text-muted">메소</Text>
+          </Pressable>
+        </View>
+
+        {/* 조각 가격을 안 적어도 선다. 비면 판 것이 없어 떼는 돈이 0 이다. */}
+        <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
+      </FieldCard>
 
       <AmountFigure
         // 큰 숫자는 여기서도 합계다. 사람이 치는 것은 획득 메소이지 합계가 아니라, 앱이 센

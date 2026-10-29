@@ -6,6 +6,7 @@
  *
  * @see docs/features/mvp-grade.md 묻는 자리
  */
+import { SheetActionButton } from '../../components/organisms/BottomSheet/SheetActionButton'
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
@@ -81,15 +82,7 @@ function GradeSheet(props: {
       }
       footer={
         <>
-          <Pressable
-            role="button"
-            aria-label="저장"
-            disabled={disabled}
-            onPress={() => void save()}
-            className={`items-center rounded-xl bg-primary py-3${disabled ? ' opacity-50' : ''}`}
-          >
-            <Text className="text-sm font-bold text-on-primary">저장</Text>
-          </Pressable>
+          <SheetActionButton label="저장" disabled={disabled} onPress={() => void save()} />
           {props.onDelete !== undefined && (
             <Pressable role="button" aria-label="이 기록 지우기" onPress={props.onDelete} className="items-center py-2">
               <Text className="text-xs font-semibold text-error-ink">이 기록 지우기</Text>
