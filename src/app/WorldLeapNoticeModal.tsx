@@ -39,6 +39,7 @@ import { useContentSchedulerStore } from '../features/content-scheduler/store'
 import { worldNameOf } from '../lib/world/worlds'
 
 import { ArrowRightIcon, Text } from '../components/atoms'
+import { INSET_ROW_CLASS } from '../components/molecules/InsetRow/InsetRow'
 import { NoticeModal } from '../components/organisms/NoticeModal/NoticeModal'
 
 /** 갈리는 문구. 셋 다 **기록은 그대로 남는다**는 말로 끝난다 - 그것이 사용자가 가장 걱정하는 것이다. */
@@ -96,7 +97,7 @@ export function WorldLeapNoticeModal(props: WorldLeapNoticeModalProps): React.JS
       tone="third"
       title={`${notice.from.name} 님이 월드를 옮긴 것 같아요`}
       content={
-        <View className="flex-row items-center justify-center gap-2">
+        <View className={`flex-row items-center gap-2 ${INSET_ROW_CLASS}`}>
           <Text className="text-sm text-text-muted">{worldNameOf(notice.from.worldKey, notice.from.world ?? '')}</Text>
           <ArrowRightIcon className="h-3.5 w-3.5 text-text-muted" aria-hidden />
           <Text className="text-sm font-semibold text-text">

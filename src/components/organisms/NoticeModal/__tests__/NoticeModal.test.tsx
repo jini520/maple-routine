@@ -1,6 +1,6 @@
 // 배지를 이고 서는 모달의 골격.
 //
-// 이 파일이 지키는 것은 **영역 여섯의 유무와 그 사이 간격**이다. 문구는 호출부 몫이라 여기서
+// 이 파일이 지키는 것은 **영역의 유무와 자리**, 버튼의 무게다. 문구는 호출부 몫이라 여기서
 // 안 본다. 세 호출부(`ApiKeyNoticeModal`·`DevelopmentStageKeyModal`·`UpdatePromptModal`)가
 // 각자 그 문구를 단언한다.
 import { fireEvent, within } from '@testing-library/react-native'
@@ -66,9 +66,9 @@ describe('NoticeModal: 영역', () => {
     expect(제목).toBeGreaterThan(설명 as number)
   })
 
-  // **제목·내용·설명이 한 덩어리다**(사용자 지정, 2026-09-04). 내용은 제목에 딸린 값이라
-  // (버전·단계) 떼어 놓으면 따로 선 사실이 되어 무엇에 대한 값인지가 사라진다. 옵션은 그 밖이다.
-  it('제목·내용·설명은 8 로 붙고 옵션은 그 덩어리 밖이다', async () => {
+  // 설명은 머리 줄에서 제목 아래 붙고, 내용과 옵션은 머리 줄 밖에 칸으로 선다. 설명이 칸 사이로 내려가면
+  // 무엇에 대한 설명인지가 흐려진다.
+  it('설명은 머리 줄에 서고 내용 · 옵션은 그 밖이다', async () => {
     const { getByTestId } = await renderOverlay(
       <NoticeModal
         {...기본프롭()}
@@ -78,22 +78,10 @@ describe('NoticeModal: 영역', () => {
       />,
     )
 
-    const 덩어리 = getByTestId('notice-body')
-    expect(flattenStyle(덩어리.props.style).rowGap).toBe(8)
-    expect(within(덩어리).getByText('v1.0.7')).toBeTruthy()
-    expect(within(덩어리).getByText('설명')).toBeTruthy()
-    expect(within(덩어리).queryByText('펼침판')).toBeNull()
-  })
-})
-
-describe('NoticeModal: 배지', () => {
-  // 표가 바로 아래 오는 자리만 네모다. 모서리를 맞춰 둘이 한 덩어리로 읽히게 한다.
-  it('표가 붙는 자리는 네모로 바꾼다', async () => {
-    const { getByTestId } = await renderOverlay(
-      <NoticeModal {...기본프롭()} badgeShape="square" />,
-    )
-
-    expect(flattenStyle(getByTestId('notice-badge').props.style).borderRadius).toBe(16)
+    const 머리 = getByTestId('notice-header')
+    expect(within(머리).getByText('설명')).toBeTruthy()
+    expect(within(머리).queryByText('v1.0.7')).toBeNull()
+    expect(within(머리).queryByText('펼침판')).toBeNull()
   })
 })
 
@@ -143,6 +131,17 @@ describe('NoticeModal: 배선', () => {
 
     expect(링크).toHaveBeenCalledTimes(1)
     expect(onPress).not.toHaveBeenCalled()
+  })
+
+  // 글자 버튼이 큰 버튼보다 작아야 무르는 쪽과 진행하는 쪽의 무게가 갈린다(사용자 지적, 업데이트 모달).
+  it('부 버튼은 주 버튼보다 작은 글자다', async () => {
+    const { getByText } = await renderOverlay(
+      <NoticeModal {...기본프롭()} secondaryAction={{ label: '나중에', onPress: noop }} />,
+    )
+
+    const 주 = flattenStyle(getByText('다시 입력하기').props.style).fontSize as number
+    const 부 = flattenStyle(getByText('나중에').props.style).fontSize as number
+    expect(부).toBeLessThan(주)
   })
 
   // **되돌릴 수 없는 확인에서는 주 버튼이 취소다.** 파괴 동작은 부 버튼에 `danger` 로 내린다.

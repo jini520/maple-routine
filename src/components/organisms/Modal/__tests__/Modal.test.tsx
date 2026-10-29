@@ -10,7 +10,10 @@ import { Dimensions, Platform, Text, View } from 'react-native'
 
 import { resolveModalMaxHeight } from '../../../../lib/modal-metrics'
 import { flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
-import { resolvePanelBorder } from '../../../../theme/theme-vars'
+import { act } from '@testing-library/react-native'
+import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
+import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../../theme/appearance-store'
+import { buildSheetScopeVariables } from '../../../../theme/theme-vars'
 import { Modal } from '../Modal'
 
 const noop = (): void => {}
@@ -69,11 +72,8 @@ describe('Modal', () => {
     expect(claims).toBe(true)
   })
 
-  // 라이트에서만 테두리를 배경색 쪽으로 눌러 가라앉힌다. RN 에는 선택자가 없어
-  // 그 결과를 `--color-panel-border` 토큰이 값으로 갖고 있고(`theme/theme-vars.ts`), 이 케이스는
-  // **`Card` atom 의 `border-border` 를 그것이 실제로 덮는지**를 지킨다. 클래스 순서가 아니라
-  // 생성된 스타일시트 순서에 달린 자리라, 조용히 뒤집히면 라이트 모달 테두리가 도드라진다.
-  it('Modal.Card 의 테두리는 스크림 위 값으로 덮인다', async () => {
+  // 패널은 테두리 없이 바탕색 차이로만 스크림과 갈린다. 테두리가 되살아나면 공통 모달이 두 모양으로 다시 갈린다.
+  it('Modal.Card 에는 테두리가 없다', async () => {
     const { getByTestId } = await renderOverlay(
       <Modal onClose={noop}>
         <Modal.Card>
@@ -82,9 +82,7 @@ describe('Modal', () => {
       </Modal>,
     )
 
-    const style = flattenStyle(getByTestId('modal-card').props.style)
-    expect(style.borderColor).toBe(resolvePanelBorder(기본테마))
-    expect(style.borderColor).not.toBe(기본테마.border)
+    expect(flattenStyle(getByTestId('modal-card').props.style).borderWidth ?? 0).toBe(0)
   })
 
   it('기본값은 상단 정렬이며 상태바를 피해 여백을 둔다', async () => {
@@ -276,5 +274,44 @@ describe('Modal', () => {
       expect(getByTestId('modal-card-fade-top')).toBeTruthy()
       expect(queryByTestId('modal-card-fade-bottom')).toBeNull()
     })
+  })
+})
+
+// 다크 바탕은 매우 어두워 테두리 없는 패널이 스크림에 묻힌다. 바텀시트처럼 표면 계열을 한 칸 올린다.
+describe('Modal.Card: 다크에서 표면 계열을 한 칸 올린다', () => {
+  const 검은마법사 = getThemeDefinition('검은마법사')
+  const 스코프 = buildSheetScopeVariables(검은마법사)
+
+  beforeEach(__resetThemeAppearanceForTest)
+  afterEach(__resetThemeAppearanceForTest)
+
+  it('패널과 패널 안 `bg-surface` 가 올린 값으로 풀린다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <Modal onClose={noop}>
+        <Modal.Card>
+          <View testID="패널안-칸" className="bg-surface" />
+        </Modal.Card>
+      </Modal>,
+    )
+    await act(async () => {
+      setThemeAppearance('검은마법사', 검은마법사)
+    })
+
+    expect(flattenStyle(getByTestId('modal-card').props.style).backgroundColor).toBe(스코프['--color-surface'])
+    expect(flattenStyle(getByTestId('패널안-칸').props.style).backgroundColor).toBe(스코프['--color-surface'])
+    // 이 단언에 판별력이 있으려면 올린 값이 원래 값과 달라야 한다.
+    expect(스코프['--color-surface']).not.toBe(검은마법사.surface)
+  })
+
+  it('라이트에서는 올리지 않는다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <Modal onClose={noop}>
+        <Modal.Card>
+          <Text>내용</Text>
+        </Modal.Card>
+      </Modal>,
+    )
+
+    expect(flattenStyle(getByTestId('modal-card').props.style).backgroundColor).toBe(기본테마.surface)
   })
 })

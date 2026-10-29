@@ -9,7 +9,8 @@
 import { useState } from 'react'
 import { View } from 'react-native'
 
-import { Button, CrownIcon, Text } from '../../components/atoms'
+import { Button, CrownIcon } from '../../components/atoms'
+import { ModalHeader } from '../../components/molecules/ModalHeader/ModalHeader'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { historyFloorDateKey } from '../../features/cashbook/range'
 import type { MvpAsk } from '../../features/mvp-grade/ask'
@@ -97,26 +98,24 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
     // 답을 받아야 끝나는 흐름이라 바깥 탭 · 뒤로가기로 안 닫힌다. 고르지 않은 ID 는 `일반` 으로 이미 서 있다.
     <Modal onClose={() => {}} testId="mvp-grade" align="center">
       <Modal.Card
-        tight={screen === 'confirm'}
         footer={
-          // 버튼은 스크롤 밖에 고정한다. 짧은 화면에서도 답할 길이 늘 보인다. `mt-5` 가 본문과의 20 이다.
-          <View className="mt-5 items-center gap-1">
+          // 버튼은 스크롤 밖에 고정한다. 짧은 화면에서도 답할 길이 늘 보인다.
+          <View className="mt-4 gap-1">
             <Button
               variant="primary"
               onPress={screen === 'pick' ? () => setScreen('confirm') : done}
               busy={screen === 'confirm' && props.busy}
               className="w-full items-center"
-              textClassName="text-sm"
             >
               {screen === 'pick' ? '다음' : '맞아요'}
             </Button>
             {screen === 'confirm' && (
               <Button
                 variant="text"
+                size="sm"
                 onPress={() => setScreen('pick')}
                 disabled={props.busy}
-                className="w-full items-center px-4 py-1.5"
-                textClassName="text-xs"
+                className="self-center"
               >
                 수정
               </Button>
@@ -124,16 +123,8 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
           </View>
         }
       >
-        <View className="gap-5">
-          <View className="items-center gap-3">
-            <View className="h-14 w-14 items-center justify-center rounded-full bg-primary-tint">
-              <CrownIcon className="h-7 w-7 text-primary-ink" strokeWidth={1.75} aria-hidden />
-            </View>
-            <View className="w-full gap-2">
-              <Text className="text-center text-base font-semibold leading-snug text-text">{copy.title}</Text>
-              <Text className="text-center text-xs text-text-muted">{copy.description}</Text>
-            </View>
-          </View>
+        <View className="gap-4">
+          <ModalHeader icon={CrownIcon} tone="primary" title={copy.title} description={copy.description} />
 
           <View className="gap-2">
             {accounts.map((account) =>

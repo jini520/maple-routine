@@ -13,7 +13,8 @@
 import { View } from 'react-native'
 
 import { ProgressBar, Text } from '../../atoms'
-import { MapleSweepSpinner } from '../../atoms/Spinner/MapleSweepSpinner'
+import { TABULAR_NUMS } from '../../../constants/style/text-styles'
+import { ModalHeader } from '../../molecules/ModalHeader/ModalHeader'
 import { Modal } from '../Modal/Modal'
 
 export interface LoadingModalProps {
@@ -39,17 +40,20 @@ export function LoadingModal(props: LoadingModalProps): React.JSX.Element {
 
   return (
     <Modal onClose={() => {}} align="center" testId="loading-modal">
-      <Modal.Card maxWidth="max-w-xs">
-        <View className="items-center gap-3.5">
-          <MapleSweepSpinner size={36} className="text-primary" />
-          <Text className="text-center text-15 font-semibold text-text">{props.title}</Text>
+      <Modal.Card>
+        <View className="gap-4">
+          <ModalHeader busy tone="primary" title={props.title} />
           {/* 분모를 몰라도 그린다. 조건부로 두면 모달과 바가 다른 프레임에 뜬다. */}
           <View testID="loading-modal-progress" className="w-full gap-1.5">
             {/* 분모를 모르는 동안 `now`·`max` 를 안 준다. 0 을 주면 스크린리더가 0% 라고 읽는다. */}
             <ProgressBar percent={percent} aria={known ? { now: done, max: total } : undefined} />
             <View className="flex-row justify-between">
-              <Text className="text-11 text-text-muted">{known ? `${done} / ${total}` : '- / -'}</Text>
-              <Text className="text-11 text-text-muted">{known ? `${percent}%` : '-'}</Text>
+              <Text className="text-xs text-text" style={TABULAR_NUMS}>
+                {known ? `${done} / ${total}` : '- / -'}
+              </Text>
+              <Text className="text-xs font-semibold text-primary-ink" style={TABULAR_NUMS}>
+                {known ? `${percent}%` : '-'}
+              </Text>
             </View>
           </View>
         </View>

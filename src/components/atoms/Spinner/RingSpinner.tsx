@@ -1,7 +1,7 @@
 /**
  * 링 스피너. 옅은 원 위에서 호 하나가 돈다.
  *
- * 단풍잎 스피너를 단순한 모양으로 바꾸기로 하고 게임 데이터 잠금 화면에 먼저 쓴다. 다른 자리는 아직 단풍잎이다.
+ * 가운데 모달과 게임 데이터 잠금 화면의 대기 표시. 영역 · 화면의 대기는 아직 단풍잎이다.
  */
 import { View } from 'react-native'
 import Animated, { Easing, useAnimatedStyle } from 'react-native-reanimated'
