@@ -1,24 +1,17 @@
 import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
 import { resolveControlColors } from '../../../../theme/theme-vars'
-import { flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
+import { findAllOfType, flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
 import { DateSelect } from '../DateSelect'
 
 describe('DateSelect', () => {
-  it('기본은 변경 글자와 날짜 알약이 함께 선다', async () => {
+  // 알약만 두면 값처럼 읽혀 아무도 안 누른다. 끝의 화살표가 `변경` 글자 대신 바꿀 수 있다는 것을 말한다.
+  it('알약 끝에 아래 화살표가 서고 변경 글자는 없다', async () => {
     const view = await renderOverlay(<DateSelect dateKey="2026-09-18" label="잡은 날" onPress={jest.fn()} />)
-
-    expect(view.getByText('변경')).toBeTruthy()
-    expect(view.getByText('9월 18일 (금)')).toBeTruthy()
-  })
-
-  // 알약 자리가 이미 바꿀 수 있는 곳으로 읽히는 화면(통계 누적의 시작 날짜)은 글자를 끈다.
-  it('변경 글자를 끄면 알약만 선다', async () => {
-    const view = await renderOverlay(
-      <DateSelect dateKey="2026-09-18" label="누적 시작 날짜" onPress={jest.fn()} showChangeLabel={false} />,
-    )
 
     expect(view.queryByText('변경')).toBeNull()
     expect(view.getByText('9월 18일 (금)')).toBeTruthy()
+    // 알약 안의 그림은 앞의 달력과 끝의 화살표 둘이다.
+    expect(findAllOfType(view.toJSON(), 'RNSVGSvgView')).toHaveLength(2)
   })
 
   // 스테퍼 트랙과 같은 반투명 바탕이라 카드 · 칸 · 시트 어디에 놓여도 알약이 보인다.
