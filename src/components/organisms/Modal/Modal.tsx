@@ -198,12 +198,7 @@ function ModalCard(props: ModalCardProps): React.JSX.Element {
  * 껍데기 없이 위치만 잡는 패널. children 이 자기 카드 스타일을 직접 두를 때 쓴다.
  *
  * 지금 쓰는 곳은 `PartySizeModal` 하나다. 히어로 일러스트가 모서리까지 가야 해서 `Modal.Card` 의
- * `p-6` 안에 들어갈 수 없다.
- *
- * RN 에는 자손 선택자가 없어 부모가 자식의 스타일을 정할 방법이 없다. 그래서 스크림 위라는
- * 사실은 오버레이가 소유한다 를 자식이 `border-panel-border` 를 직접 쓰는 것으로 대신한다.
- * 스크림 없는 화면과 공유되는 자식이 올 때는 그 사실을 프롭으로 받아야 하고, 그 배선은
- * 화면 몫이다.
+ * `p-6` 안에 들어갈 수 없다. 판의 색과 다크 표면 올리기는 그 자식이 `ModalSurface` 와 같게 직접 칠한다.
  */
 function ModalPanel(props: ModalPanelProps): React.JSX.Element {
   const maxHeight = useContext(MaxHeightContext)

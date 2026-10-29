@@ -19,24 +19,6 @@ export function toColorVariableName(token: string): string {
 }
 
 /**
- * 스크림 위 패널의 테두리. RN 에는 선택자가 없어서 값으로 만든다.
- *
- * 라이트에서 합성된 중간 회색 위에 테두리를 녹이는 계산이다. 그 결과를 토큰 하나로 미리 만들어
- * 두면 호출부는 `border-panel-border` 라고만 쓰면 되고, 모드 분기는 이 함수 안에서 딱 한 번
- * 일어난다.
- *
- * 분기 기준은 반드시 `definition.mode` 다. 테마 이름으로 가르면 `DARK_THEMES` 수동 목록이
- * 되살아난다. 테마를 수십 개로 늘릴 계획이라 특히 안 된다.
- *
- * 다크에서 테두리를 그대로 두는 것도 결정이다. 그쪽은 패널과 배경 대비가 1.07~1.18 이라 경계를
- * 그리는 것이 테두리뿐이다. 라이트에서만 `text` 쪽으로 눌러 합성된 배경색에 가라앉힌다.
- */
-export const PANEL_BORDER_TOKEN = 'panel-border'
-
-/** 라이트에서 `border` 를 `text` 쪽으로 미는 비중. 실기기에서 세 번 만에 잡은 값. */
-const PANEL_BORDER_RATIO = 0.4
-
-/**
  * `color-mix(in srgb, base <ratio>%, other)` 와 같은 계산.
  *
  * core 의 `mixOklab` 을 쓰지 않는 것은 이 값들을 **`in srgb`** 로 잡았기 때문이다
@@ -55,18 +37,12 @@ function mixSrgb(base: string, other: string, ratio: number): string {
   })
 }
 
-export function resolvePanelBorder(definition: ThemeDefinition): string {
-  return definition.mode === 'light'
-    ? mixSrgb(definition.border, definition.text, PANEL_BORDER_RATIO)
-    : definition.border
-}
-
 /**
  * 카드 안에 한 단 다르게 앉는 면. 통계 보스 칸 · 시각 휠의 고른 줄 · 드롭다운 항목을 누르는 동안이 쓴다.
  *
  * 38토큰에는 이 자리에 맞는 색이 없다. 카드(`surface`)와도 페이지(`bg`)와도 갈려야 하는데
  * `surface-2` 는 그 조건은 만족하지만 라이트에서 칙칙한 청회색이고, `bg` 를 쓰면 본문이 페이지에
- * 녹는다. 그래서 `panel-border` 와 같은 방식으로 모드에서 파생해 만든다.
+ * 녹는다. 그래서 모드에서 파생해 만든다.
  *
  * 두 모드가 하는 일이 다르다(사용자 지정).
  *
@@ -182,7 +158,7 @@ function controlVariables(colors: ControlColors): Record<string, string> {
 /**
  * 결산 안내 줄의 색 넷. **테마를 안 따라간다.**
  *
- * 앞의 둘(`panel-border` · `card-body`)과 같은 자리이지만 하는 일이 다르다. 저쪽은 테마 값에서
+ * 앞의 `card-body` 와 같은 자리이지만 하는 일이 다르다. 저쪽은 테마 값에서
  * **계산**하고 이쪽은 라이트/다크 **상수 두 벌**이다.
  *
  * 테마를 따라가면 줄의 정체가 테마 수만큼 갈린다. 먼저 쓰던 `info-tint` 가 그랬다 - 머쉬맘에서는
@@ -229,7 +205,7 @@ export function resolveSettlementColors(definition: ThemeDefinition): Settlement
 }
 
 /**
- * `:root` 에 해당하는 변수 맵. 38토큰 + 모드에서 파생되는 `--color-panel-border`.
+ * `:root` 에 해당하는 변수 맵. 38토큰 + 모드에서 파생되는 색.
  *
  * 배경 이미지(`--theme-bg-*`)는 내지 않는다. RN 은 벽지를 CSS 배경이 아니라 `<Image>` 로 그리므로
  * 값의 형태 자체가 다르다. 로 에셋이 들어온 뒤에도 그대로다(core 는 `url("…")` 을
@@ -241,7 +217,6 @@ export function buildThemeVariables(definition: ThemeDefinition): Record<string,
   for (const token of THEME_TOKEN_KEYS) {
     variables[toColorVariableName(token)] = definition[token]
   }
-  variables[toColorVariableName(PANEL_BORDER_TOKEN)] = resolvePanelBorder(definition)
   variables[toColorVariableName(CARD_BODY_TOKEN)] = resolveCardBody(definition)
   variables[toColorVariableName(STATS_SECTION_TOKEN)] = resolveStatsSection(definition)
   variables[toColorVariableName(CARD_INSET_TOKEN)] = resolveCardInset(definition)

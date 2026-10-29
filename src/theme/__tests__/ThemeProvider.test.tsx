@@ -42,7 +42,7 @@ function Swatch() {
       <Text className="text-text-muted" testID="label">
         토큰
       </Text>
-      <View className="bg-secondary-tint border-panel-border" testID="badge" />
+      <View className="bg-secondary-tint" testID="badge" />
     </View>
   )
 }
@@ -157,33 +157,6 @@ describe('ThemeProvider', () => {
 
 describe('모드 분기', () => {
 // 모드 분기를 선택자가 아니라 **값**으로 푼다. 그래서 같은 클래스가 모드마다 다른 색이 된다.
-  it('라이트에서는 패널 테두리가 `border` 와 다른 색이다', async () => {
-    const { getByTestId } = await render(
-      <ThemeProvider>
-        <Swatch />
-      </ThemeProvider>,
-    )
-
-    const borderColor = flattenStyle(getByTestId('badge').props.style).borderColor
-
-    expect(borderColor).toBe('#685B4A')
-    expect(borderColor).not.toBe(머쉬맘.border)
-  })
-
-  it('다크에서는 패널 테두리가 `border` 그대로다(유일한 경계라 손대지 않는다)', async () => {
-    const { getByTestId } = await render(
-      <ThemeProvider>
-        <Swatch />
-      </ThemeProvider>,
-    )
-
-    await act(async () => {
-      rnThemeAppearancePort.apply('검은마법사', 검은마법사)
-    })
-
-    expect(flattenStyle(getByTestId('badge').props.style).borderColor).toBe(검은마법사.border)
-  })
-
   it.each([
     ['머쉬맘', 'light', 'black'],
     ['검은마법사', 'dark', 'white'],

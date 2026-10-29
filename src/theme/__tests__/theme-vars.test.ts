@@ -25,19 +25,14 @@ import {
   STATS_SECTION_TOKEN,
   SETTLEMENT_TOKENS,
   resolveSettlementColors,
-  PANEL_BORDER_TOKEN,
   SHEET_LIFT,
   buildMediaScopeVariables,
   buildSheetScopeVariables,
   buildThemeVariables,
   resolveCardBody,
-  resolvePanelBorder,
   resolveStatsSection,
   toColorVariableName,
 } from '../theme-vars'
-
-/** 38토큰에 없는 파생 토큰. RN 이 선택자 대신 값으로 푸는 자리다. */
-const PANEL_BORDER_VARIABLE = toColorVariableName(PANEL_BORDER_TOKEN)
 
 describe('변수 이름 규칙', () => {
   it.each([
@@ -57,7 +52,6 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
   it('`:root` 변수가 38토큰과 RN 이 더 내는 것뿐이다', () => {
     const variables = buildThemeVariables(definition)
     const {
-      [PANEL_BORDER_VARIABLE]: panelBorder,
       [toColorVariableName(CARD_BODY_TOKEN)]: cardBody,
       [toColorVariableName(STATS_SECTION_TOKEN)]: statsSection,
       [toColorVariableName(CARD_INSET_TOKEN)]: cardInset,
@@ -71,7 +65,6 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
       Object.entries(rest).filter(([name]) => !name.startsWith('--color-settlement-')),
     )
 
-    expect(panelBorder).toBe(resolvePanelBorder(definition))
     expect(cardBody).toBe(resolveCardBody(definition))
     expect(statsSection).toBe(resolveStatsSection(definition))
     expect(cardInset).toBe(resolveCardInset(definition))
@@ -100,38 +93,6 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
     for (const token of ['surface', 'surface-2', 'track', 'border', 'text', 'text-muted']) {
       expect(names).toContain(`--color-${token}`)
     }
-  })
-})
-
-describe('스크림 위 패널 테두리. 모드가 역할을 가른다', () => {
-  // 표에 적힌 확정값. 계산해서 만들지 않는다. 실기기에서 세 번 만에 잡은
-  // **결정**이라 우리 구현이 그 값을 내는지가 검사 대상이다.
-  it.each([
-    ['머쉬맘', '#685B4A'],
-    ['렌', '#656269'],
-    ['엔젤릭버스터', '#6C5662'],
-  ] as const)('라이트 %s 는 배경에 가라앉은 %s 가 된다', (name, expected) => {
-    const definition = getThemeDefinition(name)
-
-    expect(definition.mode).toBe('light')
-    expect(resolvePanelBorder(definition)).toBe(expected)
-  })
-
-  // 다크는 패널과 배경 대비가 1.07~1.18 이라 **테두리가 유일한 경계**다. 손대면 경계가 사라진다.
-  it.each(['혼테일', '레테', '검은마법사'] as const)('다크 %s 는 `border` 를 그대로 쓴다', (name) => {
-    const definition = getThemeDefinition(name)
-
-    expect(definition.mode).toBe('dark')
-    expect(resolvePanelBorder(definition)).toBe(definition.border)
-  })
-
-  // 분기가 **이름이 아니라 `mode`** 를 본다는 것을 이름은 그대로 두고 모드만 뒤집어 확인한다
-  // (`DARK_THEMES` 수동 목록 폐기). 이름으로 갈랐다면 이 단언이 실패한다.
-  it('분기 기준은 테마 이름이 아니라 `mode` 다', () => {
-    const 머쉬맘 = getThemeDefinition('머쉬맘')
-
-    expect(resolvePanelBorder({ ...머쉬맘, mode: 'dark' })).toBe(머쉬맘.border)
-    expect(resolvePanelBorder({ ...머쉬맘, mode: 'light' })).not.toBe(머쉬맘.border)
   })
 })
 
@@ -354,7 +315,7 @@ describe('resolveSettlementColors. 테마를 안 따라가는 공통색', () => 
     }
   })
 
-  // 테마 이름으로 가르면 `DARK_THEMES` 수동 목록이 되살아난다. `panel-border` 와 같은 규칙이다.
+  // 테마 이름으로 가르면 `DARK_THEMES` 수동 목록이 되살아난다. `card-body` 와 같은 규칙이다.
   it('모드만 보고 가른다. 테마의 다른 값이 바뀌어도 안 움직인다', () => {
     const 원본 = 테마들.find((theme) => theme.mode === 'light')!
     const 색만바꾼테마: ThemeDefinition = { ...원본, bg: '#FF0000', primary: '#00FF00' }
