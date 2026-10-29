@@ -250,29 +250,3 @@ describe('날짜', () => {
     expect(view.getByTestId('notice-date')).toHaveTextContent('2026. 10. 23.')
   })
 })
-
-// 상세 응답에는 배너 그림이 없다. 본문 그림을 받는 동안 깔 그림은 목록 사본에만 있다.
-describe('본문 그림의 자리 그림', () => {
-  const 이벤트: Notice = {
-    id: 'event-2',
-    kind: 'event',
-    title: '사라진 네미',
-    body: '',
-    publishedAt: '2026-10-22T00:00:00Z',
-    thumbnailUrl: 'https://lwi.nexon.com/thumb.png',
-  }
-
-  it('받은 상세가 사본의 배너 그림을 이어 받아 자리에 깐다', async () => {
-    notices.mockResolvedValue([이벤트])
-    remote.mockResolvedValue({
-      status: 'found',
-      notice: { ...이벤트, thumbnailUrl: undefined, blocks: [{ type: 'image', src: 'https://lwi.nexon.com/body.png' }] },
-    })
-
-    const view = await renderOverlay(<SettingsNoticeDetailScreen route={{ params: { noticeId: 'event-2' } }} />)
-
-    await waitFor(() => {
-      expect(view.getByTestId('notice-image').props.placeholder).toEqual([{ uri: 'https://lwi.nexon.com/thumb.png' }])
-    })
-  })
-})

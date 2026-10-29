@@ -27,7 +27,6 @@ export function NoticeBannerArt(props: { notice: Notice }): React.JSX.Element {
           accessibilityIgnoresInvertColors
           source={{ uri: url }}
           contentFit="contain"
-          // 상세 화면이 본문 그림을 받는 동안 이 그림을 깐다. 메모리에 있으면 그 자리가 바로 그려진다.
           cachePolicy="memory-disk"
           style={{ width: '100%', height: '100%' }}
           onError={() => setFailedUrl(url)}

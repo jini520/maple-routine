@@ -12,7 +12,7 @@ import { Image } from 'expo-image'
 import { useState } from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 
-import { ExternalLinkIcon, Text } from '../../components/atoms'
+import { ExternalLinkIcon, Skeleton, Text } from '../../components/atoms'
 import { openInAppBrowser } from '../../native/browser'
 import type { NoticeBlock } from '../../types/notice'
 
@@ -20,15 +20,16 @@ import type { NoticeBlock } from '../../types/notice'
  * 원격 이미지 한 장. **비율을 받아 오기 전까지 자리를 잡아 둔다.**
  *
  * 넥슨 배너는 가로 876px 이고 세로가 제각각이라 상수로 못 박는다. `onLoad` 가 실제 크기를
- * 주므로 그때 비율을 고친다. 받는 동안은 `placeholder`(목록의 배너 그림)를 그 자리에 깐다. 초기값이 없으면 높이가 0이라 이미지가 안 보이고, 너무 크게
+ * 주므로 그때 비율을 고친다. 받는 동안은 그 자리에 스켈레톤을 깐다. 한 장이 수 MB 라 수 초가 걸린다. 초기값이 없으면 높이가 0이라 이미지가 안 보이고, 너무 크게
  * 잡으면 로드 뒤에 화면이 크게 튄다.
  *
  * **못 받으면 못 받았다고 말한다.** 그냥 두면 자리만 잡아 둔 빈칸이 남는데, 이벤트·캐시샵은
  * 본문이 이미지 한 장뿐이라 그 빈칸이 곧 `본문이 없는 공지` 로 읽힌다. 실패하는 길이 여럿이다 -
  * 넥슨이 지운 이미지 · 망 끊김 · 한 장에 2MB 를 넘는 배너(실측 2.3MB).
  */
-function NoticeImage(props: { src: string; placeholder?: string }): React.JSX.Element {
+function NoticeImage(props: { src: string }): React.JSX.Element {
   const [ratio, setRatio] = useState(876 / 400)
+  const [loaded, setLoaded] = useState(false)
   const [failed, setFailed] = useState(false)
 
   if (failed) {
@@ -43,22 +44,26 @@ function NoticeImage(props: { src: string; placeholder?: string }): React.JSX.El
   }
 
   return (
-    <Image
-      testID="notice-image"
-      accessibilityIgnoresInvertColors
-      source={{ uri: props.src }}
-      placeholder={props.placeholder === undefined ? undefined : { uri: props.placeholder }}
-      placeholderContentFit="contain"
-      cachePolicy="disk"
-      style={{ width: '100%', aspectRatio: ratio }}
-      contentFit="contain"
-      transition={150}
-      onLoad={(event) => {
-        const { width, height } = event.source
-        if (width > 0 && height > 0) setRatio(width / height)
-      }}
-      onError={() => setFailed(true)}
-    />
+    <View>
+      <Image
+        testID="notice-image"
+        accessibilityIgnoresInvertColors
+        source={{ uri: props.src }}
+        cachePolicy="disk"
+        style={{ width: '100%', aspectRatio: ratio }}
+        contentFit="contain"
+        transition={150}
+        onLoad={(event) => {
+          const { width, height } = event.source
+          if (width > 0 && height > 0) setRatio(width / height)
+          setLoaded(true)
+        }}
+        onError={() => setFailed(true)}
+      />
+      {!loaded && (
+        <Skeleton testID="notice-image-skeleton" className="absolute inset-0" fillClassName="rounded-none" />
+      )}
+    </View>
   )
 }
 
@@ -90,12 +95,9 @@ function NoticeTable(props: { rows: string[][] }): React.JSX.Element {
 
 export function NoticeBlocks(props: {
   blocks: readonly NoticeBlock[]
-  /** 첫 그림을 받는 동안 깔 그림 주소. 이벤트 · 캐시샵 목록의 배너 그림. */
-  placeholder?: string
   /** 그림만 화면 폭 전체로 그리고 글자 블록에는 양옆 여백을 주는가. 부르는 쪽이 여백 없이 둘 때 켠다. */
   bleed?: boolean
 }): React.JSX.Element {
-  const firstImage = props.blocks.findIndex((block) => block.type === 'image')
   const inset = props.bleed === true ? 'px-4' : ''
 
   return (
@@ -119,13 +121,7 @@ export function NoticeBlocks(props: {
               </Text>
             )
           case 'image':
-            return (
-              <NoticeImage
-                key={index}
-                src={block.src}
-                placeholder={index === firstImage ? props.placeholder : undefined}
-              />
-            )
+            return <NoticeImage key={index} src={block.src} />
           case 'link':
             return (
               <Pressable

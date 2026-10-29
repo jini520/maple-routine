@@ -132,14 +132,7 @@ export function SettingsNoticeDetailScreen(props: {
       .then(async (remote) => {
         if (remote === null || remote.status === 'failed') return
         if (remote.status === 'found') {
-          // 상세 응답에는 배너 그림이 없다. 본문 그림을 받는 동안 깔 그림이라 사본의 것을 이어 받는다.
-          if (alive) {
-            setNotice((shown) =>
-              remote.notice.thumbnailUrl === undefined && shown?.thumbnailUrl !== undefined
-                ? { ...remote.notice, thumbnailUrl: shown.thumbnailUrl }
-                : remote.notice,
-            )
-          }
+          if (alive) setNotice(remote.notice)
           return
         }
         if (alive) setNotice(null)
@@ -184,7 +177,7 @@ export function SettingsNoticeDetailScreen(props: {
         <View className="gap-3 pb-4" testID="screen-SettingsNoticeDetail">
           <NoticeMetaRow notice={found} />
           {found.blocks !== undefined ? (
-            <NoticeBlocks blocks={found.blocks} placeholder={found.thumbnailUrl} bleed />
+            <NoticeBlocks blocks={found.blocks} bleed />
           ) : (
             <View className="px-4">
               <NoticeBody notice={found} settled={settled} />
