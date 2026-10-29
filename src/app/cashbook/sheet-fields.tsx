@@ -28,7 +28,7 @@ import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { openInputCard } from '../../features/input-card/store'
 import type { InputCardChip, InputCardIcon } from '../../components/organisms/InputCard/InputCard'
 import { characterDecorOf, characterOptions } from './character-options'
-import { LIST_ALIGN_PADDING, SelectValue, type SelectDecor } from './select-value'
+import { SelectValue, type SelectDecor } from './select-value'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { monthKeyOf } from '../../lib/calendar'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -153,7 +153,7 @@ export function SelectRow(props: {
   testID: string
   renderOption?: (option: SelectOption, isSelected: boolean) => React.ReactNode
   /**
-   * 값에 붙는 아이콘 · 레벨 · 목록 글자. 주면 닫힌 줄과 목록 줄이 `SelectValue` 하나로 서고 목록 줄은 오른쪽에 붙는다.
+   * 값에 붙는 아이콘 · 레벨 · 목록 글자. 주면 닫힌 줄과 목록 줄이 `SelectValue` 하나로 서고 목록 줄은 왼쪽에 붙는다.
    * `{testID}-value-icon` · `{testID}-option-{value}-icon` · `-level` · `-note`
    */
   decorOf?: (value: string) => SelectDecor | null
@@ -171,18 +171,18 @@ export function SelectRow(props: {
           const decor = option.value === null ? null : decorOf(option.value)
           const id = `${props.testID}-option-${option.value ?? ''}`
           return (
-            <View className={`flex-row items-center justify-end gap-2 ${LIST_ALIGN_PADDING}`}>
-              {decor?.listNote != null && (
-                <Text testID={`${id}-note`} className={`mr-auto text-11 ${isSelected ? 'text-primary-ink' : 'text-text-muted'}`}>
-                  {decor.listNote}
-                </Text>
-              )}
+            <View className="flex-row items-center gap-2">
               <SelectValue
                 testID={id}
                 label={option.label}
                 decor={decor}
                 tone={isSelected ? 'selected' : option.value === null ? 'muted' : 'value'}
               />
+              {decor?.listNote != null && (
+                <Text testID={`${id}-note`} className={`ml-auto text-11 ${isSelected ? 'text-primary-ink' : 'text-text-muted'}`}>
+                  {decor.listNote}
+                </Text>
+              )}
             </View>
           )
         })
