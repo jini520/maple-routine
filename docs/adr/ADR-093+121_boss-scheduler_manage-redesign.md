@@ -1,4 +1,4 @@
-# ADR-093 보스 관리 화면 리디자인과 난이도 고르개 통일
+# ADR-093+121 보스 관리 화면 리디자인과 난이도 고르개 통일
 
 > 🟢 유효
 > 관련 소스: `app/boss-scheduler/BossManageScreen.tsx` · `app/boss-scheduler/BossScreen.tsx` · `components/organisms/CharacterRail/` · `components/organisms/CharacterPortrait/` · `app/content-scheduler/ContentManageScreen.tsx` · `app/utility/BossProfitCalculatorScreen.tsx` · `components/molecules/DifficultyExpander/` · `components/molecules/PartyShareSummary/` · `components/atoms/Badge/variants.ts` · `components/organisms/BossPicker/BossDifficultyPopover.tsx` · `components/organisms/PartySizeModal/PartySizeModal.tsx` · `app/boss-profit/ManualCompletionSheet.tsx`
@@ -32,7 +32,7 @@
 
 ### 결정 2. 난이도를 고르는 곳은 모두 주간 보스 수익 계산기의 `DifficultyExpander` 를 쓴다
 
-계산기 보스 줄의 고르개([[ADR-074]] 결정 8)로 바꾼다(사용자 지정). 접힌 동안 고른 난이도 배지 하나와 오른쪽 화살표만 서고,
+계산기 보스 줄의 고르개([[ADR-074]] 결정 8)로 바꾼다(사용자 지정). 접힌 동안 고른 난이도 배지 하나와 화살표만 서고,
 누르면 모든 난이도가 그 자리에서 펼쳐진다. 난이도 배지를 모두 늘어놓는 `DifficultySegment` 는 한 줄을 다 차지해서, 행마다
 둘째 줄이 필요했다.
 
@@ -46,8 +46,10 @@
 - 파티 모달은 보스 스케줄러 카드에서 열 때만 난이도를 고른다. 보스 관리 · 보스 수익 행 · 계산기에서 열면 고르개 대신 난이도 배지만
   선다(사용자 지정). 이 셋은 행이 난이도를 정한다. 모달에도 고르개를 세우면 눌러도 바뀌지 않는 고르개가 된다. 모달은
   `onSelectDifficulty` 를 받을 때만 고르개를 그린다.
-- 펼친 줄의 바탕은 배지 줄을 사방으로 같은 여백(3)만큼 감싼다. 오른쪽에만 여백을 두었더니, 바탕이 드러나는 파티 모달의 일러스트
-  위에서 바탕과 배지 줄이 어긋나 보였다(사용자 지적).
+- 화살표는 펼쳐지는 쪽에 선다. 기본(`start`)은 배지 오른쪽에 `›` 가, 오른쪽 끝에 붙어 왼쪽으로 펼치는 `align="end"` 는 배지
+  왼쪽에 `‹` 가 선다. 왼쪽으로 펼치는데 화살표가 오른쪽에 있으면 펼쳐지는 방향과 반대를 가리킨다(사용자 지적 2026-10-29).
+- 펼친 줄 뒤에 바탕 판을 깔지 않는다(사용자 지정 2026-10-29). 배지만 펼쳐지고 옆의 글자 · 스테퍼는 그대로 보인다. 쓰는 자리마다
+  난이도가 셋 이하면 펼친 배지가 옆 UI 에 닿지 않는다. 배지 줄 밖을 누르면 접히는데, 그 누르는 자리는 보이지 않는다.
 - 난이도 배지를 모두 늘어놓던 `DifficultySegment` 는 쓰는 곳이 없어 지웠다.
 - 고르개는 다른 난이도를 고를 때 선택 촉각을 낸다(`selectionFeedback`). 앱의 다른 고르개와 같은 규칙이다([[ADR-059]]).
 - 직접 완료 시트는 값이 줄 오른쪽 끝에 붙는다. 고르개를 그 자리에 두고 왼쪽으로 펼친다(시안 3번 판 S2, 사용자 지정).
@@ -118,10 +120,11 @@
 | 파일 | 확인하는 것 |
 |---|---|
 | `app/boss-scheduler/__tests__/BossManageScreen.test.tsx` | 결정 1: 추적 중인 행의 초상에만 추적 표시가 붙는지, 고르개와 파티 요약이 추적 중인 행에만 서는지, 고르개로 바꾼 난이도가 한 번의 저장으로 가는지 본다. 결정 4: 자동 모드에 추적 표시가 없는지 본다. 결정 8: 줄의 글자를 눌러도 스위치가 켜지는지 본다 |
-| `components/molecules/DifficultyExpander/__tests__/DifficultyExpander.test.tsx` | 결정 2: `end` 면 펼친 줄이 오른쪽 끝에 붙는지, 바탕이 배지 줄을 사방으로 같은 여백만큼 감싸는지, 바뀔 때만 촉각이 나는지 본다. 결정 3: 배지가 `Badge` 와 같은 테두리를 그리는지 본다 |
+| `components/molecules/DifficultyExpander/__tests__/DifficultyExpander.test.tsx` | 결정 2: `end` 면 펼친 줄이 오른쪽 끝에 붙는지, 화살표가 펼쳐지는 쪽에 서는지, 펼친 줄 뒤에 보이는 바탕이 없고 밖을 누르면 접히는지, 바뀔 때만 촉각이 나는지 본다. 결정 3: 배지가 `Badge` 와 같은 테두리를 그리는지 본다 |
 | `components/molecules/PartyShareSummary/__tests__/PartyShareSummary.test.tsx` | 결정 5: 붙은 쪽에 따라 `변경` 과 배지의 차례가 바뀌는지 본다 |
 | `components/organisms/PartySizeModal/__tests__/PartySizeModal.test.tsx` | 결정 2: 모달이 고르개로 난이도를 고르고, 바꾸면 그 난이도의 저장값으로 다시 뜨는지, `onSelectDifficulty` 가 없으면 배지만 서는지 본다 |
 
 ## 번호 기록
 
 - ADR-093 (2026-10-24): 보스 관리 화면 리디자인(수동 · 자동 모드 행, 섹션 머리, 빈 링 두께, `모든 보스 보기` 줄), 난이도 고르개 통일, 난이도 배지 정식 디자인 유지를 처음 작성
+- ADR-121 (2026-10-29): 결정 2 의 고르개 화살표를 펼쳐지는 쪽에 두고, 펼친 줄 뒤의 바탕 판을 걷었다

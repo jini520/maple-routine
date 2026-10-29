@@ -64,7 +64,7 @@
 | `BossPortrait` · `CharacterAvatar` | 보스 얼굴 · 캐릭터 얼굴 원 |
 | `CharacterGroupLabel` | 캐릭터별 묶음 왼쪽의 얼굴 · 이름 열 |
 | `DonutRing` | 비중 도넛. 조각 사이 틈 · 둥근 모서리, 조각이 없으면 회색 링([[ADR-074]] 결정 6) |
-| `DifficultyExpander` | 난이도를 고르는 곳 모두가 쓰는 고르개. 고른 난이도 배지가 펼쳐져 모든 난이도가 된다. 오른쪽 끝에 붙으면 `align="end"` 로 왼쪽으로 펼친다([[ADR-074]] 결정 8, [[ADR-093]] 결정 2 · 3) |
+| `DifficultyExpander` | 난이도를 고르는 곳 모두가 쓰는 고르개. 고른 난이도 배지가 펼쳐져 모든 난이도가 된다. 오른쪽 끝에 붙으면 `align="end"` 로 왼쪽으로 펼치고 화살표도 왼쪽에 선다. 펼친 줄 뒤에 바탕을 깔지 않는다([[ADR-074]] 결정 8, [[ADR-093]] 결정 2 · 3) |
 | `FadedIllustration` | 카드 안 일러스트와 베일 |
 | `MvpGradeGrid` · `MvpPlate` | MVP 등급 고르기 · 등급 명패([[ADR-050]]) |
 | `NexonLoginButton` | 넥슨 로그인 버튼([[ADR-025]]) |
