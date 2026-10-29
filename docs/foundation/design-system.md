@@ -32,7 +32,7 @@
 | 부품 | 하는 일 |
 |---|---|
 | `Text` · `TextInput` | 글자와 입력 칸. 글꼴, 앱 글자 크기 배수, 입력 칸의 기본 상자를 채운다. `react-native` 의 `Text` · `TextInput` 은 이 둘만 가져온다 |
-| `Button` | 외형만 갖는 버튼. 변형은 `primary` · `outline` · `text` · `primaryOutline` · `tint` · `danger` · `dangerText`, 크기는 `sm` · `md`(기본). `busy` 면 라벨을 가리고 스피너를 겹친다 |
+| `Button` | 외형만 갖는 버튼. 변형은 `primary` · `text` · `tint` · `soft` · `dangerText`, 크기는 `sm` · `md`(기본). `busy` 면 라벨을 가리고 스피너를 겹친다 |
 | `Badge` | 상태 · 카테고리 · 난이도 배지. 크기는 `xs` · `sm` · `md`, 아이콘을 받는다 |
 | `Card` | 카드 껍데기(반경 14 · 표면색). 테두리는 없다([[ADR-060]] 결정 16) |
 | `CheckBox` | 체크박스 네모 |

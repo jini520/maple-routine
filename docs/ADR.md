@@ -163,7 +163,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-093+121](./adr/ADR-093+121_boss-scheduler_manage-redesign.md) | 🟢 | boss-scheduler | 보스 관리 화면 리디자인과 난이도 고르개 통일 |
 | [ADR-040](./adr/ADR-040_boss-profit_records.md) | 🟢 | boss-profit | 보스 수익 기록 |
 | [ADR-041](./adr/ADR-041_boss-profit_period.md) | 🟢 | boss-profit | 보스 수익 기간 |
-| [ADR-042](./adr/ADR-042_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 |
+| [ADR-042+135](./adr/ADR-042+135_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 |
 | [ADR-043](./adr/ADR-043_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |
 | [ADR-092+112](./adr/ADR-092+112_boss-profit_redesign.md) | 🟢 | boss-profit | 보스 수익 리디자인과 고가 드롭 홀로그램 강조 |
 | [ADR-044+066+076+111+120](./adr/ADR-044+066+076+111+120_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
@@ -183,10 +183,10 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-057+125](./adr/ADR-057+125_notice_feed.md) | 🟢 | notice | 운영자 공지와 넥슨 공지 |
 | [ADR-058+087](./adr/ADR-058+087_today_widgets.md) | 🟢 | today | today 위젯 격자 |
 | [ADR-089](./adr/ADR-089_today_quick-links.md) | 🟢 | today | today 빠른 이동 |
-| [ADR-059](./adr/ADR-059_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
-| [ADR-060+073+079+085+088+107+109+130](./adr/ADR-060+073+079+085+088+107+109+130_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
+| [ADR-059+136](./adr/ADR-059+136_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
+| [ADR-060+073+079+085+088+107+109+130+133](./adr/ADR-060+073+079+085+088+107+109+130+133_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
 | [ADR-061](./adr/ADR-061_design-system_states.md) | 🟢 | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 표시 |
-| [ADR-062+082+091+106+119+123+129+131](./adr/ADR-062+082+091+106+119+123+129+131_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 |
+| [ADR-062+082+091+106+119+123+129+131+134](./adr/ADR-062+082+091+106+119+123+129+131+134_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 |
 | [ADR-063+080+113+116](./adr/ADR-063+080+113+116_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 · 화면 배율 · 글자 크기 페이지 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
 | [ADR-071](./adr/ADR-071_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 잘못 적은 값 빼기 · 관리 화면 |
