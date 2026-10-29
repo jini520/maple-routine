@@ -140,11 +140,7 @@ export function AppSettingsScreen(): React.JSX.Element {
             <SectionTitle>앱 데이터</SectionTitle>
             <Card className={SETTINGS_CARD_CLASS} testID="app-settings-card">
               <SettingsRow
-                label="계정 및 데이터"
-                onPress={() => navigation.navigate('SettingsAccountData')}
-              />
-              <SettingsRow
-                label="앱 정보"
+                label="앱 정보 및 계정"
                 onPress={() => navigation.navigate('SettingsAbout')}
                 rightContent={<SummaryValue>{displayedVersion}</SummaryValue>}
               />
