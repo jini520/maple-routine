@@ -42,7 +42,7 @@ export interface BadgeProps extends TextProps {
  * @example
  * // 상태·카테고리
  * <Badge variant="primary">beta</Badge>
- * <Badge variant="outline" className="tabular-nums">v{version}</Badge>
+ * <Badge variant="third" className="tabular-nums">v{version}</Badge>
  *
  * // 보스 난이도. variant 키가 난이도 key 그대로이고 글자는 한글 이름이다
  * <Badge variant={boss.difficulty}>{DIFFICULTY_NAME[boss.difficulty]}</Badge>
@@ -71,7 +71,7 @@ export function Badge({
    * 테두리를 여백 안쪽으로 넣는다. Yoga 가 테두리를 패딩처럼 바깥 크기에 더해서, 빼 주지 않으면
    * 테두리가 있는 배지만 커진다.
    */
-  const inset = variantStyle.border?.borderWidth ?? variantStyle.borderWidth ?? 0
+  const inset = variantStyle.border?.borderWidth ?? 0
   const boxStyle = {
     paddingHorizontal: box.padX - inset,
     paddingVertical: box.padY - inset,

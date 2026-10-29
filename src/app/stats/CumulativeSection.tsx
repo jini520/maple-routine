@@ -4,6 +4,7 @@
  * 다시 누르면 닫는다. 처음에는 말풍선이 없다.
  */
 import { memo, useState } from 'react'
+import { vars } from 'nativewind'
 import { Pressable, View, type LayoutChangeEvent } from 'react-native'
 import Animated, { useAnimatedStyle } from 'react-native-reanimated'
 import Svg, { Circle, ClipPath, Defs, Line, Path, Rect } from 'react-native-svg'
@@ -14,6 +15,7 @@ import { CalendarPopover } from '../../components/organisms/CalendarPopover/Cale
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { monthKeyOf } from '../../lib/calendar'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
+import { buildPopoverScopeVariables } from '../../theme/theme-vars'
 import { cumulativeNet, totalsSeries, type DaysByDate } from '../../features/stats/aggregate'
 import { cumulativeRanges } from '../../features/stats/periods'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
@@ -178,15 +180,18 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
 
         {selected !== null && (
           <View
+            testID="stats-cumulative-bubble"
             pointerEvents="none"
-            className="absolute top-0 rounded-[10px] border border-border bg-surface px-2 py-1 shadow-sm"
-            style={
+            // 팝오버와 같은 면이다. 테두리 없이 그림자로 뜨고, 다크에서는 한 단 더 올린다.
+            className="absolute top-0 rounded-[10px] bg-surface px-2 py-1 shadow-lg"
+            style={[
+              vars(buildPopoverScopeVariables(definition)),
               bubbleRatio < 0.3
                 ? { left: 0 }
                 : bubbleRatio > 0.7
                   ? { right: 0 }
-                  : { left: x(selected), transform: [{ translateX: '-50%' }] }
-            }
+                  : { left: x(selected), transform: [{ translateX: '-50%' }] },
+            ]}
           >
             <Text testID="stats-cumulative-bubble-title" className="text-10 text-text-muted">
               {`${periodTitle(props.cycle, ranges[selected].periodKey)}까지`}

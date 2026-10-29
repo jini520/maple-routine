@@ -85,8 +85,9 @@ describe('CrystalSummaryChip', () => {
     })
 
     const 상자 = within(getByTestId('world-crystal-breakdown'))
-    expect(상자.getByText(`1 / ${WEEKLY_CRYSTAL_SALE_LIMIT} | 월간 0개`)).toBeTruthy()
-    expect(상자.getByText(`1 / ${WEEKLY_CRYSTAL_SALE_LIMIT} | 월간 1개`)).toBeTruthy()
+    // 줄은 결정석 그림이 주간 · 월간을 말하므로 숫자만 적고, 읽는 이름이 두 몫을 풀어 말한다.
+    expect(상자.getByLabelText(`스카니아 주간 결정석 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 0개`)).toBeTruthy()
+    expect(상자.getByLabelText(`루나 주간 결정석 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 1개`)).toBeTruthy()
   })
 
   // 주간 탭의 월간 몫은 그 주 목록에 선 것이 아니라 **그 주가 끝날 때까지의 그 달 누적**이다(사용자
@@ -120,7 +121,7 @@ describe('CrystalSummaryChip', () => {
     })
 
     const 상자 = within(getByTestId('world-crystal-breakdown'))
-    expect(상자.getByText(`0 / ${WEEKLY_CRYSTAL_SALE_LIMIT} | 월간 2개`)).toBeTruthy()
+    expect(상자.getByLabelText(/주간 결정석 0 \/ \d+, 월간 결정석 2개$/)).toBeTruthy()
   })
 
   // 월간 탭에는 **월간 결정석만** 선다(사용자 선택). 주간 90 은 주마다의 한도라 한 달의 합에는 뜻이 없다.
@@ -156,7 +157,8 @@ describe('CrystalSummaryChip', () => {
       })
 
       const 상자 = within(getByTestId('world-crystal-breakdown'))
-      expect(상자.getAllByText('월간 1개')).toHaveLength(2)
+      expect(상자.getByLabelText('스카니아 월간 결정석 1개')).toBeTruthy()
+      expect(상자.getByLabelText('루나 월간 결정석 1개')).toBeTruthy()
     })
 
     it('월드를 아는 월간 행이 없으면 안 선다', async () => {
@@ -214,7 +216,7 @@ describe('CrystalSummaryChip', () => {
     })
 
     const 상자 = within(getByTestId('world-crystal-breakdown'))
-    expect(상자.getAllByText(`1 / ${WEEKLY_CRYSTAL_SALE_LIMIT} | 월간 1개`)).toHaveLength(2)
+    expect(상자.getAllByLabelText(/주간 결정석 1 \/ \d+, 월간 결정석 1개$/)).toHaveLength(2)
   })
 
   it('월드는 아는데 처치가 0이면 0 / 90 과 0개 를 그대로 보여준다', async () => {

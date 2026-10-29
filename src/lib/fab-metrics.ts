@@ -50,17 +50,6 @@ export const FAB_SPACE_PX = FAB_LIFT_PX + FAB_DIAMETER_PX + FAB_CONTENT_GAP_PX
 export const FAB_SHADOW: ShadowLayer = { opacity: 0.65, radius: 12, y: 4 }
 
 /**
- * 다크에서 원의 경계를 내는 헤어라인.
- *
- * 어두운 바탕에서는 그림자가 거의 안 보인다. 하단바가 라이트 그림자 · 다크 테두리로 가른 것과
- * 같은 자리다.
- *
- * 흰색인 것은 원이 색을 진 판이기 때문이다. 바의 폴백 테두리는 무채색 판의 가장자리를 세우는
- * 값인데, 닫혀 있으면 `bg-primary` 인 이 원에 어두운 중립선을 두르면 파낸 구멍처럼 읽힌다.
- */
-export const FAB_DARK_EDGE = 'rgba(255,255,255,0.22)'
-
-/**
  * 떠 있는 하단바 위에 앉는 `bottom` 값.
  *
  * 바는 화면 상자 밖이 아니라 그 위에 떠 있어서 화면 기준 `bottom: 0` 은 바 뒤다. 그렇게

@@ -155,12 +155,15 @@ function GroundSummary(props: {
           <ForceMark region={chosen.region} force={chosen.ground.force} />
         )}
       </View>
-      <View className="border-l border-border px-1.5">
+      {/* 칸 사이는 6 × 1 짧은 막대로 가른다. 전체 높이 선은 무거웠고 간격만으로는 칸이 이어져 읽혔다. */}
+      <View aria-hidden className="h-1.5 w-px bg-border" />
+      <View className="px-1.5">
         <Text className={`text-11 ${chosen === null ? 'text-text-disabled' : 'text-text-muted'}`} style={TABULAR_NUMS}>
           {chosen === null ? 'lv.-' : levelLabelOf(chosen.ground)}
         </Text>
       </View>
-      <View className="border-l border-border px-1.5">
+      <View aria-hidden className="h-1.5 w-px bg-border" />
+      <View className="px-1.5">
         <Text className={`text-11 ${chosen === null ? 'text-text-disabled' : 'text-text-muted'}`} style={TABULAR_NUMS}>
           <Text testID="income-sheet-killed-mobs">{chosen === null ? '-' : chosen.killedMobs}</Text>마리
         </Text>

@@ -40,20 +40,16 @@ export interface BarColors {
    * 값과 `PLATE_SHADOW` 는 함께 움직인다. 한쪽만 세게 하면 유리 쪽과 다시 갈린다.
    */
   readonly pill: string
-  /** 테두리. 페이지와 바를 가르는 것은 색이 아니라 이 선이다. */
-  readonly edge: string
 
   // 아래 셋은 iOS 26 Liquid Glass 에서만 쓴다.
   /**
    * 유리에 얹는 아주 옅은 색. 진하게 넣으면 재질이 색에 가려 그냥 반투명 판이 된다.
    */
   readonly glassTint: string
-  /** 유리 가장자리. 재질 자체의 하이라이트에 **더해지는** 얇은 선이라 알파가 낮다. */
-  readonly glassEdge: string
   /**
    * 유리 위 활성 알약의 tint. 채운 판이 아니라 조금 더 밝은 재질이다.
    *
-   * 색조를 바꾸지 않는다. 바와 갈리는 일은 밝기 차 · 그림자 · 헤어라인이 한다.
+   * 색조를 바꾸지 않는다. 바와 갈리는 일은 밝기 차 · 그림자가 한다.
    *
    * 라이트에서는 흰색을 얹는 게 아니라 덜어낸다. 흰 카드 위에서 알약만 흰 덩어리로 뭉개지는
    * 원인은 tint 가 아니라 `clear` 재질 자체가 얹는 하이라이트다. tint 를 0.38 → 0.12 로 내려도
@@ -181,7 +177,6 @@ export function resolveBarColors(theme: ThemeDefinition): BarColors {
 
     return {
       glassTint: withAlpha(theme.surface2, 0.28),
-      glassEdge: 'rgba(255,255,255,0.22)',
       pillOnGlass: 'rgba(255,255,255,0.1)',
       // 다크에서 `clear` 재질의 하이라이트는 원하는 방향이라 덜어낼 것이 없다.
       pillVeil: null,
@@ -192,14 +187,11 @@ export function resolveBarColors(theme: ThemeDefinition): BarColors {
       // `border` 를 면으로 쓴다. 그 모드에서 표면보다 한 단 밝은 중립값이 그것뿐이고, 조금만
       // 섞으면 레테처럼 표면과 테두리가 가까운 테마에서 분리가 1.16 까지 내려간다.
       pill,
-      // 어두운 배경 위에서는 `border` 단독이 약하다. `text` 쪽으로 밀어 가장자리를 세운다.
-      edge: mixOklab(theme.border, theme.text, 0.6),
     }
   }
 
   return {
     glassTint: withAlpha(theme.surface, 0.3),
-    glassEdge: 'rgba(255,255,255,0.6)',
     pillOnGlass: withAlpha(theme.text, 0.05),
     pillVeil: withAlpha(theme.text, PILL_VEIL_ALPHA),
     accent: theme.primaryInk,
@@ -208,7 +200,5 @@ export function resolveBarColors(theme: ThemeDefinition): BarColors {
     // 유리가 그리는 그 판이다. `pillOnGlass` 와 같은 방향(바에서 `text` 쪽으로 아주 조금)이고,
     // 유리 재질이 덤으로 빼 주는 채도까지 여기서 직접 뺀다.
     pill: neutralPlate(theme.surface, theme.text),
-    // 라이트에서는 `border` 가 이미 표면 가장자리로 쓰이는 값이다. 그대로 쓴다.
-    edge: theme.border,
   }
 }

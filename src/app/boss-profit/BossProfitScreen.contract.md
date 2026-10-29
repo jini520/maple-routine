@@ -130,6 +130,6 @@ RN 의 sticky 는 **스크롤 뷰의 직계 자식**만 붙일 수 있다. 그�
 | `useMeasuredHeight` + spacer | 없음 | 헤더가 **흐름 안**이라 뺄 자리가 없다([[ADR-085]]·[[ADR-112]] 구조 만족) |
 | `window`/컨테이너 `scroll` 로 팝오버 닫기 | 없음 | 아이템 팝오버는 별도 네이티브 윈도우(step 6), 이슈 팝오버는 **카드와 함께 스크롤된다** |
 | `document.addEventListener('pointerdown')` 바깥 탭 | 없음 | 이슈 팝오버는 자기 `닫기` 버튼과 헤더 탭으로 닫는다 |
-| `measureIssueAnchor(card, money)` 동기 | `resolveIssueAnchor` + **비동기 측정 두 번** | RN 측정이 콜백이다(step 6 이 갈라 둔 자리) |
+| `measureIssueAnchor(card, money)` 동기 | 공용 `AnchoredPopover` 가 금액 칸을 잰다 | 설명 팝오버도 다른 팝오버와 같은 상자를 쓴다(2026-10-30) |
 | `.valuable-drop-card` 회전 링 · 글로우 맥동 | 오로라 홀로그램 빛(`HologramSheen`) | 테두리를 쓰지 않는 새 디자인([[ADR-092]]) |
 | `animate-spin`(새로고침) | Reanimated CSS 애니메이션 | `lib/animation.ts`(step 4·5) |

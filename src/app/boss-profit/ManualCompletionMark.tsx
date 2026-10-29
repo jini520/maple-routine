@@ -50,7 +50,7 @@ export function ManualCompletionMark(props: { row: BossProfitRow }): React.JSX.E
           </Text>
           {props.row.defeatedOn !== null && (
             <Text
-              className="mt-2 border-t border-border pt-2 text-10 text-text-disabled"
+              className="mt-2 rounded-[10px] bg-card-inset px-2.5 py-1.5 text-10 text-text-muted"
               style={TABULAR_NUMS}
             >
               {`${formatDayLabel(props.row.defeatedOn)} · ${DIFFICULTY_NAME[props.row.difficulty]} · ${

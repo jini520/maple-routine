@@ -11,10 +11,11 @@ import { SheetActionButton } from '../../components/organisms/BottomSheet/SheetA
 import { useEffect, useRef, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Badge, Text, MinusIcon, PlusIcon } from '../../components/atoms'
+import { Badge, Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
 import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
+import { Stepper } from '../../components/molecules/Stepper/Stepper'
 import { DifficultyExpander } from '../../components/molecules/DifficultyExpander/DifficultyExpander'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
@@ -161,37 +162,13 @@ export function ManualCompletionSheet(props: ManualCompletionSheetProps): React.
           </Row>
 
           <Row label="파티 인원">
-            <View className="h-9 flex-row items-center gap-3 rounded-full border border-border px-2">
-              <Pressable
-                role="button"
-                aria-label="파티 인원 줄이기"
-                disabled={partySize <= 1}
-                onPress={() => changePartySize(partySize - 1)}
-                hitSlop={8}
-              >
-                <MinusIcon
-                  className={`h-4 w-4 ${partySize > 1 ? 'text-text' : 'text-text-disabled'}`}
-                  strokeWidth={2}
-                  aria-hidden
-                />
-              </Pressable>
-              <Text className="min-w-6 text-center text-sm font-bold text-text" style={TABULAR_NUMS}>
-                {partySize}
-              </Text>
-              <Pressable
-                role="button"
-                aria-label="파티 인원 늘리기"
-                disabled={partySize >= maxPartySize}
-                onPress={() => changePartySize(partySize + 1)}
-                hitSlop={8}
-              >
-                <PlusIcon
-                  className={`h-4 w-4 ${partySize < maxPartySize ? 'text-text' : 'text-text-disabled'}`}
-                  strokeWidth={2}
-                  aria-hidden
-                />
-              </Pressable>
-            </View>
+            <Stepper
+              size="sm"
+              label="파티 인원"
+              value={partySize}
+              max={maxPartySize}
+              onChange={changePartySize}
+            />
           </Row>
 
           <Row label="결정석">

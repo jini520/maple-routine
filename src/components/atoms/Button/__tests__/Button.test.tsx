@@ -90,8 +90,8 @@ describe('Button: busy', () => {
   it('스피너 색이 variant 의 라벨 색과 같다', async () => {
     const cases = [
       ['primary', 기본테마.onPrimary],
-      ['danger', 기본테마.errorInk],
-      ['outline', 기본테마.text],
+      ['soft', 기본테마.primaryInk],
+      ['tint', 기본테마.text],
       ['text', 기본테마.textMuted],
     ] as const
 

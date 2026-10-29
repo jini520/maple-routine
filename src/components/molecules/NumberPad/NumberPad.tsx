@@ -19,10 +19,10 @@
  * @example
  * <NumberPad onDigit={(d) => setDraft(draft + d)} onBackspace={drop} onConfirm={commit} />
  */
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import { vars } from 'nativewind'
 
 import {
-  NUMBER_PAD_DARK_EDGE,
   NUMBER_PAD_GAP_PX,
   NUMBER_PAD_HEIGHT_PX,
   NUMBER_PAD_PADDING_PX,
@@ -30,6 +30,7 @@ import {
 } from '../../../lib/number-pad-metrics'
 import { boxShadowOf } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
+import { buildPopoverScopeVariables } from '../../../theme/theme-vars'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { DeleteIcon, Text } from '../../atoms'
 
@@ -83,17 +84,18 @@ export function NumberPad(props: NumberPadProps): React.JSX.Element {
   return (
     <View
       testID="number-pad"
-      style={{
-        height: NUMBER_PAD_HEIGHT_PX,
-        padding: NUMBER_PAD_PADDING_PX,
-        gap: NUMBER_PAD_GAP_PX,
-        // 판이 카드 위에 떠 있다는 것을 낸다. 둘이 같은 계열 바탕이라 테두리만으로는 경계가 안 선다.
-        boxShadow: boxShadowOf(definition.shadowColor, NUMBER_PAD_SHADOW),
-        ...(definition.mode === 'dark'
-          ? { borderWidth: StyleSheet.hairlineWidth, borderColor: NUMBER_PAD_DARK_EDGE }
-          : null),
-      }}
-      className="rounded-xl border border-border bg-bg"
+      style={[
+        // 다크에서는 팝오버처럼 시트보다 한 단 더 올린다. 판도 키도 카드와 같은 계열이라 그대로면 카드에 붙는다.
+        vars(buildPopoverScopeVariables(definition)),
+        {
+          height: NUMBER_PAD_HEIGHT_PX,
+          padding: NUMBER_PAD_PADDING_PX,
+          gap: NUMBER_PAD_GAP_PX,
+          // 판이 카드 위에 떠 있다는 것을 테두리 없이 그림자가 낸다.
+          boxShadow: boxShadowOf(definition.shadowColor, NUMBER_PAD_SHADOW),
+        },
+      ]}
+      className="rounded-xl bg-bg"
     >
       <View
         testID="number-pad-row-1"

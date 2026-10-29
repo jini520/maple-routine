@@ -1,7 +1,7 @@
 import { act, fireEvent } from '@testing-library/react-native'
 import { processColor } from 'react-native'
 
-import { renderOverlay, 기본테마 } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, 기본테마 } from '../../../components/__tests__/render-atom'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { CumulativeSection } from '../CumulativeSection'
 
@@ -49,6 +49,8 @@ describe('CumulativeSection', () => {
 
     expect(view.getByTestId('stats-cumulative-bubble-title').props.children).toBe('9월 17일 주까지')
     expect(view.getByTestId('stats-cumulative-bubble-value').props.children).toBe('+3억')
+    // 말풍선은 팝오버와 같은 면이다. 테두리 없이 그림자로 뜬다.
+    expect(flattenStyle(view.getByTestId('stats-cumulative-bubble').props.style).borderWidth ?? 0).toBe(0)
 
     await 누르기()
 

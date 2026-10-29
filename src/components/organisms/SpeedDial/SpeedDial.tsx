@@ -27,7 +27,7 @@ import Animated, {
 
 import { BottomBarOverlay } from '../BottomBar/BottomBarOverlay'
 import { tapFeedback } from '../../../native/haptics'
-import { FAB_DARK_EDGE, FAB_SHADOW, useFabBottomPx } from '../../../lib/fab-metrics'
+import { FAB_SHADOW, useFabBottomPx } from '../../../lib/fab-metrics'
 import { boxShadowOf } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ThemeDefinition } from '../../../types/theme'
@@ -296,12 +296,6 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
               tapFeedback()
               setIsOpen((open) => !open)
             }}
-            // 다크에서는 그림자가 거의 안 보여 테두리가 경계를 진다. 크기가 박힌 이 원이 들어야 자리가 안 움직인다.
-            style={
-              definition.mode === 'dark'
-                ? { borderWidth: StyleSheet.hairlineWidth, borderColor: FAB_DARK_EDGE }
-                : undefined
-            }
             className="h-14 w-14 items-center justify-center rounded-full bg-primary"
           >
             <AnimatedBox style={fabStyle}>

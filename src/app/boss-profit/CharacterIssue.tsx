@@ -1,19 +1,13 @@
 /**
- * 캐릭터 동기화 **실패 표식과 그 설명 팝오버**(분리).
+ * 캐릭터 동기화 **실패 표식과 그 설명 팝오버**.
  *
- * 셋이 한 덩어리인 이유. 배지를 탭하면 팝오버가 열리고, 그 팝오버의 가로 위치를
- * `resolveIssueAnchor` 가 카드 폭 안에서 정한다. 서로를 전제하므로 갈라 두면 한쪽만 고쳐지는
- * 종류의 버그가 생긴다.
- *
- * `zIndex: 20` 은 **카드 루트가 카드 안에 가둔다**. 페이지 헤더나 탭바 위로 올라가지 않는다.
- * 그 관계는 `CharacterAccordion` 이 소유하고 여기는 층 번호만 안다.
+ * 표식을 누르면 공용 팝오버(`AnchoredPopover`)가 금액 칸에 꼬리를 대고 뜬다. 별도 네이티브 창이라 카드 셸에 잘리지 않고,
+ * 위치와 꼬리 계산도 공용 상자가 맡는다.
  */
 import { Pressable, View } from 'react-native'
 
-import { anchorPopover } from '../../lib/popover-anchor'
-import type { PopoverAnchorGeometry } from '../../lib/popover-anchor'
-
-import { AlertTriangleIcon, BanIcon, Text } from '../../components/atoms'
+import { AlertTriangleIcon, BanIcon, Button, Text } from '../../components/atoms'
+import { AnchoredPopover } from '../../components/molecules/Popover/Popover'
 import { UnavailableBadge } from '../../components/molecules/UnavailableBadge/UnavailableBadge'
 import { useThemeAppearance } from '../../theme/context'
 import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
@@ -43,23 +37,8 @@ export const CHARACTER_ISSUE_EXPLANATION = {
 
 export type CharacterIssue = keyof typeof CHARACTER_ISSUE_LABEL
 
-// 팝오버는 셸 바깥(카드 루트)에 둔다. 셸은 펼침 상태에서 잘라내므로 안에 두면 잘린다.
-export const ISSUE_POPOVER_WIDTH = 220
-
-export const ISSUE_POPOVER_EDGE_GAP = 12
-
-/**
- * 트리거를 못 쟀을 때의 세로 자리. **평소에는 잰 값을 쓴다**(`resolveIssueAnchor`).
- *
- * 상수 하나로 두면 트리거 모양이 바뀔 때마다 어긋난다. 원형 배지는 금액 왼쪽 위에 떠 있고
- * 알약은 금액 칸을 통째로 차지해 밑변이 서로 다른 자리에 있다.
- */
-export const ISSUE_POPOVER_TOP = 30
-
-/** 트리거 밑변과 팝오버 사이. 꼬리가 팝오버 위로 6px 튀어나오므로 그만큼은 비워야 닿아 보인다. */
-export const ISSUE_POPOVER_GAP = 7
-
-export const ISSUE_CARET_SIZE = 8
+/** 설명 팝오버의 폭. 날짜 팝오버 · 아이템 수익 상자와 같다. */
+const ISSUE_POPOVER_WIDTH = 248
 
 // 금액의 좌상단에 절대배치한다. 흐름에 두면 헤더 가로폭을 캐릭터명과 다투고 화면 폭에 따라
 // 겹침이 생긴다.
@@ -70,8 +49,6 @@ export const ISSUE_CARET_SIZE = 8
 // 높이 14px 이면 글자 위쪽 여백만 쓰므로 겹치지 않고, 그래서 좌측에 폭을 비울 필요도 없다.
 // 이 두 값을 클래스가 아니라 값으로 적는 것은 안 풀리는 클래스가 조용히 사라지기 때문이다.
 const BADGE_OFFSET = { top: -14, left: -4 } as const
-/** 배지 지름. 앵커 중심 계산(`left + 지름/2`)이 이 값을 쓴다. */
-const BADGE_SIZE = 14
 
 export function CharacterIssueBadge(props: {
   issue: CharacterIssue
@@ -131,90 +108,42 @@ export function CharacterIssueAmount(props: { onToggle: () => void }): React.JSX
 }
 
 /**
- * 잰 두 상자를 팝오버 기하로 옮기는 환산.
+ * 표식을 누르면 뜨는 설명. 닫기 버튼 없이 바깥을 누르면 닫히고, 조회 불가일 때만 갈 곳을 버튼 하나로 준다.
  *
- * 금액은 자릿수에 따라 폭이 변해 배지의 x 를 고정값으로 알 수 없다. clamp·꼬리 계산은 순수
- * 함수(`src/lib/popover-anchor`)가 맡고 여기서는 좌표계를 옮기기만 한다.
- *
- * 둘 다 같은 기준(윈도우)에서 잰 값이어야 한다. 뺄셈으로 카드 기준 좌표를 만든다.
+ * @example
+ * {isIssueOpen && <CharacterIssuePopover issue={issue} anchor={issueAnchor} onClose={closeIssue} onOpenCharacterManage={open} />}
  */
-/** 팝오버를 여는 트리거의 모양. 둘의 밑변과 중심이 서로 다른 자리에 있다. */
-export type IssueTriggerShape = 'dot' | 'amount'
-
-/** 세로 자리까지 담는다. 트리거 모양마다 밑변이 달라 상수로 둘 수 없다. */
-export interface IssuePopoverGeometry extends PopoverAnchorGeometry {
-  top: number
-}
-
-export function resolveIssueAnchor(
-  card: PopoverAnchorRect | null,
-  money: PopoverAnchorRect | null,
-  shape: IssueTriggerShape = 'dot',
-): IssuePopoverGeometry {
-  if (card === null || money === null) {
-    return { left: ISSUE_POPOVER_EDGE_GAP, caretLeft: ISSUE_POPOVER_WIDTH / 2, top: ISSUE_POPOVER_TOP }
-  }
-  const moneyLeft = money.left - card.left
-  return {
-    ...anchorPopover({
-      containerWidth: card.width,
-      // 원형 배지는 금액 왼쪽 끝에서 4px 밀려 있고 폭이 14px 이라 중심이 그 +7px 이다. 알약은
-      // 금액 칸을 통째로 차지하므로 그 칸의 가운데가 곧 중심이다.
-      anchorCenterX:
-        shape === 'amount'
-          ? moneyLeft + money.width / 2
-          : moneyLeft + BADGE_OFFSET.left + BADGE_SIZE / 2,
-      popoverWidth: ISSUE_POPOVER_WIDTH,
-      edgeGap: ISSUE_POPOVER_EDGE_GAP,
-      caretSize: ISSUE_CARET_SIZE,
-    }),
-    // 잰 상자의 밑변에 붙인다. 금액 글자를 덮는 것은 허용한다. 열린 동안 그 카드의 금액 대신
-    // 팝오버가 말한다.
-    top: money.top - card.top + money.height + ISSUE_POPOVER_GAP,
-  }
-}
-
 export function CharacterIssuePopover(props: {
   issue: CharacterIssue
-  geometry: IssuePopoverGeometry
+  /** 금액 칸을 잰 값. `null` 이면 아직 못 쟀다 */
+  anchor: PopoverAnchorRect | null
   onClose: () => void
   /**
    * 캐릭터 관리로 보낸다. **`unavailable` 에서만 선다** - 그 처방이 해제하거나 바꾸는 것이라서다.
    * `failed` 의 처방은 새로고침이고, 갈 이유가 없는 길을 주면 화면이 두 말을 한다.
-   *
-   * 안 주면 버튼이 안 선다. 카드가 네비게이션을 모르고 화면에서 내려받기 때문이다.
    */
   onOpenCharacterManage?: () => void
 }): React.JSX.Element {
   const copy = CHARACTER_ISSUE_EXPLANATION[props.issue]
   return (
-    <View
+    <AnchoredPopover
       testID="character-issue-popover"
-      role="status"
-      style={{ left: props.geometry.left, width: ISSUE_POPOVER_WIDTH, top: props.geometry.top }}
-      className="absolute z-[20] rounded-[12px] border border-border bg-surface p-3 shadow-lg"
+      ariaLabel={copy.title}
+      closeLabel="설명 닫기"
+      anchor={props.anchor}
+      width={ISSUE_POPOVER_WIDTH}
+      onClose={props.onClose}
+      className="p-3"
     >
-      {/* 꼬리: 45도 회전한 정사각형의 위·왼쪽 테두리만 남겨 카드 배경과 이어 붙인다. */}
-      <View
-        aria-hidden
-        style={{ left: props.geometry.caretLeft, width: ISSUE_CARET_SIZE, height: ISSUE_CARET_SIZE, top: -5 }}
-        className="absolute rotate-45 border-l border-t border-border bg-surface"
-      />
       <Text className="text-xs font-bold text-text">{copy.title}</Text>
       <Text className="mt-1 text-11 leading-relaxed text-text-muted">{copy.body}</Text>
-      {/* 오른쪽에 선다. 강조는 **다음에 할 일** 이 갖고 닫기는 물러나는 쪽이라 안 가져간다. */}
-      <View className="mt-2 flex-row items-center justify-end gap-3">
-        <Pressable role="button" onPress={props.onClose}>
-          <Text className="text-11 text-text-muted">닫기</Text>
-        </Pressable>
-        {props.issue === 'unavailable' && props.onOpenCharacterManage !== undefined && (
-          <Pressable role="button" onPress={props.onOpenCharacterManage}>
-            <Text className="text-11 font-semibold text-primary-ink underline">
-              캐릭터 관리로 이동하기
-            </Text>
-          </Pressable>
-        )}
-      </View>
-    </View>
+      {props.issue === 'unavailable' && props.onOpenCharacterManage !== undefined && (
+        <View className="mt-2.5 flex-row justify-end">
+          <Button variant="soft" size="sm" hitSlop={8} onPress={props.onOpenCharacterManage}>
+            캐릭터 관리로 이동
+          </Button>
+        </View>
+      )}
+    </AnchoredPopover>
   )
 }

@@ -123,8 +123,8 @@ const BACK_CIRCLE_RATIO = 48 / 66
  */
 const TRAVEL_MS = 240
 
-/** 바 자신의 그림자. 아주 약하게. 층은 알약 쪽에서 만든다. */
-const BAR_SHADOW: ShadowLayer = { opacity: 0.22, radius: 14, y: 5 }
+/** 바 자신의 그림자. 페이지와 바를 가르는 유일한 장치라 선을 걷은 만큼 조금 진하다. 층은 알약 쪽에서 만든다. */
+const BAR_SHADOW: ShadowLayer = { opacity: 0.3, radius: 16, y: 6 }
 
 /**
  * 활성 알약과 ← 가 공유하는 층 그림자.
@@ -524,12 +524,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
         // 유리일 때는 바탕을 `GlassView` 가 그린다. 여기에 색을 주면 그 재질이 가려진다.
         // 유리가 없는 쪽은 불투명 캡슐이고 유리를 흉내 내지 않는다.
         backgroundColor: glass ? 'transparent' : colors.bar,
-        // 페이지와 바를 가르는 것은 색이 아니라 이 선이다. 유리에서도 같은 선이 가장자리를 잡는다.
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: glass ? colors.glassEdge : colors.edge,
-        // 그림자는 약하되 떠 있음은 남는 값이다. 불투명도 1 · radius 22 · y 9 는 두껍게 읽혔고,
-        // 0.18/10/3 은 입체감이 사라졌다. 층을 만드는 장치가 셋이라(그림자 · 알약 자체 그림자 ·
-        // 위쪽 광택) 그림자 혼자 다 지지 않는다.
+        // 페이지와 바를 가르는 것은 색이 아니라 그림자다. 선은 긋지 않는다.
         boxShadow: boxShadowOf(definition.shadowColor, BAR_SHADOW),
       }}
     >
@@ -593,18 +588,6 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
                   ]}
                 />
               )}
-              {/* 유리 위 유리는 경계가 흐려진다. 헤어라인이 그 자리를 잡는다. */}
-              <View
-                pointerEvents="none"
-                style={[
-                  StyleSheet.absoluteFill,
-                  {
-                    borderRadius: 999,
-                    borderWidth: StyleSheet.hairlineWidth,
-                    borderColor: colors.glassEdge,
-                  },
-                ]}
-              />
             </>
           ) : null}
         </Animated.View>
@@ -732,17 +715,6 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
                 ]}
               />
             )}
-            <View
-              pointerEvents="none"
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  borderRadius: 999,
-                  borderWidth: StyleSheet.hairlineWidth,
-                  borderColor: colors.glassEdge,
-                },
-              ]}
-            />
           </>
         ) : null}
       </Animated.View>

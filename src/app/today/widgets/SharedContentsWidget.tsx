@@ -14,11 +14,10 @@
 import { Pressable, View, useWindowDimensions } from 'react-native'
 
 import { useAnchoredPopover, type PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
-import { usePopoverPlacement } from '../../../hooks/usePopoverPlacement'
 import { GRID_SIDE_PADDING } from '../../../lib/today/widget-grid-metrics'
 
 import { CheckIcon, CircleQuestionMarkIcon, Text } from '../../../components/atoms'
-import { PopoverLayer } from '../../../components/molecules/Popover/Popover'
+import { AnchoredPopover } from '../../../components/molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { SharedContentGroupView, SharedContentItemView } from '../view-model'
 import type { WidgetProps } from './types'
@@ -40,8 +39,6 @@ const SCOPE_NOTES = [
   ['몬스터파크와 익스트림 몬스터파커는', '마지막에 접속한 캐릭터 기준입니다.'],
 ] as const
 
-/** `?` 밑변과 상자 윗변 사이. 다른 팝오버 둘과 같은 값이다. */
-const NOTE_GAP = 8
 /**
  * 상자 폭 **상한**. 못박는 값이 아니다.
  *
@@ -222,41 +219,27 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
 }
 
 /**
- * 표시 기준 설명 팝오버. 열렸을 때만 그려서 상자 높이를 열 때마다 새로 잰다.
- *
- * 닫는 층과 내용이 같은 창(`PopoverLayer`)에 있어야 한다. 닫기 층만 창에 넣고 내용을 트리에 두면 투명한 닫기
- * 층이 상자 위에 깔린다. 별도 창이라 흐름에 없어서 타일 높이가 안 변한다.
+ * 표시 기준 설명 팝오버. 앱의 다른 팝오버와 같은 공용 상자(`AnchoredPopover`)이고, 열렸을 때만 그려서 높이를 열 때마다 새로 잰다.
+ * 별도 창이라 흐름에 없어서 타일 높이가 안 변한다.
  */
 function ScopeNotePopover(props: {
   anchor: PopoverAnchorRect | null
   tileWidth: number
   onClose: () => void
 }): React.JSX.Element {
-  const placement = usePopoverPlacement(props.anchor, NOTE_GAP)
   return (
-    <PopoverLayer closeLabel="표시 기준 설명 닫기" onClose={props.onClose}>
-      {/* 바깥 탭으로 닫는다. **스크림이 없다**. 뒤를 덮으면 설명이 가리키는 목록이 함께 어두워진다. */}
-      <View
-        testID="shared-note"
-        role="dialog"
-        aria-label="표시 기준 설명"
-        onLayout={placement.onLayout}
-        style={{
-          // 타일 왼쪽 변에 붙인다. `?` 왼쪽 끝에 맞추면 상자가 오른쪽으로 타일을 넘고, 화면
-          // 여백(12)을 쓰면 타일(16)보다 왼쪽에 선다. 제목이 고정 문구라 `?` 자리가 안
-          // 움직여서, 변에 붙여도 상자가 `?` 를 덮지 않는다.
-          left: GRID_SIDE_PADDING,
-          // `?` 위아래 중 빈 공간이 넓은 쪽에 선다
-          top: placement.top,
-          // 폭이 아니라 상한이다. 실제 폭은 가장 긴 줄이 정한다. 좁은 기기에서는 상한보다
-          // 타일이 먼저 좁다.
-          maxWidth: Math.min(NOTE_MAX_WIDTH, props.tileWidth),
-        }}
-        // `?` 와 상자 높이를 재기 전에는 그리되 안 보인다. 0,0 에 한 프레임 번쩍이는 것을 막는다.
-        className={`absolute gap-1 rounded-[12px] border border-border bg-surface px-3 py-2 shadow-lg${
-          placement.measured ? '' : ' opacity-0'
-        }`}
-      >
+    <AnchoredPopover
+      testID="shared-note"
+      ariaLabel="표시 기준 설명"
+      closeLabel="표시 기준 설명 닫기"
+      anchor={props.anchor}
+      // 부모 타일을 안 벗어난다(사용자 지시). 창은 화면 기준이라 화면 여백(12)을 쓰면 타일(16)보다 바깥에 선다.
+      edgeGap={GRID_SIDE_PADDING}
+      onClose={props.onClose}
+      className="px-3 py-2"
+    >
+      {/* 폭이 아니라 상한이다. 실제 폭은 가장 긴 줄이 정한다. 좁은 기기에서는 상한보다 타일이 먼저 좁다. */}
+      <View style={{ maxWidth: Math.min(NOTE_MAX_WIDTH, props.tileWidth) }} className="gap-1">
         {SCOPE_NOTES.map(([subject, rule]) => (
           // iOS 기본값은 한글을 글자 단위로 끊어 낱말 가운데서 꺾는다
           <Text key={subject} lineBreakStrategyIOS="hangul-word" className="text-[11.5px] leading-snug text-text-muted">
@@ -264,6 +247,6 @@ function ScopeNotePopover(props: {
           </Text>
         ))}
       </View>
-    </PopoverLayer>
+    </AnchoredPopover>
   )
 }

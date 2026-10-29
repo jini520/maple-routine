@@ -886,7 +886,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                   // 24px 이 권장 타깃(44)보다 작지만, 칩은 값을 더하는 곁들이라 잘못 눌러도
                   // 되돌리기가 한 번 더 누르는 것이다. 줄이 넘치지 않게 작게 둔다(사용자 지정).
                   hitSlop={CHIP_HIT_SLOP}
-                  className="h-6 justify-center rounded-full border border-border px-2 active:bg-surface-2"
+                  className="h-6 justify-center rounded-full bg-card-inset px-2 active:bg-surface-2"
                 >
                   <Text className="text-11 font-semibold text-text-muted" style={TABULAR_NUMS}>
                     {chip.label}
@@ -982,7 +982,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 testID="input-card-exclude"
                 role="button"
                 onPress={props.exclude.onPress}
-                className="h-11 shrink-0 justify-center rounded-xl border border-border px-3 active:bg-surface-2"
+                className="h-11 shrink-0 justify-center rounded-xl bg-card-inset px-3 active:bg-surface-2"
               >
                 <Text className="text-11 font-semibold text-text-muted">{props.exclude.label}</Text>
               </Pressable>
@@ -992,7 +992,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 testID="input-card-prev"
                 role="button"
                 onPress={() => give(props.prev?.onPress)}
-                className="h-11 flex-1 items-center justify-center rounded-xl border border-border active:bg-surface-2"
+                className="h-11 flex-1 items-center justify-center rounded-xl bg-card-inset active:bg-surface-2"
               >
                 <Text className="text-xs font-semibold text-text-muted" style={TABULAR_NUMS}>
                   {props.prev.label}

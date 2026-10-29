@@ -1,8 +1,8 @@
-# ADR-042 보스 수익 금액 표시
+# ADR-042+135 보스 수익 금액 표시
 
 > 🟢 유효
 > 옛 번호: ADR-046 결정 1~4 · ADR-054 결정 1 · 2 · 7 · 8 · 9 · 정정 4 · 5 · 6 · 7 · ADR-059 결정 2~4 · 7 · 정정 1 · 2 · ADR-087 결정 6~8 · 정정 1 · 정정 3 결정 3-1 · ADR-124 결정 7 · ADR-253 결정 5 · 7 · ADR-258 · ADR-265 · ADR-272 · ADR-273 결정 2 · 4~8 · ADR-298 · ADR-304
-> 관련 소스: `app/boss-profit/BossProfitScreen.tsx` · `app/boss-profit/CharacterAccordion.tsx` · `app/boss-profit/HeadlineChips.tsx` · `app/boss-profit/ItemRevenuePopover.tsx` · `app/boss-profit/ItemRevenueTrigger.tsx` · `app/boss-profit/character-groups.ts` · `app/boss-profit/DropPriceFab.tsx` · `features/boss-profit/monthly-crystals.ts` · `features/boss-profit/use-unpriced-drop-count.ts` · `lib/drop/drop-order.ts` · `components/atoms/AnimatedNumber/`
+> 관련 소스: `app/boss-profit/BossProfitScreen.tsx` · `app/boss-profit/CharacterAccordion.tsx` · `app/boss-profit/HeadlineChips.tsx` · `app/boss-profit/ItemRevenuePopover.tsx` · `app/boss-profit/ItemRevenueTrigger.tsx` · `app/boss-profit/CharacterIssue.tsx` · `app/boss-profit/character-groups.ts` · `app/boss-profit/DropPriceFab.tsx` · `features/boss-profit/monthly-crystals.ts` · `features/boss-profit/use-unpriced-drop-count.ts` · `lib/drop/drop-order.ts` · `components/atoms/AnimatedNumber/`
 
 ## 배경
 
@@ -92,8 +92,10 @@
 ### 결정 5. 월드가 둘 이상이면 칩을 눌러 월드별로 펼친다
 
 - 월드가 하나면 칩은 버튼이 아니다(`role="img"`).
-- 둘 이상이면 칩 전체가 버튼이고, 누르면 `월드별 판매 현황` 상자가 별도 창(`PopoverLayer`)으로 뜬다. 줄은
-  주간 탭 `엘리시움  20 / 90 | 월간 1개`, 월간 탭 `엘리시움  월간 2개` 다.
+- 둘 이상이면 칩 전체가 버튼이고, 누르면 `월드별 판매 현황` 팝오버(`AnchoredPopover`)가 칩에 꼬리를 대고 뜬다.
+- 월드마다 `card-inset` 칸 한 줄이다(사용자 지정 2026-10-30). 왼쪽에 월드 문양과 이름, 오른쪽에 주간 결정석 그림과
+  `20/90`, 월간 결정석 그림과 `1` 을 둔다. 월간 탭은 월간 그림과 수만 둔다. 주간 · 월간을 글자 대신 결정석 그림이
+  말하므로 가운데 `|` 와 `월간 … 개` 글자를 걷었다. 칩이 같은 그림을 쓰고 있어 둘이 이어져 읽힌다.
 - 월간 수도 행의 월드로 나누고, 칩의 수는 펼친 줄의 합이다. 월드를 모르는 행은 두 곳에서 함께 빠진다.
   그래서 칩의 월간 수가 카드 진행 링의 합보다 작을 수 있다(사용자 감수).
 - 상자 바깥을 누르면 닫히고, 뒤를 어둡게 하지 않는다. 닫는 투명 버튼과 상자 내용은 같은 창 안에 둔다. 다른
@@ -126,7 +128,7 @@
 ### 결정 7. 수익 내역 상자는 결정석 · 아이템 · 합계와 값을 매긴 아이템 목록이다
 
 `ItemRevenuePopover` 는 네 곳에서 열린다. 총 수익의 `자세히 보기`, 캐릭터 카드 금액, 보스 행 금액, 월간
-탭 주차 금액이다. 뒤의 셋은 아이템 몫이 있을 때만 금액이 버튼이 된다(점선 밑줄, `ItemRevenueTrigger`).
+탭 주차 금액이다. 뒤의 셋은 아이템 몫이 있을 때만 금액이 버튼이 된다(금액 왼쪽 아래 화살표, `ItemRevenueTrigger`).
 
 | 상자 | 목록 | 목록 아래 |
 |---|---|---|
@@ -144,9 +146,9 @@
   아이템이 없어요` 하나다. 미입력이 있다는 신호는 결정 9 의 배지가 맡는다.
 - 기록 한 건이 한 줄이다. 같은 아이템이라도 건마다 판 값이 다를 수 있어 `×N` 으로 묶지 않는다.
 - 합계 줄은 목록이 아니라 넘겨받은 결정석 합과 아이템 합으로 만든다.
-- 금액이 버튼일 때는 아래에 점선 밑줄을 그어 누를 수 있다는 것을 보인다(결정석뿐인 금액에는 없다).
-  `textDecorationStyle` 은 iOS 에서만 점선이 되므로 글자 장식이 아니라 `View` 의 점선 테두리로 그린다.
-  금액 열의 오른쪽 끝이 맞아야 세로로 훑기 쉬워서, 화살표나 알약을 덧붙이지 않았다.
+- 금액이 버튼일 때는 금액 **왼쪽**에 작은 아래 화살표를 두어 누르면 열린다는 것을 보인다(결정석뿐인 금액에는 없다,
+  사용자 지정 2026-10-30). 밑줄 같은 글자 꾸밈은 쓰지 않는다([[ADR-060]] 결정 19). 화살표를 왼쪽에 두는 것은 금액 열의
+  오른쪽 끝이 어느 줄에서도 같아야 세로로 훑기 쉽기 때문이다. 화살표는 날짜 알약과 같은 신호다.
 - 상자의 목록과 `아이템` 줄은 카드 금액과 같은 드롭을 읽는다(`collectRevenueDrops`). 주간 탭은 완료된 보스
   행의 드롭이고, 월간 탭은 주차 소계의 드롭과 월간 보스 행의 드롭이다.
 
@@ -216,7 +218,8 @@
 - 판정은 금액 칸을 정하는 값(`cannotStateAmount`) 하나를 쓴다. 보이는 것과 눌리는 것이 어긋나지 않는다.
 - 머리는 `Pressable` 이 아니라 `View` 로 그리고, `role="button"` · `aria-expanded` · 셰브런도 없앤다. 눌러도
   아무 일이 없는 셰브런은 스크린리더에 `펼치기` 로 읽힌다.
-- `조회 불가` 배지는 눌린다. 설명 팝오버의 `캐릭터 관리로 이동하기` 가 이 카드에서 할 수 있는 유일한 일이다.
+- `조회 불가` 배지는 눌린다. 설명 팝오버의 `캐릭터 관리로 이동` 버튼(`Button` `soft` `sm`)이 이 카드에서 할 수 있는 유일한
+  일이다. 팝오버에는 `닫기` 가 없고 바깥을 누르면 닫힌다([[ADR-062]] 결정 9).
 - 기록이 남아 금액이 있는 조회 불가 캐릭터는 그대로 펼쳐진다. 작은 금지 아이콘 배지만 보인다. 월간 탭에서는
   주차 줄에 조회 불가가 이미 보이므로 머리의 원형 배지를 그리지 않는다.
 - 펼침 상태를 지우지 않고 이 판정과 곱해서 그린다. 금액이 0 이 되면 닫히고, 값이 다시 생기면 열린 채로
@@ -241,11 +244,12 @@
 |---|---|
 | `app/boss-profit/__tests__/character-groups.test.ts` | 결정 1: 드롭 키로 그 행의 드롭만 더하고 스킵 · 미입력을 빼는지, 금액 모르는 행이 0 인지 본다. 결정 3: 월간 보스를 잡아도 주간 몫이 그대로인지, 월드 key 로 구분하는지 본다. 결정 7 · 8: 상자의 원천과 월간 몫을 본다 |
 | `app/boss-profit/__tests__/BossProfitScreen.test.tsx` | 결정 2: 총 수익 합, 단위 앞 공백, 미입력 · 미완료가 총액을 안 움직이는지, 고가 드롭 표시를 본다. 결정 7 · 8: 총 수익 상자의 상위 10건과 결정석 두 줄을 본다. 결정 12: 지난 기간 카드에 표식이 없는지 본다 |
-| `app/boss-profit/__tests__/HeadlineChips.test.tsx` | 결정 3 · 5: 칩이 보이는 조건, 두 몫을 함께 읽는지, 복수 월드 분모와 펼친 줄, 칩 수가 줄의 합인지, 닫는 버튼과 내용이 같은 창인지 본다. 결정 4: 누적 수가 오면 그 수를 보여 주는지 본다 |
+| `app/boss-profit/__tests__/HeadlineChips.test.tsx` | 결정 3 · 5: 칩이 보이는 조건, 두 몫을 함께 읽는지, 복수 월드 분모와 펼친 줄, 칩 수가 줄의 합인지, 펼친 줄이 두 몫을 읽는 이름으로 말하는지, 닫는 층과 내용이 같은 창인지 본다. 결정 4: 누적 수가 오면 그 수를 보여 주는지 본다 |
 | `features/boss-profit/__tests__/monthly-crystals.spec.ts` | 결정 4: 1명 · 2명 예시, 보는 주 뒤를 안 세는지, 달 경계 주, 날짜 모르는 기록, 개정 수가 바뀌면 다시 세는지 본다 |
 | `app/boss-profit/__tests__/CharacterAccordion.test.tsx` | 결정 6: 탭마다 링의 분모를 본다. 결정 7: 카드 상자의 상위 5건과 월간 원천을 본다. 결정 11: 조회 불가 카드가 안 펼쳐지고 배지가 눌리는지, 금액이 있으면 펼쳐지는지 본다 |
 | `components/organisms/CharacterPortrait/__tests__/CharacterPortrait.test.tsx` | 결정 6: 주간 링이 12칸이고 이름으로 진행률을 읽는지 본다 |
-| `app/boss-profit/__tests__/ItemRevenuePopover.test.tsx` | 결정 7: 미입력 · 기록 안함을 빼는지, 자르는 목록의 순서와 `외 N건` 줄, 빈 목록 문구를 본다. 결정 8: 결정석이 두 줄로 나뉘고 합계가 맞는지 본다 |
+| `app/boss-profit/__tests__/ItemRevenuePopover.test.tsx` | 결정 7: 미입력 · 기록 안함을 빼는지, 자르는 목록의 순서와 `외 N건` 줄, 빈 목록 문구, 묶음 사이에 구분선이 없는지 본다. 결정 8: 결정석이 두 줄로 나뉘고 합계가 맞는지 본다 |
+| `app/boss-profit/__tests__/CharacterIssue.test.tsx` | 결정 11: 조회 불가면 `캐릭터 관리로 이동` 버튼이 서고 실패면 안 서는지, `닫기` 버튼 없이 바깥을 누르면 닫히는지, 배지를 눌러도 카드가 안 펼쳐지는지 본다 |
 | `features/boss-profit/__tests__/use-unpriced-drop-count.spec.tsx` · `app/boss-profit/__tests__/DropPriceFab.test.tsx` | 결정 9: 못 셌으면 `null`, 다시 세는 동안과 실패 시 직전 수, `9+` 와 접근성 이름을 본다 |
 | `features/boss-profit/__tests__/record-write-burst.spec.tsx` | 결정 9: 여러 건을 쓰는 동안 버튼이 한 번만 다시 그려지는지 본다 |
 | `hooks/__tests__/useCountUp.spec.tsx` | 결정 10: 굴러가는 중에 목표가 바뀌면 지금 값에서 다시 출발하는지, 마운트 때 기억에서 출발하는지, 키가 바뀌면 바로 바뀌는지 본다 |
@@ -255,3 +259,4 @@
 ## 번호 기록
 
 - ADR-042 (2026-10-19): 옛 ADR-046 · 054 · 059 · 087 · 124 · 253 · 258 · 265 · 272 · 273 · 298 · 304 를 합쳐 처음 작성
+- ADR-135 (2026-10-30): 결정 5 의 월드별 판매 현황을 결정석 그림 칸으로, 결정 7 의 금액 표시를 왼쪽 화살표로, 결정 11 의 이동 버튼을 `soft` 버튼으로 바꿨다

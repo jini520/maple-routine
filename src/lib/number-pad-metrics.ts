@@ -41,14 +41,6 @@ export const NUMBER_PAD_HEIGHT_PX =
  */
 export const NUMBER_PAD_SHADOW: ShadowLayer = { opacity: 0.8, radius: 16, y: 3 }
 
-/**
- * 다크에서 판의 경계를 내는 헤어라인. 어두운 바탕에서는 그림자가 거의 안 보인다.
- *
- * FAB 와 달리 흰색이 아니다. 판은 색을 진 물건이 아니라 중립 표면이라, 흰 테두리를 두르면
- * 떠 있는 것이 아니라 빛나는 것으로 읽힌다.
- */
-export const NUMBER_PAD_DARK_EDGE = 'rgba(255,255,255,0.14)'
-
 /** 카드와 키보드 사이. `InputCard` 판의 `mb-3` 과 같아야 한다. */
 export const CARD_GAP_PX = 12
 

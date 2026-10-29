@@ -31,7 +31,7 @@ import { useLoopedValue } from '../../hooks/useLoopedValue'
 import { tapFeedback } from '../../native/haptics'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { useBlurTint, useThemeAppearance } from '../../theme/context'
-import { FAB_DARK_EDGE, FAB_SHADOW } from '../../lib/fab-metrics'
+import { FAB_SHADOW } from '../../lib/fab-metrics'
 import { boxShadowOf } from '../../lib/shadow'
 import {
   FAB_ITEM_LOOP_MS,
@@ -148,13 +148,6 @@ export function DropPriceFab(props: {
             // 버튼은 주간 탭에만 선다. 가격 입력 화면은 보스 수익 스토어를 안 읽으므로 보던 주를 넘긴다.
             navigation.navigate('DropPrice', { cycle: 'weekly', periodKey: props.periodKey })
           }}
-          // 다크에서는 그림자가 거의 안 보여 테두리가 경계를 진다. 크기가 박힌 이 원이 들어야
-          // 테두리가 안쪽에 그려져 자리가 안 움직인다.
-          style={
-            definition.mode === 'dark'
-              ? { borderWidth: StyleSheet.hairlineWidth, borderColor: FAB_DARK_EDGE }
-              : undefined
-          }
           className="h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-primary"
         >
           {DROP_PRICE_FAB_ITEMS.map((itemKey, slot) => (

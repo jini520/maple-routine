@@ -259,9 +259,10 @@ export function ContentManageScreen(): React.JSX.Element {
                             disabled={isLocked}
                             onPress={() => void handleToggle(entry.key)}
                             className={
+                              // 테두리 없이 면으로 고른 줄을 가린다. 고른 줄은 테마 면, 나머지는 카드 바탕이다.
                               isTracked
-                                ? 'w-full flex-row items-center gap-3 rounded-[10px] border border-primary bg-primary-tint px-4 py-3'
-                                : 'w-full flex-row items-center gap-3 rounded-[10px] border border-border px-4 py-3'
+                                ? 'w-full flex-row items-center gap-3 rounded-[10px] bg-primary-tint px-4 py-3'
+                                : 'w-full flex-row items-center gap-3 rounded-[10px] bg-surface px-4 py-3'
                             }
                           >
                             <GroupIcon
