@@ -340,6 +340,8 @@ export interface HuntingRegionRow {
   key: string
   name: string
   forceType: ForceType
+  /** 지역 아이콘 slug(`maps/icons/`). 이 칸이 없던 옛 응답은 `null` 이다. */
+  iconMap: string | null
 }
 export interface HuntingGroundRow {
   key: string

@@ -49,7 +49,7 @@ export interface SpendSheetProps {
    * 고를 수 있는 캐릭터. 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
    * 비어 있으면 고르개에 선택 안함 하나만 선다.
    */
-  characters: ReadonlyArray<{ ocid: string; name: string; level: number | null }>
+  characters: ReadonlyArray<{ ocid: string; name: string; level: number | null; worldKey: string | null }>
   /** 캐릭터의 심볼 레벨(심볼 key 별)을 읽는 콜백. 모르면 `null`. 심볼 강화 폼만 쓴다. */
   loadSymbolLevels: (ocid: string) => Promise<Readonly<Record<string, number>> | null>
   /**

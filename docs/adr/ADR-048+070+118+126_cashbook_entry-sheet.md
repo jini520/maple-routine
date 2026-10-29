@@ -1,8 +1,8 @@
-# ADR-048+070+118 가계부 입력 시트
+# ADR-048+070+118+126 가계부 입력 시트
 
 > 🟢 유효
 > 옛 번호: ADR-170 결정 5 · 6 · 9 · 정정 9 · 14 · 17 · ADR-173 · ADR-178 · ADR-202 · ADR-203 · ADR-241 결정 1 · ADR-243 · ADR-244 · ADR-245 · ADR-262 · ADR-301 · ADR-325 결정 1 · 2 · 5 · ADR-327 · ADR-333 결정 5 · 6
-> 관련 소스: `app/cashbook/IncomeSheet.tsx` · `app/cashbook/SpendSheet.tsx` · `app/cashbook/CategoryPicker.tsx` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/` · `app/cashbook/spend/` · `app/cashbook/character-options.ts` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/symbol-costs.ts` · `constants/domain/quick-adds.ts`
+> 관련 소스: `app/cashbook/IncomeSheet.tsx` · `app/cashbook/SpendSheet.tsx` · `app/cashbook/CategoryPicker.tsx` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/` · `app/cashbook/spend/` · `app/cashbook/character-options.ts` · `app/cashbook/select-value.tsx` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/symbol-costs.ts` · `constants/domain/quick-adds.ts`
 
 ## 배경
 
@@ -274,6 +274,34 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
   `quantity` 는 비워 둔다. 그 칸은 단가 × 수량의 뜻이라 다른 뜻으로 쓰면 읽는 코드가 틀린다. 금액은 저장할 때 계산한
   값이라 비용 표가 바뀌어도 지난 기록은 그대로다.
 
+### 결정 17. 캐릭터 · 지역 드롭다운은 아이콘을 붙이고, 목록 줄을 닫힌 줄과 같은 모양으로 오른쪽에 붙인다
+
+캐릭터 · 지역 목록이 이름만 늘어놓으면 어느 월드의 캐릭터인지, 어느 지역인지 이름을 읽어야만 안다. 그래서 값 앞에
+아이콘을 붙인다(사용자 지정 2026-10-29, #790). 줄의 구성은 자리마다 다르다.
+
+| 자리 | 목록 줄 | 닫힌 줄 |
+|---|---|---|
+| 사냥 전리품 판매의 조각 칸(솔 에르다 조각 갈래 포함)의 캐릭터 | `보유 n개` … `[월드 아이콘] 닉네임` | `[월드 아이콘] 닉네임` |
+| 사냥(계산기 · 직접 입력)의 캐릭터 | `[월드 아이콘] Lv.n 닉네임` | 목록 줄과 같다 |
+| 그 밖의 캐릭터 칸 | `[월드 아이콘] 닉네임` | 목록 줄과 같다 |
+| 사냥 계산기의 지역 | `[지역 아이콘] 지역 이름` | 목록 줄과 같다 |
+
+- **목록 줄은 닫힌 줄과 같은 부품(`SelectValue`)으로 그린다.** 아이콘 크기 · 글자 크기 · 간격이 같다. 모양이 갈리면 지금
+  고른 것과 고를 수 있는 것이 다른 종류로 보인다. 목록 글자도 닫힌 줄처럼 보통 굵기이고, 고른 줄은 바탕색과 글자색으로만
+  가른다.
+- **목록 줄은 오른쪽에 붙이고, 오른쪽 끝을 닫힌 줄의 화살표 앞에 맞춘다.** 닫힌 줄의 값이 오른쪽 정렬이라, 펼쳤을 때
+  고른 줄이 닫힌 줄의 값과 같은 자리에 선다. 맞추는 값은 화살표 폭 16 과 간격 12 를 더한 24 다. 그래서 줄마다 이름
+  길이에 따라 아이콘의 가로 자리가 다르다.
+- 월드 아이콘은 월드 표의 엠블럼이다(`worldEmblemUrl`). 엠블럼이 없는 월드(스페셜)와 월드를 모르는 캐릭터는 아이콘 없이
+  이름만 선다. 지역 아이콘은 서버 지역 표가 정한다([[ADR-049]] 결정 2). 아이콘이 없는 지역도 이름만 선다.
+- **`보유 n개` 는 목록에만, 줄의 왼쪽 끝에 둔다.** 닫힌 줄 아래에 보관 중 개수 줄이 따로 있어서 닫힌 줄에 또 적지 않는다.
+  보관은 캐릭터마다 고른 날까지 센 값이고 정산 폼의 보관 중 줄과 같은 조회다([[ADR-049]] 결정 11). 못 읽은 캐릭터는
+  `보유` 를 적지 않는다. 못 읽은 것을 0 으로 적으면 보관이 있는데도 없다고 보이게 된다.
+- 레벨은 캐시된 캐릭터 정보의 값이다. 캐시가 아직 없어 레벨을 모르면 레벨 없이 이름만 선다.
+- `선택 안함` · `캐릭터를 먼저 고르세요` 같은 아이콘 없는 보기와 자리표시자는 글자만 오른쪽에 선다.
+- 사냥터 드롭다운(포스 배지 · 레벨 · 마릿수)과 심볼 드롭다운(심볼 그림 · 묶음 라벨)은 이 결정 밖이다. 그 둘은 줄마다 값이
+  여럿이라 자기 모양이 따로 있다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -290,10 +318,12 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 | `lib/__tests__/spend-catalog.test.ts` | 결정 12: 같은 타일의 단계가 한 칸으로 합쳐지는지 본다. 결정 13: 형태별 단계의 값 · 이름 · key 왕복을 본다. 결정 14: 축 고르기 규칙 넷과 `optionItemOf` 를 본다 |
 | `lib/__tests__/symbol-costs.test.ts` | 결정 16: 여러 단계 비용의 합, 표 밖 레벨과 표 시작 전 날짜가 `null` 인지, 목록 거르기와 만렙 묶음, 넥슨 응답 이름 맞추기를 본다 |
 | `lib/__tests__/cashbook-categories.spec.ts` | 결정 2: 분류 카드의 그림을 모두 찾는지 본다 |
-| `app/cashbook/__tests__/sheet-fields.test.tsx` | 결정 7: 고르는 칸이 고른 이름을 글자로 보이고, 안 골랐으면 자리표시자를, 목록에서 고르면 그 값을 넘기는지 본다 |
+| `app/cashbook/__tests__/sheet-fields.test.tsx` | 결정 7: 고르는 칸이 고른 이름을 글자로 보이고, 안 골랐으면 자리표시자를, 목록에서 고르면 그 값을 넘기는지 본다. 결정 17: 아이콘 · 레벨이 닫힌 줄과 목록 줄에 함께 서고, `보유` 는 목록에만 서는지 본다 |
+| `app/cashbook/__tests__/IncomeSheet.test.tsx` | 결정 17: 사냥 캐릭터 목록에 레벨이, 조각 칸 캐릭터 목록에 캐릭터마다 센 보유가 서고 못 읽은 캐릭터는 보유가 없는지 본다 |
 
 ## 번호 기록
 
 - ADR-048 (2026-10-19): 옛 ADR-173 · 178 · 202 · 203 · 243 · 244 · 245 · 262 · 301 · 327 과 옛 ADR-170 · 241 · 325 의 시트 결정, 옛 ADR-333 결정 5 · 6 을 합쳐 처음 작성
 - ADR-070 (2026-10-20): 결정 5 에 지출 `기타` 의 캐시 · 메포 금액 칩을 더했다. 그 전에는 통화와 상관없이 메소 칩이 떴다
 - ADR-118 (2026-10-28): 시트 새 디자인(#746). 결정 2 의 분류와 항목 타일을 카드 하나 안의 `card-inset` 칸으로 바꾸고, 결정 4 에 칸 카드와 `card-inset` 칸을, 결정 7 에 알약 대신 값 글자를 적었다
+- ADR-126 (2026-10-29): 결정 17 을 더했다. 캐릭터 · 지역 드롭다운에 월드 · 지역 아이콘과 레벨 · 보유를 붙이고, 목록 줄을 닫힌 줄과 같은 모양으로 오른쪽에 붙였다(#790)

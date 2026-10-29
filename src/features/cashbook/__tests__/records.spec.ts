@@ -1022,29 +1022,31 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
  * 목록에 세우면 있지도 않은 캐릭터 가 하나 생긴다.
  */
 describe('loadTrackedCharacters', () => {
-  it('추적 캐릭터를 이름·레벨과 함께 든다', async () => {
+  it('추적 캐릭터를 이름 · 레벨 · 월드와 함께 든다', async () => {
     selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1', 'ocid-2'])
     basicCache.getCachedCharacterBasic.mockImplementation(async (ocid: string) => ({
       profile:
-        ocid === 'ocid-1' ? { name: '루디', level: 294 } : { name: '아델', level: 275 },
+        ocid === 'ocid-1'
+          ? { name: '루디', level: 294, worldKey: 'scania' }
+          : { name: '아델', level: 275, worldKey: 'elysium' },
     }))
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
     // 레벨은 사냥 계산기가 쓴다. 지역을 ±20 으로 거르고 페널티를 낸다.
     expect(await loadTrackedCharacters()).toEqual([
-      { ocid: 'ocid-1', name: '루디', level: 294 },
-      { ocid: 'ocid-2', name: '아델', level: 275 },
+      { ocid: 'ocid-1', name: '루디', level: 294, worldKey: 'scania' },
+      { ocid: 'ocid-2', name: '아델', level: 275, worldKey: 'elysium' },
     ])
   })
 
   // 캐시가 따뜻해지기 전이면 레벨만 없다. 이름이 있으면 목록에는 선다. 그때 계산기는 페널티
   // 없이 세고, 그 사실을 시트가 한 줄로 말한다.
-  it('레벨을 모르면 null 로 든다. 그 캐릭터를 빼지는 않는다', async () => {
+  it('레벨 · 월드를 모르면 null 로 든다. 그 캐릭터를 빼지는 않는다', async () => {
     selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
     basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
-    expect(await loadTrackedCharacters()).toEqual([{ ocid: 'ocid-1', name: '루디', level: null }])
+    expect(await loadTrackedCharacters()).toEqual([{ ocid: 'ocid-1', name: '루디', level: null, worldKey: null }])
   })
 
   it('캐시가 비어 이름을 모르는 캐릭터는 뺀다', async () => {
@@ -1055,7 +1057,7 @@ describe('loadTrackedCharacters', () => {
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
     expect(await loadTrackedCharacters()).toEqual([
-      { ocid: 'ocid-1', name: '루디', level: null },
+      { ocid: 'ocid-1', name: '루디', level: null, worldKey: null },
     ])
   })
 

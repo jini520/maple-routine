@@ -16,11 +16,12 @@ import type { IncomeRecord } from '../../../storage/income'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
 
-/** 고를 수 있는 캐릭터. `level` 은 사냥 계산기가 쓴다. */
+/** 고를 수 있는 캐릭터. `level` 은 사냥 계산기와 사냥 캐릭터 드롭다운이, `worldKey` 는 드롭다운의 월드 엠블럼이 쓴다. */
 export interface SheetCharacter {
   ocid: string
   name: string
   level: number | null
+  worldKey: string | null
 }
 
 /** 갈래별 폼이 **전부 받는 것**. 갈래에만 필요한 것은 각 폼이 따로 받는다. */

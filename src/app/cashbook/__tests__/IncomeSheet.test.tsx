@@ -53,8 +53,8 @@ type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 const 캐릭터둘 = [
   // 레벨은 사냥 계산기가 쓴다. 둘의 레벨을 갈라 두어야 **창이 캐릭터를
   // 따라 움직이는가** 를 잴 수 있다.
-  { ocid: 'ocid-1', name: '루디', level: 294 },
-  { ocid: 'ocid-2', name: '아델', level: 210 },
+  { ocid: 'ocid-1', name: '루디', level: 294, worldKey: 'scania' },
+  { ocid: 'ocid-2', name: '아델', level: 210, worldKey: null },
 ]
 
 /**
@@ -2365,11 +2365,10 @@ describe('솔 에르다 조각 정산', () => {
     expect(view.queryByTestId('income-sheet-chain-option-')).toBeNull()
   })
 
-  it('캐릭터를 고르기 전에는 보관을 안 읽고 저장이 꺼져 있다', async () => {
+  it('캐릭터를 고르기 전에는 보관 줄이 비고 저장이 꺼져 있다', async () => {
     const loadFragmentStorage = jest.fn(async () => 120)
     const view = await 정산시트({ loadFragmentStorage })
 
-    expect(loadFragmentStorage).not.toHaveBeenCalled()
     expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('-')
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
@@ -2495,7 +2494,7 @@ describe('솔 에르다 조각 정산', () => {
 
     await 날짜고르기(view, '2026-08-22')
 
-    expect(loadFragmentStorage).toHaveBeenLastCalledWith('ocid-1', '2026-08-22', undefined)
+    expect(loadFragmentStorage).toHaveBeenCalledWith('ocid-1', '2026-08-22', undefined)
     expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('30개')
   })
 
@@ -2545,7 +2544,7 @@ describe('솔 에르다 조각 정산', () => {
     const view = await 그리기({ editing: 정산기록, onDelete: jest.fn(), onSave, loadFragmentStorage })
 
     expect(view.getByTestId('income-sheet-title')).toHaveTextContent('솔 에르다 조각')
-    expect(loadFragmentStorage).toHaveBeenLastCalledWith('ocid-1', '2026-08-23', 'inc-settle')
+    expect(loadFragmentStorage).toHaveBeenCalledWith('ocid-1', '2026-08-23', 'inc-settle')
     expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('50개')
     expect(줄글자(view, 'income-sheet-settle-count')).toBe('50')
     expect(줄글자(view, 'income-sheet-settle-price')).toBe('8,000,000')
@@ -2562,6 +2561,46 @@ describe('솔 에르다 조각 정산', () => {
  *
  * 갈래 줄은 fixture 를 뜬 뒤에 서버 표에 더하므로 fixture 에 없다. 그래서 솔 에르다 조각 줄을 본떠 더한 표로 연다.
  */
+describe('드롭다운의 아이콘 · 레벨 · 보유', () => {
+  it('사냥 캐릭터 목록은 줄마다 레벨이 서고, 닫힌 줄도 같다', async () => {
+    const view = await 그리기()
+    await 사슬고르기(view, 'ocid-1')
+
+    expect(view.getByTestId('income-sheet-chain-value-level')).toHaveTextContent('Lv.294')
+    await 아이디로누르기(view, 'income-sheet-chain-open')
+    expect(view.getByTestId('income-sheet-chain-option-ocid-2-level')).toHaveTextContent('Lv.210')
+  })
+
+  it('사냥 지역은 지역 아이콘이 닫힌 줄과 목록 줄에 선다', async () => {
+    const view = await 그리기()
+    await 사슬고르기(view, 'ocid-1')
+    await 사슬고르기(view, 'carcion')
+
+    expect(view.getByTestId('income-sheet-region-value-icon')).toBeTruthy()
+    await 아이디로누르기(view, 'income-sheet-region-open')
+    expect(view.getByTestId('income-sheet-region-option-carcion-icon')).toBeTruthy()
+  })
+
+  it('조각 칸 캐릭터 목록은 캐릭터마다 센 보유가 서고, 못 읽은 캐릭터는 없다. 닫힌 줄에는 안 선다', async () => {
+    const loadFragmentStorage = jest.fn(async (ocid: string) => (ocid === 'ocid-1' ? 120 : null))
+    const view = await 그리기({ loadFragmentStorage }, 'sol_erda_fragment')
+    await 사슬고르기(view, 'ocid-1')
+    await 아이디로누르기(view, 'income-sheet-chain-open')
+
+    expect(view.getByTestId('income-sheet-chain-option-ocid-1-note')).toHaveTextContent('보유 120개')
+    expect(view.queryByTestId('income-sheet-chain-option-ocid-2-note')).toBeNull()
+    expect(view.queryByTestId('income-sheet-chain-value-note')).toBeNull()
+  })
+
+  it('그 밖의 캐릭터 칸은 월드 아이콘만 서고 레벨이 없다', async () => {
+    const view = await 그리기({}, 'item_sale')
+    await 사슬고르기(view, 'ocid-1')
+
+    expect(view.getByTestId('income-sheet-chain-value-icon')).toBeTruthy()
+    expect(view.queryByTestId('income-sheet-chain-value-level')).toBeNull()
+  })
+})
+
 describe('사냥 전리품 판매', () => {
   const 원래표 = cashbookCategoriesTable.get()
   beforeEach(() => {

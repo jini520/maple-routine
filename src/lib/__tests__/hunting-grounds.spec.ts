@@ -7,6 +7,7 @@ import {
   huntingRegionsForLevel,
   levelGapOf,
   monsterLevelRangeOf,
+  parseHuntingGrounds,
 } from '../cashbook/hunting-grounds'
 
 describe('monsterLevelRangeOf', () => {
@@ -188,5 +189,22 @@ describe('findHuntingGroundByName', () => {
   it('옛 기록의 자유 입력 글자는 안 잡힌다', () => {
     expect(findHuntingGroundByName('아무 데나 적은 글자')).toBeNull()
     expect(findHuntingGroundByName('')).toBeNull()
+  })
+})
+
+describe('지역 아이콘', () => {
+  it('지역은 서버가 정한 아이콘 slug 를 든다', () => {
+    expect(findHuntingRegion('arcs')?.iconMap).toBe('Arcs')
+    expect(findHuntingRegion('burning_cernium')?.iconMap).toBe('burningCernium')
+  })
+
+  it('`iconMap` 이 없는 옛 서버 응답도 지역으로 읽고, 아이콘은 `null` 이다', () => {
+    const table = parseHuntingGrounds({
+      updatedAt: null,
+      regions: [{ key: 'arcs', name: '호텔 아르크스', forceType: 'authentic' }],
+      grounds: [{ key: 'arcs_lobby', region: 'arcs', name: '로비', force: 30, mobs: 30 }],
+      groundLevels: [{ ground: 'arcs_lobby', level: 265 }],
+    })
+    expect(table?.regions).toEqual([{ key: 'arcs', name: '호텔 아르크스', forceType: 'authentic', iconMap: null }])
   })
 })

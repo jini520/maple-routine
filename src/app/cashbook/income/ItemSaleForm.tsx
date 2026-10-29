@@ -22,7 +22,7 @@ import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/m
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { netProceedsMeso } from '../../../lib/cashbook/item-split'
-import { requiredCharacterOptions } from '../character-options'
+import { characterDecorOf, requiredCharacterOptions } from '../character-options'
 import { countsQuantity, itemKindNameOf, itemKinds, type ItemKindKey } from '../../../lib/cashbook/categories'
 import { AmountInput, FieldCard, FieldRow, SelectRow, useCountField } from '../sheet-fields'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
@@ -112,6 +112,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
           options={requiredCharacterOptions(props.characters)}
           selected={ocid}
           onSelect={setOcid}
+          decorOf={characterDecorOf(props.characters)}
         />
 
         <FieldRow label="판매 아이템" labelTestID="income-sheet-name-label">

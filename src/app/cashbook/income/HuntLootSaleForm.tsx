@@ -13,7 +13,7 @@
  * 한 번에 여러 아이템을 치고, 저장은 아이템마다 한 줄이다. 한 줄로 묶으면 통계와 하루 상세에서 아이템별 수익을 못 나눈다.
  * 조각 칸은 옛 조각 정산 그대로 `sol_erda_fragment` 한 줄이다. 수정으로 열면 그 줄의 아이템 하나만 서고 분류 줄이 없다.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
@@ -26,7 +26,7 @@ import { findHuntLoot, huntLootOn, type HuntLoot, type HuntLootKind } from '../.
 import { netProceedsMeso } from '../../../lib/cashbook/item-split'
 import { HUNT_LOOT_KINDS } from '../../../types/game-data'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
-import { requiredCharacterOptions } from '../character-options'
+import { characterDecorOf, requiredCharacterOptions } from '../character-options'
 import { AmountInput, FieldCard, FieldRow, SelectRow } from '../sheet-fields'
 import { FragmentSettleForm, type LoadFragmentStorage } from './FragmentSettleForm'
 import { useSaveSlot, type IncomeDraft, type IncomeFormProps } from './form-shared'
@@ -55,6 +55,7 @@ export function HuntLootSaleForm(
       : HUNT_LOOT_KINDS.filter((kind) => items.some((item) => item.kind === kind))
   /** 날짜를 바꿔 이벤트가 닫히면 고른 칸이 사라진다. 그때는 첫 칸이다. */
   const kind = chosen !== null && kinds.includes(chosen) ? chosen : (kinds[0] ?? 'fragment')
+  const heldNotes = useHeldNotes(kind === 'fragment', props)
 
   const head = (
     <>
@@ -65,6 +66,7 @@ export function HuntLootSaleForm(
         options={requiredCharacterOptions(props.characters)}
         selected={ocid}
         onSelect={setOcid}
+        decorOf={characterDecorOf(props.characters, { notes: heldNotes })}
       />
       {kinds.length > 1 && (
         <FieldRow label="분류" testID="income-sheet-loot-kind">
@@ -104,6 +106,39 @@ export function HuntLootSaleForm(
       auction={kind === 'event'}
     />
   )
+}
+
+/**
+ * 조각 칸 캐릭터 목록의 `보유 n개`(ocid 별). 정산 폼의 보관 줄과 같은 조회를 캐릭터마다 한다.
+ *
+ * 못 읽은 캐릭터는 적지 않는다. 0 으로 적으면 보관이 있는데도 없다고 보인다. 날짜 · 수정 기록이 바뀌면 다시 센다.
+ */
+function useHeldNotes(
+  active: boolean,
+  props: Pick<IncomeFormProps, 'characters' | 'dateKey' | 'editing'> & { loadFragmentStorage: LoadFragmentStorage },
+): Readonly<Record<string, string>> {
+  const { characters, dateKey, loadFragmentStorage } = props
+  const editingId = props.editing?.id
+  const key = `${dateKey}:${editingId ?? ''}:${characters.map((each) => each.ocid).join(',')}`
+  const [loaded, setLoaded] = useState<{ key: string; notes: Record<string, string> } | null>(null)
+  useEffect(() => {
+    if (!active) return
+    let alive = true
+    void Promise.all(
+      characters.map(async (each) => [each.ocid, await loadFragmentStorage(each.ocid, dateKey, editingId).catch(() => null)] as const),
+    ).then((pairs) => {
+      if (!alive) return
+      const notes: Record<string, string> = {}
+      for (const [ocid, count] of pairs) {
+        if (count !== null) notes[ocid] = `보유 ${count.toLocaleString('ko-KR')}개`
+      }
+      setLoaded({ key, notes })
+    })
+    return () => {
+      alive = false
+    }
+  }, [active, key, characters, dateKey, editingId, loadFragmentStorage])
+  return active && loaded?.key === key ? loaded.notes : {}
 }
 
 /** 아이템 하나에 친 값. 소비는 단가를 표가 정해 개수만 든다. */

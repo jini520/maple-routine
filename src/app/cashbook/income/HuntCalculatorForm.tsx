@@ -20,7 +20,7 @@ import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/m
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import type { SelectOption } from '../../../components/organisms/SelectField/SelectField'
 import type { MesoRateLoad } from '../../../features/cashbook/meso-rate'
-import { FORCE_LABELS, forceIconOf, getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
+import { FORCE_LABELS, forceIconOf, getHuntingRegionIconUrl, getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
 import {
   optionalMesoTextOf,
   optionalMesoValueOf,
@@ -53,7 +53,7 @@ import type { ImageAssetRef } from '../../../types/image-asset'
 import type { HuntingGround, HuntingRegion } from '../../../types/hunting-grounds'
 import type { LastHunt, LastHunts } from '../../../storage/last-hunts'
 import { FIELD_CELL_CLASS, FieldCard, FieldRow, QuantityStepper, SelectRow, useCountField } from '../sheet-fields'
-import { requiredCharacterOptions } from '../character-options'
+import { characterDecorOf, requiredCharacterOptions } from '../character-options'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import type { InputCardProps } from '../../../components/organisms/InputCard/InputCard'
@@ -191,6 +191,9 @@ function restorableGroundOf(
 }
 
 /** 사냥터 목록의 한 줄. 이름 · 포스 배지 · 레벨 · 마릿수. */
+/** 지역 드롭다운의 지역 아이콘 크기. 닫힌 줄과 목록 줄이 같다. */
+const REGION_ICON_SIZE = 20
+
 function GroundOptionRow(props: {
   region: HuntingRegion
   ground: HuntingGround
@@ -544,6 +547,7 @@ export function HuntCalculatorForm(
           options={requiredCharacterOptions(props.characters)}
           selected={ocid}
           onSelect={selectCharacter}
+          decorOf={characterDecorOf(props.characters, { level: true })}
         />
         <SelectRow
           testID="income-sheet-region"
@@ -563,6 +567,10 @@ export function HuntCalculatorForm(
           }
           selected={regionKey}
           onSelect={selectRegion}
+          decorOf={(key) => {
+            const iconMap = findHuntingRegion(key)?.iconMap ?? null
+            return { icon: getHuntingRegionIconUrl(iconMap), iconSize: REGION_ICON_SIZE }
+          }}
         />
         <SelectRow
           testID="income-sheet-ground"

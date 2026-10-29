@@ -66,6 +66,11 @@ export function getDailyQuestRegionIconUrl(backgroundSlug: string | null): Image
   return assetImageBySlug('maps/icons', backgroundSlug)
 }
 
+/** 사냥 지역 드롭다운의 지역 아이콘. 일일 퀘스트와 같은 그림 묶음이다. */
+export function getHuntingRegionIconUrl(iconMap: string | null): ImageAssetRef | null {
+  return assetImageBySlug('maps/icons', iconMap)
+}
+
 // 테마 배경
 
 /** 파일이 없으면 배경만 사라지고 테마는 산다. @see */
