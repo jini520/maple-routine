@@ -10,7 +10,7 @@
 // 아이템을 들고 열리는지와 값이 그 기록 하나에 붙는지만 본다) ③ 난이도 뱃지의 흐림 정도(값이
 // 아니라 그림이라 육안 대조 목록).
 import type { ReactNode } from 'react'
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 // **드랍 연출도 세워 둔다.** 그 오버레이는 `requestAnimationFrame` 루프로 스프라이트를 돌리고
 // loop 단계가 **설계상 무한**이라, jest 의 `requestAnimationFrame`
@@ -36,8 +36,10 @@ jest.mock('react-native-gesture-handler', () => {
   const React = jest.requireActual<typeof import('react')>('react')
   return {
     ...actual,
-    ScrollView: (props: { testID?: string }) =>
-      React.createElement(View, { testID: `gesture-${props.testID}` }, React.createElement(ScrollView, props)),
+    // 스크롤 자리를 UI 스레드로 받으려고 reanimated 로 감싸므로 ref 를 받는다.
+    ScrollView: React.forwardRef((props: { testID?: string }, ref) =>
+      React.createElement(View, { testID: `gesture-${props.testID}` }, React.createElement(ScrollView, { ...props, ref } as never)),
+    ),
   }
 })
 
@@ -171,16 +173,19 @@ describe('BossDropSheet: 난이도 표시', () => {
 
     // 고정 드롭 카드에도 난이도 뱃지가 있어 글자는 여럿이다. 여기서 보는 것은 **누를 수 있는가**다.
     expect(getAllByText('하드').length).toBeGreaterThan(0)
-    expect(queryByLabelText('하드')).toBeNull()
-    expect(queryByLabelText('노멀')).toBeNull()
+    expect(queryByLabelText(/난이도 하드, 눌러서 바꾸기/)).toBeNull()
   })
 
-  it('미완료면 드롭 테이블 난이도를 선택 버튼으로 나열한다', async () => {
+  it('미완료면 난이도 고르개를 펼쳐 드롭 표의 난이도를 고른다', async () => {
     const { result } = renderSheet({ isComplete: false })
     const { getByLabelText } = await result
 
-    expect(getByLabelText('하드').props.accessibilityState.selected).toBe(true)
-    expect(getByLabelText('노멀').props.accessibilityState.selected).toBe(false)
+    await act(async () => {
+      fireEvent.press(getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
+    })
+
+    expect(getByLabelText('스우 하드').props.accessibilityState.checked).toBe(true)
+    expect(getByLabelText('스우 노멀').props.accessibilityState.checked).toBe(false)
   })
 
   it('난이도를 바꾸면 그 난이도에 없는 선택은 초기화된다', async () => {
@@ -191,7 +196,10 @@ describe('BossDropSheet: 난이도 표시', () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크'))
     })
     await act(async () => {
-      fireEvent.press(getByLabelText('노멀'))
+      fireEvent.press(getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
+    })
+    await act(async () => {
+      fireEvent.press(getByLabelText('스우 노멀'))
     })
     await act(async () => {
       fireEvent.press(getByText('추가 완료'))
@@ -363,6 +371,89 @@ describe('BossDropSheet: 상자 드릴다운', () => {
     expect(onSave).toHaveBeenCalledWith([])
   })
 
+  // 버튼이 바닥 줄에 서야 시트 아래 모서리와 같은 간격으로 선다. 고르기 전에는 누를 수 없다.
+  it('이 결과로 기록 은 바닥 줄의 버튼이고, 반지를 고르기 전에는 꺼져 있다', async () => {
+    const { result } = renderSheet({ bossKey: 'gloom', difficulty: 'chaos' })
+    const { getByLabelText, getByTestId } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('흑옥의 보스 반지 상자'))
+    })
+
+    const 버튼 = within(getByTestId('bottom-sheet-footer')).getByLabelText('이 결과로 기록')
+    expect(버튼.props.accessibilityState.disabled).toBe(true)
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('리스트레인트 링'))
+    })
+    await act(async () => {
+      fireEvent.press(getByLabelText('4레벨'))
+    })
+
+    expect(
+      within(getByTestId('bottom-sheet-footer')).getByLabelText('이 결과로 기록').props.accessibilityState.disabled,
+    ).toBe(false)
+  })
+
+  // 레벨은 고르기 전까지 아무것도 골라져 있지 않다. 늘 하나가 골라져 있는 세그먼트를 쓰지 않는 이유다.
+  it('레벨은 처음에 아무것도 골라져 있지 않고, 누르면 그것 하나만 골라진다', async () => {
+    const { result } = renderSheet({ bossKey: 'gloom', difficulty: 'chaos' })
+    const { getByLabelText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('흑옥의 보스 반지 상자'))
+    })
+    expect(getByLabelText('3레벨').props.accessibilityState.selected).toBe(false)
+    expect(getByLabelText('4레벨').props.accessibilityState.selected).toBe(false)
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('4레벨'))
+    })
+    expect(getByLabelText('3레벨').props.accessibilityState.selected).toBe(false)
+    expect(getByLabelText('4레벨').props.accessibilityState.selected).toBe(true)
+  })
+
+  // 연마석은 반지가 아니라 레벨이 없다. 레벨을 고르게 두면 없는 값을 적게 된다.
+  it('연마석을 고르면 레벨을 고를 수 없고 레벨 없이 기록한다', async () => {
+    const { result } = renderSheet({ bossKey: 'first_adversary', difficulty: 'hard' })
+    const { getByLabelText, getByTestId } = await result
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('생명의 보스 반지 상자'))
+    })
+    await act(async () => {
+      fireEvent.press(getByLabelText('생명의 연마석'))
+    })
+
+    expect(getByLabelText('3레벨').props.accessibilityState.disabled).toBe(true)
+    expect(
+      within(getByTestId('bottom-sheet-footer')).getByLabelText('이 결과로 기록').props.accessibilityState.disabled,
+    ).toBe(false)
+  })
+
+  // 표시는 그림이라 스크린리더에서 숨긴다. 그래서 숨은 요소까지 찾는다.
+  it('결과를 고르기 전의 상자 타일에만 `?` 배지가 붙는다', async () => {
+    const { result } = renderSheet({ bossKey: 'gloom', difficulty: 'chaos' })
+    const { getByLabelText, getByText, queryByTestId } = await result
+
+    expect(queryByTestId('drop-tile-box-mark-black_boss_ring_box', { includeHiddenElements: true })).toBeTruthy()
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('흑옥의 보스 반지 상자'))
+    })
+    await act(async () => {
+      fireEvent.press(getByLabelText('리스트레인트 링'))
+    })
+    await act(async () => {
+      fireEvent.press(getByLabelText('4레벨'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText('이 결과로 기록'))
+    })
+
+    expect(queryByTestId('drop-tile-box-mark-black_boss_ring_box', { includeHiddenElements: true })).toBeNull()
+  })
+
   // 타일은 기록의 key 로 찾은 지금 이름을 보인다. 적을 때의 이름이 달라도 따라온다.
   it('기록된 상자 결과는 적어 둔 이름이 아니라 key 로 찾은 이름으로 선다', async () => {
     const { result } = renderSheet({
@@ -396,7 +487,10 @@ describe('BossDropSheet: key 가 없는 옛 기록', () => {
     const { getByLabelText, getByText } = await result
 
     await act(async () => {
-      fireEvent.press(getByLabelText('노멀'))
+      fireEvent.press(getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
+    })
+    await act(async () => {
+      fireEvent.press(getByLabelText('스우 노멀'))
     })
     await act(async () => {
       fireEvent.press(getByText('추가 완료 · 1개'))

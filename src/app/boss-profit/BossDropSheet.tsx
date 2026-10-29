@@ -12,7 +12,6 @@ import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
 import { periodStartDateKey } from '../../lib/boss/boss-profit-period'
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
-import { ScrollView } from 'react-native-gesture-handler'
 
 import {
   dropTileKey,
@@ -46,6 +45,7 @@ import {
   Switch,
   Text,
 } from '../../components/atoms'
+import { DifficultyExpander } from '../../components/molecules/DifficultyExpander/DifficultyExpander'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { DropEffectOverlay } from '../../components/organisms/DropEffectOverlay/DropEffectOverlay'
@@ -54,6 +54,9 @@ import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { closeInputCard, openInputCard } from '../../features/input-card/store'
 import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
+import { useThemeAppearance } from '../../theme/context'
+import { DropTileRow } from './DropTileRow'
+import { pickedTileColor } from './drop-tile-row'
 
 // 선택 가능한 카테고리(장비·소비)의 라벨과 아이콘(노란 점 대신 아이콘). 고정은
 // 읽기 전용 별도 섹션이라 여기 없다.
@@ -112,7 +115,7 @@ function TileLabel(props: { drop: RecordedDrop | undefined }): React.JSX.Element
         된다(실기 화면에서 잡았다). 값을 매긴 것만 색을 갖고, 안 매기기로 한 것은 조용한 칩이다.
       */
       className={`absolute -bottom-1.5 h-[15px] max-w-full justify-center rounded-full px-1.5 ${
-        값 ? 'bg-primary' : 'border border-border bg-surface-2'
+        값 ? 'bg-primary' : 'bg-surface-2'
       }`}
     >
       <Text
@@ -201,6 +204,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   const [activeBox, setActiveBox] = useState<{ key: string; name: string; category: SelectableDropCategory } | null>(
     null,
   )
+  // 상자 결과 고르기 화면에서 고른 것. 확인 버튼이 시트 바닥 줄에 서서 시트가 쥔다.
+  const [boxPick, setBoxPick] = useState<BoxPick>(NO_BOX_PICK)
+  const pickedColor = pickedTileColor(useThemeAppearance().definition)
   // 고가 아이템을 새로 추가하면 전체화면 연출을 띄운다. 표시 여부는 전역 토글.
   const [effect, setEffect] = useState<{ itemKey: string } | null>(null)
   const effectEnabled = useDropEffectStore((state) => state.enabled)
@@ -421,6 +427,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
       if (findBoxDrop(candidate.key) !== undefined) {
         removeBoxResult(candidate.key)
       } else {
+        setBoxPick(NO_BOX_PICK)
         setActiveBox({ key: candidate.key, name: candidate.name, category: candidate.category })
       }
     } else {
@@ -444,25 +451,15 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
           </Badge>
         </View>
       ) : (
-        // 미완료: 드롭 테이블 난이도를 선택 버튼으로 나열(오른쪽 끝 정렬), 선택 안 된 것은 흐림 처리
-        <View className="ml-auto flex-row flex-wrap items-center gap-1.5">
-          {difficultyOptions.map((difficulty) => {
-            const active = difficulty === selectedDifficulty
-            return (
-              <Pressable
-                key={difficulty}
-                role="button"
-                aria-label={DIFFICULTY_NAME[difficulty]}
-                aria-selected={active}
-                onPress={() => selectDifficulty(difficulty)}
-                className={active ? '' : 'opacity-40'}
-              >
-                <Badge variant={difficulty}>
-                  {DIFFICULTY_NAME[difficulty]}
-                </Badge>
-              </Pressable>
-            )
-          })}
+        // 미완료: 고른 난이도 배지 하나가 서고, 누르면 드롭 표의 난이도가 펼쳐진다. 줄 오른쪽 끝이라 왼쪽으로 펼친다.
+        <View className="ml-auto">
+          <DifficultyExpander
+            label={bossNameOf(props.bossKey, props.bossKey)}
+            difficulties={difficultyOptions}
+            value={selectedDifficulty}
+            onChange={selectDifficulty}
+            align="end"
+          />
         </View>
       )}
     </View>
@@ -470,9 +467,8 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   )
 
   const 드롭저장줄 = (
-    // 구분선이 바닥 줄의 **맨 윗변**에 선다. `-mt-3` 이 슬롯의 위 여백을 되돌려, 선 위에
-    // 안 구르는 띠가 남지 않게 한다. 좌우도 같은 이유로 되돌려 선을 시트 끝까지 긋는다.
-    <View className="-mx-4 -mt-3 border-t border-border px-4 pt-3">
+    // 다른 시트의 바닥 줄처럼 구분선이 없다. 확인 줄이 테두리 없는 카드라 그것이 내용과 가른다.
+    <View>
               {/* 기록 직후 그 아이템 하나에 대해 값을 매길지 묻는다. 흐름은 기록 → 확인 →
                   (입력 →) 복귀 이고 어느 갈래든 타일 그리드로 돌아온다. 차단하지 않는다.
                   일반 아이템은 확인창 없이 탭 즉시 기록된다. 기록은 이미 끝났고 이 줄은 그 옆에
@@ -485,7 +481,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                 // 미입력 건으로 돌아갈 길이 시트 안에 없어진다.
                 <View
                   testID="drop-price-prompt"
-                  className="mb-2.5 flex-row items-center gap-2 rounded-[14px] bg-surface-2 px-3 py-2"
+                  className="mb-2.5 flex-row items-center gap-2 rounded-[14px] bg-surface px-3 py-2"
                 >
                   <View className="min-w-0 flex-1">
                     <Text numberOfLines={1} className="text-[12.5px] font-semibold leading-tight text-text">
@@ -530,7 +526,17 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
           줄이 내용 끝에 실려 있으면 다 고르고 나서 저장하러 또 내려가야 한다. 상자 드릴다운은
           자기 확인 버튼을 들고 있어 줄을 안 세운다.
         */
-        footer={activeBox === null ? 드롭저장줄 : undefined}
+        footer={
+          activeBox === null ? (
+            드롭저장줄
+          ) : (
+            <BoxConfirmButton
+              boxKey={activeBox.key}
+              pick={boxPick}
+              onConfirm={(itemKey, ringLevel) => applyBoxResult(activeBox, activeBox.category, itemKey, ringLevel)}
+            />
+          )
+        }
         /*
           보스 이름 · 드롭 연출 토글 · `획득한 아이템을 선택하세요` · 난이도 배지까지가 머리다.
           고르는 동안 **무엇의 무슨 난이도를 고르고 있나**가 안 사라져야 한다. 상자 드릴다운은
@@ -560,25 +566,8 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                         </View>
                         <Text className="text-xs font-bold text-text-muted">{label}</Text>
                       </View>
-                      {/*
-                        **한 줄로 굴린다.** 계열마다 몇 개인지가 시트 높이를 안 정하게 하려는
-                        것이다. 390 폭에 다섯이 보이고 여섯째가 반쯤 걸치는데, 그 걸친 타일이
-                        곧 더 있다는 신호라 화살표나 점을 안 그린다.
-
-                        가로 여백을 `contentContainer` 가 아니라 바깥에서 지운다(`-mx-4 px-4`).
-                        그래야 굴러 나간 타일이 시트 가장자리까지 간다.
-
-                        gesture-handler 의 ScrollView 를 쓴다. RN 기본 것은 안드로이드에서 시트의
-                        Pan 제스처가 가로 스와이프를 가져가 굴러가지 않는다. NativeWind 가 이
-                        컴포넌트의 `className` 을 모르므로 여백은 `style` 로 준다.
-                      */}
-                      <ScrollView
-                        testID={`drop-tile-row-${category}`}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={{ marginHorizontal: -16 }}
-                        contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
-                      >
+                      {/* 한 줄로 굴린다. 계열마다 몇 개인지가 시트 높이를 안 정하게 하려는 것이다. */}
+                      <DropTileRow testID={`drop-tile-row-${category}`}>
                         {(byCategory.get(category) ?? []).map((candidate) => {
                           const box = isBoxItem(candidate.key)
                           const boxDrop = box ? findBoxDrop(candidate.key) : undefined
@@ -590,47 +579,45 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                           const thumbKey = boxDrop === undefined ? candidate.key : boxDrop.itemKey
                           return (
                             <Pressable
-                                key={candidate.key}
-                                role="button"
-                                aria-label={displayName}
-                                aria-selected={on}
-                                onPress={() => handleTileTap(candidate)}
-                                className={`w-[72px] items-center gap-1 rounded-xl border p-2 pt-4 ${
-                                  on ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
-                                } ${box ? 'border-dashed' : ''}`}
-                              >
-                                {/*
-                                  **고른 것에는 표식을 안 단다**(사용자 지정). 테두리와 바탕이
-                                  이미 그 말을 한다.
-
-                                  값을 매긴 타일은 **얼마인지를 말한다**(사용자 지정). 그림
-                                  아래를 덮는 띠에 금액이 선다. 표식만 달면 카드를 열어야 얼마인지
-                                  알 수 있었다. 띠가 그림 위에 겹치는 것은 게임 인벤토리가 수량을
-                                  얹는 자리와 같아서 낯익다.
-
-                                  **알약은 글자만큼만 넓다**(사용자 지정). 폭을 못박으면 `1억` 에는
-                                  빈자리가 남고 긴 금액은 넘친다. 자리는 그림 아래 가운데다.
-
-                                  금액은 **축약 표기**다(`formatMesoCompact`). 단위를 이어 붙인
-                                  `32억 5천만` 은 72 폭에 안 들어가서 `32.5억` 으로 접는다(사용자
-                                  지정). 바깥 상자가 `-mx-1.5` 로 타일 여백을 되먹어 68 을 쓴다.
-
-                                  스킵은 기록된 가격이 아니므로 표식이 없다. 그 구분은 아이템
-                                  가격 입력 화면이 맡는다.
-                                */}
-                                <View className="-mx-1.5 items-center">
-                                  <ItemThumb itemKey={thumbKey} level={boxDrop?.ringLevel} />
-                                  <TileLabel drop={boxDrop ?? normalDrop} />
-                                </View>
-                                <View className="h-8 w-full items-center justify-center">
-                                  <Text numberOfLines={2} className="text-center text-10 leading-tight text-text">
-                                    {displayName}
-                                  </Text>
-                                </View>
-                              </Pressable>
+                              key={candidate.key}
+                              role="button"
+                              aria-label={displayName}
+                              aria-selected={on}
+                              onPress={() => handleTileTap(candidate)}
+                              className={`w-[72px] items-center gap-1 rounded-[10px] p-2 pt-4${on ? '' : ' bg-card-inset'}`}
+                              style={on ? { backgroundColor: pickedColor } : undefined}
+                            >
+                              {/*
+                                값을 매긴 타일은 그림 아래를 덮는 알약에 내 몫을 적는다. 게임 인벤토리가 수량을 얹는
+                                자리와 같아서 낯익다. 금액은 축약 표기라 72 폭에 들어가고, 바깥 상자가 `-mx-1.5` 로 타일
+                                여백을 되먹어 68 을 쓴다. 고르기만 한 것과 스킵은 기록된 가격이 아니라 알약이 없다.
+                              */}
+                              <View className="-mx-1.5 items-center">
+                                <ItemThumb itemKey={thumbKey} level={boxDrop?.ringLevel} />
+                                {/* 열어 봐야 무엇이 나오는지 아는 상자다. 결과를 고르면 그 아이템 그림이 서므로 사라진다. */}
+                                {box && boxDrop === undefined && (
+                                  <View
+                                    testID={`drop-tile-box-mark-${candidate.key}`}
+                                    aria-hidden
+                                    className="absolute -bottom-[5px] -right-[5px] h-4 w-4 items-center justify-center rounded-full bg-surface-2"
+                                  >
+                                    <Text className="text-10 font-extrabold leading-none text-text-muted">?</Text>
+                                  </View>
+                                )}
+                                <TileLabel drop={boxDrop ?? normalDrop} />
+                              </View>
+                              <View className="h-8 w-full items-center justify-center">
+                                <Text
+                                  numberOfLines={2}
+                                  className={`text-center text-10 leading-tight text-text${on ? ' font-bold' : ''}`}
+                                >
+                                  {displayName}
+                                </Text>
+                              </View>
+                            </Pressable>
                           )
                         })}
-                      </ScrollView>
+                      </DropTileRow>
                     </View>
                   )
                 })}
@@ -645,15 +632,16 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                     </View>
                     {/* 고정 드롭은 값이 난이도마다 달라 통합하지 않고 난이도별 카드로 읽기 전용
                         표시한다. 텍스트 대신 아이콘 + 수량, 솔 에르다는 단위별로 분해한다.
-                        배치는 1→1열, 2·4→2열, 3→2열 + 마지막 1개 전폭. */}
-                    <View className="-mx-1 -mb-2 flex-row flex-wrap">
+                        배치는 1→1열, 2·4→2열, 3→2열 + 마지막 1개 전폭. 카드 하나 안에 난이도마다
+                        칸이다. 퍼센트 폭과 `gap` 을 섞으면 줄 끝 칸이 밀려서 사이는 자식 여백이 만든다. */}
+                    <View className="flex-row flex-wrap rounded-[14px] bg-surface p-1">
                       {fixedGroups.map((group, index) => (
                         <View
                           key={group.difficulty}
                           className={
                             fixedGroups.length === 1 || (fixedGroups.length === 3 && index === 2)
-                              ? 'w-full px-1 pb-2'
-                              : 'w-1/2 px-1 pb-2'
+                              ? 'w-full p-0.5'
+                              : 'w-1/2 p-0.5'
                           }
                         >
                           {/*
@@ -666,7 +654,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                           */}
                           <View
                             testID={`fixed-drop-row-${group.difficulty}`}
-                            className="rounded-xl border border-border bg-surface px-2 py-4"
+                            className="rounded-[10px] bg-card-inset px-2 py-4"
                           >
                             <View testID={`fixed-drop-badge-${group.difficulty}`} className="absolute left-2 top-2">
                               <Badge variant={group.difficulty}>
@@ -697,9 +685,10 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
           <BoxDrillDown
             boxKey={activeBox.key}
             boxName={activeBox.name}
-            category={activeBox.category}
+            pickedColor={pickedColor}
+            pick={boxPick}
+            onPick={setBoxPick}
             onBack={() => setActiveBox(null)}
-            onConfirm={(itemKey, ringLevel) => applyBoxResult(activeBox, activeBox.category, itemKey, ringLevel)}
           />
         )}
       </BottomSheet>
@@ -711,29 +700,63 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   )
 }
 
+/** 상자 결과 고르기에서 고른 아이템과 레벨. */
+interface BoxPick {
+  item: string | null
+  level: number | null
+}
+
+const NO_BOX_PICK: BoxPick = { item: null, level: null }
+
+/**
+ * 고른 것으로 기록할 수 있는지와 레벨이 필요한지. 연마석처럼 레벨이 없는 결과를 고르면 레벨을 못 고르고 레벨 없이 기록한다.
+ * 반지 상자가 아니면(칠흑 장신구) 레벨이 없다.
+ */
+function boxPickStatus(boxKey: string, pick: BoxPick): { canConfirm: boolean; needsLevel: boolean; levelDisabled: boolean } {
+  const ring = getRingBoxContents(boxKey)
+  const option = ring?.rings.find((entry) => entry.key === pick.item) ?? null
+  const needsLevel = option?.hasLevel ?? false
+  return {
+    canConfirm: pick.item !== null && (!needsLevel || pick.level !== null),
+    needsLevel,
+    levelDisabled: option !== null && !option.hasLevel,
+  }
+}
+
+/** 상자 결과 고르기의 바닥 줄 버튼. 고른 것이 모자라면 꺼져 있다. */
+function BoxConfirmButton(props: {
+  boxKey: string
+  pick: BoxPick
+  onConfirm: (itemKey: string, ringLevel?: number) => void
+}): React.JSX.Element {
+  const { canConfirm, needsLevel } = boxPickStatus(props.boxKey, props.pick)
+  return (
+    <SheetActionButton
+      label="이 결과로 기록"
+      disabled={!canConfirm}
+      onPress={() => {
+        if (props.pick.item !== null) props.onConfirm(props.pick.item, needsLevel ? (props.pick.level ?? undefined) : undefined)
+      }}
+    />
+  )
+}
+
 interface BoxDrillDownProps {
   boxKey: string
   boxName: string
-  category: DropCategory
+  pickedColor: string
+  pick: BoxPick
+  onPick: (pick: BoxPick) => void
   onBack: () => void
-  onConfirm: (itemKey: string, ringLevel?: number) => void
 }
 
-// 랜덤 상자 결과 선택. 반지 상자=등급+반지 2축, 칠흑 장신구=1축. 확률 자동추정 없음.
+// 랜덤 상자 결과 선택. 반지 상자=반지+등급 2축, 칠흑 장신구=1축. 확률 자동추정 없음.
 // 이미 지정된 상자는 타일 재탭으로 제거하므로 이 화면은 항상 새 선택 전용. 제거 버튼 없음.
 function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
   const ring = getRingBoxContents(props.boxKey)
   const accessory = ring === null ? getAccessoryBoxContents(props.boxKey) : null
-
-  const [level, setLevel] = useState<number | null>(null)
-  const [item, setItem] = useState<string | null>(null)
-
-  // 선택한 반지의 레벨 유무. 연마석(hasLevel=false)은 레벨 선택을 비활성하고 레벨 없이 기록.
-  const selectedOption = ring?.rings.find((r) => r.key === item) ?? null
-  const needsLevel = selectedOption?.hasLevel ?? false
-  const levelDisabled = selectedOption !== null && !selectedOption.hasLevel
-
-  const canConfirm = item !== null && (ring === null ? true : needsLevel ? level !== null : true)
+  const { pick } = props
+  const { levelDisabled } = boxPickStatus(props.boxKey, pick)
 
   return (
     <View>
@@ -744,79 +767,65 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
         <Text className="text-lg font-bold text-text">{props.boxName}</Text>
       </View>
 
-      {/* 반지 종류 먼저 선택 */}
+      {/* 반지 종류 먼저 선택. 카드 하나 안에 칸이 한 줄에 넷이다. */}
       <View className="px-4 pb-3">
         <Text className="mb-2 text-xs font-bold text-text-muted">{ring !== null ? '반지' : '장신구'}</Text>
-        <View className="-mx-1 -mb-2 flex-row flex-wrap">
-          {(ring?.rings ?? accessory ?? []).map((entry) => (
-            <View key={entry.key} className="w-1/4 px-1 pb-2">
-              <Pressable
-                role="button"
-                aria-label={entry.name}
-                aria-selected={item === entry.key}
-                onPress={() => setItem(entry.key)}
-                className={`w-full items-center gap-1 rounded-xl border p-2 pt-4 ${
-                  item === entry.key ? 'border-primary bg-primary-tint' : 'border-border bg-surface'
-                }`}
-              >
-                {item === entry.key && (
-                  <View className="absolute right-1 top-1 h-4 w-4 items-center justify-center rounded-full bg-primary">
-                    <Text className="text-10 text-on-primary">✓</Text>
+        <View className="flex-row flex-wrap rounded-[14px] bg-surface p-1">
+          {(ring?.rings ?? accessory ?? []).map((entry) => {
+            const on = pick.item === entry.key
+            return (
+              <View key={entry.key} className="w-1/4 p-0.5">
+                <Pressable
+                  role="button"
+                  aria-label={entry.name}
+                  aria-selected={on}
+                  onPress={() => props.onPick({ ...pick, item: entry.key })}
+                  className={`w-full items-center gap-1 rounded-[10px] px-1 pb-2 pt-3${on ? '' : ' bg-card-inset'}`}
+                  style={on ? { backgroundColor: props.pickedColor } : undefined}
+                >
+                  <ItemThumb itemKey={entry.key} />
+                  <View className="h-8 w-full items-center justify-center">
+                    <Text
+                      numberOfLines={2}
+                      className={`text-center text-10 leading-tight text-text${on ? ' font-bold' : ''}`}
+                    >
+                      {entry.name}
+                    </Text>
                   </View>
-                )}
-                <ItemThumb itemKey={entry.key} />
-                <View className="h-8 w-full items-center justify-center">
-                  <Text numberOfLines={2} className="text-center text-10 leading-tight text-text">
-                    {entry.name}
-                  </Text>
-                </View>
-              </Pressable>
-            </View>
-          ))}
+                </Pressable>
+              </View>
+            )
+          })}
         </View>
       </View>
 
-      {/* 그다음 레벨(등급). 항상 보이되 연마석 선택 시에만 비활성 */}
+      {/* 그다음 레벨(등급). 항상 보이되 연마석을 고르면 꺼진다 */}
       {ring !== null && (
         <View className="px-4 pb-3">
           <Text className="mb-2 text-xs font-bold text-text-muted">등급</Text>
-          <View className="flex-row gap-1.5">
-            {ring.levels.map((lvl) => (
-              <Pressable
-                key={lvl}
-                role="button"
-                aria-label={`${lvl}레벨`}
-                disabled={levelDisabled}
-                onPress={() => setLevel(lvl)}
-                className={`flex-1 items-center rounded-lg border py-2 ${
-                  level === lvl && !levelDisabled ? 'border-primary bg-primary-tint' : 'border-border'
-                }${levelDisabled ? ' opacity-40' : ''}`}
-              >
-                <Text
-                  className={`text-xs font-bold ${
-                    level === lvl && !levelDisabled ? 'text-primary-ink' : 'text-text-muted'
-                  }`}
-                >
-                  {lvl}레벨
-                </Text>
-              </Pressable>
-            ))}
+          {/* 반지 칸과 같은 짜임이다. 고르기 전에는 아무것도 골라져 있지 않아야 해서 세그먼트를 안 쓴다. */}
+          <View className={`flex-row rounded-[14px] bg-surface p-1${levelDisabled ? ' opacity-40' : ''}`}>
+            {ring.levels.map((level) => {
+              const on = !levelDisabled && pick.level === level
+              return (
+                <View key={level} className="flex-1 p-0.5">
+                  <Pressable
+                    role="button"
+                    aria-label={`${level}레벨`}
+                    aria-selected={on}
+                    disabled={levelDisabled}
+                    onPress={() => props.onPick({ ...pick, level })}
+                    className={`h-10 items-center justify-center rounded-[10px]${on ? '' : ' bg-card-inset'}`}
+                    style={on ? { backgroundColor: props.pickedColor } : undefined}
+                  >
+                    <Text className={`text-13 text-text ${on ? 'font-bold' : 'font-medium'}`}>{level}레벨</Text>
+                  </Pressable>
+                </View>
+              )
+            })}
           </View>
         </View>
       )}
-
-      <View className="border-t border-border bg-bg px-4 pb-3 pt-3">
-        <Pressable
-          role="button"
-          disabled={!canConfirm}
-          onPress={() => {
-            if (item !== null) props.onConfirm(item, needsLevel ? (level ?? undefined) : undefined)
-          }}
-          className={`w-full items-center rounded-xl bg-primary py-3${canConfirm ? '' : ' opacity-40'}`}
-        >
-          <Text className="text-sm font-bold text-on-primary">이 결과로 기록</Text>
-        </Pressable>
-      </View>
     </View>
   )
 }

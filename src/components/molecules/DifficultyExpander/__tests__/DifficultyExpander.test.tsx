@@ -76,15 +76,24 @@ describe('DifficultyExpander', () => {
     expect(flattenStyle(pill.props.style)).toMatchObject(BADGE_VARIANT.hard.border)
   })
 
-  // 바탕은 옆 UI 를 덮는다. 일러스트 위처럼 바탕이 드러나는 자리에서 한쪽만 넓으면 배지 줄과 어긋나 보인다.
-  it.each(['start', 'end'] as const)('펼친 줄 바탕이 배지 줄을 사방으로 같은 여백만큼 감싼다 (%s)', async (align) => {
-    const view = await render(jest.fn(), align)
+  // 펼친 줄 뒤에 바탕 판을 깔지 않는다(사용자 지정). 배지 줄 밖을 누르면 접히는 자리는 남기되 보이지 않는다.
+  it('펼친 줄 뒤의 접는 자리에 보이는 바탕이 없다', async () => {
+    const view = await render()
 
     await fireEvent.press(view.getByLabelText('스우 난이도 하드, 눌러서 바꾸기'))
 
-    const { left, right, top, bottom } = flattenStyle(view.getByTestId('difficulty-expander-plate').props.style)
-    expect(left).toBeLessThan(0)
-    expect([right, top, bottom]).toEqual([left, left, left])
+    expect(flattenStyle(view.getByLabelText('스우 난이도 닫기').props.style).backgroundColor).toBeUndefined()
+  })
+
+  // 왼쪽으로 펼치는데 화살표가 오른쪽에 있으면 펼쳐지는 방향과 반대를 가리킨다.
+  it.each([
+    ['start', 'difficulty-chevron-right', 'difficulty-chevron-left'],
+    ['end', 'difficulty-chevron-left', 'difficulty-chevron-right'],
+  ] as const)('화살표는 펼쳐지는 쪽에 선다 (%s)', async (align, shown, hidden) => {
+    const view = await render(jest.fn(), align)
+
+    expect(view.getAllByTestId(shown).length).toBeGreaterThan(0)
+    expect(view.queryAllByTestId(hidden)).toHaveLength(0)
   })
 
   // 줄 오른쪽 끝에 붙은 고르개가 오른쪽으로 펼치면 화면 밖으로 넘친다.
