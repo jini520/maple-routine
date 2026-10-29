@@ -37,7 +37,7 @@ Figma 공식 MCP 서버의 `use_figma` 로 코드를 읽고 변수와 컴포넌�
 변수(`var(--color-primary)`)를 적는다. 그래야 Figma 에서 고른 변수를 그대로 `className` 으로 찾을 수
 있다.
 
-`theme-vars.ts` 가 계산하는 파생 토큰(`control-thumb` · `panel-border` 등)은 그 토큰을 쓰는 부품을
+`theme-vars.ts` 가 계산하는 파생 토큰(`control-thumb` · `card-body` 등)은 그 토큰을 쓰는 부품을
 옮길 때 함께 옮긴다.
 
 ### 결정 4. Claude 는 Noto Sans KR 로 그리고, 사람이 글꼴 변수를 Pretendard 로 바꾼다

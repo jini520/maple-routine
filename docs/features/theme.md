@@ -13,7 +13,7 @@
 | `lib/theme/theme-derive.ts` | 시드에서 토큰을 만드는 규칙 · 미디어 스코프 · 대비 측정 |
 | `lib/color.ts` | 색 공간 변환과 대비 계산 |
 | `features/theme/store.ts` · `storage/theme.ts` | 고른 테마와 저장(Preferences `theme`) |
-| `theme/theme-vars.ts` | 변수 맵 만들기 · `panel-border` · `card-body` · `stats-section` · 결산 색 · 시트 스코프 |
+| `theme/theme-vars.ts` | 변수 맵 만들기 · `card-body` · `stats-section` · 결산 색 · 시트 스코프 |
 | `theme/ThemeProvider.tsx` · `context.ts` · `appearance-store.ts` | 렌더 트리에 변수 내리기 · 지금 테마 읽기 |
 | `theme/MediaScope.tsx` | 일러스트 카드 안에서 토큰 다시 선언 |
 | `theme/ThemeScope.tsx` | 테마 페이지 안만 고른 테마로 그리기(변수 · 컨텍스트) |
@@ -54,7 +54,7 @@
 | 일러스트 카드 안 | `MediaScope` 로 감싸면 같은 클래스가 카드 기준으로 풀린다 |
 | 다크 바텀시트 안 | 시트가 표면 네 토큰을 한 단계 밝혀 다시 선언한다 |
 
-토큰 말고 계산해서 내리는 색이 넷 있다. `panel-border`(스크림 위 패널 테두리) · `card-body`(통계 보스 칸 · 시각 휠) ·
+토큰 말고 계산해서 내리는 색이 셋 있다. `card-body`(통계 보스 칸 · 시각 휠) ·
 `stats-section`(통계 카드) · `settlement-*`(결산 안내 줄)이다.
 
 ## 테마를 더하는 방법
