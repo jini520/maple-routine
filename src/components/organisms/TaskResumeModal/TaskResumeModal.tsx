@@ -9,6 +9,7 @@ import { View } from 'react-native'
 
 import { ProgressBar, RefreshCwIcon, Text } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
+import { INSET_ROW_CLASS } from '../../molecules/InsetRow/InsetRow'
 import { NoticeModal } from '../NoticeModal/NoticeModal'
 
 export interface TaskResumeLine {
@@ -32,14 +33,14 @@ export function TaskResumeModal(props: {
       tone="primary"
       title="끝나지 않은 작업이 있어요"
       content={
-        <View className="rounded-[12px] border border-border px-3">
+        <View className="gap-1.5">
           {props.tasks.map((task, index) => {
             const percent = task.total > 0 ? Math.round((task.done * 100) / task.total) : 0
             return (
               <View
                 key={task.name}
                 testID={`task-resume-${index}`}
-                className={`gap-1.5 py-2.5${index === 0 ? '' : ' border-t border-border'}`}
+                className={`gap-1.5 ${INSET_ROW_CLASS}`}
               >
                 <View className="flex-row items-center justify-between gap-2">
                   <Text className="text-13 text-text">{task.name}</Text>

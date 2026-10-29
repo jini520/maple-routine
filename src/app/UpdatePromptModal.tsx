@@ -19,14 +19,15 @@ import {
   CheckCircle2Icon,
   ChevronDownIcon,
   CloudDownloadIcon,
-  InfoIcon,
-  MapleSweepSpinner,
   ProgressBar,
   SignalIcon,
   SparklesIcon,
   StoreIcon,
   Text,
 } from '../components/atoms'
+import { INSET_ROW_CLASS, InsetRow } from '../components/molecules/InsetRow/InsetRow'
+import { ModalHeader } from '../components/molecules/ModalHeader/ModalHeader'
+import { TABULAR_NUMS } from '../constants/style/text-styles'
 import { Modal } from '../components/organisms/Modal/Modal'
 import { NoticeModal } from '../components/organisms/NoticeModal/NoticeModal'
 
@@ -82,33 +83,21 @@ function formatSize(bytes: number): string {
 // 아래 `HighlightsDisclosure` 의 `자세히 보기` 만 쓴다. 부 동작 버튼(`나중에`·`취소`)은
 // `NoticeModal` 이 그리고 **같은 값을 갖는다**. 한 모달 안에서 두 고스트 버튼의 크기가 갈리면
 // 안 되므로 한쪽을 고칠 때 다른 쪽도 함께 본다.
-const GHOST_BOX = 'w-full items-center px-4 py-1.5'
-const GHOST_TEXT = 'text-xs'
+function versionText(version: string | null): string {
+  return `v${version === null ? '' : formatAppVersion(version)}`
+}
 
-function VersionBadge({ version }: { version: string | null }): React.JSX.Element {
+/** 버전 칸. 베타 채널이면 값 앞에 `beta` 배지를 붙인다. */
+function VersionRow(props: { version: string | null; beta?: boolean }): React.JSX.Element {
   return (
-    <Badge variant="outline" className="tabular-nums">v{version === null ? null : formatAppVersion(version)}</Badge>
+    <InsetRow
+      label="버전"
+      trailing={props.beta === true ? <Badge variant="primary">beta</Badge> : undefined}
+      value={versionText(props.version)}
+    />
   )
 }
 
-/** 배지 한둘을 가로 가운데에 놓는 줄. */
-function BadgeRow({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <View className="flex-row flex-wrap items-center justify-center gap-1.5">{children}</View>
-}
-
-// info-tint 정보 콜아웃. 부가 정보(용량, 최소 앱 버전 등)를 본문 문장과 분리해 보여준다.
-function InfoNote({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return (
-    <View className="flex-row items-center gap-2 rounded-[10px] bg-info-tint px-3.5 py-2.5">
-      <InfoIcon className="h-4 w-4 shrink-0 text-info-ink" strokeWidth={2} aria-hidden />
-      <Text className="flex-1 text-xs font-medium text-text">{children}</Text>
-    </View>
-  )
-}
-
-// 받기 전 모달의 `자세히 보기`. 원격에서 온 핵심 목록을 **모달 안에서** 펼친다.
-// 화면을 옮기지 않는 이유는 모달을 닫아야 하고 돌아왔을 때 다시 띄우는 처리가 필요한데, 정작 그
-// 화면(개발 노트)에는 아직 받지 않은 이 버전이 **없기** 때문이다.
 function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -118,8 +107,8 @@ function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.J
         variant="text"
         onPress={() => setIsOpen((open) => !open)}
         accessibilityState={{ expanded: isOpen }}
-        className={`${GHOST_BOX} flex-row justify-center gap-1`}
-        textClassName={GHOST_TEXT}
+        size="sm"
+        className="flex-row justify-center gap-1 self-center"
       >
         자세히 보기
         {/* **회전은 아이콘이 아니라 감싸는 `View` 가 받는다**. NativeWind 의
@@ -141,7 +130,7 @@ function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.J
         </View>
       </Button>
       {isOpen && (
-        <View testID="update-highlights" className="gap-1.5 rounded-[10px] bg-info-tint px-3.5 py-2.5">
+        <View testID="update-highlights" className={`gap-1.5 ${INSET_ROW_CLASS}`}>
           {highlights.map((line) => (
             <View key={line} className="flex-row gap-2">
               <Text className="text-xs font-medium text-text-muted">·</Text>
@@ -152,17 +141,6 @@ function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.J
       )}
     </View>
   )
-}
-
-/** 진행 상태 둘이 쓰는 제목. `NoticeModal` 의 제목과 **같은 값이어야 한다**. */
-function Title({ children }: { children: string }): React.JSX.Element {
-  return (
-    <Text className="text-center text-base font-semibold leading-snug text-text">{children}</Text>
-  )
-}
-
-function Note({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <Text className="text-center text-xs text-text-muted">{children}</Text>
 }
 
 export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Element | null {
@@ -187,44 +165,26 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
   const 물러나기 = { label: '나중에', onPress: actions.dismiss }
   const 공통 = { onClose: actions.dismiss, testId: 'update-prompt-overlay' } as const
 
-  // ── 진행 상태 둘. **배지도 버튼도 없어 알림 틀이 아니다.**
+  // ── 진행 상태 둘. 버튼이 없어 알림 틀이 아니다.
   //
-  // 되돌릴 수 없거나 되돌리면 안 되는 구간이라 배경 탭으로도 안 닫힌다. 제목 아래 묶는 폭도
-  // 12(`gap-3`)로 다르다. 진행률·스피너가 글이 아니라 그림이라 글자끼리의 8 보다 숨이 필요하다.
+  // 되돌릴 수 없거나 되돌리면 안 되는 구간이라 배경 탭으로도 안 닫힌다.
   if (status === 'downloading') {
     return (
       <Modal onClose={() => {}} testId="update-prompt-overlay" align="center">
-        <Modal.Card maxWidth="max-w-xs" tight>
-          <View className="gap-3">
-            <Title>다운로드 중</Title>
-            {/* 결정형 진행률은 예외 없이 h-1.5 프리미티브 하나.
-                `animated` 를 쓰는 곳도 여기뿐이다. 여기만 값이 연속으로 흐른다. */}
-            <ProgressBar
-              percent={state.downloadProgress}
-              animated
-              aria={{ now: state.downloadProgress, max: 100 }}
-              fillTestId="update-progress-bar"
-            />
-            <Text className="text-center text-xs font-medium text-text-muted tabular-nums">
-              {state.downloadProgress}%
-            </Text>
-          </View>
-        </Modal.Card>
-      </Modal>
-    )
-  }
-
-  // 커버가 닫기 뒤로 밀린 구간(최대 5초). 적용은 퍼센트가 나오지 않아 결정형 진행률을 쓰지 않고
-  // (가짜로 채우면 거짓 정보다) 모달 안 대기의 규격대로 스윕 스피너 + 문구만 둔다.
-  if (status === 'applying') {
-    return (
-      <Modal onClose={() => {}} testId="update-prompt-overlay" align="center">
-        <Modal.Card maxWidth="max-w-xs" tight>
-          <View className="gap-3" accessibilityRole="progressbar" aria-busy>
-            <MapleSweepSpinner size={32} className="mx-auto text-primary" />
-            <View className="gap-2">
-              <Title>적용하고 있어요</Title>
-              <Note>잠시 뒤 앱이 다시 시작돼요.</Note>
+        <Modal.Card>
+          <View className="gap-4">
+            <ModalHeader icon={CloudDownloadIcon} tone="primary" title="다운로드 중" />
+            <View className="gap-1.5">
+              {/* `animated` 를 쓰는 곳은 여기뿐이다. 여기만 값이 연속으로 흐른다. */}
+              <ProgressBar
+                percent={state.downloadProgress}
+                animated
+                aria={{ now: state.downloadProgress, max: 100 }}
+                fillTestId="update-progress-bar"
+              />
+              <Text className="self-end text-xs font-semibold text-primary-ink" style={TABULAR_NUMS}>
+                {state.downloadProgress}%
+              </Text>
             </View>
           </View>
         </Modal.Card>
@@ -232,7 +192,21 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
     )
   }
 
-  // ── 나머지 일곱. 배지 · 제목 · 내용 · 설명 · 옵션 · 버튼 둘로 나뉜다.
+  // 커버가 닫기 뒤로 밀린 구간(최대 5초). 적용은 퍼센트가 나오지 않아 결정형 진행률을 쓰지 않고
+  // (가짜로 채우면 거짓 정보다) 배지 안 스피너와 문구만 둔다.
+  if (status === 'applying') {
+    return (
+      <Modal onClose={() => {}} testId="update-prompt-overlay" align="center">
+        <Modal.Card>
+          <View accessibilityRole="progressbar" aria-busy>
+            <ModalHeader busy tone="primary" title="적용하고 있어요" description="잠시 뒤 앱이 다시 시작돼요." />
+          </View>
+        </Modal.Card>
+      </Modal>
+    )
+  }
+
+  // ── 나머지 일곱. 머리 줄 · 칸 · 옵션 · 버튼 둘로 나뉜다.
 
   if (status === 'update-available') {
     return (
@@ -242,12 +216,11 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
         tone="primary"
         title="새 업데이트가 있어요"
         content={
-          <BadgeRow>
-            {state.channel === 'beta' && <Badge variant="primary">beta</Badge>}
-            <VersionBadge version={state.availableVersion} />
-          </BadgeRow>
+          <View className="gap-1.5">
+            <VersionRow version={state.availableVersion} beta={state.channel === 'beta'} />
+            <InsetRow label="다운로드 크기" value={sizeText} />
+          </View>
         }
-        description={`다운로드 크기 ${sizeText}`}
         // 없으면 **버튼째 그리지 않는다.** 옛 매니페스트에는 이 필드가 없고 그것은 오류가 아니라
         // 안 실려 온 것이라, 액션 없는 비활성 버튼을 두지 않는다.
         option={
@@ -269,7 +242,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
         tone="secondary"
         title="모바일 데이터를 사용해요"
         description="Wi-Fi가 아니에요. 데이터로 받으면 요금이 나올 수 있어요."
-        option={<InfoNote>다운로드 크기 {sizeText}</InfoNote>}
+        content={<InsetRow label="다운로드 크기" value={sizeText} />}
         action={{ label: '계속', onPress: () => void actions.confirmCellularDownload() }}
         // 여기서만 `취소` 다. 아직 아무것도 안 받았고 무르는 것이 곧 안 받는 것이다.
         secondaryAction={{ label: '취소', onPress: actions.dismiss }}
@@ -284,11 +257,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
         icon={CheckCircle2Icon}
         tone="secondary"
         title="업데이트 준비 완료"
-        content={
-          <BadgeRow>
-            <VersionBadge version={state.availableVersion} />
-          </BadgeRow>
-        }
+        content={<VersionRow version={state.availableVersion} />}
         description="지금 적용하려면 앱을 재시작해요."
         action={{ label: '지금 적용 (재시작)', onPress: () => void actions.apply() }}
         secondaryAction={물러나기}
@@ -305,11 +274,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
         icon={SparklesIcon}
         tone="primary"
         title="업데이트를 마쳤어요"
-        content={
-          <BadgeRow>
-            <VersionBadge version={state.currentVersion} />
-          </BadgeRow>
-        }
+        content={<VersionRow version={state.currentVersion} />}
         description="새 버전으로 다시 시작했어요."
         action={{ label: '확인', onPress: actions.dismiss }}
         secondaryAction={{ label: '자세히 보기', onPress: openReleaseNotes }}
@@ -325,12 +290,9 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
         tone="third"
         title="스토어 업데이트가 필요해요"
         description="이 업데이트는 앱 스토어에서 업데이트해야 받을 수 있어요."
-        option={
+        content={
           state.minNativeVersion !== null ? (
-            <InfoNote>
-              최소 앱 버전{' '}
-              <Text className="font-semibold tabular-nums">{state.minNativeVersion}</Text> 이상 필요
-            </InfoNote>
+            <InsetRow label="최소 앱 버전" value={`${state.minNativeVersion} 이상 필요`} />
           ) : undefined
         }
         action={{ label: '스토어로 이동', onPress: actions.openStore }}
@@ -341,7 +303,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
         // 종료 버튼은 두지 않는다. iOS 에는 앱이 스스로 끝나는 길이 없어(`BackHandler.exitApp` 의
         // iOS 구현이 빈 함수) 한쪽만 종료하면 같은 화면이 플랫폼마다 다른 말을 한다.
         //
-        // 버전 배지도 없다. 잠금이 켜질 때 이 번들은 스토어 바이너리와 같은 버전이라, 그리면
+        // 버전 칸도 없다. 잠금이 켜질 때 이 번들은 스토어 바이너리와 같은 버전이라, 그리면
         // 이미 쓰고 있는 버전으로 업데이트하라고 말하게 된다.
         onClose={() => {}}
       />

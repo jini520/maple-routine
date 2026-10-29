@@ -1,8 +1,8 @@
-# ADR-062+082+091+106+119 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드
+# ADR-062+082+091+106+119+123 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드
 
 > 🟢 유효
 > 옛 번호: ADR-039 결정 2 · 3 · ADR-170 정정 12 · 13 · ADR-179 결정 1 · 2 · 3 · 4 · 5 · ADR-180 · ADR-217 · ADR-239 · ADR-241 결정 5 · 정정 7 · ADR-244 · ADR-263 · ADR-285 · ADR-302 · ADR-315 · ADR-316 · ADR-332 · ADR-337 · ADR-338
-> 관련 소스: `components/organisms/{BottomSheet,TopSheet,Modal,NoticeModal,InputCard,MesoPad,FaqSheet,SpeedDial,CalendarPopover,WeekCalendarPopover,TimePopover}/` · `components/molecules/{Popover,NumberPad}/` · `components/organisms/BottomBar/BottomBarOverlay.tsx` · `hooks/usePopoverPlacement.ts` · `components/molecules/Segment/` · `components/organisms/MesoPad/meso-unit.ts` · `lib/{modal-metrics,number-pad-metrics,place-dropdown,popover-anchor,shadow,fab-metrics}.ts` · `features/input-card/meso-unit.ts` · `storage/meso-unit.ts`
+> 관련 소스: `components/organisms/{BottomSheet,TopSheet,Modal,NoticeModal,InputCard,MesoPad,FaqSheet,SpeedDial,CalendarPopover,WeekCalendarPopover,TimePopover}/` · `components/molecules/{Popover,NumberPad,ModalHeader,InsetRow}/` · `components/organisms/{LoadingModal,TaskProgressModal,TaskResumeModal}/` · `components/organisms/BottomBar/BottomBarOverlay.tsx` · `hooks/usePopoverPlacement.ts` · `components/molecules/Segment/` · `components/organisms/MesoPad/meso-unit.ts` · `lib/{modal-metrics,number-pad-metrics,place-dropdown,popover-anchor,shadow,fab-metrics}.ts` · `features/input-card/meso-unit.ts` · `storage/meso-unit.ts`
 
 ## 배경
 
@@ -194,21 +194,47 @@ RN `TextInput` 은 높이를 내용에서 잰다. iOS 는 한글과 영문의 �
 닫히지 않고 버튼으로만 나간다. 안드로이드에서는 스크림이 하단 내비 영역을 한 박자 늦게 덮지 않도록 표시
 높이를 최소 높이로 깐다. RN `Modal` 은 별도 네이티브 창이라 그 안에 제스처 루트를 한 번 더 둔다.
 
-### 결정 8. 알림 모달의 골격은 `NoticeModal` 하나가 정한다
+### 결정 8. 가운데 모달은 테두리 없는 패널 하나에 머리 줄 · 칸 · 버튼 줄을 쌓는다 (사용자 확정, #780)
 
-배지 · 제목 · 내용 · 설명 · 옵션 · 버튼(주 · 부 · 링크)의 배치와 값을 `organisms/NoticeModal` 이 정하고,
-호출부는 무엇을 넣을지만 정한다. 같은 골격을 파일마다 손으로 적었더니 아이콘 굵기와 설명 크기가 제각각이 되었다.
+가운데 뜨는 모달은 모두 같은 패널을 쓴다. 게임 데이터 잠금 화면과 API 키 경고 모달에서 먼저 쓴 모양을 공통 부품으로
+옮긴 것이다. 그 전에는 공통 틀(테두리 · 가운데 배지 56 · 폭 320)과 이 두 화면이 서로 다른 모양이었다. 시안은
+https://claude.ai/artifact/TD4ofUDwSZ5UN9wBsg5oaX 다.
 
-- 배지 색은 `tone`(`primary` · `secondary` · `third` · `error`), 배지 형태는 `badgeShape`(기본 원, 아래에 표가
-  붙으면 네모)로 따로 받는다.
-- 제목 · 내용 · 설명은 8 간격으로 한 덩어리이고, 그 아래 옵션까지는 20 이다. 내용은 제목에 딸린 값이라
-  떼어 놓으면 무엇에 대한 값인지 흐려진다. 설명은 `text-xs`, 아이콘 굵기는 1.75 다.
-- 버튼 줄은 `Modal.Card` 의 `footer` 로 넘겨 스크롤 밖에 고정한다.
-- 되돌릴 수 없는 확인(캐시 삭제 · 연결 해제)에서는 **주 버튼이 취소**다. 안전한 기본값이 채운 알약이어야
-  한다. 파괴 동작은 `secondaryAction` 에 `danger` 를 켜서 `Button` 의 `dangerText` 변형으로 낸다. 크기는
-  부 버튼과 같고 글자색만 테마의 `error-ink` 다. 테마에 따라 빨강이 아닐 수 있는데(레테는 로즈) 그것이
-  의도다. 다른 실패 표시와 같은 색을 써야 하기 때문이다.
-- 고르는 화면인 `TrackingModeModal` 은 이 틀을 쓰지 않는다. 배지가 없고 본문이 선택기다.
+패널(`Modal.Card`)은 이렇게 생겼다.
+
+- 테두리가 없다. 폭은 `max-w-sm`(384), 모서리 14, 안쪽 여백 24 이고, 안의 덩어리는 16 간격으로 쌓는다.
+- 다크에서는 바텀시트처럼 표면 계열을 한 단 올린다(`buildSheetScopeVariables`, 결정 2). 다크 바탕은 매우 어두워서,
+  테두리 없이 표면색을 그대로 두면 패널 가장자리가 스크림에 묻힌다. 라이트는 올리지 않는다. 카드 색이 이미 스크림 위에서
+  갈린다.
+- 패널 껍데기는 `ModalSurface` 하나가 그린다. 게임 데이터 잠금 화면은 RN `Modal` 이 아니라 화면 위에 얹는 층이라서,
+  `Modal.Card` 대신 이 껍데기만 가져다 쓴다.
+
+패널 안은 위에서부터 머리 줄 · 칸 · 버튼 줄이다.
+
+- 머리 줄(`ModalHeader`)은 왼쪽 40 원 배지와, 그 옆에 세로로 놓인 제목(`text-base` 굵게) · 설명(`text-xs` 흐린 글자)이다.
+  설명이 길어도 머리 줄에 둔다. 배지 색은 `tone`(`primary` · `secondary` · `third` · `error`)으로 받고, 아이콘은 20 ·
+  굵기 1.75 다. 기다리는 모달은 아이콘 자리에 링 스피너(`RingSpinner`)를 넣는다.
+- 내용은 `card-inset` 칸(`InsetRow`, 모서리 10)을 6 간격으로 쌓아 보인다. 표 · 테두리 상자 · 구분선 · `info-tint` 상자는
+  쓰지 않는다. 앱은 카드와 칸을 테두리 없이 바탕색 차이로 가르기 때문이다([[ADR-060]] 결정 16). 값을 보이는 칸은 왼쪽에
+  이름(`text-13`), 오른쪽에 값(`text-xs` 굵게)을 둔다. 버전 · 받을 크기 · 키 단계가 이 모양이다.
+- 버튼 줄은 위에 전폭 큰 버튼(`Button` 기본 크기)이고, 그 아래 가운데에 글자 버튼(`text-13` 흐린 글자)이다. 글자 버튼이
+  큰 버튼보다 작아서 두 버튼의 무게가 갈린다. 밖으로 나가는 링크도 글자 버튼 자리에 `primary-ink` 로 둔다. 버튼 줄은
+  `footer` 로 넘겨 스크롤 밖에 고정한다(결정 7).
+- 되돌릴 수 없는 확인(캐시 삭제 · 연결 해제)에서는 **큰 버튼이 취소**다. 안전한 기본값이 채운 알약이어야 한다. 파괴
+  동작은 글자 버튼에 `danger` 를 켜서 테마의 `error-ink` 로 칠하고, 크기는 그대로 둔다. 테마에 따라 빨강이 아닐 수
+  있는데(레테는 로즈) 그것이 의도다. 다른 실패 표시와 같은 색을 써야 하기 때문이다.
+
+모달마다 이 부품을 이렇게 쓴다.
+
+- 알리거나 확인을 받는 모달은 `NoticeModal` 하나로 조립한다. 호출부는 아이콘 · 문구 · 칸만 정한다. 같은 골격을 파일마다
+  손으로 적었더니 아이콘 굵기와 설명 크기가 제각각이 되었기 때문이다.
+- 기다리는 모달(`LoadingModal` · `TaskProgressModal` · `TaskResumeModal`, 업데이트의 `downloading` · `applying`)도 같은
+  패널과 머리 줄을 쓴다. 단계는 게임 데이터 잠금 화면의 단계 칸과 같은 모양이다. 끝난 단계는 체크, 도는 단계는 링 스피너,
+  기다리는 단계는 빈 원이다. 진행 막대 아래 줄은 왼쪽에 건수(`text-xs`), 오른쪽에 퍼센트(`text-xs` 굵게 `primary-ink`)다.
+- 고르는 모달(`TrackingModeModal` · `MvpGradeModal`)은 머리 줄과 버튼 줄을 같이 쓰고 본문만 다르다. 고른 칸은 테두리 대신
+  `primary-tint` 바탕으로 가린다. MVP 등급 격자가 고른 칸을 가리는 방식과 같다([[ADR-050]]).
+- 파티 인원 모달(`PartySizeModal`)은 이 정책 밖이다. 보스 그림이 패널 모서리까지 가야 해서 패널을 직접 그리고,
+  테두리(`panel-border`)도 그대로 둔다.
 
 ### 결정 9. 팝오버는 `molecules/Popover` 가 띄우고, 닫는 영역은 화면 전체를 덮는다
 
@@ -374,7 +400,8 @@ RN `TextInput` 은 높이를 내용에서 잰다. iOS 는 한글과 영문의 �
 | `src/__tests__/text-input-height-policy.test.ts` | 결정 6: 모든 치는 칸의 `className` 에 높이가 있는지 본다 |
 | `components/atoms/TextInput/__tests__/TextInput.test.tsx` | 결정 6: 글자 칸은 `defaultValue` 로 심고 숫자 칸은 `value` 로 통제하는지, 기본 상자를 지우고 호출부 치수가 우선하는지, iOS 한 줄 칸만 줄 높이를 지우는지, 자리표시자 색을 주는지 본다 |
 | `components/organisms/Modal/__tests__/Modal.test.tsx` · `lib/__tests__/modal-metrics.test.ts` | 결정 7: 정렬마다 상한, `footer` 가 스크롤 밖에 놓이는지, 넘칠 때만 스크롤과 페이드가 생기는지, 바깥 탭과 뒤로 가기가 `onClose` 로 가는지 본다 |
-| `components/organisms/NoticeModal/__tests__/NoticeModal.test.tsx` | 결정 8: 영역을 안 주면 공간도 없는지, 덩어리 간격, 버튼 줄이 스크롤 밖인지, 버튼마다 그 핸들러만 불리는지, `danger` 가 크기는 그대로 글자색만 바꾸는지 본다 |
+| `components/organisms/NoticeModal/__tests__/NoticeModal.test.tsx` | 결정 8: 영역을 안 주면 공간도 없는지, 버튼 줄이 스크롤 밖인지, 버튼마다 그 핸들러만 불리는지, `danger` 가 크기는 그대로 글자색만 바꾸는지 본다 |
+| `components/organisms/Modal/__tests__/Modal.test.tsx` | 결정 8: 패널에 테두리가 없는지, 다크에서만 표면 계열을 올리는지 본다 |
 | `components/molecules/Popover/__tests__/Popover.test.tsx` · `lib/__tests__/place-dropdown.spec.ts` · `popover-anchor.spec.ts` | 결정 9: 닫는 영역과 내용이 같은 `Modal` 안인지, 재기 전에 숨겨지는지, 위 · 아래 · 가운데 고르기와 하단바 계산, 꼬리와 상자의 clamp 를 본다 |
 | `components/organisms/{CalendarPopover,WeekCalendarPopover}/__tests__/` | 결정 9: 확인 전에는 값을 안 내보내는지, 바깥을 누르면 버리는지, 위치 고르기를 본다 |
 | `components/organisms/FaqSheet/__tests__/FaqSheet.test.tsx` | 결정 10: 문답이 모두 펼쳐져 있고 펼치는 누르개가 없는지 본다 |
@@ -390,3 +417,5 @@ RN `TextInput` 은 높이를 내용에서 잰다. iOS 는 한글과 영문의 �
 - ADR-091 (2026-10-24): 결정 14(여러 줄 글자 칸)를 더함
 - ADR-106 (2026-10-27): 결정 15(위에서 내려오는 `TopSheet`)를 더하고, 결정 4 를 바텀시트로 좁혔다(#757)
 - ADR-119 (2026-10-28): 결정 2 의 바텀시트를 상단 시트와 같은 떠 있는 모양 · 같은 끌기 규칙으로 바꾸고, 화면 모서리가 둥근 기기에서는 아래 모서리를 화면 곡률과 동심원으로 맞췄다(#746)
+- ADR-123 (2026-10-29): 결정 8 을 다시 썼다. 가운데 모달을 테두리 없는 패널 · 왼쪽 머리 줄 · `card-inset` 칸 · 큰 버튼과 글자 버튼으로 바꾸고,
+  다른 ADR 에 흩어져 있던 모달 생김새를 이 결정으로 모았다(#780)

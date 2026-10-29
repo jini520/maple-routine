@@ -2,7 +2,7 @@
  * 모달은 오버레이 + 패널 두 조각의 합성이다.
  *
  * 프롭이 아니라 구조인 것은 껍데기의 유무가 켜고 끄는 속성이 아니라 어떤 패널을 쓰는가 의
- * 문제이기 때문이다. 덕분에 부정 불리언이 사라지고 `maxWidth`·`tight` 는 그것이 실제로 의미를
+ * 문제이기 때문이다. 덕분에 부정 불리언이 사라지고 `footer` 는 그것이 실제로 의미를
  * 갖는 패널에만 붙는다.
  *
  * 오버레이가 소유하는 취약 구조(전체 화면 덮기·스크림·안전영역 오프셋·바깥 탭)는 한곳에
@@ -18,13 +18,14 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native'
+import { vars } from 'nativewind'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { MODAL_TOP_GAP_PX, overlayWindowHeightPx, resolveModalMaxHeight } from '../../../lib/modal-metrics'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../../theme/context'
-import { Card } from '../../atoms'
+import { buildSheetScopeVariables } from '../../../theme/theme-vars'
 
 export interface ModalProps {
   onClose: () => void
@@ -51,11 +52,6 @@ interface ModalPanelProps {
 }
 
 interface ModalCardProps extends ModalPanelProps {
-  /**
-   * 하단 패딩만 줄인다(`p-6` → `pb-4`). 부 동작 버튼이 작아 아래 여백이 상대적으로 커 보이는
-   * 모달에 쓴다(업데이트 모달).
-   */
-  tight?: boolean
   /** 카드 바닥에 고정되는 버튼 줄. 카드가 상한에 닿아도 늘 보인다. 없으면 카드 전체가 구른다. */
   footer?: ReactNode
 }
@@ -152,29 +148,49 @@ function CapScroll(props: { children: ReactNode; surface?: string; testId: strin
 }
 
 /**
- * 카드 껍데기(테두리·배경·패딩)를 갖는 패널. 모달 대부분이 이것을 쓴다.
+ * 가운데 모달의 패널 껍데기. 테두리 없이 바탕색 차이로만 스크림과 갈린다.
  *
- * 스크림 위 테두리 톤다운은 `border-panel-border` 한 클래스다. 모드 분기는 `theme-vars.ts`
- * 에서 `definition.mode` 로 한 번 일어난다. `Card` atom 은 테두리가 없으므로 폭(`border`)도 여기서 준다.
- * 스크림 위에 뜨는 패널이라 화면의 카드와 달리 테두리로 바깥과 가른다.
+ * 다크에서는 바텀시트처럼 표면 계열을 한 칸 올린다. 다크 바탕은 매우 어두워 표면색을 그대로 두면 가장자리가
+ * 스크림에 묻힌다. 변수는 바깥 층에서 다시 선언하고 색은 안쪽 층이 칠한다. 같은 층에 두면 그 층의 색이 옛 값으로 풀린다.
+ *
+ * RN `Modal` 밖에서 스크림을 직접 까는 화면(게임 데이터 잠금 화면)도 이 껍데기를 그대로 쓴다.
  */
+export function ModalSurface(props: {
+  children: ReactNode
+  /** 패널 최대 너비 Tailwind 클래스. 기본 `max-w-sm`. */
+  maxWidth?: string
+  maxHeight?: number
+  testID?: string
+  /** 안쪽 터치를 패널이 가져갈지. RN `Modal` 안에서만 켠다. 안 켜면 터치가 오버레이로 떨어져 모달이 닫힌다. */
+  claimsTouch?: boolean
+}): React.JSX.Element {
+  const { definition } = useThemeAppearance()
+  return (
+    <View style={vars(buildSheetScopeVariables(definition))} className={`w-full ${props.maxWidth ?? 'max-w-sm'}`}>
+      <View
+        testID={props.testID}
+        onStartShouldSetResponder={props.claimsTouch === true ? claimTouch : undefined}
+        className="rounded-[14px] bg-surface p-6"
+        style={{ maxHeight: props.maxHeight }}
+      >
+        {props.children}
+      </View>
+    </View>
+  )
+}
+
+/** 모달 대부분이 쓰는 패널. 내용은 상한 안에서 구르고 버튼 줄은 바닥에 고정된다. */
 function ModalCard(props: ModalCardProps): React.JSX.Element {
   const maxHeight = useContext(MaxHeightContext)
   const { definition } = useThemeAppearance()
   return (
-    <Card
-      testID="modal-card"
-      onStartShouldSetResponder={claimTouch}
-      className={`w-full ${props.maxWidth ?? 'max-w-sm'} border border-panel-border ${
-        props.tight === true ? 'px-6 pb-4 pt-6' : 'p-6'
-      }`}
-      style={{ maxHeight }}
-    >
-      <CapScroll testId="modal-card-scroll" surface={definition.surface}>
+    <ModalSurface testID="modal-card" claimsTouch maxWidth={props.maxWidth} maxHeight={maxHeight}>
+      {/* 페이드는 패널과 같은 색이어야 경계가 안 보인다. 다크에서 올린 표면색을 값으로 넘긴다. */}
+      <CapScroll testId="modal-card-scroll" surface={buildSheetScopeVariables(definition)['--color-surface']}>
         {props.children}
       </CapScroll>
       {props.footer}
-    </Card>
+    </ModalSurface>
   )
 }
 

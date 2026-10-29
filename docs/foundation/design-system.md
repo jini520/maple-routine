@@ -40,7 +40,7 @@
 | `ProgressBar` | 결정형 진행률 바. 두께 기본(`h-1.5`) · `thin`(`h-1`) |
 | `ProgressRing` | 진행률 링. 캐릭터 초상화가 쓴다([[ADR-031]]) |
 | `Skeleton` | 결과가 들어올 곳과 같은 크기의 회색 펄스 상자 |
-| `Spinner` | `MapleSpinner`(버튼 안 16px) · `MapleSweepSpinner`(영역 · 화면) |
+| `Spinner` | `MapleSpinner`(버튼 안 16px) · `MapleSweepSpinner`(영역 · 화면) · `RingSpinner`(가운데 모달 · 잠금 화면) |
 | `AnimatedNumber` | 값이 바뀌면 목표까지 굴러가는 숫자 |
 | `Icon` | 커스텀 아이콘(`ProfitIcon` · `GearIcon` · `MapleLeaf`)과 lucide 아이콘 등록(`lucide.ts`) |
 
@@ -55,6 +55,8 @@
 | `UnavailableBadge` | 값 대신 보이는 `조회 불가` 알약 |
 | `Segment` | 테두리 없는 세그먼트(크기 `sm` 26 · `md` 28 · 화면 헤더 탭 `lg` 32) |
 | `Popover` | `PopoverLayer` · `AnchoredPopover` |
+| `ModalHeader` | 가운데 모달의 머리 줄. 왼쪽 40 원 배지 옆에 제목 · 설명([[ADR-062]] 결정 8) |
+| `InsetRow` | 가운데 모달의 `card-inset` 칸 한 줄. 앞 표시 · 이름 · 값([[ADR-062]] 결정 8) |
 | `NumberPad` | 짧은 화면에서 숫자 칸이 쓰는 앱 판 |
 | `AmountFigure` | 시트의 큰 숫자. 칠 수 없다 |
 | `BackButton` | 헤더의 `←`. 크기는 하나(28px · 흐린 화살표) |
@@ -81,7 +83,7 @@
 | `InputCard` | 키보드 위에 뜨는 입력 카드. `InputCardHost` 는 앱 셸에 한 번만 둔다. `unitKey` 를 넘기면 금액 단위 세그먼트(`기본` · `만` · `억`)가 선다([[ADR-082]] 결정 13). `multiline` 이면 세 줄로 열려 네 줄까지 자라는 글자 칸이다([[ADR-091]] 결정 14) |
 | `MesoPad` | 숫자 칸의 글자 처리와 커서 계산, 금액 단위 환산(`meso-pad.ts` · `meso-caret.ts` · `meso-unit.ts`) |
 | `BossPicker` | 보스 고르기의 본문 · 선택 줄 · 난이도 팝오버. 파티 스케줄과 주간 보스 수익 계산기가 쓴다([[ADR-051]] 결정 13) |
-| `Modal` · `NoticeModal` | 가운데 모달 · 알림 모달 틀 |
+| `Modal` · `NoticeModal` | 가운데 모달(테두리 없는 패널 `Modal.Card` · 껍데기 `ModalSurface`) · 알림 모달 틀([[ADR-062]] 결정 8) |
 | `LoadingModal` · `TaskProgressModal` · `TaskResumeModal` | 불러오는 중 모달 · 오래 걸리는 작업 진행률 · 이어서 하기([[ADR-023]]) |
 | `CalendarPopover` · `WeekCalendarPopover` · `TimePopover` | 날짜 · 주 · 시각 팝오버 |
 | `SelectField` · `AccountSelect` | 드롭다운 · 메이플 ID 드롭다운 |
