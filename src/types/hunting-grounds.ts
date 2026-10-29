@@ -27,5 +27,7 @@ export interface HuntingRegion {
   readonly key: string
   readonly name: string
   readonly forceType: ForceType
+  /** 드롭다운에 서는 지역 아이콘 slug. 없으면 이름만 선다. */
+  readonly iconMap: string | null
   readonly grounds: readonly HuntingGround[]
 }

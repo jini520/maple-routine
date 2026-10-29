@@ -29,7 +29,7 @@ import { fragmentSaleFeeOf, huntTotalOf } from '../../../lib/cashbook/hunting-me
 import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { useSaleFeeChoice } from './sale-fee'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { requiredCharacterOptions } from '../character-options'
+import { characterDecorOf, requiredCharacterOptions } from '../character-options'
 import { AmountInput, FIELD_CELL_CLASS, FieldCard, FieldRow, SelectRow } from '../sheet-fields'
 import { openInputCard } from '../../../features/input-card/store'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
@@ -124,6 +124,7 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
           options={requiredCharacterOptions(props.characters)}
           selected={ocid}
           onSelect={setOcid}
+          decorOf={characterDecorOf(props.characters, { level: true })}
         />
 
         {/* 계산기에서는 앱이 세어 못 치는 줄이다. 여기서는 그 줄이 치는 칸이 된다. 같은 자리·

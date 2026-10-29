@@ -599,7 +599,7 @@ export function CashbookScreen(): React.JSX.Element {
    * 들어올 때 한 번이면 된다. 추적 목록이 시트를 여는 사이에 바뀌지 않는다.
    */
   const [characters, setCharacters] = useState<
-    Array<{ ocid: string; name: string; level: number | null }>
+    Array<{ ocid: string; name: string; level: number | null; worldKey: string | null }>
   >([])
 
   const monthWeeks = buildCalendarMonth(monthKey)

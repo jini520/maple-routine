@@ -54,7 +54,7 @@ export interface SpendFormProps {
   /** 머리를 시트 위로 올리는 손잡이. 저장 줄과 같은 방식이다. */
   setHeader: (slot: SpendHeaderSlot) => void
   dateKey: string
-  characters: ReadonlyArray<{ ocid: string; name: string; level: number | null }>
+  characters: ReadonlyArray<{ ocid: string; name: string; level: number | null; worldKey: string | null }>
   /** 1차에서 고른 갈래 key. 머리의 제목은 이 key 로 찾은 갈래 이름이다. */
   category: SpendCategoryKey
   /** 1차로 되돌아간다. 머리의 화살촉이 부른다. 수정 모드에서는 폼이 안 붙인다. */

@@ -27,7 +27,8 @@ import {
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { openInputCard } from '../../features/input-card/store'
 import type { InputCardChip, InputCardIcon } from '../../components/organisms/InputCard/InputCard'
-import { characterOptions } from './character-options'
+import { characterDecorOf, characterOptions } from './character-options'
+import { LIST_ALIGN_PADDING, SelectValue, type SelectDecor } from './select-value'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { monthKeyOf } from '../../lib/calendar'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -151,11 +152,40 @@ export function SelectRow(props: {
   /** `{testID}-open` · `{testID}-value` · `{testID}-option-{value}` */
   testID: string
   renderOption?: (option: SelectOption, isSelected: boolean) => React.ReactNode
+  /**
+   * 값에 붙는 아이콘 · 레벨 · 목록 글자. 주면 닫힌 줄과 목록 줄이 `SelectValue` 하나로 서고 목록 줄은 오른쪽에 붙는다.
+   * `{testID}-value-icon` · `{testID}-option-{value}-icon` · `-level` · `-note`
+   */
+  decorOf?: (value: string) => SelectDecor | null
   /** 칸 안 둘째 줄. 사냥터 칸의 포스 · 레벨 · 마릿수 캡슐 */
   below?: React.ReactNode
 }): React.JSX.Element {
   const chosen =
     props.selected === null ? undefined : props.options.find((option) => option.value === props.selected)
+  const { decorOf } = props
+  const renderOption =
+    props.renderOption ??
+    (decorOf === undefined
+      ? undefined
+      : (option: SelectOption, isSelected: boolean) => {
+          const decor = option.value === null ? null : decorOf(option.value)
+          const id = `${props.testID}-option-${option.value ?? ''}`
+          return (
+            <View className={`flex-row items-center justify-end gap-2 ${LIST_ALIGN_PADDING}`}>
+              {decor?.listNote != null && (
+                <Text testID={`${id}-note`} className={`mr-auto text-11 ${isSelected ? 'text-primary-ink' : 'text-text-muted'}`}>
+                  {decor.listNote}
+                </Text>
+              )}
+              <SelectValue
+                testID={id}
+                label={option.label}
+                decor={decor}
+                tone={isSelected ? 'selected' : option.value === null ? 'muted' : 'value'}
+              />
+            </View>
+          )
+        })
   return (
     <SelectField
       label={props.label}
@@ -163,7 +193,7 @@ export function SelectRow(props: {
       selected={props.selected}
       onSelect={props.onSelect}
       testID={props.testID}
-      renderOption={props.renderOption}
+      renderOption={renderOption}
       boxClassName={`${FIELD_CELL_CLASS} flex-col items-stretch gap-2`}
       renderTrigger={(open, isOpen) => (
         <>
@@ -175,13 +205,25 @@ export function SelectRow(props: {
             className="min-h-7 flex-row items-center gap-3 active:opacity-60"
           >
             <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
-            <Text
-              testID={`${props.testID}-value`}
-              numberOfLines={1}
-              className={`flex-1 text-right text-sm ${chosen === undefined ? 'text-text-disabled' : 'text-text'}`}
-            >
-              {chosen?.label ?? props.placeholder}
-            </Text>
+            {decorOf === undefined ? (
+              <Text
+                testID={`${props.testID}-value`}
+                numberOfLines={1}
+                className={`flex-1 text-right text-sm ${chosen === undefined ? 'text-text-disabled' : 'text-text'}`}
+              >
+                {chosen?.label ?? props.placeholder}
+              </Text>
+            ) : (
+              <View className="min-w-0 flex-1 flex-row justify-end">
+                <SelectValue
+                  testID={`${props.testID}-value`}
+                  nameTestID={`${props.testID}-value`}
+                  label={chosen?.label ?? props.placeholder}
+                  decor={chosen?.value == null ? null : decorOf(chosen.value)}
+                  tone={chosen === undefined ? 'muted' : 'value'}
+                />
+              </View>
+            )}
             <SelectChevron open={isOpen} />
           </Pressable>
           {props.below}
@@ -200,7 +242,7 @@ export function SelectRow(props: {
  * 껍데기에 두면 그것만 남아 **갈래를 옮겼는데 캐릭터는 그대로** 가 된다.
  */
 export function CharacterField(props: {
-  characters: ReadonlyArray<{ ocid: string; name: string }>
+  characters: ReadonlyArray<{ ocid: string; name: string; worldKey: string | null }>
   selected: string | null
   onSelect: (next: string | null) => void
   /** 두 시트가 자기 이름을 준다. */
@@ -214,6 +256,7 @@ export function CharacterField(props: {
       options={characterOptions(props.characters)}
       selected={props.selected}
       onSelect={props.onSelect}
+      decorOf={characterDecorOf(props.characters)}
     />
   )
 }

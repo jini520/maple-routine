@@ -43,8 +43,8 @@ type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
 /** 고르개가 실제로 고를 것이 있어야 선택 안함 이 기본이라는 말에 뜻이 생긴다. */
 const 캐릭터둘 = [
-  { ocid: 'ocid-1', name: '루디', level: 225 },
-  { ocid: 'ocid-2', name: '아델', level: 290 },
+  { ocid: 'ocid-1', name: '루디', level: 225, worldKey: 'scania' },
+  { ocid: 'ocid-2', name: '아델', level: 290, worldKey: null },
 ]
 
 /**
