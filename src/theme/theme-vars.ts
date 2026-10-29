@@ -285,8 +285,20 @@ const SHEET_SCOPE_TOKENS = ['bg', 'surface', 'surface2', 'track'] as const
 export const SHEET_LIFT = 0.09
 
 export function buildSheetScopeVariables(definition: ThemeDefinition): Record<string, string> {
+  return liftedScopeVariables(definition, SHEET_LIFT)
+}
+
+/**
+ * 팝오버 상자 안의 변수 맵. 다크에서 시트보다 한 칸 더 올린다. 팝오버는 대부분 바텀시트 위에서 열리는데,
+ * 테두리가 없어 시트와 같은 표면색이면 둘이 붙는다.
+ */
+export function buildPopoverScopeVariables(definition: ThemeDefinition): Record<string, string> {
+  return liftedScopeVariables(definition, SHEET_LIFT * 2)
+}
+
+function liftedScopeVariables(definition: ThemeDefinition, amount: number): Record<string, string> {
   const lift = (hex: string): string =>
-    definition.mode === 'dark' ? withLightness(hex, hexToOklch(hex).l + SHEET_LIFT) : hex
+    definition.mode === 'dark' ? withLightness(hex, hexToOklch(hex).l + amount) : hex
 
   const lifted = Object.fromEntries(
     SHEET_SCOPE_TOKENS.map((token) => [toColorVariableName(token), lift(definition[token])]),

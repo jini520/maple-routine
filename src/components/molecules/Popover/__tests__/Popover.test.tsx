@@ -1,8 +1,11 @@
 /** 팝오버 층과 앵커 팝오버. 닫기 층이 화면 전체를 덮고, 상자는 앵커 위아래를 재서 선다. */
-import { fireEvent } from '@testing-library/react-native'
+import { act, fireEvent } from '@testing-library/react-native'
 import { Dimensions, Text } from 'react-native'
 
-import { findAllOfType, flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
+import { findAllOfType, flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
+import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
+import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../../theme/appearance-store'
+import { buildPopoverScopeVariables, buildSheetScopeVariables } from '../../../../theme/theme-vars'
 import { AnchoredPopover, PopoverLayer } from '../Popover'
 
 const ANCHOR = { left: 100, top: 100, width: 120, height: 28 }
@@ -111,5 +114,49 @@ describe('AnchoredPopover', () => {
     const caretLeft = flattenStyle(view.getByTestId(`${BOX}-caret`, { includeHiddenElements: true }).props.style)
       .left as number
     expect(left + caretLeft + 4).toBe(ANCHOR.left + ANCHOR.width / 2)
+  })
+})
+
+// 팝오버는 테두리 없이 면으로 갈린다. 대부분 바텀시트 위에서 열리므로 다크에서는 시트보다 한 단 더 올려야 시트와 붙지 않는다.
+describe('AnchoredPopover 의 상자', () => {
+  const 검은마법사 = getThemeDefinition('검은마법사')
+
+  beforeEach(__resetThemeAppearanceForTest)
+  afterEach(__resetThemeAppearanceForTest)
+
+  async function 그리기() {
+    const view = await renderOverlay(
+      <AnchoredPopover testID={BOX} ariaLabel="설명" closeLabel="설명 닫기" anchor={ANCHOR} width={200} onClose={jest.fn()}>
+        <Text>내용</Text>
+      </AnchoredPopover>,
+    )
+    await fireEvent(view.getByTestId(BOX), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 200, height: 120 } } })
+    return view
+  }
+
+  it('상자와 꼬리에 테두리가 없다', async () => {
+    const view = await 그리기()
+    const caret = view.getByTestId(`${BOX}-caret`, { includeHiddenElements: true })
+
+    expect(flattenStyle(view.getByTestId(BOX).props.style).borderWidth ?? 0).toBe(0)
+    const caretStyle = flattenStyle(caret.props.style)
+    expect([caretStyle.borderTopWidth, caretStyle.borderLeftWidth, caretStyle.borderBottomWidth, caretStyle.borderRightWidth].every((w) => (w ?? 0) === 0)).toBe(true)
+  })
+
+  it('다크에서는 시트보다 한 단 더 올린 표면이다', async () => {
+    const view = await 그리기()
+    await act(async () => {
+      setThemeAppearance('검은마법사', 검은마법사)
+    })
+    const 팝오버 = buildPopoverScopeVariables(검은마법사)['--color-surface']
+
+    expect(flattenStyle(view.getByTestId(BOX).props.style).backgroundColor).toBe(팝오버)
+    expect(팝오버).not.toBe(buildSheetScopeVariables(검은마법사)['--color-surface'])
+  })
+
+  it('라이트에서는 올리지 않는다', async () => {
+    const view = await 그리기()
+
+    expect(flattenStyle(view.getByTestId(BOX).props.style).backgroundColor).toBe(기본테마.surface)
   })
 })

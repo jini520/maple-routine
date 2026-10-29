@@ -1,12 +1,12 @@
 /**
  * 날짜를 고르는 달력 팝오버. `DateSelect` 를 누르면 그 아래로 열린다.
  *
- * 상자는 아이템 수익 팝오버와 **같은 규격**이다(폭 248 · 반경 12 · 테두리 · 꼬리 · 그림자). 칸의
- * 생김새는 가계부 캘린더와 같다 - 고른 날은 채움, 오늘은 테두리다. 같은 앱에서 날짜를 고르는 두
- * 자리가 다르게 생기면 안 된다.
+ * 상자는 다른 팝오버와 같다(폭 248 · 반경 12 · 테두리 없음 · 꼬리 · 그림자). 칸의 생김새는 가계부 캘린더와 같다.
+ * 고른 날은 채운 원이다. 같은 앱에서 날짜를 고르는 두 자리가 다르게 생기면 안 된다.
  *
  * 날을 눌러도 안에서만 칠하고, `확인` 을 눌러야 밖으로 내보낸다. 바깥을 누르면 고른 것을 버린다.
  * 시각 팝오버(`TimePopover`)와 같은 규칙이다. 한 시트에 날짜 칸과 시각 칸이 나란히 서므로 반영 방식이 갈리면 안 된다.
+ * 바닥 줄 왼쪽의 고른 날이 `확인` 으로 무엇이 들어가는지 말한다. 버튼을 옅게 두어 채운 색은 고른 날 하나에만 남긴다.
  *
  * **고를 수 있는 범위를 받는다.** 그 밖의 날은 흐리고 눌러도 안 고른다. 범위 밖으로 나가는 달
  * 이동도 막는다 - 갈 수 없는 달을 열어 두면 빈 달력을 보고 왜 못 고르는지를 화면이 설명해야 한다.
@@ -14,18 +14,19 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { ChevronLeftIcon, ChevronRightIcon, Text } from '../../atoms'
+import { Button, ChevronLeftIcon, ChevronRightIcon, Text } from '../../atoms'
 import { AnchoredPopover } from '../../molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import {
   buildCalendarMonth,
+  formatDayLabel,
   getAdjacentMonthKey,
   monthKeyOf,
   WEEKDAY_LABELS,
 } from '../../../lib/calendar'
 import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
 
-/** 아이템 수익 팝오버와 같은 값들. 한 화면에서 팝오버 폭이 갈리면 안 된다. */
+/** 아이템 수익 팝오버와 같은 폭. 한 화면에서 팝오버 폭이 갈리면 안 된다. */
 const POPOVER_WIDTH = 248
 
 export interface CalendarPopoverProps {
@@ -148,16 +149,13 @@ export function CalendarPopover(props: CalendarPopoverProps): React.JSX.Element 
         </View>
       ))}
 
-      <View className="mt-1 flex-row justify-end">
-        <Pressable
-          role="button"
-          aria-label="확인"
-          onPress={() => props.onConfirm(pending)}
-          hitSlop={8}
-          className="px-2 py-1"
-        >
-          <Text className="text-sm font-bold text-primary-ink">확인</Text>
-        </Pressable>
+      <View className="mt-2 flex-row items-center justify-between gap-2">
+        <Text testID="calendar-popover-pending" className="shrink text-xs font-bold text-text" style={TABULAR_NUMS}>
+          {formatDayLabel(pending)}
+        </Text>
+        <Button variant="tint" size="sm" aria-label="확인" hitSlop={8} onPress={() => props.onConfirm(pending)}>
+          확인
+        </Button>
       </View>
     </AnchoredPopover>
   )

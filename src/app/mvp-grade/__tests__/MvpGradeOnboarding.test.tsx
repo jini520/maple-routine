@@ -98,7 +98,7 @@ describe('MvpGradeConfirmScreen', () => {
 
     expect(complete).toHaveBeenCalledWith(
       {
-        choices: [{ accountId: 'A', grade: 'red', startWeek: '2026-09-17', changed: true }],
+        choices: [{ accountId: 'A', grade: 'red', startDate: '2026-09-17', changed: true }],
         weeklyOff: true,
         bulkApply: false,
       },

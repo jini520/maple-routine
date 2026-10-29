@@ -51,7 +51,6 @@ const A: MvpGradeAccountView = {
   history: [
     { startDate: '2025-11-20', grade: 'bronze' },
     { startDate: '2026-05-07', grade: 'red' },
-    { startDate: '2026-05-21', grade: null },
     { startDate: '2026-06-11', grade: 'silver' },
     { startDate: '2026-09-17', grade: 'diamond' },
   ],
@@ -97,7 +96,7 @@ describe('SettingsMvpGradeScreen', () => {
     expect(card.getByText('지금')).toBeTruthy()
     expect(card.getByLabelText('MVP 다이아')).toBeTruthy()
 
-    await fireEvent.press(card.getByText('이력 5건 보기'))
+    await fireEvent.press(card.getByText('이력 4건 보기'))
     expect(mockNavigate).toHaveBeenCalledWith('SettingsMvpGradeHistory', { accountId: 'A' })
   })
 
@@ -117,7 +116,7 @@ describe('SettingsMvpGradeScreen', () => {
 
     expect(saveHistory).toHaveBeenCalledWith(
       'A',
-      [...A.history.slice(0, 4), { startDate: '2026-09-17', grade: 'black' }],
+      [...A.history, { startDate: '2026-09-22', grade: 'black' }],
       expect.any(Date),
     )
   })
@@ -159,30 +158,20 @@ describe('SettingsMvpGradeHistoryScreen', () => {
     expect(topLinesIn(view.toJSON())).toBe(0)
   })
 
-  it('이력은 최신부터 서고, 해가 바뀌는 자리에 연도 줄이 서고, 빈 줄은 등급 없음이다', async () => {
+  it('이력은 최신부터 서고, 해가 바뀌는 자리에 연도 줄이 선다', async () => {
     const view = await 그리기()
     const list = within(view.getByTestId('mvp-grade-timeline'))
 
-    expect(view.getByText('이력 5건')).toBeTruthy()
+    expect(view.getByText('이력 4건')).toBeTruthy()
     const labels = list.getAllByRole('button').map((row) => row.props.accessibilityLabel)
     expect(labels).toEqual([
       '9월 17일 (목)부터 다이아 고치기',
       '6월 11일 (목)부터 실버 고치기',
-      '5월 21일 (목)부터 등급 없음 고치기',
       '5월 7일 (목)부터 레드 고치기',
       '11월 20일 (목)부터 브론즈 고치기',
     ])
     expect(list.getByText('2026')).toBeTruthy()
     expect(list.getByText('2025')).toBeTruthy()
-    expect(list.getByText('등급 없음')).toBeTruthy()
-  })
-
-  it('+ 추가는 기록 추가 시트를 연다', async () => {
-    const view = await 그리기()
-
-    await fireEvent.press(view.getByRole('button', { name: '+ 추가' }))
-
-    expect(view.getByText('기록 추가')).toBeTruthy()
   })
 
   it('줄을 누르면 고치기 시트가 열리고, 지우기는 확인을 거쳐 그 줄을 지운다', async () => {

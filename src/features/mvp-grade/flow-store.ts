@@ -41,8 +41,8 @@ export interface MvpAskAccount {
 export interface MvpAskChoice {
   accountId: string
   grade: MvpGradeKey
-  /** 그 등급이 시작된 주의 목요일 */
-  startWeek: string
+  /** 그 등급을 달성한 날 */
+  startDate: string
   /** 주간 확인에서 등급을 바꿨나. 안 바꾼 ID 는 이력을 안 건드린다 */
   changed: boolean
 }
@@ -161,7 +161,7 @@ export const useMvpAskStore = create<MvpAskState>()((set, get) => ({
     const histories = await getMvpGradeHistories()
     for (const choice of result.choices) {
       if (ask.kind === 'weekly' && !choice.changed) continue
-      const next = setGradeFrom(histories.get(choice.accountId) ?? [], choice.startWeek, choice.grade)
+      const next = setGradeFrom(histories.get(choice.accountId) ?? [], choice.startDate, choice.grade)
       await replaceMvpGradeHistory(choice.accountId, next, now.toISOString())
     }
     await setMvpLastCheckedWeek(resetWeekStartOf(getCurrentKstDateKey(now)))

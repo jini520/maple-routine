@@ -48,6 +48,15 @@ describe('CalendarPopover', () => {
     expect(onConfirm).toHaveBeenCalledWith('2026-09-20')
   })
 
+  // 바닥 줄 왼쪽의 날이 확인으로 무엇이 들어가는지 말한다.
+  it('바닥 줄이 누른 날을 따라간다', async () => {
+    const { view } = await 그리기()
+
+    expect(view.getByTestId('calendar-popover-pending')).toHaveTextContent('9월 17일 (목)')
+    await fireEvent.press(view.getByLabelText('2026-09-20'))
+    expect(view.getByTestId('calendar-popover-pending')).toHaveTextContent('9월 20일 (일)')
+  })
+
   it('바깥을 누르면 고른 것을 버리고 닫는다', async () => {
     const { view, onConfirm, onClose } = await 그리기()
 

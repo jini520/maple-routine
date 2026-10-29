@@ -21,10 +21,10 @@ import { formatDayLabel } from '../../lib/calendar'
 import { findMvpGrade, mvpBenefitText } from '../../lib/mvp/grades'
 import { removeGradeEntry, type MvpGradeEntry } from '../../lib/mvp/history'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
-import { GradeChangeSheet, GradeEditSheet, GradeInsertSheet } from '../mvp-grade/MvpGradeSheets'
+import { GradeChangeSheet, GradeEditSheet } from '../mvp-grade/MvpGradeSheets'
 import { GradeTimelineRow } from '../mvp-grade/GradeTimelineRow'
 
-type Sheet = { kind: 'change' } | { kind: 'insert' } | { kind: 'edit'; startDate: string }
+type Sheet = { kind: 'change' } | { kind: 'edit'; startDate: string }
 
 export function SettingsMvpGradeHistoryScreen(props: {
   route?: { params?: { accountId?: string } }
@@ -72,15 +72,9 @@ export function SettingsMvpGradeHistoryScreen(props: {
                   <View testID="mvp-grade-now" className="gap-1.5 rounded-[10px] bg-card-inset px-3 py-2.5">
                     <View className="flex-row items-center justify-between gap-2">
                       <Text className="text-xs text-text-muted">지금 등급</Text>
-                      {current.grade === null ? (
-                        <Text className="text-xs text-text-muted">등급 없음</Text>
-                      ) : (
-                        <MvpPlate grade={current.grade} height={18} />
-                      )}
+                      <MvpPlate grade={current.grade} height={18} />
                     </View>
-                    {current.grade !== null && (
-                      <Text className="self-end text-xs text-text-muted">{mvpBenefitText(current.grade)}</Text>
-                    )}
+                    <Text className="self-end text-xs text-text-muted">{mvpBenefitText(current.grade)}</Text>
                     <Text className="self-end text-11 text-text-muted">{formatDayLabel(current.startDate)}부터</Text>
                   </View>
                 )}
@@ -97,9 +91,6 @@ export function SettingsMvpGradeHistoryScreen(props: {
               <View className="gap-2">
                 <View className="flex-row items-center justify-between px-1">
                   <Text className="text-sm font-semibold text-text">이력 {history.length}건</Text>
-                  <Pressable role="button" onPress={() => setSheet({ kind: 'insert' })} hitSlop={8} className="py-1">
-                    <Text className="text-xs font-bold text-primary-ink">+ 추가</Text>
-                  </Pressable>
                 </View>
                 <Card className="px-5" testID="mvp-grade-timeline">
                   <View className="py-1.5">
@@ -136,9 +127,6 @@ export function SettingsMvpGradeHistoryScreen(props: {
       {sheet?.kind === 'change' && (
         <GradeChangeSheet history={history} todayDateKey={today} onSave={save} onClose={() => setSheet(null)} />
       )}
-      {sheet?.kind === 'insert' && (
-        <GradeInsertSheet history={history} todayDateKey={today} onSave={save} onClose={() => setSheet(null)} />
-      )}
       {sheet?.kind === 'edit' && (
         <GradeEditSheet
           history={history}
@@ -160,7 +148,7 @@ export function SettingsMvpGradeHistoryScreen(props: {
           icon={AlertTriangleIcon}
           tone="error"
           title="등급 기록을 지울까요?"
-          description={`${formatDayLabel(deleting.startDate)}부터의 ${findMvpGrade(deleting.grade)?.name ?? '등급 없음'} 기록을 지워요. 되돌릴 수 없어요.`}
+          description={`${formatDayLabel(deleting.startDate)}부터의 ${findMvpGrade(deleting.grade)?.name ?? ''} 기록을 지워요. 되돌릴 수 없어요.`}
           action={{ label: '그대로 두기', onPress: () => setDeleting(null) }}
           secondaryAction={{
             label: '기록 지우기',

@@ -16,11 +16,10 @@ import { useMvpAskStore } from '../../features/mvp-grade/flow-store'
 import { useMvpOnboardingDraft } from '../../features/mvp-grade/onboarding-draft'
 import { useToastStore } from '../../features/toast/store'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
-import { resetWeekStartOf } from '../../lib/calendar'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { MvpConfirmCard, MvpPickCard, MvpWeeklyOffRow } from './MvpGradeCards'
 
-const START_LABEL = '적용 시작 주'
+const START_LABEL = '적용 시작일'
 
 function Heading(props: { title: string; description: string }): React.JSX.Element {
   return (
@@ -39,7 +38,6 @@ export function MvpGradePickScreen(): React.JSX.Element {
   const grades = useMvpOnboardingDraft((state) => state.grades)
   const starts = useMvpOnboardingDraft((state) => state.starts)
   const today = getCurrentKstDateKey(new Date())
-  const thisWeek = resetWeekStartOf(today)
 
   // 캐릭터 설정이 막 끝났거나 앱을 다시 켰으면 물을 것을 잰다. 물을 ID 가 없으면 온보딩을 끝낸다.
   useEffect(() => {
@@ -53,10 +51,10 @@ export function MvpGradePickScreen(): React.JSX.Element {
 
   const accountIds = accounts.map((account) => account.accountId)
   useEffect(() => {
-    if (accountIds.length > 0) useMvpOnboardingDraft.getState().seed(accountIds, thisWeek, savedWeeklyOff)
+    if (accountIds.length > 0) useMvpOnboardingDraft.getState().seed(accountIds, today, savedWeeklyOff)
     // 같은 ID 들이면 draft 가 다시 안 채운다. 배열 참조가 아니라 ID 로 본다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountIds.join(','), thisWeek, savedWeeklyOff])
+  }, [accountIds.join(','), today, savedWeeklyOff])
 
   const ready = ask !== null && ask.kind !== 'weekly' && accounts.length > 0
 
@@ -86,11 +84,11 @@ export function MvpGradePickScreen(): React.JSX.Element {
                 account={account}
                 grade={grades[account.accountId] ?? 'normal'}
                 onGrade={(grade) => useMvpOnboardingDraft.getState().setGrade(account.accountId, grade)}
-                start={starts[account.accountId] ?? thisWeek}
+                start={starts[account.accountId] ?? today}
                 startLabel={START_LABEL}
-                floorWeek={historyFloorDateKey(today)}
-                thisWeek={thisWeek}
-                onStart={(week) => useMvpOnboardingDraft.getState().setStart(account.accountId, week)}
+                floorDate={historyFloorDateKey(today)}
+                today={today}
+                onStart={(dateKey) => useMvpOnboardingDraft.getState().setStart(account.accountId, dateKey)}
               />
             ))
           )}
@@ -116,7 +114,7 @@ export function MvpGradeConfirmScreen(): React.JSX.Element {
   const starts = useMvpOnboardingDraft((state) => state.starts)
   const weeklyOff = useMvpOnboardingDraft((state) => state.weeklyOff)
   const [busy, setBusy] = useState(false)
-  const thisWeek = resetWeekStartOf(getCurrentKstDateKey(new Date()))
+  const today = getCurrentKstDateKey(new Date())
 
   async function start(): Promise<void> {
     setBusy(true)
@@ -126,7 +124,7 @@ export function MvpGradeConfirmScreen(): React.JSX.Element {
           choices: accounts.map((account) => ({
             accountId: account.accountId,
             grade: grades[account.accountId] ?? 'normal',
-            startWeek: starts[account.accountId] ?? thisWeek,
+            startDate: starts[account.accountId] ?? today,
             changed: true,
           })),
           weeklyOff,
@@ -164,7 +162,7 @@ export function MvpGradeConfirmScreen(): React.JSX.Element {
               key={account.accountId}
               account={account}
               grade={grades[account.accountId] ?? 'normal'}
-              start={starts[account.accountId] ?? thisWeek}
+              start={starts[account.accountId] ?? today}
               startLabel={START_LABEL}
             />
           ))}

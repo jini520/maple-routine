@@ -15,7 +15,6 @@ import { Modal } from '../../components/organisms/Modal/Modal'
 import { historyFloorDateKey } from '../../features/cashbook/range'
 import type { MvpAsk } from '../../features/mvp-grade/ask'
 import type { MvpAskAccount, MvpAskResult } from '../../features/mvp-grade/flow-store'
-import { resetWeekStartOf } from '../../lib/calendar'
 import type { MvpGradeKey } from '../../lib/mvp/grades'
 import { MvpCheckRow, MvpConfirmCard, MvpPickCard, MvpWeeklyOffRow } from './MvpGradeCards'
 
@@ -39,7 +38,7 @@ const COPY = {
     title: '새 메이플 ID의 MVP 등급을 알려주세요',
     description: '방금 등록한 캐릭터가 이 메이플 ID에 있어요. 고르지 않으면 일반으로 계산해요.',
   },
-  weeklyPick: { title: '바뀐 등급을 골라 주세요', description: '바꾼 메이플 ID는 그 등급이 시작된 주를 함께 받아요.' },
+  weeklyPick: { title: '바뀐 등급을 골라 주세요', description: '바꾼 메이플 ID는 그 등급이 시작된 날을 함께 받아요.' },
   confirm: { title: '이 등급이 맞나요?', description: '경매장 수수료와 스타포스 비용을 이 등급으로 계산해요.' },
   weeklyConfirm: { title: '이번 주 MVP 등급이 맞나요?', description: '등급이 바뀌었으면 수정을 눌러 주세요.' },
 } as const
@@ -51,24 +50,24 @@ function initialGradeOf(account: MvpAskAccount): MvpGradeKey {
 export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
   const { ask, accounts } = props
   const weekly = ask.kind === 'weekly'
-  const thisWeek = resetWeekStartOf(props.todayDateKey)
-  const floorWeek = historyFloorDateKey(props.todayDateKey)
+  const today = props.todayDateKey
+  const floorDate = historyFloorDateKey(today)
 
   const [screen, setScreen] = useState<Screen>(weekly ? 'confirm' : 'pick')
   const [grades, setGrades] = useState<Record<string, MvpGradeKey>>(() =>
     Object.fromEntries(accounts.map((account) => [account.accountId, initialGradeOf(account)])),
   )
   const [starts, setStarts] = useState<Record<string, string>>(() =>
-    Object.fromEntries(accounts.map((account) => [account.accountId, thisWeek])),
+    Object.fromEntries(accounts.map((account) => [account.accountId, today])),
   )
   const [weeklyOff, setWeeklyOff] = useState(props.weeklyOff)
   const [bulkApply, setBulkApply] = useState(false)
 
   const gradeOf = (account: MvpAskAccount): MvpGradeKey => grades[account.accountId] ?? initialGradeOf(account)
-  const startOf = (account: MvpAskAccount): string => starts[account.accountId] ?? thisWeek
-  // 주간 확인은 바꾼 ID 만 시작 주를 받는다. 처음 고르는 흐름은 모든 ID 가 새 기록이다.
+  const startOf = (account: MvpAskAccount): string => starts[account.accountId] ?? today
+  // 주간 확인은 바꾼 ID 만 시작일을 받는다. 처음 고르는 흐름은 모든 ID 가 새 기록이다.
   const changedOf = (account: MvpAskAccount): boolean => !weekly || gradeOf(account) !== initialGradeOf(account)
-  const startLabel = weekly ? '바뀐 등급 적용 시작 주' : '적용 시작 주'
+  const startLabel = weekly ? '바뀐 등급 적용 시작일' : '적용 시작일'
 
   const copy =
     screen === 'confirm'
@@ -86,7 +85,7 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
       choices: accounts.map((account) => ({
         accountId: account.accountId,
         grade: gradeOf(account),
-        startWeek: startOf(account),
+        startDate: startOf(account),
         changed: changedOf(account),
       })),
       weeklyOff,
@@ -136,9 +135,9 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
                   onGrade={(grade) => setGrades({ ...grades, [account.accountId]: grade })}
                   start={changedOf(account) ? startOf(account) : null}
                   startLabel={startLabel}
-                  floorWeek={floorWeek}
-                  thisWeek={thisWeek}
-                  onStart={(week) => setStarts({ ...starts, [account.accountId]: week })}
+                  floorDate={floorDate}
+                  today={today}
+                  onStart={(dateKey) => setStarts({ ...starts, [account.accountId]: dateKey })}
                   inModal
                 />
               ) : (
@@ -160,7 +159,7 @@ export function MvpGradeModal(props: MvpGradeModalProps): React.JSX.Element {
               {ask.kind !== 'weekly' && ask.bulk && (
                 <MvpCheckRow
                   label="지난 기록에도 수수료 적용하기"
-                  hint="적용 시작 주부터의 판매 기록에 수수료를 반영해요. 직거래 기록은 나중에 없음으로 고칠 수 있어요."
+                  hint="적용 시작일부터의 판매 기록에 수수료를 반영해요. 직거래 기록은 나중에 없음으로 고칠 수 있어요."
                   checked={bulkApply}
                   onChange={setBulkApply}
                 />
