@@ -65,22 +65,17 @@ export function SettingsMvpGradeScreen(): React.JSX.Element {
               />
             ))}
 
-          <View className="gap-1.5">
-            <Card className={SETTINGS_CARD_CLASS}>
-              <View className={SETTINGS_SWITCH_ROW_CLASS}>
-                <Text className="shrink text-sm text-text">매주 등급 확인</Text>
-                <Switch
-                  on={!weeklyOff}
-                  label="매주 등급 확인"
-                  className="ml-auto"
-                  onToggle={() => void useMvpGradeSettingsStore.getState().setWeeklyCheck(weeklyOff)}
-                />
-              </View>
-            </Card>
-            <Text className="px-2 text-xs text-text-muted">
-              주가 바뀌면 등급이 맞는지 물어요. 끄면 등급은 이 화면에서만 바뀌어요.
-            </Text>
-          </View>
+          <Card className={SETTINGS_CARD_CLASS}>
+            <View className={SETTINGS_SWITCH_ROW_CLASS}>
+              <Text className="shrink text-sm text-text">매주 등급 확인</Text>
+              <Switch
+                on={!weeklyOff}
+                label="매주 등급 확인"
+                className="ml-auto"
+                onToggle={() => void useMvpGradeSettingsStore.getState().setWeeklyCheck(weeklyOff)}
+              />
+            </View>
+          </Card>
         </View>
       </ScreenScroll>
 
