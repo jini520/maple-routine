@@ -43,7 +43,7 @@
 | `components/molecules/NexonLoginButton/` | 넥슨이 준 이미지 한 장으로 만든 로그인 버튼 |
 | `native/browser.ts` | 앱이 여는 웹 주소를 인앱 브라우저로 연다. 못 열면 시스템 브라우저로 넘긴다 |
 | `app/settings/SettingsScreen.tsx` | 더보기 탭 맨 위 넥슨 로그인 버튼 |
-| `app/settings/SettingsAccountDataScreen.tsx` · `app/settings/SignOutConfirm.tsx` | 넥슨 로그아웃 줄과 확인 모달 |
+| `app/settings/SettingsAboutScreen.tsx` · `app/settings/SignOutConfirm.tsx` | 넥슨 로그아웃 줄과 확인 모달 |
 
 ## 저장하는 것
 
@@ -130,7 +130,7 @@
 
 ## 로그아웃과 연결 해제
 
-둘 다 설정의 `계정 및 데이터` 화면에 있다. `넥슨 로그아웃` 은 넥슨 로그인이 있을 때만 보인다.
+둘 다 설정의 `앱 정보 및 계정` 화면의 `계정` 묶음에 있다. `넥슨 로그아웃` 은 넥슨 로그인이 있을 때만 보인다.
 
 | | 확인 모달 | 지우는 것 | 남기는 것 |
 |---|---|---|---|

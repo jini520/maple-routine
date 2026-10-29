@@ -132,8 +132,7 @@ const ROW_LABELS = [
   // 테마 바로 아래(사용자 지정). 둘 다 화면 모양을 바꾸는 행이다.
   '글자 크기',
   '스케줄 관리 방법',
-  '계정 및 데이터',
-  '앱 정보',
+  '앱 정보 및 계정',
 ]
 
 /** 카드마다 달린 제목. 순서가 곧 화면 순서다(사용자 지정). */
@@ -210,7 +209,7 @@ describe('AppSettingsScreen', () => {
     // 구역 제목과 행 이름이 같아 `ROW_LABELS` 로는 못 찾는다. 카드 안에서 본다.
     expect(within(cards[2]).getByText('MVP 등급')).toBeTruthy()
     expect(labelsIn(cards[3])).toEqual(['스케줄 관리 방법'])
-    expect(labelsIn(cards[4])).toEqual(['계정 및 데이터', '앱 정보'])
+    expect(labelsIn(cards[4])).toEqual(['앱 정보 및 계정'])
   })
 
   it('카드 안의 행 사이에 선을 긋지 않는다', async () => {
@@ -264,6 +263,7 @@ describe('AppSettingsScreen', () => {
   it.each([
     ['테마', 'SettingsTheme'],
     ['글자 크기', 'SettingsTextSize'],
+    ['앱 정보 및 계정', 'SettingsAbout'],
   ])('"%s"를 누르면 %s 페이지를 연다', async (label, route) => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
@@ -272,13 +272,13 @@ describe('AppSettingsScreen', () => {
     expect(navigate).toHaveBeenCalledWith(route)
   })
 
-  it('"앱 정보" 우측에 앱 버전을 표시한다', async () => {
+  it('"앱 정보 및 계정" 우측에 앱 버전을 표시한다', async () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
     expect(view.getAllByText(formatAppVersion(packageJson.version)).length).toBeGreaterThan(0)
   })
 
-  it('"앱 정보" 의 버전은 package.json 이 아니라 도는 번들의 버전이다', async () => {
+  it('"앱 정보 및 계정" 의 버전은 package.json 이 아니라 도는 번들의 버전이다', async () => {
     useLiveUpdateStore.setState({ currentVersion: '9.9.9' })
     try {
       const view = await renderOverlay(<AppSettingsScreen />)

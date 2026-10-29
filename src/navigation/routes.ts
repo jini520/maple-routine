@@ -155,7 +155,6 @@ export type RootStackParamList = {
   SettingsFeatureGuide: FeatureGuideParams
   SettingsReleaseNotes: undefined
   SettingsReleaseNoteGuide: FeatureGuideParams
-  SettingsAccountData: undefined
   SettingsAbout: undefined
   /**
    * 아이템 분배 계산기. 유틸리티의 첫 도구다.
@@ -305,12 +304,6 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/settings/release-notes/:guideId',
     screen: 'SettingsFeatureGuideScreen',
     target: { kind: 'push', route: 'SettingsReleaseNoteGuide' },
-    origin: 'web',
-  },
-  {
-    path: '/settings/account-data',
-    screen: 'SettingsAccountDataScreen',
-    target: { kind: 'push', route: 'SettingsAccountData' },
     origin: 'web',
   },
   { path: '/settings/about', screen: 'SettingsAboutScreen', target: { kind: 'push', route: 'SettingsAbout' }, origin: 'web' },
