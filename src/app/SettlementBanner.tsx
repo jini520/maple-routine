@@ -27,7 +27,7 @@ import { ClockIcon, Text, XIcon } from '../components/atoms'
 import { FaqSheet } from '../components/organisms/FaqSheet/FaqSheet'
 import { SETTLEMENT_BANNER_TITLE } from '../features/settlement/banner-text'
 import { SETTLEMENT_FAQ, SETTLEMENT_FAQ_TITLE } from '../features/settlement/faq'
-import { useSettlementStore } from '../features/settlement/store'
+import { useSettlementBanner } from '../features/settlement/query'
 
 /** 16px 아이콘을 권장 타깃 44px 로 되돌린다. 나란히 선 것이 없어 네 면 다 준다. */
 const CLOSE_HIT_SLOP = 14
@@ -37,8 +37,7 @@ export function SettlementBanner(props: {
   /** 둘째 줄. 그 화면에서 결산 중에 무엇이 빠지는지를 말한다(`features/settlement/banner-text`). */
   detail: string
 }): React.JSX.Element | null {
-  const visible = useSettlementStore((state) => state.visible)
-  const dismiss = useSettlementStore((state) => state.dismiss)
+  const { visible, dismiss } = useSettlementBanner()
   const [faqOpen, setFaqOpen] = useState(false)
 
   if (!visible) return null

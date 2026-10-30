@@ -19,9 +19,7 @@
  */
 
 import { TodayLoadingModal } from './TodayLoadingModal'
-import { useCallback } from 'react'
 import { View } from 'react-native'
-import { useFocusEffect } from '@react-navigation/native'
 
 import { queryKeys } from '../../features/query/keys'
 import { useResetBoundaryTick } from '../../features/query/reset-timer'
@@ -31,9 +29,8 @@ import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
 
 import { SETTLEMENT_BANNER_DETAIL_TODAY } from '../../features/settlement/banner-text'
 import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
-import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
-import { useManualCompletionStore } from '../../features/manual-completion/store'
-import { useNoticeBannerStore } from '../../features/notice/banner-store'
+import { usePartyAppointments } from '../../features/party-appointments/query'
+import { refreshNoticeKinds } from '../../features/notice/notice-query'
 import { useDropHistory } from '../../features/boss-profit/drop-history-query'
 import { useBossProfitPeriod } from '../../features/boss-profit/period-query'
 import { useBossProfitRound } from '../../features/boss-profit/round-view'
@@ -69,12 +66,9 @@ export function TodayScreen(): React.JSX.Element {
   const contentStore = useContentSchedulerStore()
   const bossStore = useBossSchedulerStore()
   const { mode } = useTrackingModeStore()
-  const loadNoticeBanner = useNoticeBannerStore((state) => state.load)
-  const refreshNoticeBanner = useNoticeBannerStore((state) => state.refresh)
-  const refreshManualCompletion = useManualCompletionStore((state) => state.refresh)
-  const partyAppointments = usePartyAppointmentsStore((state) => state.appointments)
+  // 파티 약속은 기기에만 있다. 저장이 캐시를 덮어 파티 스케줄 탭에서 고친 것이 위젯 10 에 바로 선다.
+  const { appointments: partyAppointments } = usePartyAppointments()
   const quickLinks = useQuickLinksStore((state) => state.config)
-  const loadPartyAppointments = usePartyAppointmentsStore((state) => state.load)
 
   // 프로필도 캐시에서 온다. 회차나 캐릭터 관리가 `character/basic` 을 받으면 그 자리에서 바뀐다.
   const profilesByOcid = useCharacterProfiles()
@@ -82,6 +76,11 @@ export function TodayScreen(): React.JSX.Element {
 
   // 이 화면은 탭이라 계속 살아 있고 마운트의 자동 조회는 한 번뿐이다. 돌아올 때 만료됐으면 다시 받는다.
   useRefetchStaleOnFocus(queryKeys.scheduleRound())
+  // 직접 완료를 열어 둔 보스. 진입할 때마다 서버에 묻는다. 스케줄러 회차에 안 싣는 것은 이 값이 늦게 와서 늘어나는 것이
+  // 없어서다. 배너가 늦게 설 뿐이다. 보스 수익과 같은 쿼리라 겹친 호출은 하나로 접힌다.
+  useRefetchStaleOnFocus(queryKeys.manualCompletion())
+  // 공지 배너가 세울 앱 공지. 들어올 때마다 서버에 묻는다. 배경에서 도착만 하고 안 탭한 공지는 기기에 없어 이 길로만 선다.
+  useRefetchStaleOnFocus(queryKeys.notices('app'))
 
   // 렌더당 한 번만 만든다. 두 번 부르면 두 시각이 기간 경계를 사이에 두고 갈려 카운트다운과 기간 판정이 서로 다른
   // 기간을 가리킬 수 있다(`BossProfitScreen` 과 같은 규칙).
@@ -98,48 +97,6 @@ export function TodayScreen(): React.JSX.Element {
   // 사실처럼 그리지 않는다. 주가 바뀌면(자정 렌더) 범위가 바뀌어 다른 열쇠를 읽는다.
   const weekRange = statsRanges('weekly', weekKey).current
   const { days: statsDays } = useLedgerDays(weekRange)
-
-  /**
-   * 남은 스케줄의 직접 완료. 포커스마다 스토어에 묻는다.
-   *
-   * 남은 스케줄은 보스 스케줄러 스토어의 `manualCompletedByOcid` 를 본다. 이 화면은 탭이라 계속
-   * 살아 있어서, 보스 수익에서 적고 돌아와도 안 물으면 옛 값이 선다. 스토어가 기록 판을 견줘
-   * 바뀌었을 때만 읽는다(넥슨 없음).
-   */
-  const reloadManualCompleted = bossStore.reloadManualCompleted
-  useFocusEffect(
-    useCallback(() => {
-      void reloadManualCompleted()
-    }, [reloadManualCompleted]),
-  )
-
-  /**
-   * 공지 배너. 포커스마다 기기를 다시 읽는다. 네트워크가 없어 싸다. 서버까지 가는 것은 당김뿐이다.
-   */
-  useFocusEffect(
-    useCallback(() => {
-      void loadNoticeBanner()
-    }, [loadNoticeBanner]),
-  )
-
-  /**
-   * 직접 완료를 열어 둔 보스. 진입할 때마다 서버에 묻는다.
-   *
-   * 스케줄러 갱신 회차에 안 실는 것은 이 값이 늦게 와서 늘어나는 것이 없어서다 - 배너가
-   * 늦게 설 뿐이다. 겹쳐 부르는 회차는 스토어가 하나로 접는다.
-   */
-  useFocusEffect(
-    useCallback(() => {
-      void refreshManualCompletion()
-    }, [refreshManualCompletion]),
-  )
-
-  // 파티 스케줄은 기기에만 있다. 포커스마다 읽어 파티 스케줄 탭에서 고친 것이 위젯 10 에 선다.
-  useFocusEffect(
-    useCallback(() => {
-      void loadPartyAppointments()
-    }, [loadPartyAppointments]),
-  )
 
   // 화면 순서는 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
   const orderedOcids = content.trackedOcids ?? []
@@ -158,7 +115,7 @@ export function TodayScreen(): React.JSX.Element {
     // 추가해도 이 화면만 옛 값에 굳는다.
     manualContentByOcid: contentStore.manualTrackedByOcid,
     manualBossByOcid: bossStore.manualTrackedByOcid,
-    manualCompletedByOcid: bossStore.manualCompletedByOcid,
+    manualCompletedByOcid: boss.manualCompletedByOcid,
     characterIssues: round.characterIssues,
     // 이번 주 행은 주간 보스 + 그 주에 선 월간 보스다. 자르는 일은 기간 스냅샷이 했다. 뷰모델은 다시 자르지 않는다.
     profitRows: week.snapshot?.rows ?? [],
@@ -180,11 +137,7 @@ export function TodayScreen(): React.JSX.Element {
    * 당김 인디케이터를 닫을 수 있다. 회차 · 창 · 오늘 강화가 쓴 기록은 판을 올려 이번 주 수입 · 드롭 위젯이 스스로 바뀐다.
    */
   async function refreshAll(): Promise<void> {
-    await Promise.allSettled([
-      pullRefresh(),
-      // 배경에서 도착만 하고 안 탭한 공지는 기기에 없다. 그것이 첫 화면에 닿는 유일한 길이다.
-      refreshNoticeBanner(),
-    ])
+    await Promise.allSettled([pullRefresh(), refreshNoticeKinds(['app'])])
   }
 
   return (

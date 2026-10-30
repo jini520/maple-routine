@@ -27,9 +27,10 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import type { TabParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { tapFeedback } from '../../native/haptics'
-import { readNoticeCopy } from '../../features/notice/notice-copy'
 import { emptyNoticeText } from '../../features/notice/notice-display'
-import { groupNoticesByKind, refreshNoticeKinds } from '../../features/notice/notice-feed'
+import { refreshNoticeKinds, useNotices } from '../../features/notice/notice-query'
+import { queryKeys } from '../../features/query/keys'
+import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
 import { NOTICE_KINDS, type Notice, type NoticeKind } from '../../types/notice'
 import { NoticeBannerRail } from './NoticeBannerRail'
 import { NoticeBannerSkeleton, NoticeLinesSkeleton } from './NoticeSkeleton'
@@ -72,20 +73,6 @@ const NOTICE_SECTIONS: readonly NoticeSection[] = [
   { label: '공지 사항', kind: 'game', lines: 3 },
   { label: '업데이트', kind: 'update', lines: 2 },
 ]
-
-/**
- * 갈래 하나의 상태. `null` 은 **아직 모른다** 이고 빈 배열은 **받아 봤는데 없다** 다.
- *
- * 둘을 가르지 않으면 받아 보기도 전에 `아직 받은 진행 중인 이벤트가 없습니다` 를 말하게 된다.
- */
-type NoticeState = Record<NoticeKind, Notice[] | null>
-
-function noticeStateOf(pick: (kind: NoticeKind) => Notice[] | null): NoticeState {
-  return Object.fromEntries(NOTICE_KINDS.map((kind) => [kind, pick(kind)])) as NoticeState
-}
-
-/** 첫 프레임. 다섯 갈래가 전부 스켈레톤으로 선다. */
-const UNKNOWN_NOTICES = noticeStateOf(() => null)
 
 /** 갈래 제목 줄. 이름과 그 갈래의 목록 화면을 여는 `전체` 다. */
 function NoticeSectionHeader(props: { label: string; onOpenAll: () => void }): React.JSX.Element {
@@ -163,55 +150,18 @@ export function SettingsScreen(): React.JSX.Element {
   }, [])
 
   const displayedVersion = useRunningAppVersion()
-  const [notices, setNotices] = useState<NoticeState>(UNKNOWN_NOTICES)
-
-  // 받은 갈래 하나를 화면에 반영한다. 진입 조회와 당김이 같은 함수로 들어온다.
-  // 빈 배열이어도 그대로 둔다 - 넥슨이 `지금 게시 중인 글이 없다` 고 답한 것이라 확정이다.
-  const showKind = useCallback((kind: NoticeKind, received: Notice[]): void => {
-    setNotices((current) => ({ ...current, [kind]: received }))
-  }, [])
-
-  // 조회가 끝났다. 아직 모르는 갈래를 없는 것으로 확정한다. 실패한 갈래는 `showKind` 를 안 부르므로
-  // (`refreshNoticeKinds` 의 계약) 이 마무리가 없으면 그 갈래가 영영 스켈레톤으로 남는다.
-  const settleUnknown = useCallback((): void => {
-    setNotices((current) => noticeStateOf((kind) => current[kind] ?? []))
-  }, [])
-
-  // 들어올 때마다 다섯 목록을 다시 받는다. 사본을 먼저 그리고 분류마다 받은 것으로 바꾼다. 실패한 분류는 사본이 선다.
-  // 사본을 다 읽은 뒤에 부른다. 거꾸로면 늦게 끝난 사본 읽기가 방금 받은 목록을 덮는다.
-  useFocusEffect(
-    useCallback(() => {
-      let alive = true
-      void readNoticeCopy()
-        .then((copy) => {
-          // 사본에 글이 있는 갈래만 그린다. 빈 갈래를 `[]` 로 내리면 아직 도는 조회를 두고
-          // `없습니다` 를 말한다.
-          const grouped = groupNoticesByKind(copy)
-          if (alive) setNotices(noticeStateOf((kind) => (grouped[kind].length > 0 ? grouped[kind] : null)))
-        })
-        .catch(() => undefined)
-        .then(() => {
-          // 진입은 실패해도 조용하다. 사용자가 부탁한 조회가 아니라 탭을 열었을 뿐이다.
-          void refreshNoticeKinds(NOTICE_KINDS, (kind, received) => {
-            if (alive) showKind(kind, received)
-          }).then(() => {
-            if (alive) settleUnknown()
-          })
-        })
-      return () => {
-        alive = false
-      }
-    }, [showKind, settleUnknown]),
-  )
+  // 다섯 갈래의 목록은 쿼리 캐시에서 온다. 저장된 목록이 먼저 서고, 들어올 때마다 다시 받는다. 실패한 갈래는 든 값이 선다.
+  // 앱 복귀에도 받는다. 전에는 포커스 사건이 없어 더보기를 연 채 돌아오면 새 글이 안 섰다.
+  const notices = useNotices(NOTICE_KINDS)
+  useRefetchStaleOnFocus(queryKeys.allNotices())
 
   // 당김은 사용자가 요청한 조회라 아무 일도 안 일어나면 고장으로 읽힌다. 그래서 전부 실패했을 때만
   // 말한다 - 키가 없으면 넥슨 네 갈래가 언제나 실패라, 일부 실패에도 말하면 앱 공지를 제대로
   // 받고도 매번 토스트가 뜬다.
   const refresh = useCallback(async (): Promise<void> => {
-    const { allFailed } = await refreshNoticeKinds(NOTICE_KINDS, showKind)
-    settleUnknown()
+    const { allFailed } = await refreshNoticeKinds(NOTICE_KINDS)
     if (allFailed) useToastStore.getState().showError('소식을 불러오지 못했습니다')
-  }, [showKind, settleUnknown])
+  }, [])
 
   // 로그인이 붙어 있으면 버튼을 안 세운다. **모르는 동안에도 안 세운다** - 세웠다 지우면
   // 소식이 한 칸 튀어오른다.

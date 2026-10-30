@@ -38,6 +38,7 @@ jest.mock('../character-selection/store', () => ({
 }))
 jest.mock('../schedule-sync/schedule-query', () => ({ prefetchSchedules: mockTrack('schedule') }))
 jest.mock('../boss-profit/period-query', () => ({ prefetchCurrentWeekProfit: mockTrack('profit') }))
+jest.mock('../../storage/legacy-notice-copy', () => ({ removeLegacyNoticeCopy: mockTrack('legacy') }))
 
 const loadSchedule = mockTrack('schedule')
 const loadProfit = mockTrack('profit')
@@ -49,7 +50,7 @@ describe('prehydrateTabStores', () => {
     jest.clearAllMocks()
   })
 
-  it('저장된 캐시가 올라온 뒤에 선택 · 스케줄 회차 · 보스 수익의 이번 주를 순차로 예열한다', async () => {
+  it('저장된 캐시가 올라온 뒤에 선택 · 스케줄 회차 · 보스 수익의 이번 주를 순차로 예열하고 옛 공지 사본을 지운다', async () => {
     const run = prehydrateTabStores()
     await Promise.resolve()
     expect(calls).toEqual([])
@@ -64,6 +65,8 @@ describe('prehydrateTabStores', () => {
       'schedule:end',
       'profit:start',
       'profit:end',
+      'legacy:start',
+      'legacy:end',
     ])
   })
 

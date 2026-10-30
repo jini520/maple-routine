@@ -26,12 +26,28 @@ jest.mock('@gorhom/bottom-sheet', () => {
 // 보스 추가 단계의 캐릭터는 쿼리 캐시에서 온다. 이 하네스에는 쿼리 클라이언트가 없고, 여기서 보는 것은
 // 시트의 칸이라 추적 캐릭터가 없는 상태로 둔다.
 jest.mock('../../../features/boss-scheduler/use-boss-schedule', () => ({
-  useBossSchedule: () => ({ status: 'idle', characters: [], error: null, trackedOcids: null, refresh: jest.fn() }),
+  useBossSchedule: () => ({
+    status: 'idle',
+    characters: [],
+    error: null,
+    trackedOcids: null,
+    manualCompletedByOcid: {},
+    refresh: jest.fn(),
+  }),
+}))
+
+// 약속 목록은 쿼리 캐시에서 온다. 이 하네스에는 쿼리 클라이언트가 없어 훅과 저장을 세운다. 저장이 넘긴 값이 곧 다음
+// 렌더의 목록이다.
+let mockAppointments: PartyAppointment[] = []
+jest.mock('../../../features/party-appointments/query', () => ({
+  usePartyAppointments: () => ({ appointments: mockAppointments, loaded: true }),
+  savePartyAppointments: jest.fn(async (next: PartyAppointment[]) => {
+    mockAppointments = next
+  }),
 }))
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { usePartyAlarmSettingsStore } from '../../../features/party-appointments/alarm-settings'
-import { usePartyAppointmentsStore } from '../../../features/party-appointments/store'
 import { __resetNativePortsForTest, setNotificationsPort } from '../../../native/ports'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
@@ -167,7 +183,7 @@ describe('알림 체크 상자를 켤 때', () => {
       getInitialPress: async () => null,
     })
     await setNotificationPermissionAsked()
-    usePartyAppointmentsStore.setState({ appointments: [] })
+    mockAppointments = []
     usePartyAlarmSettingsStore.setState({ enabled: true, loaded: true })
   })
 
@@ -234,7 +250,7 @@ describe('알림 체크 상자를 켤 때', () => {
     }
 
     async function 수정으로(appointment: PartyAppointment) {
-      usePartyAppointmentsStore.setState({ appointments: [appointment] })
+      mockAppointments = [appointment]
       const [occurrence] = occurrencesInWeek([appointment], '2099-01-01')
       const onClose = jest.fn()
       const view = await 그리기({ target: { occurrence: occurrence!, weekStart: '2099-01-01' }, onClose })
@@ -263,7 +279,7 @@ describe('알림 체크 상자를 켤 때', () => {
         fireEvent.press(view.getByText('알림 없이 저장'))
       })
       expect(onClose).toHaveBeenCalled()
-      expect(usePartyAppointmentsStore.getState().appointments[0]!.leadMinutes).toBeNull()
+      expect(mockAppointments[0]!.leadMinutes).toBeNull()
     })
 
     it('스위치가 꺼져 있으면 알림 켜기가 스위치를 켜고 알림을 단 채 저장한다', async () => {
@@ -279,7 +295,7 @@ describe('알림 체크 상자를 켤 때', () => {
       })
       expect(usePartyAlarmSettingsStore.getState().enabled).toBe(true)
       expect(onClose).toHaveBeenCalled()
-      expect(usePartyAppointmentsStore.getState().appointments[0]!.leadMinutes).toBe(10)
+      expect(mockAppointments[0]!.leadMinutes).toBe(10)
     })
 
     it('걸리는 것이 없으면 그대로 저장한다', async () => {

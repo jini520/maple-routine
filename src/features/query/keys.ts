@@ -23,4 +23,18 @@ export const queryKeys = {
   dropHistory: () => ['drop-history'] as const,
   /** 오늘 강화 내역을 마지막으로 받은 시각. 수집기가 `setQueryData` 로 넣는다. */
   enhancementToday: () => ['enhancement-today'] as const,
+  /** 자격 하나로 조회되는 전 계정의 캐릭터 목록. 자격이 바뀌면 열쇠가 바뀐다. */
+  characterList: (credentialKey: string) => ['character-list', credentialKey] as const,
+  /** 분류 하나의 공지 목록. */
+  notices: (kind: string) => ['notices', kind] as const,
+  /** 다섯 분류를 한꺼번에 가리키는 앞 칸. 포커스에 만료된 분류를 다 받는다. */
+  allNotices: () => ['notices'] as const,
+  /** 결산 중인지와 시작 시각. */
+  settlement: () => ['settlement'] as const,
+  /** 직접 완료를 연 보스. */
+  manualCompletion: () => ['manual-completion'] as const,
+  /** 추적 캐릭터가 직접 적은 완료. 이번 주 · 이번 달 기간 키가 열쇠다. */
+  manualCompleted: (weeklyKey: string, monthlyKey: string) => ['manual-completed', weeklyKey, monthlyKey] as const,
+  /** 파티 약속 목록(Preferences). 저장이 `setQueryData` 로 덮는다. */
+  partyAppointments: () => ['party-appointments'] as const,
 }

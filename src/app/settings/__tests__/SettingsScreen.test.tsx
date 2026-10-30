@@ -28,8 +28,9 @@ import { resolveCardInset } from '../../../theme/theme-vars'
 import { topLinesIn } from './row-lines'
 import { SettingsScreen } from '../SettingsScreen'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
-import { refreshNoticeKinds } from '../../../features/notice/notice-feed'
-import { readNoticeCopy } from '../../../features/notice/notice-copy'
+import { refreshNoticeKinds, useNotices, type NoticesByKind } from '../../../features/notice/notice-query'
+import { queryKeys } from '../../../features/query/keys'
+import { useRefetchStaleOnFocus } from '../../../hooks/useRefetchStaleOnFocus'
 import { hasNexonLogin } from '../../../features/auth/saved-key'
 import type { Notice, NoticeKind } from '../../../types/notice'
 
@@ -42,12 +43,14 @@ const mockLoadBossTracked = jest.fn()
 jest.mock('../../../features/theme/store', () => ({ useThemeStore: jest.fn() }))
 jest.mock('../../../features/tracking-mode/store', () => ({ useTrackingModeStore: jest.fn() }))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
-// 소식은 사본을 먼저 그리고 분류마다 받은 것으로 바꾼다. 분류를 나누는 함수는 실물이다.
-jest.mock('../../../features/notice/notice-copy', () => ({
+// 소식은 쿼리 캐시에 든 목록을 그린다. 쿼리가 받고 실패에 든 값을 지키는 것은 `notice-query.spec` 이 본다.
+jest.mock('../../../features/notice/notice-query', () => ({
   __esModule: true,
-  ...jest.requireActual('../../../features/notice/notice-copy'),
-  readNoticeCopy: jest.fn(),
+  useNotices: jest.fn(),
+  refreshNoticeKinds: jest.fn(),
 }))
+// 들어올 때 만료된 쿼리를 받는 훅. 쿼리 클라이언트 없이 그리므로 어느 열쇠로 불렸는지만 본다.
+jest.mock('../../../hooks/useRefetchStaleOnFocus', () => ({ useRefetchStaleOnFocus: jest.fn() }))
 // 넥슨 로그인 버튼이 이 화면 맨 위에 선다. 화면은 `features/` 를 거치고 저장소·브라우저 세션은
 // 그 아래가 맡는다(CLAUDE.md CRITICAL).
 jest.mock('../../../features/auth/saved-key', () => ({ hasNexonLogin: jest.fn() }))
@@ -62,12 +65,6 @@ jest.mock('../../../features/auth/store', () => {
   const signInWithNexonAccount = jest.fn()
   return { useAuthStore: (selector: (s: unknown) => unknown) => selector({ signInWithNexonAccount }) }
 })
-jest.mock('../../../features/notice/notice-feed', () => ({
-  __esModule: true,
-  ...jest.requireActual('../../../features/notice/notice-feed'),
-  refreshNoticeKinds: jest.fn(),
-}))
-
 // 저장은 컨텐츠 스케줄러 스토어의 액션을 그대로 부른다(세 번째 사본 금지).
 // 훅으로도(배지·저장) `getState` 로도 만지므로 둘 다 세운다.
 jest.mock('../../../features/content-scheduler/store', () => {
@@ -181,21 +178,17 @@ const mockedSignInWithNexon = (
     useAuthStore: (s: (v: { signInWithNexonAccount: jest.Mock }) => unknown) => unknown
   }
 ).useAuthStore((state) => state.signInWithNexonAccount) as jest.Mock
-const mockedReadNoticeCopy = jest.mocked(readNoticeCopy)
+const mockedUseNotices = jest.mocked(useNotices)
 const mockedRefreshKinds = jest.mocked(refreshNoticeKinds)
 
-/**
- * 갈래마다 받을 것을 정해 둔다. 빠진 갈래와 `null` 은 실패라 화면에 안 알린다
- * (사본이 그대로 서야 한다).
- */
-function serveNotices(byKind: Partial<Record<NoticeKind, Notice[] | null>>): void {
-  mockedRefreshKinds.mockImplementation(async (kinds, onReceived) => {
-    for (const kind of kinds) {
-      const received = byKind[kind] ?? null
-      if (received !== null) onReceived(kind, received)
-    }
-    return { allFailed: kinds.every((kind) => (byKind[kind] ?? null) === null) }
-  })
+/** 쿼리 캐시에 든 목록. 적지 않은 갈래는 `missing` 이다. `null` 은 아직 모른다, 빈 배열은 받아 봤는데 없다. */
+function cacheNotices(byKind: Partial<Record<NoticeKind, Notice[] | null>>, missing: Notice[] | null = []): void {
+  mockedUseNotices.mockImplementation(
+    (kinds) =>
+      Object.fromEntries(
+        kinds.map((kind) => [kind, kind in byKind ? (byKind[kind] as Notice[] | null) : missing]),
+      ) as NoticesByKind,
+  )
 }
 
 function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>> = {}): void {
@@ -248,9 +241,9 @@ beforeEach(() => {
   mockedRoster.mockReturnValue(new Promise(() => {}))
   mockLoadContentTracked.mockResolvedValue(undefined)
   mockLoadBossTracked.mockResolvedValue(undefined)
-  mockedReadNoticeCopy.mockResolvedValue([])
-  // 기본은 "영원히 받는 중". 받은 결과가 필요한 케이스만 따로 세운다.
-  mockedRefreshKinds.mockReturnValue(new Promise(() => {}))
+  // 기본은 "아직 모른다". 받은 결과가 필요한 케이스만 따로 세운다.
+  cacheNotices({}, null)
+  mockedRefreshKinds.mockResolvedValue({ allFailed: false })
   // 기본은 "로그인이 아직 없다". 버튼이 서는 쪽이 통상 경로다.
   mockedHasNexonLogin.mockResolvedValue(false)
   mockedSignInWithNexon.mockResolvedValue(true)
@@ -449,120 +442,80 @@ describe('SettingsScreen: 소식 갈래', () => {
 
   // 갈래를 숨기면 화면 순서가 바뀐다.
   it('받아 보고 없으면 그때 빈 문구로 바뀐다', async () => {
-    serveNotices({ app: [], event: [], cashshop: [], game: [], update: [] })
+    cacheNotices({})
 
     const view = await renderOverlay(<SettingsScreen />)
 
-    await waitFor(() => expect(view.getByText('아직 받은 NOTICE가 없습니다')).toBeTruthy())
+    expect(view.getByText('아직 받은 NOTICE가 없습니다')).toBeTruthy()
     expect(view.getByText('아직 받은 진행 중인 이벤트가 없습니다')).toBeTruthy()
     expect(view.getByText('아직 받은 업데이트가 없습니다')).toBeTruthy()
     expect(view.getByText('아직 받은 캐시샵 업데이트가 없습니다')).toBeTruthy()
     expect(view.queryAllByTestId('notice-lines-skeleton', HIDDEN)).toHaveLength(0)
   })
 
-  // 실패한 갈래는 `onReceived` 를 안 부른다. 그 마무리가 없으면 영영 스켈레톤으로 남는다.
-  it('전부 실패해도 스켈레톤은 안 남는다', async () => {
-    serveNotices({})
+  // 보여줄 것이 있으면 기다리게 하지 않는다. 캐시가 빈 갈래만 스켈레톤으로 남는다.
+  it('캐시에 글이 있는 갈래는 스켈레톤을 건너뛴다', async () => {
+    cacheNotices({ app: [notice('app-1', 'app')] }, null)
 
     const view = await renderOverlay(<SettingsScreen />)
 
-    await waitFor(() => expect(view.getByText('아직 받은 NOTICE가 없습니다')).toBeTruthy())
-    expect(view.queryAllByTestId('notice-banner-skeleton', HIDDEN)).toHaveLength(0)
-  })
-
-  // 보여줄 것이 있으면 기다리게 하지 않는다. 사본이 빈 갈래만 스켈레톤으로 남는다.
-  it('사본에 글이 있는 갈래는 스켈레톤을 건너뛴다', async () => {
-    mockedReadNoticeCopy.mockResolvedValue([notice('app-1', 'app')])
-
-    const view = await renderOverlay(<SettingsScreen />)
-
-    await waitFor(() => expect(view.getByText('제목 app-1')).toBeTruthy())
-    // NOTICE 는 사본이 섰고 나머지 글 갈래 둘만 스켈레톤이다.
+    expect(view.getByText('제목 app-1')).toBeTruthy()
+    // NOTICE 는 캐시가 섰고 나머지 글 갈래 둘만 스켈레톤이다.
     expect(view.getAllByTestId('notice-lines-skeleton', HIDDEN)).toHaveLength(2)
   })
 
-  it('들어오면 다섯 분류를 모두 받는다', async () => {
+  // 들어올 때마다 만료된 쿼리를 받는다. 다섯 갈래를 다 보므로 열쇠는 공지 전체다.
+  it('들어오면 다섯 분류를 보고 만료된 공지 쿼리를 다시 받는다', async () => {
     await renderOverlay(<SettingsScreen />)
 
-    await waitFor(() => expect(mockedRefreshKinds).toHaveBeenCalledTimes(1))
-    expect([...mockedRefreshKinds.mock.calls[0][0]].sort()).toEqual(['app', 'cashshop', 'event', 'game', 'update'])
+    expect([...mockedUseNotices.mock.calls[0][0]].sort()).toEqual(['app', 'cashshop', 'event', 'game', 'update'])
+    expect(useRefetchStaleOnFocus).toHaveBeenCalledWith(queryKeys.allNotices())
   })
 
   it('글 갈래는 최근 글을 앱 공지 3 · 게임 공지 3 · 업데이트 2 줄만 보인다', async () => {
-    mockedReadNoticeCopy.mockResolvedValue([
-      ...[1, 2, 3, 4].map((n) => notice(`app-${n}`, 'app')),
-      ...[1, 2, 3, 4].map((n) => notice(`game-${n}`, 'game')),
-      ...[1, 2, 3].map((n) => notice(`update-${n}`, 'update')),
-    ])
+    cacheNotices({
+      app: [1, 2, 3, 4].map((n) => notice(`app-${n}`, 'app')),
+      game: [1, 2, 3, 4].map((n) => notice(`game-${n}`, 'game')),
+      update: [1, 2, 3].map((n) => notice(`update-${n}`, 'update')),
+    })
 
     const view = await renderOverlay(<SettingsScreen />)
 
-    await waitFor(() => expect(view.getAllByTestId('notice-row')).toHaveLength(8))
+    expect(view.getAllByTestId('notice-row')).toHaveLength(8)
     expect(view.queryByText('제목 app-4')).toBeNull()
     expect(view.queryByText('제목 update-3')).toBeNull()
   })
 
   it('글 줄과 읽는 행은 card-inset 칸이고 그 사이에 선을 긋지 않는다', async () => {
-    mockedReadNoticeCopy.mockResolvedValue([1, 2, 3].map((n) => notice(`app-${n}`, 'app')))
+    cacheNotices({ app: [1, 2, 3].map((n) => notice(`app-${n}`, 'app')) })
 
     const view = await renderOverlay(<SettingsScreen />)
 
-    await waitFor(() => expect(view.getAllByTestId('notice-row')).toHaveLength(3))
+    expect(view.getAllByTestId('notice-row')).toHaveLength(3)
     for (const row of view.getAllByTestId('notice-row')) {
       expect(flattenStyle(row.props.style).backgroundColor).toBe(resolveCardInset(기본테마))
     }
     expect(topLinesIn(view.toJSON())).toBe(0)
   })
 
-  // 사본이 먼저 서고, 받은 분류만 받은 것으로 바뀐다.
-  it('사본을 먼저 그리고 받은 목록으로 바꾼다', async () => {
-    mockedReadNoticeCopy.mockResolvedValue([notice('game-old', 'game')])
-    let resolveGame: (value: Notice[]) => void = () => {}
-    mockedRefreshKinds.mockImplementation(async (_kinds, onReceived) => {
-      onReceived('game', await new Promise<Notice[]>((resolve) => (resolveGame = resolve)))
-      return { allFailed: false }
-    })
-
-    const view = await renderOverlay(<SettingsScreen />)
-    await waitFor(() => expect(view.getByText('제목 game-old')).toBeTruthy())
-
-    await act(async () => {
-      resolveGame([notice('game-new', 'game')])
-    })
-
-    expect(view.getByText('제목 game-new')).toBeTruthy()
-    expect(view.queryByText('제목 game-old')).toBeNull()
-  })
-
-  it('실패한 분류는 사본이 그대로 선다', async () => {
-    mockedReadNoticeCopy.mockResolvedValue([notice('update-1', 'update')])
-    serveNotices({})
-
-    const view = await renderOverlay(<SettingsScreen />)
-
-    await waitFor(() => expect(mockedRefreshKinds).toHaveBeenCalledTimes(1))
-    expect(view.getByText('제목 update-1')).toBeTruthy()
-  })
-
   it('이벤트 · 캐시샵은 배너 줄이고 누르면 상세를 연다', async () => {
-    mockedReadNoticeCopy.mockResolvedValue([
-      notice('event-1', 'event', { thumbnailUrl: 'https://file.nexon.com/1' }),
-      notice('cashshop-1', 'cashshop', { thumbnailUrl: 'https://file.nexon.com/2' }),
-    ])
+    cacheNotices({
+      event: [notice('event-1', 'event', { thumbnailUrl: 'https://file.nexon.com/1' })],
+      cashshop: [notice('cashshop-1', 'cashshop', { thumbnailUrl: 'https://file.nexon.com/2' })],
+    })
 
     const view = await renderOverlay(<SettingsScreen />)
 
-    await waitFor(() => expect(view.getAllByTestId('notice-banner-slide')).toHaveLength(2))
+    expect(view.getAllByTestId('notice-banner-slide')).toHaveLength(2)
     await press(view.getByLabelText('제목 event-1'))
     expect(navigate).toHaveBeenCalledWith('SettingsNoticeDetail', { noticeId: 'event-1' })
   })
 
   it('글 줄을 누르면 상세를 연다', async () => {
-    mockedReadNoticeCopy.mockResolvedValue([notice('notice-20260915-1', 'app')])
+    cacheNotices({ app: [notice('notice-20260915-1', 'app')] })
 
     const view = await renderOverlay(<SettingsScreen />)
 
-    await waitFor(() => expect(view.getByLabelText('제목 notice-20260915-1')).toBeTruthy())
     await press(view.getByLabelText('제목 notice-20260915-1'))
     expect(navigate).toHaveBeenCalledWith('SettingsNoticeDetail', { noticeId: 'notice-20260915-1' })
   })
@@ -580,36 +533,20 @@ describe('SettingsScreen: 당겨서 새로고침', () => {
     })
   }
 
-  async function 진입을마친화면(): Promise<Rendered> {
+  // 들어올 때의 재조회는 만료된 것만 받는 훅이 한다. 당김만이 신선해도 다시 받는 조회다.
+  it('당기면 다섯 갈래를 신선해도 다시 받는다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
-    await waitFor(() => expect(mockedRefreshKinds).toHaveBeenCalledTimes(1))
-    return view
-  }
-
-  it('당기면 다섯 갈래를 다시 받는다', async () => {
-    serveNotices({ app: [notice('app-1', 'app')] })
-    const view = await 진입을마친화면()
 
     await pull(view)
 
-    expect(mockedRefreshKinds).toHaveBeenCalledTimes(2)
-    expect([...mockedRefreshKinds.mock.calls[1][0]].sort()).toEqual(['app', 'cashshop', 'event', 'game', 'update'])
-  })
-
-  it('당겨서 받은 것을 그린다', async () => {
-    serveNotices({})
-    const view = await 진입을마친화면()
-    serveNotices({ game: [notice('game-new', 'game')] })
-
-    await pull(view)
-
-    expect(view.getByText('제목 game-new')).toBeTruthy()
+    expect(mockedRefreshKinds).toHaveBeenCalledTimes(1)
+    expect([...mockedRefreshKinds.mock.calls[0][0]].sort()).toEqual(['app', 'cashshop', 'event', 'game', 'update'])
   })
 
   // 당김은 사용자가 명시적으로 요청한 행동이다. 아무 일도 안 일어나면 고장으로 읽힌다.
   it('전부 실패하면 토스트로 말한다', async () => {
-    serveNotices({})
-    const view = await 진입을마친화면()
+    mockedRefreshKinds.mockResolvedValue({ allFailed: true })
+    const view = await renderOverlay(<SettingsScreen />)
 
     await pull(view)
 
@@ -618,19 +555,9 @@ describe('SettingsScreen: 당겨서 새로고침', () => {
 
   // 키가 없으면 넥슨 네 갈래가 언제나 실패다. 그때마다 말하면 앱 공지를 제대로 받고도 토스트가 뜬다.
   it('하나라도 성공하면 조용하다', async () => {
-    serveNotices({ app: [notice('app-1', 'app')] })
-    const view = await 진입을마친화면()
+    const view = await renderOverlay(<SettingsScreen />)
 
     await pull(view)
-
-    expect(useToastStore.getState().toasts).toEqual([])
-  })
-
-  // 진입 조회는 사용자가 부탁한 적이 없다. 실패를 말하는 것은 당김뿐이다.
-  it('진입 조회가 전부 실패해도 토스트는 없다', async () => {
-    serveNotices({})
-
-    await 진입을마친화면()
 
     expect(useToastStore.getState().toasts).toEqual([])
   })

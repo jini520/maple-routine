@@ -32,12 +32,14 @@ jest.mock('../../../features/manual-completion/record', () => ({
   ...jest.requireActual('../../../features/manual-completion/record'),
   loadConfiguredPartySize: jest.fn(),
 }))
+// 서버가 연 보스는 쿼리 훅이 낸다. 이 하네스에는 쿼리 클라이언트가 없어 훅을 세운다.
+jest.mock('../../../features/manual-completion/query', () => ({ useManualCompletionBosses: jest.fn() }))
 
 import { act, fireEvent } from '@testing-library/react-native'
 import type { render } from '@testing-library/react-native'
 
 import { useBossProfitStore } from '../../../features/boss-profit/store'
-import { useManualCompletionStore } from '../../../features/manual-completion/store'
+import { useManualCompletionBosses } from '../../../features/manual-completion/query'
 import { BossProfitBossRow } from '../BossProfitBossRow'
 import { loadConfiguredPartySize } from '../../../features/manual-completion/record'
 import { 보스행, 컨텍스트값, renderProfit, 주간보스, 주간보스이름, PERIOD, NOW } from './harness'
@@ -47,11 +49,7 @@ const cancelManualCompletion = jest.fn().mockResolvedValue(undefined)
 
 /** 그 보스가 이번 주부터 열려 있다. `PERIOD` 는 하네스가 고정한 이번 주다. */
 function 서버가열었다(): void {
-  useManualCompletionStore.setState({
-    bosses: [{ boss: 주간보스, from: PERIOD }],
-    dismissedWeek: null,
-    visible: true,
-  })
+  jest.mocked(useManualCompletionBosses).mockReturnValue([{ boss: 주간보스, from: PERIOD }])
 }
 
 // 자쿰은 카오스 하나뿐이다. 가격이 없는 난이도로 두면 저장 단추가 꺼져 시트를 못 본다.
@@ -64,7 +62,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   // 파티 관리에 설정이 없는 것이 기본이다. 그때 시트는 1 인으로 연다.
   mockedPartySize.mockResolvedValue(null)
-  useManualCompletionStore.setState({ bosses: null, dismissedWeek: null, visible: false })
+  jest.mocked(useManualCompletionBosses).mockReturnValue(null)
   // 행이 쓰기는 스토어에서, 조회 불가 표식은 컨텍스트에서 읽는다.
   useBossProfitStore.setState({ saveManualCompletion, cancelManualCompletion })
 })

@@ -33,7 +33,7 @@ import { ItemRevenueTrigger } from './ItemRevenueTrigger'
 import { useBossProfitContext } from './boss-profit-context'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { useBossProfitStore } from '../../features/boss-profit/store'
-import { useManualCompletionStore } from '../../features/manual-completion/store'
+import { useManualCompletionBosses } from '../../features/manual-completion/query'
 import { isManualCompletionOpen } from '../../lib/boss/manual-completion'
 import { getCurrentBossProfitPeriod, periodStartDateKey } from '../../lib/boss/boss-profit-period'
 import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
@@ -108,7 +108,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   // 직접 완료 시트. `null` 이면 안 열려 있고, 그 밖의 값이 여는 까닭이다.
   const [manualSheet, setManualSheet] = useState<'create' | 'edit' | null>(null)
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false)
-  const openedBosses = useManualCompletionStore((state) => state.bosses)
+  const openedBosses = useManualCompletionBosses()
   const saveManualCompletion = useBossProfitStore((state) => state.saveManualCompletion)
   const cancelManualCompletion = useBossProfitStore((state) => state.cancelManualCompletion)
   const characterIssue = characterIssues[row.ocid]

@@ -27,6 +27,7 @@ const TABLE_SUBSCRIBERS: Record<RecordTable, (listener: () => void) => () => voi
 /** 기대는 쿼리의 이름 → 그 쿼리의 열쇠. 열쇠 전체가 같을 때만 그 쿼리가 바뀐 것으로 본다. */
 const DEPENDENCY_KEYS: Record<QueryDependency, readonly unknown[]> = {
   'schedule-round': queryKeys.scheduleRound(),
+  'tracked-ocids': queryKeys.trackedOcids(),
 }
 
 function sameKey(left: readonly unknown[], right: readonly unknown[]): boolean {

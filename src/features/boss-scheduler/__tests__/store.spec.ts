@@ -1,8 +1,7 @@
 /**
- * 보스 스케줄러 스토어. 넥슨에서 받은 값은 쿼리 캐시가 들고, 여기는 기기 값(파티 인원 · 수동 추적 · 직접 완료)과
- * 필터만 든다. 추적 목록은 쿼리 캐시의 `trackedOcids` 열쇠로 준다.
- *
- * 시계를 고정한다. 직접 완료의 기간 열쇠(이번 주 목요일 · 이번 달 1일)가 지금 시각에서 나오기 때문이다.
+ * 보스 스케줄러 스토어. 넥슨에서 받은 값은 쿼리 캐시가 들고, 여기는 기기 값(파티 인원 · 수동 추적)과 필터만 든다.
+ * 직접 적은 완료는 `manual-completed-query.ts` 의 쿼리라 그쪽 스펙이 본다. 추적 목록은 쿼리 캐시의 `trackedOcids`
+ * 열쇠로 준다.
  */
 import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
 import { queryClient } from '../../query/client'
@@ -21,13 +20,6 @@ jest.mock('../../../storage/manual-tracked-content', () => ({
 }))
 const { getManualTrackedContent: getManualTrackedContentMock, setManualTrackedContent: setManualTrackedContentMock } =
   jest.requireMock('../../../storage/manual-tracked-content') as Record<string, jest.Mock>
-
-jest.mock('../../../storage/boss-profit', () => ({
-  getBossProfitRecordsRevision: jest.fn(),
-  getManualBossProfitRecordKeys: jest.fn(),
-}))
-const { getBossProfitRecordsRevision: revisionMock, getManualBossProfitRecordKeys: recordKeysMock } =
-  jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 
 jest.mock('../../toast/store', () => {
   const showSuccess = jest.fn()
@@ -48,11 +40,6 @@ jest.mock('../../tracking-mode/store', () => ({
 }))
 
 import { useBossSchedulerStore } from '../store'
-
-/** 2026-10-30 금요일 14:00 KST. 이번 주는 10-29(목) 부터이고 이번 달은 2026-10 이다. */
-const NOW = new Date('2026-10-30T05:00:00.000Z')
-const THIS_WEEK = '2026-10-29'
-const THIS_MONTH = '2026-10'
 
 /** 비율을 안 쓰는 파티. 인원만 고치는 테스트가 넘긴다. */
 const EVEN_SHARE_COLUMNS = {
@@ -81,20 +68,12 @@ function trackedBosses(bossNames: string[]): ManualTrackedItem[] {
   return bossNames.map((bossKey) => ({ kind: 'boss' as const, bossKey, difficulty: 'normal' as const }))
 }
 
-function recordKey(ocid: string, bossKey: string, difficulty: string, periodKey: string) {
-  return { ocid, bossKey, difficulty, periodKey }
-}
-
 beforeEach(() => {
-  jest.useFakeTimers()
-  jest.setSystemTime(NOW)
   queryClient.clear()
   useBossSchedulerStore.setState({
     partySizes: {},
     partyShares: {},
     manualTrackedByOcid: {},
-    manualCompletedByOcid: {},
-    manualCompletedStamp: null,
     partyFilter: 'all',
   })
   mockTrackingMode.mode = 'auto'
@@ -102,43 +81,10 @@ beforeEach(() => {
   setBossPartySettingMock.mockReset().mockResolvedValue(undefined)
   getManualTrackedContentMock.mockReset().mockResolvedValue([])
   setManualTrackedContentMock.mockReset().mockResolvedValue(undefined)
-  revisionMock.mockReset().mockReturnValue(0)
-  recordKeysMock.mockReset().mockResolvedValue([])
   showSuccessMock.mockClear()
 })
 
-afterEach(() => {
-  jest.useRealTimers()
-})
-
 describe('loadLocal', () => {
-  it('이번 주 · 이번 달의 직접 완료를 캐릭터별 `bossKey|difficulty` 로 든다', async () => {
-    recordKeysMock.mockResolvedValue([
-      recordKey('ocid-1', 'lotus', 'hard', THIS_WEEK),
-      recordKey('ocid-1', 'black_mage', 'extreme', THIS_MONTH),
-      recordKey('ocid-2', 'zakum', 'chaos', THIS_WEEK),
-    ])
-
-    await useBossSchedulerStore.getState().loadLocal(['ocid-1', 'ocid-2'])
-
-    expect(recordKeysMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], [THIS_WEEK, THIS_MONTH])
-    expect(useBossSchedulerStore.getState().manualCompletedByOcid).toEqual({
-      'ocid-1': ['lotus|hard', 'black_mage|extreme'],
-      'ocid-2': ['zakum|chaos'],
-    })
-    expect(useBossSchedulerStore.getState().manualCompletedStamp).not.toBeNull()
-  })
-
-  // 여기서 던지면 스케줄러 화면 전체가 못 선다. 그 회차의 카드는 넥슨이 준 그대로 서고 다음 회차가 다시 읽는다.
-  it('직접 완료 읽기가 실패하면 빈 표로 두고 나머지(파티 설정)는 읽는다', async () => {
-    recordKeysMock.mockRejectedValue(new Error('sqlite fail'))
-
-    await expect(useBossSchedulerStore.getState().loadLocal(['ocid-1'])).resolves.toBeUndefined()
-
-    expect(useBossSchedulerStore.getState().manualCompletedByOcid).toEqual({})
-    expect(getBossPartySettingsMock).toHaveBeenCalledWith(['ocid-1'])
-  })
-
   it('수동 모드면 캐릭터마다 멤버십을 읽어 manualTrackedByOcid 에 채운다', async () => {
     mockTrackingMode.mode = 'manual'
     getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
@@ -164,14 +110,11 @@ describe('loadLocal', () => {
     expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({})
   })
 
-  // 파티 설정은 스케줄과 독립인 기기 값이라 실패해도 나머지를 막지 않는다.
-  it('파티 설정 읽기가 실패해도 던지지 않고 직접 완료는 든다', async () => {
+  // 파티 설정은 스케줄과 독립인 기기 값이라 실패해도 화면을 세우지 않는다.
+  it('파티 설정 읽기가 실패해도 던지지 않는다', async () => {
     getBossPartySettingsMock.mockRejectedValue(new Error('sqlite fail'))
-    recordKeysMock.mockResolvedValue([recordKey('ocid-1', 'lotus', 'hard', THIS_WEEK)])
 
     await expect(useBossSchedulerStore.getState().loadLocal(['ocid-1'])).resolves.toBeUndefined()
-
-    expect(useBossSchedulerStore.getState().manualCompletedByOcid).toEqual({ 'ocid-1': ['lotus|hard'] })
   })
 
   it('추적 캐릭터가 없으면 저장소를 읽지 않고 파티 설정을 비운다', async () => {
@@ -179,7 +122,6 @@ describe('loadLocal', () => {
 
     await useBossSchedulerStore.getState().loadLocal([])
 
-    expect(recordKeysMock).not.toHaveBeenCalled()
     expect(getBossPartySettingsMock).not.toHaveBeenCalled()
     expect(useBossSchedulerStore.getState().partySizes).toEqual({})
   })
@@ -191,111 +133,13 @@ describe('reloadLocal', () => {
 
     await useBossSchedulerStore.getState().reloadLocal()
 
-    expect(recordKeysMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], [THIS_WEEK, THIS_MONTH])
     expect(getBossPartySettingsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
   })
 
   it('추적 목록을 아직 안 읽었으면 빈 목록으로 읽는다', async () => {
     await useBossSchedulerStore.getState().reloadLocal()
 
-    expect(recordKeysMock).not.toHaveBeenCalled()
     expect(getBossPartySettingsMock).not.toHaveBeenCalled()
-  })
-})
-
-/**
- * 직접 완료는 포커스마다 기록 판과 기간을 물어, 바뀌었을 때만 다시 읽는다.
- *
- * 스케줄러 탭은 한 번 마운트되면 계속 살아 있어서, 그 사이 보스 수익에서 적은 완료를 이것이 들여온다. 기록 판이
- * 그대로여도 목요일 0시 · 1일 0시를 넘기면 지난 기간의 완료가 이번 기간 것이 아니다.
- */
-describe('reloadManualCompleted', () => {
-  beforeEach(() => {
-    queryClient.setQueryData(queryKeys.trackedOcids(), ['ocid-1'])
-  })
-
-  it('기록 판이 바뀌었으면 직접 완료만 다시 읽는다', async () => {
-    revisionMock.mockReturnValue(1)
-    await useBossSchedulerStore.getState().loadLocal(['ocid-1'])
-    recordKeysMock.mockClear()
-    getBossPartySettingsMock.mockClear()
-
-    // 다른 화면이 기록을 썼다.
-    revisionMock.mockReturnValue(2)
-    recordKeysMock.mockResolvedValue([recordKey('ocid-1', 'black_mage', 'extreme', THIS_MONTH)])
-
-    await useBossSchedulerStore.getState().reloadManualCompleted()
-
-    expect(recordKeysMock).toHaveBeenCalledWith(['ocid-1'], [THIS_WEEK, THIS_MONTH])
-    expect(useBossSchedulerStore.getState().manualCompletedByOcid).toEqual({ 'ocid-1': ['black_mage|extreme'] })
-    expect(getBossPartySettingsMock).not.toHaveBeenCalled()
-    expect(getManualTrackedContentMock).not.toHaveBeenCalled()
-  })
-
-  it('판과 기간이 그대로면 읽지 않는다', async () => {
-    revisionMock.mockReturnValue(5)
-    await useBossSchedulerStore.getState().loadLocal(['ocid-1'])
-    recordKeysMock.mockClear()
-
-    await useBossSchedulerStore.getState().reloadManualCompleted()
-
-    expect(recordKeysMock).not.toHaveBeenCalled()
-  })
-
-  // 읽는 중에 들어온 쓰기를 본 것으로 적으면 그 쓰기를 영영 놓친다. 판은 읽기 전에 찍는다.
-  it('판은 읽기 전의 값으로 적어, 읽는 중에 오른 판은 다음 호출이 다시 읽는다', async () => {
-    revisionMock.mockReturnValue(1)
-    await useBossSchedulerStore.getState().loadLocal(['ocid-1'])
-    revisionMock.mockReturnValue(2)
-    recordKeysMock.mockImplementation(async () => {
-      revisionMock.mockReturnValue(3)
-      return []
-    })
-
-    await useBossSchedulerStore.getState().reloadManualCompleted()
-    recordKeysMock.mockClear()
-    await useBossSchedulerStore.getState().reloadManualCompleted()
-
-    expect(recordKeysMock).toHaveBeenCalledTimes(1)
-  })
-
-  it('기록 판이 같아도 목요일 0시를 넘기면 이번 주 열쇠로 다시 읽는다', async () => {
-    // 2026-11-04 수요일 23:30 KST
-    jest.setSystemTime(new Date('2026-11-04T14:30:00.000Z'))
-    await useBossSchedulerStore.getState().loadLocal(['ocid-1'])
-    expect(recordKeysMock).toHaveBeenLastCalledWith(['ocid-1'], ['2026-10-29', '2026-11'])
-
-    // 2026-11-05 목요일 00:30 KST
-    jest.setSystemTime(new Date('2026-11-04T15:30:00.000Z'))
-    await useBossSchedulerStore.getState().reloadManualCompleted()
-
-    expect(recordKeysMock).toHaveBeenCalledTimes(2)
-    expect(recordKeysMock).toHaveBeenLastCalledWith(['ocid-1'], ['2026-11-05', '2026-11'])
-  })
-
-  it('기록 판이 같아도 1일 0시를 넘기면 이번 달 열쇠로 다시 읽는다', async () => {
-    // 2026-11-30 월요일 23:30 KST
-    jest.setSystemTime(new Date('2026-11-30T14:30:00.000Z'))
-    await useBossSchedulerStore.getState().loadLocal(['ocid-1'])
-    expect(recordKeysMock).toHaveBeenLastCalledWith(['ocid-1'], ['2026-11-26', '2026-11'])
-
-    // 2026-12-01 화요일 00:30 KST
-    jest.setSystemTime(new Date('2026-11-30T15:30:00.000Z'))
-    await useBossSchedulerStore.getState().reloadManualCompleted()
-
-    expect(recordKeysMock).toHaveBeenCalledTimes(2)
-    expect(recordKeysMock).toHaveBeenLastCalledWith(['ocid-1'], ['2026-11-26', '2026-12'])
-  })
-
-  // 추적 목록을 아직 안 읽었으면 진입 조회가 곧 읽는다. 여기서 빈 표를 적으면 그 회차보다 앞서 판을 소모해 버린다.
-  it('추적 목록을 아직 안 읽었으면 읽지도 판을 적지도 않는다', async () => {
-    queryClient.clear()
-    revisionMock.mockReturnValue(2)
-
-    await useBossSchedulerStore.getState().reloadManualCompleted()
-
-    expect(recordKeysMock).not.toHaveBeenCalled()
-    expect(useBossSchedulerStore.getState().manualCompletedStamp).toBeNull()
   })
 })
 
@@ -588,7 +432,6 @@ describe('setPartyFilter', () => {
 
     expect(useBossSchedulerStore.getState().partyFilter).toBe('party')
     expect(queryClient.getQueryCache().findAll()).toHaveLength(0)
-    expect(recordKeysMock).not.toHaveBeenCalled()
     expect(getBossPartySettingsMock).not.toHaveBeenCalled()
   })
 })

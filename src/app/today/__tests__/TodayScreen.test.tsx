@@ -7,7 +7,7 @@
 //    신선해도 받는 `pullRefresh` 는 진입에서 부르지 않는다.
 //    **신선도 자체는 여기서 못 본다**. 그것은 쿼리의 `staleTime` 계약이라 `schedule-query.spec.ts` 가 지킨다.
 //    화면이 보장할 수 있는 것은 **어느 문을 쓰는가** 이고, 그 문이 바뀌면 TTL 이 통째로 사라진다.
-// ② **당김이 `pullRefresh` 하나인가**. 회차 · 13일 창 · 오늘 강화의 순서는 `pull.spec.ts` 가 본다.
+// ② **당김이 `pullRefresh` 와 앱 공지 조회 둘인가**. 회차 · 13일 창 · 오늘 강화의 순서는 `pull.spec.ts` 가 본다.
 // ③ **캐시가 비어도 서는가**. 콜드 스타트에 위젯이 전부 빈 상태로 선다.
 // ④ **어느 열쇠를 읽는가**. 이번 주 수입은 이번 주 범위의 가계부 쿼리이고, 주가 바뀌면 다음 범위를 읽는다.
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
@@ -17,7 +17,8 @@ import { useBossProfitPeriod } from '../../../features/boss-profit/period-query'
 import type { PeriodSnapshot } from '../../../features/boss-profit/period-snapshot'
 import { useBossProfitRound, type BossProfitRound } from '../../../features/boss-profit/round-view'
 import type { BossProfitRow } from '../../../features/boss-profit/store'
-import { useSettlementStore } from '../../../features/settlement/store'
+import { refreshNoticeKinds } from '../../../features/notice/notice-query'
+import { useSettlementBanner } from '../../../features/settlement/query'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
 import { useBossSchedule, type BossSchedule } from '../../../features/boss-scheduler/use-boss-schedule'
 import { useLedgerDays } from '../../../features/cashbook/ledger-query'
@@ -91,16 +92,17 @@ jest.mock('../../../storage/character-selection', () => ({
   getRepresentativeCharacter: jest.fn(),
   setRepresentativeCharacter: jest.fn() }))
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
-// 새로고침이 공지 배너의 서버 조회를 함께 탄다. 안 막으면 이 스위트가 실제 망으로 나간다.
-// 배너 자체의 동작은 `NoticeBanner.test.tsx` 와 `banner-store.spec.ts` 가 본다.
-jest.mock('../../../server/notices', () => ({
-  __esModule: true,
-  fetchNotices: jest.fn(async () => []),
-  fetchNotice: jest.fn(async () => null) }))
-// 결산 안내 줄도 같은 이유로 막는다. 줄 자체의 동작은 `SettlementBanner.test.tsx` 가 본다.
-jest.mock('../../../server/settlement', () => ({
-  __esModule: true,
-  fetchSettlement: jest.fn(async () => null) }))
+// 배너 셋과 파티 약속은 쿼리 훅을 본다. 이 하네스에는 쿼리 클라이언트가 없어 훅을 세운다. 배너 자체의 동작은
+// `NoticeBanner.test.tsx` · `SettlementBanner.test.tsx` · `ManualCompletionBanner.test.tsx` 가 본다.
+jest.mock('../../../features/notice/notice-query', () => ({
+  useNoticeBanner: jest.fn(() => ({ notice: null, dismiss: jest.fn() })),
+  refreshNoticeKinds: jest.fn(async () => ({ allFailed: false })) }))
+jest.mock('../../../features/settlement/query', () => ({
+  useSettlementBanner: jest.fn(() => ({ visible: false, dismiss: jest.fn() })) }))
+jest.mock('../../../features/manual-completion/query', () => ({
+  useManualCompletionBanner: jest.fn(() => ({ visible: false, dismiss: jest.fn() })) }))
+jest.mock('../../../features/party-appointments/query', () => ({
+  usePartyAppointments: jest.fn(() => ({ appointments: [], loaded: true })) }))
 
 const mockedContent = jest.mocked(useContentSchedule)
 const mockedBoss = jest.mocked(useBossSchedule)
@@ -127,14 +129,8 @@ const OCIDS = ['ocid-1', 'ocid-2', 'ocid-3', 'ocid-4']
 
 // 훅 · 스토어 목
 //
-// 스케줄 훅 둘은 캐시의 캐릭터 뷰를, 스토어 둘은 기기 값(수동 추적 · 직접 완료)을 낸다. 이번 주 보스 수익 · 회차 표식 ·
-// 드롭 기록 · 가계부는 쿼리 훅이 낸다. 전부 **상태 + 함수** 를 그대로 돌려주면 된다.
-
-interface StoreMocks {
-  bossStore: { reloadManualCompleted: jest.Mock }
-}
-
-let mocks: StoreMocks
+// 스케줄 훅 둘은 캐시의 캐릭터 뷰(보스는 직접 완료도)를, 스토어 둘은 기기 값(수동 추적 · 파티 인원)을 낸다. 이번 주 보스
+// 수익 · 회차 표식 · 드롭 기록 · 가계부는 쿼리 훅이 낸다. 전부 **상태 + 함수** 를 그대로 돌려주면 된다.
 
 function setStores(
   overrides: {
@@ -161,6 +157,7 @@ function setStores(
     characters: [],
     error: null,
     trackedOcids: null,
+    manualCompletedByOcid: {},
     refresh: jest.fn(),
     ...overrides.boss })
 
@@ -173,10 +170,7 @@ function setStores(
     partySizes: {},
     partyShares: {},
     manualTrackedByOcid: {},
-    manualCompletedByOcid: {},
-    manualCompletedStamp: null,
     partyFilter: 'all',
-    reloadManualCompleted: mocks.bossStore.reloadManualCompleted,
     ...overrides.bossStore } as never)
 
   mockedPeriod.mockReturnValue({
@@ -368,7 +362,7 @@ async function renderScreen(): Promise<Rendered> {
   // **`await` 가 계약이다**. RNTL 14 의 `render` 는 비동기다. 안 기다리면 아래 `act` 가 마운트보다
   // 먼저 돌아 **아무것도 안 그려졌는데 초록** 인 테스트가 된다(실제로 그렇게 한 번 갔다).
   const view = await renderOverlay(<TodayScreen />)
-  // 포커스 효과(직접 완료 · 공지 배너 · 파티 스케줄)가 비동기로 돈다. 한 번 흘려보내야 마운트가 끝난다.
+  // 대표 표식을 저장소에서 올리는 효과가 비동기로 돈다. 한 번 흘려보내야 마운트가 끝난다.
   await act(async () => {})
   return view
 }
@@ -387,8 +381,6 @@ afterAll(() => {
 })
 
 beforeEach(() => {
-  mocks = {
-    bossStore: { reloadManualCompleted: jest.fn().mockResolvedValue(undefined) } }
   // 모듈 목은 테스트 사이에 호출 기록이 남는다. 세는 것만 비운다.
   // 실물 `pullRefresh` 는 `Promise` 다. 당김이 `allSettled` 로 그 **끝** 을 기다린다.
   mockedPullRefresh.mockClear().mockResolvedValue(undefined)
@@ -429,16 +421,16 @@ describe('TodayScreen: 진입 조회', () => {
     expect(mockedPullRefresh).not.toHaveBeenCalled()
   })
 
-  // 남은 스케줄이 보스 스케줄러 스토어의 직접 완료를 본다. 탭은 계속 살아 있어서, 보스 수익에서
-  // 적고 돌아와도 포커스가 안 물으면 옛 값이 선다(사용자 보고). 넥슨을 안 타는 로컬 재조회다.
-  it('포커스마다 직접 완료를 다시 묻는다', async () => {
+  // 직접 완료 안내 줄과 공지 배너는 우리 서버 쿼리를 본다. 탭은 계속 살아 있어서, 배경에서 공지가 오거나 서버가 보스를
+  // 열어도 포커스가 안 물으면 옛 값이 선다. 둘 다 만료된 것만 받는 문이고 넥슨을 안 탄다.
+  it('포커스마다 만료된 직접 완료와 앱 공지 쿼리를 다시 받는다', async () => {
     await renderScreen()
 
-    expect(mocks.bossStore.reloadManualCompleted).toHaveBeenCalledTimes(1)
+    expect(mockedRefetchStaleOnFocus).toHaveBeenCalledWith(queryKeys.manualCompletion())
+    expect(mockedRefetchStaleOnFocus).toHaveBeenCalledWith(queryKeys.notices('app'))
     // 신선해도 받는 동기화가 아니다.
     expect(mockedPullRefresh).not.toHaveBeenCalled()
   })
-
 })
 
 // 이번 주 수익은 통계와 같은 가계부 쿼리를 읽는다. 전 기간이 아니라 이번 주 범위의 열쇠다.
@@ -491,9 +483,9 @@ describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', ()
 })
 
 describe('TodayScreen: 명시적 재조회', () => {
-  // 당김은 신선해도 받는 `pullRefresh` **하나**다. 회차 · 13일 창 · 오늘 강화가 그 안에 있고, 쓴 기록은 판을 올려
-  // 이번 주 수입 · 드롭 위젯의 쿼리를 무효화한다. 화면이 그 쿼리들을 따로 다시 읽지 않는다.
-  it('당김은 pullRefresh 하나를 부른다', async () => {
+  // 당김은 신선해도 받는 `pullRefresh` 와 앱 공지 조회 **둘**이다. 회차 · 13일 창 · 오늘 강화가 `pullRefresh` 안에 있고,
+  // 쓴 기록은 판을 올려 이번 주 수입 · 드롭 위젯의 쿼리를 무효화한다. 화면이 그 쿼리들을 따로 다시 읽지 않는다.
+  it('당김은 pullRefresh 와 앱 공지 조회를 부른다', async () => {
     setStores(캐릭터_넷)
     await renderScreen()
 
@@ -502,6 +494,7 @@ describe('TodayScreen: 명시적 재조회', () => {
     })
 
     expect(mockedPullRefresh).toHaveBeenCalledTimes(1)
+    expect(jest.mocked(refreshNoticeKinds)).toHaveBeenCalledWith(['app'])
   })
 
   // 회귀 가드. 조회 중 과 당겼다 는 다른 사실이다.
@@ -702,18 +695,13 @@ describe('TodayScreen: 초기화 경계', () => {
 // 결산 줄이 공지 배너 **위**다. 공지는 읽을거리이고 결산 줄은 지금 화면의 값이 왜 안 맞는지를
 // 말하므로, 그 줄이 값보다 먼저 와야 한다.
 describe('TodayScreen: 결산 안내 줄', () => {
-  // 실물 스토어라 값이 케이스 사이로 샌다.
+  // 모듈 목이라 돌려준 값이 케이스 사이로 샌다.
   beforeEach(() => {
-    useSettlementStore.setState({ settling: false, startedAt: null, dismissedAt: null, visible: false })
+    jest.mocked(useSettlementBanner).mockReturnValue({ visible: false, dismiss: jest.fn() })
   })
 
   it('결산 중이면 격자 위에 선다', async () => {
-    useSettlementStore.setState({
-      settling: true,
-      startedAt: '2026-08-16T14:00:00.000Z',
-      dismissedAt: null,
-      visible: true,
-    })
+    jest.mocked(useSettlementBanner).mockReturnValue({ visible: true, dismiss: jest.fn() })
 
     await renderScreen()
 

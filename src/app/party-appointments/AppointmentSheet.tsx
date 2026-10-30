@@ -41,7 +41,7 @@ import {
 import { orderByCharacter } from '../../features/party-appointments/boss-groups'
 import { checkAlarmGate, ensureNotificationPermission, type AlarmGateResult } from '../../features/party-appointments/alarm-gate'
 import { usePartyAlarmSettingsStore } from '../../features/party-appointments/alarm-settings'
-import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
+import { savePartyAppointments, usePartyAppointments } from '../../features/party-appointments/query'
 import { bossAliasOf } from '../../lib/boss/bosses'
 import { WEEKDAY_LABELS } from '../../lib/calendar'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
@@ -86,8 +86,8 @@ export interface AppointmentSheetProps {
 }
 
 export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Element {
-  const appointments = usePartyAppointmentsStore((state) => state.appointments)
-  const save = usePartyAppointmentsStore((state) => state.save)
+  const { appointments } = usePartyAppointments()
+  const save = savePartyAppointments
   const { target } = props
   const [now] = useState(() => new Date())
   const [draft, setDraft] = useState<AppointmentDraft>(() =>

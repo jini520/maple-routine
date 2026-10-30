@@ -91,6 +91,7 @@ function mockSchedule(overrides: Partial<Schedule> = {}): Schedule {
     characters: [],
     error: null,
     trackedOcids: ['ocid-1'],
+    manualCompletedByOcid: {},
     refresh: jest.fn().mockResolvedValue(undefined),
     ...overrides,
   }

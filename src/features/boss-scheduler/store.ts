@@ -6,14 +6,11 @@ import { create } from 'zustand'
 
 import { countManualWeeklyBosses, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 import { bossCycleOf, getMaxPartySize, isSeasonBoss } from '../../lib/boss/bosses'
-import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
-import { manualCompletionKey } from '../../lib/boss/manual-completion'
 import {
   getBossPartySettings,
   setBossPartySetting,
   type BossPartyShareColumns,
 } from '../../storage/boss-party-settings'
-import { getBossProfitRecordsRevision, getManualBossProfitRecordKeys } from '../../storage/boss-profit'
 import {
   getManualTrackedContent,
   setManualTrackedContent,
@@ -43,19 +40,6 @@ export interface BossSchedulerState {
   // 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에 캐시의
   // 동기화 값 또는 참조 테이블에서 조회한다.
   manualTrackedByOcid: Record<string, ManualTrackedItem[]>
-  /**
-   * 사용자가 직접 적은 완료(`bossKey|difficulty`)를 캐릭터별로. **이번 주·이번 달 것만** 든다.
-   *
-   * 스케줄 캐시에 안 쓰고 여기 따로 드는 이유는 다음 동기화가 캐시를 덮기 때문이다. 표시 판정
-   * (`displayedBosses`)이 이 값을 받아 카드 · 주간 한도 · today 남은 스케줄에 함께 얹는다.
-   */
-  manualCompletedByOcid: Record<string, string[]>
-  /**
-   * 위 값이 비추는 **기록 판**(`getBossProfitRecordsRevision`)과 기간. 포커스가 이것과 지금을 견줘
-   * 바뀌었을 때만 다시 읽는다. `null` 은 아직 한 번도 안 읽었다는 뜻이다. 기간을 함께 드는 것은
-   * 목요일을 넘기면 기록이 그대로여도 지난주 완료가 이번 주 것이 아니기 때문이다.
-   */
-  manualCompletedStamp: string | null
   // 화면 로컬 state 가 아니라 스토어가 소유한다. 화면이 언마운트돼도 살아남는다. 영속화하지 않는다.
   //
   // `activeTab` 은 여기 없다. 주간/월간 탭이 두 화면에서 함께 걷혔다. 되살리지 말 것. 공유할
@@ -65,17 +49,10 @@ export interface BossSchedulerState {
 }
 
 export interface BossSchedulerStore extends BossSchedulerState {
-  /** 추적 캐릭터의 기기 값 셋(파티 인원 · 수동 추적 · 직접 완료)을 읽는다. 넥슨은 안 부른다. */
+  /** 추적 캐릭터의 기기 값 둘(파티 인원 · 수동 추적)을 읽는다. 넥슨은 안 부른다. 직접 적은 완료는 쿼리(`manual-completed-query.ts`)다. */
   loadLocal(ocids: readonly string[]): Promise<void>
   /** 캐시의 추적 목록으로 `loadLocal`. 설정이 모드를 바꾼 뒤 부른다. */
   reloadLocal(): Promise<void>
-  /**
-   * 직접 완료만 다시 읽는다. **기록 판이나 기간이 바뀌었을 때만** 읽고 넥슨은 안 부른다.
-   *
-   * 화면이 포커스마다 부른다. 이 스토어를 쓰는 두 화면(스케줄러 · today)은 탭이라 계속 살아
-   * 있어서, 그 사이 보스 수익에서 적은 완료를 이것이 들여온다.
-   */
-  reloadManualCompleted(): Promise<void>
   loadPartySizes(ocids: readonly string[]): Promise<void>
   /** 파티 인원과 분배 비율을 한 번에 저장한다. 균등으로 되돌리는 것도 `shares` 를 비우는 이 길이다. */
   setPartySetting(
@@ -104,8 +81,6 @@ const initialState: BossSchedulerState = {
   partySizes: {},
   partyShares: {},
   manualTrackedByOcid: {},
-  manualCompletedByOcid: {},
-  manualCompletedStamp: null,
   partyFilter: 'all',
 }
 
@@ -113,54 +88,10 @@ export function partySizeKey(ocid: string, bossKey: string, difficulty: string):
   return `${ocid}:${bossKey}:${difficulty}`
 }
 
-/** 직접 완료가 비추는 판. 기록 판과 이번 주 · 이번 달 기간을 한 글자로 잇는다. */
-function manualCompletedStampOf(now: Date): string {
-  return [
-    getBossProfitRecordsRevision(),
-    getCurrentBossProfitPeriod('weekly', now).periodKey,
-    getCurrentBossProfitPeriod('monthly', now).periodKey,
-  ].join('|')
-}
-
-/**
- * 직접 적은 완료를 캐릭터별로 읽는다. 이번 주와 이번 달 기록만 본다.
- *
- * 실패하면 빈 표다. 그 회차의 카드가 넥슨이 준 그대로 서고, 다음 회차가 다시 읽는다. 여기서
- * 던지면 스케줄러 화면 전체가 못 선다.
- */
-async function readManualCompleted(
-  ocids: readonly string[],
-  now: Date,
-): Promise<Record<string, string[]>> {
-  if (ocids.length === 0) return {}
-
-  const periodKeys = [
-    getCurrentBossProfitPeriod('weekly', now).periodKey,
-    getCurrentBossProfitPeriod('monthly', now).periodKey,
-  ]
-  const byOcid: Record<string, string[]> = {}
-  try {
-    for (const record of await getManualBossProfitRecordKeys([...ocids], periodKeys)) {
-      const keys = byOcid[record.ocid] ?? []
-      keys.push(manualCompletionKey(record.bossKey, record.difficulty))
-      byOcid[record.ocid] = keys
-    }
-  } catch {
-    return {}
-  }
-  return byOcid
-}
-
 export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => ({
   ...initialState,
 
   async loadLocal(ocids) {
-    // 직접 적은 완료. 모드와 무관하게 읽는다 - 카드의 완료 배지와 주간 한도가 이 값을 함께 본다.
-    // 판은 **읽기 전에 찍는다.** 읽는 중에 들어온 쓰기를 본 것으로 적으면 그 쓰기를 영영 놓친다.
-    const now = new Date()
-    const manualCompletedStamp = manualCompletedStampOf(now)
-    const manualCompletedByOcid = await readManualCompleted(ocids, now)
-
     // 수동 모드에서만 캐릭터별 추적 항목(멤버십)을 읽어둔다. 표시 목록이 이 멤버십으로
     // 결정되기 때문. auto 모드는 등록 여부로 목록을 결정하므로 불필요한 읽기를 건너뛴다.
     const manualTrackedByOcid: Record<string, ManualTrackedItem[]> =
@@ -170,7 +101,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
           )
         : {}
 
-    set({ manualCompletedByOcid, manualCompletedStamp, manualTrackedByOcid })
+    set({ manualTrackedByOcid })
 
     // 파티 설정은 스케줄과 독립인 기기 값이라 실패해도 나머지를 막지 않는다.
     try {
@@ -182,18 +113,6 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
 
   reloadLocal() {
     return get().loadLocal(readTrackedOcidsSync() ?? [])
-  },
-
-  async reloadManualCompleted() {
-    const now = new Date()
-    const stamp = manualCompletedStampOf(now)
-    if (stamp === get().manualCompletedStamp) return
-    const ocids = readTrackedOcidsSync()
-    // 추적 목록을 아직 안 읽었으면 진입 조회가 곧 읽는다. 여기서 빈 표를 적으면 그 회차보다
-    // 앞서 판을 소모해 버린다.
-    if (ocids === null) return
-    const manualCompletedByOcid = await readManualCompleted(ocids, now)
-    set({ manualCompletedByOcid, manualCompletedStamp: stamp })
   },
 
   setPartyFilter(filter) {

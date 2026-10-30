@@ -19,14 +19,13 @@ import {
   MANUAL_COMPLETION_FAQ,
   MANUAL_COMPLETION_FAQ_TITLE,
 } from '../../features/manual-completion/faq'
-import { useManualCompletionStore } from '../../features/manual-completion/store'
+import { useManualCompletionBanner } from '../../features/manual-completion/query'
 
 /** 16px 아이콘을 권장 타깃 44px 로 되돌린다. 결산 줄의 닫기와 같은 값이다. */
 const CLOSE_HIT_SLOP = 14
 
 export function ManualCompletionBanner(): React.JSX.Element | null {
-  const visible = useManualCompletionStore((state) => state.visible)
-  const dismiss = useManualCompletionStore((state) => state.dismiss)
+  const { visible, dismiss } = useManualCompletionBanner()
   const [faqOpen, setFaqOpen] = useState(false)
 
   if (!visible) return null

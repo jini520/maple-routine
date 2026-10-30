@@ -29,7 +29,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { formatNoticeDate } from '../../features/notice/format'
-import { forgetNotice, readNoticeCopy } from '../../features/notice/notice-copy'
+import { findCachedNotice, forgetNotice } from '../../features/notice/notice-query'
 import { noticeDisplayTitle, noticePeriodLabel } from '../../features/notice/notice-display'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { openInAppBrowser } from '../../native/browser'
@@ -122,11 +122,10 @@ export function SettingsNoticeDetailScreen(props: {
 
     // `noticeId` 가 없어도 같은 비동기 경로로 답한다. 여기서 곧장 `setNotice(null)` 하면
     // 렌더 도중에 상태가 바뀌어 한 번 더 그린다.
-    void readNoticeCopy()
-      .then((all) => {
-        const copy = noticeId === undefined ? null : (all.find((n) => n.id === noticeId) ?? null)
+    void Promise.resolve(noticeId === undefined ? null : findCachedNotice(noticeId))
+      .then((copy) => {
         if (alive) setNotice(copy)
-        // 사본에 없어도 조회한다. 20건 밖 공지나 방금 온 알림은 사본에 없다.
+        // 목록에 없어도 조회한다. 20건 밖 공지나 방금 온 알림은 목록에 없다.
         return noticeId === undefined ? null : fetchNoticeDetail(noticeId)
       })
       .then(async (remote) => {

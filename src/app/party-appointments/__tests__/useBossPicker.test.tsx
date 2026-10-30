@@ -31,6 +31,7 @@ function 추적(ocids: string[]): void {
     characters: ocids.map((ocid) => 캐릭터(ocid, ocid)),
     error: null,
     trackedOcids: ocids,
+    manualCompletedByOcid: {},
     refresh: jest.fn(),
   })
 }

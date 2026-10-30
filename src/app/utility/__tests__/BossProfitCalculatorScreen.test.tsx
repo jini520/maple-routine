@@ -83,6 +83,7 @@ beforeEach(() => {
     characters,
     error: null,
     trackedOcids: ['ocid-1', 'ocid-2'],
+    manualCompletedByOcid: {},
     refresh: jest.fn(),
   })
   mockedReadBossCharacters.mockReturnValue(characters)

@@ -63,8 +63,8 @@ jest.mock('../../../features/auth/store', () => ({
   useAuthStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
 
-// 넥슨에서 받은 스케줄은 스토어가 아니라 `useBossSchedule` 이 낸다. 스토어에는 기기 값(파티 인원 · 수동
-// 추적 · 직접 완료)과 필터만 남는다. 출처가 둘이라 목도 둘이다.
+// 넥슨에서 받은 스케줄과 직접 적은 완료는 스토어가 아니라 `useBossSchedule` 이 낸다. 스토어에는 기기 값(파티
+// 인원 · 수동 추적)과 필터만 남는다. 출처가 둘이라 목도 둘이다.
 jest.mock('../../../features/boss-scheduler/use-boss-schedule', () => ({
   useBossSchedule: jest.fn(),
 }))
@@ -77,17 +77,6 @@ jest.mock('../../../features/boss-scheduler/store', () => ({
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 // 만료된 회차를 다시 받는 훅은 통째로 목이다. 화면이 어느 열쇠를 넘기는지를 보려면 훅 자체를 잡아야 한다.
 jest.mock('../../../hooks/useRefetchStaleOnFocus', () => ({ useRefetchStaleOnFocus: jest.fn() }))
-// `useFocusEffect` 는 내비게이션 컨텍스트를 요구한다. 이 하네스는 화면 하나만 띄우므로 포커스를
-// 이펙트로 흉내 낸다(마운트 = 첫 포커스, 실제와 같은 순서다). 화면의 `reloadManualCompleted` 가 이것을
-// 탄다. today 테스트와 같은 장치다.
-jest.mock('@react-navigation/native', () => ({
-  ...jest.requireActual('@react-navigation/native'),
-  useFocusEffect: (callback: () => void | (() => void)) => {
-    const react = require('react') as typeof import('react')
-    react.useEffect(callback, [callback])
-  },
-}))
-
 // **로스터 조회 목도 라우트 목도 여기 없다**. 이 화면은 더 이상 피커를 열지 않고 `openPicker`
 // 파라미터도 받지 않으므로 `schedule-sync` 와 `useRoute` 를 아예 부르지 않는다.
 // 둘 다 설정 화면 테스트로 옮겨갔다.
@@ -109,6 +98,7 @@ function mockSchedule(overrides: Partial<Schedule> = {}): Schedule {
     characters: [],
     error: null,
     trackedOcids: null,
+    manualCompletedByOcid: {},
     // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
     ...overrides,
@@ -126,8 +116,6 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     partySizes: {},
     partyShares: {},
     manualTrackedByOcid: {},
-    manualCompletedByOcid: {},
-    reloadManualCompleted: jest.fn().mockResolvedValue(undefined),
     setPartySetting: jest.fn(),
     setManualBossDifficulty: jest.fn(),
     partyFilter: 'all' as const,
@@ -251,18 +239,6 @@ describe('BossScreen: 빈 상태와 마운트', () => {
     await renderScreen()
 
     expect(mockedRefetchStaleOnFocus).toHaveBeenCalledWith(['schedule-round'])
-  })
-
-  // 탭은 계속 살아 있어 진입 조회가 마운트 때 한 번뿐이다. 보스 수익에서 적은 완료는 포커스가
-  // 물어야 선다(사용자 보고). 넥슨을 안 타는 로컬 재조회라 `refresh` 는 안 부른다.
-  it('포커스마다 직접 완료를 다시 묻는다', async () => {
-    const schedule = mockSchedule()
-    const store = mockStore()
-
-    await renderScreen()
-
-    expect(store.reloadManualCompleted).toHaveBeenCalledTimes(1)
-    expect(schedule.refresh).not.toHaveBeenCalled()
   })
 
   it('추적 목록이 빈 배열이면 빈 상태 안내만 보인다', async () => {
