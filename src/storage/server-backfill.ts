@@ -27,7 +27,8 @@ export async function getBackfillState(): Promise<BackfillState> {
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>
     const state: BackfillState = {}
-    for (const kind of ['bossClear', 'dropPrice', 'cashbookEntry', 'enhancementTotal'] as const) {
+    // 옛 앱이 적은 다른 종류의 진행은 읽지 않는다. 다음에 적을 때 빠진다.
+    for (const kind of ['dropPrice'] as const) {
       if (isProgress(parsed[kind])) state[kind] = parsed[kind]
     }
     return state

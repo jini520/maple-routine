@@ -20,15 +20,15 @@ it('응답이 없으면 no-response, 2xx 가 아니면 상태 코드를 단 reje
 it('묶음은 /batch 로 items 를 보내고 건마다의 결과를 돌려준다. 결과가 없으면 거절로 본다', async () => {
   fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ results: [{ recordId: 'a', ok: true }] }) })
 
-  await expect(postBatch({ h: '1' }, '/boss-clears', [{ id: 'a' }])).resolves.toEqual({
+  await expect(postBatch({ h: '1' }, '/drop-prices', [{ id: 'a' }])).resolves.toEqual({
     outcome: 'sent',
     results: [{ recordId: 'a', ok: true }],
   })
   expect(fetchMock).toHaveBeenCalledWith(
-    'https://mapleroutine.store/v1/boss-clears/batch',
+    'https://mapleroutine.store/v1/drop-prices/batch',
     expect.objectContaining({ method: 'POST', body: JSON.stringify({ items: [{ id: 'a' }] }) }),
   )
 
   fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({}) })
-  await expect(postBatch({}, '/boss-clears', [{}])).resolves.toEqual({ outcome: 'rejected', status: 200 })
+  await expect(postBatch({}, '/drop-prices', [{}])).resolves.toEqual({ outcome: 'rejected', status: 200 })
 })

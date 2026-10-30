@@ -11,7 +11,6 @@ jest.mock('../../../storage/enhancement-history', () => ({
   markEnhancementChecked: jest.fn(),
 }))
 jest.mock('../../../storage/enhancement-totals', () => ({ replaceEnhancementTotals: jest.fn() }))
-jest.mock('../../server-sync/report', () => ({ reportEnhancementTotals: jest.fn() }))
 jest.mock('../legacy-totals', () => ({ ensureEnhancementTotals: jest.fn() }))
 jest.mock('../../../storage/enhancement-recomputes', () => ({
   loadRecomputeProgress: jest.fn(),
@@ -27,7 +26,6 @@ const store = jest.requireMock('../../../storage/enhancement-history') as Record
 const { saveEventWorldNames } = jest.requireMock('../../../storage/event-world-names') as Record<string, jest.Mock>
 const { fillLegacyAccountIds } = jest.requireMock('../../auth/legacy-account-ids') as Record<string, jest.Mock>
 const { replaceEnhancementTotals } = jest.requireMock('../../../storage/enhancement-totals') as Record<string, jest.Mock>
-const { reportEnhancementTotals } = jest.requireMock('../../server-sync/report') as Record<string, jest.Mock>
 const { ensureEnhancementTotals } = jest.requireMock('../legacy-totals') as Record<string, jest.Mock>
 const recomputes = jest.requireMock('../../../storage/enhancement-recomputes') as Record<string, jest.Mock>
 const { RECOMPUTE_REQUESTS } = jest.requireMock('../recompute') as { RECOMPUTE_REQUESTS: unknown[] }
@@ -59,8 +57,7 @@ beforeEach(() => {
   fetchEnhancementHistory.mockReset().mockResolvedValue(page([]))
   store.loadEnhancementChecks.mockReset().mockResolvedValue(new Map())
   store.markEnhancementChecked.mockReset().mockResolvedValue(undefined)
-  replaceEnhancementTotals.mockReset().mockResolvedValue({ writtenIds: [], removedIds: [] })
-  reportEnhancementTotals.mockReset().mockResolvedValue(undefined)
+  replaceEnhancementTotals.mockReset().mockResolvedValue(undefined)
   ensureEnhancementTotals.mockReset().mockResolvedValue(undefined)
   recomputes.loadRecomputeProgress.mockReset().mockResolvedValue(new Map())
   recomputes.saveRecomputeProgress.mockReset().mockResolvedValue(undefined)
@@ -221,16 +218,6 @@ describe('수집', () => {
       [expect.objectContaining({ itemKey: 'arcane_umbra_knuckle', attempts: 2, eventWorld: false })],
       NOW,
     )
-  })
-
-  // 지운 줄도 보내야 서버에서 지워진다. 남은 줄만 보내면 사라진 합계가 서버에 남는다.
-  it('적은 줄과 지운 줄을 함께 서버 전송에 넘긴다', async () => {
-    replaceEnhancementTotals.mockImplementation((_account: string, kind: string) =>
-      Promise.resolve(kind === 'cube' ? { writtenIds: ['w'], removedIds: ['r'] } : { writtenIds: [], removedIds: [] }),
-    )
-    await collectEnhancementHistory(['2026-09-05'], NOW)
-
-    expect(reportEnhancementTotals).toHaveBeenCalledWith(['w', 'r'], NOW)
   })
 
   // 합계에는 응답 줄의 id 가 없어 이미 받은 쪽을 가릴 수 없다. 앞쪽에서 멈추면 그 날 합계가 모자란다.

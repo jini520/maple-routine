@@ -30,14 +30,6 @@ export interface EnhancementTotal {
 /** 쓸 값. id 는 같은 열쇠의 줄이 있으면 그 줄의 것을 지킨다. */
 export type EnhancementTotalInput = Omit<EnhancementTotal, 'id' | 'nexonAccountId'>
 
-/** 갈아 끼운 결과. 서버 사본을 고치는 데 쓴다. */
-export interface ReplaceResult {
-  /** 이번에 적은 줄. 값이 그대로인 줄도 든다 */
-  writtenIds: string[]
-  /** 다시 만든 합계에 없어 지운 줄 */
-  removedIds: string[]
-}
-
 let revision = 0
 
 /** 쓰기마다 오른다. 통계 화면이 새 값이 들어왔는지 이것으로 안다. */
@@ -73,7 +65,7 @@ async function replaceIn(
   historyDate: string,
   totals: readonly EnhancementTotalInput[],
   now: string,
-): Promise<ReplaceResult> {
+): Promise<void> {
   const writtenIds: string[] = []
   for (const total of totals) {
     const { values } = await db.query(UPSERT_SQL, [
@@ -95,18 +87,16 @@ async function replaceIn(
     if (typeof id === 'string') writtenIds.push(id)
   }
   const placeholders = writtenIds.map(() => '?').join(', ')
-  const { values } = await db.query(
+  await db.run(
     `DELETE FROM enhancement_totals
       WHERE nexon_account_id = ? AND enhancement_type = ? AND history_date = ?
-        ${writtenIds.length > 0 ? `AND id NOT IN (${placeholders})` : ''}
-      RETURNING id`,
+        ${writtenIds.length > 0 ? `AND id NOT IN (${placeholders})` : ''}`,
     [nexonAccountId, enhancementType, historyDate, ...writtenIds],
   )
-  return { writtenIds, removedIds: (values ?? []).map((row) => row.id as string) }
 }
 
 /**
- * 한 계정 · 한 종류 · 한 날짜의 합계를 갈아 끼운다. 같은 열쇠의 줄은 id 를 지키고, 새 합계에 없는 줄은 지운다.
+ * 한 계정 · 한 종류 · 한 날짜의 합계를 갈아 끼운다. 같은 열쇠의 줄은 값을 고쳐 적고, 새 합계에 없는 줄은 지운다.
  *
  * 합계에는 응답 줄의 id 가 없어 같은 줄을 두 번 받았는지 가릴 수 없다. 그래서 그 날을 통째로 다시 받아 갈아 끼운다.
  *
@@ -118,13 +108,12 @@ export async function replaceEnhancementTotals(
   historyDate: string,
   totals: readonly EnhancementTotalInput[],
   now: Date,
-): Promise<ReplaceResult> {
+): Promise<void> {
   const db = await getBossProfitDb()
-  const result = await inTransaction(db, () =>
+  await inTransaction(db, () =>
     replaceIn(db, nexonAccountId, enhancementType, historyDate, totals, now.toISOString()),
   )
   revision += 1
-  return result
 }
 
 function rowToTotal(row: Record<string, unknown>): EnhancementTotal {
@@ -154,12 +143,4 @@ export async function loadEnhancementTotals(fromDate: string, toDate: string): P
     [fromDate, toDate],
   )
   return (values ?? []).map(rowToTotal)
-}
-
-/** 한 줄. 서버로 보낼 때 읽는다. 없으면 `null`. */
-export async function getEnhancementTotalById(id: string): Promise<EnhancementTotal | null> {
-  const db = await getBossProfitDb()
-  const { values } = await db.query('SELECT * FROM enhancement_totals WHERE id = ?', [id])
-  const row = (values ?? [])[0]
-  return row === undefined ? null : rowToTotal(row)
 }

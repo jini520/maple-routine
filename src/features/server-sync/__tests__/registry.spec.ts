@@ -9,10 +9,9 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { SYNC_HANDLERS } from '../registry'
-import { BOSS_CLEAR_RECORD_TYPE } from '../boss-clear-sync'
-import { CASHBOOK_ENTRY_RECORD_TYPE } from '../cashbook-entry-sync'
 import { DROP_PRICE_RECORD_TYPE } from '../drop-price-sync'
-import { ENHANCEMENT_TOTAL_RECORD_TYPE } from '../enhancement-total-sync'
+import { sweepServerSync } from '../sweep'
+import type { SyncQueueEntry } from '../../../storage/server-sync-queue'
 
 const SYNC_DIR = join(__dirname, '..')
 
@@ -23,9 +22,6 @@ describe('전송 종류 레지스트리', () => {
     const kinds = new Set(Object.keys(SYNC_HANDLERS))
     const constants = new Map<string, string>([
       ['DROP_PRICE_RECORD_TYPE', DROP_PRICE_RECORD_TYPE],
-      ['BOSS_CLEAR_RECORD_TYPE', BOSS_CLEAR_RECORD_TYPE],
-      ['CASHBOOK_ENTRY_RECORD_TYPE', CASHBOOK_ENTRY_RECORD_TYPE],
-      ['ENHANCEMENT_TOTAL_RECORD_TYPE', ENHANCEMENT_TOTAL_RECORD_TYPE],
     ])
 
     const callers: { file: string; argument: string }[] = []
@@ -65,5 +61,41 @@ describe('전송 종류 레지스트리', () => {
     walk(root)
 
     expect(hits).toEqual([])
+  })
+})
+
+// 옛 앱은 보스 처치 · 가계부 기록 · 강화 합계도 대기 표에 넣었다. 그 줄이 남아 있으면 업데이트 뒤에도 서버로 나가거나,
+// 지우지 않으면 영원히 쌓인다. 실제 레지스트리로 훑어 원본을 읽지도 보내지도 않고 지우는지 본다.
+describe('보내지 않게 된 종류의 남은 줄', () => {
+  it('원본을 읽지도 서버에 보내지도 않고 줄을 지운다', async () => {
+    const fetchSpy = jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('보내면 안 된다'))
+    const entries: SyncQueueEntry[] = ['boss-clear', 'cashbook-entry', 'enhancement-total'].map((recordType, i) => ({
+      id: `q-${i}`,
+      recordType,
+      recordId: `r-${i}`,
+      attempts: 0,
+      lastError: null,
+      createdAt: '2026-10-26T00:00:00.000Z',
+    }))
+    const removed: string[] = []
+    const counted: string[] = []
+
+    const result = await sweepServerSync({
+      identity: async () => ({ 'x-api-key-hash': 'h' }),
+      list: async () => entries,
+      countAttempt: async (recordId) => {
+        counted.push(recordId)
+      },
+      remove: async (recordId) => {
+        removed.push(recordId)
+      },
+      handlers: SYNC_HANDLERS,
+    })
+
+    expect(result).toEqual({ sent: 0, rejected: 0, offline: 0, dropped: 3 })
+    expect(removed).toEqual(['r-0', 'r-1', 'r-2'])
+    expect(counted).toEqual([])
+    expect(fetchSpy).not.toHaveBeenCalled()
+    fetchSpy.mockRestore()
   })
 })

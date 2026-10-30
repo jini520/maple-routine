@@ -10,7 +10,6 @@
  * ③ 여러 원천을 하루로 접는다. 캘린더 칸이 받는 `CalendarAmounts` 를 만든다. 원천이 넷이고
  *    (손입력 둘 · 보스 결정석 · 아이템 판매) 뒤의 둘은 여기서 못 고친다.
  */
-import { reportCashbookEntries } from '../server-sync/report'
 import { countCoreSave } from '../app-review/request'
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
 import type { BossDifficulty } from '../../types'
@@ -86,7 +85,6 @@ async function entryAccountId(): Promise<string | null> {
 export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void> {
   const id = randomUuid()
   await insertIncomeRecord({ ...draft, id, recordedAt: now.toISOString() }, await entryAccountId())
-  await reportCashbookEntries([id], now)
   countCoreSave()
   // 저장이 성공한 뒤에만 기억한다.
   const remembered = lastHuntOf(draft)
@@ -97,10 +95,6 @@ export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void>
 export async function recordIncomes(drafts: readonly IncomeDraft[], now: Date): Promise<void> {
   const records = drafts.map((draft) => ({ ...draft, id: randomUuid(), recordedAt: now.toISOString() }))
   await insertIncomeRecords(records, await entryAccountId())
-  await reportCashbookEntries(
-    records.map((record) => record.id),
-    now,
-  )
   countCoreSave()
 }
 
@@ -139,7 +133,6 @@ export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
   const record: SpendRecord = { ...draft, id, recordedAt: now.toISOString() }
   await insertSpendRecord(record, await entryAccountId())
   await quietly(() => rememberAfterSave(record))
-  await reportCashbookEntries([id], now)
   countCoreSave()
   // 저장이 성공한 뒤에만 기억한다. 던진 입력의 시세를 다음 기본값으로 남기면 안 된다.
   if (draft.pointPer100mMeso !== null) {
@@ -1057,7 +1050,6 @@ export function loadFragmentStorage(
 export async function editSpend(record: SpendRecord): Promise<void> {
   await updateSpendRecord(record, await entryAccountId())
   await quietly(() => rememberAfterEdit(record))
-  await reportCashbookEntries([record.id], new Date())
   if (record.pointPer100mMeso !== null) {
     await setLastPointRate(record.pointPer100mMeso)
   }
@@ -1065,7 +1057,6 @@ export async function editSpend(record: SpendRecord): Promise<void> {
 
 export async function editIncome(record: IncomeRecord): Promise<void> {
   await updateIncomeRecord(record, await entryAccountId())
-  await reportCashbookEntries([record.id], new Date())
 }
 
 /** 지우기. 갈래가 어느 테이블인지를 안다. 손입력만 받는다. */
@@ -1080,6 +1071,4 @@ export async function removeRecord(entry: ManualDayRecord): Promise<void> {
     await deleteSpendRecord(record.id)
     await quietly(() => rememberAfterRemove(record, latestId))
   } else await deleteIncomeRecord(entry.record.id)
-  // 지운 뒤에 넣는다. 전송이 기록을 못 찾아 서버에서도 지운다.
-  await reportCashbookEntries([entry.record.id], new Date())
 }

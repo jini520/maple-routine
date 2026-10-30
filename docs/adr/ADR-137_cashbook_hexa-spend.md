@@ -1,7 +1,7 @@
 # ADR-137 헥사 강화 지출과 강화 레벨 기억
 
 > 🟢 유효
-> 관련 소스: `app/cashbook/spend/HexaMatrixForm.tsx` · `app/cashbook/spend/LevelRangeGrid.tsx` · `app/cashbook/spend/level-range.ts` · `app/cashbook/spend/SymbolForm.tsx` · `lib/cashbook/hexa-matrix.ts` · `features/cashbook/remembered-levels.ts` · `storage/remembered-levels.ts` · `nexon/hexamatrix/` · `features/server-sync/cashbook-entry-sync.ts`
+> 관련 소스: `app/cashbook/spend/HexaMatrixForm.tsx` · `app/cashbook/spend/LevelRangeGrid.tsx` · `app/cashbook/spend/level-range.ts` · `app/cashbook/spend/SymbolForm.tsx` · `lib/cashbook/hexa-matrix.ts` · `features/cashbook/remembered-levels.ts` · `storage/remembered-levels.ts` · `nexon/hexamatrix/`
 
 ## 배경
 
@@ -149,7 +149,7 @@
 
 ### 결정 9. 헥사 기록은 조각 칸 셋을 새로 더해 저장한다
 
-- 기록 표(`cashbook_entry_items`)와 서버 기록 표에 칸 셋을 더한다. 필요 조각 개수 · 교환 불가 조각 개수 · 조각 개당 가격이다(사용자 선택 2026-10-30). 수정으로 다시 열면 이 값이 다시 서야 하고, 있는 칸(수량 · 단가)을 빌리면 칸의 뜻이 갈래마다 달라져 읽기 어렵기 때문이다.
+- 기록 표(`cashbook_entry_items`)에 칸 셋을 더한다. 필요 조각 개수 · 교환 불가 조각 개수 · 조각 개당 가격이다(사용자 선택 2026-10-30). 수정으로 다시 열면 이 값이 다시 서야 하고, 있는 칸(수량 · 단가)을 빌리면 칸의 뜻이 갈래마다 달라져 읽기 어렵기 때문이다.
 - 헥사 스탯은 활성화 포함 여부도 저장한다. 필요 조각에서 활성화 몫을 다시 가를 수 있어야 수정 화면이 체크 상태로 열린다.
 - 헥사 스킬 기록의 key 는 코어 이름이고 강화 전 · 강화 후는 있는 레벨 칸(`levelFrom` · `levelTo`)에 둔다. 헥사 스탯의 key 는 스탯 key 다.
 - 금액은 저장할 때 `(필요 조각 − 교환 불가) × 개당 가격` 으로 계산해 굳힌다. 교환 불가가 필요 조각보다 많으면 0 이다.
@@ -158,7 +158,6 @@
 
 - 서버 비용 표에는 조각과 함께 솔 에르다 개수도 넣는다. 지출 계산에는 안 쓰지만 나중에 쓸 데가 있다.
 - 조각 개당 가격 칸은 빈 칸으로 연다. 마지막으로 친 값을 채우지 않는다.
-- 금액이 0 인 헥사 기록은 서버로 보내지 않는다([[ADR-099]] 최종값 전송에서 뺀다).
 - 헥사 강화는 사냥에서 보관한 조각을 빼지 않는다. 헥사를 올린 캐릭터와 조각을 모은 캐릭터가 달라서 누구의 보관에서 뺄지 정할 수 없기 때문이다. 직접 모은 조각도 강화에 쓰면 지출이고, 지출에서 빼는 것은 교환 불가 개수뿐이다.
 - 캐릭터는 필수다. 헥사는 캐릭터마다 따로이기 때문이다.
 - 헥사 스탯 Ⅳ ~ Ⅵ 처럼 활성화 비용을 모르는 스탯은 서버 표에 비용 없이 둘 수 있다. 그때 활성화 체크를 막는다.
@@ -187,10 +186,10 @@
 | `features/cashbook/__tests__/remembered-levels.spec.ts` | 결정 3: 추적 시작 때 기억이 없을 때만 넥슨 값으로 채우는지, 폼은 기억이 있으면 넥슨을 안 부르는지, 저장 · 지우기가 가장 최근 기록일 때만 기억을 옮기는지 본다 |
 | `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` | 결정 3 · 9: 조각 칸 넷이 그대로 돌아오는지, 칸이 없는 옛 품목 표에 칸이 붙는지, 가장 최근 기록 조회와 기억의 fill · overwrite 를 진짜 SQLite 로 본다 |
 | `features/cashbook/__tests__/records.spec.ts` · `row-icon.spec.ts` · `features/stats/__tests__/aggregate.spec.ts` | 결정 12: 0 메소 헥사 줄이 서는지, 줄 두 줄 · 그림, 통계의 코어 · 스탯별 몫을 본다 |
-| `features/server-sync/__tests__/record-payloads.spec.ts` | 결정 10: 조각 칸 넷을 싣고 0 메소 헥사 기록은 보내지 않는지 본다 |
 | `src/modules/hexa-matrix/hexa-matrix.repository.spec.ts` | 결정 5 · 6: API 타입마다 기본 종류가 하나인지, 비용 줄이 0 부터 만렙 − 1 까지 다 있어야 하는지, 직업별 코어의 차례를 진짜 Postgres 로 본다 |
 | `src/cli/seed-game-data.spec.ts` | 결정 5 · 7: 헥사 씨앗이 종류 6 · 비용 180 · 이름 50 · 직업 코어 672 · 스탯 3 으로 빈 표만 채우는지 본다 |
 
 ## 번호 기록
 
 - ADR-137 (2026-10-30): 헥사 코어 그림 · 레벨 범위 격자 · 강화 레벨 기억 · hexamatrix 응답 해석을 처음 작성했다(#631). 같은 날 사용자가 확인한 직업 48 개의 3rd 스킬 코어 표, 서버 종류 표 · 이름 표로 종류를 가르는 결정, 실제 코어를 고르는 결정, 수정 · 삭제 때 기억값 규칙, 이벤트 레벨 무시, 6차 스킬 그림을 서버 그림 목록 `skills/` 에 webp 로 두는 결정, API 레벨이 낮을 때 채우지 않는 규칙, 직업별 코어 목록을 서버 게임 데이터로 두는 결정을 더했다. 지출 갈래 이름 · 하위 갈래 세그먼트 · 원본 그림을 쓰는 곳도 정했다. 기록 칸 셋 · 이슈의 먼저 정한 규칙 · 서버 먼저 배포를 더했다. 하루 목록 · 통계 · 데이터 삭제 규칙과 종류 표의 만렙 칸도 더했다. 처음 레벨을 추적 시작 때 받고 폼에서는 API 를 부르지 않도록 결정 3 을 다시 썼다
+- ADR-137 (2026-10-30): 가계부 기록을 서버로 보내지 않게 되어([[ADR-099]] 결정 1) 결정 9 의 서버 기록 표와 결정 10 의 0 메소 기록 전송 규칙을 지웠다
