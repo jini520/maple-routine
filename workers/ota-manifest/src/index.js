@@ -15,7 +15,9 @@
  * 건드리지 않는다.** 배포가 «릴리스 업로드 + Worker 갱신» 두 갈래가 되면 갈리는 순간 어느 쪽이
  * 사실인지 알 방법이 없다([[ADR-137]] 결정 2).
  *
- * 에셋은 GitHub 을 직접 가리켜 여기를 안 지나간다. 번들만 압축해서 보내려고 `/bundle/` 로 이 Worker 를 거친다.
+ * 그 덕에 **대역폭도 여기를 안 지나간다** — 매니페스트가 가리키는 `launchAsset.url` 은 GitHub 을
+ * 직접 가리키므로, 이 Worker 가 내보내는 것은 수 KB JSON 한 장뿐이고 15 MB 짜리 번들·에셋은
+ * 지금까지처럼 GitHub 이 받는다.
  */
 
 /** 번들·에셋·매니페스트가 쌓이는 릴리스([[ADR-137]] 결정 9). capacitor 쪽 `live-update-latest` 와 별개 축이다. */
@@ -85,34 +87,6 @@ async function handleManifest(request) {
 }
 
 /**
- * `GET /bundle/<번들 이름>` — 번들을 gzip 으로 압축해 내주는 자리.
- *
- * 릴리스에는 발행 스크립트가 압축해 둔 `<번들 이름>.gz` 가 있다. GitHub 은 `content-encoding` 을 붙일 수 없어서
- * 압축한 파일을 그대로 받으면 기기가 풀지 않는다. 여기서 그 헤더를 붙여 내주면 기기가 풀어서 저장하고, 푼 내용으로
- * 매니페스트의 해시를 확인한다. `encodeBody: 'manual'` 이 없으면 Workers 가 이미 압축한 본문을 한 번 더 압축한다.
- *
- * 번들 이름은 내용 해시라 같은 이름이면 내용도 같다. 그래서 매니페스트와 달리 오래 캐시한다.
- */
-async function handleBundle(name) {
-  if (!isSafeSegment(name) || !name.endsWith('.hbc')) return new Response('not found', { status: 404 })
-
-  const upstream = await fetch(`${RELEASE_BASE}/${name}.gz`, {
-    cf: { cacheTtl: 31_536_000, cacheEverything: true },
-  })
-  if (!upstream.ok) return new Response('not found', { status: 404 })
-
-  return new Response(upstream.body, {
-    status: 200,
-    encodeBody: 'manual',
-    headers: {
-      'content-type': 'application/javascript',
-      'content-encoding': 'gzip',
-      'cache-control': 'public, max-age=31536000, immutable',
-    },
-  })
-}
-
-/**
  * `GET /latest?platform=ios` — **우리 축**의 조회([[ADR-137]] 결정 4).
  *
  * 프로토콜이 삼키는 것을 되살리는 자리다. 런타임이 안 맞으면 앱은 위에서 204 를 받아
@@ -153,7 +127,6 @@ export default {
     const { pathname } = new URL(request.url)
     if (pathname === '/manifest') return handleManifest(request)
     if (pathname === '/latest') return handleLatest(request)
-    if (pathname.startsWith('/bundle/')) return handleBundle(pathname.slice('/bundle/'.length))
     return new Response('not found', { status: 404 })
   },
 }

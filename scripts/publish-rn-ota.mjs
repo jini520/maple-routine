@@ -27,7 +27,6 @@ import { copyFileSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSyn
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { gzipSync } from 'node:zlib'
 // 릴리스 노트의 진실 원천을 **그대로** 읽는다([[ADR-119]] 결정 1) — capacitor 스크립트와 같은 파일을
 // 같은 이유로 읽는다. 노트가 두 벌이 되면 갈라진 순간 어느 쪽이 사실인지 알 방법이 없다.
 import { findReleaseNote } from '../src/data/release-notes.ts'
@@ -84,7 +83,7 @@ export function releaseAssetName(distRelativePath) {
  * 을 말하고([[ADR-027]]) 「자세히 보기」가 핵심 목록을 펼치고([[ADR-126]] 결정 1) 설정 화면이
  * 「사용 중」을 판정하는 재료가 전부 여기서 온다.
  */
-export function buildManifest({ id, createdAt, runtimeVersion, platform, bundle, assets, appVersion, highlights, workerBase }) {
+export function buildManifest({ id, createdAt, runtimeVersion, platform, bundle, assets, appVersion, highlights }) {
   const urlFor = (name) => `https://github.com/${REPO}/releases/download/${RELEASE_TAG}/${name}`
   return {
     id,
@@ -93,9 +92,7 @@ export function buildManifest({ id, createdAt, runtimeVersion, platform, bundle,
     launchAsset: {
       key: bundle.key,
       contentType: 'application/javascript',
-      // 번들은 Worker 가 gzip 으로 압축해 내준다. GitHub 은 `content-encoding` 을 붙일 수 없다.
-      // 해시는 압축하지 않은 번들의 것이다. 기기는 응답을 풀어서 저장하고 푼 내용으로 확인한다.
-      url: `${workerBase}/bundle/${bundle.name}`,
+      url: urlFor(bundle.name),
       hash: bundle.hash,
     },
     assets: assets.map((asset) => ({
@@ -112,8 +109,7 @@ export function buildManifest({ id, createdAt, runtimeVersion, platform, bundle,
       // 이 번들을 받는 데 드는 바이트. 프로토콜엔 용량 필드가 없는데 [[ADR-027]] 이 모달의 재료를
       // «버전 + 용량» 으로 정했다. 이미 기기에 있는 에셋은 안 받으므로(`path.exists()` →
       // ALREADY_EXISTS) **번들 크기**가 사용자가 실제로 기다리는 양에 가장 가깝다.
-      // 압축한 크기를 싣는다. 실제로 받는 양이고, 앱은 이 값이 5MB 이하면 묻지 않고 받는다.
-      sizeBytes: bundle.compressedSize,
+      sizeBytes: bundle.size,
       storeUrl: STORE_URLS[platform],
     },
   }
@@ -315,23 +311,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const fileMetadata = metadata.fileMetadata[platform]
     const bundlePath = join(distDir, fileMetadata.bundle)
     const bundleBuffer = readFileSync(bundlePath)
-    // 내용에서 파생된 이름 — 위 사고를 구조적으로 불가능하게 만드는 한 줄이다.
-    const bundleName = `bundle-${platform}-${createHash('sha256').update(bundleBuffer).digest('hex')}.hbc`
-    // Worker 가 그대로 내줄 압축본. 이름이 원본 이름에서 나오므로 같은 이름이면 같은 내용이다.
-    const compressed = gzipSync(bundleBuffer, { level: 9 })
-    const compressedPath = `${bundlePath}.gz`
-    writeFileSync(compressedPath, compressed)
     return {
       platform,
       bundle: {
         localPath: bundlePath,
-        name: bundleName,
+        // 내용에서 파생된 이름 — 위 사고를 구조적으로 불가능하게 만드는 한 줄이다.
+        name: `bundle-${platform}-${createHash('sha256').update(bundleBuffer).digest('hex')}.hbc`,
         key: md5Hex(bundleBuffer),
         hash: sha256Base64Url(bundleBuffer),
         size: statSync(bundlePath).size,
-        compressedSize: compressed.length,
       },
-      compressedBundle: { localPath: compressedPath, name: `${bundleName}.gz` },
       assets: fileMetadata.assets.map((asset) => {
         const localPath = join(distDir, asset.path)
         const buffer = readFileSync(localPath)
@@ -351,7 +340,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // 두 플랫폼이 같은 에셋을 공유하므로 이름으로 합친다.
   const uploadTargets = new Map()
   for (const plan of plans) {
-    for (const entry of [plan.bundle, plan.compressedBundle, ...plan.assets]) {
+    for (const entry of [plan.bundle, ...plan.assets]) {
       if (!uploadTargets.has(entry.name)) uploadTargets.set(entry.name, entry.localPath)
     }
   }
@@ -377,7 +366,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.log('[5/5] 매니페스트 생성·업로드 중...')
   const createdAt = new Date().toISOString()
   const manifestFiles = []
-  const workerBase = JSON.parse(readFileSync(join(appDir, 'app.json'), 'utf-8')).expo.updates.url.replace(/\/manifest$/, '')
 
   for (const plan of plans) {
     const { platform } = plan
@@ -390,7 +378,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       assets: plan.assets,
       appVersion,
       highlights: note.highlights,
-      workerBase,
     })
 
     const manifestPath = join(workDir, `manifest-${platform}-${runtimeVersions[platform]}.json`)
@@ -460,17 +447,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     // **매니페스트가 받아지는 것만으로는 부족하다** — 앱이 실패한 지점은 그 다음이었다.
     // 번들을 실제로 내려받아 매니페스트가 약속한 해시와 대조한다. 이 대조가 없어서
     // *"배포 성공 · 매니페스트 정상 · 앱만 못 받음"* 이 나왔다(위 [4/5] 주석).
-    // 기기와 같은 `accept-encoding` 을 보낸다. `fetch` 는 응답을 풀어서 주므로 해시는 푼 내용으로 잰다.
     const launchAsset = served.launchAsset
-    const bundleResponse = await fetch(launchAsset.url, { headers: { 'accept-encoding': 'zstd, br, gzip' } })
-    if (bundleResponse.headers.get('content-encoding') !== 'gzip') {
-      console.error(
-        `${platform}: 번들이 압축되지 않고 옵니다(content-encoding=${bundleResponse.headers.get('content-encoding')}).\n` +
-          `  url=${launchAsset.url}\n  Worker 의 /bundle/ 경로가 배포됐는지 확인하세요.`,
-      )
-      process.exit(1)
-    }
-    const downloaded = Buffer.from(await bundleResponse.arrayBuffer())
+    const downloaded = Buffer.from(await (await fetch(launchAsset.url)).arrayBuffer())
     const actualHash = sha256Base64Url(downloaded)
     if (actualHash !== launchAsset.hash) {
       console.error(
