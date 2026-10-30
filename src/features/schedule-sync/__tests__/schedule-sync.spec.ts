@@ -39,19 +39,13 @@ jest.mock('../../../storage/api-key', () => ({
 }))
 const { getAuthConfig: getAuthConfigMock } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
-jest.mock('../../../storage/scheduler-cache', () => ({
-  getCachedSchedulerState: jest.fn(),
-  setCachedSchedulerState: jest.fn(),
+// 캐릭터의 소속 기록. 피커의 stub 단계가 쿼리 캐시에 든 basic 을 이 계정 것만 거르는 데 쓴다. 목록을 받은 자리가 적는
+// 쪽(`recordCharacterAccounts`)은 SQLite 라 함께 세운다.
+jest.mock('../../../storage/character-accounts', () => ({
+  getCharacterAccountSightings: jest.fn(),
+  recordCharacterAccounts: jest.fn(),
 }))
-const { getCachedSchedulerState: getCachedSchedulerStateMock, setCachedSchedulerState: setCachedSchedulerStateMock } = jest.requireMock('../../../storage/scheduler-cache') as Record<string, jest.Mock>
-
-jest.mock('../../../storage/character-basic-cache', () => ({
-  getCachedCharacterBasic: jest.fn(),
-  setCachedCharacterBasic: jest.fn(),
-  getAllCachedCharacterBasicOcids: jest.fn(),
-  reconcileCachedCharacterBasicOcids: jest.fn(),
-}))
-const { getCachedCharacterBasic: getCachedCharacterBasicMock, setCachedCharacterBasic: setCachedCharacterBasicMock, getAllCachedCharacterBasicOcids: getAllCachedCharacterBasicOcidsMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
+const { getCharacterAccountSightings: getCharacterAccountSightingsMock, recordCharacterAccounts: recordCharacterAccountsMock } = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
 
 jest.mock('../../../storage/character-profiles', () => ({
   getCharacterProfiles: jest.fn(),
@@ -96,6 +90,10 @@ import {
   useWorldLeapStore,
 } from '../../character-manage/world-leap-store'
 import type { NexonCredential } from '../../../types/auth'
+import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
+import type { CachedSchedulerEntry } from '../../../storage/scheduler-cache'
+import { queryClient } from '../../query/client'
+import { queryKeys } from '../../query/keys'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
 const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accountId: 'account-key' })
@@ -159,6 +157,27 @@ const NOW = '2026-07-11T00:00:00.000Z'
 // 건너뛰는 경로는 별도 케이스가 본다.
 const STALE_CACHED_AT = '2026-07-10T00:00:00.000Z'
 
+/** 쿼리 캐시 `schedule(ocid)` 에 심는다. 폴백과 병합의 직전 상태가 여기서 온다. */
+function seedSchedule(ocid: string, entry: CachedSchedulerEntry): void {
+  queryClient.setQueryData<CachedSchedulerEntry>(queryKeys.schedule(ocid), entry)
+}
+
+/** 쿼리 캐시 `characterBasic(ocid)` 에 심는다. 5분 가드와 피커의 캐시 우선 표시가 여기서 읽는다. */
+function seedBasic(ocid: string, entry: CachedCharacterBasicEntry): void {
+  queryClient.setQueryData<CachedCharacterBasicEntry>(queryKeys.characterBasic(ocid), entry)
+}
+
+function readBasic(ocid: string): CachedCharacterBasicEntry | undefined {
+  return queryClient.getQueryData<CachedCharacterBasicEntry>(queryKeys.characterBasic(ocid))
+}
+
+/** 그 계정에서 본 캐릭터로 적는다. 피커의 stub 단계가 이 기록으로 다른 계정 캐릭터를 거른다. */
+function seenIn(accountId: string, ocids: string[]): void {
+  getCharacterAccountSightingsMock.mockResolvedValue(
+    ocids.map((ocid) => ({ ocid, name: ocid, accountId, firstSeenOn: '2026-07-01', lastSeenOn: '2026-07-10' })),
+  )
+}
+
 let prefs = installFakePreferences()
 
 beforeEach(async () => {
@@ -172,15 +191,13 @@ beforeEach(async () => {
   useRefreshProgress.getState().resetForTests()
   prefs = installFakePreferences()
   getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
-  getCachedSchedulerStateMock.mockResolvedValue(null)
-  setCachedSchedulerStateMock.mockResolvedValue(undefined)
+  queryClient.clear()
+  getCharacterAccountSightingsMock.mockResolvedValue([])
+  recordCharacterAccountsMock.mockResolvedValue(undefined)
   saveCharacterProfileMock.mockResolvedValue(undefined)
   markCharacterUnavailableMock.mockReset().mockResolvedValue(undefined)
   getCharacterProfilesMock.mockResolvedValue(new Map())
   resetWorldLeapStoreForTests()
-  getCachedCharacterBasicMock.mockResolvedValue(null)
-  setCachedCharacterBasicMock.mockResolvedValue(undefined)
-  getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
   getWorldSharedProgressMock.mockResolvedValue({})
   getAccountSharedProgressMock.mockResolvedValue({})
   setWorldSharedProgressEntryMock.mockResolvedValue(undefined)
@@ -258,7 +275,7 @@ describe('syncSchedules', () => {
     expect(results.map((r) => r.ocid)).toEqual(['ocid-1'])
   })
 
-  it('모든 캐릭터가 성공하면 캐시를 갱신하고 isStale: false로 채워진 결과를 반환한다', async () => {
+  it('모든 캐릭터가 성공하면 isStale: false 로 채워진 결과를 반환한다', async () => {
     const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock
@@ -287,14 +304,6 @@ describe('syncSchedules', () => {
         error: null,
       },
     ])
-    expect(setCachedSchedulerStateMock).toHaveBeenCalledWith('ocid-1', {
-      state: schedulerState('캐릭터1'),
-      syncedAt: NOW,
-    })
-    expect(setCachedSchedulerStateMock).toHaveBeenCalledWith('ocid-2', {
-      state: schedulerState('캐릭터2'),
-      syncedAt: NOW,
-    })
   })
 
   it('onProgress는 시작 시 (0,total)로 호출되고, 마지막 호출은 (total,total)이다', async () => {
@@ -402,7 +411,7 @@ describe('syncSchedules', () => {
     const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockRejectedValue(new NexonNetworkError('timeout'))
-    getCachedSchedulerStateMock.mockResolvedValue({
+    seedSchedule('ocid-1', {
       state: schedulerState('캐시된-캐릭터1'),
       syncedAt: '2026-07-10T00:00:00.000Z',
     })
@@ -420,14 +429,12 @@ describe('syncSchedules', () => {
         error: { kind: 'network', apiKey: 'key-1' },
       },
     ])
-    expect(setCachedSchedulerStateMock).not.toHaveBeenCalled()
   })
 
   it('네트워크 에러가 나고 캐시도 없으면 state/syncedAt이 null인 채로 isStale: true를 반환한다', async () => {
     const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockRejectedValue(new NexonNetworkError('timeout'))
-    getCachedSchedulerStateMock.mockResolvedValue(null)
 
     const results = await syncSchedules(['ocid-1'])
 
@@ -470,12 +477,10 @@ describe('syncSchedules', () => {
     const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2'), mockCharacter('ocid-3')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonAuthError('invalid'))
-    getCachedSchedulerStateMock.mockResolvedValue(null)
 
     const results = await syncSchedules(['ocid-1', 'ocid-2', 'ocid-3'])
 
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
-    expect(getCachedSchedulerStateMock).toHaveBeenCalledTimes(3)
     for (const result of results) {
       expect(result.error).toEqual({ kind: 'invalidApiKey', apiKey: 'key-1' })
       expect(result.isStale).toBe(true)
@@ -486,7 +491,6 @@ describe('syncSchedules', () => {
     const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonRateLimitError('rate limited'))
-    getCachedSchedulerStateMock.mockResolvedValue(null)
 
     const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
@@ -502,7 +506,6 @@ describe('syncSchedules', () => {
     const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonSignInRequiredError('만료'))
-    getCachedSchedulerStateMock.mockResolvedValue(null)
 
     const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
@@ -522,7 +525,6 @@ describe('syncSchedules', () => {
     const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchSchedulerCharacterStateMock.mockRejectedValueOnce(new NexonMaintenanceError('점검', scope))
-    getCachedSchedulerStateMock.mockResolvedValue(null)
 
     const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
@@ -540,7 +542,6 @@ describe('syncSchedules', () => {
       .mockResolvedValueOnce(schedulerState('캐릭터1')) // 프리플라이트: ocid-1
       .mockRejectedValueOnce(new NexonAuthError('invalid')) // 병렬: ocid-2
       .mockResolvedValueOnce(schedulerState('캐릭터3')) // 병렬: ocid-3
-    getCachedSchedulerStateMock.mockResolvedValue(null)
 
     const results = await syncSchedules(['ocid-1', 'ocid-2', 'ocid-3'])
 
@@ -746,7 +747,7 @@ describe('syncSchedules', () => {
       const fresh = schedulerState('캐릭터1')
       fetchSchedulerCharacterStateMock.mockResolvedValue(fresh)
       const cachedPrevious = { state: schedulerState('이전-캐릭터1'), syncedAt: '2026-07-10T00:00:00.000Z' }
-      getCachedSchedulerStateMock.mockResolvedValue(cachedPrevious)
+      seedSchedule('ocid-1', cachedPrevious)
       getWorldSharedProgressMock.mockResolvedValue({ monster_park: { active: true } })
       getAccountSharedProgressMock.mockResolvedValue({ epic_dungeon_nightmare_paradise: { active: true } })
 
@@ -767,14 +768,13 @@ describe('syncSchedules', () => {
       const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
-      getCachedSchedulerStateMock.mockResolvedValue(null)
 
       await syncSchedules(['ocid-1'])
 
       expect(mergeSchedulerStateMock).toHaveBeenCalledWith(expect.objectContaining({ previous: null }))
     })
 
-    it('mergeSchedulerState 결과(characterState)를 캐시에 쓰고 결과의 state로 반환한다', async () => {
+    it('mergeSchedulerState 결과(characterState)를 결과의 state 로 반환한다', async () => {
       const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
@@ -788,7 +788,6 @@ describe('syncSchedules', () => {
       const results = await syncSchedules(['ocid-1'])
 
       expect(results[0].state).toEqual(mergedState)
-      expect(setCachedSchedulerStateMock).toHaveBeenCalledWith('ocid-1', { state: mergedState, syncedAt: NOW })
     })
 
     it('worldLedgerUpdates/accountLedgerUpdates에 담긴 변경분을 각 원장에 저장한다', async () => {
@@ -954,7 +953,6 @@ describe('syncSchedules', () => {
       })
 
       expect(results[0].state).toEqual(finalState)
-      expect(setCachedSchedulerStateMock).toHaveBeenCalledWith('ocid-1', { state: finalState, syncedAt: NOW })
     })
 
     it('-1일도 그 섹션이 stale이면 -2일로 계속 넘어간다', async () => {
@@ -1278,7 +1276,7 @@ describe('syncSchedules', () => {
   // 갱신 경로가 피커 하나뿐이면 레벨·외형이 피커를 마지막으로 연 시점에 굳는다. 동기화가
   // 실제로 도는 회차에 편승시켜 그 스냅샷을 푼다.
   describe('mockCharacter/basic 편승 갱신', () => {
-    it('추적 캐릭터 N명을 동기화하면 mockCharacter/basic을 N회 호출하고 cachedAt과 함께 캐시에 쓴다', async () => {
+    it('추적 캐릭터 N명을 동기화하면 mockCharacter/basic을 N회 호출하고 cachedAt 과 함께 쿼리 캐시에 든다', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
@@ -1293,11 +1291,11 @@ describe('syncSchedules', () => {
       expect(fetchCharacterBasicMock).toHaveBeenCalledWith(자격('key-1'), 'ocid-1', worldKeyOfApiName)
       expect(fetchCharacterBasicMock).toHaveBeenCalledWith(자격('key-1'), 'ocid-2', worldKeyOfApiName)
       // mockCharacter/list 가 준 jobClass 가 엔트리에 함께 실린다. basic 응답에는 없다.
-      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', {
+      expect(readBasic('ocid-1')).toEqual({
         profile: basicProfile({ name: '갱신-ocid-1', level: 293, jobClass: '렌' }),
         cachedAt: NOW,
       })
-      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-2', {
+      expect(readBasic('ocid-2')).toEqual({
         profile: basicProfile({ name: '갱신-ocid-2', level: 293, jobClass: '렌' }),
         cachedAt: NOW,
       })
@@ -1313,8 +1311,8 @@ describe('syncSchedules', () => {
 
       expect(results[0].isStale).toBe(false)
       expect(results[0].error).toBeNull()
-      // 실패는 기존 캐시를 그대로 두는 것으로 끝난다.
-      expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
+      // 실패는 기존 캐시를 그대로 두는 것으로 끝난다. 받은 적이 없으니 캐시도 비어 있다.
+      expect(readBasic('ocid-1')).toBeUndefined()
     })
 
     it('한 캐릭터의 mockCharacter/basic 실패가 다른 캐릭터의 갱신을 막지 않는다', async () => {
@@ -1330,8 +1328,8 @@ describe('syncSchedules', () => {
 
       await syncSchedules(['ocid-1', 'ocid-2'])
 
-      expect(setCachedCharacterBasicMock).toHaveBeenCalledTimes(1)
-      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-2', {
+      expect(readBasic('ocid-1')).toBeUndefined()
+      expect(readBasic('ocid-2')).toEqual({
         profile: basicProfile({ name: '갱신-ocid-2', level: 293, jobClass: '렌' }),
         cachedAt: NOW,
       })
@@ -1364,19 +1362,14 @@ describe('syncSchedules', () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
-      getCachedCharacterBasicMock.mockResolvedValue({
-        profile: basicProfile({ name: '방금받음', level: 293 }),
-        cachedAt: NOW,
-      })
+      const fresh = { profile: basicProfile({ name: '방금받음', level: 293 }), cachedAt: NOW }
+      seedBasic('ocid-1', fresh)
+      seedBasic('ocid-2', fresh)
 
       const results = await syncSchedules(['ocid-1', 'ocid-2'])
 
       expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith(자격('key-1'), 'ocid-2', worldKeyOfApiName)
-      expect(setCachedCharacterBasicMock).not.toHaveBeenCalledWith(
-        'acc-1',
-        'ocid-2',
-        expect.anything(),
-      )
+      expect(readBasic('ocid-2')).toEqual(fresh)
       // 스케줄 동기화 자체는 그대로 돈다. 건너뛴 것은 basic 하나뿐이다.
       expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledWith(자격('key-1'), 'ocid-2', SCHEDULE_NAME_RESOLVERS)
       expect(results[1].isStale).toBe(false)
@@ -1385,11 +1378,11 @@ describe('syncSchedules', () => {
     // today 의 대표 위젯이 EXP 를 그리는 캐릭터다. 이 하나만 가드를 건너뛴다. 5분 안이면 새로고침을
     // 눌러도 그 숫자가 안 움직이던 것을 여기서 푼다.
     describe('대표 캐릭터 하나는 TTL 안이어도 다시 받는다', () => {
+      const 방금받음 = { profile: basicProfile({ name: '방금받음', level: 293 }), cachedAt: NOW }
+
       beforeEach(() => {
-        getCachedCharacterBasicMock.mockResolvedValue({
-          profile: basicProfile({ name: '방금받음', level: 293 }),
-          cachedAt: NOW,
-        })
+        seedBasic('ocid-1', 방금받음)
+        seedBasic('ocid-2', 방금받음)
       })
 
       it('저장된 대표만 부르고 나머지는 가드에 걸린다', async () => {
@@ -1430,7 +1423,7 @@ describe('syncSchedules', () => {
         const results = await syncSchedules(['ocid-1'])
 
         expect(results[0].isStale).toBe(false)
-        expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
+        expect(readBasic('ocid-1')).toEqual(방금받음)
       })
     })
   })
@@ -1494,21 +1487,6 @@ describe('syncSchedules', () => {
       expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-2', 'epic_dungeon_nightmare_paradise', entry)
     })
 
-    it('mockCharacter/basic 편승 갱신도 각 캐릭터의 자기 계정으로 캐시에 쓴다 (인덱스)', async () => {
-      fetchCharacterListMock.mockResolvedValue(twoAccounts())
-      fetchSchedulerCharacterStateMock.mockImplementation(async (_apiKey: string, ocid: string) =>
-        schedulerState(`캐릭터-${ocid}`),
-      )
-      fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) =>
-        basicProfile({ name: `갱신-${ocid}`, level: 293 }),
-      )
-
-      await syncSchedules(['ocid-1', 'ocid-2'])
-
-      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', expect.anything())
-      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-2', 'ocid-2', expect.anything())
-    })
-
     // RN 은 계정을 고르는 단계가 없어 selectedAccountId 가 영영 null 이다.
     it('selectedAccountId 가 없어도 동기화한다. 계정을 고른 적 없는 설치본', async () => {
       getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
@@ -1543,25 +1521,29 @@ describe('syncSchedules', () => {
       expect(fetchCharacterBasicMock).toHaveBeenCalledTimes(2)
       expect(getAccountSharedProgressMock).toHaveBeenCalledTimes(2)
       expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-1')
-      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-1', expect.anything())
-      expect(setCachedCharacterBasicMock).toHaveBeenCalledWith('acc-1', 'ocid-3', expect.anything())
+      expect(readBasic('ocid-1')).toBeDefined()
+      expect(readBasic('ocid-3')).toBeDefined()
     })
   })
 })
 
 describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () => {
+  /**
+   * 끝을 기다리지 않는 조회. 목록이 영영 안 오는 케이스는 다음 케이스의 `queryClient.clear()` 가 그 `character/list`
+   * 조회를 취소해 거부로 끝나므로 여기서 삼킨다. 안 삼키면 처리되지 않은 거부가 다음 케이스를 깨뜨린다.
+   */
+  function startPicker(onUpdate: jest.Mock): void {
+    void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' }).catch(() => undefined)
+  }
+
   describe(': 캐싱된 전체 캐릭터 stub으로 mockCharacter/list 대기 중에도 즉시 표시', () => {
-    it('mockCharacter-basic-cache 인덱스에 캐시가 있으면 mockCharacter/list 응답 전에 stub 목록으로 먼저 onUpdate한다', async () => {
+    it('쿼리 캐시에 이 계정의 basic 이 있으면 character/list 응답 전에 stub 목록으로 먼저 onUpdate 한다', async () => {
       fetchCharacterListMock.mockImplementation(() => new Promise(() => {})) // 절대 resolve 안 함
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
-      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
-        ocid === 'ocid-1'
-          ? { profile: basicProfile({ name: '캐싱된캐릭', level: 180 }), cachedAt: STALE_CACHED_AT }
-          : null,
-      )
+      seenIn('acc-1', ['ocid-1'])
+      seedBasic('ocid-1', { profile: basicProfile({ name: '캐싱된캐릭', level: 180 }), cachedAt: STALE_CACHED_AT })
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+      startPicker(onUpdate)
 
       await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       expect(onUpdate).toHaveBeenCalledWith([
@@ -1573,44 +1555,93 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       await waitFor(() => expect(fetchCharacterListMock).toHaveBeenCalled())
     })
 
-    it('추적 여부와 무관하게 인덱스에 있는 모든 ocid가 stub 목록에 포함된다', async () => {
+    it('추적 여부와 무관하게 이 계정의 캐시된 ocid 가 전부 stub 목록에 든다', async () => {
       fetchCharacterListMock.mockImplementation(() => new Promise(() => {}))
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
-      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
-        profile: basicProfile({ name: `캐릭-${ocid}`, level: 100 }),
-        cachedAt: STALE_CACHED_AT,
-      }))
+      seenIn('acc-1', ['ocid-1', 'ocid-2'])
+      for (const ocid of ['ocid-1', 'ocid-2']) {
+        seedBasic(ocid, { profile: basicProfile({ name: `캐릭-${ocid}`, level: 100 }), cachedAt: STALE_CACHED_AT })
+      }
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+      startPicker(onUpdate)
 
       await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       const stub = onUpdate.mock.calls[0][0] as Array<{ ocid: string }>
       expect(stub.map((entry) => entry.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
     })
 
-    it('인덱스상 캐시된 캐릭터의 access_flag가 false면 stub 목록에서 제외된다', async () => {
+    it('캐시된 캐릭터의 access_flag 가 false 면 stub 목록에서 제외된다', async () => {
       fetchCharacterListMock.mockImplementation(() => new Promise(() => {}))
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
-      getCachedCharacterBasicMock.mockResolvedValue({
+      seenIn('acc-1', ['ocid-1'])
+      seedBasic('ocid-1', {
         profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
         cachedAt: STALE_CACHED_AT,
       })
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+      startPicker(onUpdate)
 
-      await waitFor(() => expect(getCachedCharacterBasicMock).toHaveBeenCalled())
+      // stub 단계는 목록 조회보다 앞이다. 목록이 불렸으면 stub 단계는 지나갔다.
+      await waitFor(() => expect(fetchCharacterListMock).toHaveBeenCalled())
       expect(onUpdate).not.toHaveBeenCalled()
     })
 
-    it('인덱스가 비어있으면 stub 단계에서 onUpdate를 호출하지 않고 곧바로 mockCharacter/list를 기다린다', async () => {
+    it('캐시에 이 계정의 캐릭터가 없으면 stub 을 방출하지 않고 곧바로 character/list 를 기다린다', async () => {
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [])])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
+      const onUpdate = jest.fn()
 
-      await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
+      await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
-      expect(getCachedCharacterBasicMock).not.toHaveBeenCalled()
+      // stub 방출이 없었다. 목록 응답 뒤의 빈 목록 한 번뿐이다.
+      expect(onUpdate).toHaveBeenCalledTimes(1)
+      expect(onUpdate).toHaveBeenCalledWith([])
+    })
+
+    // 쿼리 캐시는 계정을 모른다. 소속 기록으로 거르지 않으면 계정을 바꿨을 때 이전 계정 캐릭터가 먼저 그려진다.
+    it('다른 계정 소속으로 적힌 캐릭터는 stub 에 안 선다', async () => {
+      fetchCharacterListMock.mockImplementation(() => new Promise(() => {}))
+      getCharacterAccountSightingsMock.mockResolvedValue([
+        { ocid: 'ocid-1', name: 'ocid-1', accountId: 'acc-1', firstSeenOn: '2026-07-01', lastSeenOn: '2026-07-10' },
+        { ocid: 'ocid-9', name: 'ocid-9', accountId: 'acc-2', firstSeenOn: '2026-07-01', lastSeenOn: '2026-07-10' },
+      ])
+      seedBasic('ocid-1', { profile: basicProfile({ name: '이계정', level: 200 }), cachedAt: STALE_CACHED_AT })
+      seedBasic('ocid-9', { profile: basicProfile({ name: '남의계정', level: 280 }), cachedAt: STALE_CACHED_AT })
+
+      const onUpdate = jest.fn()
+      startPicker(onUpdate)
+
+      await waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      expect((onUpdate.mock.calls[0][0] as CharacterPickerEntry[]).map((entry) => entry.ocid)).toEqual(['ocid-1'])
+    })
+
+    // 월드 리프로 목록에서 빠진 캐릭터는 소속 기록의 마지막 본 날이 멈춘다. 세우면 열 때마다 떴다가 목록 응답 뒤에 사라진다.
+    it('마지막으로 받은 목록에 없던 캐릭터는 stub 에 안 선다', async () => {
+      fetchCharacterListMock.mockImplementation(() => new Promise(() => {}))
+      getCharacterAccountSightingsMock.mockResolvedValue([
+        { ocid: 'ocid-1', name: 'ocid-1', accountId: 'acc-1', firstSeenOn: '2026-07-01', lastSeenOn: '2026-07-10' },
+        { ocid: 'ocid-8', name: 'ocid-8', accountId: 'acc-1', firstSeenOn: '2026-07-01', lastSeenOn: '2026-07-03' },
+      ])
+      seedBasic('ocid-1', { profile: basicProfile({ name: '남은캐릭', level: 200 }), cachedAt: STALE_CACHED_AT })
+      seedBasic('ocid-8', { profile: basicProfile({ name: '리프한캐릭', level: 280 }), cachedAt: STALE_CACHED_AT })
+
+      const onUpdate = jest.fn()
+      startPicker(onUpdate)
+
+      await waitFor(() => expect(onUpdate).toHaveBeenCalled())
+      expect((onUpdate.mock.calls[0][0] as CharacterPickerEntry[]).map((entry) => entry.ocid)).toEqual(['ocid-1'])
+    })
+
+    // 소속 기록은 SQLite 다. 못 읽어도 피커는 서야 하므로 stub 만 건너뛰고 목록을 기다린다.
+    it('소속 기록을 못 읽으면 stub 을 건너뛰고 character/list 를 기다린다', async () => {
+      fetchCharacterListMock.mockImplementation(() => new Promise(() => {}))
+      getCharacterAccountSightingsMock.mockRejectedValue(new Error('sqlite'))
+      seedBasic('ocid-1', { profile: basicProfile({ name: '캐싱된캐릭', level: 180 }), cachedAt: STALE_CACHED_AT })
+
+      const onUpdate = jest.fn()
+      startPicker(onUpdate)
+
+      await waitFor(() => expect(fetchCharacterListMock).toHaveBeenCalled())
+      expect(onUpdate).not.toHaveBeenCalled()
     })
 
     // 캐시로 활성이 확인된 캐릭터만 남는다. `character/list` 응답 시점에 캐시 없는 캐릭터까지
@@ -1618,16 +1649,12 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     it('mockCharacter/list 응답이 도착해도 캐시로 활성이 확인된 캐릭터만 담긴 목록으로 교체된다', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
-      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
-        ocid === 'ocid-1'
-          ? { profile: basicProfile({ name: '캐싱된캐릭', level: 180 }), cachedAt: STALE_CACHED_AT }
-          : null,
-      )
+      seenIn('acc-1', ['ocid-1'])
+      seedBasic('ocid-1', { profile: basicProfile({ name: '캐싱된캐릭', level: 180 }), cachedAt: STALE_CACHED_AT })
       fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+      startPicker(onUpdate)
 
       await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
       const afterCharacterList = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
@@ -1650,14 +1677,14 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
   describe('후보 항목의 직업', () => {
     it('목록 응답 전 stub 은 캐시의 직업을 싣는다', async () => {
       fetchCharacterListMock.mockImplementation(() => new Promise(() => {}))
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
-      getCachedCharacterBasicMock.mockResolvedValue({
+      seenIn('acc-1', ['ocid-1'])
+      seedBasic('ocid-1', {
         profile: basicProfile({ name: '캐싱된캐릭', level: 180, jobClass: '아크메이지(썬,콜)' }),
         cachedAt: STALE_CACHED_AT,
       })
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+      startPicker(onUpdate)
 
       await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       const stub = onUpdate.mock.calls[0][0] as CharacterPickerEntry[]
@@ -1666,15 +1693,14 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
     it('목록 응답 뒤에는 캐시가 직업을 몰라도 character/list 의 직업을 싣는다', async () => {
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue({
+      seedBasic('ocid-1', {
         profile: basicProfile({ name: '캐싱된캐릭', level: 180 }),
         cachedAt: STALE_CACHED_AT,
       })
       fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+      startPicker(onUpdate)
 
       await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       const live = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
@@ -1705,8 +1731,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     it('로스터에 없는 추적 ocid 를 따로 물어 조회 불가를 원장에 남긴다', async () => {
       await setTrackedOcids([옛ocid])
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
         if (ocid === 옛ocid) throw new NexonNoCharacterError('캐릭터가 없습니다')
         return basicProfile({ name: '정상', level: 250 })
@@ -1725,8 +1749,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
         account('acc-1', [mockCharacter('ocid-1')]),
         account('acc-2', [mockCharacter(옛ocid)]),
       ])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '정상', level: 250 }))
 
       await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
@@ -1740,8 +1762,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       const { markScheduleProbeUnavailable } = require('../../../storage/schedule-probe-ledger') as typeof import('../../../storage/schedule-probe-ledger')
       await markScheduleProbeUnavailable(옛ocid)
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [])])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
 
       await getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })
 
@@ -1752,8 +1772,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       await setTrackedOcids([옛ocid])
       const 새캐릭터 = { ...챌린저스캐릭터('new-ocid'), world: '엘리시움', worldKey: 'elysium' }
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [새캐릭터])])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       getCharacterProfilesMock.mockResolvedValue(
         new Map([[옛ocid, { ocid: 옛ocid, name: '지내우시', world: '챌린저스2', worldKey: 'challengers_2', jobClass: '레테', level: 285, imageUrl: '', updatedAt: NOW }]]),
       )
@@ -1778,12 +1796,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       await setTrackedOcids([옛ocid])
       const 새캐릭터 = { ...챌린저스캐릭터('new-ocid'), world: '엘리시움', worldKey: 'elysium' }
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [새캐릭터])])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
-        ocid === 옛ocid
-          ? { profile: basicProfile({ name: '지내우시', level: 285, jobClass: '레테' }), cachedAt: STALE_CACHED_AT }
-          : null,
-      )
+      seedBasic(옛ocid, { profile: basicProfile({ name: '지내우시', level: 285, jobClass: '레테' }), cachedAt: STALE_CACHED_AT })
       getCharacterProfilesMock.mockResolvedValue(
         new Map([[옛ocid, { ocid: 옛ocid, name: '지내우시', world: '챌린저스2', worldKey: 'challengers_2', jobClass: null, level: 285, imageUrl: '', updatedAt: NOW }]]),
       )
@@ -1803,15 +1816,10 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       await setTrackedOcids([옛ocid])
       const 새캐릭터 = { ...챌린저스캐릭터('new-ocid'), world: '엘리시움', worldKey: 'elysium' }
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [새캐릭터])])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
-        ocid === 옛ocid
-          ? {
-              profile: { ...basicProfile({ name: '지내우시', level: 285, jobClass: '레테' }), world: '챌린저스2', worldKey: 'challengers_2' },
-              cachedAt: STALE_CACHED_AT,
-            }
-          : null,
-      )
+      seedBasic(옛ocid, {
+        profile: { ...basicProfile({ name: '지내우시', level: 285, jobClass: '레테' }), world: '챌린저스2', worldKey: 'challengers_2' },
+        cachedAt: STALE_CACHED_AT,
+      })
       getCharacterProfilesMock.mockResolvedValue(new Map())
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
         if (ocid === 옛ocid) throw new NexonNoCharacterError('캐릭터가 없습니다')
@@ -1829,8 +1837,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       fetchCharacterListMock.mockResolvedValue([
         account('acc-1', [{ ...챌린저스캐릭터('new-ocid'), world: '엘리시움', worldKey: 'elysium' }]),
       ])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       getCharacterProfilesMock.mockResolvedValue(
         new Map([[옛ocid, { ocid: 옛ocid, name: '지내우시', world: '베라', worldKey: 'bera', jobClass: '레테', level: 285, imageUrl: '', updatedAt: NOW }]]),
       )
@@ -1856,8 +1862,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       await setTrackedOcids(['ocid-2'])
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
         if (ocid === 'ocid-2') {
           throw new NexonBadRequestError('조회할 수 없는 ocid', 'OPENAPI00003')
@@ -1889,8 +1893,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     it('추적 중이 아니면 목록에 넣지 않는다', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
         if (ocid === 'ocid-2') {
           throw new NexonBadRequestError('조회할 수 없는 ocid', 'OPENAPI00003')
@@ -1909,8 +1911,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       await setTrackedOcids(['ocid-high'])
       const characters = [mockCharacter('ocid-low'), mockCharacter('ocid-high')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
         // 레벨이 더 높은 쪽이 조회 불가여도 뒤로 간다
         if (ocid === 'ocid-high') throw new NexonBadRequestError('x', 'OPENAPI00003')
@@ -1927,8 +1927,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     it('그 외 개별 실패(네트워크)는 지금처럼 목록에 넣지 않는다. 조회 불가와 구분한다', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {
         if (ocid === 'ocid-2') throw new NexonNetworkError('offline')
         return basicProfile({ name: '정상', level: 250 })
@@ -1955,15 +1953,15 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
   it('캐시된 캐릭터는 mockCharacter/basic 응답을 기다리지 않고 첫 onUpdate에 즉시 포함된다', async () => {
     const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-    getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
-    getCachedCharacterBasicMock.mockResolvedValue({
+    seenIn('acc-1', ['ocid-1'])
+    seedBasic('ocid-1', {
       profile: basicProfile({ name: '캐시캐릭', level: 150 }),
       cachedAt: STALE_CACHED_AT,
     })
     fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {})) // 절대 resolve 안 함
 
     const onUpdate = jest.fn()
-    void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+    startPicker(onUpdate)
 
     // 첫 방출(stub)은 mockCharacter/basic 응답 없이도 캐시 값만으로 이뤄진다
     await waitFor(() => expect(onUpdate).toHaveBeenCalled())
@@ -1982,12 +1980,8 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
   it('캐시가 없는 캐릭터는 mockCharacter/basic으로 활성이 확인되기 전까지 어떤 방출에도 포함되지 않는다', async () => {
     const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-    getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
-    getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
-      ocid === 'ocid-1'
-        ? { profile: basicProfile({ name: '캐시캐릭', level: 150 }), cachedAt: STALE_CACHED_AT }
-        : null,
-    )
+    seenIn('acc-1', ['ocid-1'])
+    seedBasic('ocid-1', { profile: basicProfile({ name: '캐시캐릭', level: 150 }), cachedAt: STALE_CACHED_AT })
     const resolvers: Array<(profile: ReturnType<typeof basicProfile>) => void> = []
     fetchCharacterBasicMock.mockImplementation(
       () =>
@@ -2045,8 +2039,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     it('access_flag: false여도 최근 14일 완료 기록이 있으면 목록에 넣는다', async () => {
       const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       fetchCharacterBasicMock.mockResolvedValue({
         ...basicProfile({ name: '휴면캐릭', level: 250 }),
         accessFlag: false,
@@ -2066,8 +2058,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     it('최근 14일 내내 완료 기록이 없고 추적 중도 아니면 목록에서 뺀다', async () => {
       const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       fetchCharacterBasicMock.mockResolvedValue({
         ...basicProfile({ name: '휴면캐릭', level: 250 }),
         accessFlag: false,
@@ -2085,8 +2075,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
       const characters = [mockCharacter('ocid-1')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       fetchCharacterBasicMock.mockResolvedValue({
         ...basicProfile({ name: '휴면캐릭', level: 250 }),
         accessFlag: false,
@@ -2105,18 +2093,20 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
 
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
-      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
-        profile: {
-          ...basicProfile({ name: ocid === 'ocid-1' ? '미접속무활동' : '미접속활동', level: 200 }),
-          accessFlag: false,
-        },
-        cachedAt: STALE_CACHED_AT,
-      }))
+      seenIn('acc-1', ['ocid-1', 'ocid-2'])
+      for (const ocid of ['ocid-1', 'ocid-2']) {
+        seedBasic(ocid, {
+          profile: {
+            ...basicProfile({ name: ocid === 'ocid-1' ? '미접속무활동' : '미접속활동', level: 200 }),
+            accessFlag: false,
+          },
+          cachedAt: STALE_CACHED_AT,
+        })
+      }
       fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+      startPicker(onUpdate)
 
       await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       const first = onUpdate.mock.calls[0]?.[0] as CharacterPickerEntry[]
@@ -2131,15 +2121,17 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       await markScheduleProbeUnavailable('ocid-2')
 
       fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
-      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
-        profile: basicProfile({ name: ocid === 'ocid-1' ? '멀쩡이' : '이전한캐릭', level: 285 }),
-        cachedAt: STALE_CACHED_AT,
-      }))
+      seenIn('acc-1', ['ocid-1', 'ocid-2'])
+      for (const ocid of ['ocid-1', 'ocid-2']) {
+        seedBasic(ocid, {
+          profile: basicProfile({ name: ocid === 'ocid-1' ? '멀쩡이' : '이전한캐릭', level: 285 }),
+          cachedAt: STALE_CACHED_AT,
+        })
+      }
       fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
       const onUpdate = jest.fn()
-      void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+      startPicker(onUpdate)
 
       await waitFor(() => expect(onUpdate).toHaveBeenCalled())
       for (const [entries] of onUpdate.mock.calls) {
@@ -2151,19 +2143,16 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
   it('캐시상 access_flag가 false이고 활동 기록도 없는 캐릭터는 모든 방출에서 제외된다', async () => {
     const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-    getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
-    getCachedCharacterBasicMock.mockImplementation(async (ocid: string) =>
-      ocid === 'ocid-1'
-        ? { profile: basicProfile({ name: '활성캐릭', level: 150 }), cachedAt: STALE_CACHED_AT }
-        : {
-            profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
-            cachedAt: STALE_CACHED_AT,
-          },
-    )
+    seenIn('acc-1', ['ocid-1', 'ocid-2'])
+    seedBasic('ocid-1', { profile: basicProfile({ name: '활성캐릭', level: 150 }), cachedAt: STALE_CACHED_AT })
+    seedBasic('ocid-2', {
+      profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
+      cachedAt: STALE_CACHED_AT,
+    })
     fetchCharacterBasicMock.mockImplementation(() => new Promise(() => {}))
 
     const onUpdate = jest.fn()
-    void getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+    startPicker(onUpdate)
 
     await waitFor(() => expect(onUpdate.mock.calls.length).toBeGreaterThanOrEqual(2))
     for (const [entries] of onUpdate.mock.calls) {
@@ -2171,7 +2160,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     }
   })
 
-  it('mockCharacter/basic 응답이 도착하면 값을 갱신하고 캐시에 기록한다', async () => {
+  it('mockCharacter/basic 응답이 도착하면 값을 갱신하고 쿼리 캐시에 든다', async () => {
     const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
     fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '최신캐릭', level: 293 }))
@@ -2183,10 +2172,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     expect(last).toEqual([
       { ocid: 'ocid-1', name: '최신캐릭', level: 293, imageUrl: basicProfile({ name: '최신캐릭', level: 293 }).imageUrl, world: '베라', worldKey: 'bera', jobClass: '렌' },
     ])
-    // 캐시 인덱스는 계정별이라 accountId가 첫 인자다.
-    expect(setCachedCharacterBasicMock).toHaveBeenCalledWith(
-      'acc-1',
-      'ocid-1',
+    expect(readBasic('ocid-1')).toEqual(
       expect.objectContaining({ profile: basicProfile({ name: '최신캐릭', level: 293, jobClass: '렌' }) }),
     )
   })
@@ -2196,8 +2182,8 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
   it('5분 TTL 안에 캐시된 캐릭터는 live 루프에서 mockCharacter/basic 을 부르지 않는다', async () => {
     const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-    getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1'])
-    getCachedCharacterBasicMock.mockResolvedValue({
+    seenIn('acc-1', ['ocid-1'])
+    seedBasic('ocid-1', {
       profile: basicProfile({ name: '방금받음', level: 293 }),
       cachedAt: NOW,
     })
@@ -2206,7 +2192,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
 
     expect(fetchCharacterBasicMock).not.toHaveBeenCalled()
-    expect(setCachedCharacterBasicMock).not.toHaveBeenCalled()
+    expect(readBasic('ocid-1')).toEqual({ profile: basicProfile({ name: '방금받음', level: 293 }), cachedAt: NOW })
     // 목록은 캐시 값으로 그대로 완성된다(+ mockCharacter/list 가 준 world).
     expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([
       {
@@ -2238,11 +2224,10 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
   it('mockCharacter/basic을 Promise.all로 뭉치지 않고 하나씩 끝나는 대로 onUpdate한다', async () => {
     const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2'), mockCharacter('ocid-3')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-    getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2', 'ocid-3'])
-    getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
-      profile: basicProfile({ name: `캐시-${ocid}`, level: 100 }),
-      cachedAt: STALE_CACHED_AT,
-    }))
+    seenIn('acc-1', ['ocid-1', 'ocid-2', 'ocid-3'])
+    for (const ocid of ['ocid-1', 'ocid-2', 'ocid-3']) {
+      seedBasic(ocid, { profile: basicProfile({ name: `캐시-${ocid}`, level: 100 }), cachedAt: STALE_CACHED_AT })
+    }
     const resolvers: Array<(profile: ReturnType<typeof basicProfile>) => void> = []
     fetchCharacterBasicMock.mockImplementation(
       () =>
@@ -2268,7 +2253,7 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
   it('개별 실패는 기존 캐시 값을 유지한 채 조용히 넘어간다', async () => {
     const characters = [mockCharacter('ocid-1')]
     fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-    getCachedCharacterBasicMock.mockResolvedValue({
+    seedBasic('ocid-1', {
       profile: basicProfile({ name: '캐시캐릭', level: 150 }),
       cachedAt: STALE_CACHED_AT,
     })
@@ -2315,11 +2300,10 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
             resolveList = resolve
           }),
       )
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
-      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => ({
-        profile: basicProfile({ name: `캐시-${ocid}`, level: 100 }),
-        cachedAt: STALE_CACHED_AT,
-      }))
+      seenIn('acc-1', ['ocid-1', 'ocid-2'])
+      for (const ocid of ['ocid-1', 'ocid-2']) {
+        seedBasic(ocid, { profile: basicProfile({ name: `캐시-${ocid}`, level: 100 }), cachedAt: STALE_CACHED_AT })
+      }
       const resolvers: Array<(profile: ReturnType<typeof basicProfile>) => void> = []
       fetchCharacterBasicMock.mockImplementation(
         () =>
@@ -2362,8 +2346,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     it('콜드 캐시. 확인된 캐릭터는 형제를 기다리지 않고 그 자리에서 방출한다', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       const resolvers: Array<(profile: ReturnType<typeof basicProfile>) => void> = []
       fetchCharacterBasicMock.mockImplementation(
         () =>
@@ -2393,14 +2375,16 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       ])
     })
 
-    it('콜드 캐시. 캐시 인덱스에 ocid가 있어도 전부 access_flag: false면 stub 을 흘리지 않는다', async () => {
+    it('콜드 캐시. 캐시에 ocid 가 있어도 전부 access_flag: false 면 stub 을 흘리지 않는다', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue(['ocid-1', 'ocid-2'])
-      getCachedCharacterBasicMock.mockImplementation(async () => ({
-        profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
-        cachedAt: STALE_CACHED_AT,
-      }))
+      seenIn('acc-1', ['ocid-1', 'ocid-2'])
+      for (const ocid of ['ocid-1', 'ocid-2']) {
+        seedBasic(ocid, {
+          profile: { ...basicProfile({ name: '비공개', level: 999 }), accessFlag: false },
+          cachedAt: STALE_CACHED_AT,
+        })
+      }
       fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) =>
         ocid === 'ocid-1' ? basicProfile({ name: '이제활성', level: 210 }) : basicProfile({ name: '이제활성2', level: 205 }),
       )
@@ -2422,8 +2406,6 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
     it('콜드 캐시. 한 건도 확인하지 못한 채 끝나면 빈 목록은 최종 방출에서만 나간다', async () => {
       const characters = [mockCharacter('ocid-1'), mockCharacter('ocid-2')]
       fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
-      getAllCachedCharacterBasicOcidsMock.mockResolvedValue([])
-      getCachedCharacterBasicMock.mockResolvedValue(null)
       fetchCharacterBasicMock.mockImplementation(async () => ({
         ...basicProfile({ name: '비공개', level: 999 }),
         accessFlag: false,
@@ -2537,7 +2519,6 @@ describe('동기화가 월드 리프를 짚는다', () => {
   beforeEach(() => {
     resetWorldLeapStoreForTests()
     getCharacterProfilesMock.mockResolvedValue(스냅샷)
-    getCachedCharacterBasicMock.mockResolvedValue(null)
     fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
     // 목록에서 빠진 ocid 를 따로 물으면 조회 불가라고 답한다(실제 응답은 200 + 전 필드 null).
     fetchCharacterBasicMock.mockImplementation(async (_apiKey: string, ocid: string) => {

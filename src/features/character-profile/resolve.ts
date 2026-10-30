@@ -13,7 +13,7 @@
  * const profiles = await resolveDisplayProfiles(displayOcids)
  * const name = profiles.get(record.ocid)?.name
  */
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { readCharacterBasic } from '../schedule-sync/read-schedule'
 import { getCharacterProfiles, saveCharacterProfile } from '../../storage/character-profiles'
 
 export interface DisplayProfile {
@@ -55,7 +55,7 @@ export async function resolveDisplayProfiles(
   const missing = unique.filter((ocid) => !profiles.has(ocid))
   await Promise.all(
     missing.map(async (ocid) => {
-      const cached = await getCachedCharacterBasic(ocid).catch(() => null)
+      const cached = readCharacterBasic(ocid)
       if (cached === null || cached.profile.name === '') {
         return
       }

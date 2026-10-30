@@ -16,10 +16,8 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import type { KnownCharacterProfile } from '../features/character-manage/derivations'
-import {
-  getCachedCharacterBasic,
-  type CachedCharacterBasicEntry,
-} from '../storage/character-basic-cache'
+import { readCharacterBasic } from '../features/schedule-sync/read-schedule'
+import type { CachedCharacterBasicEntry } from '../storage/character-basic-cache'
 import { getScheduleProbeLedger } from '../storage/schedule-probe-ledger'
 import type { CharacterPickerEntry } from '../types'
 
@@ -53,7 +51,7 @@ export function useKnownProfiles(input: {
       const loaded = await Promise.all(
         missing.map(async (ocid) => ({
           ocid,
-          entry: await getCachedCharacterBasic(ocid).catch(() => null),
+          entry: readCharacterBasic(ocid),
           unavailable:
             (await getScheduleProbeLedger(ocid, now).catch(() => null))?.unavailable === true,
         })),

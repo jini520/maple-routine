@@ -9,7 +9,7 @@
  */
 import { currentCredential } from '../auth/current-credential'
 import { fetchMesoRate } from '../../nexon/meso-rate'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { readCharacterBasic } from '../schedule-sync/read-schedule'
 import { getCachedMesoRate, setCachedMesoRate } from '../../storage/meso-rate-cache'
 
 /**
@@ -31,7 +31,7 @@ export type MesoRateLoad =
  * 손입력으로 내리면 잃는 것이 더 크다.
  */
 async function jobClassOf(ocid: string): Promise<string | null> {
-  const cached = await getCachedCharacterBasic(ocid).catch(() => null)
+  const cached = readCharacterBasic(ocid)
   return cached?.profile.jobClass ?? null
 }
 

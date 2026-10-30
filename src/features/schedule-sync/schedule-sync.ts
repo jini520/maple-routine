@@ -9,7 +9,6 @@ import {
   toProbeObservation,
   type SchedulerSectionPresence,
 } from '../../lib/scheduler/scheduler-activity'
-import { getCachedSchedulerState, setCachedSchedulerState } from '../../storage/scheduler-cache'
 import {
   getScheduleProbeLedger,
   markScheduleProbeUnavailable,
@@ -28,6 +27,7 @@ import type { ScheduleSyncError } from './errors'
 import { useRefreshProgress } from '../refresh/progress'
 import { refreshSettlement } from '../settlement/store'
 import { fetchCharacterBasicCached } from './character-basic-fetch'
+import { readScheduleEntry } from './read-schedule'
 import {
   linkWorldLeapsFromRoster,
   probeStrandedTrackedCharacters,
@@ -68,7 +68,8 @@ async function buildFallbackResult(
   character: MapleCharacter,
   error: ScheduleSyncError,
 ): Promise<CharacterScheduleSync> {
-  const cached = await getCachedSchedulerState(character.ocid)
+  // 캐시로 채운다. 마지막으로 받은 값은 쿼리 캐시가 든다.
+  const cached = readScheduleEntry(character.ocid)
   return {
     ocid: character.ocid,
     characterName: character.name,
@@ -250,11 +251,10 @@ async function refreshCharacterBasics(
   const now = new Date()
 
   await Promise.all(
-    targets.map(async ({ character, accountId }) => {
+    targets.map(async ({ character }) => {
       try {
-        // accountId 는 그 캐릭터가 사는 계정이다. 캐시 인덱스가 계정별이라 틀리면 다른 계정
-        // 인덱스를 오염시킨다. jobClass 는 character/list 가 준 값을 그대로 실어 보낸다.
-        await fetchCharacterBasicCached(credential, accountId, character.ocid, now, character.jobClass, {
+        // jobClass 는 character/list 가 준 값을 그대로 실어 보낸다. basic 응답에는 없는 값이다.
+        await fetchCharacterBasicCached(credential, character.ocid, now, character.jobClass, {
           force: character.ocid === forcedOcid,
         })
       } catch {
@@ -274,8 +274,9 @@ async function syncOneCharacter(
 ): Promise<CharacterScheduleSync> {
   try {
     const fresh = await fetchSchedulerCharacterState(credential, character.ocid, SCHEDULE_NAME_RESOLVERS)
-    const [previousCache, worldLedger, accountLedger] = await Promise.all([
-      getCachedSchedulerState(character.ocid),
+    // 직전 상태는 쿼리 캐시의 값이다. 회차가 나눠 넣은 그 값이라 다른 사본이 없다.
+    const previousCache = readScheduleEntry(character.ocid)
+    const [worldLedger, accountLedger] = await Promise.all([
       // 월드 key 가 없으면 월드 공유 원장을 읽지도 쓰지도 않는다. 월드를 모르는 것과 같다.
       fresh.worldKey === null ? {} : getWorldSharedProgress(fresh.worldKey),
       getAccountSharedProgress(accountId),
@@ -302,7 +303,6 @@ async function syncOneCharacter(
     const syncedAt = new Date().toISOString()
 
     await Promise.all([
-      setCachedSchedulerState(character.ocid, { state: characterState, syncedAt }),
       ...(characterState.worldKey === null
         ? []
         : Object.entries(worldLedgerUpdates).map(([contentKey, entry]) =>

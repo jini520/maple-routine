@@ -1,3 +1,9 @@
+/**
+ * 1.0.12 까지의 `character/basic` 캐시(Preferences `characterBasicCache:{ocid}`). 이제 읽고 지우기만 한다.
+ *
+ * 기본 정보는 쿼리 캐시(`query_cache` 표)가 든다. 이 키는 업데이트 뒤 첫 실행이 쿼리 캐시로 옮긴 뒤 지운다
+ * (`features/schedule-sync/schedule-query.ts` 의 `seedScheduleQueriesFromLegacyCache`). 계정별 인덱스 키도 그때 함께 지운다.
+ */
 import { worldKeyOfApiName } from '../lib/world/worlds'
 import { preferences } from './ports'
 import type { CharacterBasicProfile } from '../types'
@@ -5,79 +11,12 @@ import {
   characterBasicCacheIndexKey,
   characterBasicCacheKey,
   LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY,
-  STORAGE_KEYS,
 } from './keys'
 
+/** 캐릭터 하나의 기본 정보와 받은 시각. 쿼리 캐시 `characterBasic(ocid)` 의 데이터 모양이기도 하다. */
 export interface CachedCharacterBasicEntry {
   profile: CharacterBasicProfile
   cachedAt: string
-}
-
-// character-basic-cache는 ocid별로 개별 키에 저장돼 있어, "지금까지 캐싱된
-// 캐릭터가 누구누구인지" 자체를 조회할 방법이 없었다. 이 인덱스가 그 목록을 별도로 들고 있어
-// "캐릭터 관리" 피커가 character/list 응답을 기다리지 않고도 캐싱된 캐릭터로 stub 목록을
-// 만들 수 있게 한다. 담는 것은 마지막으로 받은 목록에 있던 캐릭터뿐이다(`reconcileCachedCharacterBasicOcids`).
-//
-// 그 인덱스에 **계정 개념이 없어서** 계정을 바꿔도 stub 단계가 이전 계정
-// 캐릭터를 먼저 그렸다. 이제 계정별로 나눈다. 엔트리(characterBasicCache:{ocid}) 자체는 그대로
-// 두고 보이는 범위만 좁히므로, 그 계정으로 돌아가면 인덱스가 되살아나 따뜻한 캐시를 재사용한다.
-async function getIndexedOcids(accountId: string): Promise<string[]> {
-  const value = await preferences.get(characterBasicCacheIndexKey(accountId))
-  if (value === null) {
-    return []
-  }
-
-  try {
-    return JSON.parse(value) as string[]
-  } catch {
-    return []
-  }
-}
-
-async function setIndexedOcids(accountId: string, ocids: string[]): Promise<void> {
-  await preferences.set(characterBasicCacheIndexKey(accountId), JSON.stringify(ocids))
-}
-
-// 마이그레이션(1회): 전역 인덱스를 **레거시 `selectedAccountId`** 의 것으로 이관한다.
-// 예열이 채운 계정은 그것 하나뿐이라 이 이관은 정확하다. 그 값이 없으면
-// (RN 에서 시작한 설치본) 이관할 것도 없으므로 미룬다. 전역 키가 그대로 남아 다음에 다시 시도한다.
-async function runLegacyIndexMigration(): Promise<void> {
-  const legacy = await preferences.get(LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY)
-  if (legacy === null) {
-    return
-  }
-
-  const selectedAccountId = await preferences.get(STORAGE_KEYS.legacySelectedAccountId)
-  if (selectedAccountId === null) {
-    return
-  }
-
-  const existing = await getIndexedOcids(selectedAccountId)
-  let legacyOcids: string[]
-  try {
-    legacyOcids = JSON.parse(legacy) as string[]
-  } catch {
-    legacyOcids = []
-  }
-
-  await setIndexedOcids(selectedAccountId, Array.from(new Set([...existing, ...legacyOcids])))
-  await preferences.remove(LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY)
-}
-
-// 2026-07-14 정정: 인덱스는 읽고-수정하고-쓰는(read-modify-write) 방식이라, 여러 캐릭터를
-// Promise.all로 동시에 캐싱하면(온보딩 예열, 피커의 character/basic 스트리밍 갱신) 락 없이
-// 겹쳐 쓰다가 한쪽의 갱신이 다른 쪽에 덮어써져 유실될 수 있었다. 이 프로미스 체인으로 인덱스
-// 갱신 구간을 직렬화해 동시 호출이 항상 순차적으로만 인덱스에 반영되도록 한다.
-// 마이그레이션도 같은 구간을 건드리므로 같은 락 안에서 돈다.
-let indexLock: Promise<void> = Promise.resolve()
-
-function withIndexLock(task: () => Promise<void>): Promise<void> {
-  const result = indexLock.then(task, task)
-  indexLock = result.then(
-    () => undefined,
-    () => undefined,
-  )
-  return result
 }
 
 export async function getCachedCharacterBasic(ocid: string): Promise<CachedCharacterBasicEntry | null> {
@@ -88,7 +27,7 @@ export async function getCachedCharacterBasic(ocid: string): Promise<CachedChara
 
   try {
     const entry = JSON.parse(value) as CachedCharacterBasicEntry
-    // 월드 key 가 생기기 전 캐시는 읽을 때 이름으로 채운다. 수익 기록의 월드 폴백으로도 읽혀 비우지 않는다.
+    // 월드 key 가 생기기 전 캐시는 읽을 때 이름으로 채운다.
     const { profile } = entry
     if (profile.worldKey === undefined && profile.world !== undefined) {
       return { ...entry, profile: { ...profile, worldKey: worldKeyOfApiName(profile.world) } }
@@ -99,62 +38,14 @@ export async function getCachedCharacterBasic(ocid: string): Promise<CachedChara
   }
 }
 
-export async function getAllCachedCharacterBasicOcids(accountId: string): Promise<string[]> {
-  await withIndexLock(runLegacyIndexMigration)
-  return getIndexedOcids(accountId)
-}
-
-export async function setCachedCharacterBasic(
-  accountId: string,
-  ocid: string,
-  entry: CachedCharacterBasicEntry,
-): Promise<void> {
-  await preferences.set(characterBasicCacheKey(ocid), JSON.stringify(entry))
-
-  await withIndexLock(async () => {
-    await runLegacyIndexMigration()
-    const index = await getIndexedOcids(accountId)
-    if (!index.includes(ocid)) {
-      await setIndexedOcids(accountId, [...index, ocid])
-    }
-  })
-}
-
-/**
- * 계정의 인덱스를 방금 받은 `character/list` 에 맞추는 함수. 결과는 목록에 있고 캐시 항목도 있는
- * ocid 전부이고, 캐시 항목은 지우지 않는다.
- *
- * 목록에 있는데 인덱스에 없는 ocid 도 다시 붙인다. 캐시가 5분 TTL 안이면 `setCachedCharacterBasic`
- * 이 안 불려, 목록에 돌아온 캐릭터가 인덱스 밖에 남는다.
- *
- * @example
- * await reconcileCachedCharacterBasicOcids(accountId, characters.map((character) => character.ocid))
- */
-export async function reconcileCachedCharacterBasicOcids(
-  accountId: string,
-  listedOcids: string[],
-): Promise<void> {
-  // 잠금 밖이면 그 사이 `setCachedCharacterBasic` 이 붙인 ocid 를 이 쓰기가 덮는다.
-  await withIndexLock(async () => {
-    await runLegacyIndexMigration()
-    const hasEntry = await Promise.all(
-      listedOcids.map(async (ocid) => (await preferences.get(characterBasicCacheKey(ocid))) !== null),
-    )
-    await setIndexedOcids(
-      accountId,
-      listedOcids.filter((_, index) => hasEntry[index]),
-    )
-  })
-}
-
-export async function clearCachedCharacterBasic(accountId: string, ocid: string): Promise<void> {
+export async function clearCachedCharacterBasic(ocid: string): Promise<void> {
   await preferences.remove(characterBasicCacheKey(ocid))
+}
 
-  await withIndexLock(async () => {
-    const index = await getIndexedOcids(accountId)
-    await setIndexedOcids(
-      accountId,
-      index.filter((id) => id !== ocid),
-    )
-  })
+/** 계정별 인덱스와 그 전의 전역 인덱스. 캐릭터 관리의 첫 목록이 읽던 것인데 이제 쿼리 캐시에서 센다. */
+export async function clearCharacterBasicCacheIndex(accountIds: readonly string[]): Promise<void> {
+  await Promise.all([
+    preferences.remove(LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY),
+    ...accountIds.map((accountId) => preferences.remove(characterBasicCacheIndexKey(accountId))),
+  ])
 }

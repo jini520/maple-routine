@@ -1,16 +1,13 @@
 import type { NexonCredential } from '../../types/auth'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { fetchCharacterBasic } from '../../nexon/character'
-import {
-  getCachedCharacterBasic,
-  setCachedCharacterBasic,
-  type CachedCharacterBasicEntry,
-} from '../../storage/character-basic-cache'
+import type { CachedCharacterBasicEntry } from '../../storage/character-basic-cache'
 import { saveCharacterProfile } from '../../storage/character-profiles'
 import { markScheduleProbeUnavailable } from '../../storage/schedule-probe-ledger'
 import type { CharacterBasicProfile } from '../../types'
 import { queryClient } from '../query/client'
 import { queryKeys } from '../query/keys'
+import { readCharacterBasic } from './read-schedule'
 
 /**
  * `character/basic` 의 공유 통과 지점.
@@ -20,8 +17,7 @@ import { queryKeys } from '../query/keys'
  * 소비하는 필드만 달라서, 한 바퀴에 같은 캐릭터로 여러 번이 나간다.
  *
  * 호출부마다 이미 받았는지를 판단하게 하지 않고 경로 하나로 접는다. 그래야 호출자끼리 서로를
- * 몰라도 접힌다. 호출부가 판단하려면 그 지식을 서로에게 심어야 하고, 새 호출부가 생기는 순간
- * 조용히 중복이 되살아난다.
+ * 몰라도 접힌다. 받은 값은 쿼리 캐시 `characterBasic(ocid)` 에만 든다. 화면과 동기화가 그 캐시를 본다.
  *
  * 절감의 값은 호출 수 자체가 아니라 429 확률을 낮춰 조회 원장이 채워질 확률을 올리는 것이다.
  * 자격 스윕은 실패를 원장에 기록하지 않으므로 429 가 나면 다음 화면이 같은 13일을 처음부터
@@ -63,29 +59,26 @@ export interface FetchCharacterBasicOptions {
   force?: boolean
 }
 
-/**
- * `jobClass` 는 `character/basic` 이 아니라 `character/list` 가 주는 값이다. 저장 경로가 이
- * 함수 하나뿐이라, 그 값을 손에 든 호출부가 여기로 함께 넘겨 엔트리에 실린다.
- * `normalizeCharacterBasic` 은 채우지 않는다.
- *
- * 모르면 넘기지 않는다. 그때는 캐시에 이미 있던 값을 그대로 유지한다. 아는 값을 `undefined`
- * 로 덮으면 화면에서 직업이 사라진다.
- */
 function putInQueryCache(ocid: string, entry: CachedCharacterBasicEntry): void {
   queryClient.setQueryData(queryKeys.characterBasic(ocid), entry, { updatedAt: new Date(entry.cachedAt).getTime() })
 }
 
+/**
+ * `jobClass` 는 `character/basic` 이 아니라 `character/list` 가 주는 값이다. 저장 경로가 이
+ * 함수 하나뿐이라, 그 값을 손에 든 호출부가 여기로 함께 넘겨 엔트리에 실린다.
+ *
+ * 모르면 넘기지 않는다. 그때는 캐시에 이미 있던 값을 그대로 유지한다. 아는 값을 `undefined`
+ * 로 덮으면 화면에서 직업이 사라진다.
+ */
 export async function fetchCharacterBasicCached(
   credential: NexonCredential,
-  accountId: string,
   ocid: string,
   now: Date,
   jobClass?: string,
   options?: FetchCharacterBasicOptions,
 ): Promise<CharacterBasicProfile> {
-  const cached = await getCachedCharacterBasic(ocid)
+  const cached = readCharacterBasic(ocid)
   if (cached !== null && options?.force !== true && isFresh(cached.cachedAt, now)) {
-    putInQueryCache(ocid, cached)
     return cached.profile
   }
 
@@ -100,17 +93,13 @@ export async function fetchCharacterBasicCached(
 
   // cachedAt 은 호출부가 이미 잡아둔 `now` 다(여기서 시계를 다시 읽지 않는다). 판정이 결정적이고,
   // 오차는 항상 TTL 이 짧아지는 보수적인 방향으로만 난다.
-  const entry: CachedCharacterBasicEntry = { profile, cachedAt: now.toISOString() }
-  await setCachedCharacterBasic(accountId, ocid, entry)
-  // 화면이 보는 것은 쿼리 캐시다. 여기가 앱 전체의 basic 통과 지점이라, 캐릭터 관리가 받은 레벨도 today 에 닿는다.
-  putInQueryCache(ocid, entry)
+  // 여기가 앱 전체의 basic 통과 지점이라, 캐릭터 관리가 받은 레벨도 today 에 닿는다.
+  putInQueryCache(ocid, { profile, cachedAt: now.toISOString() })
 
-  // 지워지지 않는 스냅샷에도 같은 값을 남긴다. 위 캐시는 5분 TTL 이다. 이름이 사라지면 기록에서
-  // 행을 만드는 자리가 그 ocid 를 건너뛰어 지운 적 없는 과거 수익이 화면에서 사라진다. 이 함수가 앱 전체의 basic 통과 지점이라 여기 한 줄이면
-  // 한 번이라도 조회된 캐릭터는 추적을 해제해도 이름과 얼굴을 갖는다.
+  // 지워지지 않는 스냅샷에도 같은 값을 남긴다. 이름이 사라지면 기록에서 행을 만드는 자리가 그 ocid 를 건너뛰어 지운 적 없는
+  // 과거 수익이 화면에서 사라진다. 한 번이라도 조회된 캐릭터는 추적을 해제해도 이름과 얼굴을 갖는다.
   //
-  // 실패는 삼킨다. 이 저장은 호출부가 기다리는 값이 아니라 뒷정리라, 못 썼다고 조회가 실패하면
-  // 안 된다.
+  // 실패는 삼킨다. 이 저장은 호출부가 기다리는 값이 아니라 뒷정리라, 못 썼다고 조회가 실패하면 안 된다.
   await saveCharacterProfile({
     ocid,
     name: profile.name,

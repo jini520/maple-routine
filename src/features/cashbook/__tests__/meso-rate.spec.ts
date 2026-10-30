@@ -1,36 +1,42 @@
 // 사냥 계산기가 쓰는 메소 획득량의 **오케스트레이션**.
+import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
 import type { NexonCredential } from '../../../types/auth'
+import { queryClient } from '../../query/client'
+import { queryKeys } from '../../query/keys'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
 const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accountId: 'account-key' })
 //
 // 화면은 `nexon/` 도 `storage/` 도 직접 안 부른다(CLAUDE.md CRITICAL). 그 셋을 잇는 이 자리만
-// 검증하면 된다.
+// 검증하면 된다. 직업은 쿼리 캐시 `characterBasic(ocid)` 에서 읽으므로 `setQueryData` 로 심는다.
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/meso-rate-cache', () => ({
   getCachedMesoRate: jest.fn(),
   setCachedMesoRate: jest.fn(),
 }))
 jest.mock('../../../nexon/meso-rate', () => ({ fetchMesoRate: jest.fn() }))
-jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 
 const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 const { getCachedMesoRate, setCachedMesoRate } = jest.requireMock(
   '../../../storage/meso-rate-cache',
 ) as Record<string, jest.Mock>
 const { fetchMesoRate } = jest.requireMock('../../../nexon/meso-rate') as Record<string, jest.Mock>
-const { getCachedCharacterBasic } = jest.requireMock(
-  '../../../storage/character-basic-cache',
-) as Record<string, jest.Mock>
 
 const { loadMesoRate } = require('../meso-rate') as typeof import('../meso-rate')
 
+function 캐시심기(ocid: string, profile: CachedCharacterBasicEntry['profile']): void {
+  queryClient.setQueryData<CachedCharacterBasicEntry>(queryKeys.characterBasic(ocid), {
+    profile,
+    cachedAt: '2026-09-03T00:00:00.000Z',
+  })
+}
+
 beforeEach(() => {
+  queryClient.clear()
   getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'api-key' }] })
   getCachedMesoRate.mockReset().mockResolvedValue(null)
   setCachedMesoRate.mockReset().mockResolvedValue(undefined)
   fetchMesoRate.mockReset().mockResolvedValue(149)
-  getCachedCharacterBasic.mockReset().mockResolvedValue(null)
 })
 
 it('읽히면 자동값이다. 그 값으로 캐시를 갱신한다', async () => {
@@ -80,7 +86,7 @@ it('캐시 쓰기가 실패해도 읽은 값은 그대로 낸다', async () => {
 // `그리드`는 직업이 정하는 값이라 스킬 조회를 안 거친다. 직업 이름은
 // `character/list` 가 캐시에 남겨 둔 것을 그대로 쓴다.
 it('캐시에 든 직업 이름을 함께 넘긴다', async () => {
-  getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디', level: 294, jobClass: '섀도어' } })
+  캐시심기('ocid-1', { name: '루디', level: 294, imageUrl: '', accessFlag: true, jobClass: '섀도어' })
 
   await loadMesoRate('ocid-1')
 
@@ -88,16 +94,9 @@ it('캐시에 든 직업 이름을 함께 넘긴다', async () => {
 })
 
 it('캐시가 아직 안 따뜻하면 직업을 모르는 채로 부른다. 아무 값이나 얹지 않는다', async () => {
-  getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디', level: 294 } })
+  캐시심기('ocid-1', { name: '루디', level: 294, imageUrl: '', accessFlag: true })
 
   await loadMesoRate('ocid-1')
 
-  expect(fetchMesoRate).toHaveBeenCalledWith(자격('api-key'), 'ocid-1', null)
-})
-
-it('직업 캐시를 못 읽어도 메획 조회는 그대로 돈다', async () => {
-  getCachedCharacterBasic.mockRejectedValue(new Error('디스크 깨짐'))
-
-  await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 149 })
   expect(fetchMesoRate).toHaveBeenCalledWith(자격('api-key'), 'ocid-1', null)
 })

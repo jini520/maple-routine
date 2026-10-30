@@ -18,15 +18,6 @@ jest.mock('../../../nexon/schedule', () => ({
 const { fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 const { getAuthConfig: getAuthConfigMock } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
-jest.mock('../../../storage/scheduler-cache', () => ({
-  getCachedSchedulerState: jest.fn().mockResolvedValue(null),
-  setCachedSchedulerState: jest.fn().mockResolvedValue(undefined),
-}))
-jest.mock('../../../storage/character-basic-cache', () => ({
-  getCachedCharacterBasic: jest.fn().mockResolvedValue(null),
-  setCachedCharacterBasic: jest.fn().mockResolvedValue(undefined),
-  getAllCachedCharacterBasicOcids: jest.fn().mockResolvedValue([]),
-}))
 jest.mock('../../../storage/shared-progress-cache', () => ({
   getWorldSharedProgress: jest.fn().mockResolvedValue({}),
   getAccountSharedProgress: jest.fn().mockResolvedValue({}),
@@ -53,6 +44,7 @@ jest.mock('../../../storage/tracking-mode', () => ({
 }))
 const { getTrackingMode: getTrackingModeMock, setTrackingMode: setTrackingModeMock } = jest.requireMock('../../../storage/tracking-mode') as Record<string, jest.Mock>
 
+import { queryClient } from '../../query/client'
 import { resetSyncSingleFlightForTests } from '../../schedule-sync/schedule-sync'
 import { useTrackingModeStore } from '../store'
 import { findContent } from '../../../lib/scheduler/contents'
@@ -104,6 +96,8 @@ function stateFor(ocid: string): SchedulerCharacterState {
 
 beforeEach(() => {
   installFakePreferences()
+  // `character/list` 가 5분 동안 쿼리 캐시에 남는다. 앞 케이스의 응답을 물려받으면 호출 수가 틀린다.
+  queryClient.clear()
   resetSyncSingleFlightForTests()
   setManualTrackedContentMock.mockReset()
   setManualTrackedContentMock.mockResolvedValue(undefined)

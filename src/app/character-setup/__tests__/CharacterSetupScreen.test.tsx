@@ -18,13 +18,15 @@ import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedu
 import { fetchCharacterList } from '../../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../../nexon/errors'
 import { getAuthConfig } from '../../../storage/api-key'
-import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
 import {
   clearRepresentativeCharacter,
   getRepresentativeCharacter,
   setRepresentativeCharacter,
 } from '../../../storage/character-selection'
 import { getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
+import { queryClient } from '../../../features/query/client'
+import { queryKeys } from '../../../features/query/keys'
+import { useTrackedOcids } from '../../../features/schedule-sync/use-schedule-queries'
 import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
@@ -42,13 +44,15 @@ const mockGoBack = jest.fn()
 
 jest.mock('../../../nexon/character', () => ({ fetchCharacterList: jest.fn() }))
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
-jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 jest.mock('../../../storage/character-selection', () => ({
   getRepresentativeCharacter: jest.fn(),
   setRepresentativeCharacter: jest.fn(),
   clearRepresentativeCharacter: jest.fn(),
 }))
 jest.mock('../../../storage/schedule-probe-ledger', () => ({ getScheduleProbeLedger: jest.fn() }))
+// 추적 목록은 쿼리 캐시에서 온다. 이 하네스에는 쿼리 클라이언트가 없어 훅을 세운다. 이름 · 레벨 · 얼굴은 같은 캐시를
+// `queryClient` 로 직접 읽으므로 `setQueryData` 로 심는다.
+jest.mock('../../../features/schedule-sync/use-schedule-queries', () => ({ useTrackedOcids: jest.fn() }))
 
 // `toScheduleSyncError` 는 실물을 쓴다(문구가 원인에서 나온다). `...requireActual` 을
 // 통째로 쓰면 순환 참조가 아직 구성 중인 모듈을 `undefined` 로 만난다. 부분 모킹이 그 처방이다.
@@ -80,7 +84,7 @@ jest.mock('../../../hooks/useScreenNavigation', () => ({
 
 const mockedFetchCharacterList = jest.mocked(fetchCharacterList)
 const mockedGetAuthConfig = jest.mocked(getAuthConfig)
-const mockedGetCachedBasic = jest.mocked(getCachedCharacterBasic)
+const mockedUseTrackedOcids = jest.mocked(useTrackedOcids)
 const mockedGetRepresentative = jest.mocked(getRepresentativeCharacter)
 const mockedSetRepresentative = jest.mocked(setRepresentativeCharacter)
 const mockedClearRepresentative = jest.mocked(clearRepresentativeCharacter)
@@ -166,7 +170,10 @@ beforeEach(() => {
     if (accountsFailure !== undefined) throw accountsFailure
     return [계정A]
   })
-  mockedGetCachedBasic.mockImplementation(async (ocid: string) => 캐시된캐릭터.get(ocid) ?? null)
+  // `character/list` 가 5분 동안 쿼리 캐시에 남는다. 앞 케이스의 응답을 물려받지 않게 비우고 다시 심는다.
+  queryClient.clear()
+  for (const [ocid, entry] of 캐시된캐릭터) queryClient.setQueryData(queryKeys.characterBasic(ocid), entry)
+  mockedUseTrackedOcids.mockReturnValue([])
   mockedGetRepresentative.mockResolvedValue(null)
   mockedSetRepresentative.mockResolvedValue(undefined)
   mockedClearRepresentative.mockResolvedValue(undefined)

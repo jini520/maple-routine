@@ -2,29 +2,27 @@
 //
 // 가르기 전에는 이 규칙 둘이 컨트롤러 안에 있어서 직접 물을 자리가 없었다. **캐시가 이긴다**와
 // **miss 는 적지 않는다**가 그것이고, 뒤엣것은 어기면 **아직 모른다** 가 **그런 것은 없다** 로
-// 굳는다.
+// 굳는다. 캐시는 쿼리 캐시 `characterBasic(ocid)` 라 `setQueryData` 로 심는다.
 import { renderHook, waitFor } from '@testing-library/react-native'
 
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { queryClient } from '../../features/query/client'
+import { queryKeys } from '../../features/query/keys'
+import type { CachedCharacterBasicEntry } from '../../storage/character-basic-cache'
 import { getScheduleProbeLedger } from '../../storage/schedule-probe-ledger'
 import type { CharacterPickerEntry } from '../../types'
 import { useKnownProfiles, type KnownProfiles } from '../useKnownProfiles'
 
-jest.mock('../../storage/character-basic-cache', () => ({
-  getCachedCharacterBasic: jest.fn(),
-}))
 jest.mock('../../storage/schedule-probe-ledger', () => ({
   getScheduleProbeLedger: jest.fn(),
 }))
 
-const 캐시읽기 = getCachedCharacterBasic as jest.MockedFunction<typeof getCachedCharacterBasic>
 const 원장읽기 = getScheduleProbeLedger as jest.MockedFunction<typeof getScheduleProbeLedger>
 
-function 캐시본(name: string, level: number) {
-  return {
-    profile: { name, level, imageUrl: `https://cache/${name}`, world: '엘리시움', worldKey: 'elysium' },
+function 캐시심기(ocid: string, name: string, level: number): void {
+  queryClient.setQueryData<CachedCharacterBasicEntry>(queryKeys.characterBasic(ocid), {
+    profile: { name, level, imageUrl: `https://cache/${name}`, accessFlag: true, world: '엘리시움', worldKey: 'elysium' },
     cachedAt: '2026-09-03T00:00:00.000Z',
-  } as Awaited<ReturnType<typeof getCachedCharacterBasic>>
+  })
 }
 
 function 후보(ocid: string, name: string, level: number): CharacterPickerEntry {
@@ -41,15 +39,20 @@ async function 표(input: { ocids: string[]; fallbackEntries?: CharacterPickerEn
   return view
 }
 
+/** 회차가 그 ocid 를 읽고 지나갔는가. 캐시 읽기는 동기라 원장 읽기로 센다. */
+async function 회차가지나감(ocid: string): Promise<void> {
+  await waitFor(() => expect(원장읽기).toHaveBeenCalledWith(ocid, expect.any(Date)))
+}
+
 beforeEach(() => {
   jest.clearAllMocks()
-  캐시읽기.mockResolvedValue(null)
+  queryClient.clear()
   원장읽기.mockResolvedValue({ unavailable: false } as Awaited<ReturnType<typeof getScheduleProbeLedger>>)
 })
 
 describe('두 곳에서 모은다', () => {
   it('캐시에 있으면 그 값을 쓴다', async () => {
-    캐시읽기.mockResolvedValue(캐시본('낟낟', 294))
+    캐시심기('a1', '낟낟', 294)
     const { result } = await 표({ ocids: ['a1'] })
 
     await waitFor(() => expect(result.current.knownProfiles.get('a1')?.name).toBe('낟낟'))
@@ -64,7 +67,7 @@ describe('두 곳에서 모은다', () => {
   })
 
   it('둘 다 있으면 **캐시가 이긴다**', async () => {
-    캐시읽기.mockResolvedValue(캐시본('낟낟', 294))
+    캐시심기('a1', '낟낟', 294)
     const { result } = await 표({ ocids: ['a1'], fallbackEntries: [후보('a1', '옛이름', 1)] })
 
     await waitFor(() => expect(result.current.knownProfiles.get('a1')?.name).toBe('낟낟'))
@@ -82,27 +85,20 @@ describe('아직 모르는 것과 그런 것은 없는 것을 가른다', () => 
   it('양쪽 다 모르면 **표에 안 들어간다**. 그것이 아직 모른다 의 모양이다', async () => {
     const { result } = await 표({ ocids: ['a1'] })
 
-    await waitFor(() => expect(캐시읽기).toHaveBeenCalledWith('a1'))
+    await 회차가지나감('a1')
 
     expect(result.current.knownProfiles.has('a1')).toBe(false)
   })
 
   it('**miss 는 적지 않는다.** 캐시가 늦게 채워지면 그 값이 잡힌다', async () => {
     const { result, rerender } = await 표({ ocids: ['a1'] })
-    await waitFor(() => expect(캐시읽기).toHaveBeenCalledWith('a1'))
+    await 회차가지나감('a1')
 
     // 그 사이에 캐시가 채워졌다. 같은 ocid 를 다시 요구하면 이번에는 읽어 온다.
-    캐시읽기.mockResolvedValue(캐시본('늦게온이름', 250))
+    캐시심기('a1', '늦게온이름', 250)
     await rerender({ ocids: ['a1', 'a2'], fallbackEntries: [] })
 
     await waitFor(() => expect(result.current.knownProfiles.get('a1')?.name).toBe('늦게온이름'))
-  })
-
-  it('캐시 읽기가 던져도 표가 선다', async () => {
-    캐시읽기.mockRejectedValue(new Error('캐시 실패'))
-    const { result } = await 표({ ocids: ['a1'], fallbackEntries: [후보('a1', '젓눈', 278)] })
-
-    await waitFor(() => expect(result.current.knownProfiles.get('a1')?.name).toBe('젓눈'))
   })
 })
 
@@ -134,20 +130,20 @@ describe('조회 불가', () => {
 
 describe('회차', () => {
   it('같은 ocid 를 다시 요구해도 다시 읽지 않는다', async () => {
-    캐시읽기.mockResolvedValue(캐시본('낟낟', 294))
+    캐시심기('a1', '낟낟', 294)
     const { result, rerender } = await 표({ ocids: ['a1'] })
     await waitFor(() => expect(result.current.knownProfiles.get('a1')?.name).toBe('낟낟'))
 
     await rerender({ ocids: ['a1'], fallbackEntries: [] })
 
-    expect(캐시읽기).toHaveBeenCalledTimes(1)
+    expect(원장읽기).toHaveBeenCalledTimes(1)
   })
 
   it('같은 ocid 가 두 번 들어와도 한 번만 읽는다', async () => {
     await 표({ ocids: ['a1', 'a1'] })
 
-    await waitFor(() => expect(캐시읽기).toHaveBeenCalledWith('a1'))
+    await 회차가지나감('a1')
 
-    expect(캐시읽기).toHaveBeenCalledTimes(1)
+    expect(원장읽기).toHaveBeenCalledTimes(1)
   })
 })

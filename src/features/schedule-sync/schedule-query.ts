@@ -10,9 +10,14 @@
 import { queryOptions, skipToken } from '@tanstack/react-query'
 
 import type { CachedSchedulerEntry } from '../../storage/scheduler-cache'
-import { getCachedSchedulerState } from '../../storage/scheduler-cache'
+import { clearCachedSchedulerState, getCachedSchedulerState } from '../../storage/scheduler-cache'
 import type { CachedCharacterBasicEntry } from '../../storage/character-basic-cache'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
+import {
+  clearCachedCharacterBasic,
+  clearCharacterBasicCacheIndex,
+  getCachedCharacterBasic,
+} from '../../storage/character-basic-cache'
+import { getCharacterAccountSightings } from '../../storage/character-accounts'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
 import { recordBossProfitFromRound } from '../boss-profit/round-record'
@@ -185,9 +190,11 @@ export async function syncAddedCharacters(
 }
 
 /**
- * 1.0.13 전 앱이 Preferences 에 둔 캐시(`schedulerCache:{ocid}` · `characterBasicCache:{ocid}`)를 쿼리 캐시에 옮긴다.
- * 쿼리에 없는 캐릭터만 옮기고, 받은 시각은 캐시의 것을 그대로 쓴다. 버리기만 하면 업데이트 직후 오프라인이거나
- * 점검일 때 화면이 빈다. 옛 키는 아직 다른 읽는 곳(보스 수익 · 13일 창 · 캐릭터 관리)이 있어 지우지 않는다.
+ * 1.0.13 전 앱이 Preferences 에 둔 캐시(`schedulerCache:{ocid}` · `characterBasicCache:{ocid}`)를 쿼리 캐시에 옮기고 그 키를
+ * 지운다. 쿼리에 없는 캐릭터만 옮기고, 받은 시각은 캐시의 것을 그대로 쓴다. 버리기만 하면 업데이트 직후 오프라인이거나
+ * 점검일 때 화면이 빈다. 옮긴 뒤에는 아무도 안 읽으므로 지운다. 계정별 인덱스 키도 함께 지운다.
+ *
+ * 지우기 실패는 삼킨다. 다음 실행이 다시 옮기려다 쿼리에 이미 있어 건너뛰고 또 지우려 한다.
  */
 export async function seedScheduleQueriesFromLegacyCache(): Promise<void> {
   const ocids = (await readTrackedOcids()) ?? []
@@ -199,6 +206,7 @@ export async function seedScheduleQueriesFromLegacyCache(): Promise<void> {
           queryClient.setQueryData(queryKeys.schedule(ocid), cached, { updatedAt: new Date(cached.syncedAt).getTime() })
         }
       }
+      await clearCachedSchedulerState(ocid).catch(() => undefined)
       if (queryClient.getQueryData(queryKeys.characterBasic(ocid)) === undefined) {
         const cached = await getCachedCharacterBasic(ocid).catch(() => null)
         if (cached !== null) {
@@ -207,8 +215,11 @@ export async function seedScheduleQueriesFromLegacyCache(): Promise<void> {
           })
         }
       }
+      await clearCachedCharacterBasic(ocid).catch(() => undefined)
     }),
   )
+  const accountIds = [...new Set((await getCharacterAccountSightings().catch(() => [])).map((one) => one.accountId))]
+  await clearCharacterBasicCacheIndex(accountIds).catch(() => undefined)
 }
 
 /**

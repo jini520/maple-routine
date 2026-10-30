@@ -5,8 +5,8 @@
 //
 // 값 규칙(`summarizeAccount`·`buildSelectedCharacterViews`·`resolveRepresentative`)과 문구
 // (`formatRosterError`)는 **실물을 쓴다**. 여기서 베끼면 규칙이 두 벌이 된다(머리
-// **값 규칙의 자리**). 세우는 것은 경계 넷뿐이다: 계정 목록 조회· 후보 목록 조회· 로컬 캐시·
-// 저장 액션.
+// **값 규칙의 자리**). 세우는 것은 경계 셋뿐이다: 계정 목록 조회· 후보 목록 조회· 저장 액션.
+// 이름 · 레벨 · 얼굴이 오는 쿼리 캐시(`characterBasic(ocid)`)는 목이 아니라 `setQueryData` 로 심는다.
 //
 // 끌기는 여기서 **흉내** 내지 않는다
 //
@@ -22,13 +22,14 @@ import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedu
 import { fetchCharacterList } from '../../../nexon/character'
 import { NexonAuthError, NexonRateLimitError } from '../../../nexon/errors'
 import { getAuthConfig } from '../../../storage/api-key'
-import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
 import {
   clearRepresentativeCharacter,
   getRepresentativeCharacter,
   setRepresentativeCharacter,
 } from '../../../storage/character-selection'
 import { getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
+import { queryClient } from '../../../features/query/client'
+import { queryKeys } from '../../../features/query/keys'
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { CHARACTER_BASIC_TTL_MS } from '../../../features/schedule-sync/character-basic-fetch'
 import { saveTrackedCharacters } from '../../../features/schedule-sync/save-tracked'
@@ -55,7 +56,6 @@ const mockEvaluateMvpAsk = jest.fn()
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 jest.mock('../../../nexon/character', () => ({ fetchCharacterList: jest.fn() }))
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
-jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 jest.mock('../../../storage/character-selection', () => ({
   getRepresentativeCharacter: jest.fn(),
   setRepresentativeCharacter: jest.fn(),
@@ -88,7 +88,6 @@ jest.mock('../../../features/auth/store', () => ({
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)
 const mockedFetchCharacterList = jest.mocked(fetchCharacterList)
 const mockedGetAuthConfig = jest.mocked(getAuthConfig)
-const mockedGetCachedBasic = jest.mocked(getCachedCharacterBasic)
 const mockedGetRepresentative = jest.mocked(getRepresentativeCharacter)
 const mockedSetRepresentative = jest.mocked(setRepresentativeCharacter)
 const mockedClearRepresentative = jest.mocked(clearRepresentativeCharacter)
@@ -231,7 +230,9 @@ beforeEach(() => {
   } as unknown as ReturnType<typeof useSettingsNavigation>)
   mockedGetAuthConfig.mockResolvedValue({ login: null, apiKeys: [{ type: 'key' as const, id: 'account-key', label: '', value: 'key' }] })
   mockedFetchCharacterList.mockResolvedValue([계정A, 계정B])
-  mockedGetCachedBasic.mockImplementation(async (ocid: string) => 캐시된캐릭터.get(ocid) ?? null)
+  // `character/list` 가 5분 동안 쿼리 캐시에 남는다. 앞 케이스의 응답을 물려받지 않게 비우고 다시 심는다.
+  queryClient.clear()
+  for (const [ocid, entry] of 캐시된캐릭터) queryClient.setQueryData(queryKeys.characterBasic(ocid), entry)
   mockedGetRepresentative.mockResolvedValue(null)
   mockedSetRepresentative.mockResolvedValue(undefined)
   mockedClearRepresentative.mockResolvedValue(undefined)
@@ -332,7 +333,7 @@ describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
 
 // ★ **콜드 캐시에서 위 층이 비던 결함.**
 //
-// 위 층과 대표 얼굴은 로컬 캐시(`getCachedCharacterBasic`)만 읽었는데, 프로필 채우기 effect 가
+// 위 층과 대표 얼굴은 캐시(`readCharacterBasic`)만 읽었는데, 프로필 채우기 effect 가
 // **miss 에도 `null` 을 넣어** 그 ocid 를 영영 다시 안 읽었다(**모른다** 를 **없다** 로 기억). 온보딩에서는
 // 그 effect 가 로스터의 `character/basic` 이 캐시를 쓰기 **전에** 돌아, 신규 설치 사용자에게만.
 // 그리고 하필 가장 눈에 띄는 대표 캐릭터에서. 얼굴이 '?' 로, 고른 카드가 빈칸으로 남았다
@@ -344,7 +345,7 @@ describe('콜드 캐시. 캐시가 비어도 위 층이 빈칸으로 남지 않�
 
   beforeEach(() => {
     // 캐시가 한 번도 채워지지 않는 기기(= 신규 설치 직후의 그 창).
-    mockedGetCachedBasic.mockResolvedValue(null)
+    queryClient.clear()
     rosterByAccount['account-a'] = [
       후보(낟낟, { imageUrl: 얼굴 }),
       후보(달의아이),
@@ -372,15 +373,12 @@ describe('콜드 캐시. 캐시가 비어도 위 층이 빈칸으로 남지 않�
   // 따로 본다. 캐시가 **나중에** 차면 그때 그려져야 한다.
   it('캐시가 나중에 차면 그때 채워진다. miss 를 **없음** 으로 굳히지 않는다', async () => {
     mockTrackedOcids(['b1'])
-    let 캐시가찼다 = false
-    mockedGetCachedBasic.mockImplementation(async (ocid: string) =>
-      캐시가찼다 ? (캐시된캐릭터.get(ocid) ?? null) : null,
-    )
 
     const view = await renderScreen()
     expect(namesIn(view, 'character-manage-selected')).toEqual([])
 
-    캐시가찼다 = true
+    // 그 사이에 캐시가 찼다.
+    for (const [ocid, entry] of 캐시된캐릭터) queryClient.setQueryData(queryKeys.characterBasic(ocid), entry)
     // `neededKey` 를 움직이는 사건 하나. 후보를 고르면 위 층이 다시 읽힌다.
     await press(view.getByText('달의아이'))
 
