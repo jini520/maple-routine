@@ -10,7 +10,7 @@ import type { FeePercent } from '../lib/cashbook/item-split'
 import { spendItemOf } from '../lib/cashbook/spend-catalog'
 import { EMPTY_ITEM, type EntryHunt, type EntryItem, type StoredEntry } from './cashbook-entries'
 import type { HuntingIncomeDetail, IncomeRecord } from './income'
-import type { SpendRecord } from './spend'
+import type { SpendHexa, SpendRecord } from './spend'
 
 /**
  * 금액 하나를 가중치대로 나눈다. 버린 나머지는 첫 몫에 붙여 합이 원래 값과 같다.
@@ -41,6 +41,10 @@ export function spendItemsOf(record: SpendRecord): EntryItem[] {
     amountPoint: record.pointAmount,
     pointPer100mMeso: record.pointPer100mMeso,
     amountCash: record.cashAmount,
+    fragmentCount: record.hexa?.fragmentCount ?? null,
+    untradableFragmentCount: record.hexa?.untradableFragmentCount ?? null,
+    fragmentPriceMeso: record.hexa?.fragmentPrice ?? null,
+    hexaActivation: record.hexa?.activation ?? null,
   }
   const forms = SPEND_FORM_KEYS.filter((form) => record.formItemKeys?.[form] !== undefined)
   if (forms.length === 0) {
@@ -84,6 +88,17 @@ function sumOf(items: readonly EntryItem[], pick: (item: EntryItem) => number | 
   return values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0)
 }
 
+/** 조각 칸 셋이 다 있어야 헥사 기록이다. */
+function hexaOf(item: EntryItem): SpendHexa | null {
+  if (item.fragmentCount === null || item.untradableFragmentCount === null || item.fragmentPriceMeso === null) return null
+  return {
+    fragmentCount: item.fragmentCount,
+    untradableFragmentCount: item.untradableFragmentCount,
+    fragmentPrice: item.fragmentPriceMeso,
+    activation: item.hexaActivation,
+  }
+}
+
 export function spendRecordOf(entry: StoredEntry): SpendRecord {
   const first = entry.items[0]!
   const forms = entry.items.filter((item) => item.formKey !== null && item.itemKey !== null)
@@ -104,6 +119,7 @@ export function spendRecordOf(entry: StoredEntry): SpendRecord {
     pointAmount: sumOf(entry.items, (item) => item.amountPoint),
     pointPer100mMeso: first.pointPer100mMeso,
     cashAmount: sumOf(entry.items, (item) => item.amountCash),
+    hexa: hexaOf(first),
     recordedAt: entry.head.createdAt,
   }
 }

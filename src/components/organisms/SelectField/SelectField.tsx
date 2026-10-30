@@ -113,6 +113,8 @@ export interface SelectFieldProps {
   boxClassName?: string
   /** 조금 더 높은 줄. 시트 바탕 위에 바로 서는 자리(보스 추가) */
   tall?: boolean
+  /** 목록의 최대 높이. 넘으면 그 안에서 스크롤된다. 없으면 화면에 남은 높이까지 선다. 보기가 많은 헥사 코어 목록이 쓴다 */
+  listMaxHeight?: number
 }
 
 /** `null` 도 받는 키. 목록의 첫 칸이 대개 그것이다. */
@@ -174,7 +176,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
       : placeDropdown({
           anchorTop: anchor.top,
           anchorHeight: anchor.height,
-          contentHeight: contentHeight ?? 0,
+          contentHeight: Math.min(contentHeight ?? 0, props.listMaxHeight ?? Infinity),
           windowHeight,
           safeTop: insets.top,
           safeBottom: insets.bottom,
@@ -284,14 +286,14 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
             <View
               style={{ position: 'absolute', left: anchor?.left ?? 0, top: placement.top, width: anchor?.width }}
             >
-              <Animated.View entering={listEntering(Math.min(contentHeight, placement.maxHeight))}>
+              <Animated.View entering={listEntering(Math.min(contentHeight, placement.maxHeight, props.listMaxHeight ?? Infinity))}>
                 {/* 그림자는 바깥 상자가 든다. 모서리를 자르는 안쪽 상자에 주면 iOS 가 그림자까지 자른다. */}
                 <View style={{ borderRadius: 14, boxShadow: boxShadowOf(definition.shadowColor, DROPDOWN_SHADOW) }}>
                   <View
                     testID={`${props.testID}-list`}
                     role="menu"
                     aria-label={props.label}
-                    style={{ maxHeight: placement.maxHeight }}
+                    style={{ maxHeight: Math.min(placement.maxHeight, props.listMaxHeight ?? Infinity) }}
                     className="overflow-hidden rounded-[14px] bg-surface"
                   >
                     <ScrollView contentContainerStyle={{ padding: 6 }}>{renderOptions(true)}</ScrollView>

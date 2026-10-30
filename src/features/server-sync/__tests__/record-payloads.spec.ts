@@ -18,16 +18,37 @@ const item = {
   itemKey: 'seiram_elixir', itemName: null, formKey: null, itemKindKey: null, quantity: 2, fromLevel: null, toLevel: null,
   amountMeso: 4_000_000, tariffMeso: null, saleFeePercent: null, saleFeeMeso: null, saleFeeAuto: false, amountPoint: null,
   pointPer100mMeso: null, amountCash: null,
+  fragmentCount: null, untradableFragmentCount: null, fragmentPriceMeso: null, hexaActivation: null,
 }
 
 it('캐릭터 없는 기록만 넥슨 계정 id 를 싣고, 사냥 입력과 자동 수수료 표시는 안 싣는다', () => {
   const account = cashbookEntryPayloadOf({ entry: { head, items: [item], hunt: null }, nexonAccountId: 'account-a' })
   const character = cashbookEntryPayloadOf({ entry: { head: { ...head, ocid: 'ocid-1' }, items: [item], hunt: null }, nexonAccountId: 'account-a' })
 
-  expect(account.accountRecordId).toBe('account-a')
-  expect(character.accountRecordId).toBeNull()
-  expect(Object.keys(account)).not.toContain('hunt')
-  expect(Object.keys(account.items[0] ?? {})).not.toContain('saleFeeAuto')
+  expect(account?.accountRecordId).toBe('account-a')
+  expect(character?.accountRecordId).toBeNull()
+  expect(Object.keys(account ?? {})).not.toContain('hunt')
+  expect(Object.keys(account?.items[0] ?? {})).not.toContain('saleFeeAuto')
+})
+
+// 교환 불가 조각이 더 많아 0 메소인 헥사 기록은 지출이 아니다. 서버 통계에 0 이 섞이지 않게 보내지 않고, 보낸 적이 있으면 지운다.
+describe('헥사 매트릭스 기록', () => {
+  const hexaHead = { ...head, ocid: 'ocid-1', categoryKey: 'hexa_matrix' }
+  const hexaItem = {
+    ...item, itemKey: '매화검 본초 : 선참 VI', quantity: null, fromLevel: 25, toLevel: 28, amountMeso: 2_160_000_000,
+    fragmentCount: 345, untradableFragmentCount: 45, fragmentPriceMeso: 7_200_000, hexaActivation: null,
+  }
+
+  it('조각 칸 넷을 싣는다', () => {
+    const payload = cashbookEntryPayloadOf({ entry: { head: hexaHead, items: [hexaItem], hunt: null }, nexonAccountId: null })
+
+    expect(payload?.items[0]).toMatchObject({ fragmentCount: 345, untradableFragmentCount: 45, fragmentPriceMeso: 7_200_000, hexaActivation: null })
+  })
+
+  it('0 메소면 보내지 않는다', () => {
+    const zero = { ...hexaItem, amountMeso: 0, untradableFragmentCount: 400 }
+    expect(cashbookEntryPayloadOf({ entry: { head: hexaHead, items: [zero], hunt: null }, nexonAccountId: null })).toBeNull()
+  })
 })
 
 it('처치 기간은 칸 이름만 서버 쪽으로 바꾼다', () => {

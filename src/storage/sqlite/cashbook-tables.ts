@@ -49,6 +49,12 @@ export const CASHBOOK_ENTRY_ITEMS_BODY = `(
     point_per_100m_meso INTEGER,
     -- 환산하지 않는다.
     amount_cash INTEGER,
+    -- 헥사 강화의 필요 조각 · 교환 불가 조각 · 조각 개당 가격. 다른 갈래는 NULL 이다.
+    fragment_count INTEGER,
+    untradable_fragment_count INTEGER,
+    fragment_price_meso INTEGER,
+    -- 헥사 스탯의 활성화 포함(1 · 0). 헥사 스킬과 다른 갈래는 NULL 이다.
+    hexa_activation INTEGER,
     UNIQUE (entry_id, sort_order)
   )`
 

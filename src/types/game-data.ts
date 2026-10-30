@@ -197,6 +197,49 @@ export interface SymbolCostsTable extends TableHead {
   levelCosts: SymbolLevelCostRow[]
 }
 
+/** 헥사 코어 종류. API 타입마다 기본 종류가 하나이고, 나머지 종류는 이름 표가 코어를 가리킨다. */
+export interface HexaCoreKindRow {
+  key: string
+  name: string
+  /** 넥슨 `hexa_core_type` 의 글자. */
+  apiType: string
+  isDefault: boolean
+  maxLevel: number
+  iconFile: string
+}
+export interface HexaCoreLevelCostRow {
+  kind: string
+  /** 강화 전 레벨. Lv.level → level+1 의 값이다. */
+  level: number
+  fragments: number
+  solErda: number
+}
+/** 기본 종류가 아닌 코어 하나. */
+export interface HexaCoreNameKindRow {
+  name: string
+  kind: string
+}
+export interface HexaJobCoreRow {
+  /** 넥슨 `character_class` 의 글자. */
+  job: string
+  name: string
+  apiType: string
+  iconFile: string
+}
+export interface HexaStatRow {
+  key: string
+  name: string
+  /** 모르면 없다. 그때 활성화 체크를 막는다. */
+  activationFragments?: number
+}
+export interface HexaMatrixTable extends TableHead {
+  kinds: HexaCoreKindRow[]
+  levelCosts: HexaCoreLevelCostRow[]
+  nameKinds: HexaCoreNameKindRow[]
+  jobCores: HexaJobCoreRow[]
+  stats: HexaStatRow[]
+}
+
 /** 컨텐츠 갈래 key. 카드 모양 · 길드 판정 · 계열 한도가 이 값으로 갈려 코드가 집합을 든다. 글자는 표가 든다. */
 export const CONTENT_CATEGORY_KEYS = [
   'monster_park',
@@ -393,7 +436,7 @@ export interface ImageCropsTable extends TableHead {
   crops: ImageCropRow[]
 }
 
-/** 계약을 통과한 칸 열일곱. */
+/** 계약을 통과한 칸 열여덟. */
 export interface GameData {
   bosses: BossCatalog
   dropItems: DropItemsTable
@@ -404,6 +447,7 @@ export interface GameData {
   spendCatalog: SpendCatalogTable
   cashbookCategories: CashbookCategoriesTable
   symbolCosts: SymbolCostsTable
+  hexaMatrix: HexaMatrixTable
   contents: ContentsTable
   equipmentItems: EquipmentItemsTable
   enhancementCosts: EnhancementCostsTable
@@ -416,7 +460,7 @@ export interface GameData {
 
 export type GameDataSection = keyof GameData
 
-/** 칸 이름 열일곱. 응답과 기기 사본이 같은 차례로 든다. */
+/** 칸 이름 열여덟. 응답과 기기 사본이 같은 차례로 든다. */
 export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'bosses',
   'dropItems',
@@ -427,6 +471,7 @@ export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'spendCatalog',
   'cashbookCategories',
   'symbolCosts',
+  'hexaMatrix',
   'contents',
   'equipmentItems',
   'enhancementCosts',

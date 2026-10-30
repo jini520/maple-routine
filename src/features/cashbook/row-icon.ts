@@ -7,7 +7,9 @@
  * 그림이 없는 갈래도 열쇠는 낸다. 무엇을 그릴지는 조회표(`cashbookRowIconOf`)가 정하므로
  * 나중에 그림을 붙일 때 고치는 것이 표 한 줄이다.
  */
-import { cashbookRowIconOf, getItemIconUrlByFile, spendIconOf } from '../../lib/assets/asset-lookup'
+import { cashbookRowIconOf, getItemIconUrlByFile, getSkillIconByFile, spendIconOf } from '../../lib/assets/asset-lookup'
+import { cashbookCategoryOf } from '../../lib/cashbook/categories'
+import { findHexaCore } from '../../lib/cashbook/hexa-matrix'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
 import { findSpendChoice, findSpendRewardChoice } from '../../lib/cashbook/spend-catalog'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
@@ -39,6 +41,15 @@ export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
     if (category === 'symbol') {
       const symbol = findSymbol(itemKey)?.symbol
       return symbol === undefined ? null : spendIconOf({ file: symbol.icon })
+    }
+    // 헥사 스킬은 그 코어의 스킬 그림, 헥사 스탯은 갈래 카드와 같은 헥사 매트릭스 원본 그림이다.
+    if (category === 'hexa_matrix') {
+      if (entry.record.hexa?.activation != null) {
+        const icon = cashbookCategoryOf('spend', category)?.icon
+        return icon === undefined ? null : getItemIconUrlByFile(icon)
+      }
+      const core = findHexaCore(itemKey)
+      return core === null ? null : getSkillIconByFile(core.icon)
     }
     const choice = findSpendChoice(category, itemKey)?.choice ?? findSpendRewardChoice(category, formItemKeys)?.choice
     if (choice !== undefined) return spendIconOf(choice.icon)

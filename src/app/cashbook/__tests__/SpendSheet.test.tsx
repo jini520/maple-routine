@@ -65,7 +65,7 @@ async function 그리기(
       // 가계부 화면이 갈 수 있는 가장 이른 날. 화면이 오늘에서 읽어 넘긴다.
       earliestDateKey="2025-02-27"
       characters={캐릭터둘}
-      loadSymbolLevels={async () => null}
+      loadRememberedLevels={async () => ({})}
       lastPointRate={null}
       onSave={jest.fn()}
       onClose={jest.fn()}
@@ -82,7 +82,7 @@ async function 누르기(view: Rendered, label: string): Promise<void> {
   })
 }
 
-type 갈래이름 = '컨텐츠' | '이벤트·BM' | '버프' | '주문서' | '심볼 강화' | '아이템 구매' | '기타'
+type 갈래이름 = '컨텐츠' | '이벤트·BM' | '버프' | '주문서' | '심볼 강화' | '헥사 매트릭스' | '아이템 구매' | '기타'
 
 /** 카드의 `testID` 는 갈래 key 로 선다. 케이스는 읽히게 이름으로 적고 여기서 key 로 옮긴다. */
 const 갈래key: Record<갈래이름, SpendCategoryKey> = {
@@ -91,6 +91,7 @@ const 갈래key: Record<갈래이름, SpendCategoryKey> = {
   버프: 'buff',
   주문서: 'scroll',
   '심볼 강화': 'symbol',
+  '헥사 매트릭스': 'hexa_matrix',
   '아이템 구매': 'item_purchase',
   기타: 'etc',
 }
@@ -734,6 +735,7 @@ const 악몽선경2 = {
   pointAmount: 50_000,
   pointPer100mMeso: 1_180,
   cashAmount: null,
+  hexa: null,
   recordedAt: '2026-08-23T01:00:00.000Z',
 }
 
@@ -764,6 +766,7 @@ describe('저장', () => {
       pointAmount: 30_000,
       pointPer100mMeso: 1_180,
       cashAmount: null,
+      hexa: null,
     })
   })
 
@@ -1012,6 +1015,7 @@ describe('주문서', () => {
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
+        hexa: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
       },
       onDelete: jest.fn(),
@@ -1553,6 +1557,7 @@ describe('시작 기간 전인 항목', () => {
         pointAmount: 135_000,
         pointPer100mMeso: 1_180,
         cashAmount: null,
+        hexa: null,
         recordedAt: '2026-09-16T01:00:00.000Z',
       },
       onDelete: jest.fn(),
@@ -1581,6 +1586,7 @@ describe('수정 모드', () => {
     pointAmount: 50_000,
     pointPer100mMeso: 1_180,
     cashAmount: null,
+    hexa: null,
     recordedAt: '2026-08-23T01:00:00.000Z',
   }
 
@@ -1995,6 +2001,7 @@ describe('되짚어 여는 식', () => {
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
+    hexa: null,
     recordedAt: '2026-08-23T01:00:00.000Z',
   }
 
@@ -2246,6 +2253,7 @@ describe('수정으로 열 때의 큰 숫자', () => {
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
+      hexa: null,
       recordedAt: '2026-08-23T01:00:00.000Z',
     }
   }
@@ -2380,6 +2388,13 @@ describe('심볼 강화', () => {
     await 아이디로누르기(view, `spend-sheet-chain-option-${ocid}`)
   }
 
+  /** 격자 위 두 탭의 레벨. `[강화 전, 강화 후]` 이고 심볼을 안 골랐으면 `-` 다. */
+  function 범위(view: Rendered): [string, string] {
+    const read = (end: 'from' | 'to') =>
+      String(view.getByTestId(`spend-sheet-symbol-level-tab-${end}`).props.accessibilityLabel).replace(/^강화 (전|후) /, '')
+    return [read('from'), read('to')]
+  }
+
   /** 열린 목록의 보기 key 들. 묶음 라벨은 `@라벨` 로 적는다. */
   async function 목록(view: Rendered): Promise<string[]> {
     await 아이디로누르기(view, 'spend-sheet-symbol')
@@ -2411,6 +2426,7 @@ describe('심볼 강화', () => {
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
+    hexa: null,
     recordedAt: '2026-09-19T01:00:00.000Z',
   }
 
@@ -2420,7 +2436,7 @@ describe('심볼 강화', () => {
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('심볼 강화')
     expect(view.getByTestId('spend-sheet-symbol-trigger')).toHaveTextContent('심볼심볼 선택')
     expect(view.getByText('심볼을 먼저 고르세요')).toBeTruthy()
-    expect(view.queryByLabelText('강화 전 레벨')).toBeNull()
+    expect(view.getByTestId('spend-sheet-symbol-level-level-1').props.accessibilityState?.disabled).toBe(true)
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('0')
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
@@ -2435,19 +2451,19 @@ describe('심볼 강화', () => {
     ])
   })
 
-  it('캐릭터를 고르면 착용 레벨이 캐릭터 레벨 이하인 것만 서고, 만렙은 맨 끝 `만렙` 묶음이다', async () => {
-    const loadSymbolLevels = jest.fn(async () => ({ road_of_vanishing: 20 }))
-    const view = await 열기({ loadSymbolLevels })
+  it('캐릭터를 고르면 착용 레벨이 캐릭터 레벨 이하인 것만 서고, 기억한 레벨이 만렙인 것은 맨 끝 `만렙` 묶음이다', async () => {
+    const loadRememberedLevels = jest.fn(async () => ({ road_of_vanishing: 20 }))
+    const view = await 열기({ loadRememberedLevels })
 
     await 캐릭터고르기(view, 'ocid-1')
 
-    expect(loadSymbolLevels).toHaveBeenCalledWith('ocid-1')
+    expect(loadRememberedLevels).toHaveBeenCalledWith('ocid-1', 'symbol')
     // 루디는 Lv.225 다.
     expect(await 목록(view)).toEqual(['@아케인 심볼', 'chew_chew', 'lacheln', 'arcana', '@만렙', 'road_of_vanishing'])
   })
 
-  it('심볼 레벨을 못 읽으면 만렙 묶음 없이 레벨로만 거른다', async () => {
-    const view = await 열기({ loadSymbolLevels: async () => null })
+  it('기억한 레벨이 없으면 만렙 묶음 없이 레벨로만 거른다', async () => {
+    const view = await 열기({ loadRememberedLevels: async () => ({}) })
 
     await 캐릭터고르기(view, 'ocid-1')
 
@@ -2461,8 +2477,7 @@ describe('심볼 강화', () => {
 
     expect(view.getByTestId('spend-sheet-symbol-trigger')).toHaveTextContent('심볼소멸의 여로')
     expect(view.getByTestId('spend-sheet-symbol-icon')).toBeTruthy()
-    expect(view.getByLabelText('강화 전 레벨')).toHaveAccessibilityValue({ min: 1, max: 20, now: 7 })
-    expect(view.getByLabelText('강화 후 레벨')).toHaveAccessibilityValue({ now: 12 })
+    expect(범위(view)).toEqual(['Lv.7', 'Lv.12'])
     // 7→8 365만 · 8→9 462만 · 9→10 572만 · 10→11 699만 · 11→12 840만
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('2938만')
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
@@ -2472,11 +2487,22 @@ describe('심볼 강화', () => {
     const view = await 열기()
 
     await 심볼고르기(view, 'cernium')
-    expect(view.getByLabelText('강화 전 레벨')).toHaveAccessibilityValue({ min: 1, max: 11, now: 5 })
-    expect(view.getByLabelText('강화 후 레벨')).toHaveAccessibilityValue({ now: 8 })
+    expect(범위(view)).toEqual(['Lv.5', 'Lv.8'])
+    expect(view.getByTestId('spend-sheet-symbol-level-level-11')).toBeTruthy()
+    expect(view.queryByTestId('spend-sheet-symbol-level-level-12')).toBeNull()
 
     await 심볼고르기(view, 'geardrak')
-    expect(view.getByLabelText('강화 후 레벨')).toHaveAccessibilityValue({ max: 11, now: 8 })
+    expect(범위(view)).toEqual(['Lv.5', 'Lv.8'])
+  })
+
+  // 강화 전은 그 캐릭터의 기억한 레벨이다. 추적을 시작할 때 넥슨 값으로 채우고 그 뒤로는 저장한 기록이 옮긴다.
+  it('기억한 레벨이 있으면 강화 전이 그 레벨이고 강화 후는 한 칸 위다. 기억이 늦게 와도 맞춘다', async () => {
+    const view = await 열기({ loadRememberedLevels: async () => ({ road_of_vanishing: 9 }) })
+
+    await 심볼고르기(view, 'road_of_vanishing')
+    await 캐릭터고르기(view, 'ocid-1')
+
+    expect(범위(view)).toEqual(['Lv.9', 'Lv.10'])
   })
 
   it('칸을 눌러 옮긴 범위의 비용을 더해 레벨 칸과 함께 저장한다', async () => {
@@ -2484,6 +2510,7 @@ describe('심볼 강화', () => {
     const view = await 열기({ onSave })
     await 심볼고르기(view, 'road_of_vanishing')
 
+    await 아이디로누르기(view, 'spend-sheet-symbol-level-tab-from')
     await 누르기(view, 'Lv.3')
     await 누르기(view, 'Lv.8')
 
@@ -2505,6 +2532,7 @@ describe('심볼 강화', () => {
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
+      hexa: null,
     })
   })
 
@@ -2517,7 +2545,7 @@ describe('심볼 강화', () => {
     await 캐릭터고르기(view, 'ocid-1')
 
     expect(view.getByTestId('spend-sheet-symbol-trigger')).toHaveTextContent('심볼심볼 선택')
-    expect(view.queryByLabelText('강화 전 레벨')).toBeNull()
+    expect(view.getByText('심볼을 먼저 고르세요')).toBeTruthy()
   })
 
   it('9월 17일 전 날짜는 달력에서 못 누른다', async () => {
@@ -2542,12 +2570,168 @@ describe('심볼 강화', () => {
     const view = await 그리기({ editing: 기록, onDelete: jest.fn(), onSave, dateKey: 패치후, todayDateKey: 패치후 })
 
     expect(view.getByTestId('spend-sheet-symbol-trigger')).toHaveTextContent('심볼소멸의 여로')
-    expect(view.getByLabelText('강화 전 레벨')).toHaveAccessibilityValue({ now: 3 })
-    expect(view.getByLabelText('강화 후 레벨')).toHaveAccessibilityValue({ now: 7 })
+    expect(범위(view)).toEqual(['Lv.3', 'Lv.7'])
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('770만')
 
     await 누르기(view, '수정')
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-1', itemKey: 'road_of_vanishing', levelFrom: 3, levelTo: 7 })
+  })
+})
+
+/**
+ * 헥사 매트릭스. 코어는 캐릭터 직업의 실제 코어를 고르고, 강화 전은 기억한 레벨로 선다. 지출은
+ * (필요 조각 − 교환 불가) × 개당 가격이다. 값은 사용자가 준 비용 표다.
+ */
+describe('헥사 매트릭스', () => {
+  const 렌 = [{ ocid: 'ocid-ren', name: '렌캐릭', level: 285, worldKey: 'scania', jobClass: '렌' }]
+  const 선참 = '매화검 본초 : 선참 VI'
+
+  async function 열기(overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {}) {
+    return 그리기({ characters: 렌, ...overrides }, '헥사 매트릭스')
+  }
+
+  async function 아이디로누르기(view: Rendered, testID: string): Promise<void> {
+    await act(async () => {
+      fireEvent.press(view.getByTestId(testID))
+    })
+  }
+
+  async function 렌고르기(view: Rendered): Promise<void> {
+    await 아이디로누르기(view, 'spend-sheet-chain-open')
+    await 아이디로누르기(view, 'spend-sheet-chain-option-ocid-ren')
+  }
+
+  async function 코어고르기(view: Rendered, name: string): Promise<void> {
+    await 아이디로누르기(view, 'spend-sheet-hexa-core')
+    await 아이디로누르기(view, `spend-sheet-hexa-core-option-${name}`)
+  }
+
+  function 범위(view: Rendered): [string, string] {
+    const read = (end: 'from' | 'to') =>
+      String(view.getByTestId(`spend-sheet-hexa-level-tab-${end}`).props.accessibilityLabel).replace(/^강화 (전|후) /, '')
+    return [read('from'), read('to')]
+  }
+
+  it('갈래 제목은 헥사 매트릭스이고, 캐릭터를 고르기 전에는 코어를 못 고르며 저장이 꺼져 있다', async () => {
+    const view = await 열기()
+
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('헥사 매트릭스')
+    expect(view.getByText('캐릭터를 먼저 고르세요')).toBeTruthy()
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('캐릭터를 고르면 그 직업의 코어 열넷이 종류별로 묶여 선다', async () => {
+    const view = await 열기()
+    await 렌고르기(view)
+
+    await 아이디로누르기(view, 'spend-sheet-hexa-core')
+    const 묶음 = view
+      .getAllByTestId(/^spend-sheet-hexa-core-group-/)
+      .map((node) => String(node.props.testID).replace('spend-sheet-hexa-core-group-', ''))
+    expect(묶음).toEqual(['스킬 코어', '3rd 스킬 코어', '마스터리 코어', '강화 코어', '공용 코어', '직업 공용 코어'])
+    expect(view.getAllByTestId(/^spend-sheet-hexa-core-option-/)).toHaveLength(14)
+  })
+
+  it('강화 전은 기억한 레벨이고 강화 후를 고르면 그 사이 조각으로 금액을 내어 조각 칸과 함께 저장한다', async () => {
+    const onSave = jest.fn()
+    const loadRememberedLevels = jest.fn(async () => ({ [선참]: 25 }))
+    const view = await 열기({ onSave, loadRememberedLevels })
+    await 렌고르기(view)
+    await 코어고르기(view, 선참)
+
+    expect(loadRememberedLevels).toHaveBeenCalledWith('ocid-ren', 'hexa')
+    expect(범위(view)).toEqual(['Lv.25', 'Lv.26'])
+
+    await 아이디로누르기(view, 'spend-sheet-hexa-level-level-28')
+    // 마스터리 25→26 110 · 26→27 115 · 27→28 120
+    expect(view.getByTestId('spend-sheet-hexa-fragment-count')).toHaveTextContent('345')
+
+    await 카드칸에치기(view, 'spend-sheet-hexa-price', '7200000')
+    await 카드칸에치기(view, 'spend-sheet-hexa-untradable', '45')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('21억 6천만')
+
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      ocid: 'ocid-ren',
+      category: 'hexa_matrix',
+      itemKey: 선참,
+      levelFrom: 25,
+      levelTo: 28,
+      mesoAmount: 2_160_000_000,
+      hexa: { fragmentCount: 345, untradableFragmentCount: 45, fragmentPrice: 7_200_000, activation: null },
+    })
+  })
+
+  // 조각 개당 가격은 매번 다르다. 마지막으로 친 값을 채우면 그 값을 모르고 저장한다.
+  it('개당 가격을 안 치면 저장이 꺼진다', async () => {
+    const view = await 열기()
+    await 렌고르기(view)
+    await 코어고르기(view, 선참)
+
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  // 이벤트로 얻은 교환 불가 조각만 썼으면 돈이 안 들었다. 레벨은 옮겼으므로 기록은 저장한다.
+  it('교환 불가가 필요 조각보다 많으면 0 메소로 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 열기({ onSave })
+    await 렌고르기(view)
+    await 코어고르기(view, '창룡파천검 : 만참')
+    await 카드칸에치기(view, 'spend-sheet-hexa-price', '7200000')
+    await 카드칸에치기(view, 'spend-sheet-hexa-untradable', '500')
+
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 0, levelFrom: 0, levelTo: 1 })
+  })
+
+  it('헥사 스탯은 활성화를 체크하면 활성화 조각을 더하고 강화에 쓴 조각은 직접 친다', async () => {
+    const onSave = jest.fn()
+    const view = await 열기({ onSave })
+    await 누르기(view, '헥사 스탯')
+    await 렌고르기(view)
+    await 아이디로누르기(view, 'spend-sheet-hexa-stat-open')
+    await 아이디로누르기(view, 'spend-sheet-hexa-stat-option-hexa_stat_2')
+    await 아이디로누르기(view, 'spend-sheet-hexa-activation')
+    await 카드칸에치기(view, 'spend-sheet-hexa-enhance', '140')
+    await 카드칸에치기(view, 'spend-sheet-hexa-price', '7200000')
+
+    expect(view.getByTestId('spend-sheet-hexa-fragment-count')).toHaveTextContent('340')
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      itemKey: 'hexa_stat_2',
+      levelFrom: null,
+      levelTo: null,
+      mesoAmount: 2_448_000_000,
+      hexa: { fragmentCount: 340, untradableFragmentCount: 0, fragmentPrice: 7_200_000, activation: true },
+    })
+  })
+
+  it('수정으로 열면 헥사 스탯의 강화 조각을 필요 조각에서 활성화 몫을 빼 되살린다', async () => {
+    const 기록: SpendRecord = {
+      id: 'spd-hexa',
+      ocid: 'ocid-ren',
+      spentOn: '2026-08-23',
+      category: 'hexa_matrix',
+      item: '헥사 스탯 Ⅱ',
+      itemKey: 'hexa_stat_2',
+      formItemKeys: null,
+      itemKind: null,
+      levelFrom: null,
+      levelTo: null,
+      quantity: null,
+      mesoAmount: 2_448_000_000,
+      tariffMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
+      hexa: { fragmentCount: 340, untradableFragmentCount: 0, fragmentPrice: 7_200_000, activation: true },
+      recordedAt: '2026-08-23T01:00:00.000Z',
+    }
+    const view = await 그리기({ characters: 렌, editing: 기록, onDelete: jest.fn() })
+
+    expect(줄글자(view, 'spend-sheet-hexa-enhance')).toBe('140')
+    expect(view.getByTestId('spend-sheet-hexa-activation').props.accessibilityState?.checked).toBe(true)
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('24억 4800만')
   })
 })
 
@@ -2574,6 +2758,7 @@ describe('가격을 치는 버프', () => {
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
+      hexa: null,
       recordedAt: '2026-08-23T01:00:00.000Z',
       ...overrides,
     }

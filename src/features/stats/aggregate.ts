@@ -7,6 +7,7 @@ import { dayTotalsOf, recordMesoOf, type DayRecord } from '../cashbook/records'
 import { incomeCategoryNameOf, spendCategoryNameOf } from '../../lib/cashbook/categories'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
 import { findSpendChoice, findSpendRewardChoice, spendGroupOf } from '../../lib/cashbook/spend-catalog'
+import { hexaTargetOf } from '../../lib/cashbook/hexa-matrix'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import type { IncomeRecord } from '../../storage/income'
 import type { SpendRecord } from '../../storage/spend'
@@ -200,6 +201,12 @@ function symbolPart(record: SpendRecord, meso: number): Part {
   return symbol === undefined ? typedNamePart(record.item, meso) : { key: `symbol:${symbol.key}`, name: symbol.name, meso }
 }
 
+/** 헥사 매트릭스의 줄. 헥사 스킬은 코어, 헥사 스탯은 스탯이다. 표에서 못 찾으면 친 이름이다. */
+function hexaPart(record: SpendRecord, meso: number): Part {
+  const target = hexaTargetOf(record.itemKey, record.hexa?.activation != null)
+  return target === null ? typedNamePart(record.item, meso) : { ...target, meso }
+}
+
 /** 사냥 기록에 적힌 조각 값. 조각 가격을 안 적었으면 합계에 없어 0 이다 */
 function fragmentMesoOf(record: IncomeRecord): number {
   const hunt = record.hunt
@@ -212,7 +219,7 @@ function fragmentMesoOf(record: IncomeRecord): number {
  * 보스 · 난이도로 이미 나눈다.
  *
  * 줄의 축은 갈래마다 하나다. 보스 드롭은 아이템, 강화는 장비, 컨텐츠 · 이벤트·BM · 주문서는 선택 목록의 타일,
- * 버프는 묶음, 심볼 강화는 심볼, 아이템 판매 · 구매 · 기타는 친 이름, 사냥은 메소와 조각이다.
+ * 버프는 묶음, 심볼 강화는 심볼, 헥사 매트릭스는 코어 · 스탯, 아이템 판매 · 구매 · 기타는 친 이름, 사냥은 메소와 조각이다.
  */
 function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; parts: Part[] } {
   const meso = recordMesoOf(entry)
@@ -272,6 +279,8 @@ function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; part
           return { slice, parts: [tilePart(entry.record, meso)] }
         case 'symbol':
           return { slice, parts: [symbolPart(entry.record, meso)] }
+        case 'hexa_matrix':
+          return { slice, parts: [hexaPart(entry.record, meso)] }
         case 'item_purchase':
         case 'etc':
           return { slice, parts: [typedNamePart(entry.record.item, meso)] }

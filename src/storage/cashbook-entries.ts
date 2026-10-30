@@ -34,6 +34,11 @@ export interface EntryItem {
   amountPoint: number | null
   pointPer100mMeso: number | null
   amountCash: number | null
+  fragmentCount: number | null
+  untradableFragmentCount: number | null
+  fragmentPriceMeso: number | null
+  /** 헥사 스탯만 참 · 거짓이고 나머지는 `null` 이다. */
+  hexaActivation: boolean | null
 }
 
 export interface EntryHunt {
@@ -71,13 +76,18 @@ export const EMPTY_ITEM: EntryItem = {
   amountPoint: null,
   pointPer100mMeso: null,
   amountCash: null,
+  fragmentCount: null,
+  untradableFragmentCount: null,
+  fragmentPriceMeso: null,
+  hexaActivation: null,
 }
 
 const INSERT_ITEM_SQL = `
   INSERT INTO cashbook_entry_items
     (id, entry_id, sort_order, item_key, item_name, form_key, item_kind_key, quantity, from_level, to_level,
-     amount_meso, tariff_meso, sale_fee_percent, sale_fee_meso, sale_fee_auto, amount_point, point_per_100m_meso, amount_cash)
-  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     amount_meso, tariff_meso, sale_fee_percent, sale_fee_meso, sale_fee_auto, amount_point, point_per_100m_meso, amount_cash,
+     fragment_count, untradable_fragment_count, fragment_price_meso, hexa_activation)
+  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 const INSERT_HUNT_SQL = `
@@ -106,6 +116,10 @@ async function writeChildren(db: SqliteDbConnection, entry: StoredEntry): Promis
       item.amountPoint,
       item.pointPer100mMeso,
       item.amountCash,
+      item.fragmentCount,
+      item.untradableFragmentCount,
+      item.fragmentPriceMeso,
+      item.hexaActivation === null ? null : item.hexaActivation ? 1 : 0,
     ])
   }
   const hunt = entry.hunt
@@ -205,6 +219,10 @@ function itemOf(row: Record<string, unknown>): EntryItem {
     amountPoint: numberOrNull(row.amount_point),
     pointPer100mMeso: numberOrNull(row.point_per_100m_meso),
     amountCash: numberOrNull(row.amount_cash),
+    fragmentCount: numberOrNull(row.fragment_count),
+    untradableFragmentCount: numberOrNull(row.untradable_fragment_count),
+    fragmentPriceMeso: numberOrNull(row.fragment_price_meso),
+    hexaActivation: row.hexa_activation == null ? null : Number(row.hexa_activation) === 1,
   }
 }
 

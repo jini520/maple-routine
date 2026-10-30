@@ -40,6 +40,10 @@ export interface CashbookEntryItemPayload {
   amountPoint: number | null
   pointPer100mMeso: number | null
   amountCash: number | null
+  fragmentCount: number | null
+  untradableFragmentCount: number | null
+  fragmentPriceMeso: number | null
+  hexaActivation: boolean | null
 }
 
 /**

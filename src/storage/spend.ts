@@ -42,9 +42,9 @@ export interface SpendRecord {
    * 연다. 그때는 치는 금액 + 관세 하나뿐이었고 그것이 정확히 장비의 모양이다.
    */
   itemKind: ItemKindKey | null
-  /** 심볼 강화의 강화 전 레벨. 다른 갈래에서는 `null` 이다. */
+  /** 심볼 강화 · 헥사 스킬의 강화 전 레벨. 다른 갈래에서는 `null` 이다. */
   levelFrom: number | null
-  /** 심볼 강화의 강화 후 레벨. */
+  /** 심볼 강화 · 헥사 스킬의 강화 후 레벨. */
   levelTo: number | null
   /**
    * 금액 = 카탈로그의 `unitPrice` × 이 값. **단위 이름은 안 적는다**.
@@ -76,7 +76,22 @@ export interface SpendRecord {
    * 값을 매기는 것처럼 읽힌다.** 정확도의 문제가 아니라 무엇을 정상으로 보이게 하는가의 문제다.
    */
   cashAmount: number | null
+  /** 헥사 매트릭스 기록의 조각. 다른 갈래는 `null` 이다. */
+  hexa: SpendHexa | null
   recordedAt: string
+}
+
+/**
+ * 헥사 강화에 든 조각. 금액은 `(fragmentCount − untradableFragmentCount) × fragmentPrice` 를 저장할 때 굳힌다.
+ *
+ * `activation` 이 참 · 거짓이면 헥사 스탯 기록이고 `null` 이면 헥사 스킬 기록이다. 헥사 스킬은 코어 이름이
+ * `itemKey`, 레벨이 `levelFrom` · `levelTo` 다.
+ */
+export interface SpendHexa {
+  fragmentCount: number
+  untradableFragmentCount: number
+  fragmentPrice: number
+  activation: boolean | null
 }
 
 /**
@@ -141,4 +156,24 @@ export async function getSpendRecordsBetween(
     toDateKey,
   ])
   return entries.map(spendRecordOf)
+}
+
+/**
+ * 그 캐릭터 · 갈래 · 대상(심볼 key · 코어 이름)의 가장 최근 지출. 날짜가 같으면 늦게 저장한 것이다.
+ * 강화 레벨 기억을 고칠지 가를 때 쓴다. 가장 최근 기록을 고치거나 지울 때만 기억이 따라 바뀐다.
+ */
+export async function getLatestSpendFor(
+  ocid: string,
+  category: SpendCategoryKey,
+  itemKey: string,
+): Promise<SpendRecord | null> {
+  const db = await getBossProfitDb()
+  const entries = await readEntries(
+    db,
+    `e.entry_type = 'spend' AND e.ocid = ? AND e.category_key = ?
+      AND e.id IN (SELECT entry_id FROM cashbook_entry_items WHERE item_key = ?)`,
+    [ocid, category, itemKey],
+  )
+  const last = entries.at(-1)
+  return last === undefined ? null : spendRecordOf(last)
 }

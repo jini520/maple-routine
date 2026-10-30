@@ -26,6 +26,7 @@ import { manualCompletionKey } from '../../lib/boss/manual-completion'
 import type { BossDifficulty } from '../../types'
 import { compareByName } from '../../lib/character-order'
 import { useToastStore } from '../toast/store'
+import { seedRememberedLevels } from '../cashbook/remembered-levels'
 import { seedManualTrackedContent } from '../tracking-mode/seed'
 import { useTrackingModeStore } from '../tracking-mode/store'
 import {
@@ -306,6 +307,8 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
     // 저장 시점에는 새로 추가된 캐릭터만 조회한다. 유지되는 캐릭터는
     // 이미 가진 뷰를 그대로 재사용하고, 제거만 했거나 아무것도 안 바뀌었으면 조회 자체를 하지 않는다.
     const added = ocids.filter((ocid) => !previousOcids.includes(ocid))
+    // 새로 추적한 캐릭터의 심볼 · 헥사 레벨을 기억해 둔다. 가계부 폼의 곁가지라 저장을 기다리게 하지 않는다.
+    void seedRememberedLevels(added)
 
     // 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드하고 그 멤버십을 화면 상태에도
     // 반영한다. 동기화보다 먼저 실행한다. 화면의 저장 진행률 모달이 saveTrackedOcids 전체를

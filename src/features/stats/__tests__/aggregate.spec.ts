@@ -417,6 +417,21 @@ describe('categoryTotalsBetween', () => {
       ])
     })
 
+    it('헥사 매트릭스는 코어 · 스탯별이다', () => {
+      const 조각 = { fragmentCount: 1, untradableFragmentCount: 0, fragmentPrice: 1 }
+      const byDate = {
+        '2026-09-24': [
+          spend(null, '', { category: 'hexa_matrix', itemKey: '창룡파천검 : 만참', mesoAmount: 100, hexa: { ...조각, activation: null } }),
+          spend(null, '', { category: 'hexa_matrix', itemKey: '창룡파천검 : 만참', mesoAmount: 50, hexa: { ...조각, activation: null } }),
+          spend(null, '', { category: 'hexa_matrix', itemKey: 'hexa_stat_2', mesoAmount: 10, hexa: { ...조각, activation: true } }),
+        ],
+      }
+      expect(categoryTotalsBetween(byDate, WEEK, 'expense')[0].parts).toEqual([
+        { key: 'core:창룡파천검 : 만참', name: '창룡파천검 : 만참', meso: 150 },
+        { key: 'stat:hexa_stat_2', name: '헥사 스탯 Ⅱ', meso: 10 },
+      ])
+    })
+
     // 비슷한 이름을 추정해 묶지 않는다. 공백과 NFC 만 맞춘다.
     it('아이템 구매 · 판매 · 기타는 친 이름별이고 앞뒤 공백 · NFC 만 맞춘다. 이름이 없으면 이름 없음이다', () => {
       const byDate = {

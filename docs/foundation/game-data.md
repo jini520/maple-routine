@@ -13,7 +13,7 @@
 | `types/game-data.ts` | 칸 이름(`GAME_DATA_SECTIONS`)과 칸마다의 형식 |
 | `lib/game-data/table.ts` | 칸 하나의 현재 값(`gameTable` · `createTable` · `derive`) |
 | `lib/game-data/initial.ts` | 표의 첫 값. 앱은 빈 표이고, jest 는 `src/__fixtures__/game-data/initial.ts` 로 바꿔 fixture 로 시작한다 |
-| `lib/game-data/sections.ts` | 칸 열일곱의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
+| `lib/game-data/sections.ts` | 칸 열여덟의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
 | `lib/assets/asset-files.ts` | 그림 목록(`assets` 칸)과 받은 그림의 `{ uri, width, height }` |
 | `lib/assets/image-crops.ts` | 크롭 표(`imageCrops` 칸) |
 | `lib/assets/asset-lookup.ts` | 이름표를 그림 · 크롭으로 바꾸는 조회 |
@@ -22,10 +22,10 @@
 | `server/game-data.ts` | `GET /v1/game-data` 를 ETag 와 함께 받고 칸마다 검사한다 |
 | `storage/game-data-copy.ts` | 기기 사본(SQLite `game_data_sections` · `game_data_meta`) |
 | `storage/adapters/rn-asset-files.ts` | 그림 파일(문서 디렉터리 `game-assets/`) |
-| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 열일곱. 운영 서버 응답을 떠 둔 것이다 |
+| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 열여덟. 운영 서버 응답을 떠 둔 것이다 |
 | `lib/boss/boss-profit-period.ts` | 줄의 유효 기간 판정(`isEffectiveIn` · `isEffectiveAnytimeIn`) |
 
-## 칸 열일곱
+## 칸 열여덟
 
 | 칸 | 담는 것 | 조회 모듈 | 관리 화면 |
 |---|---|---|---|
@@ -38,6 +38,7 @@
 | `spendCatalog` | 가계부 지출 목록. 묶음 12(카드 제목) · 타일 54 · 항목 70(원본 이름 · 줄인 이름) 과 항목의 축 값 · 형태, 형태 이름 둘, 규칙(관세율 · 세라자르 주화 가격) | `lib/cashbook/spend-catalog` | `/admin/spend-catalog` |
 | `cashbookCategories` | 가계부 수입 · 지출 갈래 11개의 이름 · 카드 제목 · 그림 · 설명 · 단위와 아이템 종류 3개(장비 · 소비 · 기타)의 이름 · 단위 · 관세 여부 | `lib/cashbook/categories` | `/admin/cashbook-categories` |
 | `symbolCosts` | 심볼 묶음 3 · 심볼 14 · 레벨별 강화 비용 줄 194개. 비용 줄에는 기간이 있다 | `lib/cashbook/symbol-costs` | `/admin/symbol-costs` |
+| `hexaMatrix` | 헥사 코어 종류 6 · 종류별 레벨 비용 줄 180개(조각 · 솔 에르다) · 기본 종류가 아닌 코어 이름 50 · 직업 48 개의 코어 672 · 헥사 스탯 3 과 활성화 조각. 코어 그림은 `skills/` 에 있다 | `lib/cashbook/hexa-matrix` | `/admin/hexa-matrix` |
 | `contents` | 컨텐츠 분류 8 · 컨텐츠 41개의 넥슨 이름 · 표시 이름 · 배경 · 수동 모드 상한 · 요구 레벨 · 공유 범위 · 유효 기간. 컨텐츠 key 마스터 표다 | `lib/scheduler/contents` · `scheduler-content-scope` · `content-categories` | `/admin/contents` |
 | `equipmentItems` | 강화 비용을 매길 장비 467개의 key · 붙여 쓴 이름 · 착용 레벨. 장비 key 마스터 표다 | `lib/equipment/equipment-items` | `/admin/equipment-items` |
 | `enhancementCosts` | 잠재 재설정 비용 32줄 · 소울 잠재 재설정 비용 4줄 · 스타포스 단계 30줄과 규칙 셋. 식은 `lib/enhancement/cost.ts` 에 있다 | `lib/enhancement/cost` | `/admin/enhancement-costs` |
@@ -62,7 +63,7 @@
 
 ## 값이 기기에 반영되는 순서
 
-1. 켤 때 `startGameData` 가 기기 사본을 읽는다. 계약 판이 `GAME_DATA_CONTRACT` 와 같고 칸 열일곱이 계약을 지키면 표를
+1. 켤 때 `startGameData` 가 기기 사본을 읽는다. 계약 판이 `GAME_DATA_CONTRACT` 와 같고 칸 열여덟이 계약을 지키면 표를
    세우고 바로 연다.
 2. 사본이 없거나 읽을 수 없으면 잠금 화면을 세우고 게임 데이터를 받는다. 받을 크기를 보여 주고 `확인` 을 기다린다
    (`confirmGameData`). 확인하면 기기에 없는 그림을 받고, 다 받으면 사본을

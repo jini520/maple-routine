@@ -5,7 +5,7 @@
 // 적은 줄에서만 그림이 사라진다.
 import type { IncomeRecord } from '../../../storage/income'
 import type { SpendRecord } from '../../../storage/spend'
-import { getDailyQuestRegionIconUrl, getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
+import { getDailyQuestRegionIconUrl, getItemIconUrlByFile, getSkillIconByFile } from '../../../lib/assets/asset-lookup'
 import type { DayRecord } from '../records'
 import { recordIconKeyOf, recordIconOf } from '../row-icon'
 
@@ -104,6 +104,17 @@ describe('recordIconOf', () => {
     expect(recordIconOf(income({ category: 'hunt_loot_sale', itemKey: 'suspicious_magnifier' }))).toBe(
       getItemIconUrlByFile('suspicious_magnifier.webp'),
     )
+  })
+
+  it('헥사 스킬은 그 코어의 스킬 그림이고, 헥사 스탯은 갈래 카드와 같은 헥사 매트릭스 그림이다', () => {
+    const 조각 = { fragmentCount: 345, untradableFragmentCount: 0, fragmentPrice: 1 }
+    expect(recordIconOf(spend({ category: 'hexa_matrix', itemKey: '창룡파천검 : 만참', hexa: { ...조각, activation: null } }))).toBe(
+      getSkillIconByFile('KEJDKDOEMH.webp'),
+    )
+    expect(recordIconOf(spend({ category: 'hexa_matrix', itemKey: 'hexa_stat_1', hexa: { ...조각, activation: false } }))).toBe(
+      getItemIconUrlByFile('hexa_matrix.webp'),
+    )
+    expect(getSkillIconByFile('KEJDKDOEMH.webp')).not.toBeNull()
   })
 
   // 선택 목록이 아니라 비용 표에서 심볼을 되짚는다.

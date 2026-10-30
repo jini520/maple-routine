@@ -24,7 +24,7 @@ import {
 import { gameTable, derive } from '../game-data/table'
 
 /** 앱이 입력 폼을 아는 지출 갈래. 차례는 서버 표가 정한다. */
-export const SPEND_CATEGORY_KEYS = ['content', 'event_bm', 'buff', 'scroll', 'symbol', 'item_purchase', 'etc'] as const
+export const SPEND_CATEGORY_KEYS = ['content', 'event_bm', 'buff', 'scroll', 'symbol', 'hexa_matrix', 'item_purchase', 'etc'] as const
 export type SpendCategoryKey = (typeof SPEND_CATEGORY_KEYS)[number]
 
 /** 앱이 입력 폼을 아는 수익 갈래. 서버 표의 맨 앞이 기본 갈래다. */

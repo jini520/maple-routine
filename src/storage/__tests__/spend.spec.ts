@@ -55,6 +55,7 @@ const mesoSpend: SpendRecord = {
   pointAmount: null,
   pointPer100mMeso: null,
   cashAmount: null,
+  hexa: null,
   recordedAt: '2026-08-23T05:00:00.000Z',
 }
 

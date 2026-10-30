@@ -1,44 +1,31 @@
-/** 레벨 칸 슬라이더(`LevelRangeSlider`)의 계산. 가로 위치를 칸으로 옮기고 잡을 손잡이를 고른다. */
+/** 레벨 격자(`LevelRangeGrid`)의 계산. 탭이 고른 쪽(강화 전 · 강화 후)에 칸을 누른 값을 넣는다. */
 
 export interface LevelRange {
   from: number
   to: number
 }
 
-export type Thumb = 'from' | 'to'
+/** 지금 고르는 쪽. 격자 위 탭 둘이다. */
+export type RangeEnd = 'from' | 'to'
 
-/** 가로 위치가 든 칸의 레벨. 칸이 폭을 똑같이 나눈다. 트랙 밖은 끝 칸이다. */
-export function levelAt(x: number, width: number, max: number): number {
-  if (width <= 0) return 1
-  return Math.min(Math.max(Math.floor((x / width) * max) + 1, 1), max)
-}
-
-/** 칸 가운데의 가로 자리(%). 손잡이가 이 자리에 선다. */
-export function cellCenterPercent(level: number, max: number): number {
-  return ((level - 0.5) / max) * 100
+/**
+ * 그 칸을 지금 고를 수 있나. 강화 전은 만렙을 못 고르고(올릴 단계가 없다), 강화 후는 강화 전보다 높아야 한다.
+ * 못 고르는 칸은 흐리게 막는다. 거꾸로 된 범위가 생길 길을 처음부터 없앤다.
+ */
+export function canPick(range: LevelRange, editing: RangeEnd, level: number, max: number): boolean {
+  return editing === 'from' ? level < max : level > range.from
 }
 
 /**
- * 끌기를 시작한 자리에서 잡을 손잡이. 가까운 쪽이고, 같으면(겹쳤거나 한가운데) 끄는 방향이
- * 고른다. 겹친 채 왼쪽 손잡이를 오른쪽으로 끌면 둘이 못 벌어지기 때문이다.
+ * 칸을 누른 뒤의 범위와 다음에 고를 쪽. 강화 전을 고르면 강화 후 탭으로 넘어간다. 강화 후가 새 강화 전 이하가 되면
+ * 그 한 칸 위로 민다.
  */
-export function grabThumb(range: LevelRange, level: number, dx: number): Thumb {
-  const toFrom = Math.abs(level - range.from)
-  const toTo = Math.abs(level - range.to)
-  if (toFrom !== toTo) return toFrom < toTo ? 'from' : 'to'
-  return dx >= 0 ? 'to' : 'from'
+export function pickLevel(range: LevelRange, editing: RangeEnd, level: number): { range: LevelRange; editing: RangeEnd } {
+  if (editing === 'from') return { range: { from: level, to: Math.max(range.to, level + 1) }, editing: 'to' }
+  return { range: { from: range.from, to: level }, editing: 'to' }
 }
 
-/** 잡은 손잡이를 옮긴 범위. 다른 손잡이를 넘으면 그 자리에서 멈춘다. */
-export function dragRange(range: LevelRange, thumb: Thumb, level: number): LevelRange {
-  return thumb === 'from'
-    ? { from: Math.min(level, range.to), to: range.to }
-    : { from: range.from, to: Math.max(level, range.from) }
-}
-
-/** 칸을 눌렀을 때의 범위. 가까운 손잡이가 그 칸으로 온다. 한가운데면 강화 후다. */
-export function tapRange(range: LevelRange, level: number): LevelRange {
-  if (level <= range.from) return { from: level, to: range.to }
-  if (level >= range.to) return { from: range.from, to: level }
-  return level - range.from < range.to - level ? { from: level, to: range.to } : { from: range.from, to: level }
+/** 한 줄의 칸 수. 칸이 스물을 넘으면(헥사 0 ~ 30) 여덟, 아니면(심볼) 열이다. 칸 폭이 숫자 두 자리를 담게 한다. */
+export function gridColumns(min: number, max: number): number {
+  return max - min + 1 > 20 ? 8 : 10
 }
