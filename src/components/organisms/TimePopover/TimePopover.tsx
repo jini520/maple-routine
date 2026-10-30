@@ -58,7 +58,7 @@ export function TimePopover(props: TimePopoverProps): React.JSX.Element {
         onChange={(next) => setValue(next.hour * 60 + next.minute)}
       />
       <View className="mt-2 flex-row justify-end">
-        <Button variant="tint" size="sm" aria-label="확인" hitSlop={8} disabled={blocked} onPress={() => props.onConfirm(value)}>
+        <Button variant="soft" size="sm" aria-label="확인" hitSlop={8} disabled={blocked} onPress={() => props.onConfirm(value)}>
           확인
         </Button>
       </View>

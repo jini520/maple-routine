@@ -153,7 +153,7 @@ export function CalendarPopover(props: CalendarPopoverProps): React.JSX.Element 
         <Text testID="calendar-popover-pending" className="shrink text-xs font-bold text-text" style={TABULAR_NUMS}>
           {formatDayLabel(pending)}
         </Text>
-        <Button variant="tint" size="sm" aria-label="확인" hitSlop={8} onPress={() => props.onConfirm(pending)}>
+        <Button variant="soft" size="sm" aria-label="확인" hitSlop={8} onPress={() => props.onConfirm(pending)}>
           확인
         </Button>
       </View>
