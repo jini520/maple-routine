@@ -244,6 +244,20 @@ describe('빈 상태', () => {
     expect(resetToCurrentWeek).toHaveBeenCalledTimes(1)
   })
 
+  // 떠날 때 보는 기간이 이번 주로 돌아가므로, 지난 주 금액을 기억한 채 다시 들어오면 그 값에서 굴러간다.
+  it('지난 주를 보다 떠났다 다시 들어오면 총 수입이 굴러가지 않고 이번 주 금액으로 선다', async () => {
+    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행({ payoutMeso: 30_000_000 })] })
+    const first = await renderScreen()
+    await act(async () => {
+      first.unmount()
+    })
+
+    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행({ payoutMeso: 5_000_000 })] })
+    const { getByTestId } = await renderScreen()
+
+    expect(within(getByTestId('boss-profit-summary')).getByText(/^5,000,000/)).toBeTruthy()
+  })
+
   it('`trackedOcids` 가 `null` 이면 빈 상태를 그리지 않는다. "아직 안 읽었다" 는 "0명" 이 아니다', async () => {
     mockStore({ trackedOcids: null })
     const { queryByText, getByText } = await renderScreen()

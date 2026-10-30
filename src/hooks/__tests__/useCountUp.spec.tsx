@@ -5,6 +5,7 @@ import {
   COUNT_UP_MEMORY_LIMIT,
   clearCountUpMemory,
   easeOutExpo,
+  forgetCountUp,
   useCountUp,
 } from '../useCountUp'
 
@@ -158,6 +159,17 @@ describe('useCountUp', () => {
 
     render(<Probe identity="a" value={1000} />)
     expect(displayed()).toBe(1000)
+    expect(frames.size).toBe(0)
+  })
+
+  // 화면을 떠날 때 보는 기간이 바뀌는 자리는 기억을 지운다. 남기면 다시 들어올 때 떠나기 전 기간의 값에서 굴러간다.
+  it('지운 키는 다시 마운트할 때 굴리지 않고 목표에서 출발한다', async () => {
+    const first = render(<Probe identity="a" value={1000} />)
+    first.unmount()
+    forgetCountUp('a')
+
+    render(<Probe identity="a" value={3000} />)
+    expect(displayed()).toBe(3000)
     expect(frames.size).toBe(0)
   })
 
