@@ -16,7 +16,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useBossProfitCalculatorStore } from '../../features/boss-profit-calculator/store'
-import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { useBossSchedule } from '../../features/boss-scheduler/use-boss-schedule'
 import { useToastStore } from '../../features/toast/store'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { totalPayoutMeso } from '../../lib/boss/boss-profit-calculator'
@@ -43,7 +43,7 @@ export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
   const { definition } = useThemeAppearance()
   const { records, openedId, openRecord, deleteRecord } = useBossProfitCalculatorStore()
-  const characters = useBossSchedulerStore((state) => state.characters)
+  const { characters } = useBossSchedule()
   const [now] = useState(() => new Date())
   const lift = [
     boxShadowOf(definition.shadowColor, { opacity: 0.14, radius: 1, y: 1 }),

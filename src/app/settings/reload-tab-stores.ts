@@ -1,30 +1,25 @@
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import { prefetchSchedules } from '../../features/schedule-sync/schedule-query'
 
 /**
- * 설정에서 무언가 바뀐 뒤 탭 스토어를 다시 읽히는 한 자리.
+ * 설정에서 무언가 바뀐 뒤 탭이 그릴 것을 다시 읽히는 한 자리.
  *
- * RN 의 탭 화면은 한 번 뜨면 마운트된 채 남아 스스로 다시 읽지 않으므로, 설정이 명시적으로
- * 부르지 않으면 다른 탭이 옛 값을 들고 있게 된다. 그 어긋남이 두 모양으로 나타난다. 추적
- * 목록을 저장했을 때와 스케줄 관리 방법을 바꿨을 때.
- *
- * 호출부가 대상을 고른다. 추적 목록 저장은 컨텐츠 스토어가 저장의 주체라 이미 최신이므로 뒤의
- * 둘만 읽히고, 모드 전환은 셋을 모두 낡게 만든다. 수동 모드의 표시 목록을 정하는 것은 저장소가
- * 아니라 스토어 메모리의 사본이고 그것을 채우는 자리가 `refresh()` 하나다.
+ * 스케줄은 쿼리 캐시가 들어 추적 목록을 저장하면 보는 화면이 함께 바뀐다. 여기서 더 하는 것은 만료된 회차를 미리
+ * 받는 것과, 모드가 바뀌어 낡은 기기 값(수동 추적 · 직접 완료)을 다시 읽히는 것이다. 보스 수익은 아직 자기 스토어가
+ * 받는다.
  */
 export type TabStoreName = 'content' | 'boss' | 'profit'
 
 const LOADERS: Record<TabStoreName, () => Promise<void>> = {
-  content: () => useContentSchedulerStore.getState().loadTrackedOcids(),
-  boss: () => useBossSchedulerStore.getState().loadTrackedOcids(),
+  content: () => useContentSchedulerStore.getState().reloadLocal(),
+  boss: () => useBossSchedulerStore.getState().reloadLocal(),
   profit: () => useBossProfitStore.getState().loadTrackedOcids(),
 }
 
 /**
- * 넘긴 순서대로 도는 순차 재로드. 병렬이 아닌 이유는 `prehydrateTabStores` 와 같다.
- *  게이트의 신선도는 앞 회차가 캐시를 **다 쓴 뒤에야** 참이 되므로, 동시에 띄우면 전부
- * 옛 `syncedAt` 을 보고 같은 응답을 여러 번 받는다.
+ * 넘긴 순서대로 도는 순차 재로드. 스케줄 회차 뒤에 보스 수익이 와야 그쪽 게이트가 방금 받은 캐시를 신선하다고 본다.
  *
  * **기다리지 않는다**(반환값이 없는 이유다). 사용자가 고른 일은 이미 끝났고, 뒤따르는 회차는 그 탭에
  * 들어가면 어차피 돌 재조회를 미리 도는 것뿐이다. 실패도 삼킨다. 그 탭에 들어가면 화면이 자기 몫을
@@ -32,6 +27,10 @@ const LOADERS: Record<TabStoreName, () => Promise<void>> = {
  */
 export function reloadTabStores(names: readonly TabStoreName[]): void {
   void (async () => {
+    // 스케줄러 둘이 같은 회차를 보므로 회차는 한 번만 미리 받는다. 둘 다 부르면 첫 회차가 실패했을 때 두 번째가 다시 나간다.
+    if (names.includes('content') || names.includes('boss')) {
+      await prefetchSchedules().catch(() => undefined)
+    }
     for (const name of names) {
       try {
         await LOADERS[name]()

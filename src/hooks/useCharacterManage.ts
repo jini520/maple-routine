@@ -20,7 +20,7 @@ import {
   type AccountSummaryView,
   type SelectedCharacterView,
 } from '../features/character-manage/derivations'
-import { useContentSchedulerStore } from '../features/content-scheduler/store'
+import { useTrackedOcids } from '../features/schedule-sync/use-schedule-queries'
 import type { ScheduleSyncError } from '../features/schedule-sync/schedule-sync'
 import type { CharacterPickerEntry } from '../types'
 
@@ -65,8 +65,8 @@ export interface CharacterManageController {
 }
 
 export function useCharacterManage(): CharacterManageController {
-  // 추적 목록의 진실은 컨텐츠 스케줄러 스토어 하나다(사본을 만들지 않는다).
-  const { trackedOcids } = useContentSchedulerStore()
+  // 추적 목록의 진실은 쿼리 캐시 하나다(사본을 만들지 않는다).
+  const trackedOcids = useTrackedOcids()
   const draft = useSelectionDraft(trackedOcids)
   const roster = useAccountRosters()
 

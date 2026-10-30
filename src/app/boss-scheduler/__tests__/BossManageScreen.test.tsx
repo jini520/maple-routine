@@ -10,6 +10,7 @@ import {
   type BossCharacterView,
   type BossSchedulerStore,
 } from '../../../features/boss-scheduler/store'
+import { useBossSchedule, type BossSchedule } from '../../../features/boss-scheduler/use-boss-schedule'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
@@ -49,6 +50,12 @@ jest.mock('../../../features/toast/store', () => ({
   },
 }))
 
+// 넥슨에서 받은 스케줄은 스토어가 아니라 `useBossSchedule` 이 낸다. 스토어에는 기기 값(파티 인원 · 수동
+// 추적)만 남는다. 출처가 둘이라 목도 둘이다.
+jest.mock('../../../features/boss-scheduler/use-boss-schedule', () => ({
+  useBossSchedule: jest.fn(),
+}))
+
 jest.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: jest.fn(),
   partySizeKey: (ocid: string, boss: string, difficulty: string) => `${ocid}:${boss}:${difficulty}`,
@@ -56,9 +63,11 @@ jest.mock('../../../features/boss-scheduler/store', () => ({
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
+const mockedSchedule = jest.mocked(useBossSchedule)
 const mockedStore = jest.mocked(useBossSchedulerStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)
 
+type Schedule = BossSchedule
 type Store = BossSchedulerStore
 
 /** 참조표에서 뽑은 보이는 이름. 손으로 적으면 데이터가 바뀔 때 조용히 어긋난다. */
@@ -72,26 +81,29 @@ const HIDDEN = { includeHiddenElements: true }
 
 const keyOf = (name: string): string => bossKeyOfApiName(name) ?? name
 
-function mockStore(overrides: Partial<Store> = {}): Store {
-  const base = {
+/** 훅이 내는 스케줄. 이 화면은 캐릭터 목록 · 상태 · 추적 순서를 읽는다. */
+function mockSchedule(overrides: Partial<Schedule> = {}): Schedule {
+  const schedule: Schedule = {
     status: 'loaded',
     characters: [],
     error: null,
     trackedOcids: ['ocid-1'],
+    refresh: jest.fn().mockResolvedValue(undefined),
+    ...overrides,
+  }
+  mockedSchedule.mockReturnValue(schedule)
+  return schedule
+}
+
+function mockStore(overrides: Partial<Store> = {}): Store {
+  const base = {
     partySizes: {},
     partyShares: {},
     manualTrackedByOcid: {},
-    loadTrackedOcids: jest.fn(),
-    saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
-    refresh: jest.fn().mockResolvedValue(undefined),
-    loadPartySizes: jest.fn(),
     setPartySetting: jest.fn(),
     addManualBoss: jest.fn(async () => 'added'),
     removeManualBoss: jest.fn(),
     setManualBossDifficulty: jest.fn(),
-    partyFilter: 'all' as const,
-    setPartyFilter: jest.fn(),
     ...overrides,
   } as Store
 
@@ -176,6 +188,9 @@ beforeEach(() => {
   goBack.mockClear()
   mockedNavigation.mockReturnValue({ navigate: jest.fn(), goBack, setParams: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
+  // 케이스가 한쪽만 고쳐도 다른 쪽이 비지 않게 둘 다 기본값으로 세운다.
+  mockSchedule()
+  mockStore()
 })
 
 // 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다.
@@ -190,7 +205,7 @@ describe('BossManageScreen: 공통', () => {
   //
   // 설정에서 여는 하위 페이지라 하단바가 없고, 돌아가는 일은 화면의 ← 가 진다.
   it('제목·캐릭터 레일이 보이고, 뒤로 버튼이 화면을 닫는다', async () => {
-    mockStore({ characters: [character()] })
+    mockSchedule({ characters: [character()] })
 
     await renderScreen()
 
@@ -202,16 +217,8 @@ describe('BossManageScreen: 공통', () => {
     expect(goBack).toHaveBeenCalled()
   })
 
-  it('마운트하면 loadTrackedOcids 를 부른다. 스케줄러를 거치지 않고 들어와도 채워진다', async () => {
-    const store = mockStore({ characters: [character()] })
-
-    await renderScreen()
-
-    expect(store.loadTrackedOcids).toHaveBeenCalled()
-  })
-
   it('표시할 캐릭터가 없으면 안내 문구를 보여준다', async () => {
-    mockStore({ status: 'loaded', characters: [] })
+    mockSchedule({ status: 'loaded', characters: [] })
 
     await renderScreen()
 
@@ -220,7 +227,7 @@ describe('BossManageScreen: 공통', () => {
 
   // 조회가 끝나기 전에는 빈 상태 문구로 위장하지 않는다.
   it('조회가 끝나기 전에는 빈 상태 문구 대신 로딩 카드를 보여준다', async () => {
-    mockStore({ status: 'loading', characters: [] })
+    mockSchedule({ status: 'loading', characters: [] })
 
     await renderScreen()
 
@@ -231,7 +238,7 @@ describe('BossManageScreen: 공통', () => {
   // 스케줄러가 한 목록이 되면서 이 화면의 탭도 함께 걷혔다. 공유할 상대가 사라졌으므로
   // 되살리지 말 것.
   it('탭 없이 월간·주간이 한 목록에 서고, 월간이 위다', async () => {
-    mockStore({ characters: [character()] })
+    mockSchedule({ characters: [character()] })
 
     await renderScreen()
 
@@ -246,7 +253,7 @@ describe('BossManageScreen: 공통', () => {
   // 이 두 스토어의 우연이 아니라 **스토어 하나**가 됐고, 그래서 여기서 보는 값이 컨텐츠 스케줄러가
   // 보는 값과 같은 것이다.
   it('레일에서 다른 초상화를 누르면 고른 캐릭터가 그 ocid 가 된다', async () => {
-    mockStore({
+    mockSchedule({
       characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })],
     })
     await renderScreen()
@@ -256,11 +263,11 @@ describe('BossManageScreen: 공통', () => {
     expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-2')
   })
 
-  // 스토어가 내는 것은 레벨 내림차순이고, 그 위에 캐릭터 관리에서 정한 저장 배열 순서를 얹는다.
+  // 훅이 내는 것은 레벨 내림차순이고, 그 위에 캐릭터 관리에서 정한 저장 배열 순서를 얹는다.
   // 그래서 **입력과 다른 순서**로 주는 것이 이 케이스의 요점이다. 스케줄러 화면의 같은 이름 케이스와
   // 짝이다. 두 화면이 다른 차례로 서면 같은 캐릭터를 오갈 때마다 다시 찾아야 한다.
-  it('레일 순서는 스토어 순서가 아니라 trackedOcids 저장 순서다', async () => {
-    mockStore({
+  it('레일 순서는 훅 순서가 아니라 trackedOcids 저장 순서다', async () => {
+    mockSchedule({
       trackedOcids: ['ocid-2', 'ocid-1'],
       characters: [
         character({ characterName: '캐릭터1' }),
@@ -278,7 +285,7 @@ describe('BossManageScreen: 공통', () => {
   // 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다. 저장 직후와 동기화의 중간 커밋에서 두 목록이
   // 한순간 어긋나는데, 그때 초상화가 통째로 사라지는 것이 가장 나쁜 실패다.
   it('저장 목록에 없는 캐릭터도 레일에서 사라지지 않는다', async () => {
-    mockStore({
+    mockSchedule({
       trackedOcids: ['ocid-2'],
       characters: [
         character({ characterName: '캐릭터1' }),
@@ -293,10 +300,10 @@ describe('BossManageScreen: 공통', () => {
     ).toEqual([expect.stringContaining('캐릭터2'), expect.stringContaining('캐릭터1')])
   })
 
-  // 폴백도 같은 순서를 봐야 한다. `resolveSelectedCharacter` 는 목록의 첫 번째를 고르므로, 스토어
+  // 폴백도 같은 순서를 봐야 한다. `resolveSelectedCharacter` 는 목록의 첫 번째를 고르므로, 훅
   // 순서를 넘기면 아직 아무것도 안 고른 사용자에게 스케줄러와 다른 캐릭터가 열린다.
   it('아직 안 골랐으면 저장 순서의 첫 캐릭터가 열린다', async () => {
-    mockStore({
+    mockSchedule({
       trackedOcids: ['ocid-2', 'ocid-1'],
       characters: [
         character({ characterName: '캐릭터1' }),
@@ -319,10 +326,8 @@ describe('BossManageScreen: 수동 모드', () => {
   })
 
   it('주간 탭에 참조표의 주간 보스가 나오고, 추적 중인 보스만 선택 상태다', async () => {
-    mockStore({
-      characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] },
-    })
+    mockSchedule({ characters: [character()] })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] } })
 
     await renderScreen()
 
@@ -331,10 +336,8 @@ describe('BossManageScreen: 수동 모드', () => {
   })
 
   it('추적 중인 행에만 난이도 고르개와 파티 줄이 선다', async () => {
-    mockStore({
-      characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] },
-    })
+    mockSchedule({ characters: [character()] })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] } })
 
     await renderScreen()
 
@@ -346,10 +349,8 @@ describe('BossManageScreen: 수동 모드', () => {
 
   // 추적은 초상화의 링과 체크로만 보인다. 행 테두리 · 바탕색으로 가르지 않는다. 초상은 꾸밈이라 읽히지 않는다.
   it('추적 중인 행의 초상화에만 추적 표시가 붙는다', async () => {
-    mockStore({
-      characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard'), trackedBoss('자쿰', 'chaos')] },
-    })
+    mockSchedule({ characters: [character()] })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard'), trackedBoss('자쿰', 'chaos')] } })
 
     await renderScreen()
 
@@ -360,7 +361,8 @@ describe('BossManageScreen: 수동 모드', () => {
   })
 
   it('미추적 보스를 탭하면 기본 난이도(등록 난이도 우선)로 addManualBoss 를 부른다', async () => {
-    const store = mockStore({
+    const store = mockStore()
+    mockSchedule({
       characters: [
         character({
           weeklyBosses: [registeredBoss({ apiName: '스우', bossKey: 'lotus', difficulty: 'extreme' })],
@@ -375,7 +377,8 @@ describe('BossManageScreen: 수동 모드', () => {
   })
 
   it('등록 난이도가 없으면 참조표의 첫 난이도로 부른다', async () => {
-    const store = mockStore({ characters: [character()] })
+    mockSchedule({ characters: [character()] })
+    const store = mockStore()
     await renderScreen()
 
     await press(rowToggle('스우'))
@@ -384,10 +387,8 @@ describe('BossManageScreen: 수동 모드', () => {
   })
 
   it('추적 중인 보스를 탭하면 추적 난이도로 removeManualBoss 를 부른다', async () => {
-    const store = mockStore({
-      characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] },
-    })
+    mockSchedule({ characters: [character()] })
+    const store = mockStore({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] } })
     await renderScreen()
 
     await press(rowToggle('스우'))
@@ -397,10 +398,8 @@ describe('BossManageScreen: 수동 모드', () => {
 
   // remove → add 2단계가 아니라 **쓰기 1회**다.
   it('추적 중인 보스의 다른 난이도를 누르면 단일 액션으로 교체한다', async () => {
-    const store = mockStore({
-      characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] },
-    })
+    mockSchedule({ characters: [character()] })
+    const store = mockStore({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] } })
     await renderScreen()
 
     await pickDifficulty('스우', '하드', '익스트림')
@@ -412,8 +411,8 @@ describe('BossManageScreen: 수동 모드', () => {
 
   // 행에는 스테퍼가 없다. 수 하나만 올리고 내릴 수 있어 비율이 들어갈 자리가 없다.
   it('파티 줄은 결정석 몫을 적고 변경으로 모달을 연다', async () => {
+    mockSchedule({ characters: [character()] })
     mockStore({
-      characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'extreme')] },
       partySizes: { 'ocid-1:lotus:extreme': 2 },
       partyShares: {
@@ -437,8 +436,8 @@ describe('BossManageScreen: 수동 모드', () => {
 
   // 스우 익스트림의 상한은 2인이다(`boss-crystal-prices.json`). 화면이 숫자를 정하지 않는다.
   it('모달에서 고른 인원이 적용으로 저장되고, 상한은 (보스, 난이도)마다 다르다', async () => {
+    mockSchedule({ characters: [character()] })
     const store = mockStore({
-      characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'extreme')] },
       partySizes: { 'ocid-1:lotus:extreme': 2 },
     })
@@ -465,8 +464,8 @@ describe('BossManageScreen: 수동 모드', () => {
 
   // 저장 실패가 무음이면 체크가 조용히 되돌아가는 것 외에 설명이 없다.
   it('추적 저장이 실패하면 토스트로 알린다', async () => {
+    mockSchedule({ characters: [character()] })
     mockStore({
-      characters: [character()],
       addManualBoss: jest.fn(async () => Promise.reject(new Error('boom'))) as Store['addManualBoss'],
     })
     await renderScreen()
@@ -477,8 +476,8 @@ describe('BossManageScreen: 수동 모드', () => {
   })
 
   it('파티원 수 저장이 실패하면 스케줄러 모달과 같은 문구로 알린다', async () => {
+    mockSchedule({ characters: [character()] })
     mockStore({
-      characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] },
       setPartySetting: jest.fn(async () => Promise.reject(new Error('boom'))) as Store['setPartySetting'],
     })
@@ -496,7 +495,7 @@ describe('BossManageScreen: 자동 모드', () => {
   // 상단 안내 한 줄을 없앤다. 체크가 없고 스테퍼만 있다는 것을 화면이 이미
   // 보여 준다. 설명은 기능 안내(`boss-manage` 가이드)가 계속 진다.
   it('안내 문구 없이 등록 보스만 나오고 체크 토글이 없다', async () => {
-    mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
+    mockSchedule({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
 
     await renderScreen()
 
@@ -509,7 +508,7 @@ describe('BossManageScreen: 자동 모드', () => {
   })
 
   it('토글을 켜면 전체 보스가 나와 미등록 보스도 파티를 미리 설정할 수 있다', async () => {
-    mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
+    mockSchedule({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
     await renderScreen()
 
     await press(screen.getByLabelText('모든 보스 보기'))
@@ -520,7 +519,7 @@ describe('BossManageScreen: 자동 모드', () => {
 
   // 스위치만 표적이면 44x24 하나뿐이다. 줄의 글자를 눌러도 켜져야 한다.
   it.each(['모든 보스 보기', '끄면 스케줄러에 등록한 보스만 보여요'])('`모든 보스 보기` 줄의 글자(%s)를 눌러도 켜진다', async (글자) => {
-    mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
+    mockSchedule({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
     await renderScreen()
     const 스위치 = screen.getByLabelText('모든 보스 보기')
 
@@ -531,7 +530,7 @@ describe('BossManageScreen: 자동 모드', () => {
 
   // 등록 보스가 하나도 없으면 토글이 꺼져 있어도 전체로 대체한다.
   it('등록된 보스가 하나도 없으면 토글이 꺼져 있어도 전체 목록이다', async () => {
-    mockStore({ characters: [character()] })
+    mockSchedule({ characters: [character()] })
 
     await renderScreen()
 
@@ -541,7 +540,8 @@ describe('BossManageScreen: 자동 모드', () => {
   })
 
   it('등록 난이도가 기본 선택되고, 적용은 그 난이도로 저장한다', async () => {
-    const store = mockStore({
+    const store = mockStore()
+    mockSchedule({
       characters: [
         character({
           weeklyBosses: [registeredBoss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard' })],
@@ -566,7 +566,8 @@ describe('BossManageScreen: 자동 모드', () => {
 
   // 자동 모드의 난이도 선택은 멤버십이 아니라 "편집 대상" 전환이다.
   it('자동 모드에서 난이도를 바꿔도 멤버십 API 를 부르지 않는다', async () => {
-    const store = mockStore({
+    const store = mockStore()
+    mockSchedule({
       characters: [
         character({
           weeklyBosses: [registeredBoss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard' })],
@@ -597,7 +598,7 @@ describe('BossManageScreen: 자동 모드', () => {
   // 캐릭터를 옮기는 것이 그 편집을 끝내는 행위라 표를 비운다. 안 비우면 보스 이름만으로 다음
   // 캐릭터의 행에 남아, 등록이 노말인 보스가 익스트림으로 선다.
   it('캐릭터를 옮기면 앞 캐릭터에서 고른 난이도가 따라오지 않는다', async () => {
-    mockStore({
+    mockSchedule({
       characters: [
         character({
           weeklyBosses: [registeredBoss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard' })],
@@ -623,7 +624,8 @@ describe('BossManageScreen: 자동 모드', () => {
   // 표시만 틀리는 것이 아니다. 같은 값이 스테퍼로 흘러가 `partySizeKey` 의 다른 칸을 열고,
   // 거기서 수를 고치면 그 캐릭터가 잡지도 않는 난이도의 파티 인원이 기기에 적힌다.
   it('캐릭터를 옮긴 뒤 적용은 그 캐릭터의 등록 난이도로 저장한다', async () => {
-    const store = mockStore({
+    const store = mockStore()
+    mockSchedule({
       characters: [
         character({
           weeklyBosses: [registeredBoss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard' })],
@@ -658,12 +660,13 @@ describe('BossManageScreen: 주간 12개 한도', () => {
   // 참조표에서 앞에서부터 12마리를 뽑는다. 이름을 손으로 적지 않는다.
   const TWELVE = WEEKLY_NAMES.slice(0, WEEKLY_BOSS_CLEAR_LIMIT)
 
-  const atLimit = (extra: Partial<Store> = {}): Store =>
-    mockStore({
-      characters: [character({ worldKey: 'challengers' })],
+  const atLimit = (extra: Partial<Store> = {}): Store => {
+    mockSchedule({ characters: [character({ worldKey: 'challengers' })] })
+    return mockStore({
       manualTrackedByOcid: { 'ocid-1': TWELVE.map((name) => trackedBoss(name, 'normal')) },
       ...extra,
     })
+  }
 
   beforeEach(() => {
     useTrackingModeStore.setState({ mode: 'manual' })
@@ -672,8 +675,8 @@ describe('BossManageScreen: 주간 12개 한도', () => {
   // 카운트 규칙은 `countManualWeeklyBosses` 한 곳에만 있다. 화면이 다시 세면 선택 12/12 인데
   // 처치 11/12 인 모순이 생긴다.
   it('시즌 보스·월간 보스는 카운터에 포함하지 않는다', async () => {
+    mockSchedule({ characters: [character({ worldKey: 'challengers' })] })
     mockStore({
-      characters: [character({ worldKey: 'challengers' })],
       manualTrackedByOcid: {
         'ocid-1': [
           trackedBoss('자쿰', 'chaos'),
@@ -690,10 +693,8 @@ describe('BossManageScreen: 주간 12개 한도', () => {
 
   // 탭이 없어져 **이 수치는 주간 것** 을 말할 자리가 `주간` 헤더로 옮겨왔다.
   it('카운터는 `주간` 헤더에만 붙는다. 12는 주간 한도다', async () => {
-    mockStore({
-      characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] },
-    })
+    mockSchedule({ characters: [character()] })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] } })
 
     await renderScreen()
 
@@ -706,10 +707,8 @@ describe('BossManageScreen: 주간 12개 한도', () => {
 
   it('자동 모드에는 카운터를 표시하지 않는다. 선택 자체가 없다', async () => {
     useTrackingModeStore.setState({ mode: 'auto' })
-    mockStore({
-      characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] },
-    })
+    mockSchedule({ characters: [character()] })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] } })
 
     await renderScreen()
 
@@ -738,7 +737,7 @@ describe('BossManageScreen: 주간 12개 한도', () => {
   })
 
   it('한도에 걸리지 않은 추가는 토스트를 띄우지 않는다', async () => {
-    mockStore({ characters: [character()] })
+    mockSchedule({ characters: [character()] })
     await renderScreen()
 
     await press(rowToggle('자쿰'))
@@ -783,7 +782,7 @@ describe('BossManageScreen: 목록 구성', () => {
     ['챌린저스 월드 캐릭터에게는 시즌 보스가 나온다', 'challengers_2', true],
     ['일반 월드 캐릭터에게는 시즌 보스가 나오지 않는다', 'scania', false],
   ])('%s', async (_label, worldKey, shown) => {
-    mockStore({ characters: [character({ worldKey })] })
+    mockSchedule({ characters: [character({ worldKey })] })
 
     await renderScreen()
 
@@ -792,7 +791,7 @@ describe('BossManageScreen: 목록 구성', () => {
 
   // 스케줄러의 시즌 배지와 **같은 판정**이어야 두 화면이 갈라지지 않는다.
   it('월드를 모르면(구버전 캐시) 시즌 보스를 숨긴다', async () => {
-    mockStore({ characters: [character({ worldKey: undefined })] })
+    mockSchedule({ characters: [character({ worldKey: undefined })] })
 
     await renderScreen()
 
@@ -801,7 +800,7 @@ describe('BossManageScreen: 목록 구성', () => {
 
   it('자동 모드에서도 같은 규칙이 적용된다', async () => {
     useTrackingModeStore.setState({ mode: 'auto' })
-    mockStore({ characters: [character({ worldKey: 'scania' })] })
+    mockSchedule({ characters: [character({ worldKey: 'scania' })] })
 
     await renderScreen()
 
@@ -814,7 +813,7 @@ describe('BossManageScreen: 목록 구성', () => {
 // 있다고 믿는데, 그 선택은 조회가 돌아와야 뜻을 갖는다.
 describe('조회 불가 캐릭터', () => {
   it('편집 목록 대신 안내가 선다', async () => {
-    mockStore({
+    mockSchedule({
       status: 'loaded',
       characters: [character({ error: { kind: 'characterUnavailable' } })],
     })
@@ -838,7 +837,7 @@ describe('`모든 보스 보기` 스위치의 촉각', () => {
   afterEach(installNoopNativePorts)
 
   it('누르면 한 번 난다', async () => {
-    mockStore({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
+    mockSchedule({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
     await renderScreen()
 
     await press(screen.getByLabelText('모든 보스 보기'))

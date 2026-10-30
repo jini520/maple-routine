@@ -6,7 +6,7 @@
 import { isBossBlocked } from '../../lib/scheduler/required-level'
 import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Pressable, View } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 
@@ -24,6 +24,10 @@ import {
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
+import { useBossSchedule } from '../../features/boss-scheduler/use-boss-schedule'
+import { queryKeys } from '../../features/query/keys'
+import { useResetBoundaryTick } from '../../features/query/reset-timer'
+import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
 import { useToastStore } from '../../features/toast/store'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
@@ -152,18 +156,14 @@ const NO_SHARES: PartyModalShares = {
 }
 
 export function BossScreen(): React.JSX.Element {
+  // 스케줄은 캐시에서 온다. 마운트에 만료면 받고, 앱이 돌아오면 신선해도 받는다.
+  const { status, characters: storeCharacters, error, trackedOcids, refresh } = useBossSchedule()
   const {
-    status,
-    characters: storeCharacters,
-    error,
-    trackedOcids,
     partySizes,
     partyShares,
     manualTrackedByOcid,
     manualCompletedByOcid,
-    loadTrackedOcids,
     reloadManualCompleted,
-    refresh,
     // 카드 탭 모달이 쓰는 두 액션. 난이도 교체는 수동 모드에서만 멤버십을 바꾼다.
     setPartySetting,
     setManualBossDifficulty,
@@ -196,17 +196,15 @@ export function BossScreen(): React.JSX.Element {
    * 성공 토스트도 그만큼 뜬다. `null` 이면 저장된 값을 그대로 그린다.
    */
   // 동기화 전체 실패는 토스트로 알린다. 지속 상태는 새로고침 옆 표기가 이미 진다.
-  useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
+  useScheduleSyncErrorToast(error, { onRetry: () => void refresh() })
 
-  useEffect(() => {
-    // 진입 조회도 적는다. 게이트에 막혀 실제로 안 나간 회차에도 적히므로 이 값은
-    // 최대 그 게이트만큼 낙관적이다. 정확히 재려면 스토어 안쪽을 화면까지 끌어올려야 한다.
-    loadTrackedOcids()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // 이 화면은 탭이라 계속 살아 있고 마운트의 자동 조회는 한 번뿐이다. 돌아올 때 만료됐으면 다시 받는다.
+  useRefetchStaleOnFocus(queryKeys.scheduleRound())
+  // KST 자정을 넘기면 다시 그린다. 아래 기간 값이 렌더의 `new Date()` 로 정해진다.
+  useResetBoundaryTick()
 
-  // 이 화면은 탭이라 계속 살아 있고 위 진입 조회는 마운트 때 한 번뿐이다. 그 사이 보스 수익에서
-  // 적은 직접 완료는 포커스가 물어야 선다. 스토어가 기록 판을 견줘 바뀌었을 때만 읽는다(넥슨 없음).
+  // 그 사이 보스 수익에서 적은 직접 완료는 포커스가 물어야 선다. 스토어가 기록 판과 기간을 견줘
+  // 바뀌었을 때만 읽는다(넥슨 없음).
   useFocusEffect(
     useCallback(() => {
       void reloadManualCompleted()
@@ -239,7 +237,7 @@ export function BossScreen(): React.JSX.Element {
   // `CharacterUnavailableNotice` 가 서고 거기에 처방(캐릭터 관리로 이동)이 붙는다.
   const isSelectedUnavailable = selected?.error?.kind === 'characterUnavailable'
   useScheduleSyncErrorToast(isSelectedUnavailable ? null : (selected?.error ?? null), {
-    onRetry: () => refresh(trackedOcids ?? []),
+    onRetry: () => void refresh(),
   })
 
   // 카드로 그릴 목록. 판정은 `displayed-bosses` 가 갖는다. today 가 세는 남은 보스와 한 글자도
@@ -483,7 +481,7 @@ export function BossScreen(): React.JSX.Element {
     <View testID="screen-Boss" className="flex-1">
       <ScreenScroll
         // 당김은 헤더 버튼과 **같은 재조회**를 부른다. 컨텐츠 스케줄러와 배선이 같아야 한다.
-        onRefresh={() => refresh(trackedOcids ?? [])}
+        onRefresh={refresh}
         header={
           // 제목과 무리 필터 둘이다. 레일도 로딩 카드도 콘텐츠에 남는다.
           //

@@ -8,11 +8,16 @@ import {
   type ContentCharacterView,
   type ContentSchedulerStore,
 } from '../../../features/content-scheduler/store'
+import {
+  useContentSchedule,
+  type ContentSchedule,
+} from '../../../features/content-scheduler/use-content-schedule'
 import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { ContentScreen } from '../ContentScreen'
+import { useRefetchStaleOnFocus } from '../../../hooks/useRefetchStaleOnFocus'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
@@ -33,21 +38,49 @@ jest.mock('../../../features/auth/store', () => ({
   useAuthStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
 }))
 
+// 넥슨에서 받은 스케줄은 스토어가 아니라 `useContentSchedule` 이 낸다. 스토어에는 기기 값(수동 추적)과
+// 탭만 남는다. 출처가 둘이라 목도 둘이다.
+jest.mock('../../../features/content-scheduler/use-content-schedule', () => ({
+  useContentSchedule: jest.fn(),
+}))
+
 jest.mock('../../../features/content-scheduler/store', () => ({
   useContentSchedulerStore: jest.fn(),
 }))
+
+// `useFocusEffect` 가 내비게이션 컨텍스트를 요구한다. 이 하네스는 화면 하나만 띄우므로 훅째 목으로
+// 두고, 화면이 어느 열쇠를 넘기는지만 본다.
+jest.mock('../../../hooks/useRefetchStaleOnFocus', () => ({ useRefetchStaleOnFocus: jest.fn() }))
 
 // **로스터 조회 목은 여기 없다**. 이 화면은 더 이상 피커를 열지 않으므로 `schedule-sync` 를
 // 아예 부르지 않는다. 그 목은 설정 화면 테스트로 옮겨갔다.
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
+const mockedSchedule = jest.mocked(useContentSchedule)
 const mockedStore = jest.mocked(useContentSchedulerStore)
+const mockedRefetchStaleOnFocus = jest.mocked(useRefetchStaleOnFocus)
 const mockedNavigation = jest.mocked(useScreenNavigation)
 
+type Schedule = ContentSchedule
 // `ReturnType<typeof useContentSchedulerStore>` 은 **`unknown` 이 된다**. zustand 의 훅이 오버로드라
 // tsc 가 셀렉터 시그니처를 집는다. 스토어가 그 타입을 이미 내보내므로 그것을 그대로 쓴다.
 type Store = ContentSchedulerStore
+
+/** 훅이 내는 스케줄. 렌더 사이에 바뀌지 않는 값이라 정적 목으로 충분하다. */
+function mockSchedule(overrides: Partial<Schedule> = {}): Schedule {
+  const schedule: Schedule = {
+    status: 'idle',
+    characters: [],
+    error: null,
+    trackedOcids: null,
+    // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
+    refresh: jest.fn().mockResolvedValue(undefined),
+    ...overrides,
+  }
+  mockedSchedule.mockReturnValue(schedule)
+  return schedule
+}
 
 /**
  * 탭이 스토어 소유라 정적 목으로는 전환이 렌더에 반영되지 않는다.
@@ -56,17 +89,7 @@ type Store = ContentSchedulerStore
  */
 function mockStore(overrides: Partial<Store> = {}): Store {
   const base = {
-    status: 'idle',
-    characters: [],
-    error: null,
-    trackedOcids: null,
     manualTrackedByOcid: {},
-    loadTrackedOcids: jest.fn(),
-    saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
-    refresh: jest.fn().mockResolvedValue(undefined),
-    addManualContent: jest.fn(),
-    removeManualContent: jest.fn(),
     activeTab: 'daily' as const,
     setActiveTab: jest.fn(),
     ...overrides,
@@ -122,6 +145,7 @@ function refreshControl(): { refreshing: boolean; onRefresh: () => void } {
 beforeEach(() => {
   mockShowError.mockClear()
   mockNoticeApiKeyIssue.mockClear()
+  mockedRefetchStaleOnFocus.mockClear()
   navigate.mockClear()
   dispatch.mockClear()
   // 이 화면은 하위 층에 산다. 층 스택 깊이 2 여야 `useOpenTab` 이 실제와 같이 되돌린다.
@@ -134,6 +158,9 @@ beforeEach(() => {
   } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
   useDataFreshness.setState({ fetchedAt: null })
+  // 케이스가 한쪽만 고쳐도 다른 쪽이 비지 않게 둘 다 기본값으로 세운다.
+  mockSchedule()
+  mockStore()
 })
 
 // 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다.
@@ -143,16 +170,16 @@ beforeEach(() => {
 })
 
 describe('ContentScreen: 빈 상태와 마운트', () => {
-  it('마운트하면 loadTrackedOcids 를 부른다', async () => {
-    const store = mockStore()
-
+  // 탭 화면은 한 번 마운트되면 살아 있어 마운트의 자동 조회가 다시 돌지 않는다. 돌아올 때 만료된
+  // 회차만 다시 받는다. 열쇠가 다르면 그 재조회가 엉뚱한 캐시에 닿는다.
+  it('포커스가 올 때 만료된 회차만 다시 받도록 useRefetchStaleOnFocus 에 schedule-round 열쇠를 넘긴다', async () => {
     await renderScreen()
 
-    expect(store.loadTrackedOcids).toHaveBeenCalled()
+    expect(mockedRefetchStaleOnFocus).toHaveBeenCalledWith(['schedule-round'])
   })
 
   it('추적 목록이 빈 배열이면 빈 상태 안내만 보인다', async () => {
-    mockStore({ trackedOcids: [] })
+    mockSchedule({ trackedOcids: [] })
 
     await renderScreen()
 
@@ -163,7 +190,7 @@ describe('ContentScreen: 빈 상태와 마운트', () => {
   // `null` 은 "0명"이 아니라 "아직 안 읽었다"다. 콜드 스타트 첫 페인트가
   // 모르는 사실을 단정하면 안 된다.
   it('추적 목록이 null(미로드)이면 빈 상태가 아니라 로딩을 보여준다', async () => {
-    mockStore({ trackedOcids: null, status: 'idle' })
+    mockSchedule({ trackedOcids: null, status: 'idle' })
 
     await renderScreen()
 
@@ -173,7 +200,7 @@ describe('ContentScreen: 빈 상태와 마운트', () => {
 
   // 이 화면은 피커를 열지 않는다. 설정 탭을 **열린 채로** 연다.
   it('빈 상태 CTA 를 누르면 설정 탭을 피커가 열린 채로 연다', async () => {
-    mockStore({ trackedOcids: [] })
+    mockSchedule({ trackedOcids: [] })
     await renderScreen()
 
     await press(button('캐릭터 선택하기'))
@@ -194,7 +221,7 @@ describe('ContentScreen: 빈 상태와 마운트', () => {
 
 describe('ContentScreen: 목록', () => {
   const withContents = (): void => {
-    mockStore({
+    mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       characters: [
@@ -233,7 +260,7 @@ describe('ContentScreen: 목록', () => {
 
   // 캐시가 있으면 재검증 중에도 계속 보여준다(셸 승계 카드는 보여줄 게 없을 때만).
   it('status 가 loading 이어도 캐시된 목록이 있으면 로딩 표시 대신 목록을 보여준다', async () => {
-    mockStore({
+    mockSchedule({
       status: 'loading',
       trackedOcids: ['ocid-1'],
       characters: [
@@ -252,7 +279,7 @@ describe('ContentScreen: 목록', () => {
   })
 
   it('status 가 loading 이고 캐시도 없으면 로딩을 보여준다', async () => {
-    mockStore({ status: 'loading', trackedOcids: ['ocid-1'], characters: [] })
+    mockSchedule({ status: 'loading', trackedOcids: ['ocid-1'], characters: [] })
 
     await renderScreen()
 
@@ -264,7 +291,7 @@ describe('ContentScreen: 목록', () => {
   // **부르는가** 가 아니라 **고른 것이 바뀌는가** 를 본다. 선택이 스토어 하나가 되면서
   // 그 값이 곧 다른 화면이 보는 값이다(공유가 전파 단계 없이 성립하는 자리).
   it('레일에서 다른 초상화를 누르면 고른 캐릭터가 그 ocid 가 된다', async () => {
-    mockStore({
+    mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-1', 'ocid-2'],
       characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })],
@@ -278,7 +305,7 @@ describe('ContentScreen: 목록', () => {
 
   // 링이 세는 것과 카드 목록이 **같은 함수**에서 나온다. 등록 안 된 항목은 둘 다에서 빠진다.
   it('레일의 링은 표시 목록과 같은 것을 센다', async () => {
-    mockStore({
+    mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       characters: [
@@ -298,10 +325,10 @@ describe('ContentScreen: 목록', () => {
     expect(screen.getByTestId('character-portrait').props.accessibilityLabel).toContain('일간 1/2')
   })
 
-  // 스토어는 레벨 내림차순으로 준다. 그 위에 사용자가
+  // 훅은 레벨 내림차순으로 준다. 그 위에 사용자가
   // 정한 저장 배열 순서를 얹는다. 그래서 **입력 순서와 다른 순서**로 주는 것이 이 케이스의 요점이다.
-  it('레일 순서는 스토어 순서가 아니라 trackedOcids 저장 순서다', async () => {
-    mockStore({
+  it('레일 순서는 훅 순서가 아니라 trackedOcids 저장 순서다', async () => {
+    mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-2', 'ocid-1'],
       characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })],
@@ -318,7 +345,7 @@ describe('ContentScreen: 목록', () => {
   // 순서를 정하는 함수가 목록의 크기를 바꾸면 안 된다. 저장 직후·동기화 중간 커밋에서 두 목록이
   // 한순간 어긋나는데, 그때 카드가 통째로 사라지는 것이 가장 나쁜 실패다.
   it('저장 목록에 없는 캐릭터도 레일에서 사라지지 않는다', async () => {
-    mockStore({
+    mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-2'],
       characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })],
@@ -346,12 +373,12 @@ describe('ContentScreen: 에픽 던전 주간 한도', () => {
   })
 
   function withEpics(weeklyContents: ContentCharacterView['weeklyContents']): void {
-    mockStore({
+    mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
-      activeTab: 'weekly',
       characters: [character({ weeklyContents })],
     })
+    mockStore({ activeTab: 'weekly' })
   }
 
   it('3종을 완료하면 남은 1종의 카드가 마감이고 링은 가득 찬다', async () => {
@@ -385,18 +412,19 @@ describe('ContentScreen: 에픽 던전 주간 한도', () => {
 })
 
 describe('ContentScreen: 재조회', () => {
-  const loaded = (status: Store['status'] = 'loaded'): Store =>
-    mockStore({ status, trackedOcids: ['ocid-1'], characters: [character()] })
+  const loaded = (status: Schedule['status'] = 'loaded'): Schedule =>
+    mockSchedule({ status, trackedOcids: ['ocid-1'], characters: [character()] })
 
-  it('당겨서 새로고침이 추적 목록으로 재조회한다', async () => {
-    const store = loaded()
+  // 추적 목록은 훅이 캐시에서 안다. 화면이 넘기면 그 사이 저장이 바뀐 목록을 덮어쓴다.
+  it('당겨서 새로고침하면 훅의 refresh 를 인자 없이 부른다', async () => {
+    const schedule = loaded()
     await renderScreen()
 
     await act(async () => {
       refreshControl().onRefresh()
     })
 
-    expect(store.refresh).toHaveBeenCalledWith(['ocid-1'])
+    expect(schedule.refresh).toHaveBeenCalledWith()
   })
 
   // 회귀 가드. 조회 중 과 당겼다 는 다른 사실이다.
@@ -412,9 +440,9 @@ describe('ContentScreen: 재조회', () => {
 
   // 그리고 당기면 **돈다**. 위 가드가 **인디케이터를 없앤 것** 으로 읽히지 않게 짝으로 둔다.
   it('당기면 그 회차 동안 인디케이터가 돈다', async () => {
-    const store = loaded()
+    const schedule = loaded()
     let 회차_끝내기 = (): void => undefined
-    jest.mocked(store.refresh).mockImplementation(
+    jest.mocked(schedule.refresh).mockImplementation(
       () =>
         new Promise<void>((resolve) => {
           회차_끝내기 = resolve
@@ -440,7 +468,7 @@ describe('ContentScreen: 갱신 시각', () => {
   // 전체가 한 번 밀린다. 콜드 스타트 첫 진입에서 실제로 일어난다.
   it('받은 적이 없으면 글자만 빈다', async () => {
     useDataFreshness.setState({ fetchedAt: null })
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
+    mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
     await renderScreen()
 
     expect(screen.getByTestId('data-freshness')).toHaveTextContent('')
@@ -448,8 +476,8 @@ describe('ContentScreen: 갱신 시각', () => {
 })
 
 describe('ContentScreen: 실패의 목적지', () => {
-  const failWith = (error: Store['error']): void => {
-    mockStore({ status: 'error', error, trackedOcids: ['ocid-1'], characters: [character()] })
+  const failWith = (error: Schedule['error']): void => {
+    mockSchedule({ status: 'error', error, trackedOcids: ['ocid-1'], characters: [character()] })
   }
 
   it('401 은 토스트가 아니라 키 무효화 경로로 간다', async () => {
@@ -471,7 +499,7 @@ describe('ContentScreen: 실패의 목적지', () => {
   })
 
   it('네트워크 실패는 다시 시도 액션이 붙은 토스트다', async () => {
-    const store = mockStore({
+    const schedule = mockSchedule({
       status: 'error',
       error: { kind: 'network' },
       trackedOcids: ['ocid-1'],
@@ -483,12 +511,12 @@ describe('ContentScreen: 실패의 목적지', () => {
     const action = mockShowError.mock.calls[0][1] as { label: string; onClick: () => void }
     expect(action.label).toBe('다시 시도')
     action.onClick()
-    expect(store.refresh).toHaveBeenCalledWith(['ocid-1'])
+    expect(schedule.refresh).toHaveBeenCalledWith()
   })
 
   // 실패의 대부분은 전역이 아니라 **캐릭터별**로 온다.
   it('캐릭터별 실패도 토스트다', async () => {
-    mockStore({
+    mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       characters: [character({ error: { kind: 'network' } })],
@@ -502,7 +530,7 @@ describe('ContentScreen: 실패의 목적지', () => {
   // **조회 불가는 토스트가 아니다.** 사건이 아니라 그 캐릭터를 고르고 있는 동안 계속 참인
   // 상태라, 토스트로 두면 고를 때마다·돌아올 때마다 같은 문구가 다시 뜬다(관측된 증상).
   it('characterUnavailable 은 토스트를 안 띄우고 내용 자리에 안내를 세운다', async () => {
-    mockStore({
+    mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       characters: [character({ error: { kind: 'characterUnavailable' } })],
@@ -516,7 +544,7 @@ describe('ContentScreen: 실패의 목적지', () => {
 
   // 처방이 새로고침이 아니라 캐릭터 관리라 그 길을 버튼으로 준다.
   it('그 안내에 캐릭터 관리로 가는 버튼이 있다', async () => {
-    mockStore({
+    mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       characters: [character({ error: { kind: 'characterUnavailable' } })],
@@ -528,7 +556,7 @@ describe('ContentScreen: 실패의 목적지', () => {
   })
 
   it('isStale 이지만 error 가 없으면(캐시 우선 표시) 아무것도 알리지 않는다', async () => {
-    mockStore({
+    mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       characters: [character({ isStale: true, error: null })],
@@ -547,7 +575,7 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
   })
 
   it('추적 중인 항목을 등록 여부와 무관하게 보여준다', async () => {
-    mockStore({
+    mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
       characters: [
@@ -565,8 +593,8 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
           ],
         }),
       ],
-      manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] },
     })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] } })
 
     await renderScreen()
 
@@ -575,12 +603,8 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
 
   // 멤버십의 `kind` 가 저장 시점에 확정돼 각 탭은 자기 것만 그린다.
   it('항목은 자기 kind 의 탭에만 나온다', async () => {
-    mockStore({
-      status: 'loaded',
-      trackedOcids: ['ocid-1'],
-      characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'mu_lung_dojo', kind: 'weekly' }] },
-    })
+    mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'mu_lung_dojo', kind: 'weekly' }] } })
     await renderScreen()
 
     expect(screen.queryByText('무릉도장')).toBeNull()
@@ -590,7 +614,7 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
   })
 
   it('헤더의 "컨텐츠 관리"를 누르면 관리 페이지로 민다', async () => {
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
+    mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
     await renderScreen()
 
     // 목록이 비면 빈 상태 CTA 도 같은 글자를 쓴다. 여기서는 **헤더 쪽**(트리 순서상 첫째)을 누른다.
@@ -601,7 +625,7 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
 
   // 빈 상태 CTA 가 지시하는 곳으로 데려간다(자동 모드는 목적지가 앱 밖이라 CTA 없음).
   it('빈 상태 CTA 도 같은 곳으로 민다', async () => {
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
+    mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
     await renderScreen()
 
     expect(screen.getByText('추적할 일간 컨텐츠가 없습니다')).toBeTruthy()
@@ -611,7 +635,7 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
 
   it('자동 모드에서는 "컨텐츠 관리" 버튼도 CTA 도 없다', async () => {
     useTrackingModeStore.setState({ mode: 'auto' })
-    mockStore({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
+    mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
 
     await renderScreen()
 

@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react'
 
 import { LoadingModal } from '../../components/organisms/LoadingModal/LoadingModal'
-import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import { useScheduleQueries } from '../../features/schedule-sync/use-schedule-queries'
 import { useRefreshProgress } from '../../features/refresh/progress'
 
 /**
@@ -19,9 +19,9 @@ import { useRefreshProgress } from '../../features/refresh/progress'
 const SHOW_AFTER_MS = 400
 
 export function TodayLoadingModal(): React.JSX.Element | null {
-  // 스케줄러 셋이 같은 회차를 나눠 쓰므로(단일 비행) 하나만 봐도 도는지를 안다. 컨텐츠 스토어를
-  // 고른 것은 이 화면의 진입 조회가 그것 하나이기 때문이다.
-  const { status, characters, trackedOcids } = useContentSchedulerStore()
+  // 스케줄러 둘과 today 가 같은 회차를 보므로 캐시 스냅샷 하나만 봐도 도는지를 안다. 뷰를 만들지 않고 스냅샷을
+  // 보는 것은 today 가 이미 뷰를 만들고 기기 값을 읽는데 여기서 한 번 더 읽을 이유가 없어서다.
+  const { status, snapshot, trackedOcids } = useScheduleQueries()
   // 진행은 **별도 스토어**다. 화면 state 에 두면 작업 하나가 끝날 때마다 격자가 통째로 다시
   // 그려진다.
   const done = useRefreshProgress((state) => state.done)
@@ -31,15 +31,15 @@ export function TodayLoadingModal(): React.JSX.Element | null {
   /**
    * 서는 조건은 한 물음이다. **그릴 것이 아직 없는데 도는 중인가.**
    *
-   * `characters` 가 비었다는 것이 곧 캐시가 없다는 뜻이다. 스토어가 재검증 전에 캐시를 먼저
-   * 실어 두므로(캐시 우선 표시), 캐시가 있으면 이 값이 안 비어 있다.
+   * 스냅샷에 스케줄이 하나도 없다는 것이 곧 캐시가 없다는 뜻이다. 회차가 도는 동안도 캐시의 값이 그대로
+   * 보이므로, 캐시가 있으면 비어 있지 않다.
    *
    * `trackedOcids` 의 `null` 은 0명이 아니라 저장소를 아직 안 읽었다 다. 모르는 사이에 세우면
    * 캐릭터가 없는 계정에서도 뜬다.
    */
   const cold =
     status === 'loading' &&
-    characters.length === 0 &&
+    snapshot.schedules.size === 0 &&
     trackedOcids !== null &&
     trackedOcids.length > 0
 

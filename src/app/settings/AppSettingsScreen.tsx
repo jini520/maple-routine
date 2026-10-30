@@ -21,7 +21,7 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useThemeStore } from '../../features/theme/store'
 import { useTextSizeStore } from '../../features/text-size/store'
 import { TEXT_SIZE_LABELS } from '../../lib/text-size'
-import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import { useTrackedOcids } from '../../features/schedule-sync/use-schedule-queries'
 import { formatAppVersion } from '../../lib/app-version'
 
 import { useRunningAppVersion } from '../../features/live-update/use-running-app-version'
@@ -51,7 +51,7 @@ export function AppSettingsScreen(): React.JSX.Element {
   const { mode: trackingMode } = useTrackingModeStore()
   const { theme } = useThemeStore()
   const { size: textSize } = useTextSizeStore()
-  const { trackedOcids } = useContentSchedulerStore()
+  const trackedOcids = useTrackedOcids()
   const navigation = useSettingsNavigation()
 
   const [trackingModeOpen, setTrackingModeOpen] = useState(false)

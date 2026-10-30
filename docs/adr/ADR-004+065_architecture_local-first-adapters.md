@@ -24,7 +24,8 @@
 외부 서비스도 같은 방식으로 감싼다. 넥슨 Open API 는 `nexon/` 이, 우리 서버는 `server/` 가 맡는다.
 
 `features/` 가 import 해도 되는 바깥 패키지는 테스트의 허용 목록에 적은 것뿐이다. 지금은 `react` ·
-`react-native` · `zustand` · `@tanstack/react-query` · `@tanstack/react-query-persist-client` 다. 금지 목록
+`react-native` · `zustand` · `@tanstack/react-query` · `@tanstack/react-query-persist-client` ·
+`@tanstack/query-async-storage-persister` 다. 금지 목록
 대신 허용 목록을 쓴다. 금지 목록이면 새 네이티브 라이브러리를 들일 때마다 목록에 더하는 일을 잊기 쉽다. 네이티브 코드가 없는 JS 라이브러리가 필요하면 목록에 더한다. `react-native` 는 `Platform`
 같은 범용 API 를 쓰려고 허용한다. 타입만 가져오는 `import type` 은 런타임 의존이 없어서 검사하지 않는다.
 

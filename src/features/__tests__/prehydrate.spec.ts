@@ -1,11 +1,8 @@
-// 부팅 선하이드레이션은 세 탭 스토어를 **순차로** 돌린다.
-// 순서가 계약인 이유. 게이트의 신선도 조건은 앞 회차가 캐시를 다 쓴 뒤에야 참이
-// 되므로, 병렬로 띄우면 셋 다 게이트를 통과해 같은 응답을 3번 받는다.
+// 부팅 예열은 저장된 쿼리 캐시가 다 올라온 뒤에 **순차로** 돈다. 선택 복원 → 스케줄 회차 → 보스 수익.
+// 순서가 계약인 이유. 보스 수익의 게이트는 앞 회차가 캐시를 다 쓴 뒤에야 신선하다고 보므로, 병렬로
+// 띄우면 같은 응답을 두 번 받는다.
 import { prehydrateTabStores } from '../prehydrate'
 
-// jest 의 목 팩토리는 **`mock` 으로 시작하는 이름만** 밖에서 끌어올 수 있고, 팩토리가 여러 번
-// 불릴 수 있다. 그래서 **같은 목을 돌려주는** 멱등 팩토리로 둔다. 테스트가 그 인스턴스에 직접
-// 단언하기 때문이다.
 var mockCalls: string[] | undefined
 var mockLoads: Record<string, jest.Mock> | undefined
 
@@ -23,18 +20,28 @@ function mockTrack(name: string): jest.Mock {
   return mockLoads[name]
 }
 
-jest.mock('../content-scheduler/store', () => ({
-  useContentSchedulerStore: { getState: () => ({ loadTrackedOcids: mockTrack('content') }) },
+var mockRestoredState: { resolve: () => void; promise: Promise<void> } | undefined
+function mockRestoredGate(): { resolve: () => void; promise: Promise<void> } {
+  if (mockRestoredState === undefined) {
+    let resolve: () => void = () => undefined
+    const promise = new Promise<void>((done) => {
+      resolve = done
+    })
+    mockRestoredState = { resolve, promise }
+  }
+  return mockRestoredState
+}
+
+jest.mock('../query/persist', () => ({ whenQueryCacheRestored: () => mockRestoredGate().promise }))
+jest.mock('../character-selection/store', () => ({
+  useCharacterSelectionStore: { getState: () => ({ hydrate: mockTrack('selection') }) },
 }))
-jest.mock('../boss-scheduler/store', () => ({
-  useBossSchedulerStore: { getState: () => ({ loadTrackedOcids: mockTrack('boss') }) },
-}))
+jest.mock('../schedule-sync/schedule-query', () => ({ prefetchSchedules: mockTrack('schedule') }))
 jest.mock('../boss-profit/store', () => ({
   useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockTrack('profit') }) },
 }))
 
-const loadContent = mockTrack('content')
-const loadBoss = mockTrack('boss')
+const loadSchedule = mockTrack('schedule')
 const loadProfit = mockTrack('profit')
 const calls = (mockCalls = mockCalls ?? [])
 
@@ -44,26 +51,30 @@ describe('prehydrateTabStores', () => {
     jest.clearAllMocks()
   })
 
-  it('세 탭 스토어를 순차로 하이드레이션한다', async () => {
-    await prehydrateTabStores()
+  it('저장된 캐시가 올라온 뒤에 선택 · 스케줄 회차 · 보스 수익을 순차로 예열한다', async () => {
+    const run = prehydrateTabStores()
+    await Promise.resolve()
+    expect(calls).toEqual([])
+
+    mockRestoredGate().resolve()
+    await run
 
     expect(calls).toEqual([
-      'content:start',
-      'content:end',
-      'boss:start',
-      'boss:end',
+      'selection:start',
+      'selection:end',
+      'schedule:start',
+      'schedule:end',
       'profit:start',
       'profit:end',
     ])
   })
 
-  it('한 스토어가 실패해도 나머지를 계속 예열하고 던지지 않는다', async () => {
-    loadBoss.mockRejectedValueOnce(new Error('저장소 읽기 실패'))
+  it('한 단계가 실패해도 나머지를 계속 예열하고 던지지 않는다', async () => {
+    loadSchedule.mockRejectedValueOnce(new Error('회차 실패'))
 
     await expect(prehydrateTabStores()).resolves.toBeUndefined()
 
-    expect(loadContent).toHaveBeenCalledTimes(1)
-    expect(loadBoss).toHaveBeenCalledTimes(1)
+    expect(loadSchedule).toHaveBeenCalledTimes(1)
     expect(loadProfit).toHaveBeenCalledTimes(1)
   })
 })

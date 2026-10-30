@@ -29,9 +29,10 @@ import {
   setRepresentativeCharacter,
 } from '../../../storage/character-selection'
 import { getScheduleProbeLedger } from '../../../storage/schedule-probe-ledger'
-import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { CHARACTER_BASIC_TTL_MS } from '../../../features/schedule-sync/character-basic-fetch'
+import { saveTrackedCharacters } from '../../../features/schedule-sync/save-tracked'
+import { useTrackedOcids } from '../../../features/schedule-sync/use-schedule-queries'
 import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
 import type { CharacterPickerEntry, MapleAccount, MapleCharacter } from '../../../types'
 
@@ -44,14 +45,13 @@ import { moveOcid } from '../../../hooks/useSelectionDraft'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
 import { SettingsCharactersScreen } from '../SettingsCharactersScreen'
+import { reloadTabStores } from '../reload-tab-stores'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 // 팩토리 밖 변수를 참조하려면 이름이 `mock` 으로 시작해야 한다(babel-jest 규칙).
 const mockGetRoster = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
-const mockLoadBossTracked = jest.fn()
 const mockEvaluateMvpAsk = jest.fn()
-const mockLoadProfitTracked = jest.fn()
 
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 jest.mock('../../../nexon/character', () => ({ fetchCharacterList: jest.fn() }))
@@ -73,17 +73,11 @@ jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
   getCharacterPickerRoster: (...args: unknown[]) => mockGetRoster(...args),
 }))
 
-jest.mock('../../../features/content-scheduler/store', () => {
-  const hook = jest.fn()
-  return { useContentSchedulerStore: hook }
-})
-// 저장 뒤 다시 읽히는 둘. 화면은 `getState` 로만 만진다.
-jest.mock('../../../features/boss-scheduler/store', () => ({
-  useBossSchedulerStore: { getState: () => ({ loadTrackedOcids: mockLoadBossTracked }) },
-}))
-jest.mock('../../../features/boss-profit/store', () => ({
-  useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockLoadProfitTracked }) },
-}))
+// 추적 목록은 쿼리 캐시에서 온다. 이 하네스에는 쿼리 클라이언트가 없어 훅을 세운다. 저장은 `saveTrackedCharacters`
+// 하나이고, 저장 뒤 보스 수익을 다시 읽히는 것은 `reloadTabStores` 다. 둘 다 무엇으로 불렸는가만 본다.
+jest.mock('../../../features/schedule-sync/use-schedule-queries', () => ({ useTrackedOcids: jest.fn() }))
+jest.mock('../../../features/schedule-sync/save-tracked', () => ({ saveTrackedCharacters: jest.fn() }))
+jest.mock('../reload-tab-stores', () => ({ reloadTabStores: jest.fn() }))
 // 저장 뒤 새 메이플 ID 의 등급을 묻는다.
 jest.mock('../../../features/mvp-grade/flow-store', () => ({
   useMvpAskStore: { getState: () => ({ evaluate: mockEvaluateMvpAsk }) },
@@ -101,7 +95,9 @@ const mockedGetRepresentative = jest.mocked(getRepresentativeCharacter)
 const mockedSetRepresentative = jest.mocked(setRepresentativeCharacter)
 const mockedClearRepresentative = jest.mocked(clearRepresentativeCharacter)
 const mockedGetLedger = jest.mocked(getScheduleProbeLedger)
-const mockedContentStore = jest.mocked(useContentSchedulerStore)
+const mockedUseTrackedOcids = jest.mocked(useTrackedOcids)
+const mockedSaveTracked = jest.mocked(saveTrackedCharacters)
+const mockedReloadTabStores = jest.mocked(reloadTabStores)
 const mockedRoster = mockGetRoster as unknown as jest.MockedFunction<typeof getCharacterPickerRoster>
 
 const goBack = jest.fn()
@@ -156,14 +152,9 @@ let rosterHangingAccounts: Set<string>
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
-function mockContentStore(overrides: Partial<ContentSchedulerStore> = {}): ContentSchedulerStore {
-  const base = {
-    trackedOcids: [],
-    saveTrackedOcids: jest.fn(async () => {}),
-    ...overrides,
-  } as unknown as ContentSchedulerStore
-  mockedContentStore.mockReturnValue(base)
-  return base
+/** 저장된 추적 목록. 위 층의 시작 값이다. */
+function mockTrackedOcids(trackedOcids: string[] = []): void {
+  mockedUseTrackedOcids.mockReturnValue(trackedOcids)
 }
 
 async function press(element: AtomElement): Promise<void> {
@@ -255,9 +246,8 @@ beforeEach(() => {
     if (failure !== undefined) throw failure
     onUpdate(rosterByAccount[accountId] ?? [])
   })
-  mockLoadBossTracked.mockResolvedValue(undefined)
-  mockLoadProfitTracked.mockResolvedValue(undefined)
-  mockContentStore()
+  mockedSaveTracked.mockResolvedValue(undefined)
+  mockTrackedOcids()
   useCharacterSelectionStore.setState({
     selectedOcid: null,
     representativeOcid: null,
@@ -271,7 +261,7 @@ afterEach(() => {
 
 describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
   it('위는 저장 순서 그대로, 아래는 그 계정에서 아직 안 고른 후보다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
 
     const view = await renderScreen()
 
@@ -282,7 +272,7 @@ describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
   })
 
   it('드롭다운으로 계정을 바꿔도 위 목록은 그대로다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
     const view = await renderScreen()
 
     await switchAccount(view, 'account-b')
@@ -292,7 +282,7 @@ describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
   })
 
   it('대기는 아래 자리에만 그려진다. 위는 로컬 캐시라 기다릴 것이 없다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
     rosterHangingAccounts.add('account-b')
     const view = await renderScreen()
 
@@ -305,7 +295,7 @@ describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
   // 대기 자리에 문구가 보인다. `aria-label` 만 있으면 화면에는 마크 하나뿐이고, 그 조합은
   // 진행중인지 알 수 없다.
   it('대기 문구가 화면에 보인다. 마크만으로는 무엇을 기다리는지 모른다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
     rosterHangingAccounts.add('account-b')
     const view = await renderScreen()
 
@@ -317,7 +307,7 @@ describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
   })
 
   it('실패도 아래 자리에만 그려진다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
     rosterFailureByAccount['account-b'] = new Error('boom')
     const view = await renderScreen()
 
@@ -330,7 +320,7 @@ describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
   // `후보 목록 로딩` 정책 그대로. 보여줄 것이 남아 있으면 지우지 않고 위에 배너를 얹는다
   // 캐시 stub 이 네트워크보다 먼저 오므로 이쪽이 기본 분기다.
   it('후보가 도착한 뒤 실패하면 목록을 지우지 않고 스탈 배너를 얹는다', async () => {
-    mockContentStore({ trackedOcids: [] })
+    mockTrackedOcids([])
     mockedRoster.mockImplementation(async (onUpdate) => {
       onUpdate([후보(달의아이)])
       throw new Error('boom')
@@ -384,7 +374,7 @@ describe('콜드 캐시. 캐시가 비어도 위 층이 빈칸으로 남지 않�
   // 로스터가 못 채우는 자리(지금 열지 않은 계정의 캐릭터)로 **재시도를 막지 않는다** 를
   // 따로 본다. 캐시가 **나중에** 차면 그때 그려져야 한다.
   it('캐시가 나중에 차면 그때 채워진다. miss 를 **없음** 으로 굳히지 않는다', async () => {
-    mockContentStore({ trackedOcids: ['b1'] })
+    mockTrackedOcids(['b1'])
     let 캐시가찼다 = false
     mockedGetCachedBasic.mockImplementation(async (ocid: string) =>
       캐시가찼다 ? (캐시된캐릭터.get(ocid) ?? null) : null,
@@ -403,7 +393,7 @@ describe('콜드 캐시. 캐시가 비어도 위 층이 빈칸으로 남지 않�
 
 describe('이동. 선택은 **표시** 가 아니라 **이동** 이다', () => {
   it('후보 카드를 누르면 아래에서 사라지고 위 리스트 **끝**에 붙는다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
     const view = await renderScreen()
 
     await press(view.getByText('별헤는밤'))
@@ -414,7 +404,7 @@ describe('이동. 선택은 **표시** 가 아니라 **이동** 이다', () => {
   })
 
   it('`✕` 로 빼면 지금 열린 계정 소속은 아래로 돌아온다', async () => {
-    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    mockTrackedOcids(['a1', 'a2'])
     const view = await renderScreen()
 
     await press(view.getByLabelText('달의아이 선택 해제'))
@@ -424,7 +414,7 @@ describe('이동. 선택은 **표시** 가 아니라 **이동** 이다', () => {
   })
 
   it('다른 계정 소속을 빼면 아래로 돌아오지 않는다. 그 계정을 열어야 보인다', async () => {
-    mockContentStore({ trackedOcids: ['a1', 'b1'] })
+    mockTrackedOcids(['a1', 'b1'])
     const view = await renderScreen()
 
     await press(view.getByLabelText('밤샘메린 선택 해제'))
@@ -435,7 +425,7 @@ describe('이동. 선택은 **표시** 가 아니라 **이동** 이다', () => {
 
   // 뺄 수 있으면 됐고, 다시 고를 수 있어야 할 이유는 없다.
   it('조회 불가 캐릭터는 위에 남아 해제되고, 빼면 어디에도 서지 않는다', async () => {
-    mockContentStore({ trackedOcids: ['a2'] })
+    mockTrackedOcids(['a2'])
     rosterByAccount['account-a'] = [후보(낟낟), 후보(달의아이, { unavailable: true })]
     mockedGetLedger.mockImplementation(async (ocid: string) => ({
       unavailable: ocid === 'a2',
@@ -455,7 +445,7 @@ describe('이동. 선택은 **표시** 가 아니라 **이동** 이다', () => {
 
 describe('대표. 별의 뜻이 **고름** 에서 **대표** 로 바뀌었다', () => {
   it('대표가 없으면 아무 별도 채워지지 않고 흐려지지도 않는다', async () => {
-    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    mockTrackedOcids(['a1', 'a2'])
 
     const view = await renderScreen()
 
@@ -466,7 +456,7 @@ describe('대표. 별의 뜻이 **고름** 에서 **대표** 로 바뀌었다', 
   })
 
   it('하나가 채워지면 나머지는 흐려진다', async () => {
-    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    mockTrackedOcids(['a1', 'a2'])
     mockedGetRepresentative.mockResolvedValue('a1')
 
     const view = await renderScreen()
@@ -478,7 +468,7 @@ describe('대표. 별의 뜻이 **고름** 에서 **대표** 로 바뀌었다', 
   })
 
   it('흐린 별도 눌린다. 누르면 대표가 그리로 옮겨간다', async () => {
-    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    mockTrackedOcids(['a1', 'a2'])
     mockedGetRepresentative.mockResolvedValue('a1')
     const view = await renderScreen()
 
@@ -489,7 +479,7 @@ describe('대표. 별의 뜻이 **고름** 에서 **대표** 로 바뀌었다', 
   })
 
   it('후보 카드에는 별이 없다. 자리가 곧 **고름** 이다', async () => {
-    mockContentStore({ trackedOcids: [] })
+    mockTrackedOcids([])
 
     const view = await renderScreen()
 
@@ -497,7 +487,7 @@ describe('대표. 별의 뜻이 **고름** 에서 **대표** 로 바뀌었다', 
   })
 
   it('대표를 뺀 자리는 **대표 없음** 이 된다', async () => {
-    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    mockTrackedOcids(['a1', 'a2'])
     mockedGetRepresentative.mockResolvedValue('a1')
     const view = await renderScreen()
 
@@ -531,7 +521,7 @@ describe('순서. 놓은 자리가 배열 순서다', () => {
   // **끌 수 있는 것은 위층뿐**이다. 아래층 카드와 구분자가 고정이라 위층 행이 그 아래로
   // 내려갈 자리가 없다. 층 이동은 누르기와 `✕` 둘뿐이다.
   it('핸들은 위 층 행에만 있다. 아래 층 순서는 사용자 것이 아니다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
 
     const view = await renderScreen()
 
@@ -552,7 +542,7 @@ describe('순서. 놓은 자리가 배열 순서다', () => {
     ['아래로 옮기기', '낟낟', 'moveDown' as const, 0, 1],
     ['위로 옮기기', '별헤는밤', 'moveUp' as const, 2, 1],
   ])('%s 액션이 moveOcid 와 같은 결과를 낸다', async (_label, name, actionName, from, to) => {
-    mockContentStore({ trackedOcids: ['a1', 'a2', 'a3'] })
+    mockTrackedOcids(['a1', 'a2', 'a3'])
     const view = await renderScreen()
     const before = namesIn(view, 'character-manage-selected')
 
@@ -563,7 +553,7 @@ describe('순서. 놓은 자리가 배열 순서다', () => {
 
   // 눌러도 아무 일이 없는 액션을 로터에 남기지 않는다. 할 수 있는 것만 준다.
   it('경계 행에는 갈 수 없는 쪽 액션이 없다', async () => {
-    mockContentStore({ trackedOcids: ['a1', 'a2', 'a3'] })
+    mockTrackedOcids(['a1', 'a2', 'a3'])
 
     const view = await renderScreen()
 
@@ -573,7 +563,7 @@ describe('순서. 놓은 자리가 배열 순서다', () => {
   })
 
   it('하나뿐이면 순서 액션이 아예 없다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
 
     const view = await renderScreen()
 
@@ -583,7 +573,7 @@ describe('순서. 놓은 자리가 배열 순서다', () => {
   // **멤버십으로만 판정하라** 가 뒤집힌 자리. 집합은
   // 그대로이고 순서만 달라진다.
   it('순서만 바꿔도 저장이 활성이 된다', async () => {
-    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    mockTrackedOcids(['a1', 'a2'])
     const view = await renderScreen()
     const saveButton = (): AtomElement => {
       let node: AtomElement | null = view.getByText('저장')
@@ -600,11 +590,7 @@ describe('순서. 놓은 자리가 배열 순서다', () => {
   })
 
   it('바꾼 순서 그대로 저장한다. 저장 시점에 다시 정렬하지 않는다', async () => {
-    const saveTrackedOcids = jest.fn(async () => {})
-    mockContentStore({
-      trackedOcids: ['a1', 'a2', 'a3'],
-      saveTrackedOcids: saveTrackedOcids as unknown as ContentSchedulerStore['saveTrackedOcids'],
-    })
+    mockTrackedOcids(['a1', 'a2', 'a3'])
     const view = await renderScreen()
 
     await reorder(view, '낟낟', 'moveDown')
@@ -614,7 +600,7 @@ describe('순서. 놓은 자리가 배열 순서다', () => {
     await act(async () => {})
 
     // 레벨(294· 260· 250)로 되돌리지 않는다.
-    expect(saveTrackedOcids).toHaveBeenCalledWith(['a2', 'a1', 'a3'], expect.any(Function))
+    expect(mockedSaveTracked).toHaveBeenCalledWith(['a2', 'a1', 'a3'], expect.any(Function))
   })
 })
 
@@ -698,7 +684,7 @@ describe('못 고르는 계정', () => {
   })
 
   it('후보를 전부 골랐으면 **모두 조회할 수 없어요** 가 아니라 빈 목록이다', async () => {
-    mockContentStore({ trackedOcids: ['a1', 'a2', 'a3'] })
+    mockTrackedOcids(['a1', 'a2', 'a3'])
 
     const view = await renderScreen()
 
@@ -751,14 +737,14 @@ describe('저장', () => {
   }
 
   it('바뀐 것이 없으면 비활성이다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
 
     expect(isSaveDisabled(await renderScreen())).toBe(true)
   })
 
   // 0개는 어떤 사용자 의도도 표현하지 않는다.
   it('0개면 비활성이다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
     const view = await renderScreen()
 
     await press(view.getByLabelText('낟낟 선택 해제'))
@@ -767,7 +753,7 @@ describe('저장', () => {
   })
 
   it('집합만 달라져도 활성이다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
     const view = await renderScreen()
 
     await press(view.getByText('달의아이'))
@@ -778,7 +764,7 @@ describe('저장', () => {
   // **멤버십으로만 판정하라** 가 뒤집히는 자리다. 순서가 사용자 것이 되면서
   // 그 근거(그리드 토글이 배열 끝에 append 해 순서가 의미 없이 흔들린다)가 사라졌다.
   it('집합이 같아도 순서가 달라지면 활성이다', async () => {
-    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    mockTrackedOcids(['a1', 'a2'])
     const view = await renderScreen()
 
     await press(view.getByLabelText('낟낟 선택 해제'))
@@ -789,7 +775,7 @@ describe('저장', () => {
   })
 
   it('대표만 달라져도 활성이다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
     const view = await renderScreen()
     expect(isSaveDisabled(view)).toBe(true)
 
@@ -798,24 +784,19 @@ describe('저장', () => {
     expect(isSaveDisabled(view)).toBe(false)
   })
 
-  it('목록을 먼저 쓰고 대표를 그 뒤에 쓴 다음 보스·수익 스토어를 다시 읽힌다', async () => {
+  // 스케줄러 둘은 캐시의 추적 목록을 보므로 저장과 함께 바뀐다. 다시 읽히는 것은 보스 수익 하나다.
+  it('목록을 먼저 쓰고 대표를 그 뒤에 쓴 다음 보스 수익 스토어만 다시 읽힌다', async () => {
     const order: string[] = []
-    const saveTrackedOcids = jest.fn(async () => {
+    mockedSaveTracked.mockImplementation(async () => {
       order.push('save')
     })
     mockedSetRepresentative.mockImplementation(async () => {
       order.push('representative')
     })
-    mockLoadBossTracked.mockImplementation(async () => {
-      order.push('boss')
+    mockedReloadTabStores.mockImplementation(() => {
+      order.push('reload')
     })
-    mockLoadProfitTracked.mockImplementation(async () => {
-      order.push('profit')
-    })
-    mockContentStore({
-      trackedOcids: ['a1'],
-      saveTrackedOcids: saveTrackedOcids as unknown as ContentSchedulerStore['saveTrackedOcids'],
-    })
+    mockTrackedOcids(['a1'])
     const view = await renderScreen()
     await press(view.getByText('달의아이'))
     await press(star(view, '달의아이'))
@@ -823,10 +804,11 @@ describe('저장', () => {
     await press(saveButton(view))
     await act(async () => {})
 
-    expect(saveTrackedOcids).toHaveBeenCalledWith(['a1', 'a2'], expect.any(Function))
+    expect(mockedSaveTracked).toHaveBeenCalledWith(['a1', 'a2'], expect.any(Function))
     expect(mockedSetRepresentative).toHaveBeenCalledWith('a2')
     // 목록 저장이 먼저 돌아야 한다. `setTrackedCharacterOcids` 가 목록에 없는 대표를 지운다.
-    expect(order).toEqual(['save', 'representative', 'boss', 'profit'])
+    expect(order).toEqual(['save', 'representative', 'reload'])
+    expect(mockedReloadTabStores).toHaveBeenCalledWith(['profit'])
     expect(goBack).toHaveBeenCalled()
     expect(mockEvaluateMvpAsk).toHaveBeenCalled()
   })
@@ -834,7 +816,7 @@ describe('저장', () => {
   // today 는 탭이라 이 화면을 다녀와도 다시 마운트되지 않는다. 저장소만 고치면 today 가 든 값이
   // 안 바뀌어 당기기 전까지 옛 대표를 그렸다(#395).
   it('저장하면 today 가 구독하는 선택 스토어의 대표가 바뀐다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
     const view = await renderScreen()
     await press(view.getByText('달의아이'))
     await press(star(view, '달의아이'))
@@ -848,7 +830,7 @@ describe('저장', () => {
   it('대표를 비우고 저장하면 선택 스토어의 대표도 빈다', async () => {
     useCharacterSelectionStore.setState({ representativeOcid: 'a1', isRepresentativeHydrated: true })
     mockedGetRepresentative.mockResolvedValue('a1')
-    mockContentStore({ trackedOcids: ['a1', 'a2'] })
+    mockTrackedOcids(['a1', 'a2'])
     const view = await renderScreen()
     await press(view.getByLabelText('낟낟 선택 해제'))
 
@@ -859,7 +841,7 @@ describe('저장', () => {
   })
 
   it('대표를 고르지 않았으면 저장할 때 그 키를 지운다', async () => {
-    mockContentStore({ trackedOcids: ['a1'] })
+    mockTrackedOcids(['a1'])
     const view = await renderScreen()
     await press(view.getByText('달의아이'))
 
@@ -872,15 +854,13 @@ describe('저장', () => {
 
   it('저장 중에는 진행률 모달을 띄운다', async () => {
     let resolveSave: () => void = () => {}
-    mockContentStore({
-      trackedOcids: ['a1'],
-      saveTrackedOcids: jest.fn(
-        () =>
-          new Promise<void>((resolve) => {
-            resolveSave = resolve
-          }),
-      ) as unknown as ContentSchedulerStore['saveTrackedOcids'],
-    })
+    mockedSaveTracked.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve
+        }),
+    )
+    mockTrackedOcids(['a1'])
     const view = await renderScreen()
     await press(view.getByText('달의아이'))
 

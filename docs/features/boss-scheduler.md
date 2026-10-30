@@ -19,7 +19,8 @@
 | `app/boss-scheduler/BossScreen.tsx` | 보스 스케줄러 화면과 보스 카드(`BossCard`) |
 | `app/boss-scheduler/BossManageScreen.tsx` | 보스 관리 화면 |
 | `features/boss-scheduler/displayed-bosses.ts` | 표시할 보스 목록, 섹션 순서, 마감 판정. today 남은 스케줄도 이 파일을 쓴다 |
-| `features/boss-scheduler/store.ts` | 동기화 결과, 추적 목록, 파티 설정, 직접 완료, 솔로 · 파티 필터 |
+| `features/boss-scheduler/use-boss-schedule.ts` · `views.ts` | 쿼리 캐시에서 캐릭터 뷰를 만드는 훅과 순수 함수. 계산기는 `readBossCharacters` 로 렌더 밖에서 읽는다 |
+| `features/boss-scheduler/store.ts` | 파티 설정, 수동 추적 멤버십, 직접 완료, 솔로 · 파티 필터. 넥슨에서 받은 값은 없다 |
 | `features/manual-completion/` | 직접 완료를 연 보스 목록(서버), today 안내 줄, FAQ, 직접 완료 기록 쓰기 · 고치기 · 지우기 |
 | `lib/boss/boss-matching.ts` | 보스 순서(`compareBossOrder`), 처치 수와 한도 판정, 카드용 · 수익용 보스 고르기 |
 | `lib/boss/manual-boss-merge.ts` | 수동 모드 목록에 완료 여부를 붙인다 |
@@ -38,7 +39,8 @@
 ## 보스 스케줄러 화면
 
 헤더 제목 줄 오른쪽에 솔로 · 파티 필터가 있고, 그 아래에 갱신 시각이 있다. 내용은 초상화 레일 아래에 고른
-캐릭터의 보스 카드 목록이다. 목록을 아래로 당기면 넥슨에서 다시 받아 온다.
+캐릭터의 보스 카드 목록이다. 목록을 아래로 당기면 넥슨에서 다시 받아 온다. 들어올 때 · 포커스 · 복귀의 자동 조회는
+컨텐츠 스케줄러와 같다([[ADR-142]] 결정 5). 직접 완료는 포커스마다 기록 판과 기간을 견줘 바뀌었을 때만 다시 읽는다.
 
 | 부분 | 보여 주는 것 |
 |---|---|

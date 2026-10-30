@@ -12,6 +12,7 @@ import { AppShell } from './src/app/AppShell'
 import { ErrorBoundary } from './src/components/organisms/ErrorBoundary/ErrorBoundary'
 import { ThemeProvider } from './src/theme/ThemeProvider'
 import { InputCardHost } from './src/components/organisms/InputCard/InputCardHost'
+import { QueryCacheProvider } from './src/app/QueryCacheProvider'
 
 /**
  * 앱 루트 — 프로바이더 셋과 에러 경계만 두르고, 부팅 순서는 `src/app/AppShell.tsx` 가 갖는다
@@ -20,7 +21,7 @@ import { InputCardHost } from './src/components/organisms/InputCard/InputCardHos
  * ## 감싸는 순서가 계약이다
  *
  *   `GestureHandlerRootView` → `SafeAreaProvider` → `KeyboardProvider` → `ThemeProvider`
- *   → `BottomSheetModalProvider` → `ErrorBoundary` → `AppShell`
+ *   → `QueryCacheProvider` → `BottomSheetModalProvider` → `ErrorBoundary` → `AppShell`
  *
  * - **`GestureHandlerRootView` 와 `BottomSheetModalProvider` 는 3단계가 여기로 넘긴 것이다.**
  *   `BottomSheet.tsx` 파일 머리가 *"`BottomSheetModal` 은 `BottomSheetModalProvider` 아래에서만
@@ -62,11 +63,14 @@ export default function App(): React.JSX.Element {
         {/* 입력 카드가 키보드 높이를 여기서 받는다. 없으면 높이가 0 에 머물러 카드가 키보드 뒤에 깔린다. */}
         <KeyboardProvider>
           <ThemeProvider>
-            <BottomSheetModalProvider>
-              <ErrorBoundary onRestart={() => void reloadAppAsync('ErrorBoundary 폴백의 다시 시작')}>
-                <AppShell />
-              </ErrorBoundary>
-            </BottomSheetModalProvider>
+            {/* 쿼리 캐시. 테마 안인 것은 저장된 캐시를 올리는 동안 잠금 화면을 테마로 그리기 때문이다. */}
+            <QueryCacheProvider>
+              <BottomSheetModalProvider>
+                <ErrorBoundary onRestart={() => void reloadAppAsync('ErrorBoundary 폴백의 다시 시작')}>
+                  <AppShell />
+                </ErrorBoundary>
+              </BottomSheetModalProvider>
+            </QueryCacheProvider>
             {/*
               입력 카드는 프로바이더 **뒤**에 선다. 시트는 그 프로바이더가 자기 자식들 뒤에 그리므로,
               시트 안에서 그린 카드는 무엇으로 감싸도 시트 위로 못 올라간다. 여기 두면 그 전부를

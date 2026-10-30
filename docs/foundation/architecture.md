@@ -76,7 +76,8 @@ src/
 
 | 무엇 | 어디 |
 |---|---|
-| 화면과 기능의 클라이언트 상태(선택 캐릭터 · 테마 · 인증 · 동기화 결과) | `features/*/store.ts` 의 zustand 스토어 |
+| 화면과 기능의 클라이언트 상태(선택 캐릭터 · 테마 · 인증 · 탭 · 필터) | `features/*/store.ts` 의 zustand 스토어 |
+| 넥슨에서 받은 스케줄 · 캐릭터 기본 정보 | `features/query/` 의 TanStack Query 캐시 하나. 넥슨 쿼리는 SQLite `query_cache` 에 저장한다([[ADR-142]]). 보스 수익 · 가계부 · 공지는 아직 스토어와 화면 상태다 |
 | 서버에 원본이 있는 게임 데이터 표 | `lib/game-data/` 의 표. `features/game-data/sync.ts` 가 받아 `storage/game-data-copy.ts`(SQLite)와 문서 디렉터리에 둔다([[ADR-020]]) |
 | 기기에 남는 값 | `storage/`. 키와 스키마는 `persistence/` 문서에 있다 |
 

@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react'
 
 import { displayedBosses } from '../../features/boss-scheduler/displayed-bosses'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { useBossSchedule } from '../../features/boss-scheduler/use-boss-schedule'
 import { resolveDisplayRepresentative } from '../../features/character-manage/derivations'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import {
@@ -39,8 +40,7 @@ export interface BossPicker {
 }
 
 export function useBossPicker(): BossPicker {
-  const characters = useBossSchedulerStore((state) => state.characters)
-  const trackedOcids = useBossSchedulerStore((state) => state.trackedOcids)
+  const { characters, trackedOcids } = useBossSchedule()
   const partySizes = useBossSchedulerStore((state) => state.partySizes)
   const partyShares = useBossSchedulerStore((state) => state.partyShares)
   const manualTrackedByOcid = useBossSchedulerStore((state) => state.manualTrackedByOcid)

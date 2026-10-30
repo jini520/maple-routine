@@ -18,11 +18,12 @@
 | `nexon/symbol-levels/` | 심볼 강화 폼의 심볼 레벨 |
 | `nexon/notice/` | 넥슨 공지 목록과 상세 |
 | `nexon/developer-keys.ts` · `nexon/key-stage.ts` | 번들 개발자 키 교대, API 키 단계 판정 |
-| `features/schedule-sync/` | 스케줄 동기화 회차, `character/basic` 5분 가드, 자격 판정, 에러 종류 `toScheduleSyncError` |
+| `features/schedule-sync/` | 스케줄 동기화 회차, `character/basic` 5분 가드, 자격 판정, 에러 종류 `toScheduleSyncError`. `schedule-query.ts` 가 회차를 쿼리로 두고 캐릭터 열쇠에 나눠 넣는다 |
+| `features/query/` | 쿼리 캐시 · 열쇠 · 신선함(10분 + KST 자정) · 앱 복귀 · 자정 타이머 · 기기 저장([[ADR-142]]) |
 | `features/schedule-window/` | 지난 13일을 채우는 창 |
 | `storage/schedule-probe-ledger.ts` | 조회 원장(Preferences `scheduleProbe:{ocid}`) |
 | `storage/scheduler-cache.ts` · `storage/character-basic-cache.ts` | 스케줄 캐시(`schedulerCache:{ocid}`), 기본 정보 캐시(`characterBasicCache:{ocid}`) |
-| `lib/scheduler/sync-freshness.ts` | 10분 TTL 판정 `isSyncFresh` |
+| `lib/scheduler/sync-freshness.ts` | 10분 값 `SYNC_TTL_MS`, 보스 수익이 아직 쓰는 옛 게이트 `isSyncFresh` |
 | `lib/boss/boss-profit-period.ts` | 조회 가능한 날짜의 상한과 하한 |
 
 ## 호출 방법

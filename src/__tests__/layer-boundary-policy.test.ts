@@ -27,6 +27,7 @@ const FEATURE_ALLOWED_PACKAGES = [
   'zustand',
   '@tanstack/react-query',
   '@tanstack/react-query-persist-client',
+  '@tanstack/query-async-storage-persister',
 ]
 
 /** 디렉터리 아래 제품 소스(`.ts`·`.tsx`)의 절대 경로. 테스트 디렉터리는 뺀다. */

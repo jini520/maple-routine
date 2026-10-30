@@ -3,7 +3,9 @@ import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useBossProfitCalculatorStore } from '../../../features/boss-profit-calculator/store'
-import { partySizeKey, useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
+import { partySizeKey, useBossSchedulerStore } from '../../../features/boss-scheduler/store'
+import { useBossSchedule } from '../../../features/boss-scheduler/use-boss-schedule'
+import { readBossCharacters, type BossCharacterView } from '../../../features/boss-scheduler/views'
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
@@ -22,6 +24,13 @@ jest.mock('../../../features/toast/store', () => ({
   useToastStore: { getState: () => ({ showSuccess: mockShowSuccess, showError: jest.fn(), showInfo: jest.fn() }) },
 }))
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
+// 캐릭터는 쿼리 캐시에서 온다. 화면은 훅으로, 계산기 스토어는 `readBossCharacters` 로 같은 캐시를 보므로
+// 둘을 같은 목록으로 세운다. 보스 스토어(파티 인원 · 수동 추적)는 실물이다.
+jest.mock('../../../features/boss-scheduler/use-boss-schedule', () => ({ useBossSchedule: jest.fn() }))
+jest.mock('../../../features/boss-scheduler/views', () => ({ readBossCharacters: jest.fn() }))
+
+const mockedUseBossSchedule = jest.mocked(useBossSchedule)
+const mockedReadBossCharacters = jest.mocked(readBossCharacters)
 
 const EVEN = { myShare: null, sharesTotal: null, splitFeePercent: null }
 
@@ -65,17 +74,22 @@ beforeEach(() => {
   >)
   useTrackingModeStore.setState({ mode: 'auto' })
   useCharacterSelectionStore.setState({ selectedOcid: 'ocid-1' })
-  useBossSchedulerStore.setState({
+  const characters = [
+    character('ocid-1', '단풍전사', [registered('루시드', 'hard'), registered('카링', 'normal')]),
+    character('ocid-2', '도토리법사', [registered('윌', 'hard')]),
+  ]
+  mockedUseBossSchedule.mockReturnValue({
     status: 'loaded',
+    characters,
+    error: null,
     trackedOcids: ['ocid-1', 'ocid-2'],
-    characters: [
-      character('ocid-1', '단풍전사', [registered('루시드', 'hard'), registered('카링', 'normal')]),
-      character('ocid-2', '도토리법사', [registered('윌', 'hard')]),
-    ],
+    refresh: jest.fn(),
+  })
+  mockedReadBossCharacters.mockReturnValue(characters)
+  useBossSchedulerStore.setState({
     partySizes: { [partySizeKey('ocid-1', 'kaling', 'normal')]: 3 },
     partyShares: {},
     manualTrackedByOcid: {},
-    loadTrackedOcids: jest.fn(),
   })
   useBossProfitCalculatorStore.setState({ loaded: false, records: [], openedId: null, bossesByOcid: {} })
   mockShowSuccess.mockClear()
@@ -114,9 +128,9 @@ describe('BossProfitCalculatorScreen', () => {
     expect(view.getByTestId('calculator-boss-payout-kaling').props.children).toBe(formatMesoUnits(카링))
   })
 
-  // 로그인이 만료돼 동기화가 실패해도 스케줄러는 마지막으로 본 캐릭터를 든다. 그 값으로 연다.
+  // 로그인이 만료돼 동기화가 실패해도 캐시는 마지막으로 본 캐릭터를 든다. 그 값으로 연다.
   it('스케줄러 동기화가 실패한 상태여도 들고 있는 캐릭터로 연다', async () => {
-    useBossSchedulerStore.setState({ status: 'error' })
+    mockedUseBossSchedule.mockReturnValue({ ...mockedUseBossSchedule(), status: 'error' })
 
     const view = await renderOverlay(<BossProfitCalculatorScreen />)
 

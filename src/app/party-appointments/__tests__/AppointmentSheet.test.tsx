@@ -23,6 +23,12 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
+// 보스 추가 단계의 캐릭터는 쿼리 캐시에서 온다. 이 하네스에는 쿼리 클라이언트가 없고, 여기서 보는 것은
+// 시트의 칸이라 추적 캐릭터가 없는 상태로 둔다.
+jest.mock('../../../features/boss-scheduler/use-boss-schedule', () => ({
+  useBossSchedule: () => ({ status: 'idle', characters: [], error: null, trackedOcids: null, refresh: jest.fn() }),
+}))
+
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { usePartyAlarmSettingsStore } from '../../../features/party-appointments/alarm-settings'
 import { usePartyAppointmentsStore } from '../../../features/party-appointments/store'

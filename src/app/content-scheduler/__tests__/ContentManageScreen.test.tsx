@@ -16,6 +16,10 @@ import {
   type ContentCharacterView,
   type ContentSchedulerStore,
 } from '../../../features/content-scheduler/store'
+import {
+  useContentSchedule,
+  type ContentSchedule,
+} from '../../../features/content-scheduler/use-content-schedule'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
@@ -29,30 +33,44 @@ jest.mock('../../../features/toast/store', () => ({
   useToastStore: { getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: jest.fn() }) },
 }))
 
+// 넥슨에서 받은 스케줄은 스토어가 아니라 `useContentSchedule` 이 낸다. 스토어에는 기기 값(수동 추적)과
+// 탭만 남는다. 출처가 둘이라 목도 둘이다.
+jest.mock('../../../features/content-scheduler/use-content-schedule', () => ({
+  useContentSchedule: jest.fn(),
+}))
+
 jest.mock('../../../features/content-scheduler/store', () => ({
   useContentSchedulerStore: jest.fn(),
 }))
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
+const mockedSchedule = jest.mocked(useContentSchedule)
 const mockedStore = jest.mocked(useContentSchedulerStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)
 
+type Schedule = ContentSchedule
 // `ReturnType<typeof useContentSchedulerStore>` 은 **`unknown` 이 된다**. zustand 의 훅이 오버로드라
 // tsc 가 셀렉터 시그니처를 집는다. 스토어가 그 타입을 이미 내보내므로 그것을 그대로 쓴다.
 type Store = ContentSchedulerStore
 
-function mockStore(overrides: Partial<Store> = {}): Store {
-  const base = {
+/** 훅이 내는 스케줄. 이 화면은 캐릭터 목록과 상태만 읽는다. */
+function mockSchedule(overrides: Partial<Schedule> = {}): Schedule {
+  const schedule: Schedule = {
     status: 'loaded',
     characters: [],
     error: null,
     trackedOcids: ['ocid-1'],
-    manualTrackedByOcid: {},
-    loadTrackedOcids: jest.fn(),
-    saveTrackedOcids: jest.fn(),
-    // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
     refresh: jest.fn().mockResolvedValue(undefined),
+    ...overrides,
+  }
+  mockedSchedule.mockReturnValue(schedule)
+  return schedule
+}
+
+function mockStore(overrides: Partial<Store> = {}): Store {
+  const base = {
+    manualTrackedByOcid: {},
     addManualContent: jest.fn(async () => {}),
     removeManualContent: jest.fn(async () => {}),
     activeTab: 'daily' as const,
@@ -117,6 +135,9 @@ beforeEach(() => {
   goBack.mockClear()
   mockedNavigation.mockReturnValue({ navigate: jest.fn(), goBack } as never)
   useTrackingModeStore.setState({ mode: 'manual' })
+  // 케이스가 한쪽만 고쳐도 다른 쪽이 비지 않게 둘 다 기본값으로 세운다.
+  mockSchedule()
+  mockStore()
 })
 
 // 선택은 이제 화면 스토어가 아니라 `useCharacterSelectionStore` 가 갖는다.
@@ -126,18 +147,10 @@ beforeEach(() => {
 })
 
 describe('ContentManageScreen', () => {
-  it('마운트하면 loadTrackedOcids 를 부른다. 직접 진입해도 스토어가 채워진다', async () => {
-    const store = mockStore({ characters: [character()] })
-
-    await renderScreen()
-
-    expect(store.loadTrackedOcids).toHaveBeenCalled()
-  })
-
 // 도달할 길이 없지만 계약은 남긴다.
   it('자동 모드면 물러난다', async () => {
     useTrackingModeStore.setState({ mode: 'auto' })
-    mockStore({ characters: [character()] })
+    mockSchedule({ characters: [character()] })
 
     await renderScreen()
 
@@ -145,7 +158,7 @@ describe('ContentManageScreen', () => {
   })
 
   it('뒤로 버튼을 누르면 물러난다', async () => {
-    mockStore({ characters: [character()] })
+    mockSchedule({ characters: [character()] })
     await renderScreen()
 
     await press(screen.getByLabelText('뒤로'))
@@ -154,10 +167,8 @@ describe('ContentManageScreen', () => {
   })
 
   it('일간 템플릿 전체를 보여주고 추적 중인 항목만 선택 상태다', async () => {
-    mockStore({
-      characters: [character()],
-      manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] },
-    })
+    mockSchedule({ characters: [character()] })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] } })
 
     await renderScreen()
 
@@ -167,7 +178,7 @@ describe('ContentManageScreen', () => {
 
   // 갈래 이름을 그룹 헤더로 한 번만 말하고 행에는 표의 `displayName` 만 남긴다.
   it('갈래는 그룹 헤더가 되고 행에는 접두사 없는 이름만 남는다', async () => {
-    mockStore({ characters: [character()] })
+    mockSchedule({ characters: [character()] })
 
     await renderScreen()
 
@@ -176,7 +187,7 @@ describe('ContentManageScreen', () => {
   })
 
   it('주간 탭으로 바꾸면 주간 템플릿이 보인다', async () => {
-    mockStore({ characters: [character()] })
+    mockSchedule({ characters: [character()] })
     await renderScreen()
 
     await press(row('주간'))
@@ -186,7 +197,8 @@ describe('ContentManageScreen', () => {
   })
 
   it('미추적 항목을 누르면 현재 탭의 kind 로 즉시 추가한다', async () => {
-    const store = mockStore({ characters: [character()] })
+    mockSchedule({ characters: [character()] })
+    const store = mockStore()
     await renderScreen()
 
     await press(row('몬스터파크'))
@@ -195,8 +207,8 @@ describe('ContentManageScreen', () => {
   })
 
   it('추적 중 항목을 누르면 즉시 제거한다', async () => {
+    mockSchedule({ characters: [character()] })
     const store = mockStore({
-      characters: [character()],
       manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] },
     })
     await renderScreen()
@@ -208,8 +220,8 @@ describe('ContentManageScreen', () => {
 
   // 전에는 프로미스를 버려 저장 실패가 무음이었다.
   it('토글 저장이 실패하면 토스트로 알린다', async () => {
+    mockSchedule({ characters: [character()] })
     mockStore({
-      characters: [character()],
       addManualContent: jest.fn(async () => {
         throw new Error('boom')
       }) as unknown as Store['addManualContent'],
@@ -223,7 +235,7 @@ describe('ContentManageScreen', () => {
 
   // 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다.
   it('조회가 끝나기 전에는 빈 상태 문구 대신 로딩 카드를 보여준다', async () => {
-    mockStore({ status: 'loading', characters: [] })
+    mockSchedule({ status: 'loading', characters: [] })
 
     await renderScreen()
 
@@ -236,8 +248,8 @@ describe('ContentManageScreen: 길드 미가입 잠금', () => {
   const GUILD_ITEM = '지하 수로'
 
   async function renderWeekly(guildName: string | null | undefined, tracked: string[] = []): Promise<void> {
+    mockSchedule({ characters: [character({ guildName })] })
     mockStore({
-      characters: [character({ guildName })],
       activeTab: 'weekly',
       manualTrackedByOcid: {
         'ocid-1': tracked.map((contentKey) => ({ contentKey, kind: 'weekly' as const })),
@@ -286,7 +298,7 @@ describe('ContentManageScreen: 길드 미가입 잠금', () => {
 // 있다고 믿는데, 그 선택은 조회가 돌아와야 뜻을 갖는다.
 describe('조회 불가 캐릭터', () => {
   it('편집 목록 대신 안내가 선다', async () => {
-    mockStore({
+    mockSchedule({
       status: 'loaded',
       characters: [character({ error: { kind: 'characterUnavailable' } })],
     })
@@ -306,7 +318,8 @@ describe('시작 기간 전인 컨텐츠', () => {
 
   async function 주간목록(now: string): Promise<void> {
     jest.useFakeTimers({ now: new Date(now) })
-    mockStore({ characters: [character()], activeTab: 'weekly' })
+    mockSchedule({ characters: [character()] })
+    mockStore({ activeTab: 'weekly' })
     await renderScreen()
   }
 

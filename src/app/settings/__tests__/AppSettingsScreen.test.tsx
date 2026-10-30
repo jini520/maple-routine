@@ -13,8 +13,8 @@ import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { useThemeStore } from '../../../features/theme/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
-import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
+import { useTrackedOcids } from '../../../features/schedule-sync/use-schedule-queries'
 import { THEME_NAMES } from '../../../lib/theme/theme-registry'
 
 import { useLiveUpdateStore } from '../../../features/live-update/store'
@@ -28,27 +28,28 @@ import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
 // 그 접두사만 예외로 통과시킨다(스케줄러 화면 테스트와 같은 규칙).
 const mockGetRoster = jest.fn()
-const mockLoadContentTracked = jest.fn()
-const mockLoadBossTracked = jest.fn()
+const mockPrefetchSchedules = jest.fn()
+const mockReloadContentLocal = jest.fn()
+const mockReloadBossLocal = jest.fn()
 const mockLoadProfitTracked = jest.fn()
 
 jest.mock('../../../features/theme/store', () => ({ useThemeStore: jest.fn() }))
 jest.mock('../../../features/tracking-mode/store', () => ({ useTrackingModeStore: jest.fn() }))
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 
-// 저장은 컨텐츠 스케줄러 스토어의 액션을 그대로 부른다(세 번째 사본 금지).
-// 훅으로도(배지·저장) `getState` 로도 만지므로 둘 다 세운다.
-jest.mock('../../../features/content-scheduler/store', () => {
-  const hook = jest.fn()
-  return {
-    useContentSchedulerStore: Object.assign(hook, {
-      getState: () => ({ loadTrackedOcids: mockLoadContentTracked }),
-    }),
-  }
-})
-// 저장 뒤 다시 읽히는 나머지 둘. 화면은 `getState` 로만 만진다(구독하지 않는다).
+// 배지의 추적 캐릭터 수는 쿼리 캐시에서 온다. 이 하네스에는 쿼리 클라이언트가 없어 훅을 세운다.
+jest.mock('../../../features/schedule-sync/use-schedule-queries', () => ({ useTrackedOcids: jest.fn() }))
+
+// 스케줄 관리 방법을 바꾼 뒤 `reloadTabStores` 가 부르는 셋. 스케줄러 둘은 회차를 미리 받고 기기 값을 다시
+// 읽고, 보스 수익은 자기 스토어를 다시 읽는다. 화면은 `getState` 로만 만진다(구독하지 않는다).
+jest.mock('../../../features/schedule-sync/schedule-query', () => ({
+  prefetchSchedules: (...args: unknown[]) => mockPrefetchSchedules(...args),
+}))
+jest.mock('../../../features/content-scheduler/store', () => ({
+  useContentSchedulerStore: { getState: () => ({ reloadLocal: mockReloadContentLocal }) },
+}))
 jest.mock('../../../features/boss-scheduler/store', () => ({
-  useBossSchedulerStore: { getState: () => ({ loadTrackedOcids: mockLoadBossTracked }) },
+  useBossSchedulerStore: { getState: () => ({ reloadLocal: mockReloadBossLocal }) },
 }))
 jest.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockLoadProfitTracked }) },
@@ -76,7 +77,7 @@ jest.mock('@react-navigation/native', () => ({
 const mockedUseThemeStore = jest.mocked(useThemeStore)
 const mockedUseTrackingModeStore = jest.mocked(useTrackingModeStore)
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)
-const mockedContentStore = jest.mocked(useContentSchedulerStore)
+const mockedUseTrackedOcids = jest.mocked(useTrackedOcids)
 const mockedRoster = mockGetRoster as unknown as jest.MockedFunction<typeof getCharacterPickerRoster>
 
 const navigate = jest.fn()
@@ -158,20 +159,15 @@ function mockTrackingModeStore(
   })
 }
 
-/**
- * 화면이 컨텐츠 스케줄러 스토어에서 읽는 것은 둘뿐이다. 배지에 쓰는 `trackedOcids` 와 저장
- * 액션. 나머지 필드는 이 화면이 만지지 않으므로 세우지 않는다.
- */
-function mockContentStore(overrides: Partial<ContentSchedulerStore> = {}): ContentSchedulerStore {
-  const base = { trackedOcids: ['ocid-1'], saveTrackedOcids: jest.fn(), ...overrides } as ContentSchedulerStore
-  mockedContentStore.mockReturnValue(base)
-  return base
+/** 화면이 캐시에서 읽는 것은 배지에 쓰는 추적 목록 하나다. */
+function mockTrackedOcids(trackedOcids: string[] | null = ['ocid-1']): void {
+  mockedUseTrackedOcids.mockReturnValue(trackedOcids)
 }
 
 beforeEach(() => {
   mockThemeStore()
   mockTrackingModeStore()
-  mockContentStore()
+  mockTrackedOcids()
   mockRouteParams = undefined
   mockedUseSettingsNavigation.mockReturnValue({
     navigate,
@@ -180,8 +176,9 @@ beforeEach(() => {
   } as unknown as ReturnType<typeof useSettingsNavigation>)
   // 로스터도 기본은 "영원히 조회 중"케이스가 필요할 때 `deferredRoster` 로 갈아 세운다.
   mockedRoster.mockReturnValue(new Promise(() => {}))
-  mockLoadContentTracked.mockResolvedValue(undefined)
-  mockLoadBossTracked.mockResolvedValue(undefined)
+  mockPrefetchSchedules.mockResolvedValue(undefined)
+  mockReloadContentLocal.mockResolvedValue(undefined)
+  mockReloadBossLocal.mockResolvedValue(undefined)
   mockLoadProfitTracked.mockResolvedValue(undefined)
 })
 
@@ -321,16 +318,16 @@ describe('AppSettingsScreen', () => {
     expect(view.getByTestId('tracking-mode-modal-overlay')).toBeTruthy()
   })
 
-  it('스케줄 관리 방법을 바꾸면 컨텐츠·보스·수익 스토어를 순차로 다시 읽힌다', async () => {
+  it('스케줄 관리 방법을 바꾸면 스케줄 회차를 미리 받고 컨텐츠·보스·수익 스토어를 순차로 다시 읽힌다', async () => {
     const order: string[] = []
     let resolveContent: () => void = () => {}
-    mockLoadContentTracked.mockImplementation(() => {
+    mockReloadContentLocal.mockImplementation(() => {
       order.push('content')
       return new Promise<void>((resolve) => {
         resolveContent = resolve
       })
     })
-    mockLoadBossTracked.mockImplementation(() => {
+    mockReloadBossLocal.mockImplementation(() => {
       order.push('boss')
       return Promise.resolve()
     })
@@ -344,8 +341,9 @@ describe('AppSettingsScreen', () => {
     await press(view.getByText('수동'))
     await press(view.getByText('적용'))
 
-    // 컨텐츠가 끝나기 전에는 다음이 시작되지 않는다(게이트. `prehydrateTabStores` 와
-    // 같은 이유). 모달은 그 셋을 기다리지 않고 닫힌다.
+    // 컨텐츠가 끝나기 전에는 다음이 시작되지 않는다. 보스 수익은 스케줄 회차 뒤에 와야 방금 받은 캐시를
+    // 신선하다고 본다. 모달은 그 셋을 기다리지 않고 닫힌다.
+    expect(mockPrefetchSchedules).toHaveBeenCalled()
     expect(order).toEqual(['content'])
     expect(view.queryByTestId('tracking-mode-modal-overlay')).toBeNull()
 
@@ -360,7 +358,7 @@ describe('AppSettingsScreen: 캐릭터 관리', () => {
   // 파생·추정값이 아니라 저장된 목록의 길이다. **단위가 명 이 아니라 개** 인 것은 캐릭터가
   // 사람이 아니어서다.
   it('행 오른쪽에 추적 캐릭터 수 배지와 chevron 이 함께 있다', async () => {
-    mockContentStore({ trackedOcids: ['a', 'b', 'c'] })
+    mockTrackedOcids(['a', 'b', 'c'])
     const view = await renderOverlay(<AppSettingsScreen />)
 
     const row = rowOf(view, '캐릭터 관리')
@@ -370,14 +368,14 @@ describe('AppSettingsScreen: 캐릭터 관리', () => {
 
   // `null` 은 "0개"가 아니라 **"아직 안 읽었다"** 다. 모르는 사실을 단정하지 않는다.
   it('추적 목록이 null(미로드)이면 배지를 그리지 않는다', async () => {
-    mockContentStore({ trackedOcids: null })
+    mockTrackedOcids(null)
     const view = await renderOverlay(<AppSettingsScreen />)
 
     expect(textsIn(rowOf(view, '캐릭터 관리'))).toEqual(['캐릭터 관리'])
   })
 
   it('0개면 "0개" 배지를 그린다. 미로드와 다른 상태다', async () => {
-    mockContentStore({ trackedOcids: [] })
+    mockTrackedOcids([])
     const view = await renderOverlay(<AppSettingsScreen />)
 
     expect(textsIn(rowOf(view, '캐릭터 관리'))).toEqual(['캐릭터 관리', '0', '개'])

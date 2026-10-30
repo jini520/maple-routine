@@ -4,11 +4,14 @@
  * **이 화면에 걸린 ADR 이 스물하나다.** 대부분은 화면에 안 보이는 판단이라(캐시 우선 표시 · 실패의
  * 목적지 · 빈 상태의 판정 시점) 아래 주석이 그 자리를 지목한다.
  */
-import { useEffect } from 'react'
 import { Pressable, View } from 'react-native'
 
 import type { DailyContent, WeeklyContent } from '../../types'
 import { useContentSchedulerStore, type ContentCharacterView } from '../../features/content-scheduler/store'
+import { useContentSchedule } from '../../features/content-scheduler/use-content-schedule'
+import { queryKeys } from '../../features/query/keys'
+import { useResetBoundaryTick } from '../../features/query/reset-timer'
+import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useDataFreshness } from '../../features/refresh/freshness'
@@ -48,14 +51,10 @@ const CONTENT_TAB_LABELS: Record<(typeof CONTENT_TABS)[number], string> = {
 }
 
 export function ContentScreen(): React.JSX.Element {
+  // 스케줄은 캐시에서 온다. 마운트에 만료면 받고, 앱이 돌아오면 신선해도 받는다.
+  const { status, characters: storeCharacters, error, trackedOcids, refresh } = useContentSchedule()
   const {
-    status,
-    characters: storeCharacters,
-    error,
-    trackedOcids,
     manualTrackedByOcid,
-    loadTrackedOcids,
-    refresh,
     // 탭은 스토어 소유다. 이 화면이 언마운트돼도 살아남고, 관리 페이지가
     // 같은 값을 읽어 보던 탭 그대로 열린다.
     activeTab,
@@ -72,14 +71,12 @@ export function ContentScreen(): React.JSX.Element {
   const topSafeAreaPx = useTopSafeAreaPx()
   // 동기화 전체 실패는 인라인 문단이 아니라 토스트로 알린다. 지속 상태("n분 전")는
   // 새로고침 옆 표기가 이미 담당하고, 토스트에는 원인을 푸는 액션을 붙일 수 있다.
-  useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
+  useScheduleSyncErrorToast(error, { onRetry: () => void refresh() })
 
-  useEffect(() => {
-    // 진입 조회도 적는다. 게이트에 막혀 실제로 안 나간 회차에도 적히므로 이 값은
-    // 최대 그 게이트만큼 낙관적이다. 정확히 재려면 스토어 안쪽을 화면까지 끌어올려야 한다.
-    loadTrackedOcids()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // 이 화면은 탭이라 계속 살아 있고 마운트의 자동 조회는 한 번뿐이다. 돌아올 때 만료됐으면 다시 받는다.
+  useRefetchStaleOnFocus(queryKeys.scheduleRound())
+  // KST 자정을 넘기면 다시 그린다. 아래 기간 값이 렌더의 `new Date()` 로 정해진다.
+  useResetBoundaryTick()
 
   // `null` 은 "0명"이 아니라 **"저장소를 아직 안 읽었다"** 다. 둘을 `||` 로 묶으면
   // 콜드 스타트 첫 페인트가 아직 모르는 사실을 단정한다. 빈 상태는 읽고 확인한 뒤에만 그린다.
@@ -110,7 +107,7 @@ export function ContentScreen(): React.JSX.Element {
   // `CharacterUnavailableNotice` 가 서고 거기에 처방(캐릭터 관리로 이동)이 붙는다.
   const isSelectedUnavailable = selected?.error?.kind === 'characterUnavailable'
   useScheduleSyncErrorToast(isSelectedUnavailable ? null : (selected?.error ?? null), {
-    onRetry: () => refresh(trackedOcids ?? []),
+    onRetry: () => void refresh(),
   })
 
   // 판정은 `features/content-scheduler/displayed-contents` 가 갖는다. today 의 `남은 스케줄`이
@@ -228,7 +225,7 @@ export function ContentScreen(): React.JSX.Element {
         // 당김은 헤더 버튼과 **같은 재조회**를 부르고, 색만
         // 테마에서 넘긴다. `refreshing` 이 `status` 라서 헤더 버튼으로 시작한 재조회에도 플랫폼
         // 인디케이터가 뜬다. 그 대가는 ADR 이 적는다.
-        onRefresh={() => refresh(trackedOcids ?? [])}
+        onRefresh={refresh}
         header={
           // 헤더는 제목 줄 하나다. 레일도 탭도 로딩 카드도 콘텐츠로 내려갔다. `관리` 만
           // 남는 것은 그것이 **다른 페이지로 가는 것**이기 때문이다.

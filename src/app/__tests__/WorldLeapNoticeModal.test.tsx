@@ -1,15 +1,17 @@
 // 월드 리프 안내 모달. 갈린 것 셋이고 그 셋이 이 파일의 실질이다.
 //
 // 스토어를 모킹하지 않고 `setState` 로 몬다(이 패키지의 관례). 실물 리듀서를 쓰므로 `notice` 가
-// 실제로 그 값을 가질 수 있는지까지 함께 검사된다. 저장소를 만지는 `confirm` 과 스케줄러
-// 스토어의 `saveTrackedOcids` 만 갈아 끼운다.
+// 실제로 그 값을 가질 수 있는지까지 함께 검사된다. 저장소를 만지는 `confirm` 과 추적 목록
+// 저장 `saveTrackedCharacters` 만 갈아 끼운다.
 import { fireEvent } from '@testing-library/react-native'
 
 import { useWorldLeapStore } from '../../features/character-manage/world-leap-store'
-import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import type { WorldLeapNotice } from '../../features/character-manage/world-leap'
 
 import { renderOverlay } from '../../components/__tests__/render-atom'
+
+jest.mock('../../features/schedule-sync/save-tracked', () => ({ saveTrackedCharacters: jest.fn() }))
+const { saveTrackedCharacters } = jest.requireMock('../../features/schedule-sync/save-tracked') as { saveTrackedCharacters: jest.Mock }
 import { WorldLeapNoticeModal } from '../WorldLeapNoticeModal'
 
 const 옛것 = { ocid: 'old', name: '지내우시', world: '챌린저스2', worldKey: 'challengers_2', jobClass: '레테', level: 285 }
@@ -27,16 +29,14 @@ const 이미관리중: WorldLeapNotice = { ...짚음, kind: 'alreadyTracked' }
 
 let confirm: jest.Mock
 let dismiss: jest.Mock
-let saveTrackedOcids: jest.Mock
 let onOpenCharacterManage: jest.Mock
 
 beforeEach(() => {
   confirm = jest.fn(async () => ['new'])
   dismiss = jest.fn()
-  saveTrackedOcids = jest.fn(async () => {})
+  saveTrackedCharacters.mockReset().mockResolvedValue(undefined)
   onOpenCharacterManage = jest.fn()
   useWorldLeapStore.setState({ notice: null, confirm, dismiss })
-  useContentSchedulerStore.setState({ saveTrackedOcids })
 })
 
 const 그리기 = () =>
@@ -68,7 +68,7 @@ describe('목적지를 짚었을 때', () => {
     await Promise.resolve()
 
     expect(confirm).toHaveBeenCalled()
-    expect(saveTrackedOcids).toHaveBeenCalledWith(['new'])
+    expect(saveTrackedCharacters).toHaveBeenCalledWith(['new'])
   })
 })
 
@@ -95,7 +95,7 @@ describe('옮겨간 캐릭터를 이미 관리 중일 때', () => {
     await Promise.resolve()
 
     expect(confirm).toHaveBeenCalled()
-    expect(saveTrackedOcids).toHaveBeenCalledWith(['new'])
+    expect(saveTrackedCharacters).toHaveBeenCalledWith(['new'])
     expect(onOpenCharacterManage).not.toHaveBeenCalled()
   })
 })

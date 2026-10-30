@@ -74,7 +74,7 @@
 
 | 키 | 값 | 어댑터 | 메모 |
 |---|---|---|---|
-| `schedulerCache:{ocid}` | JSON `{ state, syncedAt, version: 4 }` | `scheduler-cache.ts` | 캐릭터의 마지막 스케줄 동기화 결과. `version` 이 다르면 없는 것으로 읽고 다음 동기화가 덮는다 |
+| `schedulerCache:{ocid}` | JSON `{ state, syncedAt, version: 4 }` | `scheduler-cache.ts` | 캐릭터의 마지막 스케줄 동기화 결과. `version` 이 다르면 없는 것으로 읽고 다음 동기화가 덮는다. 화면은 쿼리 캐시를 보고 이 키는 보스 수익 · 13일 창 · 캐릭터 관리가 읽는다. [[ADR-142]] 3단계에서 지운다 |
 | `characterBasicCache:{ocid}` | JSON `{ profile, cachedAt }` | `character-basic-cache.ts` | 캐릭터 기본 정보 캐시(5분) |
 | `characterBasicCache:index:{accountId}` | JSON ocid 배열 | `character-basic-cache.ts` | 계정마다 캐시가 있는 캐릭터 목록. 캐릭터 관리 후보 목록이 먼저 그릴 때 읽는다 |
 | `characterBasicCache:index` | JSON ocid 배열 | `character-basic-cache.ts` | 옛 키. 계정별 키로 옮기고 지운다 |

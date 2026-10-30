@@ -23,7 +23,9 @@ API 동기화와 진입 재조회는 [[ADR-021]], 실패를 알리는 방법은 
 | `app/content-scheduler/content-badges.tsx` | `quest_state` 배지 글자와 색, 주간 카드 대상 판정 |
 | `app/content-scheduler/content-completion.ts` | 완료 판정과 링 진행률. today 도 이 파일을 가져다 쓴다 |
 | `app/content-scheduler/ContentManageScreen.tsx` | 컨텐츠 관리 화면(`ContentManage`) |
-| `features/content-scheduler/store.ts` | 동기화 결과, 추적 캐릭터, 추적 목록, `activeTab` |
+| `features/content-scheduler/use-content-schedule.ts` · `views.ts` | 쿼리 캐시에서 캐릭터 뷰를 만드는 훅과 순수 함수. 자동 조회와 당김(`refresh`)도 여기서 낸다 |
+| `features/content-scheduler/store.ts` | 수동 추적 멤버십, `activeTab`. 넥슨에서 받은 값은 없다 |
+| `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` | 스케줄 회차 쿼리와 캐릭터 열쇠, 화면이 보는 스냅샷 훅([[ADR-142]]) |
 | `features/content-scheduler/displayed-contents.ts` | 모드에 따라 화면에 보일 항목을 고른다. today 의 남은 스케줄도 같은 함수를 쓴다 |
 | `features/tracking-mode/` | 추적 모드 스토어, 시드, 모드 설명 문구 |
 | `lib/scheduler/scheduler-merge.ts` | 응답 · 캐시 · 원장 병합 |
@@ -60,8 +62,8 @@ API 동기화와 진입 재조회는 [[ADR-021]], 실패를 알리는 방법은 
 
 - 탭은 스토어가 기억하고 있어서 다른 탭에 다녀와도 유지된다. 앱을 다시 켜면 일간이다.
 - 목록을 아래로 당기면 추적 캐릭터 전원을 다시 조회한다. 헤더에는 새로고침 버튼이 없다.
-- 화면에 들어올 때는 `loadTrackedOcids` 가 조회하는데, 이번 실행에서 이미 동기화했고 모든 캐릭터 캐시가 10분 안이면
-  조회하지 않는다([[ADR-021]]).
+- 화면에 들어올 때와 포커스가 올 때는 회차가 만료됐을 때만 조회하고, 앱이 배경에서 돌아오면 한 번 조회한다. 신선함은
+  받은 지 10분과 KST 자정으로 정한다([[ADR-142]] 결정 4 · 5).
 - 조회 중이어도 캐시가 있으면 캐시로 먼저 그린다. 캐시도 없으면 `불러오고 있어요` 로딩 카드를 그린다.
 
 ### 상태별 화면

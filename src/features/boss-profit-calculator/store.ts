@@ -15,6 +15,7 @@ import {
 } from '../../storage/boss-profit-calculator-records'
 import { displayedBosses } from '../boss-scheduler/displayed-bosses'
 import { partySizeKey, useBossSchedulerStore } from '../boss-scheduler/store'
+import { readBossCharacters } from '../boss-scheduler/views'
 import { useTrackingModeStore } from '../tracking-mode/store'
 import type { BossDifficulty } from '../../types'
 
@@ -61,7 +62,7 @@ export function bossWithPartySetting(ocid: string, bossKey: string, difficulty: 
 /** 보스 관리에 등록된 이 캐릭터의 주간 보스 · 난이도 · 파티 설정. 12개가 넘으면 몫이 큰 12개만 남긴다 */
 function bossesFromBossManage(ocid: string, now: Date): CalculatorBoss[] {
   const scheduler = useBossSchedulerStore.getState()
-  const character = scheduler.characters.find((one) => one.ocid === ocid)
+  const character = readBossCharacters().find((one) => one.ocid === ocid)
   if (character === undefined) return []
   const { mode } = useTrackingModeStore.getState()
   const seen = new Set<string>()
@@ -78,7 +79,7 @@ function bossesFromBossManage(ocid: string, now: Date): CalculatorBoss[] {
 /** 기록에 있는 캐릭터는 기록 값, 기록을 남긴 뒤에 추적을 시작한 캐릭터는 빈 상태. 기록은 남긴 그때의 계산이다 */
 function bossesOfRecord(record: BossProfitCalculatorRecord): Record<string, CalculatorBoss[]> {
   const byOcid: Record<string, CalculatorBoss[]> = {}
-  for (const character of useBossSchedulerStore.getState().characters) {
+  for (const character of readBossCharacters()) {
     byOcid[character.ocid] = record.characters.find((one) => one.ocid === character.ocid)?.bosses ?? []
   }
   return byOcid

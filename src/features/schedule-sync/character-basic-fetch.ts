@@ -1,10 +1,16 @@
 import type { NexonCredential } from '../../types/auth'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { fetchCharacterBasic } from '../../nexon/character'
-import { getCachedCharacterBasic, setCachedCharacterBasic } from '../../storage/character-basic-cache'
+import {
+  getCachedCharacterBasic,
+  setCachedCharacterBasic,
+  type CachedCharacterBasicEntry,
+} from '../../storage/character-basic-cache'
 import { saveCharacterProfile } from '../../storage/character-profiles'
 import { markScheduleProbeUnavailable } from '../../storage/schedule-probe-ledger'
 import type { CharacterBasicProfile } from '../../types'
+import { queryClient } from '../query/client'
+import { queryKeys } from '../query/keys'
 
 /**
  * `character/basic` 의 공유 통과 지점.
@@ -65,6 +71,10 @@ export interface FetchCharacterBasicOptions {
  * 모르면 넘기지 않는다. 그때는 캐시에 이미 있던 값을 그대로 유지한다. 아는 값을 `undefined`
  * 로 덮으면 화면에서 직업이 사라진다.
  */
+function putInQueryCache(ocid: string, entry: CachedCharacterBasicEntry): void {
+  queryClient.setQueryData(queryKeys.characterBasic(ocid), entry, { updatedAt: new Date(entry.cachedAt).getTime() })
+}
+
 export async function fetchCharacterBasicCached(
   credential: NexonCredential,
   accountId: string,
@@ -75,6 +85,7 @@ export async function fetchCharacterBasicCached(
 ): Promise<CharacterBasicProfile> {
   const cached = await getCachedCharacterBasic(ocid)
   if (cached !== null && options?.force !== true && isFresh(cached.cachedAt, now)) {
+    putInQueryCache(ocid, cached)
     return cached.profile
   }
 
@@ -89,7 +100,10 @@ export async function fetchCharacterBasicCached(
 
   // cachedAt 은 호출부가 이미 잡아둔 `now` 다(여기서 시계를 다시 읽지 않는다). 판정이 결정적이고,
   // 오차는 항상 TTL 이 짧아지는 보수적인 방향으로만 난다.
-  await setCachedCharacterBasic(accountId, ocid, { profile, cachedAt: now.toISOString() })
+  const entry: CachedCharacterBasicEntry = { profile, cachedAt: now.toISOString() }
+  await setCachedCharacterBasic(accountId, ocid, entry)
+  // 화면이 보는 것은 쿼리 캐시다. 여기가 앱 전체의 basic 통과 지점이라, 캐릭터 관리가 받은 레벨도 today 에 닿는다.
+  putInQueryCache(ocid, entry)
 
   // 지워지지 않는 스냅샷에도 같은 값을 남긴다. 위 캐시는 5분 TTL 이다. 이름이 사라지면 기록에서
   // 행을 만드는 자리가 그 ocid 를 건너뛰어 지운 적 없는 과거 수익이 화면에서 사라진다. 이 함수가 앱 전체의 basic 통과 지점이라 여기 한 줄이면

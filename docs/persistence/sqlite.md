@@ -71,6 +71,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 못 보낸 드롭. 평소에는 비어 있다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 줄은 전송이 보내지 않고 지운다([[ADR-099]] 결정 1) | `storage/server-sync-queue.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-018]] |
 | `game_data_sections` | `id`(uuid, `section` 은 UNIQUE) | 게임 데이터 사본의 칸 하나. 서버 응답의 그 칸 JSON 을 그대로 든다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
 | `game_data_meta` | `id`(uuid, `key` 는 UNIQUE) | 사본의 표식(계약 판 · ETag). 칸과 한 트랜잭션으로 쓰고, 있으면 다 받은 사본이다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
+| `query_cache` | `id`(uuid, `key` 는 UNIQUE) | TanStack Query 캐시의 사본. 넥슨에서 받은 쿼리(스케줄 · 캐릭터 기본 정보 · 회차)만 키 하나의 JSON 으로 든다 | `storage/query-cache.ts` | 남긴다 | [[ADR-142]] |
 
 ### 칸
 
@@ -98,6 +99,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `server_sync_queue` | `id` NN · `record_type` NN · `record_id` NN UNIQUE · `attempts` NN(기본 0) · `last_error` · `created_at` NN |
 | `game_data_sections` | `id` NN · `section` NN UNIQUE · `body` NN |
 | `game_data_meta` | `id` NN · `key` NN UNIQUE · `value` NN |
+| `query_cache` | `id` NN · `key` NN UNIQUE · `value` NN |
 
 분배 조건은 세 표가 같이 쓰는 여섯 칸이다. `split_mode`(`even` · `ratio`) · `party_size` · `my_share` · `shares_total` ·
 `split_fee_percent` · `split_fee_auto`. 정의는 `boss-tables.ts` 한 곳에 있다. 이름은 저장하지 않는다. 보스 · 아이템 · 월드

@@ -1,27 +1,30 @@
 /**
- * 탭 화면 스토어를 부팅 때 미리 하이드레이션하는 함수.
+ * 탭 화면이 그릴 것을 부팅 때 미리 받는 함수.
  *
- * 안 하면 탭 첫 진입이 저장소 읽기를 사용자가 보는 앞에서 치른다(실기기에서 목록보다 먼저 로딩
- * 카드가 한 프레임 스쳤다). 스플래시 최소 표시 시간 덕에 사용자가 탭을 누를 무렵엔 세 스토어가
- * 이미 메모리에 있고 첫 페인트가 곧 목록이다.
+ * 안 하면 탭 첫 진입이 조회를 사용자가 보는 앞에서 치른다. 스플래시 최소 표시 시간 덕에 사용자가 탭을 누를 무렵엔
+ * 회차가 이미 돌았고 첫 페인트가 곧 목록이다.
  *
- * ⚠️ **순차다. 병렬로 바꾸지 말 것.** 게이트가 캐시 신선도를 함께 보는데 그 값은 앞 회차가 캐시를
- * 다 쓴 뒤에야 참이 된다. 셋을 동시에 띄우면 셋 다 옛 `syncedAt` 을 보고 게이트를 통과해 같은
- * 응답을 세 번 받는다. 순서는 사용자가 실제로 밟는 순서다.
+ * 저장된 쿼리 캐시가 다 올라온 뒤에 돈다. 그 전에 회차를 돌리면 복원이 그 결과보다 옛 값을 들고 와도 덮지는 않지만,
+ * 회차가 옛 캐시를 못 보고 빈 캐시로 판단한다.
+ *
+ * 보스 수익은 아직 자기 스토어가 받는다. 스케줄 회차 뒤에 돌아야 그쪽 게이트가 방금 받은 캐시를 신선하다고 본다.
  */
-const LOADERS: ReadonlyArray<() => Promise<{ loadTrackedOcids(): Promise<void> }>> = [
-  async () => (await import('./content-scheduler/store')).useContentSchedulerStore.getState(),
-  async () => (await import('./boss-scheduler/store')).useBossSchedulerStore.getState(),
-  async () => (await import('./boss-profit/store')).useBossProfitStore.getState(),
-]
+import { useCharacterSelectionStore } from './character-selection/store'
+import { whenQueryCacheRestored } from './query/persist'
+import { prefetchSchedules } from './schedule-sync/schedule-query'
 
-// 실패해도 던지지 않는다. 이건 예열이지 부팅 절차가 아니다. 어떤 스토어가 넘어져도 나머지는
-// 계속 예열하고, 사용자가 그 탭에 들어가면 화면이 평소대로 자기 몫을 다시 부른다(그때 실패하면
-// 그 화면의 에러 경로가 정상적으로 돈다).
+// 실패해도 던지지 않는다. 이건 예열이지 부팅 절차가 아니다. 어느 단계가 넘어져도 나머지는
+// 계속 예열하고, 사용자가 그 탭에 들어가면 화면이 평소대로 자기 몫을 다시 부른다.
 export async function prehydrateTabStores(): Promise<void> {
-  for (const load of LOADERS) {
+  await whenQueryCacheRestored()
+  const steps: ReadonlyArray<() => Promise<void>> = [
+    () => useCharacterSelectionStore.getState().hydrate(),
+    prefetchSchedules,
+    async () => (await import('./boss-profit/store')).useBossProfitStore.getState().loadTrackedOcids(),
+  ]
+  for (const step of steps) {
     try {
-      await (await load()).loadTrackedOcids()
+      await step()
     } catch {
       // 예열 실패는 조용히 넘긴다. 화면 진입이 같은 경로를 다시 밟는다.
     }
