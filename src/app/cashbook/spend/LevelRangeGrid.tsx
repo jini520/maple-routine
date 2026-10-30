@@ -4,11 +4,15 @@
  * 위의 탭 둘이 지금 고르는 쪽을 보이고, 칸을 누르면 그 쪽 값이 바뀐다. 강화 전을 고르면 탭이 강화 후로 넘어간다.
  * 한 번에 한 값만 바뀌어야 어느 쪽이 바뀌는지 헷갈리지 않는다. 고른 범위는 끊김 없는 띠로 잇고 양 끝은 주색 원이다.
  */
-import { Pressable, View } from 'react-native'
+import { useEffect } from 'react'
+import { Pressable, StyleSheet, View } from 'react-native'
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated'
 
 import { Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
+import { boxShadowOf } from '../../../lib/shadow'
 import { selectionFeedback } from '../../../native/haptics'
+import { useThemeAppearance } from '../../../theme/context'
 import { canPick, gridColumns, pickLevel, type LevelRange, type RangeEnd } from './level-range'
 
 /** 고른 탭의 그림자. 세그먼트의 고른 칸과 같다. 트랙에서 떠 보이게 하는 몫이다. */
@@ -19,6 +23,43 @@ const TAB_SHADOW = {
   shadowRadius: 3,
   elevation: 2,
 } as const
+
+/** 숨쉬는 그림자가 내려가는 바닥과 한 방향 시간(ms). 왕복이라 한 주기는 두 배다. 모션 줄이기를 켜면 바닥에 멈춘다. */
+const BREATH_DIM = 0.25
+const BREATH_MS = 1100
+
+const GlowBox = Animated.createAnimatedComponent(View)
+
+/**
+ * 고른 탭 뒤의 숨쉬는 그림자. 테마 주색으로 약하고 흐리게 번진다. 지금 어느 쪽을 고르는지 눈에 띄게 하는 몫이다.
+ *
+ * `className` 을 안 쓴다. 애니메이션 상자에 정적 스타일을 함께 주면 NativeWind 가 정적 쪽을 버린다.
+ */
+function BreathingGlow(): React.JSX.Element {
+  const { definition } = useThemeAppearance()
+  const opacity = useSharedValue(1)
+  const reduceMotion = useReducedMotion()
+
+  useEffect(() => {
+    if (reduceMotion) {
+      opacity.value = 1
+      return
+    }
+    opacity.value = withRepeat(withTiming(BREATH_DIM, { duration: BREATH_MS }), -1, true)
+  }, [reduceMotion, opacity])
+
+  const breath = useAnimatedStyle(() => ({ opacity: opacity.value }))
+  return (
+    <GlowBox
+      pointerEvents="none"
+      style={[
+        StyleSheet.absoluteFill,
+        { borderRadius: 9, boxShadow: boxShadowOf(definition.primary, { opacity: 0.55, radius: 6, y: 0 }) },
+        breath,
+      ]}
+    />
+  )
+}
 
 /** 칸 높이와 원 지름. 원이 칸보다 6 작아 줄 사이가 붙어 보이지 않는다. */
 const CELL_HEIGHT = 36
@@ -55,6 +96,7 @@ export function LevelRangeGrid(props: {
         className={`flex-1 flex-row items-baseline justify-center gap-1.5 rounded-[9px] px-2.5 py-1.5 ${on ? 'bg-control-thumb' : ''}`}
         style={on ? TAB_SHADOW : undefined}
       >
+        {on && <BreathingGlow />}
         <Text className={`text-11 font-semibold ${on ? 'text-primary-ink' : 'text-text-muted'}`}>{caption}</Text>
         <Text className="text-15 font-bold text-text" style={TABULAR_NUMS}>
           {disabled ? '-' : `Lv.${level}`}
@@ -67,7 +109,7 @@ export function LevelRangeGrid(props: {
     <View className={`gap-2.5 ${disabled ? 'opacity-40' : ''}`}>
       <View role="tablist" className="flex-row items-center gap-0.5 rounded-xl bg-control-track p-[3px]">
         {tab('from', '강화 전', range.from)}
-        <Text className="text-text-disabled">→</Text>
+        <Text className="mx-2 text-text-disabled">→</Text>
         {tab('to', '강화 후', range.to)}
       </View>
 
