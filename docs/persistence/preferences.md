@@ -30,7 +30,7 @@
 |---|---|---|---|---|
 | `authMethods` | JSON. 넥슨 로그인 0 ~ 1개 + 이름 붙은 API 키 목록. 수단마다 `type`(`login` · `key`)과 넥슨 계정 id(`id`, uuid)를 든다 | `api-key.ts` | 남긴다 | 저장된 인증 수단 전부. `kind` 와 id 가 없는 옛 칸은 읽을 때 id 를 붙여 한 번 다시 적는다([[ADR-098]] 결정 5 · 7) |
 | `apiKey` | 문자열 | `api-key.ts` | 남긴다 | 옛 설치본의 API 키 하나. `authMethods` 가 없을 때만 읽어 목록에 넣고, 읽은 뒤에도 지우지 않는다. 지우는 곳은 연결 해제뿐이다 |
-| `selectedAccountId` | 문자열 | `api-key.ts` · `character-basic-cache.ts` | 남긴다 | 옛 키. 아무도 쓰지 않고, 연결 해제가 지운다 |
+| `selectedAccountId` | 문자열 | `api-key.ts` | 남긴다 | 옛 키. 아무도 쓰지 않고, 연결 해제가 지운다 |
 | `theme` | 테마 이름(`job-themes.json` 의 키) | `theme.ts` | 남긴다 | |
 | `trackingMode` | `'auto'` · `'manual'` | `tracking-mode.ts` | 남긴다 | 없으면 `null`(아직 안 골랐다) |
 | `dropEffect` | `'on'` · `'off'` | `drop-effect.ts` | 남긴다 | 없으면 켜짐 |
@@ -45,7 +45,7 @@
 | `partyScheduleView` | `'list'` · `'board'` | `party-schedule-view.ts` | 남긴다 | 파티 스케줄 화면에서 마지막으로 고른 보기. 없으면 목록 |
 | `bossProfitCalculatorRecords` | JSON `BossProfitCalculatorRecord[]` | `boss-profit-calculator-records.ts` | 남긴다 | 주간 보스 수익 계산기에서 저장한 기록. 금액 없이 보스 · 난이도 · 파티 값만 남긴다 |
 | `notificationLedger` | JSON `{ id, kind, fireAt, title, body }[]` | `notification-ledger.ts` | 남긴다 | 지금 예약해 둔 로컬 알림. OS 의 예약 목록은 읽을 수 없어서 따로 적는다 |
-| `notices` | JSON `Notice[]` | `notices.ts` | 남긴다 | 공지 분류마다 마지막 서버 응답의 사본. 서버가 다시 준다 |
+| `notices` | JSON `Notice[]` | `legacy-notice-copy.ts` | 켤 때 지운다 | 1.0.12 까지의 키. 공지는 이제 쿼리 `notices(kind)` 가 SQLite `query_cache` 에 든다([[ADR-142]] 결정 7). 안 읽고 예열의 끝에서 지운다 |
 | `dismissedNotices` | JSON 공지 id 배열(최근 50) | `notice-banner.ts` | 남긴다 | today 배너에서 닫은 공지. 닫았다는 사실은 기기에만 있다 |
 | `dismissedSettlement` | ISO 시각 | `settlement-banner.ts` | 남긴다 | 닫은 결산 안내의 시작 시각. 다음 결산은 시각이 달라 다시 보인다 |
 | `dismissedManualCompletion` | 주간 기간 키(목요일 `YYYY-MM-DD`) | `manual-completion-banner.ts` | 남긴다 | 닫은 직접 완료 안내의 주 |
@@ -73,10 +73,9 @@
 
 | 키 | 값 | 어댑터 | 메모 |
 |---|---|---|---|
-| `schedulerCache:{ocid}` | JSON `{ state, syncedAt, version: 4 }` | `scheduler-cache.ts` | 캐릭터의 마지막 스케줄 동기화 결과. `version` 이 다르면 없는 것으로 읽고 다음 동기화가 덮는다. 화면은 쿼리 캐시를 보고 이 키는 보스 수익 · 13일 창 · 캐릭터 관리가 읽는다. [[ADR-142]] 3단계에서 지운다 |
-| `characterBasicCache:{ocid}` | JSON `{ profile, cachedAt }` | `character-basic-cache.ts` | 캐릭터 기본 정보 캐시(5분) |
-| `characterBasicCache:index:{accountId}` | JSON ocid 배열 | `character-basic-cache.ts` | 계정마다 캐시가 있는 캐릭터 목록. 캐릭터 관리 후보 목록이 먼저 그릴 때 읽는다 |
-| `characterBasicCache:index` | JSON ocid 배열 | `character-basic-cache.ts` | 옛 키. 계정별 키로 옮기고 지운다 |
+| `schedulerCache:{ocid}` | JSON `{ state, syncedAt, version: 4 }` | `scheduler-cache.ts` | 1.0.12 까지의 스케줄 캐시. 업데이트 뒤 첫 실행이 쿼리 캐시 `schedule(ocid)` 에 없는 캐릭터만 옮긴 뒤 지운다(`seedScheduleQueriesFromLegacyCache`, [[ADR-142]] 결정 7). `version` 이 다르면 옮기지 않는다 |
+| `characterBasicCache:{ocid}` | JSON `{ profile, cachedAt }` | `character-basic-cache.ts` | 1.0.12 까지의 기본 정보 캐시. 위와 같이 쿼리 캐시 `characterBasic(ocid)` 로 옮긴 뒤 지운다 |
+| `characterBasicCache:index:{accountId}` · `characterBasicCache:index` | JSON ocid 배열 | `character-basic-cache.ts` | 1.0.12 까지의 계정별 인덱스와 그 전의 전역 인덱스. 옮기지 않고 첫 실행이 지운다. 캐릭터 관리의 첫 후보 목록은 쿼리 캐시에 든 `characterBasic` 을 계정 소속 기록으로 걸러 센다 |
 | `scheduleProbe:{ocid}` | JSON `{ unavailable?, dates, version: 2 }` | `schedule-probe-ledger.ts` | 캐릭터 · 날짜별 조회 기록. 조회할 수 없는 캐릭터 표시(`unavailable`)도 여기 있다 |
 | `mesoRateCache:{ocid}` | 숫자 문자열(%) | `meso-rate-cache.ts` | 캐릭터의 메소 획득량 마지막 성공값. 만료가 없다 |
 | `trackedCharacters` | JSON ocid 배열 | `character-selection.ts` | 추적 캐릭터. 배열 순서가 표시 순서다. `null`(설정 전)과 `[]`(모두 해제)은 다르다 |

@@ -27,11 +27,14 @@
 | `features/boss-profit/drop-history-query.ts` | 드롭 기록 쿼리 `dropHistory()`. 최고가 · 미입력 위젯이 읽는다 |
 | `features/refresh/pull.ts` · `freshness.ts` | 당김 하나(`pullRefresh`) · 갱신 시각(`useRealtimeFetchedAt`) |
 | `app/SettlementBanner.tsx` | 결산 안내 줄. 가계부 · 통계도 같이 쓴다 |
-| `features/settlement/store.ts` · `banner-text.ts` · `faq.ts` | 결산 여부 · 안내 문구 · FAQ |
+| `features/settlement/query.ts` | 결산 쿼리 `settlement()`. 줄을 세울지 정하는 `useSettlementBanner`, 회차가 함께 묻는 `refreshSettlement`. 앱 복귀마다 다시 받는다 |
+| `features/settlement/store.ts` · `banner-text.ts` · `faq.ts` | 닫은 결산의 시작 시각 스토어(`useSettlementDismissal`) · 안내 문구 · FAQ |
 | `storage/settlement-banner.ts` | 닫은 결산의 시작 시각(Preferences `dismissedSettlement`) |
 | `server/settlement.ts` | `/v1/settlement` 조회 |
-| `app/today/NoticeBanner.tsx` | 공지 배너([[ADR-057]]) |
+| `app/today/NoticeBanner.tsx` | 공지 배너([[ADR-057]]). `features/notice/notice-query.ts` 의 `useNoticeBanner` 가 앱 공지 쿼리에서 하나를 고른다 |
 | `app/today/ManualCompletionBanner.tsx` | 직접 완료 안내 줄([[ADR-037]]) |
+| `features/manual-completion/query.ts` | 직접 완료를 연 보스 쿼리 `manualCompletion()`. 줄을 세울지 정하는 `useManualCompletionBanner`. 포커스 · 복귀마다 다시 받는다 |
+| `features/party-appointments/query.ts` | 파티 약속 쿼리 `partyAppointments()`. 다음 파티 스케줄 위젯이 `usePartyAppointments` 로 읽는다 |
 | `app/today/CharacterManageButton.tsx` · `header-portrait-motion.ts` | 제목 줄 오른쪽의 캐릭터 관리 버튼([[ADR-029]]) |
 
 ## 화면 구성
@@ -84,7 +87,7 @@ WidgetGrid            px-4 pt-2
 | `quick-links` | 사용자가 고른 화면으로 가는 칸. 한 줄 5칸 · 두 줄 10칸, 원 안의 아이콘과 9px 짧은 이름. 제목 줄의 `편집` 이 편집 시트를 연다 | 4 | 칸마다 그 화면 | 빠른 이동 스토어 |
 | `reset-countdown` | 일일 · 주간 초기화까지 남은 시간. 일일은 초까지 1초마다 | 2 | 없음 | 뷰모델의 `resets` |
 | `crystal-limit` | 첫 월드의 링(반시계)과 `N개 남음`, 나머지 월드는 한 줄 | 2 | 보스 수익 탭 | 쿼리 `bossProfitPeriod('weekly', 이번 주)` |
-| `next-party-schedule` | 시작 전인 가장 가까운 파티 회차 하나. 캐릭터마다 칸에 닉네임과 보스 줄. 회차가 없으면 맨 아래 줄에서 `매주 반복` · `한 번만` 등록 칸 | 4 | 회차 상세, 또는 고른 갈래의 새 스케줄 시트 | 파티 스케줄 스토어 |
+| `next-party-schedule` | 시작 전인 가장 가까운 파티 회차 하나. 캐릭터마다 칸에 닉네임과 보스 줄. 회차가 없으면 맨 아래 줄에서 `매주 반복` · `한 번만` 등록 칸 | 4 | 회차 상세, 또는 고른 갈래의 새 스케줄 시트 | 쿼리 `partyAppointments()` |
 | `shared-contents` | 몬스터파크 · 메이플 유니온 · 에픽 던전의 공유 진행 | 4 | 없음(`?` 팝오버만) | 컨텐츠 스케줄러 스토어 |
 | `remaining-schedule` | 캐릭터별 남은 퀘스트 · 보스. 일간 · 주간 · 월간 탭 | 4 | 없음(행마다 펼침) | 컨텐츠 · 보스 스케줄러 스토어 |
 | `weekly-income` | 이번 주 순 수익 · 수익 · 지출(세그먼트), 반원 도넛과 갈래, 캐릭터 상위 셋. 캐릭터 줄을 누르면 갈래별 금액 팝오버 | 4 | 없음 | 쿼리 `ledgerDays(이번 주)` 와 통계의 집계 함수 |
@@ -135,10 +138,11 @@ WidgetGrid            px-4 pt-2
 | 언제 | 무엇을 |
 |---|---|
 | 마운트 · 포커스 | 스케줄 회차(만료됐을 때만, [[ADR-142]] 결정 5) |
-| 앱 복귀 | 스케줄 회차(신선해도 한 번) |
-| 포커스 | 직접 완료 · 공지 배너(기기) · 파티 스케줄 |
-| 기록이 바뀔 때 | 이번 주 가계부 줄(`ledgerDays`) · 이번 주 보스 수익(`bossProfitPeriod`) · 드롭 기록(`dropHistory`)은 표의 판이 오르면 무효화되어 다시 읽는다([[ADR-142]] 결정 6) |
-| 당김 | `pullRefresh`(스케줄 회차 → 13일 창 → 오늘 강화) · 공지 배너(서버). 쓴 기록은 판을 올려 위젯이 스스로 바뀐다. 대표의 EXP · 레벨은 회차가 캐시에 넣는 그 자리에서 바뀐다 |
+| 앱 복귀 | 스케줄 회차(신선해도 한 번) · 결산 · 열어 둔 직접 완료 · 앱 공지(서버 쿼리라 신선해도 받는다) |
+| 포커스 | 열어 둔 직접 완료(`manualCompletion()`) · 앱 공지(`notices('app')`). 둘은 `staleTime` 이 0 이라 포커스마다 받는다 |
+| 기록이 바뀔 때 | 이번 주 가계부 줄(`ledgerDays`) · 이번 주 보스 수익(`bossProfitPeriod`) · 드롭 기록(`dropHistory`) · 직접 적은 완료(`manualCompleted`)는 표의 판이 오르면 무효화되어 다시 읽는다([[ADR-142]] 결정 6) |
+| 당김 | `pullRefresh`(스케줄 회차 → 13일 창 → 오늘 강화) · 앱 공지(`refreshNoticeKinds(['app'])`). 쓴 기록은 판을 올려 위젯이 스스로 바뀐다. 대표의 EXP · 레벨은 회차가 캐시에 넣는 그 자리에서 바뀐다 |
+| 파티 약속을 저장할 때 | 저장(`savePartyAppointments`)이 쿼리 캐시를 덮는다. 기기에만 있는 값이라 다시 읽을 계기는 없다 |
 | 다음 KST 자정 | 공용 타이머(`features/query/reset-timer.ts`)가 넥슨 쿼리를 무효화하고 화면을 다시 렌더한다. 주가 바뀌면 이번 주 가계부 줄을 새 주 열쇠로 읽는다 |
 
 캐릭터 설정을 마치고 처음 들어와 캐시가 하나도 없는 동안에는, 동기화가 400ms 넘게 걸리면
@@ -147,7 +151,8 @@ WidgetGrid            px-4 pt-2
 ## 결산 안내 줄
 
 넥슨이 스케줄러 기록을 결산하는 동안 머리글 바로 아래에 띠 한 줄이 보인다. 결산 중인지는 서버가 정하고,
-스케줄러 데이터를 갱신할 때 함께 묻는다.
+스케줄러 데이터를 갱신할 때 함께 묻는다(`refreshSettlement`). 앱 복귀에도 다시 묻는다(`settlement()` 쿼리,
+[[ADR-142]] 결정 5). 새벽 결산 중 배경에 두었다가 돌아오면 다음 회차를 기다리지 않고 줄이 걷힌다.
 
 ```
 스케줄러 데이터를 결산 중입니다.

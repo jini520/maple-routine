@@ -27,10 +27,13 @@
 
 그보다 먼저 `index.ts` 의 `loadGameData()` 가 SQLite 의 게임 데이터 사본을 읽어 표를 세운다. 사본이 없으면 잠금 화면 뒤에서 받고,
 위의 복원은 다 받은 뒤에 마운트되는 `ReadyShell` 에서 돈다(테마는 잠금 화면도 그려야 해서 먼저 돈다). 쿼리 캐시는
-`QueryCacheProvider` 가 SQLite `query_cache` 에서 올리고, 그 전에는 화면의 쿼리가 기다린다. 다 올리면 옛 Preferences
-캐시(`schedulerCache:{ocid}` · `characterBasicCache:{ocid}`)를 쿼리에 없는 캐릭터만 옮기고 회차를 만료로 표시한다
-([[ADR-142]] 결정 7). 앱이 준비된 뒤 `prehydrate` 가 그 복원을 기다렸다가 스케줄 회차와 보스 수익 이번 주 쿼리를 차례로
-예열한다([[ADR-027]]). 그 밖의 값은 화면이 처음 열릴 때 그 기능의 스토어가 읽는다.
+`QueryCacheProvider` 가 SQLite `query_cache`(스케줄 · 캐릭터 기본 정보 · 회차 · 공지 다섯 분류)에서 올리고, 그 전에는
+화면의 쿼리가 기다린다. 다 올리면 1.0.12 까지의 Preferences 캐시(`schedulerCache:{ocid}` · `characterBasicCache:{ocid}`)를
+쿼리에 없는 캐릭터만 옮긴 뒤 그 키와 계정별 인덱스를 지우고, 회차를 만료로 표시한다(`seedScheduleQueriesFromLegacyCache`,
+[[ADR-142]] 결정 7). 앱이 준비된 뒤 `prehydrate` 가 그 복원을 기다렸다가 스케줄 회차와 보스 수익 이번 주 쿼리를 차례로
+예열한다([[ADR-027]]). 그 밖의 값은 화면이 처음 열릴 때 그 기능의 스토어가 읽는다. 결산 · 직접 완료 · 공지 배너를
+닫은 기록은 그 줄을 그리는 훅이 처음 돌 때 한 번 읽는다(`useSettlementDismissal` · `useManualCompletionDismissal` ·
+`useNoticeDismissal` 의 `restore`).
 
 ## 삭제: 연결 해제와 데이터 삭제
 

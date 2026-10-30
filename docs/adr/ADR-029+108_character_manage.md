@@ -53,8 +53,8 @@ push 한다. 두 스케줄러의 헤더에는 캐릭터 관리 버튼이 없다.
 - 1줄은 월드 엠블럼과 이름, 2줄은 `Lv.294 아크메이지(썬, 콜)` 처럼 레벨과 직업이다. 카드가 가로로 넓어서
   직업도 함께 적을 수 있다.
 - 직업은 `character/list` 의 `jobClass` 에서 온다. 그 응답은 어차피 받으므로 조회가 늘지 않는다. 캐시에서
-  그리는 위 목록을 위해 `character-basic-cache` 에도 직업을 함께 저장한다. 아래 후보 목록
-  (`getCharacterPickerRoster`)도 같은 값을 싣는다. 직업을 모르면 그 부분을 비운다.
+  그리는 위 목록을 위해 쿼리 캐시의 `characterBasic(ocid)` 에도 직업을 함께 넣는다(`fetchCharacterBasicCached` 의
+  `jobClass` 인자). 아래 후보 목록(`getCharacterPickerRoster`)도 같은 값을 싣는다. 직업을 모르면 그 부분을 비운다.
 - 조회 불가 캐릭터는 2줄이 `조회할 수 없는 캐릭터` 로 바뀐다.
 - 그림을 못 가져오면 남색 그라데이션 원 위에 흰 실루엣(`UnknownCharacterFace`)을 그린다. 드롭다운의 대표
   얼굴도 같은 그림을 쓴다.
@@ -128,7 +128,10 @@ RN 에는 `<select>` 가 없어서 드롭다운(`AccountSelect`)을 직접 만�
 - 목록은 `Modal transparent` 안에서 트리거의 `measureInWindow()` 좌표에 붙여 띄운다. 화면 아래로 넘치면
   위로 연다. 뒤를 어둡게 하지 않는다. 고르는 동안에도 아래 후보 목록이 보여야 하기 때문이다. 바깥을
   누르거나 안드로이드 뒤로가기를 누르면 닫힌다. 고르는 동안 저장되는 것이 없어 닫아도 잃을 것이 없다.
-- 계정을 오갈 때마다 `character/list` 를 다시 부르지 않도록, 성공한 계정의 후보는 5분
+- `character/list` 는 화면에 들어올 때 한 번만 받는다. 계정 목록(`useAccountRosters`)과 후보 목록
+  (`resolveRegisteredCharacters`)이 같은 `characterList` 쿼리를 5분 안에 나눠 쓴다(`fetchCharacterListCached`,
+  [[ADR-142]] 결정 8). 전에는 둘이 각자 불러 들어올 때마다 두 번 나갔다. `다시 시도` 는 5분 안이어도 다시 받는다.
+- 계정을 오갈 때마다 후보를 다시 확인하지 않도록, 성공한 계정의 후보(`character/basic` 과 자격 판정)는 5분
   (`CHARACTER_BASIC_TTL_MS`) 동안 다시 조회하지 않는다. 실패한 계정은 기억하지 않고, `다시 시도` 는 이
   5분과 상관없이 다시 조회한다. 이 기억은 화면을 나가면 사라진다. 화면에는 이 사실을 표시하지 않는다.
 - 그 계정의 후보가 0개면 그 사실을 알리고, 다른 계정은 드롭다운으로 고르게 한다. 고를 수 있는 계정이
@@ -137,8 +140,9 @@ RN 에는 `<select>` 가 없어서 드롭다운(`AccountSelect`)을 직접 만�
 
 ### 결정 7. 위 목록은 캐시와 이미 받은 후보로 그리고, 새로 조회하지 않는다
 
-위 목록은 `character-basic-cache` 로 그린다. 캐시가 비어 있으면 지금까지 연 계정의 후보 응답으로 빈 곳을
-채운다. 두 값이 다르면 캐시를 쓴다. 후보를 조회하면 그 결과가 캐시에 저장되므로 보통은 같은 값이다.
+위 목록은 쿼리 캐시의 `characterBasic(ocid)` 으로 그린다(`useKnownProfiles` 가 `readCharacterBasic` 으로 읽는다).
+캐시가 비어 있으면 지금까지 연 계정의 후보 응답으로 빈 곳을 채운다. 두 값이 다르면 캐시를 쓴다. 후보를 조회하면 그
+결과가 캐시에 들어가므로 보통은 같은 값이다.
 
 - 캐시에 없는 캐릭터는 결과에 넣지 않고 아직 모르는 상태로 둔다. 예전에는 없다는 결과를 기억해 버려서,
   처음 설치한 직후 고른 캐릭터의 카드가 이름까지 통째로 비어 있었다. 나중에 캐시가 차면 그때 채워진다.
@@ -269,7 +273,8 @@ today 에서 캐릭터 관리로 가려면 설정 안쪽까지 들어가야 했�
 | `app/settings/__tests__/SettingsScreen.test.tsx` | 결정 1: `openPicker` 로 들어오면 캐릭터 관리를 push 하고 파라미터를 지우는지 본다 |
 | `app/settings/__tests__/SettingsCharactersScreen.test.tsx` | 결정 2: 위는 계정을 넘고 아래는 한 계정인지, 대기 · 실패가 아래에만 그려지는지 본다. 결정 3: 고르면 위 끝에 붙고 빼면 제 계정으로 돌아가는지, 조회 불가는 빼면 사라지는지 본다. 결정 4: 별 세 상태를 본다. 결정 5: 핸들이 위에만 있고, 끝 행에는 갈 수 없는 쪽 액션이 없고, 바꾼 순서대로 저장되는지 본다. 결정 6: 5분 안에 다시 열면 조회하지 않고, 실패는 기억하지 않고, `다시 시도` 는 다시 조회하는지, 계정 순서와 못 고르는 계정, 401 처리를 본다. 결정 7: 캐시가 비어도 위 목록이 채워지는지 본다. 결정 8 · 9: 저장 버튼 조건, 목록 · 대표 · 재로드의 순서, 진행률 모달을 본다. 결정 11: 저장이 선택 스토어의 대표를 바꾸는지 본다 |
 | `hooks/__tests__/useSelectionDraft.spec.tsx` | 결정 12: 손대기 전과 뒤에 저장본을 어떻게 다루는지 본다. 결정 3 · 4 · 5 · 8: 끝에 붙이기, 빼기, `moveOcid` 의 순서, 저장 버튼 조건, 대표 세 상태, 비운 선택을 받는지, 같은 값이면 배열 참조가 그대로인지 본다 |
-| `hooks/__tests__/useKnownProfiles.spec.tsx` · `useKnownProfiles-cache-index.spec.tsx` | 결정 7: 캐시가 이기는지, 캐시가 모르면 후보가 채우는지, 모르는 것을 기억하지 않는지, 같은 ocid 를 다시 읽지 않는지, 원장이 실패해도 조회 불가로 몰지 않는지 본다 |
+| `hooks/__tests__/useKnownProfiles.spec.tsx` | 결정 7: 캐시가 이기는지, 캐시가 모르면 후보가 채우는지, 모르는 것을 기억하지 않는지, 같은 ocid 를 다시 읽지 않는지, 원장이 실패해도 조회 불가로 몰지 않는지 본다 |
+| `features/mvp-grade/__tests__/character-list.spec.ts` | 결정 6: 5분 안의 두 호출이 `character/list` 를 한 번만 부르고, 다시 시도는 안에서도 받는지 본다 |
 | `features/character-manage/__tests__/derivations.spec.ts` | 결정 2 · 6: 월드 집계(많은 순 둘), 계정 대표와 계정 순서, 위 목록 뷰가 모르는 값을 지어내지 않는지, 대표 판정 둘이 서로 다른 답을 내는지 본다 |
 | `features/character-manage/__tests__/grid-split.spec.ts` | 결정 3: 구분자 앞이 고른 것인지, 구분자가 없으면 아무것도 바꾸지 않는지 본다 |
 | `components/organisms/CharacterManage/__tests__/CharacterLayerGrid.test.tsx` | 결정 5: 끄는 동안 촉각이 나는 때를 본다. 결정 13: 행 감싸개가 카드 안쪽 여백만 두고 카드색을 칠하지 않는지 본다 |

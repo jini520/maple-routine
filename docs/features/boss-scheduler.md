@@ -20,8 +20,9 @@
 | `app/boss-scheduler/BossManageScreen.tsx` | 보스 관리 화면 |
 | `features/boss-scheduler/displayed-bosses.ts` | 표시할 보스 목록, 섹션 순서, 마감 판정. today 남은 스케줄도 이 파일을 쓴다 |
 | `features/boss-scheduler/use-boss-schedule.ts` · `views.ts` | 쿼리 캐시에서 캐릭터 뷰를 만드는 훅과 순수 함수. 계산기는 `readBossCharacters` 로 렌더 밖에서 읽는다 |
-| `features/boss-scheduler/store.ts` | 파티 설정, 수동 추적 멤버십, 직접 완료, 솔로 · 파티 필터. 넥슨에서 받은 값은 없다 |
-| `features/manual-completion/` | 직접 완료를 연 보스 목록(서버), today 안내 줄, FAQ, 직접 완료 기록 쓰기 · 고치기 · 지우기 |
+| `features/boss-scheduler/store.ts` | 파티 설정, 수동 추적 멤버십, 솔로 · 파티 필터. 넥슨에서 받은 값은 없다 |
+| `features/boss-scheduler/manual-completed-query.ts` | 추적 캐릭터가 직접 적은 완료 쿼리 `manualCompleted(weeklyKey, monthlyKey)`(`useManualCompleted`). 보스 기록 판이 오르거나 추적 목록이 바뀌면 무효화된다 |
+| `features/manual-completion/` | 직접 완료를 연 보스 쿼리 `manualCompletion()`(`query.ts`), today 안내 줄을 닫은 주(`store.ts`), FAQ, 직접 완료 기록 쓰기 · 고치기 · 지우기 |
 | `lib/boss/boss-matching.ts` | 보스 순서(`compareBossOrder`), 처치 수와 한도 판정, 카드용 · 수익용 보스 고르기 |
 | `lib/boss/manual-boss-merge.ts` | 수동 모드 목록에 완료 여부를 붙인다 |
 | `lib/boss/manual-completion.ts` | 직접 완료가 그 기간에 열려 있는지, 직접 완료를 표시 목록에 더하기 |
@@ -40,7 +41,8 @@
 
 헤더 제목 줄 오른쪽에 솔로 · 파티 필터가 있고, 그 아래에 갱신 시각이 있다. 내용은 초상화 레일 아래에 고른
 캐릭터의 보스 카드 목록이다. 목록을 아래로 당기면 넥슨에서 다시 받아 온다. 들어올 때 · 포커스 · 복귀의 자동 조회는
-컨텐츠 스케줄러와 같다([[ADR-142]] 결정 5). 직접 완료는 포커스마다 기록 판과 기간을 견줘 바뀌었을 때만 다시 읽는다.
+컨텐츠 스케줄러와 같다([[ADR-142]] 결정 5). 직접 적은 완료는 `manualCompleted` 쿼리라 보스 기록 판이 오르면 무효화되고,
+목요일 · 1일을 넘기면 새 기간 키를 읽는다([[ADR-142]] 결정 6).
 
 | 부분 | 보여 주는 것 |
 |---|---|
@@ -131,7 +133,9 @@
 
 넥슨이 완료를 주지 않는 보스는 보스 수익 화면에서 사용자가 완료로 적을 수 있다. 어떤 보스를 열지는 서버가
 정한다(`GET /v1/manual-completion`). 이 화면에는 적는 버튼이 없지만, 적은 완료는 카드의 `완료` 배지, `n/12`,
-마감, 레일의 링에 자동 기록과 똑같이 반영된다. 보스 수익에서 적고 돌아오면 화면이 포커스를 받을 때 다시 읽는다.
+마감, 레일의 링에 자동 기록과 똑같이 반영된다. 보스 수익에서 적으면 보스 기록 판이 올라 쿼리가 무효화되고, 이 화면이
+보이면 그 자리에서, 아니면 다시 보일 때 읽는다.
 
-열린 보스가 있으면 today 헤더에 `직접 완료할 수 있는 보스가 있어요.` 줄이 뜬다. 누르면 FAQ 가 열리고, 닫으면
-그 주 동안 뜨지 않는다. 자세한 규칙은 [[ADR-037]] 결정 8 ~ 15 에 있다.
+열린 보스가 있으면 today 헤더에 `직접 완료할 수 있는 보스가 있어요.` 줄이 뜬다. 열린 보스는 today 와 보스 수익이
+포커스될 때마다, 앱 복귀마다 서버에 다시 묻는다. 누르면 FAQ 가 열리고, 닫으면 그 주 동안 뜨지 않는다. 자세한 규칙은
+[[ADR-037]] 결정 8 ~ 15 에 있다.

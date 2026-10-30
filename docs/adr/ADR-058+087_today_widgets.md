@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-147 · ADR-153 · ADR-163 · ADR-165 · ADR-181 · ADR-182 · ADR-218 결정 3 · 정정 1 · ADR-183 · ADR-226 결정 5 · 정정 2 · ADR-253 결정 12 · ADR-271 결정 3 · ADR-284
-> 관련 소스: `app/today/` · `lib/today/` · `features/stats/aggregate.ts` · `features/boss-profit/period-query.ts` · `features/boss-profit/drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/refresh/pull.ts` · `app/SettlementBanner.tsx` · `features/settlement/` · `storage/settlement-banner.ts`
+> 관련 소스: `app/today/` · `lib/today/` · `features/stats/aggregate.ts` · `features/boss-profit/period-query.ts` · `features/boss-profit/drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/refresh/pull.ts` · `app/SettlementBanner.tsx` · `features/settlement/`(`query.ts` · `store.ts`) · `storage/settlement-banner.ts` · `features/manual-completion/query.ts` · `features/notice/notice-query.ts` · `features/party-appointments/query.ts`
 
 ## 배경
 
@@ -87,9 +87,9 @@ today 는 요약을 보여 주는 화면이다. 위젯은 지금 무엇을 해�
 ### 결정 5. 데이터는 화면이 한 번 모아 위젯에 나눠 준다
 
 `TodayScreen` 이 쿼리 캐시(스케줄 회차와 캐릭터 열쇠 · 이번 주 보스 수익 `bossProfitPeriod('weekly', 이번 주)` ·
-드롭 히스토리 `dropHistory()` · 이번 주 가계부 줄 `ledgerDays`)와 스토어(컨텐츠 · 보스 스케줄러의 수동 목록과 직접
-완료 · 파티 스케줄 · 캐릭터 선택)를 읽어 `buildTodayViewModel` 로 뷰모델 하나를 만들고, 위젯에는 프롭으로만
-넘긴다. 위젯은 쿼리도 스토어도 모른다.
+드롭 히스토리 `dropHistory()` · 이번 주 가계부 줄 `ledgerDays` · 직접 적은 완료 `manualCompleted` · 파티 약속
+`partyAppointments()`)와 스토어(컨텐츠 · 보스 스케줄러의 수동 목록 · 캐릭터 선택)를 읽어 `buildTodayViewModel` 로
+뷰모델 하나를 만들고, 위젯에는 프롭으로만 넘긴다. 위젯은 쿼리도 스토어도 모른다.
 
 - 위젯이 각자 읽으면 같은 기록을 위젯 수만큼 읽고, 읽는 시점이 갈린다.
 - 같은 드롭 기록을 보는 위젯이 둘(최고가 · 가격 미입력)인데, 각자 읽으면 서로 다른 시점의
@@ -139,18 +139,21 @@ today 가 세는 남은 일은 스케줄러 화면이 보여 주는 것과 한 �
 | 언제 | 무엇을 |
 |---|---|
 | 마운트 · 포커스 | 스케줄 회차(만료됐을 때만, `useRefetchStaleOnFocus`) |
-| 앱 복귀 | 스케줄 회차(신선해도 한 번, [[ADR-142]] 결정 5) |
-| 포커스 | 직접 완료(보스 스케줄러 스토어 `reloadManualCompleted`) · 열어 둔 직접 완료(서버) · 공지 배너(기기) · 파티 스케줄 |
-| 기록이 바뀔 때 | 이번 주 가계부 줄(`ledgerDays`) · 이번 주 보스 수익(`bossProfitPeriod`) · 드롭 기록(`dropHistory`)은 표의 판이 오르면 무효화된다 |
-| 당김 | `pullRefresh`(회차 → 13일 창 → 오늘 강화) · 공지 배너(서버) |
+| 앱 복귀 | 스케줄 회차(신선해도 한 번, [[ADR-142]] 결정 5) · 결산 `settlement()` · 열어 둔 직접 완료 `manualCompletion()` · 앱 공지 `notices('app')`(서버 쿼리라 신선해도 받는다) |
+| 포커스 | 열어 둔 직접 완료(서버) · 앱 공지. 둘은 `staleTime` 이 0 이라 포커스마다 받는다 |
+| 기록이 바뀔 때 | 이번 주 가계부 줄(`ledgerDays`) · 이번 주 보스 수익(`bossProfitPeriod`) · 드롭 기록(`dropHistory`) · 직접 적은 완료(`manualCompleted`)는 표의 판이 오르면 무효화된다 |
+| 당김 | `pullRefresh`(회차 → 13일 창 → 오늘 강화) · 앱 공지(`refreshNoticeKinds(['app'])`) |
 | KST 자정 | 공용 타이머가 넥슨 쿼리를 무효화하고 화면을 다시 그린다 |
 
 진입에서 신선한 회차를 또 받지 않는다. 받으면 앱을 켤 때 예열이 받은 응답을 한 번 더 받는다. 이 화면에 오래
 머물러 10분이 지나면 포커스에 다시 받고, 복귀에는 신선해도 받는다.
 
+파티 약속은 기기에만 있는 값이라 다시 받을 계기가 없다. 저장(`savePartyAppointments`)이 쿼리 캐시를 덮어, 파티
+스케줄 탭에서 적은 약속이 이 화면에 그대로 선다.
+
 당김은 `pullRefresh` 하나다(`features/refresh/pull.ts`). 회차가 자동 기록과 처치 날짜를 쓰고, 창이 조회 원장에
 없는 지난 날을 채우고, 오늘 강화를 받는다. 쓴 기록은 판을 올려 이번 주 수익 · 결정석 · 드롭 위젯이 스스로
-바뀐다. 공지 배너와 `Promise.allSettled` 로 묶어 하나가 실패해도 나머지가 끝날 때까지 기다린다. 전에는 당김이
+바뀐다. 앱 공지 조회와 `Promise.allSettled` 로 묶어 하나가 실패해도 나머지가 끝날 때까지 기다린다. 전에는 당김이
 강화와 처치 날짜를 안 받아 이번 주 수입 · 지출이 그대로였다.
 
 기록 쿼리 셋은 포커스마다 판을 견주지 않는다. 다른 화면이 기록을 쓰면 판이 올라 쿼리가 무효화되고, today 가
@@ -327,19 +330,21 @@ ID 공유 컨텐츠` 타일에 한 줄씩 모은다.
 시각이 날마다 달라서, 앱이 고정 시각으로 판단하면 틀린다. 서버는 결산 여부와 시작 시각(`startedAt`)을
 준다.
 
-스케줄러 데이터를 갱신하는 네 곳(`schedule-sync.ts` · `schedule-window/window.ts` ·
-`boss-profit/defeat-dates.ts` · `character-eligibility.ts`)이 `refreshSettlement()` 를 함께 부른다. 화면이
-따로 서버에 묻지 않는다. 겹쳐 불러도 서버에는 한 번만 묻고, 실패해도 동기화를 실패로 만들지 않는다.
+결산은 쿼리 `settlement()`(`features/settlement/query.ts`)다. 스케줄러 데이터를 갱신하는 네 곳(`schedule-sync.ts` ·
+`schedule-window/window.ts` · `boss-profit/defeat-dates.ts` · `character-eligibility.ts`)이 `refreshSettlement()` 로
+함께 묻고, 앱 복귀에도 신선해도 다시 받는다(`refetchOnWindowFocus: 'always'`, [[ADR-142]] 결정 5). 새벽 결산 중
+배경에 두었다가 돌아오면 다음 회차를 기다리지 않고 줄이 걷힌다. 화면은 그 밖에 따로 서버에 묻지 않는다. 겹쳐 불러도
+쿼리가 하나로 접어 서버에는 한 번만 묻고, 실패해도 동기화를 실패로 만들지 않는다.
 
 서버 값을 못 받으면 줄을 띄우지 않는다. 못 받았을 때 줄을 띄우면 넥슨이 멀쩡한 낮에도 결산 중이라고
 표시된다.
 
 ### 결정 21. 결산 안내 줄은 닫으면 그 결산 동안 다시 뜨지 않는다
 
-`X` 를 누르면 그때의 `startedAt` 을 기기에 저장한다(Preferences `dismissedSettlement`). 서버가 같은
-`startedAt` 을 주는 동안은 줄을 띄우지 않고, 다음 날 밤 결산처럼 값이 달라지면 다시 띄운다. 결산이
-끝날 때 기록을 지우는 방식으로 하면, 그 순간 앱이 꺼져 있을 때 지울 수 없어 다음 날 밤에도 닫힌
-채로 남는다.
+`X` 를 누르면 그때의 `startedAt` 을 기기에 저장한다(Preferences `dismissedSettlement`). 닫은 기록은 서버 값과 따로
+스토어 `useSettlementDismissal`(`features/settlement/store.ts`)이 들고, 줄을 그리는 훅(`useSettlementBanner`)이 처음 돌 때
+한 번 읽는다. 서버가 같은 `startedAt` 을 주는 동안은 줄을 띄우지 않고, 다음 날 밤 결산처럼 값이 달라지면 다시 띄운다.
+결산이 끝날 때 기록을 지우는 방식으로 하면, 그 순간 앱이 꺼져 있을 때 지울 수 없어 다음 날 밤에도 닫힌 채로 남는다.
 
 줄의 나머지 부분을 누르면 FAQ 시트(제목 `스케줄러 결산`)가 열린다. 누르면 재조회하게 두지 않았다. 결산 중에는
 다시 조회해도 같은 값이 와서 고장으로 보이기 때문이다.
@@ -370,8 +375,8 @@ ID 공유 컨텐츠` 타일에 한 줄씩 모은다.
 
 같은 줄이 가계부와 통계에도 뜬다. 그 두 화면은 처치 날짜가 있는 기록만 읽는데, 처치 날짜를 정하는
 조회가 결산 중에 막혀 자정 뒤에 잡은 보스가 아직 빠져 있다. 그래서 둘째 줄을 `오늘 잡은 보스 수익은
-결산이 끝난 뒤 반영됩니다.` 로 바꿔 쓴다(`features/settlement/banner-text.ts`). 세 화면이 같은 스토어를
-보므로 한 곳에서 닫으면 셋 다 그 결산 동안 뜨지 않는다. 보스 수익 화면에는 띄우지 않는다. 그 화면은
+결산이 끝난 뒤 반영됩니다.` 로 바꿔 쓴다(`features/settlement/banner-text.ts`). 세 화면이 같은 쿼리와 같은 닫은
+기록을 보므로 한 곳에서 닫으면 셋 다 그 결산 동안 뜨지 않는다. 보스 수익 화면에는 띄우지 않는다. 그 화면은
 주 키로 읽어 결산 중에도 값이 맞다.
 
 ### 결정 23. 남은 스케줄은 일간 · 주간 · 월간 탭으로 나눠 보여 준다
@@ -561,7 +566,7 @@ ID 공유 컨텐츠` 타일에 한 줄씩 모은다.
 | `app/today/widgets/__tests__/RemainingScheduleWidget.test.tsx` | 결정 19: 한 번에 한 행만 열리는지, 탭을 바꾸면 닫히는지, `CLEAR` · 실패 행은 누를 수 없는지 본다 |
 | | 결정 23: 처음 탭이 일간이고 합계가 없는지, 값이 있는 종류만 이름과 함께 나오는지, 0 이면 `CLEAR` 이고 대상이 없던 캐릭터도 같은지, 끝낸 캐릭터가 남는지, 탭마다 남은 개수 순 · 동수면 관리 순서 · 실패는 맨 아래로 가는지, 숫자 칸이 너비 대신 최소 너비인지 본다 |
 | `app/today/widgets/__tests__/NextPartyScheduleWidget.test.tsx` | 결정 11 · 29: 이미 시작한 회차를 건너뛰는지, 캐릭터마다 칸 하나에 닉네임만 적고 초상화가 없는지, 누르면 그 회차를 열도록 남기는지, 회차가 없으면 등록 칸 둘이 서고 누른 갈래를 남기는지 본다 |
-| `features/settlement/__tests__/store.spec.ts` | 결정 20 · 21: 서버를 못 받으면 줄을 띄우지 않는지, 겹쳐 불러도 한 번만 묻는지, 닫으면 그 결산 동안 안 뜨고 다음 결산에는 다시 뜨는지, 앱을 다시 켜도 닫은 것을 기억하는지 본다 |
+| `features/settlement/__tests__/query.spec.tsx` | 결정 20 · 21: 복귀마다 받는 서버 쿼리인지, 서버를 못 받으면 줄을 띄우지 않는지, 회차가 겹쳐 물어도 한 번만 묻는지, 닫으면 그 결산 동안 안 뜨고 다음 결산에는 다시 뜨는지, 앱을 다시 켜도 닫은 것을 기억하는지 본다 |
 | `app/__tests__/SettlementBanner.test.tsx` | 결정 21 · 22: 문장 둘이 각자 한 줄인지, 닫기가 시트를 열지 않는지, 줄을 누르면 FAQ 가 열리는지 본다 |
 
 ## 번호 기록

@@ -37,7 +37,8 @@ API 동기화와 진입 재조회는 [[ADR-021]], 실패를 알리는 방법은 
 | `lib/scheduler/content-category.ts` · `content-categories.ts` | 카테고리 묶기, 참고 배지, 길드 판정 |
 | `lib/scheduler/manual-content-merge.ts` | 수동 항목 값 찾기, 화면 순서 맞추기 |
 | `features/schedule-sync/schedule-sync.ts` | 캐릭터별 동기화, 지난 날짜로 채우기(`fillMissingSections`) |
-| `storage/scheduler-cache.ts` · `storage/shared-progress-cache.ts` | 캐릭터 캐시, 월드 · 계정 원장 |
+| `storage/shared-progress-cache.ts` | 월드 · 계정 원장 |
+| `storage/scheduler-cache.ts` | 1.0.12 까지의 스케줄 캐시(Preferences `schedulerCache:{ocid}`) 읽기 · 지우기. 업데이트 뒤 첫 실행이 쿼리 캐시로 옮긴 뒤 지운다([[ADR-142]] 결정 7) |
 | `storage/manual-tracked-content.ts` · `storage/tracking-mode.ts` | 추적 목록, 추적 모드 |
 | `app/settings/TrackingModeModal.tsx` · `TrackingModeSelector.tsx` | 설정의 모드 전환 모달 |
 | `lib/scheduler/contents.ts` | 컨텐츠 표. 서버 게임 데이터의 `contents` 칸 |
@@ -46,7 +47,7 @@ API 동기화와 진입 재조회는 [[ADR-021]], 실패를 알리는 방법은 
 
 | 키 | 내용 | 데이터 삭제 |
 |---|---|---|
-| `schedulerCache:{ocid}` | 병합된 스케줄러 상태와 동기화 시각 | 남긴다 |
+| 쿼리 `schedule(ocid)`(SQLite `query_cache`) | 병합된 스케줄러 상태와 받은 시각. Preferences 가 아니라 쿼리 캐시가 든다([[ADR-142]] 결정 7) | 남긴다 |
 | `worldSharedProgress:{worldKey}` | 월드 공유 컨텐츠 원장 | 지운다 (수동 선택 항목) |
 | `accountSharedProgress:{accountId}` | 계정 공유 컨텐츠 원장 | 지운다 (수동 선택 항목) |
 | `manualTrackedContent:{ocid}` | 수동 추적 목록 | 지운다 (수동 선택 항목) |
@@ -92,7 +93,7 @@ API 동기화와 진입 재조회는 [[ADR-021]], 실패를 알리는 방법은 
 
 ## 응답을 합치는 방법
 
-응답을 받을 때마다 아래 순서로 합쳐 `schedulerCache:{ocid}` 에 저장한다. 자세한 규칙은 [[ADR-032]] 에 있다.
+응답을 받을 때마다 아래 순서로 합쳐 쿼리 캐시 `schedule(ocid)` 에 넣는다. 자세한 규칙은 [[ADR-032]] 에 있다.
 
 1. 캐릭터 범위 항목은 이번 응답을 쓰고, 응답에서 빠진 항목은 캐시에서 진행값만 0 으로 되돌려 채운다.
 2. 월드 · 계정 공유 항목은 섹션이 비지 않은 응답일 때 원장에 쓴다. 등록 여부는 원장의 `active` 를 쓰고, 한 번 참이면

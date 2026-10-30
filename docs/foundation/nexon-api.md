@@ -24,7 +24,9 @@
 | `features/refresh/pull.ts` | 당겨서 새로고침 하나(`pullRefresh`). 스케줄 회차 → 13일 창 → 오늘 강화 |
 | `features/boss-profit/round-record.ts` · `defeat-dates.ts` | 회차가 동기화 뒤에 부르는 자동 기록과 처치 날짜 캐기 |
 | `storage/schedule-probe-ledger.ts` | 조회 원장(Preferences `scheduleProbe:{ocid}`) |
-| `storage/scheduler-cache.ts` · `storage/character-basic-cache.ts` | 스케줄 캐시(`schedulerCache:{ocid}`), 기본 정보 캐시(`characterBasicCache:{ocid}`) |
+| `features/schedule-sync/read-schedule.ts` · `character-basic-fetch.ts` | 쿼리 캐시를 렌더 밖에서 읽는 함수(`readScheduleEntry` · `readCharacterBasic`) · `character/basic` 통과 지점(`fetchCharacterBasicCached`). 받은 값은 쿼리 캐시 `characterBasic(ocid)` 에만 넣는다 |
+| `features/mvp-grade/character-list.ts` | `character/list` 를 5분 안에 한 번만 받는 `fetchCharacterListCached`(쿼리 `characterList(credentialKey)`). 캐릭터 관리 · MVP 등급 · 회차가 같은 응답을 쓴다 |
+| `storage/scheduler-cache.ts` · `storage/character-basic-cache.ts` | 1.0.12 까지의 Preferences 캐시(`schedulerCache:{ocid}` · `characterBasicCache:{ocid}`) 읽기 · 지우기. 업데이트 뒤 첫 실행이 쿼리 캐시로 옮긴 뒤 지운다([[ADR-142]] 결정 7) |
 | `lib/scheduler/sync-freshness.ts` | 10분 값 `SYNC_TTL_MS`. `features/query/freshness.ts` 의 `scheduleStaleTime` 이 쓴다 |
 | `lib/boss/boss-profit-period.ts` | 조회 가능한 날짜의 상한과 하한 |
 

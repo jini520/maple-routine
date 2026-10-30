@@ -77,7 +77,7 @@ src/
 | 무엇 | 어디 |
 |---|---|
 | 화면과 기능의 클라이언트 상태(선택 캐릭터 · 테마 · 인증 · 탭 · 필터) | `features/*/store.ts` 의 zustand 스토어 |
-| 넥슨에서 받은 스케줄 · 캐릭터 기본 정보와 기기 DB 에서 읽은 기록(보스 수익 기간 · 가계부 줄 · 드롭 히스토리) | `features/query/` 의 TanStack Query 캐시 하나. 넥슨 쿼리는 SQLite `query_cache` 에 저장하고, DB 읽기 쿼리는 표의 판이 오르면 무효화된다(`features/query/invalidation.ts`, [[ADR-142]]). 공지 · 결산 · 직접 완료 · 캐릭터 목록은 아직 스토어와 화면 상태다 |
+| 넥슨 · 우리 서버에서 받은 값(스케줄 · 캐릭터 기본 정보 · 캐릭터 목록 · 공지 · 결산 · 직접 완료)과 기기에서 읽은 값(보스 수익 기간 · 가계부 줄 · 드롭 히스토리 · 직접 적은 완료 · 파티 약속) | `features/query/` 의 TanStack Query 캐시 하나. 스케줄 · 기본 정보 · 회차 · 공지는 SQLite `query_cache` 에 저장하고, DB 읽기 쿼리는 표의 판이 오르면 무효화된다(`features/query/invalidation.ts`, [[ADR-142]]). 스토어에는 화면 상태와 결산 · 직접 완료 · 공지 배너를 닫은 기록만 남는다 |
 | 서버에 원본이 있는 게임 데이터 표 | `lib/game-data/` 의 표. `features/game-data/sync.ts` 가 받아 `storage/game-data-copy.ts`(SQLite)와 문서 디렉터리에 둔다([[ADR-020]]) |
 | 기기에 남는 값 | `storage/`. 키와 스키마는 `persistence/` 문서에 있다 |
 

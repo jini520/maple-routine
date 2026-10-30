@@ -129,7 +129,9 @@
   반영한다. 이때 `ownComplete` 도 함께 참이 된다. 사용자가 난이도까지 고른 것이라 올린 값이 아니라 사실이다.
 - 보스 수익은 `selectProfitDisplayBosses` 가 같은 값을 받는다. 주간 한도 판정도 같은 입력을 본다. 한쪽에만
   반영하면 스케줄러와 보스 수익이 서로 다른 처치 수를 보여 준다.
-- 스토어는 이번 주와 이번 달의 직접 완료만 읽는다. 읽다 실패하면 빈 표로 두고 넥슨이 준 대로 그린다.
+- 직접 적은 완료는 쿼리 `manualCompleted(weeklyKey, monthlyKey)`(`features/boss-scheduler/manual-completed-query.ts`)가
+  이번 주와 이번 달 것만 읽는다. 읽다 실패하면 빈 표를 돌려줘 넥슨이 준 대로 그린다. 여기서 던지면 스케줄러 화면 전체가
+  못 선다.
 
 ### 결정 9. 어떤 보스를 언제부터 열지는 서버가 정한다
 
@@ -149,9 +151,11 @@ GET /v1/manual-completion
 - 응답을 못 받으면 닫힌 것으로 본다. 기기에 목록 사본을 두지 않는다. 쓰는 기능이라 서버가 닫은 뒤에도 열려
   있으면 안 되기 때문이다. 여는 날의 형식이 이상해도 닫힌 것으로 본다.
 - 목록에서 빠져도 이미 적은 기록은 지우거나 바꾸지 않는다. 그 기록의 수정과 취소도 계속 할 수 있다.
-- 목록은 today 와 보스 수익 화면에 들어올 때 받는다. 스케줄러를 갱신할 때마다 받지 않는다. 이 값은 배너와
-  버튼에만 쓰이므로 늦게 와도 잘못되는 것이 없다. 스토어 하나(`features/manual-completion/store.ts`)가 관리하고, 겹쳐
-  불러도 서버는 한 번만 부른다.
+- 목록은 쿼리 `manualCompletion()`(`features/manual-completion/query.ts`)이다. today 와 보스 수익이 포커스될 때마다
+  묻고(`staleTime` 0), 앱 복귀에도 신선해도 받는다([[ADR-142]] 결정 5). 스케줄러 회차에는 싣지 않는다. 이 값은 배너와
+  버튼에만 쓰이므로 늦게 와도 잘못되는 것이 없다. 겹쳐 불러도 쿼리가 하나로 접어 서버는 한 번만 부른다. 기기에 저장하지
+  않는다. 쓰는 기능이라 서버가 닫은 뒤에도 열려 있으면 안 되기 때문이다. 안내 줄을 닫은 주는 기기 값이라 스토어
+  `useManualCompletionDismissal`(`features/manual-completion/store.ts`)이 따로 든다.
 
 ### 결정 10. 버튼은 보스 수익의 미완료 행에만 나온다
 
@@ -208,17 +212,19 @@ GET /v1/manual-completion
   그대로 있으면 방금 적은 기록이 화면에서 사라진다. 옮기기 전에 이번 기간을 먼저 다시 만든다. 그러지 않으면
   월간 탭이 그 보스를 미완료로 그린다.
 
-### 결정 14. 스케줄러와 today 는 화면에 돌아올 때 직접 완료를 다시 읽는다
+### 결정 14. 직접 적은 완료는 기록이 바뀌면 쿼리 무효화로 다시 읽힌다
 
 보스 스케줄러와 today 는 탭이라 한 번 마운트되면 마운트된 채로 남고, 처음 조회는 마운트할 때 한 번뿐이다. 그래서
-보스 수익에서 적은 완료가 새로고침 전까지 보이지 않았다.
+보스 수익에서 적은 완료가 보이려면 다시 읽을 계기가 있어야 한다.
 
-두 화면은 포커스를 받을 때마다 스토어의 `reloadManualCompleted` 를 부른다. 스토어는 보스 수익 기록의
-변경 번호(`getBossProfitRecordsRevision`)를 비교해서 바뀌었을 때만 직접 완료를 다시 읽는다. SQLite 를 한 번
-읽을 뿐 넥슨은 부르지 않는다.
+`manualCompleted(weeklyKey, monthlyKey)` 쿼리는 보스 기록 표의 판(`meta.tables`)과 추적 목록(`dependsOn: tracked-ocids`)에
+매여 무효화된다([[ADR-142]] 결정 6). 보스 수익에서 적으면 그 자리에서 판이 올라, 보이는 화면은 바로 다시 읽고 안 보이는
+화면은 다시 보일 때 읽는다. 기간 키가 열쇠라 목요일 · 1일을 넘기면 화면이 새 열쇠를 읽어 지난주 완료가 남지 않는다.
+SQLite 를 읽을 뿐 넥슨은 부르지 않는다. 화면이 포커스마다 판을 견주지 않으므로 쓰는 자리를 더 만들어도 빠뜨릴 곳이 없다.
 
-- 변경 번호는 읽기 전에 기록한다. 읽는 도중에 들어온 쓰기를 읽은 것으로 기록하면 그 쓰기를 영영 놓친다.
-- 추적 목록을 아직 안 읽었으면 아무것도 하지 않는다. 곧 처음 조회에서 읽어 온다.
+- `useBossSchedule()` 이 `manualCompletedByOcid` 로 내보내고, 표시 판정(`displayedBosses`)이 카드 · 주간 한도 · today
+  남은 스케줄에 함께 얹는다.
+- 추적 목록을 아직 안 읽었으면 빈 표다. 추적 목록 쿼리가 차면 무효화되어 다시 읽는다.
 
 ### 결정 15. 열린 보스가 있으면 today 에 안내 줄을 띄운다
 
@@ -230,7 +236,8 @@ GET /v1/manual-completion
   않는다. 서버가 바꾸는 값이라 글에 적으면 넥슨이 고친 날 틀린 말이 된다.
 - `X` 로 닫으면 그 주 동안 뜨지 않는다. 닫을 때 그 주의 주간 기간 키(목요일)를 기기에
   (`dismissedManualCompletion`) 적고, 지금 주와 같으면 띄우지 않는다. 월간 보스만 열려 있어도 주가 바뀌면 다시
-  알릴 일이라 주간을 기준으로 한다.
+  알릴 일이라 주간을 기준으로 한다. 줄이 서 있지 않으면 닫을 것도 없다. 빈 회차에 키를 적으면 다음 주 판정이 그 값에
+  걸린다(`useManualCompletionBanner`).
 
 ## 테스트
 
@@ -241,12 +248,13 @@ GET /v1/manual-completion
 | | 결정 4: 한도만큼 잡으면 참인지, 시즌 · 월간 보스가 한도를 채우지 않는지 본다. 결정 7: `countManualWeeklyBosses` 가 시즌 · 월간 · 컨텐츠 항목을 빼는지 본다 |
 | `lib/__tests__/manual-boss-merge.spec.ts` | 결정 2: 다른 난이도의 완료로 `isComplete` 를 올리고 `ownComplete` 는 그대로 두는지, 다른 보스의 완료는 쓰지 않는지 본다 |
 | `features/boss-scheduler/__tests__/displayed-bosses.spec.ts` | 결정 4: 한도를 채우면 미처치 보스가 마감인지, 한 마리 모자라면 아닌지, 시즌 · 월간 · 처치한 보스는 마감이 아닌지, 수동 모드에서 목록 밖 처치로 채워도 마감이 되는지 본다 |
-| `features/boss-scheduler/__tests__/store.spec.ts` | 결정 1: 처치 수를 직접 세고 분모가 늘 12인지, 캐시를 그릴 때도 같은지 본다. 결정 7: 한도에서 `limitReached` 를 돌려주는지, 시즌 · 월간 보스는 한도가 차도 추가되는지 본다. 결정 14: 변경 번호가 바뀌었을 때만 다시 읽는지, 읽기 전 번호를 기록하는지 본다 |
-| `app/boss-scheduler/__tests__/BossScreen.test.tsx` | 결정 6: 한도를 채우면 링이 `12/12` 가 되는지, 한도 전에는 미처치가 링에서 빠지는지 본다. 결정 14: 포커스마다 직접 완료를 다시 읽는지 본다 |
+| `features/boss-scheduler/__tests__/store.spec.ts` | 결정 1: 처치 수를 직접 세고 분모가 늘 12인지, 캐시를 그릴 때도 같은지 본다. 결정 7: 한도에서 `limitReached` 를 돌려주는지, 시즌 · 월간 보스는 한도가 차도 추가되는지 본다 |
+| `features/boss-scheduler/__tests__/manual-completed-query.spec.ts` | 결정 8 · 14: 기간 키가 열쇠이고 보스 기록 판 · 추적 목록에 매여 무효화되는지, 두 기간의 기록을 캐릭터별 `bossKey\|difficulty` 로 묶는지, 읽기가 실패하거나 추적이 없으면 빈 표인지 본다 |
+| `app/boss-scheduler/__tests__/BossScreen.test.tsx` | 결정 6: 한도를 채우면 링이 `12/12` 가 되는지, 한도 전에는 미처치가 링에서 빠지는지 본다 |
 | `app/boss-scheduler/__tests__/BossManageScreen.test.tsx` | 결정 7: `n/12` 가 수동 모드 `주간` 제목에만 붙는지, 한도에서도 행을 막지 않고 토스트로 알리는지, 고른 행은 뺄 수 있는지 본다 |
 | `lib/boss/__tests__/manual-completion.spec.ts` | 결정 8: 같은 보스 · 같은 난이도에만 완료와 `ownComplete` 를 반영하는지 본다. 결정 9: 여는 날이 속한 기간부터 열리는지, 목록에 없거나 목록을 모르거나 날짜 형식이 이상하면 닫히는지 본다 |
 | `features/manual-completion/__tests__/record.spec.ts` | 결정 11: 송금 수수료가 자동이면 잡은 날 등급 요율로 적는지 본다 |
-| `features/manual-completion/__tests__/store.spec.ts` | 결정 9: 서버를 못 받으면 목록을 모르는 채로 두는지, 겹쳐 불러도 한 번만 부르는지 본다. 결정 15: 닫으면 그 주 동안 안 뜨고 주가 바뀌면 다시 뜨는지 본다 |
+| `features/manual-completion/__tests__/query.spec.tsx` | 결정 9: 진입 · 복귀마다 묻는 서버 쿼리인지, 못 받은 것(`null`)은 줄을 안 세우는지, 단추가 보는 목록이 같은 쿼리인지 본다. 결정 15: 닫으면 이번 주 키를 적고 줄이 내려가는지, 줄이 안 서 있으면 닫지 않는지 본다 |
 
 보스 수익 쪽의 직접 완료 화면과 기록 규칙(결정 10 · 12 · 13)은 `app/boss-profit/__tests__/ManualCompletion.test.tsx`
 와 `features/boss-profit/__tests__/auto-record.spec.ts` 가 확인한다. 결정 13 의 난이도 수정과 취소가 실제 SQLite 에서
