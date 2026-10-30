@@ -21,19 +21,16 @@ describe('pickLevel: 칸을 누른 뒤', () => {
     expect(pickLevel({ from: 10, to: 15 }, 'to', 28)).toEqual({ range: { from: 10, to: 28 }, editing: 'to' })
   })
 
-  // 강화 후 탭인 채로 시작을 내리려는 사람이 강화 전 탭을 찾지 않아도 되게 한다.
-  it('강화 후 탭에서 강화 전보다 낮은 칸을 누르면 강화 후는 두고 시작이 그 칸으로 옮겨 간다', () => {
-    expect(pickLevel({ from: 10, to: 15 }, 'to', 7)).toEqual({ range: { from: 7, to: 15 }, editing: 'to' })
-  })
 })
 
 describe('canPick: 지금 고를 수 있는 칸', () => {
-  it('강화 전은 만렙을 못 고르고, 강화 후는 강화 전 칸만 못 고른다', () => {
+  // 강화 후를 고르는 중에 시작이 바뀌면 어느 쪽이 바뀌는지 헷갈린다(사용자 지정 2026-10-30).
+  it('강화 전은 만렙을 못 고르고, 강화 후는 강화 전보다 높아야 한다', () => {
     expect(canPick({ from: 10, to: 15 }, 'from', 30, 30)).toBe(false)
     expect(canPick({ from: 10, to: 15 }, 'from', 0, 30)).toBe(true)
     expect(canPick({ from: 10, to: 15 }, 'to', 10, 30)).toBe(false)
     expect(canPick({ from: 10, to: 15 }, 'to', 11, 30)).toBe(true)
-    expect(canPick({ from: 10, to: 15 }, 'to', 5, 30)).toBe(true)
+    expect(canPick({ from: 10, to: 15 }, 'to', 5, 30)).toBe(false)
   })
 })
 
@@ -52,7 +49,7 @@ it('탭을 누르면 고르는 쪽이 바뀌고, 막힌 칸은 눌러도 안 바
   expect(onChange).toHaveBeenLastCalledWith({ range: { from: 25, to: 28 }, editing: 'from' })
 
   onChange.mockClear()
-  fireEvent.press(view.getByTestId('grid-level-25'))
+  fireEvent.press(view.getByTestId('grid-level-20'))
   expect(onChange).not.toHaveBeenCalled()
 
   fireEvent.press(view.getByTestId('grid-level-29'))
