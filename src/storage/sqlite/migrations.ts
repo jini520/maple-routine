@@ -509,6 +509,7 @@ function legacySpendRecordOf(row: Row, id: string): SpendRecord {
     pointAmount: numberOrNull(row.point_amount),
     pointPer100mMeso: numberOrNull(row.point_per_100m_meso),
     cashAmount: numberOrNull(row.cash_amount),
+    hexa: null,
     recordedAt: row.recorded_at as string,
   }
 }

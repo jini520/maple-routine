@@ -10,9 +10,14 @@ import type { SyncHandler } from './sweep'
 /** 대기 표의 `record_type` 칸에 들어가는 값. */
 export const CASHBOOK_ENTRY_RECORD_TYPE = 'cashbook-entry'
 
-/** 기록에서 서버로 보낼 값. 캐릭터 없는 기록만 넥슨 계정 id 를 싣는다. */
-export function cashbookEntryPayloadOf({ entry, nexonAccountId }: CashbookEntrySource): CashbookEntryPayload {
+/**
+ * 기록에서 서버로 보낼 값. 캐릭터 없는 기록만 넥슨 계정 id 를 싣는다.
+ *
+ * 0 메소 헥사 기록은 `null` 이고 서버에서 지운다. 교환 불가 조각이 더 많아 돈이 안 든 기록이라 서버 지출 통계에 넣지 않는다.
+ */
+export function cashbookEntryPayloadOf({ entry, nexonAccountId }: CashbookEntrySource): CashbookEntryPayload | null {
   const { head } = entry
+  if (head.categoryKey === 'hexa_matrix' && entry.items.every((item) => (item.amountMeso ?? 0) === 0)) return null
   return {
     entryRecordId: head.id,
     ocid: head.ocid,
@@ -35,11 +40,15 @@ export function cashbookEntryPayloadOf({ entry, nexonAccountId }: CashbookEntryS
       amountPoint: item.amountPoint,
       pointPer100mMeso: item.pointPer100mMeso,
       amountCash: item.amountCash,
+      fragmentCount: item.fragmentCount,
+      untradableFragmentCount: item.untradableFragmentCount,
+      fragmentPriceMeso: item.fragmentPriceMeso,
+      hexaActivation: item.hexaActivation,
     })),
   }
 }
 
-/** 고리가 쓰는 함수 둘. 사라진 기록은 `null` 이고 서버에서 지운다. */
+/** 고리가 쓰는 함수 둘. 사라졌거나 보내지 않는 기록은 `null` 이고 서버에서 지운다. */
 export const cashbookEntryHandler: SyncHandler<CashbookEntryPayload> = {
   read: async (entryId) => {
     const source = await getCashbookEntrySource(entryId)

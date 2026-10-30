@@ -734,6 +734,7 @@ const 악몽선경2 = {
   pointAmount: 50_000,
   pointPer100mMeso: 1_180,
   cashAmount: null,
+  hexa: null,
   recordedAt: '2026-08-23T01:00:00.000Z',
 }
 
@@ -764,6 +765,7 @@ describe('저장', () => {
       pointAmount: 30_000,
       pointPer100mMeso: 1_180,
       cashAmount: null,
+      hexa: null,
     })
   })
 
@@ -1012,6 +1014,7 @@ describe('주문서', () => {
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
+        hexa: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
       },
       onDelete: jest.fn(),
@@ -1553,6 +1556,7 @@ describe('시작 기간 전인 항목', () => {
         pointAmount: 135_000,
         pointPer100mMeso: 1_180,
         cashAmount: null,
+        hexa: null,
         recordedAt: '2026-09-16T01:00:00.000Z',
       },
       onDelete: jest.fn(),
@@ -1581,6 +1585,7 @@ describe('수정 모드', () => {
     pointAmount: 50_000,
     pointPer100mMeso: 1_180,
     cashAmount: null,
+    hexa: null,
     recordedAt: '2026-08-23T01:00:00.000Z',
   }
 
@@ -1995,6 +2000,7 @@ describe('되짚어 여는 식', () => {
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
+    hexa: null,
     recordedAt: '2026-08-23T01:00:00.000Z',
   }
 
@@ -2246,6 +2252,7 @@ describe('수정으로 열 때의 큰 숫자', () => {
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
+      hexa: null,
       recordedAt: '2026-08-23T01:00:00.000Z',
     }
   }
@@ -2411,6 +2418,7 @@ describe('심볼 강화', () => {
     pointAmount: null,
     pointPer100mMeso: null,
     cashAmount: null,
+    hexa: null,
     recordedAt: '2026-09-19T01:00:00.000Z',
   }
 
@@ -2505,6 +2513,7 @@ describe('심볼 강화', () => {
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
+      hexa: null,
     })
   })
 
@@ -2574,6 +2583,7 @@ describe('가격을 치는 버프', () => {
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
+      hexa: null,
       recordedAt: '2026-08-23T01:00:00.000Z',
       ...overrides,
     }

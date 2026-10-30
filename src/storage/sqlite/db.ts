@@ -23,6 +23,7 @@ import {
 } from './enhancement-tables'
 import { GAME_DATA_META_BODY, GAME_DATA_SECTIONS_BODY } from './game-data-tables'
 import { runVersionedMigrations } from './migrations'
+import { REMEMBERED_LEVELS_BODY } from './remembered-level-tables'
 import {
   CHARACTER_ACCOUNTS_BODY,
   CHARACTER_PROFILES_BODY,
@@ -301,6 +302,11 @@ const TABLE_DEFINITIONS = [
     name: 'cashbook_entry_hunt_inputs',
     createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_hunt_inputs ${CASHBOOK_ENTRY_HUNT_INPUTS_BODY}`,
   },
+  // 심볼 · 헥사 코어의 강화 레벨 기억. 가계부 기록에서 나온 값이라 데이터 삭제의 가계부 그룹이 함께 지운다.
+  {
+    name: 'remembered_levels',
+    createSql: `CREATE TABLE IF NOT EXISTS remembered_levels ${REMEMBERED_LEVELS_BODY}`,
+  },
   // 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이라 데이터 삭제가 지우지 않는다.
   {
     name: 'mvp_grade_history',
@@ -448,6 +454,11 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'boss_profit_records', 'defeated_on', 'TEXT')
   // 월드도 이름 대신 월드 key 를 든다. 값은 아래 버전 이관이 채운다.
   await ensureColumn(db, 'boss_profit_records', 'world_key', 'TEXT')
+  // 헥사 강화의 조각 칸. 이미 가계부를 적은 기기에는 CREATE 가 안 붙인다.
+  await ensureColumn(db, 'cashbook_entry_items', 'fragment_count', 'INTEGER')
+  await ensureColumn(db, 'cashbook_entry_items', 'untradable_fragment_count', 'INTEGER')
+  await ensureColumn(db, 'cashbook_entry_items', 'fragment_price_meso', 'INTEGER')
+  await ensureColumn(db, 'cashbook_entry_items', 'hexa_activation', 'INTEGER')
   // 사용자가 직접 적은 완료를 가르는 칸. 이미 기록을 쌓아 둔 기기에는 CREATE 가 안 붙인다.
   await ensureColumn(db, 'boss_profit_records', 'source', 'TEXT')
   await ensureColumn(db, 'character_profiles', 'world_key', 'TEXT')

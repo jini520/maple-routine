@@ -17,6 +17,7 @@ import {
 import { setMvpOnboardingPending } from '../../storage/mvp-grade-prefs'
 import type { MapleAccount } from '../../types'
 import { needsMvpOnboarding } from '../mvp-grade/onboarding'
+import { seedRememberedLevels } from '../cashbook/remembered-levels'
 import { seedManualTrackedContent } from '../tracking-mode/seed'
 import { useTrackingModeStore } from '../tracking-mode/store'
 import { deriveEntryStage, type EntryStage } from './stage'
@@ -97,6 +98,8 @@ export const useAppEntryStore = create<AppEntryStore>()((set) => ({
 
   async completeCharacterSetup(ocids, onSeedStart) {
     await setTrackedCharacterOcids(ocids)
+    // 처음 고른 캐릭터의 심볼 · 헥사 레벨을 기억해 둔다. 가계부 폼의 곁가지라 기다리지 않는다.
+    void seedRememberedLevels(ocids)
 
     // 온보딩도 캐릭터를 고르는 자리다. 게이트가 한 번만 통과시키므로 두 경로에 다 달아도
     // 팝업은 한 번뿐이고, 어느 쪽으로 들어온 사용자든 그 한 번을 받는다.

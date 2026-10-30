@@ -136,6 +136,10 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_profit_records ADD COLUMN defeated_on TEXT',
       // 월드도 이름 대신 월드 key 를 든다.
       'ALTER TABLE boss_profit_records ADD COLUMN world_key TEXT',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN fragment_count INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN untradable_fragment_count INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN fragment_price_meso INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_activation INTEGER',
       // 사용자가 직접 적은 완료를 가르는 칸.
       'ALTER TABLE boss_profit_records ADD COLUMN source TEXT',
       'ALTER TABLE character_profiles ADD COLUMN world_key TEXT',
@@ -255,6 +259,10 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'world' },
             { name: 'drop_record_id' },
             { name: 'nexon_account_id' },
+            { name: 'fragment_count' },
+            { name: 'untradable_fragment_count' },
+            { name: 'fragment_price_meso' },
+            { name: 'hexa_activation' },
           ]
         : []
 

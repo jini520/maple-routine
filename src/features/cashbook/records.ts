@@ -29,6 +29,7 @@ import {
   spendGroupCardTitleOf,
   spendRewardCoins,
 } from '../../lib/cashbook/spend-catalog'
+import { hexaTargetOf } from '../../lib/cashbook/hexa-matrix'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import { getBossDropRecords, getBossDropRecordsRevision } from '../../storage/boss-drops'
 import {
@@ -71,6 +72,7 @@ import {
   updateSpendRecord,
   type SpendRecord,
 } from '../../storage/spend'
+import { latestLevelRecordId, rememberAfterEdit, rememberAfterRemove, rememberAfterSave } from './remembered-levels'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
 export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
@@ -123,9 +125,20 @@ export function nextLastHunts(draft: IncomeDraft, current: LastHunts): LastHunts
   return remembered === null ? current : { ...current, [remembered.ocid]: remembered.hunt }
 }
 
+/** 레벨 기억 옮기기. 기록 저장의 곁가지라 실패해도 저장을 실패로 돌리지 않는다. */
+async function quietly(task: () => Promise<void>): Promise<void> {
+  try {
+    await task()
+  } catch {
+    // 기억이 안 옮겨지면 다음 폼의 강화 전 칸을 사용자가 고친다.
+  }
+}
+
 export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
   const id = randomUuid()
-  await insertSpendRecord({ ...draft, id, recordedAt: now.toISOString() }, await entryAccountId())
+  const record: SpendRecord = { ...draft, id, recordedAt: now.toISOString() }
+  await insertSpendRecord(record, await entryAccountId())
+  await quietly(() => rememberAfterSave(record))
   await reportCashbookEntries([id], now)
   countCoreSave()
   // 저장이 성공한 뒤에만 기억한다. 던진 입력의 시세를 다음 기본값으로 남기면 안 된다.
@@ -716,6 +729,8 @@ function isEmptySpend(entry: DayRecord): boolean {
     return entry.payoutMeso === 0
   }
   if (entry.kind === 'spend') {
+    // 헥사 기록은 0 이어도 선다. 교환 불가 조각이 더 많은 기록도 레벨을 옮겨서 고치거나 지울 길이 있어야 한다.
+    if (entry.record.category === 'hexa_matrix') return false
     return spendMesoOf(entry.record) === 0 && (entry.record.cashAmount ?? 0) === 0
   }
   return false
@@ -920,6 +935,11 @@ function spendCard(record: SpendRecord): RecordCard {
       const levels = record.levelFrom === null || record.levelTo === null ? null : `${record.levelFrom} → ${record.levelTo}`
       return { title: categoryTitle, detail: found === null ? record.item : joined([found.symbol.name, levels]) }
     }
+    case 'hexa_matrix': {
+      const target = hexaTargetOf(record.itemKey, record.hexa?.activation != null)
+      const levels = record.levelFrom === null || record.levelTo === null ? null : `${record.levelFrom} → ${record.levelTo}`
+      return { title: categoryTitle, detail: joined([target?.name ?? record.item, levels]) }
+    }
     case 'item_purchase':
       return { title: categoryTitle, detail: tradedItemDetail(record.item, record.itemKind ?? 'equipment', record.quantity) }
     case 'etc':
@@ -1034,6 +1054,7 @@ export function loadFragmentStorage(
 /** 고치기. `recordedAt` 은 안 바뀐다. 시세를 기억하는 순서는 넣을 때와 같다. 성공한 뒤에만. */
 export async function editSpend(record: SpendRecord): Promise<void> {
   await updateSpendRecord(record, await entryAccountId())
+  await quietly(() => rememberAfterEdit(record))
   await reportCashbookEntries([record.id], new Date())
   if (record.pointPer100mMeso !== null) {
     await setLastPointRate(record.pointPer100mMeso)
@@ -1047,8 +1068,16 @@ export async function editIncome(record: IncomeRecord): Promise<void> {
 
 /** 지우기. 갈래가 어느 테이블인지를 안다. 손입력만 받는다. */
 export async function removeRecord(entry: ManualDayRecord): Promise<void> {
-  if (entry.kind === 'spend') await deleteSpendRecord(entry.record.id)
-  else await deleteIncomeRecord(entry.record.id)
+  if (entry.kind === 'spend') {
+    const record = entry.record
+    // 가장 최근 기록이었는지는 지우기 전에만 알 수 있다.
+    let latestId: string | null = null
+    await quietly(async () => {
+      latestId = await latestLevelRecordId(record)
+    })
+    await deleteSpendRecord(record.id)
+    await quietly(() => rememberAfterRemove(record, latestId))
+  } else await deleteIncomeRecord(entry.record.id)
   // 지운 뒤에 넣는다. 전송이 기록을 못 찾아 서버에서도 지운다.
   await reportCashbookEntries([entry.record.id], new Date())
 }

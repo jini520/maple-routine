@@ -135,6 +135,7 @@ const 메포지출: SpendDraft = {
   pointAmount: 30_000,
   pointPer100mMeso: 1_180,
   cashAmount: null,
+  hexa: null,
 }
 
 /**
@@ -485,6 +486,7 @@ const 지출행 = {
   pointAmount: 1_200,
   pointPer100mMeso: 1_180,
   cashAmount: null,
+  hexa: null,
   recordedAt: '2026-08-25T02:00:00.000Z',
 }
 
@@ -525,6 +527,29 @@ describe('loadDayRecords: 그날 적은 것을 한 줄씩', () => {
   })
 
   // 읽기 실패는 화면을 죽이지 않는다. 캘린더 칸과 같은 처방이다.
+  // 다른 지출은 0 이면 줄을 안 세운다. 헥사 기록은 0 이어도 레벨을 옮겨서 고치거나 지울 길이 있어야 한다.
+  it('교환 불가 조각이 더 많아 0 메소인 헥사 기록도 줄이 선다', async () => {
+    income.getIncomeRecordsBetween.mockResolvedValue([])
+    spend.getSpendRecordsBetween.mockResolvedValue([
+      { ...지출행, pointAmount: null, pointPer100mMeso: null, mesoAmount: 0 },
+      {
+        ...지출행,
+        id: 'spd-hexa',
+        category: 'hexa_matrix',
+        itemKey: '창룡파천검 : 만참',
+        pointAmount: null,
+        pointPer100mMeso: null,
+        mesoAmount: 0,
+        levelFrom: 19,
+        levelTo: 20,
+        hexa: { fragmentCount: 252, untradableFragmentCount: 300, fragmentPrice: 7_200_000, activation: null },
+      },
+    ])
+    const { loadDayRecords, rowKeyOf } = require('../records') as typeof import('../records')
+
+    expect((await loadDayRecords('2026-08-25')).map(rowKeyOf)).toEqual(['spd-hexa'])
+  })
+
   it('읽기가 실패해도 빈 목록으로 진행한다', async () => {
     spend.getSpendRecordsBetween.mockRejectedValue(new Error('stale connection'))
     income.getIncomeRecordsBetween.mockResolvedValue([수입행])
@@ -564,6 +589,24 @@ describe('하루 목록 카드의 두 줄', () => {
 
     expect(카드({ kind: 'spend', record: 심볼행, characterName: '루디' })).toEqual(['루디 · 심볼강화', '세르니움 7 → 10'])
     expect(카드({ kind: 'spend', record: { ...심볼행, itemKey: 'removed_symbol' }, characterName: '' })).toEqual(['심볼강화', '옛 이름'])
+  })
+
+  it('헥사 매트릭스는 갈래 제목과, 헥사 스킬이면 코어의 첫 스킬 이름 · 두 레벨, 헥사 스탯이면 스탯 이름이다', () => {
+    const 조각 = { fragmentCount: 345, untradableFragmentCount: 0, fragmentPrice: 7_200_000 }
+    const 스킬행 = {
+      ...지출행,
+      category: 'hexa_matrix' as const,
+      itemKey: '망혼강림 VI/망혼검 절기 : 열지 VI/망혼검 절기 : 망탄 VI/망혼검 절기 : 무량겁 VI',
+      levelFrom: 25,
+      levelTo: 28,
+      quantity: null,
+      hexa: { ...조각, activation: null },
+    }
+
+    expect(카드({ kind: 'spend', record: 스킬행, characterName: '렌' })).toEqual(['렌 · 헥사 매트릭스', '망혼강림 VI 25 → 28'])
+    expect(
+      카드({ kind: 'spend', record: { ...스킬행, itemKey: 'hexa_stat_2', levelFrom: null, levelTo: null, hexa: { ...조각, activation: true } }, characterName: '' }),
+    ).toEqual(['헥사 매트릭스', '헥사 스탯 Ⅱ'])
   })
 
   it('아이템 구매 · 판매는 직접 친 이름이고 소비 · 기타만 수량을 붙인다', () => {

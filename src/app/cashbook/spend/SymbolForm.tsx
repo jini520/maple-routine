@@ -104,6 +104,7 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
+        hexa: null,
       })
     },
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
