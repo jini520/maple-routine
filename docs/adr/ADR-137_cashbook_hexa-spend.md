@@ -1,7 +1,7 @@
 # ADR-137 헥사 강화 지출과 강화 레벨 기억
 
-> ⚪ 미구현
-> 관련 소스: `app/cashbook/spend/SymbolForm.tsx` · `app/cashbook/spend/LevelRangeSlider.tsx` · `app/cashbook/spend/level-range.ts` · `lib/cashbook/categories.ts` · `lib/cashbook/symbol-costs.ts`
+> 🟢 유효
+> 관련 소스: `app/cashbook/spend/HexaMatrixForm.tsx` · `app/cashbook/spend/LevelRangeGrid.tsx` · `app/cashbook/spend/level-range.ts` · `app/cashbook/spend/SymbolForm.tsx` · `lib/cashbook/hexa-matrix.ts` · `features/cashbook/remembered-levels.ts` · `storage/remembered-levels.ts` · `nexon/hexamatrix/` · `features/server-sync/cashbook-entry-sync.ts`
 
 ## 배경
 
@@ -173,7 +173,19 @@
 
 ## 테스트
 
-아직 구현 전이다. 구현할 때 이 결정을 지키는 테스트를 적는다.
+앞의 일곱 줄은 앱, 뒤의 두 줄은 서버 저장소(`maple-routine-server`)의 테스트다.
+
+| 파일 | 확인하는 것 |
+|---|---|
+| `lib/__tests__/hexa-matrix.test.ts` | 결정 4 · 5 · 7: 이름 표가 먼저이고 없으면 API 타입의 기본 종류인지(3rd · 솔 야누스 · 직업 공용), 앞뒤 공백을 걷는지, 모르는 타입은 `null` 인지, 렌의 코어 열넷이 API 차례로 서는지, 레벨 범위 조각이 사용자 표의 합계와 같은지, 기본 종류가 둘이거나 없는 종류를 가리키는 표를 버리는지 본다 |
+| `app/cashbook/spend/__tests__/LevelRangeGrid.test.tsx` | 결정 2: 강화 전을 고르면 탭이 강화 후로 넘어가고, 강화 전을 강화 후 위로 올리면 강화 후를 밀고, 못 고르는 칸은 눌러도 안 바뀌는지 본다 |
+| `app/cashbook/__tests__/SpendSheet.test.tsx` (`헥사 매트릭스` · `심볼 강화`) | 결정 3 · 6 · 8 · 9 · 10: 직업의 코어가 종류별로 묶이는지, 강화 전이 기억한 레벨인지, 조각 · 금액 · 저장 값, 개당 가격이 비면 저장이 꺼지는지, 교환 불가가 더 많으면 0 메소로 저장하는지, 헥사 스탯 활성화와 수정 되살리기, 심볼의 기억 레벨 · 만렙 묶음을 본다 |
+| `features/cashbook/__tests__/remembered-levels.spec.ts` | 결정 3: 추적 시작 때 기억이 없을 때만 넥슨 값으로 채우는지, 폼은 기억이 있으면 넥슨을 안 부르는지, 저장 · 지우기가 가장 최근 기록일 때만 기억을 옮기는지 본다 |
+| `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` | 결정 3 · 9: 조각 칸 넷이 그대로 돌아오는지, 칸이 없는 옛 품목 표에 칸이 붙는지, 가장 최근 기록 조회와 기억의 fill · overwrite 를 진짜 SQLite 로 본다 |
+| `features/cashbook/__tests__/records.spec.ts` · `row-icon.spec.ts` · `features/stats/__tests__/aggregate.spec.ts` | 결정 12: 0 메소 헥사 줄이 서는지, 줄 두 줄 · 그림, 통계의 코어 · 스탯별 몫을 본다 |
+| `features/server-sync/__tests__/record-payloads.spec.ts` | 결정 10: 조각 칸 넷을 싣고 0 메소 헥사 기록은 보내지 않는지 본다 |
+| `src/modules/hexa-matrix/hexa-matrix.repository.spec.ts` | 결정 5 · 6: API 타입마다 기본 종류가 하나인지, 비용 줄이 0 부터 만렙 − 1 까지 다 있어야 하는지, 직업별 코어의 차례를 진짜 Postgres 로 본다 |
+| `src/cli/seed-game-data.spec.ts` | 결정 5 · 7: 헥사 씨앗이 종류 6 · 비용 180 · 이름 50 · 직업 코어 672 · 스탯 3 으로 빈 표만 채우는지 본다 |
 
 ## 번호 기록
 

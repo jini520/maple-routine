@@ -509,7 +509,7 @@ export async function resolveTrackedDefeatDates(now: Date): Promise<number> {
  * 던지지 않는다. 못 읽으면 목록이 비고 그때 고르개는 선택 안함 하나만 남는다.
  */
 export async function loadTrackedCharacters(): Promise<
-  Array<{ ocid: string; name: string; level: number | null; worldKey: string | null }>
+  Array<{ ocid: string; name: string; level: number | null; worldKey: string | null; jobClass: string | null }>
 > {
   const ocids = await getTrackedCharacterOcids().catch(() => null)
   if (ocids === null || ocids.length === 0) {
@@ -526,6 +526,8 @@ export async function loadTrackedCharacters(): Promise<
         level: profile?.level ?? null,
         // 시트의 캐릭터 드롭다운이 월드 엠블럼을 그린다. 모르면 이름만 선다.
         worldKey: profile?.worldKey ?? null,
+        // 헥사 매트릭스 폼이 직업의 코어 목록을 고른다. 모르면 코어를 못 고른다.
+        jobClass: profile?.jobClass ?? null,
       }
     }),
   )

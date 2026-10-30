@@ -1070,15 +1070,15 @@ describe('loadTrackedCharacters', () => {
     basicCache.getCachedCharacterBasic.mockImplementation(async (ocid: string) => ({
       profile:
         ocid === 'ocid-1'
-          ? { name: '루디', level: 294, worldKey: 'scania' }
+          ? { name: '루디', level: 294, worldKey: 'scania', jobClass: '렌' }
           : { name: '아델', level: 275, worldKey: 'elysium' },
     }))
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
     // 레벨은 사냥 계산기가 쓴다. 지역을 ±20 으로 거르고 페널티를 낸다.
     expect(await loadTrackedCharacters()).toEqual([
-      { ocid: 'ocid-1', name: '루디', level: 294, worldKey: 'scania' },
-      { ocid: 'ocid-2', name: '아델', level: 275, worldKey: 'elysium' },
+      { ocid: 'ocid-1', name: '루디', level: 294, worldKey: 'scania', jobClass: '렌' },
+      { ocid: 'ocid-2', name: '아델', level: 275, worldKey: 'elysium', jobClass: null },
     ])
   })
 
@@ -1089,7 +1089,7 @@ describe('loadTrackedCharacters', () => {
     basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
-    expect(await loadTrackedCharacters()).toEqual([{ ocid: 'ocid-1', name: '루디', level: null, worldKey: null }])
+    expect(await loadTrackedCharacters()).toEqual([{ ocid: 'ocid-1', name: '루디', level: null, worldKey: null, jobClass: null }])
   })
 
   it('캐시가 비어 이름을 모르는 캐릭터는 뺀다', async () => {
@@ -1100,7 +1100,7 @@ describe('loadTrackedCharacters', () => {
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
     expect(await loadTrackedCharacters()).toEqual([
-      { ocid: 'ocid-1', name: '루디', level: null, worldKey: null },
+      { ocid: 'ocid-1', name: '루디', level: null, worldKey: null, jobClass: null },
     ])
   })
 

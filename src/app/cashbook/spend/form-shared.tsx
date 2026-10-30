@@ -54,7 +54,7 @@ export interface SpendFormProps {
   /** 머리를 시트 위로 올리는 손잡이. 저장 줄과 같은 방식이다. */
   setHeader: (slot: SpendHeaderSlot) => void
   dateKey: string
-  characters: ReadonlyArray<{ ocid: string; name: string; level: number | null; worldKey: string | null }>
+  characters: ReadonlyArray<{ ocid: string; name: string; level: number | null; worldKey: string | null; jobClass?: string | null }>
   /** 1차에서 고른 갈래 key. 머리의 제목은 이 key 로 찾은 갈래 이름이다. */
   category: SpendCategoryKey
   /** 1차로 되돌아간다. 머리의 화살촉이 부른다. 수정 모드에서는 폼이 안 붙인다. */
@@ -72,8 +72,8 @@ export interface SpendFormProps {
   todayDateKey: string
   /** 머리의 날짜를 이 날 앞으로 못 옮긴다. 가계부 화면이 갈 수 있는 가장 이른 날이다. */
   earliestDateKey: string
-  /** 캐릭터의 심볼 레벨(심볼 key 별)을 읽는 콜백. 모르면 `null`. 심볼 강화 폼만 쓴다. */
-  loadSymbolLevels: (ocid: string) => Promise<Readonly<Record<string, number>> | null>
+  /** 캐릭터의 기억한 강화 레벨(심볼 key · 코어 이름 별)을 읽는 콜백. 심볼 강화 · 헥사 매트릭스 폼이 쓴다. */
+  loadRememberedLevels: (ocid: string, kind: 'symbol' | 'hexa') => Promise<Readonly<Record<string, number>>>
 }
 
 /**

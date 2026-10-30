@@ -26,6 +26,7 @@ import type { SpendRecord } from '../../storage/spend'
 import { CategoryPicker } from './CategoryPicker'
 import { CatalogForm } from './spend/CatalogForm'
 import { EtcForm } from './spend/EtcForm'
+import { HexaMatrixForm } from './spend/HexaMatrixForm'
 import { ItemBuyForm } from './spend/ItemBuyForm'
 import { SymbolForm } from './spend/SymbolForm'
 import {
@@ -49,9 +50,9 @@ export interface SpendSheetProps {
    * 고를 수 있는 캐릭터. 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
    * 비어 있으면 고르개에 선택 안함 하나만 선다.
    */
-  characters: ReadonlyArray<{ ocid: string; name: string; level: number | null; worldKey: string | null }>
-  /** 캐릭터의 심볼 레벨(심볼 key 별)을 읽는 콜백. 모르면 `null`. 심볼 강화 폼만 쓴다. */
-  loadSymbolLevels: (ocid: string) => Promise<Readonly<Record<string, number>> | null>
+  characters: ReadonlyArray<{ ocid: string; name: string; level: number | null; worldKey: string | null; jobClass?: string | null }>
+  /** 캐릭터의 기억한 강화 레벨을 읽는 콜백. 심볼 강화 · 헥사 매트릭스 폼이 쓴다. */
+  loadRememberedLevels: SpendFormProps['loadRememberedLevels']
   /**
    * 고칠 기록. 있으면 수정 모드다. 머리와 버튼 글자가 갈리고 삭제가 선다. 화면을 따로 만들지
    * 않는 것은 입력 규칙이 한 벌이어야 하기 때문이다.
@@ -132,7 +133,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           onDateChange: setDateKey,
           todayDateKey: props.todayDateKey,
           earliestDateKey: props.earliestDateKey,
-          loadSymbolLevels: props.loadSymbolLevels,
+          loadRememberedLevels: props.loadRememberedLevels,
         }
 
   return (
@@ -195,5 +196,6 @@ function SpendForm(props: {
   if (props.category === 'item_purchase') return <ItemBuyForm {...props.formProps} />
   if (props.category === 'etc') return <EtcForm {...props.formProps} />
   if (props.category === 'symbol') return <SymbolForm {...props.formProps} />
+  if (props.category === 'hexa_matrix') return <HexaMatrixForm {...props.formProps} />
   return <CatalogForm {...props.formProps} />
 }
