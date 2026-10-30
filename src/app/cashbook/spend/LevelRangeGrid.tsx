@@ -31,7 +31,8 @@ const BREATH_MS = 1100
 const GlowBox = Animated.createAnimatedComponent(View)
 
 /**
- * 고른 탭 뒤의 숨쉬는 그림자. 테마 주색으로 약하고 흐리게 번진다. 지금 어느 쪽을 고르는지 눈에 띄게 하는 몫이다.
+ * 고른 탭 뒤의 숨쉬는 그림자. 테마 주색으로 약하고 넓게 번진다. 지금 어느 쪽을 고르는지 눈에 띄게 하는 몫이다.
+ * 번짐이 좁으면 테두리 선처럼 읽혀서 넓고 옅게 둔다.
  *
  * `className` 을 안 쓴다. 애니메이션 상자에 정적 스타일을 함께 주면 NativeWind 가 정적 쪽을 버린다.
  */
@@ -54,7 +55,7 @@ function BreathingGlow(): React.JSX.Element {
       pointerEvents="none"
       style={[
         StyleSheet.absoluteFill,
-        { borderRadius: 9, boxShadow: boxShadowOf(definition.primary, { opacity: 0.55, radius: 6, y: 0 }) },
+        { borderRadius: 9, boxShadow: boxShadowOf(definition.primary, { opacity: 0.35, radius: 12, y: 0 }) },
         breath,
       ]}
     />
