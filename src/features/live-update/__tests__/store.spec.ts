@@ -36,9 +36,20 @@ const INITIAL = {
   minNativeVersion: null,
   downloadProgress: 0,
   hasDownloadedBundle: false,
+  justUpdated: false,
+  holdingSplash: true,
 }
 
 const s = () => useLiveUpdateStore.getState()
+
+/** 사본이 있어 잠그지 않고 연 부팅. 이때 앱은 확인을 기다리지 않는다. */
+const OPENED = { locked: false, firstRun: false }
+
+/** 기다리지 않는 부팅 확인을 부르고 그 안의 await 들이 다 돌 때까지 흘린다. */
+async function bootOpened(): Promise<void> {
+  void s().checkOnBoot(OPENED)
+  for (let i = 0; i < 20; i += 1) await Promise.resolve()
+}
 
 const AVAILABLE = {
   kind: 'update-available' as const,
@@ -289,7 +300,7 @@ describe('useLiveUpdateStore', () => {
     it('현재 버전을 싣고 체크해 업데이트가 있으면 update-available로 노출', async () => {
       getCurrentBundleVersionMock.mockResolvedValue('1.0.1')
       checkForLiveUpdateMock.mockResolvedValue(AVAILABLE)
-      await s().checkOnBoot()
+      await bootOpened()
       expect(s().currentVersion).toBe('1.0.1')
       expect(s().status).toBe('update-available')
       expect(downloadLiveUpdateMock).not.toHaveBeenCalled()
@@ -297,7 +308,7 @@ describe('useLiveUpdateStore', () => {
 
     it('web(unsupported)이면 체크하지 않는다', async () => {
       getCurrentBundleVersionMock.mockResolvedValue(null)
-      await s().checkOnBoot()
+      await bootOpened()
       expect(s().status).toBe('unsupported')
       expect(checkForLiveUpdateMock).not.toHaveBeenCalled()
       expect(setLastRunBundleVersionMock).not.toHaveBeenCalled()
@@ -312,24 +323,24 @@ describe('useLiveUpdateStore', () => {
       checkForLiveUpdateMock.mockResolvedValue({ kind: 'up-to-date' })
     })
 
-    it('저장된 버전보다 올라갔으면 updated 로 전환한다', async () => {
+    it('저장된 버전보다 올라갔으면 완료 안내를 켠다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.3')
-      await s().checkOnBoot()
-      expect(s().status).toBe('updated')
+      await bootOpened()
+      expect(s().justUpdated).toBe(true)
       expect(s().currentVersion).toBe('1.0.4')
     })
 
     // 저장값 없음 = "모른다"이지 "업데이트했다"가 아니다. 근거 없이 안내하지 않는다.
     it('저장된 적이 없으면 안내하지 않고 기록만 한다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue(null)
-      await s().checkOnBoot()
+      await bootOpened()
       expect(s().status).toBe('up-to-date')
       expect(setLastRunBundleVersionMock).toHaveBeenCalledWith('1.0.4')
     })
 
     it('같은 버전으로 다시 실행한 것뿐이면 안내하지 않는다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.4')
-      await s().checkOnBoot()
+      await bootOpened()
       expect(s().status).toBe('up-to-date')
     })
 
@@ -342,39 +353,62 @@ describe('useLiveUpdateStore', () => {
     ])('패치 번호가 올라가도 안내한다: %s → %s', async (last, current) => {
       getCurrentBundleVersionMock.mockResolvedValue(current)
       getLastRunBundleVersionMock.mockResolvedValue(last)
-      await s().checkOnBoot()
-      expect(s().status).toBe('updated')
+      await bootOpened()
+      expect(s().justUpdated).toBe(true)
     })
 
     it('패치 번호가 내려갔으면 안내하지 않는다', async () => {
       getCurrentBundleVersionMock.mockResolvedValue('1.0.4+1')
       getLastRunBundleVersionMock.mockResolvedValue('1.0.4+2')
-      await s().checkOnBoot()
+      await bootOpened()
       expect(s().status).toBe('up-to-date')
     })
 
     // 되돌아간 것을 "완료"라고 부를 수 없다. 판정이 "달라졌다"가 아니라 "올라갔다"인 이유다.
     it('자동 롤백으로 버전이 내려갔으면 안내하지 않는다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.5')
-      await s().checkOnBoot()
+      await bootOpened()
       expect(s().status).toBe('up-to-date')
     })
 
-    // 회고와 행동 요구가 겹치면 행동 쪽이 이긴다.
-    it('새 업데이트가 또 있으면 update-available 이 이긴다', async () => {
+    // 완료 안내는 확인을 기다리지 않는다. 새 업데이트가 또 있어도 두 사실이 함께 남고, 모달이 완료 안내를 먼저 그린다.
+    it('새 업데이트가 또 있어도 완료 안내가 켜진다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.3')
       checkForLiveUpdateMock.mockResolvedValue(AVAILABLE)
-      await s().checkOnBoot()
+      await bootOpened()
+      expect(s().justUpdated).toBe(true)
       expect(s().status).toBe('update-available')
     })
 
-    // 완료 안내는 네트워크와 무관한 사실이라, 확인이 실패했다는 이유로 이미 일어난 일을
-    // 못 말할 이유가 없다.
-    it('확인이 실패해도(check-error) 완료 안내는 뜬다', async () => {
+    it('확인이 끝나기 전에 완료 안내가 켜진다', async () => {
+      getLastRunBundleVersionMock.mockResolvedValue('1.0.3')
+      checkForLiveUpdateMock.mockReturnValue(new Promise(() => {}))
+      await bootOpened()
+      expect(s().status).toBe('checking')
+      expect(s().justUpdated).toBe(true)
+    })
+
+    it('확인이 실패해도(check-error) 완료 안내는 켜진다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.3')
       checkForLiveUpdateMock.mockResolvedValue({ kind: 'error' })
-      await s().checkOnBoot()
-      expect(s().status).toBe('updated')
+      await bootOpened()
+      expect(s().justUpdated).toBe(true)
+    })
+
+    // 처음 실행에서 받아 적용한 뒤의 부팅이다. 방금 설치한 사용자에게 업데이트했다는 말은 의미가 없다.
+    it('처음 실행이면 올라갔어도 완료 안내를 켜지 않는다', async () => {
+      getLastRunBundleVersionMock.mockResolvedValue('1.0.3')
+      await s().checkOnBoot({ locked: true, firstRun: true })
+      expect(s().justUpdated).toBe(false)
+      expect(setLastRunBundleVersionMock).toHaveBeenCalledWith('1.0.4')
+    })
+
+    it('dismissUpdated 는 완료 안내만 끄고 기다리던 상태는 남긴다', async () => {
+      useLiveUpdateStore.setState({ justUpdated: true, status: 'ready-to-apply', hasDownloadedBundle: true })
+      s().dismissUpdated()
+      expect(s().justUpdated).toBe(false)
+      expect(s().status).toBe('ready-to-apply')
+      expect(s().hasDownloadedBundle).toBe(true)
     })
 
     // 기록은 판정과 같은 자리에서 끝난다. 확인 결과에 밀려 안내를 못 띄웠어도 다음 부팅에
@@ -382,16 +416,181 @@ describe('useLiveUpdateStore', () => {
     it('안내를 띄우지 못한 경우에도 기록은 갱신한다', async () => {
       getLastRunBundleVersionMock.mockResolvedValue('1.0.3')
       checkForLiveUpdateMock.mockResolvedValue(AVAILABLE)
-      await s().checkOnBoot()
+      await bootOpened()
       expect(setLastRunBundleVersionMock).toHaveBeenCalledWith('1.0.4')
     })
 
     // 완료 안내는 곁가지다. 저장소가 실패했다고 업데이트 확인 자체가 죽으면 본말전도다.
     it('저장소 조회가 실패해도 확인은 그대로 진행된다', async () => {
       getLastRunBundleVersionMock.mockRejectedValue(new Error('preferences unavailable'))
-      await s().checkOnBoot()
+      await bootOpened()
       expect(checkForLiveUpdateMock).toHaveBeenCalled()
       expect(s().status).toBe('up-to-date')
+    })
+  })
+
+  // 5MB 이하는 묻지 않고 받는다. 사용자가 시작하지 않은 받기라 실패해도 모달 대상이 아니다.
+  describe('check: 묻지 않고 받기', () => {
+    const SMALL = { ...AVAILABLE, size: 3_000_000 }
+
+    it('5MB 이하면 바로 받고 ready-to-apply 가 된다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(SMALL)
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      await s().check()
+      expect(downloadLiveUpdateMock).toHaveBeenCalledTimes(1)
+      expect(s().status).toBe('ready-to-apply')
+      expect(s().hasDownloadedBundle).toBe(true)
+    })
+
+    it('받는 동안은 background-downloading 이다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(SMALL)
+      downloadLiveUpdateMock.mockReturnValue(new Promise(() => {}))
+      void s().check()
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(s().status).toBe('background-downloading')
+    })
+
+    it('딱 5MB 까지 받고, 넘으면 묻는다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue({ ...AVAILABLE, size: 5_000_000 })
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      await s().check()
+      expect(s().status).toBe('ready-to-apply')
+
+      downloadLiveUpdateMock.mockClear()
+      checkForLiveUpdateMock.mockResolvedValue({ ...AVAILABLE, size: 5_000_001 })
+      await s().check()
+      expect(s().status).toBe('update-available')
+      expect(downloadLiveUpdateMock).not.toHaveBeenCalled()
+    })
+
+    it('묻지 않고 받다가 실패하면 background-download-error 다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(SMALL)
+      downloadLiveUpdateMock.mockRejectedValue(new Error('network'))
+      await s().check()
+      expect(s().status).toBe('background-download-error')
+      expect(s().hasDownloadedBundle).toBe(false)
+    })
+
+    it('처음 실행이 아니면 받은 뒤 적용하지 않는다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(SMALL)
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      await bootOpened()
+      expect(applyLiveUpdateMock).not.toHaveBeenCalled()
+      expect(s().status).toBe('ready-to-apply')
+    })
+  })
+
+  // 잠근 채 켜지면 게임 데이터가 이 약속을 기다린다. 끝나는 때가 곧 게임 데이터 받기를 시작하는 때다.
+  describe('checkOnBoot: 게임 데이터가 기다리는 약속', () => {
+    const LOCKED = { locked: true, firstRun: false }
+    const FIRST_RUN = { locked: true, firstRun: true }
+
+    beforeEach(() => {
+      jest.useFakeTimers()
+      getCurrentBundleVersionMock.mockResolvedValue('1.0.1')
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    /** 약속이 끝났는지 돌려준다. 시간을 흘리지 않고 마이크로태스크만 흘린다. */
+    async function settledAfter(promise: Promise<void>): Promise<boolean> {
+      let done = false
+      void promise.then(() => {
+        done = true
+      })
+      for (let i = 0; i < 20; i += 1) await Promise.resolve()
+      return done
+    }
+
+    it('최신이면 바로 끝난다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue({ kind: 'up-to-date' })
+      expect(await settledAfter(s().checkOnBoot(LOCKED))).toBe(true)
+    })
+
+    it('확인이 5초 안에 안 끝나면 기다리지 않는다 (4.9초에는 아직 기다린다)', async () => {
+      checkForLiveUpdateMock.mockReturnValue(new Promise(() => {}))
+      const boot = s().checkOnBoot(LOCKED)
+      expect(await settledAfter(boot)).toBe(false)
+      jest.advanceTimersByTime(4_900)
+      expect(await settledAfter(boot)).toBe(false)
+      jest.advanceTimersByTime(100)
+      expect(await settledAfter(boot)).toBe(true)
+    })
+
+    it('받아서 적용을 묻는 동안 기다리고, 나중에 를 누르면 끝난다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue({ ...AVAILABLE, size: 3_000_000 })
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      const boot = s().checkOnBoot(LOCKED)
+      expect(await settledAfter(boot)).toBe(false)
+      expect(s().status).toBe('ready-to-apply')
+      jest.advanceTimersByTime(60_000)
+      expect(await settledAfter(boot)).toBe(false)
+      s().dismiss()
+      expect(await settledAfter(boot)).toBe(true)
+    })
+
+    it('묻지 않고 받다가 실패하면 끝난다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue({ ...AVAILABLE, size: 3_000_000 })
+      downloadLiveUpdateMock.mockRejectedValue(new Error('network'))
+      expect(await settledAfter(s().checkOnBoot(LOCKED))).toBe(true)
+    })
+
+    it('처음 실행이 아니면 스플래시를 붙들지 않는다', async () => {
+      checkForLiveUpdateMock.mockReturnValue(new Promise(() => {}))
+      void s().checkOnBoot(LOCKED)
+      expect(s().holdingSplash).toBe(false)
+    })
+
+    it('처음 실행이면 크기와 상관없이 받아 바로 적용하고, 그동안 스플래시를 붙든다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(AVAILABLE)
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      applyLiveUpdateMock.mockReturnValue(new Promise(() => {}))
+      const boot = s().checkOnBoot(FIRST_RUN)
+      expect(await settledAfter(boot)).toBe(false)
+      expect(applyLiveUpdateMock).toHaveBeenCalledTimes(1)
+      expect(s().holdingSplash).toBe(true)
+      expect(s().status).not.toBe('ready-to-apply')
+      expect(s().status).not.toBe('applying')
+    })
+
+    it('처음 실행에서 적용이 실패하면 모달 없이 끝나고 스플래시를 놓는다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(AVAILABLE)
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      applyLiveUpdateMock.mockRejectedValue(new Error('reload failed'))
+      expect(await settledAfter(s().checkOnBoot(FIRST_RUN))).toBe(true)
+      expect(s().status).toBe('idle')
+      expect(s().holdingSplash).toBe(false)
+    })
+
+    it('처음 실행에서 20초 안에 못 받으면 놓고, 다 받은 뒤에는 적용을 묻는다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(AVAILABLE)
+      let finish: () => void = () => {}
+      downloadLiveUpdateMock.mockReturnValue(
+        new Promise<void>((resolve) => {
+          finish = resolve
+        }),
+      )
+      const boot = s().checkOnBoot(FIRST_RUN)
+      expect(await settledAfter(boot)).toBe(false)
+      jest.advanceTimersByTime(19_900)
+      expect(await settledAfter(boot)).toBe(false)
+      jest.advanceTimersByTime(100)
+      expect(await settledAfter(boot)).toBe(true)
+      expect(s().holdingSplash).toBe(false)
+
+      finish()
+      for (let i = 0; i < 20; i += 1) await Promise.resolve()
+      expect(applyLiveUpdateMock).not.toHaveBeenCalled()
+      expect(s().status).toBe('ready-to-apply')
+    })
+
+    it('처음 실행이고 최신이면 바로 끝나고 스플래시를 놓는다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue({ kind: 'up-to-date' })
+      expect(await settledAfter(s().checkOnBoot(FIRST_RUN))).toBe(true)
+      expect(s().holdingSplash).toBe(false)
     })
   })
 })

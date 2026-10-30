@@ -3,6 +3,8 @@
 // 순서가 요점이라 테스트도 순서를 본다. 그려지기 전에 내리면 그 사이가 빈다.
 import { act, fireEvent, render } from '@testing-library/react-native'
 
+import { FIRST_RUN_HOLD_MS } from '../../features/live-update/store'
+import { markBootSplashCovering, useBootSplashDone } from '../../hooks/useBootSplashDone'
 import { hideSplashScreen } from '../../native/splash-screen'
 import { BOOT_SPLASH_HOLD_MS, BootSplash } from '../BootSplash'
 
@@ -124,5 +126,59 @@ describe('BootSplash', () => {
     })
 
     expect(view.queryByTestId('boot-splash')).toBeNull()
+  })
+
+  // 처음 실행에서 OTA 를 받아 적용하는 동안 스플래시가 덮고 있어야 두 번 켜지는 화면이 덜 보인다.
+  it('붙들라는 동안은 최소 표시 시간이 지나도 걷히지 않고, 놓으면 걷힌다', async () => {
+    const view = await render(<BootSplash holding />)
+    await layout(view)
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(BOOT_SPLASH_HOLD_MS * 5)
+    })
+    expect(view.queryByTestId('boot-splash')).not.toBeNull()
+
+    await view.rerender(<BootSplash holding={false} />)
+    expect(view.queryByTestId('boot-splash')).toBeNull()
+  })
+
+  // 붙드는 쪽이 끝내 놓지 않아도 갇히지 않는다. 처음 켠 때부터 센다.
+  it('붙들라는 것이 풀리지 않아도 처음 켠 때부터 상한이 지나면 걷힌다', async () => {
+    const view = await render(<BootSplash holding />)
+    await layout(view)
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(FIRST_RUN_HOLD_MS - 1)
+    })
+    expect(view.queryByTestId('boot-splash')).not.toBeNull()
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(1)
+    })
+    expect(view.queryByTestId('boot-splash')).toBeNull()
+  })
+
+  // 모달은 이 값을 보고 그린다. 걷히기 전에 참이 되면 모달이 주황 화면 위에 뜬다.
+  it('다 걷힌 뒤에야 걷혔다고 알린다', async () => {
+    markBootSplashCovering()
+    let splashDone: boolean | null = null
+    function Probe(): null {
+      splashDone = useBootSplashDone()
+      return null
+    }
+    const view = await render(
+      <>
+        <BootSplash />
+        <Probe />
+      </>,
+    )
+    await layout(view)
+    expect(splashDone).toBe(false)
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(BOOT_SPLASH_HOLD_MS)
+    })
+    expect(view.queryByTestId('boot-splash')).toBeNull()
+    expect(splashDone).toBe(true)
   })
 })

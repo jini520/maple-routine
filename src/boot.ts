@@ -18,6 +18,7 @@ import {
 } from './native/ports'
 import { setAssetFilesPort, setPreferencesPort, setSqlitePort } from './storage/ports'
 import { startGameData } from './features/game-data/sync'
+import { useLiveUpdateStore } from './features/live-update/store'
 import { nexonMaintenanceReporter } from './features/nexon-maintenance/store'
 import { setFriendsStream, setMaintenanceReporter } from './nexon/http'
 import { streamFriends } from './server/friends-stream'
@@ -125,8 +126,11 @@ export function installPorts(): void {
 /**
  * 게임 데이터 사본을 읽고, 없으면 잠금 화면 뒤에서 받는 부팅 곁가지. 포트 주입 뒤에 부른다. 저장소를 읽기 때문이다.
  *
+ * OTA 부팅 확인도 여기서 띄운다. 처음 실행인지와 잠근 채인지는 사본을 읽어야 알고, 잠근 채면 게임 데이터 받기가
+ * 그 확인을 기다린다. 두 기능이 서로를 모르게 이어 주는 자리가 여기다.
+ *
  * 결과를 안 기다린다. 화면은 `features/game-data/sync` 의 상태를 구독해 다 받기 전에는 잠금 화면을 그린다.
  */
 export function loadGameData(): void {
-  void startGameData()
+  void startGameData((context) => useLiveUpdateStore.getState().checkOnBoot(context))
 }

@@ -16,7 +16,10 @@ jest.mock('../native/splash-screen', () => ({
   hideSplashScreen: () => mockHideSplashScreen(),
 }))
 
+import { renderHook } from '@testing-library/react-native'
+
 import { holdSplashUntilAppReady, SPLASH_FAILSAFE_MS } from '../boot-splash'
+import { markBootSplashDone, useBootSplashDone } from '../hooks/useBootSplashDone'
 
 beforeEach(() => {
   jest.useFakeTimers()
@@ -58,5 +61,15 @@ describe('holdSplashUntilAppReady', () => {
     jest.advanceTimersByTime(SPLASH_FAILSAFE_MS)
 
     expect(mockHideSplashScreen).toHaveBeenCalledTimes(1)
+  })
+
+  // 진입점이 붙드는 순간부터 모달을 막아야 첫 렌더의 모달도 스플래시 위에 뜨지 않는다.
+  it('붙들면 스플래시가 걷힐 때까지 모달을 막는다', async () => {
+    markBootSplashDone()
+    holdSplashUntilAppReady()
+
+    const { result } = await renderHook(() => useBootSplashDone())
+    expect(result.current).toBe(false)
+    markBootSplashDone()
   })
 })
