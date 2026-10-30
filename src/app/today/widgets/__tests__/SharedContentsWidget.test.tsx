@@ -9,6 +9,7 @@
 import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { flattenStyle, renderOverlay, 기본테마 } from '../../../../components/__tests__/render-atom'
+import { withAlpha } from '../../../../lib/color'
 import { GRID_SIDE_PADDING } from '../../../../lib/today/widget-grid-metrics'
 import { SharedContentsWidget } from '../SharedContentsWidget'
 import { 공유계열, 공유항목, 공유컨텐츠, 뷰모델 } from './widget-fixture'
@@ -77,7 +78,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
 
     expect(queryByTestId('shared-count')).toBeNull()
     expect(
-      flattenStyle(getAllByTestId('shared-checkbox', { includeHiddenElements: true })[0]?.props.style)
+      flattenStyle(getAllByTestId('checkbox-box', { includeHiddenElements: true })[0]?.props.style)
         .backgroundColor,
     ).toBe(기본테마.primary)
   })
@@ -132,7 +133,7 @@ describe('완료는 체크와 취소선이 말한다', () => {
   // 숨은 것을 포함해 찾는다.
   const 숨은것포함 = { includeHiddenElements: true } as const
 
-  it('항목마다 체크박스가 서고 완료한 것만 채워진다', async () => {
+  it('항목마다 공용 체크박스의 `sm` 상자가 서고 완료한 것만 채워진다', async () => {
     const { getAllByTestId } = await 위젯([
       공유계열('epic_dungeon', [
         공유항목('하이마운틴', { isComplete: true }),
@@ -140,11 +141,12 @@ describe('완료는 체크와 취소선이 말한다', () => {
       ]),
     ])
 
-    const 상자들 = getAllByTestId('shared-checkbox', 숨은것포함)
+    const 상자들 = getAllByTestId('checkbox-box', 숨은것포함)
     expect(상자들).toHaveLength(2)
+    expect(flattenStyle(상자들[0]?.props.style).width).toBe(14)
     expect(flattenStyle(상자들[0]?.props.style).backgroundColor).toBe(기본테마.primary)
-    expect(flattenStyle(상자들[1]?.props.style).backgroundColor).toBeUndefined()
-    // 체크 표시는 완료한 것 하나뿐이다. 빈 상자는 테두리만 지고 안이 비어 있다.
+    expect(flattenStyle(상자들[1]?.props.style).backgroundColor).toBe(withAlpha(기본테마.text, 0.14))
+    // 체크 표시는 완료한 것 하나뿐이다. 빈 상자는 반투명으로 채워지고 안이 비어 있다.
     expect(상자들[0]?.props.children).toBeTruthy()
     expect(상자들[1]?.props.children).toBeFalsy()
   })
@@ -226,7 +228,7 @@ describe('계열의 주간 한도', () => {
     const { getAllByTestId } = await 위젯(한도참())
 
     const 이름들 = getAllByTestId('shared-item-name')
-    const 상자들 = getAllByTestId('shared-checkbox', 숨은것포함)
+    const 상자들 = getAllByTestId('checkbox-box', 숨은것포함)
     expect(flattenStyle(이름들[2]?.props.style).textDecorationLine).toBe('line-through')
     expect(flattenStyle(이름들[2]?.props.style).color).toBe(기본테마.textDisabled)
     expect(상자들[2]?.props.children).toBeFalsy()

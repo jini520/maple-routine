@@ -22,4 +22,13 @@ describe('CheckBox', () => {
     expect(on.borderWidth).toBeUndefined()
     expect(on.backgroundColor).toBe(definition.primary)
   })
+
+  // 줄 높이가 16 인 자리(today 공유 컨텐츠)에 18 을 넣으면 줄마다 높아져 타일이 길어진다.
+  it('`sm` 은 14 상자이고 기본값은 18 이다', async () => {
+    const sm = flattenStyle((await renderAtom(<CheckBox checked size="sm" />)).getByTestId('checkbox-box').props.style)
+    const md = flattenStyle((await renderAtom(<CheckBox checked />)).getByTestId('checkbox-box').props.style)
+
+    expect([sm.width, sm.height]).toEqual([14, 14])
+    expect([md.width, md.height]).toEqual([18, 18])
+  })
 })
