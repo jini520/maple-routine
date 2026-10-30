@@ -19,6 +19,8 @@ import { bossesInSection } from '../../../lib/boss/bosses'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import dropItemsData from '../../../__fixtures__/game-data/drop-items.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
+import { AURORA_TEXT } from '../../../constants/style/aurora'
+import { 기본테마 } from '../../../components/__tests__/render-atom'
 import { dropRowKey } from '../../../features/boss-profit/store'
 import type { RecordedDrop } from '../../../types/drops'
 
@@ -187,6 +189,23 @@ describe('아이템 수입', () => {
     expect(getByLabelText('지내우시 아이템 수입 확인')).toBeTruthy()
     expect(getByTestId('item-revenue-mark')).toBeTruthy()
     expect(queryByText(/^아이템 \+/)).toBeNull()
+  })
+
+  // 아래 화살표와 금액은 한 버튼이다. 금액만 오로라이고 화살표가 테마색이면 한 버튼이 두 색으로 갈려 보인다.
+  it('고가 드롭 카드는 화살표를 오로라 그라디언트의 첫 색으로 칠하고, 아니면 테마 잉크로 둔다', async () => {
+    const 값매긴고가드롭 = {
+      [dropRowKey('ocid-1', 주간보스, 'hard', PERIOD)]: [
+        드롭({ itemKey: 고가아이템, itemName: 고가아이템, priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 1 }),
+      ],
+    }
+    const 화살표색 = (view: Awaited<ReturnType<typeof renderProfit>>): unknown =>
+      (view.getByTestId('item-revenue-mark', { includeHiddenElements: true }).children[0] as { props: { stroke?: unknown } }).props.stroke
+
+    const valuable = await renderProfit(<CharacterAccordion group={그룹()} />, 컨텍스트값({ dropsByRowKey: 값매긴고가드롭 }))
+    expect(화살표색(valuable)).toBe(AURORA_TEXT[기본테마.mode][0])
+
+    const plain = await renderProfit(<CharacterAccordion group={그룹()} />, 컨텍스트값({ dropsByRowKey: 값매긴드롭 }))
+    expect(화살표색(plain)).toBe(기본테마.primaryInk)
   })
 
   it('값을 안 매긴 드롭만 있으면 칩이 없다. 미입력은 0원이 아니다', async () => {

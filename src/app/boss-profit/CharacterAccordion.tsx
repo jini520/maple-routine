@@ -21,7 +21,9 @@ import { AuroraText } from '../../components/molecules/AuroraText/AuroraText'
 import { ValuableDropMark } from '../../components/molecules/ValuableDropMark/ValuableDropMark'
 import { HologramSheen } from '../../components/organisms/HologramSheen/HologramSheen'
 import { useHoloMotion } from '../../components/organisms/HologramSheen/holo-motion'
+import { AURORA_TEXT } from '../../constants/style/aurora'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
+import { useThemeMode } from '../../theme/context'
 import { MonthlyAccordionBody, WeeklyAccordionBody } from './AccordionBody'
 import { ItemRevenueTrigger } from './ItemRevenueTrigger'
 import { useBossProfitContext } from './boss-profit-context'
@@ -64,6 +66,7 @@ function MoneyBox({
   isOpen: boolean
   onPress: () => void
   triggerRef: (node: View | null) => void
+  markColor?: string
   children: React.ReactNode
 }): React.JSX.Element {
   if (!props.wrap) return <>{props.children}</>
@@ -73,6 +76,7 @@ function MoneyBox({
       label={props.label}
       isOpen={props.isOpen}
       onPress={props.onPress}
+      markColor={props.markColor}
     >
       {props.children}
     </ItemRevenueTrigger>
@@ -171,6 +175,7 @@ export function CharacterAccordion(props: {
   const valuableDrops = collectGroupValuableDrops(group, dropsByRowKey)
   const hasValuable = valuableDrops.length > 0
   const holoMotion = useHoloMotion(hasValuable)
+  const themeMode = useThemeMode()
   // 카드 금액(`groupTotalMeso`)과 같은 원천이어야 상자의 목록 · 아이템 줄 · 합계가 맞는다.
   const groupDrops = collectRevenueDrops(group, dropsByRowKey)
   const itemTotal = sumDropPayout(groupDrops)
@@ -282,6 +287,8 @@ export function CharacterAccordion(props: {
                 isOpen={isItemPopoverOpen}
                 onPress={toggleItemPopover}
                 triggerRef={itemChipRef}
+                // 화살표는 금액 바로 왼쪽이라 그라디언트가 시작하는 색이어야 금액과 한 덩어리로 보인다.
+                markColor={hasValuable ? AURORA_TEXT[themeMode][0] : undefined}
               >
                 {/* 실패 배지의 절대배치 기준이자 설명 팝오버가 꼬리를 대는 상자다. 아이템이 섞이면
                     금액 색이 달라진다. 새 색을 만들지 않고 보스 행과 같은 `primary-ink` 를 쓴다. */}
