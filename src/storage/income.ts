@@ -15,6 +15,7 @@ import type { UnionTier } from '../lib/cashbook/hunting-meso'
 import type { FeePercent } from '../lib/cashbook/item-split'
 import { deleteEntry, insertEntry, readEntries, replaceEntry } from './cashbook-entries'
 import { incomeEntryOf, incomeRecordOf } from './cashbook-entry-shape'
+import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
 
@@ -155,22 +156,35 @@ export interface HuntingCalculatorDetail {
 }
 
 /**
- * 수입 기록의 판. 이어서 하는 작업이 수수료를 고쳐 쓰면 오른다. 가계부가 포커스 때 이 판을 보고 다시 읽는다.
- * 시트의 쓰기는 가계부가 스스로 다시 읽어 판을 안 올린다.
+ * 수입 기록의 판. 쓰기마다 오른다. 이 표를 읽는 쿼리가 판이 오를 때 무효화된다(`features/query/invalidation.ts`).
+ * 쓰기 **뒤**에 올린다. 앞에 올리면 무효화된 쿼리가 쓰기 전 값을 읽는다.
  */
 let incomeRecordsRevision = 0
+const revisionListeners = new Set<() => void>()
 
 export function getIncomeRecordsRevision(): number {
   return incomeRecordsRevision
 }
 
+/** 판이 오를 때 부를 함수를 건다. 풀 함수를 돌려준다. `storage/boss-profit` 의 같은 이름 함수와 같은 물건이다. */
+export function subscribeIncomeRecordsRevision(listener: () => void): () => void {
+  revisionListeners.add(listener)
+  return () => {
+    revisionListeners.delete(listener)
+  }
+}
+
 function bumpIncomeRecordsRevision(): void {
   incomeRecordsRevision += 1
+  notifyAfterBatch(() => {
+    for (const listener of revisionListeners) listener()
+  })
 }
 
 export async function insertIncomeRecord(record: IncomeRecord, nexonAccountId: string | null = null): Promise<void> {
   const db = await getBossProfitDb()
   await inTransaction(db, () => insertEntry(db, incomeEntryOf(record), nexonAccountId))
+  bumpIncomeRecordsRevision()
 }
 
 /** 여러 건을 한 트랜잭션으로 넣는다. 하나라도 못 넣으면 아무것도 안 남는다. */
@@ -182,18 +196,21 @@ export async function insertIncomeRecords(
   await inTransaction(db, async () => {
     for (const record of records) await insertEntry(db, incomeEntryOf(record), nexonAccountId)
   })
+  bumpIncomeRecordsRevision()
 }
 
 /** 갈아 끼우기. 지출과 같은 계약이다. 저장 시각은 그대로다. */
 export async function updateIncomeRecord(record: IncomeRecord, nexonAccountId: string | null = null): Promise<void> {
   const db = await getBossProfitDb()
   await inTransaction(db, () => replaceEntry(db, incomeEntryOf(record), new Date(), nexonAccountId))
+  bumpIncomeRecordsRevision()
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteIncomeRecord(id: string): Promise<void> {
   const db = await getBossProfitDb()
   await deleteEntry(db, id)
+  bumpIncomeRecordsRevision()
 }
 
 const INCOME = `e.entry_type = 'income'`

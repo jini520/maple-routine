@@ -24,6 +24,11 @@ const { getCachedSchedulerState: legacyScheduleMock } = jest.requireMock('../../
 
 jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn(async () => null) }))
 
+jest.mock('../../boss-profit/round-record', () => ({ recordBossProfitFromRound: jest.fn(async () => undefined) }))
+const { recordBossProfitFromRound: recordMock } = jest.requireMock('../../boss-profit/round-record') as Record<string, jest.Mock>
+jest.mock('../../boss-profit/defeat-dates', () => ({ resolveDefeatDates: jest.fn(async () => 0) }))
+const { resolveDefeatDates: defeatDatesMock } = jest.requireMock('../../boss-profit/defeat-dates') as Record<string, jest.Mock>
+
 const NOW = new Date('2026-10-30T05:00:00.000Z')
 
 function synced(ocid: string, syncedAt = NOW.toISOString()): CharacterScheduleSync {
@@ -48,6 +53,8 @@ beforeEach(() => {
   jest.clearAllMocks()
   trackedMock.mockResolvedValue(['a', 'b'])
   strandedMock.mockResolvedValue([])
+  recordMock.mockResolvedValue(undefined)
+  defeatDatesMock.mockResolvedValue(0)
 })
 
 afterEach(() => {
@@ -91,6 +98,58 @@ describe('scheduleRound', () => {
     expect(syncSchedulesMock).toHaveBeenLastCalledWith(['a', 'b', 'c'])
   })
 
+  // 없는 기록은 날짜를 캘 수 없다. 그래서 동기화 → 기록 → 날짜 순이다.
+  it('동기화 뒤에 보스 수익을 기록하고 그다음 처치 날짜를 캔다', async () => {
+    const order: string[] = []
+    const results = [synced('a'), fallback('b')]
+    syncSchedulesMock.mockImplementation(async () => {
+      order.push('sync')
+      return results
+    })
+    recordMock.mockImplementation(async () => void order.push('record'))
+    defeatDatesMock.mockImplementation(async () => {
+      order.push('dates')
+      return 0
+    })
+
+    await prefetchSchedules()
+
+    expect(order).toEqual(['sync', 'record', 'dates'])
+    expect(recordMock).toHaveBeenCalledWith(['a', 'b'], results, expect.any(Date))
+    expect(defeatDatesMock).toHaveBeenCalledWith(['a', 'b'], expect.any(Date))
+  })
+
+  it('기록이나 날짜 캐기가 던져도 회차는 선다. 받은 스케줄은 이미 캐시에 들었다', async () => {
+    syncSchedulesMock.mockResolvedValue([synced('a'), synced('b')])
+    recordMock.mockRejectedValue(new Error('sqlite'))
+    defeatDatesMock.mockRejectedValue(new Error('network'))
+
+    await prefetchSchedules()
+
+    expect(queryClient.getQueryState(queryKeys.scheduleRound())?.status).toBe('success')
+    expect(defeatDatesMock).toHaveBeenCalled()
+  })
+
+  // 401 · 429 · 점검이면 전원이 캐시로 채워진다. 그 회차도 쿼리는 성공이라 머리 시각이 거기서 오르면 안 받은 것을 받은 것처럼 말한다.
+  it('실제로 받은 시각만 `receivedAt` 에 들고, 전원 캐시 폴백이면 이전 값을 지킨다', async () => {
+    syncSchedulesMock.mockResolvedValue([synced('a', '2026-10-30T04:00:00.000Z'), synced('b', '2026-10-30T04:30:00.000Z')])
+    await prefetchSchedules()
+    expect(queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())?.receivedAt).toBe('2026-10-30T04:30:00.000Z')
+
+    syncSchedulesMock.mockResolvedValue([fallback('a'), fallback('b')])
+    await refreshSchedules()
+    expect(queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())?.receivedAt).toBe('2026-10-30T04:30:00.000Z')
+  })
+
+  it('추적이 없으면 기록도 날짜도 안 부른다', async () => {
+    trackedMock.mockResolvedValue([])
+
+    await prefetchSchedules()
+
+    expect(recordMock).not.toHaveBeenCalled()
+    expect(defeatDatesMock).not.toHaveBeenCalled()
+  })
+
   it('회차가 던지면 쿼리는 실패로 남고 캐릭터 열쇠는 그대로다. 당김은 던지지 않는다', async () => {
     syncSchedulesMock.mockResolvedValue([synced('a'), synced('b')])
     await prefetchSchedules()
@@ -115,6 +174,8 @@ describe('syncAddedCharacters', () => {
     const round = queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())
     expect(round?.ocids).toEqual(['a', 'b', 'c'])
     expect(round?.outcomes.c?.isStale).toBe(false)
+    // 새 캐릭터의 완료도 그 자리에서 기록한다.
+    expect(recordMock).toHaveBeenLastCalledWith(['c'], [synced('c')], expect.any(Date))
     // 더한 목록이 추적 목록을 덮으므로 다음 자동 진입은 안 받는다.
     queryClient.setQueryData(queryKeys.trackedOcids(), ['a', 'b', 'c'])
     await prefetchSchedules()

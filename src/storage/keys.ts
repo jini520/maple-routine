@@ -111,11 +111,6 @@ export const STORAGE_KEYS = {
   statsCumulativeStart: 'statsCumulativeStart',
   // today 빠른 이동 구성(JSON `{ rows, ids }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   quickLinks: 'quickLinks',
-  // 페이지별 마지막 데이터 호출 시각. `{ today: ISO, content: ISO, … }` 한 칸이다.
-  //
-  // 키를 다섯으로 쪼개지 않는 것은 읽는 쪽이 언제나 다섯을 한 번에 필요로 해서다(부팅 때 한 번
-  // 읽어 스토어에 올린다).
-  dataFetchedAt: 'dataFetchedAt',
   // MVP 등급 주간 확인을 끈 체크박스(`앞으로 등급은 직접 바꿀게요`). 데이터 삭제 그룹에 넣지 말 것.
   mvpWeeklyCheckOff: 'mvpWeeklyCheckOff',
   // 마지막으로 등급을 확인한 주의 기간 키(목요일 `YYYY-MM-DD`).

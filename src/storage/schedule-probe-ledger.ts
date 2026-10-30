@@ -1,6 +1,33 @@
 import { preferences } from './ports'
 import { getKstDateKeyDaysAgo } from '../lib/scheduler/reset-clock'
 import { scheduleProbeKey } from './keys'
+import { notifyAfterBatch } from './record-revision-batch'
+
+/**
+ * 원장의 판. 날짜 하나를 적거나 조회 불가 표식을 바꾸거나 지울 때마다 오른다. 지난 기간의 상태(`notChecked` 에서
+ * `confirmedEmpty` 로)가 기록 없이 원장만으로 바뀌므로, 원장을 읽는 쿼리가 이 판으로 무효화된다
+ * (`features/query/invalidation.ts`). 기록 표의 판과 같은 물건이고 알림도 `batchRecordWrites` 안에서는 끝에 한 번이다.
+ */
+let ledgerRevision = 0
+const revisionListeners = new Set<() => void>()
+
+export function getScheduleProbeLedgerRevision(): number {
+  return ledgerRevision
+}
+
+export function subscribeScheduleProbeLedgerRevision(listener: () => void): () => void {
+  revisionListeners.add(listener)
+  return () => {
+    revisionListeners.delete(listener)
+  }
+}
+
+function bumpLedgerRevision(): void {
+  ledgerRevision += 1
+  notifyAfterBatch(() => {
+    for (const listener of revisionListeners) listener()
+  })
+}
 
 /**
  * (ocid, 날짜) 조회 원장. 같은 날짜를 다시 안 캐게 하는 포기 기록이다.
@@ -172,6 +199,7 @@ export async function recordScheduleProbe(
       }),
     )
   })
+  bumpLedgerRevision()
 }
 
 /**
@@ -192,10 +220,12 @@ export async function markScheduleProbeUnavailable(
     const ledger = await readLedger(ocid)
     await preferences.set(scheduleProbeKey(ocid), JSON.stringify({ ...ledger, version: LEDGER_VERSION, unavailable }))
   })
+  bumpLedgerRevision()
 }
 
 export async function clearScheduleProbeLedger(ocid: string): Promise<void> {
   await withLedgerLock(ocid, async () => {
     await preferences.remove(scheduleProbeKey(ocid))
   })
+  bumpLedgerRevision()
 }

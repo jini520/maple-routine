@@ -29,6 +29,7 @@ import { bossCompletionKey, toProbeObservation } from '../../lib/scheduler/sched
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { SCHEDULE_NAME_RESOLVERS } from '../../lib/scheduler/schedule-name-resolvers'
 import {
+  getBossProfitRecordsRevision,
   getUndatedBossProfitRecords,
   setBossProfitDefeatedOn,
   type UndatedBossProfitRecord,
@@ -294,7 +295,8 @@ function periodsOf(records: readonly UndatedBossProfitRecord[]): ResolvablePerio
   return [...seen.values()]
 }
 
-let inFlight: Promise<number> | null = null
+/** 도는 회차와 그 회차가 후보를 읽기 전의 보스 기록 판. 합류한 쪽이 그 뒤에 기록이 생겼는지 이 판으로 안다. */
+let inFlight: { promise: Promise<number>; recordsRevision: number } | null = null
 
 /**
  * 아직 날짜를 모르는 보스 기록을 캐내 `defeated_date` 을 채우는 회차. 채운 건수를 돌려준다. 0 이면
@@ -307,15 +309,25 @@ let inFlight: Promise<number> | null = null
  * 키가 없어도 채울 수 있는 것은 채운다. 소거법과 리셋 당일은 조회가 필요 없다.
  */
 export async function resolveDefeatDates(ocids: readonly string[], now: Date): Promise<number> {
-  // 두 화면이 같은 순간에 부를 수 있다. 원장은 차례로 부를 때만 겹침을 막으므로, 동시에 도는
+  // 스케줄 회차와 창 회차가 같은 순간에 부를 수 있다. 원장은 차례로 부를 때만 겹침을 막으므로, 동시에 도는
   // 것은 여기서 하나로 접는다. 아니면 같은 날짜가 두 번 나간다.
+  //
+  // 합류한 뒤 그 회차가 후보를 읽은 때보다 기록 판이 올랐으면 한 번 더 돈다. 창 회차가 후보를 읽은 뒤에 자동 기록이
+  // 오늘 기록을 쓰면 그 기록은 그 회차의 후보에 없어, 그대로 돌아가면 오늘 결정석에 날짜가 안 붙는다.
   if (inFlight !== null) {
-    return inFlight
+    const joined = inFlight
+    const dated = await joined.promise
+    if (getBossProfitRecordsRevision() === joined.recordsRevision) return dated
+    return dated + (await resolveDefeatDates(ocids, now))
   }
-  inFlight = runResolveDefeatDates(ocids, now).finally(() => {
-    inFlight = null
-  })
-  return inFlight
+  const started = {
+    promise: runResolveDefeatDates(ocids, now).finally(() => {
+      inFlight = null
+    }),
+    recordsRevision: getBossProfitRecordsRevision(),
+  }
+  inFlight = started
+  return started.promise
 }
 
 async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promise<number> {

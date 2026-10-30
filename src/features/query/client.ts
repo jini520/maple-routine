@@ -7,6 +7,7 @@
 import { QueryClient } from '@tanstack/react-query'
 
 import { installAppStateFocus } from './app-focus'
+import { startRecordInvalidation } from './invalidation'
 import { startResetBoundaryTimer } from './reset-timer'
 
 export const queryClient = new QueryClient({
@@ -23,15 +24,17 @@ export const queryClient = new QueryClient({
 })
 
 /**
- * 앱 복귀와 KST 자정을 캐시에 잇는다. 포트 주입 뒤, 첫 렌더 전에 한 번 부른다.
+ * 앱 복귀 · KST 자정 · 표의 판을 캐시에 잇는다. 포트 주입 뒤, 첫 렌더 전에 한 번 부른다.
  *
- * @returns 둘을 떼는 함수. 테스트가 쓴다
+ * @returns 셋을 떼는 함수. 테스트가 쓴다
  */
 export function startQueryRuntime(): () => void {
   const stopFocus = installAppStateFocus()
   const stopTimer = startResetBoundaryTimer(queryClient)
+  const stopInvalidation = startRecordInvalidation(queryClient)
   return () => {
     stopFocus()
     stopTimer()
+    stopInvalidation()
   }
 }

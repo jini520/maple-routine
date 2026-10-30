@@ -6,6 +6,7 @@
 import type { EnhancementCategory } from '../lib/enhancement/categories'
 import type { EnhancementKind } from '../nexon/history/client'
 import type { SqliteDbConnection } from './ports'
+import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
 
@@ -31,10 +32,26 @@ export interface EnhancementTotal {
 export type EnhancementTotalInput = Omit<EnhancementTotal, 'id' | 'nexonAccountId'>
 
 let revision = 0
+const revisionListeners = new Set<() => void>()
 
-/** 쓰기마다 오른다. 통계 화면이 새 값이 들어왔는지 이것으로 안다. */
+/** 쓰기마다 오른다. 이 표를 읽는 쿼리가 판이 오를 때 무효화된다(`features/query/invalidation.ts`). */
 export function getEnhancementTotalsRevision(): number {
   return revision
+}
+
+/** 판이 오를 때 부를 함수를 건다. 풀 함수를 돌려준다. `storage/boss-profit` 의 같은 이름 함수와 같은 물건이다. */
+export function subscribeEnhancementTotalsRevision(listener: () => void): () => void {
+  revisionListeners.add(listener)
+  return () => {
+    revisionListeners.delete(listener)
+  }
+}
+
+function bumpRevision(): void {
+  revision += 1
+  notifyAfterBatch(() => {
+    for (const listener of revisionListeners) listener()
+  })
 }
 
 const UPSERT_SQL = `
@@ -113,7 +130,7 @@ export async function replaceEnhancementTotals(
   await inTransaction(db, () =>
     replaceIn(db, nexonAccountId, enhancementType, historyDate, totals, now.toISOString()),
   )
-  revision += 1
+  bumpRevision()
 }
 
 function rowToTotal(row: Record<string, unknown>): EnhancementTotal {
