@@ -43,12 +43,23 @@ const NO_PROGRESS: GameDataProgress = { dataBytes: null, imageBytes: 0, imageTot
 /** 동시에 받는 그림 수. 너무 많으면 느린 망에서 하나하나가 늦어져 진행이 멈춘 것처럼 보인다. */
 const CONCURRENCY = 4
 
+/** 처음 실행이 아닌 잠금에서 묻지 않고 받는 양의 상한. OTA 를 묻지 않고 받는 상한과 같은 값이다. */
+const CONFIRM_ABOVE_BYTES = 5_000_000
+
+/** 부팅 때 OTA 확인에 알리는 것. 잠근 채 켜졌는지와 기기 사본이 아예 없는지. */
+export interface GameDataBootContext {
+  locked: boolean
+  firstRun: boolean
+}
+
 let status: GameDataStatus = { phase: 'checking', progress: NO_PROGRESS }
 const listeners = new Set<() => void>()
 let etag: string | null = null
 let running: Promise<void> | null = null
 /** 한 번 확인하면 `다시 시도` 는 다시 묻지 않는다. */
 let confirmed = false
+/** 기기 사본이 아예 없이 켜졌는가. 처음 실행에는 받는 양과 상관없이 묻는다. */
+let firstRun = false
 let resolveConfirm: (() => void) | null = null
 
 function setStatus(next: GameDataStatus): void {
@@ -154,7 +165,7 @@ function download(locked: boolean): Promise<void> {
       const data = parseAll(result.sections)
       if (data === null) throw new Error('게임 데이터가 계약을 어겼습니다')
       const needed = await missingImages(data.assets)
-      if (locked && !confirmed) {
+      if (locked && !confirmed && (firstRun || result.bytes + bytesOf(needed) > CONFIRM_ABOVE_BYTES)) {
         setStatus({ phase: 'confirm', progress: { dataBytes: result.bytes, imageBytes: 0, imageTotal: bytesOf(needed) } })
         await new Promise<void>((resolve) => {
           resolveConfirm = resolve
@@ -183,9 +194,12 @@ function download(locked: boolean): Promise<void> {
 /**
  * 켤 때 한 번. 포트 주입 뒤에 부른다. **던지지 않는다.**
  *
- * 사본이 있으면 열고 나서 조용히 묻는다. 없거나 읽을 수 없으면 잠근 채 받는다.
+ * 사본이 있으면 열고 나서 조용히 묻는다. 없거나 읽을 수 없으면 잠근 채 받는다. 잠글 때는 `onBoot`(OTA 확인)가 끝난 뒤에
+ * 받는다. 새 번들이 계약 판을 바꾸면 먼저 받은 게임 데이터를 재시작 뒤 또 받게 된다. 열 때는 기다리지 않는다.
+ *
+ * @param onBoot 부팅 때의 OTA 확인. 게임 데이터 받기를 시작해도 될 때 끝난다
  */
-export async function startGameData(): Promise<void> {
+export async function startGameData(onBoot?: (context: GameDataBootContext) => Promise<void>): Promise<void> {
   setAssetBaseUri(getAssetFilesPort().directoryUri())
   await removeLegacyGameDataCopies().catch(() => undefined)
   const copy = await loadGameDataCopy().catch(() => null)
@@ -194,10 +208,14 @@ export async function startGameData(): Promise<void> {
     apply(data)
     etag = copy.etag
     setStatus({ phase: 'ready', progress: NO_PROGRESS })
+    void onBoot?.({ locked: false, firstRun: false }).catch(() => undefined)
     void refreshGameData()
     return
   }
+  firstRun = copy === null
   if (copy !== null) await clearGameDataCopy().catch(() => undefined)
+  // 확인이 던져도 받는다. OTA 가 잠금을 막으면 고칠 길이 없다.
+  await onBoot?.({ locked: true, firstRun }).catch(() => undefined)
   await download(true)
 }
 
@@ -231,6 +249,7 @@ export function __resetGameDataSyncForTest(): void {
   etag = null
   running = null
   confirmed = false
+  firstRun = false
   resolveConfirm = null
   apply(INITIAL_GAME_DATA)
 }

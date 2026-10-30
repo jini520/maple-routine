@@ -24,6 +24,7 @@ function makeActions(): jest.Mocked<UpdatePromptActions> {
     apply: jest.fn(async () => {}),
     openStore: jest.fn(),
     dismiss: jest.fn(),
+    dismissUpdated: jest.fn(),
   }
 }
 
@@ -36,6 +37,7 @@ const BASE_STATE: UpdatePromptState = {
   minNativeVersion: null,
   downloadProgress: 0,
   channel: 'production',
+  justUpdated: false,
 }
 
 async function renderModal(
@@ -58,10 +60,18 @@ async function renderModal(
 }
 
 describe('UpdatePromptModal', () => {
-  it.each(['idle', 'checking', 'up-to-date', 'unsupported', 'check-error'] as const)(
+  it.each([
+    'idle',
+    'checking',
+    'up-to-date',
+    'unsupported',
+    'check-error',
+    'background-downloading',
+    'background-download-error',
+  ] as const)(
     '%s 상태에서는 모달을 띄우지 않는다',
     async (status) => {
-      // check-error 가 여기 있는 것이 요점이다. 자동 확인일 수 있어
+      // check-error 와 묻지 않고 받는 두 상태가 여기 있는 것이 요점이다. 사용자가 시작하지 않아
       // 모달로 알리지 않고 설정 상태 행에만 남긴다.
       const { view } = await renderModal({ status })
 
@@ -290,27 +300,44 @@ describe('UpdatePromptModal', () => {
     })
   })
 
-  describe('updated: 적용 완료 안내', () => {
-    it('마쳤다는 사실과 지금 버전을 말하고, [확인]→dismiss', async () => {
-      const { view, actions } = await renderModal({ status: 'updated' })
+  describe('적용 완료 안내', () => {
+    it('마쳤다는 사실과 지금 버전을 말하고, [확인]→dismissUpdated', async () => {
+      const { view, actions } = await renderModal({ justUpdated: true })
 
       expect(view.getByText('업데이트를 마쳤어요')).toBeTruthy()
       expect(view.getByText('v1.0.3')).toBeTruthy()
 
       await fireEvent.press(view.getByText('확인'))
-      expect(actions.dismiss).toHaveBeenCalledTimes(1)
+      expect(actions.dismissUpdated).toHaveBeenCalledTimes(1)
+      expect(actions.dismiss).not.toHaveBeenCalled()
     })
 
     // 받은 뒤에만 화면을 옮긴다. 이 시점에야 새 버전 노트가 앱 안에 있고, 흐름이 이미 끝나
     // 옮겨도 끊을 것이 없다.
-    it('[자세히 보기]는 개발 노트로 이동하고 모달을 닫는다', async () => {
-      const { view, actions, onOpenReleaseNotes } = await renderModal({ status: 'updated' })
+    it('[자세히 보기]는 개발 노트로 이동하고 안내만 닫는다', async () => {
+      const { view, actions, onOpenReleaseNotes } = await renderModal({ justUpdated: true })
 
       await fireEvent.press(view.getByText('자세히 보기'))
 
-      expect(actions.dismiss).toHaveBeenCalledTimes(1)
+      expect(actions.dismissUpdated).toHaveBeenCalledTimes(1)
+      expect(actions.dismiss).not.toHaveBeenCalled()
       expect(onOpenReleaseNotes).toHaveBeenCalledTimes(1)
     })
-  })
 
+    // 완료 안내는 확인을 기다리지 않아 받아 둔 업데이트와 겹칠 수 있다. 안내를 닫아야 그 모달이 뜬다.
+    it('받아 둔 업데이트가 있어도 완료 안내가 먼저다', async () => {
+      const { view } = await renderModal({ justUpdated: true, status: 'ready-to-apply' })
+
+      expect(view.getByText('업데이트를 마쳤어요')).toBeTruthy()
+      expect(view.queryByText('업데이트 준비 완료')).toBeNull()
+    })
+
+    // 닫을 수 없는 모달이라 뒤로 미룰 수 없다.
+    it('스토어 업데이트가 필요하면 완료 안내 대신 스토어 모달이다', async () => {
+      const { view } = await renderModal({ justUpdated: true, status: 'store-required' })
+
+      expect(view.getByText('스토어 업데이트가 필요해요')).toBeTruthy()
+      expect(view.queryByText('업데이트를 마쳤어요')).toBeNull()
+    })
+  })
 })

@@ -14,6 +14,7 @@ import { act } from '@testing-library/react-native'
 import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../../theme/appearance-store'
 import { buildSheetScopeVariables } from '../../../../theme/theme-vars'
+import { markBootSplashCovering, markBootSplashDone } from '../../../../hooks/useBootSplashDone'
 import { Modal } from '../Modal'
 
 const noop = (): void => {}
@@ -313,5 +314,23 @@ describe('Modal.Card: 다크에서 표면 계열을 한 칸 올린다', () => {
     )
 
     expect(flattenStyle(getByTestId('modal-card').props.style).backgroundColor).toBe(기본테마.surface)
+  })
+
+  // RN `Modal` 은 따로 창을 띄워 트리 맨 위의 `BootSplash` 보다도 위에 그려진다. 부팅 때 먼저 정해진 모달이 주황 화면 위에 뜨던 원인이다.
+  it('부팅 스플래시가 걷히기 전에는 그리지 않고, 걷히면 그린다', async () => {
+    markBootSplashCovering()
+    const view = await renderOverlay(
+      <Modal onClose={noop} testId="gated">
+        <Modal.Panel>
+          <Text>내용</Text>
+        </Modal.Panel>
+      </Modal>,
+    )
+    expect(view.queryByText('내용')).toBeNull()
+
+    await act(async () => {
+      markBootSplashDone()
+    })
+    expect(view.getByText('내용')).toBeTruthy()
   })
 })

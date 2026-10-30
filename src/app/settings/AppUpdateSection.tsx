@@ -47,14 +47,13 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
     'store-required': '스토어 업데이트 필요',
     'confirm-cellular': '다운로드 대기',
     downloading: `다운로드 중 ${state.downloadProgress}%`,
+    // 묻지 않고 받는 중. 모달이 없어 받는 중이라는 것이 보이는 곳은 이 줄뿐이다.
+    'background-downloading': `다운로드 중 ${state.downloadProgress}%`,
     'ready-to-apply': '업데이트 준비됨',
     applying: '적용하고 있어요',
-    // 적용·재시작 직후 1회 뜨는 안내 상태. 이 카드에서는 거의 볼 일이 없지만
-    // (안내를 닫으면 idle 이 된다) 상태 하나에 문구 하나라는 계약을 비워 둘 수 없다. '최신
-    // 버전입니다'로 적지 않는 이유는 확인이 실패했어도(check-error) 이 상태가 되기 때문이다.
-    updated: '업데이트를 마쳤어요',
     'check-error': '확인에 실패했습니다',
     'download-error': '다운로드에 실패했습니다',
+    'background-download-error': '다운로드에 실패했습니다',
     'apply-error': '적용에 실패했습니다',
     unsupported: '이 플랫폼에서는 지원되지 않습니다',
   }
@@ -62,10 +61,14 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
   const displayedVersion = formatAppVersion(state.currentVersion ?? props.fallbackVersion)
   const isUnsupported = state.status === 'unsupported'
   const isBusy =
-    state.status === 'checking' || state.status === 'downloading' || state.status === 'applying'
+    state.status === 'checking' ||
+    state.status === 'downloading' ||
+    state.status === 'background-downloading' ||
+    state.status === 'applying'
   const highlight =
     state.status === 'check-error' ||
     state.status === 'download-error' ||
+    state.status === 'background-download-error' ||
     state.status === 'apply-error'
       ? 'text-sm text-error-ink'
       : state.status === 'update-available' ||

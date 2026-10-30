@@ -1,5 +1,6 @@
 import * as SplashScreen from 'expo-splash-screen'
 
+import { markBootSplashCovering } from './hooks/useBootSplashDone'
 import { hideSplashScreen } from './native/splash-screen'
 
 /**
@@ -41,6 +42,8 @@ export function holdSplashUntilAppReady(): void {
   // 붙들기 실패는 삼킨다. 실패했다면 스플래시가 일찍 사라질 뿐이고, 여기서 던지면 그 대가로
   // 앱이 아예 안 뜬다.
   void SplashScreen.preventAutoHideAsync().catch(() => {})
+  // 첫 렌더보다 먼저여야 한다. RN `Modal` 은 스플래시 위에 따로 창을 띄우므로, 걷히기 전에 정해진 모달을 여기서부터 막는다.
+  markBootSplashCovering()
 
   SplashScreen.setOptions({ duration: 0, fade: false })
 

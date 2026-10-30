@@ -21,6 +21,7 @@ import { showPendingCacheClearNotice } from '../features/settings/cache-data'
 import { ToastStack } from '../components/organisms/Toast/ToastStack'
 import { AppNavigation } from '../navigation/AppNavigation'
 import { BootSplash } from './BootSplash'
+import { UpdatePromptModal } from './UpdatePromptModal'
 import { GameDataLock } from './game-data/GameDataLock'
 import { refreshGameData, useGameDataStatus } from '../features/game-data/sync'
 import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdrop'
@@ -43,7 +44,7 @@ import { useReturnToForeground } from '../hooks/useReturnToForeground'
  * 1. **포트 주입**. 이 파일 밖이다(`index.ts` → `boot.ts`, 1단계). 아래 어느 것보다 먼저다.
  * 2. **스플래시 붙들기**. 이것도 이 파일 밖이다(`index.ts` → `boot-splash.ts`). 전역 스코프여야
  *    한다(`expo-splash-screen` 이 명시).
- * 3. **게임 데이터 잠금**. 테마 · 글자 크기 복원과 OTA 확인을 뺀 나머지는 게임 데이터가 준비된 뒤에 마운트한다
+ * 3. **게임 데이터 잠금**. 테마 · 글자 크기 복원과 OTA 모달을 뺀 나머지는 게임 데이터가 준비된 뒤에 마운트한다
  *    (`ReadyShell`). 빈 표를 읽은 이펙트가 엉뚱한 일을 하지 않게 하기 위해서다. 알림 예약 맞추기가 빈 컨텐츠 표를 읽으면
  *    예약을 전부 지운다. 준비 전에는 `GameDataLock` 이 선다.
  * 3-1. **저장소 복원 다섯**(인증·진입 단계·테마·트래킹 모드·드롭 연출). 서로 독립이라 순서가 없다. 각자
@@ -53,15 +54,12 @@ import { useReturnToForeground } from '../hooks/useReturnToForeground'
  * 6. **스플래시 내리기**. 이 파일이 아니다. `BootSplash` 가 자기가 그려졌을 때 내린다. 시계로
  *    내리면 화면에 무엇이 그려졌는지 모르는 채로 걷게 되고, 그 사이가 빈다.
  *
- * ## 7. **OTA 부팅 확인**. 이 되살린 자리
+ * ## 7. **OTA 부팅 확인**. 이 파일이 아니다
  *
- * 예전에 이 자리는 *"이 파일이 부르지 않는 것"* 이었다: 포트가 던지고, 그 이전에 core 의
- * live-update 스토어를 **import 하는 것만으로** 죽었다(`import.meta.env`). 벽 둘이 다 사라져
- *  웹 `main.tsx` 가 하던 `checkOnBoot()` 를 그대로 부른다.
- *
- * **가장 마지막이고, 던져도 부팅을 막지 않는다**(`void`). 확인은 곁가지라 실패해도 앱은 떠야
- * 하고, 스플래시를 내리는
- * 6번보다 뒤라 네트워크가 느린 사용자를 흰 화면에 붙들지 않는다.
+ * `boot.ts` 의 `loadGameData()` 가 게임 데이터 사본을 읽은 뒤 `checkOnBoot()` 를 부른다. 처음 실행인지와
+ * 잠근 채인지는 사본을 읽어야 알기 때문이다. 잠근 채면 게임 데이터 받기가 그 확인을 기다린다. 이 파일은 잠금
+ * 화면 위에 업데이트 모달(`LockedUpdatePrompt`)을 두고, 처음 실행에서 OTA 를 적용하는 동안 `BootSplash` 를
+ * 붙든다.
  *
  * `notifyLiveUpdateReady()` 는 **부르지 않는다.** 가 이 자리를 고른 이유
  * (*"렌더가 던지는 번들이 SUCCESS 로 찍혀 영구히 박히면 안 된다"*)는 여전히 유효하지만,
@@ -208,11 +206,6 @@ function ReadyShell(): React.JSX.Element {
     void showPendingCacheClearNotice()
   }, [])
 
-  // OTA 부팅 확인. 체크만 한다.
-  //
-  // `void` 인 것이 요점이다. 확인은 곁가지라 실패해도 앱은 떠야 한다. 스토어가 실패를
-  // `check-error` 로 삼켜 던지지 않지만, 여기서 await 하지 않는 것으로 부팅이 네트워크를
-  // 기다리지 않는다 를 구조로 못박는다.
   return (
     <>
       <AppNavigation />
@@ -231,6 +224,16 @@ function ReadyShell(): React.JSX.Element {
   )
 }
 
+/**
+ * 잠금 화면 위의 업데이트 모달. 잠긴 동안에도 OTA 를 받아 적용할 수 있어야 잠금이 안 풀리는 결함을 고칠 수 있다.
+ *
+ * 완료 안내는 여기서 그리지 않는다. `자세히 보기` 가 갈 화면이 잠금이 풀린 뒤에야 서고, 풀리면 `AppNavigation` 의 모달이 그린다.
+ */
+function LockedUpdatePrompt(): React.JSX.Element | null {
+  const state = useLiveUpdateStore()
+  return <UpdatePromptModal state={{ ...state, justUpdated: false }} actions={state} onOpenReleaseNotes={() => {}} />
+}
+
 /** 백그라운드에서 돌아올 때 서버 값이 바뀌었는지 묻는다. 잠겨 있으면 아무것도 안 한다. */
 function refreshOnReturn(): void {
   void refreshGameData()
@@ -240,6 +243,7 @@ export function AppShell(): React.JSX.Element {
   const restoreTheme = useThemeStore((state) => state.restoreFromStorage)
   const restoreTextSize = useTextSizeStore((state) => state.restoreFromStorage)
   const gameData = useGameDataStatus()
+  const holdingSplash = useLiveUpdateStore((state) => state.holdingSplash)
 
   // 잠금 화면도 테마로 그리므로 게임 데이터를 기다리지 않는다.
   useEffect(() => {
@@ -250,11 +254,6 @@ export function AppShell(): React.JSX.Element {
   useEffect(() => {
     void restoreTextSize()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // OTA 확인도 기다리지 않는다. 잠금이 풀리지 않는 결함이 나가도 OTA 로 고칠 수 있어야 한다.
-  useEffect(() => {
-    void useLiveUpdateStore.getState().checkOnBoot()
   }, [])
 
   // 리뷰 요청의 첫 실행 3일은 이 바이너리를 처음 켠 날부터 센다.
@@ -270,10 +269,17 @@ export function AppShell(): React.JSX.Element {
           배경을 선언하지 않은
           테마에서는 아무것도 그리지 않는다. */}
       <ThemeBackdrop />
-      {gameData.phase === 'ready' ? <ReadyShell /> : <GameDataLock status={gameData} />}
+      {gameData.phase === 'ready' ? (
+        <ReadyShell />
+      ) : (
+        <>
+          <GameDataLock status={gameData} />
+          <LockedUpdatePrompt />
+        </>
+      )}
       {/* 스플래시의 두 번째 겹. **형제 중 마지막이라 맨 위에 그려진다.** 이 층이 그려졌다는
           사실이 네이티브 스플래시를 내리는 신호라, 순서가 뒤집히면 그 사이가 빈다. */}
-      <BootSplash />
+      <BootSplash holding={holdingSplash} />
     </>
   )
 }

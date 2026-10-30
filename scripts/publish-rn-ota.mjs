@@ -9,12 +9,12 @@
 // capacitor 스크립트가 같은 이유를 적어 두었다(버전을 인자로 받으면 앱에 박히는 표시값과 실제
 // 배포된 버전이 어긋나고, 그것은 배포되고 나서야 드러난다).
 //
-// 동작: 노트 가드 → expo export → runtimeVersion 해석 → 에셋 업로드(없는 것만) → 매니페스트 생성·업로드
+// 동작: 노트 가드 → expo export → runtimeVersion 해석 → 에셋 업로드(없는 것만) → 매니페스트 생성·업로드 → 옛 파일 정리 → 왕복 확인
 //
 // ## capacitor 스크립트와 갈리는 지점 셋
 //
 // 1. **zip 한 덩이가 아니라 파일 여럿**이다. `expo-updates` 는 매니페스트 + 에셋 목록 모델이고,
-//    에셋 이름이 이미 내용의 md5 라 «릴리스에 이미 있는 이름은 건너뛴다» 하나로 증분 업로드가 된다
+//    에셋 이름이 이미 내용의 md5 라 «서버에 이미 있는 이름은 건너뛴다» 하나로 증분 업로드가 된다
 //    ([[ADR-137]] 결정 8). 실측 293개 중 JS 만 고친 배포는 번들 2개만 오른다.
 // 2. **버전 축이 둘**이다. 프로토콜의 정체성은 매니페스트 `id`(UUID)이고, 사용자에게 보이는
 //    `1.0.6` 은 우리 축이라 `extra.appVersion` 으로 싣는다([[ADR-137]] 결정 5).
@@ -23,10 +23,11 @@
 
 import { execFileSync } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
-import { copyFileSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { gzipSync } from 'node:zlib'
 // 릴리스 노트의 진실 원천을 **그대로** 읽는다([[ADR-119]] 결정 1) — capacitor 스크립트와 같은 파일을
 // 같은 이유로 읽는다. 노트가 두 벌이 되면 갈라진 순간 어느 쪽이 사실인지 알 방법이 없다.
 import { findReleaseNote } from '../src/data/release-notes.ts'
@@ -34,6 +35,7 @@ import { baseAppVersion, parseAppVersion } from '../src/lib/app-version.ts'
 // 노트 가드([[ADR-126]] 결정 8). **캐패시터 스크립트에 살던 것을 옮겨 왔다** — [[ADR-155]] 가 그
 // 패키지를 지우면서 이 import 가 고아가 됐고, 그때부터 이 파일은 첫 줄에서 죽어 있었다.
 import { describeReleaseNoteGap } from './release-note-gap.mjs'
+import { selectRetainedFiles } from './ota-retention.mjs'
 // 지문 못박기는 **순수 로직이라 따로 산다**([[ADR-190]]) — 이 파일이 최상위 `await` 를 쓰는 ESM
 // 이라 테스트가 import 하지 못하기 때문이다. 그쪽에는 테스트가 붙어 있다.
 import {
@@ -46,8 +48,18 @@ import {
   resolveRuntimeVersions,
 } from './ota-runtime-version.mjs'
 
-const REPO = 'jini520/maple-routine'
-const RELEASE_TAG = 'live-update-rn'
+// 1.0.13 바이너리부터 OTA 는 앱 박스가 내준다. 1.0.12 바이너리가 묻는 GitHub Releases 와 Worker 에는 더 이상 쓰지 않는다.
+const OTA_HOST = 'ubuntu@158.179.175.230'
+const OTA_DIR = '/srv/maple-routine-ota'
+/** 번들과 에셋을 nginx 가 내주는 주소. 서버의 `files/` 디렉터리다. */
+const FILES_BASE = 'https://mapleroutine.store/ota/files'
+/** 파일을 남기는 최근 발행 수. 바로 지난 발행을 받던 기기가 아직 내려받는 중일 수 있어 하나가 아니라 셋이다. */
+const KEEP_RELEASES = 3
+
+/** 앱 박스에서 명령 하나를 돌리고 출력을 돌려준다. */
+function onBox(command) {
+  return execFileSync('ssh', ['-o', 'BatchMode=yes', OTA_HOST, command], { encoding: 'utf-8' })
+}
 
 /** 스토어 이동 대상([[ADR-027]] 결정 7 · `extra.storeUrl`). */
 const STORE_URLS = {
@@ -56,18 +68,7 @@ const STORE_URLS = {
 }
 
 /**
- * 릴리스에 **이미 올라가 있는** 자산 이름 집합.
- *
- * 에셋 이름이 내용의 md5 라 «같은 이름 = 같은 내용» 이고, 그래서 이 집합에 있으면 올릴 이유가 없다
- * ([[ADR-137]] 결정 8). 매니페스트처럼 내용이 바뀌는 파일만 `--clobber` 로 덮는다.
- */
-export function existingAssetNames(releaseJson) {
-  const parsed = typeof releaseJson === 'string' ? JSON.parse(releaseJson) : releaseJson
-  return new Set((parsed?.assets ?? []).map((asset) => asset.name))
-}
-
-/**
- * `dist/` 의 파일 하나를 릴리스 자산 이름으로 바꾼다.
+ * `dist/` 의 파일 하나를 서버 `files/` 의 이름으로 바꾼다.
  *
  * 평평한 이름 공간에 넣어도 안전한 근거는 실측이다 — `expo export` 산출물의 기본 이름 충돌이
  * **0건**이었다(에셋은 내용 md5, 번들 이름엔 플랫폼이 들어간다).
@@ -84,7 +85,9 @@ export function releaseAssetName(distRelativePath) {
  * 「사용 중」을 판정하는 재료가 전부 여기서 온다.
  */
 export function buildManifest({ id, createdAt, runtimeVersion, platform, bundle, assets, appVersion, highlights }) {
-  const urlFor = (name) => `https://github.com/${REPO}/releases/download/${RELEASE_TAG}/${name}`
+  // 번들은 같은 주소로 내도 nginx 의 `gzip_static` 이 옆의 `.gz` 를 압축된 채 내준다. 해시는 압축하지 않은 번들의 것이다.
+  // 기기는 응답을 풀어서 저장하고 푼 내용으로 확인한다.
+  const urlFor = (name) => `${FILES_BASE}/${name}`
   return {
     id,
     createdAt,
@@ -109,7 +112,8 @@ export function buildManifest({ id, createdAt, runtimeVersion, platform, bundle,
       // 이 번들을 받는 데 드는 바이트. 프로토콜엔 용량 필드가 없는데 [[ADR-027]] 이 모달의 재료를
       // «버전 + 용량» 으로 정했다. 이미 기기에 있는 에셋은 안 받으므로(`path.exists()` →
       // ALREADY_EXISTS) **번들 크기**가 사용자가 실제로 기다리는 양에 가장 가깝다.
-      sizeBytes: bundle.size,
+      // 압축한 크기를 싣는다. 실제로 받는 양이고, 앱은 이 값이 5MB 이하면 묻지 않고 받는다.
+      sizeBytes: bundle.compressedSize,
       storeUrl: STORE_URLS[platform],
     },
   }
@@ -270,24 +274,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     )
   }
 
-  console.log('[3/5] 릴리스에 이미 있는 자산 확인 중...')
+  console.log('[3/5] 서버에 이미 있는 파일 확인 중...')
   let existing
   try {
-    existing = existingAssetNames(
-      execFileSync('gh', ['release', 'view', RELEASE_TAG, '--repo', REPO, '--json', 'assets'], { encoding: 'utf-8' }),
-    )
+    existing = new Set(onBox(`ls -1 ${OTA_DIR}/files`).split('\n').filter(Boolean))
   } catch {
-    execFileSync(
-      'gh',
-      [
-        'release', 'create', RELEASE_TAG,
-        '--repo', REPO,
-        '--title', 'OTA bundles (RN, expo-updates)',
-        '--notes', 'RN 앱(expo-updates)의 OTA 번들·에셋 저장소입니다(ADR-137). 앱이 자동으로 참조합니다.',
-      ],
-      { stdio: 'inherit' },
+    console.error(
+      `${OTA_HOST}:${OTA_DIR}/files 를 읽지 못했습니다. 디렉터리가 없다면 서버 README 의 OTA 절대로 만드세요.\n` +
+        `  sudo install -d -o ubuntu -g ubuntu -m 755 ${OTA_DIR} ${OTA_DIR}/files`,
     )
-    existing = new Set()
+    process.exit(1)
   }
 
   const workDir = mkdtempSync(join(tmpdir(), 'rn-ota-'))
@@ -311,16 +307,23 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const fileMetadata = metadata.fileMetadata[platform]
     const bundlePath = join(distDir, fileMetadata.bundle)
     const bundleBuffer = readFileSync(bundlePath)
+    // 내용에서 파생된 이름 — 위 사고를 구조적으로 불가능하게 만드는 한 줄이다.
+    const bundleName = `bundle-${platform}-${createHash('sha256').update(bundleBuffer).digest('hex')}.hbc`
+    // nginx 가 그대로 내줄 압축본. 이름이 원본 이름에서 나오므로 같은 이름이면 같은 내용이다.
+    const compressed = gzipSync(bundleBuffer, { level: 9 })
+    const compressedPath = `${bundlePath}.gz`
+    writeFileSync(compressedPath, compressed)
     return {
       platform,
       bundle: {
         localPath: bundlePath,
-        // 내용에서 파생된 이름 — 위 사고를 구조적으로 불가능하게 만드는 한 줄이다.
-        name: `bundle-${platform}-${createHash('sha256').update(bundleBuffer).digest('hex')}.hbc`,
+        name: bundleName,
         key: md5Hex(bundleBuffer),
         hash: sha256Base64Url(bundleBuffer),
         size: statSync(bundlePath).size,
+        compressedSize: compressed.length,
       },
+      compressedBundle: { localPath: compressedPath, name: `${bundleName}.gz` },
       assets: fileMetadata.assets.map((asset) => {
         const localPath = join(distDir, asset.path)
         const buffer = readFileSync(localPath)
@@ -340,32 +343,30 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // 두 플랫폼이 같은 에셋을 공유하므로 이름으로 합친다.
   const uploadTargets = new Map()
   for (const plan of plans) {
-    for (const entry of [plan.bundle, ...plan.assets]) {
+    for (const entry of [plan.bundle, plan.compressedBundle, ...plan.assets]) {
       if (!uploadTargets.has(entry.name)) uploadTargets.set(entry.name, entry.localPath)
     }
   }
 
-  const toUpload = []
+  // 올릴 파일만 모은 디렉터리를 rsync 로 넘긴다. rsync 는 임시 이름에 쓰고 옮기므로 nginx 가 반쯤 쓴 파일을 내지 않는다.
+  // `--delete` 를 주지 않는다. 지우는 일은 맨 끝의 정리가 최근 발행을 보고 한다.
+  const filesDir = join(workDir, 'files')
+  mkdirSync(filesDir)
+  let uploadCount = 0
   for (const [name, localPath] of uploadTargets) {
     if (existing.has(name)) continue
-    // `gh release upload` 는 **파일 이름을 그대로 자산 이름으로 쓴다** — 이름을 바꾸려면 그 이름으로
-    // 복사해서 올리는 수밖에 없다(자산의 `label` 은 다운로드 URL 에 안 쓰인다).
-    const staged = join(workDir, name)
-    if (staged !== localPath) copyFileSync(localPath, staged)
-    toUpload.push(staged)
+    copyFileSync(localPath, join(filesDir, name))
+    uploadCount += 1
   }
 
-  console.log(`[4/5] 자산 ${uploadTargets.size}개 중 ${toUpload.length}개 업로드 중...`)
-  // 한 번에 다 넘기면 인자 길이 한계에 걸리므로 나눠 올린다. `--clobber` 가 필요 없는 것은 이제
-  // 규칙이 아니라 구조다 — 이름이 내용에서 나오므로 같은 이름이면 반드시 같은 내용이다.
-  for (let i = 0; i < toUpload.length; i += 40) {
-    const batch = toUpload.slice(i, i + 40)
-    execFileSync('gh', ['release', 'upload', RELEASE_TAG, ...batch, '--repo', REPO], { stdio: 'inherit' })
-  }
+  console.log(`[4/5] 파일 ${uploadTargets.size}개 중 ${uploadCount}개 업로드 중...`)
+  execFileSync('rsync', ['-a', '--chmod=F644', `${filesDir}/`, `${OTA_HOST}:${OTA_DIR}/files/`], { stdio: 'inherit' })
 
   console.log('[5/5] 매니페스트 생성·업로드 중...')
   const createdAt = new Date().toISOString()
   const manifestFiles = []
+  const metaDir = join(workDir, 'meta')
+  mkdirSync(metaDir)
 
   for (const plan of plans) {
     const { platform } = plan
@@ -380,7 +381,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       highlights: note.highlights,
     })
 
-    const manifestPath = join(workDir, `manifest-${platform}-${runtimeVersions[platform]}.json`)
+    const manifestPath = join(metaDir, `manifest-${platform}-${runtimeVersions[platform]}.json`)
     writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
     manifestFiles.push(manifestPath)
 
@@ -389,7 +390,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     // 받는 지문 목록([[ADR-268]] 결정 2). 발행 지문 + 심사 중인 바이너리. 값 하나로 두면 심사
     // 담당자가 아직 갱신되지 않은 이 파일 때문에 잠긴다.
     const accepted = resolveAcceptedRuntimeVersions(runtimeVersions, IN_REVIEW_RUNTIME_VERSIONS)[platform]
-    const latestPath = join(workDir, `latest-${platform}.json`)
+    const latestPath = join(metaDir, `latest-${platform}.json`)
     writeFileSync(
       latestPath,
       JSON.stringify(
@@ -406,10 +407,37 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     manifestFiles.push(latestPath)
   }
 
-  // 매니페스트는 이름 고정·내용 가변이라 여기만 덮는다.
-  execFileSync('gh', ['release', 'upload', RELEASE_TAG, ...manifestFiles, '--repo', REPO, '--clobber'], {
-    stdio: 'inherit',
+  // 매니페스트는 이름 고정·내용 가변이라 덮어쓴다. 파일보다 뒤라야 기기가 아직 없는 번들을 가리키는 매니페스트를 받지 않는다.
+  execFileSync('rsync', ['-a', '--chmod=F644', ...manifestFiles, `${OTA_HOST}:${OTA_DIR}/`], { stdio: 'inherit' })
+
+  // ── 정리. 최근 세 번의 발행과 지금 서버에 있는 매니페스트가 쓰는 파일만 남긴다 ──────────────
+  //
+  // 지금 매니페스트를 함께 보는 것은 한 플랫폼만 발행할 때 때문이다. iOS 만 세 번 내면 안드로이드의 마지막 발행이 목록에서
+  // 밀려나지만, 안드로이드 기기는 여전히 그 매니페스트를 받는다.
+  const releasesDir = join(workDir, 'server')
+  mkdirSync(releasesDir)
+  execFileSync('rsync', ['-a', '--include=*.json', '--exclude=*', `${OTA_HOST}:${OTA_DIR}/`, `${releasesDir}/`], { stdio: 'inherit' })
+  const releasesPath = join(releasesDir, 'releases.json')
+  const { releases: kept, keep } = selectRetainedFiles({
+    releases: existsSync(releasesPath) ? JSON.parse(readFileSync(releasesPath, 'utf-8')) : [],
+    thisRelease: {
+      appVersion,
+      createdAt,
+      platforms: PLATFORMS,
+      files: [...new Set(plans.flatMap((plan) => [plan.bundle.name, plan.compressedBundle.name, ...plan.assets.map((a) => a.name)]))],
+    },
+    manifests: readdirSync(releasesDir)
+      .filter((name) => name.startsWith('manifest-'))
+      .map((name) => JSON.parse(readFileSync(join(releasesDir, name), 'utf-8'))),
+    keepReleases: KEEP_RELEASES,
   })
+  writeFileSync(releasesPath, JSON.stringify(kept, null, 2))
+  execFileSync('rsync', ['-a', '--chmod=F644', releasesPath, `${OTA_HOST}:${OTA_DIR}/`], { stdio: 'inherit' })
+  const stale = onBox(`ls -1 ${OTA_DIR}/files`).split('\n').filter((name) => name && !keep.has(name))
+  for (let i = 0; i < stale.length; i += 100) {
+    onBox(`cd ${OTA_DIR}/files && rm -f -- ${stale.slice(i, i + 100).map((name) => `'${name}'`).join(' ')}`)
+  }
+  console.log(`      최근 ${kept.length}번의 발행이 쓰지 않는 파일 ${stale.length}개를 지웠습니다.`)
 
   rmSync(workDir, { recursive: true, force: true })
 
@@ -447,8 +475,17 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     // **매니페스트가 받아지는 것만으로는 부족하다** — 앱이 실패한 지점은 그 다음이었다.
     // 번들을 실제로 내려받아 매니페스트가 약속한 해시와 대조한다. 이 대조가 없어서
     // *"배포 성공 · 매니페스트 정상 · 앱만 못 받음"* 이 나왔다(위 [4/5] 주석).
+    // 기기와 같은 `accept-encoding` 을 보낸다. `fetch` 는 응답을 풀어서 주므로 해시는 푼 내용으로 잰다.
     const launchAsset = served.launchAsset
-    const downloaded = Buffer.from(await (await fetch(launchAsset.url)).arrayBuffer())
+    const bundleResponse = await fetch(launchAsset.url, { headers: { 'accept-encoding': 'zstd, br, gzip' } })
+    if (bundleResponse.headers.get('content-encoding') !== 'gzip') {
+      console.error(
+        `${platform}: 번들이 압축되지 않고 옵니다(status=${bundleResponse.status}, content-encoding=${bundleResponse.headers.get('content-encoding')}).\n` +
+          `  url=${launchAsset.url}\n  nginx 의 location /ota/files/ 에 gzip_static on 이 있는지 확인하세요.`,
+      )
+      process.exit(1)
+    }
+    const downloaded = Buffer.from(await bundleResponse.arrayBuffer())
     const actualHash = sha256Base64Url(downloaded)
     if (actualHash !== launchAsset.hash) {
       console.error(

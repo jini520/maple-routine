@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Image, StyleSheet, View } from 'react-native'
 
 import splashLogo from '../../assets/splash-icon.png'
+import { FIRST_RUN_HOLD_MS } from '../features/live-update/store'
+import { markBootSplashDone } from '../hooks/useBootSplashDone'
 import { hideSplashScreen } from '../native/splash-screen'
 
 /**
@@ -51,17 +53,22 @@ export const BOOT_SPLASH_HOLD_MS = 600
  */
 const BOOT_SPLASH_HANDOFF_CAP_MS = 2000
 
-type Phase = 'waiting' | 'covering' | 'done'
+type Phase = 'waiting' | 'covering'
 
-export function BootSplash(): React.JSX.Element | null {
+export function BootSplash(props: {
+  /** 처음 실행에서 OTA 를 받아 적용하는 동안 참. 최소 표시 시간이 지나도 걷지 않는다. */
+  holding?: boolean
+}): React.JSX.Element | null {
   const [phase, setPhase] = useState<Phase>('waiting')
+  const [heldLongEnough, setHeldLongEnough] = useState(false)
+  const [capped, setCapped] = useState(false)
   const handedOff = useRef(false)
 
   useEffect(() => {
     if (phase !== 'covering') return
 
     const timer = setTimeout(() => {
-      setPhase('done')
+      setHeldLongEnough(true)
     }, BOOT_SPLASH_HOLD_MS)
 
     return () => {
@@ -69,7 +76,22 @@ export function BootSplash(): React.JSX.Element | null {
     }
   }, [phase])
 
-  if (phase === 'done') return null
+  // 붙드는 쪽이 끝내 놓지 않아도 갇히지 않게, 처음 켠 때부터 센다.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCapped(true)
+    }, FIRST_RUN_HOLD_MS)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [])
+
+  const done = phase === 'covering' && heldLongEnough && (props.holding !== true || capped)
+  useEffect(() => {
+    if (done) markBootSplashDone()
+  }, [done])
+
+  if (done) return null
 
   const handleLayout = (): void => {
     // ref 로 막는 것은 `phase` 가 다음 렌더에야 바뀌기 때문이다. 같은 틱에 레이아웃이 두 번 오면

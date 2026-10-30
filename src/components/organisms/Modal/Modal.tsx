@@ -22,6 +22,7 @@ import { vars } from 'nativewind'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useBootSplashDone } from '../../../hooks/useBootSplashDone'
 import { MODAL_TOP_GAP_PX, overlayWindowHeightPx, resolveModalMaxHeight } from '../../../lib/modal-metrics'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../../theme/context'
@@ -232,9 +233,10 @@ function scrimMinHeight(): number | undefined {
   return Dimensions.get('screen').height
 }
 
-export function Modal(props: ModalProps): React.JSX.Element {
+export function Modal(props: ModalProps): React.JSX.Element | null {
   const insets = useSafeAreaInsets()
   const window = useWindowDimensions()
+  const splashDone = useBootSplashDone()
   const align = props.align ?? 'top'
   const maxHeight = resolveModalMaxHeight({
     windowHeightPx: overlayWindowHeightPx(window.height),
@@ -242,6 +244,9 @@ export function Modal(props: ModalProps): React.JSX.Element {
     insetBottomPx: insets.bottom,
     align,
   })
+
+  // RN `Modal` 은 따로 창을 띄워 트리 맨 위의 `BootSplash` 보다도 위에 그려진다. 걷히기 전에 그리면 주황 화면 위에 뜬다.
+  if (!splashDone) return null
 
   return (
     <RNModal

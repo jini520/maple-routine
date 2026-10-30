@@ -111,18 +111,26 @@ jest.mock('../app/prehydrate', () => ({
   },
 }))
 
-// OTA 부팅 확인도 포트를 거친다. 다른 스토어와 같은 방식으로 대체해 **순서만** 본다.
+// OTA 부팅 확인은 셸이 아니라 `boot.ts` 가 부른다. 셸이 읽는 것은 스플래시 붙들기와 잠금 위 모달의 상태뿐이다.
 // 확인이 실제로 무엇을 하는지는 어댑터·스토어 테스트의 몫이다.
-jest.mock('../features/live-update/store', () => ({
-  __esModule: true,
-  useLiveUpdateStore: {
-    getState: () => ({
-      checkOnBoot: async () => {
-        mockCalls.push('checkOnBoot')
-      },
-    }),
-  },
-}))
+const mockLiveUpdate = {
+  status: 'idle',
+  justUpdated: false,
+  holdingSplash: false,
+  availableVersion: '1.0.4',
+  availableSize: 1_000_000,
+  availableHighlights: null,
+  currentVersion: '1.0.3',
+  minNativeVersion: null,
+  downloadProgress: 0,
+  channel: 'production',
+}
+jest.mock('../features/live-update/store', () => {
+  const useLiveUpdateStore = (selector?: (value: typeof mockLiveUpdate) => unknown) =>
+    selector ? selector(mockLiveUpdate) : mockLiveUpdate
+  useLiveUpdateStore.getState = () => mockLiveUpdate
+  return { __esModule: true, FIRST_RUN_HOLD_MS: 20_000, useLiveUpdateStore }
+})
 
 // 키보드 구독은 포트를 거친다(`hooks/useKeyboardVisible.ts`). 주입 없이 렌더하면 슬롯이 던지고,
 // 그 던짐이 이 파일에서는 배선 문제가 아니라 **관측 대상이 아닌 것**이다(어댑터는 자기 테스트가 있다).
@@ -239,15 +247,26 @@ describe('① 셸이 무엇을 언제 하는가', () => {
   })
 
   // 빈 표를 읽은 이펙트가 엉뚱한 일을 하지 않게, 게임 데이터가 준비되기 전에는 앱의 나머지를 마운트하지 않는다.
-  // 테마 복원과 OTA 확인은 기다리지 않는다. 잠금 화면이 테마로 그려지고, 잠금이 안 풀리는 결함도 OTA 로 고쳐야 한다.
-  it('게임 데이터가 준비되기 전에는 잠금 화면만 서고, 테마 복원과 OTA 확인만 돈다', async () => {
+  // 테마 복원은 기다리지 않는다. 잠금 화면이 테마로 그려진다. OTA 확인은 셸이 아니라 `boot.ts` 가 부른다.
+  it('게임 데이터가 준비되기 전에는 잠금 화면만 서고, 테마 복원만 돈다', async () => {
     mockGameData.phase = 'downloading'
     const view = await renderOverlay(<AppShell />)
     await act(async () => {})
 
     expect(view.getByTestId('game-data-lock')).toBeTruthy()
     expect(view.queryByText('navigation')).toBeNull()
-    expect(mockCalls.sort()).toEqual(['checkOnBoot', 'restore:theme'])
+    expect(mockCalls.sort()).toEqual(['restore:theme'])
+  })
+
+  // 잠금이 안 풀리는 결함도 OTA 로 고칠 수 있어야 한다. 잠긴 동안 모달이 없으면 받을 길이 없다.
+  it('잠긴 동안에도 잠금 화면 위에 업데이트 모달이 선다', async () => {
+    mockGameData.phase = 'failed'
+    mockLiveUpdate.status = 'ready-to-apply'
+    const view = await renderOverlay(<AppShell />)
+
+    expect(view.getByTestId('game-data-lock')).toBeTruthy()
+    expect(view.getByText('업데이트 준비 완료')).toBeTruthy()
+    mockLiveUpdate.status = 'idle'
   })
 
   // 2겹이 트리에 없으면 내릴 주체가 사라져 실패 안전 타이머(8초)까지 스플래시가 남는다.
@@ -355,11 +374,13 @@ describe('③ OTA 배선. 벽이 사라졌고, 사라진 채로 있어야 한다
 
   // 배선이 실제로 있는가. 없으면 모달은 **그릴 줄은 알지만 아무것도 안 뜨는** 상태로 조용히
   // 되돌아간다(그 상태가 정상처럼 보이는 것이 원래 이 describe 가 걱정하던 것이다).
+  // 두 자리다. 잠금이 풀린 뒤는 내비게이션 안, 잠긴 동안은 셸의 잠금 화면 위다.
   it('`UpdatePromptModal` 이 마운트돼 있다', () => {
     const importers = sources.filter((file) =>
       /from '[^']*UpdatePromptModal'/.test(readFileSync(file, 'utf8')),
     )
 
-    expect(importers.map(relative)).toEqual(['src/navigation/AppNavigation.tsx'])
+    expect(importers.map(relative).sort()).toEqual(['src/app/AppShell.tsx', 'src/navigation/AppNavigation.tsx'])
   })
+
 })

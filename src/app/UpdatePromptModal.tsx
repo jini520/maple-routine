@@ -43,8 +43,6 @@ const MODAL_STATUSES: ReadonlySet<LiveUpdateStatus> = new Set([
   // 둘 다 사용자가 [지금 적용]을 눌러 시작한 흐름이라 위 분류를 그대로 따른다.
   'applying',
   'apply-error',
-  // 적용·재시작이 끝난 직후 1회. 부팅 때 뒤늦게 판정되는 상태는 이것뿐이다.
-  'updated',
 ])
 
 /** 이 모달이 **읽는** 것. core 스토어에서 그대로 뽑아 두 벌이 되지 않게 한다. */
@@ -58,12 +56,13 @@ export type UpdatePromptState = Pick<
   | 'minNativeVersion'
   | 'downloadProgress'
   | 'channel'
+  | 'justUpdated'
 >
 
 /** 이 모달이 **부르는** 것. 같은 이유로 core 스토어에서 뽑는다. */
 export type UpdatePromptActions = Pick<
   LiveUpdateStore,
-  'startDownload' | 'confirmCellularDownload' | 'apply' | 'openStore' | 'dismiss'
+  'startDownload' | 'confirmCellularDownload' | 'apply' | 'openStore' | 'dismiss' | 'dismissUpdated'
 >
 
 export interface UpdatePromptModalProps {
@@ -147,14 +146,17 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
   const { state, actions } = props
   const { status } = state
 
-  if (!MODAL_STATUSES.has(status)) return null
+  // 완료 안내는 상태와 겹칠 수 있다. 받아 둔 업데이트가 있어도 안내가 먼저고, 닫으면 그 상태의 모달이 뜬다.
+  // 스토어 업데이트가 필요하면 그쪽이 이긴다. 닫을 수 없는 모달이라 뒤로 미룰 수 없다.
+  const showsUpdated = state.justUpdated && status !== 'store-required'
+  if (!showsUpdated && !MODAL_STATUSES.has(status)) return null
 
   const sizeText = state.availableSize !== null ? formatSize(state.availableSize) : ''
 
   // 받은 뒤의 `자세히 보기`. 여기서는 펼치지 않고 전부 갖고 있는 화면으로 보낸다. 닫지 않으면
   // 돌아왔을 때 같은 안내가 그대로 덮여 있다.
   const openReleaseNotes = (): void => {
-    actions.dismiss()
+    actions.dismissUpdated()
     props.onOpenReleaseNotes()
   }
 
@@ -164,6 +166,25 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
    */
   const 물러나기 = { label: '나중에', onPress: actions.dismiss }
   const 공통 = { onClose: actions.dismiss, testId: 'update-prompt-overlay' } as const
+
+  // 적용 성공 경로에는 상태 전환 코드가 없으므로 이 안내는 **재시작 뒤 부팅에서** 뜬다.
+  // 여기서만 `자세히 보기` 가 화면을 옮긴다.
+  if (showsUpdated) {
+    return (
+      <NoticeModal
+        {...공통}
+        icon={SparklesIcon}
+        tone="primary"
+        title="업데이트를 마쳤어요"
+        content={<VersionRow version={state.currentVersion} />}
+        description="새 버전으로 다시 시작했어요."
+        action={{ label: '확인', onPress: actions.dismissUpdated }}
+        secondaryAction={{ label: '자세히 보기', onPress: openReleaseNotes }}
+        // 배경을 눌러도 안내만 닫는다. `dismiss` 는 뒤에 기다리던 업데이트까지 비운다.
+        onClose={actions.dismissUpdated}
+      />
+    )
+  }
 
   // ── 진행 상태 둘. 버튼이 없어 알림 틀이 아니다.
   //
@@ -261,23 +282,6 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
         description="지금 적용하려면 앱을 재시작해요."
         action={{ label: '지금 적용 (재시작)', onPress: () => void actions.apply() }}
         secondaryAction={물러나기}
-      />
-    )
-  }
-
-  // 적용 성공 경로에는 상태 전환 코드가 없으므로 이 안내는 **재시작 뒤 부팅에서** 뜬다.
-  // 여기서만 `자세히 보기` 가 화면을 옮긴다.
-  if (status === 'updated') {
-    return (
-      <NoticeModal
-        {...공통}
-        icon={SparklesIcon}
-        tone="primary"
-        title="업데이트를 마쳤어요"
-        content={<VersionRow version={state.currentVersion} />}
-        description="새 버전으로 다시 시작했어요."
-        action={{ label: '확인', onPress: actions.dismiss }}
-        secondaryAction={{ label: '자세히 보기', onPress: openReleaseNotes }}
       />
     )
   }

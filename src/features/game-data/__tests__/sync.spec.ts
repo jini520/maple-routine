@@ -75,6 +75,12 @@ function fakeFiles(initial: string[] = []): AssetFilesPort & { names: Set<string
 
 let files: ReturnType<typeof fakeFiles>
 
+/** 기기 사본. 그림 하나가 든 fixture 칸 전부다. */
+const copy = (contract = GAME_DATA_CONTRACT) => {
+  const sections = { ...INITIAL_GAME_DATA, assets: { updatedAt: 't', files: [file('bosses/a.webp', SHA_A)] } }
+  return { contract, etag: '"e0"', sections: sections as unknown as Record<string, unknown> }
+}
+
 /** 확인 패널에 크기가 서면 `확인` 을 누르며 받기가 끝날 때까지 기다리는 도우미. */
 async function 확인하며(run: () => Promise<void>): Promise<void> {
   let finished = false
@@ -177,11 +183,69 @@ describe('처음 켤 때 (사본 없음)', () => {
   })
 })
 
+// OTA 가 게임 데이터보다 먼저다. 새 번들이 계약 판을 바꾸면 먼저 받은 게임 데이터를 재시작 뒤 또 받는다.
+describe('부팅 때 OTA 와의 순서', () => {
+  it('처음 켤 때는 받는 양이 작아도 묻는다', async () => {
+    fetchRemote.mockResolvedValue(응답([file('bosses/a.webp', SHA_A, 10)]))
+
+    void startGameData()
+    for (let i = 0; i < 20; i += 1) await new Promise((resolve) => setImmediate(resolve))
+
+    expect(getGameDataStatus().phase).toBe('confirm')
+  })
+
+  it('잠근 채 켜지면 OTA 확인이 끝난 뒤에 받는다', async () => {
+    fetchRemote.mockResolvedValue(응답([file('bosses/a.webp', SHA_A)]))
+    let release: () => void = () => {}
+    const onBoot = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve
+        }),
+    )
+
+    const started = startGameData(onBoot)
+    for (let i = 0; i < 20; i += 1) await new Promise((resolve) => setImmediate(resolve))
+    expect(onBoot).toHaveBeenCalledWith({ locked: true, firstRun: true })
+    expect(fetchRemote).not.toHaveBeenCalled()
+    expect(getGameDataStatus().phase).toBe('checking')
+
+    release()
+    await 확인하며(() => started)
+    expect(fetchRemote).toHaveBeenCalledTimes(1)
+  })
+
+  it('계약 판이 바뀐 잠금은 처음 실행이 아니다', async () => {
+    loadCopy.mockResolvedValue(copy('옛 판'))
+    fetchRemote.mockResolvedValue(응답([file('bosses/a.webp', SHA_A)]))
+    const onBoot = jest.fn(async () => {})
+
+    await 확인하며(() => startGameData(onBoot))
+
+    expect(onBoot).toHaveBeenCalledWith({ locked: true, firstRun: false })
+  })
+
+  it('OTA 확인이 던져도 게임 데이터를 받는다', async () => {
+    fetchRemote.mockResolvedValue(응답([file('bosses/a.webp', SHA_A)]))
+
+    await 확인하며(() => startGameData(async () => Promise.reject(new Error('boom'))))
+
+    expect(getGameDataStatus().phase).toBe('ready')
+  })
+
+  it('사본이 있으면 OTA 를 기다리지 않고 연다', async () => {
+    loadCopy.mockResolvedValue(copy())
+    fetchRemote.mockResolvedValue({ kind: 'not-modified' })
+    const onBoot = jest.fn(() => new Promise<void>(() => {}))
+
+    await startGameData(onBoot)
+
+    expect(onBoot).toHaveBeenCalledWith({ locked: false, firstRun: false })
+    expect(getGameDataStatus().phase).toBe('ready')
+  })
+})
+
 describe('사본이 있을 때', () => {
-  const copy = (contract = GAME_DATA_CONTRACT) => {
-    const sections = { ...INITIAL_GAME_DATA, assets: { updatedAt: 't', files: [file('bosses/a.webp', SHA_A)] } }
-    return { contract, etag: '"e0"', sections: sections as unknown as Record<string, unknown> }
-  }
 
   it('잠그지 않고 사본으로 연 뒤 ETag 로 묻고, 304 면 아무것도 쓰지 않는다', async () => {
     loadCopy.mockResolvedValue(copy())
@@ -230,6 +294,32 @@ describe('사본이 있을 때', () => {
     expect(clearCopy).toHaveBeenCalled()
     expect(fetchRemote).toHaveBeenCalledWith(null)
     expect(getGameDataStatus().phase).toBe('ready')
+  })
+
+  // 그림이 기기에 대부분 있어 받을 양이 작다. 그 정도에 매번 확인을 누르게 할 이유가 없다.
+  it('계약 판이 바뀌어 잠겨도 받을 양이 5MB 이하면 묻지 않고 받는다', async () => {
+    loadCopy.mockResolvedValue(copy('옛 판'))
+    fetchRemote.mockResolvedValue(응답([file('bosses/a.webp', SHA_A, 4_998_999)]))
+    const phases: string[] = []
+
+    const started = startGameData()
+    while (getGameDataStatus().phase !== 'ready') {
+      phases.push(getGameDataStatus().phase)
+      await new Promise((resolve) => setImmediate(resolve))
+    }
+    await started
+
+    expect(phases).not.toContain('confirm')
+  })
+
+  it('계약 판이 바뀌어 잠기고 받을 양이 5MB 를 넘으면 묻는다', async () => {
+    loadCopy.mockResolvedValue(copy('옛 판'))
+    fetchRemote.mockResolvedValue(응답([file('bosses/a.webp', SHA_A, 4_999_001)]))
+
+    void startGameData()
+    for (let i = 0; i < 20; i += 1) await new Promise((resolve) => setImmediate(resolve))
+
+    expect(getGameDataStatus().phase).toBe('confirm')
   })
 
   it('겹쳐 부른 받기는 한 번만 돈다', async () => {

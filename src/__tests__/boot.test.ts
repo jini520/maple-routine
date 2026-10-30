@@ -55,6 +55,12 @@ jest.mock('../features/game-data/sync', () => ({
   startGameData: jest.fn(async () => {}),
 }))
 
+const mockCheckOnBoot = jest.fn(async () => {})
+jest.mock('../features/live-update/store', () => ({
+  __esModule: true,
+  useLiveUpdateStore: { getState: () => ({ checkOnBoot: mockCheckOnBoot }) },
+}))
+
 import * as nativePorts from '../native/ports'
 import * as storagePorts from '../storage/ports'
 
@@ -177,5 +183,14 @@ describe('loadGameData()', () => {
     expect(loadGameData()).toBeUndefined()
 
     expect(startGameData).toHaveBeenCalledTimes(1)
+  })
+
+  // 처음 실행인지와 잠근 채인지는 게임 데이터가 사본을 읽어야 안다. 그 값이 OTA 부팅 확인으로 그대로 건너가야 한다.
+  it('게임 데이터가 알린 부팅 상황을 OTA 부팅 확인에 넘긴다', async () => {
+    loadGameData()
+    const onBoot = jest.mocked(startGameData).mock.calls.at(-1)?.[0]
+    await onBoot?.({ locked: true, firstRun: true })
+
+    expect(mockCheckOnBoot).toHaveBeenCalledWith({ locked: true, firstRun: true })
   })
 })
