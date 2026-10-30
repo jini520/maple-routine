@@ -101,7 +101,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
 
 export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Element {
   const { row } = props
-  const { setRowParty, setBossDrops, now, partyPlans } = useBossProfitContext()
+  const { setRowParty, setBossDrops, now, partyPlans, characterIssues } = useBossProfitContext()
   const [isDropSheetOpen, setIsDropSheetOpen] = useState(false)
   // 행의 `변경` 으로 여는 파티 모달. 인원과 비율을 함께 고친다.
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false)
@@ -111,7 +111,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
   const openedBosses = useManualCompletionStore((state) => state.bosses)
   const saveManualCompletion = useBossProfitStore((state) => state.saveManualCompletion)
   const cancelManualCompletion = useBossProfitStore((state) => state.cancelManualCompletion)
-  const characterIssue = useBossProfitStore((state) => state.characterIssues[row.ocid])
+  const characterIssue = characterIssues[row.ocid]
   // 구조 분해가 필수다. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그 접근을
   // 렌더 중 ref 접근으로 본다. 훅이 안에서 `useRef` 를 쓰기 때문이다.
   const { ref: itemChipRef, isOpen: isItemPopoverOpen, anchor: itemAnchor, toggle: toggleItemPopover, close: closeItemPopover } =

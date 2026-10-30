@@ -23,7 +23,7 @@ import { activeBossesInSection, activeDifficultiesNow, bossPortraitSlugOf, getMa
 import { countManualWeeklyBosses, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 import { bossCycleOf, isSeasonBoss, type BossEntry } from '../../lib/boss/bosses'
 import { isChallengersWorld } from '../../lib/world/worlds'
-import { useDataFreshness } from '../../features/refresh/freshness'
+import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import type { BossDifficulty } from '../../types'
 
@@ -93,7 +93,7 @@ export function BossManageScreen(): React.JSX.Element {
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
 
   // 스케줄러와 같은 실시간 원천을 그린다. 값도 같아야 한다.
-  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
+  const fetchedAt = useRealtimeFetchedAt()
 
   // 화면 넷이 **같은 규칙**으로 고른다. 폴백을 화면마다 두면 공유했는데 화면마다 다른 캐릭터가 된다.
   // 넘기는 목록이 화면 순서여야 한다. 폴백이 그 첫 번째다.

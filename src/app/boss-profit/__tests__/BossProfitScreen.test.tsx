@@ -20,11 +20,18 @@ import { ScrollView } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import dropItemsData from '../../../__fixtures__/game-data/drop-items.json'
+import { useBossProfitPeriod, type BossProfitPeriod } from '../../../features/boss-profit/period-query'
+import type { PeriodSnapshot } from '../../../features/boss-profit/period-snapshot'
+import { useBossProfitRound, type BossProfitRound } from '../../../features/boss-profit/round-view'
 import {
   useBossProfitStore,
   type BossProfitRow,
   type BossProfitStore,
   type BossProfitWeeklySubtotal } from '../../../features/boss-profit/store'
+import { queryKeys } from '../../../features/query/keys'
+import { useRefetchStaleOnFocus } from '../../../hooks/useRefetchStaleOnFocus'
+import { useRealtimeFetchedAt } from '../../../features/refresh/freshness'
+import { useTrackedOcids } from '../../../features/schedule-sync/use-schedule-queries'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss/boss-matching'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period'
 import { bossesInSection, bossNameOf } from '../../../lib/boss/bosses'
@@ -39,7 +46,6 @@ import { FAB_CONTENT_GAP_PX, FAB_SPACE_PX } from '../../../lib/fab-metrics'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
 import { ThemeProvider } from '../../../theme/ThemeProvider'
-import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { useUnpricedDropCount } from '../../../features/boss-profit/use-unpriced-drop-count'
 import { BossProfitScreen } from '../BossProfitScreen'
@@ -52,15 +58,12 @@ const navigate = jest.fn()
 // 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다. 화면이 이것도 부른다.
 const dispatch = jest.fn()
 
-// 동기화 실패·기간 로드 실패는 인라인 문단이 아니라 토스트다.
+// 당김은 층의 다시 불러오기에 부탁한다. 층은 진행률만 들고 기록은 쿼리가 든다.
 const mockLedgerReload = jest.fn()
-// 층이 회차를 끝낼 때마다 오르는 값. 화면이 그때 기간을 다시 읽는지 재려면 테스트가 올려야 한다.
-let mockLedgerRevision = 1
 jest.mock('../../../features/ledger/useLedgerData', () => ({
   useLedgerData: () => ({
     status: 'ready',
     collecting: false,
-    revision: mockLedgerRevision,
     reload: mockLedgerReload,
     requestDateRange: jest.fn(),
   }),
@@ -75,12 +78,23 @@ jest.mock('../../../features/toast/store', () => ({
 jest.mock('../../../features/auth/store', () => ({
   useAuthStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) } }))
 
-// 좁은 범위로만 목한다. `dropRowKey` 는 본문(`AccordionBody`)이 쓰는 순수 함수라 실물과
+// 스토어에는 보던 탭 · 기간과 쓰기만 남았다. `dropRowKey` 는 본문(`AccordionBody`)이 쓰는 순수 함수라 실물과
 // 같은 문자열을 낸다.
 jest.mock('../../../features/boss-profit/store', () => ({
   useBossProfitStore: jest.fn(),
   dropRowKey: (ocid: string, bossKey: string, difficulty: string, periodKey: string) =>
     `${ocid}|${bossKey}|${difficulty}|${periodKey}` }))
+
+// 기간의 값 · 회차의 실패 · 추적 목록은 쿼리 캐시에서 온다. 셋 다 훅째 세운다. 쿼리가 값을 만드는 규칙은
+// `period-query.spec` · `round-view` 가 본다.
+jest.mock('../../../features/boss-profit/period-query', () => ({ useBossProfitPeriod: jest.fn() }))
+jest.mock('../../../features/boss-profit/round-view', () => ({ useBossProfitRound: jest.fn() }))
+jest.mock('../../../features/schedule-sync/use-schedule-queries', () => ({ useTrackedOcids: jest.fn() }))
+// 포커스 효과는 내비게이션 컨테이너가 있어야 돈다. 어느 열쇠를 거는지만 본다.
+jest.mock('../../../hooks/useRefetchStaleOnFocus', () => ({ useRefetchStaleOnFocus: jest.fn() }))
+jest.mock('../../../features/refresh/freshness', () => ({ useRealtimeFetchedAt: jest.fn(() => null) }))
+// 토스트의 다시 시도가 부른다. 실물은 넥슨을 친다.
+jest.mock('../../../features/schedule-sync/schedule-query', () => ({ refreshSchedules: jest.fn(async () => undefined) }))
 
 // 떠 있는 버튼이 가격 입력 창을 채우고 미입력 건수를 센다. 여기서 재는 것은 화면이지 그 창이
 // 아니라 훅째 목으로 세운다(실물은 SQLite 를 친다).
@@ -91,6 +105,10 @@ jest.mock('../../../features/boss-profit/use-unpriced-drop-count', () => ({
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
 const mockedStore = jest.mocked(useBossProfitStore)
+const mockedPeriod = jest.mocked(useBossProfitPeriod)
+const mockedRound = jest.mocked(useBossProfitRound)
+const mockedTrackedOcids = jest.mocked(useTrackedOcids)
+const mockedFetchedAt = jest.mocked(useRealtimeFetchedAt)
 const mockedNavigation = jest.mocked(useScreenNavigation)
 
 // 새로고침 버튼·다음 기간 버튼은 "현재 기간"에서만 노출/비활성되므로 실행 시점과 무관하게 항상
@@ -102,39 +120,92 @@ const 주간보스이름 = bossesInSection('weekly')[0].name
 const 다른주간보스 = bossesInSection('weekly')[1].key
 const 고가아이템 = dropItemsData.items.filter((item) => item.valuable)[0].key
 
-function mockStore(overrides: Partial<BossProfitStore> = {}): void {
-  mockedStore.mockReturnValue({
-    status: 'idle',
+/**
+ * 화면이 네 훅에서 읽는 값을 한 벌로 적는다. 케이스는 바뀐 것만 덮고 `mockStore` 가 훅마다 나눠 세운다.
+ * `snapshot: null` 은 이 기간을 아직 한 번도 못 읽은 상태다.
+ */
+type 화면값 = Omit<BossProfitStore, 'tab'> &
+  PeriodSnapshot &
+  Omit<BossProfitPeriod, 'snapshot'> &
+  BossProfitRound & {
+    tab: BossProfitStore['tab']
+    snapshot?: null
+    trackedOcids: string[] | null
+  }
+
+function mockStore(overrides: Partial<화면값> = {}): void {
+  const value: 화면값 = {
     tab: 'weekly',
     periodKey: CURRENT_WEEKLY,
-    loadedTab: 'weekly',
-    loadedPeriodKey: CURRENT_WEEKLY,
-    rows: [],
-    dropsByRowKey: {},
-    weeklySubtotals: [],
-    isPeriodLoading: false,
-    periodState: 'confirmedEmpty',
-    periodPendingAggregation: false,
-    canGoPreviousPeriod: true,
-    error: null,
-    staleCharacterNames: [],
-    characterIssues: {},
-    trackedOcids: ['ocid-1'],
-    loadTrackedOcids: jest.fn(),
     partyPlans: {},
-    loadPartyPlans: jest.fn().mockResolvedValue(undefined),
-    // 실물은 `Promise<void>` 다. 당김 훅이 회차의 **끝** 을 기다린다.
-    refresh: jest.fn().mockResolvedValue(undefined),
     setTab: jest.fn(),
     goToCurrentPeriod: jest.fn(),
     resetToCurrentWeek: jest.fn(),
-    goToPreviousPeriod: jest.fn(),
-    goToNextPeriod: jest.fn(),
-    retryPeriod: jest.fn(),
-    rereadPeriod: jest.fn().mockResolvedValue(undefined),
-    setPartySize: jest.fn(),
-    setBossDrops: jest.fn(),
-    ...overrides } as unknown as BossProfitStore)
+    goToPreviousPeriod: jest.fn().mockResolvedValue(undefined),
+    goToNextPeriod: jest.fn().mockResolvedValue(undefined),
+    retryPeriod: jest.fn().mockResolvedValue(undefined),
+    loadPartyPlans: jest.fn().mockResolvedValue(undefined),
+    setRowParty: jest.fn().mockResolvedValue(undefined),
+    saveManualCompletion: jest.fn().mockResolvedValue(undefined),
+    cancelManualCompletion: jest.fn().mockResolvedValue(undefined),
+    setBossDrops: jest.fn().mockResolvedValue(undefined),
+    rows: [],
+    dropsByRowKey: {},
+    weeklySubtotals: [],
+    periodState: 'confirmedEmpty',
+    periodPendingAggregation: false,
+    canGoPreviousPeriod: true,
+    unqueryableCards: [],
+    loadedTab: 'weekly',
+    loadedPeriodKey: CURRENT_WEEKLY,
+    isWindowSyncing: false,
+    characterIssues: {},
+    staleCharacterNames: [],
+    status: 'loaded',
+    error: null,
+    trackedOcids: ['ocid-1'],
+    ...overrides,
+  }
+  mockedStore.mockReturnValue({
+    tab: value.tab,
+    periodKey: value.periodKey,
+    partyPlans: value.partyPlans,
+    setTab: value.setTab,
+    goToCurrentPeriod: value.goToCurrentPeriod,
+    resetToCurrentWeek: value.resetToCurrentWeek,
+    goToPreviousPeriod: value.goToPreviousPeriod,
+    goToNextPeriod: value.goToNextPeriod,
+    retryPeriod: value.retryPeriod,
+    loadPartyPlans: value.loadPartyPlans,
+    setRowParty: value.setRowParty,
+    saveManualCompletion: value.saveManualCompletion,
+    cancelManualCompletion: value.cancelManualCompletion,
+    setBossDrops: value.setBossDrops,
+  })
+  mockedPeriod.mockReturnValue({
+    snapshot:
+      value.snapshot === null
+        ? null
+        : {
+            rows: value.rows,
+            dropsByRowKey: value.dropsByRowKey,
+            weeklySubtotals: value.weeklySubtotals,
+            periodState: value.periodState,
+            periodPendingAggregation: value.periodPendingAggregation,
+            canGoPreviousPeriod: value.canGoPreviousPeriod,
+            unqueryableCards: value.unqueryableCards,
+          },
+    loadedTab: value.loadedTab,
+    loadedPeriodKey: value.loadedPeriodKey,
+    isWindowSyncing: value.isWindowSyncing,
+  })
+  mockedRound.mockReturnValue({
+    characterIssues: value.characterIssues,
+    staleCharacterNames: value.staleCharacterNames,
+    status: value.status,
+    error: value.error,
+  })
+  mockedTrackedOcids.mockReturnValue(value.trackedOcids)
 }
 
 /** `bossKey` 만 덮으면 보이는 이름도 그 보스의 것으로 따라간다. */
@@ -206,12 +277,11 @@ function renderScreen(): ReturnType<typeof render> {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  mockLedgerRevision = 1
   mockLedgerReload.mockResolvedValue(undefined)
   // 카운트업의 '직전 표시값' 기억은 모듈 수준이라 언마운트를 건너 산다.
   // 테스트 하나가 곧 세션 하나다.
   clearCountUpMemory()
-  useDataFreshness.setState({ fetchedAt: null })
+  mockedFetchedAt.mockReturnValue(null)
   dispatch.mockClear()
   // 층 스택이 없는 가짜다. `useOpenTab` 이 그 깊이를 물어 `popToTop` 을 헛치지 않는다.
   mockedNavigation.mockReturnValue({ navigate, dispatch, getParent: () => undefined } as unknown as ReturnType<
@@ -221,12 +291,12 @@ beforeEach(() => {
 })
 
 describe('빈 상태', () => {
-  it('마운트하면 추적 목록을 한 번 읽는다', async () => {
-    const loadTrackedOcids = jest.fn()
-    mockStore({ loadTrackedOcids })
+  // 이 화면은 층 안에 살아 탭을 오가도 마운트가 남는다. 돌아올 때 회차가 만료됐으면 받아야 하고, 기간 쿼리는 회차에
+  // 기대어 따라 바뀐다. 포커스 훅을 안 걸면 10분 뒤에 돌아와도 옛 완료 상태가 그대로다.
+  it('포커스에 회차의 만료된 쿼리를 다시 받는다', async () => {
     await renderScreen()
 
-    expect(loadTrackedOcids).toHaveBeenCalledTimes(1)
+    expect(jest.mocked(useRefetchStaleOnFocus)).toHaveBeenCalledWith(queryKeys.scheduleRound())
   })
 
   // 이 화면은 보스 수익과 가계부가 함께 사는 층이 층 스택에서 빠질 때만 언마운트된다. 곧 수익·지출을
@@ -508,7 +578,7 @@ describe('갱신 시각', () => {
 
   // 제목에 딸린 작은 글씨다. 기간 탭 줄에 있던 것을 제목 아래로 옮겼다.
   it('기간 탭 줄이 아니라 제목 줄 아래에 선다', async () => {
-    useDataFreshness.setState({ fetchedAt: '2026-09-08T05:03:22.000Z' })
+    mockedFetchedAt.mockReturnValue('2026-09-08T05:03:22.000Z')
     const { getByTestId } = await renderScreen()
 
     const line = getByTestId('data-freshness')
@@ -519,7 +589,7 @@ describe('갱신 시각', () => {
   // **자리는 지킨다.** 값이 들어오는 순간 줄이 생기면 헤더가 16 만큼 내려앉고 그 아래 화면
   // 전체가 한 번 밀린다. 콜드 스타트 첫 진입에서 실제로 일어난다.
   it('받은 적이 없으면 글자만 빈다', async () => {
-    useDataFreshness.setState({ fetchedAt: null })
+    mockedFetchedAt.mockReturnValue(null)
     const { getByTestId } = await renderScreen()
 
     expect(getByTestId('data-freshness')).toHaveTextContent('')
@@ -527,10 +597,9 @@ describe('갱신 시각', () => {
 })
 
 describe('당겨서 새로고침', () => {
-  // 당김은 **부모에게 부탁만** 한다. 무엇을 다시 부를지(오늘·과거)는 그쪽이 정한다.
-  // 걷어 낸 헤더 버튼은 이 화면의 재조회(라이브)를 불렀다. 그 둘의 뜻이 달랐고, 남은 것은
-  // 넓은 쪽(창까지 다시 부르는 당김)이다. 스토어의 `refresh` 는 토스트의 다시 시도가 계속 쓴다.
-  it('당김이 부모의 다시 불러오기를 부른다', async () => {
+  // 당김은 **부모에게 부탁만** 한다. 조각 둘(`live` 는 회차와 오늘 강화, `window` 는 13일 창)만 고른다. 강화 사용
+  // 내역 한 달치는 이 화면이 안 그리므로 안 받는다. 회차가 기록을 쓰면 기간 쿼리는 무효화로 따라온다.
+  it('당김이 층의 다시 불러오기를 live · window 조각으로 부른다', async () => {
     mockStore({ trackedOcids: ['ocid-1'] })
     const { getByTestId } = await renderScreen()
 
@@ -540,6 +609,7 @@ describe('당겨서 새로고침', () => {
     })
 
     expect(mockLedgerReload).toHaveBeenCalledTimes(1)
+    expect(mockLedgerReload).toHaveBeenCalledWith(['live', 'window'])
   })
 
   // 어느 기간에서도 당길 수 있다(사용자 지정). 당김은 창이 못 받은 날짜를 다시 부르는 일이라
@@ -662,12 +732,22 @@ describe('로딩', () => {
     expect(getByText('지내우시')).toBeTruthy()
   })
 
-  it('기간 백필 중에는 그 기간 문구를 쓰고 카드는 그리지 않는다', async () => {
-    mockStore({ isPeriodLoading: true, rows: [보스행()] })
+  // 창 동기화를 기다리는 기간은 쿼리가 `isWindowSyncing` 으로 말한다. 앞 기간의 값이 `placeholderData` 로 남아 있어도
+  // 그것은 다른 기간의 카드라 그리지 않는다.
+  it('창 동기화를 기다리는 동안은 그 기간 문구를 쓰고 카드는 그리지 않는다', async () => {
+    mockStore({ isWindowSyncing: true, rows: [보스행()] })
     const { getByText, queryByText } = await renderScreen()
 
     expect(getByText(/기록을 불러오고 있어요$/)).toBeTruthy()
     expect(queryByText('지내우시')).toBeNull()
+  })
+
+  it('이 기간을 아직 한 번도 못 읽었으면 빈 상태가 아니라 불러오는 중이다', async () => {
+    mockStore({ snapshot: null })
+    const { getByText, queryByText } = await renderScreen()
+
+    expect(getByText(/기록을 불러오고 있어요$/)).toBeTruthy()
+    expect(queryByText('아직 처치한 보스가 없습니다')).toBeNull()
   })
 })
 
@@ -675,7 +755,7 @@ describe('로딩', () => {
 // 아니라 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
 describe('캐릭터 카드 순서', () => {
   /** 카드 헤더에 그려진 캐릭터 이름을 카드 순서대로. */
-  async function 카드이름들(store: Partial<BossProfitStore>): Promise<string[]> {
+  async function 카드이름들(store: Partial<화면값>): Promise<string[]> {
     mockStore({ status: 'loaded', periodState: 'recorded', ...store })
     const { getAllByTestId } = await renderScreen()
 
@@ -1030,35 +1110,6 @@ describe('구조 계약', () => {
 
     expect(scrollTo).not.toHaveBeenCalled()
     scrollTo.mockRestore()
-  })
-
-  // 창은 화면을 안 막으려고 뒤에서 도는데 그것이 지난 기간 기록을 만든다. 다시 읽지 않으면 이전
-  // 화살표가 읽은 순간의 답에 굳는다.
-  it('층이 회차를 끝내면 기간을 다시 읽는다', async () => {
-    const rereadPeriod = jest.fn().mockResolvedValue(undefined)
-    mockStore({ rereadPeriod })
-    const { rerender } = await renderScreen()
-    // 마운트 회차는 `loadTrackedOcids` 가 이미 읽고 있다. 여기서 또 읽으면 빈 화면이 한 프레임 스친다.
-    expect(rereadPeriod).not.toHaveBeenCalled()
-
-    mockLedgerRevision += 1
-    await act(async () => {
-      rerender(화면트리())
-    })
-
-    expect(rereadPeriod).toHaveBeenCalledTimes(1)
-  })
-
-  it('층의 회차 번호가 그대로면 다시 읽지 않는다', async () => {
-    const rereadPeriod = jest.fn().mockResolvedValue(undefined)
-    mockStore({ rereadPeriod })
-    const { rerender } = await renderScreen()
-
-    await act(async () => {
-      rerender(화면트리())
-    })
-
-    expect(rereadPeriod).not.toHaveBeenCalled()
   })
 
   it('탭·기간이 아코디언 key 에 들어가 이동하면 펼침이 리셋된다(#27)', async () => {

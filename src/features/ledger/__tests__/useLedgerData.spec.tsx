@@ -1,17 +1,18 @@
-// 수익·지출 층이 **데이터를 소유한다**. 자식(보스 수익·가계부)은 상태를 구독만 한다.
+// 수익·지출 층은 회차의 **진행**을 소유한다. 자식(보스 수익·가계부·통계)은 상태를 구독하고 다시 불러 달라고 부탁만 한다.
 //
+// 기록은 들지 않는다. 회차가 쓴 기록은 표의 판을 올리고, 그 표를 읽는 쿼리가 무효화되어 자식이 다시 읽는다.
 // 자식마다 조립하던 때 난 결함 셋이 전부 `누가 부르나·언제 끝나나·누가 결과를 받나` 에서 났다.
-// 소유자를 하나로 두면 그 물음이 사라진다.
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native'
 import { Text } from 'react-native'
 
 jest.mock('../../schedule-window/sync', () => ({ syncScheduleWindow: jest.fn() }))
 jest.mock('../../schedule-window/window', () => ({ planScheduleWindow: jest.fn() }))
-jest.mock('../../boss-profit/store', () => ({
-  useBossProfitStore: { getState: () => ({ refresh: mockRefresh }) },
+jest.mock('../../schedule-sync/schedule-query', () => ({
+  refreshSchedules: jest.fn(),
+  prefetchSchedules: jest.fn(),
+  readTrackedOcids: jest.fn(),
 }))
-const mockRefresh = jest.fn()
-jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
+jest.mock('../../refresh/pull', () => ({ collectTodayEnhancement: jest.fn() }))
 jest.mock('../../enhancement-history/collect', () => ({
   collectEnhancementHistory: jest.fn(),
   measureEnhancementHistory: jest.fn(),
@@ -22,23 +23,26 @@ import { LedgerDataProvider, useLedgerData } from '../useLedgerData'
 
 const { syncScheduleWindow: syncMock } = jest.requireMock('../../schedule-window/sync') as Record<string, jest.Mock>
 const { planScheduleWindow: planMock } = jest.requireMock('../../schedule-window/window') as Record<string, jest.Mock>
-const { getTrackedCharacterOcids: trackedMock } = jest.requireMock(
-  '../../../storage/character-selection',
-) as Record<string, jest.Mock>
+const {
+  refreshSchedules: refreshMock,
+  prefetchSchedules: prefetchMock,
+  readTrackedOcids: trackedMock,
+} = jest.requireMock('../../schedule-sync/schedule-query') as Record<string, jest.Mock>
+const { collectTodayEnhancement: todayMock } = jest.requireMock('../../refresh/pull') as Record<string, jest.Mock>
 const { collectEnhancementHistory: collectMock, measureEnhancementHistory: sizeMock } = jest.requireMock(
   '../../enhancement-history/collect',
 ) as Record<string, jest.Mock>
 
 function Probe(): React.JSX.Element {
-  const { status, revision, reload } = useLedgerData()
+  const { status, reload } = useLedgerData()
   return (
     <>
-      <Text testID="probe">{`${status}:${revision}`}</Text>
-      {/* 보스 수익의 당김. 강화를 안 받는다. */}
+      <Text testID="probe">{status}</Text>
+      {/* 보스 수익의 당김. 범위 강화를 안 받는다. */}
       <Text testID="reload" onPress={() => void reload(['live', 'window'])}>
         다시
       </Text>
-      {/* 가계부의 당김. 강화까지 받는다. */}
+      {/* 가계부의 당김. 범위 강화까지 받는다. */}
       <Text testID="reload-all" onPress={() => void reload(['live', 'window', 'enhancement'])}>
         다시(가계부)
       </Text>
@@ -56,18 +60,30 @@ const 그리기 = async () =>
 beforeEach(() => {
   useRefreshProgress.getState().resetForTests()
   syncMock.mockReset().mockResolvedValue(undefined)
-  // 계획은 실행보다 먼저 선다. 그래야 수집기 셋의 분모 총합이 첫 순간부터 잡힌다.
+  // 계획은 실행보다 먼저 선다. 그래야 수집기의 분모 총합이 첫 순간부터 잡힌다.
   planMock.mockReset().mockResolvedValue({ apiKey: 'key-1', jobs: [{ ocid: 'o1', dateKey: '2026-09-01' }] })
-  mockRefresh.mockReset().mockResolvedValue(undefined)
+  refreshMock.mockReset().mockResolvedValue(undefined)
+  prefetchMock.mockReset().mockResolvedValue(undefined)
   trackedMock.mockReset().mockResolvedValue(['o1', 'o2'])
+  todayMock.mockReset().mockResolvedValue(undefined)
   collectMock.mockReset().mockResolvedValue(undefined)
   sizeMock.mockReset().mockResolvedValue({ total: 0, hasPast: false })
 })
 
-// 마운트는 **과거(창)만** 받는다. 오늘은 보스 수익 스토어의 진입 경로가 10분 TTL 로 이미
-// 맡고 있어, 여기서 또 부르면 진입마다 조회가 두 번 나간다.
-it('부모가 마운트되면 창만 채운다. 라이브는 안 부른다', async () => {
+// 창은 회차가 쓴 오늘 기록을 봐야 처치 날짜를 캔다. 창이 회차보다 먼저 후보를 읽으면 오늘 결정석에 날짜가 안 붙는다.
+// 그래서 마운트는 만료된 회차만 받고(신선하면 지나간다) 그 뒤에 창을 채운다.
+it('마운트는 만료된 회차를 먼저 받은 뒤 창을 채운다. 신선해도 받는 회차는 안 튼다', async () => {
+  let 회차끝내기!: () => void
+  prefetchMock.mockReturnValue(new Promise<void>((resolve) => { 회차끝내기 = resolve }))
+
   const view = await 그리기()
+
+  await waitFor(() => expect(prefetchMock).toHaveBeenCalledTimes(1))
+  expect(syncMock).not.toHaveBeenCalled()
+
+  await act(async () => {
+    회차끝내기()
+  })
 
   await waitFor(() => {
     expect(syncMock).toHaveBeenCalledWith(
@@ -78,13 +94,11 @@ it('부모가 마운트되면 창만 채운다. 라이브는 안 부른다', asy
       expect.objectContaining({ jobs: expect.any(Array) }),
     )
   })
-  await waitFor(() => {
-    expect(view.getByTestId('probe')).toHaveTextContent('ready:1')
-  })
-  expect(mockRefresh).not.toHaveBeenCalled()
+  await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready'))
+  expect(refreshMock).not.toHaveBeenCalled()
 })
 
-it('채우는 동안 filling 이다. 자식이 그 사이에 스피너를 그린다', async () => {
+it('채우는 동안 filling 이다. 자식이 그 사이에 스켈레톤을 그린다', async () => {
   // 안 받은 지난 날이 있는 회차라야 모달 경로로 들어간다. 오늘 칸만 받는 회차는 조용하다.
   sizeMock.mockResolvedValue({ total: 105, hasPast: true })
   let 끝내기!: () => void
@@ -93,38 +107,36 @@ it('채우는 동안 filling 이다. 자식이 그 사이에 스피너를 그린
   const view = await 그리기()
 
   await waitFor(() => {
-    expect(view.getByTestId('probe')).toHaveTextContent('filling:0')
+    expect(view.getByTestId('probe')).toHaveTextContent('filling')
   })
 
   await act(async () => {
     끝내기()
   })
 
-  expect(view.getByTestId('probe')).toHaveTextContent('ready:1')
+  expect(view.getByTestId('probe')).toHaveTextContent('ready')
 })
 
-// 자식은 이 수가 오를 때 다시 읽는다. 창이 뒤늦게 채운 것을 받는 유일한 계기다.
-// 당김은 **오늘과 과거를 함께** 받는다. 두 하위 화면의 당김이 이것만 부른다.
-it('다시 부르면 라이브까지 받고 revision 이 또 오른다', async () => {
+// 당김은 지금 상태를 보겠다는 뜻이라 회차가 신선해도 받는다. 두 하위 화면의 당김이 이것만 부른다.
+it('다시 부르면 신선해도 회차를 받고 창을 또 채운다', async () => {
   const view = await 그리기()
-  await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:1'))
+  await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready'))
 
   await act(async () => {
     fireEvent.press(view.getByTestId('reload'))
   })
 
-  expect(view.getByTestId('probe')).toHaveTextContent('ready:2')
+  expect(refreshMock).toHaveBeenCalledTimes(1)
   expect(syncMock).toHaveBeenCalledTimes(2)
-  expect(mockRefresh).toHaveBeenCalledWith(['o1', 'o2'], { inPlace: true }, expect.any(Function))
 })
 
-it('관리 캐릭터가 없으면 안 부르고 바로 ready 다', async () => {
+it('관리 캐릭터가 없으면 창을 안 채우고 바로 ready 다', async () => {
   trackedMock.mockResolvedValue([])
 
   const view = await 그리기()
 
   await waitFor(() => {
-    expect(view.getByTestId('probe')).toHaveTextContent('ready:1')
+    expect(view.getByTestId('probe')).toHaveTextContent('ready')
   })
   expect(syncMock).not.toHaveBeenCalled()
 })
@@ -136,7 +148,7 @@ it('창이 던져도 ready 로 끝난다', async () => {
   const view = await 그리기()
 
   await waitFor(() => {
-    expect(view.getByTestId('probe')).toHaveTextContent('ready:1')
+    expect(view.getByTestId('probe')).toHaveTextContent('ready')
   })
 })
 
@@ -144,15 +156,15 @@ it('창이 던져도 ready 로 끝난다', async () => {
 it('프로바이더 밖에서는 idle 이다', async () => {
   const view = await render(<Probe />)
 
-  expect(view.getByTestId('probe')).toHaveTextContent('idle:0')
+  expect(view.getByTestId('probe')).toHaveTextContent('idle')
 })
 
 // 사용자 보고 `가계부는 왜 로딩이 두번돼? 2가지가 한 프로그래스바에서 함께 진행돼야지`.
 //
-// 라이브가 자기 칸을 먼저 열고 끝내면 바가 100% 를 찍고, 그 뒤에 창·히스토리가 자기 분모를
+// 앞 갈래가 자기 칸을 먼저 열고 끝내면 바가 100% 를 찍고, 그 뒤에 창·히스토리가 자기 분모를
 // 더해 바가 통째로 뒤로 간다. 한 회차가 두 번 로딩하는 것으로 보인다.
 describe('한 회차는 한 바다', () => {
-  it('실행 전에 세 수집기의 분모가 다 선다', async () => {
+  it('회차를 받기 전에 창과 강화의 분모가 다 선다', async () => {
     planMock.mockResolvedValue({
       apiKey: 'key-1',
       jobs: [
@@ -161,72 +173,76 @@ describe('한 회차는 한 바다', () => {
       ],
     })
     sizeMock.mockResolvedValue({ total: 9, hasPast: false })
-    // 라이브가 도는 중에 잰다. 그 순간 이미 총합이 서 있어야 한다.
+    // 회차가 도는 순간 잰다. 그때 이미 총합이 서 있어야 한다.
     let 분모 = -1
-    mockRefresh.mockImplementation(() => {
+    refreshMock.mockImplementation(() => {
       분모 = useRefreshProgress.getState().total
       return Promise.resolve()
     })
 
     const view = await 그리기()
-    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:1'))
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready'))
     await act(async () => {
       fireEvent.press(view.getByTestId('reload-all'))
     })
 
-    // 라이브 2(추적 캐릭터) + 창 2 + 히스토리 9. 하나라도 늦게 서면 이 값이 작아진다.
-    expect(분모).toBe(13)
+    // 창 2 + 히스토리 9. 회차의 칸은 회차가 스스로 열어 여기 안 든다. 하나라도 늦게 서면 이 값이 작아진다.
+    expect(분모).toBe(11)
   })
 
-  // 라이브가 끝나도 바가 100% 로 안 간다. 다른 갈래의 몫이 이미 분모에 들어 있어서다.
+  // 앞 갈래가 끝나도 바가 100% 로 안 간다. 다른 갈래의 몫이 이미 분모에 들어 있어서다.
   it('앞 갈래가 끝나도 바가 안 찬다', async () => {
     planMock.mockResolvedValue({ apiKey: 'key-1', jobs: [{ ocid: 'o1', dateKey: '2026-09-01' }] })
     sizeMock.mockResolvedValue({ total: 9, hasPast: false })
-    let 라이브끝난뒤 = { done: -1, total: -1 }
+    let 창이돌때 = { done: -1, total: -1 }
     syncMock.mockImplementation(() => {
       const { done, total } = useRefreshProgress.getState()
-      라이브끝난뒤 = { done, total }
+      창이돌때 = { done, total }
       return Promise.resolve()
     })
 
     const view = await 그리기()
-    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:1'))
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready'))
     await act(async () => {
       fireEvent.press(view.getByTestId('reload-all'))
     })
 
-    expect(라이브끝난뒤.done).toBeLessThan(라이브끝난뒤.total)
+    expect(창이돌때.done).toBeLessThan(창이돌때.total)
   })
 })
 
 // 무엇을 받을지는 **화면이 고른다**. 어떻게 받을지는 층이 안다. 보스 수익은 강화 사용 내역을
-// 안 그리므로 그 조각을 안 넣는다.
+// 안 그리므로 그 조각을 안 넣는다. 오늘 강화는 하루치라 어느 당김에나 든다.
 describe('화면이 조각을 고른다', () => {
-  it('보스 수익의 당김은 강화를 안 받는다', async () => {
+  it('보스 수익의 당김은 회차 · 창 · 오늘 강화다. 범위 강화는 안 받는다', async () => {
     const view = await 그리기()
-    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:1'))
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready'))
     collectMock.mockClear()
+    todayMock.mockClear()
 
     await act(async () => {
       fireEvent.press(view.getByTestId('reload'))
     })
 
     expect(collectMock).not.toHaveBeenCalled()
-    // 나머지 둘은 받는다. 창을 빼면 가계부의 보스 결정석 줄이 빈다.
-    expect(mockRefresh).toHaveBeenCalledWith(['o1', 'o2'], { inPlace: true }, expect.any(Function))
+    expect(todayMock).toHaveBeenCalledTimes(1)
+    expect(refreshMock).toHaveBeenCalledTimes(1)
+    // 창을 빼면 가계부의 보스 결정석 줄이 빈다.
     expect(syncMock).toHaveBeenCalledTimes(2)
   })
 
-  it('가계부의 당김은 강화까지 받는다', async () => {
+  it('가계부의 당김은 범위 강화를 받고, 오늘은 그 범위에 들어 따로 안 받는다', async () => {
     const view = await 그리기()
-    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:1'))
+    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready'))
     collectMock.mockClear()
+    todayMock.mockClear()
 
     await act(async () => {
       fireEvent.press(view.getByTestId('reload-all'))
     })
 
     expect(collectMock).toHaveBeenCalledTimes(1)
+    expect(todayMock).not.toHaveBeenCalled()
   })
 })
 
@@ -292,27 +308,6 @@ describe('강화 사용 내역', () => {
     })
 
     expect(collectMock).not.toHaveBeenCalled()
-  })
-})
-
-// 회차가 도는 동안 화면이 읽으면 그 시점의 DB 가 아직 자라는 중이라 한 셀의 값이 종류가
-// 도착할 때마다 커진다. 다 합산될 때까지 안 그린다(사용자 지정).
-describe('회차 도중에는 안 알린다', () => {
-  it('회차 표는 끝에 한 번만 오른다', async () => {
-    sizeMock.mockResolvedValue({ total: 105, hasPast: true })
-    let resolve = (): void => undefined
-    collectMock.mockImplementation(() => new Promise<void>((done) => (resolve = () => done())))
-    const view = await 그리기()
-
-    await act(async () => {
-      await Promise.resolve()
-    })
-    expect(view.getByTestId('probe')).toHaveTextContent('filling:0')
-
-    await act(async () => {
-      resolve()
-    })
-    await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready:1'))
   })
 })
 

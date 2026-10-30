@@ -14,7 +14,7 @@ import { act, fireEvent, render } from '@testing-library/react-native'
 import { processColor } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
-import { useDropHistoryStore } from '../../../features/boss-profit/drop-history-store'
+import { useDropHistory } from '../../../features/boss-profit/drop-history-query'
 import { bossesInSection } from '../../../lib/boss/bosses'
 import { formatBossProfitPeriodLabel } from '../../../lib/boss/boss-profit-period'
 import {
@@ -33,12 +33,13 @@ import { ThemeProvider } from '../../../theme/ThemeProvider'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { DropHistoryScreen } from '../DropHistoryScreen'
 
-jest.mock('../../../features/boss-profit/drop-history-store', () => ({ useDropHistoryStore: jest.fn() }))
+// 쿼리는 훅 하나로 막는다. 이 화면은 읽기만 하고 읽는 규칙은 `drop-history-query.spec` 이 본다.
+jest.mock('../../../features/boss-profit/drop-history-query', () => ({ useDropHistory: jest.fn() }))
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
-const mockedStore = jest.mocked(useDropHistoryStore)
+const mockedHistory = jest.mocked(useDropHistory)
 const mockedNavigation = jest.mocked(useScreenNavigation)
-const load = jest.fn()
+const reload = jest.fn()
 const goBack = jest.fn()
 
 // 보스 key · 이름은 게임 레퍼런스 데이터에서 뽑는다.
@@ -97,19 +98,19 @@ function 기록(overrides: Partial<DropHistoryRecord> = {}): DropHistoryRecord {
   }
 }
 
-type Store = ReturnType<typeof useDropHistoryStore>
+type History = ReturnType<typeof useDropHistory>
 
-function mockStore(overrides: Partial<Store> = {}): void {
-  mockedStore.mockReturnValue({
+function mockStore(overrides: Partial<History> = {}): void {
+  mockedHistory.mockReturnValue({
     status: 'ready',
     groups: [],
     drought: null,
     charactersByOcid: {
       'ocid-1': { ocid: 'ocid-1', characterName: '메이플영웅', imageUrl: null },
     },
-    load,
+    reload,
     ...overrides,
-  } as unknown as Store)
+  })
 }
 
 /**
@@ -133,7 +134,7 @@ async function renderHistory() {
 }
 
 beforeEach(() => {
-  load.mockReset().mockResolvedValue(undefined)
+  reload.mockReset().mockResolvedValue(undefined)
   goBack.mockReset()
   mockedNavigation.mockReturnValue({ goBack } as unknown as ReturnType<typeof useScreenNavigation>)
   mockStore()
@@ -154,11 +155,13 @@ describe('DropHistoryScreen: 셸과 조회', () => {
     )
   })
 
-  it('마운트하면 전 기간 기록을 불러온다', async () => {
-    mockStore({ status: 'idle' })
-    await renderHistory()
+  // 아직 한 번도 못 읽은 동안 빈 상태를 먼저 그리면 기록이 없다는 거짓이 잠깐 선다.
+  it('아직 못 읽었으면 빈 상태가 아니라 불러오는 중을 그린다', async () => {
+    mockStore({ status: 'loading' })
+    const { getByText, queryByTestId } = await renderHistory()
 
-    expect(load).toHaveBeenCalled()
+    expect(getByText('불러오고 있어요')).toBeTruthy()
+    expect(queryByTestId('empty-state')).toBeNull()
   })
 
   it('실패하면 빈 상태가 아니라 실패 상태와 다시 시도를 보여준다', async () => {
@@ -168,10 +171,11 @@ describe('DropHistoryScreen: 셸과 조회', () => {
     expect(getByTestId('error-state')).toBeTruthy()
     expect(queryByTestId('empty-state')).toBeNull()
 
+    // 마운트는 쿼리가 스스로 읽으므로 화면이 부르는 것은 다시 시도 한 번뿐이다.
     await act(async () => {
       fireEvent.press(getByText('다시 시도'))
     })
-    expect(load).toHaveBeenCalledTimes(2) // 마운트 1 + 탭 1
+    expect(reload).toHaveBeenCalledTimes(1)
   })
 
   it('기록이 없으면 빈 상태에서 보스 수입 화면으로 보낸다', async () => {

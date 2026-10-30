@@ -22,8 +22,17 @@ import { Image, Pressable, View } from 'react-native'
 
 import { getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
 
+import { useBossProfitPeriod } from '../../features/boss-profit/period-query'
+import type { BossProfitWeeklySubtotal, CharacterCardStub } from '../../features/boss-profit/period-snapshot'
+import type { BossProfitRow } from '../../features/boss-profit/rows'
+import { useBossProfitRound } from '../../features/boss-profit/round-view'
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
+import { queryKeys } from '../../features/query/keys'
+import { refreshSchedules } from '../../features/schedule-sync/schedule-query'
+import { useTrackedOcids } from '../../features/schedule-sync/use-schedule-queries'
+import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
+import type { RecordedDrop } from '../../types/drops'
 import { useMonthlyCrystalsUpToWeek } from '../../features/boss-profit/monthly-crystals'
 import {
   useScheduleSyncErrorToast,
@@ -57,7 +66,7 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useManualCompletionStore } from '../../features/manual-completion/store'
-import { useDataFreshness } from '../../features/refresh/freshness'
+import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
@@ -88,43 +97,48 @@ const BOSS_PROFIT_TAB_LABELS: Record<(typeof BOSS_PROFIT_TABS)[number], string> 
 /** 총 수익 내역 상자에 싣는 아이템 건수. 나머지는 한 줄로 접는다. */
 const PERIOD_REVENUE_LIST_LIMIT = 10
 
+// 아직 못 읽은 기간의 빈 값. 렌더마다 새 배열을 만들면 아래 메모가 매번 깨진다.
+const EMPTY_ROWS: readonly BossProfitRow[] = []
+const EMPTY_SUBTOTALS: readonly BossProfitWeeklySubtotal[] = []
+const EMPTY_CARDS: readonly CharacterCardStub[] = []
+const EMPTY_DROPS: Record<string, RecordedDrop[]> = {}
+
 export function BossProfitScreen(): React.JSX.Element {
   // 총 수익 금액 옆 표식. 입력 카드의 메소 표식과 같은 그림이다. 원 안에 넣지 않는다. 32x31 픽셀 아트라 원에 가두면 그
   // 원이 크기를 정하게 된다. 렌더 안에서 찾는다. 모듈 최상위에서 찾으면 그림 목록을 받기 전의 빈 값으로 굳는다.
   const mesoPouchIcon = getItemIconUrlByFile('meso_pouch.webp')
   const {
-    status,
     tab,
     periodKey,
-    loadedTab,
-    loadedPeriodKey,
-    rows,
-    weeklySubtotals,
-    isPeriodLoading,
-    periodState,
-    periodPendingAggregation,
-    canGoPreviousPeriod,
-    error,
-    staleCharacterNames,
-    characterIssues,
-    unqueryableCards,
-    trackedOcids,
-    loadTrackedOcids,
-    refresh,
     setTab,
     goToCurrentPeriod,
     resetToCurrentWeek,
     goToPreviousPeriod,
     goToNextPeriod,
     retryPeriod,
-    rereadPeriod,
     setRowParty,
     partyPlans,
     loadPartyPlans,
     setBossDrops,
-    dropsByRowKey,
   } = useBossProfitStore()
   const ledger = useLedgerData()
+  // 추적 목록 · 회차의 실패 · 기간의 값 셋 다 쿼리 캐시에서 온다. 이 화면은 사본을 들지 않는다.
+  const trackedOcids = useTrackedOcids()
+  const round = useBossProfitRound()
+  const period = useBossProfitPeriod(tab, periodKey)
+  const snapshot = period.snapshot
+  const rows = snapshot?.rows ?? EMPTY_ROWS
+  const weeklySubtotals = snapshot?.weeklySubtotals ?? EMPTY_SUBTOTALS
+  const unqueryableCards = snapshot?.unqueryableCards ?? EMPTY_CARDS
+  const dropsByRowKey = snapshot?.dropsByRowKey ?? EMPTY_DROPS
+  const periodState = snapshot?.periodState ?? 'confirmedEmpty'
+  const periodPendingAggregation = snapshot?.periodPendingAggregation ?? false
+  const canGoPreviousPeriod = snapshot?.canGoPreviousPeriod ?? false
+  // 불러오는 중은 둘이다. 이 기간을 아직 한 번도 못 읽었거나, 창 동기화를 기다린다.
+  const isPeriodLoading = snapshot === null || period.isWindowSyncing
+
+  // 이 화면은 층 안에 살아 탭을 오가도 마운트가 남는다. 돌아올 때 회차가 만료됐으면 다시 받는다.
+  useRefetchStaleOnFocus(queryKeys.scheduleRound())
 
   /**
    * 당김은 **어느 기간에서도** 되고 **보던 기간을 안 떠난다**(사용자 지정).
@@ -134,42 +148,22 @@ export function BossProfitScreen(): React.JSX.Element {
    *
    * **무엇을 다시 부를지는 부모 층이 정한다.** 이 화면은 부탁만 한다.
    */
-  // 조각 둘만 고른다. 강화 사용 내역은 이 화면이 안 그리므로 안 받는다. 그것을 받는 것은
-  // 가계부의 당김과 층 마운트다.
+  // 조각 둘만 고른다. 강화 사용 내역은 이 화면이 안 그리므로 한 달치는 안 받는다. 오늘 하루치는 `live` 에 든다.
 
   const openTab = useOpenTab()
   const navigation = useScreenNavigation()
   /**
-   * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
-   *
-   * 페이지마다 따로 재지 않는다. 화면 다섯이 같은 실시간 원천을 공유하므로, 따로 재면 같은 한
-   * 번의 조회로 그린 데이터인데 값이 갈린다. 적는 자리는 `syncSchedules` 회차와 오늘이 든 강화
-   * 조회 둘뿐이고, 기기 DB 읽기와 과거 기간 조회는 거기 안 닿는다.
+   * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다. 회차 쿼리의 받은 시각과 오늘 강화 수집의
+   * 시각 중 늦은 쪽이라 화면마다 갈리지 않는다.
    */
-  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
+  const fetchedAt = useRealtimeFetchedAt()
   const topSafeAreaPx = useTopSafeAreaPx()
 
   // 동기화 전체 실패는 토스트로 알린다. 기간 라벨·"n분 전" 표기가 남아 맥락은 화면에 있다.
-  useScheduleSyncErrorToast(error, { onRetry: () => refresh(trackedOcids ?? []) })
+  useScheduleSyncErrorToast(round.error, { onRetry: () => void refreshSchedules() })
   // 일부 캐릭터만 실패한 경우도 토스트다. 본문이 한 줄이라 이름을 나열하면 잘리므로 인원 수만
   // 싣는다.
-  useStaleCharactersToast(staleCharacterNames, () => refresh(trackedOcids ?? []))
-
-  /**
-   * 층이 회차를 끝내면 보는 기간을 다시 읽는다.
-   *
-   * 창 동기화는 화면을 안 막으려고 뒤에서 도는데 **그것이 지난 기간 기록을 만든다.** 다시 읽지
-   * 않으면 이전 화살표 게이트와 월간 주차 소계가 먼저 읽은 순간의 답에 굳어, 기록이 비어 있는
-   * 상태로 들어온 첫 회차에서 화살표가 꺼진 채로 남는다.
-   *
-   * 마운트 회차는 건너뛴다. 그때는 `loadTrackedOcids` 가 이미 읽고 있어 빈 화면이 한 프레임 스친다.
-   */
-  const seenLedgerRevision = useRef(ledger.revision)
-  useEffect(() => {
-    if (seenLedgerRevision.current === ledger.revision) return
-    seenLedgerRevision.current = ledger.revision
-    void rereadPeriod()
-  }, [ledger.revision, rereadPeriod])
+  useStaleCharactersToast(round.staleCharacterNames, () => void refreshSchedules())
 
   // 미완료 행이 그릴 파티 인원과 비율. 기록이 아니라 설정이라 기간 로드와 따로 읽고, 추적 목록이
   // 도착해야 읽을 수 있어 그 값이 바뀔 때 읽는다.
@@ -179,14 +173,13 @@ export function BossProfitScreen(): React.JSX.Element {
   }, [trackedOcids, loadPartyPlans])
 
   useEffect(() => {
-    loadTrackedOcids()
     // 직접 완료를 열어 둔 보스. 이 화면의 단추가 그 목록을 본다. today 와 같은 스토어라
     // 두 화면을 빠르게 오가도 서버는 한 번만 부른다.
     void useManualCompletionStore.getState().refresh()
     // 이 화면은 가계부와 함께 사는 층이 층 스택에서 빠질 때만 언마운트된다. 곧 수익·지출을 떠날
     // 때다. 가계부는 떠나면 주간 · 이번 주로 돌아오므로 보는 기간을 같게 맞춘다.
     return () => {
-      void resetToCurrentWeek()
+      resetToCurrentWeek()
       // 총 수익 키에는 기간이 없어서, 기억을 남기면 다시 들어올 때 떠나기 전 기간의 금액에서 이번 주 금액으로 굴러간다.
       forgetCountUp('total|weekly')
       forgetCountUp('total|monthly')
@@ -237,7 +230,7 @@ export function BossProfitScreen(): React.JSX.Element {
   // 0원인 것을 같게 말하므로, 이번 주 목록에 한해 빈 카드를 세우고 배지가 이유를 말한다
   // (스토어가 그 자리에서만 채운다).
   const characterGroups = orderByTracked(
-    buildCharacterGroups(rows, weeklySubtotals, unqueryableCards),
+    buildCharacterGroups([...rows], [...weeklySubtotals], [...unqueryableCards]),
     trackedOcids ?? [],
   )
 
@@ -309,11 +302,12 @@ export function BossProfitScreen(): React.JSX.Element {
   const bossProfitContext: BossProfitContextValue = {
     tab,
     periodKey,
-    loadedTab,
-    loadedPeriodKey,
+    loadedTab: period.loadedTab,
+    loadedPeriodKey: period.loadedPeriodKey,
     now,
     dropsByRowKey,
     partyPlans,
+    characterIssues: round.characterIssues,
     setRowParty,
     setBossDrops,
     onRetryPeriod: () => void retryPeriod(),
@@ -403,7 +397,7 @@ export function BossProfitScreen(): React.JSX.Element {
             {/* 숫자와 단위 사이에 실제 공백 문자를 남긴다. 마진만으로 띄우면 스크린리더가 `N메소` 로 이어 읽는다.
                 이 키에만 기간이 없다. 기간이 바뀌어도 같은 자리의 같은 뜻을 가진 숫자로 보고 굴린다. */}
             <Text className="text-22 font-bold text-primary-ink" style={TABULAR_NUMS}>
-              <AnimatedNumber identity={`total|${loadedTab}`} value={totalMeso} />{' '}
+              <AnimatedNumber identity={`total|${period.loadedTab}`} value={totalMeso} />{' '}
               <Text className="text-xs font-bold text-text-muted">메소</Text>
             </Text>
           </View>
@@ -467,7 +461,6 @@ export function BossProfitScreen(): React.JSX.Element {
                 갈래는 달 경계 미리보기(아직 오지 않은 주)뿐이고, 거기서 조회 가능한 기간을
                 지났다 는 거짓이다. 그 주에는 아직 안 잡은 것이 맞다. */}
             {!isPeriodLoading &&
-              status === 'loaded' &&
               characterGroups.length === 0 &&
               !periodPendingAggregation &&
               (periodState === 'failed' ? (
@@ -495,7 +488,7 @@ export function BossProfitScreen(): React.JSX.Element {
                   // 표식은 현재 기간에서만 선다. 과거 기간의 카드는 전부 기록에서 생기고,
                   // 받아 둔 그 금액 위에 조회 불가를 얹을 이유가 없다. 이 한 값이 원형 배지 ·
                   // 금액 알약 · 월간 주차 줄 · 초상화 표식 넷을 함께 정한다.
-                  issue={isOnCurrentPeriod ? characterIssues[group.ocid] : undefined}
+                  issue={isOnCurrentPeriod ? round.characterIssues[group.ocid] : undefined}
                   // 조회 불가 팝오버의 갈 길. 카드는 네비게이션을 모르고 화면이 내려준다.
                   // 피커를 열어 둔 채로 설정 탭에 보낸다(빈 상태 CTA 와 같은 길).
                   onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}

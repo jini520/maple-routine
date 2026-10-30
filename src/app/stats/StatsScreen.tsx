@@ -4,7 +4,6 @@
  * @see docs/features/stats.md
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useFocusEffect } from '@react-navigation/native'
 import { View, useWindowDimensions, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
 
 import { Text } from '../../components/atoms'
@@ -14,23 +13,18 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
+import { useLedgerDays } from '../../features/cashbook/ledger-query'
 import { apiWindowRange, floorMonthKey, floorWeekStartKey, historyFloorDateKey } from '../../features/cashbook/range'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
 import { SETTLEMENT_BANNER_DETAIL_LEDGER } from '../../features/settlement/banner-text'
-import { useDataFreshness } from '../../features/refresh/freshness'
+import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import {
   categoryTotalsBetween,
   characterTotalsBetween,
   totalsBetween,
   type DaysByDate,
 } from '../../features/stats/aggregate'
-import {
-  loadCumulativeStart,
-  loadStatsDays,
-  loadStatsImages,
-  saveCumulativeStart,
-  statsDataRevision,
-} from '../../features/stats/load'
+import { loadCumulativeStart, loadStatsImages, saveCumulativeStart } from '../../features/stats/load'
 import { statsRanges } from '../../features/stats/periods'
 import {
   formatBossProfitPeriodLabel,
@@ -66,12 +60,14 @@ export function StatsScreen(): React.JSX.Element {
   const todayDateKey = getCurrentKstDateKey(now)
   const todayMonthKey = monthKeyOf(todayDateKey)
   const ledger = useLedgerData()
-  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
+  const fetchedAt = useRealtimeFetchedAt()
 
   const [cycle, setCycle] = useState<BossCycle>('weekly')
   const [periodKey, setPeriodKey] = useState(() => getCurrentBossProfitPeriod('weekly', now).periodKey)
-  // `null` 은 아직 한 번도 못 읽었다는 뜻이다. 빈 기록(`{}`)과 갈라야 스켈레톤을 세울 수 있다.
-  const [loadedDays, setDays] = useState<DaysByDate | null>(null)
+  // 앱이 조회할 수 있는 가장 이른 날부터 오늘까지 한 범위다. 누적 카드가 처음부터 더하므로 그 범위가 나머지 카드의
+  // 범위를 다 덮는다. `null` 은 아직 한 번도 못 읽었다는 뜻이다. 빈 기록(`{}`)과 갈라야 스켈레톤을 세울 수 있다.
+  // 기록 표의 판이 오르면 이 쿼리가 무효화되어 다시 읽는다. 가계부 시트의 쓰기도 그 길로 온다.
+  const { days: loadedDays } = useLedgerDays({ from: historyFloorDateKey(todayDateKey), to: todayDateKey })
   const days = loadedDays ?? NO_DAYS
   // 아직 안 받은 지난 날을 받는 동안(`filling`)은 값이 모자라다. `collecting` 은 받아 둔 달로 옮겨도
   // 켜지는데 그때 값은 이미 맞아서, 그것으로 막으면 값이 섰다가 스켈레톤이 덮는다.
@@ -98,31 +94,6 @@ export function StatsScreen(): React.JSX.Element {
   useEffect(() => {
     requestDateRange(apiWindowRange(viewMonthKey, todayDateKey))
   }, [requestDateRange, viewMonthKey, todayDateKey])
-
-  /**
-   * 읽는 표의 판이 달라졌을 때만 다시 읽는다. 기간 이동은 이미 든 18개월 안의 일이라 안 읽고, 층의 회차가
-   * 새로 받은 것 없이 끝나도 안 읽는다. 가계부 시트의 쓰기는 층을 안 거치므로 포커스 때도 본다.
-   */
-  const loadedRevision = useRef<number | null>(null)
-  const [loadToken, setLoadToken] = useState(0)
-  useEffect(() => {
-    loadedRevision.current = statsDataRevision()
-    let alive = true
-    void loadStatsDays(todayDateKey).then((loaded) => {
-      if (alive) setDays(loaded)
-    })
-    return () => {
-      alive = false
-    }
-  }, [loadToken, todayDateKey])
-  useEffect(() => {
-    if (loadedRevision.current !== statsDataRevision()) setLoadToken((token) => token + 1)
-  }, [ledger.revision])
-  useFocusEffect(
-    useCallback(() => {
-      if (loadedRevision.current !== statsDataRevision()) setLoadToken((token) => token + 1)
-    }, []),
-  )
 
   const { current: currentRange, trend } = ranges
   const characters = useMemo(() => characterTotalsBetween(days, currentRange), [days, currentRange])

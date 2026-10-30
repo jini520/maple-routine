@@ -1,6 +1,6 @@
-// 부팅 예열은 저장된 쿼리 캐시가 다 올라온 뒤에 **순차로** 돈다. 선택 복원 → 스케줄 회차 → 보스 수익.
-// 순서가 계약인 이유. 보스 수익의 게이트는 앞 회차가 캐시를 다 쓴 뒤에야 신선하다고 보므로, 병렬로
-// 띄우면 같은 응답을 두 번 받는다.
+// 부팅 예열은 저장된 쿼리 캐시가 다 올라온 뒤에 **순차로** 돈다. 선택 복원 → 스케줄 회차 → 보스 수익의 이번 주.
+// 순서가 계약인 이유. 회차가 지금 기간의 완료를 기록까지 쓰므로, 이번 주 기간은 그 뒤에 읽어야 기록까지 든 값으로
+// today 의 위젯이 한 번에 선다. 병렬로 띄우면 기록 전 값을 들었다가 무효화로 한 번 더 읽는다.
 import { prehydrateTabStores } from '../prehydrate'
 
 var mockCalls: string[] | undefined
@@ -37,9 +37,7 @@ jest.mock('../character-selection/store', () => ({
   useCharacterSelectionStore: { getState: () => ({ hydrate: mockTrack('selection') }) },
 }))
 jest.mock('../schedule-sync/schedule-query', () => ({ prefetchSchedules: mockTrack('schedule') }))
-jest.mock('../boss-profit/store', () => ({
-  useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockTrack('profit') }) },
-}))
+jest.mock('../boss-profit/period-query', () => ({ prefetchCurrentWeekProfit: mockTrack('profit') }))
 
 const loadSchedule = mockTrack('schedule')
 const loadProfit = mockTrack('profit')
@@ -51,7 +49,7 @@ describe('prehydrateTabStores', () => {
     jest.clearAllMocks()
   })
 
-  it('저장된 캐시가 올라온 뒤에 선택 · 스케줄 회차 · 보스 수익을 순차로 예열한다', async () => {
+  it('저장된 캐시가 올라온 뒤에 선택 · 스케줄 회차 · 보스 수익의 이번 주를 순차로 예열한다', async () => {
     const run = prehydrateTabStores()
     await Promise.resolve()
     expect(calls).toEqual([])

@@ -1,12 +1,13 @@
 /**
- * 수익·지출 층의 **데이터 소유자**. 두 하위 화면(보스 수익·가계부)이 여기를 구독한다.
+ * 수익·지출 층의 **회차 주인**. 두 하위 화면(보스 수익·가계부)이 여기를 구독한다.
  *
  * 자식마다 조립하던 때 결함이 셋 났고 전부 같은 물음에서 났다. 누가 부르나(탭 재진입 시 TTL
  * 게이트 뒤로 빠졌다) · 언제 끝나나(시작 전인지 도는 중인지 몰라 실패로 그렸다) · 누가 결과를
  * 받나(가계부가 먼저 읽고 굳었다).
  *
- * 소유자가 하나면 그 셋이 사라진다. **다시 불러오기의 뜻도 한 곳에서 정한다.** 전에는 두 화면이
- * 각자 조합했다(가계부는 `refreshCashbook`, 보스 수익은 `refresh` + 창).
+ * 층이 드는 것은 진행률 · 모달 · 강화 범위다. 기록은 들지 않는다. 회차가 쓴 기록은 표의 판을 올리고, 그 표를 읽는
+ * 쿼리(`ledgerDays` · `bossProfitPeriod`)가 무효화되어 자식이 다시 읽는다. 전에는 회차가 끝날 때 `revision` 을 올려
+ * 자식이 그것을 보고 다시 읽었다.
  */
 import {
   createContext,
@@ -18,23 +19,21 @@ import {
   useState,
 } from 'react'
 
-import { getTrackedCharacterOcids } from '../../storage/character-selection'
-import { useBossProfitStore } from '../boss-profit/store'
 import { defaultCashbookRange, type CashbookRange } from '../cashbook/range'
 import { collectEnhancementHistory, measureEnhancementHistory } from '../enhancement-history/collect'
 import { datesBetween } from '../../lib/calendar'
-import { useDataFreshness } from '../refresh/freshness'
 import { useRefreshProgress } from '../refresh/progress'
-import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
+import { collectTodayEnhancement } from '../refresh/pull'
+import { prefetchSchedules, readTrackedOcids, refreshSchedules } from '../schedule-sync/schedule-query'
 import { syncScheduleWindow } from '../schedule-window/sync'
 import { planScheduleWindow } from '../schedule-window/window'
 
 /**
  * 한 회차가 받을 것. **화면이 고르고 층이 어떻게 받을지를 안다.**
  *
- * - `live` 오늘. 라이브 동기화와 자동 기록
+ * - `live` 오늘. 스케줄 회차(신선해도 받는다. 자동 기록과 처치 날짜가 그 안에 있다)와 오늘 강화
  * - `window` 지난 날의 창. 두 화면 다 받는다. 가계부의 보스 결정석 줄이 그 기록에서 온다
- * - `enhancement` 강화 사용 내역. **가계부만** 받는다. 보스 수익은 그 값을 안 그린다
+ * - `enhancement` 강화 사용 내역. **가계부만** 받는다. 보스 수익은 그 값을 안 그린다. 오늘이 범위에 들어 `live` 의 오늘 강화는 건너뛴다
  */
 export type LedgerReloadPart = 'live' | 'window' | 'enhancement'
 
@@ -65,8 +64,6 @@ export interface LedgerDataState {
    * 화면이 빈다.
    */
   collecting: boolean
-  /** 회차가 끝날 때마다 오른다. 자식이 **다시 읽을 계기**로 쓰는 유일한 신호다. */
-  revision: number
   /**
    * 다시 불러온다. **두 하위 화면의 당김이 이것만 부른다.**
    *
@@ -89,7 +86,6 @@ const IDLE: LedgerDataState = {
   status: 'idle',
   knownLong: false,
   collecting: false,
-  revision: 0,
   reload: () => Promise.resolve(),
   requestDateRange: () => undefined,
 }
@@ -111,7 +107,6 @@ export function LedgerDataProvider(props: {
   const [knownLong, setKnownLong] = useState(false)
   // 재는 동안은 막아 둔다. SQLite 한 번이고, 덧칠 회차면 그 직후에 풀린다.
   const [collecting, setCollecting] = useState(true)
-  const [revision, setRevision] = useState(0)
   // 회차가 겹칠 수 있다(기간을 연타하면 앞 회차가 아직 돈다). 세어야 뒤 회차가 도는 중에 앞
   // 회차가 끝나며 `collecting` 을 꺼 버리지 않는다.
   const running = useRef(0)
@@ -129,11 +124,13 @@ export function LedgerDataProvider(props: {
    * @param parts 이 회차가 받을 것
    * @param range 강화 사용 내역을 받을 날짜 범위
    *
-   * 마운트에는 `live` 가 없다. 오늘은 보스 수익 스토어의 진입 경로(`loadTrackedOcids`)가
-   * 10분 TTL 로 이미 맡고 있어, 여기서 또 부르면 진입마다 조회가 두 번 나간다.
+   * **스케줄 회차가 먼저다.** 창은 회차가 쓴 오늘 기록을 봐야 처치 날짜를 캔다. `live` 가 없는 회차(마운트 · 기간 이동)도
+   * 만료된 회차만 받고 지나간다(`prefetchSchedules`). 전에는 마운트가 회차를 안 거쳐, 창 회차가 자동 기록보다 먼저
+   * 후보를 읽으면 오늘 결정석에 날짜가 안 붙었다.
    *
-   * **계획을 먼저 다 세우고 그 다음에 돌린다.** 셋 다 콜 없이 원장만 읽어 자기 할 일을 셀 수
-   * 있어서, 총합을 첫 순간에 잡을 수 있다. 실행하며 각자 등록하면 바가 뒤로 간다.
+   * **계획을 먼저 다 세우고 그 다음에 돌린다.** 창과 강화는 콜 없이 원장만 읽어 자기 할 일을 셀 수 있어서, 총합을 첫
+   * 순간에 잡을 수 있다. 실행하며 각자 등록하면 바가 뒤로 간다. 스케줄 회차의 칸은 그 회차가 스스로 연다. 창 · 강화의
+   * 칸이 이미 선 뒤라 바가 뒤로 가지 않는다.
    *
    * 회차를 열고 `finally` 에서 닫는다. 그래야 한 갈래가 끝나며 그 칸만 사라져 바가 중간에
    * 꺼지는 일이 없다.
@@ -147,29 +144,14 @@ export function LedgerDataProvider(props: {
       const endRound = useRefreshProgress.getState().beginRound()
 
       try {
-        const read = await getTrackedCharacterOcids().catch(() => null)
-        // 좁힌 값을 따로 든다. 아래 갈래가 async 라 `hasOcids` 로 좁힌 것이 그 안까지 안 간다.
-        const ocids: string[] = read ?? []
+        const ocids = (await readTrackedOcids().catch(() => null)) ?? []
         const hasOcids = ocids.length > 0
         const now = new Date()
-        const wantsLive = parts.includes('live') && hasOcids
+        const wantsLive = parts.includes('live')
         const wantsWindow = parts.includes('window') && hasOcids
         const wantsHistory = parts.includes('enhancement')
         const dates = datesBetween(range.from, range.to)
-        /*
-         * 화면 머리 아래 `hh:mm:ss 기준` 이 읽는 값의 출처 둘 중 하나(나머지는 `syncSchedules`).
-         *
-         * **오늘이 든 범위만 실시간이다.** 지난 달의 강화 내역은 Open API 를 부르더라도 이미
-         * 확정된 기록이라, 그것으로 시각을 갱신하면 달을 넘겨보기만 해도 방금 받은 데이터처럼
-         * 보인다(사용자 지정).
-         */
-        const wantsToday = wantsHistory && dates.includes(getCurrentKstDateKey(now))
 
-        // ## 계획을 먼저 다 세운다
-        //
-        // 셋 다 **콜 없이 원장만 읽어** 자기 할 일을 셀 수 있다. 실행하며 각자 자기 차례에 분모를
-        // 등록하면 앞 수집기가 이미 100% 를 찍은 뒤라 **바가 뒤로 간다**(사용자 보고
-        // `가계부는 왜 로딩이 두번돼`). 총합을 먼저 잡고 그 다음에 실행한다.
         const [windowPlan, historyPlanned] = await Promise.all([
           wantsWindow ? planScheduleWindow(ocids, now) : Promise.resolve(null),
           wantsHistory && historyTotal === undefined
@@ -186,43 +168,27 @@ export function LedgerDataProvider(props: {
          */
         const slotOf = (planned: number): ((done: number, total: number) => void) => {
           const slot = useRefreshProgress.getState().start(planned)
-          // 실제로 해 보니 다른 분모가 오면 고친다. 라이브가 그 자리다. 계획은 추적 목록의
-          // 캐릭터 수인데 실제로 도는 것은 자격을 지난 수다.
           return (done, total) => {
             useRefreshProgress.getState().advance(slot, done, total)
           }
         }
 
-        const reportLive = wantsLive ? slotOf(ocids.length) : null
         const reportWindow = windowPlan === null ? null : slotOf(windowPlan.jobs.length)
         const reportHistory = wantsHistory ? slotOf(historyPlanned) : null
 
-        // ## 두 갈래가 **함께** 돈다
-        //
-        // 스케줄 갈래 안에서만 순서가 계약이다. 오늘을 받아야 지난 날의 기록이 오늘 것을 안
-        // 빠뜨린다. 강화는 다른 API·다른 표라 그 순서와 무관하다.
+        if (wantsLive) await refreshSchedules()
+        else await prefetchSchedules().catch(() => undefined)
+
+        // 창과 강화는 다른 API · 다른 표라 함께 돈다. 오늘 강화는 범위 수집이 오늘을 품으면 거기서 받는다.
         await Promise.all([
-          (async () => {
-            if (reportLive !== null) {
-              await useBossProfitStore
-                .getState()
-                .refresh(ocids, { inPlace: true }, reportLive)
-                .catch(() => undefined)
-            }
-            if (reportWindow !== null && windowPlan !== null) {
-              await syncScheduleWindow(ocids, new Date(), reportWindow, windowPlan).catch(
-                () => undefined,
-              )
-            }
-          })(),
-          reportHistory === null
-            ? Promise.resolve()
-            : collectEnhancementHistory(dates, new Date(), reportHistory)
-                .then(() => {
-                  // 오늘이 든 범위만 실시간이다. 지난 달은 확정된 기록이라 시각을 안 움직인다.
-                  if (wantsToday) void useDataFreshness.getState().markRealtimeFetch(new Date().toISOString())
-                })
-                .catch(() => undefined),
+          reportWindow !== null && windowPlan !== null
+            ? syncScheduleWindow(ocids, new Date(), reportWindow, windowPlan).catch(() => undefined)
+            : Promise.resolve(),
+          reportHistory !== null
+            ? collectEnhancementHistory(dates, new Date(), reportHistory).catch(() => undefined)
+            : wantsLive
+              ? collectTodayEnhancement(new Date())
+              : Promise.resolve(),
         ])
       } finally {
         running.current -= 1
@@ -230,7 +196,6 @@ export function LedgerDataProvider(props: {
       }
 
       if (!alive.current) return
-      setRevision((value) => value + 1)
 
       // 도는 회차가 남아 있으면 안 걷는다. 기간을 연타하면 앞 회차가 끝나며 뒤 회차의 표시를
       // 꺼 버린다. 모달도 같은 계수 뒤에 둔다.
@@ -302,8 +267,8 @@ export function LedgerDataProvider(props: {
    * 탭 재진입이다. 무조건 모달을 세우면 방문할 때마다 스피너가 돈다(사용자 보고).
    *
    * 오늘 칸은 굳을 수 없어 어느 회차에나 들지만, 그 회차의 기기 DB 는 지난 방문의 값을 이미
-   * 들고 있다. 그래서 **모달도 안 세우고 화면도 안 막는다**. 조회는 뒤에서 돌고 끝나면
-   * `revision` 이 올라 자식이 갈아 끼운다.
+   * 들고 있다. 그래서 **모달도 안 세우고 화면도 안 막는다**. 조회는 뒤에서 돌고 끝나면 쓴 기록의 판이 올라 자식의
+   * 쿼리가 갈아 끼운다.
    *
    * 재는 것은 콜이 아니라 원장이라 SQLite 한 번이다. 잰 값을 회차에 넘겨야 원장을 두 번 안 읽는다.
    *
@@ -332,8 +297,8 @@ export function LedgerDataProvider(props: {
   }, [run])
 
   const value = useMemo(
-    () => ({ status, knownLong, collecting, revision, reload, requestDateRange }),
-    [status, knownLong, collecting, revision, reload, requestDateRange],
+    () => ({ status, knownLong, collecting, reload, requestDateRange }),
+    [status, knownLong, collecting, reload, requestDateRange],
   )
 
   return <LedgerDataContext.Provider value={value}>{props.children}</LedgerDataContext.Provider>

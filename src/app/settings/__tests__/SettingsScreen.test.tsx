@@ -38,7 +38,6 @@ import type { Notice, NoticeKind } from '../../../types/notice'
 const mockGetRoster = jest.fn()
 const mockLoadContentTracked = jest.fn()
 const mockLoadBossTracked = jest.fn()
-const mockLoadProfitTracked = jest.fn()
 
 jest.mock('../../../features/theme/store', () => ({ useThemeStore: jest.fn() }))
 jest.mock('../../../features/tracking-mode/store', () => ({ useTrackingModeStore: jest.fn() }))
@@ -79,12 +78,9 @@ jest.mock('../../../features/content-scheduler/store', () => {
     }),
   }
 })
-// 저장 뒤 다시 읽히는 나머지 둘. 화면은 `getState` 로만 만진다(구독하지 않는다).
+// 저장 뒤 다시 읽히는 보스 스케줄러. 화면은 `getState` 로만 만진다(구독하지 않는다).
 jest.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: { getState: () => ({ loadTrackedOcids: mockLoadBossTracked }) },
-}))
-jest.mock('../../../features/boss-profit/store', () => ({
-  useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockLoadProfitTracked }) },
 }))
 
 // 이 화면은 로스터를 **부르지 않는 것**이 계약이라 그것을 단언하려면 감시할
@@ -252,7 +248,6 @@ beforeEach(() => {
   mockedRoster.mockReturnValue(new Promise(() => {}))
   mockLoadContentTracked.mockResolvedValue(undefined)
   mockLoadBossTracked.mockResolvedValue(undefined)
-  mockLoadProfitTracked.mockResolvedValue(undefined)
   mockedReadNoticeCopy.mockResolvedValue([])
   // 기본은 "영원히 받는 중". 받은 결과가 필요한 케이스만 따로 세운다.
   mockedRefreshKinds.mockReturnValue(new Promise(() => {}))

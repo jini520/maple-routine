@@ -77,7 +77,7 @@ const mockedProfitStore = jest.mocked(useBossProfitStore)
 const mockedPriceStore = jest.mocked(useDropPriceStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)
 
-// 스토어가 상태 타입을 내보내지 않아 훅에서 판다(`drop-history-store` 쪽과 같은 방식).
+// 스토어가 상태 타입을 내보내지 않아 훅에서 판다(`DropHistoryScreen.test` 쪽과 같은 방식).
 type PriceStore = ReturnType<typeof useDropPriceStore>
 
 // 보스 이름·난이도는 게임 레퍼런스 데이터에서 뽑는다.

@@ -1,42 +1,21 @@
 import type { BossDropRecord } from '../../../storage/boss-drops'
 
-var mockModule0: Record<string, unknown>
-jest.mock('../../../storage/boss-drops', () => {
-  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
-  mockModule0 = mockModule0 ?? {
-  getAllBossDropRecords: jest.fn(),
-  getBossDropRecordsRevision: jest.fn(),
-}
-  return mockModule0
-})
-const { getAllBossDropRecords: getAllBossDropRecordsMock, getBossDropRecordsRevision: getBossDropRecordsRevisionMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
-var mockModule1: Record<string, unknown>
-jest.mock('../../../storage/boss-profit', () => {
-  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
-  mockModule1 = mockModule1 ?? {
+jest.mock('../../../storage/boss-drops', () => ({ getAllBossDropRecords: jest.fn() }))
+jest.mock('../../../storage/boss-profit', () => ({
   getAllBossProfitRecordKeys: jest.fn(),
   getRecordedCharacterOcids: jest.fn(),
-}
-  return mockModule1
-})
-const { getAllBossProfitRecordKeys: getAllBossProfitRecordKeysMock, getRecordedCharacterOcids: getRecordedCharacterOcidsMock } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
-var mockModule2: Record<string, unknown>
-jest.mock('../../../storage/character-selection', () => {
-  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
-  mockModule2 = mockModule2 ?? {
-  getTrackedCharacterOcids: jest.fn(),
-}
-  return mockModule2
-})
+}))
+jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
+jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
+
+import { dropHistoryOptions, loadDropHistory } from '../drop-history-query'
+
+const { getAllBossDropRecords: getAllBossDropRecordsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
+const {
+  getAllBossProfitRecordKeys: getAllBossProfitRecordKeysMock,
+  getRecordedCharacterOcids: getRecordedCharacterOcidsMock,
+} = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
-var mockModule3: Record<string, unknown>
-jest.mock('../../character-profile/resolve', () => {
-  // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
-  mockModule3 = mockModule3 ?? {
-  resolveDisplayProfiles: jest.fn(),
-}
-  return mockModule3
-})
 const { resolveDisplayProfiles: resolveDisplayProfilesMock } = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
 
 function dropRecord(overrides: Partial<BossDropRecord>): BossDropRecord {
@@ -74,24 +53,10 @@ function dropRecord(overrides: Partial<BossDropRecord>): BossDropRecord {
   }
 }
 
-async function loadStore() {
-  const module = require('../drop-history-store') as typeof import('../drop-history-store')
-  module.useDropHistoryStore.setState({
-    status: 'idle',
-    groups: [],
-    drought: null,
-    charactersByOcid: {},
-    loadedRevision: -1,
-  })
-  return module.useDropHistoryStore
-}
-
 beforeEach(() => {
-  jest.resetModules()
   getAllBossDropRecordsMock.mockReset().mockResolvedValue([])
   getAllBossProfitRecordKeysMock.mockReset().mockResolvedValue([])
   getTrackedCharacterOcidsMock.mockReset().mockResolvedValue(['ocid-1'])
-  getBossDropRecordsRevisionMock.mockReset().mockReturnValue(0)
   getRecordedCharacterOcidsMock.mockReset().mockResolvedValue([])
   resolveDisplayProfilesMock
     .mockReset()
@@ -105,22 +70,25 @@ beforeEach(() => {
     )
 })
 
-describe('useDropHistoryStore.load', () => {
+describe('dropHistoryOptions', () => {
+  // 드롭 입력 시트가 쓰고 자동 기록이 난이도를 확정하면 이 쿼리가 다시 읽혀야 한다. 표를 안 적으면 무효화가 안 닿아
+  // 히스토리와 today 의 드롭 위젯이 옛 값에 머문다.
+  it('드롭 기록과 보스 기록 표를 읽는 쿼리로 적는다', () => {
+    expect(dropHistoryOptions.meta?.tables).toEqual(['boss_drop_records', 'boss_profit_records'])
+  })
+})
+
+describe('loadDropHistory', () => {
   it('전 기간 드롭 기록을 기간별로 묶어 최신 순으로 담는다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
       dropRecord({ periodKey: '2026-07-16' }),
       dropRecord({ periodKey: '2026-07-09' }),
     ])
-    const store = await loadStore()
 
-    await store.getState().load()
+    const data = await loadDropHistory()
 
     expect(getAllBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1'])
-    expect(store.getState().status).toBe('ready')
-    expect(store.getState().groups.map((group) => group.periodKey)).toEqual([
-      '2026-07-16',
-      '2026-07-09',
-    ])
+    expect(data.groups.map((group) => group.periodKey)).toEqual(['2026-07-16', '2026-07-09'])
   })
 
   // today 의 `최고가 아이템`(entered 만 순위)·`가격 미입력`(undefined 만 카운트)이 이 세 필드를
@@ -129,11 +97,10 @@ describe('useDropHistoryStore.load', () => {
     getAllBossDropRecordsMock.mockResolvedValue([
       dropRecord({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 2 }),
     ])
-    const store = await loadStore()
 
-    await store.getState().load()
+    const data = await loadDropHistory()
 
-    expect(store.getState().groups[0].records[0]).toMatchObject({
+    expect(data.groups[0].records[0]).toMatchObject({
       priceState: 'entered',
       priceMeso: 1_200_000_000,
       priceShare: 2,
@@ -144,11 +111,9 @@ describe('useDropHistoryStore.load', () => {
     getAllBossDropRecordsMock.mockResolvedValue([
       dropRecord({ priceState: null, priceMeso: null, priceShare: null }),
     ])
-    const store = await loadStore()
 
-    await store.getState().load()
+    const record = (await loadDropHistory()).groups[0].records[0]
 
-    const record = store.getState().groups[0].records[0]
     expect(record.priceState).toBeUndefined()
     expect(record.priceMeso).toBeUndefined()
     expect(record.priceShare).toBeUndefined()
@@ -162,28 +127,22 @@ describe('useDropHistoryStore.load', () => {
     getAllBossProfitRecordKeysMock.mockResolvedValue([
       { ocid: 'ocid-1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', periodKey: '2026-07-09' },
     ])
-    const store = await loadStore()
 
-    await store.getState().load()
+    const data = await loadDropHistory()
 
-    expect(store.getState().groups[0].records.map((record) => record.itemName)).toEqual([
-      '루즈 컨트롤 머신 마크',
-    ])
+    expect(data.groups[0].records.map((record) => record.itemName)).toEqual(['루즈 컨트롤 머신 마크'])
   })
 
   // 이관이 이름을 못 찾아 key 가 빈 옛 기록. 못 찾은 것이 못 먹은 것은 아니라 숨기지 않는다.
   it('확정 난이도 조합이어도 아이템 key 가 없는 옛 기록은 거르지 않는다', async () => {
-    getAllBossDropRecordsMock.mockResolvedValue([
-      dropRecord({ itemKey: null, itemName: '익셉셔널 해머' }),
-    ])
+    getAllBossDropRecordsMock.mockResolvedValue([dropRecord({ itemKey: null, itemName: '익셉셔널 해머' })])
     getAllBossProfitRecordKeysMock.mockResolvedValue([
       { ocid: 'ocid-1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', periodKey: '2026-07-09' },
     ])
-    const store = await loadStore()
 
-    await store.getState().load()
+    const data = await loadDropHistory()
 
-    expect(store.getState().groups[0].records.map((record) => record.itemName)).toEqual(['익셉셔널 해머'])
+    expect(data.groups[0].records.map((record) => record.itemName)).toEqual(['익셉셔널 해머'])
   })
 
   it('수익 기록이 없는(=난이도 미확정) 조합은 거르지 않는다', async () => {
@@ -191,45 +150,39 @@ describe('useDropHistoryStore.load', () => {
       dropRecord({ itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤' }),
     ])
     getAllBossProfitRecordKeysMock.mockResolvedValue([])
-    const store = await loadStore()
 
-    await store.getState().load()
+    const data = await loadDropHistory()
 
-    expect(store.getState().groups[0].records).toHaveLength(1)
+    expect(data.groups[0].records).toHaveLength(1)
   })
 
   it('고가 미획득 기간 요약을 계산한다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
       dropRecord({ periodKey: '2026-07-09', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }),
     ])
-    const store = await loadStore()
 
-    await store.getState().load(new Date('2026-07-31T03:00:00.000Z'))
+    const data = await loadDropHistory(new Date('2026-07-31T03:00:00.000Z'))
 
-    expect(store.getState().drought).toMatchObject({ periodKey: '2026-07-09', weeksSince: 3 })
+    expect(data.drought).toMatchObject({ periodKey: '2026-07-09', weeksSince: 3 })
   })
 
   it('고가 기록이 없으면 요약이 null이다', async () => {
     getAllBossDropRecordsMock.mockResolvedValue([
-      dropRecord({ itemKey: 'restraint_ring', itemName: '리스트레인트 링',
-      category: 'consumable' }),
+      dropRecord({ itemKey: 'restraint_ring', itemName: '리스트레인트 링', category: 'consumable' }),
     ])
-    const store = await loadStore()
 
-    await store.getState().load()
+    const data = await loadDropHistory()
 
-    expect(store.getState().drought).toBeNull()
+    expect(data.drought).toBeNull()
   })
 
   it('추적 캐릭터도 기록도 없으면 DB를 조회하지 않고 빈 목록으로 끝낸다', async () => {
     getTrackedCharacterOcidsMock.mockResolvedValue(null)
-    const store = await loadStore()
 
-    await store.getState().load()
+    const data = await loadDropHistory()
 
     expect(getAllBossDropRecordsMock).not.toHaveBeenCalled()
-    expect(store.getState().status).toBe('ready')
-    expect(store.getState().groups).toEqual([])
+    expect(data.groups).toEqual([])
   })
 
   // 캐릭터를 관리 목록에서 빼도 그 캐릭터가 먹은 것은 히스토리에 남아야 한다. 기록은 원래부터
@@ -237,9 +190,8 @@ describe('useDropHistoryStore.load', () => {
   it('추적에서 빠진 캐릭터도 기록이 있으면 조회 범위에 든다', async () => {
     getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
     getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-해제'])
-    const store = await loadStore()
 
-    await store.getState().load()
+    await loadDropHistory()
 
     expect(getAllBossDropRecordsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-해제'])
   })
@@ -247,57 +199,16 @@ describe('useDropHistoryStore.load', () => {
   it('추적 목록이 비어도 기록이 있으면 조회한다', async () => {
     getTrackedCharacterOcidsMock.mockResolvedValue(null)
     getRecordedCharacterOcidsMock.mockResolvedValue(['ocid-해제'])
-    const store = await loadStore()
 
-    await store.getState().load()
+    await loadDropHistory()
 
     expect(getAllBossDropRecordsMock).toHaveBeenCalledWith(['ocid-해제'])
   })
 
-  // 이 화면이 push 페이지일 때는 열 때마다 새로 마운트돼 늘 최신을 읽었다. `today` 가 **탭**으로
-  // 같은 스토어를 상시 구독하면서 **내 스냅샷이 낡았나** 를 물을 수 있어야 했다.
-  it('스냅샷을 **읽기 전** 리비전으로 찍는다. 읽는 중에 들어온 변경을 본 것으로 표시하지 않는다', async () => {
-    getBossDropRecordsRevisionMock.mockReturnValue(7)
-    getAllBossDropRecordsMock.mockImplementation(async () => {
-      // 조회가 도는 사이 다른 화면이 기록을 바꿨다.
-      getBossDropRecordsRevisionMock.mockReturnValue(8)
-      return [dropRecord({})]
-    })
-    const store = await loadStore()
-
-    await store.getState().load()
-
-    // 8 로 찍으면 그 변경을 이미 반영한 것이 되어 영영 다시 읽지 않는다.
-    expect(store.getState().loadedRevision).toBe(7)
-  })
-
-  it('추적 캐릭터가 없는 조기 종료에도 리비전을 찍는다. 그 상태도 **지금의 사실** 이다', async () => {
-    getBossDropRecordsRevisionMock.mockReturnValue(3)
-    getTrackedCharacterOcidsMock.mockResolvedValue([])
-    const store = await loadStore()
-
-    await store.getState().load()
-
-    expect(store.getState().loadedRevision).toBe(3)
-  })
-
-  it('실패에는 리비전을 찍지 않는다. 스냅샷이 없으므로 다음 진입이 다시 시도해야 한다', async () => {
-    getBossDropRecordsRevisionMock.mockReturnValue(5)
+  // 빈 배열로 바꾸면 쿼리가 성공으로 들고 화면이 기록이 없습니다 라는 거짓 빈 상태를 그린다. 던져야 `failed` 가 된다.
+  it('조회가 실패하면 던진다. 빈 목록으로 위장하지 않는다', async () => {
     getAllBossDropRecordsMock.mockRejectedValue(new Error('SQLite 죽음'))
-    const store = await loadStore()
 
-    await store.getState().load()
-
-    expect(store.getState().loadedRevision).toBe(-1)
-  })
-
-  it('조회가 실패하면 failed다. 빈 목록("기록이 없습니다")으로 위장하지 않는다', async () => {
-    getAllBossDropRecordsMock.mockRejectedValue(new Error('SQLite 죽음'))
-    const store = await loadStore()
-
-    await store.getState().load()
-
-    expect(store.getState().status).toBe('failed')
-    expect(store.getState().groups).toEqual([])
+    await expect(loadDropHistory()).rejects.toThrow('SQLite 죽음')
   })
 })

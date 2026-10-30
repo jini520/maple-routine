@@ -29,7 +29,7 @@ import { queryKeys } from '../../features/query/keys'
 import { useResetBoundaryTick } from '../../features/query/reset-timer'
 import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
 import { useToastStore } from '../../features/toast/store'
-import { useDataFreshness } from '../../features/refresh/freshness'
+import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { getBossPortraitCrop, getBossPortraitUrl } from '../../lib/assets/asset-lookup'
 import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
@@ -225,7 +225,7 @@ export function BossScreen(): React.JSX.Element {
    * 번의 조회로 그린 데이터인데 값이 갈린다. 적는 자리는 `syncSchedules` 회차와 오늘이 든 강화
    * 조회 둘뿐이고, 기기 DB 읽기와 과거 기간 조회는 거기 안 닿는다.
    */
-  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
+  const fetchedAt = useRealtimeFetchedAt()
 
   // 화면 넷이 **같은 규칙**으로 고른다. 폴백을 화면마다 두면 공유했는데 화면마다 다른 캐릭터가 된다.
   const selected = resolveSelectedCharacter(selectedOcid, characters)

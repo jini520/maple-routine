@@ -15,11 +15,8 @@ jest.mock('../../../features/cashbook/records', () => {
     dayTotalsOf: actual.dayTotalsOf,
     isManualRecord: actual.isManualRecord,
     rowKeyOf: actual.rowKeyOf,
-    resolveTrackedDefeatDates: jest.fn(),
-    cashbookDataRevision: jest.fn(),
     amountsOfDays: actual.amountsOfDays,
     loadMonthDays: jest.fn(),
-    loadDayRecords: jest.fn(),
     loadLastPointRate: jest.fn(),
     loadLastHunts: jest.fn(),
     // 저장 뒤 화면이 드는 값은 저장이 쓰는 그 규칙으로 낸다. 두 자리가 갈리면 안 되므로 진짜를 쓴다.
@@ -33,58 +30,30 @@ jest.mock('../../../features/cashbook/records', () => {
   }
 })
 
-// 창의 소유자는 부모 층이다. 이 화면은 상태를 구독하고 다시 채워 달라고 부탁만 한다.
-//
-// 회차 수를 **진짜 state 로** 들고 있어야 테스트가 그것을 올려 실제 리렌더를 낼 수 있다.
-// 객체만 바꾸고 `rerender` 를 부르면 하네스의 프로바이더가 벗겨진다.
+// 창의 소유자는 부모 층이다. 이 화면은 진행 상태를 구독하고 다시 채워 달라고 부탁만 한다. 기록은 쿼리가 든다.
 const mockWindow = {
   status: 'ready' as 'idle' | 'filling' | 'ready',
   collecting: false,
-  revision: 1,
   reload: jest.fn(),
 }
-let mockSetWindowRevision: ((value: number) => void) | null = null
 const mockRequestDateRange = jest.fn()
 
 jest.mock('../../../features/ledger/useLedgerData', () => ({
-  useLedgerData: () => {
-    const react = require('react') as typeof import('react')
-    const [revision, setRevision] = react.useState(mockWindow.revision)
-    mockSetWindowRevision = setRevision
-    return {
-      status: mockWindow.status,
-      collecting: mockWindow.collecting,
-      revision,
-      reload: mockWindow.reload,
-      requestDateRange: mockRequestDateRange,
-    }
-  },
+  useLedgerData: () => ({
+    status: mockWindow.status,
+    collecting: mockWindow.collecting,
+    reload: mockWindow.reload,
+    requestDateRange: mockRequestDateRange,
+  }),
 }))
+
+// 머리 아래 `hh:mm:ss 기준` 은 회차 쿼리를 읽는다. 이 화면의 일이 아니라 비워 둔다.
+jest.mock('../../../features/refresh/freshness', () => ({ useRealtimeFetchedAt: jest.fn(() => null) }))
 
 // 자동 줄은 **보스 수익 탭으로 간다**. 그 이동을 목으로 받아 **어디로 갔나** 를 본다.
 // 이름이 `mock` 으로 시작해야 팩토리 안에서 참조할 수 있다(jest 의 호이스팅 가드).
 const mockOpenTab = jest.fn()
 jest.mock('../../../hooks/useOpenTab', () => ({ useOpenTab: () => mockOpenTab }))
-
-/**
- * `useFocusEffect` 가 요구하는 내비게이션 컨텍스트의 대역. 이 하네스는 화면 하나만 띄우므로
- * **포커스를 손으로 튼다**. 마운트가 첫 포커스이고, 그 뒤는 `다시들어오기` 가
- * 등록된 콜백을 다시 부른다(탭을 떠났다 돌아오는 그 순서다).
- */
-const mockFocusCallbacks = new Set<() => void>()
-jest.mock('@react-navigation/native', () => ({
-  ...jest.requireActual('@react-navigation/native'),
-  useFocusEffect: (callback: () => void) => {
-    const react = require('react') as typeof import('react')
-    react.useEffect(() => {
-      callback()
-      mockFocusCallbacks.add(callback)
-      return () => {
-        mockFocusCallbacks.delete(callback)
-      }
-    }, [callback])
-  },
-}))
 
 // 시트 껍데기는 `BossDropSheet.test.tsx` 와 같은 방식으로 세운다.
 jest.mock('@gorhom/bottom-sheet', () => {
@@ -110,8 +79,11 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
+import { QueryClient, QueryClientProvider, notifyManager } from '@tanstack/react-query'
+
 import { useToastStore } from '../../../features/toast/store'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
+import { useResetBoundaryTick } from '../../../features/query/reset-timer'
 import { useSettlementStore } from '../../../features/settlement/store'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
@@ -137,12 +109,8 @@ beforeEach(() => {
   records.loadTrackedCharacters.mockReset().mockResolvedValue([])
   records.recordIncome.mockReset().mockResolvedValue(undefined)
   records.recordSpend.mockReset().mockResolvedValue(undefined)
-  records.loadDayRecords.mockReset().mockResolvedValue([])
-  records.resolveTrackedDefeatDates.mockReset().mockResolvedValue(0)
-  records.cashbookDataRevision.mockReset().mockReturnValue(0)
   mockWindow.status = 'ready'
   mockWindow.collecting = false
-  mockWindow.revision = 1
   mockWindow.reload.mockReset().mockResolvedValue(undefined)
   mockOpenTab.mockReset()
   records.editIncome.mockReset().mockResolvedValue(undefined)
@@ -152,6 +120,7 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.useRealTimers()
+  queryClient.clear()
 })
 
 /**
@@ -187,7 +156,7 @@ function 칸금액을(amounts: Record<string, { incomeMeso: number; expenseMeso:
 /**
  * 그날 줄을 목에 넣는다. **달 읽기가 그것을 든다.**
  *
- * 화면은 창 안의 날을 달 읽기가 든 표에서 꺼낸다. 하루 조회(`loadDayRecords`)는 창 밖의 날에만
+ * 화면은 창 안의 날을 달 읽기가 든 표에서 꺼낸다. 하루 범위의 쿼리는 창 밖의 날에만
  * 쓰이므로, 여기 넣지 않으면 케이스가 그 길을 안 지난다.
  */
 function 그날줄을(dateKey: string, rows: unknown[]): void {
@@ -199,18 +168,34 @@ function 읽은달(): string[] {
   return records.loadMonthDays.mock.calls.map((call: string[]) => call[0].slice(0, 7))
 }
 
+/** `loadMonthDays` 를 하루 범위로 부른 날. 창 밖의 날만 이 길로 읽는다. */
+function 하루읽은날(): string[] {
+  return records.loadMonthDays.mock.calls
+    .filter((call: string[]) => call[0] === call[1])
+    .map((call: string[]) => call[0])
+}
+
+/**
+ * TanStack 은 구독자 알림을 `setTimeout(0)` 으로 미루는데 이 파일은 가짜 타이머라 그 알림이 영영 안 온다.
+ * 마이크로태스크로 내서 `act` 가 흘려보내게 한다.
+ */
+notifyManager.setScheduler((callback) => {
+  void Promise.resolve().then(callback)
+})
+
+/** 그릴 때마다 새 캐시다. 한 케이스 안에서 두 번 그려도 둘째가 첫째의 달을 물려받지 않는다. */
+let queryClient = new QueryClient()
+
 async function 그리기(): Promise<Rendered> {
-  const view = await renderOverlay(<CashbookScreen />)
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const view = await renderOverlay(
+    <QueryClientProvider client={queryClient}>
+      <CashbookScreen />
+    </QueryClientProvider>,
+  )
   // 마운트 직후의 읽기 둘(칸 금액· 기억된 시세)이 끝난 뒤에 본다.
   await act(async () => {})
   return view
-}
-
-/** 탭을 떠났다 돌아오는 도우미. 실제로는 `useFocusEffect` 가 다시 도는 그 순간이다. */
-async function 다시들어오기(): Promise<void> {
-  await act(async () => {
-    for (const callback of [...mockFocusCallbacks]) callback()
-  })
 }
 
 async function 누르기(view: Rendered, testID: string): Promise<void> {
@@ -905,8 +890,8 @@ describe('칸에 숫자가 든다', () => {
     expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('7월 1일 (수)')
     expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
     expect(view.getByText('앱솔랩스 케이프')).toBeTruthy()
-    // 하루 조회는 안 돈다. 창 안의 날이다.
-    expect(records.loadDayRecords).not.toHaveBeenCalled()
+    // 하루 범위의 읽기는 안 돈다. 창 안의 날이다.
+    expect(하루읽은날()).toEqual([])
   })
 
   /**
@@ -937,7 +922,7 @@ describe('칸에 숫자가 든다', () => {
     await 월간으로(view)
     expect(view.getByTestId('cashbook-empty')).toBeTruthy()
 
-    records.loadDayRecords.mockReturnValue(new Promise(() => {}))
+    records.loadMonthDays.mockReturnValue(new Promise(() => {}))
     await 누르기(view, 'calendar-day-2026-09-01')
 
     expect(view.queryByTestId('cashbook-empty')).toBeNull()
@@ -990,7 +975,8 @@ describe('펼침판이 시트를 연다', () => {
     expect(view.getByTestId('spend-sheet-rate')).toHaveTextContent('1,180')
   })
 
-  it('저장하면 적고 다시 읽는다', async () => {
+  // 저장 뒤 다시 읽는 것은 화면의 일이 아니다. 쓰기가 표의 판을 올리면 그 표를 읽는 쿼리가 무효화된다.
+  it('저장하면 고른 날로 적는다', async () => {
     const view = await 그리기()
     await 고르기(view, '수입 추가')
     await 누르기(view, 'income-sheet-category-etc')
@@ -1004,9 +990,6 @@ describe('펼침판이 시트를 연다', () => {
       earnedOn: '2026-08-23',
       mesoAmount: 1,
     })
-    // 저장이 판을 바꿨으므로 보는 달을 다시 읽는다.
-    expect(records.loadMonthDays).toHaveBeenCalledWith('2026-08-01', '2026-08-31')
-    expect(읽은달().filter((month) => month === '2026-08')).toHaveLength(2)
   })
 
   it('저장하면 시트가 닫힌다', async () => {
@@ -1064,21 +1047,6 @@ describe('저장이 실패하면', () => {
     expect(useToastStore.getState().toasts[0]?.message).toBe('지출을 적지 못했습니다')
   })
 
-  // 다시 읽으면 **없는 것** 으로 칸이 덮인다. 실패했으니 읽을 것도 안 바뀌었다.
-  it('다시 읽지 않는다', async () => {
-    records.loadLastPointRate.mockResolvedValue(1_180)
-    records.recordSpend.mockRejectedValue(new Error('no such column'))
-    const view = await 그리기()
-    await 고르기(view, '지출 추가')
-
-    await 누르기(view, 'spend-sheet-category-content')
-    await 이름으로누르기(view, '몬스터 파크')
-    records.loadMonthDays.mockClear()
-    await 이름으로누르기(view, '저장')
-    await act(async () => {})
-
-    expect(읽은달()).toEqual([])
-  })
 })
 
 
@@ -1171,17 +1139,17 @@ describe('그날 목록', () => {
     await 누르기(view, 'calendar-day-2026-08-25')
 
     expect(view.getByTestId('cashbook-day-total')).toBeTruthy()
-    expect(records.loadDayRecords).not.toHaveBeenCalled()
+    expect(하루읽은날()).toEqual([])
   })
 
-  // 창 밖의 날만 하루 조회로 간다.
+  // 창 밖의 날만 하루 범위의 쿼리로 간다. 열쇠가 그 날짜라 다른 날의 값이 설 수 없다.
   it('창 밖의 날은 따로 읽는다', async () => {
     const view = await 그리기()
     await 월간으로(view)
 
     await 누르기(view, 'calendar-day-2026-09-01')
 
-    expect(records.loadDayRecords).toHaveBeenLastCalledWith('2026-09-01')
+    expect(하루읽은날()).toEqual(['2026-09-01'])
   })
 })
 
@@ -1228,7 +1196,7 @@ describe('줄을 누르면 고칠 수 있다', () => {
     expect(view.getByTestId('income-sheet-gross')).toHaveTextContent('1,200,000,000')
   })
 
-  it('수정하면 갈아 끼우고 다시 읽는다', async () => {
+  it('수정하면 적은 시각을 두고 갈아 끼운다', async () => {
     const view = await 그리기()
     await 누르기(view, 'cashbook-row-inc-1')
 
@@ -1244,7 +1212,7 @@ describe('줄을 누르면 고칠 수 있다', () => {
     expect(records.recordIncome).not.toHaveBeenCalled()
   })
 
-  it('삭제하면 지우고 다시 읽는다', async () => {
+  it('삭제하면 지우고 시트가 닫힌다', async () => {
     const view = await 그리기()
     await 누르기(view, 'cashbook-row-spd-1')
 
@@ -1500,25 +1468,6 @@ describe('자동으로 흘러든 줄', () => {
     expect(view.queryByTestId('cashbook-row-bosses-bossCrystal:ocid-1')).toBeNull()
   })
 
-  it('들어올 때 처치 날짜를 캐고, 캔 것이 있으면 다시 읽는다 (결정 9)', async () => {
-    records.resolveTrackedDefeatDates.mockResolvedValue(3)
-    const view = await 그리기()
-    await act(async () => {})
-
-    expect(records.resolveTrackedDefeatDates).toHaveBeenCalledTimes(1)
-    // 판이 바뀌어 **보는 달을 다시 읽는다**. 그 뒤 창의 나머지가 이어진다.
-    expect(읽은달().filter((month) => month === '2026-08')).toHaveLength(2)
-    expect(view.getByTestId('cashbook-row-bossCrystal:ocid-1')).toBeTruthy()
-  })
-
-  it('캔 것이 없으면 다시 안 읽는다. 바뀔 것이 없다', async () => {
-    const view = await 그리기()
-    await act(async () => {})
-
-    // 창의 셋을 한 번씩. 다시 읽은 달이 없다.
-    expect(읽은달()).toEqual(['2026-08', '2026-07', '2026-06'])
-    expect(view.getByTestId('cashbook-row-dropSale:ocid-1')).toBeTruthy()
-  })
 })
 
 /**
@@ -1532,8 +1481,8 @@ describe('당겨서 새로고침', () => {
     return view.getByTestId('screen-scroll').props.refreshControl.props
   }
 
-  // 당김은 **부모에게 부탁만** 한다. 무엇을 다시 부를지(오늘·과거)는 그쪽이 정하고, 끝나면
-  // 회차 수가 올라 화면이 다시 읽는다. 전에는 이 화면이 자기만의 조합을 들고 있었다.
+  // 당김은 **부모에게 부탁만** 한다. 무엇을 다시 부를지(오늘·과거)는 그쪽이 정하고, 회차가 쓴 기록이
+  // 표의 판을 올리면 달 읽기가 다시 읽는다. 전에는 이 화면이 자기만의 조합을 들고 있었다.
   it('당기면 부모의 다시 불러오기를 부른다', async () => {
     const view = await 그리기()
 
@@ -1697,94 +1646,42 @@ describe('기간 합계 세 칸', () => {
 })
 
 /**
- * 다시 들어오면 다시 읽는다. 바뀌었을 때만.
- *
- * 이 화면은 탭이라 마운트가 앱 실행당 한 번인데 원천 넷 중 둘은 남의 화면이 쓴다. 보스
- * 수익에서 아이템 가격을 입력하고 가계부로 오면 새로고침 없이도 반영돼야 한다.
+ * 가계부를 연 채 KST 자정을 넘기면 오늘이 바뀐다. 오늘을 보고 있던 사람은 새 오늘로 따라가고, 다른 날을 보던 사람은
+ * 그 자리에 남는다. 자정은 `useResetBoundaryTick` 이 알린다.
  */
-describe('CashbookScreen: 낡은 숫자', () => {
-  it('판이 그대로면 다시 안 읽는다. 탭을 오가는 것은 흔한 일이다', async () => {
-    await 그리기()
-    records.loadMonthDays.mockClear()
-    records.loadDayRecords.mockClear()
-
-    await 다시들어오기()
-
-    expect(records.loadMonthDays).not.toHaveBeenCalled()
-    expect(records.loadDayRecords).not.toHaveBeenCalled()
-  })
-
-  it('남의 화면이 원천을 바꿨으면 들어올 때 다시 읽는다. 당기지 않아도', async () => {
-    await 그리기()
-    records.loadMonthDays.mockClear()
-    records.loadDayRecords.mockClear()
-    // 가격 입력 화면이 `boss_drop_records` 를 적고 왔다.
-    records.cashbookDataRevision.mockReturnValue(1)
-
-    await 다시들어오기()
-    await act(async () => {})
-
-    // 판이 바뀌었으므로 창의 셋을 다시 읽는다. 그날 줄도 그 안에 들어 있다.
-    expect(읽은달()).toEqual(['2026-08', '2026-07', '2026-06'])
-    expect(records.loadDayRecords).not.toHaveBeenCalled()
-  })
-
-  it('다시 읽은 숫자가 그대로 합계에 선다. 증상이 사라지는 지점이다', async () => {
-    칸금액을({})
-    const view = await 그리기()
-    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent(/^0$/)
-
-    // 보스 수익 탭에서 아이템 가격을 적고 돌아왔다.
-    칸금액을({
-      '2026-08-21': { incomeMeso: 60_000_000, expenseMeso: 0 },
-    })
-    records.cashbookDataRevision.mockReturnValue(1)
-    await 다시들어오기()
-
-    expect(view.getByTestId('cashbook-summary-income')).toHaveTextContent('+6,000만')
-  })
-
-  it('한 번 따라잡으면 같은 판으로 또 안 읽는다', async () => {
-    await 그리기()
-    records.cashbookDataRevision.mockReturnValue(1)
-    await 다시들어오기()
-    records.loadMonthDays.mockClear()
-    records.loadDayRecords.mockClear()
-
-    await 다시들어오기()
-
-    expect(records.loadMonthDays).not.toHaveBeenCalled()
-    expect(records.loadDayRecords).not.toHaveBeenCalled()
-  })
-
-  it('포커스는 다시 읽기만 한다. 부모의 다시 불러오기는 안 튼다', async () => {
-    await 그리기()
-    records.cashbookDataRevision.mockReturnValue(2)
-
-    await 다시들어오기()
-
-    expect(mockWindow.reload).not.toHaveBeenCalled()
-  })
-})
-
-// ⚠️ 사용자 보고 · 실기기 계측으로 잡은 경합.
-//
-//   16:42:02  가계부가 읽는다        dated=41   (이번 주 것뿐)
-//   16:42:05  창이 과거 기록을 만든다  +185건
-//
-// 가계부는 포커스 때 한 번 재는 것이 전부라, 그 뒤 3초에 들어온 것을 받을 길이 없었다.
-// 이제 창의 회차가 끝날 때(`revision` 이 오를 때) 다시 잰다.
-describe('창이 뒤늦게 채운 것을 받는다', () => {
-  // 당김도 이 길로 온다. 바뀐 것이 없을 때 건너뛰면 사용자가 당겨도 아무 일도 안 일어난다.
-  it('안 바뀌었어도 회차가 끝나면 다시 읽는다. 당김이 이 길로 온다', async () => {
-    await 그리기()
-    const 읽은횟수 = records.loadMonthDays.mock.calls.length
-
+describe('가계부를 연 채 자정을 넘기면', () => {
+  /** 시계를 그날 KST 0시로 옮기고, 자정 타이머가 올리는 틱을 올린다. */
+  async function 자정을넘긴다(다음날: string): Promise<void> {
+    jest.setSystemTime(Date.parse(`${다음날}T00:00:00+09:00`))
     await act(async () => {
-      mockSetWindowRevision?.(2)
+      useResetBoundaryTick.setState((state) => ({ tick: state.tick + 1 }))
     })
+  }
 
-    expect(records.loadMonthDays.mock.calls.length).toBeGreaterThan(읽은횟수)
+  // 수요일에서 목요일로. 날과 함께 게임의 주도 넘어가는 경계다.
+  it('오늘을 보고 있었으면 고른 날과 주가 새 오늘로 옮겨 간다', async () => {
+    jest.setSystemTime(Date.parse('2026-08-26T05:00:00Z'))
+    const view = await 그리기()
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 26일 (수)')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 20일 ~ 8월 26일')
+
+    await 자정을넘긴다('2026-08-27')
+
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 27일 (목)')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 27일 ~ 9월 2일')
+    expect(view.getByLabelText('8월 27일 (목) 오늘')).toBeTruthy()
+  })
+
+  // 지난 기록을 보던 자리를 자정이 빼앗으면 안 된다. 주만 옮기면 고른 날이 격자 밖에 남으므로 주도 그대로다.
+  it('다른 날을 골라 두었으면 고른 날도 주도 그대로다', async () => {
+    jest.setSystemTime(Date.parse('2026-08-26T05:00:00Z'))
+    const view = await 그리기()
+    await 누르기(view, 'calendar-day-2026-08-24')
+
+    await 자정을넘긴다('2026-08-27')
+
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 24일 (월)')
+    expect(view.getByTestId('cashbook-period-range')).toHaveTextContent('8월 20일 ~ 8월 26일')
   })
 })
 

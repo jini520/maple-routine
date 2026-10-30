@@ -7,8 +7,9 @@
  * 저장된 쿼리 캐시가 다 올라온 뒤에 돈다. 그 전에 회차를 돌리면 복원이 그 결과보다 옛 값을 들고 와도 덮지는 않지만,
  * 회차가 옛 캐시를 못 보고 빈 캐시로 판단한다.
  *
- * 보스 수익은 아직 자기 스토어가 받는다. 스케줄 회차 뒤에 돌아야 그쪽 게이트가 방금 받은 캐시를 신선하다고 본다.
+ * 보스 수익의 이번 주는 회차 뒤에 읽는다. 회차가 쓴 기록까지 든 값이어야 today 의 위젯이 한 번에 선다.
  */
+import { prefetchCurrentWeekProfit } from './boss-profit/period-query'
 import { useCharacterSelectionStore } from './character-selection/store'
 import { whenQueryCacheRestored } from './query/persist'
 import { prefetchSchedules } from './schedule-sync/schedule-query'
@@ -20,7 +21,7 @@ export async function prehydrateTabStores(): Promise<void> {
   const steps: ReadonlyArray<() => Promise<void>> = [
     () => useCharacterSelectionStore.getState().hydrate(),
     prefetchSchedules,
-    async () => (await import('./boss-profit/store')).useBossProfitStore.getState().loadTrackedOcids(),
+    prefetchCurrentWeekProfit,
   ]
   for (const step of steps) {
     try {

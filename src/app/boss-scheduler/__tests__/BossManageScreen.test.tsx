@@ -44,6 +44,9 @@ const mockShowError = jest.fn()
 const mockShowInfo = jest.fn()
 const goBack = jest.fn()
 
+// 머리의 `hh:mm:ss 기준` 은 쿼리 캐시를 읽는다. 이 화면 테스트는 프로바이더 없이 그리므로 값만 돌려준다.
+jest.mock('../../../features/refresh/freshness', () => ({ useRealtimeFetchedAt: jest.fn(() => null) }))
+
 jest.mock('../../../features/toast/store', () => ({
   useToastStore: {
     getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: mockShowInfo }),

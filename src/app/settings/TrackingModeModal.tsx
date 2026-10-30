@@ -36,7 +36,7 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
     // 않는다. 이 줄이 없으면 자동 → 수동 직후 세 탭이 "모드는 수동인데 멤버십은 빈 맵"을 그린다
     // (보스 탭의 "추적할 주간 보스가 없습니다", 새로고침해야 나옴). **시드 뒤여야 한다**. 먼저
     // 읽히면 그 회차가 옛 멤버십을 담는다.
-    reloadTabStores(['content', 'boss', 'profit'])
+    reloadTabStores(['content', 'boss'])
     props.onClose()
   }
 

@@ -65,12 +65,8 @@ beforeEach(() => {
   // 파티 관리에 설정이 없는 것이 기본이다. 그때 시트는 1 인으로 연다.
   mockedPartySize.mockResolvedValue(null)
   useManualCompletionStore.setState({ bosses: null, dismissedWeek: null, visible: false })
-  useBossProfitStore.setState({
-    characterIssues: {},
-    rows: [],
-    saveManualCompletion,
-    cancelManualCompletion,
-  } as never)
+  // 행이 쓰기는 스토어에서, 조회 불가 표식은 컨텍스트에서 읽는다.
+  useBossProfitStore.setState({ saveManualCompletion, cancelManualCompletion })
 })
 
 type Rendered = Awaited<ReturnType<typeof render>>
@@ -122,9 +118,11 @@ describe('단추가 서는 자리', () => {
 
   it('조회 불가 캐릭터에는 안 선다', async () => {
     서버가열었다()
-    useBossProfitStore.setState({ characterIssues: { 'ocid-1': 'unavailable' } } as never)
 
-    const view = await renderProfit(<BossProfitBossRow row={미완료행()} drops={[]} />, 컨텍스트값({ now: NOW }))
+    const view = await renderProfit(
+      <BossProfitBossRow row={미완료행()} drops={[]} />,
+      컨텍스트값({ now: NOW, characterIssues: { 'ocid-1': 'unavailable' } }),
+    )
 
     expect(view.queryByText('완료 상태로 변경하기')).toBeNull()
   })

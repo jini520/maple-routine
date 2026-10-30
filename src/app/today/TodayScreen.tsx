@@ -1,50 +1,49 @@
 /**
  * 첫 화면. 위젯 격자를 그리는 탭.
  *
- * 하는 일이 셋뿐이다. 스토어 넷과 캐시를 **렌더당 한 번** 읽어 `TodayViewModel` 하나를 만들고,
+ * 하는 일이 셋뿐이다. 쿼리와 스토어를 **렌더당 한 번** 읽어 `TodayViewModel` 하나를 만들고,
  * 그것을 `WidgetGrid` 에 넘기고, 진입·당김·헤더 버튼의 조회를 건다. 조립은 `view-model.ts` 의 순수 함수가
  * 하고 여기 남는 것은 배선뿐이라 판정이 한 줄도 없다.
  *
  * **위젯은 스토어를 모른다.** 각자 구독하면 트리거가 위젯 수만큼 늘고, 같은 드롭 기록을 보는 셋이
  * 각자의 시점에서 읽는다.
  *
- * 스케줄과 프로필은 쿼리 캐시에서 온다(`useContentSchedule` · `useBossSchedule` · `useCharacterProfiles`).
- * 자동 조회는 마운트 · 포커스에 만료일 때, 복귀에는 신선해도 한 번이고, 당김은 `refreshSchedules` 로 항상이다.
+ * 스케줄 · 프로필 · 이번 주 보스 수익 · 드롭 기록 · 이번 주 가계부는 전부 쿼리 캐시에서 온다. 넥슨 쿼리의 자동 조회는
+ * 마운트 · 포커스에 만료일 때, 복귀에는 신선해도 한 번이다. 기기 DB 쿼리는 그 표의 판이 오를 때 무효화되어 다른 화면이
+ * 기록을 쓰면 여기도 바뀐다. 당김은 `pullRefresh` 로 회차 · 13일 창 · 오늘 강화를 다 받는다.
  *
  * 누가 대표인가는 선택 스토어를 구독한다. 화면 상태로 사본을 들면 이 탭은 다시 마운트되지 않아
  * 캐릭터 관리에서 대표를 바꿔도 옛 캐릭터가 남는다.
- *
- * 보스 수익 위젯은 아직 보스 수익 스토어를 본다. 그 스토어는 자기 게이트로 받고, 당김이 함께 새로 읽는다.
  *
  * @see docs/features/today.md 정책
  */
 
 import { TodayLoadingModal } from './TodayLoadingModal'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback } from 'react'
 import { View } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 
 import { queryKeys } from '../../features/query/keys'
 import { useResetBoundaryTick } from '../../features/query/reset-timer'
-import { refreshSchedules } from '../../features/schedule-sync/schedule-query'
+import { pullRefresh } from '../../features/refresh/pull'
 import { useCharacterProfiles } from '../../features/schedule-sync/use-schedule-queries'
 import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
 
 import { SETTLEMENT_BANNER_DETAIL_TODAY } from '../../features/settlement/banner-text'
-import { useDataFreshness } from '../../features/refresh/freshness'
+import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
 import { useManualCompletionStore } from '../../features/manual-completion/store'
 import { useNoticeBannerStore } from '../../features/notice/banner-store'
-import { isDropHistoryOutdated, useDropHistoryStore } from '../../features/boss-profit/drop-history-store'
-import { useBossProfitStore } from '../../features/boss-profit/store'
+import { useDropHistory } from '../../features/boss-profit/drop-history-query'
+import { useBossProfitPeriod } from '../../features/boss-profit/period-query'
+import { useBossProfitRound } from '../../features/boss-profit/round-view'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useBossSchedule } from '../../features/boss-scheduler/use-boss-schedule'
+import { useLedgerDays } from '../../features/cashbook/ledger-query'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
 import { useContentSchedule } from '../../features/content-scheduler/use-content-schedule'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
-import type { DaysByDate } from '../../features/stats/aggregate'
-import { loadStatsDaysBetween, statsDataRevision } from '../../features/stats/load'
 import { statsRanges } from '../../features/stats/periods'
 import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 
@@ -61,14 +60,14 @@ import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
+const EMPTY_DROPS = {}
+
 export function TodayScreen(): React.JSX.Element {
   // 스케줄은 캐시에서 온다. 두 훅이 같은 회차를 보므로 마운트 · 복귀의 자동 조회는 한 번이다.
   const content = useContentSchedule()
   const boss = useBossSchedule()
   const contentStore = useContentSchedulerStore()
   const bossStore = useBossSchedulerStore()
-  const profit = useBossProfitStore()
-  const dropHistory = useDropHistoryStore()
   const { mode } = useTrackingModeStore()
   const loadNoticeBanner = useNoticeBannerStore((state) => state.load)
   const refreshNoticeBanner = useNoticeBannerStore((state) => state.refresh)
@@ -84,36 +83,21 @@ export function TodayScreen(): React.JSX.Element {
   // 이 화면은 탭이라 계속 살아 있고 마운트의 자동 조회는 한 번뿐이다. 돌아올 때 만료됐으면 다시 받는다.
   useRefetchStaleOnFocus(queryKeys.scheduleRound())
 
-  /**
-   * 포커스가 소유하는 드롭 기록 스냅샷.
-   *
-   * 이 화면은 탭이라 한 번 마운트되면 계속 살아 있다. 마운트 이펙트는 앱 실행당 한 번뿐이고,
-   * 그 사이 보스 수익·가격 입력 화면이 `boss_drop_records` 를 바꾸면 최고가·미입력·드롭 가뭄
-   * 셋이 옛 스냅샷에 굳는다.
-   *
-   * 그래서 today 에 진입 시점을 되돌려 준다. 다만 그 스토어는 전 기간을 통째로 읽으므로
-   * 포커스마다 읽으면 비싸다. 저장 계층의 리비전을 물어 실제로 바뀌었을 때만 다시 읽는다.
-   * 첫 포커스는 `status === 'idle'` 로 걸려 마운트 조회를 대신한다.
-   */
-  // 최신 스토어 값을 **deps 없이** 읽는 자리. 구독값을 deps 에 넣으면 `load()` 가 일으킨 상태
-  // 변화가 이펙트를 다시 돌려 실패 → 재조회 → 실패 가 무한히 돈다. 포커스는 사건이지
-  // 상태 변화가 아니다.
-  const dropHistoryRef = useRef(dropHistory)
-  // 렌더 중에 ref 를 쓰면 `react-hooks/refs` 가 잡는다. 커밋 뒤에 채운다. 포커스 콜백은 렌더가
-  // 아니라 이펙트에서 도므로 이 시점이면 이미 최신이다.
-  useEffect(() => {
-    dropHistoryRef.current = dropHistory
-  })
+  // 렌더당 한 번만 만든다. 두 번 부르면 두 시각이 기간 경계를 사이에 두고 갈려 카운트다운과 기간 판정이 서로 다른
+  // 기간을 가리킬 수 있다(`BossProfitScreen` 과 같은 규칙).
+  const now = new Date()
+  const weekKey = getCurrentBossProfitPeriod('weekly', now).periodKey
 
-  useFocusEffect(
-    useCallback(() => {
-      const store = dropHistoryRef.current
-      if (store.status === 'loading') return
-      if (store.status === 'idle' || isDropHistoryOutdated(store.loadedRevision)) {
-        void store.load()
-      }
-    }, []),
-  )
+  // 이번 주 보스 수익. 보고 있는 것이 아니라 이번 주다. 보스 수익 화면이 월간 탭으로 옮겨도 여기는 안 바뀐다.
+  // 회차의 실패 표식은 회차 쿼리에서 온다.
+  const week = useBossProfitPeriod('weekly', weekKey)
+  const round = useBossProfitRound()
+  // 드롭 기록 셋(최고가 · 미입력 · 가뭄). 가격 입력 화면이 기록을 바꾸면 판이 올라 여기도 바뀐다.
+  const dropHistory = useDropHistory()
+  // 이번 주 수입은 통계와 같은 가계부 기록을 이번 주만 읽는다. `null` 은 아직 못 읽었다는 뜻이고, 위젯이 그때의 0 을
+  // 사실처럼 그리지 않는다. 주가 바뀌면(자정 렌더) 범위가 바뀌어 다른 열쇠를 읽는다.
+  const weekRange = statsRanges('weekly', weekKey).current
+  const { days: statsDays } = useLedgerDays(weekRange)
 
   /**
    * 남은 스케줄의 직접 완료. 포커스마다 스토어에 묻는다.
@@ -130,10 +114,7 @@ export function TodayScreen(): React.JSX.Element {
   )
 
   /**
-   * 공지 배너. 포커스마다 기기를 다시 읽는다. 네트워크가 없어 싸다.
-   *
-   * 드롭 기록과 이펙트를 합치지 않는다. 저쪽은 리비전을 물어 실제로 바뀌었을 때만 도는데 이쪽은
-   * 그 조건이 없고, 합치면 한쪽 조건이 다른 쪽을 막는다. 서버까지 가는 것은 당김뿐이다.
+   * 공지 배너. 포커스마다 기기를 다시 읽는다. 네트워크가 없어 싸다. 서버까지 가는 것은 당김뿐이다.
    */
   useFocusEffect(
     useCallback(() => {
@@ -145,7 +126,7 @@ export function TodayScreen(): React.JSX.Element {
    * 직접 완료를 열어 둔 보스. 진입할 때마다 서버에 묻는다.
    *
    * 스케줄러 갱신 회차에 안 실는 것은 이 값이 늦게 와서 늘어나는 것이 없어서다 - 배너가
-   * 늦게 설 뿐이다. 겉쳐 부르는 회차는 스토어가 하나로 접는다.
+   * 늦게 설 뿐이다. 겹쳐 부르는 회차는 스토어가 하나로 접는다.
    */
   useFocusEffect(
     useCallback(() => {
@@ -163,42 +144,10 @@ export function TodayScreen(): React.JSX.Element {
   // 화면 순서는 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
   const orderedOcids = content.trackedOcids ?? []
 
-  /**
-   * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
-   *
-   * 페이지마다 따로 재지 않는다. 화면 다섯이 같은 실시간 원천을 공유하므로, 따로 재면 같은 한
-   * 번의 조회로 그린 데이터인데 값이 갈린다. 적는 자리는 `syncSchedules` 회차와 오늘이 든 강화
-   * 조회 둘뿐이고, 기기 DB 읽기와 과거 기간 조회는 거기 안 닿는다.
-   */
-  // 이번 주 수익은 통계와 같은 가계부 기록을 이번 주만 읽는다. `null` 은 아직 못 읽었다는 뜻이고,
-  // 위젯이 그때의 0 을 사실처럼 그리지 않는다. 주가 바뀌면(자정 렌더) 범위가 바뀌어 다시 읽는다.
-  const weekRange = statsRanges('weekly', getCurrentBossProfitPeriod('weekly', new Date()).periodKey).current
-  const [statsDays, setStatsDays] = useState<DaysByDate | null>(null)
-  const statsRevision = useRef<number | null>(null)
-  const [statsToken, setStatsToken] = useState(0)
-  useEffect(() => {
-    statsRevision.current = statsDataRevision()
-    let alive = true
-    void loadStatsDaysBetween({ from: weekRange.from, to: weekRange.to }).then((loaded) => {
-      if (alive) setStatsDays(loaded)
-    })
-    return () => {
-      alive = false
-    }
-  }, [statsToken, weekRange.from, weekRange.to])
-  // 가계부 · 강화 · 지출 기록이 다른 화면에서 바뀌었을 때만 다시 읽는다.
-  useFocusEffect(
-    useCallback(() => {
-      if (statsRevision.current !== statsDataRevision()) setStatsToken((token) => token + 1)
-    }, []),
-  )
-
-  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
+  const fetchedAt = useRealtimeFetchedAt()
 
   const viewModel = buildTodayViewModel({
-    // 렌더당 한 번만 만든다. 두 번 부르면 두 시각이 기간 경계를 사이에 두고 갈려 카운트다운과
-    // 기간 판정이 서로 다른 기간을 가리킬 수 있다(`BossProfitScreen` 과 같은 규칙).
-    now: new Date(),
+    now,
     orderedOcids,
     representativeOcid,
     profilesByOcid,
@@ -210,12 +159,10 @@ export function TodayScreen(): React.JSX.Element {
     manualContentByOcid: contentStore.manualTrackedByOcid,
     manualBossByOcid: bossStore.manualTrackedByOcid,
     manualCompletedByOcid: bossStore.manualCompletedByOcid,
-    characterIssues: profit.characterIssues,
-    // 보고 있는 것이 아니라 이번 주다. `rows` 는 보스 수익 화면이 보고 있는 (탭, 기간) 한
-    // 조각이라, 그 화면을 월간 탭으로 옮기기만 해도 이 화면의 주간 수익·결정석 한도가 함께
-    // 빈다. 이번 주로 자르는 것은 스토어가 이미 했다 - 뷰모델은 다시 자르지 않는다.
-    profitRows: profit.currentWeekRows,
-    profitDropsByRowKey: profit.dropsByRowKey,
+    characterIssues: round.characterIssues,
+    // 이번 주 행은 주간 보스 + 그 주에 선 월간 보스다. 자르는 일은 기간 스냅샷이 했다. 뷰모델은 다시 자르지 않는다.
+    profitRows: week.snapshot?.rows ?? [],
+    profitDropsByRowKey: week.snapshot?.dropsByRowKey ?? EMPTY_DROPS,
     dropGroups: dropHistory.groups,
     statsDays,
     partyAppointments,
@@ -229,19 +176,15 @@ export function TodayScreen(): React.JSX.Element {
   /**
    * 헤더 버튼과 당김이 같은 함수를 부른다.
    *
-   * `allSettled` 다. 넷이 서로 독립이라 하나가 실패해도 나머지를 기다려야 하고, 넷이 다 끝나야
-   * 당김 인디케이터를 닫을 수 있다. 스케줄 회차는 하나다. 컨텐츠 · 보스 · 프로필이 같은 캐시를 본다.
+   * `allSettled` 다. 둘이 서로 독립이라 하나가 실패해도 나머지를 기다려야 하고, 둘 다 끝나야
+   * 당김 인디케이터를 닫을 수 있다. 회차 · 창 · 오늘 강화가 쓴 기록은 판을 올려 이번 주 수입 · 드롭 위젯이 스스로 바뀐다.
    */
   async function refreshAll(): Promise<void> {
     await Promise.allSettled([
-      refreshSchedules(),
-      profit.refresh(profit.trackedOcids ?? []),
-      dropHistory.load(),
+      pullRefresh(),
       // 배경에서 도착만 하고 안 탭한 공지는 기기에 없다. 그것이 첫 화면에 닿는 유일한 길이다.
       refreshNoticeBanner(),
     ])
-    // 방금 받은 보스 수익이 이번 주 수익에도 닿게 기록을 다시 읽는다.
-    setStatsToken((token) => token + 1)
   }
 
   return (

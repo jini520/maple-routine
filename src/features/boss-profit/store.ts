@@ -1,296 +1,85 @@
+/**
+ * 보스 수익 화면의 **화면 상태와 쓰기**. 보던 탭 · 기간, 미완료 행의 파티 계획, 그리고 기록을 쓰는 액션이다.
+ *
+ * 기간의 데이터는 여기 없다. `bossProfitPeriod(tab, periodKey)` 쿼리가 들고(`period-query.ts`) 화면이 `useBossProfitPeriod`
+ * 로 본다. 쓰기는 기록만 쓴다. 쓴 기록이 표의 판을 올리면 그 표를 읽는 쿼리가 무효화되어 화면이 맞는다. 전에는 스토어가
+ * 동기화 · 자동 기록 · 기간 표까지 들어, 그 사본들이 캐시와 어긋나는 자리가 결함이 됐다.
+ */
 import { create } from 'zustand'
+
 import {
-  containsInProgressWeek,
   getCurrentBossProfitPeriod,
-  getWeeklyPeriodKeysInMonth,
   isLatestPeriod,
-  isPeriodQueryable,
-  resolvePagePeriodState,
-  resolvePeriodDataState,
-  type PeriodDataState,
-  type PeriodQueryOutcome,
 } from '../../lib/boss/boss-profit-period'
-import {
-  fillMissingRecordWorlds,
-  getBossProfitRecords,
-  getWeeklyPeriodKeysWithRecords,
-  getManualBossProfitRecordKeys,
-  upsertBossProfitRecord,
-  type BossProfitRecord,
-} from '../../storage/boss-profit'
-import { getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
-import { reportDropPrice, reportDropRemoved } from '../server-sync/drop-price-sync'
 import { crystalPayoutMeso, type PartyShares } from '../../lib/boss/party-shares'
-import { sumDropPayout } from '../../lib/drop/drop-price'
-import type { RecordedDrop } from '../../types/drops'
-import { getRecordedCharacterOcids } from '../../storage/boss-profit'
+import { resetWeekStartOf } from '../../lib/calendar'
 import { getBossPartySettings } from '../../storage/boss-party-settings'
 import {
   getBossPartyPeriodOverrides,
   setBossPartyPeriodOverride,
 } from '../../storage/boss-party-period-overrides'
-import { buildPartyPlans, partyPlanKey, type BossPartyPlan } from './party-plans'
-import { getTrackedCharacterOcids } from '../../storage/character-selection'
-import { resolveDisplayProfiles } from '../character-profile/resolve'
-import { getManualTrackedContent, type ManualTrackedItem } from '../../storage/manual-tracked-content'
-import { getCachedSchedulerState } from '../../storage/scheduler-cache'
-import { getTrackingMode } from '../../storage/tracking-mode'
-import { type BossCycle, type BossDifficulty } from '../../types'
-import { compareByName } from '../../lib/character-order'
-import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
-import { isMaintenanceSyncError } from '../schedule-sync/errors'
-import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
-import { isSyncFresh } from '../../lib/scheduler/sync-freshness'
-import { isMonthlyRowInWeek, monthsOfWeek } from '../../lib/boss/monthly-boss-week'
-import {
-  appendRecordOnlyRows,
-  buildBossProfitRow,
-  buildRowFromRecord,
-  dropRowKey,
-  filterRowsForTab,
-  matchesRowKey,
-  mergeRecordsIntoRows,
-  selectProfitDisplayBosses,
-  sortRowsByOcidOrder,
-  sumRowsPayout,
-  toProfileSnapshot,
-  toRecordedDrop,
-  } from './rows'
-import type { BossProfitRow, BossProfitRowKey, CharacterProfileInfo, SortedCharacterInfo } from './rows'
-// 행 타입의 정의 위치는 rows.ts 지만 공개 경로는 그대로 둔다. 화면과 테스트가 store 에서
-// 가져오고, 옮긴 것은 구현 위치일 뿐이다.
-export type { BossProfitRow } from './rows'
-export { dropRowKey } from './rows'
-import { getScheduleProbeLedger } from '../../storage/schedule-probe-ledger'
-import { withSqliteFallback } from './sqlite-guards'
-import { autoRecordRows, nexonCompletedKeysOf } from './auto-record'
+import { replaceBossDropRecords } from '../../storage/boss-drops'
+import { upsertBossProfitRecord } from '../../storage/boss-profit'
+import type { RecordedDrop } from '../../types/drops'
+import type { BossCycle, BossDifficulty } from '../../types'
+import { countCoreSave } from '../app-review/request'
 import {
   cancelManualCompletion,
   saveManualCompletion,
 } from '../manual-completion/record'
-import { manualCompletionKey } from '../../lib/boss/manual-completion'
-import { resetWeekStartOf } from '../../lib/calendar'
-import { cleanUpWorldLeapDuplicates } from './world-leap-records'
-import {
-  loadObservedPeriodKeys,
-  loadUnqueryablePeriodKeys,
-  periodStateKey,
-  toPeriodOutcomes,
-} from '../schedule-window/records'
-import { syncScheduleWindow } from '../schedule-window/sync'
-import { getLastWindowFailures } from '../schedule-window/window'
-import { loadDropsByRowKey } from './drops-loader'
-import { sweepOrphanDrops } from './orphan-drops'
-import { useToastStore } from '../toast/store'
-import { countCoreSave } from '../app-review/request'
-import {
-  canReachPreviousPeriod,
-  resolveNextPeriodKey,
-  resolvePreviousPeriodKey,
-} from './period-navigation'
-import {
-  bossRecordsStamp,
-  isPrefetchTokenCurrent,
-  nextPrefetchToken,
-  readPeriodSnapshot,
-  writePeriodSnapshot,
-  type CharacterCardStub,
-  type PeriodSnapshot,
-} from './period-cache'
-import { resolvePeriodWindow } from './period-window'
+import { reportDropPrice, reportDropRemoved } from '../server-sync/drop-price-sync'
+import { readTrackedOcidsSync } from '../schedule-sync/read-schedule'
+import { buildPartyPlans, partyPlanKey, type BossPartyPlan } from './party-plans'
+import { readPeriodSnapshot, refetchPeriod } from './period-query'
+import { resolveDisplayOcids } from './period-snapshot'
+import { resolveNextPeriodKey, resolvePreviousPeriodKey } from './period-navigation'
+import { dropRowKey, matchesRowKey, type BossProfitRow, type BossProfitRowKey } from './rows'
+import { withSqliteFallback } from './sqlite-guards'
 
-
-/**
- * 월간 탭 주차 행의 상태. 기간 6상태에 이 화면 고유의 두 상태를 더한다. `inProgress`(지금
- * 진행 중인 주)와 `upcoming`(아직 시작하지 않은 주).
- *
- * `notChecked` 가 따로 있는 것은 조회한 적 없는 주를 `confirmed` 0메소로 위장하지 않기
- * 위해서다. 백필은 과거 달로 이동할 때만 그 달의 주들을 대상에 넣으므로, 현재 달의 지난 주는
- * 사용자가 그 주로 직접 이동한 적이 없으면 영영 조회되지 않는다. 그 주에는 조회 버튼을 준다.
- */
-export type WeeklySubtotalState = PeriodDataState | 'inProgress' | 'upcoming'
-
-export interface BossProfitWeeklySubtotal {
-  ocid: string
-  characterName: string
-  imageUrl: string | null
-  periodKey: string
-  totalMeso: number
-  /**
-   * 그 주에 기록된 드롭. `totalMeso` 에 이미 환산돼 들어 있다.
-   *
-   * 합이 아니라 목록으로 드는 것은 주차 소계 행의 내역 팝오버가 아이템을 낱개로 보여줘야
-   * 하기 때문이다. 총 수익에서 결정석·아이템을 가르는 데는 합이면 충분했다.
-   */
-  drops: RecordedDrop[]
-  state: WeeklySubtotalState
-}
-
-export type BossProfitStatus = 'idle' | 'loading' | 'loaded' | 'error'
-
-// 강제가 기본값이고 게이트가 예외다. force 인자를 두면 강제해야 할 호출부를 하나라도 빠뜨리는
-// 순간 그 자리가 조용히 게이트에 걸리므로, 자동 진입 경로인 loadTrackedOcids() 만 auto: true 를
-// 넘긴다. 화면(헤더 버튼·당겨서 새로고침·재시도)은 인자를 안 넘겨 자동으로 강제 경로다.
-export interface RefreshOptions {
-  auto?: boolean
-  /**
-   * **보던 기간에 남는가.** 당겨서 새로고침이 참으로 준다(사용자 지정).
-   *
-   * 안 주면 현재 기간으로 되돌린다. `refresh` 는 기간 경계를 넘은 화면을 새 기간으로 데려오는
-   * 일도 겸하기 때문이다. 둘을 `보던 기간 !== 현재 기간` 하나로는 못 가른다. 경계를 막 넘어
-   * 낡아진 기간과 사용자가 직접 옮겨 간 기간이 같은 모양이다.
-   */
-  inPlace?: boolean
-  /**
-   * **넥슨을 다시 안 부른다.** 로컬에만 쓴 뒤 화면을 맞출 때 참으로 준다(직접 완료의 저장 ·
-   * 수정 · 취소).
-   *
-   * 그 기록은 넥슨이 모르는 것이라 재동기화가 화면에 보태는 것이 없는데, 값은 비싸다. 계측
-   * (시뮬레이터 · 캐릭터 한 명): 저장 뒤 958ms 중 696ms 가 동기화였다. 캐릭터가 여럿이면 더
-   * 는다(첫 캐릭터를 혼자 부른 뒤 나머지를 병렬로 부른다).
-   *
-   * 캐시 우선 단계가 곧 최종 화면이 된다. 그 단계가 이미 기록을 읽어 합치므로(`mergeRecordsIntoRows`
-   * · 직접 완료 표식) 방금 쓴 것이 그대로 선다.
-   */
-  skipSync?: boolean
-}
+// 행과 소계 타입의 정의 위치는 `rows.ts` · `period-snapshot.ts` 지만 공개 경로는 그대로 둔다. 화면이 여기서 가져온다.
+export type { BossProfitRow } from './rows'
+export { dropRowKey } from './rows'
+export type { BossProfitWeeklySubtotal, WeeklySubtotalState } from './period-snapshot'
 
 export interface BossProfitState {
-  status: BossProfitStatus
   tab: BossCycle
-  periodKey: string // 현재 tab 기준으로 선택된 기간
-  rows: BossProfitRow[] // 선택된 (tab, periodKey)의 보스 row. monthly 탭이면 그 달의 monthly-cycle 보스만
+  /** 보고 있는 기간. 지금 탭 기준이다. */
+  periodKey: string
   /**
    * `partyPlanKey(ocid, bossKey, difficulty, periodKey)` → **미완료 행이 그릴** 파티 인원과 비율.
    *
-   * 파티 관리 설정을 깔고 그 기간에 갈라진 값이 있으면 그것이 이긴다. 못 찾은 행은
-   * `SOLO_PARTY_PLAN` 으로 선다.
-   *
-   * **기간 로드와 따로 돈다.** 캐시된 기간을 그릴 때도 최신이어야 해서다. 담기는 기간은 지금
-   * 주차와 지금 달 둘뿐인데, 미완료 행이 지금 기간에만 서기 때문이다(과거 기간은 기록이 원천).
+   * 파티 관리 설정을 깔고 그 기간에 갈라진 값이 있으면 그것이 이긴다. 못 찾은 행은 `SOLO_PARTY_PLAN` 으로 선다.
+   * 파티 설정 표에는 판이 없어 쿼리로 두지 않는다. 설정을 바꾸는 쓰기가 이 스토어 안에 있어 그 자리에서 맞춘다.
    */
   partyPlans: Record<string, BossPartyPlan>
-  /**
-   * 지금 `rows`·`weeklySubtotals` 에 담긴 데이터가 어느 (tab, periodKey) 의 것인가.
-   *
-   * 위의 `tab`·`periodKey` 는 사용자가 보려고 누른 기간이라 데이터보다 먼저 바뀐다. 그 사이 한
-   * 커밋 동안 화면은 새 기간 키 + 옛 기간 금액을 그린다.
-   *
-   * 카운트업 identity 를 이 값으로 만들어야 identity 와 금액이 같은 커밋에 도착한다. 목표
-   * 기간으로 만들면 중간 커밋이 새 identity 슬롯에 옛 금액을 기억으로 써넣어, 커밋 타이밍에
-   * 따라 굴러가기도 안 굴러가기도 한다. 그래서 반드시 `rows` 와 같은 `set()` 안에서 갱신한다.
-   */
-  loadedTab: BossCycle
-  loadedPeriodKey: string
-  /**
-   * **이번 주 행.** 주간 보스 + 그 주에 선 월간 보스다. 위의 `rows` 와 뜻이 다른 값이다.
-   *
-   * `rows` 는 이 화면의 네비게이션을 따라 움직이는 한 조각이라 today 위젯은 그것을 읽으면
-   * 안 된다. 그 화면은 언제나 이번 주를 그리므로, 여기서 월간 탭으로 옮기는 것만으로 주간
-   * 보스 수익과 주간 결정석 한도가 함께 빈다.
-   *
-   * 내용은 `latestSyncSnapshot.currentWeekRows` 와 같다. 모든 커밋이 그 스냅샷을 함께 싣기
-   * 때문에 둘이 어긋날 수 없다. 기간 이동(`loadPeriod`)은 이 값을 안 건드린다.
-   *
-   * **읽는 쪽이 이것을 다시 자르면 안 된다.** 그 자가 현재 기간 주간 탭의 `rows` 를 만드는
-   * 자와 갈려, 그 주에 잡은 월간 보스 수익이 today 에서만 사라진다(사용자 제보).
-   */
-  currentWeekRows: BossProfitRow[]
-  dropsByRowKey: Record<string, RecordedDrop[]> // 보스 행별 기록된 드롭. 키는 dropRowKey(ocid|bossKey|difficulty|periodKey). rows와 독립 상태라 탭 전환 시 loadPeriod가 DB에서 재로드
-  weeklySubtotals: BossProfitWeeklySubtotal[] // monthly 탭에서만 채워짐(주차별 합계). weekly 탭에서는 항상 []
-  isPeriodLoading: boolean // periodKey 이동이 도는 중인 창 동기화를 기다리는 중
-  // 이 기간을 화면이 어떻게 말해야 하는지. boolean 하나로 두면 집계 전 과 그 외 실패를 같은
-  // 문구로 말하게 된다.
-  periodState: PeriodDataState
-  /**
-   * 이 기간에 **아직 집계 안 된 날**이 있나(`OPENAPI00009`).
-   *
-   * `periodState` 와 갈라 든다. 그 값은 우선순위가 있어 관측이 하나라도 있으면 `confirmedEmpty`
-   * 에서 끝나고 이 사실이 묻힌다. 목요일 새벽이 정확히 그 자리다 - 지난주 목~화는 관측되는데
-   * 수요일만 집계 전이라, 그 주가 화요일 스냅샷으로 굳는다.
-   *
-   * 화면이 이것으로 **기록이 없어도 요약을 그린다**. 0 메소가 확정이 아니라 아직 덜 왔다는 뜻이다.
-   */
-  periodPendingAggregation: boolean
-  canGoPreviousPeriod: boolean // 현재 선택된 기간에서 한 칸 더 과거로 이동할 수 있는지(#29). 이전 기간이 지금 조회 가능하거나 이미 캐시된 기록이 있을 때만 true. 조회 불가·레코드 없는 기간에 착지하는 것을 막는다.
-  error: ScheduleSyncError | null
-  staleCharacterNames: string[]
-  /**
-   * 동기화가 실패한 캐릭터의 카드에 붙일 표식. 키는 ocid.
-   *
-   * `staleCharacterNames`(토스트용 이름 목록)만으로는 어느 카드인지 알 수 없다.
-   *   `unavailable` 400 OPENAPI00003. 이 캐릭터는 조회할 수 없다(영구)
-   *   `failed`      그 외 실패(네트워크·타임아웃 등)
-   */
-  characterIssues: Record<string, 'unavailable' | 'failed'>
-  /**
-   * 행이 하나도 없지만 카드는 세워야 하는 캐릭터. 조회할 수 없게 된 추적 캐릭터다.
-   *
-   * 카드는 행에서 생기는데 이 캐릭터는 동기화가 안 돌고 그 주 기록도 없어 행이 0개다. 세우지
-   * 않으면 화면이 **빠진 것과 0원인 것을 같게** 말한다. `characterIssues` 가 그 카드에 배지를 단다.
-   *
-   * **주간 탭의 현재 기간에서만 찬다.** 다른 기간·탭은 항상 `[]`.
-   */
-  unqueryableCards: CharacterCardStub[]
-  trackedOcids: string[] | null
 }
 
-
 export interface BossProfitStore extends BossProfitState {
-  loadTrackedOcids(): Promise<void>
-  /**
-   * @param onProgress 진행을 **호출부가 맡을 때** 준다. 주면 `syncSchedules` 가 자기 칸을 안 열고
-   *   이 콜백으로만 알린다. 수집기 여럿의 분모를 미리 더해 둔 회차(수익·지출 층)가 그 자리다
-   */
-  refresh(
-    ocids: string[],
-    options?: RefreshOptions,
-    onProgress?: (completed: number, total: number) => void,
-  ): Promise<void>
-  setTab(tab: BossCycle): Promise<void>
+  setTab(tab: BossCycle): void
   /** 지금 탭의 현재 기간으로 돌아온다. 이미 거기면 아무 일도 없다 */
-  goToCurrentPeriod(): Promise<void>
+  goToCurrentPeriod(): void
   /**
-   * 주간 탭의 현재 기간으로 돌린다. 이미 거기면 아무 일도 없다. 보스 수익 화면이 언마운트될 때,
-   * 곧 수익·지출을 떠날 때 부른다. 옆 탭인 가계부가 떠나면 주간 · 이번 주로 돌아오는 것과 맞춘다.
+   * 주간 탭의 현재 기간으로 돌린다. 보스 수익 화면이 언마운트될 때, 곧 수익·지출을 떠날 때 부른다. 옆 탭인 가계부가
+   * 떠나면 주간 · 이번 주로 돌아오는 것과 맞춘다.
    */
-  resetToCurrentWeek(): Promise<void>
+  resetToCurrentWeek(): void
   goToPreviousPeriod(): Promise<void>
   goToNextPeriod(): Promise<void>
-  /**
-   * 지금 보고 있는 (tab, periodKey) 를 다시 로드. 재시도(`failed`)와 조회(`notChecked`)
-   * 두 상태가 주는 행동이 이것뿐이고 둘 다 같은 일을 한다. 그 기간의 미확인 target 을 다시
-   * 백필한다. `refresh` 로는 대신할 수 없다. 그쪽은 현재 기간으로 되돌린다.
-   */
+  /** 지금 보고 있는 기간을 신선해도 다시 읽는다. 재시도(`failed`)와 조회(`notChecked`)가 부른다. */
   retryPeriod(): Promise<void>
-  /**
-   * 지금 보고 있는 (tab, periodKey) 를 **기록에서 다시 읽는다.** 기간도 탭도 안 바꾼다.
-   *
-   * 층의 회차가 끝날 때 화면이 부른다. 창 동기화가 화면보다 늦게 지난 기간 기록을 만들므로,
-   * 다시 읽지 않으면 이전 화살표 게이트와 월간 주차 소계가 먼저 읽은 순간의 답에 굳는다.
-   *
-   * `retryPeriod` 와 갈리는 자리가 둘이다. 표를 건너뛰지 않고(판이 갈렸으면 이미 못 쓴다),
-   * **회차 번호를 안 올린다**(올리면 돌고 있는 `refresh` 의 마지막 커밋이 취소돼 방금 받은
-   * 동기화 결과가 화면에 못 선다).
-   */
-  rereadPeriod(): Promise<void>
   /** 미완료 행이 그릴 파티 인원과 비율을 읽어 둔다. 설정 + 그 기간에 갈라진 값. */
   loadPartyPlans(ocids: string[], now: Date): Promise<void>
   /**
    * 그 행의 파티 인원과 분배 비율. **파티 관리 설정은 안 건드린다.**
    *
-   * 완료 행이면 그 기록 한 건을 다시 세고, 미완료 행이면 그 기간만의 값이 된다. 둘 다 그 행
-   * 하나에서 끝난다.
-   *
-   * 비율을 함께 받는 것은 둘이 따로 가면 금액과 표기가 갈리기 때문이다. 균등으로 되돌리는 것도
-   * `shares` 를 전부 `null` 로 넘기는 이 길 하나다.
+   * 완료 행이면 그 기록 한 건을 다시 세고, 미완료 행이면 그 기간만의 값이 된다. 비율을 함께 받는 것은 둘이 따로 가면
+   * 금액과 표기가 갈리기 때문이다. 균등으로 되돌리는 것도 `shares` 를 전부 `null` 로 넘기는 이 길 하나다.
    */
   setRowParty(row: BossProfitRowKey, input: { partySize: number; shares: PartyShares }): Promise<void>
   /**
-   * 직접 적은 완료를 쓰거나 고친다. 쓰고 나서 이 기간을 다시 읽는다.
+   * 직접 적은 완료를 쓰거나 고친다. 쓰고 나서 적은 날짜의 주로 데려간다(사용자 지정).
    *
-   * 난이도를 바꾸면 기록 키가 바뀌므로 옛 줄을 지우고 드롭을 새 키로 옮긴다. 그 일은
-   * `features/manual-completion/record` 가 한다.
+   * 난이도를 바꾸면 기록 키가 바뀌므로 옛 줄을 지우고 드롭을 새 키로 옮긴다. 그 일은 `features/manual-completion/record` 가 한다.
    */
   saveManualCompletion(
     row: BossProfitRowKey,
@@ -299,74 +88,9 @@ export interface BossProfitStore extends BossProfitState {
   /** 직접 적은 완료를 취소한다. **그 기록의 드롭도 함께 지운다.** */
   cancelManualCompletion(row: BossProfitRowKey): Promise<void>
   setBossDrops(row: BossProfitRowKey, drops: RecordedDrop[]): Promise<void>
-  /**
-   * 다른 화면이 같은 그룹을 DB 에 쓴 뒤 이 스토어의 스냅샷만 맞춘다. 쓰기는 없다.
-   *
-   * 가격 기록 화면(`drop-price-store`)이 부른다. 두 스토어가 같은 `boss_drop_records` 를 각자
-   * 캐시하는데 이 화면은 스택 왕복에도 마운트를 유지하므로, 알려주지 않으면 옛 스냅샷을 계속
-   * 그린다.
-   *
-   * `setBossDrops` 를 쓸 수 없는 이유가 둘이다. DB 에 두 번 쓰게 되고, 그 함수는 현재 로드된
-   * `rows` 에서 행을 찾는데 가격 화면은 다른 기간을 열고 있을 수 있다.
-   */
-  applyExternalDropEdit(
-    ocid: string,
-    bossKey: string,
-    difficulty: string,
-    periodKey: string,
-    drops: RecordedDrop[],
-  ): void
 }
 
-
-// refresh() 가 가장 최근에 계산한 현재 기간 전체(모든 cycle) row 와 그 시점의 캐릭터 정보.
-// setTab/goToPreviousPeriod/goToNextPeriod 가 현재 기간으로 되돌아올 때 네트워크 호출 없이
-// 여기서 슬라이스한다.
-interface LatestSyncSnapshot {
-  ocids: string[]
-  rows: BossProfitRow[]
-  characterProfiles: Map<string, CharacterProfileInfo>
-  /**
-   * 동기화가 **한 번도 답하지 않은** 추적 ocid. 월드 이전으로 `character/list` 에서 빠진
-   * 캐릭터가 여기 온다(`resolveTrackedCharacterContext` 가 목록 밖 ocid 를 버린다).
-   *
-   * 행이 0개인 것만으로는 이 캐릭터를 가려낼 수 없다. 보스를 하나도 등록 안 한 저레벨 캐릭터도
-   * 행이 0개인데, 그쪽은 조회가 된 것이라 배지를 달면 거짓말이 된다.
-   */
-  strandedOcids: string[]
-  /**
-   * 이번 주가 품은 달에서 **주간 기록이 있는 주차들**. 날짜를 모르는 월간 기록이 설 주를
-   * `resolveUndatedWeek` 이 이것으로 고른다.
-   *
-   * 보고 있는 탭과 무관하게 읽는다. today 는 늘 이번 주를 세므로, 월간 탭에서 안 읽으면 빈
-   * 목록이 폴백을 타고 today 만 다른 주를 고른다.
-   */
-  weeksWithRecords: string[]
-  /**
-   * **이번 주 행.** 주간 보스 + 그 주에 선 월간 보스다.
-   *
-   * 자르는 일을 읽는 쪽에 맡기지 않는다. 그렇게 두었을 때 today 가 `cycle === 'weekly'` 로
-   * 자르고 화면은 월간 행을 그 주에 끌어와, 그 주에 잡은 월간 보스 수익이 today 에서만
-   * 사라졌다(사용자 제보). 현재 기간 주간 탭의 `rows` 도 이 배열이다.
-   */
-  currentWeekRows: BossProfitRow[]
-}
-
-let latestSyncSnapshot: LatestSyncSnapshot | null = null
-
-/**
- * 위 스냅샷이 몇 번 갈렸나. **기간 표의 판**에 든다.
- *
- * 현재 기간의 행은 기기 DB 가 아니라 이 스냅샷에서 나오므로, 저장 계층의 기록 개정만 봐서는
- * 그 줄이 낡은 것을 모른다. `setLatestSyncSnapshot` 하나로만 갈리게 두어 세는 자리를 놓치지 않는다.
- */
-let syncSnapshotRevision = 0
-
-/**
- * 미완료 행이 설 수 있는 기간 둘. 지금 주차와 지금 달이다.
- *
- * 과거 기간의 행은 기록에서 나와 전부 완료라, 그 기간의 갈라진 값은 읽을 일이 없다.
- */
+/** 미완료 행이 설 수 있는 기간 둘. 지금 주차와 지금 달이다. 과거 기간의 행은 기록에서 나와 전부 완료다. */
 function currentPartyPlanPeriodKeys(now: Date): string[] {
   return [
     getCurrentBossProfitPeriod('weekly', now).periodKey,
@@ -374,1665 +98,69 @@ function currentPartyPlanPeriodKeys(now: Date): string[] {
   ]
 }
 
-/**
- * 이번 주 기간 키의 달. 주차 목록을 읽을 범위다.
- *
- * 달 경계 주가 품은 둘째 달은 **읽을 필요가 없다**. 그 목록은 날짜 모르는 기록이 설 주를 고를
- * 때만 쓰이고, `resolveUndatedWeek` 은 그 달에 든 목요일 중에서만 고르므로 경계 주가 둘째 달
- * 기록의 결과가 될 수 없다. 날짜를 아는 처치는 이 목록을 안 탄다.
- */
-function currentWeekMonthKey(now: Date): string {
-  return getCurrentBossProfitPeriod('weekly', now).periodKey.slice(0, 7)
-}
-
-/**
- * 스냅샷을 갈아끼우고 **이번 주 행을 함께 센다**.
- *
- * 자르는 호출이 여기 하나라, 화면의 주간 탭과 today 가 다른 수를 말할 자리가 없다.
- *
- * @param now 이번 주를 정하는 시계. 주 경계를 넘긴 채 앱이 떠 있으면 다시 동기화할 때까지 낡는다
- */
-function setLatestSyncSnapshot(
-  snapshot: Omit<LatestSyncSnapshot, 'currentWeekRows'> | null,
-  now: Date,
-): void {
-  latestSyncSnapshot =
-    snapshot === null
-      ? null
-      : {
-          ...snapshot,
-          currentWeekRows: filterRowsForTab(
-            snapshot.rows,
-            'weekly',
-            getCurrentBossProfitPeriod('weekly', now).periodKey,
-            now,
-            snapshot.weeksWithRecords,
-          ),
-        }
-  syncSnapshotRevision += 1
-}
-
-/**
- * 현재 기간을 그릴 `rows`. 주간 탭이면 스냅샷이 센 이번 주 행을 **그대로** 쓴다.
- *
- * 자르는 호출이 하나여야 today 와 이 화면이 같은 수를 말한다. 월간 탭은 `filterRowsForTab` 이
- * 주차 목록을 보지 않으므로 빈 배열로 충분하다.
- *
- * @param rows 스냅샷에 실은 그 행 배열. 월간 탭에서만 읽는다
- */
-function rowsOfCurrentPeriod(
-  tab: BossCycle,
-  currentPeriodKey: string,
-  rows: BossProfitRow[],
-  now: Date,
-): BossProfitRow[] {
-  return tab === 'weekly'
-    ? (latestSyncSnapshot?.currentWeekRows ?? [])
-    : filterRowsForTab(rows, tab, currentPeriodKey, now, [])
-}
-
-// 액션 넷이 전부 비동기라 여러 호출이 동시에 진행될 수 있다(‹ › 연타). 나중에 시작된 호출이
-// 먼저 끝나고 느린 호출이 뒤늦게 끝나면 그 낡은 결과가 최신 화면을 덮는다. 액션을 시작할 때마다
-// 이 카운터를 올려 자기 세대를 잡아 두고, set() 직전에 여전히 최신 세대인지 확인해 버린다.
-let requestGeneration = 0
-
-
-
-// 화면에 그릴 캐릭터. 추적 목록 ∪ 기록을 남긴 캐릭터다.
-//
-// 추적 목록만 보면 캐릭터를 관리 목록에서 뺀 순간 지운 적 없는 과거 수익이 통째로 사라진다.
-// 기록은 원래부터 안 지워졌고 조회 범위만 추적 목록이었다.
-//
-// **이 배열을 동기화·백필·고아 드롭 정리에 넘기면 안 된다.** 백필은 Nexon API 를 부르고, 고아
-// 정리의 안전 장치 하나가 `믿을 수 있는 캐릭터`(동기화가 성공한 캐릭터)라 해제한 캐릭터를
-// 넣으면 술어가 그들의 드롭을 고아로 읽는다.
-async function resolveDisplayOcids(trackedOcids: string[]): Promise<string[]> {
-  const recorded = await withSqliteFallback(getRecordedCharacterOcids(), [])
-  return [...new Set([...trackedOcids, ...recorded])]
-}
-
-// 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(Nexon character/list 응답 순서)가 서로 달라
-// 캐릭터 목록 위치가 API 응답 이후 갑자기 바뀌어 보인다. 레벨 내림차순(동레벨이면 이름순)으로
-// 항상 같은 순서를 계산해 캐시 우선 표시부터 과거 기간 조회까지 전부 이 순서를 따르게 한다.
-//
-// 프로필의 출처는 지워지지 않는 스냅샷이다. 조회는 ocid 마다가 아니라 한 번이다. 캐시는 ocid
-// 하나가 네이티브 호출 하나라 해제한 캐릭터까지 세면 목록이 길어질수록 왕복이 그만큼 늘었다.
-// world 는 정렬에 참여하지 않는다.
-async function getSortedCharacterInfo(ocids: string[]): Promise<SortedCharacterInfo[]> {
-  // 조회 불가는 프로필이 아니라 **조회 원장**에 산다(Preferences). 400 `OPENAPI00003` 이 이미 그
-  // 칸에 쓰고 캐릭터 관리 배지가 그 값을 읽으므로, 같은 사실의 출처가 앱 전체에서 하나다.
-  const now = new Date()
-  const [profiles, unavailableFlags] = await Promise.all([
-    resolveDisplayProfiles(ocids),
-    Promise.all(
-      ocids.map((ocid) =>
-        getScheduleProbeLedger(ocid, now)
-          .then((ledger) => ledger.unavailable)
-          .catch(() => false),
-      ),
-    ),
-  ])
-  const withProfile = ocids.map((ocid, index) => {
-    const profile = profiles.get(ocid)
-    return {
-      ocid,
-      level: profile?.level ?? null,
-      // 정렬용 이름은 모를 때 ''로 떨어뜨린다(compareByName이 문자열을 요구한다). 바깥으로
-      // 내보내는 characterName은 아래에서 null로 갈라 "모름"을 보존한다.
-      name: profile?.name ?? '',
-      characterName: profile?.name ?? null,
-      imageUrl: profile?.imageUrl ?? null,
-      world: profile?.world ?? null,
-      worldKey: profile?.worldKey ?? null,
-      unavailable: unavailableFlags[index] === true,
-    }
-  })
-
-  return withProfile
-    .sort((a, b) => {
-      if (a.level === null && b.level === null) return compareByName(a.name, b.name)
-      if (a.level === null) return 1
-      if (b.level === null) return -1
-      if (b.level !== a.level) return b.level - a.level
-      return compareByName(a.name, b.name)
-    })
-    .map(({ ocid, imageUrl, world, worldKey, characterName, unavailable }) => ({
-      ocid,
-      imageUrl,
-      world,
-      worldKey,
-      characterName,
-      unavailable,
-    }))
-}
-
-/**
- * 그 달에서 **주간 기록이 있는 주차**들. 날짜를 모르는 월간 보스가 설 주를 이것이 고른다.
- *
- * 기록이 없는 주는 이전 기간 게이트에 막혀 열리지 않으므로 거기 세우면 금액이 갇힌다.
- * 조회가 안 되면 빈 배열이고, 그때는 `resolveUndatedWeek` 의 폴백이 받는다.
- */
-async function loadWeeksWithRecords(ocids: string[], monthKey: string): Promise<string[]> {
-  return withSqliteFallback(getWeeklyPeriodKeysWithRecords(ocids, monthKey), [])
-}
-
-// tab 이 monthly 일 때 그 달에 포함된 weekly periodKey 들을 주차별로 합산한다. 지난 주는 로컬
-// 기록을 조회하고, 미래 주는 0/upcoming 으로 채우며, 진행 중인 주는 liveRows 에서 합산한다.
-// 단 liveRows 가 있을 때만이다.
-//
-// liveRows 는 이번 달을 보고 있을 때만 채워진다. 평소엔 진행 중인 주가 언제나 이번 달 안이라
-// 두 조건이 같은 말이지만, 한 주가 달 경계를 걸치면(7월 5주차 = 7/30~8/5) 8월 1일부터 갈라진다.
-// 그때는 지난 주와 똑같이 기록에서 합산한다. 그러지 않으면 DB 에 기록이 있는데도 0메소로 굳는다.
-//
-// 판정을 liveRows 가 비었는지로 대신하지 말 것. 이 주에 아무것도 안 잡았다(정상적인 0)와
-// 구분되지 않아 정상적인 0 을 기록으로 덮어쓴다.
-async function buildWeeklySubtotalsForMonth(
-  ocids: string[],
-  /**
-   * 추적 목록. 여기 없는 캐릭터는 **이 달에 기록이 있을 때만** 카드를 갖고, **앞으로의 주는
-   * 조회 불가**다.
-   *
-   * `ocids` 는 표시 대상이라 한 번이라도 기록을 남긴 캐릭터가 다 든다. 이 함수는 받은 목록을
-   * 그대로 돌며 주마다 한 줄씩 만들므로, 거르지 않으면 관리 목록에서 뺀 캐릭터가 기록이 없는
-   * 달에도 0 원 카드로 선다(사용자 보고). 이번 달의 0 은 아직 안 잡았다 는 사실이라 추적 중인
-   * 캐릭터에는 그대로 남긴다.
-   */
-  trackedOcids: ReadonlySet<string>,
-  monthPeriodKey: string,
-  liveRows: BossProfitRow[],
-  knownProfiles: Map<string, CharacterProfileInfo>,
-  now: Date,
-  // 이번 로드에서 그 주를 백필해 본 결과(영속되지 않는다). 키는 `${ocid}|${cycle}|${periodKey}`.
-  outcomes?: Map<string, PeriodQueryOutcome | null>,
-): Promise<BossProfitWeeklySubtotal[]> {
-  if (ocids.length === 0) {
-    return []
+/** 보고 있는 기간의 행 하나. 쿼리 캐시에서 찾는다. 없으면 그 행이 화면에 없다는 뜻이라 던진다. */
+function findRow(tab: BossCycle, periodKey: string, key: BossProfitRowKey, action: string): BossProfitRow {
+  const row = readPeriodSnapshot(tab, periodKey)?.rows.find((candidate) => matchesRowKey(candidate, key))
+  if (row === undefined) {
+    throw new Error(`${action}: 존재하지 않는 보스 행입니다`)
   }
-
-  const weekKeys = getWeeklyPeriodKeysInMonth(monthPeriodKey)
-  const currentWeeklyPeriodKey = getCurrentBossProfitPeriod('weekly', now).periodKey
-  // 진행 중인 주의 금액을 liveRows 에서 읽을 수 있는가(= 이번 달을 보고 있는가).
-  const hasLiveSource = monthPeriodKey === getCurrentBossProfitPeriod('monthly', now).periodKey
-  const pastWeekKeys = weekKeys.filter((key) => key < currentWeeklyPeriodKey)
-  // 라이브가 없는 화면에서는 진행 중인 주의 기록도 함께 읽는다.
-  const recordWeekKeys =
-    !hasLiveSource && weekKeys.includes(currentWeeklyPeriodKey)
-      ? [...pastWeekKeys, currentWeeklyPeriodKey]
-      : pastWeekKeys
-  // 달 키를 함께 넣는 것은 **이 캐릭터가 이 달에 뭔가 했나**(`hasMonthData`)를 월간 보스 기록도
-  // 증명하기 때문이다. 월간 보스만 잡은 달에 카드가 사라지면 안 된다.
-  //
-  // 금액은 안 담는다. 월간 보스 수익은 그 보스 줄이 들고 주차 소계는 주간 기록만 센다(사용자
-  // 선택). 소계가 품으면 화면에 보이는 줄들의 합이 카드 금액보다 커진다.
-  const recordKeys = [...recordWeekKeys, monthPeriodKey]
-  const records = await withSqliteFallback(getBossProfitRecords(ocids, recordKeys), [])
-
-  // 지난 주의 상태를 판정하려면 관측 여부가 필요하다. 기록이 없는 주가 조회해서 0건을 본
-  // 주인지 아직 못 받은 주인지는 그것만이 갈라 준다.
-  //
-  // 원장이 400 으로 굳힌 주도 함께 읽는다. 안 읽으면 눌러도 같은 400 이 돌아오는 자리에
-  // `다시 시도` 가 선다.
-  const [observedKeys, unqueryableKeys] = await Promise.all([
-    loadObservedPeriodKeys(ocids, now),
-    loadUnqueryablePeriodKeys(ocids, now),
-  ])
-
-  // 아이템 수익도 소계에 넣는다. 안 넣으면 주간 탭과 월간 탭의 같은 주가 다른 숫자가 된다
-  // (주간 탭은 보스 행에 더해 보여준다). 주차 전체를 한 번에 읽어 접는다.
-  const weekDrops = await withSqliteFallback(getBossDropRecords(ocids, [...weekKeys, monthPeriodKey]), [])
-  // 미완료 보스의 드롭은 돈으로 안 센다. 주간 탭이 같은 규칙이라 안 맞추면 같은 주가 두 탭에서
-  // 다른 숫자가 된다.
-  //
-  // 판정할 수 있는 것은 **행이 살아 있는 진행 중인 주**뿐이다. 지난 주의 행은 기록에서 오고
-  // 기록은 완료된 보스만 남기므로 미완료라는 것이 존재하지 않는다. 그 주에 남은 드롭은 고아
-  // 정리가 걷는다.
-  const unpaidRowKeys = new Set(
-    liveRows
-      .filter((row) => !row.isComplete)
-      .map((row) => dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)),
-  )
-  const dropsByOcidWeek = new Map<string, RecordedDrop[]>()
-  for (const record of weekDrops) {
-    if (unpaidRowKeys.has(dropRowKey(record.ocid, record.bossKey, record.difficulty, record.periodKey))) continue
-    // 월간 보스의 드롭은 그 보스 줄이 든다(금액과 같은 규칙). 주차 소계는 안 담는다. 조회에는
-    // 들어 있는데(`hasMonthData` 가 본다) 여기서 거른다.
-    if (record.periodKey === monthPeriodKey) continue
-    const weekKey = record.periodKey
-    const key = `${record.ocid}|${weekKey}`
-    const list = dropsByOcidWeek.get(key) ?? []
-    list.push(toRecordedDrop(record))
-    dropsByOcidWeek.set(key, list)
-  }
-
-  const subtotals: BossProfitWeeklySubtotal[] = []
-
-  /**
-   * 이 달에 이 캐릭터의 것이 하나라도 있나. 결정석 기록 · 드롭 · 라이브 행 셋을 본다.
-   *
-   * 라이브 행까지 보는 것은 진행 중인 주의 기록이 위 조회에 안 들어 있어서다(그 주의 금액은
-   * 스냅샷에서 읽는다). 그 스냅샷에는 기록에서 되살린 행도 들어 있어 해제한 캐릭터의 이번 주
-   * 수익이 여기서 잡힌다. 기간 키로 한 번 거르는 것은 한 주가 달 경계를 걸칠 때 옆 달의 행이
-   * 이 달의 근거가 되지 않게 하기 위해서다.
-   */
-  const monthKeys = new Set([...weekKeys, monthPeriodKey])
-  const liveOcids = new Set(
-    liveRows.filter((row) => monthKeys.has(row.periodKey)).map((row) => row.ocid),
-  )
-  const hasMonthData = (ocid: string): boolean =>
-    liveOcids.has(ocid) ||
-    records.some((record) => record.ocid === ocid) ||
-    weekDrops.some((drop) => drop.ocid === ocid)
-
-  // 호출부가 안 넘긴 ocid 만 한 번에 찾는다.
-  const missing = ocids.filter((ocid) => !knownProfiles.has(ocid))
-  const looked = await resolveDisplayProfiles(missing)
-
-  for (const ocid of ocids) {
-    if (!trackedOcids.has(ocid) && !hasMonthData(ocid)) {
-      continue
-    }
-    const known = knownProfiles.get(ocid)
-    const fallback = looked.get(ocid)
-    const characterName = known?.characterName ?? fallback?.name ?? null
-    const imageUrl = known?.imageUrl ?? fallback?.imageUrl ?? null
-    if (characterName === null) {
-      continue
-    }
-    // 추적하지 않는 캐릭터는 동기화가 안 돈다. 이번 주도 다음 주도 조회할 길이 없으므로
-    // `진행 중`·`예정` 이 거짓이 된다. 둘 다 앱이 앞으로 무언가 하겠다는 말이다.
-    const isTracked = trackedOcids.has(ocid)
-    // 한 캐릭터의 줄을 모아 든다. 이전 달의 0 원 카드를 걷으려면 그 달 합을 알아야 한다.
-    const characterSubtotals: BossProfitWeeklySubtotal[] = []
-
-    for (const weekKey of weekKeys) {
-      if (weekKey > currentWeeklyPeriodKey) {
-        characterSubtotals.push({
-          ocid,
-          characterName,
-          imageUrl,
-          periodKey: weekKey,
-          totalMeso: 0,
-          drops: [],
-          state: isTracked ? 'upcoming' : 'outOfRange',
-        })
-        continue
-      }
-
-      // 주간 기록만 센다. 월간 보스 수익은 그 보스 줄의 몫이다.
-      const matchingRecords = records.filter(
-        (record) => record.ocid === ocid && record.cycle === 'weekly' && record.periodKey === weekKey,
-      )
-      const recordedMeso = matchingRecords.reduce((sum, record) => sum + record.payoutMeso, 0)
-
-      if (weekKey === currentWeeklyPeriodKey) {
-        // 진행 중인 주. 라이브 원천이 있으면 그쪽이 최신이고(자동 기록이 건너뛰어진 처치까지
-        // 담는다), 없으면 이미 쌓인 기록에서 읽는다(달 경계를 걸친 주).
-        const crystalMeso = hasLiveSource
-          ? sumRowsPayout(
-              liveRows.filter(
-                (row) => row.ocid === ocid && row.cycle === 'weekly' && row.periodKey === weekKey,
-              ),
-            )
-          : recordedMeso
-        const drops = dropsByOcidWeek.get(`${ocid}|${weekKey}`) ?? []
-        const totalMeso = crystalMeso + sumDropPayout(drops)
-        characterSubtotals.push({
-          ocid,
-          characterName,
-          imageUrl,
-          periodKey: weekKey,
-          totalMeso,
-          drops,
-          // 추적을 끊어도 **받아 둔 사실은 안 변한다**. 주 중간에 해제한 그 주의 수익이 남아야
-          // 하므로, 금액이 있으면 기록으로 말하고 없을 때만 모른다고 말한다.
-          state: isTracked ? 'inProgress' : totalMeso > 0 ? 'recorded' : 'outOfRange',
-        })
-        continue
-      }
-
-      // 판정을 화면·백필과 공유하는 한 함수에 맡긴다. 여기서 기록 없음 + 조회 가능 을 confirmed
-      // 로 떨어뜨리면 조회한 적 없는 주가 0메소로 위장된다.
-      const state = resolvePeriodDataState({
-        isCurrentPeriod: false,
-        hasRecords: matchingRecords.length > 0,
-        isObserved: observedKeys.has(periodStateKey(ocid, 'weekly', weekKey)),
-        isQueryable: isPeriodQueryable('weekly', weekKey, now),
-        isProbedOutOfRange: unqueryableKeys.has(periodStateKey(ocid, 'weekly', weekKey)),
-        lastOutcome: outcomes?.get(periodStateKey(ocid, 'weekly', weekKey)) ?? null,
-      })
-      const drops = dropsByOcidWeek.get(`${ocid}|${weekKey}`) ?? []
-      characterSubtotals.push({
-        ocid,
-        characterName,
-        imageUrl,
-        periodKey: weekKey,
-        totalMeso: recordedMeso + sumDropPayout(drops),
-        drops,
-        state,
-      })
-    }
-
-    // 이전 달에 0 원이면 줄을 통째로 버린다. 추적 중인 캐릭터를 기록 없이 통과시킨 근거는
-    // `이번 달에 아직 안 잡았다` 인데 지난 달에는 그 사실이 없다. 카드는 이 줄들에서 생기므로
-    // 카드가 함께 사라진다.
-    if (!hasLiveSource && characterSubtotals.every((subtotal) => subtotal.totalMeso === 0)) {
-      continue
-    }
-    subtotals.push(...characterSubtotals)
-  }
-
-  return subtotals
+  return row
 }
 
-// 과거 기간의 rows를 로컬 기록만으로 구성한다(캐릭터명은 character-basic-cache에서 조회, 캐시가
-// 없는 ocid는 결과에서 제외).
-async function buildRowsFromRecords(
-  ocids: string[],
-  cycle: BossCycle,
-  periodKey: string,
-  now: Date,
-  // 호출부가 이미 읽어둔 프로필. 여기 있는 ocid 는 캐시를 다시 읽지 않고 없는 ocid 는 직접
-  // 읽는다. 이 함수가 호출부의 조회 범위에 묶이지 않게 한다.
-  knownProfiles: Map<string, CharacterProfileInfo>,
-): Promise<BossProfitRow[]> {
-  if (ocids.length === 0) {
-    return []
-  }
-
-  // 주간 기간을 그릴 때는 **그 주가 품은 달의 월간 기록**도 함께 읽는다. 월간 보스가 이 목록
-  // 맨 위에 서고, 그 기록의 `period_key` 는 주가 아니라 달이라 이 키로는 안 걸린다. 달 경계
-  // 주는 달이 둘이라 하나만 읽으면 9/1 에 잡은 9월 보스가 8/27 주에서 사라진다.
-  const monthKeys = cycle === 'weekly' ? monthsOfWeek(periodKey) : []
-  const [allRecords, weekLists] = await Promise.all([
-    withSqliteFallback(getBossProfitRecords(ocids, [periodKey, ...monthKeys]), []),
-    Promise.all(monthKeys.map(async (monthKey) => loadWeeksWithRecords(ocids, monthKey))),
-  ])
-  // 날짜 모르는 기록을 놓을 주를 고르는 목록. `resolveUndatedWeek` 이 그 달 주차만 보므로 두
-  // 달을 합쳐 넘겨도 서로 섞이지 않는다.
-  const weeksWithRecords = weekLists.flat()
-  const records = allRecords.filter(
-    (record) =>
-      record.cycle === cycle ||
-      (cycle === 'weekly' &&
-        record.cycle === 'monthly' &&
-        isMonthlyRowInWeek({
-          weeklyPeriodKey: periodKey,
-          monthlyPeriodKey: record.periodKey,
-          isComplete: true,
-          defeatedOn: record.defeatedOn ?? null,
-          now,
-          weeksWithRecords,
-        })),
-  )
-  if (records.length === 0) {
-    return []
-  }
-
-  const profileCache = new Map<string, CharacterProfileInfo | null>(knownProfiles)
-  // 호출부가 안 넘긴 ocid 만 한 번에 찾는다. 기록마다 읽으면 캐릭터 수만큼 왕복이 는다.
-  const looked = await resolveDisplayProfiles(
-    records.filter((record) => !profileCache.has(record.ocid)).map((record) => record.ocid),
-  )
-  for (const [ocid, profile] of looked) {
-    profileCache.set(ocid, {
-      characterName: profile.name,
-      imageUrl: profile.imageUrl,
-      world: profile.world,
-      worldKey: profile.worldKey,
-    })
-  }
-
-  const rows: BossProfitRow[] = []
-  for (const record of records) {
-    const profile = profileCache.get(record.ocid) ?? null
-    if (profile === null) {
-      continue
-    }
-    rows.push(buildRowFromRecord(record, profile, now))
-  }
-
-  return rows
-}
-
-
-
-
-
-
-/**
- * 정리 결과 안내. 조용히 지우지 않는다.
- *
- * `showInfo`(자동 소멸)다. 실패가 아니라 규칙 안내라서다. 지운 것이 없으면 말할 것도 없다.
- * 멱등한 회차마다 토스트가 뜨면 소음이 된다.
- */
-function notifyOrphanDropCleanup(removedDrops: number): void {
-  if (removedDrops === 0) return
-  useToastStore
-    .getState()
-    .showInfo(`잡지 않은 보스의 아이템 기록 ${removedDrops}건을 정리했어요`)
-}
-
-type BossProfitSetter = (partial: Partial<BossProfitState>) => void
-
-/**
- * 드롭 맵이 담을 행. 보고 있는 기간 ∪ 지금 기간.
- *
- * `dropsByRowKey` 는 사본을 만들지 않는다. 키(`dropRowKey`)에 `periodKey` 가 들어 있어 두
- * 기간이 한 맵에 있어도 충돌하지 않고, 사본을 두면 드롭 편집 경로(`setBossDrops`·
- * `applyExternalDropEdit`)가 둘로 갈려 today 에만 반영이 안 되는 결함이 되풀이된다.
- *
- * 조회는 늘어나지 않는다. `loadDropsByRowKey` 가 기간 키를 모아 한 번에 읽는다.
- */
-function withCurrentPeriodRows(rows: BossProfitRow[]): BossProfitRow[] {
-  return latestSyncSnapshot === null ? rows : [...rows, ...latestSyncSnapshot.rows]
-}
-
-
-
-
-
-/** 스냅샷을 만들려다 나온 답 셋. */
-type PeriodBuildOutcome =
-  | { kind: 'snapshot'; snapshot: PeriodSnapshot }
-  /** 창 동기화가 있어야 답이 나오는 기간. 프리페치는 여기서 물러난다 */
-  | { kind: 'needsWindowSync' }
-  /** 더 새 회차가 들어와 이 답은 버린다 */
-  | { kind: 'cancelled' }
-
-interface PeriodBuildInput {
-  tab: BossCycle
-  periodKey: string
-  ocids: string[]
-  now: Date
-  /**
-   * 창 동기화를 부를 수 있나. **프리페치는 못 부른다.**
-   *
-   * 거짓이면 동기화가 필요한 기간에서 `needsWindowSync` 로 물러난다. 배경에서 조용히 Nexon API
-   * 를 훑는 것도, 조회 전의 빈 상태를 `0건 확정` 으로 표에 굳히는 것도 안 한다.
-   */
-  allowWindowSync: boolean
-  /** 그 동기화를 시작할 때. 화면 회차만 로딩을 세운다 */
-  onWindowSyncStart?: () => void
-  /** 더 새 회차가 들어왔나. 참이면 이 답을 버린다 */
-  isStale: () => boolean
-}
-
-/**
- * 한 기간이 화면에 그려질 값 전부를 만든다. **화면 회차와 프리페치가 같은 함수를 쓴다.**
- *
- * 갈리는 것은 창 동기화 하나다(`allowWindowSync`). 여기서 `set` 을 부르지 않으므로 답을 쓸지는
- * 부르는 쪽이 정한다.
- */
-/**
- * 행이 0개인 **조회 불가** 캐릭터를 카드 자리로 만든다.
- *
- * 카드는 행에서 생기는데(`buildCharacterGroups`) 이 캐릭터는 동기화가 안 돌아 행이 없고, 이번
- * 주 기록도 없으면 되살릴 행도 없다. 그대로 두면 화면이 **빠진 것과 0원인 것을 같게** 말한다.
- *
- * **주간 탭에서만 만든다.** 월간 탭은 `buildWeeklySubtotalsForMonth` 의 추적 게이트가 이미
- * 세우므로 여기서 또 세우면 같은 캐릭터가 두 번 선다.
- *
- * **미완료 행을 지어내는 것과 다르다.** 그 캐릭터가 이번 주에 무엇을 잡았는지는 모르는 사실이라
- * 행으로 단정하면 안 되고, 모른다는 것을 말하는 자리가 카드와 그 배지다.
- *
- * 이름을 모르면 안 세운다. 이름 없는 카드는 사용자에게 아무것도 말하지 않는다.
- */
-function buildUnqueryableCards(
-  tab: BossCycle,
-  strandedOcids: readonly string[],
-  rows: readonly BossProfitRow[],
-  profiles: Map<string, CharacterProfileInfo>,
-): CharacterCardStub[] {
-  if (tab !== 'weekly') {
-    return []
-  }
-  const drawn = new Set(rows.map((row) => row.ocid))
-  return strandedOcids
-    .filter((ocid) => !drawn.has(ocid))
-    .map((ocid) => ({
-      ocid,
-      characterName: profiles.get(ocid)?.characterName ?? '',
-      imageUrl: profiles.get(ocid)?.imageUrl ?? null,
-    }))
-    .filter((card) => card.characterName !== '')
-}
-
-async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodBuildOutcome> {
-  const { tab, periodKey, ocids, now } = input
-  const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
-  // `ocids` 는 동기화 대상이고 이쪽은 표시 대상이다. 기록을 남긴 캐릭터가 함께 든다. 백필과
-  // 고아 드롭 정리에는 계속 `ocids` 를 넘긴다(그 둘이 왜 넓히면 안 되는지는 위 함수 주석).
-  const displayOcids = await resolveDisplayOcids(ocids)
-  // buildWeeklySubtotalsForMonth의 캐릭터별 행 순서를 항상 동일하게 유지하기 위해 여기서도
-  // 같은 정렬 규칙을 적용한다(refresh()와 동일한 이유. API 응답 순서에 좌우되지 않도록).
-  const sortedCharacterInfo = await getSortedCharacterInfo(displayOcids)
-  const sortedOcids = sortedCharacterInfo.map((info) => info.ocid)
-  // 위 조회가 이미 프로필을 한 번에 읽었다. 그 결과를 아래 두 함수에 넘겨 같은 표를 다시 읽지
-  // 않게 한다.
-  const profileSnapshot = toProfileSnapshot(sortedCharacterInfo)
-
-  if (periodKey === currentPeriodKey) {
-    // 주간 탭의 현재 기간은 스냅샷이 이미 자른 그 배열이다. 여기서 다시 자르면 자가 둘이 되고,
-    // 날짜 모르는 월간 보스가 설 주를 고르는 주차 목록을 이쪽만 못 읽는 순간 두 값이 갈린다.
-    // 월간 탭은 `filterRowsForTab` 이 그 목록을 안 보므로 빈 배열로 충분하다.
-    const syncedRows =
-      latestSyncSnapshot === null
-        ? []
-        : tab === 'weekly'
-          ? latestSyncSnapshot.currentWeekRows
-          : filterRowsForTab(latestSyncSnapshot.rows, tab, periodKey, now, [])
-    // 동기화 스냅샷이 한 줄도 안 그린 캐릭터는 기록에서 만든다. 추적을 해제해도 이번 주에 이미
-    // 잡은 것이 사라지면 안 된다.
-    //
-    // 이미 그린 캐릭터는 건너뛰므로 `refresh` 가 앞서 되살린 행과 겹치지 않는다. 그 회차가
-    // 도는 길과 이 함수가 도는 길이 갈려 있어(제자리 새로고침이 아니면 저쪽이 직접 그린다)
-    // 어느 쪽이 먼저 와도 같은 화면이 돼야 한다.
-    //
-    // 미완료 자리는 여기서 안 선다. 그 행은 스케줄 캐시와 동기화 결과에서만 나오고, 동기화를
-    // 안 하는 캐릭터에서는 `등록은 됐는데 아직 안 잡았다`가 거짓이 된다.
-    const drawnOcids = new Set(syncedRows.map((row) => row.ocid))
-    const rows = sortRowsByOcidOrder(
-      [
-        ...syncedRows,
-        ...(await buildRowsFromRecords(
-          displayOcids.filter((ocid) => !drawnOcids.has(ocid)),
-          tab,
-          periodKey,
-          now,
-          profileSnapshot,
-        )),
-      ],
-      sortedOcids,
-    )
-    const unqueryableCards = buildUnqueryableCards(
-      tab,
-      latestSyncSnapshot?.strandedOcids ?? [],
-      rows,
-      profileSnapshot,
-    )
-    const weeklySubtotals =
-      tab === 'monthly'
-        ? await buildWeeklySubtotalsForMonth(
-            sortedOcids,
-            new Set(ocids),
-            periodKey,
-            latestSyncSnapshot?.rows ?? [],
-            latestSyncSnapshot?.characterProfiles ?? new Map(),
-            now,
-          )
-        : []
-    // 서로 독립인 SQLite 조회라 병렬로 던진다. 직렬로 두면 조회 하나가 지연될 때마다
-    // withSqliteFallback 의 5초 타임아웃이 줄줄이 더해진다.
-    const [canGoPreviousPeriod, dropsByRowKey] = await Promise.all([
-      canReachPreviousPeriod(tab, periodKey, displayOcids),
-      loadDropsByRowKey(displayOcids, withCurrentPeriodRows(rows), now),
-    ])
-    if (input.isStale()) return { kind: 'cancelled' }
-    return {
-      kind: 'snapshot',
-      snapshot: {
-        rows,
-        dropsByRowKey,
-        weeklySubtotals,
-        // 현재 기간은 실시간 동기화가 원천이라 집계를 기다리는 자리가 아니다.
-        periodPendingAggregation: false,
-        // 현재 기간은 실시간 동기화가 원천이라 recorded/confirmedEmpty뿐이다.
-        periodState: resolvePeriodDataState({
-          isCurrentPeriod: true,
-          hasRecords: rows.length > 0,
-          isObserved: false,
-          isQueryable: false,
-          isProbedOutOfRange: false,
-          lastOutcome: null,
-        }),
-        canGoPreviousPeriod,
-        unqueryableCards,
-      },
-    }
-  }
-
-  // **여기서 조회하지 않는다.** 창이 진입할 때 이미 채웠다. 이 함수는 읽어서 그릴 뿐이다.
-  //
-  // 전에는 사용자가 그 기간으로 이동해야 백필이 돌았다. 그래서 이동 안 한 기간은 영영 비었고,
-  // 기록을 지우면 주간 탭에서 월간 보스가 안 돌아왔다.
-  //
-  let observedKeys = await loadObservedPeriodKeys(ocids, now)
-  // 원장이 400 으로 굳힌 (캐릭터, 기간). 관측과 같은 자격으로 **이 기간의 답**이다.
-  let unqueryableKeys = await loadUnqueryablePeriodKeys(ocids, now)
-
-  // **관측이 하나도 없는데 조회는 가능한 기간이면 여기서 채우고 기다린다.**
-  //
-  // 창은 화면을 안 막으려고 뒤에서 돈다. 그 사이에 이 기간을 열면 기록이 아직 없는데, 그것을
-  // 그대로 그리면 오는 중인 데이터에 `불러오지 못했습니다` 가 붙는다. 도는 중인지만 보면
-  // 부족하다. 캐시를 지우고 진입하자마자 이동하면 창이 **시작조차 안 한** 순간이 있다.
-  //
-  // 창의 소유자는 부모 층(`ScheduleWindowProvider`)이다. 여기서 부르는 것은 **이 기간이 아직
-  // 안 채워졌을 때뿐**이고, 부모의 회차가 돌고 있으면 그것을 나눠 쓴다. 관측이 이미 있으면
-  // 이 갈래에 안 온다.
-  if (
-    isPeriodQueryable(tab, periodKey, now) &&
-    !ocids.some(
-      (ocid) =>
-        observedKeys.has(periodStateKey(ocid, tab, periodKey)) ||
-        unqueryableKeys.has(periodStateKey(ocid, tab, periodKey)),
-    )
-  ) {
-    if (input.isStale()) return { kind: 'cancelled' }
-    if (!input.allowWindowSync) return { kind: 'needsWindowSync' }
-    input.onWindowSyncStart?.()
-    await syncScheduleWindow(ocids, now)
-    if (input.isStale()) return { kind: 'cancelled' }
-    observedKeys = await loadObservedPeriodKeys(ocids, now)
-    unqueryableKeys = await loadUnqueryablePeriodKeys(ocids, now)
-  }
-
-  const outcomes = toPeriodOutcomes(getLastWindowFailures())
-
-  const rows = sortRowsByOcidOrder(
-    await buildRowsFromRecords(displayOcids, tab, periodKey, now, profileSnapshot),
-    sortedOcids,
-  )
-  const weeklySubtotals =
-    tab === 'monthly'
-      ? await buildWeeklySubtotalsForMonth(
-          sortedOcids,
-          new Set(ocids),
-          periodKey,
-          [],
-          profileSnapshot,
-          now,
-          outcomes,
-        )
-      : []
-  // 지난 기간의 고아 드롭을 지운다. 과거 기간은 기록이 곧 사실이라 동기화 신선도를 따질 것이
-  // 없다. 백필된 적 없는 주는 행이 통째로 비어 안전 장치가 알아서 막는다.
-  //
-  // 정리 → 읽기 순서는 지키되 다른 둘과는 나란히 간다. 지운 것이 화면 맵에 남지 않으려면
-  // `loadDropsByRowKey` 보다 앞이어야 하지만, 앞줄에 세워 직렬로 두면 기간을 옮길 때마다
-  // 왕복이 하나 더 얹힌다. 그래서 그 갈래 안에서만 이어 붙인다.
-  const [canGoPreviousPeriod, dropsByRowKey] = await Promise.all([
-    canReachPreviousPeriod(tab, periodKey, displayOcids),
-    // 정리에는 **동기화 대상만** 넘긴다. 해제한 캐릭터는 동기화를 안 해 영원히 `믿을 수 있는
-    // 캐릭터`가 못 되고, 넣는 순간 술어가 그들의 드롭을 고아로 읽는다.
-    sweepOrphanDrops({
-      ocids,
-      rows,
-      trustedOcids: new Set(ocids),
-      // 보고 있는 기간 하나뿐이다. `withCurrentPeriodRows` 가 섞어 넣는 지금 기간 행은 이 회차가
-      // 판정할 대상이 아니다. 그쪽은 동기화 경로가 자기 신선도를 알고 판정한다.
-      knownPeriodKeys: new Set([periodKey]),
-      now,
-    }).then((removedDrops) => {
-      notifyOrphanDropCleanup(removedDrops)
-      return loadDropsByRowKey(displayOcids, withCurrentPeriodRows(rows), now)
-    }),
-  ])
-
-  // 캐릭터별 상태 → 이 화면의 상태. 기록 유무는 방금 읽은 rows 에서 본다(같은 조회를 두 번
-  // 하지 않는다).
-  const recordedOcids = new Set(rows.map((row) => row.ocid))
-  const periodState = resolvePagePeriodState(
-    ocids.map((ocid) =>
-      resolvePeriodDataState({
-        isCurrentPeriod: false,
-        hasRecords: recordedOcids.has(ocid),
-        isObserved: observedKeys.has(periodStateKey(ocid, tab, periodKey)),
-        isQueryable: isPeriodQueryable(tab, periodKey, now),
-        isProbedOutOfRange: unqueryableKeys.has(periodStateKey(ocid, tab, periodKey)),
-        lastOutcome: outcomes.get(periodStateKey(ocid, tab, periodKey)) ?? null,
-      }),
-    ),
-  )
-
-  // 우선순위가 있는 `periodState` 와 달리 **묻히지 않게** 따로 든다. 관측이 하나라도 있으면
-  // 그 값은 `confirmedEmpty` 에서 끝나는데, 그때도 수요일이 안 왔을 수 있다.
-  const periodPendingAggregation = ocids.some(
-    (ocid) => outcomes.get(periodStateKey(ocid, tab, periodKey)) === 'notCollected',
-  )
-
-  if (input.isStale()) return { kind: 'cancelled' }
-  return {
-    kind: 'snapshot',
-    snapshot: {
-      rows,
-      dropsByRowKey,
-      weeklySubtotals,
-      periodState,
-      periodPendingAggregation,
-      canGoPreviousPeriod,
-      // 지난 기간은 기록이 있으면 행으로 이미 서고, 없으면 그 주에 없었던 것이 맞다.
-      unqueryableCards: [],
-    },
-  }
-}
-
-/**
- * 표의 한 줄을 화면에 편다.
- *
- * status 를 `loaded` 로 확정한다. 이 자리는 `requestGeneration` 을 올린 네비게이션 뒤에만 오므로
- * 진행 중이던 refresh 의 loading 은 이미 무효화돼 있다. 여기서 확정하지 않으면 refresh 도중
- * 기간을 이동했다가 돌아왔을 때 status 가 loading 에 영구히 갇힌다.
- */
-function commitPeriod(
-  set: BossProfitSetter,
-  tab: BossCycle,
-  periodKey: string,
-  snapshot: PeriodSnapshot,
-): void {
-  set({
-    status: 'loaded',
-    rows: snapshot.rows,
-    loadedTab: tab,
-    loadedPeriodKey: periodKey,
-    dropsByRowKey: snapshot.dropsByRowKey,
-    weeklySubtotals: snapshot.weeklySubtotals,
-    isPeriodLoading: false,
-    periodState: snapshot.periodState,
-    periodPendingAggregation: snapshot.periodPendingAggregation,
-    canGoPreviousPeriod: snapshot.canGoPreviousPeriod,
-    unqueryableCards: snapshot.unqueryableCards,
-  })
-}
-
-/**
- * 표의 판. 기기 DB 기록 둘에 **동기화 스냅샷**을 더한다.
- *
- * 현재 기간의 행은 SQLite 가 아니라 `latestSyncSnapshot` 에서 나오므로, 그 스냅샷이 갈리면
- * 표의 현재 기간 줄도 낡는다.
- */
-function periodStamp(): string {
-  return `${bossRecordsStamp()}|${syncSnapshotRevision}`
-}
-
-/**
- * 도는 프리페치를 멈춘다. **사용자가 움직이면 앞의 창은 낡은 것**이고, 그대로 두면 사용자
- * 회차와 SQLite 를 두고 다툰다.
- */
-function cancelPrefetch(): void {
-  nextPrefetchToken()
-}
-
-function schedulePrefetch(tab: BossCycle, periodKey: string, ocids: string[], now: Date): void {
-  void fillPeriodWindow(tab, periodKey, ocids, now, nextPrefetchToken())
-}
-
-/**
- * 창을 **하나씩** 채운다. 사용자 회차를 안 취소한다.
- *
- * `requestGeneration` 을 안 올리는 것이 핵심이다. 올리면 지금 보고 있는 회차가 취소된다. 대신
- * 자기 토큰을 두고, 기간 하나를 채울 때마다 그것이 아직 최신인지 본다.
- *
- * 다섯을 한꺼번에 던지지 않는 것도 같은 이유다. 사용자 회차와 SQLite 를 두고 다투고, 도중에
- * 기간을 옮겨도 앞의 것들이 계속 돈다.
- */
-async function fillPeriodWindow(
-  tab: BossCycle,
-  periodKey: string,
-  ocids: string[],
-  now: Date,
-  myToken: number,
-): Promise<void> {
-  // 창도 화살표와 같은 목록으로 계산한다. 추적 목록으로 계산하면 실제로 갈 기간이 아닌 곳을
-  // 미리 채워, 사용자가 도착한 기간이 매번 새로 조회된다.
-  const window = await resolvePeriodWindow(tab, periodKey, await resolveDisplayOcids(ocids), now)
-  for (const entry of window) {
-    if (!isPrefetchTokenCurrent(myToken)) return
-    // **읽기 전에 찍는다.** 읽는 중에 들어온 변경을 본 것으로 표시하면 그 변경을 영영 놓친다.
-    const stamp = periodStamp()
-    if (readPeriodSnapshot(entry.tab, entry.periodKey, stamp) !== null) continue
-
-    const outcome = await buildPeriodSnapshot({
-      tab: entry.tab,
-      periodKey: entry.periodKey,
-      ocids,
-      now,
-      allowWindowSync: false,
-      isStale: () => !isPrefetchTokenCurrent(myToken),
-    })
-    if (outcome.kind === 'cancelled') return
-    // 조회가 있어야 답이 나오는 기간은 표에 안 넣는다. 사용자가 실제로 가면 그때 원래대로 돈다.
-    if (outcome.kind === 'needsWindowSync') continue
-    writePeriodSnapshot(entry.tab, entry.periodKey, stamp, outcome.snapshot)
-  }
-}
-
-/**
- * 그 기간을 화면에 세운다. **표에 있으면 안 읽는다.**
- *
- * 표에서 나오면 `isPeriodLoading` 이 아예 안 뜬다. 없으면 지금까지 하던 일을 그대로 하고 그
- * 결과를 표에 넣는다. 어느 쪽이든 끝나고 창을 다시 채운다.
- *
- * @param ignoreCache 표를 건너뛰고 다시 읽는다. **재시도가 참으로 준다** - 실패한 기간의
- *   스냅샷도 표에 들어가므로, 안 건너뛰면 `다시 시도` 가 같은 실패를 그대로 되돌려 준다
- */
-async function loadPeriod(
-  set: BossProfitSetter,
-  tab: BossCycle,
-  periodKey: string,
-  ocids: string[],
-  now: Date,
-  generation: number,
-  ignoreCache = false,
-): Promise<void> {
-  cancelPrefetch()
-  const stamp = periodStamp()
-  const cached = ignoreCache ? null : readPeriodSnapshot(tab, periodKey, stamp)
-  if (cached !== null) {
-    if (generation !== requestGeneration) return
-    commitPeriod(set, tab, periodKey, cached)
-    schedulePrefetch(tab, periodKey, ocids, now)
-    return
-  }
-
-  const outcome = await buildPeriodSnapshot({
-    tab,
-    periodKey,
-    ocids,
-    now,
-    allowWindowSync: true,
-    onWindowSyncStart: () => {
-      set({ isPeriodLoading: true })
-    },
-    isStale: () => generation !== requestGeneration,
-  })
-  if (outcome.kind !== 'snapshot') return
-
-  writePeriodSnapshot(tab, periodKey, stamp, outcome.snapshot)
-  if (generation !== requestGeneration) return
-  commitPeriod(set, tab, periodKey, outcome.snapshot)
-  schedulePrefetch(tab, periodKey, ocids, now)
-}
-
-const initialState: BossProfitState = {
-  status: 'idle',
+export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
   tab: 'weekly',
   periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
-  rows: [],
   partyPlans: {},
-  loadedTab: 'weekly',
-  loadedPeriodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
-  currentWeekRows: [],
-  dropsByRowKey: {},
-  weeklySubtotals: [],
-  isPeriodLoading: false,
-  periodState: 'confirmedEmpty',
-  periodPendingAggregation: false,
-  canGoPreviousPeriod: false,
-  error: null,
-  staleCharacterNames: [],
-  characterIssues: {},
-  unqueryableCards: [],
-  trackedOcids: null,
-}
 
-// 부팅 선하이드레이션과 화면 마운트가 같은 회차를 부르므로, 진행 중인 회차가 있으면 그 Promise 를
-// 그대로 돌려준다. 평생 한 번이 아니라 동시에 하나만이다. 끝나면 잊는다. 영구 메모로 만들면
-// 진입 재조회의 10분 TTL 이 죽는다.
-let hydration: Promise<void> | null = null
-
-/**
- * 자동 기록 뒤에 월드 리프한 기간의 중복 기록을 정리하고, 지운 것이 있으면 기록을 다시 읽는다.
- *
- * 다시 안 읽으면 이번 회차 화면에 지운 옛 카드 행이 남고, 새 카드는 옮겨 온 파티원 수를 모른다. 기록
- * 조회가 실패했으면(`null`) 무엇이 있는지 모르는 상태라 정리하지 않는다.
- */
-/**
- * 사용자가 직접 적은 완료를 캐릭터별 열쇠 집합으로. **이번 주·이번 달 것만** 본다.
- *
- * 행 고르기가 이 값을 봐야 스케줄러 카드와 이 화면이 같은 처치 수를 말한다. 실패하면 빈 표라
- * 그 회차는 넥슨이 준 것만 그리고, 다음 회차가 다시 읽는다.
- */
-async function readManualCompletedKeys(
-  ocids: string[],
-  now: Date,
-): Promise<Map<string, Set<string>>> {
-  const byOcid = new Map<string, Set<string>>()
-  if (ocids.length === 0) return byOcid
-
-  const periodKeys = [
-    getCurrentBossProfitPeriod('weekly', now).periodKey,
-    getCurrentBossProfitPeriod('monthly', now).periodKey,
-  ]
-  // 조회가 실패하면 빈 표다. 이 값이 없다고 화면 전체가 못 서면 안 된다 - 그 회차는 넥슨이 준
-  // 것만 그리고 다음 회차가 다시 읽는다.
-  let records: Awaited<ReturnType<typeof getManualBossProfitRecordKeys>>
-  try {
-    records = (await withSqliteFallback(getManualBossProfitRecordKeys(ocids, periodKeys), [])) ?? []
-  } catch {
-    return byOcid
-  }
-  for (const record of records) {
-    const keys = byOcid.get(record.ocid) ?? new Set<string>()
-    keys.add(manualCompletionKey(record.bossKey, record.difficulty))
-    byOcid.set(record.ocid, keys)
-  }
-  return byOcid
-}
-
-async function settleWorldLeapDuplicates(
-  records: BossProfitRecord[] | null,
-  ocids: string[],
-  periodKeys: string[],
-  now: Date,
-): Promise<BossProfitRecord[] | null> {
-  if (records === null) {
-    return null
-  }
-  const removed = await withSqliteFallback(cleanUpWorldLeapDuplicates(now), 0)
-  if (removed === 0) {
-    return records
-  }
-  return withSqliteFallback(getBossProfitRecords(ocids, periodKeys), records)
-}
-
-export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
-  /**
-   * 이 스토어의 모든 커밋은 지금 기간을 함께 싣는다.
-   *
-   * `currentWeekRows` 의 내용은 `latestSyncSnapshot.currentWeekRows` 와 같다. 갱신하는 자리마다
-   * 잊지 않고 함께 쓴다 로 두면 사본 둘이 언젠가 어긋나고, 반대로 스냅샷을 바꿀 때마다 `set` 을
-   * 한 번씩 더 부르면 건너뛴 진입의 커밋은 1회 가 깨진다(그 계약이 화면 깜빡임을 막는다).
-   *
-   * 그래서 커밋 자체에 얹는다. 커밋 수는 그대로이고 어느 커밋에서 보든 상태와 스냅샷이 같다.
-   * 대신 스냅샷 대입은 그것을 화면에 반영할 `set` 보다 앞에 와야 한다.
-   */
-  const set: BossProfitSetter = (partial) => {
-    rawSet({ ...partial, currentWeekRows: latestSyncSnapshot?.currentWeekRows ?? [] })
-  }
-
-  return {
-  ...initialState,
-
-  loadTrackedOcids() {
-    // 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
-    hydration ??= (async () => {
-      const ocids = await getTrackedCharacterOcids()
-      set({ trackedOcids: ocids })
-      if (ocids !== null) {
-        // 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
-        await get().refresh(ocids, { auto: true })
-      }
-    })().finally(() => {
-      hydration = null
-    })
-    return hydration
+  setTab(tab) {
+    set({ tab, periodKey: getCurrentBossProfitPeriod(tab, new Date()).periodKey })
   },
 
-  async refresh(ocids, options, onProgress) {
-    const myGeneration = ++requestGeneration
-    const tab = get().tab
-    const now = new Date()
-    const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
-
-    // 보던 기간을 유지할 것인가. 동기화·자동 기록·스냅샷 갱신은 그대로 하고 화면 반영만
-    // loadPeriod 에 넘긴다.
-    //
-    // 참이 되는 길이 둘이다. 당김이 그렇게 시켰거나(어느 기간에서도 당길 수 있고 당김은 보던
-    // 기간을 안 떠난다), 진행 중인 주를 품은 지난 달(7월 5주차 = 7/30~8/5)이거나.
-    const viewedPeriodKey = get().periodKey
-    const refreshInPlace =
-      options?.inPlace === true || containsInProgressWeek(tab, viewedPeriodKey, now)
-
-    // `ocids` 는 동기화 대상이다. 그리는 것은 그보다 넓다. 기록을 남긴 캐릭터가 함께 든다.
-    const displayOcids = await resolveDisplayOcids(ocids)
-
-    if (ocids.length === 0) {
-      setLatestSyncSnapshot(
-        { ocids: [], rows: [], characterProfiles: new Map(), strandedOcids: [], weeksWithRecords: [] },
-        now,
-      )
-      if (myGeneration !== requestGeneration) return
-      // 추적은 비었는데 기록이 있으면 화면은 여전히 그것을 그려야 한다. 동기화할 것이 없을 뿐
-      // 이라, 화면 반영은 기록을 원천으로 아는 `loadPeriod` 에 넘긴다.
-      if (displayOcids.length > 0) {
-        set({ error: null, staleCharacterNames: [], characterIssues: {} })
-        await loadPeriod(set, tab, currentPeriodKey, ocids, now, myGeneration)
-        return
-      }
-      set({
-        status: 'loaded',
-        periodKey: currentPeriodKey,
-        rows: [],
-        loadedTab: tab,
-        loadedPeriodKey: currentPeriodKey,
-        dropsByRowKey: {},
-        weeklySubtotals: [],
-        isPeriodLoading: false,
-        periodState: 'confirmedEmpty',
-        periodPendingAggregation: false,
-        canGoPreviousPeriod: false,
-        error: null,
-        staleCharacterNames: [],
-        characterIssues: {},
-      })
-      return
-    }
-
-    // 캐시 우선 표시·실시간 동기화 양쪽에서 항상 같은 캐릭터 순서(레벨 내림차순, 동레벨은
-    // 이름순)를 쓰도록 미리 계산해둔다. trackedOcids 저장 순서와 Nexon character/list 응답
-    // 순서가 달라 API 응답 이후 캐릭터 목록 위치가 바뀌어 보이던 문제를 없앤다. 아바타 이미지도
-    // 이 조회에 함께 실려 온다(character-basic-cache의 character_image).
-    const sortedCharacterInfo = await getSortedCharacterInfo(displayOcids)
-    const sortedOcids = sortedCharacterInfo.map((info) => info.ocid)
-    const imageUrlByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.imageUrl]))
-    // 월드도 같은 조회 결과에서 그대로 꺼내 행까지 흘린다.
-    const worldByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.world]))
-    const worldKeyByOcid = new Map(sortedCharacterInfo.map((info) => [info.ocid, info.worldKey]))
-
-    // `world` 컬럼을 새로 더했으므로 그전 기록에는 월드가 없다. 지금 아는 월드와 그 key 로 채운다.
-    // `world IS NULL` 조건이 멱등성을 보장해 다시 실행돼도 과거 스냅샷을 덮어쓰지 않는다.
-    const knownWorlds = new Map<string, { world: string; worldKey: string | null }>()
-    for (const [ocid, world] of worldByOcid) {
-      if (world !== null) knownWorlds.set(ocid, { world, worldKey: worldKeyByOcid.get(ocid) ?? null })
-    }
-    await withSqliteFallback(fillMissingRecordWorlds(knownWorlds), undefined)
-
-    // refresh 는 항상 현재 기간을 보여주므로 한 칸 더 과거로 갈 수 있는지도 함께 계산해 이전
-    // 버튼 게이트를 세운다. **이 값은 캐시 단계까지만 쓴다.** 창 동기화가 화면을 안 막으려고
-    // 뒤에서 돌면서 지난 기간 기록을 만들므로, 아래 동기화가 끝난 뒤에는 다시 재야 한다.
-    const canGoPreviousPeriod = await canReachPreviousPeriod(tab, currentPeriodKey, displayOcids)
-
-    // 수동 모드에서는 게임 등록·처치가 아니라 사용자 멤버십(manualTrackedContent)이 표시 목록을
-    // 정하므로 캐시·라이브 양쪽에서 참조할 수동 목록을 미리 조회해 둔다. 자동 모드는 이 조회를
-    // 하지 않는다. 자동 동작은 트래킹과 완전히 독립이다. 미선택(null)은 자동으로 동작한다.
-    // 트래킹 모드와 직접 적은 완료를 나란히 읽는다. 둘 다 캐시 단계가 행을 만들기 전에 필요하고,
-    // 차례로 기다리면 첫 페인트가 그만큼 늦는다.
-    const [trackingMode, manualCompletedKeys] = await Promise.all([
-      getTrackingMode(),
-      readManualCompletedKeys(displayOcids, now),
-    ])
-    const mode = trackingMode ?? 'auto'
-    const manualItemsByOcid = new Map<string, ManualTrackedItem[]>()
-    if (mode === 'manual') {
-      await Promise.all(
-        ocids.map(async (ocid) => {
-          manualItemsByOcid.set(ocid, await getManualTrackedContent(ocid))
-        }),
-      )
-    }
-
-    // 캐시 엔트리 한 캐릭터분. 행뿐 아니라 게이트 판정값(syncedAt)과 **프로필**도 함께 나른다.
-    // 프로필이 행에만 실려 있으면 행이 0인 캐릭터에서 그것을 꺼낼 방법이 없다.
-    interface CachedCharacterEntry {
-      syncedAt: string | null
-      profile: CharacterProfileInfo | null
-      rows: BossProfitRow[]
-      /** 이 캐릭터의 캐시 원문이 완료로 주는 조합. 행이 아니라 원문에서 뽑아야 한다. */
-      nexonCompleted: string[]
-    }
-
-    // 캐시 우선 표시. 재검증(syncSchedules) 전에 마지막으로 성공한 스케줄 캐시가 있으면 완료된
-    // 보스만 걸러 화면을 먼저 채운다. 이미 저장된 기록이 있으면 함께 조회해 partySize/payoutMeso
-    // 도 바로 보여준다.
-    //
-    // 다만 기록이 없는 조합에 대한 자동 기록은 재검증하는 진입에서는 이 단계에서 하지 않는다.
-    // 낡은 캐시를 기준으로 잘못된 파티원 수를 기록하는 것을 막는다. 재조회를 건너뛰는 진입
-    // (skipSync)은 예외다. 이 단계가 곧 최종 화면이라 여기서 기록하지 않으면 화면이 계산되지
-    // 않은 채로 선다.
-    //
-    // 재조회 게이트의 판정값(syncedAt)도 이 단계에서 함께 모은다. 캐릭터 단위 배열이다. 한
-    // 캐릭터가 여러 행을 만들므로 행 배열로 세면 개수가 틀어진다.
-    const cachedByOcid = await Promise.all(
-      ocids.map(async (ocid): Promise<CachedCharacterEntry> => {
-        const cached = await getCachedSchedulerState(ocid)
-        if (cached === null) {
-          return { syncedAt: null, profile: null, rows: [], nexonCompleted: [] }
-        }
-        // 자동 모드는 완료된 보스뿐 아니라 등록만 되고 아직 처치 전인 보스도 미완료 placeholder
-        // 로 함께 보여준다. `selectBossProfitBosses` 가 그룹(같은 보스 key)당 실제로 처치한
-        // 난이도를 우선하고 없으면 등록 난이도를 대신 고른다. 등록 난이도와 실제 처치 난이도가
-        // 다를 수 있어 가격 계산에는 반드시 실제 처치 난이도를 써야 한다.
-        const displayBosses = selectProfitDisplayBosses(
-          cached.state.bossContents,
-          mode,
-          manualItemsByOcid.get(ocid) ?? [],
-          worldKeyByOcid.get(ocid) ?? null,
-          manualCompletedKeys.get(ocid),
-          { periodKey: currentPeriodKey, now },
-        )
-        const profile: CharacterProfileInfo = {
-          characterName: cached.state.characterName,
-          imageUrl: imageUrlByOcid.get(ocid) ?? null,
-          world: worldByOcid.get(ocid) ?? null,
-          worldKey: worldKeyByOcid.get(ocid) ?? null,
-        }
-        return {
-          syncedAt: cached.syncedAt,
-          profile,
-          rows: displayBosses.map((boss) => buildBossProfitRow(ocid, profile, boss, now)),
-          nexonCompleted: nexonCompletedKeysOf(ocid, cached.state.bossContents),
-        }
-      }),
-    )
-    const cachedRows = cachedByOcid.flatMap((entry) => entry.rows)
-    const cachedNexonCompleted = new Set(cachedByOcid.flatMap((entry) => entry.nexonCompleted))
-
-    // 프로필 맵은 행이 아니라 캐시 엔트리에서 만든다. 행에서 만들면 축약 응답으로 행이 0인
-    // 캐릭터는 프로필이 없고 `appendRecordOnlyRows` 가 그 캐릭터를 통째로 건너뛴다.
-    //
-    // 바탕은 지워지지 않는 스냅샷이다(해제한 캐릭터는 스케줄 캐시가 애초에 없다). 그 위를 스케줄
-    // 캐시의 이름이 덮는다. 이름의 출처가 갈리면 같은 캐릭터가 화면에서 다르게 불린다.
-    const cachedCharacterProfiles = new Map<string, CharacterProfileInfo>(
-      toProfileSnapshot(sortedCharacterInfo),
-    )
-    ocids.forEach((ocid, index) => {
-      const profile = cachedByOcid[index].profile
-      if (profile !== null) cachedCharacterProfiles.set(ocid, profile)
-    })
-
-    // **표가 이미 아는 조회 불가.** 로컬 조회라 동기화를 안 기다린다. 이것이 없으면 조회 불가
-    // 캐릭터의 첫 페인트가 `0 메소` 이고, 그 숫자는 0원을 벌었다는 단정이라 할 수 없는 말이다.
-    //
-    // `null`(아직 안 물어봤다)은 안 담는다. 담으면 새 캐릭터가 전부 배지를 달고 시작한다.
-    //
-    // **추적 중인 캐릭터만** 담는다. 이 배지의 처방은 캐릭터 관리에서 해제하거나 갈아끼우는
-    // 것이라 이미 뺀 캐릭터에는 할 것이 없다. 동기화 뒤 목록(`strandedOcids`)도 추적 목록에서
-    // 나오므로, 여기서 넓게 담으면 신선한 캐시로 동기화를 건너뛴 진입에만 배지가 서서 같은
-    // 화면이 진입마다 달라진다.
-    const trackedOcidSet = new Set(ocids)
-    const knownUnavailableOcids = sortedCharacterInfo
-      .filter((info) => info.unavailable === true && trackedOcidSet.has(info.ocid))
-      .map((info) => info.ocid)
-    const cachedIssues: Record<string, 'unavailable' | 'failed'> = Object.fromEntries(
-      knownUnavailableOcids.map((ocid) => [ocid, 'unavailable' as const]),
-    )
-
-    // 화면 진입 자동 재조회는 데이터가 신선하면 건너뛴다. 캐시가 없는 캐릭터는 여기서 빠지므로
-    // `isSyncFresh` 가 개수 불일치로 만료 판정한다. 새 캐릭터가 빈 채 남지 않는다.
-    const cachedSyncedAts = cachedByOcid
-      .map((entry) => entry.syncedAt)
-      .filter((syncedAt): syncedAt is string => syncedAt !== null)
-    const autoSkipSync =
-      options?.auto === true && hasSyncAttemptedThisRun() && isSyncFresh(cachedSyncedAts, ocids.length, now)
-    const skipSync = options?.skipSync === true || autoSkipSync
-
-    // 캐시 행에서 파생한 키만 쓰면 행이 없는 기간을 조회조차 안 해 되살릴 재료가 없다.
-    // 동기화 분기와 같이 현재 주·달 키를 항상 포함한다.
-    const cachedPeriodKeys = Array.from(
-      new Set([
-        ...cachedRows.map((row) => row.periodKey),
-        getCurrentBossProfitPeriod('weekly', now).periodKey,
-        getCurrentBossProfitPeriod('monthly', now).periodKey,
-      ]),
-    )
-    // 폴백을 [] 가 아니라 null 로 둬 조회 실패 와 기록 없음 을 구분한다. 아래 자동 기록이 실패를
-    // 없음 으로 읽으면 사용자가 저장한 파티원 수가 1 로 덮인다. 캐시 행이 0 인 진입에서도
-    // 조회한다. 그 진입이 정확히 아래 복원이 겨누는 시나리오라 행 개수로 막으면 재료가 사라진다.
-    const cachedRecords = await withSqliteFallback<BossProfitRecord[] | null>(
-      getBossProfitRecords(displayOcids, cachedPeriodKeys),
-      null,
-    )
-    const cachedMergedRows = mergeRecordsIntoRows(cachedRows, cachedRecords ?? [])
-
-    // 이 행의 출처 캐시가 보스 리셋 경계를 넘었는지만 본다. `buildBossProfitRow` 가 periodKey 를
-    // now 로 계산하므로 그 경우에만 지난 기간의 처치가 이번 기간 수익으로 굳는다. 판정 기준은
-    // 캐시의 syncedAt 이다(API 응답의 asOf 가 아니다). row.periodKey 를 계산한 now 와 같은 기기
-    // 시계여야 하고, 게이트가 이미 그 값을 쓰므로 기준이 하나로 남는다.
-    const syncedAtByOcid = new Map(ocids.map((ocid, index) => [ocid, cachedByOcid[index].syncedAt]))
-    const isCachedRowCurrent = (row: BossProfitRow): boolean => {
-      const syncedAt = syncedAtByOcid.get(row.ocid) ?? null
-      if (syncedAt === null) return false
-      const syncedAtDate = new Date(syncedAt)
-      if (Number.isNaN(syncedAtDate.getTime())) return false
-      // cycle로 갈라야 주간 행은 주간 리셋(목요일 00:00), 월간 행은 월간 리셋(1일 00:00)으로 본다.
-      // 두 주기의 경계 시점이 다르므로 한쪽으로 뭉뚱그리면 반대쪽이 조용히 틀린다.
-      return getCurrentBossProfitPeriod(row.cycle, syncedAtDate).periodKey === row.periodKey
-    }
-
-    // 건너뛴 진입은 이 캐시 단계가 곧 최종 화면이다. 건너뛰는 것은 네트워크 재조회뿐이고 수익의
-    // 계산인 자동 기록·드롭 이관은 여기서 한다. 자리는 아래 set() 보다 앞이라 총 수익이 0 으로
-    // 그려졌다가 점프하지 않고, refreshInPlace 분기보다도 앞이라 두 분기가 함께 덮인다.
-    const cachedDropRecordsForMigration =
-      skipSync && cachedRecords !== null
-        ? await withSqliteFallback(getBossDropRecords(ocids, cachedPeriodKeys), [])
-        : []
-    // loadDropsByRowKey보다 반드시 먼저다. 이관이 드롭의 난이도 키를 옮기므로, 먼저 읽으면
-    // 이관 전 상태가 화면에 남는다.
-    const cachedAutoRecordedRows = skipSync
-      ? await autoRecordRows({
-          rows: cachedMergedRows,
-          records: cachedRecords,
-          dropRecords: cachedDropRecordsForMigration,
-          now,
-          isSourceCurrent: isCachedRowCurrent,
-          nexonCompleted: cachedNexonCompleted,
-        })
-      : cachedMergedRows
-    // 자동 기록을 한 진입만 리프 중복을 정리한다. 방금 쓴 새 기록의 짝을 봐야 해서 그 뒤다.
-    const cachedSettledRecords = skipSync
-      ? await settleWorldLeapDuplicates(cachedRecords, displayOcids, cachedPeriodKeys, now)
-      : cachedRecords
-    const cachedSettledRows =
-      cachedSettledRecords === cachedRecords
-        ? cachedAutoRecordedRows
-        : mergeRecordsIntoRows(cachedAutoRecordedRows, cachedSettledRecords ?? [])
-
-    // 기록만 있는 조합을 행으로 되살린다. 자동 기록 뒤여야 한다. 복원 행은 기록에서 나와
-    // partySize 가 이미 채워져 있어 자동 기록 대상이 아니고, 앞에 두면 그 루프가 헛돈다.
-    // skipSync 여부와 무관하게 캐시 단계 일반에 적용한다. 두 경로가 다른 화면을 그리면 그것이
-    // 다음 결함이 된다. 정렬은 여기서 한 번만 한다. 복원 행이 정렬 밖에 남으면 캐릭터 아코디언
-    // 순서가 흔들린다.
-    const cachedSortedRows = sortRowsByOcidOrder(
-      appendRecordOnlyRows(cachedSettledRows, cachedSettledRecords ?? [], cachedCharacterProfiles, now),
-      sortedOcids,
-    )
-
-    // 스냅샷이 이번 주 행을 세는 재료다. 리프 중복 정리 뒤여야 지운 기록이 주차 목록에 안 남는다.
-    const cachedWeeksWithRecords = await loadWeeksWithRecords(sortedOcids, currentWeekMonthKey(now))
-
-    // latestSyncSnapshot 을 캐시 데이터로 즉시 채워 둔다. 이후 syncSchedules 가 실패해도 이
-    // 스냅샷이 null 로 남지 않아야 그 상태에서 탭 전환·기간 이동을 해도 캐시 우선 표시가
-    // 유지된다. 동기화가 성공하면 아래에서 다시 최신 데이터로 덮어쓴다.
-    setLatestSyncSnapshot(
-      {
-        ocids: [...ocids],
-        rows: cachedSortedRows,
-        characterProfiles: cachedCharacterProfiles,
-        // 이번 회차가 물어본 결과가 아니라 **표가 이미 들고 있던 사실**이다. 동기화가 답하면 아래
-        // 최종 커밋이 이 목록을 그 결과로 갈아끼운다.
-        strandedOcids: knownUnavailableOcids,
-        weeksWithRecords: cachedWeeksWithRecords,
-      },
-      now,
-    )
-
-    // 제자리 새로고침은 캐시 우선 표시의 화면 반영만 건너뛴다. 이 단계가 그리는 것은 현재 기간의
-    // 캐시 행이라 그대로 두면 7월 화면에 8월 데이터가 한 프레임 스친다. 화면은 이미 그 기간을
-    // 그리고 있어 새로 그릴 것도 없다. 바로 위의 latestSyncSnapshot 갱신은 그대로 한다.
-    if (refreshInPlace) {
-      if (myGeneration !== requestGeneration) return
-      // 건너뛰는 진입도 이 분기의 규약을 그대로 따른다. 화면 반영은 loadPeriod가 하고
-      // (그 함수가 status/rows/periodState를 정한다) 여기서는 실패 표식만 비운다. 건너뛰는 것은
-      // syncSchedules뿐이고, loadPeriod의 기록 조회·백필 규칙은 무변경이다.
-      if (skipSync) {
-        set({
-          error: null,
-          staleCharacterNames: [],
-          characterIssues: cachedIssues,
-        })
-        await loadPeriod(set, tab, viewedPeriodKey, ocids, now, myGeneration)
-        return
-      }
-      set({ status: 'loading', error: null, staleCharacterNames: [], characterIssues: cachedIssues })
-    } else {
-      // monthly 탭의 주차별 합계도 캐시 단계에서 미리 채운다. 지난 주차 합계는 로컬 기록
-      // (getBossProfitRecords) 조회만으로 구해지는 값이라 API 재검증을 기다릴 이유가 없다.
-      // 이걸 생략하면 매번 화면 진입 시 이미 확정된 지난 주차 합계까지 잠깐 사라졌다가
-      // syncSchedules 완료 후에야 다시 채워지는 것처럼 보인다.
-      const cachedWeeklySubtotals =
-        tab === 'monthly'
-          ? await buildWeeklySubtotalsForMonth(
-              sortedOcids,
-              new Set(ocids),
-              currentPeriodKey,
-              cachedSortedRows,
-              cachedCharacterProfiles,
-              now,
-            )
-          : []
-
-      const cachedDropsByRowKey = await loadDropsByRowKey(displayOcids, cachedSortedRows, now)
-
-      // 이 호출보다 나중에 시작된 refresh/setTab/goToXPeriod가 이미 있다면(연타 등) 이 시점의
-      // 캐시 우선 표시조차 화면에 반영하지 않는다. 더 최신 액션이 이미 진행 중이므로 그 결과가
-      // 우선한다.
-      if (myGeneration !== requestGeneration) return
-
-      set({
-        // 건너뛰는 진입은 이 set 하나로 마감한다. loading을 거쳐 두 번 set 하면
-        // 로딩이 한 프레임 번쩍인다. 이 분기가 이미 화면에 필요한 값을 전부 채운다.
-        status: skipSync ? 'loaded' : 'loading',
-        periodKey: currentPeriodKey,
-        // 주간 탭이면 스냅샷이 방금 센 그 배열이다(위 `setLatestSyncSnapshot`). 자르는 호출이
-        // 한 번이라 today 가 읽는 값과 이 화면이 그리는 값이 어긋날 수 없다.
-        rows: rowsOfCurrentPeriod(tab, currentPeriodKey, cachedSortedRows, now),
-        loadedTab: tab,
-        loadedPeriodKey: currentPeriodKey,
-        dropsByRowKey: cachedDropsByRowKey,
-        weeklySubtotals: cachedWeeklySubtotals,
-        isPeriodLoading: false,
-        periodState: cachedSortedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
-        // 현재 기간은 실시간 동기화가 원천이라 집계를 기다리는 자리가 아니다.
-        periodPendingAggregation: false,
-        canGoPreviousPeriod,
-        error: null,
-        staleCharacterNames: [],
-        characterIssues: cachedIssues,
-        unqueryableCards: buildUnqueryableCards(
-          tab,
-          knownUnavailableOcids,
-          cachedSortedRows,
-          cachedCharacterProfiles,
-        ),
-      })
-      if (skipSync) return
-    }
-
-    let results: Awaited<ReturnType<typeof syncSchedules>>
-    try {
-      results = await syncSchedules(ocids, onProgress)
-    } catch (error) {
-      // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는 캐릭터별 에러가 아니라 전체 조회
-      // 자체의 실패다. 원인은 toScheduleSyncError 로 살린다.
-      if (myGeneration === requestGeneration) {
-        set({ status: 'error', error: toScheduleSyncError(error) })
-      }
-      return
-    }
-
-    // 방금 끝난 syncSchedules 가 대상 캐릭터의 character/basic 도 함께 받아 character-basic-cache
-    // 를 갱신했다. 이 화면만 프로필을 동기화 이전에 읽으므로(캐시 우선 표시가 즉시 그리려면
-    // 그래야 한다) 여기서 다시 읽지 않으면 갱신된 레벨·이미지가 다음 진입으로 밀린다. 로컬
-    // 조회라 네트워크는 0회다. 레벨이 바뀌어 캐릭터 순서가 바뀌는 것은 의도된 결과다.
-    const syncedCharacterInfo = await getSortedCharacterInfo(displayOcids)
-    const syncedOcids = syncedCharacterInfo.map((info) => info.ocid)
-    const syncedImageUrlByOcid = new Map(syncedCharacterInfo.map((info) => [info.ocid, info.imageUrl]))
-    const syncedWorldByOcid = new Map(syncedCharacterInfo.map((info) => [info.ocid, info.world]))
-    const syncedWorldKeyByOcid = new Map(syncedCharacterInfo.map((info) => [info.ocid, info.worldKey]))
-
-    const rows: BossProfitRow[] = []
-    const staleCharacterNames: string[] = []
-    const characterIssues: Record<string, 'unavailable' | 'failed'> = {}
-    // 동기화가 실패한 캐릭터. `buildFallbackResult` 가 마지막 캐시 상태를 그대로 돌려주므로 그
-    // state 의 완료 여부는 지금의 사실이 아니다. 자동 기록에서 제외한다.
-    const staleOcids = new Set<string>()
-    // 캐시 단계와 같은 이유로 스냅샷이 바탕이다. 동기화 결과가 그 위를 덮는다.
-    const characterProfiles = new Map<string, CharacterProfileInfo>(
-      toProfileSnapshot(syncedCharacterInfo),
-    )
-
-    const syncedNexonCompleted = new Set<string>()
-
-    for (const result of results) {
-      const profile: CharacterProfileInfo = {
-        characterName: result.characterName,
-        imageUrl: syncedImageUrlByOcid.get(result.ocid) ?? null,
-        world: syncedWorldByOcid.get(result.ocid) ?? null,
-        worldKey: syncedWorldKeyByOcid.get(result.ocid) ?? null,
-      }
-      characterProfiles.set(result.ocid, profile)
-
-      if (result.isStale) {
-        // 점검은 화면 맨 위의 배너가 알린다. 인원 수 토스트까지 띄우면 같은 일을 두 번 말한다.
-        if (!isMaintenanceSyncError(result.error)) staleCharacterNames.push(result.characterName)
-        staleOcids.add(result.ocid)
-        // 영구(조회 불가)와 일시(그 외)를 카드에서도 갈라 말한다. 전자는 재시도가 무의미하고 할
-        // 수 있는 것이 추적 해제뿐이다.
-        characterIssues[result.ocid] =
-          result.error?.kind === 'characterUnavailable' ? 'unavailable' : 'failed'
-      }
-
-      for (const key of nexonCompletedKeysOf(result.ocid, result.state?.bossContents ?? [])) {
-        syncedNexonCompleted.add(key)
-      }
-
-      const displayBosses = selectProfitDisplayBosses(
-        result.state?.bossContents ?? [],
-        mode,
-        manualItemsByOcid.get(result.ocid) ?? [],
-        profile.worldKey,
-        manualCompletedKeys.get(result.ocid),
-        { periodKey: currentPeriodKey, now },
-      )
-
-      for (const boss of displayBosses) {
-        rows.push(buildBossProfitRow(result.ocid, profile, boss, now))
-      }
-    }
-
-    // 행에서 파생한 기간 키만 쓰면 행이 없는 기간의 기록을 조회조차 하지 않는다. 축약 응답으로
-    // 월간 행이 사라지면 그 달 기록을 못 찾아 화면에서 금액이 사라진다. 현재 주·달 키를 항상
-    // 포함해 기록만 있는 조합 을 아래 합집합이 되살릴 수 있게 한다.
-    const periodKeys = Array.from(
-      new Set([
-        ...rows.map((row) => row.periodKey),
-        getCurrentBossProfitPeriod('weekly', now).periodKey,
-        getCurrentBossProfitPeriod('monthly', now).periodKey,
-      ]),
-    )
-    // 폴백을 [] 가 아니라 null 로 둬 조회 실패 와 기록 없음 을 구분한다. 실패를 없음 으로 읽으면
-    // 아래 자동 기록이 사용자가 저장한 파티원 수를 1 로 덮어쓴다.
-    const records = await withSqliteFallback<BossProfitRecord[] | null>(
-      getBossProfitRecords(displayOcids, periodKeys),
-      null,
-    )
-    const mergedRows = mergeRecordsIntoRows(rows, records ?? [])
-
-    // 완료 행의 드롭 이관에 쓴다(자동 기록과 같은 순회를 쓴다. auto-record.ts).
-    const dropRecordsForMigration =
-      records === null
-        ? []
-        : await withSqliteFallback(getBossDropRecords(ocids, periodKeys), [])
-
-    // 동기화가 실패한 캐릭터의 행은 낡은 캐시에서 나온 것이라 기록·이관에서 제외한다.
-    const autoRecordedRows = await autoRecordRows({
-      rows: mergedRows,
-      records,
-      dropRecords: dropRecordsForMigration,
-      now,
-      isSourceCurrent: (row) => !staleOcids.has(row.ocid),
-      nexonCompleted: syncedNexonCompleted,
-    })
-
-    // 리프 중복 정리. 방금 쓴 새 기록의 짝을 봐야 해서 자동 기록 뒤다(위 캐시 단계와 같은 이유).
-    const settledRecords = await settleWorldLeapDuplicates(records, displayOcids, periodKeys, now)
-    const settledRows =
-      settledRecords === records ? autoRecordedRows : mergeRecordsIntoRows(autoRecordedRows, settledRecords ?? [])
-
-    // 기록만 있는 조합을 행으로 되살린다(위 appendRecordOnlyRows 주석).
-    const unionRows = appendRecordOnlyRows(settledRows, settledRecords ?? [], characterProfiles, now)
-    const sortedRows = sortRowsByOcidOrder(unionRows, syncedOcids)
-    // 동기화가 한 번도 답하지 않은 추적 ocid. 월드 이전으로 `character/list` 에서 빠지면
-    // `resolveTrackedCharacterContext` 가 버려 `results` 에 아예 안 온다. 그 캐릭터는 위 루프가
-    // 행도 프로필도 안 만들어, 여기서 건지지 않으면 화면에서 통째로 사라진다.
-    const respondedOcids = new Set(results.map((result) => result.ocid))
-    const strandedOcids = ocids.filter((ocid) => !respondedOcids.has(ocid))
-    // 실패한 캐릭터와 같은 표를 쓴다. 사용자에게 처방이 같고(해제하거나 바꾼다) 배지·팝오버가
-    // 이미 그 문구를 든다.
-    for (const ocid of strandedOcids) {
-      characterIssues[ocid] = 'unavailable'
-    }
-    // 스냅샷이 이번 주 행을 세는 재료다. 리프 중복 정리 뒤여야 지운 기록이 주차 목록에 안 남는다.
-    const liveWeeksWithRecords = await loadWeeksWithRecords(syncedOcids, currentWeekMonthKey(now))
-
-    // 표에 남기는 일은 **`syncSchedules` 가 한다**(`persistUnavailable`). 조회 불가는 보스 수익의
-    // 사실이 아니라 캐릭터의 사실이라, 이 화면을 안 여는 사용자에게도 표가 차야 한다.
-    setLatestSyncSnapshot(
-      {
-        ocids: [...ocids],
-        rows: sortedRows,
-        characterProfiles,
-        strandedOcids,
-        weeksWithRecords: liveWeeksWithRecords,
-      },
-      now,
-    )
-
-    // 잡지 않은 보스의 드롭을 지운다. 주간 한도 마감으로 행이 걷힌 자리, 추적에서 빠진 보스,
-    // 영영 미처치로 굳은 기간이 전부 여기로 온다.
-    //
-    // 자리가 여기인 이유 셋. ① `autoRecordRows` 의 난이도 이관 뒤여야 옮겨질 기록을 고아로
-    // 오인하지 않는다 ② `loadDropsByRowKey` 앞이어야 방금 지운 것이 화면 맵에 남지 않는다
-    // ③ `refreshInPlace` 분기보다 앞이라 두 갈래가 함께 탄다.
-    //
-    // `records === null` 이면 건너뛴다. 기록 조회 자체가 실패한 것이라 행이 없다 가 아무것도
-    // 뜻하지 않는다.
-    if (records !== null) {
-      // 여기에 넘기는 것은 **동기화 대상**이다. 해제한 캐릭터를 넣으면 아래 `trustedOcids` 가
-      // 영원히 그들을 못 담아 술어가 그들의 드롭을 고아로 읽는다.
-      const removedDrops = await sweepOrphanDrops({
-        ocids,
-        rows: sortedRows,
-        // 동기화가 실패한 캐릭터의 행은 낡은 캐시에서 나온 것이라 판정 근거가 못 된다.
-        trustedOcids: new Set(ocids.filter((ocid) => !staleOcids.has(ocid))),
-        // 이 회차가 사실을 아는 기간은 동기화가 덮은 지금 기간 둘뿐이다.
-        knownPeriodKeys: new Set([
-          getCurrentBossProfitPeriod('weekly', now).periodKey,
-          getCurrentBossProfitPeriod('monthly', now).periodKey,
-        ]),
-        now,
-      })
-      notifyOrphanDropCleanup(removedDrops)
-    }
-
-    // 동기화·자동 기록은 위에서 다 끝났다. 보던 기간(지난 달)의 화면 반영은 loadPeriod 에
-    // 넘긴다. 그 함수가 이미 과거 기간은 기록이 원천 을 알고 있어 새 렌더 경로를 만들 이유가 없다.
-    if (refreshInPlace) {
-      if (myGeneration !== requestGeneration) return
-      set({ staleCharacterNames, characterIssues })
-      await loadPeriod(set, tab, viewedPeriodKey, ocids, now, myGeneration)
-      return
-    }
-
-    const weeklySubtotals =
-      tab === 'monthly'
-        ? await buildWeeklySubtotalsForMonth(
-            syncedOcids,
-            new Set(ocids),
-            currentPeriodKey,
-            sortedRows,
-            characterProfiles,
-            now,
-          )
-        : []
-
-    const [liveDropsByRowKey, liveCanGoPreviousPeriod] =
-      await Promise.all([
-        loadDropsByRowKey(displayOcids, sortedRows, now),
-        // **다시 잰다.** 위에서 잰 값은 조회 앞의 사실이고, 그 사이에 창 동기화가 지난 기간
-        // 기록을 만들 수 있다. 낡은 값을 여기서 쓰면 기록이 생겼는데도 화살표가 꺼진 채로 굳는다.
-        canReachPreviousPeriod(tab, currentPeriodKey, displayOcids),
-      ])
-
-    if (myGeneration !== requestGeneration) return
-
-    set({
-      status: 'loaded',
-      periodKey: currentPeriodKey,
-      // 주간 탭이면 스냅샷이 센 그 배열이다(위 `setLatestSyncSnapshot`).
-      rows: rowsOfCurrentPeriod(tab, currentPeriodKey, sortedRows, now),
-      loadedTab: tab,
-      loadedPeriodKey: currentPeriodKey,
-      dropsByRowKey: liveDropsByRowKey,
-      weeklySubtotals,
-      isPeriodLoading: false,
-      periodState: sortedRows.length > 0 ? 'recorded' : 'confirmedEmpty',
-      canGoPreviousPeriod: liveCanGoPreviousPeriod,
-      error: null,
-      staleCharacterNames,
-      characterIssues,
-      unqueryableCards: buildUnqueryableCards(tab, strandedOcids, sortedRows, characterProfiles),
-    })
-
-    // 동기화가 스냅샷을 갈았으니 표의 판도 갈렸다. 창을 다시 채워 다음 이동이 안 기다리게 한다.
-    schedulePrefetch(tab, currentPeriodKey, ocids, now)
-  },
-
-  /**
-   * 지금 탭의 **현재 기간**으로 돌아온다. 화면의 `오늘` 버튼이 부른다.
-   *
-   * 창이 오늘의 주간·월간을 언제나 들고 있어(`resolvePeriodWindow`) 눌러도 기다릴 것이 없다.
-   */
-  async goToCurrentPeriod() {
+  goToCurrentPeriod() {
     const { tab, periodKey } = get()
-    const now = new Date()
-    const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
-    if (periodKey === currentPeriodKey) {
-      return
-    }
-    const myGeneration = ++requestGeneration
-    const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
+    const currentPeriodKey = getCurrentBossProfitPeriod(tab, new Date()).periodKey
+    if (periodKey === currentPeriodKey) return
     set({ periodKey: currentPeriodKey })
-    await loadPeriod(set, tab, currentPeriodKey, ocids, now, myGeneration)
   },
 
-  async resetToCurrentWeek() {
-    // 이미 주간 · 이번 주면 회차를 안 연다(`goToCurrentPeriod` 가 거른다). 열면 떠나는 순간 돌던
-    // 동기화의 마지막 반영이 취소된다.
+  resetToCurrentWeek() {
     if (get().tab !== 'weekly') {
-      await get().setTab('weekly')
+      get().setTab('weekly')
       return
     }
-    await get().goToCurrentPeriod()
-  },
-
-  async setTab(tab) {
-    const myGeneration = ++requestGeneration
-    const now = new Date()
-    const periodKey = getCurrentBossProfitPeriod(tab, now).periodKey
-    const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
-    set({ tab, periodKey })
-    await loadPeriod(set, tab, periodKey, ocids, now, myGeneration)
+    get().goToCurrentPeriod()
   },
 
   async goToPreviousPeriod() {
-    const { tab, periodKey, canGoPreviousPeriod } = get()
-    // 화면 이전 버튼과 같은 플래그로 게이트한다. 더 과거에 기록이 없으면 이동하지 않는다.
-    // 매 기간 로드 시 canReachPreviousPeriod 로 계산해 저장한 값이다.
-    if (!canGoPreviousPeriod) {
-      return
-    }
-    const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
-    // **갈 곳은 그리는 목록으로 고른다.** 화살표가 사는지도 이 목록으로 판정하므로(`loadPeriod` 의
-    // `canReachPreviousPeriod`) 추적 목록으로 고르면 둘이 갈려, 관리 목록에서 뺀 캐릭터의 기록만
-    // 있는 기간을 **건너뛰고 그 앞으로** 넘어간다(사용자 보고).
-    const navigationOcids = await resolveDisplayOcids(ocids)
-    // **한 칸이 아니라 기록이 있는 가장 가까운 기간이다.** 오래 쉬었다 돌아오면 그 사이가 전부
-    // 조회 불가라, 한 칸씩 걸으면 예전 기록에 닿는 데 수십 번이 든다.
+    const { tab, periodKey } = get()
+    // 화면 이전 버튼과 같은 판정이다. 더 과거에 기록이 없으면 이동하지 않는다.
+    if (readPeriodSnapshot(tab, periodKey)?.canGoPreviousPeriod !== true) return
+    // **갈 곳은 그리는 목록으로 고른다.** 화살표가 사는지도 이 목록으로 판정하므로 추적 목록으로 고르면 둘이 갈려,
+    // 관리 목록에서 뺀 캐릭터의 기록만 있는 기간을 건너뛰고 그 앞으로 넘어간다(사용자 보고).
+    const navigationOcids = await resolveDisplayOcids(readTrackedOcidsSync() ?? [])
+    // **한 칸이 아니라 기록이 있는 가장 가까운 기간이다.** 오래 쉬었다 돌아오면 그 사이가 전부 조회 불가라, 한 칸씩
+    // 걸으면 예전 기록에 닿는 데 수십 번이 든다.
     const newPeriodKey = await resolvePreviousPeriodKey(tab, periodKey, navigationOcids)
-    if (newPeriodKey === null) {
-      return
-    }
+    if (newPeriodKey === null) return
     // 찾는 사이에 다른 이동이 들어왔으면 이 답은 다른 기간의 것이다.
-    if (get().tab !== tab || get().periodKey !== periodKey) {
-      return
-    }
-    const myGeneration = ++requestGeneration
-    // **한 칸 더 갈 수 있는지는 이 로드가 끝나야 안다. 그때까지 닫아 둔다.**
-    //
-    // 이 플래그는 직전 로드가 남긴 값이라 지금 기간에 대해서는 아직 아무 말도 안 한다. 열어
-    // 두면 연타가 그 낡은 참을 계속 읽어 갈 곳이 없는 기간까지 넘어간다(사용자 보고).
-    // 두 set 은 한 갈래에 있어야 한다. 사이에 await 이 끼면 그 틈으로 다음 탭이 들어온다.
-    set({ periodKey: newPeriodKey, canGoPreviousPeriod: false })
-    await loadPeriod(set, tab, newPeriodKey, ocids, new Date(), myGeneration)
+    if (get().tab !== tab || get().periodKey !== periodKey) return
+    set({ periodKey: newPeriodKey })
   },
 
   async goToNextPeriod() {
     const { tab, periodKey } = get()
     const now = new Date()
-    if (isLatestPeriod(tab, periodKey, now)) {
-      return
-    }
-    const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
-    // 이전 화살표와 같은 목록이다(위 주석).
-    const navigationOcids = await resolveDisplayOcids(ocids)
+    if (isLatestPeriod(tab, periodKey, now)) return
+    const navigationOcids = await resolveDisplayOcids(readTrackedOcidsSync() ?? [])
     const newPeriodKey = await resolveNextPeriodKey(tab, periodKey, navigationOcids, now)
-    if (newPeriodKey === null) {
-      return
-    }
-    if (get().tab !== tab || get().periodKey !== periodKey) {
-      return
-    }
-    const myGeneration = ++requestGeneration
+    if (newPeriodKey === null) return
+    if (get().tab !== tab || get().periodKey !== periodKey) return
     set({ periodKey: newPeriodKey })
-    await loadPeriod(set, tab, newPeriodKey, ocids, now, myGeneration)
   },
 
   async retryPeriod() {
     const { tab, periodKey } = get()
-    const myGeneration = ++requestGeneration
-    const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
-    // 표를 건너뛴다. 실패한 기간의 스냅샷도 표에 들어가므로, 쓰면 `다시 시도` 가 같은 실패를
-    // 그대로 되돌려 준다.
-    await loadPeriod(set, tab, periodKey, ocids, new Date(), myGeneration, true)
-  },
-
-  async rereadPeriod() {
-    const { tab, periodKey } = get()
-    const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
-    // 지금 회차의 번호를 그대로 쓴다. 올리면 돌고 있는 `refresh` 가 취소된다. 그 사이에 사용자가
-    // 움직이면 번호가 올라 이 읽기가 스스로 물러난다.
-    await loadPeriod(set, tab, periodKey, ocids, new Date(), requestGeneration)
+    await refetchPeriod(tab, periodKey)
   },
 
   async loadPartyPlans(ocids, now) {
@@ -2040,7 +168,6 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       set({ partyPlans: {} })
       return
     }
-    // 미완료 행은 지금 기간에만 선다. 주간 탭과 월간 탭이 각자의 지금을 갖는다.
     const periodKeys = currentPartyPlanPeriodKeys(now)
     const [settings, overrides] = await Promise.all([
       withSqliteFallback(getBossPartySettings(ocids), []),
@@ -2050,17 +177,14 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
   },
 
   async setRowParty(rowKey, { partySize, shares }) {
-    const row = get().rows.find((candidate) => matchesRowKey(candidate, rowKey))
-    if (row === undefined) {
-      throw new Error('setRowParty: 존재하지 않는 보스 행입니다')
-    }
+    const row = findRow(get().tab, get().periodKey, rowKey, 'setRowParty')
 
     if (!Number.isInteger(partySize) || partySize < 1 || partySize > row.maxPartySize) {
       throw new Error(`setRowParty: 파티원 수는 1 이상 ${row.maxPartySize} 이하의 정수여야 합니다`)
     }
 
-    // 아직 안 잡은 보스는 기록이 아니라 **그 기간만의 값**으로 간다. 기록 표에 쓰면 그 조합이
-    // 완료로 읽혀(`mergeRecordsIntoRows`) 잡지도 않은 보스가 완료로 선다.
+    // 아직 안 잡은 보스는 기록이 아니라 **그 기간만의 값**으로 간다. 기록 표에 쓰면 그 조합이 완료로 읽혀
+    // (`mergeRecordsIntoRows`) 잡지도 않은 보스가 완료로 선다.
     if (!row.isComplete) {
       const plan: BossPartyPlan = {
         partySize,
@@ -2086,66 +210,33 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       return
     }
 
-    const payoutMeso = row.priceMeso === null ? null : crystalPayoutMeso(row.priceMeso, partySize, shares)
-
-    if (row.priceMeso !== null) {
-      await upsertBossProfitRecord({
-        ocid: row.ocid,
-        bossKey: row.bossKey,
-        boss: row.bossName,
-        difficulty: row.difficulty,
-        cycle: row.cycle,
-        periodKey: row.periodKey,
-        partySize,
-        priceMeso: row.priceMeso,
-        payoutMeso: payoutMeso as number,
-        crystalMyShare: shares.myShare,
-        crystalSharesTotal: shares.sharesTotal,
-        splitFeePercent: shares.splitFeePercent,
-        splitFeeAuto: shares.splitFeeAuto === true,
-        recordedAt: new Date().toISOString(),
-        world: row.world,
-        worldKey: row.worldKey,
-        // 파티원 수만 고치는 upsert 가 **출처를 지우면 안 된다.** 안 넘기면 기본값이 `auto` 라
-        // 직접 적은 완료의 표식이 편집 한 번에 사라진다.
-        source: row.source,
-      })
-    }
-
-    const applyEdit = (candidate: BossProfitRow): BossProfitRow =>
-      matchesRowKey(candidate, rowKey)
-        ? {
-            ...candidate,
-            partySize,
-            payoutMeso,
-            crystalMyShare: shares.myShare,
-            crystalSharesTotal: shares.sharesTotal,
-            splitFeePercent: shares.splitFeePercent,
-            splitFeeAuto: shares.splitFeeAuto === true,
-          }
-        : candidate
-
-    // latestSyncSnapshot 도 함께 갱신해야 한다. 그러지 않으면 이 수정 후 탭을 전환했다 돌아오거나
-    // 기간을 이동했다 복귀할 때, loadPeriod 의 현재 기간 분기가 이 스냅샷에서 그대로 슬라이스해
-    // 방금 수정한 값이 낡은 값으로 되돌아가 보인다.
-    //
-    // set 보다 앞이어야 한다. 아래 set 이 이 스냅샷의 `currentWeekRows` 를 그대로 싣는다.
-    // 뒤에 두면 이 수정이 today 위젯에 한 커밋 늦게 닿는다.
-    if (latestSyncSnapshot !== null) {
-      setLatestSyncSnapshot(
-        { ...latestSyncSnapshot, rows: latestSyncSnapshot.rows.map(applyEdit) },
-        new Date(),
-      )
-    }
-
-    set({ rows: get().rows.map(applyEdit) })
+    if (row.priceMeso === null) return
+    // 기록이 바뀌면 판이 올라 기간 쿼리가 다시 읽는다. 화면은 여기서 안 건드린다.
+    await upsertBossProfitRecord({
+      ocid: row.ocid,
+      bossKey: row.bossKey,
+      boss: row.bossName,
+      difficulty: row.difficulty,
+      cycle: row.cycle,
+      periodKey: row.periodKey,
+      partySize,
+      priceMeso: row.priceMeso,
+      payoutMeso: crystalPayoutMeso(row.priceMeso, partySize, shares),
+      crystalMyShare: shares.myShare,
+      crystalSharesTotal: shares.sharesTotal,
+      splitFeePercent: shares.splitFeePercent,
+      splitFeeAuto: shares.splitFeeAuto === true,
+      recordedAt: new Date().toISOString(),
+      world: row.world,
+      worldKey: row.worldKey,
+      // 파티원 수만 고치는 upsert 가 **출처를 지우면 안 된다.** 안 넘기면 기본값이 `auto` 라 직접 적은 완료의 표식이
+      // 편집 한 번에 사라진다.
+      source: row.source,
+    })
   },
 
   async saveManualCompletion(rowKey, input) {
-    const row = get().rows.find((candidate) => matchesRowKey(candidate, rowKey))
-    if (row === undefined) {
-      throw new Error('saveManualCompletion: 존재하지 않는 보스 행입니다')
-    }
+    const row = findRow(get().tab, get().periodKey, rowKey, 'saveManualCompletion')
 
     await saveManualCompletion(
       {
@@ -2166,49 +257,28 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       new Date(),
     )
 
-    // 쓴 것을 **이번 기간 스냅샷**에 먼저 들인다(넥슨 없음). 월간 탭의 이번 달 행과 다른 주에서
-    // 돌아올 이번 주가 SQLite 가 아니라 그 스냅샷을 읽으므로, 아래에서 다른 주로 옮겨 가더라도
-    // 이것을 건너뛰면 그쪽이 옛 값으로 남는다(사용자 보고: 주간에서 적은 월간 보스가 월간 탭에 안 섰다).
-    await get().refresh(get().trackedOcids ?? [], { inPlace: true, skipSync: true })
-
-    // **적은 날짜의 주로 데려간다**(사용자 지정). 월간 보스는 잡은 주에 서므로 날짜를 옮기면 그
-    // 행이 다른 주로 가고, 보던 주에 그대로 두면 방금 적은 것이 화면에서 사라진다.
-    //
-    // 주간 보스는 고를 수 있는 날이 그 주 안이라 언제나 같은 주다(시트가 기간의 날들로 가둔다).
+    // **적은 날짜의 주로 데려간다**(사용자 지정). 월간 보스는 잡은 주에 서므로 날짜를 옮기면 그 행이 다른 주로 가고,
+    // 보던 주에 그대로 두면 방금 적은 것이 화면에서 사라진다. 주간 보스는 고를 수 있는 날이 그 주 안이라 언제나 같은 주다.
     const targetWeek = resetWeekStartOf(input.dateKey)
     if (get().tab === 'weekly' && targetWeek !== get().periodKey) {
-      const myGeneration = ++requestGeneration
-      const ocids = latestSyncSnapshot?.ocids ?? get().trackedOcids ?? []
-      // 화살표 판정은 이 로드가 끝나야 안다. 이동과 같은 규칙으로 그때까지 닫아 둔다.
-      set({ periodKey: targetWeek, canGoPreviousPeriod: false })
-      await loadPeriod(set, 'weekly', targetWeek, ocids, new Date(), myGeneration)
+      set({ periodKey: targetWeek })
     }
   },
 
   async cancelManualCompletion(rowKey) {
-    const row = get().rows.find((candidate) => matchesRowKey(candidate, rowKey))
-    if (row === undefined) {
-      throw new Error('cancelManualCompletion: 존재하지 않는 보스 행입니다')
-    }
-
+    const row = findRow(get().tab, get().periodKey, rowKey, 'cancelManualCompletion')
     await cancelManualCompletion(
-      {
-        ocid: row.ocid,
-        bossKey: row.bossKey,
-        difficulty: row.difficulty,
-        periodKey: row.periodKey,
-      },
+      { ocid: row.ocid, bossKey: row.bossKey, difficulty: row.difficulty, periodKey: row.periodKey },
       new Date(),
     )
-
-    await get().refresh(get().trackedOcids ?? [], { inPlace: true, skipSync: true })
   },
 
   async setBossDrops(rowKey, drops) {
-    const row = get().rows.find((candidate) => matchesRowKey(candidate, rowKey))
-    if (row === undefined) {
-      throw new Error('setBossDrops: 존재하지 않는 보스 행입니다')
-    }
+    const { tab, periodKey } = get()
+    const row = findRow(tab, periodKey, rowKey, 'setBossDrops')
+    // 저장에서 빠진 드롭을 알려면 쓰기 전의 드롭이 필요하다. 쓰기가 끝나면 쿼리가 다시 읽어 옛 값이 사라진다.
+    const key = dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)
+    const before = readPeriodSnapshot(tab, periodKey)?.dropsByRowKey[key] ?? []
 
     // 한 보스/기간의 드롭 집합을 통째로 교체한다(replace-all).
     const now = new Date()
@@ -2222,9 +292,8 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
       { name: row.world, key: row.worldKey },
     )
 
-    // 저장한 드롭 전부를 여기서 서버로 한 건씩 보낸다(시세 표본). 가격 편집 화면과 같은 규칙이고
-    // 가격이 없는 드롭도 보낸다(서버가 pending · skipped 로 든다). **기기 저장이 끝난 뒤이고 결과를
-    // 안 기다린다.** 식별자는 메모리의 드롭에 없을 수 있어(방금 적은 드롭) 저장소가 돌려준 값을 쓴다.
+    // 저장한 드롭 전부를 서버로 한 건씩 보낸다(시세 표본). 가격이 없는 드롭도 보낸다(서버가 pending · skipped 로 든다).
+    // **기기 저장이 끝난 뒤이고 결과를 안 기다린다.** 식별자는 메모리의 드롭에 없을 수 있어 저장소가 돌려준 값을 쓴다.
     const saved = drops.map((drop, index) => ({ ...drop, dropRecordId: ids[index] ?? drop.dropRecordId }))
     for (const drop of saved) {
       if (drop.dropRecordId === null) continue
@@ -2232,28 +301,13 @@ export const useBossProfitStore = create<BossProfitStore>()((rawSet, get) => {
     }
 
     // 저장에서 빠진 드롭은 기기에서 기록이 사라진 것이다. 서버의 그 줄을 deleted 로 표시하는 요청이다.
-    // 해제하고 다시 고른 드롭은 저장소가 신분으로 식별자를 물려주므로 saved 에 그대로 있다.
-    const key = dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)
     const savedIds = new Set(saved.map((drop) => drop.dropRecordId))
-    for (const drop of get().dropsByRowKey[key] ?? []) {
+    for (const drop of before) {
       if (drop.dropRecordId === null || savedIds.has(drop.dropRecordId)) continue
       void reportDropRemoved(drop.dropRecordId, now)
     }
 
-    // dropsByRowKey 는 rows 와 독립된 상태라 setPartySize 와 달리 latestSyncSnapshot 이중 갱신이
-    // 필요 없다. 탭 전환·기간 이동 시 loadPeriod 가 DB 에서 다시 로드한다.
-    set({ dropsByRowKey: { ...get().dropsByRowKey, [key]: saved } })
     // 드롭을 전부 뺀 저장은 지우기라 리뷰 요청의 셈에 넣지 않는다.
     if (saved.length > 0) countCoreSave()
   },
-
-  applyExternalDropEdit(ocid, bossKey, difficulty, periodKey, drops) {
-    set({
-      dropsByRowKey: {
-        ...get().dropsByRowKey,
-        [dropRowKey(ocid, bossKey, difficulty, periodKey)]: drops,
-      },
-    })
-  },
-  }
-})
+}))
