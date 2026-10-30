@@ -20,6 +20,7 @@
 | `features/resumable-task/` · `app/resumable-task/` | 이어서 하는 작업의 러너 · 등록부 · 모달을 띄우는 `TaskHost` |
 | `storage/pending-tasks.ts` | 끝나지 않은 작업 표시(Preferences `pendingTasks`) |
 | `storage/record-revision-batch.ts` | 기록을 여러 건 쓰는 반복의 판 알림을 한 번으로 모은다 |
+| `features/query/invalidation.ts` | 표의 판이 오르면 그 표를 읽는 쿼리를 무효화한다. 기록을 쓴 쪽이 화면을 몰라도 된다([[ADR-142]] 결정 6) |
 
 ## 실패마다 하는 일
 

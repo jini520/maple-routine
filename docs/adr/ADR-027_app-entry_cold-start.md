@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-016(🔗 줄) · ADR-101 · ADR-149
-> 관련 소스: `app/AppShell.tsx` · `app/prehydrate.ts` · `features/prehydrate.ts` · `features/content-scheduler/store.ts` · `features/boss-scheduler/store.ts` · `features/boss-profit/store.ts` · `features/schedule-sync/character-roster.ts`
+> 관련 소스: `app/AppShell.tsx` · `app/prehydrate.ts` · `features/prehydrate.ts` · `features/schedule-sync/schedule-query.ts` · `features/boss-profit/period-query.ts` · `features/schedule-sync/character-roster.ts`
 
 ## 배경
 
@@ -21,13 +21,13 @@
 ### 결정 1. 캐시가 있으면 다시 받는 동안에도 그 값을 보여 준다
 
 저장된 값이 있으면 먼저 그 값으로 화면을 채우고, 새로 받은 응답이 오면 덮어쓴다. 다시 받는 동안 스피너로
-목록을 가리지 않는다. 컨텐츠 · 보스 스케줄러 스토어의 `refresh`, 캐릭터 후보 목록
-(`getCharacterPickerRoster`), 캐릭터 관리 화면이 이 규칙을 따른다. 받다가 실패해도 화면에 있던 값은
-그대로 두고, 오래된 값이라는 것은 `StaleBanner` 로 알린다.
+목록을 가리지 않는다. 스케줄 회차(`refreshSchedules`. 회차가 도는 동안 캐릭터 열쇠의 든 값이 그대로 보인다),
+캐릭터 후보 목록(`getCharacterPickerRoster`), 캐릭터 관리 화면이 이 규칙을 따른다. 받다가 실패해도 화면에 있던
+값은 그대로 두고, 오래된 값이라는 것은 `StaleBanner` 로 알린다.
 
 ### 결정 2. 추적 목록을 아직 읽지 않았으면 빈 상태를 그리지 않는다
 
-세 탭 스토어의 `trackedOcids` 가 `null` 이면 저장소를 아직 읽지 않았다는 뜻이고, 빈 배열이면 추적하는
+화면이 받는 `trackedOcids` 가 `null` 이면 저장소를 아직 읽지 않았다는 뜻이고, 빈 배열이면 추적하는
 캐릭터가 없다는 뜻이다. 앞의 것을 빈 상태로 그리면 첫 화면이 아직 모르는 사실을 단정하게 된다. 그래서
 `ContentScreen` · `BossScreen` · `BossProfitScreen` 은 빈 상태를 이렇게 판정한다.
 
@@ -37,43 +37,43 @@ const isEmpty = trackedOcids !== null && trackedOcids.length === 0
 
 `null` 이면 빈 상태 대신 로딩을 그린다. 빈 상태는 저장소를 읽고 캐릭터가 없다는 것을 확인한 뒤에만 나온다.
 
-### 결정 3. 앱이 열리면 탭 스토어 셋을 미리 읽어 둔다
+### 결정 3. 앱이 열리면 탭이 그릴 것을 미리 받아 둔다
 
 결정 2 만으로는 정확한 로딩 화면이 잠깐 보이는 것까지는 막지 못한다. 그래서 사용자가 탭을 누르기 전에
-읽기를 끝내 둔다. `AppShell` 은 진입 단계가 `ready` 가 되면 `prehydrateTabStores` 를 부르고, 이 함수는
-컨텐츠 · 보스 · 보스 수익 스토어의 `loadTrackedOcids()` 를 미리 부른다. 스플래시가 떠 있는 동안 끝나므로
-탭에 들어가면 바로 목록이 보인다.
+받기를 끝내 둔다. `AppShell` 은 진입 단계가 `ready` 가 되면 `prehydrateTabStores` 를 부르고, 이 함수
+(`features/prehydrate.ts`)는 캐릭터 선택 스토어의 `hydrate()` · 스케줄 회차(`prefetchSchedules`) · 보스 수익의
+이번 주(`prefetchCurrentWeekProfit`)를 차례로 부른다. 스플래시가 떠 있는 동안 끝나므로 탭에 들어가면 바로
+목록이 보인다.
 
 - 진입 단계가 `ready` 가 아니면 부르지 않는다. 일정 동기화는 API 키와 캐릭터가 없으면 실패하므로, 로그인이나
-  캐릭터 설정 중에 돌리면 스토어가 오류 상태로 시작하고 토스트까지 뜬다.
-- 한 스토어가 실패해도 던지지 않고 다음 스토어를 계속 읽는다. 미리 읽기는 부팅에 꼭 필요한 절차가 아니다.
+  캐릭터 설정 중에 돌리면 회차 쿼리가 오류 상태로 시작하고 토스트까지 뜬다.
+- 한 단계가 실패해도 던지지 않고 다음 단계를 계속 돌린다. 미리 받기는 부팅에 꼭 필요한 절차가 아니다.
   실패한 탭은 사용자가 들어갈 때 화면이 다시 부르고, 그때 실패하면 그 화면의 오류 처리를 따른다.
-- 대신 사용자가 끝내 들어가지 않는 탭의 저장소도 부팅 때 미리 읽게 된다. 네트워크는 결정 4 의 조건
-  때문에 더 나가지 않는다.
+- 네트워크는 회차 한 번이다. 보스 수익의 이번 주는 그 회차가 채운 캐시와 기기 DB 에서 만든다.
 
-### 결정 4. 세 스토어는 차례대로 읽는다
+### 결정 4. 예열은 저장된 캐시를 올린 뒤, 회차 다음에 보스 수익을 읽는다
 
-진입할 때 다시 받을지는 두 조건으로 정한다. 이번 실행에서 동기화를 시도했는지와, 캐시가 신선한지다.
-캐시는 앞 회차가 캐시를 다 쓴 뒤에야 신선해진다. 세 스토어를 동시에 띄우면 셋 다 옛 `syncedAt` 을 보고
-같은 응답을 세 번 받는다.
+`prehydrateTabStores` 는 `whenQueryCacheRestored` 를 먼저 기다린다. 복원 전에 회차를 돌리면 옛 캐시를 못 보고
+빈 캐시로 판단한다([[ADR-142]] 결정 7).
 
-그래서 `features/prehydrate.ts` 는 컨텐츠 → 보스 → 보스 수익 순서로 `await` 하며 하나씩 읽는다. 이 순서는
-사용자가 실제로 탭을 누르는 순서와 같다.
+그다음 회차 → 보스 수익 이번 주 순서로 `await` 하며 하나씩 돈다. 회차가 자동 기록을 쓴 뒤에 읽어야 이번 주
+스냅샷에 그 기록까지 들어, today 의 결정석 · 수익 위젯이 한 번에 선다. 동시에 띄우면 보스 수익이 기록 전 값을
+먼저 들고, 회차가 끝나 판이 오르면 한 번 더 읽는다.
 
-### 결정 5. `loadTrackedOcids()` 를 동시에 부르면 한 번만 돈다
+### 결정 5. 예열과 화면이 같은 회차를 동시에 부르면 한 번만 돈다
 
-미리 읽는 동안 화면도 마운트되어 같은 `loadTrackedOcids()` 를 부른다. 첫 탭인 컨텐츠는 반드시 겹친다. 두
-호출이 각각 동기화로 이어지면 결정 4 가 막은 중복이 한 스토어 안에서 다시 생긴다.
+미리 받는 동안 화면도 마운트되어 같은 회차를 부른다. 첫 탭인 today 는 반드시 겹친다. 두 호출이 각각
+`syncSchedules` 로 이어지면 같은 응답을 두 번 받는다.
 
-그래서 세 스토어는 모듈 수준에 진행 중인 `Promise`(`hydration`)를 하나 두고, 돌고 있는 회차가 있으면 그것을
-그대로 돌려준다. 끝나면 비운다. 앱이 켜져 있는 동안 한 번만 도는 것이 아니라, 동시에 하나만 돈다. 진입할 때 다시 받는 기능은 계속
-살아 있어야 하기 때문이다.
+회차는 쿼리 하나(`scheduleRound()`)라 같은 열쇠의 동시 요청을 TanStack Query 가 하나로 합친다. 돌고 있는 회차가
+있으면 그 결과를 함께 받고, 끝나면 다음 요청이 새 회차를 연다. 앱이 켜져 있는 동안 한 번만 도는 것이 아니라
+동시에 하나만 돈다. 진입할 때 다시 받는 기능은 계속 살아 있어야 하기 때문이다.
 
-### 결정 6. 미리 읽기는 동적 `import()` 로 스토어를 불러온다
+### 결정 6. 미리 받기는 동적 `import()` 로 불러온다
 
-이 앱의 Metro 는 `inlineRequires` 를 쓰지 않아서, `AppShell` 이 세 스토어를 정적으로 import 하면 스토어와 그것이
-불러오는 `data/*.json` 이 첫 렌더 전에 평가된다. 그 평가가 첫 화면에 영향이 없다는 근거가 없으므로 동적
-`import()` 로 불러 첫 렌더 뒤로 미룬다.
+이 앱의 Metro 는 `inlineRequires` 를 쓰지 않아서, `AppShell` 이 `features/prehydrate.ts` 를 정적으로 import 하면
+그것이 불러오는 회차 · 보스 수익 모듈이 첫 렌더 전에 평가된다. 그 평가가 첫 화면에 영향이 없다는 근거가 없으므로
+동적 `import()` 로 불러 첫 렌더 뒤로 미룬다.
 
 동적 `import()` 한 줄은 `app/prehydrate.ts` 에만 둔다. jest 에서 `import()` 는 바로 던져서, 셸 안에 두면
 마운트 자체가 실패한다. 파일로 따로 빼 두면 테스트가 이 모듈만 목으로 바꿔 끼울 수 있다.
@@ -107,9 +107,9 @@ const isEmpty = trackedOcids !== null && trackedOcids.length === 0
 | 파일 | 확인하는 것 |
 |---|---|
 | `app/content-scheduler/__tests__/ContentScreen.test.tsx` · `app/boss-scheduler/__tests__/BossScreen.test.tsx` · `app/boss-profit/__tests__/BossProfitScreen.test.tsx` | 결정 2: `trackedOcids` 가 `null` 이면 빈 상태 대신 로딩을 그리는지 본다 |
-| `features/__tests__/prehydrate.spec.ts` | 결정 3 · 4: 세 스토어를 차례대로 읽는지, 하나가 실패해도 나머지를 읽고 던지지 않는지 본다 |
-| `__tests__/boot-order.test.tsx` | 결정 3: 미리 읽기가 앱이 열렸을 때만 도는지 본다 |
-| `features/content-scheduler/__tests__/store.spec.ts` · `features/boss-scheduler/__tests__/store.spec.ts` · `features/boss-profit/__tests__/store.spec.ts` | 결정 5: `loadTrackedOcids` 를 동시에 두 번 불러도 한 회차만 도는지 본다 |
+| `features/__tests__/prehydrate.spec.ts` | 결정 3 · 4: 복원을 기다린 뒤 선택 · 회차 · 보스 수익 이번 주를 차례로 예열하는지, 하나가 실패해도 나머지를 돌리고 던지지 않는지 본다 |
+| `__tests__/boot-order.test.tsx` | 결정 3: 미리 받기가 앱이 열렸을 때만 도는지 본다 |
+| `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 5: 신선하면 자동 진입은 안 받고 당김은 받는지, 회차가 던져도 캐릭터 열쇠가 그대로인지 본다 |
 | `features/schedule-sync/__tests__/schedule-sync.spec.ts` | 결정 7: 콜드 캐시에서 확인된 캐릭터를 바로 내보내는지, 한 명도 확인 못 하면 빈 목록을 마지막에만 내보내는지 본다. 결정 8: 401 · 429 가 먼저 정해지면 뒤에 온 성공을 내보내지 않고 던지는지 본다 |
 
 ## 번호 기록

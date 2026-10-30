@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import type { CharacterIssueKind } from '../../features/boss-profit/round-view'
 import type { BossProfitStore } from '../../features/boss-profit/store'
 import type { RecordedDrop } from '../../types/drops'
 
@@ -38,6 +39,8 @@ export interface BossProfitContextValue {
    * 완료 행은 안 본다. 그쪽은 기록이 자기 스냅샷을 들고 있다.
    */
   partyPlans: BossProfitStore['partyPlans']
+  /** 동기화가 실패한 캐릭터의 표식. 회차 쿼리에서 온다. 행이 직접 완료를 적을 수 있는지가 이것에 갈린다. */
+  characterIssues: Readonly<Record<string, CharacterIssueKind>>
   setRowParty: BossProfitStore['setRowParty']
   setBossDrops: BossProfitStore['setBossDrops']
   /** 주차 행의 조회·다시 시도. 이 기간을 다시 로드한다(store.retryPeriod). */

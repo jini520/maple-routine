@@ -149,11 +149,10 @@ function identityOf(parts: {
  *
  * ## 왜 저장 계층에 있나
  *
- * 이 테이블에는 캐시가 **셋**이다. `boss-profit/store`(`dropsByRowKey`) · `drop-price-store` ·
- * `drop-history-store`(전 기간 집계). 앞의 둘은 서로를 직접 부르는 것으로 맞춘다
- * (`applyExternalDropEdit`, 새로고침해야 반영된다 보고의 처방). 그 방식은 **쓰는 쪽이
- * 읽는 쪽을 전부 알아야** 해서, 캐시가 하나 늘 때마다 세 호출부를 다시 훑어야 한다. 실제로
- * `drop-history-store` 가 그렇게 빠졌다.
+ * 이 테이블을 읽는 캐시가 **셋**이다. 보스 수익 기간 쿼리(`period-query`, `dropsByRowKey`) · `drop-price-store` ·
+ * 드롭 히스토리 쿼리(`drop-history-query`, 전 기간 집계). 쓰는 쪽이 읽는 쪽을 직접 불러 맞추는 방식은 **쓰는 쪽이
+ * 읽는 쪽을 전부 알아야** 해서, 캐시가 하나 늘 때마다 모든 호출부를 다시 훑어야 한다. 실제로
+ * 전 기간 집계가 그렇게 빠진 적이 있다. 지금은 이 판을 쿼리 무효화(`features/query/invalidation.ts`)가 구독한다.
  *
  * 이 수는 그 방향을 뒤집는다. **쓰기 경로가 이 함수 하나뿐**이므로(세 호출부가 전부 여기로 온다)
  * 여기서 한 번 올리면 캐시가 몇 개든 물어볼 수 있는 상태가 되고, 새 캐시가 생겨도 쓰는 쪽은

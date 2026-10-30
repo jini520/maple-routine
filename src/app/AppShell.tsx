@@ -4,7 +4,6 @@ import { useDropEffectStore } from '../features/drop-effect/store'
 import { useQuickLinksStore } from '../features/quick-links/store'
 import { startKeyboardHeightRecorder } from '../features/input-card/keyboard-height'
 import { loadMesoUnits } from '../features/input-card/meso-unit'
-import { useDataFreshness } from '../features/refresh/freshness'
 import { useNoticeStore } from '../features/notice/store'
 import { requestNotificationReconcile } from '../features/local-notifications/run'
 import { fillLegacyAccountIds } from '../features/auth/legacy-account-ids'
@@ -81,7 +80,6 @@ function ReadyShell(): React.JSX.Element {
   const restoreQuickLinks = useQuickLinksStore((state) => state.restoreFromStorage)
   const restoreNotice = useNoticeStore((state) => state.restore)
   const resubscribeNotice = useNoticeStore((state) => state.resubscribe)
-  const restoreFreshness = useDataFreshness((state) => state.restore)
   const isKeyboardVisible = useKeyboardVisible()
 
   const isReady = stage === 'ready'
@@ -152,13 +150,6 @@ function ReadyShell(): React.JSX.Element {
     void requestNotificationReconcile()
   }, [])
   useReturnToForeground(requestNotificationReconcile)
-
-  // 페이지별 갱신 시각. 앱을 다시 켜도 화면이 그리는 것은 캐시에 있던 그 데이터라, 시각만
-  // 비우면 그 데이터가 언제 것인지 말할 방법이 사라진다.
-  useEffect(() => {
-    void restoreFreshness()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   // 여기서 광고 SDK 초기화와 첫 광고 사전 로드를 불렀다. 전면광고를 걷으며 지웠다. 표시만 막고
   // 사전 로드를 남기면 매 실행 **뜨지 않을 광고** 를 요청해

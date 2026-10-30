@@ -49,7 +49,7 @@ docs/
 | 카테고리 | 문서 | 다루는 것 | 결정 |
 |---|---|---|---|
 | `product` | [foundation/product.md](./foundation/product.md) | 앱이 무엇이고 누구를 위한 것인지 | - |
-| `architecture` | [foundation/architecture.md](./foundation/architecture.md) | 디렉터리 · 계층 · 어댑터 경계 · 테스트 | [[ADR-004]] · [[ADR-005]] · [[ADR-006]] · [[ADR-142]] |
+| `architecture` | [foundation/architecture.md](./foundation/architecture.md) | 디렉터리 · 계층 · 어댑터 경계 · 쿼리 캐시 · 테스트 | [[ADR-004]] · [[ADR-005]] · [[ADR-006]] · [[ADR-142]] |
 | `navigation` | [foundation/navigation.md](./foundation/navigation.md) | 화면 스택 · 하단바 | [[ADR-059]] |
 | `design-system` | [foundation/design-system.md](./foundation/design-system.md) | 공용 부품 · 시트 · 화면 틀 · 글자 | [[ADR-060]] · [[ADR-061]] · [[ADR-062]] · [[ADR-063]] · [[ADR-064]] |
 | `nexon-api` | [foundation/nexon-api.md](./foundation/nexon-api.md) | 넥슨 Open API 호출과 동기화 | [[ADR-021]] |

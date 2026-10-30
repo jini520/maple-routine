@@ -54,7 +54,6 @@ jest.mock('../../../storage/tracking-mode', () => ({
 const { getTrackingMode: getTrackingModeMock, setTrackingMode: setTrackingModeMock } = jest.requireMock('../../../storage/tracking-mode') as Record<string, jest.Mock>
 
 import { resetSyncSingleFlightForTests } from '../../schedule-sync/schedule-sync'
-import { resetSyncRunStateForTests } from '../../schedule-sync/sync-run-state'
 import { useTrackingModeStore } from '../store'
 import { findContent } from '../../../lib/scheduler/contents'
 
@@ -105,7 +104,6 @@ function stateFor(ocid: string): SchedulerCharacterState {
 
 beforeEach(() => {
   installFakePreferences()
-  resetSyncRunStateForTests()
   resetSyncSingleFlightForTests()
   setManualTrackedContentMock.mockReset()
   setManualTrackedContentMock.mockResolvedValue(undefined)

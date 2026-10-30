@@ -1,47 +1,35 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
 jest.mock('../../../features/stats/load', () => ({
-  loadStatsDays: jest.fn(),
   loadStatsImages: jest.fn().mockResolvedValue(new Map()),
-  statsDataRevision: jest.fn().mockReturnValue(0),
   loadCumulativeStart: jest.fn().mockResolvedValue(null),
   saveCumulativeStart: jest.fn().mockResolvedValue(undefined),
 }))
+// 날짜별 줄은 쿼리가 든다. 화면은 그 결과만 받으므로 쿼리 쪽을 통째로 갈아 끼운다.
+jest.mock('../../../features/cashbook/ledger-query', () => ({ useLedgerDays: jest.fn() }))
+// 머리 아래 `hh:mm:ss 기준` 은 회차 쿼리를 읽는다. 이 화면의 일이 아니라 비워 둔다.
+jest.mock('../../../features/refresh/freshness', () => ({ useRealtimeFetchedAt: jest.fn(() => null) }))
 
 const mockReload = jest.fn()
 const mockRequestDateRange = jest.fn()
-let mockSetLayerRevision: ((value: number) => void) | null = null
 let mockCollecting = false
 let mockStatus: 'idle' | 'filling' | 'ready' = 'ready'
 jest.mock('../../../features/ledger/useLedgerData', () => ({
-  useLedgerData: () => {
-    const react = require('react') as typeof import('react')
-    const [revision, setRevision] = react.useState(1)
-    mockSetLayerRevision = setRevision
-    return { status: mockStatus, collecting: mockCollecting, revision, reload: mockReload, requestDateRange: mockRequestDateRange }
-  },
-}))
-
-jest.mock('@react-navigation/native', () => ({
-  ...jest.requireActual('@react-navigation/native'),
-  useFocusEffect: (callback: () => void) => {
-    const react = require('react') as typeof import('react')
-    react.useEffect(() => {
-      callback()
-    }, [callback])
-  },
+  useLedgerData: () => ({
+    status: mockStatus,
+    collecting: mockCollecting,
+    reload: mockReload,
+    requestDateRange: mockRequestDateRange,
+  }),
 }))
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { useSettlementStore } from '../../../features/settlement/store'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
-import { apiWindowRange } from '../../../features/cashbook/range'
+import { apiWindowRange, historyFloorDateKey } from '../../../features/cashbook/range'
 import { StatsScreen } from '../StatsScreen'
 
-const { loadStatsDays, statsDataRevision } = jest.requireMock('../../../features/stats/load') as {
-  loadStatsDays: jest.Mock
-  statsDataRevision: jest.Mock
-}
+const { useLedgerDays } = jest.requireMock('../../../features/cashbook/ledger-query') as { useLedgerDays: jest.Mock }
 
 const 지금 = Date.parse('2026-09-29T05:00:00Z')
 
@@ -71,6 +59,11 @@ function 지출(dateKey: string, meso: number): unknown {
   }
 }
 
+const 기록 = {
+  '2026-09-18': [수입('2026-09-18', 100_000_000)],
+  '2026-09-25': [수입('2026-09-25', 500_000_000), 지출('2026-09-25', 200_000_000)],
+}
+
 beforeEach(() => {
   installNoopNativePorts()
   jest.useFakeTimers({ now: 지금 })
@@ -78,11 +71,7 @@ beforeEach(() => {
   mockRequestDateRange.mockReset()
   mockCollecting = false
   mockStatus = 'ready'
-  statsDataRevision.mockReset().mockReturnValue(0)
-  loadStatsDays.mockReset().mockResolvedValue({
-    '2026-09-18': [수입('2026-09-18', 100_000_000)],
-    '2026-09-25': [수입('2026-09-25', 500_000_000), 지출('2026-09-25', 200_000_000)],
-  })
+  useLedgerDays.mockReset().mockReturnValue({ days: 기록, isFetching: false })
 })
 
 afterEach(() => {
@@ -148,30 +137,21 @@ describe('StatsScreen', () => {
     expect(mockRequestDateRange).toHaveBeenLastCalledWith(apiWindowRange('2026-06', '2026-09-29'))
   })
 
-  // 주를 옮겨도 18개월치는 이미 들고 있다. 층의 회차가 끝나도 읽는 표가 안 바뀌었으면 다시 읽지 않는다.
-  it('기간을 옮기거나 층의 판만 오르면 다시 읽지 않는다', async () => {
+  // 누적 카드가 처음부터 더하므로 그 범위가 나머지 카드의 범위를 다 덮는다. 기간을 옮겨도 범위가 같아 쿼리가 하나다.
+  it('날짜별 줄은 가장 이른 조회일부터 오늘까지 한 범위로 묻고, 기간을 옮겨도 그 범위다', async () => {
     const view = await 그리기()
-    expect(loadStatsDays).toHaveBeenCalledTimes(1)
+    const 전기간 = { from: historyFloorDateKey('2026-09-29'), to: '2026-09-29' }
+    expect(useLedgerDays).toHaveBeenLastCalledWith(전기간)
 
     await act(async () => {
       fireEvent.press(view.getByLabelText('이전 주'))
     })
     await act(async () => {
-      mockSetLayerRevision?.(2)
+      fireEvent.press(view.getByLabelText('월간'))
     })
 
-    expect(loadStatsDays).toHaveBeenCalledTimes(1)
-  })
-
-  it('읽는 표의 판이 오른 뒤 층의 회차가 끝나면 다시 읽는다', async () => {
-    await 그리기()
-
-    statsDataRevision.mockReturnValue(5)
-    await act(async () => {
-      mockSetLayerRevision?.(2)
-    })
-
-    expect(loadStatsDays).toHaveBeenCalledTimes(2)
+    const 물은범위 = new Set(useLedgerDays.mock.calls.map(([range]: [{ from: string; to: string }]) => `${range.from}~${range.to}`))
+    expect([...물은범위]).toEqual([`${전기간.from}~${전기간.to}`])
   })
 
   // 읽기 전에 `0 메소` 를 그리면 기록이 없다는 말로 읽힌다. 기간 줄과 카드 제목은 그대로 선다.
@@ -179,7 +159,7 @@ describe('StatsScreen', () => {
     const 제목들 = ['순 수익', '추이', '캐릭터별', '수입 내역', '지출 내역', '보스별 수입', '누적 순 수익']
 
     it('첫 읽기가 끝나기 전에는 카드 본문 자리에 스켈레톤이 선다', async () => {
-      loadStatsDays.mockReset().mockReturnValue(new Promise(() => undefined))
+      useLedgerDays.mockReturnValue({ days: null, isFetching: true })
       const view = await 그리기()
 
       expect(view.getByTestId('stats-skeleton')).toBeTruthy()

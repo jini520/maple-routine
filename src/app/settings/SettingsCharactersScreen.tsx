@@ -33,7 +33,6 @@ import { TaskProgressModal } from '../../components/organisms/TaskProgressModal/
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { reloadTabStores } from './reload-tab-stores'
 import { SettingsActionBar } from './SettingsActionBar'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
@@ -71,8 +70,6 @@ export function SettingsCharactersScreen(): React.JSX.Element {
       setSaveProgress(null)
       navigation.goBack()
     }
-    // 스케줄러 둘은 캐시의 추적 목록을 보므로 저장과 함께 바뀐다. 보스 수익만 자기 스토어를 다시 읽는다.
-    reloadTabStores(['profit'])
     // 다른 메이플 ID 의 캐릭터를 더했으면 그 ID 의 등급을 바로 묻는다.
     void useMvpAskStore.getState().evaluate(new Date())
   }

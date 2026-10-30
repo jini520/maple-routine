@@ -7,15 +7,15 @@
  *
  * 삭제·수정 기능은 두지 않는다. 기록 편집은 드롭 입력 시트 한 곳에서만 하고, 거기서 지운 것은
  * 같은 테이블을 읽는 이 화면에서 자동으로 사라진다. 쿼리도 화면이 짜지 않는다.
- * `useDropHistoryStore.load()` 가 전 기간 조회·획득 불가 필터·가뭄 집계를 전부 갖는다.
+ * `useDropHistory()` 의 쿼리가 전 기간 조회·획득 불가 필터·가뭄 집계를 전부 갖는다.
  */
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Image, View } from 'react-native'
 
 import {
-  useDropHistoryStore,
+  useDropHistory,
   type DropHistoryCharacter,
-} from '../../features/boss-profit/drop-history-store'
+} from '../../features/boss-profit/drop-history-query'
 import { formatBossProfitPeriodLabel } from '../../lib/boss/boss-profit-period'
 import {
   formatDropHistoryLine,
@@ -249,11 +249,8 @@ function DropHistoryPeriodSection(props: {
 export function DropHistoryScreen(): React.JSX.Element {
   const navigation = useScreenNavigation()
   const topSafeAreaPx = useTopSafeAreaPx()
-  const { status, groups, drought, charactersByOcid, load } = useDropHistoryStore()
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  // 쿼리가 마운트에 스스로 읽는다. 기록 · 보스 기록의 판이 오르면 무효화되어 다시 읽힌다.
+  const { status, groups, drought, charactersByOcid, reload } = useDropHistory()
 
   const now = new Date()
 
@@ -285,9 +282,7 @@ export function DropHistoryScreen(): React.JSX.Element {
           `screen-<라우트 이름>` 은 내비게이션 테스트가 그 라우트로 밀면 그 화면이 열리는가 를
           묻는 이름이다. */}
       <View testID="screen-DropHistory" className="gap-4 px-4 pb-4">
-        {(status === 'idle' || status === 'loading') && (
-          <LoadingState size="page" message="불러오고 있어요" />
-        )}
+        {status === 'loading' && <LoadingState size="page" message="불러오고 있어요" />}
 
         {/* 실패를 빈 목록으로 위장하지 않는다. 기록이 없습니다 는 확정된 사실일 때만 할 수 있는
             말이고, 조회가 실패한 상태에서는 기록이 있는지조차 모른다. */}
@@ -295,7 +290,7 @@ export function DropHistoryScreen(): React.JSX.Element {
           <ErrorState
             title="히스토리를 불러오지 못했습니다"
             description="저장된 기록을 읽지 못했습니다. 다시 시도해주세요."
-            action={{ label: '다시 시도', onClick: () => void load() }}
+            action={{ label: '다시 시도', onClick: () => void reload() }}
           />
         )}
 

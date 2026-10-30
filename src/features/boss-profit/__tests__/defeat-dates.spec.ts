@@ -10,6 +10,7 @@ jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/boss-profit', () => ({
   getUndatedBossProfitRecords: jest.fn(),
   setBossProfitDefeatedOn: jest.fn(),
+  getBossProfitRecordsRevision: jest.fn(() => 0),
 }))
 jest.mock('../../../storage/schedule-probe-ledger', () => ({
   getScheduleProbeLedger: jest.fn(),
@@ -37,6 +38,7 @@ const { getAuthConfig: getAuthConfigMock } = jest.requireMock('../../../storage/
 const {
   getUndatedBossProfitRecords: getUndatedMock,
   setBossProfitDefeatedOn: setDefeatedOnMock,
+  getBossProfitRecordsRevision: recordsRevisionMock,
 } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 const {
   getScheduleProbeLedger: getLedgerMock,
@@ -56,6 +58,7 @@ beforeEach(() => {
   recordProbeMock.mockReset().mockResolvedValue(undefined)
   fetchStateMock.mockReset()
   refreshSettlementMock.mockReset().mockResolvedValue(undefined)
+  recordsRevisionMock.mockReset().mockReturnValue(0)
 })
 
 function observed(entries: Record<string, string[]>): Map<string, ReadonlySet<string>> {
@@ -607,6 +610,32 @@ describe('resolveDefeatDates: 두 화면이 같이 불러도 한 번만 돈다 (
     ])
 
     expect(first).toBe(second)
+    expect(getUndatedMock).toHaveBeenCalledTimes(1)
+  })
+
+  // 창 회차가 후보를 읽은 뒤에 스케줄 회차의 자동 기록이 오늘 기록을 쓰면, 그 기록은 앞 회차의 후보에 없다.
+  // 합류한 쪽이 그대로 돌아가면 오늘 결정석에 날짜가 안 붙는다.
+  it('합류한 회차가 후보를 읽은 뒤 기록 판이 올랐으면 끝나고 한 번 더 돈다', async () => {
+    getUndatedMock.mockResolvedValue([미확정_스우])
+    fetchStateMock.mockResolvedValue(schedulerState([]))
+    recordsRevisionMock.mockReturnValue(1)
+
+    const first = resolveDefeatDates(['ocid-1'], NOW)
+    // 자동 기록이 그 사이에 썼다.
+    recordsRevisionMock.mockReturnValue(2)
+    const second = resolveDefeatDates(['ocid-1'], NOW)
+    await Promise.all([first, second])
+
+    expect(getUndatedMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('합류한 뒤 기록 판이 그대로면 다시 안 돈다', async () => {
+    getUndatedMock.mockResolvedValue([미확정_스우])
+    fetchStateMock.mockResolvedValue(schedulerState([]))
+    recordsRevisionMock.mockReturnValue(1)
+
+    await Promise.all([resolveDefeatDates(['ocid-1'], NOW), resolveDefeatDates(['ocid-1'], NOW)])
+
     expect(getUndatedMock).toHaveBeenCalledTimes(1)
   })
 })

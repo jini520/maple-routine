@@ -23,6 +23,9 @@ import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
 import { eventWorldCharacterNames } from '../../lib/enhancement/world'
 import { SOUL_POTENTIAL_FROM } from '../../lib/enhancement/cost'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
+import { batchRecordWrites } from '../../storage/record-revision-batch'
+import { queryClient } from '../query/client'
+import { queryKeys } from '../query/keys'
 import { mapWithLimit } from '../schedule-window/gate'
 import { historyFloorDateKey } from '../cashbook/range'
 import { loadRecomputeProgress, saveRecomputeProgress } from '../../storage/enhancement-recomputes'
@@ -249,24 +252,33 @@ export async function collectEnhancementHistory(
     })
 
   const checkedAt = now.toISOString()
-  const results = await mapWithLimit(
-    jobs,
-    HISTORY_CALL_LIMIT,
-    async (job) => {
-      const { firstCursor, rows } = await fetchDay(credential, job)
-      const sources = rows.map((row) => ({ ...row, kind: job.kind }))
-      const totals = summarizeEnhancement(sources, eventNames)
-      await reportEnhancementAnomalies(enhancementAnomaliesOf(sources, eventNames, listError))
-      await replaceEnhancementTotals(accountId, job.kind, job.dateKey, totals, now)
-      // 목록을 못 받은 회차는 이벤트 월드를 가리지 못한 줄이 있어 굳히지 않는다. 다음 회차가 다시 받아 판정을 채운다.
-      const settled = job.dateKey < todayDateKey && eventNames !== null
-      await markEnhancementChecked(accountId, job.kind, job.dateKey, firstCursor, settled, checkedAt)
-      return true
-    },
-    (done) => onProgress?.(done, jobs.length),
+  // 한 회차의 쓰기를 한 묶음으로. 판 알림이 끝날 때 한 번이라 첫 수집의 93칸이 가계부를 93번 다시 읽게 하지 않는다.
+  const results = await batchRecordWrites(() =>
+    mapWithLimit(
+      jobs,
+      HISTORY_CALL_LIMIT,
+      async (job) => {
+        const { firstCursor, rows } = await fetchDay(credential, job)
+        const sources = rows.map((row) => ({ ...row, kind: job.kind }))
+        const totals = summarizeEnhancement(sources, eventNames)
+        await reportEnhancementAnomalies(enhancementAnomaliesOf(sources, eventNames, listError))
+        await replaceEnhancementTotals(accountId, job.kind, job.dateKey, totals, now)
+        // 목록을 못 받은 회차는 이벤트 월드를 가리지 못한 줄이 있어 굳히지 않는다. 다음 회차가 다시 받아 판정을 채운다.
+        const settled = job.dateKey < todayDateKey && eventNames !== null
+        await markEnhancementChecked(accountId, job.kind, job.dateKey, firstCursor, settled, checkedAt)
+        return true
+      },
+      (done) => onProgress?.(done, jobs.length),
+    ),
   )
   const failed = new Set(jobs.flatMap((job, index) => (results[index] === true ? [] : [checkKey(job.kind, job.dateKey)])))
   await saveRecomputes(accountId, chunks, failed, now)
+
+  // 오늘이 든 회차만 실시간이다. 머리의 `hh:mm:ss 기준` 이 이 시각과 스케줄 회차의 시각 중 늦은 쪽을 그린다. 지난 달은
+  // 확정된 기록이라 시각을 안 움직인다.
+  if (dateKeys.includes(todayDateKey)) {
+    queryClient.setQueryData(queryKeys.enhancementToday(), { fetchedAt: new Date().toISOString() })
+  }
 }
 
 /**

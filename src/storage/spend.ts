@@ -10,6 +10,7 @@
 import type { ItemKindKey, SpendCategoryKey } from '../lib/cashbook/categories'
 import { deleteEntry, insertEntry, readEntries, replaceEntry } from './cashbook-entries'
 import { spendEntryOf, spendRecordOf } from './cashbook-entry-shape'
+import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
 
@@ -111,19 +112,38 @@ function assertPointRate(record: SpendRecord): void {
   }
 }
 
-/** 지출 기록의 판. 넣기 · 고치기 · 지우기마다 오른다. 통계 화면이 가계부 시트의 쓰기를 알려고 본다 */
+/**
+ * 지출 기록의 판. 넣기 · 고치기 · 지우기마다 오른다. 이 표를 읽는 쿼리가 판이 오를 때 무효화된다
+ * (`features/query/invalidation.ts`). 쓰기 **뒤**에 올린다. 앞에 올리면 무효화된 쿼리가 쓰기 전 값을 읽는다.
+ */
 let spendRecordsRevision = 0
+const revisionListeners = new Set<() => void>()
 
 export function getSpendRecordsRevision(): number {
   return spendRecordsRevision
 }
 
-export async function insertSpendRecord(record: SpendRecord, nexonAccountId: string | null = null): Promise<void> {
+/** 판이 오를 때 부를 함수를 건다. 풀 함수를 돌려준다. `storage/boss-profit` 의 같은 이름 함수와 같은 물건이다. */
+export function subscribeSpendRecordsRevision(listener: () => void): () => void {
+  revisionListeners.add(listener)
+  return () => {
+    revisionListeners.delete(listener)
+  }
+}
+
+function bumpSpendRecordsRevision(): void {
   spendRecordsRevision += 1
+  notifyAfterBatch(() => {
+    for (const listener of revisionListeners) listener()
+  })
+}
+
+export async function insertSpendRecord(record: SpendRecord, nexonAccountId: string | null = null): Promise<void> {
   assertPointRate(record)
 
   const db = await getBossProfitDb()
   await inTransaction(db, () => insertEntry(db, spendEntryOf(record), nexonAccountId))
+  bumpSpendRecordsRevision()
 }
 
 /**
@@ -131,18 +151,18 @@ export async function insertSpendRecord(record: SpendRecord, nexonAccountId: str
  * 바뀐다. 넣을 때와 같은 검증을 탄다. 아니면 그 방어가 수정 쪽에서 반쪽이 된다.
  */
 export async function updateSpendRecord(record: SpendRecord, nexonAccountId: string | null = null): Promise<void> {
-  spendRecordsRevision += 1
   assertPointRate(record)
 
   const db = await getBossProfitDb()
   await inTransaction(db, () => replaceEntry(db, spendEntryOf(record), new Date(), nexonAccountId))
+  bumpSpendRecordsRevision()
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteSpendRecord(id: string): Promise<void> {
-  spendRecordsRevision += 1
   const db = await getBossProfitDb()
   await deleteEntry(db, id)
+  bumpSpendRecordsRevision()
 }
 
 /** 날짜 범위의 기록. **두 끝을 포함**한다. `ocid` 로 거르지 않는 이유는 `income.ts` 와 같다. */

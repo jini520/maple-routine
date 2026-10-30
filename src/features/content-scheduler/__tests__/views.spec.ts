@@ -45,7 +45,7 @@ function basic(level: number, overrides: Partial<CharacterBasicProfile> = {}): C
 }
 
 function round(overrides: Partial<ScheduleRoundResult> = {}): ScheduleRoundResult {
-  return { fetchedAt: '2026-10-30T05:00:00.000Z', ocids: [], outcomes: {}, stranded: [], ...overrides }
+  return { fetchedAt: '2026-10-30T05:00:00.000Z', receivedAt: null, ocids: [], outcomes: {}, stranded: [], ...overrides }
 }
 
 function snapshot(parts: {

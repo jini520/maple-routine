@@ -110,16 +110,16 @@ describe('TrackingModeModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  //  정정: 시드는 저장소를 채우지만 수동 모드의 표시 목록을 정하는 것은 스토어
-  // 메모리의 사본이고, RN 탭 화면은 마운트된 채 남아 스스로 다시 읽지 않는다. 그래서 적용이
-  // 끝나면 세 탭 스토어를 여기서 다시 읽힌다(안 그러면 자동 → 수동 직후 보스 탭이 빈 상태로 뜬다).
-  it('적용이 끝나면 컨텐츠·보스·수익 세 탭 스토어를 다시 읽힌다', async () => {
+  // 시드는 저장소를 채우지만 수동 모드의 표시 목록을 정하는 것은 스토어 메모리의 사본이고, RN 탭 화면은 마운트된 채
+  // 남아 스스로 다시 읽지 않는다. 그래서 적용이 끝나면 스케줄러 두 스토어를 여기서 다시 읽힌다(안 그러면 자동 → 수동
+  // 직후 보스 탭이 빈 상태로 뜬다). 보스 수익은 회차와 기록 판에 매인 쿼리라 안 부른다.
+  it('적용이 끝나면 컨텐츠·보스 두 탭 스토어를 다시 읽힌다', async () => {
     const view = await renderOverlay(<TrackingModeModal onClose={jest.fn()} />)
 
     await press(optionCard(view, 'manual'))
     await press(climb(view, '적용'))
 
-    expect(mockReloadTabStores).toHaveBeenCalledWith(['content', 'boss', 'profit'])
+    expect(mockReloadTabStores).toHaveBeenCalledWith(['content', 'boss'])
   })
 
   // 시드가 끝나기 전에 읽히면 그 회차가 옛 멤버십을 담는다. 순서가 계약이다.

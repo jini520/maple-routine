@@ -45,7 +45,6 @@ import { moveOcid } from '../../../hooks/useSelectionDraft'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
 import { SettingsCharactersScreen } from '../SettingsCharactersScreen'
-import { reloadTabStores } from '../reload-tab-stores'
 import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 
 // 팩토리 밖 변수를 참조하려면 이름이 `mock` 으로 시작해야 한다(babel-jest 규칙).
@@ -74,10 +73,9 @@ jest.mock('../../../features/schedule-sync/schedule-sync', () => ({
 }))
 
 // 추적 목록은 쿼리 캐시에서 온다. 이 하네스에는 쿼리 클라이언트가 없어 훅을 세운다. 저장은 `saveTrackedCharacters`
-// 하나이고, 저장 뒤 보스 수익을 다시 읽히는 것은 `reloadTabStores` 다. 둘 다 무엇으로 불렸는가만 본다.
+// 하나이고 무엇으로 불렸는가만 본다. 보스 수익은 회차와 기록 판에 매인 쿼리라 저장 뒤 따로 읽히지 않는다.
 jest.mock('../../../features/schedule-sync/use-schedule-queries', () => ({ useTrackedOcids: jest.fn() }))
 jest.mock('../../../features/schedule-sync/save-tracked', () => ({ saveTrackedCharacters: jest.fn() }))
-jest.mock('../reload-tab-stores', () => ({ reloadTabStores: jest.fn() }))
 // 저장 뒤 새 메이플 ID 의 등급을 묻는다.
 jest.mock('../../../features/mvp-grade/flow-store', () => ({
   useMvpAskStore: { getState: () => ({ evaluate: mockEvaluateMvpAsk }) },
@@ -97,7 +95,6 @@ const mockedClearRepresentative = jest.mocked(clearRepresentativeCharacter)
 const mockedGetLedger = jest.mocked(getScheduleProbeLedger)
 const mockedUseTrackedOcids = jest.mocked(useTrackedOcids)
 const mockedSaveTracked = jest.mocked(saveTrackedCharacters)
-const mockedReloadTabStores = jest.mocked(reloadTabStores)
 const mockedRoster = mockGetRoster as unknown as jest.MockedFunction<typeof getCharacterPickerRoster>
 
 const goBack = jest.fn()
@@ -784,17 +781,14 @@ describe('저장', () => {
     expect(isSaveDisabled(view)).toBe(false)
   })
 
-  // 스케줄러 둘은 캐시의 추적 목록을 보므로 저장과 함께 바뀐다. 다시 읽히는 것은 보스 수익 하나다.
-  it('목록을 먼저 쓰고 대표를 그 뒤에 쓴 다음 보스 수익 스토어만 다시 읽힌다', async () => {
+  // 스케줄러 둘과 보스 수익은 캐시의 추적 목록 · 회차를 보므로 저장과 함께 바뀐다. 화면이 따로 읽히는 것은 없다.
+  it('목록을 먼저 쓰고 대표를 그 뒤에 쓴다', async () => {
     const order: string[] = []
     mockedSaveTracked.mockImplementation(async () => {
       order.push('save')
     })
     mockedSetRepresentative.mockImplementation(async () => {
       order.push('representative')
-    })
-    mockedReloadTabStores.mockImplementation(() => {
-      order.push('reload')
     })
     mockTrackedOcids(['a1'])
     const view = await renderScreen()
@@ -807,8 +801,7 @@ describe('저장', () => {
     expect(mockedSaveTracked).toHaveBeenCalledWith(['a1', 'a2'], expect.any(Function))
     expect(mockedSetRepresentative).toHaveBeenCalledWith('a2')
     // 목록 저장이 먼저 돌아야 한다. `setTrackedCharacterOcids` 가 목록에 없는 대표를 지운다.
-    expect(order).toEqual(['save', 'representative', 'reload'])
-    expect(mockedReloadTabStores).toHaveBeenCalledWith(['profit'])
+    expect(order).toEqual(['save', 'representative'])
     expect(goBack).toHaveBeenCalled()
     expect(mockEvaluateMvpAsk).toHaveBeenCalled()
   })

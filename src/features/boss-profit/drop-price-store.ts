@@ -1,7 +1,7 @@
 /**
  * 가격 기록 화면의 상태. 한 주를 놓고 드롭에 값을 매긴다.
  *
- * 히스토리 스토어(`drop-history-store`)와 형제이되 축과 성격이 다르다: 저쪽은 **전 기간 읽기
+ * 히스토리 쿼리(`drop-history-query`)와 형제이되 축과 성격이 다르다: 저쪽은 **전 기간 읽기
  * 전용**이고 여기는 **한 주 쓰기**다. 그래서 저장 경로(`savePrice`·`skipPrice`)가 함께 산다.
  *
  * **왜 원본 레코드를 들고 있나**. 저장이 `replaceBossDropRecords`(그룹 통째 교체)라, 한 건의
@@ -39,7 +39,6 @@ import { dropShareFieldsOf } from '../../lib/drop/drop-price'
 import { withSqliteFallback, withSqliteTimeout } from './sqlite-guards'
 import { create } from 'zustand'
 import { dropShareSeedOf, toRecordedDrop } from './rows'
-import { useBossProfitStore } from './store'
 import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import { reportDropPrice } from '../server-sync/drop-price-sync'
 import type { BossDropRecord } from '../../storage/boss-drops'
@@ -461,13 +460,6 @@ async function writePrice(
     // 가격만 고치는 경로다. 월드는 기존 행이 물려주므로 여기서 모를 수 있다.
     NO_WORLD,
   )
-
-  // 보스 수익 화면은 스택 왕복에도 마운트를 유지하므로 자기 스냅샷을 다시 읽지 않는다. 여기서
-  // 알려주지 않으면 값이 새로고침해야 반영된다. 쓰기가 성공한 뒤에만 부른다. 실패한 값이 저쪽
-  // 화면에 남으면 저장된 것처럼 보인다.
-  useBossProfitStore
-    .getState()
-    .applyExternalDropEdit(entry.ocid, entry.bossKey, entry.difficulty, entry.periodKey, nextDrops)
 
   // 서버로 한 건 보낸다(시세 표본). **기기 저장이 끝난 뒤이고 결과를 안 기다린다** - 사용자가
   // 보는 것은 저장이고 전송은 거기 얹힌 일이다. 실패는 대기 표가 들고 다음 부팅에 다시 나간다.

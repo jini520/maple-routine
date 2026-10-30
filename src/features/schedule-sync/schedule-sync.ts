@@ -25,8 +25,6 @@ import type { MapleCharacter, SchedulerCharacterState, SharedProgressEntry } fro
 
 import { isMaintenanceSyncError, toScheduleSyncError } from './errors'
 import type { ScheduleSyncError } from './errors'
-import { latestSyncedAt } from '../../lib/data-freshness'
-import { useDataFreshness } from '../refresh/freshness'
 import { useRefreshProgress } from '../refresh/progress'
 import { refreshSettlement } from '../settlement/store'
 import { fetchCharacterBasicCached } from './character-basic-fetch'
@@ -36,7 +34,6 @@ import {
   resolveTrackedCharacterContext,
 } from './character-roster'
 import type { TrackedCharacterContext } from './character-roster'
-import { markSyncAttemptedThisRun } from './sync-run-state'
 import { persistUnavailable } from './stranded-characters'
 import { resolveDisplayRepresentative } from '../character-manage/derivations'
 import { getRepresentativeCharacter } from '../../storage/character-selection'
@@ -342,11 +339,6 @@ async function runSyncRound(
   ocids: string[],
   onProgress?: (completed: number, total: number) => void,
 ): Promise<CharacterScheduleSync[]> {
-  // 여기서부터 실제 네트워크가 나간다. 성공이 아니라 시도를 표시하므로 실패해도 표시한다.
-  // 오프라인에서 탭을 옮길 때마다 실패 호출이 반복되지 않게. 캐릭터별 신선도는 isSyncFresh 가
-  // 따로 본다.
-  markSyncAttemptedThisRun()
-
   // 추적 목록이 메이플 ID 경계를 넘으므로 선택 계정의 캐릭터를 받아 거르지 않는다. 전 계정에서
   // 찾고 각 캐릭터가 자기 계정을 들고 다닌다. 단일 계정에서는 결과가 완전히 같다.
   const { credential, characters: targets, allCharacters } = await resolveTrackedCharacterContext(ocids)
@@ -507,22 +499,6 @@ export async function syncSchedules(
   inFlightRound = { ocids: new Set(ocids), promise: round }
   try {
     const results = await round
-    /*
-     * 화면 머리 아래 `hh:mm:ss 기준` 이 읽는 값. **이 자리가 그 시각의 유일한 출처 둘 중 하나다**
-     * (나머지 하나는 오늘이 든 강화 내역 조회).
-     *
-     * 여기서 알리는 이유는 이 회차가 곧 **실시간 데이터를 실제로 받은 사건**이기 때문이다.
-     * 화면이 자기 시계로 재면 게이트에 막혀 한 번도 안 나간 진입에도 시각이 갱신되고, 같은 회차로
-     * 그린 데이터인데 페이지마다 값이 갈린다.
-     *
-     * `isStale` 인 결과는 뺀다. 그쪽 `syncedAt` 은 이번에 받은 것이 아니라 캐시의 옛 값이다.
-     */
-    void useDataFreshness
-      .getState()
-      .markRealtimeFetch(
-        latestSyncedAt(results.filter((result) => !result.isStale).map((result) => result.syncedAt)) ??
-          '',
-      )
     return pickRequested(results, ocids)
   } finally {
     // 성공·실패와 무관하게 정산되면 즉시 비운다. 실패한 회차를 들고 있으면 네트워크가 돌아와도

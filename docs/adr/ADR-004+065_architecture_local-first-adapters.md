@@ -101,8 +101,8 @@ autolinking 으로 바이너리에 들어간다.
 한 파일이 서로 다른 일을 둘 이상 하면 나눈다. 줄 수는 신호일 뿐 기준이 아니다. 예를 들어
 `lib/boss/boss-profit-period.ts` 와 `lib/theme/theme-derive.ts` 는 길어도 각각 기간 계산 하나, 토큰 파생 하나만
 다루므로 나누지 않는다. 반대로 로스터 조회와 동기화 흐름이 섞여 있던 `features/schedule-sync/` 는
-`character-roster.ts` · `schedule-sync.ts` 등으로, 보스 수익 스토어는 `features/boss-profit/` 의 `rows.ts` ·
-`auto-record.ts` · `drops-loader.ts` 등으로 나눴다.
+`character-roster.ts` · `schedule-sync.ts` 등으로, 보스 수익은 `features/boss-profit/` 의 `rows.ts` ·
+`auto-record.ts` · `round-record.ts` · `period-snapshot.ts` · `drops-loader.ts` 등으로 나눴다.
 
 줄 수 상한을 목표로 삼지 않는 이유는, 그러면 함께 있어야 할 코드부터 옮기게 되기 때문이다. 나눌 때는 서로의
 값을 참조하는 코드끼리 같은 파일에 둔다. 컴포넌트를 다른 파일로 옮기는 것만으로는 렌더 결과가 바뀌지 않는다.
@@ -119,7 +119,7 @@ autolinking 으로 바이너리에 들어간다.
 |---|---|---|
 | `SettingsScreen` · `SettingsNoticesScreen` · `SettingsNoticeDetailScreen` | `storage/notices` 의 `getNotices` | `features/notice/notice-copy.ts` 의 `readNoticeCopy` |
 | `TodayScreen` | `storage/character-basic-cache` 의 `getCachedCharacterBasic` | `features/character-profile/cached-profiles.ts` 의 `readCharacterProfiles` · `readRepresentativeProfile` |
-| `TodayScreen` | `storage/boss-drops` 의 `getBossDropRecordsRevision` | `features/boss-profit/drop-history-store.ts` 의 `isDropHistoryOutdated` |
+| `TodayScreen` | `storage/boss-drops` 의 `getBossDropRecordsRevision` | `features/boss-profit/drop-history-query.ts` 의 `useDropHistory`. 드롭 기록의 판은 화면이 아니라 쿼리 무효화가 본다([[ADR-142]] 결정 6) |
 
 `hooks/` 와 `components/` 는 이 검사에 들지 않는다. `hooks/useKnownProfiles.ts` 는 아직
 `storage/character-basic-cache` 를 직접 읽는다.

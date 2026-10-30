@@ -89,7 +89,6 @@ import {
   resetSyncSingleFlightForTests,
   syncSchedules,
 } from '../schedule-sync'
-import { hasSyncAttemptedThisRun, resetSyncRunStateForTests } from '../sync-run-state'
 import { useRefreshProgress } from '../../refresh/progress'
 import { setRepresentativeCharacter } from '../../../storage/character-selection'
 import {
@@ -166,7 +165,6 @@ beforeEach(async () => {
   jest.useFakeTimers()
   jest.setSystemTime(new Date(NOW))
   // 모듈 수준 플래그라 테스트끼리 샌다.
-  resetSyncRunStateForTests()
   // 같은 이유로 진행 중인 회차도 비운다. 끝내지 않은 회차를 남기면 다음 테스트가 거기에
   // 합류해 영영 안 끝난다.
   resetSyncSingleFlightForTests()
@@ -212,12 +210,6 @@ describe('syncSchedules', () => {
     expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
   })
 
-  it('ocids가 빈 배열이면 이번 실행의 동기화로 치지 않는다. 네트워크가 나가지 않았다', async () => {
-    await syncSchedules([])
-
-    expect(hasSyncAttemptedThisRun()).toBe(false)
-  })
-
   // 스케줄러 데이터를 갱신하는 자리는 결산 여부도 함께 갱신한다. 값이 바뀌면 today 에 바로 선다.
   it('회차가 돌면 결산도 다시 묻는다', async () => {
     fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
@@ -232,22 +224,6 @@ describe('syncSchedules', () => {
     await syncSchedules([])
 
     expect(refreshSettlementMock).not.toHaveBeenCalled()
-  })
-
-  it('실제로 조회하면 이번 실행에서 동기화를 시도한 것으로 표시한다', async () => {
-    fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
-    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
-
-    await syncSchedules(['ocid-1'])
-
-    expect(hasSyncAttemptedThisRun()).toBe(true)
-  })
-
-  it('조회가 실패해도 "시도"는 표시한다. 오프라인에서 탭마다 재시도하지 않게 한다', async () => {
-    fetchCharacterListMock.mockRejectedValue(new NexonNetworkError('timeout'))
-
-    await expect(syncSchedules(['ocid-1'])).rejects.toThrow()
-    expect(hasSyncAttemptedThisRun()).toBe(true)
   })
 
   it('계정에 캐릭터가 5명 있어도 ocids로 지정한 2명에 대해서만 스케줄 API를 호출한다', async () => {
@@ -760,7 +736,6 @@ describe('syncSchedules', () => {
       expect(onProgress).toHaveBeenNthCalledWith(1, 0, 2)
       expect(onProgress).toHaveBeenLastCalledWith(2, 2)
       expect(results.map((result) => result.ocid)).toEqual(['ocid-1', 'ocid-2'])
-      expect(hasSyncAttemptedThisRun()).toBe(true)
     })
   })
 

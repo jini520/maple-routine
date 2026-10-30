@@ -454,7 +454,7 @@ function buildRepresentative(input: TodayViewModelInput): RepresentativeView | n
   if (ocid === null) return null
 
   // 이름 없이 카드를 그릴 수 없다. ocid 는 사용자에게 뜻이 없는 값이라 대신 넣지 않는다
-  // (`drop-history-store` 가 캐시 미스에 항목을 만들지 않는 것과 같은 규칙).
+  // (`drop-history-query` 가 캐시 미스에 항목을 만들지 않는 것과 같은 규칙).
   const profile = input.profilesByOcid[ocid]
   if (profile === undefined) return null
 

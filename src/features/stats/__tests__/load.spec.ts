@@ -8,31 +8,12 @@ jest.mock('../../../storage/character-profiles', () => ({
   ]),
 }))
 
-jest.mock('../../cashbook/records', () => ({
-  loadMonthDays: jest.fn().mockResolvedValue({ '2026-09-24': [] }),
-  cashbookDataRevision: jest.fn().mockReturnValue(10),
-}))
-jest.mock('../../../storage/enhancement-history', () => ({ getEnhancementHistoryRevision: jest.fn().mockReturnValue(2) }))
-jest.mock('../../../storage/spend', () => ({ getSpendRecordsRevision: jest.fn().mockReturnValue(3) }))
 jest.mock('../../../storage/stats-cumulative-start', () => ({
   getStatsCumulativeStart: jest.fn().mockRejectedValue(new Error('읽기 실패')),
   setStatsCumulativeStart: jest.fn().mockResolvedValue(undefined),
 }))
 
-import { loadMonthDays } from '../../cashbook/records'
-import { historyFloorDateKey } from '../../cashbook/range'
-import { loadCumulativeStart, loadStatsDays, loadStatsImages } from '../load'
-
-describe('loadStatsDays', () => {
-  // 누적 카드가 기록의 처음부터 더하므로, 앱이 조회할 수 있는 가장 이른 날부터 오늘까지 한 번에 읽는다.
-  it('가장 이른 조회일부터 오늘까지 가계부의 날짜별 줄을 한 번 읽는다', async () => {
-    const days = await loadStatsDays('2026-09-29')
-
-    expect(loadMonthDays).toHaveBeenCalledTimes(1)
-    expect(loadMonthDays).toHaveBeenCalledWith(historyFloorDateKey('2026-09-29'), '2026-09-29')
-    expect(days).toEqual({ '2026-09-24': [] })
-  })
-})
+import { loadCumulativeStart, loadStatsImages } from '../load'
 
 describe('loadStatsImages', () => {
   // 과거 주는 보스 기록이 날짜를 몰라 빠지면 이름만 든 강화 줄이 남는다. 그 줄도 이름으로 그림을 찾는다.

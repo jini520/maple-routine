@@ -14,6 +14,8 @@ import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import type { CachedCharacterBasicEntry } from '../../storage/character-basic-cache'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
+import { resolveDefeatDates } from '../boss-profit/defeat-dates'
+import { recordBossProfitFromRound } from '../boss-profit/round-record'
 import { queryClient } from '../query/client'
 import { queryKeys } from '../query/keys'
 import { scheduleStaleTime } from '../query/freshness'
@@ -29,8 +31,14 @@ export interface ScheduleOutcome {
 }
 
 export interface ScheduleRoundResult {
-  /** 회차가 끝난 시각(ISO). 머리의 `hh:mm:ss 기준` 이 아니라 캐시로 채운 결과를 가르는 데 쓴다. */
+  /** 회차가 끝난 시각(ISO). 캐시로 채운 결과를 가르는 데 쓴다. */
   fetchedAt: string
+  /**
+   * 넥슨에서 **실제로 받은** 마지막 시각(ISO). 머리의 `hh:mm:ss 기준` 이 읽는다. 전원이 캐시로 채워진 회차(401 · 429 ·
+   * 점검)는 이전 값을 그대로 든다. 쿼리의 `dataUpdatedAt` 은 그런 회차에도 오르므로 그것으로 그리면 아무것도 안 받은
+   * 진입이 방금 받은 것처럼 보인다. 받은 적이 없으면 `null`.
+   */
+  receivedAt: string | null
   /** 이 회차가 덮은 캐릭터. 추적 목록에 이 밖의 캐릭터가 생기면 회차는 바로 만료다. */
   ocids: string[]
   outcomes: Record<string, ScheduleOutcome>
@@ -85,15 +93,46 @@ function distribute(results: readonly CharacterScheduleSync[]): Record<string, S
   return outcomes
 }
 
+/**
+ * 받은 스케줄로 지금 기간의 보스 수익을 기록하고 처치 날짜를 캔다. 동기화 뒤에 이 차례로 한다. 없는 기록은 날짜를 캘 수
+ * 없다. 둘은 던져도 회차를 깨지 않는다. 기록이 덜 된 것은 다음 회차가 다시 하고, 받은 스케줄은 이미 캐시에 들었다.
+ */
+async function recordAfterSync(ocids: readonly string[], results: readonly CharacterScheduleSync[]): Promise<void> {
+  const now = new Date()
+  await recordBossProfitFromRound(ocids, results, now).catch(() => undefined)
+  await resolveDefeatDates(ocids, now).catch(() => undefined)
+}
+
+/** 이번에 실제로 받은 결과 중 가장 늦은 시각. 전부 캐시로 채웠으면 이전 회차의 값이다. */
+function latestReceivedAt(results: readonly CharacterScheduleSync[], previous: string | null): string | null {
+  let latest: string | null = null
+  for (const result of results) {
+    if (result.isStale || result.syncedAt === null) continue
+    if (latest === null || result.syncedAt > latest) latest = result.syncedAt
+  }
+  return latest ?? previous
+}
+
+function previousReceivedAt(): string | null {
+  return queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())?.receivedAt ?? null
+}
+
 async function runScheduleRound(): Promise<ScheduleRoundResult> {
   const ocids = (await readTrackedOcids()) ?? []
   if (ocids.length === 0) {
-    return { fetchedAt: new Date().toISOString(), ocids: [], outcomes: {}, stranded: [] }
+    return { fetchedAt: new Date().toISOString(), receivedAt: previousReceivedAt(), ocids: [], outcomes: {}, stranded: [] }
   }
   const results = await syncSchedules(ocids)
   const outcomes = distribute(results)
   const stranded = await resolveStrandedCharacters(ocids, results)
-  return { fetchedAt: new Date().toISOString(), ocids, outcomes, stranded }
+  await recordAfterSync(ocids, results)
+  return {
+    fetchedAt: new Date().toISOString(),
+    receivedAt: latestReceivedAt(results, previousReceivedAt()),
+    ocids,
+    outcomes,
+    stranded,
+  }
 }
 
 export const scheduleRoundOptions = queryOptions({
@@ -135,8 +174,10 @@ export async function syncAddedCharacters(
   const results = await syncSchedules([...added], onProgress)
   const outcomes = distribute(results)
   const stranded = await resolveStrandedCharacters(added, results)
+  await recordAfterSync(added, results)
   queryClient.setQueryData<ScheduleRoundResult>(queryKeys.scheduleRound(), (previous) => ({
     fetchedAt: previous?.fetchedAt ?? new Date().toISOString(),
+    receivedAt: latestReceivedAt(results, previous?.receivedAt ?? null),
     ocids: [...new Set([...(previous?.ocids ?? []), ...added])],
     outcomes: { ...(previous?.outcomes ?? {}), ...outcomes },
     stranded: [...(previous?.stranded ?? []).filter((one) => !added.includes(one.ocid)), ...stranded],

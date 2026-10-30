@@ -24,8 +24,7 @@
  * @see docs/features/cashbook.md 정책
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useFocusEffect } from '@react-navigation/native'
+import { useEffect, useRef, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
 import {
@@ -80,7 +79,6 @@ import { formatMesoCompact, formatMesoSigned } from '../../lib/cashbook/meso-com
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import {
-  cashbookDataRevision,
   dayTotalsOf,
   loadLastPointRate,
   loadLastHunts,
@@ -90,14 +88,12 @@ import {
   recordIncome,
   recordIncomes,
   recordSpend,
-  loadDayRecords,
   editIncome,
   editSpend,
   removeRecord,
   recordCardOf,
   recordMesoOf,
   recordCashOf,
-  resolveTrackedDefeatDates,
   isManualRecord,
   rowKeyOf,
   type DayRecord,
@@ -107,12 +103,14 @@ import {
   type SoldItem,
 } from '../../features/cashbook/records'
 import type { LastHunts } from '../../storage/last-hunts'
+import { useLedgerDays } from '../../features/cashbook/ledger-query'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
 import { loadRememberedLevels } from '../../features/cashbook/remembered-levels'
 // 보스 수익 탭의 행이 초상을 찾는 그 함수다. 같은 보스가 두 화면에서 다른 그림이면 안 된다.
 import { bossPortraitSlugOf } from '../../lib/boss/bosses'
 import { dropItemIconOf } from '../../lib/assets/asset-lookup'
-import { useDataFreshness } from '../../features/refresh/freshness'
+import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
+import { useResetBoundaryTick } from '../../features/query/reset-timer'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
 import { useToastStore } from '../../features/toast/store'
 import { SETTLEMENT_BANNER_DETAIL_LEDGER } from '../../features/settlement/banner-text'
@@ -122,7 +120,7 @@ import { SpendSheet, type SpendDraft } from './SpendSheet'
 import { useMonthDays } from './useMonthDays'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
-const NO_RECORDS: DayRecord[] = []
+const NO_RECORDS: readonly DayRecord[] = []
 
 /** 주간 · 월간. 보스 수익 탭과 같은 부품이다. 고른 값은 기억하지 않는다. 그쪽도 화면 상태다. */
 const PERIOD_TABS = ['weekly', 'monthly'] as const
@@ -581,11 +579,6 @@ export function CashbookScreen(): React.JSX.Element {
    * 여기 못 들어온다.
    */
   const [sheet, setSheet] = useState<'income' | 'expense' | ManualDayRecord | null>(null)
-  /** 그날 목록과 **그것이 어느 날의 것인지**. 칸 금액과 같은 이유로 날짜를 함께 든다. */
-  const [loadedDay, setLoadedDay] = useState<{ dateKey: string; records: DayRecord[] }>({
-    dateKey: '',
-    records: [],
-  })
   /**
    * 펼쳐 둔 결정석 줄. 한 번에 하나다. 값은 `rowKeyOf` 가 만든 줄의 신원
    * (`bossCrystal:{ocid}`)이고, 그것이 날짜를 안 들고 있으므로 날을 바꿀 때 여기서 지워야 한다.
@@ -615,21 +608,10 @@ export function CashbookScreen(): React.JSX.Element {
   const todayMonthKey = getCurrentMonthKey(now)
 
   /**
-   * 기간이 바뀌면 다시 읽게 하는 토큰. 범위가 곧 의존성이라 달을 넘겼는데 옛 숫자가 남는 일이 없고,
-   * 저장 뒤에도 이 표를 올려 같은 길로 다시 읽는다.
+   * 데이터의 소유자는 부모 층이다. 이 화면은 **진행 상태를 구독하고 다시 불러 달라고 부탁만** 한다.
    *
-   * `useCallback` 으로 안 감싼다. React 컴파일러가 지킬 수 없는 수동 메모이제이션으로 보고
-   * 이 컴포넌트의 최적화를 통째로 건너뛴다(lint 가 막는다).
-   *
-   * `alive` 로 늦게 온 응답을 버린다. 달을 빨리 넘기면 이전 범위의 답이 뒤에 도착한다.
-   */
-  const [reloadToken, setReloadToken] = useState(0)
-
-  /**
-   * 데이터의 소유자는 부모 층이다. 이 화면은 **상태를 구독하고 다시 불러 달라고 부탁만** 한다.
-   *
-   * 무엇을 다시 부를지(오늘·과거)는 그쪽이 정하고, 끝나면 `revision` 이 올라 아래 효과가
-   * 다시 읽는다.
+   * 무엇을 다시 부를지(오늘·과거)는 그쪽이 정한다. 회차가 쓴 기록은 표의 판을 올리고, 그 표를 읽는 쿼리가
+   * 무효화되어 아래 달 읽기가 스스로 다시 읽는다.
    */
   const ledger = useLedgerData()
   /**
@@ -639,7 +621,7 @@ export function CashbookScreen(): React.JSX.Element {
    * 번의 조회로 그린 데이터인데 값이 갈린다. 적는 자리는 `syncSchedules` 회차와 오늘이 든 강화
    * 조회 둘뿐이고, 기기 DB 읽기와 과거 기간 조회는 거기 안 닿는다.
    */
-  const fetchedAt = useDataFreshness((state) => state.fetchedAt)
+  const fetchedAt = useRealtimeFetchedAt()
 
   // **강화 사용 내역을 받는 유일한 당김**이다. 이 화면만 그 값을 그린다.
 
@@ -661,100 +643,51 @@ export function CashbookScreen(): React.JSX.Element {
     requestDateRange(apiWindowRange(heatMonthKey, todayDateKey))
   }, [heatMonthKey, todayDateKey, requestDateRange])
 
-
+  // KST 자정을 넘기면 다시 그린다. `now` 가 렌더의 값이라 안 그리면 오늘이 어제에 머문다.
+  useResetBoundaryTick()
 
   /**
-   * 마지막으로 읽은 판. 다시 들어올 때 내 숫자가 낡았나 를 재는 기준이다.
+   * 자정을 넘긴 렌더. **오늘을 보고 있었으면** 고른 날을 새 오늘로 옮기고, 보던 주가 그 오늘의 주였으면 주도 옮긴다.
    *
-   * 조회 전에 찍는다. 읽는 중에 들어온 변경을 본 것으로 표시하면 영영 놓친다. 반대 방향은
-   * 다음 포커스에 한 번 더 읽을 뿐이라 안전하다.
+   * 다른 날을 골라 두었으면 아무것도 안 옮긴다. 지난 기록을 보던 자리를 자정이 빼앗으면 안 되고, 주만 옮기면 고른 날이
+   * 격자 밖에 남는다.
    */
-  const loadedRevision = useRef(cashbookDataRevision())
+  const previousTodayKey = useRef(todayDateKey)
+  useEffect(() => {
+    const before = previousTodayKey.current
+    if (before === todayDateKey) return
+    previousTodayKey.current = todayDateKey
+    if (selectedDateKey !== before) return
+    setSelectedDateKey(todayDateKey)
+    if (weekStartKey === resetWeekStartOf(before)) setWeekStartKey(resetWeekStartOf(todayDateKey))
+  }, [todayDateKey, selectedDateKey, weekStartKey])
 
   /**
    * 칸 금액. **달 단위로 다섯 달을 들고 있는다**(보는 달 ± 2). 옮기자마자 그려지도록.
    *
-   * `stamp` 가 이 표의 신원이다. 기록이 바뀌거나(`reloadToken`) 층이 한 회차를 끝내면
-   * (`ledger.revision`) 값이 달라지고 표를 통째로 다시 읽는다. 뒤엣것에 매인 이유는 **뒤늦게
-   * 채워진 것을 받기 위해서**다. 부모의 회차는 화면을 안 막으려고 뒤에서 도는데, 다시 읽을
-   * 계기가 없으면 화면이 처음 읽은 순간에 굳는다(실기기에서 3초 차이로 그랬다).
+   * 다시 읽는 계기는 여기 없다. 이 화면의 저장 · 층의 회차 · 남의 화면(가격 입력 · 보스 수익)의 쓰기가 표의 판을 올리면
+   * 그 표를 적은 쿼리가 무효화되고, 보고 있는 동안이면 그 자리에서 다시 읽는다. 전에는 저장 토큰과 층의 회차 수를 견줘
+   * 다시 읽었고, 포커스마다 판을 비교했다.
    */
-  const dataStamp = `${reloadToken}|${ledger.revision}`
+  const monthDays = useMonthDays({ viewMonthKey: heatMonthKey, todayMonthKey, paused: ledger.collecting })
 
   /**
-   * 다시 읽기 시작한 판을 찍는다. **읽기 전에** 찍는 것이 계약이다. 읽는 중에 들어온 변경을
-   * 본 것으로 표시하면 영영 놓친다. 아래 훅의 효과보다 먼저 돌도록 여기 둔다.
-   */
-  useEffect(() => {
-    loadedRevision.current = cashbookDataRevision()
-  }, [dataStamp])
-
-  const monthDays = useMonthDays({
-    viewMonthKey: heatMonthKey,
-    todayMonthKey,
-    stamp: dataStamp,
-    paused: ledger.collecting,
-  })
-
-  /**
-   * 다시 들어오면 바뀌었을 때만 다시 읽는 포커스 효과.
+   * 고른 날이 **창 안인가**. 창 안이면 달 읽기가 답을 내므로 따로 안 읽는다.
    *
-   * 이 화면은 탭이라 마운트가 앱 실행당 한 번뿐인데, 접는 원천 넷 중 둘은 남의 화면이 쓴다.
-   * 가격 입력 화면이 `boss_drop_records` 를, 보스 수익 동기화가 `boss_profit_records` 를.
-   * 그래서 첫 방문의 숫자에 굳는다.
-   *
-   * 포커스마다 무조건 안 읽는 것은 한 번의 조회가 SQLite 넷을 치기 때문이다.
+   * 창 밖은 드물다. 이번 달 격자의 다음 달 칸이 그 자리다(고른 날은 미래로 가도 격자는 안 넘어간다). 그 날만 하루
+   * 범위의 쿼리로 읽는다. 아직 안 온 것과 영영 안 올 것을 안 가르면, 첫 렌더에서 달 읽기가 도착하기 전에 하루 조회가
+   * 한 번 더 돈다.
    */
-  useFocusEffect(
-    useCallback(() => {
-      if (loadedRevision.current !== cashbookDataRevision()) {
-        setReloadToken((token) => token + 1)
-      }
-    }, []),
+  const selectedInWindow = monthWindow(heatMonthKey, todayMonthKey).includes(monthKeyOf(selectedDateKey))
+  const outsideDay = useLedgerDays(
+    { from: selectedDateKey, to: selectedDateKey },
+    !selectedInWindow && !ledger.collecting,
   )
-
-  /**
-   * 고른 날이 **창 안인가**. 창 안이면 달 읽기가 답을 내므로 기다리기만 한다.
-   *
-   * 창 밖은 드물다. 이번 달 격자의 다음 달 칸이 그 자리다(고른 날은 미래로 가도 격자는 안
-   * 넘어간다). 아직 안 온 것과 영영 안 올 것을 안 가르면, 첫 렌더에서 달 읽기가 도착하기 전에
-   * 하루 조회가 한 번 더 돈다.
-   */
-  const selectedInWindow = monthWindow(heatMonthKey, todayMonthKey).includes(
-    monthKeyOf(selectedDateKey),
-  )
-  useEffect(() => {
-    if (ledger.collecting || selectedInWindow) return
-    let alive = true
-    void loadDayRecords(selectedDateKey).then((next) => {
-      if (alive) setLoadedDay({ dateKey: selectedDateKey, records: next })
-    })
-    return () => {
-      alive = false
-    }
-  }, [selectedDateKey, selectedInWindow, reloadToken, ledger.revision, ledger.collecting])
 
   useEffect(() => {
     void loadLastPointRate().then(setLastPointRate)
     void loadLastHunts().then(setLastHunts)
     void loadTrackedCharacters().then(setCharacters)
-  }, [])
-
-
-  /**
-   * 들어올 때 한 번 처치 날짜를 캔다. 캔 것이 있을 때만 다시 읽는다.
-   *
-   * 기간마다 안 돌리는 이유는 캘 수 있는 범위를 조회 창이 정하지 보는 달이 정하지 않아서다.
-   * 그래서 첫 렌더의 숫자가 나중에 늘 수 있다. 사라지는 방향은 없다(NULL → 날짜).
-   */
-  useEffect(() => {
-    let alive = true
-    void resolveTrackedDefeatDates(new Date()).then((dated) => {
-      if (alive && dated > 0) setReloadToken((token) => token + 1)
-    })
-    return () => {
-      alive = false
-    }
   }, [])
 
   /**
@@ -763,7 +696,7 @@ export function CashbookScreen(): React.JSX.Element {
    * 삼키면 시트가 닫히고, 닫힌 뒤에는 친 것이 사라져 화면에 적혔다 와 구분되지 않는 그림만
    * 남는다. 토스트는 여기서 띄우고(저장소 실패는 화면의 몫이다) 자리를 지키는 일은 시트가 한다.
    *
-   * 다시 읽는 것도 성공했을 때만 한다. 실패했으면 읽을 것이 안 바뀌었다.
+   * 저장 뒤 다시 읽지 않는다. 쓰기가 표의 판을 올리면 그 표를 읽는 쿼리가 무효화된다.
    */
   async function saveIncome(draft: IncomeDraft): Promise<void> {
     try {
@@ -774,7 +707,6 @@ export function CashbookScreen(): React.JSX.Element {
     }
     // 방금 적은 사냥이 그 캐릭터의 다음 기본값이다. 다시 읽지 않고 저장과 같은 규칙으로 든다.
     setLastHunts((current) => nextLastHunts(draft, current))
-    setReloadToken((token) => token + 1)
   }
 
   async function saveIncomes(drafts: readonly IncomeDraft[]): Promise<void> {
@@ -784,7 +716,6 @@ export function CashbookScreen(): React.JSX.Element {
       useToastStore.getState().showError('수입을 적지 못했습니다')
       throw error
     }
-    setReloadToken((token) => token + 1)
   }
 
   async function saveSpend(draft: SpendDraft): Promise<void> {
@@ -796,7 +727,6 @@ export function CashbookScreen(): React.JSX.Element {
     }
     // 시세는 방금 저장한 값이 다음 기본값이다. 다시 읽지 않고 그대로 든다.
     if (draft.pointPer100mMeso !== null) setLastPointRate(draft.pointPer100mMeso)
-    setReloadToken((token) => token + 1)
   }
 
   /**
@@ -814,7 +744,6 @@ export function CashbookScreen(): React.JSX.Element {
       useToastStore.getState().showError('기록을 고치지 못했습니다')
       throw error
     }
-    setReloadToken((token) => token + 1)
   }
 
   async function deleteEntry(entry: ManualDayRecord): Promise<void> {
@@ -824,7 +753,6 @@ export function CashbookScreen(): React.JSX.Element {
       useToastStore.getState().showError('기록을 지우지 못했습니다')
       throw error
     }
-    setReloadToken((token) => token + 1)
   }
 
   /**
@@ -893,11 +821,9 @@ export function CashbookScreen(): React.JSX.Element {
    * 창 안의 날은 여기 안 걸린다. 달 읽기가 든 표가 곧 답이라 기다릴 것이 없다.
    */
   const cachedDayRecords = monthDays.recordsOn(selectedDateKey)
-  /** 창 밖의 날을 따로 읽은 것. 날짜가 맞을 때만 든다. */
+  /** 창 밖의 날을 따로 읽은 것. 쿼리 열쇠가 그 날짜라 다른 날의 값이 설 수 없다. */
   const outsideDayRecords =
-    !selectedInWindow && !ledger.collecting && loadedDay.dateKey === selectedDateKey
-      ? loadedDay.records
-      : null
+    selectedInWindow || outsideDay.days === null ? null : (outsideDay.days[selectedDateKey] ?? NO_RECORDS)
   const dayLoading = cachedDayRecords === null && outsideDayRecords === null
   /** 그릴 그날 목록. 창 안이면 달 읽기에서, 밖이면 따로 읽은 것에서 나온다. */
   const dayRecords = cachedDayRecords ?? outsideDayRecords ?? NO_RECORDS

@@ -10,7 +10,6 @@ import {
   type BossSchedulerStore,
 } from '../../../features/boss-scheduler/store'
 import { useBossSchedule, type BossSchedule } from '../../../features/boss-scheduler/use-boss-schedule'
-import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { bossesInSection, bossKeyOfApiName } from '../../../lib/boss/bosses'
 import { INITIAL_BOSS_CATALOG, setBossCatalog } from '../../../lib/boss/catalog'
@@ -48,6 +47,9 @@ const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
 // 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다. 화면이 이것도 부른다.
 const dispatch = jest.fn()
+
+// 머리의 받은 시각은 회차 쿼리의 `dataUpdatedAt` 에서 온다. 이 하네스에는 쿼리 클라이언트가 없어 훅을 세운다.
+jest.mock('../../../features/refresh/freshness', () => ({ useRealtimeFetchedAt: jest.fn(() => null) }))
 
 // 동기화 실패·파티원 수 저장 실패는 인라인 문단이 아니라 토스트다.
 jest.mock('../../../features/toast/store', () => ({
@@ -233,7 +235,6 @@ beforeEach(() => {
 // 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
 beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
-  useDataFreshness.setState({ fetchedAt: null })
 })
 
 /** 비율을 안 쓰는 파티. 스테퍼만 눌렀을 때 함께 실려 가는 값이다. */
@@ -583,7 +584,6 @@ describe('BossScreen: 갱신 시각', () => {
   // **자리는 지킨다.** 값이 들어오는 순간 줄이 생기면 헤더가 16 만큼 내려앉고 그 아래 화면
   // 전체가 한 번 밀린다. 콜드 스타트 첫 진입에서 실제로 일어난다.
   it('받은 적이 없으면 글자만 빈다', async () => {
-    useDataFreshness.setState({ fetchedAt: null })
     mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-1'],

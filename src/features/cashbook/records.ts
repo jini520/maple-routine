@@ -30,21 +30,16 @@ import {
 } from '../../lib/cashbook/spend-catalog'
 import { hexaTargetOf } from '../../lib/cashbook/hexa-matrix'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
-import { getBossDropRecords, getBossDropRecordsRevision } from '../../storage/boss-drops'
-import {
-  getBossProfitRecordsRevision,
-  getDatedBossProfitRecords,
-} from '../../storage/boss-profit'
+import { getBossDropRecords } from '../../storage/boss-drops'
+import { getDatedBossProfitRecords } from '../../storage/boss-profit'
 import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getRecordedCharacterOcids } from '../../storage/boss-profit'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
-import { resolveDefeatDates } from '../boss-profit/defeat-dates'
 import {
   deleteIncomeRecord,
   getFragmentStorage,
   getIncomeRecordsBetween,
-  getIncomeRecordsRevision,
   insertIncomeRecord,
   insertIncomeRecords,
   updateIncomeRecord,
@@ -466,7 +461,7 @@ function groupByDate(rows: readonly EnhancementSpending[]): Map<string, Enhancem
  * 칸에 적힌 수와 그 칸을 눌러 나온 수가 **한 계산에서** 나온다. 전에는 조회 둘이 각자 세고
  * 같기를 테스트가 지켰다.
  */
-export function amountsOfDays(byDate: Readonly<Record<string, DayRecord[]>>): CalendarAmounts {
+export function amountsOfDays(byDate: Readonly<Record<string, readonly DayRecord[]>>): CalendarAmounts {
   const amounts: Record<string, CalendarDayAmounts> = {}
   for (const [dateKey, rows] of Object.entries(byDate)) {
     amounts[dateKey] = dayTotalsOf(rows)
@@ -474,22 +469,6 @@ export function amountsOfDays(byDate: Readonly<Record<string, DayRecord[]>>): Ca
   return amounts
 }
 
-
-/**
- * 가계부가 트는 처치 날짜 캐기. 캔 건수를 돌려준다. 0 이면 다시 읽을 이유가 없다.
- *
- * 보스 수익 탭도 같은 일을 하지만(그쪽은 동기화 뒤) 한 번도 그 탭을 안 열어도 칸이 채워지도록
- * 여기서도 튼다. 겹침은 그 함수가 막는다. 조회 원장과 `inFlight` 둘이다.
- *
- * 던지지 않는다. 날짜를 못 캔 것은 칸이 덜 채워진다 이지 화면이 죽을 일이 아니다.
- */
-export async function resolveTrackedDefeatDates(now: Date): Promise<number> {
-  const ocids = await getTrackedCharacterOcids().catch(() => null)
-  if (ocids === null || ocids.length === 0) {
-    return 0
-  }
-  return resolveDefeatDates(ocids, now).catch(() => 0)
-}
 
 /**
  * 시트가 고를 수 있는 캐릭터 목록.
@@ -527,23 +506,6 @@ export async function loadTrackedCharacters(): Promise<
   return named.filter((each) => each.name !== '')
 }
 
-
-/**
- * 화면이 내 숫자가 낡았는지 묻는 값. 이 화면이 읽는 두 표의 판을 하나로 접는다. 화면은 다시
- * 들어올 때 이 값이 달라졌을 때만 조회를 다시 튼다.
- *
- * 여기 있는 이유는 화면이 `storage/` 를 직접 안 부르기 때문이다. 리비전만 예외로 두면 그 벽에
- * 구멍이 나고, 원천이 늘 때 화면을 다시 고쳐야 한다.
- *
- * 합인 이유는 세 수가 다 단조 증가라 어느 쪽이 올라도 합이 달라져서다. 어느 표가 바뀌었는지는
- * 화면이 알 필요가 없다.
- *
- * 수입 기록의 판은 이 화면 밖의 쓰기(자동 수수료를 고쳐 쓰는 작업)만 올린다. 시트의 쓰기는 이 화면이
- * 그 자리에서 다시 읽는다. `spend_records` 는 이 화면 밖에서 안 쓴다.
- */
-export function cashbookDataRevision(): number {
-  return getBossDropRecordsRevision() + getBossProfitRecordsRevision() + getIncomeRecordsRevision()
-}
 
 /** 다음 입력의 시세 기본값. 화면이 `storage/` 를 직접 안 부르게 한 번 감싼다. */
 export async function loadLastPointRate(): Promise<number | null> {
@@ -699,16 +661,6 @@ export function rowKeyOf(entry: DayRecord): string {
   return entry.kind === 'enhancement'
     ? `${entry.kind}:${entry.category}:${entry.characterName}`
     : `${entry.kind}:${entry.ocid}`
-}
-
-/**
- * 하루치 줄들. **창 밖의 날**을 고를 때 쓰는 길이다.
- *
- * 화면은 보통 달 읽기(`loadMonthDays`)가 든 표에서 꺼낸다. 그 표가 안 덮는 날은 월간 격자의
- * 다음 달 칸처럼 드물게 있고, 그때만 이 조회가 돈다.
- */
-export async function loadDayRecords(dateKey: string): Promise<DayRecord[]> {
-  return (await loadMonthDays(dateKey, dateKey))[dateKey] ?? []
 }
 
 /**

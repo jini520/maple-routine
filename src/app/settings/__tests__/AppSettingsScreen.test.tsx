@@ -31,7 +31,6 @@ const mockGetRoster = jest.fn()
 const mockPrefetchSchedules = jest.fn()
 const mockReloadContentLocal = jest.fn()
 const mockReloadBossLocal = jest.fn()
-const mockLoadProfitTracked = jest.fn()
 
 jest.mock('../../../features/theme/store', () => ({ useThemeStore: jest.fn() }))
 jest.mock('../../../features/tracking-mode/store', () => ({ useTrackingModeStore: jest.fn() }))
@@ -40,8 +39,8 @@ jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation
 // 배지의 추적 캐릭터 수는 쿼리 캐시에서 온다. 이 하네스에는 쿼리 클라이언트가 없어 훅을 세운다.
 jest.mock('../../../features/schedule-sync/use-schedule-queries', () => ({ useTrackedOcids: jest.fn() }))
 
-// 스케줄 관리 방법을 바꾼 뒤 `reloadTabStores` 가 부르는 셋. 스케줄러 둘은 회차를 미리 받고 기기 값을 다시
-// 읽고, 보스 수익은 자기 스토어를 다시 읽는다. 화면은 `getState` 로만 만진다(구독하지 않는다).
+// 스케줄 관리 방법을 바꾼 뒤 `reloadTabStores` 가 부르는 것. 스케줄러 둘은 회차를 미리 받고 기기 값을 다시 읽는다.
+// 보스 수익은 회차와 기록 판에 매인 쿼리라 여기서 할 일이 없다. 화면은 `getState` 로만 만진다(구독하지 않는다).
 jest.mock('../../../features/schedule-sync/schedule-query', () => ({
   prefetchSchedules: (...args: unknown[]) => mockPrefetchSchedules(...args),
 }))
@@ -50,9 +49,6 @@ jest.mock('../../../features/content-scheduler/store', () => ({
 }))
 jest.mock('../../../features/boss-scheduler/store', () => ({
   useBossSchedulerStore: { getState: () => ({ reloadLocal: mockReloadBossLocal }) },
-}))
-jest.mock('../../../features/boss-profit/store', () => ({
-  useBossProfitStore: { getState: () => ({ loadTrackedOcids: mockLoadProfitTracked }) },
 }))
 
 // 이 화면은 로스터를 **부르지 않는 것**이 계약이라 그것을 단언하려면 감시할
@@ -179,7 +175,6 @@ beforeEach(() => {
   mockPrefetchSchedules.mockResolvedValue(undefined)
   mockReloadContentLocal.mockResolvedValue(undefined)
   mockReloadBossLocal.mockResolvedValue(undefined)
-  mockLoadProfitTracked.mockResolvedValue(undefined)
 })
 
 afterEach(() => {
@@ -318,7 +313,7 @@ describe('AppSettingsScreen', () => {
     expect(view.getByTestId('tracking-mode-modal-overlay')).toBeTruthy()
   })
 
-  it('스케줄 관리 방법을 바꾸면 스케줄 회차를 미리 받고 컨텐츠·보스·수익 스토어를 순차로 다시 읽힌다', async () => {
+  it('스케줄 관리 방법을 바꾸면 스케줄 회차를 미리 받고 컨텐츠·보스 스토어를 순차로 다시 읽힌다', async () => {
     const order: string[] = []
     let resolveContent: () => void = () => {}
     mockReloadContentLocal.mockImplementation(() => {
@@ -331,18 +326,13 @@ describe('AppSettingsScreen', () => {
       order.push('boss')
       return Promise.resolve()
     })
-    mockLoadProfitTracked.mockImplementation(() => {
-      order.push('profit')
-      return Promise.resolve()
-    })
     const view = await renderOverlay(<AppSettingsScreen />)
 
     await press(rowOf(view, '스케줄 관리 방법'))
     await press(view.getByText('수동'))
     await press(view.getByText('적용'))
 
-    // 컨텐츠가 끝나기 전에는 다음이 시작되지 않는다. 보스 수익은 스케줄 회차 뒤에 와야 방금 받은 캐시를
-    // 신선하다고 본다. 모달은 그 셋을 기다리지 않고 닫힌다.
+    // 컨텐츠가 끝나기 전에는 다음이 시작되지 않는다. 모달은 그 둘을 기다리지 않고 닫힌다.
     expect(mockPrefetchSchedules).toHaveBeenCalled()
     expect(order).toEqual(['content'])
     expect(view.queryByTestId('tracking-mode-modal-overlay')).toBeNull()
@@ -351,7 +341,7 @@ describe('AppSettingsScreen', () => {
       resolveContent()
     })
 
-    expect(order).toEqual(['content', 'boss', 'profit'])
+    expect(order).toEqual(['content', 'boss'])
   })
 
 describe('AppSettingsScreen: 캐릭터 관리', () => {

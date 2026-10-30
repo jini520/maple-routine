@@ -12,7 +12,6 @@ import {
   useContentSchedule,
   type ContentSchedule,
 } from '../../../features/content-scheduler/use-content-schedule'
-import { useDataFreshness } from '../../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
@@ -27,6 +26,9 @@ const mockNoticeApiKeyIssue = jest.fn()
 const navigate = jest.fn()
 // 층이 스택이 된 뒤로 **그룹 층으로 되돌리기** 는 액션이다. 화면이 이것도 부른다.
 const dispatch = jest.fn()
+
+// 머리의 받은 시각은 회차 쿼리의 `dataUpdatedAt` 에서 온다. 이 하네스에는 쿼리 클라이언트가 없어 훅을 세운다.
+jest.mock('../../../features/refresh/freshness', () => ({ useRealtimeFetchedAt: jest.fn(() => null) }))
 
 // 동기화 실패는 인라인 문단이 아니라 토스트다.
 jest.mock('../../../features/toast/store', () => ({
@@ -157,7 +159,6 @@ beforeEach(() => {
     getParent: () => ({ getState: () => ({ routes: [{}, {}] }), dispatch }),
   } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
-  useDataFreshness.setState({ fetchedAt: null })
   // 케이스가 한쪽만 고쳐도 다른 쪽이 비지 않게 둘 다 기본값으로 세운다.
   mockSchedule()
   mockStore()
@@ -467,7 +468,6 @@ describe('ContentScreen: 갱신 시각', () => {
   // **자리는 지킨다.** 값이 들어오는 순간 줄이 생기면 헤더가 16 만큼 내려앉고 그 아래 화면
   // 전체가 한 번 밀린다. 콜드 스타트 첫 진입에서 실제로 일어난다.
   it('받은 적이 없으면 글자만 빈다', async () => {
-    useDataFreshness.setState({ fetchedAt: null })
     mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
     await renderScreen()
 

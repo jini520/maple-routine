@@ -1,28 +1,15 @@
 /**
- * 통계 화면의 읽기. 가계부의 날짜별 줄을 앱이 조회할 수 있는 가장 이른 날부터 오늘까지 한 번 읽는다.
+ * 통계 화면이 읽는 것 중 날짜별 줄이 아닌 것. 캐릭터 전신 그림과 누적 순수익의 시작 날짜다.
  *
- * 카드마다 따로 읽지 않는다. 누적 카드가 처음부터 더하므로 그 범위가 나머지 카드의 범위를 다 덮는다.
+ * 날짜별 줄은 화면이 `features/cashbook/ledger-query` 의 `useLedgerDays` 로 든다. 기록 표의 판이 오르면 그 쿼리가
+ * 무효화되므로 여기서 판을 견주지 않는다.
  */
-import { cashbookDataRevision, loadMonthDays } from '../cashbook/records'
-import { getEnhancementTotalsRevision } from '../../storage/enhancement-totals'
-import { getSpendRecordsRevision } from '../../storage/spend'
 import { getStatsCumulativeStart, setStatsCumulativeStart } from '../../storage/stats-cumulative-start'
 import {
   getCharacterProfiles,
   getCharacterProfilesByNames,
   type CharacterProfileSnapshot,
 } from '../../storage/character-profiles'
-import { historyFloorDateKey } from '../cashbook/range'
-import type { DaysByDate, StatsRange } from './aggregate'
-
-export async function loadStatsDays(todayDateKey: string): Promise<DaysByDate> {
-  return loadMonthDays(historyFloorDateKey(todayDateKey), todayDateKey)
-}
-
-/** 한 기간의 날짜별 줄. today 의 이번 주 수익이 그 주만 읽는다. 전 기간을 읽는 `loadStatsDays` 보다 가볍다. */
-export async function loadStatsDaysBetween(range: StatsRange): Promise<DaysByDate> {
-  return loadMonthDays(range.from, range.to)
-}
 
 /**
  * 단상에 세울 캐릭터 전신 그림. 줄의 키 → 그림 주소이고, 못 찾은 줄은 빠진다.
@@ -50,14 +37,6 @@ export async function loadStatsImages(
     if (profile !== undefined) images.set(row.key, profile.imageUrl)
   }
   return images
-}
-
-/**
- * 통계가 읽는 표들의 판. 가계부의 판(보스 · 드롭 · 수입)에 강화 내역과 지출 기록의 판을 더한다.
- * 모두 단조 증가라 어느 쪽이 올라도 합이 달라진다. 같으면 다시 읽을 까닭이 없다.
- */
-export function statsDataRevision(): number {
-  return cashbookDataRevision() + getEnhancementTotalsRevision() + getSpendRecordsRevision()
 }
 
 /** 누적 순수익의 시작 날짜. 고른 적이 없으면 `null`(기록이 처음 있는 날부터) */

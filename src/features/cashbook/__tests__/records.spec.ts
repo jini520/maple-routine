@@ -11,7 +11,6 @@ jest.mock('../../../storage/income', () => ({
   getIncomeRecordsBetween: jest.fn(),
   getIncomeMonthRows: jest.fn(),
   getFragmentStorage: jest.fn(),
-  getIncomeRecordsRevision: jest.fn(),
 }))
 jest.mock('../../../storage/spend', () => ({
   insertSpendRecord: jest.fn(),
@@ -30,7 +29,6 @@ jest.mock('../../../storage/last-hunts', () => ({
 }))
 jest.mock('../../../storage/boss-profit', () => ({
   getDatedBossProfitRecords: jest.fn(),
-  getBossProfitRecordsRevision: jest.fn(),
   getRecordedCharacterOcids: jest.fn(),
   getBossProfitMonthRows: jest.fn(),
 }))
@@ -38,7 +36,6 @@ jest.mock('../../../storage/boss-drops', () => ({
   // 실물과 같은 값이어야 호출 단언이 맞는다. 목이 안 내주면 `undefined` 가 흐른다.
   NO_WORLD: { name: null, key: null },
   getBossDropRecords: jest.fn(),
-  getBossDropRecordsRevision: jest.fn(),
 }))
 jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
 jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
@@ -73,10 +70,7 @@ beforeEach(() => {
   income.getIncomeRecordsBetween.mockResolvedValue([])
   spend.getSpendRecordsBetween.mockResolvedValue([])
   bossProfit.getDatedBossProfitRecords.mockResolvedValue([])
-  bossProfit.getBossProfitRecordsRevision.mockReturnValue(0)
   bossDrops.getBossDropRecords.mockResolvedValue([])
-  bossDrops.getBossDropRecordsRevision.mockReturnValue(0)
-  income.getIncomeRecordsRevision.mockReturnValue(0)
   selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
   bossProfit.getRecordedCharacterOcids.mockResolvedValue([])
   basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
@@ -147,6 +141,12 @@ const 메포지출: SpendDraft = {
 async function 칸금액(from: string, to: string) {
   const { amountsOfDays, loadMonthDays } = require('../records') as typeof import('../records')
   return amountsOfDays(await loadMonthDays(from, to))
+}
+
+/** 하루치 줄. 달 읽기를 하루 범위로 부른 것이다. 화면도 창 밖의 날을 같은 범위의 `ledgerDays` 쿼리로 읽는다. */
+async function loadDayRecords(dateKey: string): Promise<import('../records').DayRecord[]> {
+  const { loadMonthDays } = require('../records') as typeof import('../records')
+  return (await loadMonthDays(dateKey, dateKey))[dateKey] ?? []
 }
 
 describe('행의 신원은 여기서 만든다', () => {
@@ -502,7 +502,6 @@ describe('loadDayRecords: 그날 적은 것을 한 줄씩', () => {
   it('수입과 지출을 한 목록으로 접는다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([수입행])
     spend.getSpendRecordsBetween.mockResolvedValue([지출행])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-25')
 
@@ -518,7 +517,6 @@ describe('loadDayRecords: 그날 적은 것을 한 줄씩', () => {
       { ...수입행, id: 'inc-late', recordedAt: '2026-08-25T09:00:00.000Z' },
     ])
     spend.getSpendRecordsBetween.mockResolvedValue([지출행])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-25')
 
@@ -545,7 +543,7 @@ describe('loadDayRecords: 그날 적은 것을 한 줄씩', () => {
         hexa: { fragmentCount: 252, untradableFragmentCount: 300, fragmentPrice: 7_200_000, activation: null },
       },
     ])
-    const { loadDayRecords, rowKeyOf } = require('../records') as typeof import('../records')
+    const { rowKeyOf } = require('../records') as typeof import('../records')
 
     expect((await loadDayRecords('2026-08-25')).map(rowKeyOf)).toEqual(['spd-hexa'])
   })
@@ -553,7 +551,6 @@ describe('loadDayRecords: 그날 적은 것을 한 줄씩', () => {
   it('읽기가 실패해도 빈 목록으로 진행한다', async () => {
     spend.getSpendRecordsBetween.mockRejectedValue(new Error('stale connection'))
     income.getIncomeRecordsBetween.mockResolvedValue([수입행])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     await expect(loadDayRecords('2026-08-25')).resolves.toHaveLength(1)
   })
@@ -795,7 +792,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   it('결정석과 판매를 갈라 두 줄로 세운다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록, 데미안기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭(), 드롭({ dropIndex: 1, priceState: null, priceMeso: null })])
-    const { loadDayRecords, recordMesoOf } =
+    const { recordMesoOf } =
       require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
@@ -807,7 +804,6 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
 
   it('판매가 하나도 없으면 그 줄이 안 선다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
@@ -823,8 +819,6 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   it('미입력만 있으면 줄이 **안 선다**', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭({ priceState: null, priceMeso: null })])
-    const { loadDayRecords } =
-      require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
@@ -839,8 +833,6 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
       드롭({ priceState: 'entered', priceMeso: 1_000_000 }),
       드롭({ itemKey: null, itemName: '칠흑의 보스 반지 상자', priceState: null, priceMeso: null }),
     ])
-    const { loadDayRecords } =
-      require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
@@ -852,7 +844,6 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
     async function 판매줄(drops: Record<string, unknown>[]) {
       bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
       bossDrops.getBossDropRecords.mockResolvedValue(drops)
-      const { loadDayRecords } = require('../records') as typeof import('../records')
       const rows = await loadDayRecords('2026-08-21')
       return rows.find((row) => row.kind === 'dropSale')
     }
@@ -905,7 +896,6 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
       { id: 'i1', ocid: 'ocid-1', earnedOn: '2026-08-21', category: 'item_sale', item: '엘리시움', mesoAmount: 1, recordedAt: 'a' },
       { id: 'i2', ocid: null, earnedOn: '2026-08-21', category: 'item_sale', item: '리우', mesoAmount: 1, recordedAt: 'b' },
     ])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
@@ -919,7 +909,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
     income.getIncomeRecordsBetween.mockResolvedValue([
       { id: 'i1', earnedOn: '2026-08-21', category: 'hunting', item: null, mesoAmount: 1, recordedAt: 'z' },
     ])
-    const { loadDayRecords, isManualRecord } = require('../records') as typeof import('../records')
+    const { isManualRecord } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
@@ -929,7 +919,6 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   it('이름을 모르면 ocid 대신 `알 수 없음` 을 안 적는다. 표에도 캐시에도 없으면 갈래만 적는다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     profileLookup.resolveDisplayProfiles.mockResolvedValue(new Map())
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     expect((await loadDayRecords('2026-08-21')).map(titleOf)).toEqual(['보스 결정석'])
   })
@@ -940,7 +929,6 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   it('추적에서 빠진 캐릭터의 보스 줄도 조회 범위에 든다', async () => {
     selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
     bossProfit.getRecordedCharacterOcids.mockResolvedValue(['ocid-1', 'ocid-해제'])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     await loadDayRecords('2026-08-21')
 
@@ -954,7 +942,6 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   it('추적 목록이 비어도 기록이 있으면 보스 줄을 읽는다', async () => {
     selection.getTrackedCharacterOcids.mockResolvedValue(null)
     bossProfit.getRecordedCharacterOcids.mockResolvedValue(['ocid-해제'])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     await loadDayRecords('2026-08-21')
 
@@ -969,7 +956,6 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
   // 접어서 버리던 보스·난이도를 들고 있게 한 것뿐이다.
   it('결정석 줄이 그날 잡은 보스를 들고 있다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록, 데미안기록])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const [줄] = await loadDayRecords('2026-08-21')
 
@@ -989,7 +975,6 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
       { ...스우기록, bossKey: 'black_mage', boss: '검은마법사', difficulty: 'hard', payoutMeso: 9_000_000_000 },
       스우기록,
     ])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const [줄] = await loadDayRecords('2026-08-21')
 
@@ -1007,7 +992,6 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
       스우기록,
       { ...스우기록, difficulty: 'normal', payoutMeso: 500_000_000 },
     ])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const [줄] = await loadDayRecords('2026-08-21')
 
@@ -1037,7 +1021,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
         pointPer100mMeso: 1_180, cashAmount: null, recordedAt: 'b',
       },
     ])
-    const { loadDayRecords, dayTotalsOf } = require('../records') as typeof import('../records')
+    const { dayTotalsOf } = require('../records') as typeof import('../records')
 
     const [rows, amounts] = await Promise.all([
       loadDayRecords('2026-08-21'),
@@ -1049,7 +1033,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
 
   it('보스 줄은 손입력이 아니다. 여기서 못 고친다 (결정 8)', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
-    const { loadDayRecords, isManualRecord, rowKeyOf } = require('../records') as typeof import('../records')
+    const { isManualRecord, rowKeyOf } = require('../records') as typeof import('../records')
 
     const [row] = await loadDayRecords('2026-08-21')
 
@@ -1152,7 +1136,6 @@ describe('사냥 줄의 이름과 셈', () => {
 
   it('첫 칸이 **사냥터가 아니라 갈래**다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([사냥기록])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
@@ -1161,8 +1144,6 @@ describe('사냥 줄의 이름과 셈', () => {
 
   it('**n소재**를 센다. 보스 줄의 `n마리`와 같은 자리다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([사냥기록])
-    const { loadDayRecords } =
-      require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
@@ -1178,8 +1159,6 @@ describe('사냥 줄의 이름과 셈', () => {
         hunt: { mode: 'manual' as const, typedMeso: 41_760_000, fragments: 0, fragmentPrice: 0 },
       },
     ])
-    const { loadDayRecords } =
-      require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
@@ -1190,8 +1169,6 @@ describe('사냥 줄의 이름과 셈', () => {
   //  이전에 적힌 사냥 행은 계산 입력이 없다. 셀 것이 없으니 칸도 안 선다.
   it('계산기 이전 행도 직접 입력이라고 적는다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([{ ...사냥기록, hunt: null }])
-    const { loadDayRecords } =
-      require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
@@ -1227,7 +1204,7 @@ describe('솔 에르다 조각 정산 줄', () => {
 
   it('제목은 캐릭터 · 사냥이고 판 개수를 센다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([정산기록])
-    const { loadDayRecords, recordMesoOf } =
+    const { recordMesoOf } =
       require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
@@ -1262,7 +1239,6 @@ describe('아이템 판매 줄의 개수', () => {
 
   it('소비 · 기타는 판 개수를 센다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([판매기록])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
@@ -1273,7 +1249,6 @@ describe('아이템 판매 줄의 개수', () => {
     income.getIncomeRecordsBetween.mockResolvedValue([
       { ...판매기록, itemKind: 'equipment' as const, quantity: null },
     ])
-    const { loadDayRecords } = require('../records') as typeof import('../records')
 
     const rows = await loadDayRecords('2026-08-21')
 
@@ -1292,28 +1267,6 @@ describe('loadFragmentStorage', () => {
     const { loadFragmentStorage } = require('../records') as typeof import('../records')
 
     await expect(loadFragmentStorage('ocid-1', '2026-09-10', undefined)).resolves.toBeNull()
-  })
-})
-
-/**
- * 화면이 내 숫자가 낡았나 를 묻는 값. 화면은 `storage/` 를 직접 안 부르므로
- * (CLAUDE.md CRITICAL) 두 표의 판을 여기서 하나로 접는다.
- */
-describe('cashbookDataRevision', () => {
-  it('원천 셋의 판을 합한다. 어느 쪽이 올라도 값이 달라진다', () => {
-    const { cashbookDataRevision } = require('../records') as typeof import('../records')
-
-    expect(cashbookDataRevision()).toBe(0)
-
-    bossDrops.getBossDropRecordsRevision.mockReturnValue(1)
-    expect(cashbookDataRevision()).toBe(1)
-
-    bossProfit.getBossProfitRecordsRevision.mockReturnValue(4)
-    expect(cashbookDataRevision()).toBe(5)
-
-    // 이어서 하는 작업이 수입 기록의 수수료를 고쳐 쓰면 오른다
-    income.getIncomeRecordsRevision.mockReturnValue(2)
-    expect(cashbookDataRevision()).toBe(7)
   })
 })
 
@@ -1414,7 +1367,6 @@ describe('강화 줄', () => {
 
   async function 줄들(rows: EnhancementTotal[]) {
     enhancementTotals.loadEnhancementTotals.mockResolvedValue(rows)
-    const { loadDayRecords } = require('../records') as typeof import('../records')
     return await loadDayRecords('2026-08-23')
   }
 
@@ -1541,7 +1493,7 @@ describe('강화 줄', () => {
 
   // 칸에 적힌 수와 그 칸을 눌러 나온 수가 갈리면 안 된다.
   it('칸 금액과 상세 합계가 같은 수를 낸다', async () => {
-    const { loadDayRecords, dayTotalsOf } = require('../records') as typeof import('../records')
+    const { dayTotalsOf } = require('../records') as typeof import('../records')
     mvp.starforceMvpDiscountResolver.mockReturnValue(() => 10)
     enhancementTotals.loadEnhancementTotals.mockResolvedValue([
       합계(),
@@ -1560,7 +1512,6 @@ describe('강화 줄', () => {
 describe('손입력 지출의 0', () => {
   async function 줄들(records: unknown[]) {
     spend.getSpendRecordsBetween.mockResolvedValue(records)
-    const { loadDayRecords } = require('../records') as typeof import('../records')
     return await loadDayRecords('2026-08-23')
   }
 
