@@ -1,5 +1,5 @@
 /**
- * 헥사 매트릭스의 폼. 맨 위 세그먼트로 헥사 스킬 · 헥사 스탯을 오간다.
+ * 헥사 매트릭스의 폼. `강화 종류` 줄의 세그먼트로 헥사 스킬 · 헥사 스탯을 오간다.
  *
  * 헥사 강화는 메소 대신 솔 에르다 조각을 쓴다. 지출은 `(필요 조각 − 교환 불가) × 개당 가격` 이고 저장할 때 굳힌다.
  * 헥사 스킬은 그 캐릭터의 실제 코어를 고르고 필요 조각을 비용 표에서 더한다. 헥사 스탯은 활성화 조각을 체크로 더하고
@@ -182,11 +182,12 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
 
   return (
     <>
-      {/* 수정으로 열면 기록이 무엇이었는지가 정해져 있어 오가지 못한다. */}
-      <Segment options={MODES} selected={mode} onSelect={setMode} disabled={editing} size="md" />
-
       <FieldCard>
         <CharacterField characters={props.characters} selected={ocid} onSelect={selectCharacter} testID="spend-sheet-chain" />
+        {/* 사냥 전리품 판매의 분류 줄과 같은 모양이다. 수정으로 열면 기록이 무엇이었는지가 정해져 있어 오가지 못한다. */}
+        <FieldRow label="강화 종류" testID="spend-sheet-hexa-mode">
+          <Segment size="sm" options={MODES} selected={mode} onSelect={setMode} disabled={editing} />
+        </FieldRow>
 
         {mode === '헥사 스킬' ? (
           <>
