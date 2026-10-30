@@ -48,7 +48,7 @@
 |---|---|
 | `manual`(수동 선택 항목) | Preferences 의 `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` + 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값, 행 단위) |
 | `boss`(보스 처치 · 드롭) | 보스 기록 표 셋의 처치 · 드롭 행(행 단위) |
-| `cashbook`(가계부) | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` |
+| `cashbook`(가계부) | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `remembered_levels` |
 | `enhancement`(강화) | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` |
 
 보스 기록 표 셋(`boss_parties` · `boss_party_periods` · `boss_drops`, `BOSS_TABLE_NAMES`)은 통째로 지우지 않고 행 단위로

@@ -53,6 +53,7 @@
 | `history/*` 넷 | 가계부의 강화 내역 수집 | 날짜마다 강화 사용 내역. `count=1000`, 다음 쪽은 `cursor` 만 보낸다 |
 | `character/item-equipment` · `ability` · `symbol-equipment` · `skill` · `user/union-raider` · `union-artifact` | 사냥 계산기에서 캐릭터를 고를 때. 여섯을 동시에 부른다 | 메소 획득량 |
 | `character/symbol-equipment` | 지출 시트 심볼 강화 폼에서 캐릭터를 고를 때 | 심볼 이름과 레벨 |
+| `character/hexamatrix` | 지출 시트 헥사 매트릭스 폼에서 캐릭터를 고를 때 | 헥사 코어 이름 · 타입 · 레벨. 활성화하지 않은 코어는 줄이 없고 `hexa_core_event_level` 은 안 쓴다 |
 | `notice` · `notice-update` · `notice-event` · `notice-cashshop` 과 각 `/detail` | 공지 화면 · today 배너 | 공지 목록과 본문 |
 
 - `ocid` 는 계정마다 길이가 다르다(32 ~ 65자). 형식을 가정하지 않고 글자 그대로 다룬다.
