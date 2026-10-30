@@ -69,15 +69,15 @@ src/
    핸들러를 찾으려면 모듈 최상위에 있어야 한다([[ADR-056]] · [[ADR-057]]).
 5. `registerRootComponent(App)`.
 
-첫 렌더 뒤에는 `AppShell` 이 인증 · 진입 단계 · 테마 · 추적 모드 · 드롭 연출 설정을 저장소에서 읽어 오고, 탭
-스토어 선하이드레이션은 `app/prehydrate.ts` 가 동적 import 로 부른다([[ADR-027]]).
+첫 렌더 뒤에는 `AppShell` 이 인증 · 진입 단계 · 테마 · 추적 모드 · 드롭 연출 설정을 저장소에서 읽어 오고, 탭이
+그릴 것을 미리 받는 예열은 `app/prehydrate.ts` 가 동적 import 로 부른다([[ADR-027]]).
 
 ## 상태
 
 | 무엇 | 어디 |
 |---|---|
 | 화면과 기능의 클라이언트 상태(선택 캐릭터 · 테마 · 인증 · 탭 · 필터) | `features/*/store.ts` 의 zustand 스토어 |
-| 넥슨에서 받은 스케줄 · 캐릭터 기본 정보 | `features/query/` 의 TanStack Query 캐시 하나. 넥슨 쿼리는 SQLite `query_cache` 에 저장한다([[ADR-142]]). 보스 수익 · 가계부 · 공지는 아직 스토어와 화면 상태다 |
+| 넥슨에서 받은 스케줄 · 캐릭터 기본 정보와 기기 DB 에서 읽은 기록(보스 수익 기간 · 가계부 줄 · 드롭 히스토리) | `features/query/` 의 TanStack Query 캐시 하나. 넥슨 쿼리는 SQLite `query_cache` 에 저장하고, DB 읽기 쿼리는 표의 판이 오르면 무효화된다(`features/query/invalidation.ts`, [[ADR-142]]). 공지 · 결산 · 직접 완료 · 캐릭터 목록은 아직 스토어와 화면 상태다 |
 | 서버에 원본이 있는 게임 데이터 표 | `lib/game-data/` 의 표. `features/game-data/sync.ts` 가 받아 `storage/game-data-copy.ts`(SQLite)와 문서 디렉터리에 둔다([[ADR-020]]) |
 | 기기에 남는 값 | `storage/`. 키와 스키마는 `persistence/` 문서에 있다 |
 

@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-007 · ADR-067 결정 1 · 4 · ADR-097 · ADR-111 결정 5 · ADR-113 결정 1 · ADR-148 · ADR-218 결정 1 · 2 · ADR-222 결정 1 ~ 4 · 8 · 정정 2 · 6 · ADR-226 결정 2 ~ 4 · 정정 1 · 3
-> 관련 소스: `nexon/` · `features/schedule-sync/` · `features/schedule-window/` · `features/refresh/progress.ts` · `features/ledger/useLedgerData.tsx` · `lib/scheduler/sync-freshness.ts` · `storage/schedule-probe-ledger.ts`
+> 관련 소스: `nexon/` · `features/schedule-sync/` · `features/schedule-window/` · `features/refresh/progress.ts` · `features/refresh/pull.ts` · `features/ledger/useLedgerData.tsx` · `lib/scheduler/sync-freshness.ts` · `storage/schedule-probe-ledger.ts`
 
 ## 배경
 
@@ -118,8 +118,9 @@
   그 회차가 끝난 뒤 자기 회차를 연다. 수동 모드 시드처럼 ocid 마다 따로 부르는 곳에서, 첫 회차에 모두 합류해
   전원이 첫 캐릭터의 스케줄을 받는 일을 막기 위해서다. 실패한 회차는 남기지 않는다. 남기면 네트워크가 돌아와도
   다음 진입이 그 실패를 다시 받는다.
-- 응답을 받은 회차는 `useDataFreshness` 에 받은 시각을 알린다. 화면 헤더의 `hh:mm:ss 기준` 이 이 값을 읽는다.
-  캐시로 채운 결과(`isStale`)의 시각은 이번에 받은 것이 아니라서 넣지 않는다.
+- 회차는 쿼리 하나(`scheduleRound()`)다. 화면 헤더의 `hh:mm:ss 기준` 은 그 데이터의 `receivedAt`(넥슨에서 실제로 받은
+  마지막 시각)을 읽는다(`useRealtimeFetchedAt`, [[ADR-142]] 결정 3). 캐시로 채운 결과(`isStale`)는 캐릭터 열쇠의 든 값을
+  덮지 않고 결과 종류만 회차에 남기며, 그 시각도 `receivedAt` 에 넣지 않는다. 전원이 캐시로 채워진 회차는 이전 값을 지킨다.
 
 ### 결정 6. 자동 조회는 신선하면 건너뛰고, 당김은 항상 받는다
 
@@ -128,17 +129,15 @@
 
 언제 신선하고 언제 다시 받는지는 [[ADR-142]] 결정 4 · 5 가 정한다. 받은 지 10분 안이고 그 사이에 KST 자정이 없으며
 추적 캐릭터를 회차가 전부 덮었을 때 신선하다. 앱 시작과 복귀는 신선해도 한 번 받고, 화면 포커스는 만료만 받고,
-당김 · 다시 시도는 항상 받는다. 여기 남는 것은 넥슨 쪽 값과 아직 옮기지 않은 자리다.
+당김 · 다시 시도는 항상 받는다. 여기 남는 것은 넥슨 쪽 값이다.
 
 - 10분(`SYNC_TTL_MS`)은 게임에서 보스 하나나 일일 몇 개를 도는 시간보다 짧고, 탭을 오가는 시간보다는 길다.
-  사용자가 쓰면서 조정하기로 한 값이라 `lib/scheduler/sync-freshness.ts` 한 곳에만 둔다.
+  사용자가 쓰면서 조정하기로 한 값이라 `lib/scheduler/sync-freshness.ts` 한 곳에만 둔다. 쓰는 곳은
+  `features/query/freshness.ts` 의 `scheduleStaleTime` 하나다.
 - 건너뛴 진입의 캐시는 신선한 값으로 다룬다. `isStale` 을 붙이지 않아 오래된 데이터 안내가 뜨지 않고, 로딩 표시가
   번쩍이지 않는다.
-- 보스 수익 스토어는 아직 옛 게이트를 쓴다. 이번 실행에서 시도했는지(`sync-run-state.ts`)와 Preferences 캐시의
-  `syncedAt` 이 모두 10분 안인지(`isSyncFresh`)를 본다. 예열과 설정 뒤 다시 읽기가 스케줄 회차 뒤에 보스 수익을
-  돌리는 것은 그 게이트가 방금 받은 캐시를 신선하다고 보게 하기 위해서다. [[ADR-142]] 2단계에서 옮긴다.
-
-건너뛴 진입에서 보스 수익을 자동으로 기록하는지는 보스 수익 결정([[ADR-040]])에서 정한다.
+- 보스 수익도 같은 회차 쿼리를 본다. 자동 기록이 회차 안에 있으므로([[ADR-142]] 결정 3) 건너뛴 진입에서는 기록도
+  돌지 않는다. 기록 규칙은 [[ADR-040]] 에 있다.
 
 ### 결정 7. `character/basic` 은 동기화할 때 함께 받고, 5분 안에 받은 것은 다시 받지 않는다
 
@@ -164,8 +163,8 @@
 동기화 회차의 대표 캐릭터 하나는 이 가드를 건너뛴다(`force`). today 가 그 캐릭터의 EXP 를 그리는데, 5분 안이면
 새로고침을 눌러도 숫자가 움직이지 않았다. 전원에게 켜면 추적 45명인 계정은 새로고침 한 번에 45건이 나가므로
 대표만 켠다. 대표는 today 가 그리는 것과 같은 함수(`resolveDisplayRepresentative`)로 고른다. 새로고침 회차에만
-켜지 않고 모든 회차에 켠다. 세 스토어가 동시에 부를 때 어느 쪽이 회차를 여는지 정해져 있지 않아, 새로고침
-여부를 회차까지 전할 수 없기 때문이다. 자동 진입은 10분 게이트에 막히므로 늘어나는 호출은 회차마다 1건이다.
+켜지 않고 모든 회차에 켠다. 회차는 쿼리 하나라 어느 화면이 열었는지 가리지 않고, 새로고침 여부를 회차까지
+전하지 않기 때문이다. 자동 진입은 신선하면 받지 않으므로 늘어나는 호출은 회차마다 1건이다.
 
 ### 결정 8. 지난 13일은 조회 원장을 보고 한 번에 채운다
 
@@ -235,16 +234,19 @@ advance(slot, done, total?) 그 몫의 진척. 실제 분모가 오면 고친다
 
 | 부르는 곳 | 조각 |
 |---|---|
-| `LedgerLayer` 마운트 · 가계부 기간 이동 | `window` · `enhancement` |
+| `LedgerLayer` 마운트 · 가계부 기간 이동 | `window` · `enhancement`. 그 앞에 만료된 회차만 받는다(`prefetchSchedules`) |
 | 보스 수익 당겨서 새로고침 | `live` · `window` |
 | 가계부 · 통계 당겨서 새로고침 | `live` · `window` · `enhancement` |
 
-- `live` 는 오늘의 스케줄(`syncSchedules`)이고 `window` 는 결정 8 의 창, `enhancement` 는 강화 내역이다. 보스 수익은
-  강화 내역을 그리지 않으므로 그 당김에서 뺐다.
-- 마운트에서는 `live` 를 받지 않는다. 보스 수익 스토어의 자동 진입이 결정 6 의 게이트에 따라 이미 오늘을 받기 때문이다.
-  둘 다 부르면 진입마다 같은 조회가 두 번 나간다.
-- 회차가 끝날 때마다 `revision` 이 오르고, 자식 화면은 그 값이 바뀔 때 기록을 다시 읽는다. 받는 동안은
-  `status` 가 `filling` 이고 `LedgerLoadingModal` 이 진행 막대를 그린다.
+- `live` 는 스케줄 회차(`refreshSchedules`. 신선해도 받는다. 자동 기록과 처치 날짜 캐기가 그 안에 있다)와 오늘
+  하루의 강화 내역(`collectTodayEnhancement`)이다. `window` 는 결정 8 의 창, `enhancement` 는 범위의 강화 내역이다.
+  보스 수익은 강화 내역을 그리지 않으므로 그 당김에서 뺐다. 오늘 강화는 하루치(4콜)라 어느 당김에나 든다. today
+  의 당김(`features/refresh/pull.ts` 의 `pullRefresh`)도 같은 차례(회차 → 창 → 오늘 강화)다([[ADR-142]] 결정 3).
+- 마운트는 만료된 회차만 받은 뒤 창을 채운다. 회차를 안 거치면 창 회차가 자동 기록보다 먼저 후보를 읽어 오늘
+  기록에 처치 날짜가 안 붙는다. 신선한 회차를 또 받으면 진입마다 같은 조회가 두 번 나간다.
+- 층은 진행률 · 모달 · 강화 범위만 들고 기록은 들지 않는다. 회차가 쓴 기록은 표의 판을 올리고, 그 표를 읽는 쿼리
+  (`ledgerDays` · `bossProfitPeriod`)가 무효화되어 자식이 다시 읽는다([[ADR-142]] 결정 6). 받는 동안은 `status` 가
+  `filling` 이고 `LedgerLoadingModal` 이 진행 막대를 그린다.
 
 ## 테스트
 
@@ -256,19 +258,19 @@ advance(slot, done, total?) 그 몫의 진척. 실제 분모가 오면 고친다
 | `nexon/character/__tests__/normalize.spec.ts` | 결정 2: 캐릭터 0명 계정을 빼는지, `access_flag` 문자열을 바꾸는지, 길드 세 상태와 EXP 문자열을 바꾸는 규칙(없으면 `undefined`, `"0.000"` 은 0)을 본다 |
 | `nexon/schedule/__tests__/client.spec.ts` · `normalize.spec.ts` | 결정 2 · 4: 문자열 플래그, `bossDaily` 제외와 승격 오염 방지, 등록 난이도 승격과 `ownComplete`, 이름을 못 찾을 때 원문을 지키는지, 섹션이 비거나 없을 때와 축약 응답에서 stale 플래그가 맞게 켜지는지 본다 |
 | `features/schedule-sync/__tests__/to-schedule-sync-error.spec.ts` | 결정 3: 코드마다 종류가 맞는지, 모르는 400 이 `network` 인지, 로그인 만료가 무효 키 판정에 안 걸리고 키를 싣지 않는지 본다 |
-| `features/schedule-sync/__tests__/schedule-sync.spec.ts` | 결정 5: 추적 캐릭터만 부르는지, 첫 캐릭터를 먼저 부르고 전역 실패면 나머지를 안 부르는지, 단일 회차 합류 조건과 결과 범위를 본다. 결정 6: 시도 표시가 실패해도 켜지는지 본다. 결정 4 · 9: 섹션 채우기가 날짜를 한꺼번에 보내고, 날짜 순으로 합치고, 받은 날짜를 전부 원장에 적는지 본다. 결정 7: 편승 갱신의 횟수 · 실패 격리 · 5분 가드 · 대표 강제를 본다. 결정 10: 진행률 칸을 여는 조건을 본다 |
+| `features/schedule-sync/__tests__/schedule-sync.spec.ts` | 결정 5: 추적 캐릭터만 부르는지, 첫 캐릭터를 먼저 부르고 전역 실패면 나머지를 안 부르는지, 단일 회차 합류 조건과 결과 범위를 본다. 결정 4 · 9: 섹션 채우기가 날짜를 한꺼번에 보내고, 날짜 순으로 합치고, 받은 날짜를 전부 원장에 적는지 본다. 결정 7: 편승 갱신의 횟수 · 실패 격리 · 5분 가드 · 대표 강제를 본다. 결정 10: 진행률 칸을 여는 조건을 본다 |
 | `features/schedule-sync/__tests__/character-basic-fetch.spec.ts` | 결정 7: 5분 가드의 경계, `force`, 믿을 수 없는 `cachedAt`, 실패를 캐시로 덮지 않는지, 프로필 스냅샷을 쓰는지 본다 |
 | `features/schedule-sync/__tests__/character-eligibility.spec.ts` | 결정 9: 13일을 한꺼번에 보내는지, 원장에 있는 날을 다시 안 부르는지, 실패 종류마다 원장에 적는 규칙과 조회 불가가 우선하는지 본다 |
-| `lib/__tests__/sync-freshness.spec.ts` | 결정 6: 보스 수익의 옛 게이트가 캐시 없는 캐릭터 · 경계 · 미래 시각 · 파싱 불가를 만료로 보는지 본다 |
 | `features/query/__tests__/freshness.spec.ts` · `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 6: 스케줄 회차의 신선함과 다시 받는 계기. 자세한 것은 [[ADR-142]] 테스트 표 |
+| `features/refresh/__tests__/pull.spec.ts` | 결정 11: 당김이 회차 → 창 → 오늘 강화 순인지, 추적이 없으면 창을 안 부르는지 본다 |
 | `features/schedule-window/__tests__/window.spec.ts` | 결정 8: 오늘을 빼고 13일을 부르는지, 확정된 날을 다시 안 부르는지, 실패 종류마다 원장에 적는 규칙, 분모를 먼저 알리는지 본다 |
 | `features/schedule-window/__tests__/gate.spec.ts` | 결정 8: 동시 상한을 넘지 않는지, 결과 순서와 진척 알림, 하나가 던져도 나머지가 도는지 본다 |
 | `features/schedule-window/__tests__/sync.spec.ts` | 결정 8: 네 단계의 순서, 한 단계가 던져도 다음 단계가 도는지, 겹친 호출이 회차를 함께 쓰는지 본다 |
 | `features/schedule-window/__tests__/records.spec.ts` | 결정 8: 기간의 마지막 관측이 기록을 정하는지, 단계 하나가 죽어도 다른 기간 · 캐릭터를 쓰는지 본다 |
 | `features/refresh/__tests__/progress.spec.ts` | 결정 10: 분모와 분자를 더하는지, 회차 안에서 앞 단계가 끝나도 막대가 안 꺼지는지, 안쪽 회차가 닫혀도 바깥이 열려 있으면 안 지우는지, 실제 분모로 고치는지 본다 |
-| `features/ledger/__tests__/useLedgerData.spec.tsx` | 결정 10 · 11: 한 회차가 한 막대인지, 조각마다 부르는 것이 맞는지 본다 |
+| `features/ledger/__tests__/useLedgerData.spec.tsx` | 결정 10 · 11: 한 회차가 한 막대인지, 조각마다 부르는 것이 맞는지, 마운트가 만료된 회차만 받은 뒤 창을 채우는지 본다 |
 
 ## 번호 기록
 
 - ADR-021 (2026-10-19): 옛 ADR-007 · 067 · 097 · 111 · 113 · 148 · 218 · 222 · 226 을 합쳐 처음 작성
-- ADR-021 (2026-10-30): 결정 6 의 신선함 · 다시 받는 계기를 [[ADR-142]] 로 옮기고 여기는 10분 값과 보스 수익의 옛 게이트만 남겼다
+- ADR-021 (2026-10-30): 결정 6 의 신선함 · 다시 받는 계기를 [[ADR-142]] 로 옮기고 여기는 10분 값만 남겼다. 결정 11 의 `revision` 은 표의 판 무효화로 바뀌었다

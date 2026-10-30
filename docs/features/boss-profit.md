@@ -30,13 +30,18 @@
 | `app/boss-profit/CharacterIssue.tsx` | 조회 불가 · 동기화 실패 배지와 설명 팝오버 |
 | `app/boss-profit/character-groups.ts` | 행을 캐릭터로 묶고 금액 · 처치 수 · 결정석 수 · 고가 드롭을 센다 |
 | `app/boss-profit/DropPriceFab.tsx` | 아이템 가격 입력 버튼과 미입력 배지 |
-| `features/boss-profit/store.ts` | 동기화 · 자동 기록 · 기간 읽기 · 화면이 읽는 값 전부 |
+| `features/boss-profit/store.ts` | 보던 탭 · 기간 · 파티 계획과 기록을 쓰는 액션(파티 · 직접 완료 · 드롭) |
+| `features/boss-profit/period-query.ts` | 기간 쿼리 `bossProfitPeriod(tab, periodKey)` · 앞뒤 기간 미리 읽기 · 이번 주 예열 |
+| `features/boss-profit/period-snapshot.ts` | 한 기간의 스냅샷. 지금 기간은 스케줄 쿼리 캐시에서, 지난 기간은 기록에서 만든다 |
+| `features/boss-profit/round-record.ts` | 스케줄 회차 안의 자동 기록 · 월드 리프 중복 정리 · 고아 드롭 정리 |
+| `features/boss-profit/round-view.ts` | 회차의 실패 · 캐시로 채운 캐릭터를 배지와 토스트로 |
 | `features/boss-profit/rows.ts` | 행 만들기 · 기록 합치기 · 탭별로 자르기 |
 | `features/boss-profit/auto-record.ts` | 자동 기록과 처치 난이도 드롭 이관 |
 | `features/boss-profit/defeat-dates.ts` | 처치 날짜 찾기 |
 | `features/boss-profit/world-leap-records.ts` · `world-leap-link.ts` | 월드 리프한 기간의 중복 기록 정리와 두 캐릭터 연결 |
 | `features/boss-profit/period-navigation.ts` | 기록이 있는 이웃 기간 · 이전 화살표 판정 |
-| `features/boss-profit/period-cache.ts` · `period-window.ts` | 읽은 기간의 표와 미리 읽을 기간 목록 |
+| `features/boss-profit/period-window.ts` | 미리 읽을 기간 목록 |
+| `features/boss-profit/period-cache.ts` | 보스 기록 · 드롭 기록의 판 묶음(`bossRecordsStamp`). 아이템 가격 화면과 미입력 건수가 본다 |
 | `features/boss-profit/monthly-crystals.ts` | 주간 탭 칩의 그 달 월간 결정석 누적 |
 | `features/boss-profit/use-unpriced-drop-count.ts` | 버튼 배지의 미입력 건수 |
 | `features/boss-profit/use-period-error-toast.ts` | 기간 읽기 실패 토스트 |
@@ -64,10 +69,9 @@
 
 | 언제 | 무엇을 |
 |---|---|
-| 동기화에서 완료가 확인될 때 | 그 기간 · 난이도로 한 줄을 적는다. 파티 인원은 그 기간 값 → 파티 설정 → 1 순서로 정한다 |
-| 동기화를 건너뛴 진입 | 캐시가 지금 기간이면 캐시 단계에서 적는다 |
+| 스케줄 회차가 완료를 받았을 때(`recordBossProfitFromRound`) | 그 기간 · 난이도로 한 줄을 적는다. 파티 인원은 그 기간 값 → 파티 설정 → 1 순서로 정한다. 어느 화면이 회차를 열었든 같다 |
 | 처치 난이도가 정해질 때 | 다른 난이도 키에 적은 드롭을 확정 난이도로 옮긴다 |
-| 창 동기화가 끝난 뒤 · 가계부에 들어올 때 | 날짜 없는 기록의 처치 날짜를 찾는다 |
+| 스케줄 회차 · 창 동기화가 끝난 뒤 | 날짜 없는 기록의 처치 날짜를 찾는다(`resolveDefeatDates`). 합류한 회차가 시작한 뒤 기록 판이 올랐으면 한 번 더 돈다 |
 | 월드 리프한 기간에 같은 처치가 두 캐릭터에 생겼을 때 | 옛 캐릭터 기록을 지우고 드롭을 새 기록으로 합친다 |
 
 기록하지 않는 경우와 그 이유는 [[ADR-040]] 결정 2 에 있다.
@@ -101,8 +105,11 @@ hh:mm:ss 기준
 | 주차 줄(월간) | 주차 이름 · 날짜 · 금액 또는 상태 | `failed` 면 `다시 시도`. 아이템이 섞이면 금액이 내역 상자를 연다 |
 | 아이템 가격 입력 버튼(주간) | 칠흑 아이템 그림 · 미입력 건수 배지 | 보고 있는 주로 아이템 가격 입력 화면을 연다 |
 
-- 목록을 아래로 당기면 `LedgerLayer` 가 실시간 조회와 창 동기화를 다시 돌린다(`reload(['live', 'window'])`).
-  어느 기간에서든 되고, 보던 기간을 떠나지 않는다. 당김 동작은 [[ADR-064]] 에 있다.
+- 기간의 데이터는 쿼리 `bossProfitPeriod(tab, periodKey)` 가 든다. 보스 기록 · 드롭 기록 · 조회 원장의 판이 오르거나
+  스케줄 회차가 새 데이터를 들면 다시 읽는다([[ADR-142]] 결정 6 · 9).
+- 목록을 아래로 당기면 `LedgerLayer` 가 스케줄 회차 · 창 동기화 · 오늘 강화를 다시 돌린다(`reload(['live', 'window'])`).
+  어느 기간에서든 되고, 보던 기간을 떠나지 않는다. 화면에 돌아오면 만료된 회차만 다시 받는다
+  (`useRefetchStaleOnFocus`). 당김 동작은 [[ADR-064]] 에 있다.
 - 제목 아래의 `hh:mm:ss 기준` 은 실시간 데이터를 마지막으로 받은 시각이다. 지난 기간을 봐도 바뀌지 않는다.
 - 동기화 전체 실패와 일부 캐릭터 실패는 토스트로 알린다. 일부 실패는 이름 대신 인원 수를 적는다.
 - 추적 캐릭터가 없으면 `추적 중인 캐릭터가 없습니다` 와 `캐릭터 선택하러 가기`(설정 탭으로 가며 선택 창을

@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-010 결정 2 · ADR-038 · ADR-040 · ADR-041 · ADR-044 · ADR-070 결정 1 · ADR-071 · ADR-124 · ADR-187 결정 5 · 6 · ADR-236 · ADR-238 · ADR-249 · ADR-251 결정 7 · 8 · ADR-303 · ADR-305 결정 7 · 11 · ADR-310 결정 2 · ADR-312 결정 5 · 6 · ADR-314 · ADR-351
-> 관련 소스: `features/boss-profit/orphan-drops.ts` · `app/boss-profit/BossDropSheet.tsx` · `app/boss-profit/DropPriceScreen.tsx` · `app/boss-profit/DropPriceFab.tsx` · `app/boss-profit/DropHistoryScreen.tsx` · `features/boss-profit/drop-price-store.ts` · `features/boss-profit/drop-history-store.ts` · `features/boss-profit/drops-loader.ts` · `lib/boss/boss-drops.ts` · `lib/drop/` · `storage/boss-drops.ts`
+> 관련 소스: `features/boss-profit/orphan-drops.ts` · `app/boss-profit/BossDropSheet.tsx` · `app/boss-profit/DropPriceScreen.tsx` · `app/boss-profit/DropPriceFab.tsx` · `app/boss-profit/DropHistoryScreen.tsx` · `features/boss-profit/drop-price-store.ts` · `features/boss-profit/drop-history-query.ts` · `features/boss-profit/drops-loader.ts` · `lib/boss/boss-drops.ts` · `lib/drop/` · `storage/boss-drops.ts`
 
 ## 배경
 
@@ -354,8 +354,9 @@
 - 그 기간을 아직 읽지 않았으면 빈 상태가 아니라 불러오는 중을 보여 준다(`readThisPeriod`). 스토어가 지난번
   기간의 `ready` 를 가지고 있어서, 기간을 함께 보지 않으면 기록이 있는데도 빈 상태가 잠깐 보인다.
 - 저장은 그 기록이 속한 묶음 전체를 다시 쓰고, 성공한 뒤에 화면 상태를 바꾼다. 실패하면 `가격을 저장하지
-  못했습니다` 토스트를 띄우고 다음 기록으로 넘어가지 않는다. 성공하면 보스 수익 스토어에도 바뀐 기록을
-  알리고(`applyExternalDropEdit`), 서버로 그 가격을 보낸다([[ADR-018]]).
+  못했습니다` 토스트를 띄우고 다음 기록으로 넘어가지 않는다. 성공하면 드롭 기록의 판이 올라 보스 수익의 기간
+  쿼리와 히스토리가 다시 읽고([[ADR-142]] 결정 6), 서버로 그 가격을 보낸다([[ADR-018]]). 보스 수익 쪽에 따로
+  알리지 않는다.
 
 여러 기간을 한 번에 읽어 두는 방식은 결정 18 이다.
 
@@ -406,8 +407,9 @@
 - 히스토리에는 삭제 · 수정이 없다. 기록은 시트에서만 고친다.
 - 읽기가 실패하면 빈 목록이 아니라 실패 상태와 `다시 시도` 를 보여 준다. `기록이 없습니다` 는 읽기에 성공했을
   때만 할 수 있는 말이다.
-- 스토어는 읽기 직전의 저장소 리비전을 함께 가지고 있다(`loadedRevision`). today 가 같은 스토어를 계속 보고
-  있어서, 스냅샷이 낡았는지 이 값으로 알아본다([[ADR-058]]).
+- 히스토리는 쿼리 `dropHistory()` 하나이고(`drop-history-query.ts`), today 의 최고가 · 미입력 위젯이 같은 열쇠를
+  본다([[ADR-058]]). 드롭 · 보스 기록의 판이 오르면 무효화되어 다시 읽는다([[ADR-142]] 결정 6). 화면이 판을 견주지
+  않는다.
 
 ### 결정 15. 기록 한 건은 게임 로그 같은 한 문장이다
 
@@ -541,9 +543,9 @@
 | `storage/__tests__/boss-drops.spec.ts` | 결정 7: 묶음을 지우고 다시 넣는지, 식별자를 돌려주고 다시 저장해도 이어 받는지, 비우면 처치도 그 기간 값도 없는 기간 행까지 지우는지, 이름을 key 로 찾아 채우는지, 전 기간 조회의 정렬이 `period_key DESC, sort_order` 인지 본다. 결정 9: 매긴 드롭만 `completed` 로 분배 · 수수료를 적고 나머지는 분배 칸을 버리는지, 0메소를 미입력으로 두는지, `priced_at` 이 가격이 바뀔 때만 움직이는지 본다 |
 | `features/boss-profit/__tests__/drops-loader.spec.ts` | 결정 8 · 9: 기간을 읽어도 가격이 남는지, 완료 행에서만 정리하고 지운 기록에 지우기를 보내는지, 기간으로 판정하는지 본다 |
 | `features/boss-profit/__tests__/orphan-drops.spec.ts` | 결정 17: 행도 처치 기록도 없는 묶음만 고르고, 안전 장치 넷(난이도만 다른 행 · 빈 기간 · 가격 모르는 보스 · 믿을 수 없는 캐릭터와 모르는 기간)이 지우지 않게 막는지 본다 |
-| `features/boss-profit/__tests__/drop-price-store.spec.ts` | 결정 12 · 18: 범위 전체를 조회 한 번씩으로 읽고 범위 안 이동은 다시 안 읽는지, `warmWindow` 가 화면 상태를 안 건드리는지, 판이 바뀌면 건수를 돌려주지 않는지 본다. 결정 12: 캐릭터별 묶음, 분배 처음 값, 그 주에 나오는 월간 보스, 묶음 전체를 다시 쓰는 저장, 실패하면 던지는지, 보스 수익 스토어에 알리는지 본다. 기간별 미입력 건수를 돌려주는 조건을 본다. 결정 10: 기본으로 저장하면 내 비율 칸을 비우는지 본다. 분배 처음 값을 처치 기록 → 그 기간만 고친 값 → 파티 설정 → 1인 순서로 고르는지, 파티 설정 읽기가 실패해도 화면이 열리는지 본다 |
+| `features/boss-profit/__tests__/drop-price-store.spec.ts` | 결정 12 · 18: 범위 전체를 조회 한 번씩으로 읽고 범위 안 이동은 다시 안 읽는지, `warmWindow` 가 화면 상태를 안 건드리는지, 판이 바뀌면 건수를 돌려주지 않는지 본다. 결정 12: 캐릭터별 묶음, 분배 처음 값, 그 주에 나오는 월간 보스, 묶음 전체를 다시 쓰는 저장, 실패하면 던지는지 본다. 기간별 미입력 건수를 돌려주는 조건을 본다. 결정 10: 기본으로 저장하면 내 비율 칸을 비우는지 본다. 분배 처음 값을 처치 기록 → 그 기간만 고친 값 → 파티 설정 → 1인 순서로 고르는지, 파티 설정 읽기가 실패해도 화면이 열리는지 본다 |
 | `features/boss-profit/__tests__/rows.spec.ts` | 결정 10: `dropShareSeedOf` 가 결정석 비율이 있으면 `비율` 로, 없으면 `기본` 으로 열고 인원 칸은 늘 파티 인원인지 본다 |
-| `features/boss-profit/__tests__/drop-history-store.spec.ts` | 결정 14: 가격 칸을 옮기는지, 조회 범위가 추적과 기록의 합인지, 리비전을 읽기 전에 찍는지, 실패를 빈 목록으로 바꾸지 않는지 본다 |
+| `features/boss-profit/__tests__/drop-history-query.spec.ts` | 결정 14: 가격 칸을 옮기는지, 조회 범위가 추적과 기록의 합인지, 드롭 · 보스 기록 표를 읽는 쿼리로 적는지, 실패를 빈 목록으로 바꾸지 않는지 본다 |
 | `features/boss-profit/__tests__/use-unpriced-drop-count.spec.tsx` | 결정 13: 배지 건수가 모를 때 `null` 이고, 다시 셀 때와 실패할 때 직전 수를 두는지 본다 |
 | `app/boss-profit/__tests__/BossDropSheet.test.tsx` | 결정 2: 완료면 난이도 하나, 미완료면 토글, 난이도를 바꾸면 없는 선택이 풀리는지, key 없는 옛 기록이 남는지 본다 |
 | | 결정 3 · 4: 고정 보상이 기록에 안 담기는지, 반지 상자를 고르고 다시 누르면 풀리는지, 기간에 따라 후보가 바뀌는지 본다 |

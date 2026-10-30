@@ -136,15 +136,17 @@ CTA 버튼은 문구가 가리키는 목적지가 앱 안에 있을 때만 단�
 
 - **절대 시각만 적는다.** `12분 전` 은 화면을 보는 동안 계속 틀려지는데, 이 줄은 다시 그리지 않는다.
   날짜는 적지 않는다(사용자 지정).
-- **값은 앱 전체에 하나다.** 실시간 데이터를 마지막으로 받은 시각을 `useDataFreshness` 에 둔다.
+- **값은 앱 전체에 하나다.** `useRealtimeFetchedAt`(`features/refresh/freshness.ts`)이 회차 쿼리(`scheduleRound()`)의
+  `dataUpdatedAt` 과 오늘 강화 쿼리(`enhancementToday()`)의 시각 중 늦은 쪽을 낸다([[ADR-142]] 결정 3).
   화면마다 따로 재면 같은 조회로 그린 데이터인데 화면마다 시각이 달라진다.
-- **넥슨 API 로 실제 조회했을 때만 값이 바뀐다.** 적는 곳은 `syncSchedules` 가 끝날 때(스케줄러 데이터와
-  `character/basic`)와 원장이 오늘 날짜가 든 강화 내역을 받을 때 둘뿐이다. 기기 DB 에서 읽은 값이나
-  과거 기간 조회로는 바뀌지 않는다. 과거 기간은 이미 확정된 기록이라, 그것으로 시각을 바꾸면 지난 달을
-  넘겨보기만 해도 방금 받은 데이터처럼 보인다. 값은 뒤로 가지 않는다.
-- **앱을 다시 켜도 남는다.** Preferences `dataFetchedAt` 에 저장한다. 다시 켠 화면도 캐시에 있던 그
-  데이터를 그리므로, 시각만 지우면 그 데이터가 언제 것인지 알 수 없다. 데이터 삭제도 조회 캐시와 이
-  시각을 함께 남긴다. 둘 중 하나만 지우면 화면의 데이터와 시각이 어긋난다.
+- **넥슨 API 로 실제 조회했을 때만 값이 바뀐다.** 움직이는 자리는 회차 쿼리가 새 데이터를 들 때(스케줄러 데이터와
+  `character/basic`)와 강화 수집기가 오늘이 든 범위를 받아 `enhancementToday()` 에 시각을 넣을 때 둘뿐이다. 기기
+  DB 에서 읽은 값이나 과거 기간 조회로는 바뀌지 않는다. 과거 기간은 이미 확정된 기록이라, 그것으로 시각을 바꾸면
+  지난 달을 넘겨보기만 해도 방금 받은 데이터처럼 보인다. 둘 중 늦은 쪽이라 값은 뒤로 가지 않는다.
+- **앱을 다시 켜도 남는다.** 회차 쿼리가 기기(SQLite `query_cache`)에 저장되어 그 시각도 함께 올라온다
+  ([[ADR-142]] 결정 7). 다시 켠 화면도 캐시에 있던 그 데이터를 그리므로, 시각만 없으면 그 데이터가 언제 것인지
+  알 수 없다. 데이터 삭제도 쿼리 캐시를 남긴다([[ADR-053]] 결정 2). 오늘 강화의 시각은 저장하지 않아 다시 켜면
+  회차 시각만 남는다.
 - **값이 없어도 줄의 높이는 남긴다.** 이 줄은 `PageHeaderTitleRow` 가 언제나 그린다. 값이 없는
   화면에서는 글자만 비운다. 값이 들어오는 순간 줄이 생기면 헤더가 16px 내려앉고, 탭을 오갈 때 제목
   위치가 화면마다 달라진다.
@@ -175,8 +177,8 @@ CTA 버튼은 문구가 가리키는 목적지가 앱 안에 있을 때만 단�
 | `components/molecules/ErrorState/__tests__/ErrorState.test.tsx` · `StaleBanner.test.tsx` | 결정 7: 버튼이 `action` 을 줄 때만 생기는지, 아이콘을 배지로 감싸지 않는지 본다 |
 | `features/schedule-sync/__tests__/use-sync-error-toast.spec.tsx` | 결정 8: 같은 실패 객체로는 한 번만 띄우고 새 실패에는 다시 띄우는지 본다 |
 | `components/organisms/Toast/__tests__/` | 결정 8: 액션 버튼과 닫기, 스와이프로 닫기, 남은 시간 바와 모션 줄이기, 쌓이는 순서와 탭바 위 위치를 본다 |
-| `components/molecules/DataFreshness/__tests__/DataFreshness.test.tsx` · `lib/__tests__/data-freshness.spec.ts` | 결정 9: 표기가 `hh:mm:ss 기준` 인지, 값이 없거나 못 읽어도 줄은 남고 글자만 비는지, 여러 값 중 가장 늦은 것을 고르고 못 읽는 값은 버리는지 본다 |
-| `features/refresh/__tests__/freshness.spec.ts` | 결정 9: 시각이 뒤로 가지 않는지 본다 |
+| `components/molecules/DataFreshness/__tests__/DataFreshness.test.tsx` · `lib/__tests__/data-freshness.spec.ts` | 결정 9: 표기가 `hh:mm:ss 기준` 인지, 값이 없거나 못 읽어도 줄은 남고 글자만 비는지 본다 |
+| `features/refresh/__tests__/freshness.spec.tsx` | 결정 9: 회차 시각과 오늘 강화 시각 중 늦은 쪽을 내고 둘 다 없으면 비는지, 머리 줄 때문에 회차를 받지는 않는지 본다 |
 | `hooks/__tests__/useLoopedValue.spec.tsx` | 결정 10: 보일 때만 돌고, 초점을 잃으면 멈추고, 되찾으면 다시 도는지, 내비게이터 밖에서는 보이는 것으로 보는지, 모션 줄이기면 돌지 않는지 본다 |
 
 ## 번호 기록

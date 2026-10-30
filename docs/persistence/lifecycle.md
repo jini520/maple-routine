@@ -7,7 +7,7 @@
 | 파일 | 하는 일 |
 |---|---|
 | `app/AppShell.tsx` | 부팅 때 설정을 읽어 스토어에 넣는다 |
-| `app/prehydrate.ts` · `features/prehydrate.ts` | 부팅 예열. 스케줄 회차와 보스 수익 스토어 |
+| `app/prehydrate.ts` · `features/prehydrate.ts` | 부팅 예열. 스케줄 회차와 보스 수익 이번 주 쿼리 |
 | `app/QueryCacheProvider.tsx` · `features/query/persist.ts` | 저장된 쿼리 캐시를 올리고 바뀔 때마다 다시 쓴다 |
 | `storage/cache-data.ts` | 데이터 삭제 · 그룹마다 지울 건수 계산 |
 | `features/settings/cache-data.ts` | 삭제 → DB 닫기 → 리로드 순서 |
@@ -24,14 +24,13 @@
 | 진입 단계(`useAppEntryStore.resolveFromStorage`) | 인증 수단 · 추적 캐릭터 |
 | 테마 · 추적 모드 · 드롭 연출 | `theme` · `trackingMode` · `dropEffect` |
 | 공지(`useNoticeStore.restore`) | 구독 상태. 읽은 뒤 켜 둔 토픽을 다시 구독한다 |
-| 데이터 시각(`useDataFreshness.restore`) | `dataFetchedAt` |
 
 그보다 먼저 `index.ts` 의 `loadGameData()` 가 SQLite 의 게임 데이터 사본을 읽어 표를 세운다. 사본이 없으면 잠금 화면 뒤에서 받고,
 위의 복원은 다 받은 뒤에 마운트되는 `ReadyShell` 에서 돈다(테마는 잠금 화면도 그려야 해서 먼저 돈다). 쿼리 캐시는
 `QueryCacheProvider` 가 SQLite `query_cache` 에서 올리고, 그 전에는 화면의 쿼리가 기다린다. 다 올리면 옛 Preferences
 캐시(`schedulerCache:{ocid}` · `characterBasicCache:{ocid}`)를 쿼리에 없는 캐릭터만 옮기고 회차를 만료로 표시한다
-([[ADR-142]] 결정 7). 앱이 준비된 뒤 `prehydrate` 가 그 복원을 기다렸다가 스케줄 회차와 보스 수익 스토어를 차례로
-읽는다([[ADR-027]]). 그 밖의 값은 화면이 처음 열릴 때 그 기능의 스토어가 읽는다.
+([[ADR-142]] 결정 7). 앱이 준비된 뒤 `prehydrate` 가 그 복원을 기다렸다가 스케줄 회차와 보스 수익 이번 주 쿼리를 차례로
+예열한다([[ADR-027]]). 그 밖의 값은 화면이 처음 열릴 때 그 기능의 스토어가 읽는다.
 
 ## 삭제: 연결 해제와 데이터 삭제
 

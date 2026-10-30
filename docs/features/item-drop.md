@@ -22,7 +22,7 @@
 | `features/boss-profit/orphan-drops.ts` | 잡지 않은 보스에 남은 드롭 기록 정리 |
 | `features/boss-profit/drop-price-store.ts` | 가격 입력 화면의 상태와 가격 저장. 기간별 미입력 건수 |
 | `features/boss-profit/use-unpriced-drop-count.ts` | 떠 있는 버튼 배지의 미입력 건수 |
-| `features/boss-profit/drop-history-store.ts` | 히스토리의 전 기간 읽기. today 위젯도 함께 쓴다 |
+| `features/boss-profit/drop-history-query.ts` | 히스토리의 전 기간 쿼리 `dropHistory()`. today 위젯도 같은 열쇠를 본다. 드롭 · 보스 기록의 판이 오르면 다시 읽는다 |
 | `features/boss-profit/drop-fees.ts` | 가격 카드의 판매 · 분배 수수료 처음 값 |
 | `features/drop-effect/store.ts` · `storage/drop-effect.ts` | 연출 켜기 · 끄기(Preferences `dropEffect`) |
 | `storage/boss-drops.ts` | SQLite `boss_drops` 읽기 · 쓰기 |

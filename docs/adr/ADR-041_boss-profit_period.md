@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-023 결정 1~5 · ADR-030 결정 3 · ADR-037 결정 1 · ADR-067 결정 2 · 3 · 6 · ADR-068 결정 5 · ADR-075 · ADR-076 결정 2 · 4 · ADR-078 결정 1 · 2 · ADR-224 · ADR-221 · ADR-251 결정 1~6 · ADR-254 · ADR-256 · ADR-294 · ADR-295 · ADR-326 결정 1 · 2
-> 관련 소스: `app/boss-profit/BossProfitScreen.tsx` · `lib/boss/monthly-boss-week.ts` · `features/boss-profit/rows.ts` · `app/boss-profit/AccordionBody.tsx` · `app/boss-profit/MonthlyBossViewRow.tsx` · `features/boss-profit/store.ts` · `features/boss-profit/period-navigation.ts` · `features/boss-profit/period-window.ts` · `features/boss-profit/period-cache.ts` · `lib/boss/boss-profit-period.ts` · `storage/boss-profit.ts`
+> 관련 소스: `app/boss-profit/BossProfitScreen.tsx` · `lib/boss/monthly-boss-week.ts` · `features/boss-profit/rows.ts` · `app/boss-profit/AccordionBody.tsx` · `app/boss-profit/MonthlyBossViewRow.tsx` · `features/boss-profit/store.ts` · `features/boss-profit/period-navigation.ts` · `features/boss-profit/period-window.ts` · `features/boss-profit/period-query.ts` · `features/boss-profit/period-snapshot.ts` · `lib/boss/boss-profit-period.ts` · `storage/boss-profit.ts`
 
 ## 배경
 
@@ -40,8 +40,8 @@ API 는 최근 14일만 주므로, 오래 쉬었다 돌아오면 그 사이 기�
 - 갈 곳은 화면에 그리는 캐릭터 목록(추적 캐릭터 ∪ 기록을 남긴 캐릭터)으로 고른다. 추적 목록으로 고르면
   관리 목록에서 뺀 캐릭터의 기록만 있는 기간을 건너뛴다.
 - 이전 화살표가 켜지는지(`canGoPreviousPeriod`)는 같은 함수로 판정한다(`canReachPreviousPeriod`). 눌렀는데
-  안 움직이는 일이 없다. 이동을 시작하면 새 기간을 다 읽을 때까지 이 값을 끈다. 켜 둔 채로 두면 연타했을 때
-  갈 곳이 없는 기간까지 넘어간다.
+  안 움직이는 일이 없다. 새 기간의 스냅샷이 캐시에 서기 전에는 스토어가 이동을 받지 않는다(`readPeriodSnapshot`
+  이 비어 있다). 받으면 연타했을 때 갈 곳이 없는 기간까지 넘어간다.
 
 ### 결정 3. 기간 줄에 지금 기간으로 가는 겹화살표를 둔다
 
@@ -60,15 +60,14 @@ API 는 최근 14일만 주므로, 오래 쉬었다 돌아오면 그 사이 기�
 지난 기간의 행은 기록에서만 만든다(`buildRowsFromRecords`). 넥슨 조회는 창 동기화가 앱에 들어올 때
 조회 범위 안의 날짜를 이미 채우므로, 기간을 옮길 때는 API 를 부르지 않는다.
 
-예외는 하나다. 조회할 수 있는 기간인데 그 기간의 관측이 아직 하나도 없으면, 곧바로
-`syncScheduleWindow` 를 부르고 기다린다. 이때만 `isPeriodLoading` 이 켜지고 `{기간} 기록을 불러오고 있어요`
-가 보인다. 창 동기화는 화면을 막지 않으려고 뒤에서 도는데, 그 사이에 기간을 열면 오는 중인 데이터에
-`불러오지 못했습니다` 가 붙기 때문이다. 창 동기화의 규칙은 [[ADR-021]] 에 있다.
+예외는 하나다. 조회할 수 있는 기간인데 그 기간의 관측이 아직 하나도 없으면, 기간 쿼리의 `queryFn` 안에서
+곧바로 `syncScheduleWindow` 를 부르고 기다린다(`periodNeedsWindowSync`). 이때만 `isWindowSyncing` 이 켜지고
+`{기간} 기록을 불러오고 있어요` 가 보인다. 창 동기화는 화면을 막지 않으려고 뒤에서 도는데, 그 사이에 기간을
+열면 오는 중인 데이터에 `불러오지 못했습니다` 가 붙기 때문이다. 창 동기화의 규칙은 [[ADR-021]] 에 있다.
 
-창 동기화가 지난 기간 기록을 새로 만들 수 있으므로, `LedgerLayer` 의 개정 번호(`ledger.revision`)가 오르면
-화면이 `rereadPeriod` 로 보던 기간을 다시 읽는다. 다시 읽지 않으면 이전 화살표와 월간 주차 소계가 처음
-읽은 순간의 값에 머문다. `rereadPeriod` 는 요청 번호를 올리지 않는다. 올리면 돌고 있는 `refresh` 의 마지막
-반영이 취소된다. `refresh` 도 마지막 반영 직전에 이전 화살표를 다시 판정한다.
+창 동기화가 지난 기간 기록을 새로 만들면 기록 표와 조회 원장의 판이 올라 그 기간 쿼리가 무효화되고, 화면은
+보던 기간을 다시 읽는다([[ADR-142]] 결정 6). 다시 읽지 않으면 이전 화살표와 월간 주차 소계가 처음 읽은 순간의
+값에 머문다. 기간마다 쿼리가 따로라 다시 읽기가 다른 기간의 회차를 취소하지 않는다.
 
 ### 결정 5. 기간 상태는 다섯 가지이고, 지난 기간에서만 나뉜다
 
@@ -121,8 +120,8 @@ API 는 최근 14일만 주므로, 오래 쉬었다 돌아오면 그 사이 기�
 - 달 경계 주(7/30~8/5 같은 주)는 8월 1일부터 진행 중인데 그 주가 속한 달은 지난 달이 된다. 그때는 라이브
   행이 없으므로 기록에서 더한다. 판정은 보고 있는 달이 이번 달인가(`monthPeriodKey === 이번 달 키`)이고,
   라이브 행이 비었는지로 판단하지 않는다. 그 주에 아무것도 안 잡은 정상적인 0 과 구분되지 않기 때문이다.
-- 그 지난 달 화면에서 당겨 새로고침하면(`containsInProgressWeek` 이 참) `refresh` 가 기간을 지금으로 옮기지
-  않고, 동기화 · 자동 기록만 한 뒤 보던 기간을 다시 읽는다. 다음 화살표의 판정(`isLatestPeriod`)은 그대로다.
+- 지난 기간에서 당겨 새로고침해도 보던 기간에 머문다(사용자 지정 2026-10-30). 회차가 자동 기록을 쓰면 판이
+  올라 그 기간 쿼리가 다시 읽는다. 다음 화살표의 판정(`isLatestPeriod`)은 그대로다.
 - 추적하지 않는 캐릭터는 동기화가 돌지 않아 이번 주와 앞으로의 주를 알 수 없다. `진행 중` 과 `예정` 은
   앱이 지금도 그 캐릭터를 본다는 뜻이라 쓰지 않는다. 기록이 있는 주는 그대로 둔다.
 - 조회 원장이 400 으로 기록한 주(`loadUnqueryablePeriodKeys`)는 `failed` 가 아니라 `outOfRange` 다. 눌러도
@@ -132,19 +131,25 @@ API 는 최근 14일만 주므로, 오래 쉬었다 돌아오면 그 사이 기�
 - 줄을 만드는 캐릭터는 추적 캐릭터 ∪ 그 달에 기록이 있는 캐릭터다. 지난 달은 주차 합이 모두 0 인 캐릭터의
   줄을 만들지 않는다. 이번 달의 0 은 아직 안 잡았다는 사실이지만 지난 달의 0 은 보여 줄 것이 없다는 뜻이다.
 
-### 결정 8. 읽은 기간은 표에 담고, 표에 있으면 곧장 그린다
+### 결정 8. 기간 하나가 쿼리 하나이고, 캐시에 있으면 곧장 그린다
 
-`features/boss-profit/period-cache.ts` 가 `{tab}|{periodKey}` 마다 그 기간의 스냅샷을 담는다. 스냅샷은 화면이
-한 기간에 대해 읽는 값 전부다(`rows` · `dropsByRowKey` · `weeklySubtotals` · `periodState` ·
-`periodPendingAggregation` · `canGoPreviousPeriod` · `unqueryableCards`).
+기간의 데이터는 `bossProfitPeriod(tab, periodKey)` 쿼리가 든다(`features/boss-profit/period-query.ts`,
+[[ADR-142]] 결정 9). 스냅샷은 화면이 한 기간에 대해 읽는 값 전부다(`rows` · `dropsByRowKey` ·
+`weeklySubtotals` · `periodState` · `periodPendingAggregation` · `canGoPreviousPeriod` · `unqueryableCards`).
 
-- `loadPeriod` 는 표에 있으면 곧장 그리고 `isPeriodLoading` 을 켜지 않는다. 없으면 `buildPeriodSnapshot` 으로
-  만들어 표에 넣고 그린다. 표에 넣는 값은 이 함수 하나에서만 나온다.
-- 표는 스토어 상태가 아니라 모듈 변수다. 화면이 표를 직접 읽지 않고, 상태로 두면 미리 읽기가 한 칸 채울 때마다
-  화면 전체가 다시 그려진다.
-- 표의 줄이 낡았는지는 `{보스 수익 기록 개정}|{드롭 기록 개정}|{동기화 스냅샷 개정}` 하나로 판단한다. 다르면
-  없는 것으로 본다. 쓰기마다 어느 기간이 낡는지 따로 따지면, 새로 생긴 쓰기 경로에서 그것을 빠뜨리게 된다.
-- `다시 시도`(`retryPeriod`)는 표를 건너뛴다. 실패한 기간도 표에 들어가 있어서다.
+- 스냅샷은 `buildPeriodSnapshot`(`period-snapshot.ts`) 하나가 만든다. 지금 기간의 행은 스케줄 쿼리 캐시
+  (`schedule(ocid)`)에서, 지난 기간의 행은 기록에서 만든다. 캐시에 있는 기간은 `queryFn` 을 돌리지 않고 곧장
+  그린다.
+- 화면은 `useBossProfitPeriod(tab, periodKey)` 로 본다. 기간을 옮기면 새 값이 올 때까지 앞 기간의 값을 그대로
+  둔다(`placeholderData`). 그 값이 어느 기간 것인지는 `loadedTab` · `loadedPeriodKey` 가 말한다. 기간마다 쿼리가
+  따로라 느린 회차가 다른 기간의 화면을 덮을 수 없다.
+- 낡은 기간을 따로 세지 않는다. 쿼리가 읽는 표(보스 기록 · 드롭 기록 · 조회 원장)의 판이 오르거나 회차가 새
+  데이터를 들면 모든 기간 쿼리가 무효화된다([[ADR-142]] 결정 6). 쓰기마다 어느 기간이 낡는지 따로 따지면, 새로
+  생긴 쓰기 경로에서 그것을 빠뜨리게 된다. 보고 있지 않은 기간은 무효 표시만 되고 다시 보일 때 읽는다.
+- `다시 시도`(`retryPeriod`)는 그 기간을 신선해도 다시 읽는다(`refetchPeriod`). 실패한 기간도 캐시에 들어가
+  있어서다.
+- 기록을 쓰는 액션(`setRowParty` · `saveManualCompletion` · `cancelManualCompletion` · `setBossDrops`)은 기록만
+  쓴다. 쓰기 전의 행은 캐시에서 찾는다(`readPeriodSnapshot`). 화면은 판이 올라 쿼리가 다시 읽으며 맞는다.
 
 ### 결정 9. 화살표가 갈 기간을 미리 읽어 둔다
 
@@ -153,12 +158,14 @@ API 는 최근 14일만 주므로, 오래 쉬었다 돌아오면 그 사이 기�
 달력의 이웃이 아니라 실제로 도착할 기간을 읽는다. 지금 기간 둘은 겹화살표와 탭 전환이 늘 그리로 가기 때문에
 창 밖이어도 넣는다.
 
-- 미리 읽기는 요청 번호를 올리지 않고 자기 토큰(`prefetchToken`)을 쓴다. 올리면 사용자가 보고 있는 회차가
-  취소된다. 사용자가 기간을 옮기면 토큰이 바뀌어 남은 읽기가 멈춘다.
-- 한 번에 하나씩 기다린다. 한꺼번에 던지면 사용자 회차와 SQLite 를 두고 다툰다.
-- 네트워크를 부르지 않는다. 창 동기화가 있어야 답이 나오는 기간은 표에 넣지 않고 건너뛴다.
-- 잡지 않은 보스의 드롭 정리는 미리 읽을 때도 돈다. 기기 DB 안의 일이고 결과가 같으며, 안 돌리면 표의
-  드롭 맵에 지워졌어야 할 드롭이 남는다.
+- 미리 읽기는 `prefetchQuery` 라 보고 있는 기간의 쿼리와 무관하다(`prefetchPeriodWindow`). 한 기간이 서면
+  그 뒤에 돌고, 사용자가 기간을 옮기면 토큰(`prefetchToken`)이 바뀌어 남은 읽기가 멈춘다.
+- 한 번에 하나씩 기다린다. 한꺼번에 던지면 사용자 회차와 SQLite 를 두고 다툰다. 캐시에 있고 무효화되지 않은
+  기간은 건너뛴다.
+- 네트워크를 부르지 않는다. 창 동기화가 있어야 답이 나오는 기간(`periodNeedsWindowSync`)은 건너뛴다. 배경에서
+  넥슨을 부르지도, 조회 전의 빈 상태를 0건 확정으로 굳히지도 않는다. 사용자가 실제로 가면 그때 돈다.
+- 지난 기간의 스냅샷을 만들 때 잡지 않은 보스의 드롭 정리(`sweepOrphanDrops`)도 돈다. 기기 DB 안의 일이고
+  결과가 같으며, 안 돌리면 드롭 맵에 지워졌어야 할 드롭이 남는다. 지금 기간의 정리는 회차가 한다([[ADR-040]]).
 
 ### 결정 10. 기간 하나를 만들 때 서로 무관한 조회는 함께 던진다
 
@@ -172,8 +179,8 @@ API 는 최근 14일만 주므로, 오래 쉬었다 돌아오면 그 사이 기�
 
 보스 수익 화면이 언마운트될 때 `resetToCurrentWeek` 가 탭을 주간으로, 기간을 이번 주로 돌린다. 옆 탭인
 가계부가 떠나면 주간 · 이번 주로 돌아오므로 같게 맞췄다. 보스 수익과 가계부는 같은 `LedgerLayer` 안의
-탭이라 서로 오갈 때는 언마운트되지 않는다. 스토어를 비우지 않고 기간만 돌린다. today 가 같은 스토어의
-이번 주 행을 읽기 때문이다.
+탭이라 서로 오갈 때는 언마운트되지 않는다. 스토어에는 탭 · 기간 · 파티 계획만 있어 비울 것이 없다. today 는
+이번 주 열쇠의 기간 쿼리를 따로 보므로 이 화면이 어느 기간을 보든 영향이 없다.
 
 ### 결정 12. 월간 보스는 주간 목록 맨 위에 나오고, 한 달에 한 주에만 나온다
 
@@ -211,8 +218,9 @@ API 는 최근 14일만 주므로, 오래 쉬었다 돌아오면 그 사이 기�
 | `lib/__tests__/boss-profit-period.spec.ts` | 결정 1: 목요일 · 1일 경계, 기간 이름, 달 경계 주의 귀속을 본다. 결정 5: 상태 판정 순서와 화면 합치기 우선순위를 본다. 결정 7: `containsInProgressWeek` 가 달 경계 주의 지난 달에서만 참인지 본다 |
 | `features/boss-profit/__tests__/period-navigation.spec.ts` | 결정 2: 기록이 있는 기간으로 건너뛰는지, 월간 처치 주를 후보에 넣는지, 다음이 지금 기간을 넘지 않는지 본다 |
 | `storage/__tests__/boss-profit.spec.ts` | 결정 2: 이웃 기간을 SQL 하나로 찾고 월간은 두 축을 함께 보는지 본다 |
-| `app/boss-profit/__tests__/BossProfitScreen.test.tsx` | 결정 3: 겹화살표가 지금 기간에 흐려지고 이름이 주기를 따르는지, 화살표와 촉각을 본다. 결정 4: 개정 번호가 오를 때만 다시 읽는지 본다. 결정 5: 상태별 화면과 집계 전 요약을 본다. 결정 11: 언마운트하면 주간 · 이번 주로 돌리는지 본다 |
-| `features/boss-profit/__tests__/store.spec.ts` | 결정 2: 연타해도 한 칸만 가고 기록이 없으면 안 가는지 본다. 결정 4: 관측 없는 기간에서 창을 채우며 기다리는지, `rereadPeriod` 가 돌고 있는 회차를 취소하지 않는지 본다. 결정 7: 달 경계 주 합계와 보던 기간을 지키는 새로고침, 추적하지 않는 캐릭터와 400 주의 상태를 본다. 결정 8 · 9: 표에 있는 기간을 조회 없이 그리고 `retryPeriod` 가 표를 건너뛰는지 본다. 결정 10: 프로필을 캐릭터당 한 번 읽는지 본다. 결정 12: 주간 탭이 월간 보스를 맨 위에 내고, 달 경계 주를 열면 다음 달 월간 보스가 나오는지 본다 |
+| `app/boss-profit/__tests__/BossProfitScreen.test.tsx` | 결정 3: 겹화살표가 지금 기간에 흐려지고 이름이 주기를 따르는지, 화살표와 촉각을 본다. 결정 5: 상태별 화면과 집계 전 요약을 본다. 결정 11: 언마운트하면 주간 · 이번 주로 돌리는지 본다 |
+| `features/boss-profit/__tests__/store.spec.ts` | 결정 2: 연타해도 한 칸만 가고 기록이 없으면 안 가는지 본다. 결정 8: 쓰기 액션이 기록만 쓰고 캐시에서 행을 찾는지 본다 |
+| `features/boss-profit/__tests__/period-query.spec.ts` | 결정 4 · 8 · 9: 지금 기간은 스케줄 캐시에서, 지난 기간은 기록에서 만드는지, 관측 없는 기간에서 창을 채우며 기다리는지, `retryPeriod` 가 신선해도 다시 읽는지, 미리 읽기가 창 동기화가 필요한 기간을 건너뛰는지 본다. 결정 7: 달 경계 주 합계, 추적하지 않는 캐릭터와 400 주의 상태를 본다. 결정 10: 프로필을 캐릭터당 한 번 읽는지 본다. 결정 12: 주간 탭이 월간 보스를 맨 위에 내고, 달 경계 주를 열면 다음 달 월간 보스가 나오는지 본다 |
 | `features/boss-profit/__tests__/use-period-error-toast.spec.tsx` | 결정 5: 실패 토스트를 기간마다 한 번, 로딩을 거쳐 다시 실패하면 또 띄우는지 본다 |
 | `lib/__tests__/monthly-boss-week.spec.ts` | 결정 12: 그 주에 걸친 달에서만 나오는지, 달 경계 주가 두 달에 걸치는지, 안 잡았으면 이번 주에만, 잡았으면 잡은 주에만, 날짜 모르면 기록이 있는 가장 빠른 주차에 나오는지 본다 |
 | `features/boss-profit/__tests__/rows.spec.ts` | 결정 12: 날짜 모르는 월간 행이 기록이 있는 가장 빠른 주차에 나오는지, 탭과 기간이 맞는 행만 남기는지 본다 |

@@ -46,7 +46,7 @@
 | 남기는 것 | 남기는 이유 |
 |---|---|
 | 게임 데이터 사본 표 둘 · 받은 그림 | 지우면 다시 받기 전까지 앱을 열 수 없다([[ADR-020]]) |
-| 조회 캐시(`schedulerCache:*` · `scheduleProbe:*` · `characterBasicCache:*` · `mesoRateCache:*` · `eventWorldNames` · `dataFetchedAt` · `notices`) | 지우면 다시 띄우자마자 넥슨 API 를 한꺼번에 다시 불러 호출 한도에 걸릴 수 있고, 비는 공간도 곧 다시 찬다. 화면이 옛 값을 보이면 당겨서 새로고침이 다시 받는다([[ADR-064]]) |
+| 조회 캐시(쿼리 캐시 표 `query_cache` · `schedulerCache:*` · `scheduleProbe:*` · `characterBasicCache:*` · `mesoRateCache:*` · `eventWorldNames` · `notices`) | 지우면 다시 띄우자마자 넥슨 API 를 한꺼번에 다시 불러 호출 한도에 걸릴 수 있고, 비는 공간도 곧 다시 찬다. 화면이 옛 값을 보이면 당겨서 새로고침이 다시 받는다([[ADR-064]]) |
 | 캐릭터 이력(`character_profiles` · `character_accounts` · `character_world_leaps` · `mvp_grade_history`) | 기록을 화면에 그리는 데 쓰인다. 지우면 남은 기록이 이름 없이 화면에서 사라지거나, 월드 이전 기간이 두 번 세어진다. 등급 이력은 사용자가 적은 값이다([[ADR-050]]) |
 | 이전 버전 사본(옛 `enhancement_history` · `boss_profit_records` · `boss_drop_records` · `boss_party_settings` · `boss_party_period_overrides` · `income_records` · `spend_records`) | 지금 코드는 읽지도 쓰지도 않는다. v1.0.14 에서 코드가 표를 지운다 |
 | 추적 캐릭터 · 대표 캐릭터(`trackedCharacters` · `representativeCharacter`) | 추적 캐릭터가 없으면 앱을 쓸 수 없어 캐릭터 고르기부터 다시 한다. 대표 캐릭터는 사용자가 고른 값이다 |

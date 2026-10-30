@@ -9,14 +9,15 @@
 | 파일 | 하는 일 |
 |---|---|
 | `app/cashbook/CashbookScreen.tsx` | 화면. 주간 · 월간 전환, 기간 이동, 기간 합계, 격자, 고른 날의 목록, 펼침 |
-| `app/cashbook/useMonthDays.ts` | 보는 달 ± 2 달을 기기 DB 에서 미리 읽어 둔다 |
+| `app/cashbook/useMonthDays.ts` | 보는 달 ± 2 달을 달마다 `ledgerDays` 쿼리로 든다 |
 | `components/molecules/CalendarGrid/` | 받은 주 배열을 그린다. 판정은 하지 않는다 |
 | `lib/calendar.ts` | 월간 격자 · 리셋 주 · 열지도 단계 · 기간 합계(`periodTotals`) |
 | `lib/cashbook/meso-compact.ts` | 칸 금액 줄임(`formatMesoCompact`) · 부호 붙이기(`formatMesoSigned`) |
 | `features/cashbook/range.ts` | 미리 읽는 창 · 데이터 공급자에 알리는 범위 · 조회 한도 |
 | `features/cashbook/records.ts` | 저장 · 고치기 · 지우기, 원천 넷을 하루 단위로 합치기, 카드 두 줄(`recordCardOf`) · 금액, 그날 합계 |
 | `features/cashbook/row-icon.ts` | 하루 목록 줄의 그림 |
-| `features/ledger/useLedgerData.tsx` | 넥슨 API 회차를 관리하는 데이터 공급자. 화면은 범위를 알리고 다시 받아 달라고 요청한다 |
+| `features/cashbook/ledger-query.ts` | 날짜별 줄 쿼리 `ledgerDays(from, to)`. 기록 표의 판이 오르면 다시 읽는다. today · 통계도 같은 열쇠를 쓴다 |
+| `features/ledger/useLedgerData.tsx` | 넥슨 API 회차를 관리하는 데이터 공급자. 진행률 · 모달 · 강화 범위를 들고 기록은 들지 않는다. 화면은 범위를 알리고 다시 받아 달라고 요청한다 |
 | `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` |
 | `storage/enhancement-totals.ts` · `storage/enhancement-history.ts` · `features/enhancement-history/` · `lib/enhancement/` | 강화 사용 내역 수집 · 비용 계산 · 합계 저장 · 지출 판정. 원장은 `enhancement-history.ts` 에 있다 |
 | `app/cashbook/IncomeSheet.tsx` · `SpendSheet.tsx` · `CategoryPicker.tsx` · `sheet-fields.tsx` | 두 시트와 공용 부품 |
@@ -74,9 +75,10 @@
 | 격자의 앞뒤 달 칸 | 날짜만 흐리게 적는다. 누르면 그 날이 골라지고, 그 달이 한도 안이면 보는 달도 옮긴다 |
 | 고른 날 | 날짜 제목 아래 수입 · 지출 합계 카드 한 줄과, 줄마다 테두리 없는 카드인 목록([[ADR-095]] 결정 1 · 2). 읽는 동안에는 둘 다 비워 둔다 |
 | 당겨서 새로고침 | 동기화 · 처치 날짜 채우기 · 강화 사용 내역 받기를 데이터 공급자에 요청한다 |
-| 다시 들어올 때 | 다른 화면이 원천을 바꿨을 때만 다시 읽는다([[ADR-046]] 결정 15) |
+| 다른 화면이 기록을 쓸 때 | 표의 판이 올라 `ledgerDays` 쿼리가 무효화되고, 보고 있으면 그 자리에서 다시 읽는다([[ADR-046]] 결정 15) |
+| KST 자정 | 보는 기간과 고른 날이 오늘로 옮긴다([[ADR-046]] 결정 9) |
 | 결산 안내 줄 | 넥슨이 결산 중이면 머리 아래에 나온다. 둘째 줄이 `오늘 잡은 보스 수익은 결산이 끝난 뒤 반영됩니다.` 다([[ADR-058]]) |
-| 갱신 시각 | 제목 아래에 실시간 데이터를 받은 시각이 나온다. 이 화면에서는 오늘이 포함된 강화 조회만 그 시각을 바꾼다 |
+| 갱신 시각 | 제목 아래에 실시간 데이터를 받은 시각이 나온다. 스케줄 회차와 오늘이 포함된 강화 조회 중 늦은 쪽이다([[ADR-061]] 결정 9) |
 
 ## 하루 목록의 줄
 

@@ -21,7 +21,11 @@
 | `app/today/TodayLoadingModal.tsx` | 처음 불러오는 동안 띄우는 모달 |
 | `lib/today/widget-grid-metrics.ts` | 창 폭에서 열 폭 · 간격을 계산한다 |
 | `lib/today/widget-layout.ts` | 배치 검증(`validateWidgetLayout`) · 줄 묶기(`groupWidgetRows`) · 숨김(`omitHiddenTiles`) |
-| `features/stats/aggregate.ts` · `load.ts` | 이번 주 수익의 집계(통계와 같은 함수) · 이번 주 가계부 기록 읽기(`loadStatsDaysBetween`) |
+| `features/stats/aggregate.ts` | 이번 주 수익의 집계(통계와 같은 함수) |
+| `features/cashbook/ledger-query.ts` | 이번 주 가계부 줄 쿼리 `ledgerDays(from, to)`. 가계부 · 통계와 같은 열쇠다 |
+| `features/boss-profit/period-query.ts` · `round-view.ts` | 이번 주 보스 수익 쿼리 `bossProfitPeriod('weekly', 이번 주)` · 회차의 실패 표식 |
+| `features/boss-profit/drop-history-query.ts` | 드롭 기록 쿼리 `dropHistory()`. 최고가 · 미입력 위젯이 읽는다 |
+| `features/refresh/pull.ts` · `freshness.ts` | 당김 하나(`pullRefresh`) · 갱신 시각(`useRealtimeFetchedAt`) |
 | `app/SettlementBanner.tsx` | 결산 안내 줄. 가계부 · 통계도 같이 쓴다 |
 | `features/settlement/store.ts` · `banner-text.ts` · `faq.ts` | 결산 여부 · 안내 문구 · FAQ |
 | `storage/settlement-banner.ts` | 닫은 결산의 시작 시각(Preferences `dismissedSettlement`) |
@@ -79,13 +83,13 @@ WidgetGrid            px-4 pt-2
 | `representative-character` | 초상화(52) 오른쪽에 월드 엠블럼 · 닉네임 · 길드, 레벨 · 직업, EXP 칸 | 4 | 없음 | 쿼리 캐시 `characterBasic(ocid)` · 캐릭터 선택 스토어 |
 | `quick-links` | 사용자가 고른 화면으로 가는 칸. 한 줄 5칸 · 두 줄 10칸, 원 안의 아이콘과 9px 짧은 이름. 제목 줄의 `편집` 이 편집 시트를 연다 | 4 | 칸마다 그 화면 | 빠른 이동 스토어 |
 | `reset-countdown` | 일일 · 주간 초기화까지 남은 시간. 일일은 초까지 1초마다 | 2 | 없음 | 뷰모델의 `resets` |
-| `crystal-limit` | 첫 월드의 링(반시계)과 `N개 남음`, 나머지 월드는 한 줄 | 2 | 보스 수익 탭 | 보스 수익 스토어 `currentWeekRows` |
+| `crystal-limit` | 첫 월드의 링(반시계)과 `N개 남음`, 나머지 월드는 한 줄 | 2 | 보스 수익 탭 | 쿼리 `bossProfitPeriod('weekly', 이번 주)` |
 | `next-party-schedule` | 시작 전인 가장 가까운 파티 회차 하나. 캐릭터마다 칸에 닉네임과 보스 줄. 회차가 없으면 맨 아래 줄에서 `매주 반복` · `한 번만` 등록 칸 | 4 | 회차 상세, 또는 고른 갈래의 새 스케줄 시트 | 파티 스케줄 스토어 |
 | `shared-contents` | 몬스터파크 · 메이플 유니온 · 에픽 던전의 공유 진행 | 4 | 없음(`?` 팝오버만) | 컨텐츠 스케줄러 스토어 |
 | `remaining-schedule` | 캐릭터별 남은 퀘스트 · 보스. 일간 · 주간 · 월간 탭 | 4 | 없음(행마다 펼침) | 컨텐츠 · 보스 스케줄러 스토어 |
-| `weekly-income` | 이번 주 순 수익 · 수익 · 지출(세그먼트), 반원 도넛과 갈래, 캐릭터 상위 셋. 캐릭터 줄을 누르면 갈래별 금액 팝오버 | 4 | 없음 | 통계와 같은 가계부 기록과 집계 함수 |
-| `top-valuable-item` | 이번 주 기록한 판매가 중 가장 큰 아이템의 아이콘과 금액 | 2 | 아이템 가격 입력 | 드롭 히스토리 스토어 |
-| `unpriced-drops` | 가격을 아직 안 적은 드롭 건수와 `기록하기` 줄 | 2 | 아이템 가격 입력 | 드롭 히스토리 스토어 |
+| `weekly-income` | 이번 주 순 수익 · 수익 · 지출(세그먼트), 반원 도넛과 갈래, 캐릭터 상위 셋. 캐릭터 줄을 누르면 갈래별 금액 팝오버 | 4 | 없음 | 쿼리 `ledgerDays(이번 주)` 와 통계의 집계 함수 |
+| `top-valuable-item` | 이번 주 기록한 판매가 중 가장 큰 아이템의 아이콘과 금액 | 2 | 아이템 가격 입력 | 쿼리 `dropHistory()` |
+| `unpriced-drops` | 가격을 아직 안 적은 드롭 건수와 `기록하기` 줄 | 2 | 아이템 가격 입력 | 쿼리 `dropHistory()` |
 
 ### 빈 상태
 
@@ -130,11 +134,12 @@ WidgetGrid            px-4 pt-2
 
 | 언제 | 무엇을 |
 |---|---|
-| 마운트 · 포커스 | 스케줄 회차(만료됐을 때만, [[ADR-142]] 결정 5) · 이번 주 가계부 기록 |
+| 마운트 · 포커스 | 스케줄 회차(만료됐을 때만, [[ADR-142]] 결정 5) |
 | 앱 복귀 | 스케줄 회차(신선해도 한 번) |
-| 포커스 | 드롭 기록(리비전이 바뀌었을 때만) · 직접 완료 · 공지 배너(기기) · 파티 스케줄 · 이번 주 가계부 기록(리비전이 바뀌었을 때만) |
-| 당김 | 스케줄 회차(`refreshSchedules`) · 보스 수익 스토어 `refresh()` · 드롭 기록 · 공지 배너(서버). 끝나면 이번 주 가계부 기록을 다시 읽는다. 대표의 EXP · 레벨은 회차가 캐시에 넣는 그 자리에서 바뀐다 |
-| 다음 KST 자정 | 공용 타이머(`features/query/reset-timer.ts`)가 넥슨 쿼리를 무효화하고 화면을 다시 렌더한다. 주가 바뀌면 이번 주 가계부 기록을 새 주로 읽는다 |
+| 포커스 | 직접 완료 · 공지 배너(기기) · 파티 스케줄 |
+| 기록이 바뀔 때 | 이번 주 가계부 줄(`ledgerDays`) · 이번 주 보스 수익(`bossProfitPeriod`) · 드롭 기록(`dropHistory`)은 표의 판이 오르면 무효화되어 다시 읽는다([[ADR-142]] 결정 6) |
+| 당김 | `pullRefresh`(스케줄 회차 → 13일 창 → 오늘 강화) · 공지 배너(서버). 쓴 기록은 판을 올려 위젯이 스스로 바뀐다. 대표의 EXP · 레벨은 회차가 캐시에 넣는 그 자리에서 바뀐다 |
+| 다음 KST 자정 | 공용 타이머(`features/query/reset-timer.ts`)가 넥슨 쿼리를 무효화하고 화면을 다시 렌더한다. 주가 바뀌면 이번 주 가계부 줄을 새 주 열쇠로 읽는다 |
 
 캐릭터 설정을 마치고 처음 들어와 캐시가 하나도 없는 동안에는, 동기화가 400ms 넘게 걸리면
 `체크리스트를 불러오고 있어요` 모달과 진행률을 띄운다([[ADR-058]] 결정 26).

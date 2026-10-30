@@ -84,8 +84,9 @@ MVP 등급의 수수료 작업 둘([[ADR-050]])은 이미 있는 기록을 다�
 
 ### 결정 6. 작업이 바꾼 표는 판을 올린다
 
-수입 기록에도 판(`getIncomeRecordsRevision`)이 있고, 가계부의 `cashbookDataRevision` 은 이 판을 드롭 · 결정석
-판과 함께 더한다. 그래서 수수료 작업이 수입 기록만 바꿔도 가계부가 다음에 화면을 열 때 다시 읽는다.
+수입 기록에도 판(`getIncomeRecordsRevision` · `subscribeIncomeRecordsRevision`)이 있고, 가계부 · 통계 · today 가
+읽는 `ledgerDays` 쿼리가 그 표를 `meta.tables` 에 적는다. 그래서 수수료 작업이 수입 기록만 바꿔도 판이 올라 그
+쿼리가 무효화되고, 보고 있는 화면은 그 자리에서 다시 읽는다([[ADR-142]] 결정 6).
 
 ### 결정 7. 기록을 여러 건 쓰는 반복은 끝날 때 판 알림을 한 번 보낸다
 

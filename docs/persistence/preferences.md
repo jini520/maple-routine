@@ -50,7 +50,6 @@
 | `dismissedSettlement` | ISO 시각 | `settlement-banner.ts` | 남긴다 | 닫은 결산 안내의 시작 시각. 다음 결산은 시각이 달라 다시 보인다 |
 | `dismissedManualCompletion` | 주간 기간 키(목요일 `YYYY-MM-DD`) | `manual-completion-banner.ts` | 남긴다 | 닫은 직접 완료 안내의 주 |
 | `statsCumulativeStart` | KST `YYYY-MM-DD` | `stats-cumulative-start.ts` | 남긴다 | 통계 누적 순수익의 시작 날짜 |
-| `dataFetchedAt` | ISO 시각 하나 | `data-freshness.ts` | 남긴다 | 넥슨 Open API 의 실시간 데이터(스케줄러 · 오늘의 강화 내역 · `character/basic`)를 마지막으로 받은 시각 |
 | `mvpWeeklyCheckOff` | `'true'`(끄면 키를 지운다) | `mvp-grade-prefs.ts` | 남긴다 | 등급 주간 확인을 끈 체크박스 |
 | `mvpLastCheckedWeek` | 주간 기간 키 | `mvp-grade-prefs.ts` | 남긴다 | 마지막으로 등급을 확인한 주 |
 | `mvpBulkApplyAsked` | `'true'` | `mvp-grade-prefs.ts` | 남긴다 | 지난 기록 일괄 적용을 물어봤는지 |

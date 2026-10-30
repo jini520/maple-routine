@@ -119,7 +119,7 @@
 | `lib/modal-metrics.ts` · `lib/number-pad-metrics.ts` · `lib/place-dropdown.ts` · `lib/popover-anchor.ts` | 모달 상한 · 숫자 판 판정 · 드롭다운과 팝오버 위치 · 꼬리 위치 |
 | `lib/shadow.ts` · `lib/fab-metrics.ts` | `boxShadow` 변환 · 떠 있는 원의 위치와 그림자 |
 | `hooks/useLoopedValue.ts` · `useSlidingThumb.ts` · `usePopoverPlacement.ts` · `usePullRefresh.ts` | 반복 모션 · 세그먼트 상자 · 팝오버 위치 · 당긴 회차 |
-| `features/refresh/freshness.ts` · `storage/data-freshness.ts` | 갱신 시각 값과 저장(Preferences `dataFetchedAt`) |
+| `features/refresh/freshness.ts` | 갱신 시각(`useRealtimeFetchedAt`). 스케줄 회차 쿼리의 `dataUpdatedAt` 과 오늘 강화 쿼리의 시각 중 늦은 쪽 |
 | `features/refresh/progress.ts` | 갱신 진행률(`useRefreshProgress`) |
 | `features/input-card/store.ts` · `keyboard-height.ts` · `storage/keyboard-height.ts` | 입력 카드 열기 · 기기 키보드 높이 저장 |
 | `features/input-card/meso-unit.ts` · `storage/meso-unit.ts` | 금액 칸마다 고른 단위 기억 |

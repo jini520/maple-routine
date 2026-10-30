@@ -7,7 +7,7 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `app/stats/StatsScreen.tsx` | 머리(주간 · 월간) · 기간 줄 · 카드 일곱. 읽은 표가 바뀌면 다시 읽는다 |
+| `app/stats/StatsScreen.tsx` | 머리(주간 · 월간) · 기간 줄 · 카드 일곱. 전 기간의 줄을 `ledgerDays` 쿼리로 든다 |
 | `app/stats/StatsSection.tsx` | 카드 틀 |
 | `app/stats/TrendSection.tsx` · `CharacterSection.tsx` · `CategorySection.tsx` · `BossSection.tsx` · `CumulativeSection.tsx` | 카드 |
 | `lib/stats/slice-steps.ts` | 도넛 조각의 명도 단계 · `그 외` 색 · 조각 안 글자색과 조각 수 상한. today 이번 주 수익 도넛도 쓴다 |
@@ -15,7 +15,8 @@
 | `app/stats/reveal.ts` | 화면에 들어온 카드의 그래프를 자라게 하는 진행값 |
 | `features/stats/aggregate.ts` | 합계 · 추이 · 누적 · 캐릭터별 · 항목별 · 보스별 집계 |
 | `features/stats/periods.ts` | 고른 기간에서 추이 범위(8주 · 6개월)와 누적 범위를 만든다 |
-| `features/stats/load.ts` | 기록 읽기 · 캐릭터 그림 주소 · 누적 시작 날짜 |
+| `features/stats/load.ts` | 캐릭터 그림 주소 · 누적 시작 날짜 |
+| `features/cashbook/ledger-query.ts` | 날짜별 줄 쿼리 `ledgerDays(from, to)`. 기록 표의 판이 오르면 다시 읽는다([[ADR-142]] 결정 6) |
 | `storage/stats-cumulative-start.ts` | 누적 시작 날짜(Preferences `statsCumulativeStart`) |
 | `theme/theme-vars.ts` 의 `resolveStatsSection` | 카드 바탕색 |
 | `navigation/bar-groups.ts` · `navigation/routes.ts` | 수익·지출 그룹의 세 번째 하위 탭(`Stats`, `/stats`) |

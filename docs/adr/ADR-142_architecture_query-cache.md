@@ -1,7 +1,7 @@
 # ADR-142 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다
 
-> 🟢 유효(1단계 구현, 2 · 3단계는 결정 8)
-> 관련 소스: `features/query/` · `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` · `schedule-views.ts` · `read-schedule.ts` · `save-tracked.ts` · `features/content-scheduler/views.ts` · `use-content-schedule.ts` · `features/boss-scheduler/views.ts` · `use-boss-schedule.ts` · `features/prehydrate.ts` · `storage/query-cache.ts` · `storage/sqlite/query-cache-tables.ts` · `app/QueryCacheProvider.tsx` · `hooks/useRefetchStaleOnFocus.ts` · `index.ts` · 2 · 3단계: `features/boss-profit/store.ts` · `features/ledger/useLedgerData.tsx` · `features/refresh/freshness.ts` · `storage/data-freshness.ts` · `app/today/TodayScreen.tsx`
+> 🟢 유효(1 · 2단계 구현, 3단계는 결정 8)
+> 관련 소스: `features/query/`(`client.ts` · `keys.ts` · `meta.ts` · `freshness.ts` · `app-focus.ts` · `reset-timer.ts` · `persist.ts` · `invalidation.ts`) · `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` · `schedule-views.ts` · `read-schedule.ts` · `save-tracked.ts` · `features/refresh/pull.ts` · `features/refresh/freshness.ts` · `features/boss-profit/period-query.ts` · `round-record.ts` · `round-view.ts` · `store.ts` · `drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/ledger/useLedgerData.tsx` · `features/content-scheduler/views.ts` · `use-content-schedule.ts` · `features/boss-scheduler/views.ts` · `use-boss-schedule.ts` · `features/prehydrate.ts` · `storage/query-cache.ts` · `storage/sqlite/query-cache-tables.ts` · `app/QueryCacheProvider.tsx` · `hooks/useRefetchStaleOnFocus.ts` · `index.ts`
 
 ## 배경
 
@@ -47,7 +47,8 @@ zustand 스토어에는 **화면 상태만** 남긴다. 고른 탭 · 보던 기
 ### 결정 2. 쿼리 열쇠는 `features/query/keys.ts` 한 곳에서 만든다
 
 열쇠를 호출부마다 배열로 적으면, 같은 데이터에 열쇠가 둘 생겨 무효화가 한쪽만 닿는다. 그래서 열쇠는 이 파일의 함수로만
-만든다. 넥슨 쿼리는 `meta: { persist: true, source: 'nexon' }` 를 든다. 저장과 자정 무효화가 열쇠가 아니라 이 표식을 본다.
+만든다. 쿼리의 표식은 `features/query/meta.ts` 의 `QueryMeta` 다. 넥슨 쿼리는 `{ persist: true, source: 'nexon' }` 를 들고
+저장과 자정 무효화가 그것을 본다. DB 읽기 쿼리는 읽는 표를 `tables` 에, 기대는 쿼리를 `dependsOn` 에 적고 결정 6 이 그것을 본다.
 
 | 열쇠 | 드는 것 | 원천 | 기기에 저장 | 단계 |
 |---|---|---|---|---|
@@ -59,11 +60,13 @@ zustand 스토어에는 **화면 상태만** 남긴다. 고른 탭 · 보던 기
 | `notices(kind)` | 공지 목록 | 우리 서버 `/notices` · 넥슨 `notice*` | 한다 | 3 |
 | `settlement()` | 결산 중인지 | 우리 서버 `/settlement` | 안 한다 | 3 |
 | `manualCompletion()` | 직접 완료를 연 보스 | 우리 서버 `manual-completion` | 안 한다 | 3 |
-| `ledgerDays(from, to)` | 가계부의 날짜별 줄 | SQLite(`loadMonthDays`) | 안 한다 | 2 |
-| `bossProfitPeriod(tab, periodKey)` | 보스 수익 기간의 행 | SQLite + `schedule(ocid)` | 안 한다 | 2 |
-| `dropHistory()` | 드롭 기록 묶음 | SQLite | 안 한다 | 2 |
-| `profiles(ocids)` | 프로필 스냅샷 | SQLite(`character-profiles`) | 안 한다 | 2 |
+| `ledgerDays(from, to)` | 가계부의 날짜별 줄. today 의 이번 주 수입 · 가계부의 달 · 통계의 전 기간이 범위만 달리 든다 | SQLite(`loadMonthDays`) | 안 한다 | 2 |
+| `bossProfitPeriod(tab, periodKey)` | 보스 수익 한 기간의 스냅샷(행 · 드롭 · 주차 소계 · 기간 상태 · 이전 화살표 · 조회 불가 카드). 결정 9 | SQLite + `schedule(ocid)` | 안 한다 | 2 |
+| `dropHistory()` | 드롭 기록 전 기간 묶음과 가뭄 요약 | SQLite | 안 한다 | 2 |
+| `enhancementToday()` | 오늘 강화 내역을 마지막으로 받은 시각. 머리의 `hh:mm:ss 기준` 이 회차 시각과 견준다 | 강화 수집기가 넣는다 | 안 한다 | 2 |
 | `partyAppointments()` | 파티 약속 | Preferences | 안 한다 | 3 |
+
+프로필 스냅샷(`character-profiles`)에는 열쇠를 두지 않는다. 화면이 직접 읽지 않고 위 쿼리들의 `queryFn` 안에서 읽는다.
 
 ### 결정 3. 스케줄 회차는 쿼리 하나이고, 결과를 캐릭터 열쇠에 나눠 넣는다
 
@@ -77,19 +80,31 @@ zustand 스토어에는 **화면 상태만** 남긴다. 고른 탭 · 보던 기
 추적 목록 저장(`save-tracked.ts`)은 새로 든 캐릭터만 받아 넣고(`syncAddedCharacters`) 회차가 덮은 목록에 더한다.
 전에는 컨텐츠 · 보스 스토어가 같은 저장을 각자 들고 있었고 월드 이전 안내는 한쪽만 불러 보스 탭이 옛 목록으로 남았다.
 
-- 회차 안에서 **보스 수익 자동 기록과 처치 날짜 캐기까지** 차례로 한다. 지금은 자동 기록이 보스 수익 스토어의
-  `refresh` 안에 있고 처치 날짜 캐기(`resolveDefeatDates`)는 13일 창과 가계부 진입에만 있다. 그래서 today 를 당기면
-  기록은 생기는데 날짜가 비어 이번 주 수입에 안 든다. 한 회차에 순서대로 두면, 창 회차에 합류해 오늘 기록을 못 보는
-  경합도 사라진다.
-- 당겨서 새로고침은 회차 뒤에 13일 창([[ADR-021]] 결정 8)도 채운다(사용자 지정 2026-10-30). today 도 같다. 조회 원장에
-  적힌 날은 다시 부르지 않으므로 평소에는 새로 생긴 날짜만 캐릭터 수만큼 나간다. 창까지 채워야 처치 날짜 소거법에 필요한
-  어제 관측이 있고(#812 C4), 기록이 아직 없는 지난 날이 비지 않는다.
+- 회차 안에서 **보스 수익 자동 기록과 처치 날짜 캐기까지** 차례로 한다. `runScheduleRound` 가 `syncSchedules` 뒤에
+  `recordBossProfitFromRound`(`features/boss-profit/round-record.ts`. 지금 기간의 완료 보스를 기록하고 리프 중복과 고아
+  드롭을 정리한다)와 `resolveDefeatDates` 를 부른다. 둘은 던져도 회차를 깨지 않는다. 쓴 기록은 표의 판을 올리고 결정 6
+  이 그 표를 읽는 쿼리를 무효화한다. 전에는 자동 기록이 보스 수익 스토어의 `refresh` 안에 있고 처치 날짜 캐기는 13일
+  창과 가계부 진입에만 있어, today 를 당기면 기록은 생기는데 날짜가 비어 이번 주 수입에 안 들었다(#812 B1). 새로 추적한
+  캐릭터만 받는 `syncAddedCharacters` 도 같은 둘을 거친다.
+- `resolveDefeatDates` 는 도는 회차가 있으면 합류하되, 그 회차가 시작한 뒤 보스 기록의 판이 올랐으면 끝난 뒤 한 번 더
+  돈다. 창 회차가 후보를 읽은 뒤에 자동 기록이 오늘 기록을 쓰면 그 기록은 그 회차의 후보에 없다(#812 C1).
+- 당겨서 새로고침은 `features/refresh/pull.ts` 의 `pullRefresh` 하나다. 회차 → 13일 창([[ADR-021]] 결정 8) → 오늘 강화
+  내역 순이다(사용자 지정 2026-10-30). today 와 수익 · 지출 층이 이것을 부른다. 조회 원장에 적힌 날은 다시 부르지
+  않으므로 평소에는 새로 생긴 날짜만 캐릭터 수만큼 나간다. 창까지 채워야 처치 날짜 소거법에 필요한 어제 관측이 있고
+  (#812 C4), 기록이 아직 없는 지난 날이 비지 않는다. 오늘 강화는 하루치(4콜)라 어느 당김에나 든다. 전에는 today 와 보스
+  수익의 당김이 강화를 안 받아 이번 주 지출이 그대로였다(#812 B2 · B4). 컨텐츠 · 보스 스케줄러의 당김은 회차만 받는다.
+  그 두 화면은 창과 강화를 안 그린다.
+- 수익 · 지출 층(`features/ledger/useLedgerData.tsx`)의 `live` 조각은 회차(`refreshSchedules`)와 오늘 강화
+  (`collectTodayEnhancement`)다. 층의 마운트는 `prefetchSchedules` 로 만료된 회차를 먼저 받은 뒤 창을 채운다. 창 회차가 자동 기록보다 먼저 후보를 읽어 오늘 기록에
+  날짜가 안 붙던 자리가 사라진다(#812 C2 · C5). 층은 진행률 · 모달 · 강화 범위만 들고 기록은 들지 않는다. 자식이 다시
+  읽는 계기였던 `revision` 은 결정 6 이 대신한다.
 - 보스 수익이 지난 기간을 보며 당기면 보던 기간에 머물고 데이터만 새로 받는다. 지금 동작 그대로다(사용자 지정
   2026-10-30). #812 D4 는 고치지 않는다.
-- 회차가 끝나면 쓴 기록의 판이 오르고, 결정 6 이 DB 읽기 쿼리를 무효화한다(2단계).
-- 머리의 `hh:mm:ss 기준` 은 2단계에서 `scheduleRound()` 의 `dataUpdatedAt` 과 오늘 강화 수집의 받은 시각 중 늦은 쪽을
-  읽게 바꾼다. 그때 `storage/data-freshness.ts` 와 `features/refresh/freshness.ts` 를 걷는다. 1단계에서는 `syncSchedules`
-  가 적던 그대로다.
+- 머리의 `hh:mm:ss 기준` 은 `scheduleRound()` 데이터의 `receivedAt` 과 `enhancementToday()` 의 받은 시각 중 늦은 쪽이다
+  (`features/refresh/freshness.ts` 의 `useRealtimeFetchedAt`). `receivedAt` 은 넥슨에서 실제로 받은 마지막 시각이다. 전원이
+  캐시로 채워진 회차(401 · 429 · 점검)도 쿼리는 성공이라 `dataUpdatedAt` 은 오르는데, 그것을 그리면 아무것도 안 받은
+  진입이 방금 받은 것처럼 보인다. 회차 쿼리는 기기에 저장되므로 앱을 다시 켜도 그 시각이 남는다. Preferences 의 `dataFetchedAt` 과 `storage/data-freshness.ts` 는 걷었다. 과거 기간의 강화 조회는 시각을 안
+  움직인다. 이미 확정된 기록이라 그것으로 시각을 올리면 지난 달을 넘겨보기만 해도 방금 받은 데이터처럼 보인다.
 - 회차가 실패해도 쿼리는 이전 데이터를 든다. 회차 자체가 던진 실패(키 없음 등)는 쿼리의 `error` 가 되고 화면이
   `toScheduleSyncError` 로 종류를 가른다.
 
@@ -112,7 +127,7 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 |---|---|---|
 | 앱 시작 | 저장된 캐시를 복원한 뒤 회차를 만료로 표시한다. 앱을 켜는 것은 지금 상태를 보겠다는 뜻이다 | `onQueryCacheRestored` |
 | 앱 복귀(배경 → 활성) | **신선해도 한 번 받는다**(사용자 지정). `focusManager` 를 `AppState` 에 잇고 넥슨 · 서버 쿼리에 `refetchOnWindowFocus: 'always'` 를 준다 | `features/query/app-focus.ts` |
-| 화면 포커스 | 만료된 쿼리만 받는다. 탭을 오가는 동선은 10분 안이라 캐시로 끝난다 | `hooks/useRefetchStaleOnFocus.ts` |
+| 화면 포커스 | 만료된 쿼리만 받는다. 탭을 오가는 동선은 10분 안이라 캐시로 끝난다. 컨텐츠 · 보스 · 보스 수익 · today 가 건다 | `hooks/useRefetchStaleOnFocus.ts` |
 | 당겨서 새로고침 · 다시 시도 | 신선해도 받는다 | `refreshSchedules`. 화면이 `ScreenScroll` 의 `onRefresh` 와 토스트의 다시 시도에 넘긴다 |
 
 - 복귀의 `inactive → active` 는 세지 않는다. 지금 `useReturnToForeground` 와 같은 이유다(iOS 알림 센터를 내렸다 올린 것은
@@ -123,14 +138,27 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 
 ### 결정 6. DB 읽기 쿼리는 그 표의 판이 오를 때 무효화된다
 
-기록을 쓰는 쪽이 화면을 알 필요가 없게 한다. 저장 계층은 이미 표마다 판을 올린다(`bumpRecordsRevision` ·
-`getEnhancementTotalsRevision` · `getSpendRecordsRevision` 등). `features/query/invalidation.ts` 한 곳이 그 판을 구독해,
-그 표를 읽는 열쇠를 무효화한다.
+기록을 쓰는 쪽이 화면을 알 필요가 없게 한다. 저장 계층은 표마다 판을 올리고 구독 함수를 낸다
+(`subscribeBossProfitRecordsRevision` · `subscribeBossDropRecordsRevision` · `subscribeIncomeRecordsRevision` ·
+`subscribeSpendRecordsRevision` · `subscribeEnhancementTotalsRevision` · `subscribeScheduleProbeLedgerRevision`).
+`features/query/invalidation.ts` 의 `startRecordInvalidation` 이 여섯을 구독해, `meta.tables` 에 그 표를 적은 쿼리를
+무효화한다. 표 이름은 `features/query/meta.ts` 의 `RecordTable` 이다.
 
-- 그래서 화면마다 있던 판 비교(`statsToken` · `isDropHistoryOutdated` · `reloadManualCompleted` 의 판 · `LedgerLayer`
-  의 `revision`)를 걷는다. 쓰는 자리를 하나 더 만들어도 무효화를 빠뜨릴 수 없다.
-- 보고 있지 않은 화면의 쿼리는 무효 표시만 되고, 그 화면이 다시 보일 때 읽는다. 지금 포커스마다 판을 견주는 것과 같은
+- 쿼리는 자기가 읽는 표를 `meta.tables` 에 적는다. `ledgerDays` 는 다섯 기록 표, `bossProfitPeriod` 는 보스 기록 · 드롭
+  기록 · 조회 원장, `dropHistory` 는 드롭 기록 · 보스 기록이다. 조회 원장(`scheduleProbe:*`)이 든 것은 지난 기간의 상태
+  (`notChecked` 에서 `confirmedEmpty` 로)가 기록 없이 원장만으로 바뀌기 때문이다.
+- 다른 쿼리에 기대는 쿼리는 `meta.dependsOn` 에 그 열쇠의 이름을 적는다. `bossProfitPeriod` 의 지금 기간은
+  `schedule(ocid)` 캐시에서 행을 만들므로 `schedule-round` 에 기댄다. 같은 모듈이 쿼리 캐시를 구독해, 회차가 새 데이터를
+  들면(받았든 `setQueryData` 로 넣었든) 그 쿼리를 무효화한다.
+- 판 알림은 `batchRecordWrites` 안에서는 끝날 때 한 번이다. 자동 기록 · 처치 날짜 · 창 채우기 · 강화 수집이 그 안에서
+  돈다. 안 묶으면 첫 수집의 수백 번 쓰기가 수백 번 다시 읽게 한다. 지출 기록의 판은 쓰기 **뒤에** 오른다. 앞에 올리면
+  무효화된 쿼리가 쓰기 전 값을 읽는다.
+- 그래서 화면마다 있던 판 비교(`statsToken` · `isDropHistoryOutdated` · `cashbookDataRevision` · `statsDataRevision` ·
+  `reloadToken` · `LedgerLayer` 의 `revision` · 기간 표의 `stamp`)를 걷었다. 쓰는 자리를 하나 더 만들어도 무효화를 빠뜨릴
+  수 없다.
+- 보고 있지 않은 화면의 쿼리는 무효 표시만 되고, 그 화면이 다시 보일 때 읽는다. 전에 포커스마다 판을 견주던 것과 같은
   비용이다.
+- 보스 스케줄러의 직접 완료(`reloadManualCompleted`)는 아직 스토어가 판을 견준다. 3단계에서 쿼리로 옮긴다.
 
 ### 결정 7. 넥슨 · 서버 응답 쿼리만 기기에 저장하고, 옛 캐시 키는 한 번 옮긴 뒤 지운다
 
@@ -154,6 +182,27 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
   (`features/prehydrate.ts`)은 `whenQueryCacheRestored` 를 기다린 뒤에 돈다. 복원 전에 회차를 돌리면 옛 캐시를 못 보고
   빈 캐시로 판단한다.
 
+### 결정 9. 보스 수익의 기간은 `bossProfitPeriod(tab, periodKey)` 쿼리 하나이고, 스토어는 보던 기간만 든다
+
+`features/boss-profit/period-query.ts` 의 `bossProfitPeriodOptions` 가 한 기간의 스냅샷(행 · 드롭 · 주차 소계 · 기간 상태 ·
+집계 전 여부 · 이전 화살표 · 조회 불가 카드)을 만든다. 지금 기간의 행은 `schedule(ocid)` 캐시와 회차 결과에서, 지난 기간은
+기록에서 만든다(`buildPeriodSnapshot`). 화면은 `useBossProfitPeriod(tab, periodKey)` 로 보고 today 는 이번 주 열쇠를 본다.
+
+- 전에는 스토어가 `syncSchedules` 를 직접 부르고(10분 게이트 `isSyncFresh` 와 `sync-run-state`), 그 결과로 만든 행을
+  `latestSyncSnapshot` 에 들고, 읽어 둔 기간을 `period-cache.ts` 의 표에 `stamp` 로 들었다. 셋 다 쿼리 캐시가 하는
+  일이라 걷었다. 회차 · 기록 판 · 원장이 바뀌면 결정 6 이 기간 쿼리를 무효화한다.
+- 기간 이동의 겹침은 열쇠가 가른다. 기간마다 쿼리가 따로라 느린 회차가 다른 기간의 화면을 덮을 수 없어 `requestGeneration`
+  이 필요 없다. 화면은 `placeholderData` 로 앞 기간의 값을 새 값이 올 때까지 두고, `loadedTab` · `loadedPeriodKey` 로 그
+  값이 어느 기간 것인지 안다.
+- 기간을 미리 읽는 창(`period-window.ts`)은 그대로다. 한 기간이 서면 그 앞뒤 기간을 `prefetchQuery` 로 차례로 읽는다. 창
+  동기화가 있어야 답이 나오는 기간은 건너뛴다. 배경에서 넥슨을 부르지 않는다.
+- 스토어(`features/boss-profit/store.ts`)에는 `tab` · `periodKey` · `partyPlans` 와 쓰기(`setRowParty` ·
+  `saveManualCompletion` · `cancelManualCompletion` · `setBossDrops`)만 남는다. 쓰기는 기록만 쓰고 화면은 무효화가
+  맞춘다. 가격 입력 화면이 스토어에 알리던 `applyExternalDropEdit` 도 같은 이유로 걷었다.
+- 회차의 실패 · 캐시로 채운 캐릭터 · 답하지 않은 캐릭터는 회차 쿼리가 들고(`round-view.ts`), 화면은 토스트와 배지를
+  거기서 만든다. 스토어에 사본(`error` · `staleCharacterNames` · `characterIssues`)을 두지 않는다.
+- `partyPlans` 는 파티 설정 표를 읽는데 그 표에는 판이 없다. 설정을 바꾸는 쓰기가 이 스토어 안에 있어 그 자리에서 맞춘다.
+
 ### 결정 8. 세 단계로 나눠 옮긴다
 
 한 번에 옮기면 검증 범위가 앱 전체가 된다. 단계마다 PR 하나이고, 끝난 단계는 이슈 #812 의 해당 항목을 닫는다.
@@ -161,7 +210,7 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 | 단계 | 옮기는 것 | 닫는 #812 항목 | 상태 |
 |---|---|---|---|
 | 1 | 결정 1 · 2 · 4 · 5 · 7 의 기반, 스케줄 회차(결정 3 중 스케줄과 basic), 컨텐츠 · 보스 스케줄러, today 의 스케줄 · 프로필 | A1 · A2 · A3 · B3 · B6 · B7 · D1 · D2 · D3 | 끝(2026-10-30) |
-| 2 | 결정 3 의 자동 기록 · 처치 날짜 · 머리 시각, 결정 6, 보스 수익 · 가계부 · 통계 · today 의 이번 주 수입과 드롭 위젯, 보스 수익의 옛 게이트 걷기 | A4 · B1 · B2 · B4 · C1 ~ C5 · D5 | 전 |
+| 2 | 결정 3 의 자동 기록 · 처치 날짜 · 머리 시각, 결정 6, 결정 9, 가계부 · 통계 · today 의 이번 주 수입과 드롭 위젯, 보스 수익의 옛 게이트 걷기 | A4 · B1 · B2 · B4 · C1 ~ C5 · D5 | 끝(2026-10-30) |
 | 3 | 공지 · 결산 · 직접 완료 · 캐릭터 관리 · MVP 등급 설정 · 파티 약속, 옛 캐시 키 지우기 | A5 ~ A8 · D6 · E | 전 |
 
 넥슨 점검 배너(A6)는 3단계에서 복귀 회차가 막힌 경로를 다시 부르는 것으로 걷히는지 확인하고, 안 걷히면 그때 정한다.
@@ -180,8 +229,18 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 | `features/content-scheduler/__tests__/views.spec.ts` · `features/boss-scheduler/__tests__/views.spec.ts` | 결정 3: 스냅샷이 뷰가 되는 규칙. 조회 불가와 답하지 않은 캐릭터는 내용을 비우고 자리를 남기는지, 레벨 순서 |
 | `features/__tests__/prehydrate.spec.ts` | 결정 7: 복원을 기다린 뒤 선택 · 회차 · 보스 수익을 순차로 예열하는지 |
 | `storage/sqlite/__tests__/query-cache-real-sqlite.test.ts` | 결정 7: 같은 키는 값을 덮고 지우면 없는지 |
-| `features/query/__tests__/invalidation.spec.ts` | 결정 6(2단계): 표의 판이 오르면 그 표를 읽는 열쇠만 무효화되는지 |
+| `features/query/__tests__/invalidation.spec.ts` | 결정 6: 표의 판이 오르면 그 표를 적은 쿼리만 무효화되는지, 회차가 새 데이터를 들면 `dependsOn` 쿼리가 무효화되는지 |
+| `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 3: 회차가 동기화 뒤 자동 기록 · 처치 날짜 순으로 부르고, 둘이 던져도 회차는 서는지 |
+| `features/refresh/__tests__/pull.spec.ts` | 결정 3: 당김이 회차 → 창 → 오늘 강화 순인지, 추적이 없으면 창을 안 부르는지 |
+| `features/refresh/__tests__/freshness.spec.ts` | 결정 3: 회차 시각과 오늘 강화 시각 중 늦은 쪽을 내고 둘 다 없으면 빈지 |
+| `features/boss-profit/__tests__/defeat-dates.spec.ts` | 결정 3: 합류한 회차가 시작한 뒤 기록 판이 올랐으면 한 번 더 도는지 |
+| `features/boss-profit/__tests__/round-record.spec.ts` | 결정 3: 캐시로 채운 캐릭터는 기록 · 고아 정리에서 빼는지, 기록 조회가 실패하면 아무것도 안 쓰는지 |
+| `features/boss-profit/__tests__/period-snapshot.spec.ts` | 결정 9: 지금 기간은 스케줄 캐시에서, 지난 기간은 기록에서 만드는지, 기록만 있는 조합과 추적에서 뺀 캐릭터의 기록이 남는지, 관측이 없는 지난 기간은 창을 채우는지 |
+| `features/boss-profit/__tests__/period-query.spec.ts` | 결정 9: 미리 읽기가 창 동기화가 필요한 기간을 건너뛰는지, 회차가 새 데이터를 들면 기간 쿼리가 무효화되는지 |
+| `features/boss-profit/__tests__/store.spec.ts` | 결정 9: 기간 이동이 기록이 있는 가장 가까운 기간으로 가는지, 쓰기가 기록만 쓰고 화면 사본을 안 드는지 |
+| `features/boss-profit/__tests__/round-view.spec.ts` | 결정 9: 회차 결과에서 조회 불가 · 실패 배지를 가르고, 점검은 토스트 이름에서 빼며, 답하지 않은 캐릭터는 조회 불가로 두는지 |
+| `features/cashbook/__tests__/ledger-query.spec.ts` | 결정 6: 범위가 열쇠이고 기록 표의 판이 오르면 다시 읽는지 |
 
 ## 번호 기록
 
-- ADR-142 (2026-10-30): 처음 작성. 데이터를 드는 자리와 다시 받는 규칙을 쿼리 캐시 하나로 모은다(이슈 #812). 같은 날 1단계를 구현했다
+- ADR-142 (2026-10-30): 처음 작성. 데이터를 드는 자리와 다시 받는 규칙을 쿼리 캐시 하나로 모은다(이슈 #812). 같은 날 1 · 2단계를 구현했다
