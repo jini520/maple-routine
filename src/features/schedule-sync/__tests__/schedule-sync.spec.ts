@@ -2594,6 +2594,21 @@ describe('동기화가 월드 리프를 짚는다', () => {
     expect(useWorldLeapStore.getState().notice).toBeNull()
   })
 
+  // 캐릭터 하나만 관리하다 리프하면 목록에 남는 추적 캐릭터가 없다. 그때 회차가 던지면 모든 탭이
+  // 오류로 서고, 이 판정까지 못 와서 모달도 안 뜬다.
+  it('추적 캐릭터가 전부 목록에서 빠져도 던지지 않고 묻는다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [새캐릭터])])
+
+    await expect(syncSchedules([옛ocid])).resolves.toEqual([])
+
+    expect(fetchSchedulerCharacterStateMock).not.toHaveBeenCalled()
+    expect(useWorldLeapStore.getState().notice).toMatchObject({
+      kind: 'confirmed',
+      from: { ocid: 옛ocid },
+      to: { ocid: 'new-ocid' },
+    })
+  })
+
   // 판정의 입구가 추적 목록이다. 해제하면 그 ocid 가 후보에조차 안 든다.
   it('추적 목록에서 빠진 캐릭터는 안 묻는다', async () => {
     fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1'), 새캐릭터])])

@@ -344,6 +344,13 @@ async function runSyncRound(
   const { credential, characters: targets, allCharacters } = await resolveTrackedCharacterContext(ocids)
   const total = targets.length
 
+  // 추적 캐릭터가 전부 목록에서 빠졌다(캐릭터 하나만 관리하다 리프한 경우). 부를 캐릭터는 없어도
+  // 리프 판정과 조회 불가 기록은 돌아야 모달과 표식이 선다.
+  if (total === 0) {
+    await settleStrandedCharacters(credential, ocids, allCharacters, [])
+    return []
+  }
+
   onProgress?.(0, total)
 
   const [first, ...rest] = targets
@@ -393,14 +400,26 @@ async function runSyncRound(
 
   const results = [firstResult, ...restResults]
 
+  // 401·429 갈래에는 안 둔다. 그 상태에서는 프로브도 같은 실패를 받아 아무것도 못 짚는다.
+  await settleStrandedCharacters(credential, ocids, allCharacters, results)
+  return results
+}
+
+/**
+ * 회차 끝의 리프 판정 · 연결 · 조회 불가 기록.
+ *
+ * 여기 있는 것은 이 판정이 캐릭터 관리 화면에만 있어 그 화면을 안 여는 사용자에게 영영 안
+ * 닿았기 때문이다. 콜드 스타트는 이 경로를 반드시 지난다.
+ */
+async function settleStrandedCharacters(
+  credential: NexonCredential,
+  ocids: string[],
+  allCharacters: MapleCharacter[],
+  results: CharacterScheduleSync[],
+): Promise<void> {
   // 목록 밖 추적 ocid 를 따로 물어 월드 리프를 짚는다. **`persistUnavailable` 보다 앞이어야
   // 한다** - 그쪽이 원장에 표식을 먼저 적으면 프로브가 건너뛰어, 목록에 없다는 것만으로 판정한
   // 셈이 된다. 빠진 것은 물어볼 이유이지 답이 아니다.
-  //
-  // 여기 있는 것은 이 판정이 캐릭터 관리 화면에만 있어 그 화면을 안 여는 사용자에게 영영 안
-  // 닿았기 때문이다. 콜드 스타트는 이 경로를 반드시 지난다.
-  //
-  // 401·429 갈래에는 안 둔다. 그 상태에서는 프로브도 같은 실패를 받아 아무것도 못 짚는다.
   await probeStrandedTrackedCharacters(credential, new Set(ocids), allCharacters, new Date())
   // 모달을 안 거친 리프의 연결. 뒤에서 스토어가 기록을 쓰고 정리할 때 이 연결을 읽는다.
   await linkWorldLeapsFromRoster(allCharacters, new Date())
@@ -408,7 +427,6 @@ async function runSyncRound(
   // 조회 불가를 **여기서** 표에 남긴다. 이 사실을 배우는 자리가 동기화다. 화면 스토어에 두면
   // 그 화면을 안 여는 사용자에게는 표가 영영 안 찬다.
   await persistUnavailable(ocids, results)
-  return results
 }
 
 // 진행 중인 회차가 있으면 새 회차를 시작하지 않고 그 프라미스를 함께 기다린다.
