@@ -3,7 +3,6 @@ import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useBossProfitCalculatorStore } from '../../../features/boss-profit-calculator/store'
-import { useBossSchedulerStore } from '../../../features/boss-scheduler/store'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { getBossProfitCalculatorRecords, setBossProfitCalculatorRecords, type BossProfitCalculatorRecord } from '../../../storage/boss-profit-calculator-records'
@@ -11,6 +10,10 @@ import { installFakePreferences } from '../../../storage/__tests__/fake-preferen
 import { BossProfitCalculatorRecordsScreen } from '../BossProfitCalculatorRecordsScreen'
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
+// 캐릭터는 쿼리 캐시에서 온다. 이 화면이 보는 것은 기록 목록이라 추적 캐릭터가 없는 상태로 둔다.
+jest.mock('../../../features/boss-scheduler/use-boss-schedule', () => ({
+  useBossSchedule: () => ({ status: 'loaded', characters: [], error: null, trackedOcids: [], refresh: jest.fn() }),
+}))
 
 const EVEN = { myShare: null, sharesTotal: null, splitFeePercent: null }
 const goBack = jest.fn()
@@ -34,7 +37,6 @@ beforeEach(async () => {
   installNoopNativePorts()
   jest.mocked(useScreenNavigation).mockReturnValue({ goBack } as unknown as ReturnType<typeof useScreenNavigation>)
   goBack.mockClear()
-  useBossSchedulerStore.setState({ characters: [] })
   await setBossProfitCalculatorRecords([새것, 옛것])
   useBossProfitCalculatorStore.setState({ loaded: true, records: [새것, 옛것], openedId: 'new', bossesByOcid: {} })
 })

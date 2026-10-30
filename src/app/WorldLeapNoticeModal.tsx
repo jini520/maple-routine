@@ -35,7 +35,7 @@ import { View } from 'react-native'
 
 import type { WorldLeapNotice } from '../features/character-manage/world-leap'
 import { useWorldLeapStore } from '../features/character-manage/world-leap-store'
-import { useContentSchedulerStore } from '../features/content-scheduler/store'
+import { saveTrackedCharacters } from '../features/schedule-sync/save-tracked'
 import { worldNameOf } from '../lib/world/worlds'
 
 import { ArrowRightIcon, Text } from '../components/atoms'
@@ -60,14 +60,13 @@ export function WorldLeapNoticeModal(props: WorldLeapNoticeModalProps): React.JS
   const notice = useWorldLeapStore((state) => state.notice)
   const confirm = useWorldLeapStore((state) => state.confirm)
   const dismiss = useWorldLeapStore((state) => state.dismiss)
-  const saveTrackedOcids = useContentSchedulerStore((state) => state.saveTrackedOcids)
 
   async function handleConfirm(): Promise<void> {
     const saved = await confirm()
     if (saved === null) {
       return
     }
-    await saveTrackedOcids(saved)
+    await saveTrackedCharacters(saved)
   }
 
   // 닫고 보낸다. 안 닫으면 방금 보낸 그 화면을 이 모달이 그대로 덮는다.

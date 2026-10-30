@@ -1,87 +1,46 @@
+/**
+ * 보스 스케줄러의 화면 상태. 넥슨에서 받은 값은 여기 없다. 그것은 쿼리 캐시가 들고 `useBossSchedule` 이 뷰로 만든다.
+ * 여기 남는 것은 기기에만 있는 값(파티 인원 · 수동 추적 · 직접 완료)과 화면이 고른 것(필터)뿐이다.
+ */
 import { create } from 'zustand'
-import {
-  countClearedWeeklyBosses,
-  countManualWeeklyBosses,
-  matchBossContent,
-  WEEKLY_BOSS_CLEAR_LIMIT,
-  type MatchedBoss,
-} from '../../lib/boss/boss-matching'
+
+import { countManualWeeklyBosses, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 import { bossCycleOf, getMaxPartySize, isSeasonBoss } from '../../lib/boss/bosses'
-import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
-import { applyKnownUnavailable, resolveStrandedCharacters } from '../schedule-sync/stranded-characters'
-import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
-import { isSyncFresh } from '../../lib/scheduler/sync-freshness'
-import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
-import { useCharacterSelectionStore } from '../character-selection/store'
+import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
+import { manualCompletionKey } from '../../lib/boss/manual-completion'
 import {
   getBossPartySettings,
   setBossPartySetting,
   type BossPartyShareColumns,
 } from '../../storage/boss-party-settings'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
-import { getCachedSchedulerState } from '../../storage/scheduler-cache'
 import { getBossProfitRecordsRevision, getManualBossProfitRecordKeys } from '../../storage/boss-profit'
-import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
-import { manualCompletionKey } from '../../lib/boss/manual-completion'
-import type { BossDifficulty } from '../../types'
-import { compareByName } from '../../lib/character-order'
-import { useToastStore } from '../toast/store'
-import { seedRememberedLevels } from '../cashbook/remembered-levels'
-import { seedManualTrackedContent } from '../tracking-mode/seed'
-import { useTrackingModeStore } from '../tracking-mode/store'
 import {
   getManualTrackedContent,
   setManualTrackedContent,
   type ManualTrackedItem,
 } from '../../storage/manual-tracked-content'
+import type { BossDifficulty } from '../../types'
+import { readTrackedOcidsSync } from '../schedule-sync/read-schedule'
+import { useToastStore } from '../toast/store'
+import { useTrackingModeStore } from '../tracking-mode/store'
+
+export type { BossCharacterView } from './views'
 
 // 추가 시도의 결과. 'duplicate'는 이미 같은 (보스, 난이도)를 추적 중이라
 // 아무 일도 일어나지 않은 경우이고, 'limitReached'는 주간 12개 한도가 막은 경우다.
 export type ManualBossAddResult = 'added' | 'duplicate' | 'limitReached'
 
-export interface BossCharacterView {
-  ocid: string
-  characterName: string
-  /** 월드 key. 시즌 보스를 보일지 가른다 */
-  worldKey?: string | null
-  // 초상화 레일이 쓰는 둘. 컨텐츠 스케줄러 뷰와 같은 자리·같은 규약이다(`null` = 캐시가 아직
-  // 모름). 정렬이 이미 읽는 캐시에서 함께 꺼내므로 조회가 안 는다.
-  level?: number | null
-  imageUrl?: string | null
-  weeklyBosses: MatchedBoss[]
-  monthlyBosses: MatchedBoss[]
-  weeklyBossClearCount: number | null
-  weeklyBossClearLimitCount: number | null
-  isStale: boolean
-  syncedAt: string | null
-  error: ScheduleSyncError | null
-}
-
-export type BossSchedulerStatus = 'idle' | 'loading' | 'loaded' | 'error'
-
-// 강제가 기본값이고 게이트가 예외다. force 인자를 두면 강제해야 할 호출부를 하나라도 빠뜨리는
-// 순간 그 자리가 조용히 게이트에 걸리므로, 자동 진입 경로인 loadTrackedOcids() 만 auto: true 를
-// 넘긴다. 화면은 인자를 안 넘겨 자동으로 강제 경로다. 컨텐츠 스케줄러 스토어와 같은 이름·같은
-// 모양이다. 같은 정책이 두 모양으로 있으면 값을 바꿀 때 한쪽만 고치게 된다.
-export interface RefreshOptions {
-  auto?: boolean
-}
-
 // 솔로/파티 서브 필터. 목록이 하나라 필터도 하나다.
 export type PartyFilter = 'all' | 'solo' | 'party'
 
 export interface BossSchedulerState {
-  status: BossSchedulerStatus
-  characters: BossCharacterView[]
-  error: ScheduleSyncError | null
-  trackedOcids: string[] | null
   // key: `${ocid}:${bossKey}:${difficulty}`. 맵에 키가 없으면 미설정(솔로)을 뜻한다. 이 스토어는
   // 없는 키를 1 로 채워 넣지 않는다. 그 해석은 UI 의 책임이다.
   partySizes: Record<string, number>
   // 같은 키의 분배 비율. `partySizes` 와 나란히 사는 것은 인원을 읽는 곳(배지 · 필터 · 드롭
   // 기본값)이 비율을 안 쓰기 때문이다. 둘은 아래 두 함수에서만 함께 쓰이고 따로 안 바뀐다.
   partyShares: Record<string, BossPartyShareColumns>
-  // 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에 characters 의
+  // 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에 캐시의
   // 동기화 값 또는 참조 테이블에서 조회한다.
   manualTrackedByOcid: Record<string, ManualTrackedItem[]>
   /**
@@ -92,10 +51,11 @@ export interface BossSchedulerState {
    */
   manualCompletedByOcid: Record<string, string[]>
   /**
-   * 위 값이 비추는 **기록 판**(`getBossProfitRecordsRevision`). 포커스가 이것과 지금 판을 견줘
-   * 바뀌었을 때만 다시 읽는다. `null` 은 아직 한 번도 안 읽었다는 뜻이다.
+   * 위 값이 비추는 **기록 판**(`getBossProfitRecordsRevision`)과 기간. 포커스가 이것과 지금을 견줘
+   * 바뀌었을 때만 다시 읽는다. `null` 은 아직 한 번도 안 읽었다는 뜻이다. 기간을 함께 드는 것은
+   * 목요일을 넘기면 기록이 그대로여도 지난주 완료가 이번 주 것이 아니기 때문이다.
    */
-  manualCompletedRevision: number | null
+  manualCompletedStamp: string | null
   // 화면 로컬 state 가 아니라 스토어가 소유한다. 화면이 언마운트돼도 살아남는다. 영속화하지 않는다.
   //
   // `activeTab` 은 여기 없다. 주간/월간 탭이 두 화면에서 함께 걷혔다. 되살리지 말 것. 공유할
@@ -105,21 +65,18 @@ export interface BossSchedulerState {
 }
 
 export interface BossSchedulerStore extends BossSchedulerState {
-  loadTrackedOcids(): Promise<void>
+  /** 추적 캐릭터의 기기 값 셋(파티 인원 · 수동 추적 · 직접 완료)을 읽는다. 넥슨은 안 부른다. */
+  loadLocal(ocids: readonly string[]): Promise<void>
+  /** 캐시의 추적 목록으로 `loadLocal`. 설정이 모드를 바꾼 뒤 부른다. */
+  reloadLocal(): Promise<void>
   /**
-   * 직접 완료만 다시 읽는다. **기록 판이 바뀌었을 때만** 읽고 넥슨은 안 부른다.
+   * 직접 완료만 다시 읽는다. **기록 판이나 기간이 바뀌었을 때만** 읽고 넥슨은 안 부른다.
    *
    * 화면이 포커스마다 부른다. 이 스토어를 쓰는 두 화면(스케줄러 · today)은 탭이라 계속 살아
-   * 있고 진입 조회는 마운트 때 한 번뿐이라, 그 사이 보스 수익에서 적은 완료를 이것이 들여온다.
+   * 있어서, 그 사이 보스 수익에서 적은 완료를 이것이 들여온다.
    */
   reloadManualCompleted(): Promise<void>
-  saveTrackedOcids(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
-  refresh(
-    ocids: string[],
-    onProgress?: (completed: number, total: number) => void,
-    options?: RefreshOptions,
-  ): Promise<void>
-  loadPartySizes(ocids: string[]): Promise<void>
+  loadPartySizes(ocids: readonly string[]): Promise<void>
   /** 파티 인원과 분배 비율을 한 번에 저장한다. 균등으로 되돌리는 것도 `shares` 를 비우는 이 길이다. */
   setPartySetting(
     ocid: string,
@@ -144,15 +101,11 @@ export interface BossSchedulerStore extends BossSchedulerState {
 }
 
 const initialState: BossSchedulerState = {
-  status: 'idle',
-  characters: [],
-  error: null,
-  trackedOcids: null,
   partySizes: {},
   partyShares: {},
   manualTrackedByOcid: {},
   manualCompletedByOcid: {},
-  manualCompletedRevision: null,
+  manualCompletedStamp: null,
   partyFilter: 'all',
 }
 
@@ -160,74 +113,13 @@ export function partySizeKey(ocid: string, bossKey: string, difficulty: string):
   return `${ocid}:${bossKey}:${difficulty}`
 }
 
-// 부팅 선하이드레이션과 화면 마운트가 같은 회차를 부르므로, 진행 중인 회차가 있으면 그 Promise 를
-// 그대로 돌려준다. 평생 한 번이 아니라 동시에 하나만이다. 끝나면 잊는다. 영구 메모로 만들면
-// 진입 재조회의 10분 TTL 이 죽는다.
-let hydration: Promise<void> | null = null
-
-// 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(계정 전체 캐릭터 목록에서 필터링한 순서)가
-// 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache 의 level 을 병합해 레벨
-// 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는 캐릭터는 맨 뒤로 보낸다.
-//
-// 정렬에 쓰는 level 을 버리지 않고 `imageUrl` 과 함께 뷰에 남긴다. 초상화 레일이 쓴다. 컨텐츠
-// 스케줄러 스토어의 같은 이름 함수와 같은 모양이어야 한다.
-async function sortByCachedLevel(views: BossCharacterView[]): Promise<BossCharacterView[]> {
-  const withLevel = await Promise.all(
-    views.map(async (view) => {
-      const cached = await getCachedCharacterBasic(view.ocid)
-      return { view, level: cached?.profile.level ?? null, imageUrl: cached?.profile.imageUrl ?? null }
-    }),
-  )
-
-  return withLevel
-    .sort((a, b) => {
-      if (a.level === null && b.level === null) {
-        return compareByName(a.view.characterName, b.view.characterName)
-      }
-      if (a.level === null) return 1
-      if (b.level === null) return -1
-      if (b.level !== a.level) return b.level - a.level
-      return compareByName(a.view.characterName, b.view.characterName)
-    })
-    .map((entry) => ({ ...entry.view, level: entry.level, imageUrl: entry.imageUrl }))
-}
-
-// 저장 시점에 유지되는 캐릭터의 뷰가 메모리에 없을 때만 쓰는 폴백.
-// 네트워크(syncSchedules)는 새로 추가된 캐릭터에만 쓰고, 그 외에는 마지막 캐시를 읽는다.
-async function readCachedView(ocid: string): Promise<BossCharacterView | null> {
-  const cached = await getCachedSchedulerState(ocid)
-  if (cached === null) {
-    return null
-  }
-  const bosses = cached.state.bossContents.map(matchBossContent)
-  return {
-    ocid,
-    characterName: cached.state.characterName,
-    worldKey: cached.state.worldKey,
-    weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
-    monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
-    weeklyBossClearCount: countClearedWeeklyBosses(bosses),
-    weeklyBossClearLimitCount: WEEKLY_BOSS_CLEAR_LIMIT,
-    isStale: true,
-    syncedAt: cached.syncedAt,
-    error: null,
-  }
-}
-
-/**
- * 조회할 수 없는 캐릭터의 **모르는 상태**. 캐시 단계와 동기화 후가 이 함수 하나를 쓴다.
- *
- * 처치 수를 `null` 로 두는 것은 `0/12` 가 안 잡았다는 단정이라서다. 두 시점이 서로 다른 것을
- * 그리면 진행 링이 진행률을 그렸다가 빈 링으로 바뀐다.
- */
-function toUnknownBossView(view: BossCharacterView): BossCharacterView {
-  return {
-    ...view,
-    weeklyBosses: [],
-    monthlyBosses: [],
-    weeklyBossClearCount: null,
-    weeklyBossClearLimitCount: null,
-  }
+/** 직접 완료가 비추는 판. 기록 판과 이번 주 · 이번 달 기간을 한 글자로 잇는다. */
+function manualCompletedStampOf(now: Date): string {
+  return [
+    getBossProfitRecordsRevision(),
+    getCurrentBossProfitPeriod('weekly', now).periodKey,
+    getCurrentBossProfitPeriod('monthly', now).periodKey,
+  ].join('|')
 }
 
 /**
@@ -237,7 +129,7 @@ function toUnknownBossView(view: BossCharacterView): BossCharacterView {
  * 던지면 스케줄러 화면 전체가 못 선다.
  */
 async function readManualCompleted(
-  ocids: string[],
+  ocids: readonly string[],
   now: Date,
 ): Promise<Record<string, string[]>> {
   if (ocids.length === 0) return {}
@@ -248,7 +140,7 @@ async function readManualCompleted(
   ]
   const byOcid: Record<string, string[]> = {}
   try {
-    for (const record of await getManualBossProfitRecordKeys(ocids, periodKeys)) {
+    for (const record of await getManualBossProfitRecordKeys([...ocids], periodKeys)) {
       const keys = byOcid[record.ocid] ?? []
       keys.push(manualCompletionKey(record.bossKey, record.difficulty))
       byOcid[record.ocid] = keys
@@ -262,281 +154,46 @@ async function readManualCompleted(
 export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => ({
   ...initialState,
 
-  loadTrackedOcids() {
-    // 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
-    hydration ??= (async () => {
-      // 저장된 선택은 선택 스토어가 읽는다. 이 스토어가 읽어 자기 상태에 넣으면 출처가 두 벌이
-      // 된다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
-      const [ocids] = await Promise.all([
-        getTrackedCharacterOcids(),
-        useCharacterSelectionStore.getState().hydrate(),
-      ])
-      set({ trackedOcids: ocids })
-      if (ocids !== null) {
-        // 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
-        await get().refresh(ocids, undefined, { auto: true })
-      }
-    })().finally(() => {
-      hydration = null
-    })
-    return hydration
-  },
-
-  async reloadManualCompleted() {
-    // 판은 읽기 전에 찍는다(`refresh` 와 같은 이유).
-    const revision = getBossProfitRecordsRevision()
-    if (revision === get().manualCompletedRevision) return
-    const ocids = get().trackedOcids
-    // 추적 목록을 아직 안 읽었으면 진입 조회가 곧 읽는다. 여기서 빈 표를 적으면 그 회차보다
-    // 앞서 판을 소모해 버린다.
-    if (ocids === null) return
-    const manualCompletedByOcid = await readManualCompleted(ocids, new Date())
-    set({ manualCompletedByOcid, manualCompletedRevision: revision })
-  },
-
-  async saveTrackedOcids(ocids, onProgress) {
-    const previousOcids = get().trackedOcids ?? []
-    try {
-      await setTrackedCharacterOcids(ocids)
-    } catch {
-      useToastStore.getState().showError('저장하지 못했습니다')
-      return
-    }
-    set({ trackedOcids: ocids })
-
-    // 저장 시점에는 새로 추가된 캐릭터만 조회한다. 유지되는 캐릭터는
-    // 이미 가진 뷰를 그대로 재사용하고, 제거만 했거나 아무것도 안 바뀌었으면 조회 자체를 하지 않는다.
-    const added = ocids.filter((ocid) => !previousOcids.includes(ocid))
-    // 새로 추적한 캐릭터의 심볼 · 헥사 레벨을 기억해 둔다. 가계부 폼의 곁가지라 저장을 기다리게 하지 않는다.
-    void seedRememberedLevels(added)
-
-    // 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드하고 그 멤버십을 화면 상태에도
-    // 반영한다. 동기화보다 먼저 실행한다. 화면의 저장 진행률 모달이 saveTrackedOcids 전체를
-    // 기다리므로 시드가 끝날 때까지 자연스럽게 로딩이 유지된다.
-    if (added.length > 0 && useTrackingModeStore.getState().mode === 'manual') {
-      await seedManualTrackedContent(added)
-      const seeded = Object.fromEntries(
-        await Promise.all(added.map(async (ocid) => [ocid, await getManualTrackedContent(ocid)] as const)),
-      )
-      set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, ...seeded } }))
-    }
-
-    // 파티 설정은 스케줄 동기화와 독립적인 로컬 조회라 위 diff와 무관하게 항상 새 집합
-    // 기준으로 다시 채운다. 그래야 추가된 캐릭터의 설정이 들어오고 제거된 캐릭터의 항목이 빠진다.
-    // refresh와 동일하게 실패는 조용히 넘긴다(저장 진행률 모달이 안 닫히는 걸 막는다).
-    try {
-      await get().loadPartySizes(ocids)
-    } catch {
-      // 파티 설정 로드 실패는 조용히 넘긴다(스케줄 표시·저장 완료를 막지 않는다)
-    }
-
-    if (added.length === 0) {
-      // 네트워크 0회. 이미 가진 뷰에서 빠진 캐릭터만 걷어내면 화면이 정확해진다.
-      set({
-        status: 'loaded',
-        error: null,
-        characters: get().characters.filter((character) => ocids.includes(character.ocid)),
-      })
-    } else {
-      set({ status: 'loading' })
-
-      const existingByOcid = new Map(get().characters.map((character) => [character.ocid, character]))
-      const keptViews = (
-        await Promise.all(
-          ocids
-            .filter((ocid) => !added.includes(ocid))
-            .map(async (ocid) => existingByOcid.get(ocid) ?? (await readCachedView(ocid))),
-        )
-      ).filter((view): view is BossCharacterView => view != null)
-
-      // .catch(() => null)로 원인을 버리지 않는다. 아래에서 종류를 살려야 한다.
-      const outcome = await syncSchedules(added, onProgress).then(
-        (results) => ({ results, error: null as unknown }),
-        (error: unknown) => ({ results: null, error }),
-      )
-      const results = outcome.results
-      if (results === null) {
-        // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는 캐릭터별 에러가 아니라 전체 조회
-        // 자체의 실패다. 원인은 버리지 않고 toScheduleSyncError 로 살린다. network 로 하드코딩하면
-        // 401/429 가 화면에 도달하지 못한다.
-        set({ status: 'error', error: toScheduleSyncError(outcome.error), characters: await sortByCachedLevel(keptViews) })
-      } else {
-        const addedViews: BossCharacterView[] = results.map((result) => {
-          const bosses = result.state?.bossContents.map(matchBossContent) ?? []
-          return {
-            ocid: result.ocid,
-            characterName: result.characterName,
-            worldKey: result.worldKey,
-            weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
-            monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
-            weeklyBossClearCount: result.state === null ? null : countClearedWeeklyBosses(bosses),
-            weeklyBossClearLimitCount: result.state === null ? null : WEEKLY_BOSS_CLEAR_LIMIT,
-            isStale: result.isStale,
-            syncedAt: result.syncedAt,
-            error: result.error,
-          }
-        })
-        set({
-          status: 'loaded',
-          error: null,
-          characters: await sortByCachedLevel([...keptViews, ...addedViews]),
-        })
-      }
-    }
-
-    useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
-  },
-
-  async refresh(ocids, onProgress, options) {
-    if (ocids.length === 0) {
-      set({ status: 'loaded', characters: [], error: null, partySizes: {}, partyShares: {} })
-      return
-    }
-
+  async loadLocal(ocids) {
     // 직접 적은 완료. 모드와 무관하게 읽는다 - 카드의 완료 배지와 주간 한도가 이 값을 함께 본다.
     // 판은 **읽기 전에 찍는다.** 읽는 중에 들어온 쓰기를 본 것으로 적으면 그 쓰기를 영영 놓친다.
-    const manualCompletedRevision = getBossProfitRecordsRevision()
-    const manualCompletedByOcid = await readManualCompleted(ocids, new Date())
+    const now = new Date()
+    const manualCompletedStamp = manualCompletedStampOf(now)
+    const manualCompletedByOcid = await readManualCompleted(ocids, now)
 
     // 수동 모드에서만 캐릭터별 추적 항목(멤버십)을 읽어둔다. 표시 목록이 이 멤버십으로
     // 결정되기 때문. auto 모드는 등록 여부로 목록을 결정하므로 불필요한 읽기를 건너뛴다.
-    const manualMode = useTrackingModeStore.getState().mode === 'manual'
-    const manualTrackedByOcid: Record<string, ManualTrackedItem[]> = manualMode
-      ? Object.fromEntries(
-          await Promise.all(
-            ocids.map(async (ocid) => [ocid, await getManualTrackedContent(ocid)] as const),
-          ),
-        )
-      : {}
+    const manualTrackedByOcid: Record<string, ManualTrackedItem[]> =
+      useTrackingModeStore.getState().mode === 'manual'
+        ? Object.fromEntries(
+            await Promise.all(ocids.map(async (ocid) => [ocid, await getManualTrackedContent(ocid)] as const)),
+          )
+        : {}
 
-    // 캐시 우선 표시. 재검증(fetch) 전에 마지막으로 성공한 캐시 값이 있으면
-    // 그 값으로 먼저 채워 화면이 비지 않게 한다. 재검증 응답이 오면 그대로 덮어쓴다.
-    const cachedCharactersFromStore = (
-      await Promise.all(
-        ocids.map(async (ocid): Promise<BossCharacterView | null> => {
-          const cached = await getCachedSchedulerState(ocid)
-          if (cached === null) {
-            return null
-          }
-          const bosses = cached.state.bossContents.map(matchBossContent)
-          return {
-            ocid,
-            characterName: cached.state.characterName,
-            worldKey: cached.state.worldKey,
-            weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
-            monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
-            weeklyBossClearCount: countClearedWeeklyBosses(bosses),
-            weeklyBossClearLimitCount: WEEKLY_BOSS_CLEAR_LIMIT,
-            isStale: true,
-            syncedAt: cached.syncedAt,
-            error: null,
-          }
-        }),
-      )
-    ).filter((view): view is BossCharacterView => view !== null)
+    set({ manualCompletedByOcid, manualCompletedStamp, manualTrackedByOcid })
 
-    // **표가 이미 아는 조회 불가를 여기서 얹는다.** 안 얹으면 동기화가 끝날 때까지 이 캐릭터의
-    // 낡은 보스 목록이 그대로 서고, 그 목록은 지금 잡을 것처럼 읽힌다.
-    const cachedCharacters = await applyKnownUnavailable(cachedCharactersFromStore, toUnknownBossView)
-
-    // 파티 설정은 완료 여부·주차와 무관한 상시 데이터라 스케줄 동기화와 독립적이다. 벌크 조회
-    // 한 번으로 충분하다. 독립적이므로 조회가 실패해도 스케줄 refresh 전체를 중단시키지 않는다.
-    // 그러지 않으면 저장 진행률 모달이 안 닫힌다.
-    //
-    // 아래 TTL 게이트보다 앞이다. 로컬 SQLite 조회라 네트워크 TTL 의 대상이 아니고, 함께
-    // 건너뛰면 추적 목록이 바뀐 진입에서 파티원 수 배지·솔로/파티 필터가 옛 값으로 남는다.
+    // 파티 설정은 스케줄과 독립인 기기 값이라 실패해도 나머지를 막지 않는다.
     try {
       await get().loadPartySizes(ocids)
     } catch {
       // 파티 설정 로드 실패는 조용히 넘긴다(스케줄 표시·저장 완료를 막지 않는다)
     }
+  },
 
-    // 화면 진입 자동 재조회는 데이터가 신선하면 건너뛴다. 판정 근거는 위 캐시 우선 표시 단계가
-    // 이미 읽은 syncedAt 이라 저장소를 다시 읽지 않는다.
-    if (
-      options?.auto === true &&
-      hasSyncAttemptedThisRun() &&
-      isSyncFresh(
-        cachedCharacters.map((view) => view.syncedAt),
-        ocids.length,
-        new Date(),
-      )
-    ) {
-      // set 을 두 번 하지 않는다. loading 을 거치면 건너뛰는 진입에서 로딩이 한 프레임 번쩍인다.
-      // isStale 은 false 다. 재검증이 오지 않기로 결정된 값이라 오래된 데이터가 아니고, 그 표식을
-      // 남기면 탭을 옮길 때마다 스탈 토스트가 뜬다. syncedAt 은 캐시 값 그대로 둔다.
-      set({
-        status: 'loaded',
-        characters: await sortByCachedLevel(
-          cachedCharacters.map((view) => ({ ...view, isStale: false })),
-        ),
-        error: null,
-        manualTrackedByOcid,
-        manualCompletedByOcid,
-        manualCompletedRevision,
-      })
-      return
-    }
+  reloadLocal() {
+    return get().loadLocal(readTrackedOcidsSync() ?? [])
+  },
 
-    set({
-      status: 'loading',
-      characters: await sortByCachedLevel(cachedCharacters),
-      manualTrackedByOcid,
-      manualCompletedByOcid,
-      manualCompletedRevision,
-    })
-
-    let results: Awaited<ReturnType<typeof syncSchedules>>
-    try {
-      results = await syncSchedules(ocids, onProgress)
-    } catch (error) {
-      // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는
-      // 캐릭터별 에러가 아니라 전체 조회 자체의 실패다.
-      // 원인은 toScheduleSyncError로 살린다.
-      set({ status: 'error', error: toScheduleSyncError(error) })
-      return
-    }
-
-    const characters: BossCharacterView[] = results.map((result) => {
-      const bosses = result.state?.bossContents.map(matchBossContent) ?? []
-      return {
-        ocid: result.ocid,
-        characterName: result.characterName,
-        worldKey: result.worldKey,
-        weeklyBosses: bosses.filter((boss) => boss.cycle === 'weekly'),
-        monthlyBosses: bosses.filter((boss) => boss.cycle === 'monthly'),
-        weeklyBossClearCount: result.state === null ? null : countClearedWeeklyBosses(bosses),
-        weeklyBossClearLimitCount: result.state === null ? null : WEEKLY_BOSS_CLEAR_LIMIT,
-        isStale: result.isStale,
-        syncedAt: result.syncedAt,
-        error: result.error,
-      }
-    })
-
-    // 동기화가 한 번도 답하지 않은 추적 캐릭터도 남긴다. 버리면 그 캐릭터가 첫 페인트에 캐시로
-    // 보였다가 여기서 사라진다. 빠진 것과 없는 것은 다른 사실이라, 자리를 두고 조회 불가라고 말한다.
-    const strandedViews: BossCharacterView[] = (await resolveStrandedCharacters(ocids, results)).map(
-      (stranded) =>
-        toUnknownBossView({
-          ...stranded,
-          weeklyBosses: [],
-          monthlyBosses: [],
-          weeklyBossClearCount: null,
-          weeklyBossClearLimitCount: null,
-          isStale: true,
-          syncedAt: null,
-          error: { kind: 'characterUnavailable' },
-        }),
-    )
-
-    set({
-      status: 'loaded',
-      characters: await sortByCachedLevel([...characters, ...strandedViews]),
-      error: null,
-      manualTrackedByOcid,
-      manualCompletedByOcid,
-      manualCompletedRevision,
-    })
+  async reloadManualCompleted() {
+    const now = new Date()
+    const stamp = manualCompletedStampOf(now)
+    if (stamp === get().manualCompletedStamp) return
+    const ocids = readTrackedOcidsSync()
+    // 추적 목록을 아직 안 읽었으면 진입 조회가 곧 읽는다. 여기서 빈 표를 적으면 그 회차보다
+    // 앞서 판을 소모해 버린다.
+    if (ocids === null) return
+    const manualCompletedByOcid = await readManualCompleted(ocids, now)
+    set({ manualCompletedByOcid, manualCompletedStamp: stamp })
   },
 
   setPartyFilter(filter) {
@@ -549,7 +206,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
       return
     }
 
-    const settings = await getBossPartySettings(ocids)
+    const settings = await getBossPartySettings([...ocids])
     const partySizes: Record<string, number> = {}
     const partyShares: Record<string, BossPartyShareColumns> = {}
     for (const setting of settings) {

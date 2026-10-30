@@ -16,6 +16,7 @@ import {
 import type { ContentCategoryKey } from '../../lib/scheduler/content-categories'
 import type { ContentEntry } from '../../lib/scheduler/contents'
 import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
+import { useContentSchedule } from '../../features/content-scheduler/use-content-schedule'
 import { useGameTable } from '../../features/game-data/sync'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
@@ -72,11 +73,10 @@ const CONTENT_TAB_LABELS: Record<(typeof CONTENT_TABS)[number], string> = {
 }
 
 export function ContentManageScreen(): React.JSX.Element {
+  // 스케줄은 캐시에서, 수동 추적은 스토어에서 온다. 스케줄러를 거치지 않고 직접 진입해도 훅이 받는다.
+  const { status, characters } = useContentSchedule()
   const {
-    status,
-    characters,
     manualTrackedByOcid,
-    loadTrackedOcids,
     addManualContent,
     removeManualContent,
     // 진입 시점의 스케줄러 탭을 이어받는다(일간에서 들어오면 일간).
@@ -94,12 +94,6 @@ export function ContentManageScreen(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<ContentTab>(schedulerTab)
   // 컨텐츠 표는 켜는 동안 서버 응답으로 덮일 수 있다. 칸을 구독해 덮이면 목록을 다시 그린다.
   useGameTable('contents')
-
-  // 스케줄러를 거치지 않고 직접 진입해도 스토어가 채워지도록 동일하게 로드한다.
-  useEffect(() => {
-    loadTrackedOcids()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   // 알 수 없는 탭이면 첫 탭으로 되돌린다.
   useEffect(() => {

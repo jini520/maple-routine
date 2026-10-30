@@ -3,12 +3,13 @@
  *
  * 행의 원형 `BossPortrait` 에는 프롭을 그대로 넘기기만 하고 계산을 갖지 않는다.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { Pressable, View } from 'react-native'
 
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { useBossSchedule } from '../../features/boss-scheduler/use-boss-schedule'
 import { BOSS_SECTION_ORDER } from '../../features/boss-scheduler/displayed-bosses'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
@@ -55,14 +56,12 @@ const NO_SHARES: BossPartyShareColumns = {
 }
 
 export function BossManageScreen(): React.JSX.Element {
+  // 스케줄은 캐시에서, 기기 값(파티 인원 · 수동 추적)은 스토어에서 온다. 스케줄러를 거치지 않고 직접 진입해도 훅이 받는다.
+  const { status, characters: storeCharacters, trackedOcids } = useBossSchedule()
   const {
-    status,
-    characters: storeCharacters,
-    trackedOcids,
     partySizes,
     partyShares,
     manualTrackedByOcid,
-    loadTrackedOcids,
     setPartySetting,
     addManualBoss,
     removeManualBoss,
@@ -88,12 +87,6 @@ export function BossManageScreen(): React.JSX.Element {
     ocid: string | null
     byBoss: Record<string, BossDifficulty>
   }>({ ocid: null, byBoss: {} })
-
-  // 스케줄러를 거치지 않고 직접 진입해도 스토어가 채워지도록 동일하게 로드한다.
-  useEffect(() => {
-    loadTrackedOcids()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   // 스토어가 내는 것은 기준 순서(레벨 내림차순)이고 화면 순서는 캐릭터 관리에서 정한 배열이다.
   // 스케줄러 화면과 같은 함수를 통과시켜야 두 화면의 레일이 같은 차례로 선다.

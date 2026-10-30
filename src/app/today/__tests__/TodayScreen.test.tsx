@@ -3,12 +3,12 @@
 // 이 화면에는 판정이 한 줄도 없다. 조립은 `view-model.ts`(그 테스트), 그림은 위젯마다(각자의
 // 테스트), 좌표는 `WidgetGrid`(그 테스트)가 이미 본다. 그래서 여기서 묻는 것은 넷뿐이다.
 //
-// ① **어느 문으로 조회하는가**. 진입은 게이트가 있는 `loadTrackedOcids` 하나이고, 게이트를
-//  우회하는 `refresh` 는 진입에서 부르지 않는다.
-//    **게이트 자체는 여기서 못 본다**. 그것은 스토어 안의 계약이라 core 테스트가 지킨다. 화면이
-//    보장할 수 있는 것은 **어느 문을 쓰는가** 이고, 그 문이 바뀌면 TTL 이 통째로 사라진다.
+// ① **어느 문으로 조회하는가**. 진입은 포커스에 만료된 회차만 다시 받는 `useRefetchStaleOnFocus` 이고,
+//    신선해도 받는 `refreshSchedules` 는 진입에서 부르지 않는다.
+//    **신선도 자체는 여기서 못 본다**. 그것은 쿼리의 `staleTime` 계약이라 `schedule-query.spec.ts` 가 지킨다.
+//    화면이 보장할 수 있는 것은 **어느 문을 쓰는가** 이고, 그 문이 바뀌면 TTL 이 통째로 사라진다.
 // ② **당김과 헤더 버튼이 같은 재조회인가**.
-// ③ **스토어가 비어도 서는가**. 콜드 스타트에 위젯이 전부 빈 상태로 선다.
+// ③ **캐시가 비어도 서는가**. 콜드 스타트에 위젯이 전부 빈 상태로 선다.
 // ④ **캐릭터 넷의 기본 배치**(스냅샷). 헤더 + 격자가 실제 값 위에서 함께 그려지는 것은 여기뿐이다.
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 
@@ -16,16 +16,19 @@ import { useDropHistoryStore } from '../../../features/boss-profit/drop-history-
 import { useSettlementStore } from '../../../features/settlement/store'
 import { useBossProfitStore, type BossProfitRow } from '../../../features/boss-profit/store'
 import { useBossSchedulerStore, type BossCharacterView } from '../../../features/boss-scheduler/store'
+import { useBossSchedule, type BossSchedule } from '../../../features/boss-scheduler/use-boss-schedule'
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
-import {
-  useContentSchedulerStore,
-  type ContentCharacterView } from '../../../features/content-scheduler/store'
+import { useContentSchedulerStore, type ContentCharacterView } from '../../../features/content-scheduler/store'
+import { useContentSchedule, type ContentSchedule } from '../../../features/content-scheduler/use-content-schedule'
+import { queryKeys } from '../../../features/query/keys'
+import { useResetBoundaryTick } from '../../../features/query/reset-timer'
 import { useDataFreshness } from '../../../features/refresh/freshness'
+import { refreshSchedules } from '../../../features/schedule-sync/schedule-query'
+import { useCharacterProfiles } from '../../../features/schedule-sync/use-schedule-queries'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { loadStatsDaysBetween } from '../../../features/stats/load'
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import type { DropHistoryPeriodGroup, DropHistoryRecord } from '../../../lib/drop/drop-history'
-import { getCachedCharacterBasic } from '../../../storage/character-basic-cache'
 import {
   getLastSelectedCharacter,
   getRepresentativeCharacter,
@@ -34,9 +37,26 @@ import {
 import type { CharacterBasicProfile, DailyContent, WeeklyContent } from '../../../types'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { useRefetchStaleOnFocus } from '../../../hooks/useRefetchStaleOnFocus'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { TodayScreen } from '../TodayScreen'
 
+// 스케줄과 프로필은 쿼리 캐시에서 온다. 이 하네스에는 쿼리 클라이언트가 없어 캐시를 보는 훅 셋과, 신선해도
+// 받는 `refreshSchedules` 를 세운다. 포커스의 만료 재조회도 훅이라 무엇으로 불렸는가만 본다.
+jest.mock('../../../features/content-scheduler/use-content-schedule', () => ({ useContentSchedule: jest.fn() }))
+jest.mock('../../../features/boss-scheduler/use-boss-schedule', () => ({ useBossSchedule: jest.fn() }))
+// `useScheduleQueries` 는 로딩 모달이 캐시가 비었는지 볼 때만 쓴다. 이 스위트는 모달을 띄우지 않으므로 찬 캐시로 둔다.
+jest.mock('../../../features/schedule-sync/use-schedule-queries', () => ({
+  useCharacterProfiles: jest.fn(),
+  useScheduleQueries: () => ({
+    status: 'loaded',
+    error: null,
+    trackedOcids: [],
+    snapshot: { ocids: [], schedules: new Map(), basics: new Map(), round: undefined },
+  }),
+}))
+jest.mock('../../../features/schedule-sync/schedule-query', () => ({ refreshSchedules: jest.fn() }))
+jest.mock('../../../hooks/useRefetchStaleOnFocus', () => ({ useRefetchStaleOnFocus: jest.fn() }))
 // **훅만 갈아끼우고 나머지는 실물을 남긴다.** 스토어 모듈은 훅 말고도 순수 헬퍼를 내보내는데
 // (`dropRowKey`·`partySizeKey`) 그것을 이 화면이 아니라 **뷰모델이 부르는 계산기**가 쓴다.
 // 통째로 목으로 덮으면 그 헬퍼가 `undefined` 가 되어 조립이 렌더 도중 죽는다(실제로 그렇게 갔다).
@@ -60,9 +80,6 @@ jest.mock('@react-navigation/native', () => ({
 jest.mock('../../../features/boss-profit/drop-history-store', () => ({
   ...jest.requireActual('../../../features/boss-profit/drop-history-store'),
   useDropHistoryStore: jest.fn() }))
-jest.mock('../../../storage/character-basic-cache', () => ({
-  ...jest.requireActual('../../../storage/character-basic-cache'),
-  getCachedCharacterBasic: jest.fn() }))
 // 대표 표식은 선택 스토어가 든다. 스토어는 실물이고 그 밑의 저장소만 막는다. 포트가 주입되지 않은
 // 이 하네스에서 실물 저장소를 부르면 던진다.
 jest.mock('../../../storage/character-selection', () => ({
@@ -87,11 +104,15 @@ jest.mock('../../../server/settlement', () => ({
   __esModule: true,
   fetchSettlement: jest.fn(async () => null) }))
 
-const mockedContent = jest.mocked(useContentSchedulerStore)
-const mockedBoss = jest.mocked(useBossSchedulerStore)
+const mockedContent = jest.mocked(useContentSchedule)
+const mockedBoss = jest.mocked(useBossSchedule)
+const mockedProfiles = jest.mocked(useCharacterProfiles)
+const mockedRefreshSchedules = jest.mocked(refreshSchedules)
+const mockedRefetchStaleOnFocus = jest.mocked(useRefetchStaleOnFocus)
+const mockedContentStore = jest.mocked(useContentSchedulerStore)
+const mockedBossStore = jest.mocked(useBossSchedulerStore)
 const mockedProfit = jest.mocked(useBossProfitStore)
 const mockedDropHistory = jest.mocked(useDropHistoryStore)
-const mockedGetCachedCharacterBasic = jest.mocked(getCachedCharacterBasic)
 const mockedGetRepresentative = jest.mocked(getRepresentativeCharacter)
 const mockedGetLastSelected = jest.mocked(getLastSelectedCharacter)
 const mockedSetRepresentative = jest.mocked(setRepresentativeCharacter)
@@ -103,18 +124,14 @@ const NOW = new Date('2026-08-17T03:00:00.000Z')
 const WEEK_KEY = '2026-08-13'
 const OCIDS = ['ocid-1', 'ocid-2', 'ocid-3', 'ocid-4']
 
-// 스토어 목
+// 훅 · 스토어 목
 //
-// 넷 다 **상태 + 함수** 를 그대로 돌려주면 된다. 이 화면은 셀렉터를 쓰지 않고 상태를 통째로 읽는다.
+// 스케줄 훅 둘은 캐시의 캐릭터 뷰를, 스토어 둘은 기기 값(수동 추적 · 직접 완료)을 낸다. 전부 **상태 + 함수** 를
+// 그대로 돌려주면 된다. 이 화면은 셀렉터를 쓰지 않고 상태를 통째로 읽는다.
 
-interface TabStoreMock {
-  loadTrackedOcids: jest.Mock
-  refresh: jest.Mock
-}
 interface StoreMocks {
-  content: TabStoreMock
-  boss: TabStoreMock & { reloadManualCompleted: jest.Mock }
-  profit: TabStoreMock
+  bossStore: { reloadManualCompleted: jest.Mock }
+  profit: { loadTrackedOcids: jest.Mock; refresh: jest.Mock }
   dropHistory: { load: jest.Mock }
 }
 
@@ -122,8 +139,10 @@ let mocks: StoreMocks
 
 function setStores(
   overrides: {
-    content?: Record<string, unknown>
-    boss?: Record<string, unknown>
+    content?: Partial<ContentSchedule>
+    boss?: Partial<BossSchedule>
+    contentStore?: Record<string, unknown>
+    bossStore?: Record<string, unknown>
     profit?: Record<string, unknown>
     dropHistory?: Record<string, unknown>
   } = {},
@@ -133,28 +152,31 @@ function setStores(
     characters: [],
     error: null,
     trackedOcids: null,
-    selectedOcid: null,
-    manualTrackedByOcid: {},
-    activeTab: 'daily',
-    loadTrackedOcids: mocks.content.loadTrackedOcids,
-    refresh: mocks.content.refresh,
-    ...overrides.content } as never)
+    refresh: jest.fn(),
+    ...overrides.content })
 
   mockedBoss.mockReturnValue({
     status: 'loaded',
     characters: [],
     error: null,
     trackedOcids: null,
-    selectedOcid: null,
-    partySizes: {},
+    refresh: jest.fn(),
+    ...overrides.boss })
+
+  mockedContentStore.mockReturnValue({
     manualTrackedByOcid: {},
-    activeTab: 'weekly',
-    weeklyFilter: 'all',
-    monthlyFilter: 'all',
-    loadTrackedOcids: mocks.boss.loadTrackedOcids,
-    refresh: mocks.boss.refresh,
-    reloadManualCompleted: mocks.boss.reloadManualCompleted,
-    ...overrides.boss } as never)
+    activeTab: 'daily',
+    ...overrides.contentStore } as never)
+
+  mockedBossStore.mockReturnValue({
+    partySizes: {},
+    partyShares: {},
+    manualTrackedByOcid: {},
+    manualCompletedByOcid: {},
+    manualCompletedStamp: null,
+    partyFilter: 'all',
+    reloadManualCompleted: mocks.bossStore.reloadManualCompleted,
+    ...overrides.bossStore } as never)
 
   mockedProfit.mockReturnValue({
     status: 'loaded',
@@ -319,6 +341,21 @@ const 캐릭터_넷 = {
       weeksSince: 0,
       records: [dropRecord({ priceState: 'entered', priceMeso: 1_200_000_000 })] } } }
 
+/** 캐릭터마다 이름과 얼굴이 다른 프로필. 대표 카드와 머리 버튼이 누구를 그리는지 가를 수 있다. */
+function profileOf(ocid: string): CharacterBasicProfile {
+  const index = OCIDS.indexOf(ocid) + 1
+  return {
+    name: `캐릭터${index}`,
+    level: 280 + index,
+    imageUrl: `https://example.com/${index}.png`,
+    accessFlag: true,
+    world: '스카니아',
+    expRate: 10 }
+}
+
+/** 추적 캐릭터 넷의 프로필. `useCharacterProfiles` 가 캐시에서 내는 모양 그대로다. */
+const 프로필_넷: Record<string, CharacterBasicProfile> = Object.fromEntries(OCIDS.map((ocid) => [ocid, profileOf(ocid)]))
+
 // 도우미
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
@@ -327,22 +364,9 @@ async function renderScreen(): Promise<Rendered> {
   // **`await` 가 계약이다**. RNTL 14 의 `render` 는 비동기다. 안 기다리면 아래 `act` 가 마운트보다
   // 먼저 돌아 **아무것도 안 그려졌는데 초록** 인 테스트가 된다(실제로 그렇게 한 번 갔다).
   const view = await renderOverlay(<TodayScreen />)
-  // 프로필은 비동기 효과가 채운다. 한 번 흘려보내야 대표 카드가 그려진다.
+  // 드롭 기록 · 가계부 기록은 비동기 효과가 채운다. 한 번 흘려보내야 위젯이 값 위에 선다.
   await act(async () => {})
   return view
-}
-
-/** `character-basic-cache` 가 돌려주는 엔트리 한 벌. 대표 위젯이 이 값에서 EXP 를 꺼낸다. */
-function cachedBasic(expRate: number): { profile: CharacterBasicProfile; cachedAt: string } {
-  return {
-    profile: {
-      name: '캐릭터1',
-      level: 293,
-      imageUrl: 'https://example.com/1.png',
-      accessFlag: true,
-      world: '스카니아',
-      expRate },
-    cachedAt: NOW.toISOString() }
 }
 
 /** 스크롤 셸에 붙은 당겨서 새로고침 컨트롤. 스케줄러 테스트와 같은 자리다. */
@@ -360,15 +384,14 @@ afterAll(() => {
 
 beforeEach(() => {
   mocks = {
-    // 실물은 넷 다 `Promise` 다. 당김 훅이 `allSettled` 로 넷의 **끝** 을 기다린다.
-    content: { loadTrackedOcids: jest.fn(), refresh: jest.fn().mockResolvedValue(undefined) },
-    boss: {
-      loadTrackedOcids: jest.fn(),
-      refresh: jest.fn().mockResolvedValue(undefined),
-      reloadManualCompleted: jest.fn().mockResolvedValue(undefined),
-    },
+    // 실물은 셋 다 `Promise` 다. 당김 훅이 `allSettled` 로 넷의 **끝** 을 기다린다.
+    bossStore: { reloadManualCompleted: jest.fn().mockResolvedValue(undefined) },
     profit: { loadTrackedOcids: jest.fn(), refresh: jest.fn().mockResolvedValue(undefined) },
     dropHistory: { load: jest.fn().mockResolvedValue(undefined) } }
+  // 모듈 목은 테스트 사이에 호출 기록이 남는다. 세는 둘만 비운다.
+  mockedRefreshSchedules.mockClear().mockResolvedValue(undefined)
+  mockedRefetchStaleOnFocus.mockClear()
+  mockedProfiles.mockReturnValue({})
   mockedGetRepresentative.mockResolvedValue(null)
   mockedGetLastSelected.mockResolvedValue(null)
   mockedSetRepresentative.mockResolvedValue(undefined)
@@ -377,7 +400,6 @@ beforeEach(() => {
     selectedOcid: null,
     representativeOcid: null,
     isRepresentativeHydrated: false })
-  mockedGetCachedCharacterBasic.mockResolvedValue(null)
   mockedNavigation.mockReturnValue({ navigate: jest.fn(), goBack: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
   useDataFreshness.setState({ fetchedAt: null })
@@ -385,27 +407,26 @@ beforeEach(() => {
 })
 
 describe('TodayScreen: 진입 조회', () => {
-  //  **today 는 그 순차 밖의 **네 번째 트리거****. 예열이 셋을 돌고 이 화면이
-  // 하나를 더 낸다. 스케줄러 화면 하나와 같은 횟수다.
-  it('진입하면 동기화 트리거를 정확히 한 번 낸다', async () => {
+  // 이 화면은 탭이라 계속 살아 있고 마운트의 자동 조회는 한 번뿐이다. 돌아올 때는 만료된 회차만 다시 받는다.
+  // 그 회차 하나를 컨텐츠 · 보스 · 프로필이 함께 본다.
+  it('진입은 포커스에 만료된 스케줄 회차만 다시 받는다', async () => {
     await renderScreen()
 
-    expect(mocks.content.loadTrackedOcids).toHaveBeenCalledTimes(1)
-    // 예열이 이미 같은 회차로 채운 스토어를 다시 부르지 않는다.
-    expect(mocks.boss.loadTrackedOcids).not.toHaveBeenCalled()
-    expect(mocks.profit.loadTrackedOcids).not.toHaveBeenCalled()
+    expect(mockedRefetchStaleOnFocus).toHaveBeenCalledWith(queryKeys.scheduleRound())
+    expect(mockedRefetchStaleOnFocus).toHaveBeenCalledWith(['schedule-round'])
   })
 
-  // 회귀 가드. 게이트는 `loadTrackedOcids` **안**에 있다. 진입이 `refresh` 를
-  // 부르는 순간 10분 TTL 이 통째로 사라지고, 그 손실은 화면에서 아무 표시도 남기지 않는다.
-  it('진입은 게이트를 우회하는 refresh 를 부르지 않는다', async () => {
+  // 회귀 가드. 신선도는 쿼리의 `staleTime` 안에 있다. 진입이 `refreshSchedules` 를 부르는 순간
+  // 10분 TTL 이 통째로 사라지고, 그 손실은 화면에서 아무 표시도 남기지 않는다.
+  it('진입은 신선해도 받는 refreshSchedules 를 부르지 않는다', async () => {
     setStores(캐릭터_넷)
 
     await renderScreen()
 
-    expect(mocks.content.refresh).not.toHaveBeenCalled()
-    expect(mocks.boss.refresh).not.toHaveBeenCalled()
+    expect(mockedRefreshSchedules).not.toHaveBeenCalled()
     expect(mocks.profit.refresh).not.toHaveBeenCalled()
+    // 보스 수익은 아직 자기 스토어가 받는다. 예열이 이미 같은 회차로 채운 스토어를 다시 부르지 않는다.
+    expect(mocks.profit.loadTrackedOcids).not.toHaveBeenCalled()
   })
 
   // 드롭 히스토리는 예열 목록 밖이고 네트워크도 안 탄다. 동기화 트리거 수에 들지
@@ -421,9 +442,9 @@ describe('TodayScreen: 진입 조회', () => {
   it('포커스마다 직접 완료를 다시 묻는다', async () => {
     await renderScreen()
 
-    expect(mocks.boss.reloadManualCompleted).toHaveBeenCalledTimes(1)
-    // 게이트를 우회하는 동기화가 아니다.
-    expect(mocks.boss.refresh).not.toHaveBeenCalled()
+    expect(mocks.bossStore.reloadManualCompleted).toHaveBeenCalledTimes(1)
+    // 신선해도 받는 동기화가 아니다.
+    expect(mockedRefreshSchedules).not.toHaveBeenCalled()
   })
 
 })
@@ -442,11 +463,9 @@ describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', ()
   it('컨텐츠 멤버십은 컨텐츠 스토어에서 읽는다. 보스 스토어의 사본이 아니다', async () => {
     useTrackingModeStore.setState({ mode: 'manual' })
     setStores({
-      content: {
-        trackedOcids: ['ocid-1'],
-        characters: [contentView('ocid-1', 1)],
-        // character 범위 항목이어야 `남은 스케줄`에 남는다. 공유 컨텐츠는 별도 위젯으로 뗐다
-        //
+      content: { trackedOcids: ['ocid-1'], characters: [contentView('ocid-1', 1)] },
+      // character 범위 항목이어야 `남은 스케줄`에 남는다. 공유 컨텐츠는 별도 위젯으로 뗐다
+      contentStore: {
         manualTrackedByOcid: {
           'ocid-1': [{ contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' }] } },
       boss: { trackedOcids: ['ocid-1'], characters: [bossView('ocid-1', 1)] } })
@@ -461,9 +480,8 @@ describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', ()
     useTrackingModeStore.setState({ mode: 'manual' })
     setStores({
       content: { trackedOcids: ['ocid-1'], characters: [contentView('ocid-1', 1)] },
-      boss: {
-        trackedOcids: ['ocid-1'],
-        characters: [bossView('ocid-1', 1)],
+      boss: { trackedOcids: ['ocid-1'], characters: [bossView('ocid-1', 1)] },
+      bossStore: {
         manualTrackedByOcid: { 'ocid-1': [{ bossKey: 'lotus', difficulty: 'normal', kind: 'boss' }] } } })
 
     await renderScreen()
@@ -481,10 +499,9 @@ describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', ()
 })
 
 describe('TodayScreen: 명시적 재조회', () => {
-  // 명시적 재조회는 TTL 을 무시하고 **이 화면이 그리는 스토어 셋을 모두** 읽는다
-  // 하나만 읽으면 당겨도 보스·수익 위젯이 안 바뀐다. 셋이 동시에 나가도 `syncSchedules` 의 단일
-  // 비행이 한 회차로 합친다.
-  it('재조회는 화면이 그리는 스토어 셋을 모두 읽는다', async () => {
+  // 명시적 재조회는 신선해도 받는다. 스케줄 회차는 **하나**다. 컨텐츠 · 보스 · 프로필이 같은 캐시를 보므로
+  // 둘을 따로 부르면 같은 응답을 두 번 받는다. 보스 수익과 드롭 기록은 아직 자기 스토어라 함께 읽는다.
+  it('재조회는 스케줄 회차 하나와 보스 수익 · 드롭 기록을 함께 읽는다', async () => {
     setStores(캐릭터_넷)
     await renderScreen()
 
@@ -492,71 +509,9 @@ describe('TodayScreen: 명시적 재조회', () => {
       refreshControl().onRefresh()
     })
 
-    expect(mocks.content.refresh).toHaveBeenCalledWith(OCIDS)
-    expect(mocks.boss.refresh).toHaveBeenCalledWith(OCIDS)
+    expect(mockedRefreshSchedules).toHaveBeenCalledTimes(1)
     expect(mocks.profit.refresh).toHaveBeenCalledWith(OCIDS)
     expect(mocks.dropHistory.load).toHaveBeenCalledTimes(2)
-  })
-
-  // 대표 캐릭터의 EXP·레벨은 스토어가 아니라 `character-basic-cache` 에서 온다. 그 캐시를 읽는
-  // 이펙트는 추적 목록이 바뀔 때만 도는데 재조회는 목록을 안 건드린다. 재조회 끝에 다시 읽지
-  // 않으면 동기화가 받아 온 EXP 가 앱을 다시 켤 때까지 화면에 못 닿는다.
-  it('재조회가 끝나면 대표 캐릭터의 프로필을 캐시에서 다시 읽는다', async () => {
-    setStores(캐릭터_넷)
-    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
-
-    await renderScreen()
-    expect(screen.getByText('80.300%')).toBeTruthy()
-
-    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(5.125))
-    await act(async () => {
-      refreshControl().onRefresh()
-    })
-
-    expect(screen.getByText('5.125%')).toBeTruthy()
-  })
-
-  // **대표 하나만 읽는다.** 저장소 읽기 하나가 네이티브 호출 하나라 추적 45명이면 당길 때마다
-  // 45번이 된다. 나머지 항목에서 이 화면이 꺼내는 것은 드롭 위젯의 캐릭터 이름 하나뿐이고, 그
-  // 값은 개명 말고는 안 바뀌므로 다음 진입에서 읽어도 늦지 않다.
-  it('그때 읽는 것은 대표 하나뿐이다', async () => {
-    setStores(캐릭터_넷)
-    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
-
-    // 이 파일은 목의 호출 기록을 테스트마다 안 비운다. 세는 테스트만 자기 앞에서 비운다.
-    mockedGetCachedCharacterBasic.mockClear()
-    await renderScreen()
-
-    // 마운트는 넷을 다 읽는다. 맵이 비어 있어 거기서는 전부 읽어야 한다.
-    expect(mockedGetCachedCharacterBasic).toHaveBeenCalledTimes(OCIDS.length)
-    mockedGetCachedCharacterBasic.mockClear()
-
-    await act(async () => {
-      refreshControl().onRefresh()
-    })
-
-    expect(mockedGetCachedCharacterBasic).toHaveBeenCalledTimes(1)
-    // 대표를 안 골랐으면 목록의 첫 번째다(`resolveDisplayRepresentative`).
-    expect(mockedGetCachedCharacterBasic).toHaveBeenCalledWith(OCIDS[0])
-  })
-
-  // 누구의 프로필을 읽는지는 선택 스토어의 대표가 정한다.
-  it('대표가 바뀌었으면 그 캐릭터를 읽는다', async () => {
-    setStores(캐릭터_넷)
-    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
-
-    await renderScreen()
-    mockedGetCachedCharacterBasic.mockClear()
-    await act(async () => {
-      useCharacterSelectionStore.setState({ representativeOcid: OCIDS[2], isRepresentativeHydrated: true })
-    })
-
-    await act(async () => {
-      refreshControl().onRefresh()
-    })
-
-    expect(mockedGetCachedCharacterBasic).toHaveBeenCalledTimes(1)
-    expect(mockedGetCachedCharacterBasic).toHaveBeenCalledWith(OCIDS[2])
   })
 
   // 회귀 가드. 조회 중 과 당겼다 는 다른 사실이다.
@@ -572,27 +527,13 @@ describe('TodayScreen: 명시적 재조회', () => {
   })
 })
 
-/** 캐릭터마다 이름과 얼굴이 다른 캐시. 대표 카드와 머리 버튼이 누구를 그리는지 가를 수 있다. */
-function cachedBasicByOcid(ocid: string): { profile: CharacterBasicProfile; cachedAt: string } {
-  const index = OCIDS.indexOf(ocid) + 1
-  return {
-    profile: {
-      name: `캐릭터${index}`,
-      level: 280 + index,
-      imageUrl: `https://example.com/${index}.png`,
-      accessFlag: true,
-      world: '스카니아',
-      expRate: 10 },
-    cachedAt: NOW.toISOString() }
-}
-
 // 대표 표식은 선택 스토어가 든다. 화면 상태로 들던 때는 다시 읽는 계기가 추적 목록 변경과 당김
 // 둘뿐이라, 캐릭터 관리에서 대표만 옮기고 돌아오면 당기기 전까지 옛 캐릭터가 남았다(#395). today 는
 // 탭이라 캐릭터 관리를 다녀와도 다시 마운트되지 않는다.
 describe('TodayScreen: 대표 표식', () => {
   it('다시 마운트하거나 당기지 않아도 대표를 바꾸면 대표 카드와 머리 첫 얼굴이 새 캐릭터다', async () => {
     setStores(캐릭터_넷)
-    mockedGetCachedCharacterBasic.mockImplementation(async (ocid) => cachedBasicByOcid(ocid))
+    mockedProfiles.mockReturnValue(프로필_넷)
 
     await renderScreen()
     expect(screen.getByTestId('representative-name')).toHaveTextContent('캐릭터1')
@@ -607,14 +548,13 @@ describe('TodayScreen: 대표 표식', () => {
     expect(screen.getByTestId('representative-name')).toHaveTextContent('캐릭터3')
     expect(screen.getByTestId('character-manage-face-0').props.source).toEqual({
       uri: 'https://example.com/3.png' })
-    expect(mocks.content.loadTrackedOcids).toHaveBeenCalledTimes(1)
-    expect(mocks.content.refresh).not.toHaveBeenCalled()
+    expect(mockedRefreshSchedules).not.toHaveBeenCalled()
   })
 
   // 표식을 저장소에서 다시 읽으면 스토어와 두 벌이 되고, 늦게 온 읽기가 방금 바꾼 대표를 되돌린다.
   it('마운트도 당김도 표식을 저장소에서 읽지 않는다', async () => {
     setStores(캐릭터_넷)
-    mockedGetCachedCharacterBasic.mockImplementation(async (ocid) => cachedBasicByOcid(ocid))
+    mockedProfiles.mockReturnValue(프로필_넷)
     mockedGetRepresentative.mockClear()
 
     await renderScreen()
@@ -623,55 +563,6 @@ describe('TodayScreen: 대표 표식', () => {
     })
 
     expect(mockedGetRepresentative).not.toHaveBeenCalled()
-  })
-
-  // 온보딩의 순서. `completeCharacterSetup` 이 앱을 연 뒤에 대표를 쓰므로, today 의 복원 읽기와 대표
-  // 쓰기 중 어느 쪽이 먼저 끝날지 코드가 정하지 않는다. 두 순서 모두에서 고른 대표가 서야 한다.
-  describe('캐릭터 설정 직후', () => {
-    function loadTrackedOcidsHydrates(): void {
-      // 실물 `loadTrackedOcids` 가 하는 일 중 이 화면에 닿는 것만 남긴다.
-      mocks.content.loadTrackedOcids.mockImplementation(() =>
-        useCharacterSelectionStore.getState().hydrate(),
-      )
-    }
-
-    it('복원 읽기가 대표 쓰기보다 늦게 도착해도 고른 대표를 그린다', async () => {
-      loadTrackedOcidsHydrates()
-      let resolveRead!: (value: string | null) => void
-      mockedGetRepresentative.mockReturnValue(
-        new Promise((resolve) => {
-          resolveRead = resolve
-        }),
-      )
-      setStores(캐릭터_넷)
-      mockedGetCachedCharacterBasic.mockImplementation(async (ocid) => cachedBasicByOcid(ocid))
-
-      await renderScreen()
-      await act(async () => {
-        await useCharacterSelectionStore.getState().setRepresentative(OCIDS[2])
-      })
-      // 쓰기 전에 읽은 저장소 값(대표 없음)이 이제야 도착한다.
-      await act(async () => {
-        resolveRead(null)
-      })
-
-      expect(screen.getByTestId('representative-name')).toHaveTextContent('캐릭터3')
-    })
-
-    it('복원 읽기가 먼저 끝나도 고른 대표를 그린다', async () => {
-      loadTrackedOcidsHydrates()
-      setStores(캐릭터_넷)
-      mockedGetCachedCharacterBasic.mockImplementation(async (ocid) => cachedBasicByOcid(ocid))
-
-      await renderScreen()
-      expect(screen.getByTestId('representative-name')).toHaveTextContent('캐릭터1')
-
-      await act(async () => {
-        await useCharacterSelectionStore.getState().setRepresentative(OCIDS[2])
-      })
-
-      expect(screen.getByTestId('representative-name')).toHaveTextContent('캐릭터3')
-    })
   })
 })
 
@@ -705,7 +596,7 @@ describe('TodayScreen: 갱신 시각', () => {
 describe('TodayScreen: 머리의 캐릭터 관리 버튼', () => {
   it('제목 줄 오른쪽에 선다', async () => {
     setStores(캐릭터_넷)
-    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
+    mockedProfiles.mockReturnValue(프로필_넷)
 
     await renderScreen()
 
@@ -718,7 +609,7 @@ describe('TodayScreen: 머리의 캐릭터 관리 버튼', () => {
     const navigate = jest.fn()
     mockedNavigation.mockReturnValue({ navigate, goBack: jest.fn() } as never)
     setStores(캐릭터_넷)
-    mockedGetCachedCharacterBasic.mockResolvedValue(cachedBasic(80.3))
+    mockedProfiles.mockReturnValue(프로필_넷)
 
     await renderScreen()
     await act(async () => {
@@ -739,9 +630,9 @@ describe('TodayScreen: 머리의 캐릭터 관리 버튼', () => {
 })
 
 describe('TodayScreen: 격자', () => {
-  // 데이터가 없다고 타일을 빼지 않는다. 콜드 스타트(스토어 전부 빈 값)에서도
+  // 데이터가 없다고 타일을 빼지 않는다. 콜드 스타트(캐시 · 스토어 전부 빈 값)에서도
   // 전부 서고, 각자 자기 타일 안에서 빈 상태를 말한다. 다음 파티 스케줄은 회차가 없으면 맨 아래 줄의 등록 칸이다.
-  it('스토어가 비어 있어도 위젯이 전부 선다', async () => {
+  it('캐시가 비어 있어도 위젯이 전부 선다', async () => {
     await renderScreen()
 
     expect(screen.getByTestId('widget-grid')).toBeTruthy()
@@ -764,6 +655,9 @@ describe('TodayScreen: 격자', () => {
 
 // 뷰모델은 렌더 때의 `now` 로 초기화 시각과 기간을 정한다. 경계가 지나도 화면이 다시 렌더되지
 // 않으면 카운트다운이 `0초` 에 멈추고 기간 값이 지난 기간을 말한다(이슈 #459).
+//
+// 다시 그리는 신호는 공용 타이머가 올리는 `useResetBoundaryTick` 이다. 타이머가 자정에 틱을 올리는 것은
+// `reset-timer.spec.ts` 가 보고, 여기서는 그 틱에 이 화면이 다시 그리는가를 본다.
 describe('TodayScreen: 초기화 경계', () => {
   afterEach(() => {
     jest.setSystemTime(NOW)
@@ -773,15 +667,21 @@ describe('TodayScreen: 초기화 경계', () => {
     return screen.getByTestId('reset-value-daily').props.children
   }
 
+  /** 시계를 `ms` 만큼 옮기고 공용 타이머가 자정에 하는 일(틱 올리기)을 한다. */
+  async function 자정넘기기(ms: number): Promise<void> {
+    await act(async () => {
+      jest.advanceTimersByTime(ms)
+      useResetBoundaryTick.setState((state) => ({ tick: state.tick + 1 }))
+    })
+  }
+
   it('일일 초기화가 지나면 다음 24시간부터 다시 센다', async () => {
     // 2026-08-17(월) 23:59:57 KST
     jest.setSystemTime(new Date('2026-08-17T14:59:57.000Z'))
     await renderScreen()
     expect(일일_값()).toBe('3초')
 
-    await act(async () => {
-      jest.advanceTimersByTime(5 * 1000)
-    })
+    await 자정넘기기(5 * 1000)
 
     expect(일일_값()).toBe('23시간 59분 58초')
   })
@@ -792,9 +692,7 @@ describe('TodayScreen: 초기화 경계', () => {
     jest.setSystemTime(new Date('2026-08-19T14:59:30.000Z'))
     await renderScreen()
 
-    await act(async () => {
-      jest.advanceTimersByTime(60 * 1000)
-    })
+    await 자정넘기기(60 * 1000)
 
     expect(screen.getByTestId('reset-value-weekly').props.children).toBe('6일 23시간')
   })
@@ -804,9 +702,7 @@ describe('TodayScreen: 초기화 경계', () => {
     jest.setSystemTime(new Date('2026-08-19T14:59:58.000Z'))
     await renderScreen()
 
-    await act(async () => {
-      jest.advanceTimersByTime(5 * 1000)
-    })
+    await 자정넘기기(5 * 1000)
 
     expect(jest.mocked(loadStatsDaysBetween)).toHaveBeenLastCalledWith({ from: '2026-08-20', to: '2026-08-26' })
   })

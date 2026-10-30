@@ -1,966 +1,197 @@
-
-import { waitFor } from '../../../__tests__/wait-for'
-import { useCharacterSelectionStore } from '../../character-selection/store'
-import type { CharacterScheduleSync } from '../../schedule-sync/schedule-sync'
-import type { DailyContent, WeeklyContent } from '../../../types'
-import { findContent } from '../../../lib/scheduler/contents'
-
-// 스토어가 toScheduleSyncError로 원인을 살리므로 그 매핑은 실물을 쓴다(부분 모킹).
-jest.mock('../../schedule-sync/schedule-sync', () => ({
-  ...jest.requireActual<typeof import('../../schedule-sync/schedule-sync')>('../../schedule-sync/schedule-sync'),
-  syncSchedules: jest.fn(),
-}))
-const { syncSchedules: syncSchedulesMock } = jest.requireMock('../../schedule-sync/schedule-sync') as Record<string, jest.Mock>
-
-jest.mock('../../../storage/character-selection', () => ({
-  getTrackedCharacterOcids: jest.fn(),
-  setTrackedCharacterOcids: jest.fn(),
-  getLastSelectedCharacter: jest.fn(),
-  setLastSelectedCharacter: jest.fn(),
-}))
-const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock, setTrackedCharacterOcids: setTrackedCharacterOcidsMock, getLastSelectedCharacter: getLastSelectedCharacterMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
-
-jest.mock('../../../storage/scheduler-cache', () => ({
-  getCachedSchedulerState: jest.fn(),
-}))
-const { getCachedSchedulerState: getCachedSchedulerStateMock } = jest.requireMock('../../../storage/scheduler-cache') as Record<string, jest.Mock>
-
-jest.mock('../../../storage/character-basic-cache', () => ({
-  getCachedCharacterBasic: jest.fn(),
-}))
-const { getCachedCharacterBasic: getCachedCharacterBasicMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
-
-jest.mock('../../toast/store', () => {
-  const showSuccess = jest.fn()
-  const showError = jest.fn()
-  return { useToastStore: { getState: () => ({ showSuccess, showError }) } }
-})
-const showSuccessMock = jest.requireMock('../../toast/store').useToastStore.getState().showSuccess as jest.Mock
-const showErrorMock = jest.requireMock('../../toast/store').useToastStore.getState().showError as jest.Mock
-
-jest.mock('../../tracking-mode/store', () => {
-
-  return { useTrackingModeStore: { getState: () => {
-      mockTrackingModeStateMock = mockTrackingModeStateMock ?? { mode: 'auto' }
-      return {  mode: mockTrackingModeStateMock.mode  }
-    } } }
-})
-
-jest.mock('../../tracking-mode/seed', () => ({
-  seedManualTrackedContent: jest.fn(),
-}))
-const { seedManualTrackedContent: seedManualTrackedContentMock } = jest.requireMock('../../tracking-mode/seed') as Record<string, jest.Mock>
-
-jest.mock('../../../storage/schedule-probe-ledger', () => ({
-  getScheduleProbeLedger: jest.fn(),
-  markScheduleProbeUnavailable: jest.fn(),
-}))
-const { getScheduleProbeLedger: getScheduleProbeLedgerMock } = jest.requireMock('../../../storage/schedule-probe-ledger') as Record<string, jest.Mock>
-
-jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
-const { resolveDisplayProfiles: resolveDisplayProfilesMock } = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
+/**
+ * 컨텐츠 스케줄러 스토어. 넥슨에서 받은 값은 쿼리 캐시가 들고, 여기는 기기 값(수동 추적)과 탭만 든다.
+ * 추적 목록은 쿼리 캐시의 `trackedOcids` 열쇠로 준다.
+ */
+import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
+import type { CharacterBasicProfile } from '../../../types'
+import { queryClient } from '../../query/client'
+import { queryKeys } from '../../query/keys'
 
 jest.mock('../../../storage/manual-tracked-content', () => ({
   getManualTrackedContent: jest.fn(),
   setManualTrackedContent: jest.fn(),
 }))
-// 테스트가 이 값에 직접 쓰므로 모듈 평가 시점에도 채워 둔다(팩토리도 같은 걸 쓴다).
+const { getManualTrackedContent: getManualTrackedContentMock, setManualTrackedContent: setManualTrackedContentMock } =
+  jest.requireMock('../../../storage/manual-tracked-content') as Record<string, jest.Mock>
 
-const { getManualTrackedContent: getManualTrackedContentMock, setManualTrackedContent: setManualTrackedContentMock } = jest.requireMock('../../../storage/manual-tracked-content') as Record<string, jest.Mock>
-
-import { useContentSchedulerStore, type ContentCharacterView } from '../store'
-import {
-  markSyncAttemptedThisRun,
-  resetSyncRunStateForTests,
-} from '../../schedule-sync/sync-run-state'
-
-// 팩토리가 **모듈 평가보다 먼저** 불릴 수 있어(스토어를 import 하는 순간) `var` 로 올리고
-// 읽는 자리에서 채운다.
-var mockTrackingModeStateMock: { mode: 'auto' | 'manual' } = { mode: 'auto' }
-
-function dailyContent(contentKey: string): DailyContent {
-  const apiName = findContent(contentKey)!.content_name
-  return { contentKey, apiName, kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null }
-}
-
-function weeklyContent(contentKey: string): WeeklyContent {
-  const apiName = findContent(contentKey)!.content_name
-  return { contentKey, apiName, kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null }
-}
-
-function syncResult(overrides: Partial<CharacterScheduleSync> = {}): CharacterScheduleSync {
-  return {
-    ocid: 'ocid-1',
-    characterName: '캐릭터-ocid-1',
-    state: {
-      asOf: '2026-07-09T00:00+09:00',
-      characterName: '캐릭터-ocid-1',
-      world: '베라',
-      worldKey: 'bera',
-      level: 200,
-      jobClass: '렌',
-      dailyContents: [dailyContent('monster_park')],
-      weeklyContents: [weeklyContent('epic_dungeon_nightmare_paradise')],
-      bossContents: [],
-      isDailyStale: false,
-      isWeeklyStale: false,
-      isWeeklyBossStale: false,
-      isMonthlyBossStale: false,
+// 팩토리가 모듈 평가보다 먼저 불릴 수 있어(스토어를 import 하는 순간) `var` 로 올리고 읽는 자리에서 채운다.
+var mockTrackingMode: { mode: 'auto' | 'manual' } = { mode: 'auto' }
+jest.mock('../../tracking-mode/store', () => ({
+  useTrackingModeStore: {
+    getState: () => {
+      mockTrackingMode = mockTrackingMode ?? { mode: 'auto' }
+      return { mode: mockTrackingMode.mode }
     },
-    syncedAt: '2026-07-11T00:00:00.000Z',
-    isStale: false,
-    error: null,
-    ...overrides,
+  },
+}))
+
+import { useContentSchedulerStore } from '../store'
+
+function basicEntry(overrides: Partial<CharacterBasicProfile> = {}): CachedCharacterBasicEntry {
+  return {
+    profile: { name: '캐릭터', level: 200, imageUrl: '', accessFlag: true, ...overrides },
+    cachedAt: '2026-10-30T00:00:00.000Z',
   }
 }
 
 beforeEach(() => {
-  resolveDisplayProfilesMock.mockReset().mockResolvedValue(new Map())
-  getScheduleProbeLedgerMock.mockReset().mockResolvedValue({ unavailable: false, dates: {} })
-  useCharacterSelectionStore.setState({ selectedOcid: null })
-  useContentSchedulerStore.setState({
-    status: 'idle',
-    characters: [],
-    error: null,
-    trackedOcids: null,
-    manualTrackedByOcid: {},
-    activeTab: 'daily',
-  })
-  resetSyncRunStateForTests()
-  getCachedSchedulerStateMock.mockResolvedValue(null)
-  getCachedCharacterBasicMock.mockResolvedValue(null)
-  getLastSelectedCharacterMock.mockResolvedValue(null)
-  mockTrackingModeStateMock.mode = 'auto'
-  seedManualTrackedContentMock.mockResolvedValue(undefined)
-  getManualTrackedContentMock.mockResolvedValue([])
-  setManualTrackedContentMock.mockResolvedValue(undefined)
+  queryClient.clear()
+  useContentSchedulerStore.setState({ manualTrackedByOcid: {}, activeTab: 'daily' })
+  mockTrackingMode.mode = 'auto'
+  getManualTrackedContentMock.mockReset().mockResolvedValue([])
+  setManualTrackedContentMock.mockReset().mockResolvedValue(undefined)
 })
 
-afterEach(() => {
-  jest.resetAllMocks()
-})
-
-describe('useContentSchedulerStore', () => {
-  it('refresh([])는 syncSchedules를 호출하지 않고 곧바로 loaded/빈 배열 상태가 된다', async () => {
-    await useContentSchedulerStore.getState().refresh([])
-
-    const state = useContentSchedulerStore.getState()
-    expect(syncSchedulesMock).not.toHaveBeenCalled()
-    expect(state.status).toBe('loaded')
-    expect(state.characters).toEqual([])
-    expect(state.error).toBeNull()
-  })
-
-  it('모든 캐릭터가 성공하면 status: loaded이고 dailyContents·weeklyContents가 하나의 상태에서 동시에 반영된다', async () => {
-    syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' })])
-
-    await useContentSchedulerStore.getState().refresh(['ocid-1'])
-
-    const state = useContentSchedulerStore.getState()
-    expect(state.status).toBe('loaded')
-    expect(state.error).toBeNull()
-    expect(state.characters).toEqual([
-      {
-        ocid: 'ocid-1',
-        characterName: '캐릭터1',
-        dailyContents: [dailyContent('monster_park')],
-        weeklyContents: [weeklyContent('epic_dungeon_nightmare_paradise')],
-        isStale: false,
-        syncedAt: '2026-07-11T00:00:00.000Z',
-        error: null,
-        // 캐시가 그 캐릭터를 모르면 둘 다 `null` 이다(레일이 레벨 호를 비운다).
-        level: null,
-        imageUrl: null,
-      },
-    ])
-  })
-
-  it('state가 null인 캐릭터는 dailyContents·weeklyContents를 빈 배열로 채운다', async () => {
-    syncSchedulesMock.mockResolvedValue([
-      syncResult({ state: null, syncedAt: null, isStale: true, error: { kind: 'network' } }),
-    ])
-
-    await useContentSchedulerStore.getState().refresh(['ocid-1'])
-
-    const state = useContentSchedulerStore.getState()
-    expect(state.status).toBe('loaded')
-    expect(state.characters).toEqual([
-      {
-        ocid: 'ocid-1',
-        characterName: '캐릭터-ocid-1',
-        dailyContents: [],
-        weeklyContents: [],
-        isStale: true,
-        syncedAt: null,
-        error: { kind: 'network' },
-        level: null,
-        imageUrl: null,
-      },
-    ])
-  })
-
-  it('일부 캐릭터만 에러/isStale이 있어도 전체 status는 loaded로 유지되고 그 캐릭터에만 에러가 반영된다', async () => {
-    syncSchedulesMock.mockResolvedValue([
-      syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' }),
-      syncResult({
-        ocid: 'ocid-2',
-        characterName: '캐릭터2',
-        state: null,
-        syncedAt: null,
-        isStale: true,
-        error: { kind: 'invalidApiKey' },
-      }),
-    ])
-
-    await useContentSchedulerStore.getState().refresh(['ocid-1', 'ocid-2'])
-
-    const state = useContentSchedulerStore.getState()
-    expect(state.status).toBe('loaded')
-    expect(state.error).toBeNull()
-    expect(state.characters[0].isStale).toBe(false)
-    expect(state.characters[0].error).toBeNull()
-    expect(state.characters[1].isStale).toBe(true)
-    expect(state.characters[1].error).toEqual({ kind: 'invalidApiKey' })
-  })
-
-  it('syncSchedules() 자체가 throw하면 status: error가 되고 characters는 비어있는 상태를 유지한다', async () => {
-    syncSchedulesMock.mockRejectedValue(new Error('온보딩이 완료되지 않았습니다'))
-
-    await useContentSchedulerStore.getState().refresh(['ocid-1'])
-
-    const state = useContentSchedulerStore.getState()
-    expect(state.status).toBe('error')
-    expect(state.error).toEqual({ kind: 'network' })
-    expect(state.characters).toEqual([])
-  })
-
-  it(': 캐시된 값이 있으면 재검증 응답을 기다리지 않고 즉시 characters에 반영한다', async () => {
-    getCachedSchedulerStateMock.mockResolvedValue({
-      state: {
-        asOf: '2026-07-11T00:00+09:00',
-        characterName: '캐시된캐릭터',
-        world: '베라',
-        worldKey: 'bera',
-        level: 200,
-        jobClass: '렌',
-        dailyContents: [dailyContent('monster_park')],
-        weeklyContents: [],
-        bossContents: [],
-      },
-      syncedAt: '2026-07-11T00:00:00.000Z',
-    })
-    syncSchedulesMock.mockImplementation(() => new Promise(() => {})) // 절대 resolve 안 함(재검증 대기 중 상태 관찰용)
-
-    const promise = useContentSchedulerStore.getState().refresh(['ocid-1'])
-
-    await waitFor(() => expect(useContentSchedulerStore.getState().status).toBe('loading'))
-    expect(useContentSchedulerStore.getState().characters).toEqual([
-      {
-        ocid: 'ocid-1',
-        characterName: '캐시된캐릭터',
-        worldKey: 'bera',
-        dailyContents: [dailyContent('monster_park')],
-        weeklyContents: [],
-        isStale: true,
-        syncedAt: '2026-07-11T00:00:00.000Z',
-        error: null,
-        level: null,
-        imageUrl: null,
-      },
-    ])
-
-    void promise // 이 테스트는 재검증이 끝나길 기다리지 않는다
-  })
-
-  it(': 재검증 응답이 도착하면 캐시로 채운 값을 새 값으로 덮어쓴다', async () => {
-    getCachedSchedulerStateMock.mockResolvedValue({
-      state: {
-        asOf: '2026-07-11T00:00+09:00',
-        characterName: '오래된이름',
-        world: '베라',
-        worldKey: 'bera',
-        level: 200,
-        jobClass: '렌',
-        dailyContents: [],
-        weeklyContents: [],
-        bossContents: [],
-      },
-      syncedAt: '2026-07-10T00:00:00.000Z',
-    })
-    syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1', characterName: '최신이름' })])
-
-    await useContentSchedulerStore.getState().refresh(['ocid-1'])
-
-    const state = useContentSchedulerStore.getState()
-    expect(state.status).toBe('loaded')
-    expect(state.characters[0].characterName).toBe('최신이름')
-    expect(state.characters[0].isStale).toBe(false)
-  })
-
-  it('refresh 시작 시 status를 loading으로 바꾼다', async () => {
-    let resolveSync: (value: CharacterScheduleSync[]) => void = () => {}
-    syncSchedulesMock.mockImplementation(
-      () =>
-        new Promise<CharacterScheduleSync[]>((resolve) => {
-          resolveSync = resolve
-        }),
+describe('loadLocal', () => {
+  it('수동 모드면 추적 캐릭터마다 멤버십을 읽어 manualTrackedByOcid 에 채운다', async () => {
+    mockTrackingMode.mode = 'manual'
+    getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
+      ocid === 'ocid-1' ? [{ contentKey: 'monster_park', kind: 'daily' }] : [],
     )
 
-    const promise = useContentSchedulerStore.getState().refresh(['ocid-1'])
+    await useContentSchedulerStore.getState().loadLocal(['ocid-1', 'ocid-2'])
 
-    await waitFor(() => expect(useContentSchedulerStore.getState().status).toBe('loading'))
-    resolveSync([])
-    await promise
-
-    expect(useContentSchedulerStore.getState().status).toBe('loaded')
-  })
-
-  describe('추적 목록', () => {
-    it('loadTrackedOcids는 조회된 목록이 null이 아니면 그 목록으로 refresh를 호출한다', async () => {
-      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useContentSchedulerStore.getState().loadTrackedOcids()
-
-      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1'], undefined)
-    })
-
-    it('loadTrackedOcids는 조회된 목록이 null이면 refresh를 호출하지 않는다', async () => {
-      getTrackedCharacterOcidsMock.mockResolvedValue(null)
-
-      await useContentSchedulerStore.getState().loadTrackedOcids()
-
-      expect(syncSchedulesMock).not.toHaveBeenCalled()
-      expect(useContentSchedulerStore.getState().trackedOcids).toBeNull()
-    })
-
-    // 부팅 선하이드레이션과 화면 마운트가 반드시 겹치므로, 동시 호출은
-    // 한 회차로 합친다. 안 그러면 같은 응답을 두 번 받는다(없애려던 낭비).
-    it('loadTrackedOcids를 동시에 두 번 불러도 한 회차만 돈다', async () => {
-      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await Promise.all([
-        useContentSchedulerStore.getState().loadTrackedOcids(),
-        useContentSchedulerStore.getState().loadTrackedOcids(),
-      ])
-
-      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
-    })
-
-    // "평생 한 번"이 아니라 "동시에 하나만"이다. 영구 메모면 진입 재조회의 10분 TTL 이 죽는다.
-    it('앞 회차가 끝난 뒤에 부르면 다시 돈다', async () => {
-      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useContentSchedulerStore.getState().loadTrackedOcids()
-      await useContentSchedulerStore.getState().loadTrackedOcids()
-
-      expect(syncSchedulesMock).toHaveBeenCalledTimes(2)
-    })
-
-    it('saveTrackedOcids는 storage에 저장하고 trackedOcids 상태를 갱신한 뒤 그 목록으로 refresh를 호출한다', async () => {
-      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
-
-      expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'])
-      expect(useContentSchedulerStore.getState().trackedOcids).toEqual(['ocid-1', 'ocid-2'])
-      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
-    })
-
-    it('storage 저장이 실패하면 실패 토스트를 띄우고 상태를 바꾸지 않는다(예외를 던지지 않음)', async () => {
-      setTrackedCharacterOcidsMock.mockRejectedValue(new Error('disk full'))
-
-      await expect(
-        useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1']),
-      ).resolves.toBeUndefined()
-
-      expect(showErrorMock).toHaveBeenCalledWith('저장하지 못했습니다')
-      expect(showSuccessMock).not.toHaveBeenCalled()
-      expect(syncSchedulesMock).not.toHaveBeenCalled()
-      expect(useContentSchedulerStore.getState().trackedOcids).toBeNull()
+    expect(getManualTrackedContentMock).toHaveBeenCalledWith('ocid-1')
+    expect(getManualTrackedContentMock).toHaveBeenCalledWith('ocid-2')
+    expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
+      'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }],
+      'ocid-2': [],
     })
   })
 
-  describe(': 저장 시 추가된 캐릭터만 동기화', () => {
-    function characterView(ocid: string, characterName: string): ContentCharacterView {
-      return {
-        ocid,
-        characterName,
-        dailyContents: [dailyContent('monster_park')],
-        weeklyContents: [],
-        isStale: false,
-        syncedAt: '2026-07-27T00:00:00.000Z',
-        error: null,
-      }
-    }
-
-    beforeEach(() => {
-      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
+  // 자동 모드는 등록 여부로 목록을 정한다. 수동에서 자동으로 바꾼 뒤 옛 멤버십이 남으면 화면이 그것을 다시 읽는다.
+  it('자동 모드면 저장소를 읽지 않고 manualTrackedByOcid 를 비운다', async () => {
+    useContentSchedulerStore.setState({
+      manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] },
     })
 
-    it('선택이 바뀌지 않았으면(순서만 달라도) syncSchedules를 호출하지 않고 목록을 그대로 유지한다', async () => {
-      useContentSchedulerStore.setState({
-        trackedOcids: ['ocid-1', 'ocid-2'],
-        characters: [characterView('ocid-1', '캐릭터1'), characterView('ocid-2', '캐릭터2')],
-      })
+    await useContentSchedulerStore.getState().loadLocal(['ocid-1'])
 
-      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-2', 'ocid-1'])
-
-      expect(syncSchedulesMock).not.toHaveBeenCalled()
-      const state = useContentSchedulerStore.getState()
-      expect(state.status).toBe('loaded')
-      expect(state.characters.map((character) => character.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
-      expect(setTrackedCharacterOcidsMock).toHaveBeenCalledWith(['ocid-2', 'ocid-1'])
-    })
-
-    it('제거만 했으면 syncSchedules를 호출하지 않고 남은 캐릭터만 필터링한다', async () => {
-      useContentSchedulerStore.setState({
-        trackedOcids: ['ocid-1', 'ocid-2'],
-        characters: [characterView('ocid-1', '캐릭터1'), characterView('ocid-2', '캐릭터2')],
-      })
-
-      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1'])
-
-      expect(syncSchedulesMock).not.toHaveBeenCalled()
-      const state = useContentSchedulerStore.getState()
-      expect(state.status).toBe('loaded')
-      expect(state.characters.map((character) => character.ocid)).toEqual(['ocid-1'])
-      expect(state.characters[0].characterName).toBe('캐릭터1')
-    })
-
-    it('캐릭터를 추가하면 추가된 ocid만 인자로 syncSchedules를 1회 호출하고 유지 캐릭터는 재조회하지 않는다', async () => {
-      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-2', characterName: '새캐릭터' })])
-      useContentSchedulerStore.setState({
-        trackedOcids: ['ocid-1'],
-        characters: [characterView('ocid-1', '기존캐릭터')],
-      })
-
-      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
-
-      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
-      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-2'], undefined)
-      // 유지 캐릭터는 메모리 뷰를 그대로 재사용한다. 네트워크는 물론 캐시도 다시 읽지 않는다
-      expect(getCachedSchedulerStateMock).not.toHaveBeenCalled()
-
-      const state = useContentSchedulerStore.getState()
-      expect(state.status).toBe('loaded')
-      expect(state.characters.map((character) => character.ocid).sort()).toEqual(['ocid-1', 'ocid-2'])
-      expect(state.characters.find((character) => character.ocid === 'ocid-1')?.characterName).toBe(
-        '기존캐릭터',
-      )
-      expect(state.characters.find((character) => character.ocid === 'ocid-2')?.characterName).toBe(
-        '새캐릭터',
-      )
-    })
-
-    it('최초 선택(이전 추적 목록 없음)이면 전원이 추가분이라 전체를 조회한다', async () => {
-      syncSchedulesMock.mockResolvedValue([
-        syncResult({ ocid: 'ocid-1', characterName: '캐릭터1' }),
-        syncResult({ ocid: 'ocid-2', characterName: '캐릭터2' }),
-      ])
-
-      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
-
-      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-1', 'ocid-2'], undefined)
-      expect(
-        useContentSchedulerStore
-          .getState()
-          .characters.map((character) => character.ocid)
-          .sort(),
-      ).toEqual(['ocid-1', 'ocid-2'])
-    })
-
-    it('추가와 제거가 함께 일어나도 최종 목록은 정확히 저장한 집합이 된다', async () => {
-      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-3', characterName: '새캐릭터' })])
-      useContentSchedulerStore.setState({
-        trackedOcids: ['ocid-1', 'ocid-2'],
-        characters: [characterView('ocid-1', '캐릭터1'), characterView('ocid-2', '캐릭터2')],
-      })
-
-      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-3'])
-
-      expect(syncSchedulesMock).toHaveBeenCalledWith(['ocid-3'], undefined)
-      expect(
-        useContentSchedulerStore
-          .getState()
-          .characters.map((character) => character.ocid)
-          .sort(),
-      ).toEqual(['ocid-1', 'ocid-3'])
-    })
-
-    it('수동 모드에서 캐릭터를 추가하면 시드된 멤버십이 manualTrackedByOcid에 반영된다', async () => {
-      mockTrackingModeStateMock.mode = 'manual'
-      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-2', characterName: '새캐릭터' })])
-      getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
-        ocid === 'ocid-2' ? [{ contentKey: 'monster_park', kind: 'daily' }] : [],
-      )
-      useContentSchedulerStore.setState({
-        trackedOcids: ['ocid-1'],
-        characters: [characterView('ocid-1', '기존캐릭터')],
-      })
-
-      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
-
-      expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
-        'ocid-2': [{ contentKey: 'monster_park', kind: 'daily' }],
-      })
-    })
+    expect(getManualTrackedContentMock).not.toHaveBeenCalled()
+    expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({})
   })
 
-  describe('(b): 수동 모드에서 새 추적 캐릭터 개별 시드', () => {
-    it('수동 모드에서 saveTrackedOcids는 새로 추가된 캐릭터만 refresh 전에 시드한다', async () => {
-      mockTrackingModeStateMock.mode = 'manual'
-      useContentSchedulerStore.setState({ trackedOcids: ['ocid-1'] })
-      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
-
-      expect(seedManualTrackedContentMock).toHaveBeenCalledTimes(1)
-      expect(seedManualTrackedContentMock).toHaveBeenCalledWith(['ocid-2'])
-      // 시드가 refresh(syncSchedules)보다 먼저 실행된다. 저장 진행률 모달이 시드까지 커버
-      expect(seedManualTrackedContentMock.mock.invocationCallOrder[0]).toBeLessThan(
-        syncSchedulesMock.mock.invocationCallOrder[0],
-      )
+  it('추적 목록에서 빠진 캐릭터의 멤버십은 남기지 않는다', async () => {
+    mockTrackingMode.mode = 'manual'
+    useContentSchedulerStore.setState({
+      manualTrackedByOcid: { 'ocid-2': [{ contentKey: 'monster_park', kind: 'daily' }] },
     })
 
-    it('수동 모드라도 새로 추가된 캐릭터가 없으면 시드하지 않는다', async () => {
-      mockTrackingModeStateMock.mode = 'manual'
-      useContentSchedulerStore.setState({ trackedOcids: ['ocid-1', 'ocid-2'] })
-      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
-      syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useContentSchedulerStore.getState().loadLocal(['ocid-1'])
 
-      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1'])
-
-      expect(seedManualTrackedContentMock).not.toHaveBeenCalled()
-    })
-
-    it('auto 모드에서는 새 캐릭터가 추가돼도 시드하지 않는다', async () => {
-      useContentSchedulerStore.setState({ trackedOcids: ['ocid-1'] })
-      setTrackedCharacterOcidsMock.mockResolvedValue(undefined)
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useContentSchedulerStore.getState().saveTrackedOcids(['ocid-1', 'ocid-2'])
-
-      expect(seedManualTrackedContentMock).not.toHaveBeenCalled()
-    })
-  })
-
-  describe(': 수동 추적 항목 (manualTrackedContent)', () => {
-    it('수동 모드일 때 refresh는 추적 목록을 읽어 manualTrackedByOcid에 채운다', async () => {
-      mockTrackingModeStateMock.mode = 'manual'
-      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
-      getManualTrackedContentMock.mockImplementation(async (ocid: string) =>
-        ocid === 'ocid-1' ? [{ contentKey: 'monster_park', kind: 'daily' }] : [],
-      )
-
-      await useContentSchedulerStore.getState().refresh(['ocid-1'])
-
-      expect(getManualTrackedContentMock).toHaveBeenCalledWith('ocid-1')
-      expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
-        'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }],
-      })
-    })
-
-    it('auto 모드에서는 refresh가 추적 목록을 읽지 않고 manualTrackedByOcid는 빈 객체로 둔다', async () => {
-      syncSchedulesMock.mockResolvedValue([syncResult({ ocid: 'ocid-1' })])
-
-      await useContentSchedulerStore.getState().refresh(['ocid-1'])
-
-      expect(getManualTrackedContentMock).not.toHaveBeenCalled()
-      expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({})
-    })
-
-    it('addManualContent는 저장소에 멤버십(kind 포함)과 템플릿 max_count를 저장하고 상태를 갱신한다', async () => {
-      getManualTrackedContentMock.mockResolvedValue([])
-
-      await useContentSchedulerStore.getState().addManualContent('ocid-1', 'monster_park', 'daily')
-
-      // 'monster_park'는 scheduler-content-template.json daily에 max_count 14로 있다
-      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-        { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
-      ])
-      expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
-        'ocid-1': [{ contentKey: 'monster_park', kind: 'daily', maxCount: 14 }],
-      })
-    })
-
-    it('addManualContent는 이미 추적 중인 콘텐츠면 중복 추가하지 않는다', async () => {
-      getManualTrackedContentMock.mockResolvedValue([{ contentKey: 'monster_park', kind: 'daily', maxCount: 14 }])
-
-      await useContentSchedulerStore.getState().addManualContent('ocid-1', 'monster_park', 'daily')
-
-      expect(setManualTrackedContentMock).not.toHaveBeenCalled()
-    })
-
-    // 가드 테스트용 최소 뷰. 가드가 보는 건 ocid·guildName뿐이다.
-    function guardView(overrides: Partial<ContentCharacterView>): ContentCharacterView {
-      return {
-        ocid: 'ocid-1',
-        characterName: '낟낟',
-        dailyContents: [],
-        weeklyContents: [],
-        isStale: false,
-        syncedAt: null,
-        error: null,
-        ...overrides,
-      }
-    }
-
-    // 가드의 본체는 스토어다. UI 사전 차단만으로는 다른 호출 경로가 샌다.
-    it('addManualContent는 길드 미가입(guildName: null)이면 길드 콘텐츠를 거부한다', async () => {
-      useContentSchedulerStore.setState({
-        characters: [guardView({ guildName: null })],
-      })
-
-      const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'guild_underground_waterway', 'weekly')
-
-      expect(result).toBe('guildRequired')
-      expect(setManualTrackedContentMock).not.toHaveBeenCalled()
-    })
-
-    it('addManualContent는 길드 정보를 모르면(guildName: undefined) 길드 콘텐츠를 통과시킨다', async () => {
-      useContentSchedulerStore.setState({
-        characters: [guardView({ guildName: undefined })],
-      })
-
-      const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'guild_underground_waterway', 'weekly')
-
-      expect(result).toBe('added')
-      expect(setManualTrackedContentMock).toHaveBeenCalled()
-    })
-
-    it('addManualContent는 길드 미가입이어도 길드 외 콘텐츠는 통과시킨다', async () => {
-      useContentSchedulerStore.setState({
-        characters: [guardView({ guildName: null })],
-      })
-
-      const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'mu_lung_dojo', 'weekly')
-
-      expect(result).toBe('added')
-    })
-
-    it('removeManualContent는 해당 (kind, key) 항목만 제거하고 다른 kind(boss)·다른 key 는 보존한다', async () => {
-      getManualTrackedContentMock.mockResolvedValue([
-        { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
-        { contentKey: 'mu_lung_dojo', kind: 'weekly' },
-        { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
-      ])
-
-      await useContentSchedulerStore.getState().removeManualContent('ocid-1', 'monster_park', 'daily')
-
-      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-        { contentKey: 'mu_lung_dojo', kind: 'weekly' },
-        { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
-      ])
-      expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
-        'ocid-1': [
-          { contentKey: 'mu_lung_dojo', kind: 'weekly' },
-          { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
-        ],
-      })
-    })
-  })
-
-  describe(': 캐릭터 순서 정렬 및 마지막 선택 캐릭터', () => {
-    it('실시간 동기화 결과의 캐릭터가 캐시된 레벨 기준 내림차순으로 정렬된다', async () => {
-      syncSchedulesMock.mockResolvedValue([
-        syncResult({ ocid: 'ocid-1', characterName: '레벨낮음' }),
-        syncResult({ ocid: 'ocid-2', characterName: '레벨높음' }),
-      ])
-      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => {
-        if (ocid === 'ocid-1') {
-          return { profile: { name: '레벨낮음', level: 100, imageUrl: '', accessFlag: true }, cachedAt: '' }
-        }
-        if (ocid === 'ocid-2') {
-          return { profile: { name: '레벨높음', level: 200, imageUrl: '', accessFlag: true }, cachedAt: '' }
-        }
-        return null
-      })
-
-      await useContentSchedulerStore.getState().refresh(['ocid-1', 'ocid-2'])
-
-      expect(useContentSchedulerStore.getState().characters.map((character) => character.ocid)).toEqual([
-        'ocid-2',
-        'ocid-1',
-      ])
-    })
-
-    it('동레벨인 캐릭터는 compareByName 순서로 정렬된다', async () => {
-      syncSchedulesMock.mockResolvedValue([
-        syncResult({ ocid: 'ocid-1', characterName: '알파벳Zebra' }),
-        syncResult({ ocid: 'ocid-2', characterName: '가나다캐릭터' }),
-      ])
-      getCachedCharacterBasicMock.mockResolvedValue({
-        profile: { name: '', level: 100, imageUrl: '', accessFlag: true },
-        cachedAt: '',
-      })
-
-      await useContentSchedulerStore.getState().refresh(['ocid-1', 'ocid-2'])
-
-      // compareByName: 한글 > 알파벳 순서라 '가나다캐릭터'(한글)가 먼저 온다
-      expect(useContentSchedulerStore.getState().characters.map((character) => character.ocid)).toEqual([
-        'ocid-2',
-        'ocid-1',
-      ])
-    })
-
-    it('레벨 캐시가 없는 캐릭터는 정렬 목록 맨 뒤로 간다', async () => {
-      syncSchedulesMock.mockResolvedValue([
-        syncResult({ ocid: 'ocid-1', characterName: '캐시없음' }),
-        syncResult({ ocid: 'ocid-2', characterName: '캐시있음' }),
-      ])
-      getCachedCharacterBasicMock.mockImplementation(async (ocid: string) => {
-        if (ocid === 'ocid-2') {
-          return { profile: { name: '캐시있음', level: 1, imageUrl: '', accessFlag: true }, cachedAt: '' }
-        }
-        return null
-      })
-
-      await useContentSchedulerStore.getState().refresh(['ocid-1', 'ocid-2'])
-
-      expect(useContentSchedulerStore.getState().characters.map((character) => character.ocid)).toEqual([
-        'ocid-2',
-        'ocid-1',
-      ])
-    })
-
-    // 저장된 선택을 읽는 것은 이 스토어가 아니라 선택 스토어다. 부르는
-    // 자리(진입 경로)는 그대로라 여기서 그 위임을 지킨다.
-    it('loadTrackedOcids 는 선택 스토어를 하이드레이션한다', async () => {
-      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
-      getLastSelectedCharacterMock.mockResolvedValue('ocid-1')
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useContentSchedulerStore.getState().loadTrackedOcids()
-
-      expect(getLastSelectedCharacterMock).toHaveBeenCalledWith()
-      expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-1')
-    })
-
-    // `selectCharacter` 테스트는 여기 있었다. 선택이 이 스토어를 떠나면서
-    // `features/character-selection/__tests__/store.spec.ts` 로 옮겨갔다.
-  })
-
-  // 탭 선택을 화면 로컬 state가 아니라 스토어가 소유한다. 화면이 언마운트돼도
-  // 값이 남고, 스케줄러와 관리 페이지가 같은 값을 본다.
-  describe(': 탭 선택 상태', () => {
-    it('탭을 바꿔도 동기화를 호출하지 않는다', () => {
-      useContentSchedulerStore.getState().setActiveTab('weekly')
-
-      expect(syncSchedulesMock).not.toHaveBeenCalled()
-    })
-  })
-
-  // 화면에 들어왔다는 사실만으로는 조회하지 않는다. 게이트는 자동 진입 경로에만 걸리고,
-  // 판정 근거는 캐시 우선 표시 단계가 이미 읽은 syncedAt 이다.
-  describe('화면 진입 재조회 게이트', () => {
-    function minutesAgo(minutes: number): string {
-      return new Date(Date.now() - minutes * 60 * 1000).toISOString()
-    }
-
-    function cachedSchedulerState(syncedAt: string) {
-      return {
-        state: {
-          asOf: '2026-07-11T00:00+09:00',
-          characterName: '캐시된캐릭터',
-          world: '베라',
-          worldKey: 'bera',
-          level: 200,
-          jobClass: '렌',
-          dailyContents: [dailyContent('monster_park')],
-          weeklyContents: [],
-          bossContents: [],
-        },
-        syncedAt,
-      }
-    }
-
-    it('실행 플래그가 서 있고 전원 캐시가 TTL 안이면 자동 진입은 조회하지 않는다', async () => {
-      markSyncAttemptedThisRun()
-      getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))
-
-      await useContentSchedulerStore.getState().refresh(['ocid-1'], undefined, { auto: true })
-
-      expect(syncSchedulesMock).not.toHaveBeenCalled()
-      const state = useContentSchedulerStore.getState()
-      expect(state.status).toBe('loaded')
-      expect(state.error).toBeNull()
-      // 재검증하지 않기로 한 값이라 "오래된 데이터"가 아니다(토스트가 뜨면 안 된다).
-      expect(state.characters.every((character) => character.isStale === false)).toBe(true)
-    })
-
-    it('건너뛴 진입에서도 syncedAt 은 캐시 값 그대로다 (방금 동기화한 것처럼 꾸미지 않는다)', async () => {
-      const syncedAt = minutesAgo(5)
-      markSyncAttemptedThisRun()
-      getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(syncedAt))
-
-      await useContentSchedulerStore.getState().refresh(['ocid-1'], undefined, { auto: true })
-
-      expect(useContentSchedulerStore.getState().characters[0].syncedAt).toBe(syncedAt)
-    })
-
-    it('앱 재시작 직후(실행 플래그 없음)에는 TTL 안이어도 조회한다', async () => {
-      getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useContentSchedulerStore.getState().refresh(['ocid-1'], undefined, { auto: true })
-
-      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
-    })
-
-    it('추적 캐릭터 중 캐시가 없는 캐릭터가 있으면 TTL 안이어도 조회한다', async () => {
-      markSyncAttemptedThisRun()
-      getCachedSchedulerStateMock.mockImplementation(async (ocid: string) =>
-        ocid === 'ocid-1' ? cachedSchedulerState(minutesAgo(5)) : null,
-      )
-      syncSchedulesMock.mockResolvedValue([
-        syncResult({ ocid: 'ocid-1' }),
-        syncResult({ ocid: 'ocid-2' }),
-      ])
-
-      await useContentSchedulerStore.getState().refresh(['ocid-1', 'ocid-2'], undefined, { auto: true })
-
-      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
-    })
-
-    it('가장 오래된 캐시가 TTL 밖이면 조회한다', async () => {
-      markSyncAttemptedThisRun()
-      getCachedSchedulerStateMock.mockImplementation(async (ocid: string) =>
-        cachedSchedulerState(ocid === 'ocid-1' ? minutesAgo(5) : minutesAgo(11)),
-      )
-      syncSchedulesMock.mockResolvedValue([
-        syncResult({ ocid: 'ocid-1' }),
-        syncResult({ ocid: 'ocid-2' }),
-      ])
-
-      await useContentSchedulerStore.getState().refresh(['ocid-1', 'ocid-2'], undefined, { auto: true })
-
-      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
-    })
-
-    // 강제가 기본값이다. 옵션을 넘기지 않는 헤더 버튼·당겨서 새로고침·재시도는 항상 조회한다.
-    it('옵션 없는 refresh(명시적 재조회)는 TTL 안이어도 항상 조회한다', async () => {
-      markSyncAttemptedThisRun()
-      getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))
-      syncSchedulesMock.mockResolvedValue([syncResult()])
-
-      await useContentSchedulerStore.getState().refresh(['ocid-1'])
-
-      expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
-    })
-
-    it('자동 진입 경로인 loadTrackedOcids는 게이트에 걸린다', async () => {
-      markSyncAttemptedThisRun()
-      getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
-      getCachedSchedulerStateMock.mockResolvedValue(cachedSchedulerState(minutesAgo(5)))
-
-      await useContentSchedulerStore.getState().loadTrackedOcids()
-
-      expect(syncSchedulesMock).not.toHaveBeenCalled()
-      expect(useContentSchedulerStore.getState().status).toBe('loaded')
-    })
+    expect(Object.keys(useContentSchedulerStore.getState().manualTrackedByOcid)).toEqual(['ocid-1'])
   })
 })
 
+describe('reloadLocal', () => {
+  it('쿼리 캐시의 추적 목록으로 loadLocal 을 부른다', async () => {
+    mockTrackingMode.mode = 'manual'
+    queryClient.setQueryData(queryKeys.trackedOcids(), ['ocid-1', 'ocid-2'])
 
-// 월드 이전으로 `character/list` 에서 빠진 ocid 는 동기화 결과에 안 온다. 결과만 보고 목록을
-// 만들면 그 캐릭터가 첫 페인트에 캐시로 보였다가 동기화가 끝나는 순간 사라진다.
-describe('동기화가 답하지 않은 캐릭터', () => {
-  it('목록에 남고 조회 불가로 표시된다', async () => {
-    resolveDisplayProfilesMock.mockResolvedValue(
-      new Map([
-        ['stranded', { name: '지내우시', imageUrl: null, world: '챌린저스2', level: 285, unavailable: true }],
-      ]),
-    )
-    syncSchedulesMock.mockResolvedValue([syncResult()])
+    await useContentSchedulerStore.getState().reloadLocal()
 
-    await useContentSchedulerStore.getState().refresh(['ocid-1', 'stranded'])
+    expect(getManualTrackedContentMock.mock.calls.map(([ocid]) => ocid)).toEqual(['ocid-1', 'ocid-2'])
+  })
 
-    const view = useContentSchedulerStore
+  it('추적 목록을 아직 안 읽었으면 아무 캐릭터도 읽지 않는다', async () => {
+    mockTrackingMode.mode = 'manual'
+
+    await useContentSchedulerStore.getState().reloadLocal()
+
+    expect(getManualTrackedContentMock).not.toHaveBeenCalled()
+    expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({})
+  })
+})
+
+describe('addManualContent', () => {
+  it('저장소에 멤버십(kind 포함)과 템플릿 max_count 를 저장하고 상태를 갱신한다', async () => {
+    const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'monster_park', 'daily')
+
+    // monster_park 는 컨텐츠 표 daily 에 max_count 14 로 있다.
+    expect(result).toBe('added')
+    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+      { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
+    ])
+    expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
+      'ocid-1': [{ contentKey: 'monster_park', kind: 'daily', maxCount: 14 }],
+    })
+  })
+
+  it('이미 추적 중인 콘텐츠면 쓰지 않고 duplicate 를 돌려준다', async () => {
+    getManualTrackedContentMock.mockResolvedValue([{ contentKey: 'monster_park', kind: 'daily', maxCount: 14 }])
+
+    const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'monster_park', 'daily')
+
+    expect(result).toBe('duplicate')
+    expect(setManualTrackedContentMock).not.toHaveBeenCalled()
+  })
+
+  // 가드의 본체는 스토어다. 화면에서만 막으면 다른 호출 경로가 샌다. 길드 가입 여부는 쿼리 캐시의 기본 정보에서 읽는다.
+  it('기본 정보의 guildName 이 null(미가입)이면 길드 콘텐츠를 거부한다', async () => {
+    queryClient.setQueryData(queryKeys.characterBasic('ocid-1'), basicEntry({ guildName: null }))
+
+    const result = await useContentSchedulerStore
       .getState()
-      .characters.find((character) => character.ocid === 'stranded')
-    expect(view?.characterName).toBe('지내우시')
-    expect(view?.error).toEqual({ kind: 'characterUnavailable' })
-    expect(view?.isStale).toBe(true)
+      .addManualContent('ocid-1', 'guild_underground_waterway', 'weekly')
+
+    expect(result).toBe('guildRequired')
+    expect(setManualTrackedContentMock).not.toHaveBeenCalled()
   })
 
-  it('답한 캐릭터만 있으면 목록이 그대로다', async () => {
-    syncSchedulesMock.mockResolvedValue([syncResult()])
+  it('기본 정보가 캐시에 없으면(길드를 모름) 길드 콘텐츠를 통과시킨다', async () => {
+    const result = await useContentSchedulerStore
+      .getState()
+      .addManualContent('ocid-1', 'guild_underground_waterway', 'weekly')
 
-    await useContentSchedulerStore.getState().refresh(['ocid-1'])
-
-    expect(useContentSchedulerStore.getState().characters.map((view) => view.ocid)).toEqual(['ocid-1'])
-  })
-})
-
-
-function 캐시상태() {
-  return {
-    state: {
-      asOf: '2026-07-11T00:00+09:00',
-      characterName: '지내우시',
-      world: '챌린저스2',
-      worldKey: 'challengers_2',
-      level: 285,
-      jobClass: '레테',
-      dailyContents: [],
-      weeklyContents: [],
-      bossContents: [],
-    },
-    syncedAt: '2026-07-11T00:00:00.000Z',
-  }
-}
-
-function 캐시상태FULL() {
-  const base = 캐시상태()
-  return { ...base, state: { ...base.state, dailyContents: [dailyContent('monster_park')] } }
-}
-
-// 조회 불가는 `character_profiles.unavailable` 에 남아 있다. 동기화가 끝나야 안다고 두면 그
-// 사이에 낡은 캐시로 목록이 그려지고, 그것은 지금 할 일처럼 읽힌다.
-describe('표가 아는 조회 불가는 동기화 전에 선다', () => {
-  it('캐시 우선 표시 단계에서 이미 조회 불가다', async () => {
-    getScheduleProbeLedgerMock.mockResolvedValue({ unavailable: true, dates: {} })
-    getCachedSchedulerStateMock.mockResolvedValue(캐시상태())
-    // 동기화는 안 끝난 채로 둔다. 이 시점에 화면이 무엇을 아는지가 대상이다.
-    syncSchedulesMock.mockImplementation(() => new Promise(() => {}))
-
-    void useContentSchedulerStore.getState().refresh(['ocid-1'])
-
-    await waitFor(() =>
-      expect(useContentSchedulerStore.getState().characters[0]?.error).toEqual({ kind: 'characterUnavailable' }),
-    )
+    expect(result).toBe('added')
+    expect(setManualTrackedContentMock).toHaveBeenCalled()
   })
 
-  it('표가 모르면 캐시 그대로다', async () => {
-    getCachedSchedulerStateMock.mockResolvedValue(캐시상태())
-    syncSchedulesMock.mockImplementation(() => new Promise(() => {}))
+  it('기본 정보에 guildName 이 undefined 여도(길드를 모름) 길드 콘텐츠를 통과시킨다', async () => {
+    queryClient.setQueryData(queryKeys.characterBasic('ocid-1'), basicEntry({ guildName: undefined }))
 
-    void useContentSchedulerStore.getState().refresh(['ocid-1'])
+    const result = await useContentSchedulerStore
+      .getState()
+      .addManualContent('ocid-1', 'guild_underground_waterway', 'weekly')
 
-    await waitFor(() => expect(useContentSchedulerStore.getState().characters).toHaveLength(1))
-    expect(useContentSchedulerStore.getState().characters[0]?.error).toBeNull()
+    expect(result).toBe('added')
+  })
+
+  it('길드 미가입이어도 길드 외 콘텐츠는 통과시킨다', async () => {
+    queryClient.setQueryData(queryKeys.characterBasic('ocid-1'), basicEntry({ guildName: null }))
+
+    const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'mu_lung_dojo', 'weekly')
+
+    expect(result).toBe('added')
   })
 })
 
+describe('removeManualContent', () => {
+  it('해당 (kind, key) 항목만 제거하고 다른 kind(boss) · 다른 key 는 보존한다', async () => {
+    getManualTrackedContentMock.mockResolvedValue([
+      { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
+      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
+      { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
+    ])
 
-// 링이 캐시의 옛 진행률을 그렸다가 동기화가 끝나는 순간 빈 링으로 바뀌던 자리다. 첫 페인트와
-// 동기화 후가 같은 것을 그려야 한다.
-describe('조회 불가면 캐시 단계부터 내용이 비어 있다', () => {
-  it('일간·주간이 빈 채로 온다', async () => {
-    getScheduleProbeLedgerMock.mockResolvedValue({ unavailable: true, dates: {} })
-    getCachedSchedulerStateMock.mockResolvedValue(캐시상태FULL())
-    syncSchedulesMock.mockImplementation(() => new Promise(() => {}))
+    await useContentSchedulerStore.getState().removeManualContent('ocid-1', 'monster_park', 'daily')
 
-    void useContentSchedulerStore.getState().refresh(['ocid-1'])
+    const remaining = [
+      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
+      { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
+    ]
+    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', remaining)
+    expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({ 'ocid-1': remaining })
+  })
+})
 
-    await waitFor(() => expect(useContentSchedulerStore.getState().characters).toHaveLength(1))
-    const view = useContentSchedulerStore.getState().characters[0]
-    expect(view?.dailyContents).toEqual([])
-    expect(view?.weeklyContents).toEqual([])
+// 탭은 이미 받아 둔 데이터를 갈라 보여줄 뿐이다. 바꿔도 회차를 받거나 저장소를 읽지 않는다.
+describe('setActiveTab', () => {
+  it('탭을 바꿔도 회차를 받거나 저장소를 읽지 않는다', () => {
+    useContentSchedulerStore.getState().setActiveTab('weekly')
+
+    expect(useContentSchedulerStore.getState().activeTab).toBe('weekly')
+    expect(queryClient.getQueryCache().findAll()).toHaveLength(0)
+    expect(getManualTrackedContentMock).not.toHaveBeenCalled()
   })
 })

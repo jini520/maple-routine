@@ -8,17 +8,13 @@
  * **위젯은 스토어를 모른다.** 각자 구독하면 트리거가 위젯 수만큼 늘고, 같은 드롭 기록을 보는 셋이
  * 각자의 시점에서 읽는다.
  *
- * 진입 조회는 `loadTrackedOcids` 하나로만 들어간다. `refresh()` 를 부르면 10분 TTL 을 통째로
- * 우회해 예열이 방금 받은 응답을 한 번 더 받는다.
- *
- * 대표 캐릭터의 EXP·레벨은 스토어가 아니라 `character-basic-cache` 에서 온다. 그 캐시를 읽는
- * 이펙트는 추적 목록이 바뀔 때만 돌므로, 재조회가 끝나는 자리에서 한 번 더 읽는다.
+ * 스케줄과 프로필은 쿼리 캐시에서 온다(`useContentSchedule` · `useBossSchedule` · `useCharacterProfiles`).
+ * 자동 조회는 마운트 · 포커스에 만료일 때, 복귀에는 신선해도 한 번이고, 당김은 `refreshSchedules` 로 항상이다.
  *
  * 누가 대표인가는 선택 스토어를 구독한다. 화면 상태로 사본을 들면 이 탭은 다시 마운트되지 않아
  * 캐릭터 관리에서 대표를 바꿔도 옛 캐릭터가 남는다.
  *
- * 대가를 적어 둔다. 이 화면에 오래 머물러 TTL 이 만료되면 컨텐츠 쪽만 다시 동기화되고 보스·수익
- * 위젯은 그 탭에 들어갈 때까지 옛 스냅샷을 그린다. 당김과 헤더 버튼은 셋을 모두 새로 읽는다.
+ * 보스 수익 위젯은 아직 보스 수익 스토어를 본다. 그 스토어는 자기 게이트로 받고, 당김이 함께 새로 읽는다.
  *
  * @see docs/features/today.md 정책
  */
@@ -28,6 +24,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { View } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 
+import { queryKeys } from '../../features/query/keys'
+import { useResetBoundaryTick } from '../../features/query/reset-timer'
+import { refreshSchedules } from '../../features/schedule-sync/schedule-query'
+import { useCharacterProfiles } from '../../features/schedule-sync/use-schedule-queries'
+import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
+
 import { SETTLEMENT_BANNER_DETAIL_TODAY } from '../../features/settlement/banner-text'
 import { useDataFreshness } from '../../features/refresh/freshness'
 import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
@@ -36,11 +38,11 @@ import { useNoticeBannerStore } from '../../features/notice/banner-store'
 import { isDropHistoryOutdated, useDropHistoryStore } from '../../features/boss-profit/drop-history-store'
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { useBossSchedule } from '../../features/boss-scheduler/use-boss-schedule'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import { useContentSchedule } from '../../features/content-scheduler/use-content-schedule'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
-import { readCharacterProfiles, readRepresentativeProfile } from '../../features/character-profile/cached-profiles'
-import type { CharacterBasicProfile } from '../../types'
 import type { DaysByDate } from '../../features/stats/aggregate'
 import { loadStatsDaysBetween, statsDataRevision } from '../../features/stats/load'
 import { statsRanges } from '../../features/stats/periods'
@@ -60,8 +62,11 @@ import { WidgetGrid } from './WidgetGrid'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 export function TodayScreen(): React.JSX.Element {
-  const content = useContentSchedulerStore()
-  const boss = useBossSchedulerStore()
+  // 스케줄은 캐시에서 온다. 두 훅이 같은 회차를 보므로 마운트 · 복귀의 자동 조회는 한 번이다.
+  const content = useContentSchedule()
+  const boss = useBossSchedule()
+  const contentStore = useContentSchedulerStore()
+  const bossStore = useBossSchedulerStore()
   const profit = useBossProfitStore()
   const dropHistory = useDropHistoryStore()
   const { mode } = useTrackingModeStore()
@@ -72,18 +77,12 @@ export function TodayScreen(): React.JSX.Element {
   const quickLinks = useQuickLinksStore((state) => state.config)
   const loadPartyAppointments = usePartyAppointmentsStore((state) => state.load)
 
-  // 프로필은 스토어가 아니라 저장소에서 온다(`character-basic-cache` 는 보스 수익·히스토리가 이미
-  // 같은 방식으로 읽는다).
-  const [profilesByOcid, setProfilesByOcid] = useState<Readonly<Record<string, CharacterBasicProfile>>>(
-    {},
-  )
+  // 프로필도 캐시에서 온다. 회차나 캐릭터 관리가 `character/basic` 을 받으면 그 자리에서 바뀐다.
+  const profilesByOcid = useCharacterProfiles()
   const representativeOcid = useCharacterSelectionStore((state) => state.representativeOcid)
 
-  useEffect(() => {
-    // 진입 자동 조회. 게이트가 있는 문 하나. 드롭 기록은 아래 포커스 훅이 맡는다.
-    void content.loadTrackedOcids()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // 이 화면은 탭이라 계속 살아 있고 마운트의 자동 조회는 한 번뿐이다. 돌아올 때 만료됐으면 다시 받는다.
+  useRefetchStaleOnFocus(queryKeys.scheduleRound())
 
   /**
    * 포커스가 소유하는 드롭 기록 스냅샷.
@@ -123,7 +122,7 @@ export function TodayScreen(): React.JSX.Element {
    * 살아 있어서, 보스 수익에서 적고 돌아와도 안 물으면 옛 값이 선다. 스토어가 기록 판을 견줘
    * 바뀌었을 때만 읽는다(넥슨 없음).
    */
-  const reloadManualCompleted = boss.reloadManualCompleted
+  const reloadManualCompleted = bossStore.reloadManualCompleted
   useFocusEffect(
     useCallback(() => {
       void reloadManualCompleted()
@@ -163,25 +162,6 @@ export function TodayScreen(): React.JSX.Element {
 
   // 화면 순서는 사용자가 캐릭터 관리에서 정한 저장 배열 순서다.
   const orderedOcids = content.trackedOcids ?? []
-  // 배열 자체는 매 렌더 새 참조라 deps 로 쓸 수 없다. 목록이 실제로 바뀌었을 때만 다시 읽는다.
-  const orderedOcidsKey = orderedOcids.join(',')
-
-  // 이 이펙트는 **목록이 바뀔 때만** 돈다. 재조회로 캐시가 갱신되는 경로는 아래 `refreshAll` 이
-  // 끝에서 직접 다시 읽는다. 여기 트리거를 더 붙이면 언제 도는지가 화면 어디에도 안 적힌다.
-  useEffect(() => {
-    let cancelled = false
-
-    void (async () => {
-      const profiles = await readCharacterProfiles(orderedOcidsKey === '' ? [] : orderedOcidsKey.split(','))
-      if (cancelled) return
-
-      setProfilesByOcid(profiles)
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [orderedOcidsKey])
 
   /**
    * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
@@ -227,9 +207,9 @@ export function TodayScreen(): React.JSX.Element {
     trackingMode: mode,
     // 계열마다 주인이 다르다. 컨텐츠 멤버십을 보스 스토어 사본에서 읽으면 수동 컨텐츠를
     // 추가해도 이 화면만 옛 값에 굳는다.
-    manualContentByOcid: content.manualTrackedByOcid,
-    manualBossByOcid: boss.manualTrackedByOcid,
-    manualCompletedByOcid: boss.manualCompletedByOcid,
+    manualContentByOcid: contentStore.manualTrackedByOcid,
+    manualBossByOcid: bossStore.manualTrackedByOcid,
+    manualCompletedByOcid: bossStore.manualCompletedByOcid,
     characterIssues: profit.characterIssues,
     // 보고 있는 것이 아니라 이번 주다. `rows` 는 보스 수익 화면이 보고 있는 (탭, 기간) 한
     // 조각이라, 그 화면을 월간 탭으로 옮기기만 해도 이 화면의 주간 수익·결정석 한도가 함께
@@ -242,30 +222,19 @@ export function TodayScreen(): React.JSX.Element {
     quickLinks,
   })
 
-  /**
-   * 다음 KST 자정에 화면을 다시 렌더시키는 타이머.
-   *
-   * 초기화 시각과 기간 값은 이 렌더의 `now` 로 정해져서, 다시 렌더되지 않으면 카운트다운이 `0초` 에
-   * 멈추고 기간이 지난 기간에 머문다. 주간·월간 경계도 KST 자정이라 일일 시각 하나로 셋을 다 넘긴다.
-   * `boundaryTick` 을 deps 에 두는 것은 타이머가 경계보다 먼저 울려 `atMs` 가 그대로일 때 다시 걸기 위해서다.
-   */
-  const [boundaryTick, setBoundaryTick] = useState(0)
-  const nextResetAtMs = viewModel.resets.daily.atMs
-  useEffect(() => {
-    const id = setTimeout(() => setBoundaryTick((tick) => tick + 1), Math.max(0, nextResetAtMs - Date.now()))
-    return () => clearTimeout(id)
-  }, [nextResetAtMs, boundaryTick])
+  // KST 자정을 넘기면 다시 그린다. 초기화 시각과 기간 값은 이 렌더의 `now` 로 정해져서, 다시 렌더되지 않으면
+  // 카운트다운이 `0초` 에 멈추고 기간이 지난 기간에 머문다. 타이머는 공용이다(`reset-timer.ts`).
+  useResetBoundaryTick()
 
   /**
    * 헤더 버튼과 당김이 같은 함수를 부른다.
    *
    * `allSettled` 다. 넷이 서로 독립이라 하나가 실패해도 나머지를 기다려야 하고, 넷이 다 끝나야
-   * 당김 인디케이터를 닫을 수 있다.
+   * 당김 인디케이터를 닫을 수 있다. 스케줄 회차는 하나다. 컨텐츠 · 보스 · 프로필이 같은 캐시를 본다.
    */
   async function refreshAll(): Promise<void> {
     await Promise.allSettled([
-      content.refresh(content.trackedOcids ?? []),
-      boss.refresh(boss.trackedOcids ?? []),
+      refreshSchedules(),
       profit.refresh(profit.trackedOcids ?? []),
       dropHistory.load(),
       // 배경에서 도착만 하고 안 탭한 공지는 기기에 없다. 그것이 첫 화면에 닿는 유일한 길이다.
@@ -273,20 +242,6 @@ export function TodayScreen(): React.JSX.Element {
     ])
     // 방금 받은 보스 수익이 이번 주 수익에도 닿게 기록을 다시 읽는다.
     setStatsToken((token) => token + 1)
-
-    // 방금 끝난 동기화가 대표 캐릭터의 `character/basic` 을 5분 가드를 건너뛰고 다시 받아 캐시를
-    // 갱신했다. 여기서 다시 읽지 않으면 그 EXP·레벨이 앱을 다시 켤 때까지 화면에 못 닿는다. 위
-    // 이펙트는 추적 목록이 바뀔 때만 도는데 재조회는 그 목록을 안 건드리기 때문이다.
-    const displayed = await readRepresentativeProfile(
-      content.trackedOcids ?? [],
-      // 렌더가 잡아 둔 값이 아니라 지금 값이다. 당기는 동안 대표가 바뀌었을 수 있다.
-      useCharacterSelectionStore.getState().representativeOcid,
-    )
-    if (displayed !== null) {
-      const { ocid, profile } = displayed
-      setProfilesByOcid((previous) => ({ ...previous, [ocid]: profile }))
-    }
-
   }
 
   return (

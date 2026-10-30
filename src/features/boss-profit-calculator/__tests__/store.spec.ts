@@ -4,10 +4,16 @@ import { installNoopNativePorts } from '../../../native/__tests__/fake-native-po
 import { getBossProfitCalculatorRecords, type BossProfitCalculatorRecord } from '../../../storage/boss-profit-calculator-records'
 import { matchBossContent, type MatchedBoss } from '../../../lib/boss/boss-matching'
 import { bossKeyOfApiName } from '../../../lib/boss/bosses'
-import { partySizeKey, useBossSchedulerStore, type BossCharacterView } from '../../boss-scheduler/store'
+import { partySizeKey, useBossSchedulerStore } from '../../boss-scheduler/store'
+import { readBossCharacters, type BossCharacterView } from '../../boss-scheduler/views'
 import { useTrackingModeStore } from '../../tracking-mode/store'
 import type { BossDifficulty } from '../../../types'
 import { bossWithPartySetting, useBossProfitCalculatorStore } from '../store'
+
+// 캐릭터는 쿼리 캐시에서 온다. 스토어는 `readBossCharacters` 로 읽으므로 그 함수만 갈아 끼운다.
+jest.mock('../../boss-scheduler/views', () => ({ readBossCharacters: jest.fn() }))
+
+const mockedReadBossCharacters = jest.mocked(readBossCharacters)
 
 const NOW = new Date('2026-10-20T12:00:00+09:00')
 const EVEN = { myShare: null, sharesTotal: null, splitFeePercent: null }
@@ -48,8 +54,8 @@ beforeEach(() => {
   prefs = installFakePreferences()
   installNoopNativePorts()
   useTrackingModeStore.setState({ mode: 'auto' })
+  mockedReadBossCharacters.mockReturnValue([character('ocid-1', [카링, 루시드]), character('ocid-2', [루시드])])
   useBossSchedulerStore.setState({
-    characters: [character('ocid-1', [카링, 루시드]), character('ocid-2', [루시드])],
     partySizes: { [partySizeKey('ocid-1', 'kaling', 'normal')]: 3 },
     partyShares: {
       [partySizeKey('ocid-1', 'kaling', 'normal')]: { crystalMyShare: 2, crystalSharesTotal: 5, splitFeePercent: 3 },

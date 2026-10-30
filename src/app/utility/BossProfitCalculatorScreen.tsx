@@ -23,6 +23,7 @@ import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useBossProfitCalculatorStore, type CalculatorSaveMode } from '../../features/boss-profit-calculator/store'
 import { displayedBosses } from '../../features/boss-scheduler/displayed-bosses'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
+import { useBossSchedule } from '../../features/boss-scheduler/use-boss-schedule'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import type { PickerTile } from '../../features/party-appointments/boss-picker'
@@ -64,6 +65,8 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
   const { definition } = useThemeAppearance()
   const bottomSafeAreaPx = useBottomSafeAreaPx()
   const scheduler = useBossSchedulerStore()
+  // 보스 관리 값이 첫 값이 될 수 있어 캐시의 스케줄을 함께 본다. 자동 진입은 이 훅이 한다.
+  const schedule = useBossSchedule()
   const { mode } = useTrackingModeStore()
   const { selectedOcid, select } = useCharacterSelectionStore()
   const calculator = useBossProfitCalculatorStore()
@@ -76,16 +79,10 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState<PopoverAnchorRect | null>(null)
 
-  // 보스 관리 값이 첫 값이 될 수 있어 스케줄러 스토어부터 채운다. 보스 관리 화면과 같다.
-  useEffect(() => {
-    scheduler.loadTrackedOcids()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   // 화면에 들어올 때마다 모든 캐릭터가 빈 상태로 연다. 계산 기록 화면은 이 화면 위에 쌓여 다녀와도 다시 열리지 않는다.
   // 캐릭터를 읽은 뒤에 연다. 동기화가 실패해도(`error`) 스토어는 마지막으로 본 캐릭터를 들고 있다.
   const schedulerSettled =
-    scheduler.status === 'loaded' || scheduler.status === 'error' || scheduler.characters.length > 0
+    schedule.status === 'loaded' || schedule.status === 'error' || schedule.characters.length > 0
   const openedHere = useRef(false)
   const { open } = calculator
   useEffect(() => {
@@ -94,7 +91,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
     void open()
   }, [schedulerSettled, open])
 
-  const characters = orderByTracked(scheduler.characters, scheduler.trackedOcids ?? [])
+  const characters = orderByTracked(schedule.characters, schedule.trackedOcids ?? [])
   const selected = resolveSelectedCharacter(selectedOcid, characters)
   const cardShadow = { boxShadow: CARD_LIFT.map((layer) => boxShadowOf(definition.shadowColor, layer)).join(', ') }
 

@@ -20,7 +20,7 @@ import { useState } from 'react'
 import { View, type ScrollView } from 'react-native'
 import { useAnimatedRef } from 'react-native-reanimated'
 
-import { useContentSchedulerStore } from '../../features/content-scheduler/store'
+import { saveTrackedCharacters } from '../../features/schedule-sync/save-tracked'
 import { useMvpAskStore } from '../../features/mvp-grade/flow-store'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useApiKeyNotice } from '../../features/auth/use-api-key-notice'
@@ -39,7 +39,6 @@ import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 export function SettingsCharactersScreen(): React.JSX.Element {
-  const { saveTrackedOcids } = useContentSchedulerStore()
   const setRepresentative = useCharacterSelectionStore((state) => state.setRepresentative)
   const navigation = useSettingsNavigation()
   const manage = useCharacterManage()
@@ -65,15 +64,15 @@ export function SettingsCharactersScreen(): React.JSX.Element {
     setSaveProgress({ completed: 0, total: ocids.length })
     // 저장이 실패해도 진행률 모달은 항상 닫는다. 안 그러면 모달이 멈춘다(피커가 하던 그대로).
     try {
-      await saveTrackedOcids(ocids, (completed, total) => setSaveProgress({ completed, total }))
+      await saveTrackedCharacters(ocids, (completed, total) => setSaveProgress({ completed, total }))
       // 저장소 함수를 바로 부르지 않는다. today 는 탭이라 다시 마운트되지 않고 이 스토어의 값을 그린다.
       await setRepresentative(representative)
     } finally {
       setSaveProgress(null)
       navigation.goBack()
     }
-    // 컨텐츠는 빠진다. 저장의 주체가 그 스토어라 이미 최신이다.
-    reloadTabStores(['boss', 'profit'])
+    // 스케줄러 둘은 캐시의 추적 목록을 보므로 저장과 함께 바뀐다. 보스 수익만 자기 스토어를 다시 읽는다.
+    reloadTabStores(['profit'])
     // 다른 메이플 ID 의 캐릭터를 더했으면 그 ID 의 등급을 바로 묻는다.
     void useMvpAskStore.getState().evaluate(new Date())
   }

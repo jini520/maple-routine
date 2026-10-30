@@ -1,26 +1,23 @@
+/**
+ * 컨텐츠 스케줄러의 화면 상태. 넥슨에서 받은 값은 여기 없다. 그것은 쿼리 캐시가 들고 `useContentSchedule` 이 뷰로
+ * 만든다. 여기 남는 것은 기기에만 있는 값(수동 추적)과 화면이 고른 것(탭)뿐이다.
+ */
 import { create } from 'zustand'
-import { syncSchedules, toScheduleSyncError, type ScheduleSyncError } from '../schedule-sync/schedule-sync'
-import { applyKnownUnavailable, resolveStrandedCharacters } from '../schedule-sync/stranded-characters'
-import { hasSyncAttemptedThisRun } from '../schedule-sync/sync-run-state'
-import { isSyncFresh } from '../../lib/scheduler/sync-freshness'
-import { getTrackedCharacterOcids, setTrackedCharacterOcids } from '../../storage/character-selection'
-import { useCharacterSelectionStore } from '../character-selection/store'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
-import { getCachedSchedulerState } from '../../storage/scheduler-cache'
-import { compareByName } from '../../lib/character-order'
-import { useToastStore } from '../toast/store'
-import { seedRememberedLevels } from '../cashbook/remembered-levels'
-import { seedManualTrackedContent } from '../tracking-mode/seed'
-import { useTrackingModeStore } from '../tracking-mode/store'
+
+import { isGuildContent } from '../../lib/scheduler/content-category'
+import { findContent } from '../../lib/scheduler/contents'
+import type { CachedCharacterBasicEntry } from '../../storage/character-basic-cache'
 import {
   getManualTrackedContent,
   setManualTrackedContent,
   type ManualTrackedItem,
 } from '../../storage/manual-tracked-content'
-import { isGuildContent } from '../../lib/scheduler/content-category'
-import { findContent } from '../../lib/scheduler/contents'
-import type { DailyContent, WeeklyContent } from '../../types'
-import { askNotificationPermissionOnce } from '../notice/permission-gate'
+import { queryClient } from '../query/client'
+import { queryKeys } from '../query/keys'
+import { readTrackedOcidsSync } from '../schedule-sync/read-schedule'
+import { useTrackingModeStore } from '../tracking-mode/store'
+
+export type { ContentCharacterView } from './views'
 
 // 수동 추적 항목에 저장할 max_count는 템플릿 파일의 확정값을 그대로 복사한다
 // (사용자가 숫자를 입력하는 UI는 없다). 템플릿에 없는 항목이면 undefined(카운트 표기 없음).
@@ -32,44 +29,12 @@ function templateMaxCount(contentKey: string): number | undefined {
 // 콘텐츠 전용 사유 guildRequired 가 있다.
 export type ManualContentAddResult = 'added' | 'duplicate' | 'guildRequired'
 
-export interface ContentCharacterView {
-  ocid: string
-  characterName: string
-  /** 월드 key. 시즌 보스를 보일지 가른다 */
-  worldKey?: string | null
-  // 같은 캐시에서 함께 꺼내는 길드명. null = 미가입(길드 콘텐츠 잠금 근거),
-  // undefined = 모름(잠그지 않음).
-  guildName?: string | null
-  // 초상화 레일이 쓰는 둘. 같은 캐시에서 정렬과 함께 꺼내므로 조회가 안 는다. `null` 은 캐시가
-  // 아직 그 캐릭터를 모른다는 뜻이다. 레일은 그때 레벨 호를 비운다.
-  level?: number | null
-  imageUrl?: string | null
-  dailyContents: DailyContent[]
-  weeklyContents: WeeklyContent[]
-  isStale: boolean
-  syncedAt: string | null
-  error: ScheduleSyncError | null
-}
-
-export type ContentSchedulerStatus = 'idle' | 'loading' | 'loaded' | 'error'
-
-// 강제가 기본값이고 게이트가 예외다. force 인자를 두면 강제해야 할 호출부를 하나라도 빠뜨리는
-// 순간 그 자리가 조용히 게이트에 걸리므로, 자동 진입 경로인 loadTrackedOcids() 만 auto: true 를
-// 넘긴다. 화면은 인자를 안 넘겨 자동으로 강제 경로다.
-export interface RefreshOptions {
-  auto?: boolean
-}
-
 // 스케줄러 화면과 관리 페이지가 함께 쓰는 탭 식별자. 두 화면이 각자 선언하면 그 복제가 각자
 // 판단해도 된다 처럼 보인다.
 export type ContentTab = 'daily' | 'weekly'
 
 export interface ContentSchedulerState {
-  status: ContentSchedulerStatus
-  characters: ContentCharacterView[]
-  error: ScheduleSyncError | null
-  trackedOcids: string[] | null
-  // 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에 characters 의
+  // 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에 캐시의
   // 동기화 값 또는 템플릿에서 조회한다.
   manualTrackedByOcid: Record<string, ManualTrackedItem[]>
   // 화면 로컬 state 가 아니라 스토어가 소유한다. 화면이 언마운트돼도 살아남고, 관리 페이지가
@@ -78,13 +43,10 @@ export interface ContentSchedulerState {
 }
 
 export interface ContentSchedulerStore extends ContentSchedulerState {
-  loadTrackedOcids(): Promise<void>
-  saveTrackedOcids(ocids: string[], onProgress?: (completed: number, total: number) => void): Promise<void>
-  refresh(
-    ocids: string[],
-    onProgress?: (completed: number, total: number) => void,
-    options?: RefreshOptions,
-  ): Promise<void>
+  /** 추적 캐릭터의 기기 값을 읽는다. 수동 모드에서만 멤버십을 읽는다. 자동 모드는 등록 여부로 목록을 정한다. */
+  loadLocal(ocids: readonly string[]): Promise<void>
+  /** 캐시의 추적 목록으로 `loadLocal`. 설정이 모드를 바꾼 뒤 부른다. */
+  reloadLocal(): Promise<void>
   addManualContent(ocid: string, contentKey: string, kind: 'daily' | 'weekly'): Promise<ManualContentAddResult>
   removeManualContent(ocid: string, contentKey: string, kind: 'daily' | 'weekly'): Promise<void>
   // 보스 수익의 setTab 과 달리 동기다. 그쪽은 탭이 바뀌면 기간을 다시 불러와야 하지만 여기 탭은
@@ -93,305 +55,26 @@ export interface ContentSchedulerStore extends ContentSchedulerState {
 }
 
 const initialState: ContentSchedulerState = {
-  status: 'idle',
-  characters: [],
-  error: null,
-  trackedOcids: null,
   manualTrackedByOcid: {},
   activeTab: 'daily',
-}
-
-// 캐시 단계(trackedOcids 저장 순서)와 동기화 단계(계정 전체 캐릭터 목록에서 필터링한 순서)가
-// 서로 달라 생기던 불일치를 없애기 위해, character-basic-cache 의 level 을 병합해 레벨
-// 내림차순(동레벨이면 compareByName)으로 통일한다. 레벨 캐시가 없는 캐릭터는 맨 뒤로 보낸다.
-//
-// 길드명·`level`·`imageUrl` 도 여기서 함께 꺼내 뷰에 실어 보낸다. 정렬을 위해 이미 읽는 캐시
-// 객체 안에 있어 추가 조회가 0 이고, 화면이 character-basic-cache 를 다시 읽을 이유가 없다.
-async function sortByCachedLevel(views: ContentCharacterView[]): Promise<ContentCharacterView[]> {
-  const withLevel = await Promise.all(
-    views.map(async (view) => {
-      const cached = await getCachedCharacterBasic(view.ocid)
-      return {
-        view,
-        level: cached?.profile.level ?? null,
-        guildName: cached?.profile.guildName,
-        imageUrl: cached?.profile.imageUrl ?? null,
-      }
-    }),
-  )
-
-  return withLevel
-    .sort((a, b) => {
-      if (a.level === null && b.level === null) {
-        return compareByName(a.view.characterName, b.view.characterName)
-      }
-      if (a.level === null) return 1
-      if (b.level === null) return -1
-      if (b.level !== a.level) return b.level - a.level
-      return compareByName(a.view.characterName, b.view.characterName)
-    })
-    .map((entry) => ({
-      ...entry.view,
-      guildName: entry.guildName,
-      level: entry.level,
-      imageUrl: entry.imageUrl,
-    }))
-}
-
-// 저장 시점에 유지되는 캐릭터의 뷰가 메모리에 없을 때만 쓰는 폴백.
-// 네트워크(syncSchedules)는 새로 추가된 캐릭터에만 쓰고, 그 외에는 마지막 캐시를 읽는다.
-async function readCachedView(ocid: string): Promise<ContentCharacterView | null> {
-  const cached = await getCachedSchedulerState(ocid)
-  if (cached === null) {
-    return null
-  }
-  return {
-    ocid,
-    characterName: cached.state.characterName,
-    worldKey: cached.state.worldKey,
-    dailyContents: cached.state.dailyContents,
-    weeklyContents: cached.state.weeklyContents,
-    isStale: true,
-    syncedAt: cached.syncedAt,
-    error: null,
-  }
-}
-
-// 부팅 선하이드레이션과 화면 마운트가 같은 회차를 부르므로, 진행 중인 회차가 있으면 그 Promise 를
-// 그대로 돌려준다. 평생 한 번이 아니라 동시에 하나만이다. 끝나면 잊는다. 영구 메모로 만들면
-// 진입 재조회의 10분 TTL 이 죽는다.
-let hydration: Promise<void> | null = null
-
-/**
- * 조회할 수 없는 캐릭터의 **모르는 상태**. 캐시 단계와 동기화 후가 이 함수 하나를 쓴다.
- *
- * 빈 배열은 `0개` 라는 관측이 아니라 **그릴 것이 없다**는 뜻이고, `isStale` 과 `error` 가 그
- * 사실을 말한다. 두 시점이 서로 다른 것을 그리면 진행 링이 진행률을 그렸다가 빈 링으로 바뀐다.
- */
-function toUnknownContentView(view: ContentCharacterView): ContentCharacterView {
-  return { ...view, dailyContents: [], weeklyContents: [] }
 }
 
 export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, get) => ({
   ...initialState,
 
-  loadTrackedOcids() {
-    // 동시 호출은 한 회차로 합친다(위 `hydration` 주석).
-    hydration ??= (async () => {
-      // 저장된 선택은 선택 스토어가 읽는다. 이 스토어가 읽어 자기 상태에 넣으면 출처가 두 벌이
-      // 된다. 둘을 나란히 태우는 것은 그대로다(왕복 한 번).
-      const [ocids] = await Promise.all([
-        getTrackedCharacterOcids(),
-        useCharacterSelectionStore.getState().hydrate(),
-      ])
-      set({ trackedOcids: ocids })
-      if (ocids !== null) {
-        // 자동 진입 경로는 여기 하나뿐이라 게이트를 놓칠 자리가 생기지 않는다.
-        await get().refresh(ocids, undefined, { auto: true })
-      }
-    })().finally(() => {
-      hydration = null
-    })
-    return hydration
-  },
-
-  async saveTrackedOcids(ocids, onProgress) {
-    const previousOcids = get().trackedOcids ?? []
-    try {
-      await setTrackedCharacterOcids(ocids)
-    } catch {
-      useToastStore.getState().showError('저장하지 못했습니다')
+  async loadLocal(ocids) {
+    if (useTrackingModeStore.getState().mode !== 'manual') {
+      set({ manualTrackedByOcid: {} })
       return
     }
-    set({ trackedOcids: ocids })
-
-    // 캐릭터를 고른 직후가 알림 권한을 묻는 단 한 번의 자리다. 두 번째부터는 스스로 물러난다.
-    // `await` 하지 않는 이유는 이 흐름이 캐릭터 저장이고 알림은 곁가지라서다. 팝업을 기다리느라
-    // 아래 조회가 멈추면 사용자는 저장이 느린 것으로 읽는다.
-    void askNotificationPermissionOnce()
-
-    // 저장 시점에는 새로 추가된 캐릭터만 조회한다. 유지되는 캐릭터는
-    // 이미 가진 뷰를 그대로 재사용하고, 제거만 했거나 아무것도 안 바뀌었으면 조회 자체를 하지 않는다.
-    const added = ocids.filter((ocid) => !previousOcids.includes(ocid))
-    // 새로 추적한 캐릭터의 심볼 · 헥사 레벨을 기억해 둔다. 가계부 폼의 곁가지라 저장을 기다리게 하지 않는다.
-    void seedRememberedLevels(added)
-
-    // 수동 모드에서 새로 추적 목록에 추가된 캐릭터만 개별 시드하고 그 멤버십을 화면 상태에도
-    // 반영한다. 동기화보다 먼저 실행한다. 화면의 저장 진행률 모달이 saveTrackedOcids 전체를
-    // 기다리므로 시드가 끝날 때까지 자연스럽게 로딩이 유지된다.
-    if (added.length > 0 && useTrackingModeStore.getState().mode === 'manual') {
-      await seedManualTrackedContent(added)
-      const seeded = Object.fromEntries(
-        await Promise.all(added.map(async (ocid) => [ocid, await getManualTrackedContent(ocid)] as const)),
-      )
-      set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, ...seeded } }))
-    }
-
-    if (added.length === 0) {
-      // 네트워크 0회. 이미 가진 뷰에서 빠진 캐릭터만 걷어내면 화면이 정확해진다.
-      set({
-        status: 'loaded',
-        error: null,
-        characters: get().characters.filter((character) => ocids.includes(character.ocid)),
-      })
-    } else {
-      set({ status: 'loading' })
-
-      const existingByOcid = new Map(get().characters.map((character) => [character.ocid, character]))
-      const keptViews = (
-        await Promise.all(
-          ocids
-            .filter((ocid) => !added.includes(ocid))
-            .map(async (ocid) => existingByOcid.get(ocid) ?? (await readCachedView(ocid))),
-        )
-      ).filter((view): view is ContentCharacterView => view != null)
-
-      // .catch(() => null)로 원인을 버리지 않는다. 아래에서 종류를 살려야 한다.
-      const outcome = await syncSchedules(added, onProgress).then(
-        (results) => ({ results, error: null as unknown }),
-        (error: unknown) => ({ results: null, error }),
-      )
-      const results = outcome.results
-      if (results === null) {
-        // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는 캐릭터별 에러가 아니라 전체 조회
-        // 자체의 실패다. 원인은 버리지 않고 toScheduleSyncError 로 살린다.
-        set({ status: 'error', error: toScheduleSyncError(outcome.error), characters: await sortByCachedLevel(keptViews) })
-      } else {
-        const addedViews: ContentCharacterView[] = results.map((result) => ({
-          ocid: result.ocid,
-          characterName: result.characterName,
-          worldKey: result.worldKey,
-          dailyContents: result.state?.dailyContents ?? [],
-          weeklyContents: result.state?.weeklyContents ?? [],
-          isStale: result.isStale,
-          syncedAt: result.syncedAt,
-          error: result.error,
-        }))
-        set({
-          status: 'loaded',
-          error: null,
-          characters: await sortByCachedLevel([...keptViews, ...addedViews]),
-        })
-      }
-    }
-
-    useToastStore.getState().showSuccess('캐릭터 정보를 모두 불러왔어요')
-  },
-
-  async refresh(ocids, onProgress, options) {
-    if (ocids.length === 0) {
-      set({ status: 'loaded', characters: [], error: null })
-      return
-    }
-
-    // 수동 모드에서만 캐릭터별 추적 항목(멤버십)을 읽어둔다. 표시 목록이 이 멤버십으로
-    // 결정되기 때문. auto 모드는 등록 여부로 목록을 결정하므로 불필요한 읽기를 건너뛴다.
-    const manualMode = useTrackingModeStore.getState().mode === 'manual'
-    const manualTrackedByOcid: Record<string, ManualTrackedItem[]> = manualMode
-      ? Object.fromEntries(
-          await Promise.all(
-            ocids.map(async (ocid) => [ocid, await getManualTrackedContent(ocid)] as const),
-          ),
-        )
-      : {}
-
-    // 캐시 우선 표시. 재검증(fetch) 전에 마지막으로 성공한 캐시 값이 있으면
-    // 그 값으로 먼저 채워 화면이 비지 않게 한다. 재검증 응답이 오면 그대로 덮어쓴다.
-    const cachedCharactersFromStore = (
-      await Promise.all(
-        ocids.map(async (ocid): Promise<ContentCharacterView | null> => {
-          const cached = await getCachedSchedulerState(ocid)
-          if (cached === null) {
-            return null
-          }
-          return {
-            ocid,
-            characterName: cached.state.characterName,
-            worldKey: cached.state.worldKey,
-            dailyContents: cached.state.dailyContents,
-            weeklyContents: cached.state.weeklyContents,
-            isStale: true,
-            syncedAt: cached.syncedAt,
-            error: null,
-          }
-        }),
-      )
-    ).filter((view): view is ContentCharacterView => view !== null)
-
-    // **표가 이미 아는 조회 불가를 여기서 얹는다.** 안 얹으면 동기화가 끝날 때까지 이 캐릭터의
-    // 낡은 컨텐츠 목록이 그대로 서고, 그 목록은 지금 할 일처럼 읽힌다.
-    const cachedCharacters = await applyKnownUnavailable(cachedCharactersFromStore, toUnknownContentView)
-
-    // 화면 진입 자동 재조회는 데이터가 신선하면 건너뛴다. 판정 근거는 바로 위 캐시 우선 표시
-    // 단계가 이미 읽은 syncedAt 이라 저장소를 다시 읽지 않는다.
-    if (
-      options?.auto === true &&
-      hasSyncAttemptedThisRun() &&
-      isSyncFresh(
-        cachedCharacters.map((view) => view.syncedAt),
-        ocids.length,
-        new Date(),
-      )
-    ) {
-      // set 을 두 번 하지 않는다. loading 을 거치면 건너뛰는 진입에서 로딩이 한 프레임 번쩍인다.
-      // isStale 은 false 다. 재검증이 오지 않기로 결정된 값이라 오래된 데이터가 아니고, 그 표식을
-      // 남기면 탭을 옮길 때마다 스탈 토스트가 뜬다. syncedAt 은 캐시 값 그대로 둔다.
-      set({
-        status: 'loaded',
-        characters: await sortByCachedLevel(
-          cachedCharacters.map((view) => ({ ...view, isStale: false })),
-        ),
-        error: null,
-        manualTrackedByOcid,
-      })
-      return
-    }
-
-    set({ status: 'loading', characters: await sortByCachedLevel(cachedCharacters), manualTrackedByOcid })
-
-    let results: Awaited<ReturnType<typeof syncSchedules>>
-    try {
-      results = await syncSchedules(ocids, onProgress)
-    } catch (error) {
-      // syncSchedules 자체가 던지는 에러(온보딩 미완료 등)는
-      // 캐릭터별 에러가 아니라 전체 조회 자체의 실패다.
-      // 원인은 toScheduleSyncError로 살린다.
-      set({ status: 'error', error: toScheduleSyncError(error) })
-      return
-    }
-
-    const characters: ContentCharacterView[] = results.map((result) => ({
-      ocid: result.ocid,
-      characterName: result.characterName,
-      worldKey: result.worldKey,
-      dailyContents: result.state?.dailyContents ?? [],
-      weeklyContents: result.state?.weeklyContents ?? [],
-      isStale: result.isStale,
-      syncedAt: result.syncedAt,
-      error: result.error,
-    }))
-
-    // 동기화가 한 번도 답하지 않은 추적 캐릭터도 남긴다. 버리면 그 캐릭터가 첫 페인트에 캐시로
-    // 보였다가 여기서 사라진다. 빠진 것과 없는 것은 다른 사실이라, 자리를 두고 조회 불가라고 말한다.
-    const strandedViews: ContentCharacterView[] = (
-      await resolveStrandedCharacters(ocids, results)
-    ).map((stranded) =>
-      toUnknownContentView({
-        ...stranded,
-        dailyContents: [],
-        weeklyContents: [],
-        isStale: true,
-        syncedAt: null,
-        error: { kind: 'characterUnavailable' },
-      }),
+    const manualTrackedByOcid = Object.fromEntries(
+      await Promise.all(ocids.map(async (ocid) => [ocid, await getManualTrackedContent(ocid)] as const)),
     )
+    set({ manualTrackedByOcid })
+  },
 
-    set({
-      status: 'loaded',
-      characters: await sortByCachedLevel([...characters, ...strandedViews]),
-      error: null,
-      manualTrackedByOcid,
-    })
+  reloadLocal() {
+    return get().loadLocal(readTrackedOcidsSync() ?? [])
   },
 
   setActiveTab(tab) {
@@ -402,11 +85,10 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
   // 상태를 갱신한다. 값 필드는 저장하지 않는다. kind 는 호출부가 확정해 넘긴다. 선택 불가
   // 항목은 여기서 막는다. UI 사전 차단만으로는 다른 호출 경로가 샌다.
   async addManualContent(ocid, contentKey, kind) {
-    const view = get().characters.find((character) => character.ocid === ocid)
-
     // 길드 콘텐츠는 길드에 가입한 캐릭터만 진행할 수 있다. guildName이 null일 때만
-    // 막는다. undefined는 "미가입"이 아니라 "모름"이라 잠그면 안 된다(같은 이유로 뷰가 없어도 통과).
-    if (view?.guildName === null && isGuildContent(findContent(contentKey))) {
+    // 막는다. undefined는 "미가입"이 아니라 "모름"이라 잠그면 안 된다(같은 이유로 기본 정보가 없어도 통과).
+    const guildName = queryClient.getQueryData<CachedCharacterBasicEntry>(queryKeys.characterBasic(ocid))?.profile.guildName
+    if (guildName === null && isGuildContent(findContent(contentKey))) {
       return 'guildRequired'
     }
 
