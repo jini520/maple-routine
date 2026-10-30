@@ -43,6 +43,12 @@ import { LevelRangeGrid } from './LevelRangeGrid'
 type Mode = '헥사 스킬' | '헥사 스탯'
 const MODES: readonly Mode[] = ['헥사 스킬', '헥사 스탯']
 
+/**
+ * 코어 줄 안쪽의 높이. 고르기 전(한 줄)과 고른 뒤(종류 · 스킬 이름 두 줄)가 같은 높이여야 고를 때 아래 줄들이 안 흔들린다.
+ * 두 줄(종류 그림 18 · 사이 4 · 스킬 그림 22)이 들어가는 값이다.
+ */
+const CORE_ROW_HEIGHT = 44
+
 /** 코어 드롭다운의 최대 높이. 줄 40 과 묶음 머리를 합쳐 여섯 줄 반쯤이 보여 아래에 더 있다는 것이 잘린 줄로 드러난다. */
 const CORE_LIST_MAX_HEIGHT = 296
 
@@ -206,7 +212,8 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
                   testID="spend-sheet-hexa-core"
                   onPress={open}
                   disabled={cores.length === 0}
-                  className="min-h-6 flex-1 flex-row items-center gap-3 active:opacity-60"
+                  className="flex-1 flex-row items-center gap-3 active:opacity-60"
+                  style={{ height: CORE_ROW_HEIGHT }}
                 >
                   <Text className="shrink-0 text-xs text-text-muted">코어</Text>
                   <View className="ml-auto shrink items-end gap-1">

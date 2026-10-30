@@ -169,13 +169,6 @@ export function LevelRangeGrid(props: {
         })}
       </View>
 
-      {!disabled && (
-        <View className="flex-row justify-end">
-          <Text className="rounded-full bg-primary-tint px-2 py-0.5 text-11 font-bold text-primary-ink" style={TABULAR_NUMS}>
-            {`${range.to - range.from}단계`}
-          </Text>
-        </View>
-      )}
     </View>
   )
 }
