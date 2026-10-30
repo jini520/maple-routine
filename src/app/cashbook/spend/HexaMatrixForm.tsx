@@ -175,11 +175,10 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
     group: each.kind?.name ?? each.apiType,
   }))
   const fragmentIcon = getItemIconUrlByFile('sol_erda_fragment.webp')
+  // 헥사 스킬은 종류와 레벨이 바로 위 칸들에 이미 보여 둘째 줄을 두지 않는다. 헥사 스탯만 활성화 몫을 가른다.
   const detail =
     mode === '헥사 스킬'
-      ? core?.kind == null
-        ? null
-        : `${core.kind.name} · Lv.${range.from} → ${range.to}`
+      ? null
       : stat === null
         ? null
         : activation && activationFragments !== undefined
