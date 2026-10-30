@@ -18,7 +18,6 @@ import { fetchEnhancementHistory } from '../../nexon/history/client'
 import { saveEventWorldNames } from '../../storage/event-world-names'
 import { checkKey, loadEnhancementChecks, markEnhancementChecked } from '../../storage/enhancement-history'
 import { replaceEnhancementTotals } from '../../storage/enhancement-totals'
-import { reportEnhancementTotals } from '../server-sync/report'
 import { summarizeEnhancement } from './spending'
 import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
 import { eventWorldCharacterNames } from '../../lib/enhancement/world'
@@ -258,8 +257,7 @@ export async function collectEnhancementHistory(
       const sources = rows.map((row) => ({ ...row, kind: job.kind }))
       const totals = summarizeEnhancement(sources, eventNames)
       await reportEnhancementAnomalies(enhancementAnomaliesOf(sources, eventNames, listError))
-      const { writtenIds, removedIds } = await replaceEnhancementTotals(accountId, job.kind, job.dateKey, totals, now)
-      await reportEnhancementTotals([...writtenIds, ...removedIds], now)
+      await replaceEnhancementTotals(accountId, job.kind, job.dateKey, totals, now)
       // 목록을 못 받은 회차는 이벤트 월드를 가리지 못한 줄이 있어 굳히지 않는다. 다음 회차가 다시 받아 판정을 채운다.
       const settled = job.dateKey < todayDateKey && eventNames !== null
       await markEnhancementChecked(accountId, job.kind, job.dateKey, firstCursor, settled, checkedAt)

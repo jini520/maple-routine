@@ -1,8 +1,8 @@
 /// <reference types="node" />
 /**
- * 강화 합계 표(`enhancement_totals`)를 진짜 SQLite 로 태운다. 갈아 끼우기의 id 유지 · 지우기와 옛 원본을 옮기는 부팅 단계를 본다.
+ * 강화 합계 표(`enhancement_totals`)를 진짜 SQLite 로 태운다. 갈아 끼우기의 덮어 적기 · 지우기와 옛 원본을 옮기는 부팅 단계를 본다.
  *
- * 서버 사본이 합계 id 로 덮고 지우므로, 같은 줄의 id 가 바뀌거나 지운 줄을 못 돌려주면 서버에 줄이 쌓인다.
+ * 그 날을 통째로 다시 받아 갈아 끼우므로, 같은 줄이 둘로 늘거나 사라진 줄이 남으면 가계부의 강화 지출이 부푼다.
  */
 import {
   __resetEnhancementTotalsMoveForTest,
@@ -68,15 +68,13 @@ const draft = (over: Partial<EnhancementTotalDraft> = {}): EnhancementTotalDraft
 const EARRING = { itemGroup: 'key:dea_sidus_earring', itemKey: 'dea_sidus_earring', itemName: '데아 시두스 이어링' }
 
 describe('갈아 끼우기', () => {
-  it('같은 열쇠의 줄은 id 를 지키며 값을 고치고, 새 합계에 없는 줄은 지워 그 id 를 돌려준다', async () => {
-    const first = await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [draft(), draft(EARRING)], NOW)
-    const [knuckleId, earringId] = first.writtenIds
+  it('같은 열쇠의 줄은 값을 고쳐 한 줄로 두고, 새 합계에 없는 줄은 지운다', async () => {
+    await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [draft(), draft(EARRING)], NOW)
 
-    const second = await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [draft({ attempts: 3 })], NOW)
+    await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [draft({ attempts: 3 })], NOW)
 
-    expect(second).toEqual({ writtenIds: [knuckleId], removedIds: [earringId] })
     expect(await loadEnhancementTotals('2026-10-20', '2026-10-20')).toEqual([
-      expect.objectContaining({ id: knuckleId, attempts: 3 }),
+      expect.objectContaining({ itemGroup: 'key:arcane_umbra_knuckle', attempts: 3 }),
     ])
   })
 
@@ -87,9 +85,8 @@ describe('갈아 끼우기', () => {
     const starforce = draft({ enhancementType: 'starforce', enhancementCategory: 'starforce' })
     await replaceEnhancementTotals('account-main', 'starforce', '2026-10-20', [starforce], NOW)
 
-    const result = await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [], NOW)
+    await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [], NOW)
 
-    expect(result.removedIds).toHaveLength(1)
     expect((await loadEnhancementTotals('2026-10-20', '2026-10-20')).map((total) => total.characterName).sort())
       .toEqual(['낟낟', '부캐'])
   })

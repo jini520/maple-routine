@@ -4,7 +4,6 @@
  * 전에는 지난 기간 백필이 그 기간의 마지막 날 하나를 직접 물어 이 일을 했다. 이제 창이 그
  * 날짜들을 이미 들고 있으므로 **부르지 않고 읽어서** 만든다.
  */
-import { reportBossClearsOf } from '../server-sync/report'
 import { monthKeyOf, resetWeekStartOf } from '../../lib/calendar'
 import { bossCycleOf, bossNameOf, isBossActiveIn, isSeasonBoss } from '../../lib/boss/bosses'
 import { findPriceEntry } from '../../lib/boss/boss-crystal-prices'
@@ -132,7 +131,6 @@ async function recordPeriod(
         markBossProfitRecordAuto({ ocid, bossKey, difficulty, periodKey }),
         undefined,
       )
-      await reportBossClearsOf([{ ocid, bossKey, difficulty, periodKey }], now)
     }
 
     // 같은 (캐릭터, 보스, 기간)에 기록이 있으면 **난이도가 달라도** 안 쓴다. 한 주에 한 보스를 두
@@ -183,7 +181,6 @@ async function recordPeriod(
         worldKey,
       }),
     )
-    await reportBossClearsOf([{ ocid, bossKey, difficulty, periodKey }], now)
   }
 }
 

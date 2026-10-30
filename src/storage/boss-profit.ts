@@ -161,7 +161,6 @@ const FILL_MISSING_WORLD_SQL = `
   UPDATE boss_party_periods SET world_key = ?
    WHERE clear_status = 'cleared' AND world_key IS NULL
      AND party_id IN (SELECT id FROM boss_parties WHERE ocid = ?)
-  RETURNING id
 `
 
 /**
@@ -174,25 +173,20 @@ const FILL_MISSING_WORLD_SQL = `
  *
  * `world_key IS NULL` 조건이 멱등성을 보장한다. 한 번 채워진 기록은 이후 호출에 걸리지 않으므로 리프
  * 후에 다시 실행돼도 과거 스냅샷을 덮어쓰지 않는다.
- *
- * @returns 월드를 채운 기간 행 id. 서버 사본도 같은 값으로 고쳐야 한다
  */
 export async function fillMissingRecordWorlds(
   worldByOcid: Map<string, { world: string; worldKey: string | null }>,
-): Promise<string[]> {
+): Promise<void> {
   if (worldByOcid.size === 0) {
-    return []
+    return
   }
   const db = await getBossProfitDb()
-  const filled: string[] = []
   // 월드 표에 없는 월드는 key 가 없어 적을 값이 없다. 모름으로 남긴다.
   for (const [ocid, { worldKey }] of worldByOcid) {
     if (worldKey === null) continue
-    const { values } = await db.query(FILL_MISSING_WORLD_SQL, [worldKey, ocid])
-    for (const row of values ?? []) filled.push(row.id as string)
+    await db.run(FILL_MISSING_WORLD_SQL, [worldKey, ocid])
   }
   bumpRecordsRevision()
-  return filled
 }
 
 /** 처치 행을 읽는 SELECT. 결정석 비율은 비율 분배일 때만 있다. */
