@@ -194,7 +194,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-078](./adr/ADR-078_persistence_boss-tables.md) | 🟢 | persistence | 보스 기록 테이블 재설계 |
 | [ADR-096](./adr/ADR-096_persistence_cashbook-tables.md) | 🟢 | persistence | 가계부 기록 테이블 재설계 |
 | [ADR-098](./adr/ADR-098_persistence_record-keys.md) | 🟢 | persistence | 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id |
-| [ADR-099](./adr/ADR-099_server-sync_records.md) | 🟢 | server-sync | 보스 처치 · 가계부 · 강화 합계의 최종값 서버 전송 |
+| [ADR-099+143](./adr/ADR-099+143_server-sync_records.md) | 🟢 | server-sync | 서버로 보내는 기록의 범위와 과거 드롭 올리기 |
 | [ADR-100](./adr/ADR-100_cashbook_enhancement-totals.md) | 🟢 | cashbook | 강화 합계 저장과 재계산 요청 |
 | [ADR-101](./adr/ADR-101_auth_multi-account.md) | ⚪ | auth | 다계정 |
 | [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | 🟢 | server-sync | 예상하지 못한 상황의 서버 로그 |

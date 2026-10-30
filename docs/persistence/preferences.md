@@ -39,7 +39,7 @@
 | `notificationPermissionAsked` | `'yes'` | `notice-settings.ts` | 남긴다 | 알림 권한을 물어본 적 있는지. OS 상태로는 알 수 없다 |
 | `partyAlarmEnabled` | `'on'` · `'off'` | `party-appointment-settings.ts` | 남긴다 | 파티 약속 알림 스위치. 없으면 켜짐 |
 | `partyAppointments` | JSON `PartyAppointment[]` | `party-appointments.ts` | 남긴다 | 사용자가 적은 파티 약속. `id` 는 uuid 이고, 옛 `시각 + 난수` id 는 읽을 때 uuid 로 바꿔 다시 저장한다([[ADR-098]] 결정 4) |
-| `serverBackfill` | JSON. 종류(`bossClear` · `dropPrice` · `cashbookEntry` · `enhancementTotal`)마다 마지막으로 보낸 기록 id 와 끝났는지 | `server-backfill.ts` | 남긴다 | 업데이트 전 기록을 서버로 어디까지 올렸나([[ADR-099]] 결정 12) |
+| `serverBackfill` | JSON. 종류(`dropPrice`)마다 마지막으로 보낸 기록 id 와 끝났는지. 옛 앱이 적은 다른 종류의 값은 읽지 않는다 | `server-backfill.ts` | 남긴다 | 업데이트 전 드롭을 서버로 어디까지 올렸나([[ADR-099]] 결정 3) |
 | `enhancementTotalsMoved` | `'1'` | `enhancement-totals-moved.ts` | 남긴다 | 옛 강화 원본(`enhancement_history`)을 합계로 옮겼는지. 지워지면 다시 옮기며 업데이트 뒤 새로 받은 날의 합계를 옛 원본으로 덮는다([[ADR-100]] 결정 3) |
 | `appReview` | JSON `{ firstLaunchAt, saveCount, lastRequestedAt }`. 시각은 ISO, `lastRequestedAt` 은 요청 전이면 `null` | `app-review.ts` | 남긴다 | 앱 안 리뷰 요청의 기록([[ADR-052]] 결정 10). 지워지면 90일 간격을 처음부터 다시 센다 |
 | `partyScheduleView` | `'list'` · `'board'` | `party-schedule-view.ts` | 남긴다 | 파티 스케줄 화면에서 마지막으로 고른 보기. 없으면 목록 |

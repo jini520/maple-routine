@@ -68,7 +68,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `remembered_levels` | `id`(uuid, `(ocid, kind, item_key)` 는 UNIQUE) | 캐릭터의 심볼 · 헥사 코어 강화 레벨 기억. 추적을 시작할 때 넥슨 값으로 채우고 기록을 저장 · 고치기 · 지우기 할 때 옮긴다 | `storage/remembered-levels.ts` | 지운다 (가계부) | [[ADR-137]] |
 | `mvp_grade_history` | `id`(uuid, `(account_id, from_date)` 는 UNIQUE) | 메이플 ID 마다 MVP 등급과 시작 날짜 | `storage/mvp-grades.ts` | 남긴다 | `features/mvp-grade.md` |
 | `character_accounts` | `id`(uuid, `(ocid, name, account_id)` 는 UNIQUE) | 캐릭터가 어느 메이플 ID 에 속했는지, 그것을 어느 넥슨 계정의 목록에서 봤는지와 처음 · 마지막으로 본 날 | `storage/character-accounts.ts` | 남긴다 | `features/mvp-grade.md` |
-| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 보낼 기록. 처치 · 가계부는 쓰는 자리가 넣고 곧바로 보내며, 드롭은 못 보낸 것만 남는다. 평소에는 비어 있다 | `storage/server-sync-queue.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-018]] |
+| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 못 보낸 드롭. 평소에는 비어 있다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 줄은 전송이 보내지 않고 지운다([[ADR-099]] 결정 1) | `storage/server-sync-queue.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-018]] |
 | `game_data_sections` | `id`(uuid, `section` 은 UNIQUE) | 게임 데이터 사본의 칸 하나. 서버 응답의 그 칸 JSON 을 그대로 든다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
 | `game_data_meta` | `id`(uuid, `key` 는 UNIQUE) | 사본의 표식(계약 판 · ETag). 칸과 한 트랜잭션으로 쓰고, 있으면 다 받은 사본이다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
 
@@ -138,7 +138,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | 14 | `moveBossTablesToParties` | 옛 보스 기록 표 넷의 행을 새 표 셋으로 옮긴다. 옛 표는 지우지 않는다([[ADR-078]] 결정 8) |
 | 15 | `moveCashbookRecordsToEntries` | 옛 가계부 표 둘의 행을 기록 표 셋으로 옮긴다. 옮기기 전에 DB 를 파일째 떠 둔다([[ADR-096]] 결정 9) |
 | 16 | `moveRecordKeysToUuid` | 기본키가 값의 조합이던 다섯 표를 uuid 기본키로 다시 쓰고, 칸 이름을 서버 규칙에 맞춘다. 계정 칸이 생기기 전의 행은 계정 칸에 빈 글자를 적는다([[ADR-098]]) |
-| 17 | `dropCashbookMemo` | 입력 시트가 모두 비워 두던 가계부 메모 칸을 지운다([[ADR-099]] 결정 15) |
+| 17 | `dropCashbookMemo` | 입력 시트가 모두 비워 두던 가계부 메모 칸을 지운다([[ADR-099]] 결정 7) |
 
 못 찾는 이름은 key 만 비우고 행과 이름은 남긴다.
 
