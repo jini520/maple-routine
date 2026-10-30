@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-022 결정 6 · ADR-024 · ADR-137 · ADR-190 · ADR-191 결정 1 · ADR-268 결정 2 · 3 · 4 · ADR-279 · ADR-292
-> 관련 소스: `native/live-update.ts` · `native/adapters/rn-live-update.ts` · `lib/app-version.ts` · `features/live-update/use-running-app-version.ts` · `workers/ota-manifest/` · `scripts/publish-rn-ota.mjs` · `scripts/ota-runtime-version.mjs` · `scripts/release-note-gap.mjs`
+> 관련 소스: `native/live-update.ts` · `native/adapters/rn-live-update.ts` · `lib/app-version.ts` · `features/live-update/use-running-app-version.ts` · `scripts/publish-rn-ota.mjs` · 서버 `modules/ota/` · `workers/ota-manifest/`(1.0.12 바이너리 전용) · `scripts/ota-runtime-version.mjs` · `scripts/release-note-gap.mjs`
 
 ## 배경
 
@@ -17,28 +17,41 @@
 
 ## 결정
 
-### 결정 1. 매니페스트는 Cloudflare Worker 가 내주고, 번들과 에셋은 GitHub Releases 에 올린다
+### 결정 1. 1.0.13 부터 매니페스트 · 번들 · 에셋은 우리 서버가 내준다 (사용자 지정 2026-10-30)
 
-`expo-updates` 는 매니페스트 응답에 `expo-protocol-version` 헤더가 없으면 매니페스트를 버린다. GitHub
-Releases 와 GitHub Pages 는 응답 헤더를 마음대로 붙일 수 없다. 그래서 매니페스트 응답만 Worker
-(`workers/ota-manifest/`)를 거친다. Worker 는 요청 헤더의 플랫폼과 `runtimeVersion` 으로 파일 이름
-`manifest-<platform>-<runtimeVersion>.json` 을 만들고, 릴리스 `live-update-rn` 에서 그 파일을 읽어
-헤더를 붙여 돌려준다. 파일이 없으면 204 를 돌려주는데, 프로토콜에서 204 는 업데이트가 없다는 뜻이다.
+앱 박스(`mapleroutine.store`)가 전부 내준다. 게임 데이터 그림을 앱 박스 디스크에 두고 nginx 가 내주는 것과 같은 이유다
+([[ADR-020]] 결정 8). 앱 박스는 API 와 같은 곳이라 장애가 날 곳이 늘지 않는다. GitHub Releases 와 Cloudflare Worker 를
+쓰던 때는 그 둘이 장애 지점으로 하나씩 더 있었다.
 
-에셋 주소는 GitHub 을 바로 가리킨다. 번들 주소(`launchAsset.url`)는 결정 13 에 따라 Worker 를 가리키게 바뀐다.
-EAS Update 는 쓰지 않았다. 매니페스트와 번들을 외부 서비스에 맡기지 않고 저장소 릴리스에 쌓아 두기 위해서다.
+| 경로 | 내주는 곳 | 하는 일 |
+|---|---|---|
+| `GET /v1/ota/manifest` | 서버 `modules/ota/` | 요청 헤더의 플랫폼과 `runtimeVersion` 으로 `manifest-<platform>-<runtimeVersion>.json` 을 읽어 `expo-protocol-version: 1` 을 붙여 준다. 파일이 없거나 헤더 값이 이상하면 204 다. 프로토콜에서 204 는 업데이트가 없다는 뜻이다 |
+| `GET /v1/ota/latest?platform=` | 서버 `modules/ota/` | `latest-<platform>.json`. 아직 없으면 `{ "runtimeVersion": null, "appVersion": null }` |
+| `GET /ota/files/<이름>` | nginx | 번들과 에셋. 이름이 내용 해시라 `immutable` 로 오래 캐시한다 |
 
-채널은 하나다. 어댑터의 `getChannel` 은 `Updates.channel` 을 읽고, 값이 없으면 `production` 을 쓴다.
+매니페스트를 서버 코드가 내주는 것은 요청 헤더 값을 파일 이름에 넣기 때문이다. 경로 조작을 막는 검사를 테스트로 지킬 수
+있다. 파일은 앱 박스의 `/srv/maple-routine-ota` 에 있고, 서버 컨테이너는 읽기 전용으로 건다. 서버는 매니페스트를 만들지
+않는다. 만드는 일은 발행 스크립트가 하고, 서버는 읽기만 한다. DB 에 넣지 않은 것은 발행이 파일 올리기와 DB 쓰기 두 단계로
+나뉘면 하나만 성공했을 때 어느 쪽이 맞는지 알 수 없어서다.
 
-### 결정 2. Worker 는 상태를 갖지 않는다
+매니페스트와 `latest-<platform>.json` 은 이름은 그대로인데 내용만 바뀌는 파일이라 캐시하지 않는다(`cache-control:
+private, max-age=0`).
 
-Worker 는 매니페스트를 만들지 않는다. 만드는 일은 발행 스크립트가 하고, 결과는 릴리스에 올라간다.
-Worker 에 KV 같은 저장소를 붙이면 발행이 릴리스 업로드와 Worker 쓰기 두 단계로 나뉜다. 둘 중 하나만
-성공하면 어느 쪽이 맞는지 알 수 없게 된다. 그래서 `wrangler.toml` 에 바인딩이 하나도 없고, Worker 는
-한 번 배포한 뒤로 다시 손대지 않는다.
+EAS Update 는 쓰지 않았다. 매니페스트와 번들을 외부 서비스에 맡기지 않기 위해서다. 채널은 하나다. 어댑터의 `getChannel` 은
+`Updates.channel` 을 읽고, 값이 없으면 `production` 을 쓴다.
 
-Worker 는 릴리스 파일을 읽을 때 캐시를 쓰지 않는다. 매니페스트와 `latest-<platform>.json` 은 이름은
-그대로인데 내용만 바뀌는 파일이라, 엣지 캐시가 옛 내용을 돌려줄 수 있기 때문이다.
+매니페스트 주소(`app.json` 의 `updates.url`)는 네이티브 설정이라 스토어 바이너리에 박힌다. 그래서 서버로 옮긴 것은
+v1.0.13 바이너리부터다.
+
+### 결정 2. 1.0.12 바이너리는 GitHub Releases 와 Worker 에 얼려 둔다 (사용자 지정 2026-10-30)
+
+1.0.12 바이너리에는 더 이상 OTA 를 내지 않는다. 그 바이너리는 `workers/ota-manifest/` 주소를 묻고, Worker 는 릴리스
+`live-update-rn` 의 파일을 읽어 준다. 지금 올라가 있는 매니페스트를 그대로 둔다.
+
+남는 일은 v1.0.13 을 게시한 뒤 1.0.12 를 잠그는 것 하나다. 릴리스의 `latest-<platform>.json` 을 v1.0.13 의 지문으로
+한 번 덮어쓰면, 1.0.12 앱은 받아 주는 목록에 자기 지문이 없어 스토어 업데이트 모달을 띄운다(결정 5). 이 일은 발행
+스크립트가 하지 않고 손으로 한 번 한다. 스크립트가 두 곳에 쓰면 발행 경로가 둘이 된다. 1.0.12 사용자가 없어지면 Worker 와
+릴리스를 지운다(이슈 #810).
 
 ### 결정 3. `runtimeVersion` 은 `fingerprint` 정책으로 계산하고, 사람이 적지 않는다
 
@@ -55,9 +68,9 @@ Worker 는 릴리스 파일을 읽을 때 캐시를 쓰지 않는다. 매니페�
 sha256 해시를 매니페스트 값과 비교한다. 올라갔는지가 아니라 기기가 실제로 받을 수 있는지를 확인해야
 발행이 끝난 것으로 본다.
 
-### 결정 4. 번들은 자기 sha256 으로 이름을 짓고, 릴리스에 이미 있는 이름은 올리지 않는다
+### 결정 4. 번들은 자기 sha256 으로 이름을 짓고, 서버에 이미 있는 이름은 올리지 않는다
 
-에셋 파일 이름은 Metro 가 내용의 md5 로 짓는다. 이름이 같으면 내용도 같으므로, 릴리스에 이미 있는
+에셋 파일 이름은 Metro 가 내용의 md5 로 짓는다. 이름이 같으면 내용도 같으므로, 서버에 이미 있는
 이름은 건너뛴다. JS 만 고친 발행이면 번들 두 개만 올라간다. 기기도 같은 이유로 이미 가진 에셋은 다시
 받지 않는다.
 
@@ -70,9 +83,9 @@ sha256 해시를 매니페스트 값과 비교한다. 올라갔는지가 아니�
 ### 결정 5. 스토어 업데이트가 필요한지는 `/latest` 로 따로 판정하고, 받아 주는 지문은 목록으로 둔다
 
 기기의 지문이 매니페스트와 맞지 않으면 프로토콜은 204 를 준다. 그대로 두면 새 버전이 있는데도
-설정 화면에 `최신 버전입니다` 가 뜬다. 그래서 확인 결과가 최신일 때만 어댑터가 Worker 의
-`/latest?platform=<platform>` 을 한 번 더 묻는다. 이 요청은 릴리스의 `latest-<platform>.json` 을
-돌려준다.
+설정 화면에 `최신 버전입니다` 가 뜬다. 그래서 확인 결과가 최신일 때만 어댑터가 매니페스트 주소 옆의
+`latest?platform=<platform>` 을 한 번 더 묻는다(1.0.13 부터 서버의 `/v1/ota/latest`, 1.0.12 는 Worker 의 `/latest`).
+이 요청은 `latest-<platform>.json` 을 돌려준다.
 
 ```json
 { "runtimeVersion": "…", "acceptedRuntimeVersions": ["…"], "appVersion": "1.0.12+5", "storeUrl": "…" }
@@ -200,22 +213,23 @@ OTA 버전이 스토어 버전보다 낮으면 버전을 비교하는 판정(완
 버전 문자열을 글자 그대로 비교하면 이 규칙을 놓친다. 비교는 `parseAppVersion` 이나 `baseAppVersion`
 을 거친다.
 
-### 결정 13. 번들은 gzip 으로 압축해 Worker 가 내준다 (사용자 지정 2026-10-30)
+### 결정 13. 번들은 gzip 으로 압축해 내주고, 최근 세 번의 발행만 남긴다 (사용자 지정 2026-10-30)
 
 OTA 를 받을 때 실제로 받는 것은 대부분 JS 번들 하나다. 기기에 이미 있는 에셋은 다시 받지 않기 때문이다. 이미지를 서버로
-옮긴 뒤에도 번들은 그대로라, 2026-10-30 main 을 iOS 로 내보낸 `.hbc` 가 7.55MB 였다. 지금은 GitHub 이 이 파일을 압축하지
-않고 내준다. 같은 파일을 `gzip -9` 로 압축하면 3.05MB 다. 5MB 이하인 업데이트만 자동으로 받으므로([[ADR-012]] 결정 2),
-압축하지 않으면 모든 OTA 가 묻는 쪽으로 빠진다.
+옮긴 뒤에도 번들은 그대로라, 2026-10-30 main 을 iOS 로 내보낸 `.hbc` 가 7.55MB 였다. 같은 파일을 `gzip -9` 로 압축하면
+3.05MB 다. 5MB 이하인 업데이트만 묻지 않고 받으므로([[ADR-012]] 결정 2), 압축하지 않으면 모든 OTA 가 묻는 쪽으로 빠진다.
 
-- 발행 스크립트가 번들을 gzip 으로 압축한 사본을 릴리스에 함께 올린다.
-- 매니페스트의 `launchAsset.url` 은 Worker 의 번들 경로를 가리킨다. Worker 는 릴리스에서 압축한 사본을 읽어
-  `Content-Encoding: gzip` 을 붙여 내준다. GitHub 은 이 헤더를 붙일 수 없어서 Worker 를 거친다(결정 1 과 같은 이유).
-- `launchAsset.hash` 는 지금처럼 압축하지 않은 번들의 해시다. 기기는 응답을 풀어서 저장하고, 푼 내용으로 해시를 확인한다.
-  안드로이드 `expo-updates` 는 `Accept-Encoding: zstd, br, gzip` 을 보내고 응답을 스스로 푼다(`CompressionInterceptor.kt`).
-  iOS 가 푸는지는 실기기로 아직 확인하지 않았다.
+- 발행 스크립트가 번들 옆에 `gzip -9` 압축본(`<번들 이름>.gz`)을 함께 올린다. nginx 의 `gzip_static on` 이 기기가
+  `accept-encoding: gzip` 을 보내면 압축본을 `content-encoding: gzip` 으로 내준다.
+- `launchAsset.hash` 는 압축하지 않은 번들의 해시다. 기기는 응답을 풀어서 저장하고, 푼 내용으로 해시를 확인한다. 안드로이드
+  `expo-updates` 는 `Accept-Encoding: zstd, br, gzip` 을 보내고 응답을 스스로 푼다(`CompressionInterceptor.kt`). iOS 가
+  푸는지는 실기기로 아직 확인하지 않았다.
 - `extra.sizeBytes` 는 압축한 크기다. 사용자가 실제로 받는 양이기 때문이다.
-- 발행 스크립트의 왕복 확인(`[6/6]`)도 기기와 같은 `Accept-Encoding` 을 보내고, 푼 내용의 해시를 비교한다.
-- 번들 이름은 내용 해시라 바뀌지 않으므로 Worker 는 이 응답을 오래 캐시해도 된다.
+- 발행 스크립트의 왕복 확인(`[6/6]`)은 기기와 같은 `Accept-Encoding` 을 보내고, gzip 으로 왔는지와 푼 내용의 해시를 본다.
+
+발행할 때마다 올린 파일 목록을 `releases.json` 에 적고, 최근 세 번의 발행이 쓰는 파일만 남기고 나머지를 지운다. 번들은 발행
+한 번에 플랫폼 둘을 합쳐 약 21MB(원본 7.5MB + 압축본 3MB 씩)라 지우지 않으면 디스크가 계속 찬다. 바로 지난 발행을 받던
+기기가 아직 내려받는 중일 수 있어서 하나가 아니라 셋을 남긴다. OTA zip 을 최신 셋만 남기던 때와 같은 기준이다.
 
 ## 테스트
 
@@ -231,10 +245,10 @@ OTA 를 받을 때 실제로 받는 것은 대부분 JS 번들 하나다. 기기
 | | `--platform` 으로 고른 플랫폼만 발행하는지, 모르는 값이나 빈 값이면 던지는지, 발행하지 않는 플랫폼의 고정값은 검사에서 빠지는지 본다 |
 | `scripts/__tests__/release-note-gap.test.mjs` | 결정 8: 노트가 없거나 `items` 나 `highlights` 가 비면 발행을 막는지, 지금 맨 앞의 노트가 이 검사를 통과하는지 본다 |
 
-결정 13 을 확인하는 단위 테스트는 없다. 발행 스크립트의 `[6/6]` 이 발행할 때마다 Worker 에서 번들을 받아, gzip 으로
-왔는지와 푼 내용의 해시를 확인한다.
+결정 13 의 압축은 단위 테스트가 없다. 발행 스크립트의 `[6/6]` 이 발행할 때마다 서버에서 번들을 받아, gzip 으로 왔는지와
+푼 내용의 해시를 확인한다.
 
-`publish-rn-ota.mjs` 본문과 Worker 에는 테스트가 없다. 스크립트 본문은 최상위 `await` 를 쓰는 ESM 이라
+`publish-rn-ota.mjs` 본문에는 테스트가 없다. 서버의 `/v1/ota/*` 는 서버 저장소의 `modules/ota/` 테스트가 본다. 스크립트 본문은 최상위 `await` 를 쓰는 ESM 이라
 jest 가 불러오지 못한다. 그래서 검사할 로직은 `ota-runtime-version.mjs` 와 `release-note-gap.mjs` 로
 따로 뺐다.
 
@@ -248,4 +262,4 @@ jest 가 불러오지 못한다. 그래서 검사할 로직은 `ota-runtime-vers
 ## 번호 기록
 
 - ADR-011 (2026-10-19): 옛 ADR-022 · 024 · 137 · 190 · 191 · 268 · 279 · 292 를 합쳐 처음 작성
-- ADR-138 (2026-10-30): 번들을 gzip 으로 압축해 Worker 가 내준다(결정 13 더함, 결정 1 · 8 고침, 이슈 #803)
+- ADR-138 (2026-10-30): 1.0.13 부터 우리 서버가 매니페스트 · 번들 · 에셋을 내주고, 1.0.12 는 GitHub · Worker 에 얼려 두고, 번들을 gzip 으로 압축하고 최근 세 번의 발행만 남긴다(결정 1 · 2 · 4 · 8 고침, 결정 13 더함, 이슈 #803)
