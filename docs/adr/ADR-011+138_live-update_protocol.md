@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-022 결정 6 · ADR-024 · ADR-137 · ADR-190 · ADR-191 결정 1 · ADR-268 결정 2 · 3 · 4 · ADR-279 · ADR-292
-> 관련 소스: `native/live-update.ts` · `native/adapters/rn-live-update.ts` · `lib/app-version.ts` · `features/live-update/use-running-app-version.ts` · `scripts/publish-rn-ota.mjs` · 서버 `modules/ota/` · `workers/ota-manifest/`(1.0.12 바이너리 전용) · `scripts/ota-runtime-version.mjs` · `scripts/release-note-gap.mjs`
+> 관련 소스: `native/live-update.ts` · `native/adapters/rn-live-update.ts` · `lib/app-version.ts` · `features/live-update/use-running-app-version.ts` · `scripts/publish-rn-ota.mjs` · `scripts/ota-retention.mjs` · 서버 `modules/ota/` · `workers/ota-manifest/`(1.0.12 바이너리 전용) · `scripts/ota-runtime-version.mjs` · `scripts/release-note-gap.mjs`
 
 ## 배경
 
@@ -244,6 +244,8 @@ OTA 를 받을 때 실제로 받는 것은 대부분 JS 번들 하나다. 기기
 | | 결정 7: 고정한 값이 트리 계산값보다 우선하는지, 고정한 값이 발행된 판정값과 다르면 멈추는지 본다 |
 | | `--platform` 으로 고른 플랫폼만 발행하는지, 모르는 값이나 빈 값이면 던지는지, 발행하지 않는 플랫폼의 고정값은 검사에서 빠지는지 본다 |
 | `scripts/__tests__/release-note-gap.test.mjs` | 결정 8: 노트가 없거나 `items` 나 `highlights` 가 비면 발행을 막는지, 지금 맨 앞의 노트가 이 검사를 통과하는지 본다 |
+| `scripts/__tests__/ota-retention.test.mjs` | 결정 13: 최근 세 번의 발행이 쓴 파일만 남기는지, 목록에서 밀려도 지금 서버의 매니페스트가 가리키는 번들 · 압축본 · 에셋은 남기는지 본다 |
+| 서버 `modules/ota/ota.controller.spec.ts` | 결정 1: 매니페스트를 프로토콜 헤더와 함께 내는지, 없으면 204 인지, 헤더 값이 이상하면 파일을 읽지 않고 204 인지, `latest` 가 없으면 빈 값을 200 으로 내는지 본다 |
 
 결정 13 의 압축은 단위 테스트가 없다. 발행 스크립트의 `[6/6]` 이 발행할 때마다 서버에서 번들을 받아, gzip 으로 왔는지와
 푼 내용의 해시를 확인한다.

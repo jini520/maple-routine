@@ -1,8 +1,10 @@
 # OTA 업데이트
 
-스토어 심사 없이 JS 번들과 에셋을 바꿔 내보내는 기능이다. `expo-updates` 를 쓰고, 매니페스트는
-Cloudflare Worker 가, 번들과 에셋은 GitHub Releases `live-update-rn` 이 내준다. 앱은 켤 때 새 번들이
-있는지 확인하고, 받을지와 적용할지를 사용자에게 묻는다.
+스토어 심사 없이 JS 번들과 에셋을 바꿔 내보내는 기능이다. `expo-updates` 를 쓰고, v1.0.13 바이너리부터
+매니페스트는 우리 서버(`/v1/ota/manifest` · `/v1/ota/latest`)가, 번들과 에셋은 같은 앱 박스의 nginx
+(`/ota/files/`)가 내준다. 1.0.12 바이너리는 Cloudflare Worker 와 GitHub Releases `live-update-rn` 을 묻고, 그쪽에는
+더 이상 발행하지 않는다([[ADR-011]] 결정 2). 앱은 켤 때 새 번들이 있는지 확인하고, 작은 번들은 묻지 않고 받은 뒤
+적용할지를 사용자에게 묻는다.
 
 왜 이렇게 만들었는지는 [[ADR-011]](프로토콜 · 발행 · 버전)과 [[ADR-012]](모달 · 적용)에 있다.
 
@@ -22,7 +24,9 @@ Cloudflare Worker 가, 번들과 에셋은 GitHub Releases `live-update-rn` 이 
 | `lib/app-version.ts` | 버전 형식 읽기(`x.y.z` · `x.y.z+n`) · 화면 표기 `x.y.z(n)` |
 | `storage/last-run-bundle-version.ts` | 마지막으로 실행한 번들 버전(Preferences `lastRunBundleVersion`). 완료 안내 판정에 쓴다 |
 | `storage/sqlite/db.ts` 의 `closeBossProfitDb` | 적용 전에 SQLite 를 닫는다. 5초 타임아웃 |
-| `workers/ota-manifest/` | 매니페스트 Worker(`/manifest` · `/latest`) |
+| 서버 `modules/ota/` | 매니페스트와 `latest` 를 `/srv/maple-routine-ota` 에서 읽어 준다 |
+| `scripts/ota-retention.mjs` | 발행 뒤 서버에 남길 파일 고르기(최근 세 번의 발행과 지금 매니페스트) |
+| `workers/ota-manifest/` | 1.0.12 바이너리 전용 매니페스트 Worker(`/manifest` · `/latest`). 얼려 두었다 |
 | `scripts/publish-rn-ota.mjs` | 발행 스크립트 |
 | `scripts/ota-runtime-version.mjs` | `IN_REVIEW_RUNTIME_VERSIONS` · `PINNED_RUNTIME_VERSIONS` · 플랫폼 인자 해석 |
 | `scripts/release-note-gap.mjs` | 노트가 없으면 발행을 막는 검사 |
@@ -84,7 +88,8 @@ OTA 부팅 확인은 `boot.ts` 의 `loadGameData()` 가 게임 데이터 사본�
 
 ### 준비
 
-1. `gh` 가 `jini520/maple-routine` 에 릴리스를 올릴 수 있는 계정으로 로그인돼 있어야 한다.
+1. `ssh ubuntu@158.179.175.230` 이 비밀번호 없이 열려야 한다. 스크립트가 rsync 로 `/srv/maple-routine-ota` 에 올린다.
+   디렉터리가 없으면 서버 README 의 OTA 절대로 만든다.
 2. `package.json` 의 `version` 을 올린다. 새 버전이면 `x.y.z`, 같은 버전의 버그 수정이면 `x.y.z+n`
    (`n` 은 1 부터)이다. `app.json` 의 `expo.version` 은 건드리지 않는다. 그 값은 스토어 버전이고 지문
    재료다.
@@ -105,7 +110,7 @@ OTA 부팅 확인은 `boot.ts` 의 `loadGameData()` 가 게임 데이터 사본�
    `base/assets/fingerprint`(AAB)다. 지금 발행돼 있는 값은 아래로도 볼 수 있다.
 
    ```bash
-   curl -s "https://maple-routine-ota.dev-jinni520.workers.dev/latest?platform=ios&t=$(date +%s)"
+   curl -s "https://mapleroutine.store/v1/ota/latest?platform=ios&t=$(date +%s)"
    ```
 
 5. 워크트리에서 발행한다면 git 이 무시하는 다음 파일을 원래 체크아웃에서 복사한다. 모두 지문 재료라서
@@ -144,10 +149,10 @@ node scripts/publish-rn-ota.mjs --platform ios     # 한 플랫폼만. --platfor
 | 빌드 전 | `package.json` 버전 형식 확인, 노트 확인, 고정한 지문 확인 | 형식이 틀림 · 노트나 `highlights` 가 없음 · `PINNED_RUNTIME_VERSIONS` 에 값이 있음 |
 | `[1/5]` | `npx expo export --platform … --output-dir dist` | |
 | `[2/5]` | `npx expo-updates runtimeversion:resolve` 로 플랫폼별 지문 계산 | 지문이 파일 이름으로 쓸 수 없는 값임 |
-| `[3/5]` | 릴리스 `live-update-rn` 에 이미 있는 파일 이름 조회. 릴리스가 없으면 만든다 | |
+| `[3/5]` | 서버 `files/` 에 이미 있는 파일 이름 조회 | 디렉터리를 읽지 못함 |
 | `[4/5]` | 없는 파일만 올린다. 번들은 `bundle-<platform>-<sha256>.hbc` 이름으로, gzip 압축본은 그 뒤에 `.gz` 를 붙여 올린다 | |
-| `[5/5]` | `manifest-<platform>-<지문>.json` 과 `latest-<platform>.json` 을 덮어 올린다 | |
-| `[6/6]` | 기기와 같은 헤더로 매니페스트를 요청하고, 번들을 Worker 에서 내려받아 푼 내용의 해시를 비교한다 | `appVersion` 이 안 맞음 · 응답이 200 이 아님 · 번들이 gzip 으로 오지 않음 · 번들 해시가 다름 |
+| `[5/5]` | `manifest-<platform>-<지문>.json` 과 `latest-<platform>.json` 을 덮어 올린다. 이어서 `releases.json` 에 이번 발행을 적고, 최근 세 번의 발행과 지금 매니페스트가 쓰지 않는 파일을 지운다 | |
+| `[6/6]` | 기기와 같은 헤더로 매니페스트를 요청하고, 번들을 서버에서 내려받아 푼 내용의 해시를 비교한다 | `appVersion` 이 안 맞음 · 응답이 200 이 아님 · 번들이 gzip 으로 오지 않음 · 번들 해시가 다름 |
 
 마지막 줄에 `완료: <버전> 배포됨 (ios=… android=…)` 이 찍히면 끝이다.
 
@@ -160,8 +165,7 @@ node scripts/publish-rn-ota.mjs --platform ios     # 한 플랫폼만. --platfor
   빌드해야 한다.
 - 스토어 심사에서 반려돼 네이티브를 고쳐 다시 빌드했다면 지문이 바뀐다. 새 바이너리를 빌드한 트리에서 다시
   발행하고, `IN_REVIEW_RUNTIME_VERSIONS` 의 값도 새 지문으로 바꾼다.
-- 릴리스에는 이전 번들이 지워지지 않고 쌓인다. 매니페스트만 같은 이름으로 덮어쓰기 때문이다. 지우는
-  코드는 없다.
+- 서버에는 최근 세 번의 발행이 쓰는 파일만 남는다. 그보다 옛 번들로 되돌리려면 그 커밋에서 다시 발행한다.
 
 ### 스토어 게시 뒤 옛 바이너리 잠그기
 
@@ -173,15 +177,17 @@ node scripts/publish-rn-ota.mjs --platform ios     # 한 플랫폼만. --platfor
 잠그기 전에 잠금 코드가 들어 있는 번들을 실기기에서 확인한다. 옛 지문을 뺀 뒤에는 발행 스크립트로 그
 바이너리를 고칠 수 없다.
 
-## Worker
+## 서버와 Worker
 
-`workers/ota-manifest/` 는 바인딩이 없고 상태도 없다.
+| 경로 | 내주는 곳 | 응답 |
+|---|---|---|
+| `GET /v1/ota/manifest` | 서버 | 요청 헤더 `expo-platform` · `expo-runtime-version` 에 맞는 `manifest-<platform>-<지문>.json` 에 `expo-protocol-version: 1` 을 붙여 준다. 없거나 헤더 값이 이상하면 204 |
+| `GET /v1/ota/latest?platform=` | 서버 | `latest-<platform>.json`. 아직 없으면 `{ "runtimeVersion": null, "appVersion": null }` |
+| `GET /ota/files/<이름>` | nginx | 번들과 에셋. 번들은 `gzip_static` 이 옆의 `.gz` 를 `content-encoding: gzip` 으로 내준다 |
 
-| 경로 | 응답 |
-|---|---|
-| `GET /manifest` | 요청 헤더 `expo-platform` · `expo-runtime-version` 에 맞는 `manifest-<platform>-<지문>.json` 에 `expo-protocol-version: 1` 을 붙여 준다. 없거나 헤더 값이 이상하면 204 |
-| `GET /bundle/<번들 이름>` | 릴리스의 `<번들 이름>.gz` 를 `content-encoding: gzip` 으로 내준다. 이름이 내용 해시라 오래 캐시한다([[ADR-011]] 결정 13) |
-| `GET /latest?platform=` | `latest-<platform>.json`. 아직 없으면 `{ "runtimeVersion": null, "appVersion": null }` |
+`workers/ota-manifest/` 는 1.0.12 바이너리만 묻는다. 같은 두 경로(`/manifest` · `/latest`)를 GitHub Releases
+`live-update-rn` 에서 읽어 준다. 발행 스크립트는 더 이상 그쪽에 쓰지 않는다. 1.0.12 를 잠그는 손 절차와 Worker ·
+릴리스를 걷는 일은 이슈 #810 에 있다.
 
-다시 배포해야 하면 `workers/ota-manifest` 에서 `npx wrangler deploy` 를 한다. 주소를 바꾸면 `app.json` 의
-`expo.updates.url` 도 바꿔야 하는데, 이것은 네이티브 설정이라 스토어 바이너리를 새로 빌드해야 한다.
+매니페스트 주소(`app.json` 의 `expo.updates.url`)는 네이티브 설정이라, 바꾸면 스토어 바이너리를 새로 빌드해야 한다.
+`ios/app/Supporting/Expo.plist` 의 `EXUpdatesURL` 과 `AndroidManifest.xml` 의 `EXPO_UPDATE_URL` 도 같은 값이어야 한다.
