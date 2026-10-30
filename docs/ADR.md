@@ -201,3 +201,4 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |
 | [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |
 | [ADR-137](./adr/ADR-137_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
+| [ADR-142](./adr/ADR-142_architecture_query-cache.md) | ⚪ | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
