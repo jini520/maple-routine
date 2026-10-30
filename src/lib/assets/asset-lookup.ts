@@ -129,6 +129,11 @@ export function getItemIconUrlByFile(fileName: string): ImageAssetRef | null {
   return itemImage(fileName)
 }
 
+/** 헥사 코어의 스킬 그림. 넥슨 6차 스킬 그림을 서버 그림 목록 `skills/` 에 올린 것이다. */
+export function getSkillIconByFile(fileName: string): ImageAssetRef | null {
+  return assetImage(`skills/${fileName.normalize('NFC')}`)
+}
+
 // 지출 타일
 
 /**

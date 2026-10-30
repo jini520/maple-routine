@@ -16,6 +16,7 @@ import dropBoxes from './drop-boxes.json'
 import dropItems from './drop-items.json'
 import enhancementCosts from './enhancement-costs.json'
 import equipmentItems from './equipment-items.json'
+import hexaMatrix from './hexa-matrix.json'
 import huntingGrounds from './hunting-grounds.json'
 import huntLoot from './hunt-loot.json'
 import imageCrops from './image-crops.json'
@@ -34,6 +35,7 @@ const FIXTURES: Record<GameDataSection, unknown> = {
   spendCatalog,
   cashbookCategories,
   symbolCosts,
+  hexaMatrix,
   contents,
   equipmentItems,
   enhancementCosts,

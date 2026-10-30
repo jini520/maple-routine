@@ -136,6 +136,21 @@ export interface NexonSymbolEquipmentResponse {
   symbol?: NexonSymbol[] | null
 }
 
+/** 헥사 코어 하나. 활성화하지 않은 코어는 줄이 없다. 레벨 0 으로 오지 않는다. */
+export interface NexonHexaCore {
+  /** 여러 스킬을 묶은 코어는 `가/나` 다. 이름 끝에 공백이 붙어 오는 코어가 있다. */
+  hexa_core_name?: string | null
+  hexa_core_level?: number | null
+  /** 이벤트로 오른 레벨. 조각이 안 들어 지출에서는 안 쓴다. */
+  hexa_core_event_level?: number | null
+  /** `스킬 코어` · `마스터리 코어` · `강화 코어` · `공용 코어`. */
+  hexa_core_type?: string | null
+}
+
+export interface NexonHexaMatrixResponse {
+  character_hexa_core_equipment?: NexonHexaCore[] | null
+}
+
 export interface NexonUnionRaiderPreset {
   union_raider_stat?: string[] | null
   union_occupied_stat?: string[] | null
