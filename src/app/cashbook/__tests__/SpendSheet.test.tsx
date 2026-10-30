@@ -2642,6 +2642,8 @@ describe('헥사 매트릭스', () => {
     expect(loadRememberedLevels).toHaveBeenCalledWith('ocid-ren', 'hexa')
     expect(범위(view)).toEqual(['Lv.25', 'Lv.26'])
 
+    // 강화 전 탭으로 열린다. 기억한 레벨이 맞으면 그 칸을 한 번 눌러 강화 후로 넘어간다.
+    await 아이디로누르기(view, 'spend-sheet-hexa-level-level-25')
     await 아이디로누르기(view, 'spend-sheet-hexa-level-level-28')
     // 마스터리 25→26 110 · 26→27 115 · 27→28 120
     expect(view.getByTestId('spend-sheet-hexa-fragment-count')).toHaveTextContent('345')

@@ -45,8 +45,8 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
     from: props.editing?.levelFrom ?? EMPTY.from,
     to: props.editing?.levelTo ?? EMPTY.to,
   }))
-  /** 격자에서 지금 고르는 쪽. 강화 전은 기억한 레벨로 서므로 강화 후부터 고른다. */
-  const [editingEnd, setEditingEnd] = useState<RangeEnd>('to')
+  /** 격자에서 지금 고르는 쪽. 강화 전부터 고른다. 기억한 레벨이 맞으면 그 칸을 한 번 눌러 강화 후로 넘어간다. */
+  const [editingEnd, setEditingEnd] = useState<RangeEnd>('from')
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
   /** 그 캐릭터의 기억한 심볼 레벨. 강화 전과 만렙 묶음을 가른다. 다른 캐릭터의 것이 남지 않게 ocid 를 함께 든다. */
   const [symbolLevels, setSymbolLevels] = useState<{ ocid: string; levels: Readonly<Record<string, number>> } | null>(null)
@@ -78,7 +78,7 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
     symbolKeyRef.current = next === null ? null : next.symbol.key
     setSymbolKey(symbolKeyRef.current)
     setRange(next === null ? EMPTY : rangeFor(next, levels?.[next.symbol.key]))
-    setEditingEnd('to')
+    setEditingEnd('from')
   }
 
   function selectCharacter(next: string | null): void {

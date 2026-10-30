@@ -68,7 +68,7 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
     from: props.editing?.levelFrom ?? EMPTY.from,
     to: props.editing?.levelTo ?? EMPTY.to,
   }))
-  const [editingEnd, setEditingEnd] = useState<RangeEnd>('to')
+  const [editingEnd, setEditingEnd] = useState<RangeEnd>('from')
   const [statKey, setStatKey] = useState<string | null>(mode === '헥사 스탯' ? (props.editing?.itemKey ?? null) : null)
   const [activation, setActivation] = useState(editedHexa?.activation === true)
   /** 헥사 스탯의 강화에 쓴 조각. 수정으로 열면 필요 조각에서 활성화 몫을 뺀 값이다. */
@@ -115,7 +115,7 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
     setCoreName(name)
     const next = cores.find((each) => each.name === name)
     setRange(next === undefined ? EMPTY : rangeFor(next, remembered?.[next.name]))
-    setEditingEnd('to')
+    setEditingEnd('from')
   }
 
   const canSave =
