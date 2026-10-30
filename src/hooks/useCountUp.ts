@@ -30,6 +30,16 @@ function remember(identity: string, value: number): void {
   }
 }
 
+/**
+ * 키 하나의 기억을 지운다. 다음 마운트는 굴러가지 않고 목표에서 출발한다.
+ *
+ * @example
+ * forgetCountUp('total|weekly')
+ */
+export function forgetCountUp(identity: string): void {
+  lastDisplayedByIdentity.delete(identity)
+}
+
 /** 테스트 전용. 위 기억을 비운다. */
 export function clearCountUpMemory(): void {
   lastDisplayedByIdentity.clear()

@@ -74,6 +74,7 @@ import {
 } from './character-groups'
 import { CrystalSummaryChip } from './HeadlineChips'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
+import { forgetCountUp } from '../../hooks/useCountUp'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
@@ -186,6 +187,9 @@ export function BossProfitScreen(): React.JSX.Element {
     // 때다. 가계부는 떠나면 주간 · 이번 주로 돌아오므로 보는 기간을 같게 맞춘다.
     return () => {
       void resetToCurrentWeek()
+      // 총 수익 키에는 기간이 없어서, 기억을 남기면 다시 들어올 때 떠나기 전 기간의 금액에서 이번 주 금액으로 굴러간다.
+      forgetCountUp('total|weekly')
+      forgetCountUp('total|monthly')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

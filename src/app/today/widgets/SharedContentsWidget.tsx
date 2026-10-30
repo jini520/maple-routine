@@ -16,7 +16,7 @@ import { Pressable, View, useWindowDimensions } from 'react-native'
 import { useAnchoredPopover, type PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
 import { GRID_SIDE_PADDING } from '../../../lib/today/widget-grid-metrics'
 
-import { CheckIcon, CircleQuestionMarkIcon, Text } from '../../../components/atoms'
+import { CheckBox, CircleQuestionMarkIcon, Text } from '../../../components/atoms'
 import { AnchoredPopover } from '../../../components/molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { SharedContentGroupView, SharedContentItemView } from '../view-model'
@@ -83,34 +83,6 @@ function splitColumns(
   return [groups.slice(0, cut), groups.slice(cut)]
 }
 
-/**
- * 읽기 전용 체크박스. `Pressable` 이 아니다.
- *
- * 채운 상자는 `primary` 다. 완료 계보(`secondary`)는 테마의 두 번째 시드라 메인 컬러와 색상(H)이
- * 아예 무관해, 빨강 테마에 틸이 앉으면 테마 밖의 색으로 읽힌다. 앱의 다른 체크박스 셋(설정
- * 데이터 삭제 · 가계부 사냥 입력 · 테마 선택)이 전부 이 색이다.
- */
-function Checkbox(props: { checked: boolean }): React.JSX.Element {
-  return (
-    <View
-      testID="shared-checkbox"
-      aria-hidden
-      className={`h-3 w-3 shrink-0 items-center justify-center rounded-[3px] border ${
-        props.checked ? 'border-primary bg-primary' : 'border-border-strong'
-      }`}
-    >
-      {props.checked && (
-        <CheckIcon
-          testID="shared-checkbox-mark"
-          className="h-2 w-2 text-on-primary"
-          strokeWidth={3.5}
-          aria-hidden
-        />
-      )}
-    </View>
-  )
-}
-
 /** `n/max`. 줄의 진행과 계열 제목의 주간 한도가 같은 모양을 쓴다. */
 function CountValue(props: { count: { now: number; max: number }; testID: string }): React.JSX.Element {
   return (
@@ -134,7 +106,10 @@ function SharedItemRow(props: { item: SharedContentItemView }): React.JSX.Elemen
       className="flex-row items-center gap-1.5"
       style={{ minHeight: ITEM_HEIGHT_PX }}
     >
-      <Checkbox checked={item.isComplete} />
+      {/* 읽기 전용이라 `Pressable` 이 아니고 스크린리더에서도 숨긴다. 완료는 취소선이 말한다. 줄 높이 16 에 맞춰 `sm` 이다. */}
+      <View testID="shared-checkbox" aria-hidden className="shrink-0">
+        <CheckBox checked={item.isComplete} size="sm" />
+      </View>
       <Text
         testID="shared-item-name"
         numberOfLines={1}

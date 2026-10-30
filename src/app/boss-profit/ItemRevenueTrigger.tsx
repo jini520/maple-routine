@@ -23,6 +23,8 @@ export interface ItemRevenueTriggerProps {
   label: string
   isOpen: boolean
   onPress: () => void
+  /** 화살표 색. 안 주면 `primary-ink`. 금액이 오로라 글자일 때 그 첫 색을 받는다. */
+  markColor?: string
   /** 금액 `Text`. 색은 부르는 쪽이 정한다(아이템이 섞이면 `primary-ink`). */
   children: React.ReactNode
 }
@@ -34,6 +36,7 @@ export function ItemRevenueTrigger({
   label,
   isOpen,
   onPress,
+  markColor,
   children,
 }: ItemRevenueTriggerProps): React.JSX.Element {
   return (
@@ -47,7 +50,11 @@ export function ItemRevenueTrigger({
       className="shrink-0 flex-row items-center gap-1"
     >
       <View testID="item-revenue-mark">
-        <ChevronDownIcon className="h-2.5 w-2.5 text-primary-ink" strokeWidth={2.5} aria-hidden />
+        {markColor === undefined ? (
+          <ChevronDownIcon className="h-2.5 w-2.5 text-primary-ink" strokeWidth={2.5} aria-hidden />
+        ) : (
+          <ChevronDownIcon className="h-2.5 w-2.5" color={markColor} strokeWidth={2.5} aria-hidden />
+        )}
       </View>
       {children}
     </Pressable>
