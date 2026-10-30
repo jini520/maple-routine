@@ -4,6 +4,7 @@ import notifee from '@notifee/react-native'
 
 import App from './App'
 import { installPorts, loadGameData } from './src/boot'
+import { startQueryRuntime } from './src/features/query/client'
 import { holdSplashUntilAppReady } from './src/boot-splash'
 import { handleBackgroundNotificationEvent } from './src/native/adapters/rn-notifications'
 
@@ -15,6 +16,9 @@ import { handleBackgroundNotificationEvent } from './src/native/adapters/rn-noti
 // registerRootComponent 이 등록만 한 뒤 번들 평가가 끝나야 온다. 그래도 호출을 등록 앞에 두어
 // "렌더보다 먼저"가 코드 순서로 읽히게 한다.
 installPorts()
+
+// 앱 복귀와 KST 자정을 쿼리 캐시에 잇는다. 포트 주입 뒤, 첫 렌더 전이다.
+startQueryRuntime()
 
 // 게임 데이터 표를 기기 사본과 서버 응답으로 덮는다. 포트 주입 **뒤**여야 한다. 기기 사본을 Preferences 에서
 // 읽기 때문이다. 결과는 안 기다린다. 번들 사본으로 이미 서 있다.

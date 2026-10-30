@@ -22,6 +22,7 @@ import {
   ENHANCEMENT_TOTALS_DATE_INDEX,
 } from './enhancement-tables'
 import { GAME_DATA_META_BODY, GAME_DATA_SECTIONS_BODY } from './game-data-tables'
+import { QUERY_CACHE_BODY } from './query-cache-tables'
 import { runVersionedMigrations } from './migrations'
 import { REMEMBERED_LEVELS_BODY } from './remembered-level-tables'
 import {
@@ -346,6 +347,11 @@ const TABLE_DEFINITIONS = [
   {
     name: 'game_data_meta',
     createSql: `CREATE TABLE IF NOT EXISTS game_data_meta ${GAME_DATA_META_BODY}`,
+  },
+  // TanStack Query 캐시의 사본. 넥슨 · 서버에서 받은 값만 든다. 데이터 삭제가 지우지 않는다. 다음 조회가 덮어쓰는 값이다.
+  {
+    name: 'query_cache',
+    createSql: `CREATE TABLE IF NOT EXISTS query_cache ${QUERY_CACHE_BODY}`,
   },
 ] as const
 

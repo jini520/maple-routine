@@ -1,0 +1,40 @@
+import { QueryClient } from '@tanstack/react-query'
+
+import { QUERY_CACHE_BUSTER, createQueryPersistOptions, shouldPersistQuery } from '../persist'
+
+jest.mock('../../../storage/query-cache', () => ({
+  getQueryCache: jest.fn(),
+  setQueryCache: jest.fn(),
+  removeQueryCache: jest.fn(),
+}))
+const storage = jest.requireMock('../../../storage/query-cache') as Record<string, jest.Mock>
+
+describe('shouldPersistQuery', () => {
+  it('meta.persist 가 참이고 성공한 쿼리만 저장한다', () => {
+    const client = new QueryClient()
+    client.setQueryData(['schedule', 'a'], { v: 1 })
+    const persisted = client.getQueryCache().find({ queryKey: ['schedule', 'a'] })!
+    persisted.setOptions({ queryKey: ['schedule', 'a'], meta: { persist: true } })
+    client.setQueryData(['tracked-ocids'], ['a'])
+    const notPersisted = client.getQueryCache().find({ queryKey: ['tracked-ocids'] })!
+
+    expect(shouldPersistQuery(persisted)).toBe(true)
+    expect(shouldPersistQuery(notPersisted)).toBe(false)
+  })
+})
+
+describe('createQueryPersistOptions', () => {
+  it('저장소 어댑터는 storage/query-cache 를 부르고 판이 다르면 버린다', async () => {
+    const options = createQueryPersistOptions()
+    expect(options.buster).toBe(QUERY_CACHE_BUSTER)
+    expect(options.maxAge).toBe(Number.POSITIVE_INFINITY)
+
+    storage.getQueryCache.mockResolvedValue(null)
+    storage.removeQueryCache.mockResolvedValue(undefined)
+    await options.persister.restoreClient()
+    expect(storage.getQueryCache).toHaveBeenCalledWith('query-cache')
+
+    await options.persister.removeClient()
+    expect(storage.removeQueryCache).toHaveBeenCalledWith('query-cache')
+  })
+})
