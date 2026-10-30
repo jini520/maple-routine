@@ -9,23 +9,19 @@ export interface LevelRange {
 export type RangeEnd = 'from' | 'to'
 
 /**
- * 그 칸을 지금 고를 수 있나. 강화 전은 만렙을 못 고른다(올릴 단계가 없다). 강화 후는 강화 전 칸만 못 고른다.
- * 강화 후 탭에서 강화 전보다 낮은 칸은 시작을 옮기는 칸이라 막지 않는다.
+ * 그 칸을 지금 고를 수 있나. 강화 전은 만렙을 못 고르고(올릴 단계가 없다), 강화 후는 강화 전보다 높아야 한다.
+ * 못 고르는 칸은 흐리게 막는다. 강화 후를 고르는 중에 시작이 바뀌면 어느 쪽이 바뀌는지 헷갈리기 때문이다.
  */
 export function canPick(range: LevelRange, editing: RangeEnd, level: number, max: number): boolean {
-  return editing === 'from' ? level < max : level !== range.from
+  return editing === 'from' ? level < max : level > range.from
 }
 
 /**
  * 칸을 누른 뒤의 범위와 다음에 고를 쪽. 강화 전을 고르면 강화 후 탭으로 넘어간다. 강화 후가 새 강화 전 이하가 되면
  * 그 한 칸 위로 민다.
- *
- * 강화 후 탭에서 강화 전보다 낮은 칸을 누르면 강화 후는 두고 시작이 그 칸으로 옮겨 간다. 탭을 다시 누르지 않고도
- * 시작을 내릴 수 있게 하기 위해서다(날짜 범위 고르기와 같다).
  */
 export function pickLevel(range: LevelRange, editing: RangeEnd, level: number): { range: LevelRange; editing: RangeEnd } {
   if (editing === 'from') return { range: { from: level, to: Math.max(range.to, level + 1) }, editing: 'to' }
-  if (level < range.from) return { range: { from: level, to: range.to }, editing: 'to' }
   return { range: { from: range.from, to: level }, editing: 'to' }
 }
 
