@@ -1,8 +1,9 @@
 /**
  * 1.0.12 까지의 `character/basic` 캐시(Preferences `characterBasicCache:{ocid}`). 이제 읽고 지우기만 한다.
  *
- * 기본 정보는 쿼리 캐시(`query_cache` 표)가 든다. 이 키는 업데이트 뒤 첫 실행이 쿼리 캐시로 옮긴 뒤 지운다
- * (`features/schedule-sync/schedule-query.ts` 의 `seedScheduleQueriesFromLegacyCache`). 계정별 인덱스 키도 그때 함께 지운다.
+ * 기본 정보는 쿼리 캐시(`query_cache` 표)가 든다. 추적 캐릭터의 키는 업데이트 뒤 첫 실행이 쿼리 캐시로 옮긴 뒤 지운다
+ * (`features/schedule-sync/schedule-query.ts` 의 `seedScheduleQueriesFromLegacyCache`). 남은 키는 프로필 조회가 표에 심은 뒤
+ * 지운다(`features/character-profile/resolve.ts`).
  */
 import { worldKeyOfApiName } from '../lib/world/worlds'
 import { preferences } from './ports'

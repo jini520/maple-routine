@@ -1,9 +1,9 @@
 /**
  * 기록에 붙일 캐릭터 이름·얼굴을 찾는 **한 문**.
  *
- * 원천이 둘이라 갈라 두면 어긋난다. `character_profiles` 표가 지워지지 않는 스냅샷이고
- * `character-basic-cache` 는 5분 TTL 캐시다. 표를 먼저 보고 없는 것만 캐시를 읽으며, 캐시에서
- * 찾은 것은 표에 심는다.
+ * 원천이 셋이라 갈라 두면 어긋난다. `character_profiles` 표가 지워지지 않는 스냅샷이고, 쿼리 캐시는
+ * 추적 중인 캐릭터만 들며, 옛 Preferences 키(`characterBasicCache:{ocid}`)는 그 밖의 캐릭터 값이 남은
+ * 마지막 자리다. 이 순서로 찾고, 찾은 것은 표에 심는다.
  *
  * **그 자가 치유가 곧 마이그레이션이다.** 이 표가 생기기 전 설치본은 표가 비어 있고 캐시만 차
  * 있다. 별도 이관 단계를 두면 그때 이미 추적에서 뺀 캐릭터는 그 단계가 훑을 목록에 없어 영영 안
@@ -14,6 +14,7 @@
  * const name = profiles.get(record.ocid)?.name
  */
 import { readCharacterBasic } from '../schedule-sync/read-schedule'
+import { clearCachedCharacterBasic, getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getCharacterProfiles, saveCharacterProfile } from '../../storage/character-profiles'
 
 export interface DisplayProfile {
@@ -55,7 +56,8 @@ export async function resolveDisplayProfiles(
   const missing = unique.filter((ocid) => !profiles.has(ocid))
   await Promise.all(
     missing.map(async (ocid) => {
-      const cached = readCharacterBasic(ocid)
+      const fromQuery = readCharacterBasic(ocid)
+      const cached = fromQuery ?? (await getCachedCharacterBasic(ocid).catch(() => null))
       if (cached === null || cached.profile.name === '') {
         return
       }
@@ -71,12 +73,18 @@ export async function resolveDisplayProfiles(
       // `updatedAt` 은 캐시가 적어 둔 시각이다. 지금 시각으로 쓰면 방금 받은 값처럼 보인다.
       // `jobClass` 는 `DisplayProfile` 에 없다. 이 화면이 안 그리는 값이지만 스냅샷은 들어야
       // 해서(월드 이전 판정이 읽는다) 캐시에서 따로 꺼낸다.
-      await saveCharacterProfile({
-        ocid,
-        ...profile,
-        jobClass: cached.profile.jobClass ?? null,
-        updatedAt: cached.cachedAt,
-      }).catch(() => undefined)
+      try {
+        await saveCharacterProfile({
+          ocid,
+          ...profile,
+          jobClass: cached.profile.jobClass ?? null,
+          updatedAt: cached.cachedAt,
+        })
+        // 값이 지워지지 않는 표로 옮겨졌으니 옛 키는 더 필요 없다. 표에 못 심었으면 남겨 다음 조회가 다시 옮긴다.
+        if (fromQuery === null) await clearCachedCharacterBasic(ocid)
+      } catch {
+        // 스냅샷 쓰기 실패는 화면을 막지 않는다. 이름은 이미 찾았다.
+      }
     }),
   )
 
