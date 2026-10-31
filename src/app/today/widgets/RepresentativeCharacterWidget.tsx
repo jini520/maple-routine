@@ -1,6 +1,8 @@
 /**
  * 위젯 1. 대표 캐릭터의 전신 그림 · 이름 · 레벨 · 직업 · 길드 · EXP 를 그리는 타일.
  *
+ * 전신 그림은 다섯 동작을 무작위로 이어 간다. 고르는 규칙은 `figure-motion.ts` 가 든다.
+ *
  * 전신 그림 오른쪽 열에 닉네임 줄 · 레벨 줄 · EXP 칸을 쌓는다. EXP 칸은 이 열과 같은 폭이다. 오른쪽 끝의
  * 좁은 열에 두면 바가 짧아 진행이 잘 안 보인다. 자리가 모자라면 길드가 아니라 **닉네임이 줄어든다**.
  * 길드는 잘리면 다른 길드로 읽히고, 닉네임은 그림이 이미 누구인지 말한다.
@@ -15,6 +17,7 @@
  */
 
 import { Image, View } from 'react-native'
+import { useReducedMotion } from 'react-native-reanimated'
 
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 import { worldNameOf } from '../../../lib/world/worlds'
@@ -22,11 +25,15 @@ import { worldNameOf } from '../../../lib/world/worlds'
 import { ProgressBar, Text } from '../../../components/atoms'
 import { UnavailableBadge } from '../../../components/molecules/UnavailableBadge/UnavailableBadge'
 import { UnavailableFaceMark } from '../../../components/molecules/CharacterAvatar/UnavailableFaceMark'
+import { useAppFocused } from '../../../hooks/useAppFocused'
+import { useScreenFocused } from '../../../hooks/useScreenFocused'
+import { LOOK_FRAMES, lookFrameHeadShift, lookFrameUrl } from '../../../lib/character-look'
 import { FIGURE_BOX, figureCropStyle } from '../../../lib/figure-crop'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { RepresentativeView } from '../view-model'
 import type { WidgetProps } from './types'
+import { useFigureStep, useLookFramesReady } from './useFigureStep'
 
 /** 전신 그림 높이. 오른쪽 열이 세 줄(닉네임 · 레벨 · EXP 칸)이라 그 높이에 맞춘다 */
 const FIGURE_HEIGHT = 76
@@ -40,28 +47,82 @@ const FIGURE_CROP = figureCropStyle(FIGURE_SCALE, true)
 const MARK_PX = 16
 const EMBLEM_PX = 15
 
-/** 전신 그림. 통계 단상과 같은 칸을 자른다 */
-function Figure(props: { view: RepresentativeView }): React.JSX.Element {
+const FIGURE_LEFT = FIGURE_CROP.left - FIGURE_BOX.width * FIGURE_SIDE_TRIM * FIGURE_SCALE
+const FIGURE_TOP = FIGURE_CROP.top - FIGURE_DROP * FIGURE_SCALE
+
+/** 프레임 전부를 겹쳐 깔고 지금 칸만 보이는 층. 주소를 그때 바꾸면 그림을 다시 그리는 동안 깜빡인다 */
+function FigureFrames(props: { view: RepresentativeView }): React.JSX.Element {
+  const screenFocused = useScreenFocused()
+  const appFocused = useAppFocused()
+  const step = useFigureStep(screenFocused && appFocused)
+  const current = step?.frame ?? LOOK_FRAMES[0]
+
   return (
-    // 왼쪽을 4 더 띄워 카드 끝에서 16 이다. 오른쪽 열과의 간격(16)과 같게 맞춘다(사용자 지정)
-    <View style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT }} className="ml-1 shrink-0">
-      {/* 좌우를 뒤집어 캐릭터가 오른쪽 열(닉네임 · 레벨)을 바라보게 한다(사용자 지정). 자르는 몫이 좌우 같아 칸은 그대로다. */}
-      <View
-        testID="representative-figure-frame"
-        style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT, overflow: 'hidden', transform: [{ scaleX: -1 }] }}
-      >
+    <View
+      testID="representative-figure-frame"
+      // 뒤집은 뒤에 올린다. 뒤집기 전에 올려도 위아래는 같지만, 순서를 고정해야 값을 읽기 쉽다.
+      style={{
+        width: FIGURE_WIDTH,
+        height: FIGURE_HEIGHT,
+        overflow: 'visible',
+        transform: [{ translateY: -(step?.liftPx ?? 0) }, { scaleX: -1 }],
+      }}
+    >
+      {LOOK_FRAMES.map((frame, index) => (
         <Image
-          testID="representative-figure"
-          accessibilityLabel={props.view.name}
-          source={{ uri: props.view.imageUrl }}
+          key={frame}
+          testID={`representative-figure-${frame}`}
+          accessibilityLabel={index === 0 ? props.view.name : undefined}
+          source={{ uri: lookFrameUrl(props.view.imageUrl, frame) }}
+          // 안드로이드 기본값 300ms 면 프레임이 바뀔 때마다 서서히 나타난다.
+          fadeDuration={0}
           style={{
             position: 'absolute',
             ...FIGURE_CROP,
-            left: FIGURE_CROP.left - FIGURE_BOX.width * FIGURE_SIDE_TRIM * FIGURE_SCALE,
-            top: FIGURE_CROP.top - FIGURE_DROP * FIGURE_SCALE,
+            // 뒤집은 칸 안이라 그림 기준 값이다.
+            left: FIGURE_LEFT - lookFrameHeadShift(frame) * FIGURE_SCALE,
+            top: FIGURE_TOP,
+            opacity: frame === current ? 1 : 0,
           }}
         />
-      </View>
+      ))}
+    </View>
+  )
+}
+
+/** 전신 그림. 통계 단상과 같은 칸을 자른다 */
+function StillFigure(props: { view: RepresentativeView }): React.JSX.Element {
+  return (
+    <View
+      testID="representative-figure-frame"
+      style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT, overflow: 'hidden', transform: [{ scaleX: -1 }] }}
+    >
+      <Image
+        testID="representative-figure"
+        accessibilityLabel={props.view.name}
+        source={{ uri: props.view.imageUrl }}
+        style={{ position: 'absolute', ...FIGURE_CROP, left: FIGURE_LEFT, top: FIGURE_TOP }}
+      />
+    </View>
+  )
+}
+
+function Figure(props: { view: RepresentativeView }): React.JSX.Element {
+  const reduceMotion = useReducedMotion()
+  const canMove = !props.view.unavailable && !reduceMotion
+  const framesReady = useLookFramesReady(canMove ? props.view.imageUrl : null)
+
+  return (
+    // 왼쪽을 4 더 띄워 카드 끝에서 16 이다. 오른쪽 열과의 간격(16)과 같게 맞춘다(사용자 지정).
+    // 휘두르는 무기는 글자 위로 지나간다(사용자 지정). 그래서 이 상자가 오른쪽 열보다 위에 선다.
+    <View
+      testID="representative-figure-box"
+      pointerEvents="none"
+      style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT, zIndex: 1 }}
+      className="ml-1 shrink-0"
+    >
+      {/* 좌우를 뒤집어 캐릭터가 오른쪽 열(닉네임 · 레벨)을 바라보게 한다(사용자 지정). 자르는 몫이 좌우 같아 칸은 그대로다. */}
+      {framesReady ? <FigureFrames view={props.view} /> : <StillFigure view={props.view} />}
       {props.view.unavailable && (
         <View className="absolute bottom-0 right-0">
           <UnavailableFaceMark size={MARK_PX} />
