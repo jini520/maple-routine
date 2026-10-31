@@ -8,7 +8,8 @@ import { QueryClient } from '@tanstack/react-query'
 
 import { installAppStateFocus } from './app-focus'
 import { startRecordInvalidation } from './invalidation'
-import { startResetBoundaryTimer } from './reset-timer'
+import { queryKeys } from './keys'
+import { NEXON_QUERY_SOURCE, startResetBoundaryTimer } from './reset-timer'
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +23,12 @@ export const queryClient = new QueryClient({
     },
   },
 })
+
+// 화면이 구독하지 않고 `setQueryData` 로만 넣는 쿼리. `meta` 는 옵저버나 `fetchQuery` 가 실어 주므로, 기본값으로 걸지
+// 않으면 저장기가 이 쿼리를 건너뛴다.
+for (const queryKey of [queryKeys.allMesoRates(), queryKeys.eventWorldNames()]) {
+  queryClient.setQueryDefaults(queryKey, { meta: { persist: true, source: NEXON_QUERY_SOURCE } })
+}
 
 /**
  * 앱 복귀 · KST 자정 · 표의 판을 캐시에 잇는다. 포트 주입 뒤, 첫 렌더 전에 한 번 부른다.

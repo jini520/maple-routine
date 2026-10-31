@@ -15,7 +15,7 @@ import { closeBossProfitDb, getBossProfitDb } from '../db'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 jest.mock('../../api-key', () => ({ getAuthConfig: jest.fn() }))
-jest.mock('../../event-world-names', () => ({ getEventWorldNames: jest.fn() }))
+jest.mock('../../../features/enhancement-history/event-world-names', () => ({ readEventWorldNames: jest.fn() }))
 // 옮기기가 빠진 줄을 서버에 알린다. 테스트에서 운영 서버로 요청이 나가면 안 된다.
 jest.mock('../../../features/enhancement-history/anomalies', () => ({
   ...jest.requireActual('../../../features/enhancement-history/anomalies'),
@@ -27,7 +27,10 @@ jest.mock('../../enhancement-totals-moved', () => ({
 }))
 
 const { getAuthConfig } = jest.requireMock('../../api-key') as Record<string, jest.Mock>
-const { getEventWorldNames } = jest.requireMock('../../event-world-names') as Record<string, jest.Mock>
+const { readEventWorldNames } = jest.requireMock('../../../features/enhancement-history/event-world-names') as Record<
+  string,
+  jest.Mock
+>
 const moved = jest.requireMock('../../enhancement-totals-moved') as Record<string, jest.Mock>
 
 let real: RealSqlite
@@ -37,7 +40,7 @@ beforeEach(() => {
   setSqlitePort(real.port)
   __resetEnhancementTotalsMoveForTest()
   getAuthConfig.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-main', label: '', value: 'k' }] })
-  getEventWorldNames.mockResolvedValue(new Set(['머리맨들맨둘']))
+  readEventWorldNames.mockReturnValue(new Set(['머리맨들맨둘']))
   moved.isEnhancementTotalsMoved.mockResolvedValue(false)
   moved.markEnhancementTotalsMoved.mockReset().mockResolvedValue(undefined)
 })
@@ -154,14 +157,14 @@ describe('옛 원본을 합계로 옮기기', () => {
 
   // 이름 목록 없이 옮기면 판정이 빈 줄이 남고, 옛 날짜는 다시 받지 않아 그 지출이 영영 안 보인다.
   it('계정이나 이벤트 월드 이름 목록이 없으면 옮기지 않고 다음 호출이 다시 본다', async () => {
-    getEventWorldNames.mockResolvedValue(null)
+    readEventWorldNames.mockReturnValue(null)
     await seedHistory([{ id: 'a', kind: 'cube', date: '2026-10-01', name: '낟낟', level: 200 }])
 
     await ensureEnhancementTotals()
     expect(await loadEnhancementTotals('2026-10-01', '2026-10-01')).toEqual([])
     expect(moved.markEnhancementTotalsMoved).not.toHaveBeenCalled()
 
-    getEventWorldNames.mockResolvedValue(new Set())
+    readEventWorldNames.mockReturnValue(new Set())
     await ensureEnhancementTotals()
     expect(await loadEnhancementTotals('2026-10-01', '2026-10-01')).toHaveLength(1)
   })

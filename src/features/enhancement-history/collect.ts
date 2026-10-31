@@ -11,15 +11,15 @@ import { currentCredential } from '../auth/current-credential'
 import { fillLegacyAccountIds } from '../auth/legacy-account-ids'
 import { ensureEnhancementTotals } from './legacy-totals'
 import type { NexonCredential } from '../../types/auth'
-import { fetchAndRecordCharacterList } from '../mvp-grade/character-list'
+import { fetchCharacterListCached } from '../mvp-grade/character-list'
 import type { EnhancementHistoryRow, EnhancementKind } from '../../nexon/history/client'
 import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
 import { fetchEnhancementHistory } from '../../nexon/history/client'
-import { saveEventWorldNames } from '../../storage/event-world-names'
 import { checkKey, loadEnhancementChecks, markEnhancementChecked } from '../../storage/enhancement-history'
 import { replaceEnhancementTotals } from '../../storage/enhancement-totals'
 import { summarizeEnhancement } from './spending'
 import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
+import { saveEventWorldNames } from './event-world-names'
 import { eventWorldCharacterNames } from '../../lib/enhancement/world'
 import { SOUL_POTENTIAL_FROM } from '../../lib/enhancement/cost'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
@@ -239,11 +239,11 @@ export async function collectEnhancementHistory(
 
   // 목록을 못 받은 것과 스페셜 캐릭터가 없는 것은 다르다. 앞은 null, 뒤는 빈 집합이다.
   let listError: string | null = null
-  const eventNames = await fetchAndRecordCharacterList(credential)
-    .then(async (accounts) => {
+  const eventNames = await fetchCharacterListCached(credential)
+    .then((accounts) => {
       const names = eventWorldCharacterNames(accounts)
       // 읽는 쪽이 이것을 쓴다. 칸 하나 그릴 때마다 계정 목록을 부를 수는 없다.
-      await saveEventWorldNames(names).catch(() => undefined)
+      saveEventWorldNames(names)
       return names
     })
     .catch((error: unknown) => {

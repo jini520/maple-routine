@@ -9,8 +9,9 @@
  */
 import { currentCredential } from '../auth/current-credential'
 import { fetchMesoRate } from '../../nexon/meso-rate'
+import { queryClient } from '../query/client'
+import { queryKeys } from '../query/keys'
 import { readCharacterBasic } from '../schedule-sync/read-schedule'
-import { getCachedMesoRate, setCachedMesoRate } from '../../storage/meso-rate-cache'
 
 /**
  * 읽었나 못 읽었나. 화면이 **줄의 모양을 가르는** 값이다.
@@ -35,18 +36,26 @@ async function jobClassOf(ocid: string): Promise<string | null> {
   return cached?.profile.jobClass ?? null
 }
 
+/**
+ * 캐릭터의 마지막 성공값. 기한이 없다. 이 값은 사용자가 장비를 갈아입을 때만 변하고, 낡은 값이 쓰이는 곳은 폴백의
+ * 기본값 하나뿐이다. **0 은 값이다**(메획을 안 두른 부캐가 실제로 있다).
+ */
+function lastMesoRate(ocid: string): number | null {
+  return queryClient.getQueryData<number>(queryKeys.mesoRate(ocid)) ?? null
+}
+
 export async function loadMesoRate(ocid: string): Promise<MesoRateLoad> {
   const credential = await currentCredential()
   // 키가 없으면 **부르지도 않는다**. 401 을 만들면 그 사슬이 저장된 키를 지운다.
-  if (credential === null) return { kind: 'fallback', percent: await getCachedMesoRate(ocid) }
+  if (credential === null) return { kind: 'fallback', percent: lastMesoRate(ocid) }
 
   try {
     const percent = await fetchMesoRate(credential, ocid, await jobClassOf(ocid))
-    // 캐시 쓰기 실패로 **읽은 값을 버리지 않는다**. 캐시는 폴백의 기본값일 뿐이다.
-    await setCachedMesoRate(ocid, percent).catch(() => undefined)
+    // 폴백 칸의 기본값으로 쓰이는 자리라 NaN 이 새면 치는 칸이 깨진다.
+    if (Number.isFinite(percent) && percent >= 0) queryClient.setQueryData(queryKeys.mesoRate(ocid), percent)
     return { kind: 'read', percent }
   } catch {
     // 실패한 값으로 캐시를 덮지 않는다. 마지막 성공값이 사라지면 폴백 칸이 빈다.
-    return { kind: 'fallback', percent: await getCachedMesoRate(ocid) }
+    return { kind: 'fallback', percent: lastMesoRate(ocid) }
   }
 }

@@ -1,5 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 
+import { queryClient } from '../client'
+import { queryKeys } from '../keys'
 import { QUERY_CACHE_BUSTER, createQueryPersistOptions, shouldPersistQuery } from '../persist'
 
 jest.mock('../../../storage/query-cache', () => ({
@@ -20,6 +22,18 @@ describe('shouldPersistQuery', () => {
 
     expect(shouldPersistQuery(persisted)).toBe(true)
     expect(shouldPersistQuery(notPersisted)).toBe(false)
+  })
+})
+
+// `meta` 는 옵저버가 붙거나 `fetchQuery` 가 돌 때 쿼리에 실린다. 둘 다 없는 쿼리는 저장기가 조용히 건너뛴다.
+describe('화면이 구독하지 않는 쿼리', () => {
+  it.each([
+    ['메소 획득량', queryKeys.mesoRate('ocid-1'), 0],
+    ['이벤트 월드 이름', queryKeys.eventWorldNames(), []],
+  ])('%s 은 `setQueryData` 로만 넣어도 저장 대상이다', (_name, queryKey, value) => {
+    queryClient.setQueryData(queryKey, value)
+
+    expect(shouldPersistQuery(queryClient.getQueryCache().find({ queryKey })!)).toBe(true)
   })
 })
 

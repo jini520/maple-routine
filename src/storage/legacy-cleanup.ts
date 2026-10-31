@@ -3,19 +3,47 @@
  *
  * 이제 아무도 읽지 않는 키들이다. 남겨 두면 Preferences 파일이 그만큼 커진 채 설정을 쓸 때마다 함께 다시 쓰인다.
  */
-import { characterBasicCacheIndexKey, LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY, STORAGE_KEYS } from './keys'
+import {
+  characterBasicCacheIndexKey,
+  LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY,
+  mesoRateCacheKey,
+  STORAGE_KEYS,
+} from './keys'
 import { preferences } from './ports'
 
 const LEGACY_KEYS = new Set<string>([
   STORAGE_KEYS.queryCache,
   STORAGE_KEYS.legacyBossCatalog,
   STORAGE_KEYS.legacyNotices,
+  STORAGE_KEYS.eventWorldNames,
   LEGACY_CHARACTER_BASIC_CACHE_INDEX_KEY,
 ])
 const BASIC_INDEX_PREFIX = characterBasicCacheIndexKey('')
+const MESO_RATE_PREFIX = mesoRateCacheKey('')
 
 function isLegacyKey(key: string): boolean {
-  return LEGACY_KEYS.has(key) || key.startsWith(BASIC_INDEX_PREFIX)
+  return LEGACY_KEYS.has(key) || key.startsWith(BASIC_INDEX_PREFIX) || key.startsWith(MESO_RATE_PREFIX)
+}
+
+/** 1.0.12 까지의 메소 획득량. 잘못된 값은 뺀다. 폴백 칸의 기본값이 될 값이라 NaN 이 새면 치는 칸이 깨진다. */
+export async function readLegacyMesoRates(): Promise<Map<string, number>> {
+  const keys = (await preferences.keys()).filter((key) => key.startsWith(MESO_RATE_PREFIX))
+  const entries = await Promise.all(
+    keys.map(async (key) => [key.slice(MESO_RATE_PREFIX.length), Number((await preferences.get(key)) ?? Number.NaN)] as const),
+  )
+  return new Map(entries.filter(([, percent]) => Number.isFinite(percent) && percent >= 0))
+}
+
+/** 1.0.12 까지의 이벤트 월드 캐릭터 이름. 안 적혔거나 상한 값이면 `null`. 빈 배열로 읽으면 스페셜 지출이 샌다. */
+export async function readLegacyEventWorldNames(): Promise<string[] | null> {
+  const raw = await preferences.get(STORAGE_KEYS.eventWorldNames)
+  if (raw === null) return null
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed.map(String) : null
+  } catch {
+    return null
+  }
 }
 
 /**

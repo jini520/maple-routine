@@ -14,7 +14,7 @@ import { clearCachedSchedulerState, getCachedSchedulerState } from '../../storag
 import type { CachedCharacterBasicEntry } from '../../storage/character-basic-cache'
 import { clearCachedCharacterBasic, getCachedCharacterBasic } from '../../storage/character-basic-cache'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
-import { runLegacyCleanupOnce } from '../../storage/legacy-cleanup'
+import { readLegacyEventWorldNames, readLegacyMesoRates, runLegacyCleanupOnce } from '../../storage/legacy-cleanup'
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
 import { recordBossProfitFromRound } from '../boss-profit/round-record'
 import { queryClient } from '../query/client'
@@ -216,11 +216,29 @@ export async function seedScheduleQueriesFromLegacyCache(): Promise<void> {
   )
 }
 
+/** 1.0.13 전 앱이 남긴 메소 획득량과 이벤트 월드 이름을 쿼리에 심는다. 쿼리에 든 값이 더 새것이라 덮지 않는다. */
+async function seedMesoRatesAndEventNames(): Promise<void> {
+  for (const [ocid, percent] of await readLegacyMesoRates()) {
+    if (queryClient.getQueryData(queryKeys.mesoRate(ocid)) === undefined) {
+      queryClient.setQueryData(queryKeys.mesoRate(ocid), percent)
+    }
+  }
+  const names = await readLegacyEventWorldNames()
+  if (names !== null && queryClient.getQueryData(queryKeys.eventWorldNames()) === undefined) {
+    queryClient.setQueryData(queryKeys.eventWorldNames(), names)
+  }
+}
+
+async function seedQueriesFromLegacyKeys(): Promise<void> {
+  await seedScheduleQueriesFromLegacyCache()
+  await seedMesoRatesAndEventNames()
+}
+
 /**
  * 저장된 캐시를 올린 뒤 한 번 부른다. 옛 캐시를 옮기고, 회차를 만료로 표시한다. 앱을 켜는 것은 지금 상태를 보겠다는
  * 뜻이라 10분 안이어도 첫 진입은 한 번 받는다.
  */
 export async function onQueryCacheRestored(): Promise<void> {
-  await runLegacyCleanupOnce(seedScheduleQueriesFromLegacyCache).catch(() => undefined)
+  await runLegacyCleanupOnce(seedQueriesFromLegacyKeys).catch(() => undefined)
   await queryClient.invalidateQueries({ queryKey: queryKeys.scheduleRound(), refetchType: 'none' })
 }
