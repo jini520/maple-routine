@@ -56,7 +56,7 @@ export function useScrollIndicatorStyle(): 'black' | 'white' {
 }
 
 /**
- * 얹히는 흐림의 재질(`expo-blur` 의 `tint`). 시트의 단계 전환과 보스 수익 버튼의 드럼이 쓴다.
+ * 얹히는 흐림의 재질(`expo-blur` 의 `tint`). 시트의 단계 전환이 쓴다.
  *
  * 위 훅과 **같은 이유로 여기 있다**. `expo-blur` 의 기본값 `'default'` 는 iOS 에서
  * `UIBlurEffect.Style.regular` 이고, 그 재질은 트레잇의 `userInterfaceStyle` 을 따라가 **OS 가

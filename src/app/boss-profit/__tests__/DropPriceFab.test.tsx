@@ -1,6 +1,6 @@
 // 아이템 가격 입력으로 가는 떠 있는 버튼.
 //
-// **움직임은 여기서 안 본다**. 값은 `drop-price-fab-motion.ts` 가 들고 그쪽 테스트가 붙든다.
+// **흔들리는 값은 여기서 안 본다**. 값은 `drop-price-fab-motion.ts` 가 들고 그쪽 테스트가 붙든다.
 // 여기서 보는 것은 **무엇이 어디에 섰고 누르면 어디로 가는가** 다.
 import { act, fireEvent, within } from '@testing-library/react-native'
 
@@ -10,12 +10,12 @@ import { getThemeDefinition } from '../../../lib/theme/theme-registry'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../theme/appearance-store'
 import { boxShadowOf } from '../../../lib/shadow'
 import { FAB_SHADOW } from '../../../lib/fab-metrics'
-import { dropItemIconOf } from '../../../lib/assets/asset-lookup'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
 import { useUnpricedDropCount } from '../../../features/boss-profit/use-unpriced-drop-count'
-import { DropPriceFab, DROP_PRICE_FAB_ITEMS } from '../DropPriceFab'
+import { TAG_SWING_PIVOT } from '../drop-price-fab-motion'
+import { DropPriceFab } from '../DropPriceFab'
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 // 배지 수의 원천(창 채우기 · 판 구독)은 그 훅의 테스트가 본다. 여기서는 받은 수를 어떻게 그리는가다.
@@ -31,22 +31,6 @@ beforeEach(() => {
   >)
   jest.mocked(useUnpricedDropCount).mockReturnValue(null)
 })
-
-/** 트리에 선 순서대로의 `testID`. 무엇이 무엇 위에 얹혔는지는 이 순서가 답한다. */
-function testIdsInOrder(node: unknown, found: string[] = []): string[] {
-  if (node === null || typeof node !== 'object') return found
-
-  if (Array.isArray(node)) {
-    for (const child of node) testIdsInOrder(child, found)
-    return found
-  }
-
-  const element = node as { props?: Record<string, unknown>; children?: unknown }
-  const testID = element.props?.testID
-  if (typeof testID === 'string') found.push(testID)
-  testIdsInOrder(element.children, found)
-  return found
-}
 
 describe('버튼', () => {
   // 보던 주를 넘긴다. 가격 입력 화면이 보스 수익 스토어를 읽으면, 이 화면이 없을 때 남은 낡은
@@ -112,8 +96,8 @@ describe('미입력 건수 배지', () => {
     expect(view.getByLabelText('아이템 가격 입력, 미입력 12건')).toBeTruthy()
   })
 
-  // 원이 `overflow-hidden` 이라 그 안에 두면 원 밖으로 걸친 부분이 잘린다.
-  it('자르는 원 밖에 선다', async () => {
+  // 뜻은 원의 이름이 읽으므로 배지는 눌리는 원 안에 넣지 않는다.
+  it('눌리는 원 밖에 선다', async () => {
     const view = await 그리기(3)
 
     const circle = view.getByLabelText('아이템 가격 입력, 미입력 3건')
@@ -131,46 +115,14 @@ describe('미입력 건수 배지', () => {
   })
 })
 
-describe('도는 그림', () => {
-  // 파일명은 화면이 안 든다. `drop-items.json` 이 key 에 매어 둔 것을 그대로 꺼내므로
-  // 매핑이 바뀌면 이 버튼도 함께 따라간다.
-  it('그림은 아이템 key 로 찾은 것이다', async () => {
+// 흔들려도 구멍 자리는 그대로여야 가격표가 걸려 있는 것처럼 보인다.
+describe('가격표', () => {
+  it('원 안에 태그 아이콘 하나가 구멍을 축으로 선다', async () => {
     const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
+    const tag = view.getByTestId('drop-price-fab-tag')
 
-    DROP_PRICE_FAB_ITEMS.forEach((itemKey, slot) => {
-      const icon = dropItemIconOf(itemKey)
-
-      expect(icon).not.toBeNull()
-      expect(view.getByTestId(`drop-price-fab-item-${slot}`).props.source).toBe(icon)
-    })
-  })
-})
-
-describe('흐림', () => {
-  // `expo-blur` 는 **자기 뒤에 있는 것**을 흐린다. 그림보다 먼저 서면 흐릴 것이 원의 채움색
-  // 뿐이라 아무 일도 안 일어난다.
-  it('그림 셋보다 뒤에 서서 그것들을 덮는다', async () => {
-    const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
-    const order = testIdsInOrder(view.toJSON())
-
-    expect(order.indexOf('drop-price-fab-veil')).toBeGreaterThan(
-      order.indexOf(`drop-price-fab-item-${DROP_PRICE_FAB_ITEMS.length - 1}`),
-    )
-  })
-
-  // 모서리는 바깥 원이 자른다. `BlurView` 자신에게 반경을 주면 iOS 의 시각 효과 뷰가 그것을
-  // 안 따라 각진 네모가 원 밖으로 삐져나온다.
-  it('자르는 것은 바깥 원이다', async () => {
-    const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
-    const box = flattenStyle(view.getByLabelText('아이템 가격 입력').props.style)
-
-    expect(box.overflow).toBe('hidden')
-  })
-
-  it('터치를 안 먹는다. 버튼이 통째로 눌려야 한다', async () => {
-    const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
-
-    expect(view.getByTestId('drop-price-fab-veil').props.pointerEvents).toBe('none')
+    expect(flattenStyle(tag.props.style).transformOrigin).toBe(TAG_SWING_PIVOT)
+    expect(within(view.getByLabelText('아이템 가격 입력')).getByTestId('drop-price-fab-tag')).toBeTruthy()
   })
 })
 
@@ -179,17 +131,13 @@ describe('흐림', () => {
 describe('떠 있는 원의 입체감', () => {
   afterEach(__resetThemeAppearanceForTest)
 
-  // 이 원은 `overflow-hidden` 이다(도는 그림과 흐림 판을 원 안에 가두는 값). 같은 뷰에 그림자를
-  // 달면 플랫폼에 따라 잘리므로 원을 감싸는 바깥 뷰가 든다.
-  it('그림자는 자르는 원 밖의 뷰가 든다', async () => {
+  it('그림자는 원을 감싸는 뷰가 든다', async () => {
     const view = await renderOverlay(<DropPriceFab periodKey={PERIOD} />)
 
     const elevation = flattenStyle(view.getByTestId('drop-price-fab-elevation').props.style)
 
     expect(elevation.boxShadow).toBe(boxShadowOf(기본테마.shadowColor, FAB_SHADOW))
     expect(elevation.borderRadius).toBe(999)
-    // 자르는 것은 이 뷰가 아니다. 여기서 자르면 그림자가 자기 상자 안에 갇힌다.
-    expect(elevation.overflow).toBeUndefined()
   })
 
   it('원 자신은 그림자를 안 든다', async () => {
