@@ -2,7 +2,7 @@ import { QueryClient } from '@tanstack/react-query'
 
 import { queryClient } from '../client'
 import { queryKeys } from '../keys'
-import { QUERY_CACHE_BUSTER, createQueryPersistOptions, shouldPersistQuery } from '../persist'
+import { QUERY_CACHE_BUSTER, createQueryPersistOptions, shouldPersistQuery, stopQueryPersist } from '../persist'
 
 jest.mock('../../../storage/query-cache', () => ({
   getQueryCache: jest.fn(),
@@ -50,5 +50,28 @@ describe('createQueryPersistOptions', () => {
 
     await options.persister.removeClient()
     expect(storage.removeQueryCache).toHaveBeenCalledWith('query-cache')
+  })
+})
+
+// 이 파일의 맨 뒤에 둔다. 멈춘 저장기는 앱을 다시 띄워야 풀린다.
+describe('stopQueryPersist', () => {
+  const client = { buster: QUERY_CACHE_BUSTER, timestamp: 0, clientState: { mutations: [], queries: [] } }
+
+  beforeEach(() => {
+    storage.setQueryCache.mockReset().mockResolvedValue(undefined)
+  })
+
+  it('멈추기 전에는 표에 쓴다', async () => {
+    await createQueryPersistOptions().persister.persistClient(client)
+
+    expect(storage.setQueryCache).toHaveBeenCalledTimes(1)
+  })
+
+  it('멈추면 표에 쓰지 않는다', async () => {
+    stopQueryPersist()
+
+    await createQueryPersistOptions().persister.persistClient(client)
+
+    expect(storage.setQueryCache).not.toHaveBeenCalled()
   })
 })

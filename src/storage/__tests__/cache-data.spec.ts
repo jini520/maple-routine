@@ -26,8 +26,8 @@ afterEach(async () => {
   real.dispose()
 })
 
-const NONE: CacheDataSelection = { manual: false, boss: false, cashbook: false, enhancement: false }
-const ALL: CacheDataSelection = { manual: true, boss: true, cashbook: true, enhancement: true }
+const NONE: CacheDataSelection = { manual: false, boss: false, cashbook: false, enhancement: false, cache: false }
+const ALL: CacheDataSelection = { manual: true, boss: true, cashbook: true, enhancement: true, cache: true }
 
 let seq = 0
 
@@ -82,6 +82,8 @@ const MANUAL_KEYS = [
   'lastPointRate',
 ]
 
+const CACHE_KEYS = ['schedulerCache:o1', 'characterBasicCache:o1', 'mesoRateCache:o1', 'eventWorldNames']
+
 const KEPT_KEYS = [
   'authMethods',
   'apiKey',
@@ -90,11 +92,9 @@ const KEPT_KEYS = [
   'trackedCharacters',
   'representativeCharacter',
   'enhancementTotalsMoved',
+  'legacyCleanupDone',
   'partyAppointments',
-  'schedulerCache:o1',
   'scheduleProbe:o1',
-  'characterBasicCache:o1',
-  'mesoRateCache:o1',
   'dataFetchedAt',
   'notices',
   'serverBackfill',
@@ -112,13 +112,14 @@ const KEPT_TABLES = [
 ]
 
 async function seedAll(): Promise<void> {
-  for (const key of [...MANUAL_KEYS, ...KEPT_KEYS]) await prefs.set(key, 'v')
+  for (const key of [...MANUAL_KEYS, ...CACHE_KEYS, ...KEPT_KEYS]) await prefs.set(key, 'v')
   for (const table of [
     'cashbook_entries',
     'cashbook_entry_items',
     'enhancement_totals',
     'enhancement_history_checks',
     'server_sync_queue',
+    'query_cache',
     ...KEPT_TABLES,
   ]) {
     insertRow(table)
@@ -137,7 +138,7 @@ describe('clearCacheData', () => {
     await clearCacheData(NONE)
 
     expect(real.statements.slice(before).filter((statement) => /DELETE|UPDATE|VACUUM/.test(statement))).toEqual([])
-    expect(await remainingKeys()).toEqual([...MANUAL_KEYS, ...KEPT_KEYS].sort())
+    expect(await remainingKeys()).toEqual([...MANUAL_KEYS, ...CACHE_KEYS, ...KEPT_KEYS].sort())
   })
 
   it('수동 선택 항목은 그 키만 지우고 표는 기록을 건드리지 않는다', async () => {
@@ -145,7 +146,7 @@ describe('clearCacheData', () => {
 
     await clearCacheData({ ...NONE, manual: true })
 
-    expect(await remainingKeys()).toEqual([...KEPT_KEYS].sort())
+    expect(await remainingKeys()).toEqual([...CACHE_KEYS, ...KEPT_KEYS].sort())
     expect([count('cashbook_entries'), count('enhancement_totals')]).toEqual([1, 1])
   })
 
@@ -156,7 +157,7 @@ describe('clearCacheData', () => {
 
     expect([count('cashbook_entries'), count('cashbook_entry_items')]).toEqual([0, 0])
     expect([count('enhancement_totals'), count('enhancement_history_checks')]).toEqual([1, 1])
-    expect(await remainingKeys()).toEqual([...MANUAL_KEYS, ...KEPT_KEYS].sort())
+    expect(await remainingKeys()).toEqual([...MANUAL_KEYS, ...CACHE_KEYS, ...KEPT_KEYS].sort())
   })
 
   // 확인 기록만 남으면 그 날짜를 다시 부르지 않아 합계가 빈 채로 굳는다.
@@ -169,7 +170,7 @@ describe('clearCacheData', () => {
     expect(count('cashbook_entries')).toBe(1)
   })
 
-  it('네 그룹을 다 골라도 목록에 없는 키 · 표는 남는다', async () => {
+  it('다섯 그룹을 다 골라도 목록에 없는 키 · 표는 남는다', async () => {
     await seedAll()
 
     await clearCacheData(ALL)
@@ -178,13 +179,103 @@ describe('clearCacheData', () => {
     expect(KEPT_TABLES.map(count)).toEqual(KEPT_TABLES.map(() => 1))
   })
 
-  // 대기 표가 남으면 방금 지운 기록마다 지우기 요청이 서버로 간다. 서버 사본은 남긴다.
-  it('어느 그룹을 골라도 서버 전송 대기 표를 비운다', async () => {
+  it('캐시는 쿼리 캐시 표와 그 키만 지운다', async () => {
     await seedAll()
 
-    await clearCacheData({ ...NONE, cashbook: true })
+    await clearCacheData({ ...NONE, cache: true })
+
+    expect(count('query_cache')).toBe(0)
+    expect(await remainingKeys()).toEqual([...MANUAL_KEYS, ...KEPT_KEYS].sort())
+    expect([count('cashbook_entries'), count('enhancement_totals')]).toEqual([1, 1])
+  })
+
+  // 대기 표가 남으면 방금 지운 기록마다 지우기 요청이 서버로 간다. 서버 사본은 남긴다.
+  it.each(['manual', 'boss', 'cashbook', 'enhancement'] as const)('%s 을 고르면 서버 전송 대기 표를 비운다', async (group) => {
+    await seedAll()
+
+    await clearCacheData({ ...NONE, [group]: true })
 
     expect(count('server_sync_queue')).toBe(0)
+  })
+
+  // 기록이 그대로라 지우기 요청이 생기지 않는다. 비우면 아직 못 보낸 드롭 시세가 사라진다.
+  it('캐시만 고르면 서버 전송 대기 표를 남긴다', async () => {
+    await seedAll()
+
+    await clearCacheData({ ...NONE, cache: true })
+
+    expect(count('server_sync_queue')).toBe(1)
+  })
+
+  describe('옛 프로필', () => {
+    const basicEntry = (name: string): string =>
+      JSON.stringify({
+        profile: { name, level: 285, imageUrl: 'https://example.test/a.png', accessFlag: true, world: '루나', worldKey: 'luna', jobClass: '레테' },
+        cachedAt: '2026-08-01T00:00:00.000Z',
+      })
+    const profileNames = (): Record<string, string> =>
+      real.inspect((db) =>
+        Object.fromEntries(
+          (db.prepare('SELECT ocid, name FROM character_profiles').all() as { ocid: string; name: string }[]).map((row) => [
+            row.ocid,
+            row.name,
+          ]),
+        ),
+      )
+
+    // 이 키가 이름이 남은 마지막 자리인 캐릭터가 있다. 그냥 지우면 가계부 · 드롭 이력에서 줄이 사라진다.
+    it('캐시가 옛 키를 지우기 전에 표에 없는 캐릭터를 표에 심는다', async () => {
+      await prefs.set('characterBasicCache:untracked', basicEntry('옛추적'))
+
+      await clearCacheData({ ...NONE, cache: true })
+
+      expect(profileNames()).toEqual({ untracked: '옛추적' })
+      expect(await prefs.get('characterBasicCache:untracked')).toBeNull()
+      expect(
+        real.inspect((db) => db.prepare('SELECT world_key, job_class, updated_at FROM character_profiles').get()),
+      ).toEqual({ world_key: 'luna', job_class: '레테', updated_at: '2026-08-01T00:00:00.000Z' })
+    })
+
+    it('표에 있는 캐릭터는 덮지 않는다. 옛 키의 값이 더 오래됐다', async () => {
+      insertRow('character_profiles', { ocid: 'tracked', name: '새이름' })
+      await prefs.set('characterBasicCache:tracked', basicEntry('옛이름'))
+
+      await clearCacheData({ ...NONE, cache: true })
+
+      expect(profileNames()).toEqual({ tracked: '새이름' })
+    })
+
+    // 이름이 빈 행을 심으면 화면에 이름 없는 줄이 선다.
+    it('이름이 비었거나 상한 값 · 계정별 인덱스 키는 심지 않고 지운다', async () => {
+      await prefs.set('characterBasicCache:empty', basicEntry(''))
+      await prefs.set('characterBasicCache:broken', '{{{')
+      await prefs.set('characterBasicCache:index:account-1', '["ocid-1"]')
+
+      await clearCacheData({ ...NONE, cache: true })
+
+      expect(profileNames()).toEqual({})
+      expect(await remainingKeys()).toEqual([])
+    })
+
+    it('캐시를 안 고르면 옛 키를 표에 옮기지 않는다', async () => {
+      await prefs.set('characterBasicCache:untracked', basicEntry('옛추적'))
+
+      await clearCacheData({ ...NONE, cashbook: true })
+
+      expect(profileNames()).toEqual({})
+      expect(await prefs.get('characterBasicCache:untracked')).not.toBeNull()
+    })
+
+    // 표에 못 심었는데 키를 지우면 그 이름은 어디에도 안 남는다.
+    it('표 지우기가 실패하면 옛 키가 남는다', async () => {
+      await prefs.set('characterBasicCache:untracked', basicEntry('옛추적'))
+      real.inspect((db) => db.exec('DROP TABLE query_cache'))
+
+      await expect(clearCacheData({ ...NONE, cache: true })).rejects.toThrow()
+
+      expect(await prefs.get('characterBasicCache:untracked')).not.toBeNull()
+      expect(profileNames()).toEqual({})
+    })
   })
 
   it('표 지우기가 중간에 실패하면 앞에서 지운 표도 되돌아간다', async () => {
@@ -218,9 +309,18 @@ describe('getCacheDataCounts', () => {
     insertRow('enhancement_totals', { history_date: '2026-10-01' })
     insertRow('enhancement_totals', { history_date: '2026-10-01' })
     insertRow('enhancement_totals', { history_date: '2026-10-02' })
+    for (const key of CACHE_KEYS) await prefs.set(key, 'v')
+    await prefs.set('scheduleProbe:o1', 'v')
 
     const counts = await getCacheDataCounts()
 
-    expect(counts).toEqual({ manualCharacters: 2, bossClears: 0, bossDrops: 0, cashbookEntries: 2, enhancementDays: 2 })
+    expect(counts).toEqual({
+      manualCharacters: 2,
+      bossClears: 0,
+      bossDrops: 0,
+      cashbookEntries: 2,
+      enhancementDays: 2,
+      cacheEntries: CACHE_KEYS.length,
+    })
   })
 })

@@ -54,7 +54,7 @@ function count(table: string): number {
   return real.inspect((db) => (db.prepare(`SELECT count(*) AS n FROM ${table}`).get() as { n: number }).n)
 }
 
-const NONE = { manual: false, boss: false, cashbook: false, enhancement: false }
+const NONE = { manual: false, boss: false, cashbook: false, enhancement: false, cache: false }
 
 describe('보스 기록 새 표 셋의 데이터 삭제', () => {
   it('수동 선택 항목만 지우면 보스 관리 설정과 그 기간 값만 사라지고 처치와 드롭은 남는다', async () => {
