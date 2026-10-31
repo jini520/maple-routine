@@ -4,7 +4,6 @@ import { installFakePreferences } from './fake-preferences'
 import type { CharacterBasicProfile } from '../../types'
 import {
   clearCachedCharacterBasic,
-  clearCharacterBasicCacheIndex,
   getCachedCharacterBasic,
   type CachedCharacterBasicEntry,
 } from '../character-basic-cache'
@@ -75,18 +74,11 @@ describe('손상된 JSON', () => {
 
 // 옮긴 뒤 지우는 자리(`seedScheduleQueriesFromLegacyCache`)가 부른다. 키 이름이 어긋나면 옛 값이 기기에 영영 남는다.
 describe('지우기', () => {
-  it('엔트리 키와 전역 · 계정별 인덱스 키를 지운다', async () => {
+  it('엔트리 키를 지운다', async () => {
     await seed('ocid-1', sampleEntry)
-    await prefs.set('characterBasicCache:index', JSON.stringify(['ocid-1']))
-    await prefs.set('characterBasicCache:index:account-1', JSON.stringify(['ocid-1']))
-    await prefs.set('characterBasicCache:index:account-2', JSON.stringify(['ocid-1']))
 
     await clearCachedCharacterBasic('ocid-1')
-    await clearCharacterBasicCacheIndex(['account-1', 'account-2'])
 
     await expect(getCachedCharacterBasic('ocid-1')).resolves.toBeNull()
-    await expect(prefs.get('characterBasicCache:index')).resolves.toBeNull()
-    await expect(prefs.get('characterBasicCache:index:account-1')).resolves.toBeNull()
-    await expect(prefs.get('characterBasicCache:index:account-2')).resolves.toBeNull()
   })
 })

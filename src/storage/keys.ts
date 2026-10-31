@@ -133,6 +133,8 @@ export const STORAGE_KEYS = {
   legacyBossCatalog: 'bossCatalog',
   // 1.0.12 까지의 공지 사본(분류 다섯의 응답을 한 JSON 에). 공지는 이제 쿼리 캐시가 든다. 안 읽고 켤 때 지우기만 한다.
   legacyNotices: 'notices',
+  // 옛 키 정리가 끝났다는 표식. 있으면 부팅이 정리를 건너뛴다.
+  legacyCleanupDone: 'legacyCleanupDone',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {

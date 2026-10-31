@@ -8,7 +8,6 @@ jest.mock('../../../storage/game-data-copy', () => ({
   loadGameDataCopy: jest.fn(),
   saveGameDataCopy: jest.fn(),
   clearGameDataCopy: jest.fn(),
-  removeLegacyGameDataCopies: jest.fn(),
 }))
 
 import { act, renderHook } from '@testing-library/react-native'
@@ -20,7 +19,6 @@ import { fetchGameData, type GameDataFetch } from '../../../server/game-data'
 import {
   clearGameDataCopy,
   loadGameDataCopy,
-  removeLegacyGameDataCopies,
   saveGameDataCopy,
 } from '../../../storage/game-data-copy'
 import { __resetStoragePortsForTest, setAssetFilesPort, type AssetFilesPort } from '../../../storage/ports'
@@ -103,7 +101,6 @@ beforeEach(() => {
   loadCopy.mockResolvedValue(null)
   saveCopy.mockResolvedValue()
   clearCopy.mockResolvedValue()
-  jest.mocked(removeLegacyGameDataCopies).mockResolvedValue()
 })
 
 afterAll(() => {

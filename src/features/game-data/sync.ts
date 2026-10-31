@@ -12,12 +12,7 @@ import { useSyncExternalStore } from 'react'
 import { setAssetBaseUri } from '../../lib/assets/asset-files'
 import { GAME_DATA_CONTRACT, INITIAL_GAME_DATA, SECTIONS } from '../../lib/game-data/sections'
 import { assetFileUrl, fetchGameData } from '../../server/game-data'
-import {
-  clearGameDataCopy,
-  loadGameDataCopy,
-  removeLegacyGameDataCopies,
-  saveGameDataCopy,
-} from '../../storage/game-data-copy'
+import { clearGameDataCopy, loadGameDataCopy, saveGameDataCopy } from '../../storage/game-data-copy'
 import { getAssetFilesPort } from '../../storage/ports'
 import { GAME_DATA_SECTIONS, type AssetFilesTable, type GameData, type GameDataSection } from '../../types/game-data'
 
@@ -201,7 +196,6 @@ function download(locked: boolean): Promise<void> {
  */
 export async function startGameData(onBoot?: (context: GameDataBootContext) => Promise<void>): Promise<void> {
   setAssetBaseUri(getAssetFilesPort().directoryUri())
-  await removeLegacyGameDataCopies().catch(() => undefined)
   const copy = await loadGameDataCopy().catch(() => null)
   const data = copy?.contract === GAME_DATA_CONTRACT ? parseAll(copy.sections) : null
   if (copy !== null && data !== null) {
