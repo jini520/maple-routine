@@ -331,7 +331,7 @@ export function DropEffectOverlay(props: DropEffectOverlayProps): React.JSX.Elem
 
         <View className="absolute inset-x-0 bottom-6" pointerEvents="none" style={{ zIndex: 5 }}>
           <Text
-            className="text-center text-xs font-semibold"
+            className="text-center text-xs"
             style={{
               color: 'rgba(255,255,255,0.8)',
               textShadowColor: 'rgba(0,0,0,0.7)',

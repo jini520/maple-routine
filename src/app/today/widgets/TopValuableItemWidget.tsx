@@ -68,12 +68,12 @@ export function TopValuableItemWidget({ data }: WidgetProps): React.JSX.Element 
     <View testID="widget-top-valuable-item" className="grow flex-row items-center gap-2.5 p-3">
       <IconSlot drop={top} />
       <View className="min-w-0 flex-1 gap-0.5">
-        <Text className="text-10 font-bold text-text-muted">{TITLE}</Text>
-        <Text testID="top-item-amount" numberOfLines={1} className="text-text">
-          <Text style={TABULAR_NUMS} className="text-15 font-bold text-text">
+        <Text className="text-11 font-bold text-text-muted">{TITLE}</Text>
+        <Text testID="top-item-amount" numberOfLines={1} adjustsFontSizeToFit className="text-text">
+          <Text style={TABULAR_NUMS} className="text-base font-bold text-text">
             {formatMesoShort(top.payoutMeso)}
           </Text>
-          <Text className="text-11 font-semibold text-text-muted"> 메소</Text>
+          <Text className="text-xs text-text-muted"> 메소</Text>
         </Text>
       </View>
     </View>

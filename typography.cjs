@@ -23,26 +23,16 @@
 //
 // 칩은 한 줄짜리 라벨이라 본문 줄 높이를 쓰면 상자가 헐렁하다. 자기 계단을 따로 둔다.
 
-/** `[크기, { lineHeight }]` — Tailwind 의 `fontSize` 형식 그대로다. */
+/** `[크기, { lineHeight }]` — Tailwind 의 `fontSize` 형식 그대로다. 역할별로 고르는 표는 `docs/foundation/design-system/typography.md` 다. */
 const fontSize = {
-  8: ['8px', { lineHeight: '12px' }],
   9: ['9px', { lineHeight: '13px' }],
   10: ['10px', { lineHeight: '15px' }],
   11: ['11px', { lineHeight: '16px' }],
   xs: ['12px', { lineHeight: '17px' }],
-  13: ['13px', { lineHeight: '19px' }],
   sm: ['14px', { lineHeight: '20px' }],
-  15: ['15px', { lineHeight: '22px' }],
   base: ['16px', { lineHeight: '23px' }],
   lg: ['18px', { lineHeight: '25px' }],
-  19: ['19px', { lineHeight: '27px' }],
-  xl: ['20px', { lineHeight: '28px' }],
-  22: ['22px', { lineHeight: '29px' }],
-  23: ['23px', { lineHeight: '30px' }],
   '2xl': ['24px', { lineHeight: '31px' }],
-  30: ['30px', { lineHeight: '36px' }],
-  '3xl': ['30px', { lineHeight: '36px' }],
-  32: ['32px', { lineHeight: '38px' }],
 
   // 칩(배지) 계단. 한 줄이라 좁다. `chip` 과 `chip-sm` 은 **줄 높이가 같아** 글자 크기가 달라도
   // 배지 높이가 안 갈린다 — 난이도 배지가 10px 인데 상태 배지와 나란히 서기 때문이다.
@@ -60,7 +50,7 @@ const fontSize = {
 // 1.13em 을 넘길 것.
 
 /**
- * 앱이 실제로 쓰는 넷. 심은 글꼴의 굵기와 같다.
+ * 앱이 쓰는 셋. 안드로이드에 심은 500 글꼴 파일은 쓰지 않는다.
  *
  * **800(`extrabold`)은 표에 없고, 글꼴 파일도 안 심는다.** 안드로이드가 그 굵기에서 글자를 잰 폭보다
  * 넓게 그려, 마지막 음절이 다음 줄로 넘어가 상자에 가려 사라진다(`주간` 이 `주` 로 보였다.
@@ -68,7 +58,6 @@ const fontSize = {
  */
 const fontWeight = {
   normal: '400',
-  medium: '500',
   semibold: '600',
   bold: '700',
 }

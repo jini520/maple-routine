@@ -45,6 +45,7 @@ import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodSt
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { FAB_SPACE_PX } from '../../lib/fab-metrics'
+import { AMOUNT_COLUMN_MAX_SCALE } from '../../lib/text-size'
 import { PORTRAIT_SHADOW, boxShadowOf } from '../../lib/shadow'
 import { useThemeAppearance } from '../../theme/context'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
@@ -135,7 +136,7 @@ const PERIOD_TAB_LABELS: Record<(typeof PERIOD_TABS)[number], string> = {
  * **금액 칸이 고정 폭이다.** 오른쪽 정렬만으로는 금액의 오른쪽 끝만 한 x 에 서고, 자릿수가
  * 달라지면 줄의 왼쪽 끝(라벨)이 밀린다. 값이 들어올 때마다 두 줄이 흔들렸다(사용자 보고).
  *
- * `w-16`(64px)은 `−12,345억`(9글자, 약 52px)까지 든다. `formatMesoCompact` 가 유효숫자 넷으로
+ * `w-16`(64px)은 `−12,345억`(9글자, 약 60px)까지 든다. `formatMesoCompact` 가 유효숫자 넷으로
  * 자르므로 그보다 길어지려면 수십조 메소여야 한다.
  *
  * 부호를 값에서 뽑지 않고 받는다. `formatMesoCompact` 는 음수에 ASCII `-` 를 붙이는데 답은
@@ -154,8 +155,9 @@ function SourceRow(props: {
       <Text
         testID={props.testID}
         numberOfLines={1}
-        className={`w-16 text-right text-11 font-medium ${props.tone}`}
+        className={`w-16 text-right text-xs font-semibold ${props.tone}`}
         style={TABULAR_NUMS}
+        maxScale={AMOUNT_COLUMN_MAX_SCALE}
       >
         {formatMesoSigned(props.amount, props.sign)}
       </Text>
@@ -207,11 +209,11 @@ function PeriodSummary(props: {
       className="flex-row items-end justify-between gap-3 rounded-xl bg-surface px-3.5 py-3"
     >
       <View className="shrink">
-        <Text className="text-10 tracking-wide text-text-muted">순 수익</Text>
+        <Text className="text-11 font-bold tracking-wide text-text-muted">순 수익</Text>
         <Text
           testID="cashbook-summary-net"
           numberOfLines={1}
-          className={`mt-1 text-xl font-bold ${
+          className={`mt-1 text-2xl font-bold ${
             net > 0 ? 'text-rise-ink' : net < 0 ? 'text-fall-ink' : 'text-text'
           }`}
           style={TABULAR_NUMS}
@@ -220,7 +222,7 @@ function PeriodSummary(props: {
           {formatMesoCompact(Math.abs(net))}{' '}
           {/* 단위는 작은 글자로 격하하되 사이에 진짜 공백을 남긴다. 마진으로만 띄우면 읽히는
               문자열이 `N메소`로 붙어 스크린리더가 이어 읽는다. */}
-          <Text className="text-11 font-bold text-text-muted">메소</Text>
+          <Text className="text-xs font-normal text-text-muted">메소</Text>
         </Text>
       </View>
 
@@ -369,10 +371,10 @@ function EnhancedItemRows(props: {
           <Text numberOfLines={1} className="shrink text-11 text-text-muted">
             {item.targetItem}
           </Text>
-          <Text numberOfLines={1} className="shrink-0 text-10 text-text-disabled" style={TABULAR_NUMS}>
+          <Text numberOfLines={1} className="shrink-0 text-11 text-text-disabled" style={TABULAR_NUMS}>
             {`${item.count}회`}
           </Text>
-          <Text className="ml-auto shrink-0 text-11 font-medium text-fall-ink" style={TABULAR_NUMS}>
+          <Text className="ml-auto shrink-0 text-xs font-semibold text-fall-ink" style={TABULAR_NUMS}>
             {formatMesoSigned(item.costMeso, '−')}
           </Text>
         </View>
@@ -410,7 +412,7 @@ function SoldItemRows(props: { rowKey: string; items: readonly SoldItem[] }): Re
             <Text numberOfLines={1} className="shrink text-11 text-text-muted">
               {item.itemName}
             </Text>
-            <Text className="ml-auto shrink-0 text-11 font-medium text-rise-ink" style={TABULAR_NUMS}>
+            <Text className="ml-auto shrink-0 text-xs font-semibold text-rise-ink" style={TABULAR_NUMS}>
               {formatMesoSigned(item.payoutMeso, '+')}
             </Text>
           </View>
@@ -519,7 +521,7 @@ function DayRecordRow(props: {
         {/* 첫 줄은 캐릭터 · 제목, 둘째 줄은 무엇을 얼마나다. 갈래마다 다른 규칙은 화면이 아니라
             `recordCardOf` 가 든다. */}
         <View className="min-w-0 flex-1">
-          <Text numberOfLines={1} testID={`cashbook-row-title-${rowKey}`} className="text-13 font-medium text-text">
+          <Text numberOfLines={1} testID={`cashbook-row-title-${rowKey}`} className="text-xs font-semibold text-text">
             {card.title}
           </Text>
           {card.detail !== null && (
@@ -535,7 +537,7 @@ function DayRecordRow(props: {
         </View>
 
         <Text
-          className={`shrink-0 text-13 font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
+          className={`shrink-0 text-xs font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
           style={TABULAR_NUMS}
         >
           {cash === null
@@ -959,7 +961,7 @@ export function CashbookScreen(): React.JSX.Element {
                 />
               }
             >
-              <Text className="text-lg font-semibold text-text">가계부</Text>
+              <Text className="text-lg font-bold text-text">가계부</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }
@@ -1016,7 +1018,7 @@ export function CashbookScreen(): React.JSX.Element {
           />
 
           <View className="gap-2">
-            <Text testID="cashbook-selected-day" className="px-1 text-sm font-semibold text-text">
+            <Text testID="cashbook-selected-day" className="px-1 text-sm font-bold text-text">
               {formatDayLabel(selectedDateKey)}
             </Text>
             {dayLoading ? null : dayRecords.length === 0 ? (

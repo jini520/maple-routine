@@ -17,7 +17,7 @@ export function CharacterGroupHeader(props: CharacterGroupHeaderProps): React.JS
   return (
     <View className="flex-row items-center gap-1.5">
       <CharacterAvatar imageUrl={props.imageUrl} name={props.name} size={20} className="bg-surface-2" />
-      <Text className="shrink text-13 font-bold text-text" numberOfLines={1}>
+      <Text className="shrink text-sm font-bold text-text" numberOfLines={1}>
         {props.name}
       </Text>
       <Text className="text-11 text-text-muted">보스 {props.count}</Text>

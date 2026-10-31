@@ -149,7 +149,7 @@ function ItemThumb(props: { itemKey: string | null; level?: number }): React.JSX
       {/* 그림 **위쪽**이다. 아래는 금액 띠가 덮는다. */}
       {props.level !== undefined && (
         <View className="absolute -right-1 -top-1 rounded-full bg-primary px-1 py-px">
-          <Text className="text-8 font-bold leading-none text-on-primary">lv{props.level}</Text>
+          <Text className="text-9 font-bold leading-none text-on-primary">lv{props.level}</Text>
         </View>
       )}
     </View>
@@ -170,7 +170,7 @@ function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
         <View className="h-8 w-8 rounded-md bg-surface-2" role="img" aria-label={name} />
       )}
       <View className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1 py-px">
-        <Text className="text-8 font-bold leading-none text-on-primary" style={TABULAR_NUMS}>
+        <Text className="text-9 font-bold leading-none text-on-primary" style={TABULAR_NUMS}>
           {icon.count}개
         </Text>
       </View>
@@ -191,7 +191,7 @@ function EffectToggle(props: { on: boolean; onToggle: () => void }): React.JSX.E
       onToggle={props.onToggle}
       className="ml-auto gap-1.5"
     >
-      <Text className="text-11 font-semibold text-text-muted">드롭 연출</Text>
+      <Text className="text-xs text-text-muted">드롭 연출</Text>
     </Switch>
   )
 }
@@ -439,7 +439,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
   const 드롭머리 = (
     <View>
     <View className="flex-row items-center gap-2 pb-1 pt-1">
-      <Text className="text-lg font-bold text-text">{bossNameOf(props.bossKey, props.bossKey)}</Text>
+      <Text className="text-base font-bold text-text">{bossNameOf(props.bossKey, props.bossKey)}</Text>
       <EffectToggle on={effectEnabled} onToggle={() => void setEffectEnabled(!effectEnabled)} />
     </View>
     <View className="flex-row flex-wrap items-center gap-x-2 gap-y-1.5 pb-3">
@@ -485,11 +485,11 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                   className="mb-2.5 flex-row items-center gap-2 rounded-[14px] bg-surface px-3 py-2"
                 >
                   <View className="min-w-0 flex-1">
-                    <Text numberOfLines={1} className="text-[12.5px] font-semibold leading-tight text-text">
+                    <Text numberOfLines={1} className="text-xs font-semibold leading-tight text-text">
                       {prompt.title}
                     </Text>
                     {prompt.detail !== '' && (
-                      <Text numberOfLines={1} className="text-[12.5px] font-medium leading-tight text-text-muted">
+                      <Text numberOfLines={1} className="text-xs leading-tight text-text-muted">
                         {prompt.detail}
                       </Text>
                     )}
@@ -500,7 +500,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                     onPress={() => openPriceCard(unpriced.length > 0 ? unpriced : selected, 0)}
                     className="shrink-0 rounded-full bg-primary px-3 py-1.5"
                   >
-                    <Text className="text-[12.5px] font-bold text-on-primary">
+                    <Text className="text-xs font-semibold text-on-primary">
                       {unpriced.length > 0 ? '가격 입력' : '가격 수정'}
                     </Text>
                   </Pressable>
@@ -765,7 +765,7 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
         <Pressable role="button" onPress={props.onBack} aria-label="뒤로">
           <ChevronLeftIcon className="h-6 w-6 text-text" aria-hidden />
         </Pressable>
-        <Text className="text-lg font-bold text-text">{props.boxName}</Text>
+        <Text className="text-base font-bold text-text">{props.boxName}</Text>
       </View>
 
       {/* 반지 종류 먼저 선택. 카드 하나 안에 칸이 한 줄에 넷이다. */}
@@ -819,7 +819,7 @@ function BoxDrillDown(props: BoxDrillDownProps): React.JSX.Element {
                     className={`h-10 items-center justify-center rounded-[10px]${on ? '' : ' bg-card-inset'}`}
                     style={on ? { backgroundColor: props.pickedColor } : undefined}
                   >
-                    <Text className={`text-13 text-text ${on ? 'font-bold' : 'font-medium'}`}>{level}레벨</Text>
+                    <Text className={`text-sm text-text${on ? ' font-semibold' : ''}`}>{level}레벨</Text>
                   </Pressable>
                 </View>
               )

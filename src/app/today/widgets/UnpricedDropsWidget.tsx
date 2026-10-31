@@ -31,13 +31,13 @@ export function UnpricedDropsWidget({ data }: WidgetProps): React.JSX.Element {
 
   return (
     <View testID="widget-unpriced-drops" className="grow justify-center gap-2 p-3">
-      {/* 제목 줄 높이를 건수 글자(15/22)에 맞춰 둔다. 0건이면 건수가 없어 줄이 낮아진다. */}
-      <View testID="unpriced-head" className="min-h-[22px] flex-row items-baseline gap-2">
-        <Text className="flex-1 text-10 font-bold text-text-muted">{TITLE}</Text>
+      {/* 제목 줄 높이를 건수 글자(16/23)에 맞춰 둔다. 0건이면 건수가 없어 줄이 낮아진다. */}
+      <View testID="unpriced-head" className="min-h-[23px] flex-row items-baseline gap-2">
+        <Text className="flex-1 text-11 font-bold text-text-muted">{TITLE}</Text>
         {count > 0 && (
-          <Text testID="unpriced-count" style={TABULAR_NUMS} className="text-15 font-bold text-text">
+          <Text testID="unpriced-count" style={TABULAR_NUMS} className="text-base font-bold text-text">
             {count}
-            <Text className="text-11 font-semibold text-text-muted">건</Text>
+            <Text className="text-xs font-normal text-text-muted">건</Text>
           </Text>
         )}
       </View>
@@ -51,7 +51,7 @@ export function UnpricedDropsWidget({ data }: WidgetProps): React.JSX.Element {
         // 화살표가 없다. 기록할 것이 없는데 누를 곳처럼 보이면 빈 화면으로 보내는 것처럼 읽힌다.
         <View testID="unpriced-done" className={CELL_CLASS}>
           <CheckIcon className="h-[13px] w-[13px] text-text-muted" strokeWidth={2.6} aria-hidden />
-          <Text className="flex-1 text-xs font-semibold text-text-muted">{DONE_NOTE}</Text>
+          <Text className="flex-1 text-xs text-text-muted">{DONE_NOTE}</Text>
         </View>
       )}
     </View>

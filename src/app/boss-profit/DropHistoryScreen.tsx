@@ -210,7 +210,7 @@ function DropHistoryPeriodSection(props: {
       <View testID="drop-history-period" className="flex-row items-center gap-2 pb-1.5">
         <View testID="drop-history-period-rule" className="h-px flex-1 bg-border" aria-hidden />
         <View>
-          <Text className="text-center text-xs font-semibold tracking-wide text-text-muted">
+          <Text className="text-center text-xs tracking-wide text-text-muted">
             {label.primary}
           </Text>
           {/* 날짜 구간은 라벨 바로 아래 작게. `leading-tight` + 마진 없이 붙여 한 덩어리로
@@ -221,7 +221,7 @@ function DropHistoryPeriodSection(props: {
           {label.secondary !== label.primary && (
             <Text
               testID="drop-history-period-range"
-              className="text-center text-10 leading-tight text-text-muted"
+              className="text-center text-11 leading-tight text-text-muted"
               style={TABULAR_NUMS}
             >
               {label.secondary}
@@ -264,7 +264,7 @@ export function DropHistoryScreen(): React.JSX.Element {
         <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
           <PageHeaderTitleRow className="gap-1">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-semibold text-text">히스토리</Text>
+            <Text className="text-lg font-bold text-text">히스토리</Text>
           </PageHeaderTitleRow>
         </View>
       }

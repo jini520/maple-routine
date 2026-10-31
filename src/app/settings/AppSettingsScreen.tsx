@@ -66,7 +66,7 @@ export function AppSettingsScreen(): React.JSX.Element {
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-semibold text-text">설정</Text>
+              <Text className="text-lg font-bold text-text">설정</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }

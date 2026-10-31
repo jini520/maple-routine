@@ -25,7 +25,7 @@ export function ErrorState(props: ErrorStateProps): React.JSX.Element {
       <AlertTriangleIcon className="h-7 w-7 text-error-ink" strokeWidth={1.75} aria-hidden />
 
       <View className="gap-1">
-        <Text testID="error-state-title" className="text-center text-sm font-semibold text-text">
+        <Text testID="error-state-title" className="text-center text-sm font-bold text-text">
           {props.title}
         </Text>
         {props.description !== undefined && (

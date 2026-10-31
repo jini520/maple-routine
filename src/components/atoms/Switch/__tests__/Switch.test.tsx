@@ -133,7 +133,7 @@ describe.each(['ios', 'android'] as const)('Switch(%s): 누름', (os) => {
     const onToggle = jest.fn()
     const { getByText } = await renderAtom(
       <Switch on={false} label="모든 보스 보기" onToggle={onToggle}>
-        <Text className="text-xs font-medium text-text-muted">모든 보스 보기</Text>
+        <Text className="text-xs text-text-muted">모든 보스 보기</Text>
       </Switch>,
     )
 

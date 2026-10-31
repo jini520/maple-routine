@@ -40,7 +40,7 @@ export function EmptyState(props: EmptyStateProps): React.JSX.Element {
       <View className="gap-1">
         <Text
           testID="empty-state-title"
-          className={`text-center font-semibold text-text ${isPage ? 'text-base' : 'text-sm'}`}
+          className="text-center text-sm font-bold text-text"
         >
           {title}
         </Text>
@@ -50,7 +50,7 @@ export function EmptyState(props: EmptyStateProps): React.JSX.Element {
             className={
               isPage
                 ? 'max-w-[220px] text-center text-xs text-text-muted'
-                : 'mx-auto max-w-[240px] text-center text-11 text-text-muted'
+                : 'mx-auto max-w-[240px] text-center text-xs text-text-muted'
             }
           >
             {description}

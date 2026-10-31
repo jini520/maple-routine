@@ -71,7 +71,7 @@ function DigitKey(props: { digit: string; onPress: (digit: string) => void }): R
       style={{ flexGrow: 1, flexBasis: 0 }}
       className="items-center justify-center rounded-[10px] bg-surface active:bg-surface-2"
     >
-      <Text className="text-xl font-medium text-text" style={TABULAR_NUMS}>
+      <Text className="text-lg font-semibold text-text" style={TABULAR_NUMS}>
         {props.digit}
       </Text>
     </Pressable>
@@ -123,7 +123,7 @@ export function NumberPad(props: NumberPadProps): React.JSX.Element {
               props.decimalDisabled === true ? ' opacity-40' : ''
             }`}
           >
-            <Text className="text-xl font-bold text-text">.</Text>
+            <Text className="text-lg font-semibold text-text">.</Text>
           </Pressable>
         )}
         <Pressable
@@ -155,7 +155,7 @@ export function NumberPad(props: NumberPadProps): React.JSX.Element {
           style={{ flexGrow: props.onDecimal === undefined ? 마지막_열_배수 : 마지막_열_배수 + 1, flexBasis: 0 }}
           className="items-center justify-center rounded-[10px] bg-primary active:opacity-90"
         >
-          <Text numberOfLines={1} className="text-13 font-bold text-on-primary">
+          <Text numberOfLines={1} className="text-xs font-semibold text-on-primary">
             {props.confirmLabel ?? '확인'}
           </Text>
         </Pressable>

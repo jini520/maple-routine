@@ -27,8 +27,8 @@ function Tile(props: {
         />
       </View>
       <View className="shrink">
-        <Text className="text-11 text-text-muted">{props.label}</Text>
-        <Text className={`text-sm font-bold ${props.on ? 'text-text' : 'text-text-disabled'}`} numberOfLines={1}>
+        <Text className="text-xs text-text-muted">{props.label}</Text>
+        <Text className={`text-sm ${props.on ? 'font-semibold text-text' : 'text-text-disabled'}`} numberOfLines={1}>
           {props.value}
         </Text>
       </View>

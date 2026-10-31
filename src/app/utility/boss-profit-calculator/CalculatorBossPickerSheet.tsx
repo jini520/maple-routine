@@ -72,7 +72,7 @@ export function CalculatorBossPickerSheet(props: {
         label="보스 선택"
         minHeightRatio={MIN_HEIGHT_RATIO}
         onClose={props.onClose}
-        header={<Text className="text-lg font-bold text-text">보스 선택</Text>}
+        header={<Text className="text-base font-bold text-text">보스 선택</Text>}
         footer={
           <BossPickerTray
             picked={trayPicked}
@@ -91,7 +91,7 @@ export function CalculatorBossPickerSheet(props: {
           character={
             <View className="h-10 flex-row items-center gap-2 self-start rounded-full bg-surface pl-1.5 pr-4">
               <CharacterAvatar imageUrl={props.character.imageUrl} name={props.character.name} size={28} className="bg-surface-2" />
-              <Text className="text-sm font-bold text-text">{props.character.name}</Text>
+              <Text className="text-sm font-semibold text-text">{props.character.name}</Text>
             </View>
           }
           groups={[

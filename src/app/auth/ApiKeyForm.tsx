@@ -40,14 +40,14 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
     <View className="w-full gap-4">
       <View className="gap-1.5">
         <View className="flex-row items-center justify-between px-0.5">
-          <Text className="text-13 font-medium text-text-muted">Nexon Open API 키</Text>
+          <Text className="text-xs text-text-muted">Nexon Open API 키</Text>
           {/* 이미 키를 발급받은 사용자의 동선. 라벨 줄에 붙여 입력칸과 한 덩어리로 읽히게 한다. */}
           <Pressable
             role="link"
             onPress={() => openInAppBrowser(NEXON_OPEN_API_URL)}
             className="flex-row items-center gap-1 py-0.5"
           >
-            <Text className="text-xs text-primary-ink">openapi.nexon.com에서 확인</Text>
+            <Text className="text-xs font-semibold text-primary-ink">openapi.nexon.com에서 확인</Text>
             <ExternalLinkIcon className="h-3 w-3 text-primary-ink" aria-hidden />
           </Pressable>
         </View>
@@ -95,7 +95,7 @@ export function ApiKeyForm(props: ApiKeyFormProps): React.JSX.Element {
         onPress={() => openInAppBrowser(GUIDE_URL)}
         className="flex-row items-center gap-1 self-center px-3 py-0.5"
       >
-        <Text className="text-13 text-primary-ink">API 키 발급 방법 보기</Text>
+        <Text className="text-xs font-semibold text-primary-ink">API 키 발급 방법 보기</Text>
         <ExternalLinkIcon className="h-3.5 w-3.5 text-primary-ink" aria-hidden />
       </Pressable>
     </View>

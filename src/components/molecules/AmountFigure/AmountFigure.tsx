@@ -80,7 +80,7 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
               ) : kind === 'gap' ? (
                 <View key={index} style={GAP_STYLE} />
               ) : (
-                <Text key={index} className="text-xl">
+                <Text key={index} className="text-lg">
                   {text}
                 </Text>
               ),
@@ -91,7 +91,7 @@ export function AmountFigure(props: AmountFigureProps): React.JSX.Element {
         {/* 앞의 폭 0 짜리 큰 글자가 이 줄의 ascent·descent 를 정해 숫자와 기준선이 맞는다. */}
         <Text testID={`${props.testID}-unit`} className="shrink-0 text-2xl">
           <Text className="text-2xl" style={OPAQUE_ZERO}>{'\u200B'}</Text>
-          <Text className="text-xs font-semibold text-text-muted">{props.unit}</Text>
+          <Text className="text-xs text-text-muted">{props.unit}</Text>
         </Text>
       </View>
     </View>

@@ -53,7 +53,7 @@ export function DailyQuestCard(props: {
               className="h-6 w-6 shrink-0"
             />
           )}
-          <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
+          <Text className="text-sm font-semibold text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
             {displayName}
           </Text>
         </View>
@@ -101,7 +101,7 @@ export function MonsterParkCard(props: {
                 className="h-6 w-6 shrink-0"
               />
             )}
-            <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
+            <Text className="text-sm font-semibold text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
               {contentDisplayNameOf(content.contentKey, content.apiName)}
             </Text>
           </View>
@@ -150,7 +150,7 @@ export function renderDailyContentCard(
   return (
     <Card className="gap-2 p-4">
       <View className="flex-row items-center justify-between gap-2">
-        <Text className="shrink text-sm text-text">
+        <Text className="shrink text-sm font-semibold text-text">
           {contentDisplayNameOf(content.contentKey, content.apiName)} · {content.nowCount}/{content.maxCount}
         </Text>
         {isBlocked && <Badge variant="muted" className="shrink-0">진행 불가</Badge>}

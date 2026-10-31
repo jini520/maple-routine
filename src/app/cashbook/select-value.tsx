@@ -23,19 +23,26 @@ export interface SelectDecor {
 /**
  * 아이콘 · 레벨 · 이름을 한 줄로 세운다. 닫힌 줄은 오른쪽, 목록 줄은 왼쪽에 놓인다.
  *
- * @param tone `value` 는 닫힌 줄과 고르지 않은 목록 줄, `selected` 는 고른 목록 줄, `muted` 는 자리표시자와 `선택 안함`
+ * @param tone `value` 는 닫힌 줄, `option` 은 고르지 않은 목록 줄, `selected` 는 고른 목록 줄, `muted` 는 자리표시자와 `선택 안함`
  */
 export function SelectValue(props: {
   label: string
   decor: SelectDecor | null
-  tone: 'value' | 'selected' | 'muted'
+  tone: 'value' | 'option' | 'selected' | 'muted'
   /** 아이콘 · 레벨에 `-icon` · `-level` 을 붙여 쓰는 뿌리. */
   testID?: string
   /** 이름 글자의 testID. 목록 줄은 줄 자체가 뿌리 id 를 들어 이름에는 안 준다. */
   nameTestID?: string
 }): React.JSX.Element {
   const { decor } = props
-  const ink = props.tone === 'selected' ? 'text-primary-ink' : props.tone === 'muted' ? 'text-text-disabled' : 'text-text'
+  const ink =
+    props.tone === 'selected'
+      ? 'font-semibold text-primary-ink'
+      : props.tone === 'muted'
+        ? 'text-text-disabled'
+        : props.tone === 'option'
+          ? 'text-text'
+          : 'font-semibold text-text'
   const sub = props.tone === 'selected' ? 'text-primary-ink' : 'text-text-muted'
   return (
     <View className="min-w-0 shrink flex-row items-center justify-end gap-1.5">
@@ -50,7 +57,7 @@ export function SelectValue(props: {
       {decor?.level != null && (
         <Text
           testID={props.testID === undefined ? undefined : `${props.testID}-level`}
-          className={`text-11 font-semibold ${sub}`}
+          className={`text-11 ${sub}`}
           style={TABULAR_NUMS}
         >
           {`Lv.${decor.level}`}

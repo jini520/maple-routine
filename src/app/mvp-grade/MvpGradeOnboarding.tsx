@@ -24,7 +24,7 @@ const START_LABEL = '적용 시작일'
 function Heading(props: { title: string; description: string }): React.JSX.Element {
   return (
     <View className="gap-1">
-      <Text className="text-lg font-semibold text-text">{props.title}</Text>
+      <Text className="text-lg font-bold text-text">{props.title}</Text>
       <Text className="text-sm text-text-muted">{props.description}</Text>
     </View>
   )

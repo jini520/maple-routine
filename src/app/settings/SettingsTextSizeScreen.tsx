@@ -30,10 +30,10 @@ import { TextSizeSlider } from './TextSizeSlider'
  * 크기가 다른 줄을 나란히 두면 단계가 그 모두에 같은 배수를 곱한다는 것이 그대로 보인다.
  */
 const PREVIEW_LINES = [
-  { label: '화면 제목', basePx: 18, className: 'text-lg font-semibold' },
-  { label: '행 이름 · 본문', basePx: 14, className: 'text-sm font-medium' },
+  { label: '화면 제목', basePx: 18, className: 'text-lg font-bold' },
+  { label: '행 이름 · 본문', basePx: 14, className: 'text-sm font-semibold' },
   { label: '배지 · 보조 글자', basePx: 12, className: 'text-xs' },
-  { label: '위젯 제목', basePx: 10, className: 'text-10 font-bold' },
+  { label: '위젯 제목', basePx: 11, className: 'text-11 font-bold' },
 ] as const
 
 /** 미리보기 칸. 숫자는 스코프 안의 실제 배수로 셈해, 좁은 화면의 상한까지 반영한다. */
@@ -74,7 +74,7 @@ export function SettingsTextSizeScreen(): React.JSX.Element {
             <PageHeader>
               <PageHeaderTitleRow className="gap-2">
                 <BackButton onPress={() => navigation.goBack()} />
-                <Text className="text-lg font-semibold text-text">글자 크기</Text>
+                <Text className="text-lg font-bold text-text">글자 크기</Text>
               </PageHeaderTitleRow>
             </PageHeader>
           }

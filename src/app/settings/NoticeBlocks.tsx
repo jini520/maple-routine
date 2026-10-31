@@ -109,7 +109,7 @@ export function NoticeBlocks(props: {
             return (
               <Text
                 key={index}
-                className={`text-sm font-semibold text-text ${index === 0 ? '' : 'pt-2'} ${inset}`}
+                className={`text-base font-bold text-text ${index === 0 ? '' : 'pt-2'} ${inset}`}
               >
                 {block.text}
               </Text>

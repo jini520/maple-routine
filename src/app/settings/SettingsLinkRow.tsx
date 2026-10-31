@@ -27,7 +27,7 @@ export function SettingsLinkRow(props: SettingsLinkRowProps): React.JSX.Element 
       }}
       className={SETTINGS_ROW_CLASS}
     >
-      <Text className="text-sm font-medium text-text">{props.label}</Text>
+      <Text className="text-sm font-semibold text-text">{props.label}</Text>
       {/* `testID` 가 감싸는 `View` 에 있는 이유는 `SettingsRow` 의 chevron 과 같다. lucide 가
           그 프롭을 `data-testid` 로 바꿔 넘겨 RNTL 이 못 찾는다. */}
       <View testID="settings-row-external">

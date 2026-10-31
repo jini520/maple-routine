@@ -137,8 +137,8 @@ export function WeeklySubtotalRow(props: {
     <Text
       className={
         itemMeso > 0
-          ? 'text-sm font-semibold text-primary-ink'
-          : 'text-sm font-semibold text-text'
+          ? 'text-sm font-bold text-primary-ink'
+          : 'text-sm font-bold text-text'
       }
       style={TABULAR_NUMS}
     >
@@ -199,8 +199,8 @@ export function WeeklySubtotalRow(props: {
           <Text
             className={
               subtotal.state === 'failed'
-                ? 'text-11 font-semibold text-error-ink'
-                : 'text-11 font-semibold text-primary-ink'
+                ? 'text-xs font-semibold text-error-ink'
+                : 'text-xs font-semibold text-primary-ink'
             }
           >
             {actionLabel}

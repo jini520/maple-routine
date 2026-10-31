@@ -134,7 +134,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
           >
             <Text
               numberOfLines={1}
-              className={`text-right text-sm ${name === '' ? 'text-text-disabled' : 'text-text'}`}
+              className={`text-right text-sm ${name === '' ? 'text-text-disabled' : 'font-semibold text-text'}`}
             >
               {name === '' ? '아이템 명' : name}
             </Text>
@@ -172,8 +172,8 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
             className="h-5 flex-1"
           >
             <Text
-              className={`text-right text-sm font-semibold ${
-                typedText === '' ? 'text-text-disabled' : 'text-text'
+              className={`text-right text-sm ${
+                typedText === '' ? 'text-text-disabled' : 'font-semibold text-text'
               }`}
               style={TABULAR_NUMS}
             >
@@ -184,7 +184,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
               여기서 말한다. */}
           <Text
             testID="income-sheet-gross-unit"
-            className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
+            className="ml-1.5 shrink-0 text-xs text-text-muted"
           >
             메소
           </Text>
@@ -203,7 +203,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
               pristine={quantityPristine}
               onChange={setQuantityText}
             />
-            <Text className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted">개</Text>
+            <Text className="ml-1.5 shrink-0 text-xs text-text-muted">개</Text>
           </FieldRow>
         )}
 

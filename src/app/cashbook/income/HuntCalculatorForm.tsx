@@ -112,11 +112,11 @@ function ForceMark(props: { region: HuntingRegion; force: number }): React.JSX.E
   return (
     <View aria-label={`${label} ${props.force}`} className="flex-row items-center gap-1.5">
       {icon === null ? (
-        <Text className="text-10 font-semibold text-text-muted">{label.split(' ')[0]}</Text>
+        <Text className="text-11 text-text-muted">{label.split(' ')[0]}</Text>
       ) : (
         <Image source={icon} className="h-3.5 w-3.5" resizeMode="contain" aria-hidden />
       )}
-      <Text className="text-11 font-semibold text-text-muted" style={TABULAR_NUMS}>
+      <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
         {props.force}
       </Text>
     </View>
@@ -749,8 +749,8 @@ export function HuntCalculatorForm(
             className="shrink-0 flex-row items-baseline gap-1"
           >
             <Text
-              className={`w-[52px] text-right text-sm font-semibold ${
-                fragmentsText === '' ? 'text-text-disabled' : 'text-text'
+              className={`w-[52px] text-right text-sm ${
+                fragmentsText === '' ? 'text-text-disabled' : 'font-semibold text-text'
               }`}
               style={TABULAR_NUMS}
             >
@@ -767,8 +767,8 @@ export function HuntCalculatorForm(
           >
             <Text
               numberOfLines={1}
-              className={`shrink text-right text-sm font-semibold ${
-                fragmentPriceText === '' ? 'text-text-disabled' : 'text-text'
+              className={`shrink text-right text-sm ${
+                fragmentPriceText === '' ? 'text-text-disabled' : 'font-semibold text-text'
               }`}
               style={TABULAR_NUMS}
             >

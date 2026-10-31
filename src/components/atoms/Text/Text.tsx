@@ -12,7 +12,10 @@ import { BASE_TEXT_STYLE } from './app-font'
 import { scaleTextStyle } from './font-scaling'
 
 /** RN 의 `TextProps` 에서 시스템 배수 프롭 둘을 뺀 것. 배수는 앱 설정이 정한다. */
-export type TextProps = Omit<RNTextProps, 'allowFontScaling' | 'maxFontSizeMultiplier'>
+export type TextProps = Omit<RNTextProps, 'allowFontScaling' | 'maxFontSizeMultiplier'> & {
+  /** 칸이 px 로 고정된 글자의 배수 상한. 값은 `typography.md` 의 표에서 정한다 */
+  maxScale?: number
+}
 
 /**
  * 글자 하나. RN 의 `Text` 프롭을 그대로 받는다.
@@ -22,8 +25,8 @@ export type TextProps = Omit<RNTextProps, 'allowFontScaling' | 'maxFontSizeMulti
  * @example
  * <Text className="text-sm text-text">문구</Text>
  */
-export function Text({ style, ...rest }: TextProps): React.JSX.Element {
-  const scale = useTextScale()
+export function Text({ style, maxScale, ...rest }: TextProps): React.JSX.Element {
+  const scale = useTextScale(maxScale)
 
   /** 글꼴이 맨 앞이라 호출부가 덮을 수 있다. 시스템 배수 끄기는 뒤에 와서 스프레드가 못 이긴다. */
   return (

@@ -224,7 +224,7 @@ export const TrendSection = memo(function TrendSection(props: {
             </Text>
             <Text
               testID="stats-trend-bubble-value"
-              className={`text-11 font-bold ${mode === '지출' || (net && pickedTotals.netMeso < 0) ? 'text-fall-ink' : 'text-rise-ink'}`}
+              className={`text-10 font-bold ${mode === '지출' || (net && pickedTotals.netMeso < 0) ? 'text-fall-ink' : 'text-rise-ink'}`}
               style={TABULAR_NUMS}
             >
               {net

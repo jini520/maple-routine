@@ -40,7 +40,7 @@ export function LootBlock(props: {
     <View testID={props.testID} className="gap-0.5 rounded-[10px] bg-card-inset px-3 py-2">
       <View className="min-h-[30px] flex-row items-center gap-2.5">
         <LootIcon iconFile={props.iconFile} />
-        <Text className="shrink text-13 font-semibold text-text">{props.name}</Text>
+        <Text className="shrink text-sm font-semibold text-text">{props.name}</Text>
         {props.right !== undefined && (
           <View className="ml-auto shrink-0 flex-row items-baseline gap-1">{props.right}</View>
         )}
@@ -56,7 +56,7 @@ export function LootLine(props: { label: string; unit: string; children: React.R
     <View className="min-h-7 flex-row items-center gap-3">
       <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
       {props.children}
-      <Text className="-ml-1.5 shrink-0 text-xs font-semibold text-text-muted">{props.unit}</Text>
+      <Text className="-ml-1.5 shrink-0 text-xs text-text-muted">{props.unit}</Text>
     </View>
   )
 }
@@ -72,13 +72,13 @@ export function NpcLootRow(props: {
     <View className="min-h-[52px] flex-row items-center gap-2.5 rounded-[10px] bg-card-inset px-3 py-2">
       <LootIcon iconFile={props.iconFile} />
       <View className="shrink gap-0.5">
-        <Text className="text-13 font-semibold text-text">{props.name}</Text>
-        <Text className="text-10 text-text-muted" style={TABULAR_NUMS}>
+        <Text className="text-sm font-semibold text-text">{props.name}</Text>
+        <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
           개당 {props.npcPriceMeso.toLocaleString()} 메소
         </Text>
       </View>
       {props.children}
-      <Text className="-ml-1.5 shrink-0 text-xs font-semibold text-text-muted">개</Text>
+      <Text className="-ml-1.5 shrink-0 text-xs text-text-muted">개</Text>
     </View>
   )
 }

@@ -72,7 +72,7 @@ export function PeriodStepper(props: {
       <Arrow arrow={props.prev} icon={ChevronLeftIcon} />
       <View className="min-w-0 flex-1 flex-row items-baseline justify-center">
         {props.year != null && (
-          <Text testID={props.yearTestID} className="mr-1 text-11 font-semibold text-text-muted" style={TABULAR_NUMS}>
+          <Text testID={props.yearTestID} className="mr-1 text-11 text-text-muted" style={TABULAR_NUMS}>
             {props.year}
           </Text>
         )}

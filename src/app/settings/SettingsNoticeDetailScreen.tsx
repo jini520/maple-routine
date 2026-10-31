@@ -159,7 +159,7 @@ export function SettingsNoticeDetailScreen(props: {
             <View className="mt-0.5 self-start">
               <BackButton onPress={() => navigation.goBack()} />
             </View>
-            <Text testID="notice-title" className="min-w-0 flex-1 text-lg font-semibold text-text">
+            <Text testID="notice-title" className="min-w-0 flex-1 text-lg font-bold text-text">
               {found === null ? '공지사항' : noticeDisplayTitle(found)}
             </Text>
           </PageHeaderTitleRow>

@@ -143,18 +143,18 @@ export const CharacterSection = memo(function CharacterSection(props: {
             return (
               <View key={row.key} testID={`stats-character-row-${row.key}`} className="gap-1">
                 <View className="flex-row items-baseline justify-between gap-2">
-                  <Text testID="stats-character-name" numberOfLines={1} className="shrink text-11 text-text">
+                  <Text testID="stats-character-name" numberOfLines={1} className="shrink text-10 text-text">
                     {row.name}
                   </Text>
                   {/* % 와 금액은 한 Text 다. 따로 두고 기준선을 맞추면 % 가 선 탭에서만 줄이 커진다 */}
-                  <Text testID="stats-character-value" className="text-11" style={TABULAR_NUMS}>
+                  <Text testID="stats-character-value" className="text-10" style={TABULAR_NUMS}>
                     {!net && (
                       <Text testID="stats-character-percent" className="text-10 text-text-muted">
                         {`${Math.round((value / total) * 100)}%`}
                       </Text>
                     )}
                     {!net && ' '}
-                    <Text testID="stats-character-amount" className={`font-semibold ${tone}`}>
+                    <Text testID="stats-character-amount" className={`font-bold ${tone}`}>
                       {net ? signed(value) : formatMesoCompact(value)}
                     </Text>
                   </Text>
@@ -231,7 +231,7 @@ export const CharacterSection = memo(function CharacterSection(props: {
                   {/* 줄은 `podiumNameLines` 가 나눈다. 폭을 블록보다 넓게 열어 네 자 이름이 조금 넘쳐도
                       RN 이 다시 꺾지 않게 한다. 넘친 만큼은 부모의 `items-center` 로 양옆에 고르게 나간다. */}
                   <View className="items-center" style={{ width: '140%' }}>
-                    <Text testID="stats-podium-name" className="text-center text-10 font-semibold text-text">
+                    <Text testID="stats-podium-name" className="text-center text-10 text-text">
                       {podiumNameLines(row.name).join('\n')}
                     </Text>
                   </View>

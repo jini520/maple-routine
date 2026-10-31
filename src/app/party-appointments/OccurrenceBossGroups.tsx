@@ -18,7 +18,7 @@ export function OccurrenceBossLine(props: { boss: PartyAppointmentBoss }): React
   return (
     <View className="min-h-[34px] flex-row items-center gap-2">
       <BossPortrait portraitSlug={bossPortraitSlugOf(boss.bossKey)} label={name} size={28} />
-      <Text className="shrink text-13 font-semibold text-text" numberOfLines={1}>
+      <Text className="shrink text-xs font-semibold text-text" numberOfLines={1}>
         {name}
       </Text>
       <Badge variant={boss.difficulty as BossDifficulty} size="xs">

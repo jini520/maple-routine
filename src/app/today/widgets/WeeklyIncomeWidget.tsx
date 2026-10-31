@@ -137,7 +137,7 @@ function LegendRow(props: { slice: Slice; amount: string; ink?: string }): React
     <View className="flex-row items-center gap-1.5">
       <View className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: props.slice.color }} />
       <Text className="text-11 text-text-muted">{props.slice.name}</Text>
-      <Text style={[TABULAR_NUMS, props.ink === undefined ? undefined : { color: props.ink }]} className="ml-auto text-11 font-semibold text-text">
+      <Text style={[TABULAR_NUMS, props.ink === undefined ? undefined : { color: props.ink }]} className="ml-auto text-xs font-bold text-text">
         {props.amount}
       </Text>
     </View>
@@ -171,7 +171,7 @@ function RankRow(props: {
         onPress={toggle}
         className="flex-row items-center gap-2.5 rounded-[10px] bg-card-inset px-3 py-2"
       >
-        <Text style={TABULAR_NUMS} className={`min-w-[26px] text-13 font-bold ${props.first ? 'text-text' : 'text-text-muted'}`}>
+        <Text style={TABULAR_NUMS} className={`min-w-[26px] text-xs font-bold ${props.first ? 'text-text' : 'text-text-muted'}`}>
           {props.rank}
         </Text>
         <CharacterAvatar
@@ -181,12 +181,12 @@ function RankRow(props: {
           className="shrink-0"
           fallback={<UnknownCharacterFace size={FACE_PX} />}
         />
-        <Text testID="weekly-income-rank-name" numberOfLines={1} className="min-w-0 flex-1 text-13 font-semibold text-text">
+        <Text testID="weekly-income-rank-name" numberOfLines={1} className="min-w-0 flex-1 text-xs font-semibold text-text">
           {props.character.name}
         </Text>
         {/* 팝오버는 이 금액 쪽에 뜬다. 누른 줄의 금액을 풀어 쓴 것이라 그 금액 아래에서 시작해야 이어 읽힌다. */}
         <View ref={ref} collapsable={false}>
-          <Text style={[TABULAR_NUMS, { color: props.ink }]} className="text-13 font-bold">
+          <Text style={[TABULAR_NUMS, { color: props.ink }]} className="text-xs font-bold">
             {props.amount}
           </Text>
         </View>
@@ -204,7 +204,7 @@ function RankRow(props: {
             <View key={group.label} className="gap-1">
               <View className="flex-row justify-between gap-4">
                 <Text className="text-11 font-bold text-text-muted">{group.label}</Text>
-                <Text style={[TABULAR_NUMS, { color: group.color }]} className="text-11 font-bold">
+                <Text style={[TABULAR_NUMS, { color: group.color }]} className="text-xs font-bold">
                   {group.total}
                 </Text>
               </View>
@@ -214,8 +214,8 @@ function RankRow(props: {
                     className="h-2 w-2 rounded-[2px]"
                     style={{ backgroundColor: sliceColor(group.color, index) }}
                   />
-                  <Text className="text-[11.5px] text-text">{row.name}</Text>
-                  <Text style={TABULAR_NUMS} className="ml-auto pl-4 text-[11.5px] font-semibold text-text">
+                  <Text className="text-xs font-semibold text-text">{row.name}</Text>
+                  <Text style={TABULAR_NUMS} className="ml-auto pl-4 text-xs font-bold text-text">
                     {formatMesoCompact(row.meso)}
                   </Text>
                 </View>
@@ -288,7 +288,7 @@ export function WeeklyIncomeWidget({ data }: WidgetProps): React.JSX.Element {
         <SemiDonut slices={view.loading ? [] : slices} trackColor={definition.track}>
           <Text className="text-10 text-text-muted">{mode}</Text>
           {!view.loading && (
-            <Text testID="weekly-income-total" style={[TABULAR_NUMS, { color: centerColor }]} className="text-15 font-bold">
+            <Text testID="weekly-income-total" style={[TABULAR_NUMS, { color: centerColor }]} className="text-base font-bold">
               {centerText}
             </Text>
           )}

@@ -111,7 +111,7 @@ export function CharacterSetupScreen(): React.JSX.Element {
       >
         <View className="w-full gap-4">
           <View className="gap-1">
-            <Text className="text-lg font-semibold text-text">관리할 캐릭터를 선택해주세요</Text>
+            <Text className="text-lg font-bold text-text">관리할 캐릭터를 선택해주세요</Text>
             {/* 캐릭터를 세는 단위는 **개** 다(**명** 은 사람을 센다). */}
             <Text className="text-sm text-text-muted">
               선택한 캐릭터만 스케줄러 목록에 표시됩니다. 최소 한 개는 선택해주세요.

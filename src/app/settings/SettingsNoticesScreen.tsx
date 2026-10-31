@@ -101,7 +101,7 @@ export function SettingsNoticesScreen(props: {
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-semibold text-text">{title}</Text>
+            <Text className="text-lg font-bold text-text">{title}</Text>
           </PageHeaderTitleRow>
         </PageHeader>
       }

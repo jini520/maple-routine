@@ -175,8 +175,8 @@ export function RateRow(props: {
         className="h-5 flex-1"
       >
         <Text
-          className={`text-right text-sm font-semibold ${
-            props.value === '' ? 'text-text-disabled' : props.valid ? 'text-text' : 'text-error-ink'
+          className={`text-right text-sm ${
+            props.value === '' ? 'text-text-disabled' : props.valid ? 'font-semibold text-text' : 'font-semibold text-error-ink'
           }`}
           style={TABULAR_NUMS}
         >

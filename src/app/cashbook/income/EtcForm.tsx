@@ -168,7 +168,7 @@ export function EtcForm(
               라벨이 아니라 단위다. 캐시는 `원` 이고 큰 숫자와 같은 말이 된다. */}
           <Text
             testID="income-sheet-unit-price-unit"
-            className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
+            className="ml-1.5 shrink-0 text-xs text-text-muted"
           >
             {unitOfCurrency(currency)}
           </Text>
@@ -217,8 +217,8 @@ export function EtcForm(
                 className="h-5 flex-1"
               >
                 <Text
-                  className={`text-right text-sm font-semibold ${
-                    rateText === '' ? 'text-text-disabled' : rate !== null ? 'text-text' : 'text-error-ink'
+                  className={`text-right text-sm ${
+                    rateText === '' ? 'text-text-disabled' : rate !== null ? 'font-semibold text-text' : 'font-semibold text-error-ink'
                   }`}
                   style={TABULAR_NUMS}
                 >

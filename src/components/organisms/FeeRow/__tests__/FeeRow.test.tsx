@@ -92,8 +92,8 @@ describe('FeeRow', () => {
     expect(screen.getByLabelText('MVP 다이아')).toBeTruthy()
   })
 
-  // 자동을 켜고 끌 때마다 값 자리가 명패 · 요율(19)과 세그먼트(26)를 오간다. 높이를 안 못박으면
-  // 그 7px 만큼 아래의 버튼 줄과 옆 줄이 함께 흔들린다(사용자 지적).
+  // 자동을 켜고 끌 때마다 값 자리가 명패 · 요율(20)과 세그먼트(26)를 오간다. 높이를 안 못박으면
+  // 그 6px 만큼 아래의 버튼 줄과 옆 줄이 함께 흔들린다(사용자 지적).
   it.each(['field', 'stacked', 'compact'] as const)('%s 는 자동을 켜고 꺼도 값 줄 높이가 안 바뀐다', async (variant) => {
     const 켬 = await renderAtom(
       <FeeRow

@@ -23,7 +23,7 @@ import { mvpBenefitText, type MvpGradeKey } from '../../lib/mvp/grades'
 
 /** ID 카드의 머리. 목록을 못 받은 ID 는 표시 없이 선다. */
 function Identity(props: { account: MvpAskAccount }): React.JSX.Element {
-  if (props.account.summary === null) return <Text className="text-sm text-text">메이플 ID</Text>
+  if (props.account.summary === null) return <Text className="text-sm font-semibold text-text">메이플 ID</Text>
   return <AccountRow summary={props.account.summary} portraitUrl={props.account.portraitUrl} />
 }
 

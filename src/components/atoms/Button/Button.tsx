@@ -32,10 +32,8 @@ export interface ButtonProps extends Omit<PressableProps, 'children'> {
    * 아니라 생성된 CSS 순서가 이겨서 조용히 안 덮인다.
    */
   size?: ButtonSize
-  /** 상자 클래스(레이아웃). 글자 유틸은 여기가 아니라 `textClassName` 이다. */
+  /** 상자 클래스(레이아웃). 라벨의 크기와 두께는 변형과 `size` 가 정한다. */
   className?: string
-  /** 글자 클래스. 변형 기본값 뒤에 이어 붙어 그것을 덮는다. */
-  textClassName?: string
   /**
    * 대기 중인가. 라벨이 가려지고 그 자리에 스피너가 겹친다.
    *
@@ -77,12 +75,6 @@ function join(base: string, extra: string | undefined): string {
  * </Button>
  *
  * @example
- * // 글자 크기를 바꿀 때는 `textClassName` 이다. 상자에 주면 무시된다.
- * <Button variant="primary" onPress={props.onClose} textClassName="text-sm">
- *   닫기
- * </Button>
- *
- * @example
  * // 배너 안에 끼는 자리. 32px 라 손가락 자리는 `hitSlop` 이 되돌려 준다.
  * <Button variant="soft" size="sm" hitSlop={{ top: 6, bottom: 6 }} onPress={openDetail}>
  *   자세히 보기
@@ -98,7 +90,6 @@ export function Button({
   variant,
   size = 'md',
   className,
-  textClassName,
   busy = false,
   children,
   ...rest
@@ -106,10 +97,7 @@ export function Button({
   // 라벨을 지우지 않고 가린다. 자리를 그대로 차지해야 버튼 폭이 안 줄고, `opacity` 는 접근성
   // 트리를 안 건드려서 스크린리더는 라벨을 그대로 읽는다.
   const label = join(
-    join(
-      join(BUTTON_VARIANT_TEXT_CLASS[variant], buttonTextSizeClass(variant, size)),
-      textClassName,
-    ),
+    join(BUTTON_VARIANT_TEXT_CLASS[variant], buttonTextSizeClass(variant, size)),
     busy ? 'opacity-0' : undefined,
   )
 

@@ -14,6 +14,7 @@ export function MvpPlate(props: { grade: MvpGradeKey; height: number; testID?: s
   const name = findMvpGrade(props.grade)?.name ?? ''
   const source = mvpPlateAsset(props.grade)
   if (source === null) {
+    const lineHeight = props.height >= 16 ? 16 : 15
     return (
       <View
         testID={props.testID}
@@ -22,7 +23,10 @@ export function MvpPlate(props: { grade: MvpGradeKey; height: number; testID?: s
         className="items-center justify-center bg-surface-2 px-1.5"
       >
         {/* 줄 높이가 판보다 높으면 글자가 판 안에서 눌린다. text-11 의 줄은 16 이다. */}
-        <Text className={`${props.height >= 16 ? 'text-11' : 'text-10'} font-semibold text-text-muted`}>
+        <Text
+          className={`${props.height >= 16 ? 'text-11' : 'text-10'} text-text-muted`}
+          maxScale={props.height / lineHeight}
+        >
           {name}
         </Text>
       </View>

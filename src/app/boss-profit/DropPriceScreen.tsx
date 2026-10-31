@@ -96,7 +96,7 @@ function PriceStatePill(props: { drop: RecordedDrop }): React.JSX.Element {
   if (drop.priceState === 'entered') {
     return (
       <View className="h-[26px] shrink-0 justify-center rounded-full bg-primary-tint px-2.5">
-        <Text className="text-[12.5px] font-bold text-primary-ink" style={TABULAR_NUMS}>
+        <Text className="text-xs font-bold text-primary-ink" style={TABULAR_NUMS}>
           {formatMesoShort(dropPayoutMeso(drop))}
         </Text>
       </View>
@@ -106,14 +106,14 @@ function PriceStatePill(props: { drop: RecordedDrop }): React.JSX.Element {
     return (
       // surface 는 card-inset 칸 위에서 알약이 보이게 하는 색이다.
       <View className="h-[26px] shrink-0 justify-center rounded-full bg-surface px-2.5">
-        <Text className="text-[12.5px] font-semibold text-text-disabled">기록 안함</Text>
+        <Text className="text-xs text-text-disabled">기록 안함</Text>
       </View>
     )
   }
   return (
     <View className="h-[26px] shrink-0 flex-row items-center gap-0.5 pl-2 pr-1">
       <PlusIcon className="h-[13px] w-[13px] text-primary-ink" strokeWidth={2.5} aria-hidden />
-      <Text className="text-[12.5px] font-bold text-primary-ink">입력</Text>
+      <Text className="text-xs font-semibold text-primary-ink">입력</Text>
     </View>
   )
 }
@@ -131,7 +131,7 @@ function SummaryCount(props: {
       <Text className={`text-sm font-bold ${props.tone}`} style={TABULAR_NUMS}>
         {props.count}건
       </Text>
-      <Text className="text-10 text-text-muted">{props.label}</Text>
+      <Text className="text-11 text-text-muted">{props.label}</Text>
     </View>
   )
 }
@@ -166,7 +166,7 @@ function EntryRow(props: {
       )}
       <View className="min-w-0 flex-1">
         <View className="flex-row items-center gap-1.5">
-          <Text numberOfLines={1} className="shrink text-[13.5px] font-semibold text-text">
+          <Text numberOfLines={1} className="shrink text-sm font-semibold text-text">
             {itemName}
             {drop.ringLevel !== undefined && ` ${drop.ringLevel}레벨`}
           </Text>
@@ -352,7 +352,7 @@ export function DropPriceScreen(): React.JSX.Element {
           <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
             <PageHeaderTitleRow className="gap-1">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-semibold text-text">아이템 가격 입력</Text>
+              <Text className="text-lg font-bold text-text">아이템 가격 입력</Text>
             </PageHeaderTitleRow>
           </View>
         }
@@ -404,9 +404,9 @@ export function DropPriceScreen(): React.JSX.Element {
                   )}
                   {/* 단위 앞의 실제 공백은 남긴다. 마진만으로 띄우면 읽는 값이 `N메소` 로 붙어
                       스크린리더가 이어 읽는다. */}
-                  <Text className="text-22 font-bold text-primary-ink" style={TABULAR_NUMS}>
+                  <Text className="text-2xl font-bold text-primary-ink" style={TABULAR_NUMS}>
                     {total.toLocaleString()}{' '}
-                    <Text className="text-xs font-bold text-text-muted">메소</Text>
+                    <Text className="text-xs font-normal text-text-muted">메소</Text>
                   </Text>
                 </View>
                 {/* 입력은 가격을 **입력한** 것만 센다. 기록 안함은 값을 매기지 않기로 한 결정이고,
@@ -425,7 +425,7 @@ export function DropPriceScreen(): React.JSX.Element {
                   onPress={startSequence}
                   className="w-full items-center rounded-full bg-primary py-3"
                 >
-                  <Text className="text-sm font-bold text-on-primary">
+                  <Text className="text-base font-bold text-on-primary">
                     미입력 {unpriced}건 이어서 입력
                   </Text>
                 </Pressable>

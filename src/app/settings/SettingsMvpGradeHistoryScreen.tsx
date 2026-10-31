@@ -52,7 +52,7 @@ export function SettingsMvpGradeHistoryScreen(props: {
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-semibold text-text">MVP 등급 이력</Text>
+              <Text className="text-lg font-bold text-text">MVP 등급 이력</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }
@@ -63,7 +63,7 @@ export function SettingsMvpGradeHistoryScreen(props: {
               <Card className="gap-2 p-3">
                 <View className="px-1 pt-0.5">
                   {account.summary === null ? (
-                    <Text className="text-sm text-text">메이플 ID</Text>
+                    <Text className="text-sm font-semibold text-text">메이플 ID</Text>
                   ) : (
                     <AccountRow summary={account.summary} portraitUrl={account.portraitUrl} />
                   )}
@@ -84,13 +84,13 @@ export function SettingsMvpGradeHistoryScreen(props: {
                   onPress={() => setSheet({ kind: 'change' })}
                   className="items-center rounded-full bg-card-inset px-4 py-2"
                 >
-                  <Text className="text-13 font-semibold text-text">등급 변경</Text>
+                  <Text className="text-xs font-semibold text-text">등급 변경</Text>
                 </Pressable>
               </Card>
 
               <View className="gap-2">
                 <View className="flex-row items-center justify-between px-1">
-                  <Text className="text-sm font-semibold text-text">이력 {history.length}건</Text>
+                  <Text className="text-sm font-bold text-text">이력 {history.length}건</Text>
                 </View>
                 <Card className="px-5" testID="mvp-grade-timeline">
                   <View className="py-1.5">

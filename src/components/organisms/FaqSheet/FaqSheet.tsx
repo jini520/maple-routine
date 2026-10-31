@@ -56,14 +56,14 @@ export function FaqSheet(props: FaqSheetProps): React.JSX.Element {
             className={index === 0 ? 'py-1' : 'border-t border-border py-3.5'}
           >
             <View className="flex-row items-start gap-2">
-              <Text className="text-13 font-bold leading-5 text-primary-ink">Q</Text>
+              <Text className="text-sm font-bold leading-5 text-primary-ink">Q</Text>
               <Text className="shrink text-sm font-semibold text-text">{item.question}</Text>
             </View>
 
             {/* 왼쪽 20 은 `Q` 표식과 그 사이 간격의 합이다. 답의 첫 글자가 질문의 첫 글자와 맞는다. */}
             <View className="mt-2 gap-2 pl-5">
               {item.answer.map((block) => (
-                <Text key={block.text} className="text-13 text-text-muted">
+                <Text key={block.text} className="text-sm text-text-muted">
                   {block.text}
                 </Text>
               ))}

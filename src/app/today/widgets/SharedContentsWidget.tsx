@@ -86,8 +86,8 @@ function splitColumns(
 /** `n/max`. 줄의 진행과 계열 제목의 주간 한도가 같은 모양을 쓴다. */
 function CountValue(props: { count: { now: number; max: number }; testID: string }): React.JSX.Element {
   return (
-    <Text testID={props.testID} style={TABULAR_NUMS} className="shrink-0 text-[11.5px] text-text-muted">
-      <Text style={TABULAR_NUMS} className="text-[11.5px] font-bold text-text">
+    <Text testID={props.testID} style={TABULAR_NUMS} className="shrink-0 text-11 text-text-muted">
+      <Text style={TABULAR_NUMS} className="text-11 font-bold text-text">
         {String(props.count.now)}
       </Text>
       {`/${String(props.count.max)}`}
@@ -113,8 +113,8 @@ function SharedItemRow(props: { item: SharedContentItemView }): React.JSX.Elemen
       <Text
         testID="shared-item-name"
         numberOfLines={1}
-        className={`min-w-0 flex-1 text-[11.5px] leading-tight ${
-          isStruck ? 'text-text-disabled line-through' : 'text-text'
+        className={`min-w-0 flex-1 text-xs leading-tight ${
+          isStruck ? 'text-text-disabled line-through' : 'font-semibold text-text'
         }`}
       >
         {item.shortName}
@@ -171,7 +171,7 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
                 {column.map((group) => (
                   <View key={group.category} testID="shared-group" className="rounded-[10px] bg-card-inset px-2.5 py-2">
                     <View className="flex-row items-center justify-between gap-1.5">
-                      <Text testID="shared-group-name" className="text-[12.5px] font-bold text-text">
+                      <Text testID="shared-group-name" className="text-xs font-bold text-text">
                         {group.label}
                       </Text>
                       {group.weeklyLimit !== null && (
@@ -217,7 +217,7 @@ function ScopeNotePopover(props: {
       <View style={{ maxWidth: Math.min(NOTE_MAX_WIDTH, props.tileWidth) }} className="gap-1">
         {SCOPE_NOTES.map(([subject, rule]) => (
           // iOS 기본값은 한글을 글자 단위로 끊어 낱말 가운데서 꺾는다
-          <Text key={subject} lineBreakStrategyIOS="hangul-word" className="text-[11.5px] leading-snug text-text-muted">
+          <Text key={subject} lineBreakStrategyIOS="hangul-word" className="text-11 leading-snug text-text-muted">
             {`${subject} ${rule}`}
           </Text>
         ))}

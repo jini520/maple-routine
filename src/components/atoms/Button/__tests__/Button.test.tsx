@@ -25,9 +25,9 @@ describe('Button', () => {
     }
   })
 
-  it('className은 상자에, textClassName은 글자에 이어 붙는다', async () => {
+  it('className은 상자에 이어 붙고 라벨 크기는 변형이 정한다', async () => {
     const { getByRole, getByText } = await renderAtom(
-      <Button variant="primary" className="w-full items-center" textClassName="text-sm">
+      <Button variant="primary" className="w-full items-center">
         저장
       </Button>,
     )
@@ -37,8 +37,7 @@ describe('Button', () => {
       alignItems: 'center',
       backgroundColor: 기본테마.primary,
     })
-    // 뒤에 붙은 `text-sm` 이 변형 기본값(16px)을 덮는다.
-    expect(flattenStyle(getByText('저장').props.style).fontSize).toBe(14)
+    expect(flattenStyle(getByText('저장').props.style).fontSize).toBe(16)
   })
 
   it('문자열 children만 Text 로 감싸고 요소 children 은 그대로 통과시킨다', async () => {
@@ -117,7 +116,7 @@ describe('Button: busy', () => {
     }
   })
 
-  it('sm: 상자가 14/6 으로 줄고 라벨이 13px 이 된다', async () => {
+  it('sm: 상자가 14/6 으로 줄고 라벨이 12px 이 된다', async () => {
     const { getByRole, getByText } = await renderAtom(
       <Button variant="primary" size="sm">
         확인
@@ -132,7 +131,7 @@ describe('Button: busy', () => {
     })
     // 변형 표의 `text-sm` 을 실제로 이기는지 본다. 글자 크기는 덮이고 여백은 안 덮이는데,
     // 그 차이가 조용해서 여기서 값으로 못박는다.
-    expect(flattenStyle(getByText('확인').props.style).fontSize).toBe(13)
+    expect(flattenStyle(getByText('확인').props.style).fontSize).toBe(12)
   })
 
   it('크기 표에는 색도 글자 유틸도 없다', () => {

@@ -91,7 +91,7 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
       <View className="flex-row items-end gap-2">
         <Text testID="stats-cumulative-total" className={`text-2xl font-bold ${total >= 0 ? 'text-rise-ink' : 'text-fall-ink'}`} style={TABULAR_NUMS}>
           {signed(total)}{' '}
-          <Text className="text-11 font-bold text-text-muted">메소</Text>
+          <Text className="text-xs text-text-muted">메소</Text>
         </Text>
       </View>
       <View className="flex-row items-center gap-2">
@@ -198,7 +198,7 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
             </Text>
             <Text
               testID="stats-cumulative-bubble-value"
-              className={`text-11 font-bold ${points[selected] >= 0 ? 'text-rise-ink' : 'text-fall-ink'}`}
+              className={`text-10 font-bold ${points[selected] >= 0 ? 'text-rise-ink' : 'text-fall-ink'}`}
               style={TABULAR_NUMS}
             >
               {signed(points[selected])}

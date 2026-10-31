@@ -43,11 +43,11 @@ export function TaskResumeModal(props: {
                 className={`gap-1.5 ${INSET_ROW_CLASS}`}
               >
                 <View className="flex-row items-center justify-between gap-2">
-                  <Text className="text-13 text-text">{task.name}</Text>
+                  <Text className="text-xs font-semibold text-text">{task.name}</Text>
                   {task.waiting ? (
                     <Text className="text-xs text-text-disabled">대기</Text>
                   ) : (
-                    <Text className="text-xs text-text" style={TABULAR_NUMS}>
+                    <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
                       {`${task.done.toLocaleString()} / ${task.total.toLocaleString()}${task.unit ?? '건'}`}
                     </Text>
                   )}

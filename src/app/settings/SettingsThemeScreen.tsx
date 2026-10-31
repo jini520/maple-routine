@@ -68,7 +68,7 @@ export function SettingsThemeScreen(): React.JSX.Element {
               trailing={<Segment size="lg" options={MODE_FILTERS} selected={filter} onSelect={setFilter} />}
             >
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-semibold text-text">테마</Text>
+              <Text className="text-lg font-bold text-text">테마</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }

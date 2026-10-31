@@ -102,7 +102,7 @@ export function Segment<T extends string>(props: {
                   것처럼 보인다. */}
               <Text
                 className={`${size.label} ${
-                  isSelected ? 'font-semibold text-text' : 'font-medium text-control-ink-off'
+                  isSelected ? 'font-semibold text-text' : 'text-control-ink-off'
                 }`}
               >
                 {label}

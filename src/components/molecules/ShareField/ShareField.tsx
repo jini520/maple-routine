@@ -102,8 +102,8 @@ export function ShareField(props: {
     // 칸이 나란히 선 수수료 칸(110)보다 한참 높아져 카드가 판을 밀어낸다.
     <View className={wide ? 'gap-4' : 'gap-2'}>
       {/*
-        가로로 선 두 벌은 라벨이 **카드 좌상단**이다. `items-baseline` 으로 묶으면 11px 라벨이
-        23px 백분율의 아랫변에 붙어 7px 내려앉고, 그러면 나란히 서는 칸의 라벨(드롭 가격 카드의
+        가로로 선 두 벌은 라벨이 **카드 좌상단**이다. `items-baseline` 으로 묶으면 12px 라벨이
+        23px 백분율의 아랫변에 붙어 6px 내려앉고, 그러면 나란히 서는 칸의 라벨(드롭 가격 카드의
         `파티 인원`)과 높이가 갈린다.
       */}
       <View
@@ -117,8 +117,8 @@ export function ShareField(props: {
         <Text
           className={
             stacked
-              ? 'text-11 font-semibold tracking-[.04em] text-text-muted'
-              : 'text-xs font-bold tracking-[.06em] text-text-muted'
+              ? 'text-xs tracking-[.04em] text-text-muted'
+              : 'text-xs tracking-[.06em] text-text-muted'
           }
         >
           {props.label}

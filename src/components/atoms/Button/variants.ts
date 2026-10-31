@@ -61,10 +61,10 @@ export type ButtonVariant = keyof typeof BUTTON_VARIANT_CLASS
 export type ButtonSize = keyof typeof BUTTON_SIZE_CLASS
 
 /**
- * 라벨 **글자 크기** 하나. 변형과 크기가 함께 정한다.
+ * 라벨의 **글자 크기와 두께**. 변형과 크기가 함께 정한다.
  *
- * **표를 겹치지 않고 함수로 고르는 이유는 실측이다.** `text-13` 을 `text-sm` 뒤에 이어 붙였더니
- * 렌더된 `fontSize` 가 14 로 나왔다. 안 덮인다. 그런데 `text-sm` 은 `text-base` 를 덮는다.
+ * **표를 겹치지 않고 함수로 고르는 이유는 실측이다.** 크기 클래스 둘을 이어 붙이면 붙인 순서가
+ * 아니라 생성된 CSS 순서가 이긴다. `text-sm` 은 `text-base` 를 덮지만 못 덮는 쌍도 있었다.
  * **어느 쪽이 이길지가 클래스 이름 쌍마다 갈리므로 덮어쓰기에 기대지 않는다.** 한 벌만
  * 내보내면 겹칠 일이 없다.
  *
@@ -75,21 +75,21 @@ export type ButtonSize = keyof typeof BUTTON_SIZE_CLASS
  * @param size 여백 크기
  */
 export function buttonTextSizeClass(variant: ButtonVariant, size: ButtonSize): string {
-  if (size === 'sm') return 'text-13'
-  return variant === 'primary' ? 'text-base' : 'text-sm'
+  if (size === 'sm') return 'text-xs font-semibold'
+  return variant === 'primary' ? 'text-base font-bold' : 'text-sm font-semibold'
 }
 
 /**
- * 변형별 **글자** 클래스. `Button` 이 라벨을 감싸는 `Text` 에 준다. 굵기와 색만 있다.
+ * 변형별 **글자** 클래스. `Button` 이 라벨을 감싸는 `Text` 에 준다. 색만 있다.
  *
  * 크기는 `buttonTextSizeClass` 가 따로 낸다. 여기 같이 적으면 `sm` 이 그것을 못 덮는다.
  */
 export const BUTTON_VARIANT_TEXT_CLASS = {
-  primary: 'font-semibold text-on-primary',
-  text: 'font-medium text-text-muted',
-  tint: 'font-semibold text-text',
-  soft: 'font-semibold text-primary-ink',
-  dangerText: 'font-medium text-error-ink',
+  primary: 'text-on-primary',
+  text: 'text-text-muted',
+  tint: 'text-text',
+  soft: 'text-primary-ink',
+  dangerText: 'text-error-ink',
 } as const
 
 /**

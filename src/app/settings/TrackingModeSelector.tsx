@@ -48,7 +48,7 @@ export function TrackingModeSelector(props: TrackingModeSelectorProps): React.JS
             <View className="flex-row items-start gap-2.5">
               <Icon className="mt-px h-[18px] w-[18px] flex-none text-primary-ink" aria-hidden />
               <View className="min-w-0 flex-1 gap-px">
-                <Text className="text-13 font-semibold text-text">{option.title}</Text>
+                <Text className="text-sm font-semibold text-text">{option.title}</Text>
                 <Text className="text-xs text-text-muted">{option.description}</Text>
               </View>
               {/* 원은 여럿 중 하나를 고르는 표시다. 체크박스의 네모와 갈린다. */}

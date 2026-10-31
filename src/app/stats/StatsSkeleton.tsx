@@ -13,7 +13,7 @@ import { Svg } from '../../lib/nativewind-interop'
 import { StatsSection } from './StatsSection'
 
 /** `typography.cjs` 의 줄 높이(px). 막대가 아니라 그 글자가 설 상자의 높이다 */
-const LINE = { 11: 16, xl: 28, '2xl': 31 } as const
+const LINE = { 10: 15, 11: 16, xs: 17, lg: 25, '2xl': 31 } as const
 
 /** `TrendSection` 의 말풍선 자리 · 그래프 높이 · 왼쪽 눈금 폭 · 아래 축 높이 · 위 여백 */
 const TREND = { bubble: 54, chart: 162, axisLeft: 46, axisBottom: 32, topPad: 8 } as const
@@ -148,10 +148,10 @@ export function StatsSkeleton(): React.JSX.Element {
     <View testID="stats-skeleton" role="status" aria-busy className="gap-2">
       <StatsSection title="순 수익">
         <View className="flex-row items-end justify-between gap-3">
-          <LineBar height={LINE.xl} className="h-5 w-32" />
+          <LineBar height={LINE['2xl']} className="h-6 w-32" />
           <View className="items-end gap-1">
-            <LineBar height={LINE[11]} className="h-2.5 w-20" />
-            <LineBar height={LINE[11]} className="h-2.5 w-20" />
+            <LineBar height={LINE.xs} className="h-2.5 w-20" />
+            <LineBar height={LINE.xs} className="h-2.5 w-20" />
           </View>
         </View>
       </StatsSection>
@@ -171,7 +171,7 @@ export function StatsSkeleton(): React.JSX.Element {
             <LineBar height={20} className="h-3 w-24" />
             {[0, 1, 2].map((index) => (
               <View key={index} className="gap-1">
-                <LineBar height={LINE[11]} className="h-2.5 w-16" />
+                <LineBar height={LINE[10]} className="h-2.5 w-16" />
                 <Skeleton className="h-[7px] w-full" fillClassName="rounded-full" />
               </View>
             ))}
@@ -192,7 +192,7 @@ export function StatsSkeleton(): React.JSX.Element {
       </StatsSection>
 
       <StatsSection title="보스별 수입" trailing={<SegmentPill />}>
-        <LineBar height={LINE.xl} className="h-5 w-28" />
+        <LineBar height={LINE.lg} className="h-5 w-28" />
         <View className="flex-row gap-2 overflow-hidden">
           {[0, 1, 2, 3].map((index) => (
             // 폭은 `BossSection` 의 `TILE_WIDTH` 와 같다.

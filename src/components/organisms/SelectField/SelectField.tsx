@@ -195,7 +195,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
             // 첫 묶음 말고는 위를 더 띄운다. 라벨만 붙어 있으면 앞 묶음의 끝이 안 보인다. 선은 긋지 않는다.
             <Text
               testID={`${props.testID}-group-${option.group}`}
-              className={`px-2.5 pb-1 text-11 font-semibold text-text-disabled ${index === 0 ? 'pt-2.5' : 'pt-4'}`}
+              className={`px-2.5 pb-1 text-11 font-bold text-text-disabled ${index === 0 ? 'pt-2.5' : 'pt-4'}`}
             >
               {option.group}
             </Text>
@@ -247,7 +247,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           className={`${triggerBoxClass(props.tall === true)} active:opacity-60`}
         >
           <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
-          <Text numberOfLines={1} className="flex-1 text-15 font-bold text-text">
+          <Text numberOfLines={1} className="flex-1 text-sm font-semibold text-text">
             {selectedLabel}
           </Text>
           <SelectChevron open={isOpen} />

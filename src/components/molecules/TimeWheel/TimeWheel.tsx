@@ -66,7 +66,7 @@ export function TimeWheel(props: TimeWheelProps): React.JSX.Element {
   const { isDisabled, step } = props
 
   const textScale = useTextScale()
-  const textStyle = { color: definition.text, fontSize: 20, fontWeight: '600' as const }
+  const textStyle = { color: definition.text, fontSize: 18, fontWeight: '600' as const }
   const common = {
     itemHeight: ITEM_HEIGHT,
     visibleItemCount: VISIBLE_ITEM_COUNT,
@@ -130,9 +130,9 @@ export function TimeWheel(props: TimeWheelProps): React.JSX.Element {
         onValueChanged={({ item }) => props.onChange({ hour: item.value, minute })}
       />
       {props.units === undefined ? (
-        <Text className="mx-1 text-lg font-bold text-text">:</Text>
+        <Text className="mx-1 text-lg font-semibold text-text">:</Text>
       ) : (
-        <Text className="text-sm font-semibold text-text-muted">{props.units.hour}</Text>
+        <Text className="text-xs text-text-muted">{props.units.hour}</Text>
       )}
       <WheelPicker
         {...common}
@@ -142,7 +142,7 @@ export function TimeWheel(props: TimeWheelProps): React.JSX.Element {
         onValueChanged={({ item }) => props.onChange({ hour: props.hour, minute: item.value })}
       />
       {props.units !== undefined && (
-        <Text className="text-sm font-semibold text-text-muted">{props.units.minute}</Text>
+        <Text className="text-xs text-text-muted">{props.units.minute}</Text>
       )}
     </View>
   )

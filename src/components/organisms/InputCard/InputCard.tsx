@@ -750,8 +750,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                   <Text
                     testID="input-card-hint"
                     numberOfLines={1}
-                    className="font-bold text-text-disabled"
-                    style={[TABULAR_NUMS, { fontSize: 20 }]}
+                    className="font-semibold text-text-disabled"
+                    style={[TABULAR_NUMS, { fontSize: 18 }]}
                   >
                     {ownHint}
                   </Text>
@@ -851,18 +851,18 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 직접 줘야 줄 사이가 플랫폼마다 같다.
               */
               className={`${isMultiline ? (lines === MULTILINE_MAX_LINES ? 'h-[88px]' : 'h-[66px]') : 'h-9'} w-full text-text ${
-                isText ? 'text-left font-semibold' : 'text-right font-bold'
+                isText ? 'text-left' : 'text-right font-semibold'
               }`}
               style={[
                 isText ? null : TABULAR_NUMS,
-                { fontSize: isText ? 16 : 20 },
+                { fontSize: isText ? 16 : 18 },
                 // 아톰의 기본 `textAlignVertical: 'center'` 를 이긴다. 안 이기면 안드로이드에서 글이 칸 가운데 뜬다.
                 isMultiline ? { lineHeight: MULTILINE_LINE_HEIGHT, textAlignVertical: 'top' } : null,
               ]}
             />
             </View>
             {props.unit !== undefined && (
-              <Text className="shrink-0 text-xs font-semibold text-text-muted">
+              <Text className="shrink-0 text-xs text-text-muted">
                 {unit === 'base' ? props.unit : `${MESO_UNIT_LABELS[unit]} ${props.unit}`}
               </Text>
             )}
@@ -899,7 +899,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
           {props.share !== undefined && (
             <View className="mt-3 gap-2.5">
               <View className="flex-row items-center justify-between gap-2.5">
-                <Text className="text-13 font-bold text-text">분배 방식</Text>
+                <Text className="text-xs font-bold text-text">분배 방식</Text>
                 <Segment size="sm"
                   options={SPLIT_OPTIONS}
                   selected={usesRatio ? '비율' : '기본'}
@@ -939,7 +939,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                     className="h-[112px] flex-1 gap-2.5 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]"
                   >
                     <View className="flex-row items-center justify-between gap-1.5">
-                      <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
+                      <Text className="text-xs leading-[14px] tracking-[.04em] text-text-muted">
                         파티 인원
                       </Text>
                       <Badge variant="primary" size="xs" style={TABULAR_NUMS}>
@@ -984,7 +984,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                 onPress={props.exclude.onPress}
                 className="h-11 shrink-0 justify-center rounded-xl bg-card-inset px-3 active:bg-surface-2"
               >
-                <Text className="text-11 font-semibold text-text-muted">{props.exclude.label}</Text>
+                <Text className="text-xs font-semibold text-text-muted">{props.exclude.label}</Text>
               </Pressable>
             )}
             {props.prev !== undefined && (

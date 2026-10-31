@@ -74,7 +74,7 @@ function Waiting(props: { label: string }): React.JSX.Element {
 }
 
 function SectionLabel(props: { children: React.ReactNode }): React.JSX.Element {
-  return <Text className="text-13 font-semibold text-text">{props.children}</Text>
+  return <Text className="text-sm font-bold text-text">{props.children}</Text>
 }
 
 function Notice(props: { children: React.ReactNode }): React.JSX.Element {
@@ -183,7 +183,7 @@ export function CharacterManageBody({
         }}
       >
         <SectionLabel>선택된 캐릭터</SectionLabel>
-        <Text className="text-xs font-semibold text-primary-ink">{manage.selectedOcids.length}개</Text>
+        <Text className="text-xs font-bold text-primary-ink">{manage.selectedOcids.length}개</Text>
       </View>
 
       {/* 두 층이 한 격자다. 층을 넘는 것이 재배열이라 그 움직임을 라이브러리가 잇는다. */}

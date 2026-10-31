@@ -58,7 +58,7 @@ export function DayColumn(props: DayColumnProps): React.JSX.Element {
   const slot = { position: 'absolute' as const, left: DAY_COLUMN_INSET, right: DAY_COLUMN_GAP, top: (props.pickerHeight - h) / 2, height: h }
   // 줄 높이는 칸 높이와 같아야 휠 숫자와 같은 줄에 선다. atom 이 글자 배수를 곱하므로 미리 나눈다.
   const label = (text: string): React.JSX.Element => (
-    <Text className="text-right text-11 font-semibold text-text-muted" style={{ lineHeight: h / textScale }} numberOfLines={1}>
+    <Text className="text-right text-11 text-text-muted" style={{ lineHeight: h / textScale }} numberOfLines={1}>
       {text}
     </Text>
   )

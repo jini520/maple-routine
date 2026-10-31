@@ -131,7 +131,7 @@ describe('ShareField', () => {
     expect(Number(트랙.flexGrow)).toBe(1)
   })
 
-  // 라벨 11px 과 백분율 23px 를 baseline 으로 묶으면 라벨이 7px 내려앉아, 드롭 가격 카드에서
+  // 라벨 12px 과 백분율 23px 를 baseline 으로 묶으면 라벨이 6px 내려앉아, 드롭 가격 카드에서
   // 옆 칸의 `파티 인원` 과 다른 높이에 선다(사용자 지정).
   it.each(['wide', 'stacked'] as const)('%s 는 라벨을 카드 좌상단에 세운다', async (layout) => {
     const { getByTestId } = await renderAtom(

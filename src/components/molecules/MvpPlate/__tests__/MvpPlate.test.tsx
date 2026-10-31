@@ -1,5 +1,8 @@
 /** MVP 등급 명패. 일반은 그림이 없어 그림 명패와 같은 모양의 글자 판이다. */
+import { Dimensions } from 'react-native'
+
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
+import { __resetTextScaleForTest, setTextScale } from '../../../../theme/text-scale'
 import { MvpPlate } from '../MvpPlate'
 
 describe('MvpPlate', () => {
@@ -18,5 +21,15 @@ describe('MvpPlate', () => {
     const view = await renderAtom(<MvpPlate grade="normal" height={height} />)
 
     expect(Number(flattenStyle(view.getByText('일반').props.style).lineHeight)).toBeLessThanOrEqual(height)
+  })
+
+  it.each([15, 16, 18, 20])('넓은 화면의 `아주 크게` 에서도 높이 %i 의 판을 글자 줄이 넘지 않는다', async (height) => {
+    jest.spyOn(Dimensions, 'get').mockReturnValue({ width: 466, height: 678, scale: 3, fontScale: 1 })
+    setTextScale(1.2)
+    const view = await renderAtom(<MvpPlate grade="normal" height={height} />)
+
+    expect(Number(flattenStyle(view.getByText('일반').props.style).lineHeight)).toBeLessThanOrEqual(height)
+    jest.restoreAllMocks()
+    __resetTextScaleForTest()
   })
 })

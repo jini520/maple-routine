@@ -127,7 +127,7 @@ describe('atom 을 안 거치는 SVG 글자도 앱 배수를 받는다', () => {
 
   it('SVG 글자를 그리는 파일은 모두 `useTextScale` 로 배수를 읽는다', () => {
     const missing = svgTextFiles()
-      .filter((file) => !readFileSync(file, 'utf8').includes('useTextScale()'))
+      .filter((file) => !readFileSync(file, 'utf8').includes('useTextScale('))
       .map((file) => relative(SRC, file))
 
     expect(missing).toEqual([])

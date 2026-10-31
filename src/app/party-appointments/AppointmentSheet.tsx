@@ -237,7 +237,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   )
 
   const viewFooter = past ? (
-    <Text className="py-2 text-center text-13 text-text-muted">지난 주 스케줄은 볼 수만 있어요</Text>
+    <Text className="py-2 text-center text-xs text-text-muted">지난 주 스케줄은 볼 수만 있어요</Text>
   ) : (
     // 다른 시트와 같은 바닥. 전폭 주 버튼 아래에 되돌릴 수 없는 동작을 작은 빨간 글자로 둔다.
     <View className="gap-1">
@@ -280,7 +280,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
           className="flex-row items-center gap-2 self-start"
         >
           <CheckBox checked={thisWeekOnly} />
-          <Text className="text-sm font-medium text-text">이 주만 적용하기</Text>
+          <Text className="text-sm font-semibold text-text">이 주만 적용하기</Text>
           <Text className="text-xs text-text-muted">
             {startDate.getUTCMonth() + 1}/{startDate.getUTCDate()} ({weekday})
           </Text>

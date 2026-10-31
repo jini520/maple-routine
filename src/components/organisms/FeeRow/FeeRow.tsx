@@ -53,8 +53,8 @@ export function FeeRow<T extends string>(props: {
       */
       pointerEvents={disabled ? 'none' : 'auto'}
       /*
-        **값 줄 높이를 못박는다.** 자동을 켜고 끌 때 이 자리가 명패 + 요율(19)과 세그먼트(26)를
-        오가는데, 안 못박으면 그 7px 만큼 아래의 버튼 줄과 옆 줄이 함께 흔들린다(사용자 지적).
+        **값 줄 높이를 못박는다.** 자동을 켜고 끌 때 이 자리가 명패 + 요율(20)과 세그먼트(26)를
+        오가는데, 안 못박으면 그 6px 만큼 아래의 버튼 줄과 옆 줄이 함께 흔들린다(사용자 지적).
         26 은 세그먼트 쪽 높이다(조각 16 + `py-0.5` 4 + 상자 `p-0.5` 4 + 테두리 2). `stacked` 는
         세그먼트가 `sm` 이라 23 이다.
       */
@@ -64,13 +64,13 @@ export function FeeRow<T extends string>(props: {
         props.autoFee !== null ? (
           <>
             <MvpPlate grade={props.autoFee.grade} height={18} />
-            <Text className="text-13 font-semibold text-text" style={TABULAR_NUMS}>
+            <Text className="text-sm font-semibold text-text" style={TABULAR_NUMS}>
               {props.autoFee.percent}%
             </Text>
           </>
         ) : (
           props.autoPlaceholder !== undefined && (
-            <Text className="text-13 text-text-disabled">{props.autoPlaceholder}</Text>
+            <Text className="text-sm text-text-disabled">{props.autoPlaceholder}</Text>
           )
         )
       ) : (
@@ -101,7 +101,7 @@ export function FeeRow<T extends string>(props: {
         <Text
           className={
             compact
-              ? 'text-11 font-semibold tracking-[.04em] text-text-muted'
+              ? 'text-xs tracking-[.04em] text-text-muted'
               : `shrink-0 text-xs text-text-muted${stacked ? ' flex-1' : ''}`
           }
         >
@@ -118,7 +118,7 @@ export function FeeRow<T extends string>(props: {
           className="flex-row items-center gap-2"
         >
           <CheckBox checked={props.auto} />
-          <Text className="text-xs font-semibold text-text-muted">자동</Text>
+          <Text className="text-xs text-text-muted">자동</Text>
         </Pressable>
         {!stacked && value}
       </View>

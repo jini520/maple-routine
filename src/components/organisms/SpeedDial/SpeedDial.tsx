@@ -191,7 +191,7 @@ function DialPill(props: DialPillProps): React.JSX.Element {
               onLayout={(event) => props.onMeasure(action.key, event.nativeEvent.layout.width)}
               style={{ alignSelf: 'flex-start' }}
             >
-              <Text className="text-sm font-bold text-text" numberOfLines={1}>
+              <Text className="text-sm font-semibold text-text" numberOfLines={1}>
                 {action.label}
               </Text>
               {action.description !== undefined && (

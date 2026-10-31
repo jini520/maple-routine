@@ -89,7 +89,7 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
           <PageHeaderTitleRow className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
             {/* `min-w-0` + 한 줄 말줄임. 말줄임은 글자 쪽 프롭이다. */}
-            <Text numberOfLines={1} className="min-w-0 flex-1 text-lg font-semibold text-text">
+            <Text numberOfLines={1} className="min-w-0 flex-1 text-lg font-bold text-text">
               {guide.title}
             </Text>
           </PageHeaderTitleRow>
@@ -113,7 +113,7 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
           // 아니라 위젯으로 읽힌다. 제목 + 번호 목록으로 충분하다. 묶음 제목의 생김새는 개발
           // 노트의 카테고리 제목과 같다.
           <View className="gap-1.5">
-            <Text className="text-xs font-semibold text-text-muted">목차</Text>
+            <Text className="text-11 font-bold text-text-muted">목차</Text>
             <View className="gap-1">
               {guide.sections.map((section, index) => (
                 <View key={section.id} className="flex-row gap-1.5">
@@ -150,7 +150,7 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
               setMeasuredAt((value) => value + 1)
             }}
           >
-            <Text className="text-base font-semibold text-text">{section.title}</Text>
+            <Text className="text-base font-bold text-text">{section.title}</Text>
             {section.blocks.map((block, index) => (
               <View key={index} testID="guide-block" className="gap-2">
                 {block.image !== undefined && (

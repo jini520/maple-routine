@@ -65,7 +65,7 @@ export function AppointmentAlarmField(props: AppointmentAlarmFieldProps): React.
         className="flex-row items-center gap-2 self-start py-1"
       >
         <CheckBox checked={props.alarmOn} />
-        <Text className="text-sm font-medium text-text">알림</Text>
+        <Text className="text-sm font-semibold text-text">알림</Text>
       </Pressable>
 
       {/* 알림을 꺼도 알약 줄은 접지 않는다. 흐리게 막아 두어, 켜면 무엇을 고를 수 있는지 미리 보인다. */}

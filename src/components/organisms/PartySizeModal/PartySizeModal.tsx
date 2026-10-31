@@ -262,8 +262,8 @@ export function PartySizeModal(props: {
 
               {/* 글자는 전부 왼쪽이다. 그림 위에 안 앉으므로 그림자를 안 쓴다. */}
               <View className="absolute left-4 top-4 gap-1.5">
-                <Text className="text-10 font-bold tracking-[.16em] text-text-muted">{props.cycleLabel}</Text>
-                <Text className="text-22 font-bold tracking-[-.02em] text-text">{props.bossName}</Text>
+                <Text className="text-11 font-bold tracking-[.16em] text-text-muted">{props.cycleLabel}</Text>
+                <Text className="text-base font-bold tracking-[-.02em] text-text">{props.bossName}</Text>
                 {props.onSelectDifficulty === undefined ? (
                   <View className="self-start">
                     <Badge variant={props.difficulty}>{DIFFICULTY_NAME[props.difficulty]}</Badge>
@@ -281,7 +281,7 @@ export function PartySizeModal(props: {
 
             <View className="gap-3.5 p-4">
               <View className="flex-row items-center justify-between gap-2.5">
-                <Text className="text-13 font-bold text-text">분배 방식</Text>
+                <Text className="text-xs font-bold text-text">분배 방식</Text>
                 <Segment
                   options={SPLIT_OPTIONS}
                   selected={usesShares ? '비율' : '기본'}
@@ -342,10 +342,10 @@ export function PartySizeModal(props: {
                    말한다. */
                 <View className="flex-row items-center justify-between gap-2.5">
                   <View className="flex-row items-center gap-2">
-                    {/* 줄 높이를 글꼴 자연 상자(11 × 1.19 ≈ 13)에 붙인다. `text-11` 의 기본 16 은
+                    {/* 줄 높이를 글꼴 자연 상자(12 × 1.19 ≈ 14)에 붙인다. `text-xs` 의 기본 17 은
                         iOS 에서 남는 여유가 전부 글자 **위**로 가서(기준선이 `줄높이 − descent`)
                         글자가 3px 내려앉고, 옆의 배지만 위로 붙어 보인다. */}
-                    <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
+                    <Text className="text-xs leading-[14px] tracking-[.04em] text-text-muted">
                       파티 인원
                     </Text>
                     <Badge variant="primary" size="xs" style={TABULAR_NUMS}>

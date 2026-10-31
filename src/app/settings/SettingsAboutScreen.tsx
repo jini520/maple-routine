@@ -111,7 +111,7 @@ export function SettingsAboutScreen(props: SettingsAboutScreenProps = {}): React
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-semibold text-text">앱 정보 및 계정</Text>
+              <Text className="text-lg font-bold text-text">앱 정보 및 계정</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }

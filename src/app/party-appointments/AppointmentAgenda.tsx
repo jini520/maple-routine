@@ -37,7 +37,7 @@ function DayHeader(props: { dateKey: string; today: boolean }): React.JSX.Elemen
   return (
     <View className="flex-row items-center gap-1">
       <Text className="text-sm font-bold text-text">{WEEKDAY_LABELS[date.getUTCDay()]}</Text>
-      <Text className="text-13 text-text-muted" style={TABULAR_NUMS}>
+      <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>
         {date.getUTCMonth() + 1}/{date.getUTCDate()}
       </Text>
       {props.today && (

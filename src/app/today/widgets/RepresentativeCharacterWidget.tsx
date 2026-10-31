@@ -110,12 +110,12 @@ function NameLine(props: { view: RepresentativeView }): React.JSX.Element {
 function CaptionLine(props: { view: RepresentativeView }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-1.5">
-      <Text className="shrink-0 text-[11.5px] leading-tight text-text-muted">{`Lv. ${props.view.level}`}</Text>
+      <Text className="shrink-0 text-11 leading-tight text-text-muted">{`Lv. ${props.view.level}`}</Text>
       {props.view.jobClass !== undefined && (
         <Text
           testID="representative-job"
           numberOfLines={1}
-          className="min-w-0 shrink text-[11.5px] leading-tight text-text-muted"
+          className="min-w-0 shrink text-11 leading-tight text-text-muted"
         >
           {props.view.jobClass}
         </Text>
@@ -139,11 +139,11 @@ function ExpBlock(props: { view: RepresentativeView }): React.JSX.Element | null
   if (rate === undefined) return null
   return (
     <View testID="representative-exp" className="flex-row items-center gap-2 rounded-[10px] bg-card-inset px-2.5 py-1.5">
-      <Text className="text-11 font-semibold text-text-muted">EXP</Text>
+      <Text className="text-11 text-text-muted">EXP</Text>
       <View className="min-w-0 flex-1">
         <ProgressBar percent={rate} aria={{ now: rate, max: 100 }} />
       </View>
-      <Text numberOfLines={1} style={TABULAR_NUMS} className="text-11 font-semibold text-text">
+      <Text numberOfLines={1} style={TABULAR_NUMS} className="text-xs font-bold text-text">
         {formatExpRate(rate)}
       </Text>
     </View>
@@ -156,7 +156,7 @@ export function RepresentativeCharacterWidget({ data }: WidgetProps): React.JSX.
   if (view === null) {
     return (
       <View testID="widget-representative-character" className="grow justify-center p-3">
-        <Text className="text-13 text-text-muted">추적 중인 캐릭터가 없습니다</Text>
+        <Text className="text-11 text-text-muted">추적 중인 캐릭터가 없습니다</Text>
       </View>
     )
   }

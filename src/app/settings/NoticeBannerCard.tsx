@@ -19,7 +19,7 @@ export function NoticeBannerCard(props: { notice: Notice; onPress: () => void })
       <Card className="overflow-hidden">
         <NoticeBannerArt key={props.notice.thumbnailUrl ?? ''} notice={props.notice} />
         <View className="gap-1 px-3.5 pb-3 pt-2.5">
-          <Text numberOfLines={2} className="text-sm font-medium text-text">
+          <Text numberOfLines={2} className="text-sm font-semibold text-text">
             {title}
           </Text>
           {period !== null && (

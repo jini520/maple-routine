@@ -99,9 +99,7 @@ export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
             >
               {props.action.label}
             </Button>
-            {/* 파괴 동작의 색은 `textClassName` 이 아니라 **변형**으로 준다. 클래스 순서로는 변형의
-                색을 못 덮는다. 같은 특이도라 생성된 CSS 순서가 이기는데, 크기는 덮이고 색은 안 덮여
-                실측으로 갈렸다. 변형이면 대기 스피너 색도 함께 온다. */}
+            {/* 파괴 동작의 색은 **변형**으로 준다. 변형이면 대기 스피너 색도 함께 온다. */}
             {props.secondaryAction !== undefined && (
               <Button
                 variant={props.secondaryAction.danger === true ? 'dangerText' : 'text'}
@@ -121,7 +119,7 @@ export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
                 onPress={props.link.onPress}
                 className="flex-row items-center gap-1 self-center px-3.5 py-1.5"
               >
-                <Text className="text-13 text-primary-ink">{props.link.label}</Text>
+                <Text className="text-xs font-semibold text-primary-ink">{props.link.label}</Text>
                 <ExternalLinkIcon className="h-3 w-3 text-primary-ink" aria-hidden />
               </Pressable>
             )}

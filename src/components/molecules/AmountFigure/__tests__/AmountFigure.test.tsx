@@ -70,7 +70,7 @@ describe('줄 상자', () => {
   /**
    * 단위 글자(`조`·`억`·`만`·`천`)는 숫자보다 **계단 한 칸 아래**다.
    *
-   * `text-2xl` 안에 `text-xl` 을 안친 것이라 줄 높이 28 이 함께 온다. 그 줄 높이가 바깥 줄 상자를
+   * `text-2xl` 안에 `text-lg` 를 안친 것이라 줄 높이 25 가 함께 온다. 그 줄 높이가 바깥 줄 상자를
    * 흔들지 않는 것은 안드로이드에서 잰 값이다(큰 숫자 줄이 픽셀 단위로 같다).
    */
   it('단위 글자는 숫자보다 한 단계 작다', async () => {
@@ -79,7 +79,7 @@ describe('줄 상자', () => {
     const 억 = flattenStyle(view.getByText('억').props.style) as { fontSize: number }
     const 숫자 = flattenStyle(view.getByTestId('amount').props.style) as { fontSize: number }
 
-    expect(억.fontSize).toBe(20)
+    expect(억.fontSize).toBe(18)
     expect(억.fontSize).toBeLessThan(숫자.fontSize)
   })
 

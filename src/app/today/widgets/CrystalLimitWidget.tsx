@@ -109,7 +109,7 @@ export function CrystalLimitWidget({ data }: WidgetProps): React.JSX.Element {
   if (worlds.length === 0) {
     return (
       <View testID="widget-crystal-limit" className="grow justify-center gap-1 p-3">
-        <Text className="text-10 font-bold text-text-muted">{TITLE}</Text>
+        <Text className="text-11 font-bold text-text-muted">{TITLE}</Text>
         <Text testID="crystal-empty" numberOfLines={2} className="text-11 text-text-muted">
           {EMPTY_NOTE}
         </Text>
@@ -122,8 +122,8 @@ export function CrystalLimitWidget({ data }: WidgetProps): React.JSX.Element {
     <View testID="widget-crystal-limit" className="grow flex-row items-center gap-2.5 p-3">
       <Ring view={first} />
       <View className="min-w-0 flex-1 gap-0.5">
-        <Text className="text-10 font-bold text-text-muted">{TITLE}</Text>
-        <Text testID="crystal-world" numberOfLines={1} className="text-[12.5px] font-semibold text-text">
+        <Text className="text-11 font-bold text-text-muted">{TITLE}</Text>
+        <Text testID="crystal-world" numberOfLines={1} className="text-xs font-semibold text-text">
           {first.world}
         </Text>
         <Text testID="crystal-remaining" numberOfLines={1} className="text-11 text-text-muted">

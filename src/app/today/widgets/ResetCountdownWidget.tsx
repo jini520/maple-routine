@@ -113,7 +113,7 @@ function remainingOf(countdown: ResetCountdown, nowMs: number): number {
 function Row(props: { cycle: CycleKey; countdown: ResetCountdown; nowMs: number }): React.JSX.Element {
   return (
     <View testID={`reset-row-${props.cycle}`} className="flex-row items-baseline gap-2">
-      <Text testID={`reset-label-${props.cycle}`} className="text-[11.5px] text-text-muted">
+      <Text testID={`reset-label-${props.cycle}`} className="text-11 text-text-muted">
         {CYCLE_LABEL[props.cycle]}
       </Text>
       <Text
@@ -121,7 +121,7 @@ function Row(props: { cycle: CycleKey; countdown: ResetCountdown; nowMs: number 
         numberOfLines={1}
         adjustsFontSizeToFit
         style={TABULAR_NUMS}
-        className="ml-auto shrink text-[12.5px] font-bold text-text"
+        className="ml-auto shrink text-xs font-bold text-text"
       >
         {formatResetRemaining(remainingOf(props.countdown, props.nowMs), props.cycle === 'daily' ? 'second' : 'minute')}
       </Text>
@@ -135,7 +135,7 @@ export function ResetCountdownWidget({ data }: WidgetProps): React.JSX.Element {
 
   return (
     <View testID="widget-reset-countdown" className="grow justify-center gap-1 px-3 py-2.5">
-      <Text className="text-10 font-bold text-text-muted">{TITLE}</Text>
+      <Text className="text-11 font-bold text-text-muted">{TITLE}</Text>
       <View className="gap-0.5 rounded-lg bg-card-inset px-2 py-1">
         <Row cycle="daily" countdown={resets.daily} nowMs={nowMs} />
         <Row cycle="weekly" countdown={resets.weekly} nowMs={nowMs} />

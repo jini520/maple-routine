@@ -59,7 +59,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
     // 글꼴 line-height가 그대로 행 높이에 실려 드롭 유무로 행이 튄다.
     return (
       <View className="ml-auto h-6 shrink-0 flex-row items-center rounded-full bg-primary-tint px-2.5">
-        <Text className="text-11 font-bold text-primary-ink">＋ 드롭 추가</Text>
+        <Text className="text-xs font-semibold text-primary-ink">＋ 드롭 추가</Text>
       </View>
     )
   }
@@ -84,7 +84,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
                 영향을 주지 않는다. */}
             {drop.ringLevel !== undefined && (
               <View className="absolute -bottom-1 -right-0.5 rounded-full bg-primary px-0.5 py-px">
-                <Text className="text-8 font-bold leading-none text-on-primary">lv{drop.ringLevel}</Text>
+                <Text className="text-9 font-bold leading-none text-on-primary">lv{drop.ringLevel}</Text>
               </View>
             )}
           </View>
@@ -92,7 +92,7 @@ export function DropIndicator(props: { drops: RecordedDrop[] }): React.JSX.Eleme
       })}
       {extra > 0 && (
         <View testID="drop-stack-more" className="h-6 min-w-6 items-center justify-center rounded-md bg-control-track px-1">
-          <Text className="text-10 font-bold text-text-muted">+{extra}</Text>
+          <Text className="text-xs font-bold text-text-muted">+{extra}</Text>
         </View>
       )}
     </View>
@@ -173,8 +173,8 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
         dropTotal > 0
           ? // 아이템이 섞이면 **금액 색이 달라진다**(2026-08-10 사용자 요청). 캐릭터 합계와 같은
             // 규칙·같은 잉크라, 카드를 펼치면 "어느 행이 그 색을 만들었는지"가 바로 이어진다.
-            'text-sm font-semibold text-primary-ink'
-          : 'text-sm font-semibold text-text'
+            'text-sm font-bold text-primary-ink'
+          : 'text-sm font-bold text-text'
       }
       style={TABULAR_NUMS}
     >
@@ -298,7 +298,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
                   hitSlop={8}
                   className="shrink-0 active:opacity-60"
                 >
-                  <Text className="text-11 font-bold text-primary-ink">수정</Text>
+                  <Text className="text-xs font-semibold text-primary-ink">수정</Text>
                 </Pressable>
               )}
               {amount}

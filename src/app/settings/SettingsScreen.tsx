@@ -78,7 +78,7 @@ const NOTICE_SECTIONS: readonly NoticeSection[] = [
 function NoticeSectionHeader(props: { label: string; onOpenAll: () => void }): React.JSX.Element {
   return (
     <View testID="notice-section" className="flex-row items-center justify-between px-1">
-      <Text className="text-sm font-semibold text-text">{props.label}</Text>
+      <Text className="text-sm font-bold text-text">{props.label}</Text>
       <Pressable role="button" aria-label={`${props.label} 전체`} onPress={props.onOpenAll} hitSlop={8}>
         <Text className="text-xs font-semibold text-primary-ink">전체</Text>
       </Pressable>
@@ -200,7 +200,7 @@ export function SettingsScreen(): React.JSX.Element {
         {/* 설정은 머리의 아이콘 뒤에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에
             밀려 내려간다. 톱니바퀴가 하단 바에서 여기로 옮겨 온 그림이다. */}
         <PageHeaderTitleRow>
-          <Text className="text-lg font-semibold text-text">더보기</Text>
+          <Text className="text-lg font-bold text-text">더보기</Text>
           <Pressable
             role="button"
             aria-label="설정"
