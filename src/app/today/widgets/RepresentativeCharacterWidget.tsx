@@ -16,6 +16,7 @@
  * 거짓을 말한다.
  */
 
+import { Image as CachedImage } from 'expo-image'
 import { Image, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
@@ -33,7 +34,7 @@ import { naturalAspectStyle } from '../../../lib/image-aspect'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { RepresentativeView } from '../view-model'
 import type { WidgetProps } from './types'
-import { useFigureStep, useLookFramesReady } from './useFigureStep'
+import { FIGURE_CACHE_POLICY, useFigureStep, useLookFramesReady } from './useFigureStep'
 
 /** 전신 그림 높이. 오른쪽 열이 세 줄(닉네임 · 레벨 · EXP 칸)이라 그 높이에 맞춘다 */
 const FIGURE_HEIGHT = 76
@@ -69,13 +70,13 @@ function FigureFrames(props: { view: RepresentativeView }): React.JSX.Element {
       }}
     >
       {LOOK_FRAMES.map((frame, index) => (
-        <Image
+        <CachedImage
           key={frame}
           testID={`representative-figure-${frame}`}
           accessibilityLabel={index === 0 ? props.view.name : undefined}
           source={{ uri: lookFrameUrl(props.view.imageUrl, frame) }}
-          // 안드로이드 기본값 300ms 면 프레임이 바뀔 때마다 서서히 나타난다.
-          fadeDuration={0}
+          cachePolicy={FIGURE_CACHE_POLICY}
+          contentFit="fill"
           style={{
             position: 'absolute',
             ...FIGURE_CROP,

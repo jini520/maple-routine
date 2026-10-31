@@ -65,6 +65,13 @@
 생기면 캐릭터가 깜빡이기 때문이다. 조회 불가 캐릭터, 움직임 줄이기, today 화면이 보이지 않는 동안, 앱이 뒤로 간 동안에도
 멈춘다.
 
+### 결정 6. 받은 프레임은 기기 디스크에 남긴다
+
+앱을 켤 때마다 13장을 다시 받지 않는다(사용자 지정). 넥슨 응답에는 `Cache-Control` · `ETag` 가 없어 HTTP 캐시에 맡길 수 없다.
+그래서 `expo-image` 의 디스크 캐시(`memory-disk`)에 그림 주소를 열쇠로 남긴다. 그림 주소는 기기 백업들을 비교하면 대부분
+같아서, 외형이 바뀔 때만 바뀌는 것으로 본다. 주소가 바뀌면 새 주소의 프레임을 받는다. iOS 의 디스크 캐시는 기본 보관 기간이
+7일이라 약 일주일에 한 번은 다시 받는다. 13장을 합쳐 약 60KB 라 보관 기간을 늘리지 않는다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -74,7 +81,7 @@
 | `app/today/__tests__/CharacterManageButton.test.tsx` | 결정 2: 얼굴이 대표 한 장인지 본다 |
 | `app/today/widgets/__tests__/figure-motion.test.ts` | 결정 3: 같은 동작을 연달아 안 고르고, 다섯 동작이 모두 나오고, 대기 시간이 범위 안인지 본다 |
 | `lib/__tests__/character-look.test.ts` | 결정 4: 프레임 주소와 머리 위치 되돌리기를 본다 |
-| `app/today/widgets/__tests__/RepresentativeFigureMotion.test.tsx` | 결정 3 · 5: 다 받으면 움직이고, 글자 위로 그리고, 못 받거나 볼 수 없으면 멈추는지 본다 |
+| `app/today/widgets/__tests__/RepresentativeFigureMotion.test.tsx` | 결정 3 · 5 · 6: 다 받으면 움직이고, 글자 위로 그리고, 못 받거나 볼 수 없으면 멈추고, 디스크 캐시로 받는지 본다 |
 
 ## 번호 기록
 

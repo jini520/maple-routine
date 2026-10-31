@@ -1,8 +1,16 @@
+import { Image } from 'expo-image'
 import { useEffect, useState } from 'react'
-import { Image } from 'react-native'
 
 import { LOOK_FRAMES, lookFrameUrl } from '../../../lib/character-look'
 import { figureRestSteps, planFigureSteps, type FigureAction, type FigureStep } from './figure-motion'
+
+/**
+ * 프레임 그림의 캐시. 받은 그림을 기기 디스크에 남긴다.
+ *
+ * 넥슨 응답에는 `Cache-Control` · `ETag` 가 없어 HTTP 캐시에 맡기면 앱을 켤 때마다 다시 받는다.
+ * `expo-image` 의 디스크 캐시는 응답 헤더와 상관없이 주소를 열쇠로 남긴다.
+ */
+export const FIGURE_CACHE_POLICY = 'memory-disk'
 
 /**
  * 프레임을 전부 미리 받았는지 내는 훅. 하나라도 못 받으면 계속 거짓이다.
@@ -19,9 +27,10 @@ export function useLookFramesReady(imageUrl: string | null): boolean {
     if (imageUrl === null) return
     let cancelled = false
 
-    Promise.all(LOOK_FRAMES.map((frame) => Image.prefetch(lookFrameUrl(imageUrl, frame))))
-      .then((results) => {
-        if (!cancelled && results.every(Boolean)) setReadyUrl(imageUrl)
+    const urls = LOOK_FRAMES.map((frame) => lookFrameUrl(imageUrl, frame))
+    Image.prefetch(urls, FIGURE_CACHE_POLICY)
+      .then((ready) => {
+        if (!cancelled && ready) setReadyUrl(imageUrl)
       })
       .catch(() => {
         // 못 받으면 기본 그림 한 장으로 남는다. 알릴 일이 아니다.

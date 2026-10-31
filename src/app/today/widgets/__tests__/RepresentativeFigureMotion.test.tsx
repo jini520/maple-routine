@@ -8,17 +8,18 @@ jest.mock('react-native-reanimated', () =>
 import { mockReducedMotion } from '../../../../components/__tests__/reduced-motion'
 
 import { act } from '@testing-library/react-native'
-import { Image } from 'react-native'
+import { Image } from 'expo-image'
 
 import { flattenStyle, renderAtom } from '../../../../components/__tests__/render-atom'
-import { LOOK_FRAMES, lookFrameHeadShift } from '../../../../lib/character-look'
+import { LOOK_FRAMES, lookFrameHeadShift, lookFrameUrl } from '../../../../lib/character-look'
 import { useScreenFocused } from '../../../../hooks/useScreenFocused'
 import { RepresentativeCharacterWidget } from '../RepresentativeCharacterWidget'
+import { FIGURE_CACHE_POLICY } from '../useFigureStep'
 import { 대표_캐릭터, 뷰모델 } from './widget-fixture'
 
 jest.mock('../../../../hooks/useScreenFocused', () => ({ useScreenFocused: jest.fn() }))
 
-const prefetch = jest.spyOn(Image, 'prefetch')
+const prefetch = jest.spyOn(Image, 'prefetch') as unknown as jest.Mock
 
 async function 위젯(representative = 대표_캐릭터): Promise<Awaited<ReturnType<typeof renderAtom>>> {
   const view = await renderAtom(<RepresentativeCharacterWidget data={뷰모델({ representative })} />)
@@ -48,10 +49,22 @@ afterEach(() => {
 })
 
 describe('프레임을 다 받으면', () => {
-  it('열세 프레임을 미리 받는다', async () => {
+  it('열세 프레임을 한 번에 미리 받는다', async () => {
     await 위젯()
 
-    expect(prefetch).toHaveBeenCalledTimes(LOOK_FRAMES.length)
+    expect(prefetch).toHaveBeenCalledTimes(1)
+    expect(prefetch.mock.calls[0][0]).toEqual(LOOK_FRAMES.map((frame) => lookFrameUrl(대표_캐릭터.imageUrl, frame)))
+  })
+
+  // 넥슨 응답에는 캐시 지시가 없다. 디스크에 남기지 않으면 앱을 켤 때마다 13장을 또 받는다.
+  it('받은 그림을 기기 디스크에 남기고 화면도 같은 캐시를 읽는다', async () => {
+    const view = await 위젯()
+
+    expect(FIGURE_CACHE_POLICY).toBe('memory-disk')
+    expect(prefetch.mock.calls[0][1]).toBe(FIGURE_CACHE_POLICY)
+    LOOK_FRAMES.forEach((frame) => {
+      expect(view.getByTestId(`representative-figure-${frame}`).props.cachePolicy).toBe(FIGURE_CACHE_POLICY)
+    })
   })
 
   // 프레임을 그때그때 그리면 처음 나오는 그림마다 깜빡인다.
@@ -96,7 +109,7 @@ describe('프레임을 다 받으면', () => {
 
 describe('움직이지 않을 때', () => {
   it('프레임을 하나라도 못 받으면 기본 그림 한 장이다', async () => {
-    prefetch.mockResolvedValueOnce(false)
+    prefetch.mockResolvedValue(false)
 
     const view = await 위젯()
 
@@ -105,7 +118,7 @@ describe('움직이지 않을 때', () => {
   })
 
   it('받기가 실패해도 기본 그림 한 장이다', async () => {
-    prefetch.mockRejectedValueOnce(new Error('offline'))
+    prefetch.mockRejectedValue(new Error('offline'))
 
     const view = await 위젯()
 
