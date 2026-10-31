@@ -28,10 +28,12 @@ jest.mock('../../server/notices', () => ({
 
 import { act, render, screen } from '@testing-library/react-native'
 import { PortalProvider } from '@gorhom/portal'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context'
 
 import { useAppEntryStore } from '../../features/app-entry/store'
 import { usePartyAppointmentOpenStore } from '../../features/party-appointments/open-request'
+import { queryClient } from '../../features/query/client'
 import { setPartyAppointments } from '../../storage/party-appointments'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { installNoopNativePorts } from '../../native/__tests__/fake-native-ports'
@@ -50,9 +52,11 @@ function Harness(): React.JSX.Element {
   return (
     <SafeAreaProvider initialMetrics={TEST_SAFE_AREA_METRICS}>
       <ThemeProvider>
-        <PortalProvider shouldAddRootHost={false}>
-          <AppNavigation />
-        </PortalProvider>
+        <QueryClientProvider client={queryClient}>
+          <PortalProvider shouldAddRootHost={false}>
+            <AppNavigation />
+          </PortalProvider>
+        </QueryClientProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   )
@@ -80,6 +84,10 @@ function 알림으로_열렸다(data: Record<string, string> | null): void {
     },
   })
 }
+
+afterEach(() => {
+  queryClient.clear()
+})
 
 beforeEach(() => {
   installMemoryPreferences()

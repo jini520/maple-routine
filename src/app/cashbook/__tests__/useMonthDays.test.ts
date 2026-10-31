@@ -64,14 +64,21 @@ it('층이 채우는 동안은 안 읽고, 풀리면 창의 달을 보는 달부
 
 // 아직 안 읽었다 와 읽었더니 없더라 는 다른 사실이다. 안 가르면 들어오자마자 빈 상태가 한 번 번쩍인다.
 it('안 든 달의 날은 null 이고, 든 달은 줄이 없는 날도 빈 목록이다', async () => {
-  loadMonthDays.mockImplementation(async (from: string) =>
-    from === '2026-08-01' ? { '2026-08-23': [수입줄('2026-08-23', 100)] } : {},
-  )
+  // 응답을 붙들어 둔다. 바로 끝나면 `renderHook` 을 기다리는 사이에 도착해 안 든 달을 볼 수 없다.
+  let answer = (): void => undefined
+  const answered = new Promise<void>((resolve) => {
+    answer = resolve
+  })
+  loadMonthDays.mockImplementation(async (from: string) => {
+    await answered
+    return from === '2026-08-01' ? { '2026-08-23': [수입줄('2026-08-23', 100)] } : {}
+  })
 
   const { result } = await renderHook(() => useMonthDays(입력()), { wrapper })
 
   expect(result.current.recordsOn('2026-08-23')).toBeNull()
 
+  answer()
   await waitFor(() => expect(result.current.has('2026-08')).toBe(true))
   expect(result.current.recordsOn('2026-08-23')).toHaveLength(1)
   expect(result.current.recordsOn('2026-08-24')).toEqual([])

@@ -81,11 +81,20 @@ describe('refreshNoticeKinds', () => {
 
 describe('useNotices', () => {
   it('첫 조회 중은 `null`, 받으면 목록, 실패했는데 든 값도 없으면 빈 배열이다', async () => {
-    receiveMock.mockImplementation(async (kind: string) => (kind === 'app' ? [notice('app-1')] : null))
+    // 응답을 붙들어 둔다. 바로 끝나면 `renderHook` 을 기다리는 사이에 도착해 첫 조회 중을 볼 수 없다.
+    let answer = (): void => undefined
+    const answered = new Promise<void>((resolve) => {
+      answer = resolve
+    })
+    receiveMock.mockImplementation(async (kind: string) => {
+      await answered
+      return kind === 'app' ? [notice('app-1')] : null
+    })
 
     const { result } = await renderHook(() => useNotices(['app', 'event']), { wrapper })
     expect(result.current).toEqual({ app: null, event: null })
 
+    answer()
     await waitFor(() => expect(result.current.app).toEqual([notice('app-1')]))
     await waitFor(() => expect(result.current.event).toEqual([]))
   })
