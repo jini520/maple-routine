@@ -35,7 +35,7 @@ const SIDE_PADDING = 16
 const LEFT_PEEK = 20
 
 const STRIP_TONE_CLASS: Record<TimelineTone, string> = {
-  next: 'bg-primary',
+  accent: 'bg-primary',
   normal: 'bg-border-strong',
   ended: 'bg-border-strong opacity-50',
 }

@@ -1,10 +1,10 @@
 /**
- * 위젯 10. 시작 전인 가장 가까운 파티 스케줄 회차 하나.
+ * 위젯 10. 진행 중인 파티 스케줄 회차 하나. 없으면 시작 전인 가장 가까운 회차 하나.
  *
  * 캐릭터마다 `card-inset` 칸 하나를 두고 칸 머리 줄에 닉네임만 적는다. 초상화를 곁들인 폭 40 의 열에 두면
  * 네 글자가 넘는 닉네임이 잘린다. 보스 줄과 알림 · 반복 줄은 파티 스케줄 목록 카드와 같은 부품이다.
  *
- * 분마다 스스로 시계를 읽는다. 남은 시간이 갈리고, 시작한 회차는 다음으로 넘어가야 해서다.
+ * 분마다 스스로 시계를 읽는다. 남은 시간이 갈리고, 끝난 회차는 다음으로 넘어가야 해서다.
  * 누르면 파티 스케줄 탭으로 가서 그 회차의 상세 시트를 연다(알림을 눌렀을 때와 같은 길).
  *
  * @see docs/features/today.md 10. 다음 파티 스케줄
@@ -83,11 +83,15 @@ export function NextPartyScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
     return () => clearInterval(timer)
   }, [])
 
-  const next = data.nextParty.find((occurrence) => occurrence.startsAtMs > nowMs)
-  // 회차가 없거나, 마지막 회차가 화면을 띄워 둔 사이 시작했다. 다음 렌더에서 격자가 맨 아래 줄로 내린다.
+  const next = data.nextParty.find((occurrence) => occurrence.endsAtMs > nowMs)
+  // 회차가 없거나, 마지막 회차가 화면을 띄워 둔 사이 끝났다. 다음 렌더에서 격자가 맨 아래 줄로 내린다.
   if (next === undefined) return <CreateCells />
 
   const todayKey = getCurrentKstDateKey(new Date(nowMs))
+  // 진행 중이면 날짜를 적지 않는다. 자정을 넘긴 회차의 시작 날짜는 어제다.
+  const whenLabel = next.startsAtMs <= nowMs
+    ? '진행 중'
+    : `${dayLabel(next.dateKey, todayKey)} · ${remainingLabelOf(next.startsAtMs - nowMs)}`
   return (
     <Pressable
       testID="widget-next-party-schedule"
@@ -116,7 +120,7 @@ export function NextPartyScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
           {` ~ ${next.endClock} `}
         </Text>
         <Text className="text-11 font-bold text-primary-ink" style={TABULAR_NUMS}>
-          {`${dayLabel(next.dateKey, todayKey)} · ${remainingLabelOf(next.startsAtMs - nowMs)}`}
+          {whenLabel}
         </Text>
       </View>
       <View className="gap-1.5">

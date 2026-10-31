@@ -27,7 +27,7 @@ const BANDS = [3, 9, 15, 21] as const
 const BAR_HIT_SLOP = { top: 8, bottom: 8, left: 2, right: 2 }
 
 const BAR_TONE_CLASS: Record<TimelineTone, string> = {
-  next: 'bg-primary',
+  accent: 'bg-primary',
   normal: 'bg-border-strong',
   ended: 'bg-border-strong opacity-50',
 }

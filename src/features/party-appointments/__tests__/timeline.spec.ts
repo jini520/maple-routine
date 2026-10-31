@@ -21,8 +21,8 @@ function once(id: string, dateKey: string, timeKst: string, durationMinutes: num
 const WEEK = '2026-10-22'
 const NOW = new Date('2026-10-24T18:40:00+09:00').getTime()
 
-function timelineOf(appointments: PartyAppointment[], nextKey: string | null = null) {
-  return weekTimeline(occurrencesInWeek(appointments, WEEK), WEEK, NOW, nextKey)
+function timelineOf(appointments: PartyAppointment[], accentKeys: ReadonlySet<string> = new Set()) {
+  return weekTimeline(occurrencesInWeek(appointments, WEEK), WEEK, NOW, accentKeys)
 }
 
 describe('weekTimeline', () => {
@@ -57,17 +57,29 @@ describe('weekTimeline', () => {
     expect(days.flatMap((day) => day.segments)).toHaveLength(1)
   })
 
-  it('다음 회차만 주황 톤이고, 끝난 회차는 끝난 톤이다', () => {
+  it('칠할 회차만 주황 톤이고, 끝난 회차는 끝난 톤이다', () => {
     const ended = once('e', '2026-10-22', '21:00', 50)
     const next = once('n', '2026-10-24', '21:00', 90)
     const later = once('l', '2026-10-24', '23:30', 40)
     const [occurrence] = occurrencesInWeek([next], WEEK)
 
-    const tones = timelineOf([ended, next, later], occurrenceKeyOf(occurrence!))
+    const tones = timelineOf([ended, next, later], new Set([occurrenceKeyOf(occurrence!)]))
       .flatMap((day) => day.segments)
       .map((segment) => `${segment.key}:${segment.tone}`)
 
-    expect(tones).toEqual(['e:2026-10-22:ended', 'n:2026-10-24:next', 'l:2026-10-24:normal', 'l:2026-10-24:normal'])
+    expect(tones).toEqual(['e:2026-10-22:ended', 'n:2026-10-24:accent', 'l:2026-10-24:normal', 'l:2026-10-24:normal'])
+  })
+
+  it('겹친 회차는 칠할 열쇠에 든 만큼 모두 주황 톤이다', () => {
+    const first = once('a', '2026-10-24', '18:00', 90)
+    const second = once('b', '2026-10-24', '18:30', 90)
+    const keys = occurrencesInWeek([first, second], WEEK).map(occurrenceKeyOf)
+
+    const tones = timelineOf([first, second], new Set(keys))
+      .flatMap((day) => day.segments)
+      .map((segment) => segment.tone)
+
+    expect(tones).toEqual(['accent', 'accent'])
   })
 
   it('지금 선은 오늘 줄에만 있다', () => {
@@ -77,7 +89,7 @@ describe('weekTimeline', () => {
   })
 
   it('지난 주나 다음 주를 보면 지금 선이 없다', () => {
-    const days = weekTimeline([], '2026-10-29', NOW, null)
+    const days = weekTimeline([], '2026-10-29', NOW, new Set())
 
     expect(days.every((day) => day.nowAt === null)).toBe(true)
   })

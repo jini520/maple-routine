@@ -98,6 +98,7 @@ describe('다음 파티 스케줄 타일', () => {
     timeKst: '21:00',
     endClock: '22:00',
     startsAtMs: Date.parse('2099-01-01T12:00:00Z'),
+    endsAtMs: Date.parse('2099-01-01T13:00:00Z'),
     groups: [{ ocid: 'a', name: '낟낟', imageUrl: null, bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'a' }] }],
     leadMinutes: 30,
     repeats: false,

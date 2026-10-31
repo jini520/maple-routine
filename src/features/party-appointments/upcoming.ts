@@ -1,7 +1,7 @@
 /**
- * 지금 뒤에 시작하는 회차. today 의 다음 파티 스케줄 위젯이 맨 앞 하나를 보여 준다.
+ * 진행 중인 회차와 지금 뒤에 시작하는 회차. today 의 다음 파티 스케줄 위젯과 시간표 · 보드가 쓴다.
  *
- * 시작한 회차는 빠진다. 리셋 주와 상관없이 앞으로 찾는다. 한 번 약속은 한참 뒤에 있을 수 있어 가장 먼 한 번 약속의 주까지 본다.
+ * 앞으로 찾을 때는 리셋 주와 상관없이 찾는다. 한 번 약속은 한참 뒤에 있을 수 있어 가장 먼 한 번 약속의 주까지 본다.
  */
 import { resetWeekStartOf, shiftDateKey } from '../../lib/calendar'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
@@ -35,4 +35,29 @@ export function upcomingOccurrences(
     result.push(...inWeek)
   }
   return result.slice(0, limit)
+}
+
+/**
+ * 시작했고 끝나지 않은 회차를 시작 순으로.
+ *
+ * 회차는 시작한 주에 속해서, 수요일 밤에 시작해 자정을 넘긴 회차는 지난 주까지 봐야 찾는다.
+ */
+export function runningOccurrences(
+  appointments: readonly PartyAppointment[],
+  now: Date,
+): PartyAppointmentOccurrence[] {
+  const nowMs = now.getTime()
+  const thisWeek = resetWeekStartOf(getCurrentKstDateKey(now))
+  return [shiftDateKey(thisWeek, -7), thisWeek]
+    .flatMap((week) => occurrencesInWeek(appointments, week))
+    .filter((occurrence) => occurrence.startsAt.getTime() <= nowMs && nowMs < occurrence.endsAt.getTime())
+}
+
+/** 시간표와 보드가 주황으로 칠할 회차. 진행 중인 회차가 있으면 전부, 없으면 다음 회차 하나 */
+export function accentOccurrences(
+  appointments: readonly PartyAppointment[],
+  now: Date,
+): PartyAppointmentOccurrence[] {
+  const running = runningOccurrences(appointments, now)
+  return running.length > 0 ? running : upcomingOccurrences(appointments, now, 1)
 }
