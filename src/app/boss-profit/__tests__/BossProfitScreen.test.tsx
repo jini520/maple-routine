@@ -60,6 +60,8 @@ const dispatch = jest.fn()
 
 // 당김은 층의 다시 불러오기에 부탁한다. 층은 진행률만 들고 기록은 쿼리가 든다.
 const mockLedgerReload = jest.fn()
+// 직접 완료를 연 보스는 쿼리 캐시에서 온다. 이 테스트는 프로바이더 없이 그리므로 값만 돌려준다.
+jest.mock('../../../features/manual-completion/query', () => ({ useManualCompletionBosses: jest.fn(() => null) }))
 jest.mock('../../../features/ledger/useLedgerData', () => ({
   useLedgerData: () => ({
     status: 'ready',

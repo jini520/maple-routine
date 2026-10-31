@@ -19,7 +19,7 @@
 | `storage/mvp-grades.ts` | `mvp_grade_history` 읽기 · 쓰기 · 옛 등급 빈 줄 지우기 |
 | `storage/character-accounts.ts` | `character_accounts` 읽기 · 쓰기. 소속을 어느 넥슨 계정의 목록에서 봤는지도 적는다 |
 | `storage/mvp-grade-prefs.ts` | `mvpWeeklyCheckOff` · `mvpLastCheckedWeek` · `mvpBulkApplyAsked` · `mvpOnboardingPending` |
-| `features/mvp-grade/character-list.ts` | `character/list` 를 받고 소속을 기록한다. 목록을 받는 곳은 모두 이것을 부른다 |
+| `features/mvp-grade/character-list.ts` | `character/list` 를 받고 소속을 기록한다(`fetchAndRecordCharacterList`). 목록을 받는 곳은 모두 이것을 거친다. 화면이 그리는 목록은 `fetchCharacterListCached` 가 쿼리 `characterList(credentialKey)` 로 5분 안에 같은 응답을 나눠 쓰고, 그 안에서도 이 함수를 부른다. 로그인 · 키 검증처럼 지금 답이 필요한 자리만 매번 받는다 |
 | `features/mvp-grade/ask.ts` · `flow-store.ts` | 묻는 규칙 · 모달의 답을 저장하는 흐름 |
 | `features/mvp-grade/accounts.ts` | 추적 캐릭터의 ID · ID 표시(대표 캐릭터 · 초상) |
 | `features/mvp-grade/store.ts` · `fee-context.ts` · `auto-fee.ts` | 화면이 읽는 등급 정보 · 폼마다의 자동 요율 |

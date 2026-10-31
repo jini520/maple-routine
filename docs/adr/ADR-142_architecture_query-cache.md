@@ -1,7 +1,7 @@
 # ADR-142 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다
 
-> 🟢 유효(1 · 2단계 구현, 3단계는 결정 8)
-> 관련 소스: `features/query/`(`client.ts` · `keys.ts` · `meta.ts` · `freshness.ts` · `app-focus.ts` · `reset-timer.ts` · `persist.ts` · `invalidation.ts`) · `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` · `schedule-views.ts` · `read-schedule.ts` · `save-tracked.ts` · `features/refresh/pull.ts` · `features/refresh/freshness.ts` · `features/boss-profit/period-query.ts` · `round-record.ts` · `round-view.ts` · `store.ts` · `drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/ledger/useLedgerData.tsx` · `features/content-scheduler/views.ts` · `use-content-schedule.ts` · `features/boss-scheduler/views.ts` · `use-boss-schedule.ts` · `features/prehydrate.ts` · `storage/query-cache.ts` · `storage/sqlite/query-cache-tables.ts` · `app/QueryCacheProvider.tsx` · `hooks/useRefetchStaleOnFocus.ts` · `index.ts`
+> 🟢 유효(세 단계 모두 구현)
+> 관련 소스: `features/query/`(`client.ts` · `keys.ts` · `meta.ts` · `freshness.ts` · `app-focus.ts` · `reset-timer.ts` · `persist.ts` · `invalidation.ts`) · `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` · `schedule-views.ts` · `read-schedule.ts` · `save-tracked.ts` · `features/refresh/pull.ts` · `features/refresh/freshness.ts` · `features/boss-profit/period-query.ts` · `round-record.ts` · `round-view.ts` · `store.ts` · `drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/ledger/useLedgerData.tsx` · `features/content-scheduler/views.ts` · `use-content-schedule.ts` · `features/boss-scheduler/views.ts` · `use-boss-schedule.ts` · `manual-completed-query.ts` · `features/settlement/query.ts` · `features/manual-completion/query.ts` · `features/notice/notice-query.ts` · `features/party-appointments/query.ts` · `features/mvp-grade/character-list.ts` · `features/prehydrate.ts` · `storage/query-cache.ts` · `storage/sqlite/query-cache-tables.ts` · `app/QueryCacheProvider.tsx` · `hooks/useRefetchStaleOnFocus.ts` · `index.ts`
 
 ## 배경
 
@@ -56,15 +56,16 @@ zustand 스토어에는 **화면 상태만** 남긴다. 고른 탭 · 보던 기
 | `schedule(ocid)` | 캐릭터 하나의 스케줄러 응답(정규화 뒤). 회차가 넣고 스스로 받지 않는다(`skipToken`) | 넥슨 `scheduler/character-state` | 한다 | 1 |
 | `characterBasic(ocid)` | 캐릭터 하나의 기본 정보. `fetchCharacterBasicCached` 가 넣는다 | 넥슨 `character/basic` | 한다 | 1 |
 | `scheduleRound()` | 마지막 회차의 받은 시각 · 덮은 캐릭터 · 캐릭터별 결과 종류 · 답하지 않은 캐릭터 | 결정 3 의 회차 | 한다 | 1 |
-| `characterList(accountId)` | 계정의 캐릭터 목록 | 넥슨 `character/list` | 안 한다 | 3 |
-| `notices(kind)` | 공지 목록 | 우리 서버 `/notices` · 넥슨 `notice*` | 한다 | 3 |
-| `settlement()` | 결산 중인지 | 우리 서버 `/settlement` | 안 한다 | 3 |
-| `manualCompletion()` | 직접 완료를 연 보스 | 우리 서버 `manual-completion` | 안 한다 | 3 |
+| `characterList(credentialKey)` | 자격 하나로 조회되는 전 계정의 캐릭터 목록. 5분 안에는 캐릭터 관리 · MVP 등급 · 회차가 같은 응답을 쓴다 | 넥슨 `character/list` | 안 한다 | 3 |
+| `notices(kind)` | 분류 하나의 공지 목록. 기기 사본(`notices`)을 대신한다 | 우리 서버 `/notices` · 넥슨 `notice*` | 한다 | 3 |
+| `settlement()` | 결산 중인지와 시작 시각. 닫은 기록은 기기 값이라 스토어가 든다 | 우리 서버 `/settlement` | 안 한다 | 3 |
+| `manualCompletion()` | 직접 완료를 연 보스. 닫은 주는 기기 값이라 스토어가 든다 | 우리 서버 `manual-completion` | 안 한다 | 3 |
+| `manualCompleted(weeklyKey, monthlyKey)` | 추적 캐릭터가 직접 적은 완료(`bossKey\|difficulty`). 기간 키가 열쇠라 목요일 · 1일을 넘기면 새 열쇠를 읽는다 | SQLite(`boss_profit_records`) | 안 한다 | 3 |
 | `ledgerDays(from, to)` | 가계부의 날짜별 줄. today 의 이번 주 수입 · 가계부의 달 · 통계의 전 기간이 범위만 달리 든다 | SQLite(`loadMonthDays`) | 안 한다 | 2 |
 | `bossProfitPeriod(tab, periodKey)` | 보스 수익 한 기간의 스냅샷(행 · 드롭 · 주차 소계 · 기간 상태 · 이전 화살표 · 조회 불가 카드). 결정 9 | SQLite + `schedule(ocid)` | 안 한다 | 2 |
 | `dropHistory()` | 드롭 기록 전 기간 묶음과 가뭄 요약 | SQLite | 안 한다 | 2 |
 | `enhancementToday()` | 오늘 강화 내역을 마지막으로 받은 시각. 머리의 `hh:mm:ss 기준` 이 회차 시각과 견준다 | 강화 수집기가 넣는다 | 안 한다 | 2 |
-| `partyAppointments()` | 파티 약속 | Preferences | 안 한다 | 3 |
+| `partyAppointments()` | 파티 약속. 저장이 `setQueryData` 로 덮는다 | Preferences | 안 한다 | 3 |
 
 프로필 스냅샷(`character-profiles`)에는 열쇠를 두지 않는다. 화면이 직접 읽지 않고 위 쿼리들의 `queryFn` 안에서 읽는다.
 
@@ -132,6 +133,11 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 
 - 복귀의 `inactive → active` 는 세지 않는다. 지금 `useReturnToForeground` 와 같은 이유다(iOS 알림 센터를 내렸다 올린 것은
   배경에 간 적이 없다).
+- 우리 서버 쿼리(결산 · 직접 완료 · 공지)도 `refetchOnWindowFocus: 'always'` 다. 새벽 결산 중 배경에 두었다가 돌아오면 결산
+  줄이 걷히고(#812 A5), 더보기 · 공지 목록을 연 채 돌아오면 새 글이 서고(A7), 배경에서 온 운영자 공지는 today 배너가
+  서버를 다시 물어 세운다(A8). `meta.source` 는 `server` 다. 자정 무효화는 `nexon` 만 본다.
+- 넥슨 점검 배너(A6)는 따로 묻지 않는다. 복귀 회차가 스케줄러 · `character/basic` 경로를 다시 부르고 그 성공이 배너를
+  내린다(`nexonMaintenanceReporter`). 강화 내역 경로만 막혔던 점검은 수익 · 지출 층에 들어갈 때 내려간다.
 - 복귀마다 받으면 호출이 복귀 횟수만큼 는다. 늘어나는 것은 회차 하나(추적 캐릭터 수만큼의 스케줄러 호출)와 공지 · 결산
   조회다. 겹친 복귀는 진행 중인 쿼리를 함께 쓰고, 13일 창은 원장을 보고 부르므로 늘지 않는다.
 - [[ADR-021]] 결정 6 은 이 결정을 가리키고 10분 값과 보스 수익의 옛 게이트만 남겼다.
@@ -158,7 +164,9 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
   수 없다.
 - 보고 있지 않은 화면의 쿼리는 무효 표시만 되고, 그 화면이 다시 보일 때 읽는다. 전에 포커스마다 판을 견주던 것과 같은
   비용이다.
-- 보스 스케줄러의 직접 완료(`reloadManualCompleted`)는 아직 스토어가 판을 견준다. 3단계에서 쿼리로 옮긴다.
+- 보스 스케줄러의 직접 완료는 `manualCompleted(weeklyKey, monthlyKey)` 쿼리다(`features/boss-scheduler/manual-completed-query.ts`).
+  보스 기록 표의 판과 추적 목록(`dependsOn: tracked-ocids`)에 매여 무효화되고, 기간 키가 열쇠라 목요일 · 1일을 넘기면 화면이
+  새 열쇠를 읽는다. 전에는 스토어가 기록 판과 기간을 이어 붙인 표식을 포커스마다 견줬다.
 
 ### 결정 7. 넥슨 · 서버 응답 쿼리만 기기에 저장하고, 옛 캐시 키는 한 번 옮긴 뒤 지운다
 
@@ -175,9 +183,15 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
   가를 수 없다.
 - 저장된 캐시의 `buster` 는 캐시 모양의 판이다. 정규화 모양을 바꾸면 판을 올려 옛 캐시를 버린다. 맞지 않는 모양을 읽어
   화면이 깨지는 것보다 한 번 다시 받는 것이 낫다.
-- 복원이 끝나면 `schedulerCache:{ocid}` · `characterBasicCache:{ocid}` 를 쿼리에 없는 캐릭터만 쿼리 캐시로 옮긴다
-  (`seedScheduleQueriesFromLegacyCache`). 버리기만 하면 업데이트 직후 오프라인이거나 넥슨 점검일 때 화면이 빈다. 옛 키는
-  동기화가 아직 함께 쓰고 보스 수익 · 13일 창 · 캐릭터 관리가 읽으므로 3단계에서 지운다.
+- 복원이 끝나면 1.0.12 까지의 Preferences 캐시(`schedulerCache:{ocid}` · `characterBasicCache:{ocid}`)를 쿼리에 없는
+  캐릭터만 쿼리 캐시로 옮기고 **그 키를 지운다**(`seedScheduleQueriesFromLegacyCache`). 버리기만 하면 업데이트 직후
+  오프라인이거나 넥슨 점검일 때 화면이 빈다. 동기화 · `character/basic` 조회 · 13일 창 · 캐릭터 관리 · 가계부는 이제 쿼리
+  캐시만 읽는다(`read-schedule.ts` 의 `readCharacterBasic`). 캐릭터 관리의 첫 목록(`character/list` 를 기다리기 전에 그리는
+  후보)은 쿼리 캐시에 든 `characterBasic` 을 계정 소속 기록으로 걸러 만든다. 소속 기록의 마지막 본 날이 그 계정의 가장 최근
+  날과 같은 캐릭터만이다. 월드 리프로 목록에서 빠진 캐릭터를 세우면 열 때마다 떴다가 사라진다. 옛 인덱스 키는 그 자리에서
+  지운다.
+- 공지의 기기 사본(Preferences `notices`)도 걷었다. `notices(kind)` 쿼리가 저장되므로 같은 것이 두 벌이 된다. 상세 화면이
+  목록에서 먼저 그리던 것은 쿼리 캐시에서 찾는다. 옛 키는 예열의 끝에서 지운다(`storage/legacy-notice-copy.ts`).
 - 복원은 `app/QueryCacheProvider.tsx` 가 한다. 올리는 동안 화면의 쿼리는 기다리고(`useIsRestoring`), 부팅 예열
   (`features/prehydrate.ts`)은 `whenQueryCacheRestored` 를 기다린 뒤에 돈다. 복원 전에 회차를 돌리면 옛 캐시를 못 보고
   빈 캐시로 판단한다.
@@ -211,9 +225,10 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 |---|---|---|---|
 | 1 | 결정 1 · 2 · 4 · 5 · 7 의 기반, 스케줄 회차(결정 3 중 스케줄과 basic), 컨텐츠 · 보스 스케줄러, today 의 스케줄 · 프로필 | A1 · A2 · A3 · B3 · B6 · B7 · D1 · D2 · D3 | 끝(2026-10-30) |
 | 2 | 결정 3 의 자동 기록 · 처치 날짜 · 머리 시각, 결정 6, 결정 9, 가계부 · 통계 · today 의 이번 주 수입과 드롭 위젯, 보스 수익의 옛 게이트 걷기 | A4 · B1 · B2 · B4 · C1 ~ C5 · D5 | 끝(2026-10-30) |
-| 3 | 공지 · 결산 · 직접 완료 · 캐릭터 관리 · MVP 등급 설정 · 파티 약속, 옛 캐시 키 지우기 | A5 ~ A8 · D6 · E | 전 |
+| 3 | 공지 · 결산 · 직접 완료 · 캐릭터 목록 · 파티 약속 · 보스 스케줄러의 직접 완료, 옛 캐시 키 지우기 | A5 ~ A8 · D6 · E | 끝(2026-10-31) |
 
-넥슨 점검 배너(A6)는 3단계에서 복귀 회차가 막힌 경로를 다시 부르는 것으로 걷히는지 확인하고, 안 걷히면 그때 정한다.
+파티 스케줄 화면은 주가 바뀌면(D6) 보던 주가 지난 이번 주였을 때만 새 이번 주로 옮긴다. 다른 주를 보고 있었으면 그대로 둔다.
+캐릭터 관리는 `character/list` 를 한 번만 부른다(E). 계정 목록과 후보 목록이 같은 `characterList` 쿼리를 5분 안에 나눠 쓴다.
 
 ## 테스트
 
@@ -240,7 +255,13 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 | `features/boss-profit/__tests__/store.spec.ts` | 결정 9: 기간 이동이 기록이 있는 가장 가까운 기간으로 가는지, 쓰기가 기록만 쓰고 화면 사본을 안 드는지 |
 | `features/boss-profit/__tests__/round-view.spec.ts` | 결정 9: 회차 결과에서 조회 불가 · 실패 배지를 가르고, 점검은 토스트 이름에서 빼며, 답하지 않은 캐릭터는 조회 불가로 두는지 |
 | `features/cashbook/__tests__/ledger-query.spec.ts` | 결정 6: 범위가 열쇠이고 기록 표의 판이 오르면 다시 읽는지 |
+| `features/settlement/__tests__/query.spec.ts` · `features/manual-completion/__tests__/query.spec.ts` | 결정 5: 복귀마다 받는 서버 쿼리인지, 닫은 기록이 서버 값과 따로 살아 다음 결산 · 다음 주에 다시 서는지 |
+| `features/notice/__tests__/notice-query.spec.ts` | 결정 2 · 5 · 7: 분류마다 열쇠이고 저장되는지, 실패하면 든 값을 지키는지, 앱 공지를 받으면 닫은 기록을 정리하는지, 당김이 전부 실패했을 때만 그렇게 말하는지 |
+| `features/mvp-grade/__tests__/character-list.spec.ts` | 결정 2: 5분 안의 두 호출이 `character/list` 를 한 번만 부르고 강제 조회는 다시 받는지 |
+| `features/boss-scheduler/__tests__/manual-completed-query.spec.ts` | 결정 6: 기간 키가 열쇠이고 보스 기록 판 · 추적 목록에 매여 무효화되는지 |
+| `features/party-appointments/__tests__/query.spec.ts` | 결정 2: 저장이 캐시를 덮고 알림 재조정을 부르는지 |
+| `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 7: 옛 캐시를 옮긴 뒤 그 키를 지우는지 |
 
 ## 번호 기록
 
-- ADR-142 (2026-10-30): 처음 작성. 데이터를 드는 자리와 다시 받는 규칙을 쿼리 캐시 하나로 모은다(이슈 #812). 같은 날 1 · 2단계를 구현했다
+- ADR-142 (2026-10-30): 처음 작성. 데이터를 드는 자리와 다시 받는 규칙을 쿼리 캐시 하나로 모은다(이슈 #812). 같은 날 1 · 2단계를, 이튿날 3단계를 구현했다

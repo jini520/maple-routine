@@ -278,8 +278,13 @@
 SQLite 를 쓰지 않는 이유는 스케줄이 한 주에 몇 건뿐이고 다른 표와 합쳐 셀 일이 없기 때문이다. 깨진 JSON 은 빈 목록으로
 읽고, 형식이 틀린 항목은 그 항목만 버린다. 한 항목 때문에 목록 전체를 잃으면 사용자가 적은 스케줄이 한꺼번에 사라진다.
 
-스토어(`usePartyAppointmentsStore`)는 저장소에 먼저 쓰고 나서 화면 값을 바꾸고, 그다음 알림 재조정을 부른다. 저장에 실패했는데
-화면만 바뀌면 앱을 다시 켰을 때 스케줄이 사라진다.
+목록은 쿼리 `partyAppointments()`(`features/party-appointments/query.ts`)가 들고, 화면은 `usePartyAppointments` 로 본다
+([[ADR-142]] 결정 2). 저장(`savePartyAppointments`)은 저장소에 먼저 쓰고 나서 캐시를 덮고, 그다음 알림 재조정을 부른다.
+저장에 실패했는데 캐시만 바뀌면 앱을 다시 켰을 때 스케줄이 사라진다. 기기에만 있는 값이라 다시 읽을 계기는 없다.
+알림을 눌러 들어온 화면은 `loadPartyAppointments` 로 목록을 먼저 읽고 그 회차를 찾는다.
+
+주가 바뀌는 렌더(분마다 도는 시계가 목요일 자정을 넘겼다)에서는 지난 이번 주를 보고 있었을 때만 새 이번 주로 옮긴다.
+다른 주를 보고 있었으면 그대로 둔다. 지난 약속을 살피던 자리를 자정이 빼앗으면 안 된다([[ADR-142]] 결정 8).
 
 ### 결정 13. 보스 추가 단계는 공용 부품이고, 주간 보스 수익 계산기도 쓴다
 
@@ -326,7 +331,7 @@ SQLite 를 쓰지 않는 이유는 스케줄이 한 주에 몇 건뿐이고 다�
 | `features/party-appointments/__tests__/notification-text.spec.ts` | 결정 10: 제목 · 본문의 형태, `외 n마리` · `외 n캐릭터`, 정각과 시간 단위를 본다 |
 | `features/party-appointments/__tests__/open-request.spec.ts` | 결정 11: 알림 `data` 를 읽는지, 회차와 그 주를 찾는지, 회차가 없으면 주만 돌려주는지 본다 |
 | `features/party-appointments/__tests__/upcoming.spec.ts` | 결정 11: 지금 뒤에 시작하는 회차를 시작 순으로 돌려주는지, 먼 한 번만 스케줄도 찾는지 본다 |
-| `features/party-appointments/__tests__/store.spec.ts` | 결정 12: 저장하면 저장소와 상태가 함께 바뀌고 재조정을 부르는지 본다 |
+| `features/party-appointments/__tests__/query.spec.ts` | 결정 12: 저장이 저장소에 먼저 쓰고 캐시를 덮은 뒤 재조정을 부르는지, 저장이 실패하면 캐시도 그대로인지, 아직 안 읽었으면 저장소를 읽고 읽은 뒤에는 캐시를 돌려주는지 본다 |
 | `storage/__tests__/party-appointments.spec.ts` | 결정 12: 깨진 JSON 과 형식이 틀린 항목(글자가 아닌 메모 포함)을 어떻게 다루는지, 메모를 그대로 읽는지 본다 |
 | `app/party-appointments/__tests__/AppointmentSheet.test.tsx` | 결정 14: `메모 추가` → 여러 줄 입력 카드 → 본문 전체 표시, 상세의 메모 타일이 있을 때만 서는지 본다. 결정 7: 한 번만은 날짜, 반복은 요일을 고르는지, 수정 시트의 `이 주만 적용하기` 와 타일 전환을 본다. 결정 9: 켤 때와 저장할 때의 모달과 각 버튼의 결과를 본다 |
 | `app/party-appointments/__tests__/AppointmentTimeBand.test.tsx` | 결정 4 · 7: 다음 날 표기, 주황과 빨강의 우선순위, 읽기 모드, 요일 세그먼트의 순서와 상자 형태를 본다 |

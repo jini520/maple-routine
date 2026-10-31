@@ -31,7 +31,7 @@ import {
   toScheduleSyncError,
   type ScheduleSyncError,
 } from '../features/schedule-sync/schedule-sync'
-import { fetchAndRecordCharacterList } from '../features/mvp-grade/character-list'
+import { fetchCharacterListCached } from '../features/mvp-grade/character-list'
 import type { CharacterPickerEntry } from '../types'
 import { apiKeyValueOf } from '../lib/nexon-credential'
 import type { NexonCredential } from '../types/auth'
@@ -139,7 +139,8 @@ export function useAccountRosters(): AccountRosters {
         if (credential === null) {
           throw new Error('useAccountRosters: API 키가 없습니다')
         }
-        const list = await fetchAndRecordCharacterList(credential)
+        // 후보 목록(`getCharacterPickerRoster`)이 5분 안에 같은 응답을 쓴다. 다시 시도만 새로 받는다.
+        const list = await fetchCharacterListCached(credential, { force: accountsNonce > 0 })
         if (cancelled) return
         // 캐릭터 0명 계정은 `normalizeCharacterList` 가 이미 걸렀고,
         // `summarizeAccount` 의 `null` 은 그 규칙이 뚫렸을 때의 안전망이다. 렌더 중에 던지지 않는다.

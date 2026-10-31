@@ -10,7 +10,7 @@
 // 그 구멍은 서버 조회가 메운다.
 //
 // **어느 길도 기기에 쓰지 않는다.** 공지의 기준은 서버라 푸시 내용을 저장하면 서버가 지운 공지를
-// 기기에서 지울 신호가 없다. 앞에 있을 때 오면 배너가 서버를 다시 묻고, 탭하면 상세가 서버에 묻는다.
+// 기기에서 지울 신호가 없다. 앞에 있을 때 오면 앱 공지 쿼리를 무효화해 배너가 서버를 다시 묻고, 탭하면 상세가 서버에 묻는다.
 import { renderHook, waitFor } from '@testing-library/react'
 
 jest.mock('../../../native/push', () => ({
@@ -19,10 +19,7 @@ jest.mock('../../../native/push', () => ({
   addPushOpenedListener: jest.fn(() => () => {}),
   getInitialPushNotification: jest.fn(async () => null),
 }))
-jest.mock('../banner-store', () => {
-  const refresh = jest.fn(async () => {})
-  return { __esModule: true, useNoticeBannerStore: { getState: () => ({ refresh }) } }
-})
+jest.mock('../notice-query', () => ({ __esModule: true, invalidateAppNotices: jest.fn(async () => {}) }))
 
 import {
   addPushMessageListener,
@@ -30,13 +27,13 @@ import {
   getInitialPushNotification,
 } from '../../../native/push'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
-import { useNoticeBannerStore } from '../banner-store'
+import { invalidateAppNotices } from '../notice-query'
 import { useNoticeDelivery } from '../use-notice-delivery'
 
 const onMessage = jest.mocked(addPushMessageListener)
 const onOpened = jest.mocked(addPushOpenedListener)
 const initial = jest.mocked(getInitialPushNotification)
-const refresh = jest.mocked(useNoticeBannerStore.getState().refresh)
+const invalidate = jest.mocked(invalidateAppNotices)
 const openDetail = jest.fn()
 let prefs = installFakePreferences()
 
@@ -77,12 +74,12 @@ describe('진입점 셋을 다 단다', () => {
 })
 
 describe('앞에 있을 때 도착', () => {
-  // 이 길은 OS 가 알림을 안 그린다. 배너가 서버를 다시 묻지 않으면 화면에 아무 일도 안 일어난다.
-  it('배너가 서버를 다시 묻고 화면을 밀지 않는다', async () => {
+  // 이 길은 OS 가 알림을 안 그린다. 앱 공지 쿼리를 무효화하지 않으면 화면에 아무 일도 안 일어난다.
+  it('앱 공지 쿼리를 무효화하고 화면을 밀지 않는다', async () => {
     renderHook(() => useNoticeDelivery(openDetail))
     onMessage.mock.calls[0][0](공지)
 
-    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(invalidate).toHaveBeenCalledTimes(1))
     expect(openDetail).not.toHaveBeenCalled()
   })
 
@@ -90,15 +87,15 @@ describe('앞에 있을 때 도착', () => {
     renderHook(() => useNoticeDelivery(openDetail))
     onMessage.mock.calls[0][0](공지)
 
-    await waitFor(() => expect(refresh).toHaveBeenCalled())
+    await waitFor(() => expect(invalidate).toHaveBeenCalled())
     expect(prefs.set).not.toHaveBeenCalled()
   })
 
-  it('공지가 아닌 푸시로는 서버를 안 묻는다', () => {
+  it('공지가 아닌 푸시로는 쿼리를 안 건드린다', () => {
     renderHook(() => useNoticeDelivery(openDetail))
     onMessage.mock.calls[0][0]({ 아무거나: '값' })
 
-    expect(refresh).not.toHaveBeenCalled()
+    expect(invalidate).not.toHaveBeenCalled()
   })
 })
 

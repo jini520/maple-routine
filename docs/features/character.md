@@ -18,7 +18,10 @@
 | `storage/character-selection.ts` | 추적 목록(`trackedCharacters`) · 마지막 선택(`lastSelectedCharacter`) · 대표 저장, 옛 키 이관 |
 | `storage/schedule-probe-ledger.ts` | (ocid, 날짜) 조회 원장(`scheduleProbe:{ocid}`)과 조회 불가 표식 |
 | `storage/character-profiles.ts` | 지워지지 않는 이름 · 얼굴 표(`character_profiles`) |
-| `features/schedule-sync/character-roster.ts` | 후보 목록을 단계마다 나눠 내보낸다(`getCharacterPickerRoster`) |
+| `features/schedule-sync/character-roster.ts` | 후보 목록을 단계마다 나눠 내보낸다(`getCharacterPickerRoster`). 계정의 캐릭터(`resolveRegisteredCharacters`)와 추적 캐릭터의 계정(`resolveTrackedCharacterContext`)은 같은 `character/list` 응답에서 찾는다 |
+| `features/schedule-sync/read-schedule.ts` | 쿼리 캐시를 렌더 밖에서 읽는다(`readCharacterBasic` · `readScheduleEntry` · `readCachedBasicOcids`). 후보 목록의 첫 그리기, 캐릭터 관리의 위 목록, 가계부 시트의 캐릭터 이름이 쓴다 |
+| `features/schedule-sync/character-basic-fetch.ts` | `character/basic` 통과 지점(`fetchCharacterBasicCached`). 5분 안은 쿼리 캐시 `characterBasic(ocid)` 의 값을 돌려주고, 받은 값은 그 열쇠에만 넣는다 |
+| `features/mvp-grade/character-list.ts` | `character/list` 를 5분 안에 한 번만 받는다(`fetchCharacterListCached`, 쿼리 `characterList(credentialKey)`). 캐릭터 관리의 계정 목록과 후보 목록이 나눠 쓴다 |
 | `features/schedule-sync/character-eligibility.ts` | 후보 자격 판정(`resolveCharacterEligibility`) |
 | `features/schedule-sync/stranded-characters.ts` | `character/list` 에 없는 추적 ocid 를 따로 조회한다 |
 | `features/character-profile/resolve.ts` | 표시할 이름 · 얼굴을 찾는다(`resolveDisplayProfiles`) |
@@ -47,7 +50,7 @@
 | 목록 | 앱 전체에 하나. 저장된 순서가 화면 순서다. 최소 1개 |
 | 동기화 | 넥슨 스케줄러 API 는 추적 캐릭터만 부른다 |
 | 후보 자격 | `access_flag` 가 `true` 이거나 최근 14일 안에 캐릭터 단위 항목을 하나라도 완료한 캐릭터. 추적 중이면 자격이 없어도 남긴다 |
-| 후보 표시 | 기기 캐시 → `character/list` → 캐릭터마다 자격 확인 순서로, 확인된 캐릭터만 차례로 보여 준다 |
+| 후보 표시 | 쿼리 캐시에 든 `characterBasic`(그 계정 소속으로 기록된 것만) → `character/list` → 캐릭터마다 자격 확인 순서로, 확인된 캐릭터만 차례로 보여 준다 |
 | 기록 | 추적에서 빼도 보스 수익 · 가계부 기록은 남는다. 이름과 얼굴은 `character_profiles` 에서 읽는다 |
 | 조회 불가 | 지우지 않는다. `조회 불가` 배지와 얼굴의 `!` 표식을 달고, 스케줄러에서 고르면 `캐릭터 관리로 이동하기` 안내를 보여 준다 |
 | 월드 이전 | 챌린저스 월드 캐릭터가 조회 불가가 되면 옮겨 간 캐릭터를 찾아 모달로 묻는다. `변경` · `목록에서 빼기` · `캐릭터 관리로 이동` · `나중에` |
@@ -67,6 +70,9 @@
 두 층은 각각 테두리 없는 카드 하나에 담고, 행과 메이플 ID 드롭다운은 그 안의 `card-inset` 칸이다. 대표 별과
 `✕` 는 각자 40×44 누름 상자로 붙어 서서, 별을 누르려다 `✕` 가 눌리지 않는다. 이유는 [[ADR-029]] 결정 4 · 13 에 있다.
 온보딩의 캐릭터 설정 화면도 같은 본문을 쓴다.
+
+들어올 때 `character/list` 는 한 번만 받는다. 계정 목록과 고른 계정의 후보 목록이 같은 `characterList` 쿼리를 5분 안에
+나눠 쓴다([[ADR-142]] 결정 8). 위 목록의 이름 · 레벨 · 직업은 쿼리 캐시의 `characterBasic(ocid)` 에서 읽는다.
 
 today 헤더의 버튼은 지름 48 원 안에서 대표부터 앞의 세 캐릭터 얼굴을 차례로 바꿔 보여 준다. 움직임 줄이기가
 켜져 있으면 첫 얼굴에서 멈추고, 얼굴이 없으면 사람 아이콘을 그린다.

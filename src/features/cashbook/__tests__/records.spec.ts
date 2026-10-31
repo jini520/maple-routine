@@ -1,6 +1,9 @@
 // 가계부의 오케스트레이션.
 import type { IncomeDraft, SpendDraft } from '../records'
+import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
 import type { EnhancementTotal } from '../../../storage/enhancement-totals'
+import { queryClient } from '../../query/client'
+import { queryKeys } from '../../query/keys'
 
 
 jest.mock('../../../storage/income', () => ({
@@ -38,7 +41,6 @@ jest.mock('../../../storage/boss-drops', () => ({
   getBossDropRecords: jest.fn(),
 }))
 jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
-jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
 jest.mock('../../../storage/enhancement-totals', () => ({ loadEnhancementTotals: jest.fn() }))
 jest.mock('../../enhancement-history/legacy-totals', () => ({ ensureEnhancementTotals: jest.fn() }))
@@ -54,7 +56,6 @@ const lastHunts = jest.requireMock('../../../storage/last-hunts') as Record<stri
 const bossProfit = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 const bossDrops = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 const selection = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
-const basicCache = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
 const profileLookup = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
 const enhancementTotals = jest.requireMock('../../../storage/enhancement-totals') as Record<string, jest.Mock>
 const appReview = jest.requireMock('../../app-review/request') as Record<string, jest.Mock>
@@ -65,15 +66,24 @@ const mvp = jest.requireMock('../../../lib/mvp/starforce') as Record<string, jes
 
 const 지금 = new Date('2026-08-23T05:00:00.000Z')
 
+/** 쿼리 캐시 `characterBasic(ocid)` 에 심는다. 추적 캐릭터의 이름 · 레벨 · 월드가 여기서 온다. */
+function seedBasic(ocid: string, profile: Partial<CachedCharacterBasicEntry['profile']>): void {
+  queryClient.setQueryData<CachedCharacterBasicEntry>(queryKeys.characterBasic(ocid), {
+    profile: profile as CachedCharacterBasicEntry['profile'],
+    cachedAt: 지금.toISOString(),
+  })
+}
+
 beforeEach(() => {
   jest.clearAllMocks()
+  queryClient.clear()
   income.getIncomeRecordsBetween.mockResolvedValue([])
   spend.getSpendRecordsBetween.mockResolvedValue([])
   bossProfit.getDatedBossProfitRecords.mockResolvedValue([])
   bossDrops.getBossDropRecords.mockResolvedValue([])
   selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
   bossProfit.getRecordedCharacterOcids.mockResolvedValue([])
-  basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
+  seedBasic('ocid-1', { name: '루디' })
   enhancementTotals.loadEnhancementTotals.mockResolvedValue([])
   legacyTotals.ensureEnhancementTotals.mockResolvedValue(undefined)
   mvpGrades.getMvpGradeHistories.mockResolvedValue(new Map())
@@ -1051,12 +1061,8 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
 describe('loadTrackedCharacters', () => {
   it('추적 캐릭터를 이름 · 레벨 · 월드와 함께 든다', async () => {
     selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1', 'ocid-2'])
-    basicCache.getCachedCharacterBasic.mockImplementation(async (ocid: string) => ({
-      profile:
-        ocid === 'ocid-1'
-          ? { name: '루디', level: 294, worldKey: 'scania', jobClass: '렌' }
-          : { name: '아델', level: 275, worldKey: 'elysium' },
-    }))
+    seedBasic('ocid-1', { name: '루디', level: 294, worldKey: 'scania', jobClass: '렌' })
+    seedBasic('ocid-2', { name: '아델', level: 275, worldKey: 'elysium' })
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
     // 레벨은 사냥 계산기가 쓴다. 지역을 ±20 으로 거르고 페널티를 낸다.
@@ -1070,7 +1076,7 @@ describe('loadTrackedCharacters', () => {
   // 없이 세고, 그 사실을 시트가 한 줄로 말한다.
   it('레벨 · 월드를 모르면 null 로 든다. 그 캐릭터를 빼지는 않는다', async () => {
     selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1'])
-    basicCache.getCachedCharacterBasic.mockResolvedValue({ profile: { name: '루디' } })
+    seedBasic('ocid-1', { name: '루디' })
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
     expect(await loadTrackedCharacters()).toEqual([{ ocid: 'ocid-1', name: '루디', level: null, worldKey: null, jobClass: null }])
@@ -1078,9 +1084,7 @@ describe('loadTrackedCharacters', () => {
 
   it('캐시가 비어 이름을 모르는 캐릭터는 뺀다', async () => {
     selection.getTrackedCharacterOcids.mockResolvedValue(['ocid-1', 'ocid-2'])
-    basicCache.getCachedCharacterBasic.mockImplementation(async (ocid: string) =>
-      ocid === 'ocid-1' ? { profile: { name: '루디' } } : null,
-    )
+    seedBasic('ocid-1', { name: '루디' })
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
     expect(await loadTrackedCharacters()).toEqual([

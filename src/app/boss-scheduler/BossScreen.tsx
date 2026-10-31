@@ -6,9 +6,8 @@
 import { isBossBlocked } from '../../lib/scheduler/required-level'
 import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { Pressable, View } from 'react-native'
-import { useFocusEffect } from '@react-navigation/native'
 
 import type { BossDifficulty } from '../../types'
 import {
@@ -157,13 +156,11 @@ const NO_SHARES: PartyModalShares = {
 
 export function BossScreen(): React.JSX.Element {
   // 스케줄은 캐시에서 온다. 마운트에 만료면 받고, 앱이 돌아오면 신선해도 받는다.
-  const { status, characters: storeCharacters, error, trackedOcids, refresh } = useBossSchedule()
+  const { status, characters: storeCharacters, error, trackedOcids, manualCompletedByOcid, refresh } = useBossSchedule()
   const {
     partySizes,
     partyShares,
     manualTrackedByOcid,
-    manualCompletedByOcid,
-    reloadManualCompleted,
     // 카드 탭 모달이 쓰는 두 액션. 난이도 교체는 수동 모드에서만 멤버십을 바꾼다.
     setPartySetting,
     setManualBossDifficulty,
@@ -202,14 +199,6 @@ export function BossScreen(): React.JSX.Element {
   useRefetchStaleOnFocus(queryKeys.scheduleRound())
   // KST 자정을 넘기면 다시 그린다. 아래 기간 값이 렌더의 `new Date()` 로 정해진다.
   useResetBoundaryTick()
-
-  // 그 사이 보스 수익에서 적은 직접 완료는 포커스가 물어야 선다. 스토어가 기록 판과 기간을 견줘
-  // 바뀌었을 때만 읽는다(넥슨 없음).
-  useFocusEffect(
-    useCallback(() => {
-      void reloadManualCompleted()
-    }, [reloadManualCompleted]),
-  )
 
   // `null` 은 0명이 아니라 **저장소를 아직 안 읽었다** 다. `||` 로 묶으면 첫 페인트가 모르는
   // 빈 상태는 읽고 0명임을 **확인한 뒤에만** 그린다.

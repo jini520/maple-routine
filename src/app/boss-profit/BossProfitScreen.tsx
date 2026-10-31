@@ -65,7 +65,6 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
-import { useManualCompletionStore } from '../../features/manual-completion/store'
 import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
@@ -139,6 +138,9 @@ export function BossProfitScreen(): React.JSX.Element {
 
   // 이 화면은 층 안에 살아 탭을 오가도 마운트가 남는다. 돌아올 때 회차가 만료됐으면 다시 받는다.
   useRefetchStaleOnFocus(queryKeys.scheduleRound())
+  // 직접 완료를 열어 둔 보스. 이 화면의 단추가 그 목록을 본다. 들어올 때마다 서버에 묻는다. today 와 같은 쿼리라 두 화면을
+  // 빠르게 오가도 서버는 한 번만 부른다.
+  useRefetchStaleOnFocus(queryKeys.manualCompletion())
 
   /**
    * 당김은 **어느 기간에서도** 되고 **보던 기간을 안 떠난다**(사용자 지정).
@@ -173,9 +175,6 @@ export function BossProfitScreen(): React.JSX.Element {
   }, [trackedOcids, loadPartyPlans])
 
   useEffect(() => {
-    // 직접 완료를 열어 둔 보스. 이 화면의 단추가 그 목록을 본다. today 와 같은 스토어라
-    // 두 화면을 빠르게 오가도 서버는 한 번만 부른다.
-    void useManualCompletionStore.getState().refresh()
     // 이 화면은 가계부와 함께 사는 층이 층 스택에서 빠질 때만 언마운트된다. 곧 수익·지출을 떠날
     // 때다. 가계부는 떠나면 주간 · 이번 주로 돌아오므로 보는 기간을 같게 맞춘다.
     return () => {

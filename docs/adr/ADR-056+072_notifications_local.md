@@ -59,7 +59,7 @@ iOS 는 로컬 알림이 울려도 앱을 깨우지 않는다. 그래서 아래 
 |---|---|
 | 앱을 켤 때 | `AppShell` |
 | 백그라운드에서 포그라운드로 돌아올 때 | `AppShell` 의 `useReturnToForeground` |
-| 파티 약속을 저장하거나 지울 때 | `features/party-appointments/store.ts` |
+| 파티 약속을 저장하거나 지울 때 | `features/party-appointments/query.ts` 의 `savePartyAppointments` |
 | 파티 스케줄 알림 스위치를 바꿀 때 | `features/party-appointments/alarm-settings.ts` |
 
 알림 권한이 없으면 계획을 빈 목록으로 보고, 원장에 있는 예약을 모두 취소한다. 권한이 다시 생기면 다음

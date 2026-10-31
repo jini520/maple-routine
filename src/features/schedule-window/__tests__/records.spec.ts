@@ -20,7 +20,6 @@ jest.mock('../../../storage/boss-drops', () => ({
   // 실물과 같은 값이어야 호출 단언이 맞는다. 목이 안 내주면 `undefined` 가 흐른다.
   NO_WORLD: { name: null, key: null }, getBossDropRecords: jest.fn(), replaceBossDropRecords: jest.fn() }))
 jest.mock('../../../storage/boss-party-settings', () => ({ getBossPartySetting: jest.fn() }))
-jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn() }))
 // 판 알림을 모으는 반복. 쓰기가 그 안에서 도는지 깊이로 본다.
 jest.mock('../../../storage/record-revision-batch', () => ({
   batchRecordWrites: async (write: () => Promise<unknown>) => {
@@ -34,6 +33,9 @@ jest.mock('../../../storage/record-revision-batch', () => ({
 }))
 var mockBatchDepth = 0
 
+import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
+import { queryClient } from '../../query/client'
+import { queryKeys } from '../../query/keys'
 import { loadUnqueryablePeriodKeys, recordBossProfitFromWindow } from '../records'
 
 const { getScheduleProbeLedger: getLedgerMock } = jest.requireMock('../../../storage/schedule-probe-ledger') as Record<string, jest.Mock>
@@ -44,7 +46,14 @@ const {
 } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 const { getBossDropRecords: getDropsMock, replaceBossDropRecords: replaceDropsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 const { getBossPartySetting: getPartySettingMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
-const { getCachedCharacterBasic: getBasicMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
+
+/** 캐릭터의 월드를 쿼리 캐시 `characterBasic(ocid)` 에 심는다. 시즌 보스를 기록할지가 이 월드로 갈린다. */
+function seedWorld(ocid: string, world: string, worldKey: string): void {
+  queryClient.setQueryData<CachedCharacterBasicEntry>(queryKeys.characterBasic(ocid), {
+    profile: { name: ocid, level: 0, imageUrl: '', accessFlag: true, world, worldKey },
+    cachedAt: '2026-09-05T00:00:00.000Z',
+  })
+}
 
 // KST 2026-09-05(토). 창은 8/23 ~ 9/4. 이번 주는 09-03, 지난 주는 08-27, 그 앞은 08-20.
 const NOW = new Date('2026-09-05T03:00:00.000Z')
@@ -61,7 +70,8 @@ beforeEach(() => {
   getDropsMock.mockReset().mockResolvedValue([])
   replaceDropsMock.mockReset().mockResolvedValue(undefined)
   getPartySettingMock.mockReset().mockResolvedValue(null)
-  getBasicMock.mockReset().mockResolvedValue({ profile: { world: '스카니아', worldKey: 'scania' } })
+  queryClient.clear()
+  for (const ocid of ['o1', 'o2', 'ocid-1']) seedWorld(ocid, '스카니아', 'scania')
 })
 
 const upserted = () =>
@@ -138,7 +148,7 @@ describe('시즌 보스는 챌린저스 월드 캐릭터만 기록한다', () =>
   })
 
   it('일반 월드 캐릭터는 시즌 보스를 건너뛰고 나머지는 기록한다', async () => {
-    getBasicMock.mockResolvedValue({ profile: { world: '엘리시움', worldKey: 'elysium' } })
+    seedWorld('o1', '엘리시움', 'elysium')
 
     await recordBossProfitFromWindow(['o1'], NOW)
 
@@ -146,7 +156,7 @@ describe('시즌 보스는 챌린저스 월드 캐릭터만 기록한다', () =>
   })
 
   it('월드를 모르면 시즌 보스를 이번에 건너뛴다', async () => {
-    getBasicMock.mockResolvedValue(null)
+    queryClient.removeQueries({ queryKey: queryKeys.characterBasic('o1') })
 
     await recordBossProfitFromWindow(['o1'], NOW)
 
@@ -154,7 +164,7 @@ describe('시즌 보스는 챌린저스 월드 캐릭터만 기록한다', () =>
   })
 
   it('챌린저스 월드 캐릭터는 시즌 보스도 기록한다', async () => {
-    getBasicMock.mockResolvedValue({ profile: { world: '챌린저스2', worldKey: 'challengers_2' } })
+    seedWorld('o1', '챌린저스2', 'challengers_2')
 
     await recordBossProfitFromWindow(['o1'], NOW)
 

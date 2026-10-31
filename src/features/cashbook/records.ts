@@ -32,7 +32,7 @@ import { hexaTargetOf } from '../../lib/cashbook/hexa-matrix'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import { getBossDropRecords } from '../../storage/boss-drops'
 import { getDatedBossProfitRecords } from '../../storage/boss-profit'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { readCharacterBasic } from '../schedule-sync/read-schedule'
 import { getRecordedCharacterOcids } from '../../storage/boss-profit'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
@@ -489,7 +489,7 @@ export async function loadTrackedCharacters(): Promise<
   }
   const named = await Promise.all(
     ocids.map(async (ocid) => {
-      const profile = (await getCachedCharacterBasic(ocid).catch(() => null))?.profile
+      const profile = readCharacterBasic(ocid)?.profile
       return {
         ocid,
         name: profile?.name ?? '',

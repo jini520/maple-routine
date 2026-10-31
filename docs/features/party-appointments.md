@@ -12,7 +12,7 @@
 | `types/party-appointment.ts` | 스케줄 · 보스 · 파티원 · 주별 예외 · 회차 |
 | `storage/party-appointments.ts` | Preferences `partyAppointments` 읽기 · 쓰기. 깨진 항목만 버린다 |
 | `storage/party-appointment-settings.ts` · `features/party-appointments/alarm-settings.ts` | `파티 스케줄 알림` 스위치 |
-| `features/party-appointments/store.ts` | 목록을 가지고 있고, 저장한 뒤 알림 재조정을 부른다 |
+| `features/party-appointments/query.ts` | 약속 목록 쿼리 `partyAppointments()`. 화면은 `usePartyAppointments` 로 읽고, 알림으로 들어온 화면은 `loadPartyAppointments` 로 먼저 읽는다. 저장(`savePartyAppointments`)은 저장소에 먼저 쓰고 캐시를 덮은 뒤 알림 재조정을 부른다 |
 | `features/party-appointments/occurrences.ts` | 한 주의 회차 펼치기 |
 | `features/party-appointments/draft.ts` | 시트의 처음 값 · 시각 계산 · 저장 조건 · 스케줄로 바꾸기 |
 | `features/party-appointments/edit.ts` | 수정 · 삭제 |
@@ -56,6 +56,9 @@
 | 세그먼트 | 헤더 오른쪽 `목록 \| 보드`. 마지막에 고른 보기로 연다 | 보기 바꾸기 |
 | 주 이동 줄 | `←` · 주 이름과 날짜 범위 · `→`, 이번 주로 돌아가는 `≪` · `≫` | 주 이동 |
 | ＋ | `매주 반복` · `한 번만` 두 항목 | 그 종류의 추가 시트 |
+
+목요일 자정을 넘겨 이번 주가 바뀌면, 지난 이번 주를 보고 있었을 때만 새 이번 주로 옮긴다. 다른 주를 보고 있었으면
+그대로 둔다. 지난 약속을 살피던 자리를 자정이 빼앗으면 안 되기 때문이다([[ADR-142]] 결정 8).
 
 ### 목록 보기
 

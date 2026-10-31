@@ -31,6 +31,7 @@
 | `app/boss-profit/character-groups.ts` | 행을 캐릭터로 묶고 금액 · 처치 수 · 결정석 수 · 고가 드롭을 센다 |
 | `app/boss-profit/DropPriceFab.tsx` | 아이템 가격 입력 버튼과 미입력 배지 |
 | `features/boss-profit/store.ts` | 보던 탭 · 기간 · 파티 계획과 기록을 쓰는 액션(파티 · 직접 완료 · 드롭) |
+| `features/manual-completion/query.ts` | 직접 완료를 연 보스 쿼리 `manualCompletion()`. `BossProfitBossRow` 가 `useManualCompletionBosses` 로 단추를 세울지 가른다. 화면 포커스 · 앱 복귀마다 다시 받는다 |
 | `features/boss-profit/period-query.ts` | 기간 쿼리 `bossProfitPeriod(tab, periodKey)` · 앞뒤 기간 미리 읽기 · 이번 주 예열 |
 | `features/boss-profit/period-snapshot.ts` | 한 기간의 스냅샷. 지금 기간은 스케줄 쿼리 캐시에서, 지난 기간은 기록에서 만든다 |
 | `features/boss-profit/round-record.ts` | 스케줄 회차 안의 자동 기록 · 월드 리프 중복 정리 · 고아 드롭 정리 |

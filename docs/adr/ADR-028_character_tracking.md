@@ -93,15 +93,16 @@ Preferences 키 `trackedCharacters`(ocid 배열) 하나로 합쳤다. 마지막�
 
 `getCharacterPickerRoster` 는 후보를 단계마다 나눠 내보낸다.
 
-1. 기기 캐시(`character-basic-cache`)에 있는 캐릭터를 네트워크 없이 먼저 보여 준다. 판정은 원장만
-   읽는다(결정 4).
+1. 쿼리 캐시에 `characterBasic(ocid)` 이 있는 캐릭터(`readCachedBasicOcids`)를 네트워크 없이 먼저 보여 준다.
+   판정은 원장만 읽는다(결정 4).
 2. `character/list` 응답이 오면 캐시가 있는 캐릭터부터 다시 보여 준다.
 3. 캐릭터마다 `character/basic` 과 자격 판정이 끝나는 대로 목록을 고친다. 캐릭터끼리는 병렬로 조회한다.
    하나씩 차례로 부르면 캐릭터 수만큼 기다려야 한다.
 
-- 캐시 인덱스는 메이플 ID 마다 따로 둔다(`characterBasicCache:index:{accountId}`). 인덱스 하나를 모든
-  계정이 함께 쓰면 1단계가 다른 계정의 캐릭터까지 그린다. 옛 전역 인덱스는 레거시 `selectedAccountId`
-  의 인덱스로 한 번 옮긴다. 인덱스는 마지막으로 받은 `character/list` 에 맞춰 정리한다.
+- 1단계는 그 계정 소속으로 기록된 캐릭터(`character_accounts`, `accountOfOcid`)만 세운다. 안 거르면 계정을 바꿨을 때
+  이전 계정의 캐릭터가 먼저 그려진다. 1.0.12 까지는 계정별 캐시 인덱스(`characterBasicCache:index:{accountId}`)를
+  따로 두었는데, 쿼리 캐시가 든 캐릭터를 바로 셀 수 있어 걷었다. 옛 인덱스 키는 업데이트 뒤 첫 실행이 지운다
+  ([[ADR-142]] 결정 7).
 - `character/list` 에는 `access_flag` 가 없다. 그 응답만 보고 캐릭터를 목록에 넣으면, 나중에 자격이
   없다고 판정된 캐릭터가 하나씩 사라지면서 목록이 계속 흔들린다. 그래서 자격을 확인한 캐릭터만 넣는다.
 - 한 명도 확인하지 못했을 때는 빈 목록을 내보내지 않는다. 빈 목록을 내보내면 화면에 고를 캐릭터가
@@ -221,7 +222,6 @@ ocid 의 마지막으로 알던 월드가 월드 표에서 챌린저스(`isChall
 | `features/schedule-sync/__tests__/character-eligibility.spec.ts` | 결정 3: `access_flag: true` 면 바로 통과하는지, 과거 날짜를 한꺼번에 조회하는지 본다. 결정 4: 같은 날짜를 두 번 조회하지 않는지, 실패 종류별로 원장에 남기는 것이 맞는지, 캐시된 `access_flag` 가 원장을 덮지 못하는지 본다 |
 | `storage/__tests__/schedule-probe-ledger.spec.ts` | 결정 4: 남긴 관측 기록을 다시 읽으면 확정으로 판정되는지, 캐릭터 단위 조회 불가, 14일 범위 밖 날짜 정리, 조회 불가 표식을 지우는 것을 본다 |
 | `features/schedule-sync/__tests__/schedule-sync.spec.ts` 의 `getCharacterPickerRoster` 묶음 | 결정 5: 캐시가 있으면 `character/list` 전에 먼저 보여 주는지, 한 명도 확인하지 못했으면 빈 목록을 내보내지 않는지, 자격이 없어도 추적 중이면 남기는지 본다. 결정 8: 목록 밖 추적 ocid 를 따로 묻고, 이미 조회 불가면 다시 안 부르는지 본다 |
-| `features/schedule-sync/__tests__/roster-cache-index.spec.ts` · `storage/__tests__/character-basic-cache.spec.ts` | 결정 5: 캐시 인덱스를 메이플 ID 마다 두고, 옛 전역 인덱스를 옮기고, 마지막 목록에 맞춰 정리하는지 본다 |
 | `nexon/character/__tests__/normalize.spec.ts` | 결정 5: 캐릭터가 없는 메이플 ID 를 걸러 내는지 본다 |
 | `features/character-profile/__tests__/resolve.spec.ts` · `storage/__tests__/character-profiles.spec.ts` | 결정 7: 표를 먼저 읽고 없는 것만 캐시에서 찾아 표에 써 넣는지, 둘 다 없으면 결과에서 빠지는지, 표 조회가 실패하면 캐시로 넘어가는지, `IN` 한 번으로 읽는지 본다 |
 | `features/schedule-sync/__tests__/stranded-characters.spec.ts` | 결정 9: 답하지 않은 추적 ocid 를 남기고, 원장의 조회 불가를 첫 그리기에 반영하면서 내용을 비우고, 답한 캐릭터의 표식을 지우는지 본다 |

@@ -49,6 +49,10 @@ jest.mock('../../../features/ledger/useLedgerData', () => ({
 
 // 머리 아래 `hh:mm:ss 기준` 은 회차 쿼리를 읽는다. 이 화면의 일이 아니라 비워 둔다.
 jest.mock('../../../features/refresh/freshness', () => ({ useRealtimeFetchedAt: jest.fn(() => null) }))
+// 결산 안내 줄은 서버 쿼리를 본다. 줄 자체의 동작은 `SettlementBanner.test.tsx` 가 보고, 여기서는 선 자리와 둘째 줄만 본다.
+jest.mock('../../../features/settlement/query', () => ({
+  useSettlementBanner: jest.fn(() => ({ visible: false, dismiss: jest.fn() })),
+}))
 
 // 자동 줄은 **보스 수익 탭으로 간다**. 그 이동을 목으로 받아 **어디로 갔나** 를 본다.
 // 이름이 `mock` 으로 시작해야 팩토리 안에서 참조할 수 있다(jest 의 호이스팅 가드).
@@ -84,7 +88,7 @@ import { QueryClient, QueryClientProvider, notifyManager } from '@tanstack/react
 import { useToastStore } from '../../../features/toast/store'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { useResetBoundaryTick } from '../../../features/query/reset-timer'
-import { useSettlementStore } from '../../../features/settlement/store'
+import { useSettlementBanner } from '../../../features/settlement/query'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
@@ -1903,9 +1907,9 @@ describe('기간 이동의 촉각', () => {
 
 // 처치 날짜가 있는 기록만 읽는 화면이라 결산 중에는 오늘 잡은 보스가 빠진다. 그 말을 머리글 바로 아래 줄이 한다.
 describe('결산 안내 줄', () => {
-  // 실물 스토어라 값이 케이스 사이로 샌다.
+  // 모듈 목이라 돌려준 값이 케이스 사이로 샌다.
   beforeEach(() => {
-    useSettlementStore.setState({ settling: false, startedAt: null, dismissedAt: null, visible: false })
+    jest.mocked(useSettlementBanner).mockReturnValue({ visible: false, dismiss: jest.fn() })
   })
 
   it('결산 중이 아니면 안 선다', async () => {
@@ -1915,12 +1919,7 @@ describe('결산 안내 줄', () => {
   })
 
   it('결산 중이면 머리글 아래에 서고 둘째 줄이 보스 수입이 늦는다고 말한다', async () => {
-    useSettlementStore.setState({
-      settling: true,
-      startedAt: '2026-10-18T15:00:00.000Z',
-      dismissedAt: null,
-      visible: true,
-    })
+    jest.mocked(useSettlementBanner).mockReturnValue({ visible: true, dismiss: jest.fn() })
 
     const view = await 그리기()
 

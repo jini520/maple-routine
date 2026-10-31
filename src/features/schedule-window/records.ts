@@ -26,7 +26,7 @@ import {
   markBossProfitRecordAuto,
   upsertBossProfitRecord,
 } from '../../storage/boss-profit'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { readCharacterBasic } from '../schedule-sync/read-schedule'
 import { getScheduleProbeLedger } from '../../storage/schedule-probe-ledger'
 import { batchRecordWrites } from '../../storage/record-revision-batch'
 import { BOSS_CYCLES, type BossCycle, type BossDifficulty } from '../../types'
@@ -101,7 +101,7 @@ async function recordPeriod(
   const [existingRecords, dropRecords, cachedBasic] = await Promise.all([
     withSqliteFallback(getBossProfitRecords([ocid], [periodKey]), []),
     withSqliteFallback(getBossDropRecords([ocid], [periodKey]), []),
-    getCachedCharacterBasic(ocid).catch(() => null),
+    Promise.resolve(readCharacterBasic(ocid)),
   ])
   const world = cachedBasic?.profile.world ?? null
   const worldKey = cachedBasic?.profile.worldKey ?? null

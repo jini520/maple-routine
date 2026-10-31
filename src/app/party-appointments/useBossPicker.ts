@@ -40,11 +40,10 @@ export interface BossPicker {
 }
 
 export function useBossPicker(): BossPicker {
-  const { characters, trackedOcids } = useBossSchedule()
+  const { characters, trackedOcids, manualCompletedByOcid } = useBossSchedule()
   const partySizes = useBossSchedulerStore((state) => state.partySizes)
   const partyShares = useBossSchedulerStore((state) => state.partyShares)
   const manualTrackedByOcid = useBossSchedulerStore((state) => state.manualTrackedByOcid)
-  const manualCompletedByOcid = useBossSchedulerStore((state) => state.manualCompletedByOcid)
   const { mode } = useTrackingModeStore()
   const representativeOcid = useCharacterSelectionStore((state) => state.representativeOcid)
 

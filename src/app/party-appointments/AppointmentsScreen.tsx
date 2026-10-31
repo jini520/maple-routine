@@ -23,7 +23,7 @@ import { useBossSchedule } from '../../features/boss-scheduler/use-boss-schedule
 import { agendaDays, thisWeekJumpOf } from '../../features/party-appointments/agenda'
 import { findNotifiedOccurrence, usePartyAppointmentOpenStore } from '../../features/party-appointments/open-request'
 import { occurrencesInWeek } from '../../features/party-appointments/occurrences'
-import { usePartyAppointmentsStore } from '../../features/party-appointments/store'
+import { loadPartyAppointments, usePartyAppointments } from '../../features/party-appointments/query'
 import { occurrenceKeyOf, weekTimeline } from '../../features/party-appointments/timeline'
 import { upcomingOccurrences } from '../../features/party-appointments/upcoming'
 import { usePartyScheduleViewStore, type PartyScheduleView } from '../../features/party-appointments/view-preference'
@@ -52,8 +52,7 @@ const HIGHLIGHT_MS = 1200
 const SCROLL_TOP_GAP = 12
 
 export function AppointmentsScreen(): React.JSX.Element {
-  const appointments = usePartyAppointmentsStore((state) => state.appointments)
-  const load = usePartyAppointmentsStore((state) => state.load)
+  const { appointments } = usePartyAppointments()
   const { characters } = useBossSchedule()
   /** 열린 시트. `add` 는 추가, 회차면 그 상세 */
   // 추가는 ＋ 에서 고른 갈래(`once` · `weekly`), 상세는 누른 회차다.
@@ -70,12 +69,22 @@ export function AppointmentsScreen(): React.JSX.Element {
   const thisWeek = resetWeekStartOf(todayKey)
   const [weekStart, setWeekStart] = useState(thisWeek)
 
+  // 주가 바뀐 렌더(분마다 도는 시계가 목요일 자정을 넘겼다). 이번 주를 보고 있었으면 새 이번 주로 옮기고, 다른 주를 보고
+  // 있었으면 그대로 둔다. 지난 약속을 살피던 자리를 자정이 빼앗으면 안 된다.
+  const previousThisWeek = useRef(thisWeek)
+  useEffect(() => {
+    const before = previousThisWeek.current
+    if (before === thisWeek) return
+    previousThisWeek.current = thisWeek
+    if (weekStart === before) setWeekStart(thisWeek)
+  }, [thisWeek, weekStart])
+
   /**
    * 목록을 읽고, 알림을 눌러 왔으면 그 회차가 든 주로 가서 상세를 연다. 약속이 없어졌으면 그 주만 연다.
    * 들어올 때와, 이 화면에 있는 채로 알림을 눌렀을 때 부른다.
    */
   const loadAndOpenNotified = useCallback(async () => {
-    await load()
+    const loaded = await loadPartyAppointments()
     const { request, create } = usePartyAppointmentOpenStore.getState()
     // today 위젯이 고른 갈래의 새 스케줄 시트. ＋ 메뉴에서 고른 것과 같다.
     if (create !== null) {
@@ -85,10 +94,10 @@ export function AppointmentsScreen(): React.JSX.Element {
     }
     if (request === null) return
     usePartyAppointmentOpenStore.getState().clear()
-    const found = findNotifiedOccurrence(usePartyAppointmentsStore.getState().appointments, request)
+    const found = findNotifiedOccurrence(loaded, request)
     setWeekStart(found.weekStart)
     setSheet(found.occurrence === undefined ? null : { occurrence: found.occurrence, weekStart: found.weekStart })
-  }, [load])
+  }, [])
 
   useFocusEffect(
     useCallback(() => {

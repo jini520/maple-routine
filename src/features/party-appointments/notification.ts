@@ -3,7 +3,7 @@
  */
 import { resetWeekStartOf, shiftDateKey } from '../../lib/calendar'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
-import { getCachedCharacterBasic } from '../../storage/character-basic-cache'
+import { readCharacterBasic } from '../schedule-sync/read-schedule'
 import { getPartyAlarmEnabled } from '../../storage/party-appointment-settings'
 import { getPartyAppointments } from '../../storage/party-appointments'
 import type { PartyAppointment } from '../../types/party-appointment'
@@ -55,7 +55,7 @@ export function planPartyNotifications(
 async function characterNames(appointments: readonly PartyAppointment[]): Promise<Map<string, string>> {
   const ocids = [...new Set(appointments.flatMap((appointment) => appointment.bosses.map((boss) => boss.ocid)))]
   const entries = await Promise.all(
-    ocids.map(async (ocid) => [ocid, (await getCachedCharacterBasic(ocid))?.profile.name ?? ''] as const),
+    ocids.map(async (ocid) => [ocid, readCharacterBasic(ocid)?.profile.name ?? ''] as const),
   )
   return new Map(entries)
 }

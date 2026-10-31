@@ -24,7 +24,7 @@ import {
   getInitialPushNotification,
   type PushData,
 } from '../../native/push'
-import { useNoticeBannerStore } from './banner-store'
+import { invalidateAppNotices } from './notice-query'
 import { parseNotice } from './receive'
 
 export function useNoticeDelivery(
@@ -43,10 +43,7 @@ export function useNoticeDelivery(
     // 화면에 아무 일도 안 일어난다.
     const offMessage = addPushMessageListener((data) => {
       if (parseNotice(data) === null) return
-      void useNoticeBannerStore
-        .getState()
-        .refresh()
-        .catch(() => undefined)
+      void invalidateAppNotices().catch(() => undefined)
     })
     const offOpened = addPushOpenedListener(opened)
 

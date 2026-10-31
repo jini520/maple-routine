@@ -14,6 +14,9 @@ import { BossProfitBossRow } from '../BossProfitBossRow'
 import { PERIOD, 보스행, 주간보스, 컨텍스트값, renderProfit, 주간보스이름 } from './harness'
 import { partyPlanKey } from '../../../features/boss-profit/party-plans'
 
+// 직접 완료를 연 보스는 쿼리 캐시에서 온다. 이 테스트는 프로바이더 없이 그리므로 값만 돌려준다.
+jest.mock('../../../features/manual-completion/query', () => ({ useManualCompletionBosses: jest.fn(() => null) }))
+
 // 카운트업은 모듈 수준 기억을 갖는다. 케이스 사이로 새지 않게 비운다.
 beforeEach(() => {
   clearCountUpMemory()

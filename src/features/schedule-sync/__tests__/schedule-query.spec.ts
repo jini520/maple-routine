@@ -19,10 +19,25 @@ const { resolveStrandedCharacters: strandedMock } = jest.requireMock('../strande
 jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
 const { getTrackedCharacterOcids: trackedMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
 
-jest.mock('../../../storage/scheduler-cache', () => ({ getCachedSchedulerState: jest.fn(async () => null) }))
-const { getCachedSchedulerState: legacyScheduleMock } = jest.requireMock('../../../storage/scheduler-cache') as Record<string, jest.Mock>
+jest.mock('../../../storage/scheduler-cache', () => ({
+  getCachedSchedulerState: jest.fn(async () => null),
+  clearCachedSchedulerState: jest.fn(async () => undefined),
+}))
+const { getCachedSchedulerState: legacyScheduleMock, clearCachedSchedulerState: clearScheduleMock } = jest.requireMock(
+  '../../../storage/scheduler-cache',
+) as Record<string, jest.Mock>
 
-jest.mock('../../../storage/character-basic-cache', () => ({ getCachedCharacterBasic: jest.fn(async () => null) }))
+jest.mock('../../../storage/character-basic-cache', () => ({
+  getCachedCharacterBasic: jest.fn(async () => null),
+  clearCachedCharacterBasic: jest.fn(async () => undefined),
+  clearCharacterBasicCacheIndex: jest.fn(async () => undefined),
+}))
+const { clearCachedCharacterBasic: clearBasicMock, clearCharacterBasicCacheIndex: clearIndexMock } = jest.requireMock(
+  '../../../storage/character-basic-cache',
+) as Record<string, jest.Mock>
+jest.mock('../../../storage/character-accounts', () => ({
+  getCharacterAccountSightings: jest.fn(async () => [{ ocid: 'a', accountId: 'acc-1' }]),
+}))
 
 jest.mock('../../boss-profit/round-record', () => ({ recordBossProfitFromRound: jest.fn(async () => undefined) }))
 const { recordBossProfitFromRound: recordMock } = jest.requireMock('../../boss-profit/round-record') as Record<string, jest.Mock>
@@ -196,6 +211,15 @@ describe('onQueryCacheRestored', () => {
     expect(queryClient.getQueryData(queryKeys.schedule('a'))).toEqual({ state: { characterName: 'query-a' }, syncedAt: NOW.toISOString() })
     expect(queryClient.getQueryData(queryKeys.schedule('b'))).toEqual({ state: { characterName: 'legacy-b' }, syncedAt: '2026-10-29T00:00:00.000Z' })
     expect(queryClient.getQueryState(queryKeys.schedule('b'))?.dataUpdatedAt).toBe(new Date('2026-10-29T00:00:00.000Z').getTime())
+  })
+
+  // 옮긴 뒤에는 아무도 안 읽는다. 남겨 두면 Preferences 에 큰 JSON 이 캐릭터 수만큼 영영 남는다.
+  it('옛 캐시를 옮긴 뒤 그 키와 계정별 인덱스를 지운다', async () => {
+    await onQueryCacheRestored()
+
+    expect(clearScheduleMock.mock.calls.map(([ocid]) => ocid).sort()).toEqual(['a', 'b'])
+    expect(clearBasicMock.mock.calls.map(([ocid]) => ocid).sort()).toEqual(['a', 'b'])
+    expect(clearIndexMock).toHaveBeenCalledWith(['acc-1'])
   })
 
   it('앱을 켜면 10분 안이어도 한 번 받는다', async () => {

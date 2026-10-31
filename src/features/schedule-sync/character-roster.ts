@@ -9,13 +9,10 @@ import { currentCredential } from '../auth/current-credential'
 import type { NexonCredential } from '../../types/auth'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { fetchCharacterBasic } from '../../nexon/character'
-import { fetchAndRecordCharacterList } from '../mvp-grade/character-list'
+import { fetchCharacterListCached } from '../mvp-grade/character-list'
 import { NexonAuthError, NexonRateLimitError } from '../../nexon/errors'
-import {
-  getAllCachedCharacterBasicOcids,
-  getCachedCharacterBasic,
-  reconcileCachedCharacterBasicOcids,
-} from '../../storage/character-basic-cache'
+import { getCharacterAccountSightings } from '../../storage/character-accounts'
+import { accountOfOcid } from '../../lib/mvp/membership'
 import { getCharacterProfiles } from '../../storage/character-profiles'
 import type { CharacterProfileSnapshot } from '../../storage/character-profiles'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
@@ -27,6 +24,7 @@ import type { StrandedCharacter } from '../character-manage/world-leap'
 import { useWorldLeapStore } from '../character-manage/world-leap-store'
 import { linkWorldLeapsByNameAndJob } from '../boss-profit/world-leap-link'
 import { fetchCharacterBasicCached } from './character-basic-fetch'
+import { readCachedBasicOcids, readCharacterBasic } from './read-schedule'
 import { readKnownEligibility, resolveCharacterEligibility } from './character-eligibility'
 import type { CharacterEligibility } from './character-eligibility'
 import { toScheduleSyncError } from './errors'
@@ -60,7 +58,7 @@ export async function resolveRegisteredCharacters(accountId?: string): Promise<{
 }> {
   const { credential, accountId: resolved } = await resolveAccountContext(accountId)
 
-  const accounts = await fetchAndRecordCharacterList(credential)
+  const accounts = await fetchCharacterListCached(credential)
   const account = accounts.find((candidate) => candidate.accountId === resolved)
   if (account === undefined) {
     throw new Error('resolveRegisteredCharacters: 지정한 계정을 응답에서 찾을 수 없습니다')
@@ -109,7 +107,7 @@ export async function resolveTrackedCharacterContext(ocids: string[]): Promise<{
   }
 
   const wanted = new Set(ocids)
-  const accounts = await fetchAndRecordCharacterList(credential)
+  const accounts = await fetchCharacterListCached(credential)
   const characters = accounts.flatMap((account) =>
     account.characters
       .filter((character) => wanted.has(character.ocid))
@@ -252,7 +250,7 @@ async function resolveStrandedCharacter(
   ocid: string,
   snapshot: CharacterProfileSnapshot | undefined,
 ): Promise<StrandedCharacter | null> {
-  const cached = await getCachedCharacterBasic(ocid).catch(() => null)
+  const cached = readCharacterBasic(ocid)
   const name = snapshot?.name ?? cached?.profile.name ?? null
   if (name === null || name === '') {
     return null
@@ -316,16 +314,25 @@ export async function getCharacterPickerRoster(
     onUpdate(sortPickerEntries(Array.from(liveEntries.values())))
   }
 
-  // character/list 는 캐싱하지 않으므로(개명·전직·레벨업 정확성 우선) 이 함수가 열릴 때마다 그
-  // 네트워크 응답을 기다려야 한다. 그동안 character-basic-cache 에 이미 있는 캐릭터는 전부 즉시
-  // 후보 목록에 채워, 피커를 열 때마다 아직 캐싱되지 않은 캐릭터를 뺀 나머지가 잠깐씩 비어
-  // 보이던 것을 없앤다. 인덱스가 계정별이라 이 단계가 이전 계정 캐릭터를 그리지 않는다.
-  const cachedOcids = await getAllCachedCharacterBasicOcids(accountId)
+  // `character/list` 를 기다리는 동안 쿼리 캐시에 이미 있는 캐릭터를 먼저 후보로 세운다. 안 그러면 피커를 열 때마다
+  // 목록이 잠깐 빈다. 이 계정의 캐릭터만 세우려고 소속 기록(`character-accounts`)으로 거른다. 안 거르면 계정을
+  // 바꿨을 때 이전 계정 캐릭터가 먼저 그려진다.
+  //
+  // 그중에서도 **마지막으로 받은 목록에 있던 캐릭터만** 세운다. 소속 기록은 목록을 받을 때마다 그 날을 적으므로, 월드
+  // 리프로 목록에서 빠진 캐릭터는 마지막 본 날이 이 계정의 가장 최근 날보다 앞선다. 그 캐릭터를 세우면 열 때마다 떴다가
+  // 목록 응답 뒤에 사라진다.
+  const sightings = await getCharacterAccountSightings().catch(() => [])
+  const mine = sightings.filter((sighting) => sighting.accountId === accountId)
+  const latestSeenOn = mine.reduce((best, sighting) => (sighting.lastSeenOn > best ? sighting.lastSeenOn : best), '')
+  const listedLately = new Set(mine.filter((sighting) => sighting.lastSeenOn === latestSeenOn).map((sighting) => sighting.ocid))
+  const cachedOcids = readCachedBasicOcids().filter(
+    (ocid) => listedLately.has(ocid) && accountOfOcid(sightings, ocid) === accountId,
+  )
   if (cachedOcids.length > 0) {
     const stubEntries = (
       await Promise.all(
         cachedOcids.map(async (ocid): Promise<CharacterPickerEntry | null> => {
-          const cached = await getCachedCharacterBasic(ocid)
+          const cached = readCharacterBasic(ocid)
           if (cached === null) {
             return null
           }
@@ -355,11 +362,6 @@ export async function getCharacterPickerRoster(
   }
 
   const { characters, allCharacters } = await resolveRegisteredCharacters(options?.accountId)
-  // 다음 회차의 stub 단계가 읽는 인덱스다. 목록에서 빠진 캐릭터가 남으면 열 때마다 떴다가 사라진다.
-  await reconcileCachedCharacterBasicOcids(
-    accountId,
-    characters.map((character) => character.ocid),
-  )
 
   // 목록 밖 추적 ocid 확정. 로스터 방출과 섞이지 않게 먼저 끝낸다 - 이 단계가 원장에 표식을
   // 남기고, 아래 `readKnownEligibility` 가 그 원장을 읽는다.
@@ -372,7 +374,7 @@ export async function getCharacterPickerRoster(
 
   await Promise.all(
     characters.map(async (character) => {
-      const cached = await getCachedCharacterBasic(character.ocid)
+      const cached = readCharacterBasic(character.ocid)
       if (cached === null) {
         return
       }
@@ -402,13 +404,7 @@ export async function getCharacterPickerRoster(
       try {
         // 캐시 쓰기까지 공유 경로 안이다. 온보딩 한 바퀴(프로브 → 예열 → 피커)가 5분 안에 끝나면
         // 여기서는 네트워크가 나가지 않고 방금 채워진 캐시를 그대로 쓴다.
-        const profile = await fetchCharacterBasicCached(
-          credential,
-          accountId,
-          character.ocid,
-          now,
-          character.jobClass,
-        )
+        const profile = await fetchCharacterBasicCached(credential, character.ocid, now, character.jobClass)
         // 여기서 스윕이 일어난다. 예열이 이미 훑었으면 원장이 채워져 있어
         // 추가 호출이 없고, 예열이 중간에 끊겼으면 이 경로가 이어서 완성한다.
         const eligibility = await resolveCharacterEligibility(

@@ -7,10 +7,10 @@
  * **받아 보기 전에는 스켈레톤이 선다.** 목록 상태가 `null` 이면 아직 모르는 것이고 빈 배열이면 받아 봤는데 없는 것이다.
  * 둘을 안 가르면 첫 프레임에 `아직 받은 진행 중인 이벤트가 없습니다` 를 세우고 그다음에 카드가 들어온다.
  *
- * **사본을 먼저 그리고, 분류마다 받기에 성공하면 받은 것으로 바꾼다.** 앱 공지의 기준은 서버, 넥슨 공지의 기준은 넥슨 목록이라
- * 거기서 내린 글은 받은 목록에 없고 여기서도 사라진다. 받기가 실패하면 사본이 그대로 선다. 빈 화면도 에러 화면도 아니다.
+ * **저장된 목록을 먼저 그리고, 분류마다 받기에 성공하면 받은 것으로 바꾼다.** 앱 공지의 기준은 서버, 넥슨 공지의 기준은 넥슨
+ * 목록이라 거기서 내린 글은 받은 목록에 없고 여기서도 사라진다. 받기가 실패하면 든 값이 그대로 선다. 빈 화면도 에러 화면도 아니다.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { View } from 'react-native'
 
 import { ScrollTextIcon, Text } from '../../components/atoms'
@@ -19,9 +19,10 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { readNoticeCopy } from '../../features/notice/notice-copy'
 import { emptyNoticeText } from '../../features/notice/notice-display'
-import { refreshNoticeKinds } from '../../features/notice/notice-feed'
+import { refreshNoticeKinds, useNotices } from '../../features/notice/notice-query'
+import { queryKeys } from '../../features/query/keys'
+import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
 import { useToastStore } from '../../features/toast/store'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { NOTICE_KINDS, type Notice, type NoticeKind } from '../../types/notice'
@@ -63,67 +64,32 @@ export function SettingsNoticesScreen(props: {
   const navigation = useSettingsNavigation()
   const kinds = props.route?.params?.kinds
   const title = props.route?.params?.title ?? '소식'
-  // `null` 은 **아직 모른다**. 빈 배열(받아 봤는데 없다)과 뜻이 다르다.
-  const [notices, setNotices] = useState<Notice[] | null>(null)
-  // 배열은 매 렌더 새 참조라 deps 로 못 쓴다. 값이 실제로 바뀌었을 때만 다시 읽는다.
+  // 배열은 매 렌더 새 참조라 deps 로 못 쓴다. 값이 실제로 바뀌었을 때만 다시 만든다.
   const kindsKey = kinds === undefined ? '' : kinds.join(',')
   // 배너 갈래면 그 갈래, 아니면 `null`. 스켈레톤이 그림 비율을 내려면 갈래를 알아야 한다.
   const bannerKind = kinds?.length === 1 && (kinds[0] === 'event' || kinds[0] === 'cashshop') ? kinds[0] : null
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const shown = useMemo(() => kinds ?? NOTICE_KINDS, [kindsKey])
 
-  // 받은 분류 하나를 화면에 반영한다. 진입 조회와 당김이 같은 함수로 들어온다.
-  const showKind = useCallback(
-    (kind: NoticeKind, received: Notice[]): void => {
-      // 한 분류만 보면 받은 순서 그대로다. 여럿이면 분류가 섞이므로 최근 발행순으로 선다.
-      setNotices((current) =>
-        shown.length === 1
-          ? received
-          : [...(current ?? []).filter((n) => n.kind !== kind), ...received].sort(newestFirst),
-      )
-    },
-    [shown],
-  )
-
-  // 조회가 끝났다. 아직 모르면 없는 것으로 확정한다. 실패한 분류는 `showKind` 를 안 부르므로
-  // (`refreshNoticeKinds` 의 계약) 이 마무리가 없으면 영영 스켈레톤으로 남는다.
-  const settleUnknown = useCallback((): void => {
-    setNotices((current) => current ?? [])
-  }, [])
-
-  useEffect(() => {
-    let alive = true
-
-    // 사본이 먼저다. 네트워크를 기다리는 동안 빈 화면을 보여 주지 않는다.
-    // 사본을 다 읽은 뒤에 부른다. 거꾸로면 늦게 끝난 사본 읽기가 방금 받은 목록을 덮는다.
-    void readNoticeCopy()
-      .then((copy) => {
-        // 사본이 비었으면 `null` 인 채로 둔다. `[]` 로 내리면 아직 도는 조회를 두고 `없습니다` 를 말한다.
-        const mine = copy.filter((n) => shown.includes(n.kind))
-        if (alive && mine.length > 0) setNotices(mine)
-      })
-      .catch(() => undefined)
-      .then(() => {
-        // 진입은 실패해도 조용하다. 사용자가 부탁한 조회가 아니라 화면을 열었을 뿐이다.
-        void refreshNoticeKinds(shown, (kind, received) => {
-          if (alive) showKind(kind, received)
-        }).then(() => {
-          if (alive) settleUnknown()
-        })
-      })
-
-    return () => {
-      alive = false
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kindsKey])
+  // 보는 분류의 목록은 쿼리 캐시에서 온다. 저장된 목록이 먼저 서고, 들어올 때마다 다시 받는다. 실패한 분류는 든 값이 선다.
+  const byKind = useNotices(shown)
+  useRefetchStaleOnFocus(queryKeys.allNotices())
+  /**
+   * `null` 은 **아직 모른다**. 빈 배열(받아 봤는데 없다)과 뜻이 다르다. 분류가 하나면 받은 순서 그대로이고, 여럿이면
+   * 분류가 섞이므로 최근 발행순으로 선다. 한 분류라도 아직 모르는데 아무것도 못 받았으면 아직 모르는 것이다.
+   */
+  const notices = useMemo((): Notice[] | null => {
+    const lists = shown.map((kind) => byKind[kind])
+    if (lists.every((list) => list === null)) return null
+    const merged = lists.flatMap((list) => list ?? [])
+    return shown.length === 1 ? merged : [...merged].sort(newestFirst)
+  }, [byKind, shown])
 
   // 당김은 사용자가 요청한 조회라 아무 일도 안 일어나면 고장으로 읽힌다. 보고 있는 분류만 다시 받는다.
   const refresh = useCallback(async (): Promise<void> => {
-    const { allFailed } = await refreshNoticeKinds(shown, showKind)
-    settleUnknown()
+    const { allFailed } = await refreshNoticeKinds(shown)
     if (allFailed) useToastStore.getState().showError('소식을 불러오지 못했습니다')
-  }, [shown, showKind, settleUnknown])
+  }, [shown])
 
   const open = (notice: Notice): void => navigation.navigate('SettingsNoticeDetail', { noticeId: notice.id })
 

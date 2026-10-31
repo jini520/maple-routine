@@ -14,7 +14,7 @@
 | `lib/calendar.ts` | 월간 격자 · 리셋 주 · 열지도 단계 · 기간 합계(`periodTotals`) |
 | `lib/cashbook/meso-compact.ts` | 칸 금액 줄임(`formatMesoCompact`) · 부호 붙이기(`formatMesoSigned`) |
 | `features/cashbook/range.ts` | 미리 읽는 창 · 데이터 공급자에 알리는 범위 · 조회 한도 |
-| `features/cashbook/records.ts` | 저장 · 고치기 · 지우기, 원천 넷을 하루 단위로 합치기, 카드 두 줄(`recordCardOf`) · 금액, 그날 합계 |
+| `features/cashbook/records.ts` | 저장 · 고치기 · 지우기, 원천 넷을 하루 단위로 합치기, 카드 두 줄(`recordCardOf`) · 금액, 그날 합계. 시트의 캐릭터 이름 · 레벨 · 월드는 쿼리 캐시의 `characterBasic(ocid)` 에서 읽는다(`features/schedule-sync/read-schedule.ts` 의 `readCharacterBasic`) |
 | `features/cashbook/row-icon.ts` | 하루 목록 줄의 그림 |
 | `features/cashbook/ledger-query.ts` | 날짜별 줄 쿼리 `ledgerDays(from, to)`. 기록 표의 판이 오르면 다시 읽는다. today · 통계도 같은 열쇠를 쓴다 |
 | `features/ledger/useLedgerData.tsx` | 넥슨 API 회차를 관리하는 데이터 공급자. 진행률 · 모달 · 강화 범위를 들고 기록은 들지 않는다. 화면은 범위를 알리고 다시 받아 달라고 요청한다 |
@@ -29,7 +29,7 @@
 | `features/cashbook/remembered-levels.ts` · `storage/remembered-levels.ts` | 캐릭터의 심볼 · 헥사 코어 강화 레벨 기억(`remembered_levels`) |
 | `lib/cashbook/hunt-loot.ts` | 사냥 전리품 판매의 아이템(`huntLoot` 칸)과 그 날 팔 수 있는 아이템 |
 | `lib/cashbook/hunting-grounds.ts` · `lib/cashbook/hunting-meso.ts` | 사냥터 참조표(`huntingGrounds` 칸)와 사냥 메소 계산 |
-| `lib/cashbook/meso-rate.ts` · `features/cashbook/meso-rate.ts` · `storage/meso-rate-cache.ts` | 캐릭터 메소 획득량 |
+| `lib/cashbook/meso-rate.ts` · `features/cashbook/meso-rate.ts` · `storage/meso-rate-cache.ts` | 캐릭터 메소 획득량. 직업은 쿼리 캐시의 `characterBasic(ocid)` 에서 읽는다 |
 | `storage/last-hunts.ts` · `storage/last-point-rate.ts` | 캐릭터별 마지막 사냥 · 마지막 시세 |
 
 ## 무엇을 보여 주나

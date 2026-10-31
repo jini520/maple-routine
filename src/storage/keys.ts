@@ -85,9 +85,6 @@ export const STORAGE_KEYS = {
   //
   // 데이터 삭제 그룹에 넣지 말 것. 지우면 OS 에 남은 예약을 지목할 길이 없어 유령 알림이 된다.
   notificationLedger: 'notificationLedger',
-  // 공지의 사본. 분류마다 마지막 서버 응답(최대 20건)을 한 JSON 배열에 함께 둔다. 서버가 죽어도
-  // 마지막으로 받은 것은 열려야 해서 남긴다.
-  notices: 'notices',
   // today 배너에서 닫은 공지 id. 최근 50건의 JSON 배열이다. 닫은 것은 배너이지 공지가 아니라
   // 설정의 목록·상세에는 그대로 보인다. 앱 공지 조회가 성공하면 서버에 없는 id 가 빠진다.
   //
@@ -134,6 +131,8 @@ export const STORAGE_KEYS = {
   queryCache: 'queryCache',
   // 1.0.12+3 까지 보스 표만 들던 사본. 이제 안 읽고 켤 때 지우기만 한다.
   legacyBossCatalog: 'bossCatalog',
+  // 1.0.12 까지의 공지 사본(분류 다섯의 응답을 한 JSON 에). 공지는 이제 쿼리 캐시가 든다. 안 읽고 켤 때 지우기만 한다.
+  legacyNotices: 'notices',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {

@@ -117,12 +117,12 @@ autolinking 으로 바이너리에 들어간다.
 
 | 화면 | 전에 부르던 것 | 지금 부르는 것 |
 |---|---|---|
-| `SettingsScreen` · `SettingsNoticesScreen` · `SettingsNoticeDetailScreen` | `storage/notices` 의 `getNotices` | `features/notice/notice-copy.ts` 의 `readNoticeCopy` |
-| `TodayScreen` | `storage/character-basic-cache` 의 `getCachedCharacterBasic` | `features/character-profile/cached-profiles.ts` 의 `readCharacterProfiles` · `readRepresentativeProfile` |
+| `SettingsScreen` · `SettingsNoticesScreen` · `SettingsNoticeDetailScreen` | 1.0.12 까지의 Preferences `notices` 사본 읽기(`getNotices`) | `features/notice/notice-query.ts` 의 `useNotices` · `findCachedNotice`. 공지는 기기에 저장되는 쿼리라 사본 읽기가 따로 없다([[ADR-142]] 결정 7) |
+| `TodayScreen` | `storage/character-basic-cache` 의 `getCachedCharacterBasic` | `features/schedule-sync/use-schedule-queries.ts` 의 `useCharacterProfiles`. 쿼리 캐시 `characterBasic(ocid)` 을 읽는다 |
 | `TodayScreen` | `storage/boss-drops` 의 `getBossDropRecordsRevision` | `features/boss-profit/drop-history-query.ts` 의 `useDropHistory`. 드롭 기록의 판은 화면이 아니라 쿼리 무효화가 본다([[ADR-142]] 결정 6) |
 
-`hooks/` 와 `components/` 는 이 검사에 들지 않는다. `hooks/useKnownProfiles.ts` 는 아직
-`storage/character-basic-cache` 를 직접 읽는다.
+`hooks/` 와 `components/` 는 이 검사에 들지 않는다. `hooks/useKnownProfiles.ts` 도 저장소가 아니라
+`features/schedule-sync/read-schedule.ts` 의 `readCharacterBasic` 으로 쿼리 캐시를 읽는다.
 
 ## 테스트
 

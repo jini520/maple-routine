@@ -22,7 +22,7 @@ import {
   MegaphoneIcon,
   Text,
 } from '../../components/atoms'
-import { useNoticeBannerStore } from '../../features/notice/banner-store'
+import { useNoticeBanner } from '../../features/notice/notice-query'
 import { formatNoticeDate } from '../../features/notice/format'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 
@@ -30,8 +30,7 @@ import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 const BUTTON_HIT_SLOP = { top: 6, bottom: 6 } as const
 
 export function NoticeBanner(): React.JSX.Element | null {
-  const notice = useNoticeBannerStore((state) => state.notice)
-  const dismiss = useNoticeBannerStore((state) => state.dismiss)
+  const { notice, dismiss } = useNoticeBanner()
   const navigation = useScreenNavigation()
 
   /**

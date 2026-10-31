@@ -1,6 +1,7 @@
-import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
-import { setCachedCharacterBasic } from '../../../storage/character-basic-cache'
+import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
 import type { CharacterBasicProfile } from '../../../types'
+import { queryClient } from '../../query/client'
+import { queryKeys } from '../../query/keys'
 
 jest.mock('../../../storage/character-profiles', () => ({
   getCharacterProfiles: jest.fn(),
@@ -17,8 +18,13 @@ function basic(overrides: Partial<CharacterBasicProfile> = {}): CharacterBasicPr
   return { name: '루디', level: 285, imageUrl: 'https://example.test/a.png', accessFlag: true, ...overrides }
 }
 
+/** 쿼리 캐시 `characterBasic(ocid)` 에 심는다. 화면 밖 코드도 같은 캐시를 읽는다. */
+function seedCache(ocid: string, entry: CachedCharacterBasicEntry): void {
+  queryClient.setQueryData<CachedCharacterBasicEntry>(queryKeys.characterBasic(ocid), entry)
+}
+
 beforeEach(() => {
-  installFakePreferences()
+  queryClient.clear()
   getCharacterProfilesMock.mockReset().mockResolvedValue(new Map())
   saveCharacterProfileMock.mockClear().mockResolvedValue(undefined)
 })
@@ -46,7 +52,7 @@ it('표에 있는 것은 표에서 읽는다. 캐시를 안 본다', async () =>
 // 마이그레이션이다. 별도 이관 단계를 두면 그때 이미 해제한 캐릭터는 훑을 목록에 없어 영영 안
 // 옮겨진다.
 it('표에 없으면 캐시에서 가져오고, 그 값을 표에 심는다', async () => {
-  await setCachedCharacterBasic('account-1', 'ocid-2', {
+  seedCache('ocid-2', {
     profile: basic({ name: '옛캐릭', world: '루나', worldKey: 'luna' }),
     cachedAt: NOW,
   })
@@ -76,7 +82,7 @@ it('표에 없으면 캐시에서 가져오고, 그 값을 표에 심는다', as
 // 직업은 월드 이전 판정이 읽는 값이다. 캐시가 들고 있으면 그 이관 길로 표까지 따라가야, 이미
 // 조회할 수 없게 된 캐릭터도 판정 재료를 갖는다.
 it('캐시가 직업을 알면 표에도 함께 심는다', async () => {
-  await setCachedCharacterBasic('account-1', 'ocid-4', {
+  seedCache('ocid-4', {
     profile: { ...basic({ name: '레테캐릭', world: '챌린저스2', worldKey: 'challengers_2' }), jobClass: '레테' },
     cachedAt: NOW,
   })
@@ -101,7 +107,7 @@ it('표에 없는 것만 캐시를 읽는다', async () => {
       ['ocid-1', { ocid: 'ocid-1', name: '루디', imageUrl: 'https://example.test/a.png', world: null, worldKey: null, level: null, updatedAt: NOW }],
     ]),
   )
-  await setCachedCharacterBasic('account-1', 'ocid-2', { profile: basic({ name: '둘' }), cachedAt: NOW })
+  seedCache('ocid-2', { profile: basic({ name: '둘' }), cachedAt: NOW })
 
   await resolveDisplayProfiles(['ocid-1', 'ocid-2'])
 
@@ -123,7 +129,7 @@ it('빈 목록이면 아무것도 조회하지 않는다', async () => {
 // 표 조회가 죽어도 화면이 서야 한다. 그때는 캐시가 아는 만큼 그린다.
 it('표 조회가 실패하면 캐시로 떨어진다', async () => {
   getCharacterProfilesMock.mockRejectedValue(new Error('sqlite down'))
-  await setCachedCharacterBasic('account-1', 'ocid-2', { profile: basic({ name: '캐시만' }), cachedAt: NOW })
+  seedCache('ocid-2', { profile: basic({ name: '캐시만' }), cachedAt: NOW })
 
   const profiles = await resolveDisplayProfiles(['ocid-2'])
 

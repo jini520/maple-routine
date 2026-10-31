@@ -13,13 +13,13 @@ export type RecordTable =
   | 'schedule_probe_ledger'
 
 /** 다른 쿼리가 새 데이터를 들면 무효화되는 관계. 이름은 `queryKeys` 의 첫 칸과 같다. */
-export type QueryDependency = 'schedule-round'
+export type QueryDependency = 'schedule-round' | 'tracked-ocids'
 
 export interface QueryMeta extends Record<string, unknown> {
   /** 참이면 성공한 데이터를 기기에 저장한다. */
   persist?: boolean
-  /** `nexon` 이면 KST 자정에 무효화된다. */
-  source?: 'nexon'
+  /** `nexon` 이면 KST 자정에 무효화된다. `server` 는 우리 서버 응답이고 자정과 무관하다. 둘 다 복귀마다 받는다. */
+  source?: 'nexon' | 'server'
   /** 이 쿼리가 읽는 표. 그 표의 판이 오르면 무효화된다. */
   tables?: readonly RecordTable[]
   /** 이 쿼리가 기대는 쿼리. 그 쿼리가 새 데이터를 들면 무효화된다. */

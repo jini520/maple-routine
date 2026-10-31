@@ -9,6 +9,7 @@
  *
  * 보스 수익의 이번 주는 회차 뒤에 읽는다. 회차가 쓴 기록까지 든 값이어야 today 의 위젯이 한 번에 선다.
  */
+import { removeLegacyNoticeCopy } from '../storage/legacy-notice-copy'
 import { prefetchCurrentWeekProfit } from './boss-profit/period-query'
 import { useCharacterSelectionStore } from './character-selection/store'
 import { whenQueryCacheRestored } from './query/persist'
@@ -22,6 +23,8 @@ export async function prehydrateTabStores(): Promise<void> {
     () => useCharacterSelectionStore.getState().hydrate(),
     prefetchSchedules,
     prefetchCurrentWeekProfit,
+    // 1.0.12 까지의 공지 사본. 아무도 안 읽으므로 켤 때 지운다. 예열의 끝에 두어 첫 화면을 안 늦춘다.
+    removeLegacyNoticeCopy,
   ]
   for (const step of steps) {
     try {
