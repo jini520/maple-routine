@@ -1447,4 +1447,14 @@ describe('다음 파티 스케줄', () => {
     ])
     expect(next!.groups[0]!.imageUrl).toBe('face-a')
   })
+
+  it('진행 중인 회차가 시작 전인 회차보다 앞에 오고 종료 시각을 함께 낸다', () => {
+    const 다음 = { ...약속, id: 'p2', timeKst: '23:00' }
+    const model = buildTodayViewModel(
+      input({ partyAppointments: [다음, 약속], now: new Date('2026-08-17T21:30:00+09:00') }),
+    )
+
+    expect(model.nextParty.map((occurrence) => occurrence.appointmentId)).toEqual(['p1', 'p2'])
+    expect(model.nextParty[0]!.endsAtMs).toBe(Date.parse('2026-08-17T22:00:00+09:00'))
+  })
 })

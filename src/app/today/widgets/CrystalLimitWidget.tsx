@@ -5,7 +5,7 @@
  *
  * ① 한도는 계정이 아니라 **월드마다** 각각이라 분모도 월드마다다. **절대 합치지 않는다.** 합친
  *    수는 어느 월드에서도 팔 수 있는 양이 아니라 게임에 없는 수치다. 첫 월드만 링으로 그리고
- *    나머지는 한 줄로 접는다.
+ *    나머지는 첫 월드 이름 옆의 `외 N` 으로 접는다.
  * ② **한도 숫자가 이 파일에 한 번도 안 나온다**(주석 포함, 테스트가 검사한다). 뷰모델이
  *    `CrystalLimitView.limit` 에 실어 준다. 여기 적으면 참조 데이터가 바뀌어도 화면만 옛 한도를 말한다.
  * ③ 링은 칸이 아니라 **연속 호**다. 이 한도는 캐릭터당 주간 보스 한도의 몇 배라 쪼개면 읽을 수 없는
@@ -88,21 +88,6 @@ function Ring(props: { view: CrystalLimitView }): React.JSX.Element {
   )
 }
 
-/**
- * 첫 월드 밖의 월드들. 하나면 이름과 남은 개수를 그대로, 둘 이상이면 개수만 말한다.
- * 합친 남은 개수는 쓰지 않는다(①).
- */
-function RestWorlds(props: { rest: CrystalLimitView[] }): React.JSX.Element | null {
-  if (props.rest.length === 0) return null
-  return (
-    <Text testID="crystal-rest" numberOfLines={1} className="text-11 text-text-muted">
-      {props.rest.length === 1
-        ? `${props.rest[0].world} ${remainingOf(props.rest[0])}개 남음`
-        : `외 ${props.rest.length}개 월드`}
-    </Text>
-  )
-}
-
 export function CrystalLimitWidget({ data }: WidgetProps): React.JSX.Element {
   const worlds = data.crystalLimits
 
@@ -123,16 +108,23 @@ export function CrystalLimitWidget({ data }: WidgetProps): React.JSX.Element {
       <Ring view={first} />
       <View className="min-w-0 flex-1 gap-0.5">
         <Text className="text-11 font-bold text-text-muted">{TITLE}</Text>
-        <Text testID="crystal-world" numberOfLines={1} className="text-xs font-semibold text-text">
-          {first.world}
-        </Text>
+        {/* 줄에 안 들어가면 `외 N` 만 다음 줄로 내린다. 글자 하나로 합치면 말줄임에 잘린다. */}
+        <View testID="crystal-world-line" className="flex-row flex-wrap items-baseline gap-x-1">
+          <Text testID="crystal-world" numberOfLines={1} className="text-xs font-semibold text-text">
+            {first.world}
+          </Text>
+          {rest.length > 0 && (
+            <Text testID="crystal-rest" numberOfLines={1} className="text-11 text-text-muted">
+              {`외 ${rest.length}`}
+            </Text>
+          )}
+        </View>
         <Text testID="crystal-remaining" numberOfLines={1} className="text-11 text-text-muted">
           <Text style={TABULAR_NUMS} className="font-bold text-text">
             {remainingOf(first)}
           </Text>
           개 남음
         </Text>
-        <RestWorlds rest={rest} />
       </View>
     </View>
   )

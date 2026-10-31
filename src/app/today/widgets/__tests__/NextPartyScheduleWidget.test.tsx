@@ -18,6 +18,7 @@ function 회차(startsInMs: number, overrides: Partial<NextPartyView> = {}): Nex
     timeKst: '21:00',
     endClock: '22:00',
     startsAtMs,
+    endsAtMs: startsAtMs + 60 * MINUTE_MS,
     groups: [
       {
         ocid: 'a',
@@ -63,16 +64,42 @@ describe('NextPartyScheduleWidget', () => {
     expect(view.getByText('매주')).toBeTruthy()
   })
 
-  // 시작하면 다음으로 넘어간다.
-  it('이미 시작한 회차는 건너뛰고 그 다음을 그린다', async () => {
+  // 끝나면 다음으로 넘어간다.
+  it('끝난 회차는 건너뛰고 그 다음을 그린다', async () => {
     const view = await 위젯([
-      회차(-MINUTE_MS, { appointmentId: 'gone', timeKst: '17:00' }),
+      회차(-2 * 60 * MINUTE_MS, { appointmentId: 'gone', timeKst: '17:00' }),
       회차(10 * MINUTE_MS + 30_000, { appointmentId: 'next', timeKst: '18:00' }),
     ])
 
     expect(view.queryByText('17:00')).toBeNull()
     expect(view.getByText('18:00')).toBeTruthy()
     expect(view.getByText('오늘 · 10분 뒤')).toBeTruthy()
+  })
+
+  // 지금 하고 있는 약속이 다음 약속보다 먼저다. 날짜는 적지 않는다. 자정을 넘긴 회차의 시작 날짜는 어제다.
+  it('진행 중인 회차를 시작 전인 회차보다 먼저 그리고 `진행 중` 으로 적는다', async () => {
+    const view = await 위젯([
+      회차(-10 * MINUTE_MS, { timeKst: '17:00' }),
+      회차(30 * MINUTE_MS, { appointmentId: 'next', timeKst: '18:00' }),
+    ])
+
+    expect(view.getByText('17:00')).toBeTruthy()
+    expect(view.getByText('진행 중')).toBeTruthy()
+    expect(view.queryByText('18:00')).toBeNull()
+  })
+
+  it('띄워 둔 사이 진행 중인 회차가 끝나면 다음 회차로 넘어간다', async () => {
+    const view = await 위젯([
+      회차(-59 * MINUTE_MS, { timeKst: '17:00' }),
+      회차(30 * MINUTE_MS + 30_000, { appointmentId: 'next', timeKst: '18:00' }),
+    ])
+
+    await act(async () => {
+      jest.advanceTimersByTime(2 * MINUTE_MS)
+    })
+
+    expect(view.getByText('18:00')).toBeTruthy()
+    expect(view.getByText('오늘 · 28분 뒤')).toBeTruthy()
   })
 
   // 폭 40 의 열에 초상화와 닉네임을 쌓으면 네 글자가 넘는 닉네임이 잘린다. 닉네임만 칸 머리에 적는다.
@@ -118,9 +145,9 @@ describe('회차가 없을 때', () => {
     expect(usePartyAppointmentOpenStore.getState().create).toBe(kind)
   })
 
-  // 띄워 둔 사이 마지막 회차가 시작해도 빈 타일로 남지 않는다.
-  it('이미 시작한 회차뿐이면 등록 칸을 그린다', async () => {
-    const view = await 위젯([회차(-MINUTE_MS)])
+  // 띄워 둔 사이 마지막 회차가 끝나도 빈 타일로 남지 않는다.
+  it('끝난 회차뿐이면 등록 칸을 그린다', async () => {
+    const view = await 위젯([회차(-2 * 60 * MINUTE_MS)])
 
     expect(view.getByText('예정된 파티가 없습니다')).toBeTruthy()
   })

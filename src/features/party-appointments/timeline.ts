@@ -9,7 +9,7 @@ import { kstStartsAt } from './occurrences'
 
 const DAY_MS = 24 * 60 * 60_000
 
-export type TimelineTone = 'next' | 'ended' | 'normal'
+export type TimelineTone = 'accent' | 'ended' | 'normal'
 
 export interface TimelineSegment {
   /** 회차 열쇠. 막대를 누르면 목록에서 이 회차 카드를 찾는다 */
@@ -33,9 +33,9 @@ export function occurrenceKeyOf(occurrence: PartyAppointmentOccurrence): string 
   return `${occurrence.appointment.id}:${occurrence.dateKey}`
 }
 
-function toneOf(occurrence: PartyAppointmentOccurrence, nowMs: number, nextKey: string | null): TimelineTone {
+function toneOf(occurrence: PartyAppointmentOccurrence, nowMs: number, accentKeys: ReadonlySet<string>): TimelineTone {
   if (occurrence.endsAt.getTime() <= nowMs) return 'ended'
-  return occurrenceKeyOf(occurrence) === nextKey ? 'next' : 'normal'
+  return accentKeys.has(occurrenceKeyOf(occurrence)) ? 'accent' : 'normal'
 }
 
 /**
@@ -45,13 +45,13 @@ function toneOf(occurrence: PartyAppointmentOccurrence, nowMs: number, nextKey: 
  * 다음 주의 목요일 줄이라 그리지 않는다.
  *
  * @param weekStart 리셋 주 첫날(목요일)
- * @param nextKey 앞으로 가장 먼저 시작할 회차의 열쇠. 다른 주에 있으면 이 주에는 주황 막대가 없다
+ * @param accentKeys 주황으로 칠할 회차의 열쇠. 다른 주에 있으면 이 주에는 주황 막대가 없다
  */
 export function weekTimeline(
   occurrences: readonly PartyAppointmentOccurrence[],
   weekStart: string,
   nowMs: number,
-  nextKey: string | null,
+  accentKeys: ReadonlySet<string>,
 ): TimelineDay[] {
   return Array.from({ length: 7 }, (_, index) => {
     const dateKey = shiftDateKey(weekStart, index)
@@ -68,7 +68,7 @@ export function weekTimeline(
             key: occurrenceKeyOf(occurrence),
             from: (start - dayStart) / DAY_MS,
             to: (end - dayStart) / DAY_MS,
-            tone: toneOf(occurrence, nowMs, nextKey),
+            tone: toneOf(occurrence, nowMs, accentKeys),
             occurrence,
           },
         ]

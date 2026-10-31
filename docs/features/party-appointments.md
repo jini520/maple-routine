@@ -21,9 +21,9 @@
 | `features/party-appointments/alarm-gate.ts` | 알림을 켤 때 · 저장할 때 권한과 스위치 확인 |
 | `features/party-appointments/notification.ts` · `notification-text.ts` | 레지스트리의 `party-appointment` 계획 · 알림 문구 |
 | `features/party-appointments/open-request.ts` | 알림이나 위젯에서 열 회차 · today 위젯이 고른 새 스케줄 갈래 |
-| `features/party-appointments/upcoming.ts` | 다음 회차들(today 위젯이 쓴다) |
+| `features/party-appointments/upcoming.ts` | 진행 중인 회차 · 다음 회차들 · 시간표가 칠할 회차 |
 | `storage/party-schedule-view.ts` · `features/party-appointments/view-preference.ts` | 목록 · 보드 중 마지막으로 고른 보기 |
-| `features/party-appointments/timeline.ts` | 한 주를 0 ~ 24시 줄 일곱 개로 나누기 · 다음 · 끝난 톤 · 지금 선 |
+| `features/party-appointments/timeline.ts` | 한 주를 0 ~ 24시 줄 일곱 개로 나누기 · 칠할 회차 · 끝난 톤 · 지금 선 |
 | `app/party-appointments/AppointmentsScreen.tsx` | 세그먼트 · 주 이동 줄 · 보기 고르기 · 막대에서 카드로 스크롤 · ＋ |
 | `app/party-appointments/ScheduleTimeline.tsx` · `AppointmentAgenda.tsx` | 목록 보기의 시간표 카드 · 요일별 목록 |
 | `app/party-appointments/AppointmentBoard.tsx` | 보드 보기의 요일 일곱 열 |
@@ -64,7 +64,7 @@
 
 | 부분 | 내용 | 누르면 |
 |---|---|---|
-| 시간표 카드 | 0 ~ 24시 시간축. 처음에는 오늘 한 줄(`오늘 시간표`), 펼치면 요일 일곱 줄(`주간 시간표`). 다음 회차는 주황, 지금 선은 오늘 줄에만 | `주간 ⌄` · `오늘만 ⌃`: 펼치기 · 접기. 막대: 아래 목록의 그 회차 카드로 스크롤 |
+| 시간표 카드 | 0 ~ 24시 시간축. 처음에는 오늘 한 줄(`오늘 시간표`), 펼치면 요일 일곱 줄(`주간 시간표`). 진행 중인 회차는 겹쳐도 모두 주황, 없으면 다음 회차 하나가 주황, 지금 선은 오늘 줄에만 | `주간 ⌄` · `오늘만 ⌃`: 펼치기 · 접기. 막대: 아래 목록의 그 회차 카드로 스크롤 |
 | 요일별 목록 | 스케줄 있는 날만 요일 머리, 그 아래 회차 카드(시각 줄 · 캐릭터마다 `card-inset` 칸 · 알림 · 반복 줄 · 메모 두 줄) | 카드: 상세 시트 |
 | 빈 상태 | `{주 이름} 파티 스케줄이 없어요` | |
 
@@ -105,7 +105,7 @@
 | 문구 | `낟낟 파티 보스 스케줄이 곧 시작해요` / `21:00 낟낟 하드 림보 외 2마리 파티 10분 전이에요` |
 | 누르면 | 파티 스케줄 탭에서 그 회차가 속한 주를 열고 상세를 연다. 회차가 없으면 그 주만 연다 |
 
-today 의 `다음 파티 스케줄` 위젯도 시작 전인 가장 가까운 회차를 보여 주고, 누르면 같은 방법으로 상세를 연다. 회차가 없으면
+today 의 `다음 파티 스케줄` 위젯도 진행 중인 회차를, 없으면 시작 전인 가장 가까운 회차를 보여 주고, 누르면 같은 방법으로 상세를 연다. 회차가 없으면
 위젯이 맨 아래 줄에서 `매주 반복` · `한 번만` 칸을 보여 주고, 누르면 이 탭에서 그 갈래의 새 스케줄 시트가 열린다.
 
 ## 저장

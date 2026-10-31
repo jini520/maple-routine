@@ -26,7 +26,7 @@ const NOW = Date.parse('2026-10-24T18:40:00+09:00')
 
 function props(appointments: PartyAppointment[], overrides: Partial<AppointmentBoardProps> = {}): AppointmentBoardProps {
   return {
-    days: weekTimeline(occurrencesInWeek(appointments, WEEK), WEEK, NOW, null),
+    days: weekTimeline(occurrencesInWeek(appointments, WEEK), WEEK, NOW, new Set()),
     todayKey: '2026-10-24',
     weekLabel: '이번 주',
     nowMs: NOW,

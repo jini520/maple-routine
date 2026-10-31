@@ -25,7 +25,7 @@ import { findNotifiedOccurrence, usePartyAppointmentOpenStore } from '../../feat
 import { occurrencesInWeek } from '../../features/party-appointments/occurrences'
 import { loadPartyAppointments, usePartyAppointments } from '../../features/party-appointments/query'
 import { occurrenceKeyOf, weekTimeline } from '../../features/party-appointments/timeline'
-import { upcomingOccurrences } from '../../features/party-appointments/upcoming'
+import { accentOccurrences } from '../../features/party-appointments/upcoming'
 import { usePartyScheduleViewStore, type PartyScheduleView } from '../../features/party-appointments/view-preference'
 import { formatBossProfitPeriodLabel } from '../../lib/boss/boss-profit-period'
 import { resetWeekStartOf, shiftDateKey } from '../../lib/calendar'
@@ -124,13 +124,13 @@ export function AppointmentsScreen(): React.JSX.Element {
   )
   const occurrences = useMemo(() => occurrencesInWeek(appointments, weekStart), [appointments, weekStart])
   const days = useMemo(() => agendaDays(occurrences), [occurrences])
-  const nextKey = useMemo(() => {
-    const [next] = upcomingOccurrences(appointments, new Date(nowMs), 1)
-    return next === undefined ? null : occurrenceKeyOf(next)
-  }, [appointments, nowMs])
+  const accentKeys = useMemo(
+    () => new Set(accentOccurrences(appointments, new Date(nowMs)).map(occurrenceKeyOf)),
+    [appointments, nowMs],
+  )
   const timeline = useMemo(
-    () => weekTimeline(occurrences, weekStart, nowMs, nextKey),
-    [occurrences, weekStart, nowMs, nextKey],
+    () => weekTimeline(occurrences, weekStart, nowMs, accentKeys),
+    [occurrences, weekStart, nowMs, accentKeys],
   )
 
   const view = usePartyScheduleViewStore((state) => state.view)

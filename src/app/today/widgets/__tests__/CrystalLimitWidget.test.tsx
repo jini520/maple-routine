@@ -1,11 +1,13 @@
 // 주간 결정석 판매 한도 위젯. 이 파일이 지키는 것 넷.
 // ① **분모가 참조 데이터에서 온다**(리터럴이 아니다. 값을 바꾸면 화면이 따라 바뀐다)
 // ② **월드별 한도를 합치지 않는다**(한도는 계정이 아니라 월드마다 각각이다)
-// ③ **넘치는 월드는 외 N개 월드 한 줄로 접힌다**(타일 안에서 스크롤하지 않는다)
+// ③ **넘치는 월드는 첫 월드 줄의 외 N 으로 접힌다**(타일 안에서 스크롤하지 않는다)
 // ④ **집계할 것이 없어도 타일은 자기 자리에서 말한다**(위젯은 사라지지 않는다)
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+
+import { within } from '@testing-library/react-native'
 
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../../lib/boss/boss-matching'
 
@@ -64,7 +66,7 @@ describe('남은 개수 (이월되지 않는다)', () => {
   })
 })
 
-describe('넘치는 월드 (합치지 않고 한 줄로 접는다)', () => {
+describe('넘치는 월드 (합치지 않고 첫 월드 줄에 접는다)', () => {
   it('첫 월드의 링 하나만 그린다. 월드끼리 분모를 더하지 않는다', async () => {
     const { getAllByTestId, queryByText } = await 위젯(뷰모델({ crystalLimits: 월드한도목록(2) }))
 
@@ -72,17 +74,26 @@ describe('넘치는 월드 (합치지 않고 한 줄로 접는다)', () => {
     expect(queryByText(`/${WEEKLY_CRYSTAL_SALE_LIMIT * 2}`)).toBeNull()
   })
 
-  it('나머지는 **외 N개 월드** 한 줄로 접는다', async () => {
-    const { getByText } = await 위젯(뷰모델({ crystalLimits: 월드한도목록(4) }))
+  it('나머지는 첫 월드 줄에 **외 N** 으로 붙는다', async () => {
+    const { getByTestId } = await 위젯(뷰모델({ crystalLimits: 월드한도목록(4) }))
+    const line = within(getByTestId('crystal-world-line'))
 
-    expect(getByText('스카니아')).toBeTruthy()
-    expect(getByText('외 3개 월드')).toBeTruthy()
+    expect(line.getByText('스카니아')).toBeTruthy()
+    expect(line.getByText('외 3')).toBeTruthy()
   })
 
-  it('나머지가 하나뿐이면 그 월드를 이름으로 말한다', async () => {
-    const { getByText } = await 위젯(뷰모델({ crystalLimits: 월드한도목록(2) }))
+  it('나머지가 하나여도 **외 1** 이고 그 월드의 이름과 남은 개수는 적지 않는다', async () => {
+    const { getByTestId, queryByText } = await 위젯(뷰모델({ crystalLimits: 월드한도목록(2) }))
 
-    expect(getByText(`루나 ${WEEKLY_CRYSTAL_SALE_LIMIT - 20}개 남음`)).toBeTruthy()
+    expect(getByTestId('crystal-rest')).toHaveTextContent('외 1')
+    expect(queryByText(/루나/)).toBeNull()
+  })
+
+  // 말줄임 대신 줄을 나눈다. 월드 이름과 한 글자 덩어리로 합치면 줄 끝이 잘려 `외 N` 이 사라진다.
+  it('줄에 안 들어가면 **외 N** 이 다음 줄로 내려간다', async () => {
+    const { getByTestId } = await 위젯(뷰모델({ crystalLimits: 월드한도목록(2) }))
+
+    expect(flattenStyle(getByTestId('crystal-world-line').props.style).flexWrap).toBe('wrap')
   })
 
   it('월드가 하나면 나머지 줄이 아예 없다', async () => {

@@ -42,7 +42,7 @@ import { getCurrentKstDateKey, getMostRecentWeeklyResetKst } from '../../lib/sch
 import { HEADER_PORTRAIT_MAX } from './header-portrait-motion'
 import { endClockOf } from '../../features/party-appointments/agenda'
 import { groupBossesByCharacter } from '../../features/party-appointments/boss-groups'
-import { upcomingOccurrences } from '../../features/party-appointments/upcoming'
+import { runningOccurrences, upcomingOccurrences } from '../../features/party-appointments/upcoming'
 import type { PartyAppointment, PartyAppointmentBoss } from '../../types/party-appointment'
 import type { QuickLinksConfig } from '../../types/quick-links'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
@@ -332,6 +332,7 @@ export interface NextPartyView {
   /** 종료 시각 글자. 자정을 넘어도 시계 그대로(`00:30`) */
   endClock: string
   startsAtMs: number
+  endsAtMs: number
   groups: NextPartyGroupView[]
   leadMinutes: number | null
   repeats: boolean
@@ -368,7 +369,7 @@ export interface TodayViewModel {
   crystalLimits: CrystalLimitView[]
   resets: ResetCountdownView
   /**
-   * 지금 뒤에 시작하는 파티 스케줄 회차. 시작 순. 위젯 10 은 분마다 시계를 읽어 아직 시작하지 않은 맨 앞을 그린다.
+   * 진행 중인 파티 스케줄 회차와 지금 뒤에 시작하는 회차. 시작 순. 위젯 10 은 분마다 시계를 읽어 아직 끝나지 않은 맨 앞을 그린다.
    * 비어 있으면 그 위젯이 타일째 숨는다.
    */
   nextParty: NextPartyView[]
@@ -411,12 +412,16 @@ function buildNextParty(input: TodayViewModelInput): NextPartyView[] {
       imageUrl: content?.imageUrl ?? boss?.imageUrl ?? null,
     }
   }
-  return upcomingOccurrences(input.partyAppointments, input.now).map((occurrence) => ({
+  return [
+    ...runningOccurrences(input.partyAppointments, input.now),
+    ...upcomingOccurrences(input.partyAppointments, input.now),
+  ].map((occurrence) => ({
     appointmentId: occurrence.appointment.id,
     dateKey: occurrence.dateKey,
     timeKst: occurrence.timeKst,
     endClock: endClockOf(occurrence),
     startsAtMs: occurrence.startsAt.getTime(),
+    endsAtMs: occurrence.endsAt.getTime(),
     groups: groupBossesByCharacter(occurrence.bosses).map((group) => ({ ...group, ...nameOf(group.ocid) })),
     leadMinutes: occurrence.leadMinutes,
     repeats: occurrence.appointment.schedule.type === 'weekly',
