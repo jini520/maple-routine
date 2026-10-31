@@ -17,6 +17,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
+import { focusManager } from '@tanstack/react-query'
 import { act } from '@testing-library/react-native'
 import { AppState, type AppStateStatus } from 'react-native'
 
@@ -178,6 +179,7 @@ jest.mock('../features/game-data/sync', () => ({
 
 import { AppShell } from '../app/AppShell'
 import { renderOverlay } from '../components/__tests__/render-atom'
+import { installAppStateFocus } from '../features/query/app-focus'
 
 const RN_ROOT = path.resolve(__dirname, '../..')
 
@@ -296,6 +298,8 @@ describe('① 셸이 무엇을 언제 하는가', () => {
       listeners.push(callback)
       return { remove: jest.fn() }
     }) as unknown as typeof AppState.addEventListener)
+    // 복귀 신호는 앱이 `index.ts` 에서 세운다. 여기서는 셸만 띄우므로 직접 세운다.
+    const stopFocus = installAppStateFocus()
 
     try {
       await mountShell()
@@ -309,6 +313,8 @@ describe('① 셸이 무엇을 언제 하는가', () => {
 
       expect(mockCalls.sort()).toEqual(['refresh:gameData', 'resubscribe:notice'])
     } finally {
+      stopFocus()
+      focusManager.setFocused(undefined)
       spy.mockRestore()
       if (currentState !== undefined) Object.defineProperty(AppState, 'currentState', currentState)
     }

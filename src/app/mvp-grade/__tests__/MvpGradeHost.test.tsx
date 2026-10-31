@@ -1,4 +1,5 @@
 /** 등급을 물을 것이 있으면 모달을 띄우는 자리. 스토어는 모킹하지 않고 `setState` 로 몬다. */
+import { focusManager } from '@tanstack/react-query'
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
@@ -18,7 +19,26 @@ beforeEach(() => {
   useTaskRunnerStore.setState({ checked: true, running: false, resume: null, progress: null })
 })
 
+afterEach(() => {
+  // 포커스 값은 싱글턴에 남는다. 앞 테스트의 값이 남으면 다음 복귀가 변화로 안 잡힌다.
+  focusManager.setFocused(undefined)
+})
+
 describe('MvpGradeHost', () => {
+  // 켜 둔 채 목요일을 넘긴 사용자에게 주간 확인이 떠야 한다.
+  it('앱으로 돌아오면 다시 잰다', async () => {
+    useAppEntryStore.setState({ stage: 'ready' })
+    await renderOverlay(<MvpGradeHost />)
+    expect(evaluate).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      focusManager.setFocused(false)
+      focusManager.setFocused(true)
+    })
+
+    expect(evaluate).toHaveBeenCalledTimes(2)
+  })
+
   it('끝나지 않은 작업을 확인하기 전이나 작업이 남아 있으면 재지 않고, 끝나면 잰다', async () => {
     useAppEntryStore.setState({ stage: 'ready' })
     useTaskRunnerStore.setState({
