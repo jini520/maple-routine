@@ -308,7 +308,7 @@ Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` ·
 | `features/cashbook/__tests__/ledger-query.spec.ts` | 결정 6: 범위가 열쇠이고 기록 표의 판이 오르면 다시 읽는지 |
 | `features/settlement/__tests__/query.spec.ts` · `features/manual-completion/__tests__/query.spec.ts` | 결정 5: 복귀마다 받는 서버 쿼리인지, 닫은 기록이 서버 값과 따로 살아 다음 결산 · 다음 주에 다시 서는지 |
 | `features/notice/__tests__/notice-query.spec.ts` | 결정 2 · 5 · 7: 분류마다 열쇠이고 저장되는지, 실패하면 든 값을 지키는지, 앱 공지를 받으면 닫은 기록을 정리하는지, 당김이 전부 실패했을 때만 그렇게 말하는지 |
-| `features/mvp-grade/__tests__/character-list.spec.ts` | 결정 2: 5분 안의 두 호출이 `character/list` 를 한 번만 부르고 강제 조회는 다시 받는지 |
+| `features/mvp-grade/__tests__/character-list.spec.ts` | 결정 2: 5분 안의 두 호출이 `character/list` 를 한 번만 부르고 강제 조회는 다시 받는지, MVP 등급의 ID 표시가 같은 응답을 쓰는지 |
 | `features/boss-scheduler/__tests__/manual-completed-query.spec.ts` | 결정 6: 기간 키가 열쇠이고 보스 기록 판 · 추적 목록에 매여 무효화되는지 |
 | `features/party-appointments/__tests__/query.spec.ts` | 결정 2: 저장이 캐시를 덮고 알림 재조정을 부르는지 |
 | `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 7 · 12: 옛 캐시를 옮긴 뒤 그 키를 지우는지, 메소 획득량 · 이벤트 월드 이름을 쿼리에 심되 든 값은 안 덮는지, 표식이 있으면 옛 값을 다시 옮기지 않는지 |

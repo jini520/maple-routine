@@ -4,7 +4,7 @@ jest.mock('../../../storage/mvp-grades', () => ({ getMvpGradeHistories: jest.fn(
 jest.mock('../../../storage/mvp-grade-prefs', () => ({ getMvpWeeklyCheckOff: jest.fn(), setMvpWeeklyCheckOff: jest.fn() }))
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/character-profiles', () => ({ getCharacterProfiles: jest.fn() }))
-jest.mock('../character-list', () => ({ fetchAndRecordCharacterList: jest.fn() }))
+jest.mock('../character-list', () => ({ fetchCharacterListCached: jest.fn() }))
 jest.mock('../after-change', () => ({ afterGradeChange: jest.fn() }))
 jest.mock('../../toast/store', () => ({ useToastStore: { getState: () => ({ showError: mockShowError }) } }))
 
@@ -17,7 +17,7 @@ import { getMvpGradeHistories, replaceMvpGradeHistory } from '../../../storage/m
 import { getMvpWeeklyCheckOff, setMvpWeeklyCheckOff } from '../../../storage/mvp-grade-prefs'
 import { getAuthConfig } from '../../../storage/api-key'
 import { getCharacterProfiles } from '../../../storage/character-profiles'
-import { fetchAndRecordCharacterList } from '../character-list'
+import { fetchCharacterListCached } from '../character-list'
 import { afterGradeChange } from '../after-change'
 import { useMvpGradeSettingsStore } from '../settings-store'
 
@@ -39,7 +39,7 @@ beforeEach(() => {
   )
   m(getMvpWeeklyCheckOff).mockResolvedValue(true)
   m(getAuthConfig).mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key' }] })
-  m(fetchAndRecordCharacterList).mockResolvedValue([
+  m(fetchCharacterListCached).mockResolvedValue([
     { accountId: 'A', characters: [{ ocid: 'a1', name: '에이', world: '스카니아', worldKey: 'scania', jobClass: '비숍', level: 280 }] },
   ])
   m(getCharacterProfiles).mockResolvedValue(new Map())
