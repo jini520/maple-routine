@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-175 · ADR-177 · ADR-201 · ADR-283 · ADR-288 · ADR-290 · ADR-328 · ADR-329
-> 관련 소스: `app/cashbook/income/HuntCalculatorForm.tsx` · `app/cashbook/income/HuntManualForm.tsx` · `app/cashbook/income/FragmentSettleForm.tsx` · `app/cashbook/income/form-shared.tsx` · `lib/cashbook/hunting-meso.ts` · `lib/cashbook/hunting-grounds.ts` · `lib/cashbook/meso-rate.ts` · `features/cashbook/meso-rate.ts` · `nexon/meso-rate/` · `storage/meso-rate-cache.ts` · `storage/last-hunts.ts`
+> 관련 소스: `app/cashbook/income/HuntCalculatorForm.tsx` · `app/cashbook/income/HuntManualForm.tsx` · `app/cashbook/income/FragmentSettleForm.tsx` · `app/cashbook/income/form-shared.tsx` · `lib/cashbook/hunting-meso.ts` · `lib/cashbook/hunting-grounds.ts` · `lib/cashbook/meso-rate.ts` · `features/cashbook/meso-rate.ts` · `nexon/meso-rate/` · `storage/last-hunts.ts`
 
 ## 배경
 
@@ -132,7 +132,7 @@ API 여섯 개를 함께 불러(`fetchMesoRate`) 도달할 수 있는 최대값�
 - 잠재 · 어빌리티 · 유니온 · 아티팩트의 글자는 정규식 하나로 읽는다. 두 표기를 따로 파싱하면 한쪽 표기가 바뀔 때
   조용히 0 이 된다.
 - **읽었으면 자동값이고 칠 수 없다.** 못 읽었으면(키가 없거나 호출이 실패하면) 메소 획득량 칸이 치는 칸이 되고, 기본값은
-  그 캐릭터의 마지막 성공값(`meso-rate-cache`, 기한 없음)이다. 그것도 없으면 비어 있다. 키가 없으면 아예 부르지
+  그 캐릭터의 마지막 성공값(쿼리 `mesoRate(ocid)`, 기한 없음)이다. 그것도 없으면 비어 있다. 키가 없으면 아예 부르지
   않는다. 401 응답 때문에 저장된 키가 지워지지 않게 하기 위해서다. 0% 를 읽은 것은 성공이다.
 - Open API 점검 때문에 못 읽어도 칸은 같다. 점검은 가계부 화면 맨 위의 배너가 알린다([[ADR-081]] 결정 8).
 - 캐릭터를 고르지 않으면 캐릭터 몫은 0% 이고 줄은 그대로 보인다.
@@ -246,8 +246,7 @@ Preferences `lastHunts`(`{ [ocid]: { groundKey, boosts, unionTier } }`)가 캐�
 | | 결정 11: 가격 `null` 이면 조각 값이 빠지고 0 은 적은 값인지, 조각 몫에만 수수료가 붙는지 본다 |
 | `lib/__tests__/hunting-grounds.spec.ts` | 결정 2: `iconMap` 을 읽고, 없는 옛 응답도 지역으로 읽는지 본다. 결정 7: 지역 범위의 위 · 아래 경계(포함), 몬스터 레벨로 재는지, 역순인지, 사냥터를 레벨 차이 · 마릿수 순으로 정렬하되 빠뜨리지 않고 원본을 안 바꾸는지 본다. 결정 2: 사냥터 key 하나로 지역이 함께 나오는지 본다 |
 | `lib/__tests__/meso-rate.test.ts` | 결정 8: 두 표기를 한 정규식이 읽고, 장비 상한을 프리셋마다 걸며, 축마다 최댓값을 더하고, 심볼 · 챌린저스 · 직업이 상한 밖이며, 유니온 프리셋이 비면 현재 적용본을 쓰고, 아티팩트를 두 번 세지 않는지 본다. 실측 캐릭터 값(149%)을 재현하는지 본다 |
-| `features/cashbook/__tests__/meso-rate.spec.ts` | 결정 8: 읽으면 자동값이고 캐시를 갱신하며, 실패하면 마지막 성공값으로 내려가고, 키가 없으면 부르지 않으며, 0 을 읽은 것은 성공인지 본다 |
-| `storage/__tests__/meso-rate-cache.spec.ts` | 결정 8: 0 을 `null` 로 접지 않으며 잘못된 값은 없는 것으로 보는지 본다 |
+| `features/cashbook/__tests__/meso-rate.spec.ts` | 결정 8: 읽으면 자동값이고 캐시를 갱신하며, 실패하면 마지막 성공값으로 내려가고, 키가 없으면 부르지 않으며, 0 을 읽은 것은 성공이고 `null` 로 접지 않는지 본다 |
 | `storage/__tests__/last-hunts.spec.ts` | 결정 13: 캐릭터마다 따로 기억하고, 옛 두 키를 한 번 옮긴 뒤 지우며, 단계가 없으면 3단계로 읽는지 본다 |
 | `features/cashbook/__tests__/records.spec.ts` | 결정 13: 계산기로 적은 사냥만 그 캐릭터 몫을 남기고 저장이 실패하면 남기지 않는지 본다. 결정 14: 사냥 줄의 이름과 `n소재`, 수동 · 옛 기록은 셈 칸이 없는지 본다. 결정 12: 정산 줄의 이름과 판 개수, 보관 조회에 넘기는 인자를 본다 |
 | `storage/__tests__/income.spec.ts` | 결정 10 · 11: 계산 입력과 `NULL` 가격을 그대로 저장하고 읽으며, 보관을 가격 빈 사냥 기록에서 세는지 본다 |

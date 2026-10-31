@@ -14,7 +14,7 @@
 | `storage/cache-data.ts` | 데이터 삭제가 그룹마다 지우는 키 목록 |
 | `storage/*.ts` | 키마다 읽고 쓰는 어댑터 |
 
-`keys()` 는 빠지면 안 된다. 데이터 삭제가 `수동 선택 항목` 의 접두사 키(`manualTrackedContent:*` 등)를 찾으려고 이 목록을 훑는다.
+`keys()` 는 빠지면 안 된다. 데이터 삭제가 `수동 선택 항목` · `캐시` 의 접두사 키(`manualTrackedContent:*` · `schedulerCache:*` 등)를 찾고 옛 키 정리가 `mesoRateCache:*` 를 찾으려고 이 목록을 훑는다.
 
 ## 데이터 삭제와 새 키
 
@@ -40,12 +40,13 @@
 | `partyAlarmEnabled` | `'on'` · `'off'` | `party-appointment-settings.ts` | 남긴다 | 파티 약속 알림 스위치. 없으면 켜짐 |
 | `partyAppointments` | JSON `PartyAppointment[]` | `party-appointments.ts` | 남긴다 | 사용자가 적은 파티 약속. `id` 는 uuid 이고, 옛 `시각 + 난수` id 는 읽을 때 uuid 로 바꿔 다시 저장한다([[ADR-098]] 결정 4) |
 | `serverBackfill` | JSON. 종류(`dropPrice`)마다 마지막으로 보낸 기록 id 와 끝났는지. 옛 앱이 적은 다른 종류의 값은 읽지 않는다 | `server-backfill.ts` | 남긴다 | 업데이트 전 드롭을 서버로 어디까지 올렸나([[ADR-099]] 결정 3) |
+| `legacyCleanupDone` | `'1'` | `legacy-cleanup.ts` | 남긴다 | 옛 키 정리가 끝났다는 표식. 있으면 부팅이 정리를 건너뛴다([[ADR-142]] 결정 12) |
 | `enhancementTotalsMoved` | `'1'` | `enhancement-totals-moved.ts` | 남긴다 | 옛 강화 원본(`enhancement_history`)을 합계로 옮겼는지. 지워지면 다시 옮기며 업데이트 뒤 새로 받은 날의 합계를 옛 원본으로 덮는다([[ADR-100]] 결정 3) |
 | `appReview` | JSON `{ firstLaunchAt, saveCount, lastRequestedAt }`. 시각은 ISO, `lastRequestedAt` 은 요청 전이면 `null` | `app-review.ts` | 남긴다 | 앱 안 리뷰 요청의 기록([[ADR-052]] 결정 10). 지워지면 90일 간격을 처음부터 다시 센다 |
 | `partyScheduleView` | `'list'` · `'board'` | `party-schedule-view.ts` | 남긴다 | 파티 스케줄 화면에서 마지막으로 고른 보기. 없으면 목록 |
 | `bossProfitCalculatorRecords` | JSON `BossProfitCalculatorRecord[]` | `boss-profit-calculator-records.ts` | 남긴다 | 주간 보스 수익 계산기에서 저장한 기록. 금액 없이 보스 · 난이도 · 파티 값만 남긴다 |
 | `notificationLedger` | JSON `{ id, kind, fireAt, title, body }[]` | `notification-ledger.ts` | 남긴다 | 지금 예약해 둔 로컬 알림. OS 의 예약 목록은 읽을 수 없어서 따로 적는다 |
-| `notices` | JSON `Notice[]` | `legacy-notice-copy.ts` | 켤 때 지운다 | 1.0.12 까지의 키. 공지는 이제 쿼리 `notices(kind)` 가 SQLite `query_cache` 에 든다([[ADR-142]] 결정 7). 안 읽고 예열의 끝에서 지운다 |
+| `notices` | JSON `Notice[]` | `legacy-cleanup.ts` | 켤 때 지운다 | 1.0.12 까지의 키. 공지는 이제 쿼리 `notices(kind)` 가 SQLite `query_cache` 에 든다([[ADR-142]] 결정 7). 안 읽고 옛 키 정리가 지운다([[ADR-142]] 결정 12) |
 | `dismissedNotices` | JSON 공지 id 배열(최근 50) | `notice-banner.ts` | 남긴다 | today 배너에서 닫은 공지. 닫았다는 사실은 기기에만 있다 |
 | `dismissedSettlement` | ISO 시각 | `settlement-banner.ts` | 남긴다 | 닫은 결산 안내의 시작 시각. 다음 결산은 시각이 달라 다시 보인다 |
 | `dismissedManualCompletion` | 주간 기간 키(목요일 `YYYY-MM-DD`) | `manual-completion-banner.ts` | 남긴다 | 닫은 직접 완료 안내의 주 |
@@ -60,24 +61,24 @@
 | `lastPointRate` | 숫자 문자열 | `last-point-rate.ts` | 지운다 (수동 선택 항목) | 마지막으로 넣은 메이플 포인트 시세(1억 메소당) |
 | `lastHunts` | JSON `{ [ocid]: { groundKey, boosts, unionTier? } }` | `last-hunts.ts` | 지운다 (수동 선택 항목) | 캐릭터마다 마지막 사냥 |
 | `lastHuntSelection` · `lastHuntToggles` | JSON | `last-hunts.ts` | 지운다 (수동 선택 항목) | 옛 키. `lastHunts` 가 없을 때 한 번 읽어 옮기고 지운다 |
-| `eventWorldNames` | JSON 이름 배열 | `event-world-names.ts` | 남긴다 | 이벤트 월드 캐릭터 이름. 값이 없는 것(아직 못 받음)과 빈 배열(그런 캐릭터가 없음)을 구분한다 |
+| `eventWorldNames` | JSON 이름 배열 | `legacy-cleanup.ts` | 지운다 (캐시) | 1.0.12 까지의 이벤트 월드 캐릭터 이름. 첫 실행이 쿼리 `eventWorldNames()` 로 옮긴 뒤 지운다([[ADR-142]] 결정 11) |
 | `lastRunBundleVersion` | 버전 문자열 | `last-run-bundle-version.ts` | 남긴다 | 마지막으로 실행한 OTA 번들 버전. 방금 업데이트했는지 판단한다 |
 | `pendingNotice` | `'cacheClearFailed'` | `pending-notice.ts` | 남긴다 | 데이터 삭제가 실패했다는 표시. 삭제가 끝난 뒤에 쓰고, 다시 띄운 앱이 읽으면서 지운다([[ADR-053]] 결정 5) |
-| `queryCache` · `bossCatalog` | JSON | `game-data-copy.ts` | 남긴다 | 1.0.13 전 게임 데이터 사본의 옛 키. 읽지 않고 켤 때 지운다. 사본은 이제 SQLite 에 있다([[ADR-020]] 결정 3) |
+| `queryCache` · `bossCatalog` | JSON | `legacy-cleanup.ts` | 남긴다 | 1.0.13 전 게임 데이터 사본의 옛 키. 읽지 않고 옛 키 정리가 지운다([[ADR-142]] 결정 12). 사본은 이제 SQLite 에 있다([[ADR-020]] 결정 3) |
 
 ## 캐릭터 · 계정 · 월드마다 달라지는 키
 
 `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` 는 데이터 삭제의 `수동 선택 항목` 이 지운다.
-나머지는 데이터 삭제가 남긴다. 조회 캐시는 다시 받을 수 있지만, 지우면 다시 띄우자마자 넥슨 API 를 한꺼번에 불러 호출 한도에
-걸릴 수 있기 때문이다. 추적 캐릭터가 없으면 캐릭터 고르기부터 다시 해야 한다.
+`schedulerCache:*` · `characterBasicCache:*` · `mesoRateCache:*` 는 `캐시` 가 지운다. 나머지는 데이터 삭제가 남긴다. 조회 원장은 지우면 다시
+띄우자마자 넥슨 API 를 한꺼번에 불러 호출 한도에 걸릴 수 있기 때문이다. 추적 캐릭터가 없으면 캐릭터 고르기부터 다시 해야 한다.
 
 | 키 | 값 | 어댑터 | 메모 |
 |---|---|---|---|
-| `schedulerCache:{ocid}` | JSON `{ state, syncedAt, version: 4 }` | `scheduler-cache.ts` | 1.0.12 까지의 스케줄 캐시. 업데이트 뒤 첫 실행이 쿼리 캐시 `schedule(ocid)` 에 없는 캐릭터만 옮긴 뒤 지운다(`seedScheduleQueriesFromLegacyCache`, [[ADR-142]] 결정 7). `version` 이 다르면 옮기지 않는다 |
-| `characterBasicCache:{ocid}` | JSON `{ profile, cachedAt }` | `character-basic-cache.ts` | 1.0.12 까지의 기본 정보 캐시. 위와 같이 쿼리 캐시 `characterBasic(ocid)` 로 옮긴 뒤 지운다 |
-| `characterBasicCache:index:{accountId}` · `characterBasicCache:index` | JSON ocid 배열 | `character-basic-cache.ts` | 1.0.12 까지의 계정별 인덱스와 그 전의 전역 인덱스. 옮기지 않고 첫 실행이 지운다. 캐릭터 관리의 첫 후보 목록은 쿼리 캐시에 든 `characterBasic` 을 계정 소속 기록으로 걸러 센다 |
+| `schedulerCache:{ocid}` | JSON `{ state, syncedAt, version: 4 }` | `scheduler-cache.ts` | 1.0.12 까지의 스케줄 캐시. 업데이트 뒤 첫 실행이 추적 캐릭터 중 쿼리 캐시 `schedule(ocid)` 에 없는 것만 옮긴 뒤 지운다(`seedScheduleQueriesFromLegacyCache`, [[ADR-142]] 결정 7). `version` 이 다르면 옮기지 않는다. 추적하지 않는 캐릭터의 키는 `캐시` 가 지울 때까지 남는다 |
+| `characterBasicCache:{ocid}` | JSON `{ profile, cachedAt }` | `character-basic-cache.ts` | 1.0.12 까지의 기본 정보 캐시. 위와 같이 쿼리 캐시 `characterBasic(ocid)` 로 옮긴 뒤 지운다. 남은 키는 프로필 조회의 마지막 폴백이고, 조회가 표에 심은 뒤 지운다([[ADR-142]] 결정 10) |
+| `characterBasicCache:index:{accountId}` · `characterBasicCache:index` | JSON ocid 배열 | `legacy-cleanup.ts` | 1.0.12 까지의 계정별 인덱스와 그 전의 전역 인덱스. 옮기지 않고 옛 키 정리가 지운다. 캐릭터 관리의 첫 후보 목록은 쿼리 캐시에 든 `characterBasic` 을 계정 소속 기록으로 걸러 센다 |
 | `scheduleProbe:{ocid}` | JSON `{ unavailable?, dates, version: 2 }` | `schedule-probe-ledger.ts` | 캐릭터 · 날짜별 조회 기록. 조회할 수 없는 캐릭터 표시(`unavailable`)도 여기 있다 |
-| `mesoRateCache:{ocid}` | 숫자 문자열(%) | `meso-rate-cache.ts` | 캐릭터의 메소 획득량 마지막 성공값. 만료가 없다 |
+| `mesoRateCache:{ocid}` | 숫자 문자열(%) | `legacy-cleanup.ts` | 1.0.12 까지의 메소 획득량 마지막 성공값. 첫 실행이 쿼리 `mesoRate(ocid)` 로 옮긴 뒤 지운다([[ADR-142]] 결정 11) |
 | `trackedCharacters` | JSON ocid 배열 | `character-selection.ts` | 추적 캐릭터. 배열 순서가 표시 순서다. `null`(설정 전)과 `[]`(모두 해제)은 다르다 |
 | `lastSelectedCharacter` | ocid | `character-selection.ts` | 드롭다운에서 마지막으로 고른 캐릭터 |
 | `representativeCharacter` | ocid | `character-selection.ts` | 사용자가 고른 대표 캐릭터. 고르지 않았으면 키가 없다 |

@@ -34,7 +34,7 @@ features/* · app/*  →  storage/*.ts  →  storage/ports.ts  →  storage/adap
 | 성격 | 예 | 잃으면 |
 |---|---|---|
 | 사용자가 고른 설정 | `theme` · `trackingMode` · `dropEffect` · 알림 스위치 | 다시 고르면 된다. 데이터 삭제에서 남긴다 |
-| 동기화 캐시 | 쿼리 캐시 표 `query_cache`(스케줄 · 캐릭터 기본 정보 · 회차 · 공지) · 게임 데이터 사본(`game_data_sections` · `game_data_meta`) · 받은 그림 | 다음 조회가 다시 채운다. 게임 데이터는 잠금 화면이 다시 받는다 |
+| 동기화 캐시 | 쿼리 캐시 표 `query_cache`(스케줄 · 캐릭터 기본 정보 · 회차 · 공지 · 메소 획득량 · 이벤트 월드 이름) · 게임 데이터 사본(`game_data_sections` · `game_data_meta`) · 받은 그림 | 다음 조회가 다시 채운다. 게임 데이터는 잠금 화면이 다시 받는다 |
 | 기기에만 있는 기록 | 보스 수익 · 드롭 · 가계부 · 파티 약속 · MVP 등급 이력 | 되살릴 방법이 없다. 넥슨 API 는 최근 기간만 준다 |
 
 ## 여기서 다루지 않는 것
