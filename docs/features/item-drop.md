@@ -15,7 +15,7 @@
 | `app/boss-profit/BossDropSheet.tsx` | 드롭 기록 시트. 난이도 토글 · 타일 · 고정 보상 · 상자 결과 고르기 · 확인 줄 · 가격 카드 |
 | `app/boss-profit/BossProfitBossRow.tsx` 의 `DropIndicator` | 보스 행의 드롭 그림 스택과 `＋ 드롭 추가` 칩 |
 | `app/boss-profit/DropPriceScreen.tsx` | 아이템 가격 입력 화면(`DropPrice`, `/profit/prices`) |
-| `app/boss-profit/DropPriceFab.tsx` · `drop-price-fab-motion.ts` | 아이템 가격 입력으로 가는 떠 있는 버튼과 그 안에서 도는 그림의 값 |
+| `app/boss-profit/DropPriceFab.tsx` · `drop-price-fab-motion.ts` | 아이템 가격 입력으로 가는 떠 있는 버튼과 태그가 흔들리는 값([[ADR-147]]) |
 | `app/boss-profit/DropHistoryScreen.tsx` | 히스토리 화면(`DropHistory`, `/profit/drops`) |
 | `app/boss-profit/CharacterAccordion.tsx` · `components/organisms/HologramSheen/` | 고가 드롭 카드 강조(홀로그램 빛 · 아이템 표시 · 오로라 금액) |
 | `features/boss-profit/drops-loader.ts` | 기간의 드롭 읽기, 완료 행의 정리, 처치 난이도 확정 이관 |
