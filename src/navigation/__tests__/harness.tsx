@@ -1,7 +1,9 @@
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native'
 import { PortalProvider } from '@gorhom/portal'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context'
 
+import { queryClient } from '../../features/query/client'
 import { ThemeProvider } from '../../theme/ThemeProvider'
 import { RootNavigator } from '../RootNavigator'
 import type { RootStackParamList } from '../routes'
@@ -24,7 +26,14 @@ import type { RootStackParamList } from '../routes'
  * 이 스위트의 스냅샷이 흔들린다. 포털만 세우면 뷰가 하나도 안 늘고, 바 위 슬롯(`BottomBarOverlayHost`,
  * `LayerStack` 의 `layout`)이 실제와 같은 자리에서 돈다. 없으면 그 슬롯을 쓰는 화면이 렌더 중에
  * **던진다**(PortalProvider 를 루트에 두라).
+ *
+ * **`QueryClientProvider` 는 앱과 같은 인스턴스를 받는다**. 화면 밖 코드(회차 · 저장 · 예열)도 그 인스턴스를 직접 쓰므로,
+ * 새로 만들면 화면과 다른 캐시를 보게 된다. 그래서 테스트마다 비운다.
  */
+afterEach(() => {
+  queryClient.clear()
+})
+
 const TEST_SAFE_AREA_METRICS: Metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
   insets: { top: 59, left: 0, right: 0, bottom: 34 },
@@ -38,11 +47,13 @@ export function NavigationHarness({
   return (
     <SafeAreaProvider initialMetrics={TEST_SAFE_AREA_METRICS}>
       <ThemeProvider>
-        <PortalProvider shouldAddRootHost={false}>
-          <NavigationContainer ref={navigationRef}>
-            <RootNavigator />
-          </NavigationContainer>
-        </PortalProvider>
+        <QueryClientProvider client={queryClient}>
+          <PortalProvider shouldAddRootHost={false}>
+            <NavigationContainer ref={navigationRef}>
+              <RootNavigator />
+            </NavigationContainer>
+          </PortalProvider>
+        </QueryClientProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   )
