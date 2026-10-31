@@ -70,7 +70,7 @@ export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-semibold text-text">계산 기록</Text>
+            <Text className="text-lg font-bold text-text">계산 기록</Text>
           </PageHeaderTitleRow>
         </PageHeader>
       }
@@ -102,8 +102,8 @@ export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
                     className="flex-1 gap-2 py-2.5 pl-[18px] pr-2"
                   >
                     <View className="flex-row items-baseline gap-2">
-                      <Text className="text-base font-bold text-text">{title.date}</Text>
-                      <Text className="text-13 font-semibold text-text-muted" style={TABULAR_NUMS}>
+                      <Text className="text-sm font-bold text-text">{title.date}</Text>
+                      <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>
                         {title.time}
                       </Text>
                       {opened && (

@@ -29,6 +29,8 @@ import { AnchoredPopover } from '../../components/molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 
 export const ITEM_POPOVER_WIDTH = 248
+/** 가장 긴 아이템 이름이 기본 크기에서 줄 폭을 다 쓴다. 더 키우면 이름이 잘린다 */
+const ITEM_ROW_MAX_SCALE = 1
 /** 목록 상자의 높이 상한. 넘치면 안에서 스크롤한다. */
 const ITEM_LIST_MAX_HEIGHT = 260
 
@@ -114,18 +116,18 @@ export function ItemRevenuePopover(props: {
                   <View className="h-5 w-5 shrink-0 rounded bg-surface-2" />
                 )}
                 <View className="min-w-0 flex-1">
-                  <Text numberOfLines={1} className="text-11 font-semibold text-text">
+                  <Text numberOfLines={1} className="text-11 font-semibold text-text" maxScale={ITEM_ROW_MAX_SCALE}>
                     {dropItemNameOf(drop.itemKey, drop.itemName)}
                     {drop.ringLevel !== undefined && ` ${drop.ringLevel}레벨`}
                   </Text>
                   {/* 나눠 가졌을 때만 그 분배를 말한다. 혼자 다 가졌으면 나눈 것이 없다. */}
                   {split !== null && (
-                    <Text className="text-10 text-text-muted" style={TABULAR_NUMS}>
+                    <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
                       {formatMesoShort(drop.priceMeso ?? 0)} {split.endsWith('인') ? '÷' : '중'} {split}
                     </Text>
                   )}
                 </View>
-                <Text className="shrink-0 text-11 font-bold text-text" style={TABULAR_NUMS}>
+                <Text className="shrink-0 text-xs font-bold text-text" style={TABULAR_NUMS} maxScale={ITEM_ROW_MAX_SCALE}>
                   {formatMesoShort(dropPayoutMeso(drop))}
                 </Text>
               </View>
@@ -134,7 +136,7 @@ export function ItemRevenuePopover(props: {
           {top.restCount > 0 && (
             <View className="flex-row items-center justify-between">
               <Text className="text-11 text-text-muted">외 {top.restCount}건</Text>
-              <Text className="shrink-0 text-11 font-bold text-text" style={TABULAR_NUMS}>
+              <Text className="shrink-0 text-xs font-bold text-text" style={TABULAR_NUMS}>
                 {formatMesoShort(top.restMeso)}
               </Text>
             </View>
@@ -143,11 +145,11 @@ export function ItemRevenuePopover(props: {
       )}
       {props.weeklyLines !== undefined && props.weeklyLines.length > 0 && (
         <View className="mt-2 gap-1 rounded-[10px] bg-card-inset px-2.5 py-2">
-          <Text className="text-10 font-bold tracking-wide text-text-muted">주차별</Text>
+          <Text className="text-11 font-bold tracking-wide text-text-muted">주차별</Text>
           {props.weeklyLines.map((line) => (
             <View key={line.periodKey} className="flex-row items-center justify-between">
               <Text className="text-11 text-text-muted">{line.label}</Text>
-              <Text className="text-11 font-semibold text-text" style={TABULAR_NUMS}>
+              <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
                 {line.meso.toLocaleString()} 메소
               </Text>
             </View>
@@ -159,7 +161,7 @@ export function ItemRevenuePopover(props: {
         {crystalLines.map((line) => (
           <View key={line.label} className="flex-row items-center justify-between">
             <Text className="text-11 text-text-muted">{line.label}</Text>
-            <Text className="text-11 font-semibold text-text" style={TABULAR_NUMS}>
+            <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
               {line.meso.toLocaleString()}
             </Text>
           </View>
@@ -167,13 +169,13 @@ export function ItemRevenuePopover(props: {
         <View className="flex-row items-center justify-between">
           <Text className="text-11 text-text-muted">아이템</Text>
           {/* 아이템 쪽만 잉크를 준다. 카드·행 칩과 같은 색이라 "그 색이 이 몫"이 이어진다. */}
-          <Text className="text-11 font-semibold text-primary-ink" style={TABULAR_NUMS}>
+          <Text className="text-xs font-bold text-primary-ink" style={TABULAR_NUMS}>
             {props.itemMeso.toLocaleString()}
           </Text>
         </View>
       </View>
       <View className="mt-1.5 flex-row items-center justify-between px-2.5">
-        <Text className="text-11 font-semibold text-text-muted">합계</Text>
+        <Text className="text-11 font-bold text-text-muted">합계</Text>
         <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
           {(props.crystalMeso + props.itemMeso).toLocaleString()}
         </Text>

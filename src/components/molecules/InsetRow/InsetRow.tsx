@@ -32,12 +32,12 @@ export function InsetRow(props: InsetRowProps): React.JSX.Element {
     <View testID={props.testID} className={`flex-row items-center gap-2.5 ${INSET_ROW_CLASS}`}>
       {props.leading}
       <View className="min-w-0 flex-1 gap-px">
-        <Text className="text-13 text-text">{props.label}</Text>
+        <Text className="text-xs font-semibold text-text">{props.label}</Text>
         {props.sub !== undefined && <Text className="text-11 text-text-muted">{props.sub}</Text>}
       </View>
       {props.trailing}
       {props.value !== undefined && (
-        <Text className={props.valueClassName ?? 'text-xs font-semibold text-text'} style={TABULAR_NUMS}>
+        <Text className={props.valueClassName ?? 'text-xs font-bold text-text'} style={TABULAR_NUMS}>
           {props.value}
         </Text>
       )}

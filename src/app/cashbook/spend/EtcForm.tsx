@@ -153,7 +153,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
               이미 하는 일을 이 줄도 한다. */}
           <Text
             testID="spend-sheet-unit-price-unit"
-            className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
+            className="ml-1.5 shrink-0 text-xs text-text-muted"
           >
             {labelOfCurrency(currency)}
           </Text>

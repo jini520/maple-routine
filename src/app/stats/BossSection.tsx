@@ -46,7 +46,7 @@ export const BossSection = memo(function BossSection(props: {
       ) : (
         <>
           <View className="flex-row items-baseline gap-1.5">
-            <Text className="text-xl font-bold text-rise-ink" style={TABULAR_NUMS}>
+            <Text className="text-lg font-bold text-rise-ink" style={TABULAR_NUMS}>
               {formatMesoCompact(total)}
             </Text>
             <Text testID="stats-boss-headline" className="text-11 text-text-muted">
@@ -76,7 +76,7 @@ export const BossSection = memo(function BossSection(props: {
                   )}
                 </View>
                 <View className="items-center">
-                  <Text numberOfLines={2} className="text-center text-11 font-semibold text-text">
+                  <Text numberOfLines={2} className="text-center text-11 text-text">
                     {row.name}
                   </Text>
                   <Text className="text-10 text-text-muted" style={TABULAR_NUMS}>

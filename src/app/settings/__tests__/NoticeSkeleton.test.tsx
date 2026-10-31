@@ -15,7 +15,7 @@ const { fontSize } = require('../../../../typography.cjs') as {
   fontSize: Record<string, [string, { lineHeight: string }]>
 }
 
-function lineHeightOf(step: 'sm' | 'xs' | '13'): number {
+function lineHeightOf(step: 'sm' | 'xs'): number {
   return Number.parseInt(fontSize[step][1].lineHeight, 10)
 }
 

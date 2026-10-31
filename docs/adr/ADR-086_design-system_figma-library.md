@@ -58,7 +58,7 @@ Figma 공식 MCP 서버의 `use_figma` 로 코드를 읽고 변수와 컴포넌�
 - 줄 높이는 `typography.cjs` 의 픽셀 값으로 고정한다. 글꼴마다 기본 줄 높이가 달라 높이가 바뀌기 때문이다.
 - 모든 글자는 텍스트 스타일에 연결한다. 노드에서 글꼴을 직접 덮어쓰면 변수를 바꿔도 따라가지 않는다.
 
-텍스트 스타일은 `typography.cjs` 의 `fontSize` 와 `fontWeight` 넷을 곱한 것이고, 이름은
+텍스트 스타일은 `typography.cjs` 의 `fontSize` 와 `fontWeight` 를 곱한 것이고, 이름은
 `sm/semibold` 처럼 `className` 의 두 클래스와 같다. 난이도 배지의 자간(`tracking-[.03em]`)은
 `chip-sm/bold-tracked` · `chip-xs/bold-tracked` 스타일로 둔다. 노드에서 자간을 덮어쓰면 스타일
 연결이 끊어지기 때문이다. 간격과 radius 는 `tailwind-v4-axes.cjs` 의 값을 숫자 변수로 옮긴다.

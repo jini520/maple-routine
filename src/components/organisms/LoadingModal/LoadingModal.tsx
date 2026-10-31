@@ -51,7 +51,7 @@ export function LoadingModal(props: LoadingModalProps): React.JSX.Element {
               <Text className="text-xs text-text" style={TABULAR_NUMS}>
                 {known ? `${done} / ${total}` : '- / -'}
               </Text>
-              <Text className="text-xs font-semibold text-primary-ink" style={TABULAR_NUMS}>
+              <Text className="text-xs font-bold text-primary-ink" style={TABULAR_NUMS}>
                 {known ? `${percent}%` : '-'}
               </Text>
             </View>

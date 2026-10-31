@@ -230,7 +230,7 @@ export const CategorySection = memo(function CategorySection(props: {
   function labelText(slice: Slice, inside: boolean, ink: string): React.JSX.Element {
     const body = (
       <>
-        <Text className={`text-11 font-bold ${inside ? '' : 'text-text'}`} style={inside ? { color: ink } : undefined}>
+        <Text className={`text-10 ${inside ? '' : 'text-text'}`} style={inside ? { color: ink } : undefined}>
           {slice.details.length > 0 ? `${slice.name} ›` : slice.name}
         </Text>
         {inside ? (
@@ -238,7 +238,7 @@ export const CategorySection = memo(function CategorySection(props: {
             <Text className="text-10" style={[TABULAR_NUMS, { color: ink }]}>
               {percent(slice.meso)}
             </Text>
-            <Text className="text-10 font-semibold" style={[TABULAR_NUMS, { color: ink }]}>
+            <Text className="text-10 font-bold" style={[TABULAR_NUMS, { color: ink }]}>
               {formatMesoCompact(slice.meso)}
             </Text>
           </>
@@ -332,7 +332,7 @@ export const CategorySection = memo(function CategorySection(props: {
         ))}
 
         <View className="absolute items-center" style={{ left: cx, top: cy - 34, transform: [{ translateX: '-50%' }] }}>
-          <Text className="text-11 font-semibold text-text-muted">{label}</Text>
+          <Text className="text-11 font-bold text-text-muted">{label}</Text>
           <Text testID="stats-category-total" className={`text-lg font-bold ${tone}`} style={TABULAR_NUMS}>
             {formatMesoCompact(total)}
           </Text>
@@ -348,15 +348,15 @@ export const CategorySection = memo(function CategorySection(props: {
             onClose={() => setOpenFor(null)}
             className="gap-1.5 p-3"
           >
-              <Text className="text-10 font-bold tracking-wide text-text-muted">{opened.name}</Text>
+              <Text className="text-11 font-bold tracking-wide text-text-muted">{opened.name}</Text>
               {opened.details.map((item) => (
                 <View key={item.key} className="flex-row items-center justify-between gap-3">
-                  <Text className="text-11 text-text">{item.name}</Text>
+                  <Text className="text-10 text-text">{item.name}</Text>
                   <View className="flex-row items-baseline gap-1.5">
                     <Text className="text-10 text-text-muted" style={TABULAR_NUMS}>
                       {percent(item.meso)}
                     </Text>
-                    <Text className={`text-11 font-bold ${tone}`} style={TABULAR_NUMS}>
+                    <Text className={`text-10 font-bold ${tone}`} style={TABULAR_NUMS}>
                       {formatMesoCompact(item.meso)}
                     </Text>
                   </View>

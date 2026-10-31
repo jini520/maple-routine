@@ -51,7 +51,7 @@ export function PartyShareSummary(props: {
       >
         {/* 조용한 글자 버튼이다. 이 줄의 주인공은 값이고 `변경` 은 곁들이다. 디자인 시스템의
             Text 버튼과 같은 잉크(`초기화` 가 쓰는 것)를 쓴다. */}
-        <Text className="text-11 font-medium text-text-muted">변경</Text>
+        <Text className="text-xs font-semibold text-text-muted">변경</Text>
       </Pressable>
     )
 

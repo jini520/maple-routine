@@ -54,7 +54,7 @@ export function ModalHeader(props: ModalHeaderProps): React.JSX.Element {
         )}
       </View>
       <View className="min-w-0 flex-1 gap-0.5">
-        <Text testID={props.titleTestId} className="text-base font-semibold text-text">
+        <Text testID={props.titleTestId} className="text-base font-bold text-text">
           {props.title}
         </Text>
         {props.description !== undefined && (

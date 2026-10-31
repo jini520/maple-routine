@@ -157,7 +157,7 @@ export function ContentManageScreen(): React.JSX.Element {
           <PageHeaderTitleRow className="justify-between">
             <View className="flex-row items-center gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-semibold text-text">컨텐츠 관리</Text>
+              <Text className="text-lg font-bold text-text">컨텐츠 관리</Text>
             </View>
             {/* 읽기 전용 칩이던 자리. 이 화면에서 캐릭터를 갈아 가며 쓰는데도
                 바꾸려면 뒤로 나가야 했다. 자리와 크기감은 그대로 두고(compact) 누를 수 있게만 한다.
@@ -268,7 +268,7 @@ export function ContentManageScreen(): React.JSX.Element {
                               strokeWidth={2}
                               aria-hidden
                             />
-                            <Text numberOfLines={1} className="min-w-0 flex-1 text-sm font-medium text-text">
+                            <Text numberOfLines={1} className="min-w-0 flex-1 text-sm font-semibold text-text">
                               {displayName}
                             </Text>
                             {tag !== null && (

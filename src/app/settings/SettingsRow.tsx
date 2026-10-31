@@ -28,8 +28,8 @@ export function SettingsRow(props: SettingsRowProps): React.JSX.Element {
       <Text
         className={
           props.danger === true
-            ? 'text-sm font-medium text-error-ink'
-            : 'text-sm font-medium text-text'
+            ? 'text-sm font-semibold text-error-ink'
+            : 'text-sm font-semibold text-text'
         }
       >
         {props.label}

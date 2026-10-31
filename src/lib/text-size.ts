@@ -22,6 +22,9 @@ export function isTextSize(value: string): value is TextSize {
   return (TEXT_SIZES as readonly string[]).includes(value)
 }
 
+/** 폭 64(`w-16`)로 고정된 수입 · 지출 금액의 배수 상한. 이 배수까지 `−12,345억` 이 한 줄에 든다 */
+export const AMOUNT_COLUMN_MAX_SCALE = 1.05
+
 /** 글자 배수의 상한을 정하는 폭. 화면 폭을 배수로 나눈 값이 이보다 작아지면 한 줄 라벨이 넘친다 */
 export const TEXT_REFERENCE_WIDTH = 360
 

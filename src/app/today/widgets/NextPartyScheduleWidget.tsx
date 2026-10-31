@@ -46,7 +46,7 @@ function CreateCells(): React.JSX.Element {
   return (
     <View testID="widget-next-party-schedule" className="gap-2 p-3">
       <View className="flex-row items-baseline justify-between">
-        <Text className="text-10 font-bold text-text-muted">{TITLE}</Text>
+        <Text className="text-11 font-bold text-text-muted">{TITLE}</Text>
         <Text className="text-11 text-text-muted">예정된 파티가 없습니다</Text>
       </View>
       <View className="flex-row gap-2">
@@ -62,10 +62,10 @@ function CreateCells(): React.JSX.Element {
               <Icon className="h-[15px] w-[15px] text-primary-ink" strokeWidth={2.2} aria-hidden />
             </View>
             <View className="min-w-0 flex-1">
-              <Text numberOfLines={1} className="text-[12.5px] font-bold text-text">
+              <Text numberOfLines={1} className="text-xs font-semibold text-text">
                 {label}
               </Text>
-              <Text numberOfLines={1} className="text-[10.5px] text-text-muted">
+              <Text numberOfLines={1} className="text-11 text-text-muted">
                 {description}
               </Text>
             </View>
@@ -98,7 +98,7 @@ export function NextPartyScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
       className="gap-2 p-3"
     >
       <View className="flex-row items-center justify-between">
-        <Text className="text-10 font-bold text-text-muted">
+        <Text className="text-11 font-bold text-text-muted">
           {TITLE}
         </Text>
         <View className="flex-row items-center">
@@ -109,7 +109,7 @@ export function NextPartyScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
         </View>
       </View>
       <View className="flex-row items-baseline">
-        <Text className="text-15 font-bold text-text" style={TABULAR_NUMS}>
+        <Text className="text-base font-bold text-text" style={TABULAR_NUMS}>
           {next.timeKst}
         </Text>
         <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>
@@ -122,7 +122,7 @@ export function NextPartyScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
       <View className="gap-1.5">
         {next.groups.map((group) => (
           <View key={group.ocid} testID="next-party-group" className="rounded-[10px] bg-card-inset px-2.5 py-2">
-            <Text numberOfLines={1} className="text-xs font-semibold text-text-muted">
+            <Text numberOfLines={1} className="text-xs text-text-muted">
               {group.name}
             </Text>
             {group.bosses.map((boss) => (

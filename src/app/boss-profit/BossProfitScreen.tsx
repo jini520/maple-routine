@@ -261,7 +261,7 @@ export function BossProfitScreen(): React.JSX.Element {
       <View testID="screen-Profit" className="flex-1 p-4" style={{ paddingTop: topSafeAreaPx }}>
         {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다. */}
         <PageHeaderTitleRow>
-          <Text className="text-lg font-semibold text-text">보스 수입</Text>
+          <Text className="text-lg font-bold text-text">보스 수입</Text>
         </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
@@ -349,7 +349,7 @@ export function BossProfitScreen(): React.JSX.Element {
           </View>
         }
       >
-        <Text className="text-lg font-semibold text-text">보스 수입</Text>
+        <Text className="text-lg font-bold text-text">보스 수입</Text>
       </PageHeaderTitleRow>
     </View>
   )
@@ -395,9 +395,9 @@ export function BossProfitScreen(): React.JSX.Element {
             )}
             {/* 숫자와 단위 사이에 실제 공백 문자를 남긴다. 마진만으로 띄우면 스크린리더가 `N메소` 로 이어 읽는다.
                 이 키에만 기간이 없다. 기간이 바뀌어도 같은 자리의 같은 뜻을 가진 숫자로 보고 굴린다. */}
-            <Text className="text-22 font-bold text-primary-ink" style={TABULAR_NUMS}>
+            <Text className="text-2xl font-bold text-primary-ink" style={TABULAR_NUMS}>
               <AnimatedNumber identity={`total|${period.loadedTab}`} value={totalMeso} />{' '}
-              <Text className="text-xs font-bold text-text-muted">메소</Text>
+              <Text className="text-xs font-normal text-text-muted">메소</Text>
             </Text>
           </View>
 
@@ -415,7 +415,7 @@ export function BossProfitScreen(): React.JSX.Element {
               onPress={togglePeriodPopover}
               className="ml-auto h-[30px] shrink-0 flex-row items-center gap-0.5 rounded-[10px] bg-card-inset px-2.5"
             >
-              <Text className="text-11 font-semibold text-text-muted">자세히</Text>
+              <Text className="text-xs font-semibold text-text-muted">자세히</Text>
               <ChevronDownIcon className="h-3 w-3 shrink-0 text-text-muted" strokeWidth={2.5} aria-hidden />
             </Pressable>
           </View>

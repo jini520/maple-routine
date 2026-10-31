@@ -62,10 +62,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <AlertTriangleIcon className="h-10 w-10 text-error-ink" strokeWidth={1.75} aria-hidden />
 
         <View className="gap-1">
-          <Text className="text-center text-base font-semibold text-text">
+          <Text className="text-center text-sm font-bold text-text">
             화면을 표시하지 못했습니다
           </Text>
-          <Text className="max-w-[260px] text-center text-sm text-text-muted">
+          <Text className="max-w-[260px] text-center text-xs text-text-muted">
             앱을 다시 시작하면 대부분 해결됩니다.
           </Text>
         </View>
@@ -74,7 +74,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           variant="primary"
           onPress={this.props.onRestart}
           className="w-full max-w-[260px] flex-row items-center justify-center gap-2"
-          textClassName="text-sm"
         >
           <RotateCcwIcon className="h-4 w-4 text-on-primary" strokeWidth={2} aria-hidden />
           다시 시작

@@ -42,7 +42,8 @@ function stripComments(source: string): string {
 }
 
 /** 화면 제목의 글자. `text-lg font-semibold text-text`(`design-system.md` 타이포). */
-const TITLE_CLASS = /text-lg font-semibold text-text/
+// 카드 합계 금액도 같은 클래스다. 합계는 숫자 정렬을 함께 주므로 그것으로 가른다.
+const TITLE_CLASS = /text-lg font-bold text-text"(?! style=\{TABULAR_NUMS\})/
 
 /**
  * 앱을 열기 전 화면 둘. 탭바도 뒤로 가기도 없는 자리라 **페이지 헤더 줄 자체가 없고**, 제목은
@@ -83,7 +84,7 @@ describe('제목 줄은 프리미티브 하나로 그린다', () => {
       .filter((file) => TITLE_CLASS.test(file.source))
       .map((file) => ({
         name: file.name,
-        titles: count(file.source, /text-lg font-semibold text-text/g),
+        titles: count(file.source, new RegExp(TITLE_CLASS.source, 'g')),
         rows: count(file.source, /<PageHeaderTitleRow/g),
       }))
       .filter((file) => file.titles !== file.rows)

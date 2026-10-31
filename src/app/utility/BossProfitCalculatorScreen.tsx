@@ -153,7 +153,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
               }
             >
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-semibold text-text">{BOSS_PROFIT_CALCULATOR_TOOL_NAME}</Text>
+              <Text className="text-lg font-bold text-text">{BOSS_PROFIT_CALCULATOR_TOOL_NAME}</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }
@@ -207,7 +207,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                     onPress={() => setPickerOpen(true)}
                     className="h-7 justify-center rounded-full bg-primary-tint px-[11px] active:opacity-60"
                   >
-                    <Text className="text-xs font-bold text-primary-ink">보스 선택</Text>
+                    <Text className="text-xs font-semibold text-primary-ink">보스 선택</Text>
                   </Pressable>
                   <Pressable
                     ref={menuRef}
@@ -255,7 +255,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
           {/* 어느 캐릭터의 카드를 보고 있든 그 캐릭터의 합이 늘 같은 자리에 보인다. */}
           <View className="flex-row items-center gap-2 px-1 py-2">
             <CharacterAvatar imageUrl={selected.imageUrl ?? null} name={selectedName} size={28} className="bg-surface-2" />
-            <Text className="text-13 font-semibold text-text">{selectedName} 주간 수입</Text>
+            <Text className="text-sm font-semibold text-text">{selectedName} 주간 수입</Text>
             <Text
               testID="calculator-character-total"
               className={`ml-auto text-lg font-bold ${selectedTotal === 0 ? 'text-text-disabled' : 'text-text'}`}
@@ -351,7 +351,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
             }}
             className="h-10 justify-center rounded-[10px] px-3 active:bg-bg"
           >
-            <Text className="text-13 font-semibold text-text">스케줄러 데이터 가져오기</Text>
+            <Text className="text-xs font-semibold text-text">스케줄러 데이터 가져오기</Text>
           </Pressable>
           {/* 지울 보스가 없으면 초기화를 두지 않는다. */}
           {selectedBosses.length > 0 && (
@@ -365,7 +365,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
               }}
               className="h-10 justify-center rounded-[10px] px-3 active:bg-bg"
             >
-              <Text className="text-13 font-semibold text-error-ink">초기화</Text>
+              <Text className="text-xs font-semibold text-error-ink">초기화</Text>
             </Pressable>
           )}
         </AnchoredPopover>

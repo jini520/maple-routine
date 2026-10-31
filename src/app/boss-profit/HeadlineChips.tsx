@@ -77,7 +77,7 @@ export function CrystalSummaryChip(props: {
           )}
           <Text className="text-11 text-text-muted">주간 결정석</Text>
           <Text className="ml-auto text-xs font-bold text-text" style={TABULAR_NUMS}>
-            {cleared} <Text className="font-semibold text-text-muted">/ {limit}</Text>
+            {cleared} <Text className="font-normal text-text-muted">/ {limit}</Text>
           </Text>
         </View>
       )}
@@ -145,7 +145,7 @@ export function CrystalSummaryChip(props: {
                   className="flex-row items-center gap-1.5 rounded-[10px] bg-card-inset px-2 py-1.5"
                 >
                   {emblemUrl !== null && <Image source={emblemUrl} className="h-3.5 w-3.5 shrink-0" resizeMode="contain" />}
-                  <Text className="mr-3 shrink grow text-xs text-text" numberOfLines={1}>
+                  <Text className="mr-3 shrink grow text-xs font-semibold text-text" numberOfLines={1}>
                     {summary.world}
                   </Text>
                   {!monthlyOnly && (
@@ -155,7 +155,7 @@ export function CrystalSummaryChip(props: {
                       )}
                       <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
                         {summary.cleared}
-                        <Text className="text-11 font-medium text-text-muted">/{WEEKLY_CRYSTAL_SALE_LIMIT}</Text>
+                        <Text className="text-11 font-normal text-text-muted">/{WEEKLY_CRYSTAL_SALE_LIMIT}</Text>
                       </Text>
                     </View>
                   )}

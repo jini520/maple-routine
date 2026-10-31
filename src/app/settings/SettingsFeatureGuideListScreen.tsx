@@ -33,7 +33,7 @@ import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 const ACTIVE_TAB_CLASS = 'rounded-full bg-primary-tint px-3 py-[5px]'
 const ACTIVE_TAB_TEXT_CLASS = 'text-sm font-semibold text-primary-ink'
 const INACTIVE_TAB_CLASS = 'px-3 py-[5px]'
-const INACTIVE_TAB_TEXT_CLASS = 'text-sm font-medium text-text-muted'
+const INACTIVE_TAB_TEXT_CLASS = 'text-sm text-text-muted'
 
 export function SettingsFeatureGuideListScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
@@ -61,7 +61,7 @@ export function SettingsFeatureGuideListScreen(): React.JSX.Element {
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-semibold text-text">기능 설명</Text>
+            <Text className="text-lg font-bold text-text">기능 설명</Text>
           </PageHeaderTitleRow>
         </PageHeader>
       }
@@ -117,7 +117,7 @@ export function SettingsFeatureGuideListScreen(): React.JSX.Element {
                   >
                     <Text
                       testID="guide-row-title"
-                      className="min-w-0 flex-1 text-sm font-medium text-text"
+                      className="min-w-0 flex-1 text-sm font-semibold text-text"
                     >
                       {guide.title}
                     </Text>

@@ -40,7 +40,7 @@ const SCHEDULER_ALERTS: readonly { key: string; label: string }[] = [
 
 /** 구역 이름. 다섯과 둘이 성질이 달라(서버가 쏘는 것 · 기기가 띄우는 것) 카드만으로는 안 갈린다. */
 function SectionLabel(props: { children: string }): React.JSX.Element {
-  return <Text className="px-2 text-xs text-text-disabled">{props.children}</Text>
+  return <Text className="px-2 text-11 font-bold text-text-disabled">{props.children}</Text>
 }
 
 export function SettingsNoticeAlertsScreen(): React.JSX.Element {
@@ -104,7 +104,7 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
           <PageHeaderTitleRow className="justify-between">
             <View className="flex-row items-center gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-semibold text-text">알림 설정</Text>
+              <Text className="text-lg font-bold text-text">알림 설정</Text>
             </View>
             {/* 아래 권한 카드는 **켜려다 막혔을 때만** 나온다. 막힌 적 없이 기기 쪽에서 알림을
                 끄거나 채널·방해 금지를 손보러 가려는 사용자에게는 앱 안에 길이 없었다. */}
@@ -127,7 +127,7 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
             세워 두면 사용자가 그것을 눌러 보고 나서야 못 쓴다는 것을 안다. */}
         <Card className={SETTINGS_CARD_CLASS}>
           <View className={SETTINGS_SWITCH_ROW_CLASS}>
-            <Text className="shrink text-sm text-text">알림 받기</Text>
+            <Text className="shrink text-sm font-semibold text-text">알림 받기</Text>
             <Switch
               on={on}
               label="알림 받기"
@@ -145,7 +145,7 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
         {failure !== null && (
           <Card className={SETTINGS_CARD_CLASS}>
             <View className={SETTINGS_NOTE_CELL_CLASS}>
-              <Text className="text-sm text-error-ink">알림을 켜지 못했어요</Text>
+              <Text className="text-sm font-bold text-error-ink">알림을 켜지 못했어요</Text>
               <Text className="text-xs text-text-disabled">{failure}</Text>
             </View>
           </Card>
@@ -164,7 +164,7 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
               }}
               className={SETTINGS_NOTE_CELL_CLASS}
             >
-              <Text className="text-sm text-error-ink">기기에서 알림이 꺼져 있어요</Text>
+              <Text className="text-sm font-bold text-error-ink">기기에서 알림이 꺼져 있어요</Text>
               <Text className="text-xs text-text-disabled">
                 눌러서 설정을 열고 이 앱의 알림을 켜 주세요
               </Text>
@@ -180,7 +180,7 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
               key={topic.key}
               className={SETTINGS_SWITCH_ROW_CLASS}
             >
-              <Text className="shrink text-sm text-text">{topic.label}</Text>
+              <Text className="shrink text-sm font-semibold text-text">{topic.label}</Text>
               <Switch
                 on={shown[topic.key]}
                 label={`${topic.label} 알림`}
@@ -199,7 +199,7 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
         {on && (
           <Card className={SETTINGS_CARD_CLASS}>
             <View className={SETTINGS_SWITCH_ROW_CLASS}>
-              <Text className="shrink text-sm text-text">파티 스케줄 알림</Text>
+              <Text className="shrink text-sm font-semibold text-text">파티 스케줄 알림</Text>
               <Switch
                 on={partyAlarmOn}
                 label="파티 스케줄 알림"

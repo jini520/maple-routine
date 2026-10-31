@@ -44,8 +44,8 @@ export function MonthlyBossViewRow(props: {
       className={
         dropTotal > 0
           ? // 아이템이 섞이면 금액 색이 달라진다. 캐릭터 합계·주간 행과 같은 규칙이다.
-            'text-sm font-semibold text-primary-ink'
-          : 'text-sm font-semibold text-text'
+            'text-sm font-bold text-primary-ink'
+          : 'text-sm font-bold text-text'
       }
       style={TABULAR_NUMS}
     >

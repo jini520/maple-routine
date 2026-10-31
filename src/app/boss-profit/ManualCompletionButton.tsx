@@ -28,7 +28,7 @@ export function ManualCompletionButton(props: {
 
       <View className="min-w-0 flex-1">
         <Text className="text-11 text-text-muted">직접 완료할 수 있는 보스예요</Text>
-        <Text className="mt-px text-13 font-bold text-primary-ink">완료 상태로 변경하기</Text>
+        <Text className="mt-px text-sm font-semibold text-primary-ink">완료 상태로 변경하기</Text>
       </View>
 
       {/* 꺾쇠가 **창이 하나 더 열린다**고 말한다. 눌러서 바로 완료가 되는 것이 아니라 난이도와

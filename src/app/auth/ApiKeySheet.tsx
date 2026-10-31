@@ -26,7 +26,7 @@ export function ApiKeySheet(props: {
           <View className="h-8 w-8 items-center justify-center rounded-full bg-primary-tint">
             <KeyRoundIcon className="h-4 w-4 text-primary-ink" strokeWidth={1.75} aria-hidden />
           </View>
-          <Text className="flex-1 text-base font-semibold text-text">API 키로 시작하기</Text>
+          <Text className="flex-1 text-base font-bold text-text">API 키로 시작하기</Text>
           <Badge
             variant="error"
             icon={<AlertTriangleIcon className="h-3 w-3 text-error-ink" strokeWidth={2} aria-hidden />}

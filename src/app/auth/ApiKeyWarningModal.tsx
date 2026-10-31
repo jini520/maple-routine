@@ -33,11 +33,11 @@ export function ApiKeyWarningModal(props: {
             {/* 자물쇠인 것은 머리 줄의 경고 삼각형과 겹치지 않게 하려는 것이다. 칸이 말하는 것은 잠긴 기능이다. */}
             <View className={`flex-row items-center gap-2.5 ${INSET_ROW_CLASS}`}>
               <LockIcon className="h-[18px] w-[18px] text-error-ink" strokeWidth={1.75} aria-hidden />
-              <Text className="flex-1 text-13 text-text">{keepWords('일부 기능은 넥슨 로그인으로만 쓸 수 있어요')}</Text>
+              <Text className="flex-1 text-sm text-text">{keepWords('일부 기능은 넥슨 로그인으로만 쓸 수 있어요')}</Text>
             </View>
             <View className={INSET_ROW_CLASS}>
               {/* 단어 가운데서 줄이 바뀌지 않게 묶는다. RN 은 한글을 글자 사이에서도 줄을 바꾼다. */}
-              <Text className="text-13 text-text-muted">{keepWords('앞으로 나오는 기능도 넥슨 로그인을 기준으로 만들어요.')}</Text>
+              <Text className="text-sm text-text-muted">{keepWords('앞으로 나오는 기능도 넥슨 로그인을 기준으로 만들어요.')}</Text>
             </View>
           </View>
 
@@ -48,7 +48,7 @@ export function ApiKeyWarningModal(props: {
               onPress={props.onContinueWithApiKey}
               className="self-center px-3 pb-0.5 pt-2.5"
             >
-              <Text className="text-13 text-text-muted">그래도 API 키로 시작하기</Text>
+              <Text className="text-xs text-text-muted">그래도 API 키로 시작하기</Text>
             </Pressable>
           </View>
         </View>

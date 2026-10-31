@@ -84,7 +84,7 @@ export function SettingsCharactersScreen(): React.JSX.Element {
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-semibold text-text">캐릭터 관리</Text>
+              <Text className="text-lg font-bold text-text">캐릭터 관리</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }

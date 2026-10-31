@@ -71,7 +71,7 @@ export function TextSizeSlider(props: { value: TextSize; onChange: (size: TextSi
 
   return (
     <View className="flex-row items-start gap-3.5">
-      <Text aria-hidden className="mt-0.5 w-4 text-center text-13 font-semibold text-text-muted">
+      <Text aria-hidden className="mt-0.5 w-4 text-center text-xs font-semibold text-text-muted">
         가
       </Text>
 
@@ -117,7 +117,7 @@ export function TextSizeSlider(props: { value: TextSize; onChange: (size: TextSi
         </View>
       </GestureDetector>
 
-      <Text aria-hidden className="-mt-0.5 w-5 text-center text-xl font-semibold text-text-muted">
+      <Text aria-hidden className="-mt-0.5 w-5 text-center text-lg font-semibold text-text-muted">
         가
       </Text>
     </View>

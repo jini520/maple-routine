@@ -41,7 +41,7 @@ export function SettingsMvpGradeScreen(): React.JSX.Element {
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-semibold text-text">MVP 등급</Text>
+              <Text className="text-lg font-bold text-text">MVP 등급</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }
@@ -67,7 +67,7 @@ export function SettingsMvpGradeScreen(): React.JSX.Element {
 
           <Card className={SETTINGS_CARD_CLASS}>
             <View className={SETTINGS_SWITCH_ROW_CLASS}>
-              <Text className="shrink text-sm text-text">매주 등급 확인</Text>
+              <Text className="shrink text-sm font-semibold text-text">매주 등급 확인</Text>
               <Switch
                 on={!weeklyOff}
                 label="매주 등급 확인"
@@ -101,7 +101,7 @@ function AccountCard(props: {
   const current = account.history[account.history.length - 1]
   const change = (
     <Pressable role="button" aria-label="변경" onPress={props.onChange} hitSlop={8} className="shrink-0 py-1">
-      <Text className="text-xs font-bold text-primary-ink">변경</Text>
+      <Text className="text-xs font-semibold text-primary-ink">변경</Text>
     </Pressable>
   )
 
@@ -111,7 +111,7 @@ function AccountCard(props: {
       <View className="px-1 pb-1 pt-0.5">
         {account.summary === null ? (
           <View className="flex-row items-center justify-between gap-2.5">
-            <Text className="text-sm text-text">메이플 ID</Text>
+            <Text className="text-sm font-semibold text-text">메이플 ID</Text>
             {change}
           </View>
         ) : (

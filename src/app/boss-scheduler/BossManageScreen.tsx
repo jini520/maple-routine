@@ -304,7 +304,7 @@ export function BossManageScreen(): React.JSX.Element {
         <PageHeader>
           <PageHeaderTitleRow fetchedAt={fetchedAt} className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-semibold text-text">보스 관리</Text>
+            <Text className="text-lg font-bold text-text">보스 관리</Text>
           </PageHeaderTitleRow>
         </PageHeader>
       }
@@ -338,8 +338,8 @@ export function BossManageScreen(): React.JSX.Element {
             className="justify-between gap-3 rounded-[14px] bg-surface px-3.5 py-3"
           >
             <View className="min-w-0 flex-1 gap-0.5">
-              <Text className="text-13 font-medium text-text">모든 보스 보기</Text>
-              <Text className="text-11 text-text-muted">끄면 스케줄러에 등록한 보스만 보여요</Text>
+              <Text className="text-sm font-semibold text-text">모든 보스 보기</Text>
+              <Text className="text-xs text-text-muted">끄면 스케줄러에 등록한 보스만 보여요</Text>
             </View>
           </Switch>
         </View>
@@ -453,7 +453,7 @@ export function BossManageScreen(): React.JSX.Element {
                       </View>
                     ) : (
                       <View pointerEvents="none" className="min-w-0 flex-1">
-                        <Text numberOfLines={1} className="text-sm font-semibold text-text-muted">
+                        <Text numberOfLines={1} className="text-sm text-text-muted">
                           {entry.name}
                         </Text>
                       </View>

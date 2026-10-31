@@ -179,7 +179,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
           />
           <Text
             testID="spend-sheet-unit-price-unit"
-            className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
+            className="ml-1.5 shrink-0 text-xs text-text-muted"
           >
             메소
           </Text>
@@ -220,7 +220,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
             />
             <Text
               testID="spend-sheet-quantity-unit"
-              className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted"
+              className="ml-1.5 shrink-0 text-xs text-text-muted"
             >
               개
             </Text>

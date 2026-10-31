@@ -102,8 +102,8 @@ export function AppointmentWeekdayTile(props: AppointmentWeekdayTileProps): Reac
           <RepeatIcon className="h-[15px] w-[15px] text-primary-ink" strokeWidth={2} aria-hidden />
         </View>
         <View>
-          <Text className="text-11 text-text-muted">요일</Text>
-          <Text className="text-sm font-bold text-primary-ink">{value}</Text>
+          <Text className="text-xs text-text-muted">요일</Text>
+          <Text className="text-sm font-semibold text-primary-ink">{value}</Text>
         </View>
       </View>
       <View className="rounded-full bg-surface p-0.5">
@@ -136,7 +136,7 @@ export function AppointmentWeekdayTile(props: AppointmentWeekdayTileProps): Reac
                 className="h-[30px] flex-1 items-center justify-center rounded-full"
               >
                 {/* 글자색은 상자를 안 기다린다. 기다리면 누른 칸이 그동안 안 눌린 것처럼 보인다. */}
-                <Text className={`text-13 ${filled(weekday) ? 'font-bold text-on-primary' : 'font-semibold text-text'}`}>
+                <Text className={`text-xs ${filled(weekday) ? 'font-semibold text-on-primary' : 'text-text'}`}>
                   {label}
                 </Text>
               </Pressable>

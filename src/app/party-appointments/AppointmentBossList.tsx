@@ -43,7 +43,7 @@ function RowBody(props: { boss: PartyAppointmentBoss }): React.JSX.Element {
   return (
     <>
       <BossPortrait portraitSlug={bossPortraitSlugOf(boss.bossKey)} label={name} size={24} />
-      <Text className="shrink text-13 font-semibold text-text" numberOfLines={1}>
+      <Text className="shrink text-sm font-semibold text-text" numberOfLines={1}>
         {name}
       </Text>
       <Badge variant={boss.difficulty as BossDifficulty} size="xs">
@@ -62,7 +62,7 @@ export function AppointmentBossList(props: AppointmentBossListProps): React.JSX.
 
   return (
     <View className="gap-1.5 px-4">
-      <Text className="text-11 font-semibold text-text-muted">보스 {bosses.length}</Text>
+      <Text className="text-11 font-bold text-text-muted">보스 {bosses.length}</Text>
       {groups.map((group) => (
         <View key={group.ocid} className="gap-1.5 pt-1">
           <CharacterGroupHeader
@@ -128,7 +128,7 @@ export function AppointmentBossList(props: AppointmentBossListProps): React.JSX.
           className="mt-1 h-[46px] flex-row items-center justify-center gap-1.5 rounded-[10px] bg-card-inset active:opacity-60"
         >
           <PlusIcon className="h-3.5 w-3.5 text-primary-ink" strokeWidth={2.6} aria-hidden />
-          <Text className="text-13 font-bold text-primary-ink">보스 추가</Text>
+          <Text className="text-xs font-semibold text-primary-ink">보스 추가</Text>
         </Pressable>
       )}
     </View>

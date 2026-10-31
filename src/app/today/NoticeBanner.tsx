@@ -74,7 +74,7 @@ export function NoticeBanner(): React.JSX.Element | null {
 
       {expanded && (
         <>
-          <Text className="mt-2.5 text-13 text-text-muted" numberOfLines={2}>
+          <Text className="mt-2.5 text-xs text-text-muted" numberOfLines={2}>
             {notice.body}
           </Text>
           {/* 오른쪽 끝이 배너 여백과 맞는다. 무게는 셋 중 가운데다. 채우면 배너에서 가장 센
@@ -84,7 +84,7 @@ export function NoticeBanner(): React.JSX.Element | null {
               (머쉬맘 2.38 · 엔젤릭버스터 2.26).
 
               `compact` 는 이 배너가 156px 안에 머리·본문·버튼 줄을 다 넣기 때문이다. 기본 크기는
-              40px 라 버튼 줄만으로 배너의 4분의 1을 먹고, 라벨이 본문(13px)보다 커서 먼저 읽힌다.
+              40px 라 버튼 줄만으로 배너의 4분의 1을 먹고, 라벨이 본문(12px)보다 커서 먼저 읽힌다.
               대신 32px 는 권장 타깃 44px 아래라 `hitSlop` 이 손가락 자리를 되돌린다. 좌우로 넓히면
               나란히 선 둘의 히트 영역이 겹치므로 위아래로만 준다. */}
           <View className="mt-1.5 flex-row items-center justify-end gap-1">

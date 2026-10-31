@@ -120,7 +120,7 @@ function Tile(props: {
           </View>
         )}
       </View>
-      <Text className={`text-xs ${selected ? 'font-bold text-text' : 'font-medium text-text-muted'}`}>{name}</Text>
+      <Text className={`text-11 ${selected ? 'font-bold text-text' : 'text-text-muted'}`}>{name}</Text>
     </Pressable>
   )
 }
@@ -135,7 +135,7 @@ function TileGroup(props: {
   return (
     // 테두리 없이 카드와 시트 바탕의 색 차이로 묶음을 가른다.
     <View className="rounded-[22px] bg-surface px-3 pb-1 pt-3.5">
-      <Text className="px-1.5 pb-2.5 text-13 font-bold text-text">{props.group.label}</Text>
+      <Text className="px-1.5 pb-2.5 text-xs font-bold text-text">{props.group.label}</Text>
       <View className="flex-row flex-wrap">
         {props.group.tiles.map((tile) => (
           <Tile
@@ -155,12 +155,12 @@ export function BossPickerBody(props: BossPickerBodyProps): React.JSX.Element {
   const [showAll, setShowAll] = useState(false)
   const toggle = (
     <Switch size="sm" on={showAll} label="모든 보스" onToggle={() => setShowAll(!showAll)} className="gap-2">
-      <Text className="text-xs font-semibold text-text-muted">모든 보스</Text>
+      <Text className="text-xs text-text-muted">모든 보스</Text>
     </Switch>
   )
 
   return (
-    <View className="gap-3 px-4">
+    <View className="gap-3 px-4 pb-3">
       {props.toggleBelow === true ? (
         <>
           <View testID="boss-picker-character-row">{props.character}</View>

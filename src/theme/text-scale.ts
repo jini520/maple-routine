@@ -42,12 +42,16 @@ export function TextScaleScope(props: { scale: number; children: ReactNode }): R
   return createElement(ScopedTextScale.Provider, { value: props.scale }, props.children)
 }
 
-/** 글자 크기에 곱할 배수. 고른 단계에 화면 폭으로 상한을 걸고, 단계나 폭이 바뀌면 다시 그리게 하는 훅. */
-export function useTextScale(): number {
+/**
+ * 글자 크기에 곱할 배수. 고른 단계에 화면 폭으로 상한을 걸고, 단계나 폭이 바뀌면 다시 그리게 하는 훅.
+ *
+ * @param maxScale 칸이 px 로 고정된 글자의 상한. 화면이 넓어도 칸은 그대로라 넘친다
+ */
+export function useTextScale(maxScale = Infinity): number {
   const { width } = useWindowDimensions()
   const scoped = useContext(ScopedTextScale)
   const current = useSyncExternalStore(subscribe, getTextScale)
-  return capTextScale(scoped ?? current, width)
+  return Math.min(capTextScale(scoped ?? current, width), maxScale)
 }
 
 /** 테스트 격리용. */

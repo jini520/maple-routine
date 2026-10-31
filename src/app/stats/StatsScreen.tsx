@@ -35,6 +35,7 @@ import {
 import { monthKeyOf } from '../../lib/calendar'
 import { formatMesoCompact, formatMesoSigned } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
+import { AMOUNT_COLUMN_MAX_SCALE } from '../../lib/text-size'
 import type { BossCycle } from '../../types'
 import { SettlementBanner } from '../SettlementBanner'
 import { BossSection } from './BossSection'
@@ -174,7 +175,7 @@ export function StatsScreen(): React.JSX.Element {
                 />
               }
             >
-              <Text className="text-lg font-semibold text-text">통계</Text>
+              <Text className="text-lg font-bold text-text">통계</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }
@@ -222,23 +223,23 @@ export function StatsScreen(): React.JSX.Element {
                     <Text
                       testID="stats-summary-net"
                       numberOfLines={1}
-                      className={`text-xl font-bold ${current.netMeso > 0 ? 'text-rise-ink' : current.netMeso < 0 ? 'text-fall-ink' : 'text-text'}`}
+                      className={`text-2xl font-bold ${current.netMeso > 0 ? 'text-rise-ink' : current.netMeso < 0 ? 'text-fall-ink' : 'text-text'}`}
                       style={TABULAR_NUMS}
                     >
                       {signed(current.netMeso)}{' '}
-                      <Text className="text-11 font-bold text-text-muted">메소</Text>
+                      <Text className="text-xs text-text-muted">메소</Text>
                     </Text>
                   </View>
                   <View className="shrink-0 items-end gap-1">
                     <View className="flex-row items-baseline gap-1.5">
                       <Text className="text-11 text-text-muted">수입</Text>
-                      <Text className="w-16 text-right text-11 font-medium text-rise-ink" style={TABULAR_NUMS}>
+                      <Text className="w-16 text-right text-xs font-semibold text-rise-ink" style={TABULAR_NUMS} maxScale={AMOUNT_COLUMN_MAX_SCALE}>
                         {formatMesoSigned(current.incomeMeso, '+')}
                       </Text>
                     </View>
                     <View className="flex-row items-baseline gap-1.5">
                       <Text className="text-11 text-text-muted">지출</Text>
-                      <Text className="w-16 text-right text-11 font-medium text-fall-ink" style={TABULAR_NUMS}>
+                      <Text className="w-16 text-right text-xs font-semibold text-fall-ink" style={TABULAR_NUMS} maxScale={AMOUNT_COLUMN_MAX_SCALE}>
                         {formatMesoSigned(current.expenseMeso, '−')}
                       </Text>
                     </View>

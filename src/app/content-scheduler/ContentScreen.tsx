@@ -172,7 +172,7 @@ export function ContentScreen(): React.JSX.Element {
   // 잘린 버튼은 목적지를 잃는다. 줄어드는 것은 시각 텍스트뿐이다.
   const manualManageButton = mode === 'manual' && (
     <Pressable role="button" className="shrink-0" onPress={() => navigation.navigate('ContentManage')}>
-      <Text className="text-sm font-medium text-text-muted">컨텐츠 관리</Text>
+      <Text className="text-xs font-semibold text-text-muted">컨텐츠 관리</Text>
     </Pressable>
   )
 
@@ -203,7 +203,7 @@ export function ContentScreen(): React.JSX.Element {
         {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다. 빈 상태와
             목록 상태를 오갈 때 제목이 튀면 그것이 가장 눈에 띄는 자리다. */}
         <PageHeaderTitleRow>
-          <Text className="text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
+          <Text className="text-lg font-bold text-text">컨텐츠 스케줄러</Text>
         </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
@@ -252,7 +252,7 @@ export function ContentScreen(): React.JSX.Element {
                 </View>
               }
             >
-              <Text className="shrink text-lg font-semibold text-text">컨텐츠 스케줄러</Text>
+              <Text className="shrink text-lg font-bold text-text">컨텐츠 스케줄러</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }

@@ -9,6 +9,8 @@ import { CharacterAvatar } from '../CharacterAvatar/CharacterAvatar'
 /** 열 폭. 보스 줄이 이만큼 오른쪽에서 시작한다 */
 export const CHARACTER_LABEL_WIDTH = 40
 const FACE_SIZE = 24
+/** 이 배수까지 열 폭에 네 글자 이름이 든다 */
+const NAME_MAX_SCALE = 1.1
 
 export function CharacterGroupLabel(props: { name: string; imageUrl: string | null }): React.JSX.Element {
   return (
@@ -20,7 +22,7 @@ export function CharacterGroupLabel(props: { name: string; imageUrl: string | nu
         size={FACE_SIZE}
         className="bg-surface-2"
       />
-      <Text className="text-10 font-semibold text-text-muted" numberOfLines={1}>
+      <Text className="text-10 text-text-muted" numberOfLines={1} maxScale={NAME_MAX_SCALE}>
         {props.name}
       </Text>
     </View>

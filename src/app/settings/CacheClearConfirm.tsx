@@ -98,9 +98,9 @@ export function CacheClearConfirm(props: CacheClearConfirmProps): React.JSX.Elem
                 </View>
                 <View className="min-w-0 flex-1 gap-0.5">
                   <View className="flex-row items-center justify-between gap-2">
-                    <Text className="text-13 font-semibold text-text">{group.label}</Text>
+                    <Text className="text-sm font-semibold text-text">{group.label}</Text>
                     {group.count !== undefined && (
-                      <Text style={TABULAR_NUMS} className="shrink-0 text-xs font-semibold text-text">
+                      <Text style={TABULAR_NUMS} className="shrink-0 text-xs font-bold text-text">
                         {group.count}
                       </Text>
                     )}

@@ -101,7 +101,7 @@ export function TotalCard(props: {
               : `캐릭터별 수입 분포. ${rows.map((row) => `${row.name} ${percentOf(row.meso, total)}`).join(', ')}`
           }
         >
-          <Text className="text-11 font-semibold text-text-muted">캐릭터</Text>
+          <Text className="text-11 font-bold text-text-muted">캐릭터</Text>
           {/* 금액이 있는 캐릭터만 센다. 범례가 그리는 캐릭터 · 아래 면의 캐릭터 수와 같은 수다. */}
           <Text testID="calculator-donut-count" className="text-lg font-bold text-text" style={TABULAR_NUMS}>
             {earningCount}
@@ -113,7 +113,7 @@ export function TotalCard(props: {
             const label = (
               <>
                 <View className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: empty ? definition.surface2 : row.color }} />
-                <Text className={`text-11 text-text ${strong ? 'font-semibold' : 'font-medium'}`}>{row.name}</Text>
+                <Text className={`text-10 text-text ${strong ? 'font-semibold' : ''}`}>{row.name}</Text>
                 {row.grouped !== undefined && <ChevronRightIcon className="h-3 w-3 text-text-muted" strokeWidth={2.5} aria-hidden />}
                 {!empty && (
                   <Text className="text-10 text-text-muted" style={TABULAR_NUMS}>
@@ -122,7 +122,7 @@ export function TotalCard(props: {
                 )}
                 {/* 금액은 이름보다 한 단계만 굵다. 크게 강조할 값이 아니다. */}
                 <Text
-                  className={`ml-auto text-11 ${strong ? 'font-bold' : 'font-semibold'} ${empty ? 'text-text-disabled' : 'text-text'}`}
+                  className={`ml-auto text-10 ${strong ? 'font-bold' : 'font-semibold'} ${empty ? 'text-text-disabled' : 'text-text'}`}
                   style={TABULAR_NUMS}
                 >
                   {formatEok(row.meso)}
@@ -154,7 +154,7 @@ export function TotalCard(props: {
       </View>
       <View className="-mx-1.5 gap-0.5 rounded-2xl bg-bg px-3 pb-3 pt-2.5">
         <View className="flex-row items-baseline justify-between gap-3">
-          <Text className="text-13 font-semibold text-text">주간 보스 예상 수입</Text>
+          <Text className="text-xs font-bold text-text">주간 보스 예상 수입</Text>
           <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>
             {earningCount}캐릭터 · 보스 {props.bossCount}
           </Text>
@@ -181,13 +181,13 @@ export function TotalCard(props: {
         >
           {(rows.find((row) => row.grouped !== undefined)?.grouped ?? []).map((character) => (
             <View key={character.ocid} className="flex-row items-center gap-2">
-              <Text className="text-xs font-medium text-text">{character.name}</Text>
+              <Text className="text-xs font-semibold text-text">{character.name}</Text>
               {!empty && (
                 <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
                   {percentOf(character.meso, total)}
                 </Text>
               )}
-              <Text className="ml-auto pl-3 text-xs font-semibold text-text" style={TABULAR_NUMS}>
+              <Text className="ml-auto pl-3 text-xs font-bold text-text" style={TABULAR_NUMS}>
                 {formatEok(character.meso)}
               </Text>
             </View>

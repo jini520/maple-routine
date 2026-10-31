@@ -11,7 +11,7 @@
  *
  * // 글자를 눌러도 토글돼야 하는 자리. 글자 크기는 자리마다 달라 호출부가 정한다
  * <Switch on={showAll} label="모든 보스 보기" size="sm" onToggle={toggle} className="gap-1.5">
- *   <Text className="text-xs font-medium text-text-muted">모든 보스 보기</Text>
+ *   <Text className="text-xs text-text-muted">모든 보스 보기</Text>
  * </Switch>
  */
 import { Platform, Pressable, Switch as NativeSwitch, View } from 'react-native'

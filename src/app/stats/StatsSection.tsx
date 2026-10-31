@@ -14,7 +14,7 @@ export function StatsSection(props: {
   return (
     <View testID={props.testID} className="gap-3 rounded-[14px] bg-stats-section px-4 py-[18px]">
       <View className="flex-row items-center justify-between">
-        <Text className="text-sm font-semibold text-text">{props.title}</Text>
+        <Text className="text-sm font-bold text-text">{props.title}</Text>
         {props.trailing}
       </View>
       {props.children}

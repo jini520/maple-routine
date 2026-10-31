@@ -68,12 +68,12 @@ function DateText(props: { dateKey: string; toDateKey?: string } & ValueTone): R
     return (
       <>
         {date.getUTCMonth() + 1}/{date.getUTCDate()}
-        <Text className={`text-xs font-medium ${weekdayColor}`}> ({WEEKDAY_LABELS[date.getUTCDay()]})</Text>
+        <Text className={`text-xs font-normal ${weekdayColor}`}> ({WEEKDAY_LABELS[date.getUTCDay()]})</Text>
       </>
     )
   }
   return (
-    <Text className={`text-sm font-bold ${valueColor(props)}`} style={TABULAR_NUMS}>
+    <Text className={`text-sm font-semibold ${valueColor(props)}`} style={TABULAR_NUMS}>
       {day(props.dateKey)}
       {props.toDateKey !== undefined && (
         <>
@@ -118,7 +118,7 @@ const Tile = forwardRef<View, TileProps>(function Tile(props, ref) {
         />
       </View>
       <View className="shrink">
-        <Text className="text-11 text-text-muted">{props.label}</Text>
+        <Text className="text-xs text-text-muted">{props.label}</Text>
         <View className="flex-row items-center gap-0.5">
           {props.children}
           {!props.readOnly && <SelectChevron open={props.isOpen} className={valueColor(props)} />}
@@ -189,7 +189,7 @@ export function AppointmentTimeBand(props: AppointmentTimeBandProps): React.JSX.
           isOpen={stOpen}
           onPress={stToggle}
         >
-          <Text className={`text-sm font-bold ${valueColor(startTone)}`} style={TABULAR_NUMS}>
+          <Text className={`text-sm font-semibold ${valueColor(startTone)}`} style={TABULAR_NUMS}>
             {formatClock(props.startMinutes)}
           </Text>
         </Tile>
@@ -202,7 +202,7 @@ export function AppointmentTimeBand(props: AppointmentTimeBandProps): React.JSX.
           isOpen={etOpen}
           onPress={etToggle}
         >
-          <Text className={`text-sm font-bold ${valueColor(endTone)}`} style={TABULAR_NUMS}>
+          <Text className={`text-sm font-semibold ${valueColor(endTone)}`} style={TABULAR_NUMS}>
             {formatClock(props.endMinutes)}
           </Text>
         </Tile>

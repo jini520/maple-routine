@@ -36,7 +36,7 @@ describe('EmptyState', () => {
     expect(queryByRole('button')).toBeNull()
   })
 
-  // page(캐릭터 미선택 3곳)와 inline(목록 8곳)은 배지 크기·타이포만 다르고 구조는 같다.
+  // page(캐릭터 미선택 3곳)와 inline(목록 8곳)은 배지 크기·버튼 크기만 다르고 구조는 같다.
   it('기본은 inline 크기. 48px 배지, 자체 카드 껍데기를 가진다', async () => {
     const { getByTestId } = await renderAtom(
       <EmptyState
@@ -54,11 +54,11 @@ describe('EmptyState', () => {
       backgroundColor: 기본테마.surface,
     })
     expect(flattenStyle(getByTestId('empty-state-title').props.style).fontSize).toBe(14)
-    // 설명은 제목보다 두 계단 아래다. 목록 사이에 서는 자리라 제목만 읽히면 된다.
-    expect(flattenStyle(getByTestId('empty-state-description').props.style).fontSize).toBe(11)
+    // 설명은 제목보다 한 계단 아래다. 목록 사이에 서는 자리라 제목만 읽히면 된다.
+    expect(flattenStyle(getByTestId('empty-state-description').props.style).fontSize).toBe(12)
   })
 
-  it('size=page면 64px 배지에 큰 타이포, 자체 껍데기는 없다(화면이 감싼다)', async () => {
+  it('size=page면 64px 배지에 글자는 inline 과 같고, 자체 껍데기는 없다(화면이 감싼다)', async () => {
     const { getByTestId } = await renderAtom(
       <EmptyState size="page" icon={SwordsIcon} title="표시할 캐릭터가 없습니다" />,
     )
@@ -68,7 +68,7 @@ describe('EmptyState', () => {
       width: 64,
     })
     expect(flattenStyle(getByTestId('empty-state').props.style).borderWidth).toBeUndefined()
-    expect(flattenStyle(getByTestId('empty-state-title').props.style).fontSize).toBe(16)
+    expect(flattenStyle(getByTestId('empty-state-title').props.style).fontSize).toBe(14)
   })
 
   //  정정: 캐릭터 미선택(page) 3곳은 컨텍스트 아이콘이 아니라 브랜드 마크(단풍잎)를 쓴다.

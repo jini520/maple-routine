@@ -43,7 +43,7 @@ export function OccurrenceCard(props: OccurrenceCardProps): React.JSX.Element {
       }`}
     >
       <View className="flex-row flex-wrap items-baseline">
-        <Text className="text-15 font-bold text-text" style={TABULAR_NUMS}>
+        <Text className="text-base font-bold text-text" style={TABULAR_NUMS}>
           {occurrence.timeKst}
         </Text>
         <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>
@@ -58,7 +58,7 @@ export function OccurrenceCard(props: OccurrenceCardProps): React.JSX.Element {
       <View className="gap-1.5">
         {groupBossesByCharacter(occurrence.bosses).map((group) => (
           <View key={group.ocid} testID="occurrence-card-group" className="rounded-[10px] bg-card-inset px-2.5 py-2">
-            <Text numberOfLines={1} className="text-xs font-semibold text-text-muted">
+            <Text numberOfLines={1} className="text-xs text-text-muted">
               {props.names.get(group.ocid) ?? ''}
             </Text>
             {group.bosses.map((boss) => (

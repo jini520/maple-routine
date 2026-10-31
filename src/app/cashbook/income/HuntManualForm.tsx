@@ -171,8 +171,8 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
             className="shrink-0 flex-row items-baseline gap-1"
           >
             <Text
-              className={`w-[52px] text-right text-sm font-semibold ${
-                fragmentsText === '' ? 'text-text-disabled' : 'text-text'
+              className={`w-[52px] text-right text-sm ${
+                fragmentsText === '' ? 'text-text-disabled' : 'font-semibold text-text'
               }`}
               style={TABULAR_NUMS}
             >
@@ -205,8 +205,8 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
           >
             <Text
               numberOfLines={1}
-              className={`shrink text-right text-sm font-semibold ${
-                fragmentPriceText === '' ? 'text-text-disabled' : 'text-text'
+              className={`shrink text-right text-sm ${
+                fragmentPriceText === '' ? 'text-text-disabled' : 'font-semibold text-text'
               }`}
               style={TABULAR_NUMS}
             >

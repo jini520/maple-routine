@@ -31,7 +31,7 @@ export function MvpGradeGrid(props: { selected: MvpGradeKey | null; onSelect: (g
           >
             <View style={{ width: TILE, height: TILE }} className="items-center justify-center overflow-hidden rounded-[7px]">
               {source === null ? (
-                <Text className="text-10 font-semibold text-text-muted">일반</Text>
+                <Text className="text-10 text-text-muted">일반</Text>
               ) : (
                 // 높이를 타일에 맞추고 왼쪽에 붙이면 명패의 왼쪽 정사각(문양)이 보인다.
                 <Image
@@ -41,7 +41,7 @@ export function MvpGradeGrid(props: { selected: MvpGradeKey | null; onSelect: (g
                 />
               )}
             </View>
-            <Text className={`text-10 ${on ? 'font-bold text-primary-ink' : 'font-medium text-text-muted'}`}>
+            <Text className={`text-11 ${on ? 'font-bold text-primary-ink' : 'text-text-muted'}`}>
               {grade.name}
             </Text>
           </Pressable>

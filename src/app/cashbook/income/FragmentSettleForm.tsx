@@ -129,7 +129,7 @@ export function FragmentSettleForm(
               <Text className="text-11 text-text-muted">보유</Text>
               <Text
                 testID="income-sheet-fragment-storage"
-                className="text-xs font-medium text-text"
+                className="text-xs font-bold text-text"
                 style={TABULAR_NUMS}
               >
                 {storage === null ? '-' : `${storage}개`}

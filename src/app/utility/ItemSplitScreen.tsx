@@ -85,7 +85,7 @@ function FeeRow(props: {
 }): React.JSX.Element {
   return (
     <View testID={`item-split-fee-${props.label}`} className="flex-row items-center justify-between">
-      <Text className="text-sm text-text">{props.label}</Text>
+      <Text className="text-xs text-text">{props.label}</Text>
       <Segment
         options={FEE_OPTIONS}
         selected={`${props.value}%`}
@@ -130,7 +130,7 @@ export function ItemSplitScreen(): React.JSX.Element {
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-semibold text-text">{ITEM_SPLIT_TOOL_NAME}</Text>
+            <Text className="text-lg font-bold text-text">{ITEM_SPLIT_TOOL_NAME}</Text>
           </PageHeaderTitleRow>
         </PageHeader>
       }
@@ -138,12 +138,12 @@ export function ItemSplitScreen(): React.JSX.Element {
       <View className="gap-4 px-4 pb-4" testID="screen-UtilityItemSplit">
         <View className={`${CARD_CLASS} gap-3 p-4`}>
           <View className="flex-row items-center justify-between">
-            <Text className="text-sm font-bold text-text">판매가</Text>
+            <Text className="text-xs font-bold text-text">판매가</Text>
             {/* 단위는 값 상자 바로 위 오른쪽이다. 입력 카드의 단위 세그먼트와 같은 자리다. */}
             <View className="flex-row items-center gap-3">
               {salePriceMeso > 0 && (
                 <Pressable role="button" aria-label="금액 초기화" onPress={() => setSaleText('')}>
-                  <Text className="text-xs font-medium text-text-muted">초기화</Text>
+                  <Text className="text-xs font-semibold text-text-muted">초기화</Text>
                 </Pressable>
               )}
               <Segment
@@ -178,10 +178,10 @@ export function ItemSplitScreen(): React.JSX.Element {
               onChangeText={(text) => setSaleText(acceptSalePrice(saleText, text, unit))}
               keyboardType="decimal-pad"
               placeholder="0"
-              className="h-9 flex-1 text-right font-bold text-text"
-              style={[TABULAR_NUMS, { fontSize: 20 }]}
+              className="h-9 flex-1 text-right font-semibold text-text"
+              style={[TABULAR_NUMS, { fontSize: 18 }]}
             />
-            <Text className="shrink-0 text-xs font-semibold text-text-muted">
+            <Text className="shrink-0 text-xs text-text-muted">
               {unit === 'base' ? '메소' : `${MESO_UNIT_LABELS[unit]} 메소`}
             </Text>
           </View>
@@ -208,7 +208,7 @@ export function ItemSplitScreen(): React.JSX.Element {
         <View className={`${CARD_CLASS} gap-3 p-4`}>
           {/* 금액 단위 세그먼트에도 `기본` 이 있어 줄째 `testID` 로 가른다. */}
           <View testID="item-split-split" className="flex-row items-center justify-between gap-2.5">
-            <Text className="text-13 font-bold text-text">분배 방식</Text>
+            <Text className="text-xs font-bold text-text">분배 방식</Text>
             <Segment
               options={SPLIT_OPTIONS}
               selected={shares === null ? '기본' : '비율'}
@@ -223,7 +223,7 @@ export function ItemSplitScreen(): React.JSX.Element {
             {shares === null ? (
               <>
                 <View className="flex-row items-center justify-between gap-1.5">
-                  <Text className="text-11 font-semibold leading-[14px] tracking-[.04em] text-text-muted">
+                  <Text className="text-xs leading-[14px] tracking-[.04em] text-text-muted">
                     파티 인원
                   </Text>
                   <Badge variant="primary" size="xs" style={TABULAR_NUMS}>
@@ -249,7 +249,7 @@ export function ItemSplitScreen(): React.JSX.Element {
         </View>
 
         <View className={`${CARD_CLASS} gap-3 p-4`}>
-          <Text className="text-13 font-bold text-text">경매장 수수료</Text>
+          <Text className="text-xs font-bold text-text">경매장 수수료</Text>
           {/* MVP 실버 등급 이상이면 5% → 3%(사용자 확인). 판매와 분배를
               각각 고르는 것이 결정이다. 세 대표 상황 밖의 조합도 나온다. */}
           <FeeRow label="판매" value={saleFeePercent} onChange={setSaleFeePercent} />
@@ -257,7 +257,7 @@ export function ItemSplitScreen(): React.JSX.Element {
         </View>
 
         <View className={`${CARD_CLASS} items-center gap-1 px-4 py-5`}>
-          <Text className="text-xs font-semibold text-text-muted">정산 금액</Text>
+          <Text className="text-xs text-text-muted">정산 금액</Text>
           {salePriceMeso === 0 ? (
             <Text className="pt-1 text-sm text-text-muted">판매가를 입력하세요</Text>
           ) : transfer === null ? (
@@ -267,12 +267,12 @@ export function ItemSplitScreen(): React.JSX.Element {
               <View className="flex-row items-baseline gap-1">
                 <Text
                   testID="item-split-transfer"
-                  className="text-3xl font-bold text-text"
+                  className="text-2xl font-bold text-text"
                   style={TABULAR_NUMS}
                 >
                   {transfer.toLocaleString()}
                 </Text>
-                <Text className="text-sm font-semibold text-text-muted">메소</Text>
+                <Text className="text-xs text-text-muted">메소</Text>
               </View>
               <Text className="text-xs text-text-muted">{formatMesoUnits(transfer)}</Text>
             </>

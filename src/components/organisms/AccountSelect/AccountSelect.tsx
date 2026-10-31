@@ -91,7 +91,7 @@ export function AccountRow(props: AccountRowProps): React.JSX.Element {
               />
             </View>
           )}
-          <Text numberOfLines={1} className="min-w-0 flex-1 text-sm text-text">
+          <Text numberOfLines={1} className="min-w-0 flex-1 text-sm font-semibold text-text">
             {`${worldName} Lv.${representative.level} ${representative.name}`}
           </Text>
         </View>

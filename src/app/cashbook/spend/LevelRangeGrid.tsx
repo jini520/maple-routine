@@ -98,8 +98,8 @@ export function LevelRangeGrid(props: {
         style={on ? TAB_SHADOW : undefined}
       >
         {on && <BreathingGlow />}
-        <Text className={`text-11 font-semibold ${on ? 'text-primary-ink' : 'text-text-muted'}`}>{caption}</Text>
-        <Text className="text-15 font-bold text-text" style={TABULAR_NUMS}>
+        <Text className={`text-11 ${on ? 'font-semibold text-primary-ink' : 'text-text-muted'}`}>{caption}</Text>
+        <Text className="text-sm font-bold text-text" style={TABULAR_NUMS}>
           {disabled ? '-' : `Lv.${level}`}
         </Text>
       </Pressable>
@@ -156,7 +156,7 @@ export function LevelRangeGrid(props: {
                 style={{ width: DOT, height: DOT }}
               >
                 <Text
-                  className={`text-13 ${
+                  className={`text-xs ${
                     end ? 'font-bold text-on-primary' : inside ? 'font-bold text-primary-ink' : pickable ? 'text-text' : 'text-text-disabled'
                   }`}
                   style={TABULAR_NUMS}

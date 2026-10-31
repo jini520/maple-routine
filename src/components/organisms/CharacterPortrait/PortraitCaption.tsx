@@ -21,7 +21,7 @@ export interface PortraitCaptionProps {
 }
 
 export function PortraitCaption(props: PortraitCaptionProps): React.JSX.Element {
-  const textScale = useTextScale()
+  const textScale = useTextScale(PORTRAIT_RAIL.textMaxScale)
   /** 레벨과 이름은 자리만 다르고 글자는 같다. 한 값으로 묶어야 한쪽만 바뀌지 않는다. */
   const fontProps = { fontSize: PORTRAIT_RAIL.textFontSize * textScale, fontWeight: '600' } as const
 

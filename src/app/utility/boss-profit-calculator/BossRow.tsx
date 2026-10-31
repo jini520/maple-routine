@@ -56,7 +56,7 @@ export function BossRow(props: {
               hitSlop={{ top: 6, bottom: 6 }}
               className="h-8 justify-center px-1.5 active:opacity-60"
             >
-              <Text className="text-11 font-medium text-text-muted">변경</Text>
+              <Text className="text-xs font-semibold text-text-muted">변경</Text>
             </Pressable>
             {ratio === null ? (
               <Stepper

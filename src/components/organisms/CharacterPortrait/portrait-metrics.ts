@@ -28,7 +28,9 @@ export const PORTRAIT_RAIL = {
   ringGapDeg: 5,
   /** 이름과 레벨이 함께 도는 호 하나의 반지름. */
   textR: 35,
-  textFontSize: 8.5,
+  textFontSize: 9,
+  /** 이 배수까지 호의 반쪽에 여섯 글자 이름이 든다. 호를 넘는 글자는 그려지지 않는다. */
+  textMaxScale: 1.1,
   /** 레벨과 이름 사이를 벌리는 몫. 6시를 기준으로 좌우 절반씩 나눠 쓴다. */
   textGap: 3,
   /** 글자가 베이스라인에서 자라는 높이의 어림값. 겹침 검사만 쓴다. */

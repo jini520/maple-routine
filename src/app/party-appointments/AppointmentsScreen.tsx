@@ -184,7 +184,7 @@ export function AppointmentsScreen(): React.JSX.Element {
                 />
               }
             >
-              <Text className="text-lg font-semibold text-text">파티 스케줄</Text>
+              <Text className="text-lg font-bold text-text">파티 스케줄</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }

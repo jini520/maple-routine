@@ -132,7 +132,7 @@ export function SignInScreen(): React.JSX.Element {
                   onPress={() => openInAppBrowser(DATA_UTIL_LOGIN_URL)}
                   className="flex-row items-center gap-1 self-center px-3 py-0.5"
                 >
-                  <Text className="text-13 text-primary-ink">게임 데이터 활용 로그인이란?</Text>
+                  <Text className="text-xs font-semibold text-primary-ink">게임 데이터 활용 로그인이란?</Text>
                   <ExternalLinkIcon className="h-3.5 w-3.5 text-primary-ink" aria-hidden />
                 </Pressable>
               </View>

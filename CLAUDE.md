@@ -12,7 +12,7 @@
 
 ## 문서
 - 설계 문서는 기능 단위로 계층화됨 — `docs/README.md`가 인덱스(기능→문서→소스 파일). 작업 전 여기서 read/write 대상 문서를 판단할 것
-- `docs/features/*`(기능마다 지금 하는 일) · `docs/foundation/*`(공통 토대: product·architecture·navigation·design-system·nexon-api·error-resilience·game-data·server·server-sync·release·writing) · `docs/persistence/*`(기기 저장소)
+- `docs/features/*`(기능마다 지금 하는 일) · `docs/foundation/*`(공통 토대: product·architecture·navigation·design-system(규칙 문서는 `design-system/` 아래)·nexon-api·error-resilience·game-data·server·server-sync·release·writing) · `docs/persistence/*`(기기 저장소)
 - ADR: `docs/ADR.md` 가 인덱스이고 전문은 `docs/adr/` 에 파일 하나씩 있다. 필요한 ADR만 열고 **ADR 전체를 컨텍스트에 로드하지 말 것**. 파일 이름 규칙 · 카테고리 표 · 문서 형식은 `docs/ADR.md` 머리에 있다
 - CRITICAL: ADR 파일 이름은 `ADR-{번호목록}_{카테고리}_{기능}.md` 다(예: `ADR-001+010_boss-profit_drop-records.md`). 번호는 세 자리이고 여러 개면 `+` 로 잇는다. 카테고리는 카테고리 표의 slug 만 쓰고, 기능은 코드에 있는 이름을 영어 slug 로 쓴다. 대괄호 · 쉼표 · 공백 · 한글은 넣지 않는다. 대괄호는 zsh 의 패턴 문자이고, 한글은 macOS 와 GitHub 의 유니코드 정규화가 달라 같은 파일이 다른 이름으로 잡히기 때문이다
 - CRITICAL: **한 기능의 결정은 한 파일에 둔다.** 그 기능의 결정이 바뀌면 새 파일을 만들지 말고, 새 번호를 파일 이름에 `+NNN` 으로 덧붙인 뒤 같은 파일에 이어 쓸 것. 문서끼리는 경로가 아니라 번호(`[[ADR-NNN]]`)로 가리킨다. 파일 이름은 바뀌어도 번호는 남기 때문이다
@@ -31,6 +31,7 @@
 - CRITICAL: 작업 전 관련 문서를 먼저 작성/갱신하고(docs-first), 작업 완료 후 문서를 다시 점검해 완료된 항목을 반영(체크)할 것
 - CRITICAL: 새 기능 구현 시 반드시 테스트를 먼저 작성하고, 테스트가 통과하는 구현을 작성할 것 (TDD)
 - CRITICAL: 작업 중 검증은 **변경 영향 범위의 경로만** 지정해 돌릴 것 — `npx jest <바꾼 디렉터리…>`. 전체 실행은 540여 스위트·7,500여 테스트로 40초가 넘고, 애니메이션이 무거운 스위트(`DropEffectOverlay` 등)에서 **내 변경과 무관한 워커 플레이크**를 내 해석에 시간이 샌다. 공유 상수·유틸을 뽑아 다른 소비자를 건드렸으면 그 경로도 함께 넣을 것. 배선 누락은 `npx tsc --noEmit` 가 전역으로 잡으므로 그것 때문에 전체를 돌릴 필요는 없다
+- CRITICAL: **디자인을 고치거나 새 시안을 만들 때는 `docs/foundation/design-system.md` 의 `디자인 작업 전에` 를 먼저 읽고 따를 것.** 글자는 `docs/foundation/design-system/typography.md` 의 역할표에서 크기와 두께를 고른다. 표에 없는 크기나 두께를 새로 만들지 않고, 맞는 역할이 없으면 사용자에게 묻는다. 눈대중으로 값을 고르면 같은 역할이 화면마다 갈리기 때문이다
 - 아티팩트로 디자인 시안을 만들면 앱의 테마 전부(지금 `job-themes.json` 의 6개)를 함께 보여 줄 것. 배경 그림이 있는 테마는 `src/assets/themes/` 의 그림을 깔고 그 위에 놓는다. 테마마다 라이트 · 다크와 색이 달라 한 테마에서만 보면 다른 테마에서 깨지는 것을 놓친다(`docs/foundation/design-system.md` 시안)
 - 낮은 화면에서 어떻게 보이는지 다루는 시안이면 갤럭시 Z 폴드8 외부 화면 · 아이폰 듀오 외부 화면 · 아이폰 SE 2 를 함께 그릴 것. 셋 다 키보드가 올라오면 남는 높이가 가장 작은 축이다(`docs/foundation/design-system.md` 시안)
 - CRITICAL: **OTA 를 발행할 때는 `docs/features/live-update.md` 의 `OTA 발행 절차` 를 처음부터 순서대로 따를 것.** 메모리에 적힌 버전을 믿지 말고 서버 `/v1/ota/latest` 와 스토어 버전부터 직접 확인한다. 스토어 바이너리와 지문이 다른 트리에서 발행하면 스토어 사용자 전체가 잠기기 때문이다. 스토어 바이너리를 빌드할 때는 `docs/foundation/release.md` 를 본다

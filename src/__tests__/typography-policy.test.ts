@@ -49,9 +49,21 @@ describe('글자 계단은 표 안에서만 고른다', () => {
   })
 
   it('임의 크기(`text-[Npx]`)를 쓰지 않는다. 줄 높이가 안 붙는다', () => {
-    const 임의 = FILES.filter((file) => /text-\[\d+px\]/.test(readFileSync(file, 'utf8'))).map(where)
+    const 임의 = FILES.filter((file) => /text-\[[\d.]+(?:px)?\]/.test(readFileSync(file, 'utf8'))).map(where)
 
     expect(임의).toEqual([])
+  })
+
+  it('숫자로 준 `fontSize` 도 표 안의 값이다. 클래스를 못 쓰는 글자가 표 밖으로 새지 않게 한다', () => {
+    const sizes = new Set(Object.values(fontSize).map((value) => parseFloat((value as [string])[0])))
+    const 밖 = FILES.flatMap((file) =>
+      [...readFileSync(file, 'utf8').matchAll(/fontSize[:=]\s*\{?\s*(\d+(?:\.\d+)?)/gi)]
+        .map((m) => Number(m[1]))
+        .filter((px) => !sizes.has(px))
+        .map((px) => `${where(file)} → ${px}`),
+    )
+
+    expect([...new Set(밖)]).toEqual([])
   })
 
   it('`font-<굵기>` 도 전부 표에 있다', () => {

@@ -47,7 +47,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-semibold text-text">개발 노트</Text>
+            <Text className="text-lg font-bold text-text">개발 노트</Text>
           </PageHeaderTitleRow>
         </PageHeader>
       }
@@ -87,7 +87,7 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
 
                 return (
                   <View key={category} testID="release-note-group" className="gap-1 rounded-[10px] bg-card-inset px-3 py-2.5">
-                    <Text className="text-xs font-semibold text-text-muted">
+                    <Text className="text-11 font-bold text-text-muted">
                       {RELEASE_NOTE_CATEGORY_LABELS[category]}
                     </Text>
                     <View className="gap-2">

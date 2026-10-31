@@ -21,7 +21,7 @@ export interface DataFreshnessProps {
 
 export function DataFreshness({ fetchedAt }: DataFreshnessProps): React.JSX.Element {
   return (
-    <Text testID="data-freshness" className="h-4 text-11 text-text-disabled">
+    <Text testID="data-freshness" className="h-4 text-11 text-text-disabled" maxScale={1}>
       {formatFetchedAt(fetchedAt)}
     </Text>
   )

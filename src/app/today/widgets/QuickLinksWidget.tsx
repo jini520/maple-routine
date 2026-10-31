@@ -28,7 +28,7 @@ export function QuickLinksWidget({ data }: WidgetProps): React.JSX.Element {
   return (
     <View testID="widget-quick-links" className="gap-2.5 p-3">
       <View className="flex-row items-center">
-        <Text className="flex-1 text-10 font-bold text-text-muted">빠른 이동</Text>
+        <Text className="flex-1 text-11 font-bold text-text-muted">빠른 이동</Text>
         <Pressable
           role="button"
           aria-label="빠른 이동 편집"

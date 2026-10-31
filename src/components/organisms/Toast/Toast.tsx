@@ -107,7 +107,7 @@ export function Toast(props: ToastProps): React.JSX.Element {
       <Icon className={`h-4 w-4 shrink-0 ${ICON_CLASSES[toast.variant]}`} strokeWidth={2} aria-hidden />
       <Text
         numberOfLines={1}
-        className={`min-w-0 flex-1 text-sm font-medium ${
+        className={`min-w-0 flex-1 text-sm font-semibold ${
           toast.variant === 'error' ? 'text-error-ink' : 'text-text'
         }`}
       >

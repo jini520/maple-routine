@@ -67,7 +67,7 @@ export function PickerCharacterSelect(props: {
           className="flex-1 flex-row items-center gap-2.5 active:opacity-60"
         >
           <CharacterFace ocid={props.ocid} name={current?.name ?? ''} imageUrl={current?.imageUrl ?? null} />
-          <Text className="text-15 font-bold text-text">{current?.name ?? ''}</Text>
+          <Text className="text-sm font-semibold text-text">{current?.name ?? ''}</Text>
           {current?.level != null && <Text className="text-xs text-text-muted">Lv.{current.level}</Text>}
           <View className="ml-auto">
             <SelectChevron open={isOpen} />

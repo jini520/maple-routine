@@ -33,7 +33,7 @@ export function SheetActionButton(props: {
       style={{ height: 52, borderRadius: 26, borderCurve: 'continuous', marginHorizontal: gap - FOOTER_INSET }}
       className={`items-center justify-center ${enabled ? 'bg-primary' : 'bg-surface-2'}`}
     >
-      <Text className={`text-15 font-bold ${enabled ? 'text-on-primary' : 'text-text-disabled'}`}>{props.label}</Text>
+      <Text className={`text-base font-bold ${enabled ? 'text-on-primary' : 'text-text-disabled'}`}>{props.label}</Text>
     </Pressable>
   )
 }

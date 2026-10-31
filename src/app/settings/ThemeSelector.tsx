@@ -88,7 +88,7 @@ function ThemeTile(props: ThemeTileProps): React.JSX.Element {
         </View>
 
         <View className="min-h-5 flex-row items-center gap-1 px-0.5">
-          <Text numberOfLines={1} className="shrink text-13 font-medium text-text">
+          <Text numberOfLines={1} className="shrink text-xs font-semibold text-text">
             {props.name}
           </Text>
           <ModeIcon aria-hidden className="h-3 w-3 shrink-0 text-text-muted" strokeWidth={2} />

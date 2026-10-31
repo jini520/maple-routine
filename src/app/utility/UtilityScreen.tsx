@@ -69,7 +69,7 @@ function ToolLabel(props: { text: string; color: string }): React.JSX.Element {
       {props.text.split(' ').map((word, index) => (
         <Text
           key={`${word}-${index}`}
-          className="text-15 font-semibold"
+          className="text-sm font-semibold"
           style={{ color: props.color }}
         >
           {word}
@@ -118,7 +118,7 @@ export function UtilityScreen(): React.JSX.Element {
         header={
           <PageHeader>
             <PageHeaderTitleRow>
-              <Text className="text-lg font-semibold text-text">유틸리티</Text>
+              <Text className="text-lg font-bold text-text">유틸리티</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }

@@ -63,7 +63,7 @@ function StepRow(props: { step: TaskProgressStep; unit: string }): React.JSX.Ele
             ? 'text-xs text-text-disabled'
             : step.state === 'done'
               ? 'text-xs text-text-muted'
-              : 'text-xs font-semibold text-text'
+              : 'text-xs font-bold text-text'
         }
       />
     </View>
@@ -95,7 +95,7 @@ export function TaskProgressModal(props: TaskProgressModalProps): React.JSX.Elem
               <Text className="text-xs text-text" style={TABULAR_NUMS}>
                 {`${props.done.toLocaleString()} / ${props.total.toLocaleString()}${unit}`}
               </Text>
-              <Text className="text-xs font-semibold text-primary-ink" style={TABULAR_NUMS}>
+              <Text className="text-xs font-bold text-primary-ink" style={TABULAR_NUMS}>
                 {`${percent}%`}
               </Text>
             </View>

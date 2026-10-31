@@ -34,8 +34,8 @@ import { GUIDE_URL } from './api-key-links'
 function KeyStageRows(): React.JSX.Element {
   return (
     <View className="gap-1.5">
-      <InsetRow label="넣으신 키" value="개발 단계" valueClassName="text-xs font-semibold text-text-muted" />
-      <InsetRow label="필요한 키" value="서비스 단계" valueClassName="text-xs font-semibold text-primary-ink" />
+      <InsetRow label="넣으신 키" value="개발 단계" valueClassName="text-xs text-text-muted" />
+      <InsetRow label="필요한 키" value="서비스 단계" valueClassName="text-xs font-bold text-primary-ink" />
     </View>
   )
 }

@@ -86,8 +86,8 @@ function orderForCycle(rows: readonly ScheduleRowView[], cycle: Cycle): Schedule
     .map((entry) => entry.row)
 }
 
-const VALUE_CLASS = 'text-right text-[11.5px] font-bold leading-tight text-text'
-const LABEL_CLASS = 'text-[11.5px] leading-tight text-text-muted'
+const VALUE_CLASS = 'text-right text-xs font-bold leading-tight text-text'
+const LABEL_CLASS = 'text-xs leading-tight text-text-muted'
 
 /** 수치 한 덩이. 퀘스트 3개·보스 1개. */
 function Amount(props: { label: string; count: number }): React.JSX.Element {
@@ -198,7 +198,7 @@ function DetailGroup(props: { label: string | null; children: React.ReactNode })
   return (
     <View className="gap-1">
       {props.label !== null && (
-        <Text className="text-[10.5px] font-bold tracking-[.02em] text-text-muted">
+        <Text className="text-11 font-bold tracking-[.02em] text-text-muted">
           {props.label}
         </Text>
       )}
@@ -256,7 +256,7 @@ function ScheduleRow(props: {
       <Text
         testID="schedule-name"
         numberOfLines={1}
-        className="min-w-0 flex-1 text-13 font-semibold text-text"
+        className="min-w-0 flex-1 text-xs font-semibold text-text"
       >
         {row.characterName}
       </Text>
@@ -333,7 +333,7 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
       </View>
 
       {data.schedule.length === 0 ? (
-        <Text className="pt-2.5 text-13 text-text-muted">추적 중인 캐릭터가 없습니다</Text>
+        <Text className="pt-2.5 text-11 text-text-muted">추적 중인 캐릭터가 없습니다</Text>
       ) : (
         <View className="gap-1.5 pt-2">
           {orderForCycle(data.schedule, cycle).map((row) => (

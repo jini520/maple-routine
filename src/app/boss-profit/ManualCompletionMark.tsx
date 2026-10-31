@@ -43,14 +43,14 @@ export function ManualCompletionMark(props: { row: BossProfitRow }): React.JSX.E
           onClose={close}
           className="p-3"
         >
-          <Text className="text-11 font-bold text-text">직접 완료로 작성된 기록이에요</Text>
+          <Text className="text-xs font-bold text-text">직접 완료로 작성된 기록이에요</Text>
           <Text className="mt-1 text-11 leading-4 text-text-muted">
             API 응답과 동기화되지 않은 기록이에요. API에서 완료 기록이 도착하면 이 표시가
             사라져요.
           </Text>
           {props.row.defeatedOn !== null && (
             <Text
-              className="mt-2 rounded-[10px] bg-card-inset px-2.5 py-1.5 text-10 text-text-muted"
+              className="mt-2 rounded-[10px] bg-card-inset px-2.5 py-1.5 text-11 text-text-muted"
               style={TABULAR_NUMS}
             >
               {`${formatDayLabel(props.row.defeatedOn)} · ${DIFFICULTY_NAME[props.row.difficulty]} · ${

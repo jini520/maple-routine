@@ -149,13 +149,13 @@ API 키로 이미 들어온 사용자는 로그인 화면을 다시 볼 일이 �
            내 메이플 스토리 스케줄 정보 조회를 위해서
            넥슨 로그인이 필요해요.                       14px · text-muted
            [ 넥슨ID 로그인 ]
-           게임 데이터 활용 로그인이란? ↗                13px · primary-ink · 링크
+           게임 데이터 활용 로그인이란? ↗                12px · primary-ink · 링크
            (화면 맨 아래) API 키로 시작하기               12px · text-muted · 글자 버튼
 경고 모달  ⚠ API 키로 시작할까요?
            [🔒 일부 기능은 넥슨 로그인으로만 쓸 수 있어요]   card-inset 칸
            [앞으로 나오는 기능도 넥슨 로그인을 기준으로 만들어요.]   card-inset 칸 · text-muted
            [ 넥슨ID 로그인 ]
-           그래도 API 키로 시작하기                       13px · text-muted · 글자 버튼
+           그래도 API 키로 시작하기                       12px · text-muted · 글자 버튼
 상단 시트  🔑 API 키로 시작하기            ⚠ 일부 기능 제한
            Nexon Open API 키           openapi.nexon.com에서 확인 ↗
            [ 입력칸 ]

@@ -296,7 +296,7 @@ function BarItem({
           // 폰트 메트릭 여백을 더해 iOS 보다 큰 상자를 만든다. 아이콘→라벨이 27 → 30px
           // 이 되고 블록이 5px 자라 아이콘이 3px 위로 밀린다. iOS 는 이 값을 무시한다.
           style={{ color: active ? accent : muted, includeFontPadding: false }}
-          className="text-[10.5px] font-normal tracking-[-0.01em]"
+          className="text-10 font-normal tracking-[-0.01em]"
         >
           {label}
         </Text>

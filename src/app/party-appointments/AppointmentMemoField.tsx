@@ -34,7 +34,7 @@ export function AppointmentMemoField(props: AppointmentMemoFieldProps): React.JS
         <View className="gap-1 rounded-xl bg-surface px-3 pb-3 pt-2.5">
           <View className="flex-row items-center gap-1">
             <StickyNoteIcon className="h-3 w-3 text-text-muted" strokeWidth={2.2} aria-hidden />
-            <Text className="text-11 text-text-muted">메모</Text>
+            <Text className="text-xs text-text-muted">메모</Text>
           </View>
           <MemoBody memo={props.memo} />
         </View>
@@ -53,7 +53,7 @@ export function AppointmentMemoField(props: AppointmentMemoFieldProps): React.JS
           <View className="h-[30px] w-[30px] items-center justify-center">
             <StickyNoteIcon className="h-[15px] w-[15px] text-text-muted" strokeWidth={2} aria-hidden />
           </View>
-          <Text className="flex-1 text-sm font-semibold text-text-muted">메모 추가</Text>
+          <Text className="flex-1 text-sm text-text-muted">메모 추가</Text>
           <PlusIcon className="h-4 w-4 text-text-muted" strokeWidth={2.6} aria-hidden />
         </Pressable>
       </View>
@@ -61,7 +61,7 @@ export function AppointmentMemoField(props: AppointmentMemoFieldProps): React.JS
   }
   return (
     <Pressable role="button" aria-label="메모 고치기" onPress={props.onPress} className="gap-1.5 px-4 active:opacity-60">
-      <Text className="text-13 font-semibold text-text">메모</Text>
+      <Text className="text-xs text-text">메모</Text>
       <View className="rounded-xl bg-surface px-3 py-2.5">
         <MemoBody memo={props.memo} />
       </View>

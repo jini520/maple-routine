@@ -115,7 +115,7 @@ export function ScheduleTimeline(props: ScheduleTimelineProps): React.JSX.Elemen
             onPress={() => setExpanded((open) => !open)}
             className="flex-row items-center gap-0.5 active:opacity-60"
           >
-            <Text className="text-11 font-semibold text-text-muted">{expanded ? '오늘만' : '주간'}</Text>
+            <Text className="text-xs font-semibold text-text-muted">{expanded ? '오늘만' : '주간'}</Text>
             {expanded ? (
               <ChevronUpIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden />
             ) : (

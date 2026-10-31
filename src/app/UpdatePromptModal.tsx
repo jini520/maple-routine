@@ -132,8 +132,8 @@ function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.J
         <View testID="update-highlights" className={`gap-1.5 ${INSET_ROW_CLASS}`}>
           {highlights.map((line) => (
             <View key={line} className="flex-row gap-2">
-              <Text className="text-xs font-medium text-text-muted">·</Text>
-              <Text className="min-w-0 flex-1 text-xs font-medium text-text">{line}</Text>
+              <Text className="text-xs text-text-muted">·</Text>
+              <Text className="min-w-0 flex-1 text-xs text-text">{line}</Text>
             </View>
           ))}
         </View>
@@ -203,7 +203,7 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
                 aria={{ now: state.downloadProgress, max: 100 }}
                 fillTestId="update-progress-bar"
               />
-              <Text className="self-end text-xs font-semibold text-primary-ink" style={TABULAR_NUMS}>
+              <Text className="self-end text-xs font-bold text-primary-ink" style={TABULAR_NUMS}>
                 {state.downloadProgress}%
               </Text>
             </View>

@@ -79,7 +79,7 @@ export function CategoryPicker<T extends string>(props: {
                 )}
                 {/* 둘 다 한 줄이다. 줄 수가 갈래마다 갈리면 카드 높이도 갈린다. */}
                 <View className="min-w-0 flex-1">
-                  <Text numberOfLines={1} className="text-13 font-semibold leading-tight text-text">
+                  <Text numberOfLines={1} className="text-xs font-semibold leading-tight text-text">
                     {category.name}
                   </Text>
                   <Text

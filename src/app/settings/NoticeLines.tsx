@@ -30,7 +30,7 @@ export function NoticeLines(props: {
           onPress={() => props.onPress(notice)}
           className={NOTICE_LINE_CLASS}
         >
-          <Text numberOfLines={props.titleLines} className="text-sm text-text">
+          <Text numberOfLines={props.titleLines} className="text-sm font-semibold text-text">
             {notice.title}
           </Text>
           <Text className="text-xs text-text-disabled">{formatNoticeDate(notice.publishedAt)}</Text>

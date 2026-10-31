@@ -168,7 +168,7 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
                     style={{ width: 22, height: 22 }}
                   />
                 )}
-                <Text numberOfLines={1} className={`shrink text-sm ${found === null ? 'text-text-disabled' : 'text-text'}`}>
+                <Text numberOfLines={1} className={`shrink text-sm ${found === null ? 'text-text-disabled' : 'font-semibold text-text'}`}>
                   {found === null ? '심볼 선택' : found.symbol.name}
                 </Text>
               </View>

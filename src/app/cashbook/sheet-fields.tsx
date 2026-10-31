@@ -176,7 +176,7 @@ export function SelectRow(props: {
                 testID={id}
                 label={option.label}
                 decor={decor}
-                tone={isSelected ? 'selected' : option.value === null ? 'muted' : 'value'}
+                tone={isSelected ? 'selected' : option.value === null ? 'muted' : 'option'}
               />
               {decor?.listNote != null && (
                 <Text testID={`${id}-note`} className={`ml-auto text-11 ${isSelected ? 'text-primary-ink' : 'text-text-muted'}`}>
@@ -209,7 +209,7 @@ export function SelectRow(props: {
               <Text
                 testID={`${props.testID}-value`}
                 numberOfLines={1}
-                className={`flex-1 text-right text-sm ${chosen === undefined ? 'text-text-disabled' : 'text-text'}`}
+                className={`flex-1 text-right text-sm ${chosen === undefined ? 'text-text-disabled' : 'font-semibold text-text'}`}
               >
                 {chosen?.label ?? props.placeholder}
               </Text>
@@ -301,7 +301,7 @@ export function AmountInput(props: {
       className="h-5 flex-1"
     >
       <Text
-        className={`text-right text-sm font-semibold ${empty ? 'text-text-disabled' : 'text-text'}`}
+        className={`text-right text-sm ${empty ? 'text-text-disabled' : 'font-semibold text-text'}`}
         style={TABULAR_NUMS}
       >
         {empty ? (props.placeholder ?? '0') : mesoValueOf(props.value).toLocaleString()}
@@ -378,7 +378,7 @@ export function TextField(props: {
       }
       className="h-5 flex-1"
     >
-      <Text numberOfLines={1} className={`text-right text-sm ${empty ? 'text-text-disabled' : 'text-text'}`}>
+      <Text numberOfLines={1} className={`text-right text-sm ${empty ? 'text-text-disabled' : 'font-semibold text-text'}`}>
         {empty ? props.placeholder : props.value}
       </Text>
     </Pressable>

@@ -196,7 +196,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
               className="flex-row items-center gap-2"
             >
               <CheckBox checked={huntMode === 'manual'} />
-              <Text className="text-xs font-semibold text-text-muted">획득 메소 직접 입력</Text>
+              <Text className="text-xs text-text-muted">획득 메소 직접 입력</Text>
             </Pressable>
           </View>
         )}

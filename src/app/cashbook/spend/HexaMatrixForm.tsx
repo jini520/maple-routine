@@ -269,9 +269,9 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
               className={`${FIELD_CELL_CLASS} ${activationFragments === undefined ? 'opacity-40' : ''}`}
             >
               <CheckBox checked={activation && activationFragments !== undefined} />
-              <Text className="text-13 font-semibold text-text">이번 기록에 활성화 포함</Text>
+              <Text className="text-sm font-semibold text-text">이번 기록에 활성화 포함</Text>
               <Text
-                className={`ml-auto text-13 font-semibold ${activation ? 'text-primary-ink' : 'text-text-disabled'}`}
+                className={`ml-auto text-sm ${activation ? 'font-bold text-primary-ink' : 'text-text-disabled'}`}
                 style={TABULAR_NUMS}
               >
                 {activationFragments === undefined ? '' : `+${activationFragments.toLocaleString()}개`}
@@ -301,7 +301,7 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
             <Text className="text-xs text-text-muted">필요 조각</Text>
             {detail !== null && <Text className="text-11 text-text-muted">{detail}</Text>}
           </View>
-          <Text testID="spend-sheet-hexa-fragment-count" className="ml-auto text-base font-bold text-text" style={TABULAR_NUMS}>
+          <Text testID="spend-sheet-hexa-fragment-count" className="ml-auto text-lg font-bold text-text" style={TABULAR_NUMS}>
             {fragments === null ? '-' : fragments.toLocaleString()}
           </Text>
           <Text className="text-xs text-text-muted">개</Text>
@@ -346,7 +346,7 @@ function KindChip(props: { icon: string; name: string }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-1">
       {icon !== null && <Image source={icon} resizeMode="contain" style={{ width: 18, height: 18 }} />}
-      <Text className="text-11 font-semibold text-text-muted">{props.name}</Text>
+      <Text className="text-11 text-text-muted">{props.name}</Text>
     </View>
   )
 }
@@ -358,11 +358,16 @@ function CoreName(props: { core: HexaCore; iconSize: number; selected?: boolean 
   return (
     <View className="flex-row items-center gap-1.5">
       {icon !== null && <Image source={icon} resizeMode="contain" style={{ width: props.iconSize, height: props.iconSize }} />}
-      <Text numberOfLines={1} className={`shrink text-sm ${props.selected === true ? 'font-semibold text-primary-ink' : 'text-text'}`}>
+      <Text
+        numberOfLines={1}
+        className={`shrink text-sm ${
+          props.selected === true ? 'font-semibold text-primary-ink' : props.selected === false ? 'text-text' : 'font-semibold text-text'
+        }`}
+      >
         {first}
       </Text>
       {more > 0 && (
-        <Text className="rounded-full bg-control-track px-1.5 py-px text-10 font-semibold text-text-muted">{`외 ${more}`}</Text>
+        <Text className="rounded-full bg-control-track px-1.5 py-px text-chip-sm font-semibold text-text-muted">{`외 ${more}`}</Text>
       )}
     </View>
   )

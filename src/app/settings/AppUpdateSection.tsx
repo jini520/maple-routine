@@ -74,13 +74,13 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
       : state.status === 'update-available' ||
           state.status === 'ready-to-apply' ||
           state.status === 'store-required'
-        ? 'text-sm font-medium text-primary-ink'
+        ? 'text-sm font-semibold text-primary-ink'
         : 'text-sm text-text-muted'
 
   return (
     <Card className={SETTINGS_CARD_CLASS}>
       <View className={SETTINGS_ROW_CLASS}>
-        <Text className="text-sm font-medium text-text">현재 버전</Text>
+        <Text className="text-sm font-semibold text-text">현재 버전</Text>
         <View className="flex-row items-center gap-2">
           {state.channel === 'beta' && (
             <Badge variant="primary">beta</Badge>
@@ -90,7 +90,7 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
       </View>
 
       <View className={SETTINGS_ROW_CLASS}>
-        <Text className="text-sm font-medium text-text">상태</Text>
+        <Text className="text-sm font-semibold text-text">상태</Text>
         <Text className={highlight}>{statusText[state.status]}</Text>
       </View>
 
@@ -107,7 +107,6 @@ export function AppUpdateSection(props: AppUpdateSectionProps): React.JSX.Elemen
             className={`w-full flex-row items-center justify-center${
               isBusy ? ' opacity-50' : ''
             }`}
-            textClassName="text-sm"
           >
             업데이트 확인
           </Button>

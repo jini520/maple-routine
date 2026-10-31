@@ -90,7 +90,7 @@ function Tile(props: { id: QuickLinkId; selected: boolean; locked: boolean; onPr
           </View>
         )}
       </View>
-      <Text className={`text-xs ${props.selected ? 'font-bold text-text' : 'font-medium text-text-muted'}`} numberOfLines={1}>
+      <Text className={`text-11 ${props.selected ? 'font-bold text-text' : 'text-text-muted'}`} numberOfLines={1}>
         {QUICK_LINK_NAMES[props.id].short}
       </Text>
     </Pressable>
@@ -132,7 +132,7 @@ export function QuickLinksSheet(props: QuickLinksSheetProps): React.JSX.Element 
       testId="quick-links-sheet"
       label="빠른 이동 편집"
       onClose={props.onClose}
-      header={<Text className="text-lg font-bold text-text">빠른 이동</Text>}
+      header={<Text className="text-base font-bold text-text">빠른 이동</Text>}
       footer={
         <View className="-mx-4 -mt-3 bg-bg pt-3" style={{ boxShadow: boxShadowOf(definition.shadowColor, TRAY_SHADOW) }}>
           <View className="flex-row items-center justify-between px-5">
@@ -194,10 +194,10 @@ export function QuickLinksSheet(props: QuickLinksSheetProps): React.JSX.Element 
         </View>
       }
     >
-      <View className="gap-3 px-4">
+      <View className="gap-3 px-4 pb-3">
         {QUICK_LINK_GROUPS.map((group) => (
           <View key={group.label} className="rounded-[22px] bg-surface px-3 pb-1 pt-3.5">
-            <Text className="px-1.5 pb-2.5 text-13 font-bold text-text">{group.label}</Text>
+            <Text className="px-1.5 pb-2.5 text-xs font-bold text-text">{group.label}</Text>
             <View className="flex-row flex-wrap">
               {group.ids.map((id) => {
                 const selected = draft.ids.includes(id)

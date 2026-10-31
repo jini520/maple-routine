@@ -155,7 +155,7 @@ export function TodayScreen(): React.JSX.Element {
               fetchedAt={fetchedAt}
               trailing={<CharacterManageButton portraits={viewModel.headerPortraits} />}
             >
-              <Text className="shrink-0 text-lg font-semibold text-text">today</Text>
+              <Text className="shrink-0 text-lg font-bold text-text">today</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }

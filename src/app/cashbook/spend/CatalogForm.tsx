@@ -154,7 +154,7 @@ function ItemTile(props: {
         )}
         {/* 글자가 남은 폭을 갖는다. `min-w-0` 이 없으면 긴 이름이 그림을 밀어낸다. */}
         <View className="min-w-0 flex-1">
-          <Text numberOfLines={1} className="text-13 font-semibold leading-tight text-text">
+          <Text numberOfLines={1} className="text-xs font-semibold leading-tight text-text">
             {props.label}
           </Text>
           {props.price !== null && (
@@ -183,7 +183,7 @@ function ItemTile(props: {
 function GroupLabel(props: { groupKey: string; group: string; active: boolean }): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-1.5">
-      <Text className="text-11 text-text-disabled">{props.group}</Text>
+      <Text className="text-11 font-bold text-text-disabled">{props.group}</Text>
       {!props.active && (
         <Text testID={`spend-sheet-closed-${props.groupKey}`} className="text-11 text-text-disabled">
           · 이벤트 기간이 아닙니다
@@ -496,7 +496,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
                 )}
                 <View className="flex-row items-baseline justify-end gap-1" style={COIN_COUNT_SLOT}>
                   <Text
-                    className={`text-sm font-semibold ${coins === 0 ? 'text-text-disabled' : 'text-text'}`}
+                    className={`text-sm ${coins === 0 ? 'text-text-disabled' : 'font-semibold text-text'}`}
                     style={TABULAR_NUMS}
                   >
                     {coins}
@@ -506,7 +506,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
                 <Text className="shrink-0 text-xs text-text-muted">주화 판매</Text>
                 <View className="ml-auto flex-row items-baseline gap-1">
                   <Text
-                    className={`text-sm font-semibold ${coins === 0 ? 'text-text-disabled' : 'text-text'}`}
+                    className={`text-sm ${coins === 0 ? 'text-text-disabled' : 'font-semibold text-text'}`}
                     style={TABULAR_NUMS}
                   >
                     {formatMesoUnits(rewardCoinMeso(coins))}
@@ -555,7 +555,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
                   value={priceText}
                   onChange={setPriceText}
                 />
-                <Text className="ml-1.5 shrink-0 text-xs font-semibold text-text-muted">메소</Text>
+                <Text className="ml-1.5 shrink-0 text-xs text-text-muted">메소</Text>
               </FieldRow>
             )}
 

@@ -112,7 +112,7 @@ function BossCard(props: {
             <Badge variant={boss.difficulty}>
               {DIFFICULTY_NAME[boss.difficulty]}
             </Badge>
-            <Text className="text-sm font-medium text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
+            <Text className="text-sm font-semibold text-text" style={ILLUSTRATION_TEXT_SHADOW_STYLE}>
               {bossName}
             </Text>
             {partySize !== undefined && partySize > 1 && (
@@ -450,7 +450,7 @@ export function BossScreen(): React.JSX.Element {
         {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다. 빈 상태와 목록 상태를
             오갈 때 제목이 튀면 가장 눈에 띈다. */}
         <PageHeaderTitleRow>
-          <Text className="text-lg font-semibold text-text">보스 스케줄러</Text>
+          <Text className="text-lg font-bold text-text">보스 스케줄러</Text>
         </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
@@ -492,7 +492,7 @@ export function BossScreen(): React.JSX.Element {
                 )
               }
             >
-              <Text className="shrink text-lg font-semibold text-text">보스 스케줄러</Text>
+              <Text className="shrink text-lg font-bold text-text">보스 스케줄러</Text>
             </PageHeaderTitleRow>
           </PageHeader>
         }
