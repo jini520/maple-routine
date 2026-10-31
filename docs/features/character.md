@@ -24,7 +24,7 @@
 | `features/mvp-grade/character-list.ts` | `character/list` 를 5분 안에 한 번만 받는다(`fetchCharacterListCached`, 쿼리 `characterList(credentialKey)`). 캐릭터 관리의 계정 목록과 후보 목록이 나눠 쓴다 |
 | `features/schedule-sync/character-eligibility.ts` | 후보 자격 판정(`resolveCharacterEligibility`) |
 | `features/schedule-sync/stranded-characters.ts` | `character/list` 에 없는 추적 ocid 를 따로 조회한다 |
-| `features/character-profile/resolve.ts` | 표시할 이름 · 얼굴을 찾는다(`resolveDisplayProfiles`) |
+| `features/character-profile/resolve.ts` | 표시할 이름 · 얼굴을 찾는다(`resolveDisplayProfiles`). 표 → 쿼리 캐시 → 옛 Preferences 키 순이고, 찾은 것은 표에 심는다([[ADR-142]] 결정 10) |
 | `features/character-manage/world-leap.ts` · `world-leap-store.ts` · `app/WorldLeapNoticeModal.tsx` | 월드 이전 판정과 확인 모달 |
 | `app/settings/SettingsCharactersScreen.tsx` | 캐릭터 관리 화면 |
 | `components/organisms/CharacterManage/` | 캐릭터 관리 본문. 고른 목록과 후보를 한 격자에 그린다 |

@@ -12,6 +12,7 @@
 | `storage/adapters/rn-preferences.ts` | 포트 구현. 로컬 모듈 `modules/capacitor-storage` 를 부른다 |
 | `storage/adapters/capacitor-storage-keys.ts` | iOS 키 접두사 규칙(`capacitor-storage.md`) |
 | `storage/cache-data.ts` | 데이터 삭제가 그룹마다 지우는 키 목록 |
+| `storage/legacy-cleanup.ts` | 부팅 때 옛 키를 한 번 지우는 정리와 옛 값 읽기([[ADR-142]] 결정 12) |
 | `storage/*.ts` | 키마다 읽고 쓰는 어댑터 |
 
 `keys()` 는 빠지면 안 된다. 데이터 삭제가 `수동 선택 항목` · `캐시` 의 접두사 키(`manualTrackedContent:*` · `schedulerCache:*` 등)를 찾고 옛 키 정리가 `mesoRateCache:*` 를 찾으려고 이 목록을 훑는다.

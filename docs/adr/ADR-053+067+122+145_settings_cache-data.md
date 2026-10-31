@@ -1,6 +1,6 @@
 # ADR-053+067+122+145 데이터 삭제
 
-> 🟢 유효(`캐시` 그룹은 구현 중)
+> 🟢 유효
 > 옛 번호: ADR-052 · ADR-058 · ADR-117 결정 8
 > 관련 소스: `storage/cache-data.ts` · `storage/character-profiles.ts` · `storage/sqlite/db.ts` · `storage/pending-notice.ts` · `features/settings/cache-data.ts` · `features/query/persist.ts` · `app/settings/CacheClearConfirm.tsx` · `app/settings/SettingsAboutScreen.tsx`
 

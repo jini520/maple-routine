@@ -1,6 +1,6 @@
 # ADR-142+144 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다
 
-> 🟢 유효(세 단계 모두 구현. 결정 10 ~ 12 와 결정 5 의 복귀 신호 통합은 구현 중)
+> 🟢 유효(세 단계와 #819 후속 모두 구현)
 > 관련 소스: `features/query/`(`client.ts` · `keys.ts` · `meta.ts` · `freshness.ts` · `app-focus.ts` · `reset-timer.ts` · `persist.ts` · `invalidation.ts`) · `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` · `schedule-views.ts` · `read-schedule.ts` · `save-tracked.ts` · `features/refresh/pull.ts` · `features/refresh/freshness.ts` · `features/boss-profit/period-query.ts` · `round-record.ts` · `round-view.ts` · `store.ts` · `drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/cashbook/meso-rate.ts` · `features/ledger/useLedgerData.tsx` · `features/content-scheduler/views.ts` · `use-content-schedule.ts` · `features/boss-scheduler/views.ts` · `use-boss-schedule.ts` · `manual-completed-query.ts` · `features/settlement/query.ts` · `features/manual-completion/query.ts` · `features/notice/notice-query.ts` · `features/party-appointments/query.ts` · `features/mvp-grade/character-list.ts` · `features/character-profile/resolve.ts` · `features/enhancement-history/event-world-names.ts` · `features/prehydrate.ts` · `storage/query-cache.ts` · `storage/legacy-cleanup.ts` · `storage/sqlite/query-cache-tables.ts` · `app/QueryCacheProvider.tsx` · `hooks/useRefetchStaleOnFocus.ts` · `hooks/useReturnToForeground.ts` · `index.ts`
 
 ## 배경
@@ -56,7 +56,7 @@ zustand 스토어에는 **화면 상태만** 남긴다. 고른 탭 · 보던 기
 | `schedule(ocid)` | 캐릭터 하나의 스케줄러 응답(정규화 뒤). 회차가 넣고 스스로 받지 않는다(`skipToken`) | 넥슨 `scheduler/character-state` | 한다 | 1 |
 | `characterBasic(ocid)` | 캐릭터 하나의 기본 정보. `fetchCharacterBasicCached` 가 넣는다 | 넥슨 `character/basic` | 한다 | 1 |
 | `scheduleRound()` | 마지막 회차의 받은 시각 · 덮은 캐릭터 · 캐릭터별 결과 종류 · 답하지 않은 캐릭터 | 결정 3 의 회차 | 한다 | 1 |
-| `characterList(credentialKey)` | 자격 하나로 조회되는 전 계정의 캐릭터 목록. 5분 안에는 캐릭터 관리 · MVP 등급 · 회차가 같은 응답을 쓴다 | 넥슨 `character/list` | 안 한다 | 3 |
+| `characterList(credentialKey)` | 자격 하나로 조회되는 전 계정의 캐릭터 목록. 5분 안에는 캐릭터 관리 · MVP 등급 · 회차 · 강화 수집이 같은 응답을 쓴다 | 넥슨 `character/list` | 안 한다 | 3 |
 | `notices(kind)` | 분류 하나의 공지 목록. 기기 사본(`notices`)을 대신한다 | 우리 서버 `/notices` · 넥슨 `notice*` | 한다 | 3 |
 | `settlement()` | 결산 중인지와 시작 시각. 닫은 기록은 기기 값이라 스토어가 든다 | 우리 서버 `/settlement` | 안 한다 | 3 |
 | `manualCompletion()` | 직접 완료를 연 보스. 닫은 주는 기기 값이라 스토어가 든다 | 우리 서버 `manual-completion` | 안 한다 | 3 |
