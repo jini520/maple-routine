@@ -37,4 +37,10 @@ export const queryKeys = {
   manualCompleted: (weeklyKey: string, monthlyKey: string) => ['manual-completed', weeklyKey, monthlyKey] as const,
   /** 파티 약속 목록(Preferences). 저장이 `setQueryData` 로 덮는다. */
   partyAppointments: () => ['party-appointments'] as const,
+  /** 캐릭터 하나의 메소 획득량(%) 마지막 성공값. */
+  mesoRate: (ocid: string) => ['meso-rate', ocid] as const,
+  /** 메소 획득량 전부를 가리키는 앞 칸. */
+  allMesoRates: () => ['meso-rate'] as const,
+  /** 이벤트 월드 캐릭터 이름 배열. 강화 수집기가 `setQueryData` 로 넣는다. */
+  eventWorldNames: () => ['event-world-names'] as const,
 }

@@ -3,6 +3,8 @@ import { clearCacheData, getCacheDataCounts } from '../../storage/cache-data'
 import { consumePendingNotice, setPendingNotice } from '../../storage/pending-notice'
 import { closeBossProfitDb } from '../../storage/sqlite/db'
 import { showSplashScreen } from '../../native/splash-screen'
+import { queryClient } from '../query/client'
+import { shouldPersistQuery, stopQueryPersist } from '../query/persist'
 import { useToastStore } from '../toast/store'
 
 // 데이터 삭제의 오케스트레이션. 화면에서 이리로 옮겼다.
@@ -18,7 +20,10 @@ export type { CacheDataCounts }
 
 /** 그룹마다 지울 기록의 건수. 실패는 호출부가 자리표시로 처리하도록 그대로 던진다. */
 export async function loadCacheDataCounts(): Promise<CacheDataCounts> {
-  return getCacheDataCounts()
+  const counts = await getCacheDataCounts()
+  // 저장된 쿼리는 표의 한 행에 JSON 으로 들어 있어 표로 셀 수 없다. 복원된 메모리 캐시가 같은 것을 든다.
+  const storedQueries = queryClient.getQueryCache().getAll().filter(shouldPersistQuery).length
+  return { ...counts, cacheEntries: counts.cacheEntries + storedQueries }
 }
 
 /**
@@ -33,6 +38,10 @@ export async function clearCacheDataAndReload(
   selection: CacheDataSelection,
   reload: () => void,
 ): Promise<void> {
+  // 메모리의 쿼리 캐시가 살아 있어 저장기를 두면 지운 표를 다시 쓴다. `queryClient.clear()` 로는 못 막는다. 저장기가 1초
+  // 간격으로 돌아 비운 뒤의 쓰기가 DB 를 닫은 다음에 나가면 닫은 연결을 다시 연다. 메모리 값은 리로드가 없앤다.
+  if (selection.cache) stopQueryPersist()
+
   // 실패를 삼키지 않는다. 다만 리로드가 화면 신호를 파괴하므로 여기서 토스트를 띄울 수 없다.
   // 플래그를 남기고 부팅 후에 띄운다. 타임아웃(응답 없음)도 삭제됐는지 알 수 없으므로 같이 알린다.
   const outcome = await Promise.race([

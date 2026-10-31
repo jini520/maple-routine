@@ -176,7 +176,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-050+110+128](./adr/ADR-050+110+128_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
 | [ADR-051+075+090](./adr/ADR-051+075+090_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
 | [ADR-052+104+114+124](./adr/ADR-052+104+114+124_settings_screen.md) | 🟢 | settings | 더보기 · 설정 화면과 안내 · 앱 안 리뷰 요청 · 카드 안 칸 |
-| [ADR-053+067+122](./adr/ADR-053+067+122_settings_cache-data.md) | 🟢 | settings | 데이터 삭제 |
+| [ADR-053+067+122+145](./adr/ADR-053+067+122+145_settings_cache-data.md) | 🟢 | settings | 데이터 삭제 |
 | [ADR-054+115+132](./adr/ADR-054+115+132_theme_tokens.md) | 🟢 | theme | 테마와 색 토큰 · 테마 페이지 |
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |
 | [ADR-056+072](./adr/ADR-056+072_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |
@@ -201,4 +201,4 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |
 | [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |
 | [ADR-137](./adr/ADR-137_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
-| [ADR-142](./adr/ADR-142_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
+| [ADR-142+144](./adr/ADR-142+144_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |

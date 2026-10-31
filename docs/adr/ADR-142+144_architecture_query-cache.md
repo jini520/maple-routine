@@ -1,7 +1,7 @@
-# ADR-142 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다
+# ADR-142+144 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다
 
-> 🟢 유효(세 단계 모두 구현)
-> 관련 소스: `features/query/`(`client.ts` · `keys.ts` · `meta.ts` · `freshness.ts` · `app-focus.ts` · `reset-timer.ts` · `persist.ts` · `invalidation.ts`) · `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` · `schedule-views.ts` · `read-schedule.ts` · `save-tracked.ts` · `features/refresh/pull.ts` · `features/refresh/freshness.ts` · `features/boss-profit/period-query.ts` · `round-record.ts` · `round-view.ts` · `store.ts` · `drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/ledger/useLedgerData.tsx` · `features/content-scheduler/views.ts` · `use-content-schedule.ts` · `features/boss-scheduler/views.ts` · `use-boss-schedule.ts` · `manual-completed-query.ts` · `features/settlement/query.ts` · `features/manual-completion/query.ts` · `features/notice/notice-query.ts` · `features/party-appointments/query.ts` · `features/mvp-grade/character-list.ts` · `features/prehydrate.ts` · `storage/query-cache.ts` · `storage/sqlite/query-cache-tables.ts` · `app/QueryCacheProvider.tsx` · `hooks/useRefetchStaleOnFocus.ts` · `index.ts`
+> 🟢 유효(세 단계와 #819 후속 모두 구현)
+> 관련 소스: `features/query/`(`client.ts` · `keys.ts` · `meta.ts` · `freshness.ts` · `app-focus.ts` · `reset-timer.ts` · `persist.ts` · `invalidation.ts`) · `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` · `schedule-views.ts` · `read-schedule.ts` · `save-tracked.ts` · `features/refresh/pull.ts` · `features/refresh/freshness.ts` · `features/boss-profit/period-query.ts` · `round-record.ts` · `round-view.ts` · `store.ts` · `drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/cashbook/meso-rate.ts` · `features/ledger/useLedgerData.tsx` · `features/content-scheduler/views.ts` · `use-content-schedule.ts` · `features/boss-scheduler/views.ts` · `use-boss-schedule.ts` · `manual-completed-query.ts` · `features/settlement/query.ts` · `features/manual-completion/query.ts` · `features/notice/notice-query.ts` · `features/party-appointments/query.ts` · `features/mvp-grade/character-list.ts` · `features/character-profile/resolve.ts` · `features/enhancement-history/event-world-names.ts` · `features/prehydrate.ts` · `storage/query-cache.ts` · `storage/legacy-cleanup.ts` · `storage/sqlite/query-cache-tables.ts` · `app/QueryCacheProvider.tsx` · `hooks/useRefetchStaleOnFocus.ts` · `hooks/useReturnToForeground.ts` · `index.ts`
 
 ## 배경
 
@@ -56,7 +56,7 @@ zustand 스토어에는 **화면 상태만** 남긴다. 고른 탭 · 보던 기
 | `schedule(ocid)` | 캐릭터 하나의 스케줄러 응답(정규화 뒤). 회차가 넣고 스스로 받지 않는다(`skipToken`) | 넥슨 `scheduler/character-state` | 한다 | 1 |
 | `characterBasic(ocid)` | 캐릭터 하나의 기본 정보. `fetchCharacterBasicCached` 가 넣는다 | 넥슨 `character/basic` | 한다 | 1 |
 | `scheduleRound()` | 마지막 회차의 받은 시각 · 덮은 캐릭터 · 캐릭터별 결과 종류 · 답하지 않은 캐릭터 | 결정 3 의 회차 | 한다 | 1 |
-| `characterList(credentialKey)` | 자격 하나로 조회되는 전 계정의 캐릭터 목록. 5분 안에는 캐릭터 관리 · MVP 등급 · 회차가 같은 응답을 쓴다 | 넥슨 `character/list` | 안 한다 | 3 |
+| `characterList(credentialKey)` | 자격 하나로 조회되는 전 계정의 캐릭터 목록. 5분 안에는 캐릭터 관리 · MVP 등급 · 회차 · 강화 수집이 같은 응답을 쓴다 | 넥슨 `character/list` | 안 한다 | 3 |
 | `notices(kind)` | 분류 하나의 공지 목록. 기기 사본(`notices`)을 대신한다 | 우리 서버 `/notices` · 넥슨 `notice*` | 한다 | 3 |
 | `settlement()` | 결산 중인지와 시작 시각. 닫은 기록은 기기 값이라 스토어가 든다 | 우리 서버 `/settlement` | 안 한다 | 3 |
 | `manualCompletion()` | 직접 완료를 연 보스. 닫은 주는 기기 값이라 스토어가 든다 | 우리 서버 `manual-completion` | 안 한다 | 3 |
@@ -66,8 +66,12 @@ zustand 스토어에는 **화면 상태만** 남긴다. 고른 탭 · 보던 기
 | `dropHistory()` | 드롭 기록 전 기간 묶음과 가뭄 요약 | SQLite | 안 한다 | 2 |
 | `enhancementToday()` | 오늘 강화 내역을 마지막으로 받은 시각. 머리의 `hh:mm:ss 기준` 이 회차 시각과 견준다 | 강화 수집기가 넣는다 | 안 한다 | 2 |
 | `partyAppointments()` | 파티 약속. 저장이 `setQueryData` 로 덮는다 | Preferences | 안 한다 | 3 |
+| `mesoRate(ocid)` | 캐릭터 하나의 메소 획득량(%) 마지막 성공값. 사냥 계산기가 못 읽었을 때 칸의 기본값이다. 결정 11 | 넥슨(`fetchMesoRate`) | 한다 | 후속 |
+| `eventWorldNames()` | 이벤트 월드 캐릭터 이름 배열. 강화 수집기가 넣는다. 결정 11 | 넥슨 `character/list` | 한다 | 후속 |
 
 프로필 스냅샷(`character-profiles`)에는 열쇠를 두지 않는다. 화면이 직접 읽지 않고 위 쿼리들의 `queryFn` 안에서 읽는다.
+
+`meta` 는 옵저버가 붙거나 `fetchQuery` 가 돌 때 쿼리에 실린다. `mesoRate` · `eventWorldNames` 는 화면이 구독하지 않고 `setQueryData` 로만 들어가므로, 그대로 두면 `meta` 가 비어 저장기가 건너뛴다. 그래서 이 둘은 `features/query/client.ts` 의 `setQueryDefaults` 로 표식을 건다.
 
 ### 결정 3. 스케줄 회차는 쿼리 하나이고, 결과를 캐릭터 열쇠에 나눠 넣는다
 
@@ -131,8 +135,10 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 | 화면 포커스 | 만료된 쿼리만 받는다. 탭을 오가는 동선은 10분 안이라 캐시로 끝난다. 컨텐츠 · 보스 · 보스 수익 · today 가 건다 | `hooks/useRefetchStaleOnFocus.ts` |
 | 당겨서 새로고침 · 다시 시도 | 신선해도 받는다 | `refreshSchedules`. 화면이 `ScreenScroll` 의 `onRefresh` 와 토스트의 다시 시도에 넘긴다 |
 
-- 복귀의 `inactive → active` 는 세지 않는다. 지금 `useReturnToForeground` 와 같은 이유다(iOS 알림 센터를 내렸다 올린 것은
-  배경에 간 적이 없다).
+- 복귀의 `inactive → active` 는 세지 않는다. iOS 알림 센터를 내렸다 올린 것은 배경에 간 적이 없기 때문이다.
+- 복귀 신호는 `app-focus.ts` 하나다. 쿼리 밖의 일(게임 데이터 확인 · 알림 재구독 · 알림 재조정 · MVP 등급)은
+  `hooks/useReturnToForeground` 를 쓰고, 이 훅은 `focusManager` 를 구독해 포커스가 켜질 때 콜백을 부른다. 전에는 훅이 `AppState`
+  리스너를 따로 달아 같은 규칙이 두 벌이었다.
 - 우리 서버 쿼리(결산 · 직접 완료 · 공지)도 `refetchOnWindowFocus: 'always'` 다. 새벽 결산 중 배경에 두었다가 돌아오면 결산
   줄이 걷히고(#812 A5), 더보기 · 공지 목록을 연 채 돌아오면 새 글이 서고(A7), 배경에서 온 운영자 공지는 today 배너가
   서버를 다시 물어 세운다(A8). `meta.source` 는 `server` 다. 자정 무효화는 `nexon` 만 본다.
@@ -183,15 +189,15 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
   가를 수 없다.
 - 저장된 캐시의 `buster` 는 캐시 모양의 판이다. 정규화 모양을 바꾸면 판을 올려 옛 캐시를 버린다. 맞지 않는 모양을 읽어
   화면이 깨지는 것보다 한 번 다시 받는 것이 낫다.
-- 복원이 끝나면 1.0.12 까지의 Preferences 캐시(`schedulerCache:{ocid}` · `characterBasicCache:{ocid}`)를 쿼리에 없는
-  캐릭터만 쿼리 캐시로 옮기고 **그 키를 지운다**(`seedScheduleQueriesFromLegacyCache`). 버리기만 하면 업데이트 직후
+- 복원이 끝나면 1.0.12 까지의 Preferences 캐시(`schedulerCache:{ocid}` · `characterBasicCache:{ocid}`) 중 추적 캐릭터의 것을,
+  쿼리에 없는 캐릭터만 쿼리 캐시로 옮기고 **그 키를 지운다**(`seedScheduleQueriesFromLegacyCache`, 결정 12 가 한 번만 돌린다). 버리기만 하면 업데이트 직후
   오프라인이거나 넥슨 점검일 때 화면이 빈다. 동기화 · `character/basic` 조회 · 13일 창 · 캐릭터 관리 · 가계부는 이제 쿼리
   캐시만 읽는다(`read-schedule.ts` 의 `readCharacterBasic`). 캐릭터 관리의 첫 목록(`character/list` 를 기다리기 전에 그리는
   후보)은 쿼리 캐시에 든 `characterBasic` 을 계정 소속 기록으로 걸러 만든다. 소속 기록의 마지막 본 날이 그 계정의 가장 최근
-  날과 같은 캐릭터만이다. 월드 리프로 목록에서 빠진 캐릭터를 세우면 열 때마다 떴다가 사라진다. 옛 인덱스 키는 그 자리에서
+  날과 같은 캐릭터만이다. 월드 리프로 목록에서 빠진 캐릭터를 세우면 열 때마다 떴다가 사라진다. 옛 인덱스 키는 결정 12 가
   지운다.
 - 공지의 기기 사본(Preferences `notices`)도 걷었다. `notices(kind)` 쿼리가 저장되므로 같은 것이 두 벌이 된다. 상세 화면이
-  목록에서 먼저 그리던 것은 쿼리 캐시에서 찾는다. 옛 키는 예열의 끝에서 지운다(`storage/legacy-notice-copy.ts`).
+  목록에서 먼저 그리던 것은 쿼리 캐시에서 찾는다. 옛 키는 결정 12 가 지운다.
 - 복원은 `app/QueryCacheProvider.tsx` 가 한다. 올리는 동안 화면의 쿼리는 기다리고(`useIsRestoring`), 부팅 예열
   (`features/prehydrate.ts`)은 `whenQueryCacheRestored` 를 기다린 뒤에 돈다. 복원 전에 회차를 돌리면 옛 캐시를 못 보고
   빈 캐시로 판단한다.
@@ -230,6 +236,51 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 파티 스케줄 화면은 주가 바뀌면(D6) 보던 주가 지난 이번 주였을 때만 새 이번 주로 옮긴다. 다른 주를 보고 있었으면 그대로 둔다.
 캐릭터 관리는 `character/list` 를 한 번만 부른다(E). 계정 목록과 후보 목록이 같은 `characterList` 쿼리를 5분 안에 나눠 쓴다.
 
+### 결정 10. 프로필 조회는 표 → 쿼리 캐시 → 옛 Preferences 키 순으로 찾는다
+
+`features/character-profile/resolve.ts` 의 `resolveDisplayProfiles` 가 세 곳을 이 순서로 본다. 표(`character_profiles`)는 지워지지
+않는 스냅샷이라 먼저 본다. 쿼리 캐시에는 추적 중인 캐릭터만 든다.
+
+옛 키(`characterBasicCache:{ocid}`)까지 보는 이유가 있다. 첫 실행 이관은 추적 중인 ocid 만 옮기므로, 2026-09-05(표가 생긴 날) 전에
+추적을 뺐거나 월드를 옮겼고 그 뒤 기록 화면을 안 연 캐릭터는 이 키가 값이 남은 유일한 자리다. 이 키를 안 읽으면 보스 수익 지난
+기간은 이름이 빈 채 뜨고, 가계부 · 드롭 이력처럼 프로필을 못 찾으면 행을 안 만드는 화면에서는 줄이 사라진다(#819 A).
+
+- 옛 키에서 찾으면 `saveCharacterProfile` 로 표에 심고 그 키를 지운다. 값이 지워지지 않는 표로 옮겨졌으니 키는 더 필요 없다.
+  표에 심지 못하면 키를 남겨 다음 조회가 다시 옮긴다.
+- 남은 옛 키를 한꺼번에 지우지 않는다(사용자 결정 2026-10-31). 화면에 뜰 때 하나씩 옮겨지고, 사용자가 데이터 삭제의 `캐시` 를
+  고르면 [[ADR-053]] 결정 1 이 프로필을 표에 옮긴 뒤 지운다.
+
+### 결정 11. 메소 획득량과 이벤트 월드 이름도 쿼리 캐시가 든다
+
+Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` · `eventWorldNames`)을 `mesoRate(ocid)` · `eventWorldNames()` 쿼리로
+옮긴다. 받은 값을 쿼리 캐시 하나에 두기로 한 결정 1 의 남은 몫이다. 두 쿼리는 화면이 구독하지 않는다. `loadMesoRate` 와 강화
+수집기가 `setQueryData` 로 넣고 읽는 쪽이 `getQueryData` 로 읽는다.
+
+- 메소 획득량의 0 은 값이다. 메획을 안 두른 캐릭터가 실제로 있어 `null` 로 접지 않는다.
+- 이벤트 월드 이름은 쿼리에 **배열**로 든다. 저장기가 JSON 으로 쓰므로 `Set` 을 넣으면 `{}` 로 저장되어 다음 실행에 값이 사라진다.
+  `features/enhancement-history/event-world-names.ts` 가 읽을 때 `Set` 으로 바꾼다.
+- 이벤트 월드 이름의 `null` 과 빈 집합은 다르다. `null` 은 아직 못 받았다는 뜻이고, 빈 집합은 스페셜 캐릭터가 없는 계정이라 답이
+  난 것이다. `null` 을 빈 집합으로 읽으면 스페셜 지출이 그대로 샌다. 복원 전에 읽어도 `null` 이고, `ensureEnhancementTotals` 는
+  그때 옮기지 않고 다음 호출이 다시 본다.
+- 강화 수집은 계정 목록을 `fetchCharacterListCached` 로 받는다. 전에는 회차마다 `character/list` 를 따로 불렀다. 5분 안이면 캐릭터
+  관리와 같은 응답을 쓴다.
+- 캐시 판(`QUERY_CACHE_BUSTER`)을 올리면 둘도 사라진다. 메소 획득량은 칸의 기본값이 한 번 비고, 이벤트 월드 이름은 다음 수집이
+  다시 채운다.
+
+### 결정 12. 부팅 때 옛 키 정리는 한 자리에서 한 번만 돈다
+
+`storage/legacy-cleanup.ts` 의 `runLegacyCleanupOnce` 가 옛 키를 지우고 Preferences 에 표식 `legacyCleanupDone` 을 둔다. 다음 부팅부터는
+표식만 읽고 끝난다. 전에는 지우는 자리가 셋(`features/game-data/sync.ts` · `features/prehydrate.ts` · `seedScheduleQueriesFromLegacyCache`)이고
+지울 것이 없어도 매 부팅 돌았다.
+
+- 저장된 쿼리 캐시를 올린 뒤(`onQueryCacheRestored`) 돈다. 옛 값을 쿼리에 심어야 하므로 복원보다 먼저 돌 수 없다.
+- 차례는 쿼리에 심기 → 지우기 → 표식이다. 쿼리에 이미 값이 있으면 덮지 않는다. `storage/` 는 쿼리를 모르므로 심는 일은
+  `features/schedule-sync/schedule-query.ts` 가 함수로 넘긴다.
+- 정리가 지우는 키는 `queryCache` · `bossCatalog` · `notices` · `characterBasicCache:index` · `characterBasicCache:index:{accountId}` ·
+  `mesoRateCache:{ocid}` · `eventWorldNames` 다. 추적 캐릭터의 `schedulerCache:{ocid}` · `characterBasicCache:{ocid}` 는
+  `seedScheduleQueriesFromLegacyCache` 가 옮기며 지운다. 추적하지 않는 캐릭터의 두 키는 남는다(결정 10).
+- 어느 단계든 던지면 표식을 안 둔다. 다음 부팅이 처음부터 다시 돌고, 심기는 쿼리에 있는 값을 건너뛰며 지우기는 두 번 돌아도 같다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -257,11 +308,19 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 | `features/cashbook/__tests__/ledger-query.spec.ts` | 결정 6: 범위가 열쇠이고 기록 표의 판이 오르면 다시 읽는지 |
 | `features/settlement/__tests__/query.spec.ts` · `features/manual-completion/__tests__/query.spec.ts` | 결정 5: 복귀마다 받는 서버 쿼리인지, 닫은 기록이 서버 값과 따로 살아 다음 결산 · 다음 주에 다시 서는지 |
 | `features/notice/__tests__/notice-query.spec.ts` | 결정 2 · 5 · 7: 분류마다 열쇠이고 저장되는지, 실패하면 든 값을 지키는지, 앱 공지를 받으면 닫은 기록을 정리하는지, 당김이 전부 실패했을 때만 그렇게 말하는지 |
-| `features/mvp-grade/__tests__/character-list.spec.ts` | 결정 2: 5분 안의 두 호출이 `character/list` 를 한 번만 부르고 강제 조회는 다시 받는지 |
+| `features/mvp-grade/__tests__/character-list.spec.ts` | 결정 2: 5분 안의 두 호출이 `character/list` 를 한 번만 부르고 강제 조회는 다시 받는지, MVP 등급의 ID 표시가 같은 응답을 쓰는지 |
 | `features/boss-scheduler/__tests__/manual-completed-query.spec.ts` | 결정 6: 기간 키가 열쇠이고 보스 기록 판 · 추적 목록에 매여 무효화되는지 |
 | `features/party-appointments/__tests__/query.spec.ts` | 결정 2: 저장이 캐시를 덮고 알림 재조정을 부르는지 |
-| `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 7: 옛 캐시를 옮긴 뒤 그 키를 지우는지 |
+| `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 7 · 12: 옛 캐시를 옮긴 뒤 그 키를 지우는지, 메소 획득량 · 이벤트 월드 이름을 쿼리에 심되 든 값은 안 덮는지, 표식이 있으면 옛 값을 다시 옮기지 않는지 |
+| `hooks/__tests__/useReturnToForeground.spec.tsx` | 결정 5: `app-focus.ts` 의 신호로 배경에서 돌아올 때만 부르고, 언마운트하면 안 부르는지 |
+| `features/character-profile/__tests__/resolve.spec.ts` | 결정 10: 표와 쿼리 캐시에 없고 옛 키에만 있는 캐릭터를 찾아 표에 심고 그 키를 지우는지, 표에 못 심으면 키를 남기는지 |
+| `features/cashbook/__tests__/meso-rate.spec.ts` | 결정 11: 읽은 값을 쿼리에 남기고, 실패하면 마지막 성공값을 내며, 0 을 `null` 로 접지 않는지 |
+| `features/enhancement-history/__tests__/event-world-names.spec.ts` | 결정 11: 배열로 들어 JSON 왕복 뒤에도 값이 남는지, 없음과 빈 집합이 다른지 |
+| `features/enhancement-history/__tests__/collect.spec.ts` | 결정 11: 목록을 `fetchCharacterListCached` 로 받아 이름을 남기고, 못 받으면 날짜를 굳히지 않는지 |
+| `features/query/__tests__/persist.spec.ts` | 결정 2 · 11: 옵저버 없이 `setQueryData` 로 넣은 두 쿼리가 저장 대상인지 |
+| `storage/__tests__/legacy-cleanup.spec.ts` | 결정 12: 심기 → 지우기 → 표식 순서, 표식이 있으면 아무것도 안 하는지, 심기가 던지면 표식을 안 두는지, 지우는 목록 밖의 키가 남는지 |
 
 ## 번호 기록
 
 - ADR-142 (2026-10-30): 처음 작성. 데이터를 드는 자리와 다시 받는 규칙을 쿼리 캐시 하나로 모은다(이슈 #812). 같은 날 1 · 2단계를, 이튿날 3단계를 구현했다
+- ADR-144 (2026-10-31): 프로필 조회의 옛 키 폴백을 되살리고(결정 10), 넥슨 응답 캐시 둘을 쿼리로 옮기고(결정 11), 옛 키 정리를 한 자리로 모으고(결정 12), 복귀 신호를 하나로 줄였다(결정 5)(#819)

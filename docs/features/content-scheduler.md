@@ -47,7 +47,7 @@ API 동기화와 진입 재조회는 [[ADR-021]], 실패를 알리는 방법은 
 
 | 키 | 내용 | 데이터 삭제 |
 |---|---|---|
-| 쿼리 `schedule(ocid)`(SQLite `query_cache`) | 병합된 스케줄러 상태와 받은 시각. Preferences 가 아니라 쿼리 캐시가 든다([[ADR-142]] 결정 7) | 남긴다 |
+| 쿼리 `schedule(ocid)`(SQLite `query_cache`) | 병합된 스케줄러 상태와 받은 시각. Preferences 가 아니라 쿼리 캐시가 든다([[ADR-142]] 결정 7) | 지운다 (캐시) |
 | `worldSharedProgress:{worldKey}` | 월드 공유 컨텐츠 원장 | 지운다 (수동 선택 항목) |
 | `accountSharedProgress:{accountId}` | 계정 공유 컨텐츠 원장 | 지운다 (수동 선택 항목) |
 | `manualTrackedContent:{ocid}` | 수동 추적 목록 | 지운다 (수동 선택 항목) |

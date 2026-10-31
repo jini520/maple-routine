@@ -4,7 +4,7 @@ import { summarizeAccount, type AccountSummaryView } from '../character-manage/d
 import { accountOfOcid, type CharacterAccountSighting } from '../../lib/mvp/membership'
 import { getCharacterProfiles } from '../../storage/character-profiles'
 import type { MapleAccount } from '../../types'
-import { fetchAndRecordCharacterList } from './character-list'
+import { fetchCharacterListCached } from './character-list'
 
 export interface AccountIdentity {
   /** 목록을 못 받았으면 `null` 이라 ID 만 적는다 */
@@ -27,7 +27,7 @@ export function trackedAccountIdsOf(
 export async function loadAccountIdentities(accountIds: readonly string[]): Promise<Map<string, AccountIdentity>> {
   let lists: MapleAccount[] = []
   const credential = await currentCredential()
-  if (credential !== null) lists = await fetchAndRecordCharacterList(credential).catch(() => [])
+  if (credential !== null) lists = await fetchCharacterListCached(credential).catch(() => [])
   const summaries = new Map<string, AccountSummaryView>()
   for (const account of lists) {
     if (!accountIds.includes(account.accountId)) continue

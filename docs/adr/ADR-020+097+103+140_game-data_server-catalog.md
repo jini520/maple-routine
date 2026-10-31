@@ -74,7 +74,7 @@ GET /v1/game-data
 - 데이터 삭제는 두 표를 지우지 않는다(결정 17).
 - 칸의 계약(`parse`)이 바뀌어 옛 사본을 읽을 수 없게 되면 `GAME_DATA_CONTRACT` 를 올린다. 켤 때 계약 판이 다른 사본은
   지우고 처음부터 받는다.
-- 1.0.13 전의 사본(Preferences `queryCache` 와 그 전의 `bossCatalog`)은 켤 때 지운다. 옮기지 않는 것은 어차피 처음부터
+- 1.0.13 전의 사본(Preferences `queryCache` 와 그 전의 `bossCatalog`)은 옛 키 정리가 한 번 지운다([[ADR-142]] 결정 12). 옮기지 않는 것은 어차피 처음부터
   받기 때문이다.
 
 ### 결정 4. 조회 모듈은 표 객체를 읽고, 부르는 쪽은 값이 어디서 왔는지 모른다
@@ -288,7 +288,7 @@ jsonb 칸 두 개에 나눠 두면 두 칸의 순서가 어긋나도 DB 가 잡�
 | `lib/game-data/__tests__/sections.spec.ts` | 결정 4: 칸이 `GAME_DATA_SECTIONS` 와 같은 순서인지, fixture 가 계약을 통과하고 다시 통과시켜도 같은지, 표를 덮으면 그 칸이 바뀌는지 본다 |
 | `app/game-data/__tests__/GameDataLock.test.tsx` | 결정 16: 확인 패널의 두 칸 크기와 합계, 크기를 모를 때 막힌 확인 단추, 받는 단계 · 대기 단계, 두 데이터를 합친 MB 와 퍼센트, 받을 그림이 없을 때 끝난 단계, 실패 상태와 다시 시도를 본다 |
 | `__tests__/boot-order.test.tsx` | 결정 12: 준비 전에는 잠금 화면만 서고 테마 복원과 OTA 확인만 도는지, 돌아오면 다시 묻는지 본다 |
-| `storage/__tests__/cache-data.spec.ts` | 결정 17: 네 그룹을 다 골라도 사본 표와 그림 디렉터리가 남는지 본다 |
+| `storage/__tests__/cache-data.spec.ts` | 결정 17: 다섯 그룹을 다 골라도 사본 표와 그림 디렉터리가 남는지 본다 |
 | 서버 `modules/assets/*.spec.ts` · `modules/admin/admin-assets.controller.spec.ts` · `modules/game-data/game-data.controller.spec.ts` | 결정 2 · 7 · 8 · 15: 경로 규칙 · 머리로 형식과 크기 읽기 · 해시 이름 쓰기 · 파일 먼저 표 나중 · ETag 304 · 그림 칸 검사를 본다 |
 
 ## 번호 기록

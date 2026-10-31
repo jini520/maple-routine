@@ -15,7 +15,7 @@ jest.mock('../../../storage/boss-drops', () => ({
   NO_WORLD: { name: null, key: null }, getBulkFeeDropRecords: jest.fn() }))
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/character-profiles', () => ({ getCharacterProfiles: jest.fn() }))
-jest.mock('../character-list', () => ({ fetchAndRecordCharacterList: jest.fn() }))
+jest.mock('../character-list', () => ({ fetchCharacterListCached: jest.fn() }))
 jest.mock('../after-change', () => ({ afterGradeChange: jest.fn() }))
 
 import { getTrackedCharacterOcids } from '../../../storage/character-selection'
@@ -26,7 +26,7 @@ import { getBulkFeeIncomeRecords } from '../../../storage/income'
 import { getBulkFeeDropRecords } from '../../../storage/boss-drops'
 import { getAuthConfig } from '../../../storage/api-key'
 import { getCharacterProfiles } from '../../../storage/character-profiles'
-import { fetchAndRecordCharacterList } from '../character-list'
+import { fetchCharacterListCached } from '../character-list'
 import { afterGradeChange } from '../after-change'
 import { useMvpAskStore } from '../flow-store'
 
@@ -48,7 +48,7 @@ beforeEach(() => {
   m(getBulkFeeIncomeRecords).mockResolvedValue([{ id: 'x' }])
   m(getBulkFeeDropRecords).mockResolvedValue([])
   m(getAuthConfig).mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key' }] })
-  m(fetchAndRecordCharacterList).mockResolvedValue([
+  m(fetchCharacterListCached).mockResolvedValue([
     { accountId: 'A', characters: [{ ocid: 'a1', name: '에이', world: '스카니아', worldKey: 'scania', jobClass: '비숍', level: 280 }] },
   ])
   m(getCharacterProfiles).mockResolvedValue(new Map())
@@ -61,11 +61,11 @@ describe('ID 표시를 기다리지 않는다', () => {
    * `character/list` 에서 오고, 못 받으면 화면이 `메이플 ID` 로 폴백한다.
    *
    * 그것을 기다린 뒤에 한 번만 알리면, 망이 느린 사용자는 온보딩에서 전면 스피너를 10초까지 본다
-   * (조회 상한이 10초이고 재시도 · 캐시가 없다).
+   * (조회 상한이 10초이고 재시도가 없다).
    */
   it('목록이 오기 전에 카드가 먼저 선다', async () => {
     let 목록도착 = (): void => undefined
-    m(fetchAndRecordCharacterList).mockImplementation(
+    m(fetchCharacterListCached).mockImplementation(
       () => new Promise((resolve) => (목록도착 = () => resolve([]))),
     )
 
@@ -93,7 +93,7 @@ describe('ID 표시를 기다리지 않는다', () => {
   })
 
   it('목록을 못 받아도 카드는 선다', async () => {
-    m(fetchAndRecordCharacterList).mockRejectedValue(new Error('offline'))
+    m(fetchCharacterListCached).mockRejectedValue(new Error('offline'))
 
     await useMvpAskStore.getState().evaluate(NOW)
 
@@ -120,7 +120,7 @@ describe('evaluate', () => {
     await useMvpAskStore.getState().evaluate(NOW)
 
     expect(useMvpAskStore.getState().ask).toBeNull()
-    expect(fetchAndRecordCharacterList).not.toHaveBeenCalled()
+    expect(fetchCharacterListCached).not.toHaveBeenCalled()
   })
 })
 
@@ -153,7 +153,7 @@ describe('evaluate 가드', () => {
   it('겹쳐 불러도 목록은 한 번만 받는다', async () => {
     await Promise.all([useMvpAskStore.getState().evaluate(NOW), useMvpAskStore.getState().evaluate(NOW)])
 
-    expect(fetchAndRecordCharacterList).toHaveBeenCalledTimes(1)
+    expect(fetchCharacterListCached).toHaveBeenCalledTimes(1)
   })
 })
 

@@ -10,6 +10,13 @@ jest.mock('../../../storage/character-profiles', () => ({
 const { getCharacterProfiles: getCharacterProfilesMock, saveCharacterProfile: saveCharacterProfileMock } =
   jest.requireMock('../../../storage/character-profiles') as Record<string, jest.Mock>
 
+jest.mock('../../../storage/character-basic-cache', () => ({
+  getCachedCharacterBasic: jest.fn(),
+  clearCachedCharacterBasic: jest.fn().mockResolvedValue(undefined),
+}))
+const { getCachedCharacterBasic: getLegacyBasicMock, clearCachedCharacterBasic: clearLegacyBasicMock } =
+  jest.requireMock('../../../storage/character-basic-cache') as Record<string, jest.Mock>
+
 import { resolveDisplayProfiles } from '../resolve'
 
 const NOW = '2026-09-05T00:00:00.000Z'
@@ -27,6 +34,8 @@ beforeEach(() => {
   queryClient.clear()
   getCharacterProfilesMock.mockReset().mockResolvedValue(new Map())
   saveCharacterProfileMock.mockClear().mockResolvedValue(undefined)
+  getLegacyBasicMock.mockReset().mockResolvedValue(null)
+  clearLegacyBasicMock.mockClear().mockResolvedValue(undefined)
 })
 
 it('표에 있는 것은 표에서 읽는다. 캐시를 안 본다', async () => {
@@ -134,4 +143,56 @@ it('표 조회가 실패하면 캐시로 떨어진다', async () => {
   const profiles = await resolveDisplayProfiles(['ocid-2'])
 
   expect(profiles.get('ocid-2')?.name).toBe('캐시만')
+})
+
+// 첫 실행 이관은 추적 중인 캐릭터만 옮긴다. 그 전에 추적을 뺀 캐릭터는 이 키가 값이 남은 유일한 자리다.
+it('표와 쿼리 캐시에 없으면 옛 키에서 찾아 표에 심고 그 키를 지운다', async () => {
+  getLegacyBasicMock.mockResolvedValue({ profile: basic({ name: '옛추적', world: '루나', worldKey: 'luna' }), cachedAt: NOW })
+
+  const profiles = await resolveDisplayProfiles(['ocid-legacy'])
+
+  expect(profiles.get('ocid-legacy')?.name).toBe('옛추적')
+  expect(saveCharacterProfileMock).toHaveBeenCalledWith(
+    expect.objectContaining({ ocid: 'ocid-legacy', name: '옛추적', worldKey: 'luna', updatedAt: NOW }),
+  )
+  expect(clearLegacyBasicMock).toHaveBeenCalledWith('ocid-legacy')
+})
+
+it('옛 키를 지우는 것은 표에 심은 뒤다', async () => {
+  const order: string[] = []
+  getLegacyBasicMock.mockResolvedValue({ profile: basic(), cachedAt: NOW })
+  saveCharacterProfileMock.mockImplementation(async () => void order.push('save'))
+  clearLegacyBasicMock.mockImplementation(async () => void order.push('clear'))
+
+  await resolveDisplayProfiles(['ocid-legacy'])
+
+  expect(order).toEqual(['save', 'clear'])
+})
+
+// 키를 지웠는데 표에 못 심었으면 이름이 어디에도 안 남는다. 남겨 두면 다음 조회가 다시 옮긴다.
+it('표에 못 심으면 이름은 내고 옛 키는 남긴다', async () => {
+  getLegacyBasicMock.mockResolvedValue({ profile: basic({ name: '남는키' }), cachedAt: NOW })
+  saveCharacterProfileMock.mockRejectedValue(new Error('표 쓰기 실패'))
+
+  const profiles = await resolveDisplayProfiles(['ocid-legacy'])
+
+  expect(profiles.get('ocid-legacy')?.name).toBe('남는키')
+  expect(clearLegacyBasicMock).not.toHaveBeenCalled()
+})
+
+it('쿼리 캐시에서 찾으면 옛 키를 읽지도 지우지도 않는다', async () => {
+  seedCache('ocid-2', { profile: basic(), cachedAt: NOW })
+
+  await resolveDisplayProfiles(['ocid-2'])
+
+  expect(getLegacyBasicMock).not.toHaveBeenCalled()
+  expect(clearLegacyBasicMock).not.toHaveBeenCalled()
+})
+
+it('옛 키 읽기가 던져도 화면은 선다', async () => {
+  getLegacyBasicMock.mockRejectedValue(new Error('읽기 실패'))
+
+  const profiles = await resolveDisplayProfiles(['ocid-legacy'])
+
+  expect(profiles.has('ocid-legacy')).toBe(false)
 })

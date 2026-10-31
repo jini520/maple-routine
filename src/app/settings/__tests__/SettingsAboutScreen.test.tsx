@@ -234,7 +234,13 @@ describe('계정 묶음', () => {
     await press(view.getByText(/^삭제/))
 
     expect(mockedClearAndReload).toHaveBeenCalledTimes(1)
-    expect(mockedClearAndReload.mock.calls[0][0]).toEqual({ manual: false, boss: false, cashbook: true, enhancement: false })
+    expect(mockedClearAndReload.mock.calls[0][0]).toEqual({
+      manual: false,
+      boss: false,
+      cashbook: true,
+      enhancement: false,
+      cache: false,
+    })
   })
 
   // 리로드 실행부는 **주입 가능**하다. 기본값은 지금 도는 번들의 재실행이다.

@@ -20,6 +20,13 @@ export const QUERY_CACHE_BUSTER = '1'
 
 const STORAGE_KEY = 'query-cache'
 
+let stopped = false
+
+/** 더는 표에 쓰지 않게 멈추는 함수. 데이터 삭제가 `query_cache` 를 지우기 전에 부른다. 앱을 다시 띄우면 풀린다. */
+export function stopQueryPersist(): void {
+  stopped = true
+}
+
 export function shouldPersistQuery(query: Query): boolean {
   return query.meta?.persist === true && query.state.status === 'success'
 }
@@ -30,7 +37,9 @@ export function createQueryPersistOptions(): Omit<PersistQueryClientOptions, 'qu
       key: STORAGE_KEY,
       storage: {
         getItem: (key) => getQueryCache(key).catch(() => null),
-        setItem: (key, value) => setQueryCache(key, value).catch(() => undefined),
+        setItem: async (key, value) => {
+          if (!stopped) await setQueryCache(key, value).catch(() => undefined)
+        },
         removeItem: (key) => removeQueryCache(key).catch(() => undefined),
       },
     }),

@@ -9,10 +9,10 @@ import { getAuthConfig } from '../../storage/api-key'
 import { listEnhancementHistoryDates, loadEnhancementHistory } from '../../storage/enhancement-history'
 import { replaceEnhancementTotals } from '../../storage/enhancement-totals'
 import { isEnhancementTotalsMoved, markEnhancementTotalsMoved } from '../../storage/enhancement-totals-moved'
-import { getEventWorldNames } from '../../storage/event-world-names'
 import type { EnhancementKind } from '../../nexon/history/client'
 import { summarizeEnhancement } from './spending'
 import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
+import { readEventWorldNames } from './event-world-names'
 import type { EnhancementAnomaly } from '../../types/server-records'
 
 let moving: Promise<void> | null = null
@@ -36,7 +36,7 @@ async function move(): Promise<void> {
   if (await isEnhancementTotalsMoved()) return
   const accountId = mainNexonAccountIdOf(await getAuthConfig())
   // 이름 목록 없이 옮기면 이벤트 월드 판정이 빈 줄이 남는다. 옛 날짜는 다시 받지 않아 그 지출이 영영 안 보인다.
-  const eventNames = await getEventWorldNames()
+  const eventNames = readEventWorldNames()
   if (accountId === null || eventNames === null) {
     moving = null
     return

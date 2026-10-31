@@ -29,7 +29,7 @@ export interface CacheClearConfirmProps {
   onCancel: () => void
 }
 
-const NONE_SELECTED: CacheDataSelection = { manual: false, boss: false, cashbook: false, enhancement: false }
+const NONE_SELECTED: CacheDataSelection = { manual: false, boss: false, cashbook: false, enhancement: false, cache: false }
 
 function n(value: number | undefined): string {
   return value === undefined ? '-' : value.toLocaleString()
@@ -53,6 +53,7 @@ function groupsOf(counts: CacheDataCounts | null): {
     },
     { id: 'cashbook', label: '가계부', count: `${n(c?.cashbookEntries)}건`, detail: '직접 작성한 수입·지출 기록' },
     { id: 'enhancement', label: '강화', count: `${n(c?.enhancementDays)}일치`, detail: '큐브·스타포스·잠재능력 재설정 비용' },
+    { id: 'cache', label: '캐시', count: `${n(c?.cacheEntries)}건`, detail: '스케줄·캐릭터 정보·공지 등 조회 결과' },
   ]
 }
 

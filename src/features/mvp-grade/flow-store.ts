@@ -129,7 +129,7 @@ async function evaluateAsk(now: Date, set: (partial: Partial<MvpAskState>) => vo
   /*
    * **ID 를 먼저 알린다.** 고를 ID 는 로컬로 이미 확정됐고(추적 캐릭터 + 소속 기록), 표시만
    * 넥슨 `character/list` 에서 온다. 그것을 기다린 뒤에 한 번만 알리면 망이 느린 사용자가
-   * 온보딩에서 전면 스피너를 조회 상한(10초)까지 본다 - 재시도도 캐시도 없는 조회다.
+   * 온보딩에서 전면 스피너를 조회 상한(10초)까지 본다 - 재시도가 없는 조회다.
    */
   const accounts = accountsWithoutIdentity(ask.accountIds, histories)
   set({ ask, accounts, weeklyOff })

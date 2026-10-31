@@ -10,7 +10,7 @@
 | `app/prehydrate.ts` · `features/prehydrate.ts` | 부팅 예열. 스케줄 회차와 보스 수익 이번 주 쿼리 |
 | `app/QueryCacheProvider.tsx` · `features/query/persist.ts` | 저장된 쿼리 캐시를 올리고 바뀔 때마다 다시 쓴다 |
 | `storage/cache-data.ts` | 데이터 삭제 · 그룹마다 지울 건수 계산 |
-| `features/settings/cache-data.ts` | 삭제 → DB 닫기 → 리로드 순서 |
+| `features/settings/cache-data.ts` | 저장기 멈춤 → 삭제 → DB 닫기 → 리로드 순서 |
 | `storage/api-key.ts` 의 `clearAuthConfig` · `features/auth/store.ts` | 연결 해제 |
 | `storage/sqlite/db.ts` 의 `closeBossProfitDb` | 리로드 전 DB 닫기 |
 
@@ -27,10 +27,9 @@
 
 그보다 먼저 `index.ts` 의 `loadGameData()` 가 SQLite 의 게임 데이터 사본을 읽어 표를 세운다. 사본이 없으면 잠금 화면 뒤에서 받고,
 위의 복원은 다 받은 뒤에 마운트되는 `ReadyShell` 에서 돈다(테마는 잠금 화면도 그려야 해서 먼저 돈다). 쿼리 캐시는
-`QueryCacheProvider` 가 SQLite `query_cache`(스케줄 · 캐릭터 기본 정보 · 회차 · 공지 다섯 분류)에서 올리고, 그 전에는
-화면의 쿼리가 기다린다. 다 올리면 1.0.12 까지의 Preferences 캐시(`schedulerCache:{ocid}` · `characterBasicCache:{ocid}`)를
-쿼리에 없는 캐릭터만 옮긴 뒤 그 키와 계정별 인덱스를 지우고, 회차를 만료로 표시한다(`seedScheduleQueriesFromLegacyCache`,
-[[ADR-142]] 결정 7). 앱이 준비된 뒤 `prehydrate` 가 그 복원을 기다렸다가 스케줄 회차와 보스 수익 이번 주 쿼리를 차례로
+`QueryCacheProvider` 가 SQLite `query_cache`(스케줄 · 캐릭터 기본 정보 · 회차 · 공지 다섯 분류 · 메소 획득량 · 이벤트 월드 이름)에서 올리고, 그 전에는
+화면의 쿼리가 기다린다. 다 올리면 옛 키 정리가 한 번 돈다(`runLegacyCleanupOnce`, [[ADR-142]] 결정 12). 옛 Preferences 캐시를
+쿼리에 옮기고, 옛 키를 지운 뒤 표식 `legacyCleanupDone` 을 둔다. 다음 부팅부터는 표식만 읽는다. 그다음 회차를 만료로 표시한다. 앱이 준비된 뒤 `prehydrate` 가 그 복원을 기다렸다가 스케줄 회차와 보스 수익 이번 주 쿼리를 차례로
 예열한다([[ADR-027]]). 그 밖의 값은 화면이 처음 열릴 때 그 기능의 스토어가 읽는다. 결산 · 직접 완료 · 공지 배너를
 닫은 기록은 그 줄을 그리는 훅이 처음 돌 때 한 번 읽는다(`useSettlementDismissal` · `useManualCompletionDismissal` ·
 `useNoticeDismissal` 의 `restore`).
@@ -46,7 +45,7 @@
 | 기록 | 그대로 둔다 | 고른 그룹의 기록을 지운다. 강화는 다시 받고, 나머지는 되살릴 수 없거나 최근 기간만 다시 받는다([[ADR-053]] 결정 1) |
 | 결과 | 로그인 화면으로 돌아간다 | 앱을 리로드한다 |
 
-데이터 삭제는 그룹 넷 중에서 고른다. 처음에는 아무것도 골라져 있지 않다. 지우는 것이 되살릴 수 없거나 다시 받는 데 호출이 몰리는 기록이라서,
+데이터 삭제는 그룹 다섯 중에서 고른다. 처음에는 아무것도 골라져 있지 않다. 지우는 것이 되살릴 수 없거나 다시 받는 데 호출이 몰리는 기록이라서,
 확인 창을 열고 바로 누른 한 번에 아무것도 지워지지 않게 하려는 것이다.
 
 | 그룹 | 지우는 것 |
@@ -55,6 +54,7 @@
 | `boss`(보스 처치 · 드롭) | 보스 기록 표 셋의 처치 · 드롭 행(행 단위) |
 | `cashbook`(가계부) | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `remembered_levels` |
 | `enhancement`(강화) | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` |
+| `cache`(캐시) | `query_cache` · `schedulerCache:*` · `characterBasicCache:*` · `mesoRateCache:*` · `eventWorldNames`. `characterBasicCache:*` 의 프로필 중 표에 없는 것은 `character_profiles` 에 심은 뒤 지운다 |
 
 보스 기록 표 셋(`boss_parties` · `boss_party_periods` · `boss_drops`, `BOSS_TABLE_NAMES`)은 통째로 지우지 않고 행 단위로
 지운다. 한 표에 두 그룹의 행이 섞여 있고, 조합 행이 처치와 드롭의 부모라서 표를 통째로 지우면 외래키를 따라
@@ -62,10 +62,10 @@
 어느 쪽이든 분배 칸도 기간도 남지 않은 조합 행은 함께 지운다([[ADR-078]] 결정 10).
 
 그룹 목록에 없는 키와 테이블은 어떤 선택에서도 남긴다. 사용자가 그룹 이름을 보고 고르는 기능이라, 화면에 적지 않은 것을
-함께 지우면 사용자가 모르는 것을 잃기 때문이다. 게임 데이터 사본과 받은 그림, 조회 캐시, 캐릭터 이력, 이전 버전 사본 표,
+함께 지우면 사용자가 모르는 것을 잃기 때문이다. 게임 데이터 사본과 받은 그림, 조회 원장, 캐릭터 이력, 이전 버전 사본 표,
 추적 캐릭터, 인증과 사용자 설정이 여기에 든다. 새 Preferences 키와 새 테이블은 그룹 목록에 더해야만 지워진다.
 
-어느 그룹을 골라도 서버 전송 대기 표(`server_sync_queue`)는 비운다. 대기 표는 원본 기록이 없는 줄을 서버에 지우기
+기록 그룹을 하나라도 고르면 서버 전송 대기 표(`server_sync_queue`)를 비운다. `캐시` 만 고르면 비우지 않는다. 기록이 그대로라 지우기 요청이 생기지 않고, 비우면 못 보낸 드롭 시세가 사라진다. 대기 표는 원본 기록이 없는 줄을 서버에 지우기
 요청으로 보낸다. 대기 표를 남기면 방금 지운 기록들의 지우기 요청이 서버로 간다. 서버에 올린 데이터는 지우지 않는다.
 
 테이블은 `DROP` 이 아니라 `DELETE FROM` 으로 비우므로 스키마는 남는다. 표 지우기는 트랜잭션 하나로 묶어, 중간에 실패하면

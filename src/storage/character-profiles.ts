@@ -5,7 +5,7 @@
  * 기록에서 행을 만드는 자리가 그 `ocid` 를 건너뛰어(`ocid` 는 사용자에게 아무 뜻도 없어 대신 안
  * 적는다) **기록이 있어도 화면에서 사라진다**. 그래서 데이터 삭제는 이 표를 지우지 않는다.
  *
- * 쓰는 자리는 `fetchCharacterBasicCached` 하나다. 앱 전체의 `character/basic` 통과 지점이라,
+ * 주로 `fetchCharacterBasicCached` 가 쓴다. 앱 전체의 `character/basic` 통과 지점이라,
  * 한 번이라도 조회된 캐릭터는 추적을 해제해도 이름과 얼굴을 갖는다.
  *
  * @see docs/persistence/sqlite.md `character_profiles`
@@ -46,6 +46,25 @@ const UPSERT_SQL = `
     updated_at = excluded.updated_at
 `
 
+const INSERT_MISSING_SQL = `
+  INSERT INTO character_profiles (ocid, name, image_url, world, world_key, level, job_class, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT(ocid) DO NOTHING
+`
+
+function paramsOf(snapshot: CharacterProfileSnapshot): (string | number | null)[] {
+  return [
+    snapshot.ocid,
+    snapshot.name,
+    snapshot.imageUrl,
+    snapshot.world,
+    snapshot.worldKey,
+    snapshot.level,
+    snapshot.jobClass,
+    snapshot.updatedAt,
+  ]
+}
+
 /**
  * 이름이 빈 스냅샷은 **안 쓴다**. 심으면 화면에 이름 없는 행이 서고, 그때 캐시에서 되찾을 길이
  * 사라진다(표에 있으니 캐시를 안 읽는다).
@@ -56,16 +75,13 @@ export async function saveCharacterProfile(snapshot: CharacterProfileSnapshot): 
   }
 
   const db = await getBossProfitDb()
-  await db.run(UPSERT_SQL, [
-    snapshot.ocid,
-    snapshot.name,
-    snapshot.imageUrl,
-    snapshot.world,
-    snapshot.worldKey,
-    snapshot.level,
-    snapshot.jobClass,
-    snapshot.updatedAt,
-  ])
+  await db.run(UPSERT_SQL, paramsOf(snapshot))
+}
+
+/** 표에 없는 캐릭터만 심는 함수. 옛 캐시의 값은 표보다 오래되어 있는 행을 덮으면 안 된다. */
+export async function addMissingCharacterProfile(snapshot: CharacterProfileSnapshot): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(INSERT_MISSING_SQL, paramsOf(snapshot))
 }
 
 /**

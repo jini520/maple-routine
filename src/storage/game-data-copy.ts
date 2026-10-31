@@ -4,8 +4,6 @@
  * 칸과 표식을 한 트랜잭션으로 쓴다. 표식이 있으면 칸과 그림을 다 받은 사본이고, 잠금 화면은 그것을 믿고 풀린다.
  * 쓰다 실패하면 앞 사본이 그대로 남는다.
  */
-import { STORAGE_KEYS } from './keys'
-import { preferences } from './ports'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
 
@@ -54,13 +52,4 @@ export async function clearGameDataCopy(): Promise<void> {
     await db.run('DELETE FROM game_data_meta')
     await db.run('DELETE FROM game_data_sections')
   })
-}
-
-/**
- * 1.0.13 전의 사본 둘. TanStack Query 캐시(`queryCache`)와 그 전의 보스 표(`bossCatalog`)다. 이제 아무도 읽지 않으므로
- * 켤 때 지운다. 남겨 두면 Preferences 파일이 수백 KB 로 남아 설정을 쓸 때마다 함께 다시 쓰인다.
- */
-export async function removeLegacyGameDataCopies(): Promise<void> {
-  await preferences.remove(STORAGE_KEYS.queryCache)
-  await preferences.remove(STORAGE_KEYS.legacyBossCatalog)
 }

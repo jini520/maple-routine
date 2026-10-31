@@ -1,8 +1,8 @@
-# ADR-053+067+122 데이터 삭제
+# ADR-053+067+122+145 데이터 삭제
 
 > 🟢 유효
 > 옛 번호: ADR-052 · ADR-058 · ADR-117 결정 8
-> 관련 소스: `storage/cache-data.ts` · `storage/sqlite/db.ts` · `storage/pending-notice.ts` · `features/settings/cache-data.ts` · `app/settings/CacheClearConfirm.tsx` · `app/settings/SettingsAboutScreen.tsx`
+> 관련 소스: `storage/cache-data.ts` · `storage/character-profiles.ts` · `storage/sqlite/db.ts` · `storage/pending-notice.ts` · `features/settings/cache-data.ts` · `features/query/persist.ts` · `app/settings/CacheClearConfirm.tsx` · `app/settings/SettingsAboutScreen.tsx`
 
 ## 배경
 
@@ -14,9 +14,13 @@
 조회 캐시는 지워도 곧바로 다시 받는다. 그래서 이 기능은 공간을 비우는 기능이 아니라 기록을 지우는 기능으로 바꿨다
 (사용자 확정, #779).
 
+조회 캐시는 그때 일부러 뺐다. 그런데 1.0.13 에서 캐시 자리가 쿼리 캐시로 옮겨 가며 옛 키가 기기에 남았고(2026-10-31 아이폰 실측:
+`schedulerCache:` 57개 · `characterBasicCache:` 74개, 합쳐 255KB), 사용자가 이것을 비울 길이 없었다. 그래서 다섯째 그룹 `캐시` 를
+더했다(사용자 결정 2026-10-31, #819).
+
 ## 결정
 
-### 결정 1. 지우는 단위는 네 그룹이고, 그룹마다 지우는 것을 목록으로 적는다 (사용자 확정)
+### 결정 1. 지우는 단위는 다섯 그룹이고, 그룹마다 지우는 것을 목록으로 적는다 (사용자 확정)
 
 | 그룹(`CacheDataGroupId`) | 화면 이름 | Preferences | SQLite | 지운 뒤 |
 |---|---|---|---|---|
@@ -24,6 +28,7 @@
 | `boss` | 보스 처치 · 드롭 | 없음 | 보스 기록 표 셋의 처치 · 드롭 행 | 넥슨 API 가 최근 2주치 처치만 다시 준다. 드롭은 되살릴 수 없다 |
 | `cashbook` | 가계부 | 없음 | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` | 손으로 적은 기록이라 되살릴 수 없다 |
 | `enhancement` | 강화 | 없음 | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` | 가계부 · 통계에서 그 달을 볼 때 넥슨 API 에서 다시 받는다. 조회 한도(약 18개월, `HISTORY_MONTHS_BACK`)보다 이른 날은 다시 받을 수 없다 |
+| `cache` | 캐시 | `schedulerCache:*` · `characterBasicCache:*` · `mesoRateCache:*` · `eventWorldNames` | `query_cache` | 다시 띄운 앱이 평소 켤 때처럼 회차와 공지를 받는다. 메소 획득량의 마지막 성공값은 다음 조회가 채울 때까지 빈다 |
 
 - 지울 것을 그룹마다 목록으로 적고, 목록에 없는 키와 표는 지우지 않는다. 이 기능은 사용자가 이름을 보고 고르는 기능이라,
   화면에 적지 않은 것을 함께 지우면 사용자가 모르는 것을 잃는다. 새 키나 새 표는 그룹 목록에 더해야만 지워진다.
@@ -40,17 +45,21 @@
   - `boss` 만 지우면 드롭을 모두 지우고, `cleared` 기간 행과 분배 칸이 빈 기간 행을 지운다.
   - 어느 쪽이든 마지막에 분배 칸도 기간 행도 없는 조합 행을 지운다. 남기면 기록을 지웠는데 조합만 남는다.
 - 파티 분배 설정을 지워도 지난 금액은 바뀌지 않는다. 파티 인원은 저장할 때 기록에 복사되기 때문이다.
+- `캐시` 는 `character_profiles` 표를 지우지 않는다. 기록에 붙는 이름 · 이미지의 지워지지 않는 스냅샷이다. 그런데
+  `characterBasicCache:*` 는 표에 없는 캐릭터의 프로필이 남은 마지막 자리일 수 있다([[ADR-142]] 결정 10). 그대로 지우면 가계부 ·
+  드롭 이력에서 그 캐릭터의 줄이 영영 사라지므로, 키를 지우기 전에 표에 없는 캐릭터만 표에 심는다(사용자 결정). 표에 있는
+  캐릭터는 덮지 않는다. 키의 값이 표보다 오래된 값이기 때문이다. 심기는 표 지우기와 같은 트랜잭션이다.
 
 ### 결정 2. 그룹 목록에 없는 것은 어떤 선택에서도 남긴다
 
 | 남기는 것 | 남기는 이유 |
 |---|---|
 | 게임 데이터 사본 표 둘 · 받은 그림 | 지우면 다시 받기 전까지 앱을 열 수 없다([[ADR-020]]) |
-| 조회 캐시(쿼리 캐시 표 `query_cache` · `scheduleProbe:*` · `mesoRateCache:*` · `eventWorldNames`) | 지우면 다시 띄우자마자 넥슨 API 를 한꺼번에 다시 불러 호출 한도에 걸릴 수 있고, 비는 공간도 곧 다시 찬다. 화면이 옛 값을 보이면 당겨서 새로고침이 다시 받는다([[ADR-064]]) |
+| 조회 원장(`scheduleProbe:*`) | 13일 창이 이 원장을 보고 부를 날을 정한다. 지우면 다시 띄우자마자 넥슨 API 를 한꺼번에 다시 불러 호출 한도에 걸릴 수 있다([[ADR-028]]) |
 | 캐릭터 이력(`character_profiles` · `character_accounts` · `character_world_leaps` · `mvp_grade_history`) | 기록을 화면에 그리는 데 쓰인다. 지우면 남은 기록이 이름 없이 화면에서 사라지거나, 월드 이전 기간이 두 번 세어진다. 등급 이력은 사용자가 적은 값이다([[ADR-050]]) |
 | 이전 버전 사본(옛 `enhancement_history` · `boss_profit_records` · `boss_drop_records` · `boss_party_settings` · `boss_party_period_overrides` · `income_records` · `spend_records`) | 지금 코드는 읽지도 쓰지도 않는다. v1.0.14 에서 코드가 표를 지운다 |
 | 추적 캐릭터 · 대표 캐릭터(`trackedCharacters` · `representativeCharacter`) | 추적 캐릭터가 없으면 앱을 쓸 수 없어 캐릭터 고르기부터 다시 한다. 대표 캐릭터는 사용자가 고른 값이다 |
-| 인증 · 사용자 설정 · 표시 키(`authMethods` · `theme` · `trackingMode` · 알림 구독 · `partyAppointments` · `pendingTasks` · `enhancementTotalsMoved` 등) | 지우면 로그인 화면으로 돌아가거나, 끈 알림이 다시 오거나, 반쯤 고친 작업이 굳는다. `enhancementTotalsMoved` 가 지워지면 옛 원본을 합계로 다시 옮겨 새로 받은 날의 합계를 옛 값으로 덮는다 |
+| 인증 · 사용자 설정 · 표시 키(`authMethods` · `theme` · `trackingMode` · 알림 구독 · `partyAppointments` · `pendingTasks` · `enhancementTotalsMoved` · `legacyCleanupDone` 등) | 지우면 로그인 화면으로 돌아가거나, 끈 알림이 다시 오거나, 반쯤 고친 작업이 굳는다. `enhancementTotalsMoved` 가 지워지면 옛 원본을 합계로 다시 옮겨 새로 받은 날의 합계를 옛 값으로 덮는다 |
 
 ### 결정 3. 확인 창에서 그룹을 골라 지운다. 처음에는 아무것도 고르지 않은 상태다 (사용자 확정)
 
@@ -68,6 +77,7 @@ https://claude.ai/artifact/2gPc1rSReFaUKiCj1YV7Zo 의 `E2 문구 수정` 판이�
   | `boss` | `보스 처치·드롭 아이템 기록` | 없음 | `보스 처치 n건·드롭 아이템 n건 포함` |
   | `cashbook` | `가계부` | `n건` | `직접 작성한 수입·지출 기록` |
   | `enhancement` | `강화` | `n일치` | `큐브·스타포스·잠재능력 재설정 비용` |
+  | `cache` | `캐시` | `n건` | `스케줄·캐릭터 정보·공지 등 조회 결과` |
 
   보스 칸은 건수가 설명 줄에 이미 있어 오른쪽에 다시 적지 않는다.
 - 칸 아래, 버튼 위에 `직접 입력한 데이터는 복구할 수 없고 보스 처치 기록은 2주, 강화 기록은 18개월까지 재조회 할 수 있습니다.`
@@ -81,7 +91,7 @@ https://claude.ai/artifact/2gPc1rSReFaUKiCj1YV7Zo 의 `E2 문구 수정` 판이�
 
 ### 결정 4. 용량 대신 지워질 기록의 건수를 보인다 (사용자 확정)
 
-네 그룹을 다 지워도 1MB 가 안 되어 바이트는 고르는 데 도움이 되지 않는다. 사용자가 판단할 것은 무엇을 얼마나 잃는가다.
+기록을 다 지워도 1MB 가 안 되어 바이트는 고르는 데 도움이 되지 않는다. 사용자가 판단할 것은 무엇을 얼마나 잃는가다.
 그래서 칸마다 그 그룹이 지우는 기록의 건수를 보인다. 설정 행에 붙어 있던 총 용량은 없앤다([[ADR-052]]).
 
 | 그룹 | 세는 것 |
@@ -90,6 +100,7 @@ https://claude.ai/artifact/2gPc1rSReFaUKiCj1YV7Zo 의 `E2 문구 수정` 판이�
 | `boss` | `cleared` 기간 행 수와 드롭 행 수 |
 | `cashbook` | `cashbook_entries` 행 수 |
 | `enhancement` | `enhancement_totals` 의 날짜(`history_date`) 수 |
+| `cache` | 저장된 쿼리 수와 이 그룹의 Preferences 키 수의 합. 저장된 쿼리는 `query_cache` 의 한 행에 JSON 으로 들어 있어 표로 셀 수 없으므로, 복원된 메모리 캐시에서 `shouldPersistQuery` 로 센다 |
 
 ### 결정 5. 지운 뒤에는 선택과 관계없이 늘 앱을 다시 띄운다
 
@@ -98,17 +109,21 @@ https://claude.ai/artifact/2gPc1rSReFaUKiCj1YV7Zo 의 `E2 문구 수정` 판이�
 
 `features/settings/cache-data.ts` 의 `clearCacheDataAndReload` 가 이 순서로 처리한다.
 
-1. 삭제와 10초 타이머 중 먼저 끝나는 쪽을 기다린다. 삭제가 멈춰도 확인 창이 `삭제 중` 에 갇히지 않게 하려는 것이다.
+1. `캐시` 를 골랐으면 쿼리 저장기를 멈춘다(`stopQueryPersist`). 메모리의 쿼리 캐시가 살아 있어 그대로 두면 저장기가 방금 지운 표를
+   다시 쓴다. `queryClient.clear()` 로는 막지 못한다. 저장기는 1초 간격으로 돌아서 비운 뒤의 쓰기가 DB 를 닫은 다음에 나갈 수
+   있고, 그러면 닫은 연결을 다시 연다. 도는 회차도 비운 캐시를 다시 채운다. 메모리 값은 다시 띄우면 사라지고, 회차는 다시 띄운
+   앱의 `onQueryCacheRestored` 가 만료로 표시하므로 따로 무효화하지 않는다.
+2. 삭제와 10초 타이머 중 먼저 끝나는 쪽을 기다린다. 삭제가 멈춰도 확인 창이 `삭제 중` 에 갇히지 않게 하려는 것이다.
    표 지우기는 트랜잭션 하나로 묶는다. 중간에 실패하면 일부 표만 지워진 채 남지 않는다. 삭제의 마지막 단계는 SQLite 의
    `VACUUM` 이다. 행을 지워도 SQLite 는 그 공간을 파일 안에 빈 칸으로 남겨 두어서, `VACUUM` 으로 파일을 다시 쓰지 않으면
    앱이 쓰는 저장 공간이 줄지 않는다. `VACUUM` 은 트랜잭션 안에서 돌지 않으므로 트랜잭션이 끝난 뒤 따로 부른다 (사용자 확정)
-2. 실패했거나 시간이 지났으면 Preferences 의 `pendingNotice` 에 표시를 남긴다. 다시 띄우면 지금 화면이 사라지므로
+3. 실패했거나 시간이 지났으면 Preferences 의 `pendingNotice` 에 표시를 남긴다. 다시 띄우면 지금 화면이 사라지므로
    바로 토스트를 띄울 수 없다. 다시 띄운 뒤 `AppShell` 이 `showPendingCacheClearNotice` 로 이 표시를 읽고
    `데이터를 일부만 삭제했습니다` 오류 토스트를 띄운다.
-3. SQLite 연결을 닫는다(`closeBossProfitDb`). 연결이 남은 채 다시 띄우면 네이티브에 옛 연결이 남아 과거 기간 조회가 실패한다.
+4. SQLite 연결을 닫는다(`closeBossProfitDb`). 연결이 남은 채 다시 띄우면 네이티브에 옛 연결이 남아 과거 기간 조회가 실패한다.
    닫기는 예외를 던지지 않고 5초 안에 끝난다.
-4. 스플래시로 덮는다. 다시 띄우는 동안 네이티브 배경색이 깜빡 보이기 때문이다. 덮기에 실패해도 계속한다.
-5. 다시 띄운다(`reloadAppAsync`).
+5. 스플래시로 덮는다. 다시 띄우는 동안 네이티브 배경색이 깜빡 보이기 때문이다. 덮기에 실패해도 계속한다.
+6. 다시 띄운다(`reloadAppAsync`).
 
 덮기는 반드시 닫기 뒤에 한다. 먼저 덮으면 닫기가 늦어지는 동안 사용자가 터치도 되지 않는 스플래시 화면에 갇힌다.
 OTA 적용과 같은 순서다.
@@ -124,8 +139,11 @@ OTA 적용과 같은 순서다.
 서버 사본은 사용자 화면에 다시 나오지 않고, 여러 사용자의 통계를 내는 표본으로만 쓰인다. 그래서 기기에서 지워도 사용자가
 보는 것은 달라지지 않는다. 연결 해제도 같은 이유로 시세 표본을 남긴다(`server/drop-price.ts` 의 `deleteMeOnServer`).
 
-그래서 어느 그룹을 골라도 서버 전송 대기 표(`server_sync_queue`)를 비운다. 대기 표는 앱을 켤 때 줄마다 원본 기록을 찾고,
-없으면 서버에 지우기 요청을 보낸다. 기록을 지우고 대기 표를 남기면, 방금 지운 기록들의 지우기 요청이 서버로 간다.
+그래서 기록 그룹(`manual` · `boss` · `cashbook` · `enhancement`)을 하나라도 고르면 서버 전송 대기 표(`server_sync_queue`)를 비운다.
+대기 표는 앱을 켤 때 줄마다 원본 기록을 찾고, 없으면 서버에 지우기 요청을 보낸다. 기록을 지우고 대기 표를 남기면, 방금 지운
+기록들의 지우기 요청이 서버로 간다.
+
+`캐시` 만 고르면 대기 표를 비우지 않는다. 기록이 그대로라 지우기 요청이 생기지 않고, 비우면 아직 못 보낸 드롭 시세가 사라진다.
 
 대가가 있다. 사용자가 그 전에 직접 지웠지만 아직 서버에 전하지 못한 기록도 서버에 남는다. 서버가 이 값을 모으는 목적이
 통계라 몇 건이 남는 것은 문제가 되지 않는다. 그래서 지우는 기록만 골라 대기 표에서 빼는 방법은 쓰지 않았다(사용자 확정).
@@ -134,9 +152,10 @@ OTA 적용과 같은 순서다.
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `storage/__tests__/cache-data.spec.ts` | 결정 1: 그룹 하나만 고르면 그 그룹의 키와 표만 지우는지, 아무것도 고르지 않으면 아무것도 지우지 않는지 진짜 SQLite 로 본다. 결정 2: 네 그룹을 다 골라도 목록에 없는 키 · 표가 남는지 본다. 결정 4: 그룹마다 지울 건수를 세는지 본다. 결정 5: 표 지우기가 중간에 실패하면 앞에서 지운 표도 되돌아가는지, 트랜잭션이 끝난 뒤 `VACUUM` 을 부르는지 본다. 결정 6: 어느 그룹을 골라도 대기 표가 비는지 본다 |
+| `storage/__tests__/cache-data.spec.ts` | 결정 1: 그룹 하나만 고르면 그 그룹의 키와 표만 지우는지, 아무것도 고르지 않으면 아무것도 지우지 않는지 진짜 SQLite 로 본다. `캐시` 가 표에 없는 프로필만 심고 `character_profiles` 를 지우지 않는지 본다. 결정 2: 다섯 그룹을 다 골라도 목록에 없는 키 · 표가 남는지 본다. 결정 4: 그룹마다 지울 건수를 세는지 본다. 결정 5: 표 지우기가 중간에 실패하면 앞에서 지운 표도 되돌아가는지, 트랜잭션이 끝난 뒤 `VACUUM` 을 부르는지 본다. 결정 6: 기록 그룹을 고르면 대기 표가 비고 `캐시` 만 고르면 남는지 본다 |
 | `storage/__tests__/cache-data-boss.spec.ts` | 결정 1: 보스 기록 표 셋에서 `manual` 만 지우면 분배 칸만, `boss` 만 지우면 처치와 드롭만 사라지는지, 둘 다 지우면 세 표가 비는지 본다. 결정 4: 처치 · 드롭 건수를 세는지 본다 |
-| `features/settings/__tests__/cache-data.spec.ts` | 결정 5: 닫기 → 덮기 → 다시 띄우기 순서, 닫기가 끝나기 전에는 덮지 않는지, 덮기 실패에도 다시 띄우는지, 삭제가 실패하면 다시 띄운 뒤 오류 토스트가 한 번만 뜨는지 본다 |
+| `features/settings/__tests__/cache-data.spec.ts` | 결정 4: `캐시` 건수에 저장된 쿼리 수가 더해지는지 본다. 결정 5: `캐시` 를 고르면 삭제 전에 저장기를 멈추는지, 닫기 → 덮기 → 다시 띄우기 순서, 닫기가 끝나기 전에는 덮지 않는지, 덮기 실패에도 다시 띄우는지, 삭제가 실패하면 다시 띄운 뒤 오류 토스트가 한 번만 뜨는지 본다 |
+| `features/query/__tests__/persist.spec.ts` | 결정 5: 저장기를 멈추면 표에 쓰지 않는지 본다 |
 | `app/settings/__tests__/CacheClearConfirm.test.tsx` | 결정 3: 칸이 처음에 모두 해제되어 있고 삭제를 누를 수 없는지, 고른 그룹만 넘기는지, 다 풀면 삭제가 다시 꺼지는지, 다시 열면 해제 상태인지, 보스 건수를 설명 줄에만 적는지, 지우는 동안 모두 꺼지는지 본다 |
 | `app/settings/__tests__/SettingsAboutScreen.test.tsx` | 결정 3 · 5: 고른 그룹을 그대로 넘기는지, 다시 띄우는 함수를 넘기는지 본다 |
 
@@ -149,3 +168,4 @@ OTA 적용과 같은 순서다.
   처음에는 아무것도 고르지 않고(결정 3), 용량 대신 건수를 보인다(결정 4). 표 지우기를 트랜잭션으로 묶고 `VACUUM` 을
   더했다(결정 5). 서버 데이터를 지우지 않고 대기 표를 비운다(결정 6)(#779)
 - ADR-122 (2026-10-30): 서버로 보내는 기록이 드롭 가격 하나로 줄어([[ADR-099]] 결정 1) 결정 6 의 서버 데이터 목록을 고쳤다
+- ADR-145 (2026-10-31): 전에 뺀 조회 캐시를 다섯째 그룹 `캐시` 로 더했다(결정 1 · 3 · 4). 지우기 전에 저장기를 멈추고(결정 5), `캐시` 만 고르면 대기 표를 남긴다(결정 6)(#819)

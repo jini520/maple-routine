@@ -22,8 +22,15 @@ import { CacheClearConfirm } from '../CacheClearConfirm'
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
-const COUNTS = { manualCharacters: 10, bossClears: 1154, bossDrops: 87, cashbookEntries: 154, enhancementDays: 244 }
-const NONE = { manual: false, boss: false, cashbook: false, enhancement: false }
+const COUNTS = {
+  manualCharacters: 10,
+  bossClears: 1154,
+  bossDrops: 87,
+  cashbookEntries: 154,
+  enhancementDays: 244,
+  cacheEntries: 171,
+}
+const NONE = { manual: false, boss: false, cashbook: false, enhancement: false, cache: false }
 
 /** 누르고 다시 그려질 때까지 기다리는 도우미. */
 async function press(element: AtomElement): Promise<void> {
@@ -50,7 +57,7 @@ function props(overrides: Partial<React.ComponentProps<typeof CacheClearConfirm>
   }
 }
 
-const LABELS = ['수동 선택 항목', '보스 처치·드롭 아이템 기록', '가계부', '강화']
+const LABELS = ['수동 선택 항목', '보스 처치·드롭 아이템 기록', '가계부', '강화', '캐시']
 
 describe('CacheClearConfirm', () => {
   // 지우는 것이 되살릴 수 없거나 다시 받는 데 호출이 몰리는 기록이라, 열고 바로 누른 한 번에 무엇도 지워지면 안 된다.
@@ -70,6 +77,19 @@ describe('CacheClearConfirm', () => {
     await press(buttonOf(view, '삭제'))
 
     expect(onConfirm).toHaveBeenCalledWith({ ...NONE, cashbook: true, enhancement: true })
+  })
+
+  it('캐시 칸은 건수와 설명을 보이고, 캐시만 골라도 지울 수 있다', async () => {
+    const onConfirm = jest.fn()
+    const view = await renderOverlay(<CacheClearConfirm {...props({ onConfirm })} />)
+
+    expect(view.getByText('171건')).toBeTruthy()
+    expect(view.getByText('스케줄·캐릭터 정보·공지 등 조회 결과')).toBeTruthy()
+
+    await press(view.getByLabelText('캐시'))
+    await press(buttonOf(view, '삭제'))
+
+    expect(onConfirm).toHaveBeenCalledWith({ ...NONE, cache: true })
   })
 
   it('고른 칸을 다시 누르면 풀리고, 다 풀면 삭제가 다시 꺼진다', async () => {

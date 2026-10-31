@@ -1,10 +1,11 @@
+import { queryClient } from '../../query/client'
 import { collectEnhancementHistory, measureEnhancementHistory, planEnhancementHistory } from '../collect'
 
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../auth/legacy-account-ids', () => ({ fillLegacyAccountIds: jest.fn() }))
 jest.mock('../../../nexon/history/client', () => ({ fetchEnhancementHistory: jest.fn() }))
 jest.mock('../../../nexon/character', () => ({ fetchCharacterList: jest.fn() }))
-jest.mock('../../../storage/event-world-names', () => ({ saveEventWorldNames: jest.fn() }))
+jest.mock('../event-world-names', () => ({ saveEventWorldNames: jest.fn() }))
 jest.mock('../../../storage/enhancement-history', () => ({
   checkKey: (kind: string, dateKey: string) => `${kind}|${dateKey}`,
   loadEnhancementChecks: jest.fn(),
@@ -23,7 +24,7 @@ const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record
 const { fetchEnhancementHistory } = jest.requireMock('../../../nexon/history/client') as Record<string, jest.Mock>
 const { fetchCharacterList } = jest.requireMock('../../../nexon/character') as Record<string, jest.Mock>
 const store = jest.requireMock('../../../storage/enhancement-history') as Record<string, jest.Mock>
-const { saveEventWorldNames } = jest.requireMock('../../../storage/event-world-names') as Record<string, jest.Mock>
+const { saveEventWorldNames } = jest.requireMock('../event-world-names') as Record<string, jest.Mock>
 const { fillLegacyAccountIds } = jest.requireMock('../../auth/legacy-account-ids') as Record<string, jest.Mock>
 const { replaceEnhancementTotals } = jest.requireMock('../../../storage/enhancement-totals') as Record<string, jest.Mock>
 const { ensureEnhancementTotals } = jest.requireMock('../legacy-totals') as Record<string, jest.Mock>
@@ -50,6 +51,7 @@ const page = (ids: string[], nextCursor: string | null = null) => ({
 })
 
 beforeEach(() => {
+  queryClient.clear()
   getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'k' }] })
   fetchCharacterList.mockReset().mockResolvedValue([
     { accountId: 'a', characters: [{ ocid: '1', name: '머리맨들맨둘', world: '스페셜', worldKey: 'special', jobClass: '', level: 1 }] },
@@ -63,7 +65,7 @@ beforeEach(() => {
   recomputes.saveRecomputeProgress.mockReset().mockResolvedValue(undefined)
   setRequests([])
   reportEnhancementAnomalies.mockReset().mockResolvedValue(undefined)
-  saveEventWorldNames.mockReset().mockResolvedValue(undefined)
+  saveEventWorldNames.mockReset()
 })
 
 describe('계획', () => {
@@ -265,6 +267,14 @@ describe('수집', () => {
     await collectEnhancementHistory(['2026-09-05'], NOW)
 
     expect(saveEventWorldNames).toHaveBeenCalledWith(new Set(['머리맨들맨둘']))
+  })
+
+  it('5분 안의 회차는 계정 목록을 다시 안 부른다. 캐릭터 관리와 같은 응답을 쓴다', async () => {
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+    await collectEnhancementHistory(['2026-09-04'], NOW)
+
+    expect(fetchCharacterList).toHaveBeenCalledTimes(1)
+    expect(saveEventWorldNames).toHaveBeenCalledTimes(2)
   })
 
   // 정정 4. 목록을 못 받으면 큐브·잠재의 스페셜을 가릴 수가 없다.

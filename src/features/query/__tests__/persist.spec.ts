@@ -1,6 +1,8 @@
 import { QueryClient } from '@tanstack/react-query'
 
-import { QUERY_CACHE_BUSTER, createQueryPersistOptions, shouldPersistQuery } from '../persist'
+import { queryClient } from '../client'
+import { queryKeys } from '../keys'
+import { QUERY_CACHE_BUSTER, createQueryPersistOptions, shouldPersistQuery, stopQueryPersist } from '../persist'
 
 jest.mock('../../../storage/query-cache', () => ({
   getQueryCache: jest.fn(),
@@ -23,6 +25,18 @@ describe('shouldPersistQuery', () => {
   })
 })
 
+// `meta` 는 옵저버가 붙거나 `fetchQuery` 가 돌 때 쿼리에 실린다. 둘 다 없는 쿼리는 저장기가 조용히 건너뛴다.
+describe('화면이 구독하지 않는 쿼리', () => {
+  it.each([
+    ['메소 획득량', queryKeys.mesoRate('ocid-1'), 0],
+    ['이벤트 월드 이름', queryKeys.eventWorldNames(), []],
+  ])('%s 은 `setQueryData` 로만 넣어도 저장 대상이다', (_name, queryKey, value) => {
+    queryClient.setQueryData(queryKey, value)
+
+    expect(shouldPersistQuery(queryClient.getQueryCache().find({ queryKey })!)).toBe(true)
+  })
+})
+
 describe('createQueryPersistOptions', () => {
   it('저장소 어댑터는 storage/query-cache 를 부르고 판이 다르면 버린다', async () => {
     const options = createQueryPersistOptions()
@@ -36,5 +50,28 @@ describe('createQueryPersistOptions', () => {
 
     await options.persister.removeClient()
     expect(storage.removeQueryCache).toHaveBeenCalledWith('query-cache')
+  })
+})
+
+// 이 파일의 맨 뒤에 둔다. 멈춘 저장기는 앱을 다시 띄워야 풀린다.
+describe('stopQueryPersist', () => {
+  const client = { buster: QUERY_CACHE_BUSTER, timestamp: 0, clientState: { mutations: [], queries: [] } }
+
+  beforeEach(() => {
+    storage.setQueryCache.mockReset().mockResolvedValue(undefined)
+  })
+
+  it('멈추기 전에는 표에 쓴다', async () => {
+    await createQueryPersistOptions().persister.persistClient(client)
+
+    expect(storage.setQueryCache).toHaveBeenCalledTimes(1)
+  })
+
+  it('멈추면 표에 쓰지 않는다', async () => {
+    stopQueryPersist()
+
+    await createQueryPersistOptions().persister.persistClient(client)
+
+    expect(storage.setQueryCache).not.toHaveBeenCalled()
   })
 })

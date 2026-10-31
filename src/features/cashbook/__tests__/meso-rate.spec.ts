@@ -10,16 +10,9 @@ const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accoun
 // 화면은 `nexon/` 도 `storage/` 도 직접 안 부른다(CLAUDE.md CRITICAL). 그 셋을 잇는 이 자리만
 // 검증하면 된다. 직업은 쿼리 캐시 `characterBasic(ocid)` 에서 읽으므로 `setQueryData` 로 심는다.
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
-jest.mock('../../../storage/meso-rate-cache', () => ({
-  getCachedMesoRate: jest.fn(),
-  setCachedMesoRate: jest.fn(),
-}))
 jest.mock('../../../nexon/meso-rate', () => ({ fetchMesoRate: jest.fn() }))
 
 const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
-const { getCachedMesoRate, setCachedMesoRate } = jest.requireMock(
-  '../../../storage/meso-rate-cache',
-) as Record<string, jest.Mock>
 const { fetchMesoRate } = jest.requireMock('../../../nexon/meso-rate') as Record<string, jest.Mock>
 
 const { loadMesoRate } = require('../meso-rate') as typeof import('../meso-rate')
@@ -31,11 +24,14 @@ function 캐시심기(ocid: string, profile: CachedCharacterBasicEntry['profile'
   })
 }
 
+const 마지막값 = (ocid: string): number | undefined => queryClient.getQueryData<number>(queryKeys.mesoRate(ocid))
+const 마지막값심기 = (ocid: string, percent: number): void => {
+  queryClient.setQueryData(queryKeys.mesoRate(ocid), percent)
+}
+
 beforeEach(() => {
   queryClient.clear()
   getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'api-key' }] })
-  getCachedMesoRate.mockReset().mockResolvedValue(null)
-  setCachedMesoRate.mockReset().mockResolvedValue(undefined)
   fetchMesoRate.mockReset().mockResolvedValue(149)
 })
 
@@ -43,16 +39,16 @@ it('읽히면 자동값이다. 그 값으로 캐시를 갱신한다', async () =
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 149 })
 
   expect(fetchMesoRate).toHaveBeenCalledWith(자격('api-key'), 'ocid-1', null)
-  expect(setCachedMesoRate).toHaveBeenCalledWith('ocid-1', 149)
+  expect(마지막값('ocid-1')).toBe(149)
 })
 
 it('호출이 실패하면 손입력으로 내려가고 기본값은 마지막 성공값이다', async () => {
   fetchMesoRate.mockRejectedValue(new Error('boom'))
-  getCachedMesoRate.mockResolvedValue(161)
+  마지막값심기('ocid-1', 161)
 
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'fallback', percent: 161 })
   // 실패한 값으로 캐시를 덮지 않는다. 마지막 성공값이 사라지면 폴백 칸이 빈다.
-  expect(setCachedMesoRate).not.toHaveBeenCalled()
+  expect(마지막값('ocid-1')).toBe(161)
 })
 
 it('실패했는데 마지막 성공값도 없으면 빈 칸이다', async () => {
@@ -63,7 +59,7 @@ it('실패했는데 마지막 성공값도 없으면 빈 칸이다', async () =>
 
 it('키가 없으면 부르지도 않는다. 401 을 만들어 키를 지우게 두지 않는다', async () => {
   getAuthConfig.mockResolvedValue(null)
-  getCachedMesoRate.mockResolvedValue(149)
+  마지막값심기('ocid-1', 149)
 
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'fallback', percent: 149 })
   expect(fetchMesoRate).not.toHaveBeenCalled()
@@ -74,13 +70,24 @@ it('0 을 읽은 것은 성공이다. 손입력으로 안 내려간다', async (
   fetchMesoRate.mockResolvedValue(0)
 
   await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 0 })
-  expect(setCachedMesoRate).toHaveBeenCalledWith('ocid-1', 0)
+  expect(마지막값('ocid-1')).toBe(0)
 })
 
-it('캐시 쓰기가 실패해도 읽은 값은 그대로 낸다', async () => {
-  setCachedMesoRate.mockRejectedValue(new Error('디스크 꽉참'))
+it('마지막 성공값 0 은 빈 칸이 아니라 0 이다', async () => {
+  fetchMesoRate.mockRejectedValue(new Error('boom'))
+  마지막값심기('ocid-1', 0)
 
-  await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'read', percent: 149 })
+  await expect(loadMesoRate('ocid-1')).resolves.toEqual({ kind: 'fallback', percent: 0 })
+})
+
+// 폴백 칸의 기본값으로 쓰이는 자리라 NaN 이 새면 치는 칸이 깨진다.
+it('숫자가 아닌 값은 마지막 성공값으로 남기지 않는다', async () => {
+  마지막값심기('ocid-1', 161)
+  fetchMesoRate.mockResolvedValue(Number.NaN)
+
+  await loadMesoRate('ocid-1')
+
+  expect(마지막값('ocid-1')).toBe(161)
 })
 
 // `그리드`는 직업이 정하는 값이라 스킬 조회를 안 거친다. 직업 이름은

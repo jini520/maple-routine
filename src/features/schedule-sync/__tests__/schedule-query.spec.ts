@@ -30,14 +30,22 @@ const { getCachedSchedulerState: legacyScheduleMock, clearCachedSchedulerState: 
 jest.mock('../../../storage/character-basic-cache', () => ({
   getCachedCharacterBasic: jest.fn(async () => null),
   clearCachedCharacterBasic: jest.fn(async () => undefined),
-  clearCharacterBasicCacheIndex: jest.fn(async () => undefined),
 }))
-const { clearCachedCharacterBasic: clearBasicMock, clearCharacterBasicCacheIndex: clearIndexMock } = jest.requireMock(
-  '../../../storage/character-basic-cache',
-) as Record<string, jest.Mock>
-jest.mock('../../../storage/character-accounts', () => ({
-  getCharacterAccountSightings: jest.fn(async () => [{ ocid: 'a', accountId: 'acc-1' }]),
+const { clearCachedCharacterBasic: clearBasicMock } = jest.requireMock('../../../storage/character-basic-cache') as Record<
+  string,
+  jest.Mock
+>
+
+jest.mock('../../../storage/legacy-cleanup', () => ({
+  runLegacyCleanupOnce: jest.fn(),
+  readLegacyMesoRates: jest.fn(),
+  readLegacyEventWorldNames: jest.fn(),
 }))
+const {
+  runLegacyCleanupOnce: cleanupMock,
+  readLegacyMesoRates: legacyRatesMock,
+  readLegacyEventWorldNames: legacyNamesMock,
+} = jest.requireMock('../../../storage/legacy-cleanup') as Record<string, jest.Mock>
 
 jest.mock('../../boss-profit/round-record', () => ({ recordBossProfitFromRound: jest.fn(async () => undefined) }))
 const { recordBossProfitFromRound: recordMock } = jest.requireMock('../../boss-profit/round-record') as Record<string, jest.Mock>
@@ -70,6 +78,9 @@ beforeEach(() => {
   strandedMock.mockResolvedValue([])
   recordMock.mockResolvedValue(undefined)
   defeatDatesMock.mockResolvedValue(0)
+  cleanupMock.mockImplementation(async (seed: () => Promise<void>) => seed())
+  legacyRatesMock.mockResolvedValue(new Map())
+  legacyNamesMock.mockResolvedValue(null)
 })
 
 afterEach(() => {
@@ -214,12 +225,75 @@ describe('onQueryCacheRestored', () => {
   })
 
   // 옮긴 뒤에는 아무도 안 읽는다. 남겨 두면 Preferences 에 큰 JSON 이 캐릭터 수만큼 영영 남는다.
-  it('옛 캐시를 옮긴 뒤 그 키와 계정별 인덱스를 지운다', async () => {
+  it('옛 캐시를 옮긴 뒤 그 키를 지운다', async () => {
     await onQueryCacheRestored()
 
     expect(clearScheduleMock.mock.calls.map(([ocid]) => ocid).sort()).toEqual(['a', 'b'])
     expect(clearBasicMock.mock.calls.map(([ocid]) => ocid).sort()).toEqual(['a', 'b'])
-    expect(clearIndexMock).toHaveBeenCalledWith(['acc-1'])
+  })
+
+  it('옛 메소 획득량과 이벤트 월드 이름을 쿼리에 심는다. 0 과 빈 배열도 값이다', async () => {
+    legacyRatesMock.mockResolvedValue(new Map([['a', 149], ['b', 0]]))
+    legacyNamesMock.mockResolvedValue([])
+
+    await onQueryCacheRestored()
+
+    expect(queryClient.getQueryData(queryKeys.mesoRate('a'))).toBe(149)
+    expect(queryClient.getQueryData(queryKeys.mesoRate('b'))).toBe(0)
+    expect(queryClient.getQueryData(queryKeys.eventWorldNames())).toEqual([])
+  })
+
+  // 앞 실행이 심은 뒤 지우다 실패했으면 쿼리에는 그 뒤 받은 새 값이 든다.
+  it('쿼리에 든 메소 획득량과 이벤트 월드 이름은 덮지 않는다', async () => {
+    queryClient.setQueryData(queryKeys.mesoRate('a'), 161)
+    queryClient.setQueryData(queryKeys.eventWorldNames(), ['새이름'])
+    legacyRatesMock.mockResolvedValue(new Map([['a', 149]]))
+    legacyNamesMock.mockResolvedValue(['옛이름'])
+
+    await onQueryCacheRestored()
+
+    expect(queryClient.getQueryData(queryKeys.mesoRate('a'))).toBe(161)
+    expect(queryClient.getQueryData(queryKeys.eventWorldNames())).toEqual(['새이름'])
+  })
+
+  it('옛 이벤트 월드 이름이 없으면 쿼리를 만들지 않는다. 없는 것과 빈 집합은 다르다', async () => {
+    await onQueryCacheRestored()
+
+    expect(queryClient.getQueryData(queryKeys.eventWorldNames())).toBeUndefined()
+  })
+
+  // 지우기를 삼키면 표식이 남아 그 키를 지울 기회가 다시 안 온다.
+  it('옛 키를 못 지우면 정리가 던진다', async () => {
+    clearScheduleMock.mockRejectedValueOnce(new Error('지우기 실패'))
+    let thrown: unknown = null
+    cleanupMock.mockImplementation(async (seed: () => Promise<void>) => {
+      thrown = await seed().catch((error: unknown) => error)
+    })
+
+    await onQueryCacheRestored()
+
+    expect(thrown).toEqual(new Error('지우기 실패'))
+  })
+
+  it('표식이 있어 정리가 안 돌면 옛 캐시를 읽지 않아도 회차를 만료로 표시한다', async () => {
+    cleanupMock.mockImplementation(async () => undefined)
+    syncSchedulesMock.mockResolvedValue([synced('a'), synced('b')])
+    await prefetchSchedules()
+
+    await onQueryCacheRestored()
+
+    expect(legacyScheduleMock).not.toHaveBeenCalled()
+    expect(queryClient.getQueryState(queryKeys.scheduleRound())?.isInvalidated).toBe(true)
+  })
+
+  it('정리가 던져도 회차를 만료로 표시한다', async () => {
+    cleanupMock.mockRejectedValue(new Error('정리 실패'))
+    syncSchedulesMock.mockResolvedValue([synced('a'), synced('b')])
+    await prefetchSchedules()
+
+    await expect(onQueryCacheRestored()).resolves.toBeUndefined()
+
+    expect(queryClient.getQueryState(queryKeys.scheduleRound())?.isInvalidated).toBe(true)
   })
 
   it('앱을 켜면 10분 안이어도 한 번 받는다', async () => {

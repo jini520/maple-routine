@@ -71,7 +71,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 못 보낸 드롭. 평소에는 비어 있다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 줄은 전송이 보내지 않고 지운다([[ADR-099]] 결정 1) | `storage/server-sync-queue.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-018]] |
 | `game_data_sections` | `id`(uuid, `section` 은 UNIQUE) | 게임 데이터 사본의 칸 하나. 서버 응답의 그 칸 JSON 을 그대로 든다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
 | `game_data_meta` | `id`(uuid, `key` 는 UNIQUE) | 사본의 표식(계약 판 · ETag). 칸과 한 트랜잭션으로 쓰고, 있으면 다 받은 사본이다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
-| `query_cache` | `id`(uuid, `key` 는 UNIQUE) | TanStack Query 캐시의 사본. 저장 표식(`meta.persist`)이 있는 쿼리(넥슨의 스케줄 · 캐릭터 기본 정보 · 회차, 서버 · 넥슨의 공지 다섯 분류)만 키 하나의 JSON 으로 든다. 기기 DB 를 읽는 쿼리와 결산 · 직접 완료 · 캐릭터 목록 · 파티 약속은 저장하지 않는다 | `storage/query-cache.ts` | 남긴다 | [[ADR-142]] |
+| `query_cache` | `id`(uuid, `key` 는 UNIQUE) | TanStack Query 캐시의 사본. 저장 표식(`meta.persist`)이 있는 쿼리(넥슨의 스케줄 · 캐릭터 기본 정보 · 회차 · 메소 획득량 · 이벤트 월드 이름, 서버 · 넥슨의 공지 다섯 분류)만 키 하나의 JSON 으로 든다. 기기 DB 를 읽는 쿼리와 결산 · 직접 완료 · 캐릭터 목록 · 파티 약속은 저장하지 않는다 | `storage/query-cache.ts` | 지운다 (캐시) | [[ADR-142]] |
 
 ### 칸
 
