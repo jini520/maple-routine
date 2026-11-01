@@ -122,7 +122,7 @@ it('지운 드롭이 있으면 안내하고, 없으면 조용하다', async () =
 
   sweepMock.mockResolvedValue(2)
   await recordBossProfitFromRound(['a'], [result('a')], NOW)
-  expect(mockShowInfo).toHaveBeenCalledWith('잡지 않은 보스의 아이템 기록 2건을 정리했어요')
+  expect(mockShowInfo).toHaveBeenCalledWith('잡지 않은 보스의 기록 2건을 정리했어요')
 })
 
 it('추적이 없거나 결과가 없으면 아무것도 안 읽는다', async () => {
