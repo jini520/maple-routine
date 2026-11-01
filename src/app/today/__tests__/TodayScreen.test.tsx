@@ -192,6 +192,7 @@ function setStores(
   mockedRound.mockReturnValue({
     characterIssues: {},
     staleCharacterNames: [],
+    hasNetworkFailure: false,
     status: 'loaded',
     error: null,
     ...overrides.round,

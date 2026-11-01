@@ -1,4 +1,4 @@
-// 토스트. 갈린 것 넷.
+// 토스트. 갈린 것 셋.
 //
 // **액션 아이콘 케이스**: 클래스로 lucide 아이콘을 구분할 수 없다. RN 의 lucide 는
 //   `testID` 를 삼키므로(`nativewind-interop.ts`) 그 아이콘이 실제로 그린 **`Path` 의 `d`** 를
@@ -8,17 +8,23 @@
 // **스와이프**: `fireEvent.pointer` → responder 이벤트. 좌표가 `clientX` → `pageX` 로 바뀔 뿐
 //   임계값 판정은 같은 `shouldDismissFromSwipe` 다.
 // `role`·`aria-live` 는 그대로 남았다(RN 이 같은 이름의 프롭을 받는다).
-// 타이머 바는 **있고 없음만** 지킨다. 줄어드는 것은 Reanimated 가 UI 스레드에서 하는 일이라
-//   렌더 트리에는 선언(`animationName`·`animationDuration`)만 남는다. 그 선언을 웹
-//   `@keyframes toast-shrink` 와 대조하던 `keyframes-parity.test.ts` 는 웹 소스와 함께 지워졌다
-//
-jest.mock('react-native-reanimated', () =>
+const mockWithTiming = jest.fn()
+
+jest.mock('react-native-reanimated', () => {
   // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다**. 그래서 `require` 가
   // 선택이 아니라 이 길뿐이다(`reduced-motion.ts` `쓰는 법`).
-  require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
-)
+  const reanimated = require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion()
+  return {
+    ...reanimated,
+    // 기록만 하고 진짜에 넘긴다. 링의 줄어듦은 UI 스레드의 일이라 렌더 트리로는 볼 수 없다.
+    withTiming: (...args: unknown[]) => {
+      mockWithTiming(...args)
+      return reanimated.withTiming(...args)
+    },
+  }
+})
 
-import { fireEvent } from '@testing-library/react-native'
+import { fireEvent, within } from '@testing-library/react-native'
 
 import type { ToastAction, ToastItem } from '../../../../features/toast/store'
 
@@ -29,6 +35,7 @@ import { Toast } from '../Toast'
 
 afterEach(() => {
   mockReducedMotion(false)
+  mockWithTiming.mockClear()
 })
 
 function makeToast(overrides: Partial<ToastItem> = {}): ToastItem {
@@ -124,13 +131,13 @@ describe('Toast', () => {
     expect(root.props['aria-live']).toBe('polite')
   })
 
-  it('duration 이 있으면 자동 소멸 타이머 바를 렌더한다', async () => {
-    const { getByTestId } = await renderAtom(<Toast toast={makeToast()} onDismiss={noop} />)
+  it('duration 이 있으면 닫기 버튼 둘레에 남은 시간 링을 그린다', async () => {
+    const { getByLabelText, getByTestId } = await renderAtom(<Toast toast={makeToast()} onDismiss={noop} />)
 
-    expect(getByTestId('toast-timer')).toBeTruthy()
+    expect(within(getByLabelText('닫기')).getByTestId('toast-timer')).toBe(getByTestId('toast-timer'))
   })
 
-  it('duration 이 null 이면 타이머 바를 렌더하지 않는다', async () => {
+  it('duration 이 null 이면 남은 시간 링을 그리지 않는다', async () => {
     const { queryByTestId } = await renderAtom(
       <Toast toast={makeToast({ duration: null })} onDismiss={noop} />,
     )
@@ -167,29 +174,24 @@ describe('Toast: 스와이프로 닫기', () => {
   })
 })
 
-// 모션 줄이기. 줄지 않는 막대를 남기면 "시간이 안 간다"로
-// 읽히므로 통째로 없앤다. **바깥 껍데기(`toast-timer`)는 남는다**. 자리를 차지하지 않는 절대 배치라
-// 있고 없고가 레이아웃을 바꾸지 않고, 그 감춤은 안쪽 바에만 건다.
+// 모션 줄이기. 줄지 않는 링을 남기면 "시간이 안 간다"로 읽히므로 통째로 없앤다. **바깥 껍데기(`toast-timer`)는
+// 남는다**. 자리를 차지하지 않는 절대 배치라 있고 없고가 레이아웃을 바꾸지 않고, 그 감춤은 안쪽 링에만 건다.
 describe('Toast: 모션 줄이기', () => {
-  it('켜져 있으면 남은 시간 바가 그려지지 않는다', async () => {
+  it('켜져 있으면 남은 시간 링이 그려지지 않는다', async () => {
     mockReducedMotion(true)
     const { getByTestId } = await renderAtom(<Toast toast={makeToast()} onDismiss={noop} />)
 
     expect(getByTestId('toast-timer').children).toHaveLength(0)
   })
 
-  it('꺼져 있으면 남은 시간 바가 toast-shrink 를 그 토스트의 지속시간으로 재생한다', async () => {
+  it('꺼져 있으면 남은 시간 링이 그 토스트의 지속시간 동안 줄어든다', async () => {
     mockReducedMotion(false)
-    const { getByTestId } = await renderAtom(
-      <Toast toast={makeToast({ duration: 2500 })} onDismiss={noop} />,
-    )
+    await renderAtom(<Toast toast={makeToast({ duration: 2500 })} onDismiss={noop} />)
 
-    const [bar] = getByTestId('toast-timer').children as AtomElement[]
-    // 지속시간만 런타임 값이라 여기서 본다. 나머지(키프레임·이징·채우기)를 웹 원본과 대조하던
-    // 테스트는 없다.
-    expect(bar.props.jestInlineStyle).toMatchObject({
-      animationDuration: '2500ms',
-      transformOrigin: 'left' })
+    expect(mockWithTiming).toHaveBeenCalledWith(
+      expect.any(Number),
+      expect.objectContaining({ duration: 2500 }),
+    )
   })
 })
 

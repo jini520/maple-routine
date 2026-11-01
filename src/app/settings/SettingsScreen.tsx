@@ -43,7 +43,7 @@ import { SectionTitle } from './SectionTitle'
 import { SettingsLinkRow } from './SettingsLinkRow'
 import { SettingsRow } from './SettingsRow'
 import { SETTINGS_CARD_CLASS } from './row-class'
-import { CONTACT_EMAIL, contactDeviceOf, contactMailUrl } from './contact-mail'
+import { contactDeviceOf, contactMailUrl } from './contact-mail'
 import { storeReviewUrl } from './store-review-link'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
@@ -265,13 +265,12 @@ export function SettingsScreen(): React.JSX.Element {
               {/* 앱을 떠나 메일·스토어로 가는 행 둘이라 오른쪽이 chevron 이 아니라 외부 링크
                   표식이다. chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는 앱을 떠나 버린다.
 
-                  문의는 응원보다 자주 써서 위다. 메일 앱이 안 열리면 주소를 적은 토스트로만
-                  알린다(복사는 없다). */}
+                  문의는 응원보다 자주 써서 위다. 메일 앱이 안 열리면 토스트로만 알린다. */}
               <SettingsLinkRow
                 label="문의하기"
                 href={contactMailUrl(contactDeviceOf(Platform, displayedVersion))}
                 onOpenFailed={() =>
-                  useToastStore.getState().showError(`메일 앱을 열지 못했습니다. ${CONTACT_EMAIL} 으로 보내 주세요`)
+                  useToastStore.getState().showError('메일 앱을 열지 못했습니다')
                 }
               />
               {/* 평생 한 번 누르는 것이라 맨 아래다. */}

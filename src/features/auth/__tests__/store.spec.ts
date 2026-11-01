@@ -217,7 +217,7 @@ describe('useAuthStore.signIn', () => {
     const state = useAuthStore.getState()
     expect(state.status).toBe('signedOut')
     expect(state.error).toEqual({ kind: 'storageWriteFailed' })
-    expect(showErrorMock).toHaveBeenCalledWith('기기에 저장하지 못했습니다. 다시 시도해주세요')
+    expect(showErrorMock).toHaveBeenCalledWith('기기에 저장하지 못했습니다')
     expect(resolveAfterSignInMock).not.toHaveBeenCalled()
   })
 

@@ -16,7 +16,12 @@ jest.mock('../../auth/store', () => {
 })
 const noticeApiKeyIssueMock = jest.requireMock('../../auth/store').useAuthStore.getState().noticeApiKeyIssue as jest.Mock
 
-import { useScheduleSyncErrorToast } from '../use-sync-error-toast'
+import { useScheduleSyncErrorToast, useStaleCharactersToast } from '../use-sync-error-toast'
+
+function StaleHarness(props: { names: string[]; hasNetworkFailure: boolean }): React.JSX.Element {
+  useStaleCharactersToast(props.names, props.hasNetworkFailure, () => {})
+  return <div />
+}
 
 function Harness(props: { error: ScheduleSyncError | null; onRetry?: () => void }): React.JSX.Element {
   useScheduleSyncErrorToast(props.error, { onRetry: props.onRetry ?? (() => {}) })
@@ -141,5 +146,20 @@ describe('useScheduleSyncErrorToast', () => {
     rerender(<Harness error={{ kind: 'network' }} />)
 
     expect(showErrorMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('useStaleCharactersToast', () => {
+  it('실패한 캐릭터 수를 한 줄로 알린다', async () => {
+    render(<StaleHarness names={['루디', '보니']} hasNetworkFailure={false} />)
+
+    expect(showErrorMock.mock.calls[0][0]).toBe('2캐릭터를 불러오지 못했습니다')
+  })
+
+  // 문구가 스케줄 화면과 같아야 토스트 스토어가 한 장으로 합친다.
+  it('네트워크 실패가 섞이면 스케줄 화면과 같은 문구로 알린다', async () => {
+    render(<StaleHarness names={['루디', '보니']} hasNetworkFailure />)
+
+    expect(showErrorMock.mock.calls[0][0]).toBe('네트워크 오류가 발생했습니다')
   })
 })

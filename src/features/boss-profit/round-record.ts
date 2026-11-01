@@ -72,7 +72,7 @@ export async function readManualItems(ocids: readonly string[], mode: 'auto' | '
 /** 정리 결과 안내. 조용히 지우지 않는다. 지운 것이 없으면 말할 것도 없다. */
 function notifyOrphanDropCleanup(removedDrops: number): void {
   if (removedDrops === 0) return
-  useToastStore.getState().showInfo(`잡지 않은 보스의 아이템 기록 ${removedDrops}건을 정리했어요`)
+  useToastStore.getState().showInfo(`잡지 않은 보스의 기록 ${removedDrops}건을 정리했어요`)
 }
 
 export async function recordBossProfitFromRound(

@@ -87,5 +87,20 @@ it('이름은 스케줄 캐시, 없으면 기본 정보에서 읽고, 둘 다 �
 it('회차가 아직 없으면 비어 있다', () => {
   const view = buildRoundView({ ocids: [], schedules: new Map(), basics: new Map(), round: undefined })
 
-  expect(view).toEqual({ characterIssues: {}, staleCharacterNames: [] })
+  expect(view).toEqual({ characterIssues: {}, staleCharacterNames: [], hasNetworkFailure: false })
+})
+
+it.each([
+  ['network', true],
+  ['characterUnavailable', false],
+  ['gameMaintenance', false],
+] as const)('실패 종류가 %s 이면 네트워크 실패 여부는 %s 다', (kind, expected) => {
+  const view = buildRoundView(
+    snapshot({
+      names: { a: '루디' },
+      outcomes: { a: { isStale: true, syncedAt: null, error: { kind } } },
+    }),
+  )
+
+  expect(view.hasNetworkFailure).toBe(expected)
 })

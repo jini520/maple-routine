@@ -91,6 +91,49 @@ describe('useToastStore', () => {
     expect(useToastStore.getState().toasts).toHaveLength(0)
   })
 
+  it('같은 문구가 떠 있으면 새로 띄우지 않는다', () => {
+    useToastStore.getState().showError('실패')
+    useToastStore.getState().showError('실패')
+
+    expect(useToastStore.getState().toasts).toHaveLength(1)
+  })
+
+  it('같은 문구가 대기 중이면 새로 띄우지 않는다', () => {
+    useToastStore.getState().showSuccess('1')
+    useToastStore.getState().showSuccess('2')
+    useToastStore.getState().showSuccess('3')
+    useToastStore.getState().showSuccess('4')
+    useToastStore.getState().showSuccess('4')
+
+    expect(useToastStore.getState().queue.map((t) => t.message)).toEqual(['4'])
+  })
+
+  it('먼저 뜬 토스트의 버튼을 그대로 둔다', () => {
+    const first = jest.fn()
+    useToastStore.getState().showError('실패', { label: '다시 시도', onClick: first })
+    useToastStore.getState().showError('실패', { label: '다시 시도', onClick: jest.fn() })
+
+    useToastStore.getState().toasts[0].action?.onClick()
+
+    expect(first).toHaveBeenCalledTimes(1)
+  })
+
+  it('문구가 같아도 종류가 다르면 각각 띄운다', () => {
+    useToastStore.getState().showInfo('같은 문구')
+    useToastStore.getState().showError('같은 문구')
+
+    expect(useToastStore.getState().toasts).toHaveLength(2)
+  })
+
+  it('사라진 뒤에는 같은 문구를 다시 띄운다', () => {
+    useToastStore.getState().showError('실패')
+    useToastStore.getState().dismiss(useToastStore.getState().toasts[0].id)
+
+    useToastStore.getState().showError('실패')
+
+    expect(useToastStore.getState().toasts).toHaveLength(1)
+  })
+
   it('수동으로 먼저 dismiss한 항목의 예약된 자동 소멸 타이머는 취소된다', () => {
     jest.useFakeTimers()
     useToastStore.getState().showSuccess('1')
