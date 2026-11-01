@@ -163,9 +163,9 @@ export function BossProfitScreen(): React.JSX.Element {
 
   // 동기화 전체 실패는 토스트로 알린다. 기간 라벨·"n분 전" 표기가 남아 맥락은 화면에 있다.
   useScheduleSyncErrorToast(round.error, { onRetry: () => void refreshSchedules() })
-  // 일부 캐릭터만 실패한 경우도 토스트다. 본문이 한 줄이라 이름을 나열하면 잘리므로 인원 수만
+  // 일부 캐릭터만 실패한 경우도 토스트다. 본문이 한 줄이라 이름을 나열하면 잘리므로 캐릭터 수만
   // 싣는다.
-  useStaleCharactersToast(round.staleCharacterNames, () => void refreshSchedules())
+  useStaleCharactersToast(round.staleCharacterNames, round.hasNetworkFailure, () => void refreshSchedules())
 
   // 미완료 행이 그릴 파티 인원과 비율. 기록이 아니라 설정이라 기간 로드와 따로 읽고, 추적 목록이
   // 도착해야 읽을 수 있어 그 값이 바뀔 때 읽는다.

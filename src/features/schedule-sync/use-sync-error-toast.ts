@@ -81,11 +81,18 @@ export function useScheduleSyncErrorToast(
 // 일부 캐릭터만 실패한 경우. 보스 수익 화면만 전체 캐릭터를 훑어 실패자를 모은다. 스케줄러 두
 // 화면은 선택된 캐릭터만 보므로 이 신호가 없다.
 //
-// Toast 본문은 truncate 라 이름을 나열하면 잘린다. 이름 대신 인원 수만 실어 한 줄에 담고
+// Toast 본문은 truncate 라 이름을 나열하면 잘린다. 이름 대신 캐릭터 수만 실어 한 줄에 담고
 // 어느 캐릭터인지는 포기한다.
 //
+// 네트워크 실패가 섞이면 스케줄러 두 화면과 같은 문구를 쓴다. 문구가 같아야 토스트 스토어가 한 장으로
+// 합치고, 탭의 실행 순서에도 기대지 않는다.
+//
 // 기간 이동(loadPeriod)은 staleCharacterNames 를 건드리지 않아 다시 뜨지 않는다.
-export function useStaleCharactersToast(staleCharacterNames: string[], onRetry: () => void): void {
+export function useStaleCharactersToast(
+  staleCharacterNames: string[],
+  hasNetworkFailure: boolean,
+  onRetry: () => void,
+): void {
   const lastShownRef = useRef<string[] | null>(null)
   const onRetryRef = useLatestRef(onRetry)
 
@@ -95,12 +102,14 @@ export function useStaleCharactersToast(staleCharacterNames: string[], onRetry: 
     }
     lastShownRef.current = staleCharacterNames
 
-    useToastStore
-      .getState()
-      .showError(`일부 캐릭터를 불러오지 못했습니다 (${staleCharacterNames.length}명)`, {
-        label: '다시 시도',
-        onClick: () => onRetryRef.current(),
-      })
+    const message = hasNetworkFailure
+      ? formatScheduleSyncError({ kind: 'network' })
+      : `${staleCharacterNames.length}캐릭터를 불러오지 못했습니다`
+
+    useToastStore.getState().showError(message, {
+      label: '다시 시도',
+      onClick: () => onRetryRef.current(),
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [staleCharacterNames])
 }
