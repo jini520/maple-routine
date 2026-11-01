@@ -13,6 +13,21 @@ import { figureRestSteps, planFigureSteps, type FigureAction, type FigureStep } 
 export const FIGURE_CACHE_POLICY = 'memory-disk'
 
 /**
+ * 프레임이 전부 디스크에 있게 만드는 함수.
+ *
+ * `Image.prefetch` 는 iOS 에서 캐시를 안 보고 항상 받는다. 그래서 없는 프레임만 골라 넘긴다.
+ *
+ * @param urls 프레임 주소들
+ * @returns 전부 디스크에 있으면 참
+ */
+async function cacheFrames(urls: string[]): Promise<boolean> {
+  const paths = await Promise.all(urls.map((url) => Image.getCachePathAsync(url)))
+  const missing = urls.filter((_, index) => !paths[index])
+
+  return missing.length === 0 || Image.prefetch(missing, FIGURE_CACHE_POLICY)
+}
+
+/**
  * 프레임을 전부 미리 받았는지 내는 훅. 하나라도 못 받으면 계속 거짓이다.
  *
  * 움직이다가 비는 칸이 생기면 캐릭터가 깜빡이므로, 다 받기 전에는 움직이지 않는다.
@@ -27,8 +42,7 @@ export function useLookFramesReady(imageUrl: string | null): boolean {
     if (imageUrl === null) return
     let cancelled = false
 
-    const urls = LOOK_FRAMES.map((frame) => lookFrameUrl(imageUrl, frame))
-    Image.prefetch(urls, FIGURE_CACHE_POLICY)
+    cacheFrames(LOOK_FRAMES.map((frame) => lookFrameUrl(imageUrl, frame)))
       .then((ready) => {
         if (!cancelled && ready) setReadyUrl(imageUrl)
       })

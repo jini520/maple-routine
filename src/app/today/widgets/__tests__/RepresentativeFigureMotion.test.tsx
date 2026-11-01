@@ -20,6 +20,7 @@ import { 대표_캐릭터, 뷰모델 } from './widget-fixture'
 jest.mock('../../../../hooks/useScreenFocused', () => ({ useScreenFocused: jest.fn() }))
 
 const prefetch = jest.spyOn(Image, 'prefetch') as unknown as jest.Mock
+const cachePath = jest.spyOn(Image, 'getCachePathAsync')
 
 async function 위젯(representative = 대표_캐릭터): Promise<Awaited<ReturnType<typeof renderAtom>>> {
   const view = await renderAtom(<RepresentativeCharacterWidget data={뷰모델({ representative })} />)
@@ -42,6 +43,7 @@ beforeEach(() => {
   mockReducedMotion(false)
   jest.mocked(useScreenFocused).mockReturnValue(true)
   prefetch.mockResolvedValue(true)
+  cachePath.mockResolvedValue(null)
 })
 
 afterEach(() => {
@@ -107,6 +109,62 @@ describe('프레임을 다 받으면', () => {
   })
 })
 
+// `Image.prefetch` 는 iOS 에서 캐시를 안 보고 항상 받는다. 실기기에서 앱을 켤 때마다 13장을 다시 받았다.
+describe('이미 받은 프레임', () => {
+  it('디스크에 다 있으면 받지 않고 바로 움직인다', async () => {
+    cachePath.mockResolvedValue('/cache/frame')
+
+    const view = await 위젯()
+
+    expect(prefetch).not.toHaveBeenCalled()
+    expect(view.getByTestId('representative-figure-idle0')).toBeTruthy()
+  })
+
+  it('디스크에 없는 프레임만 받는다', async () => {
+    const 있는주소 = lookFrameUrl(대표_캐릭터.imageUrl, 'wink')
+    cachePath.mockImplementation(async (url) => (url === 있는주소 ? null : '/cache/frame'))
+
+    await 위젯()
+
+    expect(prefetch.mock.calls[0][0]).toEqual([있는주소])
+  })
+})
+
+// 외형이 바뀌면 `character/basic` 이 새 주소를 준다. 옛 주소는 옛 모습을 계속 주므로 주소가 곧 그 모습이다.
+describe('캐릭터 그림이 바뀌면', () => {
+  it('새 모습의 기본 그림이 먼저 서고, 새 프레임을 받은 뒤 움직인다', async () => {
+    const view = await 위젯()
+    const 새주소 = 'https://example.test/new.png?wmotion=W02'
+    let 받기끝: (ready: boolean) => void = () => {}
+    prefetch.mockClear()
+    prefetch.mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          받기끝 = resolve
+        }),
+    )
+
+    await view.rerender(
+      <RepresentativeCharacterWidget data={뷰모델({ representative: { ...대표_캐릭터, imageUrl: 새주소 } })} />,
+    )
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(0)
+    })
+
+    expect(view.getByTestId('representative-figure').props.source).toEqual({ uri: 새주소 })
+    expect(prefetch.mock.calls[0][0]).toEqual(LOOK_FRAMES.map((frame) => lookFrameUrl(새주소, frame)))
+
+    await act(async () => {
+      받기끝(true)
+      await jest.advanceTimersByTimeAsync(0)
+    })
+
+    expect(JSON.stringify(view.getByTestId('representative-figure-idle0').props.source)).toContain(
+      `${새주소}&action=A01.0`,
+    )
+  })
+})
+
 describe('움직이지 않을 때', () => {
   it('프레임을 하나라도 못 받으면 기본 그림 한 장이다', async () => {
     prefetch.mockResolvedValue(false)
@@ -119,6 +177,14 @@ describe('움직이지 않을 때', () => {
 
   it('받기가 실패해도 기본 그림 한 장이다', async () => {
     prefetch.mockRejectedValue(new Error('offline'))
+
+    const view = await 위젯()
+
+    expect(view.getByTestId('representative-figure')).toBeTruthy()
+  })
+
+  it('디스크 확인이 실패해도 기본 그림 한 장이다', async () => {
+    cachePath.mockRejectedValue(new Error('cache'))
 
     const view = await 위젯()
 
