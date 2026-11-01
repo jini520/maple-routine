@@ -42,6 +42,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, { type AnimatedStyle } from 'react-native-reanimated'
 
 import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
+import { boxShadowOf, type ShadowLayer } from '../../../lib/shadow'
+import { useThemeAppearance } from '../../../theme/context'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { Text, TextInput, XIcon } from '../../atoms'
@@ -65,6 +67,7 @@ import { Segment } from '../../molecules/Segment/Segment'
 import { Badge } from '../../atoms/Badge/Badge'
 import { defaultMaxPartySize } from '../../../lib/boss/bosses'
 import { FeeRow } from '../FeeRow/FeeRow'
+import { ModalSurface } from '../Modal/Modal'
 import { NumberPad } from '../../molecules/NumberPad/NumberPad'
 import { resolveNumberPadUse } from '../../../lib/number-pad-metrics'
 import { keyboardHeightPx } from '../../../features/input-card/keyboard-height'
@@ -142,6 +145,9 @@ export interface FeesValue {
   splitFeePercent: number | null
   splitFeeAuto: boolean
 }
+
+/** 값 칸의 초점 표시. 테마색으로 둘레에 고르게 번지는 옅은 그림자. 아래로 밀면 위쪽 둘레가 비어 고른 표시가 안 된다. */
+const FOCUS_SHADOW: ShadowLayer = { opacity: 0.35, radius: 6, y: 0 }
 
 /** 칩이 작아진 만큼 누를 자리를 위아래로 넓힌다. 시각 크기는 24 이고 실제 타깃은 40 이다. */
 const CHIP_HIT_SLOP = { top: 8, bottom: 8, left: 2, right: 2 }
@@ -356,6 +362,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
 
   const { height: windowHeightPx } = useWindowDimensions()
   const insets = useSafeAreaInsets()
+  const { definition } = useThemeAppearance()
 
   /**
    * OS 키보드 대신 앱이 그린 판으로 받는가. `null` 은 아직 카드를 못 잰 것이다.
@@ -673,8 +680,9 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
           testID="input-card-panel"
           onLayout={measure}
           onPress={dismissInput}
-          className="mx-3 mb-3 rounded-2xl border border-border-strong bg-surface p-4"
+          className="mx-3 mb-3"
         >
+          <ModalSurface testID="input-card-surface" maxWidth="max-w-full" padding="p-4">
           <View className="flex-row items-center gap-2.5">
             {iconSource !== null && (
               // (`&& ( … )` 안은 JS 표현식 자리라 `{/* */}` 이 아니라 `//` 다.)
@@ -728,10 +736,13 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             아래로 내린다. 값이 비어도 자리를 지켜 첫 타건에 값이 안 뛴다.
           */}
           <View
-            className={`${props.unitKey === undefined ? 'mt-3' : 'mt-1.5'} relative min-h-14 flex-row gap-2 rounded-xl border-[1.5px] border-primary bg-bg px-3.5 ${
+            testID="input-card-field"
+            className={`${props.unitKey === undefined ? 'mt-3' : 'mt-1.5'} relative min-h-14 flex-row gap-2 rounded-xl bg-card-inset px-3.5 ${
               // 여러 줄 칸은 위에 붙인다. 가운데에 두면 한 줄만 적은 글이 칸 가운데 떠 있다.
               isMultiline ? 'items-start py-3' : 'items-center'
             } ${props.reading === true ? 'pb-1 pt-[18px]' : isMultiline ? '' : 'py-2.5'}`}
+            // 커서와 같은 값을 따른다. 칸은 키보드가 내려가도 초점을 쥐고 있어 초점을 따르면 칠 수 없는 칸에 표시가 남는다.
+            style={showsCaret ? { boxShadow: boxShadowOf(definition.primary, FOCUS_SHADOW) } : undefined}
           >
             {props.reading === true && (
               <Text
@@ -1034,6 +1045,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               </View>
             )}
           </View>
+          </ModalSurface>
         </Pressable>
       </Animated.View>
     </View>
