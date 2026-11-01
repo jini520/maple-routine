@@ -154,12 +154,14 @@ function CapScroll(props: { children: ReactNode; surface?: string; testId: strin
  * 다크에서는 바텀시트처럼 표면 계열을 한 칸 올린다. 다크 바탕은 매우 어두워 표면색을 그대로 두면 가장자리가
  * 스크림에 묻힌다. 변수는 바깥 층에서 다시 선언하고 색은 안쪽 층이 칠한다. 같은 층에 두면 그 층의 색이 옛 값으로 풀린다.
  *
- * RN `Modal` 밖에서 스크림을 직접 까는 화면(게임 데이터 잠금 화면)도 이 껍데기를 그대로 쓴다.
+ * RN `Modal` 밖에서 스크림을 직접 까는 화면(게임 데이터 잠금 화면 · 입력 카드)도 이 껍데기를 그대로 쓴다.
  */
 export function ModalSurface(props: {
   children: ReactNode
   /** 패널 최대 너비 Tailwind 클래스. 기본 `max-w-sm`. */
   maxWidth?: string
+  /** 안쪽 여백 Tailwind 클래스. 기본 `p-6`. 높이가 숫자 판 판정에 들어가는 입력 카드는 `p-4` 다. */
+  padding?: string
   maxHeight?: number
   testID?: string
   /** 안쪽 터치를 패널이 가져갈지. RN `Modal` 안에서만 켠다. 안 켜면 터치가 오버레이로 떨어져 모달이 닫힌다. */
@@ -171,7 +173,7 @@ export function ModalSurface(props: {
       <View
         testID={props.testID}
         onStartShouldSetResponder={props.claimsTouch === true ? claimTouch : undefined}
-        className="rounded-[14px] bg-surface p-6"
+        className={`rounded-[14px] bg-surface ${props.padding ?? 'p-6'}`}
         style={{ maxHeight: props.maxHeight }}
       >
         {props.children}

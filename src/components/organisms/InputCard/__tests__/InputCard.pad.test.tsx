@@ -8,7 +8,10 @@
 import { act, fireEvent } from '@testing-library/react-native'
 import { Keyboard, Platform, type KeyboardEvent } from 'react-native'
 
-import { renderOverlay } from '../../../__tests__/render-atom'
+import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
+import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../../theme/appearance-store'
+import { buildSheetScopeVariables } from '../../../../theme/theme-vars'
+import { flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
 import { InputCard, type InputCardProps } from '../InputCard'
 
 /**
@@ -447,6 +450,77 @@ describe('판으로 친다', () => {
     })
 
     expect(onConfirm).toHaveBeenCalledWith('500')
+  })
+})
+
+describe('패널과 값 칸의 표시', () => {
+  const 검은마법사 = getThemeDefinition('검은마법사')
+
+  const 표면 = (view: 화면) => flattenStyle(view.getByTestId('input-card-surface').props.style)
+  const 그림자 = (view: 화면) => flattenStyle(view.getByTestId('input-card-field').props.style).boxShadow
+
+  beforeEach(__resetThemeAppearanceForTest)
+  afterEach(__resetThemeAppearanceForTest)
+
+  // 테두리가 되살아나면 떠 있는 패널이 다시 두 모양으로 갈린다.
+  it('패널과 값 칸에 테두리가 없다', async () => {
+    const { view } = await 그리기()
+
+    expect(표면(view).borderWidth ?? 0).toBe(0)
+    expect(flattenStyle(view.getByTestId('input-card-field').props.style).borderWidth ?? 0).toBe(0)
+  })
+
+  // 테두리가 없으면 다크의 표면이 스크림에 묻힌다.
+  it('다크에서는 패널 표면을 올리고 라이트에서는 그대로 둔다', async () => {
+    const { view } = await 그리기()
+    expect(표면(view).backgroundColor).toBe(기본테마.surface)
+
+    await act(async () => {
+      setThemeAppearance('검은마법사', 검은마법사)
+    })
+
+    const 올린값 = buildSheetScopeVariables(검은마법사)['--color-surface']
+    expect(표면(view).backgroundColor).toBe(올린값)
+    expect(올린값).not.toBe(검은마법사.surface)
+  })
+
+  // 칸은 키보드가 내려가도 초점을 쥐고 있다. 초점을 따르면 칠 수 없는 칸에 표시가 남는다.
+  it('OS 키보드를 내리면 그림자가 사라지고 다시 올리면 돌아온다', async () => {
+    const { view } = await 그리기()
+
+    await 재기(view, 들어가는_카드)
+    expect(그림자(view)).toContain(기본테마.primary)
+
+    await act(async () => {
+      키보드(true)
+    })
+    expect(그림자(view)).toContain(기본테마.primary)
+
+    await act(async () => {
+      키보드(false)
+    })
+    expect(그림자(view)).toBeUndefined()
+
+    await act(async () => {
+      키보드(true)
+    })
+    expect(그림자(view)).toContain(기본테마.primary)
+  })
+
+  it('판을 내리면 그림자가 사라지고 다시 올리면 돌아온다', async () => {
+    const { view } = await 그리기()
+
+    await 재기(view, 안_들어가는_카드)
+    await 값칸누르기(view)
+    expect(그림자(view)).toContain(기본테마.primary)
+
+    await act(async () => {
+      fireEvent.press(view.getByTestId('input-card-scrim'))
+    })
+    expect(그림자(view)).toBeUndefined()
+
+    await 값칸누르기(view)
+    expect(그림자(view)).toContain(기본테마.primary)
   })
 })
 
