@@ -2,11 +2,15 @@
 //
 // 순서가 요점이라 테스트도 순서를 본다. 그려지기 전에 내리면 그 사이가 빈다.
 import { act, fireEvent, render } from '@testing-library/react-native'
+import { StyleSheet, View } from 'react-native'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import { FIRST_RUN_HOLD_MS } from '../../features/live-update/store'
 import { markBootSplashCovering, useBootSplashDone } from '../../hooks/useBootSplashDone'
 import { hideSplashScreen } from '../../native/splash-screen'
 import { BOOT_SPLASH_HOLD_MS, BootSplash } from '../BootSplash'
+import { entranceEndMs } from '../splash/animations'
+import { WORDMARK_GLYPHS } from '../splash/wordmark'
 
 jest.mock('../../native/splash-screen', () => ({
   hideSplashScreen: jest.fn(async () => {}),
@@ -26,6 +30,24 @@ afterEach(() => {
 
 type Rendered = Awaited<ReturnType<typeof render>>
 
+/** 이 층은 상단 인셋으로 묶음 자리를 잡는다. 앱에서는 `App.tsx` 의 `SafeAreaProvider` 가 준다. */
+function SafeArea(props: { children: React.ReactNode }): React.JSX.Element {
+  return (
+    <SafeAreaProvider
+      initialMetrics={{
+        frame: { x: 0, y: 0, width: 390, height: 844 },
+        insets: { top: 47, left: 0, right: 0, bottom: 34 },
+      }}
+    >
+      {props.children}
+    </SafeAreaProvider>
+  )
+}
+
+function renderSplash(ui: React.ReactElement): ReturnType<typeof render> {
+  return render(ui, { wrapper: SafeArea })
+}
+
 /**
  * RN 은 실제 측정이 있을 때만 `onLayout` 을 부른다. 이 환경에서는 손으로 쏜다.
  *
@@ -41,13 +63,13 @@ async function layout(view: Rendered): Promise<void> {
 describe('BootSplash', () => {
   // 그려지기 전에 내리면 1겹이 걷힌 자리에 아무것도 없다. 그 구간이 검정으로 보인다.
   it('그려지기 전에는 네이티브 스플래시를 내리지 않는다', async () => {
-    await render(<BootSplash />)
+    await renderSplash(<BootSplash />)
 
     expect(mockedHide).not.toHaveBeenCalled()
   })
 
   it('그려진 사실(onLayout)이 네이티브 스플래시를 내린다', async () => {
-    const view = await render(<BootSplash />)
+    const view = await renderSplash(<BootSplash />)
 
     await layout(view)
 
@@ -56,7 +78,7 @@ describe('BootSplash', () => {
 
   // 회전·키보드 등으로 레이아웃은 여러 번 온다. 내리는 것은 한 번이면 된다.
   it('레이아웃이 다시 와도 다시 내리지 않는다', async () => {
-    const view = await render(<BootSplash />)
+    const view = await renderSplash(<BootSplash />)
 
     await layout(view)
     await layout(view)
@@ -67,7 +89,7 @@ describe('BootSplash', () => {
   // 최소 표시 시간의 보장이 1겹에서 이 층으로 옮겨 왔다. 1겹은 OS 가 언제 걷을지 모르지만
   // 이 층은 우리가 통제한다.
   it('1겹이 사라진 뒤 최소 표시 시간을 채우고 걷힌다', async () => {
-    const view = await render(<BootSplash />)
+    const view = await renderSplash(<BootSplash />)
     await layout(view)
 
     await act(async () => {
@@ -84,7 +106,7 @@ describe('BootSplash', () => {
   // 시간이 흘러도 넘겨받지 못했으면 안 걷는다. 걷으면 1겹이 아직 떠 있는 채로 이 층만 사라져
   // 최소 표시 시간의 보장이 사라진다.
   it('넘겨받기 전에는 시간이 흘러도 걷히지 않는다', async () => {
-    const view = await render(<BootSplash />)
+    const view = await renderSplash(<BootSplash />)
 
     await act(async () => {
       await jest.advanceTimersByTimeAsync(BOOT_SPLASH_HOLD_MS * 10)
@@ -99,7 +121,7 @@ describe('BootSplash', () => {
   // 붙으면 그만큼이 안 보이고 시작한다.
   it('1겹이 아직 안 사라졌으면 최소 표시 시간을 세지 않는다', async () => {
     mockedHide.mockReturnValue(new Promise(() => {}))
-    const view = await render(<BootSplash />)
+    const view = await renderSplash(<BootSplash />)
     await layout(view)
 
     await act(async () => {
@@ -113,7 +135,7 @@ describe('BootSplash', () => {
   // 실패 안전 타이머도 같은 함수를 기다리므로 그쪽이 대신 받아 주지 못한다.
   it('1겹이 끝내 안 사라져도 상한이 지나면 걷힌다', async () => {
     mockedHide.mockReturnValue(new Promise(() => {}))
-    const view = await render(<BootSplash />)
+    const view = await renderSplash(<BootSplash />)
     await layout(view)
 
     // 두 번에 나눠 감는다. 상한이 풀린 **뒤에야** 최소 표시 시간 타이머가 걸리므로, 한 번에
@@ -130,7 +152,7 @@ describe('BootSplash', () => {
 
   // 처음 실행에서 OTA 를 받아 적용하는 동안 스플래시가 덮고 있어야 두 번 켜지는 화면이 덜 보인다.
   it('붙들라는 동안은 최소 표시 시간이 지나도 걷히지 않고, 놓으면 걷힌다', async () => {
-    const view = await render(<BootSplash holding />)
+    const view = await renderSplash(<BootSplash holding />)
     await layout(view)
 
     await act(async () => {
@@ -144,7 +166,7 @@ describe('BootSplash', () => {
 
   // 붙드는 쪽이 끝내 놓지 않아도 갇히지 않는다. 처음 켠 때부터 센다.
   it('붙들라는 것이 풀리지 않아도 처음 켠 때부터 상한이 지나면 걷힌다', async () => {
-    const view = await render(<BootSplash holding />)
+    const view = await renderSplash(<BootSplash holding />)
     await layout(view)
 
     await act(async () => {
@@ -158,27 +180,48 @@ describe('BootSplash', () => {
     expect(view.queryByTestId('boot-splash')).toBeNull()
   })
 
-  // 모달은 이 값을 보고 그린다. 걷히기 전에 참이 되면 모달이 주황 화면 위에 뜬다.
+  // 안드로이드는 `hideAsync()` 가 끝난 뒤에도 1겹이 400ms 를 더 떠 있다. 그려지자마자 등장을
+  // 시작하면 그 앞부분이 1겹 아래에서 지나간다.
+  it('잎과 이름은 1겹이 사라진 뒤에야 나타나 움직인다', async () => {
+    const view = await renderSplash(<BootSplash />)
+    const before = StyleSheet.flatten(view.getByTestId('boot-splash-lockup').props.style)
+    expect(before.opacity).toBe(0)
+
+    await layout(view)
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(0)
+    })
+
+    const after = StyleSheet.flatten(view.getByTestId('boot-splash-lockup').props.style)
+    expect(after.opacity).not.toBe(0)
+  })
+
+  // 걷은 뒤에 글자가 뛰고 있으면 앱 화면 위로 사라진 자리에 움직임이 끊긴다.
+  it('최소 표시 시간은 등장이 끝난 뒤다', () => {
+    const syllables = WORDMARK_GLYPHS.filter((glyph) => glyph.path !== '').length
+    expect(BOOT_SPLASH_HOLD_MS).toBeGreaterThanOrEqual(entranceEndMs(syllables))
+  })
+
+  // 모달은 이 값을 보고 그린다. 걷히기 전에 참이 되면 모달이 바탕색 화면 위에 뜬다.
   it('다 걷힌 뒤에야 걷혔다고 알린다', async () => {
     markBootSplashCovering()
-    let splashDone: boolean | null = null
-    function Probe(): null {
-      splashDone = useBootSplashDone()
-      return null
+    function Probe(): React.JSX.Element {
+      const splashDone = useBootSplashDone()
+      return <View testID="splash-done" accessibilityLabel={splashDone ? 'done' : 'covering'} />
     }
-    const view = await render(
+    const view = await renderSplash(
       <>
         <BootSplash />
         <Probe />
       </>,
     )
     await layout(view)
-    expect(splashDone).toBe(false)
+    expect(view.getByTestId('splash-done').props.accessibilityLabel).toBe('covering')
 
     await act(async () => {
       await jest.advanceTimersByTimeAsync(BOOT_SPLASH_HOLD_MS)
     })
     expect(view.queryByTestId('boot-splash')).toBeNull()
-    expect(splashDone).toBe(true)
+    expect(view.getByTestId('splash-done').props.accessibilityLabel).toBe('done')
   })
 })
