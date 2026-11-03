@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient'
 import { useEffect, useRef, useState } from 'react'
 import { Image, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Animated, { useReducedMotion } from 'react-native-reanimated'
@@ -25,6 +26,7 @@ import {
   spinAnimation,
   swayAnimation,
 } from './splash/animations'
+import { SPLASH_COLORS } from './splash/colors'
 import { splashLayout } from './splash/layout'
 import { SPLASH_LEAF_PATH, SPLASH_LEAF_VIEW_BOX } from './splash/leaf'
 import { WORDMARK_EM_HEIGHT, WORDMARK_GLYPHS } from './splash/wordmark'
@@ -48,9 +50,10 @@ import { WORDMARK_EM_HEIGHT, WORDMARK_GLYPHS } from './splash/wordmark'
  *
  * ## 그리는 것
  *
- * 기본 테마 바탕 위에 겨울 축제 일러스트, 그 위에 잎과 이름 묶음이다. 잎과 이름은 1겹이 사라진
- * 뒤에 나타나 글자가 하나씩 뛴다. 눈 조각은 처음부터 계속 내린다. 자리는 `splash/layout.ts` 가,
- * 움직임은 `splash/animations.ts` 가 정한다. 모션 줄이기면 묶음은 처음부터 보이고 눈은 없다.
+ * 하늘 그라디언트 위에 겨울 축제 일러스트, 그 위에 잎과 이름 묶음이다. 잎과 이름은 1겹이 사라진
+ * 뒤에 나타나 글자가 하나씩 뛴다. 눈 조각은 처음부터 계속 내린다. 색은 `splash/colors.ts` 가, 자리는
+ * `splash/layout.ts` 가, 움직임은 `splash/animations.ts` 가 정한다. 모션 줄이기면 묶음은 처음부터 보이고
+ * 눈은 없다.
  *
  * `onLayout` 은 회전·키보드로 여러 번 온다. 내리는 것은 한 번이면 된다.
  *
@@ -156,6 +159,7 @@ export function BootSplash(props: {
 
   const layout = splashLayout({ width, height, topInset: insets.top })
   const theme = getThemeDefinition(resolveSystemTheme())
+  const colors = SPLASH_COLORS[theme.mode]
   const entered = phase === 'covering'
   const animate = entered && !reduceMotion
   const glyphScale = layout.lockup.namePx / WORDMARK_EM_HEIGHT
@@ -164,8 +168,13 @@ export function BootSplash(props: {
     <View
       testID="boot-splash"
       onLayout={handleLayout}
-      style={[styles.cover, { backgroundColor: theme.bg }]}
+      style={[styles.cover, { backgroundColor: colors.sky }]}
     >
+      <LinearGradient
+        colors={[colors.sky, colors.ground, colors.ground]}
+        locations={[0, colors.groundAt, 1]}
+        style={StyleSheet.absoluteFill}
+      />
       <Image
         testID="boot-splash-illustration"
         source={body}
@@ -224,8 +233,8 @@ export function BootSplash(props: {
                 >
                   <Path
                     d={glyph.path}
-                    fill={theme.text}
-                    stroke={theme.text}
+                    fill={colors.ink}
+                    stroke={colors.ink}
                     strokeWidth={WORDMARK_STROKE_UNITS}
                     strokeLinejoin="round"
                   />

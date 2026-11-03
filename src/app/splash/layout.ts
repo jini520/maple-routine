@@ -7,14 +7,19 @@
 /** `assets/splash/body.png` 의 픽셀 크기. 떨어진 눈 조각을 지운 본체다. */
 const BODY_PX = { width: 1145, height: 1178 }
 
-/** 그림 폭은 화면 폭의 110%. 넓고 낮은 화면에서도 옆이 비지 않게 높이로 제한하지 않는다. */
-const IMAGE_WIDTH_RATIO = 1.1
+/**
+ * 그림 폭은 화면 폭의 110 ~ 125%. 그림 높이가 화면 높이의 60% 를 넘지 않는 가장 넓은 폭이되, 110% 아래로는 줄이지
+ * 않는다. 110% 는 넓고 낮은 화면에서도 옆이 비지 않는 값이다.
+ */
+const IMAGE_WIDTH_RATIO_MAX = 1.25
+const IMAGE_WIDTH_RATIO_MIN = 1.1
+const IMAGE_HEIGHT_CAP_RATIO = 0.6
 
-/** 그림 아래 10% 가 둥글게 좁아져서 그만큼 넘게 화면 밖으로 흘린다. 모서리에 바탕이 비치지 않는다. */
-const IMAGE_BLEED_RATIO = 0.11
+/** 아래로 흘리는 높이 비율. 모서리에 바탕이 안 비치는 가장 작은 값이다. 더 흘리면 오른쪽 아래 슬라임이 잘린다. */
+const IMAGE_BLEED_RATIO = 0.05
 
 /** 390 폭에서의 이름 글자 크기 · 잎 높이 비율 · 잎과 이름 사이 */
-const NAME_PX_AT_390 = 36
+const NAME_PX_AT_390 = 44
 const LEAF_TO_NAME = 1.17
 const GAP_PX_AT_390 = 8
 
@@ -24,9 +29,14 @@ const LEAF_ASPECT = 127 / 130
 /** 화면 폭이 390 보다 넓은 만큼의 6할만 키운다. 넓은 화면이 좁은 화면보다 조금 크다. */
 const WIDTH_SCALE_SHARE = 0.6
 
-/** 묶음 중심은 상태바 아래 남은 높이의 34%. 그림 윗변보다 그림 높이의 3% 넘게는 내려가지 않는다. */
-const LOCKUP_Y_RATIO = 0.34
+/**
+ * 묶음 아랫변은 그림 상자 윗변보다 그림 높이의 3% 아래. 그림의 보이는 윗끝(깃발)은 상자 윗변에서 6.7% 아래라
+ * 겹치지 않는다. 묶음이 상태바 아래로 올라가지는 않는다.
+ */
 const LOCKUP_OVERLAP_RATIO = 0.03
+
+/** 눈 조각 크기는 그림 비율의 70%. 그림 비율 그대로면 클립아트처럼 커 보인다. */
+const SNOW_SCALE = 0.7
 
 /**
  * 눈 조각 일곱. 원본에서 본체와 떨어져 있던 눈송이 다섯과 눈뭉치 둘이다. 크기는 `assets/splash/snow-N.png` 의
@@ -98,7 +108,11 @@ export interface SplashLayout {
 }
 
 export function splashLayout(viewport: SplashViewport): SplashLayout {
-  const imageWidth = Math.round(viewport.width * IMAGE_WIDTH_RATIO)
+  const cappedWidth = Math.round((viewport.height * IMAGE_HEIGHT_CAP_RATIO * BODY_PX.width) / BODY_PX.height)
+  const imageWidth = Math.max(
+    Math.round(viewport.width * IMAGE_WIDTH_RATIO_MIN),
+    Math.min(Math.round(viewport.width * IMAGE_WIDTH_RATIO_MAX), cappedWidth),
+  )
   const imageHeight = Math.round((imageWidth * BODY_PX.height) / BODY_PX.width)
   const bleed = Math.round(imageHeight * IMAGE_BLEED_RATIO)
   const image: SplashImagePlacement = {
@@ -114,9 +128,8 @@ export function splashLayout(viewport: SplashViewport): SplashLayout {
   const leafHeight = Math.round(namePx * LEAF_TO_NAME)
   const leafWidth = Math.round(leafHeight * LEAF_ASPECT)
   const height = Math.max(namePx, leafHeight)
-  const wantedCenter = viewport.topInset + (viewport.height - viewport.topInset) * LOCKUP_Y_RATIO
-  const lowestCenter = imageTop - height / 2 + imageHeight * LOCKUP_OVERLAP_RATIO
-  const centerY = Math.min(wantedCenter, lowestCenter)
+  const seatedCenter = imageTop - height / 2 + imageHeight * LOCKUP_OVERLAP_RATIO
+  const centerY = Math.max(viewport.topInset + height / 2, seatedCenter)
   const lockup: SplashLockupPlacement = {
     namePx,
     leafWidth,
@@ -126,7 +139,7 @@ export function splashLayout(viewport: SplashViewport): SplashLayout {
     height,
   }
 
-  const spriteScale = imageWidth / BODY_PX.width
+  const spriteScale = (imageWidth / BODY_PX.width) * SNOW_SCALE
   const snow = SNOW_FLAKES.map((flake) => {
     const h = Math.round(flake.height * spriteScale)
     return {
