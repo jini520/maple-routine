@@ -109,9 +109,9 @@ src/
 목으로 바꾸는 테스트다. 작업 중에는 바꾼 경로만 저장소 루트에서 돌린다.
 
 ```bash
-npx jest src/lib src/app/utility --testPathIgnorePatterns /node_modules/ /.claude/
-npx tsc --noEmit
-npx eslint src
+npx jest src/lib src/app/utility   # 테스트. 바꾼 경로만
+npx tsgo --noEmit                  # 타입. 전역, 1~2초
+npx oxlint src                     # 린트. 최종은 npm run lint
 ```
 
-규칙과 이유는 [[ADR-006]] 에 있다.
+규칙과 이유는 [[ADR-006]] 에 있다. 빌드 캐시(ccache · Gradle · watchman)는 `release.md` 의 빌드 캐시에 있다.

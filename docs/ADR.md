@@ -126,7 +126,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-003](./adr/ADR-003_docs_writing-rules.md) | 🟢 | docs | 문서 · 주석 · 앱 문구 쓰는 규칙 |
 | [ADR-004+065](./adr/ADR-004+065_architecture_local-first-adapters.md) | 🟢 | architecture | 기기 저장소와 네이티브 어댑터 경계 |
 | [ADR-005](./adr/ADR-005_architecture_react-native.md) | 🟢 | architecture | React Native 앱 하나로 만든다 |
-| [ADR-006+069](./adr/ADR-006+069_architecture_testing.md) | 🟢 | architecture | 테스트 러너와 테스트 작성 규칙 |
+| [ADR-006+069+154](./adr/ADR-006+069+154_architecture_testing.md) | 🟢 | architecture | 테스트 러너 · 검증 명령 · 네이티브 빌드 캐시 |
 | [ADR-007+077](./adr/ADR-007+077_persistence_sqlite.md) | 🟢 | persistence | SQLite 커넥션 · 스키마 진화 · 기본키 |
 | [ADR-008](./adr/ADR-008_release_android-signing.md) | 🟢 | release | Android 릴리스 서명 |
 | [ADR-009](./adr/ADR-009_release_binary-size.md) | 🟢 | release | 에셋과 스토어 바이너리 크기 |
@@ -203,4 +203,5 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-137](./adr/ADR-137_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
 | [ADR-142+144](./adr/ADR-142+144_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
 | [ADR-147](./adr/ADR-147_design-system_round-entry-buttons.md) | 🟢 | design-system | 진입 버튼과 대표 캐릭터의 움직임 |
+| [ADR-150](./adr/ADR-150_design-system_page-faq.md) | ⚪ | design-system | 모든 페이지의 FAQ |
 | [ADR-152](./adr/ADR-152_navigation_bar-order.md) | 🟢 | navigation | 하단바 순서 바꾸기 |

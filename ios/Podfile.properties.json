@@ -4,5 +4,6 @@
   "expo.inlineModules.watchedDirectories": "[]",
   "expo.inlineModules.xcodeProjectTargets": "{\"mainTarget\":\"app\",\"targets\":[]}",
   "ios.buildReactNativeFromSource": "true",
-  "EXPO_USE_PRECOMPILED_MODULES": "false"
+  "EXPO_USE_PRECOMPILED_MODULES": "false",
+  "apple.ccacheEnabled": "true"
 }

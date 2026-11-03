@@ -1,0 +1,44 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "react"],
+  "ignorePatterns": ["dist", "android", "ios", ".expo", "dist-site", "phases", ".claude"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    "react/purity": "off",
+    "react/immutability": "off",
+    "no-unsafe-optional-chaining": "off"
+  },
+  "overrides": [
+    {
+      "files": ["src/**/*.{ts,tsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react-native",
+                "importNames": ["Text", "TextInput"],
+                "message": "글자는 'components/atoms/Text/Text', 입력 칸은 'components/atoms/TextInput/TextInput' 에서 가져올 것. 시스템 글자 크기 클램프가 거기 있다. 칸에 묶여 못 커지는 자리는 `fixed` 프롭."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["**/__tests__/**/*.{ts,tsx}", "**/*.spec.{ts,tsx}", "**/*.test.{ts,tsx}"],
+      "rules": {
+        "typescript/no-require-imports": "off",
+        "no-var": "off",
+        "react/only-export-components": "off"
+      }
+    },
+    {
+      "files": ["src/components/atoms/Text/Text.tsx", "src/components/atoms/TextInput/TextInput.tsx", "src/**/__tests__/**"],
+      "rules": { "no-restricted-imports": "off" }
+    }
+  ]
+}
