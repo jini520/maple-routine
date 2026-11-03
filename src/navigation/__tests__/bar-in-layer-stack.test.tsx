@@ -16,7 +16,9 @@ import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
 import { BAR_MAX_WIDTH, resolveBottomBarMetrics } from '../../lib/bottom-bar-metrics'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../theme/appearance-store'
-import { resetBarStoreForTests } from '../../components/organisms/BottomBar/bar-store'
+import { resetBarStoreForTests, setLastSub } from '../../components/organisms/BottomBar/bar-store'
+import { useBarOrderStore } from '../../features/bar-order/store'
+import { DEFAULT_BAR_ORDER, type BarOrder } from '../bar-groups'
 import { setHapticsPort } from '../../native/ports'
 import { __resetScrollToTopForTest, registerScrollToTop } from '../scroll-to-top'
 import { NavigationHarness } from './harness'
@@ -41,6 +43,7 @@ beforeEach(() => {
   __resetScrollToTopForTest()
   isLiquidGlassAvailableMock.mockReturnValue(true)
   useAppEntryStore.setState({ stage: 'ready' })
+  useBarOrderStore.setState({ order: DEFAULT_BAR_ORDER })
 })
 
 afterEach(() => {
@@ -493,5 +496,78 @@ describe('탭 이동에만 햅틱이 난다', () => {
 
     expect(screen.getByTestId('screen-Today')).toBeTruthy()
     expect(tap).toHaveBeenCalledTimes(1)
+  })
+})
+
+// 표의 순서가 아니라 사용자 순서로 그려지는가. 층 이동은 안쪽 페이지를 지정하므로 탭 선언 순서와 어긋나도 되고,
+// 맨 왼쪽 칸은 today 로 고정이라 시작 화면과 어긋날 수 없다.
+describe('사용자가 정한 순서로 그린다', () => {
+  const MOVED: BarOrder = {
+    groups: ['today', 'utility', 'ledger', 'schedule', 'settings'],
+    subs: { schedule: ['Boss', 'Appointments', 'Content'], ledger: ['Stats', 'Profit', 'Cashbook'] },
+  }
+
+  /** 트리에서 그려진 순서대로의 칸. RN 이 왼쪽부터 놓으므로 트리 순서가 곧 화면 순서다. */
+  function drawnTestIds(prefix: string): string[] {
+    const ids: string[] = []
+    const walk = (node: unknown): void => {
+      if (node === null || typeof node !== 'object') return
+      if (Array.isArray(node)) {
+        node.forEach(walk)
+        return
+      }
+      const { props, children } = node as { props?: { testID?: string }; children?: unknown }
+      const id = props?.testID
+      if (id?.startsWith(prefix) === true && !ids.includes(id)) ids.push(id)
+      walk(children)
+    }
+    walk(screen.toJSON())
+    return ids
+  }
+
+  /** 알약이 놓인 칸 번호. 칸 폭의 몇 배만큼 밀렸는지로 잰다. */
+  function pillSlot(): number {
+    const pill = StyleSheet.flatten(screen.getByTestId('bar-pill').props.style) as {
+      width: number
+      transform: { translateX: number }[]
+    }
+    const overhang = 23
+    return Math.round((pill.transform[0].translateX + overhang / 2) / (pill.width - overhang))
+  }
+
+  it('순서를 바꿔도 today 에서 시작하고, 칸이 그 순서로 선다', async () => {
+    useBarOrderStore.setState({ order: MOVED })
+    await render(<NavigationHarness />)
+
+    expect(screen.getByTestId('bar-group-today').props.accessibilityState).toEqual({ selected: true })
+    expect(drawnTestIds('bar-group-')).toEqual([
+      'bar-group-today',
+      'bar-group-utility',
+      'bar-group-ledger',
+      'bar-group-schedule',
+      'bar-group-settings',
+    ])
+  })
+
+  // 층을 넘는 이동이라 알약이 미끄러지지 않고 바로 앉는다. 같은 층 안의 이동은 네이티브 드라이버가 움직여 JS 에서 못 읽는다.
+  it('활성 표시가 옮긴 칸을 따라간다', async () => {
+    useBarOrderStore.setState({ order: MOVED })
+    setLastSub({ ledger: 'Cashbook' })
+    await render(<NavigationHarness />)
+
+    await press('bar-group-ledger')
+
+    // ← 가 첫 칸이고 가계부는 사용자 순서의 셋째다. 표의 순서였다면 2 다.
+    expect(pillSlot()).toBe(3)
+  })
+
+  it('맨 왼쪽 하위로 들어가고, 하위 행이 그 순서로 선다', async () => {
+    useBarOrderStore.setState({ order: MOVED })
+    await render(<NavigationHarness />)
+
+    await press('bar-group-ledger')
+
+    expect(screen.getByTestId('bar-sub-Stats').props.accessibilityState).toEqual({ selected: true })
+    expect(drawnTestIds('bar-sub-')).toEqual(['bar-sub-Stats', 'bar-sub-Profit', 'bar-sub-Cashbook'])
   })
 })

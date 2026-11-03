@@ -38,7 +38,8 @@ export interface BarGroup {
 }
 
 /**
- * 그룹 다섯. 순서가 곧 바의 순서다.
+ * 그룹 다섯. 이 표의 순서는 기본 순서다. 사용자가 바꾼 순서는 `BarState.order` 로 들어오고, 이 표는 그대로 남아
+ * 페이지가 어느 그룹인지 찾아보는 자리로 쓰인다.
  *
  * 라벨이 여기 있는 것은 바가 라벨을 두 층에서 쓰기 때문이다. 그룹 행에서는 그룹 이름,
  * 하위 행에서는 하위 이름. `routes.ts` 에도 두면 같은 문구가 두 벌이 된다.
@@ -79,10 +80,27 @@ export const BAR_GROUPS: readonly BarGroup[] = [
 /** 그룹마다 마지막으로 보던 하위. 다시 들어갈 때 그 자리로 돌아간다. */
 export type LastSub = Readonly<Partial<Record<GroupId, TabRouteName>>>
 
+/** 사용자가 정한 바의 순서. 저장과 복원은 `features/bar-order` 몫이고 이 모듈은 받아서 읽기만 한다. */
+export interface BarOrder {
+  /** 그룹 행 다섯. today 가 맨 앞, 더보기가 맨 뒤다. */
+  readonly groups: readonly GroupId[]
+  /** 하위가 있는 그룹마다 하위 페이지의 순서. */
+  readonly subs: Readonly<Partial<Record<GroupId, readonly TabRouteName[]>>>
+}
+
+/** 표 그대로의 순서. */
+export const DEFAULT_BAR_ORDER: BarOrder = {
+  groups: BAR_GROUPS.map((group) => group.id),
+  subs: Object.fromEntries(
+    BAR_GROUPS.filter((group) => group.subs.length > 0).map((group) => [group.id, group.subs.map((sub) => sub.page)]),
+  ),
+}
+
 export interface BarState {
   /** react-navigation 이 알려 주는 지금 화면. 이 모듈이 소유하지 않는다(위 머리말). */
   readonly page: TabRouteName
   readonly lastSub: LastSub
+  readonly order: BarOrder
 }
 
 /**
@@ -103,7 +121,7 @@ export type BarIntent =
 const NONE: BarIntent = { kind: 'none' }
 
 export function initialBarState(): BarState {
-  return { page: 'Today', lastSub: {} }
+  return { page: 'Today', lastSub: {}, order: DEFAULT_BAR_ORDER }
 }
 
 export function groupById(id: GroupId): BarGroup {
@@ -146,14 +164,20 @@ export function canGoBack(state: BarState): boolean {
   return barLayer(state) === 'sub'
 }
 
-/** 지금 하위 행이 보여 줄 항목. 그룹 행이면 빈 배열이다. */
-export function visibleSubs(state: BarState): readonly BarSub[] {
-  return barLayer(state) === 'sub' ? groupOfPage(state.page).subs : []
+/** 그룹의 하위를 사용자가 정한 순서로. */
+function orderedSubs(group: BarGroup, order: BarOrder): readonly BarSub[] {
+  const pages = order.subs[group.id] ?? []
+  return [...group.subs].sort((a, b) => pages.indexOf(a.page) - pages.indexOf(b.page))
 }
 
-/** 그룹의 목적지. 기억된 하위가 있으면 그것, 없으면 첫 하위. */
-function entryPageOf(group: BarGroup, lastSub: LastSub): TabRouteName {
-  return lastSub[group.id] ?? group.subs[0].page
+/** 지금 하위 행이 보여 줄 항목. 그룹 행이면 빈 배열이다. */
+export function visibleSubs(state: BarState): readonly BarSub[] {
+  return barLayer(state) === 'sub' ? orderedSubs(groupOfPage(state.page), state.order) : []
+}
+
+/** 그룹의 목적지. 기억된 하위가 있으면 그것, 없으면 맨 왼쪽 하위. */
+function entryPageOf(group: BarGroup, state: BarState): TabRouteName {
+  return state.lastSub[group.id] ?? orderedSubs(group, state.order)[0].page
 }
 
 /**
@@ -173,7 +197,7 @@ export function pressGroup(state: BarState, id: GroupId): BarIntent {
   return {
     kind: 'openSubs',
     layer: group.layer as LayerRouteName,
-    page: entryPageOf(group, state.lastSub),
+    page: entryPageOf(group, state),
   }
 }
 

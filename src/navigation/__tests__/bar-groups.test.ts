@@ -9,6 +9,7 @@
 import { TAB_ROUTE_NAMES, LAYER_ROUTE_NAMES } from '../routes'
 import {
   BAR_GROUPS,
+  DEFAULT_BAR_ORDER,
   barLayer,
   canGoBack,
   initialBarState,
@@ -19,6 +20,7 @@ import {
   pressSub,
   rememberSub,
   visibleSubs,
+  type BarOrder,
   type BarState,
 } from '../bar-groups'
 
@@ -226,5 +228,36 @@ describe('openPage: 바를 거치지 않은 이동', () => {
     const remembered = at('Today', { lastSub: { ledger: 'Cashbook' } })
 
     expect(openPage(remembered, 'Profit')).toMatchObject({ page: 'Profit' })
+  })
+})
+
+// 표는 기본 순서로 남고 사용자가 정한 순서는 상태로 들어온다. 표를 찾아보는 `groupOfPage` 들은 순서와 상관이 없다.
+describe('사용자가 정한 순서', () => {
+  const moved: BarOrder = {
+    ...DEFAULT_BAR_ORDER,
+    subs: { schedule: ['Boss', 'Appointments', 'Content'], ledger: ['Stats', 'Cashbook', 'Profit'] },
+  }
+
+  it('하위 행이 그 순서를 따른다', () => {
+    const subs = visibleSubs(at('Content', { order: moved }))
+
+    expect(subs.map((sub) => sub.page)).toEqual(['Boss', 'Appointments', 'Content'])
+    expect(subs.map((sub) => sub.label)).toEqual(['보스', '파티 스케줄', '컨텐츠'])
+  })
+
+  it('기억이 없으면 맨 왼쪽 하위로 들어간다', () => {
+    expect(pressGroup(at('Today', { order: moved }), 'ledger')).toEqual({
+      kind: 'openSubs',
+      layer: 'LedgerSubs',
+      page: 'Stats',
+    })
+  })
+
+  it('기억이 있으면 순서와 상관없이 마지막으로 보던 하위로 들어간다', () => {
+    expect(pressGroup(at('Today', { order: moved, lastSub: { ledger: 'Cashbook' } }), 'ledger')).toEqual({
+      kind: 'openSubs',
+      layer: 'LedgerSubs',
+      page: 'Cashbook',
+    })
   })
 })

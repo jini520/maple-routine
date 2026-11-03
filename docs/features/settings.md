@@ -1,17 +1,17 @@
 # 더보기 · 설정
 
-하단 바의 넷째 탭 `더보기` 와, 그 머리의 톱니바퀴가 여는 `설정` 이다. 더보기는 소식과 안내를 읽는 화면이고, 값을 바꾸는
+하단 바의 맨 오른쪽 탭 `더보기` 와, 그 머리의 톱니바퀴가 여는 `설정` 이다. 더보기는 소식과 안내를 읽는 화면이고, 값을 바꾸는
 행은 모두 설정에 있다. 이렇게 나눈 이유는 [[ADR-052]], 데이터 삭제는 [[ADR-053]] 에 있다.
 
 캐릭터 관리는 `features/character.md`([[ADR-029]]), 소식 목록과 상세는 [[ADR-057]], 알림 설정 화면은 [[ADR-056]],
-MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기는 `features/theme.md`([[ADR-054]]) 에 있다.
+MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기는 `features/theme.md`([[ADR-054]]), 하단 탭 순서는 [[ADR-152]] 에 있다.
 
 ## 관련 소스
 
 | 파일 | 하는 일 |
 |---|---|
 | `app/settings/SettingsScreen.tsx` | 더보기. 소식 분류 다섯과 `가이드 및 문의` 카드 |
-| `app/settings/AppSettingsScreen.tsx` | 설정. 제목 붙은 카드 다섯과 고지 네 줄 |
+| `app/settings/AppSettingsScreen.tsx` | 설정. 제목 붙은 카드 여섯과 고지 네 줄 |
 | `app/settings/SectionTitle.tsx` | 카드 제목 줄. 두 화면이 함께 쓴다 |
 | `app/settings/NoticeSkeleton.tsx` | 소식을 받기 전의 스켈레톤 |
 | `app/settings/SettingsRow.tsx` · `SettingsLinkRow.tsx` · `row-class.ts` · `ValueBadge.tsx` | 누르는 행 둘과 공통 골격 · 현재값 배지 |
@@ -23,7 +23,8 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `features/app-review/request.ts` · `storage/app-review.ts` · `native/store-review.ts` | 저장 뒤 앱 안 리뷰 요청. 요청 조건 판단 · 기록 칸 · OS 팝업 호출 |
 | `app/settings/SettingsThemeScreen.tsx` · `ThemeSelector.tsx` | 테마 페이지([[ADR-054]] 결정 10) |
 | `app/settings/SettingsTextSizeScreen.tsx` · `TextSizeSlider.tsx` | 글자 크기 페이지. 미리보기 칸과 네 칸 슬라이더([[ADR-063]] 결정 11) |
-| `app/settings/SettingsActionBar.tsx` | 하위 페이지 아래에 고정하는 버튼 바. 캐릭터 관리의 `저장` · 테마와 글자 크기의 `적용` |
+| `app/settings/SettingsBarOrderScreen.tsx` | 하단 탭 순서 페이지. 카드마다 바 미리보기와 끄는 목록([[ADR-152]] 결정 4) |
+| `app/settings/SettingsActionBar.tsx` | 하위 페이지 아래에 고정하는 버튼 바. 캐릭터 관리의 `저장` · 테마 · 글자 크기 · 하단 탭 순서의 `적용` |
 | `app/settings/TrackingModeModal.tsx` · `TrackingModeSelector.tsx` | 스케줄 관리 방법 고르기 |
 | `app/settings/reload-tab-stores.ts` | 스케줄 관리 방법을 바꾼 뒤 컨텐츠 · 보스 · 수익 스토어를 차례로 다시 읽게 한다 |
 | `features/settings/store.ts` | 연결 해제 |
@@ -65,10 +66,11 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | 카드 제목 | 행 | 오른쪽 | 누르면 |
 |---|---|---|---|
 | `알림` | 알림 설정 | › | 알림 설정 화면 |
-| `캐릭터 · 테마 · 글자 크기` | 캐릭터 관리 | `3개` 배지 › | 캐릭터 관리 화면 |
+| `캐릭터 · 보스` | 캐릭터 관리 | `3개` 배지 › | 캐릭터 관리 화면 |
 | | 보스 관리 | › | 보스 관리 화면 |
-| | 테마 | 테마 이름 배지 › | 테마 페이지 |
+| `테마 · 글자 크기 · 하단 탭` | 테마 | 테마 이름 배지 › | 테마 페이지 |
 | | 글자 크기 | `작게` · `기본` · `크게` · `아주 크게` 배지 › | 글자 크기 페이지 |
+| | 하단 탭 순서 | › | 하단 탭 순서 페이지 |
 | `MVP 등급` | MVP 등급 | › | MVP 등급 목록 |
 | `스케줄` | 스케줄 관리 방법 | `자동` · `수동` 배지 › | 스케줄 관리 방법 모달 |
 | `앱 데이터` | 앱 정보 및 계정 | 앱 버전 › | 앱 정보 및 계정 |
@@ -83,6 +85,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `SettingsFeatureGuideList` | 기능 설명 | 그룹 탭(`컨텐츠 · 보스 · 수익 · 유틸리티 · 설정`, 안내 없는 그룹은 감춘다)과 안내 목록 |
 | `SettingsFeatureGuide` · `SettingsReleaseNoteGuide` | 기능 안내 | 목차(마디가 둘 이상일 때) · 이미지 · 문단. 두 라우트가 같은 화면이다 |
 | `SettingsReleaseNotes` | 개발 노트 | 버전마다 기능 → 개선 → 버그 묶음. `사용 중` · `스토어 업데이트 필요` 배지. 안내가 있는 항목만 눌린다 |
+| `SettingsBarOrder` | 하단 탭 순서 | `하단 탭` · `스케줄러` · `수입·지출` 카드 셋. 카드마다 맨 위에 그 행의 바 미리보기, 아래에 왼쪽 손잡이로 끄는 목록이 있다. today 와 더보기는 목록에 없고 미리보기에만 보인다. `적용` 을 눌러야 저장되고, 누르지 않고 나가면 버린다 |
 | `SettingsAbout` | 앱 정보 및 계정 | `앱 정보` 묶음에 현재 버전 · 상태 · `업데이트 확인` · 개인정보 처리방침(`mapleroutine.store/privacy` 를 인앱 브라우저로 연다). `계정` 묶음에 넥슨 로그아웃(로그인이 있을 때) · 데이터 삭제 · 연결 해제. 계정 행은 확인 창을 거친다 |
 
 개발 노트에는 업데이트를 적용하고 다시 시작했을 때 뜨는 `업데이트를 마쳤어요` 안내의 `자세히 보기` 로도 들어갈 수 있다.
