@@ -1,21 +1,16 @@
-// 효과 층은 카드보다 사방으로 여유 폭만큼 큰 띠 상자 둘이 미끄러지는 것이다. 띠가 경로 끝에서 여유 폭보다 멀리 가면
-// 카드 가장자리에 상자의 끝이 보인다. 여유 폭을 이동 거리에서 계산하므로 거리나 경로 끝을 바꿔도 이 계약은 지켜져야 한다.
-//
-// 카드 크기는 안 본다. 테스트의 애니메이션 스타일은 첫 계산값에 머물러 레이아웃 뒤의 크기를 안 담는다. 여유 폭은 상자의
-// `left` · `top` 으로 읽히고, 계약은 크기와 무관하게 이동 거리와 여유 폭의 비교다.
-import { act } from '@testing-library/react-native'
+// 효과 층은 카드를 재지 않는다. 가는 띠 둘을 GPU 변환으로 늘려 고정 크기 상자로 카드를 덮는다. 레이아웃을 잰 뒤 다시 그리면
+// iOS 그라디언트가 비트맵을 다시 그려 흰 바탕이 한 프레임 비친다. 그래서 계약은 셋이다. ① 레이아웃 전에 띠가 선다
+// ② 경로 끝에서도 `HOLO_COVER` 크기의 카드를 덮는다 ③ 비트맵이 가늘다.
 import { getAnimatedStyle, useSharedValue } from 'react-native-reanimated'
 
 import { renderAtom } from '../../../__tests__/render-atom'
-import { HologramSheen } from '../HologramSheen'
+import { HOLO_COVER, HologramSheen } from '../HologramSheen'
 import { HOLO_REACH } from '../holo-motion'
 
-const CARD = { width: 300, height: 120 }
-
-interface Box {
-  left: number
-  top: number
-  transform: [{ translateX: number }, { translateY: number }]
+interface Strip {
+  width: number
+  height: number
+  transform: Record<string, number | string>[]
 }
 
 function Probe(props: { x: number; y: number }): React.JSX.Element {
@@ -24,13 +19,31 @@ function Probe(props: { x: number; y: number }): React.JSX.Element {
   return <HologramSheen variant="card" motion={{ x, y }} />
 }
 
-async function 띠상자들(x: number, y: number): Promise<Box[]> {
-  const view = await renderAtom(<Probe x={x} y={y} />)
-  // 효과 층은 `pointerEvents="none"` 이라 `fireEvent` 가 이벤트를 막는다. 레이아웃 핸들러를 직접 부른다.
-  const sheen = view.getByTestId('hologram-sheen')
-  await act(async () => sheen.props.onLayout({ nativeEvent: { layout: { x: 0, y: 0, ...CARD } } }))
-  return ['hologram-metal', 'hologram-aurora'].map((id) => getAnimatedStyle(view.getByTestId(id) as never) as Box)
+/** 변환 목록에서 이름의 값. 없으면 `fallback`(scale 은 1, 이동은 0). */
+function part(strip: Strip, name: string, fallback: number): number {
+  const found = strip.transform.find((entry) => name in entry)
+  return found === undefined ? fallback : Number(found[name])
 }
+
+async function 띠들(x: number, y: number): Promise<{ metal: Strip; aurora: Strip }> {
+  const view = await renderAtom(<Probe x={x} y={y} />)
+  const read = (id: string): Strip => getAnimatedStyle(view.getByTestId(id) as never) as unknown as Strip
+  return { metal: read('hologram-metal'), aurora: read('hologram-aurora') }
+}
+
+it('레이아웃을 재기 전에도 두 띠가 선다', async () => {
+  const view = await renderAtom(<Probe x={0} y={0} />)
+
+  expect(view.getByTestId('hologram-metal')).toBeTruthy()
+  expect(view.getByTestId('hologram-aurora')).toBeTruthy()
+})
+
+it('띠 비트맵은 가늘다', async () => {
+  const { metal, aurora } = await 띠들(0, 0)
+
+  expect(Math.min(metal.width, metal.height)).toBeLessThanOrEqual(8)
+  expect(Math.min(aurora.width, aurora.height)).toBeLessThanOrEqual(8)
+})
 
 describe.each([
   [HOLO_REACH, HOLO_REACH],
@@ -38,19 +51,19 @@ describe.each([
   [HOLO_REACH, -HOLO_REACH],
   [-HOLO_REACH, HOLO_REACH],
 ])('경로 끝 (%s, %s)', (x, y) => {
-  it('두 띠가 여유 폭 안에서 움직인다', async () => {
-    for (const box of await 띠상자들(x, y)) {
-      expect(Math.abs(box.transform[0].translateX)).toBeLessThanOrEqual(-box.left)
-      expect(Math.abs(box.transform[1].translateY)).toBeLessThanOrEqual(-box.top)
-    }
+  it('늘린 띠가 가장 큰 카드를 다 덮는다', async () => {
+    const { metal, aurora } = await 띠들(x, y)
+    // 카드는 가로 · 세로 모두 HOLO_COVER 까지다. 가운데 기준 반대각선이 가장 먼 모서리다.
+    const halfDiagonal = (HOLO_COVER * Math.SQRT2) / 2
+
+    // 오로라 띠는 가로로 늘리고 세로는 카드 위에서 시작한다.
+    const auroraHalfWidth = (aurora.width * part(aurora, 'scaleX', 1)) / 2
+    expect(auroraHalfWidth - Math.abs(part(aurora, 'translateX', 0))).toBeGreaterThanOrEqual(HOLO_COVER / 2)
+    expect(aurora.height - Math.abs(part(aurora, 'translateY', 0))).toBeGreaterThanOrEqual(HOLO_COVER)
+
+    // 금속 띠는 돌아가 있어 길이 · 두께 모두 반대각선과 이동 거리를 넘어야 한다.
+    const travel = Math.hypot(part(metal, 'translateX', 0), part(metal, 'translateY', 0))
+    expect(metal.width / 2 - travel).toBeGreaterThanOrEqual(halfDiagonal)
+    expect((metal.height * part(metal, 'scaleY', 1)) / 2 - travel).toBeGreaterThanOrEqual(halfDiagonal)
   })
-})
-
-// 카드는 기간을 넘길 때 다시 마운트된다. 레이아웃을 잰 뒤에야 띠를 그리면 흰 카드가 한 프레임 먼저 서고
-// 오로라가 늦게 덮인다. 띠는 카드와 같은 프레임에 서야 한다.
-it('레이아웃을 재기 전에도 두 띠가 선다', async () => {
-  const view = await renderAtom(<Probe x={0} y={0} />)
-
-  expect(view.getByTestId('hologram-metal')).toBeTruthy()
-  expect(view.getByTestId('hologram-aurora')).toBeTruthy()
 })
