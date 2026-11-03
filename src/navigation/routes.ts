@@ -177,6 +177,8 @@ export type RootStackParamList = {
   SettingsTheme: undefined
   /** 글자 크기. 고르면 이 페이지만 바뀌고 `적용` 으로 앱 전체에 적용한다 */
   SettingsTextSize: undefined
+  /** 하단 탭 순서. 끌어서 놓은 순서는 이 페이지에만 보이고 `적용` 으로 바에 반영한다 */
+  SettingsBarOrder: undefined
   /**
    * 공지 목록. **분류를 받아 그것만 그린다.**
    *
@@ -349,6 +351,12 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/settings/text-size',
     screen: 'SettingsTextSizeScreen',
     target: { kind: 'push', route: 'SettingsTextSize' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/bar-order',
+    screen: 'SettingsBarOrderScreen',
+    target: { kind: 'push', route: 'SettingsBarOrder' },
     origin: 'rn',
   },
   {

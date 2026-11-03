@@ -74,7 +74,7 @@ export interface BottomBarMetrics {
  */
 export function resolveBottomBarMetrics(windowWidthPx: number): BottomBarMetrics {
   const widthPx = Math.min(windowWidthPx - BAR_SIDE_MARGIN * 2, BAR_MAX_WIDTH)
-  const heightPx = Math.round(Math.max(BAR_MIN_HEIGHT, widthPx * HEIGHT_PER_WIDTH))
+  const heightPx = barHeightOf(widthPx)
 
   return {
     widthPx,
@@ -82,4 +82,9 @@ export function resolveBottomBarMetrics(windowWidthPx: number): BottomBarMetrics
     heightPx,
     spacePx: heightPx + BAR_LIFT,
   }
+}
+
+/** 바 폭에서 나오는 높이. 설정의 하단 탭 순서 미리보기도 바보다 좁은 폭에서 이 값으로 같은 비율을 지킨다 */
+export function barHeightOf(widthPx: number): number {
+  return Math.round(Math.max(BAR_MIN_HEIGHT, widthPx * HEIGHT_PER_WIDTH))
 }

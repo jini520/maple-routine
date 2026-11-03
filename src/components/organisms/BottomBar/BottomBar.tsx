@@ -20,34 +20,23 @@ import {
 } from 'react-native'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
-import {
-  ArrowLeftIcon,
-  CalendarCheckIcon,
-  CalendarClockIcon,
-  CalendarIcon,
-  MenuIcon,
-  LayoutDashboardIcon,
-  ListChecksIcon,
-  ProfitIcon,
-  SwordsIcon,
-  Text,
-  TrendingUpIcon,
-  WalletIcon,
-  WrenchIcon,
-} from '../../atoms'
+import { useBarOrderStore } from '../../../features/bar-order/store'
 import { useKeyboardShown } from '../../../hooks/useKeyboardShown'
 import { tapFeedback } from '../../../native/haptics'
 import { scrollPageToTop } from '../../../navigation/scroll-to-top'
 import { isSecondTap, type TapRecord } from './double-tap'
 import { BAR_LIFT, resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
-import { boxShadowOf, type ShadowLayer } from '../../../lib/shadow'
+import { boxShadowOf } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
 import { resolveBarColors } from './bar-colors'
+import { BarBackGlyph, BarGlyph } from './BarGlyph'
+import { BACK_CIRCLE_RATIO, BAR_PADDING, BAR_SHADOW, PILL_OVERHANG, PLATE_SHADOW } from './bar-shape'
 import {
   BAR_GROUPS,
   barLayer,
   canGoBack,
+  groupById,
   groupOfPage,
   pressBack,
   pressGroup,
@@ -81,61 +70,12 @@ export interface BottomBarProps {
   navigation: BarNavigation
 }
 
-/** 치수. `design-system.md` 하단바 표와 같은 값이어야 한다. */
-/**
- * 알약이 칸보다 넓은 정도. 이 값 하나가 나머지 셋을 정한다.
- *
- * 요구가 셋이고 서로 묶여 있어 값을 따로 고를 수 없다. ① 항목 간 간격을 줄인다 ② 알약은
- * 칸 경계를 넘어도 된다 ③ 끝 칸에서 알약이 바 가장자리로부터 위아래와 같은 여백을 남긴다.
- *
- * ```
- * 칸  S = (바폭 − 패딩×2 − O) ÷ 항목수      ← O 가 클수록 칸이 좁아진다(= 간격이 준다)
- * 알약 W = S + O
- * 들여 T = 패딩 + O ÷ 2                     ← 끝 칸 알약이 정확히 패딩 만큼 남기는 자리
- * ```
- *
- * 402pt 기기에서 O=23 이면 칸 69 · 알약 92 · 들여쓰기 14.5 이고 양 끝 여백이 위아래와 같은 3 이다.
- * 세 값을 손으로 적어 두면 기기 폭이 바뀌는 순간 균형이 깨지므로 상수는 이것 하나다.
- */
-const PILL_OVERHANG = 23
-/**
- * 바 안쪽 여백. 레퍼런스 두 장에서 활성 알약 높이 ÷ 바 높이 가 0.89 이고, 그 차이가 곧 이
- * 여백이다. 좁힐수록 알약이 바를 꽉 채워 항목이 바 안에 떠 있는 느낌이 사라진다.
- *
- * 바 높이가 기기마다 달라져도 이 값은 상수다. 여백은 판 둘레의 선이라 판이 커진다고 함께
- * 커질 이유가 없고, 커지면 그 비율이 작은 기기에서 먼저 무너진다.
- */
-const BAR_PADDING = 3
-/**
- * ← 원이 알약 높이에서 차지하는 비율. 402pt 기기의 48 / 66 이다.
- *
- * 고정 48 로 두면 하한(높이 64 · 알약 58)에서 원이 알약을 거의 채우고 태블릿(81 · 알약 75)
- * 에서는 점이 된다. 비율로 두면 402pt 에서 값이 48 그대로다.
- *
- * 원이 차지하는 폭은 이것이 아니라 한 칸(`itemWidth`)이다. 위치와 너비를 메뉴 하나와 같게
- * 두어야 ← 도 이 바의 항목 하나로 읽히고, 하위 행이 둘째 칸에서 시작해 그룹 행의 격자와
- * 어긋나지 않는다.
- */
-const BACK_CIRCLE_RATIO = 48 / 66
 /**
  * 알약이 같은 층 안에서 미끄러지는 시간. 화면이 통째로 밀려 들어오는 전환값(340ms)은
  * 70~145pt 를 움직이는 작은 판에 길다.
  */
 const TRAVEL_MS = 240
 
-/** 바 자신의 그림자. 페이지와 바를 가르는 유일한 장치라 선을 걷은 만큼 조금 진하다. 층은 알약 쪽에서 만든다. */
-const BAR_SHADOW: ShadowLayer = { opacity: 0.3, radius: 16, y: 6 }
-
-/**
- * 활성 알약과 ← 가 공유하는 층 그림자.
- *
- * 둘은 바 위에 한 겹 떠 있는 판 이라는 같은 물건이라 같은 값을 쓴다. 값을 각자 적어 두면
- * 한쪽만 손볼 때 조용히 갈린다.
- *
- * 값이 큰 것은 과해서가 아니라 두 번 깎이기 때문이다. 테마의 `shadowColor` 알파(0.35)와
- * 곱해져 실효 0.23 이다. 0.26(실효 0.09)이면 라이트에서 층이 아예 안 보인다.
- */
-const PLATE_SHADOW: ShadowLayer = { opacity: 0.65, radius: 10, y: 3 }
 /** 층 전환(페이드·← 열림). 알약보다 조금 짧아 알약이 마지막에 자리를 잡는다. */
 const LAYER_MS = 280
 /** 들어오는 행이 오른쪽에서 밀려 들어오는 거리. 크면 날아온다 가 되어 층 관계가 흐려진다. */
@@ -143,101 +83,8 @@ const ROW_SHIFT = 10
 /** 앱이 이미 쓰는 스택 전환 커브와 같은 가족. */
 const EASE = Easing.bezier(0.32, 0.72, 0, 1)
 
-/**
- * 아이콘 선 굵기.
- *
- * 크기·간격·라벨은 클래스에 박혀 있는데 이것만 상수인 것은 `strokeWidth` 가 className 이
- * 아니라 프롭이기 때문이다. 항목 아이콘과 ← 가 같은 값을 써야 해서 이름을 준다.
- */
-const ICON_STROKE = 1.5
-/**
- * 활성인데 채울 수 없는 그림의 획 굵기.
- *
- * 채우기가 통하는 다섯(대시보드·렌치·장바구니·톱니·수익)은 면으로 활성을 말한다. 나머지
- * (달력·지갑·목록·검·조준경)는 안쪽 선이 의미를 져서 채울 수 없으므로 굵기로 말한다. 둘을
- * 같이 주면 채운 그림이 과해지므로 배타다. `activeStroke` 가 그것을 한 자리에서 고른다.
- *
- * 안쪽에 선이 많은 그림일수록 굵은 획이 칸을 메워 형태가 뭉갠다. 그런 그림은 아래 표가 한 단계 낮춘다.
- */
-const ICON_STROKE_ACTIVE = 2.2
-
-/** 활성 굵기를 낮추는 그림. 달력 + 시계는 2.2 에서 안쪽 선이 칸을 메운다 */
-const LIGHT_ACTIVE_STROKE: ReadonlyMap<IconComponent, number> = new Map([[CalendarClockIcon, 1.8]])
-
-type IconComponent = React.ComponentType<{
-  className?: string
-  color?: string
-  fill?: string
-  strokeWidth?: number
-}>
-
-/**
- * 그룹·하위가 쓰는 아이콘.
- *
- * 컨텐츠·보스·설정과 보스 수익은 앱이 이미 쓰던 그림 그대로다(보스 수익은 커스텀
- * `ProfitIcon`. 도메인 아이덴티티를 임의의 lucide 로 대체하지 않는다).
- */
-const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
-  today: LayoutDashboardIcon,
-  schedule: CalendarCheckIcon,
-  ledger: WalletIcon,
-  utility: WrenchIcon,
-  // 톱니바퀴는 더보기 머리로 옮겨 갔다. 같은 그림이 두 자리에 있으면 어느 쪽이 설정인지
-  // 흐려진다. **자리표시자다** - 사용자가 고를 그림이 정해지면 바꾼다.
-  settings: MenuIcon,
-  Today: LayoutDashboardIcon,
-  Content: ListChecksIcon,
-  Boss: SwordsIcon,
-  // 시각이 붙은 달력. 스케줄 그룹(`CalendarCheck`)과 한 식구로 읽히게 골랐다.
-  Appointments: CalendarClockIcon,
-  Profit: ProfitIcon,
-  // 가계부 = 장부. 달력 계열(`CalendarCheck` = 스케줄러 그룹)과 겹치지 않게 골랐다.
-  Cashbook: CalendarIcon,
-  // 오르는 화살표. 기간을 모아 흐름을 보는 자리라 장부(달력)와 갈린다.
-  Stats: TrendingUpIcon,
-  Utility: WrenchIcon,
-  Settings: MenuIcon,
-}
-
-/**
- * 활성일 때 면으로 채우는 아이콘. 나머지는 선 그대로 둔다.
- *
- * 채우기가 통하는 것은 안쪽에 의미가 없는 그림뿐이다. fill 과 stroke 가 같은 색이라 안쪽에
- * 선이 있는 아이콘은 채우는 순간 그 선이 통째로 사라진다.
- *
- * 살아남는 것은 대시보드(사각 넷) · 렌치(실루엣 하나) · 검(칼날이 면으로 차고 손잡이 선은
- * 남는다). 무너지는 것은 톱니(가운데 구멍이 메워진다) · 달력·지갑(안쪽 체크·주머니를 잃는다) ·
- * 목록·장부(선뿐이라 채울 면이 없다) · 수익(`ProfitIcon` 은 열린 호로 그린 커스텀이라
- * `fill="none"` 이 규격이다).
- *
- * 아이콘 컴포넌트로 잡는 이유는 같은 그림이 두 자리에 쓰이기 때문이다(today 는 그룹과 페이지,
- * 렌치는 유틸리티 그룹과 페이지). 라우트 키로 잡으면 한쪽만 채워지는 사고가 난다.
- */
-const FILLED_ICONS: ReadonlySet<IconComponent> = new Set([
-  LayoutDashboardIcon,
-  WrenchIcon,
-  SwordsIcon,
-  // 수익은 우리가 그린 아이콘이라 **채울 자리를 고를 수 있다** - 동전 두 개만 면이 되고 단을
-  // 그리는 호는 선으로 남는다.
-  //
-  // 톱니(`GearIcon`)가 여기서 빠진 것은 그 그림이 하단 바를 떠나 더보기 머리로 갔기 때문이다.
-  // 자리를 물려받은 `MenuIcon` 은 선 셋이라 채울 안쪽이 없다.
-  ProfitIcon,
-])
-
-/** 활성 아이콘이 쓸 `fill`. 채우지 않는 그림은 `none` 그대로다. */
-function activeFill(Icon: IconComponent, active: boolean, accent: string): string {
-  return active && FILLED_ICONS.has(Icon) ? accent : 'none'
-}
-
-/** 채우지 못하는 그림만 활성일 때 굵어진다. 채우는 그림은 기본 굵기 그대로다(배타). */
-function activeStroke(Icon: IconComponent, active: boolean): number {
-  if (!active || FILLED_ICONS.has(Icon)) return ICON_STROKE
-  return LIGHT_ACTIVE_STROKE.get(Icon) ?? ICON_STROKE_ACTIVE
-}
-
 interface BarItemProps {
-  icon: IconComponent
+  id: GroupId | TabRouteName
   label: string
   active: boolean
   /** 활성일 때 아이콘·라벨이 **함께** 쓰는 색(`bar-colors.ts` 의 `accent`). */
@@ -261,7 +108,7 @@ interface BarItemProps {
 }
 
 function BarItem({
-  icon: Icon,
+  id,
   label,
   active,
   accent,
@@ -281,26 +128,7 @@ function BarItem({
       style={{ width, height }}
       className="items-center justify-center"
     >
-      <View className="items-center gap-[4px]">
-        {/* 아이콘과 라벨은 **같은 색**이다. 강조색을 그대로 쓰면 테마에 따라 대비가 1.89 까지
-            내려가므로, **읽힐 때까지 민** 값을 `bar-colors.ts` 가 계산해 준다. */}
-        <Icon
-          className="h-[25px] w-[25px]"
-          color={active ? accent : muted}
-          fill={activeFill(Icon, active, accent)}
-          strokeWidth={activeStroke(Icon, active)}
-        />
-        <Text
-          numberOfLines={1}
-          // `includeFontPadding` 은 안드로이드에서만 읽히는 값이고, 기본(참)일 때 글자 상자에
-          // 폰트 메트릭 여백을 더해 iOS 보다 큰 상자를 만든다. 아이콘→라벨이 27 → 30px
-          // 이 되고 블록이 5px 자라 아이콘이 3px 위로 밀린다. iOS 는 이 값을 무시한다.
-          style={{ color: active ? accent : muted, includeFontPadding: false }}
-          className="text-10 font-normal tracking-[-0.01em]"
-        >
-          {label}
-        </Text>
-      </View>
+      <BarGlyph id={id} label={label} active={active} accent={accent} muted={muted} />
     </Pressable>
   )
 }
@@ -312,6 +140,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
   const bottomSafeAreaPx = useBottomSafeAreaPx()
   const { definition } = useThemeAppearance()
   const lastSub = useLastSub()
+  const order = useBarOrderStore((state) => state.order)
   const isKeyboardShown = useKeyboardShown()
   // 바의 세로는 창 폭에서 나온다. 콘텐츠가 남기는 몫도 같은 함수를 보므로
   // (`ScreenScroll` → `bottom-inset.ts`) 두 값이 어긋날 자리가 없다.
@@ -322,7 +151,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
   const pillHeight = barHeight - BAR_PADDING * 2
   const backCircle = Math.round(pillHeight * BACK_CIRCLE_RATIO)
 
-  const bar: BarState = useMemo(() => ({ page, lastSub }), [page, lastSub])
+  const bar: BarState = useMemo(() => ({ page, lastSub, order }), [page, lastSub, order])
 
   const colors = resolveBarColors(definition)
   // iOS 26 이상에서만 Liquid Glass 가 있다. 그 밖(안드로이드 · iOS 26 미만)은 블러 재질이고,
@@ -332,16 +161,14 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
   const subs = visibleSubs(bar)
   const hasBack = canGoBack(bar)
 
-  const groupItems = BAR_GROUPS.map((group) => ({
+  const groupItems = order.groups.map(groupById).map((group) => ({
     key: group.id,
     label: group.label,
-    icon: ICONS[group.id],
     active: group.id === groupOfPage(page).id,
   }))
   const subItems = subs.map((sub) => ({
     key: sub.page,
     label: sub.label,
-    icon: ICONS[sub.page],
     active: sub.page === page,
   }))
 
@@ -623,7 +450,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
           {groupItems.map((item) => (
             <BarItem
               key={item.key}
-              icon={item.icon}
+              id={item.key}
               label={item.label}
               active={item.active}
               accent={colors.accent}
@@ -656,7 +483,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
           {subItems.map((item) => (
             <BarItem
               key={item.key}
-              icon={item.icon}
+              id={item.key}
               label={item.label}
               active={item.active}
               accent={colors.accent}
@@ -760,11 +587,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
               justifyContent: 'center',
             }}
           >
-            <ArrowLeftIcon
-              className="h-[25px] w-[25px]"
-              color={colors.muted}
-              strokeWidth={ICON_STROKE}
-            />
+            <BarBackGlyph color={colors.muted} />
           </View>
         </Pressable>
       </Animated.View>

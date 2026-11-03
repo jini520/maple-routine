@@ -128,12 +128,13 @@ const ROW_LABELS = [
   '테마',
   // 테마 바로 아래(사용자 지정). 둘 다 화면 모양을 바꾸는 행이다.
   '글자 크기',
+  '하단 탭 순서',
   '스케줄 관리 방법',
   '앱 정보 및 계정',
 ]
 
 /** 카드마다 달린 제목. 순서가 곧 화면 순서다(사용자 지정). */
-const SECTION_TITLES = ['알림', '캐릭터 · 테마 · 글자 크기', 'MVP 등급', '스케줄', '앱 데이터']
+const SECTION_TITLES = ['알림', '캐릭터 · 보스', '테마 · 글자 크기 · 하단 탭', 'MVP 등급', '스케줄', '앱 데이터']
 
 function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>> = {}): void {
   mockedUseThemeStore.mockReturnValue({
@@ -182,12 +183,12 @@ afterEach(() => {
 })
 
 describe('AppSettingsScreen', () => {
-  // 카드 넷이 주제를 가른다. 알림(밖으로 나간다) · 스케줄 · 캐릭터와 테마 · 앱 데이터.
-  it('카드가 넷이고 알림이 혼자 맨 위다', async () => {
+  // 카드가 주제를 가른다. 내 캐릭터를 다루는 행과 앱의 모양을 바꾸는 행은 다른 카드다(사용자 지정).
+  it('카드가 여섯이고 알림이 혼자 맨 위다', async () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
     const cards = view.getAllByTestId('app-settings-card')
-    expect(cards).toHaveLength(5)
+    expect(cards).toHaveLength(6)
 
     const labelsIn = (card: AtomElement): string[] =>
       ROW_LABELS.filter((label) => {
@@ -197,11 +198,12 @@ describe('AppSettingsScreen', () => {
       })
 
     expect(labelsIn(cards[0])).toEqual(['알림 설정'])
-    expect(labelsIn(cards[1])).toEqual(['캐릭터 관리', '보스 관리', '테마', '글자 크기'])
+    expect(labelsIn(cards[1])).toEqual(['캐릭터 관리', '보스 관리'])
+    expect(labelsIn(cards[2])).toEqual(['테마', '글자 크기', '하단 탭 순서'])
     // 구역 제목과 행 이름이 같아 `ROW_LABELS` 로는 못 찾는다. 카드 안에서 본다.
-    expect(within(cards[2]).getByText('MVP 등급')).toBeTruthy()
-    expect(labelsIn(cards[3])).toEqual(['스케줄 관리 방법'])
-    expect(labelsIn(cards[4])).toEqual(['앱 정보 및 계정'])
+    expect(within(cards[3]).getByText('MVP 등급')).toBeTruthy()
+    expect(labelsIn(cards[4])).toEqual(['스케줄 관리 방법'])
+    expect(labelsIn(cards[5])).toEqual(['앱 정보 및 계정'])
   })
 
   it('카드 안의 행 사이에 선을 긋지 않는다', async () => {
@@ -219,13 +221,13 @@ describe('AppSettingsScreen', () => {
     // `MVP 등급` 은 제목과 행 이름이 같아 두 번 나온다. 처음 나온 자리로 순서를 본다.
     expect([...new Set(texts.filter((text) => SECTION_TITLES.includes(text)))]).toEqual(SECTION_TITLES)
     // 제목은 카드 **위**에 선다.
-    expect(texts.indexOf('캐릭터 · 테마 · 글자 크기')).toBeLessThan(texts.indexOf('캐릭터 관리'))
+    expect(texts.indexOf('캐릭터 · 보스')).toBeLessThan(texts.indexOf('캐릭터 관리'))
   })
 
   it('"MVP 등급" 행을 누르면 SettingsMvpGrade 로 민다', async () => {
     const view = await renderOverlay(<AppSettingsScreen />)
 
-    await press(within(view.getAllByTestId('app-settings-card')[2]).getByRole('button'))
+    await press(within(view.getAllByTestId('app-settings-card')[3]).getByRole('button'))
 
     expect(navigate).toHaveBeenCalledWith('SettingsMvpGrade')
   })
@@ -255,6 +257,7 @@ describe('AppSettingsScreen', () => {
   it.each([
     ['테마', 'SettingsTheme'],
     ['글자 크기', 'SettingsTextSize'],
+    ['하단 탭 순서', 'SettingsBarOrder'],
     ['앱 정보 및 계정', 'SettingsAbout'],
   ])('"%s"를 누르면 %s 페이지를 연다', async (label, route) => {
     const view = await renderOverlay(<AppSettingsScreen />)
@@ -262,6 +265,15 @@ describe('AppSettingsScreen', () => {
     await press(rowOf(view, label))
 
     expect(navigate).toHaveBeenCalledWith(route)
+  })
+
+  // 순서는 짧은 말로 요약할 수 없어 값 배지를 달지 않는다.
+  it('"하단 탭 순서" 행에는 값 배지 없이 chevron 만 있다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    const row = rowOf(view, '하단 탭 순서')
+    expect(textsIn(row)).toEqual(['하단 탭 순서'])
+    expect(hasChevron(row)).toBe(true)
   })
 
   it('"앱 정보 및 계정" 우측에 앱 버전을 표시한다', async () => {

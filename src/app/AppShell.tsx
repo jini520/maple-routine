@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import { useDropEffectStore } from '../features/drop-effect/store'
+import { useBarOrderStore } from '../features/bar-order/store'
 import { useQuickLinksStore } from '../features/quick-links/store'
 import { startKeyboardHeightRecorder } from '../features/input-card/keyboard-height'
 import { loadMesoUnits } from '../features/input-card/meso-unit'
@@ -43,7 +44,7 @@ import { useReturnToForeground } from '../hooks/useReturnToForeground'
  * 1. **포트 주입**. 이 파일 밖이다(`index.ts` → `boot.ts`, 1단계). 아래 어느 것보다 먼저다.
  * 2. **스플래시 붙들기**. 이것도 이 파일 밖이다(`index.ts` → `boot-splash.ts`). 전역 스코프여야
  *    한다(`expo-splash-screen` 이 명시).
- * 3. **게임 데이터 잠금**. 테마 · 글자 크기 복원과 OTA 모달을 뺀 나머지는 게임 데이터가 준비된 뒤에 마운트한다
+ * 3. **게임 데이터 잠금**. 테마 · 글자 크기 · 하단바 순서 복원과 OTA 모달을 뺀 나머지는 게임 데이터가 준비된 뒤에 마운트한다
  *    (`ReadyShell`). 빈 표를 읽은 이펙트가 엉뚱한 일을 하지 않게 하기 위해서다. 알림 예약 맞추기가 빈 컨텐츠 표를 읽으면
  *    예약을 전부 지운다. 준비 전에는 `GameDataLock` 이 선다.
  * 3-1. **저장소 복원 다섯**(인증·진입 단계·테마·트래킹 모드·드롭 연출). 서로 독립이라 순서가 없다. 각자
@@ -233,6 +234,7 @@ function refreshOnReturn(): void {
 export function AppShell(): React.JSX.Element {
   const restoreTheme = useThemeStore((state) => state.restoreFromStorage)
   const restoreTextSize = useTextSizeStore((state) => state.restoreFromStorage)
+  const restoreBarOrder = useBarOrderStore((state) => state.restoreFromStorage)
   const gameData = useGameDataStatus()
   const holdingSplash = useLiveUpdateStore((state) => state.holdingSplash)
 
@@ -244,6 +246,12 @@ export function AppShell(): React.JSX.Element {
 
   useEffect(() => {
     void restoreTextSize()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 게임 데이터가 늦으면 `ReadyShell` 은 스플래시가 걷힌 뒤에 선다. 거기서 읽으면 바가 기본 순서로 먼저 보인다.
+  useEffect(() => {
+    void restoreBarOrder()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
