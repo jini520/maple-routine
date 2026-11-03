@@ -62,7 +62,7 @@ function NoticeMetaRow(props: { notice: Notice }): React.JSX.Element {
       </View>
       {notice.link !== undefined && (
         <Button
-          variant="tint"
+          variant="soft"
           size="sm"
           role="link"
           aria-label="자세히 보기"
@@ -71,7 +71,7 @@ function NoticeMetaRow(props: { notice: Notice }): React.JSX.Element {
           className="flex-row items-center gap-1.5"
         >
           자세히 보기
-          <ExternalLinkIcon className="h-3.5 w-3.5 text-text" strokeWidth={2} aria-hidden />
+          <ExternalLinkIcon className="h-3.5 w-3.5 text-primary-ink" strokeWidth={2} aria-hidden />
         </Button>
       )}
     </View>
