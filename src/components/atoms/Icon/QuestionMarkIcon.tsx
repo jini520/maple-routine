@@ -18,7 +18,7 @@ const GLYPH_GRID: SvgGrid = { viewBox: '6 6 12 12', ratio: 1 }
  *
  * @example
  * // 보스 드롭 시트의 상자 타일 배지
- * <QuestionMarkIcon className="h-2.5 w-2.5 text-text-muted" aria-hidden />
+ * <QuestionMarkIcon className="h-2 w-2 text-primary-ink" aria-hidden />
  */
 export function QuestionMarkIcon(props: IconProps): React.JSX.Element {
   return (

@@ -600,9 +600,9 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                                   <View
                                     testID={`drop-tile-box-mark-${candidate.key}`}
                                     aria-hidden
-                                    className="absolute -bottom-[5px] -right-[5px] h-4 w-4 items-center justify-center rounded-full bg-surface-2"
+                                    className="absolute -bottom-[5px] -right-[5px] h-4 w-4 items-center justify-center rounded-full bg-primary-tint"
                                   >
-                                    <QuestionMarkIcon className="h-2.5 w-2.5 text-text-muted" aria-hidden />
+                                    <QuestionMarkIcon className="h-2 w-2 text-primary-ink" aria-hidden />
                                   </View>
                                 )}
                                 <TileLabel drop={boxDrop ?? normalDrop} />
