@@ -16,6 +16,7 @@ import dropBoxes from './drop-boxes.json'
 import dropItems from './drop-items.json'
 import enhancementCosts from './enhancement-costs.json'
 import equipmentItems from './equipment-items.json'
+import faqs from './faqs.json'
 import hexaMatrix from './hexa-matrix.json'
 import huntingGrounds from './hunting-grounds.json'
 import huntLoot from './hunt-loot.json'
@@ -44,6 +45,7 @@ const FIXTURES: Record<GameDataSection, unknown> = {
   huntLoot,
   assets,
   imageCrops,
+  faqs,
 }
 
 export function initialTable<T>(name: GameDataSection, _empty: T, parse: (value: unknown) => T | null): T {

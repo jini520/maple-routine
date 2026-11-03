@@ -14,7 +14,7 @@ import { Pressable, View } from 'react-native'
 
 import { Text, WrenchIcon, XIcon } from '../components/atoms'
 import { FaqSheet } from '../components/organisms/FaqSheet/FaqSheet'
-import { MAINTENANCE_FAQ, MAINTENANCE_FAQ_TITLE } from '../features/nexon-maintenance/faq'
+import { useFaqSheet } from '../features/faq/use-faq-sheet'
 import { useNexonMaintenanceStore } from '../features/nexon-maintenance/store'
 
 /** 16px 아이콘을 권장 타깃 44px 로 되돌린다. */
@@ -29,6 +29,7 @@ export function NexonMaintenanceBanner(props: { testID: string }): React.JSX.Ele
   const scope = useNexonMaintenanceStore((state) => state.scope)
   const dismiss = useNexonMaintenanceStore((state) => state.dismiss)
   const [faqOpen, setFaqOpen] = useState(false)
+  const faq = useFaqSheet('nexon-maintenance')
 
   if (scope === null) return null
 
@@ -41,6 +42,8 @@ export function NexonMaintenanceBanner(props: { testID: string }): React.JSX.Ele
           role="button"
           aria-label="점검이 무엇인지 보기"
           onPress={() => setFaqOpen(true)}
+          // 묶음에 문항이 없으면 줄은 서되 열 시트가 없다.
+          disabled={faq === null}
           className="shrink grow active:opacity-60"
         >
           <Text className="text-xs font-semibold text-settlement-ink">{TITLE[scope]}</Text>
@@ -60,8 +63,8 @@ export function NexonMaintenanceBanner(props: { testID: string }): React.JSX.Ele
         </Pressable>
       </View>
 
-      {faqOpen && (
-        <FaqSheet title={MAINTENANCE_FAQ_TITLE} items={MAINTENANCE_FAQ} onClose={() => setFaqOpen(false)} />
+      {faqOpen && faq !== null && (
+        <FaqSheet title={faq.title} items={faq.items} onClose={() => setFaqOpen(false)} />
       )}
     </>
   )

@@ -32,6 +32,7 @@ import { act, fireEvent, screen } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../components/__tests__/render-atom'
 import { useSettlementBanner } from '../../features/settlement/query'
+import { faqsTable } from '../../lib/faq/faqs'
 import { SettlementBanner } from '../SettlementBanner'
 
 const dismiss = jest.fn().mockResolvedValue(undefined)
@@ -85,6 +86,24 @@ it('줄을 탭하면 FAQ 시트가 열린다. 가계부 · 통계 문답도 든�
   expect(screen.getByText('스케줄러 결산')).toBeTruthy()
   expect(screen.getByText('결산이 무엇인가요?')).toBeTruthy()
   expect(screen.getByText('가계부와 통계에 오늘 잡은 보스가 안 보여요.')).toBeTruthy()
+})
+
+// 문구는 서버 FAQ 묶음이다. 관리 화면에서 문항을 다 지우면 줄은 그대로 서고 열 시트만 없다.
+it('FAQ 묶음에 문항이 없으면 줄을 탭해도 시트가 열리지 않는다', async () => {
+  세우기()
+  const before = faqsTable.get()
+  faqsTable.set({ ...before, items: before.items.filter((item) => item.sheet !== 'settlement') })
+  try {
+    await renderOverlay(<SettlementBanner testID="today-settlement-banner" detail="일부 데이터가 갱신되지 않을 수 있습니다." />)
+
+    expect(screen.getByLabelText('결산이 무엇인지 보기')).toBeDisabled()
+    await press(screen.getByLabelText('결산이 무엇인지 보기'))
+
+    expect(screen.getByText('스케줄러 데이터를 결산 중입니다.')).toBeTruthy()
+    expect(screen.queryByText('스케줄러 결산')).toBeNull()
+  } finally {
+    faqsTable.set(before)
+  }
 })
 
 // 재조회가 아닌 이유는 결산 중에는 같은 값이 다시 와서 앱이 고장 난 것으로 읽히기 때문이다.

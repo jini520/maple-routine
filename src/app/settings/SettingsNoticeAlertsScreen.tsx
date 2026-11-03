@@ -15,6 +15,8 @@ import { Button, Card, Switch, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useNoticeStore } from '../../features/notice/store'
 import { anySubscribed, NOTICE_TOPICS } from '../../features/notice/topics'
@@ -44,6 +46,7 @@ function SectionLabel(props: { children: string }): React.JSX.Element {
 }
 
 export function SettingsNoticeAlertsScreen(): React.JSX.Element {
+  const faq = useFaqSheet('settings-notice-alerts')
   const navigation = useSettingsNavigation()
   const subscriptions = useNoticeStore((state) => state.subscriptions)
   const pending = useNoticeStore((state) => state.pending)
@@ -104,7 +107,10 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
           <PageHeaderTitleRow className="justify-between">
             <View className="flex-row items-center gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-bold text-text">알림 설정</Text>
+              <View className="flex-row items-center">
+                <Text className="text-lg font-bold text-text">알림 설정</Text>
+                <FaqButton sheet={faq} />
+              </View>
             </View>
             {/* 아래 권한 카드는 **켜려다 막혔을 때만** 나온다. 막힌 적 없이 기기 쪽에서 알림을
                 끄거나 채널·방해 금지를 손보러 가려는 사용자에게는 앱 안에 길이 없었다. */}

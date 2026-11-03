@@ -841,6 +841,20 @@ describe('BossScreen: 주간 헤더가 서는 조건', () => {
   })
 })
 
+// 보스 스케줄러에서 바로 보스 관리로 간다. 자동 모드에서도 보스 관리는 파티 인원을 정하는 곳이라 두 모드 모두 선다.
+describe('BossScreen: 머리의 보스 관리 버튼', () => {
+  // 머리 글자는 `관리` 로 짧고, 스크린 리더는 버튼 이름만 읽으므로 이름에 무엇의 관리인지 남는다.
+  it('자동 모드에서도 머리의 "관리" 를 누르면 보스 관리 화면을 연다. 스크린 리더 이름은 "보스 관리"다', async () => {
+    mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
+    await renderScreen()
+
+    expect(screen.getByText('관리')).toBeTruthy()
+    await press(screen.getByLabelText('보스 관리'))
+
+    expect(navigate).toHaveBeenCalledWith('BossManage')
+  })
+})
+
 describe('BossScreen: 빈 상태 문구', () => {
   it('자동 모드는 게임 등록을 안내하고 CTA 가 없다. 목적지가 앱 밖이다', async () => {
     mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
@@ -848,12 +862,10 @@ describe('BossScreen: 빈 상태 문구', () => {
     await renderScreen()
 
     expect(screen.getByText('등록된 보스가 없습니다')).toBeTruthy()
-    // 헤더 버튼이 사라졌으므로 이 화면에 "보스 관리"라는 글자는 **하나도 없다**.
-    // 자동 모드에는 CTA 도 없다.
+    // 자동 모드에는 CTA 가 없다. 머리 버튼의 글자는 `관리` 라 "보스 관리" 글자는 화면에 없다.
     expect(screen.queryByText('보스 관리')).toBeNull()
   })
 
-  // 보스 관리는 설정에서 여는 하위 페이지다. CTA 는 그 화면을 민다.
   it('수동 모드는 "보스 관리" CTA 를 주고, 누르면 보스 관리 화면을 연다', async () => {
     useTrackingModeStore.setState({ mode: 'manual' })
     mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })

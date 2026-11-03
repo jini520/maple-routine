@@ -19,6 +19,8 @@ import { ShareField } from '../../components/molecules/ShareField/ShareField'
 import { Stepper } from '../../components/molecules/Stepper/Stepper'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { formatMesoUnits } from '../../lib/drop/drop-price'
 import {
@@ -102,6 +104,7 @@ const CARD_CLASS = 'rounded-[14px] bg-surface'
 const SPLIT_OPTIONS = ['기본', '비율'] as const
 
 export function ItemSplitScreen(): React.JSX.Element {
+  const faq = useFaqSheet('utility-item-split')
   const navigation = useScreenNavigation()
   const [unit, setUnit] = useState<MesoUnit>(() => mesoUnitOf('itemSplit'))
   /** 칸이 든 글자. **고른 단위의 글자**다(`99.9`). 셈은 메소로 옮긴 값으로 한다. */
@@ -130,7 +133,10 @@ export function ItemSplitScreen(): React.JSX.Element {
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-bold text-text">{ITEM_SPLIT_TOOL_NAME}</Text>
+            <View className="flex-row items-center">
+              <Text className="text-lg font-bold text-text">{ITEM_SPLIT_TOOL_NAME}</Text>
+              <FaqButton sheet={faq} />
+            </View>
           </PageHeaderTitleRow>
         </PageHeader>
       }

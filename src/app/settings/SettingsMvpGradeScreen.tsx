@@ -14,6 +14,8 @@ import { LoadingState } from '../../components/molecules/LoadingState/LoadingSta
 import { AccountRow } from '../../components/organisms/AccountSelect/AccountSelect'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useMvpGradeSettingsStore, type MvpGradeAccountView } from '../../features/mvp-grade/settings-store'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
@@ -23,6 +25,7 @@ import { GradeTimelineRow } from '../mvp-grade/GradeTimelineRow'
 import { SETTINGS_CARD_CLASS, SETTINGS_SWITCH_ROW_CLASS } from './row-class'
 
 export function SettingsMvpGradeScreen(): React.JSX.Element {
+  const faq = useFaqSheet('settings-mvp-grade')
   const navigation = useSettingsNavigation()
   const status = useMvpGradeSettingsStore((state) => state.status)
   const accounts = useMvpGradeSettingsStore((state) => state.accounts)
@@ -41,7 +44,10 @@ export function SettingsMvpGradeScreen(): React.JSX.Element {
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-bold text-text">MVP 등급</Text>
+              <View className="flex-row items-center">
+                <Text className="text-lg font-bold text-text">MVP 등급</Text>
+                <FaqButton sheet={faq} />
+              </View>
             </PageHeaderTitleRow>
           </PageHeader>
         }

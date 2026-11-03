@@ -31,6 +31,8 @@ import packageJson from '../../../package.json'
 import { Card, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { AppUpdateSection } from './AppUpdateSection'
@@ -51,6 +53,7 @@ export interface SettingsAboutScreenProps {
 }
 
 export function SettingsAboutScreen(props: SettingsAboutScreenProps = {}): React.JSX.Element {
+  const faq = useFaqSheet('settings-about')
   const navigation = useSettingsNavigation()
 
   const liveUpdate = useLiveUpdateStore()
@@ -111,7 +114,10 @@ export function SettingsAboutScreen(props: SettingsAboutScreenProps = {}): React
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-bold text-text">앱 정보 및 계정</Text>
+              <View className="flex-row items-center">
+                <Text className="text-lg font-bold text-text">앱 정보 및 계정</Text>
+                <FaqButton sheet={faq} />
+              </View>
             </PageHeaderTitleRow>
           </PageHeader>
         }

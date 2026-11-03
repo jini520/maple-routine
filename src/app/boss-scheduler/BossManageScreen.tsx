@@ -36,6 +36,8 @@ import { LoadingState } from '../../components/molecules/LoadingState/LoadingSta
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { PartyShareSummary } from '../../components/molecules/PartyShareSummary/PartyShareSummary'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -56,6 +58,7 @@ const NO_SHARES: BossPartyShareColumns = {
 }
 
 export function BossManageScreen(): React.JSX.Element {
+  const faq = useFaqSheet('boss-manage')
   // 스케줄은 캐시에서, 기기 값(파티 인원 · 수동 추적)은 스토어에서 온다. 스케줄러를 거치지 않고 직접 진입해도 훅이 받는다.
   const { status, characters: storeCharacters, trackedOcids } = useBossSchedule()
   const {
@@ -304,7 +307,11 @@ export function BossManageScreen(): React.JSX.Element {
         <PageHeader>
           <PageHeaderTitleRow fetchedAt={fetchedAt} className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-bold text-text">보스 관리</Text>
+            {/* 물음표는 제목과 한 덩어리다. 뒤로 버튼과의 간격(gap-2)을 따르지 않게 묶는다. */}
+            <View className="flex-row items-center">
+              <Text className="text-lg font-bold text-text">보스 관리</Text>
+              <FaqButton sheet={faq} />
+            </View>
           </PageHeaderTitleRow>
         </PageHeader>
       }

@@ -15,6 +15,8 @@ import {
 } from '../../components/atoms'
 import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
 import { Segment } from '../../components/molecules/Segment/Segment'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -52,6 +54,7 @@ const HIGHLIGHT_MS = 1200
 const SCROLL_TOP_GAP = 12
 
 export function AppointmentsScreen(): React.JSX.Element {
+  const faq = useFaqSheet('appointments')
   const { appointments } = usePartyAppointments()
   const { characters } = useBossSchedule()
   /** 열린 시트. `add` 는 추가, 회차면 그 상세 */
@@ -185,6 +188,7 @@ export function AppointmentsScreen(): React.JSX.Element {
               }
             >
               <Text className="text-lg font-bold text-text">파티 스케줄</Text>
+              <FaqButton sheet={faq} />
             </PageHeaderTitleRow>
           </PageHeader>
         }

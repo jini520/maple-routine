@@ -28,9 +28,9 @@ jest.mock('@gorhom/bottom-sheet', () => {
 
 import { screen } from '@testing-library/react-native'
 
-import { renderOverlay } from '../../../__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
+import type { FaqItem } from '../../../../types/faq'
 import { FaqSheet } from '../FaqSheet'
-import type { FaqItem } from '../FaqSheet'
 
 const 문답: FaqItem[] = [
   {
@@ -64,6 +64,13 @@ it('펼치는 누르개가 없다', async () => {
   await 그리기()
 
   expect(screen.queryAllByRole('button')).toHaveLength(0)
+})
+
+// 앱은 구분선을 쓰지 않는다. 문답은 간격으로 가른다.
+it('문답 사이에 구분선이 없다', async () => {
+  await 그리기()
+
+  expect(flattenStyle(screen.getByTestId('faq-item-1').props.style).borderTopWidth).toBeUndefined()
 })
 
 it('문답이 없으면 머리만 선다', async () => {

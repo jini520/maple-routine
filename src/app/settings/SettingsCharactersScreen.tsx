@@ -31,6 +31,8 @@ import { CharacterManageBody } from '../../components/organisms/CharacterManage/
 import { useCharacterManage } from '../../hooks/useCharacterManage'
 import { TaskProgressModal } from '../../components/organisms/TaskProgressModal/TaskProgressModal'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SettingsActionBar } from './SettingsActionBar'
@@ -38,6 +40,7 @@ import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 export function SettingsCharactersScreen(): React.JSX.Element {
+  const faq = useFaqSheet('settings-characters')
   const setRepresentative = useCharacterSelectionStore((state) => state.setRepresentative)
   const navigation = useSettingsNavigation()
   const manage = useCharacterManage()
@@ -84,7 +87,10 @@ export function SettingsCharactersScreen(): React.JSX.Element {
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-bold text-text">캐릭터 관리</Text>
+              <View className="flex-row items-center">
+                <Text className="text-lg font-bold text-text">캐릭터 관리</Text>
+                <FaqButton sheet={faq} />
+              </View>
             </PageHeaderTitleRow>
           </PageHeader>
         }

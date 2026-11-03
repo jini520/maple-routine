@@ -28,12 +28,15 @@ import {
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
 export function SettingsReleaseNotesScreen(): React.JSX.Element {
+  const faq = useFaqSheet('settings-release-notes')
   const navigation = useSettingsNavigation()
 
   // 폴백까지 했는데도 일치하는 노트가 없으면 아무 배지도 붙지 않는다. 1.0.2 이전 사용자는
@@ -47,7 +50,10 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-bold text-text">개발 노트</Text>
+            <View className="flex-row items-center">
+              <Text className="text-lg font-bold text-text">개발 노트</Text>
+              <FaqButton sheet={faq} />
+            </View>
           </PageHeaderTitleRow>
         </PageHeader>
       }

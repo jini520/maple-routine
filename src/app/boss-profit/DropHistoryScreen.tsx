@@ -38,6 +38,8 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../constants/style/drought-tier-styles'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -247,6 +249,7 @@ function DropHistoryPeriodSection(props: {
 }
 
 export function DropHistoryScreen(): React.JSX.Element {
+  const faq = useFaqSheet('drop-history')
   const navigation = useScreenNavigation()
   const topSafeAreaPx = useTopSafeAreaPx()
   // 쿼리가 마운트에 스스로 읽는다. 기록 · 보스 기록의 판이 오르면 무효화되어 다시 읽힌다.
@@ -264,7 +267,10 @@ export function DropHistoryScreen(): React.JSX.Element {
         <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
           <PageHeaderTitleRow className="gap-1">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-bold text-text">히스토리</Text>
+            <View className="flex-row items-center">
+              <Text className="text-lg font-bold text-text">히스토리</Text>
+              <FaqButton sheet={faq} />
+            </View>
           </PageHeaderTitleRow>
         </View>
       }

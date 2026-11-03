@@ -18,6 +18,8 @@ import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { emptyNoticeText } from '../../features/notice/notice-display'
 import { refreshNoticeKinds, useNotices } from '../../features/notice/notice-query'
@@ -61,6 +63,7 @@ function NoticesSkeleton(props: { bannerKind: NoticeKind | null }): React.JSX.El
 export function SettingsNoticesScreen(props: {
   route?: { params?: { kinds?: NoticeKind[]; title?: string } }
 }): React.JSX.Element {
+  const faq = useFaqSheet('settings-notices')
   const navigation = useSettingsNavigation()
   const kinds = props.route?.params?.kinds
   const title = props.route?.params?.title ?? '소식'
@@ -101,7 +104,10 @@ export function SettingsNoticesScreen(props: {
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-bold text-text">{title}</Text>
+            <View className="flex-row items-center">
+              <Text className="text-lg font-bold text-text">{title}</Text>
+              <FaqButton sheet={faq} />
+            </View>
           </PageHeaderTitleRow>
         </PageHeader>
       }

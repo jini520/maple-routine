@@ -15,10 +15,7 @@ import { Pressable, View } from 'react-native'
 
 import { CheckCircle2Icon, Text, XIcon } from '../../components/atoms'
 import { FaqSheet } from '../../components/organisms/FaqSheet/FaqSheet'
-import {
-  MANUAL_COMPLETION_FAQ,
-  MANUAL_COMPLETION_FAQ_TITLE,
-} from '../../features/manual-completion/faq'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { useManualCompletionBanner } from '../../features/manual-completion/query'
 
 /** 16px 아이콘을 권장 타깃 44px 로 되돌린다. 결산 줄의 닫기와 같은 값이다. */
@@ -27,6 +24,7 @@ const CLOSE_HIT_SLOP = 14
 export function ManualCompletionBanner(): React.JSX.Element | null {
   const { visible, dismiss } = useManualCompletionBanner()
   const [faqOpen, setFaqOpen] = useState(false)
+  const faq = useFaqSheet('manual-completion')
 
   if (!visible) return null
 
@@ -44,6 +42,8 @@ export function ManualCompletionBanner(): React.JSX.Element | null {
           role="button"
           aria-label="직접 완료가 무엇인지 보기"
           onPress={() => setFaqOpen(true)}
+          // 묶음에 문항이 없으면 줄은 서되 열 시트가 없다.
+          disabled={faq === null}
           className="shrink grow active:opacity-60"
         >
           {/* 문장 둘을 각자 한 줄에 둔다. 한 문단으로 흘리면 폭에 따라 접히는 자리가 달라져
@@ -71,12 +71,8 @@ export function ManualCompletionBanner(): React.JSX.Element | null {
         </Pressable>
       </View>
 
-      {faqOpen && (
-        <FaqSheet
-          title={MANUAL_COMPLETION_FAQ_TITLE}
-          items={MANUAL_COMPLETION_FAQ}
-          onClose={() => setFaqOpen(false)}
-        />
+      {faqOpen && faq !== null && (
+        <FaqSheet title={faq.title} items={faq.items} onClose={() => setFaqOpen(false)} />
       )}
     </>
   )

@@ -613,12 +613,13 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
     expect(screen.getByText('무릉도장')).toBeTruthy()
   })
 
-  it('헤더의 "컨텐츠 관리"를 누르면 관리 페이지로 민다', async () => {
+  // 머리 글자는 `관리` 로 짧고, 스크린 리더는 버튼 이름만 읽으므로 이름에 무엇의 관리인지 남는다.
+  it('헤더의 "관리"를 누르면 관리 페이지로 민다. 스크린 리더 이름은 "컨텐츠 관리"다', async () => {
     mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
     await renderScreen()
 
-    // 목록이 비면 빈 상태 CTA 도 같은 글자를 쓴다. 여기서는 **헤더 쪽**(트리 순서상 첫째)을 누른다.
-    await press(buttonAt('컨텐츠 관리', 0))
+    expect(screen.getByText('관리')).toBeTruthy()
+    await press(screen.getByLabelText('컨텐츠 관리'))
 
     expect(navigate).toHaveBeenCalledWith('ContentManage')
   })
@@ -629,16 +630,17 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
     await renderScreen()
 
     expect(screen.getByText('추적할 일간 컨텐츠가 없습니다')).toBeTruthy()
-    await press(buttonAt('컨텐츠 관리', 1))
+    await press(buttonAt('컨텐츠 관리'))
     expect(navigate).toHaveBeenCalledWith('ContentManage')
   })
 
-  it('자동 모드에서는 "컨텐츠 관리" 버튼도 CTA 도 없다', async () => {
+  it('자동 모드에서는 머리의 "관리" 도 CTA 도 없다', async () => {
     useTrackingModeStore.setState({ mode: 'auto' })
     mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
 
     await renderScreen()
 
+    expect(screen.queryByText('관리')).toBeNull()
     expect(screen.queryByText('컨텐츠 관리')).toBeNull()
     expect(screen.getByText('등록된 일간 컨텐츠가 없습니다')).toBeTruthy()
   })

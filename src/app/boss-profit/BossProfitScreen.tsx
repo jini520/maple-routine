@@ -61,6 +61,8 @@ import { tapFeedback } from '../../native/haptics'
 import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
 import { ValuableDropMark } from '../../components/molecules/ValuableDropMark/ValuableDropMark'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useTopSafeAreaPx } from '../../lib/safe-area'
@@ -103,6 +105,7 @@ const EMPTY_CARDS: readonly CharacterCardStub[] = []
 const EMPTY_DROPS: Record<string, RecordedDrop[]> = {}
 
 export function BossProfitScreen(): React.JSX.Element {
+  const faq = useFaqSheet('profit')
   // 총 수익 금액 옆 표식. 입력 카드의 메소 표식과 같은 그림이다. 원 안에 넣지 않는다. 32x31 픽셀 아트라 원에 가두면 그
   // 원이 크기를 정하게 된다. 렌더 안에서 찾는다. 모듈 최상위에서 찾으면 그림 목록을 받기 전의 빈 값으로 굳는다.
   const mesoPouchIcon = getItemIconUrlByFile('meso_pouch.webp')
@@ -262,6 +265,7 @@ export function BossProfitScreen(): React.JSX.Element {
         {/* 헤더 셸을 안 쓰는 가지에서도 제목 줄은 같은 프리미티브다. */}
         <PageHeaderTitleRow>
           <Text className="text-lg font-bold text-text">보스 수입</Text>
+          <FaqButton sheet={faq} />
         </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
@@ -350,6 +354,7 @@ export function BossProfitScreen(): React.JSX.Element {
         }
       >
         <Text className="text-lg font-bold text-text">보스 수입</Text>
+        <FaqButton sheet={faq} />
       </PageHeaderTitleRow>
     </View>
   )
