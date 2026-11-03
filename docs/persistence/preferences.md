@@ -33,6 +33,9 @@
 | `apiKey` | 문자열 | `api-key.ts` | 남긴다 | 옛 설치본의 API 키 하나. `authMethods` 가 없을 때만 읽어 목록에 넣고, 읽은 뒤에도 지우지 않는다. 지우는 곳은 연결 해제뿐이다 |
 | `selectedAccountId` | 문자열 | `api-key.ts` | 남긴다 | 옛 키. 아무도 쓰지 않고, 연결 해제가 지운다 |
 | `theme` | 테마 이름(`job-themes.json` 의 키) | `theme.ts` | 남긴다 | |
+| `textSize` | `'small'` · `'default'` · `'large'` · `'xlarge'` | `text-size.ts` | 남긴다 | 없거나 모르는 값이면 `기본` |
+| `quickLinks` | JSON `{ rows, ids }`. `rows` 는 1 · 2, `ids` 는 위젯에 놓이는 차례 그대로 | `quick-links.ts` | 남긴다 | today 빠른 이동의 구성. 깨졌으면 기본 구성이다 |
+| `barOrder` | JSON `{ groups, subs }`. 그룹 다섯과, 하위가 있는 그룹마다 하위 페이지의 차례 | `bar-order.ts` | 남긴다 | 하단바 순서. 읽을 때 표에 맞추고, 깨졌으면 기본 순서다([[ADR-152]] 결정 5) |
 | `trackingMode` | `'auto'` · `'manual'` | `tracking-mode.ts` | 남긴다 | 없으면 `null`(아직 안 골랐다) |
 | `dropEffect` | `'on'` · `'off'` | `drop-effect.ts` | 남긴다 | 없으면 켜짐 |
 | `noticeSubscribed` | `'on'` · `'off'` | `notice-settings.ts` | 남긴다 | 토글이 하나이던 때의 공지 구독. `noticeSubscriptions` 가 없을 때 `app` 값으로 물려받는다 |

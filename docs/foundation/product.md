@@ -16,7 +16,8 @@
 
 ## 기능
 
-하단바 그룹 다섯 개로 나뉜다(`navigation/bar-groups.ts`).
+하단바 그룹 다섯 개로 나뉜다(`navigation/bar-groups.ts`). 아래 표가 기본 순서이고, today 와 더보기를 뺀 칸의 순서는
+설정에서 바꿀 수 있다.
 
 | 그룹 | 화면 | 하는 일 | 문서 |
 |---|---|---|---|
@@ -24,11 +25,11 @@
 | 스케줄러 | 파티 스케줄 | 파티 보스 약속을 요일별로 적고 시작 전에 로컬 알림 | `features/party-appointments.md` |
 | | 컨텐츠 | 일간 · 주간 컨텐츠 진행. 자동 모드(게임 스케줄러를 따른다)와 수동 모드 | `features/content-scheduler.md` |
 | | 보스 | 주간 · 월간 보스 처치 현황 · 파티 인원과 분배 비율 | `features/boss-scheduler.md` |
-| 수익·지출 | 보스 수익 | 결정석 수익 · 드롭 기록과 판매가 · 기간별 합계 | `features/boss-profit.md` · `features/item-drop.md` |
+| 수입·지출 | 보스 수입 | 결정석 수익 · 드롭 기록과 판매가 · 기간별 합계 | `features/boss-profit.md` · `features/item-drop.md` |
 | | 가계부 | 월간 · 주간 달력. 보스 수익 · 드롭이 처치한 날에 들어오고, 수입과 지출을 손으로 적는다. 강화 지출은 넥슨 API 에서 읽는다 | `features/cashbook.md` |
 | | 통계 | 기간별 순수익 · 추이 · 캐릭터별 · 내역 · 보스별 · 누적 | `features/stats.md` |
 | 유틸리티 | 도구 목록 | 판매 분배금 계산기 | `features/utility.md` |
-| 더보기 | 공지 · 설정 | 운영자 공지와 넥슨 공지 · 테마 여섯 · 추적 모드 · MVP 등급 · 데이터 삭제 · 연결 해제 | `features/settings.md` |
+| 더보기 | 공지 · 설정 | 운영자 공지와 넥슨 공지 · 테마 여섯 · 하단 탭 순서 · 추적 모드 · MVP 등급 · 데이터 삭제 · 연결 해제 | `features/settings.md` |
 
 ## 플랫폼과 전제
 

@@ -8,20 +8,24 @@
 | 파일 | 하는 일 |
 |---|---|
 | `navigation/AppNavigation.tsx` | `NavigationContainer`. 알림을 눌렀을 때 공지 상세와 파티 약속 화면으로 보내고, 업데이트 안내와 월드 이전 안내 모달을 띄운다 |
-| `navigation/RootNavigator.tsx` | 루트 스택. 진입 전에는 온보딩 화면 넷, 진입 뒤에는 `Main`(`LayerStack`)과 하위 페이지 열아홉 |
+| `navigation/RootNavigator.tsx` | 루트 스택. 진입 전에는 온보딩 화면 넷, 진입 뒤에는 `Main`(`LayerStack`)과 하위 페이지 스물둘 |
 | `navigation/LayerStack.tsx` | 그룹 행과 하위 행을 레이어로 하나씩 쌓는 스택. `layout` 에서 하단바와 `BottomBarOverlayHost` 를 그린다 |
 | `navigation/tab-layer-props.tsx` | 레이어 안 탭 내비게이터 셋이 함께 쓰는 props(`backBehavior="none"`, 바 숨김, 배경) |
 | `navigation/push-screen-options.ts` | `PUSH_SCREEN_OPTIONS`. 두 스택이 같은 전환과 제스처를 쓰게 하는 상수 |
 | `navigation/routes.ts` | `ROUTE_TABLE` 과 라우트 이름 타입, `INITIAL_TAB_ROUTE`, `LAYER_STACK_ID` |
-| `navigation/bar-groups.ts` | `BAR_GROUPS` 표와, 누름을 `BarIntent` 로 바꾸는 순수 함수 |
+| `navigation/bar-groups.ts` | `BAR_GROUPS` 표(칸과 기본 순서) · `BarOrder` 와, 누름을 `BarIntent` 로 바꾸는 순수 함수 |
 | `navigation/page-from-layer-state.ts` | `LayerStack` 상태에서 지금 페이지를 읽는다 |
 | `navigation/tab-navigate.ts` | 페이지 이름을 두 단계로 중첩된 이동 인자로 바꾼다 |
 | `navigation/scroll-to-top.ts` | 라우트 이름별 맨 위 스크롤 함수 표 |
 | `navigation/navigation-theme.ts` | react-navigation 이 칠하는 배경 · 카드 · 테두리 색을 테마에서 가져온다 |
-| `navigation/LedgerLoadingModal.tsx` | 수익·지출 레이어가 데이터를 오래 불러올 때 띄우는 모달 |
+| `navigation/LedgerLoadingModal.tsx` | 수입·지출 레이어가 데이터를 오래 불러올 때 띄우는 모달 |
 | `components/organisms/BottomBar/BottomBar.tsx` | 하단바 그리기와 누름 처리 |
+| `components/organisms/BottomBar/BarGlyph.tsx` | 칸 하나의 아이콘 · 라벨. 바와 미리보기가 같이 쓴다 |
+| `components/organisms/BottomBar/BarPreview.tsx` | 설정의 하단 탭 순서 페이지가 그리는 바 한 행의 그림 |
+| `components/organisms/BottomBar/bar-shape.ts` | 바와 미리보기가 같이 쓰는 여백 · 알약 · ← 치수와 그림자 |
 | `components/organisms/BottomBar/bar-colors.ts` | 테마에서 바 색을 계산한다 |
 | `components/organisms/BottomBar/bar-store.ts` | 그룹마다 마지막으로 보던 하위(`lastSub`) |
+| `features/bar-order/config.ts` · `features/bar-order/store.ts` | 사용자가 정한 바 순서를 표에 맞춰 읽고 저장한다([[ADR-152]]) |
 | `components/organisms/BottomBar/double-tap.ts` | 두 번 누름 판정(`isSecondTap`, 300ms) |
 | `components/organisms/BottomBar/BottomBarOverlay.tsx` | 화면이 띄우는 것을 바 위에 그리는 포털([[ADR-062]]) |
 | `lib/bottom-bar-metrics.ts` | 창 폭에서 바 치수를 계산한다 |
@@ -43,7 +47,7 @@ RootStack
    │   ├─ ScheduleSubs  Appointments · Content · Boss
    │   ├─ LedgerSubs    Profit · Cashbook · Stats
    │   └─ BottomBar
-   └─ 하위 페이지 열아홉
+   └─ 하위 페이지 스물둘
 ```
 
 진입 전과 진입 뒤에는 `useAppEntryStore` 의 `stage` 에 따라 화면 목록 자체가 바뀐다. 진입한 뒤에는 온보딩으로 돌아가는
@@ -57,6 +61,7 @@ RootStack
 | 개발 노트 목록 · 상세 | `SettingsReleaseNotes` · `SettingsReleaseNoteGuide` |
 | 앱 정보 및 계정 | `SettingsAbout` |
 | 캐릭터 관리 | `SettingsCharacters` |
+| 테마 · 글자 크기 · 하단 탭 순서 | `SettingsTheme` · `SettingsTextSize` · `SettingsBarOrder` |
 | 공지 목록 · 알림 설정 · 공지 상세 | `SettingsNotices` · `SettingsNoticeAlerts` · `SettingsNoticeDetail` |
 | MVP 등급 · 등급 이력 | `SettingsMvpGrade` · `SettingsMvpGradeHistory` |
 | 설정(더보기 머리의 톱니바퀴) | `AppSettings` |
@@ -71,13 +76,16 @@ RootStack
 |---|---|---|
 | `today` | today | 없음 |
 | `schedule` | 스케줄러 | 파티 스케줄 · 컨텐츠 · 보스 |
-| `ledger` | 수익·지출 | 보스 수익 · 가계부 · 통계 |
+| `ledger` | 수입·지출 | 보스 수입 · 가계부 · 통계 |
 | `utility` | 유틸리티 | 없음 |
 | `settings` | 더보기 | 없음 |
 
+표의 순서는 기본 순서다. today 는 맨 왼쪽, 더보기는 맨 오른쪽에 고정이고, 가운데 세 그룹과 두 하위 행의 순서는
+설정의 `하단 탭 순서` 에서 바꾼다. 앱은 순서와 관계없이 today 에서 시작한다([[ADR-152]]).
+
 | 누른 것 | 지금 위치 | 일어나는 일 |
 |---|---|---|
-| 하위가 있는 그룹 | 그룹 행 | 그 레이어가 오른쪽에서 밀려 들어오고 바가 하위 행으로 바뀐다. 마지막으로 보던 하위가 열린다 |
+| 하위가 있는 그룹 | 그룹 행 | 그 레이어가 오른쪽에서 밀려 들어오고 바가 하위 행으로 바뀐다. 마지막으로 보던 하위가 열리고, 없으면 사용자가 정한 순서의 맨 왼쪽 하위가 열린다 |
 | 하위가 없는 그룹 | 그룹 행 | 같은 레이어 안에서 바로 바뀐다. 전환 없음 |
 | 하위 | 하위 행 | 같은 레이어 안에서 바로 바뀐다. 스택이 자라지 않는다 |
 | ← | 하위 행 | 그 그룹에 들어오기 전 화면으로 돌아간다. iOS 가장자리 스와이프와 안드로이드 뒤로 가기도 같다 |

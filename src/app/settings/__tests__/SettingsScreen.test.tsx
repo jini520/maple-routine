@@ -349,15 +349,14 @@ describe('SettingsScreen', () => {
     )
   })
 
-  // 복사는 없다(사용자 지정). 주소를 읽고 다른 곳에서 보낼 수 있게 토스트에 적는다.
-  it('메일 앱을 못 열면 주소를 적은 토스트가 뜬다', async () => {
+  it('메일 앱을 못 열면 토스트가 뜬다', async () => {
     openURL.mockRejectedValueOnce(new Error('Unable to open URL'))
 
     const view = await renderOverlay(<SettingsScreen />)
     await press(rowOf(view, '문의하기'))
 
     expect(useToastStore.getState().toasts.map((toast) => toast.message)).toEqual([
-      '메일 앱을 열지 못했습니다. support.mapleroutine@gmail.com 으로 보내 주세요',
+      '메일 앱을 열지 못했습니다',
     ])
   })
 

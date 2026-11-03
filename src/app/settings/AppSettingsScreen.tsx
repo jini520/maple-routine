@@ -7,9 +7,9 @@
  *
  * **카드마다 제목을 단다**(사용자 지정). 카드 경계만으로 가르던 것을 바꿨다. 경계는 여기서 무리가
  * 갈린다는 말만 하고 그 무리가 무엇인지는 안 말해서, 안을 보려면 행 이름을 다 읽어야 했다.
- * 제목은 **안에 든 것을 열거한다**(`캐릭터 · 테마`) - 더보기의 `가이드 및 문의` 와 같은 결이다.
+ * 제목은 **안에 든 것을 열거한다**(`캐릭터 · 보스`) - 더보기의 `가이드 및 문의` 와 같은 결이다.
  *
- * 카드는 넷이고 성질로 갈린다. `알림` 은 이 화면에서 유일하게 밖으로 나가는 설정이고, 가운데 둘은
+ * 카드는 성질로 갈린다. `알림` 은 이 화면에서 유일하게 밖으로 나가는 설정이고, 가운데 카드들은
  * 눌러서 값을 고르는 행이고(모달이 뜨거나 화면이 넘어간다), `앱 데이터` 는 안을 미리 보여 주는
  * 대표값을 단 이동 행이다.
  */
@@ -84,9 +84,10 @@ export function AppSettingsScreen(): React.JSX.Element {
             </Card>
           </View>
 
-          {/* 값을 고르는 행. 배지(현재값) + chevron 병기. */}
+          {/* 값을 고르는 행. 배지(현재값) + chevron 병기. 내 캐릭터를 다루는 행과 앱의 모양을 바꾸는 행은
+              카드를 나눈다(사용자 지정). 제목이 안에 든 행을 열거하는데 다섯을 한 제목에 담을 수 없다. */}
           <View className="gap-2">
-            <SectionTitle>캐릭터 · 테마 · 글자 크기</SectionTitle>
+            <SectionTitle>캐릭터 · 보스</SectionTitle>
             <Card className={SETTINGS_CARD_CLASS} testID="app-settings-card">
               {/* 캐릭터 관리가 위다. 보스 수익과 스케줄러 둘이 빈 상태에서 미는 자리라 테마보다
                   자주 열린다. 배지는 추적 캐릭터 수이고 아직 못 읽었으면(`null`) 그리지 않는다 -
@@ -100,6 +101,12 @@ export function AppSettingsScreen(): React.JSX.Element {
               />
               {/* 스케줄러 하위 바에서 빠진 보스 관리. 캐릭터 관리 다음 줄이다(사용자 지정). */}
               <SettingsRow label="보스 관리" onPress={() => navigation.navigate('BossManage')} />
+            </Card>
+          </View>
+
+          <View className="gap-2">
+            <SectionTitle>테마 · 글자 크기 · 하단 탭</SectionTitle>
+            <Card className={SETTINGS_CARD_CLASS} testID="app-settings-card">
               <SettingsRow
                 label="테마"
                 onPress={() => navigation.navigate('SettingsTheme')}
@@ -110,10 +117,12 @@ export function AppSettingsScreen(): React.JSX.Element {
                 onPress={() => navigation.navigate('SettingsTextSize')}
                 rightContent={<ValueBadge>{TEXT_SIZE_LABELS[textSize]}</ValueBadge>}
               />
+              {/* 순서는 짧은 말로 요약할 수 없어 값 배지가 없다. */}
+              <SettingsRow label="하단 탭 순서" onPress={() => navigation.navigate('SettingsBarOrder')} />
             </Card>
           </View>
 
-          {/* 계정마다 받은 등급이라 캐릭터 바로 아래 선다. 수수료와 스타포스 비용이 이 값을 따른다. */}
+          {/* 계정마다 받은 등급이라 캐릭터 카드 가까이, 두 카드 바로 다음에 선다. 수수료와 스타포스 비용이 이 값을 따른다. */}
           <View className="gap-2">
             <SectionTitle>MVP 등급</SectionTitle>
             <Card className={SETTINGS_CARD_CLASS} testID="app-settings-card">

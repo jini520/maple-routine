@@ -50,7 +50,7 @@ docs/
 |---|---|---|---|
 | `product` | [foundation/product.md](./foundation/product.md) | 앱이 무엇이고 누구를 위한 것인지 | - |
 | `architecture` | [foundation/architecture.md](./foundation/architecture.md) | 디렉터리 · 계층 · 어댑터 경계 · 쿼리 캐시 · 테스트 | [[ADR-004]] · [[ADR-005]] · [[ADR-006]] · [[ADR-142]] |
-| `navigation` | [foundation/navigation.md](./foundation/navigation.md) | 화면 스택 · 하단바 | [[ADR-059]] |
+| `navigation` | [foundation/navigation.md](./foundation/navigation.md) | 화면 스택 · 하단바 · 하단바 순서 | [[ADR-059]] · [[ADR-152]] |
 | `design-system` | [foundation/design-system.md](./foundation/design-system.md) · [글자 체계](./foundation/design-system/typography.md) | 디자인 원칙 · 공용 부품 · 시트 · 화면 틀 · 글자 · 시안 규칙 | [[ADR-060]] · [[ADR-061]] · [[ADR-062]] · [[ADR-063]] · [[ADR-064]] |
 | `nexon-api` | [foundation/nexon-api.md](./foundation/nexon-api.md) | 넥슨 Open API 호출과 동기화 | [[ADR-021]] |
 | `error-resilience` | [foundation/error-resilience.md](./foundation/error-resilience.md) | 실패 처리 · 이어서 하는 작업 | [[ADR-022]] · [[ADR-023]] |

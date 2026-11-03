@@ -58,8 +58,11 @@ export const useToastStore = create<ToastStore>()((set, get) => {
   }
 
   function push(variant: ToastVariant, message: string, action?: ToastAction) {
-    const item: ToastItem = { id: nextId(), variant, message, duration: DURATIONS[variant], action }
     const { toasts, queue } = get()
+    // 탭마다 같은 실패를 알려도 한 장만 남긴다. 실패 토스트는 스스로 사라지지 않아 그대로 쌓인다.
+    if ([...toasts, ...queue].some((t) => t.variant === variant && t.message === message)) return
+
+    const item: ToastItem = { id: nextId(), variant, message, duration: DURATIONS[variant], action }
     if (toasts.length < MAX_VISIBLE) {
       set({ toasts: [...toasts, item] })
       scheduleAutoDismiss(item)

@@ -163,6 +163,7 @@ function mockStore(overrides: Partial<화면값> = {}): void {
     isWindowSyncing: false,
     characterIssues: {},
     staleCharacterNames: [],
+    hasNetworkFailure: false,
     status: 'loaded',
     error: null,
     trackedOcids: ['ocid-1'],
@@ -204,6 +205,7 @@ function mockStore(overrides: Partial<화면값> = {}): void {
   mockedRound.mockReturnValue({
     characterIssues: value.characterIssues,
     staleCharacterNames: value.staleCharacterNames,
+    hasNetworkFailure: value.hasNetworkFailure,
     status: value.status,
     error: value.error,
   })

@@ -133,7 +133,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-010](./adr/ADR-010_release_ios-scene.md) | 🟢 | release | 화면 회전 잠금과 iOS 씬 |
 | [ADR-011+138](./adr/ADR-011+138_live-update_protocol.md) | 🟢 | live-update | OTA 발행과 프로토콜 |
 | [ADR-012+139](./adr/ADR-012+139_live-update_prompt.md) | 🟢 | live-update | 업데이트 동의 모달과 적용 |
-| [ADR-013](./adr/ADR-013_splash_boot.md) | 🟢 | splash | 스플래시와 앱 아이콘 |
+| [ADR-013+151](./adr/ADR-013+151_splash_boot.md) | 🟢 | splash | 스플래시와 앱 아이콘 |
 | [ADR-014](./adr/ADR-014_ads_inline.md) | 🟢 | ads | 광고 배선 |
 | [ADR-015](./adr/ADR-015_site_guide.md) | 🟢 | site | 안내 사이트 |
 | [ADR-016](./adr/ADR-016_server_platform.md) | 🟢 | server | 서버 구성 |
@@ -185,8 +185,8 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-089](./adr/ADR-089_today_quick-links.md) | 🟢 | today | today 빠른 이동 |
 | [ADR-059+136](./adr/ADR-059+136_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
 | [ADR-060+073+079+085+088+107+109+130+133](./adr/ADR-060+073+079+085+088+107+109+130+133_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
-| [ADR-061](./adr/ADR-061_design-system_states.md) | 🟢 | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 표시 |
-| [ADR-062+082+091+106+119+123+129+131+134+141](./adr/ADR-062+082+091+106+119+123+129+131+134+141_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 |
+| [ADR-061+149](./adr/ADR-061+149_design-system_states.md) | 🟢 | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 · 토스트 표시 |
+| [ADR-062+082+091+106+119+123+129+131+134+141+148](./adr/ADR-062+082+091+106+119+123+129+131+134+141+148_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 |
 | [ADR-063+080+113+116+146](./adr/ADR-063+080+113+116+146_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 체계 · 화면 배율 · 글자 크기 페이지 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
 | [ADR-071](./adr/ADR-071_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 잘못 적은 값 빼기 · 관리 화면 |
@@ -203,3 +203,4 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-137](./adr/ADR-137_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
 | [ADR-142+144](./adr/ADR-142+144_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
 | [ADR-147](./adr/ADR-147_design-system_round-entry-buttons.md) | 🟢 | design-system | 진입 버튼과 대표 캐릭터의 움직임 |
+| [ADR-152](./adr/ADR-152_navigation_bar-order.md) | 🟢 | navigation | 하단바 순서 바꾸기 |

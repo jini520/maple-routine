@@ -19,24 +19,28 @@ export interface BossProfitRoundView {
   characterIssues: Readonly<Record<string, CharacterIssueKind>>
   /** 토스트가 셀 실패 캐릭터의 이름. 점검은 배너가 말하므로 안 센다. */
   staleCharacterNames: string[]
+  /** 실패한 캐릭터 중 네트워크로 실패한 캐릭터가 있는가. 토스트 문구를 스케줄 화면과 맞추는 데 쓴다. */
+  hasNetworkFailure: boolean
 }
 
 export function buildRoundView(snapshot: ScheduleSnapshot): BossProfitRoundView {
   const characterIssues: Record<string, CharacterIssueKind> = {}
   const staleCharacterNames: string[] = []
+  let hasNetworkFailure = false
   const round = snapshot.round
-  if (round === undefined) return { characterIssues, staleCharacterNames }
+  if (round === undefined) return { characterIssues, staleCharacterNames, hasNetworkFailure }
 
   for (const [ocid, outcome] of Object.entries(round.outcomes)) {
     if (!outcome.isStale) continue
     characterIssues[ocid] = outcome.error?.kind === 'characterUnavailable' ? 'unavailable' : 'failed'
     if (isMaintenanceSyncError(outcome.error)) continue
+    if (outcome.error?.kind === 'network') hasNetworkFailure = true
     const name = snapshot.schedules.get(ocid)?.state.characterName ?? snapshot.basics.get(ocid)?.profile.name
     if (name !== undefined) staleCharacterNames.push(name)
   }
   // 동기화가 한 번도 답하지 않은 캐릭터. 실패한 캐릭터와 같은 표를 쓴다. 처방이 같다(해제하거나 바꾼다).
   for (const one of round.stranded) characterIssues[one.ocid] = 'unavailable'
-  return { characterIssues, staleCharacterNames }
+  return { characterIssues, staleCharacterNames, hasNetworkFailure }
 }
 
 export interface BossProfitRound extends BossProfitRoundView {
