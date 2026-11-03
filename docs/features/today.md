@@ -37,11 +37,12 @@
 | `features/party-appointments/query.ts` | 파티 약속 쿼리 `partyAppointments()`. 다음 파티 스케줄 위젯이 `usePartyAppointments` 로 읽는다 |
 | `app/today/CharacterManageButton.tsx` | 제목 줄 오른쪽의 캐릭터 관리 버튼([[ADR-029]]) |
 | `app/today/widgets/figure-motion.ts` · `useFigureStep.ts` · `lib/character-look.ts` | 대표 캐릭터 위젯의 전신 그림이 움직이는 값과 프레임 주소([[ADR-147]]) |
+| `features/today/faq.ts` | 제목 옆 물음표가 여는 FAQ([[ADR-150]]) |
 
 ## 화면 구성
 
 ```
-PageHeader            today · 갱신 시각 · 캐릭터 관리 버튼
+PageHeader            today · FAQ 물음표 · 갱신 시각 · 캐릭터 관리 버튼
 [결산 안내 줄]         결산 중일 때만
 [직접 완료 안내 줄]    서버가 직접 완료를 열었을 때만
 [공지 배너]            새 앱 공지가 있을 때만
@@ -89,7 +90,7 @@ WidgetGrid            px-4 pt-2
 | `reset-countdown` | 일일 · 주간 초기화까지 남은 시간. 일일은 초까지 1초마다 | 2 | 없음 | 뷰모델의 `resets` |
 | `crystal-limit` | 첫 월드의 링(반시계)과 `N개 남음`, 나머지 월드는 첫 월드 이름 옆의 `외 N`. 줄에 안 들어가면 `외 N` 이 다음 줄로 | 2 | 보스 수익 탭 | 쿼리 `bossProfitPeriod('weekly', 이번 주)` |
 | `next-party-schedule` | 진행 중인 파티 회차 하나(`진행 중`). 없으면 시작 전인 가장 가까운 회차 하나. 캐릭터마다 칸에 닉네임과 보스 줄. 회차가 없으면 맨 아래 줄에서 `매주 반복` · `한 번만` 등록 칸 | 4 | 회차 상세, 또는 고른 갈래의 새 스케줄 시트 | 쿼리 `partyAppointments()` |
-| `shared-contents` | 몬스터파크 · 메이플 유니온 · 에픽 던전의 공유 진행 | 4 | 없음(`?` 팝오버만) | 컨텐츠 스케줄러 스토어 |
+| `shared-contents` | 몬스터파크 · 메이플 유니온 · 에픽 던전의 공유 진행 | 4 | 없음 | 컨텐츠 스케줄러 스토어 |
 | `remaining-schedule` | 캐릭터별 남은 퀘스트 · 보스. 일간 · 주간 · 월간 탭 | 4 | 없음(행마다 펼침) | 컨텐츠 · 보스 스케줄러 스토어 |
 | `weekly-income` | 이번 주 순 수익 · 수익 · 지출(세그먼트), 반원 도넛과 갈래, 캐릭터 상위 셋. 캐릭터 줄을 누르면 갈래별 금액 팝오버 | 4 | 없음 | 쿼리 `ledgerDays(이번 주)` 와 통계의 집계 함수 |
 | `top-valuable-item` | 이번 주 기록한 판매가 중 가장 큰 아이템의 아이콘과 금액 | 2 | 아이템 가격 입력 | 쿼리 `dropHistory()` |
@@ -127,14 +128,7 @@ WidgetGrid            px-4 pt-2
 | 완료 | `CLEAR` 배지. 대상이 없던 캐릭터도 같다 | 체크박스와 취소선. 누를 수 없다 |
 | 순서 | 실패는 맨 아래, 그 탭에 남은 개수가 많은 순, 같으면 캐릭터 관리 순서 | `sharedGroupOrder`. 줄 수가 가장 비슷해지는 곳에서 두 열로 나눈다 |
 | 수치 | `퀘스트 N개` · `보스 N개`. 합계는 없다 | 진행 횟수 `n/max`. 에픽 던전 제목 줄에 주간 한도 `n/3` |
-| 누르면 | 그 행이 펼쳐진다 | `?` 만 눌러 표시 기준을 본다 |
-
-`?` 를 누르면 아래 두 줄이 뜬다.
-
-```
-에픽 던전과 메이플 유니온은 메이플 ID 기준입니다.
-몬스터파크와 익스트림 몬스터파커는 마지막에 접속한 캐릭터 기준입니다.
-```
+| 누르면 | 그 행이 펼쳐진다 | 아무 일도 없다 |
 
 ## 조회
 

@@ -131,7 +131,7 @@
 
 | 역할 | 클래스 | 보기 |
 |---|---|---|
-| 문단 제목 | `text-base font-bold` | 기능 설명의 절 제목 |
+| 문단 제목 | `text-base font-bold` | 기능 설명의 절 제목 · `FaqSheet` 질문 |
 | 본문 | `text-sm` | 공지 본문 · 기능 설명 · `FaqSheet` 답변 |
 
 ### 차트와 달력
