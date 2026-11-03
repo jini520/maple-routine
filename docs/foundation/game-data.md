@@ -2,7 +2,8 @@
 
 보스 · 결정석 가격 · 드롭 표 · 컨텐츠 · 지출 목록 · 강화 비용 같은 게임 수치와 그 그림을 정리한다. 서버가 기준이고 앱
 번들에는 없다. 앱은 서버에서 받아 기기에 두고, 다 받기 전에는 잠금 화면만 그린다. 값을 누가 정하는지와 key · 기간 규칙은
-[[ADR-019]] 에, 서버 표와 앱이 받는 방법은 [[ADR-020]] 에 이유가 있다.
+[[ADR-019]] 에, 서버 표와 앱이 받는 방법은 [[ADR-020]] 에 이유가 있다. 화면의 FAQ 문구도 게임 수치는 아니지만 같은
+방법으로 받는다([[ADR-150]] 결정 5). 앱을 다시 내지 않고 고치기 위해서다.
 
 게임 수치는 사용자가 확인한 값만 쓴다. AI 가 추정한 값을 넣지 않는다. 값과 그림 · 크롭은 서버 관리 화면에서 고친다.
 
@@ -13,7 +14,7 @@
 | `types/game-data.ts` | 칸 이름(`GAME_DATA_SECTIONS`)과 칸마다의 형식 |
 | `lib/game-data/table.ts` | 칸 하나의 현재 값(`gameTable` · `createTable` · `derive`) |
 | `lib/game-data/initial.ts` | 표의 첫 값. 앱은 빈 표이고, jest 는 `src/__fixtures__/game-data/initial.ts` 로 바꿔 fixture 로 시작한다 |
-| `lib/game-data/sections.ts` | 칸 열여덟의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
+| `lib/game-data/sections.ts` | 칸 열아홉의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
 | `lib/assets/asset-files.ts` | 그림 목록(`assets` 칸)과 받은 그림의 `{ uri, width, height }` |
 | `lib/assets/image-crops.ts` | 크롭 표(`imageCrops` 칸) |
 | `lib/assets/asset-lookup.ts` | 이름표를 그림 · 크롭으로 바꾸는 조회 |
@@ -22,10 +23,10 @@
 | `server/game-data.ts` | `GET /v1/game-data` 를 ETag 와 함께 받고 칸마다 검사한다 |
 | `storage/game-data-copy.ts` | 기기 사본(SQLite `game_data_sections` · `game_data_meta`) |
 | `storage/adapters/rn-asset-files.ts` | 그림 파일(문서 디렉터리 `game-assets/`) |
-| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 열여덟. 운영 서버 응답을 떠 둔 것이다 |
+| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 열아홉. 운영 서버 응답을 떠 둔 것이다 |
 | `lib/boss/boss-profit-period.ts` | 줄의 유효 기간 판정(`isEffectiveIn` · `isEffectiveAnytimeIn`) |
 
-## 칸 열여덟
+## 칸 열아홉
 
 | 칸 | 담는 것 | 조회 모듈 | 관리 화면 |
 |---|---|---|---|
@@ -47,6 +48,7 @@
 | `huntLoot` | 가계부 사냥 전리품 판매의 아이템 5개(조각 1 · 소비 2 · 이벤트 2)의 key · 분류 · 이름 · 그림 · NPC 개당 가격 · 유효 기간 | `lib/cashbook/hunt-loot` | `/admin/hunt-loot` |
 | `assets` | 앱이 받는 그림 약 350장의 경로 · 내용 해시 · 바이트 · 가로 · 세로 | `lib/assets/asset-files` | `/admin/assets` |
 | `imageCrops` | 보스 초상(카드 · 원형 아이콘 · 파티 모달 띠)과 컨텐츠 지역 지도의 크롭 | `lib/assets/image-crops` | `/admin/assets` |
+| `faqs` | 화면 FAQ 의 묶음(key · 제목)과 문항(질문 · 답 블록). 묶음 하나가 시트 하나다([[ADR-150]]) | `lib/faq/faqs` | `/admin/faqs` |
 
 응답은 서버 표의 줄을 그대로 펼친 목록이다. 보스 · 난이도 · 분류로 묶거나 지역 안에 사냥터를 묶는 일은 조회 모듈이 한다.
 부르는 쪽은 값이 기기 사본에서 왔는지 서버 응답인지 모른다.
@@ -63,7 +65,7 @@
 
 ## 값이 기기에 반영되는 순서
 
-1. 켤 때 `startGameData` 가 기기 사본을 읽는다. 계약 판이 `GAME_DATA_CONTRACT` 와 같고 칸 열여덟이 계약을 지키면 표를
+1. 켤 때 `startGameData` 가 기기 사본을 읽는다. 계약 판이 `GAME_DATA_CONTRACT` 와 같고 칸 열아홉이 계약을 지키면 표를
    세우고 바로 연다.
 2. 사본이 없거나 읽을 수 없으면 잠금 화면을 세운다. 먼저 OTA 부팅 확인(`checkOnBoot`)이 끝나기를 기다린다. 새 번들이
    계약 판을 바꾸면 먼저 받은 게임 데이터를 재시작 뒤 또 받기 때문이다. 그다음 게임 데이터를 받는다. 처음 실행(사본이

@@ -28,7 +28,7 @@
 | `features/refresh/pull.ts` · `freshness.ts` | 당김 하나(`pullRefresh`) · 갱신 시각(`useRealtimeFetchedAt`) |
 | `app/SettlementBanner.tsx` | 결산 안내 줄. 가계부 · 통계도 같이 쓴다 |
 | `features/settlement/query.ts` | 결산 쿼리 `settlement()`. 줄을 세울지 정하는 `useSettlementBanner`, 회차가 함께 묻는 `refreshSettlement`. 앱 복귀마다 다시 받는다 |
-| `features/settlement/store.ts` · `banner-text.ts` · `faq.ts` | 닫은 결산의 시작 시각 스토어(`useSettlementDismissal`) · 안내 문구 · FAQ |
+| `features/settlement/store.ts` · `banner-text.ts` | 닫은 결산의 시작 시각 스토어(`useSettlementDismissal`) · 안내 문구 |
 | `storage/settlement-banner.ts` | 닫은 결산의 시작 시각(Preferences `dismissedSettlement`) |
 | `server/settlement.ts` | `/v1/settlement` 조회 |
 | `app/today/NoticeBanner.tsx` | 공지 배너([[ADR-057]]). `features/notice/notice-query.ts` 의 `useNoticeBanner` 가 앱 공지 쿼리에서 하나를 고른다 |
@@ -37,7 +37,7 @@
 | `features/party-appointments/query.ts` | 파티 약속 쿼리 `partyAppointments()`. 다음 파티 스케줄 위젯이 `usePartyAppointments` 로 읽는다 |
 | `app/today/CharacterManageButton.tsx` | 제목 줄 오른쪽의 캐릭터 관리 버튼([[ADR-029]]) |
 | `app/today/widgets/figure-motion.ts` · `useFigureStep.ts` · `lib/character-look.ts` | 대표 캐릭터 위젯의 전신 그림이 움직이는 값과 프레임 주소([[ADR-147]]) |
-| `features/today/faq.ts` | 제목 옆 물음표가 여는 FAQ([[ADR-150]]) |
+| `features/faq/` | 제목 옆 물음표와 안내 줄이 여는 FAQ 묶음(`useFaqSheet`). 문구는 서버의 게임 데이터 칸 `faqs` 다([[ADR-150]]) |
 
 ## 화면 구성
 
