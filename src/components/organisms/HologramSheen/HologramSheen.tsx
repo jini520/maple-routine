@@ -5,7 +5,7 @@ import Animated, { useAnimatedStyle } from 'react-native-reanimated'
 
 import { AURORA } from '../../../constants/style/aurora'
 import { useThemeMode } from '../../../theme/context'
-import type { HoloMotion } from './holo-motion'
+import { HOLO_REACH, type HoloMotion } from './holo-motion'
 
 /** `Animated.View` 는 NativeWind 등록 탓에 정적 스타일을 버린다. 자리 · 크기까지 애니메이션 스타일로 준다. */
 const AnimatedBox = Animated.createAnimatedComponent(View)
@@ -42,11 +42,15 @@ const AURORA_LOOP = [
 const AURORA_OFFSETS = AURORA_LOOP.map((_, index) => index * AURORA_BAND)
 const AURORA_PERIOD = AURORA_BAND * (AURORA_LOOP.length - 1)
 
-/** 띠가 움직여도 상자 가장자리가 안 보이게 카드보다 사방으로 키우는 폭. 띠가 가장 멀리 가는 거리(180 × 1.7)보다 커야 한다. */
-const OVERSCAN = 320
 /** 경로 값 1 일 때 두 띠가 미끄러지는 거리(px). 금속은 좌우로, 오로라는 위아래로 주로 움직여 서로 엇갈린다. */
 const METAL_SHIFT = { x: 150, y: 30 }
 const AURORA_SHIFT = { x: 20, y: 180 }
+/**
+ * 띠가 움직여도 상자 가장자리가 안 보이게 카드보다 사방으로 키우는 폭. 띠가 가장 멀리 가는 거리에 반올림 여유를 더한 값이다.
+ *
+ * 상자는 프레임마다 합성되므로 필요한 만큼만 키운다. 이동 거리에서 계산해 거리나 경로 끝이 바뀌어도 따라온다.
+ */
+const OVERSCAN = Math.ceil(Math.max(METAL_SHIFT.x, METAL_SHIFT.y, AURORA_SHIFT.x, AURORA_SHIFT.y) * HOLO_REACH) + 10
 
 /** 경로에 따른 세기. 가운데를 지날 때 차분하고 끝으로 갈수록 짙어져야 반사처럼 보인다. */
 const OPACITY_FLAT = 0.15
@@ -148,7 +152,7 @@ export function HologramSheen(props: {
       {size.width > 0 && (
         <AnimatedBox style={fadeStyle}>
           <View style={[StyleSheet.absoluteFill, { isolation: 'isolate' }]}>
-            <AnimatedBox style={metalStyle}>
+            <AnimatedBox testID="hologram-metal" style={metalStyle}>
               <LinearGradient
                 colors={metal.colors}
                 locations={metal.locations}
@@ -157,7 +161,7 @@ export function HologramSheen(props: {
                 style={StyleSheet.absoluteFill}
               />
             </AnimatedBox>
-            <AnimatedBox style={auroraStyle}>
+            <AnimatedBox testID="hologram-aurora" style={auroraStyle}>
               <LinearGradient
                 colors={aurora.colors}
                 locations={aurora.locations}
