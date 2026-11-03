@@ -73,6 +73,7 @@ export function CharacterRow(props: CharacterRowProps): React.JSX.Element {
           가져왔다 를 말하지 못한다. */}
       <CharacterAvatar
         imageTestID="character-row-face"
+        mirrored
         imageUrl={props.imageUrl}
         name={props.name}
         size={FACE_AVATAR_SIZE}

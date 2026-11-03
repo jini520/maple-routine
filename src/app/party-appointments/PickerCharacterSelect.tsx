@@ -37,7 +37,7 @@ function CharacterFace(props: { ocid: string; name: string; imageUrl: string | n
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
   return (
     <Animated.View style={style}>
-      <CharacterAvatar imageUrl={props.imageUrl} name={props.name} size={22} className="bg-surface-2" />
+      <CharacterAvatar imageUrl={props.imageUrl} name={props.name} size={22} className="bg-surface-2" mirrored />
     </Animated.View>
   )
 }
@@ -83,6 +83,7 @@ export function PickerCharacterSelect(props: {
               name={option.label}
               size={20}
               className="bg-surface-2"
+              mirrored
             />
             <Text className={`text-sm font-semibold ${isSelected ? 'text-primary-ink' : 'text-text'}`}>
               {option.label}

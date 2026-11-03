@@ -57,6 +57,29 @@ describe('CharacterAvatar', () => {
   })
 })
 
+// 줄의 왼쪽 끝에 서는 얼굴은 오른쪽을 봐야 한다. 넥슨 그림은 왼쪽을 본다.
+describe('mirrored', () => {
+  it('그림을 좌우로 뒤집는다', async () => {
+    const { getByTestId } = await renderAtom(
+      <CharacterAvatar imageTestID="그림" imageUrl="https://example.test/a.png" name="아무개" size={36} mirrored />,
+    )
+
+    expect(flattenStyle(getByTestId('그림').props.style).transform).toEqual([{ scaleX: -1 }])
+  })
+
+  // 원째로 뒤집으면 머리글자 폴백이 거울상이 된다.
+  it('폴백은 뒤집지 않는다', async () => {
+    const { toJSON } = await renderAtom(
+      <CharacterAvatar imageUrl={null} name="아무개" size={36} mirrored fallback={폴백} />,
+    )
+
+    const 뒤집힌 = findAllOfType(toJSON(), 'View').filter(
+      (node) => flattenStyle(node.props.style).transform !== undefined,
+    )
+    expect(뒤집힌).toHaveLength(0)
+  })
+})
+
 // 표식은 원 **밖**에 서야 한다. 그림을 자르는 `overflow-hidden` 이 원 안의 것을 함께 자른다.
 describe('조회 불가 표식', () => {
   it('참이면 얼굴에 표식이 붙는다', async () => {

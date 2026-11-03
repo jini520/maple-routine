@@ -10,9 +10,10 @@ import { installFakePreferences } from '../../../storage/__tests__/fake-preferen
 import { BossProfitCalculatorRecordsScreen } from '../BossProfitCalculatorRecordsScreen'
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
-// 캐릭터는 쿼리 캐시에서 온다. 이 화면이 보는 것은 기록 목록이라 추적 캐릭터가 없는 상태로 둔다.
+// 캐릭터는 쿼리 캐시에서 온다. 기록 줄의 이름을 보는 테스트만 채우고 나머지는 추적 캐릭터가 없는 상태로 둔다.
+const mockCharacters: { ocid: string; characterName: string; imageUrl: string }[] = []
 jest.mock('../../../features/boss-scheduler/use-boss-schedule', () => ({
-  useBossSchedule: () => ({ status: 'loaded', characters: [], error: null, trackedOcids: [], refresh: jest.fn() }),
+  useBossSchedule: () => ({ status: 'loaded', characters: mockCharacters, error: null, trackedOcids: [], refresh: jest.fn() }),
 }))
 
 const EVEN = { myShare: null, sharesTotal: null, splitFeePercent: null }
@@ -25,6 +26,14 @@ const 새것: BossProfitCalculatorRecord = {
   characters: [{ ocid: 'ocid-1', bosses: [{ bossKey: 'kaling', difficulty: 'normal', partySize: 1, shares: EVEN }] }],
 }
 const 옛것: BossProfitCalculatorRecord = { id: 'old', savedAt: '2026-10-19T14:10:00.000Z', characters: [{ ocid: 'ocid-1', bosses: [] }] }
+const 둘이서: BossProfitCalculatorRecord = {
+  id: 'pair',
+  savedAt: '2026-10-18T03:00:00.000Z',
+  characters: [
+    { ocid: 'ocid-1', bosses: [] },
+    { ocid: 'ocid-2', bosses: [{ bossKey: 'kaling', difficulty: 'normal', partySize: 1, shares: EVEN }] },
+  ],
+}
 
 async function press(element: AtomElement): Promise<void> {
   await act(async () => {
@@ -37,6 +46,7 @@ beforeEach(async () => {
   installNoopNativePorts()
   jest.mocked(useScreenNavigation).mockReturnValue({ goBack } as unknown as ReturnType<typeof useScreenNavigation>)
   goBack.mockClear()
+  mockCharacters.length = 0
   await setBossProfitCalculatorRecords([새것, 옛것])
   useBossProfitCalculatorStore.setState({ loaded: true, records: [새것, 옛것], openedId: 'new', bossesByOcid: {} })
 })
@@ -49,6 +59,21 @@ describe('BossProfitCalculatorRecordsScreen', () => {
     expect(view.getByText('14:32')).toBeTruthy()
     expect(view.getByText('10월 19일 (월)')).toBeTruthy()
     expect(view.getAllByText('열려 있음')).toHaveLength(1)
+  })
+
+  // 기록 하나에 캐릭터가 여럿이면 날짜와 금액 사이에 얼굴을 늘어놓을 폭이 모자란다. 글자 한 줄만 둔다.
+  it('기록 줄은 첫 캐릭터 이름 외 n 이고, 얼굴과 보스 수는 없다', async () => {
+    mockCharacters.push(
+      { ocid: 'ocid-1', characterName: '아무개', imageUrl: 'https://example.test/a.png' },
+      { ocid: 'ocid-2', characterName: '둘째', imageUrl: 'https://example.test/b.png' },
+    )
+    useBossProfitCalculatorStore.setState({ records: [새것, 옛것, 둘이서] })
+    const view = await renderOverlay(<BossProfitCalculatorRecordsScreen />)
+
+    expect(view.getByText('아무개 외 1')).toBeTruthy()
+    expect(view.getAllByText('아무개')).toHaveLength(2)
+    expect(view.queryByLabelText('아무개')).toBeNull()
+    expect(view.queryByText(/^보스 \d+$/)).toBeNull()
   })
 
   it('기록을 누르면 그 기록을 열고 계산기로 돌아간다', async () => {

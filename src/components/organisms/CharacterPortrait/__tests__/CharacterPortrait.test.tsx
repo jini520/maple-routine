@@ -296,6 +296,21 @@ describe('CharacterPortrait · compact 규격', () => {
     )
   }
 
+  // 보스 수익 카드 머리는 줄의 왼쪽 끝이라 얼굴이 오른쪽을 봐야 한다.
+  it('`mirrored` 를 얼굴에 넘긴다', async () => {
+    const view = await renderAtom(
+      <CharacterPortrait
+        variant="compact"
+        characterName="지내우시"
+        imageUrl="https://example.test/face.png"
+        clears={{ cleared: 0, total: 12, label: '주간' }}
+        mirrored
+      />,
+    )
+
+    expect(flattenStyle(view.getByTestId('character-portrait-image').props.style).transform).toEqual([{ scaleX: -1 }])
+  })
+
   it('주간은 12칸을 그리고 이름으로 진행률을 말한다', async () => {
     const view = await compact({ cleared: 3, total: 12, label: '주간' })
 

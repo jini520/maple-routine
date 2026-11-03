@@ -175,6 +175,7 @@ function RankRow(props: {
           {props.rank}
         </Text>
         <CharacterAvatar
+          mirrored
           imageUrl={props.character.imageUrl}
           name={props.character.name}
           size={FACE_PX}

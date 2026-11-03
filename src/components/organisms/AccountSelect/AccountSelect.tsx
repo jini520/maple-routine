@@ -69,6 +69,7 @@ export function AccountRow(props: AccountRowProps): React.JSX.Element {
           없어진다. */}
       <CharacterAvatar
         imageTestID={`account-select-face-${accountId}`}
+        mirrored
         imageUrl={props.portraitUrl}
         name={representative.name}
         size={FACE_AVATAR_SIZE}
