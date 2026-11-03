@@ -36,6 +36,8 @@ import { LoadingState } from '../../components/molecules/LoadingState/LoadingSta
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { BOSS_MANAGE_FAQ } from '../../features/boss-scheduler/faq'
 import { PartyShareSummary } from '../../components/molecules/PartyShareSummary/PartyShareSummary'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -304,7 +306,11 @@ export function BossManageScreen(): React.JSX.Element {
         <PageHeader>
           <PageHeaderTitleRow fetchedAt={fetchedAt} className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-bold text-text">보스 관리</Text>
+            {/* 물음표는 제목과 한 덩어리다. 뒤로 버튼과의 간격(gap-2)을 따르지 않게 묶는다. */}
+            <View className="flex-row items-center">
+              <Text className="text-lg font-bold text-text">보스 관리</Text>
+              <FaqButton title="보스 관리" items={BOSS_MANAGE_FAQ} />
+            </View>
           </PageHeaderTitleRow>
         </PageHeader>
       }

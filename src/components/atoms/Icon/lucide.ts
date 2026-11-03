@@ -147,9 +147,9 @@ export const ChevronUpIcon = withIconInterop(ChevronUp)
 export const ChevronsRightIcon = withIconInterop(ChevronsRight)
 /** 미래 주에서 이번 주로 돌아가기. 파티 약속의 기간 스테퍼. */
 export const ChevronsLeftIcon = withIconInterop(ChevronsLeft)
-
-/** 도움말 여는 자리. 위젯 9 머리의 `?`. */
+/** 화면 머리 제목 옆에서 FAQ 시트를 여는 물음표. `FaqButton`. */
 export const CircleQuestionMarkIcon = withIconInterop(CircleQuestionMark)
+
 /**
  * 관리 대상 캐릭터가 없을 때 얼굴 자리를 채우는 그림. today 머리의 `CharacterManageButton`.
  *

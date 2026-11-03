@@ -45,6 +45,8 @@ import { statsRanges } from '../../features/stats/periods'
 import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 
 import { Text } from '../../components/atoms'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { TODAY_FAQ } from '../../features/today/faq'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -156,6 +158,7 @@ export function TodayScreen(): React.JSX.Element {
               trailing={<CharacterManageButton portrait={viewModel.representative} />}
             >
               <Text className="shrink-0 text-lg font-bold text-text">today</Text>
+              <FaqButton title="today" items={TODAY_FAQ} />
             </PageHeaderTitleRow>
           </PageHeader>
         }

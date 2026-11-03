@@ -47,6 +47,8 @@ import {
 } from '../../components/atoms'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { BOSS_SCHEDULER_FAQ } from '../../features/boss-scheduler/faq'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -405,8 +407,7 @@ export function BossScreen(): React.JSX.Element {
     openTab('Settings', { openPicker: true })
   }
 
-  //  이 만든 헤더 진입점("보스 관리")은 **여기 없다**.
-  // 보스 관리는 설정에서 여는 하위 페이지다. 빈 상태 CTA 가 그 화면을 민다.
+  // 머리의 `보스 관리` 버튼과 수동 모드 빈 상태 CTA 가 함께 쓴다.
   function goToBossManage(): void {
     navigation.navigate('BossManage')
   }
@@ -451,6 +452,7 @@ export function BossScreen(): React.JSX.Element {
             오갈 때 제목이 튀면 가장 눈에 띈다. */}
         <PageHeaderTitleRow>
           <Text className="text-lg font-bold text-text">보스 스케줄러</Text>
+          <FaqButton title="보스 스케줄러" items={BOSS_SCHEDULER_FAQ} />
         </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
@@ -480,19 +482,26 @@ export function BossScreen(): React.JSX.Element {
             <PageHeaderTitleRow
               fetchedAt={fetchedAt}
               trailing={
-                characters.length > 0 &&
-                selected !== null && (
-                  <Segment
-                    size="lg" className="self-start"
-                    options={PARTY_FILTERS}
-                    selected={partyFilter}
-                    onSelect={setPartyFilter}
-                    labelOf={(filter) => PARTY_FILTER_LABELS[filter]}
-                  />
-                )
+                <View className="flex-row items-center gap-3">
+                  {/* 두 모드 모두 선다. 자동 모드에서도 보스 관리는 파티 인원을 정하는 곳이다.
+                      글자는 `관리` 로 짧다. 스크린 리더는 버튼 이름만 읽어서 무엇의 관리인지 이름에 남긴다. */}
+                  <Pressable role="button" aria-label="보스 관리" className="shrink-0" onPress={goToBossManage}>
+                    <Text className="text-xs font-semibold text-text-muted">관리</Text>
+                  </Pressable>
+                  {characters.length > 0 && selected !== null && (
+                    <Segment
+                      size="lg" className="self-start"
+                      options={PARTY_FILTERS}
+                      selected={partyFilter}
+                      onSelect={setPartyFilter}
+                      labelOf={(filter) => PARTY_FILTER_LABELS[filter]}
+                    />
+                  )}
+                </View>
               }
             >
               <Text className="shrink text-lg font-bold text-text">보스 스케줄러</Text>
+              <FaqButton title="보스 스케줄러" items={BOSS_SCHEDULER_FAQ} />
             </PageHeaderTitleRow>
           </PageHeader>
         }

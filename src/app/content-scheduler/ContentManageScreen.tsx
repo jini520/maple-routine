@@ -35,6 +35,8 @@ import {
   Text,
 } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { CONTENT_MANAGE_FAQ } from '../../features/content-scheduler/faq'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -157,7 +159,11 @@ export function ContentManageScreen(): React.JSX.Element {
           <PageHeaderTitleRow className="justify-between">
             <View className="flex-row items-center gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-bold text-text">컨텐츠 관리</Text>
+              {/* 물음표는 제목과 한 덩어리다. 뒤로 버튼과의 간격(gap-2)을 따르지 않게 묶는다. */}
+              <View className="flex-row items-center">
+                <Text className="text-lg font-bold text-text">컨텐츠 관리</Text>
+                <FaqButton title="컨텐츠 관리" items={CONTENT_MANAGE_FAQ} />
+              </View>
             </View>
             {/* 읽기 전용 칩이던 자리. 이 화면에서 캐릭터를 갈아 가며 쓰는데도
                 바꾸려면 뒤로 나가야 했다. 자리와 크기감은 그대로 두고(compact) 누를 수 있게만 한다.

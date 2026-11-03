@@ -1,56 +1,23 @@
 /**
  * 위젯 9. 계정과 메이플 ID 가 공유하는 컨텐츠 진행을 계열별로 그리는 `4×auto` 타일.
  *
- * 지키는 것 셋.
+ * 지키는 것 둘.
  *
  * ① 계열은 두 열로 서고 두 열의 줄 수가 가장 고른 지점에서 가른다. 오른쪽이 비면 한 열이다.
  * ② 체크박스를 누를 수 없다. 값이 게임에서 오므로 앱이 못 뒤집는다.
- * ③ 말풍선은 **별도 창**이다. 인라인으로 펼치면 `h: 'auto'` 가 다시 재서 아래 타일이 전부
- *    밀린다. 앱의 다른 팝오버 둘과 같은 구조이고, 바깥을 누르면 닫힌다.
  *
  * @see docs/features/today.md 위젯 정책
  */
 
-import { Pressable, View, useWindowDimensions } from 'react-native'
+import { View } from 'react-native'
 
-import { useAnchoredPopover, type PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
-import { GRID_SIDE_PADDING } from '../../../lib/today/widget-grid-metrics'
-
-import { CheckBox, CircleQuestionMarkIcon, Text } from '../../../components/atoms'
-import { AnchoredPopover } from '../../../components/molecules/Popover/Popover'
+import { CheckBox, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { SharedContentGroupView, SharedContentItemView } from '../view-model'
 import type { WidgetProps } from './types'
 
 /** 한 줄의 **고정 높이**. 위젯 2 의 수치 줄과 같은 이유다(빈 오른쪽 칸이 행을 접으면 안 된다). */
 const ITEM_HEIGHT_PX = 16
-
-/**
- * `?` 가 말하는 두 줄. **계열마다 기준이 다르다**(사용자 확인).
- *
- * 한 문장으로 뭉뚱그리면 어느 쪽도 안 맞는다. Open API 는 몬스터파크 계열을 마지막 접속 캐릭터
- * 기준으로 돌려주고, 그 캐릭터가 누구인지 구분할 신호가 응답에 없다.
- *
- * 줄바꿈을 넣지 않는다. 손으로 끊으면 줄이 짧아 상자도 그만큼 좁다. 글은 폭 상한까지 흐르고
- * 거기서 꺾인다.
- */
-const SCOPE_NOTES = [
-  ['에픽 던전과 메이플 유니온은', '메이플 ID 기준입니다.'],
-  ['몬스터파크와 익스트림 몬스터파커는', '마지막에 접속한 캐릭터 기준입니다.'],
-] as const
-
-/**
- * 상자 폭 **상한**. 못박는 값이 아니다.
- *
- * 폭을 주면 가장 긴 줄보다 넓은 만큼이 오른쪽에 죽은 여백으로 남아 글 덩어리가 왼쪽으로 쏠린다.
- * 상한만 주고 실제 폭은 레이아웃 엔진이 가장 긴 줄에 맞춘다. 재서 못박지 않는 것은 그 값이
- * 글꼴 실측이라, 손으로 어림한 값이 틀리면 줄바꿈이 다시 깨지기 때문이다.
- *
- * 248(아이템 수익 팝오버 폭)이던 것을 320 으로 넓혔다(2026-10-07, 사용자 지정). 248 은 안쪽 여백을
- * 빼면 가장 긴 줄(`몬스터파크와 익스트림 몬스터파커는`)과 거의 같아 상자가 빠듯했다. 상한이 없으면
- * 넓은 기기에서 두 문장이 한 줄씩으로 늘어져 상자가 화면을 가로지른다.
- */
-const NOTE_MAX_WIDTH = 320
 
 /** 계열이 차지하는 **줄 수**. 제목 한 줄 + 항목들. 두 열의 높이를 견주는 자다. */
 function groupRows(group: SharedContentGroupView): number {
@@ -125,40 +92,9 @@ function SharedItemRow(props: { item: SharedContentItemView }): React.JSX.Elemen
 }
 
 export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
-  // 기억하지 않는다. 위젯 2 의 아코디언과 같은 태도다. 다음에 열었을 때 설명이 떠 있으면 닫는
-  // 법을 다시 찾게 된다.
-  //
-  // 구조 분해가 필수다. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그 접근을
-  // 렌더 중 ref 접근으로 본다.
-  const { ref: toggleRef, isOpen: noteOpen, anchor, toggle: toggleNote, close: closeNote } = useAnchoredPopover()
-  // 팝오버가 별도 창이라 좌표가 **화면 기준**이다. 부모 타일을 안 넘으려면 그 변을 알아야 하는데,
-  // 이 위젯은 크기 선언이 `4×auto` 하나뿐이라(레지스트리) 창 좌우 여백이 곧 타일의 변이다.
-  const { width: windowWidth } = useWindowDimensions()
-  const tileWidth = windowWidth - GRID_SIDE_PADDING * 2
-
   return (
     <View testID="widget-shared-contents" className="p-3">
-      <View className="flex-row items-center">
-        <Text className="text-11 font-bold text-text-muted">계정 및 메이플 ID 공유 컨텐츠</Text>
-        <Pressable
-          ref={toggleRef}
-          testID="shared-note-toggle"
-          role="button"
-          aria-label="표시 기준 설명"
-          aria-expanded={noteOpen}
-          // 아이콘이 12px 이라 그대로면 누를 자리가 손가락보다 작다. 보이는 크기는 두고 **눌리는
-          // 자리만** 넓힌다.
-          hitSlop={10}
-          className="ml-1"
-          onPress={toggleNote}
-        >
-          {/* 열려도 색이 안 변한다. 상태를 가진 버튼이 아니라 팁을 띄우는 버튼이라, 켜짐을 그리면
-              사용자가 그 색을 무언가의 상태로 읽는다. */}
-          <CircleQuestionMarkIcon className="h-3 w-3 text-text-disabled" strokeWidth={2.5} aria-hidden />
-        </Pressable>
-      </View>
-
-      {noteOpen && <ScopeNotePopover anchor={anchor} tileWidth={tileWidth} onClose={closeNote} />}
+      <Text className="text-11 font-bold text-text-muted">계정 및 메이플 ID 공유 컨텐츠</Text>
 
       {data.sharedContents.length > 0 && (
         <View className="flex-row gap-2 pt-2">
@@ -190,38 +126,5 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
         </View>
       )}
     </View>
-  )
-}
-
-/**
- * 표시 기준 설명 팝오버. 앱의 다른 팝오버와 같은 공용 상자(`AnchoredPopover`)이고, 열렸을 때만 그려서 높이를 열 때마다 새로 잰다.
- * 별도 창이라 흐름에 없어서 타일 높이가 안 변한다.
- */
-function ScopeNotePopover(props: {
-  anchor: PopoverAnchorRect | null
-  tileWidth: number
-  onClose: () => void
-}): React.JSX.Element {
-  return (
-    <AnchoredPopover
-      testID="shared-note"
-      ariaLabel="표시 기준 설명"
-      closeLabel="표시 기준 설명 닫기"
-      anchor={props.anchor}
-      // 부모 타일을 안 벗어난다(사용자 지시). 창은 화면 기준이라 화면 여백(12)을 쓰면 타일(16)보다 바깥에 선다.
-      edgeGap={GRID_SIDE_PADDING}
-      onClose={props.onClose}
-      className="px-3 py-2"
-    >
-      {/* 폭이 아니라 상한이다. 실제 폭은 가장 긴 줄이 정한다. 좁은 기기에서는 상한보다 타일이 먼저 좁다. */}
-      <View style={{ maxWidth: Math.min(NOTE_MAX_WIDTH, props.tileWidth) }} className="gap-1">
-        {SCOPE_NOTES.map(([subject, rule]) => (
-          // iOS 기본값은 한글을 글자 단위로 끊어 낱말 가운데서 꺾는다
-          <Text key={subject} lineBreakStrategyIOS="hangul-word" className="text-11 leading-snug text-text-muted">
-            {`${subject} ${rule}`}
-          </Text>
-        ))}
-      </View>
-    </AnchoredPopover>
   )
 }

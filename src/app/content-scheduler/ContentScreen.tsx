@@ -9,6 +9,8 @@ import { Pressable, View } from 'react-native'
 import type { DailyContent, WeeklyContent } from '../../types'
 import { useContentSchedulerStore, type ContentCharacterView } from '../../features/content-scheduler/store'
 import { useContentSchedule } from '../../features/content-scheduler/use-content-schedule'
+import { CONTENT_SCHEDULER_FAQ } from '../../features/content-scheduler/faq'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { queryKeys } from '../../features/query/keys'
 import { useResetBoundaryTick } from '../../features/query/reset-timer'
 import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
@@ -170,9 +172,15 @@ export function ContentScreen(): React.JSX.Element {
 
   // 수동 모드의 추적 항목 편집은 이 화면이 아니라 전용 관리 페이지에서 한다.
   // 잘린 버튼은 목적지를 잃는다. 줄어드는 것은 시각 텍스트뿐이다.
+  // 글자는 `관리` 로 짧다. 스크린 리더는 버튼 이름만 읽어서 무엇의 관리인지 이름에 남긴다.
   const manualManageButton = mode === 'manual' && (
-    <Pressable role="button" className="shrink-0" onPress={() => navigation.navigate('ContentManage')}>
-      <Text className="text-xs font-semibold text-text-muted">컨텐츠 관리</Text>
+    <Pressable
+      role="button"
+      aria-label="컨텐츠 관리"
+      className="shrink-0"
+      onPress={() => navigation.navigate('ContentManage')}
+    >
+      <Text className="text-xs font-semibold text-text-muted">관리</Text>
     </Pressable>
   )
 
@@ -204,6 +212,7 @@ export function ContentScreen(): React.JSX.Element {
             목록 상태를 오갈 때 제목이 튀면 그것이 가장 눈에 띄는 자리다. */}
         <PageHeaderTitleRow>
           <Text className="text-lg font-bold text-text">컨텐츠 스케줄러</Text>
+          <FaqButton title="컨텐츠 스케줄러" items={CONTENT_SCHEDULER_FAQ} />
         </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
@@ -253,6 +262,7 @@ export function ContentScreen(): React.JSX.Element {
               }
             >
               <Text className="shrink text-lg font-bold text-text">컨텐츠 스케줄러</Text>
+              <FaqButton title="컨텐츠 스케줄러" items={CONTENT_SCHEDULER_FAQ} />
             </PageHeaderTitleRow>
           </PageHeader>
         }
