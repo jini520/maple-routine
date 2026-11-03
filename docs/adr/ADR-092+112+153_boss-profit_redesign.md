@@ -1,7 +1,7 @@
-# ADR-092+112 보스 수익 리디자인과 고가 드롭 홀로그램 강조
+# ADR-092+112+153 보스 수익 리디자인과 고가 드롭 홀로그램 강조
 
 > 🟢 유효
-> 관련 소스: `constants/style/aurora.ts` · `components/organisms/HologramSheen/HologramSheen.tsx` · `components/organisms/HologramSheen/holo-motion.ts` · `components/molecules/ValuableDropMark/` · `components/molecules/AuroraText/` · `components/molecules/PeriodStepper/` · `components/organisms/DropEffectOverlay/DropEffectOverlay.tsx` · `app/boss-profit/BossProfitScreen.tsx` · `app/boss-profit/HeadlineChips.tsx` · `app/boss-profit/CharacterAccordion.tsx` · `app/boss-profit/AccordionBody.tsx` · `app/boss-profit/InsetCell.tsx` · `app/boss-profit/BossProfitBossRow.tsx` · `app/boss-profit/MonthlyBossViewRow.tsx` · `app/boss-profit/DropPriceScreen.tsx` · `app/cashbook/CashbookScreen.tsx` · `app/stats/StatsScreen.tsx` · `app/party-appointments/AppointmentsScreen.tsx`
+> 관련 소스: `constants/style/aurora.ts` · `components/organisms/HologramSheen/HologramSheen.tsx` · `components/organisms/HologramSheen/holo-motion.ts` · `hooks/useScreenSettled.ts` · `components/molecules/ValuableDropMark/` · `components/molecules/AuroraText/` · `components/molecules/PeriodStepper/` · `components/organisms/DropEffectOverlay/DropEffectOverlay.tsx` · `app/boss-profit/BossProfitScreen.tsx` · `app/boss-profit/HeadlineChips.tsx` · `app/boss-profit/CharacterAccordion.tsx` · `app/boss-profit/AccordionBody.tsx` · `app/boss-profit/InsetCell.tsx` · `app/boss-profit/BossProfitBossRow.tsx` · `app/boss-profit/MonthlyBossViewRow.tsx` · `app/boss-profit/DropPriceScreen.tsx` · `app/cashbook/CashbookScreen.tsx` · `app/stats/StatsScreen.tsx` · `app/party-appointments/AppointmentsScreen.tsx`
 
 ## 배경
 
@@ -45,8 +45,9 @@
 
 - 움직임은 5초에 한 바퀴 도는 경로 하나다(사용자 지정, 6초에서 살짝 빠르게). 폰 기울기는 쓰지 않는다(사용자 지정). 경로는 다섯 자리(처음과 끝이 같다)를
   `ease-in-out` 으로 잇고, 좌우 · 위아래 값은 −0.7~0.7 이다.
-- 반복 애니메이션은 매 바퀴 시작한 값으로 되돌아간다. 그래서 늘 0 에서 출발시킨다. 중간 값에서 다시 시작하면 바퀴마다 경로
-  중간으로 튀어 끊겨 보였다.
+- 반복 애니메이션은 매 바퀴 시작한 값으로 되돌아간다. 그래서 한 바퀴의 끝을 고정된 값이 아니라 **시작한 값 더하기 한 바퀴**로 건다.
+  효과는 경로 값을 한 바퀴 길이로 나눈 나머지로 읽으므로 어디서 출발해도 이음매가 없다. 끝을 고정하면 중간 값에서 다시 시작할 때
+  바퀴마다 경로 중간으로 튀어 끊겨 보였다.
 - 곡선은 경로의 구간마다 건다. 시간 전체에 걸면 경로가 꺾이는 자리마다 멈칫해 끊겨 보인다.
 - 오로라 띠는 `color` 합성으로 금속 띠 위에 얹는다(시안 비교 `오로라 금속 테마 비교` 의 A, 사용자 지정). 금속 띠의 밝기 위에
   오로라의 색조와 채도가 그대로 남는다. `hue` 합성은 채도를 금속 띠에서 가져와, 거의 회색인 금속 위에서 오로라가 회색이 됐다.
@@ -64,6 +65,12 @@
 - 효과 층은 카드 바탕과 내용 사이에 둔다(사용자 지정). 보스 행 칸 위로 올라오지 않아야 하기 때문이다(결정 3).
 - 시안은 CSS `filter` 로 대비 · 채도를 올렸다. RN 의 `filter` 는 iOS 에서 대비 · 채도를 그리지 않아 쓰지 않는다. `color` 합성이 그 몫이다.
 - 움직임 줄이기를 켜면 경로의 첫 자리에 멈춘다.
+- **화면이 자리 잡았을 때만 돈다**(2026-11-03). 자기 화면이 초점을 잃으면 멈추고, 초점을 되찾아도 스택 전환이 끝난 뒤에 멈춘 자리에서
+  이어 돈다(`useScreenSettled`). 효과 층은 합성 모드와 투명도 그룹이라 iOS 에서 프레임마다 오프스크린 패스를 만든다. 보스 수익 위에
+  화면을 push 하거나 되돌아올 때 전환 애니메이션과 이 합성이 같은 프레임 예산을 나눠 전환이 끊겼다. 탭 화면은 떠나도 마운트된 채라
+  안 멈추면 안 보이는 곳에서 계속 합성한다. 코드를 읽어 세운 원인이고 실기기 계측은 아직 없다.
+- 효과 층은 카드보다 사방으로 띠가 가장 멀리 가는 거리만큼만 크다. 거리는 띠의 이동 폭과 경로 끝(`HOLO_REACH`)에서 계산한다. 전에는
+  기울기 센서 시절의 320px 이 남아 있어 합성 면적이 필요한 것의 약 세 배였다.
 
 ### 결정 3. 펼친 카드는 본문 바탕까지 빛나고, 보스 행 칸은 카드의 빛을 받지 않는다
 
@@ -170,9 +177,13 @@
 | `app/boss-profit/__tests__/AccordionBody.test.tsx` | 결정 9: 행 사이에 선이 없는지 본다 |
 | `components/molecules/PeriodStepper/__tests__/PeriodStepper.test.tsx` | 결정 10: 쓸 수 없는 화살표가 숨지 않고 막히는지, 연도 · 겹화살표가 받은 값이 있을 때만 서는지, 같은 글자를 한 번만 적는지 본다 |
 | `src/__tests__/period-stepper-policy.test.ts` | 결정 10: 다섯 화면이 `PeriodStepper` 를 쓰고 화살표를 직접 그리지 않는지 본다 |
+| `hooks/__tests__/useScreenSettled.spec.tsx` | 결정 2: 초점을 잃거나 부모 스택의 전환이 진행 중이면 자리 잡지 않은 것으로, 전환이 끝나면 자리 잡은 것으로 내는지, 내비게이터 밖에서는 늘 자리 잡은 것으로 두는지 본다 |
+| `components/organisms/HologramSheen/__tests__/holo-motion.spec.tsx` | 결정 2: 화면이 자리 잡았을 때만 반복을 걸고 떠나면 멈추는지, 다시 돌 때 멈춘 자리에서 한 바퀴를 거는지 본다 |
+| `components/organisms/HologramSheen/__tests__/HologramSheen.test.tsx` | 결정 2: 경로의 양 끝에서도 두 띠의 이동이 여유 폭 안인지 본다 |
 
 ## 번호 기록
 
 - ADR-092 (2026-10-24): 보스 수익 리디자인 시안에서 처음 작성
 - ADR-112 (2026-10-27): 빛 덩이를 걷고 카드 전면의 오로라 금속(금속 띠 · 오로라 띠)으로 바꿨다. 폰 기울기와 `expo-sensors` 를 걷고 5초 경로 애니메이션만 남겼다(#754)
 - (2026-10-30) 결정 6 에 고가 카드 금액 왼쪽 화살표를 오로라 첫 색으로 칠하는 규칙을 더했다
+- ADR-153 (2026-11-03): 결정 2 에 화면이 자리 잡았을 때만 돌고 멈춘 자리에서 이어 도는 규칙과, 효과 층 여유 폭을 이동 거리에서 계산하는 규칙을 더했다. 화면 전환이 끊기는 것에 대한 조치
