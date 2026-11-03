@@ -17,6 +17,7 @@ export function CharacterGroupLabel(props: { name: string; imageUrl: string | nu
     <View testID="character-group-label" style={{ width: CHARACTER_LABEL_WIDTH }} className="items-center gap-0.5">
       <CharacterAvatar
         testID="character-group-face"
+        mirrored
         imageUrl={props.imageUrl}
         name={props.name}
         size={FACE_SIZE}

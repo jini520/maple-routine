@@ -9,7 +9,6 @@ import { Pressable, View } from 'react-native'
 
 import { FileTextIcon, Text, Trash2Icon } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
-import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -53,9 +52,17 @@ export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
     boxShadowOf(definition.shadowColor, { opacity: 0.17, radius: 12, y: 8 }),
   ].join(', ')
 
-  function faceOf(ocid: string): { name: string; imageUrl: string | null } | null {
-    const character = characters.find((one) => one.ocid === ocid)
-    return character === undefined ? null : { name: character.characterName, imageUrl: character.imageUrl ?? null }
+  /**
+   * 기록 줄의 캐릭터 글자. 추적 캐릭터 가운데 기록 순서로 첫 이름이고, 나머지 캐릭터 수를 `외 n` 으로 단다.
+   * 아는 이름이 없으면 비운다.
+   */
+  function charactersLabel(record: BossProfitCalculatorRecord): string {
+    const first = record.characters
+      .map((one) => characters.find((character) => character.ocid === one.ocid)?.characterName)
+      .find((name) => name !== undefined)
+    if (first === undefined) return ''
+    const others = record.characters.length - 1
+    return others === 0 ? first : `${first} 외 ${others}`
   }
 
   async function remove(record: BossProfitCalculatorRecord): Promise<void> {
@@ -119,25 +126,10 @@ export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
                       )}
                     </View>
                     <View className="flex-row items-center justify-between gap-2">
-                      <View className="flex-row items-center gap-2">
-                        <View className="flex-row gap-0.5">
-                          {record.characters.flatMap((character) => {
-                            const face = faceOf(character.ocid)
-                            return face === null
-                              ? []
-                              : [
-                                  <CharacterAvatar
-                                    key={character.ocid}
-                                    imageUrl={face.imageUrl}
-                                    name={face.name}
-                                    size={22}
-                                    className="bg-surface-2"
-                                  />,
-                                ]
-                          })}
-                        </View>
-                        <Text className="text-xs text-text-muted">보스 {bosses.length}</Text>
-                      </View>
+                      {/* 얼굴을 늘어놓지 않는다. 캐릭터가 여럿이면 날짜와 금액 사이에 얼굴이 설 폭이 모자란다. */}
+                      <Text numberOfLines={1} className="min-w-0 shrink text-xs text-text-muted">
+                        {charactersLabel(record)}
+                      </Text>
                       <Text className="text-lg font-bold text-text" style={TABULAR_NUMS}>
                         {formatMesoUnits(totalPayoutMeso(bosses, now))}
                       </Text>

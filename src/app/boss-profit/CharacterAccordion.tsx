@@ -259,6 +259,7 @@ export function CharacterAccordion(props: {
         >
           <CharacterPortrait
             variant="compact"
+            mirrored
             characterName={group.characterName}
             imageUrl={group.imageUrl}
             unavailable={props.issue === 'unavailable'}

@@ -40,6 +40,8 @@ export interface CharacterAvatarProps {
    * 곳은 today 머리의 캐릭터 관리 버튼 하나뿐이고, 나머지 여덟 자리는 기본값이다.
    */
   readonly faceZoom?: number
+  /** 그림을 좌우로 뒤집는다. 줄의 왼쪽 끝에 서는 얼굴은 오른쪽의 글자를 봐야 한다. 폴백과 표식은 안 뒤집는다. */
+  readonly mirrored?: boolean
   readonly testID?: string
   readonly imageTestID?: string
   /**
@@ -67,7 +69,7 @@ export function CharacterAvatar(props: CharacterAvatarProps): React.JSX.Element 
           testID={props.imageTestID}
           accessibilityLabel={props.name}
           source={{ uri: props.imageUrl }}
-          style={{ position: 'absolute', ...faceCropStyle(props.size, props.faceZoom) }}
+          style={{ position: 'absolute', ...faceCropStyle(props.size, props.faceZoom, props.mirrored) }}
         />
       )}
       {props.imageUrl === null && props.fallback}

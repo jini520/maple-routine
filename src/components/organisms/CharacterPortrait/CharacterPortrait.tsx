@@ -57,6 +57,8 @@ export interface CompactPortraitProps extends CommonProps {
   clears: { cleared: number; total: number; label: string }
   /** 조회할 수 없게 된 캐릭터. 얼굴 오른쪽 아래에 표식이 붙는다. */
   unavailable?: boolean
+  /** 얼굴을 좌우로 뒤집는다. 줄의 왼쪽 끝에 서는 칸이 준다. */
+  mirrored?: boolean
 }
 
 export type CharacterPortraitProps = RailPortraitProps | CompactPortraitProps
@@ -109,6 +111,7 @@ function CompactPortrait(props: CompactPortraitProps): React.JSX.Element {
         size={PORTRAIT_COMPACT.faceSize}
         className="bg-surface-2"
         unavailable={props.unavailable}
+        mirrored={props.mirrored}
         fallback={<InitialFallback name={props.characterName} textClass="text-xs" />}
       />
     </View>

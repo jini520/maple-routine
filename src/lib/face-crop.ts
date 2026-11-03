@@ -14,7 +14,7 @@ export const FACE_CROP_BOX = { x: 123, y: 128, size: 48 } as const
 export const FACE_AVATAR_SIZE = 36
 
 /**
- * 원형 프레임 안에 절대 배치할 `<Image>` 의 크기·오프셋.
+ * 원형 프레임 안에 절대 배치할 `<Image>` 의 크기·오프셋·뒤집기.
  *
  * 프레임은 `overflow-hidden rounded-full` 이고, 이 값이 그 안에서 원본을 확대·이동해 크롭 박스가
  * 프레임을 꽉 채우게 만든다.
@@ -22,16 +22,19 @@ export const FACE_AVATAR_SIZE = 36
  * @param size 프레임(원)의 지름
  * @param zoom 크롭 박스를 넓혀 **얼굴을 작게** 보이게 하는 배수. 1 이 기본이고 그때 박스가 프레임을
  *   꽉 채운다. 1.35 면 박스를 35% 넓게 잡아 얼굴 둘레가 더 보인다. 1 보다 작게 주면 더 확대된다
+ * @param mirrored 그림을 좌우로 뒤집는다. 줄의 왼쪽 끝에 서는 얼굴이 오른쪽의 글자를 보게 할 때
  * @example faceCropStyle(PORTRAIT_HEADER.faceSize, HEADER_FACE_ZOOM)
  */
 export function faceCropStyle(
   size: number = FACE_AVATAR_SIZE,
   zoom = 1,
+  mirrored = false,
 ): {
   width: number
   height: number
   left: number
   top: number
+  transform?: { scaleX: number }[]
 } {
   const scale = size / (FACE_CROP_BOX.size * zoom)
 
@@ -44,11 +47,15 @@ export function faceCropStyle(
    */
   const centerX = FACE_CROP_BOX.x + FACE_CROP_BOX.size / 2
   const centerY = FACE_CROP_BOX.y + FACE_CROP_BOX.size / 2
+  // 뒤집기는 요소의 중심을 축으로 돌아 원본 x 가 `300 - x` 로 간다. 프레임 중심에 둘 원본 좌표도 거울상이어야
+  // 얼굴이 원 가운데에 남는다.
+  const framedX = mirrored ? FACE_SOURCE_IMAGE_SIZE - centerX : centerX
 
   return {
     width: FACE_SOURCE_IMAGE_SIZE * scale,
     height: FACE_SOURCE_IMAGE_SIZE * scale,
-    left: size / 2 - centerX * scale,
+    left: size / 2 - framedX * scale,
     top: size / 2 - centerY * scale,
+    ...(mirrored ? { transform: [{ scaleX: -1 }] } : {}),
   }
 }

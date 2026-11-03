@@ -143,6 +143,7 @@ function Portrait(props: { row: ScheduleRowView }): React.JSX.Element {
   return (
     <CharacterAvatar
       imageTestID="schedule-face"
+      mirrored
       imageUrl={props.row.imageUrl}
       name={props.row.characterName}
       size={PORTRAIT_PX}

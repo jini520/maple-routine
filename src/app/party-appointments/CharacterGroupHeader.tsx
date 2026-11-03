@@ -16,7 +16,7 @@ export interface CharacterGroupHeaderProps {
 export function CharacterGroupHeader(props: CharacterGroupHeaderProps): React.JSX.Element {
   return (
     <View className="flex-row items-center gap-1.5">
-      <CharacterAvatar imageUrl={props.imageUrl} name={props.name} size={20} className="bg-surface-2" />
+      <CharacterAvatar imageUrl={props.imageUrl} name={props.name} size={20} className="bg-surface-2" mirrored />
       <Text className="shrink text-sm font-bold text-text" numberOfLines={1}>
         {props.name}
       </Text>

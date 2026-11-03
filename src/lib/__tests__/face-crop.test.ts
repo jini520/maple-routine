@@ -83,3 +83,23 @@ describe('zoom', () => {
     expect(width).toBe(height)
   })
 })
+
+// `mirrored` 는 그림을 좌우로 뒤집는다. RN 의 transform 은 요소의 중심을 축으로 돌아서, 뒤집으면 프레임 중심에
+// 놓이는 원본 좌표가 거울상(300 - x)이 된다. 그 자리를 안 옮기면 얼굴이 원 안에서 옆으로 쏠린다.
+describe('mirrored', () => {
+  const SIZE = 36
+
+  it('뒤집으면 프레임 중심이 거울상 원본 좌표를 본다', () => {
+    const { left, top, width } = faceCropStyle(SIZE, 1, true)
+    const scale = width / FACE_SOURCE_IMAGE_SIZE
+    const centerX = FACE_CROP_BOX.x + FACE_CROP_BOX.size / 2
+
+    expect((SIZE / 2 - left) / scale).toBeCloseTo(FACE_SOURCE_IMAGE_SIZE - centerX, 5)
+    expect((SIZE / 2 - top) / scale).toBeCloseTo(FACE_CROP_BOX.y + FACE_CROP_BOX.size / 2, 5)
+  })
+
+  it('뒤집으면 transform 이 붙고, 안 뒤집으면 없다', () => {
+    expect(faceCropStyle(SIZE, 1, true).transform).toEqual([{ scaleX: -1 }])
+    expect(faceCropStyle(SIZE).transform).toBeUndefined()
+  })
+})
