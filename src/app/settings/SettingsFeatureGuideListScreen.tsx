@@ -24,6 +24,8 @@ import { BookOpenIcon, Card, ChevronRightIcon, Text } from '../../components/ato
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SETTINGS_ROW_DIVIDER_CLASS } from './row-class'
@@ -36,6 +38,7 @@ const INACTIVE_TAB_CLASS = 'px-3 py-[5px]'
 const INACTIVE_TAB_TEXT_CLASS = 'text-sm text-text-muted'
 
 export function SettingsFeatureGuideListScreen(): React.JSX.Element {
+  const faq = useFaqSheet('settings-feature-guide-list')
   const navigation = useSettingsNavigation()
 
   // **비어 있는 그룹은 탭째 감춘다**(개발 노트의 카테고리 묶음·`ThemeSelector` 와 같은 규칙).
@@ -61,7 +64,10 @@ export function SettingsFeatureGuideListScreen(): React.JSX.Element {
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-bold text-text">기능 설명</Text>
+            <View className="flex-row items-center">
+              <Text className="text-lg font-bold text-text">기능 설명</Text>
+              <FaqButton sheet={faq} />
+            </View>
           </PageHeaderTitleRow>
         </PageHeader>
       }

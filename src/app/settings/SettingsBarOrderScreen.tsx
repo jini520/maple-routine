@@ -25,6 +25,8 @@ import { BarPreview } from '../../components/organisms/BottomBar/BarPreview'
 import { DragHandle } from '../../components/organisms/CharacterRow/DragHandle'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { SectionTitle } from './SectionTitle'
 import { SettingsActionBar } from './SettingsActionBar'
@@ -104,6 +106,7 @@ function OrderCard<T extends BarKey>(props: OrderCardProps<T>): React.JSX.Elemen
 }
 
 export function SettingsBarOrderScreen(): React.JSX.Element {
+  const faq = useFaqSheet('settings-bar-order')
   const navigation = useSettingsNavigation()
   const { order, save } = useBarOrderStore()
   const [draft, setDraft] = useState<BarOrder>(order)
@@ -129,7 +132,10 @@ export function SettingsBarOrderScreen(): React.JSX.Element {
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-bold text-text">하단 탭 순서</Text>
+              <View className="flex-row items-center">
+                <Text className="text-lg font-bold text-text">하단 탭 순서</Text>
+                <FaqButton sheet={faq} />
+              </View>
             </PageHeaderTitleRow>
           </PageHeader>
         }

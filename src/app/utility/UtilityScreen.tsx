@@ -19,6 +19,8 @@ import itemSplitIllustration from '../../assets/utility/item-split.webp'
 import { Text } from '../../components/atoms'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { useThemeMode } from '../../theme/context'
@@ -109,6 +111,7 @@ function ToolCard(props: {
 }
 
 export function UtilityScreen(): React.JSX.Element {
+  const faq = useFaqSheet('utility')
   const navigation = useScreenNavigation()
   const mode = useThemeMode()
 
@@ -119,6 +122,7 @@ export function UtilityScreen(): React.JSX.Element {
           <PageHeader>
             <PageHeaderTitleRow>
               <Text className="text-lg font-bold text-text">유틸리티</Text>
+              <FaqButton sheet={faq} />
             </PageHeaderTitleRow>
           </PageHeader>
         }

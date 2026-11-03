@@ -46,7 +46,7 @@ import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 
 import { Text } from '../../components/atoms'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
-import { TODAY_FAQ } from '../../features/today/faq'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -62,6 +62,7 @@ import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 const EMPTY_DROPS = {}
 
 export function TodayScreen(): React.JSX.Element {
+  const faq = useFaqSheet('today')
   // 스케줄은 캐시에서 온다. 두 훅이 같은 회차를 보므로 마운트 · 복귀의 자동 조회는 한 번이다.
   const content = useContentSchedule()
   const boss = useBossSchedule()
@@ -158,7 +159,7 @@ export function TodayScreen(): React.JSX.Element {
               trailing={<CharacterManageButton portrait={viewModel.representative} />}
             >
               <Text className="shrink-0 text-lg font-bold text-text">today</Text>
-              <FaqButton title="today" items={TODAY_FAQ} />
+              <FaqButton sheet={faq} />
             </PageHeaderTitleRow>
           </PageHeader>
         }

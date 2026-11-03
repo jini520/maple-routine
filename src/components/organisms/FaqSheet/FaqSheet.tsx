@@ -8,26 +8,14 @@
  * 상한을 두지 않는 것은 같은 자리에서 올라오는 시트들이 저마다 다른 높이에서 멈추지 않게 하려는 것이다.
  *
  * @example
- * {열림 ? <FaqSheet title="스케줄러 결산" items={SETTLEMENT_FAQ} onClose={닫기} /> : null}
+ * {열림 && faq !== null ? <FaqSheet title={faq.title} items={faq.items} onClose={닫기} /> : null}
  * @see docs/features/today.md 결산 안내 줄
  */
 import { View } from 'react-native'
 
+import type { FaqItem } from '../../../types/faq'
 import { Text } from '../../atoms'
 import { BottomSheet } from '../BottomSheet/BottomSheet'
-
-/**
- * 답 한 조각.
- *
- * 종류가 지금 하나인 것은 쓰는 FAQ 가 문단만 써서다. 배열 모양을 두는 것이 늘릴 자리이고,
- * 종류가 늘어도 호출부는 안 고친다.
- */
-export type FaqBlock = { kind: 'paragraph'; text: string }
-
-export interface FaqItem {
-  question: string
-  answer: FaqBlock[]
-}
 
 export interface FaqSheetProps {
   /** 머리에 서는 이름. **그 화면의 말로 쓴다.** `자주 묻는 질문` 은 무엇에 대한 설명인지를 안 말한다. */

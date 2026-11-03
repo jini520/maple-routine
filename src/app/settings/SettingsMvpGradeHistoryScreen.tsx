@@ -14,6 +14,8 @@ import { AccountRow } from '../../components/organisms/AccountSelect/AccountSele
 import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useMvpGradeSettingsStore } from '../../features/mvp-grade/settings-store'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
@@ -29,6 +31,7 @@ type Sheet = { kind: 'change' } | { kind: 'edit'; startDate: string }
 export function SettingsMvpGradeHistoryScreen(props: {
   route?: { params?: { accountId?: string } }
 }): React.JSX.Element {
+  const faq = useFaqSheet('settings-mvp-grade-history')
   const navigation = useSettingsNavigation()
   const accountId = props.route?.params?.accountId
   const account = useMvpGradeSettingsStore((state) => state.accounts.find((entry) => entry.accountId === accountId))
@@ -52,7 +55,10 @@ export function SettingsMvpGradeHistoryScreen(props: {
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-bold text-text">MVP 등급 이력</Text>
+              <View className="flex-row items-center">
+                <Text className="text-lg font-bold text-text">MVP 등급 이력</Text>
+                <FaqButton sheet={faq} />
+              </View>
             </PageHeaderTitleRow>
           </PageHeader>
         }

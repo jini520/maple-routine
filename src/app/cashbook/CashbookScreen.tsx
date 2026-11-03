@@ -50,6 +50,8 @@ import { PORTRAIT_SHADOW, boxShadowOf } from '../../lib/shadow'
 import { useThemeAppearance } from '../../theme/context'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import {
   formatBossProfitPeriodLabel,
@@ -560,6 +562,7 @@ function DayRecordRow(props: {
 }
 
 export function CashbookScreen(): React.JSX.Element {
+  const faq = useFaqSheet('cashbook')
   /**
    * 렌더당 한 번만 만드는 지금. 두 번 부르면 두 시각이 기간 경계를 사이에 두고 갈려 오늘 과
    * 기간 라벨이 서로 다른 기간을 가리킬 수 있다.
@@ -962,6 +965,7 @@ export function CashbookScreen(): React.JSX.Element {
               }
             >
               <Text className="text-lg font-bold text-text">가계부</Text>
+              <FaqButton sheet={faq} />
             </PageHeaderTitleRow>
           </PageHeader>
         }

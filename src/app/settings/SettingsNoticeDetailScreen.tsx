@@ -27,6 +27,8 @@ import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { formatNoticeDate } from '../../features/notice/format'
 import { findCachedNotice, forgetNotice } from '../../features/notice/notice-query'
@@ -103,6 +105,7 @@ function NoticeBody(props: { notice: Notice; settled: boolean }): React.JSX.Elem
 export function SettingsNoticeDetailScreen(props: {
   route?: { params?: { noticeId?: string } }
 }): React.JSX.Element {
+  const faq = useFaqSheet('settings-notice-detail')
   const navigation = useSettingsNavigation()
   const noticeId = props.route?.params?.noticeId
   // `undefined` 는 아직 찾는 중이고 `null` 은 없다는 답이다. 둘을 합치면 여는 순간 없음 이
@@ -159,9 +162,15 @@ export function SettingsNoticeDetailScreen(props: {
             <View className="mt-0.5 self-start">
               <BackButton onPress={() => navigation.goBack()} />
             </View>
-            <Text testID="notice-title" className="min-w-0 flex-1 text-lg font-bold text-text">
-              {found === null ? '공지사항' : noticeDisplayTitle(found)}
-            </Text>
+            <View className="min-w-0 flex-1 flex-row items-start">
+              <Text testID="notice-title" className="min-w-0 shrink text-lg font-bold text-text">
+                {found === null ? '공지사항' : noticeDisplayTitle(found)}
+              </Text>
+              {/* 물음표도 첫 줄 높이에 둔다. 25 는 `text-lg` 의 줄 높이다. */}
+              <View className="h-[25px] justify-center">
+                <FaqButton sheet={faq} />
+              </View>
+            </View>
           </PageHeaderTitleRow>
         </PageHeader>
       }

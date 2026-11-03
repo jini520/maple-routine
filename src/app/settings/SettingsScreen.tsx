@@ -23,6 +23,8 @@ import { useRunningAppVersion } from '../../features/live-update/use-running-app
 import { useToastStore } from '../../features/toast/store'
 import { Card, GearIcon, Text } from '../../components/atoms'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import type { TabParamList } from '../../navigation/routes'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
@@ -131,6 +133,7 @@ function NoticeSectionBody(props: {
 }
 
 export function SettingsScreen(): React.JSX.Element {
+  const faq = useFaqSheet('settings')
   // 저장 로직을 새로 갖지 않는다. 통합 키 쓰기·수동 모드 시드·추가분만 동기화·
   // 진행률 보고가 이 액션에 이미 한 벌로 들어 있다. 이름이 **컨텐츠** 인 것은 이전의
   const navigation = useSettingsNavigation()
@@ -201,6 +204,7 @@ export function SettingsScreen(): React.JSX.Element {
             밀려 내려간다. 톱니바퀴가 하단 바에서 여기로 옮겨 온 그림이다. */}
         <PageHeaderTitleRow>
           <Text className="text-lg font-bold text-text">더보기</Text>
+          <FaqButton sheet={faq} />
           <Pressable
             role="button"
             aria-label="설정"

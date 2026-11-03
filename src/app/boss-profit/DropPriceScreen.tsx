@@ -56,6 +56,8 @@ import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
@@ -192,6 +194,7 @@ function EntryRow(props: {
 }
 
 export function DropPriceScreen(): React.JSX.Element {
+  const faq = useFaqSheet('drop-price')
   const navigation = useScreenNavigation()
   const topSafeAreaPx = useTopSafeAreaPx()
   const { params } = useRoute<RouteProp<RootStackParamList, 'DropPrice'>>()
@@ -352,7 +355,10 @@ export function DropPriceScreen(): React.JSX.Element {
           <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
             <PageHeaderTitleRow className="gap-1">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-bold text-text">아이템 가격 입력</Text>
+              <View className="flex-row items-center">
+                <Text className="text-lg font-bold text-text">아이템 가격 입력</Text>
+                <FaqButton sheet={faq} />
+              </View>
             </PageHeaderTitleRow>
           </View>
         }

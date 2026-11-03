@@ -13,6 +13,8 @@ import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/Char
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useBossProfitCalculatorStore } from '../../features/boss-profit-calculator/store'
@@ -40,6 +42,7 @@ function recordTitle(savedAt: string): { date: string; time: string } {
 }
 
 export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
+  const faq = useFaqSheet('utility-boss-profit-calculator-records')
   const navigation = useScreenNavigation()
   const { definition } = useThemeAppearance()
   const { records, openedId, openRecord, deleteRecord } = useBossProfitCalculatorStore()
@@ -70,7 +73,10 @@ export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            <Text className="text-lg font-bold text-text">계산 기록</Text>
+            <View className="flex-row items-center">
+              <Text className="text-lg font-bold text-text">계산 기록</Text>
+              <FaqButton sheet={faq} />
+            </View>
           </PageHeaderTitleRow>
         </PageHeader>
       }

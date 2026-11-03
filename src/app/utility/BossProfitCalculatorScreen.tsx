@@ -18,6 +18,8 @@ import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useBossProfitCalculatorStore, type CalculatorSaveMode } from '../../features/boss-profit-calculator/store'
@@ -61,6 +63,7 @@ const CARD_LIFT: readonly ShadowLayer[] = [
 ]
 
 export function BossProfitCalculatorScreen(): React.JSX.Element {
+  const faq = useFaqSheet('utility-boss-profit-calculator')
   const navigation = useScreenNavigation()
   const { definition } = useThemeAppearance()
   const bottomSafeAreaPx = useBottomSafeAreaPx()
@@ -153,7 +156,10 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
               }
             >
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-bold text-text">{BOSS_PROFIT_CALCULATOR_TOOL_NAME}</Text>
+              <View className="flex-row items-center">
+                <Text className="text-lg font-bold text-text">{BOSS_PROFIT_CALCULATOR_TOOL_NAME}</Text>
+                <FaqButton sheet={faq} />
+              </View>
             </PageHeaderTitleRow>
           </PageHeader>
         }

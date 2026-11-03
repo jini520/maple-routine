@@ -48,7 +48,7 @@ import {
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
-import { BOSS_SCHEDULER_FAQ } from '../../features/boss-scheduler/faq'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -157,6 +157,7 @@ const NO_SHARES: PartyModalShares = {
 }
 
 export function BossScreen(): React.JSX.Element {
+  const faq = useFaqSheet('boss')
   // 스케줄은 캐시에서 온다. 마운트에 만료면 받고, 앱이 돌아오면 신선해도 받는다.
   const { status, characters: storeCharacters, error, trackedOcids, manualCompletedByOcid, refresh } = useBossSchedule()
   const {
@@ -452,7 +453,7 @@ export function BossScreen(): React.JSX.Element {
             오갈 때 제목이 튀면 가장 눈에 띈다. */}
         <PageHeaderTitleRow>
           <Text className="text-lg font-bold text-text">보스 스케줄러</Text>
-          <FaqButton title="보스 스케줄러" items={BOSS_SCHEDULER_FAQ} />
+          <FaqButton sheet={faq} />
         </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
@@ -501,7 +502,7 @@ export function BossScreen(): React.JSX.Element {
               }
             >
               <Text className="shrink text-lg font-bold text-text">보스 스케줄러</Text>
-              <FaqButton title="보스 스케줄러" items={BOSS_SCHEDULER_FAQ} />
+              <FaqButton sheet={faq} />
             </PageHeaderTitleRow>
           </PageHeader>
         }

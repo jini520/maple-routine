@@ -9,8 +9,8 @@ import { Pressable, View } from 'react-native'
 import type { DailyContent, WeeklyContent } from '../../types'
 import { useContentSchedulerStore, type ContentCharacterView } from '../../features/content-scheduler/store'
 import { useContentSchedule } from '../../features/content-scheduler/use-content-schedule'
-import { CONTENT_SCHEDULER_FAQ } from '../../features/content-scheduler/faq'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { queryKeys } from '../../features/query/keys'
 import { useResetBoundaryTick } from '../../features/query/reset-timer'
 import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
@@ -53,6 +53,7 @@ const CONTENT_TAB_LABELS: Record<(typeof CONTENT_TABS)[number], string> = {
 }
 
 export function ContentScreen(): React.JSX.Element {
+  const faq = useFaqSheet('content')
   // 스케줄은 캐시에서 온다. 마운트에 만료면 받고, 앱이 돌아오면 신선해도 받는다.
   const { status, characters: storeCharacters, error, trackedOcids, refresh } = useContentSchedule()
   const {
@@ -212,7 +213,7 @@ export function ContentScreen(): React.JSX.Element {
             목록 상태를 오갈 때 제목이 튀면 그것이 가장 눈에 띄는 자리다. */}
         <PageHeaderTitleRow>
           <Text className="text-lg font-bold text-text">컨텐츠 스케줄러</Text>
-          <FaqButton title="컨텐츠 스케줄러" items={CONTENT_SCHEDULER_FAQ} />
+          <FaqButton sheet={faq} />
         </PageHeaderTitleRow>
 
         <View className="flex-1 items-center justify-center">
@@ -262,7 +263,7 @@ export function ContentScreen(): React.JSX.Element {
               }
             >
               <Text className="shrink text-lg font-bold text-text">컨텐츠 스케줄러</Text>
-              <FaqButton title="컨텐츠 스케줄러" items={CONTENT_SCHEDULER_FAQ} />
+              <FaqButton sheet={faq} />
             </PageHeaderTitleRow>
           </PageHeader>
         }

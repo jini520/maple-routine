@@ -11,6 +11,8 @@ import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodSt
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useLedgerDays } from '../../features/cashbook/ledger-query'
@@ -57,6 +59,7 @@ function signed(meso: number): string {
 }
 
 export function StatsScreen(): React.JSX.Element {
+  const faq = useFaqSheet('stats')
   const now = new Date()
   const todayDateKey = getCurrentKstDateKey(now)
   const todayMonthKey = monthKeyOf(todayDateKey)
@@ -176,6 +179,7 @@ export function StatsScreen(): React.JSX.Element {
               }
             >
               <Text className="text-lg font-bold text-text">통계</Text>
+              <FaqButton sheet={faq} />
             </PageHeaderTitleRow>
           </PageHeader>
         }

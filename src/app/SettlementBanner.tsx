@@ -26,7 +26,7 @@ import { Pressable, View } from 'react-native'
 import { ClockIcon, Text, XIcon } from '../components/atoms'
 import { FaqSheet } from '../components/organisms/FaqSheet/FaqSheet'
 import { SETTLEMENT_BANNER_TITLE } from '../features/settlement/banner-text'
-import { SETTLEMENT_FAQ, SETTLEMENT_FAQ_TITLE } from '../features/settlement/faq'
+import { useFaqSheet } from '../features/faq/use-faq-sheet'
 import { useSettlementBanner } from '../features/settlement/query'
 
 /** 16px 아이콘을 권장 타깃 44px 로 되돌린다. 나란히 선 것이 없어 네 면 다 준다. */
@@ -39,6 +39,7 @@ export function SettlementBanner(props: {
 }): React.JSX.Element | null {
   const { visible, dismiss } = useSettlementBanner()
   const [faqOpen, setFaqOpen] = useState(false)
+  const faq = useFaqSheet('settlement')
 
   if (!visible) return null
 
@@ -58,6 +59,8 @@ export function SettlementBanner(props: {
           role="button"
           aria-label="결산이 무엇인지 보기"
           onPress={() => setFaqOpen(true)}
+          // 묶음에 문항이 없으면 줄은 서되 열 시트가 없다.
+          disabled={faq === null}
           className="shrink grow active:opacity-60"
         >
           <Text className="text-xs font-semibold text-settlement-ink">{SETTLEMENT_BANNER_TITLE}</Text>
@@ -79,12 +82,8 @@ export function SettlementBanner(props: {
         </Pressable>
       </View>
 
-      {faqOpen && (
-        <FaqSheet
-          title={SETTLEMENT_FAQ_TITLE}
-          items={SETTLEMENT_FAQ}
-          onClose={() => setFaqOpen(false)}
-        />
+      {faqOpen && faq !== null && (
+        <FaqSheet title={faq.title} items={faq.items} onClose={() => setFaqOpen(false)} />
       )}
     </>
   )

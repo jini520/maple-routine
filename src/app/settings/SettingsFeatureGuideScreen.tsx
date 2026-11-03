@@ -19,6 +19,8 @@ import { useRoute, type RouteProp } from '@react-navigation/native'
 import { findFeatureGuide } from '../../data/feature-guides'
 
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { naturalAspectStyle } from '../../lib/image-aspect'
@@ -44,6 +46,10 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
   // 두 라우트가 같은 파라미터 모양을 가지므로(`FeatureGuideParams`) 어느 쪽으로 들어왔든 같다.
   const route = useRoute<FeatureGuideRoute>()
   const { guideId, section: requestedSection } = route.params
+  // 화면은 하나지만 FAQ 는 들어온 라우트의 묶음이다.
+  const faq = useFaqSheet(
+    route.name === 'SettingsReleaseNoteGuide' ? 'settings-release-note-guide' : 'settings-feature-guide',
+  )
 
   const scrollRef = useRef<ScrollViewType>(null)
   const sectionOffsets = useRef(new Map<string, number>())
@@ -88,10 +94,13 @@ export function SettingsFeatureGuideScreen(): React.JSX.Element | null {
         <PageHeader>
           <PageHeaderTitleRow className="gap-2">
             <BackButton onPress={() => navigation.goBack()} />
-            {/* `min-w-0` + 한 줄 말줄임. 말줄임은 글자 쪽 프롭이다. */}
-            <Text numberOfLines={1} className="min-w-0 flex-1 text-lg font-bold text-text">
-              {guide.title}
-            </Text>
+            {/* `min-w-0` + 한 줄 말줄임. 말줄임은 글자 쪽 프롭이다. 물음표가 제목 끝에 붙게 글자는 줄어들기만 한다. */}
+            <View className="min-w-0 flex-1 flex-row items-center">
+              <Text numberOfLines={1} className="min-w-0 shrink text-lg font-bold text-text">
+                {guide.title}
+              </Text>
+              <FaqButton sheet={faq} />
+            </View>
           </PageHeaderTitleRow>
         </PageHeader>
       }

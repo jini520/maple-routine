@@ -29,8 +29,8 @@ jest.mock('@gorhom/bottom-sheet', () => {
 import { screen } from '@testing-library/react-native'
 
 import { flattenStyle, renderOverlay } from '../../../__tests__/render-atom'
+import type { FaqItem } from '../../../../types/faq'
 import { FaqSheet } from '../FaqSheet'
-import type { FaqItem } from '../FaqSheet'
 
 const 문답: FaqItem[] = [
   {

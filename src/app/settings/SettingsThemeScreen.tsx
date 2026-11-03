@@ -17,6 +17,8 @@ import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ThemeBackdrop } from '../../components/templates/ThemeBackdrop/ThemeBackdrop'
 import { SettingsActionBar } from './SettingsActionBar'
@@ -36,6 +38,7 @@ const FILTERED_MODE: Record<ModeFilter, 'light' | 'dark' | null> = {
 }
 
 export function SettingsThemeScreen(): React.JSX.Element {
+  const faq = useFaqSheet('settings-theme')
   const navigation = useSettingsNavigation()
   const { theme, selectTheme } = useThemeStore()
   const [draft, setDraft] = useState<ThemeName>(theme)
@@ -68,7 +71,10 @@ export function SettingsThemeScreen(): React.JSX.Element {
               trailing={<Segment size="lg" options={MODE_FILTERS} selected={filter} onSelect={setFilter} />}
             >
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-bold text-text">테마</Text>
+              <View className="flex-row items-center">
+                <Text className="text-lg font-bold text-text">테마</Text>
+                <FaqButton sheet={faq} />
+              </View>
             </PageHeaderTitleRow>
           </PageHeader>
         }

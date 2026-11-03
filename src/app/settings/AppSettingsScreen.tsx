@@ -29,6 +29,8 @@ import { Card, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -48,6 +50,7 @@ function SummaryValue(props: { children: React.ReactNode }): React.JSX.Element {
 }
 
 export function AppSettingsScreen(): React.JSX.Element {
+  const faq = useFaqSheet('app-settings')
   const { mode: trackingMode } = useTrackingModeStore()
   const { theme } = useThemeStore()
   const { size: textSize } = useTextSizeStore()
@@ -66,7 +69,10 @@ export function AppSettingsScreen(): React.JSX.Element {
           <PageHeader>
             <PageHeaderTitleRow className="gap-2">
               <BackButton onPress={() => navigation.goBack()} />
-              <Text className="text-lg font-bold text-text">설정</Text>
+              <View className="flex-row items-center">
+                <Text className="text-lg font-bold text-text">설정</Text>
+                <FaqButton sheet={faq} />
+              </View>
             </PageHeaderTitleRow>
           </PageHeader>
         }

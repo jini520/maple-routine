@@ -8,6 +8,7 @@
  */
 import type { BossCatalog } from './boss-catalog'
 import type { DropCategory } from './drops'
+import type { FaqBlock } from './faq'
 import type { ForceType } from './hunting-grounds'
 import type { BossDifficulty } from './scheduler'
 
@@ -436,7 +437,25 @@ export interface ImageCropsTable extends TableHead {
   crops: ImageCropRow[]
 }
 
-/** 계약을 통과한 칸 열여덟. */
+/** FAQ 묶음. 묶음 하나가 시트 하나이고 key 는 화면이 물음표에 다는 이름이다. */
+export interface FaqSheetRow {
+  key: string
+  title: string
+}
+export interface FaqItemRow {
+  /** 묶음 key */
+  sheet: string
+  question: string
+  /** 앱이 아는 종류의 블록만 남긴 것. 하나 이상이다 */
+  answer: FaqBlock[]
+}
+/** 한 묶음의 문항 차례는 `items` 의 차례다. */
+export interface FaqsTable extends TableHead {
+  sheets: FaqSheetRow[]
+  items: FaqItemRow[]
+}
+
+/** 계약을 통과한 칸 열아홉. */
 export interface GameData {
   bosses: BossCatalog
   dropItems: DropItemsTable
@@ -456,11 +475,12 @@ export interface GameData {
   huntLoot: HuntLootTable
   assets: AssetFilesTable
   imageCrops: ImageCropsTable
+  faqs: FaqsTable
 }
 
 export type GameDataSection = keyof GameData
 
-/** 칸 이름 열여덟. 응답과 기기 사본이 같은 차례로 든다. */
+/** 칸 이름 열아홉. 응답과 기기 사본이 같은 차례로 든다. */
 export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'bosses',
   'dropItems',
@@ -480,6 +500,7 @@ export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'huntLoot',
   'assets',
   'imageCrops',
+  'faqs',
 ]
 
 /** 서버 응답을 칸마다 검사한 결과. 못 받았거나 계약을 어겼거나 서버가 아직 안 넣은 칸은 `null` 이다. */

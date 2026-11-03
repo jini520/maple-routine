@@ -36,7 +36,7 @@ import {
 } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
-import { CONTENT_MANAGE_FAQ } from '../../features/content-scheduler/faq'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
@@ -75,6 +75,7 @@ const CONTENT_TAB_LABELS: Record<(typeof CONTENT_TABS)[number], string> = {
 }
 
 export function ContentManageScreen(): React.JSX.Element {
+  const faq = useFaqSheet('content-manage')
   // 스케줄은 캐시에서, 수동 추적은 스토어에서 온다. 스케줄러를 거치지 않고 직접 진입해도 훅이 받는다.
   const { status, characters } = useContentSchedule()
   const {
@@ -162,7 +163,7 @@ export function ContentManageScreen(): React.JSX.Element {
               {/* 물음표는 제목과 한 덩어리다. 뒤로 버튼과의 간격(gap-2)을 따르지 않게 묶는다. */}
               <View className="flex-row items-center">
                 <Text className="text-lg font-bold text-text">컨텐츠 관리</Text>
-                <FaqButton title="컨텐츠 관리" items={CONTENT_MANAGE_FAQ} />
+                <FaqButton sheet={faq} />
               </View>
             </View>
             {/* 읽기 전용 칩이던 자리. 이 화면에서 캐릭터를 갈아 가며 쓰는데도

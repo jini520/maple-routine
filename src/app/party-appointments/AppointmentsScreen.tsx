@@ -16,13 +16,13 @@ import {
 import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { SpeedDial } from '../../components/organisms/SpeedDial/SpeedDial'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { useBossSchedule } from '../../features/boss-scheduler/use-boss-schedule'
 import { agendaDays, thisWeekJumpOf } from '../../features/party-appointments/agenda'
-import { PARTY_SCHEDULE_FAQ } from '../../features/party-appointments/faq'
 import { findNotifiedOccurrence, usePartyAppointmentOpenStore } from '../../features/party-appointments/open-request'
 import { occurrencesInWeek } from '../../features/party-appointments/occurrences'
 import { loadPartyAppointments, usePartyAppointments } from '../../features/party-appointments/query'
@@ -54,6 +54,7 @@ const HIGHLIGHT_MS = 1200
 const SCROLL_TOP_GAP = 12
 
 export function AppointmentsScreen(): React.JSX.Element {
+  const faq = useFaqSheet('appointments')
   const { appointments } = usePartyAppointments()
   const { characters } = useBossSchedule()
   /** 열린 시트. `add` 는 추가, 회차면 그 상세 */
@@ -187,7 +188,7 @@ export function AppointmentsScreen(): React.JSX.Element {
               }
             >
               <Text className="text-lg font-bold text-text">파티 스케줄</Text>
-              <FaqButton title="파티 스케줄" items={PARTY_SCHEDULE_FAQ} />
+              <FaqButton sheet={faq} />
             </PageHeaderTitleRow>
           </PageHeader>
         }

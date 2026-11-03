@@ -1,6 +1,6 @@
 # ADR-150 모든 페이지의 FAQ
 
-> ⚪ 미구현
+> 🟢 유효
 > 관련 소스: `components/organisms/FaqSheet/` · `types/faq.ts` · `lib/faq/` · `features/faq/` · 서버 `modules/faqs/` · `modules/admin/views/faqs.ts`
 
 ## 배경
