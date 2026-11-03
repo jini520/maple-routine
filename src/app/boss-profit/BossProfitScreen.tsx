@@ -481,8 +481,10 @@ export function BossProfitScreen(): React.JSX.Element {
                 // key 에 탭·기간을 포함해 이동 시 아코디언을 remount 시킨다. 펼침 상태는
                 // `CharacterAccordion` 로컬 state 라, key 가 그대로면 인스턴스가 재사용돼 한
                 // 탭·기간에서 펼친 상태가 다른 탭·기간으로 그대로 이어진다.
+                // 기간은 보고 있는 것이 아니라 **자료가 선** 것이다. 조회가 앞 기간 값을 들고 있는 동안
+                // 다시 마운트하면 앞 기간 자료를 새 카드로 한 번 더 그려 고가 카드의 오로라가 두 번 뜬다.
                 <CharacterAccordion
-                  key={`${tab}-${periodKey}-${group.ocid}`}
+                  key={`${period.loadedTab}-${period.loadedPeriodKey}-${group.ocid}`}
                   group={group}
                   // 표식은 현재 기간에서만 선다. 과거 기간의 카드는 전부 기록에서 생기고,
                   // 받아 둔 그 금액 위에 조회 불가를 얹을 이유가 없다. 이 한 값이 원형 배지 ·

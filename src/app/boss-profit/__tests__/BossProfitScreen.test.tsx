@@ -1127,12 +1127,31 @@ describe('구조 계약', () => {
     })
     expect(queryByText(주간보스이름)).toBeTruthy()
 
-    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()], periodKey: '2026-07-09' })
+    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()], periodKey: '2026-07-09', loadedPeriodKey: '2026-07-09' })
     await act(async () => {
       rerender(화면트리())
     })
 
     expect(queryByText(주간보스이름)).toBeNull()
+  })
+
+  // 기간 조회는 새 값이 올 때까지 앞 기간 값을 들고 있다. 그 사이에 다시 마운트하면 앞 기간 자료를 새 카드로
+  // 한 번 더 그려, 고가 카드의 오로라가 흰 바탕 뒤에 두 번 뜬다. key 의 기간은 자료가 선 기간이어야 한다.
+  it('기간을 옮겨도 자료가 서기 전에는 카드를 다시 마운트하지 않는다', async () => {
+    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()] })
+    const { getByText, queryByText, rerender } = await renderScreen()
+
+    await act(async () => {
+      fireEvent.press(getByText('지내우시'))
+    })
+    expect(queryByText(주간보스이름)).toBeTruthy()
+
+    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()], periodKey: '2026-07-09' })
+    await act(async () => {
+      rerender(화면트리())
+    })
+
+    expect(queryByText(주간보스이름)).toBeTruthy()
   })
 })
 

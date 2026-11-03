@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient'
 import { useState } from 'react'
-import { StyleSheet, View, type LayoutChangeEvent } from 'react-native'
+import { StyleSheet, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native'
 import Animated, { useAnimatedStyle } from 'react-native-reanimated'
 
 import { AURORA } from '../../../constants/style/aurora'
@@ -91,7 +91,10 @@ export function HologramSheen(props: {
 }): React.JSX.Element {
   const variant = VARIANTS[props.variant]
   const isDark = useThemeMode() === 'dark'
-  const [size, setSize] = useState({ width: 0, height: 0 })
+  // 처음 크기는 창이다. 레이아웃을 잰 뒤에야 그리면 카드가 한 프레임 먼저 서고 빛이 늦게 덮인다. 두 띠 모두 상자의
+  // 왼쪽 위에 묶여 있어 카드 크기로 바뀌어도 띠가 안 움직인다.
+  const window = useWindowDimensions()
+  const [size, setSize] = useState({ width: window.width, height: window.height })
   const { x, y } = props.motion
 
   const boxW = size.width + OVERSCAN * 2
@@ -149,17 +152,16 @@ export function HologramSheen(props: {
         { overflow: 'hidden', borderRadius: variant.radius, mixBlendMode: isDark ? 'screen' : 'multiply' },
       ]}
     >
-      {size.width > 0 && (
-        <AnimatedBox style={fadeStyle}>
-          <View style={[StyleSheet.absoluteFill, { isolation: 'isolate' }]}>
-            <AnimatedBox testID="hologram-metal" style={metalStyle}>
-              <LinearGradient
-                colors={metal.colors}
-                locations={metal.locations}
-                start={{ x: 0.5 - metalHalf.x, y: 0.5 - metalHalf.y }}
-                end={{ x: 0.5 + metalHalf.x, y: 0.5 + metalHalf.y }}
-                style={StyleSheet.absoluteFill}
-              />
+      <AnimatedBox style={fadeStyle}>
+        <View style={[StyleSheet.absoluteFill, { isolation: 'isolate' }]}>
+          <AnimatedBox testID="hologram-metal" style={metalStyle}>
+            <LinearGradient
+              colors={metal.colors}
+              locations={metal.locations}
+              start={{ x: 0.5 - metalHalf.x, y: 0.5 - metalHalf.y }}
+              end={{ x: 0.5 + metalHalf.x, y: 0.5 + metalHalf.y }}
+              style={StyleSheet.absoluteFill}
+            />
             </AnimatedBox>
             <AnimatedBox testID="hologram-aurora" style={auroraStyle}>
               <LinearGradient
@@ -171,8 +173,7 @@ export function HologramSheen(props: {
               />
             </AnimatedBox>
           </View>
-        </AnimatedBox>
-      )}
+      </AnimatedBox>
     </View>
   )
 }

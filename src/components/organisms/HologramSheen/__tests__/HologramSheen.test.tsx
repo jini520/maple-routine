@@ -45,3 +45,12 @@ describe.each([
     }
   })
 })
+
+// 카드는 기간을 넘길 때 다시 마운트된다. 레이아웃을 잰 뒤에야 띠를 그리면 흰 카드가 한 프레임 먼저 서고
+// 오로라가 늦게 덮인다. 띠는 카드와 같은 프레임에 서야 한다.
+it('레이아웃을 재기 전에도 두 띠가 선다', async () => {
+  const view = await renderAtom(<Probe x={0} y={0} />)
+
+  expect(view.getByTestId('hologram-metal')).toBeTruthy()
+  expect(view.getByTestId('hologram-aurora')).toBeTruthy()
+})
