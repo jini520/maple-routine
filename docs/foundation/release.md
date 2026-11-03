@@ -64,6 +64,22 @@ npx expo-updates runtimeversion:resolve --platform android
 업데이트 모달을 띄운다([[ADR-011]]). 심사에 올린 바이너리의 지문은 `IN_REVIEW_RUNTIME_VERSIONS` 에 넣는다.
 그 절차는 `features/live-update.md` 의 `스토어 게시 뒤 옛 바이너리 잠그기` 에 있다.
 
+## 빌드 캐시
+
+ccache · Gradle 빌드 캐시 · watchman 을 켜 둔다. 이유와 확인 방법은 [[ADR-006]] 결정 13 에 있다.
+
+| 무엇 | 어디 | 켜는 법 |
+|---|---|---|
+| ccache(iOS) | `ios/Podfile.properties.json` 의 `apple.ccacheEnabled` | `brew install ccache` 뒤 `pod install`. 래퍼가 `/opt/homebrew/bin/ccache` 를 그대로 부르므로 ccache 가 없으면 빌드가 안 된다 |
+| Gradle 빌드 캐시 | `~/.gradle/gradle.properties` 의 `org.gradle.caching=true` | 저장소 밖이라 지문이 안 움직인다 |
+| watchman | `.watchmanconfig` | `brew install watchman`. Metro 와 jest 가 쓴다 |
+
+개발용 Android 빌드는 ABI 하나만 굽는다. 릴리스는 아래 `릴리스마다` 의 ABI 둘을 그대로 쓴다.
+
+```bash
+ORG_GRADLE_PROJECT_reactNativeArchitectures=arm64-v8a npx expo run:android
+```
+
 ## Android
 
 ### 처음 한 번: 업로드 키 만들기

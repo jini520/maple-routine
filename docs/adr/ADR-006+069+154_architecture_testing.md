@@ -1,8 +1,8 @@
-# ADR-006+069 테스트 러너와 테스트 작성 규칙
+# ADR-006+069+154 테스트 러너 · 검증 명령 · 네이티브 빌드 캐시
 
 > 🟢 유효
 > 옛 번호: ADR-156 · ADR-157 · ADR-179 정정 1
-> 관련 소스: `jest.config.js` · `jest.setup.js` · `jest.global-setup.js` · `nativewind.config.js` · `jest.resolver.js` · `jest-extensions.d.ts` · `babel.config.js` · `src/storage/__tests__/fake-preferences.ts` · `src/native/__tests__/fake-native-ports.ts`
+> 관련 소스: `jest.config.js` · `jest.setup.js` · `jest.global-setup.js` · `nativewind.config.js` · `jest.resolver.js` · `jest-extensions.d.ts` · `babel.config.js` · `.oxlintrc.json` · `.watchmanconfig` · `ios/Podfile.properties.json` · `src/storage/__tests__/fake-preferences.ts` · `src/native/__tests__/fake-native-ports.ts`
 
 ## 배경
 
@@ -109,18 +109,16 @@ jsdom 은 Node 의 `TextEncoder` 를 지우므로 `jest.setup.js` 맨 앞에서 
 
 ### 결정 8. 작업 중에는 바꾼 범위만, 저장소 루트에서 돌린다
 
-전체를 돌리면 스위트가 270 개 가까이라 40초가 넘게 걸리고, 애니메이션이 무거운 스위트에서 가끔 워커가 죽는다. 그래서
+전체를 돌리면 스위트가 630 개라 1~2분이 걸리고, 애니메이션이 무거운 스위트에서 가끔 워커가 죽는다. 그래서
 작업 중에는 바꾼 디렉터리만 지정해 돌린다. 공용 상수나 유틸을 고쳤다면 그것을 쓰는 경로도 함께 넣는다.
-배선 누락은 `npx tsc --noEmit` 이 전역으로 잡는다.
+배선 누락은 `npx tsgo --noEmit` 이 전역으로 잡는다(결정 11).
 
 ```bash
-npx jest src/lib src/app/utility --testPathIgnorePatterns /node_modules/ /.claude/
+npx jest src/lib src/app/utility
 ```
 
 - 저장소 루트에서 돌린다. `src/` 에서 돌리면 Tailwind 의 content 경로가 어긋나 스타일 단언이 한꺼번에
   실패한다. "No utility classes were detected" 경고가 보이면 이 경우다.
-- `.claude/worktrees/` 의 사본이 jest 의 rootDir 안에 있어서, 경로를 지정해도 사본까지 함께 돈다.
-  `--testPathIgnorePatterns /node_modules/ /.claude/` 로 뺀다.
 - 전체 실행(`npm test`)에서 테스트 몇 개가 "Test suite failed to run" 으로 실패하면 먼저 워커 크래시를
   의심한다. 매번 다른 스위트가 실패한다.
 
@@ -138,13 +136,70 @@ web 과 native 는 같은 클래스를 다른 값으로 만든다. `invisible` �
 두 플랫폼 사이에서 컴파일 결과가 다른 것은 Android 가 그림자에 `elevation` 을 더하는 것 하나뿐이다. 그래서 jest 를
 플랫폼마다 두 번 돌리지 않고, 그 차이를 테스트 하나가 컴파일 결과로 직접 확인한다.
 
+### 결정 10. jest 는 `src` · `scripts` · `ota` 세 곳만 훑는다
+
+`jest.config.js` 의 `roots` 가 이 셋이다. 기본값은 저장소 루트인데, 그 아래에는 `ios/build`(10만 파일)와
+`.claude/worktrees`(20만 파일)가 있어 jest 가 시작할 때마다 33만 파일을 훑느라 10초를 썼다. 세 곳만 훑으면
+0.4초다. 테스트 파일은 이 세 곳에만 있다.
+
+`.claude/worktrees` 의 사본 테스트가 함께 돌던 문제도 같이 사라져서, 경로를 지정할 때
+`--testPathIgnorePatterns` 를 붙일 필요가 없다. `modulePathIgnorePatterns` 로는 안 된다. 그것은 훑은 뒤에
+거르는 것이라 10초가 그대로다(실측 10.2초).
+
+### 결정 11. 타입 검사는 `npx tsgo --noEmit` 으로 한다
+
+`@typescript/native-preview` 가 주는 `tsgo` 는 TypeScript 7 의 네이티브 컴파일러다. 같은 1,618 파일을 `tsc` 는
+5.0초, `tsgo` 는 1.4초에 검사한다. 같은 오류를 잡는 것은 일부러 틀린 파일을 넣어 확인했다.
+
+`typescript` 의존은 6 에 둔다. `typescript-eslint` 가 TypeScript 6 의 컴파일러 API 를 쓰는데(peer `<6.1.0`),
+TypeScript 7 패키지는 그 API 를 내지 않는다. 6 과 7 을 alias 로 나란히 두는 공식 방법(`@typescript/typescript6`
+의 `tsc6`)은 npm 이 `.bin/tsc` 를 6 의 것으로 이어서 `npx tsc` 가 어느 쪽인지 알 수 없게 되므로 쓰지 않았다.
+`@typescript/native-preview` 는 7.0 정식 출시 전날 빌드(`7.0.0-dev.20260707.2`)에서 멈춘 패키지라 버전을
+고정했다. `typescript-eslint` 가 7 을 받으면 `typescript` 를 7 로 올리고 이 패키지를 지운다. 그때부터
+`npx tsc --noEmit` 이 네이티브다.
+
+`npm run typecheck` 는 그대로 `tsc` 다. `scripts` 는 지문 재료라 바꾸지 않는다(`release.md` 의 빌드하기 전에 2).
+
+### 결정 12. 작업 중 린트는 `npx oxlint src`, 최종 린트는 `npm run lint` 다
+
+`.oxlintrc.json` 이 `eslint.config.mjs` 와 같은 규칙을 켠다. hooks 규칙 둘, `only-export-components`,
+`react-native` 의 `Text` · `TextInput` 금지, 테스트 파일 예외다. 같은 소스에서 oxlint 는 0.9초, eslint 는 8.8초다.
+
+eslint 를 최종으로 남기는 이유는 둘이다. `npm run lint` 스크립트는 지문 재료라 바꾸지 않는다. oxlint 의 규칙은
+eslint 규칙을 옮겨 적은 것이라 판정이 조금 다르다. 그래서 oxlint 가 더 잡는 규칙(`react/purity` ·
+`react/immutability` · `no-unsafe-optional-chaining`)과 테스트 파일의 `only-export-components` 는 껐다. 둘의
+결과가 다르면 어느 쪽을 믿을지 매번 가려야 한다. 남는 차이는 `boss-profit-context.tsx` 의 훅 export 경고
+하나다.
+
+### 결정 13. 네이티브 빌드 캐시를 켜 둔다: ccache · Gradle 빌드 캐시 · watchman
+
+**iOS 는 ccache 다.** React 를 소스에서 빌드하므로(`ios/Podfile.properties.json` 의
+`ios.buildReactNativeFromSource`) 클린 빌드와 Debug · Release 전환마다 전부 다시 컴파일한다. 같은 파일의
+`apple.ccacheEnabled` 를 켜면 `pod install` 이 Pods 프로젝트와 앱 프로젝트의 컴파일러를 ccache 래퍼로 바꾼다.
+앱 프로젝트(`project.pbxproj`)에도 설정이 들어가서 iOS 지문이 바뀌었다(305c88e3 → 3e7719d3). 1.0.12 OTA 는
+못박은 워크트리에서 발행하므로 영향이 없고, v1.0.13 스토어 바이너리에 이 지문이 실린다. 래퍼는
+`CCACHE_BINARY`(`/opt/homebrew/bin/ccache`)를 그대로 실행하므로 ccache 가 없는 머신에서는 빌드가 안 된다.
+`brew install ccache` 가 먼저다.
+
+**Android 는 Gradle 빌드 캐시다.** `~/.gradle/gradle.properties` 에 `org.gradle.caching=true` 를 둔다. 저장소의
+`android/gradle.properties` 는 지문 재료라 사용자 설정에 두고, 사용자 설정도 빌드에 적용된다
+(`./gradlew properties --property org.gradle.caching` 으로 확인). 개발 빌드는
+`ORG_GRADLE_PROJECT_reactNativeArchitectures=arm64-v8a` 를 앞에 붙여 ABI 하나만 굽는다. 실기기와 애플 실리콘
+에뮬레이터가 모두 arm64 라서다. 릴리스는 `release.md` 대로 ABI 둘을 명시한다.
+
+**파일 감시는 watchman 이다.** Metro 와 jest 가 파일 목록을 watchman 에서 받는다. 없으면 둘 다 시작할 때마다
+저장소를 직접 훑는다. `.watchmanconfig` 의 `ignore_dirs` 가 빌드 산출물(`ios/build` · `ios/Pods` ·
+`android/build` 등)을 뺀다. `.claude/worktrees` 는 빼지 않는다. watchman 은 저장소 루트 하나를 감시하고 워크트리는
+그 안에 있어서, 빼면 워크트리에서 도는 jest 와 Metro 가 파일을 못 본다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
 |---|---|
 | `src/__tests__/nativewind-preset.test.ts` | 결정 9: jest 가 보는 스타일이 web 프리셋 산물이 아닌지, Android 만 그림자에 `elevation` 을 더하는지, 그 밖의 선언은 두 플랫폼이 같은지 본다. 달라지는 곳이 늘면 여기서 실패한다 |
 
-결정 1 ~ 8 을 따로 지키는 테스트는 없다. 결정 1 ~ 5 가 깨지면 해당 스위트가 실행 단계에서 실패해서 바로 드러난다.
+결정 1 ~ 8 과 10 ~ 13 을 따로 지키는 테스트는 없다. 결정 1 ~ 5 가 깨지면 해당 스위트가 실행 단계에서 실패해서 바로
+드러난다. 결정 10 ~ 13 은 명령의 소요 시간이 근거라 테스트로 지킬 값이 없다.
 
 ## 번호 기록
 
@@ -152,3 +207,5 @@ web 과 native 는 같은 클래스를 다른 값으로 만든다. `invisible` �
   작업이라 옮기지 않았고, 결정 3(값만 비교하는 테스트도 남긴다)은 결정 7 로 바뀌었다. 옛 ADR-179 정정 1 은 결정 9 로 옮겼다
 - ADR-069 (2026-10-20): 결정 7 의 삭제 대상을 넓혔다. 빈 상태만이 아니라 화면에 문구가 뜨는지만 보는 테스트 전부와,
   식에서 결과가 바로 보이는 계산 테스트를 지운다
+- ADR-154 (2026-11-03): 결정 10 ~ 13 을 더했다. jest 시작 10초 · tsc 5초 · eslint 9초를 줄이고 네이티브 빌드 캐시를
+  켰다. 결정 8 의 `--testPathIgnorePatterns` 를 걷었다
