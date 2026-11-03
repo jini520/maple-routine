@@ -28,7 +28,6 @@ const DAY_MS = 24 * HOUR_MS
 
 export const 빈_뷰모델: TodayViewModel = {
   representative: null,
-  headerPortraits: [],
   sharedContents: [],
   schedule: [],
   weeklyIncome: {

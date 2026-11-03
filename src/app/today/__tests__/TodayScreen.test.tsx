@@ -521,7 +521,7 @@ describe('TodayScreen: 대표 표식', () => {
 
     await renderScreen()
     expect(screen.getByTestId('representative-name')).toHaveTextContent('캐릭터1')
-    expect(screen.getByTestId('character-manage-face-0').props.source).toEqual({
+    expect(screen.getByTestId('character-manage-face').props.source).toEqual({
       uri: 'https://example.com/1.png' })
 
     // 캐릭터 관리의 저장이 부르는 것과 같은 문이다.
@@ -530,7 +530,7 @@ describe('TodayScreen: 대표 표식', () => {
     })
 
     expect(screen.getByTestId('representative-name')).toHaveTextContent('캐릭터3')
-    expect(screen.getByTestId('character-manage-face-0').props.source).toEqual({
+    expect(screen.getByTestId('character-manage-face').props.source).toEqual({
       uri: 'https://example.com/3.png' })
     expect(mockedPullRefresh).not.toHaveBeenCalled()
   })
@@ -575,8 +575,7 @@ describe('TodayScreen: 갱신 시각', () => {
 })
 
 // 머리의 캐릭터 관리 버튼. **화면이 하는 일은 배선뿐**이라 여기서 보는 것은 그 버튼이 머리에
-// 섰는가와 누르면 어디로 가는가 둘이다. 도는 얼굴의 목록은 뷰모델이 내고(`view-model.test.ts`),
-// 움직임은 `header-portrait-motion.test.ts` 가 붙든다.
+// 섰는가와 누르면 어디로 가는가 둘이다.
 describe('TodayScreen: 머리의 캐릭터 관리 버튼', () => {
   it('제목 줄 오른쪽에 선다', async () => {
     setStores(캐릭터_넷)

@@ -54,6 +54,7 @@
 |---|---|---|
 | `character/list` | 키 입력 · 동기화 회차 · 캐릭터 관리 | 계정(`account_id`)마다 캐릭터 목록. 한 키가 메이플 ID 여럿을 줄 수 있다 |
 | `character/basic` | 동기화 회차에 함께 · 캐릭터 관리. 5분 안에 받은 캐릭터는 다시 안 부른다 | 이름 · 레벨 · 외형 · 월드 · 길드 · `access_flag` · EXP 진행률 |
+| `character/basic` 의 그림 주소 | today 대표 캐릭터 위젯 | 주소에 `action` · `emotion` 값을 붙이면 동작 · 표정 프레임을 준다([[ADR-147]] 결정 4) |
 | `scheduler/character-state` | 동기화 회차(오늘) · 13일 창 · 자격 판정 · 섹션 채우기 | 일간 · 주간 컨텐츠, 보스 |
 | `history/*` 넷 | 가계부의 강화 내역 수집 | 날짜마다 강화 사용 내역. `count=1000`, 다음 쪽은 `cursor` 만 보낸다 |
 | `character/item-equipment` · `ability` · `symbol-equipment` · `skill` · `user/union-raider` · `union-artifact` | 사냥 계산기에서 캐릭터를 고를 때. 여섯을 동시에 부른다 | 메소 획득량 |

@@ -202,4 +202,5 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |
 | [ADR-137](./adr/ADR-137_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
 | [ADR-142+144](./adr/ADR-142+144_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
+| [ADR-147](./adr/ADR-147_design-system_round-entry-buttons.md) | 🟢 | design-system | 진입 버튼과 대표 캐릭터의 움직임 |
 | [ADR-152](./adr/ADR-152_navigation_bar-order.md) | 🟢 | navigation | 하단바 순서 바꾸기 |

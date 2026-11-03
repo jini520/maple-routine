@@ -150,10 +150,10 @@ export function TodayScreen(): React.JSX.Element {
         header={
           <PageHeader>
             {/* 오른쪽 자리는 캐릭터 관리로 가는 문이다. 다른 탭 화면이 세그먼트를 두는 그 자리이고,
-                이 화면에는 가를 목록이 없다. 돌릴 얼굴은 뷰모델이 골라 둔 것을 그대로 넘긴다. */}
+                이 화면에는 가를 목록이 없다. 얼굴은 대표 카드와 같은 캐릭터다. */}
             <PageHeaderTitleRow
               fetchedAt={fetchedAt}
-              trailing={<CharacterManageButton portraits={viewModel.headerPortraits} />}
+              trailing={<CharacterManageButton portrait={viewModel.representative} />}
             >
               <Text className="shrink-0 text-lg font-bold text-text">today</Text>
             </PageHeaderTitleRow>

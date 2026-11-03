@@ -181,13 +181,7 @@ RN 에는 `<select>` 가 없어서 드롭다운(`AccountSelect`)을 직접 만�
 today 에서 캐릭터 관리로 가려면 설정 안쪽까지 들어가야 했다. 그래서 today 머리 제목 줄 오른쪽에 원형
 버튼(`CharacterManageButton`)을 두었다.
 
-- 원 안에서 얼굴 셋이 차례로 바뀐다. 얼굴이 위로 빠지고 다음 얼굴이 아래에서 올라온다. 한 장을 제자리에서
-  돌리면 거꾸로 뒤집히는 순간이 생기고, 계속 도는 원은 로딩 스피너처럼 보인다.
-- 돌리는 얼굴은 앞의 3명이다(사용자 지정). 대표가 첫 번째이고, 그 뒤는 캐릭터 관리 순서다. 추적 캐릭터를
-  전부 돌리면 한 바퀴가 너무 길고 얼굴을 모두 마운트해야 한다. 이 목록(`headerPortraits`)은 today 뷰모델이
-  만든다. 프로필이 캐시에 없는 캐릭터는 넣지 않으므로 셋보다 적을 수 있다.
-- 움직임 줄이기가 켜져 있으면 첫 얼굴에서 멈춘다. 얼굴이 하나면 그 한 장을 그대로 보여 준다. 보여 줄 얼굴이
-  없으면 사람 아이콘(`CircleUserRound`)을 그린다.
+- 원 안에는 대표 캐릭터 얼굴 한 장이 고정으로 선다([[ADR-147]] 결정 2). 보여 줄 얼굴이 없으면 사람 아이콘(`CircleUserRound`)을 그린다.
 - 원 지름은 48, 얼굴은 40 이다(`PORTRAIT_HEADER`). today 머리는 제목 줄 32 와 갱신 시각 줄 16 을 쌓아
   높이가 48 이다. 원이 이보다 크면 today 머리만 높아져 탭을 옮길 때 머리가 들썩인다. 더 키우려면 머리
   구성을 먼저 바꿔야 한다.
@@ -282,7 +276,7 @@ today 에서 캐릭터 관리로 가려면 설정 안쪽까지 들어가야 했�
 | `features/schedule-sync/__tests__/schedule-sync.spec.ts` 의 `후보 항목의 직업` | 결정 2: 후보 행이 목록 전에는 캐시의 직업을, 목록 뒤에는 `character/list` 의 직업을 싣는지 본다 |
 | `components/organisms/CharacterRow/__tests__/` | 결정 4: 별과 `✕` 가 좌우 `hitSlop` 없이 각자 40×44 상자인지 본다 |
 | `features/content-scheduler/__tests__/store.spec.ts` | 결정 9: 빼기만 하면 조회하지 않고, 더하면 더한 캐릭터만 조회하는지 본다 |
-| `app/today/__tests__/CharacterManageButton.test.tsx` · `header-portrait-motion.test.ts` · `view-model.test.ts` | 결정 10: 누르면 push 하는지, 얼굴이 원보다 작게 앉고 원이 얼굴을 자르는지, 바탕이 라이트에서 흰색 · 다크에서 검정인지, 얼굴을 넓게 자르는지, 사람 아이콘, 움직임 줄이기, 얼굴 차례와 불투명도, 대표가 첫 번째인지 본다 |
+| `app/today/__tests__/CharacterManageButton.test.tsx` | 결정 10: 누르면 push 하는지, 얼굴이 대표 한 장이고 원보다 작게 앉는지, 바탕이 라이트에서 흰색 · 다크에서 검정인지, 얼굴을 넓게 자르는지, 사람 아이콘을 본다 |
 | `features/character-selection/__tests__/store.spec.ts` · `app/today/__tests__/TodayScreen.test.tsx` 의 `TodayScreen: 대표 표식` | 결정 11: 복원 · 미지정과 안 읽음 구분 · 늦게 온 복원이 덮지 않는지 · 메모리 먼저 쓰기, today 가 다시 마운트하지 않고도 새 대표를 그리는지 본다 |
 
 ## 번호 기록

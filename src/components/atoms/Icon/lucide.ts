@@ -70,6 +70,7 @@ import PackageOpen from 'lucide-react-native/icons/package-open'
 import Pencil from 'lucide-react-native/icons/pencil'
 import Pin from 'lucide-react-native/icons/pin'
 import Plus from 'lucide-react-native/icons/plus'
+import Tag from 'lucide-react-native/icons/tag'
 import Trash from 'lucide-react-native/icons/trash'
 import Trash2 from 'lucide-react-native/icons/trash-2'
 import RefreshCw from 'lucide-react-native/icons/refresh-cw'
@@ -216,6 +217,8 @@ export const CalendarIcon = withIconInterop(Calendar)
 export const PackageOpenIcon = withIconInterop(PackageOpen)
 /** 값을 적으러 가는 줄. today 가격 미입력 위젯의 `기록하기`. */
 export const PencilIcon = withIconInterop(Pencil)
+/** 가격을 적는 곳으로 가는 원. `DropPriceFab`. */
+export const TagIcon = withIconInterop(Tag)
 /** 고정 드롭(읽기 전용) 섹션. `BossDropSheet`. */
 export const PinIcon = withIconInterop(Pin)
 /** 하나 늘리기. `Stepper`. */

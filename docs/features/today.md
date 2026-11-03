@@ -35,7 +35,8 @@
 | `app/today/ManualCompletionBanner.tsx` | 직접 완료 안내 줄([[ADR-037]]) |
 | `features/manual-completion/query.ts` | 직접 완료를 연 보스 쿼리 `manualCompletion()`. 줄을 세울지 정하는 `useManualCompletionBanner`. 포커스 · 복귀마다 다시 받는다 |
 | `features/party-appointments/query.ts` | 파티 약속 쿼리 `partyAppointments()`. 다음 파티 스케줄 위젯이 `usePartyAppointments` 로 읽는다 |
-| `app/today/CharacterManageButton.tsx` · `header-portrait-motion.ts` | 제목 줄 오른쪽의 캐릭터 관리 버튼([[ADR-029]]) |
+| `app/today/CharacterManageButton.tsx` | 제목 줄 오른쪽의 캐릭터 관리 버튼([[ADR-029]]) |
+| `app/today/widgets/figure-motion.ts` · `useFigureStep.ts` · `lib/character-look.ts` | 대표 캐릭터 위젯의 전신 그림이 움직이는 값과 프레임 주소([[ADR-147]]) |
 
 ## 화면 구성
 
@@ -108,6 +109,8 @@ WidgetGrid            px-4 pt-2
 
 남은 스케줄은 캐릭터 단위 실패를 행에 표시한다. 조회할 수 없는 캐릭터는 `조회 불가`, 동기화가 실패한
 캐릭터는 `동기화 실패` 배지를 달고 맨 아래로 간다. 대표 캐릭터가 조회 불가면 EXP 칸에 배지가 보인다.
+
+대표 캐릭터 위젯의 전신 그림은 휘두르기 · 걷기 · 웃기 · 윙크 · 점프를 무작위로 잇고, 동작 사이에 4~7초 대기 동작을 한다. 프레임을 다 받지 못했거나 조회 불가 · 움직임 줄이기 · 화면이나 앱이 보이지 않는 때는 움직이지 않는다([[ADR-147]]).
 
 이번 주 수익은 통계와 같이 처치 날짜가 있는 기록만 센다. 결정석 판매는 보스 수익 기간으로 세므로, 넥슨이 결산하는
 동안이나 처치 날짜를 아직 못 받은 주에는 두 위젯의 기준이 다를 수 있다([[ADR-058]] 결정 27).
