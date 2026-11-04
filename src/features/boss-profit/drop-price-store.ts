@@ -41,6 +41,7 @@ import { create } from 'zustand'
 import { dropShareSeedOf, toRecordedDrop } from './rows'
 import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
 import { reportDropPrice } from '../server-sync/drop-price-sync'
+import { recordUsageAction } from '../usage-log/record'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import {
   getBossProfitRecords,
@@ -469,6 +470,7 @@ async function writePrice(
   const index = siblings.findIndex((candidate) => candidate.id === entry.id)
   const dropRecordId = entry.drop.dropRecordId ?? ids[index] ?? null
   if (dropRecordId !== null) void reportDropPrice(dropRecordId, new Date())
+  recordUsageAction('drop-save')
 
   set({
     groups: get().groups.map((group) => ({

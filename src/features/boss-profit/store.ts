@@ -23,6 +23,7 @@ import { upsertBossProfitRecord } from '../../storage/boss-profit'
 import type { RecordedDrop } from '../../types/drops'
 import type { BossCycle, BossDifficulty } from '../../types'
 import { countCoreSave } from '../app-review/request'
+import { recordUsageAction } from '../usage-log/record'
 import {
   cancelManualCompletion,
   saveManualCompletion,
@@ -308,6 +309,9 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     }
 
     // 드롭을 전부 뺀 저장은 지우기라 리뷰 요청의 셈에 넣지 않는다.
-    if (saved.length > 0) countCoreSave()
+    if (saved.length > 0) {
+      countCoreSave()
+      recordUsageAction('drop-save')
+    }
   },
 }))

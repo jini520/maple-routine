@@ -248,19 +248,34 @@ iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다
 `difficulty` 이고, 신원 헤더 하나가 함께 간다(`features/auth/server-identity.ts`). 전송은 `AppShell` 이 띄우는
 `runServerSync` 와 가격을 저장하는 순간에 일어난다([[ADR-018]]).
 
+사용 로그도 보낸다. 방문 · 화면 이름과 체류 시간 · 드롭과 가계부 저장 횟수를 플랫폼 · 앱 버전과 함께 묶어 보낸다
+(`features/usage-log/`, [[ADR-158]]).
+
 | 신고 항목 | 왜 |
 |---|---|
 | 사용자 ID | 넥슨 로그인 세션이나 API 키 해시를 보낸다. 되돌릴 수 없는 해시여도 한 사람의 기록을 묶는 값이다 |
 | 기타 사용자 생성 콘텐츠 | 사용자가 적은 판매가와 아이템 · 기간 · 월드 · 반지 레벨 |
 | 광고 ID | 앱에 `AD_ID` 권한이 들어 있다 |
 | 기기 식별자 | Firebase 가 FCM 등록 토큰을 보관한다 |
+| 앱 상호작용(Play) · 제품 상호작용(App Store) | 사용 로그. 어느 화면을 얼마나 봤는지, 드롭 · 가계부를 몇 번 저장했는지 |
+| 진단(Play `앱 정보 및 성능` · App Store `기타 진단 데이터`) | 강화 합계에서 빠진 줄의 날짜 · 종류 · 사유 · 장비 이름 · 줄 수([[ADR-102]]). 앱의 계산 오류를 찾는 데 쓴다 |
 
-Play 는 `수집함 · 공유하지 않음 · 필수 · 앱 기능과 분석`, `전송 중 암호화`, `삭제 요청 가능`(연결 해제가 서버의
-값을 지운다)으로 적는다. App Store 는 `사용자에게 연결됨`, `추적 아님` 으로 적는다. 제3자에게 넘기지 않고, 광고
+Play 는 `수집함 · 공유하지 않음 · 필수 · 앱 기능과 분석`(사용 로그와 진단은 `분석`), `전송 중 암호화`, `삭제 요청 가능` 으로
+적는다. 삭제는 문의처로 요청받아 지운다. 연결 해제는 탈퇴만 적고 보낸 값을 지우지 않는다(처리방침 3장). 삭제 요청 URL 은
+`https://mapleroutine.store/support` 다. 그 페이지의 `서버에 보낸 기록을 지우고 싶습니다` 절이 요청하는 방법과 지우는 데이터를
+적는다. App Store 는 `사용자에게 연결됨`, `추적 아님` 으로 적고, 사용 로그의 목적은 `분석` 이다. 제3자에게 넘기지 않고, 광고
 식별자와 엮지 않고, 맞춤 광고에 쓰지 않기 때문이다. 이 셋 중 하나라도 바뀌면 ATT 동의 창이 필요하다.
 
 수집하는 내용을 바꿀 때는 처리방침 게시 → 앱 발행 → 콘솔 양식 갱신 순서를 지킨다. 아직 수집하지 않는 것을
 신고하면 양식과 실제 동작이 달라 정책 위반이 된다.
+
+### 앱 액세스 권한(Play)
+
+Play 에는 심사 메모 칸이 없다. 심사자에게 주는 안내는 `정책 및 프로그램 > 앱 콘텐츠 > 앱 액세스 권한` 에 적는다. API 키가 없으면
+온보딩 화면밖에 볼 수 없어 `일부 기능이 제한됨` 으로 두고, 안내 항목 하나에 테스트 키와 들어가는 순서를 적는다. 사용자 이름 ·
+비밀번호 칸은 비운다. 계정이 아니라 키 하나를 넣는 방식이다. 순서는 아래 심사 메모의 `[NO LOGIN ...]` 과 `[HOW TO REVIEW]` 를
+옮긴다. 나머지 절(개인정보 · 비제휴)은 옮기지 않는다. Play 에서는 데이터 보안 양식과 자세한 설명이 그 일을 한다. 테스트 키는
+App Store 와 같이 저장소에 적지 않는다.
 
 ### 스토어 아이콘
 
@@ -384,7 +399,7 @@ python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA')
 
 ▶ 개인정보
 
-회원가입이 없습니다. 발급받은 API 키와 앱에서 만든 기록은 이용자의 기기에 저장되며, API 키 원문은 운영자에게 전송되지 않습니다. 다만 아이템 시세 추이를 보기 위해, 드롭 기록에 적은 판매가는 API 키의 해시값과 함께 운영자 서버로 전송됩니다. 공지를 받아오는 요청에는 이용자를 식별할 정보가 들어가지 않습니다.
+회원가입이 없습니다. 발급받은 API 키와 앱에서 만든 기록은 이용자의 기기에 저장되며, API 키 원문은 운영자에게 전송되지 않습니다. 다만 아이템 시세 추이를 보기 위해, 드롭 기록에 적은 판매가는 API 키의 해시값과 함께 운영자 서버로 전송됩니다. 앱을 고치는 데 참고하려고 어느 화면을 얼마나 보는지 같은 사용 기록도 함께 전송됩니다. 공지를 받아오는 요청에는 이용자를 식별할 정보가 들어가지 않습니다.
 
 개인정보 처리방침: https://mapleroutine.store/privacy
 문의: https://mapleroutine.store/support
@@ -443,9 +458,9 @@ TEST API KEY:
 
 [PERMISSIONS / THIRD PARTIES]
 - Notifications: optional. Used for NEXON notice alerts (game notices, update notices, Sunday Maple, cash shop) and for local reminders of party schedules the user creates. Party reminders are scheduled on the device. The app works fully if denied.
-- Network: NEXON Open API for game data and NEXON notices (game notices, updates, events, cash shop), and our own server at mapleroutine.store for the app notice list and detail (read-only GET, no user identifier in the request). Push delivery uses Firebase Cloud Messaging topics, so no device token or account is tied to a user on our side.
+- Network: NEXON Open API for game data and NEXON notices (game notices, updates, events, cash shop), and our own server at mapleroutine.store for the app notice list and detail (read-only GET, no user identifier in the request). The same server receives the sale prices users enter for item drops and a first-party usage log (app opens, screen names and time on screen, counts of drop and cashbook saves, platform and app version), keyed by a SHA-256 hash of the API key. No third-party analytics SDK is used. Push delivery uses Firebase Cloud Messaging topics, so no device token or account is tied to a user on our side.
 - No ads in this version.
-- No user accounts and no analytics service. The API key and every record the user creates stay on the device.
+- No user accounts. The API key stays on the device and is never sent in plain text. Records other than drop sale prices stay on the device.
 
 [AFFILIATION] Not affiliated with, endorsed by, or sponsored by NEXON Korea Corp. Uses only publicly documented read-only endpoints of NEXON Open API. The required attribution "Data based on NEXON Open API" is shown at the bottom of the Settings screen (gear icon at the top of the 더보기 (More) tab).
 

@@ -14,6 +14,7 @@ import { RootNavigator } from './RootNavigator'
 import { useNavigationTheme } from './navigation-theme'
 import type { RootStackParamList } from './routes'
 import { tabNavigateArgs, type TabNavigateParams } from './tab-navigate'
+import { usageTracker } from '../features/usage-log/record'
 
 /** 알림 탭의 목적지. 문자열을 두 번 적으면 한쪽 오타가 조용히 안 미는 상태를 만든다. */
 const NOTICE_DETAIL = 'SettingsNoticeDetail'
@@ -43,6 +44,12 @@ const NOTICE_DETAIL = 'SettingsNoticeDetail'
 export function AppNavigation(): React.JSX.Element {
   const navigationRef = useNavigationContainerRef<RootStackParamList>()
   const theme = useNavigationTheme()
+
+  /** 사용 로그의 화면 사건. 가장 안쪽의 보이는 라우트가 페이지다. */
+  const recordScreen = () => {
+    const name = navigationRef.getCurrentRoute()?.name
+    if (name !== undefined) void usageTracker.screen(name, new Date())
+  }
 
   /**
    * 지금 루트 스택에 **등록돼 있는 화면 이름들**.
@@ -98,8 +105,14 @@ export function AppNavigation(): React.JSX.Element {
       theme={theme}
       // 화면 목록이 갈리는 것은 상태 변화로 온다. 첫 값은 `onReady` 가 준다(그때는 아직
       // `onStateChange` 가 한 번도 안 불렸다).
-      onReady={() => setRouteNames(navigationRef.getRootState().routeNames)}
-      onStateChange={(state) => setRouteNames(state?.routeNames ?? [])}
+      onReady={() => {
+        setRouteNames(navigationRef.getRootState().routeNames)
+        recordScreen()
+      }}
+      onStateChange={(state) => {
+        setRouteNames(state?.routeNames ?? [])
+        recordScreen()
+      }}
     >
       <RootNavigator />
       <WorldLeapNoticeModal
