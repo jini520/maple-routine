@@ -16,7 +16,7 @@ Play 와 App Store 에 올릴 바이너리를 만드는 절차다. 서명 · 버
 | `android/gradle.properties` | R8 · 리소스 축소 켜기 · 기본 ABI 넷 |
 | `android/keystore.properties` | 업로드 키 경로와 비밀번호. 커밋하지 않는다 |
 | `android/app/src/main/AndroidManifest.xml` | 세로 잠금 · 권한 |
-| `ios/app/Info.plist` | `CFBundleShortVersionString` · `CFBundleVersion`(빌드가 실제로 읽는 값) · 씬 매니페스트 · 방향 |
+| `ios/app/Info.plist` | `CFBundleShortVersionString` · `CFBundleVersion`(빌드가 실제로 읽는 값) · 씬 매니페스트 · 방향 · 백그라운드 모드(`processing` 과 허용 태스크 식별자, [[ADR-056]] 결정 20) |
 | `ios/app.xcodeproj/project.pbxproj` | 서명 설정 · `Strip Embedded Frameworks` 빌드 단계 |
 | `ios/app/AppDelegate.swift` · `SceneDelegate.swift` | 회전 제한 · 창 만들기 |
 | `ios/app/app.entitlements` | `aps-environment` |

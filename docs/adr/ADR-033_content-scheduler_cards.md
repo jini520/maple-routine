@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-020 · ADR-021 · ADR-057 · ADR-162 · ADR-271 결정 1 · 2 · 4 · 5
-> 관련 소스: `app/content-scheduler/DailyContentCards.tsx` · `app/content-scheduler/WeeklyContentCards.tsx` · `app/content-scheduler/content-badges.tsx` · `app/content-scheduler/content-completion.ts` · `lib/scheduler/required-level.ts` · `lib/scheduler/group-weekly-limit.ts` · `features/content-scheduler/store.ts`
+> 관련 소스: `app/content-scheduler/DailyContentCards.tsx` · `app/content-scheduler/WeeklyContentCards.tsx` · `app/content-scheduler/content-badges.tsx` · `features/content-scheduler/content-completion.ts` · `lib/scheduler/required-level.ts` · `lib/scheduler/group-weekly-limit.ts` · `features/content-scheduler/store.ts`
 
 ## 배경
 
@@ -144,7 +144,7 @@
 | `app/content-scheduler/__tests__/ContentCards.test.tsx` | 결정 1 · 3 · 4: 종류마다 정한 카드 · 이름 · 배지 · 배경이 나오는지, 표에 없는 컨텐츠가 기본 카드에 API 이름으로 나오는지, 무릉도장 `n층` 과 성실한 조사 `n회 완료` 가 바뀌는 때를 본다 |
 | | 결정 6: 요구 레벨 미달이면 상태 배지 대신 `진행 불가` 가 보이는지, 요구 레벨이 없는 항목은 낮은 레벨에서도 안 보이는지 본다 |
 | | 결정 7: 한도가 차고 미완료일 때만 `마감` 인지, 레벨 미달이 `마감` 보다 앞서는지, `마감` 과 `완료` 배지의 크기가 같은지 본다 |
-| `app/content-scheduler/__tests__/content-completion.test.ts` | 결정 5: 종류마다 정한 기준으로 완료를 판정하는지, 무릉도장과 레벨 미달을 분모에서 빼는지, 레벨을 모르면 아무것도 빼지 않는지 본다 |
+| `features/content-scheduler/__tests__/content-completion.test.ts` | 결정 5: 종류마다 정한 기준으로 완료를 판정하는지, 무릉도장과 레벨 미달을 분모에서 빼는지, 레벨을 모르면 아무것도 빼지 않는지 본다 |
 | | 결정 7: 세 곳 완료면 남은 한 곳이 막히는지, 등록 안 한 던전의 완료도 세는지, 네 곳 추적 · 세 곳 완료면 링이 `4/4` 인지 본다 |
 | `lib/__tests__/required-level.spec.ts` | 결정 6: 레벨을 모르거나 요구 레벨이 없으면 진행 가능인지, 보스는 난이도까지 보는지 본다 |
 | `lib/__tests__/group-weekly-limit.spec.ts` | 결정 7: 다른 카테고리와 key 가 없는 항목을 안 세는지, 같은 컨텐츠를 한 번만 세는지, 완료한 항목은 막힌 것이 아닌지 본다 |
