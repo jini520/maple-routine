@@ -13,17 +13,15 @@
  * 감수한다.
  */
 
-import { isBossBlocked, isContentBlocked } from '../../lib/scheduler/required-level'
 import { resolveDisplayRepresentative } from '../../features/character-manage/derivations'
-import { displayedBosses } from '../../features/boss-scheduler/displayed-bosses'
+import { remainingScheduleOf, type RemainingBossView } from '../../features/remaining-schedule/remaining-schedule'
 import type { BossCharacterView } from '../../features/boss-scheduler/store'
 import type { ContentCharacterView } from '../../features/content-scheduler/store'
 import type { BossProfitRow } from '../../features/boss-profit/store'
 import { dropRowKey } from '../../features/boss-profit/store'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
-import { getShareScope, getSharedContentGroups } from '../../lib/scheduler/scheduler-content-scope'
+import { getSharedContentGroups } from '../../lib/scheduler/scheduler-content-scope'
 import { contentCategoryNameOf, type ContentCategoryKey } from '../../lib/scheduler/content-categories'
-import { contentShortNameOf } from '../../lib/scheduler/contents'
 import { groupWeeklyLimitOf, isClosedByWeeklyLimit } from '../../lib/scheduler/group-weekly-limit'
 import {
   getAdjacentPeriodKey,
@@ -47,8 +45,6 @@ import type { QuickLinksConfig } from '../../types/quick-links'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type {
-  BossCycle,
-  BossDifficulty,
   CharacterBasicProfile,
   DailyContent,
   DropCategory,
@@ -100,19 +96,12 @@ export interface RepresentativeView {
 }
 
 /**
- * 한 캐릭터의 남은 것 넷.
+ * 한 캐릭터의 남은 것 넷. 세는 함수는 `features/remaining-schedule` 에 있고 미완료 스케줄 알림이 같이 쓴다.
  *
  * 라벨(일퀘·주간퀘·주간 보스·**검마**)은 위젯이 붙인다. 검마는 월간 보스가 하나뿐이라 성립하는
  * 이름이라 참조 데이터에서 파생시키지 않는다.
  */
-/** 아코디언 본문의 보스 한 줄. 난이도는 공용 `Badge` 가 그린다. */
-export interface RemainingBossView {
-  /** 보스 key. 보스 표에 없는 보스는 `null` 이고 그때 `name` 이 API 원문이다. */
-  bossKey: string | null
-  /** 보이는 이름. 보스 표의 이름, 표에 없으면 API 원문. */
-  name: string
-  difficulty: BossDifficulty
-}
+export type { RemainingBossView }
 
 /**
  * 캐릭터 한 줄.
@@ -575,42 +564,21 @@ function buildScheduleRows(input: TodayViewModelInput, weeklyPeriodKey: string):
     const content = contentByOcid.get(ocid)
     const boss = bossByOcid.get(ocid)
 
-    // 남은 것 = 셀 수 있는 항목 − 완료한 항목. `unmeasurable`(무릉도장)은 분모에서 이미 빠져
-    // 있으므로 여기서 따로 거르지 않는다.
-    //
-    // 먼저 표시 대상으로 거른다. `content.dailyContents` 는 캐릭터가 등록했든 안 했든 게임에
-    // 있는 항목 전부라, 그냥 세면 모든 캐릭터가 카탈로그 길이(일간 18)로 똑같아진다. 스케줄러
-    // 화면과 같은 함수를 써야 세는 것 = 보이는 것 이 성립한다.
-    //
-    // 공유 항목은 여기 안 든다. 진행이 공유되므로 캐릭터마다 세면 하루 한 번 할 일이 캐릭터
-    // 수만큼 부푼다. 거르는 자리가 여기인 것이 중요하다. `displayed-contents.ts` 는 컨텐츠
-    // 화면과 공유하므로 거기서 빼면 그 화면에서도 사라지는데, 그 화면은 캐릭터별로 그리는
-    // 것이 맞다.
-    const contentsInput = contentsInputOf(input, content)
-    // 요구 레벨에 못 미치는 항목은 남은 것이 아니다. 게임이 등록을 허용해도 이 캐릭터로는 못
-    // 하므로 세면 그 숫자가 영원히 안 줄어든다. 스케줄러 카드·진행률·링과 같은 판정 함수를 본다.
-    const characterLevel = content?.level ?? boss?.level ?? null
-    const dailyNames = displayedDailyContents(contentsInput, input.trackingMode, weeklyPeriodKey)
-      .filter((item) => getShareScope(item.contentKey) === 'character')
-      .filter((item) => !isContentBlocked(characterLevel, item.contentKey))
-      .filter((item) => dailyContentCompletion(item) === 'incomplete')
-      .map((item) => contentShortNameOf(item.contentKey, item.apiName))
-    const weeklyNames = displayedWeeklyContents(contentsInput, input.trackingMode, weeklyPeriodKey)
-      .filter((item) => getShareScope(item.contentKey) === 'character')
-      .filter((item) => !isContentBlocked(characterLevel, item.contentKey))
-      .filter((item) => weeklyContentCompletion(item) === 'incomplete')
-      .map((item) => contentShortNameOf(item.contentKey, item.apiName))
-    const weeklyBosses = remainingBosses(input, boss, 'weekly', characterLevel)
-    const monthlyBosses = remainingBosses(input, boss, 'monthly', characterLevel)
-
+    // 세는 규칙은 `remainingScheduleOf` 하나다. 미완료 스케줄 알림도 같은 함수를 부른다.
     return {
       ocid,
       characterName: content?.characterName ?? boss?.characterName ?? '',
       imageUrl: content?.imageUrl ?? boss?.imageUrl ?? null,
-      dailyNames,
-      weeklyNames,
-      weeklyBosses,
-      monthlyBosses,
+      ...remainingScheduleOf({
+        content,
+        boss,
+        trackingMode: input.trackingMode,
+        manualContentItems: (content === undefined ? undefined : input.manualContentByOcid?.[content.ocid]) ?? [],
+        manualBossByOcid: input.manualBossByOcid,
+        manualCompletedByOcid: input.manualCompletedByOcid,
+        weeklyPeriodKey,
+        now: input.now,
+      }),
       syncIssue: issues[ocid] ?? null,
     }
   })
@@ -619,41 +587,6 @@ function buildScheduleRows(input: TodayViewModelInput, weeklyPeriodKey: string):
   // 셀 수 있는데 그 주기는 위젯의 탭이라, 그 정렬은 탭을 아는 쪽이 한다. 뷰모델이 총합으로 한
   // 번 세워 두면 위젯이 그것을 다시 세우게 되고 순서의 계약이 두 벌이 된다.
   return orderByTracked(rows, input.orderedOcids)
-}
-
-/**
- * 남은 보스. **개수가 아니라 목록**이다(아코디언 본문이 이름을 그린다).
- *
- * 이름은 보스 표의 이름이고, 표에 없는 보스는 API 원문 그대로다.
- */
-function remainingBosses(
-  input: TodayViewModelInput,
-  boss: BossCharacterView | undefined,
-  cycle: BossCycle,
-  /** 요구 레벨에 못 미치는 보스는 남은 것 이 아니다. */
-  characterLevel: number | null,
-): RemainingBossView[] {
-  if (boss === undefined) return []
-  return displayedBosses(
-    boss,
-    cycle,
-    input.trackingMode,
-    input.manualBossByOcid,
-    input.manualCompletedByOcid,
-  )
-    .filter(
-      (matched) =>
-        !isBossBlocked(characterLevel, matched.bossKey, matched.difficulty),
-    )
-    .filter((matched) => !matched.isComplete)
-    // 주간 한도를 채우면 남은 것이 아니다. 판정은 여기 없다. `displayedBosses` 가 실어 보낸
-    // 값을 거를 뿐이라 스케줄러가 마감 배지를 다는 보스와 정확히 같은 집합이다.
-    .filter((matched) => !matched.isWeeklyLimitClosed)
-    .map((matched) => ({
-      bossKey: matched.bossKey,
-      name: bossNameOf(matched.bossKey, matched.apiName),
-      difficulty: matched.difficulty,
-    }))
 }
 
 function buildCrystalLimits(input: TodayViewModelInput): CrystalLimitView[] {
