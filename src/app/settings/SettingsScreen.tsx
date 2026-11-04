@@ -45,6 +45,7 @@ import { SectionTitle } from './SectionTitle'
 import { SettingsLinkRow } from './SettingsLinkRow'
 import { SettingsRow } from './SettingsRow'
 import { SETTINGS_CARD_CLASS } from './row-class'
+import { ContactModal } from './ContactModal'
 import { contactDeviceOf, contactMailUrl } from './contact-mail'
 import { storeReviewUrl } from './store-review-link'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
@@ -169,6 +170,7 @@ export function SettingsScreen(): React.JSX.Element {
   // 로그인이 붙어 있으면 버튼을 안 세운다. **모르는 동안에도 안 세운다** - 세웠다 지우면
   // 소식이 한 칸 튀어오른다.
   const [showNexonLogin, setShowNexonLogin] = useState(false)
+  const [showContact, setShowContact] = useState(false)
 
   useFocusEffect(
     useCallback(() => {
@@ -192,97 +194,101 @@ export function SettingsScreen(): React.JSX.Element {
   const openNotice = (notice: Notice): void => navigation.navigate('SettingsNoticeDetail', { noticeId: notice.id })
 
   return (
-    <ScreenScroll onRefresh={refresh}>
-      <NexonMaintenanceBanner testID="settings-maintenance-banner" />
-      {/* `screen-Settings` 는 나머지 세 탭 화면과 같은 관례다(`screen-Content`·`-Boss`·`-Profit`).
-          이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
-          설정 탭이 통째로 빠진 것을 아무도 못 잡았다(실기기 관측). */}
-      <View className="gap-2 px-4 pb-4" testID="screen-Settings">
-        {/* 이 화면에는 `PageHeader` 가 없지만 제목 줄은 다른 탭과 **같은
-            프리미티브**다. 셸이 달라도 제목이 서는 선은 같아야 한다. */}
-        {/* 설정은 머리의 아이콘 뒤에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에
-            밀려 내려간다. 톱니바퀴가 하단 바에서 여기로 옮겨 온 그림이다. */}
-        <PageHeaderTitleRow>
-          <Text className="text-lg font-bold text-text">더보기</Text>
-          <FaqButton sheet={faq} />
-          <Pressable
-            role="button"
-            aria-label="설정"
-            onPress={() => {
-              tapFeedback()
-              navigation.navigate('AppSettings')
-            }}
-            className="ml-auto p-1"
-          >
-            {/* 제목 글자(18)보다 크다. 이 화면에서 유일하게 누를 수 있는 머리 요소라 뒤로
-                가기(20)와 같은 크기면 눈에 안 걸린다. */}
-            <GearIcon className="h-6 w-6 text-text-muted" strokeWidth={2} aria-hidden />
-          </Pressable>
-        </PageHeaderTitleRow>
+    <>
+      <ScreenScroll onRefresh={refresh}>
+        <NexonMaintenanceBanner testID="settings-maintenance-banner" />
+        {/* `screen-Settings` 는 나머지 세 탭 화면과 같은 관례다(`screen-Content`·`-Boss`·`-Profit`).
+            이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
+            설정 탭이 통째로 빠진 것을 아무도 못 잡았다(실기기 관측). */}
+        <View className="gap-2 px-4 pb-4" testID="screen-Settings">
+          {/* 이 화면에는 `PageHeader` 가 없지만 제목 줄은 다른 탭과 **같은
+              프리미티브**다. 셸이 달라도 제목이 서는 선은 같아야 한다. */}
+          {/* 설정은 머리의 아이콘 뒤에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에
+              밀려 내려간다. 톱니바퀴가 하단 바에서 여기로 옮겨 온 그림이다. */}
+          <PageHeaderTitleRow>
+            <Text className="text-lg font-bold text-text">더보기</Text>
+            <FaqButton sheet={faq} />
+            <Pressable
+              role="button"
+              aria-label="설정"
+              onPress={() => {
+                tapFeedback()
+                navigation.navigate('AppSettings')
+              }}
+              className="ml-auto p-1"
+            >
+              {/* 제목 글자(18)보다 크다. 이 화면에서 유일하게 누를 수 있는 머리 요소라 뒤로
+                  가기(20)와 같은 크기면 눈에 안 걸린다. */}
+              <GearIcon className="h-6 w-6 text-text-muted" strokeWidth={2} aria-hidden />
+            </Pressable>
+          </PageHeaderTitleRow>
 
-        {/* 영역 사이만 넓힌다. 머리와 첫 영역까지 벌리면 제목이 내용과 떨어져 보인다. */}
-        <View className="gap-7">
-          {/*
-            **키로 이미 들어온 사용자의 유일한 진입점이다.** 로그인 화면은 저장된 수단이 하나도
-            없을 때만 서서 그 사용자에게는 다시 안 보이고, 설정은 톱니바퀴 뒤라 한 단계 더 깊다.
+          {/* 영역 사이만 넓힌다. 머리와 첫 영역까지 벌리면 제목이 내용과 떨어져 보인다. */}
+          <View className="gap-7">
+            {/*
+              **키로 이미 들어온 사용자의 유일한 진입점이다.** 로그인 화면은 저장된 수단이 하나도
+              없을 때만 서서 그 사용자에게는 다시 안 보이고, 설정은 톱니바퀴 뒤라 한 단계 더 깊다.
 
-            이 탭 안에서도 소식 아래면 안 보인다. 갈래 셋에 배너 둘이 커서 첫 화면을 넘게 쓴다
-            (시뮬레이터 확인. 한 번 넘겨도 버튼이 안 나왔다).
+              이 탭 안에서도 소식 아래면 안 보인다. 갈래 셋에 배너 둘이 커서 첫 화면을 넘게 쓴다
+              (시뮬레이터 확인. 한 번 넘겨도 버튼이 안 나왔다).
 
-            **한 번 누르면 끝이라** 이 화면의 소식이 맨 위다 와 영구히 부딪치지 않는다. 로그인하면
-            버튼이 사라져 소식이 다시 맨 위로 올라온다.
-          */}
-          {NEXON_LOGIN_ENABLED && showNexonLogin && <NexonLoginButton onPress={() => void handleNexonLogin()} />}
-          {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
-              한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
-          {NOTICE_SECTIONS.map((section) => (
-            <View key={section.kind} className="gap-2">
-              <NoticeSectionHeader
-                label={section.label}
-                onOpenAll={() =>
-                  navigation.navigate('SettingsNotices', { kinds: [section.kind], title: section.label })
-                }
-              />
-              <NoticeSectionBody section={section} items={notices[section.kind]} onOpen={openNotice} />
+              **한 번 누르면 끝이라** 이 화면의 소식이 맨 위다 와 영구히 부딪치지 않는다. 로그인하면
+              버튼이 사라져 소식이 다시 맨 위로 올라온다.
+            */}
+            {NEXON_LOGIN_ENABLED && showNexonLogin && <NexonLoginButton onPress={() => void handleNexonLogin()} />}
+            {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
+                한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
+            {NOTICE_SECTIONS.map((section) => (
+              <View key={section.kind} className="gap-2">
+                <NoticeSectionHeader
+                  label={section.label}
+                  onOpenAll={() =>
+                    navigation.navigate('SettingsNotices', { kinds: [section.kind], title: section.label })
+                  }
+                />
+                <NoticeSectionBody section={section} items={notices[section.kind]} onOpen={openNotice} />
+              </View>
+            ))}
+
+            {/* **읽는 행 넷이 한 카드다.** 앞 둘은 읽고 끝나고 뒤 둘은 앱을 떠나는데, 카드를
+                갈라 두던 근거가 사라졌다 - 응원이 맨 아래여야 한다는 것이었고 고지 네 줄이 설정
+                화면으로 가면서 아래 카드가 곧 화면 끝이 됐다. 그러면 두 카드의 경계가 말하는 것이
+                없다.
+
+                제목은 `가이드 및 문의` 다(사용자 지정). 앞 둘이 가이드이고 뒤 둘이 문의다. */}
+            <View className="gap-2">
+              <SectionTitle>가이드 및 문의</SectionTitle>
+              <Card className={SETTINGS_CARD_CLASS} testID="settings-card">
+                {/* `기능 설명` 이 `개발 노트` 위다. 이 앱을 어떻게 쓰나 가 무엇이 바뀌었나 보다
+                    자주 묻는 질문이고 설명의 원천도 이쪽이다. */}
+                <SettingsRow
+                  label="기능 설명"
+                  onPress={() => navigation.navigate('SettingsFeatureGuideList')}
+                />
+                <SettingsRow
+                  label="개발 노트"
+                  onPress={() => navigation.navigate('SettingsReleaseNotes')}
+                />
+                {/* 앱을 떠나 메일 · 카카오톡 · 스토어로 가는 행 둘이라 오른쪽이 chevron 이 아니라 외부 링크
+                    표식이다. chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는 앱을 떠나 버린다.
+
+                    문의는 응원보다 자주 써서 위다. 메일과 오픈채팅 중에서 고르는 모달을 먼저 연다. */}
+                <SettingsLinkRow label="문의 · 버그 제보" onPress={() => setShowContact(true)} />
+                {/* 평생 한 번 누르는 것이라 맨 아래다. */}
+                <SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href={storeReviewUrl(Platform.OS)} />
+              </Card>
             </View>
-          ))}
-
-          {/* **읽는 행 넷이 한 카드다.** 앞 둘은 읽고 끝나고 뒤 둘은 앱을 떠나는데, 카드를
-              갈라 두던 근거가 사라졌다 - 응원이 맨 아래여야 한다는 것이었고 고지 네 줄이 설정
-              화면으로 가면서 아래 카드가 곧 화면 끝이 됐다. 그러면 두 카드의 경계가 말하는 것이
-              없다.
-
-              제목은 `가이드 및 문의` 다(사용자 지정). 앞 둘이 가이드이고 뒤 둘이 문의다. */}
-          <View className="gap-2">
-            <SectionTitle>가이드 및 문의</SectionTitle>
-            <Card className={SETTINGS_CARD_CLASS} testID="settings-card">
-              {/* `기능 설명` 이 `개발 노트` 위다. 이 앱을 어떻게 쓰나 가 무엇이 바뀌었나 보다
-                  자주 묻는 질문이고 설명의 원천도 이쪽이다. */}
-              <SettingsRow
-                label="기능 설명"
-                onPress={() => navigation.navigate('SettingsFeatureGuideList')}
-              />
-              <SettingsRow
-                label="개발 노트"
-                onPress={() => navigation.navigate('SettingsReleaseNotes')}
-              />
-              {/* 앱을 떠나 메일·스토어로 가는 행 둘이라 오른쪽이 chevron 이 아니라 외부 링크
-                  표식이다. chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는 앱을 떠나 버린다.
-
-                  문의는 응원보다 자주 써서 위다. 메일 앱이 안 열리면 토스트로만 알린다. */}
-              <SettingsLinkRow
-                label="문의하기"
-                href={contactMailUrl(contactDeviceOf(Platform, displayedVersion))}
-                onOpenFailed={() =>
-                  useToastStore.getState().showError('메일 앱을 열지 못했습니다')
-                }
-              />
-              {/* 평생 한 번 누르는 것이라 맨 아래다. */}
-              <SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href={storeReviewUrl(Platform.OS)} />
-            </Card>
           </View>
         </View>
-      </View>
-    </ScreenScroll>
+      </ScreenScroll>
+
+      {/* 모달은 화면 위에 뜨므로 카드 안도 스크롤 안도 아니다. */}
+      {showContact && (
+        <ContactModal
+          mailUrl={contactMailUrl(contactDeviceOf(Platform, displayedVersion))}
+          onClose={() => setShowContact(false)}
+        />
+      )}
+    </>
   )
 }

@@ -12,6 +12,7 @@
 export * from './lucide'
 
 export { GearIcon } from './GearIcon'
+export { KakaoTalkIcon } from './KakaoTalkIcon'
 export { MapleLeaf } from './MapleLeaf'
 export { ProfitIcon } from './ProfitIcon'
 export { QuestionMarkIcon } from './QuestionMarkIcon'

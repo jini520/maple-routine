@@ -4,26 +4,29 @@
  * `SettingsRow` 와 골격은 같지만 **시맨틱이 링크**인 것이 요점이다. 한 컴포넌트로 합치지 않는다
  * (합치면 `onPress` 가 선택 필드가 되어 호출부에서 어느 쪽인지 타입으로 알 수 없다). 오른쪽 표식도
  * chevron 이 아니다: chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는 다른 일을 한다.
- * 더보기 셋째 카드의 `문의하기` · `개발자 응원하기(앱 리뷰)` 가 쓴다.
+ * 더보기 셋째 카드의 `문의 · 버그 제보` · `개발자 응원하기(앱 리뷰)` 가 쓴다.
  */
 import { Linking, Pressable, View } from 'react-native'
 
 import { ExternalLinkIcon, Text } from '../../components/atoms'
 import { SETTINGS_ROW_CLASS } from './row-class'
 
-export interface SettingsLinkRowProps {
-  label: string
-  href: string
-  /** 여는 앱이 없어 주소를 못 열었을 때. 없으면 조용히 넘어간다 */
-  onOpenFailed?: () => void
-}
+/**
+ * 주소를 바로 여는 행과, 앱을 떠나기 전에 고르는 모달을 먼저 여는 행(`문의 · 버그 제보`).
+ *
+ * 둘 중 하나만 받는다. 호출부가 어느 쪽인지 타입으로 안다.
+ */
+export type SettingsLinkRowProps = { label: string } & ({ href: string } | { onPress: () => void })
 
 export function SettingsLinkRow(props: SettingsLinkRowProps): React.JSX.Element {
+  const opensModal = 'onPress' in props
   return (
     <Pressable
-      role="link"
+      role={opensModal ? 'button' : 'link'}
       onPress={() => {
-        Linking.openURL(props.href).catch(() => props.onOpenFailed?.())
+        if (opensModal) props.onPress()
+        // 여는 앱이 없으면 거절이 온다. 삼키지 않으면 누름 하나가 처리되지 않은 거부로 남는다.
+        else Linking.openURL(props.href).catch(() => undefined)
       }}
       className={SETTINGS_ROW_CLASS}
     >
