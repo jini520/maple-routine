@@ -60,7 +60,7 @@
 | 파일 | 담는 것 |
 |---|---|
 | `src/data/job-themes.json` · `src/assets/themes/` | 테마 색 토큰과 배경. 잠금 화면도 테마로 그린다 |
-| `src/data/release-notes.ts` · `src/data/feature-guides/` · `src/assets/guide/` | 업데이트 노트 · 기능 안내 문구와 그림 |
+| `src/data/release-notes.ts` | 업데이트 노트 |
 | `src/assets/utility/` · `src/assets/nexon/` | 도구 아이콘 · 넥슨 로그인 단추 |
 
 ## 값이 기기에 반영되는 순서

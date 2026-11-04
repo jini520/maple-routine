@@ -49,9 +49,6 @@ export const THEME_BACKGROUND_ASSETS: Record<string, ImageAssetRef> = { "blackma
 대체 그림만 그린다. 생성기와 검사 테스트가 같은 표(`asset-groups.ts`)를 읽으므로, 규칙이 두 벌로 갈라질
 일은 없다.
 
-기능 안내 이미지(`assets/guide/`)는 이 목록에 넣지 않는다. 파일을 이름으로 찾는 곳이 아니라 명시적으로
-import 하는 곳이라, 파일 이름이 틀리면 조용히 넘어가지 않고 빌드가 실패해야 한다.
-
 ### 결정 3. 에셋 참조의 타입은 `ImageAssetRef` 하나를 플랫폼마다 다르게 적는다
 
 같은 import 가 Metro 에서는 에셋 id(숫자)가 된다. 그래서 `src/types/image-asset.native.ts` 에서는 `number` 로,

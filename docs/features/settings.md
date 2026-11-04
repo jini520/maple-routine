@@ -18,7 +18,6 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/CacheClearConfirm.tsx` · `DisconnectConfirm.tsx` · `SignOutConfirm.tsx` | 위험 동작 확인 창 |
 | `app/settings/SettingsAboutScreen.tsx` · `AppUpdateSection.tsx` | 앱 정보 및 계정. 버전 · 상태 · 업데이트 확인 · 개인정보 처리방침 주소(`PRIVACY_URL`) · 로그아웃 · 데이터 삭제 · 계정 삭제 |
 | `app/settings/SettingsReleaseNotesScreen.tsx` | 개발 노트 |
-| `app/settings/SettingsFeatureGuideListScreen.tsx` · `SettingsFeatureGuideScreen.tsx` | 기능 설명 목록과 안내 상세 |
 | `app/settings/ContactModal.tsx` | `문의 · 버그 제보` 모달. 메일 · 카카오톡 오픈채팅 두 칸([[ADR-052]] 결정 9) |
 | `app/settings/contact-mail.ts` · `contact-open-chat.ts` · `store-review-link.ts` | 문의 메일 주소 · 오픈채팅 주소와 여는 순서 · 스토어 리뷰 주소 |
 | `components/atoms/Icon/KakaoTalkIcon.tsx` | 카카오 공식 원형 아이콘. 색을 받지 않는다 |
@@ -31,7 +30,6 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/reload-tab-stores.ts` | 스케줄 관리 방법을 바꾼 뒤 컨텐츠 · 보스 · 수익 스토어를 차례로 다시 읽게 한다 |
 | `features/settings/cache-data.ts` · `storage/cache-data.ts` | 데이터 삭제 그룹 · 건수 · 삭제 · 다시 띄우기 |
 | `src/data/release-notes.ts` · `types/release-notes.ts` | 버전별 변경 목록과 업데이트 모달의 핵심 줄 |
-| `src/data/feature-guides/` · `types/feature-guides.ts` · `src/assets/guide/` | 기능 안내. 안내 하나가 파일 하나 |
 
 ## 더보기
 
@@ -39,9 +37,10 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 |---|---|---|
 | 1 | 넥슨 로그인 버튼(로그인이 없을 때만, [[ADR-025]]) | 넥슨 로그인 |
 | 2 | 소식 분류 다섯: `NOTICE` · `진행 중인 이벤트` · `캐시샵 업데이트` · `공지 사항` · `업데이트` | 분류 제목의 `전체`: 그 분류 목록 · 글: 상세 |
-| 3 | `가이드 및 문의` 카드: 기능 설명 · 개발 노트 · 문의 · 버그 제보 · 개발자 응원하기(앱 리뷰) | 하위 화면 · 문의 모달(메일 앱 · 카카오톡 오픈채팅) · 스토어 |
+| 3 | `가이드 및 문의` 카드: 개발 노트 · 문의 · 버그 제보 · 개발자 응원하기(앱 리뷰) | 하위 화면 · 문의 모달(메일 앱 · 카카오톡 오픈채팅) · 스토어 |
 
 - 머리 오른쪽 톱니바퀴가 설정을 연다.
+- 기능 사용법을 모은 화면은 없다. 사용법은 페이지마다 머리 줄 물음표가 여는 FAQ 가 맡는다([[ADR-052]] 결정 2).
 - 들어올 때마다(포커스 · 복귀) 저장된 공지 쿼리의 목록을 먼저 그리고 다섯 분류를 다시 받는다(`features/notice/notice-query.ts` 의
   `useNotices`, [[ADR-142]] 결정 5). 실패해도 알리지 않는다.
 - 당겨서 새로고침하면 다섯 분류를 다시 받는다(`refreshNoticeKinds`). 모두 실패했을 때만 `소식을 불러오지 못했습니다` 가 뜬다.
@@ -83,9 +82,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 
 | 라우트 | 화면 | 내용 |
 |---|---|---|
-| `SettingsFeatureGuideList` | 기능 설명 | 그룹 탭(`컨텐츠 · 보스 · 수익 · 유틸리티 · 설정`, 안내 없는 그룹은 감춘다)과 안내 목록 |
-| `SettingsFeatureGuide` · `SettingsReleaseNoteGuide` | 기능 안내 | 목차(마디가 둘 이상일 때) · 이미지 · 문단. 두 라우트가 같은 화면이다 |
-| `SettingsReleaseNotes` | 개발 노트 | 버전마다 기능 → 개선 → 버그 묶음. `사용 중` · `스토어 업데이트 필요` 배지. 안내가 있는 항목만 눌린다 |
+| `SettingsReleaseNotes` | 개발 노트 | 버전마다 기능 → 개선 → 버그 묶음. `사용 중` · `스토어 업데이트 필요` 배지 |
 | `SettingsBarOrder` | 하단 탭 순서 | `하단 탭` · `스케줄러` · `수입·지출` 카드 셋. 카드마다 맨 위에 그 행의 바 미리보기, 아래에 왼쪽 손잡이로 끄는 목록이 있다. today 와 더보기는 목록에 없고 미리보기에만 보인다. `적용` 을 눌러야 저장되고, 누르지 않고 나가면 버린다 |
 | `SettingsAbout` | 앱 정보 및 계정 | `앱 정보` 묶음에 현재 버전 · 상태 · `업데이트 확인` · 개인정보 처리방침(`mapleroutine.store/privacy` 를 인앱 브라우저로 연다). `계정` 묶음에 로그아웃 · 데이터 삭제 · 계정 삭제. 계정 행은 확인 창을 거친다([[ADR-017]] 결정 8) |
 
@@ -108,7 +105,6 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 
 - 더보기 · 설정 · 앱 정보 및 계정 · 알림 설정 · MVP 등급 · MVP 등급 이력 · 개발 노트, 그리고 더보기와 소식 목록의 글 줄이 이 모양이다.
 - ID 표시(MVP 등급)와 버전 줄(개발 노트)은 칸 없이 카드 머리에 선다.
-- 기능 설명 목록은 아직 행 사이에 선을 긋는다.
 
 ## 릴리스 노트를 쓰는 방법
 
@@ -117,7 +113,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | 칸 | 내용 |
 |---|---|
 | `version` · `date` | OTA 번들 버전(`x.y.z`)과 날짜 |
-| `items` | 항목마다 `category`(`feature` · `improvement` · `fix`)와 `text`. 네이티브 변경이면 `requiresStoreUpdate`, 사용법 안내가 있으면 `guideId`(와 `guideSectionId`) |
+| `items` | 항목마다 `category`(`feature` · `improvement` · `fix`)와 `text`. 네이티브 변경이면 `requiresStoreUpdate` |
 | `highlights` | 업데이트 모달이 보여 줄 핵심 몇 줄. `items` 와 따로 쓴다. 비면 OTA 발행이 멈춘다 |
 
 이 파일에는 이미지 import 를 넣지 않는다. 발행 스크립트가 이 파일을 Node 에서 직접 읽기 때문이다.

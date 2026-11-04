@@ -39,7 +39,7 @@ src/
 ├── server/       우리 서버(mapleroutine.store/v1) 클라이언트
 ├── storage/      기기 저장소 어댑터. ports.ts · adapters/ · sqlite/
 ├── native/       네이티브 기능 어댑터. ports.ts · adapters/
-├── data/         게임 레퍼런스 데이터(JSON) · 릴리스 노트 · 기능 안내
+├── data/         게임 레퍼런스 데이터(JSON) · 릴리스 노트
 ├── assets/       그림. generated/ 에 커밋된 목록이 있다(ADR-009)
 ├── types/        공용 타입
 ├── boot.ts       포트 주입(installPorts) · 게임 데이터 덮어쓰기(loadGameData)

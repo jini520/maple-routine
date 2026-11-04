@@ -127,12 +127,12 @@
 | 토스트 | `text-sm font-semibold` | `Toast` |
 | 빈 상태 · 오류 제목 | `text-sm font-bold` | `EmptyState` · `ErrorState`. 설명은 행 보조 줄이다 |
 
-### 공지와 기능 설명
+### 공지와 FAQ
 
 | 역할 | 클래스 | 보기 |
 |---|---|---|
-| 문단 제목 | `text-base font-bold` | 기능 설명의 절 제목 · `FaqSheet` 질문 |
-| 본문 | `text-sm` | 공지 본문 · 기능 설명 · `FaqSheet` 답변 |
+| 문단 제목 | `text-base font-bold` | `FaqSheet` 질문 |
+| 본문 | `text-sm` | 공지 본문 · `FaqSheet` 답변 |
 
 ### 차트와 달력
 
