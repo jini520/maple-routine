@@ -227,7 +227,7 @@ manual_completion_bosses
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `server/__tests__/nexon-auth.spec.ts` | 결정 6: 로그인 시작이 플랫폼을 보내고 계약과 다른 응답이면 던지는지, ④ 의 응답을 `ok` · `pending` · `gone` 셋으로 나누고 5xx 는 던지는지, 연결 해제가 세션을 Bearer 로 싣고 실패해도 던지지 않는지 본다 |
+| `server/__tests__/nexon-auth.spec.ts` | 결정 6: 로그인 시작이 플랫폼을 보내고 계약과 다른 응답이면 던지는지, ④ 의 응답을 `ok` · `pending` · `gone` 셋으로 나누고 5xx 는 던지는지, 로그아웃이 세션을 Bearer 로 싣고 실패해도 던지지 않는지 본다 |
 | `server/__tests__/friends-stream.spec.ts` | 결정 9: 세션을 Bearer 로 싣는지, 청크 경계에서 잘린 줄을 이어 읽고 빈 줄(하트비트)과 JSON 이 아닌 줄을 버리는지, 서버가 거절하면 status 를 담은 에러를 던지는지 본다 |
 | 서버 `modules/auth/*.spec.ts` | 결정 6 · 7 · 8: `state` 를 한 번만 선점하는지, 봉한 뒤 60초 창, 1분 잡이 지우는 짝과 세션, 갱신을 하나로 묶고 거절되면 세션을 지우는지 본다 |
 | 서버 `modules/settlement/*.spec.ts` | 결정 11: 창 안의 타점에만 확인하는지, 응답마다 판정이 맞게 바뀌고 모름이 판정을 안 바꾸는지, `startedAt` 이 그 밤의 날짜인지 본다 |

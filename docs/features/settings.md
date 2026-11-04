@@ -16,7 +16,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/NoticeSkeleton.tsx` | 소식을 받기 전의 스켈레톤 |
 | `app/settings/SettingsRow.tsx` · `SettingsLinkRow.tsx` · `row-class.ts` · `ValueBadge.tsx` | 누르는 행 둘과 공통 골격 · 현재값 배지 |
 | `app/settings/CacheClearConfirm.tsx` · `DisconnectConfirm.tsx` · `SignOutConfirm.tsx` | 위험 동작 확인 창 |
-| `app/settings/SettingsAboutScreen.tsx` · `AppUpdateSection.tsx` | 앱 정보 및 계정. 버전 · 상태 · 업데이트 확인 · 개인정보 처리방침 주소(`PRIVACY_URL`) · 넥슨 로그아웃 · 데이터 삭제 · 연결 해제 |
+| `app/settings/SettingsAboutScreen.tsx` · `AppUpdateSection.tsx` | 앱 정보 및 계정. 버전 · 상태 · 업데이트 확인 · 개인정보 처리방침 주소(`PRIVACY_URL`) · 로그아웃 · 데이터 삭제 · 계정 삭제 |
 | `app/settings/SettingsReleaseNotesScreen.tsx` | 개발 노트 |
 | `app/settings/SettingsFeatureGuideListScreen.tsx` · `SettingsFeatureGuideScreen.tsx` | 기능 설명 목록과 안내 상세 |
 | `app/settings/contact-mail.ts` · `store-review-link.ts` | 문의 메일 주소 · 스토어 리뷰 주소 |
@@ -27,7 +27,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/SettingsActionBar.tsx` | 하위 페이지 아래에 고정하는 버튼 바. 캐릭터 관리의 `저장` · 테마 · 글자 크기 · 하단 탭 순서의 `적용` |
 | `app/settings/TrackingModeModal.tsx` · `TrackingModeSelector.tsx` | 스케줄 관리 방법 고르기 |
 | `app/settings/reload-tab-stores.ts` | 스케줄 관리 방법을 바꾼 뒤 컨텐츠 · 보스 · 수익 스토어를 차례로 다시 읽게 한다 |
-| `features/settings/store.ts` | 연결 해제 |
+| `features/settings/store.ts` | 로그아웃 · 계정 삭제 |
 | `features/settings/cache-data.ts` · `storage/cache-data.ts` | 데이터 삭제 그룹 · 건수 · 삭제 · 다시 띄우기 |
 | `src/data/release-notes.ts` · `types/release-notes.ts` | 버전별 변경 목록과 업데이트 모달의 핵심 줄 |
 | `src/data/feature-guides/` · `types/feature-guides.ts` · `src/assets/guide/` | 기능 안내. 안내 하나가 파일 하나 |
@@ -86,7 +86,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `SettingsFeatureGuide` · `SettingsReleaseNoteGuide` | 기능 안내 | 목차(마디가 둘 이상일 때) · 이미지 · 문단. 두 라우트가 같은 화면이다 |
 | `SettingsReleaseNotes` | 개발 노트 | 버전마다 기능 → 개선 → 버그 묶음. `사용 중` · `스토어 업데이트 필요` 배지. 안내가 있는 항목만 눌린다 |
 | `SettingsBarOrder` | 하단 탭 순서 | `하단 탭` · `스케줄러` · `수입·지출` 카드 셋. 카드마다 맨 위에 그 행의 바 미리보기, 아래에 왼쪽 손잡이로 끄는 목록이 있다. today 와 더보기는 목록에 없고 미리보기에만 보인다. `적용` 을 눌러야 저장되고, 누르지 않고 나가면 버린다 |
-| `SettingsAbout` | 앱 정보 및 계정 | `앱 정보` 묶음에 현재 버전 · 상태 · `업데이트 확인` · 개인정보 처리방침(`mapleroutine.store/privacy` 를 인앱 브라우저로 연다). `계정` 묶음에 넥슨 로그아웃(로그인이 있을 때) · 데이터 삭제 · 연결 해제. 계정 행은 확인 창을 거친다 |
+| `SettingsAbout` | 앱 정보 및 계정 | `앱 정보` 묶음에 현재 버전 · 상태 · `업데이트 확인` · 개인정보 처리방침(`mapleroutine.store/privacy` 를 인앱 브라우저로 연다). `계정` 묶음에 로그아웃 · 데이터 삭제 · 계정 삭제. 계정 행은 확인 창을 거친다([[ADR-017]] 결정 8) |
 
 개발 노트에는 업데이트를 적용하고 다시 시작했을 때 뜨는 `업데이트를 마쳤어요` 안내의 `자세히 보기` 로도 들어갈 수 있다.
 

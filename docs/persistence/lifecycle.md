@@ -11,7 +11,7 @@
 | `app/QueryCacheProvider.tsx` · `features/query/persist.ts` | 저장된 쿼리 캐시를 올리고 바뀔 때마다 다시 쓴다 |
 | `storage/cache-data.ts` | 데이터 삭제 · 그룹마다 지울 건수 계산 |
 | `features/settings/cache-data.ts` | 저장기 멈춤 → 삭제 → DB 닫기 → 리로드 순서 |
-| `storage/api-key.ts` 의 `clearAuthConfig` · `features/auth/store.ts` | 연결 해제 |
+| `storage/api-key.ts` 의 `clearAuthConfig` · `features/auth/store.ts` | 로그아웃 · 계정 삭제 |
 | `storage/sqlite/db.ts` 의 `closeBossProfitDb` | 리로드 전 DB 닫기 |
 
 ## 부팅 때 읽는 것
@@ -34,14 +34,14 @@
 닫은 기록은 그 줄을 그리는 훅이 처음 돌 때 한 번 읽는다(`useSettlementDismissal` · `useManualCompletionDismissal` ·
 `useNoticeDismissal` 의 `restore`).
 
-## 삭제: 연결 해제와 데이터 삭제
+## 삭제: 로그아웃과 데이터 삭제
 
 설정에 지우는 동작이 둘 있다. 둘이 지우는 범위는 겹치지 않는다.
 
-| | 연결 해제 | 데이터 삭제 |
+| | 로그아웃 | 데이터 삭제 |
 |---|---|---|
 | 어디서 | 더보기 → 설정 → 앱 정보 및 계정 | 더보기 → 설정 → 앱 정보 및 계정 → 데이터 삭제 |
-| 지우는 것 | Preferences 의 `authMethods` · `apiKey` · `selectedAccountId` 셋. 넥슨 세션이 있으면 서버 세션도 끊는다 | 고른 그룹(아래 표) |
+| 지우는 것 | Preferences 의 `authMethods` · `apiKey` · `selectedAccountId` 셋. 넥슨 세션이 있으면 서버 세션도 끊는다. SQLite 의 `server_sync_queue` · `usage_events` 도 비운다. 계정 삭제는 서버 계정을 지운 뒤 같은 일을 한다 | 고른 그룹(아래 표) |
 | 기록 | 그대로 둔다 | 고른 그룹의 기록을 지운다. 강화는 다시 받고, 나머지는 되살릴 수 없거나 최근 기간만 다시 받는다([[ADR-053]] 결정 1) |
 | 결과 | 로그인 화면으로 돌아간다 | 앱을 리로드한다 |
 

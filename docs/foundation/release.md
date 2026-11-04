@@ -261,9 +261,11 @@ iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다
 | 진단(Play `앱 정보 및 성능` · App Store `기타 진단 데이터`) | 강화 합계에서 빠진 줄의 날짜 · 종류 · 사유 · 장비 이름 · 줄 수([[ADR-102]]). 앱의 계산 오류를 찾는 데 쓴다 |
 
 Play 는 `수집함 · 공유하지 않음 · 필수 · 앱 기능과 분석`(사용 로그와 진단은 `분석`), `전송 중 암호화`, `삭제 요청 가능` 으로
-적는다. 삭제는 문의처로 요청받아 지운다. 연결 해제는 탈퇴만 적고 보낸 값을 지우지 않는다(처리방침 3장). 삭제 요청 URL 은
-`https://mapleroutine.store/support` 다. 그 페이지의 `서버에 보낸 기록을 지우고 싶습니다` 절이 요청하는 방법과 지우는 데이터를
-적는다. App Store 는 `사용자에게 연결됨`, `추적 아님` 으로 적고, 사용 로그의 목적은 `분석` 이다. 제3자에게 넘기지 않고, 광고
+적는다. 삭제는 앱 설정의 `계정 삭제` 가 한다. 서버는 사람과 열쇠를 지우고 보낸 기록을 익명으로 남긴다([[ADR-017]] 결정 6).
+메일로는 받지 않는다. 운영자가 메일만으로 사람을 찾을 수 없어서다. 넥슨 로그인이 바이너리에 있으므로 계정 생성 방법은
+`OAuth` 이고, 잠근 채로 내도 그렇게 적는다. OTA 로 풀면 심사 없이 계정이 생기기 때문이다. 계정 삭제 URL 과 데이터 삭제 URL 은
+`https://mapleroutine.store/support` 다. 그 페이지의 `계정을 삭제하고 싶습니다` 절이 앱에서 지우는 순서와 지우는 데이터 · 남는
+데이터를 적는다. App Store 는 `사용자에게 연결됨`, `추적 아님` 으로 적고, 사용 로그의 목적은 `분석` 이다. 제3자에게 넘기지 않고, 광고
 식별자와 엮지 않고, 맞춤 광고에 쓰지 않기 때문이다. 이 셋 중 하나라도 바뀌면 ATT 동의 창이 필요하다.
 
 수집하는 내용을 바꿀 때는 처리방침 게시 → 앱 발행 → 콘솔 양식 갱신 순서를 지킨다. 아직 수집하지 않는 것을
@@ -297,10 +299,11 @@ python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA')
 - 앱에 없는 기능을 적지 않는다. 화면에서 눌러 확인한 것만 적는다.
 - 가격(`무료`) · 순위(`1위`) · 설치 유도(`지금 다운로드`) 문구를 넣지 않고, 다른 앱이나 플랫폼을 언급하지 않는다.
   HTML 이 적용되지 않으므로 불릿은 문자(`■` `▶` `•`)로 쓴다.
-- 넥슨 로그인은 아직 문구에 쓰지 않는다. 1.0.12 바이너리에는 꺼진 채로 들어 있고, 켜는 값
-  (`features/auth/nexon-login-enabled.ts` 의 `NEXON_LOGIN_ENABLED = true`)은 OTA 로 나간다. 그 OTA 를 낼 때 자세한
-  설명의 `회원가입이 없습니다` 와 심사 메모의 `[NO LOGIN ...]` 을 함께 고치고, App Store 의 계정 삭제 요건도 그때
-  다시 본다.
+- 넥슨 로그인을 잠근 채로 내면(`features/auth/nexon-login-enabled.ts` 의 `NEXON_LOGIN_ENABLED = false`) 문구에 쓰지 않는다.
+  넥슨의 콜백 주소 검수가 끝나면 OTA 로 연다. 대신 심사 메모의 `[NEXON LOGIN AND ACCOUNT DELETION]` 에 잠가 둔 것과 OTA 로
+  연다는 것을 밝힌다. 밝히지 않으면 숨긴 기능(App Store 가이드라인 2.3.1)으로 보일 수 있다. 열 때 자세한 설명의
+  `회원가입이 없습니다` 와 심사 메모의 `[NO LOGIN ...]` 을 함께 고친다. 계정 삭제는 잠금과 관계없이 모든 사용자에게 열려 있다
+  ([[ADR-017]] 결정 8).
 - 앱 안에서는 컨텐츠라고 부르지만 짧은 설명에서만 `숙제` 를 쓴다. 스토어에서는 `메이플 숙제` 로 검색하기
   때문이다.
 - 비제휴 고지는 앱 설정 화면 · 안내 사이트 · `PRIVACY.md` 와 같은 영문 문구를 쓴다.
@@ -461,6 +464,9 @@ TEST API KEY:
 - Network: NEXON Open API for game data and NEXON notices (game notices, updates, events, cash shop), and our own server at mapleroutine.store for the app notice list and detail (read-only GET, no user identifier in the request). The same server receives the sale prices users enter for item drops and a first-party usage log (app opens, screen names and time on screen, counts of drop and cashbook saves, platform and app version), keyed by a SHA-256 hash of the API key. No third-party analytics SDK is used. Push delivery uses Firebase Cloud Messaging topics, so no device token or account is tied to a user on our side.
 - No ads in this version.
 - No user accounts. The API key stays on the device and is never sent in plain text. Records other than drop sale prices stay on the device.
+
+[NEXON LOGIN AND ACCOUNT DELETION]
+Sign in with NEXON is built into this binary but switched off while NEXON finishes reviewing our callback URL. We will switch it on with an over-the-air update after NEXON approves it. It adds no other functionality. Account deletion is available to every user at 더보기 (More) > gear icon > 앱 정보 및 계정 (App info and account) > 계정 삭제 (Delete account). It deletes the user's identifiers and login session on our server. Records the user already sent are kept only with the link to the user removed. 로그아웃 (Sign out) on the same screen only signs out and keeps the data.
 
 [AFFILIATION] Not affiliated with, endorsed by, or sponsored by NEXON Korea Corp. Uses only publicly documented read-only endpoints of NEXON Open API. The required attribution "Data based on NEXON Open API" is shown at the bottom of the Settings screen (gear icon at the top of the 더보기 (More) tab).
 
