@@ -19,7 +19,9 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/SettingsAboutScreen.tsx` · `AppUpdateSection.tsx` | 앱 정보 및 계정. 버전 · 상태 · 업데이트 확인 · 개인정보 처리방침 주소(`PRIVACY_URL`) · 로그아웃 · 데이터 삭제 · 계정 삭제 |
 | `app/settings/SettingsReleaseNotesScreen.tsx` | 개발 노트 |
 | `app/settings/SettingsFeatureGuideListScreen.tsx` · `SettingsFeatureGuideScreen.tsx` | 기능 설명 목록과 안내 상세 |
-| `app/settings/contact-mail.ts` · `store-review-link.ts` | 문의 메일 주소 · 스토어 리뷰 주소 |
+| `app/settings/ContactModal.tsx` | `문의 · 버그 제보` 모달. 메일 · 카카오톡 오픈채팅 두 칸([[ADR-052]] 결정 9) |
+| `app/settings/contact-mail.ts` · `contact-open-chat.ts` · `store-review-link.ts` | 문의 메일 주소 · 오픈채팅 주소와 여는 순서 · 스토어 리뷰 주소 |
+| `components/atoms/Icon/KakaoTalkIcon.tsx` | 카카오 공식 원형 아이콘. 색을 받지 않는다 |
 | `features/app-review/request.ts` · `storage/app-review.ts` · `native/store-review.ts` | 저장 뒤 앱 안 리뷰 요청. 요청 조건 판단 · 기록 칸 · OS 팝업 호출 |
 | `app/settings/SettingsThemeScreen.tsx` · `ThemeSelector.tsx` | 테마 페이지([[ADR-054]] 결정 10) |
 | `app/settings/SettingsTextSizeScreen.tsx` · `TextSizeSlider.tsx` | 글자 크기 페이지. 미리보기 칸과 네 칸 슬라이더([[ADR-063]] 결정 11) |
@@ -37,7 +39,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 |---|---|---|
 | 1 | 넥슨 로그인 버튼(로그인이 없을 때만, [[ADR-025]]) | 넥슨 로그인 |
 | 2 | 소식 분류 다섯: `NOTICE` · `진행 중인 이벤트` · `캐시샵 업데이트` · `공지 사항` · `업데이트` | 분류 제목의 `전체`: 그 분류 목록 · 글: 상세 |
-| 3 | `가이드 및 문의` 카드: 기능 설명 · 개발 노트 · 문의하기 · 개발자 응원하기(앱 리뷰) | 하위 화면 · 메일 앱 · 스토어 |
+| 3 | `가이드 및 문의` 카드: 기능 설명 · 개발 노트 · 문의 · 버그 제보 · 개발자 응원하기(앱 리뷰) | 하위 화면 · 문의 모달(메일 앱 · 카카오톡 오픈채팅) · 스토어 |
 
 - 머리 오른쪽 톱니바퀴가 설정을 연다.
 - 들어올 때마다(포커스 · 복귀) 저장된 공지 쿼리의 목록을 먼저 그리고 다섯 분류를 다시 받는다(`features/notice/notice-query.ts` 의

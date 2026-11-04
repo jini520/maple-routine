@@ -78,7 +78,7 @@
 | `Skeleton` | 결과가 들어올 곳과 같은 크기의 회색 펄스 상자 |
 | `Spinner` | `MapleSpinner`(버튼 안 16px) · `MapleSweepSpinner`(영역 · 화면) · `RingSpinner`(가운데 모달 · 잠금 화면) |
 | `AnimatedNumber` | 값이 바뀌면 목표까지 굴러가는 숫자 |
-| `Icon` | 커스텀 아이콘(`ProfitIcon` · `GearIcon` · `MapleLeaf`)과 lucide 아이콘 등록(`lucide.ts`) |
+| `Icon` | 커스텀 아이콘(`ProfitIcon` · `GearIcon` · `MapleLeaf`)과 lucide 아이콘 등록(`lucide.ts`). `KakaoTalkIcon` 은 카카오 공식 파일 그대로라 색을 받지 않는다. 상표 변형이 금지돼서다([[ADR-052]] 결정 9) |
 
 ### molecules
 

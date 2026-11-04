@@ -227,8 +227,10 @@ Tabs 다. 같은 크기와 색의 링크 가운데 어떤 것은 앱을 떠나�
 | `발급 방법 자세히 보기` | `app/auth/DevelopmentStageKeyModal.tsx` |
 | 개인정보 처리방침 | `app/settings/SettingsAboutScreen.tsx` |
 | 공지의 `자세히 보기` · 공지 본문 안 링크 | `app/settings/SettingsNoticeDetailScreen.tsx` · `NoticeBlocks.tsx` |
+| 카카오톡이 없을 때의 오픈채팅 안내 페이지 | `app/settings/ContactModal.tsx` |
 
-- 웹 주소가 아닌 것은 인앱 브라우저가 열 수 없어 그대로 `Linking` 으로 연다. `문의하기`(`mailto:`) ·
+- 웹 주소가 아닌 것은 인앱 브라우저가 열 수 없어 그대로 `Linking` 으로 연다. `문의 · 버그 제보` 의 메일(`mailto:`) ·
+  오픈채팅(`kakaoopen:`) ·
   `개발자 응원하기(앱 리뷰)`(스토어 앱) · 알림 설정의 앱 설정 이동(`Linking.openSettings()`) · 스토어 업데이트
   이동이다.
 - 인앱 브라우저를 못 열면 시스템 브라우저(`Linking.openURL`)로 넘긴다. 안드로이드에 Custom Tabs 를 받는 브라우저가
@@ -303,3 +305,4 @@ Tabs 다. 같은 크기와 색의 링크 가운데 어떤 것은 앱을 떠나�
   테마에 맞춘다. iOS 는 로그인 창처럼 카드 시트로 띄운다(#634)
 - ADR-105 (2026-10-27): 결정 7 을 다시 썼다. 첫 화면에는 넥슨 로그인만 두고, API 키는 경고 모달을 거쳐 상단 시트에서
   받는다. 결정 9 의 입구를 껐을 때 화면도 그에 맞췄다(#757)
+- (2026-11-04) 결정 8 의 링크 목록에 문의 모달의 오픈채팅을 더했다([[ADR-052]] 결정 9)
