@@ -497,7 +497,7 @@ describe('BossManageScreen: 수동 모드', () => {
 
 describe('BossManageScreen: 자동 모드', () => {
   // 상단 안내 한 줄을 없앤다. 체크가 없고 스테퍼만 있다는 것을 화면이 이미
-  // 보여 준다. 설명은 기능 안내(`boss-manage` 가이드)가 계속 진다.
+  // 보여 준다. 설명은 보스 관리 FAQ(`boss-manage` 묶음)가 진다.
   it('안내 문구 없이 등록 보스만 나오고 체크 토글이 없다', async () => {
     mockSchedule({ characters: [character({ weeklyBosses: [registeredBoss()] })] })
 

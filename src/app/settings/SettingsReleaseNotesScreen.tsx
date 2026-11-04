@@ -8,7 +8,7 @@
  * **배열을 정렬하지 않는다**. "최신이 먼저"는 데이터 파일의 계약이고 그 강제는 데이터 테스트가
  * 한다. 화면이 다시 정렬하면 같은 규칙의 진실이 두 곳에 생긴다.
  */
-import { Pressable, View } from 'react-native'
+import { View } from 'react-native'
 
 import { useRunningAppVersion } from '../../features/live-update/use-running-app-version'
 import { baseAppVersion } from '../../lib/app-version'
@@ -21,7 +21,6 @@ import {
 import {
   Badge,
   Card,
-  ChevronRightIcon,
   FileTextIcon,
   Text,
 } from '../../components/atoms'
@@ -97,11 +96,11 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                       {RELEASE_NOTE_CATEGORY_LABELS[category]}
                     </Text>
                     <View className="gap-2">
-                      {items.map((item) => {
-                        // 지역 상수로 받는다. `item.guideId` 를 콜백 안에서 그대로 쓰면 바깥의
-                        // `undefined` 검사로 좁혀진 타입이 클로저 경계에서 풀린다.
-                        const guideId = item.guideId
-                        const body = (
+                      {items.map((item) => (
+                        <View key={item.text} className="flex-row gap-2">
+                          <Text aria-hidden className="text-sm text-text-disabled">
+                            ·
+                          </Text>
                           <View className="min-w-0 flex-1 gap-1">
                             <Text className="text-sm text-text-muted">{item.text}</Text>
                             {/* 표식은 버전이 아니라 이 항목에 붙는다. 톤은 스토어
@@ -113,45 +112,8 @@ export function SettingsReleaseNotesScreen(): React.JSX.Element {
                               </View>
                             )}
                           </View>
-                        )
-
-                        return (
-                          <View key={item.text} className="flex-row gap-2">
-                            <Text aria-hidden className="text-sm text-text-disabled">
-                              ·
-                            </Text>
-                            {/* 안내가 있는 항목만 눌린다. 없는 것은 결함이 아니라 정상이므로
-                                비활성 버튼을 두지 않는다. chevron 은 설정 행과 같은 약속이다.
-                                있으면 누르면 무언가 열린다. */}
-                            {guideId === undefined ? (
-                              body
-                            ) : (
-                              <Pressable
-                                role="button"
-                                onPress={() => {
-                                  // 마디까지 가리키면 그 자리로 떨어진다.
-                                  // 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다.
-                                  // `section` 은 라우트 파라미터다(`routes.ts`).
-                                  navigation.navigate('SettingsReleaseNoteGuide', {
-                                    guideId,
-                                    section: item.guideSectionId,
-                                  })
-                                }}
-                                className="min-w-0 flex-1 flex-row items-start gap-2"
-                              >
-                                {body}
-                                <View testID="release-note-item-chevron" className="mt-0.5">
-                                  <ChevronRightIcon
-                                    className="h-4 w-4 text-text-muted"
-                                    strokeWidth={2}
-                                    aria-hidden
-                                  />
-                                </View>
-                              </Pressable>
-                            )}
-                          </View>
-                        )
-                      })}
+                        </View>
+                      ))}
                     </View>
                   </View>
                 )

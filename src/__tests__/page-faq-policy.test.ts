@@ -20,7 +20,7 @@ const FILES = readdirSync(APP, { recursive: true, encoding: 'utf8' })
 
 describe('페이지 FAQ', () => {
   it('화면을 찾는다', () => {
-    expect(FILES.reduce((sum, file) => sum + file.screens, 0)).toBeGreaterThanOrEqual(34)
+    expect(FILES.reduce((sum, file) => sum + file.screens, 0)).toBeGreaterThanOrEqual(32)
   })
 
   it.each(FILES)('$name 의 화면마다 FAQ 입구가 있다', ({ source, screens }) => {

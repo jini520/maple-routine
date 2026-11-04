@@ -21,10 +21,3 @@ export const SETTINGS_NOTE_CELL_CLASS = 'rounded-[10px] bg-card-inset p-3.5'
 
 /** 칸을 담는 카드의 안쪽 여백과 칸 사이 간격. `Card` 에 얹는다. */
 export const SETTINGS_CARD_CLASS = 'gap-1 p-1.5'
-
-/**
- * 형제 행 사이의 구분선. 아직 칸으로 바꾸지 않은 기능 설명 목록만 쓴다.
- *
- * NativeWind 에는 형제 선택자가 없어, 부모가 첫 행을 제외한 나머지에 이 클래스를 직접 얹는다.
- */
-export const SETTINGS_ROW_DIVIDER_CLASS = 'border-t border-border'

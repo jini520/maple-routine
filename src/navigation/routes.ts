@@ -95,16 +95,6 @@ export type LayerParamList = {
 export const LAYER_ROUTE_NAMES: readonly LayerRouteName[] = ['Groups', 'ScheduleSubs', 'LedgerSubs']
 
 /**
- * 기능 안내 상세가 받는 파라미터.
- *
- * `section` 은 파라미터 하나다. push 는 우리가 명시하므로 세그먼트로 둘 이유가 없다.
- */
-export interface FeatureGuideParams {
-  guideId: string
-  section?: string
-}
-
-/**
  * 공지 상세가 받는 파라미터.
  *
  * `noticeId` 하나다. 알림 탭이 이 값을 그대로 넘긴다. 본문은 안 넘긴다. 넘기면 알림에서 온
@@ -151,10 +141,7 @@ export type RootStackParamList = {
   ContentManage: undefined
   DropHistory: undefined
   DropPrice: DropPriceParams | undefined
-  SettingsFeatureGuideList: undefined
-  SettingsFeatureGuide: FeatureGuideParams
   SettingsReleaseNotes: undefined
-  SettingsReleaseNoteGuide: FeatureGuideParams
   SettingsAbout: undefined
   /**
    * 아이템 분배 계산기. 유틸리티의 첫 도구다.
@@ -283,29 +270,9 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
 
   { path: '/settings', screen: 'SettingsScreen', target: { kind: 'tab', route: 'Settings' }, origin: 'web' },
   {
-    path: '/settings/guide',
-    screen: 'SettingsFeatureGuideListScreen',
-    target: { kind: 'push', route: 'SettingsFeatureGuideList' },
-    origin: 'web',
-  },
-  // 아래 둘이 **같은 `screen` 값을 갖는 것이 계약이다**. 기능 설명 목록에서도,
-  // 개발 노트 항목에서도 같은 상세가 열린다. 화면과 데이터는 한 벌이고 경로만 둘이다.
-  {
-    path: '/settings/guide/:guideId',
-    screen: 'SettingsFeatureGuideScreen',
-    target: { kind: 'push', route: 'SettingsFeatureGuide' },
-    origin: 'web',
-  },
-  {
     path: '/settings/release-notes',
     screen: 'SettingsReleaseNotesScreen',
     target: { kind: 'push', route: 'SettingsReleaseNotes' },
-    origin: 'web',
-  },
-  {
-    path: '/settings/release-notes/:guideId',
-    screen: 'SettingsFeatureGuideScreen',
-    target: { kind: 'push', route: 'SettingsReleaseNoteGuide' },
     origin: 'web',
   },
   { path: '/settings/about', screen: 'SettingsAboutScreen', target: { kind: 'push', route: 'SettingsAbout' }, origin: 'web' },
@@ -401,12 +368,6 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
 export const STACK_ROUTE_NAMES: readonly StackRouteName[] = ROUTE_TABLE.flatMap((row) =>
   row.target.kind === 'push' ? [row.target.route] : [],
 )
-
-/** 기능 안내 상세를 가리키는 두 라우트. 같은 컴포넌트가 그린다. */
-export const FEATURE_GUIDE_ROUTE_NAMES = [
-  'SettingsFeatureGuide',
-  'SettingsReleaseNoteGuide',
-] as const satisfies readonly StackRouteName[]
 
 /**
  * 탭 내비게이터가 그리는 화면 이름 아홉. 표에서 파생한다.

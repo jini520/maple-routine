@@ -1,14 +1,12 @@
 // 이 화면이 지키는 것을 적는다.
 //
-// 갈린 것 넷
-// ① **라우터 프로브가 없다**. 항목을 누르면 `navigate('SettingsReleaseNoteGuide', {…})` 가
-//  불리는지를 본다. 마디는 `section` 파라미터다(`routes.ts`).
-// ② **`사용 중` 배지의 기준이 빌드 시점 버전으로 좁혀졌다**. `currentVersion`
+// 갈린 것 셋
+// ① **`사용 중` 배지의 기준이 빌드 시점 버전으로 좁혀졌다**. `currentVersion`
 //    을 물을 수 없어 폴백 경로만 남았다. 그래서 두 케이스가 하나로 접히고,
 //    **매니페스트를 조회하지 않는다는 검사할 스토어가 없어 사라진다**
 //    (그 계약은 이제 구조가 지킨다. 이 화면은 live-update 를 import 조차 하지 않는다).
-// ③ `closest('li')` → **항목 텍스트에서 위로 올라가** 그 행을 잡는다.
-// ④ **픽스처 주입 방식. getter 가 안 통한다.** 목이 돌려준 객체에 getter 를
+// ② `closest('li')` → **항목 텍스트에서 위로 올라가** 그 행을 잡는다.
+// ③ **픽스처 주입 방식. getter 가 안 통한다.** 목이 돌려준 객체에 getter 를
 //    얹어 매 접근마다 픽스처를 갈아 끼웠는데, jest + Babel 조합에서는 **모듈 네임스페이스가 한 번
 //    복사되면서 getter 가 그때 딱 한 번 평가된다**(`__esModule: true` 를 붙여도 같다).
 //    그래서 **배열의 정체성을 고정해 두고 내용만 갈아 끼운다**(`mockNotes` 를 비우고 다시 채운다).
@@ -48,22 +46,12 @@ function setNotes(notes: ReleaseNote[]): void {
 }
 
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)
-const navigate = jest.fn()
 const goBack = jest.fn()
-
-type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
 async function press(element: AtomElement): Promise<void> {
   await act(async () => {
     fireEvent.press(element)
   })
-}
-
-/** 그 문구를 담은 눌리는 항목. 없으면 null(안내가 없는 항목은 눌리지 않는다). */
-function pressableItem(view: Rendered, text: string): AtomElement | null {
-  let node: AtomElement | null = view.getByText(text)
-  while (node !== null && node.props.role !== 'button') node = node.parent
-  return node
 }
 
 function textsIn(node: AtomElement): string[] {
@@ -84,7 +72,7 @@ const 진짜노트 = jest.requireActual<typeof import('../../../data/release-not
 
 beforeEach(() => {
   setNotes(진짜노트)
-  mockedUseSettingsNavigation.mockReturnValue({ navigate, goBack } as unknown as ReturnType<
+  mockedUseSettingsNavigation.mockReturnValue({ goBack } as unknown as ReturnType<
     typeof useSettingsNavigation
   >)
 })
@@ -275,76 +263,5 @@ describe('SettingsReleaseNotesScreen', () => {
 
     expect(view.getByText('아직 기록된 변경 내역이 없습니다')).toBeTruthy()
     expect(view.queryAllByTestId('release-note')).toHaveLength(0)
-  })
-
-  // 안내가 있는 항목만 눌린다. 버그 수정 한 줄에 붙일 사용법은 없고, 액션이
-  // 없는 자리에 액션처럼 보이는 것을 두지 않는다.
-  it('guideId 가 있는 항목만 눌리고, 누르면 그 안내로 민다', async () => {
-    setNotes([
-      {
-        version: '1.0.4',
-        date: '2026-08-20',
-        items: [
-          { category: 'feature', text: '안내가 있는 기능', guideId: 'boss-party' },
-          { category: 'fix', text: '안내가 없는 수정' },
-        ],
-      },
-    ])
-    const view = await renderOverlay(<SettingsReleaseNotesScreen />)
-
-    expect(pressableItem(view, '안내가 없는 수정')).toBeNull()
-    expect(view.getByText('안내가 없는 수정')).toBeTruthy()
-
-    const guided = pressableItem(view, '안내가 있는 기능')
-    expect(guided).not.toBeNull()
-    await press(guided as AtomElement)
-
-    expect(navigate).toHaveBeenCalledWith('SettingsReleaseNoteGuide', {
-      guideId: 'boss-party',
-      section: undefined,
-    })
-  })
-
-  // 릴리스에서 바뀐 것은 보통 기능 전체가 아니라 그중 한 마디다.
-  it('guideSectionId 가 있으면 그 마디까지 넘긴다', async () => {
-    setNotes([
-      {
-        version: '1.0.4',
-        date: '2026-08-20',
-        items: [
-          {
-            category: 'improvement',
-            text: '마디를 가리키는 항목',
-            guideId: 'boss-party',
-            guideSectionId: 'card',
-          },
-        ],
-      },
-    ])
-    const view = await renderOverlay(<SettingsReleaseNotesScreen />)
-
-    await press(pressableItem(view, '마디를 가리키는 항목') as AtomElement)
-
-    expect(navigate).toHaveBeenCalledWith('SettingsReleaseNoteGuide', {
-      guideId: 'boss-party',
-      section: 'card',
-    })
-  })
-
-  // 안내 없는 항목은 **트리가 종전과 같다**. 래퍼도 클래스도 만들지 않는다.
-  it('안내가 하나도 없으면 chevron 도 하나도 없다', async () => {
-    setNotes([
-      {
-        version: '1.0.4',
-        date: '2026-08-20',
-        items: [
-          { category: 'fix', text: '수정 하나' },
-          { category: 'fix', text: '수정 둘' },
-        ],
-      },
-    ])
-    const view = await renderOverlay(<SettingsReleaseNotesScreen />)
-
-    expect(view.queryAllByTestId('release-note-item-chevron')).toHaveLength(0)
   })
 })
