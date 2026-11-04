@@ -7,7 +7,7 @@
 |---|---|
 | [preferences.md](./preferences.md) | Key-Value 저장소의 키 전부 |
 | [sqlite.md](./sqlite.md) | SQLite 테이블 · 칸 · 버전 이관 |
-| [lifecycle.md](./lifecycle.md) | 언제 읽고, 쓰고, 지우는가(부팅 · 데이터 삭제 · 연결 해제 · 리로드) |
+| [lifecycle.md](./lifecycle.md) | 언제 읽고, 쓰고, 지우는가(부팅 · 데이터 삭제 · 로그아웃 · 리로드) |
 | [capacitor-storage.md](./capacitor-storage.md) | Capacitor 앱이 남긴 저장소를 그대로 여는 규칙 |
 
 ## 저장소 셋

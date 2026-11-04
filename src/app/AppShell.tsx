@@ -26,6 +26,7 @@ import { GameDataLock } from './game-data/GameDataLock'
 import { refreshGameData, useGameDataStatus } from '../features/game-data/sync'
 import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdrop'
 import { ApiKeyNoticeModal } from './auth/ApiKeyNoticeModal'
+import { AccountDeletionPrompt } from './auth/AccountDeletionPrompt'
 import { MvpGradeHost } from './mvp-grade/MvpGradeHost'
 import { TaskHost } from './resumable-task/TaskHost'
 import { prehydrateTabStores } from './prehydrate'
@@ -213,6 +214,7 @@ function ReadyShell(): React.JSX.Element {
           원래 화면 위에 닫을 수 없는 안내 모달이 덮이고, "확인"을 눌러야 키 입력 화면으로
           이동한다. 내비게이터 **밖**이라 어느 화면에서 감지되든 뜬다(웹에서 라우트 밖이던 자리). */}
       <ApiKeyNoticeModal />
+      <AccountDeletionPrompt />
       {/* 토스트는 자기가 놓인 자리에 절대 배치로 그린다. 여기가 `ThemeProvider` 의 화면 채움
           View 직속이라 탭바 위에 뜬다. */}
       <ToastStack hasTabBar={isReady && !isKeyboardVisible} />

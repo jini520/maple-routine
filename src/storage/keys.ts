@@ -3,10 +3,10 @@ export const STORAGE_KEYS = {
   authMethods: 'authMethods',
   // **레거시로 내려갔다**(#536). 옛 설치본의 키 하나가 여기 있고, 새 칸이 비어 있을 때만
   // 읽어 목록으로 올린다. **읽고 나서 안 지운다** - 구버전으로 되돌아가도 키를 잃지 않아야
-  // 한다. 치우는 것은 연결 해제 한 자리뿐이다.
+  // 한다. 치우는 것은 로그아웃 한 자리뿐이다.
   apiKey: 'apiKey',
   // 레거시. 계정 선택 단계가 사라져 아무도 읽고 쓰지 않는다. 옛 설치본에
-  // 남은 값을 치우기 위해 이름만 남긴다(연결 해제가 지운다).
+  // 남은 값을 치우기 위해 이름만 남긴다(로그아웃이 지운다).
   legacySelectedAccountId: 'selectedAccountId',
   theme: 'theme',
   textSize: 'textSize',

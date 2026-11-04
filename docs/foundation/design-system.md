@@ -93,6 +93,7 @@
 | `Popover` | `PopoverLayer` · `AnchoredPopover` |
 | `ModalHeader` | 가운데 모달의 머리 줄. 왼쪽 40 원 배지 옆에 제목 · 설명([[ADR-062]] 결정 8) |
 | `InsetRow` | 가운데 모달의 `card-inset` 칸 한 줄. 앞 표시 · 이름 · 값([[ADR-062]] 결정 8) |
+| `InsetNote` | 가운데 모달의 `card-inset` 칸에 든 설명 문단. `text-xs` 흐린 색([[ADR-017]] 결정 8) |
 | `NumberPad` | 짧은 화면에서 숫자 칸이 쓰는 앱 판 |
 | `AmountFigure` | 시트의 큰 숫자. 칠 수 없다 |
 | `BackButton` | 헤더의 `←`. 크기는 하나(28px · 흐린 화살표) |

@@ -15,8 +15,9 @@
 | `server/settlement.ts` | 넥슨 결산 중인지 조회 |
 | `server/manual-completion.ts` | 직접 완료를 열어 둔 보스 조회 |
 | `server/game-data.ts` | 게임 데이터 열세 칸 조회 |
-| `server/drop-price.ts` | 드롭 가격 올리기 · 지우기 · 탈퇴 알림 |
-| `server/nexon-auth.ts` | 넥슨 로그인 시작 · 세션 받기 · 연결 해제 |
+| `server/drop-price.ts` | 드롭 가격 올리기 · 지우기 |
+| `server/account-deletion.ts` | 계정 삭제 예약 · 예약 확인 · 취소 |
+| `server/nexon-auth.ts` | 넥슨 로그인 시작 · 세션 받기 · 세션 거두기 |
 | `server/friends-stream.ts` | 로그인 사용자의 프렌즈 조회 스트림 |
 | `features/auth/server-identity.ts` | 쓰기 요청에 싣는 신원 헤더 |
 | `lib/crypto/api-key-hash.ts` | API 키의 SHA-256 |
@@ -61,9 +62,9 @@ API 키 원문은 서버로 가지 않는다.
 | 어댑터 | 실패했을 때 |
 |---|---|
 | 공지 · 결산 · 직접 완료 · 게임 데이터 조회 | 실패가 어떤 형태든 `null` 하나를 돌려준다. 화면은 기기 사본이나 번들을 그대로 쓴다. 결산 여부를 모르면 결산 중이라고 표시하지 않고, 직접 완료 대상을 모르면 버튼을 보여 주지 않는다 |
-| 드롭 가격 · 탈퇴 | `sent` · `no-response`(응답이 안 왔다) · `rejected`(응답이 왔고 거절) 셋으로 나눈다. 대기 표가 응답이 온 시도만 센다([[ADR-018]] 결정 8) |
+| 드롭 가격 · 계정 삭제 | `sent` · `no-response`(응답이 안 왔다) · `rejected`(응답이 왔고 거절) 셋으로 나눈다. 대기 표가 응답이 온 시도만 센다([[ADR-018]] 결정 8) |
 | 넥슨 로그인 시작 · 세션 받기 | 예외를 던진다. 로그인 화면에 실패를 보여 준다 |
-| 연결 해제 | 예외를 던지지 않는다. 기기에서 지우는 일이 먼저이기 때문이다 |
+| 세션 거두기 | 예외를 던지지 않는다. 로그아웃은 기기에서 지우는 일이 먼저이기 때문이다 |
 | 프렌즈 스트림 | 서버가 거절하면 `FriendsStreamRejected(status)`, 닿지 못하면 `fetch` 의 실패를 그대로 던진다. 부르는 쪽(`nexon/http.ts`)이 넥슨 에러로 바꾼다 |
 
 조회 어댑터는 응답의 형식을 검사하고, 어긴 줄이나 칸만 버린다. 서버가 계약을 어겨도 빈 칸이 화면까지 가지 않게 하기

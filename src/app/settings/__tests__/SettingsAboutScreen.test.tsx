@@ -9,10 +9,9 @@
 // ⑤ 삭제 뒤 흐름(타임아웃 경쟁 → `closeBossProfitDb` → 스플래시 → 리로드)은 **core 의
 //    `clearCacheDataAndReload` 가 소유한다**. 여기서는 **화면이 무엇을 넘기고 무엇을 받는가**만
 //    본다. 순서 자체는 `storage/__tests__/cache-data.spec.ts` 가 지킨다.
-import { act, fireEvent, waitFor } from '@testing-library/react-native'
+import { act, fireEvent } from '@testing-library/react-native'
 
 import { clearCacheDataAndReload, loadCacheDataCounts } from '../../../features/settings/cache-data'
-import { useSettingsStore } from '../../../features/settings/store'
 
 import { useLiveUpdateStore } from '../../../features/live-update/store'
 import { openInAppBrowser } from '../../../native/browser'
@@ -47,19 +46,24 @@ function installLiveUpdatePort(overrides: Partial<LiveUpdatePort> = {}): void {
 
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 jest.mock('../../../native/browser', () => ({ openInAppBrowser: jest.fn() }))
-jest.mock('../../../features/settings/store', () => ({ useSettingsStore: jest.fn() }))
 jest.mock('../../../features/settings/cache-data', () => ({
   loadCacheDataCounts: jest.fn(),
   clearCacheDataAndReload: jest.fn(async () => {}),
 }))
-// 로그아웃 행은 로그인이 있을 때만 선다. 화면은 `features/` 를 거치고 저장소는 그 아래가 맡는다.
-jest.mock('../../../features/auth/saved-key', () => ({ hasNexonLogin: jest.fn() }))
 jest.mock('../../../features/auth/store', () => {
-  const signOutNexonLogin = jest.fn()
-  return { useAuthStore: (selector: (s: unknown) => unknown) => selector({ signOutNexonLogin }) }
+  const actions = { signOut: jest.fn(), deleteAccount: jest.fn() }
+  return { useAuthStore: (selector: (s: typeof actions) => unknown) => selector(actions), actions }
 })
-const { hasNexonLogin: mockedHasNexonLogin } = jest.requireMock('../../../features/auth/saved-key') as Record<string, jest.Mock>
-const mockedStore = jest.mocked(useSettingsStore)
+jest.mock('../../../features/toast/store', () => {
+  const toast = { showSuccess: jest.fn(), showError: jest.fn() }
+  return { useToastStore: { getState: () => toast }, toast }
+})
+const { actions: authActions } = jest.requireMock('../../../features/auth/store') as {
+  actions: { signOut: jest.Mock; deleteAccount: jest.Mock }
+}
+const { toast } = jest.requireMock('../../../features/toast/store') as {
+  toast: { showSuccess: jest.Mock; showError: jest.Mock }
+}
 const mockedLoadCounts = jest.mocked(loadCacheDataCounts)
 const mockedClearAndReload = jest.mocked(clearCacheDataAndReload)
 
@@ -99,22 +103,6 @@ function hasChevron(node: AtomElement): boolean {
   return node.children.some((child) => typeof child !== 'string' && hasChevron(child))
 }
 
-function mockSettingsStore(overrides: Partial<ReturnType<typeof useSettingsStore>> = {}): void {
-  mockedStore.mockReturnValue({
-    status: 'idle',
-    accounts: [],
-    error: null,
-    prefetchProgress: null,
-    pendingAccountId: null,
-    changeApiKey: jest.fn(),
-    refreshAccounts: jest.fn(),
-    selectAccount: jest.fn(),
-    commitAccountChange: jest.fn(),
-    disconnect: jest.fn(),
-    reset: jest.fn(),
-    ...overrides,
-  })
-}
 
 
 beforeEach(() => {
@@ -122,10 +110,8 @@ beforeEach(() => {
     typeof useSettingsNavigation
   >)
   installLiveUpdatePort()
-  mockSettingsStore()
   mockedLoadCounts.mockReturnValue(new Promise(() => {}))
-  // 기본은 로그인 없음. 행이 서는 케이스만 따로 세운다.
-  mockedHasNexonLogin.mockResolvedValue(false)
+  authActions.deleteAccount.mockResolvedValue(true)
   // 스토어는 모듈 싱글턴이라 케이스 사이에 상태가 샌다.
   useLiveUpdateStore.setState({ currentVersion: null, status: 'idle', channel: '' })
 })
@@ -197,11 +183,29 @@ describe('SettingsAboutScreen', () => {
     const view = await renderOverlay(<SettingsAboutScreen />)
 
     const order = view
-      .getAllByText(/^(앱 정보|개인정보 처리방침|계정|데이터 삭제|연결 해제)$/)
+      .getAllByText(/^(앱 정보|개인정보 처리방침|계정|로그아웃|데이터 삭제|계정 삭제)$/)
       .map((node) => node.props.children as string)
-    expect(order).toEqual(['앱 정보', '개인정보 처리방침', '계정', '데이터 삭제', '연결 해제'])
+    expect(order).toEqual(['앱 정보', '개인정보 처리방침', '계정', '로그아웃', '데이터 삭제', '계정 삭제'])
   })
 })
+
+/** 확인 모달 안의 버튼. 행과 이름이 같아 오버레이 안쪽에서 고른다. */
+function buttonInside(view: Rendered, overlayId: string, label: string): AtomElement {
+  const overlay = view.getByTestId(overlayId)
+  const buttons = view
+    .getAllByText(label)
+    .map((node) => {
+      let current: AtomElement | null = node
+      while (current !== null && current.props.role !== 'button') current = current.parent
+      return current
+    })
+    .filter((node): node is AtomElement => {
+      let current: AtomElement | null = node
+      while (current !== null && current !== overlay) current = current.parent
+      return current === overlay
+    })
+  return buttons[buttons.length - 1]!
+}
 
 describe('계정 묶음', () => {
   // 이 앱에는 `계정 변경`이 없다. 계정을 바꾸는 일이 `캐릭터 관리`의
@@ -213,7 +217,7 @@ describe('계정 묶음', () => {
 
     expect(view.queryByText('계정 변경')).toBeNull()
     expect(view.getAllByTestId('settings-card')).toHaveLength(1)
-    expect(cardOf(view, '연결 해제')).toBe(cardOf(view, '데이터 삭제'))
+    expect(cardOf(view, '계정 삭제')).toBe(cardOf(view, '데이터 삭제'))
   })
 
   // chevron 이 있으면 누르면 무언가 열리고, 없는 위험 색 행은 누르면 지운다.
@@ -221,7 +225,7 @@ describe('계정 묶음', () => {
     const view = await renderOverlay(<SettingsAboutScreen />)
 
     expect(hasChevron(rowOf(view, '데이터 삭제'))).toBe(false)
-    expect(hasChevron(rowOf(view, '연결 해제'))).toBe(false)
+    expect(hasChevron(rowOf(view, '계정 삭제'))).toBe(false)
   })
 
   // **범위는 이 화면이 정하지 않는다**. 그룹마다 고른 여부를 그대로 넘기고,
@@ -267,120 +271,62 @@ describe('계정 묶음', () => {
     expect(view.getByTestId('button-busy', { includeHiddenElements: true })).toBeTruthy()
   })
 
-  it('"연결 해제"를 누르면 확인 모달이 열리고, 확인 시 disconnect가 호출된다', async () => {
-    const disconnect = jest.fn()
-    mockSettingsStore({ disconnect })
+  it('계정 삭제는 확인을 받은 뒤에만 부르고, 예약되면 30일 뒤 지워진다고 알린다', async () => {
     const view = await renderOverlay(<SettingsAboutScreen />)
 
-    expect(view.queryByText('연결을 해제할까요?')).toBeNull()
+    await press(rowOf(view, '계정 삭제'))
+    expect(authActions.deleteAccount).not.toHaveBeenCalled()
+    expect(view.getByText('계정을 삭제할까요?')).toBeTruthy()
 
-    await press(rowOf(view, '연결 해제'))
-    expect(view.getByText('연결을 해제할까요?')).toBeTruthy()
+    await press(buttonInside(view, 'delete-account-confirm-overlay', '계정 삭제'))
 
-    // 확인 모달 안의 `연결 해제`. 행과 이름이 같아 오버레이 안쪽에서 고른다.
-    const overlay = view.getByTestId('disconnect-confirm-overlay')
-    const buttons = view
-      .getAllByText('연결 해제')
-      .map((node) => {
-        let current: AtomElement | null = node
-        while (current !== null && current.props.role !== 'button') current = current.parent
-        return current
-      })
-      .filter((node): node is AtomElement => {
-        let current: AtomElement | null = node
-        while (current !== null && current !== overlay) current = current.parent
-        return current === overlay
-      })
+    expect(authActions.deleteAccount).toHaveBeenCalledTimes(1)
+    expect(toast.showSuccess).toHaveBeenCalledWith('30일 뒤 계정이 삭제돼요')
+  })
 
-    await press(buttons[buttons.length - 1])
+  // 키가 기기에 남아 있어 다시 누를 수 있어야 한다.
+  it('서버가 예약하지 못하면 알리고 화면에 남는다', async () => {
+    authActions.deleteAccount.mockResolvedValue(false)
+    const view = await renderOverlay(<SettingsAboutScreen />)
 
-    expect(disconnect).toHaveBeenCalledTimes(1)
+    await press(rowOf(view, '계정 삭제'))
+    await press(buttonInside(view, 'delete-account-confirm-overlay', '계정 삭제'))
+
+    expect(toast.showError).toHaveBeenCalledTimes(1)
+    expect(view.queryByText('계정을 삭제할까요?')).toBeNull()
+    expect(rowOf(view, '계정 삭제')).toBeTruthy()
   })
 })
 
-// 로그아웃은 연결 해제와 다르다. 지우는 것은 넥슨 로그인 하나이고 API 키와 내부 데이터는 남는다.
-/** 스토어가 내주는 로그아웃 액션. 모킹이 셀렉터라 꺼내 쓰는 길이 한 줄이 아니다. */
-function 로그아웃액션(): jest.Mock {
-  const { useAuthStore: authStoreMock } = jest.requireMock('../../../features/auth/store') as {
-    useAuthStore: (s: (v: { signOutNexonLogin: jest.Mock }) => unknown) => unknown
-  }
-  return authStoreMock((state) => state.signOutNexonLogin) as jest.Mock
-}
-
-describe('넥슨 로그아웃 행', () => {
-  it('로그인이 있으면 선다', async () => {
-    mockedHasNexonLogin.mockResolvedValue(true)
-
+describe('로그아웃 행', () => {
+  // 넥슨 로그인만 떼는 로그아웃을 합쳐, 로그인이 없어도 늘 선다.
+  it('로그아웃 행은 하나이고 위험 행과 다른 카드다', async () => {
     const view = await renderOverlay(<SettingsAboutScreen />)
 
-    await waitFor(() => expect(view.getByText('넥슨 로그아웃')).toBeTruthy())
-  })
-
-  it('로그인이 없으면 안 선다. 뗄 것이 없다', async () => {
-    mockedHasNexonLogin.mockResolvedValue(false)
-
-    const view = await renderOverlay(<SettingsAboutScreen />)
-
-    await waitFor(() => expect(mockedHasNexonLogin).toHaveBeenCalled())
+    expect(view.getAllByText('로그아웃')).toHaveLength(1)
     expect(view.queryByText('넥슨 로그아웃')).toBeNull()
+    expect(() => cardOf(view, '로그아웃')).toThrow()
   })
 
-  it('판정 전에는 안 세운다', async () => {
-    mockedHasNexonLogin.mockReturnValue(new Promise(() => {}))
-
+  it('누르면 바로 안 하고 확인을 받은 뒤 로그아웃한다', async () => {
     const view = await renderOverlay(<SettingsAboutScreen />)
 
-    expect(view.queryByText('넥슨 로그아웃')).toBeNull()
-  })
-
-  // 확인을 한 번 받는다. 다시 로그인하는 것이 창을 열고 넥슨을 거치는 일이라 실수로 눌렀을 때
-  // 치르는 값이 작지 않다.
-  it('누르면 바로 안 뗀다. 확인을 먼저 받는다', async () => {
-    mockedHasNexonLogin.mockResolvedValue(true)
-    const signOut = 로그아웃액션()
-
-    const view = await renderOverlay(<SettingsAboutScreen />)
-    await waitFor(() => view.getByText('넥슨 로그아웃'))
-    await press(rowOf(view, '넥슨 로그아웃'))
-
+    await press(rowOf(view, '로그아웃'))
+    expect(authActions.signOut).not.toHaveBeenCalled()
     expect(view.getByText('로그아웃할까요?')).toBeTruthy()
-    expect(signOut).not.toHaveBeenCalled()
-  })
 
-  it('확인을 누르면 뗀다', async () => {
-    mockedHasNexonLogin.mockResolvedValue(true)
-    const signOut = 로그아웃액션()
+    await press(buttonInside(view, 'sign-out-confirm-overlay', '로그아웃'))
 
-    const view = await renderOverlay(<SettingsAboutScreen />)
-    await waitFor(() => view.getByText('넥슨 로그아웃'))
-    await press(rowOf(view, '넥슨 로그아웃'))
-    await press(view.getByText('로그아웃'))
-
-    expect(signOut).toHaveBeenCalledTimes(1)
+    expect(authActions.signOut).toHaveBeenCalledTimes(1)
   })
 
   it('취소하면 아무 일도 안 일어나고 모달이 닫힌다', async () => {
-    mockedHasNexonLogin.mockResolvedValue(true)
-    const signOut = 로그아웃액션()
-
     const view = await renderOverlay(<SettingsAboutScreen />)
-    await waitFor(() => view.getByText('넥슨 로그아웃'))
-    await press(rowOf(view, '넥슨 로그아웃'))
+
+    await press(rowOf(view, '로그아웃'))
     await press(view.getByText('취소'))
 
-    expect(signOut).not.toHaveBeenCalled()
+    expect(authActions.signOut).not.toHaveBeenCalled()
     expect(view.queryByText('로그아웃할까요?')).toBeNull()
-  })
-
-  it('연결 해제 모달과 다른 문구다', async () => {
-    // 두 행이 같은 화면에 있어 문구가 같으면 무엇을 누른 건지 모른다.
-    mockedHasNexonLogin.mockResolvedValue(true)
-    로그아웃액션()
-
-    const view = await renderOverlay(<SettingsAboutScreen />)
-    await waitFor(() => view.getByText('넥슨 로그아웃'))
-    await press(rowOf(view, '넥슨 로그아웃'))
-
-    expect(view.queryByText('연결을 해제할까요?')).toBeNull()
   })
 })

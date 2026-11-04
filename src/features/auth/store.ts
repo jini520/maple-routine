@@ -34,7 +34,7 @@ import {
   type AuthError,
   type AuthState,
 } from './state'
-import { forgetServerData } from '../server-sync/forget'
+import { clearUnsentServerData, requestAccountDeletion } from '../server-sync/forget'
 
 export interface AuthStore extends AuthState {
   restoreFromStorage(): Promise<void>
@@ -58,14 +58,10 @@ export interface AuthStore extends AuthState {
    * 앱으로 넘어갈 수 있으면 `true`.
    */
   signInWithNexonAccount(): Promise<boolean>
-  /**
-   * 로그아웃. **넥슨 로그인만 뗀다.** API 키와 내부 데이터는 남는다.
-   *
-   * 아래 `signOut`(연결 해제)과 갈리는 자리다. 저쪽은 인증 수단을 통째로 버린다.
-   */
-  signOutNexonLogin(): Promise<void>
-  // 연결 해제. 저장된 인증 정보를 통째로 버린다.
+  /** 로그아웃. 넥슨 로그인과 API 키를 모두 뗀다. 앱 데이터와 서버 데이터는 남는다. */
   signOut(): Promise<void>
+  /** 계정 삭제를 서버에 예약하고 로그아웃한다. 서버가 받지 못하면 로그아웃하지 않고 `false` 다. */
+  deleteAccount(): Promise<boolean>
 }
 
 function toAuthError(error: unknown): AuthError {
@@ -242,38 +238,22 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     return true
   },
 
-  // 로그아웃. 지우는 것은 넥슨 로그인 하나이고 API 키와 내부 데이터는 그대로다. 확인 모달을
-  // 안 띄우는 것은 되돌릴 수 있기 때문이다 - 다시 로그인하면 된다.
-  async signOutNexonLogin() {
-    // **기기에서 지우기 전에** 물어야 세션 값을 아직 들고 있다. 실패해도 진행한다 - 기기에서
-    // 지우는 것이 본론이고, 서버 쪽은 갱신 토큰 수명이 지나면 어차피 정리된다.
+  async signOut() {
+    // 로그인이 있었으면 서버의 토큰도 거둔다. **기기에서 지우기 전에** 물어야 세션 값을 아직 들고 있다. 실패해도
+    // 진행한다. 기기에서 지우는 일이 본론이고, 서버 쪽은 갱신 토큰 수명이 지나면 정리된다.
     const session = (await getAuthConfig().catch(() => null))?.login?.session
     if (session !== undefined) await revokeNexonSession(session)
 
-    await clearNexonLogin()
-
-    // 남은 수단이 있으면 앱은 그 수단으로 계속 선다. 다른 넥슨 계정의 키가 남아 있는데
-    // 로그인 화면으로 보내면 그 계정 캐릭터까지 함께 잃는다.
-    if ((await getAuthConfig().catch(() => null)) !== null) return
-
+    await clearUnsentServerData()
+    await clearAuthConfig()
     set((state) => authReducer(state, { type: 'SIGNED_OUT' }))
     useAppEntryStore.getState().reset()
   },
 
-  async signOut() {
-    // 서버에 모아 둔 시세 표본과 식별자를 먼저 거둔다. **기기에서 키를 지우기 전**이어야 한다 -
-    // 자기를 밝힐 값이 그 키에서 나오므로, 지운 뒤에는 무엇을 지워 달라고 말할 길이 없다.
-    // 실패해도 진행한다(처리방침이 그 경우를 적는다).
-    await forgetServerData()
-
-    // 로그인이 있었으면 서버의 토큰도 함께 거둔다. **기기에서 지우기 전에** 물어야 세션 값을
-    // 아직 들고 있다. 실패해도 진행한다 - 기기에서 지우는 것이 본론이고, 서버 쪽은 갱신 토큰
-    // 수명이 지나면 어차피 정리된다.
-    const session = (await getAuthConfig().catch(() => null))?.login?.session
-    if (session !== undefined) await revokeNexonSession(session)
-
-    await clearAuthConfig()
-    set((state) => authReducer(state, { type: 'SIGNED_OUT' }))
-    useAppEntryStore.getState().reset()
+  async deleteAccount() {
+    // **키를 지우기 전**이어야 한다. 서버가 지울 사람을 찾을 값이 그 키에서 나온다.
+    if (!(await requestAccountDeletion())) return false
+    await get().signOut()
+    return true
   },
 }))

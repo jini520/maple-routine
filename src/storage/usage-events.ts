@@ -43,7 +43,7 @@ export async function takeUsageEvents(): Promise<UsageEvent[]> {
   })
 }
 
-/** 연결 해제 때 비운다. 남기면 다음 사람의 신원으로 나간다. */
+/** 로그아웃 때 비운다. 남기면 다음 사람의 신원으로 나간다. */
 export async function clearUsageEvents(): Promise<void> {
   const db = await getBossProfitDb()
   await db.run('DELETE FROM usage_events')
