@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /v1/
+Disallow: /app/
+Disallow: /ota/
+
+Sitemap: https://mapleroutine.store/sitemap.xml
