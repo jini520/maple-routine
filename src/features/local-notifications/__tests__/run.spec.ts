@@ -1,10 +1,18 @@
-// 재조정을 실제 저장소 · 포트에 잇는 흐름. 권한 · 스위치 · 실패 · 멱등.
+// 재조정을 실제 저장소 · 포트에 잇는 흐름. 권한 · 스위치 · 실패 · 멱등 · 다시 부르는 신호.
+import { focusManager } from '@tanstack/react-query'
+
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
+import { setScheduleAlertEnabled } from '../../../storage/schedule-alert-settings'
+import type { CachedSchedulerEntry } from '../../../storage/scheduler-cache'
+import { queryClient } from '../../query/client'
+import { queryKeys } from '../../query/keys'
+import { useResetBoundaryTick } from '../../query/reset-timer'
+import type { ScheduleRoundResult } from '../../schedule-sync/schedule-query'
 import { __resetNativePortsForTest, setNotificationsPort, type LocalNotificationRequest } from '../../../native/ports'
 import { getNotificationLedger, setNotificationLedger } from '../../../storage/notification-ledger'
 import { setPartyAppointments } from '../../../storage/party-appointments'
 import { setPartyAlarmEnabled } from '../../../storage/party-appointment-settings'
-import { reconcileLocalNotifications } from '../run'
+import { reconcileLocalNotifications, watchReconcileTriggers } from '../run'
 import type { PartyAppointment } from '../../../types/party-appointment'
 
 const NOW = new Date('2026-10-07T10:00:00Z')
@@ -48,7 +56,36 @@ beforeEach(async () => {
   await setPartyAppointments([appointment])
 })
 
-afterEach(__resetNativePortsForTest)
+afterEach(() => {
+  __resetNativePortsForTest()
+  queryClient.clear()
+})
+
+/** 추적 캐릭터 하나의 마지막 스케줄. 일일 퀘스트 하나가 남아 있다 */
+function scheduleEntry(): CachedSchedulerEntry {
+  return {
+    state: {
+      asOf: '2026-10-07T00:00+09:00',
+      characterName: '낟낟',
+      world: '베라',
+      worldKey: 'bera',
+      level: 280,
+      jobClass: '렌',
+      dailyContents: [{ contentKey: null, apiName: '일일 퀘스트', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 0 }],
+      weeklyContents: [],
+      bossContents: [],
+      isDailyStale: false,
+      isWeeklyStale: false,
+      isWeeklyBossStale: false,
+      isMonthlyBossStale: false,
+    },
+    syncedAt: '2026-10-07T05:00:00.000Z',
+  }
+}
+
+function round(): ScheduleRoundResult {
+  return { fetchedAt: '2026-10-07T05:00:00.000Z', receivedAt: null, ocids: [], outcomes: {}, stranded: [] }
+}
 
 describe('reconcileLocalNotifications', () => {
   it('약속 알림을 party 채널로 예약하고 원장에 적는다', async () => {
@@ -108,5 +145,58 @@ describe('reconcileLocalNotifications', () => {
     await reconcileLocalNotifications(NOW)
 
     expect(cancelled).toEqual([99])
+  })
+})
+
+describe('미완료 스케줄 알림', () => {
+  it('추적 캐릭터의 마지막 스케줄로 schedule 채널에 예약하고, 스위치를 끄면 취소한다', async () => {
+    queryClient.setQueryData(queryKeys.trackedOcids(), ['ocid-1'])
+    queryClient.setQueryData(queryKeys.schedule('ocid-1'), scheduleEntry())
+
+    await reconcileLocalNotifications(NOW)
+    const alerts = scheduled.filter((request) => request.channel === 'schedule')
+
+    // 10-07(수) 19:00 KST 라 오늘 21:00 부터 7일 안의 날마다 한 장이다.
+    expect(alerts).toHaveLength(7)
+    expect(alerts[0]!.scheduleAt.toISOString()).toBe('2026-10-07T12:00:00.000Z')
+    // 수요일이라 주간이 드는 날이지만, 주간은 남은 것이 없고 같은 리셋 주라 그 상태를 믿어 제목에서 빠진다.
+    expect(alerts[0]!.title).toBe('일간 스케줄이 남은 것 같아요')
+
+    await setScheduleAlertEnabled(false)
+    await reconcileLocalNotifications(NOW)
+
+    expect(cancelled).toEqual(expect.arrayContaining(alerts.map((request) => request.id)))
+  })
+})
+
+describe('watchReconcileTriggers', () => {
+  it('스케줄 회차 쿼리가 새 데이터를 들면 부르고, 다른 쿼리에는 안 부른다', () => {
+    const reconcile = jest.fn()
+    const stop = watchReconcileTriggers(reconcile)
+
+    queryClient.setQueryData(queryKeys.scheduleRound(), round())
+    expect(reconcile).toHaveBeenCalledTimes(1)
+    queryClient.setQueryData(queryKeys.trackedOcids(), ['ocid-1'])
+    expect(reconcile).toHaveBeenCalledTimes(1)
+
+    stop()
+    queryClient.setQueryData(queryKeys.scheduleRound(), round())
+    expect(reconcile).toHaveBeenCalledTimes(1)
+  })
+
+  // 복귀는 AppShell 이 따로 잇는다. 여기서도 부르면 돌아올 때 두 번 돈다.
+  it('자정 틱과 배경 전환에 부르고, 복귀에는 안 부른다', () => {
+    const reconcile = jest.fn()
+    const stop = watchReconcileTriggers(reconcile)
+
+    useResetBoundaryTick.setState((state) => ({ tick: state.tick + 1 }))
+    expect(reconcile).toHaveBeenCalledTimes(1)
+    focusManager.setFocused(false)
+    expect(reconcile).toHaveBeenCalledTimes(2)
+    focusManager.setFocused(true)
+    expect(reconcile).toHaveBeenCalledTimes(2)
+
+    focusManager.setFocused(undefined)
+    stop()
   })
 })

@@ -77,6 +77,10 @@ export const STORAGE_KEYS = {
   //
   // 데이터 삭제 그룹에 넣지 말 것. 사용자가 끈 스위치가 지워져 되살아나면 끈 약속 알림이 다시 온다.
   partyAlarmEnabled: 'partyAlarmEnabled',
+  // 미완료 스케줄 알림 스위치(설정 > 알림 설정). 없으면 켜짐이다.
+  //
+  // 데이터 삭제 그룹에 넣지 말 것. 사용자가 끈 스위치가 지워져 되살아나면 끈 알림이 다시 온다.
+  scheduleAlertEnabled: 'scheduleAlertEnabled',
   // 파티 스케줄 화면에서 마지막으로 고른 보기 `list` · `board`. 없으면 목록이다.
   //
   // 데이터 삭제 그룹에 넣지 말 것. 사용자가 고른 보기라 지워져 목록으로 돌아가면 안 된다.

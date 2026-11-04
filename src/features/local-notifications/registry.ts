@@ -2,6 +2,7 @@
  * 로컬 알림 종류의 목록. 종류 하나가 한 줄이다. 여기서 빠진 종류의 예약은 재조정이 취소한다.
  */
 import { PARTY_NOTIFICATION_KIND, planPartyAppointmentKind } from '../party-appointments/notification'
+import { SCHEDULE_ALERT_KIND, planScheduleAlertKind } from '../schedule-alert/notification'
 import type { PlannedNotification } from './reconcile'
 
 export interface NotificationKind {
@@ -12,4 +13,5 @@ export interface NotificationKind {
 
 export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   { kind: PARTY_NOTIFICATION_KIND, plan: planPartyAppointmentKind },
+  { kind: SCHEDULE_ALERT_KIND, plan: planScheduleAlertKind },
 ]

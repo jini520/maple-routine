@@ -6,7 +6,8 @@ import { useQuickLinksStore } from '../features/quick-links/store'
 import { startKeyboardHeightRecorder } from '../features/input-card/keyboard-height'
 import { loadMesoUnits } from '../features/input-card/meso-unit'
 import { useNoticeStore } from '../features/notice/store'
-import { requestNotificationReconcile } from '../features/local-notifications/run'
+import { requestNotificationReconcile, watchReconcileTriggers } from '../features/local-notifications/run'
+import { syncBackgroundRefreshRegistration } from '../features/schedule-alert/background-refresh'
 import { assignLegacyEntryAccounts } from '../features/cashbook/legacy-entry-accounts'
 import { dropEmptyMvpGradeRows } from '../features/mvp-grade/empty-rows'
 import { kickServerSync } from '../features/server-sync/kick'
@@ -152,10 +153,17 @@ function ReadyShell(): React.JSX.Element {
   useUsageLog()
 
   // 로컬 알림 예약을 맞춘다. iOS 는 가까운 64개만 들고 알림이 울려도 앱을 깨우지 않아, 켤 때마다 다시 채운다.
+  // 회차 · 자정 · 배경 전환도 다시 부른다. 켜 둔 사이 바뀐 것이 그날 밤 알림에 들어가게 한다.
   useEffect(() => {
     void requestNotificationReconcile()
+    return watchReconcileTriggers()
   }, [])
   useReturnToForeground(requestNotificationReconcile)
+
+  // 미완료 스케줄 알림의 백그라운드 재확인 태스크를 스위치대로 걸거나 푼다. 실패해도 예약은 서 있다.
+  useEffect(() => {
+    void syncBackgroundRefreshRegistration().catch(() => undefined)
+  }, [])
 
   // 여기서 광고 SDK 초기화와 첫 광고 사전 로드를 불렀다. 전면광고를 걷으며 지웠다. 표시만 막고
   // 사전 로드를 남기면 매 실행 **뜨지 않을 광고** 를 요청해

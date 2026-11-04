@@ -7,6 +7,7 @@ import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { topLinesIn } from './row-lines'
 import { useNoticeStore } from '../../../features/notice/store'
 import { usePartyAlarmSettingsStore } from '../../../features/party-appointments/alarm-settings'
+import { useScheduleAlertSettingsStore } from '../../../features/schedule-alert/alert-settings'
 import { NOTICE_TOPICS } from '../../../features/notice/topics'
 import { NO_SUBSCRIPTIONS } from '../../../types/notice'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
@@ -55,8 +56,14 @@ beforeEach(() => {
     setSubscribed: jest.fn().mockResolvedValue(undefined),
     setAllSubscribed: jest.fn().mockResolvedValue(undefined),
   })
-  // 약속 스위치는 꺼 둔다. 위 공지 구독만으로 전체 스위치가 갈리게 한다.
+  // 약속 · 미완료 스케줄 스위치는 꺼 둔다. 위 공지 구독만으로 전체 스위치가 갈리게 한다.
   usePartyAlarmSettingsStore.setState({
+    enabled: false,
+    loaded: true,
+    load: jest.fn().mockResolvedValue(undefined),
+    setEnabled: jest.fn().mockResolvedValue(undefined),
+  })
+  useScheduleAlertSettingsStore.setState({
     enabled: false,
     loaded: true,
     load: jest.fn().mockResolvedValue(undefined),
@@ -488,6 +495,39 @@ describe('스케줄러 알림', () => {
     })
 
     expect(usePartyAlarmSettingsStore.getState().setEnabled).toHaveBeenCalledWith(false)
+  })
+
+  it('미완료 스케줄 알림은 스위치로 서고, 누르면 저장 쪽으로 부른다', async () => {
+    useScheduleAlertSettingsStore.setState({ enabled: true })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.getByLabelText('미완료 스케줄 알림').props.accessibilityState.checked).toBe(true)
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('미완료 스케줄 알림'))
+    })
+
+    expect(useScheduleAlertSettingsStore.getState().setEnabled).toHaveBeenCalledWith(false)
+  })
+
+  // 전체가 꺼진 채로 미완료 알림만 오는 상태가 생기지 않게 전체 스위치가 함께 든다.
+  it('미완료 스케줄 알림만 켜져 있어도 전체는 켜짐이고, 전체를 끄면 함께 끈다', async () => {
+    useNoticeStore.setState({ subscriptions: NO_SUBSCRIPTIONS })
+    useScheduleAlertSettingsStore.setState({ enabled: true })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.getByLabelText('알림 받기').props.accessibilityState.checked).toBe(true)
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('알림 받기'))
+    })
+
+    expect(useScheduleAlertSettingsStore.getState().setEnabled).toHaveBeenCalledWith(false)
+  })
+
+  it('준비 중인 것은 주간 결산 알림 하나다', async () => {
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.getAllByText('준비 중')).toHaveLength(1)
+    expect(view.getByText('주간 결산 알림')).toBeTruthy()
   })
 
   it('전체가 꺼져 있으면 구역째 안 그린다', async () => {

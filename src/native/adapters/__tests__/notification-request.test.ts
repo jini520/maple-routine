@@ -11,13 +11,14 @@ jest.mock('@notifee/react-native', () => ({
   ...jest.requireActual('@notifee/react-native/dist/types/Trigger'),
 }))
 
-import { TriggerType } from '@notifee/react-native'
+import { AndroidImportance, TriggerType } from '@notifee/react-native'
 
 import {
   channelFor,
   NOTIFICATION_CHANNEL,
   NOTIFICATION_CHANNEL_ID,
   PARTY_NOTIFICATION_CHANNEL,
+  SCHEDULE_NOTIFICATION_CHANNEL,
   toNotificationId,
   toTriggerNotification,
 } from '../notification-request'
@@ -102,13 +103,21 @@ describe('toTriggerNotification', () => {
   })
 })
 
-// 파티 약속 알림만 따로 끌 수 있게 채널을 둔다. 채널은 한 번 만들면 이름 · 중요도를 못 바꾼다.
-describe('파티 약속 채널', () => {
-  it('요청이 party 를 고르면 그 채널로, 안 고르면 옛 채널로 간다', () => {
+// 파티 약속 · 미완료 스케줄 알림만 따로 끌 수 있게 채널을 둔다. 채널은 한 번 만들면 이름 · 중요도를 못 바꾼다.
+describe('파티 약속 · 스케줄 채널', () => {
+  it('요청이 고른 채널로, 안 고르면 옛 채널로 간다', () => {
     expect(toTriggerNotification(request({ channel: 'party' }), NOW).notification.android?.channelId).toBe('party')
+    expect(toTriggerNotification(request({ channel: 'schedule' }), NOW).notification.android?.channelId).toBe('schedule')
     expect(toTriggerNotification(request(), NOW).notification.android?.channelId).toBe('default')
     expect(channelFor(request({ channel: 'party' }))).toBe(PARTY_NOTIFICATION_CHANNEL)
+    expect(channelFor(request({ channel: 'schedule' }))).toBe(SCHEDULE_NOTIFICATION_CHANNEL)
     expect(channelFor(request())).toBe(NOTIFICATION_CHANNEL)
+  })
+
+  // 둘 다 시각이 지나면 쓸모가 없어 화면 위에 뜨는 HIGH 다.
+  it('두 채널은 HIGH 이고 소리를 싣는다', () => {
+    expect(PARTY_NOTIFICATION_CHANNEL).toMatchObject({ importance: AndroidImportance.HIGH, sound: 'default' })
+    expect(SCHEDULE_NOTIFICATION_CHANNEL).toMatchObject({ importance: AndroidImportance.HIGH, sound: 'default' })
   })
 })
 

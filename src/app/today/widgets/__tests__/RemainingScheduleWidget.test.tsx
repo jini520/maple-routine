@@ -12,6 +12,7 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderAtom, flattenStyle } from '../../../../components/__tests__/render-atom'
+import { useScheduleAlertOpenStore } from '../../../../features/schedule-alert/open-request'
 import { RemainingScheduleWidget } from '../RemainingScheduleWidget'
 import { 뷰모델, 스케줄목록, 스케줄행, 빈_뷰모델 } from './widget-fixture'
 import type { ScheduleRowView } from '../../view-model'
@@ -34,6 +35,31 @@ async function 펼치기(view: 위젯화면, 번째 = 0): Promise<void> {
     fireEvent.press(view.getAllByTestId('schedule-toggle')[번째] as never)
   })
 }
+
+afterEach(() => {
+  useScheduleAlertOpenStore.setState({ cycle: null })
+})
+
+describe('미완료 스케줄 알림이 연 주기', () => {
+  it('알림이 남긴 주기로 세그먼트가 서고 요청을 비운다', async () => {
+    useScheduleAlertOpenStore.setState({ cycle: 'weekly' })
+    const view = await 위젯([스케줄행()])
+
+    expect(view.getByLabelText('주간').props.accessibilityState?.selected).toBe(true)
+    expect(useScheduleAlertOpenStore.getState().cycle).toBeNull()
+  })
+
+  it('보고 있는 중에 알림이 오면 그 주기로 옮기고 펼친 행을 접는다', async () => {
+    const view = await 위젯([스케줄행()])
+    await 펼치기(view)
+    await act(async () => {
+      useScheduleAlertOpenStore.getState().open('monthly')
+    })
+
+    expect(view.getByLabelText('월간').props.accessibilityState?.selected).toBe(true)
+    expect(view.queryByText('검은마법사')).toBeNull()
+  })
+})
 
 describe('주기 탭', () => {
   it('제목 줄에 세그먼트 셋이 서고 **합계는 없다**', async () => {
