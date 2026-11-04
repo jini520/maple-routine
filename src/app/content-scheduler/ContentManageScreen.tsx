@@ -18,6 +18,7 @@ import type { ContentEntry } from '../../lib/scheduler/contents'
 import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
 import { useContentSchedule } from '../../features/content-scheduler/use-content-schedule'
 import { useGameTable } from '../../features/game-data/sync'
+import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
@@ -77,7 +78,9 @@ const CONTENT_TAB_LABELS: Record<(typeof CONTENT_TABS)[number], string> = {
 export function ContentManageScreen(): React.JSX.Element {
   const faq = useFaqSheet('content-manage')
   // 스케줄은 캐시에서, 수동 추적은 스토어에서 온다. 스케줄러를 거치지 않고 직접 진입해도 훅이 받는다.
-  const { status, characters } = useContentSchedule()
+  const { status, characters: storeCharacters, trackedOcids } = useContentSchedule()
+  // 훅은 레벨 내림차순으로 낸다. 스케줄러와 같은 함수를 거쳐야 두 화면의 레일이 캐릭터 관리에서 정한 차례로 선다.
+  const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
   const {
     manualTrackedByOcid,
     addManualContent,
