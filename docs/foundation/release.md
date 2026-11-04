@@ -261,7 +261,7 @@ iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다
 | 진단(Play `앱 정보 및 성능` · App Store `기타 진단 데이터`) | 강화 합계에서 빠진 줄의 날짜 · 종류 · 사유 · 장비 이름 · 줄 수([[ADR-102]]). 앱의 계산 오류를 찾는 데 쓴다 |
 
 Play 는 `수집함 · 공유하지 않음 · 필수 · 앱 기능과 분석`(사용 로그와 진단은 `분석`), `전송 중 암호화`, `삭제 요청 가능` 으로
-적는다. 삭제는 앱 설정의 `계정 삭제` 가 한다. 서버는 사람과 열쇠를 지우고 보낸 기록을 익명으로 남긴다([[ADR-017]] 결정 6).
+적는다. 삭제는 앱 설정의 `계정 삭제` 가 한다. 서버는 30일 유예 뒤 사람과 열쇠를 지우고 보낸 기록을 익명으로 남긴다([[ADR-017]] 결정 6).
 메일로는 받지 않는다. 운영자가 메일만으로 사람을 찾을 수 없어서다. 넥슨 로그인이 바이너리에 있으므로 계정 생성 방법은
 `OAuth` 이고, 잠근 채로 내도 그렇게 적는다. OTA 로 풀면 심사 없이 계정이 생기기 때문이다. 계정 삭제 URL 과 데이터 삭제 URL 은
 `https://mapleroutine.store/support` 다. 그 페이지의 `계정을 삭제하고 싶습니다` 절이 앱에서 지우는 순서와 지우는 데이터 · 남는
@@ -466,7 +466,7 @@ TEST API KEY:
 - No user accounts. The API key stays on the device and is never sent in plain text. Records other than drop sale prices stay on the device.
 
 [NEXON LOGIN AND ACCOUNT DELETION]
-Sign in with NEXON is built into this binary but switched off while NEXON finishes reviewing our callback URL. We will switch it on with an over-the-air update after NEXON approves it. It adds no other functionality. Account deletion is available to every user at 더보기 (More) > gear icon > 앱 정보 및 계정 (App info and account) > 계정 삭제 (Delete account). It deletes the user's identifiers and login session on our server. Records the user already sent are kept only with the link to the user removed. 로그아웃 (Sign out) on the same screen only signs out and keeps the data.
+Sign in with NEXON is built into this binary but switched off while NEXON finishes reviewing our callback URL. We will switch it on with an over-the-air update after NEXON approves it. It adds no other functionality. Account deletion is available to every user at 더보기 (More) > gear icon > 앱 정보 및 계정 (App info and account) > 계정 삭제 (Delete account). The login session is removed immediately and the user is signed out. After a 30-day grace period our server deletes the user's identifiers; signing in again within that period offers to cancel the deletion. Records the user already sent are kept only with the link to the user removed. 로그아웃 (Sign out) on the same screen only signs out and keeps the data.
 
 [AFFILIATION] Not affiliated with, endorsed by, or sponsored by NEXON Korea Corp. Uses only publicly documented read-only endpoints of NEXON Open API. The required attribution "Data based on NEXON Open API" is shown at the bottom of the Settings screen (gear icon at the top of the 더보기 (More) tab).
 
