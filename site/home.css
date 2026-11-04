@@ -203,7 +203,10 @@ figure { margin: 0; }
   .section-head p, .feature-copy p, .section-body { font-size: 15px; line-height: 1.7; }
   .eyebrow { font-size: 14px; }
   .feature-row, .feature-row-reverse { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 20px; }
-  .feature-copy { gap: 12px; }
+  /* 세로로 쌓이면 flex-basis 360px 이 높이가 되어 글 아래가 빈다. */
+  .feature-copy { flex: none; gap: 12px; }
+  /* 데스크톱에서 폰을 왼쪽에 두는 줄도 모바일에서는 글이 먼저다. */
+  .feature-row-reverse .feature-copy { order: -1; }
   .feature-media, .feature-media.wide { flex: none; }
   .blob { display: none; }
 
