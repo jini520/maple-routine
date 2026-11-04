@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { useAutoFee, type AutoFee } from '../../../features/mvp-grade/store'
+import { autoFeeFrom, useAutoFee, useMvpGradeContext, type AutoFee } from '../../../features/mvp-grade/store'
 import type { FeePercent } from '../../../lib/cashbook/item-split'
 import type { IncomeRecord } from '../../../storage/income'
 
@@ -28,6 +28,8 @@ export interface SaleFeeChoice {
   auto: boolean
   /** 자동인데 요율을 아직 모르면(캐릭터를 고르기 전) 거짓. 저장을 막는다 */
   ready: boolean
+  /** 그 캐릭터에서 뗄 요율. 모든 캐릭터로 정산할 때 자동 요율이 캐릭터마다 다르다 */
+  percentOf: (ocid: string) => FeePercent | null
   /** `FeeRow` 에 그대로 넘기는 값 */
   row: {
     auto: boolean
@@ -43,16 +45,29 @@ export interface SaleFeeChoice {
 /**
  * 판매 수수료를 고르는 수입 폼의 상태. 새 기록은 자동으로 시작하고, 수정으로 연 옛 행은 저장된 자동 여부를 따른다.
  *
+ * @param everyone 모든 캐릭터로 정산할 때의 캐릭터들. 주면 `ocid` 대신 이 캐릭터들의 자동 요율을 본다
  * @example const fee = useSaleFeeChoice(props.editing, ocid, props.dateKey)
  */
-export function useSaleFeeChoice(editing: IncomeRecord | undefined, ocid: string | null, dateKey: string): SaleFeeChoice {
+export function useSaleFeeChoice(
+  editing: IncomeRecord | undefined,
+  ocid: string | null,
+  dateKey: string,
+  everyone?: readonly string[],
+): SaleFeeChoice {
   const [auto, setAuto] = useState(editing === undefined ? true : editing.saleFeeAuto)
   const [manual, setManual] = useState<FeePercent | null>(editing?.saleFeePercent ?? null)
-  const autoFee = useAutoFee(ocid, dateKey)
+  const single = useAutoFee(ocid, dateKey)
+  const context = useMvpGradeContext()
+  const autoFeeOf = (each: string): AutoFee | null => (context === null ? null : autoFeeFrom(context, each, dateKey))
+  const fees = everyone?.map(autoFeeOf) ?? []
+  /** 자동 요율이 캐릭터마다 다른가. 그때 줄에 등급 하나를 세우면 거짓이 된다 */
+  const mixed = fees.some((each) => each?.grade !== fees[0]?.grade)
+  const autoFee = everyone === undefined ? single : mixed ? null : (fees[0] ?? null)
   return {
     percent: auto ? (autoFee?.percent ?? null) : manual,
     auto,
-    ready: !auto || autoFee !== null,
+    ready: !auto || (everyone === undefined ? autoFee !== null : context !== null),
+    percentOf: (each) => (auto ? (autoFeeOf(each)?.percent ?? null) : manual),
     row: {
       auto,
       onAutoChange: (next) => {
@@ -62,7 +77,8 @@ export function useSaleFeeChoice(editing: IncomeRecord | undefined, ocid: string
       },
       autoFee,
       // 요율은 캐릭터가 속한 ID 의 등급에서 온다. 새 기록은 캐릭터가 빈 채로 열린다.
-      autoPlaceholder: ocid === null ? '캐릭터를 선택해 주세요' : undefined,
+      autoPlaceholder:
+        everyone !== undefined ? (mixed ? '캐릭터마다 다름' : undefined) : ocid === null ? '캐릭터를 선택해 주세요' : undefined,
       options: FEE_OPTIONS,
       selected: feeOptionOf(manual),
       onSelect: (option) => setManual(feePercentOf(option)),

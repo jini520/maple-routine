@@ -28,7 +28,7 @@ import { HUNT_LOOT_KINDS } from '../../../types/game-data'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { characterDecorOf, requiredCharacterOptions } from '../character-options'
 import { AmountInput, FieldCard, FieldRow, SelectRow } from '../sheet-fields'
-import { FragmentSettleForm, type LoadFragmentStorage } from './FragmentSettleForm'
+import { ALL_CHARACTERS, FragmentSettleForm, type LoadFragmentStorage } from './FragmentSettleForm'
 import { useSaveSlot, type IncomeDraft, type IncomeFormProps } from './form-shared'
 import { LootBlock, LootLine, NpcLootRow } from './loot-block'
 import { useSaleFeeChoice } from './sale-fee'
@@ -63,7 +63,12 @@ export function HuntLootSaleForm(
         testID="income-sheet-chain"
         label="캐릭터"
         placeholder="캐릭터 선택"
-        options={requiredCharacterOptions(props.characters)}
+        options={
+          // 모든 캐릭터는 새 조각 정산에만 있다. 수정은 기록 한 줄을 고치는 일이다.
+          kind === 'fragment' && props.editing === undefined
+            ? [{ value: ALL_CHARACTERS, label: '모든 캐릭터' }, ...requiredCharacterOptions(props.characters)]
+            : requiredCharacterOptions(props.characters)
+        }
         selected={ocid}
         onSelect={setOcid}
         decorOf={characterDecorOf(props.characters, { notes: heldNotes })}
@@ -100,7 +105,8 @@ export function HuntLootSaleForm(
     <LootForm
       key={kind}
       {...props}
-      ocid={ocid}
+      // 조각 칸에서 고른 모든 캐릭터는 이 칸에 없는 보기라 안 고른 것이다.
+      ocid={ocid === ALL_CHARACTERS ? null : ocid}
       head={head}
       items={items.filter((item) => item.kind === kind)}
       auction={kind === 'event'}
