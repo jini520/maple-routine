@@ -150,7 +150,6 @@ function textsIn(node: AtomElement): string[] {
 
 /** 카드 안에 선 행 라벨들. 순서가 곧 화면 순서다. 소식은 행이 아니라 갈래로 펼친다. */
 const ROW_LABELS = [
-  '기능 설명',
   '개발 노트',
   // 둘 다 앱을 떠나는 줄이다. 문의는 응원보다 자주 써서 위다.
   '문의 · 버그 제보',
@@ -265,19 +264,19 @@ describe('SettingsScreen', () => {
     expect(view.getByTestId('screen-scroll')).toBeTruthy()
   })
 
-  it('읽는 행 넷이 읽을거리 → 문의 · 응원 순으로 선다', async () => {
+  it('읽는 행 셋이 읽을거리 → 문의 · 응원 순으로 선다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     for (const label of ROW_LABELS) expect(view.getByText(label)).toBeTruthy()
     // 문의 · 응원 행만 오른쪽이 chevron 이 아니다. chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는
     // 앱을 떠나 버린다.
-    expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(2)
+    expect(view.getAllByTestId('settings-row-chevron')).toHaveLength(1)
     expect(view.getAllByTestId('settings-row-external')).toHaveLength(2)
   })
 
   // 카드를 갈라 두던 근거가 사라졌다 - 응원이 맨 아래여야 한다는 것이었는데, 고지 네 줄이 설정
   // 화면으로 가면서 아래 카드가 곧 화면 끝이 됐다.
-  it('읽는 행 넷이 한 카드에 선다', async () => {
+  it('읽는 행 셋이 한 카드에 선다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     const cards = view.getAllByTestId('settings-card')
@@ -293,25 +292,22 @@ describe('SettingsScreen', () => {
     expect(labelsIn(cards[0])).toEqual(ROW_LABELS)
   })
 
-  // 앞 둘이 가이드이고 뒤 둘이 문의다(사용자 지정).
+  // 개발 노트가 가이드이고 뒤 둘이 문의다(사용자 지정).
   it('그 카드의 제목은 `가이드 및 문의` 이고 카드 바로 위에 선다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     const texts = textsIn(view.getByTestId('screen-Settings'))
-    expect(texts.indexOf('가이드 및 문의')).toBeLessThan(texts.indexOf('기능 설명'))
+    expect(texts.indexOf('가이드 및 문의')).toBeLessThan(texts.indexOf('개발 노트'))
     // 소식 갈래 제목이 아니므로 `전체` 를 안 단다 - 열 목록이 없다.
     expect(view.queryByLabelText('가이드 및 문의 전체')).toBeNull()
   })
 
-  it.each([
-    ['기능 설명', 'SettingsFeatureGuideList'],
-    ['개발 노트', 'SettingsReleaseNotes'],
-  ])('"%s" 행을 누르면 %s 로 민다', async (label, route) => {
+  it('"개발 노트" 행을 누르면 SettingsReleaseNotes 로 민다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
-    await press(rowOf(view, label))
+    await press(rowOf(view, '개발 노트'))
 
-    expect(navigate).toHaveBeenCalledWith(route)
+    expect(navigate).toHaveBeenCalledWith('SettingsReleaseNotes')
   })
 
   // 후원 수단을 아직 안 정했다. 누를 수 있게 그려 놓고 아무 일도 안 하는 행은 고장으로 읽힌다.
@@ -379,13 +375,11 @@ describe('SettingsScreen', () => {
 
   // 후보가 전부 틀린 말을 한다. "최신 버전"은 아래 `앱 정보` 행과 중복이고 "n개"는
   // 뜻이 없다. 없는 대표값을 지어내지 않는다.
-  it('"기능 설명"·"개발 노트" 행에는 대표값을 두지 않는다', async () => {
+  it('"개발 노트" 행에는 대표값을 두지 않는다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     // 행 안에 남는 글자는 라벨 하나뿐이다(chevron 은 글자가 아니다).
-    for (const label of ['기능 설명', '개발 노트']) {
-      expect(textsIn(rowOf(view, label))).toEqual([label])
-    }
+    expect(textsIn(rowOf(view, '개발 노트'))).toEqual(['개발 노트'])
   })
 
   //  정정: 모드 전환은 세 스토어를 **모두** 낡게 만든다(저장 경로에서 컨텐츠가

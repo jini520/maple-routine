@@ -57,8 +57,7 @@ RootStack
 |---|---|
 | 컨텐츠 관리 · 보스 관리 | `ContentManage` · `BossManage` |
 | 드롭 히스토리 · 아이템 가격 입력 | `DropHistory` · `DropPrice` |
-| 기능 설명 목록 · 상세 | `SettingsFeatureGuideList` · `SettingsFeatureGuide` |
-| 개발 노트 목록 · 상세 | `SettingsReleaseNotes` · `SettingsReleaseNoteGuide` |
+| 개발 노트 | `SettingsReleaseNotes` |
 | 앱 정보 및 계정 | `SettingsAbout` |
 | 캐릭터 관리 | `SettingsCharacters` |
 | 테마 · 글자 크기 · 하단 탭 순서 | `SettingsTheme` · `SettingsTextSize` · `SettingsBarOrder` |
@@ -67,8 +66,6 @@ RootStack
 | 설정(더보기 머리의 톱니바퀴) | `AppSettings` |
 | 판매 분배금 계산기 | `UtilityItemSplit` |
 | 주간 보스 수익 계산기 · 계산 기록 | `UtilityBossProfitCalculator` · `UtilityBossProfitCalculatorRecords` |
-
-기능 설명 상세와 개발 노트 상세는 라우트 이름이 다르지만 같은 화면(`SettingsFeatureGuideScreen`)을 그린다.
 
 ## 하단바
 

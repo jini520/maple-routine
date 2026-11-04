@@ -250,21 +250,15 @@ export function SettingsScreen(): React.JSX.Element {
               </View>
             ))}
 
-            {/* **읽는 행 넷이 한 카드다.** 앞 둘은 읽고 끝나고 뒤 둘은 앱을 떠나는데, 카드를
+            {/* **읽는 행 셋이 한 카드다.** 첫 행은 읽고 끝나고 뒤 둘은 앱을 떠나는데, 카드를
                 갈라 두던 근거가 사라졌다 - 응원이 맨 아래여야 한다는 것이었고 고지 네 줄이 설정
                 화면으로 가면서 아래 카드가 곧 화면 끝이 됐다. 그러면 두 카드의 경계가 말하는 것이
                 없다.
 
-                제목은 `가이드 및 문의` 다(사용자 지정). 앞 둘이 가이드이고 뒤 둘이 문의다. */}
+                제목은 `가이드 및 문의` 다(사용자 지정). 개발 노트가 가이드이고 뒤 둘이 문의다. */}
             <View className="gap-2">
               <SectionTitle>가이드 및 문의</SectionTitle>
               <Card className={SETTINGS_CARD_CLASS} testID="settings-card">
-                {/* `기능 설명` 이 `개발 노트` 위다. 이 앱을 어떻게 쓰나 가 무엇이 바뀌었나 보다
-                    자주 묻는 질문이고 설명의 원천도 이쪽이다. */}
-                <SettingsRow
-                  label="기능 설명"
-                  onPress={() => navigation.navigate('SettingsFeatureGuideList')}
-                />
                 <SettingsRow
                   label="개발 노트"
                   onPress={() => navigation.navigate('SettingsReleaseNotes')}

@@ -18,7 +18,6 @@ import ArrowRight from 'lucide-react-native/icons/arrow-right'
 import Ban from 'lucide-react-native/icons/ban'
 import Bell from 'lucide-react-native/icons/bell'
 import BellOff from 'lucide-react-native/icons/bell-off'
-import BookOpen from 'lucide-react-native/icons/book-open'
 import Calendar from 'lucide-react-native/icons/calendar'
 import CalendarCheck from 'lucide-react-native/icons/calendar-check'
 import CalendarClock from 'lucide-react-native/icons/calendar-clock'
@@ -113,8 +112,6 @@ export const ArrowRightIcon = withIconInterop(ArrowRight)
 /** 직전 기간 대비 **증가**. 보스 수익 증감 칩. */
 /** 조회 불가 캐릭터. 보스 수익 `CharacterIssue`(영구 이슈 표식). */
 export const BanIcon = withIconInterop(Ban)
-/** 안내가 하나도 없을 때. `SettingsFeatureGuideListScreen` 빈 상태. */
-export const BookOpenIcon = withIconInterop(BookOpen)
 /** 에픽 던전 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const CalendarCheckIcon = withIconInterop(CalendarCheck)
 

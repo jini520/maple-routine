@@ -1,5 +1,5 @@
 // 라우트 표가 지켜야 하는 규칙. 실제로 열리는지는 `RootNavigator.test.tsx` 가 본다.
-import { FEATURE_GUIDE_ROUTE_NAMES, INITIAL_TAB_ROUTE, ROUTE_TABLE } from '../routes'
+import { INITIAL_TAB_ROUTE, ROUTE_TABLE } from '../routes'
 
 describe('ROUTE_TABLE', () => {
   it('경로가 중복되지 않는다', () => {
@@ -30,31 +30,5 @@ describe('ROUTE_TABLE', () => {
 
     expect(promoted).toEqual([])
     expect(ROUTE_TABLE.find((row) => row.path === '/boss/manage')?.target).toEqual({ kind: 'push', route: 'BossManage' })
-  })
-})
-
-// 기능 설명 목록에서도, 개발 노트 항목에서도 **같은 상세**가 열린다.
-// 경로를 둘로 두면(`resolveStackDirection` 이 형제 이동을 `replace` 로 떨어뜨려 전환이
-// 사라진다)는 RN 에 없지만, **화면과 데이터가 한 벌이라는 계약은 그대로**다.
-describe('안내 상세는 두 경로가 같은 화면을 가리킨다', () => {
-  const guideRows = ROUTE_TABLE.filter((row) =>
-    row.path.endsWith('/:guideId'),
-  )
-
-  it('둘의 `screen` 이 같다. 사본이 아니라 한 벌이다', () => {
-    expect(guideRows.map((row) => row.screen)).toEqual([
-      'SettingsFeatureGuideScreen',
-      'SettingsFeatureGuideScreen',
-    ])
-  })
-
-  // 라우트 **이름**은 갈린다(부모가 다르므로 pop 목적지도 다르다). 갈리는 것은 이름뿐이라는 것을
-  // 고정해 둔다. 나중에 하나로 합치면 어느 목록으로 돌아갈지가 사라진다.
-  it('라우트 이름은 둘이고 표의 두 행과 일치한다', () => {
-    expect(FEATURE_GUIDE_ROUTE_NAMES).toEqual([
-      'SettingsFeatureGuide',
-      'SettingsReleaseNoteGuide',
-    ])
-    expect(guideRows.map((row) => row.target.route)).toEqual([...FEATURE_GUIDE_ROUTE_NAMES])
   })
 })

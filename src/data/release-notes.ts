@@ -525,7 +525,6 @@ export const RELEASE_NOTES: ReleaseNote[] = [
       {
         category: 'feature',
         text: '드롭한 아이템에 판매 가격을 입력해 주간·월간 수익에 합산',
-        guideId: 'drop-item-price',
       },
       {
         category: 'feature',
@@ -534,11 +533,6 @@ export const RELEASE_NOTES: ReleaseNote[] = [
       {
         category: 'improvement',
         text: '총 수익을 결정석과 아이템으로 나눠 보기',
-        // 같은 안내의 **다른 마디**를 가리킨다. 위 `판매 가격` 항목은
-        // `where` 로, 이 항목은 갈라 보는 자리로 간다. 그래서 참조 규칙이 막는 것은
-        // "같은 안내"가 아니라 **같은 (안내, 마디)** 쌍이다.
-        guideId: 'drop-item-price',
-        guideSectionId: 'total',
       },
       {
         // 사라진 것도 적는다. 말없이 없어지면 고장으로 읽힌다. **다시 넣겠다고 쓰지 않는다.**
@@ -550,10 +544,6 @@ export const RELEASE_NOTES: ReleaseNote[] = [
       {
         category: 'improvement',
         text: '보스 카드를 탭해 파티 인원·난이도를 그 자리에서 수정',
-        guideId: 'boss-party',
-        // 이 릴리스에서 바뀐 것은 파티 인원 기능 전체가 아니라 **카드에서 바로 고치는 것**
-        // 하나다. 안내 첫머리에 떨어뜨리면 그 마디를 다시 찾아야 한다.
-        guideSectionId: 'card',
       },
       {
         category: 'improvement',
