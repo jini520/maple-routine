@@ -29,7 +29,7 @@
 ### 결정 1. 수입과 지출을 테이블 하나로 합치고, 수입과 지출은 `entry_type` 칸으로 가른다
 
 ```
-cashbook_entries               id · ocid · nexon_account_id · entry_type · category_key · entry_date · created_at · updated_at
+cashbook_entries               id · ocid · account_id · nexon_account_id · entry_type · category_key · entry_date · created_at · updated_at
   ├ cashbook_entry_items       id · entry_id · sort_order · item_key · item_name · form_key · item_kind_key
   │                            · quantity · from_level · to_level · 금액 칸
   └ cashbook_entry_hunt_inputs id · entry_id · 사냥 계산기 입력
@@ -68,8 +68,8 @@ cashbook_entries               id · ocid · nexon_account_id · entry_type · c
   확률이 하나뿐인 주문서도 확률을 이름에 남긴다(`매지컬 한손무기 공격력 주문서 100%` · `귀 장식 마력 주문서 10%`).
 - 에픽던전 리워드 형태도 같은 규칙이다. 원본 이름 `경험치` · `솔 에르다` 를 카드에도 쓴다
   (`악몽선경 경험치 1단계, 솔 에르다 1단계`, 사용자 지정).
-- 갈래마다 두 줄은 이렇게 선다(카드 이름표, 사용자 확정 2026-10-25). 첫 줄 앞에는 캐릭터 이름과 ` · ` 가 붙고, 계정 단위
-  기록은 제목만 선다. 수량은 천 단위 쉼표를 찍고 단위를 붙인다(`1,000포인트`).
+- 갈래마다 두 줄은 이렇게 선다(카드 이름표, 사용자 확정 2026-10-25). 첫 줄 앞에는 캐릭터 이름과 ` · ` 가 붙는다. 메이플 ID
+  기록은 그 자리에 메이플 ID 의 이름이 붙고([[ADR-161]] 결정 3), 캐릭터도 메이플 ID 도 없는 옛 기록은 제목만 선다. 수량은 천 단위 쉼표를 찍고 단위를 붙인다(`1,000포인트`).
 
   | 기록 | 첫 줄 | 둘째 줄 |
   |---|---|---|

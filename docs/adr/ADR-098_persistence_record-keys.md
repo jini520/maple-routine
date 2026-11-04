@@ -94,7 +94,7 @@ uuid 를 JS 가 아니라 SQLite 가 만드는 이유는 `storage/sqlite/uuid.ts
 |---|---|---|
 | `enhancement_history_checks` | `nexon_account_id`, `UNIQUE (nexon_account_id, enhancement_type, history_date)` | 강화 내역은 넥슨 계정 단위로 받는다. 계정마다 날짜별 조회를 따로 기록해야 한다 |
 | `character_accounts` | `nexon_account_id` | 메이플 ID 소속은 계정마다 `character/list` 로 받는다. 메이플 ID 가 어느 넥슨 계정에 속하는지 여기서 찾는다 |
-| `cashbook_entries` | `nexon_account_id`, 비어 있어도 된다 | 캐릭터가 없는 기록(계정 단위 지출 등)만 채운다. 캐릭터가 있는 기록은 ocid 에서 메이플 ID 를 거쳐 계정을 찾는다(사용자 선택) |
+| `cashbook_entries` | `nexon_account_id`, 비어 있어도 된다 | 캐릭터도 메이플 ID 도 없는 옛 기록에만 남는다. 새 기록은 적지 않는다. 캐릭터 기록은 ocid 에서 메이플 ID 를 거쳐, 메이플 ID 기록은 그 ID 에서 계정을 찾는다([[ADR-161]] 결정 4) |
 
 - 기존 행은 메인 계정의 `id` 로 채운다. 지금까지 받은 강화 내역과 소속은 모두 메인 계정의 자격으로 받았기 때문이다.
 - 계정 id 는 Preferences 에 있어 SQLite 이관에서는 읽을 수 없다. 그래서 버전 16 은 옛 행의 계정 칸에 빈 글자를 적어 두기만
