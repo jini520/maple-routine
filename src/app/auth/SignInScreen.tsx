@@ -21,12 +21,14 @@ import { useAppEntryStore } from '../../features/app-entry/store'
 import { NEXON_LOGIN_ENABLED } from '../../features/auth/nexon-login-enabled'
 import { loadSavedApiKey } from '../../features/auth/saved-key'
 import { useAuthStore } from '../../features/auth/store'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { boxShadowOf, type ShadowLayer } from '../../lib/shadow'
 import { useThemeAppearance } from '../../theme/context'
 
 import { ExternalLinkIcon, Text } from '../../components/atoms'
 import { NexonLoginButton } from '../../components/molecules/NexonLoginButton/NexonLoginButton'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { EntryScroll } from '../../components/templates/EntryScroll/EntryScroll'
 import { openInAppBrowser } from '../../native/browser'
 import { ApiKeyForm } from './ApiKeyForm'
@@ -44,6 +46,7 @@ const DATA_UTIL_LOGIN_URL = 'https://openapi.nexon.com/ko/data-util/introduction
 const ICON_SHADOW: ShadowLayer = { opacity: 0.6, radius: 12, y: 6 }
 
 export function SignInScreen(): React.JSX.Element {
+  const faq = useFaqSheet('sign-in')
   const status = useAuthStore((state) => state.status)
   const signIn = useAuthStore((state) => state.signIn)
   const signInWithNexonAccount = useAuthStore((state) => state.signInWithNexonAccount)
@@ -95,6 +98,10 @@ export function SignInScreen(): React.JSX.Element {
   return (
     <View testID="screen-SignIn" className="flex-1">
       <EntryScroll>
+        {/* 스크롤 내용 안에 띄워 내용과 함께 굴러간다. 화면에 고정하면 낮은 화면에서 굴린 내용과 겹친다. */}
+        <View className="absolute left-4 top-0">
+          <FaqButton sheet={faq} variant="text" />
+        </View>
         <View className="flex-1">
           <View className="flex-1 justify-center gap-8 px-2">
             <View className="items-center gap-4">

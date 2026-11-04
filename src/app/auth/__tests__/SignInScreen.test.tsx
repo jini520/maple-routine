@@ -16,6 +16,29 @@ import { SignInScreen } from '../SignInScreen'
 
 jest.mock('../../../native/browser', () => ({ openInAppBrowser: jest.fn() }))
 
+// FAQ 시트는 바텀시트다. 열린 내용을 재려고 모달을 평범한 View 로 바꾼다.
+jest.mock('@gorhom/bottom-sheet', () => {
+  const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
+  const React = jest.requireActual<typeof import('react')>('react')
+
+  return {
+    BottomSheetBackdrop: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.View, { testID: 'sheet-backdrop', ...props }),
+    BottomSheetModal: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
+      React.useImperativeHandle(ref as never, () => ({ present: jest.fn(), dismiss: jest.fn() }))
+      return React.createElement(ReactNative.View, props)
+    }),
+    BottomSheetScrollView: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.View, props),
+    useBottomSheetTimingConfigs: (config: unknown) => config,
+    useBottomSheetInternal: () =>
+      jest.requireActual<typeof import('../../../components/__tests__/bottom-sheet-internal-fake')>(
+        '../../../components/__tests__/bottom-sheet-internal-fake',
+      ).fakeBottomSheetInternal(),
+    BottomSheetModalProvider: (props: { children: React.ReactNode }) => props.children,
+  }
+})
+
 jest.mock('../../../features/auth/store', () => ({
   useAuthStore: jest.fn(),
 }))
@@ -147,6 +170,21 @@ describe('SignInScreen: 첫 화면', () => {
 
     expect(mockNavigate.mock.calls).toEqual([['CharacterSetup'], ['MvpGradePick']])
     expect(mockEntry.consumeResume).toHaveBeenCalled()
+  })
+})
+
+describe('SignInScreen: FAQ', () => {
+  // 머리 제목 줄이 없는 화면이라 왼쪽 위의 글자 버튼이 이 화면의 FAQ 를 연다. 문구는 서버 묶음 `sign-in` 이다.
+  it('자주 묻는 질문은 로그인 묶음의 FAQ 시트를 연다', async () => {
+    mockStore({ status: 'signedOut' })
+    const view = await renderOverlay(<SignInScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByText('자주 묻는 질문'))
+    })
+
+    expect(view.getByText('로그인')).toBeTruthy()
+    expect(view.getByText('로그인은 왜 필요한가요?')).toBeTruthy()
   })
 })
 

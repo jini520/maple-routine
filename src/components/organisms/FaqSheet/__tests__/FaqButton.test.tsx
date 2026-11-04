@@ -52,6 +52,17 @@ it('누르기 전에는 시트가 없고, 누르면 묶음 제목의 FAQ 시트�
   expect(screen.getByText('today에서는 무엇을 할 수 있나요?')).toBeTruthy()
 })
 
+// 머리 제목 줄이 없는 로그인 화면은 물음표 대신 글자를 쓴다. 여는 시트는 같다.
+it('글자 모양은 `자주 묻는 질문` 을 그리고, 누르면 묶음의 시트가 열린다', async () => {
+  await renderOverlay(<FaqButton sheet={묶음} variant="text" />)
+
+  await act(async () => {
+    fireEvent.press(screen.getByText('자주 묻는 질문'))
+  })
+
+  expect(screen.getByText('today에서는 무엇을 할 수 있나요?')).toBeTruthy()
+})
+
 // 문항이 없는 화면에도 물음표를 미리 달아 둔다. 서버에 문항이 생기기 전에는 보이지 않아야 한다.
 it('묶음이 없으면 아무것도 그리지 않는다', async () => {
   await renderOverlay(<FaqButton sheet={null} />)

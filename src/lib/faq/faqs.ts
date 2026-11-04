@@ -15,6 +15,7 @@ import { gameTable } from '../game-data/table'
  * 서버 묶음 key 와 글자가 같아야 한다. 다르면 그 화면의 물음표가 뜨지 않는다.
  */
 export const FAQ_SHEET_KEYS = [
+  'sign-in',
   'today',
   'content',
   'boss',
