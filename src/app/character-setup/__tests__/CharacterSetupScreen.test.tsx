@@ -223,14 +223,14 @@ afterEach(() => {
 })
 
 describe('CharacterSetupScreen: FAQ', () => {
-  // 진입 전 화면은 헤더 줄 오른쪽 끝의 글자 버튼이 그 화면의 FAQ 를 연다. 묶음은 설정의 캐릭터 관리와 따로다.
-  it('헤더 줄의 자주 묻는 질문은 캐릭터 선택 묶음의 시트를 연다', async () => {
+  // 진입 전 화면은 헤더 줄 오른쪽 끝의 글자 버튼이 FAQ 를 연다. 설정의 캐릭터 관리와 같은 일을 해서 같은 묶음이다.
+  it('헤더 줄의 자주 묻는 질문은 설정과 같은 캐릭터 관리 묶음의 시트를 연다', async () => {
     const before = faqsTable.get()
     faqsTable.set({
       ...before,
       items: [
         ...before.items,
-        { sheet: 'character-setup', question: '캐릭터가 목록에 없어요.', answer: [{ kind: 'paragraph', text: '답' }] },
+        { sheet: 'settings-characters', question: '캐릭터가 목록에 없어요.', answer: [{ kind: 'paragraph', text: '답' }] },
       ],
     })
     try {
@@ -238,7 +238,7 @@ describe('CharacterSetupScreen: FAQ', () => {
 
       await press(view.getByText('자주 묻는 질문'))
 
-      expect(view.getByText('캐릭터 선택')).toBeTruthy()
+      expect(view.getByText('캐릭터 관리')).toBeTruthy()
       expect(view.getByText('캐릭터가 목록에 없어요.')).toBeTruthy()
     } finally {
       faqsTable.set(before)

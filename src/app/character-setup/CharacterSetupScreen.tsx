@@ -42,7 +42,8 @@ import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 type SetupPhase = 'idle' | 'saving' | 'seeding'
 
 export function CharacterSetupScreen(): React.JSX.Element {
-  const faq = useFaqSheet('character-setup')
+  // 진입 뒤 캐릭터 관리와 같은 일을 하는 화면이라 같은 FAQ 를 보인다.
+  const faq = useFaqSheet('settings-characters')
   const completeCharacterSetup = useAppEntryStore((state) => state.completeCharacterSetup)
   const setRepresentative = useCharacterSelectionStore((state) => state.setRepresentative)
   const navigation = useScreenNavigation()

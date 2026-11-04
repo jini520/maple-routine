@@ -33,7 +33,8 @@ function Heading(props: { title: string; description: string }): React.JSX.Eleme
 }
 
 export function MvpGradePickScreen(): React.JSX.Element {
-  const faq = useFaqSheet('mvp-grade-pick')
+  // 진입 뒤 MVP 등급 설정과 같은 일을 하는 화면이라 같은 FAQ 를 보인다.
+  const faq = useFaqSheet('settings-mvp-grade')
   const navigation = useScreenNavigation()
   const ask = useMvpAskStore((state) => state.ask)
   const accounts = useMvpAskStore((state) => state.accounts)
