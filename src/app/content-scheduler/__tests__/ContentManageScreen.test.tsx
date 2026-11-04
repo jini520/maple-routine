@@ -336,3 +336,33 @@ describe('시작 기간 전인 컨텐츠', () => {
     expect(row('아우룸 레기스')).toBeTruthy()
   })
 })
+
+// 훅은 레벨이 높은 순서로 내보낸다. 레일은 캐릭터 관리에서 정한 저장 순서를 따라야 스케줄러에서 들어와도
+// 같은 순서로 보인다.
+describe('레일 순서', () => {
+  const 레벨순 = [
+    character({ characterName: '캐릭터1', level: 290 }),
+    character({ ocid: 'ocid-2', characterName: '캐릭터2', level: 260 }),
+  ]
+
+  it('저장 순서가 레벨 순서와 다르면 저장 순서로 선다', async () => {
+    mockSchedule({ trackedOcids: ['ocid-2', 'ocid-1'], characters: 레벨순 })
+
+    await renderScreen()
+
+    expect(
+      screen.getAllByTestId('character-portrait').map((node) => node.props.accessibilityLabel),
+    ).toEqual([expect.stringContaining('캐릭터2'), expect.stringContaining('캐릭터1')])
+  })
+
+  it('아직 안 골랐으면 저장 순서의 첫 캐릭터가 열린다', async () => {
+    mockSchedule({ trackedOcids: ['ocid-2', 'ocid-1'], characters: 레벨순 })
+
+    await renderScreen()
+
+    const 고른칸 = screen
+      .getAllByTestId('character-portrait')
+      .find((node) => stateOf(node).selected === true)
+    expect(고른칸?.props.accessibilityLabel).toEqual(expect.stringContaining('캐릭터2'))
+  })
+})
