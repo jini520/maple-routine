@@ -7,6 +7,8 @@ import { installPorts, loadGameData } from './src/boot'
 import { startQueryRuntime } from './src/features/query/client'
 import { holdSplashUntilAppReady } from './src/boot-splash'
 import { handleBackgroundNotificationEvent } from './src/native/adapters/rn-notifications'
+import { defineBackgroundRefreshTask } from './src/native/adapters/rn-background-task'
+import { runBackgroundRefresh } from './src/features/schedule-alert/background-refresh'
 
 // 포트 주입은 **저장소·네이티브를 건드리는 어떤 코드보다 먼저** 와야 한다 — 웹 쪽
 // `main.tsx` 가 세터를 파일 맨 위에 둔 것과 같은 이유다. 주입 전 접근은 조용히 넘어가지 않고 던지므로,
@@ -43,6 +45,10 @@ setBackgroundMessageHandler(getMessaging(), async () => undefined)
 
 // 로컬 알림 탭이 배경에서 오는 길. 위와 같은 이유로 최상위여야 한다. 받은 탭은 화면이 리스너를 달 때 넘어간다.
 notifee.onBackgroundEvent(handleBackgroundNotificationEvent)
+
+// 미완료 스케줄 알림의 백그라운드 재확인. 위와 같은 이유로 최상위여야 한다. OS 가 깨우면 회차를 받고 알림을 재조정한다.
+// 걸지 말지는 스위치대로 `AppShell` 이 정한다.
+defineBackgroundRefreshTask(runBackgroundRefresh)
 
 // registerRootComponent 이 AppRegistry.registerComponent('main', () => App) 를 대신한다.
 registerRootComponent(App)

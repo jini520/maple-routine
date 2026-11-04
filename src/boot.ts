@@ -4,6 +4,7 @@ import {
   setColorSchemePort,
   setBrowserPort,
   setHapticsPort,
+  setBackgroundTaskPort,
   setScreenCornersPort,
   setStoreReviewPort,
   setKeyboardPort,
@@ -28,6 +29,7 @@ import { rnBackGesturePort } from './native/adapters/rn-back-gesture'
 import { rnColorSchemePort } from './native/adapters/rn-color-scheme'
 import { rnHapticsPort } from './native/adapters/rn-haptics'
 import { rnScreenCornersPort } from './native/adapters/rn-screen-corners'
+import { rnBackgroundTaskPort } from './native/adapters/rn-background-task'
 import { rnStoreReviewPort } from './native/adapters/rn-store-review'
 import { rnKeyboardPort } from './native/adapters/rn-keyboard'
 import { rnNotificationsPort } from './native/adapters/rn-notifications'
@@ -103,6 +105,7 @@ export function installPorts(): void {
   setColorSchemePort(rnColorSchemePort)
   setHapticsPort(rnHapticsPort)
   setScreenCornersPort(rnScreenCornersPort)
+  setBackgroundTaskPort(rnBackgroundTaskPort)
   setStoreReviewPort(rnStoreReviewPort)
   setKeyboardPort(rnKeyboardPort)
   setNotificationsPort(rnNotificationsPort)

@@ -403,6 +403,7 @@ iOS 는 알림에 소리가 없으면 무음 알림으로 띄운다. 애플워�
 | `features/remaining-schedule/__tests__/remaining-schedule.spec.ts` | 결정 16: 공유 컨텐츠 · 레벨 미달 · 완료 항목을 빼는지, 수동 추적 모드와 직접 적은 완료를 반영하는지 본다 |
 | `features/schedule-alert/__tests__/alert-settings.spec.ts` | 결정 19: 끄면 재조정과 등록 해제를, 켜면 재조정과 등록을 부르는지 본다 |
 | `features/schedule-alert/__tests__/background-refresh.spec.ts` | 결정 20: 캐시 복원을 기다린 뒤 회차를 받고 재조정하는지, 회차가 실패해도 재조정하는지 본다 |
+| `native/adapters/__tests__/rn-background-task.test.ts` | 결정 20: 제한된 기기에서는 걸지 않는지, 걸려 있을 때만 푸는지, 몸통이 던져도 OS 에 실패로 답하는지 본다 |
 | `src/__tests__/background-task-policy.test.ts` | 결정 1 · 20: `index.ts` 가 최상위에서 태스크를 정의하는지, Info.plist 에 `processing` 모드와 허용 식별자가 있는지 본다 |
 | `app/today/widgets/__tests__/RemainingScheduleWidget.test.tsx` | 결정 6: 알림이 남긴 주기로 세그먼트가 서고 요청을 비우는지 본다 |
 

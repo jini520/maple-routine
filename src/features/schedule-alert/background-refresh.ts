@@ -18,7 +18,7 @@ export const BACKGROUND_REFRESH_INTERVAL_MINUTES = 120
  */
 export async function runBackgroundRefresh(): Promise<void> {
   await whenQueryCacheRestored()
-  await refreshSchedules()
+  await refreshSchedules().catch(() => undefined)
   await requestNotificationReconcile()
 }
 
