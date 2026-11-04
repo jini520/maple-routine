@@ -8,6 +8,7 @@ description: 메이플 루틴 이용 문의, 버그 신고, 기능 제안 안내
 ## 연락처
 
 - **이메일**: support.mapleroutine@gmail.com
+- **카카오톡 오픈채팅**: [open.kakao.com/o/sbxo2RHi](https://open.kakao.com/o/sbxo2RHi)
 - **버그 신고·기능 제안**: [GitHub Issues](https://github.com/jini520/maple-routine/issues)
 
 답변에는 수일이 걸릴 수 있습니다. 개인 개발자가 운영하는 앱인 점 양해 부탁드립니다.

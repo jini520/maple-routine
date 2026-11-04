@@ -153,7 +153,7 @@ const ROW_LABELS = [
   '기능 설명',
   '개발 노트',
   // 둘 다 앱을 떠나는 줄이다. 문의는 응원보다 자주 써서 위다.
-  '문의하기',
+  '문의 · 버그 제보',
   // 평생 한 번 누르는 것이라 맨 아래다.
   '개발자 응원하기(앱 리뷰)',
 ]
@@ -335,29 +335,31 @@ describe('SettingsScreen', () => {
     expect(openURL).toHaveBeenCalledWith(url)
   })
 
+  // 바로 메일을 열지 않고 메일 · 오픈채팅 중에서 고르는 모달을 연다. 두 칸의 동작은 `ContactModal` 테스트가 본다.
+  it('문의 · 버그 제보 행은 주소를 열지 않고 문의 모달을 연다', async () => {
+    const view = await renderOverlay(<SettingsScreen />)
+    expect(view.queryByText('카카오톡 오픈채팅')).toBeNull()
+
+    await press(rowOf(view, '문의 · 버그 제보'))
+
+    expect(view.getByText('카카오톡 오픈채팅')).toBeTruthy()
+    expect(openURL).not.toHaveBeenCalled()
+  })
+
   // 서버로 보내지 않고 메일 앱을 연다. 받는 사람 · 제목 · 기기 정보가 채워진다.
-  it('문의하기 행은 앱 버전이 든 문의 메일을 연다', async () => {
+  it('문의 모달의 메일 칸은 앱 버전이 든 문의 메일을 열고 모달을 닫는다', async () => {
     Platform.OS = 'ios'
 
     const view = await renderOverlay(<SettingsScreen />)
-    await press(rowOf(view, '문의하기'))
+    await press(rowOf(view, '문의 · 버그 제보'))
+    await press(rowOf(view, '메일'))
 
     const url = String(openURL.mock.calls[0]?.[0])
     expect(url.startsWith('mailto:support.mapleroutine@gmail.com?')).toBe(true)
     expect(new URLSearchParams(url.slice(url.indexOf('?') + 1)).get('body')).toContain(
       `앱 ${formatAppVersion(packageJson.version)} / iOS`,
     )
-  })
-
-  it('메일 앱을 못 열면 토스트가 뜬다', async () => {
-    openURL.mockRejectedValueOnce(new Error('Unable to open URL'))
-
-    const view = await renderOverlay(<SettingsScreen />)
-    await press(rowOf(view, '문의하기'))
-
-    expect(useToastStore.getState().toasts.map((toast) => toast.message)).toEqual([
-      '메일 앱을 열지 못했습니다',
-    ])
+    expect(view.queryByText('카카오톡 오픈채팅')).toBeNull()
   })
 
   // 설정은 본문이 아니라 머리에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에 밀린다.

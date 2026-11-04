@@ -46,17 +46,19 @@ describe('SettingsLinkRow', () => {
     expect(openURL).toHaveBeenCalledWith('https://mapleroutine.store/privacy')
   })
 
-  // 여는 앱이 없으면 거절이 온다. 부르는 쪽이 사용자에게 알린다(문의하기의 토스트).
-  it('주소를 못 열면 onOpenFailed 를 부른다', async () => {
-    openURL.mockRejectedValueOnce(new Error('No activity found'))
-    const onOpenFailed = jest.fn()
-    const view = await renderAtom(<SettingsLinkRow label="문의하기" href="mailto:x" onOpenFailed={onOpenFailed} />)
+  // `문의 · 버그 제보` 는 고르는 모달을 먼저 연다. 어느 칸을 골라도 앱을 떠나서 외부 링크 아이콘은 그대로다.
+  it('onPress 를 받으면 주소를 열지 않고 누름만 알린다', async () => {
+    const onPress = jest.fn()
+    const view = await renderAtom(<SettingsLinkRow label="문의 · 버그 제보" onPress={onPress} />)
 
-    fireEvent.press(linkOf(view, '문의하기'))
-    await Promise.resolve()
-    await Promise.resolve()
+    let node: AtomElement | null = view.getByText('문의 · 버그 제보')
+    while (node !== null && node.props.role !== 'button') node = node.parent
+    if (node === null) throw new Error('버튼 행을 찾지 못했다')
+    fireEvent.press(node)
 
-    expect(onOpenFailed).toHaveBeenCalledTimes(1)
+    expect(onPress).toHaveBeenCalledTimes(1)
+    expect(openURL).not.toHaveBeenCalled()
+    expect(view.getByTestId('settings-row-external')).toBeTruthy()
   })
 
   // chevron 은 "다음 화면이 열린다"는 약속이다. 앱을 떠나는 행이 그것을 쓰면
@@ -84,8 +86,10 @@ describe('SettingsLinkRow', () => {
   })
 
   it('행은 SettingsRow 와 같은 card-inset 칸이다', async () => {
-    const view = await renderAtom(<SettingsLinkRow label="문의하기" href="mailto:x" />)
+    const view = await renderAtom(<SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href="itms-apps://x" />)
 
-    expect(flattenStyle(linkOf(view, '문의하기').props.style).backgroundColor).toBe(resolveCardInset(기본테마))
+    expect(flattenStyle(linkOf(view, '개발자 응원하기(앱 리뷰)').props.style).backgroundColor).toBe(
+      resolveCardInset(기본테마),
+    )
   })
 })

@@ -54,12 +54,14 @@ import FlaskConical from 'lucide-react-native/icons/flask-conical'
 import Gamepad2 from 'lucide-react-native/icons/gamepad-2'
 import Gauge from 'lucide-react-native/icons/gauge'
 import GripVertical from 'lucide-react-native/icons/grip-vertical'
+import Headset from 'lucide-react-native/icons/headset'
 import Info from 'lucide-react-native/icons/info'
 import KeyRound from 'lucide-react-native/icons/key-round'
 import LayoutGrid from 'lucide-react-native/icons/layout-grid'
 import LayoutDashboard from 'lucide-react-native/icons/layout-dashboard'
 import ListChecks from 'lucide-react-native/icons/list-checks'
 import Lock from 'lucide-react-native/icons/lock'
+import Mail from 'lucide-react-native/icons/mail'
 import MapPin from 'lucide-react-native/icons/map-pin'
 import Megaphone from 'lucide-react-native/icons/megaphone'
 import Medal from 'lucide-react-native/icons/medal'
@@ -180,6 +182,8 @@ export const Gamepad2Icon = withIconInterop(Gamepad2)
 export const GaugeIcon = withIconInterop(Gauge)
 /** 끌기 핸들. `CharacterRow/DragHandle`. 점을 채워 그린다. */
 export const GripVerticalIcon = withIconInterop(GripVertical)
+/** 문의. `ContactModal` 의 머리 줄 배지. */
+export const HeadsetIcon = withIconInterop(Headset)
 /** 정보 톤. 업데이트 모달 · 추적 방식 고르개 · 정보 토스트 `Toast`(info). */
 export const InfoIcon = withIconInterop(Info)
 /** API 키 무효. `ApiKeyNoticeModal`(invalid). */
@@ -192,6 +196,8 @@ export const LayoutDashboardIcon = withIconInterop(LayoutDashboard)
 export const ListChecksIcon = withIconInterop(ListChecks)
 /** 넥슨 로그인으로만 쓸 수 있는 기능. `ApiKeyWarningModal` 의 첫 칸. */
 export const LockIcon = withIconInterop(Lock)
+/** 문의 메일. `ContactModal` 의 메일 칸. */
+export const MailIcon = withIconInterop(Mail)
 /** 일일/주간 퀘스트 카테고리. `ContentManageScreen` 그룹 헤더·행. */
 export const MapPinIcon = withIconInterop(MapPin)
 /** 운영자 공지. today 배너의 배지. 두루마리는 읽을 것 이라 목록 쪽이고 이쪽은 알린다 이다. */
