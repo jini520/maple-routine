@@ -26,7 +26,7 @@ import {
 } from '../../features/content-scheduler/displayed-contents'
 
 import { ListChecksIcon, Text } from '../../components/atoms'
-import { dailyContentProgress, weeklyContentProgress, weeklyLimitClosedKeys } from './content-completion'
+import { dailyContentProgress, weeklyContentProgress, weeklyLimitClosedKeys } from '../../features/content-scheduler/content-completion'
 
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'

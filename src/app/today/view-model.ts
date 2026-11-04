@@ -9,8 +9,8 @@
  * 글자도 다르면 안 되므로 전부 남의 것을 부른다. 컨텐츠 완료는 `content-completion`, 표시 대상
  * 보스는 `displayed-bosses`, 수익 합산은 `character-groups`, 한도 분모는 `boss-matching` 이다.
  *
- * 대가로 화면 사이 import 가 둘 생긴다(`content-scheduler` · `boss-profit`). 판정을 두 벌로 만드는
- * 것보다 낫다고 보고 감수한다.
+ * 대가로 화면 사이 import 가 하나 생긴다(`boss-profit`). 판정을 두 벌로 만드는 것보다 낫다고 보고
+ * 감수한다.
  */
 
 import { isBossBlocked, isContentBlocked } from '../../lib/scheduler/required-level'
@@ -73,7 +73,7 @@ import {
   displayedWeeklyContents,
 } from '../../features/content-scheduler/displayed-contents'
 
-import { dailyContentCompletion, weeklyContentCompletion } from '../content-scheduler/content-completion'
+import { dailyContentCompletion, weeklyContentCompletion } from '../../features/content-scheduler/content-completion'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 

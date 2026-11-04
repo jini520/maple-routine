@@ -31,17 +31,20 @@ import {
 } from './content-badges'
 import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 
-// 주간 탭 카테고리 분류 상수. 길드 셋은 같은 갈래인데 카드가 저마다 달라 컨텐츠 key 로 가른다.
-export const GUILD_MISSION_POINTS_KEY = 'guild_weekly_mission_points'
-export const GUILD_UNDERGROUND_WATERWAY_KEY = 'guild_underground_waterway'
-export const GUILD_FLAG_RACE_KEY = 'guild_flag_race'
+import {
+  GUILD_FLAG_RACE_KEY,
+  GUILD_MISSION_POINTS_KEY,
+  GUILD_UNDERGROUND_WATERWAY_KEY,
+  MONSTER_PARK_EXTREME_KEY,
+} from '../../lib/scheduler/content-kinds'
+
+export { GUILD_FLAG_RACE_KEY, GUILD_MISSION_POINTS_KEY, GUILD_UNDERGROUND_WATERWAY_KEY, MONSTER_PARK_EXTREME_KEY }
 export const GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG = 'arcanus'
 export const GUILD_MISSION_POINTS_BACKGROUND_SLUG = 'hallOfHeroes'
 export const GUILD_FLAG_RACE_BACKGROUND_SLUG = 'flagRace'
 // 메이플 유니온 주간 드래곤 퇴치. 실제로 등장하는 드래곤은 매주 바뀌지만 API 가 어떤 드래곤인지
 // 알려주지 않아, 에픽 던전 카드와 같이 대표 이미지 하나로 고정한다.
 export const MAPLE_UNION_DRAGON_BOSS_SLUG = 'armorDragon'
-export const MONSTER_PARK_EXTREME_KEY = 'monster_park_extreme'
 
 export function EpicDungeonCard(props: {
   content: WeeklyContent
