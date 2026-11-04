@@ -15,8 +15,8 @@
  * 받는 서버가 한다.
  *
  * **인증 창은 `openAuthSessionAsync` 로 정했다.** iOS 에서는 ASWebAuthenticationSession 이라 콜백
- * URL 이 그 세션에만 돌아오기 때문이다. 안드로이드는 스킴 인텐트로 돌아오고, 다음 스토어 빌드에서
- * App Link 로 바꾼다(이슈 #635). 이 호출은 브라우저 어댑터(`native/adapters/rn-browser.ts`)가 한다.
+ * URL 이 그 세션에만 돌아오기 때문이다. 안드로이드는 스킴 인텐트로 돌아온다. 이 호출은 브라우저
+ * 어댑터(`native/adapters/rn-browser.ts`)가 한다.
  *
  * **던지지 않는다.** 부르는 쪽이 화면이라, 실패를 예외로 내면 그 자리마다 try 가 선다.
  */
