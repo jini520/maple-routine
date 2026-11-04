@@ -211,8 +211,8 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   // 로그인 화면과 더보기 탭이 함께 쓴다. 두 자리가 같은 끝을 내야 한다.
   async signInWithNexonAccount() {
     const result = await signInWithNexon()
-    // 사용자가 창을 닫은 것이라 아무 일도 안 일어난 것이다. 안내를 띄우면 자기가 닫아 놓고
-    // 무엇이 잘못됐나 찾게 된다.
+    // 사용자가 창을 닫거나 동의 화면에서 취소한 것이라 아무 일도 안 일어난 것이다. 안내를 띄우면
+    // 자기가 그만둬 놓고 무엇이 잘못됐나 찾게 된다.
     if (result.kind === 'cancelled') return false
     if (result.kind === 'failed') {
       useToastStore.getState().showError('넥슨 로그인에 실패했습니다')

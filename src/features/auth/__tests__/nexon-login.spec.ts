@@ -112,7 +112,7 @@ describe('콜백이 아직 도는 중이면 되묻는다', () => {
 
 describe('receipt 가 없으면 서버에 묻지 않는다', () => {
   it('receipt 없이 돌아온 콜백은 실패다', async () => {
-    // 서버가 짝을 못 집었거나 넥슨이 동의를 거절로 끝낸 것이다. 스킴 주소만 돌아온다.
+    // 서버가 짝을 못 집었거나 교환이 실패한 것이다. 스킴 주소만 돌아온다.
     콜백('com.mapleroutine.app://oauth/callback')
 
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'failed' })
@@ -126,6 +126,13 @@ describe('receipt 가 없으면 서버에 묻지 않는다', () => {
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'failed' })
     expect(redeemNexonSession).not.toHaveBeenCalled()
   })
+
+  it('동의 취소가 아닌 error_name 은 실패다', async () => {
+    콜백('com.mapleroutine.app://oauth/callback?error_name=server_error')
+
+    await expect(signInWithNexon()).resolves.toEqual({ kind: 'failed' })
+    expect(redeemNexonSession).not.toHaveBeenCalled()
+  })
 })
 
 describe('취소는 실패가 아니다', () => {
@@ -133,6 +140,15 @@ describe('취소는 실패가 아니다', () => {
     // 아무 일도 안 일어난 것이다. 실패로 다루면 안내가 뜨고, 사용자는 자기가 닫아 놓고
     // 무엇이 잘못됐나 찾게 된다. 닫힌 종류를 `null` 로 모으는 일은 브라우저 어댑터가 한다.
     openAuthSession.mockResolvedValue(null)
+
+    await expect(signInWithNexon()).resolves.toEqual({ kind: 'cancelled' })
+    expect(redeemNexonSession).not.toHaveBeenCalled()
+    expect(setNexonLogin).not.toHaveBeenCalled()
+  })
+
+  it('넥슨 동의 화면에서 취소해도 취소로 끝난다', async () => {
+    // 넥슨은 state 없이 error_name 만 보내고, 서버가 그 값을 스킴 주소에 실어 돌려보낸다.
+    콜백('com.mapleroutine.app://oauth/callback?error_name=user_cancel_consent')
 
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'cancelled' })
     expect(redeemNexonSession).not.toHaveBeenCalled()
