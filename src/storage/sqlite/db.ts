@@ -315,6 +315,19 @@ const TABLE_DEFINITIONS = [
   },
   // 캐릭터의 메이플 ID 소속. 스타포스 줄은 이름만 들어 옛 이름을 지우면 안 된다.
   // 옛 이름과 지운 캐릭터는 다시 받을 수 없어 데이터 삭제가 지우지 않는다.
+  // 서버로 보낼 사용 로그. 백그라운드로 갈 때와 다음 실행 때 통째로 꺼내 보낸다. 신원이 없는 기기에서 끝없이 자라지 않게
+  // 줄 수에 상한이 있다(`storage/usage-events.ts`). 데이터 삭제와는 상관없다.
+  {
+    name: 'usage_events',
+    createSql: `CREATE TABLE IF NOT EXISTS usage_events (
+    id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    duration_ms INTEGER,
+    occurred_at TEXT NOT NULL,
+    PRIMARY KEY (id)
+)`,
+  },
   // 서버로 못 보낸 것만 든다. 평소에 비어 있다 - 전송은 사용자가 값을 저장하는 그 자리에서
   // 한 건 나가고, 실패한 것만 여기 줄이 남는다. 할 일만 들어서 표 자체가 목록이 된다.
   //

@@ -11,6 +11,7 @@
  *    (손입력 둘 · 보스 결정석 · 아이템 판매) 뒤의 둘은 여기서 못 고친다.
  */
 import { countCoreSave } from '../app-review/request'
+import { recordUsageAction } from '../usage-log/record'
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
 import type { BossDifficulty } from '../../types'
 import { compareBossOrder } from '../../lib/boss/boss-matching'
@@ -81,6 +82,7 @@ export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void>
   const id = randomUuid()
   await insertIncomeRecord({ ...draft, id, recordedAt: now.toISOString() }, await entryAccountId())
   countCoreSave()
+  recordUsageAction('cashbook-add')
   // 저장이 성공한 뒤에만 기억한다.
   const remembered = lastHuntOf(draft)
   if (remembered !== null) await setLastHunt(remembered.ocid, remembered.hunt)
@@ -91,6 +93,7 @@ export async function recordIncomes(drafts: readonly IncomeDraft[], now: Date): 
   const records = drafts.map((draft) => ({ ...draft, id: randomUuid(), recordedAt: now.toISOString() }))
   await insertIncomeRecords(records, await entryAccountId())
   countCoreSave()
+  recordUsageAction('cashbook-add')
 }
 
 /**
@@ -129,6 +132,7 @@ export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
   await insertSpendRecord(record, await entryAccountId())
   await quietly(() => rememberAfterSave(record))
   countCoreSave()
+  recordUsageAction('cashbook-add')
   // 저장이 성공한 뒤에만 기억한다. 던진 입력의 시세를 다음 기본값으로 남기면 안 된다.
   if (draft.pointPer100mMeso !== null) {
     await setLastPointRate(draft.pointPer100mMeso)

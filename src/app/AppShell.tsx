@@ -32,6 +32,7 @@ import { prehydrateTabStores } from './prehydrate'
 import { recordFirstLaunch } from '../features/app-review/request'
 import { useKeyboardVisible } from '../hooks/useKeyboardVisible'
 import { useReturnToForeground } from '../hooks/useReturnToForeground'
+import { useUsageLog } from '../features/usage-log/useUsageLog'
 
 /**
  * 앱 셸. 웹 `AppShell`(573줄)의 짝. 화면이 아니라 **부팅 순서**가 이 파일의 실질이다.
@@ -145,6 +146,9 @@ function ReadyShell(): React.JSX.Element {
 
   // 돌아올 때도 같다. OS 설정에서 알림 권한을 켜고 돌아오면 그때 구독이 맞춰진다.
   useReturnToForeground(resubscribeNotice)
+
+  // 방문을 적고, 백그라운드로 갈 때 쌓인 사용 로그를 묶어 보낸다.
+  useUsageLog()
 
   // 로컬 알림 예약을 맞춘다. iOS 는 가까운 64개만 들고 알림이 울려도 앱을 깨우지 않아, 켤 때마다 다시 채운다.
   useEffect(() => {
