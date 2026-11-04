@@ -31,6 +31,9 @@ import { pruneCoveredApiKeys } from './prune-covered-keys'
 /** 넥슨에 등록한 값. 인증 세션이 이 주소로 돌아올 때만 콜백을 우리에게 준다. */
 const REDIRECT_URI = 'com.mapleroutine.app://oauth/callback'
 
+/** 넥슨 동의 화면에서 `취소` 를 누르면 넥슨이 보내는 `error_name`. 서버가 돌아오는 주소에 그대로 싣는다. */
+const CONSENT_CANCELLED = 'user_cancel_consent'
+
 /** 콜백이 넥슨과 왕복하는 동안 되묻는 간격과 횟수. 서버가 봉한 세션을 60초 안에 꺼내 가야 한다. */
 export const REDEEM_RETRY_MS = 1_000
 export const REDEEM_MAX_TRIES = 30
@@ -71,8 +74,12 @@ export async function signInWithNexon(): Promise<NexonSignInResult> {
     // 사용자가 창을 닫았다.
     if (callbackUrl === null) return { kind: 'cancelled' }
 
-    // 서버가 짝을 못 집었거나 넥슨이 동의를 거절로 끝내면 receipt 없이 돌아온다.
-    const receipt = new URL(callbackUrl).searchParams.get('receipt')
+    // 동의 화면에서 취소한 것도 창을 닫은 것과 같이 스스로 그만둔 것이다.
+    const params = new URL(callbackUrl).searchParams
+    if (params.get('error_name') === CONSENT_CANCELLED) return { kind: 'cancelled' }
+
+    // 서버가 짝을 못 집었거나 교환이 실패하면 receipt 없이 돌아온다.
+    const receipt = params.get('receipt')
     if (receipt === null || receipt === '') return { kind: 'failed' }
 
     const session = await redeemUntilSettled(started.redeemKey, receipt)
