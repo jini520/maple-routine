@@ -11,7 +11,7 @@
 // 드롭다운· 실패 표현. 은 `../../settings/__tests__/SettingsCharactersScreen.test.tsx` 가 이미
 // 본다. 같은 컴포넌트를 두 곳에서 다시 검사하면 이 **머리와 CTA 만 갈린다** 로
 // 묶어 둔 것이 테스트에서 두 벌이 된다. 여기서 보는 것은 제목· CTA 게이트· 저장 배선· 대기 두 단·
-// **429 만 넘기는 배선** 다섯이다.
+// **429 만 넘기는 배선** 다섯과 헤더 줄의 FAQ 입구다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
@@ -29,6 +29,7 @@ import { queryKeys } from '../../../features/query/keys'
 import { useTrackedOcids } from '../../../features/schedule-sync/use-schedule-queries'
 import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
+import { faqsTable } from '../../../lib/faq/faqs'
 import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
 import type { CharacterPickerEntry, MapleAccount, MapleCharacter } from '../../../types'
 
@@ -44,6 +45,29 @@ const mockGoBack = jest.fn()
 
 jest.mock('../../../nexon/character', () => ({ fetchCharacterList: jest.fn() }))
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
+
+// FAQ 시트는 바텀시트다. 열린 내용을 재려고 모달을 평범한 View 로 바꾼다.
+jest.mock('@gorhom/bottom-sheet', () => {
+  const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
+  const React = jest.requireActual<typeof import('react')>('react')
+
+  return {
+    BottomSheetBackdrop: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.View, { testID: 'sheet-backdrop', ...props }),
+    BottomSheetModal: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
+      React.useImperativeHandle(ref as never, () => ({ present: jest.fn(), dismiss: jest.fn() }))
+      return React.createElement(ReactNative.View, props)
+    }),
+    BottomSheetScrollView: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.View, props),
+    useBottomSheetTimingConfigs: (config: unknown) => config,
+    useBottomSheetInternal: () =>
+      jest.requireActual<typeof import('../../../components/__tests__/bottom-sheet-internal-fake')>(
+        '../../../components/__tests__/bottom-sheet-internal-fake',
+      ).fakeBottomSheetInternal(),
+    BottomSheetModalProvider: (props: { children: React.ReactNode }) => props.children,
+  }
+})
 jest.mock('../../../storage/character-selection', () => ({
   getRepresentativeCharacter: jest.fn(),
   setRepresentativeCharacter: jest.fn(),
@@ -196,6 +220,30 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.clearAllMocks()
+})
+
+describe('CharacterSetupScreen: FAQ', () => {
+  // 진입 전 화면은 헤더 줄 오른쪽 끝의 글자 버튼이 FAQ 를 연다. 설정의 캐릭터 관리와 같은 일을 해서 같은 묶음이다.
+  it('헤더 줄의 자주 묻는 질문은 설정과 같은 캐릭터 관리 묶음의 시트를 연다', async () => {
+    const before = faqsTable.get()
+    faqsTable.set({
+      ...before,
+      items: [
+        ...before.items,
+        { sheet: 'settings-characters', question: '캐릭터가 목록에 없어요.', answer: [{ kind: 'paragraph', text: '답' }] },
+      ],
+    })
+    try {
+      const { view } = await renderStep()
+
+      await press(view.getByText('자주 묻는 질문'))
+
+      expect(view.getByText('캐릭터 관리')).toBeTruthy()
+      expect(view.getByText('캐릭터가 목록에 없어요.')).toBeTruthy()
+    } finally {
+      faqsTable.set(before)
+    }
+  })
 })
 
 describe('CharacterSetupScreen: 머리와 CTA', () => {
