@@ -44,6 +44,9 @@ PODS:
     - Yoga
   - ExpoAsset (57.0.10):
     - ExpoModulesCore
+  - ExpoBackgroundTask (57.0.21):
+    - ExpoModulesCore
+    - ExpoTaskManager
   - ExpoBlur (57.0.2):
     - ExpoModulesCore
   - ExpoCrypto (57.0.4):
@@ -123,6 +126,9 @@ PODS:
     - ExpoModulesCore
   - ExpoStoreReview (57.0.1):
     - ExpoModulesCore
+  - ExpoTaskManager (57.0.21):
+    - ExpoModulesCore
+    - UMAppLoader
   - ExpoWebBrowser (57.0.3):
     - ExpoModulesCore
   - EXStructuredHeaders (57.0.0)
@@ -3453,6 +3459,7 @@ PODS:
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.17)
   - SocketRocket (0.7.1)
+  - UMAppLoader (57.0.2)
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -3465,6 +3472,7 @@ DEPENDENCIES:
   - EXManifests (from `../node_modules/expo-manifests/ios`)
   - Expo (from `../node_modules/expo`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
+  - ExpoBackgroundTask (from `../node_modules/expo-background-task/ios`)
   - ExpoBlur (from `../node_modules/expo-blur/ios`)
   - ExpoCrypto (from `../node_modules/expo-crypto/ios`)
   - "ExpoDomWebView (from `../node_modules/@expo/dom-webview/ios`)"
@@ -3485,6 +3493,7 @@ DEPENDENCIES:
   - ExpoSharing (from `../node_modules/expo-sharing/ios`)
   - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
   - ExpoStoreReview (from `../node_modules/expo-store-review/ios`)
+  - ExpoTaskManager (from `../node_modules/expo-task-manager/ios`)
   - ExpoWebBrowser (from `../node_modules/expo-web-browser/ios`)
   - EXStructuredHeaders (from `../node_modules/expo-structured-headers/ios`)
   - EXUpdates (from `../node_modules/expo-updates/ios`)
@@ -3582,6 +3591,7 @@ DEPENDENCIES:
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNWorklets (from `../node_modules/react-native-worklets`)
   - SocketRocket (~> 0.7.1)
+  - UMAppLoader (from `../node_modules/unimodules-app-loader/ios`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -3627,6 +3637,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo"
   ExpoAsset:
     :path: "../node_modules/expo-asset/ios"
+  ExpoBackgroundTask:
+    :path: "../node_modules/expo-background-task/ios"
   ExpoBlur:
     :path: "../node_modules/expo-blur/ios"
   ExpoCrypto:
@@ -3667,6 +3679,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-splash-screen/ios"
   ExpoStoreReview:
     :path: "../node_modules/expo-store-review/ios"
+  ExpoTaskManager:
+    :path: "../node_modules/expo-task-manager/ios"
   ExpoWebBrowser:
     :path: "../node_modules/expo-web-browser/ios"
   EXStructuredHeaders:
@@ -3856,6 +3870,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-svg"
   RNWorklets:
     :path: "../node_modules/react-native-worklets"
+  UMAppLoader:
+    :path: "../node_modules/unimodules-app-loader/ios"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -3869,6 +3885,7 @@ SPEC CHECKSUMS:
   EXManifests: f9888c0bf5aaa6ddb7e3d4b224d6d54ac4ca84a4
   Expo: 8e68a0ae1d3a157d3633f363883f109fba578cb3
   ExpoAsset: 64e4684e2cb6c45a52009f91e18c45ff56ed4a09
+  ExpoBackgroundTask: 855f1e9d278e9396a8b837f68fe064d5636f5eae
   ExpoBlur: 69e67b4fbfed6f7325377af2aefa8aa4f00cd2af
   ExpoCrypto: 20c5dfad9f2c0b7831591fb75397d0c248cf7f8b
   ExpoDomWebView: beaec034e51bd028428b98bb1f2633ab79c6d095
@@ -3889,6 +3906,7 @@ SPEC CHECKSUMS:
   ExpoSharing: c5da4721c1c539fde2db3fe83e46338550e3691d
   ExpoSplashScreen: 2dda363bfc268b92f00530ee7fa2a3be4534cf57
   ExpoStoreReview: 2a0f6b8e04112aea2f6e3e1cb84109d78f4d041f
+  ExpoTaskManager: ede265f5b4a6e075b422eb4d45c8cb393b0dc465
   ExpoWebBrowser: a4d7c382116fbe33c1ec7f60293f02b7e97042e4
   EXStructuredHeaders: 1423c3602a30eb078e03b63b251ef912267dd4c0
   EXUpdates: 8fd7e5898a01e35d56c035a26efb98595345768a
@@ -4004,6 +4022,7 @@ SPEC CHECKSUMS:
   SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c
   SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
+  UMAppLoader: d69910810f31d2e2cfd49706e89ad372161b0561
   Yoga: 0b38f02674a32b9a15de1f41f8680ffa06eaf8ef
 
 PODFILE CHECKSUM: 43076f381b9bc8228c658672c820e0a8d3ff21c4
