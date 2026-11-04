@@ -14,8 +14,9 @@
   --dark: #241208;
   --dark-muted: #D8CFC4;
   --gutter: 24px;
-  /* 두 스토어 배지는 같은 높이다. Apple 화면 최소 40px, Google 은 App Store 배지보다 작으면 안 된다. */
-  --badge-h: 48px;
+  /* 두 스토어 배지는 같은 높이다. Apple 화면 최소 40px, Google 은 App Store 배지보다 작으면 안 된다.
+     Google 한국어 배지의 한글 획이 높이의 1% 안팎이라 48px 에서는 흰 글씨가 회색으로 번진다. */
+  --badge-h: 56px;
 }
 
 * { box-sizing: border-box; }
@@ -179,7 +180,7 @@ figure { margin: 0; }
 
 /* 모바일 */
 @media (max-width: 860px) {
-  :root { --gutter: 20px; --badge-h: 44px; }
+  :root { --gutter: 20px; --badge-h: 52px; }
   .site-nav a:not(.nav-cta) { display: none; }
   .site-header { padding-top: 16px; padding-bottom: 16px; }
   .brand { font-size: 18px; }
