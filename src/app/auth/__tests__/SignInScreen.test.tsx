@@ -139,15 +139,16 @@ describe('SignInScreen: 첫 화면', () => {
     expect(view.queryByLabelText('Nexon Open API 키')).toBeNull()
   })
 
-  // 첫 화면에 입력칸이 없어져 설명이 밀려날 자리가 없다. 이름이 제목이 되고 두 줄은 그 아래 보조 글이다.
-  it('머리에 앱 이름과, 넥슨 로그인이 왜 필요한지를 적는다', async () => {
+  // 머리는 스플래시의 잎과 이름 묶음이고 앱 아이콘은 없다. 이름은 그림이라 접근성 이름으로 읽힌다.
+  it('머리에 앱 이름과, 넥슨 로그인으로 무엇을 불러오는지를 적는다', async () => {
     mockStore({ status: 'signedOut' })
 
     const view = await renderOverlay(<SignInScreen />)
 
-    expect(view.getByText('메이플 루틴')).toBeTruthy()
-    expect(view.getByText('내 메이플 스토리 스케줄 정보 조회를 위해서')).toBeTruthy()
-    expect(view.getByText('넥슨 로그인이 필요해요.')).toBeTruthy()
+    expect(view.getByLabelText('메이플 루틴')).toBeTruthy()
+    expect(view.queryByTestId('app-icon')).toBeNull()
+    expect(view.getByText('넥슨 Open API의 메이플스토리 스케줄러와 강화 기록을')).toBeTruthy()
+    expect(view.getByText('불러오려면 넥슨 로그인이 필요해요.')).toBeTruthy()
   })
 
   // 설명 다섯 문장을 앱이 싣지 않는다. 넥슨이 문구를 고치면 앱을 안 고쳐도 따라간다.
@@ -354,8 +355,8 @@ describe('SignInScreen: 넥슨 로그인이 꺼져 있을 때', () => {
 
     const view = await renderOverlay(<SignInScreen />)
 
-    expect(view.getByText('API 키 입력이 필요해요.')).toBeTruthy()
-    expect(view.queryByText('넥슨 로그인이 필요해요.')).toBeNull()
+    expect(view.getByText('불러오려면 API 키 입력이 필요해요.')).toBeTruthy()
+    expect(view.queryByText('불러오려면 넥슨 로그인이 필요해요.')).toBeNull()
   })
 
   // 경고와 시트는 넥슨 로그인이 있을 때 키 경로를 낮추려고 둔 것이다. 키가 유일한 방법이면 낮출 이유가 없다.

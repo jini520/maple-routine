@@ -13,9 +13,8 @@
  * @see docs/features/auth.md 정책
  */
 import { useEffect, useState } from 'react'
-import { Image, Pressable, View } from 'react-native'
-
-import appIcon from '../../../assets/icon.png'
+import { Pressable, View } from 'react-native'
+import { Path } from 'react-native-svg'
 
 import { useAppEntryStore } from '../../features/app-entry/store'
 import { NEXON_LOGIN_ENABLED } from '../../features/auth/nexon-login-enabled'
@@ -23,14 +22,15 @@ import { loadSavedApiKey } from '../../features/auth/saved-key'
 import { useAuthStore } from '../../features/auth/store'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
-import { boxShadowOf, type ShadowLayer } from '../../lib/shadow'
-import { useThemeAppearance } from '../../theme/context'
+import { Svg } from '../../lib/nativewind-interop'
 
 import { ExternalLinkIcon, Text } from '../../components/atoms'
 import { NexonLoginButton } from '../../components/molecules/NexonLoginButton/NexonLoginButton'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { EntryScroll } from '../../components/templates/EntryScroll/EntryScroll'
 import { openInAppBrowser } from '../../native/browser'
+import { SPLASH_LEAF_PATH, SPLASH_LEAF_VIEW_BOX } from '../splash/leaf'
+import { WORDMARK_EM_HEIGHT, WORDMARK_GLYPHS, WORDMARK_UNITS_PER_EM } from '../splash/wordmark'
 import { ApiKeyForm } from './ApiKeyForm'
 import { ApiKeySheet } from './ApiKeySheet'
 import { ApiKeyWarningModal } from './ApiKeyWarningModal'
@@ -42,8 +42,46 @@ import { DevelopmentStageKeyModal } from './DevelopmentStageKeyModal'
  */
 const DATA_UTIL_LOGIN_URL = 'https://openapi.nexon.com/ko/data-util/introduction/'
 
-/** 아이콘 바탕과 페이지 색의 밝기가 거의 같아 경계가 필요하다. 테두리 대신 그림자로 가른다. */
-const ICON_SHADOW: ShadowLayer = { opacity: 0.6, radius: 12, y: 6 }
+/** 이름 글자 크기. 잎 높이(117%)와 획 윤곽선(em 의 1000 분의 18)은 스플래시와 같아야 두 화면의 이름이 같은 글자로 보인다. */
+const NAME_PX = 34
+const LEAF_PX = Math.round(NAME_PX * 1.17)
+const WORDMARK_STROKE_UNITS = 18
+
+const GLYPH_OFFSETS = WORDMARK_GLYPHS.map((_, index) =>
+  WORDMARK_GLYPHS.slice(0, index).reduce((sum, glyph) => sum + glyph.advance, 0),
+)
+const WORDMARK_ADVANCE = WORDMARK_GLYPHS.reduce((sum, glyph) => sum + glyph.advance, 0)
+
+/** 스플래시의 잎과 이름 묶음. 이름은 서체 윤곽을 그린 그림이라 글자 크기 설정을 따르지 않는다. */
+function NameLockup(): React.JSX.Element {
+  return (
+    <View accessible role="img" aria-label="메이플 루틴" className="flex-row items-center gap-1.5">
+      <Svg width={(LEAF_PX * 127) / 130} height={LEAF_PX} viewBox={SPLASH_LEAF_VIEW_BOX} className="text-primary">
+        <Path d={SPLASH_LEAF_PATH} fill="currentColor" />
+      </Svg>
+      <Svg
+        width={(NAME_PX * WORDMARK_ADVANCE) / WORDMARK_UNITS_PER_EM}
+        height={NAME_PX}
+        viewBox={`0 0 ${WORDMARK_ADVANCE} ${WORDMARK_EM_HEIGHT}`}
+        className="text-text"
+      >
+        {WORDMARK_GLYPHS.map((glyph, index) =>
+          glyph.path === '' ? null : (
+            <Path
+              key={glyph.char}
+              d={glyph.path}
+              transform={`translate(${GLYPH_OFFSETS[index]} 0)`}
+              fill="currentColor"
+              stroke="currentColor"
+              strokeWidth={WORDMARK_STROKE_UNITS}
+              strokeLinejoin="round"
+            />
+          ),
+        )}
+      </Svg>
+    </View>
+  )
+}
 
 export function SignInScreen(): React.JSX.Element {
   const faq = useFaqSheet('sign-in')
@@ -52,7 +90,6 @@ export function SignInScreen(): React.JSX.Element {
   const signInWithNexonAccount = useAuthStore((state) => state.signInWithNexonAccount)
   const resumeTo = useAppEntryStore((state) => state.resumeTo)
   const navigation = useScreenNavigation()
-  const { definition } = useThemeAppearance()
   const [savedKey, setSavedKey] = useState<string | null>(null)
   const [warningOpen, setWarningOpen] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -104,25 +141,17 @@ export function SignInScreen(): React.JSX.Element {
         </View>
         <View className="flex-1">
           <View className="flex-1 justify-center gap-8 px-2">
-            <View className="items-center gap-4">
-              <View
-                className="rounded-[22px]"
-                style={{ boxShadow: boxShadowOf(definition.shadowColor, ICON_SHADOW) }}
-              >
-                <Image testID="app-icon" source={appIcon} className="h-24 w-24 rounded-[22px]" accessible={false} />
-              </View>
-              <View className="items-center gap-2">
-                <Text className="text-2xl font-bold text-text">메이플 루틴</Text>
-                {/* 두 줄이 한 문장이라 사이를 안 벌린다. 줄 높이(20)가 곧 문단의 리듬이다. */}
-                <View>
-                  <Text className="text-center text-sm text-text-muted">
-                    내 메이플 스토리 스케줄 정보 조회를 위해서
-                  </Text>
-                  {/* 넥슨 로그인이 꺼져 있으면 로그인을 말하지 않는다. 없는 수단을 찾게 된다. */}
-                  <Text className="text-center text-sm text-text-muted">
-                    {NEXON_LOGIN_ENABLED ? '넥슨 로그인이 필요해요.' : 'API 키 입력이 필요해요.'}
-                  </Text>
-                </View>
+            <View className="items-center gap-16">
+              <NameLockup />
+              {/* 두 줄이 한 문장이라 사이를 안 벌린다. 줄은 손으로 나눈다. 자동 줄바꿈은 폭에 따라 말 가운데서 꺾는다. */}
+              <View>
+                <Text className="text-center text-sm text-text-muted">
+                  넥슨 Open API의 메이플스토리 스케줄러와 강화 기록을
+                </Text>
+                {/* 넥슨 로그인이 꺼져 있으면 로그인을 말하지 않는다. 없는 수단을 찾게 된다. */}
+                <Text className="text-center text-sm text-text-muted">
+                  {NEXON_LOGIN_ENABLED ? '불러오려면 넥슨 로그인이 필요해요.' : '불러오려면 API 키 입력이 필요해요.'}
+                </Text>
               </View>
             </View>
 
