@@ -78,7 +78,7 @@ export function useSaleFeeChoice(
       autoFee,
       // 요율은 캐릭터가 속한 ID 의 등급에서 온다. 새 기록은 캐릭터가 빈 채로 열린다.
       autoPlaceholder:
-        everyone !== undefined ? (mixed ? '캐릭터마다 다름' : undefined) : ocid === null ? '캐릭터를 선택해 주세요' : undefined,
+        everyone !== undefined ? (mixed ? '메이플 ID 별 수수료 적용' : undefined) : ocid === null ? '캐릭터를 선택해 주세요' : undefined,
       options: FEE_OPTIONS,
       selected: feeOptionOf(manual),
       onSelect: (option) => setManual(feePercentOf(option)),

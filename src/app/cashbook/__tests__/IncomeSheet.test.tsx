@@ -2571,11 +2571,19 @@ describe('솔 에르다 조각 정산', () => {
     it('새 정산의 캐릭터 목록 맨 앞에 서고, 수정으로 열면 없다', async () => {
       const view = await 정산시트()
       await 아이디로누르기(view, 'income-sheet-chain-open')
-      expect(view.getByTestId('income-sheet-chain-option-all')).toHaveTextContent('모든 캐릭터')
+      expect(view.getByTestId('income-sheet-chain-option-all')).toHaveTextContent(/^모든 캐릭터/)
 
       const editing = await 그리기({ editing: 정산기록, onDelete: jest.fn(), loadFragmentStorage: async () => 50 })
       await 아이디로누르기(editing, 'income-sheet-chain-open')
       expect(editing.queryByTestId('income-sheet-chain-option-all')).toBeNull()
+    })
+
+    it('목록 줄 오른쪽에 모든 캐릭터의 보유를 더한 값이 선다', async () => {
+      const view = await 정산시트({ loadFragmentStorage: 둘다있음 })
+
+      await 아이디로누르기(view, 'income-sheet-chain-open')
+
+      expect(view.getByTestId('income-sheet-chain-option-all-note')).toHaveTextContent('보유 160개')
     })
 
     it('판 개수는 보관을 더한 값으로 서고 칠 수 없다', async () => {
@@ -2595,7 +2603,7 @@ describe('솔 에르다 조각 정산', () => {
       await 사슬고르기(view, 'all')
       await 아이디로치기(view, 'income-sheet-settle-price', '1000000')
 
-      expect(view.getByTestId('income-sheet-fee')).toHaveTextContent(/캐릭터마다 다름/)
+      expect(view.getByTestId('income-sheet-fee')).toHaveTextContent(/메이플 ID 별 수수료 적용/)
       // 1억 2천에서 3% · 4천만에서 5% 를 뗀다
       expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1억 5440만')
       await 이름으로누르기(view, '저장')
