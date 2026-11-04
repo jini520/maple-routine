@@ -278,7 +278,7 @@ export function StatsScreen(): React.JSX.Element {
                 />
               </View>
 
-              <BossSection days={days} range={currentRange} cycle={cycle} />
+              <BossSection days={days} range={currentRange} />
 
               <View onLayout={onSectionLayout('cumulative')}>
                 <CumulativeSection
