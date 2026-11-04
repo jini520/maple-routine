@@ -14,8 +14,9 @@
   --dark: #241208;
   --dark-muted: #D8CFC4;
   --gutter: 24px;
-  /* 두 스토어 배지는 같은 높이다. Apple 화면 최소 40px, Google 은 App Store 배지보다 작으면 안 된다. */
-  --badge-h: 48px;
+  /* 두 스토어 배지는 같은 높이다. Apple 화면 최소 40px, Google 은 App Store 배지보다 작으면 안 된다.
+     Google 한국어 배지의 한글 획이 높이의 1% 안팎이라 48px 에서는 흰 글씨가 회색으로 번진다. */
+  --badge-h: 56px;
 }
 
 * { box-sizing: border-box; }
@@ -102,7 +103,8 @@ figure { margin: 0; }
 .section-body { flex: 1 1 400px; min-width: 0; font-size: 17px; line-height: 1.75; color: var(--dark-muted); }
 
 /* 핵심 기능 카드 */
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+/* 한 줄에 둘. 넷이면 카드가 좁아져 제목이 두 줄로 꺾인다. */
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .card { background: var(--bg); border-radius: 24px; padding: 28px; display: flex; gap: 18px; align-items: flex-start; }
 .card h3 { font-size: 19px; font-weight: 700; margin-bottom: 6px; }
 .card p { font-size: 15px; line-height: 1.6; color: var(--muted); }
@@ -153,9 +155,7 @@ figure { margin: 0; }
 .carousel.is-scrollable .arrow { display: flex; }
 
 /* 테마 */
-.theme { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 16px; }
-.theme .phone { --w: 160px; }
-.theme figcaption { font-size: 16px; font-weight: 700; }
+.phone-theme { --w: 160px; }
 
 /* 다운로드 */
 .cta-band { padding: 0 var(--gutter) 120px; }
@@ -179,7 +179,7 @@ figure { margin: 0; }
 
 /* 모바일 */
 @media (max-width: 860px) {
-  :root { --gutter: 20px; --badge-h: 44px; }
+  :root { --gutter: 20px; --badge-h: 52px; }
   .site-nav a:not(.nav-cta) { display: none; }
   .site-header { padding-top: 16px; padding-bottom: 16px; }
   .brand { font-size: 18px; }
@@ -224,8 +224,7 @@ figure { margin: 0; }
   .rail > :first-child { margin-left: 0; }
   .rail > :last-child { margin-right: 0; }
   .rail .phone { --w: 210px; margin-top: 0; }
-  .theme .phone { --w: 150px; }
-  .theme figcaption { font-size: 15px; }
+  .rail .phone-theme { --w: 150px; }
   .arrow { width: 44px; height: 44px; top: calc(50% - 40px); box-shadow: 0 8px 20px -6px rgba(36, 18, 8, .45); }
   .arrow-prev { left: 8px; }
   .arrow-next { right: 8px; }
