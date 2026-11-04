@@ -13,7 +13,7 @@
 import type { IncomeCategoryKey, ItemKindKey } from '../lib/cashbook/categories'
 import type { UnionTier } from '../lib/cashbook/hunting-meso'
 import type { FeePercent } from '../lib/cashbook/item-split'
-import { deleteEntry, insertEntry, readEntries, replaceEntry } from './cashbook-entries'
+import { assignLegacyEntryAccounts, deleteEntry, insertEntry, readEntries, replaceEntry } from './cashbook-entries'
 import { incomeEntryOf, incomeRecordOf } from './cashbook-entry-shape'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
@@ -21,8 +21,10 @@ import { inTransaction } from './sqlite/transaction'
 
 export interface IncomeRecord {
   id: string
-  /** `null` = 계정 단위가 기본이다. 고르면 그 캐릭터가 붙는다. */
+  /** 기록이 붙은 캐릭터. 메이플 ID 기록과 주인을 모르는 옛 기록은 `null` 이다. */
   ocid: string | null
+  /** 기록이 붙은 메이플 ID. 메이플 ID 기록에만 있다. */
+  accountId?: string
   /** `'YYYY-MM-DD'` KST. **사용자가 고른 날짜**라 캘린더 칸에 바로 선다. */
   earnedOn: string
   /** 갈래 key. */
@@ -181,29 +183,36 @@ function bumpIncomeRecordsRevision(): void {
   })
 }
 
-export async function insertIncomeRecord(record: IncomeRecord, nexonAccountId: string | null = null): Promise<void> {
+export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
   const db = await getBossProfitDb()
-  await inTransaction(db, () => insertEntry(db, incomeEntryOf(record), nexonAccountId))
+  await inTransaction(db, () => insertEntry(db, incomeEntryOf(record)))
   bumpIncomeRecordsRevision()
 }
 
 /** 여러 건을 한 트랜잭션으로 넣는다. 하나라도 못 넣으면 아무것도 안 남는다. */
-export async function insertIncomeRecords(
-  records: readonly IncomeRecord[],
-  nexonAccountId: string | null = null,
-): Promise<void> {
+export async function insertIncomeRecords(records: readonly IncomeRecord[]): Promise<void> {
   const db = await getBossProfitDb()
   await inTransaction(db, async () => {
-    for (const record of records) await insertEntry(db, incomeEntryOf(record), nexonAccountId)
+    for (const record of records) await insertEntry(db, incomeEntryOf(record))
   })
   bumpIncomeRecordsRevision()
 }
 
 /** 갈아 끼우기. 지출과 같은 계약이다. 저장 시각은 그대로다. */
-export async function updateIncomeRecord(record: IncomeRecord, nexonAccountId: string | null = null): Promise<void> {
+export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
   const db = await getBossProfitDb()
-  await inTransaction(db, () => replaceEntry(db, incomeEntryOf(record), new Date(), nexonAccountId))
+  await inTransaction(db, () => replaceEntry(db, incomeEntryOf(record), new Date()))
   bumpIncomeRecordsRevision()
+}
+
+/**
+ * 주인을 모르는 옛 수입을 그 넥슨 계정의 하나뿐인 메이플 ID 로 옮긴다. 옮긴 것이 있을 때만 판이 오른다.
+ *
+ * @param categoryKeys 메이플 ID 를 고를 수 있는 수입 분류
+ */
+export async function assignLegacyIncomeAccounts(categoryKeys: readonly IncomeCategoryKey[]): Promise<void> {
+  const db = await getBossProfitDb()
+  if (await assignLegacyEntryAccounts(db, 'income', categoryKeys)) bumpIncomeRecordsRevision()
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */

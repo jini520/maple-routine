@@ -28,7 +28,8 @@ import {
   itemKindNameOf,
   type ItemKindKey,
 } from '../../../lib/cashbook/categories'
-import { AmountInput, CharacterField, FieldCard, FieldRow, TextField, useCountField } from '../sheet-fields'
+import { ownerFieldsOf, ownerValueOf } from '../character-options'
+import { AmountInput, FieldCard, FieldRow, OwnerField, TextField, useCountField } from '../sheet-fields'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
@@ -45,7 +46,8 @@ function tariffOptions(): readonly [string, string] {
 
 export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
-  const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
+  /** 고른 캐릭터나 메이플 ID(`ownerValueOf`). 주인을 모르는 옛 기록은 빈 채로 열린다. */
+  const [owner, setOwner] = useState<string | null>(ownerValueOf(props.editing))
   const [name, setName] = useState(props.editing?.item ?? '')
   const { text: quantityText, pristine: quantityPristine, set: setQuantityText, reset: resetQuantity } =
     useCountField(props.editing?.quantity)
@@ -78,7 +80,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   // 8.5억 → 9.35억 → 10.28억 으로 부푼다.
   const tariffed = withTariffMeso(subtotal)
   const amount = hasTariff ? tariffed.mesoAmount : subtotal
-  const canSave = subtotal > 0
+  const canSave = owner !== null && subtotal > 0
 
   /**
    * 종류를 바꾸는 자리. 수량은 1 로, 관세는 꺼진다.
@@ -101,7 +103,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
     saving,
     onSave: () =>
       void submit({
-        ocid,
+        ...ownerFieldsOf(owner),
         spentOn: props.dateKey,
         category: 'item_purchase',
         item: name.trim() === '' ? null : name.trim(),
@@ -137,10 +139,11 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   return (
     <>
       <FieldCard>
-        <CharacterField
+        <OwnerField
           characters={props.characters}
-          selected={ocid}
-          onSelect={setOcid}
+          accounts={props.accounts}
+          selected={owner}
+          onSelect={setOwner}
           testID="spend-sheet-chain"
         />
 

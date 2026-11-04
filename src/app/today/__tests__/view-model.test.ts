@@ -596,6 +596,39 @@ describe('이번 주 수익', () => {
     ])
   })
 
+  // 순위는 얼굴이 서는 자리인데 메이플 ID 에는 그림이 없다. 합계와 도넛은 모든 기록을 센다.
+  it('메이플 ID 기록은 순위에 서지 않고 합계에는 든다', () => {
+    const accountSpend: DayRecord = {
+      kind: 'spend',
+      record: {
+        id: 's',
+        ocid: null,
+        accountId: 'maple-a',
+        spentOn: week.from,
+        category: 'etc',
+        item: null,
+        itemKey: null,
+        formItemKeys: null,
+        itemKind: null,
+        levelFrom: null,
+        levelTo: null,
+        quantity: null,
+        mesoAmount: 200,
+        tariffMeso: null,
+        pointAmount: null,
+        pointPer100mMeso: null,
+        cashAmount: null,
+        hexa: null,
+        recordedAt: `${week.from}T00:00:00.000Z`,
+      },
+      characterName: '메이플 ID · 단풍루틴',
+    }
+    const model = buildTodayViewModel(input({ statsDays: { [week.from]: [crystalDay('a', '단풍루틴', 500), accountSpend] } }))
+
+    expect(model.weeklyIncome.characters.map((row) => row.key)).toEqual(['ocid:a'])
+    expect(model.weeklyIncome.totals).toEqual({ incomeMeso: 500, expenseMeso: 200, netMeso: 300 })
+  })
+
   // 읽기 전의 0 을 이번 주에 번 것이 없다 로 그리면 사실을 단정하게 된다.
   it('기록을 아직 못 읽었으면 loading 이다', () => {
     expect(buildTodayViewModel(input({ statsDays: null })).weeklyIncome.loading).toBe(true)

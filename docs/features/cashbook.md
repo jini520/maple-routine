@@ -15,6 +15,8 @@
 | `lib/cashbook/meso-compact.ts` | 칸 금액 줄임(`formatMesoCompact`) · 부호 붙이기(`formatMesoSigned`) |
 | `features/cashbook/range.ts` | 미리 읽는 창 · 데이터 공급자에 알리는 범위 · 조회 한도 |
 | `features/cashbook/records.ts` | 저장 · 고치기 · 지우기, 원천 넷을 하루 단위로 합치기, 카드 두 줄(`recordCardOf`) · 금액, 그날 합계. 시트의 캐릭터 이름 · 레벨 · 월드는 쿼리 캐시의 `characterBasic(ocid)` 에서 읽는다(`features/schedule-sync/read-schedule.ts` 의 `readCharacterBasic`) |
+| `features/cashbook/account-names.ts` | 메이플 ID 기록의 이름(`메이플 ID · 대표 캐릭터`)과 시트의 메이플 ID 보기. 대표는 기기에 저장된 `characterList` 쿼리에서 고른다 |
+| `features/cashbook/legacy-entry-accounts.ts` | 주인을 모르는 옛 손입력을 그 넥슨 계정의 하나뿐인 메이플 ID 로 옮기는 부팅 단계 |
 | `features/cashbook/row-icon.ts` | 하루 목록 줄의 그림 |
 | `features/cashbook/ledger-query.ts` | 날짜별 줄 쿼리 `ledgerDays(from, to)`. 기록 표의 판이 오르면 다시 읽는다. today · 통계도 같은 열쇠를 쓴다 |
 | `features/ledger/useLedgerData.tsx` | 넥슨 API 회차를 관리하는 데이터 공급자. 진행률 · 모달 · 강화 범위를 들고 기록은 들지 않는다. 화면은 범위를 알리고 다시 받아 달라고 요청한다 |
@@ -22,7 +24,7 @@
 | `storage/enhancement-totals.ts` · `storage/enhancement-history.ts` · `features/enhancement-history/` · `lib/enhancement/` | 강화 사용 내역 수집 · 비용 계산 · 합계 저장 · 지출 판정. 원장은 `enhancement-history.ts` 에 있다 |
 | `app/cashbook/IncomeSheet.tsx` · `SpendSheet.tsx` · `CategoryPicker.tsx` · `sheet-fields.tsx` | 두 시트와 공용 부품 |
 | `app/cashbook/income/` · `app/cashbook/spend/` | 분류별 폼 |
-| `lib/cashbook/categories.ts` | 지출 · 수입 분류, 아이템 종류, 에픽던전 형태의 key 와 이름 |
+| `lib/cashbook/categories.ts` | 지출 · 수입 분류, 메이플 ID 를 고를 수 있는 분류, 아이템 종류, 에픽던전 형태의 key 와 이름 |
 | `lib/cashbook/spend-catalog.ts` | 지출 참조표(서버 게임 데이터의 `spendCatalog` 칸) · 메포 환산 · 관세 · 주화 |
 | `lib/cashbook/symbol-costs.ts` | 심볼 강화 비용(`symbolCosts` 칸) |
 | `lib/cashbook/hexa-matrix.ts` | 헥사 코어 종류 · 직업별 코어 · 레벨별 조각 · 헥사 스탯(`hexaMatrix` 칸)과 지출 금액 |

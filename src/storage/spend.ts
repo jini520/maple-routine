@@ -8,7 +8,7 @@
  * 한 행 = 한 통화로는 표현이 안 된다.
  */
 import type { ItemKindKey, SpendCategoryKey } from '../lib/cashbook/categories'
-import { deleteEntry, insertEntry, readEntries, replaceEntry } from './cashbook-entries'
+import { assignLegacyEntryAccounts, deleteEntry, insertEntry, readEntries, replaceEntry } from './cashbook-entries'
 import { spendEntryOf, spendRecordOf } from './cashbook-entry-shape'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
@@ -16,8 +16,10 @@ import { inTransaction } from './sqlite/transaction'
 
 export interface SpendRecord {
   id: string
-  /** `null` = 계정 단위가 기본. */
+  /** 기록이 붙은 캐릭터. 메이플 ID 기록과 주인을 모르는 옛 기록은 `null` 이다. */
   ocid: string | null
+  /** 기록이 붙은 메이플 ID. 메이플 ID 기록에만 있다. */
+  accountId?: string
   /** `'YYYY-MM-DD'` KST. */
   spentOn: string
   /** 갈래 key. */
@@ -138,11 +140,11 @@ function bumpSpendRecordsRevision(): void {
   })
 }
 
-export async function insertSpendRecord(record: SpendRecord, nexonAccountId: string | null = null): Promise<void> {
+export async function insertSpendRecord(record: SpendRecord): Promise<void> {
   assertPointRate(record)
 
   const db = await getBossProfitDb()
-  await inTransaction(db, () => insertEntry(db, spendEntryOf(record), nexonAccountId))
+  await inTransaction(db, () => insertEntry(db, spendEntryOf(record)))
   bumpSpendRecordsRevision()
 }
 
@@ -150,12 +152,22 @@ export async function insertSpendRecord(record: SpendRecord, nexonAccountId: str
  * 갈아 끼우기. **지우고 다시 넣지 않는다**. 지우고 넣으면 `id` 와 저장 시각이 새것이 되어 같은 날 안의 차례가
  * 바뀐다. 넣을 때와 같은 검증을 탄다. 아니면 그 방어가 수정 쪽에서 반쪽이 된다.
  */
-export async function updateSpendRecord(record: SpendRecord, nexonAccountId: string | null = null): Promise<void> {
+export async function updateSpendRecord(record: SpendRecord): Promise<void> {
   assertPointRate(record)
 
   const db = await getBossProfitDb()
-  await inTransaction(db, () => replaceEntry(db, spendEntryOf(record), new Date(), nexonAccountId))
+  await inTransaction(db, () => replaceEntry(db, spendEntryOf(record), new Date()))
   bumpSpendRecordsRevision()
+}
+
+/**
+ * 주인을 모르는 옛 지출을 그 넥슨 계정의 하나뿐인 메이플 ID 로 옮긴다. 옮긴 것이 있을 때만 판이 오른다.
+ *
+ * @param categoryKeys 메이플 ID 를 고를 수 있는 지출 분류
+ */
+export async function assignLegacySpendAccounts(categoryKeys: readonly SpendCategoryKey[]): Promise<void> {
+  const db = await getBossProfitDb()
+  if (await assignLegacyEntryAccounts(db, 'spend', categoryKeys)) bumpSpendRecordsRevision()
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */

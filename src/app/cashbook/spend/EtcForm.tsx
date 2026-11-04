@@ -22,13 +22,15 @@ import {
 import { CASH_QUICK_ADDS, POINT_AMOUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
-import { AmountInput, CharacterField, FieldCard, FieldRow, TextField, useCountField } from '../sheet-fields'
+import { ownerFieldsOf, ownerValueOf } from '../character-options'
+import { AmountInput, FieldCard, FieldRow, OwnerField, TextField, useCountField } from '../sheet-fields'
 import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 
 export function EtcForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
-  const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
+  /** 고른 캐릭터나 메이플 ID(`ownerValueOf`). 주인을 모르는 옛 기록은 빈 채로 열린다. */
+  const [owner, setOwner] = useState<string | null>(ownerValueOf(props.editing))
   const [name, setName] = useState(props.editing?.item ?? '')
   const { text: quantityText, pristine: quantityPristine, set: setQuantityText } = useCountField(
     props.editing?.quantity,
@@ -68,7 +70,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
   const totalMeso = currency === 'cash' ? 0 : usesPoint ? pointToMeso(amount, rate ?? 0) : amount
   // 메포를 쓰는데 시세가 없으면 **막는다**. 저장하면 영영 메소로 표시할 수 없는 행이 된다.
   const blocked = usesPoint && (rate === null || rate <= 0)
-  const canSave = amount > 0 && !blocked
+  const canSave = owner !== null && amount > 0 && !blocked
 
   useSaveSlot(props.setSave, {
     showSave: true,
@@ -77,7 +79,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
     saving,
     onSave: () =>
       void submit({
-        ocid,
+        ...ownerFieldsOf(owner),
         spentOn: props.dateKey,
         category: 'etc',
         item: name.trim() === '' ? null : name.trim(),
@@ -110,10 +112,11 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
   return (
     <>
       <FieldCard>
-        <CharacterField
+        <OwnerField
           characters={props.characters}
-          selected={ocid}
-          onSelect={setOcid}
+          accounts={props.accounts}
+          selected={owner}
+          onSelect={setOwner}
           testID="spend-sheet-chain"
         />
 

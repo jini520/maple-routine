@@ -7,9 +7,11 @@
 
 export const CASHBOOK_ENTRIES_BODY = `(
     id TEXT PRIMARY KEY,
-    -- NULL 은 계정 단위 기록이다.
+    -- 기록이 붙은 캐릭터. 새 기록은 이것과 account_id 중 하나만 채운다.
     ocid TEXT,
-    -- 계정 단위 기록이 어느 넥슨 계정의 것인지. 캐릭터가 있는 기록은 ocid 로 계정을 찾아 NULL 이다.
+    -- 기록이 붙은 메이플 ID(character_accounts.account_id). 캐릭터 기록과 주인을 모르는 옛 기록은 NULL 이다.
+    account_id TEXT,
+    -- 주인을 모르는 옛 기록이 어느 넥슨 계정의 것인지. 새 기록은 적지 않는다. 계정은 ocid · account_id 에서 찾는다.
     nexon_account_id TEXT,
     entry_type TEXT NOT NULL CHECK (entry_type IN ('income', 'spend')),
     -- 갈래 key. 기타가 수입 · 지출 양쪽에 있어 entry_type 과 함께 읽는다.

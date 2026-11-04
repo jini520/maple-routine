@@ -27,7 +27,8 @@ import {
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { openInputCard } from '../../features/input-card/store'
 import type { InputCardChip, InputCardIcon } from '../../components/organisms/InputCard/InputCard'
-import { characterDecorOf, characterOptions } from './character-options'
+import type { SheetAccount } from '../../features/cashbook/account-names'
+import { characterDecorOf, characterOptions, ownerOptions } from './character-options'
 import { SelectValue, type SelectDecor } from './select-value'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { monthKeyOf } from '../../lib/calendar'
@@ -234,9 +235,7 @@ export function SelectRow(props: {
 }
 
 /**
- * 캐릭터 칸. 두 시트의 폼이 함께 쓴다.
- *
- * 목록 맨 앞의 `선택 안함` 은 되돌리는 자리이고 그 상태가 계정 단위(`ocid = null`)다.
+ * 목록 맨 앞에 `선택 안함` 이 서는 캐릭터 칸. 헥사 매트릭스 폼이 쓴다.
  *
  * 폼 안에 사는 것은 갈래를 옮기면 폼이 언마운트되어 고른 것이 함께 사라지기 때문이다.
  * 껍데기에 두면 그것만 남아 **갈래를 옮겼는데 캐릭터는 그대로** 가 된다.
@@ -254,6 +253,33 @@ export function CharacterField(props: {
       label="캐릭터"
       placeholder="캐릭터 선택"
       options={characterOptions(props.characters)}
+      selected={props.selected}
+      onSelect={props.onSelect}
+      decorOf={characterDecorOf(props.characters)}
+    />
+  )
+}
+
+/**
+ * 기록을 붙일 캐릭터나 메이플 ID 를 고르는 칸. `선택 안함` 이 없어 고르기 전에는 폼이 저장을 끈다.
+ *
+ * 캐릭터 없이 저장되던 갈래가 쓴다. 값은 `ownerValueOf` 의 모양이고 저장할 때 `ownerFieldsOf` 로 푼다.
+ */
+export function OwnerField(props: {
+  characters: ReadonlyArray<{ ocid: string; name: string; worldKey: string | null }>
+  /** 메이플 ID 를 고를 수 없는 갈래는 시트가 빈 배열을 준다. */
+  accounts: readonly SheetAccount[]
+  selected: string | null
+  onSelect: (next: string | null) => void
+  /** 두 시트가 자기 이름을 준다. */
+  testID: string
+}): React.JSX.Element {
+  return (
+    <SelectRow
+      testID={props.testID}
+      label="캐릭터"
+      placeholder="캐릭터 선택"
+      options={ownerOptions(props.characters, props.accounts)}
       selected={props.selected}
       onSelect={props.onSelect}
       decorOf={characterDecorOf(props.characters)}

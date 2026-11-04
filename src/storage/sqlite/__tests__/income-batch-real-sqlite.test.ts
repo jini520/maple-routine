@@ -49,7 +49,7 @@ const 이슬: IncomeRecord = {
 
 describe('insertIncomeRecords', () => {
   it('한 번에 넣은 기록이 따로따로 읽힌다', async () => {
-    await insertIncomeRecords([우유, 이슬], 'account-main')
+    await insertIncomeRecords([우유, 이슬])
 
     const rows = await getIncomeRecordsBetween('2026-10-29', '2026-10-29')
     expect(rows.map((row) => [row.itemKey, row.quantity, row.mesoAmount])).toEqual([
@@ -60,7 +60,7 @@ describe('insertIncomeRecords', () => {
 
   /** 반만 적히면 한 번 판 것이 가계부에 반만 선다. 다시 적으면 앞의 반이 두 번 선다. */
   it('하나라도 못 넣으면 아무것도 안 남는다', async () => {
-    await expect(insertIncomeRecords([우유, { ...이슬, id: 우유.id }], 'account-main')).rejects.toThrow()
+    await expect(insertIncomeRecords([우유, { ...이슬, id: 우유.id }])).rejects.toThrow()
 
     expect(await getIncomeRecordsBetween('2026-10-29', '2026-10-29')).toEqual([])
   })

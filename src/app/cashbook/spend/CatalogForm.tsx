@@ -50,7 +50,8 @@ import {
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
-import { AmountInput, CharacterField, FIELD_CELL_CLASS, FieldCard, FieldRow, QuantityStepper, useCountField } from '../sheet-fields'
+import { ownerFieldsOf, ownerValueOf } from '../character-options'
+import { AmountInput, FIELD_CELL_CLASS, FieldCard, FieldRow, OwnerField, QuantityStepper, useCountField } from '../sheet-fields'
 import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import type { SpendRecord } from '../../../storage/spend'
 import { rowsOfGroups } from './tile-rows'
@@ -251,7 +252,8 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     if (editing === undefined || found?.item?.unitPrice !== null) return ''
     return mesoTextOf(Math.round((editing.mesoAmount ?? 0) / (editing.quantity ?? 1)))
   })
-  const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
+  /** 고른 캐릭터나 메이플 ID(`ownerValueOf`). 주인을 모르는 옛 기록은 빈 채로 열린다. */
+  const [owner, setOwner] = useState<string | null>(ownerValueOf(props.editing))
   const [rateText, setRateText] = useState(() => {
     const rate = props.editing?.pointPer100mMeso ?? props.lastPointRate
     return rate === null || rate === undefined ? '' : String(rate)
@@ -309,7 +311,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
    */
   const totalMeso = usesPoint ? pointToMeso(amount, rate ?? 0) - (blocked ? 0 : rewardCoinMeso(coins)) : amount
   const picked = forms.length > 0 ? rewardName !== null : item !== null
-  const canSave = picked && !blocked && quantity > 0 && (!typesPrice || unitPrice > 0)
+  const canSave = owner !== null && picked && !blocked && quantity > 0 && (!typesPrice || unitPrice > 0)
 
   /** ① 대표를 고르는 단계. 갈래가 하나뿐이면 **그 자리에서 항목까지 정해진다.** */
   function selectChoice(next: SpendCatalogChoice): void {
@@ -365,7 +367,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     saving,
     onSave: () =>
       void submit({
-        ocid,
+        ...ownerFieldsOf(owner),
         spentOn: props.dateKey,
         category: props.category,
         // 그때 이름. 형태가 있으면 고른 단계들이 이름에 든다(`하이마운틴 EXP 1단계, 솔 2단계`).
@@ -452,10 +454,11 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
         // 고른 뒤. 라벨–값 줄들이 서고 **합계가 저장 바로 위**에 선다.
         <>
           <FieldCard>
-            <CharacterField
+            <OwnerField
               characters={props.characters}
-              selected={ocid}
-              onSelect={setOcid}
+              accounts={props.accounts}
+              selected={owner}
+              onSelect={setOwner}
               testID="spend-sheet-chain"
             />
 

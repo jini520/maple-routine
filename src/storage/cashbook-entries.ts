@@ -12,6 +12,8 @@ export type EntryType = 'income' | 'spend'
 export interface EntryHead {
   id: string
   ocid: string | null
+  /** 메이플 ID 기록의 ID. 새 기록은 이것과 `ocid` 중 하나만 든다. */
+  accountId: string | null
   entryType: EntryType
   categoryKey: string
   entryDate: string
@@ -140,17 +142,17 @@ async function writeChildren(db: SqliteDbConnection, entry: StoredEntry): Promis
 /**
  * 부르는 쪽이 트랜잭션으로 감싼다. 품목이 기록 행과 함께 서야 한다.
  *
- * @param nexonAccountId 캐릭터가 없는 기록이 속할 넥슨 계정 id. 캐릭터가 있는 기록은 ocid 로 계정을 찾으므로 적지 않는다
+ * 넥슨 계정 칸은 적지 않는다. 계정은 `ocid` 나 메이플 ID 에서 `character_accounts` 를 거쳐 찾는다.
  */
-export async function insertEntry(db: SqliteDbConnection, entry: StoredEntry, nexonAccountId: string | null): Promise<void> {
+export async function insertEntry(db: SqliteDbConnection, entry: StoredEntry): Promise<void> {
   const { head } = entry
   await db.run(
-    `INSERT INTO cashbook_entries (id, ocid, nexon_account_id, entry_type, category_key, entry_date, created_at, updated_at)
+    `INSERT INTO cashbook_entries (id, ocid, account_id, entry_type, category_key, entry_date, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       head.id,
       head.ocid,
-      head.ocid === null ? nexonAccountId : null,
+      head.accountId,
       head.entryType,
       head.categoryKey,
       head.entryDate,
@@ -165,24 +167,18 @@ export async function insertEntry(db: SqliteDbConnection, entry: StoredEntry, ne
  * 갈아 끼우기. 기록 행은 고치고 품목 · 사냥 입력은 지우고 다시 쓴다. `created_at` 은 그대로라 같은 날 안의 차례가
  * 안 바뀐다. 부르는 쪽이 트랜잭션으로 감싼다.
  *
- * 캐릭터 없는 기록은 처음 속한 넥슨 계정을 지킨다. 계정이 없던 기록만 넘긴 계정을 받는다.
+ * 넥슨 계정 칸은 주인을 고르면 비우고, 아직 주인이 없으면 지킨다. 그래서 그 칸이 찬 행은 늘 주인을 모르는 옛 기록이다.
  *
  * @param now 마지막으로 고친 시각
- * @param nexonAccountId 계정이 없는 캐릭터 없는 기록이 받을 넥슨 계정 id
  */
-export async function replaceEntry(
-  db: SqliteDbConnection,
-  entry: StoredEntry,
-  now: Date,
-  nexonAccountId: string | null,
-): Promise<void> {
+export async function replaceEntry(db: SqliteDbConnection, entry: StoredEntry, now: Date): Promise<void> {
   const { head } = entry
   await db.run(
     `UPDATE cashbook_entries
-        SET ocid = ?, nexon_account_id = CASE WHEN ? IS NULL THEN COALESCE(nexon_account_id, ?) END,
+        SET ocid = ?, account_id = ?, nexon_account_id = CASE WHEN ? IS NULL AND ? IS NULL THEN nexon_account_id END,
             category_key = ?, entry_date = ?, updated_at = ?
       WHERE id = ?`,
-    [head.ocid, head.ocid, nexonAccountId, head.categoryKey, head.entryDate, now.toISOString(), head.id],
+    [head.ocid, head.accountId, head.ocid, head.accountId, head.categoryKey, head.entryDate, now.toISOString(), head.id],
   )
   await db.run(`DELETE FROM cashbook_entry_items WHERE entry_id = ?`, [head.id])
   await db.run(`DELETE FROM cashbook_entry_hunt_inputs WHERE entry_id = ?`, [head.id])
@@ -192,6 +188,41 @@ export async function replaceEntry(
 /** 품목 · 사냥 입력은 외래키를 따라 함께 지워진다. */
 export async function deleteEntry(db: SqliteDbConnection, id: string): Promise<void> {
   await db.run(`DELETE FROM cashbook_entries WHERE id = ?`, [id])
+}
+
+/** 주인을 모르는 옛 기록 가운데 그 넥슨 계정의 메이플 ID 가 하나뿐인 것. */
+const LEGACY_OWNERLESS_SQL = `
+  ocid IS NULL AND account_id IS NULL AND nexon_account_id IS NOT NULL AND nexon_account_id <> ''
+  AND (SELECT COUNT(DISTINCT ca.account_id) FROM character_accounts ca
+        WHERE ca.nexon_account_id = cashbook_entries.nexon_account_id) = 1`
+
+/**
+ * 주인을 모르는 옛 기록을 그 넥슨 계정의 하나뿐인 메이플 ID 로 옮기고 계정 칸을 비운다. 몇 번을 불러도 결과가 같다.
+ *
+ * 메이플 ID 가 여럿이면 어느 ID 의 기록인지 몰라 그대로 둔다.
+ *
+ * @param categoryKeys 메이플 ID 를 고를 수 있는 분류. 캐릭터만 고르는 분류의 옛 기록은 옮기지 않는다
+ * @returns 옮긴 것이 있었는지
+ */
+export async function assignLegacyEntryAccounts(
+  db: SqliteDbConnection,
+  entryType: EntryType,
+  categoryKeys: readonly string[],
+): Promise<boolean> {
+  if (categoryKeys.length === 0) return false
+  const scope = `entry_type = ? AND category_key IN (${categoryKeys.map(() => '?').join(', ')}) AND ${LEGACY_OWNERLESS_SQL}`
+  const params = [entryType, ...categoryKeys]
+  const { values } = await db.query(`SELECT COUNT(*) AS n FROM cashbook_entries WHERE ${scope}`, params)
+  if (Number(values?.[0]?.n ?? 0) === 0) return false
+  await db.run(
+    `UPDATE cashbook_entries
+        SET account_id = (SELECT MIN(ca.account_id) FROM character_accounts ca
+                           WHERE ca.nexon_account_id = cashbook_entries.nexon_account_id),
+            nexon_account_id = NULL
+      WHERE ${scope}`,
+    params,
+  )
+  return true
 }
 
 function numberOrNull(value: unknown): number | null {
@@ -264,6 +295,7 @@ export async function readEntries(db: SqliteDbConnection, where: string, params:
     head: {
       id: row.id as string,
       ocid: textOrNull(row.ocid),
+      accountId: textOrNull(row.account_id),
       entryType: row.entry_type as EntryType,
       categoryKey: row.category_key as string,
       entryDate: row.entry_date as string,

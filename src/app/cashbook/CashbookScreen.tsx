@@ -78,6 +78,7 @@ import {
   monthWindow,
 } from '../../features/cashbook/range'
 import { recordIconOf } from '../../features/cashbook/row-icon'
+import { loadSheetAccounts, type SheetAccount } from '../../features/cashbook/account-names'
 import { formatMesoCompact, formatMesoSigned } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
@@ -599,6 +600,8 @@ export function CashbookScreen(): React.JSX.Element {
   const [characters, setCharacters] = useState<
     Array<{ ocid: string; name: string; level: number | null; worldKey: string | null }>
   >([])
+  /** 시트의 캐릭터 칸에 캐릭터 뒤로 서는 메이플 ID. 캐릭터 목록과 같이 들어올 때 한 번 읽는다. */
+  const [accounts, setAccounts] = useState<readonly SheetAccount[]>([])
 
   const monthWeeks = buildCalendarMonth(monthKey)
   const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
@@ -693,6 +696,7 @@ export function CashbookScreen(): React.JSX.Element {
     void loadLastPointRate().then(setLastPointRate)
     void loadLastHunts().then(setLastHunts)
     void loadTrackedCharacters().then(setCharacters)
+    void loadSheetAccounts().then(setAccounts, () => undefined)
   }, [])
 
   /**
@@ -1090,6 +1094,7 @@ export function CashbookScreen(): React.JSX.Element {
         // 여러 날을 걸치게 되는 날 갈린다).
         <IncomeSheet
           characters={characters}
+          accounts={accounts}
           lastPointRate={lastPointRate}
           lastHunts={lastHunts}
           // 캐릭터의 메소 획득량. 시트는 `nexon/` 도 `storage/` 도 모른다.
@@ -1110,6 +1115,7 @@ export function CashbookScreen(): React.JSX.Element {
       {(sheet === 'expense' || (typeof sheet === 'object' && sheet?.kind === 'spend')) && (
         <SpendSheet
           characters={characters}
+          accounts={accounts}
           dateKey={typeof sheet === 'object' ? sheet.record.spentOn : selectedDateKey}
           todayDateKey={todayDateKey}
           earliestDateKey={historyFloorDateKey(todayDateKey)}

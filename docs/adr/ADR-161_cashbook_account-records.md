@@ -1,7 +1,7 @@
 # ADR-161 가계부 메이플 ID 기록
 
-> ⚪ 미구현
-> 관련 소스: `app/cashbook/character-options.ts` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/EtcForm.tsx` · `app/cashbook/spend/CatalogForm.tsx` · `app/cashbook/spend/SymbolForm.tsx` · `app/cashbook/spend/ItemBuyForm.tsx` · `app/cashbook/spend/EtcForm.tsx` · `features/cashbook/records.ts` · `storage/cashbook-entries.ts` · `storage/income.ts` · `storage/spend.ts` · `storage/sqlite/migrations.ts` · `features/mvp-grade/character-list.ts` · `features/stats/aggregate.ts` · `app/stats/CharacterSection.tsx` · `app/today/view-model.ts`
+> 🟢 유효
+> 관련 소스: `app/cashbook/character-options.ts` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/EtcForm.tsx` · `app/cashbook/spend/CatalogForm.tsx` · `app/cashbook/spend/SymbolForm.tsx` · `app/cashbook/spend/ItemBuyForm.tsx` · `app/cashbook/spend/EtcForm.tsx` · `features/cashbook/account-names.ts` · `features/cashbook/legacy-entry-accounts.ts` · `features/cashbook/records.ts` · `lib/cashbook/categories.ts` · `storage/cashbook-entries.ts` · `storage/income.ts` · `storage/spend.ts` · `storage/sqlite/migrations.ts` · `features/mvp-grade/character-list.ts` · `features/stats/aggregate.ts` · `app/stats/CharacterSection.tsx` · `app/today/view-model.ts`
 
 ## 배경
 
@@ -123,7 +123,8 @@
 | 파일 | 확인하는 것 |
 |---|---|
 | `app/cashbook/__tests__/IncomeSheet.test.tsx` · `app/cashbook/__tests__/SpendSheet.test.tsx` | 결정 1 · 2: 결정 1 의 분류마다 목록에 `선택 안함` 이 없는지, 메이플 ID 보기가 고를 수 있는 분류에서만 캐릭터 뒤에 서는지, 고르기 전에는 저장이 꺼지고 메이플 ID 를 고르면 그 ID 로 저장되는지, 옛 기록이 빈 칸으로 열려 골라야 다시 저장되는지 본다 |
-| `features/cashbook/__tests__/records.spec.ts` | 결정 3: 대표를 저장된 목록 · 추적 캐릭터 · `메이플 ID` 차례로 찾는지 본다. 결정 6: 하루 목록 줄의 첫 줄에 메이플 ID 이름이 붙고, 캐릭터도 메이플 ID 도 없는 옛 기록은 제목만인지 본다 |
+| `features/cashbook/__tests__/account-names.spec.ts` | 결정 2: 추적 캐릭터가 속한 ID 만 대표 레벨 차례로 서는지 본다. 결정 3: 대표를 저장된 목록 · 추적 캐릭터 · `메이플 ID` 차례로 찾는지 본다 |
+| `features/cashbook/__tests__/records.spec.ts` | 결정 6: 하루 목록 줄의 첫 줄에 메이플 ID 이름이 붙고, 캐릭터도 메이플 ID 도 없는 옛 기록은 제목만인지 본다 |
 | `storage/__tests__/income.spec.ts` · `storage/__tests__/spend.spec.ts` | 결정 4: `account_id` 가 저장되고 읽히는지, 새 기록과 주인을 고른 옛 기록의 `nexon_account_id` 가 비는지 본다. 결정 5: 메이플 ID 가 하나인 넥슨 계정의 옛 기록만, 메이플 ID 를 고를 수 있는 분류만 옮기는지 본다 |
 | `features/stats/__tests__/aggregate.spec.ts` | 결정 6: 메이플 ID 기록이 ID 마다 한 줄이고, 캐릭터도 메이플 ID 도 없는 옛 기록은 빠지는지 본다 |
 | `app/stats/__tests__/CharacterSection.test.tsx` | 결정 6: 막대에는 메이플 ID 줄이 서고 단상에는 서지 않는지 본다 |

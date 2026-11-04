@@ -49,6 +49,8 @@ jest.mock('../../../features/ledger/useLedgerData', () => ({
 
 // 머리 아래 `hh:mm:ss 기준` 은 회차 쿼리를 읽는다. 이 화면의 일이 아니라 비워 둔다.
 jest.mock('../../../features/refresh/freshness', () => ({ useRealtimeFetchedAt: jest.fn(() => null) }))
+// 메이플 ID 보기는 시트 테스트가 본다. 여기서는 기기 저장소를 안 읽게 빈 목록을 준다.
+jest.mock('../../../features/cashbook/account-names', () => ({ loadSheetAccounts: jest.fn(async () => []) }))
 // 결산 안내 줄은 서버 쿼리를 본다. 줄 자체의 동작은 `SettlementBanner.test.tsx` 가 보고, 여기서는 선 자리와 둘째 줄만 본다.
 jest.mock('../../../features/settlement/query', () => ({
   useSettlementBanner: jest.fn(() => ({ visible: false, dismiss: jest.fn() })),
@@ -230,12 +232,21 @@ async function 이름으로누르기(view: Rendered, label: string | RegExp): Pr
  */
 async function 금액치기(view: Rendered, text: string): Promise<void> {
   // 기타의 금액은 입력 카드로 옮겨갔다. 줄을 눌러 카드를 열고 쳐서 확인한다.
-  // 저장 흐름만 보는 자리라 캐릭터가 필요 없는 기타로 적는다(아이템 판매는 캐릭터가 필수다).
+  // 저장 흐름만 보는 자리라 칸이 가장 적은 기타로 적는다.
   await 누르기(view, 'income-sheet-unit-price')
   await act(async () => {
     fireEvent.changeText(view.getByTestId('input-card-value'), text)
   })
   await 누르기(view, 'input-card-confirm')
+}
+
+/** 저장 흐름을 보는 케이스의 추적 캐릭터. 모든 갈래가 캐릭터나 메이플 ID 를 골라야 저장된다. */
+const 루디 = { ocid: 'ocid-1', name: '루디', level: 280, worldKey: null, jobClass: null }
+
+/** 시트의 캐릭터 칸에서 루디를 고른다. */
+async function 루디고르기(view: Rendered, chain: 'income-sheet-chain' | 'spend-sheet-chain'): Promise<void> {
+  await 누르기(view, `${chain}-open`)
+  await 누르기(view, `${chain}-option-ocid-1`)
 }
 
 
@@ -981,11 +992,13 @@ describe('펼침판이 시트를 연다', () => {
 
   // 저장 뒤 다시 읽는 것은 화면의 일이 아니다. 쓰기가 표의 판을 올리면 그 표를 읽는 쿼리가 무효화된다.
   it('저장하면 고른 날로 적는다', async () => {
+    records.loadTrackedCharacters.mockResolvedValue([루디])
     const view = await 그리기()
     await 고르기(view, '수입 추가')
     await 누르기(view, 'income-sheet-category-etc')
 
     await 금액치기(view, '1')
+    await 루디고르기(view, 'income-sheet-chain')
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 
@@ -997,11 +1010,13 @@ describe('펼침판이 시트를 연다', () => {
   })
 
   it('저장하면 시트가 닫힌다', async () => {
+    records.loadTrackedCharacters.mockResolvedValue([루디])
     const view = await 그리기()
     await 고르기(view, '수입 추가')
     await 누르기(view, 'income-sheet-category-etc')
 
     await 금액치기(view, '1')
+    await 루디고르기(view, 'income-sheet-chain')
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 
@@ -1023,11 +1038,13 @@ describe('저장이 실패하면', () => {
 
   it('수입. 시트가 열려 있고 토스트가 뜬다', async () => {
     records.recordIncome.mockRejectedValue(new Error('no such column'))
+    records.loadTrackedCharacters.mockResolvedValue([루디])
     const view = await 그리기()
     await 고르기(view, '수입 추가')
     await 누르기(view, 'income-sheet-category-etc')
 
     await 금액치기(view, '1')
+    await 루디고르기(view, 'income-sheet-chain')
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 
@@ -1039,11 +1056,13 @@ describe('저장이 실패하면', () => {
     // 메포 항목은 시세가 있어야 저장이 열린다.
     records.loadLastPointRate.mockResolvedValue(1_180)
     records.recordSpend.mockRejectedValue(new Error('no such column'))
+    records.loadTrackedCharacters.mockResolvedValue([루디])
     const view = await 그리기()
     await 고르기(view, '지출 추가')
 
     await 누르기(view, 'spend-sheet-category-content')
     await 이름으로누르기(view, '몬스터 파크')
+    await 루디고르기(view, 'spend-sheet-chain')
     await 이름으로누르기(view, '저장')
     await act(async () => {})
 

@@ -23,7 +23,8 @@ import {
 } from '../../../lib/cashbook/free-currency'
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { AmountInput, CharacterField, FIELD_CELL_CLASS, FieldCard, FieldRow, TextField, useCountField } from '../sheet-fields'
+import { ownerFieldsOf, ownerValueOf } from '../character-options'
+import { AmountInput, FIELD_CELL_CLASS, FieldCard, FieldRow, OwnerField, TextField, useCountField } from '../sheet-fields'
 import { openInputCard } from '../../../features/input-card/store'
 import { POINT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
@@ -36,7 +37,8 @@ export function EtcForm(
   },
 ): React.JSX.Element {
   const editing = props.editing !== undefined
-  const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
+  /** 고른 캐릭터나 메이플 ID(`ownerValueOf`). 주인을 모르는 옛 기록은 빈 채로 열린다. */
+  const [owner, setOwner] = useState<string | null>(ownerValueOf(props.editing))
   const [name, setName] = useState(props.editing?.item ?? '')
   const { text: quantityText, pristine: quantityPristine, set: setQuantityText } = useCountField(
     props.editing?.quantity,
@@ -85,8 +87,8 @@ export function EtcForm(
    * 같은 기록이 두 자리에서 다른 수로 보였다.
    */
   const totalMeso = usesPoint ? pointToMeso(amount, rate ?? 0) : amount
-  /** 저장할 수 있는 상태인가. 메포로 적으면 시세가 있어야 한다. */
-  const canSave = amount > 0 && (!usesPoint || rate !== null)
+  /** 저장할 수 있는 상태인가. 붙일 곳을 골라야 하고, 메포로 적으면 시세가 있어야 한다. */
+  const canSave = owner !== null && amount > 0 && (!usesPoint || rate !== null)
 
   useSaveSlot(props.setSave, {
     editing,
@@ -94,7 +96,7 @@ export function EtcForm(
     saving,
     onSave: () =>
       void submit({
-        ocid,
+        ...ownerFieldsOf(owner),
         earnedOn: props.dateKey,
         category: 'etc',
         item: name.trim() === '' ? null : name.trim(),
@@ -119,10 +121,11 @@ export function EtcForm(
   return (
     <>
       <FieldCard>
-        <CharacterField
+        <OwnerField
           characters={props.characters}
-          selected={ocid}
-          onSelect={setOcid}
+          accounts={props.accounts}
+          selected={owner}
+          onSelect={setOwner}
           testID="income-sheet-chain"
         />
 

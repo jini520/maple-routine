@@ -50,7 +50,13 @@ export async function fetchCharacterListCached(
     queryKey: queryKeys.characterList(credentialKeyOf(credential)),
     queryFn: () => fetchAndRecordCharacterList(credential),
     staleTime: options?.force === true ? 0 : CHARACTER_LIST_TTL_MS,
-    meta: { source: 'nexon' },
+    // 가계부 · 통계 · today 가 메이플 ID 의 대표 캐릭터를 넥슨을 부르지 않고 고르려고 기기에 저장한다.
+    meta: { persist: true, source: 'nexon' },
   })
   return queryClient.fetchQuery(listOptions)
+}
+
+/** 마지막으로 받아 둔 목록. 넥슨을 부르지 않는다. 받은 적이 없으면 `undefined` 다. */
+export function readCachedCharacterList(credential: NexonCredential): MapleAccount[] | undefined {
+  return queryClient.getQueryData<MapleAccount[]>(queryKeys.characterList(credentialKeyOf(credential)))
 }

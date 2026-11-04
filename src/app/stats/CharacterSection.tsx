@@ -105,7 +105,8 @@ export const CharacterSection = memo(function CharacterSection(props: {
   const maxNegative = Math.max(0, ...shown.map((row) => -valueOf(row, tab)))
   const span = maxPositive + maxNegative || 1
   const zero = (maxNegative / span) * 100
-  const podium = shown.slice(0, 3)
+  // 단상은 전신 그림이 서는 자리라 그림이 없는 메이플 ID 줄은 막대에만 선다.
+  const podium = shown.filter((row) => row.accountId === undefined).slice(0, 3)
   const nameLineCounts = podium.map((row) => podiumNameLines(row.name).length)
   const amountOf = (row: CharacterTotals): string => (net ? signed(valueOf(row, tab)) : formatMesoCompact(valueOf(row, tab)))
   const [amountWidths, setAmountWidths] = useState<Record<number, number>>({})

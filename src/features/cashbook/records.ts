@@ -55,9 +55,7 @@ import { withMvpDiscount } from '../../lib/enhancement/cost'
 import { loadEnhancementTotals } from '../../storage/enhancement-totals'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
-import { mainNexonAccountIdOf } from '../../lib/nexon-credential'
 import { randomUuid } from '../../native/uuid'
-import { getAuthConfig } from '../../storage/api-key'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import { getLastHunts, setLastHunt, type LastHunt, type LastHunts } from '../../storage/last-hunts'
 import {
@@ -67,20 +65,16 @@ import {
   updateSpendRecord,
   type SpendRecord,
 } from '../../storage/spend'
+import { loadAccountLabels } from './account-names'
 import { latestLevelRecordId, rememberAfterEdit, rememberAfterRemove, rememberAfterSave } from './remembered-levels'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
 export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
 
 
-/** 캐릭터 없는 기록이 속할 넥슨 계정. 계정을 고르는 화면이 생기기 전까지는 메인 계정이다. */
-async function entryAccountId(): Promise<string | null> {
-  return mainNexonAccountIdOf(await getAuthConfig().catch(() => null))
-}
-
 export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void> {
   const id = randomUuid()
-  await insertIncomeRecord({ ...draft, id, recordedAt: now.toISOString() }, await entryAccountId())
+  await insertIncomeRecord({ ...draft, id, recordedAt: now.toISOString() })
   countCoreSave()
   recordUsageAction('cashbook-add')
   // 저장이 성공한 뒤에만 기억한다.
@@ -91,7 +85,7 @@ export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void>
 /** 여러 건을 한 번에 적는다. 하나라도 못 적으면 아무것도 안 남는다. 사냥 전리품 판매가 아이템마다 한 줄씩 적는다. */
 export async function recordIncomes(drafts: readonly IncomeDraft[], now: Date): Promise<void> {
   const records = drafts.map((draft) => ({ ...draft, id: randomUuid(), recordedAt: now.toISOString() }))
-  await insertIncomeRecords(records, await entryAccountId())
+  await insertIncomeRecords(records)
   countCoreSave()
   recordUsageAction('cashbook-add')
 }
@@ -129,7 +123,7 @@ async function quietly(task: () => Promise<void>): Promise<void> {
 export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
   const id = randomUuid()
   const record: SpendRecord = { ...draft, id, recordedAt: now.toISOString() }
-  await insertSpendRecord(record, await entryAccountId())
+  await insertSpendRecord(record)
   await quietly(() => rememberAfterSave(record))
   countCoreSave()
   recordUsageAction('cashbook-add')
@@ -398,12 +392,23 @@ export async function loadMonthDays(
    * 이름을 한 번에 찾는 조회. 손입력 줄과 보스 줄이 같은 캐릭터를 가리킬 수 있어, 갈라 부르면
    * 같은 `ocid` 를 두 번 읽는다. 범위로 한 번이라 날짜 수만큼 안 곱해진다.
    */
-  const names = await namesByOcid([
-    ...incomes.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
-    ...spends.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
-    ...bossSummaries.map((summary) => summary.ocid),
+  const [names, accountLabels] = await Promise.all([
+    namesByOcid([
+      ...incomes.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
+      ...spends.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
+      ...bossSummaries.map((summary) => summary.ocid),
+    ]),
+    loadAccountLabels([
+      ...new Set([...incomes, ...spends].flatMap((record) => (record.accountId === undefined ? [] : [record.accountId]))),
+    ]),
   ])
-  const nameOf = (ocid: string | null): string => (ocid === null ? '' : (names.get(ocid) ?? ''))
+  /** 기록이 붙은 캐릭터나 메이플 ID 의 이름. 줄의 첫 줄 앞에 선다. */
+  const nameOf = (record: IncomeRecord | SpendRecord): string =>
+    record.accountId !== undefined
+      ? (accountLabels.get(record.accountId) ?? '')
+      : record.ocid === null
+        ? ''
+        : (names.get(record.ocid) ?? '')
 
   /** 자동 줄이 위, 손입력이 아래. 손입력끼리는 적은 순이다. */
   const days: Record<string, { auto: DayRecord[]; manual: ManualDayRecord[] }> = {}
@@ -425,14 +430,14 @@ export async function loadMonthDays(
     bucketOf(record.earnedOn).manual.push({
       kind: 'income',
       record,
-      characterName: nameOf(record.ocid),
+      characterName: nameOf(record),
     })
   }
   for (const record of spends) {
     bucketOf(record.spentOn).manual.push({
       kind: 'spend',
       record,
-      characterName: nameOf(record.ocid),
+      characterName: nameOf(record),
     })
   }
 
@@ -482,7 +487,7 @@ export function amountsOfDays(byDate: Readonly<Record<string, readonly DayRecord
  * 이름을 모르는 캐릭터는 안 든다. `ocid` 는 사용자에게 아무 뜻도 없는 문자열이고 알 수 없음 은
  * 있지도 않은 캐릭터를 목록에 만든다. 캐시는 캐릭터를 한 번이라도 연 뒤에 찬다.
  *
- * 던지지 않는다. 못 읽으면 목록이 비고 그때 고르개는 선택 안함 하나만 남는다.
+ * 던지지 않는다. 못 읽으면 목록이 비고 그때 고르개에는 캐릭터가 없다.
  */
 export async function loadTrackedCharacters(): Promise<
   Array<{ ocid: string; name: string; level: number | null; worldKey: string | null; jobClass: string | null }>
@@ -530,9 +535,9 @@ export async function loadLastHunts(): Promise<LastHunts> {
  */
 interface ManualDayRecordBase {
   /**
-   * 그 기록에 붙은 캐릭터의 이름. 없으면 빈 문자열이다.
+   * 그 기록에 붙은 캐릭터의 이름, 메이플 ID 기록이면 `메이플 ID · 대표 캐릭터`. 없으면 빈 문자열이다.
    *
-   * `ocid` 가 `null`(계정 단위, 기본)이거나 캐시에 이름이 없으면 빈다. 줄은 그때 항목만 적는다.
+   * 주인을 모르는 옛 기록이거나 캐시에 이름이 없으면 빈다. 줄은 그때 항목만 적는다.
    */
   characterName: string
 }
@@ -929,7 +934,7 @@ function autoDetail(entry: AutoDayRecord): string {
  * 하루 목록 카드의 두 줄(ADR 이 갈래마다의 규칙을 든다). 이름 · 카드 제목 · 단위는 서버 표에서 찾으므로, 관리 화면에서
  * 고치면 옛 기록도 새 글자로 선다. key 로 못 찾으면 적어 둔 이름, 그것도 없으면 갈래 제목이다.
  *
- * 첫 줄 앞에는 캐릭터 이름이 붙는다. 계정 단위 기록이나 이름을 모르는 줄은 제목만 선다.
+ * 첫 줄 앞에는 캐릭터 이름이, 메이플 ID 기록이면 그 ID 의 이름이 붙는다. 주인을 모르는 옛 기록이나 이름을 모르는 줄은 제목만 선다.
  */
 export function recordCardOf(entry: DayRecord): RecordCard {
   const card = isManualRecord(entry)
@@ -1004,7 +1009,7 @@ export function loadFragmentStorage(
 
 /** 고치기. `recordedAt` 은 안 바뀐다. 시세를 기억하는 순서는 넣을 때와 같다. 성공한 뒤에만. */
 export async function editSpend(record: SpendRecord): Promise<void> {
-  await updateSpendRecord(record, await entryAccountId())
+  await updateSpendRecord(record)
   await quietly(() => rememberAfterEdit(record))
   if (record.pointPer100mMeso !== null) {
     await setLastPointRate(record.pointPer100mMeso)
@@ -1012,7 +1017,7 @@ export async function editSpend(record: SpendRecord): Promise<void> {
 }
 
 export async function editIncome(record: IncomeRecord): Promise<void> {
-  await updateIncomeRecord(record, await entryAccountId())
+  await updateIncomeRecord(record)
 }
 
 /** 지우기. 갈래가 어느 테이블인지를 안다. 손입력만 받는다. */

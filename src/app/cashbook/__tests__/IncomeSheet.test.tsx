@@ -49,7 +49,7 @@ import type { IncomeRecord } from '../../../storage/income'
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
-/** 고르개가 실제로 고를 것이 있어야 선택 안함 이 기본이라는 말에 뜻이 생긴다. */
+/** 고르개가 실제로 고를 것이 있어야 고르기 전에는 저장이 꺼진다는 말에 뜻이 생긴다. */
 const 캐릭터둘 = [
   // 레벨은 사냥 계산기가 쓴다. 둘의 레벨을 갈라 두어야 **창이 캐릭터를
   // 따라 움직이는가** 를 잴 수 있다.
@@ -93,6 +93,8 @@ async function 시트열기(overrides: Partial<React.ComponentProps<typeof Incom
       // 가계부 화면이 갈 수 있는 가장 이른 날. 화면이 오늘에서 읽어 넘긴다.
       earliestDateKey="2025-02-27"
       characters={캐릭터둘}
+      // 메이플 ID 보기는 그것을 보는 케이스만 준다.
+      accounts={[]}
       lastPointRate={null}
       // 기본은 **0** 이다. 메획이 테스트가 세는 금액을 흔들지 않는다.
       // 메획이 든 계산은 아래 describe 가 값을 직접 준다.
@@ -227,6 +229,22 @@ const 옛사냥행 = {
   hunt: null,
   quantity: null,
   recordedAt: '2026-08-23T01:00:00.000Z',
+}
+
+/** 추적 캐릭터가 속한 메이플 ID 둘. 시트는 화면이 만든 이름을 그대로 세운다. */
+const 메이플ID둘 = [
+  { accountId: 'maple-a', label: '메이플 ID · 루디' },
+  { accountId: 'maple-b', label: '메이플 ID · 아델' },
+]
+
+/** 주인을 모르는 옛 기타 기록. 캐릭터도 메이플 ID 도 없다. */
+const 옛기타: IncomeRecord = {
+  ...옛사냥행,
+  id: 'inc-etc',
+  category: 'etc',
+  item: '이벤트 보상',
+  mesoAmount: 12,
+  quantity: 1,
 }
 
 /** 사냥 계산기의 고르는 줄 셋. 다른 갈래는 캐릭터 줄 하나뿐이다. */
@@ -630,11 +648,12 @@ describe('저장', () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave }, 'etc')
     await 치기(view, '12')
+    await 사슬고르기(view, 'ocid-1')
     await 누르기(view, '저장')
 
     expect(onSave).toHaveBeenCalledTimes(1)
     expect(onSave.mock.calls[0][0]).toEqual({
-      ocid: null,
+      ocid: 'ocid-1',
       earnedOn: '2026-08-23',
       category: 'etc',
       item: null,
@@ -669,10 +688,10 @@ describe('저장', () => {
  * 캐릭터 귀속(사용자 말: *"캐릭터를 선택해서 입력하는 방법을 추가하는게
  * 좋을거 같아"*). 컬럼은 처음부터 있었고 **화면만 없었다**.
  *
- * **기본은 `선택 안함`**. `ocid = null` 이 계정 단위다.
+ * 모든 갈래가 골라야 저장된다. 기타는 캐릭터 뒤에 메이플 ID 를 고를 수 있다.
  */
 describe('캐릭터 귀속', () => {
-  it('기본이 선택 안함 이다', async () => {
+  it('캐릭터 칸은 빈 채로 열린다', async () => {
     const view = await 그리기()
 
     expect(view.getByTestId('income-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
@@ -698,13 +717,50 @@ describe('캐릭터 귀속', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-2' })
   })
 
-  it('기타는 안 고르면 계정 단위로 저장한다. `ocid` 가 `null` 이다', async () => {
-    const onSave = jest.fn()
-    const view = await 그리기({ onSave }, 'etc')
+  // 고르기 전에 저장하면 주인을 모르는 기록이 생긴다. 메이플 ID 는 캐릭터 뒤에 선다.
+  it('기타는 목록에 선택 안함이 없고 캐릭터 뒤에 메이플 ID 가 서며, 고르기 전에는 저장이 꺼진다', async () => {
+    const view = await 그리기({ accounts: 메이플ID둘 }, 'etc')
     await 치기(view, '12')
-    await 이름으로누르기(view, '저장')
 
-    expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: null })
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+    await 아이디로누르기(view, 'income-sheet-chain-open')
+    expect(view.queryByText('선택 안함')).toBeNull()
+    // 월드 엠블럼이 `-icon` 을 단 같은 머리의 testID 를 따로 든다.
+    expect(
+      view
+        .getAllByTestId(/^income-sheet-chain-option-(?!.*-icon$)/)
+        .map((option) => option.props.testID.slice('income-sheet-chain-option-'.length)),
+    ).toEqual(['ocid-1', 'ocid-2', 'account:maple-a', 'account:maple-b'])
+  })
+
+  it('기타에서 메이플 ID 를 고르면 캐릭터 없이 그 ID 로 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, accounts: 메이플ID둘 }, 'etc')
+    await 사슬고르기(view, 'account:maple-b')
+    await 치기(view, '12')
+
+    expect(view.getByTestId('income-sheet-chain-value')).toHaveTextContent('메이플 ID · 아델')
+    await 이름으로누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: null, accountId: 'maple-b' })
+  })
+
+  // 옮기지 못한 옛 기록이다. 그대로 다시 저장되면 주인을 모르는 기록이 남는다.
+  it('주인을 모르는 옛 기타 기록은 빈 칸으로 열리고, 골라야 다시 저장된다', async () => {
+    const onSave = jest.fn()
+    const view = await 시트열기({ onSave, accounts: 메이플ID둘, editing: 옛기타 })
+
+    expect(view.getByTestId('income-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
+    expect(view.getByLabelText('수정').props.accessibilityState?.disabled).toBe(true)
+    await 사슬고르기(view, 'ocid-1')
+    await 이름으로누르기(view, '수정')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-1' })
+    expect(onSave.mock.calls[0][0].accountId).toBeUndefined()
+  })
+
+  it('메이플 ID 기록을 고치면 그 ID 가 골라진 채 열린다', async () => {
+    const view = await 시트열기({ accounts: 메이플ID둘, editing: { ...옛기타, accountId: 'maple-a' } })
+
+    expect(view.getByTestId('income-sheet-chain-value')).toHaveTextContent('메이플 ID · 루디')
   })
 
   // 수수료 요율을 캐릭터가 속한 ID 의 등급에서 찾는다. 계정 단위로 적을 수 없다.
@@ -921,6 +977,7 @@ describe('통화', () => {
     await 이름으로누르기(view, '메포')
     await 치기(view, '3000')
 
+    await 사슬고르기(view, 'ocid-1')
     await 이름으로누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -965,6 +1022,7 @@ describe('통화', () => {
     await 이름으로누르기(view, '메포')
     await 치기(view, '3000')
 
+    await 사슬고르기(view, 'ocid-1')
     await 이름으로누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -994,6 +1052,7 @@ describe('통화', () => {
     // 든다는 사실은 저장된 칸(`cashAmount` 만 참)이 말한다.
     expect(view.queryByTestId('income-sheet-amount-hint')).toBeNull()
 
+    await 사슬고르기(view, 'ocid-1')
     await 이름으로누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -1019,6 +1078,7 @@ describe('통화', () => {
 
       expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('6천만')
 
+      await 사슬고르기(view, 'ocid-1')
       await 이름으로누르기(view, '저장')
 
       // 통화 칸에는 **곱한 총액**이 들어가고 수량은 자기 칸에 남는다.

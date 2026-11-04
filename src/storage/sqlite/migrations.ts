@@ -577,11 +577,11 @@ async function moveCashbookRecordsToEntries(db: SqliteDbConnection): Promise<voi
   }
   const spend = await db.query('SELECT * FROM spend_records ORDER BY spent_on, recorded_at, id')
   for (const row of spend.values ?? []) {
-    await insertEntry(db, spendEntryOf(legacySpendRecordOf(row, await newId())), null)
+    await insertEntry(db, spendEntryOf(legacySpendRecordOf(row, await newId())))
   }
   const income = await db.query('SELECT * FROM income_records ORDER BY earned_on, recorded_at, id')
   for (const row of income.values ?? []) {
-    await insertEntry(db, incomeEntryOf(legacyIncomeRecordOf(row, await newId())), null)
+    await insertEntry(db, incomeEntryOf(legacyIncomeRecordOf(row, await newId())))
   }
   await assertCashbookTotalsMoved(db)
 }
