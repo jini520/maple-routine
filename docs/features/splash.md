@@ -13,8 +13,8 @@
 | `app/splash/layout.ts` | 화면 크기와 상단 인셋으로 그림 · 잎과 이름 묶음 · 눈 조각의 자리를 계산 |
 | `app/splash/animations.ts` | 묶음 페이드 인 · 글자 하나씩 뛰기 · 눈 내림의 Reanimated CSS 애니메이션 값 |
 | `app/splash/colors.ts` | 2겹의 하늘 · 땅 · 글자 색. 일러스트에서 뽑은 값이라 테마 토큰이 아니다. 1겹 색은 여기 `sky` 와 맞춘다 |
-| `app/splash/leaf.ts` | 모서리를 둥글린 단풍잎 경로. 스플래시 전용 |
-| `app/splash/wordmark.ts` | `메이플 루틴` 글자의 SVG 패스. `scripts/make-splash-wordmark.py` 가 메이플스토리 서체 Light 에서 만든다 |
+| `app/splash/leaf.ts` | 모서리를 둥글린 단풍잎 경로. 스플래시와 로그인 화면 머리가 쓴다 |
+| `app/splash/wordmark.ts` | `메이플 루틴` 글자의 SVG 패스. `scripts/make-splash-wordmark.py` 가 메이플스토리 서체 Light 에서 만든다. 스플래시와 로그인 화면 머리가 쓴다 |
 | `features/theme/system-theme.ts` | OS 밝기로 고르는 기본 테마. 2겹은 이것으로 라이트 · 다크를 가르고 잎 색(`primary`)을 가져온다 |
 | `assets/splash/body.png` · `snow-0.png` ~ `snow-6.png` | 겨울 축제 일러스트 본체와 떼어낸 눈 조각 일곱 |
 | `app/AppShell.tsx` | 2겹을 형제 중 마지막에 두어 맨 위에 그린다 |
