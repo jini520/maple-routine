@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>메이플루틴 - 메이플스토리 스케줄러 &amp; 보스 수익 · 지출 자동 기록</title>
+<meta name="description" content="메이플스토리 OPEN API 로 보스 처치와 스타포스 · 큐브 기록을 불러와 결정석 수입과 강화 지출을 자동으로 기록하는 앱. 파티 분배 계산, 파티 스케줄, 사냥 수입, 공지 · 썬데이 메이플 알림까지.">
+<link rel="canonical" href="https://mapleroutine.store/">
+<meta name="google-site-verification" content="q3LGuCS3zHBpgjDmb4SMeeBx9WNuC_oaBp8iRDzkDU4">
+<meta name="naver-site-verification" content="85d3bd631bef4497e95839cd12d23e89b1cd7c79">
+<meta name="theme-color" content="#F2F0E2">
+<meta name="apple-itunes-app" content="app-id=6797579391">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="메이플 루틴">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:url" content="https://mapleroutine.store/">
+<meta property="og:title" content="메이플루틴 - 메이플스토리 수입 · 지출 자동 기록">
+<meta property="og:description" content="보스 결정석 수입과 스타포스 · 큐브 지출을 자동으로 기록하고, 파티 분배까지 계산해요.">
+<meta property="og:image" content="https://mapleroutine.store/images/home/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="메이플루틴 앱 화면">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="/home.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://mapleroutine.store/#website",
+      "url": "https://mapleroutine.store/",
+      "name": "메이플 루틴",
+      "alternateName": "메이플루틴",
+      "inLanguage": "ko-KR"
+    },
+    {
+      "@type": "MobileApplication",
+      "@id": "https://mapleroutine.store/#app",
+      "name": "메이플루틴",
+      "alternateName": "메이플 루틴",
+      "url": "https://mapleroutine.store/",
+      "description": "메이플스토리 OPEN API 로 보스 처치와 강화 기록을 불러와 결정석 수입과 강화 지출을 자동으로 기록하는 메이플스토리 스케줄러 · 가계부 앱",
+      "operatingSystem": "iOS, Android",
+      "applicationCategory": "UtilitiesApplication",
+      "inLanguage": "ko",
+      "image": "https://mapleroutine.store/images/home/icon.png",
+      "screenshot": [
+        "https://mapleroutine.store/images/home/screens/profit.webp",
+        "https://mapleroutine.store/images/home/screens/party-week.webp",
+        "https://mapleroutine.store/images/home/screens/cash-week.webp",
+        "https://mapleroutine.store/images/home/screens/today.webp"
+      ],
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" },
+      "sameAs": [
+        "https://apps.apple.com/kr/app/id6797579391",
+        "https://play.google.com/store/apps/details?id=com.mapleroutine.app"
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  // 스토어 배지는 기기에 맞는 하나만 보여 준다. 배지가 하나일 때만 흰색 App Store 배지를 쓸 수 있어서다.
+  (function () {
+    var ua = navigator.userAgent;
+    var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var android = /Android/i.test(ua);
+    document.documentElement.classList.add(ios ? 'platform-ios' : android ? 'platform-android' : 'platform-other');
+  })();
+</script>
+<script src="/home.js" defer></script>
+</head>
+<body>
+
+<header class="site-header container">
+  <a class="brand" href="#top">
+    <img src="/images/home/icon.png" alt="" width="40" height="40">
+    <span>메이플 루틴</span>
+  </a>
+  <nav class="site-nav" aria-label="페이지 안 이동">
+    <a href="#auto">자동 기록</a>
+    <a href="#party">파티 스케줄</a>
+    <a href="#preset">간편 입력</a>
+    <a href="#alerts">알림</a>
+    <a href="#themes">테마</a>
+    <a class="nav-cta" href="#download">앱 받기</a>
+  </nav>
+</header>
+
+<main>
+
+<section id="top" class="hero">
+  <svg class="hero-blob" aria-hidden="true" viewBox="0 0 800 700"><path d="M520 40c140 20 260 130 270 270 10 150-80 230-150 300-80 80-220 110-350 70C150 640 40 560 20 420 0 280 90 170 200 100 300 40 400 22 520 40z" fill="#FEECDA"/><path d="M640 470c60 30 90 110 50 170-40 60-140 70-200 30-50-35-60-110-20-160 40-48 110-66 170-40z" fill="#FBE3A0"/></svg>
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <span class="pill">메이플스토리 OPEN API 연동</span>
+      <h1>메이플 수입 · 지출,<br><span class="accent">자동으로 기록하세요</span></h1>
+      <p class="lead">메이플스토리 OPEN API 로 보스 처치와 강화 기록을 불러와 결정석 수입과 강화 지출을 자동으로 기록해요. 파티 인원을 정해 두면 매주 분배 금액도 계산해요.</p>
+      <div class="badges">
+        <a class="badge badge-apple" href="https://apps.apple.com/kr/app/id6797579391">
+          <img class="badge-apple-black" src="/images/home/badges/app-store-ko-black.svg" alt="App Store에서 다운로드" width="156" height="48">
+          <img class="badge-apple-white" src="/images/home/badges/app-store-ko-white.svg" alt="App Store에서 다운로드" width="156" height="48">
+        </a>
+        <a class="badge badge-google" href="https://play.google.com/store/apps/details?id=com.mapleroutine.app">
+          <img src="/images/home/badges/google-play-ko.svg" alt="Google Play에서 다운로드" width="162" height="48">
+        </a>
+      </div>
+    </div>
+    <div class="hero-phones">
+      <div class="phone hero-side lift-hero-1"><img src="/images/home/screens/boss.webp" alt="보스 스케줄러 화면" width="620" height="1348"></div>
+      <div class="phone hero-main"><img src="/images/home/screens/profit.webp" alt="주간 보스 수입 화면" width="620" height="1348" fetchpriority="high"></div>
+      <div class="phone hero-side lift-hero-2"><img src="/images/home/screens/cash-week.webp" alt="강화 지출이 자동으로 들어온 가계부" width="620" height="1348"></div>
+    </div>
+  </div>
+</section>
+
+<section class="band band-surface">
+  <div class="container stack">
+    <div class="section-head center">
+      <h2>기록은 자동으로, 입력은 간단하게</h2>
+      <p>메이플 루틴의 핵심 기능이에요.</p>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="card-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20"/><path d="m12 21-4-12 4-6 4 6z"/></svg></span>
+        <div><h3>결정석 수입 자동 기록</h3><p>인게임 스케줄러의 보스 처치를 불러와 주간 · 월간 수입으로 쌓아요.</p></div>
+      </div>
+      <div class="card">
+        <span class="card-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14.5a5 5 0 0 1 4.5 5"/></svg></span>
+        <div><h3>파티 분배 자동 계산</h3><p>보스마다 인원을 한 번 정하면 매주 그 기준으로 내 몫을 계산해요.</p></div>
+      </div>
+      <div class="card">
+        <span class="card-icon card-icon-blue"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m12 2 2.9 6.1 6.6.8-4.9 4.6 1.3 6.5L12 16.8 6.1 20l1.3-6.5L2.5 8.9l6.6-.8z"/></svg></span>
+        <div><h3>강화 · 큐브 지출 자동 기록</h3><p>스타포스 · 큐브 · 잠재능력 재설정 비용을 가계부에 기록해요.</p></div>
+      </div>
+      <div class="card">
+        <span class="card-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><circle cx="15.5" cy="15.5" r="2.5"/><path d="M15.5 14.5v1l.7.7"/></svg></span>
+        <div><h3>파티 스케줄</h3><p>고정 파티를 주간 시간표로 관리하고 시작 전에 알림을 받아요.</p></div>
+      </div>
+      <div class="card">
+        <span class="card-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7"/><path d="M14 17.5h7"/></svg></span>
+        <div><h3>선택형 간편 입력</h3><p>보스 드롭 아이템과 지출 항목을 고르고 수량만 넣으면 끝이에요.</p></div>
+      </div>
+      <div class="card">
+        <span class="card-icon card-icon-red"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
+        <div><h3>사냥 · 보스 수입 관리</h3><p>사냥터를 고르면 획득 메소가 계산되고, 드롭 판매까지 한곳에 모여요.</p></div>
+      </div>
+      <div class="card">
+        <span class="card-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></span>
+        <div><h3>공지 · 이벤트 · 썬데이 알림</h3><p>게임 공지와 썬데이 메이플, 업데이트 소식을 푸시로 받아요.</p></div>
+      </div>
+      <div class="card">
+        <span class="card-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.3A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2z"/></svg></span>
+        <div><h3>깔끔한 UI, 테마 6종</h3><p>필요한 숫자만 보이는 화면을 메이플 테마로 골라 써요.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="container stack">
+    <div class="section-head center">
+      <span class="eyebrow">어떻게 자동으로 기록되나요?</span>
+      <h2>로그인 한 번이면 준비 끝</h2>
+    </div>
+    <ol class="steps">
+      <li class="step"><span class="step-num">1</span><div><h3>넥슨 계정으로 로그인</h3><p>게임 데이터 활용 로그인으로 메이플 ID 의 캐릭터를 불러와요.</p></div></li>
+      <li class="step"><span class="step-num">2</span><div><h3>OPEN API 로 기록 연동</h3><p>스케줄러의 보스 · 컨텐츠 진행과 스타포스 · 큐브 기록을 메이플스토리 OPEN API 로 받아요.</p></div></li>
+      <li class="step"><span class="step-num">3</span><div><h3>수입 · 지출 자동 정리</h3><p>결정석 수입은 보스 수입에, 강화 비용은 가계부에 자동으로 기록돼요.</p></div></li>
+    </ol>
+  </div>
+</section>
+
+<section id="auto" class="band band-dark">
+  <div class="container stack">
+    <div class="split-head">
+      <div class="section-head">
+        <span class="eyebrow eyebrow-gold">자동 기록 · 결정석 수입</span>
+        <h2>보스 처치만으로<br>쌓이는 결정석 수입</h2>
+      </div>
+      <p class="section-body">인게임 스케줄러에서 처치한 보스를 불러와 결정석 금액을 자동으로 기록해요. 캐릭터별 · 주간 · 월간 수입을 따로 적지 않아도 한눈에 볼 수 있어요.</p>
+    </div>
+    <div class="carousel">
+      <div class="rail" id="rail-auto">
+        <div class="phone phone-black" style="--w-d: 250px"><img src="/images/home/screens/boss.webp" alt="보스 스케줄러의 처치 현황" width="620" height="1348" loading="lazy"></div>
+        <div class="phone phone-black lift-h" style="--w-d: 250px"><img src="/images/home/screens/profit.webp" alt="캐릭터별 주간 보스 수입" width="620" height="1348" loading="lazy"></div>
+        <div class="phone phone-black" style="--w-d: 250px"><img src="/images/home/screens/profit-detail.webp" alt="결정석과 아이템 수입 상세" width="620" height="1348" loading="lazy"></div>
+        <div class="phone phone-black lift-h" style="--w-d: 250px"><img src="/images/home/screens/crystal-day.webp" alt="가계부에 쌓인 날짜별 결정석 수입" width="620" height="1348" loading="lazy"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="container feature-row">
+    <div class="feature-copy">
+      <span class="eyebrow">자동 기록 · 파티 분배</span>
+      <h2>한 번 정한 파티 인원으로<br>매주 분배 계산</h2>
+      <p>보스마다 파티 인원과 분배 방식을 정해 두면, 매주 그 기준으로 내 몫의 결정석 수입을 계산해 기록해요. 파티가 바뀐 주만 고치면 돼요.</p>
+    </div>
+    <div class="feature-media">
+      <svg class="blob" aria-hidden="true" viewBox="0 0 700 560"><path d="M380 20c150 20 290 120 300 260 10 150-120 260-280 270-170 10-360-70-390-210C-20 200 180-10 380 20z" fill="#FEECDA"/></svg>
+      <div class="carousel">
+        <div class="rail" id="rail-split">
+          <div class="phone" style="--w-d: 196px"><img src="/images/home/screens/boss-sheet.webp" alt="보스 파티 인원과 분배 방식 설정" width="620" height="1348" loading="lazy"></div>
+          <div class="phone lift-1" style="--w-d: 196px"><img src="/images/home/screens/boss-manage.webp" alt="보스 관리의 파티 인원 표시" width="620" height="1348" loading="lazy"></div>
+          <div class="phone lift-2" style="--w-d: 196px"><img src="/images/home/screens/profit-month.webp" alt="월간 보스 수입 주차별 합계" width="620" height="1348" loading="lazy"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band band-surface">
+  <div class="container feature-row feature-row-reverse">
+    <div class="feature-media">
+      <svg class="blob" aria-hidden="true" viewBox="0 0 600 560"><path d="M280 40c150-20 290 80 300 220 10 150-110 260-260 270-160 10-300-80-310-220C0 170 120 60 280 40z" fill="#E3EAFB"/></svg>
+      <div class="carousel">
+        <div class="rail" id="rail-enhance">
+          <div class="phone" style="--w-d: 250px"><img src="/images/home/screens/cash-week.webp" alt="강화 지출이 들어온 주간 가계부" width="620" height="1348" loading="lazy"></div>
+          <div class="phone lift-1" style="--w-d: 250px"><img src="/images/home/screens/enhance.webp" alt="스타포스 기록 펼침" width="620" height="1348" loading="lazy"></div>
+        </div>
+      </div>
+    </div>
+    <div class="feature-copy">
+      <span class="eyebrow eyebrow-blue">자동 기록 · 강화 지출</span>
+      <h2>스타포스 · 큐브 비용까지<br>지출로 자동 기록</h2>
+      <p>스타포스 · 큐브 · 잠재능력 재설정 기록을 불러와 캐릭터별 강화 지출로 정리해요. 몇 번 돌렸는지, 어떤 장비였는지도 펼쳐서 확인해요.</p>
+    </div>
+  </div>
+</section>
+
+<section id="party" class="band">
+  <div class="container feature-row">
+    <div class="feature-copy">
+      <span class="eyebrow">파티 스케줄</span>
+      <h2>고정 파티 일정,<br>주간 시간표로 한눈에</h2>
+      <p>매주 반복되는 파티와 한 번뿐인 파티를 캐릭터 · 보스별로 등록해요. 요일별 시간표와 보드로 한 주를 보고, 시작 전에는 알림을 받아요. 다음 파티는 today 첫 화면에도 떠요.</p>
+    </div>
+    <div class="feature-media">
+      <svg class="blob" aria-hidden="true" viewBox="0 0 700 560"><path d="M120 80C230-10 430 0 560 90c120 80 160 240 60 350-100 110-320 140-460 70C20 440-40 210 120 80z" fill="#FBEFC2"/></svg>
+      <div class="carousel">
+        <div class="rail" id="rail-party">
+          <div class="phone" style="--w-d: 196px"><img src="/images/home/screens/party-week.webp" alt="파티 스케줄 주간 시간표" width="620" height="1348" loading="lazy"></div>
+          <div class="phone lift-1" style="--w-d: 196px"><img src="/images/home/screens/party-board.webp" alt="파티 스케줄 보드" width="620" height="1348" loading="lazy"></div>
+          <div class="phone lift-2" style="--w-d: 196px"><img src="/images/home/screens/party-add.webp" alt="반복 파티 스케줄 추가" width="620" height="1348" loading="lazy"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="preset" class="band band-surface">
+  <div class="container stack">
+    <div class="section-head center">
+      <span class="eyebrow">간편 입력 · 선택형 입력</span>
+      <h2>보스 아이템과 지출,<br>목록에서 고르기만 하세요</h2>
+      <p>보스별 드롭 아이템과 버프 · 헥사 매트릭스 · 주문서 같은 지출 항목이 목록으로 준비돼 있어요. 항목을 고르고 수량만 넣으면 금액이 계산돼요.</p>
+    </div>
+    <div class="feature-media wide">
+      <svg class="blob" aria-hidden="true" viewBox="0 0 1200 520" preserveAspectRatio="none"><path d="M60 260C40 120 220 30 420 60c140 20 220-40 380-20 180 20 380 110 360 250-20 150-220 210-420 190-150-15-230 40-400 20C180 480 80 400 60 260z" fill="#FEECDA"/></svg>
+      <div class="carousel">
+        <div class="rail" id="rail-preset">
+          <div class="phone" style="--w-d: 230px"><img src="/images/home/screens/drop-add.webp" alt="보스 드롭 아이템 선택" width="620" height="1348" loading="lazy"></div>
+          <div class="phone lift-1" style="--w-d: 230px"><img src="/images/home/screens/spend-kinds.webp" alt="지출 항목 선택" width="620" height="1348" loading="lazy"></div>
+          <div class="phone" style="--w-d: 230px"><img src="/images/home/screens/buff-sheet.webp" alt="버프 수량 입력" width="620" height="1348" loading="lazy"></div>
+          <div class="phone lift-1" style="--w-d: 230px"><img src="/images/home/screens/hexa.webp" alt="헥사 매트릭스 강화 비용 입력" width="620" height="1348" loading="lazy"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="container feature-row">
+    <div class="feature-copy">
+      <span class="eyebrow eyebrow-red">수입 관리 · 사냥 · 보스</span>
+      <h2>사냥터만 고르면<br>계산되는 사냥 수입</h2>
+      <p>지역과 사냥터를 고르면 소재 수와 메소 획득량으로 획득 메소가 계산돼요. 보스 드롭 판매 수입도 같은 가계부에 모여 수입이 한곳에 정리돼요.</p>
+    </div>
+    <div class="feature-media">
+      <svg class="blob" aria-hidden="true" viewBox="0 0 700 560"><path d="M120 80C230-10 430 0 560 90c120 80 160 240 60 350-100 110-320 140-460 70C20 440-40 210 120 80z" fill="#FBE1E1"/></svg>
+      <div class="carousel">
+        <div class="rail" id="rail-hunt">
+          <div class="phone lift-2" style="--w-d: 196px"><img src="/images/home/screens/income-kinds.webp" alt="수입 추가 종류" width="620" height="1348" loading="lazy"></div>
+          <div class="phone lift-1" style="--w-d: 196px"><img src="/images/home/screens/hunt.webp" alt="사냥 수입 입력" width="620" height="1348" loading="lazy"></div>
+          <div class="phone" style="--w-d: 196px"><img src="/images/home/screens/drop-sale.webp" alt="보스 드롭 판매 수입" width="620" height="1348" loading="lazy"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="alerts" class="band band-surface">
+  <div class="container feature-row feature-row-reverse">
+    <div class="feature-media">
+      <svg class="blob" aria-hidden="true" viewBox="0 0 700 560"><path d="M300 30c130-10 260 70 280 200 20 140-70 270-210 300-150 30-310-30-350-160C-20 230 120 40 300 30z" fill="#FBEFC2"/></svg>
+      <div class="carousel">
+        <div class="rail" id="rail-alerts">
+          <div class="phone" style="--w-d: 196px"><img src="/images/home/screens/alerts.webp" alt="알림 설정" width="620" height="1348" loading="lazy"></div>
+          <div class="phone lift-1" style="--w-d: 196px"><img src="/images/home/screens/more.webp" alt="공지와 진행 중인 이벤트" width="620" height="1348" loading="lazy"></div>
+          <div class="phone lift-2" style="--w-d: 196px"><img src="/images/home/screens/events.webp" alt="진행 중인 이벤트 목록" width="620" height="1348" loading="lazy"></div>
+        </div>
+      </div>
+    </div>
+    <div class="feature-copy">
+      <span class="eyebrow">푸시 알림</span>
+      <h2>공지 · 이벤트 · 썬데이 메이플,<br>푸시 알림으로 받아보세요</h2>
+      <p>게임 공지와 썬데이 메이플, 업데이트 안내, 캐시샵 소식을 푸시로 받아요. 파티 스케줄도 시작 전에 알려 드려요. 받을 알림은 종류별로 골라요.</p>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="container stack">
+    <div class="section-head center">
+      <span class="eyebrow">그리고 매일 쓰는 것들</span>
+      <h2>컨텐츠 · 통계 · 계산기까지 한 앱에서</h2>
+      <p>today 에서 초기화까지 남은 시간을 보고, 일일 · 주간 컨텐츠 진행은 스케줄러로, 수입 흐름은 통계로, 분배금은 계산기로 확인해요.</p>
+    </div>
+    <div class="carousel">
+      <div class="rail" id="rail-daily">
+        <div class="phone" style="--w-d: 196px"><img src="/images/home/screens/today.webp" alt="today 화면" width="620" height="1348" loading="lazy"></div>
+        <div class="phone lift-h" style="--w-d: 196px"><img src="/images/home/screens/content-weekly.webp" alt="주간 컨텐츠 스케줄러" width="620" height="1348" loading="lazy"></div>
+        <div class="phone" style="--w-d: 196px"><img src="/images/home/screens/stats.webp" alt="월간 통계 추이" width="620" height="1348" loading="lazy"></div>
+        <div class="phone lift-h" style="--w-d: 196px"><img src="/images/home/screens/split.webp" alt="판매 분배금 계산기" width="620" height="1348" loading="lazy"></div>
+        <div class="phone" style="--w-d: 196px"><img src="/images/home/screens/calc.webp" alt="주간 보스 수입 계산기" width="620" height="1348" loading="lazy"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="themes" class="band band-surface">
+  <div class="container stack">
+    <div class="section-head center">
+      <span class="eyebrow">깔끔한 UI</span>
+      <h2>깔끔한 화면, 메이플 테마 6종</h2>
+      <p>기본 테마 둘, 직업 테마 셋, 보스 테마 하나. 라이트와 다크를 골라 쓰세요.</p>
+    </div>
+    <div class="carousel">
+      <div class="rail rail-themes" id="rail-themes">
+        <figure class="theme"><div class="phone"><img src="/images/home/screens/theme-mushmom.webp" alt="머쉬맘 테마" width="620" height="1348" loading="lazy"></div><figcaption>머쉬맘</figcaption></figure>
+        <figure class="theme"><div class="phone phone-black"><img src="/images/home/screens/theme-horntail.webp" alt="혼테일 테마" width="620" height="1348" loading="lazy"></div><figcaption>혼테일</figcaption></figure>
+        <figure class="theme"><div class="phone phone-black"><img src="/images/home/screens/theme-lethe.webp" alt="레테 테마" width="620" height="1348" loading="lazy"></div><figcaption>레테</figcaption></figure>
+        <figure class="theme"><div class="phone"><img src="/images/home/screens/theme-ren.webp" alt="렌 테마" width="620" height="1348" loading="lazy"></div><figcaption>렌</figcaption></figure>
+        <figure class="theme"><div class="phone"><img src="/images/home/screens/theme-angelicbuster.webp" alt="엔젤릭버스터 테마" width="620" height="1348" loading="lazy"></div><figcaption>엔젤릭버스터</figcaption></figure>
+        <figure class="theme"><div class="phone phone-black"><img src="/images/home/screens/theme-blackmage.webp" alt="검은마법사 테마" width="620" height="1348" loading="lazy"></div><figcaption>검은마법사</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="download" class="cta-band">
+  <div class="cta">
+    <svg class="cta-blob cta-blob-a" aria-hidden="true" viewBox="0 0 400 400"><circle cx="200" cy="200" r="180" fill="#F7A53E"/></svg>
+    <svg class="cta-blob cta-blob-b" aria-hidden="true" viewBox="0 0 400 400"><circle cx="200" cy="200" r="180" fill="#F7A53E"/></svg>
+    <img class="cta-icon" src="/images/home/icon.png" alt="" width="96" height="96">
+    <h2>기록은 맡기고, 메이플만 하세요</h2>
+    <p>iPhone · Android 에서 받을 수 있어요.</p>
+    <div class="badges">
+      <a class="badge badge-apple" href="https://apps.apple.com/kr/app/id6797579391">
+        <img class="badge-apple-black" src="/images/home/badges/app-store-ko-black.svg" alt="App Store에서 다운로드" width="156" height="48">
+        <img class="badge-apple-white" src="/images/home/badges/app-store-ko-white.svg" alt="App Store에서 다운로드" width="156" height="48">
+      </a>
+      <a class="badge badge-google" href="https://play.google.com/store/apps/details?id=com.mapleroutine.app">
+        <img src="/images/home/badges/google-play-ko.svg" alt="Google Play에서 다운로드" width="162" height="48">
+      </a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer container">
+  <div class="footer-brand">
+    <img src="/images/home/icon.png" alt="" width="28" height="28">
+    <strong>메이플 루틴</strong>
+    <span>© 2026</span>
+    <nav class="footer-links" aria-label="안내 페이지"><a href="/api-key">API 키 발급</a><a href="/support">문의</a><a href="/privacy">개인정보 처리방침</a></nav>
+  </div>
+  <div class="footer-legal">
+    <p>Data based on NEXON Open API · Maple Routine is not associated with NEXON Korea</p>
+    <p>Apple 및 Apple 로고는 미국 및 기타 국가에서 등록된 Apple Inc.의 상표입니다. App Store는 미국 및 기타 국가에서 등록된 Apple Inc.의 서비스 마크입니다.</p>
+    <p>Google Play 및 Google Play 로고는 Google LLC의 상표입니다.</p>
+  </div>
+</footer>
+
+</body>
+</html>

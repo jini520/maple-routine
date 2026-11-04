@@ -17,9 +17,11 @@ const OUT = join(ROOT, 'dist-site')
 
 const DOMAIN = 'mapleroutine.store'
 
-/** 출력 경로 → 마크다운 원본. `privacy` 만 저장소 루트를 가리킨다(단일 원본). */
+/**
+ * 출력 경로 → 마크다운 원본. `privacy` 만 저장소 루트를 가리킨다(단일 원본).
+ * 첫 화면(`index.html`)은 홍보 페이지라 마크다운이 아니고 `site/` 에서 그대로 복사된다.
+ */
 const PAGES = [
-  { out: 'index.html', source: join(SITE, 'index.md') },
   { out: 'support/index.html', source: join(SITE, 'support.md') },
   { out: 'api-key/index.html', source: join(SITE, 'api-key.md') },
   { out: 'privacy/index.html', source: join(ROOT, 'PRIVACY.md') },
@@ -53,6 +55,11 @@ function firstHeading(markdown) {
   return markdown.match(/^#\s+(.+)$/m)?.[1].trim() ?? '메이플 루틴'
 }
 
+/** 검색엔진에 알리는 대표 주소. nginx 가 `/privacy` 를 `/privacy/` 로 301 하므로 슬래시 붙은 쪽이다. */
+function canonicalUrl(out) {
+  return `https://${DOMAIN}/${out.replace(/index\.html$/, '')}`
+}
+
 function escapeHtml(text) {
   return text.replace(
     /[&<>"]/g,
@@ -78,8 +85,9 @@ async function build() {
     const description = meta.description ?? '메이플스토리 루틴 관리 앱, 메이플 루틴'
 
     const html = template
-      .replace('{{title}}', escapeHtml(title))
-      .replace('{{description}}', escapeHtml(description))
+      .replaceAll('{{title}}', escapeHtml(title))
+      .replaceAll('{{description}}', escapeHtml(description))
+      .replaceAll('{{canonical}}', canonicalUrl(page.out))
       .replace('{{content}}', wrapTables(marked.parse(body)))
 
     const target = join(OUT, page.out)

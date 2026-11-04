@@ -1,8 +1,8 @@
-# ADR-015 안내 사이트
+# ADR-015+156 안내 사이트와 홍보 첫 화면
 
 > 🟢 유효
 > 옛 번호: ADR-110 · ADR-229
-> 관련 소스: `site/` · `PRIVACY.md` · `scripts/build-site.mjs` · `scripts/deploy-site.sh` · `app/auth/api-key-links.ts`
+> 관련 소스: `site/` · `site/index.html` · `site/home.css` · `site/home.js` · `site/images/home/` · `site/robots.txt` · `site/sitemap.xml` · `PRIVACY.md` · `scripts/build-site.mjs` · `scripts/deploy-site.sh` · `app/auth/api-key-links.ts`
 
 ## 배경
 
@@ -79,11 +79,75 @@ GitHub Actions 로 자동화하지 않는다. 자동화하려면 GitHub 에 Orac
 빌드는 `CNAME` 과 `.nojekyll` 을 만들지 않는다. 둘 다 GitHub Pages 를 위한 파일이었고, 남겨 두면
 `mapleroutine.store/CNAME` 처럼 아무 의미 없는 파일이 공개된다.
 
+### 결정 8. 첫 화면(`/`)은 앱 홍보 페이지이고, 마크다운이 아니라 HTML 로 쓴다
+
+`/` 는 앱의 기능을 스크린샷과 함께 소개하는 홍보 페이지다. 원본은 `site/index.html` 이고, 이 페이지만 쓰는
+스타일과 스크립트는 `site/home.css` · `site/home.js`, 그림은 `site/images/home/` 에 둔다. 다른 페이지는 그대로
+`template.html` 과 마크다운으로 만든다.
+
+홍보 페이지는 폰 화면을 엇갈려 놓고 가로로 넘기는 배치라 마크다운으로 쓸 수 없다. 문서 페이지의 틀
+(`template.html` · `style.css`)에 맞추면 문서 페이지까지 함께 바뀌므로 파일을 나눈다. 빌드 스크립트는 `.md` 와
+`template.html` 이 아닌 파일을 그대로 복사하므로(결정 5) `index.html` 도 그대로 나간다. 그래서 `PAGES` 에서
+`index.md` 줄을 빼고 `site/index.md` 를 지운다.
+
+그림은 `/images/home/` 아래에 둔다. `/assets/` 는 nginx 가 앱의 게임 데이터 폴더로 넘기는 경로라 이 사이트의
+파일이 보이지 않는다. `/images/` 는 nginx 가 7일 캐시를 거는 경로라 그림에 맞다.
+
+스크린샷은 홍보용 데모 데이터(`feat-debug-demo-seed` 브랜치)를 넣은 시뮬레이터에서 찍는다. 데모 데이터가 같은
+날짜에는 같은 화면을 내므로 다시 찍을 수 있다.
+
+### 결정 9. 스토어 배지는 공식 그림을 쓰고, 기기에 맞는 배지 하나만 보여 준다
+
+App Store 와 Google Play 배지는 두 회사가 내놓은 한국어 공식 그림을 그대로 쓴다. 색 · 비율 · 글자를 바꾸면
+두 스토어의 배지 정책을 어긴다.
+
+| 파일 | 출처 |
+|---|---|
+| `app-store-ko-black.svg` · `app-store-ko-white.svg` | Apple 배지 도구 `tools.applemediaservices.com` |
+| `google-play-ko.svg` | Google Play Partner Marketing Hub 의 한국어 `Get it on Google Play` 배지 |
+
+Apple 은 흰색 배지를 화면에 배지가 하나뿐일 때만 허용하고, 다른 스토어 배지와 함께 놓을 때는 검정 배지를
+App Store 부터 놓으라고 정한다. Google Play 배지는 검정 바탕뿐이다. 둘을 늘 함께 두면 둘 다 검정이 되므로,
+`index.html` 머리의 스크립트가 기기를 보고 `<html>` 에 `platform-ios` · `platform-android` · `platform-other`
+를 단다.
+
+| 기기 | 보이는 배지 |
+|---|---|
+| 아이폰 · 아이패드 | 흰색 App Store 배지 하나 |
+| 안드로이드 | Google Play 배지 하나 |
+| 그 밖(데스크톱 등) | 검정 App Store 배지, 그 오른쪽에 Google Play 배지 |
+
+두 배지는 같은 높이다(데스크톱 48px · 모바일 44px). Apple 은 화면에서 40px 이상, Google 은 App Store
+배지보다 작지 않게 정하기 때문이다. 배지 둘레에는 배지 높이의 1/4 이상을 비운다. 바닥글에 Apple · Google 의
+상표 문구를 둔다.
+
+### 결정 10. 검색엔진이 읽을 정보를 사이트에 둔다
+
+검색과 공유 미리보기에 앱이 바르게 나오도록 아래를 둔다.
+
+| 무엇 | 어디 | 왜 |
+|---|---|---|
+| 대표 주소(`canonical`) | 모든 페이지 머리 | `/privacy` 와 `/privacy/` 처럼 같은 페이지가 두 주소로 잡히지 않게 한다 |
+| 공유 미리보기(Open Graph · 트위터 카드) | 모든 페이지 머리. 그림은 `images/home/og.png`(1200×630) | 카카오톡 · 디스코드 · X 에 링크를 붙였을 때 앱 이름과 그림이 나온다 |
+| 구조화 데이터(JSON-LD `MobileApplication` · `WebSite`) | `index.html` | 검색엔진이 이 페이지를 앱 소개로 알아보게 한다 |
+| `apple-itunes-app` 메타 | `index.html` | 아이폰 Safari 가 위쪽에 App Store 배너를 띄운다 |
+| `robots.txt` | `site/robots.txt` | 사이트맵 위치를 알리고, `/admin` · `/v1` · `/app` · `/ota` 처럼 사람이 읽을 페이지가 아닌 경로를 수집에서 뺀다 |
+| `sitemap.xml` | `site/sitemap.xml` | `/` · `/privacy/` · `/support/` · `/api-key/` 를 알린다 |
+
+구조화 데이터의 분류(`UtilitiesApplication`)와 가격(무료)은 App Store 등록 정보에서 확인한 값이다. 평점은 넣지
+않는다. 스토어에서 계속 바뀌는 값이라 페이지에 적어 두면 곧 틀린 정보가 된다. 앱 이름은 스토어 이름인 `메이플루틴`
+과 페이지에 쓰는 `메이플 루틴` 을 둘 다 적어 어느 쪽으로 검색해도 잡히게 한다.
+
+검색엔진 등록(Google Search Console · 네이버 서치어드바이저 · Bing 웹마스터 도구)은 운영자 계정으로 사람이
+한다. 소유 확인에는 HTML 메타 태그를 쓰고, 받은 값은 `index.html` 머리에 넣어 다시 배포한다.
+
 ## 테스트
 
-이 결정들을 확인하는 자동 테스트는 없다. 배포 스크립트가 끝에 다섯 경로(`/` · `/privacy` · `/support` ·
-`/api-key` · `/app-ads.txt`)의 응답 코드를 출력하므로, 배포할 때마다 그 출력을 눈으로 확인한다.
+이 결정들을 확인하는 자동 테스트는 없다. 배포 스크립트가 끝에 일곱 경로(`/` · `/privacy` · `/support` ·
+`/api-key` · `/app-ads.txt` · `/robots.txt` · `/sitemap.xml`)의 응답 코드를 출력하므로, 배포할 때마다 그 출력을
+눈으로 확인한다.
 
 ## 번호 기록
 
 - ADR-015 (2026-10-19): 옛 ADR-110 · 229 를 합쳐 처음 작성
+- ADR-156 (2026-11-04): 첫 화면을 홍보 페이지로 바꾸고(결정 8), 스토어 배지 규칙(결정 9)과 검색엔진 정보(결정 10)를 더했다

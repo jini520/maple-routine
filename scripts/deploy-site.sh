@@ -21,7 +21,7 @@ echo "올린다 → $HOST:$DEST"
 rsync -az --delete --stats dist-site/ "$HOST:$DEST" | grep -E "Number of files|Total transferred"
 
 echo "확인"
-for p in / /privacy /support /api-key /app-ads.txt; do
+for p in / /privacy /support /api-key /app-ads.txt /robots.txt /sitemap.xml; do
   code=$(curl -sL --max-time 15 -o /dev/null -w '%{http_code}' "https://mapleroutine.store$p")
   printf '  %-14s %s\n' "$p" "$code"
 done
