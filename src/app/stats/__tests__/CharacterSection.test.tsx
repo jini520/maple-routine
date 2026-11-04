@@ -99,6 +99,25 @@ describe('CharacterSection', () => {
     expect(within(view.getByTestId('stats-podium-2')).getByTestId('stats-podium-image-unknown')).toBeTruthy()
   })
 
+  // 단상은 전신 그림이 서는 자리인데 메이플 ID 에는 그림이 없다(사용자 지정 2026-11-04).
+  it('메이플 ID 줄은 막대에는 금액 순서대로 서고, 단상에는 서지 않는다', async () => {
+    const account: CharacterTotals = {
+      key: 'account:maple-a',
+      ocid: null,
+      accountId: 'maple-a',
+      name: '메이플 ID · 본캐',
+      incomeMeso: 700_000_000,
+      expenseMeso: 0,
+      netMeso: 700_000_000,
+    }
+    const view = await renderOverlay(<CharacterSection rows={[...rows, account]} images={images} />)
+
+    const names = view.getAllByTestId(/^stats-character-row-/).map((row) => within(row).getByTestId('stats-character-name').props.children)
+    expect(names).toEqual(['메이플 ID · 본캐', '낟넘', '지내우시', '단풍라떼', '낟낟'])
+    expect(view.getByTestId('stats-podium-1').props.accessibilityLabel).toBe('1위 낟넘')
+    expect(view.getByTestId('stats-podium-3').props.accessibilityLabel).toBe('3위 단풍라떼')
+  })
+
   // 발끝 아래에서 그림 칸이 잘리면 발이 단상 뒤로 숨는다. 그림 칸을 블록 위로 겹쳐 내리고 앞에 그린다.
   it('캐릭터 그림은 단상 블록에 겹쳐 내려 블록보다 앞에 선다', async () => {
     const view = await 그리기()

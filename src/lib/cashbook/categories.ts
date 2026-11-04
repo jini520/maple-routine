@@ -31,6 +31,15 @@ export type SpendCategoryKey = (typeof SPEND_CATEGORY_KEYS)[number]
 export const INCOME_CATEGORY_KEYS = ['hunting', 'sol_erda_fragment', 'hunt_loot_sale', 'item_sale', 'etc'] as const
 export type IncomeCategoryKey = (typeof INCOME_CATEGORY_KEYS)[number]
 
+/**
+ * 캐릭터 칸에 메이플 ID 보기가 서는 갈래. 나머지 갈래는 캐릭터만 고른다.
+ *
+ * 시트의 보기와 옛 기록을 메이플 ID 로 옮기는 부팅 단계가 같은 목록을 본다. 둘이 갈리면 메이플 ID 를 고를 수 없는 갈래에
+ * 메이플 ID 기록이 생긴다.
+ */
+export const ACCOUNT_INCOME_CATEGORY_KEYS: readonly IncomeCategoryKey[] = ['etc']
+export const ACCOUNT_SPEND_CATEGORY_KEYS: readonly SpendCategoryKey[] = ['event_bm', 'etc']
+
 /** 아이템 구매 · 판매의 종류. 게임 인벤토리 탭이다. 수량 · 관세는 서버 표의 단위 · 관세 칸이 가른다. */
 export const ITEM_KIND_KEYS = ['equipment', 'consumable', 'etc'] as const
 export type ItemKindKey = (typeof ITEM_KIND_KEYS)[number]

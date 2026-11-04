@@ -15,6 +15,8 @@
 | `lib/cashbook/meso-compact.ts` | 칸 금액 줄임(`formatMesoCompact`) · 부호 붙이기(`formatMesoSigned`) |
 | `features/cashbook/range.ts` | 미리 읽는 창 · 데이터 공급자에 알리는 범위 · 조회 한도 |
 | `features/cashbook/records.ts` | 저장 · 고치기 · 지우기, 원천 넷을 하루 단위로 합치기, 카드 두 줄(`recordCardOf`) · 금액, 그날 합계. 시트의 캐릭터 이름 · 레벨 · 월드는 쿼리 캐시의 `characterBasic(ocid)` 에서 읽는다(`features/schedule-sync/read-schedule.ts` 의 `readCharacterBasic`) |
+| `features/cashbook/account-names.ts` | 메이플 ID 기록의 이름(`메이플 ID · 대표 캐릭터`)과 시트의 메이플 ID 보기. 대표는 기기에 저장된 `characterList` 쿼리에서 고른다 |
+| `features/cashbook/legacy-entry-accounts.ts` | 주인을 모르는 옛 손입력을 그 넥슨 계정의 하나뿐인 메이플 ID 로 옮기는 부팅 단계 |
 | `features/cashbook/row-icon.ts` | 하루 목록 줄의 그림 |
 | `features/cashbook/ledger-query.ts` | 날짜별 줄 쿼리 `ledgerDays(from, to)`. 기록 표의 판이 오르면 다시 읽는다. today · 통계도 같은 열쇠를 쓴다 |
 | `features/ledger/useLedgerData.tsx` | 넥슨 API 회차를 관리하는 데이터 공급자. 진행률 · 모달 · 강화 범위를 들고 기록은 들지 않는다. 화면은 범위를 알리고 다시 받아 달라고 요청한다 |
@@ -22,7 +24,7 @@
 | `storage/enhancement-totals.ts` · `storage/enhancement-history.ts` · `features/enhancement-history/` · `lib/enhancement/` | 강화 사용 내역 수집 · 비용 계산 · 합계 저장 · 지출 판정. 원장은 `enhancement-history.ts` 에 있다 |
 | `app/cashbook/IncomeSheet.tsx` · `SpendSheet.tsx` · `CategoryPicker.tsx` · `sheet-fields.tsx` | 두 시트와 공용 부품 |
 | `app/cashbook/income/` · `app/cashbook/spend/` | 분류별 폼 |
-| `lib/cashbook/categories.ts` | 지출 · 수입 분류, 아이템 종류, 에픽던전 형태의 key 와 이름 |
+| `lib/cashbook/categories.ts` | 지출 · 수입 분류, 메이플 ID 를 고를 수 있는 분류, 아이템 종류, 에픽던전 형태의 key 와 이름 |
 | `lib/cashbook/spend-catalog.ts` | 지출 참조표(서버 게임 데이터의 `spendCatalog` 칸) · 메포 환산 · 관세 · 주화 |
 | `lib/cashbook/symbol-costs.ts` | 심볼 강화 비용(`symbolCosts` 칸) |
 | `lib/cashbook/hexa-matrix.ts` | 헥사 코어 종류 · 직업별 코어 · 레벨별 조각 · 헥사 스탯(`hexaMatrix` 칸)과 지출 금액 |
@@ -93,6 +95,7 @@
 | 사냥 | `캐릭터 · 사냥` | `n소재`(조각을 팔았으면 `, 솔 에르다 조각 n개 판매`), 직접 입력이면 `직접 입력` | 채워진 수입 시트 |
 | 솔 에르다 조각 정산 · 사냥 전리품 판매 · 아이템 판매 · 기타(손입력) | `캐릭터 · 갈래 카드 제목` | `솔 에르다 조각 n개 판매` · `순록의 우유 n개 판매` · 직접 친 이름(+ 수량) | 채워진 수입 시트 |
 
+손으로 적은 줄의 `캐릭터` 자리에는 메이플 ID 기록이면 `메이플 ID · 대표 캐릭터` 가 선다. 캐릭터도 메이플 ID 도 없는 옛 기록은 제목만 선다([[ADR-161]] 결정 6).
 제목 · 이름 · 단위는 서버 표가 들어 관리 화면에서 고친다. 갈래마다의 규칙은 [[ADR-096]] 결정 3 에 있다. 줄 왼쪽 표식은
 게임 그림이고, 그림이 없으면 수입 `ProfitIcon` · 지출 `ShoppingCartIcon` 이다.
 펼친 내용은 그 줄의 카드 안 card-inset 칸에 서고, 결정석 줄의 보스는 원형 초상 아래에 난이도 배지가 붙는다([[ADR-095]] 결정 3).
@@ -115,6 +118,7 @@
 | 지출 | 기타 | 캐릭터 · 내용 · 통화 · 금액 · 수량 · 시세 |
 
 - 분류와 항목 타일은 테두리 없는 카드 안에 하나씩 `card-inset` 칸으로 선다(항목 격자는 묶음 줄마다 카드 하나). 폼의 줄은 테두리 없는 카드 하나 안에 줄마다 `card-inset` 칸으로 서고, 큰 숫자는 그 카드 아래에 선다([[ADR-048]] 결정 2 · 4).
+- 캐릭터 칸은 수입 기타 · 지출 이벤트·BM · 지출 기타에서 캐릭터나 메이플 ID 를, 지출 컨텐츠 · 버프 · 주문서 · 심볼 강화 · 아이템 구매에서 캐릭터를 골라야 저장된다. 이 분류들에는 `선택 안함` 이 없고, 새 기록은 빈 칸으로 열린다. 메이플 ID 보기는 캐릭터 뒤에 `메이플 ID · 대표 캐릭터` 글자로 선다. 캐릭터 없이 적힌 옛 기록은 메이플 ID 를 고를 수 있는 분류에서 그 넥슨 계정의 메이플 ID 가 하나뿐이면 그 ID 로 옮긴다. 옮기지 못한 기록은 수정으로 열면 빈 칸이라 골라야 다시 저장된다([[ADR-161]] 결정 1 · 5).
 - 큰 숫자는 언제나 합계이고 직접 입력할 수 없다. 금액은 각 칸을 누르면 뜨는 입력 카드에서 입력한다.
 - 아이템 판매의 판매 대금 · 단가, 아이템 구매의 구매 비용 · 단가, 지출 항목의 개당 가격은 입력 카드에서 단위(`기본` · `만` · `억`)를 골라 소수점까지 친다. 고른 단위는 칸마다 기기에 기억된다([[ADR-082]] 결정 13).
 - 날짜는 시트 머리에서 바꾼다. 조회 한도의 첫날부터 오늘까지이고, 심볼 강화는 2026-09-17 부터다.

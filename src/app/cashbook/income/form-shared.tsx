@@ -12,6 +12,7 @@ import { Text } from '../../../components/atoms'
 import { AmountInput, FieldRow } from '../sheet-fields'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
+import type { SheetAccount } from '../../../features/cashbook/account-names'
 import type { IncomeRecord } from '../../../storage/income'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
@@ -39,6 +40,8 @@ export interface IncomeFormProps {
   setSave: (slot: SaveSlot) => void
   dateKey: string
   characters: readonly SheetCharacter[]
+  /** 캐릭터 뒤에 서는 메이플 ID 보기. 메이플 ID 를 고를 수 없는 갈래는 시트가 빈 배열을 준다. */
+  accounts: readonly SheetAccount[]
   /** 있으면 **수정 모드**다. */
   editing?: IncomeRecord
   onDelete?: () => void | Promise<void>

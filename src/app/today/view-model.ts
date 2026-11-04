@@ -683,12 +683,15 @@ function buildWeeklyIncome(input: TodayViewModelInput, weeklyPeriodKey: string):
     totals: totalsBetween(days, range),
     income: categoryTotalsBetween(days, range, 'income'),
     expense: categoryTotalsBetween(days, range, 'expense'),
-    characters: characterTotalsBetween(days, range).map((row) => ({
-      ...row,
-      imageUrl: row.ocid === null ? null : (input.profilesByOcid[row.ocid]?.imageUrl ?? null),
-      income: categories.get(row.key)?.income ?? [],
-      expense: categories.get(row.key)?.expense ?? [],
-    })),
+    // 순위는 얼굴이 서는 자리라 그림이 없는 메이플 ID 줄은 세우지 않는다. 합계와 도넛은 위에서 모든 기록을 센다.
+    characters: characterTotalsBetween(days, range)
+      .filter((row) => row.accountId === undefined)
+      .map((row) => ({
+        ...row,
+        imageUrl: row.ocid === null ? null : (input.profilesByOcid[row.ocid]?.imageUrl ?? null),
+        income: categories.get(row.key)?.income ?? [],
+        expense: categories.get(row.key)?.expense ?? [],
+      })),
   }
 }
 

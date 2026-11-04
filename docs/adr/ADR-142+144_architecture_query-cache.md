@@ -56,7 +56,7 @@ zustand 스토어에는 **화면 상태만** 남긴다. 고른 탭 · 보던 기
 | `schedule(ocid)` | 캐릭터 하나의 스케줄러 응답(정규화 뒤). 회차가 넣고 스스로 받지 않는다(`skipToken`) | 넥슨 `scheduler/character-state` | 한다 | 1 |
 | `characterBasic(ocid)` | 캐릭터 하나의 기본 정보. `fetchCharacterBasicCached` 가 넣는다 | 넥슨 `character/basic` | 한다 | 1 |
 | `scheduleRound()` | 마지막 회차의 받은 시각 · 덮은 캐릭터 · 캐릭터별 결과 종류 · 답하지 않은 캐릭터 | 결정 3 의 회차 | 한다 | 1 |
-| `characterList(credentialKey)` | 자격 하나로 조회되는 전 계정의 캐릭터 목록. 5분 안에는 캐릭터 관리 · MVP 등급 · 회차 · 강화 수집이 같은 응답을 쓴다 | 넥슨 `character/list` | 안 한다 | 3 |
+| `characterList(credentialKey)` | 자격 하나로 조회되는 전 계정의 캐릭터 목록. 5분 안에는 캐릭터 관리 · MVP 등급 · 회차 · 강화 수집이 같은 응답을 쓴다. 가계부 · 통계 · today 가 메이플 ID 의 대표 캐릭터를 넥슨을 부르지 않고 고르려고 저장한다([[ADR-161]] 결정 3) | 넥슨 `character/list` | 한다 | 3 |
 | `notices(kind)` | 분류 하나의 공지 목록. 기기 사본(`notices`)을 대신한다 | 우리 서버 `/notices` · 넥슨 `notice*` | 한다 | 3 |
 | `settlement()` | 결산 중인지와 시작 시각. 닫은 기록은 기기 값이라 스토어가 든다 | 우리 서버 `/settlement` | 안 한다 | 3 |
 | `manualCompletion()` | 직접 완료를 연 보스. 닫은 주는 기기 값이라 스토어가 든다 | 우리 서버 `manual-completion` | 안 한다 | 3 |

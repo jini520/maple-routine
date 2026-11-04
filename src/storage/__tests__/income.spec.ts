@@ -3,10 +3,13 @@
  * 손입력 수입 어댑터를 진짜 SQLite 로 태운다. 수입은 가계부 기록 표 셋에 `entry_type = 'income'` 으로 살고, 사냥의
  * 계산 입력은 사냥 입력 표에 따로 든다. 넣은 모양이 그대로 되읽히는지와 조각 보관 셈을 본다.
  */
+import { recordCharacterAccounts } from '../character-accounts'
 import {
+  assignLegacyIncomeAccounts,
   deleteIncomeRecord,
   getFragmentStorage,
   getIncomeRecordsBetween,
+  getIncomeRecordsRevision,
   insertIncomeRecord,
   updateIncomeRecord,
   type IncomeRecord,
@@ -98,8 +101,9 @@ describe('넣은 수입을 같은 모양으로 되읽는다', () => {
       { ...calculatorHunt, id: idOf(), mesoAmount: 0, hunt: { mode: 'manual', typedMeso: 0, fragments: 12, fragmentPrice: 0 } },
     ],
     ['계산 입력이 없던 옛 사냥', { ...calculatorHunt, id: idOf(), itemKey: null, item: '츄츄 아일랜드', hunt: null }],
+    ['메이플 ID 에 붙은 기타', { ...sale, id: idOf(), ocid: null, accountId: 'maple-a', category: 'etc', itemKind: null }],
     [
-      '메포 기타. 계정 단위다',
+      '메포 기타. 주인을 모르는 옛 기록이다',
       {
         ...sale,
         id: idOf(),
@@ -159,6 +163,33 @@ describe('고치기 · 지우기', () => {
 
     expect(await getIncomeRecordsBetween('2026-08-20', '2026-08-20')).toEqual([sale])
     expect(all('SELECT count(*) AS n FROM cashbook_entry_hunt_inputs')).toEqual([{ n: 0 }])
+  })
+})
+
+describe('assignLegacyIncomeAccounts: 주인을 모르는 옛 수입을 메이플 ID 로 옮긴다', () => {
+  // 사냥은 이미 캐릭터가 필수라 옛 기록도 옮기지 않는다. 수정으로 열면 캐릭터를 골라야 저장된다.
+  it('넥슨 계정의 메이플 ID 가 하나면 고를 수 있는 분류의 옛 기록만 옮기고, 판은 옮긴 것이 있을 때만 오른다', async () => {
+    await recordCharacterAccounts(
+      [{ accountId: 'maple-a', characters: [{ ocid: 'ocid-1', name: '낟낟', world: '스카니아', worldKey: 'scania', jobClass: '히어로', level: 280 }] }],
+      '2026-08-01',
+      'account-a',
+    )
+    const etc: IncomeRecord = { ...sale, id: idOf(), ocid: null, category: 'etc', itemKind: null }
+    const hunt: IncomeRecord = { ...calculatorHunt, id: idOf(), ocid: null }
+    for (const record of [etc, hunt]) {
+      await insertIncomeRecord(record)
+      real.inspect((db) => db.prepare(`UPDATE cashbook_entries SET nexon_account_id = 'account-a' WHERE id = ?`).run(record.id))
+    }
+    const before = getIncomeRecordsRevision()
+
+    await assignLegacyIncomeAccounts(['etc'])
+    await assignLegacyIncomeAccounts(['etc'])
+
+    expect(all('SELECT category_key, account_id, nexon_account_id FROM cashbook_entries ORDER BY category_key')).toEqual([
+      { category_key: 'etc', account_id: 'maple-a', nexon_account_id: null },
+      { category_key: 'hunting', account_id: null, nexon_account_id: 'account-a' },
+    ])
+    expect(getIncomeRecordsRevision()).toBe(before + 1)
   })
 })
 

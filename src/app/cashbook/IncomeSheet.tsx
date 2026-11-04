@@ -18,7 +18,9 @@ import { CheckBox, ChevronLeftIcon, Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import type { MesoRateLoad } from '../../features/cashbook/meso-rate'
 import type { LastHunts } from '../../storage/last-hunts'
+import type { SheetAccount } from '../../features/cashbook/account-names'
 import {
+  ACCOUNT_INCOME_CATEGORY_KEYS,
   INCOME_CATEGORY_KEYS,
   incomeCategoryNameOf,
   incomePickerCategories,
@@ -40,13 +42,15 @@ export type { IncomeDraft } from './income/form-shared'
 export interface IncomeSheetProps {
   dateKey: string
   /**
-   * 고를 수 있는 캐릭터. 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다). 비어 있으면
-   * 고르개에 선택 안함 하나만 선다.
+   * 고를 수 있는 캐릭터. 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다). 비어 있고 메이플 ID 도
+   * 없으면 고를 것이 없어 저장할 수 없다.
    *
    * `level` 은 사냥 계산기가 쓴다. 지역 목록을 거르고 레벨 차이 페널티를 낸다. 캐시에 없으면
    * `null` 이고 그때는 페널티 없이 계산하며 그 사실을 화면이 말한다.
    */
   characters: readonly SheetCharacter[]
+  /** 추적 캐릭터가 속한 메이플 ID. 메이플 ID 를 고를 수 있는 갈래의 폼에만 넘긴다. 화면이 읽어서 넘긴다. */
+  accounts: readonly SheetAccount[]
   /**
    * 마지막으로 쓴 메소마켓 시세. 기타를 메포로 적을 때의 기본값이다. 지출 시트와 같은
    * 계약이라 화면이 한 값을 두 시트에 그대로 넘긴다.
@@ -113,6 +117,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
     setSave,
     dateKey,
     characters: props.characters,
+    accounts: category !== null && ACCOUNT_INCOME_CATEGORY_KEYS.includes(category) ? props.accounts : [],
     editing: props.editing,
     onDelete: props.onDelete,
     onSave: props.onSave,

@@ -21,7 +21,13 @@ import { View } from 'react-native'
 
 import { Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
-import { SPEND_CATEGORY_KEYS, spendCategories, type SpendCategoryKey } from '../../lib/cashbook/categories'
+import type { SheetAccount } from '../../features/cashbook/account-names'
+import {
+  ACCOUNT_SPEND_CATEGORY_KEYS,
+  SPEND_CATEGORY_KEYS,
+  spendCategories,
+  type SpendCategoryKey,
+} from '../../lib/cashbook/categories'
 import type { SpendRecord } from '../../storage/spend'
 import { CategoryPicker } from './CategoryPicker'
 import { CatalogForm } from './spend/CatalogForm'
@@ -48,9 +54,11 @@ export interface SpendSheetProps {
   earliestDateKey: string
   /**
    * 고를 수 있는 캐릭터. 화면이 읽어서 넘긴다(시트는 `storage/` 를 모른다).
-   * 비어 있으면 고르개에 선택 안함 하나만 선다.
+   * 비어 있고 메이플 ID 도 없으면 고를 것이 없어 저장할 수 없다.
    */
   characters: ReadonlyArray<{ ocid: string; name: string; level: number | null; worldKey: string | null; jobClass?: string | null }>
+  /** 추적 캐릭터가 속한 메이플 ID. 메이플 ID 를 고를 수 있는 갈래의 폼에만 넘긴다. 화면이 읽어서 넘긴다. */
+  accounts: readonly SheetAccount[]
   /** 캐릭터의 기억한 강화 레벨을 읽는 콜백. 심볼 강화 · 헥사 매트릭스 폼이 쓴다. */
   loadRememberedLevels: SpendFormProps['loadRememberedLevels']
   /**
@@ -122,6 +130,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           setHeader: setHead,
           dateKey,
           characters: props.characters,
+          accounts: ACCOUNT_SPEND_CATEGORY_KEYS.includes(category) ? props.accounts : [],
           category,
           onBack: clearCategory,
           editing: props.editing,

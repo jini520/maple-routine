@@ -30,9 +30,11 @@ export interface StatsTotals {
 }
 
 export interface CharacterTotals extends StatsTotals {
-  /** `ocid:…` 이거나, 캐릭터에 못 붙은 강화 기록이면 `name:…` */
+  /** `ocid:…` 이거나, 메이플 ID 기록이면 `account:…`, 캐릭터에 못 붙은 강화 기록이면 `name:…` */
   key: string
   ocid: string | null
+  /** 메이플 ID 줄에만 있다. 그림이 없어 단상 · today 순위에는 서지 않는다. */
+  accountId?: string
   name: string
 }
 
@@ -77,6 +79,7 @@ export function cumulativeNet(series: readonly StatsTotals[]): number[] {
 interface CharacterEntry {
   key: string
   ocid: string | null
+  accountId?: string
   name: string
   entry: DayRecord
 }
@@ -84,8 +87,8 @@ interface CharacterEntry {
 /**
  * 범위의 기록에 캐릭터 key 를 붙인 목록. 캐릭터별 합계와 캐릭터별 갈래가 같은 기준으로 나뉘도록 둘이 함께 쓴다.
  *
- * 캐릭터를 고르지 않은 손입력은 안 든다. 강화 기록은 이름만 들어, 지금 이름과 같은 캐릭터가 있으면
- * 거기 붙고 없으면(개명 전 이름) 그 이름으로 따로 선다. 가계부가 강화 줄을 이름으로 묶는 것과 같다.
+ * 메이플 ID 기록은 ID 마다 한 줄이다. 주인을 모르는 옛 손입력은 안 든다. 강화 기록은 이름만 들어, 지금 이름과 같은
+ * 캐릭터가 있으면 거기 붙고 없으면(개명 전 이름) 그 이름으로 따로 선다. 가계부가 강화 줄을 이름으로 묶는 것과 같다.
  */
 function characterEntriesBetween(byDate: DaysByDate, range: StatsRange): CharacterEntry[] {
   const entries = entriesBetween(byDate, range)
@@ -95,6 +98,11 @@ function characterEntriesBetween(byDate: DaysByDate, range: StatsRange): Charact
   // 강화 줄이 이름으로 붙을 자리를 먼저 세운다. 줄 차례와 상관없이 같은 결과가 나와야 한다.
   for (const entry of entries) {
     if (entry.kind === 'enhancement') continue
+    const accountId = entry.kind === 'income' || entry.kind === 'spend' ? entry.record.accountId : undefined
+    if (accountId !== undefined) {
+      keyed.push({ key: `account:${accountId}`, ocid: null, accountId, name: entry.characterName, entry })
+      continue
+    }
     const ocid = entry.kind === 'income' || entry.kind === 'spend' ? entry.record.ocid : entry.ocid
     if (ocid === null) continue
     const key = `ocid:${ocid}`
@@ -116,8 +124,16 @@ function characterEntriesBetween(byDate: DaysByDate, range: StatsRange): Charact
 /** 캐릭터별 합계. 순 수익이 큰 순서다. 캐릭터를 가르는 기준은 `characterEntriesBetween` 에 있다. */
 export function characterTotalsBetween(byDate: DaysByDate, range: StatsRange): CharacterTotals[] {
   const rows = new Map<string, CharacterTotals>()
-  for (const { key, ocid, name, entry } of characterEntriesBetween(byDate, range)) {
-    const row = rows.get(key) ?? { key, ocid, name, incomeMeso: 0, expenseMeso: 0, netMeso: 0 }
+  for (const { key, ocid, accountId, name, entry } of characterEntriesBetween(byDate, range)) {
+    const row = rows.get(key) ?? {
+      key,
+      ocid,
+      ...(accountId === undefined ? {} : { accountId }),
+      name,
+      incomeMeso: 0,
+      expenseMeso: 0,
+      netMeso: 0,
+    }
     const meso = recordMesoOf(entry)
     if (isExpense(entry)) row.expenseMeso += meso
     else row.incomeMeso += meso

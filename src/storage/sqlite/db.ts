@@ -592,8 +592,10 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // 이 기록을 다시 가리키는 값. **칸만 여기서 더하고 값과 기본키는 버전 12 가 옮긴다** -
   // SQLite 는 ALTER TABLE 로 기본키를 못 바꿔서 표를 다시 써야 한다.
   await ensureColumn(db, 'boss_drop_records', 'drop_record_id', 'TEXT')
-  // 계정 단위 기록이 어느 넥슨 계정의 것인지. 버전 15 에서 만든 표에는 CREATE 가 안 붙인다. 옛 행은 버전 16 이 표시한다.
+  // 주인을 모르는 옛 기록이 어느 넥슨 계정의 것인지. 버전 15 에서 만든 표에는 CREATE 가 안 붙인다. 옛 행은 버전 16 이 표시한다.
   await ensureColumn(db, 'cashbook_entries', 'nexon_account_id', 'TEXT')
+  // 메이플 ID 기록의 ID. 옛 행은 NULL 이고, 그 넥슨 계정의 메이플 ID 가 하나뿐이면 부팅 단계가 채운다.
+  await ensureColumn(db, 'cashbook_entries', 'account_id', 'TEXT')
   // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
   await runVersionedMigrations(db)
   // 기본키를 uuid 로 옮긴 뒤에 선다. 종전에는 기본키가 곧 이 인덱스였다.

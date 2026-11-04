@@ -23,9 +23,6 @@ jest.mock('../../../storage/spend', () => ({
   getSpendMonthRows: jest.fn(),
 }))
 jest.mock('../../../storage/last-point-rate', () => ({ setLastPointRate: jest.fn() }))
-jest.mock('../../../storage/api-key', () => ({
-  getAuthConfig: jest.fn(async () => ({ login: { type: 'login', id: 'account-main', session: 's' }, apiKeys: [] })),
-}))
 jest.mock('../../../storage/last-hunts', () => ({
   setLastHunt: jest.fn(),
   getLastHunts: jest.fn(),
@@ -48,6 +45,7 @@ jest.mock('../../../storage/mvp-grades', () => ({ getMvpGradeHistories: jest.fn(
 jest.mock('../../../storage/character-accounts', () => ({ getCharacterAccountSightings: jest.fn() }))
 jest.mock('../../../lib/mvp/starforce', () => ({ starforceMvpDiscountResolver: jest.fn() }))
 jest.mock('../../app-review/request', () => ({ countCoreSave: jest.fn() }))
+jest.mock('../account-names', () => ({ loadAccountLabels: jest.fn(async () => new Map()) }))
 
 const income = jest.requireMock('../../../storage/income') as Record<string, jest.Mock>
 const spend = jest.requireMock('../../../storage/spend') as Record<string, jest.Mock>
@@ -63,6 +61,7 @@ const legacyTotals = jest.requireMock('../../enhancement-history/legacy-totals')
 const mvpGrades = jest.requireMock('../../../storage/mvp-grades') as Record<string, jest.Mock>
 const characterAccounts = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
 const mvp = jest.requireMock('../../../lib/mvp/starforce') as Record<string, jest.Mock>
+const accountNames = jest.requireMock('../account-names') as Record<string, jest.Mock>
 
 const 지금 = new Date('2026-08-23T05:00:00.000Z')
 
@@ -170,15 +169,6 @@ describe('행의 신원은 여기서 만든다', () => {
     })
   })
 
-  // 캐릭터 없는 기록이 속할 계정이다. 계정을 고르는 화면이 생기기 전까지는 메인 계정이다.
-  it('메인 넥슨 계정 id 를 함께 넘긴다', async () => {
-    const { recordIncome } = require('../records') as typeof import('../records')
-
-    await recordIncome(수입, 지금)
-
-    expect(income.insertIncomeRecord.mock.calls[0][1]).toBe('account-main')
-  })
-
   // 손입력은 **같은 날 같은 것을 두 번** 이 정상이라 자연키가 없다.
   it('같은 것을 두 번 넣어도 서로 다른 행이다', async () => {
     const { recordIncome } = require('../records') as typeof import('../records')
@@ -199,13 +189,12 @@ describe('recordIncomes', () => {
     await recordIncomes([수입, { ...수입, mesoAmount: 1 }], 지금)
 
     expect(income.insertIncomeRecords).toHaveBeenCalledTimes(1)
-    const [records, accountId] = income.insertIncomeRecords.mock.calls[0]
+    const [records] = income.insertIncomeRecords.mock.calls[0]
     expect(records.map((record: { recordedAt: string }) => record.recordedAt)).toEqual([
       '2026-08-23T05:00:00.000Z',
       '2026-08-23T05:00:00.000Z',
     ])
     expect(records[0].id).not.toBe(records[1].id)
-    expect(accountId).toBe('account-main')
     expect(appReview.countCoreSave).toHaveBeenCalledTimes(1)
   })
 })
@@ -564,6 +553,20 @@ describe('loadDayRecords: 그날 적은 것을 한 줄씩', () => {
 
     await expect(loadDayRecords('2026-08-25')).resolves.toHaveLength(1)
   })
+
+  // 캐릭터 이름 자리에 메이플 ID 의 이름이 선다. 주인을 모르는 옛 기록은 제목만 선다.
+  it('메이플 ID 기록은 그 ID 의 이름이 앞에 붙고, 주인을 모르는 옛 기록은 제목만 선다', async () => {
+    accountNames.loadAccountLabels.mockResolvedValue(new Map([['maple-a', '메이플 ID · 낟낟']]))
+    spend.getSpendRecordsBetween.mockResolvedValue([
+      { ...지출행, id: 'spd-account', category: 'event_bm', itemKey: 'blueberry_farm', quantity: 1, accountId: 'maple-a' },
+      { ...지출행, id: 'spd-legacy', category: 'event_bm', itemKey: 'blueberry_farm', quantity: 1 },
+    ])
+
+    const rows = await loadDayRecords('2026-08-25')
+
+    expect(accountNames.loadAccountLabels).toHaveBeenCalledWith(['maple-a'])
+    expect(rows.map(titleOf)).toEqual(['메이플 ID · 낟낟 · 메이플 포인트 샵', '메이플 포인트 샵'])
+  })
 })
 
 // 카드 두 줄의 규칙은 갈래마다 다르다. 이름 · 제목 · 단위는 서버 표에서 찾고, 사용자가 확정한 카드 이름표가 그 모양이다.
@@ -699,7 +702,7 @@ describe('고치기와 지우기', () => {
 
     await editSpend({ ...지출행, quantity: 3 })
 
-    expect(spend.updateSpendRecord).toHaveBeenCalledWith({ ...지출행, quantity: 3 }, 'account-main')
+    expect(spend.updateSpendRecord).toHaveBeenCalledWith({ ...지출행, quantity: 3 })
     expect(rate.setLastPointRate).toHaveBeenCalledWith(1_180)
   })
 

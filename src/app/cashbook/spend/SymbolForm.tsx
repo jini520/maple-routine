@@ -20,7 +20,7 @@ import {
   symbolRecordName,
   symbolUpgradeCost,
 } from '../../../lib/cashbook/symbol-costs'
-import { CharacterField, FIELD_CELL_CLASS, FieldCard } from '../sheet-fields'
+import { FIELD_CELL_CLASS, FieldCard, OwnerField } from '../sheet-fields'
 import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { type LevelRange, type RangeEnd } from './level-range'
 import { LevelRangeGrid } from './LevelRangeGrid'
@@ -100,7 +100,7 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
   useSaveSlot(props.setSave, {
     showSave: true,
     editing,
-    canSave: found !== null && cost !== null && range.to > range.from && !beforeTable,
+    canSave: ocid !== null && found !== null && cost !== null && range.to > range.from && !beforeTable,
     saving,
     onSave: () => {
       if (found === null) return
@@ -141,7 +141,8 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
   return (
     <>
       <FieldCard>
-        <CharacterField characters={props.characters} selected={ocid} onSelect={selectCharacter} testID="spend-sheet-chain" />
+        {/* 심볼은 캐릭터마다 레벨이 따로라 메이플 ID 를 두지 않는다. 고른 캐릭터의 레벨로 목록을 거른다. */}
+        <OwnerField characters={props.characters} accounts={[]} selected={ocid} onSelect={selectCharacter} testID="spend-sheet-chain" />
 
         <SelectField
           label="심볼"

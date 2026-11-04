@@ -14,6 +14,7 @@ import { FIELD_CELL_CLASS, SheetDateField } from '../sheet-fields'
 import { mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { openInputCard } from '../../../features/input-card/store'
 import { POINT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
+import type { SheetAccount } from '../../../features/cashbook/account-names'
 import type { SpendCategoryKey } from '../../../lib/cashbook/categories'
 import { type SpendRecord } from '../../../storage/spend'
 
@@ -55,6 +56,8 @@ export interface SpendFormProps {
   setHeader: (slot: SpendHeaderSlot) => void
   dateKey: string
   characters: ReadonlyArray<{ ocid: string; name: string; level: number | null; worldKey: string | null; jobClass?: string | null }>
+  /** 캐릭터 뒤에 서는 메이플 ID 보기. 메이플 ID 를 고를 수 없는 갈래는 시트가 빈 배열을 준다. */
+  accounts: readonly SheetAccount[]
   /** 1차에서 고른 갈래 key. 머리의 제목은 이 key 로 찾은 갈래 이름이다. */
   category: SpendCategoryKey
   /** 1차로 되돌아간다. 머리의 화살촉이 부른다. 수정 모드에서는 폼이 안 붙인다. */

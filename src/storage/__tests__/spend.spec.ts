@@ -6,7 +6,10 @@
 import spendCatalog from '../../__fixtures__/game-data/spend-catalog.json'
 import { spendCategories } from '../../lib/cashbook/categories'
 import { __resetStoragePortsForTest, setSqlitePort } from '../ports'
+import type { MapleAccount } from '../../types'
+import { recordCharacterAccounts } from '../character-accounts'
 import {
+  assignLegacySpendAccounts,
   deleteSpendRecord,
   getSpendRecordsBetween,
   getSpendRecordsRevision,
@@ -194,29 +197,91 @@ describe('고치기 · 지우기', () => {
   })
 })
 
-// 캐릭터 없는 기록은 ocid 로 계정을 찾을 수 없어 넥슨 계정을 직접 든다. 다계정이면 그 계정의 기록으로 갈린다.
-describe('캐릭터 없는 기록의 넥슨 계정', () => {
-  it('캐릭터 없는 기록만 계정을 적고, 캐릭터가 있는 기록은 비워 둔다', async () => {
-    await insertSpendRecord(mesoSpend, 'account-a')
-    await insertSpendRecord({ ...rewardSpend, ocid: 'ocid-1' }, 'account-a')
+/** 주인을 모르는 옛 기록. 계정 칸만 든 채로 남은 행이다. */
+async function insertLegacySpend(record: SpendRecord, nexonAccountId: string | null): Promise<void> {
+  await insertSpendRecord(record)
+  real.inspect((db) => db.prepare('UPDATE cashbook_entries SET nexon_account_id = ? WHERE id = ?').run(nexonAccountId, record.id))
+}
 
-    expect(all('SELECT id, nexon_account_id FROM cashbook_entries ORDER BY id')).toEqual([
-      { id: mesoSpend.id, nexon_account_id: 'account-a' },
-      { id: rewardSpend.id, nexon_account_id: null },
+function mapleAccount(accountId: string, ocids: string[]): MapleAccount {
+  return {
+    accountId,
+    characters: ocids.map((ocid) => ({ ocid, name: ocid, world: '스카니아', worldKey: 'scania', jobClass: '히어로', level: 280 })),
+  }
+}
+
+// 넥슨 계정은 캐릭터나 메이플 ID 에서 찾는다. 계정 칸이 찬 행은 주인을 모르는 옛 기록뿐이어야 한다.
+describe('메이플 ID 기록과 넥슨 계정 칸', () => {
+  it('메이플 ID 기록은 그 ID 로 되읽히고, 새 기록은 계정 칸을 비워 둔다', async () => {
+    const accountSpend: SpendRecord = { ...mesoSpend, category: 'event_bm', accountId: 'maple-a' }
+    await insertSpendRecord(accountSpend)
+    await insertSpendRecord({ ...rewardSpend, ocid: 'ocid-1' })
+
+    expect(await getSpendRecordsBetween(mesoSpend.spentOn, mesoSpend.spentOn)).toEqual([
+      accountSpend,
+      { ...rewardSpend, ocid: 'ocid-1' },
+    ])
+    expect(all('SELECT ocid, account_id, nexon_account_id FROM cashbook_entries ORDER BY id')).toEqual([
+      { ocid: null, account_id: 'maple-a', nexon_account_id: null },
+      { ocid: 'ocid-1', account_id: null, nexon_account_id: null },
     ])
   })
 
-  it('고쳐도 처음 속한 계정을 지키고, 캐릭터를 고르면 계정 칸을 비운다', async () => {
-    await insertSpendRecord(mesoSpend, 'account-a')
+  it('옛 기록은 주인 없이 고치면 계정을 지키고, 주인을 고르면 계정 칸을 비운다', async () => {
+    await insertLegacySpend(mesoSpend, 'account-a')
 
-    await updateSpendRecord({ ...mesoSpend}, 'account-b')
+    await updateSpendRecord(mesoSpend)
     expect(all('SELECT nexon_account_id FROM cashbook_entries')).toEqual([{ nexon_account_id: 'account-a' }])
 
-    await updateSpendRecord({ ...mesoSpend, ocid: 'ocid-1' }, 'account-b')
-    expect(all('SELECT nexon_account_id FROM cashbook_entries')).toEqual([{ nexon_account_id: null }])
+    await updateSpendRecord({ ...mesoSpend, accountId: 'maple-a' })
+    expect(all('SELECT account_id, nexon_account_id FROM cashbook_entries')).toEqual([
+      { account_id: 'maple-a', nexon_account_id: null },
+    ])
+  })
+})
 
-    await updateSpendRecord(mesoSpend, 'account-b')
-    expect(all('SELECT nexon_account_id FROM cashbook_entries')).toEqual([{ nexon_account_id: 'account-b' }])
+describe('assignLegacySpendAccounts: 주인을 모르는 옛 기록을 메이플 ID 로 옮긴다', () => {
+  const ids = ['6f1b0e2c-0000-4000-8000-000000000201', '6f1b0e2c-0000-4000-8000-000000000202', '6f1b0e2c-0000-4000-8000-000000000203']
+
+  it('넥슨 계정의 메이플 ID 가 하나면, 고를 수 있는 분류의 옛 기록만 그 ID 로 옮기고 계정 칸을 비운다', async () => {
+    await recordCharacterAccounts([mapleAccount('maple-a', ['ocid-1', 'ocid-2'])], '2026-08-01', 'account-a')
+    await insertLegacySpend({ ...mesoSpend, id: ids[0]!, category: 'etc' }, 'account-a')
+    await insertLegacySpend({ ...mesoSpend, id: ids[1]!, category: 'buff' }, 'account-a')
+    await insertSpendRecord({ ...mesoSpend, id: ids[2]!, category: 'etc', ocid: 'ocid-1' })
+    const before = getSpendRecordsRevision()
+
+    await assignLegacySpendAccounts(['event_bm', 'etc'])
+
+    expect(all('SELECT id, ocid, account_id, nexon_account_id FROM cashbook_entries ORDER BY id')).toEqual([
+      { id: ids[0], ocid: null, account_id: 'maple-a', nexon_account_id: null },
+      // 캐릭터만 고르는 분류는 옮기지 않는다. 수정으로 열면 캐릭터를 골라야 저장된다.
+      { id: ids[1], ocid: null, account_id: null, nexon_account_id: 'account-a' },
+      { id: ids[2], ocid: 'ocid-1', account_id: null, nexon_account_id: null },
+    ])
+    // 화면의 하루 목록이 옮긴 기록을 다시 읽는다.
+    expect(getSpendRecordsRevision()).toBe(before + 1)
+  })
+
+  // 대표 캐릭터의 ID 로 몰면 다른 ID 에서 쓴 돈이 그 ID 의 기록이 된다.
+  it('메이플 ID 가 여럿이거나, 계정을 모르거나, 소속을 아직 못 받았으면 옮기지 않고 판도 그대로다', async () => {
+    await recordCharacterAccounts(
+      [mapleAccount('maple-a', ['ocid-1']), mapleAccount('maple-b', ['ocid-2'])],
+      '2026-08-01',
+      'account-a',
+    )
+    await insertLegacySpend({ ...mesoSpend, id: ids[0]!, category: 'etc' }, 'account-a')
+    await insertLegacySpend({ ...mesoSpend, id: ids[1]!, category: 'etc' }, null)
+    await insertLegacySpend({ ...mesoSpend, id: ids[2]!, category: 'etc' }, 'account-unseen')
+    const before = getSpendRecordsRevision()
+
+    await assignLegacySpendAccounts(['event_bm', 'etc'])
+
+    expect(all('SELECT account_id FROM cashbook_entries')).toEqual([
+      { account_id: null },
+      { account_id: null },
+      { account_id: null },
+    ])
+    expect(getSpendRecordsRevision()).toBe(before)
   })
 })
 

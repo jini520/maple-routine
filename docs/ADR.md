@@ -206,3 +206,4 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-150](./adr/ADR-150_design-system_page-faq.md) | 🟢 | design-system | 모든 페이지의 FAQ |
 | [ADR-152](./adr/ADR-152_navigation_bar-order.md) | 🟢 | navigation | 하단바 순서 바꾸기 |
 | [ADR-158](./adr/ADR-158_server-sync_usage-log.md) | 🟢 | server-sync | 앱 사용 로그와 관리자 화면 |
+| [ADR-161](./adr/ADR-161_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |

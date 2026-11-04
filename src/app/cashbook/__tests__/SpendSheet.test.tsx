@@ -41,7 +41,7 @@ import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
-/** 고르개가 실제로 고를 것이 있어야 선택 안함 이 기본이라는 말에 뜻이 생긴다. */
+/** 고르개가 실제로 고를 것이 있어야 고르기 전에는 저장이 꺼진다는 말에 뜻이 생긴다. */
 const 캐릭터둘 = [
   { ocid: 'ocid-1', name: '루디', level: 225, worldKey: 'scania' },
   { ocid: 'ocid-2', name: '아델', level: 290, worldKey: null },
@@ -65,6 +65,8 @@ async function 그리기(
       // 가계부 화면이 갈 수 있는 가장 이른 날. 화면이 오늘에서 읽어 넘긴다.
       earliestDateKey="2025-02-27"
       characters={캐릭터둘}
+      // 메이플 ID 보기는 그것을 보는 케이스만 준다.
+      accounts={[]}
       loadRememberedLevels={async () => ({})}
       lastPointRate={null}
       onSave={jest.fn()}
@@ -79,6 +81,16 @@ async function 그리기(
 async function 누르기(view: Rendered, label: string): Promise<void> {
   await act(async () => {
     fireEvent.press(view.getByLabelText(label))
+  })
+}
+
+/** 캐릭터 칸에서 고른다. 캐릭터 없이 저장되던 갈래도 이제 골라야 저장된다. */
+async function 캐릭터고르기(view: Rendered, ocid = 'ocid-1'): Promise<void> {
+  await act(async () => {
+    fireEvent.press(view.getByTestId('spend-sheet-chain-open'))
+  })
+  await act(async () => {
+    fireEvent.press(view.getByTestId(`spend-sheet-chain-option-${ocid}`))
   })
 }
 
@@ -489,6 +501,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
     await 누르기(view, '몬스터 파크')
 
     await 카드칸에치기(view, 'spend-sheet-quantity', '2')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ quantity: 2, pointAmount: 1_200 })
@@ -519,6 +532,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     await 형태단계(view, '경험치', '1단계')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ item: '하이마운틴 경험치 1단계', quantity: 1 })
@@ -613,6 +627,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
 
     await 형태단계(view, '솔 에르다', '1단계')
 
+    await 캐릭터고르기(view)
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
   })
 
@@ -662,6 +677,7 @@ describe('메소마켓 시세', () => {
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     expect(줄글자(view, 'spend-sheet-rate')).toBe('1,180')
+    await 캐릭터고르기(view)
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
   })
 
@@ -672,6 +688,7 @@ describe('메소마켓 시세', () => {
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
     await 카드칸에치기(view, 'spend-sheet-rate', '2360')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ pointPer100mMeso: 2_360 })
@@ -692,6 +709,7 @@ describe('메소마켓 시세', () => {
 
     await 누르기(view, '세이람의 영약')
 
+    await 캐릭터고르기(view)
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
   })
 })
@@ -745,11 +763,12 @@ describe('저장', () => {
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
 
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave).toHaveBeenCalledTimes(1)
     expect(onSave.mock.calls[0][0]).toEqual({
-      ocid: null,
+      ocid: 'ocid-1',
       spentOn: '2026-08-23',
       category: 'content',
       // 고른 단계가 이름에 든다. 0단계인 솔 에르다는 안 적힌다.
@@ -776,6 +795,7 @@ describe('저장', () => {
     await 갈래바꾸기(view, '버프')
 
     await 누르기(view, '콜렉터의 영약')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -794,6 +814,7 @@ describe('저장', () => {
     const view = await 그리기({ onClose, lastPointRate: 1_180 })
 
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onClose).toHaveBeenCalledTimes(1)
@@ -827,6 +848,7 @@ describe('형태별 단계', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
     await 형태단계(view, '솔 에르다', '2단계')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -853,6 +875,7 @@ describe('형태별 단계', () => {
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
 
     await 에픽던전(view, '악몽선경', '솔 에르다', '2단계')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -911,6 +934,7 @@ describe('주문서', () => {
     await 줄에서(view, '능력치', '마력')
 
     expect(조각(view, '무기', '한손무기')?.selected).toBe(true)
+    await 캐릭터고르기(view)
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
   })
 
@@ -936,6 +960,7 @@ describe('주문서', () => {
     expect(조각(view, '스탯', '운')?.disabled).toBe(true)
     expect(조각(view, '스탯', '운')?.selected).toBe(false)
     // 마력 주문서는 스탯이 안 갈려 항목이 하나로 정해졌다.
+    await 캐릭터고르기(view)
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
 
     await 줄에서(view, '능력치', '공격력')
@@ -953,6 +978,7 @@ describe('주문서', () => {
     await 누르기(view, '귀 장식 주문서')
     await 줄에서(view, '스탯', '민첩')
 
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -972,6 +998,7 @@ describe('주문서', () => {
     await 누르기(view, '놀라운 긍정의 혼돈 주문서')
 
     await 누르기(view, '100%')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -987,6 +1014,7 @@ describe('주문서', () => {
     await 누르기(view, '펫장비 주문서')
 
     await 누르기(view, '마력')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -1152,6 +1180,7 @@ describe('아이템 구매', () => {
     await 관세고르기(view, '10%')
     await 관세고르기(view, '10%')
     await 관세고르기(view, '10%')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -1169,6 +1198,7 @@ describe('아이템 구매', () => {
     await 관세고르기(view, '10%')
 
     await 카드칸에치기(view, 'spend-sheet-name', '앱솔랩스 슈즈')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -1189,6 +1219,7 @@ describe('아이템 구매', () => {
     await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '100')
 
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 100, tariffMeso: null })
@@ -1248,6 +1279,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
     await 누르기(view, '캐시')
     await 금액치기(view, '6900')
 
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -1297,6 +1329,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
     await 누르기(view, '메포')
     await 금액치기(view, '30000')
 
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -1371,10 +1404,26 @@ describe('시세가 비어 있을 때', () => {
  * 캐릭터 귀속(사용자 말: *"캐릭터를 선택해서 입력하는 방법을 추가하는게
  * 좋을거 같아"*). 컬럼은 처음부터 있었고 **화면만 없었다**.
  *
- * 줄은 **수입 시트와 같은 배지 사슬**이다(사용자 지시). 안 고르면 자리표시자가
- * `캐릭터 선택` 이고 그 상태가 계정 단위(`ocid = null`)다.
+ * 줄은 **수입 시트와 같은 배지 사슬**이다(사용자 지시). 안 고르면 자리표시자가 `캐릭터 선택` 이다.
+ * 갈래마다 골라야 저장되고, 이벤트·BM 과 기타는 캐릭터 뒤에 메이플 ID 를 고를 수 있다.
  */
 describe('캐릭터 귀속', () => {
+  const 메이플ID둘 = [
+    { accountId: 'maple-a', label: '메이플 ID · 아델' },
+    { accountId: 'maple-b', label: '메이플 ID · 루디' },
+  ]
+
+  /** 열린 캐릭터 목록의 값들. 메이플 ID 는 `account:` 를 단다. */
+  async function 보기들(view: Rendered): Promise<string[]> {
+    await 아이디로누르기(view, 'spend-sheet-chain-open')
+    // 월드 엠블럼이 `-icon` 을 단 같은 머리의 testID 를 따로 든다.
+    const values = view
+      .getAllByTestId(/^spend-sheet-chain-option-(?!.*-icon$)/)
+      .map((option) => String(option.props.testID).slice('spend-sheet-chain-option-'.length))
+    await 아이디로누르기(view, 'spend-sheet-chain-backdrop')
+    return values
+  }
+
   async function 아이디로누르기(view: Rendered, testID: string): Promise<void> {
     await act(async () => {
       fireEvent.press(view.getByTestId(testID))
@@ -1411,15 +1460,55 @@ describe('캐릭터 귀속', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-2' })
   })
 
-  it('안 고르면 계정 단위로 저장한다. `ocid` 가 `null` 이다', async () => {
-    const onSave = jest.fn()
-    const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '아이템 구매')
+  // 고르기 전에 저장하면 주인을 모르는 기록이 생긴다.
+  it('고르기 전에는 저장이 꺼진다', async () => {
+    const view = await 그리기({ accounts: 메이플ID둘 }, '아이템 구매')
     await 치기(view, '1200000000')
 
-    await 누르기(view, '저장')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
 
-    expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: null })
+  // 갈래마다 사용자가 정했다(2026-11-04). 같은 폼을 쓰는 컨텐츠와 이벤트·BM 도 갈린다.
+  it('이벤트·BM 과 기타는 캐릭터 뒤에 메이플 ID 가 서고, 컨텐츠 · 심볼 강화 · 아이템 구매는 캐릭터만 선다', async () => {
+    const 이벤트 = await 그리기({ accounts: 메이플ID둘 }, '이벤트·BM')
+    await 누르기(이벤트, '보약 버프 추가 구매')
+    expect(await 보기들(이벤트)).toEqual(['ocid-1', 'ocid-2', 'account:maple-a', 'account:maple-b'])
+
+    const 기타 = await 그리기({ accounts: 메이플ID둘 }, '기타')
+    expect(await 보기들(기타)).toEqual(['ocid-1', 'ocid-2', 'account:maple-a', 'account:maple-b'])
+
+    const 컨텐츠 = await 그리기({ accounts: 메이플ID둘 })
+    await 누르기(컨텐츠, '하이마운틴')
+    expect(await 보기들(컨텐츠)).toEqual(['ocid-1', 'ocid-2'])
+
+    for (const 갈래 of ['심볼 강화', '아이템 구매'] as const) {
+      expect(await 보기들(await 그리기({ accounts: 메이플ID둘 }, 갈래))).toEqual(['ocid-1', 'ocid-2'])
+    }
+  })
+
+  it('기타에서 메이플 ID 를 고르면 캐릭터 없이 그 ID 로 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, accounts: 메이플ID둘 }, '기타')
+    await 치기(view, '1200000000')
+    await 아이디로누르기(view, 'spend-sheet-chain-open')
+    await 아이디로누르기(view, 'spend-sheet-chain-option-account:maple-a')
+
+    expect(view.getByTestId('spend-sheet-chain-value')).toHaveTextContent('메이플 ID · 아델')
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: null, accountId: 'maple-a' })
+  })
+
+  // 옮기지 못한 옛 기록이다. 그대로 다시 저장되면 주인을 모르는 기록이 남는다.
+  it('주인을 모르는 옛 기록은 빈 칸으로 열리고, 골라야 다시 저장된다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, accounts: 메이플ID둘, lastPointRate: 1_180, editing: 악몽선경2 })
+
+    expect(view.getByTestId('spend-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
+    expect(view.getByLabelText('수정').props.accessibilityState?.disabled).toBe(true)
+    await 아이디로누르기(view, 'spend-sheet-chain-open')
+    await 아이디로누르기(view, 'spend-sheet-chain-option-ocid-1')
+    await 누르기(view, '수정')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ ocid: 'ocid-1' })
   })
 })
 
@@ -1499,6 +1588,7 @@ describe('기타. 금액 × 수량', () => {
 
     await 금액치기(view, '30000000')
     await 카드칸에치기(view, 'spend-sheet-quantity', '2')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ mesoAmount: 60_000_000, quantity: 2 })
@@ -1883,6 +1973,7 @@ describe('아이템 구매의 종류', () => {
     await 단가치기(view, '12000')
     await 수량치기(view, '300')
     await 카드칸에치기(view, 'spend-sheet-name', '주문서')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -1904,6 +1995,7 @@ describe('아이템 구매의 종류', () => {
     await 갈래바꾸기(view, '아이템 구매')
     await 치기(view, '850000000')
     await 관세고르기(view, '10%')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({
@@ -1930,6 +2022,7 @@ describe('아이템 구매의 종류', () => {
     await 종류고르기(view, '소비')
     await 수량치기(view, '300')
     await 종류고르기(view, '장비')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     // 관세가 남아 있었다면 13,200 이고, 수량이 남아 있었다면 3,600,000 이다.
@@ -2034,6 +2127,8 @@ describe('되짚어 여는 식', () => {
     const view = await 고치기(
       {
         ...기록,
+        // 그대로 다시 저장하려면 주인이 있어야 한다. 주인을 모르는 옛 기록은 골라야 저장된다.
+        ocid: 'ocid-1',
         category: 'item_purchase',
         item: '앱솔 무기',
         itemKind: 'equipment',
@@ -2332,6 +2427,7 @@ describe('날짜 바꾸기', () => {
     await 갈래바꾸기(view, '기타')
     await 금액치기(view, '30000')
     await 날짜고르기(view, '2026-08-22')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ spentOn: '2026-08-22' })
@@ -2480,6 +2576,7 @@ describe('심볼 강화', () => {
     expect(범위(view)).toEqual(['Lv.7', 'Lv.12'])
     // 7→8 365만 · 8→9 462만 · 9→10 572만 · 10→11 699만 · 11→12 840만
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('2938만')
+    await 캐릭터고르기(view, 'ocid-1')
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
   })
 
@@ -2508,6 +2605,8 @@ describe('심볼 강화', () => {
   it('칸을 눌러 옮긴 범위의 비용을 더해 레벨 칸과 함께 저장한다', async () => {
     const onSave = jest.fn()
     const view = await 열기({ onSave })
+    // 캐릭터를 나중에 고르면 그 캐릭터의 기억한 레벨로 범위가 다시 선다. 범위보다 먼저 고른다.
+    await 캐릭터고르기(view, 'ocid-1')
     await 심볼고르기(view, 'road_of_vanishing')
 
     await 아이디로누르기(view, 'spend-sheet-symbol-level-tab-from')
@@ -2516,7 +2615,7 @@ describe('심볼 강화', () => {
 
     await 누르기(view, '저장')
     expect(onSave.mock.calls[0][0]).toEqual({
-      ocid: null,
+      ocid: 'ocid-1',
       spentOn: 패치후,
       category: 'symbol',
       item: '소멸의 여로 Lv.3 → 8',
@@ -2794,6 +2893,7 @@ describe('가격을 치는 버프', () => {
     await 카드칸에치기(view, 'spend-sheet-quantity', '2')
 
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('600만')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
     expect(onSave.mock.calls[0][0]).toMatchObject({
       category: 'buff',
@@ -2819,6 +2919,7 @@ describe('가격을 치는 버프', () => {
 
     await 누르기(view, '행운')
     await 카드칸에치기(view, 'spend-sheet-unit-price', '1000000')
+    await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'enhanced_10_luk_potion', mesoAmount: 1_000_000 })

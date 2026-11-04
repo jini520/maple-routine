@@ -154,9 +154,26 @@ describe('characterTotalsBetween', () => {
     ])
   })
 
-  it('캐릭터를 고르지 않은 손입력은 뺀다', () => {
+  it('주인을 모르는 옛 손입력은 뺀다', () => {
     const byDate = { '2026-09-24': [income(null, '', { mesoAmount: 70 }), spend(null, '', { mesoAmount: 20 })] }
     expect(characterTotalsBetween(byDate, WEEK)).toEqual([])
+  })
+
+  // 이름은 가계부가 붙인 `메이플 ID · 대표 캐릭터` 이고, 같은 ID 의 기록은 대표가 누구든 한 줄이다.
+  it('메이플 ID 기록은 ID 마다 한 줄이고 금액 순서대로 캐릭터 줄 사이에 선다', () => {
+    const byDate = {
+      '2026-09-24': [
+        crystal('a', '낟낟', 500),
+        spend(null, '메이플 ID · 본캐', { accountId: 'maple-a', mesoAmount: 30 }),
+        income(null, '메이플 ID · 본캐', { accountId: 'maple-a', mesoAmount: 100 }),
+        spend('b', '낟넘', { mesoAmount: 20 }),
+      ],
+    }
+    expect(characterTotalsBetween(byDate, WEEK)).toEqual([
+      { key: 'ocid:a', ocid: 'a', name: '낟낟', incomeMeso: 500, expenseMeso: 0, netMeso: 500 },
+      { key: 'account:maple-a', ocid: null, accountId: 'maple-a', name: '메이플 ID · 본캐', incomeMeso: 100, expenseMeso: 30, netMeso: 70 },
+      { key: 'ocid:b', ocid: 'b', name: '낟넘', incomeMeso: 0, expenseMeso: 20, netMeso: -20 },
+    ])
   })
 
   // 강화 기록은 이름만 든다. 지금 이름과 같으면 그 캐릭터에 붙고, 개명 전 이름이면 따로 선다.

@@ -62,7 +62,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `enhancement_history` | `id` | 옛 강화 응답 원본. 합계로 옮기는 부팅 단계만 읽고 v1.0.14 에서 지운다 | `storage/enhancement-history.ts` | 남긴다 | [[ADR-100]] |
 | `enhancement_recomputes` | `id`(uuid, `(nexon_account_id, request_key)` 는 UNIQUE) | 강화 비용 다시 매기기 요청을 넥슨 계정마다 어디까지 받았는지와 끝났는지 | `storage/enhancement-recomputes.ts` | 지운다 (강화) | [[ADR-100]] |
 | `enhancement_history_checks` | `id`(uuid, `(nexon_account_id, enhancement_type, history_date)` 는 UNIQUE) | 강화 내역을 넥슨 계정 · 날짜별로 조회했는지 기록 | `storage/enhancement-history.ts` | 지운다 (강화) | `features/cashbook.md` |
-| `cashbook_entries` | `id`(uuid) | 가계부에 손으로 적은 수입 · 지출 한 건. 날짜 · 갈래 · 캐릭터 | `storage/income.ts` · `storage/spend.ts` | 지운다 (가계부) | [[ADR-096]] |
+| `cashbook_entries` | `id`(uuid) | 가계부에 손으로 적은 수입 · 지출 한 건. 날짜 · 갈래 · 캐릭터나 메이플 ID | `storage/income.ts` · `storage/spend.ts` | 지운다 (가계부) | [[ADR-096]] · [[ADR-161]] |
 | `cashbook_entry_items` | `id`(uuid, `(entry_id, sort_order)` 는 UNIQUE) | 기록의 품목. 항목 key 또는 직접 친 이름, 수량 · 레벨, 금액 · 수수료 · 관세, 헥사 강화의 조각 칸 넷 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-096]] |
 | `cashbook_entry_hunt_inputs` | `id`(uuid, `entry_id` 는 UNIQUE) | 사냥 기록의 계산기 입력 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-096]] |
 | `remembered_levels` | `id`(uuid, `(ocid, kind, item_key)` 는 UNIQUE) | 캐릭터의 심볼 · 헥사 코어 강화 레벨 기억. 추적을 시작할 때 넥슨 값으로 채우고 기록을 저장 · 고치기 · 지우기 할 때 옮긴다 | `storage/remembered-levels.ts` | 지운다 (가계부) | [[ADR-137]] |
@@ -77,7 +77,8 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 
 `NN` 은 `NOT NULL` 이다. 각 칸의 뜻은 표마다의 문서와 `db.ts` · `boss-tables.ts` · `record-key-tables.ts` 의 DDL 주석에 있다. 칸 이름은 서버 규칙을 따른다([[ADR-098]] 결정 7).
 
-`nexon_account_id` 는 인증 수단의 넥슨 계정 id 다. 빈 글자는 계정 칸이 생기기 전의 행이고, 앱을 켤 때 메인 계정 id 로 채운다(`fillLegacyAccountIds`). `NULL` 은 계정을 모르는 자격(저장 전에 검증하는 키)으로 본 소속이거나, 캐릭터가 있는 가계부 기록이다.
+`nexon_account_id` 는 인증 수단의 넥슨 계정 id 다. 빈 글자는 계정 칸이 생기기 전의 행이고, 앱을 켤 때 메인 계정 id 로 채운다(`fillLegacyAccountIds`). `NULL` 은 계정을 모르는 자격(저장 전에 검증하는 키)으로 본 소속이거나, 캐릭터나 메이플 ID 가 있는 가계부 기록이다. 가계부 기록에서 이 칸이 찬 행은 주인을 모르는 옛 기록뿐이다([[ADR-161]] 결정 4).
+가계부 기록의 `account_id` 는 메이플 ID 기록의 메이플 ID 이고, `character_accounts.account_id` 와 같은 값이다. 캐릭터 기록과 캐릭터 없이 적은 옛 기록은 `NULL` 이다. 메이플 ID 를 고를 수 있는 분류의 옛 기록은 그 넥슨 계정의 메이플 ID 가 하나뿐이면 앱을 켤 때 그 ID 로 채운다([[ADR-161]] 결정 4 · 5).
 
 | 테이블 | 칸 |
 |---|---|
@@ -90,7 +91,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `enhancement_history` | `id` NN · `kind` NN · `date_key` NN · `created_at` NN · `character_name` NN · `target_item` NN · `item_key` · `item_level` · `payload` NN · `cost_meso` |
 | `enhancement_recomputes` | `id` NN · `nexon_account_id` NN · `request_key` NN · `done_through_date` · `completed_at` · `updated_at` NN |
 | `enhancement_history_checks` | `id` NN · `nexon_account_id` · `enhancement_type` NN · `history_date` NN · `next_cursor` · `settled` NN(기본 0) · `checked_at` NN |
-| `cashbook_entries` | `id` NN · `ocid` · `nexon_account_id` · `entry_type` NN(`income` · `spend`) · `category_key` NN · `entry_date` NN · `created_at` NN · `updated_at` NN |
+| `cashbook_entries` | `id` NN · `ocid` · `account_id` · `nexon_account_id` · `entry_type` NN(`income` · `spend`) · `category_key` NN · `entry_date` NN · `created_at` NN · `updated_at` NN |
 | `cashbook_entry_items` | `id` NN · `entry_id` NN · `sort_order` NN · `item_key` · `item_name` · `form_key` · `item_kind_key` · `quantity` · `from_level` · `to_level` · `amount_meso` · `tariff_meso` · `sale_fee_percent` · `sale_fee_meso` · `sale_fee_auto` · `amount_point` · `point_per_100m_meso` · `amount_cash` · `fragment_count` · `untradable_fragment_count` · `fragment_price_meso` · `hexa_activation` |
 | `cashbook_entry_hunt_inputs` | `id` NN · `entry_id` NN UNIQUE · `character_level` · `missed_mobs` · `boosts` · `fragments` · `fragment_price_meso` · `meso_rate` · `typed_meso` · `union_tier` |
 | `remembered_levels` | `id` NN · `ocid` NN · `kind` NN · `item_key` NN · `level` NN · `updated_at` NN |

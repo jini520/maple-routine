@@ -67,11 +67,17 @@ export function spendItemsOf(record: SpendRecord): EntryItem[] {
   }))
 }
 
+/** 기록의 메이플 ID 칸. 메이플 ID 기록에만 붙인다. 캐릭터 기록과 옛 기록은 칸이 없어 모양이 그대로다. */
+function accountIdField(accountId: string | null): { accountId?: string } {
+  return accountId === null ? {} : { accountId }
+}
+
 export function spendEntryOf(record: SpendRecord): StoredEntry {
   return {
     head: {
       id: record.id,
       ocid: record.ocid,
+      accountId: record.accountId ?? null,
       entryType: 'spend',
       categoryKey: record.category,
       entryDate: record.spentOn,
@@ -105,6 +111,7 @@ export function spendRecordOf(entry: StoredEntry): SpendRecord {
   return {
     id: entry.head.id,
     ocid: entry.head.ocid,
+    ...accountIdField(entry.head.accountId),
     spentOn: entry.head.entryDate,
     category: entry.head.categoryKey as SpendCategoryKey,
     item: first.itemName,
@@ -196,6 +203,7 @@ export function incomeEntryOf(record: IncomeRecord): StoredEntry {
     head: {
       id: record.id,
       ocid: record.ocid,
+      accountId: record.accountId ?? null,
       entryType: 'income',
       categoryKey: record.category,
       entryDate: record.earnedOn,
@@ -228,6 +236,7 @@ export function incomeRecordOf(entry: StoredEntry): IncomeRecord {
   return {
     id: entry.head.id,
     ocid: entry.head.ocid,
+    ...accountIdField(entry.head.accountId),
     earnedOn: entry.head.entryDate,
     category: entry.head.categoryKey as IncomeCategoryKey,
     item: item.itemName,
