@@ -28,7 +28,7 @@ import { HUNT_LOOT_KINDS } from '../../../types/game-data'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { characterDecorOf, requiredCharacterOptions } from '../character-options'
 import { AmountInput, FieldCard, FieldRow, SelectRow } from '../sheet-fields'
-import { FragmentSettleForm, type LoadFragmentStorage } from './FragmentSettleForm'
+import { ALL_CHARACTERS, FragmentSettleForm, type LoadFragmentStorage } from './FragmentSettleForm'
 import { useSaveSlot, type IncomeDraft, type IncomeFormProps } from './form-shared'
 import { LootBlock, LootLine, NpcLootRow } from './loot-block'
 import { useSaleFeeChoice } from './sale-fee'
@@ -56,6 +56,7 @@ export function HuntLootSaleForm(
   /** 날짜를 바꿔 이벤트가 닫히면 고른 칸이 사라진다. 그때는 첫 칸이다. */
   const kind = chosen !== null && kinds.includes(chosen) ? chosen : (kinds[0] ?? 'fragment')
   const heldNotes = useHeldNotes(kind === 'fragment', props)
+  const characterDecor = characterDecorOf(props.characters, { notes: heldNotes })
 
   const head = (
     <>
@@ -63,10 +64,19 @@ export function HuntLootSaleForm(
         testID="income-sheet-chain"
         label="캐릭터"
         placeholder="캐릭터 선택"
-        options={requiredCharacterOptions(props.characters)}
+        options={
+          // 모든 캐릭터는 새 조각 정산에만 있다. 수정은 기록 한 줄을 고치는 일이다.
+          kind === 'fragment' && props.editing === undefined
+            ? [{ value: ALL_CHARACTERS, label: '모든 캐릭터' }, ...requiredCharacterOptions(props.characters)]
+            : requiredCharacterOptions(props.characters)
+        }
         selected={ocid}
         onSelect={setOcid}
-        decorOf={characterDecorOf(props.characters, { notes: heldNotes })}
+        decorOf={(value) =>
+          value === ALL_CHARACTERS
+            ? { icon: null, iconSize: 0, listNote: heldNotes[ALL_CHARACTERS] ?? null }
+            : characterDecor(value)
+        }
       />
       {kinds.length > 1 && (
         <FieldRow label="분류" testID="income-sheet-loot-kind">
@@ -100,7 +110,8 @@ export function HuntLootSaleForm(
     <LootForm
       key={kind}
       {...props}
-      ocid={ocid}
+      // 조각 칸에서 고른 모든 캐릭터는 이 칸에 없는 보기라 안 고른 것이다.
+      ocid={ocid === ALL_CHARACTERS ? null : ocid}
       head={head}
       items={items.filter((item) => item.kind === kind)}
       auction={kind === 'event'}
@@ -112,6 +123,7 @@ export function HuntLootSaleForm(
  * 조각 칸 캐릭터 목록의 `보유 n개`(ocid 별). 정산 폼의 보관 줄과 같은 조회를 캐릭터마다 한다.
  *
  * 못 읽은 캐릭터는 적지 않는다. 0 으로 적으면 보관이 있는데도 없다고 보인다. 날짜 · 수정 기록이 바뀌면 다시 센다.
+ * `모든 캐릭터` 줄은 보관이 1개 이상인 캐릭터의 합이다. 정산 폼이 그 합을 판 개수로 세운다. 한 캐릭터라도 못 읽으면 안 적는다.
  */
 function useHeldNotes(
   active: boolean,
@@ -129,9 +141,12 @@ function useHeldNotes(
     ).then((pairs) => {
       if (!alive) return
       const notes: Record<string, string> = {}
+      let total: number | null = 0
       for (const [ocid, count] of pairs) {
         if (count !== null) notes[ocid] = `보유 ${count.toLocaleString('ko-KR')}개`
+        total = count === null || total === null ? null : total + Math.max(count, 0)
       }
+      if (total !== null) notes[ALL_CHARACTERS] = `보유 ${total.toLocaleString('ko-KR')}개`
       setLoaded({ key, notes })
     })
     return () => {

@@ -2449,16 +2449,24 @@ describe('솔 에르다 조각 정산', () => {
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).not.toBe(true)
   })
 
-  it('판 개수나 개당 가격이 비면 저장이 꺼진다', async () => {
+  it('판 개수가 비면 저장이 꺼진다', async () => {
     const view = await 정산시트({ loadFragmentStorage: async () => 120 })
     await 사슬고르기(view, 'ocid-1')
 
-    await 아이디로치기(view, 'income-sheet-settle-count', '50')
-    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
-
-    await 아이디로치기(view, 'income-sheet-settle-count', '')
     await 아이디로치기(view, 'income-sheet-settle-price', '8000000')
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  // 조각을 직접 쓴 사람이 보관만 줄인다(사용자 지정 2026-11-04).
+  it('개당 가격을 비워도 0 메소로 정산해 보관을 줄인다', async () => {
+    const onSave = jest.fn()
+    const view = await 정산시트({ onSave, loadFragmentStorage: async () => 120 })
+    await 사슬고르기(view, 'ocid-1')
+    await 아이디로치기(view, 'income-sheet-settle-count', '50')
+
+    await 이름으로누르기(view, '저장')
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ mesoAmount: 0, saleFeeMeso: 0, quantity: 50 }))
   })
 
   /**
@@ -2554,6 +2562,89 @@ describe('솔 에르다 조각 정산', () => {
       expect.objectContaining({ mesoAmount: 400_000_000, quantity: 50, category: 'sol_erda_fragment' }),
     )
   })
+
+  /** 여러 캐릭터에 나눠 모은 조각을 한 번에 정산한다. 보관이 캐릭터별이라 저장은 캐릭터마다 한 줄이다. */
+  describe('모든 캐릭터', () => {
+    /** 루디(ocid-1)는 다이아 3%, 아델(ocid-2)은 등급이 없어 일반 5% 다. */
+    const 둘다있음 = async (ocid: string): Promise<number> => (ocid === 'ocid-1' ? 120 : 40)
+
+    it('새 정산의 캐릭터 목록 맨 앞에 서고, 수정으로 열면 없다', async () => {
+      const view = await 정산시트()
+      await 아이디로누르기(view, 'income-sheet-chain-open')
+      expect(view.getByTestId('income-sheet-chain-option-all')).toHaveTextContent(/^모든 캐릭터/)
+
+      const editing = await 그리기({ editing: 정산기록, onDelete: jest.fn(), loadFragmentStorage: async () => 50 })
+      await 아이디로누르기(editing, 'income-sheet-chain-open')
+      expect(editing.queryByTestId('income-sheet-chain-option-all')).toBeNull()
+    })
+
+    it('목록 줄 오른쪽에 모든 캐릭터의 보유를 더한 값이 선다', async () => {
+      const view = await 정산시트({ loadFragmentStorage: 둘다있음 })
+
+      await 아이디로누르기(view, 'income-sheet-chain-open')
+
+      expect(view.getByTestId('income-sheet-chain-option-all-note')).toHaveTextContent('보유 160개')
+    })
+
+    it('판 개수는 보관을 더한 값으로 서고 칠 수 없다', async () => {
+      const view = await 정산시트({ loadFragmentStorage: 둘다있음 })
+
+      await 사슬고르기(view, 'all')
+
+      expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('160개')
+      expect(view.getByTestId('income-sheet-settle-count')).toHaveTextContent('160')
+      await 아이디로누르기(view, 'income-sheet-settle-count')
+      expect(view.queryByTestId('input-card-confirm')).toBeNull()
+    })
+
+    it('보관이 있는 캐릭터마다 그 캐릭터의 등급 요율로 한 줄씩 저장한다', async () => {
+      const onSaveMany = jest.fn()
+      const view = await 정산시트({ onSaveMany, loadFragmentStorage: 둘다있음 })
+      await 사슬고르기(view, 'all')
+      await 아이디로치기(view, 'income-sheet-settle-price', '1000000')
+
+      expect(view.getByTestId('income-sheet-fee')).toHaveTextContent(/메이플 ID 별 수수료 적용/)
+      // 1억 2천에서 3% · 4천만에서 5% 를 뗀다
+      expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('1억 5440만')
+      await 이름으로누르기(view, '저장')
+      expect(onSaveMany).toHaveBeenCalledWith([
+        expect.objectContaining({ ocid: 'ocid-1', category: 'sol_erda_fragment', quantity: 120, mesoAmount: 116_400_000, saleFeePercent: 3, saleFeeMeso: 3_600_000, saleFeeAuto: true }),
+        expect.objectContaining({ ocid: 'ocid-2', category: 'sol_erda_fragment', quantity: 40, mesoAmount: 38_000_000, saleFeePercent: 5, saleFeeMeso: 2_000_000, saleFeeAuto: true }),
+      ])
+    })
+
+    it('수동으로 고른 요율은 모든 캐릭터에 같고, 보관이 0 이하인 캐릭터는 적지 않는다', async () => {
+      const onSaveMany = jest.fn()
+      const view = await 정산시트({ onSaveMany, loadFragmentStorage: async (ocid) => (ocid === 'ocid-1' ? 120 : -5) })
+      await 사슬고르기(view, 'all')
+      await 자동누르기(view)
+      await 누르기(view, '없음')
+
+      expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('120개')
+      await 이름으로누르기(view, '저장')
+      expect(onSaveMany).toHaveBeenCalledWith([
+        expect.objectContaining({ ocid: 'ocid-1', quantity: 120, mesoAmount: 0, saleFeePercent: null, saleFeeAuto: false }),
+      ])
+    })
+
+    /** 못 읽은 캐릭터를 빼고 저장하면 그 조각이 남는데도 모두 정산한 것처럼 보인다. */
+    it('한 캐릭터라도 보관을 못 읽으면 보유가 비고 저장이 꺼진다', async () => {
+      const view = await 정산시트({ loadFragmentStorage: async (ocid) => (ocid === 'ocid-1' ? 120 : null) })
+
+      await 사슬고르기(view, 'all')
+
+      expect(view.getByTestId('income-sheet-fragment-storage')).toHaveTextContent('-')
+      expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+    })
+
+    it('보관이 있는 캐릭터가 없으면 저장이 꺼진다', async () => {
+      const view = await 정산시트({ loadFragmentStorage: async () => 0 })
+
+      await 사슬고르기(view, 'all')
+
+      expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+    })
+  })
 })
 
 /**
@@ -2638,6 +2729,17 @@ describe('사냥 전리품 판매', () => {
   it('열린 이벤트가 없으면 분류가 조각 · 소비 둘이고 이벤트 기간에는 셋이다', async () => {
     expect(분류들(await 전리품시트())).toEqual(['조각', '소비'])
     expect(분류들(await 전리품시트(이벤트날))).toEqual(['조각', '소비', '이벤트'])
+  })
+
+  it('조각 칸에서 고른 모든 캐릭터는 소비 칸에서 캐릭터를 안 고른 것이다', async () => {
+    const view = await 그리기({}, 'hunt_loot_sale')
+    await 사슬고르기(view, 'all')
+    await 누르기(view, '소비')
+
+    await 아이디로치기(view, 'income-sheet-loot-count-reindeer_milk', '300')
+
+    expect(view.getByTestId('income-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
   it('소비는 개수만 치고 NPC 가격으로 금액을 세며, 친 아이템만 수수료 없이 한 줄씩 저장한다', async () => {
