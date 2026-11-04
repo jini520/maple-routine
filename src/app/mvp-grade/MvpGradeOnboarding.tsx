@@ -9,9 +9,11 @@ import { View } from 'react-native'
 
 import { Button, Text } from '../../components/atoms'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { EntryScroll } from '../../components/templates/EntryScroll/EntryScroll'
 import { useAppEntryStore } from '../../features/app-entry/store'
 import { historyFloorDateKey } from '../../features/cashbook/range'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { useMvpAskStore } from '../../features/mvp-grade/flow-store'
 import { useMvpOnboardingDraft } from '../../features/mvp-grade/onboarding-draft'
 import { useToastStore } from '../../features/toast/store'
@@ -31,6 +33,7 @@ function Heading(props: { title: string; description: string }): React.JSX.Eleme
 }
 
 export function MvpGradePickScreen(): React.JSX.Element {
+  const faq = useFaqSheet('mvp-grade-pick')
   const navigation = useScreenNavigation()
   const ask = useMvpAskStore((state) => state.ask)
   const accounts = useMvpAskStore((state) => state.accounts)
@@ -62,6 +65,7 @@ export function MvpGradePickScreen(): React.JSX.Element {
     <View testID="screen-MvpGradePick" className="flex-1">
       <EntryScroll
         onBack={() => navigation.goBack()}
+        headerTrailing={<FaqButton sheet={faq} variant="text" />}
         footer={
           <Button
             variant="primary"
@@ -99,6 +103,7 @@ export function MvpGradePickScreen(): React.JSX.Element {
 }
 
 export function MvpGradeConfirmScreen(): React.JSX.Element {
+  const faq = useFaqSheet('mvp-grade-confirm')
   const navigation = useScreenNavigation()
   /**
    * **들어올 때의 목록을 들고 있는다.** 스토어를 구독하지 않는다.
@@ -144,6 +149,7 @@ export function MvpGradeConfirmScreen(): React.JSX.Element {
     <View testID="screen-MvpGradeConfirm" className="flex-1">
       <EntryScroll
         onBack={() => navigation.goBack()}
+        headerTrailing={<FaqButton sheet={faq} variant="text" />}
         footer={
           <Button
             variant="primary"

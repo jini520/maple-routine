@@ -29,9 +29,11 @@ import { useAnimatedRef } from 'react-native-reanimated'
 import { useAppEntryStore } from '../../features/app-entry/store'
 import { useApiKeyNotice } from '../../features/auth/use-api-key-notice'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
+import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 
 import { Button, MapleSweepSpinner, Text } from '../../components/atoms'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
+import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { EntryScroll } from '../../components/templates/EntryScroll/EntryScroll'
 import { useCharacterManage } from '../../hooks/useCharacterManage'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
@@ -40,6 +42,7 @@ import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 type SetupPhase = 'idle' | 'saving' | 'seeding'
 
 export function CharacterSetupScreen(): React.JSX.Element {
+  const faq = useFaqSheet('character-setup')
   const completeCharacterSetup = useAppEntryStore((state) => state.completeCharacterSetup)
   const setRepresentative = useCharacterSelectionStore((state) => state.setRepresentative)
   const navigation = useScreenNavigation()
@@ -95,6 +98,7 @@ export function CharacterSetupScreen(): React.JSX.Element {
         scrollRef={scrollableRef}
         tracksScrollOffset
         onBack={() => navigation.goBack()}
+        headerTrailing={<FaqButton sheet={faq} variant="text" />}
         footer={
           <Button
             variant="primary"

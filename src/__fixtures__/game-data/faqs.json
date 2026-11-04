@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T07:21:34.588Z",
+  "updatedAt": "2026-11-04T08:39:58.937Z",
   "sheets": [
     {
       "key": "today",
@@ -140,6 +140,18 @@
     {
       "key": "sign-in",
       "title": "로그인"
+    },
+    {
+      "key": "character-setup",
+      "title": "캐릭터 선택"
+    },
+    {
+      "key": "mvp-grade-pick",
+      "title": "MVP 등급 선택"
+    },
+    {
+      "key": "mvp-grade-confirm",
+      "title": "MVP 등급 확인"
     }
   ],
   "items": [

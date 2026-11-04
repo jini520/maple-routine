@@ -16,6 +16,9 @@ import { gameTable } from '../game-data/table'
  */
 export const FAQ_SHEET_KEYS = [
   'sign-in',
+  'character-setup',
+  'mvp-grade-pick',
+  'mvp-grade-confirm',
   'today',
   'content',
   'boss',

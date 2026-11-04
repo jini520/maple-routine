@@ -28,6 +28,7 @@ export function EntryScroll({
   scrollRef,
   tracksScrollOffset = false,
   onBack,
+  headerTrailing,
   footer,
   children,
 }: {
@@ -41,6 +42,8 @@ export function EntryScroll({
   tracksScrollOffset?: boolean
   /** 머리 줄 뒤로가기 버튼이 부르는 것. 주면 하위 페이지와 같은 머리 줄이 위 안전영역을 먹고, 안 주면 머리 줄이 없다 */
   onBack?: () => void
+  /** 머리 줄 오른쪽 끝에 서는 것(FAQ 의 `자주 묻는 질문`). 줄 높이(32)는 키우지 않는다 */
+  headerTrailing?: React.ReactNode
   /** 하단에 고정되는 액션 바의 내용. 안 주면 바 자체가 없다. */
   footer?: React.ReactNode
   children: React.ReactNode
@@ -92,8 +95,10 @@ export function EntryScroll({
     <View className="flex-1">
       {onBack !== undefined && (
         <PageHeader>
-          <PageHeaderTitleRow className="gap-2">
+          <PageHeaderTitleRow className="justify-between gap-2">
             <BackButton onPress={onBack} />
+            {/* 글자 버튼(40)이 줄(32)을 키우면 그 아래 제목이 버튼 몫만큼 내려간다. 위아래로 4 씩 걸친다. */}
+            {headerTrailing !== undefined && <View className="-my-1">{headerTrailing}</View>}
           </PageHeaderTitleRow>
         </PageHeader>
       )}
