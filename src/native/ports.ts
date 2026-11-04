@@ -121,7 +121,7 @@ export interface LocalNotificationRequest {
   body: string
   scheduleAt: Date
   /** 안드로이드 채널. 없으면 옛 채널 `default` */
-  channel?: 'party'
+  channel?: 'party' | 'schedule'
   /** 탭했을 때 돌려받는 값. 어느 알림인지 다시 찾는 열쇠 */
   data?: NotificationData
 }
@@ -174,6 +174,15 @@ export interface PushPort {
 
 /** 푸시가 실어 오는 `data`. FCM 이 값을 전부 문자열로만 받는다. */
 export type PushData = Record<string, string>
+
+/**
+ * 앱이 닫힌 채 OS 가 주기적으로 깨워 주는 백그라운드 태스크. 무엇을 할지는 `index.ts` 최상위에서 어댑터에 정의해 두고,
+ * 여기는 돌릴지 말지만 든다. 때는 OS 가 정하고 간격은 하한이다.
+ */
+export interface BackgroundTaskPort {
+  register(minimumIntervalMinutes: number): Promise<void>
+  unregister(): Promise<void>
+}
 
 export interface BackProgressEvent {
   /** 0~1. 시스템이 계산한 제스처 진행률. */
@@ -355,6 +364,7 @@ const liveUpdateSlot = createPortSlot<LiveUpdatePort>('LiveUpdatePort')
 const browserSlot = createPortSlot<BrowserPort>('BrowserPort')
 const uuidSlot = createPortSlot<UuidPort>('UuidPort')
 const screenCornersSlot = createPortSlot<ScreenCornersPort>('ScreenCornersPort')
+const backgroundTaskSlot = createPortSlot<BackgroundTaskPort>('BackgroundTaskPort')
 
 export const setColorSchemePort = colorSchemeSlot.set
 export const getColorSchemePort = colorSchemeSlot.get
@@ -404,6 +414,9 @@ export const getUuidPort = uuidSlot.get
 export const setScreenCornersPort = screenCornersSlot.set
 export const getScreenCornersPort = screenCornersSlot.get
 
+export const setBackgroundTaskPort = backgroundTaskSlot.set
+export const getBackgroundTaskPort = backgroundTaskSlot.get
+
 /** 테스트 전용. 주입된 포트를 전부 비운다(`storage/ports.ts` 의 `__resetStoragePortsForTest` 관례). */
 export function __resetNativePortsForTest(): void {
   for (const slot of [
@@ -423,6 +436,7 @@ export function __resetNativePortsForTest(): void {
     browserSlot,
     uuidSlot,
     screenCornersSlot,
+    backgroundTaskSlot,
   ]) {
     slot.clear()
   }

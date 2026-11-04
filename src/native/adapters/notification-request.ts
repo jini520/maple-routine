@@ -56,9 +56,21 @@ export const PARTY_NOTIFICATION_CHANNEL: AndroidChannel = {
   sound: 'default',
 }
 
+/**
+ * 미완료 스케줄 알림 채널. 초기화가 지나면 쓸모가 없어 파티와 같은 `HIGH` 다. 채널을 따로 두어 OS 설정에서 이 알림만 끌 수 있다.
+ */
+export const SCHEDULE_NOTIFICATION_CHANNEL: AndroidChannel = {
+  id: 'schedule',
+  name: '스케줄',
+  importance: AndroidImportance.HIGH,
+  sound: 'default',
+}
+
 /** 요청이 갈 채널. 고르지 않으면 옛 채널 */
 export function channelFor(request: LocalNotificationRequest): AndroidChannel {
-  return request.channel === 'party' ? PARTY_NOTIFICATION_CHANNEL : NOTIFICATION_CHANNEL
+  if (request.channel === 'party') return PARTY_NOTIFICATION_CHANNEL
+  if (request.channel === 'schedule') return SCHEDULE_NOTIFICATION_CHANNEL
+  return NOTIFICATION_CHANNEL
 }
 
 /**

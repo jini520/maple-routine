@@ -1,13 +1,13 @@
-# ADR-056+072 알림 예약과 공지 구독
+# ADR-056+072+164 알림 예약과 공지 구독
 
 > 🟢 유효
 > 옛 번호: ADR-004 · ADR-146 결정 1 · 2 · 5 · 6 · ADR-227 결정 5 · ADR-259 · ADR-278 · ADR-228 결정 2 · 3 · 정정 1 · 2 · ADR-247 결정 2 · 10 · 정정 1
-> 관련 소스: `features/local-notifications/` · `features/notice/store.ts` · `features/notice/topics.ts` · `features/notice/permission-gate.ts` · `native/adapters/rn-notifications.ts` · `native/adapters/notification-request.ts` · `native/adapters/rn-push.ts` · `app/settings/SettingsNoticeAlertsScreen.tsx` · `index.ts` · `maple-routine-server` 의 `src/clients/fcm.client.ts`
+> 관련 소스: `features/local-notifications/` · `features/notice/store.ts` · `features/notice/topics.ts` · `features/notice/permission-gate.ts` · `native/adapters/rn-notifications.ts` · `native/adapters/notification-request.ts` · `native/adapters/rn-push.ts` · `app/settings/SettingsNoticeAlertsScreen.tsx` · `features/schedule-alert/` · `features/remaining-schedule/` · `native/background-task.ts` · `native/adapters/rn-background-task.ts` · `navigation/AppNavigation.tsx` · `index.ts` · `maple-routine-server` 의 `src/clients/fcm.client.ts`
 
 ## 배경
 
-앱이 띄우는 알림은 두 종류다. 하나는 기기가 정한 시각에 스스로 띄우는 로컬 알림이고, 지금은 파티 약속
-알림 하나뿐이다. 다른 하나는 서버가 보내는 공지 푸시다. 둘 다 스토어에 낸 바이너리 위에서 돌아야 하는데,
+앱이 띄우는 알림은 두 종류다. 하나는 기기가 정한 시각에 스스로 띄우는 로컬 알림이고, 파티 약속 알림과
+미완료 스케줄 알림 둘이다. 다른 하나는 서버가 보내는 공지 푸시다. 둘 다 스토어에 낸 바이너리 위에서 돌아야 하는데,
 네이티브 코드에 들어간 것은 다음 스토어 심사 전까지 고칠 수 없다. 그래서 바이너리에는 알림을 띄우는 기능만
 넣고, 무엇을 언제 띄울지는 모두 JS 에 두었다. JS 는 OTA 로 고칠 수 있기 때문이다.
 
@@ -15,15 +15,16 @@
 
 ## 결정
 
-### 결정 1. 바이너리에는 알림 기능 둘만 넣고, 정책은 JS 에 둔다
+### 결정 1. 바이너리에는 알림 기능 셋만 넣고, 정책은 JS 에 둔다
 
-바이너리에 들어간 기능은 로컬 알림(`@notifee/react-native`)과 원격 푸시(`@react-native-firebase/messaging`)
-둘이다. 알림 종류 · 문구 · 시각 · 채널 선택 · 구독할 토픽 이름은 모두 JS 에 있다. 네이티브에 적으면 OTA 로
-바꿀 수 없기 때문이다.
+바이너리에 들어간 기능은 로컬 알림(`@notifee/react-native`) · 원격 푸시(`@react-native-firebase/messaging`) ·
+백그라운드 태스크(`expo-background-task`) 셋이다. 알림 종류 · 문구 · 시각 · 채널 선택 · 구독할 토픽 이름 · 태스크가
+하는 일은 모두 JS 에 있다. 네이티브에 적으면 OTA 로 바꿀 수 없기 때문이다.
 
-다만 `index.ts` 최상위에서 등록하는 두 줄은 위치가 정해져 있다. `setBackgroundMessageHandler` 와
-`notifee.onBackgroundEvent` 는 모듈 최상위에 있어야 OS 가 꺼진 앱을 깨울 때 이 핸들러를 찾는다. 나중에
-OTA 로 등록을 추가하면 OS 가 그 핸들러를 모른다. 그래서 핸들러 몸통이 비어 있어도 등록은 미리 넣어 두었다.
+다만 `index.ts` 최상위에서 등록하는 세 줄은 위치가 정해져 있다. `setBackgroundMessageHandler` ·
+`notifee.onBackgroundEvent` · `defineBackgroundRefreshTask` 는 모듈 최상위에 있어야 OS 가 꺼진 앱을 깨울 때 이
+핸들러를 찾는다. 나중에 OTA 로 등록을 추가하면 OS 가 그 핸들러를 모른다. 그래서 핸들러 몸통이 비어 있어도 등록은
+미리 넣어 두었다. 백그라운드 태스크의 네이티브 설정은 결정 20 에 있다.
 
 ### 결정 2. 로컬 알림은 레지스트리와 원장으로 예약한다
 
@@ -61,6 +62,11 @@ iOS 는 로컬 알림이 울려도 앱을 깨우지 않는다. 그래서 아래 
 | 백그라운드에서 포그라운드로 돌아올 때 | `AppShell` 의 `useReturnToForeground` |
 | 파티 약속을 저장하거나 지울 때 | `features/party-appointments/query.ts` 의 `savePartyAppointments` |
 | 파티 스케줄 알림 스위치를 바꿀 때 | `features/party-appointments/alarm-settings.ts` |
+| 미완료 스케줄 알림 스위치를 바꿀 때 | `features/schedule-alert/alert-settings.ts` |
+| 앱이 배경으로 갈 때 | `AppShell`. 앱 안에서 바꾼 추적 목록 · 모드 · 직접 적은 완료가 그날 밤 알림에 들어가게 한다 |
+| 스케줄 회차 쿼리가 새 데이터를 들 때 | `features/local-notifications/run.ts` 의 `watchReconcileTriggers`. 회차가 바뀌면 남은 것이 바뀐다 |
+| KST 자정 | 같은 곳. `useResetBoundaryTick` 의 틱을 받는다. 앱이 살아 있을 때만 온다 |
+| 백그라운드 태스크가 돌 때 | `features/schedule-alert/background-refresh.ts`. 회차를 받은 뒤 |
 
 알림 권한이 없으면 계획을 빈 목록으로 보고, 원장에 있는 예약을 모두 취소한다. 권한이 다시 생기면 다음
 재조정이 되살린다.
@@ -69,7 +75,7 @@ iOS 는 로컬 알림이 울려도 앱을 깨우지 않는다. 그래서 아래 
 서로 원장을 덮어써 예약을 잃는다. 재조정의 실패는 알리지 않는다. 다음 재조정이 같은 계획으로 다시 하기
 때문이다.
 
-### 결정 4. 안드로이드 채널은 옛 `default` 와 파티 약속용 `party` 둘이다
+### 결정 4. 안드로이드 채널은 옛 `default` · 파티 약속용 `party` · 미완료 스케줄용 `schedule` 셋이다
 
 안드로이드 채널은 한 번 만들면 앱이 이름과 중요도를 바꿀 수 없다. 그래서 값을 정할 때 신중해야 한다.
 
@@ -77,11 +83,13 @@ iOS 는 로컬 알림이 울려도 앱을 깨우지 않는다. 그래서 아래 
 |---|---|---|---|
 | `default` | `Default` | `DEFAULT` | 채널을 고르지 않은 로컬 알림 |
 | `party` | `파티 스케줄` | `HIGH` | 파티 약속 알림 |
+| `schedule` | `스케줄` | `HIGH` | 미완료 스케줄 알림 |
 
 `default` 는 Capacitor 시절 채널 id 를 그대로 쓴다. 새 id 를 만들면 사용자 알림 설정에 채널이 하나 더 생긴다.
-`party` 는 약속 시각이 지나면 쓸모가 없어 화면 위에 뜨는 `HIGH` 로 했다.
+`party` 는 약속 시각이 지나면 쓸모가 없어 화면 위에 뜨는 `HIGH` 로 했다. `schedule` 도 같은 이유다. 초기화가
+지나면 쓸모가 없다(사용자 결정). 채널을 따로 두면 사용자가 OS 설정에서 이 알림만 끌 수 있다.
 
-두 채널 모두 `sound: 'default'` 를 명시한다. notifee 는 소리를 지정하지 않으면 무음 채널을 만든다.
+세 채널 모두 `sound: 'default'` 를 명시한다. notifee 는 소리를 지정하지 않으면 무음 채널을 만든다.
 
 채널은 예약할 때마다 `createChannel` 로 만든다. 이미 있으면 설정을 바꾸지 않으므로 여러 번 불러도 된다.
 채널을 만들었는지 기억하는 상태를 두지 않은 이유는, 그 상태가 실제와 어긋나면 알림이 아무 표시 없이
@@ -109,8 +117,10 @@ id 는 `String(id)` 로 바꿔 notifee 에 넘긴다. 정수가 아니면 예외
 | 백그라운드에 있을 때 | `index.ts` 의 `onBackgroundEvent`. 화면이 리스너를 달기 전에 오면 쌓아 두었다가 리스너를 달 때 넘긴다 |
 | 꺼져 있다가 탭으로 열렸을 때 | `getInitialNotification`. 한 번만 답한다 |
 
-`useLocalNotificationPress` 가 셋을 모아 종류를 구분한다. 지금은 종류가 파티 약속 하나뿐이라, 알림을 누르면 그 약속을 연다.
-iOS 는 꺼진 앱을 탭으로 열 때 같은 탭을 두 경로로 보내므로, 같은 약속의 같은 회차는 한 번만 연다.
+`useLocalNotificationPress` 가 셋을 모아 종류를 구분한다. 파티 약속 알림은 그 약속을 열고(`usePartyAppointmentOpenStore`),
+미완료 스케줄 알림은 today 탭을 열고 남은 스케줄 타일의 세그먼트를 알림의 주기로 맞춘다(`useScheduleAlertOpenStore`).
+탭 이동은 `AppNavigation` 이 `Main` 이 선 뒤에 한다. 죽어 있던 앱은 그 전에 스택이 없기 때문이다.
+iOS 는 꺼진 앱을 탭으로 열 때 같은 탭을 두 경로로 보내므로, 같은 알림은 한 번만 연다.
 
 ### 결정 7. 공지 알림은 FCM 토픽 푸시이고, 등록 토큰은 앱 밖으로 내보내지 않는다
 
@@ -234,10 +244,10 @@ FCM 구독이 실패했는데 켜졌다고 저장하면 스위치는 켜져 있�
 
 `더보기 > 설정 > 알림 설정`(`SettingsNoticeAlertsScreen`) 화면이다.
 
-- **전체 스위치**(`알림 받기`)는 저장하지 않고 계산한다. 공지 스위치 하나라도 켜져 있거나 파티 스케줄 알림이
-  켜져 있으면 켜짐이다. 따로 저장하면 전체는 켜짐인데 하위는 모두 꺼진 상태가 생겨, 스위치는 켜져 있는데 알림은
-  오지 않는다. 전체가 꺼져 있으면 하위 스위치를 그리지 않는다. 전체를 누르면 공지 스위치와 파티 스케줄 알림을
-  함께 켜거나 끈다.
+- **전체 스위치**(`알림 받기`)는 저장하지 않고 계산한다. 공지 스위치 하나라도 켜져 있거나 파티 스케줄 알림 ·
+  미완료 스케줄 알림이 켜져 있으면 켜짐이다. 따로 저장하면 전체는 켜짐인데 하위는 모두 꺼진 상태가 생겨, 스위치는 켜져 있는데 알림은
+  오지 않는다. 전체가 꺼져 있으면 하위 스위치를 그리지 않는다. 전체를 누르면 공지 스위치 · 파티 스케줄 알림 · 미완료 스케줄
+  알림을 함께 켜거나 끈다.
 - **머리의 `기기 설정` 버튼**은 늘 보인다. 기기 쪽에서 알림이나 채널을 바꾸려는 사용자를 위한 버튼이다.
   안드로이드는 `APP_NOTIFICATION_SETTINGS` 인텐트로 앱의 알림 설정을 바로 연다. `openSettings()` 는 앱 정보
   화면까지만 열어서 한 번 더 눌러야 알림이 나오기 때문이다. iOS 는 앱별 알림 설정을 바로 여는 공개 API 가 없어
@@ -248,7 +258,7 @@ FCM 구독이 실패했는데 켜졌다고 저장하면 스위치는 켜져 있�
   때도 띄우지 않는다. 알림이 켜진 기기를 꺼졌다고 잘못 알리게 된다.
 - **`알림을 켜지 못했어요` 카드**는 스위치 요청이 실패한 이유를 그대로 적는다. 알리지 않으면 사용자는 스위치가
   반응하지 않는다고 느낀다.
-- **스케줄러 구역**에는 파티 스케줄 알림 스위치가 있고, 그 아래 `미완료 스케줄 알림` · `주간 결산 알림` 은 스위치
+- **스케줄러 구역**에는 파티 스케줄 알림 · 미완료 스케줄 알림 스위치가 있고, 그 아래 `주간 결산 알림` 은 스위치
   대신 `준비 중` 을 적는다. 켤 수 없는 스위치를 그려 두면 눌러 본 뒤에야 쓸 수 없다는 것을 알게 된다.
 
 ### 결정 14. iOS 알림은 로컬 알림과 공지 푸시 모두 소리를 명시한다
@@ -263,25 +273,142 @@ iOS 는 알림에 소리가 없으면 무음 알림으로 띄운다. 애플워�
 
 소리를 넣으면 아이폰에서도 알림음이 난다. 무음 모드에서는 진동만 난다. 워치 진동만 따로 켜는 방법은 없다.
 
+### 결정 15. 미완료 스케줄 알림은 매일 21:00 KST 에 하루 한 장이다 (사용자 결정)
+
+초기화 전에 아직 안 한 것이 있으면 알리는 로컬 알림이다. 종류 이름은 `schedule-alert` 이고
+`features/schedule-alert/notification.ts` 의 `planScheduleAlertKind` 가 계획한다.
+
+- **시각은 매일 21:00 KST 하나다.** 초기화 몇 시간 전이 아니라 하루 중 정한 시각이다(사용자 선택). 일간은 매일,
+  주간은 수요일(목요일 00:00 초기화 전날), 월간은 그 달의 마지막 날(1일 00:00 초기화 전날)에 든다. 기기 시간대와
+  관계없이 KST 다.
+- **같은 날은 한 장이다.** 수요일은 일간 · 주간이, 말일은 일간 · 월간이 한 장에 든다. 같은 시각에 두 장이 뜨면
+  같은 말을 두 번 하는 것이다.
+- **캐릭터마다 쏘지 않는다.** 추적 캐릭터 전체를 한 장으로 접는다. 어느 캐릭터인지는 알림을 눌러 today 를 열면
+  남은 스케줄 타일이 캐릭터마다 적는다. 캐릭터 수와 관계없이 하루 한 장이라 64개 한도(결정 3)를 정책 없이 피한다.
+- **앞으로 7일 안의 날마다 한 장을 구체 시각으로 예약한다.** id 는 `notificationId('schedule-alert', 'day', 날짜 키)`
+  다. OS 반복 알림을 쓰지 않는 이유는 `무엇이 남았는지` 를 반복 예약에 실을 수 없기 때문이다. 재조정 때마다 다시
+  채운다.
+- 21:00 이 지난 날은 계획하지 않는다. 지난 시각을 예약하면 네이티브가 던진다(결정 5).
+- 추적 캐릭터가 없으면 계획이 비어 있다. 알릴 스케줄이 없다.
+
+### 결정 16. 남은 것은 today 의 남은 스케줄 타일과 같은 함수로 센다
+
+알림이 말하는 것과 화면이 말하는 것이 갈리면 사용자는 둘 중 하나를 못 믿는다. 그래서 세는 함수를 하나로 둔다.
+
+`features/remaining-schedule/remaining-schedule.ts` 의 `remainingScheduleOf` 가 캐릭터 하나의 남은 일간 컨텐츠 ·
+주간 컨텐츠 · 주간 보스 · 월간 보스를 낸다. today 뷰모델의 `buildScheduleRows` 와 알림 계획이 둘 다 이것을 부른다.
+규칙은 [[ADR-058]] 결정 6 · 18 · 23 그대로다.
+
+| 규칙 | 함수 |
+|---|---|
+| 표시 대상만 센다. 자동 · 수동 추적 모드를 받는다 | `displayedDailyContents` · `displayedWeeklyContents` · `displayedBosses` |
+| 공유 컨텐츠(몬스터파크 · 메이플 유니온 · 에픽 던전)는 세지 않는다 | `getShareScope` |
+| 요구 레벨에 못 미치는 항목은 세지 않는다 | `isContentBlocked` |
+| 완료 판정. 보스는 사용자가 직접 적은 완료도 본다 | `dailyContentCompletion` · `weeklyContentCompletion` · `manualCompletedByOcid` |
+
+- 세는 대상은 일간 컨텐츠 · 주간 컨텐츠와 주간 보스 · 월간 보스다(사용자 결정). today 의 세 탭과 같다. 공유
+  컨텐츠는 today 에서도 따로 타일에 두므로 알림에도 넣지 않는다.
+- 한 주기에 남은 것이 있다는 것은 추적 캐릭터 중 하나라도 그 주기에 남은 항목이 있다는 뜻이다.
+- 완료 판정 `content-completion.ts` 는 `app/content-scheduler/` 에서 `features/content-scheduler/` 로 옮긴다. 알림
+  계획은 `features/` 에 있고, `features/` 가 `app/` 을 가져오면 의존 방향이 거꾸로다([[ADR-004]]).
+- 계획은 React 밖에서 돈다. 입력은 화면과 같은 캐시에서 읽는다. 추적 캐릭터와 스케줄은 `readScheduleSnapshot` 을
+  `buildContentViews` · `buildBossViews` 에 넣어 만들고, 추적 모드는 `getTrackingMode`, 수동 추적 목록은
+  `getManualTrackedContent`, 직접 적은 완료는 `readManualCompleted`(이번 주 · 이번 달)로 읽는다. 화면이 보는 캐시와
+  같은 곳이라 값이 갈리지 않는다.
+
+### 결정 17. 문구는 마지막으로 아는 상태를 단정하지 않는다 (사용자 결정)
+
+앱은 게임 안의 완료를 넥슨 API 로만 안다. 예약할 때 알던 상태는 울리는 시각에는 지났을 수 있다. 그래서 문구는
+`안 했어요` 가 아니라 `남은 것 같아요` 이고, 끝냈으면 앱을 열어 갱신하라고 적는다. 수는 싣지 않는다. 예약 시점의
+수는 울리는 시점에 거짓일 수 있다.
+
+| 상태 | 제목 | 본문 |
+|---|---|---|
+| 마지막으로 확인했을 때 남은 것이 있다 | `일간 스케줄이 남은 것 같아요` | `마지막으로 확인했을 때 기준이에요. 끝냈다면 앱을 열어 갱신해 주세요. 자정에 초기화돼요` |
+| 초기화 뒤에 확인한 적이 없다(결정 18) | 같다 | `초기화 뒤에 확인하지 못했어요. 앱을 열면 갱신돼요. 자정에 초기화돼요` |
+
+- 제목의 주기는 그날 드는 주기 중 남았거나 모르는 것만 `일간 · 주간` 처럼 가운뎃점으로 잇는다.
+- 드는 주기를 전부 다 한 것으로 확인되면 그날은 보내지 않는다(사용자 결정). 계획에서 빠지고, 이미 예약돼 있었다면
+  재조정이 취소한다. 대상이 원래 없는 날도 같다.
+- 본문은 주기가 섞여도 하나다. 모르는 주기가 하나라도 있으면 둘째 줄, 아니면 첫째 줄이다.
+- 앱 안에서 스케줄이 갱신되면 그날 알림도 따라 바뀐다. 회차 쿼리가 새 데이터를 들 때와 배경으로 갈 때 재조정이
+  돌고(결정 3), 원장이 문구까지 견주므로(결정 2) 문구가 바뀌면 같은 id 로 다시 예약하고 남은 것이 없어지면 취소한다.
+- 문구는 `features/schedule-alert/notification-text.ts` 에 있다.
+
+### 결정 18. 같은 기간의 상태만 믿고, 다른 기간은 남은 것으로 본다
+
+계획하는 지금과 알림이 울리는 날이 같은 기간이 아니면 마지막 상태는 그날의 상태가 아니다. 월요일에 세운 화요일
+알림은 화요일 일간을 모른다. 자정에 초기화됐기 때문이다.
+
+- 일간은 같은 KST 날짜, 주간은 같은 리셋 주(`resetWeekStartOf`), 월간은 같은 달일 때만 마지막 상태를 믿는다.
+- 다른 기간이면 모르는 것이다. 남은 것으로 보아 제목에 넣고 본문은 `확인하지 못했어요` 다. 초기화 뒤에는 아무것도
+  안 한 상태가 사실이고, 앱을 열면 재조정이 그날 상태로 다시 쓴다.
+- 그래서 내일 이후의 알림은 `남은 것 같아요` 로 예약되고, 그날 앱을 열거나 백그라운드 태스크가 돌면 그날의
+  상태로 바뀐다.
+
+### 결정 19. 스위치는 `미완료 스케줄 알림` 하나이고 기본은 켜짐이다 (사용자 결정)
+
+- 알림 설정의 스케줄러 구역에 스위치 하나다. 주기마다 나누지 않는다(사용자 선택).
+- 값은 Preferences `scheduleAlertEnabled`(`on` · `off`)이고 없으면 켜짐이다. 파티 스케줄 알림과 같다. 데이터 삭제
+  대상이 아니다.
+- 스토어는 `features/schedule-alert/alert-settings.ts` 의 `useScheduleAlertSettingsStore` 다. 바꾸면 재조정을
+  부른다. 끄면 계획이 비어 원장의 예약을 취소하고 백그라운드 태스크 등록도 푼다. 켜면 다시 등록한다.
+- 전체 스위치 `알림 받기` 의 계산과 일괄 켜기 · 끄기에 든다(결정 13).
+
+### 결정 20. 백그라운드 태스크는 expo-background-task 로 회차를 받고 재조정한다 (사용자 결정)
+
+미리 예약만 하면 앱을 안 연 사이 다 끝냈어도 뜬다. 백그라운드 재확인만 하면 iOS 에서 태스크가 안 돌 때 아예 안
+뜬다. 둘을 겹친다. 예약은 결정 15 대로 늘 서 있고, 태스크가 돌면 회차를 받아 같은 재조정을 한 번 더 한다. 태스크가
+한 번도 안 돌아도 알림은 뜬다.
+
+- 라이브러리는 `expo-background-task`(SDK 57 의 57.0.x)와 `expo-task-manager` 다. `react-native-background-fetch`
+  와 견줬다. 그쪽은 iOS 에서 사용 패턴에 맞춰 낮에 돌 가능성이 더 크지만 AppDelegate · Headless JS · ProGuard 를
+  손으로 적어야 한다. 이 저장소는 prebuild 를 안 쓰므로 네이티브 수정이 적은 쪽을 골랐다. Info.plist 두 줄뿐이고
+  SDK 와 같이 버전이 오른다.
+- iOS 는 `BGTaskScheduler` 의 processing 작업이다. OS 가 배터리 · 네트워크 · 사용 패턴을 보고 때를 정하고 기기가
+  쉴 때 도는 일이 많다. 사용자가 앱 전환기에서 앱을 밀어 끄면 다음 실행까지 돌지 않는다. 안드로이드는
+  WorkManager 이고 최소 간격 15분이다. 시뮬레이터에서는 돌지 않는다.
+- 포트는 `native/ports.ts` 의 `BackgroundTaskPort`(`register` · `unregister`)이고 어댑터는
+  `native/adapters/rn-background-task.ts` 다. 태스크 정의 `defineBackgroundRefreshTask` 는 `index.ts` 최상위에서
+  부른다(결정 1).
+- 몸통은 `features/schedule-alert/background-refresh.ts` 의 `runBackgroundRefresh` 다. 쿼리 캐시 복원을
+  기다리고(`whenQueryCacheRestored`), `refreshSchedules` 로 회차를 받고, `reconcileLocalNotifications` 를 돈다.
+  회차가 실패해도 재조정은 한다. 캐시의 마지막 상태로 다시 쓰는 것이고 이미 서 있는 예약과 같으면 아무것도 안
+  한다.
+- 등록은 앱을 켤 때 스위치가 켜져 있으면 `register(120)`(최소 간격 120분)이고 스위치를 끄면 `unregister` 다.
+  간격은 하한이고 OS 가 더 늦게 돌릴 수 있다. 더 짧게 잡아도 iOS 는 무시하고, 안드로이드는 넥슨 호출만 는다.
+- 네이티브 설정은 `ios/app/Info.plist` 의 `UIBackgroundModes` 에 `processing`, `BGTaskSchedulerPermittedIdentifiers`
+  에 `com.expo.modules.backgroundtask.processing` 이다. 안드로이드는 없다. 의존성이 들어 지문이 바뀌므로 v1.0.13
+  스토어 빌드에 실린다. OTA 로는 못 더한다.
+- 개발 빌드에서는 `triggerTaskWorkerForTestingAsync` 로 바로 돌려 본다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
 |---|---|
 | `features/local-notifications/__tests__/reconcile.spec.ts` | 결정 2 · 3: 원장과 계획의 차이만큼 예약 · 취소하는지, 시각과 문구가 같으면 아무것도 안 하는지, 문구만 바뀌어도 다시 예약하는지, 시각 순으로 정한 개수만큼만 예약하고 넘친 원장 항목을 취소하는지 본다. 같은 회차는 같은 id 이고 id 가 양의 정수인지 본다 |
-| `features/local-notifications/__tests__/run.spec.ts` | 결정 2 · 3 · 4: 파티 약속을 `party` 채널로 예약하고 원장에 적는지, 두 번 돌려도 다시 예약하지 않는지, 권한이 없거나 스위치가 꺼지면 취소하는지, 예약 실패는 원장에 남기지 않는지, 레지스트리에 없는 종류를 취소하는지 본다 |
-| `features/local-notifications/__tests__/use-notification-press.test.tsx` | 결정 6: 탭과 꺼진 앱의 첫 탭이 약속을 여는지, 같은 탭이 두 번 와도 한 번만 여는지, 다른 종류는 무시하는지 본다 |
-| `native/adapters/__tests__/notification-request.test.ts` | 결정 4 · 5 · 14: 옛 채널 id 와 소리를 유지하는지, iOS 알림에 소리를 싣는지, id 가 왕복 손실 없이 바뀌고 정수가 아니면 던지는지, 지난 시각 · 지금 · `Invalid Date` 를 던지는지 본다 |
+| `features/local-notifications/__tests__/run.spec.ts` | 결정 2 · 3 · 4: 파티 약속을 `party` 채널로 예약하고 원장에 적는지, 두 번 돌려도 다시 예약하지 않는지, 권한이 없거나 스위치가 꺼지면 취소하는지, 예약 실패는 원장에 남기지 않는지, 레지스트리에 없는 종류를 취소하는지, 회차 쿼리가 새 데이터를 들거나 자정 틱이 오면 다시 도는지 본다 |
+| `features/local-notifications/__tests__/use-notification-press.test.tsx` | 결정 6: 탭과 꺼진 앱의 첫 탭이 약속을 여는지, 같은 탭이 두 번 와도 한 번만 여는지, 미완료 스케줄 알림 탭이 주기를 남기는지, 모르는 종류는 무시하는지 본다 |
+| `native/adapters/__tests__/notification-request.test.ts` | 결정 4 · 5 · 14: 옛 채널 id 와 소리를 유지하는지, `party` · `schedule` 채널이 `HIGH` 이고 소리를 싣는지, iOS 알림에 소리를 싣는지, id 가 왕복 손실 없이 바뀌고 정수가 아니면 던지는지, 지난 시각 · 지금 · `Invalid Date` 를 던지는지 본다 |
 | `native/adapters/__tests__/rn-notifications.test.ts` | 결정 4 · 5 · 6: 채널을 만든 뒤 예약하는지, 권한 조회가 팝업을 띄우지 않는지, 취소가 예약 때와 같은 id 로 떠 있는 알림까지 내리는지, 리스너를 달기 전에 온 백그라운드 탭을 쌓아 두었다가 넘기는지 본다 |
 | `native/adapters/__tests__/rn-push.test.ts` | 결정 7: 토픽 이름을 그대로 넘기는지, 실패를 삼키지 않는지, iOS 에서 APNs 토큰을 기다리고 끝내 없으면 읽을 수 있는 이유로 던지는지, 안드로이드는 기다리지 않는지 본다 |
 | `features/notice/__tests__/permission-gate.spec.ts` | 결정 9: 처음 한 번만 묻는지, 요청이 던져도 물은 것으로 남는지, 허용하면 기본 셋을 켜고 구독이 실패해도 던지지 않는지 본다 |
 | `features/notice/__tests__/store.spec.ts` | 결정 8 ~ 12: 구독 실패 시 저장하지 않는지, 옛 값을 이어받고 옛 키에도 적는지, 기본 셋만 켜는지, 권한 상태별로 켜는 동작이 갈리는지, 끄기는 권한을 안 보는지, 연타가 마지막 값 하나로 합쳐지는지, 실패한 스위치만 돌아가는지, 재구독이 켜짐만 보내고 권한을 묻지 않고 대기열에서 합쳐지는지 본다 |
 | `storage/__tests__/notification-ledger.spec.ts` | 결정 2: 깨진 원장은 빈 목록으로, 형식이 틀린 항목은 그 항목만 버리는지 본다 |
 | `storage/__tests__/notice-settings.spec.ts` | 결정 10: 저장이 실패하면 그대로 던지는지 본다 |
-| `app/settings/__tests__/SettingsNoticeAlertsScreen.test.tsx` | 결정 11 · 13: 전체 스위치가 계산 값이고 파티 알림까지 함께 움직이는지, 기기 설정 버튼과 권한 카드가 같은 함수를 부르는지, 권한 카드가 뜨는 조건과 안 뜨는 조건, 실패 이유를 적는지, 왕복을 기다리지 않고 그리는지, 파티 스위치가 맞게 보이는지, 스위치를 누르면 촉각이 나는지 본다 |
+| `app/settings/__tests__/SettingsNoticeAlertsScreen.test.tsx` | 결정 11 · 13: 전체 스위치가 계산 값이고 파티 알림까지 함께 움직이는지, 기기 설정 버튼과 권한 카드가 같은 함수를 부르는지, 권한 카드가 뜨는 조건과 안 뜨는 조건, 실패 이유를 적는지, 왕복을 기다리지 않고 그리는지, 파티 · 미완료 스케줄 스위치가 맞게 보이는지, 스위치를 누르면 촉각이 나는지 본다 |
 | `app/settings/__tests__/notification-settings-link.spec.ts` | 결정 13: 안드로이드는 알림 설정 인텐트로, iOS 는 앱 설정으로 여는지 본다 |
 | `maple-routine-server` 의 `src/clients/fcm.client.spec.ts` | 결정 14: 보내는 메시지에 APNs 소리를 싣는지 본다 |
+| `features/schedule-alert/__tests__/notification.spec.ts` | 결정 15 · 17 · 18: 7일 안의 날마다 21:00 KST 한 장인지, 수요일 · 말일에 주간 · 월간이 같은 장에 드는지, 21:00 이 지난 날과 추적 캐릭터가 없을 때는 비는지, 같은 기간만 마지막 상태를 믿는지, 제목의 주기와 본문 둘이 상태대로 갈리는지, 드는 주기를 전부 다 했으면 그날이 비는지 본다 |
+| `features/remaining-schedule/__tests__/remaining-schedule.spec.ts` | 결정 16: 공유 컨텐츠 · 레벨 미달 · 완료 항목을 빼는지, 수동 추적 모드와 직접 적은 완료를 반영하는지 본다 |
+| `features/schedule-alert/__tests__/alert-settings.spec.ts` | 결정 19: 끄면 재조정과 등록 해제를, 켜면 재조정과 등록을 부르는지 본다 |
+| `features/schedule-alert/__tests__/background-refresh.spec.ts` | 결정 20: 캐시 복원을 기다린 뒤 회차를 받고 재조정하는지, 회차가 실패해도 재조정하는지 본다 |
+| `native/adapters/__tests__/rn-background-task.test.ts` | 결정 20: 제한된 기기에서는 걸지 않는지, 걸려 있을 때만 푸는지, 몸통이 던져도 OS 에 실패로 답하는지 본다 |
+| `src/__tests__/background-task-policy.test.ts` | 결정 1 · 20: `index.ts` 가 최상위에서 태스크를 정의하는지, Info.plist 에 `processing` 모드와 허용 식별자가 있는지 본다 |
+| `app/today/widgets/__tests__/RemainingScheduleWidget.test.tsx` | 결정 6: 알림이 남긴 주기로 세그먼트가 서고 요청을 비우는지 본다 |
 
 ## 번호 기록
 
 - ADR-056 (2026-10-19): 옛 ADR-004 · 146 · 259 · 278 과 ADR-227 결정 5, ADR-228 · 247 의 구독 · 권한 결정을 합쳐 처음 작성
 - ADR-072 (2026-10-20): 결정 14 를 더했다. 그 전에는 iOS 알림에 소리가 없어 애플워치가 진동하지 않았다
+- ADR-164 (2026-11-04): 미완료 스케줄 알림(결정 15 ~ 20)을 더하고 결정 1 · 3 · 4 · 6 · 13 을 그에 맞췄다. 백그라운드 태스크 의존성이 들어 v1.0.13 스토어 빌드에 실린다

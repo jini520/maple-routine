@@ -4,6 +4,7 @@ import { NavigationContainer, useNavigationContainerRef } from '@react-navigatio
 import { useNoticeDelivery } from '../features/notice/use-notice-delivery'
 import { useLocalNotificationPress } from '../features/local-notifications/use-notification-press'
 import { usePartyAppointmentOpenStore } from '../features/party-appointments/open-request'
+import { useScheduleAlertOpenStore } from '../features/schedule-alert/open-request'
 
 import { useLiveUpdateStore } from '../features/live-update/store'
 
@@ -98,6 +99,14 @@ export function AppNavigation(): React.JSX.Element {
     // 층 이름이 유니온이라 `navigate` 의 파라미터가 하나로 안 좁혀진다(`useOpenTab` 과 같은 대가).
     ;(navigationRef.navigate as (route: string, params: TabNavigateParams) => void)(name, nested)
   }, [appointmentRequest, routeNames, navigationRef])
+
+  // 미완료 스케줄 알림 탭은 today 로 보낸다. 세그먼트는 남은 스케줄 타일이 요청을 보고 맞춘 뒤 요청을 비운다.
+  const alertRequest = useScheduleAlertOpenStore((state) => state.cycle !== null)
+  useEffect(() => {
+    if (!alertRequest || !routeNames.includes('Main')) return
+    const [name, nested] = tabNavigateArgs('Today')
+    ;(navigationRef.navigate as (route: string, params: TabNavigateParams) => void)(name, nested)
+  }, [alertRequest, routeNames, navigationRef])
 
   return (
     <NavigationContainer

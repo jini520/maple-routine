@@ -1,5 +1,6 @@
 import {
   setAdsPort,
+  setBackgroundTaskPort,
   setBrowserPort,
   setBackGesturePort,
   setColorSchemePort,
@@ -83,6 +84,9 @@ export function installNoopNativePorts(): void {
     addPressListener: () => () => {},
     getInitialPress: async () => null,
   })
+
+  // 테스트 환경에는 OS 스케줄러가 없다. 등록 · 해제를 부르는지는 `schedule-alert/__tests__` 가 자기 목으로 본다.
+  setBackgroundTaskPort({ register: async () => {}, unregister: async () => {} })
 
   setPushPort({
     subscribe: async () => {},

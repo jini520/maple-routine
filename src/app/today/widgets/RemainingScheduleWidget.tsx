@@ -12,7 +12,7 @@
  * @see docs/features/today.md 위젯 정책
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { Badge, ChevronDownIcon, ChevronUpIcon, Text } from '../../../components/atoms'
@@ -21,6 +21,8 @@ import { CharacterAvatar } from '../../../components/molecules/CharacterAvatar/C
 import { UnknownCharacterFace } from '../../../components/molecules/CharacterAvatar/UnknownCharacterFace'
 import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
+import { CYCLE_LABEL } from '../../../features/schedule-alert/notification-text'
+import { useScheduleAlertOpenStore } from '../../../features/schedule-alert/open-request'
 import type { RemainingBossView, ScheduleRowView } from '../view-model'
 import type { WidgetProps } from './types'
 
@@ -303,7 +305,11 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
    * 보고 있는 주기. 저장소에 안 쓴다. 앱을 다시 켜면 언제나 일간이고 요일에 따라 기본 탭을
    * 바꾸지 않는다. 첫 화면이 날마다 다른 얼굴로 열리면 어제와 같은 화면 이 깨진다.
    */
-  const [cycle, setCycle] = useState<Cycle>('일간')
+  const [cycle, setCycle] = useState<Cycle>(() => {
+    // 미완료 스케줄 알림을 눌러 왔으면 그 주기로 연다. 요청은 아래 이펙트가 비운다.
+    const requested = useScheduleAlertOpenStore.getState().cycle
+    return requested === null ? '일간' : CYCLE_LABEL[requested]
+  })
 
   /**
    * 펼친 행 하나. `null` 은 전부 접힘이다.
@@ -312,6 +318,18 @@ export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Elemen
    * 기억하지도 않는다.
    */
   const [expandedOcid, setExpandedOcid] = useState<string | null>(null)
+
+  // 보고 있는 중에 알림을 누르면 그 주기로 옮긴다. 받은 요청은 비워 다음 마운트가 다시 쓰지 않게 한다.
+  useEffect(() => {
+    const store = useScheduleAlertOpenStore
+    if (store.getState().cycle !== null) store.getState().clear()
+    return store.subscribe((state) => {
+      if (state.cycle === null) return
+      setCycle(CYCLE_LABEL[state.cycle])
+      setExpandedOcid(null)
+      store.getState().clear()
+    })
+  }, [])
 
   return (
     <View testID="widget-remaining-schedule" className="p-3">

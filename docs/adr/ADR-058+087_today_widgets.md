@@ -114,8 +114,8 @@ today 가 세는 남은 일은 스케줄러 화면이 보여 주는 것과 한 �
 | 월드별 결정석 | `summarizeWorldCrystals` · `WEEKLY_CRYSTAL_SALE_LIMIT` |
 | 대표 캐릭터 | `resolveDisplayRepresentative` |
 
-컨텐츠 완료 판정은 `app/content-scheduler/` 에 있어서 화면끼리 import 하는 일이 생긴다. 같은 판정을 두 곳에
-만드는 것보다 낫다고 보고 받아들였다.
+컨텐츠 완료 판정은 `features/content-scheduler/content-completion.ts` 에 있다. 처음에는 `app/content-scheduler/` 에
+있어 화면끼리 import 했는데, 미완료 스케줄 알림([[ADR-056]] 결정 16)이 `features/` 에서 같은 판정을 쓰면서 옮겼다.
 
 수동 추적 목록은 저장소 키가 하나지만 컨텐츠 스토어와 보스 스토어가 각자 사본을 갖고, 각자 자기
 종류를 바꿀 때만 사본을 고친다. 두 종류를 한 화면에 그리는 곳은 today 뿐이라 입력을 둘로 받는다

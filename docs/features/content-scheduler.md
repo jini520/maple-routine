@@ -21,7 +21,7 @@ API 동기화와 진입 재조회는 [[ADR-021]], 실패를 알리는 방법은 
 | `app/content-scheduler/ContentScreen.tsx` | 스케줄러 화면. 헤더 · 초상화 레일 · 카드 목록 |
 | `app/content-scheduler/DailyContentCards.tsx` · `WeeklyContentCards.tsx` | 일간 · 주간 카드와 카드 고르기 |
 | `app/content-scheduler/content-badges.tsx` | `quest_state` 배지 글자와 색, 주간 카드 대상 판정 |
-| `app/content-scheduler/content-completion.ts` | 완료 판정과 링 진행률. today 도 이 파일을 가져다 쓴다 |
+| `features/content-scheduler/content-completion.ts` | 완료 판정과 링 진행률. today 의 남은 스케줄과 미완료 스케줄 알림도 이 파일을 쓴다 |
 | `app/content-scheduler/ContentManageScreen.tsx` | 컨텐츠 관리 화면(`ContentManage`) |
 | `features/content-scheduler/use-content-schedule.ts` · `views.ts` | 쿼리 캐시에서 캐릭터 뷰를 만드는 훅과 순수 함수. 자동 조회와 당김(`refresh`)도 여기서 낸다 |
 | `features/content-scheduler/store.ts` | 수동 추적 멤버십, `activeTab`. 넥슨에서 받은 값은 없다 |

@@ -13,7 +13,7 @@ import { assetUri } from '../../../assets/__tests__/asset-uri'
 import { findAllOfType, renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
 import { renderDailyContentCard } from '../DailyContentCards'
 import { renderWeeklyContentCard } from '../WeeklyContentCards'
-import { weeklyLimitClosedKeys } from '../content-completion'
+import { weeklyLimitClosedKeys } from '../../../features/content-scheduler/content-completion'
 
 const HIDDEN = { includeHiddenElements: true } as const
 

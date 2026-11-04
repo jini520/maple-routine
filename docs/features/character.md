@@ -37,7 +37,7 @@
 | `features/character-selection/store.ts` | 고른 캐릭터와 대표 표식을 갖는 스토어 |
 | `features/character-selection/selected-character.ts` | 고른 캐릭터가 목록에 없을 때 대신 보여 줄 캐릭터 |
 | `lib/scheduler/tracked-order.ts` | 추적 목록 저장 순서로 정렬(`orderByTracked`) |
-| `app/content-scheduler/content-completion.ts` | 진행 링이 세는 완료 판정 |
+| `features/content-scheduler/content-completion.ts` | 진행 링이 세는 완료 판정 |
 | `components/organisms/CharacterRail/` | 초상화 레일 |
 | `components/organisms/CharacterPortrait/` | 초상화 · 링 · 곡선 글자 · 치수 표(`portrait-metrics.ts`) |
 | `components/molecules/CharacterAvatar/` | 얼굴 원과 그림이 없을 때의 실루엣 |

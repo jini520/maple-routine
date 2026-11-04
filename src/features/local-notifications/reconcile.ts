@@ -10,7 +10,7 @@ import type { NotificationLedgerEntry } from '../../storage/notification-ledger'
 /** 예약할 알림 하나 */
 export interface PlannedNotification extends NotificationLedgerEntry {
   /** 안드로이드 채널. 없으면 옛 채널 */
-  channel?: 'party'
+  channel?: 'party' | 'schedule'
   /** 탭했을 때 돌려받는 값. id 와 같은 재료라 원장에서 비교하지 않는다 */
   data?: NotificationData
 }

@@ -21,12 +21,13 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { useNoticeStore } from '../../features/notice/store'
 import { anySubscribed, NOTICE_TOPICS } from '../../features/notice/topics'
 import { usePartyAlarmSettingsStore } from '../../features/party-appointments/alarm-settings'
+import { useScheduleAlertSettingsStore } from '../../features/schedule-alert/alert-settings'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { openNotificationSettings } from './notification-settings-link'
 import { SETTINGS_CARD_CLASS, SETTINGS_NOTE_CELL_CLASS, SETTINGS_SWITCH_ROW_CLASS } from './row-class'
 
 /**
- * 아직 못 만든 알림들. **보이되 못 켠다.**
+ * 아직 못 만든 알림. **보이되 못 켠다.**
  *
  * 자리를 미리 세우는 이유는 이 화면이 `알림으로 무엇을 받을 수 있는가` 를 말하는 자리이고,
  * 그 목록에서 빠져 있으면 없는 기능인지 못 찾는 기능인지 모르기 때문이다. 준비 중이라고
@@ -35,10 +36,7 @@ import { SETTINGS_CARD_CLASS, SETTINGS_NOTE_CELL_CLASS, SETTINGS_SWITCH_ROW_CLAS
  * 여기 사는 것은 이것들이 **FCM 토픽이 아니라 기기가 스스로 띄우는 예약 알림**이라서다.
  * 만들 때 `features/` 로 옮긴다.
  */
-const SCHEDULER_ALERTS: readonly { key: string; label: string }[] = [
-  { key: 'schedule-incomplete', label: '미완료 스케줄 알림' },
-  { key: 'weekly-summary', label: '주간 결산 알림' },
-]
+const SCHEDULER_ALERTS: readonly { key: string; label: string }[] = [{ key: 'weekly-summary', label: '주간 결산 알림' }]
 
 /** 구역 이름. 다섯과 둘이 성질이 달라(서버가 쏘는 것 · 기기가 띄우는 것) 카드만으로는 안 갈린다. */
 function SectionLabel(props: { children: string }): React.JSX.Element {
@@ -58,19 +56,23 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
   const partyAlarmOn = usePartyAlarmSettingsStore((state) => state.enabled)
   const loadPartyAlarm = usePartyAlarmSettingsStore((state) => state.load)
   const setPartyAlarm = usePartyAlarmSettingsStore((state) => state.setEnabled)
+  const scheduleAlertOn = useScheduleAlertSettingsStore((state) => state.enabled)
+  const loadScheduleAlert = useScheduleAlertSettingsStore((state) => state.load)
+  const setScheduleAlert = useScheduleAlertSettingsStore((state) => state.setEnabled)
   /** 누른 값을 덮은 구독. 스위치가 왕복을 기다리지 않게 하는 값. */
   const shown = { ...subscriptions, ...pending }
   // **저장하지 않고 파생한다.** 저장하면 `전체는 켜졌는데 넷은 다 꺼진` 상태가 생기고, 그때
   // 화면은 스위치가 켜졌다고 말하면서 알림은 안 온다.
-  // 약속 스위치도 더한다. 빼 두면 전체가 꺼진 채로 약속 알림이 오는 상태가 생긴다.
-  const on = anySubscribed(shown) || partyAlarmOn
+  // 약속 · 미완료 스케줄 스위치도 더한다. 빼 두면 전체가 꺼진 채로 그 알림이 오는 상태가 생긴다.
+  const on = anySubscribed(shown) || partyAlarmOn || scheduleAlertOn
 
   // 들어올 때마다 읽는다. 기기 설정에 갔다 오는 사이 값이 바뀌고, 그 왕복이 이 화면에서 시작된다.
   useFocusEffect(
     useCallback(() => {
       void refreshPermission()
       void loadPartyAlarm()
-    }, [refreshPermission, loadPartyAlarm]),
+      void loadScheduleAlert()
+    }, [refreshPermission, loadPartyAlarm, loadScheduleAlert]),
   )
 
   /**
@@ -142,6 +144,7 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
                 // 켜면 기본 묶음이 켜지고 끄면 전부 꺼진다.
                 report(setAllSubscribed(!on))
                 void setPartyAlarm(!on)
+                void setScheduleAlert(!on)
               }}
             />
           </View>
@@ -212,6 +215,17 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
                 className="ml-auto"
                 onToggle={() => {
                   void setPartyAlarm(!partyAlarmOn)
+                }}
+              />
+            </View>
+            <View className={SETTINGS_SWITCH_ROW_CLASS}>
+              <Text className="shrink text-sm font-semibold text-text">미완료 스케줄 알림</Text>
+              <Switch
+                on={scheduleAlertOn}
+                label="미완료 스케줄 알림"
+                className="ml-auto"
+                onToggle={() => {
+                  void setScheduleAlert(!scheduleAlertOn)
                 }}
               />
             </View>

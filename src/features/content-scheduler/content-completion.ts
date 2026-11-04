@@ -18,16 +18,14 @@ import type { DailyContent, WeeklyContent } from '../../types'
 
 import {
   FAITHFUL_INVESTIGATION_KEY,
-  MU_LUNG_DOJO_KEY,
-  isWeeklyQuestContent,
-  isWeeklyRegionalContent,
-} from './content-badges'
-import {
   GUILD_FLAG_RACE_KEY,
   GUILD_MISSION_POINTS_KEY,
   GUILD_UNDERGROUND_WATERWAY_KEY,
   MONSTER_PARK_EXTREME_KEY,
-} from './WeeklyContentCards'
+  MU_LUNG_DOJO_KEY,
+  isWeeklyQuestContent,
+  isWeeklyRegionalContent,
+} from '../../lib/scheduler/content-kinds'
 
 /** `'unmeasurable'` = 끝이 없는 항목. 완료도 미완료도 아니라 세지 않는다. */
 export type ContentCompletion = 'complete' | 'incomplete' | 'unmeasurable'

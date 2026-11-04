@@ -1,8 +1,9 @@
-// 로컬 알림 탭이 앱에 닿는 길을 모아 종류별로 나눈다. 지금 종류는 파티 약속 하나다.
+// 로컬 알림 탭이 앱에 닿는 길을 모아 종류별로 나눈다. 파티 약속과 미완료 스케줄 알림이다.
 import { renderHook } from '@testing-library/react-native'
 
 import { __resetNativePortsForTest, setNotificationsPort } from '../../../native/ports'
 import { usePartyAppointmentOpenStore } from '../../party-appointments/open-request'
+import { useScheduleAlertOpenStore } from '../../schedule-alert/open-request'
 import { useLocalNotificationPress } from '../use-notification-press'
 
 let pressHandler: ((data: Record<string, string>) => void) | null = null
@@ -12,6 +13,7 @@ beforeEach(() => {
   pressHandler = null
   initial = null
   usePartyAppointmentOpenStore.setState({ request: null })
+  useScheduleAlertOpenStore.setState({ cycle: null })
   setNotificationsPort({
     requestPermission: async () => true,
     hasPermission: async () => true,
@@ -58,6 +60,27 @@ describe('useLocalNotificationPress', () => {
     await new Promise((resolve) => setImmediate(resolve))
 
     expect(open).toHaveBeenCalledTimes(1)
+  })
+
+  it('미완료 스케줄 알림을 누르면 열 주기를 남기고, 같은 날 알림은 한 번만 남긴다', async () => {
+    const alert = { kind: 'schedule-alert', cycle: 'weekly', dateKey: '2026-10-07' }
+    initial = alert
+    const open = jest.spyOn(useScheduleAlertOpenStore.getState(), 'open')
+    await renderHook(() => useLocalNotificationPress())
+    pressHandler!(alert)
+    await new Promise((resolve) => setImmediate(resolve))
+
+    expect(useScheduleAlertOpenStore.getState().cycle).toBe('weekly')
+    expect(open).toHaveBeenCalledTimes(1)
+    expect(usePartyAppointmentOpenStore.getState().request).toBeNull()
+  })
+
+  it('주기가 모르는 값인 미완료 스케줄 알림은 무시한다', async () => {
+    await renderHook(() => useLocalNotificationPress())
+
+    pressHandler!({ kind: 'schedule-alert', cycle: 'yearly', dateKey: '2026-10-07' })
+
+    expect(useScheduleAlertOpenStore.getState().cycle).toBeNull()
   })
 
   it('다른 종류는 무시한다', async () => {
