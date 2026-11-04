@@ -13,7 +13,6 @@ import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { bossTotalsBetween, type DaysByDate, type StatsRange } from '../../features/stats/aggregate'
 import { bossPortraitSlugOf } from '../../lib/boss/bosses'
-import type { BossCycle } from '../../types'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { StatsSection } from './StatsSection'
 
@@ -28,10 +27,9 @@ const BADGE_HALF = 7
 export const BossSection = memo(function BossSection(props: {
   days: DaysByDate
   range: StatsRange
-  cycle: BossCycle
 }): React.JSX.Element {
   const [mode, setMode] = useState<Mode>('난이도별')
-  const rows = bossTotalsBetween(props.days, props.range, mode === '보스별' ? 'boss' : 'difficulty', props.cycle)
+  const rows = bossTotalsBetween(props.days, props.range, mode === '보스별' ? 'boss' : 'difficulty')
   const total = rows.reduce((sum, row) => sum + row.meso, 0)
   const count = rows.reduce((sum, row) => sum + row.count, 0)
 
