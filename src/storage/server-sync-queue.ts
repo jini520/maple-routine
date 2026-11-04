@@ -91,7 +91,7 @@ export async function countServerSyncAttempt(recordId: string, lastError: string
 }
 
 /**
- * 표를 통째로 비운다. **연결 해제가 부른다.**
+ * 표를 통째로 비운다. **로그아웃이 부른다.**
  *
  * 남겨 두면 다음에 다른 키를 넣은 사람이 **앞사람의 기록을 자기 이름으로** 올린다. 대기 줄에는
  * 누가 만든 것인지가 안 적혀 있다 - 적을 이유가 없었던 것이, 보낼 때의 신원으로 나가기 때문이다.

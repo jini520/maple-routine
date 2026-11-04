@@ -15,7 +15,8 @@
 | `server/settlement.ts` | 넥슨 결산 중인지 조회 |
 | `server/manual-completion.ts` | 직접 완료를 열어 둔 보스 조회 |
 | `server/game-data.ts` | 게임 데이터 열세 칸 조회 |
-| `server/drop-price.ts` | 드롭 가격 올리기 · 지우기 · 계정 삭제 |
+| `server/drop-price.ts` | 드롭 가격 올리기 · 지우기 |
+| `server/account-deletion.ts` | 계정 삭제 예약 · 예약 확인 · 취소 |
 | `server/nexon-auth.ts` | 넥슨 로그인 시작 · 세션 받기 · 세션 거두기 |
 | `server/friends-stream.ts` | 로그인 사용자의 프렌즈 조회 스트림 |
 | `features/auth/server-identity.ts` | 쓰기 요청에 싣는 신원 헤더 |

@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-299 결정 3 · ADR-340 결정 2 · 3 · 4 · 5 · 7 · 8 · 정정 1 · 2 · 2-1 · 3 · 5 · ADR-347 결정 18
-> 관련 소스: `features/auth/server-identity.ts` · `features/auth/store.ts` · `lib/crypto/api-key-hash.ts` · `features/server-sync/forget.ts` · `server/drop-price.ts` · `app/settings/SettingsAboutScreen.tsx` · `app/settings/SignOutConfirm.tsx` · 서버 `modules/users/` · `modules/identity/`
+> 관련 소스: `features/auth/server-identity.ts` · `features/auth/store.ts` · `lib/crypto/api-key-hash.ts` · `features/server-sync/forget.ts` · `features/auth/account-deletion.ts` · `server/account-deletion.ts` · `app/settings/SettingsAboutScreen.tsx` · `app/settings/SignOutConfirm.tsx` · `app/settings/DeleteAccountConfirm.tsx` · `app/auth/AccountDeletionPrompt.tsx` · 서버 `modules/users/` · `modules/identity/`
 
 ## 배경
 
@@ -183,7 +183,8 @@ users   id · created_at · deletion_requested_at   NULL 이 아니면 삭제 �
 | `features/auth/__tests__/server-identity.spec.ts` | 결정 5: 로그인이 있으면 Bearer 하나만 싣는지, 키만 있으면 첫 키의 해시를 싣는지, 수단이 없거나 저장소를 못 읽으면 `null` 인지 본다 |
 | `features/server-sync/__tests__/forget.spec.ts` | 결정 6 · 7: 계정 삭제가 서버의 답을 돌려주는지, 비우기가 대기 표와 사용 로그 표를 함께 비우고 터져도 던지지 않는지 본다 |
 | `features/auth/__tests__/store.spec.ts` | 결정 7: 로그아웃이 서버에 삭제를 알리지 않고 세션을 거둔 뒤 기기를 지우는지, 계정 삭제가 서버에 예약하고 실패하면 로그아웃하지 않는지 본다 |
-| `features/auth/__tests__/account-deletion.spec.ts` | 결정 7: 로그인 뒤 예약이 있으면 묻고, 취소면 예약을 비우고 들어가며, 로그아웃이면 예약을 둔 채 나가는지, 응답이 없으면 묻지 않고 들어가는지 본다 |
+| `features/auth/__tests__/account-deletion.spec.ts` | 결정 7: 예약이 있으면 지울 날을 돌려주고, 예약이 없거나 응답이 없거나 신원이 없으면 묻지 않는지, 취소가 서버에 닿았을 때만 성공인지 본다 |
+| `app/auth/__tests__/AccountDeletionPrompt.test.tsx` | 결정 7 · 8: 들어오면 예약을 묻고 지울 날을 연도까지 보이는지, 취소면 비우고 닫고 실패면 닫지 않는지, 로그아웃이면 예약을 둔 채 로그아웃하는지 본다 |
 | `app/settings/__tests__/SettingsAboutScreen.test.tsx` | 결정 8: 로그아웃 행이 하나인지, 계정 삭제가 확인을 받은 뒤에만 부르는지, 실패하면 알리고 화면에 남는지 본다 |
 | 서버 `modules/identity/*.spec.ts` · `modules/users/*.spec.ts` | 결정 5 · 6: 세션이 우선하고 죽은 세션은 키로 안 넘어가는지, 키 해시를 다시 해시해 찾는지, 계정 삭제 요청이 세션만 지우고 예약 시각을 덮지 않는지, 유예 중 쓰기가 403 인지, 취소가 예약을 비우는지, 30일이 지난 사람만 지우고 그때 남기는 표의 `user_id` 를 비우며 옛 표의 줄과 열쇠를 지우는지, 지운 뒤 같은 열쇠로 오면 새 사람인지 본다 |
 

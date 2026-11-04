@@ -44,3 +44,16 @@ export function InsetRow(props: InsetRowProps): React.JSX.Element {
     </View>
   )
 }
+
+/**
+ * 가운데 모달의 `card-inset` 칸 하나에 든 설명 문단. 제목 아래가 아니라 머리 줄 아래 칸에 둔다.
+ *
+ * @example <NoticeModal content={<InsetNote>{description}</InsetNote>} … />
+ */
+export function InsetNote(props: { children: string; testID?: string }): React.JSX.Element {
+  return (
+    <View testID={props.testID} className={INSET_ROW_CLASS}>
+      <Text className="text-xs text-text-muted">{props.children}</Text>
+    </View>
+  )
+}

@@ -1,6 +1,6 @@
 /**
  * 설정 하위 페이지 `앱 정보 및 계정`. 위는 `앱 정보` 묶음(현재 버전·상태·업데이트 확인·개인정보 처리방침),
- * 아래는 `계정` 묶음(넥슨 로그아웃·데이터 삭제·연결 해제).
+ * 아래는 `계정` 묶음(로그아웃·데이터 삭제·계정 삭제).
  *
  * 묶음 제목을 다는 것은 계정 행이 정보 행 아래에 있어서다. 제목이 없으면 끝까지 읽어야 계정 행이 있는 줄 안다.
  *
@@ -20,9 +20,8 @@ import { reloadAppAsync } from 'expo'
 
 import type { CacheDataCounts } from '../../features/settings/cache-data'
 import { clearCacheDataAndReload, loadCacheDataCounts } from '../../features/settings/cache-data'
-import { useSettingsStore } from '../../features/settings/store'
 import { useAuthStore } from '../../features/auth/store'
-import { hasNexonLogin } from '../../features/auth/saved-key'
+import { useToastStore } from '../../features/toast/store'
 import { useLiveUpdateStore } from '../../features/live-update/store'
 import { openInAppBrowser } from '../../native/browser'
 import type { CacheDataSelection } from '../../storage/cache-data'
@@ -37,7 +36,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { AppUpdateSection } from './AppUpdateSection'
 import { CacheClearConfirm } from './CacheClearConfirm'
-import { DisconnectConfirm } from './DisconnectConfirm'
+import { DeleteAccountConfirm } from './DeleteAccountConfirm'
 import { SectionTitle } from './SectionTitle'
 import { SignOutConfirm } from './SignOutConfirm'
 import { SETTINGS_CARD_CLASS } from './row-class'
@@ -59,18 +58,15 @@ export function SettingsAboutScreen(props: SettingsAboutScreenProps = {}): React
   const liveUpdate = useLiveUpdateStore()
   const { loadCurrentVersion } = liveUpdate
 
-  const { disconnect } = useSettingsStore()
-
   const [isCacheClearOpen, setIsCacheClearOpen] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
   const [counts, setCounts] = useState<CacheDataCounts | null>(null)
-  const [isDisconnectOpen, setIsDisconnectOpen] = useState(false)
-  const [isDisconnecting, setIsDisconnecting] = useState(false)
-  // 로그인이 없으면 뗄 것이 없다. 모르는 동안에도 안 세운다 - 세웠다 지우면 행이 하나 튄다.
-  const [showSignOut, setShowSignOut] = useState(false)
   const [isSignOutOpen, setIsSignOutOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
-  const signOutNexonLogin = useAuthStore((state) => state.signOutNexonLogin)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const signOut = useAuthStore((state) => state.signOut)
+  const deleteAccount = useAuthStore((state) => state.deleteAccount)
 
   // 이 화면이 열릴 때 실행 중인 번들 버전을 싣는다.
   useEffect(() => {
@@ -83,16 +79,6 @@ export function SettingsAboutScreen(props: SettingsAboutScreenProps = {}): React
       .catch(() => {})
   }, [])
 
-  useEffect(() => {
-    let alive = true
-    void hasNexonLogin().then((has) => {
-      if (alive) setShowSignOut(has)
-    })
-    return () => {
-      alive = false
-    }
-  }, [])
-
   async function handleClear(selection: CacheDataSelection): Promise<void> {
     setIsClearing(true)
     await clearCacheDataAndReload(
@@ -101,9 +87,17 @@ export function SettingsAboutScreen(props: SettingsAboutScreenProps = {}): React
     )
   }
 
-  async function handleDisconnectConfirm(): Promise<void> {
-    setIsDisconnecting(true)
-    await disconnect()
+  async function handleDeleteConfirm(): Promise<void> {
+    setIsDeleting(true)
+    const deleted = await deleteAccount()
+    // 성공하면 로그아웃으로 로그인 화면이 서서 이 화면이 사라진다. 실패면 키가 남아 다시 누를 수 있다.
+    if (deleted) {
+      useToastStore.getState().showSuccess('30일 뒤 계정이 삭제돼요')
+      return
+    }
+    setIsDeleting(false)
+    setIsDeleteOpen(false)
+    useToastStore.getState().showError('계정을 삭제하지 못했어요. 잠시 뒤 다시 시도해 주세요.')
   }
 
   return (
@@ -154,22 +148,12 @@ export function SettingsAboutScreen(props: SettingsAboutScreenProps = {}): React
             <SectionTitle>계정</SectionTitle>
             <View className="gap-4">
               {/*
-                로그아웃은 **연결 해제와 다른 카드**다. 파괴적 행은 별도 카드로 내린다는 규칙이
-                이 화면에 이미 있고, 로그아웃은 되돌릴 수 있어 그 무리에 안 든다.
-
-                확인을 한 번 받는다(사용자 지정). 되돌릴 수 있는 동작이지만 다시 로그인하는 것이
-                창을 열고 넥슨을 거치는 일이라 실수로 눌렀을 때 치르는 값이 작지 않다.
-                지우는 것은 넥슨 로그인 하나이고 API 키와 내부 데이터는 남는다.
+                로그아웃은 **위험 행과 다른 카드**다. 되돌릴 수 있어 지우는 행의 무리에 안 든다.
+                확인은 한 번 받는다. 다시 로그인하려면 넥슨 창을 거치거나 키를 다시 붙여야 한다.
               */}
-              {showSignOut && (
-                <Card className={SETTINGS_CARD_CLASS}>
-                  <SettingsRow
-                    label="넥슨 로그아웃"
-                    onPress={() => setIsSignOutOpen(true)}
-                    showChevron={false}
-                  />
-                </Card>
-              )}
+              <Card className={SETTINGS_CARD_CLASS}>
+                <SettingsRow label="로그아웃" onPress={() => setIsSignOutOpen(true)} showChevron={false} />
+              </Card>
 
               <Card className={SETTINGS_CARD_CLASS} testID="settings-card">
                 <SettingsRow
@@ -179,8 +163,8 @@ export function SettingsAboutScreen(props: SettingsAboutScreenProps = {}): React
                   showChevron={false}
                 />
                 <SettingsRow
-                  label="연결 해제"
-                  onPress={() => setIsDisconnectOpen(true)}
+                  label="계정 삭제"
+                  onPress={() => setIsDeleteOpen(true)}
                   danger
                   showChevron={false}
                 />
@@ -197,7 +181,7 @@ export function SettingsAboutScreen(props: SettingsAboutScreenProps = {}): React
         onCancel={() => setIsSignOutOpen(false)}
         onConfirm={() => {
           setIsSigningOut(true)
-          void signOutNexonLogin()
+          void signOut()
         }}
       />
       <CacheClearConfirm
@@ -210,13 +194,13 @@ export function SettingsAboutScreen(props: SettingsAboutScreenProps = {}): React
         onCancel={() => setIsCacheClearOpen(false)}
       />
 
-      <DisconnectConfirm
-        isOpen={isDisconnectOpen}
-        isDisconnecting={isDisconnecting}
+      <DeleteAccountConfirm
+        isOpen={isDeleteOpen}
+        isDeleting={isDeleting}
         onConfirm={() => {
-          void handleDisconnectConfirm()
+          void handleDeleteConfirm()
         }}
-        onCancel={() => setIsDisconnectOpen(false)}
+        onCancel={() => setIsDeleteOpen(false)}
       />
     </>
   )

@@ -1,40 +1,27 @@
 /**
- * 연결 해제가 서버 쪽을 함께 거두는 자리.
+ * 로그아웃 · 계정 삭제가 서버 쪽을 거두는 자리.
  *
- * 하는 일 둘이고 **순서가 요건이다.**
- *
- * 1. 서버에 탈퇴를 알린다. **기기에서 키를 지우기 전**이어야 한다 - 자기를 밝힐
- *    값이 그 키에서 나오므로, 지운 뒤에는 무엇을 지워 달라고 말할 길이 없다.
- * 2. 대기 표와 사용 로그 표를 비운다. 남겨 두면 다음에 **다른 키를 넣은 사람이 앞사람의 기록을 자기 이름으로**
- *    올린다.
- *
- * **통신이 실패해도 진행한다.** 기기에서 지우는 것이 본론이고, 그 경우 서버가 탈퇴를 모른 채
- * 남는다. 같은 키를 다시 넣고 연결 해제를 다시 하면 그때 전해진다.
+ * - 계정 삭제는 **기기에서 키를 지우기 전**에 보낸다. 서버가 사람을 찾을 값이 그 키에서 나온다.
+ * - 못 보낸 것(대기 표 · 사용 로그 표)은 로그아웃할 때 비운다. 누가 만든 줄인지 적혀 있지 않아, 남기면 다음에 다른 키로
+ *   로그인한 사람의 신원으로 나간다.
  */
-import { deleteMeOnServer } from '../../server/drop-price'
+import { deleteMeOnServer } from '../../server/account-deletion'
 import { clearServerSyncQueue } from '../../storage/server-sync-queue'
 import { clearUsageEvents } from '../../storage/usage-events'
 import { serverIdentityHeaders } from '../auth/server-identity'
 
-/** 알렸는지 돌려준다. `false` 는 통신이 실패했거나 밝힐 수단이 없었다는 뜻이다. */
-export async function forgetServerData(): Promise<boolean> {
-  let told = false
+/** 계정 삭제를 예약한다. 서버가 받았을 때만 `true` 다. 던지지 않는다. */
+export async function requestAccountDeletion(): Promise<boolean> {
   try {
     const headers = await serverIdentityHeaders()
-    if (headers !== null) {
-      told = (await deleteMeOnServer(headers)).outcome === 'sent'
-    }
+    if (headers === null) return false
+    return (await deleteMeOnServer(headers)).outcome === 'sent'
   } catch {
-    // 밝힐 수단을 읽다가 터졌다. 아래 비우기는 그래도 해야 한다.
+    return false
   }
+}
 
-  // 서버에 못 보냈어도 비운다. 못 보낸 줄이 다음 사람의 신원으로 나가는 것이 더 나쁘다.
-  try {
-    await clearServerSyncQueue()
-    await clearUsageEvents()
-  } catch {
-    // 저장소가 안 열렸다. 연결 해제 자체를 막지 않는다.
-  }
-
-  return told
+/** 못 보낸 것을 버린다. 하나가 터져도 나머지를 비우고 던지지 않는다. 로그아웃을 막지 않는다. */
+export async function clearUnsentServerData(): Promise<void> {
+  await Promise.allSettled([clearServerSyncQueue(), clearUsageEvents()])
 }

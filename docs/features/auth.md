@@ -44,6 +44,7 @@
 | `native/browser.ts` | 앱이 여는 웹 주소를 인앱 브라우저로 연다. 못 열면 시스템 브라우저로 넘긴다 |
 | `app/settings/SettingsScreen.tsx` | 더보기 탭 맨 위 넥슨 로그인 버튼 |
 | `app/settings/SettingsAboutScreen.tsx` · `app/settings/SignOutConfirm.tsx` · `app/settings/DeleteAccountConfirm.tsx` | 로그아웃 · 계정 삭제 줄과 확인 모달 |
+| `app/auth/AccountDeletionPrompt.tsx` · `features/auth/account-deletion.ts` | 삭제 예정 계정으로 다시 들어왔을 때 취소를 묻는다 |
 
 ## 저장하는 것
 

@@ -76,7 +76,7 @@ function parse(raw: string | null): Parsed | null {
 /**
  * 옛 설치본의 키를 이어받는다. 옛 칸은 **안 지운다.**
  *
- * 구버전으로 되돌아가도 키를 잃지 않아야 한다. 치우는 것은 연결 해제 한 자리뿐이다.
+ * 구버전으로 되돌아가도 키를 잃지 않아야 한다. 치우는 것은 로그아웃 한 자리뿐이다.
  */
 async function liftLegacy(): Promise<Parsed | null> {
   const legacy = await preferences.get(STORAGE_KEYS.apiKey)
@@ -167,7 +167,7 @@ export async function clearNexonLogin(): Promise<void> {
 /**
  * 무효화된 키 **하나만** 지운다(400 OPENAPI00005 · 401/403 · 429).
  *
- * 아래 `clearAuthConfig` 로 갈아끼우지 말 것. 그쪽은 연결 해제용이라 목록을 통째로 버리고
+ * 아래 `clearAuthConfig` 로 갈아끼우지 말 것. 그쪽은 로그아웃용이라 목록을 통째로 버리고
  * **다른 넥슨 계정의 키까지 함께 사라진다.** 키 재입력 후의 재개는 남아 있는
  * trackingMode·trackedCharacters 에서 파생된다.
  *
@@ -196,12 +196,12 @@ export async function removeAllApiKeys(): Promise<void> {
 }
 
 /**
- * 연결 해제 전용. 저장된 인증 정보를 통째로 버린다(위 `removeApiKey` 와 목적이 다르다).
+ * 로그아웃 전용. 저장된 인증 정보를 통째로 버린다(위 `removeApiKey` 와 목적이 다르다).
  *
  * **옛 칸까지 치운다.** 안 치우면 다음 읽기가 그것을 다시 목록으로 올린다.
  *
  * `selectedAccountId` 는 **레거시 키**다(계정 선택이 사라졌다). 아무도 쓰지 않지만 옛 설치본에는
- * 값이 남아 있어, 연결 해제에서 함께 치운다.
+ * 값이 남아 있어, 로그아웃에서 함께 치운다.
  */
 export async function clearAuthConfig(): Promise<void> {
   await preferences.remove(STORAGE_KEYS.authMethods)
