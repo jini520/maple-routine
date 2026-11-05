@@ -182,9 +182,6 @@ export function ContentManageScreen(): React.JSX.Element {
                 <FaqButton sheet={faq} />
               </View>
             </View>
-            {/* 읽기 전용 칩이던 자리. 이 화면에서 캐릭터를 갈아 가며 쓰는데도
-                바꾸려면 뒤로 나가야 했다. 자리와 크기감은 그대로 두고(compact) 누를 수 있게만 한다.
-                onSelect는 스케줄러와 같은 selectCharacter라 돌아갔을 때 그쪽도 같은 캐릭터다. */}
           </PageHeaderTitleRow>
 
         </PageHeader>
