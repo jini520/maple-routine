@@ -1,4 +1,4 @@
-# ADR-098 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id 를 uuid 로 둔다
+# ADR-098+173 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id 를 uuid 로 둔다
 
 > 🟢 유효
 > 관련 소스: `storage/api-key.ts` · `storage/nexon-account-ids.ts` · `features/auth/legacy-account-ids.ts` · `features/auth/reentry-account-id.ts` · `storage/sqlite/record-key-tables.ts` · `storage/sqlite/db.ts` · `storage/sqlite/migrations.ts` · `storage/sqlite/uuid.ts` · `storage/character-profiles.ts` · `storage/character-world-leaps.ts` · `storage/enhancement-history.ts` · `storage/mvp-grades.ts` · `storage/character-accounts.ts` · `storage/party-appointments.ts` · `features/party-appointments/draft.ts`
@@ -84,7 +84,16 @@ uuid 를 JS 가 아니라 SQLite 가 만드는 이유는 `storage/sqlite/uuid.ts
 - 새 키를 넣을 때 그 키의 `character/list` 에 아는 메이플 ID 가 있으면, 그 메이플 ID 가 속했던 계정의 `id` 를 잇는다
   (`reusableNexonAccountId`). 메이플 ID 는 넥슨 계정 하나에만 속하기 때문이다. 그 계정이 다른 수단으로 살아 있으면 잇지
   않는다. 같은 계정 id 를 두 수단이 가지면 안 된다.
-- 같은 키를 다시 넣거나 다시 로그인해도 그 수단의 `id` 는 그대로다.
+- 같은 키를 다시 넣거나 다시 로그인해도 그 수단의 `id` 는 그대로다. 바뀌는 때는 아래 하나뿐이다.
+- 넥슨 로그인이 메이플 ID 가 같은 키를 거두면 로그인은 **그 키의 `id` 를 이어받는다**([[ADR-025]] 결정 4). 로그인과 그 키는
+  같은 넥슨 계정이라 기록이 이어져야 한다. 새 `id` 를 받으면 키 시절 기록이 주인 없는 `id` 에 남고, 강화 수집기가 새 `id` 로
+  키 시절 날짜를 모두 다시 받는다. 강화 합계는 계정을 가리지 않고 더하므로(`loadEnhancementTotals`) 같은 지출이 두 번 세어진다.
+  - 거둔 키가 여럿이면 첫 키의 `id` 를 잇는다. 로그인이 이미 다른 `id` 를 갖고 있었거나 둘째 이후 키가 있으면, 그 `id` 들의 기기
+    기록을 이어받은 `id` 로 옮긴다(`moveNexonAccountRows`).
+  - 계정 칸이 `UNIQUE` 에 든 표(`enhancement_history_checks` · `enhancement_totals` · `enhancement_recomputes`)에서 같은 줄이
+    겹치면 나중에 적힌 줄(`checked_at` · `updated_at`)을 남긴다. 두 줄은 같은 넥슨 계정의 같은 날을 두 번 받은 것이라, 나중
+    줄이 그 날을 더 많이 담는다. `character_accounts` · `cashbook_entries` 는 계정 칸이 `UNIQUE` 에 없어 그대로 옮긴다.
+  - 기록을 먼저 옮기고 인증 수단을 저장한다. 저장이 실패해도 기록은 아직 살아 있는 키의 `id` 아래에 있다.
 - 넥슨 자격(`NexonCredential`)도 `accountId` 를 든다. 저장 전에 검증하는 키는 아직 계정이 없어 `null` 이다.
 - 메인 계정은 로그인이 있으면 로그인, 없으면 첫 번째 키다. 지금 넥슨을 부를 때 고르는 자격(`credentialOf`)과 같다.
 
@@ -153,7 +162,8 @@ uuid 를 JS 가 아니라 SQLite 가 만드는 이유는 `storage/sqlite/uuid.ts
 | 파일 | 확인하는 것 |
 |---|---|
 | `storage/sqlite/__tests__/record-keys-real-sqlite.test.ts` | 결정 1 · 3: 버전 15 DB 의 다섯 표가 행 하나 안 잃고 값 그대로 옮겨지는지, 행마다 서로 다른 uuid 가 붙는지, 다시 열어도 다시 안 도는지. 결정 2: 옛 조합으로 같은 행을 또 넣으면 `UNIQUE` 가 막고, `id` 없이 쓰는 upsert 가 그대로 도는지. 결정 6: 옛 행의 계정 칸에 빈 글자가 적히고 캐릭터 있는 가계부 기록은 비는지, 부팅 단계가 빈 글자를 메인 계정으로 채우되 이미 다시 조회한 날짜는 새 줄을 남기는지, 계정이 다르면 같은 날짜의 조회 기록이 둘 서는지, 계정 모르는 자격이 아는 계정을 안 지우는지, 메이플 ID 로 옛 계정을 찾는지. 결정 7: 나머지 표의 칸이 이름만 바뀌고 값이 그대로인지 |
-| `storage/__tests__/api-key.spec.ts` | 결정 5 · 7: `kind` 와 id 가 없는 옛 수단이 `type` 과 id 를 받아 한 번 다시 적히고 두 번째 읽기는 같은 id 인지, 옛 `apiKey` 칸에서 올린 키도 id 를 받는지, 같은 키 · 다시 로그인이 id 를 지키는지, 넘긴 계정 id 로 새 키를 저장하는지 |
+| `storage/__tests__/api-key.spec.ts` | 결정 5 · 7: `kind` 와 id 가 없는 옛 수단이 `type` 과 id 를 받아 한 번 다시 적히고 두 번째 읽기는 같은 id 인지, 옛 `apiKey` 칸에서 올린 키도 id 를 받는지, 같은 키 · 다시 로그인이 id 를 지키는지, 넘긴 계정 id 로 새 키를 저장하는지. 로그인이 거둔 첫 키의 id 를 이어받고 거둔 키가 같은 저장에서 빠지는지 |
+| `storage/sqlite/__tests__/nexon-account-move-real-sqlite.test.ts` | 결정 5: 옛 id 의 줄이 이어받은 id 로 옮겨지는지, 계정 칸이 `UNIQUE` 에 든 표에서 겹치면 나중 줄이 남는지, 다른 계정의 줄은 그대로인지 |
 | `features/auth/__tests__/reentry-account-id.spec.ts` | 결정 5: 메이플 ID 가 속했던 계정을 잇되 그 계정이 다른 수단으로 살아 있으면 잇지 않는지 |
 | `features/auth/__tests__/store.spec.ts` | 결정 5: 다시 받은 키를 옛 계정 id 로 저장하는지 |
 | `features/enhancement-history/__tests__/collect.spec.ts` | 결정 6: 옛 조회 기록을 채운 뒤에 그 계정의 기록을 읽고, 그 계정으로 조회 기록을 적는지 |
@@ -165,3 +175,5 @@ uuid 를 JS 가 아니라 SQLite 가 만드는 이유는 `storage/sqlite/uuid.ts
 - ADR-098 (2026-10-26): 남은 다섯 표의 기본키와 파티 약속 id 를 uuid 로 바꾸는 결정을 처음 작성했다(#670). 같은 날
   다계정을 위해 넥슨 계정 id 와 `nexon_account_id` 칸(결정 5 · 6)을, 서버 규칙에 맞춘 칸 이름(결정 7)을 더했다
 - ADR-098 (2026-10-26): 버전 16 이관 · 계정 id · 칸 이름 · 약속 id 를 구현했다
+- ADR-173 (2026-11-05): 결정 5 에 넥슨 로그인이 메이플 ID 가 같은 키를 거두면 그 키의 계정 id 를 이어받는 것을 더했다. 로그인이
+  새 id 를 받아 키 시절 강화 지출이 두 번 세어지던 것을 막는다(#607)

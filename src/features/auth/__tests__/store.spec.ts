@@ -40,6 +40,8 @@ jest.mock('../../server-sync/forget', () => ({ requestAccountDeletion: jest.fn()
 jest.mock('../nexon-login', () => ({ signInWithNexon: jest.fn() }))
 jest.mock('../current-credential', () => ({ currentCredential: jest.fn() }))
 jest.mock('../reentry-account-id', () => ({ reusableNexonAccountId: jest.fn() }))
+jest.mock('../prune-covered-keys', () => ({ pruneCoveredApiKeys: jest.fn() }))
+const { pruneCoveredApiKeys: pruneCoveredApiKeysMock } = jest.requireMock('../prune-covered-keys') as Record<string, jest.Mock>
 const { signInWithNexon: signInWithNexonMock } = jest.requireMock('../nexon-login') as Record<string, jest.Mock>
 const { currentCredential: currentCredentialMock } = jest.requireMock('../current-credential') as Record<string, jest.Mock>
 const { revokeNexonSession: revokeNexonSessionMock } = jest.requireMock('../../../server/nexon-auth') as Record<string, jest.Mock>
@@ -95,6 +97,7 @@ beforeEach(() => {
   removeAllApiKeysMock.mockResolvedValue(undefined)
   clearNexonLoginMock.mockResolvedValue(undefined)
   resolveAfterSignInMock.mockResolvedValue(undefined)
+  pruneCoveredApiKeysMock.mockResolvedValue(undefined)
   // 판정이 안 서는 것이 통상 경로다. 서는 경우만 그 테스트가 직접 세운다.
   probeApiKeyStageMock.mockResolvedValue('undetermined')
   getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
@@ -123,6 +126,26 @@ describe('useAuthStore.restoreFromStorage', () => {
 
     expect(useAuthStore.getState().status).toBe('signedIn')
     expect(fetchCharacterListMock).not.toHaveBeenCalled()
+  })
+
+  // 로그인 직후 서버에서 잇지 못해 남은 키가 있을 수 있다. 다음 로그인까지 미루면 그동안 키가 평문으로 남는다.
+  it('로그인한 채 앱을 켜면 키 거두기를 다시 한다', async () => {
+    getAuthConfigMock.mockResolvedValue({
+      login: { type: 'login', id: 'login-id', session: '세션' },
+      apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }],
+    })
+
+    await useAuthStore.getState().restoreFromStorage()
+
+    expect(pruneCoveredApiKeysMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('키 거두기가 실패해도 앱은 열린다', async () => {
+    pruneCoveredApiKeysMock.mockRejectedValue(new Error('조회가 죽었다'))
+
+    await expect(useAuthStore.getState().restoreFromStorage()).resolves.toBeUndefined()
+
+    expect(useAuthStore.getState().status).toBe('signedIn')
   })
 })
 

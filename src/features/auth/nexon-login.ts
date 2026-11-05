@@ -24,9 +24,8 @@ import { Platform } from 'react-native'
 
 import { openAuthSession } from '../../native/browser'
 import { redeemNexonSession, startNexonLogin } from '../../server/nexon-auth'
-import { setNexonLogin } from '../../storage/api-key'
 import type { Platform as NexonPlatform } from '../../types/auth'
-import { pruneCoveredApiKeys } from './prune-covered-keys'
+import { saveNexonLogin } from './prune-covered-keys'
 
 /** 넥슨에 등록한 값. 인증 세션이 이 주소로 돌아올 때만 콜백을 우리에게 준다. */
 const REDIRECT_URI = 'com.mapleroutine.app://oauth/callback'
@@ -85,12 +84,9 @@ export async function signInWithNexon(): Promise<NexonSignInResult> {
     const session = await redeemUntilSettled(started.redeemKey, receipt)
     if (session === null) return { kind: 'failed' }
 
-    // 못 적으면 다시 켤 때 로그인 상태가 아니다. 성공이라고 말하면 안 된다.
-    await setNexonLogin({ session })
-
-    // 같은 계정의 키가 있으면 거둔다. **로그인은 이미 끝났으므로 실패해도 성공이다** - 못
-    // 거두면 쓸모없는 키가 남을 뿐이고 다음 로그인이 다시 해 본다.
-    await pruneCoveredApiKeys().catch(() => undefined)
+    // 메이플 ID 가 같은 키를 저장하기 전에 서버에서 잇고, 로그인이 그 키의 계정 id 를 이어받아 저장된다. 못 적으면 다시
+    // 켤 때 로그인 상태가 아니다. 성공이라고 말하면 안 된다.
+    await saveNexonLogin(session)
     return { kind: 'signedIn' }
   } catch {
     return { kind: 'failed' }

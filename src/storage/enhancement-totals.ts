@@ -47,6 +47,11 @@ export function subscribeEnhancementTotalsRevision(listener: () => void): () => 
   }
 }
 
+/** 다른 저장소 함수가 이 표의 줄을 바꿨을 때 화면에 알린다. 계정 id 를 옮길 때 겹친 줄이 지워진다. */
+export function notifyEnhancementTotalsChanged(): void {
+  bumpRevision()
+}
+
 function bumpRevision(): void {
   revision += 1
   notifyAfterBatch(() => {

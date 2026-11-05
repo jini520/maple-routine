@@ -4,9 +4,12 @@
 로그인하게 한다. 인증 수단은 API 키와 넥슨 로그인 두 가지다. API 키에 관한 결정은 [[ADR-024]],
 넥슨 로그인에 관한 결정은 [[ADR-025]] 에 있다.
 
-넥슨 로그인 입구는 `NEXON_LOGIN_ENABLED` 로 켜고 끈다. 지금은 꺼져 있다(`false`). 1.0.13 스토어 바이너리를
-잠근 채로 내고, 넥슨의 콜백 주소 검수가 끝나면 이 값만 바꾸는 OTA 로 연다([[ADR-025]] 결정 9). 그래서 지금
-사용자는 API 키로만 들어온다. 이미 로그인한 기기는 로그인을 그대로 쓴다.
+넥슨 로그인 입구는 `NEXON_LOGIN_ENABLED` 로 켜고 끈다. 지금은 켜져 있다(`true`). 넥슨의 콜백 주소 검수가
+승인돼 1.0.13 스토어 바이너리에서 연다([[ADR-025]] 결정 9).
+
+키를 쓰던 사용자가 넥슨으로 로그인하면, 기기는 로그인과 메이플 ID 가 같은 키를 서버에서 로그인한 사람과 이은 뒤 지운다
+([[ADR-025]] 결정 4). 로그인은 그 키의 넥슨 계정 id 를 이어받아 기기 기록이 그대로 이어진다([[ADR-098]] 결정 5). 서버는 키로
+보낸 기록을 로그인한 사람에게 옮긴다([[ADR-017]] 결정 9).
 
 앱을 켰을 때 어느 화면이 나오는지는 [[ADR-026]], 키 발급 안내 사이트는 [[ADR-015]] 에 있다.
 
@@ -27,7 +30,7 @@
 | `features/auth/format.ts` | 키 입력 실패 토스트 문구(`formatAuthError`) |
 | `features/auth/use-api-key-notice.ts` | 조회 오류를 알림으로 넘기는 훅 |
 | `features/auth/nexon-login.ts` | 넥슨 로그인 한 번(`signInWithNexon`) |
-| `features/auth/prune-covered-keys.ts` | 로그인 뒤 같은 계정의 키를 지운다 |
+| `features/auth/prune-covered-keys.ts` | 로그인을 저장하기 전과 로그인한 채 앱을 켤 때, 메이플 ID 가 같은 키를 서버에서 잇고 거둔다. 로그인은 그 키의 계정 id 를 이어받는다 |
 | `features/auth/nexon-login-enabled.ts` | `NEXON_LOGIN_ENABLED`. 넥슨 로그인 입구를 켜고 끈다 |
 | `features/auth/saved-key.ts` | 저장된 첫 키 읽기 · 넥슨 로그인이 있는지 확인 |
 | `features/auth/current-credential.ts` | 넥슨을 부르기 직전에 저장된 설정에서 자격을 고른다 |
@@ -35,13 +38,14 @@
 | `features/auth/legacy-account-ids.ts` | 계정 칸이 생기기 전의 행을 메인 넥슨 계정으로 채우는 부팅 단계([[ADR-098]] 결정 6) |
 | `features/auth/server-identity.ts` | 우리 서버에 보낼 신원 헤더(`Authorization: Bearer` 또는 `x-api-key-hash`) |
 | `lib/nexon-credential.ts` | 저장된 설정에서 자격과 메인 넥슨 계정 id 를 고르는 순수 함수 |
-| `lib/covered-keys.ts` | 로그인이 모두 포함하는 키를 고르는 판정 |
+| `lib/covered-keys.ts` | 로그인과 메이플 ID 집합이 같은 키를 고르는 판정 |
 | `nexon/key-stage.ts` | 키가 개발 단계인지 확인하는 판정(`probeApiKeyStage`) |
 | `nexon/errors.ts` | `isInvalidApiKeyError` · `NexonSignInRequiredError` |
 | `nexon/developer-keys.ts` | 로그인 사용자가 프렌즈 밖 경로에 쓰는 개발자 키 둘 |
 | `server/nexon-auth.ts` | 로그인 시작 · 세션 받기 · 세션 거두기 |
+| `server/api-key-link.ts` | 지울 키의 해시를 보내 서버에서 로그인한 사람과 잇는다 |
 | `storage/api-key.ts` | 인증 수단 목록 저장(`getAuthConfig` · `setApiKey` · `setNexonLogin` · `removeApiKey` · `clearNexonLogin` · `clearAuthConfig`). 수단마다 넥슨 계정 id 를 든다 |
-| `storage/nexon-account-ids.ts` | 옛 행의 빈 계정 칸을 메인 계정 id 로 채운다 |
+| `storage/nexon-account-ids.ts` | 옛 행의 빈 계정 칸을 메인 계정 id 로 채운다. 로그인이 키의 id 를 이어받을 때 옛 id 의 줄을 옮긴다 |
 | `components/molecules/NexonLoginButton/` | 넥슨이 준 이미지 한 장으로 만든 로그인 버튼 |
 | `native/browser.ts` | 앱이 여는 웹 주소를 인앱 브라우저로 연다. 못 열면 시스템 브라우저로 넘긴다 |
 | `app/today/NexonLinkButton.tsx` | today 머리의 `넥슨 ID 연동하기`. 누르면 연동 시트를 연다 |
@@ -143,7 +147,7 @@
 
 | 결과 | 사용자가 보는 것 |
 |---|---|
-| 성공 | `넥슨 계정을 연결했어요` 토스트. 같은 계정의 API 키는 지운다 |
+| 성공 | `넥슨 계정을 연결했어요` 토스트. 메이플 ID 가 같은 API 키는 서버에서 이은 뒤 지운다 |
 | 실패 | `넥슨 로그인에 실패했습니다` 토스트 |
 | 사용자가 창을 닫음 | 아무 일도 없다 |
 | 넥슨 동의 화면에서 `취소` | 아무 일도 없다. 창을 닫은 것과 같다 |
