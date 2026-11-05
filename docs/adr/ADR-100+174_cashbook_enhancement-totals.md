@@ -1,7 +1,7 @@
-# ADR-100 강화 내역을 계산한 합계로 저장하고, 다시 매길 기간은 환경 변수로 건다
+# ADR-100+174 강화 내역을 계산한 합계로 저장하고, 다시 매길 기간은 환경 변수로 건다
 
 > 🟢 유효
-> 관련 소스: `features/enhancement-history/spending.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/legacy-totals.ts` · `storage/enhancement-totals.ts` · `storage/sqlite/enhancement-tables.ts` · `lib/enhancement/cost.ts` · `features/cashbook/records.ts`
+> 관련 소스: `features/enhancement-history/spending.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/legacy-totals.ts` · `storage/enhancement-totals.ts` · `storage/sqlite/enhancement-tables.ts` · `lib/enhancement/cost.ts` · `features/cashbook/records.ts` · `app/cashbook/CashbookScreen.tsx`
 
 ## 배경
 
@@ -88,7 +88,7 @@ SQLite 버전 이관이 아니라 앱이 켜진 뒤 한 번 도는 단계(`ensur
 ```
 기기 enhancement_totals   id · nexon_account_id · history_date · character_name · enhancement_type · enhancement_category
                           · item_group · item_key · item_name · attempts · attempt_cost_meso · destroy_defence_cost_meso
-                          · event_world · updated_at
+                          · from_star · to_star · event_world · updated_at
                           UNIQUE(nexon_account_id, history_date, character_name, enhancement_category, item_group)
 ```
 
@@ -97,6 +97,26 @@ SQLite 버전 이관이 아니라 앱이 켜진 뒤 한 번 도는 단계(`ensur
 - `item_group` 은 장비 key, 없으면 NFC 정규화 뒤 공백을 지운 이름이다. 화면이 장비별로 펼치는 열쇠와 같다([[ADR-047]] 결정 12).
 - 합계 표는 처음부터 계정 칸을 든다. 옛 원본에서 옮긴 줄도 결정 3 의 단계가 메인 계정 id 를 바로 적어, 빈 글자 표시를 거치지
   않는다.
+- `from_star` · `to_star` 는 결정 8 의 스타포스 첫 성과 끝 성이다. 다른 분류의 줄은 `NULL` 이다.
+
+### 결정 8. 스타포스 합계는 그날 첫 성과 끝 성을 들고, 펼친 장비 줄이 `17성 → 21성` 으로 보인다
+
+스타포스 줄을 펼치면 장비마다 횟수와 금액만 있어서, 그 강화로 장비가 몇 성에서 몇 성이 됐는지 알 수 없었다(#876,
+사용자 2026-11-05). 응답 줄에는 강화 전 성(`before_starforce_count`)과 강화 후 성(`after_starforce_count`)이 있다. 원본은
+저장하지 않으므로(결정 1) 묶을 때 합계 줄에 적는다.
+
+- `from_star` 는 그 합계 줄에 든 시도 중 가장 이른 시도(`date_create`)의 강화 전 성이고, `to_star` 는 가장 늦은 시도의 강화
+  후 성이다. 응답은 최신 줄부터 오므로 받은 차례가 아니라 시각으로 고른다.
+- 두 끝만 잇는다. 그 사이에 성이 내려가거나 파괴되어도 끝 성은 마지막 시도의 강화 후 성이다. 같은 이름의 장비를 한 날에 둘
+  강화하면 둘이 한 줄로 묶여(결정 7 의 `item_group`) 다른 장비의 성끼리 이어질 수 있다. 사용자가 받아들인 모양이다(사용자
+  선택 2026-11-05).
+- 성은 횟수와 같은 시도에서 잰다. 전용 재화 줄과 값을 못 매긴 줄은 합계에 들지 않으므로(결정 5) 성에도 들지 않는다.
+- 펼친 장비 줄은 `아케인셰이드 나이트슈즈 17성 → 21성 64회` 다음에 금액이 선다. 성은 횟수와 같은 글자 모양으로 횟수 앞에
+  서고, 화살표는 심볼 강화 줄(`세르니움 7 → 10`)과 같은 `→` 다(사용자 선택). 두 칸 중 하나라도 비면 지금처럼 이름 · 횟수 ·
+  금액만 선다.
+- 칸이 생기기 전에 받은 날은 결정 4 의 다시 매기기 요청으로 채운다. 요청은 스타포스만이고 기간은 조회 하한부터 이 변경을
+  배포한 날까지다(사용자 선택 2026-11-05). 하루에 1 콜이고, 넥슨 로그인 계정은 결정 4 대로 한 회차에 7일씩 받는다. 아직
+  다시 받지 않은 날은 성 없이 선다.
 
 ## 테스트
 
@@ -109,6 +129,9 @@ SQLite 버전 이관이 아니라 앱이 켜진 뒤 한 번 도는 단계(`ensur
 | `lib/enhancement/__tests__/cost.spec.ts` | 스타포스 비용을 두 몫으로 나누고 MVP 할인을 시도 비용에만 붙이는 계산(결정 2) |
 | `features/enhancement-history/__tests__/recompute.spec.ts` | 틀린 요청만 버리는지, 기간을 하한 · 오늘로 자르고 진행 뒤부터 고르는지, 로그인 계정만 7일로 나누는지(결정 4) |
 | `features/enhancement-history/__tests__/collect.spec.ts` (다시 매기기) | 굳은 날도 요청이면 다시 받고 분모에 드는지, 모두 받으면 진행 · 완료를 적고 실패하면 안 적는지, 완료된 요청은 안 도는지(결정 4) |
+| `features/enhancement-history/__tests__/spending.spec.ts` (성) | 최신 줄부터 받아도 가장 이른 시도의 강화 전 성과 가장 늦은 시도의 강화 후 성을 드는지, 중간에 성이 오르내려도 두 끝만 잇는지, 합계에 안 드는 줄은 성에도 안 드는지(결정 8) |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (성) | 갈아 끼울 때 성 칸도 고쳐 적는지, 성 칸이 없던 옛 기기의 표에도 적히고 옛 줄은 비어 있는지(결정 8) |
+| `app/cashbook/__tests__/CashbookScreen.test.tsx` (성) | 펼친 스타포스 장비 줄에 `17성 → 21성` 이 횟수 앞에 서고, 성이 빈 줄은 이름 · 횟수 · 금액만 서는지(결정 8) |
 
 ## 번호 기록
 
@@ -116,3 +139,4 @@ SQLite 버전 이관이 아니라 앱이 켜진 뒤 한 번 도는 단계(`ensur
   받던 결정을 걷고, 할인 전 비용을 저장해 화면에서 할인을 붙이는 결정 2 로 바꿨다. 이어 이벤트 월드 판정 · 굳지 않은 날 갈아
   끼우기 · 서버 전송 범위 · 표(결정 5 ~ 8)를 더했다. #614 를 구현하며 결정 3 의 옮기는 자리를 DB 이관에서 부팅 단계로 고쳤다. #615 를 구현하며 결정 4 의 요청 형식 · 계정별 진행 표를 정했다
 - ADR-100 (2026-10-30): 강화 합계를 서버로 보내지 않게 되어([[ADR-099]] 결정 1) 서버 전송 범위 결정을 지우고 결정 8 을 결정 7 로 당겼다. 결정 2 · 3 · 6 에서 서버 전송에만 걸리던 문장과 서버 표를 지웠다
+- ADR-174 (2026-11-05): 스타포스 합계가 그날 첫 성과 끝 성을 들고 펼친 장비 줄이 보이는 결정 8 을 더하고, 결정 7 의 표에 성 칸 둘을 넣었다(#876)

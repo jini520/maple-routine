@@ -1380,6 +1380,8 @@ const 합계 = (over: Partial<EnhancementTotal> = {}): EnhancementTotal => ({
   attempts: 1,
   attemptCostMeso: 450_000,
   destroyDefenceCostMeso: 0,
+  fromStar: null,
+  toStar: null,
   eventWorld: false,
   ...over,
 })
@@ -1541,8 +1543,8 @@ describe('강화 줄', () => {
     ])
 
     expect(row.kind === 'enhancement' && row.items).toEqual([
-      { itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 2, costMeso: 1_600_000 },
-      { itemKey: 'dea_sidus_earring', targetItem: '데아 시두스 이어링', count: 1, costMeso: 338_000 },
+      { itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 2, costMeso: 1_600_000, fromStar: null, toStar: null },
+      { itemKey: 'dea_sidus_earring', targetItem: '데아 시두스 이어링', count: 1, costMeso: 338_000, fromStar: null, toStar: null },
     ])
   })
 

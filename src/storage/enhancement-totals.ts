@@ -24,6 +24,9 @@ export interface EnhancementTotal {
   attempts: number
   attemptCostMeso: number
   destroyDefenceCostMeso: number
+  /** 스타포스만. 칸이 생기기 전에 받은 줄도 `null` */
+  fromStar: number | null
+  toStar: number | null
   /** 이벤트 월드인가. 판정하지 못했으면 `null` */
   eventWorld: boolean | null
 }
@@ -62,8 +65,8 @@ function bumpRevision(): void {
 const UPSERT_SQL = `
   INSERT INTO enhancement_totals
     (nexon_account_id, history_date, character_name, enhancement_type, enhancement_category, item_group, item_key,
-     item_name, attempts, attempt_cost_meso, destroy_defence_cost_meso, event_world, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     item_name, attempts, attempt_cost_meso, destroy_defence_cost_meso, from_star, to_star, event_world, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT (nexon_account_id, history_date, character_name, enhancement_category, item_group) DO UPDATE SET
     enhancement_type = excluded.enhancement_type,
     item_key = excluded.item_key,
@@ -71,6 +74,8 @@ const UPSERT_SQL = `
     attempts = excluded.attempts,
     attempt_cost_meso = excluded.attempt_cost_meso,
     destroy_defence_cost_meso = excluded.destroy_defence_cost_meso,
+    from_star = excluded.from_star,
+    to_star = excluded.to_star,
     event_world = excluded.event_world,
     updated_at = excluded.updated_at
   RETURNING id
@@ -102,6 +107,8 @@ async function replaceIn(
       total.attempts,
       total.attemptCostMeso,
       total.destroyDefenceCostMeso,
+      total.fromStar,
+      total.toStar,
       eventWorldValue(total.eventWorld),
       now,
     ])
@@ -153,6 +160,8 @@ function rowToTotal(row: Record<string, unknown>): EnhancementTotal {
     attempts: row.attempts as number,
     attemptCostMeso: row.attempt_cost_meso as number,
     destroyDefenceCostMeso: row.destroy_defence_cost_meso as number,
+    fromStar: (row.from_star as number | null | undefined) ?? null,
+    toStar: (row.to_star as number | null | undefined) ?? null,
     eventWorld: eventWorld === null || eventWorld === undefined ? null : eventWorld === 1,
   }
 }

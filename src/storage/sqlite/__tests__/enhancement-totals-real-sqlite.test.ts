@@ -12,6 +12,7 @@ import type { EnhancementTotalDraft } from '../../../features/enhancement-histor
 import { loadEnhancementTotals, replaceEnhancementTotals } from '../../enhancement-totals'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
+import { NEW_UUID_SQL } from '../uuid'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 jest.mock('../../api-key', () => ({ getAuthConfig: jest.fn() }))
@@ -64,6 +65,8 @@ const draft = (over: Partial<EnhancementTotalDraft> = {}): EnhancementTotalDraft
   attempts: 1,
   attemptCostMeso: 450_000,
   destroyDefenceCostMeso: 0,
+  fromStar: null,
+  toStar: null,
   eventWorld: false,
   ...over,
 })
@@ -92,6 +95,46 @@ describe('갈아 끼우기', () => {
 
     expect((await loadEnhancementTotals('2026-10-20', '2026-10-20')).map((total) => total.characterName).sort())
       .toEqual(['낟낟', '부캐'])
+  })
+
+  // 다시 매기기 요청이 성 없는 옛 줄을 이 길로 채운다. 고쳐 적기에서 칸이 빠지면 다시 받아도 성이 안 선다.
+  it('갈아 끼울 때 성 칸도 고쳐 적는다', async () => {
+    const starforce = (fromStar: number | null, toStar: number | null) =>
+      draft({ enhancementType: 'starforce', enhancementCategory: 'starforce', fromStar, toStar })
+    await replaceEnhancementTotals('account-main', 'starforce', '2026-10-20', [starforce(null, null)], NOW)
+
+    await replaceEnhancementTotals('account-main', 'starforce', '2026-10-20', [starforce(17, 21)], NOW)
+
+    expect(await loadEnhancementTotals('2026-10-20', '2026-10-20')).toEqual([
+      expect.objectContaining({ fromStar: 17, toStar: 21 }),
+    ])
+  })
+
+  // 성 칸 전에 표를 만든 기기는 CREATE 문이 칸을 안 붙인다. 칸이 없으면 INSERT 가 실패해 그 날의 강화 지출이 통째로 안 적힌다.
+  it('성 칸이 없던 옛 기기의 표에도 적힌다. 옛 줄의 두 칸은 NULL 이다', async () => {
+    real.inspect((db) => {
+      db.exec(`CREATE TABLE enhancement_totals (
+        id TEXT NOT NULL PRIMARY KEY DEFAULT (${NEW_UUID_SQL}),
+        nexon_account_id TEXT NOT NULL, history_date TEXT NOT NULL, character_name TEXT NOT NULL,
+        enhancement_type TEXT NOT NULL, enhancement_category TEXT NOT NULL, item_group TEXT NOT NULL,
+        item_key TEXT, item_name TEXT NOT NULL, attempts INTEGER NOT NULL, attempt_cost_meso INTEGER NOT NULL,
+        destroy_defence_cost_meso INTEGER NOT NULL, event_world INTEGER, updated_at TEXT NOT NULL,
+        UNIQUE (nexon_account_id, history_date, character_name, enhancement_category, item_group))`)
+      db.exec(
+        `INSERT INTO enhancement_totals (nexon_account_id, history_date, character_name, enhancement_type, enhancement_category,
+           item_group, item_name, attempts, attempt_cost_meso, destroy_defence_cost_meso, event_world, updated_at)
+         VALUES ('account-main', '2026-10-19', '낟낟', 'starforce', 'starforce', 'key:arcane_umbra_knuckle',
+           '아케인셰이드 클로', 1, 1000, 0, 0, '2026-10-19T00:00:00.000Z')`,
+      )
+    })
+
+    const starforce = draft({ enhancementType: 'starforce', enhancementCategory: 'starforce', fromStar: 17, toStar: 21 })
+    await replaceEnhancementTotals('account-main', 'starforce', '2026-10-20', [starforce], NOW)
+
+    expect((await loadEnhancementTotals('2026-10-19', '2026-10-20')).map((total) => [total.fromStar, total.toStar])).toEqual([
+      [null, null],
+      [17, 21],
+    ])
   })
 
   it('이벤트 월드 판정의 세 값을 그대로 되읽는다', async () => {

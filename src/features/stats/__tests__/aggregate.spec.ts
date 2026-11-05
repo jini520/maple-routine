@@ -94,7 +94,7 @@ function enhancement(characterName: string, category: 'starforce' | 'cube_reset'
     characterName,
     payoutMeso,
     count: 1,
-    items: [{ itemKey: null, targetItem: '아케인셰이드 투구', count: 1, costMeso: payoutMeso }],
+    items: [{ itemKey: null, targetItem: '아케인셰이드 투구', count: 1, costMeso: payoutMeso, fromStar: null, toStar: null }],
   }
 }
 
@@ -484,8 +484,8 @@ describe('categoryTotalsBetween', () => {
             count: 3,
             unpricedCount: 1,
             items: [
-              { itemKey: 'arcane_shade_hat', targetItem: '아케인셰이드 투구', count: 2, costMeso: 300, unpricedCount: 0 },
-              { itemKey: null, targetItem: '모르는 장비', count: 1, costMeso: 0, unpricedCount: 1 },
+              { itemKey: 'arcane_shade_hat', targetItem: '아케인셰이드 투구', count: 2, costMeso: 300, unpricedCount: 0, fromStar: null, toStar: null },
+              { itemKey: null, targetItem: '모르는 장비', count: 1, costMeso: 0, unpricedCount: 1, fromStar: null, toStar: null },
             ],
           },
         ],

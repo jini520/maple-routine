@@ -603,6 +603,9 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'cashbook_entries', 'nexon_account_id', 'TEXT')
   // 메이플 ID 기록의 ID. 옛 행은 NULL 이고, 그 넥슨 계정의 메이플 ID 가 하나뿐이면 부팅 단계가 채운다.
   await ensureColumn(db, 'cashbook_entries', 'account_id', 'TEXT')
+  // 스타포스 첫 성 · 끝 성. 옛 줄은 NULL 이고 다시 매기기 요청이 그 날을 다시 받아 채운다.
+  await ensureColumn(db, 'enhancement_totals', 'from_star', 'INTEGER')
+  await ensureColumn(db, 'enhancement_totals', 'to_star', 'INTEGER')
   // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
   await runVersionedMigrations(db)
   // 기본키를 uuid 로 옮긴 뒤에 선다. 종전에는 기본키가 곧 이 인덱스였다.
