@@ -67,7 +67,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
       },
       {
         category: 'feature',
-        text: '유틸리티에 주간 보스 수익 계산기가 추가됩니다.',
+        text: '유틸리티에 주간 보스 수입 계산기가 추가됩니다.',
       },
       {
         category: 'feature',
