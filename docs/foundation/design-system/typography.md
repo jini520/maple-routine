@@ -112,6 +112,7 @@
 | 입력 카드 제목 | `text-sm font-bold` | `InputCard` 머리. 낮은 화면에서 카드를 밀어 올리지 않게 시트 제목보다 작다 |
 | 입력 칸 라벨 | `text-xs` | `판매가` · `파티 인원` |
 | 입력 값 | `text-sm font-semibold` | 고른 값 · 적어 둔 숫자 |
+| 취소선 원래 값 | `text-sm` | 줄이기 전의 수. 줄인 수 오른쪽에 취소선으로 선다. 헥사 매트릭스 필요 조각의 원래 개수 |
 | 자리표시자 | `text-sm` | `아이템 명` |
 | 치는 글자 | `text-base` | `InputCard` 의 글자 칸 · API 키 칸 |
 | 큰 입력 숫자 | `text-lg font-semibold` | `InputCard` 의 숫자 칸 · `NumberPad` 키 · `TimeWheel` |
