@@ -1,5 +1,5 @@
 /**
- * 키 입력 상단 시트. 경고 모달에서 `그래도 API 키로 시작하기` 를 고른 사람만 온다.
+ * 키 입력 상단 시트. 경고 모달의 `그래도 API 키로 시작하기` 나, 넥슨 로그인 입구가 꺼졌을 때의 `API 키로 로그인` 이 연다.
  *
  * 위에서 내려오는 것은 키보드 때문이다. 키보드는 아래에서 올라오므로 위에 선 입력칸과 `확인` 을 가리지 않는다.
  * 머리 줄의 배지는 경고를 지나온 뒤에도 키 경로가 제한된 경로라는 것을 한 줄로 남긴다.
@@ -10,6 +10,7 @@ import { View } from 'react-native'
 
 import { AlertTriangleIcon, Badge, KeyRoundIcon, Text } from '../../components/atoms'
 import { TopSheet } from '../../components/organisms/TopSheet/TopSheet'
+import { NEXON_LOGIN_ENABLED } from '../../features/auth/nexon-login-enabled'
 import { ApiKeyForm } from './ApiKeyForm'
 
 export function ApiKeySheet(props: {
@@ -27,12 +28,15 @@ export function ApiKeySheet(props: {
             <KeyRoundIcon className="h-4 w-4 text-primary-ink" strokeWidth={1.75} aria-hidden />
           </View>
           <Text className="flex-1 text-base font-bold text-text">API 키로 시작하기</Text>
-          <Badge
-            variant="error"
-            icon={<AlertTriangleIcon className="h-3 w-3 text-error-ink" strokeWidth={2} aria-hidden />}
-          >
-            일부 기능 제한
-          </Badge>
+          {/* 넥슨 로그인보다 제한된 경로라는 표시라, 넥슨 로그인이 없으면 무엇에 비해 제한되는지 말이 안 된다. */}
+          {NEXON_LOGIN_ENABLED && (
+            <Badge
+              variant="error"
+              icon={<AlertTriangleIcon className="h-3 w-3 text-error-ink" strokeWidth={2} aria-hidden />}
+            >
+              일부 기능 제한
+            </Badge>
+          )}
         </View>
         <ApiKeyForm
           isSubmitting={props.isSubmitting}

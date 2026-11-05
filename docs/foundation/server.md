@@ -41,8 +41,8 @@
 | `DELETE /v1/auth/nexon/session` | 세션 | | | 15초 |
 | `POST /v1/friends/stream` | 세션 | `{ tasks: [{ kind, date?, ocid? }] }` | gzip NDJSON 줄. 상한을 넘으면 503 · 세션이 죽었으면 401 | 130초 |
 
-넥슨 로그인 입구는 앱에서 켜져 있다(`NEXON_LOGIN_ENABLED = true`). 그래서 쓰기 요청의 신원은 로그인한 사용자는 세션,
-API 키 사용자는 키 해시다.
+쓰기 요청의 신원은 넥슨으로 로그인한 사용자는 세션, API 키 사용자는 키 해시다. 앱의 넥슨 로그인 입구는 지금 꺼져
+있어(`NEXON_LOGIN_ENABLED = false`, [[ADR-025]] 결정 9) 새로 로그인하는 사용자는 없고, 이미 로그인한 기기만 세션을 보낸다.
 
 ## 신원 헤더
 
