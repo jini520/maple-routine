@@ -1020,8 +1020,8 @@ export function loadFragmentStorage(
 }
 
 /**
- * 헥사 강화가 보관 조각을 가져올 캐릭터와 그 보관. 강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID 의 추적 캐릭터를
- * 캐릭터 관리 순서로 둔다.
+ * 헥사 강화가 보관 조각을 가져올 캐릭터와 그 보관. 강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID · 같은 월드의
+ * 추적 캐릭터를 캐릭터 관리 순서로 둔다. 월드는 캐릭터 기본 정보 캐시에서 읽는다.
  *
  * 한 캐릭터라도 못 읽으면 `null` 이다. 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.
  *
@@ -1038,6 +1038,7 @@ export async function loadHexaStorages(
       ocid,
       trackedOcids: trackedOcids ?? [],
       accountOf: (each) => accountOfOcid(sightings, each),
+      worldOf: (each) => readCharacterBasic(each)?.profile?.worldKey ?? null,
     })
     return await Promise.all(
       candidates.map(async (each) => ({

@@ -103,23 +103,33 @@ describe('hexaSpendMeso: 보관에서 가져온 조각', () => {
 })
 
 describe('hexaStorageCandidates: 보관을 가져오는 캐릭터와 차례', () => {
-  const accounts: Record<string, string> = { main: 'A', alt1: 'A', alt2: 'A', other: 'B' }
+  const accounts: Record<string, string> = { main: 'A', alt1: 'A', alt2: 'A', otherWorld: 'A', noWorld: 'A', other: 'B' }
+  const worlds: Record<string, string> = { main: 'scania', alt1: 'scania', alt2: 'scania', otherWorld: 'luna', other: 'scania' }
   const accountOf = (ocid: string): string | null => accounts[ocid] ?? null
+  const worldOf = (ocid: string): string | null => worlds[ocid] ?? null
 
-  it('강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID 의 추적 캐릭터를 캐릭터 관리 순서로 둔다', () => {
+  it('강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID · 같은 월드의 추적 캐릭터를 캐릭터 관리 순서로 둔다', () => {
     expect(
-      hexaStorageCandidates({ ocid: 'main', trackedOcids: ['alt2', 'other', 'main', 'alt1'], accountOf }),
+      hexaStorageCandidates({
+        ocid: 'main',
+        trackedOcids: ['alt2', 'other', 'otherWorld', 'noWorld', 'main', 'alt1'],
+        accountOf,
+        worldOf,
+      }),
     ).toEqual(['main', 'alt2', 'alt1'])
   })
 
-  it('메이플 ID 를 모르면 강화한 캐릭터 자신뿐이다', () => {
-    expect(
-      hexaStorageCandidates({ ocid: 'lost', trackedOcids: ['lost', 'main', 'alt1'], accountOf }),
-    ).toEqual(['lost'])
+  it('메이플 ID 나 월드를 모르면 강화한 캐릭터 자신뿐이다', () => {
+    expect(hexaStorageCandidates({ ocid: 'lost', trackedOcids: ['lost', 'main', 'alt1'], accountOf, worldOf })).toEqual([
+      'lost',
+    ])
+    expect(hexaStorageCandidates({ ocid: 'noWorld', trackedOcids: ['noWorld', 'main'], accountOf, worldOf })).toEqual([
+      'noWorld',
+    ])
   })
 
   it('강화한 캐릭터가 추적 목록에 없어도 먼저 선다', () => {
-    expect(hexaStorageCandidates({ ocid: 'main', trackedOcids: ['alt1'], accountOf })).toEqual(['main', 'alt1'])
+    expect(hexaStorageCandidates({ ocid: 'main', trackedOcids: ['alt1'], accountOf, worldOf })).toEqual(['main', 'alt1'])
   })
 })
 
