@@ -8,7 +8,8 @@
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
 import { useState, type ReactNode } from 'react'
 import { Platform, Pressable, Text, View } from 'react-native'
-import { act, fireEvent, within } from '@testing-library/react-native'
+import { act, fireEvent, renderHook, within } from '@testing-library/react-native'
+import { GESTURE_SOURCE, type GestureEventsHandlersHookType } from '@gorhom/bottom-sheet'
 import type { Metrics } from 'react-native-safe-area-context'
 
 // `jest.mock` 팩토리는 호이스팅돼 스코프 밖 변수를 못 읽는다. **`mock` 접두 이름만** 예외다.
@@ -17,6 +18,8 @@ const mockPresent = jest.fn()
 const mockScrollTo = jest.fn()
 /** 시트를 닫는 손잡이. 이탈 애니메이션을 돌린 뒤 `onDismiss` 를 부른다. */
 const mockDismiss = jest.fn()
+/** 라이브러리 기본 끌기 처리기가 받은 출처. 시트의 처리기가 무엇으로 넘겼는지를 여기서 본다. */
+const mockDragSources: number[] = []
 
 jest.mock('@gorhom/bottom-sheet', () => {
   const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
@@ -35,6 +38,13 @@ jest.mock('@gorhom/bottom-sheet', () => {
     }),
     // 넘긴 것을 그대로 돌려준다. 시트가 무엇을 넘겼는지는 프롭에서 본다.
     useBottomSheetTimingConfigs: (config: unknown) => config,
+    GESTURE_SOURCE: jest.requireActual<typeof import('@gorhom/bottom-sheet')>('@gorhom/bottom-sheet').GESTURE_SOURCE,
+    useGestureEventsHandlersDefault: () => ({
+      handleOnStart: (source: number) => mockDragSources.push(source),
+      handleOnChange: () => {},
+      handleOnEnd: () => {},
+      handleOnFinalize: () => {},
+    }),
     useBottomSheetInternal: () =>
       jest.requireActual<typeof import('../../../__tests__/bottom-sheet-internal-fake')>(
         '../../../__tests__/bottom-sheet-internal-fake',
@@ -270,6 +280,26 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
     })
 
     expect(위여백()).toBe(67)
+  })
+
+  // 재기 전 추정값에 머물면, 추정보다 큰 머리의 아래쪽을 잡았을 때 스크롤된 만큼 더 당겨야 닫히는 결함이 그대로 남는다.
+  it('잰 머리 · 바닥 줄 높이로 끌기가 스크롤 밖에서 시작했는지 가른다', async () => {
+    const { getByTestId } = await 고정시트()
+    await fireEvent(getByTestId('bottom-sheet-header'), 'layout', { nativeEvent: { layout: { height: 90 } } })
+    await fireEvent(getByTestId('bottom-sheet-footer'), 'layout', { nativeEvent: { layout: { height: 100 } } })
+    const hook = getByTestId('sheet').props.gestureEventsHandlersHook as GestureEventsHandlersHookType
+    const { result } = await renderHook(() => hook())
+    /** 시트 윗변에서 `y` 만큼 아래에 손가락을 대고 끌었을 때 라이브러리가 받은 출처. */
+    const 출처 = (y: number): number | undefined => {
+      mockDragSources.length = 0
+      result.current.handleOnStart(GESTURE_SOURCE.CONTENT, { y, translationY: 0 } as never)
+      return mockDragSources[0]
+    }
+
+    // 가짜 시트 상태는 컨테이너 844 · 윗변 0 이라 시트 높이가 844 다. 머리 추정은 60, 바닥 줄 추정은 72 다.
+    expect(출처(85)).toBe(GESTURE_SOURCE.HANDLE)
+    expect(출처(95)).toBe(GESTURE_SOURCE.CONTENT)
+    expect(출처(844 - 95)).toBe(GESTURE_SOURCE.HANDLE)
   })
 
   /**

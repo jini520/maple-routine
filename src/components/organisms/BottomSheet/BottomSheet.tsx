@@ -25,7 +25,6 @@ import Animated, {
   useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated'
@@ -35,9 +34,7 @@ import {
   BottomSheetScrollView,
   useBottomSheetInternal,
   useBottomSheetTimingConfigs,
-  useGestureEventsHandlersDefault,
   type BottomSheetBackdropProps,
-  type GestureEventsHandlersHookType,
 } from '@gorhom/bottom-sheet'
 
 import { vars } from 'nativewind'
@@ -50,14 +47,8 @@ import { buildSheetScopeVariables } from '../../../theme/theme-vars'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { nextScrimOpacity } from './scrim-opacity'
 import { useStepDissolve } from './step-dissolve'
-import {
-  bottomSheetDragOffset,
-  floatingLayerHeight,
-  SHEET_SIDE_GAP_PX,
-  SHEET_RADIUS,
-  SNAP_BACK,
-  sheetShape,
-} from './bottom-sheet-drag'
+import { floatingLayerHeight, SHEET_SIDE_GAP_PX, SHEET_RADIUS, sheetShape } from './bottom-sheet-drag'
+import { sheetDragHandlers, type FixedRows } from './sheet-drag-handlers'
 import { screenCornerRadius } from '../../../native/screen-corners'
 import { SheetFooterInset } from './sheet-footer-inset'
 
@@ -428,45 +419,25 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
   /** 끄는 동안 시트가 좌우 · 위로 따라간 거리. 바탕과 내용이 같은 값으로 움직인다. */
   const dragX = useSharedValue(0)
   const dragY = useSharedValue(0)
+  /** 머리 · 바닥 줄의 높이. 끌기가 스크롤 밖에서 시작했는지를 처리기가 이것으로 가른다. */
+  const fixedRows = useSharedValue<FixedRows>({ top: 0, bottom: 0 })
   /**
    * 라이브러리의 기본 끌기 처리 위에 끈 거리를 받는 몫을 얹는다. 라이브러리가 몸통 위치를 `transform` 으로 덮어써서
    * 시트를 바깥에서 옮길 수 없기 때문이다. 처리기가 렌더마다 새것이면 제스처가 다시 만들어지므로 한 번만 만든다.
    */
-  const gestureEventsHandlersHook = useMemo<GestureEventsHandlersHookType>(
-    () =>
-      function useSheetDragHandlers() {
-        const base = useGestureEventsHandlersDefault()
-        return {
-          ...base,
-          handleOnChange(source, payload) {
-            'worklet'
-            base.handleOnChange(source, payload)
-            const offset = bottomSheetDragOffset(payload.translationX, payload.translationY)
-            dragX.set(offset.x)
-            dragY.set(offset.y)
-          },
-          // 둘 다에서 돌려놓는다. 라이브러리는 정상 종료(`onEnd`) 뒤의 `onFinalize` 를 처리기까지 넘기지 않아, 한쪽에만 두면
-          // 놓은 뒤에도 시트가 옆으로 밀린 채 남았다(실기기).
-          handleOnEnd(source, payload) {
-            'worklet'
-            base.handleOnEnd(source, payload)
-            dragX.set(withSpring(0, SNAP_BACK))
-            dragY.set(withSpring(0, SNAP_BACK))
-          },
-          handleOnFinalize(source, payload) {
-            'worklet'
-            base.handleOnFinalize(source, payload)
-            dragX.set(withSpring(0, SNAP_BACK))
-            dragY.set(withSpring(0, SNAP_BACK))
-          },
-        }
-      },
-    [dragX, dragY],
+  const gestureEventsHandlersHook = useMemo(
+    () => sheetDragHandlers(dragX, dragY, fixedRows),
+    [dragX, dragY, fixedRows],
   )
 
   /** 고정된 머리가 차지한 높이. 흐름 밖이라 스크롤 내용의 `paddingTop` 이 이만큼을 되돌려 준다. */
   const [headerHeight, setHeaderHeight] = useState(0)
   const [footerHeight, setFooterHeight] = useState(0)
+  const fixedTop = props.header === undefined ? 0 : headerHeight > 0 ? headerHeight : HEADER_GUESS
+  const fixedBottom = props.footer === undefined ? 0 : footerHeight > 0 ? footerHeight : FOOTER_GUESS
+  useEffect(() => {
+    fixedRows.set({ top: fixedTop, bottom: fixedBottom })
+  }, [fixedRows, fixedTop, fixedBottom])
   /**
    * 구르는 자리의 위아래에 **가려진 내용이 있나**. 페이드는 그때만 뜬다.
    *
@@ -564,7 +535,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       <SheetLayer layer={{ sideGap, bottomRadius, dragX, dragY }}>
       {/*
         그랩 핸들. 라이브러리 기본 핸들도 `handleComponent` 슬롯도 안 그려져서 첫 자식으로 직접 놓는다.
-        핸들을 잡고 끄는 제스처는 없고 내용을 끌어 닫는 경로만 남는다.
+        핸들 자체는 그림이다. 핸들 자리를 잡은 끌기는 그 밑의 머리가 받고, 처리기가 머리에서 시작한 끌기를 핸들 끌기로 넘긴다.
 
         흐름에서 빼 놓을 것(`position: absolute`). `handleComponent={null}` 이라 라이브러리는 핸들
         높이를 0 으로 보고 스크롤 내용만 재는데, 흐름 안에 두면 그 위에 24pt 가 더 얹혀 딱 그만큼
