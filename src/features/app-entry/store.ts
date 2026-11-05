@@ -17,6 +17,8 @@ import {
 import { setMvpOnboardingPending } from '../../storage/mvp-grade-prefs'
 import type { MapleAccount } from '../../types'
 import { needsMvpOnboarding } from '../mvp-grade/onboarding'
+import { queryClient } from '../query/client'
+import { queryKeys } from '../query/keys'
 import { seedRememberedLevels } from '../cashbook/remembered-levels'
 import { seedManualTrackedContent } from '../tracking-mode/seed'
 import { useTrackingModeStore } from '../tracking-mode/store'
@@ -109,6 +111,10 @@ export const useAppEntryStore = create<AppEntryStore>()((set) => ({
       onSeedStart?.()
       await seedManualTrackedContent(ocids)
     }
+
+    // 캐릭터 설정 화면이 빈 목록을 캐시에 읽어 두었고, 그 캐시는 다시 읽지 않는다. 덮지 않으면 앱이 열려도 today 가
+    // 빈 목록을 본다. 시드 뒤에 덮는다. 덮는 순간 화면이 멤버십을 읽는데, 시드 전이면 빈 멤버십이 선다.
+    queryClient.setQueryData(queryKeys.trackedOcids(), ocids)
 
     // 표시를 먼저 적는다. 그 사이 앱이 꺼져도 다시 켤 때 MVP 화면부터 잇는다.
     if (await needsMvpOnboarding()) {
