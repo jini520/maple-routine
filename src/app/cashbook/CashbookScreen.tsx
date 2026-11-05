@@ -378,7 +378,9 @@ function EnhancedItemRows(props: {
             {item.targetItem}
           </Text>
           <Text numberOfLines={1} className="shrink-0 text-11 text-text-disabled" style={TABULAR_NUMS}>
-            {`${item.count}회`}
+            {item.fromStar !== null && item.toStar !== null
+              ? `${item.fromStar}성 → ${item.toStar}성 ${item.count}회`
+              : `${item.count}회`}
           </Text>
           <Text className="ml-auto shrink-0 text-xs font-semibold text-fall-ink" style={TABULAR_NUMS}>
             {formatMesoSigned(item.costMeso, '−')}

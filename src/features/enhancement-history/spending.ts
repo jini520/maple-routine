@@ -21,6 +21,8 @@ import type { EnhancementKind } from '../../nexon/history/client'
 export interface EnhancementSource {
   kind: EnhancementKind
   dateKey: string
+  /** `date_create` 원본. 응답이 최신 줄부터 와서 첫 성과 끝 성을 이 시각으로 고른다 */
+  createdAt: string
   characterName: string
   /** API 이름 원문. 화면은 이 글자를 보인다 */
   targetItem: string
@@ -45,6 +47,10 @@ export interface EnhancementTotalDraft {
   attempts: number
   attemptCostMeso: number
   destroyDefenceCostMeso: number
+  /** 스타포스의 가장 이른 시도의 강화 전 성. 다른 분류는 `null` */
+  fromStar: number | null
+  /** 스타포스의 가장 늦은 시도의 강화 후 성. 다른 분류는 `null` */
+  toStar: number | null
   /** 이벤트 월드 캐릭터인가. 캐릭터 목록을 못 받아 판정하지 못했으면 `null` */
   eventWorld: boolean | null
 }
@@ -228,7 +234,9 @@ export function summarizeEnhancement(
   entries: readonly EnhancementSource[],
   eventNames: ReadonlySet<string> | null,
 ): EnhancementTotalDraft[] {
-  const totals = new Map<string, EnhancementTotalDraft>()
+  const totals = new Map<string, Omit<EnhancementTotalDraft, 'fromStar' | 'toStar'>>()
+  const firsts = new Map<string, EnhancementSource>()
+  const lasts = new Map<string, EnhancementSource>()
   for (const entry of entries) {
     if (usesSpecialCurrency(entry)) continue
     const parts = enhancementCostPartsOf(entry)
@@ -236,6 +244,12 @@ export function summarizeEnhancement(
     const category = categoryOf(entry)
     const itemGroup = itemGroupOf(entry.itemKey, entry.targetItem)
     const key = [entry.dateKey, entry.characterName, category, itemGroup].join('|')
+    if (entry.kind === 'starforce') {
+      const first = firsts.get(key)
+      if (first === undefined || timeOf(entry) < timeOf(first)) firsts.set(key, entry)
+      const last = lasts.get(key)
+      if (last === undefined || timeOf(entry) > timeOf(last)) lasts.set(key, entry)
+    }
     const total = totals.get(key) ?? {
       historyDate: entry.dateKey,
       characterName: entry.characterName,
@@ -254,5 +268,19 @@ export function summarizeEnhancement(
     total.destroyDefenceCostMeso += parts.destroyDefenceMeso
     totals.set(key, total)
   }
-  return [...totals.values()]
+  return [...totals].map(([key, total]) => ({
+    ...total,
+    fromStar: starOf(firsts.get(key), 'before_starforce_count'),
+    toStar: starOf(lasts.get(key), 'after_starforce_count'),
+  }))
+}
+
+function timeOf(entry: EnhancementSource): number {
+  return Date.parse(entry.createdAt)
+}
+
+/** @param key `before_starforce_count` · `after_starforce_count` */
+function starOf(entry: EnhancementSource | undefined, key: string): number | null {
+  const value = entry === undefined ? undefined : field(entry.payload, key)
+  return typeof value === 'number' ? value : null
 }

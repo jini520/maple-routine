@@ -4,6 +4,7 @@ import type { EnhancementSource } from '../spending'
 const entry = (over: Partial<EnhancementSource> = {}): EnhancementSource => ({
   kind: 'cube',
   dateKey: '2026-09-05',
+  createdAt: '2026-09-05T10:00:00.000+09:00',
   characterName: '낟낟',
   targetItem: '아케인셰이드 클로',
   itemKey: 'arcane_umbra_knuckle',

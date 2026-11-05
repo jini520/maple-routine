@@ -1720,8 +1720,8 @@ describe('강화 줄', () => {
     payoutMeso: 1_200_000_000,
     count: 47,
     items: [
-      { itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 32, costMeso: 980_000_000 },
-      { itemKey: 'dea_sidus_earring', targetItem: '데아 시두스 이어링', count: 15, costMeso: 220_000_000 },
+      { itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 32, costMeso: 980_000_000, fromStar: null, toStar: null },
+      { itemKey: 'dea_sidus_earring', targetItem: '데아 시두스 이어링', count: 15, costMeso: 220_000_000, fromStar: null, toStar: null },
     ],
   }
   const 에디셔널줄 = {
@@ -1730,7 +1730,9 @@ describe('강화 줄', () => {
     characterName: '낟낟',
     payoutMeso: 740_000_000,
     count: 10,
-    items: [{ itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 10, costMeso: 740_000_000 }],
+    items: [
+      { itemKey: 'arcane_umbra_knuckle', targetItem: '아케인셰이드 클로', count: 10, costMeso: 740_000_000, fromStar: null, toStar: null },
+    ],
   }
 
   beforeEach(() => {
@@ -1778,6 +1780,19 @@ describe('강화 줄', () => {
     expect(view.getByTestId('cashbook-item-row-dea_sidus_earring')).toHaveTextContent(
       '데아 시두스 이어링15회−2.2억',
     )
+  })
+
+  // 성이 빈 줄은 다시 매기기 요청이 아직 안 채운 날의 줄이다. 빈 칸을 지어내지 않고 전처럼 선다.
+  it('스타포스 장비 줄은 횟수 앞에 첫 성과 끝 성이 서고, 성이 빈 줄은 이름 · 횟수 · 금액만 선다', async () => {
+    const [클로, 이어링] = 스타포스줄.items
+    그날줄을(고른날, [{ ...스타포스줄, items: [{ ...클로, fromStar: 17, toStar: 21 }, 이어링] }])
+    const view = await 그리기()
+    await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*펼치기$/)
+
+    expect(view.getByTestId('cashbook-item-row-arcane_umbra_knuckle')).toHaveTextContent(
+      '아케인셰이드 클로17성 → 21성 32회−9.8억',
+    )
+    expect(view.getByTestId('cashbook-item-row-dea_sidus_earring')).toHaveTextContent('데아 시두스 이어링15회−2.2억')
   })
 
   // 한 번에 하나만 펼친다. 둘이 같은 장비를 만졌으면 판이 둘 서서 신원이 겹친다.

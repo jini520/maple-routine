@@ -3,6 +3,7 @@ import { enhancementCostPartsOf, summarizeEnhancement, type EnhancementSource } 
 const entry = (over: Partial<EnhancementSource> = {}): EnhancementSource => ({
   kind: 'cube',
   dateKey: '2026-09-05',
+  createdAt: '2026-09-05T10:00:00.000+09:00',
   characterName: '낟낟',
   targetItem: '아케인셰이드 클로',
   itemKey: 'arcane_umbra_knuckle',
@@ -276,6 +277,37 @@ describe('묶기', () => {
     const rows = summarizeEnhancement([entry({ itemLevel: 150 }), entry({ itemLevel: null })], NO_EVENT)
 
     expect(rows).toEqual([expect.objectContaining({ attempts: 1, attemptCostMeso: 450_000 })])
+  })
+})
+
+describe('스타포스 첫 성과 끝 성', () => {
+  const attempt = (time: string, before: number, after: number, upgradeItem = '') =>
+    entry({
+      kind: 'starforce',
+      itemLevel: null,
+      createdAt: `2026-09-05T${time}:00.000+09:00`,
+      payload: { before_starforce_count: before, after_starforce_count: after, upgrade_item: upgradeItem },
+    })
+
+  // 넥슨은 최신 줄부터 준다. 받은 차례로 고르면 첫 성과 끝 성이 뒤바뀐다.
+  it('최신 줄부터 받아도 가장 이른 시도의 강화 전 성과 가장 늦은 시도의 강화 후 성을 든다', () => {
+    const rows = summarizeEnhancement([attempt('21:00', 20, 21), attempt('20:00', 18, 20), attempt('19:00', 17, 18)], NO_EVENT)
+
+    expect(rows).toEqual([expect.objectContaining({ attempts: 3, fromStar: 17, toStar: 21 })])
+  })
+
+  // 가장 높이 오른 성이 아니라 마지막 시도가 남긴 성이다.
+  it('중간에 성이 오르내려도 두 끝만 잇는다', () => {
+    const rows = summarizeEnhancement([attempt('21:00', 19, 18), attempt('20:00', 18, 19), attempt('19:00', 17, 18)], NO_EVENT)
+
+    expect(rows).toEqual([expect.objectContaining({ fromStar: 17, toStar: 18 })])
+  })
+
+  // 성은 횟수와 같은 시도에서 잰다. 펄스 인핸서 줄은 횟수에 안 드니 성에도 안 든다.
+  it('합계에 안 드는 줄은 성에도 안 든다', () => {
+    const rows = summarizeEnhancement([attempt('20:00', 18, 19), attempt('19:00', 17, 18, '펄스 인핸서')], NO_EVENT)
+
+    expect(rows).toEqual([expect.objectContaining({ attempts: 1, fromStar: 18, toStar: 19 })])
   })
 })
 

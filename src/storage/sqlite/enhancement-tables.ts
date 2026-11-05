@@ -25,6 +25,9 @@ export const ENHANCEMENT_TOTALS_BODY = `(
     attempt_cost_meso INTEGER NOT NULL,
     -- 파괴 방지 추가분. 어떤 할인도 받지 않는다.
     destroy_defence_cost_meso INTEGER NOT NULL,
+    -- 스타포스의 가장 이른 시도의 강화 전 성과 가장 늦은 시도의 강화 후 성. 다른 분류는 NULL.
+    from_star INTEGER,
+    to_star INTEGER,
     -- 1 이벤트 월드 · 0 아님 · NULL 판정 못 함. 이벤트 월드와 모름은 지출에서 뺀다.
     event_world INTEGER,
     updated_at TEXT NOT NULL,

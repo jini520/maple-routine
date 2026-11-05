@@ -338,6 +338,8 @@ interface EnhancementSpending {
   targetItem: string
   attempts: number
   costMeso: number
+  fromStar: number | null
+  toStar: number | null
 }
 
 /**
@@ -363,6 +365,8 @@ async function loadEnhancementSpending(fromDateKey: string, toDateKey: string): 
       itemKey: total.itemKey,
       targetItem: total.itemName,
       attempts: total.attempts,
+      fromStar: total.fromStar,
+      toStar: total.toStar,
       costMeso:
         total.enhancementType === 'starforce'
           ? withMvpDiscount(
@@ -650,6 +654,9 @@ export interface EnhancedItem {
   targetItem: string
   count: number
   costMeso: number
+  /** 스타포스의 그날 첫 성과 끝 성. 다른 분류와 다시 받기 전의 옛 줄은 `null` */
+  fromStar: number | null
+  toStar: number | null
 }
 
 /**
@@ -731,7 +738,14 @@ function toEnhancementRecords(rows: readonly EnhancementSpending[]): Enhancement
     group.record.count += row.attempts
     group.record.payoutMeso += row.costMeso
 
-    const item = group.items.get(row.itemGroup) ?? { itemKey: row.itemKey, targetItem: row.targetItem, count: 0, costMeso: 0 }
+    const item = group.items.get(row.itemGroup) ?? {
+      itemKey: row.itemKey,
+      targetItem: row.targetItem,
+      count: 0,
+      costMeso: 0,
+      fromStar: row.fromStar,
+      toStar: row.toStar,
+    }
     item.count += row.attempts
     item.costMeso += row.costMeso
     group.items.set(row.itemGroup, item)
