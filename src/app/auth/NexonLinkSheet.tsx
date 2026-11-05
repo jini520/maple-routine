@@ -18,15 +18,17 @@ export function NexonLinkSheet(props: {
   onSignIn: () => void
 }): React.JSX.Element {
   return (
-    <BottomSheet label={TITLE} onClose={props.onClose}>
+    <BottomSheet
+      label={TITLE}
+      onClose={props.onClose}
+      // 제목은 머리에 둔다. 머리가 없으면 핸들 띠에 바탕이 없어 끌어 올릴 때 그 뒤로 내용이 비친다. `px-2` 는 껍데기 머리의 16 을 아래 본문의 24 에 맞춘다.
+      header={<Text className="px-2 text-base font-bold text-text">{TITLE}</Text>}
+    >
       <View className="gap-5 px-6">
-        <View className="gap-1">
-          <Text className="text-base font-bold text-text">{TITLE}</Text>
-          {/* 줄은 손으로 나눈다. 자동 줄바꿈은 폭에 따라 말 가운데서 꺾는다. 두 줄 모두 폭 320 에서 한 줄에 든다. */}
-          <View>
-            <Text className="text-xs text-text-muted">일부 기능은 넥슨 로그인으로만 쓸 수 있어요.</Text>
-            <Text className="text-xs text-text-muted">앞으로 나오는 기능도 넥슨 로그인을 기준으로 만들어요.</Text>
-          </View>
+        {/* 줄은 손으로 나눈다. 자동 줄바꿈은 폭에 따라 말 가운데서 꺾는다. 두 줄 모두 폭 320 에서 한 줄에 든다. */}
+        <View>
+          <Text className="text-xs text-text-muted">일부 기능은 넥슨 로그인으로만 쓸 수 있어요.</Text>
+          <Text className="text-xs text-text-muted">앞으로 나오는 기능도 넥슨 로그인을 기준으로 만들어요.</Text>
         </View>
 
         <View className="gap-3">
