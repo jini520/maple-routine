@@ -65,6 +65,7 @@
 | `mesoUnits` | JSON `{ [unitKey]: 'base' \| 'man' \| 'eok' }` | `meso-unit.ts` | 남긴다 | 금액 칸마다 마지막으로 고른 단위([[ADR-082]] 결정 13). 모르는 칸 · 값은 `기본` 으로 읽는다 |
 | `lastPointRate` | 숫자 문자열 | `last-point-rate.ts` | 지운다 (수동 선택 항목) | 마지막으로 넣은 메이플 포인트 시세(1억 메소당) |
 | `lastHunts` | JSON `{ [ocid]: { groundKey, boosts, unionTier? } }` | `last-hunts.ts` | 지운다 (수동 선택 항목) | 캐릭터마다 마지막 사냥 |
+| `hexaStorageChecks` | JSON `{ useStorage, storageAsSpend }` | `hexa-storage-checks.ts` | 지운다 (수동 선택 항목) | 헥사 폼의 두 체크. 새 헥사 기록을 저장할 때만 적는다 |
 | `lastHuntSelection` · `lastHuntToggles` | JSON | `last-hunts.ts` | 지운다 (수동 선택 항목) | 옛 키. `lastHunts` 가 없을 때 한 번 읽어 옮기고 지운다 |
 | `eventWorldNames` | JSON 이름 배열 | `legacy-cleanup.ts` | 지운다 (캐시) | 1.0.12 까지의 이벤트 월드 캐릭터 이름. 첫 실행이 쿼리 `eventWorldNames()` 로 옮긴 뒤 지운다([[ADR-142]] 결정 11) |
 | `lastRunBundleVersion` | 버전 문자열 | `last-run-bundle-version.ts` | 남긴다 | 마지막으로 실행한 OTA 번들 버전. 방금 업데이트했는지 판단한다 |

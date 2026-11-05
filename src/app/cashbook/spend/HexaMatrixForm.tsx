@@ -1,11 +1,12 @@
 /**
  * 헥사 매트릭스의 폼. `강화 종류` 줄의 세그먼트로 헥사 스킬 · 헥사 스탯을 오간다.
  *
- * 헥사 강화는 메소 대신 솔 에르다 조각을 쓴다. 지출은 `(필요 조각 − 교환 불가) × 개당 가격` 이고 저장할 때 굳힌다.
+ * 헥사 강화는 메소 대신 솔 에르다 조각을 쓴다. 필요 조각에서 교환 불가를 먼저 빼고, 보관 중인 조각 사용을 켜면 같은
+ * 메이플 ID 캐릭터의 보관에서 최대한 가져온다. 지출은 개당 가격을 곱할 개수 × 개당 가격이고 저장할 때 굳힌다.
  * 헥사 스킬은 그 캐릭터의 실제 코어를 고르고 필요 조각을 비용 표에서 더한다. 헥사 스탯은 활성화 조각을 체크로 더하고
  * 강화에 쓴 조각은 직접 친다. 강화마다 개수가 달라 미리 알 수 없기 때문이다.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
 import { CheckBox, Text } from '../../../components/atoms'
@@ -25,11 +26,14 @@ import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 import { getItemIconUrlByFile, getSkillIconByFile } from '../../../lib/assets/asset-lookup'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import {
+  allocateHexaStorage,
   findHexaCore,
   findHexaStat,
   hexaCoreLabel,
   hexaFragmentsBetween,
+  hexaFragmentsLeft,
   hexaJobCores,
+  hexaPricedFragments,
   hexaSkillRecordName,
   hexaSpendMeso,
   hexaStats,
@@ -87,7 +91,32 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
   // 개당 가격은 빈 칸으로 연다. 마지막으로 친 값을 채우지 않는다(사용자 지정).
   const [priceText, setPriceText] = useState(optionalMesoTextOf(editedHexa?.fragmentPrice ?? null))
   const [untradableText, setUntradableText] = useState(optionalMesoTextOf(editedHexa?.untradableFragmentCount ?? null))
+  // 수정은 그 기록에 저장한 체크로, 새 기록은 직전에 새 기록을 저장한 때의 체크로 연다.
+  const [useStorage, setUseStorage] = useState(editedHexa?.useStorage ?? props.hexaStorageChecks.useStorage)
+  const [storageAsSpend, setStorageAsSpend] = useState(editedHexa?.storageAsSpend ?? props.hexaStorageChecks.storageAsSpend)
+  /**
+   * 보관을 가져올 캐릭터와 그 보관. 캐릭터나 날짜를 빠르게 바꾸면 먼저 부른 응답이 늦게 올 수 있어, 지금 고른 것과
+   * 열쇠가 다른 값은 안 쓴다. `value` 가 `null` 이면 한 캐릭터라도 못 읽은 것이다.
+   */
+  const [storages, setStorages] = useState<{ key: string; value: readonly { ocid: string; stored: number }[] | null } | null>(
+    null,
+  )
   const { saving, submit, remove } = useSpendSubmit(props)
+
+  const { loadHexaStorages, dateKey } = props
+  const editingId = props.editing?.id
+  const storageKey = ocid === null ? null : `${ocid}:${dateKey}`
+  useEffect(() => {
+    if (ocid === null) return
+    const key = `${ocid}:${dateKey}`
+    let live = true
+    void loadHexaStorages(ocid, dateKey, editingId).then((value) => {
+      if (live) setStorages({ key, value })
+    })
+    return () => {
+      live = false
+    }
+  }, [ocid, dateKey, editingId, loadHexaStorages])
 
   const character = ocid === null ? null : (props.characters.find((each) => each.ocid === ocid) ?? null)
   const remembered = hexaLevels !== null && hexaLevels.ocid === ocid ? hexaLevels.levels : null
@@ -107,7 +136,21 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
         : enhanceFragments + (activation ? (activationFragments ?? 0) : 0)
   const price = optionalMesoValueOf(priceText)
   const untradable = optionalMesoValueOf(untradableText) ?? 0
-  const amount = fragments === null || price === null ? 0 : hexaSpendMeso({ fragments, untradable, price })
+  /** 캐릭터마다 센 보관. 안 골랐거나 읽는 중이면 `undefined`, 한 캐릭터라도 못 읽었으면 `null` 이다. */
+  const loaded = storages !== null && storages.key === storageKey ? storages.value : undefined
+  // 꺼져 있어도 켜면 가져올 개수를 흐리게 보이려고 센다.
+  const allocation =
+    fragments !== null && loaded != null ? allocateHexaStorage({ fragments, untradable, storages: loaded }) : null
+  const taken = useStorage ? (allocation?.taken ?? 0) : 0
+  const asSpend = useStorage && storageAsSpend
+  const left = fragments === null ? null : hexaFragmentsLeft({ fragments, untradable, taken })
+  const priced = fragments === null ? 0 : hexaPricedFragments({ fragments, untradable, taken, takenAsSpend: asSpend })
+  // 곱할 개수가 없으면 개당 가격을 받지 않는다. 받게 하면 저장하려고 아무 값이나 넣게 된다.
+  const priceNeeded = priced > 0
+  const amount =
+    fragments === null || !priceNeeded || price === null
+      ? 0
+      : hexaSpendMeso({ fragments, untradable, price, taken, takenAsSpend: asSpend })
 
   function selectCharacter(next: string | null): void {
     setOcid(next)
@@ -126,8 +169,10 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
 
   const canSave =
     ocid !== null &&
-    price !== null &&
+    (!priceNeeded || price !== null) &&
     fragments !== null &&
+    // 보관을 쓰면 배분을 굳혀야 저장할 수 있다. 못 읽은 채 저장하면 보관이 줄지 않는다.
+    (!useStorage || allocation !== null) &&
     (mode === '헥사 스킬' ? core !== null && skillCost !== null : stat !== null && fragments > 0)
 
   useSaveSlot(props.setSave, {
@@ -136,7 +181,7 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
     canSave,
     saving,
     onSave: () => {
-      if (!canSave || fragments === null || price === null) return
+      if (!canSave || fragments === null) return
       const isSkill = mode === '헥사 스킬'
       void submit({
         ocid,
@@ -154,7 +199,15 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
         pointAmount: null,
         pointPer100mMeso: null,
         cashAmount: null,
-        hexa: { fragmentCount: fragments, untradableFragmentCount: untradable, fragmentPrice: price, activation: isSkill ? null : activation },
+        hexa: {
+          fragmentCount: fragments,
+          untradableFragmentCount: untradable,
+          fragmentPrice: priceNeeded ? price : null,
+          activation: isSkill ? null : activation,
+          useStorage,
+          storageAsSpend,
+          storageUses: useStorage ? (allocation?.uses ?? []) : [],
+        },
       })
     },
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
@@ -301,25 +354,23 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
             <Text className="text-xs text-text-muted">필요 조각</Text>
             {detail !== null && <Text className="text-11 text-text-muted">{detail}</Text>}
           </View>
-          <Text testID="spend-sheet-hexa-fragment-count" className="ml-auto text-lg font-bold text-text" style={TABULAR_NUMS}>
-            {fragments === null ? '-' : fragments.toLocaleString()}
-          </Text>
+          {/* 교환 불가와 보관 몫을 뺀 수다. 줄인 수와 원래 수 사이(4)가 줄의 다른 칸 사이(12)보다 좁아야 한 값으로 읽힌다. */}
+          <View className="ml-auto flex-row items-baseline gap-1">
+            <Text testID="spend-sheet-hexa-fragment-count" className="text-lg font-bold text-text" style={TABULAR_NUMS}>
+              {left === null ? '-' : left.toLocaleString()}
+            </Text>
+            {fragments !== null && left !== fragments && (
+              <Text
+                testID="spend-sheet-hexa-fragment-original"
+                className="text-sm text-text-disabled line-through"
+                style={TABULAR_NUMS}
+              >
+                {fragments.toLocaleString()}
+              </Text>
+            )}
+          </View>
           <Text className="text-xs text-text-muted">개</Text>
         </View>
-        <FieldRow label="개당 가격">
-          <AmountInput
-            testID="spend-sheet-hexa-price"
-            label="개당 가격"
-            context="솔 에르다 조각 · 개당"
-            icon="meso"
-            unit="메소"
-            reading
-            chips={FRAGMENT_PRICE_QUICK_ADDS}
-            value={priceText}
-            onChange={setPriceText}
-          />
-          <Text className="ml-1 text-xs text-text-muted">메소</Text>
-        </FieldRow>
         <FieldRow label="교환 불가">
           <AmountInput
             testID="spend-sheet-hexa-untradable"
@@ -332,6 +383,55 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
             onChange={setUntradableText}
           />
           <Text className="ml-1 text-xs text-text-muted">개</Text>
+        </FieldRow>
+        {/* 교환 불가처럼 필요 조각을 줄이는 칸이라 바로 아래에 둔다. 꺼져 있어도 켜면 가져올 개수를 흐리게 보인다. */}
+        <Pressable
+          role="checkbox"
+          aria-checked={useStorage}
+          testID="spend-sheet-hexa-use-storage"
+          onPress={() => setUseStorage((current) => !current)}
+          className={FIELD_CELL_CLASS}
+        >
+          <View className="flex-row items-center gap-2">
+            <CheckBox checked={useStorage} />
+            <Text className="text-xs text-text-muted">보관 중인 조각 사용</Text>
+          </View>
+          <Text
+            testID="spend-sheet-hexa-storage-taken"
+            className={`ml-auto text-sm ${useStorage ? 'font-bold text-primary-ink' : 'text-text-disabled'}`}
+            style={TABULAR_NUMS}
+          >
+            {allocation === null ? '-' : `${allocation.taken.toLocaleString()}개`}
+          </Text>
+        </Pressable>
+        <FieldRow label="개당 가격">
+          {useStorage && (
+            <Pressable
+              role="checkbox"
+              aria-label="보관 중인 조각도 지출로 기록하기"
+              aria-checked={storageAsSpend}
+              testID="spend-sheet-hexa-storage-as-spend"
+              onPress={() => setStorageAsSpend((current) => !current)}
+              hitSlop={8}
+              className="flex-row items-center gap-2"
+            >
+              <CheckBox checked={storageAsSpend} />
+              <Text className="text-11 text-text-muted">{'보관 중인 조각도\n지출로 기록하기'}</Text>
+            </Pressable>
+          )}
+          <AmountInput
+            testID="spend-sheet-hexa-price"
+            label="개당 가격"
+            context="솔 에르다 조각 · 개당"
+            icon="meso"
+            unit="메소"
+            reading
+            chips={FRAGMENT_PRICE_QUICK_ADDS}
+            value={priceText}
+            onChange={setPriceText}
+            disabled={!priceNeeded}
+          />
+          <Text className={`ml-1 text-xs text-text-muted${priceNeeded ? '' : ' opacity-40'}`}>메소</Text>
         </FieldRow>
       </FieldCard>
 

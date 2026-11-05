@@ -32,7 +32,8 @@
 cashbook_entries               id · ocid · account_id · nexon_account_id · entry_type · category_key · entry_date · created_at · updated_at
   ├ cashbook_entry_items       id · entry_id · sort_order · item_key · item_name · form_key · item_kind_key
   │                            · quantity · from_level · to_level · 금액 칸
-  └ cashbook_entry_hunt_inputs id · entry_id · 사냥 계산기 입력
+  ├ cashbook_entry_hunt_inputs id · entry_id · 사냥 계산기 입력
+  └ cashbook_entry_fragment_uses id · entry_id · ocid · fragments
 ```
 
 - `entry_type` 은 `income` · `spend` 둘이다. 하루 목록과 기간 합계를 테이블 하나에서 읽으려고 합쳤다(사용자 선택).
@@ -45,6 +46,7 @@ cashbook_entries               id · ocid · account_id · nexon_account_id · e
   칸 이름을 다시 바꾸지 않아도 된다.
 - 기록에는 묶음 key 를 두지 않는다(사용자 선택). 품목의 `item_key` 가 이미 묶음을 알아서, 두면 같은 값이 두 곳에 생긴다.
   한 기록의 품목은 모두 같은 묶음이다.
+- 헥사 기록이 보관에서 가져온 조각은 캐릭터마다 한 줄이라 `cashbook_entry_fragment_uses` 로 뺀다([[ADR-137]] 결정 16).
 - 사냥 계산기 입력은 수입 사냥에만 있어서 `cashbook_entry_hunt_inputs` 로 뺀다. 기록 하나에 0개나 1개다. 합친 테이블에 두면
   지출 행마다 빈 칸이 열 개 넘게 붙는다.
 - 보스 결정석 · 보스 드롭 판매 · 강화 지출은 원천 테이블(보스 기록 테이블 · `enhancement_totals`)에 그대로 둔다. 카드는

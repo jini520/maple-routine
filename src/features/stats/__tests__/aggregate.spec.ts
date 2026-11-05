@@ -435,7 +435,7 @@ describe('categoryTotalsBetween', () => {
     })
 
     it('헥사 매트릭스는 코어 · 스탯별이다', () => {
-      const 조각 = { fragmentCount: 1, untradableFragmentCount: 0, fragmentPrice: 1 }
+      const 조각 = { fragmentCount: 1, untradableFragmentCount: 0, fragmentPrice: 1, useStorage: false, storageAsSpend: false, storageUses: [] }
       const byDate = {
         '2026-09-24': [
           spend(null, '', { category: 'hexa_matrix', itemKey: '창룡파천검 : 만참', mesoAmount: 100, hexa: { ...조각, activation: null } }),

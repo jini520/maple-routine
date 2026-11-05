@@ -316,15 +316,20 @@ export function AmountInput(props: {
   placeholder?: string
   /** 아직 사용자가 안 건드린 기본값인가. 참이면 카드가 빈 칸으로 열린다 */
   pristine?: boolean
+  /** 받을 값이 없는 칸. 흐리게 서고 눌러도 카드가 안 열린다. 단위는 부르는 쪽이 같이 흐리게 한다 */
+  disabled?: boolean
 }): React.JSX.Element {
   const empty = props.value === ''
+  const disabled = props.disabled === true
   return (
     <Pressable
       testID={props.testID}
       role="button"
       aria-label={props.label}
+      aria-disabled={disabled}
+      disabled={disabled}
       onPress={() => openAmountCard(props)}
-      className="h-5 flex-1"
+      className={`h-5 flex-1${disabled ? ' opacity-40' : ''}`}
     >
       <Text
         className={`text-right text-sm ${empty ? 'text-text-disabled' : 'font-semibold text-text'}`}

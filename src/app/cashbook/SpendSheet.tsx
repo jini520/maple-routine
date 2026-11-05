@@ -61,6 +61,10 @@ export interface SpendSheetProps {
   accounts: readonly SheetAccount[]
   /** 캐릭터의 기억한 강화 레벨을 읽는 콜백. 심볼 강화 · 헥사 매트릭스 폼이 쓴다. */
   loadRememberedLevels: SpendFormProps['loadRememberedLevels']
+  /** 헥사 강화가 보관 조각을 가져올 캐릭터와 그 보관을 읽는 콜백. 화면이 넘긴다. */
+  loadHexaStorages: SpendFormProps['loadHexaStorages']
+  /** 새 헥사 폼의 두 체크. 화면이 읽어서 넘긴다. */
+  hexaStorageChecks: SpendFormProps['hexaStorageChecks']
   /**
    * 고칠 기록. 있으면 수정 모드다. 머리와 버튼 글자가 갈리고 삭제가 선다. 화면을 따로 만들지
    * 않는 것은 입력 규칙이 한 벌이어야 하기 때문이다.
@@ -143,6 +147,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           todayDateKey: props.todayDateKey,
           earliestDateKey: props.earliestDateKey,
           loadRememberedLevels: props.loadRememberedLevels,
+          loadHexaStorages: props.loadHexaStorages,
+          hexaStorageChecks: props.hexaStorageChecks,
         }
 
   return (

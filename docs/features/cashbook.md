@@ -2,7 +2,7 @@
 
 수입과 지출을 날짜별로 모아 달력으로 보여 주고, 손으로 적고 고치는 화면이다. 수익·지출 그룹의 둘째 하위 탭이다.
 달력과 기간은 [[ADR-046]], 저장과 금액 기준은 [[ADR-047]], 입력 시트는 [[ADR-048]], 사냥 수입은 [[ADR-049]], 목록과 기간 이동 줄의
-생김새는 [[ADR-095]] 에, 솔 에르다 조각 정산을 합친 사냥 전리품 판매는 [[ADR-117]], 헥사 매트릭스와 강화 레벨 기억은 [[ADR-137]], 보스 결정석 · 강화 건을 가계부에서 빼는 것은 [[ADR-160]], 헥사 강화에 보관한 조각을 쓰는 것은 [[ADR-168]] 에 그렇게 만든 이유가 있다.
+생김새는 [[ADR-095]] 에, 솔 에르다 조각 정산을 합친 사냥 전리품 판매는 [[ADR-117]], 헥사 매트릭스 · 강화 레벨 기억 · 헥사 강화에 보관한 조각을 쓰는 것은 [[ADR-137]], 보스 결정석 · 강화 건을 가계부에서 빼는 것은 [[ADR-160]] 에 그렇게 만든 이유가 있다.
 
 ## 관련 소스
 
@@ -21,7 +21,7 @@
 | `features/cashbook/exclusions.ts` | 보스 결정석 한 건 · 강화 장비 한 줄을 가계부에서 빼고 되돌리기. 표식은 그 기록의 `excluded_from_cashbook` 칸이다 |
 | `features/cashbook/ledger-query.ts` | 날짜별 줄 쿼리 `ledgerDays(from, to)`. 기록 표의 판이 오르면 다시 읽는다. today · 통계도 같은 열쇠를 쓴다 |
 | `features/ledger/useLedgerData.tsx` | 넥슨 API 회차를 관리하는 데이터 공급자. 진행률 · 모달 · 강화 범위를 들고 기록은 들지 않는다. 화면은 범위를 알리고 다시 받아 달라고 요청한다 |
-| `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` |
+| `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` |
 | `storage/enhancement-totals.ts` · `storage/enhancement-history.ts` · `features/enhancement-history/` · `lib/enhancement/` | 강화 사용 내역 수집 · 비용 계산 · 합계 저장 · 지출 판정. 원장은 `enhancement-history.ts` 에 있다 |
 | `app/cashbook/IncomeSheet.tsx` · `SpendSheet.tsx` · `CategoryPicker.tsx` · `sheet-fields.tsx` | 두 시트와 공용 부품 |
 | `app/cashbook/income/` · `app/cashbook/spend/` | 분류별 폼 |
@@ -33,7 +33,7 @@
 | `lib/cashbook/hunt-loot.ts` | 사냥 전리품 판매의 아이템(`huntLoot` 칸)과 그 날 팔 수 있는 아이템 |
 | `lib/cashbook/hunting-grounds.ts` · `lib/cashbook/hunting-meso.ts` | 사냥터 참조표(`huntingGrounds` 칸)와 사냥 메소 계산 |
 | `lib/cashbook/meso-rate.ts` · `features/cashbook/meso-rate.ts` | 캐릭터 메소 획득량. 직업은 쿼리 캐시의 `characterBasic(ocid)` 에서 읽고, 마지막 성공값은 쿼리 `mesoRate(ocid)` 에 남긴다 |
-| `storage/last-hunts.ts` · `storage/last-point-rate.ts` | 캐릭터별 마지막 사냥 · 마지막 시세 |
+| `storage/last-hunts.ts` · `storage/last-point-rate.ts` · `storage/hexa-storage-checks.ts` | 캐릭터별 마지막 사냥 · 마지막 시세 · 헥사 폼의 마지막 보관 체크 |
 
 ## 무엇을 보여 주나
 
@@ -121,7 +121,7 @@
 | 수입 | 기타 | 캐릭터 · 내용 · 통화 · 금액 · 수량 · 시세 |
 | 지출 | 컨텐츠 · 이벤트·BM · 버프 · 주문서 | 항목 격자 → 캐릭터 · 단계(또는 형태별 단계 · 축 줄 둘) · 개당 가격 · 수량 · 시세 |
 | 지출 | 심볼 강화 | 캐릭터 · 심볼 · 레벨 격자 |
-| 지출 | 헥사 매트릭스 | 캐릭터 · `강화 종류`(헥사 스킬 · 헥사 스탯) → 스킬: 캐릭터 · 코어 · 레벨 격자 / 스탯: 캐릭터 · 스탯 · 활성화 포함 · 강화에 쓴 조각, 공통: 필요 조각 · 개당 가격 · 교환 불가 |
+| 지출 | 헥사 매트릭스 | 캐릭터 · `강화 종류`(헥사 스킬 · 헥사 스탯) → 스킬: 캐릭터 · 코어 · 레벨 격자 / 스탯: 캐릭터 · 스탯 · 활성화 포함 · 강화에 쓴 조각, 공통: 필요 조각 · 교환 불가 · 보관 중인 조각 사용 · 개당 가격(보관을 쓰면 옆에 지출 체크) |
 | 지출 | 아이템 구매 | 캐릭터 · 구매 아이템 · 종류 · 구매 비용과 관세(소비 · 기타는 단가 × 수량) |
 | 지출 | 기타 | 캐릭터 · 내용 · 통화 · 금액 · 수량 · 시세 |
 
@@ -133,5 +133,6 @@
 - 고칠 때는 적을 때 쓴 시트가 그 기록으로 채워져 열린다. 분류와 항목은 바꿀 수 없고, 삭제는 그 시트의 바닥 줄에 있다.
 - 사냥 전리품 판매의 아이템은 서버 전리품 표가 정한다. 열린 이벤트가 없으면 세그먼트에서 `이벤트` 칸이 빠진다. 여러 아이템을 한 번에 치고, 개수를 친 아이템만 아이템마다 한 줄로 한 번에 저장한다. 조각 칸은 `솔 에르다 조각` 갈래로 저장해 옛 정산 기록과 같다. 서버 갈래 표에 `사냥 전리품 판매` 줄이 없으면 그 카드 대신 `솔 에르다 조각` 카드가 서고, 누르면 조각 칸 하나뿐인 같은 폼이 열린다([[ADR-117]]).
 - 심볼 강화 · 헥사 스킬의 강화 전은 그 캐릭터의 기억한 레벨로 선다. 기억은 캐릭터 관리에서 추적을 시작할 때 넥슨 값으로 채우고, 기록을 저장 · 고치기 · 지우기 할 때 옮긴다. 폼에서는 넥슨을 부르지 않고, 기억이 비어 있을 때만 한 번 받아 채운다([[ADR-137]] 결정 3).
-- 헥사 매트릭스의 지출은 `(필요 조각 − 교환 불가) × 개당 가격` 이다. 개당 가격은 빈 칸으로 열리고, 교환 불가가 더 많으면 0 메소로 저장한다. 헥사 코어는 캐릭터 직업의 실제 코어를 종류별로 묶어 고른다([[ADR-137]]).
+- 헥사 매트릭스의 지출은 개당 가격을 곱할 개수 × 개당 가격이다. 곱할 개수는 필요 조각에서 교환 불가를 빼고, `보관 중인 조각 사용` 을 켜고 지출 체크(`보관 중인 조각도 지출로 기록하기`)를 끄면 보관에서 가져온 개수도 뺀다. 곱할 개수가 없으면 개당 가격 입력이 꺼지고 0 메소로 저장한다. 개당 가격은 빈 칸으로 열린다. 헥사 코어는 캐릭터 직업의 실제 코어를 종류별로 묶어 고른다([[ADR-137]] 결정 17).
+- 보관은 강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID 의 캐릭터를 캐릭터 관리 순서로 가져온다. 메이플 ID 를 모르면 자신의 보관만 쓴다. 필요 조각 칸은 줄인 수와 취소선 원래 수를 보이고, 어느 캐릭터의 보관인지는 보이지 않는다. 새 폼의 두 체크는 직전에 새 헥사 기록을 저장한 때의 상태로 열린다([[ADR-137]] 결정 13 ~ 16).
 - 저장이 실패하면 시트를 닫지 않고 토스트를 띄운다.

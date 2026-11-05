@@ -45,6 +45,8 @@ export function spendItemsOf(record: SpendRecord): EntryItem[] {
     untradableFragmentCount: record.hexa?.untradableFragmentCount ?? null,
     fragmentPriceMeso: record.hexa?.fragmentPrice ?? null,
     hexaActivation: record.hexa?.activation ?? null,
+    hexaUseStorage: record.hexa?.useStorage ?? null,
+    hexaStorageAsSpend: record.hexa?.storageAsSpend ?? null,
   }
   const forms = SPEND_FORM_KEYS.filter((form) => record.formItemKeys?.[form] !== undefined)
   if (forms.length === 0) {
@@ -85,6 +87,7 @@ export function spendEntryOf(record: SpendRecord): StoredEntry {
     },
     items: spendItemsOf(record),
     hunt: null,
+    fragmentUses: record.hexa?.storageUses ?? [],
   }
 }
 
@@ -94,14 +97,17 @@ function sumOf(items: readonly EntryItem[], pick: (item: EntryItem) => number | 
   return values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0)
 }
 
-/** 조각 칸 셋이 다 있어야 헥사 기록이다. */
-function hexaOf(item: EntryItem): SpendHexa | null {
-  if (item.fragmentCount === null || item.untradableFragmentCount === null || item.fragmentPriceMeso === null) return null
+/** 필요 조각 · 교환 불가 칸이 있어야 헥사 기록이다. 개당 가격은 곱할 개수가 없으면 비어 있다. */
+function hexaOf(item: EntryItem, uses: StoredEntry['fragmentUses']): SpendHexa | null {
+  if (item.fragmentCount === null || item.untradableFragmentCount === null) return null
   return {
     fragmentCount: item.fragmentCount,
     untradableFragmentCount: item.untradableFragmentCount,
     fragmentPrice: item.fragmentPriceMeso,
     activation: item.hexaActivation,
+    useStorage: item.hexaUseStorage === true,
+    storageAsSpend: item.hexaStorageAsSpend === true,
+    storageUses: uses,
   }
 }
 
@@ -126,7 +132,7 @@ export function spendRecordOf(entry: StoredEntry): SpendRecord {
     pointAmount: sumOf(entry.items, (item) => item.amountPoint),
     pointPer100mMeso: first.pointPer100mMeso,
     cashAmount: sumOf(entry.items, (item) => item.amountCash),
-    hexa: hexaOf(first),
+    hexa: hexaOf(first, entry.fragmentUses),
     recordedAt: entry.head.createdAt,
   }
 }
@@ -227,6 +233,7 @@ export function incomeEntryOf(record: IncomeRecord): StoredEntry {
       },
     ],
     hunt: huntRowOf(record.hunt),
+    fragmentUses: [],
   }
 }
 

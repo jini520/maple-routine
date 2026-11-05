@@ -200,7 +200,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | 🟢 | server-sync | 예상하지 못한 상황의 서버 로그 |
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |
 | [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |
-| [ADR-137](./adr/ADR-137_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
+| [ADR-137+168](./adr/ADR-137+168_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
 | [ADR-142+144](./adr/ADR-142+144_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
 | [ADR-147](./adr/ADR-147_design-system_round-entry-buttons.md) | 🟢 | design-system | 진입 버튼과 대표 캐릭터의 움직임 |
 | [ADR-150](./adr/ADR-150_design-system_page-faq.md) | 🟢 | design-system | 모든 페이지의 FAQ |
@@ -208,4 +208,3 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-158](./adr/ADR-158_server-sync_usage-log.md) | 🟢 | server-sync | 앱 사용 로그와 관리자 화면 |
 | [ADR-160](./adr/ADR-160_cashbook_exclusions.md) | ⚪ | cashbook | 가계부에서 빼는 보스 결정석과 강화 기록 |
 | [ADR-161](./adr/ADR-161_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |
-| [ADR-168](./adr/ADR-168_cashbook_hexa-fragment-storage.md) | ⚪ | cashbook | 헥사 강화에 보관한 솔 에르다 조각을 쓴다 |

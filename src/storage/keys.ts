@@ -38,6 +38,9 @@ export const STORAGE_KEYS = {
   // 데이터 삭제의 `manual` 그룹이 지운다. 한 번 적으면 다시 생기는 값이고 지워지면 캐릭터를 골라도 빈
   // 칸이 설 뿐이다.
   lastHunts: 'lastHunts',
+  // 헥사 매트릭스 폼의 두 체크(보관 중인 조각 사용 · 지출 체크)의 마지막 상태. 새 기록을 저장할 때만 적는다.
+  // 데이터 삭제의 `manual` 그룹이 지운다. 지워지면 다음 폼이 둘 다 꺼진 채로 열릴 뿐이다.
+  hexaStorageChecks: 'hexaStorageChecks',
   // 옛 한 벌 둘. `lastHunts` 가 없을 때 한 번 읽어 그 캐릭터 몫으로 옮기고 지운다.
   lastHuntSelection: 'lastHuntSelection',
   lastHuntToggles: 'lastHuntToggles',

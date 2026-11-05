@@ -29,7 +29,8 @@ import {
   spendGroupCardTitleOf,
   spendRewardCoins,
 } from '../../lib/cashbook/spend-catalog'
-import { hexaTargetOf } from '../../lib/cashbook/hexa-matrix'
+import { hexaStorageCandidates, hexaTargetOf } from '../../lib/cashbook/hexa-matrix'
+import { accountOfOcid } from '../../lib/mvp/membership'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import { getBossDropRecords } from '../../storage/boss-drops'
 import { getDatedBossProfitRecords } from '../../storage/boss-profit'
@@ -58,6 +59,12 @@ import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
 import { randomUuid } from '../../native/uuid'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import { getLastHunts, setLastHunt, type LastHunt, type LastHunts } from '../../storage/last-hunts'
+import {
+  DEFAULT_HEXA_STORAGE_CHECKS,
+  getHexaStorageChecks,
+  setHexaStorageChecks,
+  type HexaStorageChecks,
+} from '../../storage/hexa-storage-checks'
 import {
   deleteSpendRecord,
   getSpendRecordsBetween,
@@ -125,6 +132,11 @@ export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
   const record: SpendRecord = { ...draft, id, recordedAt: now.toISOString() }
   await insertSpendRecord(record)
   await quietly(() => rememberAfterSave(record))
+  // 다음 새 헥사 폼이 이 상태로 열린다. 수정 저장은 그 기록만 고치는 일이라 적지 않는다.
+  const hexa = record.hexa
+  if (hexa !== null) {
+    await quietly(() => setHexaStorageChecks({ useStorage: hexa.useStorage, storageAsSpend: hexa.storageAsSpend }))
+  }
   countCoreSave()
   recordUsageAction('cashbook-add')
   // 저장이 성공한 뒤에만 기억한다. 던진 입력의 시세를 다음 기본값으로 남기면 안 된다.
@@ -1005,6 +1017,42 @@ export function loadFragmentStorage(
     getFragmentStorage(ocid, onOrBeforeDateKey, excludeRecordId),
     null,
   )
+}
+
+/**
+ * 헥사 강화가 보관 조각을 가져올 캐릭터와 그 보관. 강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID 의 추적 캐릭터를
+ * 캐릭터 관리 순서로 둔다.
+ *
+ * 한 캐릭터라도 못 읽으면 `null` 이다. 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.
+ *
+ * @param excludeRecordId 수정 중인 헥사 기록. 그 기록이 가져간 몫을 보관에 되돌려야 다시 배분할 수 있다.
+ */
+export async function loadHexaStorages(
+  ocid: string,
+  onOrBeforeDateKey: string,
+  excludeRecordId: string | undefined,
+): Promise<{ ocid: string; stored: number }[] | null> {
+  try {
+    const [trackedOcids, sightings] = await Promise.all([getTrackedCharacterOcids(), getCharacterAccountSightings()])
+    const candidates = hexaStorageCandidates({
+      ocid,
+      trackedOcids: trackedOcids ?? [],
+      accountOf: (each) => accountOfOcid(sightings, each),
+    })
+    return await Promise.all(
+      candidates.map(async (each) => ({
+        ocid: each,
+        stored: await getFragmentStorage(each, onOrBeforeDateKey, excludeRecordId),
+      })),
+    )
+  } catch {
+    return null
+  }
+}
+
+/** 새 헥사 폼의 두 체크. 못 읽으면 둘 다 꺼진 상태다. */
+export function loadHexaStorageChecks(): Promise<HexaStorageChecks> {
+  return getHexaStorageChecks().catch(() => DEFAULT_HEXA_STORAGE_CHECKS)
 }
 
 /** 고치기. `recordedAt` 은 안 바뀐다. 시세를 기억하는 순서는 넣을 때와 같다. 성공한 뒤에만. */

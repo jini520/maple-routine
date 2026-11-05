@@ -57,6 +57,9 @@ export const CASHBOOK_ENTRY_ITEMS_BODY = `(
     fragment_price_meso INTEGER,
     -- 헥사 스탯의 활성화 포함(1 · 0). 헥사 스킬과 다른 갈래는 NULL 이다.
     hexa_activation INTEGER,
+    -- 헥사 기록의 두 체크(1 · 0). 보관 중인 조각 사용과, 보관에서 가져온 몫을 지출로 셀지다. 다른 갈래는 NULL 이다.
+    hexa_use_storage INTEGER,
+    hexa_storage_as_spend INTEGER,
     UNIQUE (entry_id, sort_order)
   )`
 
@@ -75,6 +78,18 @@ export const CASHBOOK_ENTRY_HUNT_INPUTS_BODY = `(
     -- NULL 이 아니면 직접 입력 사냥의 친 메소다.
     typed_meso INTEGER,
     union_tier INTEGER
+  )`
+
+/**
+ * 헥사 기록이 보관에서 가져온 조각을 캐릭터마다 한 줄. 저장할 때 굳힌다. 다시 계산하면 옛 사냥 기록을 고칠 때 지난 헥사
+ * 기록이 가져간 캐릭터가 바뀐다. 보관 개수(`getFragmentStorage`)가 이 개수를 뺀다.
+ */
+export const CASHBOOK_ENTRY_FRAGMENT_USES_BODY = `(
+    id TEXT PRIMARY KEY,
+    entry_id TEXT NOT NULL REFERENCES cashbook_entries(id) ON DELETE CASCADE,
+    -- 조각을 가져온 캐릭터. 기록의 캐릭터와 다를 수 있다.
+    ocid TEXT NOT NULL,
+    fragments INTEGER NOT NULL
   )`
 
 /** 하루 목록 · 기간 합계가 날짜 범위로 읽는다. */

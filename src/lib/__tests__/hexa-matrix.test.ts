@@ -1,11 +1,14 @@
 // 헥사 매트릭스 표를 읽는 쪽. 값은 fixture(사용자가 준 비용 표와 2026-10-30 에 조회한 직업 48 개의 코어)다.
 import {
+  allocateHexaStorage,
   findHexaCore,
   findHexaStat,
   hexaFragmentsBetween,
+  hexaFragmentsLeft,
   hexaJobCores,
   hexaKindOf,
   hexaSpendMeso,
+  hexaStorageCandidates,
   parseHexaMatrix,
 } from '../cashbook/hexa-matrix'
 import hexaMatrix from '../../__fixtures__/game-data/hexa-matrix.json'
@@ -82,6 +85,80 @@ describe('hexaSpendMeso: 지출 금액', () => {
 
   it('교환 불가가 필요 조각보다 많으면 0 이다', () => {
     expect(hexaSpendMeso({ fragments: 83, untradable: 100, price: 7_200_000 })).toBe(0)
+  })
+})
+
+describe('hexaSpendMeso: 보관에서 가져온 조각', () => {
+  it('지출 체크를 끄면 보관에서 가져온 몫은 금액에서 빠지고, 켜면 들어간다', () => {
+    const input = { fragments: 690, untradable: 30, price: 7_200_000, taken: 420 }
+    expect(hexaSpendMeso({ ...input, takenAsSpend: false })).toBe(240 * 7_200_000)
+    expect(hexaSpendMeso({ ...input, takenAsSpend: true })).toBe(660 * 7_200_000)
+  })
+
+  it('필요 조각은 교환 불가와 보관 몫을 뺀 수이고, 지출 체크와 상관없다', () => {
+    expect(hexaFragmentsLeft({ fragments: 690, untradable: 30, taken: 420 })).toBe(240)
+    expect(hexaFragmentsLeft({ fragments: 690, untradable: 30, taken: 660 })).toBe(0)
+    expect(hexaFragmentsLeft({ fragments: 50, untradable: 80, taken: 0 })).toBe(0)
+  })
+})
+
+describe('hexaStorageCandidates: 보관을 가져오는 캐릭터와 차례', () => {
+  const accounts: Record<string, string> = { main: 'A', alt1: 'A', alt2: 'A', other: 'B' }
+  const accountOf = (ocid: string): string | null => accounts[ocid] ?? null
+
+  it('강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID 의 추적 캐릭터를 캐릭터 관리 순서로 둔다', () => {
+    expect(
+      hexaStorageCandidates({ ocid: 'main', trackedOcids: ['alt2', 'other', 'main', 'alt1'], accountOf }),
+    ).toEqual(['main', 'alt2', 'alt1'])
+  })
+
+  it('메이플 ID 를 모르면 강화한 캐릭터 자신뿐이다', () => {
+    expect(
+      hexaStorageCandidates({ ocid: 'lost', trackedOcids: ['lost', 'main', 'alt1'], accountOf }),
+    ).toEqual(['lost'])
+  })
+
+  it('강화한 캐릭터가 추적 목록에 없어도 먼저 선다', () => {
+    expect(hexaStorageCandidates({ ocid: 'main', trackedOcids: ['alt1'], accountOf })).toEqual(['main', 'alt1'])
+  })
+})
+
+describe('allocateHexaStorage: 보관에서 가져오는 배분', () => {
+  it('교환 불가를 먼저 빼고, 남은 개수를 차례대로 가져오며 마지막 캐릭터는 모자란 만큼만 쓴다', () => {
+    const result = allocateHexaStorage({
+      fragments: 690,
+      untradable: 30,
+      storages: [
+        { ocid: 'main', stored: 120 },
+        { ocid: 'alt1', stored: 300 },
+        { ocid: 'alt2', stored: 400 },
+      ],
+    })
+    expect(result.uses).toEqual([
+      { ocid: 'main', fragments: 120 },
+      { ocid: 'alt1', fragments: 300 },
+      { ocid: 'alt2', fragments: 240 },
+    ])
+    expect(result.taken).toBe(660)
+  })
+
+  it('보관이 0 이하인 캐릭터는 건너뛰고, 보관이 모자라면 있는 만큼만 가져온다', () => {
+    const result = allocateHexaStorage({
+      fragments: 690,
+      untradable: 30,
+      storages: [
+        { ocid: 'main', stored: -20 },
+        { ocid: 'alt1', stored: 0 },
+        { ocid: 'alt2', stored: 400 },
+      ],
+    })
+    expect(result.uses).toEqual([{ ocid: 'alt2', fragments: 400 }])
+    expect(result.taken).toBe(400)
+  })
+
+  it('교환 불가가 필요 조각 이상이면 보관에서 가져오지 않는다', () => {
+    const result = allocateHexaStorage({ fragments: 50, untradable: 80, storages: [{ ocid: 'main', stored: 100 }] })
+    expect(result).toEqual({ uses: [], taken: 0 })
   })
 })
 
