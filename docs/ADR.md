@@ -137,7 +137,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-014](./adr/ADR-014_ads_inline.md) | 🟢 | ads | 광고 배선 |
 | [ADR-015+156](./adr/ADR-015+156_site_guide.md) | 🟢 | site | 안내 사이트와 홍보 첫 화면 |
 | [ADR-016+167](./adr/ADR-016+167_server_platform.md) | 🟢 | server | 서버 구성 |
-| [ADR-017+159](./adr/ADR-017+159_server_users.md) | 🟢 | server | 서버의 사용자와 신원 · 로그아웃과 계정 삭제 |
+| [ADR-017+159+172](./adr/ADR-017+159+172_server_users.md) | 🟢 | server | 서버의 사용자와 신원 · 로그아웃과 계정 삭제 · 키 사용자 합치기 |
 | [ADR-018](./adr/ADR-018_server-sync_drop-price.md) | 🟢 | server-sync | 드롭 가격 서버 전송 |
 | [ADR-019](./adr/ADR-019_game-data_reference.md) | 🟢 | game-data | 게임 데이터의 규칙 |
 | [ADR-020+097+103+140](./adr/ADR-020+097+103+140_game-data_server-catalog.md) | 🟢 | game-data | 게임 데이터 서버 표와 기기 사본 |
@@ -145,7 +145,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-022+081](./adr/ADR-022+081_error-resilience_failure-states.md) | 🟢 | error-resilience | 실패를 알리는 방법과 기간 데이터 상태 |
 | [ADR-023](./adr/ADR-023_error-resilience_resumable-task.md) | 🟢 | error-resilience | 이어서 하는 작업과 기록 판 알림 |
 | [ADR-024](./adr/ADR-024_auth_api-key.md) | 🟢 | auth | API 키 로그인과 키 재입력 |
-| [ADR-025+068+083+105+166+169+170](./adr/ADR-025+068+083+105+166+169+170_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
+| [ADR-025+068+083+105+166+169+170+171](./adr/ADR-025+068+083+105+166+169+170+171_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
 | [ADR-026](./adr/ADR-026_app-entry_onboarding.md) | 🟢 | app-entry | 온보딩 흐름 |
 | [ADR-027](./adr/ADR-027_app-entry_cold-start.md) | 🟢 | app-entry | 콜드 스타트 첫 화면 |
 | [ADR-028](./adr/ADR-028_character_tracking.md) | 🟢 | character | 추적 캐릭터 |
@@ -193,7 +193,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-074](./adr/ADR-074_utility_boss-profit-calculator.md) | 🟢 | utility | 주간 보스 수익 계산기 |
 | [ADR-078](./adr/ADR-078_persistence_boss-tables.md) | 🟢 | persistence | 보스 기록 테이블 재설계 |
 | [ADR-096](./adr/ADR-096_persistence_cashbook-tables.md) | 🟢 | persistence | 가계부 기록 테이블 재설계 |
-| [ADR-098](./adr/ADR-098_persistence_record-keys.md) | 🟢 | persistence | 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id |
+| [ADR-098+173](./adr/ADR-098+173_persistence_record-keys.md) | 🟢 | persistence | 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id |
 | [ADR-099+143](./adr/ADR-099+143_server-sync_records.md) | 🟢 | server-sync | 서버로 보내는 기록의 범위와 과거 드롭 올리기 |
 | [ADR-100](./adr/ADR-100_cashbook_enhancement-totals.md) | 🟢 | cashbook | 강화 합계 저장과 재계산 요청 |
 | [ADR-101](./adr/ADR-101_auth_multi-account.md) | ⚪ | auth | 다계정 |

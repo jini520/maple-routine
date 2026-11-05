@@ -36,13 +36,14 @@
 | `POST /v1/drop-prices` | 세션 또는 키 해시 | 드롭 가격 한 건 | `{ ok: true }` | 10초 |
 | `DELETE /v1/drop-prices/:dropRecordId` | 세션 또는 키 해시 | | 204 | 10초 |
 | `DELETE /v1/me` | 세션 또는 키 해시 | | 204 | 10초 |
+| `POST /v1/me/api-key-links` | 세션 | `{ apiKeyHash }` | 204. 키 해시 헤더로 오면 403 | 10초 |
 | `POST /v1/auth/nexon/login` | 없음 | `{ platform }` | `{ authorizeUrl, redeemKey }` | 15초 |
 | `POST /v1/auth/nexon/session` | 없음 | `{ redeemKey, receipt }` | `{ status: 'ok', session }` · `{ status: 'pending' }` · 404 | 15초 |
 | `DELETE /v1/auth/nexon/session` | 세션 | | | 15초 |
 | `POST /v1/friends/stream` | 세션 | `{ tasks: [{ kind, date?, ocid? }] }` | gzip NDJSON 줄. 상한을 넘으면 503 · 세션이 죽었으면 401 | 130초 |
 
-쓰기 요청의 신원은 넥슨으로 로그인한 사용자는 세션, API 키 사용자는 키 해시다. 앱의 넥슨 로그인 입구는 지금 꺼져
-있어(`NEXON_LOGIN_ENABLED = false`, [[ADR-025]] 결정 9) 새로 로그인하는 사용자는 없고, 이미 로그인한 기기만 세션을 보낸다.
+쓰기 요청의 신원은 넥슨으로 로그인한 사용자는 세션, API 키 사용자는 키 해시다. 키 사용자가 로그인하면 앱은 지울 키의
+해시를 `POST /v1/me/api-key-links` 로 보내고, 서버는 키로 만든 사람을 로그인한 사람에 합친다([[ADR-017]] 결정 9).
 
 ## 신원 헤더
 
