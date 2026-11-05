@@ -34,18 +34,14 @@ Play 와 App Store 에 올릴 바이너리를 만드는 절차다. 서명 · 버
 
 | 값 | 어디 | 지금 | 규칙 |
 |---|---|---|---|
-| 스토어 버전 | `app.json` `expo.version` · `build.gradle` `versionName` · `Info.plist` `CFBundleShortVersionString` | 1.0.12 | `x.y.z` 세 자리 |
-| Android `versionCode` | `build.gradle` · `app.json` | 24 · 23 | 올리기만 한다. 한 번 올린 번호는 다시 못 쓴다 |
-| iOS 빌드 번호 | `Info.plist` `CFBundleVersion` · `app.json` `ios.buildNumber` | 16 · 16 | 올리기만 한다 |
+| 스토어 버전 | `app.json` `expo.version` · `build.gradle` `versionName` · `Info.plist` `CFBundleShortVersionString` | 1.0.13 | `x.y.z` 세 자리 |
+| Android `versionCode` | `build.gradle` · `app.json` | 25 · 25 | 올리기만 한다. 한 번 올린 번호는 다시 못 쓴다 |
+| iOS 빌드 번호 | `Info.plist` `CFBundleVersion` · `app.json` `ios.buildNumber` | 17 · 17 | 올리기만 한다 |
 | OTA 버전 | `package.json` `version` | `features/live-update.md` 참고 | 스토어 버전과 따로 올린다 |
 
 빌드 번호는 두 파일에 있다. 빌드가 실제로 읽는 것은 `build.gradle` 과 `Info.plist` 이고, `app.json` 만 고치면
 옛 번호로 나간다. `app.json` 은 두 플랫폼이 같이 쓰는 지문 재료라서, 한 플랫폼의 번호만 올려도 다른 플랫폼의
 지문이 바뀐다.
-
-1.0.12 는 Android `versionCode` 가 `build.gradle` 24, `app.json` 23 으로 다르다. 23 을 Play 에 먼저 올려 버려서
-24 로 다시 빌드했는데, `app.json` 까지 올리면 이미 올린 iOS 빌드 16 의 지문도 바뀌기 때문에 `build.gradle` 만
-올렸다. 다음 스토어 릴리스에서 두 값을 맞춘다.
 
 ## 빌드하기 전에
 
@@ -285,11 +281,26 @@ Play 는 `수집함 · 공유하지 않음 · 필수 · 앱 기능과 분석`(�
 
 ### 앱 액세스 권한(Play)
 
-Play 에는 심사 메모 칸이 없다. 심사자에게 주는 안내는 `정책 및 프로그램 > 앱 콘텐츠 > 앱 액세스 권한` 에 적는다. API 키가 없으면
-온보딩 화면밖에 볼 수 없어 `일부 기능이 제한됨` 으로 두고, 안내 항목 하나에 테스트 키와 들어가는 순서를 적는다. 사용자 이름 ·
-비밀번호 칸은 비운다. 계정이 아니라 키 하나를 넣는 방식이다. 순서는 아래 심사 메모의 `[NO LOGIN ...]` 과 `[HOW TO REVIEW]` 를
-옮긴다. 나머지 절(개인정보 · 비제휴)은 옮기지 않는다. Play 에서는 데이터 보안 양식과 자세한 설명이 그 일을 한다. 테스트 키는
-App Store 와 같이 저장소에 적지 않는다.
+Play 에는 심사 메모 칸이 없다. 심사자에게 주는 안내는 `정책 및 프로그램 > 앱 콘텐츠 > 앱 액세스 권한` 에 적는다. 넥슨 로그인도
+API 키도 없으면 로그인 화면밖에 볼 수 없어 `일부 기능이 제한됨` 으로 두고, 안내 항목 하나에 테스트 키와 들어가는 순서를 적는다.
+사용자 이름 · 비밀번호 칸은 비운다. 심사자에게 넥슨 계정을 줄 수 없고, 키 하나로 모든 기능을 볼 수 있기 때문이다(아래 `심사에서
+넥슨 로그인`). 순서는 아래 심사 메모의 `[SIGN-IN ...]` 과 `[HOW TO REVIEW]` 를 옮긴다. 나머지 절(개인정보 · 비제휴)은 옮기지
+않는다. Play 에서는 데이터 보안 양식과 자세한 설명이 그 일을 한다. 테스트 키는 App Store 와 같이 저장소에 적지 않는다.
+
+### 심사에서 넥슨 로그인
+
+심사자에게 넥슨 계정을 줄 수 없다. 넥슨 계정은 개인 계정이라 심사용으로 내줄 수 없다(사용자 확인 2026-11-05). 그래서
+아래처럼 한다.
+
+- 테스트 API 키를 데모 계정 대신 준다. 가이드라인 2.1 은 로그인이 있는 앱에 데모 계정을 요구한다. 이 앱에는 넥슨 로그인으로만
+  쓰는 기능이 없어서 키 하나로 모든 기능을 볼 수 있다. 그것을 심사 메모 첫 절 `[SIGN-IN ...]` 에 먼저 적는다.
+- 넥슨 로그인 흐름은 실기기 화면 녹화로 보인다. 넥슨 버튼을 누르고 넥슨 동의 화면을 지나 앱으로 돌아오는 데까지 찍어, 심사 메모의
+  링크나 App Review 정보의 첨부로 준다. 영상만으로는 심사자가 직접 해 보는 것을 대신하지 못해서 키 경로와 함께 준다.
+- 넥슨 로그인은 이용자 본인의 메이플스토리 데이터를 넥슨에서 읽으려는 로그인이다. 그래서 가이드라인 4.8 의 예외(특정 제3자
+  서비스의 클라이언트이고, 사용자가 그 서비스 계정으로 로그인해 자기 콘텐츠를 보는 앱)에 든다. Sign in with Apple 같은 다른
+  로그인을 따로 두지 않는 이유이고, 심사 메모의 `[LOGIN SERVICES]` 에 적는다.
+- 테스트 키는 App Store Connect 의 로그인 정보 칸이 아니라 심사 메모에 붙인다. 계정이 아니라 키 하나를 붙여 넣는 방식이라서다.
+- 넥슨 로그인으로만 쓰는 기능이 생기면 키로 볼 수 없는 기능이 생겨 이 방법이 통하지 않는다. 그때는 이 절을 다시 정한다.
 
 ### 스토어 아이콘
 
@@ -311,11 +322,10 @@ python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA')
 - 앱에 없는 기능을 적지 않는다. 화면에서 눌러 확인한 것만 적는다.
 - 가격(`무료`) · 순위(`1위`) · 설치 유도(`지금 다운로드`) 문구를 넣지 않고, 다른 앱이나 플랫폼을 언급하지 않는다.
   HTML 이 적용되지 않으므로 불릿은 문자(`■` `▶` `•`)로 쓴다.
-- 넥슨 로그인을 잠근 채로 내면(`features/auth/nexon-login-enabled.ts` 의 `NEXON_LOGIN_ENABLED = false`) 문구에 쓰지 않는다.
-  넥슨의 콜백 주소 검수가 끝나면 OTA 로 연다. 대신 심사 메모의 `[NEXON LOGIN AND ACCOUNT DELETION]` 에 잠가 둔 것과 OTA 로
-  연다는 것을 밝힌다. 밝히지 않으면 숨긴 기능(App Store 가이드라인 2.3.1)으로 보일 수 있다. 열 때 자세한 설명의
-  `회원가입이 없습니다` 와 심사 메모의 `[NO LOGIN ...]` 을 함께 고친다. 계정 삭제는 잠금과 관계없이 모든 사용자에게 열려 있다
-  ([[ADR-017]] 결정 8).
+- 넥슨 로그인 입구(`features/auth/nexon-login-enabled.ts` 의 `NEXON_LOGIN_ENABLED`)는 1.0.13 부터 열려 있다. 그래서 문구는
+  넥슨 로그인과 API 키 두 방법으로 시작한다고 적는다. 입구를 잠근 채로 내는 빌드가 생기면 문구에 넥슨 로그인을 쓰지 않고,
+  심사 메모에 잠가 둔 것과 OTA 로 연다는 것을 밝힌다. 밝히지 않으면 숨긴 기능(App Store 가이드라인 2.3.1)으로 보일 수 있다.
+  계정 삭제는 잠금과 관계없이 모든 사용자에게 열려 있다([[ADR-017]] 결정 8).
 - 앱 안에서는 컨텐츠라고 부르지만 짧은 설명에서만 `숙제` 를 쓴다. 스토어에서는 `메이플 숙제` 로 검색하기
   때문이다.
 - 비제휴 고지는 앱 설정 화면 · 안내 사이트 · `PRIVACY.md` 와 같은 영문 문구를 쓴다.
@@ -324,7 +334,7 @@ python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA')
 - 심사용 테스트 키는 저장소에 적지 않는다. App Store Connect 에 직접 붙이고, 붙이기 전에 그 키로 앱이 열리는지
   본다. 개발 단계 키면 `DevelopmentStageKeyModal` 이 막아 심사가 첫 화면에서 끝난다.
 
-아래는 1.0.12 원문이다.
+아래는 1.0.13 원문이다.
 
 ### 짧은 설명 (Play, 80자)
 
@@ -335,7 +345,7 @@ python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA')
 ### 프로모션 텍스트 (App Store, 170자)
 
 ```
-수익·지출에 통계 탭이 생겼습니다. 순 수익 추이와 캐릭터별·보스별 수익을 주간·월간으로 확인하세요. 파티 보스 일정은 파티 스케줄에 등록해 두면 시작 전에 알림으로 알려드립니다.
+이제 넥슨 ID로 로그인할 수 있습니다. API 키를 발급받지 않아도 바로 시작하세요. 매일 21:00에는 완료하지 않은 스케줄을 알림으로 알려드리고, 앱 전체 디자인도 새로 다듬었습니다.
 ```
 
 ### 자세한 설명 (4000자)
@@ -343,7 +353,7 @@ python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA')
 ```
 메이플스토리 플레이어를 위한 루틴 관리 앱입니다. 오늘 숙제가 남은 캐릭터는 누구인지, 이번 주 보스로 얼마를 벌고 강화에 얼마를 썼는지, 본캐부터 부캐까지 한 곳에서 확인하세요. 여러 메이플 ID의 캐릭터를 함께 관리할 수 있습니다.
 
-이용하려면 넥슨 오픈 API 키가 필요합니다. 발급 방법은 아래 ‘이용 전 준비 사항’에 적었습니다.
+넥슨 ID로 로그인하거나 넥슨 오픈 API 키를 입력해 시작합니다. 자세한 내용은 아래 ‘이용 전 준비 사항’에 적었습니다.
 
 
 ■ today
@@ -392,7 +402,7 @@ python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA')
 
 ■ 유틸리티
 
-판매 분배금 계산기로 함께 잡은 아이템을 판 값을 인원수로 나눠 봅니다.
+판매 분배금 계산기로 함께 잡은 아이템을 판 값을 인원수로 나눠 봅니다. 주간 보스 수입 계산기로는 캐릭터별로 보스를 골라 한 주 결정석 수입을 계산하고, 결과를 기록으로 남겨 둘 수 있습니다.
 
 
 ■ 넥슨 공지 알림
@@ -407,14 +417,14 @@ python3 -c "from PIL import Image; Image.open('assets/icon.png').convert('RGBA')
 
 ▶ 이용 전 준비 사항
 
-이 앱은 넥슨이 공개한 오픈 API로 게임 데이터를 읽어 옵니다. 사용하시려면 openapi.nexon.com에서 본인의 개인 API 키를 발급받아 앱에 입력해 주세요. 발급 방법은 앱 첫 화면에서 안내합니다.
+이 앱은 넥슨이 공개한 오픈 API로 게임 데이터를 읽어 옵니다. 넥슨 ID로 로그인하면 바로 시작할 수 있습니다. 로그인 대신 openapi.nexon.com에서 발급한 본인의 개인 API 키를 입력해도 됩니다. 키 발급 방법은 앱의 키 입력 화면에서 안내합니다.
 
 자동 모드에서는 게임 클라이언트의 ‘스케줄러’에 등록한 항목만 보입니다. 등록하지 않은 것은 API로 조회되지 않기 때문입니다. 직접 고르고 싶다면 설정에서 수동 모드로 바꿔 주세요.
 
 
 ▶ 개인정보
 
-회원가입이 없습니다. 발급받은 API 키와 앱에서 만든 기록은 이용자의 기기에 저장되며, API 키 원문은 운영자에게 전송되지 않습니다. 다만 아이템 시세 추이를 보기 위해, 드롭 기록에 적은 판매가는 API 키의 해시값과 함께 운영자 서버로 전송됩니다. 앱을 고치는 데 참고하려고 어느 화면을 얼마나 보는지 같은 사용 기록도 함께 전송됩니다. 공지를 받아오는 요청에는 이용자를 식별할 정보가 들어가지 않습니다.
+별도 회원가입이 없고, 아이디·비밀번호를 받지 않습니다. 앱에서 만든 기록은 이용자의 기기에 저장되며, API 키 원문은 운영자에게 전송되지 않습니다. 넥슨 ID로 로그인하면 넥슨의 보안 지침에 따라 로그인 토큰을 운영자 서버가 보관하고, 서버가 이용자 대신 넥슨에 요청해 받은 내용을 저장하지 않고 기기로 넘깁니다. 아이템 시세 추이를 보기 위해 드롭 기록에 적은 판매가는 운영자 서버로 전송됩니다. 앱을 고치는 데 참고하려고 어느 화면을 얼마나 보는지 같은 사용 기록도 함께 전송됩니다. 공지를 받아오는 요청에는 이용자를 식별할 정보가 들어가지 않습니다. 계정은 설정에서 언제든 삭제할 수 있습니다.
 
 개인정보 처리방침: https://mapleroutine.store/privacy
 문의: https://mapleroutine.store/support
@@ -437,50 +447,59 @@ Data based on NEXON Open API
 
 ```
 ■ 새로운 기능
-• 통계 탭이 추가되었습니다. 순 수익과 추이, 캐릭터별·보스별 수익, 수입·지출 내역, 누적 순수익을 주간·월간으로 볼 수 있습니다.
-• 파티 스케줄이 추가되었습니다. 파티 보스 일정을 한 번 또는 요일 반복으로 등록하고, 시작 전에 알림을 받을 수 있습니다. today에서 다음 일정도 볼 수 있습니다.
-• 가계부 버프 지출이 보스 버프와 사냥 버프로 나뉘고, 마법의 숫돌 등 새 항목이 추가되었습니다.
-• 사냥 수익의 지역·사냥터 자동 완성이 캐릭터별로 적용되고, 유니온의 부 단계를 고를 수 있습니다.
+• 넥슨 ID 로그인이 추가되었습니다. API 키를 발급받지 않아도 넥슨 ID로 로그인할 수 있습니다.
+• 계정 삭제가 추가되고, ‘연결 해제’는 ‘로그아웃’으로 바뀌었습니다.
+• 매일 21:00에 완료하지 않은 스케줄을 알려주는 미완료 스케줄 알림이 추가되었습니다.
+• 주요 화면에 FAQ가 추가되고, 문의·버그 제보에 카카오톡 오픈채팅이 추가되었습니다.
+• 유틸리티에 주간 보스 수입 계산기가 추가되었습니다.
+• 가계부 지출에 헥사 스킬·헥사 스탯 강화가 추가되고, 조각 정산이 사냥 전리품 판매로 옮겨졌습니다.
+• 파티 스케줄에 목록·보드 보기와 메모가, today에 빠른 이동 위젯이 추가되었습니다.
+• 글자 크기와 하단 탭 순서를 설정에서 바꿀 수 있습니다.
 
 ■ 개선 사항
-• 스케줄러 하위 탭 순서가 바뀌고, 보스 관리는 보스 수익과 설정에서 열 수 있습니다.
-• 보스 수익과 가계부에 이번 주로 이동하는 버튼이 추가되었습니다.
-• 수량을 직접 입력할 수 있고, 아이템 판매도 종류를 고를 수 있습니다.
+• 앱 전체 디자인이 하나로 통일되었습니다.
+• 통계 주간 보스별 수입에 검은 마법사가 포함됩니다.
 • 여러 버그를 수정했습니다.
 ```
 
 ### 심사 메모 (App Store)
 
 ```
-[NO LOGIN - API KEY REQUIRED INSTEAD]
-There is no sign-up or sign-in. Each user enters a personal API key they issue for themselves at openapi.nexon.com. Without a key the app shows only the onboarding screen and no game data at all, so please use the test key below. It is a service-stage key; the app rejects development-stage keys by design.
+[SIGN-IN - PLEASE USE THE TEST API KEY]
+No sign-up of our own; the app never asks for an ID or password. Users start in one of two ways that open exactly the same features: "넥슨ID 로그인" (Sign in with NEXON, NEXON's OAuth for reading the user's own MapleStory data) or a personal NEXON Open API key issued at openapi.nexon.com. NEXON accounts are personal, so we cannot provide one. Nothing in this version requires NEXON sign-in; the test key below opens every feature. It is a service-stage key (the app rejects development-stage keys by design).
 
 TEST API KEY:
 <App Store Connect 에 직접 붙인다>
 
-[HOW TO REVIEW - about 2 minutes]
-1. Launch the app. The onboarding screen asks for a NEXON Open API key.
-2. Paste the test key above and submit. The key is long, so please paste rather than type.
-3. On the character screen, select one or more characters and tap "계속하기" (Continue).
-4. A progress bar loads that account's data. This may take several seconds.
-5. You land on the "today" tab, a grid of summary widgets. The bottom bar has five groups: today, 스케줄러 (Scheduler: party schedule, daily and weekly content, boss clear status), 수익·지출 (Income and expense: boss crystal income, cashbook calendar, statistics), 유틸리티 (Utility: a sale-split calculator), 더보기 (More: notices; the gear icon opens settings, including boss management).
-6. Item drop records open by selecting a boss on the 보스 (Boss) page. Cashbook entries are added with the floating + button on the 가계부 (Cashbook) page.
+NEXON SIGN-IN SCREEN RECORDING:
+<영상 링크. App Review 정보에 첨부했으면 "Attached." 로 바꾼다>
+
+[HOW TO REVIEW - about 3 minutes]
+1. On the sign-in screen, tap "API 키로 시작하기" (Start with API key) at the very bottom, below the blue NEXON button.
+2. In the dialog, tap "그래도 API 키로 시작하기" (Continue with API key).
+3. Paste the test key into the sheet and tap "확인" (Confirm). Please paste rather than type.
+4. Select one or more characters and tap "계속하기" (Continue). Data loads for several seconds.
+5. If asked for the MVP grade, tap "다음" (Next), then "시작하기" (Start).
+6. You land on "today". Bottom bar: today, 스케줄러 (Scheduler), 수입·지출 (Income and expense), 유틸리티 (Utility: two calculators), 더보기 (More; the gear icon opens settings).
+7. Item drops: tap a boss row on 보스 수입 (Boss income). Cashbook entries: the floating + button on 가계부 (Cashbook).
 
 [EXPECTED BEHAVIOR, NOT BUGS]
-- In the default "자동" (auto) mode, only content the player registered in the game client's in-game Scheduler can appear, because NEXON's API returns nothing else. This is stated in onboarding and in the App Store description. "수동" (manual) mode in settings lets the user pick content instead.
-- NEXON's API serves data as of the previous day, not in real time.
-- Weekly data resets Thursday 00:00 KST, so reviewing right after a reset may legitimately show zero or low values.
+- In the default "자동" (auto) mode, only content registered in the game's in-game Scheduler appears, because NEXON's API returns nothing else. "수동" (manual) mode in settings lets the user pick content.
+- NEXON's API serves data as of the previous day.
+- Weekly data resets Thursday 00:00 KST, so values may legitimately be zero right after a reset.
 
 [PERMISSIONS / THIRD PARTIES]
-- Notifications: optional. Used for NEXON notice alerts (game notices, update notices, Sunday Maple, cash shop) and for local reminders of party schedules the user creates. Party reminders are scheduled on the device. The app works fully if denied.
-- Network: NEXON Open API for game data and NEXON notices (game notices, updates, events, cash shop), and our own server at mapleroutine.store for the app notice list and detail (read-only GET, no user identifier in the request). The same server receives the sale prices users enter for item drops and a first-party usage log (app opens, screen names and time on screen, counts of drop and cashbook saves, platform and app version), keyed by a SHA-256 hash of the API key. No third-party analytics SDK is used. Push delivery uses Firebase Cloud Messaging topics, so no device token or account is tied to a user on our side.
-- No ads in this version.
-- No user accounts. The API key stays on the device and is never sent in plain text. Records other than drop sale prices stay on the device.
+- Notifications (optional): NEXON notice alerts, party schedule reminders, and a daily 21:00 reminder of unfinished schedules (can be turned off). Reminders are scheduled on the device; a background task rechecks remaining schedules.
+- Network: NEXON Open API. For NEXON sign-in users, NEXON's guidelines keep the login token on our server (mapleroutine.store), which calls NEXON on the user's behalf and passes results to the device without storing them. Our server also serves app notices and receives the drop sale prices users enter and a first-party usage log (screens viewed, save counts, platform, app version), keyed by our session or a SHA-256 hash of the API key. No third-party analytics. Push uses Firebase Cloud Messaging topics. No ads.
+- The API key stays on the device and is never sent in plain text.
 
-[NEXON LOGIN AND ACCOUNT DELETION]
-Sign in with NEXON is built into this binary but switched off while NEXON finishes reviewing our callback URL. We will switch it on with an over-the-air update after NEXON approves it. It adds no other functionality. Account deletion is available to every user at 더보기 (More) > gear icon > 앱 정보 및 계정 (App info and account) > 계정 삭제 (Delete account). The login session is removed immediately and the user is signed out. After a 30-day grace period our server deletes the user's identifiers; signing in again within that period offers to cancel the deletion. Records the user already sent are kept only with the link to the user removed. 로그아웃 (Sign out) on the same screen only signs out and keeps the data.
+[LOGIN SERVICES]
+Sign in with NEXON is used only to read the user's own MapleStory data from NEXON; the app is a client for NEXON's game-data service (Guideline 4.8). An API key can be used instead.
 
-[AFFILIATION] Not affiliated with, endorsed by, or sponsored by NEXON Korea Corp. Uses only publicly documented read-only endpoints of NEXON Open API. The required attribution "Data based on NEXON Open API" is shown at the bottom of the Settings screen (gear icon at the top of the 더보기 (More) tab).
+[ACCOUNT DELETION]
+더보기 (More) > gear icon > 앱 정보 및 계정 (App info and account) > 계정 삭제 (Delete account), for every user. The session is removed and the user is signed out at once; after 30 days our server deletes the user's identifiers (signing in again before then offers to cancel). Records already sent remain without the link to the user.
 
-[CONTACT] If the test key stops working during review, please email support.mapleroutine@gmail.com and we will send a replacement immediately.
+[AFFILIATION] Not affiliated with or endorsed by NEXON Korea Corp. "Data based on NEXON Open API" is shown at the bottom of Settings.
+
+[CONTACT] If the test key stops working, email support.mapleroutine@gmail.com for a replacement.
 ```
