@@ -107,6 +107,7 @@
 | `FadedIllustration` | 카드 안 일러스트와 베일 |
 | `MvpGradeGrid` · `MvpPlate` | MVP 등급 고르기 · 등급 명패([[ADR-050]]) |
 | `NexonLoginButton` | 넥슨 로그인 버튼([[ADR-025]]) |
+| `ApiKeyLoginButton` | 넥슨 로그인 입구가 꺼졌을 때 넥슨 버튼 자리에 서는 `API 키로 로그인`. 넥슨 버튼과 같은 비율 · 모서리 6 · 열쇠 아이콘에 테마 `primary` 바탕이다([[ADR-025]] 결정 9) |
 | `ValuableDropMark` | 고가 드롭 표시. 그림 셋과 나머지 `+N`([[ADR-092]]) |
 | `AuroraText` | 오로라 그라디언트 글자([[ADR-092]]) |
 | `PeriodStepper` | 기간 이동 줄. 다섯 화면이 함께 쓴다([[ADR-092]] 결정 10) |
