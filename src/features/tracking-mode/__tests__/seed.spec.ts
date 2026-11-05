@@ -8,7 +8,7 @@ import type {
   SchedulerCharacterState,
   WeeklyContent,
 } from '../../../types'
-import { seedManualTrackedContent } from '../seed'
+import { seedManualTrackedContent, seedManualTrackedContentOnModeSwitch } from '../seed'
 
 jest.mock('../../schedule-sync/schedule-sync', () => ({
   syncSchedules: jest.fn(),
@@ -257,5 +257,55 @@ describe('seedManualTrackedContent: 여러 ocid', () => {
 
     expect(syncSchedules).not.toHaveBeenCalled()
     expect(setManualTrackedContent).not.toHaveBeenCalled()
+  })
+})
+
+// 자동 → 수동 전환은 추적 캐릭터 전원을 채우므로 추적 목록에 남은 조회 불가 캐릭터도 들어온다.
+describe('seedManualTrackedContentOnModeSwitch', () => {
+  const MONSTER_PARK = [{ contentKey: 'monster_park', kind: 'daily' }]
+
+  // 결과가 없는 것은 넥슨 캐릭터 목록에서 빠졌다는 뜻이다. 채울 게임 등록이 없다.
+  it('결과가 없는 캐릭터는 건너뛰고 나머지를 채운다', async () => {
+    jest.mocked(syncSchedules).mockResolvedValue([
+      buildSyncResult(buildState({ dailyContents: [buildDaily('monster_park', true)] }), 'ocid-1'),
+    ])
+
+    await seedManualTrackedContentOnModeSwitch(['ocid-1', 'ocid-2'])
+
+    expect(setManualTrackedContent).toHaveBeenCalledTimes(1)
+    expect(setManualTrackedContent).toHaveBeenCalledWith('ocid-1', MONSTER_PARK)
+  })
+
+  // 캐시에 옛 등록이 남아 있어도 채우지 않는다. 조회 불가 캐릭터의 목록은 건드리지 않는다.
+  it('결과의 에러가 characterUnavailable 이면 캐시된 state 가 있어도 건너뛴다', async () => {
+    jest.mocked(syncSchedules).mockResolvedValue([
+      buildSyncResult(buildState({ dailyContents: [buildDaily('monster_park', true)] }), 'ocid-1'),
+      {
+        ...buildSyncResult(buildState({ dailyContents: [buildDaily('monster_park', true)] }), 'ocid-2'),
+        isStale: true,
+        error: { kind: 'characterUnavailable' },
+      },
+    ])
+
+    await seedManualTrackedContentOnModeSwitch(['ocid-1', 'ocid-2'])
+
+    expect(setManualTrackedContent).toHaveBeenCalledTimes(1)
+    expect(setManualTrackedContent).toHaveBeenCalledWith('ocid-1', MONSTER_PARK)
+  })
+
+  // 첫 실패에서 바로 던지면 나머지 저장이 끝나기 전에 모달이 탭을 다시 읽어 빈 목록을 그린다.
+  it('다른 이유로 못 채운 캐릭터가 있으면 나머지 저장이 끝난 뒤에 실패한다', async () => {
+    jest.mocked(syncSchedules).mockResolvedValue([
+      buildSyncResult(null, 'ocid-1'),
+      buildSyncResult(buildState({ dailyContents: [buildDaily('monster_park', true)] }), 'ocid-2'),
+    ])
+    const written: string[] = []
+    jest.mocked(setManualTrackedContent).mockImplementation(async (ocid) => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      written.push(ocid)
+    })
+
+    await expect(seedManualTrackedContentOnModeSwitch(['ocid-1', 'ocid-2'])).rejects.toThrow()
+    expect(written).toEqual(['ocid-2'])
   })
 })

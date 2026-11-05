@@ -7,6 +7,7 @@
 // ③ 누른 뒤 화면을 보려면 `act` 로 흘려보낸다(`CacheClearConfirm` 테스트).
 import { act, fireEvent } from '@testing-library/react-native'
 
+import { __resetToastsForTest, useToastStore } from '../../../features/toast/store'
 import { TRACKING_MODE_OPTIONS } from '../../../features/tracking-mode/copy'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import type { TrackingMode } from '../../../storage/tracking-mode'
@@ -62,6 +63,7 @@ function mockTrackingModeStore(
 
 beforeEach(() => {
   mockTrackingModeStore()
+  __resetToastsForTest()
 })
 
 afterEach(() => {
@@ -145,6 +147,26 @@ describe('TrackingModeModal', () => {
     })
 
     expect(mockReloadTabStores).toHaveBeenCalledTimes(1)
+  })
+
+  // 실패를 안 받으면 스피너가 멈추지 않고, 적용 중이라 닫을 수도 없다. 모드는 이미 수동이라 채운 캐릭터를 보이게
+  // 다시 읽힌다. 토스트는 모달이 열려 있으면 그 뒤에 가리므로 닫은 뒤에 띄운다.
+  it('setMode가 실패하면 모달을 닫고 다시 읽힌 뒤 실패 토스트를 띄운다', async () => {
+    const toastsAtClose: number[] = []
+    const onClose = jest.fn(() => {
+      toastsAtClose.push(useToastStore.getState().toasts.length)
+    })
+    mockTrackingModeStore({ setMode: jest.fn(async () => Promise.reject(new Error('못 채운 캐릭터'))) })
+    const view = await renderOverlay(<TrackingModeModal onClose={onClose} />)
+
+    await press(optionCard(view, 'manual'))
+    await press(climb(view, '적용'))
+
+    expect(toastsAtClose).toEqual([0])
+    expect(mockReloadTabStores).toHaveBeenCalledWith(['content', 'boss'])
+    expect(useToastStore.getState().toasts.map((toast) => toast.message)).toEqual([
+      '컨텐츠를 불러오지 못한 캐릭터가 있습니다',
+    ])
   })
 
   it('취소를 누르면 setMode 없이 닫힌다', async () => {

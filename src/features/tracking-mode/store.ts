@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getTrackingMode, setTrackingMode, type TrackingMode } from '../../storage/tracking-mode'
-import { seedManualTrackedContent } from './seed'
+import { seedManualTrackedContentOnModeSwitch } from './seed'
 
 export interface TrackingModeStore {
   mode: TrackingMode
@@ -19,7 +19,8 @@ export const useTrackingModeStore = create<TrackingModeStore>()((set, get) => ({
   },
 
   // auto → manual 전환 순간, 그 시점에 추적 중인 캐릭터 전원을 일괄 시드한다. 반환 Promise 는
-  // 시드가 전부 끝난 뒤에만 resolve 된다. 호출부가 그것을 await 하며 로딩을 유지한다.
+  // 시드가 전부 끝난 뒤에만 resolve 된다. 호출부가 그것을 await 하며 로딩을 유지한다. 못 채운 캐릭터가 있으면
+  // 모드를 수동으로 저장한 채 거절된다. 채운 캐릭터는 수동으로 쓸 수 있어서 모드를 먼저 저장한다.
   //
   // 일괄은 목록 전체를 한 번에 넘기는 것이다. 캐릭터마다 시드를 동시에 부르면 단일 비행에
   // 서로 합류해 전원이 첫 캐릭터의 스케줄로 시드된다.
@@ -29,7 +30,7 @@ export const useTrackingModeStore = create<TrackingModeStore>()((set, get) => ({
     set({ mode })
 
     if (mode === 'manual' && previousMode !== 'manual') {
-      await seedManualTrackedContent((await getTrackedCharacterOcids()) ?? [])
+      await seedManualTrackedContentOnModeSwitch((await getTrackedCharacterOcids()) ?? [])
     }
   },
 }))

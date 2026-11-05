@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { View } from 'react-native'
 
+import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { TrackingMode } from '../../storage/tracking-mode'
 
@@ -30,7 +31,13 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
     setIsApplying(true)
     // setMode는 수동 전환 시 시드가 전부 끝난 뒤에만 resolve된다. 시드가
     // 끝나기 전에 닫으면 사용자가 방금 고른 모드가 아직 준비 안 된 상태를 보게 되므로 await 후 닫는다.
-    await setMode(selected)
+    // 거절돼도 모드는 이미 수동이라 성공처럼 다시 읽히고 닫는다. 안 받으면 스피너가 멈추지 않는다.
+    let failed = false
+    try {
+      await setMode(selected)
+    } catch {
+      failed = true
+    }
     //  정정: 시드는 저장소를 채우지만 수동 모드의 표시 목록을 정하는 것은 스토어
     // 메모리의 사본(`manualTrackedByOcid`)이고, RN 탭 화면은 마운트된 채 남아 스스로 다시 읽지
     // 않는다. 이 줄이 없으면 자동 → 수동 직후 세 탭이 "모드는 수동인데 멤버십은 빈 맵"을 그린다
@@ -38,6 +45,8 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
     // 읽히면 그 회차가 옛 멤버십을 담는다.
     reloadTabStores(['content', 'boss'])
     props.onClose()
+    // 모달이 열려 있으면 토스트가 그 뒤에 가린다. 닫은 뒤에 띄운다.
+    if (failed) useToastStore.getState().showError('컨텐츠를 불러오지 못한 캐릭터가 있습니다')
   }
 
   return (

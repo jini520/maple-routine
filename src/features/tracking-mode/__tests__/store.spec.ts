@@ -1,6 +1,6 @@
 import { getTrackedCharacterOcids } from '../../../storage/character-selection'
 import { setTrackingMode } from '../../../storage/tracking-mode'
-import { seedManualTrackedContent } from '../seed'
+import { seedManualTrackedContentOnModeSwitch } from '../seed'
 import { useTrackingModeStore } from '../store'
 
 jest.mock('../../../storage/tracking-mode', () => ({
@@ -13,7 +13,7 @@ jest.mock('../../../storage/character-selection', () => ({
 }))
 
 jest.mock('../seed', () => ({
-  seedManualTrackedContent: jest.fn(),
+  seedManualTrackedContentOnModeSwitch: jest.fn(),
 }))
 
 beforeEach(() => {
@@ -21,8 +21,8 @@ beforeEach(() => {
   jest.mocked(setTrackingMode).mockResolvedValue(undefined)
   jest.mocked(getTrackedCharacterOcids).mockReset()
   jest.mocked(getTrackedCharacterOcids).mockResolvedValue(null)
-  jest.mocked(seedManualTrackedContent).mockReset()
-  jest.mocked(seedManualTrackedContent).mockResolvedValue(undefined)
+  jest.mocked(seedManualTrackedContentOnModeSwitch).mockReset()
+  jest.mocked(seedManualTrackedContentOnModeSwitch).mockResolvedValue(undefined)
   useTrackingModeStore.setState({ mode: 'auto' })
 })
 
@@ -34,14 +34,14 @@ describe('setMode: 시드 트리거 (a): auto → manual 전환', () => {
 
     await useTrackingModeStore.getState().setMode('manual')
 
-    expect(seedManualTrackedContent).toHaveBeenCalledTimes(1)
-    expect(seedManualTrackedContent).toHaveBeenCalledWith(['ocid-a', 'ocid-b', 'ocid-c'])
+    expect(seedManualTrackedContentOnModeSwitch).toHaveBeenCalledTimes(1)
+    expect(seedManualTrackedContentOnModeSwitch).toHaveBeenCalledWith(['ocid-a', 'ocid-b', 'ocid-c'])
   })
 
   it('추적 목록이 아직 없으면(null) 빈 목록을 넘긴다. 시드가 할 일이 없다', async () => {
     await useTrackingModeStore.getState().setMode('manual')
 
-    expect(seedManualTrackedContent).toHaveBeenCalledWith([])
+    expect(seedManualTrackedContentOnModeSwitch).toHaveBeenCalledWith([])
     expect(useTrackingModeStore.getState().mode).toBe('manual')
   })
 
@@ -50,7 +50,17 @@ describe('setMode: 시드 트리거 (a): auto → manual 전환', () => {
 
     await useTrackingModeStore.getState().setMode('manual')
 
-    expect(seedManualTrackedContent).not.toHaveBeenCalled()
+    expect(seedManualTrackedContentOnModeSwitch).not.toHaveBeenCalled()
+  })
+
+  // 시드가 일부 캐릭터를 못 채워도 채운 캐릭터는 수동으로 쓸 수 있다. 모달은 이 거절을 받아 토스트만 띄운다.
+  it('시드가 실패해도 모드는 manual 로 저장된 채 거절을 그대로 전한다', async () => {
+    jest.mocked(seedManualTrackedContentOnModeSwitch).mockRejectedValue(new Error('못 채운 캐릭터'))
+
+    await expect(useTrackingModeStore.getState().setMode('manual')).rejects.toThrow()
+
+    expect(setTrackingMode).toHaveBeenCalledWith('manual')
+    expect(useTrackingModeStore.getState().mode).toBe('manual')
   })
 
   it('manual에서 auto로 전환하면 시드하지 않는다', async () => {
@@ -58,7 +68,7 @@ describe('setMode: 시드 트리거 (a): auto → manual 전환', () => {
 
     await useTrackingModeStore.getState().setMode('auto')
 
-    expect(seedManualTrackedContent).not.toHaveBeenCalled()
+    expect(seedManualTrackedContentOnModeSwitch).not.toHaveBeenCalled()
     expect(getTrackedCharacterOcids).not.toHaveBeenCalled()
   })
 })
