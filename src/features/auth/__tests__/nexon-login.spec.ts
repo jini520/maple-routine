@@ -9,15 +9,13 @@ jest.mock('../../../server/nexon-auth', () => ({
   startNexonLogin: jest.fn(),
   redeemNexonSession: jest.fn(),
 }))
-jest.mock('../../../storage/api-key', () => ({ setNexonLogin: jest.fn() }))
-jest.mock('../prune-covered-keys', () => ({ pruneCoveredApiKeys: jest.fn() }))
+jest.mock('../prune-covered-keys', () => ({ saveNexonLogin: jest.fn() }))
 
 const { openAuthSession } = jest.requireMock('../../../native/browser') as Record<string, jest.Mock>
 const { startNexonLogin, redeemNexonSession } = jest.requireMock(
   '../../../server/nexon-auth',
 ) as Record<string, jest.Mock>
-const { setNexonLogin } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
-const { pruneCoveredApiKeys } = jest.requireMock('../prune-covered-keys') as Record<string, jest.Mock>
+const { saveNexonLogin } = jest.requireMock('../prune-covered-keys') as Record<string, jest.Mock>
 
 const 시작값 = { authorizeUrl: 'https://openid.nexon.com/oauth2/authorize?state=s', redeemKey: '되찾기열쇠' }
 
@@ -31,8 +29,7 @@ beforeEach(() => {
   Platform.OS = 'ios'
   startNexonLogin.mockResolvedValue(시작값)
   redeemNexonSession.mockResolvedValue({ status: 'ok', session: '받은세션' })
-  setNexonLogin.mockResolvedValue(undefined)
-  pruneCoveredApiKeys.mockResolvedValue(undefined)
+  saveNexonLogin.mockResolvedValue(undefined)
   콜백('com.mapleroutine.app://oauth/callback?receipt=영수증')
 })
 
@@ -41,18 +38,7 @@ describe('정상 흐름', () => {
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'signedIn' })
 
     expect(redeemNexonSession).toHaveBeenCalledWith({ redeemKey: '되찾기열쇠', receipt: '영수증' })
-    expect(setNexonLogin).toHaveBeenCalledWith({ session: '받은세션' })
-  })
-
-  it('로그인 뒤에 같은 계정의 키를 거둔다', async () => {
-    await signInWithNexon()
-    expect(pruneCoveredApiKeys).toHaveBeenCalledTimes(1)
-  })
-
-  it('키를 못 거둬도 로그인은 성공이다', async () => {
-    pruneCoveredApiKeys.mockRejectedValue(new Error('조회가 죽었다'))
-
-    await expect(signInWithNexon()).resolves.toEqual({ kind: 'signedIn' })
+    expect(saveNexonLogin).toHaveBeenCalledWith('받은세션')
   })
 
   it('서버가 준 주소를 그대로 열고 돌아올 주소는 등록한 스킴이다', async () => {
@@ -87,7 +73,7 @@ describe('콜백이 아직 도는 중이면 되묻는다', () => {
 
     await expect(result).resolves.toEqual({ kind: 'signedIn' })
     expect(redeemNexonSession).toHaveBeenCalledTimes(3)
-    expect(setNexonLogin).toHaveBeenCalledWith({ session: '늦은세션' })
+    expect(saveNexonLogin).toHaveBeenCalledWith('늦은세션')
   })
 
   it('끝까지 pending 이면 실패다. 무한히 안 묻는다', async () => {
@@ -99,7 +85,7 @@ describe('콜백이 아직 도는 중이면 되묻는다', () => {
 
     await expect(result).resolves.toEqual({ kind: 'failed' })
     expect(redeemNexonSession).toHaveBeenCalledTimes(REDEEM_MAX_TRIES)
-    expect(setNexonLogin).not.toHaveBeenCalled()
+    expect(saveNexonLogin).not.toHaveBeenCalled()
   })
 
   it('gone 이면 바로 실패다', async () => {
@@ -117,7 +103,7 @@ describe('receipt 가 없으면 서버에 묻지 않는다', () => {
 
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'failed' })
     expect(redeemNexonSession).not.toHaveBeenCalled()
-    expect(setNexonLogin).not.toHaveBeenCalled()
+    expect(saveNexonLogin).not.toHaveBeenCalled()
   })
 
   it('빈 receipt 도 거절한다', async () => {
@@ -143,7 +129,7 @@ describe('취소는 실패가 아니다', () => {
 
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'cancelled' })
     expect(redeemNexonSession).not.toHaveBeenCalled()
-    expect(setNexonLogin).not.toHaveBeenCalled()
+    expect(saveNexonLogin).not.toHaveBeenCalled()
   })
 
   it('넥슨 동의 화면에서 취소해도 취소로 끝난다', async () => {
@@ -152,7 +138,7 @@ describe('취소는 실패가 아니다', () => {
 
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'cancelled' })
     expect(redeemNexonSession).not.toHaveBeenCalled()
-    expect(setNexonLogin).not.toHaveBeenCalled()
+    expect(saveNexonLogin).not.toHaveBeenCalled()
   })
 })
 
@@ -164,7 +150,7 @@ describe('던지지 않는다', () => {
   })
 
   it('저장이 던지면 실패다. 다시 켤 때 로그인 상태가 아니기 때문이다', async () => {
-    setNexonLogin.mockRejectedValue(new Error('디스크'))
+    saveNexonLogin.mockRejectedValue(new Error('디스크'))
 
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'failed' })
   })

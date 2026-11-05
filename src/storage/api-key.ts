@@ -143,13 +143,18 @@ export async function setApiKey(apiKey: string, label = '', accountId?: string):
  * 넥슨 로그인을 붙인다. **로그인은 0~1개라 있던 것을 갈아끼운다.**
  *
  * 로그인은 앱 사용자를 식별하는 축이고 키는 거기 붙는 자원이다. 둘 이상일 이유가 없다.
- * **API 키는 안 건드린다** - 같은 계정인지 대조해 지우는 일은 따로다(#541).
+ *
+ * 거둘 키를 넘기면 그 키들을 같은 저장에서 빼고, 로그인은 그중 목록에서 앞선 키의 계정 id 를 이어받는다. 같은 넥슨 계정이라
+ * 기기 기록이 이어져야 한다. 나눠 적으면 그 사이에 두 수단이 같은 id 를 갖는다.
+ *
+ * @param takenKeys 메이플 ID 가 같아 서버에서 이은 키의 값. 안 주면 키는 안 건드린다
  */
-export async function setNexonLogin(login: { session: string }): Promise<void> {
+export async function setNexonLogin(login: { session: string }, takenKeys: readonly string[] = []): Promise<void> {
   const current = (await getAuthConfig()) ?? { login: null, apiKeys: [] }
+  const taken = current.apiKeys.filter((one) => takenKeys.includes(one.value))
   await write({
-    login: { type: 'login', id: current.login?.id ?? randomUuid(), session: login.session },
-    apiKeys: current.apiKeys,
+    login: { type: 'login', id: taken[0]?.id ?? current.login?.id ?? randomUuid(), session: login.session },
+    apiKeys: current.apiKeys.filter((one) => !takenKeys.includes(one.value)),
   })
 }
 

@@ -224,6 +224,28 @@ describe('넥슨 로그인 자리', () => {
     expect((await getAuthConfig())?.login).toMatchObject({ type: 'login', id: expect.any(String), session: '세션-나' })
   })
 
+  // 로그인과 그 키는 같은 넥슨 계정이다. 새 id 를 받으면 키 시절 기기 기록이 주인 없는 id 에 남는다.
+  it('거둘 키를 넘기면 그 키들이 빠지고 로그인은 첫 키의 id 를 이어받는다', async () => {
+    await setApiKey('키-가', '', 'account-가')
+    await setApiKey('키-나', '', 'account-나')
+    await setApiKey('키-다', '', 'account-다')
+
+    await setNexonLogin(로그인('세션-가'), ['키-나', '키-가'])
+
+    const config = await getAuthConfig()
+    expect(config?.login).toEqual({ type: 'login', id: 'account-가', session: '세션-가' })
+    expect(config?.apiKeys.map((one) => one.value)).toEqual(['키-다'])
+  })
+
+  it('이미 로그인이 있어도 거둔 키의 id 로 바뀐다', async () => {
+    await setNexonLogin(로그인('세션-가'))
+    await setApiKey('키-가', '', 'account-가')
+
+    await setNexonLogin(로그인('세션-가'), ['키-가'])
+
+    expect((await getAuthConfig())?.login?.id).toBe('account-가')
+  })
+
   it('로그인을 붙여도 키는 안 건드린다', async () => {
     // 같은 계정인지 대조해 키를 지우는 일은 따로다(#541).
     await setApiKey('키-가', '본계정')

@@ -25,6 +25,7 @@ import { useToastStore } from '../toast/store'
 import { formatAuthError } from './format'
 import { apiKeyCredential } from '../../lib/nexon-credential'
 import { signInWithNexon } from './nexon-login'
+import { pruneCoveredApiKeys } from './prune-covered-keys'
 import { currentCredential } from './current-credential'
 import { reusableNexonAccountId } from './reentry-account-id'
 import {
@@ -89,6 +90,8 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     }
 
     set((state) => authReducer(state, { type: 'RESTORE_SIGNED_IN' }))
+    // 로그인 직후 서버에서 잇지 못해 남은 키를 다시 다룬다. 앱을 여는 일은 기다리지 않는다.
+    void pruneCoveredApiKeys().catch(() => undefined)
   },
 
   async signIn(apiKey: string) {

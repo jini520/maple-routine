@@ -4,4 +4,4 @@
  * 넥슨이 허락하지 않은 사용자는 로그인되지 않으므로, 열 수 없는 동안은 `false` 여야 한다.
  * 스킴 · `expo-web-browser` 는 바이너리에 이미 있어 이 값만 바꾸는 OTA 로 켜고 끈다.
  */
-export const NEXON_LOGIN_ENABLED = false
+export const NEXON_LOGIN_ENABLED = true
