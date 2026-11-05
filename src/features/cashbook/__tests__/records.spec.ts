@@ -1321,11 +1321,20 @@ describe('loadHexaStorages', () => {
   })
 
   beforeEach(() => {
-    selection.getTrackedCharacterOcids.mockResolvedValue(['alt', 'other', 'main'])
-    characterAccounts.getCharacterAccountSightings.mockResolvedValue([본('main', 'A'), 본('alt', 'A'), 본('other', 'B')])
+    selection.getTrackedCharacterOcids.mockResolvedValue(['alt', 'luna', 'other', 'main'])
+    characterAccounts.getCharacterAccountSightings.mockResolvedValue([
+      본('main', 'A'),
+      본('alt', 'A'),
+      본('luna', 'A'),
+      본('other', 'B'),
+    ])
+    seedBasic('main', { worldKey: 'scania' })
+    seedBasic('alt', { worldKey: 'scania' })
+    seedBasic('luna', { worldKey: 'luna' })
+    seedBasic('other', { worldKey: 'scania' })
   })
 
-  it('같은 메이플 ID 캐릭터의 보관을 강화한 캐릭터부터 캐릭터 관리 순서로 읽는다', async () => {
+  it('같은 메이플 ID · 같은 월드 캐릭터의 보관을 강화한 캐릭터부터 캐릭터 관리 순서로 읽는다', async () => {
     income.getFragmentStorage.mockImplementation(async (ocid: string) => ({ main: 10, alt: 20 })[ocid] ?? 0)
     const { loadHexaStorages } = require('../records') as typeof import('../records')
 

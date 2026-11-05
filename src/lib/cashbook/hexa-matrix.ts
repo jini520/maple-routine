@@ -219,8 +219,8 @@ export function hexaSpendMeso(input: { fragments: number; untradable: number; pr
 }
 
 /**
- * 보관 조각을 가져오는 캐릭터의 차례. 강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID 의 추적 캐릭터를 캐릭터
- * 관리 순서로 둔다. 다른 메이플 ID 의 조각은 옮길 수 없고, 메이플 ID 를 모르면 같은 ID 인지 알 수 없어 자신뿐이다.
+ * 보관 조각을 가져오는 캐릭터의 차례. 강화한 캐릭터가 먼저이고, 그다음은 메이플 ID 도 월드도 같은 추적 캐릭터를
+ * 캐릭터 관리 순서로 둔다. 강화한 캐릭터의 메이플 ID 나 월드를 모르면 같은지 알 수 없어 자신뿐이다.
  *
  * @param input.trackedOcids 캐릭터 관리에 저장한 순서
  */
@@ -228,10 +228,14 @@ export function hexaStorageCandidates(input: {
   ocid: string
   trackedOcids: readonly string[]
   accountOf: (ocid: string) => string | null
+  worldOf: (ocid: string) => string | null
 }): string[] {
   const account = input.accountOf(input.ocid)
-  if (account === null) return [input.ocid]
-  const others = input.trackedOcids.filter((ocid) => ocid !== input.ocid && input.accountOf(ocid) === account)
+  const world = input.worldOf(input.ocid)
+  if (account === null || world === null) return [input.ocid]
+  const others = input.trackedOcids.filter(
+    (ocid) => ocid !== input.ocid && input.accountOf(ocid) === account && input.worldOf(ocid) === world,
+  )
   return [input.ocid, ...others]
 }
 
