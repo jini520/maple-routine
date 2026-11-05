@@ -157,10 +157,23 @@ export function ContentManageScreen(): React.JSX.Element {
     <ScreenScroll
       hasTabBar={false}
       header={
-        // 헤더는 제목 줄 하나다. 레일도 탭도 콘텐츠로 내려갔다. `←` 만 남는 것은 그것이
-        // **다른 페이지로 가는 것**이기 때문이다.
+        // 헤더는 제목 줄 하나다. 레일은 콘텐츠로 내려갔다. `←` 이 남는 것은 그것이
+        // **다른 페이지로 가는 것**이기 때문이다. 주기 탭은 다른 화면과 같은 자리(`trailing`)에 선다.
         <PageHeader>
-          <PageHeaderTitleRow className="justify-between">
+          <PageHeaderTitleRow
+            className="justify-between"
+            trailing={
+              selected !== null ? (
+                <Segment
+                  size="lg" className="self-start"
+                  options={CONTENT_TABS}
+                  selected={activeTab}
+                  onSelect={setActiveTab}
+                  labelOf={(value) => CONTENT_TAB_LABELS[value]}
+                />
+              ) : undefined
+            }
+          >
             <View className="flex-row items-center gap-2">
               <BackButton onPress={() => navigation.goBack()} />
               {/* 물음표는 제목과 한 덩어리다. 뒤로 버튼과의 간격(gap-2)을 따르지 않게 묶는다. */}
@@ -169,9 +182,6 @@ export function ContentManageScreen(): React.JSX.Element {
                 <FaqButton sheet={faq} />
               </View>
             </View>
-            {/* 읽기 전용 칩이던 자리. 이 화면에서 캐릭터를 갈아 가며 쓰는데도
-                바꾸려면 뒤로 나가야 했다. 자리와 크기감은 그대로 두고(compact) 누를 수 있게만 한다.
-                onSelect는 스케줄러와 같은 selectCharacter라 돌아갔을 때 그쪽도 같은 캐릭터다. */}
           </PageHeaderTitleRow>
 
         </PageHeader>
@@ -189,19 +199,6 @@ export function ContentManageScreen(): React.JSX.Element {
             void select(ocid)
           }}
         />
-      )}
-
-      {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다. */}
-      {selected !== null && (
-        <View className="px-4">
-          <Segment
-            size="lg" className="self-start"
-            options={CONTENT_TABS}
-            selected={activeTab}
-            onSelect={setActiveTab}
-            labelOf={(value) => CONTENT_TAB_LABELS[value]}
-          />
-        </View>
       )}
 
       <View testID="screen-ContentManage">

@@ -8,7 +8,7 @@
 // ③ 잠금 행의 **스크림에서 블러가 빠진다**(`backdrop-filter` 가 RN 에 없다). 검사 대상은 흐림이
 //    아니라 *"눌리지 않고, 사유가 행 위에 뜬다"* 라 그대로 남는다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
-import { act, fireEvent, screen } from '@testing-library/react-native'
+import { act, fireEvent, screen, within } from '@testing-library/react-native'
 import { useState } from 'react'
 
 import {
@@ -184,6 +184,16 @@ describe('ContentManageScreen', () => {
 
     expect(screen.getAllByText('일일 퀘스트').length).toBeGreaterThan(0)
     expect(screen.queryByText(/^\[일일 퀘스트\]/)).toBeNull()
+  })
+
+  // 주기 탭은 다른 화면처럼 제목 덩어리 오른쪽에 둔다. 레일 아래에 두면 이 화면만 탭 자리가 달랐다.
+  it('일간 · 주간 탭이 제목 덩어리 오른쪽에 선다', async () => {
+    mockSchedule({ characters: [character()] })
+    await renderScreen()
+
+    const trailing = screen.getByTestId('page-header-title-trailing')
+    expect(within(trailing).getByText('일간')).toBeTruthy()
+    expect(within(trailing).getByText('주간')).toBeTruthy()
   })
 
   it('주간 탭으로 바꾸면 주간 템플릿이 보인다', async () => {

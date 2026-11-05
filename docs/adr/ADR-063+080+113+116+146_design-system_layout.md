@@ -370,6 +370,7 @@ densityDpi = 실제 밀도 ÷ 153.33 × 160 × (지금 densityDpi ÷ 공장값 d
 | `src/__tests__/mask-policy.test.ts` | 결정 4: 마스크 패치와 `postinstall` 이 있고, 마스크 안의 터치를 막는 대체 라이브러리를 쓰지 않는지 본다 |
 | `components/templates/ScreenScroll/__tests__/bottom-inset.test.ts` | 결정 5: 탭 화면과 두 플랫폼 하위 페이지에서 상자와 콘텐츠 여백이 맞게 나뉘는지 본다 |
 | `src/__tests__/page-header-title-row-policy.test.ts` | 결정 6: 제목 줄을 모두 `PageHeaderTitleRow` 로 그리는지, 헤더 안에 콘텐츠 요소가 없는지 본다 |
+| `app/content-scheduler/__tests__/ContentManageScreen.test.tsx` | 결정 6: 컨텐츠 관리의 `일간 · 주간` 탭이 제목 덩어리 오른쪽(`trailing`)에 서는지 본다 |
 | `components/templates/PageHeader/__tests__/PageHeaderTitleRow.test.tsx` | 결정 6: 최소 높이만 주는지, 갱신 시각 줄을 제목 아래에 언제나 그리는지, 제목 영역에 간격이 없는지, `trailing` 을 주면 제목 쪽이 남는 폭을 차지하는지 본다 |
 | `lib/__tests__/image-aspect.test.ts` · `image-crop.test.ts` | 결정 9: 한 축을 주면 다른 축이 `undefined` 와 비율로 채워지는지, 고유 크기를 모르면 준 축만 돌려주는지, 크롭이 두 축을 모두 지정하는지 본다 |
 | `src/__tests__/typography-policy.test.ts` | 결정 10 · 18: 글자 크기 · 굵기 이름이 모두 표에 있고, 소수점을 포함한 임의 크기를 쓰지 않으며, `fontSize` 값이 표 안에 있고, 표의 모든 크기가 줄 높이를 갖는지 본다 |
