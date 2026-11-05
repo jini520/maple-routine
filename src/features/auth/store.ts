@@ -208,7 +208,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     useAppEntryStore.getState().reset()
   },
 
-  // 로그인 화면과 더보기 탭이 함께 쓴다. 두 자리가 같은 끝을 내야 한다.
+  // 로그인 화면과 today 의 연동 시트가 함께 쓴다. 두 자리가 같은 끝을 내야 한다.
   async signInWithNexonAccount() {
     const result = await signInWithNexon()
     // 사용자가 창을 닫거나 동의 화면에서 취소한 것이라 아무 일도 안 일어난 것이다. 안내를 띄우면

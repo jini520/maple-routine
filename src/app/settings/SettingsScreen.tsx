@@ -16,7 +16,7 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { Platform, Pressable, View } from 'react-native'
-import { useFocusEffect, useRoute, type RouteProp } from '@react-navigation/native'
+import { useRoute, type RouteProp } from '@react-navigation/native'
 
 
 import { useRunningAppVersion } from '../../features/live-update/use-running-app-version'
@@ -36,10 +36,6 @@ import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
 import { NOTICE_KINDS, type Notice, type NoticeKind } from '../../types/notice'
 import { NoticeBannerRail } from './NoticeBannerRail'
 import { NoticeBannerSkeleton, NoticeLinesSkeleton } from './NoticeSkeleton'
-import { NexonLoginButton } from '../../components/molecules/NexonLoginButton/NexonLoginButton'
-import { NEXON_LOGIN_ENABLED } from '../../features/auth/nexon-login-enabled'
-import { hasNexonLogin } from '../../features/auth/saved-key'
-import { useAuthStore } from '../../features/auth/store'
 import { NoticeLines } from './NoticeLines'
 import { SectionTitle } from './SectionTitle'
 import { SettingsLinkRow } from './SettingsLinkRow'
@@ -167,29 +163,7 @@ export function SettingsScreen(): React.JSX.Element {
     if (allFailed) useToastStore.getState().showError('소식을 불러오지 못했습니다')
   }, [])
 
-  // 로그인이 붙어 있으면 버튼을 안 세운다. **모르는 동안에도 안 세운다** - 세웠다 지우면
-  // 소식이 한 칸 튀어오른다.
-  const [showNexonLogin, setShowNexonLogin] = useState(false)
   const [showContact, setShowContact] = useState(false)
-
-  useFocusEffect(
-    useCallback(() => {
-      let alive = true
-      void hasNexonLogin().then((has) => {
-        if (alive) setShowNexonLogin(!has)
-      })
-      return () => {
-        alive = false
-      }
-    }, []),
-  )
-
-  // 로그인 화면과 **같은 동작**을 쓴다. 두 자리가 다른 끝을 내면 안 된다.
-  const signInWithNexonAccount = useAuthStore((state) => state.signInWithNexonAccount)
-
-  async function handleNexonLogin(): Promise<void> {
-    if (await signInWithNexonAccount()) setShowNexonLogin(false)
-  }
 
   const openNotice = (notice: Notice): void => navigation.navigate('SettingsNoticeDetail', { noticeId: notice.id })
 
@@ -225,17 +199,6 @@ export function SettingsScreen(): React.JSX.Element {
 
           {/* 영역 사이만 넓힌다. 머리와 첫 영역까지 벌리면 제목이 내용과 떨어져 보인다. */}
           <View className="gap-7">
-            {/*
-              **키로 이미 들어온 사용자의 유일한 진입점이다.** 로그인 화면은 저장된 수단이 하나도
-              없을 때만 서서 그 사용자에게는 다시 안 보이고, 설정은 톱니바퀴 뒤라 한 단계 더 깊다.
-
-              이 탭 안에서도 소식 아래면 안 보인다. 갈래 셋에 배너 둘이 커서 첫 화면을 넘게 쓴다
-              (시뮬레이터 확인. 한 번 넘겨도 버튼이 안 나왔다).
-
-              **한 번 누르면 끝이라** 이 화면의 소식이 맨 위다 와 영구히 부딪치지 않는다. 로그인하면
-              버튼이 사라져 소식이 다시 맨 위로 올라온다.
-            */}
-            {NEXON_LOGIN_ENABLED && showNexonLogin && <NexonLoginButton onPress={() => void handleNexonLogin()} />}
             {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
                 한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
             {NOTICE_SECTIONS.map((section) => (

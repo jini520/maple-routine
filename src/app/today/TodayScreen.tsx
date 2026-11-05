@@ -52,6 +52,7 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { CharacterManageButton } from './CharacterManageButton'
 import { ManualCompletionBanner } from './ManualCompletionBanner'
+import { NexonLinkButton } from './NexonLinkButton'
 import { NoticeBanner } from './NoticeBanner'
 import { SettlementBanner } from '../SettlementBanner'
 import { useQuickLinksStore } from '../../features/quick-links/store'
@@ -153,10 +154,16 @@ export function TodayScreen(): React.JSX.Element {
         header={
           <PageHeader>
             {/* 오른쪽 자리는 캐릭터 관리로 가는 문이다. 다른 탭 화면이 세그먼트를 두는 그 자리이고,
-                이 화면에는 가를 목록이 없다. 얼굴은 대표 카드와 같은 캐릭터다. */}
+                이 화면에는 가를 목록이 없다. 얼굴은 대표 카드와 같은 캐릭터다. 넥슨 로그인이 없으면
+                그 왼쪽에 `넥슨 ID 연동하기` 가 선다. */}
             <PageHeaderTitleRow
               fetchedAt={fetchedAt}
-              trailing={<CharacterManageButton portrait={viewModel.representative} />}
+              trailing={
+                <View className="flex-row items-center gap-2">
+                  <NexonLinkButton />
+                  <CharacterManageButton portrait={viewModel.representative} />
+                </View>
+              }
             >
               <Text className="shrink-0 text-lg font-bold text-text">today</Text>
               <FaqButton sheet={faq} />

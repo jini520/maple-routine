@@ -9,7 +9,7 @@
 // ④ 하단 버전은 실행 중인 OTA 번들이 아니라 빌드 시점 값이다.
 // ⑤ 캐릭터 관리 행의 계약은 셋뿐이다. 배지(단위 개), 누르면 그 화면을 민다, `openPicker` 로
 //    들어와도 같은 곳으로 민다. 조회·저장·401/429 배선은 `SettingsCharactersScreen` 이 갖는다.
-import { act, fireEvent, waitFor } from '@testing-library/react-native'
+import { act, fireEvent } from '@testing-library/react-native'
 import { Linking, Platform } from 'react-native'
 
 import { useThemeStore } from '../../../features/theme/store'
@@ -31,7 +31,6 @@ import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 import { refreshNoticeKinds, useNotices, type NoticesByKind } from '../../../features/notice/notice-query'
 import { queryKeys } from '../../../features/query/keys'
 import { useRefetchStaleOnFocus } from '../../../hooks/useRefetchStaleOnFocus'
-import { hasNexonLogin } from '../../../features/auth/saved-key'
 import type { Notice, NoticeKind } from '../../../types/notice'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
@@ -51,20 +50,6 @@ jest.mock('../../../features/notice/notice-query', () => ({
 }))
 // 들어올 때 만료된 쿼리를 받는 훅. 쿼리 클라이언트 없이 그리므로 어느 열쇠로 불렸는지만 본다.
 jest.mock('../../../hooks/useRefetchStaleOnFocus', () => ({ useRefetchStaleOnFocus: jest.fn() }))
-// 넥슨 로그인 버튼이 이 화면 맨 위에 선다. 화면은 `features/` 를 거치고 저장소·브라우저 세션은
-// 그 아래가 맡는다(CLAUDE.md CRITICAL).
-jest.mock('../../../features/auth/saved-key', () => ({ hasNexonLogin: jest.fn() }))
-// 스토어 빌드는 꺼진 값으로 나간다. 켜진 화면과 꺼진 화면을 둘 다 잰다.
-var mockNexonLoginEnabled = true
-jest.mock('../../../features/auth/nexon-login-enabled', () => ({
-  get NEXON_LOGIN_ENABLED() {
-    return mockNexonLoginEnabled
-  },
-}))
-jest.mock('../../../features/auth/store', () => {
-  const signInWithNexonAccount = jest.fn()
-  return { useAuthStore: (selector: (s: unknown) => unknown) => selector({ signInWithNexonAccount }) }
-})
 // 저장은 컨텐츠 스케줄러 스토어의 액션을 그대로 부른다(세 번째 사본 금지).
 // 훅으로도(배지·저장) `getState` 로도 만지므로 둘 다 세운다.
 jest.mock('../../../features/content-scheduler/store', () => {
@@ -171,12 +156,6 @@ function notice(id: string, kind: NoticeKind, patch: Partial<Notice> = {}): Noti
   return { id, kind, title: `제목 ${id}`, body: '', publishedAt: '2026-09-15T00:00:00.000Z', ...patch }
 }
 
-const mockedHasNexonLogin = jest.mocked(hasNexonLogin)
-const mockedSignInWithNexon = (
-  jest.requireMock('../../../features/auth/store') as {
-    useAuthStore: (s: (v: { signInWithNexonAccount: jest.Mock }) => unknown) => unknown
-  }
-).useAuthStore((state) => state.signInWithNexonAccount) as jest.Mock
 const mockedUseNotices = jest.mocked(useNotices)
 const mockedRefreshKinds = jest.mocked(refreshNoticeKinds)
 
@@ -225,7 +204,6 @@ const openURL = jest.spyOn(Linking, 'openURL')
 const 원래플랫폼 = Platform.OS
 
 beforeEach(() => {
-  mockNexonLoginEnabled = true
   openURL.mockResolvedValue(true)
   mockThemeStore()
   mockTrackingModeStore()
@@ -243,9 +221,6 @@ beforeEach(() => {
   // 기본은 "아직 모른다". 받은 결과가 필요한 케이스만 따로 세운다.
   cacheNotices({}, null)
   mockedRefreshKinds.mockResolvedValue({ allFailed: false })
-  // 기본은 "로그인이 아직 없다". 버튼이 서는 쪽이 통상 경로다.
-  mockedHasNexonLogin.mockResolvedValue(false)
-  mockedSignInWithNexon.mockResolvedValue(true)
 })
 
 afterEach(() => {
@@ -601,96 +576,5 @@ describe('설정 버튼의 촉각', () => {
     await press(view.getByLabelText('설정'))
 
     expect(tap).toHaveBeenCalledTimes(1)
-  })
-})
-
-// 키로 이미 들어온 사용자는 로그인 화면(`SignInScreen`)을 다시 못 본다. 저장된 수단이 하나도
-// 없을 때만 그 화면이 서기 때문이다. 그래서 이 탭 맨 위가 그 사용자의 유일한 진입점이다.
-describe('SettingsScreen: 넥슨 로그인 버튼', () => {
-  it('로그인이 없으면 선다', async () => {
-    const view = await renderOverlay(<SettingsScreen />)
-
-    await waitFor(() => expect(view.getByLabelText('넥슨ID 로그인')).toBeTruthy())
-  })
-
-  it('로그인이 이미 있으면 안 선다', async () => {
-    // 한 번 누르면 끝나는 버튼이다. 남아 있으면 매일 여는 탭의 맨 위를 계속 차지한다.
-    mockedHasNexonLogin.mockResolvedValue(true)
-
-    const view = await renderOverlay(<SettingsScreen />)
-
-    await waitFor(() => expect(mockedHasNexonLogin).toHaveBeenCalled())
-    expect(view.queryByLabelText('넥슨ID 로그인')).toBeNull()
-  })
-
-  // 프로덕션 승인 전에는 테스트 사용자만 로그인된다. 나머지가 눌러 실패하지 않게 진입점을 끈다.
-  it('넥슨 로그인이 꺼져 있으면 로그인이 없어도 안 선다', async () => {
-    mockNexonLoginEnabled = false
-
-    const view = await renderOverlay(<SettingsScreen />)
-
-    await waitFor(() => expect(mockedHasNexonLogin).toHaveBeenCalled())
-    expect(view.queryByLabelText('넥슨ID 로그인')).toBeNull()
-  })
-
-  it('판정 전에는 안 세운다', async () => {
-    // 세웠다 지우면 소식이 한 칸 튀어오른다. 모르는 동안은 자리를 안 잡는다.
-    mockedHasNexonLogin.mockReturnValue(new Promise(() => {}))
-
-    const view = await renderOverlay(<SettingsScreen />)
-
-    expect(view.queryByLabelText('넥슨ID 로그인')).toBeNull()
-  })
-
-  it('누르면 인증 세션을 연다', async () => {
-    const view = await renderOverlay(<SettingsScreen />)
-    const button = await waitFor(() => view.getByLabelText('넥슨ID 로그인'))
-
-    await act(async () => {
-      fireEvent.press(button)
-    })
-
-    expect(mockedSignInWithNexon).toHaveBeenCalledTimes(1)
-  })
-
-  // 토스트는 스토어가 띄운다(로그인 화면과 같은 동작을 써야 두 자리가 같은 끝을 낸다).
-  // 이 화면이 지는 것은 **버튼을 치우는 것** 하나다.
-  it('성공하면 버튼이 사라진다', async () => {
-    const view = await renderOverlay(<SettingsScreen />)
-    const button = await waitFor(() => view.getByLabelText('넥슨ID 로그인'))
-
-    await act(async () => {
-      fireEvent.press(button)
-    })
-
-    expect(view.queryByLabelText('넥슨ID 로그인')).toBeNull()
-  })
-
-  it('취소·실패 모두 버튼이 남는다', async () => {
-    // 되돌아올 길이 있어야 한다. 취소와 실패를 가르는 것은 스토어의 몫이다.
-    mockedSignInWithNexon.mockResolvedValue(false)
-
-    const view = await renderOverlay(<SettingsScreen />)
-    const button = await waitFor(() => view.getByLabelText('넥슨ID 로그인'))
-
-    await act(async () => {
-      fireEvent.press(button)
-    })
-
-    expect(view.getByLabelText('넥슨ID 로그인')).toBeTruthy()
-  })
-
-  it('실패하면 버튼은 남는다', async () => {
-    // 다시 누를 수 있어야 한다. 버튼을 치우면 그 사용자는 갈 곳이 없다. 문구는 스토어가 띄운다.
-    mockedSignInWithNexon.mockResolvedValue(false)
-
-    const view = await renderOverlay(<SettingsScreen />)
-    const button = await waitFor(() => view.getByLabelText('넥슨ID 로그인'))
-
-    await act(async () => {
-      fireEvent.press(button)
-    })
-
-    expect(view.getByLabelText('넥슨ID 로그인')).toBeTruthy()
   })
 })
