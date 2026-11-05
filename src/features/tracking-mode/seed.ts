@@ -69,3 +69,37 @@ export async function seedManualTrackedContent(ocids: string[]): Promise<void> {
     }),
   )
 }
+
+/**
+ * 자동 → 수동 전환의 시드. 조회 불가 캐릭터는 건너뛰고, 못 채운 캐릭터가 있으면 나머지 저장이 끝난 뒤 던진다.
+ *
+ * 결과가 없는 캐릭터는 넥슨 캐릭터 목록에서 빠진 것이라 결과의 `characterUnavailable` 과 같이 조회 불가다. 채울
+ * 게임 등록이 없으므로 목록을 건드리지 않는다. 첫 실패에서 바로 던지면 나머지 저장이 끝나기 전에 탭이 다시 읽혀
+ * 빈 목록이 선다.
+ */
+export async function seedManualTrackedContentOnModeSwitch(ocids: string[]): Promise<void> {
+  if (ocids.length === 0) {
+    return
+  }
+
+  const results = await syncSchedules(ocids)
+  const resultByOcid = new Map(results.map((result) => [result.ocid, result]))
+
+  const outcomes = await Promise.allSettled(
+    ocids.map(async (ocid) => {
+      const result = resultByOcid.get(ocid)
+      if (result === undefined || result.error?.kind === 'characterUnavailable') {
+        return
+      }
+      if (result.state === null) {
+        throw new Error(`seedManualTrackedContentOnModeSwitch: ${ocid}의 최신 동기화 결과가 없어 시드할 수 없습니다`)
+      }
+      await setManualTrackedContent(ocid, toTrackedItems(result.state))
+    }),
+  )
+
+  const failed = outcomes.filter((outcome) => outcome.status === 'rejected')
+  if (failed.length > 0) {
+    throw new Error(`seedManualTrackedContentOnModeSwitch: ${failed.length}캐릭터를 시드하지 못했습니다`)
+  }
+}

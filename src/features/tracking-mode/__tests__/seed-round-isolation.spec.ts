@@ -148,4 +148,21 @@ describe('auto → manual 전환 시드', () => {
       fetchSchedulerCharacterStateMock.mock.calls.map((call) => call[1] as string).sort(),
     ).toEqual([...TRACKED].sort())
   })
+
+  // 캐릭터 목록에서 빠진 추적 캐릭터는 회차 결과에 아예 안 온다. 전에는 시드가 그 자리에서 던져
+  // 설정 모달의 스피너가 멈추지 않았다.
+  it('캐릭터 목록에서 빠진 추적 캐릭터가 있어도 전환이 끝나고, 나머지는 자기 스케줄로 채운다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-a'), mockCharacter('ocid-b')])])
+
+    await useTrackingModeStore.getState().setMode('manual')
+
+    expect(useTrackingModeStore.getState().mode).toBe('manual')
+    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-a', [
+      { contentKey: REGISTERED_DAILY['ocid-a'], kind: 'daily' },
+    ])
+    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-b', [
+      { contentKey: REGISTERED_DAILY['ocid-b'], kind: 'daily' },
+    ])
+    expect(setManualTrackedContentMock).not.toHaveBeenCalledWith('ocid-c', expect.anything())
+  })
 })
