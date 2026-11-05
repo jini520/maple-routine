@@ -115,6 +115,12 @@ export function SignInScreen(): React.JSX.Element {
     if (useAppEntryStore.getState().stage !== 'ready') navigation.navigate('CharacterSetup')
   }
 
+  // 키로 들어갈 때와 같이 민다. 처음 쓰는 사용자는 고른 캐릭터가 없어 앱이 열리지 않으므로, 안 밀면 이 화면에 머문다.
+  async function signInWithNexonAndContinue(): Promise<void> {
+    if (!(await signInWithNexonAccount())) return
+    if (useAppEntryStore.getState().stage !== 'ready') navigation.navigate('CharacterSetup')
+  }
+
   // `testID` 는 내비게이션 계약이다. `RootNavigator` 의 분기 테스트가 이 이름으로 "지금 이 화면이
   // 떠 있는가"를 묻는다(`screen-<라우트 이름>` 규약).
   return (
@@ -146,7 +152,7 @@ export function SignInScreen(): React.JSX.Element {
             */}
             {NEXON_LOGIN_ENABLED ? (
               <View className="gap-3">
-                <NexonLoginButton onPress={() => void signInWithNexonAccount()} />
+                <NexonLoginButton onPress={() => void signInWithNexonAndContinue()} />
                 <DataUtilLoginLink />
               </View>
             ) : (
@@ -168,7 +174,7 @@ export function SignInScreen(): React.JSX.Element {
           onClose={() => setWarningOpen(false)}
           onNexonLogin={() => {
             setWarningOpen(false)
-            void signInWithNexonAccount()
+            void signInWithNexonAndContinue()
           }}
           onContinueWithApiKey={() => {
             setWarningOpen(false)

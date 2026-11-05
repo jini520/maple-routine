@@ -80,6 +80,12 @@ function toAuthError(error: unknown): AuthError {
   return { kind: 'network' }
 }
 
+/**
+ * 넥슨 로그인이 진행 중인가. 로그인 창은 한 번에 하나만 열 수 있어서, 두 번째 시작은 창을 못 열고 실패 토스트를 낸다.
+ * 그사이 첫 로그인은 끝까지 가므로 사용자는 로그인이 됐는데도 실패했다는 말을 듣는다.
+ */
+let nexonSignInRunning = false
+
 export const useAuthStore = create<AuthStore>()((set, get) => ({
   ...initialAuthState,
 
@@ -213,32 +219,38 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
   // 로그인 화면과 today 의 연동 시트가 함께 쓴다. 두 자리가 같은 끝을 내야 한다.
   async signInWithNexonAccount() {
-    const result = await signInWithNexon()
-    // 사용자가 창을 닫거나 동의 화면에서 취소한 것이라 아무 일도 안 일어난 것이다. 안내를 띄우면
-    // 자기가 그만둬 놓고 무엇이 잘못됐나 찾게 된다.
-    if (result.kind === 'cancelled') return false
-    if (result.kind === 'failed') {
-      useToastStore.getState().showError('넥슨 로그인에 실패했습니다')
-      return false
-    }
-
-    // 세션은 이미 적혔다. 여기서부터는 **앱을 여는 일**이다.
-    const credential = await currentCredential()
-    if (credential === null) return false
-
-    let accounts: AuthState['accounts']
+    if (nexonSignInRunning) return false
+    nexonSignInRunning = true
     try {
-      accounts = await fetchAndRecordCharacterList(credential)
-    } catch {
-      // 로그인은 끝났다. 목록은 다음 회차가 다시 받는다. 여기서 앱을 열면 캐릭터 없는 화면이
-      // 선다. 토스트는 안 띄운다 - 로그인 자체는 성공이라 실패라고 말하면 거짓이다.
-      return false
-    }
+      const result = await signInWithNexon()
+      // 사용자가 창을 닫거나 동의 화면에서 취소한 것이라 아무 일도 안 일어난 것이다. 안내를 띄우면
+      // 자기가 그만둬 놓고 무엇이 잘못됐나 찾게 된다.
+      if (result.kind === 'cancelled') return false
+      if (result.kind === 'failed') {
+        useToastStore.getState().showError('넥슨 로그인에 실패했습니다')
+        return false
+      }
 
-    useToastStore.getState().showSuccess('넥슨 계정을 연결했어요')
-    set((state) => authReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
-    await useAppEntryStore.getState().resolveAfterSignIn(accounts)
-    return true
+      // 세션은 이미 적혔다. 여기서부터는 **앱을 여는 일**이다.
+      const credential = await currentCredential()
+      if (credential === null) return false
+
+      let accounts: AuthState['accounts']
+      try {
+        accounts = await fetchAndRecordCharacterList(credential)
+      } catch {
+        // 로그인은 끝났다. 목록은 다음 회차가 다시 받는다. 여기서 앱을 열면 캐릭터 없는 화면이
+        // 선다. 토스트는 안 띄운다 - 로그인 자체는 성공이라 실패라고 말하면 거짓이다.
+        return false
+      }
+
+      useToastStore.getState().showSuccess('넥슨 계정을 연결했어요')
+      set((state) => authReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
+      await useAppEntryStore.getState().resolveAfterSignIn(accounts)
+      return true
+    } finally {
+      nexonSignInRunning = false
+    }
   },
 
   async signOut() {

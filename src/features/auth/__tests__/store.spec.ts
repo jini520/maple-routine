@@ -749,4 +749,27 @@ describe('useAuthStore.signInWithNexonAccount', () => {
     expect(await useAuthStore.getState().signInWithNexonAccount()).toBe(false)
     expect(resolveAfterSignInMock).not.toHaveBeenCalled()
   })
+
+  it('진행 중에 다시 부르면 새로 시작하지 않는다', async () => {
+    // 로그인 창은 하나만 열 수 있다. 두 번째 시작은 창을 못 열고 실패 토스트를 내는데, 그사이 첫 로그인은 성공한다.
+    let finish: (result: { kind: 'signedIn' }) => void = () => undefined
+    signInWithNexonMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve
+      }),
+    )
+
+    const first = useAuthStore.getState().signInWithNexonAccount()
+    const second = await useAuthStore.getState().signInWithNexonAccount()
+    finish({ kind: 'signedIn' })
+
+    expect(second).toBe(false)
+    expect(await first).toBe(true)
+    expect(signInWithNexonMock).toHaveBeenCalledTimes(1)
+    expect(showErrorMock).not.toHaveBeenCalled()
+
+    // 끝나면 다시 누를 수 있다.
+    await useAuthStore.getState().signInWithNexonAccount()
+    expect(signInWithNexonMock).toHaveBeenCalledTimes(2)
+  })
 })
