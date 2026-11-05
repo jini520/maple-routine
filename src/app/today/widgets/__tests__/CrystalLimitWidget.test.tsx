@@ -148,8 +148,8 @@ describe('집계할 것이 없을 때', () => {
     expect(queryByTestId('crystal-ring')).toBeNull()
   })
 
-  // 이유가 둘이라(기록 없음 / 월드 모름) 어느 쪽도 단정하지 않는다.
-  it('**판매 0개** 라고 단정하지 않는다', async () => {
+  // 처치가 없을 뿐이면 뷰모델이 `0 / 한도` 를 준다. 이 줄은 세울 월드 이름이 없을 때만 선다.
+  it('세울 월드가 없으면 한 줄로 알린다', async () => {
     const { getByText } = await 위젯(빈_뷰모델)
 
     expect(getByText('집계할 기록이 없습니다')).toBeTruthy()

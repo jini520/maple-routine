@@ -174,6 +174,52 @@ describe('SignInScreen: 첫 화면', () => {
   })
 })
 
+describe('SignInScreen: 넥슨 로그인', () => {
+  /** 성공하면 진입 단계가 캐릭터 설정이 되는 로그인. 처음 쓰는 사용자는 고른 캐릭터가 없어 앱이 열리지 않는다. */
+  function succeedingSignIn(): jest.Mock {
+    return jest.fn(async () => {
+      mockEntry.stage = 'characterSetup'
+      return true
+    })
+  }
+
+  // 앱이 열리지 않으면 스택이 바뀌지 않는다. 화면이 밀지 않으면 로그인이 됐는데도 이 화면에 머문다.
+  it('성공하면 다음 온보딩 화면을 민다', async () => {
+    mockStore({ status: 'signedOut', signInWithNexonAccount: succeedingSignIn() })
+    const view = await renderOverlay(<SignInScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('넥슨ID 로그인'))
+    })
+
+    expect(mockNavigate).toHaveBeenCalledWith('CharacterSetup')
+  })
+
+  it('경고 모달의 넥슨 버튼도 성공하면 다음 온보딩 화면을 민다', async () => {
+    mockStore({ status: 'signedOut', signInWithNexonAccount: succeedingSignIn() })
+    const view = await renderOverlay(<SignInScreen />)
+    await openWarning(view)
+
+    const buttons = view.getAllByLabelText('넥슨ID 로그인')
+    await act(async () => {
+      fireEvent.press(buttons[buttons.length - 1])
+    })
+
+    expect(mockNavigate).toHaveBeenCalledWith('CharacterSetup')
+  })
+
+  it('실패하거나 취소하면 밀지 않는다', async () => {
+    mockStore({ status: 'signedOut', signInWithNexonAccount: jest.fn(async () => false) })
+    const view = await renderOverlay(<SignInScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('넥슨ID 로그인'))
+    })
+
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+})
+
 describe('SignInScreen: FAQ', () => {
   // 머리 제목 줄이 없는 화면이라 왼쪽 위의 글자 버튼이 이 화면의 FAQ 를 연다. 문구는 서버 묶음 `sign-in` 이다.
   it('자주 묻는 질문은 로그인 묶음의 FAQ 시트를 연다', async () => {

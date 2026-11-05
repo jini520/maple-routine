@@ -36,6 +36,8 @@ const { getMvpOnboardingPending: getMvpOnboardingPendingMock, setMvpOnboardingPe
 jest.mock('../../mvp-grade/onboarding', () => ({ needsMvpOnboarding: jest.fn() }))
 const { needsMvpOnboarding: needsMvpOnboardingMock } = jest.requireMock('../../mvp-grade/onboarding') as Record<string, jest.Mock>
 
+import { queryClient } from '../../query/client'
+import { queryKeys } from '../../query/keys'
 import { useAppEntryStore } from '../store'
 
 // 팩토리가 **모듈 평가보다 먼저** 불릴 수 있어(스토어를 import 하는 순간) `var` 로 올리고
@@ -73,6 +75,7 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.resetAllMocks()
+  queryClient.clear()
 })
 
 // 끝내지 않은 설정은 그 지점부터 이어간다. 전에는 키 하나만 보고 곧바로 앱을 열어, 캐릭터를
@@ -227,6 +230,21 @@ describe('useAppEntryStore.completeCharacterSetup', () => {
     await useAppEntryStore.getState().completeCharacterSetup(['ocid-a'], onSeedStart)
 
     expect(onSeedStart).not.toHaveBeenCalled()
+  })
+
+  // 캐릭터 설정 화면이 이미 빈 목록을 캐시에 읽어 두었다. 그 캐시는 다시 읽지 않으므로, 덮지 않으면 앱이 열려도
+  // today 가 `추적 중인 캐릭터가 없습니다` 에 머문다.
+  it('앱을 열기 전에 추적 목록 캐시를 고른 목록으로 덮는다', async () => {
+    queryClient.setQueryData(queryKeys.trackedOcids(), null)
+    let cachedWhenOpened: unknown
+    const unsubscribe = useAppEntryStore.subscribe((state) => {
+      if (state.stage === 'ready') cachedWhenOpened = queryClient.getQueryData(queryKeys.trackedOcids())
+    })
+
+    await useAppEntryStore.getState().completeCharacterSetup(['ocid-a', 'ocid-b'])
+    unsubscribe()
+
+    expect(cachedWhenOpened).toEqual(['ocid-a', 'ocid-b'])
   })
 })
 

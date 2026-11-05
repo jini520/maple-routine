@@ -52,7 +52,7 @@ zustand 스토어에는 **화면 상태만** 남긴다. 고른 탭 · 보던 기
 
 | 열쇠 | 드는 것 | 원천 | 기기에 저장 | 단계 |
 |---|---|---|---|---|
-| `trackedOcids()` | 추적 캐릭터 목록. 저장이 `setQueryData` 로 덮는다 | Preferences | 안 한다 | 1 |
+| `trackedOcids()` | 추적 캐릭터 목록. 목록을 저장하는 두 곳(캐릭터 관리의 저장 · 온보딩의 캐릭터 설정 완료)이 `setQueryData` 로 덮는다 | Preferences | 안 한다 | 1 |
 | `schedule(ocid)` | 캐릭터 하나의 스케줄러 응답(정규화 뒤). 회차가 넣고 스스로 받지 않는다(`skipToken`) | 넥슨 `scheduler/character-state` | 한다 | 1 |
 | `characterBasic(ocid)` | 캐릭터 하나의 기본 정보. `fetchCharacterBasicCached` 가 넣는다 | 넥슨 `character/basic` | 한다 | 1 |
 | `scheduleRound()` | 마지막 회차의 받은 시각 · 덮은 캐릭터 · 캐릭터별 결과 종류 · 답하지 않은 캐릭터 | 결정 3 의 회차 | 한다 | 1 |

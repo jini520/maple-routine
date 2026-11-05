@@ -20,6 +20,7 @@ import type { ContentCharacterView } from '../../features/content-scheduler/stor
 import type { BossProfitRow } from '../../features/boss-profit/store'
 import { dropRowKey } from '../../features/boss-profit/store'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
+import { worldNameOf } from '../../lib/world/worlds'
 import { getSharedContentGroups } from '../../lib/scheduler/scheduler-content-scope'
 import { contentCategoryNameOf, type ContentCategoryKey } from '../../lib/scheduler/content-categories'
 import { groupWeeklyLimitOf, isClosedByWeeklyLimit } from '../../lib/scheduler/group-weekly-limit'
@@ -594,12 +595,20 @@ function buildCrystalLimits(input: TodayViewModelInput): CrystalLimitView[] {
   // 자와 갈려, 그 주에 잡은 월간 보스 수익이 이 화면에서만 사라진다(사용자 제보 2026-10-04).
   // 월간 탭에서만 채워지는 값이라 이번 주 계산에는 언제나 빈 배열이다.
   const groups = buildCharacterGroups([...input.profitRows], [])
-  return summarizeWorldCrystals(groups).map((summary) => ({
+  const views = summarizeWorldCrystals(groups).map((summary) => ({
     worldKey: summary.worldKey,
     world: summary.world,
     cleared: summary.cleared,
     limit: WEEKLY_CRYSTAL_SALE_LIMIT,
   }))
+  // 처치 행이 없는 추적 캐릭터의 월드도 0 으로 세운다. 처치가 없으면 아직 하나도 안 판 것이다.
+  for (const ocid of input.orderedOcids) {
+    const profile = input.profilesByOcid[ocid]
+    const worldKey = profile?.worldKey
+    if (worldKey == null || views.some((view) => view.worldKey === worldKey)) continue
+    views.push({ worldKey, world: worldNameOf(worldKey, profile.world ?? worldKey), cleared: 0, limit: WEEKLY_CRYSTAL_SALE_LIMIT })
+  }
+  return views
 }
 
 /**
