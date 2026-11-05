@@ -42,7 +42,9 @@
 | `storage/nexon-account-ids.ts` | 옛 행의 빈 계정 칸을 메인 계정 id 로 채운다 |
 | `components/molecules/NexonLoginButton/` | 넥슨이 준 이미지 한 장으로 만든 로그인 버튼 |
 | `native/browser.ts` | 앱이 여는 웹 주소를 인앱 브라우저로 연다. 못 열면 시스템 브라우저로 넘긴다 |
-| `app/settings/SettingsScreen.tsx` | 더보기 탭 맨 위 넥슨 로그인 버튼 |
+| `app/today/NexonLinkButton.tsx` | today 머리의 `넥슨 ID 연동하기`. 누르면 연동 시트를 연다 |
+| `app/auth/NexonLinkSheet.tsx` | 연동 시트. 제목 · 설명 · 넥슨 버튼 · 소개 링크 |
+| `app/auth/DataUtilLoginLink.tsx` | `게임 데이터 활용 로그인이란?` 링크. 로그인 화면과 연동 시트가 함께 쓴다 |
 | `app/settings/SettingsAboutScreen.tsx` · `app/settings/SignOutConfirm.tsx` · `app/settings/DeleteAccountConfirm.tsx` | 로그아웃 · 계정 삭제 줄과 확인 모달 |
 | `app/auth/AccountDeletionPrompt.tsx` · `features/auth/account-deletion.ts` | 삭제 예정 계정으로 다시 들어왔을 때 취소를 묻는다 |
 
@@ -125,7 +127,17 @@
 | 위치 | 언제 보이나 |
 |---|---|
 | 로그인 화면 넥슨 블록 | 늘 |
-| 더보기 탭 맨 위 | 넥슨 로그인이 없을 때 |
+| today 머리의 `넥슨 ID 연동하기` 가 여는 연동 시트 | 넥슨 로그인이 없을 때. 화면에 들어올 때마다 확인하고, 확인하기 전에는 머리 버튼이 없다 |
+
+`넥슨 ID 연동하기` 는 캐릭터 관리 버튼 왼쪽의 글자 버튼이다. 누르면 아래에서 연동 시트(`NexonLinkSheet`)가 올라온다.
+머리에 넥슨 버튼을 바로 두지 않는 이유는 [[ADR-025]] 결정 6 에 있다.
+
+| 항목 | 동작 |
+|---|---|
+| 제목 · 설명 | `넥슨 ID 연동하기` 와 그 아래 두 줄 `일부 기능은 넥슨 로그인으로만 쓸 수 있어요.` · `앞으로 나오는 기능도 넥슨 로그인을 기준으로 만들어요.` 왼쪽 정렬이다 |
+| 넥슨 버튼 | 시트를 닫고 넥슨 로그인을 시작한다 |
+| `게임 데이터 활용 로그인이란?` | 넥슨의 소개 페이지를 인앱 브라우저로 연다 |
+| 닫기 | 끌어 내리기 · 스크림 탭. 닫기 버튼은 없다 |
 
 | 결과 | 사용자가 보는 것 |
 |---|---|

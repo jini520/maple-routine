@@ -36,13 +36,14 @@
 | `features/manual-completion/query.ts` | 직접 완료를 연 보스 쿼리 `manualCompletion()`. 줄을 세울지 정하는 `useManualCompletionBanner`. 포커스 · 복귀마다 다시 받는다 |
 | `features/party-appointments/query.ts` | 파티 약속 쿼리 `partyAppointments()`. 다음 파티 스케줄 위젯이 `usePartyAppointments` 로 읽는다 |
 | `app/today/CharacterManageButton.tsx` | 제목 줄 오른쪽의 캐릭터 관리 버튼([[ADR-029]]) |
+| `app/today/NexonLinkButton.tsx` | 캐릭터 관리 버튼 왼쪽의 `넥슨 ID 연동하기`. 넥슨 로그인이 없을 때만 보이고, 누르면 연동 시트를 연다([[ADR-025]] 결정 6) |
 | `app/today/widgets/figure-motion.ts` · `useFigureStep.ts` · `lib/character-look.ts` | 대표 캐릭터 위젯의 전신 그림이 움직이는 값과 프레임 주소([[ADR-147]]) |
 | `features/faq/` | 제목 옆 물음표와 안내 줄이 여는 FAQ 묶음(`useFaqSheet`). 문구는 서버의 게임 데이터 칸 `faqs` 다([[ADR-150]]) |
 
 ## 화면 구성
 
 ```
-PageHeader            today · FAQ 물음표 · 갱신 시각 · 캐릭터 관리 버튼
+PageHeader            today · FAQ 물음표 · 갱신 시각 · [넥슨 ID 연동하기] · 캐릭터 관리 버튼
 [결산 안내 줄]         결산 중일 때만
 [직접 완료 안내 줄]    서버가 직접 완료를 열었을 때만
 [공지 배너]            새 앱 공지가 있을 때만
