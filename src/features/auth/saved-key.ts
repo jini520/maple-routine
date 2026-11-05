@@ -8,7 +8,7 @@ export async function loadSavedApiKey(): Promise<string | null> {
 /**
  * 넥슨 로그인이 붙어 있나. 없거나 못 읽으면 `false`.
  *
- * 더보기 탭이 로그인 버튼을 세울지 정할 때 쓴다. 못 읽었을 때 `true` 로 기울면 로그인할 길이
+ * today 머리가 `넥슨 ID 연동하기` 를 세울지 정할 때 쓴다. 못 읽었을 때 `true` 로 기울면 로그인할 길이
  * 사라지므로, 모를 때는 버튼이 서는 쪽으로 떨어뜨린다.
  */
 export async function hasNexonLogin(): Promise<boolean> {
