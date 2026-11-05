@@ -181,7 +181,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |
 | [ADR-056+072+164](./adr/ADR-056+072+164_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |
 | [ADR-057+125](./adr/ADR-057+125_notice_feed.md) | 🟢 | notice | 운영자 공지와 넥슨 공지 |
-| [ADR-058+087](./adr/ADR-058+087_today_widgets.md) | 🟢 | today | today 위젯 격자 |
+| [ADR-058+087+176](./adr/ADR-058+087+176_today_widgets.md) | 🟢 | today | today 위젯 격자 |
 | [ADR-089](./adr/ADR-089_today_quick-links.md) | 🟢 | today | today 빠른 이동 |
 | [ADR-059+136](./adr/ADR-059+136_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
 | [ADR-060+073+079+085+088+107+109+130+133](./adr/ADR-060+073+079+085+088+107+109+130+133_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |

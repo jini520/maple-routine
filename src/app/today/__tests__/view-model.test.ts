@@ -902,6 +902,45 @@ describe('주간 결정석 판매 한도', () => {
       { worldKey: 'challengers_2', world: '챌린저스2', cleared: 2, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
     ])
   })
+
+  // 처치가 없으면 아직 하나도 안 판 것이다. 문구로 비우면 이 위젯이 무엇을 세는지 알 수 없다(사용자 지정).
+  it('이번 주 처치 기록이 없어도 추적 캐릭터의 월드를 0 으로 세운다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b'],
+        profilesByOcid: {
+          a: profile({ world: '스카니아', worldKey: 'scania' }),
+          b: profile({ world: '스카니아', worldKey: 'scania' }),
+        },
+      }),
+    )
+
+    expect(model.crystalLimits).toEqual([
+      { worldKey: 'scania', world: '스카니아', cleared: 0, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
+    ])
+  })
+
+  it('처치 행이 없는 월드는 처치 행의 월드 뒤에 추적 순서대로 붙는다', () => {
+    const model = buildTodayViewModel(
+      input({
+        orderedOcids: ['a', 'b', 'c'],
+        profilesByOcid: {
+          a: profile({ world: '스카니아', worldKey: 'scania' }),
+          b: profile({ world: '루나', worldKey: 'luna' }),
+          c: profile({ world: '엘리시움', worldKey: 'elysium' }),
+        },
+        profitRows: [
+          profitRow({ ocid: 'b', world: '루나', worldKey: 'luna', bossKey: 'lotus', bossName: '스우', isComplete: true }),
+        ],
+      }),
+    )
+
+    expect(model.crystalLimits.map((view) => [view.worldKey, view.cleared])).toEqual([
+      ['luna', 1],
+      ['scania', 0],
+      ['elysium', 0],
+    ])
+  })
 })
 
 describe('초기화 카운트다운', () => {
