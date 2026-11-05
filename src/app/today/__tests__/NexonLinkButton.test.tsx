@@ -2,7 +2,7 @@
 //
 // 키로 이미 들어온 사용자는 로그인 화면을 다시 못 본다. 이 버튼이 앱 안에서 넥슨 로그인으로 가는 유일한 입구다.
 import type { ReactNode } from 'react'
-import { act, fireEvent, waitFor } from '@testing-library/react-native'
+import { act, fireEvent, waitFor, within } from '@testing-library/react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { hasNexonLogin } from '../../../features/auth/saved-key'
@@ -120,6 +120,16 @@ describe('연동 시트', () => {
     expect(view.getByLabelText(넥슨버튼)).toBeTruthy()
     expect(view.getByText('일부 기능은 넥슨 로그인으로만 쓸 수 있어요.')).toBeTruthy()
     expect(view.getByText('앞으로 나오는 기능도 넥슨 로그인을 기준으로 만들어요.')).toBeTruthy()
+  })
+
+  it('제목만 시트 머리에 서고 설명은 스크롤 안에 선다', async () => {
+    // 제목까지 스크롤 안에 두면 끌어 올릴 때 핸들 띠 뒤로 내용이 비친다. 머리는 핸들 띠까지 바탕을 칠한다.
+    const view = await 시트를연다()
+    const header = within(view.getByTestId('bottom-sheet-header'))
+
+    expect(header.getByText(머리버튼)).toBeTruthy()
+    expect(header.queryByText('일부 기능은 넥슨 로그인으로만 쓸 수 있어요.')).toBeNull()
+    expect(header.queryByLabelText(넥슨버튼)).toBeNull()
   })
 
   it('넥슨 버튼은 시트를 먼저 닫고 로그인을 시작한다', async () => {
