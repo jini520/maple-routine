@@ -359,12 +359,27 @@ describe('SignInScreen: 넥슨 로그인이 꺼져 있을 때', () => {
     expect(view.queryByText('불러오려면 넥슨 로그인이 필요해요.')).toBeNull()
   })
 
-  // 경고와 시트는 넥슨 로그인이 있을 때 키 경로를 낮추려고 둔 것이다. 키가 유일한 방법이면 낮출 이유가 없다.
-  it('키 입력은 경고와 시트 없이 첫 화면에 펼쳐 둔다', async () => {
+  // 입구를 켰을 때와 같은 자리에 같은 모양의 버튼이 선다. 입력칸을 펼치면 입구를 켤 때 첫 화면 배치가 바뀐다.
+  it('키 입력칸을 첫 화면에 펼치지 않고, 넥슨 버튼 자리에 API 키로 로그인을 둔다', async () => {
     mockStore({ status: 'signedOut' })
 
     const view = await renderOverlay(<SignInScreen />)
 
+    expect(view.getByRole('button', { name: 'API 키로 로그인' })).toBeTruthy()
+    expect(view.queryByLabelText('Nexon Open API 키')).toBeNull()
+  })
+
+  // 경고 모달은 넥슨 로그인을 한 번 더 권하는 창이고, 알약은 넥슨 로그인보다 제한된 경로라는 표시다.
+  // 넥슨 로그인이 없으면 둘 다 말이 되지 않는다.
+  it('API 키로 로그인은 경고 모달 없이 시트를 열고, 시트 머리에 일부 기능 제한이 없다', async () => {
+    mockStore({ status: 'signedOut' })
+    const view = await renderOverlay(<SignInScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByRole('button', { name: 'API 키로 로그인' }))
+    })
+
+    expect(view.queryByText('API 키로 시작할까요?')).toBeNull()
     expect(view.getByLabelText('Nexon Open API 키')).toBeTruthy()
     expect(view.queryByText('일부 기능 제한')).toBeNull()
   })

@@ -3,6 +3,7 @@
  *
  * 앞으로 일부 기능은 넥슨 로그인으로만 쓸 수 있게 된다. 그래서 키로 가는 길은 화면 맨 아래의 작은 글자 버튼 하나이고,
  * 누르면 경고 모달이 먼저 뜬다. 경고를 넘긴 사람에게만 키 입력 상단 시트를 연다.
+ * 넥슨 로그인 입구가 꺼져 있으면 넥슨 버튼 자리에 `API 키로 로그인` 을 두고, 경고 없이 시트를 연다.
  *
  * **실패해도 화면이 안 바뀐다.** 검증 실패는 스토어가 토스트로 알리고 시트는 그대로 서 있다.
  * 검증(캐릭터 목록 조회)은 보통 1초 미만이라 별도 로딩 문구를 안 띄우고 제출 버튼만 스피너로 바꾼다.
@@ -25,12 +26,12 @@ import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { Svg } from '../../lib/nativewind-interop'
 
 import { Text } from '../../components/atoms'
+import { ApiKeyLoginButton } from '../../components/molecules/ApiKeyLoginButton/ApiKeyLoginButton'
 import { NexonLoginButton } from '../../components/molecules/NexonLoginButton/NexonLoginButton'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { EntryScroll } from '../../components/templates/EntryScroll/EntryScroll'
 import { SPLASH_LEAF_PATH, SPLASH_LEAF_VIEW_BOX } from '../splash/leaf'
 import { WORDMARK_EM_HEIGHT, WORDMARK_GLYPHS, WORDMARK_UNITS_PER_EM } from '../splash/wordmark'
-import { ApiKeyForm } from './ApiKeyForm'
 import { ApiKeySheet } from './ApiKeySheet'
 import { ApiKeyWarningModal } from './ApiKeyWarningModal'
 import { DataUtilLoginLink } from './DataUtilLoginLink'
@@ -114,16 +115,6 @@ export function SignInScreen(): React.JSX.Element {
     if (useAppEntryStore.getState().stage !== 'ready') navigation.navigate('CharacterSetup')
   }
 
-  const keyForm = (
-    // 저장된 키가 늦게 읽히면 폼을 새로 세워 그 키로 채운다.
-    <ApiKeyForm
-      key={savedKey ?? ''}
-      initialApiKey={savedKey ?? undefined}
-      isSubmitting={status === 'verifying'}
-      onSubmit={(apiKey) => void submit(apiKey)}
-    />
-  )
-
   // `testID` 는 내비게이션 계약이다. `RootNavigator` 의 분기 테스트가 이 이름으로 "지금 이 화면이
   // 떠 있는가"를 묻는다(`screen-<라우트 이름>` 규약).
   return (
@@ -159,8 +150,8 @@ export function SignInScreen(): React.JSX.Element {
                 <DataUtilLoginLink />
               </View>
             ) : (
-              // 넥슨 로그인이 없으면 키가 유일한 방법이라 경고와 시트를 거치지 않는다.
-              <View className="rounded-[14px] bg-surface p-4">{keyForm}</View>
+              // 경고는 넥슨 로그인을 한 번 더 권하는 창이라, 넥슨 로그인이 없으면 거치지 않는다.
+              <ApiKeyLoginButton onPress={() => setSheetOpen(true)} />
             )}
           </View>
 
