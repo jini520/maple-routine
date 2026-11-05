@@ -361,32 +361,53 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
 function EnhancedItemRows(props: {
   rowKey: string
   items: readonly EnhancedItem[]
+  /** 참이면 이름 아래 줄에 성과 횟수를 둔다. 셋을 한 줄에 같은 크기로 두면 구분되지 않는다 */
+  starforce: boolean
 }): React.JSX.Element {
   return (
     <View
       testID={`cashbook-row-items-${props.rowKey}`}
-      className="mx-2.5 mb-2.5 gap-y-1.5 rounded-[10px] bg-card-inset px-2.5 py-2.5"
+      className={`mx-2.5 mb-2.5 ${props.starforce ? 'gap-y-2.5' : 'gap-y-1.5'} rounded-[10px] bg-card-inset px-2.5 py-2.5`}
     >
-      {props.items.map((item) => (
-        <View
-          // 장비 표에 없는 장비는 key 가 없어 이름으로 묶였다. 그 이름이 곧 칸의 신원이다.
-          key={item.itemKey ?? item.targetItem}
-          testID={`cashbook-item-row-${item.itemKey ?? item.targetItem}`}
-          className="flex-row items-center gap-2"
-        >
-          <Text numberOfLines={1} className="shrink text-11 text-text-muted">
-            {item.targetItem}
-          </Text>
-          <Text numberOfLines={1} className="shrink-0 text-11 text-text-disabled" style={TABULAR_NUMS}>
-            {item.fromStar !== null && item.toStar !== null
-              ? `${item.fromStar}성 → ${item.toStar}성 ${item.count}회`
-              : `${item.count}회`}
-          </Text>
+      {props.items.map((item) => {
+        // 장비 표에 없는 장비는 key 가 없어 이름으로 묶였다. 그 이름이 곧 칸의 신원이다.
+        const itemId = item.itemKey ?? item.targetItem
+        const amount = (
           <Text className="ml-auto shrink-0 text-xs font-semibold text-fall-ink" style={TABULAR_NUMS}>
             {formatMesoSigned(item.costMeso, '−')}
           </Text>
-        </View>
-      ))}
+        )
+        return props.starforce ? (
+          <View key={itemId} testID={`cashbook-item-row-${itemId}`} className="flex-row items-center gap-2">
+            <View className="min-w-0 flex-1">
+              <Text numberOfLines={1} className="text-xs font-semibold text-text">
+                {item.targetItem}
+              </Text>
+              <View testID={`cashbook-item-detail-${itemId}`} className="flex-row gap-2">
+                {item.fromStar !== null && item.toStar !== null && (
+                  <Text numberOfLines={1} className="text-11 text-text-muted" style={TABULAR_NUMS}>
+                    {`${item.fromStar}성 → ${item.toStar}성`}
+                  </Text>
+                )}
+                <Text numberOfLines={1} className="text-11 text-text-disabled" style={TABULAR_NUMS}>
+                  {`${item.count}회`}
+                </Text>
+              </View>
+            </View>
+            {amount}
+          </View>
+        ) : (
+          <View key={itemId} testID={`cashbook-item-row-${itemId}`} className="flex-row items-center gap-2">
+            <Text numberOfLines={1} className="shrink text-11 text-text-muted">
+              {item.targetItem}
+            </Text>
+            <Text numberOfLines={1} className="shrink-0 text-11 text-text-disabled" style={TABULAR_NUMS}>
+              {`${item.count}회`}
+            </Text>
+            {amount}
+          </View>
+        )
+      })}
     </View>
   )
 }
@@ -561,7 +582,13 @@ function DayRecordRow(props: {
         </View>
       </Pressable>
       {isOpen && bosses !== null && <DefeatedBossTiles rowKey={rowKey} bosses={bosses} />}
-      {isOpen && items !== null && <EnhancedItemRows rowKey={rowKey} items={items} />}
+      {isOpen && items !== null && (
+        <EnhancedItemRows
+          rowKey={rowKey}
+          items={items}
+          starforce={entry.kind === 'enhancement' && entry.category === 'starforce'}
+        />
+      )}
       {isOpen && soldItems !== null && <SoldItemRows rowKey={rowKey} items={soldItems} />}
     </View>
   )

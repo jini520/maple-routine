@@ -1782,17 +1782,24 @@ describe('강화 줄', () => {
     )
   })
 
-  // 성이 빈 줄은 다시 매기기 요청이 아직 안 채운 날의 줄이다. 빈 칸을 지어내지 않고 전처럼 선다.
-  it('스타포스 장비 줄은 횟수 앞에 첫 성과 끝 성이 서고, 성이 빈 줄은 이름 · 횟수 · 금액만 선다', async () => {
+  // 이름 · 성 · 횟수를 한 줄에 같은 크기로 두면 셋이 구분되지 않는다. 성이 빈 줄은 다시 매기기 요청이 아직 안 채운 날이다.
+  it('스타포스 장비 줄은 이름 아래 줄에 첫 성과 끝 성, 횟수를 따로 세우고, 성이 빈 줄은 횟수만 세운다', async () => {
     const [클로, 이어링] = 스타포스줄.items
     그날줄을(고른날, [{ ...스타포스줄, items: [{ ...클로, fromStar: 17, toStar: 21 }, 이어링] }])
     const view = await 그리기()
     await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*펼치기$/)
 
-    expect(view.getByTestId('cashbook-item-row-arcane_umbra_knuckle')).toHaveTextContent(
-      '아케인셰이드 클로17성 → 21성 32회−9.8억',
-    )
-    expect(view.getByTestId('cashbook-item-row-dea_sidus_earring')).toHaveTextContent('데아 시두스 이어링15회−2.2억')
+    expect(view.getByTestId('cashbook-item-detail-arcane_umbra_knuckle')).toHaveTextContent(/^17성 → 21성32회$/)
+    expect(view.getByTestId('cashbook-item-row-arcane_umbra_knuckle')).toHaveTextContent('아케인셰이드 클로17성 → 21성32회−9.8억')
+    expect(view.getByTestId('cashbook-item-detail-dea_sidus_earring')).toHaveTextContent(/^15회$/)
+  })
+
+  it('스타포스가 아닌 장비 줄은 이름 · 횟수 · 금액 한 줄이다', async () => {
+    const view = await 그리기()
+    await 이름으로누르기(view, /^낟낟 · 강화 에디셔널 잠재능력 .*펼치기$/)
+
+    expect(view.getByTestId('cashbook-item-row-arcane_umbra_knuckle')).toHaveTextContent('아케인셰이드 클로10회−7.4억')
+    expect(view.queryByTestId('cashbook-item-detail-arcane_umbra_knuckle')).toBeNull()
   })
 
   // 한 번에 하나만 펼친다. 둘이 같은 장비를 만졌으면 판이 둘 서서 신원이 겹친다.
