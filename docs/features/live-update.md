@@ -162,6 +162,8 @@ OTA 번들은 스토어 바이너리와 지문이 같은 트리에서만 받힌�
 6. 스토어 심사 중인 바이너리가 있으면 그 지문을 `IN_REVIEW_RUNTIME_VERSIONS` 에 넣어 둔다
    ([[ADR-011]] 결정 6). 넣지 않고 발행하면 심사 담당자의 앱이 잠긴다.
 7. `PINNED_RUNTIME_VERSIONS` 는 비어 있어야 한다. 값이 있으면 스크립트가 멈춘다([[ADR-011]] 결정 7).
+8. `.env` 의 `EXPO_PUBLIC_ENHANCEMENT_RECOMPUTE` 에 `foundation/release.md` 의 `빌드하기 전에` 4 의 표에 있는 요청이
+   모두 있는지 본다. OTA 번들에도 이 값이 구워진다. 빠지면 그 OTA 를 받은 기기가 지난 날을 다시 받지 않는다.
 
 ### 실행
 
