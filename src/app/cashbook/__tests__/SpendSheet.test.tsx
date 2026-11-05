@@ -68,6 +68,8 @@ async function 그리기(
       // 메이플 ID 보기는 그것을 보는 케이스만 준다.
       accounts={[]}
       loadRememberedLevels={async () => ({})}
+      loadHexaStorages={async () => []}
+      hexaStorageChecks={{ useStorage: false, storageAsSpend: false }}
       lastPointRate={null}
       onSave={jest.fn()}
       onClose={jest.fn()}
@@ -2759,7 +2761,7 @@ describe('헥사 매트릭스', () => {
       levelFrom: 25,
       levelTo: 28,
       mesoAmount: 2_160_000_000,
-      hexa: { fragmentCount: 345, untradableFragmentCount: 45, fragmentPrice: 7_200_000, activation: null },
+      hexa: { fragmentCount: 345, untradableFragmentCount: 45, fragmentPrice: 7_200_000, activation: null, useStorage: false, storageAsSpend: false, storageUses: [] },
     })
   })
 
@@ -2803,8 +2805,153 @@ describe('헥사 매트릭스', () => {
       levelFrom: null,
       levelTo: null,
       mesoAmount: 2_448_000_000,
-      hexa: { fragmentCount: 340, untradableFragmentCount: 0, fragmentPrice: 7_200_000, activation: true },
+      hexa: { fragmentCount: 340, untradableFragmentCount: 0, fragmentPrice: 7_200_000, activation: true, useStorage: false, storageAsSpend: false, storageUses: [] },
     })
+  })
+
+  /** 마스터리 25→28 이 345개라 교환 불가 45 를 빼면 보관에서 300 을 가져올 수 있다. */
+  async function 선참25에서28(view: Rendered): Promise<void> {
+    await 렌고르기(view)
+    await 코어고르기(view, 선참)
+    await 아이디로누르기(view, 'spend-sheet-hexa-level-level-25')
+    await 아이디로누르기(view, 'spend-sheet-hexa-level-level-28')
+    await 카드칸에치기(view, 'spend-sheet-hexa-untradable', '45')
+  }
+
+  function 꺼짐(view: Rendered, testID: string): boolean | undefined {
+    return view.getByTestId(testID).props.accessibilityState?.disabled
+  }
+
+  it('보관 중인 조각 사용을 켜면 교환 불가 다음으로 보관에서 가져온 만큼 필요 조각을 줄이고, 원래 수는 취소선으로 남긴다', async () => {
+    const onSave = jest.fn()
+    const loadHexaStorages = jest.fn(async () => [
+      { ocid: 'ocid-ren', stored: 120 },
+      { ocid: 'ocid-alt', stored: 100 },
+    ])
+    const view = await 열기({ onSave, loadHexaStorages, loadRememberedLevels: async () => ({ [선참]: 25 }) })
+    await 선참25에서28(view)
+
+    // 지출 체크는 보관을 켰을 때만 선다.
+    expect(view.queryByTestId('spend-sheet-hexa-storage-as-spend')).toBeNull()
+    await 아이디로누르기(view, 'spend-sheet-hexa-use-storage')
+
+    expect(loadHexaStorages).toHaveBeenCalledWith('ocid-ren', '2026-08-23', undefined)
+    expect(view.getByTestId('spend-sheet-hexa-storage-taken')).toHaveTextContent('220개')
+    expect(view.getByTestId('spend-sheet-hexa-fragment-count')).toHaveTextContent('80')
+    expect(view.getByTestId('spend-sheet-hexa-fragment-original')).toHaveTextContent('345')
+    expect(view.getByTestId('spend-sheet-hexa-storage-as-spend')).toBeTruthy()
+
+    await 카드칸에치기(view, 'spend-sheet-hexa-price', '7200000')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('5억 7600만')
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: 576_000_000,
+      hexa: {
+        fragmentCount: 345,
+        untradableFragmentCount: 45,
+        fragmentPrice: 7_200_000,
+        useStorage: true,
+        storageAsSpend: false,
+        storageUses: [
+          { ocid: 'ocid-ren', fragments: 120 },
+          { ocid: 'ocid-alt', fragments: 100 },
+        ],
+      },
+    })
+  })
+
+  // 곱할 개수가 없는데 가격을 치게 하면 저장하려고 아무 값이나 넣게 된다.
+  it('교환 불가와 보관이 필요 조각을 다 채우면 가격 입력이 꺼지고 0 메소로 저장하며, 지출 체크를 켜면 가격을 받는다', async () => {
+    const onSave = jest.fn()
+    const view = await 열기({
+      onSave,
+      loadHexaStorages: async () => [{ ocid: 'ocid-ren', stored: 400 }],
+      loadRememberedLevels: async () => ({ [선참]: 25 }),
+    })
+    await 선참25에서28(view)
+    await 아이디로누르기(view, 'spend-sheet-hexa-use-storage')
+
+    expect(view.getByTestId('spend-sheet-hexa-fragment-count')).toHaveTextContent('0')
+    expect(꺼짐(view, 'spend-sheet-hexa-price')).toBe(true)
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
+
+    await 아이디로누르기(view, 'spend-sheet-hexa-storage-as-spend')
+    expect(꺼짐(view, 'spend-sheet-hexa-price')).toBe(false)
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+    await 카드칸에치기(view, 'spend-sheet-hexa-price', '7200000')
+    // 지출 체크를 켜도 필요 조각 칸은 보관 몫을 뺀 수다. 금액만 보관 몫을 넣는다.
+    expect(view.getByTestId('spend-sheet-hexa-fragment-count')).toHaveTextContent('0')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('21억 6천만')
+
+    await 아이디로누르기(view, 'spend-sheet-hexa-storage-as-spend')
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      mesoAmount: 0,
+      hexa: { fragmentPrice: null, useStorage: true, storageAsSpend: false, storageUses: [{ ocid: 'ocid-ren', fragments: 300 }] },
+    })
+  })
+
+  // 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.
+  it('보관을 못 읽으면 보관을 켰을 때 개수가 - 이고 저장이 꺼진다', async () => {
+    const view = await 열기({ loadHexaStorages: async () => null, loadRememberedLevels: async () => ({ [선참]: 25 }) })
+    await 선참25에서28(view)
+    await 카드칸에치기(view, 'spend-sheet-hexa-price', '7200000')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
+
+    await 아이디로누르기(view, 'spend-sheet-hexa-use-storage')
+    expect(view.getByTestId('spend-sheet-hexa-storage-taken')).toHaveTextContent('-')
+    expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+  })
+
+  it('새 폼은 직전에 새 헥사 기록을 저장한 때의 두 체크로 연다', async () => {
+    const view = await 열기({ hexaStorageChecks: { useStorage: true, storageAsSpend: true } })
+    await 렌고르기(view)
+
+    expect(view.getByTestId('spend-sheet-hexa-use-storage').props.accessibilityState?.checked).toBe(true)
+    expect(view.getByTestId('spend-sheet-hexa-storage-as-spend').props.accessibilityState?.checked).toBe(true)
+  })
+
+  it('수정은 기억이 아니라 그 기록에 저장한 체크로 열고, 그 기록의 몫을 뺀 보관으로 다시 나눈다', async () => {
+    const 기록: SpendRecord = {
+      id: 'spd-hexa-storage',
+      ocid: 'ocid-ren',
+      spentOn: '2026-08-23',
+      category: 'hexa_matrix',
+      item: null,
+      itemKey: 선참,
+      formItemKeys: null,
+      itemKind: null,
+      levelFrom: 25,
+      levelTo: 28,
+      quantity: null,
+      mesoAmount: 0,
+      tariffMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
+      hexa: {
+        fragmentCount: 345,
+        untradableFragmentCount: 45,
+        fragmentPrice: null,
+        activation: null,
+        useStorage: true,
+        storageAsSpend: false,
+        storageUses: [{ ocid: 'ocid-ren', fragments: 300 }],
+      },
+      recordedAt: '2026-08-23T01:00:00.000Z',
+    }
+    const loadHexaStorages = jest.fn(async () => [{ ocid: 'ocid-ren', stored: 300 }])
+    const view = await 그리기({
+      characters: 렌,
+      editing: 기록,
+      onDelete: jest.fn(),
+      loadHexaStorages,
+      hexaStorageChecks: { useStorage: false, storageAsSpend: true },
+    })
+
+    expect(view.getByTestId('spend-sheet-hexa-use-storage').props.accessibilityState?.checked).toBe(true)
+    expect(view.getByTestId('spend-sheet-hexa-storage-as-spend').props.accessibilityState?.checked).toBe(false)
+    expect(loadHexaStorages).toHaveBeenCalledWith('ocid-ren', '2026-08-23', 'spd-hexa-storage')
   })
 
   it('수정으로 열면 헥사 스탯의 강화 조각을 필요 조각에서 활성화 몫을 빼 되살린다', async () => {
@@ -2825,7 +2972,7 @@ describe('헥사 매트릭스', () => {
       pointAmount: null,
       pointPer100mMeso: null,
       cashAmount: null,
-      hexa: { fragmentCount: 340, untradableFragmentCount: 0, fragmentPrice: 7_200_000, activation: true },
+      hexa: { fragmentCount: 340, untradableFragmentCount: 0, fragmentPrice: 7_200_000, activation: true, useStorage: false, storageAsSpend: false, storageUses: [] },
       recordedAt: '2026-08-23T01:00:00.000Z',
     }
     const view = await 그리기({ characters: 렌, editing: 기록, onDelete: jest.fn() })

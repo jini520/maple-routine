@@ -88,6 +88,8 @@ import {
   loadLastHunts,
   nextLastHunts,
   loadFragmentStorage,
+  loadHexaStorageChecks,
+  loadHexaStorages,
   loadTrackedCharacters,
   recordIncome,
   recordIncomes,
@@ -106,6 +108,7 @@ import {
   type ManualDayRecord,
   type SoldItem,
 } from '../../features/cashbook/records'
+import type { HexaStorageChecks } from '../../storage/hexa-storage-checks'
 import type { LastHunts } from '../../storage/last-hunts'
 import { useLedgerDays } from '../../features/cashbook/ledger-query'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
@@ -593,6 +596,8 @@ export function CashbookScreen(): React.JSX.Element {
   const [lastPointRate, setLastPointRate] = useState<number | null>(null)
   /** 캐릭터별 마지막 사냥. 사냥 계산기에서 캐릭터를 고르면 그 몫이 선다. */
   const [lastHunts, setLastHunts] = useState<LastHunts>({})
+  /** 새 헥사 폼의 두 체크. 기억이 없으면 둘 다 꺼져 있다. */
+  const [hexaStorageChecks, setHexaStorageChecks] = useState<HexaStorageChecks>({ useStorage: false, storageAsSpend: false })
   /**
    * 시트의 캐릭터 고르개가 쓸 목록. 화면이 읽는다(시트는 `storage/` 를 모른다).
    * 들어올 때 한 번이면 된다. 추적 목록이 시트를 여는 사이에 바뀌지 않는다.
@@ -695,6 +700,7 @@ export function CashbookScreen(): React.JSX.Element {
   useEffect(() => {
     void loadLastPointRate().then(setLastPointRate)
     void loadLastHunts().then(setLastHunts)
+    void loadHexaStorageChecks().then(setHexaStorageChecks)
     void loadTrackedCharacters().then(setCharacters)
     void loadSheetAccounts().then(setAccounts, () => undefined)
   }, [])
@@ -736,6 +742,9 @@ export function CashbookScreen(): React.JSX.Element {
     }
     // 시세는 방금 저장한 값이 다음 기본값이다. 다시 읽지 않고 그대로 든다.
     if (draft.pointPer100mMeso !== null) setLastPointRate(draft.pointPer100mMeso)
+    // 헥사 체크도 같다. 다음 새 헥사 폼이 이 상태로 열린다.
+    const hexa = draft.hexa
+    if (hexa !== null) setHexaStorageChecks({ useStorage: hexa.useStorage, storageAsSpend: hexa.storageAsSpend })
   }
 
   /**
@@ -1122,6 +1131,9 @@ export function CashbookScreen(): React.JSX.Element {
           lastPointRate={lastPointRate}
           // 심볼 강화 드롭다운이 만렙인 심볼을 가를 때 부른다. 시트는 `nexon/` 도 `storage/` 도 모른다.
           loadRememberedLevels={loadRememberedLevels}
+          // 헥사 매트릭스 폼이 보관 조각을 가져올 캐릭터와 그 보관을 읽을 때 부른다.
+          loadHexaStorages={loadHexaStorages}
+          hexaStorageChecks={hexaStorageChecks}
           editing={typeof sheet === 'object' ? sheet.record : undefined}
           onSave={typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveSpend}
           onDelete={typeof sheet === 'object' ? () => deleteEntry(sheet) : undefined}

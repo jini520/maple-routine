@@ -193,12 +193,69 @@ export function findHexaStat(key: string | null): HexaStat | null {
   return index().stats.find((stat) => stat.key === key) ?? null
 }
 
+/** 보관에서 가져온 조각. `takenAsSpend` 가 참이면 그 몫도 개당 가격으로 지출에 넣는다. */
+interface HexaTaken {
+  taken?: number
+  takenAsSpend?: boolean
+}
+
+/** 필요 조각에서 교환 불가와 보관에서 가져온 개수를 뺀 수. 더 구해야 할 조각이다. */
+export function hexaFragmentsLeft(input: { fragments: number; untradable: number; taken: number }): number {
+  return Math.max(0, input.fragments - input.untradable - input.taken)
+}
+
+/** 개당 가격을 곱할 개수. 0 이면 개당 가격을 받지 않는다. */
+export function hexaPricedFragments(input: { fragments: number; untradable: number } & HexaTaken): number {
+  const taken = input.takenAsSpend === true ? 0 : (input.taken ?? 0)
+  return hexaFragmentsLeft({ fragments: input.fragments, untradable: input.untradable, taken })
+}
+
 /**
- * 헥사 지출 금액. `(필요 조각 − 교환 불가) × 개당 가격` 이고, 교환 불가가 더 많으면 0 이다.
- * 교환 불가 조각은 이벤트로 얻어 돈이 안 든 조각이다.
+ * 헥사 지출 금액. 개당 가격을 곱할 개수 × 개당 가격이다. 교환 불가 조각은 이벤트로 얻어 돈이 안 든 조각이고,
+ * 보관 조각은 사냥한 날 수입으로 잡히지 않아 지출 체크를 켰을 때만 넣는다.
  */
-export function hexaSpendMeso(input: { fragments: number; untradable: number; price: number }): number {
-  return Math.max(0, input.fragments - input.untradable) * input.price
+export function hexaSpendMeso(input: { fragments: number; untradable: number; price: number } & HexaTaken): number {
+  return hexaPricedFragments(input) * input.price
+}
+
+/**
+ * 보관 조각을 가져오는 캐릭터의 차례. 강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID 의 추적 캐릭터를 캐릭터
+ * 관리 순서로 둔다. 다른 메이플 ID 의 조각은 옮길 수 없고, 메이플 ID 를 모르면 같은 ID 인지 알 수 없어 자신뿐이다.
+ *
+ * @param input.trackedOcids 캐릭터 관리에 저장한 순서
+ */
+export function hexaStorageCandidates(input: {
+  ocid: string
+  trackedOcids: readonly string[]
+  accountOf: (ocid: string) => string | null
+}): string[] {
+  const account = input.accountOf(input.ocid)
+  if (account === null) return [input.ocid]
+  const others = input.trackedOcids.filter((ocid) => ocid !== input.ocid && input.accountOf(ocid) === account)
+  return [input.ocid, ...others]
+}
+
+/**
+ * 보관에서 가져오는 배분. 교환 불가를 먼저 빼고 남은 개수를 `storages` 차례대로 가져온다. 보관이 0 이하인
+ * 캐릭터는 건너뛴다.
+ *
+ * @param input.storages `hexaStorageCandidates` 차례의 캐릭터별 보관
+ */
+export function allocateHexaStorage(input: {
+  fragments: number
+  untradable: number
+  storages: readonly { ocid: string; stored: number }[]
+}): { uses: { ocid: string; fragments: number }[]; taken: number } {
+  let rest = Math.max(0, input.fragments - input.untradable)
+  const uses: { ocid: string; fragments: number }[] = []
+  for (const { ocid, stored } of input.storages) {
+    if (rest === 0) break
+    if (stored <= 0) continue
+    const fragments = Math.min(stored, rest)
+    uses.push({ ocid, fragments })
+    rest -= fragments
+  }
+  return { uses, taken: uses.reduce((sum, use) => sum + use.fragments, 0) }
 }
 
 /** 여러 스킬을 묶은 코어 이름(`가/나/다`)의 첫 스킬과 나머지 수. 목록에서 이름을 한 줄에 두기 위해서다. */

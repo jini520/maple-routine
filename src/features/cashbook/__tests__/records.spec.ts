@@ -43,6 +43,7 @@ jest.mock('../../../storage/enhancement-totals', () => ({ loadEnhancementTotals:
 jest.mock('../../enhancement-history/legacy-totals', () => ({ ensureEnhancementTotals: jest.fn() }))
 jest.mock('../../../storage/mvp-grades', () => ({ getMvpGradeHistories: jest.fn() }))
 jest.mock('../../../storage/character-accounts', () => ({ getCharacterAccountSightings: jest.fn() }))
+jest.mock('../../../storage/hexa-storage-checks', () => ({ setHexaStorageChecks: jest.fn(), getHexaStorageChecks: jest.fn() }))
 jest.mock('../../../lib/mvp/starforce', () => ({ starforceMvpDiscountResolver: jest.fn() }))
 jest.mock('../../app-review/request', () => ({ countCoreSave: jest.fn() }))
 jest.mock('../account-names', () => ({ loadAccountLabels: jest.fn(async () => new Map()) }))
@@ -60,6 +61,7 @@ const appReview = jest.requireMock('../../app-review/request') as Record<string,
 const legacyTotals = jest.requireMock('../../enhancement-history/legacy-totals') as Record<string, jest.Mock>
 const mvpGrades = jest.requireMock('../../../storage/mvp-grades') as Record<string, jest.Mock>
 const characterAccounts = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
+const hexaChecks = jest.requireMock('../../../storage/hexa-storage-checks') as Record<string, jest.Mock>
 const mvp = jest.requireMock('../../../lib/mvp/starforce') as Record<string, jest.Mock>
 const accountNames = jest.requireMock('../account-names') as Record<string, jest.Mock>
 
@@ -539,7 +541,7 @@ describe('loadDayRecords: 그날 적은 것을 한 줄씩', () => {
         mesoAmount: 0,
         levelFrom: 19,
         levelTo: 20,
-        hexa: { fragmentCount: 252, untradableFragmentCount: 300, fragmentPrice: 7_200_000, activation: null },
+        hexa: { fragmentCount: 252, untradableFragmentCount: 300, fragmentPrice: 7_200_000, activation: null, useStorage: false, storageAsSpend: false, storageUses: [] },
       },
     ])
     const { rowKeyOf } = require('../records') as typeof import('../records')
@@ -602,7 +604,7 @@ describe('하루 목록 카드의 두 줄', () => {
   })
 
   it('헥사 매트릭스는 갈래 제목과, 헥사 스킬이면 코어의 첫 스킬 이름 · 두 레벨, 헥사 스탯이면 스탯 이름이다', () => {
-    const 조각 = { fragmentCount: 345, untradableFragmentCount: 0, fragmentPrice: 7_200_000 }
+    const 조각 = { fragmentCount: 345, untradableFragmentCount: 0, fragmentPrice: 7_200_000, useStorage: false, storageAsSpend: false, storageUses: [] }
     const 스킬행 = {
       ...지출행,
       category: 'hexa_matrix' as const,
@@ -1268,6 +1270,84 @@ describe('아이템 판매 줄의 개수', () => {
  *
  * 못 읽으면 `null` 이다. 0 으로 읽으면 보관이 있는데도 없다고 적는다.
  */
+// 다음 새 헥사 폼의 두 체크가 직전 새 기록의 상태로 선다. 수정 저장은 그 기록만 고치는 일이라 기억을 안 건드린다.
+describe('헥사 보관 체크 기억', () => {
+  const 헥사지출: SpendDraft = {
+    ...메포지출,
+    ocid: 'main',
+    category: 'hexa_matrix',
+    itemKey: '창룡파천검 : 승천',
+    levelFrom: 25,
+    levelTo: 28,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    mesoAmount: 0,
+    hexa: {
+      fragmentCount: 690,
+      untradableFragmentCount: 30,
+      fragmentPrice: null,
+      activation: null,
+      useStorage: true,
+      storageAsSpend: false,
+      storageUses: [{ ocid: 'main', fragments: 660 }],
+    },
+  }
+
+  beforeEach(() => {
+    spend.insertSpendRecord.mockResolvedValue(undefined)
+    spend.updateSpendRecord.mockResolvedValue(undefined)
+  })
+
+  it('새 헥사 기록을 저장하면 두 체크를 기억하고, 고친 저장과 다른 지출은 기억하지 않는다', async () => {
+    const { editSpend, recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend(헥사지출, 지금)
+    expect(hexaChecks.setHexaStorageChecks).toHaveBeenCalledWith({ useStorage: true, storageAsSpend: false })
+
+    hexaChecks.setHexaStorageChecks.mockClear()
+    await editSpend({ ...헥사지출, id: 'rec-1', recordedAt: '2026-08-23T05:00:00.000Z' })
+    await recordSpend(메포지출, 지금)
+    expect(hexaChecks.setHexaStorageChecks).not.toHaveBeenCalled()
+  })
+})
+
+describe('loadHexaStorages', () => {
+  const 본 = (ocid: string, accountId: string) => ({
+    ocid,
+    name: ocid,
+    accountId,
+    firstSeenOn: '2026-10-01',
+    lastSeenOn: '2026-10-01',
+  })
+
+  beforeEach(() => {
+    selection.getTrackedCharacterOcids.mockResolvedValue(['alt', 'other', 'main'])
+    characterAccounts.getCharacterAccountSightings.mockResolvedValue([본('main', 'A'), 본('alt', 'A'), 본('other', 'B')])
+  })
+
+  it('같은 메이플 ID 캐릭터의 보관을 강화한 캐릭터부터 캐릭터 관리 순서로 읽는다', async () => {
+    income.getFragmentStorage.mockImplementation(async (ocid: string) => ({ main: 10, alt: 20 })[ocid] ?? 0)
+    const { loadHexaStorages } = require('../records') as typeof import('../records')
+
+    await expect(loadHexaStorages('main', '2026-10-30', 'rec-1')).resolves.toEqual([
+      { ocid: 'main', stored: 10 },
+      { ocid: 'alt', stored: 20 },
+    ])
+    expect(income.getFragmentStorage).toHaveBeenCalledWith('main', '2026-10-30', 'rec-1')
+  })
+
+  // 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.
+  it('한 캐릭터라도 보관을 못 읽으면 null 이다', async () => {
+    income.getFragmentStorage.mockImplementation(async (ocid: string) => {
+      if (ocid === 'alt') throw new Error('db')
+      return 10
+    })
+    const { loadHexaStorages } = require('../records') as typeof import('../records')
+
+    await expect(loadHexaStorages('main', '2026-10-30', undefined)).resolves.toBeNull()
+  })
+})
+
 describe('loadFragmentStorage', () => {
   it('못 읽으면 null 이다', async () => {
     income.getFragmentStorage.mockRejectedValue(new Error('db'))

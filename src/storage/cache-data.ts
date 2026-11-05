@@ -16,6 +16,7 @@ export type CacheDataSelection = Record<CacheDataGroupId, boolean>
 const MANUAL_KEY_PREFIXES = ['manualTrackedContent:', 'worldSharedProgress:', 'accountSharedProgress:']
 const MANUAL_KEYS = new Set<string>([
   STORAGE_KEYS.lastHunts,
+  STORAGE_KEYS.hexaStorageChecks,
   STORAGE_KEYS.lastHuntSelection,
   STORAGE_KEYS.lastHuntToggles,
   STORAGE_KEYS.lastPointRate,
@@ -35,9 +36,15 @@ function isCacheKey(key: string): boolean {
 /** 기록을 지우는 그룹. `cache` 는 다시 받는 값만 지운다. */
 const RECORD_GROUPS: readonly CacheDataGroupId[] = ['manual', 'boss', 'cashbook', 'enhancement']
 
-// 품목 · 사냥 입력은 기록의 자식이라 기록과 함께 지워야 고아가 안 생긴다. 강화 레벨 기억은 기록에서 나온 값이라
-// 기록만 지우고 남기면 다음 기록의 강화 전 칸이 지운 기록의 레벨로 선다.
-const CASHBOOK_TABLES = ['cashbook_entries', 'cashbook_entry_items', 'cashbook_entry_hunt_inputs', 'remembered_levels']
+// 품목 · 사냥 입력 · 보관에서 가져온 조각은 기록의 자식이라 기록과 함께 지워야 고아가 안 생긴다. 강화 레벨 기억은
+// 기록에서 나온 값이라 기록만 지우고 남기면 다음 기록의 강화 전 칸이 지운 기록의 레벨로 선다.
+const CASHBOOK_TABLES = [
+  'cashbook_entries',
+  'cashbook_entry_items',
+  'cashbook_entry_hunt_inputs',
+  'cashbook_entry_fragment_uses',
+  'remembered_levels',
+]
 
 // 확인 기록만 남으면 그 날짜를 다시 부르지 않아 합계가 빈 채로 굳는다. 셋을 함께 지워야 다시 받는다.
 const ENHANCEMENT_TABLES = ['enhancement_totals', 'enhancement_history_checks', 'enhancement_recomputes']

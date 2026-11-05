@@ -140,6 +140,8 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE cashbook_entry_items ADD COLUMN untradable_fragment_count INTEGER',
       'ALTER TABLE cashbook_entry_items ADD COLUMN fragment_price_meso INTEGER',
       'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_activation INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_use_storage INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_storage_as_spend INTEGER',
       // 사용자가 직접 적은 완료를 가르는 칸.
       'ALTER TABLE boss_profit_records ADD COLUMN source TEXT',
       'ALTER TABLE character_profiles ADD COLUMN world_key TEXT',
@@ -265,6 +267,8 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'untradable_fragment_count' },
             { name: 'fragment_price_meso' },
             { name: 'hexa_activation' },
+            { name: 'hexa_use_storage' },
+            { name: 'hexa_storage_as_spend' },
           ]
         : []
 

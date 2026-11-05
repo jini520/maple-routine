@@ -107,7 +107,7 @@ describe('recordIconOf', () => {
   })
 
   it('헥사 스킬은 그 코어의 스킬 그림이고, 헥사 스탯은 갈래 카드와 같은 헥사 매트릭스 그림이다', () => {
-    const 조각 = { fragmentCount: 345, untradableFragmentCount: 0, fragmentPrice: 1 }
+    const 조각 = { fragmentCount: 345, untradableFragmentCount: 0, fragmentPrice: 1, useStorage: false, storageAsSpend: false, storageUses: [] }
     expect(recordIconOf(spend({ category: 'hexa_matrix', itemKey: '창룡파천검 : 만참', hexa: { ...조각, activation: null } }))).toBe(
       getSkillIconByFile('KEJDKDOEMH.webp'),
     )

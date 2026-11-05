@@ -1,5 +1,6 @@
 /**
- * 가계부 기록 표 셋(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs`)을 읽고 쓰는 자리.
+ * 가계부 기록 표 넷(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` ·
+ * `cashbook_entry_fragment_uses`)을 읽고 쓰는 자리.
  *
  * 수입(`income.ts`)과 지출(`spend.ts`)이 이것을 함께 쓴다. 두 어댑터는 화면이 쓰는 기록 모양(`IncomeRecord` ·
  * `SpendRecord`)을 그대로 두고 이 모양과 서로 옮긴다. 그래서 표가 바뀌어도 화면 코드는 그대로다.
@@ -41,6 +42,15 @@ export interface EntryItem {
   fragmentPriceMeso: number | null
   /** 헥사 스탯만 참 · 거짓이고 나머지는 `null` 이다. */
   hexaActivation: boolean | null
+  /** 헥사 기록만 참 · 거짓이고 나머지는 `null` 이다. */
+  hexaUseStorage: boolean | null
+  hexaStorageAsSpend: boolean | null
+}
+
+/** 헥사 기록이 한 캐릭터의 보관에서 가져온 조각. */
+export interface FragmentUse {
+  ocid: string
+  fragments: number
 }
 
 export interface EntryHunt {
@@ -59,6 +69,8 @@ export interface StoredEntry {
   /** 차례대로다. 하나 이상이다. */
   items: EntryItem[]
   hunt: EntryHunt | null
+  /** 헥사 기록이 보관에서 가져온 조각. 다른 기록은 빈 배열이다. */
+  fragmentUses: readonly FragmentUse[]
 }
 
 /** 빈 품목. 쓰는 칸만 덮어 만든다. */
@@ -82,14 +94,24 @@ export const EMPTY_ITEM: EntryItem = {
   untradableFragmentCount: null,
   fragmentPriceMeso: null,
   hexaActivation: null,
+  hexaUseStorage: null,
+  hexaStorageAsSpend: null,
+}
+
+function flagOf(value: boolean | null): number | null {
+  return value === null ? null : value ? 1 : 0
 }
 
 const INSERT_ITEM_SQL = `
   INSERT INTO cashbook_entry_items
     (id, entry_id, sort_order, item_key, item_name, form_key, item_kind_key, quantity, from_level, to_level,
      amount_meso, tariff_meso, sale_fee_percent, sale_fee_meso, sale_fee_auto, amount_point, point_per_100m_meso, amount_cash,
-     fragment_count, untradable_fragment_count, fragment_price_meso, hexa_activation)
-  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     fragment_count, untradable_fragment_count, fragment_price_meso, hexa_activation, hexa_use_storage, hexa_storage_as_spend)
+  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`
+
+const INSERT_FRAGMENT_USE_SQL = `
+  INSERT INTO cashbook_entry_fragment_uses (id, entry_id, ocid, fragments) VALUES (${NEW_UUID_SQL}, ?, ?, ?)
 `
 
 const INSERT_HUNT_SQL = `
@@ -121,8 +143,13 @@ async function writeChildren(db: SqliteDbConnection, entry: StoredEntry): Promis
       item.fragmentCount,
       item.untradableFragmentCount,
       item.fragmentPriceMeso,
-      item.hexaActivation === null ? null : item.hexaActivation ? 1 : 0,
+      flagOf(item.hexaActivation),
+      flagOf(item.hexaUseStorage),
+      flagOf(item.hexaStorageAsSpend),
     ])
+  }
+  for (const use of entry.fragmentUses) {
+    await db.run(INSERT_FRAGMENT_USE_SQL, [entry.head.id, use.ocid, use.fragments])
   }
   const hunt = entry.hunt
   if (hunt === null) return
@@ -182,10 +209,11 @@ export async function replaceEntry(db: SqliteDbConnection, entry: StoredEntry, n
   )
   await db.run(`DELETE FROM cashbook_entry_items WHERE entry_id = ?`, [head.id])
   await db.run(`DELETE FROM cashbook_entry_hunt_inputs WHERE entry_id = ?`, [head.id])
+  await db.run(`DELETE FROM cashbook_entry_fragment_uses WHERE entry_id = ?`, [head.id])
   await writeChildren(db, entry)
 }
 
-/** 품목 · 사냥 입력은 외래키를 따라 함께 지워진다. */
+/** 품목 · 사냥 입력 · 보관에서 가져온 조각은 외래키를 따라 함께 지워진다. */
 export async function deleteEntry(db: SqliteDbConnection, id: string): Promise<void> {
   await db.run(`DELETE FROM cashbook_entries WHERE id = ?`, [id])
 }
@@ -254,6 +282,8 @@ function itemOf(row: Record<string, unknown>): EntryItem {
     untradableFragmentCount: numberOrNull(row.untradable_fragment_count),
     fragmentPriceMeso: numberOrNull(row.fragment_price_meso),
     hexaActivation: row.hexa_activation == null ? null : Number(row.hexa_activation) === 1,
+    hexaUseStorage: row.hexa_use_storage == null ? null : Number(row.hexa_use_storage) === 1,
+    hexaStorageAsSpend: row.hexa_storage_as_spend == null ? null : Number(row.hexa_storage_as_spend) === 1,
   }
 }
 
@@ -278,11 +308,20 @@ function huntOf(row: Record<string, unknown>): EntryHunt {
  */
 export async function readEntries(db: SqliteDbConnection, where: string, params: unknown[]): Promise<StoredEntry[]> {
   const ids = `SELECT e.id FROM cashbook_entries e WHERE ${where}`
-  const [heads, items, hunts] = await Promise.all([
+  const [heads, items, hunts, uses] = await Promise.all([
     db.query(`SELECT e.* FROM cashbook_entries e WHERE ${where} ORDER BY e.entry_date, e.created_at, e.id`, params),
     db.query(`SELECT * FROM cashbook_entry_items WHERE entry_id IN (${ids}) ORDER BY entry_id, sort_order`, params),
     db.query(`SELECT * FROM cashbook_entry_hunt_inputs WHERE entry_id IN (${ids})`, params),
+    // 차례 칸이 없어 rowid 로 넣은 차례(강화한 캐릭터 먼저, 그다음 캐릭터 관리 순서)를 지킨다.
+    db.query(`SELECT * FROM cashbook_entry_fragment_uses WHERE entry_id IN (${ids}) ORDER BY rowid`, params),
   ])
+  const usesOf = new Map<string, FragmentUse[]>()
+  for (const row of uses.values ?? []) {
+    const id = row.entry_id as string
+    const list = usesOf.get(id) ?? []
+    list.push({ ocid: row.ocid as string, fragments: Number(row.fragments) })
+    usesOf.set(id, list)
+  }
   const itemsOf = new Map<string, EntryItem[]>()
   for (const row of items.values ?? []) {
     const id = row.entry_id as string
@@ -303,5 +342,6 @@ export async function readEntries(db: SqliteDbConnection, where: string, params:
     },
     items: itemsOf.get(row.id as string) ?? [{ ...EMPTY_ITEM }],
     hunt: huntOfEntry.get(row.id as string) ?? null,
+    fragmentUses: usesOf.get(row.id as string) ?? [],
   }))
 }

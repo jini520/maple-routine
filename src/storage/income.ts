@@ -316,13 +316,13 @@ export async function applyAutoIncomeSaleFees(updates: readonly IncomeSaleFeeUpd
 
 /**
  * 한 캐릭터의 솔 에르다 조각 보관 개수. 조각 가격을 안 적은(`NULL`) 사냥 기록의 조각 합에서 `솔 에르다 조각` 정산 기록이 판
- * 개수 합을 뺀 값이다.
+ * 개수 합과 헥사 기록이 그 캐릭터의 보관에서 가져간 개수 합을 뺀 값이다.
  *
  * 보관을 따로 저장하지 않고 기록에서 센다. 저장하면 사냥 기록을 고치거나 지울 때마다 그 값도 맞춰야 한다. 마이너스도 그대로 낸다.
  *
  * @param ocid 보관이 캐릭터별이라 캐릭터 없는 기록은 안 든다
  * @param onOrBeforeDateKey 이 날까지 쌓인 기록만 센다. 나중에 보관한 조각을 앞선 날짜로 팔 수 없다
- * @param excludeRecordId 수정 중인 정산 기록. 자기 몫을 빼야 보관을 다 판 기록을 열어 저장할 수 있다
+ * @param excludeRecordId 수정 중인 정산 · 헥사 기록. 자기 몫을 빼야 보관을 다 쓴 기록을 열어 저장할 수 있다
  */
 export async function getFragmentStorage(
   ocid: string,
@@ -339,8 +339,11 @@ export async function getFragmentStorage(
          WHERE ${scope} AND e.category_key = 'hunting' AND h.fragment_price_meso IS NULL)
        - (SELECT COALESCE(SUM(i.quantity), 0)
           FROM cashbook_entries e JOIN cashbook_entry_items i ON i.entry_id = e.id
-         WHERE ${scope} AND e.category_key = 'sol_erda_fragment') AS stored`,
-    [...params, ...params],
+         WHERE ${scope} AND e.category_key = 'sol_erda_fragment')
+       - (SELECT COALESCE(SUM(u.fragments), 0)
+          FROM cashbook_entries e JOIN cashbook_entry_fragment_uses u ON u.entry_id = e.id
+         WHERE u.ocid = ? AND e.entry_date <= ? AND e.id != ?) AS stored`,
+    [...params, ...params, ...params],
   )
   return Number((values?.[0] as { stored?: unknown } | undefined)?.stored ?? 0)
 }

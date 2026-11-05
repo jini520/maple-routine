@@ -85,7 +85,7 @@ export interface SpendRecord {
 }
 
 /**
- * 헥사 강화에 든 조각. 금액은 `(fragmentCount − untradableFragmentCount) × fragmentPrice` 를 저장할 때 굳힌다.
+ * 헥사 강화에 든 조각. 금액은 개당 가격을 곱할 개수(`hexaPricedFragments`) × `fragmentPrice` 를 저장할 때 굳힌다.
  *
  * `activation` 이 참 · 거짓이면 헥사 스탯 기록이고 `null` 이면 헥사 스킬 기록이다. 헥사 스킬은 코어 이름이
  * `itemKey`, 레벨이 `levelFrom` · `levelTo` 다.
@@ -93,8 +93,15 @@ export interface SpendRecord {
 export interface SpendHexa {
   fragmentCount: number
   untradableFragmentCount: number
-  fragmentPrice: number
+  /** 곱할 개수가 없어 가격을 안 받은 기록은 `null` 이다. */
+  fragmentPrice: number | null
   activation: boolean | null
+  /** 보관 중인 조각 사용 체크. */
+  useStorage: boolean
+  /** 보관에서 가져온 몫도 지출로 셀지 고르는 체크. */
+  storageAsSpend: boolean
+  /** 보관에서 가져온 조각을 캐릭터마다. 보관을 안 쓰면 빈 배열이다. */
+  storageUses: readonly { ocid: string; fragments: number }[]
 }
 
 /**

@@ -45,7 +45,7 @@
 
 ### 결정 3. 지출은 가계부 기록 표에 통화별 칸으로 저장한다
 
-지출과 수입은 기록 표 셋(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs`)에 함께 산다. 표의 모양과
+지출과 수입은 기록 표 넷(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses`)에 함께 산다. 표의 모양과
 옛 표에서 옮긴 방법은 [[ADR-096]] 에 있다. 지출 한 건은 기록 행 하나(`entry_type = 'spend'`)와 품목 행 하나 이상이다.
 
 | 칸 | 뜻 |
@@ -135,7 +135,7 @@
 
 ### 결정 8. 손입력 기록 표와 강화 내역은 사용자가 그 그룹을 골랐을 때만 데이터 삭제가 지운다
 
-데이터 삭제는 기록 표 셋(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs`)을 `가계부` 그룹을
+데이터 삭제는 기록 표 넷(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses`)을 `가계부` 그룹을
 골랐을 때만 지운다. `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` 는 `강화` 그룹을 골랐을
 때만 지운다([[ADR-053]] 결정 1). 확인 창은 아무 그룹도 고르지 않은 채 열린다. 손입력은 사용자 말고는 출처가 없어
 지우면 되살릴 수 없기 때문이다.
