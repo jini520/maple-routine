@@ -12,6 +12,7 @@ Play 와 App Store 에 올릴 바이너리를 만드는 절차다. 서명 · 버
 |---|---|
 | `app.json` | 스토어 버전 `expo.version` · `ios.buildNumber` · `android.versionCode`. 두 플랫폼이 같이 쓰는 지문 재료 |
 | `package.json` | OTA 버전 `version`. 스토어 버전과 따로 올린다([[ADR-011]]) |
+| `.fingerprintignore` | 지문 계산에서 빼는 경로. 빌드 중에만 생기는 Kotlin 세션 파일(아래 Android 산출물 확인) |
 | `android/app/build.gradle` | `versionCode` · `versionName`(빌드가 실제로 읽는 값) · 릴리스 서명 · 축소 설정 |
 | `android/gradle.properties` | R8 · 리소스 축소 켜기 · 기본 ABI 넷 |
 | `android/keystore.properties` | 업로드 키 경로와 비밀번호. 커밋하지 않는다 |
@@ -151,6 +152,14 @@ Android 빌드를 한 번도 하지 않은 트리(새 워크트리 등)에서는
 계산되는데, 그 뒤 빌드가 `android/` 와 `node_modules/expo-updates/expo-updates-gradle-plugin/` 안에 산출물을
 만들고, 그 산출물도 지문 재료다. 스토어 바이너리는 산출물이 이미 있는 트리에서 빌드됐다. 첫 빌드의 지문이 다르면
 `createReleaseUpdatesResources` 를 지우고 한 번 더 빌드한다(1.0.12+6 에서 확인).
+
+본 체크아웃에서도 첫 `bundleRelease` 가 다른 지문을 넣은 적이 있다(v1.0.13, 2026-11-06). Gradle 로그의
+`createReleaseUpdatesResources` 다음 줄에 지문 재료가 JSON 으로 찍힌다. 이것과 CLI 의 `fingerprintSources` 를
+`(type, filePath)` 로 맞대면 `android` 디렉터리 해시 하나만 달랐다. 원인은 Kotlin 데몬이 빌드하는 동안만
+`android/.kotlin/sessions/` 에 두는 세션 파일이다. 빌드가 끝나면 지워져서 CLI 로는 재현되지 않는다. 그래서 루트의
+`.fingerprintignore` 가 `android/.kotlin/**` 를 지문에서 뺀다. 세션 파일을 하나 만들어 두고 재면 빼기 전에는 지문이
+바뀌고 뺀 뒤에는 그대로다. 이 줄을 넣어도 v1.0.13 의 두 지문은 바뀌지 않았다. `.fingerprintignore` 는 줄마다 경로
+하나이고 주석을 읽지 않으므로, 이유는 이 문서에 적는다.
 
 R8 이 켜져 있으므로 릴리스 빌드를 실기기에 깔고 주요 화면을 모두 눌러 본 뒤에 올린다([[ADR-009]] 결정 7).
 debug 빌드에서는 R8 이 돌지 않아 문제가 재현되지 않는다. 이전 OTA 번들이 임베드 번들을 가릴 수 있으니,
