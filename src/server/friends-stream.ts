@@ -56,8 +56,14 @@ function parseLine(text: string): StreamLine | null {
  *
  * 던지는 것은 둘이다. 서버가 거절하면 `FriendsStreamRejected`, 닿지 못하거나 끊기면 `fetch` 의 실패
  * 그대로다. 부르는 쪽(`nexon/http.ts`)이 넥슨 에러 어휘로 바꾼다.
+ *
+ * @param onLine 줄을 읽는 대로 하나씩. 묶인 작업이 자기 줄을 받는 대로 끝나게 한다
  */
-export async function streamFriends(session: string, tasks: readonly StreamTask[]): Promise<StreamLine[]> {
+export async function streamFriends(
+  session: string,
+  tasks: readonly StreamTask[],
+  onLine?: (line: StreamLine) => void,
+): Promise<StreamLine[]> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
   try {
@@ -80,7 +86,9 @@ export async function streamFriends(session: string, tasks: readonly StreamTask[
       for (const part of parts) {
         if (part.length === 0) continue
         const line = parseLine(part)
-        if (line !== null) lines.push(line)
+        if (line === null) continue
+        lines.push(line)
+        onLine?.(line)
       }
     }
     for (;;) {

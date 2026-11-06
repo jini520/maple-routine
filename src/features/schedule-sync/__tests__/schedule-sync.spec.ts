@@ -2070,6 +2070,23 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       expect(onUpdate.mock.calls.at(-1)?.[0]).toEqual([])
     })
 
+    // 조회가 실패한 것은 자격이 없다고 확인한 것이 아니다. 빼면 활동 중인 캐릭터가 실패 때문에 사라진다.
+    it('조회가 실패해 판정을 보류한 캐릭터는 목록에 둔다', async () => {
+      const characters = [mockCharacter('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      fetchCharacterBasicMock.mockResolvedValue({
+        ...basicProfile({ name: '로그인캐릭', level: 250 }),
+        accessFlag: false,
+      })
+      fetchSchedulerCharacterStateMock.mockRejectedValue(new NexonNetworkError('503'))
+
+      const onUpdate = jest.fn()
+      await getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })
+
+      const emitted = onUpdate.mock.calls.at(-1)?.[0] as CharacterPickerEntry[]
+      expect(emitted.map((entry) => entry.ocid)).toEqual(['ocid-1'])
+    })
+
     it('자격이 없어도 추적 중이면 남긴다. 해제 경로', async () => {
       await prefs.set('trackedCharacters', JSON.stringify(['ocid-1']))
 

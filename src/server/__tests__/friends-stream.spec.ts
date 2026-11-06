@@ -75,3 +75,27 @@ it('닿지 못하면 fetch 의 실패를 그대로 올린다', async () => {
 
   await expect(streamFriends('세션', [])).rejects.toThrow('offline')
 })
+
+// 묶인 요청은 오래 걸릴 수 있다. 줄을 끝에 한꺼번에 넘기면 먼저 끝난 작업도 요청이 끝날 때까지 기다린다.
+it('줄을 읽는 대로 넘긴다. 다음 청크를 읽기 전에 앞 줄이 먼저 나온다', async () => {
+  const seen: string[] = []
+  const chunks = ['{"t":"done","kind":"character-list","pages":0}\n', '{"t":"end","reason":"done"}\n']
+  const encoder = new TextEncoder()
+  expoFetch.mockResolvedValue({
+    ok: true,
+    status: 200,
+    body: {
+      getReader: () => ({
+        read: async () => {
+          const value = chunks.shift()
+          seen.push(value === undefined ? 'read:end' : 'read')
+          return value === undefined ? { done: true, value: undefined } : { done: false, value: encoder.encode(value) }
+        },
+      }),
+    },
+  })
+
+  await streamFriends('세션', [{ kind: 'character-list' }], (line) => seen.push(`line:${line.t}`))
+
+  expect(seen).toEqual(['read', 'line:done', 'read', 'line:end', 'read:end'])
+})

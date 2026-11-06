@@ -144,7 +144,8 @@ function shouldShowEntry(
   eligibility: CharacterEligibility | 'unknown',
   isTracked: boolean,
 ): boolean {
-  return isTracked || eligibility === 'eligible'
+  // 판정을 보류한 캐릭터는 자격이 없다고 확인된 것이 아니다. 빼면 조회 실패만으로 활동 중인 캐릭터가 사라진다.
+  return isTracked || eligibility === 'eligible' || eligibility === 'undetermined'
 }
 
 /**

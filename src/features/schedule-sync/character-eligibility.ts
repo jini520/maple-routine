@@ -22,8 +22,9 @@ import { toScheduleSyncError } from './errors'
  * - `eligible`   목록에 넣는다
  * - `ineligible` 최근 14일간 활동 증거가 없다. 추적 중이 아니면 목록에서 뺀다
  * - `unavailable` 400 `OPENAPI00003`. 조회 자체가 불가(영구). 추적 중이면 해제 경로로 남긴다
+ * - `undetermined` 조회가 실패한 날짜가 있어 판정하지 못했다. 목록에 둔다. 그 날짜에 완료가 있었을 수 있다
  */
-export type CharacterEligibility = 'eligible' | 'ineligible' | 'unavailable'
+export type CharacterEligibility = 'eligible' | 'ineligible' | 'unavailable' | 'undetermined'
 
 /** 이미 가진 원장만으로 내리는 판정. API를 부르지 않는다. `null` 이면 아직 모른다(스윕이 필요하다). */
 function judgeFromLedger(ledger: ScheduleProbeLedger): CharacterEligibility | null {
@@ -59,8 +60,11 @@ export async function readKnownEligibility(
   return accessFlag ? 'eligible' : 'unknown'
 }
 
-/** 한 날짜가 스윕에 남기는 것. 날짜끼리 독립이라 이것만 모으면 판정이 선다. */
-type DayOutcome = 'completion' | 'observed' | 'unavailable' | 'skipped'
+/**
+ * 한 날짜가 스윕에 남기는 것. 날짜끼리 독립이라 이것만 모으면 판정이 선다.
+ * `skipped` 는 그 날짜에 볼 것이 없는 것(구간 밖 · 집계 전)이고, `failed` 는 조회 자체가 실패해 모르는 것이다.
+ */
+type DayOutcome = 'completion' | 'observed' | 'unavailable' | 'skipped' | 'failed'
 
 /**
  * `access_flag` 가 false 인 캐릭터의 최근 14일 활동 여부.
@@ -123,8 +127,10 @@ export async function resolveCharacterEligibility(
           await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
           return 'skipped'
         }
-        // notCollected(집계 전)·네트워크·파싱은 기록하지 않는다. 나중에 다시 시도한다.
-        return 'skipped'
+        // 집계 전은 결산 시간마다 어제 날짜에 생긴다. 실패로 치면 그때마다 활동 없는 캐릭터가 목록에 선다.
+        if (kind === 'notCollected') return 'skipped'
+        // 나머지(네트워크 · 서버 거절 · 호출 한도 · 점검)는 기록하지 않고 다음에 다시 묻는다.
+        return 'failed'
       }
 
       const observation = toProbeObservation(dayState)
@@ -139,5 +145,6 @@ export async function resolveCharacterEligibility(
   if (outcomes.includes('unavailable')) {
     return 'unavailable'
   }
-  return outcomes.includes('completion') ? 'eligible' : 'ineligible'
+  if (outcomes.includes('completion')) return 'eligible'
+  return outcomes.includes('failed') ? 'undetermined' : 'ineligible'
 }
