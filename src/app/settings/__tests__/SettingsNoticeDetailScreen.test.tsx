@@ -188,7 +188,7 @@ describe('본문이 빈 공지', () => {
     const view = await renderOverlay(<SettingsNoticeDetailScreen route={{ params: { noticeId: 'event-1374' } }} />)
 
     await waitFor(() => {
-      expect(view.getByTestId('notice-body-pending').props.children).toBe('본문을 받지 못했어요')
+      expect(view.getByTestId('notice-body-pending').props.children).toBe('본문을 받지 못했습니다')
     })
   })
 

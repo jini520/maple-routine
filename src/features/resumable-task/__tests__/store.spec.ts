@@ -143,7 +143,7 @@ describe('run', () => {
 
     await useTaskRunnerStore.getState().run([task])
 
-    expect(mockShowError).toHaveBeenCalledWith('작업을 마치지 못했어요')
+    expect(mockShowError).toHaveBeenCalledWith('작업을 마치지 못했습니다')
     expect(mockShowSuccess).not.toHaveBeenCalled()
     expect(state.left).toEqual([250])
     await expect(getPendingTasks()).resolves.toEqual([{ id: 'a', totals: [450] }])

@@ -97,7 +97,7 @@ export function SettingsAboutScreen(props: SettingsAboutScreenProps = {}): React
     }
     setIsDeleting(false)
     setIsDeleteOpen(false)
-    useToastStore.getState().showError('계정을 삭제하지 못했어요. 잠시 뒤 다시 시도해 주세요.')
+    useToastStore.getState().showError('계정을 삭제하지 못했습니다. 잠시 뒤 다시 시도해 주세요.')
   }
 
   return (
