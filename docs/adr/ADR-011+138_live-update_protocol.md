@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-022 결정 6 · ADR-024 · ADR-137 · ADR-190 · ADR-191 결정 1 · ADR-268 결정 2 · 3 · 4 · ADR-279 · ADR-292
-> 관련 소스: `native/live-update.ts` · `native/adapters/rn-live-update.ts` · `lib/app-version.ts` · `features/live-update/use-running-app-version.ts` · `scripts/publish-rn-ota.mjs` · `scripts/ota-retention.mjs` · 서버 `modules/ota/` · `workers/ota-manifest/`(1.0.12 바이너리 전용) · `scripts/ota-runtime-version.mjs` · `scripts/release-note-gap.mjs`
+> 관련 소스: `native/live-update.ts` · `native/adapters/rn-live-update.ts` · `lib/app-version.ts` · `features/live-update/use-running-app-version.ts` · `scripts/publish-rn-ota.mjs` · `scripts/ota-retention.mjs` · 서버 `modules/ota/` · `workers/ota-manifest/`(1.0.12 바이너리 전용) · `scripts/ota-runtime-version.mjs` · `scripts/release-note-gap.mjs` · `.fingerprintignore`
 
 ## 배경
 
@@ -48,16 +48,19 @@ v1.0.13 바이너리부터다.
 1.0.12 바이너리에는 더 이상 OTA 를 내지 않는다. 그 바이너리는 `workers/ota-manifest/` 주소를 묻고, Worker 는 릴리스
 `live-update-rn` 의 파일을 읽어 준다. 지금 올라가 있는 매니페스트를 그대로 둔다.
 
-남는 일은 v1.0.13 을 게시한 뒤 1.0.12 를 잠그는 것 하나다. 릴리스의 `latest-<platform>.json` 을 v1.0.13 의 지문으로
-한 번 덮어쓰면, 1.0.12 앱은 받아 주는 목록에 자기 지문이 없어 스토어 업데이트 모달을 띄운다(결정 5). 이 일은 발행
-스크립트가 하지 않고 손으로 한 번 한다. 스크립트가 두 곳에 쓰면 발행 경로가 둘이 된다. 1.0.12 사용자가 없어지면 Worker 와
-릴리스를 지운다(이슈 #810).
+1.0.12 는 v1.0.13 이 게시된 2026-11-06 에 잠갔다. 릴리스의 `latest-<platform>.json` 을 v1.0.13 의 지문으로 한 번
+덮어써서, 1.0.12 앱은 받아 주는 목록에 자기 지문이 없어 스토어 업데이트 모달을 띄운다(결정 5). 이 일은 발행 스크립트가
+하지 않고 손으로 했다. 스크립트가 두 곳에 쓰면 발행 경로가 둘이 된다. 1.0.12 사용자가 없어지면 Worker 와 릴리스를
+지운다(이슈 #810).
 
 ### 결정 3. `runtimeVersion` 은 `fingerprint` 정책으로 계산하고, 사람이 적지 않는다
 
 `app.json` 의 `runtimeVersion` 은 `{ "policy": "fingerprint" }` 다. 네이티브가 맞지 않는 번들이 나가면
 앱이 켜지자마자 죽고, 죽은 앱은 OTA 로 고칠 수 없다. 네이티브를 바꿀 때마다 사람이 숫자를 올리게 하면
 언젠가 잊는다. 그래서 값을 계산으로 정한다.
+
+빌드하는 동안만 생기는 파일은 루트의 `.fingerprintignore` 로 뺀다. 지금은 Kotlin 데몬의 세션 파일(`android/.kotlin/**`)
+하나다. 빼지 않으면 Gradle 이 지문을 계산하는 순간에만 그 파일이 있어, 바이너리 안의 지문이 트리 계산값과 갈린다.
 
 이 때문에 지켜야 할 규칙이 있다. 지문은 커밋된 `android/` · `ios/` 와 `app.json` 에서 계산되므로,
 네이티브를 바꾼 트리에서 발행하면 그 번들은 지금 스토어에 있는 어느 바이너리도 받지 못한다. 네이티브를
@@ -265,3 +268,5 @@ jest 가 불러오지 못한다. 그래서 검사할 로직은 `ota-runtime-vers
 
 - ADR-011 (2026-10-19): 옛 ADR-022 · 024 · 137 · 190 · 191 · 268 · 279 · 292 를 합쳐 처음 작성
 - ADR-138 (2026-10-30): 1.0.13 부터 우리 서버가 매니페스트 · 번들 · 에셋을 내주고, 1.0.12 는 GitHub · Worker 에 얼려 두고, 번들을 gzip 으로 압축하고 최근 세 번의 발행만 남긴다(결정 1 · 2 · 4 · 8 고침, 결정 13 더함, 이슈 #803)
+- (2026-11-06) 결정 2 의 1.0.12 잠금을 마쳤다(#810 1단계). 결정 3 에 빌드 중에만 생기는 Kotlin 세션 파일을 `.fingerprintignore` 로
+  빼는 것을 더했다. v1.0.13 의 첫 Android 빌드가 그 파일 때문에 다른 지문을 넣었다
