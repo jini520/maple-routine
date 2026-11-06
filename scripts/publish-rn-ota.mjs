@@ -23,7 +23,7 @@
 
 import { execFileSync } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -350,17 +350,19 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   // 올릴 파일만 모은 디렉터리를 rsync 로 넘긴다. rsync 는 임시 이름에 쓰고 옮기므로 nginx 가 반쯤 쓴 파일을 내지 않는다.
   // `--delete` 를 주지 않는다. 지우는 일은 맨 끝의 정리가 최근 발행을 보고 한다.
+  // 권한은 여기서 644 로 맞추고 `-a` 로 그대로 보낸다. nginx 가 읽어야 하고, macOS 의 rsync(openrsync)는 `--chmod=F644` 를 모른다.
   const filesDir = join(workDir, 'files')
   mkdirSync(filesDir)
   let uploadCount = 0
   for (const [name, localPath] of uploadTargets) {
     if (existing.has(name)) continue
     copyFileSync(localPath, join(filesDir, name))
+    chmodSync(join(filesDir, name), 0o644)
     uploadCount += 1
   }
 
   console.log(`[4/5] 파일 ${uploadTargets.size}개 중 ${uploadCount}개 업로드 중...`)
-  execFileSync('rsync', ['-a', '--chmod=F644', `${filesDir}/`, `${OTA_HOST}:${OTA_DIR}/files/`], { stdio: 'inherit' })
+  execFileSync('rsync', ['-a', `${filesDir}/`, `${OTA_HOST}:${OTA_DIR}/files/`], { stdio: 'inherit' })
 
   console.log('[5/5] 매니페스트 생성·업로드 중...')
   const createdAt = new Date().toISOString()
@@ -408,7 +410,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
 
   // 매니페스트는 이름 고정·내용 가변이라 덮어쓴다. 파일보다 뒤라야 기기가 아직 없는 번들을 가리키는 매니페스트를 받지 않는다.
-  execFileSync('rsync', ['-a', '--chmod=F644', ...manifestFiles, `${OTA_HOST}:${OTA_DIR}/`], { stdio: 'inherit' })
+  for (const path of manifestFiles) chmodSync(path, 0o644)
+  execFileSync('rsync', ['-a', ...manifestFiles, `${OTA_HOST}:${OTA_DIR}/`], { stdio: 'inherit' })
 
   // ── 정리. 최근 세 번의 발행과 지금 서버에 있는 매니페스트가 쓰는 파일만 남긴다 ──────────────
   //
@@ -432,7 +435,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     keepReleases: KEEP_RELEASES,
   })
   writeFileSync(releasesPath, JSON.stringify(kept, null, 2))
-  execFileSync('rsync', ['-a', '--chmod=F644', releasesPath, `${OTA_HOST}:${OTA_DIR}/`], { stdio: 'inherit' })
+  chmodSync(releasesPath, 0o644)
+  execFileSync('rsync', ['-a', releasesPath, `${OTA_HOST}:${OTA_DIR}/`], { stdio: 'inherit' })
   const stale = onBox(`ls -1 ${OTA_DIR}/files`).split('\n').filter((name) => name && !keep.has(name))
   for (let i = 0; i < stale.length; i += 100) {
     onBox(`cd ${OTA_DIR}/files && rm -f -- ${stale.slice(i, i + 100).map((name) => `'${name}'`).join(' ')}`)
