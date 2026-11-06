@@ -1,4 +1,5 @@
 // 여덟 자리가 각자 그리던 얼굴 원을 이 부품이 든다.
+import { within } from '@testing-library/react-native'
 import { View } from 'react-native'
 
 import { FACE_CROP_BOX, FACE_SOURCE_IMAGE_SIZE } from '../../../../lib/face-crop'
@@ -80,68 +81,59 @@ describe('mirrored', () => {
   })
 })
 
-// 표식은 원 **밖**에 서야 한다. 그림을 자르는 `overflow-hidden` 이 원 안의 것을 함께 자른다.
-describe('조회 불가 표식', () => {
-  it('참이면 얼굴에 표식이 붙는다', async () => {
+// 원 전체를 덮어야 작은 얼굴에서도 어느 캐릭터가 조회 불가인지 보인다. 원이 자르는 상자 안에
+// 그려야 덮개가 원 밖으로 삐져나오지 않는다.
+describe('조회 불가', () => {
+  it('그림을 흐리고 덮개를 원 안에 얹는다', async () => {
     const { getByTestId } = await renderAtom(
-      <CharacterAvatar imageUrl={null} name="지내우시" size={26} unavailable />,
-    )
-
-    expect(getByTestId('portrait-unavailable')).toBeTruthy()
-  })
-
-  // 얼굴이 자리마다 달라 고정값으로 두면 작은 얼굴을 덮는다.
-  it('표식이 얼굴 크기를 따라간다', async () => {
-    const 작은 = await renderAtom(
-      <CharacterAvatar imageUrl={null} name="가" size={20} unavailable testID="작은" />,
-    )
-    const 큰 = await renderAtom(
-      <CharacterAvatar imageUrl={null} name="나" size={44} unavailable testID="큰" />,
-    )
-
-    const 작은표식 = flattenStyle(작은.getByTestId('portrait-unavailable').props.style).width
-    const 큰표식 = flattenStyle(큰.getByTestId('portrait-unavailable').props.style).width
-    expect(Number(큰표식)).toBeGreaterThan(Number(작은표식))
-  })
-
-  // 배치 클래스는 바깥 상자가 져야 한다. 안쪽은 자르는 일만 한다.
-  it('표식이 붙어도 `testID` 는 바깥 상자 하나다', async () => {
-    const { getAllByTestId } = await renderAtom(
-      <CharacterAvatar imageUrl={null} name="지내우시" size={26} unavailable testID="얼굴" />,
-    )
-
-    expect(getAllByTestId('얼굴')).toHaveLength(1)
-  })
-
-  // 바깥 상자는 안 깎는다. 거기에 바탕색이 실리면 **둥근 얼굴 뒤에 네모가 한 겹** 생긴다
-  // (보스 수익 아코디언 머리에서 관측).
-  it('바탕색은 바깥 상자가 아니라 원이 든다', async () => {
-    const { getByTestId, toJSON } = await renderAtom(
       <CharacterAvatar
+        testID="얼굴"
         imageTestID="그림"
         imageUrl="https://example.test/a.png"
         name="지내우시"
-        size={32}
+        size={26}
         unavailable
-        testID="얼굴"
-        className="bg-surface-2"
       />,
     )
 
-    expect(flattenStyle(getByTestId('얼굴').props.style).backgroundColor).toBeUndefined()
-
-    const 원 = findAllOfType(toJSON(), 'View').find(
-      (node) => flattenStyle(node.props.style).overflow === 'hidden',
-    )
-    expect(flattenStyle(원?.props.style).backgroundColor).toBeDefined()
+    expect(getByTestId('그림').props.blurRadius).toBeGreaterThan(0)
+    expect(within(getByTestId('얼굴')).getByTestId('portrait-unavailable')).toBeTruthy()
   })
 
-  // 바깥 상자가 layout 을 지므로 안 줄어들어야 한다. 안쪽으로 내려가면 이 상자가 형제에게 밀린다.
-  it('바깥 상자는 줄어들지 않는다', async () => {
-    const { getByTestId } = await renderAtom(
-      <CharacterAvatar imageUrl={null} name="지내우시" size={32} unavailable testID="얼굴" />,
+  it('조회할 수 있으면 흐리지도 덮지도 않는다', async () => {
+    const { getByTestId, queryByTestId } = await renderAtom(
+      <CharacterAvatar imageTestID="그림" imageUrl="https://example.test/a.png" name="지내우시" size={26} />,
     )
 
-    expect(flattenStyle(getByTestId('얼굴').props.style).flexShrink).toBe(0)
+    expect(getByTestId('그림').props.blurRadius).toBeUndefined()
+    expect(queryByTestId('portrait-unavailable')).toBeNull()
+  })
+
+  // 얼굴이 자리마다 다르다(카드 26 · 레일 40). 고정값이면 작은 얼굴은 형체가 지워지고 큰 얼굴은
+  // 덜 흐려 보인다.
+  it('흐림과 아이콘이 얼굴 지름을 따라 커진다', async () => {
+    const 작은 = await renderAtom(
+      <CharacterAvatar imageTestID="그림" imageUrl="https://example.test/a.png" name="가" size={20} unavailable />,
+    )
+    const 큰 = await renderAtom(
+      <CharacterAvatar imageTestID="그림" imageUrl="https://example.test/a.png" name="나" size={44} unavailable />,
+    )
+
+    expect(큰.getByTestId('그림').props.blurRadius).toBeGreaterThan(작은.getByTestId('그림').props.blurRadius)
+    const 아이콘폭 = (view: typeof 작은): number => {
+      const [아이콘] = findAllOfType(view.toJSON(), 'RNSVGSvgView')
+      return Number(flattenStyle(아이콘?.props.style).width)
+    }
+    expect(아이콘폭(큰)).toBeGreaterThan(아이콘폭(작은))
+  })
+
+  // 머리글자 얼굴도 조회 불가는 같은 모양으로 읽혀야 한다.
+  it('그림이 없어도 폴백 위에 덮개를 얹는다', async () => {
+    const { getByTestId } = await renderAtom(
+      <CharacterAvatar imageUrl={null} name="지내우시" size={26} fallback={폴백} unavailable />,
+    )
+
+    expect(getByTestId('폴백')).toBeTruthy()
+    expect(getByTestId('portrait-unavailable')).toBeTruthy()
   })
 })

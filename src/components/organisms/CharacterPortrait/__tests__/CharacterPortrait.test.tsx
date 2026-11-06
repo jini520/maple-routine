@@ -3,10 +3,10 @@
 // **여기서 볼 수 없는 것이 있다.** 곡선 글자가 실제로 어떻게 휘는지, 링 두 겹이 눈에 구분되는지는
 // 렌더 트리에 안 나온다(jest 에는 레이아웃도 폰트도 없다). 이 파일이 보는 것은 무엇을 그렸는가와
 // 무엇을 눌렀을 때 무엇이 불리는가이고, 나머지는 실기기 몫이다.
+import { within } from '@testing-library/react-native'
 import { processColor } from 'react-native'
 
 import {
-  findAllOfType,
   flattenStyle,
   renderAtom,
   기본테마,
@@ -276,6 +276,14 @@ describe('CharacterPortrait · rail 규격의 얼굴과 선택', () => {
     expect(selected.getByTestId('character-portrait').props.accessibilityState.selected).toBe(true)
     expect(dimmed.getByTestId('character-portrait').props.accessibilityState.selected).toBe(false)
   })
+
+  // 레일도 다른 자리와 같은 덮개를 써야 같은 말이 같은 그림으로 읽힌다.
+  it('조회 불가를 얼굴 부품에 넘겨 얼굴 원 안을 덮는다', async () => {
+    const view = await rail({ unavailable: true })
+
+    expect(within(view.getByTestId('portrait-face')).getByTestId('portrait-unavailable')).toBeTruthy()
+    expect(view.getByTestId('character-portrait-image').props.blurRadius).toBeGreaterThan(0)
+  })
 })
 
 // 보스 수익의 아바타도 이 부품을 쓴다. 아래는 그 화면의 계약이고,
@@ -372,30 +380,5 @@ describe('CharacterPortrait · compact 규격', () => {
 
     expect(view.queryByTestId('portrait-name-text')).toBeNull()
     expect(view.queryByTestId('portrait-level-text')).toBeNull()
-  })
-
-  // RN 은 형제 순서가 곧 그리는 순서다. 링이 표식보다 뒤에 서면 표식이 그 밑으로 들어간다
-  // (보스 수익 아코디언 머리에서 관측). rail 규격은 같은 이유로 이미 표식을 SVG 뒤에 둔다.
-  it('조회 불가 표식이 링보다 위에 그려진다', async () => {
-    const view = await renderAtom(
-      <CharacterPortrait
-        variant="compact"
-        characterName="지내우시"
-        imageUrl="https://example.test/face.png"
-        clears={{ cleared: 0, total: 12, label: '주간' }}
-        unavailable
-      />,
-    )
-
-    // `findAllOfType` 은 트리를 앞에서부터 훑으므로 그 차례가 곧 그리는 차례다.
-    const 상자들 = findAllOfType(view.toJSON(), 'View')
-    const 표식자리 = 상자들.findIndex((node) => node.props.testID === 'portrait-unavailable')
-    const 링자리 = 상자들.findIndex((node) =>
-      String(node.props['aria-label'] ?? '').includes('보스 처치'),
-    )
-
-    expect(표식자리).toBeGreaterThan(-1)
-    expect(링자리).toBeGreaterThan(-1)
-    expect(표식자리).toBeGreaterThan(링자리)
   })
 })

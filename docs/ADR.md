@@ -151,7 +151,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-028](./adr/ADR-028_character_tracking.md) | 🟢 | character | 추적 캐릭터 |
 | [ADR-029+108](./adr/ADR-029+108_character_manage.md) | 🟢 | character | 캐릭터 관리 화면 |
 | [ADR-030](./adr/ADR-030_character_selection.md) | 🟢 | character | 캐릭터 선택 |
-| [ADR-031+155](./adr/ADR-031+155_character_portrait.md) | 🟢 | character | 캐릭터 초상화 |
+| [ADR-031+155+177](./adr/ADR-031+155+177_character_portrait.md) | 🟢 | character | 캐릭터 초상화 |
 | [ADR-032](./adr/ADR-032_content-scheduler_cache.md) | 🟢 | content-scheduler | 스케줄러 응답 병합과 캐시 |
 | [ADR-033](./adr/ADR-033_content-scheduler_cards.md) | 🟢 | content-scheduler | 컨텐츠 카드와 완료 판정 |
 | [ADR-034+175](./adr/ADR-034+175_content-scheduler_tracking-mode.md) | 🟢 | content-scheduler | 자동 · 수동 추적 모드와 컨텐츠 관리 |
@@ -163,7 +163,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-093+121](./adr/ADR-093+121_boss-scheduler_manage-redesign.md) | 🟢 | boss-scheduler | 보스 관리 화면 리디자인과 난이도 고르개 통일 |
 | [ADR-040](./adr/ADR-040_boss-profit_records.md) | 🟢 | boss-profit | 보스 수익 기록 |
 | [ADR-041](./adr/ADR-041_boss-profit_period.md) | 🟢 | boss-profit | 보스 수익 기간 |
-| [ADR-042+135](./adr/ADR-042+135_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 |
+| [ADR-042+135+178](./adr/ADR-042+135+178_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 |
 | [ADR-043](./adr/ADR-043_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |
 | [ADR-092+112+153](./adr/ADR-092+112+153_boss-profit_redesign.md) | 🟢 | boss-profit | 보스 수익 리디자인과 고가 드롭 홀로그램 강조 |
 | [ADR-044+066+076+111+120](./adr/ADR-044+066+076+111+120_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
@@ -181,7 +181,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |
 | [ADR-056+072+164](./adr/ADR-056+072+164_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |
 | [ADR-057+125](./adr/ADR-057+125_notice_feed.md) | 🟢 | notice | 운영자 공지와 넥슨 공지 |
-| [ADR-058+087+176](./adr/ADR-058+087+176_today_widgets.md) | 🟢 | today | today 위젯 격자 |
+| [ADR-058+087+176+179](./adr/ADR-058+087+176+179_today_widgets.md) | 🟢 | today | today 위젯 격자 |
 | [ADR-089](./adr/ADR-089_today_quick-links.md) | 🟢 | today | today 빠른 이동 |
 | [ADR-059+136](./adr/ADR-059+136_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
 | [ADR-060+073+079+085+088+107+109+130+133](./adr/ADR-060+073+079+085+088+107+109+130+133_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |

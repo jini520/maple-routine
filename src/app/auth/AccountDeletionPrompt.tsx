@@ -41,7 +41,7 @@ export function AccountDeletionPrompt(): React.JSX.Element | null {
     const cancelled = await cancelPendingAccountDeletion()
     setBusy(false)
     if (cancelled) setDeletesAt(null)
-    else useToastStore.getState().showError('삭제를 취소하지 못했어요. 잠시 뒤 다시 시도해 주세요.')
+    else useToastStore.getState().showError('삭제를 취소하지 못했습니다. 잠시 뒤 다시 시도해 주세요.')
   }
 
   return (

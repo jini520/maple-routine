@@ -9,7 +9,7 @@ import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { BossProfitRow, WeeklySubtotalState } from '../../../features/boss-profit/store'
 import { useManualCompletionBosses } from '../../../features/manual-completion/query'
 
-import { findAllOfType, flattenStyle } from '../../../components/__tests__/render-atom'
+import { findAllOfType, flattenStyle, 기본테마 } from '../../../components/__tests__/render-atom'
 import { MonthlyAccordionBody, WeeklyAccordionBody, WeeklySubtotalRow } from '../AccordionBody'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import { 다른주간보스, 월간보스, 보스행, 주차소계, 컨텍스트값, renderProfit } from './harness'
@@ -98,6 +98,19 @@ describe('WeeklySubtotalRow: 상태마다 얼굴이 다르다', () => {
     })
 
     expect(onRetryPeriod).toHaveBeenCalled()
+  })
+
+  // 다시 시도는 지우는 동작이 아니라 진행하는 동작이라 primary 다. 상자를 걷어 글자만큼만 눌리므로
+  // 누르는 넓이를 따로 넓힌다.
+  it('`다시 시도` 는 상자 없는 primary 글자이고 누르는 넓이가 글자보다 넓다', async () => {
+    const { getByRole, getByText } = await renderProfit(
+      <WeeklySubtotalRow subtotal={주차소계({ state: 'failed', totalMeso: 0 })} />,
+    )
+
+    const 버튼 = getByRole('button', { name: /다시 시도/ })
+    expect(flattenStyle(버튼.props.style).backgroundColor).toBeUndefined()
+    expect(flattenStyle(getByText('다시 시도').props.style).color).toBe(기본테마.primaryInk)
+    expect(버튼.props.hitSlop).toBeGreaterThan(0)
   })
 
   it('금액을 말할 수 있는 상태만 금액을 낸다', async () => {
@@ -343,19 +356,20 @@ describe('조회 불가 캐릭터의 주차 합계', () => {
     expect(queryByTestId('subtotal-issue')).toBeNull()
   })
 
-  // 카드 머리의 금액 자리와 같은 부품이다. 같은 말이 한 카드 안에서 두 그림이면 안 된다.
+  // 주차 줄에서는 상자를 걷는다. 카드 금액 칸은 상자 있는 알약 그대로다(사용자 지정).
   // lucide 그림은 `testID` 가 안 통해 트리에서 본다.
-  it('배지는 금지 아이콘을 함께 든다', async () => {
+  it('`조회 불가` 는 상자 없이 금지 아이콘과 글자다', async () => {
     const view = await renderProfit(
       <WeeklySubtotalRow subtotal={주차소계({ state: 'inProgress', totalMeso: 0 })} unavailable />,
     )
 
     expect(findAllOfType(view.toJSON(), 'RNSVGSvgView')).toHaveLength(1)
     expect(view.getByText('조회 불가')).toBeTruthy()
+    expect(flattenStyle(view.getByTestId('subtotal-issue').props.style).backgroundColor).toBeUndefined()
   })
 
-  // 기간이 못 읽히는 것은 회색 글자다. 캐릭터가 못 읽히는 것만 알약이라 아이콘이 안 든다.
-  it('기간이 조회 구간 밖인 주는 알약이 아니다', async () => {
+  // 기간이 못 읽히는 것은 회색 글자다. 캐릭터가 못 읽힐 때만 금지 아이콘이 붙는다.
+  it('기간이 조회 구간 밖인 주에는 아이콘이 없다', async () => {
     const view = await renderProfit(
       <WeeklySubtotalRow subtotal={주차소계({ state: 'outOfRange', totalMeso: 0 })} />,
     )

@@ -137,7 +137,7 @@ export const useTaskRunnerStore = create<TaskRunnerState>()((set) => {
         if (total > 0) useToastStore.getState().showSuccess(entry.task.doneToast(total))
       }
     } catch {
-      useToastStore.getState().showError('작업을 마치지 못했어요')
+      useToastStore.getState().showError('작업을 마치지 못했습니다')
     } finally {
       if (timer !== null) clearTimeout(timer)
       set({ progress: null })

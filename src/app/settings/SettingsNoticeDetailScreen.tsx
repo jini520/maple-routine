@@ -97,7 +97,7 @@ function NoticeBody(props: { notice: Notice; settled: boolean }): React.JSX.Elem
   // 그릴 것이 정말 없는 자리. 빈칸으로 두면 사용자는 그것을 고장으로 읽는다.
   return (
     <Text testID="notice-body-pending" className="text-sm text-text-disabled">
-      {settled ? '본문을 받지 못했어요' : '본문을 받는 중이에요'}
+      {settled ? '본문을 받지 못했습니다' : '본문을 받는 중이에요'}
     </Text>
   )
 }

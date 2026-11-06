@@ -3,20 +3,22 @@
 // 카드 헤더 안의 배지도 터치를
 // **가장 깊은 곳이 가져가므로**(responder) 중첩 `Pressable` 이 정상이다. 아래 케이스가 그 사실을
 // 계약으로 박는다(부모가 함께 열리면 아코디언이 토글돼 카드가 접힌다).
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 import { Pressable, Text } from 'react-native'
 
 import { renderAtom, renderOverlay } from '../../../components/__tests__/render-atom'
 import { CHARACTER_ISSUE_LABEL, CharacterIssueBadge, CharacterIssuePopover } from '../CharacterIssue'
 
 describe('CharacterIssueBadge', () => {
-  it.each(['unavailable', 'failed'] as const)('%s 는 라벨만 갖고 글자는 두지 않는다', async (issue) => {
-    const { getByLabelText } = await renderAtom(<CharacterIssueBadge issue={issue} onToggle={jest.fn()} />)
+  // 문구가 처방을 가른다. 조회 불가는 캐릭터 관리에서 손봐야 하고, 동기화 실패는 새로고침이면
+  // 풀린다. today 남은 스케줄 줄과 같은 말을 쓴다.
+  it.each([
+    ['unavailable', '조회 불가'],
+    ['failed', '동기화 실패'],
+  ] as const)('%s 는 `%s` 를 글자로 적는다', async (issue, label) => {
+    const { getByTestId } = await renderAtom(<CharacterIssueBadge issue={issue} onToggle={jest.fn()} />)
 
-    const badge = getByLabelText(CHARACTER_ISSUE_LABEL[issue])
-    expect(badge).toBeTruthy()
-    // 라벨 배지는 6자 이름부터 캐릭터명을 잘라먹었다. 아이콘만 남는다.
-    expect(badge.props.children).not.toContain(CHARACTER_ISSUE_LABEL[issue])
+    expect(within(getByTestId('character-issue-badge')).getByText(label)).toBeTruthy()
   })
 
   it('탭하면 토글만 부르고 부모 아코디언은 열지 않는다', async () => {

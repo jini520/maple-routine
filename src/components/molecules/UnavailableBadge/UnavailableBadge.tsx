@@ -11,8 +11,8 @@ const BOX_CLASS = 'flex-row items-center gap-1 rounded-full bg-error-tint px-2 p
  * `Badge` 를 안 쓰는 이유는 아이콘이다. 그쪽은 `Text` 하나거나 그라디언트 상자 하나라 안에
  * 아이콘을 못 넣는다. 색은 `Badge` 의 `error` 와 **같은 값**이다(`bg-error-tint`·`text-error-ink`).
  *
- * 값을 대신 차지하는 자리에만 선다. 이름 옆에 서는 표식은 아이콘만이고 그쪽은
- * `boss-profit/CharacterIssue` 의 `CharacterIssueBadge` 다.
+ * 보스 수익 카드의 금액 칸과 today 대표 캐릭터 카드의 오른쪽 위에 선다. 보스 수익 카드 머리의
+ * 금액 위 배지는 `boss-profit/CharacterIssue` 의 `CharacterIssueBadge` 다.
  *
  * @example
  * // 누르면 설명 팝오버가 열리는 자리
