@@ -65,6 +65,18 @@ describe('Segment', () => {
     expect(flattenStyle(getByTestId('segment').props.style).opacity).toBeCloseTo(0.4)
   })
 
+  // 안드로이드는 흐림을 트랙 · 고른 칸 · 그 그림자에 따로 걸어 고른 칸 안으로 그림자가 비친다.
+  // 아이폰처럼 상자를 한 장으로 합친 뒤 흐려야 깨끗하다.
+  it('`disabled` 면 상자를 한 장으로 합친 뒤 흐린다', async () => {
+    const 잠김 = await renderAtom(
+      <Segment disabled options={['힘', '민첩']} selected="힘" onSelect={jest.fn()} />,
+    )
+    const 열림 = await renderAtom(<Segment options={['힘', '민첩']} selected="힘" onSelect={jest.fn()} />)
+
+    expect(잠김.getByTestId('segment').props.needsOffscreenAlphaCompositing).toBe(true)
+    expect(열림.getByTestId('segment').props.needsOffscreenAlphaCompositing).toBe(false)
+  })
+
   // 배경이 조각마다 켜졌다 꺼지는 대신 **상자 하나가 옮겨 간다**. 조각이 자기 배경을 들고
   // 있으면 옮겨 갈 것이 없다.
   it('칠하는 것은 조각이 아니라 옮겨 다니는 상자다', async () => {

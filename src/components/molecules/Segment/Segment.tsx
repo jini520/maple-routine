@@ -57,6 +57,9 @@ export function Segment<T extends string>(props: {
   return (
     <View
       testID="segment"
+      // 안드로이드는 흐림을 트랙 · 고른 칸 · 그 그림자에 따로 걸어 고른 칸 안으로 그림자가 비친다.
+      // 상자를 한 장으로 합친 뒤 흐린다. 합치는 데 화면 밖 버퍼가 들어 잠긴 동안만 켠다.
+      needsOffscreenAlphaCompositing={props.disabled === true}
       className={`flex-row items-center rounded-full bg-control-track p-0.5 ${props.className ?? ''} ${
         props.disabled === true ? 'opacity-40' : ''
       }`}
