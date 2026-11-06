@@ -144,19 +144,22 @@ export type FriendsStream = (
 
 let friendsStream: FriendsStream | null = null
 
-/** 부팅이 한 번 부른다. */
+/** 부팅이 한 번 부른다. 앞 스트림의 묶음 · 요청 간격 · 쉼은 잇지 않는다. */
 export function setFriendsStream(stream: FriendsStream | null): void {
   friendsStream = stream
+  batches.clear()
 }
 
 /** 테스트가 갈아끼운다. 이름을 가른 것은 부팅 배선과 섞이지 않게 하려는 것이다. */
 export const setFriendsStreamForTest = setFriendsStream
 
 /**
- * 작업을 모으는 시간. 한 세션이 1초에 요청을 7건 넘게 만들지 않는 값이다. nginx 가 IP 당 초당 10건까지 받고,
- * 공지 · 결산 조회도 같은 구역을 쓴다.
+ * 작업을 모으는 시간이자 한 세션이 요청을 보내는 최소 간격. 1초에 7건을 넘지 않는다. nginx 가 IP 당 초당 10건까지 받고,
+ * 공지 · 결산 · 사용 로그도 같은 구역을 쓴다.
  */
 const BATCH_WINDOW_MS = 150
+/** 503 뒤 요청을 보내지 않는 시간. 서버가 동시 회차 상한의 503 에 싣는 `Retry-After` 값이고, nginx 의 503 에는 그 헤더가 없다. */
+const REJECTED_PAUSE_MS = 30_000
 /** 한 세션이 동시에 여는 요청. 서버의 동시 회차 상한은 모든 사용자가 함께 쓴다. */
 const MAX_STREAMS_IN_FLIGHT = 2
 /** 한 요청에 싣는 작업. 서버가 받는 상한(1,000)의 절반이다. */
@@ -169,10 +172,13 @@ interface QueuedTask {
   waiters: { resolve: (lines: StreamLine[]) => void; reject: (error: unknown) => void }[]
 }
 
+/** 세션마다 하나. 요청 간격과 쉼이 회차를 넘어 이어져야 해서 비어도 지우지 않는다. */
 interface SessionBatch {
   queued: Map<string, QueuedTask>
   timer: ReturnType<typeof setTimeout> | null
   inFlight: number
+  lastSentAt: number
+  pausedUntil: number
 }
 
 const batches = new Map<string, SessionBatch>()
@@ -194,7 +200,11 @@ function keyOfTask(task: StreamTask): string {
  * 묶음 하나를 보낸다. 작업마다 자기 `done` · `fail` 줄이 오면 바로 돌려주고, 끝까지 못 받은 작업에는 `end` 줄을
  * 붙여 돌려준다. 요청이 거절되거나 끊기면 남은 작업이 모두 그 실패를 받는다. 던지지 않는다.
  */
-async function sendBatch(session: string, entries: ReadonlyMap<string, QueuedTask>): Promise<void> {
+async function sendBatch(
+  session: string,
+  batch: SessionBatch,
+  entries: ReadonlyMap<string, QueuedTask>,
+): Promise<void> {
   const seen: { end: StreamLine | null; any: boolean } = { end: null, any: false }
   const settle = (entry: QueuedTask, tail: StreamLine[]): void => {
     for (const waiter of entry.waiters) waiter.resolve([...entry.lines, ...tail])
@@ -217,6 +227,7 @@ async function sendBatch(session: string, entries: ReadonlyMap<string, QueuedTas
     // 줄을 하나씩 넘기지 않는 스트림이면 모아 받은 줄로 같은 일을 한다.
     if (!seen.any) lines.forEach(onLine)
   } catch (error) {
+    if ((error as { status?: unknown }).status === 503) batch.pausedUntil = Date.now() + REJECTED_PAUSE_MS
     for (const entry of entries.values()) {
       for (const waiter of entry.waiters) waiter.reject(error)
       entry.waiters = []
@@ -228,29 +239,62 @@ async function sendBatch(session: string, entries: ReadonlyMap<string, QueuedTas
   }
 }
 
-/** 모인 작업을 요청 하나로 보낸다. 동시 요청이 상한이면 그대로 두고, 앞 요청이 끝날 때 다시 부른다. */
+function pausedError(): NexonNetworkError {
+  return new NexonNetworkError('프렌즈 조회가 503 을 받아 잠시 쉬고 있습니다')
+}
+
+function arm(session: string, batch: SessionBatch, delayMs: number): void {
+  batch.timer = setTimeout(() => {
+    batch.timer = null
+    flush(session, batch)
+  }, delayMs)
+}
+
+/**
+ * 모인 작업을 요청 하나로 보낸다. 동시 요청이 상한이면 그대로 두고, 앞 요청이 끝날 때 다시 부른다.
+ * 앞 요청을 보낸 지 `BATCH_WINDOW_MS` 가 안 됐으면 그때까지 기다린다. 쉬는 중이면 보내지 않고 모두 실패로 돌려준다.
+ */
 function flush(session: string, batch: SessionBatch): void {
   if (batch.queued.size === 0 || batch.inFlight >= MAX_STREAMS_IN_FLIGHT) return
   if (batch.timer !== null) {
     clearTimeout(batch.timer)
     batch.timer = null
   }
+  if (Date.now() < batch.pausedUntil) {
+    for (const entry of batch.queued.values()) {
+      for (const waiter of entry.waiters) waiter.reject(pausedError())
+    }
+    batch.queued.clear()
+    return
+  }
+  const wait = batch.lastSentAt + BATCH_WINDOW_MS - Date.now()
+  if (wait > 0) {
+    arm(session, batch, wait)
+    return
+  }
   const taken = [...batch.queued.entries()].slice(0, MAX_TASKS_PER_STREAM)
   for (const [key] of taken) batch.queued.delete(key)
   batch.inFlight += 1
-  void sendBatch(session, new Map(taken)).finally(() => {
+  batch.lastSentAt = Date.now()
+  void sendBatch(session, batch, new Map(taken)).finally(() => {
     batch.inFlight -= 1
     flush(session, batch)
-    if (batch.inFlight === 0 && batch.queued.size === 0 && batch.timer === null) batches.delete(session)
   })
-  // 상한만큼 넘게 쌓였으면 남은 것을 곧바로 다음 요청에 싣는다.
+  // 상한만큼 넘게 쌓였으면 남은 것을 다음 요청에 싣는다. 간격이 안 찼으니 기다렸다가 나간다.
   if (batch.queued.size >= MAX_TASKS_PER_STREAM) flush(session, batch)
 }
 
 /** 작업 하나를 세션의 묶음에 싣고, 그 작업의 줄을 받는다. 서버가 작업 목록 하나를 요청 하나로 받기 때문이다. */
 function streamTask(session: string, task: StreamTask): Promise<StreamLine[]> {
-  const batch = batches.get(session) ?? { queued: new Map<string, QueuedTask>(), timer: null, inFlight: 0 }
+  const batch = batches.get(session) ?? {
+    queued: new Map<string, QueuedTask>(),
+    timer: null,
+    inFlight: 0,
+    lastSentAt: 0,
+    pausedUntil: 0,
+  }
   batches.set(session, batch)
+  if (Date.now() < batch.pausedUntil) return Promise.reject(pausedError())
   const key = keyOfTask(task)
   const entry = batch.queued.get(key) ?? { task, lines: [], waiters: [] }
   batch.queued.set(key, entry)
@@ -260,10 +304,7 @@ function streamTask(session: string, task: StreamTask): Promise<StreamLine[]> {
   if (batch.queued.size >= MAX_TASKS_PER_STREAM) {
     flush(session, batch)
   } else if (batch.timer === null) {
-    batch.timer = setTimeout(() => {
-      batch.timer = null
-      flush(session, batch)
-    }, BATCH_WINDOW_MS)
+    arm(session, batch, BATCH_WINDOW_MS)
   }
   return result
 }

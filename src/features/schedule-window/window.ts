@@ -31,10 +31,11 @@ import { toScheduleSyncError } from '../schedule-sync/errors'
 import { mapWithLimit } from './gate'
 
 /**
- * 한 번에 나가는 조회 수. 캐릭터를 가로질러 센다.
+ * API 키 자격이 한 번에 내는 조회 수. 캐릭터를 가로질러 센다.
  *
  * 서비스 키 한도(초당 500건)를 실측할 방법이 없어 보수적으로 잡았다. 정상 운영에서는 하루에
  * 새로 생기는 날짜가 하나라 캐릭터 수만큼만 나가고, 이 값이 드는 것은 설치·초기화 때뿐이다.
+ * 로그인 자격에는 걸지 않는다. 서버 스트림이 요청 하나로 묶고 넥슨을 부르는 속도도 서버가 정한다.
  */
 export const WINDOW_CALL_LIMIT = 6
 
@@ -177,7 +178,8 @@ export async function fillScheduleWindow(
   const unavailable = new Set<string>()
   const failures: WindowFailure[] = []
 
-  await mapWithLimit(jobs, WINDOW_CALL_LIMIT, async ({ ocid, dateKey }) => {
+  const limit = credential.type === 'login' ? jobs.length : WINDOW_CALL_LIMIT
+  await mapWithLimit(jobs, limit, async ({ ocid, dateKey }) => {
     if (unavailable.has(ocid)) return
 
     let state

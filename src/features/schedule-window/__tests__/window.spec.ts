@@ -204,3 +204,37 @@ describe('결산 여부도 갱신한다', () => {
     expect(refreshSettlementMock).not.toHaveBeenCalled()
   })
 })
+
+// 동시 6건은 API 키가 넥슨을 직접 부를 때의 한도다. 로그인 조회는 서버 스트림이 요청 하나로 묶고 넥슨을 부르는 속도도
+// 서버가 정하므로, 6건씩 넘기면 작은 요청이 잦아질 뿐이다.
+describe('자격마다 동시에 부르는 수', () => {
+  function 동시최대(): () => number {
+    let inFlight = 0
+    let max = 0
+    fetchStateMock.mockImplementation(async () => {
+      inFlight += 1
+      max = Math.max(max, inFlight)
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      inFlight -= 1
+      return schedulerState()
+    })
+    return () => max
+  }
+
+  it('API 키는 한 번에 6건까지 부른다', async () => {
+    const max = 동시최대()
+
+    await fillScheduleWindow(['o1', 'o2'], NOW)
+
+    expect(max()).toBe(6)
+  })
+
+  it('로그인은 창 전부를 한꺼번에 부른다', async () => {
+    getAuthConfigMock.mockResolvedValue({ login: { type: 'login', id: 'account-login', session: '세션' }, apiKeys: [] })
+    const max = 동시최대()
+
+    await fillScheduleWindow(['o1', 'o2'], NOW)
+
+    expect(max()).toBe(26)
+  })
+})
