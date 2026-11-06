@@ -136,7 +136,11 @@ function retryWith(
  * `nexon/` 이 우리 서버를 직접 부르면 계층이 거꾸로 선다. 그래서 방향을 여기서 뒤집는다
  * (`native/ports.ts` 와 같은 태도). 안 꽂혀 있으면 로그인 자격의 프렌즈 조회는 못 닿은 것으로 던진다.
  */
-export type FriendsStream = (session: string, tasks: readonly StreamTask[]) => Promise<StreamLine[]>
+export type FriendsStream = (
+  session: string,
+  tasks: readonly StreamTask[],
+  onLine?: (line: StreamLine) => void,
+) => Promise<StreamLine[]>
 
 let friendsStream: FriendsStream | null = null
 
@@ -147,6 +151,122 @@ export function setFriendsStream(stream: FriendsStream | null): void {
 
 /** 테스트가 갈아끼운다. 이름을 가른 것은 부팅 배선과 섞이지 않게 하려는 것이다. */
 export const setFriendsStreamForTest = setFriendsStream
+
+/**
+ * 작업을 모으는 시간. 한 세션이 1초에 요청을 7건 넘게 만들지 않는 값이다. nginx 가 IP 당 초당 10건까지 받고,
+ * 공지 · 결산 조회도 같은 구역을 쓴다.
+ */
+const BATCH_WINDOW_MS = 150
+/** 한 세션이 동시에 여는 요청. 서버의 동시 회차 상한은 모든 사용자가 함께 쓴다. */
+const MAX_STREAMS_IN_FLIGHT = 2
+/** 한 요청에 싣는 작업. 서버가 받는 상한(1,000)의 절반이다. */
+const MAX_TASKS_PER_STREAM = 500
+
+/** 묶음에 실린 작업 하나와, 그 결과를 기다리는 호출들. 같은 작업을 두 번 부르면 기다리는 쪽만 늘어난다. */
+interface QueuedTask {
+  task: StreamTask
+  lines: StreamLine[]
+  waiters: { resolve: (lines: StreamLine[]) => void; reject: (error: unknown) => void }[]
+}
+
+interface SessionBatch {
+  queued: Map<string, QueuedTask>
+  timer: ReturnType<typeof setTimeout> | null
+  inFlight: number
+}
+
+const batches = new Map<string, SessionBatch>()
+
+/** 같은 작업인가를 가르는 열쇠. 아래 `isOf` 와 같은 필드를 본다. */
+function keyOf(fields: { kind: string; date?: string; ocid?: string }): string {
+  return `${fields.kind}|${fields.date ?? ''}|${fields.ocid ?? ''}`
+}
+
+function keyOfTask(task: StreamTask): string {
+  return keyOf({
+    kind: task.kind,
+    ...('date' in task && task.date !== undefined ? { date: task.date } : {}),
+    ...('ocid' in task ? { ocid: task.ocid } : {}),
+  })
+}
+
+/**
+ * 묶음 하나를 보낸다. 작업마다 자기 `done` · `fail` 줄이 오면 바로 돌려주고, 끝까지 못 받은 작업에는 `end` 줄을
+ * 붙여 돌려준다. 요청이 거절되거나 끊기면 남은 작업이 모두 그 실패를 받는다. 던지지 않는다.
+ */
+async function sendBatch(session: string, entries: ReadonlyMap<string, QueuedTask>): Promise<void> {
+  const seen: { end: StreamLine | null; any: boolean } = { end: null, any: false }
+  const settle = (entry: QueuedTask, tail: StreamLine[]): void => {
+    for (const waiter of entry.waiters) waiter.resolve([...entry.lines, ...tail])
+    entry.waiters = []
+  }
+  const onLine = (line: StreamLine): void => {
+    seen.any = true
+    if (line.t === 'end') {
+      seen.end = line
+      return
+    }
+    const entry = entries.get(keyOf(line))
+    if (entry === undefined || entry.waiters.length === 0) return
+    entry.lines.push(line)
+    if (line.t === 'done' || line.t === 'fail') settle(entry, [])
+  }
+  try {
+    if (friendsStream === null) throw new NexonNetworkError('프렌즈 스트림이 배선되지 않았습니다')
+    const lines = await friendsStream(session, [...entries.values()].map((entry) => entry.task), onLine)
+    // 줄을 하나씩 넘기지 않는 스트림이면 모아 받은 줄로 같은 일을 한다.
+    if (!seen.any) lines.forEach(onLine)
+  } catch (error) {
+    for (const entry of entries.values()) {
+      for (const waiter of entry.waiters) waiter.reject(error)
+      entry.waiters = []
+    }
+    return
+  }
+  for (const entry of entries.values()) {
+    if (entry.waiters.length > 0) settle(entry, seen.end === null ? [] : [seen.end])
+  }
+}
+
+/** 모인 작업을 요청 하나로 보낸다. 동시 요청이 상한이면 그대로 두고, 앞 요청이 끝날 때 다시 부른다. */
+function flush(session: string, batch: SessionBatch): void {
+  if (batch.queued.size === 0 || batch.inFlight >= MAX_STREAMS_IN_FLIGHT) return
+  if (batch.timer !== null) {
+    clearTimeout(batch.timer)
+    batch.timer = null
+  }
+  const taken = [...batch.queued.entries()].slice(0, MAX_TASKS_PER_STREAM)
+  for (const [key] of taken) batch.queued.delete(key)
+  batch.inFlight += 1
+  void sendBatch(session, new Map(taken)).finally(() => {
+    batch.inFlight -= 1
+    flush(session, batch)
+    if (batch.inFlight === 0 && batch.queued.size === 0 && batch.timer === null) batches.delete(session)
+  })
+  // 상한만큼 넘게 쌓였으면 남은 것을 곧바로 다음 요청에 싣는다.
+  if (batch.queued.size >= MAX_TASKS_PER_STREAM) flush(session, batch)
+}
+
+/** 작업 하나를 세션의 묶음에 싣고, 그 작업의 줄을 받는다. 서버가 작업 목록 하나를 요청 하나로 받기 때문이다. */
+function streamTask(session: string, task: StreamTask): Promise<StreamLine[]> {
+  const batch = batches.get(session) ?? { queued: new Map<string, QueuedTask>(), timer: null, inFlight: 0 }
+  batches.set(session, batch)
+  const key = keyOfTask(task)
+  const entry = batch.queued.get(key) ?? { task, lines: [], waiters: [] }
+  batch.queued.set(key, entry)
+  const result = new Promise<StreamLine[]>((resolve, reject) => {
+    entry.waiters.push({ resolve, reject })
+  })
+  if (batch.queued.size >= MAX_TASKS_PER_STREAM) {
+    flush(session, batch)
+  } else if (batch.timer === null) {
+    batch.timer = setTimeout(() => {
+      batch.timer = null
+      flush(session, batch)
+    }, BATCH_WINDOW_MS)
+  }
+  return result
+}
 
 /**
  * 점검 응답과 성공 응답을 받아 가는 쪽. **앱이 부팅 때 꽂는다**(`setFriendsStream` 과 같은 이유).
@@ -241,7 +361,7 @@ function errorOfFail(path: string, status: number, code: string | undefined): Ne
 }
 
 /**
- * 로그인 자격의 프렌즈 조회. 작업 하나를 스트림에 보내고 그 작업의 쪽들을 응답 하나로 되돌린다.
+ * 로그인 자격의 프렌즈 조회. 작업 하나를 세션의 묶음에 싣고, 그 작업의 쪽들을 응답 하나로 되돌린다.
  *
  * 서버의 거절은 둘로 가른다. 401 은 세션이 죽은 것이라 재로그인이고, 503 은 상한이라 못 닿은 것과
  * 같이 다음 회차에 다시 온다.
@@ -252,7 +372,7 @@ async function requestViaStream<T>(path: string, session: string): Promise<T> {
 
   let lines: StreamLine[]
   try {
-    lines = await friendsStream(session, [task])
+    lines = await streamTask(session, task)
   } catch (error) {
     const status = (error as { status?: unknown }).status
     if (status === 401) throw new NexonSignInRequiredError('넥슨 로그인이 만료되었습니다', { cause: error })

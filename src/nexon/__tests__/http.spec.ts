@@ -175,7 +175,7 @@ describe('requestJson: 로그인 자격의 프렌즈 경로는 서버 스트림�
     await requestJson('/maplestory/v1/character/list', 로그인)
 
     expect(fetcher).not.toHaveBeenCalled()
-    expect(stream).toHaveBeenCalledWith('내세션', [{ kind: 'character-list' }])
+    expect(stream).toHaveBeenCalledWith('내세션', [{ kind: 'character-list' }], expect.any(Function))
   })
 
   it.each([
@@ -189,7 +189,7 @@ describe('requestJson: 로그인 자격의 프렌즈 경로는 서버 스트림�
     const stream = 잡는스트림([쪽(task, 1, { ok: true }), 끝(task, 1), { t: 'end', reason: 'done' }])
 
     await expect(requestJson(path, 로그인)).resolves.toEqual({ ok: true })
-    expect(stream).toHaveBeenCalledWith('내세션', [task])
+    expect(stream).toHaveBeenCalledWith('내세션', [task], expect.any(Function))
   })
 
   it('쪽이 여럿이면 배열을 잇고 next_cursor 는 null 이다. 부르는 쪽의 커서 고리는 한 번에 끝난다', async () => {
@@ -509,5 +509,127 @@ describe('requestJson: Open API 점검', () => {
       requestJson('/maplestory/v1/character/list', { type: 'login', value: '세션', accountId: null }),
     ).rejects.toMatchObject({ scope: 'api' })
     expect(보고.maintenance).toHaveBeenCalledWith('api', '/maplestory/v1/character/list')
+  })
+})
+
+// 서버는 작업 목록 하나를 요청 하나로 받는다. 작업마다 요청을 하나씩 보내면 화면 하나가 1초에 요청 수백 건을 만들어
+// nginx 속도 제한과 서버의 동시 회차 상한에 걸린다(2026-11-06, 캐릭터 설정의 활동 판정).
+describe('requestJson: 프렌즈 조회 묶기', () => {
+  const 로그인 = { type: 'login', value: '내세션', accountId: null } as const
+  type OnLine = (line: StreamLine) => void
+  type Call = { tasks: Record<string, unknown>[]; onLine: OnLine }
+
+  const 상태 = (ocid: string) => `/maplestory/v1/scheduler/character-state?ocid=${ocid}&date=2026-09-25`
+  const 작업 = (ocid: string) => ({ kind: 'character-state', ocid, date: '2026-09-25' })
+  const 쪽 = (task: Record<string, unknown>, body: unknown): StreamLine => ({ t: 'page', ...task, n: 1, body }) as StreamLine
+  const 끝 = (task: Record<string, unknown>): StreamLine => ({ t: 'done', ...task, pages: 1 }) as StreamLine
+  const 회차끝: StreamLine = { t: 'end', reason: 'done' }
+
+  /** 받은 작업마다 자기 ocid 를 몸체로 돌려주는 스트림. 부른 기록을 남긴다. */
+  function 메아리스트림() {
+    const calls: Call[] = []
+    setFriendsStreamForTest(async (_session, tasks, onLine) => {
+      const call = { tasks: tasks as unknown as Record<string, unknown>[], onLine: onLine as OnLine }
+      calls.push(call)
+      const lines = call.tasks.flatMap((task) => [쪽(task, { who: task.ocid }), 끝(task)])
+      for (const line of [...lines, 회차끝]) call.onLine(line)
+      return [...lines, 회차끝]
+    })
+    return calls
+  }
+
+  afterEach(() => {
+    setFriendsStreamForTest(null)
+  })
+
+  it('같은 순간 들어온 조회를 요청 하나로 보내고, 작업마다 자기 줄만 받는다', async () => {
+    const calls = 메아리스트림()
+
+    const results = await Promise.all([requestJson(상태('o1'), 로그인), requestJson(상태('o2'), 로그인)])
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0]?.tasks).toEqual([작업('o1'), 작업('o2')])
+    expect(results).toEqual([{ who: 'o1' }, { who: 'o2' }])
+  })
+
+  it('같은 작업이 두 번 들어오면 한 번만 싣고 둘 다 받는다', async () => {
+    const calls = 메아리스트림()
+
+    const results = await Promise.all([requestJson(상태('o1'), 로그인), requestJson(상태('o1'), 로그인)])
+
+    expect(calls[0]?.tasks).toEqual([작업('o1')])
+    expect(results).toEqual([{ who: 'o1' }, { who: 'o1' }])
+  })
+
+  // 묶인 요청은 그 안에서 가장 늦은 작업이 끝나야 끝난다. 먼저 끝난 작업까지 그때를 기다리면 화면이 늦게 선다.
+  it('자기 done 이 오면 요청이 끝나기 전에 돌려받는다', async () => {
+    let release: () => void = () => undefined
+    setFriendsStreamForTest(async (_session, _tasks, onLine) => {
+      const emit = onLine as OnLine
+      emit(쪽(작업('o1'), { who: 'o1' }))
+      emit(끝(작업('o1')))
+      await new Promise<void>((resolve) => {
+        release = resolve
+      })
+      emit(쪽(작업('o2'), { who: 'o2' }))
+      emit(끝(작업('o2')))
+      emit(회차끝)
+      return []
+    })
+
+    const fast = requestJson(상태('o1'), 로그인)
+    const slow = requestJson(상태('o2'), 로그인)
+
+    await expect(fast).resolves.toEqual({ who: 'o1' })
+    release()
+    await expect(slow).resolves.toEqual({ who: 'o2' })
+  })
+
+  it('서버가 거절하면 묶인 작업이 모두 같은 실패를 받는다', async () => {
+    setFriendsStreamForTest(async () => {
+      throw Object.assign(new Error('rejected'), { status: 503 })
+    })
+
+    const results = await Promise.allSettled([requestJson(상태('o1'), 로그인), requestJson(상태('o2'), 로그인)])
+
+    expect(results.map((result) => result.status)).toEqual(['rejected', 'rejected'])
+    for (const result of results) {
+      if (result.status === 'rejected') expect(result.reason).toBeInstanceOf(NexonNetworkError)
+    }
+  })
+
+  it('한 세션이 동시에 여는 요청은 둘까지이고, 그동안 들어온 작업은 앞 요청이 끝나면 실린다', async () => {
+    const releases: (() => void)[] = []
+    const calls: Call[] = []
+    setFriendsStreamForTest(async (_session, tasks, onLine) => {
+      const call = { tasks: tasks as unknown as Record<string, unknown>[], onLine: onLine as OnLine }
+      calls.push(call)
+      await new Promise<void>((resolve) => releases.push(resolve))
+      for (const task of call.tasks) {
+        call.onLine(쪽(task, { who: task.ocid }))
+        call.onLine(끝(task))
+      }
+      call.onLine(회차끝)
+      return []
+    })
+    const 묶음창보다길게 = () => new Promise((resolve) => setTimeout(resolve, 400))
+
+    const first = requestJson(상태('o1'), 로그인)
+    await 묶음창보다길게()
+    const second = requestJson(상태('o2'), 로그인)
+    await 묶음창보다길게()
+    const third = requestJson(상태('o3'), 로그인)
+    await 묶음창보다길게()
+
+    expect(calls.map((call) => call.tasks)).toEqual([[작업('o1')], [작업('o2')]])
+
+    releases[0]?.()
+    await expect(first).resolves.toEqual({ who: 'o1' })
+    await 묶음창보다길게()
+    expect(calls.map((call) => call.tasks)).toEqual([[작업('o1')], [작업('o2')], [작업('o3')]])
+
+    releases[1]?.()
+    releases[2]?.()
+    await expect(Promise.all([second, third])).resolves.toEqual([{ who: 'o2' }, { who: 'o3' }])
   })
 })
