@@ -1,7 +1,6 @@
 # ADR-158+180 앱 사용 로그를 기기에 모아 묶어 보내고, 관리자 대시보드에서 본다
 
 > 🟢 유효
-> 결정 4 ~ 8 은 ⚪ 미구현이다. 서버에 배포하면 이 줄을 지운다
 > 관련 소스: `features/usage-log/` · `storage/usage-events.ts` · `server/usage-events.ts` · `types/usage-event.ts` · `navigation/AppNavigation.tsx` · `app/AppShell.tsx` · `features/server-sync/forget.ts` · 서버 `modules/usage-events/` · `modules/admin/` · `modules/notices/` · `modules/users/`
 
 ## 배경
@@ -182,4 +181,4 @@
 - ADR-158 (2026-11-04): 사용 로그의 사건 종류 · 전송 시점 · 서버 표 · 관리자 화면을 처음 작성하고 구현했다(#619, 서버 #57)
 - ADR-180 (2026-11-06): 결정 4 의 관리자 화면을 날짜별 · 화면별 표에서 사용자 · 사용 로그 두 장의 대시보드로 바꿨다(결정 4 · 5 · 6).
   일별 막대 아래에 알림 발송 수를 두고(결정 7), 화면을 앱 머리 줄의 제목으로 보인다(결정 8). 관리 화면 전체에서 테두리와 구분선을
-  걷는 결정은 [[ADR-016]] 결정 13 에 있다
+  걷는 결정은 [[ADR-016]] 결정 13 에 있다. 같은 날 서버 #67 로 구현해 운영에 배포했다
