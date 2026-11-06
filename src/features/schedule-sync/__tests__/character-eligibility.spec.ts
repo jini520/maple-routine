@@ -260,7 +260,7 @@ describe('실패 종류별 기록 정책', () => {
   it('네트워크 실패도 기록하지 않는다. 모르는 실패를 확정으로 굳히지 않는다', async () => {
     fetchSchedulerCharacterStateMock.mockRejectedValue(new NexonNetworkError('offline'))
 
-    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('ineligible')
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('undetermined')
     await expect(getScheduleProbeLedger('ocid-1', NOW)).resolves.toEqual({
       unavailable: false,
       dates: {},
@@ -283,5 +283,58 @@ describe('결산 여부도 갱신한다', () => {
     await resolveCharacterEligibility(자격('key'), 'ocid-1', true, NOW)
 
     expect(refreshSettlementMock).not.toHaveBeenCalled()
+  })
+})
+
+// 조회가 실패한 날짜에 완료가 있었을 수 있다. 그 실패만으로 자격 없음을 내면 활동 중인 캐릭터가 목록에서 빠진다
+// (2026-11-06, 넥슨 로그인 사용자의 조회가 nginx 503 에 걸렸다).
+describe('조회가 실패한 날짜가 있으면 판정을 보류한다', () => {
+  it('실패한 날짜가 하나라도 있고 다른 날짜에 완료가 없으면 보류한다', async () => {
+    fetchSchedulerCharacterStateMock.mockImplementation(
+      async (_apiKey: string, _ocid: string, _resolveBossKey: unknown, dateKey: string) => {
+        if (dateKey === '2026-07-21') throw new NexonNetworkError('503')
+        return state()
+      },
+    )
+
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('undetermined')
+  })
+
+  it('실패한 날짜가 있어도 다른 날짜에 완료가 있으면 자격 O 다', async () => {
+    fetchSchedulerCharacterStateMock.mockImplementation(
+      async (_apiKey: string, _ocid: string, _resolveBossKey: unknown, dateKey: string) => {
+        if (dateKey === '2026-07-21') throw new NexonNetworkError('503')
+        return COMPLETED
+      },
+    )
+
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('eligible')
+  })
+
+  // 결산 시간에는 어제가 매일 집계 전이다. 실패로 치면 그때마다 활동 없는 캐릭터가 목록에 뜬다.
+  it('집계 전(OPENAPI00009)은 실패로 치지 않는다', async () => {
+    fetchSchedulerCharacterStateMock.mockImplementation(
+      async (_apiKey: string, _ocid: string, _resolveBossKey: unknown, dateKey: string) => {
+        if (dateKey === '2026-08-02') throw new NexonBadRequestError('not collected', 'OPENAPI00009')
+        return state()
+      },
+    )
+
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('ineligible')
+  })
+
+  it('보류한 날짜는 원장에 안 남아 다음 판정이 그 날짜만 다시 묻는다', async () => {
+    fetchSchedulerCharacterStateMock.mockImplementation(
+      async (_apiKey: string, _ocid: string, _resolveBossKey: unknown, dateKey: string) => {
+        if (dateKey === '2026-07-21') throw new NexonNetworkError('503')
+        return state()
+      },
+    )
+    await resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)
+
+    fetchSchedulerCharacterStateMock.mockClear()
+    fetchSchedulerCharacterStateMock.mockResolvedValue(state())
+    await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('ineligible')
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
   })
 })
