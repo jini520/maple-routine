@@ -173,6 +173,50 @@ describe('고가 드롭 강조', () => {
     const plain = await renderProfit(<CharacterAccordion group={그룹()} />, 컨텍스트값({ dropsByRowKey: 평범한드롭 }))
     expect(plain.queryByTestId('character-amount-aurora')).toBeNull()
   })
+
+  // 원인 배지와 아이템 그림이 금액 위 같은 칸에 선다. 실패를 말하는 카드가 빛나면 앞뒤가 안 맞는다.
+  it.each(['failed', 'unavailable'] as const)('%s 배지가 서면 드롭이 있어도 강조가 모두 빠진다', async (issue) => {
+    const view = await renderProfit(
+      <CharacterAccordion group={그룹()} issue={issue} />,
+      컨텍스트값({ dropsByRowKey: 고가드롭 }),
+    )
+
+    expect(view.getByTestId('character-issue-badge')).toBeTruthy()
+    expect(view.queryByTestId('character-card-sheen')).toBeNull()
+    expect(view.queryByLabelText('고가 드롭')).toBeNull()
+    expect(view.queryByTestId('character-amount-aurora')).toBeNull()
+  })
+
+  // 금액을 말할 수 없다는 카드가 빛나도 앞뒤가 안 맞는다.
+  it('금액 칸에 `조회 불가` 알약이 서도 강조가 빠진다', async () => {
+    const view = await renderProfit(
+      <CharacterAccordion group={그룹([보스행({ isComplete: true, payoutMeso: 0 })])} issue="unavailable" />,
+      컨텍스트값({ dropsByRowKey: 고가드롭 }),
+    )
+
+    expect(view.getByTestId('character-issue-amount')).toBeTruthy()
+    expect(view.queryByTestId('character-card-sheen')).toBeNull()
+    expect(view.queryByLabelText('고가 드롭')).toBeNull()
+  })
+
+  // 월간의 조회 불가는 주차 줄이 말하므로 머리에 배지가 없다. 끌 까닭도 없다.
+  it('월간 탭의 조회 불가 카드는 배지가 없어 강조가 남는다', async () => {
+    const 월간행 = 보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-08', payoutMeso: 4_000_000 })
+    const view = await renderProfit(
+      <CharacterAccordion group={그룹([월간행])} issue="unavailable" />,
+      컨텍스트값({
+        tab: 'monthly',
+        dropsByRowKey: {
+          [dropRowKey(월간행.ocid, 월간행.bossKey, 월간행.difficulty, 월간행.periodKey)]: [
+            드롭({ itemKey: 고가아이템, itemName: 고가아이템 }),
+          ],
+        },
+      }),
+    )
+
+    expect(view.queryByTestId('character-issue-badge')).toBeNull()
+    expect(view.getByTestId('character-card-sheen')).toBeTruthy()
+  })
 })
 
 describe('아이템 수입', () => {
@@ -365,6 +409,18 @@ describe('실패 표식', () => {
     expect(queryByTestId('character-issue-badge')).toBeNull()
   })
 
+  // 아이콘만으로는 원인을 읽을 수 없었고 금액의 첫 자리를 가렸다. 금액 위 칸에 글자로 적는다.
+  it.each([
+    ['failed', '동기화 실패'],
+    ['unavailable', '조회 불가'],
+  ] as const)('%s 면 금액 위 칸에 `%s` 를 적는다', async (issue, label) => {
+    const { getByTestId } = await renderProfit(<CharacterAccordion group={그룹()} issue={issue} />)
+
+    const 윗칸 = within(getByTestId('character-header-mark-slot'))
+    expect(윗칸.getByTestId('character-issue-badge')).toBeTruthy()
+    expect(윗칸.getByText(label)).toBeTruthy()
+  })
+
   it('배지를 탭하면 설명이 열리고 아코디언은 펼쳐지지 않는다', async () => {
     const { getByTestId, queryByText } = await renderProfit(
       <CharacterAccordion group={그룹()} issue="failed" />,
@@ -446,7 +502,7 @@ describe('행이 없는 조회 불가 카드', () => {
   })
 
   // 같은 말을 두 번 하지 않는다. 금액 자리 배지가 이미 조회 불가 를 글자로 말한다.
-  it('금액 자리 배지가 서면 원형 배지는 안 그린다', async () => {
+  it('금액 자리 배지가 서면 금액 위 배지는 안 그린다', async () => {
     const { queryByTestId } = await renderProfit(
       <CharacterAccordion group={빈그룹} issue="unavailable" />,
     )
@@ -490,7 +546,7 @@ describe('행이 없는 조회 불가 카드', () => {
   })
 
   // 네트워크 실패는 마지막으로 확인한 기록을 보여주는 상태라 금액 자리를 안 건드린다.
-  it('행이 없어도 `failed` 면 원형 배지 그대로다', async () => {
+  it('행이 없어도 `failed` 면 금액 위 배지 그대로다', async () => {
     const { getByTestId, queryByTestId } = await renderProfit(
       <CharacterAccordion group={빈그룹} issue="failed" />,
     )
@@ -598,9 +654,9 @@ describe('월간 탭의 조회 불가 카드', () => {
     expect(queryByTestId('character-issue-amount')).toBeNull()
   })
 
-  // 주차 줄이 주마다 조회 불가 를 적으므로(`subtotal-issue`) 머리의 원형 배지는 같은 말을 한 번
-  // 더 하는 것이고, 그 자리가 금액 좌상단이라 숫자를 가린다(사용자 지정).
-  it('금액을 그릴 때 머리의 원형 배지는 안 선다', async () => {
+  // 주차 줄이 주마다 조회 불가 를 적으므로(`subtotal-issue`) 머리의 배지는 같은 말을 한 번 더
+  // 하는 것이다(사용자 지정).
+  it('금액을 그릴 때 머리의 배지는 안 선다', async () => {
     const 번달 = 그룹([], [주차소계({ state: 'recorded', totalMeso: 1_000 })])
     const { getByText, queryByTestId } = await renderProfit(
       <CharacterAccordion group={번달} issue="unavailable" />,
@@ -612,7 +668,7 @@ describe('월간 탭의 조회 불가 카드', () => {
   })
 
   // `failed` 는 한 주가 아니라 카드 전체의 사실이라 주차 줄이 대신 말해 주지 않는다.
-  it('`failed` 는 월간에서도 원형 배지가 선다', async () => {
+  it('`failed` 는 월간에서도 배지가 선다', async () => {
     const 번달 = 그룹([], [주차소계({ state: 'recorded', totalMeso: 1_000 })])
     const { getByTestId } = await renderProfit(
       <CharacterAccordion group={번달} issue="failed" />,

@@ -123,7 +123,7 @@ export function CharacterAccordion(props: {
 }): React.JSX.Element {
   const { tab, loadedTab, loadedPeriodKey, dropsByRowKey } = useBossProfitContext()
   const [isOpenedByUser, setIsOpenedByUser] = useState(false)
-  // 아이콘만으로는 원인을 말할 수 없어, 탭하면 설명 팝오버를 연다. 금액 칸을 재서 그 아래에 꼬리를 댄다.
+  // 배지 글자는 원인만 말해서, 누르면 처방을 적은 설명 팝오버를 연다. 누른 배지를 재서 꼬리를 댄다.
   const {
     ref: issueAnchorRef,
     isOpen: isIssueOpen,
@@ -163,17 +163,19 @@ export function CharacterAccordion(props: {
    */
   const isExpanded = isOpenedByUser && !cannotStateAmount
   /**
-   * 금액 옆 **원형 배지**가 말할 것. `undefined` 면 안 선다.
+   * 금액 위 칸의 배지가 말할 것. `undefined` 면 안 선다.
    *
-   * 월간의 조회 불가는 뺀다(사용자 지정). 그 탭은 펼치면 주차 줄마다 `조회 불가` 를 적으므로
-   * 머리의 원형 배지가 같은 말을 한 번 더 하는데, 그 자리가 금액 좌상단이라 숫자를 가린다.
-   * `failed` 는 남는다. 그것은 한 주가 아니라 카드 전체의 사실이라 주차 줄이 대신 말해 주지 않는다.
+   * 둘을 뺀다. 금액 칸에 `조회 불가` 알약이 서면 그것이 같은 말을 한다. 월간의 조회 불가는 펼치면
+   * 주차 줄마다 `조회 불가` 를 적어 같은 말을 한 번 더 하게 된다(사용자 지정). `failed` 는 월간에도
+   * 남는다. 그것은 한 주가 아니라 카드 전체의 사실이라 주차 줄이 대신 말해 주지 않는다.
    */
   const badgeIssue =
-    tab === 'monthly' && props.issue === 'unavailable' ? undefined : props.issue
+    cannotStateAmount || (tab === 'monthly' && props.issue === 'unavailable') ? undefined : props.issue
   // 이 기간에 고가 아이템을 먹었을 때: 홀로그램 빛 + 머리 오른쪽 위 아이템 표시 + 오로라 금액.
+  // 머리가 실패를 말하는 카드는 드롭이 있어도 강조하지 않는다(사용자 지정). 배지와 아이템 그림이
+  // 같은 칸에 서고, 실패를 말하는 카드가 빛나면 앞뒤가 안 맞는다.
   const valuableDrops = collectGroupValuableDrops(group, dropsByRowKey)
-  const hasValuable = valuableDrops.length > 0
+  const hasValuable = !cannotStateAmount && badgeIssue === undefined && valuableDrops.length > 0
   const holoMotion = useHoloMotion(hasValuable)
   const themeMode = useThemeMode()
   // 카드 금액(`groupTotalMeso`)과 같은 원천이어야 상자의 목록 · 아이템 줄 · 합계가 맞는다.
@@ -275,10 +277,13 @@ export function CharacterAccordion(props: {
           {/* 숫자 표기(n/12)는 두지 않는다. 헤더 가로폭을 캐릭터명과 다투는 문제가 안 풀렸다.
               진행률은 아바타 링이 표현한다. */}
 
-          {/* 오른쪽 열은 위가 고가 드롭 표시, 아래가 금액이다. 고가 드롭이 없는 카드도 금액이 같은 줄에 서서
-              카드끼리 금액이 맞는다. */}
+          {/* 오른쪽 열은 위가 실패 배지나 고가 드롭 표시, 아래가 금액이다. 윗칸이 빈 카드도 금액이 같은
+              줄에 서서 카드끼리 금액이 맞는다. */}
           <View className="shrink-0 items-end gap-0.5">
-            <View className="h-[22px] justify-center">
+            <View testID="character-header-mark-slot" className="h-[22px] justify-center">
+              {badgeIssue !== undefined && (
+                <CharacterIssueBadge ref={issueAnchorRef} issue={badgeIssue} onToggle={toggleIssue} />
+              )}
               {hasValuable && <ValuableDropMark drops={valuableDrops} label="고가 드롭" />}
             </View>
             <View className="h-[22px] justify-center">
@@ -291,29 +296,22 @@ export function CharacterAccordion(props: {
                 // 화살표는 금액 바로 왼쪽이라 그라디언트가 시작하는 색이어야 금액과 한 덩어리로 보인다.
                 markColor={hasValuable ? AURORA_TEXT[themeMode][0] : undefined}
               >
-                {/* 실패 배지의 절대배치 기준이자 설명 팝오버가 꼬리를 대는 상자다. 아이템이 섞이면
+                {/* 금액 칸에 `조회 불가` 알약이 서면 설명 팝오버가 꼬리를 대는 상자다. 아이템이 섞이면
                     금액 색이 달라진다. 새 색을 만들지 않고 보스 행과 같은 `primary-ink` 를 쓴다. */}
-                <View ref={issueAnchorRef} className="relative flex-row items-center">
+                <View ref={cannotStateAmount ? issueAnchorRef : undefined} className="flex-row items-center">
                   {cannotStateAmount ? (
                     <CharacterIssueAmount onToggle={toggleIssue} />
+                  ) : hasValuable ? (
+                    <AuroraText testID="character-amount-aurora" className="text-sm font-bold" style={TABULAR_NUMS}>
+                      {amountText}
+                    </AuroraText>
                   ) : (
-                    <>
-                      {badgeIssue !== undefined && (
-                        <CharacterIssueBadge issue={badgeIssue} onToggle={toggleIssue} />
-                      )}
-                      {hasValuable ? (
-                        <AuroraText testID="character-amount-aurora" className="text-sm font-bold" style={TABULAR_NUMS}>
-                          {amountText}
-                        </AuroraText>
-                      ) : (
-                        <Text
-                          className={`text-sm font-bold ${hasItemRevenue ? 'text-primary-ink' : 'text-text'}`}
-                          style={TABULAR_NUMS}
-                        >
-                          {amountText}
-                        </Text>
-                      )}
-                    </>
+                    <Text
+                      className={`text-sm font-bold ${hasItemRevenue ? 'text-primary-ink' : 'text-text'}`}
+                      style={TABULAR_NUMS}
+                    >
+                      {amountText}
+                    </Text>
                   )}
                 </View>
               </MoneyBox>

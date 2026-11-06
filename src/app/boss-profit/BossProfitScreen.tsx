@@ -492,8 +492,8 @@ export function BossProfitScreen(): React.JSX.Element {
                   key={`${period.loadedTab}-${period.loadedPeriodKey}-${group.ocid}`}
                   group={group}
                   // 표식은 현재 기간에서만 선다. 과거 기간의 카드는 전부 기록에서 생기고,
-                  // 받아 둔 그 금액 위에 조회 불가를 얹을 이유가 없다. 이 한 값이 원형 배지 ·
-                  // 금액 알약 · 월간 주차 줄 · 초상화 표식 넷을 함께 정한다.
+                  // 받아 둔 그 금액 위에 조회 불가를 얹을 이유가 없다. 이 한 값이 금액 위 배지 ·
+                  // 금액 알약 · 월간 주차 줄 · 초상화 덮개 넷을 함께 정한다.
                   issue={isOnCurrentPeriod ? round.characterIssues[group.ocid] : undefined}
                   // 조회 불가 팝오버의 갈 길. 카드는 네비게이션을 모르고 화면이 내려준다.
                   // 피커를 열어 둔 채로 설정 탭에 보낸다(빈 상태 CTA 와 같은 길).

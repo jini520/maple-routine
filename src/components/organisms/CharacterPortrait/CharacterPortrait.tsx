@@ -16,18 +16,9 @@ import { Svg } from '../../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../../theme/context'
 import { Text } from '../../atoms'
 import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar'
-import { UnavailableFaceMark } from '../../molecules/CharacterAvatar/UnavailableFaceMark'
 import { PORTRAIT_COMPACT, PORTRAIT_RAIL } from './portrait-metrics'
 import { PortraitCaption } from './PortraitCaption'
 import { EmptyRing, ProgressArc, SegmentedRing, type PortraitRingProgress } from './PortraitRing'
-
-/**
- * 조회 불가 표식의 치수. 얼굴 원의 **오른쪽 아래 대각선**에 앉는다(사용자 지정).
- *
- * `offset` 은 중심에서 그 방향으로 민 거리다. 얼굴 반지름이 20 이라 14 면 원 테두리에 걸치고,
- * 링(반지름 26)보다 안쪽이라 진행도를 안 가린다.
- */
-const UNAVAILABLE_MARK = { size: 16, offset: 14 } as const
 
 /** 안 고른 칸의 불투명도. 0.45 는 칸이 여섯을 넘으면 안 잡혔다. */
 const SELECTED_DIM_OPACITY = 0.3
@@ -55,7 +46,7 @@ export interface CompactPortraitProps extends CommonProps {
   variant: 'compact'
   /** 링이 이 값만큼 쪼개진다. `label` 은 읽어 주는 주기(`주간`·`월간`)다. */
   clears: { cleared: number; total: number; label: string }
-  /** 조회할 수 없게 된 캐릭터. 얼굴 오른쪽 아래에 표식이 붙는다. */
+  /** 조회할 수 없게 된 캐릭터. 얼굴 원을 흐리고 경고 덮개로 덮는다. */
   unavailable?: boolean
   /** 얼굴을 좌우로 뒤집는다. 줄의 왼쪽 끝에 서는 칸이 준다. */
   mirrored?: boolean
@@ -96,9 +87,6 @@ function CompactPortrait(props: CompactPortraitProps): React.JSX.Element {
       className="relative shrink-0 items-center justify-center"
       style={{ width: PORTRAIT_COMPACT.slot, height: PORTRAIT_COMPACT.slot }}
     >
-      {/* **링이 먼저다.** RN 은 형제 순서가 곧 그리는 순서라, 뒤에 서면 얼굴에 붙는 조회 불가
-          표식을 이 링이 덮는다(실기기 관측). 링은 `absolute inset-0` 이고 stroke 가 얼굴보다
-          바깥이라, 차례를 바꿔도 얼굴이 링을 가리지 않는다. */}
       <SegmentedRing
         cleared={props.clears.cleared}
         total={props.clears.total}
@@ -155,6 +143,7 @@ function RailPortrait(props: RailPortraitProps): React.JSX.Element {
           imageUrl={props.imageUrl}
           name={props.characterName}
           size={PORTRAIT_RAIL.faceSize}
+          unavailable={props.unavailable}
           fallback={
             <InitialFallback
               testID="portrait-face-fallback"
@@ -213,23 +202,6 @@ function RailPortrait(props: RailPortraitProps): React.JSX.Element {
           />
         </Svg>
       </View>
-
-      {/* 조회 불가 표식. **SVG 뒤에 그린다** - 그 층이 `inset-0` 이라 먼저 두면 링에 덮인다.
-          자리는 얼굴 원의 오른쪽 아래다(사용자 지정). */}
-      {props.unavailable === true && (
-        <View
-          pointerEvents="none"
-          style={{
-            top: PORTRAIT_RAIL.centerY + UNAVAILABLE_MARK.offset - UNAVAILABLE_MARK.size / 2,
-            left: PORTRAIT_RAIL.centerX + UNAVAILABLE_MARK.offset - UNAVAILABLE_MARK.size / 2,
-            width: UNAVAILABLE_MARK.size,
-            height: UNAVAILABLE_MARK.size,
-          }}
-          className="absolute"
-        >
-          <UnavailableFaceMark size={UNAVAILABLE_MARK.size} />
-        </View>
-      )}
     </Pressable>
   )
 }

@@ -20,12 +20,11 @@ import { Image as CachedImage } from 'expo-image'
 import { Image, View } from 'react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
-import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
+import { unknownCharacterAsset, worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 import { worldNameOf } from '../../../lib/world/worlds'
 
 import { ProgressBar, Text } from '../../../components/atoms'
 import { UnavailableBadge } from '../../../components/molecules/UnavailableBadge/UnavailableBadge'
-import { UnavailableFaceMark } from '../../../components/molecules/CharacterAvatar/UnavailableFaceMark'
 import { useAppFocused } from '../../../hooks/useAppFocused'
 import { useScreenFocused } from '../../../hooks/useScreenFocused'
 import { LOOK_FRAMES, lookFrameHeadShift, lookFrameUrl } from '../../../lib/character-look'
@@ -45,11 +44,14 @@ const FIGURE_WIDTH = FIGURE_BOX.width * (1 - FIGURE_SIDE_TRIM * 2) * FIGURE_SCAL
 /** 자르는 칸을 아래로 내리는 거리(그림 px). 넥슨 그림의 캐릭터는 칸 바닥(발끝)에 붙어 서서, 칸 그대로면 머리 위만 빈다 */
 const FIGURE_DROP = 10
 const FIGURE_CROP = figureCropStyle(FIGURE_SCALE, true)
-const MARK_PX = 16
+/** 조회 불가면 서는 흰 실루엣의 칸. 전신 그림과 같은 몫을 잘라 내고 같은 거리만큼 내려야 발이 같은 줄에 닿는다 */
+const SILHOUETTE_CROP = figureCropStyle(FIGURE_SCALE, false)
 const EMBLEM_PX = 15
 
-const FIGURE_LEFT = FIGURE_CROP.left - FIGURE_BOX.width * FIGURE_SIDE_TRIM * FIGURE_SCALE
-const FIGURE_TOP = FIGURE_CROP.top - FIGURE_DROP * FIGURE_SCALE
+const SIDE_TRIM_PX = FIGURE_BOX.width * FIGURE_SIDE_TRIM * FIGURE_SCALE
+const DROP_PX = FIGURE_DROP * FIGURE_SCALE
+const FIGURE_LEFT = FIGURE_CROP.left - SIDE_TRIM_PX
+const FIGURE_TOP = FIGURE_CROP.top - DROP_PX
 
 /** 프레임 전부를 겹쳐 깔고 지금 칸만 보이는 층. 주소를 그때 바꾸면 그림을 다시 그리는 동안 깜빡인다 */
 function FigureFrames(props: { view: RepresentativeView }): React.JSX.Element {
@@ -91,19 +93,34 @@ function FigureFrames(props: { view: RepresentativeView }): React.JSX.Element {
   )
 }
 
-/** 전신 그림. 통계 단상과 같은 칸을 자른다 */
+/** 전신 그림. 통계 단상과 같은 칸을 자른다. 조회 불가면 흰 실루엣이 같은 칸에 선다 */
 function StillFigure(props: { view: RepresentativeView }): React.JSX.Element {
+  const unavailable = props.view.unavailable
   return (
     <View
       testID="representative-figure-frame"
       style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT, overflow: 'hidden', transform: [{ scaleX: -1 }] }}
     >
-      <Image
-        testID="representative-figure"
-        accessibilityLabel={props.view.name}
-        source={{ uri: props.view.imageUrl }}
-        style={{ position: 'absolute', ...FIGURE_CROP, left: FIGURE_LEFT, top: FIGURE_TOP }}
-      />
+      {unavailable ? (
+        <Image
+          testID="representative-figure-unknown"
+          accessibilityLabel={props.view.name}
+          source={unknownCharacterAsset() ?? undefined}
+          style={{
+            position: 'absolute',
+            ...SILHOUETTE_CROP,
+            left: SILHOUETTE_CROP.left - SIDE_TRIM_PX,
+            top: SILHOUETTE_CROP.top - DROP_PX,
+          }}
+        />
+      ) : (
+        <Image
+          testID="representative-figure"
+          accessibilityLabel={props.view.name}
+          source={{ uri: props.view.imageUrl }}
+          style={{ position: 'absolute', ...FIGURE_CROP, left: FIGURE_LEFT, top: FIGURE_TOP }}
+        />
+      )}
     </View>
   )
 }
@@ -124,11 +141,6 @@ function Figure(props: { view: RepresentativeView }): React.JSX.Element {
     >
       {/* 좌우를 뒤집어 캐릭터가 오른쪽 열(닉네임 · 레벨)을 바라보게 한다(사용자 지정). 자르는 몫이 좌우 같아 칸은 그대로다. */}
       {framesReady ? <FigureFrames view={props.view} /> : <StillFigure view={props.view} />}
-      {props.view.unavailable && (
-        <View className="absolute bottom-0 right-0">
-          <UnavailableFaceMark size={MARK_PX} />
-        </View>
-      )}
     </View>
   )
 }
@@ -188,17 +200,8 @@ function CaptionLine(props: { view: RepresentativeView }): React.JSX.Element {
 
 function ExpBlock(props: { view: RepresentativeView }): React.JSX.Element | null {
   const rate = props.view.expRate
-  if (props.view.unavailable) {
-    return (
-      <View testID="representative-issue-block" className="items-start rounded-[10px] bg-card-inset px-2.5 py-1.5">
-        {/* 보스 수익의 금액 자리에 서는 것과 **같은 알약**이다(사용자 지정). 그쪽도 여기도
-            금액을 말할 수 없어 그 칸을 대신 차지한 것이라 같은 말이 같은 그림으로 선다.
-            누를 것은 없다. 이 카드에는 열 팝오버가 없다. */}
-        <UnavailableBadge testID="representative-issue" label="조회 불가" />
-      </View>
-    )
-  }
-  if (rate === undefined) return null
+  // 조회를 못 하면 보여 줄 EXP 가 없다. 굳은 바가 서 있으면 지금의 진행도로 읽힌다.
+  if (props.view.unavailable || rate === undefined) return null
   return (
     <View testID="representative-exp" className="flex-row items-center gap-2 rounded-[10px] bg-card-inset px-2.5 py-1.5">
       <Text className="text-11 text-text-muted">EXP</Text>
@@ -233,6 +236,11 @@ export function RepresentativeCharacterWidget({ data }: WidgetProps): React.JSX.
         </View>
         <ExpBlock view={view} />
       </View>
+      {/* 글자 열 밖에 서야 닉네임 · 레벨 줄이 알약 폭만큼 비켜 선다. 누를 것은 없다. 이 카드에는
+          열 팝오버가 없다. */}
+      {view.unavailable && (
+        <UnavailableBadge testID="representative-issue" label="조회 불가" className="self-start" />
+      )}
     </View>
   )
 }

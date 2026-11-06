@@ -14,8 +14,7 @@ import { sumDropPayout } from '../../lib/drop/drop-price'
 
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 
-import { AnimatedNumber, Badge, RefreshCwIcon, Text } from '../../components/atoms'
-import { UnavailableBadge } from '../../components/molecules/UnavailableBadge/UnavailableBadge'
+import { AnimatedNumber, Badge, BanIcon, RefreshCwIcon, Text } from '../../components/atoms'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { BossProfitBossRow } from './BossProfitBossRow'
 import { MonthlyBossViewRow } from './MonthlyBossViewRow'
@@ -167,44 +166,35 @@ export function WeeklySubtotalRow(props: {
         <Badge variant="primary">진행 중</Badge>
       )}
 
-      {/* 금액 자리를 대신한다(카드 머리와 **같은 부품**). 이 주에 무엇을 벌었는지 모르므로
-          숫자도 `진행 중` 도 안 적는다.
+      {/* 금액 자리를 대신한다. 이 주에 무엇을 벌었는지 모르므로 숫자도 `진행 중` 도 안 적는다.
+          상자는 걷는다. 카드 금액 칸의 알약은 그대로 둔다(사용자 지정).
 
-          기간이 못 읽히는 주(`staticLabel`)는 회색 글자다. 이 알약은 **캐릭터가** 못 읽힐 때만
-          선다 - 그쪽은 사용자가 할 일이 있고(캐릭터 관리에서 해제하거나 갈아끼운다) 이쪽은 없다. */}
-      {cannotStateWeek && <UnavailableBadge testID="subtotal-issue" label="조회 불가" />}
+          기간이 못 읽히는 주(`staticLabel`)는 회색 글자다. 금지 아이콘은 **캐릭터가** 못 읽힐 때만
+          붙는다. 그쪽은 사용자가 할 일이 있고(캐릭터 관리에서 해제하거나 갈아끼운다) 이쪽은 없다. */}
+      {cannotStateWeek && (
+        <View testID="subtotal-issue" className="flex-row items-center gap-1">
+          <BanIcon className="h-3 w-3 text-error-ink" strokeWidth={2.5} aria-hidden />
+          <Text className="text-xs font-semibold text-error-ink">조회 불가</Text>
+        </View>
+      )}
 
       {staticLabel !== undefined && !cannotStateWeek && (
         <Text className="text-xs text-text-muted">{staticLabel}</Text>
       )}
 
-      {/* 누를 수 있는 행만 어포던스(칩)를 갖는다. 한 주를 누르면 그 달의 미확인 주를 함께 채운다.
-          같은 백필이 그 달 전체를 대상으로 돌기 때문이고, 탭 수를 늘릴 이유가 없다. */}
+      {/* 한 주를 누르면 그 달의 미확인 주를 함께 채운다. 같은 백필이 그 달 전체를 대상으로 돌기
+          때문이고, 탭 수를 늘릴 이유가 없다. 다시 시도는 진행하는 동작이라 `primary` 다. 상자가 없어
+          글자만큼만 눌리므로 `hitSlop` 으로 넓힌다. */}
       {actionLabel !== undefined && (
         <Pressable
           role="button"
           aria-label={`${label.primary} ${actionLabel}`}
           onPress={onRetryPeriod}
-          className={
-            subtotal.state === 'failed'
-              ? 'flex-row items-center gap-1.5 rounded-full bg-error-tint px-2.5 py-1'
-              : 'flex-row items-center gap-1.5 rounded-full bg-primary-tint px-2.5 py-1'
-          }
+          hitSlop={8}
+          className="flex-row items-center gap-1"
         >
-          <RefreshCwIcon
-            className={subtotal.state === 'failed' ? 'h-3 w-3 text-error-ink' : 'h-3 w-3 text-primary-ink'}
-            strokeWidth={2}
-            aria-hidden
-          />
-          <Text
-            className={
-              subtotal.state === 'failed'
-                ? 'text-xs font-semibold text-error-ink'
-                : 'text-xs font-semibold text-primary-ink'
-            }
-          >
-            {actionLabel}
-          </Text>
+          <RefreshCwIcon className="h-3 w-3 text-primary-ink" strokeWidth={2} aria-hidden />
+          <Text className="text-xs font-semibold text-primary-ink">{actionLabel}</Text>
         </Pressable>
       )}
 

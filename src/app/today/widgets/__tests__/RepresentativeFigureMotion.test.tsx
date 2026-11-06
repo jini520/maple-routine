@@ -200,11 +200,12 @@ describe('움직이지 않을 때', () => {
     expect(view.getByTestId('representative-figure')).toBeTruthy()
   })
 
+  // 조회 불가면 동작 프레임 대신 흰 실루엣이 멈춰 선다.
   it('조회 불가 캐릭터는 받지도 않는다', async () => {
     const view = await 위젯({ ...대표_캐릭터, unavailable: true })
 
     expect(prefetch).not.toHaveBeenCalled()
-    expect(view.getByTestId('representative-figure')).toBeTruthy()
+    expect(view.getByTestId('representative-figure-unknown')).toBeTruthy()
   })
 
   it('화면이 안 보이면 첫 프레임에 멈춘다', async () => {

@@ -12,14 +12,9 @@ import { Image, View } from 'react-native'
 import { faceCropStyle } from '../../../lib/face-crop'
 import { UnavailableFaceMark } from './UnavailableFaceMark'
 
-/**
- * 얼굴 지름에서 표식 지름을 낸다. 0.42 는 26px 얼굴에서 11, 40px 에서 17 이다.
- *
- * 아래로 자르는 것은 그보다 작으면 아이콘이 안 읽히기 때문이고, 위로 자르는 것은 큰 얼굴에서
- * 표식이 얼굴만큼 커지지 않게 하기 위해서다.
- */
-function markSizeOf(faceSize: number): number {
-  return Math.min(Math.max(Math.round(faceSize * 0.42), 12), 18)
+/** 조회 불가 얼굴의 흐림 반지름. 얼굴 지름의 5% 이고 1.2 보다 작게 하지 않는다. */
+function blurRadiusOf(faceSize: number): number {
+  return Math.max(faceSize * 0.05, 1.2)
 }
 
 export interface CharacterAvatarProps {
@@ -40,26 +35,19 @@ export interface CharacterAvatarProps {
    * 곳은 today 머리의 캐릭터 관리 버튼 하나뿐이고, 나머지 여덟 자리는 기본값이다.
    */
   readonly faceZoom?: number
-  /** 그림을 좌우로 뒤집는다. 줄의 왼쪽 끝에 서는 얼굴은 오른쪽의 글자를 봐야 한다. 폴백과 표식은 안 뒤집는다. */
+  /** 그림을 좌우로 뒤집는다. 줄의 왼쪽 끝에 서는 얼굴은 오른쪽의 글자를 봐야 한다. 폴백과 조회 불가 덮개는 안 뒤집는다. */
   readonly mirrored?: boolean
   readonly testID?: string
   readonly imageTestID?: string
-  /**
-   * 조회할 수 없게 된 캐릭터. 원의 **오른쪽 아래**에 표식이 붙는다.
-   *
-   * 표식은 원 **밖**에 서야 한다. 그림을 자르는 `overflow-hidden` 이 원 안의 것을 함께 자르므로,
-   * 참이면 자르지 않는 바깥 상자를 한 겹 두르고 그 위에 얹는다.
-   *
-   * 그 상자 위로 링을 그리는 자리(`CharacterPortrait`)는 **링을 먼저 그려야 한다**. RN 은 형제
-   * 순서가 곧 그리는 순서라, 뒤에 선 링이 이 표식을 덮는다.
-   */
+  /** 조회할 수 없게 된 캐릭터. 그림을 흐리고 원 안을 경고 덮개로 덮는다. */
   readonly unavailable?: boolean
 }
 
 export function CharacterAvatar(props: CharacterAvatarProps): React.JSX.Element {
-  const circle = (
+  const unavailable = props.unavailable === true
+  return (
     <View
-      testID={props.unavailable === true ? undefined : props.testID}
+      testID={props.testID}
       style={{ width: props.size, height: props.size }}
       // 크롭한 그림은 원보다 커서 삐져나온다. RN 의 `<Image>` 는 자식이라 부모가 안 자르면 네모다.
       className={`overflow-hidden rounded-full ${props.className ?? ''}`}
@@ -69,36 +57,13 @@ export function CharacterAvatar(props: CharacterAvatarProps): React.JSX.Element 
           testID={props.imageTestID}
           accessibilityLabel={props.name}
           source={{ uri: props.imageUrl }}
+          // RN 의 `filter: blur` 는 이 앱에서 두 플랫폼 모두 안 그려진다. 흐림은 그림이 직접 낸다.
+          blurRadius={unavailable ? blurRadiusOf(props.size) : undefined}
           style={{ position: 'absolute', ...faceCropStyle(props.size, props.faceZoom, props.mirrored) }}
         />
       )}
       {props.imageUrl === null && props.fallback}
-    </View>
-  )
-
-  if (props.unavailable !== true) {
-    return circle
-  }
-
-  const markSize = markSizeOf(props.size)
-  return (
-    // 바깥 상자는 원과 같은 크기이고 **안 자른다**. 표식이 절반쯤 밖으로 나가 원 테두리에 걸린다.
-    //
-    // `className` 은 이쪽으로 안 넘긴다. 이 상자는 안 깎이므로 바탕색이 실리면 **둥근 얼굴 뒤에
-    // 네모가 한 겹** 생긴다(보스 수익 아코디언 머리에서 관측). 그 클래스가 노리는 것은 그림 뒤에
-    // 비치는 바탕이라 자리가 원이다.
-    //
-    // 대신 `shrink-0` 을 여기서 박는다. 형제들 사이에 서는 것이 이 상자라, 안쪽으로 내려가면
-    // 얼굴이 옆 글자에 밀려 찌그러진다. 지름을 프롭으로 받는 부품이 줄어들 이유는 어차피 없다.
-    <View
-      testID={props.testID}
-      style={{ width: props.size, height: props.size }}
-      className="relative shrink-0"
-    >
-      {circle}
-      <View className="absolute" style={{ right: -markSize / 4, bottom: -markSize / 4 }}>
-        <UnavailableFaceMark size={markSize} />
-      </View>
+      {unavailable && <UnavailableFaceMark size={props.size} />}
     </View>
   )
 }
