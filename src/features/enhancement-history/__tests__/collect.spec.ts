@@ -388,9 +388,9 @@ describe('다시 매기기 요청', () => {
   })
 })
 
-// 원본을 버리므로 빠진 줄은 받은 그 자리에서 알려야 원인을 볼 수 있다.
+// 원본을 버리므로 빠진 줄은 받은 회차에서 알려야 원인을 볼 수 있다.
 describe('합계에서 빠진 줄 알리기', () => {
-  it('받은 날마다 빠진 줄을 세어 알린다', async () => {
+  it('받은 날의 빠진 줄을 세어 알린다', async () => {
     // 이 줄은 시도 전 성수가 없어 비용을 못 매긴다.
     fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
       Promise.resolve(kind === 'starforce' ? page(['sf']) : page([])),
@@ -415,5 +415,52 @@ describe('합계에서 빠진 줄 알리기', () => {
       expect.objectContaining({ anomalyType: 'event_world_unknown', detail: 'Error: boom' }),
     ])
   })
+
+  // 날마다 보내면 요청이 받은 날 수만큼 나간다. 로그인은 날들을 한꺼번에 받아 같은 순간에 몰려 nginx 속도 제한에 걸린다.
+  it('회차에 받은 날들의 빠진 줄을 회차가 끝날 때 한 번에 알린다', async () => {
+    fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
+      Promise.resolve(kind === 'starforce' ? page(['sf']) : page([])),
+    )
+
+    await collectEnhancementHistory(['2026-09-04', '2026-09-05'], NOW)
+
+    expect(reportEnhancementAnomalies).toHaveBeenCalledTimes(1)
+    expect(reportEnhancementAnomalies.mock.calls[0]?.[0]).toHaveLength(2)
+  })
 })
 
+// 동시 3건은 API 키가 넥슨을 직접 부를 때의 한도다. 로그인 조회는 서버 스트림이 요청 하나로 묶고 넥슨을 부르는 속도도
+// 서버가 정하므로, 3건씩 넘기면 작은 요청이 잦아질 뿐이다.
+describe('자격마다 동시에 부르는 수', () => {
+  const 닷새 = ['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04', '2026-09-05']
+
+  function 동시최대(): () => number {
+    let inFlight = 0
+    let max = 0
+    fetchEnhancementHistory.mockImplementation(async () => {
+      inFlight += 1
+      max = Math.max(max, inFlight)
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      inFlight -= 1
+      return page([])
+    })
+    return () => max
+  }
+
+  it('API 키는 한 번에 3건까지 부른다', async () => {
+    const max = 동시최대()
+
+    await collectEnhancementHistory(닷새, NOW)
+
+    expect(max()).toBe(3)
+  })
+
+  it('로그인은 회차의 일을 한꺼번에 부른다', async () => {
+    getAuthConfig.mockResolvedValue({ login: { id: 'account-login', session: 's' }, apiKeys: [] })
+    const max = 동시최대()
+
+    await collectEnhancementHistory(닷새, NOW)
+
+    expect(max()).toBe(닷새.length * KINDS.length)
+  })
+})

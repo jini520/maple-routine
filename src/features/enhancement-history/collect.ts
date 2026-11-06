@@ -19,6 +19,7 @@ import { checkKey, loadEnhancementChecks, markEnhancementChecked } from '../../s
 import { replaceEnhancementTotals } from '../../storage/enhancement-totals'
 import { summarizeEnhancement } from './spending'
 import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
+import type { EnhancementAnomaly } from '../../types/server-records'
 import { saveEventWorldNames } from './event-world-names'
 import { eventWorldCharacterNames } from '../../lib/enhancement/world'
 import { SOUL_POTENTIAL_FROM } from '../../lib/enhancement/cost'
@@ -40,7 +41,8 @@ function kindsOn(dateKey: string): readonly EnhancementKind[] {
 }
 
 /**
- * 한 번에 나가는 조회 수. 창(6)보다 낮게 잡는다. 둘이 같은 회차에 돌 수 있어 합이 한도를 친다.
+ * API 키 자격이 한 번에 내는 조회 수. 창(6)보다 낮게 잡는다. 둘이 같은 회차에 돌 수 있어 합이 한도를 친다.
+ * 로그인 자격에는 걸지 않는다. 서버 스트림이 요청 하나로 묶고 넥슨을 부르는 속도도 서버가 정한다.
  */
 export const HISTORY_CALL_LIMIT = 3
 
@@ -252,16 +254,18 @@ export async function collectEnhancementHistory(
     })
 
   const checkedAt = now.toISOString()
+  // 회차가 끝날 때 한 번에 보낸다. 날마다 보내면 로그인 자격이 날들을 한꺼번에 받을 때 요청이 같은 순간에 몰린다.
+  const anomalies: EnhancementAnomaly[] = []
   // 한 회차의 쓰기를 한 묶음으로. 판 알림이 끝날 때 한 번이라 첫 수집의 93칸이 가계부를 93번 다시 읽게 하지 않는다.
   const results = await batchRecordWrites(() =>
     mapWithLimit(
       jobs,
-      HISTORY_CALL_LIMIT,
+      credential.type === 'login' ? jobs.length : HISTORY_CALL_LIMIT,
       async (job) => {
         const { firstCursor, rows } = await fetchDay(credential, job)
         const sources = rows.map((row) => ({ ...row, kind: job.kind }))
         const totals = summarizeEnhancement(sources, eventNames)
-        await reportEnhancementAnomalies(enhancementAnomaliesOf(sources, eventNames, listError))
+        anomalies.push(...enhancementAnomaliesOf(sources, eventNames, listError))
         await replaceEnhancementTotals(accountId, job.kind, job.dateKey, totals, now)
         // 목록을 못 받은 회차는 이벤트 월드를 가리지 못한 줄이 있어 굳히지 않는다. 다음 회차가 다시 받아 판정을 채운다.
         const settled = job.dateKey < todayDateKey && eventNames !== null
@@ -271,6 +275,7 @@ export async function collectEnhancementHistory(
       (done) => onProgress?.(done, jobs.length),
     ),
   )
+  await reportEnhancementAnomalies(anomalies)
   const failed = new Set(jobs.flatMap((job, index) => (results[index] === true ? [] : [checkKey(job.kind, job.dateKey)])))
   await saveRecomputes(accountId, chunks, failed, now)
 

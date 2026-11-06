@@ -632,4 +632,77 @@ describe('requestJson: 프렌즈 조회 묶기', () => {
     releases[2]?.()
     await expect(Promise.all([second, third])).resolves.toEqual([{ who: 'o2' }, { who: 'o3' }])
   })
+
+  // 서버 회차는 20~50ms 에 끝난다. 끝나는 대로 다음 요청을 보내면 수집기 하나가 1초에 20건을 넘겨 nginx 에 걸린다.
+  it('서버가 바로 답해도 요청을 보내는 간격이 150ms 아래로 줄지 않는다', async () => {
+    const sentAt: number[] = []
+    setFriendsStreamForTest(async (_session, tasks, onLine) => {
+      sentAt.push(Date.now())
+      for (const task of tasks as unknown as Record<string, unknown>[]) {
+        await new Promise((resolve) => setTimeout(resolve, 5))
+        onLine?.(쪽(task, { who: task.ocid }))
+        onLine?.(끝(task))
+      }
+      onLine?.(회차끝)
+      return []
+    })
+    // mapWithLimit(3) 처럼 셋이 각자 끝나는 대로 다음 조회를 건다.
+    const 줄 = async (from: number) => {
+      for (let i = from; i < from + 4; i += 1) await requestJson(상태(`o${i}`), 로그인)
+    }
+
+    await Promise.all([줄(0), 줄(10), 줄(20)])
+
+    const gaps = sentAt.slice(1).map((at, i) => at - (sentAt[i] ?? at))
+    expect(Math.min(...gaps)).toBeGreaterThanOrEqual(150)
+  })
+})
+
+// 503 은 곧바로 돌아오고 수집기는 실패를 넘기고 다음 일로 간다. 쉬지 않으면 남은 일이 몇 초 만에 전부 503 으로 끝나고,
+// 같은 IP 의 결산 · 공지 조회도 nginx 의 같은 구역이라 함께 막힌다.
+describe('requestJson: 프렌즈 조회가 503 을 받으면 30초 쉰다', () => {
+  const 로그인 = { type: 'login', value: '쉬는세션', accountId: null } as const
+  const 상태 = (ocid: string) => `/maplestory/v1/scheduler/character-state?ocid=${ocid}&date=2026-09-25`
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+    setFriendsStreamForTest(null)
+  })
+
+  it('30초 동안은 요청 없이 실패를 돌려주고, 30초가 지나면 다시 보낸다', async () => {
+    let calls = 0
+    setFriendsStreamForTest(async (_session, tasks, onLine) => {
+      calls += 1
+      if (calls === 1) throw Object.assign(new Error('rejected'), { status: 503 })
+      for (const task of tasks as unknown as Record<string, unknown>[]) {
+        onLine?.({ t: 'page', ...task, n: 1, body: { who: task.ocid } } as StreamLine)
+        onLine?.({ t: 'done', ...task, pages: 1 } as StreamLine)
+      }
+      onLine?.({ t: 'end', reason: 'done' })
+      return []
+    })
+    const 묶음창 = () => jest.advanceTimersByTimeAsync(150)
+
+    const first = requestJson(상태('o1'), 로그인)
+    const firstFailed = expect(first).rejects.toBeInstanceOf(NexonNetworkError)
+    await 묶음창()
+    await firstFailed
+
+    await jest.advanceTimersByTimeAsync(29_000)
+    const paused = requestJson(상태('o2'), 로그인)
+    const pausedFailed = expect(paused).rejects.toBeInstanceOf(NexonNetworkError)
+    await 묶음창()
+    await pausedFailed
+    expect(calls).toBe(1)
+
+    await jest.advanceTimersByTimeAsync(1_000)
+    const resumed = requestJson(상태('o3'), 로그인)
+    await 묶음창()
+    await expect(resumed).resolves.toEqual({ who: 'o3' })
+    expect(calls).toBe(2)
+  })
 })
