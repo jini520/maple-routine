@@ -24,6 +24,7 @@ import { usePartyAlarmSettingsStore } from '../../features/party-appointments/al
 import { useScheduleAlertSettingsStore } from '../../features/schedule-alert/alert-settings'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { openNotificationSettings } from './notification-settings-link'
+import { openExactAlarmSettings, useExactAlarmStore } from '../../features/local-notifications/exact-alarm'
 import { SETTINGS_CARD_CLASS, SETTINGS_NOTE_CELL_CLASS, SETTINGS_SWITCH_ROW_CLASS } from './row-class'
 
 /**
@@ -59,6 +60,8 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
   const scheduleAlertOn = useScheduleAlertSettingsStore((state) => state.enabled)
   const loadScheduleAlert = useScheduleAlertSettingsStore((state) => state.load)
   const setScheduleAlert = useScheduleAlertSettingsStore((state) => state.setEnabled)
+  const exactAlarm = useExactAlarmStore((state) => state.setting)
+  const refreshExactAlarm = useExactAlarmStore((state) => state.refresh)
   /** 누른 값을 덮은 구독. 스위치가 왕복을 기다리지 않게 하는 값. */
   const shown = { ...subscriptions, ...pending }
   // **저장하지 않고 파생한다.** 저장하면 `전체는 켜졌는데 넷은 다 꺼진` 상태가 생기고, 그때
@@ -72,7 +75,8 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
       void refreshPermission()
       void loadPartyAlarm()
       void loadScheduleAlert()
-    }, [refreshPermission, loadPartyAlarm, loadScheduleAlert]),
+      void refreshExactAlarm()
+    }, [refreshPermission, loadPartyAlarm, loadScheduleAlert, refreshExactAlarm]),
   )
 
   /**
@@ -85,6 +89,12 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
    * 한 번도 안 물으면 설정에 그 앱의 알림 항목을 아예 안 만들어 보낼 곳이 없다.
    */
   const deviceBlocked = blockedByPermission || (permissionGranted === false && on)
+  /**
+   * 정확한 알람 권한이 없어 파티 · 미완료 스케줄 알림이 최대 1시간 늦을 수 있는 상태.
+   *
+   * 알림 권한이 없으면 알람 권한을 켜도 알림이 오지 않아 위 카드가 먼저다. 공지는 서버 푸시라 이 권한과 관계없다.
+   */
+  const alarmLate = exactAlarm === 'disabled' && (partyAlarmOn || scheduleAlertOn) && !deviceBlocked
   /**
    * 스위치를 못 켠 이유. **삼키면 화면이 아무 말도 안 한다.**
    *
@@ -179,6 +189,22 @@ export function SettingsNoticeAlertsScreen(): React.JSX.Element {
               </Text>
             </Pressable>
             </Card>
+        )}
+
+        {alarmLate && (
+          <Card className={SETTINGS_CARD_CLASS}>
+            <Pressable
+              role="button"
+              aria-label="알람 권한 설정 열기"
+              onPress={() => {
+                void openExactAlarmSettings().catch(() => undefined)
+              }}
+              className={SETTINGS_NOTE_CELL_CLASS}
+            >
+              <Text className="text-sm font-bold text-error-ink">알림이 늦게 올 수 있어요</Text>
+              <Text className="text-xs text-text-disabled">눌러서 ‘알람 및 리마인더’를 허용해 주세요</Text>
+            </Pressable>
+          </Card>
         )}
 
         {on && <SectionLabel>일반</SectionLabel>}

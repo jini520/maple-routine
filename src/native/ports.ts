@@ -124,7 +124,12 @@ export interface LocalNotificationRequest {
   channel?: 'party' | 'schedule'
   /** 탭했을 때 돌려받는 값. 어느 알림인지 다시 찾는 열쇠 */
   data?: NotificationData
+  /** 안드로이드에서 정확한 알람으로 예약하는가. 권한 없이 참이면 notifee 가 에러 없이 예약을 건너뛴다 */
+  exact: boolean
 }
+
+/** 안드로이드 정확한 알람 권한(`알람 및 리마인더`). `unsupported` 는 권한 없이 정한 시각에 울리는 기기(iOS · 안드로이드 12 미만) */
+export type ExactAlarmSetting = 'enabled' | 'disabled' | 'unsupported'
 
 /** 로컬 알림이 실어 나르는 값. 문자열만 싣는다 */
 export type NotificationData = Record<string, string>
@@ -139,6 +144,9 @@ export interface NotificationsPort {
   addPressListener(handler: (data: NotificationData) => void): () => void
   /** 죽어 있던 앱을 로컬 알림 탭으로 열었으면 그 `data`. 아니면 `null` */
   getInitialPress(): Promise<NotificationData | null>
+  getExactAlarmSetting(): Promise<ExactAlarmSetting>
+  /** 이 앱의 `알람 및 리마인더` 권한 화면을 연다 */
+  openExactAlarmSettings(): Promise<void>
 }
 
 /**

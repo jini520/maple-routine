@@ -13,7 +13,14 @@
  * @see docs/features/notifications.md 로컬 알림과 원격 푸시가 갈라지는 자리
  */
 
-import notifee, { AuthorizationStatus, EventType, type Event, type NotificationSettings } from '@notifee/react-native'
+import notifee, {
+  AndroidNotificationSetting,
+  AuthorizationStatus,
+  EventType,
+  type Event,
+  type NotificationSettings,
+} from '@notifee/react-native'
+import { Platform } from 'react-native'
 
 import type { NotificationData, NotificationsPort } from '../ports'
 
@@ -71,6 +78,8 @@ export const rnNotificationsPort: NotificationsPort = {
     // (이미 있으면 설정을 안 바꾼다) 예약마다 불러도 되고, 그래서 "만들었던가"를 기억하는
     // 모듈 상태를 두지 않는다. 그 상태가 어긋나면 알림이 조용히 사라진다.
     await notifee.createChannel(channelFor(request))
+    // notifee 는 알람으로 예약할 때 같은 id 의 WorkManager 작업을 지우지 않는다. 남으면 같은 알림이 두 번 뜬다.
+    await notifee.cancelTriggerNotification(toNotificationId(request.id))
     await notifee.createTriggerNotification(notification, trigger)
   },
   // `cancelTriggerNotification` 이 아니라 `cancelNotification` 이다. 예약 취소와 이미 떠 있는
@@ -100,5 +109,16 @@ export const rnNotificationsPort: NotificationsPort = {
   async getInitialPress() {
     const initial = await notifee.getInitialNotification()
     return initial === null ? null : toData(initial.notification.data)
+  },
+  // iOS 에는 알람 종류가 없고 정한 시각에 띄운다. notifee 가 주는 android 값은 보지 않는다.
+  async getExactAlarmSetting() {
+    if (Platform.OS !== 'android') return 'unsupported'
+    const { android } = await notifee.getNotificationSettings()
+    if (android.alarm === AndroidNotificationSetting.ENABLED) return 'enabled'
+    if (android.alarm === AndroidNotificationSetting.DISABLED) return 'disabled'
+    return 'unsupported'
+  },
+  async openExactAlarmSettings() {
+    await notifee.openAlarmPermissionSettings()
   },
 }

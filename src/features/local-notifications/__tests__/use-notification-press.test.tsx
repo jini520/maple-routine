@@ -27,6 +27,8 @@ beforeEach(() => {
       }
     },
     getInitialPress: async () => initial,
+    getExactAlarmSetting: async () => 'enabled',
+    openExactAlarmSettings: async () => {},
   })
 })
 

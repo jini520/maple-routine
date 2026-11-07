@@ -25,13 +25,14 @@ export interface ReconcilePlan {
 }
 
 function sameNotification(a: NotificationLedgerEntry, b: NotificationLedgerEntry): boolean {
-  return a.kind === b.kind && a.fireAt === b.fireAt && a.title === b.title && a.body === b.body
+  return a.kind === b.kind && a.fireAt === b.fireAt && a.title === b.title && a.body === b.body && a.exact === b.exact
 }
 
 /**
  * 계획과 원장을 비교해 예약 · 취소 · 그대로 둘 것을 가른다. 몇 번을 돌려도 결과가 같다.
  *
- * 시각이 같아도 문구가 다르면 다시 예약한다. 같은 id 로 예약하면 OS 가 덮어쓴다.
+ * 시각이 같아도 문구나 `exact` 가 다르면 다시 예약한다. 같은 id 로 예약하면 OS 가 덮어쓴다.
+ * `exact` 가 없는 옛 원장 항목도 달라 한 번 다시 예약된다. WorkManager 로 잡힌 예약을 알람으로 옮기는 길이다.
  * 원장에만 있는 것(지운 약속 · 자리를 벗어난 것 · 레지스트리에서 빠진 종류)은 취소한다.
  */
 export function planReconcile(

@@ -20,10 +20,13 @@ jest.mock('@notifee/react-native', () => ({
     getTriggerNotificationIds: jest.fn(),
     onForegroundEvent: jest.fn(),
     getInitialNotification: jest.fn(),
+    openAlarmPermissionSettings: jest.fn(),
   },
 }))
 
+import { Platform } from 'react-native'
 import notifee, {
+  AndroidNotificationSetting,
   AuthorizationStatus,
   EventType,
   TriggerType,
@@ -41,6 +44,7 @@ function settings(authorizationStatus: AuthorizationStatus): NotificationSetting
 
 beforeEach(() => {
   jest.clearAllMocks()
+  Platform.OS = 'ios'
 })
 
 describe('권한', () => {
@@ -67,14 +71,14 @@ describe('schedule', () => {
   const scheduleAt = new Date(Date.now() + 60_000)
 
   it('채널을 만든 뒤 예약한다', async () => {
-    await rnNotificationsPort.schedule({ id: 7, title: '제목', body: '본문', scheduleAt })
+    await rnNotificationsPort.schedule({ id: 7, title: '제목', body: '본문', scheduleAt, exact: true })
 
     expect(mocked.createChannel).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'default', sound: 'default' }),
     )
     expect(mocked.createTriggerNotification).toHaveBeenCalledWith(
       { id: '7', title: '제목', body: '본문', android: { channelId: 'default' }, ios: { sound: 'default' } },
-      { type: TriggerType.TIMESTAMP, timestamp: scheduleAt.getTime() },
+      expect.objectContaining({ type: TriggerType.TIMESTAMP, timestamp: scheduleAt.getTime() }),
     )
     // 채널이 없으면 Android 는 알림을 아예 안 띄운다. 순서가 뒤집히면 첫 예약을 잃는다.
     expect(mocked.createChannel.mock.invocationCallOrder[0]).toBeLessThan(
@@ -90,10 +94,58 @@ describe('schedule', () => {
         title: '제목',
         body: '본문',
         scheduleAt: new Date(Date.now() - 60_000),
+        exact: true,
       }),
     ).rejects.toThrow('이미 지났습니다')
     expect(mocked.createTriggerNotification).not.toHaveBeenCalled()
     expect(mocked.createChannel).not.toHaveBeenCalled()
+  })
+})
+
+describe('옛 예약 지우기', () => {
+  // notifee 는 알람으로 예약할 때 같은 id 의 WorkManager 작업을 지우지 않는다. 남으면 같은 알림이 두 번 뜬다.
+  it('예약하기 전에 같은 id 의 트리거를 지운다', async () => {
+    await rnNotificationsPort.schedule({
+      id: 7,
+      title: '제목',
+      body: '본문',
+      scheduleAt: new Date(Date.now() + 60_000),
+      exact: false,
+    })
+
+    expect(mocked.cancelTriggerNotification).toHaveBeenCalledWith('7')
+    expect(mocked.cancelTriggerNotification.mock.invocationCallOrder[0]).toBeLessThan(
+      mocked.createTriggerNotification.mock.invocationCallOrder[0]!,
+    )
+  })
+})
+
+describe('정확한 알람 권한', () => {
+  function alarm(value: AndroidNotificationSetting): NotificationSettings {
+    return { authorizationStatus: AuthorizationStatus.AUTHORIZED, android: { alarm: value } } as NotificationSettings
+  }
+
+  it.each([
+    [AndroidNotificationSetting.ENABLED, 'enabled'],
+    [AndroidNotificationSetting.DISABLED, 'disabled'],
+    // 안드로이드 12 미만. 권한 없이 정확한 알람을 쓸 수 있다.
+    [AndroidNotificationSetting.NOT_SUPPORTED, 'unsupported'],
+  ])('안드로이드 %p → %p', async (value, expected) => {
+    Platform.OS = 'android'
+    mocked.getNotificationSettings.mockResolvedValue(alarm(value))
+    await expect(rnNotificationsPort.getExactAlarmSetting()).resolves.toBe(expected)
+  })
+
+  // iOS 에는 알람 종류가 없고 정한 시각에 띄운다. notifee 가 주는 android 값을 믿지 않는다.
+  it('iOS 는 읽지 않고 unsupported 다', async () => {
+    mocked.getNotificationSettings.mockResolvedValue(alarm(AndroidNotificationSetting.DISABLED))
+    await expect(rnNotificationsPort.getExactAlarmSetting()).resolves.toBe('unsupported')
+    expect(mocked.getNotificationSettings).not.toHaveBeenCalled()
+  })
+
+  it('권한 화면을 연다', async () => {
+    await rnNotificationsPort.openExactAlarmSettings()
+    expect(mocked.openAlarmPermissionSettings).toHaveBeenCalled()
   })
 })
 
@@ -105,6 +157,7 @@ describe('cancel', () => {
       title: '제목',
       body: '본문',
       scheduleAt: new Date(Date.now() + 60_000),
+      exact: true,
     })
     const [scheduled] = mocked.createTriggerNotification.mock.calls[0]
 
@@ -129,6 +182,7 @@ describe('data', () => {
       title: '제목',
       body: '본문',
       scheduleAt: new Date(Date.now() + 60_000),
+      exact: true,
       data: { kind: 'party-appointment', appointmentId: 'a1', dateKey: '2026-10-08' },
     })
 

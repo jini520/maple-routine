@@ -181,6 +181,8 @@ describe('알림 체크 상자를 켤 때', () => {
       getPendingCount: async () => 0,
       addPressListener: () => () => {},
       getInitialPress: async () => null,
+      getExactAlarmSetting: async () => 'enabled',
+      openExactAlarmSettings: async () => {},
     })
     await setNotificationPermissionAsked()
     mockAppointments = []
