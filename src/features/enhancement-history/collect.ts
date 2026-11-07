@@ -55,10 +55,10 @@ export interface EnhancementHistoryJob {
 }
 
 /**
- * 넥슨 로그인 계정이 한 회차에 다시 받는 날 수. 그 계정의 강화 내역은 서버 스트림을 거쳐, 요청을 걸면 모든 로그인 사용자가
- * 그 기간을 한꺼번에 서버로 받는다. 나눠 받아 부하를 여러 날로 흩는다.
+ * 넥슨 로그인 계정이 한 회차에 다시 받는 날 수. 늘릴 때는 서버 스트림 요청 하나의 한도(16MB) 안인지 볼 것. 넘으면 남은 날이
+ * 실패해 같은 날들을 끝없이 다시 받는다.
  */
-export const LOGIN_RECOMPUTE_DAYS = 7
+export const LOGIN_RECOMPUTE_DAYS = 60
 
 /** 이번 회차에 다시 받는 요청 하나의 날들. */
 interface RecomputeChunk {

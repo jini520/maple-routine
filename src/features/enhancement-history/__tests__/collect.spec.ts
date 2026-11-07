@@ -367,15 +367,15 @@ describe('다시 매기기 요청', () => {
     expect(recomputes.saveRecomputeProgress).not.toHaveBeenCalled()
   })
 
-  // 로그인 계정의 강화 내역은 서버 스트림을 거친다. 모든 사용자가 같은 날 긴 기간을 받으면 서버에 몰린다.
-  it('넥슨 로그인 계정은 한 회차에 7일만 받고 끝을 적지 않는다', async () => {
+  // 로그인 계정의 강화 내역은 서버 스트림을 거친다. 스트림 요청 하나가 16MB 를 넘으면 남은 날이 실패해 같은 날들을 끝없이 다시 받는다.
+  it('넥슨 로그인 계정은 한 회차에 60일만 받고 끝을 적지 않는다', async () => {
     getAuthConfig.mockResolvedValue({ login: { id: 'account-login', session: 's' }, apiKeys: [] })
-    setRequests([cubeRequest('2026-08-01', '2026-08-20')])
+    setRequests([cubeRequest('2026-06-01', '2026-08-20')])
 
     await collectEnhancementHistory([], NOW)
 
-    expect(fetchEnhancementHistory.mock.calls.map((call) => call[3].dateKey)).toHaveLength(7)
-    expect(recomputes.saveRecomputeProgress).toHaveBeenCalledWith('account-login', 'r1', '2026-08-07', false, NOW)
+    expect(fetchEnhancementHistory.mock.calls.map((call) => call[3].dateKey)).toHaveLength(60)
+    expect(recomputes.saveRecomputeProgress).toHaveBeenCalledWith('account-login', 'r1', '2026-07-30', false, NOW)
   })
 
   it('기간이 통째로 조회 하한 앞이면 받지 않고 끝을 적는다', async () => {
