@@ -186,4 +186,14 @@ describe('전신 그림', () => {
 
     expect(flattenStyle(view.getByTestId('representative-figure-frame').props.style).transform).toEqual([{ scaleX: -1 }])
   })
+
+  // 큰 모자 · 무기 · 날개가 그림 자리 밖으로 나가도 다 보여야 한다(사용자 지정 2026-11-07).
+  it.each([
+    ['전신 그림', 채워진],
+    ['흰 실루엣', 뷰모델({ representative: { ...대표_캐릭터, unavailable: true } })],
+  ])('멈춘 %s을 그림 자리에서 자르지 않는다', async (_, data) => {
+    const view = await 위젯(data)
+
+    expect(flattenStyle(view.getByTestId('representative-figure-frame').props.style).overflow).not.toBe('hidden')
+  })
 })

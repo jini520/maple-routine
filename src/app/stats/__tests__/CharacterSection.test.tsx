@@ -20,6 +20,23 @@ async function 그리기(): Promise<Awaited<ReturnType<typeof renderOverlay>>> {
   return renderOverlay(<CharacterSection rows={rows} images={images} />)
 }
 
+/** 그림 줄은 화면 읽기에서 빠져 있어 숨은 것까지 찾는다 */
+const 숨김포함 = { includeHiddenElements: true } as const
+
+/** 단상 블록 셋의 높이를 잰 것처럼 알린다. 키는 순위다 */
+async function 블록재기(view: Awaited<ReturnType<typeof 그리기>>, heights: Record<1 | 2 | 3, number>): Promise<void> {
+  await act(async () => {
+    for (const rank of [1, 2, 3] as const) {
+      const block = within(view.getByTestId(`stats-podium-${rank}`)).getByTestId('stats-podium-block')
+      fireEvent(block, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 42, height: heights[rank] } } })
+    }
+  })
+}
+
+function 그림칸(view: Awaited<ReturnType<typeof 그리기>>, rank: number): Record<string, unknown> {
+  return flattenStyle(view.getByTestId(`stats-podium-figure-${rank}`, 숨김포함).props.style)
+}
+
 beforeEach(() => {
   installNoopNativePorts()
 })
@@ -87,16 +104,16 @@ describe('CharacterSection', () => {
 
   it('단상은 그 탭의 상위 셋이고 그림이 있으면 세운다', async () => {
     const view = await 그리기()
+    await 블록재기(view, { 1: 74, 2: 60, 3: 50 })
 
     expect(view.getByTestId('stats-podium-1').props.accessibilityLabel).toBe('1위 낟넘')
     expect(view.getByTestId('stats-podium-2').props.accessibilityLabel).toBe('2위 지내우시')
     expect(view.getByTestId('stats-podium-3').props.accessibilityLabel).toBe('3위 단풍라떼')
-    expect(within(view.getByTestId('stats-podium-1')).getByTestId('stats-podium-image').props.source).toEqual({
-      uri: 'https://img/b.png',
-    })
+    const 칸 = (rank: number) => within(view.getByTestId(`stats-podium-figure-${rank}`, 숨김포함))
+    expect(칸(1).getByTestId('stats-podium-image', 숨김포함).props.source).toEqual({ uri: 'https://img/b.png' })
     // 그림을 모르는 캐릭터는 흰 실루엣이 선다.
-    expect(within(view.getByTestId('stats-podium-2')).queryByTestId('stats-podium-image')).toBeNull()
-    expect(within(view.getByTestId('stats-podium-2')).getByTestId('stats-podium-image-unknown')).toBeTruthy()
+    expect(칸(2).queryByTestId('stats-podium-image', 숨김포함)).toBeNull()
+    expect(칸(2).getByTestId('stats-podium-image-unknown', 숨김포함)).toBeTruthy()
   })
 
   // 단상은 전신 그림이 서는 자리인데 메이플 ID 에는 그림이 없다(사용자 지정 2026-11-04).
@@ -118,13 +135,53 @@ describe('CharacterSection', () => {
     expect(view.getByTestId('stats-podium-3').props.accessibilityLabel).toBe('3위 단풍라떼')
   })
 
-  // 발끝 아래에서 그림 칸이 잘리면 발이 단상 뒤로 숨는다. 그림 칸을 블록 위로 겹쳐 내리고 앞에 그린다.
-  it('캐릭터 그림은 단상 블록에 겹쳐 내려 블록보다 앞에 선다', async () => {
+  // 큰 모자 · 무기 · 날개가 그림 칸 밖으로 나가도 다 보여야 한다(사용자 지정 2026-11-07).
+  it('단상 그림은 카드 안 어느 상자에서도 잘리지 않는다', async () => {
     const view = await 그리기()
+    await 블록재기(view, { 1: 74, 2: 60, 3: 50 })
 
-    const figure = flattenStyle(within(view.getByTestId('stats-podium-1')).getByTestId('stats-podium-figure').props.style)
-    expect(figure.zIndex).toBeGreaterThan(0)
-    expect(figure.marginBottom).toBeLessThan(0)
+    const section = view.getByTestId('stats-characters')
+    const clipped: string[] = []
+    for (const image of view.getAllByTestId(/^stats-podium-image/, 숨김포함)) {
+      for (let node = image.parent; node !== null && node !== section; node = node.parent) {
+        if (flattenStyle(node.props.style).overflow === 'hidden') clipped.push(String(node.props.testID))
+      }
+    }
+
+    expect(view.getAllByTestId(/^stats-podium-image/, 숨김포함)).toHaveLength(3)
+    expect(clipped).toEqual([])
+  })
+
+  // 그림을 블록과 같은 칸에 넣으면 오른쪽 칸의 블록이 나중에 그려져 왼쪽 캐릭터의 무기를 가린다.
+  it('그림 줄은 블록 셋보다 나중에 그리고 터치를 받지 않는다', async () => {
+    const view = await 그리기()
+    await 블록재기(view, { 1: 74, 2: 60, 3: 50 })
+
+    const order = view
+      .getAllByTestId(/^stats-podium-(block|image)/, 숨김포함)
+      .map((node) => (String(node.props.testID).startsWith('stats-podium-block') ? '블록' : '그림'))
+    expect(order).toEqual(['블록', '블록', '블록', '그림', '그림', '그림'])
+    // 모자가 탭 버튼을 덮어도 탭은 눌려야 한다.
+    expect(view.getByTestId('stats-podium-figures', 숨김포함).props.pointerEvents).toBe('none')
+  })
+
+  // 블록 높이는 닉네임 줄 수와 글자 크기 단계로 바뀐다. 재기 전에 세우면 그림이 블록 한가운데 겹쳐 선다.
+  it('그림 발끝은 잰 블록 높이 위에 서고, 재기 전에는 서지 않는다', async () => {
+    const view = await 그리기()
+    expect(view.queryAllByTestId(/^stats-podium-image/, 숨김포함)).toHaveLength(0)
+
+    await 블록재기(view, { 1: 74, 2: 60, 3: 50 })
+
+    expect([1, 2, 3].map((rank) => 그림칸(view, rank).marginBottom)).toEqual([74, 60, 50])
+  })
+
+  // 그림끼리 겹치면 1위가 맨 앞이고 2위와 3위 사이에서는 3위가 앞이다(사용자 지정 2026-11-07).
+  it('그림끼리 겹치면 1위 · 3위 · 2위 차례로 앞에 선다', async () => {
+    const view = await 그리기()
+    const z = (rank: number): number => Number(그림칸(view, rank).zIndex ?? 0)
+
+    expect(z(1)).toBeGreaterThan(z(3))
+    expect(z(3)).toBeGreaterThan(z(2))
   })
 
   // 한 블록만 줄이면 그 금액만 옆 금액보다 작아 보인다(사용자 지정).
