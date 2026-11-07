@@ -169,7 +169,7 @@ export const rnLiveUpdatePort: LiveUpdatePort = {
   },
 
   // reloadAsync 는 JS 컨텍스트를 파괴하고 새 번들로 재시작한다. 이후 코드는 실행되지 않는다.
-  // 앞의 순서(닫기 → 커버)는 core 의 applyLiveUpdate 가 소유한다.
+  // 앞의 순서(DB 닫기 → 모달 닫기 → 커버)는 core 의 applyLiveUpdate 가 소유한다.
   async apply() {
     await Updates.reloadAsync()
   },

@@ -2,6 +2,7 @@ import type { CacheDataCounts, CacheDataSelection } from '../../storage/cache-da
 import { clearCacheData, getCacheDataCounts } from '../../storage/cache-data'
 import { consumePendingNotice, setPendingNotice } from '../../storage/pending-notice'
 import { closeBossProfitDb } from '../../storage/sqlite/db'
+import { closeNativeModals } from '../../lib/native-modal-gate'
 import { showSplashScreen } from '../../native/splash-screen'
 import { queryClient } from '../query/client'
 import { shouldPersistQuery, stopQueryPersist } from '../query/persist'
@@ -58,6 +59,8 @@ export async function clearCacheDataAndReload(
   // 쪽에 stale 커넥션이 남아 리로드 후 보스 수익 과거 기간 조회가 실패한다. 닫기는 던지지 않고
   // 5초 안에 끝난다.
   await closeBossProfitDb()
+  // 확인 창이 떠 있는 채 리로드하면 iOS 에서 그 창의 빈 화면이 남아 리로드한 앱의 터치를 모두 막는다.
+  await closeNativeModals()
   // 리로드 동안 네이티브 배경색이 깜빡 드러나므로 앱 실행 때처럼 스플래시로 덮고 리로드한다.
   // 리로드된 앱의 부팅 흐름이 스플래시를 내린다. 실패해도 리로드는 진행한다.
   //

@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBootSplashDone } from '../../../hooks/useBootSplashDone'
 import { MODAL_TOP_GAP_PX, overlayWindowHeightPx, resolveModalMaxHeight } from '../../../lib/modal-metrics'
+import { useNativeModalGate } from '../../../lib/native-modal-gate'
 import { LinearGradient } from '../../../lib/nativewind-interop'
 import { useThemeAppearance } from '../../../theme/context'
 import { buildSheetScopeVariables } from '../../../theme/theme-vars'
@@ -239,6 +240,8 @@ export function Modal(props: ModalProps): React.JSX.Element | null {
   const insets = useSafeAreaInsets()
   const window = useWindowDimensions()
   const splashDone = useBootSplashDone()
+  // 앱을 다시 띄우기 직전에 내린다. 떠 있는 채 다시 띄우면 iOS 에서 이 모달의 빈 화면이 남아 터치를 모두 막는다.
+  const gate = useNativeModalGate(splashDone)
   const align = props.align ?? 'top'
   const maxHeight = resolveModalMaxHeight({
     windowHeightPx: overlayWindowHeightPx(window.height),
@@ -253,7 +256,8 @@ export function Modal(props: ModalProps): React.JSX.Element | null {
   return (
     <RNModal
       testID={props.testId === undefined ? undefined : `${props.testId}-modal`}
-      visible
+      visible={gate.visible}
+      onDismiss={gate.onDismiss}
       transparent
       animationType="none"
       statusBarTranslucent

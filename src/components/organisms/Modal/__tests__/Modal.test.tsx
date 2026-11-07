@@ -15,6 +15,7 @@ import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../../theme/appearance-store'
 import { buildSheetScopeVariables } from '../../../../theme/theme-vars'
 import { markBootSplashCovering, markBootSplashDone } from '../../../../hooks/useBootSplashDone'
+import { closeNativeModals, reopenNativeModals } from '../../../../lib/native-modal-gate'
 import { Modal } from '../Modal'
 
 const noop = (): void => {}
@@ -330,6 +331,37 @@ describe('Modal.Card: 다크에서 표면 계열을 한 칸 올린다', () => {
 
     await act(async () => {
       markBootSplashDone()
+    })
+    expect(view.getByText('내용')).toBeTruthy()
+  })
+
+  // 떠 있는 채 앱을 다시 띄우면 iOS 에서 이 모달의 투명한 화면이 남아 다시 띄운 앱의 터치를 모두 막는다.
+  it('다시 띄우기 전 모달 닫기가 걸리면 내리고, 내려갔다는 알림이 그 기다림을 푼다', async () => {
+    const view = await renderOverlay(
+      <Modal onClose={noop} testId="closing">
+        <Modal.Panel>
+          <Text>내용</Text>
+        </Modal.Panel>
+      </Modal>,
+    )
+    const dismissed = view.getByTestId('closing-modal').props.onDismiss as () => void
+
+    let settled = false
+    await act(async () => {
+      void closeNativeModals().then(() => {
+        settled = true
+      })
+    })
+    expect(view.queryByText('내용')).toBeNull()
+    expect(settled).toBe(false)
+
+    await act(async () => {
+      dismissed()
+    })
+    expect(settled).toBe(true)
+
+    await act(async () => {
+      reopenNativeModals()
     })
     expect(view.getByText('내용')).toBeTruthy()
   })

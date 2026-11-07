@@ -25,6 +25,7 @@ jest.mock('../../../native/splash-screen', () => ({
 }))
 const { showSplashScreen: showSplashScreenMock, hideSplashScreen: hideSplashScreenMock } = jest.requireMock('../../../native/splash-screen') as Record<string, jest.Mock>
 
+import { __resetNativeModalGateForTest, closeNativeModals, nativeModalsOpen } from '../../../lib/native-modal-gate'
 import { useLiveUpdateStore } from '../store'
 
 const INITIAL = {
@@ -69,6 +70,7 @@ beforeEach(() => {
   getLastRunBundleVersionMock.mockReset().mockResolvedValue(null)
   setLastRunBundleVersionMock.mockReset().mockResolvedValue(undefined)
   useLiveUpdateStore.setState(INITIAL)
+  __resetNativeModalGateForTest()
 })
 
 describe('useLiveUpdateStore', () => {
@@ -238,6 +240,40 @@ describe('useLiveUpdateStore', () => {
       await s().apply()
 
       expect(s().hasDownloadedBundle).toBe(true)
+    })
+
+    // 적용은 다시 시작하기 전에 모달을 모두 닫는다. 되돌리지 않으면 apply-error 모달이 뜨지 않아 다시 시도할 길이 없다.
+    it('적용이 실패하면 모달을 다시 그릴 수 있게 되돌린다', async () => {
+      useLiveUpdateStore.setState({ hasDownloadedBundle: true })
+      applyLiveUpdateMock.mockImplementation(async () => {
+        await closeNativeModals()
+        throw new Error('reload failed')
+      })
+
+      await s().apply()
+
+      expect(s().status).toBe('apply-error')
+      expect(nativeModalsOpen()).toBe(true)
+    })
+
+    it('모달을 닫은 뒤 12초 안에 끝나지 않아도 모달을 되돌린다', async () => {
+      jest.useFakeTimers()
+      try {
+        useLiveUpdateStore.setState({ hasDownloadedBundle: true })
+        applyLiveUpdateMock.mockImplementation(async () => {
+          await closeNativeModals()
+          await new Promise<void>(() => {})
+        })
+
+        const pending = s().apply()
+        await jest.advanceTimersByTimeAsync(12_100)
+        await pending
+
+        expect(s().status).toBe('apply-error')
+        expect(nativeModalsOpen()).toBe(true)
+      } finally {
+        jest.useRealTimers()
+      }
     })
 
     it('12초 안에 끝나지 않으면 커버를 걷고 apply-error (11.9초에는 아직 applying)', async () => {
@@ -563,6 +599,17 @@ describe('useLiveUpdateStore', () => {
       expect(await settledAfter(s().checkOnBoot(FIRST_RUN))).toBe(true)
       expect(s().status).toBe('idle')
       expect(s().holdingSplash).toBe(false)
+    })
+
+    it('처음 실행에서 적용이 실패하면 그 뒤의 모달이 뜰 수 있게 되돌린다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(AVAILABLE)
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      applyLiveUpdateMock.mockImplementation(async () => {
+        await closeNativeModals()
+        throw new Error('reload failed')
+      })
+      expect(await settledAfter(s().checkOnBoot(FIRST_RUN))).toBe(true)
+      expect(nativeModalsOpen()).toBe(true)
     })
 
     it('처음 실행에서 20초 안에 못 받으면 놓고, 다 받은 뒤에는 적용을 묻는다', async () => {

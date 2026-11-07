@@ -286,7 +286,7 @@ export interface LiveUpdatePort {
   /**
    * 받아둔 번들로 갈아끼우는 리로드. **이후 코드는 실행되지 않는다.**
    *
-   * 앞뒤 순서(커넥션 닫기 → 커버 → 이 호출)는 여전히 `native/live-update.ts` 한 함수가 통째로
+   * 앞뒤 순서(커넥션 닫기 → 모달 닫기 → 커버 → 이 호출)는 여전히 `native/live-update.ts` 한 함수가 통째로
    * 소유한다. 그 순서가 곧 그 결정이라 두 곳으로 나누지 않는다.
    */
   apply(): Promise<void>

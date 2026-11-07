@@ -34,6 +34,11 @@ jest.mock('../../../native/splash-screen', () => ({
     mockCallOrder.push('cover')
   }),
 }))
+jest.mock('../../../lib/native-modal-gate', () => ({
+  closeNativeModals: jest.fn(async () => {
+    mockCallOrder.push('modals')
+  }),
+}))
 
 const { clearCacheData, getCacheDataCounts } = jest.requireMock<{ clearCacheData: jest.Mock; getCacheDataCounts: jest.Mock }>(
   '../../../storage/cache-data',
@@ -41,6 +46,7 @@ const { clearCacheData, getCacheDataCounts } = jest.requireMock<{ clearCacheData
 const { stopQueryPersist } = jest.requireMock<{ stopQueryPersist: jest.Mock }>('../../query/persist')
 const { closeBossProfitDb } = jest.requireMock<{ closeBossProfitDb: jest.Mock }>('../../../storage/sqlite/db')
 const { showSplashScreen } = jest.requireMock<{ showSplashScreen: jest.Mock }>('../../../native/splash-screen')
+const { closeNativeModals } = jest.requireMock<{ closeNativeModals: jest.Mock }>('../../../lib/native-modal-gate')
 
 const CASHBOOK: CacheDataSelection = { manual: false, boss: false, cashbook: true, enhancement: false, cache: false }
 const CACHE: CacheDataSelection = { ...CASHBOOK, cashbook: false, cache: true }
@@ -108,12 +114,12 @@ describe('clearCacheDataAndReload', () => {
     expect(stopQueryPersist).not.toHaveBeenCalled()
   })
 
-  it('닫기 → 커버 → 리로드 순으로 부른다', async () => {
+  it('DB 닫기 → 확인 창 닫기 → 커버 → 리로드 순으로 부른다', async () => {
     await clearCacheDataAndReload(CASHBOOK, () => {
       mockCallOrder.push('reload')
     })
 
-    expect(mockCallOrder).toEqual(['close', 'cover', 'reload'])
+    expect(mockCallOrder).toEqual(['close', 'modals', 'cover', 'reload'])
   })
 
   // 닫기가 매달리는 동안 화면이 가려져 있지 않아야 한다. 커버는 리로드 직전에만 올라간다.
@@ -143,7 +149,37 @@ describe('clearCacheDataAndReload', () => {
     finishClose()
     await pending
 
-    expect(mockCallOrder).toEqual(['close', 'cover', 'reload'])
+    expect(mockCallOrder).toEqual(['close', 'modals', 'cover', 'reload'])
+  })
+
+  // 확인 창이 떠 있는 채 리로드하면 iOS 에서 그 창의 투명한 화면이 남아 리로드한 앱의 터치를 모두 막는다.
+  it('확인 창이 다 닫히기 전에는 덮지도 리로드하지도 않는다', async () => {
+    let finishClosing: () => void = () => {}
+    closeNativeModals.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishClosing = () => {
+            mockCallOrder.push('modals')
+            resolve()
+          }
+        }),
+    )
+    const reload = jest.fn(() => {
+      mockCallOrder.push('reload')
+    })
+
+    const pending = clearCacheDataAndReload(CASHBOOK, reload)
+    await waitFor(() => {
+      expect(closeNativeModals).toHaveBeenCalled()
+    })
+
+    expect(showSplashScreen).not.toHaveBeenCalled()
+    expect(reload).not.toHaveBeenCalled()
+
+    finishClosing()
+    await pending
+
+    expect(mockCallOrder).toEqual(['close', 'modals', 'cover', 'reload'])
   })
 
   // 커버는 화면 장치일 뿐이라, 그것이 실패했다고 리로드를 막으면 안 된다.
@@ -156,6 +192,6 @@ describe('clearCacheDataAndReload', () => {
     await clearCacheDataAndReload(CASHBOOK, reload)
 
     expect(reload).toHaveBeenCalledOnce()
-    expect(mockCallOrder).toEqual(['close', 'reload'])
+    expect(mockCallOrder).toEqual(['close', 'modals', 'reload'])
   })
 })
