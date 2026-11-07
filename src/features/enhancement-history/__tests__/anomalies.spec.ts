@@ -22,8 +22,9 @@ const potential = (payload: Record<string, unknown>) => entry({ kind: 'potential
 describe('합계에서 뺀 줄', () => {
   it('같은 날 · 종류 · 이유 · 장비는 한 줄로 센다', () => {
     const unknownItem = { itemKey: null, targetItem: '왕푸' }
+    const rows = [starforce(unknownItem, { after_starforce_count: 15 }), starforce(unknownItem, { after_starforce_count: 15 })]
 
-    expect(enhancementAnomaliesOf([starforce(unknownItem), starforce(unknownItem)], NO_EVENT, null)).toEqual([
+    expect(enhancementAnomaliesOf(rows, NO_EVENT, null)).toEqual([
       {
         historyDate: '2026-09-05',
         enhancementType: 'starforce',
@@ -53,6 +54,19 @@ describe('합계에서 뺀 줄', () => {
       ['potential', 'no_grade'],
       ['potential', 'no_cost'],
     ])
+  })
+
+  // 운영자는 10성 이상으로 올린 장비만 본다. 시도 뒤 성수를 모르는 줄은 기준을 넘었는지 몰라 뺀다.
+  it('장비 표에 없는 장비의 스타포스는 시도 뒤 10성 이상인 줄만 센다', () => {
+    const unknownItem = { itemKey: null, targetItem: '슈피겔만의 평범한 목걸이' }
+    const rows = [
+      starforce(unknownItem, { after_starforce_count: 9 }),
+      starforce(unknownItem, { after_starforce_count: 10 }),
+      starforce(unknownItem, { after_starforce_count: 22 }),
+      starforce(unknownItem),
+    ]
+
+    expect(enhancementAnomaliesOf(rows, NO_EVENT, null).map((one) => [one.anomalyType, one.rowCount])).toEqual([['no_level', 2]])
   })
 
   // 메소가 안 드는 강화라 빼는 것이 정상이다. 알리면 상황의 양이 부푼다.
