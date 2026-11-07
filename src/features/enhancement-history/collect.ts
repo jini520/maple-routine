@@ -97,10 +97,10 @@ async function planRound(
   dateKeys: readonly string[],
   todayDateKey: string,
   recomputeDays: number | null,
-): Promise<{ jobs: EnhancementHistoryJob[]; chunks: RecomputeChunk[] }> {
+): Promise<{ jobs: EnhancementHistoryJob[]; chunks: RecomputeChunk[]; hasPast: boolean }> {
   const days = dateKeys.filter((dateKey) => dateKey <= todayDateKey)
   const chunks = await recomputeChunks(nexonAccountId, todayDateKey, recomputeDays)
-  if (days.length === 0 && chunks.length === 0) return { jobs: [], chunks }
+  if (days.length === 0 && chunks.length === 0) return { jobs: [], chunks, hasPast: false }
 
   await fillLegacyAccountIds()
   await ensureEnhancementTotals()
@@ -119,12 +119,14 @@ async function planRound(
       add(kind, dateKey)
     }
   }
+  // 다시 매기기의 날을 더하기 전에 잰다. 그 날들은 합계가 있어 모달을 세우지 않는다.
+  const hasPast = jobs.some((job) => job.dateKey !== todayDateKey)
   for (const chunk of chunks) {
     for (const dateKey of chunk.dates) {
       for (const kind of kindsOn(dateKey)) if (chunk.request.kinds.includes(kind)) add(kind, dateKey)
     }
   }
-  return { jobs, chunks }
+  return { jobs, chunks, hasPast }
 }
 
 /** 끝나지 않은 요청마다 이번 회차에 받을 날. 받을 날이 없어도 끝을 적어야 해서 목록에 든다. */
@@ -158,6 +160,8 @@ export interface HistoryPlanSize {
    *
    * **오늘은 빼고 센다.** 오늘 칸은 굳을 수 없어 어느 회차에나 들고, 세면 이미 받아 둔 달로
    * 돌아올 때도 참이 된다. 오늘 셋만 받는 회차는 3콜이라 눈에 안 띈다.
+   *
+   * **다시 매기기 요청의 날도 안 센다.** 이미 합계가 있어 그릴 것이 있다. 분모에는 든다.
    */
   hasPast: boolean
 }
@@ -179,11 +183,8 @@ export async function measureEnhancementHistory(
   const accountId = credential?.accountId ?? null
   if (credential === null || accountId === null) return { total: 0, hasPast: false }
   const todayDateKey = getCurrentKstDateKey(now)
-  const jobs = await planEnhancementHistory(accountId, dateKeys, todayDateKey, recomputeDaysOf(credential))
-  return {
-    total: jobs.length,
-    hasPast: jobs.some((job) => job.dateKey !== todayDateKey),
-  }
+  const { jobs, hasPast } = await planRound(accountId, dateKeys, todayDateKey, recomputeDaysOf(credential))
+  return { total: jobs.length, hasPast }
 }
 
 /**
