@@ -280,7 +280,7 @@ function timeOf(entry: EnhancementSource): number {
 }
 
 /** @param key `before_starforce_count` · `after_starforce_count` */
-function starOf(entry: EnhancementSource | undefined, key: string): number | null {
+export function starOf(entry: EnhancementSource | undefined, key: string): number | null {
   const value = entry === undefined ? undefined : field(entry.payload, key)
   return typeof value === 'number' ? value : null
 }

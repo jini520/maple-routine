@@ -7,7 +7,14 @@
 import { sendEnhancementAnomalies } from '../../server/enhancement-anomalies'
 import type { EnhancementAnomaly } from '../../types/server-records'
 import { serverIdentityHeaders } from '../auth/server-identity'
-import { eventWorldOf, unpricedReasonOf, usesSpecialCurrency, type EnhancementSource } from './spending'
+import {
+  eventWorldOf,
+  starOf,
+  unpricedReasonOf,
+  usesSpecialCurrency,
+  type EnhancementSource,
+  type UnpricedReason,
+} from './spending'
 
 /** 한 번에 보내는 상황 수. 옛 원본을 옮길 때는 날짜가 수백이라 나눠 보낸다. */
 const SEND_CHUNK = 500
@@ -15,8 +22,19 @@ const SEND_CHUNK = 500
 /** 실패 이유 글자의 길이 상한. 서버 칸의 상한과 같다. */
 const DETAIL_MAX = 200
 
+/** 장비 표에 없는 장비의 스타포스를 세는 시도 뒤 최소 성수. 운영자는 이 성수 이상으로 올린 장비만 본다. */
+const NO_LEVEL_STARFORCE_MIN_STAR = 10
+
+/** 장비 표에 없는 장비의 스타포스인데 시도 뒤 성수가 기준에 못 미치거나 없는 줄. */
+function isUnwatchedNoLevel(entry: EnhancementSource, reason: UnpricedReason): boolean {
+  if (reason !== 'no_level' || entry.kind !== 'starforce') return false
+  const after = starOf(entry, 'after_starforce_count')
+  return after === null || after < NO_LEVEL_STARFORCE_MIN_STAR
+}
+
 /**
- * 줄들의 상황을 날짜 · 종류 · 이유 · 장비마다 센다. 전용 재화 줄은 빼는 것이 정상이라 세지 않는다.
+ * 줄들의 상황을 날짜 · 종류 · 이유 · 장비마다 센다. 전용 재화 줄은 빼는 것이 정상이라 세지 않고, 장비 표에 없는 장비의
+ * 스타포스는 시도 뒤 10성 이상인 줄만 센다.
  *
  * @param eventNames 스페셜 캐릭터 이름. 목록을 못 받았으면 `null` 이고, 그때 월드를 모르는 줄을 판정하지 못한 줄로 센다
  * @param listError 캐릭터 목록 요청의 실패 이유. 판정하지 못한 줄에 싣는다
@@ -47,6 +65,7 @@ export function enhancementAnomaliesOf(
   for (const entry of entries) {
     if (usesSpecialCurrency(entry)) continue
     const reason = unpricedReasonOf(entry)
+    if (reason !== null && isUnwatchedNoLevel(entry, reason)) continue
     if (reason !== null) count(entry, reason, entry.itemKey, entry.targetItem)
     else if (eventWorldOf(entry, eventNames) === null) count(entry, 'event_world_unknown', null, '')
   }
