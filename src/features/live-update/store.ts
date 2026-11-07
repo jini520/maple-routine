@@ -9,6 +9,7 @@ import {
   isNewerVersion,
   openStoreForUpdate,
 } from '../../native/live-update'
+import { reopenNativeModals } from '../../lib/native-modal-gate'
 import { hideSplashScreen } from '../../native/splash-screen'
 import {
   getLastRunBundleVersion,
@@ -200,6 +201,8 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
         }),
       ])
     } catch {
+      // 적용은 다시 시작하기 전에 모달을 모두 내린다. 되돌리지 않으면 그 뒤로 어떤 모달도 뜨지 않는다.
+      reopenNativeModals()
       set({ status: 'idle', ...CLEARED })
     } finally {
       clearTimeout(timer)
@@ -347,6 +350,8 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
         // 화면은 돌아와야 한다. `hideSplashScreen` 이 커버까지 걷는다. 걷기 실패까지 삼켜야
         // 상태 전환에 닿는다.
         await hideSplashScreen().catch(() => {})
+        // 적용이 내린 모달을 되돌린다. 안 되돌리면 apply-error 모달이 그려지지 않아 다시 시도할 길이 없다.
+        reopenNativeModals()
         // hasDownloadedBundle 은 비우지 않는다. 받아둔 번들은 그대로 살아 있고 모달의 다시 시도가
         // 다시 부른다. 여기서 비우면 재시도가 불가능해진다(download-error 와 다른 점).
         set({ status: 'apply-error' })

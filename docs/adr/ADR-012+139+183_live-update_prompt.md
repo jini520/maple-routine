@@ -1,8 +1,8 @@
-# ADR-012+139 업데이트 동의 모달과 적용
+# ADR-012+139+183 업데이트 동의 모달과 적용
 
 > 🟢 유효
 > 옛 번호: ADR-026 · ADR-027 결정 1 · 4 · 6 · 7 · ADR-065 결정 2 · ADR-117 결정 1 · 5 · 7 · ADR-268 결정 1 · 5
-> 관련 소스: `features/live-update/store.ts` · `app/UpdatePromptModal.tsx` · `app/settings/AppUpdateSection.tsx` · `native/live-update.ts` · `storage/sqlite/db.ts`
+> 관련 소스: `features/live-update/store.ts` · `app/UpdatePromptModal.tsx` · `app/settings/AppUpdateSection.tsx` · `native/live-update.ts` · `storage/sqlite/db.ts` · `lib/native-modal-gate.ts` · `components/organisms/Modal/Modal.tsx`
 
 ## 배경
 
@@ -90,24 +90,27 @@ OTA 번들을 받아 적용하면 앱이 다시 시작된다. 사용자가 무�
 API 가 없고, `@react-native-community/netinfo` 를 추가하면 네이티브 의존성이 늘어 스토어 바이너리를 다시
 빌드해야 한다. 그래서 지금은 경고 없이 바로 받는다. 경고를 다시 살리려면 그 패키지를 먼저 넣어야 한다.
 
-### 결정 6. 적용은 DB 닫기, 커버, 재시작 순서로 하고, 실패하면 12초 안에 화면을 되돌린다
+### 결정 6. 적용은 DB 닫기, 모달 닫기, 커버, 재시작 순서로 하고, 실패하면 12초 안에 화면을 되돌린다
 
 `native/live-update.ts` 의 `applyLiveUpdate` 한 함수가 이 순서를 지킨다.
 
 ```
-closeBossProfitDb() → showSplashScreen() → Updates.reloadAsync()
+closeBossProfitDb() → closeNativeModals() → showSplashScreen() → Updates.reloadAsync()
 ```
 
 - SQLite 커넥션을 먼저 닫는다. 닫지 않고 재시작하면 네이티브 커넥션이 남아 재시작 뒤 첫 쿼리가 응답
   없이 멈춘다.
+- 재시작하기 전에 떠 있는 RN `Modal` 을 모두 닫고, iOS 가 다 닫을 때까지 기다린다(결정 13). 닫는 동안
+  `적용하고 있어요` 모달이 떠 있어야 하므로 DB 닫기 뒤에 둔다.
 - 스플래시 커버는 닫기 뒤에 올린다. 커버를 먼저 올리면 닫기가 멈췄을 때 사용자가 스플래시에 갇힌다.
   커버는 재시작하는 순간을 가리려는 것이지, 그 앞의 준비 작업까지 가리려는 것이 아니다. 커버를 올리지
   못해도 적용은 계속한다.
-- 세 단계를 한 함수에 둔다. 순서가 두 파일에 나뉘어 있으면 다음 사람이 한쪽만 고치게 된다.
+- 네 단계를 한 함수에 둔다. 순서가 두 파일에 나뉘어 있으면 다음 사람이 한쪽만 고치게 된다.
 
 스토어의 `apply()` 는 이 함수를 12초(`APPLY_TIMEOUT_MS`) 타임아웃으로 감싼다. 어느 단계에서 실패하거나
-멈춰도 `hideSplashScreen()` 으로 커버를 걷고 `apply-error` 로 바뀐다. 타임아웃은 단계별로 나누지 않았다.
-어디서 멈췄든 사용자가 볼 화면은 같아야 하기 때문이다.
+멈춰도 `hideSplashScreen()` 으로 커버를 걷고, `reopenNativeModals()` 로 모달을 다시 그릴 수 있게 한 뒤 `apply-error`
+로 바뀐다. 모달을 되돌리지 않으면 `apply-error` 모달이 그려지지 않아 다시 시도할 길이 없다. 타임아웃은 단계별로
+나누지 않았다. 어디서 멈췄든 사용자가 볼 화면은 같아야 하기 때문이다.
 
 적용이 성공하면 `reloadAsync()` 가 곧바로 JS 를 새로 시작하므로 상태를 바꾸는 코드가 실행되지
 않는다. 그래서 성공한 뒤의 상태 변경 코드를 두지 않았다. 두면 실행되지 않는 거짓 정보가 된다.
@@ -208,6 +211,36 @@ ms 안에 끝나기 때문이다. 이 값이 `applying` 화면이 떠 있는 최
 사본이 있어 잠그지 않고 여는 때에는 이 순서가 없다. 앱이 바로 열리고, 게임 데이터의 조용한 받기([[ADR-020]] 결정 13)와
 OTA 확인이 따로 돈다.
 
+### 결정 13. 앱을 다시 띄우기 전에 RN `Modal` 을 모두 닫고, iOS 가 다 닫을 때까지 기다린다
+
+아이폰에서 `지금 적용 (재시작)` 을 누르면 다시 시작한 뒤 today 는 보이는데 어떤 터치도 먹지 않았다. 스크롤도 되지 않았고
+기다려도 풀리지 않았다. 강제 종료하고 다시 켜면 괜찮았다. 1.0.13+1 부터 +3 까지 OTA 마다 같았다(2026-11-07 사용자 보고).
+안드로이드 태블릿에서 같은 순서로 적용하면 생기지 않았다.
+
+원인은 RN `Modal` 이 떠 있는 채로 `Updates.reloadAsync()` 를 부르는 것이다. 적용하는 동안 `applying` 모달(결정 7)이 떠 있다.
+iOS 의 RN `Modal` 은 루트 뷰 컨트롤러 위에 `RCTFabricModalHostViewController` 를 띄우는데, 다시 시작은 JS 와 화면 내용만
+갈아 끼우고 이 뷰 컨트롤러를 닫지 않는다. 그래서 내용이 빠진 투명한 전체 화면이 맨 위에 남아 모든 터치를 받는다. 새 번들의
+완료 안내(결정 10)도 그 위에는 뜨지 못한다. 출시 빌드를 시뮬레이터에 깔고 서버의 1.0.13+3 을 받아 적용해 재현했다. UIKit 은
+`Attempt to present … which is already presenting <RCTFabricModalHostViewController>` 를 남겼고, 메인 스레드와 JS 스레드는
+멈추지 않고 쉬고 있었다.
+
+그래서 앱을 다시 띄우는 두 자리가 다시 띄우기 직전에 `lib/native-modal-gate.ts` 의 `closeNativeModals()` 를 부른다.
+OTA 적용(`applyLiveUpdate`, 결정 6)과 데이터 삭제(`clearCacheDataAndReload`, [[ADR-053]] 결정 5)다. 이 함수는 떠 있는
+RN `Modal` 을 모두 `visible={false}` 로 바꾸고, iOS 가 닫았다고 알릴 때(`onDismiss`)까지 기다린다. 시간을 정해 두고 기다리는
+대신 알림을 기다리는 것은, 닫는 데 걸리는 시간을 앱이 정할 수 없기 때문이다.
+
+- 기다림에는 상한(1.5초, `NATIVE_MODAL_CLOSE_CAP_MS`)을 둔다. 닫혔다는 알림이 끝내 오지 않아도 다시 띄우기가 막히면
+  안 된다.
+- 안드로이드는 기다리지 않는다. 안드로이드의 RN `Modal` 은 다시 시작과 함께 사라지고, `onDismiss` 도 iOS 에서만 온다.
+- 적용이 실패하거나 12초를 넘기면 스토어가 `reopenNativeModals()` 로 모달을 다시 그릴 수 있게 되돌린다. 처음 실행에서 묻지
+  않고 적용하다 실패했을 때(결정 12)도 같다. 되돌리지 않으면 그 뒤로 어떤 모달도 뜨지 않는다.
+- 조건은 `components/organisms/Modal` 한 곳에 둔다([[ADR-062]] 결정 16). 모든 가운데 모달이 그 위에 있어서, 새 모달을
+  더해도 빠지지 않는다. RN `Modal` 을 직접 쓰는 `Popover` · `DropEffectOverlay` · `BossPickerTray` 는 이 조건을 거치지
+  않는다. 두 다시 띄우기는 모두 가운데 모달 안의 버튼에서 시작하므로 그 셋이 함께 떠 있지 않다.
+
+이 수정은 적용을 하는 쪽 번들에 들어 있어야 듣는다. 이 수정이 든 OTA 를 받는 그 한 번은 옛 번들이 적용하므로 아이폰에서
+한 번 더 멈출 수 있고, 그다음 OTA 부터는 멈추지 않는다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -231,11 +264,13 @@ OTA 확인이 따로 돈다.
 | | `update-available` 의 `자세히 보기` 가 핵심 목록을 펼치고 접는지, 목록이 없으면 버튼이 없는지, 화살표가 접힘과 펼침 두 상태 모두 transform 을 갖는지(NativeWind 가 첫 렌더에 transform 이 없으면 메모리를 다 쓰고 죽는다) 본다. `updated` 의 `자세히 보기` 가 개발 노트로 이동하는지 본다([[ADR-052]]) |
 | `app/settings/__tests__/AppUpdateSection.test.tsx` | 결정 9: `업데이트 확인` 이 `check` 를 부르는지, 진행 중에 버튼이 대기 상태로 막히는지, 지원하지 않는 환경이면 버튼을 숨기는지, 지금 버전이 없으면 넘겨받은 기본값을 쓰는지 본다. 모든 상태 문구에 한 글자 말줄임표 `…` 가 없는지 본다 |
 | `storage/sqlite/__tests__/db.spec.ts` | 결정 8: 닫기가 응답하지 않아도 5초 안에 던지지 않고 끝나는지, 그 뒤 다음 `getBossProfitDb` 가 새로 여는지 본다 |
-
-`applyLiveUpdate` 의 순서(닫기, 커버, 재시작)를 직접 확인하는 테스트는 없다. 스토어 테스트는 이 함수를
-가짜로 바꿔 쓴다.
+| `native/__tests__/live-update.spec.ts` | 결정 6 · 13: `applyLiveUpdate` 가 DB 닫기, 모달 닫기, 커버, 재시작 순서로 부르는지, 모달이 다 닫히기 전에는 재시작하지 않는지 본다 |
+| `lib/__tests__/native-modal-gate.spec.ts` | 결정 13: iOS 에서 떠 있는 모달이 닫혔다고 알릴 때까지 기다리는지, 알림이 오지 않아도 1.5초에 끝나는지, 안드로이드는 기다리지 않는지, 되돌린 뒤에는 모달을 다시 그리는지 본다 |
+| `components/organisms/Modal/__tests__/Modal.test.tsx` | 결정 13: 모달 닫기가 걸리면 RN `Modal` 을 `visible={false}` 로 두고, 그 `onDismiss` 가 기다림을 푸는지 본다 |
+| `features/live-update/__tests__/store.spec.ts` | 결정 6 · 13: 적용이 실패하거나 12초를 넘기면 모달을 다시 그릴 수 있게 되돌리는지, 처음 실행의 적용이 실패해도 되돌리는지 본다 |
 
 ## 번호 기록
 
 - ADR-012 (2026-10-19): 옛 ADR-026 · 027 · 065 결정 2 · 117 · 268 결정 1 · 5 를 합쳐 처음 작성
 - ADR-139 (2026-10-30): 5MB 이하는 묻지 않고 받고, 완료 안내를 앞당기고, 스플래시가 걷힌 뒤에만 모달을 띄우고, 잠근 채 켜지면 OTA 를 먼저 하고 처음 실행에는 묻지 않고 적용한다(결정 1 · 2 · 3 고침, 결정 10 · 11 · 12 더함, 이슈 #803)
+- ADR-183 (2026-11-08): 다시 띄우기 전에 RN `Modal` 을 모두 닫고 iOS 가 다 닫을 때까지 기다린다. 아이폰에서 OTA 적용 뒤 터치가 모두 죽던 결함이다(결정 6 고침, 결정 13 더함)

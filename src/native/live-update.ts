@@ -1,4 +1,5 @@
 import { parseAppVersion } from '../lib/app-version'
+import { closeNativeModals } from '../lib/native-modal-gate'
 import { closeBossProfitDb } from '../storage/sqlite/db'
 import { getLiveUpdatePort, type LiveUpdateCheckResult, type NetworkType } from './ports'
 import { showSplashScreen } from './splash-screen'
@@ -82,11 +83,13 @@ export async function downloadLiveUpdate(onProgress: (percent: number) => void):
  * 내려받아 둔 번들의 즉시 적용. 적용은 JS 컨텍스트를 파괴하고 재로드하므로 이후 코드는
  * 실행되지 않는다.
  *
- * 순서는 닫기 → 커버 → 적용이다. 커버가 닫기 뒤인 것이 요점이다. 먼저 올리면 닫기가 매달릴 때
+ * 순서는 DB 닫기 → 모달 닫기 → 커버 → 적용이다. 커버가 닫기 뒤인 것이 요점이다. 먼저 올리면 닫기가 매달릴 때
  * 사용자가 브랜드 주황 스플래시에 갇힌다. 커버의 목적은 리로드 동안 네이티브 배경색이 드러나는
  * 것을 덮는 것이지 그 앞의 준비 작업까지 덮는 것이 아니다.
  *
- * 셋을 한 함수가 순서대로 책임진다. 나눠 가지면 순서가 곧 결함이었다 는 사실을 다음 사람이
+ * 모달이 떠 있는 채 재로드하면 iOS 에서 그 모달의 빈 화면이 남아 재로드한 앱의 터치를 모두 막는다.
+ *
+ * 넷을 한 함수가 순서대로 책임진다. 나눠 가지면 순서가 곧 결함이었다 는 사실을 다음 사람이
  * 두 곳에서 읽어야 한다.
  *
  * SQLite 커넥션을 먼저 닫는 것은, 안 닫으면 리로드로 JS 쪽 캐시만 초기화되고 네이티브
@@ -96,6 +99,7 @@ export async function downloadLiveUpdate(onProgress: (percent: number) => void):
  */
 export async function applyLiveUpdate(): Promise<void> {
   await closeBossProfitDb()
+  await closeNativeModals()
   // 커버 표시 실패가 적용을 막으면 안 된다. 시각적 장치 때문에 적용에 도달 못 하면 본말전도다.
   await showSplashScreen().catch(() => {})
   await getLiveUpdatePort().apply()
