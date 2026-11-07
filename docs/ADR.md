@@ -132,7 +132,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-009](./adr/ADR-009_release_binary-size.md) | 🟢 | release | 에셋과 스토어 바이너리 크기 |
 | [ADR-010](./adr/ADR-010_release_ios-scene.md) | 🟢 | release | 화면 회전 잠금과 iOS 씬 |
 | [ADR-011+138](./adr/ADR-011+138_live-update_protocol.md) | 🟢 | live-update | OTA 발행과 프로토콜 |
-| [ADR-012+139](./adr/ADR-012+139_live-update_prompt.md) | 🟢 | live-update | 업데이트 동의 모달과 적용 |
+| [ADR-012+139+183](./adr/ADR-012+139+183_live-update_prompt.md) | 🟢 | live-update | 업데이트 동의 모달과 적용 |
 | [ADR-013+151](./adr/ADR-013+151_splash_boot.md) | 🟢 | splash | 스플래시와 앱 아이콘 |
 | [ADR-014](./adr/ADR-014_ads_inline.md) | 🟢 | ads | 광고 배선 |
 | [ADR-015+156](./adr/ADR-015+156_site_guide.md) | 🟢 | site | 안내 사이트와 홍보 첫 화면 |

@@ -21,6 +21,7 @@
 | `app/settings/AppUpdateSection.tsx` | `앱 정보` 화면의 현재 버전 · 상태 · `업데이트 확인` |
 | `boot.ts` 의 `loadGameData` | 게임 데이터 사본을 읽은 뒤 `checkOnBoot()` 호출 |
 | `app/BootSplash.tsx` · `hooks/useBootSplashDone.ts` | 처음 실행에서 OTA 를 적용하는 동안 스플래시를 붙들고, 다 걷힌 뒤에야 모달을 그리게 한다 |
+| `lib/native-modal-gate.ts` | 재시작 직전에 떠 있는 RN `Modal` 을 모두 닫고 iOS 가 다 닫을 때까지 기다린다. 실패하면 되돌린다 |
 | `lib/app-version.ts` | 버전 형식 읽기(`x.y.z` · `x.y.z+n`) · 화면 표기 `x.y.z(n)` |
 | `storage/last-run-bundle-version.ts` | 마지막으로 실행한 번들 버전(Preferences `lastRunBundleVersion`). 완료 안내 판정에 쓴다 |
 | `storage/sqlite/db.ts` 의 `closeBossProfitDb` | 적용 전에 SQLite 를 닫는다. 5초 타임아웃 |
@@ -60,6 +61,10 @@
 필요하면 그쪽이 이긴다. 이 판정과 `자세히 보기` 는 [[ADR-052]] 의 릴리스 노트 결정을 따른다.
 
 모든 가운데 모달은 부팅 스플래시(`BootSplash`)가 다 걷힌 뒤에만 그린다(`useBootSplashDone`, [[ADR-062]] 결정 16).
+
+적용은 DB 닫기, 모달 닫기, 커버, 재시작 순서다(`applyLiveUpdate`, [[ADR-012]] 결정 6). `적용하고 있어요` 모달이 떠 있는 채
+재시작하면 아이폰에서 그 모달의 투명한 화면이 남아 재시작한 앱의 터치를 모두 막는다. 그래서 재시작 직전에 모달을 닫고
+iOS 가 다 닫을 때까지 기다린다([[ADR-012]] 결정 13).
 
 ### 부팅 순서
 
