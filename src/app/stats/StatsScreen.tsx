@@ -231,7 +231,7 @@ export function StatsScreen(): React.JSX.Element {
                       style={TABULAR_NUMS}
                     >
                       {signed(current.netMeso)}{' '}
-                      <Text className="text-xs text-text-muted">메소</Text>
+                      <Text className="text-xs font-normal text-text-muted">메소</Text>
                     </Text>
                   </View>
                   <View className="shrink-0 items-end gap-1">

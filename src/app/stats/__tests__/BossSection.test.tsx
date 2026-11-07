@@ -1,4 +1,5 @@
 import { act, fireEvent, within } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
@@ -55,5 +56,19 @@ describe('BossSection', () => {
     expect(within(seren).getByText('2회 처치')).toBeTruthy()
     expect(within(seren).getByText('13.3억')).toBeTruthy()
     expect(within(seren).queryByText('하드')).toBeNull()
+  })
+
+  it('보스별로 바꿔도 초상화 아래에 배지 자리를 난이도별과 같은 높이로 비워 둔다', async () => {
+    const view = await renderOverlay(<BossSection days={days} range={range} />)
+    const 비운자리 = (tileId: string): { marginBottom?: number } =>
+      StyleSheet.flatten(within(view.getByTestId(tileId)).getByTestId('stats-boss-portrait-slot').props.style)
+
+    const 난이도별 = 비운자리('stats-boss-tile-lucid|hard')
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('보스별'))
+    })
+
+    expect(난이도별.marginBottom).toBeGreaterThan(0)
+    expect(비운자리('stats-boss-tile-lucid')).toEqual(난이도별)
   })
 })

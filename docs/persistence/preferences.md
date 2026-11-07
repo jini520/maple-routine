@@ -55,7 +55,7 @@
 | `dismissedNotices` | JSON 공지 id 배열(최근 50) | `notice-banner.ts` | 남긴다 | today 배너에서 닫은 공지. 닫았다는 사실은 기기에만 있다 |
 | `dismissedSettlement` | ISO 시각 | `settlement-banner.ts` | 남긴다 | 닫은 결산 안내의 시작 시각. 다음 결산은 시각이 달라 다시 보인다 |
 | `dismissedManualCompletion` | 주간 기간 키(목요일 `YYYY-MM-DD`) | `manual-completion-banner.ts` | 남긴다 | 닫은 직접 완료 안내의 주 |
-| `statsCumulativeStart` | KST `YYYY-MM-DD` | `stats-cumulative-start.ts` | 남긴다 | 통계 누적 순수익의 시작 날짜 |
+| `statsCumulativeStart` | KST `YYYY-MM-DD` | `stats-cumulative-start.ts` | 남긴다 | 통계 누적 순 수익의 시작 날짜 |
 | `mvpWeeklyCheckOff` | `'true'`(끄면 키를 지운다) | `mvp-grade-prefs.ts` | 남긴다 | 등급 주간 확인을 끈 체크박스 |
 | `mvpLastCheckedWeek` | 주간 기간 키 | `mvp-grade-prefs.ts` | 남긴다 | 마지막으로 등급을 확인한 주 |
 | `mvpBulkApplyAsked` | `'true'` | `mvp-grade-prefs.ts` | 남긴다 | 지난 기록 일괄 적용을 물어봤는지 |
