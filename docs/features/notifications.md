@@ -13,12 +13,13 @@
 | `native/ports.ts` 의 `NotificationsPort` · `PushPort` | 로컬 알림(권한 · 예약 · 취소 · 탭) · 푸시(토픽 구독 · 해제 · 수신) 포트 |
 | `native/notifications.ts` · `native/push.ts` | 포트를 부르는 함수 |
 | `native/adapters/rn-notifications.ts` | notifee 로 예약 · 취소 · 권한 · 탭 처리 |
-| `native/adapters/notification-request.ts` | 채널 정의 · id 변환 · 예약 시각 검사 |
+| `native/adapters/notification-request.ts` | 채널 정의 · id 변환 · 예약 시각 검사 · 안드로이드 알람 종류 |
 | `native/adapters/rn-push.ts` | FCM 토픽 구독 · 해제. iOS 는 APNs 토큰을 기다린다 |
 | `features/local-notifications/registry.ts` | 로컬 알림 종류 목록(`NOTIFICATION_KINDS`) |
 | `features/local-notifications/reconcile.ts` | 계획과 원장 비교 · 알림 id 계산 |
 | `features/local-notifications/run.ts` | 재조정 실행 · 겹친 요청 처리 · 회차 쿼리와 자정 틱을 재조정에 잇는 `watchReconcileTriggers` |
 | `features/local-notifications/use-notification-press.ts` | 로컬 알림 탭을 종류별로 나눈다 |
+| `features/local-notifications/exact-alarm.ts` | 안드로이드 정확한 알람 권한을 읽는 스토어 · 권한 화면 열기 |
 | `features/schedule-alert/notification.ts` · `notification-text.ts` | 레지스트리의 `schedule-alert` 계획 · 알림 문구 |
 | `features/schedule-alert/alert-settings.ts` · `storage/schedule-alert-settings.ts` | `미완료 스케줄 알림` 스위치 |
 | `features/schedule-alert/open-request.ts` | 알림을 눌러 열 today 의 남은 스케줄 주기 |
@@ -44,7 +45,7 @@
 | 파티 스케줄 알림 · 미완료 스케줄 알림 스위치를 바꿀 때 | 재조정 |
 | 스케줄 회차 쿼리가 새 데이터를 들 때 · KST 자정 | 재조정 |
 | 백그라운드 태스크가 돌 때 | 회차를 받고 재조정 |
-| 재조정 | 알림 권한이 없으면 원장의 예약을 모두 취소. 있으면 울릴 시각 순으로 앞 64개만 예약하고 나머지 원장 항목은 취소 |
+| 재조정 | 알림 권한이 없으면 원장의 예약을 모두 취소. 있으면 울릴 시각 순으로 앞 64개만 예약하고 나머지 원장 항목은 취소. 안드로이드 정확한 알람 권한을 한 번 읽어 예약 방식을 정한다 |
 | 알림을 탭할 때 | 파티 약속은 그 약속을, 미완료 스케줄은 today 탭을 그 주기로 연다 |
 
 | 안드로이드 채널 | 이름 | 중요도 | 쓰는 곳 |
@@ -54,6 +55,17 @@
 | `schedule` | `스케줄` | `HIGH` | 미완료 스케줄 알림 |
 
 공지 푸시는 채널을 따로 만들지 않아 FCM 기본 채널로 뜬다.
+
+안드로이드는 로컬 알림을 알람으로 예약한다. WorkManager 로 예약하면 Doze 에서 몇 시간씩 늦기 때문이다.
+
+| 정확한 알람 권한(`알람 및 리마인더`) | 예약 방식 | 울리는 때 |
+|---|---|---|
+| 있음 · 안드로이드 12 미만 | `SET_EXACT_AND_ALLOW_WHILE_IDLE` | 정한 시각 |
+| 없음 · 읽기 실패 | `SET_AND_ALLOW_WHILE_IDLE` | 정한 시각에서 최대 1시간 늦을 수 있다 |
+
+권한 없이 정확한 알람을 요청하면 notifee 가 에러 없이 예약을 건너뛰므로, 권한을 확인한 뒤에만 정확한 알람을 쓴다.
+권한이 바뀌면 원장의 `exact` 와 달라져 다음 재조정이 다시 예약한다. 예약 전에는 같은 id 의 옛 예약을 지운다. notifee 가
+알람으로 예약할 때 같은 id 의 WorkManager 작업을 지우지 않아서다.
 
 iOS 는 로컬 알림과 공지 푸시 모두 기본 알림음(`default`)을 싣는다. 소리가 없으면 무음 알림이 되어 애플워치가 진동하지 않는다.
 
@@ -114,6 +126,7 @@ iOS 는 로컬 알림과 공지 푸시 모두 기본 알림음(`default`)을 싣
 | `알림 받기` | 공지 스위치 하나라도 켜져 있거나 파티 스케줄 알림 · 미완료 스케줄 알림이 켜져 있으면 켜짐. 누르면 공지 기본 셋 · 파티 알림 · 미완료 스케줄 알림을 함께 켜거나, 전부 끈다. 꺼져 있으면 아래 항목을 그리지 않는다 |
 | `알림을 켜지 못했어요` 카드 | 스위치 요청이 실패한 이유 |
 | `기기에서 알림이 꺼져 있어요` 카드 | 켜려다 권한에 막혔거나, 켜 둔 것이 있는데 기기 권한이 없을 때. 누르면 OS 알림 설정 |
+| `알림이 늦게 올 수 있어요` 카드 | 안드로이드에서 정확한 알람 권한이 꺼져 있고 파티 스케줄 알림이나 미완료 스케줄 알림이 켜져 있을 때. 위 카드가 떠 있으면 숨는다. 누르면 이 앱의 `알람 및 리마인더` 권한 화면 |
 | 일반 | 공지 스위치 다섯. 누르면 스위치가 바로 바뀌고 요청은 차례로 처리한다 |
 | 스케줄러 | `파티 스케줄 알림` · `미완료 스케줄 알림` 스위치, `주간 결산 알림` 은 `준비 중` |
 
@@ -121,7 +134,7 @@ iOS 는 로컬 알림과 공지 푸시 모두 기본 알림음(`default`)을 싣
 
 | 키 | 값 | 데이터 삭제 |
 |---|---|---|
-| `notificationLedger` | 예약해 둔 로컬 알림 `{ id, kind, fireAt, title, body }[]` | 남긴다 |
+| `notificationLedger` | 예약해 둔 로컬 알림 `{ id, kind, fireAt, title, body, exact }[]` | 남긴다 |
 | `noticeSubscriptions` | 공지 스위치 다섯 `{ app, game, update, event, cashshop }` | 남긴다 |
 | `noticeSubscribed` | 스위치가 하나였던 때의 값(`on` · `off`). 앱 공지 스위치와 함께 적는다 | 남긴다 |
 | `notificationPermissionAsked` | 권한을 물었는지(`yes`) | 남긴다 |
