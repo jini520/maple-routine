@@ -11,7 +11,7 @@ jest.mock('@notifee/react-native', () => ({
   ...jest.requireActual('@notifee/react-native/dist/types/Trigger'),
 }))
 
-import { AndroidImportance, TriggerType } from '@notifee/react-native'
+import { AlarmType, AndroidImportance, TriggerType } from '@notifee/react-native'
 
 import {
   channelFor,
@@ -31,6 +31,7 @@ function request(overrides: Partial<Parameters<typeof toTriggerNotification>[0]>
     title: '주간 보스 리셋',
     body: '아직 안 잡은 보스가 있어요',
     scheduleAt: new Date(NOW + 60_000),
+    exact: true,
     ...overrides,
   }
 }
@@ -77,7 +78,17 @@ describe('toTriggerNotification', () => {
 
   it('예약 시각을 타임스탬프 트리거로 바꾼다', () => {
     const { trigger } = toTriggerNotification(request(), NOW)
-    expect(trigger).toEqual({ type: TriggerType.TIMESTAMP, timestamp: NOW + 60_000 })
+    expect(trigger).toMatchObject({ type: TriggerType.TIMESTAMP, timestamp: NOW + 60_000 })
+  })
+
+  // alarmManager 가 빠지면 notifee 는 WorkManager 로 예약하고, Doze 에서 몇 시간씩 늦는다.
+  // 권한 없이 정확한 알람을 고르면 notifee 가 에러 없이 예약을 건너뛴다.
+  it.each([
+    [true, AlarmType.SET_EXACT_AND_ALLOW_WHILE_IDLE],
+    [false, AlarmType.SET_AND_ALLOW_WHILE_IDLE],
+  ])('exact %p 면 알람 종류 %p 로 예약한다', (exact, type) => {
+    const { trigger } = toTriggerNotification(request({ exact }), NOW)
+    expect(trigger.alarmManager).toEqual({ type })
   })
 
   // 플랫폼끼리 거동이 갈리던 자리다. 여기서는 둘 다 던진다. 앱 실행마다 재예약하는 구조라

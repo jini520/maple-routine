@@ -8,6 +8,7 @@ import { topLinesIn } from './row-lines'
 import { useNoticeStore } from '../../../features/notice/store'
 import { usePartyAlarmSettingsStore } from '../../../features/party-appointments/alarm-settings'
 import { useScheduleAlertSettingsStore } from '../../../features/schedule-alert/alert-settings'
+import { useExactAlarmStore } from '../../../features/local-notifications/exact-alarm'
 import { NOTICE_TOPICS } from '../../../features/notice/topics'
 import { NO_SUBSCRIPTIONS } from '../../../types/notice'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
@@ -44,6 +45,7 @@ const 진짜 = useNoticeStore.getState()
 
 /** 화면이 들어올 때마다 부르는 권한 읽기. 네이티브를 안 타게 목으로 둔다. */
 const refreshPermission = jest.fn().mockResolvedValue(undefined)
+const refreshExactAlarm = jest.fn().mockResolvedValue(undefined)
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -69,6 +71,7 @@ beforeEach(() => {
     load: jest.fn().mockResolvedValue(undefined),
     setEnabled: jest.fn().mockResolvedValue(undefined),
   })
+  useExactAlarmStore.setState({ setting: 'enabled', refresh: refreshExactAlarm })
 })
 
 // **저장하지 않고 파생한다.** 저장하면 `전체는 켜졌는데 넷은 다 꺼진` 상태가 생기고, 그때
@@ -380,6 +383,8 @@ describe('왕복을 기다리지 않는다', () => {
       getPendingCount: async () => 0,
       addPressListener: () => () => {},
       getInitialPress: async () => null,
+      getExactAlarmSetting: async () => 'enabled',
+      openExactAlarmSettings: async () => {},
     })
     useNoticeStore.setState({
       setSubscribed: 진짜.setSubscribed,
@@ -584,5 +589,75 @@ describe('스위치의 촉각', () => {
     })
 
     expect(select).toHaveBeenCalledTimes(2)
+  })
+})
+
+// 권한이 없으면 파티 · 미완료 스케줄 알림이 최대 1시간 늦을 수 있는데, 사용자는 그것을 모른다.
+describe('알람 권한 카드', () => {
+  const 카드 = '알림이 늦게 올 수 있어요'
+
+  it.each([
+    ['파티 스케줄 알림', usePartyAlarmSettingsStore],
+    ['미완료 스케줄 알림', useScheduleAlertSettingsStore],
+  ] as const)('권한이 꺼져 있고 %s 이 켜져 있으면 뜬다', async (_label, store) => {
+    useExactAlarmStore.setState({ setting: 'disabled' })
+    store.setState({ enabled: true })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.getByText(카드)).toBeTruthy()
+    expect(refreshExactAlarm).toHaveBeenCalled()
+  })
+
+  // 권한을 아직 못 읽었거나(null), 정한 시각에 울리는 기기(iOS · 안드로이드 12 미만)는 늦지 않는다.
+  it.each(['enabled', 'unsupported', null] as const)('권한이 %p 면 안 뜬다', async (setting) => {
+    useExactAlarmStore.setState({ setting })
+    useScheduleAlertSettingsStore.setState({ enabled: true })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.queryByText(카드)).toBeNull()
+  })
+
+  // 공지는 서버가 보내는 푸시라 알람 권한과 관계없다.
+  it('공지만 켜져 있으면 안 뜬다', async () => {
+    useExactAlarmStore.setState({ setting: 'disabled' })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.queryByText(카드)).toBeNull()
+  })
+
+  // 알림 권한이 없으면 알람 권한을 켜도 알림이 오지 않는다. 그 카드가 먼저다.
+  it('기기에서 알림이 꺼져 있으면 그 카드만 뜬다', async () => {
+    useExactAlarmStore.setState({ setting: 'disabled' })
+    useScheduleAlertSettingsStore.setState({ enabled: true })
+    useNoticeStore.setState({ permissionGranted: false })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    expect(view.getByText('기기에서 알림이 꺼져 있어요')).toBeTruthy()
+    expect(view.queryByText(카드)).toBeNull()
+  })
+
+  it('누르면 알람 권한 화면을 연다', async () => {
+    const openExactAlarmSettings = jest.fn().mockResolvedValue(undefined)
+    setNotificationsPort({
+      requestPermission: async () => true,
+      hasPermission: async () => true,
+      schedule: async () => {},
+      cancel: async () => {},
+      getPendingCount: async () => 0,
+      addPressListener: () => () => {},
+      getInitialPress: async () => null,
+      getExactAlarmSetting: async () => 'disabled',
+      openExactAlarmSettings,
+    })
+    useExactAlarmStore.setState({ setting: 'disabled' })
+    useScheduleAlertSettingsStore.setState({ enabled: true })
+    const view = await renderOverlay(<SettingsNoticeAlertsScreen />)
+
+    await act(async () => {
+      fireEvent.press(view.getByLabelText('알람 권한 설정 열기'))
+    })
+
+    expect(openExactAlarmSettings).toHaveBeenCalled()
+    installNoopNativePorts()
   })
 })

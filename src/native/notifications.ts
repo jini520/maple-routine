@@ -1,6 +1,6 @@
-import { getNotificationsPort, type LocalNotificationRequest, type NotificationData } from './ports'
+import { getNotificationsPort, type ExactAlarmSetting, type LocalNotificationRequest, type NotificationData } from './ports'
 
-export type { LocalNotificationRequest, NotificationData }
+export type { ExactAlarmSetting, LocalNotificationRequest, NotificationData }
 
 export async function requestNotificationPermission(): Promise<boolean> {
   return getNotificationsPort().requestPermission()
@@ -28,4 +28,12 @@ export function addNotificationPressListener(handler: (data: NotificationData) =
 
 export async function getInitialNotificationPress(): Promise<NotificationData | null> {
   return getNotificationsPort().getInitialPress()
+}
+
+export async function getExactAlarmSetting(): Promise<ExactAlarmSetting> {
+  return getNotificationsPort().getExactAlarmSetting()
+}
+
+export async function openExactAlarmSettings(): Promise<void> {
+  await getNotificationsPort().openExactAlarmSettings()
 }

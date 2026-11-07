@@ -1,8 +1,8 @@
-# ADR-056+072+164 알림 예약과 공지 구독
+# ADR-056+072+164+182 알림 예약과 공지 구독
 
 > 🟢 유효
 > 옛 번호: ADR-004 · ADR-146 결정 1 · 2 · 5 · 6 · ADR-227 결정 5 · ADR-259 · ADR-278 · ADR-228 결정 2 · 3 · 정정 1 · 2 · ADR-247 결정 2 · 10 · 정정 1
-> 관련 소스: `features/local-notifications/` · `features/notice/store.ts` · `features/notice/topics.ts` · `features/notice/permission-gate.ts` · `native/adapters/rn-notifications.ts` · `native/adapters/notification-request.ts` · `native/adapters/rn-push.ts` · `app/settings/SettingsNoticeAlertsScreen.tsx` · `features/schedule-alert/` · `features/remaining-schedule/` · `native/background-task.ts` · `native/adapters/rn-background-task.ts` · `navigation/AppNavigation.tsx` · `index.ts` · `maple-routine-server` 의 `src/clients/fcm.client.ts`
+> 관련 소스: `features/local-notifications/` · `features/notice/store.ts` · `features/notice/topics.ts` · `features/notice/permission-gate.ts` · `native/adapters/rn-notifications.ts` · `native/adapters/notification-request.ts` · `native/adapters/rn-push.ts` · `app/settings/SettingsNoticeAlertsScreen.tsx` · `features/local-notifications/exact-alarm.ts` · `features/schedule-alert/` · `features/remaining-schedule/` · `native/background-task.ts` · `native/adapters/rn-background-task.ts` · `navigation/AppNavigation.tsx` · `index.ts` · `maple-routine-server` 의 `src/clients/fcm.client.ts`
 
 ## 배경
 
@@ -32,9 +32,11 @@ OS 는 예약해 둔 알림 목록을 앱에 주지 않는다. 그래서 앱이 
 
 - **레지스트리**(`registry.ts` 의 `NOTIFICATION_KINDS`): 알림 종류 하나가 한 줄이다. 각 종류에는 지금 예약해야 할
   알림 목록을 돌려주는 `plan(now)` 이 있다.
-- **원장**(Preferences `notificationLedger`): 지금 예약해 둔 알림의 `{ id, kind, fireAt, title, body }` 목록이다.
+- **원장**(Preferences `notificationLedger`): 지금 예약해 둔 알림의 `{ id, kind, fireAt, title, body, exact }` 목록이다.
+  `exact` 는 안드로이드에서 정확한 알람으로 예약했는지다(결정 21).
 - **재조정**(`planReconcile`): 계획과 원장을 비교한다. 원장에만 있으면 취소하고, 계획에만 있으면 예약한다.
-  둘 다 있고 시각과 문구가 같으면 아무것도 하지 않는다. 시각이 같아도 문구가 바뀌면 다시 예약한다.
+  둘 다 있고 시각 · 문구 · `exact` 가 같으면 아무것도 하지 않는다. 시각이 같아도 문구나 `exact` 가 바뀌면 다시 예약한다.
+  `exact` 가 없는 옛 원장 항목도 다르다고 보아 한 번 다시 예약한다. 결정 21 이전의 예약을 새 방식으로 옮기는 길이 이것이다.
 
 레지스트리에서 빠진 종류가 원장에 남아 있으면 무조건 취소한다. OTA 로 알림 종류를 지웠을 때 그 예약이
 OS 에 남아 계속 울리는 것을 막으려고 원장을 둔 것이다.
@@ -256,6 +258,9 @@ FCM 구독이 실패했는데 켜졌다고 저장하면 스위치는 켜져 있�
   화면에 들어올 때마다 권한을 읽는다(묻지는 않는다). 켜 둔 것이 없으면 띄우지 않는다. 알림을 쓰지 않기로 한
   사용자에게는 잔소리이고, 한 번도 묻지 않은 iOS 앱은 설정 앱에 항목도 없기 때문이다. 권한을 아직 읽지 못했을
   때도 띄우지 않는다. 알림이 켜진 기기를 꺼졌다고 잘못 알리게 된다.
+- **`알림이 늦게 올 수 있어요` 카드**는 안드로이드에서 정확한 알람 권한이 꺼져 있고, 파티 스케줄 알림이나 미완료
+  스케줄 알림이 켜져 있을 때 뜬다(결정 22). `기기에서 알림이 꺼져 있어요` 카드가 떠 있으면 띄우지 않는다. 알림 권한이
+  없으면 알람 권한을 켜도 알림이 오지 않으므로 그 카드가 먼저다.
 - **`알림을 켜지 못했어요` 카드**는 스위치 요청이 실패한 이유를 그대로 적는다. 알리지 않으면 사용자는 스위치가
   반응하지 않는다고 느낀다.
 - **스케줄러 구역**에는 파티 스케줄 알림 · 미완료 스케줄 알림 스위치가 있고, 그 아래 `주간 결산 알림` 은 스위치
@@ -382,6 +387,44 @@ iOS 는 알림에 소리가 없으면 무음 알림으로 띄운다. 애플워�
   스토어 빌드에 실린다. OTA 로는 못 더한다.
 - 개발 빌드에서는 `triggerTaskWorkerForTestingAsync` 로 바로 돌려 본다.
 
+### 결정 21. 안드로이드 로컬 알림은 알람으로 예약하고, 정확한 알람 권한이 있을 때만 정확한 알람을 쓴다
+
+notifee 는 트리거에 `alarmManager` 를 주지 않으면 WorkManager 작업으로 예약한다. WorkManager 의 시각은 그 시각 이후에
+OS 가 정할 때 돌린다는 뜻이고, Doze 에서는 OS 가 잠깐 깨어나는 틈까지 밀린다. 틈 사이 간격은 15분에서 6시간까지
+늘어난다. 2026-11-07 충전기 없이 놓인 레노버 태블릿(안드로이드 15)에서 21:00 미완료 스케줄 알림이 다음 틈인 02:09 에
+떴다. 그래서 `toTriggerNotification` 은 늘 `alarmManager` 를 싣는다.
+
+- **정확한 알람 권한(`알람 및 리마인더`)이 있으면** `SET_EXACT_AND_ALLOW_WHILE_IDLE` 이다. Doze 에서도 정한 시각에 울린다.
+- **없으면** `SET_AND_ALLOW_WHILE_IDLE` 이다. 권한 없이 Doze 에서도 울리지만, 안드로이드 12 이상은 정한 시각에서
+  최대 1시간까지 늦출 수 있다.
+- 권한이 없는데 정확한 알람을 요청하면 notifee 9.1.8 은 에러 없이 예약을 건너뛴다(API 31 이상, `Trigger not scheduled`
+  를 로그에만 찍는다). 그래서 권한을 확인하지 않고 정확한 알람을 쓰지 않는다. 권한을 읽다 실패하면 권한이 없는 것으로
+  본다. 늦게 오는 알림이 오지 않는 알림보다 낫다.
+- 권한은 재조정마다 한 번 읽는다(`getExactAlarmSetting`). 안드로이드 14 이상에 새로 설치한 기기는 이 권한이 기본으로
+  꺼져 있다. 안드로이드 12 미만은 권한이 없어도 정확한 알람을 쓸 수 있어 정확한 알람이다. iOS 는 알람 종류가 없고
+  정한 시각에 띄우므로 `exact` 를 참으로 둔다.
+- 권한이 바뀌면 원장의 `exact` 와 달라져 재조정이 다시 예약한다(결정 2). 사용자가 설정에서 권한을 켜고 돌아오면
+  포그라운드 복귀의 재조정이 정확한 알람으로 옮긴다. 권한을 끄면 OS 가 정확한 알람을 지우고, 다음 재조정이 권한
+  없는 알람으로 다시 잡는다.
+- 예약하기 전에 같은 id 의 예약을 `cancelTriggerNotification` 으로 지운다. notifee 는 알람으로 예약할 때 같은 id 의
+  WorkManager 작업을 지우지 않는다. 결정 21 이전에 잡힌 작업이 남으면 같은 알림이 한 번 더 뜬다.
+- 알람 수신기(`NotificationAlarmReceiver`)와 권한(`SCHEDULE_EXACT_ALARM`)은 notifee 가 이미 매니페스트에 넣어 두었다.
+  JS 만 바뀌어 OTA 로 낼 수 있다.
+
+### 결정 22. 정확한 알람 권한이 꺼져 있으면 알림 설정 화면이 알린다 (사용자 결정)
+
+권한이 없으면 알림이 최대 1시간 늦을 수 있다는 것을 사용자는 모른다. 그래서 알림 설정 화면에 카드를 띄운다.
+팝업으로 묻지 않는다. 이 권한은 시스템 팝업이 없고 설정 화면에서만 켤 수 있기 때문이다.
+
+- 카드는 `알림이 늦게 올 수 있어요` 이고, 설명은 `눌러서 ‘알람 및 리마인더’를 허용해 주세요` 다. 늦는 이유는
+  제목이 말하고 설명은 할 일만 적는다. 설명이 길면 작은 화면에서 두 줄이 된다. 모양은 `기기에서 알림이 꺼져 있어요`
+  카드와 같다. 누르면 `openAlarmPermissionSettings` 로 이 앱의 권한 화면을 연다.
+- 뜨는 조건은 셋이다. 안드로이드에서 권한이 꺼져 있다. 파티 스케줄 알림이나 미완료 스케줄 알림이 켜져 있다.
+  `기기에서 알림이 꺼져 있어요` 카드가 떠 있지 않다. 공지 알림은 서버가 보내는 푸시라 이 권한과 관계없다.
+- 화면에 들어올 때마다 권한을 읽는다. 설정에 갔다 오는 사이 값이 바뀌기 때문이다. 권한을 아직 읽지 못했으면
+  띄우지 않는다.
+- 상태는 `features/local-notifications/exact-alarm.ts` 의 `useExactAlarmStore` 다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -399,6 +442,11 @@ iOS 는 알림에 소리가 없으면 무음 알림으로 띄운다. 애플워�
 | `app/settings/__tests__/SettingsNoticeAlertsScreen.test.tsx` | 결정 11 · 13: 전체 스위치가 계산 값이고 파티 알림까지 함께 움직이는지, 기기 설정 버튼과 권한 카드가 같은 함수를 부르는지, 권한 카드가 뜨는 조건과 안 뜨는 조건, 실패 이유를 적는지, 왕복을 기다리지 않고 그리는지, 파티 · 미완료 스케줄 스위치가 맞게 보이는지, 스위치를 누르면 촉각이 나는지 본다 |
 | `app/settings/__tests__/notification-settings-link.spec.ts` | 결정 13: 안드로이드는 알림 설정 인텐트로, iOS 는 앱 설정으로 여는지 본다 |
 | `maple-routine-server` 의 `src/clients/fcm.client.spec.ts` | 결정 14: 보내는 메시지에 APNs 소리를 싣는지 본다 |
+| `native/adapters/__tests__/notification-request.test.ts` 의 알람 종류 | 결정 21: `exact` 면 `SET_EXACT_AND_ALLOW_WHILE_IDLE`, 아니면 `SET_AND_ALLOW_WHILE_IDLE` 이고 어느 경우든 `alarmManager` 가 빠지지 않는지 본다 |
+| `native/adapters/__tests__/rn-notifications.test.ts` 의 알람 권한 | 결정 21 · 22: 예약 전에 같은 id 의 트리거를 지우는지, 권한 값을 셋으로 옮기고 iOS 는 `unsupported` 인지 본다 |
+| `features/local-notifications/__tests__/reconcile.spec.ts` 의 `exact` | 결정 2 · 21: `exact` 가 바뀌거나 없는 원장 항목을 다시 예약하는지 본다 |
+| `features/local-notifications/__tests__/run.spec.ts` 의 알람 권한 | 결정 21: 권한을 한 번 읽어 예약과 원장에 싣는지, 읽기가 실패하면 권한 없는 알람으로 잡는지 본다 |
+| `app/settings/__tests__/SettingsNoticeAlertsScreen.test.tsx` 의 알람 카드 | 결정 22: 권한이 꺼져 있고 로컬 알림이 켜져 있을 때만 뜨는지, 알림 권한 카드가 있으면 숨는지, 누르면 권한 화면을 여는지 본다 |
 | `features/schedule-alert/__tests__/notification.spec.ts` | 결정 15 · 17 · 18: 7일 안의 날마다 21:00 KST 한 장인지, 수요일 · 말일에 주간 · 월간이 같은 장에 드는지, 21:00 이 지난 날과 추적 캐릭터가 없을 때는 비는지, 같은 기간만 마지막 상태를 믿는지, 제목의 주기와 본문 둘이 상태대로 갈리는지, 드는 주기를 전부 다 했으면 그날이 비는지 본다 |
 | `features/remaining-schedule/__tests__/remaining-schedule.spec.ts` | 결정 16: 공유 컨텐츠 · 레벨 미달 · 완료 항목을 빼는지, 수동 추적 모드와 직접 적은 완료를 반영하는지 본다 |
 | `features/schedule-alert/__tests__/alert-settings.spec.ts` | 결정 19: 끄면 재조정과 등록 해제를, 켜면 재조정과 등록을 부르는지 본다 |
@@ -412,3 +460,4 @@ iOS 는 알림에 소리가 없으면 무음 알림으로 띄운다. 애플워�
 - ADR-056 (2026-10-19): 옛 ADR-004 · 146 · 259 · 278 과 ADR-227 결정 5, ADR-228 · 247 의 구독 · 권한 결정을 합쳐 처음 작성
 - ADR-072 (2026-10-20): 결정 14 를 더했다. 그 전에는 iOS 알림에 소리가 없어 애플워치가 진동하지 않았다
 - ADR-164 (2026-11-04): 미완료 스케줄 알림(결정 15 ~ 20)을 더하고 결정 1 · 3 · 4 · 6 · 13 을 그에 맞췄다. 백그라운드 태스크 의존성이 들어 v1.0.13 스토어 빌드에 실린다
+- ADR-182 (2026-11-07): 결정 21 · 22 를 더하고 결정 2 · 13 을 그에 맞췄다. 안드로이드 로컬 알림이 WorkManager 로 예약되어 Doze 에서 몇 시간씩 늦었다

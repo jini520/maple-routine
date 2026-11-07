@@ -14,6 +14,8 @@ export interface NotificationLedgerEntry {
   fireAt: number
   title: string
   body: string
+  /** 안드로이드에서 정확한 알람으로 예약했는가. 이 칸이 생기기 전의 항목에는 없다 */
+  exact?: boolean
 }
 
 function isEntry(value: unknown): value is NotificationLedgerEntry {

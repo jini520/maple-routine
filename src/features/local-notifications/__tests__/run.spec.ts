@@ -8,7 +8,12 @@ import { queryClient } from '../../query/client'
 import { queryKeys } from '../../query/keys'
 import { useResetBoundaryTick } from '../../query/reset-timer'
 import type { ScheduleRoundResult } from '../../schedule-sync/schedule-query'
-import { __resetNativePortsForTest, setNotificationsPort, type LocalNotificationRequest } from '../../../native/ports'
+import {
+  __resetNativePortsForTest,
+  setNotificationsPort,
+  type ExactAlarmSetting,
+  type LocalNotificationRequest,
+} from '../../../native/ports'
 import { getNotificationLedger, setNotificationLedger } from '../../../storage/notification-ledger'
 import { setPartyAppointments } from '../../../storage/party-appointments'
 import { setPartyAlarmEnabled } from '../../../storage/party-appointment-settings'
@@ -30,6 +35,8 @@ const appointment: PartyAppointment = {
 
 let granted = true
 let failSchedule = false
+let exactSetting: ExactAlarmSetting | Error = 'enabled'
+let exactReads = 0
 const scheduled: LocalNotificationRequest[] = []
 const cancelled: number[] = []
 
@@ -37,6 +44,8 @@ beforeEach(async () => {
   installFakePreferences()
   granted = true
   failSchedule = false
+  exactSetting = 'enabled'
+  exactReads = 0
   scheduled.length = 0
   cancelled.length = 0
   setNotificationsPort({
@@ -52,6 +61,12 @@ beforeEach(async () => {
     getPendingCount: async () => scheduled.length,
     addPressListener: () => () => {},
     getInitialPress: async () => null,
+    getExactAlarmSetting: async () => {
+      exactReads += 1
+      if (exactSetting instanceof Error) throw exactSetting
+      return exactSetting
+    },
+    openExactAlarmSettings: async () => {},
   })
   await setPartyAppointments([appointment])
 })
@@ -145,6 +160,54 @@ describe('reconcileLocalNotifications', () => {
     await reconcileLocalNotifications(NOW)
 
     expect(cancelled).toEqual([99])
+  })
+})
+
+describe('정확한 알람 권한', () => {
+  it.each([
+    ['enabled', true],
+    // 안드로이드 12 미만 · iOS. 권한 없이 정한 시각에 울린다.
+    ['unsupported', true],
+    ['disabled', false],
+  ] as const)('권한 %p 면 exact %p 로 예약하고 원장에 적는다', async (setting, exact) => {
+    exactSetting = setting
+
+    await reconcileLocalNotifications(NOW)
+
+    expect(scheduled.map((request) => request.exact)).toEqual([exact])
+    expect((await getNotificationLedger()).map((entry) => entry.exact)).toEqual([exact])
+  })
+
+  // 권한 없이 정확한 알람을 고르면 notifee 가 에러 없이 예약을 건너뛴다. 늦게 오는 알림이 안 오는 알림보다 낫다.
+  it('권한을 읽다 실패하면 권한 없는 알람으로 잡는다', async () => {
+    exactSetting = new Error('읽기 실패')
+
+    await reconcileLocalNotifications(NOW)
+
+    expect(scheduled.map((request) => request.exact)).toEqual([false])
+  })
+
+  it('권한은 재조정마다 한 번 읽는다', async () => {
+    queryClient.setQueryData(queryKeys.trackedOcids(), ['ocid-1'])
+    queryClient.setQueryData(queryKeys.schedule('ocid-1'), scheduleEntry())
+
+    await reconcileLocalNotifications(NOW)
+
+    expect(scheduled.length).toBeGreaterThan(1)
+    expect(exactReads).toBe(1)
+  })
+
+  // 설정에서 권한을 켜고 돌아오면 복귀의 재조정이 정확한 알람으로 옮긴다.
+  it('권한이 바뀌면 같은 알림을 다시 예약한다', async () => {
+    exactSetting = 'disabled'
+    await reconcileLocalNotifications(NOW)
+    exactSetting = 'enabled'
+
+    await reconcileLocalNotifications(NOW)
+
+    expect(scheduled.map((request) => request.exact)).toEqual([false, true])
+    expect(scheduled[0]!.id).toBe(scheduled[1]!.id)
+    expect(cancelled).toEqual([])
   })
 })
 

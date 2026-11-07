@@ -9,6 +9,7 @@ import { focusManager, hashKey } from '@tanstack/react-query'
 
 import {
   cancelLocalNotification,
+  getExactAlarmSetting,
   hasNotificationPermission,
   scheduleLocalNotification,
 } from '../../native/notifications'
@@ -31,7 +32,11 @@ import { NOTIFICATION_KINDS } from './registry'
  */
 export async function reconcileLocalNotifications(now: Date): Promise<void> {
   const granted = await hasNotificationPermission().catch(() => false)
-  const planned = granted ? (await Promise.all(NOTIFICATION_KINDS.map((kind) => kind.plan(now)))).flat() : []
+  // 권한 없이 정확한 알람을 고르면 notifee 가 에러 없이 예약을 건너뛴다. 읽지 못하면 권한 없는 알람이다.
+  const exact = granted ? (await getExactAlarmSetting().catch(() => 'disabled' as const)) !== 'disabled' : false
+  const planned = granted
+    ? (await Promise.all(NOTIFICATION_KINDS.map((kind) => kind.plan(now)))).flat().map((item) => ({ ...item, exact }))
+    : []
   const ledger = await getNotificationLedger()
   const { schedule, cancel, keep } = planReconcile(planned, ledger)
   const next: NotificationLedgerEntry[] = [...keep]
@@ -52,6 +57,7 @@ export async function reconcileLocalNotifications(now: Date): Promise<void> {
         scheduleAt: new Date(entry.fireAt),
         channel,
         data,
+        exact,
       })
       next.push(entry)
     } catch {

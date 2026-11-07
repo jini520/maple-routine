@@ -83,6 +83,8 @@ export function installNoopNativePorts(): void {
     getPendingCount: async () => 0,
     addPressListener: () => () => {},
     getInitialPress: async () => null,
+    getExactAlarmSetting: async () => 'enabled',
+    openExactAlarmSettings: async () => {},
   })
 
   // 테스트 환경에는 OS 스케줄러가 없다. 등록 · 해제를 부르는지는 `schedule-alert/__tests__` 가 자기 목으로 본다.

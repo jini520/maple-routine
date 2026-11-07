@@ -46,6 +46,23 @@ describe('planReconcile', () => {
 
 })
 
+describe('planReconcile 의 exact', () => {
+  it('exact 가 바뀌면 다시 예약한다', () => {
+    const result = planReconcile([planned(1, 100, { exact: true })], [planned(1, 100, { exact: false })])
+
+    expect(result.schedule.map((item) => item.exact)).toEqual([true])
+    expect(result.keep).toEqual([])
+  })
+
+  // 결정 이전 원장에는 exact 가 없다. WorkManager 로 잡힌 그 예약을 한 번 알람으로 옮기는 길이다.
+  it('exact 가 없는 옛 원장 항목은 다시 예약한다', () => {
+    const result = planReconcile([planned(1, 100, { exact: false })], [planned(1, 100)])
+
+    expect(result.schedule.map((item) => item.id)).toEqual([1])
+    expect(result.cancel).toEqual([])
+  })
+})
+
 describe('notificationId', () => {
   it('같은 회차는 늘 같은 id 다', () => {
     expect(notificationId('party-appointment', 'a1', '2026-10-08')).toBe(

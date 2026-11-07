@@ -7,6 +7,7 @@
  */
 
 import {
+  AlarmType,
   AndroidImportance,
   TriggerType,
   type AndroidChannel,
@@ -130,6 +131,13 @@ export function toTriggerNotification(
       ios: { sound: 'default' },
       ...(request.data === undefined ? {} : { data: request.data }),
     },
-    trigger: { type: TriggerType.TIMESTAMP, timestamp },
+    // alarmManager 가 빠지면 notifee 는 WorkManager 로 예약하고, Doze 에서 몇 시간씩 늦는다.
+    trigger: {
+      type: TriggerType.TIMESTAMP,
+      timestamp,
+      alarmManager: {
+        type: request.exact ? AlarmType.SET_EXACT_AND_ALLOW_WHILE_IDLE : AlarmType.SET_AND_ALLOW_WHILE_IDLE,
+      },
+    },
   }
 }
