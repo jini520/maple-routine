@@ -334,6 +334,21 @@ describe('다시 매기기 요청', () => {
     expect(jobs).toContainEqual({ kind: 'cube', dateKey: '2026-09-04' })
   })
 
+  // 다시 매기기의 날은 이미 합계가 있어 화면에 그릴 것이 있다. 모달로 화면을 막을 이유가 없다.
+  it('다시 매기기의 날만 남으면 분모에는 들고 모달은 없다', async () => {
+    store.loadEnhancementChecks.mockResolvedValue(settledDay('2026-09-05'))
+    setRequests([cubeRequest('2026-09-01', '2026-09-03')])
+
+    expect(await measureEnhancementHistory(['2026-09-05'], NOW)).toEqual({ total: 3, hasPast: false })
+  })
+
+  // 범위의 날이 아직 안 받은 날이면 다시 매기기와 겹쳐도 그릴 것이 없다.
+  it('다시 매기기와 겹친 범위의 날이 받을 날이면 모달을 띄운다', async () => {
+    setRequests([cubeRequest('2026-09-04', '2026-09-04')])
+
+    expect(await measureEnhancementHistory(['2026-09-04'], NOW)).toEqual({ total: 3, hasPast: true })
+  })
+
   it('화면 범위의 일과 겹치면 한 번만 받는다', async () => {
     setRequests([cubeRequest('2026-09-05', '2026-09-05')])
 
