@@ -38,13 +38,13 @@ import { FIGURE_CACHE_POLICY, useFigureStep, useLookFramesReady } from './useFig
 /** 전신 그림 높이. 오른쪽 열이 세 줄(닉네임 · 레벨 · EXP 칸)이라 그 높이에 맞춘다 */
 const FIGURE_HEIGHT = 76
 const FIGURE_SCALE = FIGURE_HEIGHT / FIGURE_BOX.height
-/** 칸 좌우에서 잘라 내는 몫. 단상 칸은 무기가 들어갈 만큼 넓어 이 좁은 자리에서는 캐릭터 양옆이 빈다 */
+/** 그림 자리 폭에서 칸 좌우를 빼는 몫. 단상 칸은 무기가 들어갈 만큼 넓어 이 좁은 자리에서는 캐릭터 양옆이 빈다 */
 const FIGURE_SIDE_TRIM = 0.2
 const FIGURE_WIDTH = FIGURE_BOX.width * (1 - FIGURE_SIDE_TRIM * 2) * FIGURE_SCALE
-/** 자르는 칸을 아래로 내리는 거리(그림 px). 넥슨 그림의 캐릭터는 칸 바닥(발끝)에 붙어 서서, 칸 그대로면 머리 위만 빈다 */
+/** 칸을 아래로 내리는 거리(그림 px). 넥슨 그림의 캐릭터는 칸 바닥(발끝)에 붙어 서서, 칸 그대로면 머리 위만 빈다 */
 const FIGURE_DROP = 10
 const FIGURE_CROP = figureCropStyle(FIGURE_SCALE, true)
-/** 조회 불가면 서는 흰 실루엣의 칸. 전신 그림과 같은 몫을 잘라 내고 같은 거리만큼 내려야 발이 같은 줄에 닿는다 */
+/** 조회 불가면 서는 흰 실루엣의 칸. 전신 그림과 같은 몫을 빼고 같은 거리만큼 내려야 발이 같은 줄에 닿는다 */
 const SILHOUETTE_CROP = figureCropStyle(FIGURE_SCALE, false)
 const EMBLEM_PX = 15
 
@@ -93,13 +93,13 @@ function FigureFrames(props: { view: RepresentativeView }): React.JSX.Element {
   )
 }
 
-/** 전신 그림. 통계 단상과 같은 칸을 자른다. 조회 불가면 흰 실루엣이 같은 칸에 선다 */
+/** 멈춘 전신 그림. 통계 단상과 같은 칸에 서고 칸 밖도 자르지 않는다. 조회 불가면 흰 실루엣이 같은 칸에 선다 */
 function StillFigure(props: { view: RepresentativeView }): React.JSX.Element {
   const unavailable = props.view.unavailable
   return (
     <View
       testID="representative-figure-frame"
-      style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT, overflow: 'hidden', transform: [{ scaleX: -1 }] }}
+      style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT, transform: [{ scaleX: -1 }] }}
     >
       {unavailable ? (
         <Image
@@ -139,7 +139,7 @@ function Figure(props: { view: RepresentativeView }): React.JSX.Element {
       style={{ width: FIGURE_WIDTH, height: FIGURE_HEIGHT, zIndex: 1 }}
       className="ml-1 shrink-0"
     >
-      {/* 좌우를 뒤집어 캐릭터가 오른쪽 열(닉네임 · 레벨)을 바라보게 한다(사용자 지정). 자르는 몫이 좌우 같아 칸은 그대로다. */}
+      {/* 좌우를 뒤집어 캐릭터가 오른쪽 열(닉네임 · 레벨)을 바라보게 한다(사용자 지정). 빼는 몫이 좌우 같아 칸은 그대로다. */}
       {framesReady ? <FigureFrames view={props.view} /> : <StillFigure view={props.view} />}
     </View>
   )

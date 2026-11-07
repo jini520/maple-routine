@@ -50,8 +50,10 @@ type Tab = (typeof TABS)[number]
 /** 전신 칸(`FIGURE_BOX`)을 이 폭으로 줄여 세운다 */
 const PODIUM_FIGURE_WIDTH = 72
 const FIGURE_SCALE = PODIUM_FIGURE_WIDTH / FIGURE_BOX.width
-/** 그림 칸이 단상 블록 위로 겹쳐 내려가는 높이. 발끝 아래가 잘리지 않고 블록 앞에 그려진다 */
-const FIGURE_OVERLAP = 16
+/** 블록 위 그림 자리 높이. 발끝이 자리 바닥에 닿고, 모자 · 무기는 자리 밖으로도 그려진다 */
+const FIGURE_HEIGHT = FIGURE_BOX.height * FIGURE_SCALE
+/** 그림끼리 겹칠 때의 `zIndex`. 순위 차례이고 1위가 맨 앞, 다음이 3위다 */
+const FIGURE_Z = [2, 0, 1]
 /** `text-10` 의 줄 높이(`typography.cjs`). 줄이 적은 블록을 이만큼씩 늘려 순위가 안 뒤집히게 */
 const NAME_LINE_HEIGHT = 15
 /** 단상 금액의 좌우 여백. 금액이 쓸 폭은 블록 폭에서 이 두 배를 뺀 것이다 */
@@ -71,9 +73,7 @@ function signed(meso: number): string {
 function Figure(props: { uri: string | undefined }): React.JSX.Element {
   const known = props.uri !== undefined
   return (
-    <View
-      style={{ width: PODIUM_FIGURE_WIDTH, height: FIGURE_BOX.height * FIGURE_SCALE + FIGURE_OVERLAP, overflow: 'hidden' }}
-    >
+    <View style={{ width: PODIUM_FIGURE_WIDTH, height: FIGURE_HEIGHT }}>
       <Image
         testID={known ? 'stats-podium-image' : 'stats-podium-image-unknown'}
         source={known ? { uri: props.uri } : (unknownCharacterAsset() ?? undefined)}
@@ -111,6 +111,7 @@ export const CharacterSection = memo(function CharacterSection(props: {
   const amountOf = (row: CharacterTotals): string => (net ? signed(valueOf(row, tab)) : formatMesoCompact(valueOf(row, tab)))
   const [amountWidths, setAmountWidths] = useState<Record<number, number>>({})
   const [amountRoom, setAmountRoom] = useState(0)
+  const [blockHeights, setBlockHeights] = useState<Record<number, number>>({})
   const amountScale = podiumAmountScale(
     podium.flatMap((_, rank) => amountWidths[rank] ?? []),
     amountRoom - AMOUNT_PAD * 2,
@@ -203,7 +204,6 @@ export const CharacterSection = memo(function CharacterSection(props: {
             const row = podium[rank]
             if (row === undefined) return <View key={`empty-${rank}`} className="flex-1" />
             const value = valueOf(row, tab)
-            const uri = props.images.get(row.key)
             const first = rank === 0
             return (
               <View
@@ -212,21 +212,17 @@ export const CharacterSection = memo(function CharacterSection(props: {
                 accessible
                 accessibilityLabel={`${rank + 1}위 ${row.name}`}
                 className="flex-1 items-center"
+                // 그림 자리. 그림은 아래 그림 줄이 이 블록 위에 세운다.
+                style={{ paddingTop: FIGURE_HEIGHT }}
               >
                 <View
-                  testID="stats-podium-figure"
-                  className="items-center justify-end"
-                  style={{
-                    height: FIGURE_BOX.height * FIGURE_SCALE + FIGURE_OVERLAP,
-                    marginBottom: -FIGURE_OVERLAP,
-                    zIndex: 1,
-                  }}
-                >
-                  <Figure uri={uri} />
-                </View>
-                <View
+                  testID="stats-podium-block"
                   className={`w-full items-center gap-px rounded-b-[3px] rounded-t-lg pt-1 ${first ? 'bg-primary-tint' : 'bg-surface-2'}`}
                   style={{ paddingBottom: podiumBlockPadding(nameLineCounts, rank, NAME_LINE_HEIGHT * textScale) }}
+                  onLayout={(event) => {
+                    const height = event.nativeEvent.layout.height
+                    setBlockHeights((heights) => (heights[rank] === height ? heights : { ...heights, [rank]: height }))
+                  }}
                 >
                   <Text className={`text-xs font-bold ${first ? 'text-primary-ink' : 'text-text-muted'}`}>{rank + 1}</Text>
                   {/* 줄은 `podiumNameLines` 가 나눈다. 폭을 블록보다 넓게 열어 네 자 이름이 조금 넘쳐도
@@ -251,6 +247,29 @@ export const CharacterSection = memo(function CharacterSection(props: {
               </View>
             )
           })}
+          {/* 그림 줄. 블록 셋보다 나중에 그려야 옆 블록이 칸 밖으로 나간 무기를 가리지 않는다. */}
+          <View
+            testID="stats-podium-figures"
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            className="absolute inset-0 flex-row items-end gap-0.5"
+          >
+            {PODIUM_ORDER.map((rank) => {
+              const row = podium[rank]
+              const blockHeight = blockHeights[rank]
+              return (
+                <View
+                  key={rank}
+                  testID={`stats-podium-figure-${rank + 1}`}
+                  className="flex-1 items-center"
+                  style={{ zIndex: FIGURE_Z[rank], marginBottom: blockHeight ?? 0 }}
+                >
+                  {row !== undefined && blockHeight !== undefined && <Figure uri={props.images.get(row.key)} />}
+                </View>
+              )
+            })}
+          </View>
         </View>
       </View>
     </StatsSection>
