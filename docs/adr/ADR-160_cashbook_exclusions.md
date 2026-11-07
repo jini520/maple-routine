@@ -45,7 +45,7 @@
   이름 · 같은 장비라도 넥슨 계정이 다르면 합계 행이 둘이기 때문이다. 화면에는 하나로 보이고 표식도 함께 바뀐다.
 - **전부 뺀 줄은 목록에 남고 금액은 0 이다**(사용자 지정). 숨기면 되돌릴 길이 없다. 한 푼도 안 쓴 강화 줄을 숨기는 규칙
   ([[ADR-047]] 결정 14)은 뺀 것이 있는 줄에는 적용하지 않는다.
-- **통계의 집계는 뺀 것을 건너뛴다.** 보스별 수익 카드(`bossTotalsBetween`)는 줄의 `bosses` 를 돌고, 지출 내역 도넛의
+- **통계의 집계는 뺀 것을 건너뛴다.** 보스별 수입 카드(`bossTotalsBetween`)는 줄의 `bosses` 를 돌고, 지출 내역 도넛의
   장비 몫(`sliceOf`)은 줄의 `items` 를 도는데, 둘 다 `excluded` 를 건너뛴다. 줄의 금액만 빼고 몫을 그대로 더하면 도넛
   조각과 조각 안의 줄이 안 맞는다.
 - **보스 수익 탭과 today 의 주간 결정석 판매 한도는 그대로다**(사용자 지정). 둘은 `bossProfitPeriod` 쿼리를 읽고 게임에서
@@ -77,7 +77,7 @@
 | 파일 | 확인하는 것 |
 |---|---|
 | `features/cashbook/__tests__/records.spec.ts` | 결정 2: 뺀 처치가 결정석 줄의 금액 · 마리 수에서 빠지고 `bosses` 에는 표식과 함께 남는지, 뺀 장비 줄이 강화 줄의 금액 · 횟수에서 빠지는지, 전부 뺀 줄이 금액 0 으로 남는지 본다 |
-| `features/stats/__tests__/aggregate.spec.ts` | 결정 2: 보스별 수익과 장비 몫이 뺀 것을 건너뛰는지 본다 |
+| `features/stats/__tests__/aggregate.spec.ts` | 결정 2: 보스별 수입과 장비 몫이 뺀 것을 건너뛰는지 본다 |
 | `storage/__tests__/boss-profit.spec.ts` · `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 결정 1: 표식이 저장되고 읽히는지, 합계를 다시 받아도 남는지, 바꾸면 판이 오르는지 본다 |
 | `app/cashbook/__tests__/CashbookScreen.test.tsx` | 결정 3: 편집 상태에서만 타일 · 장비 줄이 눌리는지, 뺀 것이 흐린지, 접으면 편집 상태가 끝나는지 본다 |
 

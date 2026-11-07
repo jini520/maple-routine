@@ -1,5 +1,5 @@
 /**
- * 보스별 수익 섹션. 파티 분배 뒤의 내 몫 결정석을 보스 초상 타일로 줄 세운다.
+ * 보스별 수입 섹션. 파티 분배 뒤의 내 몫 결정석을 보스 초상 타일로 줄 세운다.
  *
  * 난이도별은 초상 아래 테두리에 작은 난이도 배지를 반쯤 걸치고, 보스별은 난이도를 합쳐 배지가 없다.
  */
@@ -21,7 +21,7 @@ type Mode = (typeof MODES)[number]
 
 const TILE_WIDTH = 88
 const PORTRAIT_SIZE = 48
-/** 작은 배지 높이의 반. 배지가 초상 아래 테두리에 반쯤 걸친다 */
+/** 작은 배지 높이의 반. 배지가 초상 아래 테두리에 반쯤 걸치고, 배지가 없는 보스별도 이만큼 비워 두 보기의 카드 높이를 같게 둔다 */
 const BADGE_HALF = 7
 
 export const BossSection = memo(function BossSection(props: {
@@ -59,7 +59,11 @@ export const BossSection = memo(function BossSection(props: {
                 className="items-center gap-1.5 rounded-xl bg-card-body p-2"
                 style={{ width: TILE_WIDTH }}
               >
-                <View className="items-center" style={{ marginBottom: row.difficulty === null ? 0 : BADGE_HALF }}>
+                <View
+                  testID="stats-boss-portrait-slot"
+                  className="items-center"
+                  style={{ marginBottom: BADGE_HALF }}
+                >
                   <BossPortrait
                     portraitSlug={bossPortraitSlugOf(row.bossKey)}
                     label={row.difficulty === null ? row.name : `${DIFFICULTY_NAME[row.difficulty]} ${row.name}`}
