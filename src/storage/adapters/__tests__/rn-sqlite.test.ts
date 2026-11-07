@@ -208,6 +208,9 @@ describe('db.ts 와 맞물리는가', () => {
       // 계정 단위 기록이 어느 넥슨 계정의 것인지.
       'ALTER TABLE cashbook_entries ADD COLUMN nexon_account_id TEXT',
       'ALTER TABLE cashbook_entries ADD COLUMN account_id TEXT',
+      // 스타포스 첫 성 · 끝 성.
+      'ALTER TABLE enhancement_totals ADD COLUMN from_star INTEGER',
+      'ALTER TABLE enhancement_totals ADD COLUMN to_star INTEGER',
     ])
   })
 
@@ -269,6 +272,8 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'hexa_activation' },
             { name: 'hexa_use_storage' },
             { name: 'hexa_storage_as_spend' },
+            { name: 'from_star' },
+            { name: 'to_star' },
           ]
         : []
 
