@@ -39,6 +39,17 @@ it('칸이 스물을 넘는 헥사는 한 줄 여덟, 심볼은 열이다', () =
   expect(gridColumns(1, 20)).toBe(10)
 })
 
+// 안드로이드는 배경 없는 View 를 만들지 않다가 배경이 붙을 때 그 렌더에서 바뀐 값만으로 만들어, borderRadius 가 빠진 네모가 된다.
+it('고르지 않은 칸의 원 자리도 처음부터 네이티브 뷰다', async () => {
+  const view = await renderAtom(
+    <LevelRangeGrid min={1} max={20} range={{ from: 9, to: 10 }} editing="to" onChange={jest.fn()} testID="grid" />,
+  )
+
+  for (const level of ['9', '12']) {
+    expect(view.getByText(level).parent?.props.collapsable).toBe(false)
+  }
+})
+
 it('탭을 누르면 고르는 쪽이 바뀌고, 막힌 칸은 눌러도 안 바뀐다', async () => {
   const onChange = jest.fn()
   const view = await renderAtom(
