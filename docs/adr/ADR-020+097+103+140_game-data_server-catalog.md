@@ -17,7 +17,7 @@
 | 칸 | 서버 표 |
 |---|---|
 | `bosses` | `bosses` · `boss_difficulties` · `game_rules` |
-| `dropItems` | `drop_items` |
+| `dropItems` | `items` 의 드롭 아이템 줄(`is_drop`) |
 | `bossDrops` | `boss_drop_rewards` |
 | `dropBoxes` | `drop_boxes` · `drop_box_contents` |
 | `crystalPrices` | `boss_crystal_prices` |
@@ -26,7 +26,7 @@
 | `cashbookCategories` | `cashbook_categories` · `cashbook_item_kinds` |
 | `symbolCosts` | `symbol_groups` · `symbols` · `symbol_level_costs` |
 | `contents` | `contents` · `content_categories` |
-| `equipmentItems` | `equipment_items` |
+| `equipmentItems` | `items` 의 강화 장비 줄(`is_equipment`) |
 | `enhancementCosts` | `potential_reset_costs` · `soul_potential_reset_costs` · `starforce_steps` · `game_rules` |
 | `mvpGrades` | `mvp_grades` |
 | `huntingGrounds` | `hunting_regions` · `hunting_grounds` · `hunting_ground_levels` |
@@ -180,7 +180,7 @@ jsonb 칸 두 개에 나눠 두면 두 칸의 순서가 어긋나도 DB 가 잡�
 줄에 기간이 있으면 그 난이도는 그 값을 쓰고, 기간이 없는 칸은 보스의 값을 쓴다(`isBossActiveIn` · `activeDifficultiesOf`). 기록을
 고치는 화면은 그 행의 난이도가 기간 밖이어도 목록에 남긴다.
 
-### 결정 11. 고가 판정은 `drop_items.valuable` 한 칸이다
+### 결정 11. 고가 판정은 `items.valuable` 한 칸이다
 
 예전에는 세트 표와 고가 목록 파일이 따로 있었지만, 세트를 쓰는 곳이 고가 판정 하나뿐이었다. 그래서 드롭 아이템 줄의
 `valuable` 칸 하나로 합쳤다. 판정 함수는 `lib/drop/drop-items.ts` 의 `isValuableDropItem` 이다. 새 아이템이 고가면

@@ -112,7 +112,7 @@ uuid 는 기기가 만든다. 서버가 만들어 응답으로 주면, 통신이
 | 칸 | 뜻 |
 |---|---|
 | `dropRecordId` | 기기가 만든 uuid. 같은 기록을 고치면 같은 줄을 덮게 한다 |
-| `itemKey` | 분포의 축. 서버가 `drop_items` 에서 찾아 `item_id` 로 적는다. 모르는 key 는 400 |
+| `itemKey` | 분포의 축. 서버가 아이템 표(`items`)의 드롭 아이템 줄에서 찾아 `item_id` 로 적는다. 모르는 key 는 400 |
 | `status` · `priceMeso` | 결정 5. `priceMeso` 는 판매 총액이고 내 몫이 아니다 |
 | `periodKey` | 언제 먹었나. 바뀌지 않는 값이라 추이의 축이 된다 |
 | `worldKey` | 결정 3. 서버가 `worlds` 에서 찾아 `world_id` 로 적는다. 없으면 `NULL`, 모르는 key 는 400 |

@@ -1,7 +1,7 @@
 # ADR-071 드롭 시세
 
 > 🟢 유효
-> 관련 소스: 서버 `modules/drop-market/` · `database/migrations/0013_drop_market.sql` · `modules/drop-prices/drop-prices.repository.ts` · `modules/worlds/worlds.repository.ts` · `modules/drop-items/drop-items.repository.ts` · `modules/admin/views/drop-market.ts` · `modules/admin/views/drop-market-item.ts` · `database/schema.ts`(`drop_prices.priced_at` · `worlds.price_group` · `drop_items.world_bound`)
+> 관련 소스: 서버 `modules/drop-market/` · `database/migrations/0013_drop_market.sql` · `modules/drop-prices/drop-prices.repository.ts` · `modules/worlds/worlds.repository.ts` · `modules/drop-items/drop-items.repository.ts` · `modules/admin/views/drop-market.ts` · `modules/admin/views/drop-market-item.ts` · `database/schema.ts`(`drop_prices.priced_at` · `worlds.price_group` · `items.world_bound`)
 
 ## 배경
 
@@ -26,7 +26,7 @@
 시세 하나는 같은 아이템, 같은 반지 레벨, 같은 범위의 기록으로 센다. 반지는 레벨에 따라 값이 다르기 때문이다.
 `completed` 인 줄만 쓴다. 가격이 있는 것은 그 상태뿐이다([[ADR-018]] 결정 5).
 
-범위는 아이템의 `drop_items.world_bound` 칸이 가른다.
+범위는 아이템의 `items.world_bound` 칸이 가른다.
 
 | 아이템 | `world_bound` | 범위 | 이유 |
 |---|---|---|---|
