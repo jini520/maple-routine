@@ -1,7 +1,7 @@
 # ADR-187 서버 아이템 표와 그림 연결 · 관리 화면
 
 > ⚪ 미구현
-> 관련 소스: 서버 `database/schema.ts` · `modules/drop-items/` · `modules/equipment-items/` · `modules/hunt-loot/` · `modules/assets/` · `modules/game-data/` · `modules/admin/` · 이슈 #911 · #912
+> 관련 소스: 서버 `database/schema.ts` · `modules/items/` · `modules/drop-items/` · `modules/equipment-items/` · `modules/hunt-loot/` · `modules/assets/` · `modules/game-data/` · `modules/admin/` · 앱 `lib/assets/` · `lib/game-data/sections.ts` · `lib/cashbook/categories.ts` · 이슈 #911 · #912 · #914
 
 ## 배경
 
@@ -16,7 +16,7 @@
 경로의 폴더 14개뿐이다.
 
 이 문서는 아이템을 표 하나로 모으고, 그림을 `id` 로 잇고, 관리 화면을 그 구조에 맞게 바꾸는 방법을 정한다(사용자 지정
-2026-11-08). 지금의 그림 목록과 관리 화면 결정은 [[ADR-020]] 에 있다. 이 문서를 구현하면 그 결정 7 · 15 를 고친다.
+2026-11-08). 지금의 그림 목록과 관리 화면 결정은 [[ADR-020]] 에 있다. 이 문서를 구현하면 그 결정 7 · 14 · 15 를 고친다.
 
 ## 결정
 
@@ -94,13 +94,35 @@
 | `contents` | `background_map` · `background_portrait` |
 | `hunting_regions` | `icon_map` |
 
-### 결정 4. 앱에 보내는 게임 데이터는 지금 모양 그대로다 (사용자 지정 2026-11-08)
+### 결정 4. 게임 데이터의 그림 칸은 그림 `id` 를 싣고, 옛 글자 칸은 옛 앱이 남는 동안 함께 낸다 (사용자 지정 2026-11-09)
 
-- 서버가 칸을 낼 때 그림 `id` 를 지금 글자(파일 이름 · slug)로 풀어 낸다. 아이템 표도 지금 칸(`dropItems` ·
-  `equipmentItems` · `huntLoot`)으로 나눠 낸다. 계약 판(`GAME_DATA_CONTRACT`)은 그대로다. 앱 출시 없이 서버만 바꾸기
-  위해서다.
-- 그림 경로도 그대로다. 앱은 경로로 그림 파일을 찾는다([[ADR-020]] 결정 14).
-- 거래 아이템을 앱에 내는 칸은 #912 를 구현할 때 정한다.
+- 그림을 가리키는 방법을 그림 `id` 하나로 통일한다(사용자 지정 2026-11-09). 지금 게임 데이터의 그림 칸은 폴더마다 규칙이
+  다르다. 보스 초상은 확장자 없는 이름(`bellona`)을, 아이템은 파일 이름(`meso.webp`)을 싣고 앱이 폴더를 붙여 찾는다. `id` 를
+  실으면 서버 DB 의 FK 와 같은 연결고리를 쓰게 되고, 관리 화면에서 그림 경로를 바꿔도 앱이 같은 그림을 찾는다.
+- 그림 목록(`assets` 칸)의 줄에 `id` 를 더한다. 앱은 그림 칸의 `id` 로 그 줄을 찾아 기기의 파일을 연다.
+- 그림 칸마다 `id` 칸을 새로 더한다. 크롭 줄도 `assetId` 로 그림을 가리킨다.
+
+| 칸 | 옛 글자 칸 | 새 `id` 칸 |
+|---|---|---|
+| `bosses` | `portraitSlug` | `portraitAssetId` |
+| `dropItems` · `huntLoot` | `iconFile` | `iconAssetId` |
+| `worlds` | `emblem` | `emblemAssetId` |
+| `cashbookCategories` | `iconFile` | `iconAssetId` |
+| `spendCatalog` 의 타일 | `iconFile` · `iconMap` | `iconAssetId` |
+| `symbolCosts` | `iconFile` | `iconAssetId` |
+| `hexaMatrix` 의 코어 종류 · 직업별 코어 | `iconFile` | `iconAssetId` |
+| `contents` | `backgroundMap` · `backgroundPortrait` | `backgroundMapAssetId` · `backgroundPortraitAssetId` |
+| `huntingGrounds` 의 지역 | `iconMap` | `iconAssetId` |
+| `imageCrops` | `slug` | `assetId` |
+
+- 옛 글자 칸은 함께 낸다(사용자 지정 2026-11-09). 이미 깔린 앱(스토어 1.0.13 과 이 일 전의 OTA)은 옛 칸을 읽고, 칸이 없으면
+  게임 데이터가 계약을 어겼다며 잠금 화면에서 멈추기 때문이다. 새 앱은 새 칸만 읽는다. 새 앱이 퍼지고 옛 버전을 잠근 뒤에
+  옛 칸을 지운다.
+- 새 칸을 읽는 앱은 계약 판(`GAME_DATA_CONTRACT`)을 올린다. 옛 사본에는 새 칸이 없어 새 앱이 읽을 수 없기 때문이다. 앱 코드만
+  바뀌므로 스토어 출시 없이 OTA 로 낸다. 서버를 먼저 배포하고 OTA 를 낸다.
+- 아이템 표는 지금 칸(`dropItems` · `equipmentItems` · `huntLoot`)으로 나눠 낸다. 거래 아이템을 앱에 내는 칸은 #912 를 구현할
+  때 정한다.
+- 그림 경로는 그대로다. 옛 앱이 경로로 그림 파일을 찾는다.
 
 ### 결정 5. 그림의 관리용 분류와 이름은 경로와 따로 둔다 (사용자 지정 2026-11-08)
 
@@ -132,29 +154,50 @@
 - 캐시 종류는 수량을 묻고 구매 관세가 붙는다(사용자 지정 2026-11-08). 종류 표의 단위(`unit`)와 관세 여부(`has_tariff`)를
   그렇게 채운다.
 - 이 결정은 앱도 고친다. 앱이 종류 key 를 세 값(`ITEM_KIND_KEYS`)으로 걸러 모르는 종류를 버리기 때문이다. 앱 코드만 바뀌므로
-  OTA 로 낸다. 결정 4 의 `앱 출시 없이` 는 그대로다.
+  OTA 로 낸다.
 
-### 결정 8. 그림을 가리키는 방법은 게임 데이터 표의 그림 칸 하나로 통일하고, 앱 코드가 이름으로 쓰던 그림도 게임 데이터로 받는다 (사용자 지정 2026-11-08)
+### 결정 8. 앱 코드가 이름으로 쓰던 그림도 게임 데이터 표의 그림 칸으로 받는다 (사용자 지정 2026-11-08)
 
-- 앱이 그림을 쓰는 방법은 지금 둘이다. 게임 데이터 표의 그림 칸을 거치는 방법과, 앱 코드에 파일 이름을 직접 적는 방법이다.
-  뒤의 방법은 서버가 모르는 사용이라, 관리 화면에서 그 그림을 지워도 막을 수 없고 앱에서 그림만 소리 없이 빠진다. 그래서
-  방법을 표의 그림 칸 하나로 통일한다.
-- 대상은 앱 코드가 이름으로 쓰는 그림 85장이다. 파일 이름으로 쓰는 17장(가계부 줄 표식 · 보스 수익의 메소 주머니와 결정석 칩 ·
-  솔 에르다 조각 · 솔 에르다의 기운 단위 · 유니온의 부 · 세라자르 주화), 확장자 없는 이름으로 쓰는 주간 컨텐츠 카드 배경 4장(길드
-  지하수로 `arcanus` · 메이플 유니온 드래곤 `armorDragon` · 길드 미션 `hallOfHeroes` · 플래그 레이스 `flagRace`), 폴더째 쓰는
-  64장(MVP 명패 · 포스 · 모르는 캐릭터 · 드롭 연출 프레임)이다. 앱은 이 일과 함께 바로 게임 데이터에서 이 그림들을 찾게 바꾼다.
-  게임 데이터 계약 판을 올리고 OTA 로 낸다.
-- 그림을 붙일 표가 이미 있으면 그 표의 그림 칸에 두고, 없는 것만 새 표 하나(역할 key 와 그림)에 둔다(사용자 지정 2026-11-08).
-  표에 붙어 있어야 그 줄을 고칠 때 그림도 함께 보이기 때문이다.
+- 앱이 그림을 쓰는 방법은 지금 셋이다. 게임 데이터 표의 그림 칸을 거치는 방법, 앱 코드에 그림 이름을 직접 적는 방법, 표의 다른
+  칸에서 이름을 빌려 다른 폴더를 찾는 방법이다. 뒤의 둘은 서버가 모르는 사용이라, 관리 화면에서 그 그림을 지워도 막을 수 없고
+  앱에서 그림만 소리 없이 빠진다. 그래서 방법을 표의 그림 칸 하나로 통일한다.
+- 앱 코드가 이름으로 쓰는 그림은 85장이다. 파일 이름으로 쓰는 17장(가계부 줄 표식 · 보스 수익의 메소 주머니와 결정석 칩 · 솔
+  에르다 조각 · 솔 에르다의 기운 단위 넷 · 유니온의 부 · 세라자르 주화), 확장자 없는 이름으로 쓰는 주간 컨텐츠 카드 배경 4장
+  (`arcanus` · `armorDragon` · `hallOfHeroes` · `flagRace`), 폴더째 쓰는 64장(MVP 명패 · 포스 · 모르는 캐릭터 · 드롭 연출
+  프레임)이다.
+- 다른 칸에서 이름을 빌리는 곳은 컨텐츠 카드의 지역 아이콘이다. 앱이 배경 지도의 이름으로 `maps/icons/` 의 같은 이름 그림을
+  찾는다(`getDailyQuestRegionIconUrl`). 컨텐츠 표에 지역 아이콘 칸(`region_icon_asset_id`, 게임 데이터 `regionIconAssetId`)을
+  더하고, 지금 앱이 찾는 그림으로 채운다.
+- 그림을 붙일 표가 이미 있으면 그 표의 그림 칸에 두고, 없는 것만 새 표 하나에 둔다(사용자 지정 2026-11-08). 표에 붙어 있어야
+  그 줄을 고칠 때 그림도 함께 보이기 때문이다.
 
 | 그림 | 둘 곳 |
 |---|---|
-| MVP 명패 6 | MVP 등급 표(`mvp_grades`)의 그림 칸 |
-| 가계부 줄 표식 중 사냥 · 솔 에르다 조각 · 수입 기타 · 지출 기타 | 가계부 분류 표(`cashbook_categories`)의 그림 칸. 지금도 같은 파일이다 |
-| 주간 컨텐츠 카드 배경 4(지하 수로 · 주간 드래곤 퇴치 · 주간 미션 포인트 · 플래그 레이스) | 컨텐츠 표(`contents`)의 그림 칸. 그 컨텐츠 줄은 있고 그림 칸만 비어 있다. PC방 주간 드래곤 퇴치도 드래곤 그림을 같이 쓴다 |
+| MVP 명패 6 | MVP 등급 표(`mvp_grades`)에 그림 칸(`plate_asset_id`, 게임 데이터 `plateAssetId`)을 더한다. 일반 등급은 그림이 없다 |
+| 가계부 줄 표식 중 사냥 · 솔 에르다 조각 · 수입 기타 · 지출 기타 | 가계부 분류 표(`cashbook_categories`)의 그 분류 그림. 지금도 같은 파일이다 |
+| 사냥 계산기의 재물 획득의 비약 버프 | 가계부 분류 표의 사냥 그림을 같이 쓴다(사용자 지정 2026-11-09). 지금도 같은 파일이다 |
+| 주간 컨텐츠 카드 배경 4 | 컨텐츠 표(`contents`)의 그림 칸. 지하 수로 · 주간 드래곤 퇴치 · PC방 주간 드래곤 퇴치는 보스 초상 칸, 주간 미션 포인트 · 플래그 레이스는 지도 칸이다. 그 다섯 줄은 있고 그림 칸만 비어 있다 |
 | 솔 에르다 조각 | 아이템 표(`items`)의 그 아이템 그림 |
-| 결정석 줄과 결정석 칩 · 강화 다섯 · 메소 주머니 · 유니온의 부 · 세라자르 주화 · 솔 에르다의 기운 단위 3 · 포스 2 · 모르는 캐릭터 · 드롭 연출 프레임 55 | 새 표. 드롭 연출 프레임은 단계와 차례를 key 에 담는다 |
-- 그림 경로는 바꾸지 않는다. 바꾸기 전 앱은 계속 파일 이름으로 그림을 찾기 때문이다.
+| 나머지 72장 | 새 표 `app_images`(역할 key 와 그림 `id`). 게임 데이터 칸은 `appImages` 다 |
+
+- 새 표의 key 는 아래다. 드롭 연출 프레임은 단계와 차례를 key 에 담고, 앱은 같은 단계의 key 를 번호 차례로 모은다. 글자
+  차례로 모으면 `10` 이 `2` 앞에 서서 프레임이 뒤섞인다.
+
+| key | 그림 | 지금 경로 |
+|---|---|---|
+| `boss_crystal_weekly` · `boss_crystal_monthly` | 보스 수익의 결정석 칩 둘. 가계부 결정석 줄은 주간 것을 쓴다 | `items/intense_power_crystal_weekly.webp` · `items/intense_power_crystal_monthly.webp` |
+| `enhancement_cube_reset` · `enhancement_starforce` · `enhancement_potential` · `enhancement_additional_potential` · `enhancement_soul_potential` | 가계부 강화 줄 다섯 | `items/cube_gold.png` · `items/equipment_enhancement_scroll.png` · `items/potential_reset.png` · `items/additional_potential_reset.png` · `items/soul_weapon_potential.webp` |
+| `meso_pouch` | 메소 주머니. 보스 수익 · 드롭 시세 · 입력 카드가 쓴다 | `items/meso_pouch.webp` |
+| `union_wealth` | 사냥 계산기의 유니온의 부 버프 | `items/union_wealth.webp` |
+| `selazar_coin` | 지출 카탈로그의 세라자르 주화 | `items/selazar_coin.webp` |
+| `sol_erda_energy_1000` · `sol_erda_energy_500` · `sol_erda_energy_200` · `sol_erda_energy_10` | 솔 에르다의 기운 단위 넷 | `items/sole_1000.webp` · `items/sole_500.webp` · `items/sole_200.png` · `items/sole_10.png` |
+| `arcane_force` · `authentic_force` | 사냥터의 포스 | `force/arcane-force.png` · `force/authentic-force.png` |
+| `unknown_character` | 모르는 캐릭터의 흰 실루엣 | `characters/unknown.webp` |
+| `drop_effect_<단계>_<번호>` | 드롭 연출 프레임 55. 단계는 `screen` 16 · `pre` 8 · `loop` 24 · `end` 7 이다 | `drop-effect/<단계>/<번호>.webp` |
+
+- 새 표를 고치는 관리 화면은 S4 의 그림 고르개와 함께 만든다(사용자 지정 2026-11-09). 그 전까지 새 표는 이관이 지금 앱이 쓰는
+  그림으로 채운 그대로다.
+- 그림 경로는 바꾸지 않는다. 옛 앱은 계속 이름으로 그림을 찾기 때문이다.
 
 ### 결정 9. 표도 앱 코드도 쓰지 않는 그림은 하나만 지운다 (사용자 지정 2026-11-08)
 
@@ -168,10 +211,11 @@
 
 | 파일 | 확인하는 것 |
 |---|---|
-| 서버 `modules/game-data/*.spec.ts` | 결정 4: 아이템 표 하나에서 `dropItems` · `equipmentItems` · `huntLoot` 칸을 지금과 같은 모양 · 같은 key 로 내는지, 그림 `id` 를 지금 파일 이름 · slug 로 푸는지 본다 |
-| 서버 이관 테스트(진짜 DB) | 결정 1 · 3: 드롭 아이템 `id` 가 그대로 옮겨져 드롭 표 · 상자 · 드롭 가격 FK 가 이어지는지, 겹친 17개가 한 줄인지, 글자 그림 칸이 같은 그림의 `id` 로 바뀌는지 본다 |
+| 서버 `modules/game-data/*.spec.ts` | 결정 4: 아이템 표 하나에서 `dropItems` · `equipmentItems` · `huntLoot` 칸을 지금과 같은 모양 · 같은 key 로 내는지, 그림 칸마다 옛 글자 칸과 새 `id` 칸을 함께 내는지 본다 |
+| 서버 이관 테스트(진짜 DB) | 결정 1 · 3: 드롭 아이템 `id` 가 그대로 옮겨져 드롭 표 · 상자 · 드롭 가격 FK 가 이어지는지, 겹친 17개가 한 줄인지, 글자 그림 칸이 같은 그림의 `id` 로 바뀌는지 본다. 결정 7 · 8: 캐시 종류 · MVP 명패 · 컨텐츠 그림 · 새 표가 지금 앱이 쓰는 그림으로 채워지는지, 그림이 없으면 멈추는지 본다 |
 | 서버 `modules/admin/*.spec.ts` | 결정 2 · 3 · 5: 상수 표에 없는 분류를 거절하는지, 쓰이는 그림을 지우지 못하는지, 쓰는 곳과 안 쓰는 그림을 맞게 세는지 본다 |
-| 앱 `server/__tests__/game-data.spec.ts` | 결정 4: 바뀐 서버 응답이 지금 계약을 그대로 통과하는지 본다 |
+| 앱 `lib/assets/__tests__/` | 결정 4 · 8: 그림 `id` 로 기기 파일을 찾는지, 크롭을 그림 `id` 로 찾는지, 드롭 연출 프레임을 번호 차례로 모으는지 본다 |
+| 앱 `lib/game-data/__tests__/` | 결정 4: 새 `id` 칸이 없는 응답과 옛 계약 판의 사본을 거절하는지 본다 |
 
 ## 열린 질문
 
