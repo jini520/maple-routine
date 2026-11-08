@@ -27,6 +27,8 @@ import { askNotificationPermissionOnce } from '../notice/permission-gate'
 
 export interface AppEntryState {
   stage: EntryStage
+  /** 저장소에서 단계를 읽었는지. 읽기 전의 `stage` 는 실제 단계가 아닌 첫 값 */
+  resolved: boolean
   /**
    * 부팅이 온보딩 중간에서 멈춘 것을 찾았을 때 그 단계. 로그인 화면이 받아 그 단계까지 스택을 다시 놓고 지운다.
    * 온보딩은 뒤로 갈 수 있는 한 스택이라 그 화면 하나만 세우면 돌아갈 곳이 없다.
@@ -35,7 +37,7 @@ export interface AppEntryState {
 }
 
 /** 부팅 직후. 저장소를 아직 안 읽었으므로 가장 앞 단계에 선다. */
-export const initialAppEntryState: AppEntryState = { stage: 'signIn', resumeTo: null }
+export const initialAppEntryState: AppEntryState = { stage: 'signIn', resolved: false, resumeTo: null }
 
 export interface AppEntryStore extends AppEntryState {
   /** 부팅. 저장된 값에서 단계를 파생한다. */
@@ -63,7 +65,7 @@ export const useAppEntryStore = create<AppEntryStore>()((set) => ({
 
   async resolveFromStorage() {
     const stage = await deriveEntryStage()
-    set({ stage, resumeTo: stage === 'characterSetup' || stage === 'mvpGrade' ? stage : null })
+    set({ stage, resolved: true, resumeTo: stage === 'characterSetup' || stage === 'mvpGrade' ? stage : null })
   },
 
   async resolveAfterSignIn(accounts) {

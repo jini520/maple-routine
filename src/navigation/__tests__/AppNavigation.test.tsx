@@ -34,6 +34,7 @@ import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context'
 import { useAppEntryStore } from '../../features/app-entry/store'
 import { usePartyAppointmentOpenStore } from '../../features/party-appointments/open-request'
 import { queryClient } from '../../features/query/client'
+import { usageTracker } from '../../features/usage-log/record'
 import { setPartyAppointments } from '../../storage/party-appointments'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { installNoopNativePorts } from '../../native/__tests__/fake-native-ports'
@@ -93,7 +94,7 @@ beforeEach(() => {
   installMemoryPreferences()
   installNoopNativePorts()
   useTrackingModeStore.setState({ mode: 'manual' })
-  useAppEntryStore.setState({ stage: 'signIn' })
+  useAppEntryStore.setState({ stage: 'signIn', resolved: false })
   usePartyAppointmentOpenStore.setState({ request: null, create: null })
 })
 
@@ -204,5 +205,43 @@ describe('위젯이 여는 새 스케줄 시트', () => {
     expect(screen.getByTestId('screen-Appointments')).toBeTruthy()
     expect(screen.getByTestId('appointment-sheet-add')).toBeTruthy()
     expect(usePartyAppointmentOpenStore.getState().create).toBeNull()
+  })
+})
+
+// 진입 단계를 읽기 전에는 첫 값 `signIn` 때문에 로그인 화면이 서 있다. 이미 로그인한 사용자도 앱을 새로 열 때마다 그 화면을 지난다.
+describe('사용 로그의 화면 사건', () => {
+  const 적은_화면 = () => jest.mocked(usageTracker.screen).mock.calls.map(([name]) => name)
+
+  beforeEach(() => {
+    jest.spyOn(usageTracker, 'screen').mockResolvedValue()
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it('단계를 읽기 전에 서 있던 로그인 화면은 적지 않는다', async () => {
+    await render(<Harness />)
+    await act(async () => {})
+
+    await act(async () => {
+      useAppEntryStore.setState({ stage: 'ready', resolved: true })
+    })
+
+    expect(적은_화면()).not.toContain('SignIn')
+    expect(적은_화면()).toContain('Today')
+  })
+
+  it('읽은 단계가 로그인 전이면 그때 로그인 화면을 적는다', async () => {
+    await render(<Harness />)
+    await act(async () => {})
+    expect(적은_화면()).toEqual([])
+
+    // 저장소가 비어 있어 로그인 전으로 읽힌다.
+    await act(async () => {
+      await useAppEntryStore.getState().resolveFromStorage()
+    })
+
+    expect(적은_화면()).toEqual(['SignIn'])
   })
 })
