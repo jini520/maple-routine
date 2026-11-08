@@ -57,6 +57,26 @@ object PhysicalDensity {
   }
 
   /**
+   * RN 이 시스템 배율로 되돌린 화면 지표를 레이아웃이 끝날 때마다 다시 맞추는 리스너.
+   *
+   * RN 루트 뷰는 화면 방향이 바뀌면 레이아웃 뒤에 화면 지표를 시스템 배율로 다시 읽고, 플래그로 끌 수 없다.
+   * 그대로 두면 터치 좌표만 시스템 배율이 되어, 누른 채 손가락이 조금만 움직여도 `Pressable` 이 누름을 취소한다.
+   */
+  fun keepReactNativeSynced(activity: Activity) {
+    val decor = activity.window.decorView
+    decor.viewTreeObserver.addOnGlobalLayoutListener {
+      // RN 의 리스너보다 먼저 불릴 수 있어서, 이번 레이아웃의 리스너가 다 돈 뒤에 본다
+      decor.post {
+        val wanted = activity.resources.displayMetrics.densityDpi
+        if (DisplayMetricsHolder.getScreenDisplayMetrics().densityDpi == wanted) return@post
+        syncReactNative(activity)
+        // RN 이 되돌린 배율로 잰 화면 크기를 이미 JS 에 보냈으므로, 레이아웃을 한 번 더 돌려 고친 크기를 다시 보내게 한다
+        decor.requestLayout()
+      }
+    }
+  }
+
+  /**
    * 앱을 처음부터 다시 띄운다. 앱 context 와 RN 은 시작할 때 받은 배율을 바꾸지 못해서, 배율이 바뀌면 새 프로세스로 맞춘다.
    */
   fun restartProcess(activity: Activity) {
