@@ -33,6 +33,7 @@ class MainActivity : ReactActivity() {
       PhysicalDensity.restartProcess(this)
       return
     }
+    PhysicalDensity.keepReactNativeSynced(this)
   }
 
   /** 시스템 설정이 바뀌면 시스템 `Resources` 의 배율이 되돌아가므로 다시 맞춘다 */
