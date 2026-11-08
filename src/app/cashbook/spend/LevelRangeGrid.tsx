@@ -151,7 +151,9 @@ export function LevelRangeGrid(props: {
                   }}
                 />
               )}
+              {/* 배경 없이 합쳐졌다가 고를 때 새로 만들어지면 안드로이드는 바뀐 값만 받아 borderRadius 가 빠져 네모가 된다 */}
               <View
+                collapsable={false}
                 className={`items-center justify-center rounded-full ${end ? 'bg-primary' : ''}`}
                 style={{ width: DOT, height: DOT }}
               >
