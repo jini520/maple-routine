@@ -30,16 +30,18 @@
 | `features/auth/format.ts` | 키 입력 실패 토스트 문구(`formatAuthError`) |
 | `features/auth/use-api-key-notice.ts` | 조회 오류를 알림으로 넘기는 훅 |
 | `features/auth/nexon-login.ts` | 넥슨 로그인 한 번(`signInWithNexon`) |
-| `features/auth/prune-covered-keys.ts` | 로그인을 저장하기 전과 로그인한 채 앱을 켤 때, 메이플 ID 가 같은 키를 서버에서 잇고 거둔다. 로그인은 그 키의 계정 id 를 이어받는다 |
+| `features/auth/prune-covered-keys.ts` | 로그인을 저장하기 전과 로그인한 채 앱을 켤 때, 메이플 ID 가 같은 키를 서버에서 잇고 거둔다. 로그인은 그 키의 계정 id 를 이어받고, 거둔 키가 없으면 메이플 ID 가 속했던 옛 계정 id 를 잇는다 |
+| `features/character-selection/forget.ts` | 새 로그인이 저장하기 전에 추적 목록 · 대표 · 마지막에 고른 캐릭터를 저장소와 쿼리 캐시에서 비운다(`forgetTrackedSelection`) |
 | `features/auth/nexon-login-enabled.ts` | `NEXON_LOGIN_ENABLED`. 넥슨 로그인 입구를 켜고 끈다 |
 | `features/auth/saved-key.ts` | 저장된 첫 키 읽기 · 넥슨 로그인이 있는지 확인 |
 | `features/auth/current-credential.ts` | 넥슨을 부르기 직전에 저장된 설정에서 자격을 고른다 |
-| `features/auth/reentry-account-id.ts` | 새로 넣는 키가 이을 옛 넥슨 계정 id 를 메이플 ID 로 찾는다([[ADR-098]] 결정 5) |
+| `features/auth/reentry-account-id.ts` | 새로 넣는 키와 넥슨 로그인이 이을 옛 넥슨 계정 id 를 메이플 ID 로 찾는다([[ADR-098]] 결정 5) |
 | `features/auth/legacy-account-ids.ts` | 계정 칸이 생기기 전의 행을 메인 넥슨 계정으로 채우는 부팅 단계([[ADR-098]] 결정 6) |
 | `features/auth/server-identity.ts` | 우리 서버에 보낼 신원 헤더(`Authorization: Bearer` 또는 `x-api-key-hash`) |
 | `lib/nexon-credential.ts` | 저장된 설정에서 자격과 메인 넥슨 계정 id 를 고르는 순수 함수 |
 | `lib/covered-keys.ts` | 로그인과 메이플 ID 집합이 같은 키를 고르는 판정 |
 | `nexon/key-stage.ts` | 키가 개발 단계인지 확인하는 판정(`probeApiKeyStage`) |
+| `nexon/key-rate-limit.ts` | 사용자 API 키로 넥슨을 직접 부를 때 키마다 초당 요청 수의 상한(`waitForKeySlot`) |
 | `nexon/errors.ts` | `isInvalidApiKeyError` · `NexonSignInRequiredError` |
 | `nexon/developer-keys.ts` | 로그인 사용자가 프렌즈 밖 경로에 쓰는 개발자 키 둘 |
 | `server/nexon-auth.ts` | 로그인 시작 · 세션 받기 · 세션 거두기 |
@@ -125,8 +127,9 @@
 이 앱의 토큰을 모두 거절한다(400 `OPENAPI00012`). 서버는 조회가 이 응답을 받으면 그 자리에서 세션을 지우므로,
 철회한 뒤 다음 조회에서 바로 모달이 뜬다([[ADR-016]] 결정 8).
 
-키를 다시 넣으면 추적 캐릭터를 다시 묻지 않고 앞서 하던 단계로 돌아간다. 새 키에 저장된 추적 캐릭터가
-하나도 없으면 캐릭터 설정부터 다시 한다.
+로그인 화면에서 키를 넣거나 넥슨 로그인을 하면 추적 캐릭터를 비우고 캐릭터 설정부터 다시 한다([[ADR-101]] 결정 14).
+키가 무효화되어 로그인 화면으로 온 경우도 같다. today 의 `넥슨 ID 연동하기` 는 비우지 않는다. 보스 수익 · 가계부 · 드롭 ·
+강화 기록은 어느 쪽이든 지우지 않는다.
 
 ## 넥슨 로그인 (입구가 켜져 있을 때)
 

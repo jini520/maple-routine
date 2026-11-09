@@ -1,7 +1,7 @@
 # ADR-101+186 다계정: 넥슨 로그인 아래에 API 키 계정을 더 등록한다
 
 > ⚪ 미구현
-> 관련 소스: `storage/api-key.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `nexon/key-stage.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/enhancement-history/collect.ts` · `features/cashbook/account-names.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts`
+> 관련 소스: `storage/api-key.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/enhancement-history/collect.ts` · `features/cashbook/account-names.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts`
 
 ## 배경
 
@@ -56,7 +56,7 @@
 2. **개발 단계 키인가.** `character/list` 를 **20건** 동시에 보내 429 가 하나라도 오면 개발 단계로 본다(사용자 지정 2026-11-08).
    지금은 10건이다. 10건이 같은 1초 안에 다 나가지 못하면 개발 단계 키를 놓치는데, 20건이면 놓칠 여지가 줄어든다. 서비스 단계
    한도(초당 500건 · 하루 2,000만 건)에는 20건이 부담이 되지 않는다. 첫 키 입력도 같은 함수(`probeApiKeyStage`)를 쓰므로 함께
-   20건이 된다. 구현할 때 [[ADR-024]] 결정 3 을 고친다. 이 판정은 개발 단계를 잡을 뿐, 서비스 단계라고 확인해 주지는 않는다.
+   20건이다([[ADR-024]] 결정 3). 이 판정은 개발 단계를 잡을 뿐, 서비스 단계라고 확인해 주지는 않는다.
 3. **이미 등록된 계정인가.** 새 키의 메이플 ID 가 로그인이나 등록된 키의 메이플 ID 와 **하나라도 겹치면** 막는다(사용자 지정
    2026-11-08). 메이플 ID 는 넥슨 계정 하나에만 속해서, 겹치면 같은 계정이다. 집합이 같은지만 보면, 앞서 등록한 뒤 메이플 ID 를
    새로 만든 계정을 다른 계정으로 읽는다. 메이플 ID 가 하나도 없는 키도 막는다. 겹치는지 가를 수 없기 때문이다.
@@ -228,8 +228,11 @@
 - 지금 요청 간격은 넥슨 로그인의 서버 스트림에만 있다(`BATCH_WINDOW_MS`). API 키 직접 호출은 13일 창(동시 6건)과 강화 내역(동시 3건)에만
   동시 개수 상한이 있고, 스케줄 회차 · 후보 자격 확인 · 후보 프로필 · 처치 날짜 · 시드는 한꺼번에 보낸다. 후보 자격 확인은 캐릭터 수 ×
   최대 13일을 한 번에 보낼 수 있다.
-- 상한은 넥슨을 부르는 공통 함수(`nexon/http.ts`)에서 키마다 건다. 부르는 곳마다 걸면 새로 생기는 경로가 빠진다. 값은 구현할 때
-  서비스 단계 한도(초당 500건)보다 충분히 낮게 정한다.
+- 상한은 넥슨을 부르는 공통 함수(`nexon/http.ts`)에서 키마다 건다(`nexon/key-rate-limit.ts`). 부르는 곳마다 걸면 새로 생기는
+  경로가 빠진다.
+- 값은 키마다 초당 50건이다(`KEY_REQUESTS_PER_SECOND`). 서비스 단계 한도(초당 500건)의 10분의 1이라, 같은 키를 기기 여럿에서
+  써도 한도에 닿지 않는다. 어느 1초에도 50건을 넘지 않게, 요청이 나갈 시각을 부르는 순간에 정한다. 기다린 뒤에 세면 함께
+  기다리던 요청이 한꺼번에 풀려 상한을 넘는다.
 - 개발 단계 판정의 20건 동시 호출(결정 3)은 상한에서 뺀다. 한꺼번에 보내야 개발 단계 키가 429 를 낸다.
 - 번들 개발자 키는 이 상한의 대상이 아니다. 모든 사용자가 함께 쓰는 키라 기기 하나의 상한으로는 지킬 수 없고, 그 키의 429 는 이미
   사용자 키의 문제로 보지 않는다(`toScheduleSyncError`).
@@ -386,7 +389,18 @@
 
 ## 테스트
 
-구현할 때 적는다.
+아래는 구현한 결정의 테스트다. 나머지 결정은 구현할 때 더한다.
+
+| 파일 | 확인하는 것 |
+|---|---|
+| `nexon/__tests__/key-stage.spec.ts` | 결정 3: 개발 단계 판정이 20건을 키의 초당 상한을 거치지 않고 동시에 보내는지 본다 |
+| `features/auth/__tests__/nexon-login.spec.ts` | 결정 14: 로그인 화면의 넥슨 로그인만 세션을 받은 뒤 저장하기 전에 추적 목록을 비우는지, 연동 시트와 창을 닫거나 세션을 못 받은 로그인은 비우지 않는지 본다 |
+| `features/auth/__tests__/store.spec.ts` | 결정 14: 키 입력이 키를 저장하기 전에 추적 목록을 비우고, 무효 키 · 개발 단계 키는 비우지 않는지 본다. 로그인 화면과 연동 시트가 새 로그인 여부를 다르게 넘기는지 본다. 결정 20: 키 입력이 소속을 키를 저장한 뒤 그 키의 계정 id 로 적고, 막힌 키는 적지 않는지 본다 |
+| `features/character-selection/__tests__/forget.spec.ts` | 결정 14: 저장소 · 쿼리 캐시 · 메모리의 추적 목록 · 대표 · 마지막에 고른 캐릭터를 모두 비우는지, 비우기 전에 시작한 조회가 늦게 끝나도 앞 목록이 캐시에 돌아오지 않는지 본다 |
+| `features/auth/__tests__/prune-covered-keys.spec.ts` | 결정 16: 거둔 키가 없으면 로그인의 메이플 ID 가 속했던 옛 계정 id 를 잇는지, 로그인의 목록을 소속을 적지 않고 받는지, 거둔 키가 있으면 키의 계정 id 가 이기는지 본다 |
+| `nexon/__tests__/key-rate-limit.spec.ts` | 결정 17: 상한의 세 배를 한꺼번에 불러도 어느 1초에도 상한을 넘지 않는지, 키마다 따로 세는지 본다 |
+| `nexon/__tests__/http.spec.ts` | 결정 17: 사용자 키의 직접 호출이 상한을 거치고, 상한을 빼라는 호출과 번들 개발자 키는 거치지 않는지 본다 |
+| `features/mvp-grade/__tests__/character-list.spec.ts` | 결정 20: 목록 캐시의 열쇠에 키 값이 들어가지 않고 같은 넥슨 계정의 새 키가 같은 목록을 쓰는지, 옛 열쇠의 목록만 걷는지 본다 |
 
 ## 번호 기록
 
