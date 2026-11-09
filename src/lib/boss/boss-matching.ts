@@ -3,7 +3,7 @@ import type { BossContent, BossCycle, BossDifficulty } from '../../types'
 import {
   WEEKLY_BOSS_CLEAR_LIMIT,
   bossCycleOf,
-  bossPortraitSlugOf,
+  bossPortraitAssetIdOf,
   bossReferenceOrder,
   isSeasonBoss,
 } from './bosses'
@@ -19,7 +19,7 @@ export interface MatchedBoss {
   isRegistered: boolean
   isComplete: boolean
   ownComplete: boolean // 승격 없는 원본 완료 여부. selectBossProfitBosses가 실제 처치 난이도를 판정할 때 사용
-  portraitSlug: string | null
+  portraitAssetId: string | null
   isSeasonBoss: boolean
 }
 
@@ -76,7 +76,7 @@ export function matchBossContent(content: BossContent): MatchedBoss {
     isRegistered: content.isRegistered,
     isComplete: content.isComplete,
     ownComplete: content.ownComplete,
-    portraitSlug: bossPortraitSlugOf(content.bossKey),
+    portraitAssetId: bossPortraitAssetIdOf(content.bossKey),
     isSeasonBoss: isSeasonBoss(content.bossKey),
   }
 }

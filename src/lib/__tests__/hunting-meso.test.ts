@@ -12,7 +12,7 @@ import {
   huntingTotalOf,
   levelPenaltyPercent,
 } from '../cashbook/hunting-meso'
-import { getItemIconUrlByFile } from '../assets/asset-lookup'
+import { mesoBoostIconOf } from '../assets/asset-lookup'
 
 /** 사용자가 준 예시의 맵. 밤의 길 3(탈라하트, 40마리, lv.294). */
 const NIGHT_ROAD_3 = { key: 'tallahart_road_of_night_3', name: '밤의 길 3', force: 700, mobs: 40, levels: [294] } as const
@@ -378,10 +378,10 @@ describe('efficiencyPercentOf', () => {
 
 describe('표', () => {
 
-  // 칩이 **글자가 아니라 그림**이라 파일명이 어긋나면 칩이 빈 채로 뜬다.
-  it('파일명이 번들 에셋으로 실제로 풀린다. 오타면 칩이 조용히 빈다', () => {
+  // 칩이 **글자가 아니라 그림**이라 그림을 못 찾으면 칩이 빈 채로 뜬다.
+  it('버프마다 그림을 찾는다. 못 찾으면 칩이 조용히 빈다', () => {
     for (const boost of MESO_BOOSTS) {
-      expect(getItemIconUrlByFile(boost.icon)).not.toBeNull()
+      expect([boost.id, mesoBoostIconOf(boost.id)]).not.toContain(null)
     }
   })
 

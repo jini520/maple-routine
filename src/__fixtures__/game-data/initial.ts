@@ -6,6 +6,7 @@
  */
 import type { GameDataSection } from '../../types/game-data'
 
+import appImages from './app-images.json'
 import assets from './assets.json'
 import bossDrops from './boss-drops.json'
 import bosses from './bosses.json'
@@ -46,6 +47,7 @@ const FIXTURES: Record<GameDataSection, unknown> = {
   assets,
   imageCrops,
   faqs,
+  appImages,
 }
 
 export function initialTable<T>(name: GameDataSection, _empty: T, parse: (value: unknown) => T | null): T {

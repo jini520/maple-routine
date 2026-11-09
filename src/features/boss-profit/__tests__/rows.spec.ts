@@ -128,7 +128,7 @@ describe('buildBossProfitRow', () => {
     isRegistered: true,
     isComplete: true,
     ownComplete: true,
-    portraitSlug: null,
+    portraitAssetId: null,
     isSeasonBoss: false,
   }
   const 캐릭터 = { characterName: '낟낟', imageUrl: null, world: null, worldKey: null }

@@ -39,12 +39,6 @@ import {
 } from '../../lib/scheduler/content-kinds'
 
 export { GUILD_FLAG_RACE_KEY, GUILD_MISSION_POINTS_KEY, GUILD_UNDERGROUND_WATERWAY_KEY, MONSTER_PARK_EXTREME_KEY }
-export const GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG = 'arcanus'
-export const GUILD_MISSION_POINTS_BACKGROUND_SLUG = 'hallOfHeroes'
-export const GUILD_FLAG_RACE_BACKGROUND_SLUG = 'flagRace'
-// 메이플 유니온 주간 드래곤 퇴치. 실제로 등장하는 드래곤은 매주 바뀌지만 API 가 어떤 드래곤인지
-// 알려주지 않아, 에픽 던전 카드와 같이 대표 이미지 하나로 고정한다.
-export const MAPLE_UNION_DRAGON_BOSS_SLUG = 'armorDragon'
 
 export function EpicDungeonCard(props: {
   content: WeeklyContent
@@ -56,9 +50,9 @@ export function EpicDungeonCard(props: {
 }): React.JSX.Element {
   const { content } = props
   const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
-  const backgroundSlug = findContent(content.contentKey)?.background?.portrait ?? null
-  const backgroundUrl = getBossPortraitUrl(backgroundSlug)
-  const crop = props.crop ?? getBossPortraitCrop(backgroundSlug)
+  const backgroundId = findContent(content.contentKey)?.background?.portrait ?? null
+  const backgroundUrl = getBossPortraitUrl(backgroundId)
+  const crop = props.crop ?? getBossPortraitCrop(backgroundId)
   const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
 
   return (
@@ -99,10 +93,10 @@ export function WeeklyRegionalContentCard(props: {
 }): React.JSX.Element {
   const { content } = props
   const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
-  const backgroundSlug = findContent(content.contentKey)?.background?.map ?? null
-  const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
-  const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
-  const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
+  const background = findContent(content.contentKey)?.background
+  const backgroundUrl = getDailyQuestBackgroundUrl(background?.map ?? null)
+  const iconUrl = getDailyQuestRegionIconUrl(background?.regionIcon ?? null)
+  const crop = props.crop ?? getDailyQuestRegionCrop(background?.map ?? null)
   // 익스트림 몬스터파커는 다른 6개 지역 콘텐츠와 달리 now_count/max_count 가 아니라 실제
   // quest_state(0/1/2)로 진행 상태를 준다.
   const questState: 0 | 1 | 2 | null =
@@ -149,10 +143,10 @@ export function WeeklyQuestCard(props: {
 }): React.JSX.Element {
   const { content } = props
   const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
-  const backgroundSlug = findContent(content.contentKey)?.background?.map ?? null
-  const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
-  const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
-  const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
+  const background = findContent(content.contentKey)?.background
+  const backgroundUrl = getDailyQuestBackgroundUrl(background?.map ?? null)
+  const iconUrl = getDailyQuestRegionIconUrl(background?.regionIcon ?? null)
+  const crop = props.crop ?? getDailyQuestRegionCrop(background?.map ?? null)
 
   return (
     <IllustratedCard className="h-20 overflow-hidden">
@@ -185,8 +179,10 @@ export function MapleUnionDragonCard(props: {
 }): React.JSX.Element {
   const { content } = props
   const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
-  const backgroundUrl = getBossPortraitUrl(MAPLE_UNION_DRAGON_BOSS_SLUG)
-  const crop = props.crop ?? getBossPortraitCrop(MAPLE_UNION_DRAGON_BOSS_SLUG)
+  // 실제로 등장하는 드래곤은 매주 바뀌지만 API 가 어떤 드래곤인지 알려주지 않아, 컨텐츠 표가 대표 그림 하나를 든다.
+  const backgroundId = findContent(content.contentKey)?.background?.portrait ?? null
+  const backgroundUrl = getBossPortraitUrl(backgroundId)
+  const crop = props.crop ?? getBossPortraitCrop(backgroundId)
 
   return (
     <IllustratedCard className="h-20 overflow-hidden">
@@ -216,8 +212,9 @@ export function GuildUndergroundWaterwayCard(props: {
 }): React.JSX.Element {
   const { content } = props
   const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
-  const backgroundUrl = getBossPortraitUrl(GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG)
-  const crop = props.crop ?? getBossPortraitCrop(GUILD_UNDERGROUND_WATERWAY_BACKGROUND_SLUG)
+  const backgroundId = findContent(content.contentKey)?.background?.portrait ?? null
+  const backgroundUrl = getBossPortraitUrl(backgroundId)
+  const crop = props.crop ?? getBossPortraitCrop(backgroundId)
 
   return (
     <IllustratedCard className="h-20 overflow-hidden">
@@ -243,8 +240,9 @@ export function GuildMissionPointsCard(props: {
 }): React.JSX.Element {
   const { content } = props
   const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
-  const backgroundUrl = getDailyQuestBackgroundUrl(GUILD_MISSION_POINTS_BACKGROUND_SLUG)
-  const crop = props.crop ?? getDailyQuestRegionCrop(GUILD_MISSION_POINTS_BACKGROUND_SLUG)
+  const backgroundId = findContent(content.contentKey)?.background?.map ?? null
+  const backgroundUrl = getDailyQuestBackgroundUrl(backgroundId)
+  const crop = props.crop ?? getDailyQuestRegionCrop(backgroundId)
   const progressPercent = content.maxCount > 0 ? Math.min((content.nowCount / content.maxCount) * 100, 100) : 0
 
   return (
@@ -285,8 +283,9 @@ export function GuildFlagRaceCard(props: {
 }): React.JSX.Element {
   const { content } = props
   const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
-  const backgroundUrl = getDailyQuestBackgroundUrl(GUILD_FLAG_RACE_BACKGROUND_SLUG)
-  const crop = props.crop ?? getDailyQuestRegionCrop(GUILD_FLAG_RACE_BACKGROUND_SLUG)
+  const backgroundId = findContent(content.contentKey)?.background?.map ?? null
+  const backgroundUrl = getDailyQuestBackgroundUrl(backgroundId)
+  const crop = props.crop ?? getDailyQuestRegionCrop(backgroundId)
   const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
 
   return (

@@ -21,7 +21,7 @@ import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountF
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { formatMesoCompact } from '../../../lib/cashbook/meso-compact'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
-import { getItemIconUrlByFile, spendIconOf } from '../../../lib/assets/asset-lookup'
+import { appImage, getAssetImage } from '../../../lib/assets/asset-lookup'
 import type { ImageAssetRef } from '../../../types/image-asset'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import {
@@ -45,7 +45,6 @@ import {
   SPEND_REWARD_COIN,
   type SpendCatalogChoice,
   type SpendCatalogItem,
-  type SpendTileIcon,
 } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
@@ -93,12 +92,9 @@ function capQuantityText(text: string, max: number | undefined): string {
 /** 타일 그림의 한 변. 1차 갈래 카드와 같은 수다. */
 const TILE_ICON_SIZE = 28
 
-/**
- * 주화 줄의 그림. 참조표가 파일 이름을 들어서 화면이 그 이름을 안 적는다. 부를 때 찾는다. 모듈 최상위에서 찾으면 그림 목록을
- * 받기 전의 빈 값으로 굳는다.
- */
+/** 주화 줄의 그림. 부를 때 찾는다. 모듈 최상위에서 찾으면 그림 목록을 받기 전의 빈 값으로 굳는다. */
 function coinIcon(): ImageAssetRef | null {
-  return getItemIconUrlByFile(SPEND_REWARD_COIN.icon)
+  return appImage('selazar_coin')
 }
 
 /**
@@ -113,7 +109,7 @@ function ItemTile(props: {
   /** 타일 key. 그림의 `testID` 가 쓴다. */
   tileKey: string
   label: string
-  icon?: SpendTileIcon
+  iconAssetId?: string
   /** 값이 하나로 정해지는 칸만 가격을 적는다. 단계가 여럿이면 단계마다 값이 달라 못 적는다. */
   price: string | null
   selected: boolean
@@ -121,7 +117,7 @@ function ItemTile(props: {
   disabled?: boolean
   onPress: () => void
 }): React.JSX.Element {
-  const icon = spendIconOf(props.icon)
+  const icon = getAssetImage(props.iconAssetId)
   return (
     <Pressable
       role="button"
@@ -437,7 +433,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
                       key={each.key}
                       tileKey={each.key}
                       label={each.label}
-                      icon={each.icon}
+                      iconAssetId={each.iconAssetId}
                       // 단계가 여럿이면 **나란히** 적는다. `7,500 | 30,000 메포`.
                       price={tilePriceLabel(each.items)}
                       selected={false}

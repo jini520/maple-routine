@@ -12,6 +12,7 @@
       "alias": "자쿰",
       "cycle": "weekly",
       "portraitSlug": "zakum",
+      "portraitAssetId": "f7aee7b7-473e-44d8-bc03-ce024e688a27",
       "from": null,
       "until": null,
       "difficulties": [
@@ -30,6 +31,7 @@
       "alias": "매그너스",
       "cycle": "weekly",
       "portraitSlug": "magnus",
+      "portraitAssetId": "6f401e48-bb27-4fcf-bbe2-0751bfa49899",
       "from": null,
       "until": null,
       "difficulties": [
@@ -48,6 +50,7 @@
       "alias": "파풀라투스",
       "cycle": "weekly",
       "portraitSlug": "papulatus",
+      "portraitAssetId": "c5a9135e-595e-463b-9494-ee217ec3ee78",
       "from": null,
       "until": null,
       "difficulties": [
@@ -66,6 +69,7 @@
       "alias": "반반",
       "cycle": "weekly",
       "portraitSlug": "vonBon",
+      "portraitAssetId": "31c0f940-2a00-44b4-a241-af86e43620c6",
       "from": null,
       "until": null,
       "difficulties": [
@@ -84,6 +88,7 @@
       "alias": "피에르",
       "cycle": "weekly",
       "portraitSlug": "pierre",
+      "portraitAssetId": "8efc3289-813a-412a-a8b1-d8ab1d63a5d9",
       "from": null,
       "until": null,
       "difficulties": [
@@ -102,6 +107,7 @@
       "alias": "블러디퀸",
       "cycle": "weekly",
       "portraitSlug": "crimsonQueen",
+      "portraitAssetId": "77e49946-6a40-4084-acd3-e2edee53d946",
       "from": null,
       "until": null,
       "difficulties": [
@@ -120,6 +126,7 @@
       "alias": "벨룸",
       "cycle": "weekly",
       "portraitSlug": "vellum",
+      "portraitAssetId": "1e0afb70-384d-4498-aa7f-f099c763df8f",
       "from": null,
       "until": null,
       "difficulties": [
@@ -138,6 +145,7 @@
       "alias": "스우",
       "cycle": "weekly",
       "portraitSlug": "lotus",
+      "portraitAssetId": "9bddfe69-679e-4cd1-bfe6-ced7ab0bfe7a",
       "from": null,
       "until": null,
       "difficulties": [
@@ -170,6 +178,7 @@
       "alias": "데미안",
       "cycle": "weekly",
       "portraitSlug": "damien",
+      "portraitAssetId": "1edbfb3f-733f-4a01-aab5-7aa4f7f38306",
       "from": null,
       "until": null,
       "difficulties": [
@@ -195,6 +204,7 @@
       "alias": "가엔슬",
       "cycle": "weekly",
       "portraitSlug": "slime",
+      "portraitAssetId": "253e5c1b-2acc-4695-ad2b-387f1c165e92",
       "from": null,
       "until": null,
       "difficulties": [
@@ -220,6 +230,7 @@
       "alias": "루시드",
       "cycle": "weekly",
       "portraitSlug": "lucid",
+      "portraitAssetId": "2d450c29-8d0b-450c-84e1-990b63305c48",
       "from": null,
       "until": null,
       "difficulties": [
@@ -252,6 +263,7 @@
       "alias": "윌",
       "cycle": "weekly",
       "portraitSlug": "will",
+      "portraitAssetId": "e97ab26e-7e53-4666-bed4-2d66c094acbb",
       "from": null,
       "until": null,
       "difficulties": [
@@ -284,6 +296,7 @@
       "alias": "더스크",
       "cycle": "weekly",
       "portraitSlug": "gloom",
+      "portraitAssetId": "ff43b179-4499-4de8-8ecb-c22c77298bb7",
       "from": null,
       "until": null,
       "difficulties": [
@@ -309,6 +322,7 @@
       "alias": "진 힐라",
       "cycle": "weekly",
       "portraitSlug": "verusHilla",
+      "portraitAssetId": "072b2c33-8d66-4dc9-90ce-15e11ab374b7",
       "from": null,
       "until": null,
       "difficulties": [
@@ -334,6 +348,7 @@
       "alias": "듄켈",
       "cycle": "weekly",
       "portraitSlug": "darknell",
+      "portraitAssetId": "4fd3ae23-376f-4ef9-a2fd-6310cc24eeba",
       "from": null,
       "until": null,
       "difficulties": [
@@ -359,6 +374,7 @@
       "alias": "세렌",
       "cycle": "weekly",
       "portraitSlug": "seren",
+      "portraitAssetId": "392a43bf-8e49-4095-82dd-2d4fe350a25a",
       "from": null,
       "until": null,
       "difficulties": [
@@ -391,6 +407,7 @@
       "alias": "칼로스",
       "cycle": "weekly",
       "portraitSlug": "kalos",
+      "portraitAssetId": "eafa411b-740b-4b03-8a61-d4e55c2ff24b",
       "from": null,
       "until": null,
       "difficulties": [
@@ -430,6 +447,7 @@
       "alias": "최초의 대적자",
       "cycle": "weekly",
       "portraitSlug": "adversary",
+      "portraitAssetId": "8a4ed1b9-a83c-4474-b2f8-eff42bd4fa37",
       "from": null,
       "until": null,
       "difficulties": [
@@ -469,6 +487,7 @@
       "alias": "카링",
       "cycle": "weekly",
       "portraitSlug": "kaling",
+      "portraitAssetId": "3e189e06-11f9-41c8-a02f-c06d683320de",
       "from": null,
       "until": null,
       "difficulties": [
@@ -508,6 +527,7 @@
       "alias": "찬란한 흉성",
       "cycle": "weekly",
       "portraitSlug": "maleficStar",
+      "portraitAssetId": "d3f9bd41-c5fc-4820-b454-f536100bc2c2",
       "from": null,
       "until": null,
       "difficulties": [
@@ -533,6 +553,7 @@
       "alias": "벨로나",
       "cycle": "weekly",
       "portraitSlug": "bellona",
+      "portraitAssetId": "9826b964-a4fc-437e-ba64-370959bd8dac",
       "from": null,
       "until": null,
       "difficulties": [
@@ -565,6 +586,7 @@
       "alias": "림보",
       "cycle": "weekly",
       "portraitSlug": "limbo",
+      "portraitAssetId": "6a64c46b-92be-49d4-880f-b4698514404e",
       "from": null,
       "until": null,
       "difficulties": [
@@ -597,6 +619,7 @@
       "alias": "발드릭스",
       "cycle": "weekly",
       "portraitSlug": "bardrix",
+      "portraitAssetId": "3ecc62cc-9468-4065-b738-4f7d9de7d8d4",
       "from": null,
       "until": null,
       "difficulties": [
@@ -629,6 +652,7 @@
       "alias": "유피테르",
       "cycle": "weekly",
       "portraitSlug": "jupiter",
+      "portraitAssetId": "a33b871a-0c1d-4028-959d-bd03cc63b7e0",
       "from": null,
       "until": null,
       "difficulties": [
@@ -654,6 +678,7 @@
       "alias": "메이린",
       "cycle": "event_weekly",
       "portraitSlug": "maerin",
+      "portraitAssetId": "7f30e1aa-4be5-4e83-9cb2-02e27753c5f1",
       "from": "2026-06-18T10:00",
       "until": "2026-09-16T23:59",
       "difficulties": [
@@ -679,6 +704,7 @@
       "alias": "검은 마법사",
       "cycle": "monthly",
       "portraitSlug": "blackMage",
+      "portraitAssetId": "b32e077a-c476-4795-9622-64804ce59cfb",
       "from": null,
       "until": null,
       "difficulties": [

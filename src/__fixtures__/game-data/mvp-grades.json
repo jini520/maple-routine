@@ -5,43 +5,50 @@
       "key": "normal",
       "name": "일반",
       "auctionFeePercent": 5,
-      "starforceDiscountPercent": 0
+      "starforceDiscountPercent": 0,
+      "plateAssetId": null
     },
     {
       "key": "bronze",
       "name": "브론즈",
       "auctionFeePercent": 5,
-      "starforceDiscountPercent": 0
+      "starforceDiscountPercent": 0,
+      "plateAssetId": "f22bfbe0-d06a-47f3-907b-87ac245fa212"
     },
     {
       "key": "silver",
       "name": "실버",
       "auctionFeePercent": 3,
-      "starforceDiscountPercent": 3
+      "starforceDiscountPercent": 3,
+      "plateAssetId": "2d4dd5ab-ddc8-4fd7-b2bf-391f38f0949c"
     },
     {
       "key": "gold",
       "name": "골드",
       "auctionFeePercent": 3,
-      "starforceDiscountPercent": 5
+      "starforceDiscountPercent": 5,
+      "plateAssetId": "c5be56c7-19f2-435b-988e-0af167d283e4"
     },
     {
       "key": "diamond",
       "name": "다이아",
       "auctionFeePercent": 3,
-      "starforceDiscountPercent": 10
+      "starforceDiscountPercent": 10,
+      "plateAssetId": "96080adc-4136-4285-a06d-c18412904c8d"
     },
     {
       "key": "red",
       "name": "레드",
       "auctionFeePercent": 3,
-      "starforceDiscountPercent": 10
+      "starforceDiscountPercent": 10,
+      "plateAssetId": "4c50ed22-88fb-4152-9118-61dd56e43f42"
     },
     {
       "key": "black",
       "name": "블랙",
       "auctionFeePercent": 3,
-      "starforceDiscountPercent": 10
+      "starforceDiscountPercent": 10,
+      "plateAssetId": "3a390fe1-b533-438a-b985-9e53e44bcff6"
     }
   ]
 }

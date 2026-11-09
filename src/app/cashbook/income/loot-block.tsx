@@ -7,15 +7,15 @@
 import { Image, View } from 'react-native'
 
 import { Text } from '../../../components/atoms'
-import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
+import { getAssetImage } from '../../../lib/assets/asset-lookup'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 
 /** 블록 머리의 그림 한 변. */
 const BLOCK_ICON_SIZE = 26
 
 /** 아이템 그림. 그림을 못 찾으면 자리만 지킨다. 이름의 시작점이 줄마다 갈리지 않게. */
-function LootIcon(props: { iconFile: string }): React.JSX.Element {
-  const icon = getItemIconUrlByFile(props.iconFile)
+function LootIcon(props: { iconAssetId: string }): React.JSX.Element {
+  const icon = getAssetImage(props.iconAssetId)
   const size = { width: BLOCK_ICON_SIZE, height: BLOCK_ICON_SIZE }
   // 아이템 아이콘은 원본 비율 그대로 둔다. 상자에 맞춰 늘리면 도트가 뭉갠다.
   return icon === null ? <View style={size} /> : <Image source={icon} style={size} resizeMode="contain" aria-hidden />
@@ -25,12 +25,12 @@ function LootIcon(props: { iconFile: string }): React.JSX.Element {
  * 경매장 아이템 블록. 머리는 그림 · 이름이고 오른쪽에 `right`(조각의 보유 개수)가 선다.
  *
  * @example
- * <LootBlock iconFile="sol_erda_fragment.webp" name="솔 에르다 조각" right={held}>
+ * <LootBlock iconAssetId={fragment.iconAssetId} name="솔 에르다 조각" right={held}>
  *   <LootLine label="개당 가격" unit="메소">…</LootLine>
  * </LootBlock>
  */
 export function LootBlock(props: {
-  iconFile: string
+  iconAssetId: string
   name: string
   right?: React.ReactNode
   children: React.ReactNode
@@ -39,7 +39,7 @@ export function LootBlock(props: {
   return (
     <View testID={props.testID} className="gap-0.5 rounded-[10px] bg-card-inset px-3 py-2">
       <View className="min-h-[30px] flex-row items-center gap-2.5">
-        <LootIcon iconFile={props.iconFile} />
+        <LootIcon iconAssetId={props.iconAssetId} />
         <Text className="shrink text-sm font-semibold text-text">{props.name}</Text>
         {props.right !== undefined && (
           <View className="ml-auto shrink-0 flex-row items-baseline gap-1">{props.right}</View>
@@ -63,14 +63,14 @@ export function LootLine(props: { label: string; unit: string; children: React.R
 
 /** 소비 아이템 한 줄. 이름 아래에 NPC 개당 가격이 작게 서고, 오른쪽이 개수 칸이다. */
 export function NpcLootRow(props: {
-  iconFile: string
+  iconAssetId: string
   name: string
   npcPriceMeso: number
   children: React.ReactNode
 }): React.JSX.Element {
   return (
     <View className="min-h-[52px] flex-row items-center gap-2.5 rounded-[10px] bg-card-inset px-3 py-2">
-      <LootIcon iconFile={props.iconFile} />
+      <LootIcon iconAssetId={props.iconAssetId} />
       <View className="shrink gap-0.5">
         <Text className="text-sm font-semibold text-text">{props.name}</Text>
         <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>

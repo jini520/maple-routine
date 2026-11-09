@@ -11,7 +11,7 @@ import { Pressable, View } from 'react-native'
 import { CheckIcon, Switch, Text } from '../../atoms'
 import { BossPortrait } from '../../molecules/BossPortrait/BossPortrait'
 import type { PickerTile } from '../../../features/party-appointments/boss-picker'
-import { bossAliasOf, bossPortraitSlugOf } from '../../../lib/boss/bosses'
+import { bossAliasOf, bossPortraitAssetIdOf } from '../../../lib/boss/bosses'
 import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
 import { useThemeAppearance } from '../../../theme/context'
 import type { Flight } from './BossPickerTray'
@@ -102,7 +102,7 @@ function Tile(props: {
             />
           </Animated.View>
         </View>
-        <BossPortrait portraitSlug={bossPortraitSlugOf(tile.bossKey)} label={name} size={TILE_PORTRAIT} />
+        <BossPortrait portraitAssetId={bossPortraitAssetIdOf(tile.bossKey)} label={name} size={TILE_PORTRAIT} />
         {selected && (
           <View
             testID={`boss-picker-check-${tile.bossKey}`}

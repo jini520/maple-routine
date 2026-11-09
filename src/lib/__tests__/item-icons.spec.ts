@@ -1,6 +1,5 @@
 
-import { assetUri } from '../../assets/__tests__/asset-uri'
-import { cashbookRowIconOf, dropItemIconOf, getItemIconUrlByFile, spendIconOf } from '../assets/asset-lookup'
+import { cashbookRowIconOf, dropItemIconOf } from '../assets/asset-lookup'
 
 describe('dropItemIconOf', () => {
   // 그림 없는 줄 · 모르는 key · key 없는 옛 기록은 비운다. 비슷한 그림을 붙이면 틀린 것을 그린다.
@@ -11,20 +10,9 @@ describe('dropItemIconOf', () => {
   })
 })
 
-describe('getItemIconUrlByFile', () => {
-  it('파일명으로 표시전용 아이콘(솔 에르다 단위)을 조회한다', () => {
-    expect(assetUri(getItemIconUrlByFile('sole_500.webp'))).toContain('sole_500')
-    expect(assetUri(getItemIconUrlByFile('sole_10.png'))).toContain('sole_10')
-  })
-
-  it('없는 파일은 null을 반환한다', () => {
-    expect(getItemIconUrlByFile('nope.png')).toBeNull()
-  })
-})
-
-// 가계부 줄 표식이 실제 파일에 닿는가.
+// 가계부 줄 표식이 실제 그림에 닿는가.
 //
-// 표에 파일 이름을 손으로 적으므로 오타 한 글자면 그 줄만 조용히 아이콘으로 남는다. 화면에서는
+// 표식은 앱 그림 표의 key 나 가계부 분류 표의 갈래로 찾는다. 하나라도 어긋나면 그 줄만 조용히 아이콘으로 남는다. 화면에서는
 // **아직 안 바꿨나** 로 보여 고장으로 안 읽힌다.
 describe('가계부 줄 표식', () => {
   it.each([
@@ -50,23 +38,4 @@ describe('가계부 줄 표식', () => {
       expect(cashbookRowIconOf(key)).toBeNull()
     },
   )
-})
-
-// 지출 타일 그림. 그림은 카탈로그의 `tiles` 가 들고 여기서는 자산으로 풀기만 한다.
-describe('spendIconOf', () => {
-  // 원천이 둘이다. 아이템은 파일 이름, 에픽던전 셋은 **지역 아이콘** slug 다. 서는 자리는
-  // 하나가 됐다(타일이 가로 상자가 되면서 `타일 왼쪽`과 `이름 옆`이 같은 자리다).
-  it('아이템 그림 파일을 푼다', () => {
-    expect(spendIconOf({ file: 'seiram_elixir.webp' })).toBeDefined()
-  })
-
-  it('지역 아이콘 slug 도 푼다', () => {
-    expect(spendIconOf({ map: 'highMountain' })).toBeDefined()
-  })
-
-  it('그림이 없거나 못 찾으면 null 이다', () => {
-    expect(spendIconOf(undefined)).toBeNull()
-    expect(spendIconOf({ file: 'nope.webp' })).toBeNull()
-    expect(spendIconOf({ map: 'nope' })).toBeNull()
-  })
 })

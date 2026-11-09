@@ -24,7 +24,7 @@ export interface BossEntry {
   requiredLevels: Partial<Record<BossDifficulty, number>>
   /** 난이도 줄이 든 파티 인원 상한. 없는 난이도는 `rules.defaultMaxPartySize` 다. */
   maxPartySizes: Partial<Record<BossDifficulty, number>>
-  portraitSlug: string
+  portraitAssetId: string
   section: BossSection
   cycle: BossCycle
   /** 시즌 보스는 주간 12마리 한도와 결정석 판매 수에서 빠진다. */
@@ -63,7 +63,7 @@ function toEntry(boss: BossCatalogBoss): BossEntry {
     difficulties: boss.difficulties.map((row) => row.difficulty),
     requiredLevels,
     maxPartySizes,
-    portraitSlug: boss.portraitSlug,
+    portraitAssetId: boss.portraitAssetId,
     section: SECTION_OF_CYCLE[boss.cycle],
     cycle: boss.cycle === 'monthly' ? 'monthly' : 'weekly',
     isSeasonBoss: boss.cycle === 'event_weekly',
@@ -173,8 +173,8 @@ export function getMaxPartySize(key: string | null | undefined, difficulty: Boss
   return findBoss(key)?.maxPartySizes[difficulty] ?? defaultMaxPartySize()
 }
 
-export function bossPortraitSlugOf(key: string | null | undefined): string | null {
-  return findBoss(key)?.portraitSlug ?? null
+export function bossPortraitAssetIdOf(key: string | null | undefined): string | null {
+  return findBoss(key)?.portraitAssetId ?? null
 }
 
 export function bossesInSection(section: BossSection): BossEntry[] {

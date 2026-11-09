@@ -28,8 +28,8 @@ export interface BossCatalogBoss {
   /** 좁은 자리의 이름. */
   alias: string
   cycle: BossCatalogCycle
-  /** `assets/bosses/{portraitSlug}.webp` 의 파일명. */
-  portraitSlug: string
+  /** 초상 그림 id(`assets` 칸). 크롭도 이 id 로 찾는다. */
+  portraitAssetId: string
   /** 줄의 차례가 곧 난이도 정렬 순서다. */
   difficulties: BossCatalogDifficulty[]
   /** 유효 기간. KST `YYYY-MM-DD` 또는 `YYYY-MM-DDTHH:mm`. 없으면 처음부터 · 끝없이. 시즌 보스가 끝을 든다. */

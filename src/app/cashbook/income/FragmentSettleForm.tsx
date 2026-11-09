@@ -43,7 +43,7 @@ export function FragmentSettleForm(
     /** 카드 맨 위에 서는 캐릭터 · 분류 줄. */
     head: React.ReactNode
     /** 블록 머리의 그림 · 이름. 사냥 전리품 표의 조각 줄이다. */
-    iconFile: string
+    iconAssetId: string
     name: string
     /** 보관 개수 조회. 폼은 `storage/` 를 모른다. */
     loadFragmentStorage: LoadFragmentStorage
@@ -155,7 +155,7 @@ export function FragmentSettleForm(
 
         {/* 개수를 치면서 상한인 보유 개수를 같은 블록 머리에서 본다(사용자 지정 2026-10-29). */}
         <LootBlock
-          iconFile={props.iconFile}
+          iconAssetId={props.iconAssetId}
           name={props.name}
           right={
             <>

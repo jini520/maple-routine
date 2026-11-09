@@ -1,3 +1,5 @@
+import { imageOfPath } from '../../assets/__tests__/asset-uri'
+import { getHuntingRegionIconUrl } from '../assets/asset-lookup'
 import {
   huntingRegions,
   findHuntingGround,
@@ -193,18 +195,18 @@ describe('findHuntingGroundByName', () => {
 })
 
 describe('지역 아이콘', () => {
-  it('지역은 서버가 정한 아이콘 slug 를 든다', () => {
-    expect(findHuntingRegion('arcs')?.iconMap).toBe('Arcs')
-    expect(findHuntingRegion('burning_cernium')?.iconMap).toBe('burningCernium')
+  it('지역은 서버가 정한 아이콘 그림 id 를 들고, 아이콘이 없는 지역은 null 이다', () => {
+    expect(getHuntingRegionIconUrl(findHuntingRegion('arcs')?.iconAssetId ?? null)).toBe(imageOfPath('maps/icons/Arcs.webp'))
+    expect(findHuntingRegion('burning_cernium')?.iconAssetId).toBeNull()
   })
 
-  it('`iconMap` 이 없는 옛 서버 응답도 지역으로 읽고, 아이콘은 `null` 이다', () => {
+  it('아이콘이 없는 지역도 지역으로 읽고, 아이콘은 `null` 이다', () => {
     const table = parseHuntingGrounds({
       updatedAt: null,
       regions: [{ key: 'arcs', name: '호텔 아르크스', forceType: 'authentic' }],
       grounds: [{ key: 'arcs_lobby', region: 'arcs', name: '로비', force: 30, mobs: 30 }],
       groundLevels: [{ ground: 'arcs_lobby', level: 265 }],
     })
-    expect(table?.regions).toEqual([{ key: 'arcs', name: '호텔 아르크스', forceType: 'authentic', iconMap: null }])
+    expect(table?.regions).toEqual([{ key: 'arcs', name: '호텔 아르크스', forceType: 'authentic', iconAssetId: null }])
   })
 })

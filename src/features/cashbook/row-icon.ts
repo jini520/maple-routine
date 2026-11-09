@@ -7,7 +7,7 @@
  * 그림이 없는 갈래도 열쇠는 낸다. 무엇을 그릴지는 조회표(`cashbookRowIconOf`)가 정하므로
  * 나중에 그림을 붙일 때 고치는 것이 표 한 줄이다.
  */
-import { cashbookRowIconOf, getItemIconUrlByFile, getSkillIconByFile, spendIconOf } from '../../lib/assets/asset-lookup'
+import { cashbookRowIconOf, getAssetImage } from '../../lib/assets/asset-lookup'
 import { cashbookCategoryOf } from '../../lib/cashbook/categories'
 import { findHexaCore } from '../../lib/cashbook/hexa-matrix'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
@@ -28,7 +28,7 @@ export function recordIconKeyOf(entry: DayRecord): string {
  * 줄 표식 그림. 없으면 `null` 이고 화면이 아이콘을 그린다.
  *
  * 지출 목록에서 고른 기록은 **시트에서 고른 타일의 그림**이다. 항목 key(에픽던전 추가 리워드는 형태별 항목 key)로
- * 타일을 되짚고 시트 타일과 같은 `spendIconOf` 로 찾는다. 시트와 줄이 한 조회를 써야 시트에서 본 그림과 목록의 그림이
+ * 타일을 되짚고 시트 타일과 같은 그림 id 로 찾는다. 시트와 줄이 한 그림을 써야 시트에서 본 그림과 목록의 그림이
  * 갈리지 않는다. 그림 없는 타일이면 `null` 이다. 비슷한 그림을 붙이면 틀린 것을 그린다.
  *
  * 사냥 전리품 판매는 전리품 표에서 그 아이템의 그림을 찾는다. 나머지 줄은 `recordIconKeyOf` 의 열쇠로 찾는다. 목록 갈래의 열쇠(`spend:buff` 등)는 조회표에 없어, 타일을 되짚지
@@ -40,24 +40,23 @@ export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
     // 심볼 강화는 선택 목록이 아니라 비용 표에서 심볼을 되짚는다.
     if (category === 'symbol') {
       const symbol = findSymbol(itemKey)?.symbol
-      return symbol === undefined ? null : spendIconOf({ file: symbol.icon })
+      return symbol === undefined ? null : getAssetImage(symbol.iconAssetId)
     }
     // 헥사 스킬은 그 코어의 스킬 그림, 헥사 스탯은 갈래 카드와 같은 헥사 매트릭스 원본 그림이다.
     if (category === 'hexa_matrix') {
       if (entry.record.hexa?.activation != null) {
-        const icon = cashbookCategoryOf('spend', category)?.icon
-        return icon === undefined ? null : getItemIconUrlByFile(icon)
+        return getAssetImage(cashbookCategoryOf('spend', category)?.iconAssetId)
       }
       const core = findHexaCore(itemKey)
-      return core === null ? null : getSkillIconByFile(core.icon)
+      return core === null ? null : getAssetImage(core.iconAssetId)
     }
     const choice = findSpendChoice(category, itemKey)?.choice ?? findSpendRewardChoice(category, formItemKeys)?.choice
-    if (choice !== undefined) return spendIconOf(choice.icon)
+    if (choice !== undefined) return getAssetImage(choice.iconAssetId)
   }
   // 사냥 전리품 판매는 아이템마다 한 줄이라 그 아이템의 그림이다.
   if (entry.kind === 'income' && entry.record.category === 'hunt_loot_sale') {
     const loot = findHuntLoot(entry.record.itemKey)
-    if (loot !== null) return getItemIconUrlByFile(loot.iconFile)
+    if (loot !== null) return getAssetImage(loot.iconAssetId)
   }
   return cashbookRowIconOf(recordIconKeyOf(entry))
 }

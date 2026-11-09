@@ -11,7 +11,7 @@ import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { SelectChevron, SelectField, type SelectOption } from '../../../components/organisms/SelectField/SelectField'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
-import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
+import { getAssetImage } from '../../../lib/assets/asset-lookup'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import {
   findSymbol,
@@ -127,7 +127,7 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })
 
-  const icon = found === null ? null : getItemIconUrlByFile(found.symbol.icon)
+  const icon = found === null ? null : getAssetImage(found.symbol.iconAssetId)
 
   useHeaderSlot(props.setHeader, {
     title: spendCategoryNameOf(props.category),
@@ -178,7 +178,7 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
           )}
           renderOption={(option, isSelected) => {
             const symbol = findSymbol(option.value)?.symbol
-            const optionIcon = symbol === undefined ? null : getItemIconUrlByFile(symbol.icon)
+            const optionIcon = symbol === undefined ? null : getAssetImage(symbol.iconAssetId)
             return (
               <View className="flex-row items-center gap-2.5">
                 {optionIcon !== null && (

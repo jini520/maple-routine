@@ -6,12 +6,15 @@
 // 있는 계약은 **어느 분기로 가는가**(그림이 있으면 `<Image>`, 없으면 `?`)이고, 퍼센트 배치가 맞게
 // 나오는지는 `lib/__tests__/image-crop.test.ts` 의 순수 함수 케이스가 든다.
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
+import { assetIdOfPath } from '../../../../assets/__tests__/asset-uri'
 import { BossPortrait } from '../BossPortrait'
 
+const 루시드 = assetIdOfPath('bosses/lucid.webp') ?? null
+
 describe('BossPortrait', () => {
-  it('그림이 있는 슬러그는 원형으로 잘린 이미지다', async () => {
+  it('그림이 있는 초상은 원형으로 잘린 이미지다', async () => {
     const { getByTestId, queryByText } = await renderAtom(
-      <BossPortrait portraitSlug="lucid" label="루시드" />,
+      <BossPortrait portraitAssetId={루시드} label="루시드" />,
     )
 
     const portrait = getByTestId('boss-portrait')
@@ -27,14 +30,14 @@ describe('BossPortrait', () => {
       overflow: 'hidden',
     })
 
-    // 그림이 **진짜 번들 에셋**이라는 것이 계약이다. 슬러그가 안 풀리면 조용히 플레이스홀더로
+    // 그림이 **그림 목록에 있는 파일**이라는 것이 계약이다. id 가 안 풀리면 조용히 플레이스홀더로
     // 떨어지므로, 소스가 실재하는지까지 본다.
     expect(getByTestId('boss-portrait-image').props.source).toBeDefined()
   })
 
   it('label 을 접근성 이름으로 갖는 원형 플레이스홀더를 그린다', async () => {
     const { getByTestId, getByText } = await renderAtom(
-      <BossPortrait portraitSlug={null} label="벨로나" />,
+      <BossPortrait portraitAssetId={null} label="벨로나" />,
     )
 
     const portrait = getByTestId('boss-portrait')
@@ -50,7 +53,7 @@ describe('BossPortrait', () => {
   // 네 귀가 비어 사이가 성겨 보인다.
   it('네모를 지정하면 귀만 둥근 상자다. 기본은 원형 그대로다', async () => {
     const 네모 = await renderAtom(
-      <BossPortrait portraitSlug="lucid" label="루시드" shape="square" />,
+      <BossPortrait portraitAssetId={루시드} label="루시드" shape="square" />,
     )
     expect(flattenStyle(네모.getByTestId('boss-portrait').props.style)).toMatchObject({
       borderRadius: 8,
@@ -58,27 +61,27 @@ describe('BossPortrait', () => {
     })
 
     // 호출부 둘(보스 수익 행·보스 관리)이 안 바뀐다는 것이 계약이다.
-    const 지정없음 = await renderAtom(<BossPortrait portraitSlug="lucid" label="루시드" />)
+    const 지정없음 = await renderAtom(<BossPortrait portraitAssetId={루시드} label="루시드" />)
     const 원형지정 = await renderAtom(
-      <BossPortrait portraitSlug="lucid" label="루시드" shape="circle" />,
+      <BossPortrait portraitAssetId={루시드} label="루시드" shape="circle" />,
     )
     expect(지정없음.toJSON()).toEqual(원형지정.toJSON())
   })
 
   it('플레이스홀더도 같은 모양을 따른다. 그림 유무로 귀가 달라지면 안 된다', async () => {
     const { getByTestId } = await renderAtom(
-      <BossPortrait portraitSlug={null} label="벨로나" shape="square" />,
+      <BossPortrait portraitAssetId={null} label="벨로나" shape="square" />,
     )
 
     expect(flattenStyle(getByTestId('boss-portrait').props.style).borderRadius).toBe(8)
   })
 
   it.each([
-    ['슬러그가 없을 때', null],
-    ['존재하지 않는 슬러그일 때', '존재하지않는슬러그'],
+    ['그림 id 가 없을 때', null],
+    ['그림 목록에 없는 id 일 때', '없는 그림 id'],
   ])('%s 는 플레이스홀더다. 그림이 없다는 사실을 화면이 인정한다', async (_label, slug) => {
     const { getByTestId, getByText } = await renderAtom(
-      <BossPortrait portraitSlug={slug} label="알 수 없는 보스" />,
+      <BossPortrait portraitAssetId={slug} label="알 수 없는 보스" />,
     )
 
     expect(getByTestId('boss-portrait').props.accessibilityLabel).toBe('알 수 없는 보스')

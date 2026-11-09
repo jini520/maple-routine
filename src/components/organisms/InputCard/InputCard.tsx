@@ -41,7 +41,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, { type AnimatedStyle } from 'react-native-reanimated'
 
-import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
+import { appImage, solErdaFragmentIcon } from '../../../lib/assets/asset-lookup'
 import { boxShadowOf, type ShadowLayer } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ImageAssetRef } from '../../../types/image-asset'
@@ -290,8 +290,8 @@ export interface InputCardProps {
 /** 표식 이름에서 그림으로. 그림을 그대로 넘겼으면 그것이 답이다. 없는 그림은 없는 채로 둔다. */
 function iconSourceOf(icon: InputCardIcon | undefined): ImageAssetRef | null {
   if (icon === undefined) return null
-  if (icon === 'meso') return getItemIconUrlByFile('meso_pouch.webp')
-  if (icon === 'fragment') return getItemIconUrlByFile('sol_erda_fragment.webp')
+  if (icon === 'meso') return appImage('meso_pouch')
+  if (icon === 'fragment') return solErdaFragmentIcon()
   return icon
 }
 

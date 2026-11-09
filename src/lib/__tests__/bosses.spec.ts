@@ -53,7 +53,7 @@ describe('bosses: 표가 덮이면', () => {
         name: '검은 마법사',
         alias: '검은 마법사',
         cycle: 'monthly',
-        portraitSlug: 'blackMage',
+        portraitAssetId: 'blackMage',
         difficulties: [{ difficulty: 'hard', requiredLevel: 255 }],
       },
       {
@@ -61,7 +61,7 @@ describe('bosses: 표가 덮이면', () => {
         name: '시즌 보스 메이린',
         alias: '메이린',
         cycle: 'event_weekly',
-        portraitSlug: 'maerin',
+        portraitAssetId: 'maerin',
         difficulties: [
           { difficulty: 'normal', requiredLevel: 270 },
           { difficulty: 'hard', requiredLevel: 280 },
@@ -72,7 +72,7 @@ describe('bosses: 표가 덮이면', () => {
         name: '새 보스',
         alias: '새 보스',
         cycle: 'weekly',
-        portraitSlug: 'newBoss',
+        portraitAssetId: 'newBoss',
         difficulties: [{ difficulty: 'extreme', requiredLevel: 300 }],
       },
     ],
@@ -93,7 +93,7 @@ describe('bosses: 표가 덮이면', () => {
       isSeasonBoss: false,
       difficulties: ['extreme'],
       requiredLevels: { extreme: 300 },
-      portraitSlug: 'newBoss',
+      portraitAssetId: 'newBoss',
     })
     expect(findBoss('meirin')).toMatchObject({ section: 'eventWeekly', cycle: 'weekly', isSeasonBoss: true })
     expect(findBoss('black_mage')).toMatchObject({ section: 'monthly', cycle: 'monthly', isSeasonBoss: false })

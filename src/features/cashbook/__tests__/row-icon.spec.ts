@@ -5,7 +5,7 @@
 // 적은 줄에서만 그림이 사라진다.
 import type { IncomeRecord } from '../../../storage/income'
 import type { SpendRecord } from '../../../storage/spend'
-import { getDailyQuestRegionIconUrl, getItemIconUrlByFile, getSkillIconByFile } from '../../../lib/assets/asset-lookup'
+import { imageOfPath } from '../../../assets/__tests__/asset-uri'
 import type { DayRecord } from '../records'
 import { recordIconKeyOf, recordIconOf } from '../row-icon'
 
@@ -80,47 +80,47 @@ describe('recordIconOf', () => {
   it('에픽던전 추가 리워드는 형태별 항목 key 로 타일을 되짚어 지역 그림을 쓴다', () => {
     expect(
       recordIconOf(spend({ category: 'content', itemKey: null, formItemKeys: { exp: 'high_mountain_2', sol_erda: 'high_mountain_1' } })),
-    ).toBe(getDailyQuestRegionIconUrl('highMountain'))
+    ).toBe(imageOfPath('maps/icons/highMountain.png'))
   })
 
   // 버프 갈래 전체가 세이람의 영약 하나이던 것이 끝난다.
   it('버프는 고른 영약의 그림이다', () => {
-    expect(recordIconOf(spend({ category: 'buff', itemKey: 'alleria_elixir' }))).toBe(getItemIconUrlByFile('alleria_elixir.webp'))
-    expect(recordIconOf(spend({ category: 'buff', itemKey: 'alleria_elixir' }))).not.toBe(getItemIconUrlByFile('seiram_elixir.webp'))
+    expect(recordIconOf(spend({ category: 'buff', itemKey: 'alleria_elixir' }))).toBe(imageOfPath('items/alleria_elixir.webp'))
+    expect(recordIconOf(spend({ category: 'buff', itemKey: 'alleria_elixir' }))).not.toBe(imageOfPath('items/seiram_elixir.webp'))
   })
 
   it('주문서 · 이벤트·BM 은 고른 타일의 그림이다', () => {
     expect(recordIconOf(spend({ category: 'scroll', itemKey: 'amazing_positive_chaos_scroll_60' }))).toBe(
-      getItemIconUrlByFile('amazing_positive_chaos_scroll.webp'),
+      imageOfPath('items/amazing_positive_chaos_scroll.webp'),
     )
-    expect(recordIconOf(spend({ category: 'event_bm', itemKey: 'nickname_change' }))).toBe(getItemIconUrlByFile('npc_mr_newname.webp'))
+    expect(recordIconOf(spend({ category: 'event_bm', itemKey: 'nickname_change' }))).toBe(imageOfPath('items/npc_mr_newname.webp'))
   })
 
   // 갈래 그림 하나로 그리면 순록의 우유와 돋보기 줄이 같은 그림이 된다.
   it('사냥 전리품 판매는 전리품 표에서 찾은 그 아이템의 그림이다', () => {
     expect(recordIconOf(income({ category: 'hunt_loot_sale', itemKey: 'reindeer_milk' }))).toBe(
-      getItemIconUrlByFile('reindeer_milk.webp'),
+      imageOfPath('items/reindeer_milk.webp'),
     )
     expect(recordIconOf(income({ category: 'hunt_loot_sale', itemKey: 'suspicious_magnifier' }))).toBe(
-      getItemIconUrlByFile('suspicious_magnifier.webp'),
+      imageOfPath('items/suspicious_magnifier.webp'),
     )
   })
 
   it('헥사 스킬은 그 코어의 스킬 그림이고, 헥사 스탯은 갈래 카드와 같은 헥사 매트릭스 그림이다', () => {
     const 조각 = { fragmentCount: 345, untradableFragmentCount: 0, fragmentPrice: 1, useStorage: false, storageAsSpend: false, storageUses: [] }
     expect(recordIconOf(spend({ category: 'hexa_matrix', itemKey: '창룡파천검 : 만참', hexa: { ...조각, activation: null } }))).toBe(
-      getSkillIconByFile('KEJDKDOEMH.webp'),
+      imageOfPath('skills/KEJDKDOEMH.webp'),
     )
     expect(recordIconOf(spend({ category: 'hexa_matrix', itemKey: 'hexa_stat_1', hexa: { ...조각, activation: false } }))).toBe(
-      getItemIconUrlByFile('hexa_matrix.webp'),
+      imageOfPath('items/hexa_matrix.webp'),
     )
-    expect(getSkillIconByFile('KEJDKDOEMH.webp')).not.toBeNull()
+    expect(imageOfPath('skills/KEJDKDOEMH.webp')).not.toBeNull()
   })
 
   // 선택 목록이 아니라 비용 표에서 심볼을 되짚는다.
   it('심볼 강화는 고른 심볼의 그림이다', () => {
     expect(recordIconOf(spend({ category: 'symbol', itemKey: 'cernium', levelFrom: 1, levelTo: 2 }))).toBe(
-      getItemIconUrlByFile('authentic_symbol_cernium.webp'),
+      imageOfPath('items/authentic_symbol_cernium.webp'),
     )
     expect(recordIconOf(spend({ category: 'symbol', itemKey: 'nope' }))).toBeNull()
   })
@@ -134,8 +134,8 @@ describe('recordIconOf', () => {
 
   // 이름을 치는 갈래는 갈래 key 로 잡는다. 기타 둘은 두 시트의 기타 카드와 같은 메소 주머니다.
   it('기타(수익) · 기타(지출)은 메소 주머니이고 아이템 구매 · 아이템 판매는 그림이 없다', () => {
-    expect(recordIconOf(spend({ category: 'etc', item: '아무거나' }))).toBe(getItemIconUrlByFile('meso.webp'))
-    expect(recordIconOf(income({ category: 'etc', item: '아무거나' }))).toBe(getItemIconUrlByFile('meso.webp'))
+    expect(recordIconOf(spend({ category: 'etc', item: '아무거나' }))).toBe(imageOfPath('items/meso.webp'))
+    expect(recordIconOf(income({ category: 'etc', item: '아무거나' }))).toBe(imageOfPath('items/meso.webp'))
     expect(recordIconOf(spend({ category: 'item_purchase', item: '루즈 컨트롤 머신 마크' }))).toBeNull()
     expect(recordIconOf(income({ category: 'item_sale', item: '앱솔 무기' }))).toBeNull()
   })

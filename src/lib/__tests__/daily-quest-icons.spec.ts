@@ -1,32 +1,30 @@
-
 import { assetUri } from '../../assets/__tests__/asset-uri'
 import { getDailyQuestRegionIconUrl } from '../assets/asset-lookup'
+import { findContent } from '../scheduler/contents'
 
 describe('getDailyQuestRegionIconUrl', () => {
-  it('slug가 null이면 null을 반환한다', () => {
+  it('칸이 비면 null 이다', () => {
     expect(getDailyQuestRegionIconUrl(null)).toBeNull()
   })
 
-  // 실제 아이콘 파일의 확장자(png/webp)는 언제든 바뀔 수 있어 특정 확장자를 전제하지 않는다.
-  // 확장자와 무관하게 slug만으로 조회되는지가 검증 대상이다.
-  it('실제로 존재하는 slug면 확장자와 무관하게 URL을 반환한다', () => {
-    const url = getDailyQuestRegionIconUrl('lacheln')
+  // 지역 아이콘은 컨텐츠 표의 그림 id 다. 앱은 배경 지도의 이름을 빌려 아이콘을 찾지 않는다.
+  it('컨텐츠 표의 지역 아이콘 id 로 그 지역의 아이콘을 찾는다', () => {
+    const url = getDailyQuestRegionIconUrl(findContent('daily_quest_lacheln')?.background?.regionIcon ?? null)
 
     expect(url).not.toBeNull()
-    expect(assetUri(url)).toContain('lacheln')
+    expect(assetUri(url)).toContain('maps/icons/lacheln')
   })
 
-  it('존재하지 않는 slug면 null을 반환한다', () => {
-    expect(getDailyQuestRegionIconUrl('존재하지않는슬러그')).toBeNull()
+  it('목록에 없는 id 면 null 이다', () => {
+    expect(getDailyQuestRegionIconUrl('없는 그림 id')).toBeNull()
   })
 
-  // 회귀 방지: 아이콘 파일명(moonbridge.png)이 slug(moonBridge)와 대소문자가 어긋나
-  // '문브릿지 조사' 퀘스트의 지역 아이콘이 조회되지 않던 버그. 조회는 NFC 정규화만 하고
-  // 대소문자는 구분하므로 파일명이 slug와 정확히 일치해야 한다.
-  it('moonBridge slug는 대소문자까지 일치하는 아이콘 URL을 반환한다', () => {
-    const url = getDailyQuestRegionIconUrl('moonBridge')
+  // 회귀 방지: 아이콘 파일명(moonbridge.png)이 지도 이름(moonBridge)과 대소문자가 어긋나 '문브릿지 조사' 퀘스트의 지역
+  // 아이콘이 안 서던 버그. 지금은 서버가 대소문자까지 같은 그림을 표에 붙인다.
+  it('문브릿지 조사는 대소문자까지 같은 moonBridge 아이콘이다', () => {
+    const url = getDailyQuestRegionIconUrl(findContent('daily_quest_moon_bridge')?.background?.regionIcon ?? null)
 
     expect(url).not.toBeNull()
-    expect(assetUri(url)).toContain('moonBridge')
+    expect(assetUri(url)).toContain('maps/icons/moonBridge')
   })
 })

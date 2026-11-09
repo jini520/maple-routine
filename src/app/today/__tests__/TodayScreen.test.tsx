@@ -245,7 +245,7 @@ function matchedBoss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
     isRegistered: true,
     isComplete: false,
     ownComplete: false,
-    portraitSlug: null,
+    portraitAssetId: null,
     isSeasonBoss: false,
     ...overrides }
 }

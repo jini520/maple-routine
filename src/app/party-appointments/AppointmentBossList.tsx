@@ -13,7 +13,7 @@ import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortra
 import { DragHandle } from '../../components/organisms/CharacterRow/DragHandle'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { groupBossesByCharacter, moveWithinGroup } from '../../features/party-appointments/boss-groups'
-import { bossAliasOf, bossPortraitSlugOf } from '../../lib/boss/bosses'
+import { bossAliasOf, bossPortraitAssetIdOf } from '../../lib/boss/bosses'
 import { selectionFeedback } from '../../native/haptics'
 import type { BossDifficulty } from '../../types'
 import type { PartyAppointmentBoss } from '../../types/party-appointment'
@@ -42,7 +42,7 @@ function RowBody(props: { boss: PartyAppointmentBoss }): React.JSX.Element {
   const name = bossAliasOf(boss.bossKey, boss.bossKey)
   return (
     <>
-      <BossPortrait portraitSlug={bossPortraitSlugOf(boss.bossKey)} label={name} size={24} />
+      <BossPortrait portraitAssetId={bossPortraitAssetIdOf(boss.bossKey)} label={name} size={24} />
       <Text className="shrink text-sm font-semibold text-text" numberOfLines={1}>
         {name}
       </Text>

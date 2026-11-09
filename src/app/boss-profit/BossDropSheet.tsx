@@ -26,7 +26,7 @@ import {
 import { useDropEffectStore } from '../../features/drop-effect/store'
 import { holdReviewRequest } from '../../features/app-review/request'
 import { getFixedDropIcons, type FixedDropIconSpec } from '../../lib/drop/fixed-drops'
-import { dropItemIconOf, getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
+import { appImage, dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { dropItemNameOf, isValuableDropItem } from '../../lib/drop/drop-items'
 import { dropPromptOf } from '../../lib/drop/drop-prompt'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
@@ -160,7 +160,7 @@ function ItemThumb(props: { itemKey: string | null; level?: number }): React.JSX
 // 아니다. 수량은 이미지 우측 하단 배지(`N개`)로 표시한다.
 function FixedDropIcon(props: { icon: FixedDropIconSpec }): React.JSX.Element {
   const { icon } = props
-  const url = icon.iconFile !== null ? getItemIconUrlByFile(icon.iconFile) : dropItemIconOf(icon.itemKey)
+  const url = icon.imageKey !== null ? appImage(icon.imageKey) : dropItemIconOf(icon.itemKey)
   const name = dropItemNameOf(icon.itemKey, icon.itemKey)
   return (
     <View className="h-8 w-8">
@@ -668,7 +668,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
                             >
                               {group.items.flatMap((item) =>
                                 getFixedDropIcons(item).map((icon, i) => (
-                                  <FixedDropIcon key={`${item.key}-${icon.iconFile ?? 'item'}-${i}`} icon={icon} />
+                                  <FixedDropIcon key={`${item.key}-${icon.imageKey ?? 'item'}-${i}`} icon={icon} />
                                 )),
                               )}
                             </View>

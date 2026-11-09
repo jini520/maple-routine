@@ -18,7 +18,7 @@ const 작은표: BossCatalog = {
       name: '스우',
       alias: '스우',
       cycle: 'weekly',
-      portraitSlug: 'lotus',
+      portraitAssetId: 'lotus',
       difficulties: [
         { difficulty: 'normal', requiredLevel: 190 },
         { difficulty: 'hard', requiredLevel: 190, maxPartySize: 2 },
@@ -125,7 +125,7 @@ describe('parseBossCatalog', () => {
     ['보스가 비었다', { ...작은표, bosses: [] }],
     ['보스 key 가 비었다', { ...작은표, bosses: [{ ...작은표.bosses[0], key: '' }] }],
     ['주기가 모르는 값이다', { ...작은표, bosses: [{ ...작은표.bosses[0], cycle: 'daily' }] }],
-    ['초상 파일명이 없다', { ...작은표, bosses: [{ ...작은표.bosses[0], portraitSlug: undefined }] }],
+    ['초상 파일명이 없다', { ...작은표, bosses: [{ ...작은표.bosses[0], portraitAssetId: undefined }] }],
     ['난이도가 비었다', { ...작은표, bosses: [{ ...작은표.bosses[0], difficulties: [] }] }],
     [
       '난이도가 모르는 값이다',

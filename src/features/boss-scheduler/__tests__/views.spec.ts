@@ -1,3 +1,4 @@
+import { assetIdOfPath } from '../../../assets/__tests__/asset-uri'
 /**
  * `buildBossViews` 와 `readBossCharacters`. 스냅샷을 보스 스케줄러의 캐릭터 뷰로 바꾸는 순수 함수라 스냅샷을 손으로
  * 만들어 넣고, `readBossCharacters` 만 쿼리 캐시에서 읽는다. 레벨 순서 규칙은 컨텐츠 뷰와 같은 함수라 거기서 고정한다.
@@ -81,8 +82,8 @@ describe('buildBossViews', () => {
 
     expect(view.weeklyBosses.map((boss) => boss.bossKey)).toEqual(['zakum'])
     expect(view.monthlyBosses.map((boss) => boss.bossKey)).toEqual(['black_mage'])
-    // 보스 표와 맞춘 결과(초상 slug)가 실려 있다. 화면이 API 이름으로 다시 찾지 않는다.
-    expect(view.monthlyBosses[0].portraitSlug).toBe('blackMage')
+    // 보스 표와 맞춘 결과(초상 그림 id)가 실려 있다. 화면이 API 이름으로 다시 찾지 않는다.
+    expect(view.monthlyBosses[0].portraitAssetId).toBe(assetIdOfPath('bosses/blackMage.webp'))
   })
 
   it('주간 처치 수는 등록 없이 완료된 보스도 세고 시즌 보스(메이린)는 뺀다', () => {

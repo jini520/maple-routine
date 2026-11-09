@@ -28,8 +28,8 @@ export interface SymbolCost {
   readonly name: string
   /** 그 심볼을 쓸 수 있는 캐릭터 레벨. */
   readonly requiredLevel: number
-  /** `src/assets/items/` 의 그림 파일. */
-  readonly icon: string
+  /** 심볼 그림의 id. */
+  readonly iconAssetId: string
 }
 
 export interface SymbolCostGroup {
@@ -57,8 +57,8 @@ function toGroup(row: Row): SymbolGroupRow | null {
 
 function toSymbol(row: Row): SymbolRow | null {
   if (!isNonEmptyString(row.key) || !isNonEmptyString(row.group) || !isNonEmptyString(row.name)) return null
-  if (!isPositiveInteger(row.requiredLevel) || !isNonEmptyString(row.iconFile)) return null
-  return { key: row.key, group: row.group, name: row.name, requiredLevel: row.requiredLevel, iconFile: row.iconFile }
+  if (!isPositiveInteger(row.requiredLevel) || !isNonEmptyString(row.iconAssetId)) return null
+  return { key: row.key, group: row.group, name: row.name, requiredLevel: row.requiredLevel, iconAssetId: row.iconAssetId }
 }
 
 function toLevelCost(row: Row): SymbolLevelCostRow | null {
@@ -92,7 +92,7 @@ const index = derive(symbolCostsTable, (table) => {
     defaultRange: [group.defaultFrom, group.defaultTo] as const,
     symbols: table.symbols
       .filter((symbol) => symbol.group === group.key)
-      .map((symbol) => ({ key: symbol.key, name: symbol.name, requiredLevel: symbol.requiredLevel, icon: symbol.iconFile })),
+      .map((symbol) => ({ key: symbol.key, name: symbol.name, requiredLevel: symbol.requiredLevel, iconAssetId: symbol.iconAssetId })),
   }))
   const costsBySymbolLevel = new Map<string, SymbolLevelCostRow[]>()
   for (const row of table.levelCosts) {
