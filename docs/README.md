@@ -58,7 +58,7 @@ docs/
 | `server` | [foundation/server.md](./foundation/server.md) | 우리 서버의 경로와 인증 · 드롭 시세 | [[ADR-016]] · [[ADR-017]] · [[ADR-071]] |
 | `server-sync` | [foundation/server-sync.md](./foundation/server-sync.md) | 앱이 서버로 올리는 값 | [[ADR-018]] · [[ADR-099]] · [[ADR-102]] · [[ADR-158]] |
 | `persistence` | [persistence/README.md](./persistence/README.md) | 기기 저장소 · SQLite 스키마 · 데이터 수명 | [[ADR-007]] · [[ADR-078]] · [[ADR-096]] |
-| `release` | [foundation/release.md](./foundation/release.md) | 스토어 빌드 · 서명 · 버전 | [[ADR-008]] · [[ADR-009]] · [[ADR-010]] |
+| `release` | [foundation/release.md](./foundation/release.md) | 스토어 빌드 · 서명 · 버전 · 브랜치 | [[ADR-008]] · [[ADR-009]] · [[ADR-010]] · [[ADR-188]] |
 | `docs` | [foundation/writing.md](./foundation/writing.md) | 문서 · 주석 · 앱 문구 쓰는 규칙 | [[ADR-003]] |
 
 ## 작업마다 볼 문서
@@ -70,3 +70,4 @@ docs/
 - **기존 사용자의 기기 데이터를 다룰 때**: [persistence/capacitor-storage.md](./persistence/capacitor-storage.md). 이름에 `capacitor` 가 붙은 파일을 지우면 안 되는 이유가 여기 있다.
 - **스토어에 올릴 바이너리를 만들 때**: [foundation/release.md](./foundation/release.md). OTA 발행은 [features/live-update.md](./features/live-update.md) 를 본다.
 - **문서 · 주석 · 앱 문구를 쓸 때**: [foundation/writing.md](./foundation/writing.md).
+- **브랜치를 따거나 핫픽스 · 출시를 할 때, ADR 새 번호가 필요할 때**: [[ADR-188]].
