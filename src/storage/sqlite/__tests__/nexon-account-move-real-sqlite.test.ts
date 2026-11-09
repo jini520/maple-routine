@@ -67,6 +67,12 @@ it('옛 id 의 줄을 이어받은 id 로 옮기고, 다른 계정의 줄은 그
       `INSERT INTO character_accounts (ocid, name, account_id, nexon_account_id, first_seen_date, last_seen_date)
        VALUES ('o1', '낟낟', 'maple-1', ?, '2026-10-01', '2026-10-01')`,
     ).run(키)
+    for (const account of [키, 로그인]) {
+      db.prepare(
+        `INSERT INTO event_world_characters (nexon_account_id, character_name, world_key, updated_at)
+         VALUES (?, '지운캐릭', 'special_2', '2026-10-02T00:00:00.000Z')`,
+      ).run(account)
+    }
   })
 
   await moveNexonAccountRows([키], 로그인)
@@ -75,6 +81,7 @@ it('옛 id 의 줄을 이어받은 id 로 옮기고, 다른 계정의 줄은 그
   expect(줄('SELECT nexon_account_id AS a, attempts FROM enhancement_totals')).toEqual([{ a: 로그인, attempts: 3 }])
   expect(줄('SELECT nexon_account_id AS a FROM enhancement_recomputes')).toEqual([{ a: 로그인 }])
   expect(줄('SELECT nexon_account_id AS a FROM character_accounts')).toEqual([{ a: 로그인 }])
+  expect(줄('SELECT nexon_account_id AS a, character_name AS n FROM event_world_characters')).toEqual([{ a: 로그인, n: '지운캐릭' }])
 })
 
 // 같은 넥슨 계정의 같은 날을 두 번 받은 것이다. 나중 줄이 그 날을 더 많이 담는다.

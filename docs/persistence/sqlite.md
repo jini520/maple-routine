@@ -62,6 +62,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `enhancement_history` | `id` | 옛 강화 응답 원본. 합계로 옮기는 부팅 단계만 읽고 v1.0.14 에서 지운다 | `storage/enhancement-history.ts` | 남긴다 | [[ADR-100]] |
 | `enhancement_recomputes` | `id`(uuid, `(nexon_account_id, request_key)` 는 UNIQUE) | 강화 비용 다시 매기기 요청을 넥슨 계정마다 어디까지 받았는지와 끝났는지 | `storage/enhancement-recomputes.ts` | 지운다 (강화) | [[ADR-100]] |
 | `enhancement_history_checks` | `id`(uuid, `(nexon_account_id, enhancement_type, history_date)` 는 UNIQUE) | 강화 내역을 넥슨 계정 · 날짜별로 조회했는지 기록 | `storage/enhancement-history.ts` | 지운다 (강화) | `features/cashbook.md` |
+| `event_world_characters` | `id`(uuid, `(nexon_account_id, character_name, world_key)` 는 UNIQUE) | 이벤트 월드의 스타포스 줄에서 본 캐릭터 이름과 월드. 목록에서 사라진 캐릭터의 큐브 · 잠재 · 소울 줄을 그 월드의 기간 안에서 지출에서 빼는 데 쓴다 | `storage/event-world-characters.ts` | 지운다 (강화) | [[ADR-100]] |
 | `cashbook_entries` | `id`(uuid) | 가계부에 손으로 적은 수입 · 지출 한 건. 날짜 · 갈래 · 캐릭터나 메이플 ID | `storage/income.ts` · `storage/spend.ts` | 지운다 (가계부) | [[ADR-096]] · [[ADR-161]] |
 | `cashbook_entry_items` | `id`(uuid, `(entry_id, sort_order)` 는 UNIQUE) | 기록의 품목. 항목 key 또는 직접 친 이름, 수량 · 레벨, 금액 · 수수료 · 관세, 헥사 강화의 조각 칸 넷과 보관 체크 칸 둘 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-096]] |
 | `cashbook_entry_hunt_inputs` | `id`(uuid, `entry_id` 는 UNIQUE) | 사냥 기록의 계산기 입력 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-096]] |
@@ -92,6 +93,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `enhancement_history` | `id` NN · `kind` NN · `date_key` NN · `created_at` NN · `character_name` NN · `target_item` NN · `item_key` · `item_level` · `payload` NN · `cost_meso` |
 | `enhancement_recomputes` | `id` NN · `nexon_account_id` NN · `request_key` NN · `done_through_date` · `completed_at` · `updated_at` NN |
 | `enhancement_history_checks` | `id` NN · `nexon_account_id` · `enhancement_type` NN · `history_date` NN · `next_cursor` · `settled` NN(기본 0) · `checked_at` NN |
+| `event_world_characters` | `id` NN · `nexon_account_id` NN · `character_name` NN · `world_key` NN · `updated_at` NN |
 | `cashbook_entries` | `id` NN · `ocid` · `account_id` · `nexon_account_id` · `entry_type` NN(`income` · `spend`) · `category_key` NN · `entry_date` NN · `created_at` NN · `updated_at` NN |
 | `cashbook_entry_items` | `id` NN · `entry_id` NN · `sort_order` NN · `item_key` · `item_name` · `form_key` · `item_kind_key` · `quantity` · `from_level` · `to_level` · `amount_meso` · `tariff_meso` · `sale_fee_percent` · `sale_fee_meso` · `sale_fee_auto` · `amount_point` · `point_per_100m_meso` · `amount_cash` · `fragment_count` · `untradable_fragment_count` · `fragment_price_meso` · `hexa_activation` · `hexa_use_storage` · `hexa_storage_as_spend` |
 | `cashbook_entry_hunt_inputs` | `id` NN · `entry_id` NN UNIQUE · `character_level` · `missed_mobs` · `boosts` · `fragments` · `fragment_price_meso` · `meso_rate` · `typed_meso` · `union_tier` |

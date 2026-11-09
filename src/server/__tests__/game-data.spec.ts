@@ -22,7 +22,7 @@ const 보스표: BossCatalog = {
 }
 const 월드표: WorldsTable = {
   updatedAt: '2026-10-16T15:07:54.435Z',
-  worlds: [{ key: 'scania', name: '스카니아', emblemAssetId: 'scania-id', challengers: false, event: false }],
+  worlds: [{ key: 'scania', name: '스카니아', emblemAssetId: 'scania-id', challengers: false, event: false, periods: [] }],
 }
 
 /** 칸 열넷 중 넘긴 것만 값이고 나머지는 null 인 응답. */
@@ -96,7 +96,7 @@ describe('parseGameDataResponse', () => {
 
     expect(parseGameDataResponse({ worlds: 응답 })?.worlds).toEqual({
       ...월드표,
-      worlds: [{ key: 'scania', name: '스카니아', challengers: false, event: false }],
+      worlds: [{ key: 'scania', name: '스카니아', challengers: false, event: false, periods: [] }],
     })
   })
 

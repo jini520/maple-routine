@@ -4,6 +4,7 @@
  *
  * @see docs/foundation/server-sync.md 강화 합계에서 빠진 줄
  */
+import type { EventWorldEvidence } from '../../lib/enhancement/world'
 import { sendEnhancementAnomalies } from '../../server/enhancement-anomalies'
 import type { EnhancementAnomaly } from '../../types/server-records'
 import { serverIdentityHeaders } from '../auth/server-identity'
@@ -34,19 +35,24 @@ function isUnwatchedNoLevel(entry: EnhancementSource, reason: UnpricedReason): b
 
 /**
  * 줄들의 상황을 날짜 · 종류 · 이유 · 장비마다 센다. 전용 재화 줄은 빼는 것이 정상이라 세지 않고, 장비 표에 없는 장비의
- * 스타포스는 시도 뒤 10성 이상인 줄만 센다.
+ * 스타포스는 시도 뒤 10성 이상인 줄만 센다. 판정하지 못한 줄은 까닭(`detail`)마다 따로 센다.
  *
- * @param eventNames 스페셜 캐릭터 이름. 목록을 못 받았으면 `null` 이고, 그때 월드를 모르는 줄을 판정하지 못한 줄로 센다
- * @param listError 캐릭터 목록 요청의 실패 이유. 판정하지 못한 줄에 싣는다
+ * @param listError 캐릭터 목록 요청의 실패 이유. 목록 없이 판정하지 못한 줄에 싣는다. 표에 없는 월드의 줄은 그 월드 이름을 싣는다
  */
 export function enhancementAnomaliesOf(
   entries: readonly EnhancementSource[],
-  eventNames: ReadonlySet<string> | null,
+  evidence: EventWorldEvidence,
   listError: string | null,
 ): EnhancementAnomaly[] {
   const counted = new Map<string, EnhancementAnomaly>()
-  const count = (entry: EnhancementSource, anomalyType: EnhancementAnomaly['anomalyType'], itemKey: string | null, itemName: string) => {
-    const key = [entry.dateKey, entry.kind, anomalyType, itemName].join('|')
+  const count = (
+    entry: EnhancementSource,
+    anomalyType: EnhancementAnomaly['anomalyType'],
+    itemKey: string | null,
+    itemName: string,
+    detail: string | null,
+  ) => {
+    const key = [entry.dateKey, entry.kind, anomalyType, itemName, detail ?? ''].join('|')
     const existing = counted.get(key)
     if (existing !== undefined) {
       existing.rowCount += 1
@@ -59,15 +65,19 @@ export function enhancementAnomaliesOf(
       itemKey,
       itemName,
       rowCount: 1,
-      detail: anomalyType === 'event_world_unknown' ? (listError?.slice(0, DETAIL_MAX) ?? null) : null,
+      detail: detail?.slice(0, DETAIL_MAX) ?? null,
     })
   }
   for (const entry of entries) {
     if (usesSpecialCurrency(entry)) continue
     const reason = unpricedReasonOf(entry)
     if (reason !== null && isUnwatchedNoLevel(entry, reason)) continue
-    if (reason !== null) count(entry, reason, entry.itemKey, entry.targetItem)
-    else if (eventWorldOf(entry, eventNames) === null) count(entry, 'event_world_unknown', null, '')
+    if (reason !== null) {
+      count(entry, reason, entry.itemKey, entry.targetItem, null)
+      continue
+    }
+    const judgment = eventWorldOf(entry, evidence)
+    if (judgment.eventWorld === null) count(entry, 'event_world_unknown', null, '', judgment.unknownWorld ?? listError)
   }
   return [...counted.values()]
 }

@@ -47,7 +47,7 @@ const CASHBOOK_TABLES = [
 ]
 
 // 확인 기록만 남으면 그 날짜를 다시 부르지 않아 합계가 빈 채로 굳는다. 셋을 함께 지워야 다시 받는다.
-const ENHANCEMENT_TABLES = ['enhancement_totals', 'enhancement_history_checks', 'enhancement_recomputes']
+const ENHANCEMENT_TABLES = ['enhancement_totals', 'enhancement_history_checks', 'enhancement_recomputes', 'event_world_characters']
 
 const NULL_SPLIT = SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')
 
