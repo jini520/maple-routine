@@ -6,12 +6,20 @@ import type { NexonCredential } from '../../../types/auth'
 
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn(), setNexonLogin: jest.fn() }))
 jest.mock('../../../storage/nexon-account-ids', () => ({ moveNexonAccountRows: jest.fn() }))
-jest.mock('../../mvp-grade/character-list', () => ({ fetchAndRecordCharacterList: jest.fn() }))
+jest.mock('../../mvp-grade/character-list', () => ({
+  fetchAndRecordCharacterList: jest.fn(),
+  fetchUnsavedCharacterList: jest.fn(),
+}))
 jest.mock('../../../server/api-key-link', () => ({ linkApiKeyOnServer: jest.fn() }))
+jest.mock('../reentry-account-id', () => ({ reusableNexonAccountId: jest.fn() }))
 
 const { getAuthConfig, setNexonLogin } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 const { moveNexonAccountRows } = jest.requireMock('../../../storage/nexon-account-ids') as Record<string, jest.Mock>
-const { fetchAndRecordCharacterList } = jest.requireMock('../../mvp-grade/character-list') as Record<string, jest.Mock>
+const { fetchAndRecordCharacterList, fetchUnsavedCharacterList } = jest.requireMock('../../mvp-grade/character-list') as Record<
+  string,
+  jest.Mock
+>
+const { reusableNexonAccountId } = jest.requireMock('../reentry-account-id') as Record<string, jest.Mock>
 const { linkApiKeyOnServer } = jest.requireMock('../../../server/api-key-link') as Record<string, jest.Mock>
 
 import { pruneCoveredApiKeys, saveNexonLogin } from '../prune-covered-keys'
@@ -35,6 +43,8 @@ const 로그인 = { type: 'login', id: 'login-id', session: '세션' }
 beforeEach(() => {
   jest.resetAllMocks()
   fetchAndRecordCharacterList.mockImplementation(async (credential: NexonCredential) => 메이플ID.get(credential.value) ?? [])
+  fetchUnsavedCharacterList.mockImplementation(async (credential: NexonCredential) => 메이플ID.get(credential.value) ?? [])
+  reusableNexonAccountId.mockResolvedValue(null)
   setNexonLogin.mockResolvedValue(undefined)
   moveNexonAccountRows.mockResolvedValue(undefined)
   linkApiKeyOnServer.mockResolvedValue({ outcome: 'sent' })
@@ -69,7 +79,7 @@ describe('saveNexonLogin: 로그인 직후', () => {
 
     await saveNexonLogin('세션')
 
-    expect(setNexonLogin).toHaveBeenCalledWith({ session: '세션' }, [])
+    expect(setNexonLogin).toHaveBeenCalledWith({ session: '세션' }, [], undefined)
   })
 
   it('잇기가 던져도 로그인은 저장한다', async () => {
@@ -77,7 +87,41 @@ describe('saveNexonLogin: 로그인 직후', () => {
 
     await saveNexonLogin('세션')
 
-    expect(setNexonLogin).toHaveBeenCalledWith({ session: '세션' }, [])
+    expect(setNexonLogin).toHaveBeenCalledWith({ session: '세션' }, [], undefined)
+  })
+})
+
+// 같은 넥슨 ID 로 다시 로그인하면서 새 계정 id 를 받으면, 강화 수집기가 이미 받은 날짜를 새 id 로 다시 받아 같은 강화를 한 줄
+// 더 적는다. 로그아웃 뒤든 로그인 만료 뒤든 같다.
+describe('saveNexonLogin: 거둔 키가 없을 때의 계정 id', () => {
+  beforeEach(() => {
+    getAuthConfig.mockResolvedValue(null)
+  })
+
+  it('로그인의 메이플 ID 가 속했던 옛 계정 id 를 이어 저장한다', async () => {
+    reusableNexonAccountId.mockResolvedValue('옛-로그인-id')
+
+    await saveNexonLogin('세션')
+
+    expect(reusableNexonAccountId).toHaveBeenCalledWith([계정('id-1')])
+    expect(setNexonLogin).toHaveBeenCalledWith({ session: '세션' }, [], '옛-로그인-id')
+  })
+
+  // 먼저 적으면 소속 기록의 계정 칸이 덮여 옛 id 를 찾을 수 없다.
+  it('로그인의 목록은 계정 id 를 정하기 전이라 소속을 적지 않고 받는다', async () => {
+    await saveNexonLogin('세션')
+
+    expect(fetchUnsavedCharacterList).toHaveBeenCalledWith({ type: 'login', value: '세션', accountId: null })
+    expect(fetchAndRecordCharacterList).not.toHaveBeenCalled()
+  })
+
+  it('키를 거두면 옛 계정 id 가 아니라 거둔 키의 계정 id 를 잇는다', async () => {
+    getAuthConfig.mockResolvedValue({ login: null, apiKeys: [키('같은-키', 'k1')] })
+    reusableNexonAccountId.mockResolvedValue('옛-로그인-id')
+
+    await saveNexonLogin('세션')
+
+    expect(setNexonLogin).toHaveBeenCalledWith({ session: '세션' }, ['같은-키'])
   })
 })
 

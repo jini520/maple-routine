@@ -23,8 +23,10 @@ export const queryKeys = {
   dropHistory: () => ['drop-history'] as const,
   /** 오늘 강화 내역을 마지막으로 받은 시각. 수집기가 `setQueryData` 로 넣는다. */
   enhancementToday: () => ['enhancement-today'] as const,
-  /** 자격 하나로 조회되는 전 계정의 캐릭터 목록. 자격이 바뀌면 열쇠가 바뀐다. */
+  /** 넥슨 계정 하나의 캐릭터 목록. 둘째 칸은 그 계정 id 로 만든다. */
   characterList: (credentialKey: string) => ['character-list', credentialKey] as const,
+  /** 캐릭터 목록 전부를 가리키는 앞 칸. */
+  allCharacterLists: () => ['character-list'] as const,
   /** 분류 하나의 공지 목록. */
   notices: (kind: string) => ['notices', kind] as const,
   /** 다섯 분류를 한꺼번에 가리키는 앞 칸. 포커스에 만료된 분류를 다 받는다. */

@@ -25,6 +25,7 @@ import { Platform } from 'react-native'
 import { openAuthSession } from '../../native/browser'
 import { redeemNexonSession, startNexonLogin } from '../../server/nexon-auth'
 import type { Platform as NexonPlatform } from '../../types/auth'
+import { forgetTrackedSelection } from '../character-selection/forget'
 import { saveNexonLogin } from './prune-covered-keys'
 
 /** 넥슨에 등록한 값. 인증 세션이 이 주소로 돌아올 때만 콜백을 우리에게 준다. */
@@ -65,7 +66,15 @@ async function redeemUntilSettled(redeemKey: string, receipt: string): Promise<s
   return null
 }
 
-export async function signInWithNexon(): Promise<NexonSignInResult> {
+export interface NexonSignInOptions {
+  /**
+   * 참이면 로그인 화면에서 하는 새 로그인이다. 세션을 받은 뒤, 저장하기 전에 앞 로그인의 추적 목록을 비운다. today 의
+   * `넥슨 ID 연동하기` 는 키로 쓰던 사람이 로그인을 붙이는 것이라 비우지 않는다.
+   */
+  fresh?: boolean
+}
+
+export async function signInWithNexon(options?: NexonSignInOptions): Promise<NexonSignInResult> {
   try {
     const started = await startNexonLogin(platformOf())
 
@@ -83,6 +92,10 @@ export async function signInWithNexon(): Promise<NexonSignInResult> {
 
     const session = await redeemUntilSettled(started.redeemKey, receipt)
     if (session === null) return { kind: 'failed' }
+
+    // 로그인 만료는 로그아웃을 거치지 않는다. 그래서 로그아웃이 아니라 여기서 비워야 다른 넥슨 ID 로 들어올 때 앞 목록이
+    // 남지 않는다.
+    if (options?.fresh === true) await forgetTrackedSelection()
 
     // 메이플 ID 가 같은 키를 저장하기 전에 서버에서 잇고, 로그인이 그 키의 계정 id 를 이어받아 저장된다. 못 적으면 다시
     // 켤 때 로그인 상태가 아니다. 성공이라고 말하면 안 된다.

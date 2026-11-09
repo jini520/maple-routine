@@ -41,6 +41,16 @@ jest.mock('../nexon-login', () => ({ signInWithNexon: jest.fn() }))
 jest.mock('../current-credential', () => ({ currentCredential: jest.fn() }))
 jest.mock('../reentry-account-id', () => ({ reusableNexonAccountId: jest.fn() }))
 jest.mock('../prune-covered-keys', () => ({ pruneCoveredApiKeys: jest.fn() }))
+jest.mock('../../character-selection/forget', () => ({ forgetTrackedSelection: jest.fn() }))
+jest.mock('../../../storage/character-accounts', () => ({ recordCharacterAccounts: jest.fn() }))
+const { forgetTrackedSelection: forgetTrackedSelectionMock } = jest.requireMock('../../character-selection/forget') as Record<
+  string,
+  jest.Mock
+>
+const { recordCharacterAccounts: recordCharacterAccountsMock } = jest.requireMock('../../../storage/character-accounts') as Record<
+  string,
+  jest.Mock
+>
 const { pruneCoveredApiKeys: pruneCoveredApiKeysMock } = jest.requireMock('../prune-covered-keys') as Record<string, jest.Mock>
 const { signInWithNexon: signInWithNexonMock } = jest.requireMock('../nexon-login') as Record<string, jest.Mock>
 const { currentCredential: currentCredentialMock } = jest.requireMock('../current-credential') as Record<string, jest.Mock>
@@ -98,6 +108,8 @@ beforeEach(() => {
   clearNexonLoginMock.mockResolvedValue(undefined)
   resolveAfterSignInMock.mockResolvedValue(undefined)
   pruneCoveredApiKeysMock.mockResolvedValue(undefined)
+  forgetTrackedSelectionMock.mockResolvedValue(undefined)
+  recordCharacterAccountsMock.mockResolvedValue(undefined)
   // 판정이 안 서는 것이 통상 경로다. 서는 경우만 그 테스트가 직접 세운다.
   probeApiKeyStageMock.mockResolvedValue('undetermined')
   getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
@@ -707,6 +719,62 @@ describe('useAuthStore.signIn: 다시 받은 키가 옛 계정을 잇는다', ()
   })
 })
 
+// 로그인 화면에서 들어오는 것은 새 로그인이라 캐릭터를 반드시 새로 고른다. 로그인 만료는 로그아웃을 거치지 않으므로 로그아웃
+// 때 비우면 만료 뒤 다른 넥슨 ID 로 들어올 때 앞 목록이 남는다.
+describe('useAuthStore.signIn: 새 로그인은 추적 목록을 비운다', () => {
+  beforeEach(() => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+  })
+
+  it('키를 저장하기 전에 추적 목록을 비운다', async () => {
+    const order: string[] = []
+    forgetTrackedSelectionMock.mockImplementation(async () => {
+      order.push('forget')
+    })
+    setApiKeyMock.mockImplementation(async () => {
+      order.push('save')
+    })
+
+    await useAuthStore.getState().signIn('key-1')
+
+    expect(order).toEqual(['forget', 'save'])
+  })
+
+  it.each([
+    ['키가 무효면', () => fetchCharacterListMock.mockRejectedValue(new NexonAuthError('401'))],
+    ['개발 단계 키면', () => probeApiKeyStageMock.mockResolvedValue('developmentStage')],
+  ])('%s 비우지 않는다', async (_label, arrange) => {
+    arrange()
+
+    await useAuthStore.getState().signIn('key-1')
+
+    expect(forgetTrackedSelectionMock).not.toHaveBeenCalled()
+  })
+})
+
+// 먼저 적으면 막힌 키의 캐릭터가 계정 칸이 빈 채로 남는다.
+describe('useAuthStore.signIn: 소속은 키를 저장한 뒤에 적는다', () => {
+  beforeEach(() => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+  })
+
+  it('저장된 키의 계정 id 로 적는다', async () => {
+    getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: '새-계정', label: '', value: 'key-1' }] })
+
+    await useAuthStore.getState().signIn('key-1')
+
+    expect(recordCharacterAccountsMock).toHaveBeenCalledWith([account('acc-1')], expect.any(String), '새-계정')
+  })
+
+  it('개발 단계 키로 막히면 적지 않는다', async () => {
+    probeApiKeyStageMock.mockResolvedValue('developmentStage')
+
+    await useAuthStore.getState().signIn('key-1')
+
+    expect(recordCharacterAccountsMock).not.toHaveBeenCalled()
+  })
+})
+
 // 연결 해제와 가른다. 둘 다 내부 데이터를 안 건드리고, **인증에서 지우는 범위**가 다르다.
 // 로그아웃이 생기면서 로그인 화면에도 버튼이 선다. 그 화면에서 성공하면 **앱이 열려야 한다** -
 // 진입 단계를 다시 판정하지 않으면 사용자는 로그인하고도 같은 화면에 남는다.
@@ -723,6 +791,16 @@ describe('useAuthStore.signInWithNexonAccount', () => {
     expect(ok).toBe(true)
     expect(useAuthStore.getState().status).toBe('signedIn')
     expect(resolveAfterSignInMock).toHaveBeenCalledWith([account('acc-1')])
+  })
+
+  // today 의 `넥슨 ID 연동하기` 는 키로 쓰던 사람이 로그인을 붙이는 것이라 새 로그인이 아니다.
+  it.each([
+    ['로그인 화면이면 새 로그인으로', { fresh: true }, { fresh: true }],
+    ['today 의 연동이면 새 로그인이 아닌 것으로', undefined, { fresh: false }],
+  ])('%s 넥슨 로그인을 연다', async (_label, options, expected) => {
+    await useAuthStore.getState().signInWithNexonAccount(options)
+
+    expect(signInWithNexonMock).toHaveBeenCalledWith(expected)
   })
 
   it('취소는 아무 일도 안 일어난다', async () => {

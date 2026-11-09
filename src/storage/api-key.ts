@@ -148,12 +148,17 @@ export async function setApiKey(apiKey: string, label = '', accountId?: string):
  * 기기 기록이 이어져야 한다. 나눠 적으면 그 사이에 두 수단이 같은 id 를 갖는다.
  *
  * @param takenKeys 메이플 ID 가 같아 서버에서 이은 키의 값. 안 주면 키는 안 건드린다
+ * @param accountId 거둔 키가 없을 때 로그인이 이을 옛 넥슨 계정 id. 안 주면 지금 로그인의 id, 그것도 없으면 새 id 다
  */
-export async function setNexonLogin(login: { session: string }, takenKeys: readonly string[] = []): Promise<void> {
+export async function setNexonLogin(
+  login: { session: string },
+  takenKeys: readonly string[] = [],
+  accountId?: string,
+): Promise<void> {
   const current = (await getAuthConfig()) ?? { login: null, apiKeys: [] }
   const taken = current.apiKeys.filter((one) => takenKeys.includes(one.value))
   await write({
-    login: { type: 'login', id: taken[0]?.id ?? current.login?.id ?? randomUuid(), session: login.session },
+    login: { type: 'login', id: taken[0]?.id ?? accountId ?? current.login?.id ?? randomUuid(), session: login.session },
     apiKeys: current.apiKeys.filter((one) => !takenKeys.includes(one.value)),
   })
 }

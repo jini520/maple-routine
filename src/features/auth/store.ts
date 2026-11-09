@@ -8,7 +8,7 @@
  * 그 결과를 `useAppEntryStore` 에 알린다.
  */
 import { create } from 'zustand'
-import { fetchAndRecordCharacterList } from '../mvp-grade/character-list'
+import { fetchAndRecordCharacterList, fetchUnsavedCharacterList, recordCharacterList } from '../mvp-grade/character-list'
 import { probeApiKeyStage } from '../../nexon/key-stage'
 import { isInvalidApiKeyError, NexonMaintenanceError, NexonRateLimitError } from '../../nexon/errors'
 import {
@@ -36,6 +36,7 @@ import {
   type AuthState,
 } from './state'
 import { clearUnsentServerData, requestAccountDeletion } from '../server-sync/forget'
+import { forgetTrackedSelection } from '../character-selection/forget'
 
 export interface AuthStore extends AuthState {
   restoreFromStorage(): Promise<void>
@@ -57,8 +58,10 @@ export interface AuthStore extends AuthState {
    * 로그인 화면에 선 사용자가 그 자리를 벗어난다.
    *
    * 앱으로 넘어갈 수 있으면 `true`.
+   *
+   * @param options 로그인 화면이면 `{ fresh: true }`. 앞 로그인의 추적 목록을 비운다
    */
-  signInWithNexonAccount(): Promise<boolean>
+  signInWithNexonAccount(options?: { fresh?: boolean }): Promise<boolean>
   /** 로그아웃. 넥슨 로그인과 API 키를 모두 뗀다. 앱 데이터와 서버 데이터는 남는다. */
   signOut(): Promise<void>
   /** 계정 삭제를 서버에 예약하고 로그아웃한다. 서버가 받지 못하면 로그아웃하지 않고 `false` 다. */
@@ -103,9 +106,10 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   async signIn(apiKey: string) {
     set((state) => authReducer(state, { type: 'SUBMIT_API_KEY' }))
 
+    // 소속은 계정 id 를 정한 뒤에 적는다. 먼저 적으면 막힌 키의 캐릭터가 계정 칸이 빈 채로 남는다.
     let accounts: AuthState['accounts']
     try {
-      accounts = await fetchAndRecordCharacterList(apiKeyCredential(apiKey))
+      accounts = await fetchUnsavedCharacterList(apiKeyCredential(apiKey))
     } catch (error) {
       const authError = toAuthError(error)
       useToastStore.getState().showError(formatAuthError(authError))
@@ -113,7 +117,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       return false
     }
 
-    // 검증이 성공한 뒤에만 잰다. 키 오타는 흔한 실패인데 그때마다 열 건을 태우면 개발 단계
+    // 검증이 성공한 뒤에만 잰다. 키 오타는 흔한 실패인데 그때마다 판정 건수를 태우면 개발 단계
     // 키의 하루 예산이 오타 몇 번에 녹는다.
     //
     // **저장보다 먼저**여야 한다. 저장한 뒤 지우는 순서면 그 사이에 앱이 죽었을 때 개발 단계
@@ -128,7 +132,12 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
     // try 밖이면 미처리 rejection 이라 저장이 실패해도 아무 일도 안 일어난 것처럼 보인다.
     try {
-      await setApiKey(apiKey, '', (await reusableNexonAccountId(accounts)) ?? undefined)
+      // 로그인 화면에서 들어온 새 로그인이라 캐릭터를 새로 고른다.
+      const reusedId = (await reusableNexonAccountId(accounts)) ?? undefined
+      await forgetTrackedSelection()
+      await setApiKey(apiKey, '', reusedId)
+      const saved = (await getAuthConfig())?.apiKeys.find((one) => one.value === apiKey)
+      recordCharacterList(accounts, saved?.id ?? null)
     } catch {
       const authError = { kind: 'storageWriteFailed' } as const
       useToastStore.getState().showError(formatAuthError(authError))
@@ -139,9 +148,8 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     useToastStore.getState().showSuccess('API 키를 확인했어요')
     set((state) => authReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
 
-    // 키 재입력이면 뒤 단계를 저장된 값으로 재개한다. 캐릭터를 다시 묻지 않는다. 파생은 부팅과
-    // 같은 함수 하나가 하고(setApiKey 뒤라야 authConfig가 채워져 있다), 남의 계정 키로 이전
-    // 목록을 쓰게 두지 않는 대조도 저쪽이 진다.
+    // 추적 목록을 비웠으므로 캐릭터 설정으로 간다. 파생은 부팅과 같은 함수 하나가 한다(setApiKey 뒤라야 authConfig 가
+    // 채워져 있다).
     await useAppEntryStore.getState().resolveAfterSignIn(accounts)
     return true
   },
@@ -218,11 +226,11 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   // 로그인 화면과 today 의 연동 시트가 함께 쓴다. 두 자리가 같은 끝을 내야 한다.
-  async signInWithNexonAccount() {
+  async signInWithNexonAccount(options) {
     if (nexonSignInRunning) return false
     nexonSignInRunning = true
     try {
-      const result = await signInWithNexon()
+      const result = await signInWithNexon({ fresh: options?.fresh === true })
       // 사용자가 창을 닫거나 동의 화면에서 취소한 것이라 아무 일도 안 일어난 것이다. 안내를 띄우면
       // 자기가 그만둬 놓고 무엇이 잘못됐나 찾게 된다.
       if (result.kind === 'cancelled') return false

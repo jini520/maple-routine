@@ -5,7 +5,7 @@ jest.mock('../../auth/current-credential', () => ({ currentCredential: jest.fn()
 import type { NexonCredential } from '../../../types/auth'
 import { queryClient } from '../../query/client'
 import { loadAccountIdentities } from '../accounts'
-import { CHARACTER_LIST_TTL_MS, fetchCharacterListCached } from '../character-list'
+import { CHARACTER_LIST_TTL_MS, dropLegacyCharacterLists, fetchCharacterListCached } from '../character-list'
 
 const { fetchCharacterList: fetchMock } = jest.requireMock('../../../nexon/character') as Record<string, jest.Mock>
 const { currentCredential } = jest.requireMock('../../auth/current-credential') as Record<string, jest.Mock>
@@ -65,4 +65,25 @@ it('실패는 그대로 던지고 다음 호출이 다시 받는다', async () =
   await expect(fetchCharacterListCached(KEY_A)).rejects.toThrow('401')
   await fetchCharacterListCached(KEY_A)
   expect(fetchMock).toHaveBeenCalledTimes(2)
+})
+
+// 열쇠에 키 값을 넣으면 기기 캐시에 키가 한 벌 더 저장된다. 같은 계정의 키를 다시 받으면 옛 캐시가 주인 없이 남는다.
+it('목록 캐시의 열쇠에 키 값이 들어가지 않고, 같은 넥슨 계정의 새 키는 같은 목록을 쓴다', async () => {
+  await fetchCharacterListCached(KEY_A)
+  await fetchCharacterListCached({ type: 'key', value: 'key-a-다시받음', accountId: 'acc-a' })
+
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+  const keys = queryClient.getQueryCache().getAll().map((query) => JSON.stringify(query.queryKey))
+  expect(keys.some((key) => key.includes('key-a'))).toBe(false)
+})
+
+it('옛 열쇠로 남은 목록만 걷는다', async () => {
+  queryClient.setQueryData(['character-list', 'key:옛키값'], [])
+  queryClient.setQueryData(['character-list', 'login:옛계정'], [])
+  await fetchCharacterListCached(KEY_A)
+
+  dropLegacyCharacterLists()
+
+  const keys = queryClient.getQueryCache().getAll().map((query) => query.queryKey[1])
+  expect(keys).toEqual(['account:acc-a'])
 })
