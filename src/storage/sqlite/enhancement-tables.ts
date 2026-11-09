@@ -53,3 +53,17 @@ export const ENHANCEMENT_RECOMPUTES_BODY = `(
     updated_at TEXT NOT NULL,
     UNIQUE (nexon_account_id, request_key)
   )`
+
+/**
+ * 이벤트 월드의 스타포스 줄에서 본 캐릭터 이름과 월드. 이벤트 중에 지운 캐릭터는 목록에서 사라져, 그 이름의 큐브 · 잠재 · 소울
+ * 줄을 가를 단서가 이것뿐이다. 그래서 지우지 않는다.
+ */
+export const EVENT_WORLD_CHARACTERS_BODY = `(
+    id TEXT NOT NULL PRIMARY KEY DEFAULT (${NEW_UUID_SQL}),
+    -- 강화 내역이 계정 단위라 계정마다 따로 남긴다.
+    nexon_account_id TEXT NOT NULL,
+    character_name TEXT NOT NULL,
+    world_key TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (nexon_account_id, character_name, world_key)
+  )`

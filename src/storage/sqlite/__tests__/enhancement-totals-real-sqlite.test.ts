@@ -9,7 +9,8 @@ import {
   ensureEnhancementTotals,
 } from '../../../features/enhancement-history/legacy-totals'
 import type { EnhancementTotalDraft } from '../../../features/enhancement-history/spending'
-import { loadEnhancementTotals, replaceEnhancementTotals } from '../../enhancement-totals'
+import { loadEnhancementTotals, markEventWorldTotals, replaceEnhancementTotals } from '../../enhancement-totals'
+import { loadEventWorldCharacters, rememberEventWorldCharacters } from '../../event-world-characters'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
 import { NEW_UUID_SQL } from '../uuid'
@@ -166,6 +167,64 @@ async function seedHistory(rows: { id: string; kind: string; date: string; name:
     )
   }
 }
+
+describe('이벤트 월드에서 본 이름', () => {
+  // 지운 캐릭터를 가를 단서라 지우지 않는다. 같은 이름 · 월드를 매 회차 다시 보아도 한 줄이다.
+  it('같은 계정 · 이름 · 월드는 한 줄이고 계정마다 따로 읽는다', async () => {
+    await rememberEventWorldCharacters('account-main', [{ characterName: '지운캐릭', worldKey: 'special_2' }], NOW)
+    await rememberEventWorldCharacters(
+      'account-main',
+      [
+        { characterName: '지운캐릭', worldKey: 'special_2' },
+        { characterName: '지운캐릭', worldKey: 'special' },
+      ],
+      NOW,
+    )
+    await rememberEventWorldCharacters('account-other', [{ characterName: '남의캐릭', worldKey: 'special' }], NOW)
+
+    const mine = await loadEventWorldCharacters('account-main')
+    expect([...mine].map(([name, keys]) => [name, [...keys].sort()])).toEqual([['지운캐릭', ['special', 'special_2']]])
+  })
+})
+
+describe('남겨 둔 이름으로 다시 보기', () => {
+  // 고치는 것은 목록에 없는 이름의 큐브 · 잠재 · 소울 중 일반 월드로 적힌 줄뿐이다. 스타포스는 줄의 월드로 이미 판정했다.
+  it('그 계정 · 그 이름 · 기간 안 · 스타포스가 아닌 0 줄만 1 로 고친다', async () => {
+    const name = { characterName: '지운캐릭' }
+    await replaceEnhancementTotals('account-main', 'cube', '2025-11-20', [draft({ ...name, historyDate: '2025-11-20' })], NOW)
+    await replaceEnhancementTotals('account-main', 'cube', '2025-12-19', [draft({ ...name, historyDate: '2025-12-19' })], NOW)
+    await replaceEnhancementTotals(
+      'account-main',
+      'potential',
+      '2025-12-18',
+      [draft({ ...name, historyDate: '2025-12-18', enhancementType: 'potential', enhancementCategory: 'potential' })],
+      NOW,
+    )
+    await replaceEnhancementTotals(
+      'account-main',
+      'starforce',
+      '2025-11-25',
+      [draft({ ...name, historyDate: '2025-11-25', enhancementType: 'starforce', enhancementCategory: 'starforce' })],
+      NOW,
+    )
+    await replaceEnhancementTotals('account-main', 'cube', '2025-11-26', [draft({ ...name, historyDate: '2025-11-26', eventWorld: null })], NOW)
+    await replaceEnhancementTotals('account-main', 'cube', '2025-11-27', [draft({ historyDate: '2025-11-27' })], NOW)
+    await replaceEnhancementTotals('account-other', 'cube', '2025-11-21', [draft({ ...name, historyDate: '2025-11-21' })], NOW)
+
+    await markEventWorldTotals('account-main', '지운캐릭', '2025-11-20', '2025-12-19')
+
+    const rows = await loadEnhancementTotals('2025-11-01', '2025-12-31')
+    expect(rows.map((row) => [row.nexonAccountId, row.historyDate, row.characterName, row.enhancementType, row.eventWorld])).toEqual([
+      ['account-main', '2025-11-20', '지운캐릭', 'cube', true],
+      ['account-other', '2025-11-21', '지운캐릭', 'cube', false],
+      ['account-main', '2025-11-25', '지운캐릭', 'starforce', false],
+      ['account-main', '2025-11-26', '지운캐릭', 'cube', null],
+      ['account-main', '2025-11-27', '낟낟', 'cube', false],
+      ['account-main', '2025-12-18', '지운캐릭', 'potential', true],
+      ['account-main', '2025-12-19', '지운캐릭', 'cube', false],
+    ])
+  })
+})
 
 describe('옛 원본을 합계로 옮기기', () => {
   it('날짜 · 종류마다 묶어 메인 계정으로 적고, 다 옮기면 표시를 남긴다', async () => {

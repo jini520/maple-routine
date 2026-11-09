@@ -17,6 +17,7 @@ const ACCOUNT_KEYED_TABLES = [
     keys: ['history_date', 'character_name', 'enhancement_category', 'item_group'],
   },
   { table: 'enhancement_recomputes', at: 'updated_at', keys: ['request_key'] },
+  { table: 'event_world_characters', at: 'updated_at', keys: ['character_name', 'world_key'] },
 ] as const
 
 /**
