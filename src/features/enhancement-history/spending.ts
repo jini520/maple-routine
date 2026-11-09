@@ -12,9 +12,10 @@ import {
   type StarforceCostParts,
 } from '../../lib/enhancement/cost'
 import type { EnhancementCategory } from '../../lib/enhancement/categories'
-import { isSpendingRecord } from '../../lib/enhancement/world'
+import { judgeEventWorld, type EventWorldEvidence, type EventWorldJudgment } from '../../lib/enhancement/world'
+import { isEventWorld, worldKeyOfApiName } from '../../lib/world/worlds'
+import type { EventWorldCharacter } from '../../storage/event-world-characters'
 import { comparableEquipmentName, equipmentItemLevelOf } from '../../lib/equipment/equipment-items'
-import { worldKeyOfApiName } from '../../lib/world/worlds'
 import type { EnhancementKind } from '../../nexon/history/client'
 
 /** 묶기 전 응답 줄 한 개. 수집기가 받은 줄과 옛 원본 표의 줄이 이 모양이다. */
@@ -93,12 +94,6 @@ export function usesSpecialCurrency(entry: EnhancementSource): boolean {
     SPECIAL_CURRENCY.has(text(entry.payload, 'cube_type')) ||
     SPECIAL_CURRENCY.has(text(entry.payload, 'upgrade_item'))
   )
-}
-
-/** 스타포스 응답의 `world_name` 으로 찾은 월드 key. 큐브·잠재는 월드를 안 줘서 `null` 이다. 저장된 응답 원문이라 여기서 맞춘다. */
-function worldKeyOf(entry: EnhancementSource): string | null {
-  const world = text(entry.payload, 'world_name')
-  return world === '' ? null : worldKeyOfApiName(world)
 }
 
 /** `starforce_event_list` 가 주는 비용 할인율. 여럿이면 가장 큰 것. */
@@ -207,14 +202,20 @@ export function unpricedReasonOf(entry: EnhancementSource): UnpricedReason | nul
   return gradeBeforeReset(entry.payload, 'before_soul_potential_option') === null ? 'no_grade' : 'no_cost'
 }
 
-/**
- * 이 줄이 이벤트 월드인가. 스타포스는 응답의 월드로, 그 밖은 캐릭터 목록의 이름으로 판정한다. 판정하지 못하면 `null`.
- *
- * @param eventNames 스페셜 캐릭터 이름. 목록을 못 받았으면 `null`
- */
-export function eventWorldOf(entry: EnhancementSource, eventNames: ReadonlySet<string> | null): boolean | null {
-  const spending = isSpendingRecord(worldKeyOf(entry), entry.characterName, eventNames)
-  return spending === null ? null : !spending
+/** 이벤트 월드 스타포스 줄의 캐릭터와 월드. 이벤트 중에 지운 캐릭터를 가를 단서라 수집기가 남긴다. */
+export function eventWorldCharactersOf(entries: readonly EnhancementSource[]): EventWorldCharacter[] {
+  const seen = new Map<string, EventWorldCharacter>()
+  for (const entry of entries) {
+    const worldKey = worldKeyOfApiName(text(entry.payload, 'world_name'))
+    if (worldKey === null || !isEventWorld(worldKey)) continue
+    seen.set(`${entry.characterName}|${worldKey}`, { characterName: entry.characterName, worldKey })
+  }
+  return [...seen.values()]
+}
+
+/** 이 줄이 이벤트 월드인가. 스타포스는 응답의 `world_name` 을 들고, 큐브 · 잠재 · 소울은 빈 글자라 이름으로 가른다. */
+export function eventWorldOf(entry: EnhancementSource, evidence: EventWorldEvidence): EventWorldJudgment {
+  return judgeEventWorld(text(entry.payload, 'world_name'), entry.characterName, entry.dateKey, evidence)
 }
 
 /** 장비별로 묶는 열쇠. 장비 key 와 이름이 같은 글자여도 섞이지 않게 앞에 표시를 단다. */
@@ -226,13 +227,11 @@ export function itemGroupOf(itemKey: string | null, targetItem: string): string 
  * 줄들을 날짜 · 캐릭터 · 분류 · 장비별 합계로 묶는다.
  *
  * 전용 재화 줄과 값을 못 매기는 줄은 넣지 않는다. 전용 재화는 메소가 안 들고, 0 원으로 세우면 건수만 뜬다(사용자 지정).
- * 이벤트 월드는 스타포스면 응답의 월드로, 그 밖은 캐릭터 목록의 이름으로 판정해 줄에 적는다.
- *
- * @param eventNames 스페셜 캐릭터 이름. **목록을 못 받았으면 `null`** 이고, 그때 월드를 모르는 줄은 판정을 비운다
+ * 이벤트 월드 판정은 묶음의 첫 줄로 적는다. 묶음 열쇠가 날짜 · 캐릭터라 한 묶음의 줄은 판정이 같다.
  */
 export function summarizeEnhancement(
   entries: readonly EnhancementSource[],
-  eventNames: ReadonlySet<string> | null,
+  evidence: EventWorldEvidence,
 ): EnhancementTotalDraft[] {
   const totals = new Map<string, Omit<EnhancementTotalDraft, 'fromStar' | 'toStar'>>()
   const firsts = new Map<string, EnhancementSource>()
@@ -261,7 +260,7 @@ export function summarizeEnhancement(
       attempts: 0,
       attemptCostMeso: 0,
       destroyDefenceCostMeso: 0,
-      eventWorld: eventWorldOf(entry, eventNames),
+      eventWorld: eventWorldOf(entry, evidence).eventWorld,
     }
     total.attempts += 1
     total.attemptCostMeso += parts.attemptMeso

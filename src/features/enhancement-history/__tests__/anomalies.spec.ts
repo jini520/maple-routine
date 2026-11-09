@@ -1,3 +1,4 @@
+import type { EventWorldEvidence } from '../../../lib/enhancement/world'
 import { enhancementAnomaliesOf } from '../anomalies'
 import type { EnhancementSource } from '../spending'
 
@@ -13,7 +14,7 @@ const entry = (over: Partial<EnhancementSource> = {}): EnhancementSource => ({
   ...over,
 })
 
-const NO_EVENT = new Set<string>()
+const NO_EVENT: EventWorldEvidence = { listed: new Map(), remembered: new Map() }
 const starforce = (over: Partial<EnhancementSource> = {}, payload: Record<string, unknown> = {}) =>
   entry({ kind: 'starforce', itemLevel: null, payload: { before_starforce_count: 3, upgrade_item: '', ...payload }, ...over })
 const potential = (payload: Record<string, unknown>) => entry({ kind: 'potential', payload })
@@ -79,7 +80,7 @@ describe('이벤트 월드를 판정하지 못한 줄', () => {
   it('목록을 못 받은 회차는 월드를 모르는 줄을 날짜 · 종류마다 세고 실패 이유를 싣는다', () => {
     const rows = [entry(), entry(), starforce({}, { world_name: '엘리시움' })]
 
-    expect(enhancementAnomaliesOf(rows, null, 'Error: 503')).toEqual([
+    expect(enhancementAnomaliesOf(rows, { listed: null, remembered: new Map() }, 'Error: 503')).toEqual([
       {
         historyDate: '2026-09-05',
         enhancementType: 'cube',
@@ -89,6 +90,24 @@ describe('이벤트 월드를 판정하지 못한 줄', () => {
         rowCount: 2,
         detail: 'Error: 503',
       },
+    ])
+  })
+
+  // 새 이벤트 월드가 열린 것을 운영자가 이 보고로 안다. 월드 이름이 있어야 표에 넣을 수 있다.
+  it('표에 없는 월드의 줄은 월드마다 세고 그 월드 이름을 싣는다', () => {
+    const evidence: EventWorldEvidence = {
+      listed: new Map([['새캐릭', { eventWorld: null, unknownWorld: '스페셜3' }]]),
+      remembered: new Map(),
+    }
+    const rows = [
+      starforce({}, { world_name: '스페셜3' }),
+      starforce({}, { world_name: '스페셜3' }),
+      entry({ characterName: '새캐릭' }),
+    ]
+
+    expect(enhancementAnomaliesOf(rows, evidence, null).map((one) => [one.enhancementType, one.rowCount, one.detail])).toEqual([
+      ['starforce', 2, '스페셜3'],
+      ['cube', 1, '스페셜3'],
     ])
   })
 })

@@ -21,6 +21,7 @@ import {
   ENHANCEMENT_RECOMPUTES_BODY,
   ENHANCEMENT_TOTALS_BODY,
   ENHANCEMENT_TOTALS_DATE_INDEX,
+  EVENT_WORLD_CHARACTERS_BODY,
 } from './enhancement-tables'
 import { GAME_DATA_META_BODY, GAME_DATA_SECTIONS_BODY } from './game-data-tables'
 import { QUERY_CACHE_BODY } from './query-cache-tables'
@@ -218,6 +219,11 @@ const TABLE_DEFINITIONS = [
   {
     name: 'enhancement_recomputes',
     createSql: `CREATE TABLE IF NOT EXISTS enhancement_recomputes ${ENHANCEMENT_RECOMPUTES_BODY}`,
+  },
+  // 이벤트 월드에서 본 캐릭터 이름. 합계를 다시 받으면 다시 남는다.
+  {
+    name: 'event_world_characters',
+    createSql: `CREATE TABLE IF NOT EXISTS event_world_characters ${EVENT_WORLD_CHARACTERS_BODY}`,
   },
   // 날짜별 조회 원장. 계정 단위라 ocid 축이 없어 하루가 3콜이다.
   //

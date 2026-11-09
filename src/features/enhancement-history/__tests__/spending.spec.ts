@@ -1,3 +1,4 @@
+import type { EventWorldEvidence } from '../../../lib/enhancement/world'
 import { enhancementCostPartsOf, summarizeEnhancement, type EnhancementSource } from '../spending'
 
 const entry = (over: Partial<EnhancementSource> = {}): EnhancementSource => ({
@@ -12,7 +13,13 @@ const entry = (over: Partial<EnhancementSource> = {}): EnhancementSource => ({
   ...over,
 })
 
-const NO_EVENT = new Set<string>()
+const NO_EVENT: EventWorldEvidence = { listed: new Map(), remembered: new Map() }
+
+/** 목록에 이벤트 월드로 있는 이름들. */
+const listedEvent = (...names: string[]): EventWorldEvidence => ({
+  listed: new Map(names.map((name) => [name, { eventWorld: true, unknownWorld: null }])),
+  remembered: new Map(),
+})
 
 /** 줄 하나의 시도 비용. 값을 못 매기면 `null`. */
 const attemptMesoOf = (over: Partial<EnhancementSource>) => enhancementCostPartsOf(entry(over))?.attemptMeso ?? null
@@ -315,7 +322,7 @@ describe('이벤트 월드', () => {
   it('스페셜 캐릭터의 줄은 이벤트 월드로 적는다', () => {
     const rows = summarizeEnhancement(
       [entry({ characterName: '머리맨들맨둘' }), entry({ characterName: '낟낟' })],
-      new Set(['머리맨들맨둘']),
+      listedEvent('머리맨들맨둘'),
     )
 
     expect(rows.map((row) => [row.characterName, row.eventWorld])).toEqual([
@@ -331,7 +338,7 @@ describe('이벤트 월드', () => {
       entry({ kind: 'starforce', payload: { world_name: worldName, before_starforce_count: 0, upgrade_item: '' } })
     const rows = summarizeEnhancement(
       [starforce('스페셜 '.normalize('NFD')), { ...starforce('챌린저스2'), characterName: '둘째' }],
-      new Set(['둘째']),
+      listedEvent('둘째'),
     )
 
     expect(rows.map((row) => [row.characterName, row.eventWorld])).toEqual([
@@ -342,7 +349,21 @@ describe('이벤트 월드', () => {
 
   // 판정을 비워 두면 다음 목록을 받았을 때 다시 묶어 채운다. 지출로 세지도 서버로 보내지도 않는다.
   it('목록을 못 받았으면 월드를 모르는 줄의 판정을 비운다', () => {
-    expect(summarizeEnhancement([entry()], null)[0].eventWorld).toBeNull()
+    expect(summarizeEnhancement([entry()], { listed: null, remembered: new Map() })[0].eventWorld).toBeNull()
+  })
+
+  // 목록에서 사라진 이름은 그 줄의 날짜가 남겨 둔 월드의 기간 안인지로 가른다. 같은 이름이라도 날마다 판정이 다르다.
+  it('남겨 둔 이름은 줄마다 그 날짜로 판정한다', () => {
+    const remembered: EventWorldEvidence = { listed: new Map(), remembered: new Map([['지운캐릭', ['special_2']]]) }
+    const rows = summarizeEnhancement(
+      [entry({ characterName: '지운캐릭', dateKey: '2025-11-25' }), entry({ characterName: '지운캐릭', dateKey: '2026-01-05' })],
+      remembered,
+    )
+
+    expect(rows.map((row) => [row.historyDate, row.eventWorld])).toEqual([
+      ['2025-11-25', true],
+      ['2026-01-05', false],
+    ])
   })
 })
 

@@ -167,6 +167,30 @@ function rowToTotal(row: Record<string, unknown>): EnhancementTotal {
 }
 
 /** 날짜 범위(두 끝 포함)의 합계. 계정은 가리지 않는다. */
+/**
+ * 그 이름의 큐브 · 잠재 · 소울 합계 중 일반 월드로 적힌 줄을 기간 안에서 이벤트 월드로 고친다. 스타포스는 줄의 월드로 이미
+ * 판정했고, 모름 줄은 그 날을 다시 받아 채우므로 건드리지 않는다.
+ *
+ * @param from 그 월드가 연 날 @param until 닫힌 다음 날. 이 날은 안 든다
+ */
+export async function markEventWorldTotals(
+  nexonAccountId: string,
+  characterName: string,
+  from: string,
+  until: string,
+): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(
+    `UPDATE enhancement_totals SET event_world = 1
+      WHERE nexon_account_id = ? AND character_name = ? AND enhancement_type <> 'starforce' AND event_world = 0
+        AND history_date >= ? AND history_date < ?`,
+    [nexonAccountId, characterName, from, until],
+  )
+  // 회차마다 남겨 둔 이름을 모두 다시 보므로 대개 고칠 줄이 없다. 그때 판을 올리면 가계부가 회차마다 다시 읽는다.
+  const { values } = await db.query('SELECT changes() AS n')
+  if (Number(values?.[0]?.n ?? 0) > 0) bumpRevision()
+}
+
 export async function loadEnhancementTotals(fromDate: string, toDate: string): Promise<EnhancementTotal[]> {
   const db = await getBossProfitDb()
   const { values } = await db.query(

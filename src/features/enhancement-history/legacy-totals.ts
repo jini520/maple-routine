@@ -12,6 +12,7 @@ import { isEnhancementTotalsMoved, markEnhancementTotalsMoved } from '../../stor
 import type { EnhancementKind } from '../../nexon/history/client'
 import { summarizeEnhancement } from './spending'
 import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
+import type { EventWorldEvidence } from '../../lib/enhancement/world'
 import { readEventWorldNames } from './event-world-names'
 import type { EnhancementAnomaly } from '../../types/server-records'
 
@@ -41,6 +42,11 @@ async function move(): Promise<void> {
     moving = null
     return
   }
+  // 옛 이름 목록은 이벤트 월드 캐릭터만 든다. 그 밖의 이름은 목록에 없는 이름이라 일반 월드로 센다.
+  const evidence: EventWorldEvidence = {
+    listed: new Map([...eventNames].map((name) => [name, { eventWorld: true, unknownWorld: null }])),
+    remembered: new Map(),
+  }
   const now = new Date()
   const anomalies: EnhancementAnomaly[] = []
   for (const dateKey of await listEnhancementHistoryDates()) {
@@ -48,8 +54,8 @@ async function move(): Promise<void> {
     for (const kind of ['cube', 'starforce', 'potential', 'soul_potential'] as const satisfies readonly EnhancementKind[]) {
       const ofKind = entries.filter((entry) => entry.kind === kind)
       if (ofKind.length === 0) continue
-      await replaceEnhancementTotals(accountId, kind, dateKey, summarizeEnhancement(ofKind, eventNames), now)
-      anomalies.push(...enhancementAnomaliesOf(ofKind, eventNames, null))
+      await replaceEnhancementTotals(accountId, kind, dateKey, summarizeEnhancement(ofKind, evidence), now)
+      anomalies.push(...enhancementAnomaliesOf(ofKind, evidence, null))
     }
   }
   await markEnhancementTotalsMoved()

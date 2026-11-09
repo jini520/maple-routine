@@ -16,12 +16,19 @@ import type { EnhancementHistoryRow, EnhancementKind } from '../../nexon/history
 import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
 import { fetchEnhancementHistory } from '../../nexon/history/client'
 import { checkKey, loadEnhancementChecks, markEnhancementChecked } from '../../storage/enhancement-history'
-import { replaceEnhancementTotals } from '../../storage/enhancement-totals'
-import { summarizeEnhancement } from './spending'
+import { markEventWorldTotals, replaceEnhancementTotals } from '../../storage/enhancement-totals'
+import { loadEventWorldCharacters, rememberEventWorldCharacters } from '../../storage/event-world-characters'
+import { eventWorldCharactersOf, summarizeEnhancement } from './spending'
 import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
 import type { EnhancementAnomaly } from '../../types/server-records'
 import { saveEventWorldNames } from './event-world-names'
-import { eventWorldCharacterNames } from '../../lib/enhancement/world'
+import {
+  eventWorldCharacterNames,
+  listedJudgmentsOf,
+  type EventWorldEvidence,
+  type EventWorldJudgment,
+} from '../../lib/enhancement/world'
+import { findWorld, isEventWorld } from '../../lib/world/worlds'
 import { SOUL_POTENTIAL_FROM } from '../../lib/enhancement/cost'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { batchRecordWrites } from '../../storage/record-revision-batch'
@@ -212,6 +219,25 @@ async function fetchDay(
 }
 
 /**
+ * 목록에 없는 남겨 둔 이름의 줄을 그 월드의 기간 안에서 이벤트 월드로 고친다. 한 회차의 일은 동시에 돌아 큐브 날을 스타포스
+ * 날보다 먼저 매길 수 있고, 굳은 날은 다시 받지 않기 때문이다. 앞 회차들이 굳힌 줄도 같이 고쳐진다.
+ */
+async function markRememberedEventWorld(
+  accountId: string,
+  listed: ReadonlyMap<string, EventWorldJudgment>,
+): Promise<void> {
+  for (const [name, worldKeys] of await loadEventWorldCharacters(accountId)) {
+    if (listed.has(name)) continue
+    for (const worldKey of worldKeys) {
+      if (!isEventWorld(worldKey)) continue
+      for (const period of findWorld(worldKey)?.periods ?? []) {
+        await markEventWorldTotals(accountId, name, period.from, period.until)
+      }
+    }
+  }
+}
+
+/**
  * 창의 형제. **던지지 않는다.** 못 채운 칸은 원장에 안 남아 다음 회차가 다시 온다.
  *
  * 계정 목록을 먼저 한 번 받는다. 큐브·잠재 응답에 `world_name` 이 없어 스페셜 캐릭터를 이름으로
@@ -240,42 +266,49 @@ export async function collectEnhancementHistory(
     return
   }
 
-  // 목록을 못 받은 것과 스페셜 캐릭터가 없는 것은 다르다. 앞은 null, 뒤는 빈 집합이다.
+  // 목록을 못 받은 것과 스페셜 캐릭터가 없는 것은 다르다. 앞은 null, 뒤는 빈 목록이다.
   let listError: string | null = null
-  const eventNames = await fetchCharacterListCached(credential)
+  const listed = await fetchCharacterListCached(credential)
     .then((accounts) => {
-      const names = eventWorldCharacterNames(accounts)
-      // 읽는 쪽이 이것을 쓴다. 칸 하나 그릴 때마다 계정 목록을 부를 수는 없다.
-      saveEventWorldNames(names)
-      return names
+      // 옛 원본을 합계로 옮기는 단계가 이것을 쓴다.
+      saveEventWorldNames(eventWorldCharacterNames(accounts))
+      return listedJudgmentsOf(accounts)
     })
     .catch((error: unknown) => {
       listError = String(error)
       return null
     })
+  const evidence: EventWorldEvidence = {
+    listed,
+    remembered: await loadEventWorldCharacters(accountId).catch(() => new Map<string, string[]>()),
+  }
 
   const checkedAt = now.toISOString()
   // 회차가 끝날 때 한 번에 보낸다. 날마다 보내면 로그인 자격이 날들을 한꺼번에 받을 때 요청이 같은 순간에 몰린다.
   const anomalies: EnhancementAnomaly[] = []
   // 한 회차의 쓰기를 한 묶음으로. 판 알림이 끝날 때 한 번이라 첫 수집의 93칸이 가계부를 93번 다시 읽게 하지 않는다.
-  const results = await batchRecordWrites(() =>
-    mapWithLimit(
+  const results = await batchRecordWrites(async () => {
+    const done = await mapWithLimit(
       jobs,
       credential.type === 'login' ? jobs.length : HISTORY_CALL_LIMIT,
       async (job) => {
         const { firstCursor, rows } = await fetchDay(credential, job)
         const sources = rows.map((row) => ({ ...row, kind: job.kind }))
-        const totals = summarizeEnhancement(sources, eventNames)
-        anomalies.push(...enhancementAnomaliesOf(sources, eventNames, listError))
+        if (job.kind === 'starforce') await rememberEventWorldCharacters(accountId, eventWorldCharactersOf(sources), now)
+        const totals = summarizeEnhancement(sources, evidence)
+        anomalies.push(...enhancementAnomaliesOf(sources, evidence, listError))
         await replaceEnhancementTotals(accountId, job.kind, job.dateKey, totals, now)
-        // 목록을 못 받은 회차는 이벤트 월드를 가리지 못한 줄이 있어 굳히지 않는다. 다음 회차가 다시 받아 판정을 채운다.
-        const settled = job.dateKey < todayDateKey && eventNames !== null
+        // 목록을 못 받았거나 표에 없는 월드의 줄이 있으면 굳히지 않는다. 다음 회차가 다시 받아 판정을 채운다.
+        const settled = job.dateKey < todayDateKey && listed !== null && totals.every((total) => total.eventWorld !== null)
         await markEnhancementChecked(accountId, job.kind, job.dateKey, firstCursor, settled, checkedAt)
         return true
       },
-      (done) => onProgress?.(done, jobs.length),
-    ),
-  )
+      (count) => onProgress?.(count, jobs.length),
+    )
+    // 목록이 1순위라 목록 없이는 이름이 목록에 없는지 알 수 없다.
+    if (listed !== null) await markRememberedEventWorld(accountId, listed).catch(() => undefined)
+    return done
+  })
   await reportEnhancementAnomalies(anomalies)
   const failed = new Set(jobs.flatMap((job, index) => (results[index] === true ? [] : [checkKey(job.kind, job.dateKey)])))
   await saveRecomputes(accountId, chunks, failed, now)
