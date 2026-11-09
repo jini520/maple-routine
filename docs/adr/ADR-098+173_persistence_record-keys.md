@@ -90,7 +90,7 @@ uuid 를 JS 가 아니라 SQLite 가 만드는 이유는 `storage/sqlite/uuid.ts
   키 시절 날짜를 모두 다시 받는다. 강화 합계는 계정을 가리지 않고 더하므로(`loadEnhancementTotals`) 같은 지출이 두 번 세어진다.
   - 거둔 키가 여럿이면 첫 키의 `id` 를 잇는다. 로그인이 이미 다른 `id` 를 갖고 있었거나 둘째 이후 키가 있으면, 그 `id` 들의 기기
     기록을 이어받은 `id` 로 옮긴다(`moveNexonAccountRows`).
-  - 계정 칸이 `UNIQUE` 에 든 표(`enhancement_history_checks` · `enhancement_totals` · `enhancement_recomputes`)에서 같은 줄이
+  - 계정 칸이 `UNIQUE` 에 든 표(`enhancement_history_checks` · `enhancement_totals` · `enhancement_recomputes` · `event_world_characters`)에서 같은 줄이
     겹치면 나중에 적힌 줄(`checked_at` · `updated_at`)을 남긴다. 두 줄은 같은 넥슨 계정의 같은 날을 두 번 받은 것이라, 나중
     줄이 그 날을 더 많이 담는다. `character_accounts` · `cashbook_entries` 는 계정 칸이 `UNIQUE` 에 없어 그대로 옮긴다.
   - 기록을 먼저 옮기고 인증 수단을 저장한다. 저장이 실패해도 기록은 아직 살아 있는 키의 `id` 아래에 있다.

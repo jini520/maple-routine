@@ -27,7 +27,7 @@
 | `manual` | 수동 선택 항목 | `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` · `hexaStorageChecks` | 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값) | 사용자가 다시 고른다 |
 | `boss` | 보스 처치 · 드롭 | 없음 | 보스 기록 표 셋의 처치 · 드롭 행 | 넥슨 API 가 최근 2주치 처치만 다시 준다. 드롭은 되살릴 수 없다 |
 | `cashbook` | 가계부 | 없음 | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` | 손으로 적은 기록이라 되살릴 수 없다 |
-| `enhancement` | 강화 | 없음 | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` | 가계부 · 통계에서 그 달을 볼 때 넥슨 API 에서 다시 받는다. 조회 한도(약 18개월, `HISTORY_MONTHS_BACK`)보다 이른 날은 다시 받을 수 없다 |
+| `enhancement` | 강화 | 없음 | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` · `event_world_characters` | 가계부 · 통계에서 그 달을 볼 때 넥슨 API 에서 다시 받는다. 조회 한도(약 18개월, `HISTORY_MONTHS_BACK`)보다 이른 날은 다시 받을 수 없다 |
 | `cache` | 캐시 | `schedulerCache:*` · `characterBasicCache:*` · `mesoRateCache:*` · `eventWorldNames` | `query_cache` | 다시 띄운 앱이 평소 켤 때처럼 회차와 공지를 받는다. 메소 획득량의 마지막 성공값은 다음 조회가 채울 때까지 빈다 |
 
 - 지울 것을 그룹마다 목록으로 적고, 목록에 없는 키와 표는 지우지 않는다. 이 기능은 사용자가 이름을 보고 고르는 기능이라,
