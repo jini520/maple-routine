@@ -24,6 +24,10 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 **한 기능의 결정은 한 파일에 둔다.** 그 기능의 결정이 바뀌면 새 파일을 만들지 않는다. 새 번호를
 파일 이름 끝에 `+NNN` 으로 덧붙이고 같은 파일에 이어 쓴다.
 
+**새 번호는 `node scripts/adr-number.mjs` 로 받는다**([[ADR-188]] 결정 8). 손으로 고르지 않는다. 핫픽스는
+main 에서 따므로 develop 에서 이미 쓴 번호가 그 브랜치에 보이지 않는다. 스크립트는 origin 의 main · develop ·
+release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다.
+
 **문서끼리는 번호로 가리킨다**(`[[ADR-NNN]]`). 번호가 붙을 때마다 파일 이름이 바뀌므로 경로로
 걸면 링크가 끊어진다. 번호는 파일 이름이 바뀌어도 남는다.
 
@@ -74,7 +78,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | `error-resilience` | 실패 처리 · 빈 상태 · 이어서 하는 작업 | `foundation/error-resilience.md` |
 | `design-system` | 공용 컴포넌트 · 시트 · 타이포 · 아이콘 | `foundation/design-system.md` |
 | `game-data` | 보스 표 · 드롭 표 등 게임 수치 데이터 | `foundation/game-data.md` |
-| `release` | 스토어 빌드 · 서명 · 버전 | `foundation/release.md` |
+| `release` | 스토어 빌드 · 서명 · 버전 · 브랜치 | `foundation/release.md` |
 | `persistence` | 기기 저장소 · SQLite 스키마 · 옛 저장소 읽기 | `persistence/` |
 | `docs` | 문서 · 주석 · ADR 자체의 규칙 | `README.md` |
 
@@ -209,3 +213,4 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-160](./adr/ADR-160_cashbook_exclusions.md) | ⚪ | cashbook | 가계부에서 빼는 보스 결정석과 강화 기록 |
 | [ADR-161](./adr/ADR-161_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |
 | [ADR-187](./adr/ADR-187_game-data_item-catalog.md) | ⚪ | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 |
+| [ADR-188](./adr/ADR-188_release_branches.md) | ⚪ | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기 |
