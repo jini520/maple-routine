@@ -279,8 +279,8 @@
 
 ## 테스트
 
-결정 1 · 3 · 4 · 7 · 8 은 서버 0029 · 0030 · 0031 과 앱 OTA 로 구현했다. 결정 2 의 분류 칸 쓰기 검사, 결정 5 · 6 · 9 는 관리 화면(S4)
-에서 구현하고 그때 적는다.
+결정 1 · 3 · 4 · 7 · 8 은 서버 0029 · 0030 · 0031 과 앱 OTA 로, 결정 2 · 5 · 6 · 9 는 관리 화면(S4)과 0032 · 0033 으로 구현했다.
+남은 것은 결정 4 의 옛 글자 칸 지우기(S6)다.
 
 | 파일 | 확인하는 것 |
 |---|---|
@@ -291,6 +291,10 @@
 | 서버 `modules/items/item-roles.spec.ts` | 결정 1: 한 key 가 드롭 아이템 · 장비 · 사냥 전리품을 함께 맡고, 이름이 같은 다른 key 의 아이템은 거절하는지 본다 |
 | 서버 `database/app-images-migration.spec.ts` | 결정 7 · 8: 0031 이 캐시 종류 · MVP 명패 · 컨텐츠 배경 다섯 줄 · 지역 아이콘 · 새 표 72줄을 이관 전 앱 코드가 찾던 그림으로 채우는지, 그림이 없으면 멈추는지, 그림 표가 빈 새 DB 는 건너뛰는지 본다 |
 | 서버 `modules/contents/contents.repository.spec.ts` | 결정 8: 컨텐츠를 고칠 때 지역 아이콘이 지도 배경을 따라가는지 본다 |
+| 서버 `modules/assets/asset-uses.spec.ts` | 결정 6: 쓰는 곳 목록이 DB 에서 그림을 FK 로 가리키는 칸 전부(크롭 제외)와 같은지, 그림마다 쓰는 곳의 종류 · 이름과 아이템 분류를 모으는지 본다. 칸이 빠지면 쓰는 그림을 지울 수 있게 되기 때문이다 |
+| 서버 `modules/assets/assets.repository.spec.ts` | 결정 5 · 6: 이름이 비면 쓰는 곳의 이름, 그것도 없으면 파일 이름을 보이는지, 이름을 고쳐도 앱 칸의 시각은 그대로인지, 쓰는 곳이 있는 그림은 지우지 않고 없으면 크롭과 함께 지우는지 본다 |
+| 서버 `database/asset-names-migration.spec.ts` | 결정 9: 0033 이 아무도 안 쓰는 `Tower_Boost_Ring` 을 크롭과 함께 지우고, 쓰는 곳이 생겼으면 남기는지 본다 |
+| 서버 `modules/app-images/app-images.repository.spec.ts` | 결정 6 · 8: 앱 그림을 바꾸면 칸의 시각을 밀고, 같은 그림이면 그대로이며, 모르는 key 와 없는 그림을 거절하는지 본다 |
 | 서버 `modules/spend-catalog/spend-catalog.repository.spec.ts` | 결정 4: 타일의 `iconAssetId` 가 아이템 그림과 지역 아이콘 중 있는 그림인지 본다 |
 | 앱 `lib/assets/__tests__/asset-files.spec.ts` · `image-crops.spec.ts` | 결정 4: 그림 `id` 로 기기 파일을 찾고 크롭을 그림 `id` 로 찾는지, `id` 가 없거나 겹치는 목록을 거절하는지 본다 |
 | 앱 `lib/assets/__tests__/app-images.spec.ts` | 결정 8: key 로 그림을 찾고 드롭 연출 프레임을 단계마다 번호 차례로 모으는지 본다 |
