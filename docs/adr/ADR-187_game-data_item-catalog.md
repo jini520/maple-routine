@@ -207,15 +207,21 @@
 
 ## 테스트
 
-구현할 때 적는다. 지킬 것은 이렇다.
+결정 1 · 3 · 4 · 7 · 8 은 서버 0029 · 0030 · 0031 과 앱 OTA 로 구현했다. 결정 2 의 분류 칸 쓰기 검사, 결정 5 · 6 · 9 는 관리 화면(S4)
+에서 구현하고 그때 적는다.
 
 | 파일 | 확인하는 것 |
 |---|---|
-| 서버 `modules/game-data/*.spec.ts` | 결정 4: 아이템 표 하나에서 `dropItems` · `equipmentItems` · `huntLoot` 칸을 지금과 같은 모양 · 같은 key 로 내는지, 그림 칸마다 옛 글자 칸과 새 `id` 칸을 함께 내는지 본다 |
-| 서버 이관 테스트(진짜 DB) | 결정 1 · 3: 드롭 아이템 `id` 가 그대로 옮겨져 드롭 표 · 상자 · 드롭 가격 FK 가 이어지는지, 겹친 17개가 한 줄인지, 글자 그림 칸이 같은 그림의 `id` 로 바뀌는지 본다. 결정 7 · 8: 캐시 종류 · MVP 명패 · 컨텐츠 그림 · 새 표가 지금 앱이 쓰는 그림으로 채워지는지, 그림이 없으면 멈추는지 본다 |
-| 서버 `modules/admin/*.spec.ts` | 결정 2 · 3 · 5: 상수 표에 없는 분류를 거절하는지, 쓰이는 그림을 지우지 못하는지, 쓰는 곳과 안 쓰는 그림을 맞게 세는지 본다 |
-| 앱 `lib/assets/__tests__/` | 결정 4 · 8: 그림 `id` 로 기기 파일을 찾는지, 크롭을 그림 `id` 로 찾는지, 드롭 연출 프레임을 번호 차례로 모으는지 본다 |
-| 앱 `lib/game-data/__tests__/` | 결정 4: 새 `id` 칸이 없는 응답과 옛 계약 판의 사본을 거절하는지 본다 |
+| 서버 `database/asset-id-migration.spec.ts` | 결정 3: 0029 가 글자 그림 칸을 같은 그림의 `id` 로 바꾸고, 표에 없는 그림이면 멈추는지 본다 |
+| 서버 `database/items-migration.spec.ts` | 결정 1: 0030 이 드롭 아이템 `id` 를 지켜 상자 FK 가 이어지는지, 같은 key 의 장비를 그 줄에 얹는지, 사냥 전리품이 아이템을 가리키는지, 이름이 겹치면 멈추는지 본다 |
+| 서버 `modules/items/item-roles.spec.ts` | 결정 1: 한 key 가 드롭 아이템 · 장비 · 사냥 전리품을 함께 맡고, 이름이 같은 다른 key 의 아이템은 거절하는지 본다 |
+| 서버 `database/app-images-migration.spec.ts` | 결정 7 · 8: 0031 이 캐시 종류 · MVP 명패 · 컨텐츠 배경 다섯 줄 · 지역 아이콘 · 새 표 72줄을 이관 전 앱 코드가 찾던 그림으로 채우는지, 그림이 없으면 멈추는지, 그림 표가 빈 새 DB 는 건너뛰는지 본다 |
+| 서버 `modules/contents/contents.repository.spec.ts` | 결정 8: 컨텐츠를 고칠 때 지역 아이콘이 지도 배경을 따라가는지 본다 |
+| 서버 `modules/spend-catalog/spend-catalog.repository.spec.ts` | 결정 4: 타일의 `iconAssetId` 가 아이템 그림과 지역 아이콘 중 있는 그림인지 본다 |
+| 앱 `lib/assets/__tests__/asset-files.spec.ts` · `image-crops.spec.ts` | 결정 4: 그림 `id` 로 기기 파일을 찾고 크롭을 그림 `id` 로 찾는지, `id` 가 없거나 겹치는 목록을 거절하는지 본다 |
+| 앱 `lib/assets/__tests__/app-images.spec.ts` | 결정 8: key 로 그림을 찾고 드롭 연출 프레임을 단계마다 번호 차례로 모으는지 본다 |
+| 앱 `lib/assets/__tests__/code-referenced-assets.spec.ts` | 결정 8: 앱 코드가 찾는 key · 가계부 줄 표식 · MVP 명패 · 솔 에르다 조각이 fixture 표에서 찾아지는지 본다 |
+| 앱 `lib/__tests__/cashbook-categories.spec.ts` | 결정 7: 캐시 종류를 고를 수 있고 수량을 묻고 관세가 붙는지 본다 |
 
 ## 열린 질문
 

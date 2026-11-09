@@ -34,7 +34,7 @@
 | `app/settings/SettingsMvpGradeScreen.tsx` · `SettingsMvpGradeHistoryScreen.tsx` | 설정의 목록 페이지 · ID 이력 페이지 |
 | `components/molecules/MvpGradeGrid` · `MvpPlate` | 7칸 격자 · 명패 |
 | `components/organisms/FeeRow` · `CalendarPopover` | 수수료 줄 · 시작 날짜를 고르는 달력 |
-| `lib/assets/asset-lookup.ts` 의 `mvpPlateAsset` | 명패 여섯. 서버 그림 목록의 `mvp/` 에서 찾는다. 일반은 그림이 없다 |
+| `lib/assets/asset-lookup.ts` 의 `mvpPlateAsset` | 명패 여섯. MVP 등급 표의 명패 칸(`plateAssetId`)으로 찾는다. 일반은 그림이 없다 |
 
 ## 등급과 혜택
 

@@ -33,7 +33,7 @@ key 는 영문 snake_case 이고(`black_mage` · `high_mountain`), 한글 이름
 `dropItems`, 컨텐츠는 `contents`, 장비는 `equipmentItems`, 월드는 `worlds` 다. 드롭 표 · 상자 · 가격표 같은 다른
 데이터는 key 로만 가리킨다. 이름을 바꿀 때 한 줄만 고치면 되고, 표끼리 이름이 어긋날 일이 없다.
 
-보스 초상 slug(`portraitSlug`)나 컨텐츠 배경(`backgroundMap`) 같은 그림용 key 는 식별 key 와 따로 둔다. 그림 하나를
+보스 초상(`portraitAssetId`)이나 컨텐츠 배경(`backgroundMapAssetId`) 같은 그림 칸은 식별 key 와 따로 두고 그림 id 를 든다([[ADR-187]] 결정 4). 그림 하나를
 여러 식별 key 가 같이 쓸 수 있어서다.
 
 ### 결정 3. 기록은 key 와 그때의 이름을 함께 저장하고, 화면은 key 로 지금 이름을 찾는다

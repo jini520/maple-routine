@@ -17,7 +17,8 @@
 
 카드를 고를 때 API 이름의 접두어나 글자를 비교하지 않는다. 응답을 정규화할 때 얻은 컨텐츠 key 와, 컨텐츠 표 줄의
 `category` · `type` 을 본다([[ADR-019]]). 카드에 보이는 이름은 컨텐츠 표의 `displayName` 이고, 표에 없는 컨텐츠는 API
-이름을 그대로 쓴다. 배경 그림도 표 줄의 `backgroundMap`(지도) 이나 `backgroundPortrait`(보스 초상) 으로 정한다.
+이름을 그대로 쓴다. 배경 그림도 표 줄의 `backgroundMapAssetId`(지도) 나 `backgroundPortraitAssetId`(보스 초상) 로 정하고,
+지역 아이콘은 `regionIconAssetId` 다([[ADR-187]] 결정 8). 아래 길드 · 유니온 카드도 그 컨텐츠 줄의 그림을 쓴다.
 
 표에 없는 컨텐츠는 key 가 없어 카테고리를 알 수 없다. 그래서 기본 카드에 API 이름으로 나오고, 이름이
 `에픽 던전 : ` 으로 시작해도 에픽 던전 카드나 주간 한도에 들어가지 않는다.
@@ -51,12 +52,12 @@
 
 | 대상 | 카드 | 왼쪽 | 오른쪽 |
 |---|---|---|---|
-| `guild_underground_waterway` | `GuildUndergroundWaterwayCard`(80, 배경 `arcanus`) | `길드` 배지 + 이름 | `n점` |
-| `guild_weekly_mission_points` | `GuildMissionPointsCard`(112, 배경 `hallOfHeroes`) | `길드` 배지 + 이름 | `now/max`, 아래에 진행률 바 |
-| `guild_flag_race` | `GuildFlagRaceCard`(80, 배경 `flagRace`) | `길드` 배지 + 이름 | `now_count` 가 1 이상이면 완료, 아니면 시작 안함 |
+| `guild_underground_waterway` | `GuildUndergroundWaterwayCard`(80, 배경은 보스 초상) | `길드` 배지 + 이름 | `n점` |
+| `guild_weekly_mission_points` | `GuildMissionPointsCard`(112, 배경은 지도) | `길드` 배지 + 이름 | `now/max`, 아래에 진행률 바 |
+| `guild_flag_race` | `GuildFlagRaceCard`(80, 배경은 지도) | `길드` 배지 + 이름 | `now_count` 가 1 이상이면 완료, 아니면 시작 안함 |
 | 카테고리 `epic_dungeon` | `EpicDungeonCard`(80, 배경은 보스 초상) | `에픽 던전` 배지 + 던전 이름 | `now_count` 가 1 이상이면 완료, 아니면 시작 안함 |
 | 카테고리 `monster_park`, 또는 `arcane_river_quest` 이면서 `type: 'contents'` | `WeeklyRegionalContentCard`(80, 배경은 지역 지도) | 지역 아이콘 + 이름 | `now == max` 이고 `max > 0` 이면 완료, 아니면 시작 안함. 익스트림 몬스터파커만 `quest_state` 를 그대로 쓴다 |
-| 카테고리 `maple_union` | `MapleUnionDragonCard`(80, 배경 `armorDragon`) | `유니온` 배지 + 이름 | `quest_state` 배지 |
+| 카테고리 `maple_union` | `MapleUnionDragonCard`(80, 배경은 보스 초상. 등장하는 드래곤은 매주 바뀌지만 API 가 알려 주지 않아 표가 대표 그림 하나를 든다) | `유니온` 배지 + 이름 | `quest_state` 배지 |
 | 카테고리 `weekly_quest` · `mu_lung_dojo`, 또는 `arcane_river_quest` 이면서 `type: 'quest'` | `WeeklyQuestCard`(80, 배경은 지역 지도) | 지역 아이콘 + 이름 | `quest_state` 배지. 무릉도장은 `n층`(참여 전이면 시작 안함), 성실한 조사에 대한 보답은 `quest_state` 가 1 일 때 `n회 완료` 이고 `now == max` 가 되면 완료 |
 | 그 밖 | 기본 카드 | `이름 · now/max` | 진행률 바 |
 
