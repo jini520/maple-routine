@@ -9,6 +9,7 @@ import {
   type NexonMaintenanceScope,
 } from './errors'
 import { markDeveloperKeyDead, nextDeveloperKey } from './developer-keys'
+import { waitForKeySlot } from './key-rate-limit'
 import type { StreamLine, StreamTask } from '../server/friends-stream'
 import type { NexonCredential } from '../types/auth'
 
@@ -89,6 +90,11 @@ function bareOf(path: string): string {
   return path.split('?')[0] ?? path
 }
 
+export interface RequestOptions {
+  /** 참이면 API 키의 초당 상한(`key-rate-limit`)을 거치지 않는다. 개발 단계 판정만 쓴다. 한꺼번에 보내야 429 가 오기 때문이다. */
+  skipKeyRateLimit?: boolean
+}
+
 /**
  * 넥슨에 한 번 묻는다. 자격이 로그인이고 프렌즈 경로면 **우리 서버의 스트림을 거친다.**
  *
@@ -97,17 +103,17 @@ function bareOf(path: string): string {
  *
  * @param credential `lib/nexon-credential` 의 `credentialOf` 가 고른다
  */
-export async function requestJson<T>(path: string, credential: NexonCredential): Promise<T> {
+export async function requestJson<T>(path: string, credential: NexonCredential, options?: RequestOptions): Promise<T> {
   if (credential.type === 'login' && FRIENDS_PATHS.includes(bareOf(path))) {
     return requestViaStream<T>(path, credential.value)
   }
   try {
-    return await requestOnce<T>(path, credential)
+    return await requestOnce<T>(path, credential, options)
   } catch (error) {
     // 재시도는 **한 번뿐**이다. 두 번째도 같은 실패면 올린다. 그래야 안 도는 것이 보장된다.
     const 다시 = await retryWith(path, credential, error)
     if (다시 === null) throw error
-    return (await requestOnce<T>(path, 다시)) as T
+    return (await requestOnce<T>(path, 다시, options)) as T
   }
 }
 
@@ -453,8 +459,10 @@ function deadDeveloperKeyOf(error: unknown): string | null {
   return 키문제 ? error.developerKey : null
 }
 
-async function requestOnce<T>(path: string, credential: NexonCredential): Promise<T> {
+async function requestOnce<T>(path: string, credential: NexonCredential, options?: RequestOptions): Promise<T> {
   const { url, headers, developerKey } = routeOf(path, credential)
+  // 사용자 키만 센다. 기다린 뒤에 시간 제한을 건다. 기다린 시간이 응답 시간으로 잡히면 안 된다.
+  if (credential.type === 'key' && options?.skipKeyRateLimit !== true) await waitForKeySlot(credential.value)
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 

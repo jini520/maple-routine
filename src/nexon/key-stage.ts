@@ -23,8 +23,11 @@ import { requestJson } from './http'
  */
 export type ApiKeyStageVerdict = 'developmentStage' | 'undetermined'
 
-/** 한 번에 쏘는 건수. 개발 단계 한도가 초당 5건이라 그보다 커야 판정이 선다. */
-export const PROBE_CALL_COUNT = 10
+/**
+ * 한 번에 쏘는 건수. 개발 단계 한도가 초당 5건이라 그보다 커야 판정이 선다. 보낸 요청이 같은 1초 안에 다 나가지 못하면
+ * 개발 단계 키를 놓친다. 건수가 많을수록 놓칠 여지가 준다.
+ */
+export const PROBE_CALL_COUNT = 20
 
 /**
  * 키의 단계를 잰다. 어떤 실패에도 던지지 않고 판정만 낸다.
@@ -38,7 +41,8 @@ export const PROBE_CALL_COUNT = 10
 export async function probeApiKeyStage(credential: NexonCredential): Promise<ApiKeyStageVerdict> {
   const results = await Promise.allSettled(
     Array.from({ length: PROBE_CALL_COUNT }, () =>
-      requestJson<unknown>(CHARACTER_LIST_PATH, credential),
+      // 키의 초당 상한을 거치면 요청이 나눠 나가 429 가 오지 않는다.
+      requestJson<unknown>(CHARACTER_LIST_PATH, credential, { skipKeyRateLimit: true }),
     ),
   )
 

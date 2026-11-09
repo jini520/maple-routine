@@ -9,6 +9,7 @@ import {
 } from '../errors'
 import { __setDeveloperKeysForTest } from '../developer-keys'
 import { requestJson, setFriendsStreamForTest, setMaintenanceReporter } from '../http'
+import { KEY_REQUESTS_PER_SECOND, resetKeySlotsForTest } from '../key-rate-limit'
 import type { StreamLine } from '../../server/friends-stream'
 import type { NexonCredential } from '../../types/auth'
 
@@ -48,6 +49,7 @@ function response(status: number, body: unknown): Response {
 
 afterEach(() => {
   unstubAllGlobals()
+  resetKeySlotsForTest()
 })
 
 describe('requestJson: 에러 코드 보존', () => {
@@ -704,5 +706,59 @@ describe('requestJson: 프렌즈 조회가 503 을 받으면 30초 쉰다', () =
     await 묶음창()
     await expect(resumed).resolves.toEqual({ who: 'o3' })
     expect(calls).toBe(2)
+  })
+})
+
+// 앱은 429 를 키 문제로 보고 그 키를 지운다. 사용자 키로 직접 부르는 길이 모두 초당 상한을 지나야 서비스 단계 키를 잃지 않는다.
+describe('requestJson: API 키의 초당 상한', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+    __setDeveloperKeysForTest([])
+  })
+
+  it('사용자 키로 한꺼번에 불러도 1초에 상한까지만 넥슨에 나간다', async () => {
+    const fetcher = jest.fn(async () => response(200, {}))
+    stubGlobal('fetch', fetcher)
+
+    const calls = Array.from({ length: KEY_REQUESTS_PER_SECOND + 1 }, () => requestJson('/x', 자격('키')))
+    await jest.advanceTimersByTimeAsync(0)
+    expect(fetcher).toHaveBeenCalledTimes(KEY_REQUESTS_PER_SECOND)
+
+    await jest.advanceTimersByTimeAsync(1_000)
+    expect(fetcher).toHaveBeenCalledTimes(KEY_REQUESTS_PER_SECOND + 1)
+    await Promise.all(calls)
+  })
+
+  it('상한을 빼라고 하면 한꺼번에 나간다', async () => {
+    const fetcher = jest.fn(async () => response(200, {}))
+    stubGlobal('fetch', fetcher)
+
+    const calls = Array.from({ length: KEY_REQUESTS_PER_SECOND + 1 }, () =>
+      requestJson('/x', 자격('키'), { skipKeyRateLimit: true }),
+    )
+    await jest.advanceTimersByTimeAsync(0)
+
+    expect(fetcher).toHaveBeenCalledTimes(KEY_REQUESTS_PER_SECOND + 1)
+    await Promise.all(calls)
+  })
+
+  // 모든 로그인 사용자가 나눠 쓰는 키라 기기 하나의 상한으로는 지킬 수 없다.
+  it('로그인이 번들 개발자 키로 부르는 길은 상한을 받지 않는다', async () => {
+    __setDeveloperKeysForTest(['개발자키'])
+    const fetcher = jest.fn(async () => response(200, {}))
+    stubGlobal('fetch', fetcher)
+    const 로그인 = { type: 'login', value: '세션', accountId: null } as const
+
+    const calls = Array.from({ length: KEY_REQUESTS_PER_SECOND + 1 }, () =>
+      requestJson('/maplestory/v1/character/basic?ocid=o1', 로그인),
+    )
+    await jest.advanceTimersByTimeAsync(0)
+
+    expect(fetcher).toHaveBeenCalledTimes(KEY_REQUESTS_PER_SECOND + 1)
+    await Promise.all(calls)
   })
 })
