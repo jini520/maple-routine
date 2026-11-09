@@ -1,6 +1,6 @@
 # ADR-188 브랜치 전략과 ADR 번호 받기
 
-> ⚪ 미구현
+> 🟢 유효
 > 관련 소스: `scripts/adr-number.mjs` · `scripts/__tests__/adr-number.test.mjs`
 
 ## 배경
@@ -106,7 +106,7 @@ node scripts/adr-number.mjs
 
 | 보는 곳 | 보는 이유 |
 |---|---|
-| origin 의 main · develop · `release/*` · `hotfix/*` | 머지됐거나 출시 중인 번호 |
+| origin 의 main · develop, main 에 아직 머지되지 않은 `release/*` · `hotfix/*` | 머지됐거나 출시 중인 번호 |
 | 열린 PR 의 브랜치(`gh pr list`) | 아직 머지되지 않은 번호 |
 | 이 맥에 있는 모든 워크트리의 `docs/adr/` | 다른 세션이 만들고 아직 커밋하거나 푸시하지 않은 번호 |
 
@@ -115,8 +115,9 @@ node scripts/adr-number.mjs
 다른 것(`ADR-011` 과 `ADR-011+138`)은 충돌이 아니다. `git fetch` 나 `gh` 가 실패하면 번호를 내지 않고 종료 코드 2
 로 끝난다. 일부만 보고 고른 번호는 겹칠 수 있기 때문이다.
 
-오래된 로컬 브랜치는 보지 않는다. 문서 재작성(PR #659) 전의 브랜치는 옛 번호를 써서, 보면 가장 큰 번호가 크게
-튄다.
+로컬 브랜치는 보지 않는다. 진행 중인 작업은 워크트리로 본다. main 에 이미 머지된 `release/*` · `hotfix/*` 도 보지
+않는다. 그 번호는 main 이 이미 담고 있다. 게다가 origin 에 남은 `release/1.0.12` 같은 옛 브랜치는 문서 재작성(PR
+#659) 전의 번호를 써서, 보면 가장 큰 번호가 300 넘게 튄다.
 
 쓰는 때는 둘이다.
 

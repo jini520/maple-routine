@@ -213,4 +213,4 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-160](./adr/ADR-160_cashbook_exclusions.md) | ⚪ | cashbook | 가계부에서 빼는 보스 결정석과 강화 기록 |
 | [ADR-161](./adr/ADR-161_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |
 | [ADR-187](./adr/ADR-187_game-data_item-catalog.md) | ⚪ | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 |
-| [ADR-188](./adr/ADR-188_release_branches.md) | ⚪ | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기 |
+| [ADR-188](./adr/ADR-188_release_branches.md) | 🟢 | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기 |
