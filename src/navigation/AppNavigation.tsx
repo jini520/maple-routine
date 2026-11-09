@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native'
 
+import { useAppEntryStore } from '../features/app-entry/store'
 import { useNoticeDelivery } from '../features/notice/use-notice-delivery'
 import { useLocalNotificationPress } from '../features/local-notifications/use-notification-press'
 import { usePartyAppointmentOpenStore } from '../features/party-appointments/open-request'
@@ -46,11 +47,22 @@ export function AppNavigation(): React.JSX.Element {
   const navigationRef = useNavigationContainerRef<RootStackParamList>()
   const theme = useNavigationTheme()
 
-  /** 사용 로그의 화면 사건. 가장 안쪽의 보이는 라우트가 페이지다. */
-  const recordScreen = () => {
+  /**
+   * 사용 로그의 화면 사건. 가장 안쪽의 보이는 라우트가 페이지다.
+   *
+   * 진입 단계를 읽기 전에는 적지 않는다. 그때 서 있는 로그인 화면은 첫 값일 뿐이라, 적으면 앱을 새로 열 때마다 로그인 화면을 본 것이 된다.
+   */
+  const recordScreen = useCallback(() => {
+    if (!useAppEntryStore.getState().resolved) return
     const name = navigationRef.getCurrentRoute()?.name
     if (name !== undefined) void usageTracker.screen(name, new Date())
-  }
+  }, [navigationRef])
+
+  // 단계를 읽은 순간. 앱이 열리면 화면 목록이 바뀌어 `onStateChange` 가 적고, 로그인 전이면 화면이 그대로라 여기서 적는다.
+  const stageResolved = useAppEntryStore((state) => state.resolved)
+  useEffect(() => {
+    if (stageResolved && useAppEntryStore.getState().stage !== 'ready') recordScreen()
+  }, [stageResolved, recordScreen])
 
   /**
    * 지금 루트 스택에 **등록돼 있는 화면 이름들**.
