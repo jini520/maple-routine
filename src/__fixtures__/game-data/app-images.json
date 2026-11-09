@@ -1,0 +1,293 @@
+{
+  "updatedAt": "2026-11-08T23:39:58.533Z",
+  "images": [
+    {
+      "key": "arcane_force",
+      "assetId": "87150786-b981-4b73-838e-db21199efdc5"
+    },
+    {
+      "key": "authentic_force",
+      "assetId": "2012a625-42d2-45c6-9f34-dd33b4741b4c"
+    },
+    {
+      "key": "boss_crystal_monthly",
+      "assetId": "10288ab6-7bcb-483e-bcc2-2e3ae65a9719"
+    },
+    {
+      "key": "boss_crystal_weekly",
+      "assetId": "e1338cc8-7eee-4d0b-af83-9225282609dc"
+    },
+    {
+      "key": "drop_effect_end_0",
+      "assetId": "ab9a2e00-30f7-4a59-9155-026341673a1d"
+    },
+    {
+      "key": "drop_effect_end_1",
+      "assetId": "0fadcc3a-5b7c-4b10-a555-6ff5ff26abfc"
+    },
+    {
+      "key": "drop_effect_end_2",
+      "assetId": "2f3be611-dfac-4b99-98f9-37e9cf41e51a"
+    },
+    {
+      "key": "drop_effect_end_3",
+      "assetId": "1f8e7b95-8991-4acf-b9ed-ab8f330aef80"
+    },
+    {
+      "key": "drop_effect_end_4",
+      "assetId": "c02c1ea0-0301-43e3-857f-722b7ae020e1"
+    },
+    {
+      "key": "drop_effect_end_5",
+      "assetId": "7d4945c1-e5ad-4715-a3c4-ad83a3f45b0b"
+    },
+    {
+      "key": "drop_effect_end_6",
+      "assetId": "c4ee287e-005b-474b-b132-e76247a1614c"
+    },
+    {
+      "key": "drop_effect_loop_0",
+      "assetId": "65134375-ff64-4a17-99fd-f60065ac51b2"
+    },
+    {
+      "key": "drop_effect_loop_1",
+      "assetId": "f26cc5d7-e015-4a5f-8d91-d70cd7e26d18"
+    },
+    {
+      "key": "drop_effect_loop_10",
+      "assetId": "569f6b3d-0aa8-410a-82fb-3ea9c9bdae4a"
+    },
+    {
+      "key": "drop_effect_loop_11",
+      "assetId": "454eea24-49c9-4a1c-b8c9-56c91cb71c2c"
+    },
+    {
+      "key": "drop_effect_loop_12",
+      "assetId": "a20126c2-7e2a-4b2e-bf40-20c317a47a3a"
+    },
+    {
+      "key": "drop_effect_loop_13",
+      "assetId": "faeb3d72-bce8-41c8-98ae-ed425738be2b"
+    },
+    {
+      "key": "drop_effect_loop_14",
+      "assetId": "2aa0c59b-17a1-40a0-a2b3-4d52ba162b38"
+    },
+    {
+      "key": "drop_effect_loop_15",
+      "assetId": "a5299f02-ecff-4ff6-a378-269bfd758a51"
+    },
+    {
+      "key": "drop_effect_loop_16",
+      "assetId": "96c6c1d9-ce8e-436b-aba9-e7a48bbd77b2"
+    },
+    {
+      "key": "drop_effect_loop_17",
+      "assetId": "ba9abb2b-b305-4435-8e88-3a8413dd849a"
+    },
+    {
+      "key": "drop_effect_loop_18",
+      "assetId": "0430e371-8bd2-48f8-9d01-9bb3861287f0"
+    },
+    {
+      "key": "drop_effect_loop_19",
+      "assetId": "7026106e-e48a-408b-839f-6a9c236404d5"
+    },
+    {
+      "key": "drop_effect_loop_2",
+      "assetId": "f738fd46-89f6-4b7a-8c49-7224aaa091e6"
+    },
+    {
+      "key": "drop_effect_loop_20",
+      "assetId": "2c8f7cca-52c0-4425-8a64-c5cbd9e7a0f5"
+    },
+    {
+      "key": "drop_effect_loop_21",
+      "assetId": "48c416e3-bd39-47d6-8dfa-23588420244c"
+    },
+    {
+      "key": "drop_effect_loop_22",
+      "assetId": "25794da4-cab0-4efe-80b3-caecce454dac"
+    },
+    {
+      "key": "drop_effect_loop_23",
+      "assetId": "396462d1-8ffb-43b6-bc60-6614cf93d661"
+    },
+    {
+      "key": "drop_effect_loop_3",
+      "assetId": "32baa28f-6479-4a82-ade7-9b85fffb9561"
+    },
+    {
+      "key": "drop_effect_loop_4",
+      "assetId": "59183f90-760d-40ee-9e7f-f29fa6205656"
+    },
+    {
+      "key": "drop_effect_loop_5",
+      "assetId": "ddf89441-9f6a-4fb8-a74d-3caf83e02fd7"
+    },
+    {
+      "key": "drop_effect_loop_6",
+      "assetId": "70d210ea-6b51-4151-a0ce-588992d233e0"
+    },
+    {
+      "key": "drop_effect_loop_7",
+      "assetId": "1325f0f2-2aff-4bd8-a733-d17569505487"
+    },
+    {
+      "key": "drop_effect_loop_8",
+      "assetId": "c49b33b4-81d0-4181-a9a9-d93ede06a716"
+    },
+    {
+      "key": "drop_effect_loop_9",
+      "assetId": "b162fcaf-f451-43c0-9754-f03dfcbc5fa3"
+    },
+    {
+      "key": "drop_effect_pre_0",
+      "assetId": "669f7c16-e301-4cff-b136-6152aafe97ee"
+    },
+    {
+      "key": "drop_effect_pre_1",
+      "assetId": "acd26ab4-7425-4569-8c0b-3ccc62152af1"
+    },
+    {
+      "key": "drop_effect_pre_2",
+      "assetId": "23347362-75d3-469d-9b44-4818d363817b"
+    },
+    {
+      "key": "drop_effect_pre_3",
+      "assetId": "de85e74e-16ec-48b4-95a7-7a176eaf78c8"
+    },
+    {
+      "key": "drop_effect_pre_4",
+      "assetId": "9815c061-818b-4156-90f4-5f1b107a582e"
+    },
+    {
+      "key": "drop_effect_pre_5",
+      "assetId": "d2d5d2fd-ebb1-4483-bfa4-3f26bbab19cb"
+    },
+    {
+      "key": "drop_effect_pre_6",
+      "assetId": "a100b4a3-bcfc-4956-a37b-ff0d25891f8c"
+    },
+    {
+      "key": "drop_effect_pre_7",
+      "assetId": "89efb6bb-7b16-4408-9021-64cac06bc984"
+    },
+    {
+      "key": "drop_effect_screen_0",
+      "assetId": "6395b3e5-e4bb-4bd9-9f29-be07fa66558c"
+    },
+    {
+      "key": "drop_effect_screen_1",
+      "assetId": "bffbc607-21a2-4ab1-a7cd-02b8ce1ebd8d"
+    },
+    {
+      "key": "drop_effect_screen_10",
+      "assetId": "d56f2a73-f984-4d0f-b8b9-4fdc5f499afe"
+    },
+    {
+      "key": "drop_effect_screen_11",
+      "assetId": "e08de9e1-1205-43a7-9597-15bf5d1c408d"
+    },
+    {
+      "key": "drop_effect_screen_12",
+      "assetId": "55012fa6-bdaf-4157-820a-c5445f08b381"
+    },
+    {
+      "key": "drop_effect_screen_13",
+      "assetId": "032efaaa-1cc1-49fd-9190-5e22918a24e4"
+    },
+    {
+      "key": "drop_effect_screen_14",
+      "assetId": "90cb73d1-92c2-4331-8535-885ba036b0a7"
+    },
+    {
+      "key": "drop_effect_screen_15",
+      "assetId": "1cc6ec92-5009-4838-9a75-533b6cfe754f"
+    },
+    {
+      "key": "drop_effect_screen_2",
+      "assetId": "d1a18dd7-2a1e-4698-a929-898e82868ce2"
+    },
+    {
+      "key": "drop_effect_screen_3",
+      "assetId": "70149b1c-1826-4168-8908-f67f55ba7113"
+    },
+    {
+      "key": "drop_effect_screen_4",
+      "assetId": "df4870e9-705f-4c52-b9fe-dfd73003d948"
+    },
+    {
+      "key": "drop_effect_screen_5",
+      "assetId": "4b65be81-8d2f-4e0a-b3ea-762eacb6e84e"
+    },
+    {
+      "key": "drop_effect_screen_6",
+      "assetId": "434996ae-e851-4e1d-844e-83daa2421b56"
+    },
+    {
+      "key": "drop_effect_screen_7",
+      "assetId": "d7720789-3ba9-4e1b-ac5d-4db7480aef19"
+    },
+    {
+      "key": "drop_effect_screen_8",
+      "assetId": "069fc34b-b9ae-487d-b43f-56a2c5f5ee65"
+    },
+    {
+      "key": "drop_effect_screen_9",
+      "assetId": "e880b95e-cc84-4631-9f3d-9a112e1019fb"
+    },
+    {
+      "key": "enhancement_additional_potential",
+      "assetId": "8acc8228-7bc7-42d9-a51c-d90a1c968a25"
+    },
+    {
+      "key": "enhancement_cube_reset",
+      "assetId": "68b5d8f2-7827-4b14-9aaf-0fef1302d4b1"
+    },
+    {
+      "key": "enhancement_potential",
+      "assetId": "0cd20a73-c3ef-4187-bf5a-313174230392"
+    },
+    {
+      "key": "enhancement_soul_potential",
+      "assetId": "c98ac4b0-d908-4ccb-9476-c0aab32037c2"
+    },
+    {
+      "key": "enhancement_starforce",
+      "assetId": "24fd1a58-42ad-4df6-a867-944c11112ec8"
+    },
+    {
+      "key": "meso_pouch",
+      "assetId": "ed270a69-b6f3-44cd-ab98-a1f6c03f2b34"
+    },
+    {
+      "key": "selazar_coin",
+      "assetId": "63978b5a-ee30-45ee-a5e2-89a21b30d3e0"
+    },
+    {
+      "key": "sol_erda_energy_10",
+      "assetId": "69ba1510-6d3c-4d63-b8f2-1ce9fff6ecde"
+    },
+    {
+      "key": "sol_erda_energy_1000",
+      "assetId": "7adeb2c8-e993-4fc8-9a58-f338dc874d7a"
+    },
+    {
+      "key": "sol_erda_energy_200",
+      "assetId": "32ae19be-f08f-42b3-b138-485ac843afcc"
+    },
+    {
+      "key": "sol_erda_energy_500",
+      "assetId": "27f79ef3-b224-47e0-a549-83cc4533bf46"
+    },
+    {
+      "key": "union_wealth",
+      "assetId": "481ef83d-f8f7-4ee6-9bc3-d1f675d72414"
+    },
+    {
+      "key": "unknown_character",
+      "assetId": "348d6bdc-b57f-4f3d-8dad-d4fa5fad1c85"
+    }
+  ]
+}

@@ -41,7 +41,7 @@ export const ACCOUNT_INCOME_CATEGORY_KEYS: readonly IncomeCategoryKey[] = ['etc'
 export const ACCOUNT_SPEND_CATEGORY_KEYS: readonly SpendCategoryKey[] = ['event_bm', 'etc']
 
 /** 아이템 구매 · 판매의 종류. 게임 인벤토리 탭이다. 수량 · 관세는 서버 표의 단위 · 관세 칸이 가른다. */
-export const ITEM_KIND_KEYS = ['equipment', 'consumable', 'etc'] as const
+export const ITEM_KIND_KEYS = ['equipment', 'consumable', 'etc', 'cash'] as const
 export type ItemKindKey = (typeof ITEM_KIND_KEYS)[number]
 
 /** 에픽던전 추가 리워드가 값을 받는 형태. 이름은 지출 목록 칸의 `forms` 가 든다. */
@@ -54,8 +54,8 @@ export interface CashbookCategory<K extends string = string> {
   readonly name: string
   /** 하루 목록 카드 첫 줄. 묶음이 있는 지출 갈래는 묶음의 카드 제목이 대신 선다. */
   readonly cardTitle: string
-  /** `src/assets/items/` 의 파일명. */
-  readonly icon: string
+  /** 갈래 그림의 id. */
+  readonly iconAssetId: string
   /**
    * 갈래 카드에만 서는 한 줄. 넘치면 말줄임표로 잘린다. 기기마다 가로 비율이 달라 다 들어간다고 못 박을 수가
    * 없고, 잘리는 쪽을 받기로 했다(사용자 지정 2026-09-21).
@@ -78,7 +78,7 @@ const ENTRY_TYPES = ['income', 'spend'] as const
 
 function toCategory(row: Row): CashbookCategoryRow | null {
   if (!isOneOf(row.entryType, ENTRY_TYPES) || !isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
-  if (!isNonEmptyString(row.cardTitle) || !isNonEmptyString(row.iconFile) || typeof row.description !== 'string') return null
+  if (!isNonEmptyString(row.cardTitle) || !isNonEmptyString(row.iconAssetId) || typeof row.description !== 'string') return null
   const unit = optional(row.unit, isNonEmptyString)
   if (unit === false) return null
   return compact({
@@ -86,7 +86,7 @@ function toCategory(row: Row): CashbookCategoryRow | null {
     key: row.key,
     name: row.name,
     cardTitle: row.cardTitle,
-    iconFile: row.iconFile,
+    iconAssetId: row.iconAssetId,
     description: row.description,
     unit,
   })
@@ -120,7 +120,7 @@ function categoryOf<K extends string>(row: CashbookCategoryRow, knownKeys: reado
     key: row.key,
     name: row.name,
     cardTitle: row.cardTitle,
-    icon: row.iconFile,
+    iconAssetId: row.iconAssetId,
     description: row.description,
     unit: row.unit,
     known: (knownKeys as readonly string[]).includes(row.key),

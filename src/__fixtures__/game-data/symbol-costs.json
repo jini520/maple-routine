@@ -29,98 +29,112 @@
       "group": "arcane",
       "name": "소멸의 여로",
       "requiredLevel": 200,
-      "iconFile": "arcane_symbol_road_of_vanishing.webp"
+      "iconFile": "arcane_symbol_road_of_vanishing.webp",
+      "iconAssetId": "e896f323-02bf-4e83-8bb9-ca2982944ea2"
     },
     {
       "key": "chew_chew",
       "group": "arcane",
       "name": "츄츄 아일랜드",
       "requiredLevel": 210,
-      "iconFile": "arcane_symbol_chew_chew.webp"
+      "iconFile": "arcane_symbol_chew_chew.webp",
+      "iconAssetId": "6463a4af-83f6-4b1a-b2fe-b439bcd9467a"
     },
     {
       "key": "lacheln",
       "group": "arcane",
       "name": "레헬른",
       "requiredLevel": 220,
-      "iconFile": "arcane_symbol_lacheln.webp"
+      "iconFile": "arcane_symbol_lacheln.webp",
+      "iconAssetId": "e43d7bac-bea8-486d-a8cd-9983194e366f"
     },
     {
       "key": "arcana",
       "group": "arcane",
       "name": "아르카나",
       "requiredLevel": 225,
-      "iconFile": "arcane_symbol_arcana.webp"
+      "iconFile": "arcane_symbol_arcana.webp",
+      "iconAssetId": "df831f02-dac3-45d8-93b0-e119a43f1c2f"
     },
     {
       "key": "morass",
       "group": "arcane",
       "name": "모라스",
       "requiredLevel": 230,
-      "iconFile": "arcane_symbol_morass.webp"
+      "iconFile": "arcane_symbol_morass.webp",
+      "iconAssetId": "d0fc20ee-942b-45a8-be1b-69b8f0f5bb59"
     },
     {
       "key": "esfera",
       "group": "arcane",
       "name": "에스페라",
       "requiredLevel": 235,
-      "iconFile": "arcane_symbol_esfera.webp"
+      "iconFile": "arcane_symbol_esfera.webp",
+      "iconAssetId": "3b912192-549a-41fb-97f1-7447ff32ba19"
     },
     {
       "key": "cernium",
       "group": "authentic",
       "name": "세르니움",
       "requiredLevel": 260,
-      "iconFile": "authentic_symbol_cernium.webp"
+      "iconFile": "authentic_symbol_cernium.webp",
+      "iconAssetId": "76a8f6a5-b57e-4466-9c55-58b8c92d34a1"
     },
     {
       "key": "arcs",
       "group": "authentic",
       "name": "아르크스",
       "requiredLevel": 265,
-      "iconFile": "authentic_symbol_arcs.webp"
+      "iconFile": "authentic_symbol_arcs.webp",
+      "iconAssetId": "293e55a2-7e7c-4308-914c-1b75bdabb2ee"
     },
     {
       "key": "odium",
       "group": "authentic",
       "name": "오디움",
       "requiredLevel": 270,
-      "iconFile": "authentic_symbol_odium.webp"
+      "iconFile": "authentic_symbol_odium.webp",
+      "iconAssetId": "33909e6b-dc43-4daf-9f21-06f8cd1f119b"
     },
     {
       "key": "dowonkyung",
       "group": "authentic",
       "name": "도원경",
       "requiredLevel": 275,
-      "iconFile": "authentic_symbol_dowonkyung.webp"
+      "iconFile": "authentic_symbol_dowonkyung.webp",
+      "iconAssetId": "9df65cbf-f452-40c1-b1d6-68f72a5b5d26"
     },
     {
       "key": "arteria",
       "group": "authentic",
       "name": "아르테리아",
       "requiredLevel": 280,
-      "iconFile": "authentic_symbol_arteria.webp"
+      "iconFile": "authentic_symbol_arteria.webp",
+      "iconAssetId": "76062d27-ba36-4202-b952-689da8795425"
     },
     {
       "key": "carcion",
       "group": "authentic",
       "name": "카르시온",
       "requiredLevel": 285,
-      "iconFile": "authentic_symbol_carcion.webp"
+      "iconFile": "authentic_symbol_carcion.webp",
+      "iconAssetId": "960e202d-fa8e-4a1d-8471-c79b259bfcba"
     },
     {
       "key": "tallahart",
       "group": "grand_authentic",
       "name": "탈라하트",
       "requiredLevel": 290,
-      "iconFile": "grand_authentic_symbol_tallahart.webp"
+      "iconFile": "grand_authentic_symbol_tallahart.webp",
+      "iconAssetId": "794deba9-fe91-464e-8630-b653a62280d0"
     },
     {
       "key": "geardrak",
       "group": "grand_authentic",
       "name": "기어드락",
       "requiredLevel": 295,
-      "iconFile": "grand_authentic_symbol_geardrak.webp"
+      "iconFile": "grand_authentic_symbol_geardrak.webp",
+      "iconAssetId": "aa5e91ae-2e39-4561-84f0-f4b93c0d9ba2"
     }
   ],
   "levelCosts": [

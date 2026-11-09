@@ -7,7 +7,8 @@
       "apiType": "스킬 코어",
       "isDefault": true,
       "maxLevel": 30,
-      "iconFile": "hexa_core_skill.webp"
+      "iconFile": "hexa_core_skill.webp",
+      "iconAssetId": "c123188c-9ce1-4c71-86de-ade73f8fbbd5"
     },
     {
       "key": "skill_3rd",
@@ -15,7 +16,8 @@
       "apiType": "스킬 코어",
       "isDefault": false,
       "maxLevel": 30,
-      "iconFile": "hexa_core_skill.webp"
+      "iconFile": "hexa_core_skill.webp",
+      "iconAssetId": "c123188c-9ce1-4c71-86de-ade73f8fbbd5"
     },
     {
       "key": "mastery",
@@ -23,7 +25,8 @@
       "apiType": "마스터리 코어",
       "isDefault": true,
       "maxLevel": 30,
-      "iconFile": "hexa_core_mastery.webp"
+      "iconFile": "hexa_core_mastery.webp",
+      "iconAssetId": "c23cca5a-7b0b-488f-bd32-a51055ca17b1"
     },
     {
       "key": "enhance",
@@ -31,7 +34,8 @@
       "apiType": "강화 코어",
       "isDefault": true,
       "maxLevel": 30,
-      "iconFile": "hexa_core_enhance.webp"
+      "iconFile": "hexa_core_enhance.webp",
+      "iconAssetId": "61313e3e-1675-4837-9236-b1821123f2f1"
     },
     {
       "key": "common",
@@ -39,7 +43,8 @@
       "apiType": "공용 코어",
       "isDefault": false,
       "maxLevel": 30,
-      "iconFile": "hexa_core_common.webp"
+      "iconFile": "hexa_core_common.webp",
+      "iconAssetId": "ebf877e7-98a2-46d3-b8c6-07fc1d0af0e5"
     },
     {
       "key": "job_common",
@@ -47,7 +52,8 @@
       "apiType": "공용 코어",
       "isDefault": true,
       "maxLevel": 30,
-      "iconFile": "hexa_core_common.webp"
+      "iconFile": "hexa_core_common.webp",
+      "iconAssetId": "ebf877e7-98a2-46d3-b8c6-07fc1d0af0e5"
     }
   ],
   "levelCosts": [
@@ -1339,4033 +1345,4705 @@
       "job": "히어로",
       "name": "스피릿 칼리버",
       "apiType": "스킬 코어",
-      "iconFile": "KFPDKDPEMA.webp"
+      "iconFile": "KFPDKDPEMA.webp",
+      "iconAssetId": "40a2c865-854e-498c-b285-033b6a9454e1"
     },
     {
       "job": "히어로",
       "name": "사일런트 클리브",
       "apiType": "스킬 코어",
-      "iconFile": "KFPDKDPEMC.webp"
+      "iconFile": "KFPDKDPEMC.webp",
+      "iconAssetId": "d43cd307-032a-4efd-901f-35c1ade505dd"
     },
     {
       "job": "히어로",
       "name": "레이지 익스플로젼",
       "apiType": "스킬 코어",
-      "iconFile": "KFPDKDPEMD.webp"
+      "iconFile": "KFPDKDPEMD.webp",
+      "iconAssetId": "eaa3b9b3-41f8-4c58-9e59-e99cda42afe3"
     },
     {
       "job": "히어로",
       "name": "레이징 블로우 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPDKDPBMA.webp"
+      "iconFile": "KFPDKDPBMA.webp",
+      "iconAssetId": "23beee6c-876a-42b5-a627-366d83d5901b"
     },
     {
       "job": "히어로",
       "name": "레이지 업라이징 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPDKDPBMC.webp"
+      "iconFile": "KFPDKDPBMC.webp",
+      "iconAssetId": "d01e9625-e7f2-428f-85fa-76bd31dabbc5"
     },
     {
       "job": "히어로",
       "name": "오라 블레이드 VI/퓨리어스 엣지",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPDKDPBMD.webp"
+      "iconFile": "KFPDKDPBMD.webp",
+      "iconAssetId": "42250781-c513-4994-a1c8-9baf4bba6d8a"
     },
     {
       "job": "히어로",
       "name": "인사이징 VI/파이널 어택 VI/발할라 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPDKDPBMI.webp"
+      "iconFile": "KFPDKDPBMI.webp",
+      "iconAssetId": "ce79df18-7cfb-4289-92d0-246aa0b2639d"
     },
     {
       "job": "히어로",
       "name": "소드 오브 버닝 소울",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBMA.webp"
+      "iconFile": "KAPCLHKBMA.webp",
+      "iconAssetId": "194d12bd-ad91-420f-a009-1458cb244732"
     },
     {
       "job": "히어로",
       "name": "콤보 인스팅트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBMB.webp"
+      "iconFile": "KAPCLHKBMB.webp",
+      "iconAssetId": "8be3a168-1ecc-408e-9b0d-7f646c13bd0b"
     },
     {
       "job": "히어로",
       "name": "콤보 데스폴트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBMC.webp"
+      "iconFile": "KAPCLHKBMC.webp",
+      "iconAssetId": "c71212d8-7a45-4a82-bb53-9083d0467b50"
     },
     {
       "job": "히어로",
       "name": "소드 일루전",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBMD.webp"
+      "iconFile": "KAPCLHKBMD.webp",
+      "iconAssetId": "18c92e3b-71ad-4b1d-96ec-00da73b04943"
     },
     {
       "job": "히어로",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "히어로",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "히어로",
       "name": "블리츠 실드 VI/블리츠 버스트",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBNF.webp"
+      "iconFile": "KAPCLHPBNF.webp",
+      "iconAssetId": "55a523a3-d29e-4a8a-80a4-207d7a31b0d5"
     },
     {
       "job": "팔라딘",
       "name": "세이크리드 바스티온",
       "apiType": "스킬 코어",
-      "iconFile": "KFPDJDPEMA.webp"
+      "iconFile": "KFPDJDPEMA.webp",
+      "iconAssetId": "9e33a685-9054-4409-9000-ba6870385b72"
     },
     {
       "job": "팔라딘",
       "name": "도미누스 오브리온",
       "apiType": "스킬 코어",
-      "iconFile": "KFPDJDPEME.webp"
+      "iconFile": "KFPDJDPEME.webp",
+      "iconAssetId": "bc7ba1f2-90eb-404a-8d1c-33bed1a2fbca"
     },
     {
       "job": "팔라딘",
       "name": "디바인 컨버전스",
       "apiType": "스킬 코어",
-      "iconFile": "KFPDJDPEMG.webp"
+      "iconFile": "KFPDJDPEMG.webp",
+      "iconAssetId": "e74bbea6-fd5c-4db2-923f-7c169177cd3f"
     },
     {
       "job": "팔라딘",
       "name": "블래스트 VI/디바인 저지먼트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPDJDPBMA.webp"
+      "iconFile": "KFPDJDPBMA.webp",
+      "iconAssetId": "193dec1d-3a2b-4c44-b4ef-71570e5918ce"
     },
     {
       "job": "팔라딘",
       "name": "디바인 차지 VI/디바인 스티그마 VI/폴링 저스티스",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPDJDPBMD.webp"
+      "iconFile": "KFPDJDPBMD.webp",
+      "iconAssetId": "d4710b9a-a70b-4c46-8bd7-0f55c1c495d7"
     },
     {
       "job": "팔라딘",
       "name": "생츄어리 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPDJDPBMH.webp"
+      "iconFile": "KFPDJDPBMH.webp",
+      "iconAssetId": "a3a267d8-ac4e-4f37-8b52-f5a1ef7262f9"
     },
     {
       "job": "팔라딘",
       "name": "파이널 어택 VI/라이징 저스티스",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPDJDOBMI.webp"
+      "iconFile": "KFPDJDOBMI.webp",
+      "iconAssetId": "fdb0c9b0-4f87-4985-8bd8-d5bd03dd63c1"
     },
     {
       "job": "팔라딘",
       "name": "홀리 유니티",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBME.webp"
+      "iconFile": "KAPCLHKBME.webp",
+      "iconAssetId": "37677ec6-7c1e-437c-a244-01cb6b9ca96a"
     },
     {
       "job": "팔라딘",
       "name": "블래스드 해머",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBMF.webp"
+      "iconFile": "KAPCLHKBMF.webp",
+      "iconAssetId": "d4c7de78-6ab5-481d-ad92-b54835bd0329"
     },
     {
       "job": "팔라딘",
       "name": "그랜드 크로스",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBMG.webp"
+      "iconFile": "KAPCLHKBMG.webp",
+      "iconAssetId": "3f821427-3ac4-46da-977c-393946f5bb37"
     },
     {
       "job": "팔라딘",
       "name": "마이티 묠니르",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBMH.webp"
+      "iconFile": "KAPCLHKBMH.webp",
+      "iconAssetId": "85576ac4-09d2-4c1a-8f57-b8193f1c27f7"
     },
     {
       "job": "팔라딘",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "팔라딘",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "팔라딘",
       "name": "블리츠 실드 VI/블리츠 버스트",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBNH.webp"
+      "iconFile": "KAPCLHPBNH.webp",
+      "iconAssetId": "46344dea-c6f0-465e-a80a-1c7c5d3f73ce"
     },
     {
       "job": "다크나이트",
       "name": "데드 스페이스",
       "apiType": "스킬 코어",
-      "iconFile": "KFPDIDPEMA.webp"
+      "iconFile": "KFPDIDPEMA.webp",
+      "iconAssetId": "3cdb66f8-bb1c-4483-8746-e52734a40e74"
     },
     {
       "job": "다크나이트",
       "name": "다크 헬리덤",
       "apiType": "스킬 코어",
-      "iconFile": "KFPDIDPEMC.webp"
+      "iconFile": "KFPDIDPEMC.webp",
+      "iconAssetId": "2964df19-76a8-4287-ab23-3cab62d4c89b"
     },
     {
       "job": "다크나이트",
       "name": "다크니스 오브 그레이스",
       "apiType": "스킬 코어",
-      "iconFile": "KFPDIDPEME.webp"
+      "iconFile": "KFPDIDPEME.webp",
+      "iconAssetId": "e12257f5-bb9b-4b74-bbc8-46f282fcba62"
     },
     {
       "job": "다크나이트",
       "name": "궁니르 디센트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPDIDPBMA.webp"
+      "iconFile": "KFPDIDPBMA.webp",
+      "iconAssetId": "c818807f-fb87-4efd-acc5-981ead8b4d43"
     },
     {
       "job": "다크나이트",
       "name": "다크 임페일 VI/다크 신서시스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPDIDPBMB.webp"
+      "iconFile": "KFPDIDPBMB.webp",
+      "iconAssetId": "1cd01cd8-2f02-4e1a-b6fd-c8cd2f85c5c2"
     },
     {
       "job": "다크나이트",
       "name": "파이널 어택 VI/비홀더스 리벤지 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPDIDOBMH.webp"
+      "iconFile": "KFPDIDOBMH.webp",
+      "iconAssetId": "cd07e6d2-6bba-4178-bd4e-c5e0d32f2af9"
     },
     {
       "job": "다크나이트",
       "name": "비홀더 쇼크 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPDIDPBMI.webp"
+      "iconFile": "KFPDIDPBMI.webp",
+      "iconAssetId": "b9082dc9-8770-4fe5-84a3-ec0e99877ba9"
     },
     {
       "job": "다크나이트",
       "name": "다크 스피어",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBMI.webp"
+      "iconFile": "KAPCLHKBMI.webp",
+      "iconAssetId": "aaf9f736-68c9-43d2-b19d-8333a606c143"
     },
     {
       "job": "다크나이트",
       "name": "비홀더 임팩트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBMJ.webp"
+      "iconFile": "KAPCLHKBMJ.webp",
+      "iconAssetId": "36b89ac9-fbff-4466-a631-df57831db8b4"
     },
     {
       "job": "다크나이트",
       "name": "피어스 사이클론",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBNA.webp"
+      "iconFile": "KAPCLHKBNA.webp",
+      "iconAssetId": "de61059a-99e9-4522-881e-995c232936e1"
     },
     {
       "job": "다크나이트",
       "name": "다크니스 오라",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBNB.webp"
+      "iconFile": "KAPCLHKBNB.webp",
+      "iconAssetId": "231b573a-571c-4c4f-83ce-77ee4ce18b39"
     },
     {
       "job": "다크나이트",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "다크나이트",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "다크나이트",
       "name": "블리츠 실드 VI/블리츠 버스트",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBNJ.webp"
+      "iconFile": "KAPCLHPBNJ.webp",
+      "iconAssetId": "ac360f0f-0708-4c1d-b2cc-add9999f59df"
     },
     {
       "job": "비숍",
       "name": "홀리 어드밴트",
       "apiType": "스킬 코어",
-      "iconFile": "KFPAIDPEMA.webp"
+      "iconFile": "KFPAIDPEMA.webp",
+      "iconAssetId": "eefba307-d150-4f56-ab01-15f3cb2e3084"
     },
     {
       "job": "비숍",
       "name": "커맨드 오브 헤븐",
       "apiType": "스킬 코어",
-      "iconFile": "KFPAIDPEMH.webp"
+      "iconFile": "KFPAIDPEMH.webp",
+      "iconAssetId": "6131d101-f6c8-4ba3-bd13-3b605631b175"
     },
     {
       "job": "비숍",
       "name": "엔젤스 플레지",
       "apiType": "스킬 코어",
-      "iconFile": "KFPAIDPEMJ.webp"
+      "iconFile": "KFPAIDPEMJ.webp",
+      "iconAssetId": "31dca1df-1ff9-4f28-b6af-f188ddeee49f"
     },
     {
       "job": "비숍",
       "name": "엔젤레이 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPAIDPBMA.webp"
+      "iconFile": "KFPAIDPBMA.webp",
+      "iconAssetId": "656f6316-419e-4e37-883c-8dcd0e970191"
     },
     {
       "job": "비숍",
       "name": "빅뱅 VI/트라이엄프 페더 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPAIDPBMC.webp"
+      "iconFile": "KFPAIDPBMC.webp",
+      "iconAssetId": "aeb3b1cd-9cb8-40b0-9477-f806e07e8665"
     },
     {
       "job": "비숍",
       "name": "엔젤릭 터치 VI/파운틴 포 엔젤 VI/바하뮤트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPAIDPBMH.webp"
+      "iconFile": "KFPAIDPBMH.webp",
+      "iconAssetId": "e73f3de3-1425-41fd-b1e7-d372d968780c"
     },
     {
       "job": "비숍",
       "name": "제네시스 VI/헤븐즈 도어 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPAIDPBMJ.webp"
+      "iconFile": "KFPAIDPBMJ.webp",
+      "iconAssetId": "8509970c-4c1c-4875-bf22-d201b3a51fa3"
     },
     {
       "job": "비숍",
       "name": "프레이",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBOA.webp"
+      "iconFile": "KAPCLHKBOA.webp",
+      "iconAssetId": "e8621c3b-f235-4f6f-843c-ac3dda5ba5f8"
     },
     {
       "job": "비숍",
       "name": "엔젤 오브 제미니",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBOB.webp"
+      "iconFile": "KAPCLHKBOB.webp",
+      "iconAssetId": "dc567184-74a2-44df-9101-c603303508c2"
     },
     {
       "job": "비숍",
       "name": "피스메이커",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBOC.webp"
+      "iconFile": "KAPCLHKBOC.webp",
+      "iconAssetId": "c8145631-3e84-406f-a617-ea51ca186d7d"
     },
     {
       "job": "비숍",
       "name": "디바인 퍼니시먼트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBOD.webp"
+      "iconFile": "KAPCLHKBOD.webp",
+      "iconAssetId": "060af22f-e3b1-4459-9052-b5c9ccfc7d6c"
     },
     {
       "job": "비숍",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "비숍",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "비숍",
       "name": "아르카나 오버라이드 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBOD.webp"
+      "iconFile": "KAPCLHPBOD.webp",
+      "iconAssetId": "a42b0a5c-b141-418a-a24d-95d64f83b9ad"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "인페르날 베놈",
       "apiType": "스킬 코어",
-      "iconFile": "KFPAKDPEMA.webp"
+      "iconFile": "KFPAKDPEMA.webp",
+      "iconAssetId": "12beabef-d729-46f4-932f-17721ef75158"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "토렌셜 플레임",
       "apiType": "스킬 코어",
-      "iconFile": "KFPAKDPEME.webp"
+      "iconFile": "KFPAKDPEME.webp",
+      "iconAssetId": "a4b4c7c9-51b5-4790-8b19-6f52de83ac1f"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "인페르날 웨이브",
       "apiType": "스킬 코어",
-      "iconFile": "KFPAKDPEMG.webp"
+      "iconFile": "KFPAKDPEMG.webp",
+      "iconAssetId": "22cd78f4-954c-4280-a774-6097ec24e6c9"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "플레임 스윕 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPAKDPBMA.webp"
+      "iconFile": "KFPAKDPBMA.webp",
+      "iconAssetId": "5d6bf9e1-7ab2-4476-a7e1-39842a3e8b53"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "플레임 헤이즈 VI/미스트 이럽션 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPAKDPBMD.webp"
+      "iconFile": "KFPAKDPBMD.webp",
+      "iconAssetId": "3199a978-522e-4725-95be-305c2d45ccd6"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "이그나이트 VI/이프리트 VI/파이어 오라 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPAKDPBMH.webp"
+      "iconFile": "KFPAKDPBMH.webp",
+      "iconAssetId": "2a9de15f-099a-43b8-b0b8-a23cc73ad4b4"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "포이즌 리젼 VI/메테오 VI/메기도 플레임 VI/포이즌 플레어 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPAKDPBNE.webp"
+      "iconFile": "KFPAKDPBNE.webp",
+      "iconAssetId": "a505dd55-f618-4018-85b5-42a2b15f6c16"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "도트 퍼니셔",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBNC.webp"
+      "iconFile": "KAPCLHKBNC.webp",
+      "iconAssetId": "9be2e19f-23f4-49ab-80b9-c24db79a81a4"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "포이즌 노바",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBND.webp"
+      "iconFile": "KAPCLHKBND.webp",
+      "iconAssetId": "dccf84be-d685-4e8b-9cd0-637f97f6b2c7"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "퓨리 오브 이프리트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBNE.webp"
+      "iconFile": "KAPCLHKBNE.webp",
+      "iconAssetId": "f4300002-69f6-4a90-a701-a126facc02fa"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "포이즌 체인",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBNF.webp"
+      "iconFile": "KAPCLHKBNF.webp",
+      "iconAssetId": "2fa7a01f-c010-461c-9a60-5ec2a3449e18"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "아크메이지(불,독)",
       "name": "아르카나 오버라이드 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBOB.webp"
+      "iconFile": "KAPCLHPBOB.webp",
+      "iconAssetId": "2b04cee1-a314-46fe-949e-6ef2e2c31552"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "프로즌 라이트닝",
       "apiType": "스킬 코어",
-      "iconFile": "KFPAJDPEMA.webp"
+      "iconFile": "KFPAJDPEMA.webp",
+      "iconAssetId": "4eb39889-0af1-4847-90a0-f53c6feb14ec"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "파라볼릭 볼트",
       "apiType": "스킬 코어",
-      "iconFile": "KFPAJDPEMF.webp"
+      "iconFile": "KFPAJDPEMF.webp",
+      "iconAssetId": "7135d0c1-9aa3-4555-b40c-5c1b1e4420ff"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "서브제로 퍼미네이션",
       "apiType": "스킬 코어",
-      "iconFile": "KFPAJDPEMH.webp"
+      "iconFile": "KFPAJDPEMH.webp",
+      "iconAssetId": "00cfe860-dee5-4857-b330-fe1cf307c27c"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "체인 라이트닝 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPAJDPBMA.webp"
+      "iconFile": "KFPAJDPBMA.webp",
+      "iconAssetId": "c8356b87-4f1c-41eb-a087-8bb164369ea4"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "프로즌 오브 VI/블리자드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPAJDPBMC.webp"
+      "iconFile": "KFPAJDPBMC.webp",
+      "iconAssetId": "4e5830d3-60fa-4bbf-a034-9e2df5f23491"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "라이트닝 스피어 VI/크라이오 쇼크",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPAJDPBMF.webp"
+      "iconFile": "KFPAJDPBMF.webp",
+      "iconAssetId": "f3c0bd8d-dec6-47f3-9388-551cc8763b34"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "썬더 스피어 VI/엘퀴네스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPAJDPBMI.webp"
+      "iconFile": "KFPAJDPBMI.webp",
+      "iconAssetId": "369a7eb2-93a9-430a-ae98-8c7a831ebebd"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "프로스트 아크",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBNG.webp"
+      "iconFile": "KAPCLHKBNG.webp",
+      "iconAssetId": "8bc4d716-a6ac-424b-b6c3-bfe8a493505b"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "썬더 브레이크",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBNH.webp"
+      "iconFile": "KAPCLHKBNH.webp",
+      "iconAssetId": "df83d576-2ca9-43f4-a9f5-db98a847580d"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "스피릿 오브 스노우",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBNI.webp"
+      "iconFile": "KAPCLHKBNI.webp",
+      "iconAssetId": "660dcb6e-91d0-4df5-a37c-78527231430d"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "주피터 썬더",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBNJ.webp"
+      "iconFile": "KAPCLHKBNJ.webp",
+      "iconAssetId": "2de8a3bf-2251-4ff2-ac72-e55c8c844607"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "아크메이지(썬,콜)",
       "name": "아르카나 오버라이드 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBOC.webp"
+      "iconFile": "KAPCLHPBOC.webp",
+      "iconAssetId": "f1fa8375-f113-4725-a98e-3ae3a388b3fd"
     },
     {
       "job": "보우마스터",
       "name": "어센던트 셰이드",
       "apiType": "스킬 코어",
-      "iconFile": "KFPBKDPEMA.webp"
+      "iconFile": "KFPBKDPEMA.webp",
+      "iconAssetId": "6be740c2-6ebf-4d1a-b78b-e3910d341d19"
     },
     {
       "job": "보우마스터",
       "name": "포인트 제로",
       "apiType": "스킬 코어",
-      "iconFile": "KFPBKDPEMD.webp"
+      "iconFile": "KFPBKDPEMD.webp",
+      "iconAssetId": "bf1f4f2c-feba-4dfd-ba87-aca849bfbfb8"
     },
     {
       "job": "보우마스터",
       "name": "아이 오브 아퀼라",
       "apiType": "스킬 코어",
-      "iconFile": "KFPBKDPEMF.webp"
+      "iconFile": "KFPBKDPEMF.webp",
+      "iconAssetId": "5a662e00-5c04-416c-bcce-94ae9ed9fa48"
     },
     {
       "job": "보우마스터",
       "name": "폭풍의 시 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPBKDPBMA.webp"
+      "iconFile": "KFPBKDPBMA.webp",
+      "iconAssetId": "51a722b9-b79e-4296-b5c5-a413d2f1a464"
     },
     {
       "job": "보우마스터",
       "name": "애로우 플래터 VI/언카운터블 애로우 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPBKDPBME.webp"
+      "iconFile": "KFPBKDPBME.webp",
+      "iconAssetId": "7e328738-4496-43c5-bb91-15163026de3e"
     },
     {
       "job": "보우마스터",
       "name": "퀴버 카트리지 VI/피닉스 VI/엑스트라 퀴버 카트리지",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPBKDPBMF.webp"
+      "iconFile": "KFPBKDPBMF.webp",
+      "iconAssetId": "f185464c-021f-430d-b126-24056369c9b4"
     },
     {
       "job": "보우마스터",
       "name": "플레시 미라주 VI/윈드 오브 프레이 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPBKDPBND.webp"
+      "iconFile": "KFPBKDPBND.webp",
+      "iconAssetId": "fd76de3c-bb57-4f16-a75a-9db14263dd58"
     },
     {
       "job": "보우마스터",
       "name": "애로우 레인",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBOE.webp"
+      "iconFile": "KAPCLHKBOE.webp",
+      "iconAssetId": "9929c693-4e7d-4091-9bb4-218727f91a8f"
     },
     {
       "job": "보우마스터",
       "name": "잔영의 시",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBOF.webp"
+      "iconFile": "KAPCLHKBOF.webp",
+      "iconAssetId": "fb6e3cb7-994b-4ab6-a898-994e36baa1e5"
     },
     {
       "job": "보우마스터",
       "name": "퀴버 풀버스트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBOG.webp"
+      "iconFile": "KAPCLHKBOG.webp",
+      "iconAssetId": "93c177f3-a051-4aeb-a7dc-a92f2e597571"
     },
     {
       "job": "보우마스터",
       "name": "실루엣 미라주",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBOH.webp"
+      "iconFile": "KAPCLHKBOH.webp",
+      "iconAssetId": "62767327-277c-475c-a0ff-af8cd1040fa9"
     },
     {
       "job": "보우마스터",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "보우마스터",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "보우마스터",
       "name": "이볼브 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBOE.webp"
+      "iconFile": "KAPCLHPBOE.webp",
+      "iconAssetId": "c5d84d47-0016-4fd8-92de-46c6b8bf8035"
     },
     {
       "job": "신궁",
       "name": "파이널 에임",
       "apiType": "스킬 코어",
-      "iconFile": "KFPBJDPEMA.webp"
+      "iconFile": "KFPBJDPEMA.webp",
+      "iconAssetId": "00fac870-c490-4517-9c7b-198276f28ab0"
     },
     {
       "job": "신궁",
       "name": "페이탈 트리거",
       "apiType": "스킬 코어",
-      "iconFile": "KFPBJDPEMC.webp"
+      "iconFile": "KFPBJDPEMC.webp",
+      "iconAssetId": "c9a7895c-02dc-4815-a03f-d0a06aca1b93"
     },
     {
       "job": "신궁",
       "name": "리썰 퍼니셔",
       "apiType": "스킬 코어",
-      "iconFile": "KFPBJDPEME.webp"
+      "iconFile": "KFPBJDPEME.webp",
+      "iconAssetId": "ab702a5b-9696-4a15-9631-5dab323e846e"
     },
     {
       "job": "신궁",
       "name": "스나이핑 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPBJDPBMA.webp"
+      "iconFile": "KFPBJDPBMA.webp",
+      "iconAssetId": "768a8447-8e49-4afd-8a30-4976e42a6376"
     },
     {
       "job": "신궁",
       "name": "피어싱 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPBJDPBMF.webp"
+      "iconFile": "KFPBJDPBMF.webp",
+      "iconAssetId": "3e1c832c-5cb2-46ed-bdb7-95786dc96ce4"
     },
     {
       "job": "신궁",
       "name": "프리져 VI/볼트 스위프트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPBJDPBNC.webp"
+      "iconFile": "KFPBJDPBNC.webp",
+      "iconAssetId": "4fb89b28-a575-4944-bba8-794a2dfe9d98"
     },
     {
       "job": "신궁",
       "name": "파이널 어택 VI/롱 레인지 트루샷 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPBJDOBNE.webp"
+      "iconFile": "KFPBJDOBNE.webp",
+      "iconAssetId": "b6e70c6c-3d47-4187-a847-ee13f2306c92"
     },
     {
       "job": "신궁",
       "name": "트루 스나이핑",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBOI.webp"
+      "iconFile": "KAPCLHKBOI.webp",
+      "iconAssetId": "e5c88588-7353-47b0-b4e9-eaf9fe2f403a"
     },
     {
       "job": "신궁",
       "name": "스플릿 애로우",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBOJ.webp"
+      "iconFile": "KAPCLHKBOJ.webp",
+      "iconAssetId": "f5fbac1f-aebf-4d8f-b6d0-39b7bcac0caf"
     },
     {
       "job": "신궁",
       "name": "차지드 애로우",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBPA.webp"
+      "iconFile": "KAPCLHKBPA.webp",
+      "iconAssetId": "159ca16b-511f-4ad4-828a-8d2b0db041f1"
     },
     {
       "job": "신궁",
       "name": "리피팅 크로스보우 카트리지",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBPB.webp"
+      "iconFile": "KAPCLHKBPB.webp",
+      "iconAssetId": "ef55cd7e-58af-4e22-b3ff-7d43412da823"
     },
     {
       "job": "신궁",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "신궁",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "신궁",
       "name": "이볼브 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBOG.webp"
+      "iconFile": "KAPCLHPBOG.webp",
+      "iconAssetId": "808edcd3-9dff-4847-8b02-67e1c88e0b5c"
     },
     {
       "job": "패스파인더",
       "name": "포세이큰 렐릭",
       "apiType": "스킬 코어",
-      "iconFile": "KFPBIDPEMA.webp"
+      "iconFile": "KFPBIDPEMA.webp",
+      "iconAssetId": "ad93f285-8816-4137-afc5-1cdd26b60c93"
     },
     {
       "job": "패스파인더",
       "name": "렐릭 페네트레이션",
       "apiType": "스킬 코어",
-      "iconFile": "KFPBIDPEMF.webp"
+      "iconFile": "KFPBIDPEMF.webp",
+      "iconAssetId": "55a5a57d-5b4e-49e7-bce2-a3aacfb5c365"
     },
     {
       "job": "패스파인더",
       "name": "마테리얼 버스트",
       "apiType": "스킬 코어",
-      "iconFile": "KFPBIDPEMG.webp"
+      "iconFile": "KFPBIDPEMG.webp",
+      "iconAssetId": "a2c59afd-dcf0-4089-a9dd-ab20346b1e14"
     },
     {
       "job": "패스파인더",
       "name": "카디널 블래스트 VI/에디셔널 블래스트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPBIDPBMA.webp"
+      "iconFile": "KFPBIDPBMA.webp",
+      "iconAssetId": "8af45f9f-2ee9-4fe8-a969-68528a5801f9"
     },
     {
       "job": "패스파인더",
       "name": "카디널 디스차지 VI/에디셔널 디스차지 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPBIDPBME.webp"
+      "iconFile": "KFPBIDPBME.webp",
+      "iconAssetId": "461d4bfe-6832-4b03-a10d-0b3a8b708255"
     },
     {
       "job": "패스파인더",
       "name": "카디널 트랜지션 VI/엣지 오브 레조넌스 VI/에인션트 아스트라 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPBIDPBMI.webp"
+      "iconFile": "KFPBIDPBMI.webp",
+      "iconAssetId": "9e601d87-39b3-4fa4-833e-034396c7d451"
     },
     {
       "job": "패스파인더",
       "name": "레이븐 VI/콤보 어썰트 VI/렐릭 마테리얼라이즈",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPBIDPBOE.webp"
+      "iconFile": "KFPBIDPBOE.webp",
+      "iconAssetId": "9993385b-edea-438b-a424-488d5ab9602d"
     },
     {
       "job": "패스파인더",
       "name": "얼티밋 블래스트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBPC.webp"
+      "iconFile": "KAPCLHKBPC.webp",
+      "iconAssetId": "7feb495b-9019-4aa6-aafb-76fb57d9db36"
     },
     {
       "job": "패스파인더",
       "name": "에인션트 템페스트/프라이멀 템페스트 강화",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBPD.webp"
+      "iconFile": "KAPCLHKBPD.webp",
+      "iconAssetId": "8884ea21-0cee-4b86-b2cb-1d283e505531"
     },
     {
       "job": "패스파인더",
       "name": "옵시디언 배리어",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBPE.webp"
+      "iconFile": "KAPCLHKBPE.webp",
+      "iconAssetId": "54ed746b-2d96-47de-b0e4-0d6a25d0fce0"
     },
     {
       "job": "패스파인더",
       "name": "렐릭 언바운드",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBPF.webp"
+      "iconFile": "KAPCLHKBPF.webp",
+      "iconAssetId": "5f8dd818-4617-423c-8e32-b478fa8e53f7"
     },
     {
       "job": "패스파인더",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "패스파인더",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "패스파인더",
       "name": "이볼브 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBOI.webp"
+      "iconFile": "KAPCLHPBOI.webp",
+      "iconAssetId": "3cb4b7e6-a147-453b-9ec1-e8a98deb1cf7"
     },
     {
       "job": "나이트로드",
       "name": "생사여탈",
       "apiType": "스킬 코어",
-      "iconFile": "KFPGKDPEMA.webp"
+      "iconFile": "KFPGKDPEMA.webp",
+      "iconAssetId": "e598eb41-1f6b-4670-ab22-f11b7566e28d"
     },
     {
       "job": "나이트로드",
       "name": "크루셜 어썰트",
       "apiType": "스킬 코어",
-      "iconFile": "KFPGKDPEMD.webp"
+      "iconFile": "KFPGKDPEMD.webp",
+      "iconAssetId": "68d81f57-e8cc-4c01-82c1-2eb78d06c3f7"
     },
     {
       "job": "나이트로드",
       "name": "쉐도우 리츄얼",
       "apiType": "스킬 코어",
-      "iconFile": "KFPGKDPEMF.webp"
+      "iconFile": "KFPGKDPEMF.webp",
+      "iconAssetId": "197272a8-800b-49b4-abb7-62474d9aa478"
     },
     {
       "job": "나이트로드",
       "name": "쿼드러플 스로우 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPGKDPBMA.webp"
+      "iconFile": "KFPGKDPBMA.webp",
+      "iconAssetId": "e0e58385-4b10-433f-a39f-2d8b05641680"
     },
     {
       "job": "나이트로드",
       "name": "마크 오브 어쌔신 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPGKDPBMD.webp"
+      "iconFile": "KFPGKDPBMD.webp",
+      "iconAssetId": "8085e4b4-518e-4de9-a137-88eeb0cc7efa"
     },
     {
       "job": "나이트로드",
       "name": "다크 플레어 VI/쇼다운 챌린지 VI/다크니스 슈리켄",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPGKDPBMH.webp"
+      "iconFile": "KFPGKDPBMH.webp",
+      "iconAssetId": "bd2e4b69-87d2-4c2a-86fc-1146a2994114"
     },
     {
       "job": "나이트로드",
       "name": "써든레이드 VI/포 시즌 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPGKDPBMI.webp"
+      "iconFile": "KFPGKDPBMI.webp",
+      "iconAssetId": "3025442b-3562-48ae-8ee0-4e54d3c7ea6e"
     },
     {
       "job": "나이트로드",
       "name": "스프레드 스로우",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBPG.webp"
+      "iconFile": "KAPCLHKBPG.webp",
+      "iconAssetId": "352454cd-1864-4773-a520-29eee7f8f7b5"
     },
     {
       "job": "나이트로드",
       "name": "풍마수리검",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBPH.webp"
+      "iconFile": "KAPCLHKBPH.webp",
+      "iconAssetId": "33abbb09-a42c-4211-8e80-36ec37f756b7"
     },
     {
       "job": "나이트로드",
       "name": "다크로드의 비전서",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBPI.webp"
+      "iconFile": "KAPCLHKBPI.webp",
+      "iconAssetId": "d63b2ba1-118f-49b4-a153-5e4200455b6a"
     },
     {
       "job": "나이트로드",
       "name": "스로우 블래스팅",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBPJ.webp"
+      "iconFile": "KAPCLHKBPJ.webp",
+      "iconAssetId": "db9763fd-bf00-4c05-8fbb-c4c13c065508"
     },
     {
       "job": "나이트로드",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "나이트로드",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "나이트로드",
       "name": "얼티밋 다크 사이트 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBPA.webp"
+      "iconFile": "KAPCLHPBPA.webp",
+      "iconAssetId": "05ff1df9-afb6-4222-8dfe-32f78aa5b6d4"
     },
     {
       "job": "섀도어",
       "name": "일도양단",
       "apiType": "스킬 코어",
-      "iconFile": "KFPGJDPEMA.webp"
+      "iconFile": "KFPGJDPEMA.webp",
+      "iconAssetId": "ce61a70d-b685-4cc1-a421-df545bc54e90"
     },
     {
       "job": "섀도어",
       "name": "어센틱 다크니스",
       "apiType": "스킬 코어",
-      "iconFile": "KFPGJDPEMD.webp"
+      "iconFile": "KFPGJDPEMD.webp",
+      "iconAssetId": "3da2d7da-750a-473a-ac3f-a6ecfcccf169"
     },
     {
       "job": "섀도어",
       "name": "무아지경",
       "apiType": "스킬 코어",
-      "iconFile": "KFPGJDPEMH.webp"
+      "iconFile": "KFPGJDPEMH.webp",
+      "iconAssetId": "cd0ca700-d017-4f33-a790-f7f7367b0d4d"
     },
     {
       "job": "섀도어",
       "name": "암살 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPGJDPBMA.webp"
+      "iconFile": "KFPGJDPBMA.webp",
+      "iconAssetId": "31c8cebf-8b5a-4186-ad0e-58ea69c31390"
     },
     {
       "job": "섀도어",
       "name": "메소 익스플로젼 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPGJDPBMG.webp"
+      "iconFile": "KFPGJDPBMG.webp",
+      "iconAssetId": "87753de6-fa5d-4481-8ca3-c6c95047542a"
     },
     {
       "job": "섀도어",
       "name": "다크 플레어 VI/크루얼 스탭 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPGJDPBNC.webp"
+      "iconFile": "KFPGJDPBNC.webp",
+      "iconAssetId": "3c807879-4ca7-4f24-9361-f3dc3edde0ea"
     },
     {
       "job": "섀도어",
       "name": "써든 레이드 VI/베일 오브 섀도우 VI/커버트 쉐도우",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPGJDPBNF.webp"
+      "iconFile": "KFPGJDPBNF.webp",
+      "iconAssetId": "464c503b-9dd0-4589-9343-1155ae005247"
     },
     {
       "job": "섀도어",
       "name": "쉐도우 어썰트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBIA.webp"
+      "iconFile": "KAPCLHKBIA.webp",
+      "iconAssetId": "d2031f9d-2bd5-4b91-a2d1-e8206cbf5783"
     },
     {
       "job": "섀도어",
       "name": "절개",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBIB.webp"
+      "iconFile": "KAPCLHKBIB.webp",
+      "iconAssetId": "b8e1a6a5-2a83-445f-b846-82b610428ec3"
     },
     {
       "job": "섀도어",
       "name": "소닉 블로우",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBIC.webp"
+      "iconFile": "KAPCLHKBIC.webp",
+      "iconAssetId": "554a5204-1392-4bf1-a94f-91b363b3ba88"
     },
     {
       "job": "섀도어",
       "name": "멸귀참영진",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBID.webp"
+      "iconFile": "KAPCLHKBID.webp",
+      "iconAssetId": "50d97281-6b48-4908-8ccc-e67894a498b1"
     },
     {
       "job": "섀도어",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "섀도어",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "섀도어",
       "name": "얼티밋 다크 사이트 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBPC.webp"
+      "iconFile": "KAPCLHPBPC.webp",
+      "iconAssetId": "1048f257-bf11-4224-a1f3-d49dfa14b7d7"
     },
     {
       "job": "듀얼블레이더",
       "name": "카르마 블레이드",
       "apiType": "스킬 코어",
-      "iconFile": "KFPGIBPEMA.webp"
+      "iconFile": "KFPGIBPEMA.webp",
+      "iconAssetId": "be80ce6d-cd30-4105-9c5c-ff7a837c665b"
     },
     {
       "job": "듀얼블레이더",
       "name": "야마즈 디크리",
       "apiType": "스킬 코어",
-      "iconFile": "KFPGIBPEME.webp"
+      "iconFile": "KFPGIBPEME.webp",
+      "iconAssetId": "f623962e-aa49-4041-b63c-711b31f03d97"
     },
     {
       "job": "듀얼블레이더",
       "name": "암영난참",
       "apiType": "스킬 코어",
-      "iconFile": "KFPGIBOEMH.webp"
+      "iconFile": "KFPGIBOEMH.webp",
+      "iconAssetId": "93f2c746-05ba-43ef-9e7f-8b4902380ce3"
     },
     {
       "job": "듀얼블레이더",
       "name": "팬텀 블로우 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPGIBPBMA.webp"
+      "iconFile": "KFPGIBPBMA.webp",
+      "iconAssetId": "e1937be3-be64-40aa-8e50-fd83d8d687b0"
     },
     {
       "job": "듀얼블레이더",
       "name": "아수라 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPGIBPBMB.webp"
+      "iconFile": "KFPGIBPBMB.webp",
+      "iconAssetId": "c801ce8c-fad7-4ef4-9fb1-b2ace4571c24"
     },
     {
       "job": "듀얼블레이더",
       "name": "히든 블레이드 VI/생자필멸",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPGIBPBMC.webp"
+      "iconFile": "KFPGIBPBMC.webp",
+      "iconAssetId": "784fcd47-a1af-42ba-8141-636975ee7065"
     },
     {
       "job": "듀얼블레이더",
       "name": "블레이드 퓨리 VI/써든레이드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPGIBPBMD.webp"
+      "iconFile": "KFPGIBPBMD.webp",
+      "iconAssetId": "36cebceb-1935-4b8b-b9fd-be4ab238e572"
     },
     {
       "job": "듀얼블레이더",
       "name": "블레이드 스톰",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBIE.webp"
+      "iconFile": "KAPCLHKBIE.webp",
+      "iconAssetId": "88ade575-01e1-4dbc-91c0-a836bc67430d"
     },
     {
       "job": "듀얼블레이더",
       "name": "카르마 퓨리",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBIF.webp"
+      "iconFile": "KAPCLHKBIF.webp",
+      "iconAssetId": "4530b176-f653-4324-982b-a68604fac1ec"
     },
     {
       "job": "듀얼블레이더",
       "name": "블레이드 토네이도",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBIG.webp"
+      "iconFile": "KAPCLHKBIG.webp",
+      "iconAssetId": "da59ebc9-b594-41d8-ba68-4e92a70da68a"
     },
     {
       "job": "듀얼블레이더",
       "name": "헌티드 엣지",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBIH.webp"
+      "iconFile": "KAPCLHKBIH.webp",
+      "iconAssetId": "8c9b07ed-c1e7-42b1-96fe-409dbc805859"
     },
     {
       "job": "듀얼블레이더",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "듀얼블레이더",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "듀얼블레이더",
       "name": "얼티밋 다크 사이트 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBPE.webp"
+      "iconFile": "KAPCLHPBPE.webp",
+      "iconAssetId": "69e11927-7375-49a8-ad4b-0d5823516346"
     },
     {
       "job": "바이퍼",
       "name": "리버레이트 넵투누스",
       "apiType": "스킬 코어",
-      "iconFile": "KFPHKDPEMA.webp"
+      "iconFile": "KFPHKDPEMA.webp",
+      "iconAssetId": "64c18932-be73-4db1-886e-e592cb442aa0"
     },
     {
       "job": "바이퍼",
       "name": "헤이메이커",
       "apiType": "스킬 코어",
-      "iconFile": "KFPHKDPEMH.webp"
+      "iconFile": "KFPHKDPEMH.webp",
+      "iconAssetId": "aed092e0-d0fc-45c6-9970-2d42e4125cdf"
     },
     {
       "job": "바이퍼",
       "name": "넵투누스 어드밴트",
       "apiType": "스킬 코어",
-      "iconFile": "KFPHKDPEMJ.webp"
+      "iconFile": "KFPHKDPEMJ.webp",
+      "iconAssetId": "a01b1c04-cba7-4ab2-819d-20f2d037a51d"
     },
     {
       "job": "바이퍼",
       "name": "피스트 인레이지 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPHKDPBMA.webp"
+      "iconFile": "KFPHKDPBMA.webp",
+      "iconAssetId": "39a72b5c-5b08-40c0-aff2-19b892486671"
     },
     {
       "job": "바이퍼",
       "name": "씨 서펜트 VI/씨 서펜트 인레이지VI/씨 서펜트 버스트VI/전함 노틸러스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPHKDOBME.webp"
+      "iconFile": "KFPHKDOBME.webp",
+      "iconAssetId": "7f1ed715-3814-4c29-aa6d-af2856a3cb95"
     },
     {
       "job": "바이퍼",
       "name": "서펜트 스톤 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPHKDPBNB.webp"
+      "iconFile": "KFPHKDPBNB.webp",
+      "iconAssetId": "23bd8000-ffde-441b-9621-d7a84f8d84a2"
     },
     {
       "job": "바이퍼",
       "name": "훅 봄버 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPHKDPBNF.webp"
+      "iconFile": "KFPHKDPBNF.webp",
+      "iconAssetId": "a5009dcd-8374-4661-ba71-f0a1de3f51d1"
     },
     {
       "job": "바이퍼",
       "name": "라이트닝 폼",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBII.webp"
+      "iconFile": "KAPCLHKBII.webp",
+      "iconAssetId": "c212e5b9-fdb3-4724-ac6f-df13e4f62089"
     },
     {
       "job": "바이퍼",
       "name": "서펜트 스크류",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBIJ.webp"
+      "iconFile": "KAPCLHKBIJ.webp",
+      "iconAssetId": "690adb9b-6a7a-4b33-8df0-5a39e3d06f84"
     },
     {
       "job": "바이퍼",
       "name": "퓨리어스 차지",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBJA.webp"
+      "iconFile": "KAPCLHKBJA.webp",
+      "iconAssetId": "f4b9931a-5782-462d-8764-e488fb5f6e1a"
     },
     {
       "job": "바이퍼",
       "name": "하울링 피스트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBJB.webp"
+      "iconFile": "KAPCLHKBJB.webp",
+      "iconAssetId": "3afd4191-3a4b-4dbd-b57e-fcf0ff0ed3d8"
     },
     {
       "job": "바이퍼",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "바이퍼",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "바이퍼",
       "name": "파이렛 플래그 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBPG.webp"
+      "iconFile": "KAPCLHPBPG.webp",
+      "iconAssetId": "4fd86d39-b813-4b46-bc25-9c889b2c90e4"
     },
     {
       "job": "캡틴",
       "name": "드레드노트",
       "apiType": "스킬 코어",
-      "iconFile": "KFPHJDPEMA.webp"
+      "iconFile": "KFPHJDPEMA.webp",
+      "iconAssetId": "bd6c4c53-8bf7-44f9-ba1f-401dea72fcce"
     },
     {
       "job": "캡틴",
       "name": "파이어크래커",
       "apiType": "스킬 코어",
-      "iconFile": "KFPHJDPEMD.webp"
+      "iconFile": "KFPHJDPEMD.webp",
+      "iconAssetId": "8a4e45b4-0b5b-44a7-b1ae-cb920be807fe"
     },
     {
       "job": "캡틴",
       "name": "에어리얼 봄바드먼트",
       "apiType": "스킬 코어",
-      "iconFile": "KFPHJDPEMF.webp"
+      "iconFile": "KFPHJDPEMF.webp",
+      "iconAssetId": "42235ca7-63fb-4a42-9a53-8b8564d0baf1"
     },
     {
       "job": "캡틴",
       "name": "래피드 파이어 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPHJDPBMA.webp"
+      "iconFile": "KFPHJDPBMA.webp",
+      "iconAssetId": "9ab65a60-a80e-47a2-97aa-22a9260bde5e"
     },
     {
       "job": "캡틴",
       "name": "배틀쉽 봄버 VI/봄바드 템페스트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPHJDPBMC.webp"
+      "iconFile": "KFPHJDPBMC.webp",
+      "iconAssetId": "32f68b8b-69ef-440f-87b7-2bd8cf7efb0c"
     },
     {
       "job": "캡틴",
       "name": "헤드 샷 VI/퍼실레이드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPHJDPBMF.webp"
+      "iconFile": "KFPHJDPBMF.webp",
+      "iconAssetId": "b9130233-ceea-40c3-89de-e70c242c26ca"
     },
     {
       "job": "캡틴",
       "name": "시즈 봄버 VI/서먼 크루 VI/전함 노틸러스 VI/스트레인지 봄 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPHJDPBNF.webp"
+      "iconFile": "KFPHJDPBNF.webp",
+      "iconAssetId": "8eac489d-b35a-4584-94bd-bff105ea5132"
     },
     {
       "job": "캡틴",
       "name": "불릿 파티",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBJC.webp"
+      "iconFile": "KAPCLHKBJC.webp",
+      "iconAssetId": "683ba19c-7387-4761-877f-d0a4ecd269f6"
     },
     {
       "job": "캡틴",
       "name": "데드아이",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBJD.webp"
+      "iconFile": "KAPCLHKBJD.webp",
+      "iconAssetId": "5299cc5a-0982-4dcf-b66c-691bb3013809"
     },
     {
       "job": "캡틴",
       "name": "노틸러스 어썰트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBJE.webp"
+      "iconFile": "KAPCLHKBJE.webp",
+      "iconAssetId": "631bf142-732d-46b7-bf8e-16e84e722609"
     },
     {
       "job": "캡틴",
       "name": "데스 트리거",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBJF.webp"
+      "iconFile": "KAPCLHKBJF.webp",
+      "iconAssetId": "30321ddc-a0af-4d93-8c9a-ecf9ec5f79ee"
     },
     {
       "job": "캡틴",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "캡틴",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "캡틴",
       "name": "파이렛 플래그 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBPH.webp"
+      "iconFile": "KAPCLHPBPH.webp",
+      "iconAssetId": "78780e35-11b0-4e60-a277-dba4f14bac6f"
     },
     {
       "job": "캐논마스터",
       "name": "슈퍼 캐논 익스플로젼",
       "apiType": "스킬 코어",
-      "iconFile": "KFPHIDPEMA.webp"
+      "iconFile": "KFPHIDPEMA.webp",
+      "iconAssetId": "b1aae71d-cda0-481f-8bee-294283dfd474"
     },
     {
       "job": "캐논마스터",
       "name": "배럴 오브 몽키스",
       "apiType": "스킬 코어",
-      "iconFile": "KFPHIDPEMC.webp"
+      "iconFile": "KFPHIDPEMC.webp",
+      "iconAssetId": "970f24bc-2f5a-4f76-8a57-c44767ccac31"
     },
     {
       "job": "캐논마스터",
       "name": "메가 캐논 봄바드",
       "apiType": "스킬 코어",
-      "iconFile": "KFPHIDPEME.webp"
+      "iconFile": "KFPHIDPEME.webp",
+      "iconAssetId": "ed2427ad-46fc-43b4-ba1c-03b6281ea013"
     },
     {
       "job": "캐논마스터",
       "name": "캐논 버스터 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPHIDPBMA.webp"
+      "iconFile": "KFPHIDPBMA.webp",
+      "iconAssetId": "b3bad057-e260-42e4-ae12-bfb6f8156245"
     },
     {
       "job": "캐논마스터",
       "name": "캐논 바주카 VI/미니 캐논볼 VI/마그네틱 앵커 VI/전함 노틸러스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPHIDPBMB.webp"
+      "iconFile": "KFPHIDPBMB.webp",
+      "iconAssetId": "ec0c8bad-6f8e-4238-8f21-eb8915785cb5"
     },
     {
       "job": "캐논마스터",
       "name": "롤링 캐논 레인보우 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPHIDPBNE.webp"
+      "iconFile": "KFPHIDPBNE.webp",
+      "iconAssetId": "132dcf02-c764-4bf7-afed-21aace4a76b3"
     },
     {
       "job": "캐논마스터",
       "name": "몽키 퓨리어스 VI/서포트 몽키 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFPHIDPBNC.webp"
+      "iconFile": "KFPHIDPBNC.webp",
+      "iconAssetId": "2c792b2d-1bea-4887-8793-b176e39c5545"
     },
     {
       "job": "캐논마스터",
       "name": "빅 휴즈 기간틱 캐논볼",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBJG.webp"
+      "iconFile": "KAPCLHKBJG.webp",
+      "iconAssetId": "482659b8-2a15-4f0e-a6bc-3bf97e4fbc1a"
     },
     {
       "job": "캐논마스터",
       "name": "ICBM",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBJH.webp"
+      "iconFile": "KAPCLHKBJH.webp",
+      "iconAssetId": "7a957256-b8cd-4755-93bc-81fbe86d5201"
     },
     {
       "job": "캐논마스터",
       "name": "스페셜 몽키 에스코트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBJI.webp"
+      "iconFile": "KAPCLHKBJI.webp",
+      "iconAssetId": "c36666d9-155e-4005-82b3-11a904da7a1b"
     },
     {
       "job": "캐논마스터",
       "name": "풀 메이커",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBJJ.webp"
+      "iconFile": "KAPCLHKBJJ.webp",
+      "iconAssetId": "1d2eb098-01e4-473c-99f8-d7049ee62c14"
     },
     {
       "job": "캐논마스터",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "캐논마스터",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "캐논마스터",
       "name": "파이렛 플래그 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBPI.webp"
+      "iconFile": "KAPCLHPBPI.webp",
+      "iconAssetId": "440ca57a-fdba-4024-b4df-0081a4f01efc"
     },
     {
       "job": "소울마스터",
       "name": "아스트랄 블리츠",
       "apiType": "스킬 코어",
-      "iconFile": "KFODKDPEMA.webp"
+      "iconFile": "KFODKDPEMA.webp",
+      "iconAssetId": "0f8ef0bc-26bb-4ab2-993a-454ab839278a"
     },
     {
       "job": "소울마스터",
       "name": "토탈리티",
       "apiType": "스킬 코어",
-      "iconFile": "KFODKDPEMD.webp"
+      "iconFile": "KFODKDPEMD.webp",
+      "iconAssetId": "83385690-0c29-419d-9844-2156e9dcffb8"
     },
     {
       "job": "소울마스터",
       "name": "셀레스티얼 클리브",
       "apiType": "스킬 코어",
-      "iconFile": "KFODKDPEMF.webp"
+      "iconFile": "KFODKDPEMF.webp",
+      "iconAssetId": "8b3b1b11-9a7f-4b0a-a5cb-e7e5eb7bac6d"
     },
     {
       "job": "소울마스터",
       "name": "솔라 슬래시 VI/루나 디바이드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFODKDPDMA.webp"
+      "iconFile": "KFODKDPDMA.webp",
+      "iconAssetId": "dc65b5b2-f17f-4300-bb64-6f96cc84a445"
     },
     {
       "job": "소울마스터",
       "name": "코스믹 샤워 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFODKDPBMC.webp"
+      "iconFile": "KFODKDPBMC.webp",
+      "iconAssetId": "6c9448cc-3760-436f-88bf-bef055940fa5"
     },
     {
       "job": "소울마스터",
       "name": "코스믹 버스트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFODKDPBME.webp"
+      "iconFile": "KFODKDPBME.webp",
+      "iconAssetId": "75c46f4c-7b20-4707-91ed-b50e365f43a4"
     },
     {
       "job": "소울마스터",
       "name": "솔루나 슬래시 VI/솔루나 파워 II",
       "apiType": "마스터리 코어",
-      "iconFile": "KFODKDPBMF.webp"
+      "iconFile": "KFODKDPBMF.webp",
+      "iconAssetId": "79e3e232-d6e9-468a-930f-59f6a3efe5ca"
     },
     {
       "job": "소울마스터",
       "name": "코스모스",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBKA.webp"
+      "iconFile": "KAPCLHKBKA.webp",
+      "iconAssetId": "62236a82-f4c4-4b17-9d79-3ff0ce600650"
     },
     {
       "job": "소울마스터",
       "name": "엘리시온",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBKB.webp"
+      "iconFile": "KAPCLHKBKB.webp",
+      "iconAssetId": "7a04c958-29c0-46c0-be10-aa8ff4c88ca2"
     },
     {
       "job": "소울마스터",
       "name": "소울 이클립스",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBKC.webp"
+      "iconFile": "KAPCLHKBKC.webp",
+      "iconAssetId": "e31080c5-27f1-482f-b54c-700fe561fb9a"
     },
     {
       "job": "소울마스터",
       "name": "플레어 슬래시",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBKD.webp"
+      "iconFile": "KAPCLHKBKD.webp",
+      "iconAssetId": "6b1dc317-686b-434d-91b7-47551cfd8983"
     },
     {
       "job": "소울마스터",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "소울마스터",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "소울마스터",
       "name": "시그너스 팔랑크스 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBIA.webp"
+      "iconFile": "KAPCLHPBIA.webp",
+      "iconAssetId": "166fc993-d5da-44ba-955c-c5019dbc1961"
     },
     {
       "job": "플레임위자드",
       "name": "이터니티",
       "apiType": "스킬 코어",
-      "iconFile": "KFOAKDPEMA.webp"
+      "iconFile": "KFOAKDPEMA.webp",
+      "iconAssetId": "117d7a0c-5540-47a5-8249-66be5c88a9b8"
     },
     {
       "job": "플레임위자드",
       "name": "플레임 콘체르토",
       "apiType": "스킬 코어",
-      "iconFile": "KFOAKDPEMD.webp"
+      "iconFile": "KFOAKDPEMD.webp",
+      "iconAssetId": "cd20d499-194c-44d3-ba42-38d7655ee89c"
     },
     {
       "job": "플레임위자드",
       "name": "이그니스 레퀴엠",
       "apiType": "스킬 코어",
-      "iconFile": "KFOAKDPEMF.webp"
+      "iconFile": "KFOAKDPEMF.webp",
+      "iconAssetId": "5644b49f-3b2f-4653-bf50-5f5e3c595923"
     },
     {
       "job": "플레임위자드",
       "name": "오비탈 플레임 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOAKDPBMA.webp"
+      "iconFile": "KFOAKDPBMA.webp",
+      "iconAssetId": "bec0ed24-c4b2-44a8-ac23-c7f0bc23108e"
     },
     {
       "job": "플레임위자드",
       "name": "블레이징 익스팅션 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOAKDPBMH.webp"
+      "iconFile": "KFOAKDPBMH.webp",
+      "iconAssetId": "2aade83d-8c31-44f2-b080-ad85bf4bd845"
     },
     {
       "job": "플레임위자드",
       "name": "오비탈 익스플로젼 VI/피닉스 드라이브 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOAKDOBNF.webp"
+      "iconFile": "KFOAKDOBNF.webp",
+      "iconAssetId": "e1c5fc46-fddf-45b1-98b3-1622cca5073e"
     },
     {
       "job": "플레임위자드",
       "name": "인페르노라이즈 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOAKDPBNH.webp"
+      "iconFile": "KFOAKDPBNH.webp",
+      "iconAssetId": "6881b051-a02d-4ea8-b50c-71865ff8a232"
     },
     {
       "job": "플레임위자드",
       "name": "블레이징 오비탈 플레임",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBKE.webp"
+      "iconFile": "KAPCLHKBKE.webp",
+      "iconAssetId": "a5eeed0b-2d22-4914-8a5d-6d2718fc80c5"
     },
     {
       "job": "플레임위자드",
       "name": "플레임 디스차지",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBKF.webp"
+      "iconFile": "KAPCLHKBKF.webp",
+      "iconAssetId": "6c0843ad-3a37-4b12-af7c-4f1b4855559a"
     },
     {
       "job": "플레임위자드",
       "name": "인피니티 플레임 서클",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBKG.webp"
+      "iconFile": "KAPCLHKBKG.webp",
+      "iconAssetId": "a4c41526-ec9d-4720-a80e-c5d493a9e9d2"
     },
     {
       "job": "플레임위자드",
       "name": "샐리맨더 미스칩",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBKH.webp"
+      "iconFile": "KAPCLHKBKH.webp",
+      "iconAssetId": "f636edec-11b3-474e-be92-24de0527044b"
     },
     {
       "job": "플레임위자드",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "플레임위자드",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "플레임위자드",
       "name": "시그너스 팔랑크스 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBIB.webp"
+      "iconFile": "KAPCLHPBIB.webp",
+      "iconAssetId": "860de8a5-316f-49c2-8382-209e732953fc"
     },
     {
       "job": "윈드브레이커",
       "name": "미스트랄 스프링",
       "apiType": "스킬 코어",
-      "iconFile": "KFOBKDPEMA.webp"
+      "iconFile": "KFOBKDPEMA.webp",
+      "iconAssetId": "e4a0602b-470d-4a48-b5bf-cdfcbb01dbab"
     },
     {
       "job": "윈드브레이커",
       "name": "엘리멘트 템페스트",
       "apiType": "스킬 코어",
-      "iconFile": "KFOBKDPEMG.webp"
+      "iconFile": "KFOBKDPEMG.webp",
+      "iconAssetId": "8c86d9b5-be53-4257-af14-8d0dc6eb0085"
     },
     {
       "job": "윈드브레이커",
       "name": "실프스 브레스",
       "apiType": "스킬 코어",
-      "iconFile": "KFOBKDPEMI.webp"
+      "iconFile": "KFOBKDPEMI.webp",
+      "iconAssetId": "e5c5e2f7-004d-4c7d-9866-115135bb6da5"
     },
     {
       "job": "윈드브레이커",
       "name": "천공의 노래 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOBKDPBMA.webp"
+      "iconFile": "KFOBKDPBMA.webp",
+      "iconAssetId": "d9724e81-8b4d-4b9b-85ab-6b294c96aa5c"
     },
     {
       "job": "윈드브레이커",
       "name": "트라이플링 윔 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOBKDPBMB.webp"
+      "iconFile": "KFOBKDPBMB.webp",
+      "iconAssetId": "41eab8e3-567e-4d0b-bd86-4285d9bdf594"
     },
     {
       "job": "윈드브레이커",
       "name": "페어리 턴 VI/스톰 브링어 VI/몬순 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOBKDPBME.webp"
+      "iconFile": "KFOBKDPBME.webp",
+      "iconAssetId": "ec99821b-a503-404b-93c6-10ff1e406761"
     },
     {
       "job": "윈드브레이커",
       "name": "스톰 윔 VI/아네모이",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOBKDPBMG.webp"
+      "iconFile": "KFOBKDPBMG.webp",
+      "iconAssetId": "3e7e3b12-dfc2-4049-994a-bf7a9197ee7f"
     },
     {
       "job": "윈드브레이커",
       "name": "하울링 게일",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBKI.webp"
+      "iconFile": "KAPCLHKBKI.webp",
+      "iconAssetId": "a19f920c-bef1-4da1-ab6f-8cff70db995e"
     },
     {
       "job": "윈드브레이커",
       "name": "아이들 윔",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBKJ.webp"
+      "iconFile": "KAPCLHKBKJ.webp",
+      "iconAssetId": "b846f0da-4956-4c71-b322-7e04e65c0290"
     },
     {
       "job": "윈드브레이커",
       "name": "윈드 월",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBLA.webp"
+      "iconFile": "KAPCLHKBLA.webp",
+      "iconAssetId": "8bf96678-3a10-4530-8ec5-429b613fc0f3"
     },
     {
       "job": "윈드브레이커",
       "name": "볼텍스 스피어",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBLB.webp"
+      "iconFile": "KAPCLHKBLB.webp",
+      "iconAssetId": "f54260d7-6d35-4e39-93b7-624342e24c49"
     },
     {
       "job": "윈드브레이커",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "윈드브레이커",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "윈드브레이커",
       "name": "시그너스 팔랑크스 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBIC.webp"
+      "iconFile": "KAPCLHPBIC.webp",
+      "iconAssetId": "d8ac9325-8f0a-464e-9e56-b4482dabe09a"
     },
     {
       "job": "나이트워커",
       "name": "사일런스",
       "apiType": "스킬 코어",
-      "iconFile": "KFOGKDPEMA.webp"
+      "iconFile": "KFOGKDPEMA.webp",
+      "iconAssetId": "aaa8a7ea-f581-4b9e-975f-bdbccaa059ba"
     },
     {
       "job": "나이트워커",
       "name": "스티지언 커맨드",
       "apiType": "스킬 코어",
-      "iconFile": "KFOGKDPEMD.webp"
+      "iconFile": "KFOGKDPEMD.webp",
+      "iconAssetId": "0b420e33-7b30-4da3-8d39-b03b9c0a4c5c"
     },
     {
       "job": "나이트워커",
       "name": "싱귤래러티 스로우",
       "apiType": "스킬 코어",
-      "iconFile": "KFOGKDPEMF.webp"
+      "iconFile": "KFOGKDPEMF.webp",
+      "iconAssetId": "f7ddbb98-e98e-4023-b73b-1d5678c13f04"
     },
     {
       "job": "나이트워커",
       "name": "퀸터플 스로우 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOGKDPBMA.webp"
+      "iconFile": "KFOGKDPBMA.webp",
+      "iconAssetId": "8ebfc821-f194-488f-a907-40f42eb5ec5f"
     },
     {
       "job": "나이트워커",
       "name": "쉐도우 배트 VI/래버너스 배트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOGKDPBME.webp"
+      "iconFile": "KFOGKDPBME.webp",
+      "iconAssetId": "ba714ab6-f0d7-4cdc-b38c-0828d2f13244"
     },
     {
       "job": "나이트워커",
       "name": "다크니스 오멘 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOGKDPBNH.webp"
+      "iconFile": "KFOGKDPBNH.webp",
+      "iconAssetId": "8cfca46e-ef98-48f0-a3cf-5a677adc6ff4"
     },
     {
       "job": "나이트워커",
       "name": "도미니언 VI/어비셜 다크니스",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOGKDPBNI.webp"
+      "iconFile": "KFOGKDPBNI.webp",
+      "iconAssetId": "3657d01b-8acf-4e92-bfc2-125b7b1173e1"
     },
     {
       "job": "나이트워커",
       "name": "쉐도우 스피어",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBLC.webp"
+      "iconFile": "KAPCLHKBLC.webp",
+      "iconAssetId": "f525141b-1d8d-4603-a99a-054ce283bcb8"
     },
     {
       "job": "나이트워커",
       "name": "쉐도우 서번트 익스텐드/쉐도우 쉬프트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBLD.webp"
+      "iconFile": "KAPCLHKBLD.webp",
+      "iconAssetId": "b22b2aed-1ec9-44f9-a34c-132c00e3f62c"
     },
     {
       "job": "나이트워커",
       "name": "쉐도우 바이트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBLE.webp"
+      "iconFile": "KAPCLHKBLE.webp",
+      "iconAssetId": "54f7037f-041d-49a8-bdd5-ac58360ed104"
     },
     {
       "job": "나이트워커",
       "name": "래피드 스로우",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBLF.webp"
+      "iconFile": "KAPCLHKBLF.webp",
+      "iconAssetId": "2efa6a65-4f80-4dcd-abd2-a95e9467fce8"
     },
     {
       "job": "나이트워커",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "나이트워커",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "나이트워커",
       "name": "시그너스 팔랑크스 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBID.webp"
+      "iconFile": "KAPCLHPBID.webp",
+      "iconAssetId": "d05b4d45-73a3-4e87-ae36-37c6ef36f32a"
     },
     {
       "job": "스트라이커",
       "name": "뇌명벽해파",
       "apiType": "스킬 코어",
-      "iconFile": "KFOHKDPEMA.webp"
+      "iconFile": "KFOHKDPEMA.webp",
+      "iconAssetId": "1dc62ed8-1b60-4340-a120-0ff8690f6eca"
     },
     {
       "job": "스트라이커",
       "name": "질도섬멸",
       "apiType": "스킬 코어",
-      "iconFile": "KFOHKDPEMC.webp"
+      "iconFile": "KFOHKDPEMC.webp",
+      "iconAssetId": "5afede48-83fe-4392-bd2f-e88993b7e450"
     },
     {
       "job": "스트라이커",
       "name": "해황폭쇄",
       "apiType": "스킬 코어",
-      "iconFile": "KFOHKDPEME.webp"
+      "iconFile": "KFOHKDPEME.webp",
+      "iconAssetId": "8a9dd532-121c-42bb-b2b6-dcc013c51d06"
     },
     {
       "job": "스트라이커",
       "name": "섬멸 VI/낙뢰",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOHKDPBMA.webp"
+      "iconFile": "KFOHKDPBMA.webp",
+      "iconAssetId": "b411cc85-9880-4d91-9328-b916e234d35b"
     },
     {
       "job": "스트라이커",
       "name": "벽력 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOHKDPBMD.webp"
+      "iconFile": "KFOHKDPBMD.webp",
+      "iconAssetId": "13938a96-646e-475a-8283-167c7547e6ff"
     },
     {
       "job": "스트라이커",
       "name": "태풍 VI/해신강림 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOHKDPBMG.webp"
+      "iconFile": "KFOHKDPBMG.webp",
+      "iconAssetId": "b6e9f677-136e-4062-9e32-506f7a324e72"
     },
     {
       "job": "스트라이커",
       "name": "해파 VI/해신강체",
       "apiType": "마스터리 코어",
-      "iconFile": "KFOHKDOBMI.webp"
+      "iconFile": "KFOHKDOBMI.webp",
+      "iconAssetId": "cf05fc1f-56f7-4305-9eaf-478c9666d40e"
     },
     {
       "job": "스트라이커",
       "name": "신뇌합일",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBLG.webp"
+      "iconFile": "KAPCLHKBLG.webp",
+      "iconAssetId": "81814488-4936-4743-9273-2b30cdac92d9"
     },
     {
       "job": "스트라이커",
       "name": "교아탄",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBLH.webp"
+      "iconFile": "KAPCLHKBLH.webp",
+      "iconAssetId": "e9796aab-b5e2-42c9-836b-fe75de7dcd3a"
     },
     {
       "job": "스트라이커",
       "name": "뇌신창격",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBLI.webp"
+      "iconFile": "KAPCLHKBLI.webp",
+      "iconAssetId": "177b7dcf-b1b6-4010-93b4-5ec5c2187286"
     },
     {
       "job": "스트라이커",
       "name": "창뇌연격",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBLJ.webp"
+      "iconFile": "KAPCLHKBLJ.webp",
+      "iconAssetId": "8a28b67a-a2b3-4d61-bb7a-a46849b8c165"
     },
     {
       "job": "스트라이커",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "스트라이커",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "스트라이커",
       "name": "시그너스 팔랑크스 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBIE.webp"
+      "iconFile": "KAPCLHPBIE.webp",
+      "iconAssetId": "73d39d82-d886-4bf6-8d83-67f462003c84"
     },
     {
       "job": "미하일",
       "name": "듀란달",
       "apiType": "스킬 코어",
-      "iconFile": "KFKDKDPEMA.webp"
+      "iconFile": "KFKDKDPEMA.webp",
+      "iconAssetId": "34053bf3-0a08-4826-93e8-4ecf4b47515f"
     },
     {
       "job": "미하일",
       "name": "나이트 임모탈스",
       "apiType": "스킬 코어",
-      "iconFile": "KFKDKDPEMD.webp"
+      "iconFile": "KFKDKDPEMD.webp",
+      "iconAssetId": "57200588-80ff-430c-afb7-41a31c9def6f"
     },
     {
       "job": "미하일",
       "name": "레디언스 오브 발러",
       "apiType": "스킬 코어",
-      "iconFile": "KFKDKDPEMF.webp"
+      "iconFile": "KFKDKDPEMF.webp",
+      "iconAssetId": "e81027f6-919e-43be-9a9f-dd4cc9f6fb04"
     },
     {
       "job": "미하일",
       "name": "샤이닝 크로스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFKDKDPBMA.webp"
+      "iconFile": "KFKDKDPBMA.webp",
+      "iconAssetId": "672b53a4-4a8a-49f8-b872-c9cccc68c3b8"
     },
     {
       "job": "미하일",
       "name": "로얄 가드 VI/인스톨 실드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFKDKDPBMC.webp"
+      "iconFile": "KFKDKDPBMC.webp",
+      "iconAssetId": "645bcdce-6822-40bd-9adf-37587d2366c8"
     },
     {
       "job": "미하일",
       "name": "데들리 차지 VI/파이널 어택 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFKDKDPBND.webp"
+      "iconFile": "KFKDKDPBND.webp",
+      "iconAssetId": "45427af6-5a00-4f8c-b2ac-cb6dd288257d"
     },
     {
       "job": "미하일",
       "name": "오펜시브 디펜스 VI/소울 마제스티 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFKDKDPBNG.webp"
+      "iconFile": "KFKDKDPBNG.webp",
+      "iconAssetId": "8c85008d-1d85-4383-9335-756bbeed4aff"
     },
     {
       "job": "미하일",
       "name": "로 아이아스",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAPC.webp"
+      "iconFile": "KAPCLHKAPC.webp",
+      "iconAssetId": "9e56f130-0638-4ef6-82c9-3468d73d8e44"
     },
     {
       "job": "미하일",
       "name": "클라우 솔라스",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAPD.webp"
+      "iconFile": "KAPCLHKAPD.webp",
+      "iconAssetId": "85f10321-638d-40b9-a34a-314d5d17e069"
     },
     {
       "job": "미하일",
       "name": "소드 오브 소울 라이트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAPE.webp"
+      "iconFile": "KAPCLHKAPE.webp",
+      "iconAssetId": "4ac47dfa-2136-45bc-9ce8-2c29f9ecd2fa"
     },
     {
       "job": "미하일",
       "name": "라이트 오브 커리지",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAPF.webp"
+      "iconFile": "KAPCLHKAPF.webp",
+      "iconAssetId": "5029ebd9-9ccf-46ed-a985-f07085e5af75"
     },
     {
       "job": "미하일",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "미하일",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "미하일",
       "name": "시그너스 팔랑크스 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBPJ.webp"
+      "iconFile": "KAPCLHPBPJ.webp",
+      "iconAssetId": "a520b6aa-c581-40a2-8647-c79bf42f0017"
     },
     {
       "job": "데몬슬레이어",
       "name": "나이트메어",
       "apiType": "스킬 코어",
-      "iconFile": "KFMDKDPEMA.webp"
+      "iconFile": "KFMDKDPEMA.webp",
+      "iconAssetId": "7693a899-cfcd-4182-95d9-b0dfa6af4b55"
     },
     {
       "job": "데몬슬레이어",
       "name": "아메시스틴 인트루젼",
       "apiType": "스킬 코어",
-      "iconFile": "KFMDKDPEME.webp"
+      "iconFile": "KFMDKDPEME.webp",
+      "iconAssetId": "50c6888a-114a-4c4b-ac47-bed83f28f556"
     },
     {
       "job": "데몬슬레이어",
       "name": "래쓰 오브 세이튼",
       "apiType": "스킬 코어",
-      "iconFile": "KFMDKDPEMF.webp"
+      "iconFile": "KFMDKDPEMF.webp",
+      "iconAssetId": "25d51e56-a67d-472b-bbaa-dafa26199068"
     },
     {
       "job": "데몬슬레이어",
       "name": "데몬 임팩트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMDKDPBMA.webp"
+      "iconFile": "KFMDKDPBMA.webp",
+      "iconAssetId": "e2cad32d-2063-4bc3-8715-a5808eaea438"
     },
     {
       "job": "데몬슬레이어",
       "name": "데몬 슬래시 VI/데몬 익스플로젼 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMDKDPBMC.webp"
+      "iconFile": "KFMDKDPBMC.webp",
+      "iconAssetId": "45d2c051-bf7b-463b-81ec-594e52691e12"
     },
     {
       "job": "데몬슬레이어",
       "name": "데빌 크라이 VI/메타모포시스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMDKDPBNC.webp"
+      "iconFile": "KFMDKDPBNC.webp",
+      "iconAssetId": "f20aa848-1f97-4335-b8ae-03214aeea019"
     },
     {
       "job": "데몬슬레이어",
       "name": "서버러스 VI/데모닉 디센트",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMDKDPBND.webp"
+      "iconFile": "KFMDKDPBND.webp",
+      "iconAssetId": "6dc75381-a677-4045-bd31-12ce04a7dced"
     },
     {
       "job": "데몬슬레이어",
       "name": "데몬 어웨이크닝",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAME.webp"
+      "iconFile": "KAPCLHKAME.webp",
+      "iconAssetId": "7b2e7f1f-32ee-44f2-8507-f815cd73e7cd"
     },
     {
       "job": "데몬슬레이어",
       "name": "요르문간드",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAMF.webp"
+      "iconFile": "KAPCLHKAMF.webp",
+      "iconAssetId": "f06cc0f0-ceee-4d60-bad2-612efc4d8987"
     },
     {
       "job": "데몬슬레이어",
       "name": "오르트로스",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAMG.webp"
+      "iconFile": "KAPCLHKAMG.webp",
+      "iconAssetId": "d38018a8-657b-40d5-ab7f-be601365e59f"
     },
     {
       "job": "데몬슬레이어",
       "name": "데몬 베인",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAMH.webp"
+      "iconFile": "KAPCLHKAMH.webp",
+      "iconAssetId": "57f7f4fe-e0ba-48cb-8b23-22601107c028"
     },
     {
       "job": "데몬슬레이어",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "데몬슬레이어",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "데몬슬레이어",
       "name": "콜 마스테마 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBKI.webp"
+      "iconFile": "KAPCLHPBKI.webp",
+      "iconAssetId": "ebc830af-5eb2-43a6-834b-19e1d03c4377"
     },
     {
       "job": "데몬어벤져",
       "name": "레퀴엠",
       "apiType": "스킬 코어",
-      "iconFile": "KFMDJDPEMA.webp"
+      "iconFile": "KFMDJDPEMA.webp",
+      "iconAssetId": "ba55cdd2-cbd8-4169-8967-936ddaef5e09"
     },
     {
       "job": "데몬어벤져",
       "name": "레이지본 데어데빌",
       "apiType": "스킬 코어",
-      "iconFile": "KFMDJDPEMD.webp"
+      "iconFile": "KFMDJDPEMD.webp",
+      "iconAssetId": "68791e03-08f0-4086-b314-bfd65d471c97"
     },
     {
       "job": "데몬어벤져",
       "name": "래비드 카니지",
       "apiType": "스킬 코어",
-      "iconFile": "KFMDJDPEMG.webp"
+      "iconFile": "KFMDJDPEMG.webp",
+      "iconAssetId": "7a44ba29-48db-436e-8fad-108d0cc09f38"
     },
     {
       "job": "데몬어벤져",
       "name": "실드 체이싱 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMDJDPBMA.webp"
+      "iconFile": "KFMDJDPBMA.webp",
+      "iconAssetId": "280db1ef-7a00-419a-95fe-586c974beef2"
     },
     {
       "job": "데몬어벤져",
       "name": "익시드 : 엑스큐션 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMDJDPBMC.webp"
+      "iconFile": "KFMDJDPBMC.webp",
+      "iconAssetId": "5e950b1f-a2ab-4e8c-a30a-dd3e1503e9df"
     },
     {
       "job": "데몬어벤져",
       "name": "익시드 : 문라이트 슬래시 VI/오버맥시마이징 익시드",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMDJDPBMH.webp"
+      "iconFile": "KFMDJDPBMH.webp",
+      "iconAssetId": "39c007fd-2425-400e-b50e-b6e73a266a69"
     },
     {
       "job": "데몬어벤져",
       "name": "사우전드 소드 VI/인핸스드 익시드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMDJDPBNC.webp"
+      "iconFile": "KFMDJDPBNC.webp",
+      "iconAssetId": "9d93c8eb-b6c5-42a7-bc49-379d43d930ae"
     },
     {
       "job": "데몬어벤져",
       "name": "데몬 프렌지",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAMI.webp"
+      "iconFile": "KAPCLHKAMI.webp",
+      "iconAssetId": "0df55d0c-0736-46a6-9c66-cf7194b68030"
     },
     {
       "job": "데몬어벤져",
       "name": "블러드 피스트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAMJ.webp"
+      "iconFile": "KAPCLHKAMJ.webp",
+      "iconAssetId": "71f66c66-39e7-4d92-ae62-c464f2ee0ee0"
     },
     {
       "job": "데몬어벤져",
       "name": "디멘션 소드",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKANA.webp"
+      "iconFile": "KAPCLHKANA.webp",
+      "iconAssetId": "80149d6c-736e-41d5-af06-55a69f2dc138"
     },
     {
       "job": "데몬어벤져",
       "name": "레버넌트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKANB.webp"
+      "iconFile": "KAPCLHKANB.webp",
+      "iconAssetId": "e023e6e8-25c2-41e7-9d5d-2dfa65ab70ac"
     },
     {
       "job": "데몬어벤져",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "데몬어벤져",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "데몬어벤져",
       "name": "콜 마스테마 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBLA.webp"
+      "iconFile": "KAPCLHPBLA.webp",
+      "iconAssetId": "092cb09f-f57c-470d-a904-ef6e1f42758a"
     },
     {
       "job": "배틀메이지",
       "name": "크림슨 팩텀",
       "apiType": "스킬 코어",
-      "iconFile": "KFMAKDPEMA.webp"
+      "iconFile": "KFMAKDPEMA.webp",
+      "iconAssetId": "cbef7a99-7069-4059-b802-63074721da74"
     },
     {
       "job": "배틀메이지",
       "name": "글루미 오라",
       "apiType": "스킬 코어",
-      "iconFile": "KFMAKDPEMC.webp"
+      "iconFile": "KFMAKDPEMC.webp",
+      "iconAssetId": "94458bbf-dcd2-405d-9fc4-65d488bf0d67"
     },
     {
       "job": "배틀메이지",
       "name": "모티스 엣지",
       "apiType": "스킬 코어",
-      "iconFile": "KFMAKDPEME.webp"
+      "iconFile": "KFMAKDPEME.webp",
+      "iconAssetId": "fbb14e7c-ad9b-4c76-9279-6b852f3bcb25"
     },
     {
       "job": "배틀메이지",
       "name": "데스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMAKDPBMA.webp"
+      "iconFile": "KFMAKDPBMA.webp",
+      "iconAssetId": "f48b5dc3-d002-4709-a435-969cff54c3d9"
     },
     {
       "job": "배틀메이지",
       "name": "피니쉬 블로우 VI/배틀킹 바 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMAKDPBMB.webp"
+      "iconFile": "KFMAKDPBMB.webp",
+      "iconAssetId": "89b6e343-950d-4e17-88c1-99357aaac870"
     },
     {
       "job": "배틀메이지",
       "name": "다크 라이트닝 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMAKDPBMF.webp"
+      "iconFile": "KFMAKDPBMF.webp",
+      "iconAssetId": "79e8e79b-1297-4c22-89af-5f70eedeb0be"
     },
     {
       "job": "배틀메이지",
       "name": "다크 제네시스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMAKDPBMI.webp"
+      "iconFile": "KFMAKDPBMI.webp",
+      "iconAssetId": "e190c2cb-08ec-4cf5-a571-9321e064277f"
     },
     {
       "job": "배틀메이지",
       "name": "유니온 오라",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKANC.webp"
+      "iconFile": "KAPCLHKANC.webp",
+      "iconAssetId": "e680725e-83b7-4d62-b69d-a306b24116fb"
     },
     {
       "job": "배틀메이지",
       "name": "블랙 매직 알터",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAND.webp"
+      "iconFile": "KAPCLHKAND.webp",
+      "iconAssetId": "d7b112b6-8ca0-40a0-83ff-5a1699e7f598"
     },
     {
       "job": "배틀메이지",
       "name": "그림 리퍼",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKANE.webp"
+      "iconFile": "KAPCLHKANE.webp",
+      "iconAssetId": "106a772f-126d-4055-8f5d-bcfb6d30265f"
     },
     {
       "job": "배틀메이지",
       "name": "어비셜 라이트닝",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKANF.webp"
+      "iconFile": "KAPCLHKANF.webp",
+      "iconAssetId": "5167ac28-c478-4718-a46b-8cd448cbbdec"
     },
     {
       "job": "배틀메이지",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "배틀메이지",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "배틀메이지",
       "name": "레지스탕스 라인 인팬트리 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBKE.webp"
+      "iconFile": "KAPCLHPBKE.webp",
+      "iconAssetId": "038071a9-55ad-4295-ab53-a3f99b77551d"
     },
     {
       "job": "와일드헌터",
       "name": "링크드 임팩트",
       "apiType": "스킬 코어",
-      "iconFile": "KFMBKDPEMA.webp"
+      "iconFile": "KFMBKDPEMA.webp",
+      "iconAssetId": "e9be6b00-3f18-4d17-9c05-65198abc4e0e"
     },
     {
       "job": "와일드헌터",
       "name": "기어 스톰",
       "apiType": "스킬 코어",
-      "iconFile": "KFMBKDPEME.webp"
+      "iconFile": "KFMBKDPEME.webp",
+      "iconAssetId": "68e5f874-373d-40af-8d01-370c18da2635"
     },
     {
       "job": "와일드헌터",
       "name": "레조넌스 : 와일드 피어스",
       "apiType": "스킬 코어",
-      "iconFile": "KFMBKDPEMC.webp"
+      "iconFile": "KFMBKDPEMC.webp",
+      "iconAssetId": "3f66955e-eb3c-4e1e-834d-d43b16e458e4"
     },
     {
       "job": "와일드헌터",
       "name": "와일드 발칸 : 에이펙스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMBKDPBMA.webp"
+      "iconFile": "KFMBKDPBMA.webp",
+      "iconAssetId": "6e95d8ba-37a9-47cd-9741-7c3f6c06fe7e"
     },
     {
       "job": "와일드헌터",
       "name": "어시스트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMBKDOBMD.webp"
+      "iconFile": "KFMBKDOBMD.webp",
+      "iconAssetId": "c345e50e-457b-4df9-a2b0-1507b86ac9ea"
     },
     {
       "job": "와일드헌터",
       "name": "커맨드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMBKDPBMH.webp"
+      "iconFile": "KFMBKDPBMH.webp",
+      "iconAssetId": "c8a78fa8-7eea-406d-ad0d-e8e47e19f9f2"
     },
     {
       "job": "와일드헌터",
       "name": "어나더 바이트 VI/파이널 어택 VI/트랩 시더 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMBKDOBNB.webp"
+      "iconFile": "KFMBKDOBNB.webp",
+      "iconAssetId": "fc560923-4a2c-4a1e-bd7a-b8a3d438a34c"
     },
     {
       "job": "와일드헌터",
       "name": "커맨드 : 프레데터스 아이",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKANG.webp"
+      "iconFile": "KAPCLHKANG.webp",
+      "iconAssetId": "6671c67c-12f4-43fc-bd4c-cf7577bd1592"
     },
     {
       "job": "와일드헌터",
       "name": "오버바이트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKANH.webp"
+      "iconFile": "KAPCLHKANH.webp",
+      "iconAssetId": "813ca2e5-0735-4710-9680-56d4ffd0953b"
     },
     {
       "job": "와일드헌터",
       "name": "프라이멀 블룸",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKANI.webp"
+      "iconFile": "KAPCLHKANI.webp",
+      "iconAssetId": "d1775f02-cb19-49f1-8302-2623731f1a51"
     },
     {
       "job": "와일드헌터",
       "name": "와일드 발칸 : 오버 드라이브",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKANJ.webp"
+      "iconFile": "KAPCLHKANJ.webp",
+      "iconAssetId": "2945ac85-fa5c-4a37-af0e-1e269e91fa62"
     },
     {
       "job": "와일드헌터",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "와일드헌터",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "와일드헌터",
       "name": "레지스탕스 라인 인팬트리 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBKF.webp"
+      "iconFile": "KAPCLHPBKF.webp",
+      "iconAssetId": "5cd5677b-82ff-4134-b3fd-82f347613c5d"
     },
     {
       "job": "메카닉",
       "name": "그라운드 제로",
       "apiType": "스킬 코어",
-      "iconFile": "KFMHKDPEMA.webp"
+      "iconFile": "KFMHKDPEMA.webp",
+      "iconAssetId": "10e8a54c-e84f-41d4-b2be-d1c652ba7fe1"
     },
     {
       "job": "메카닉",
       "name": "메탈아머 : 익스터미네이션",
       "apiType": "스킬 코어",
-      "iconFile": "KFMHKDPEME.webp"
+      "iconFile": "KFMHKDPEME.webp",
+      "iconAssetId": "7d54ad20-5da5-48e4-a811-b5fd7bf9d339"
     },
     {
       "job": "메카닉",
       "name": "버스터 스테이션",
       "apiType": "스킬 코어",
-      "iconFile": "KFMHKDPEMF.webp"
+      "iconFile": "KFMHKDPEMF.webp",
+      "iconAssetId": "5e73761a-67ec-4726-9b88-cd3cd7c7ba97"
     },
     {
       "job": "메카닉",
       "name": "매시브 파이어 : SPLASH-F VI/IRON-B VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMHKDPBMA.webp"
+      "iconFile": "KFMHKDPBMA.webp",
+      "iconAssetId": "33833ed6-61f3-4384-80b0-329458438e54"
     },
     {
       "job": "메카닉",
       "name": "호밍 미사일 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMHKDOBMD.webp"
+      "iconFile": "KFMHKDOBMD.webp",
+      "iconAssetId": "e834cd98-439f-43b0-b212-dce1a6ea79a7"
     },
     {
       "job": "메카닉",
       "name": "디스토션 필드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMHKDPBME.webp"
+      "iconFile": "KFMHKDPBME.webp",
+      "iconAssetId": "7ea02a00-74d3-4db4-bfe3-118c2b22a0d7"
     },
     {
       "job": "메카닉",
       "name": "로봇 런처 : RM7 VI/마그네틱 필드 VI/로봇 팩토리 : RM1 VI/로봇 트랜지션 : CB-P1",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMHKDPBMG.webp"
+      "iconFile": "KFMHKDPBMG.webp",
+      "iconAssetId": "15692326-7158-470f-8569-245ae2da5ba9"
     },
     {
       "job": "메카닉",
       "name": "멀티플 옵션 : M-FL",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAOA.webp"
+      "iconFile": "KAPCLHKAOA.webp",
+      "iconAssetId": "8ee18936-fd15-4d63-8bf2-4738f231059d"
     },
     {
       "job": "메카닉",
       "name": "마이크로 미사일 컨테이너",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAOB.webp"
+      "iconFile": "KAPCLHKAOB.webp",
+      "iconAssetId": "f152bb7f-5f51-463d-8542-146e68b9144d"
     },
     {
       "job": "메카닉",
       "name": "메탈아머 전탄발사",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAOC.webp"
+      "iconFile": "KAPCLHKAOC.webp",
+      "iconAssetId": "09f37de3-a73a-4b98-a00a-4d3b3c2206d2"
     },
     {
       "job": "메카닉",
       "name": "메카 캐리어",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAOD.webp"
+      "iconFile": "KAPCLHKAOD.webp",
+      "iconAssetId": "e1942531-29e2-4b4d-9482-bcb7c6f3c175"
     },
     {
       "job": "메카닉",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "메카닉",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "메카닉",
       "name": "레지스탕스 라인 인팬트리 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBKH.webp"
+      "iconFile": "KAPCLHPBKH.webp",
+      "iconAssetId": "0a94064f-7fc3-4e27-9aea-b218cb34e910"
     },
     {
       "job": "블래스터",
       "name": "파이널 디스트로이어",
       "apiType": "스킬 코어",
-      "iconFile": "KFMFKDPEMA.webp"
+      "iconFile": "KFMFKDPEMA.webp",
+      "iconAssetId": "a32c2010-b66c-4e3d-9483-41a2ca2b16c3"
     },
     {
       "job": "블래스터",
       "name": "뱅가드 임팩트",
       "apiType": "스킬 코어",
-      "iconFile": "KFMFKDPEMC.webp"
+      "iconFile": "KFMFKDPEMC.webp",
+      "iconAssetId": "5637da9d-d3a5-4d73-becb-81d412d4f712"
     },
     {
       "job": "블래스터",
       "name": "오버히트 펀치",
       "apiType": "스킬 코어",
-      "iconFile": "KFMFKDPEME.webp"
+      "iconFile": "KFMFKDPEME.webp",
+      "iconAssetId": "c7fcb5dd-d650-48a6-b90b-cbc32d5046dd"
     },
     {
       "job": "블래스터",
       "name": "매그넘 펀치 VI/더블 팡 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMFKDPBMA.webp"
+      "iconFile": "KFMFKDPBMA.webp",
+      "iconAssetId": "6af38310-4b6d-4653-afc9-4597ab08c5ac"
     },
     {
       "job": "블래스터",
       "name": "릴리즈 파일 벙커 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMFKDPBMC.webp"
+      "iconFile": "KFMFKDPBMC.webp",
+      "iconAssetId": "d2ba5678-9b95-4f6e-84ce-5768a3de02ca"
     },
     {
       "job": "블래스터",
       "name": "리볼빙 캐논 마스터리 VI/해머 스매시 VI/쇼크 웨이브 펀치 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMFKDPBMI.webp"
+      "iconFile": "KFMFKDPBMI.webp",
+      "iconAssetId": "ccff0718-2863-43f8-879b-227e18febb39"
     },
     {
       "job": "블래스터",
       "name": "리볼빙 캐논 VI/허리케인 믹서 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMFKDPBNC.webp"
+      "iconFile": "KFMFKDPBNC.webp",
+      "iconAssetId": "ee4e8e73-4b51-463c-864e-e42073b78df5"
     },
     {
       "job": "블래스터",
       "name": "벙커 버스터",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAOI.webp"
+      "iconFile": "KAPCLHKAOI.webp",
+      "iconAssetId": "37984a01-5b79-453d-85d3-ddf9fac705c6"
     },
     {
       "job": "블래스터",
       "name": "발칸 펀치",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAOJ.webp"
+      "iconFile": "KAPCLHKAOJ.webp",
+      "iconAssetId": "b83339e2-5cc2-4874-96ba-aa0163e050f0"
     },
     {
       "job": "블래스터",
       "name": "버닝 브레이커",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAPA.webp"
+      "iconFile": "KAPCLHKAPA.webp",
+      "iconAssetId": "3737b28b-47fc-4793-892d-92787dbfad68"
     },
     {
       "job": "블래스터",
       "name": "애프터이미지 쇼크",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAPB.webp"
+      "iconFile": "KAPCLHKAPB.webp",
+      "iconAssetId": "93411877-c644-418f-9f50-5dbfd8e4dec6"
     },
     {
       "job": "블래스터",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "블래스터",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "블래스터",
       "name": "레지스탕스 라인 인팬트리 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBKD.webp"
+      "iconFile": "KAPCLHPBKD.webp",
+      "iconAssetId": "4019ecdf-b055-4ca0-af15-25b436046799"
     },
     {
       "job": "제논",
       "name": "아티피셜 에볼루션",
       "apiType": "스킬 코어",
-      "iconFile": "KFMEKDPEMA.webp"
+      "iconFile": "KFMEKDPEMA.webp",
+      "iconAssetId": "a35e125b-ccba-4f52-b707-eca32152dc8f"
     },
     {
       "job": "제논",
       "name": "네오테릭 트라이스",
       "apiType": "스킬 코어",
-      "iconFile": "KFMEKDPEME.webp"
+      "iconFile": "KFMEKDPEME.webp",
+      "iconAssetId": "54b9d9cd-c4e6-4b4f-9925-d109c247d78b"
     },
     {
       "job": "제논",
       "name": "레일 건 캐노네이드",
       "apiType": "스킬 코어",
-      "iconFile": "KFMEKDPEMH.webp"
+      "iconFile": "KFMEKDPEMH.webp",
+      "iconAssetId": "461d1eee-6153-4720-b238-0b0f0e910d9e"
     },
     {
       "job": "제논",
       "name": "퍼지롭 매스커레이드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMEKDPBMA.webp"
+      "iconFile": "KFMEKDPBMA.webp",
+      "iconAssetId": "b72b4057-b406-4c9d-8849-f81b0459d421"
     },
     {
       "job": "제논",
       "name": "트라이앵글 포메이션 VI/홀로그램 그래피티 : 역장 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMEKDPBMH.webp"
+      "iconFile": "KFMEKDPBMH.webp",
+      "iconAssetId": "022c088d-927f-4407-8f91-f4800b678eab"
     },
     {
       "job": "제논",
       "name": "로켓 시스템 VI/멜트다운 익스플로젼 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMEKDPBMJ.webp"
+      "iconFile": "KFMEKDPBMJ.webp",
+      "iconAssetId": "9c38d2c5-3a94-41ac-8ad4-73808984e1f6"
     },
     {
       "job": "제논",
       "name": "블레이드 댄싱 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFMEKDPBNE.webp"
+      "iconFile": "KFMEKDPBNE.webp",
+      "iconAssetId": "df716acd-253f-46ba-94d2-06e4f8c6aa31"
     },
     {
       "job": "제논",
       "name": "메가 스매셔",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAOE.webp"
+      "iconFile": "KAPCLHKAOE.webp",
+      "iconAssetId": "fca9fb83-2a24-4b18-9bb6-e71ed9ba9d18"
     },
     {
       "job": "제논",
       "name": "오버로드 모드",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAOF.webp"
+      "iconFile": "KAPCLHKAOF.webp",
+      "iconAssetId": "9da21f17-af41-4342-88c4-21fa0598447b"
     },
     {
       "job": "제논",
       "name": "홀로그램 그래피티 : 융합",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAOG.webp"
+      "iconFile": "KAPCLHKAOG.webp",
+      "iconAssetId": "1e8df03f-4627-499f-8ebc-9ebd06a1ae54"
     },
     {
       "job": "제논",
       "name": "포톤 레이",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAOH.webp"
+      "iconFile": "KAPCLHKAOH.webp",
+      "iconAssetId": "f0829414-5773-4326-aef9-65c79782b1af"
     },
     {
       "job": "제논",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "제논",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "제논",
       "name": "레지스탕스 라인 인팬트리 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBKG.webp"
+      "iconFile": "KAPCLHPBKG.webp",
+      "iconAssetId": "9cbae6ad-ae20-4fef-9ab6-a37244bd6264"
     },
     {
       "job": "아란",
       "name": "엔드 게임",
       "apiType": "스킬 코어",
-      "iconFile": "KFNDKDPEMA.webp"
+      "iconFile": "KFNDKDPEMA.webp",
+      "iconAssetId": "ed54f7be-bebf-460a-9978-6174552242c5"
     },
     {
       "job": "아란",
       "name": "프로스트 블러스터",
       "apiType": "스킬 코어",
-      "iconFile": "KFNDKDPEMD.webp"
+      "iconFile": "KFNDKDPEMD.webp",
+      "iconAssetId": "3893e718-c09b-4d14-98c9-7ca8208b29f9"
     },
     {
       "job": "아란",
       "name": "마하 언리시드",
       "apiType": "스킬 코어",
-      "iconFile": "KFNDKDPEMF.webp"
+      "iconFile": "KFNDKDPEMF.webp",
+      "iconAssetId": "33dff2c7-ef72-492f-aecd-065c57bd2857"
     },
     {
       "job": "아란",
       "name": "비욘더 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNDKDPBMA.webp"
+      "iconFile": "KFNDKDPBMA.webp",
+      "iconAssetId": "b50f7b05-8e32-4c5c-b193-b0b6fc2f9e87"
     },
     {
       "job": "아란",
       "name": "부스트 엔드-헌터즈 타겟팅 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNDKDPBME.webp"
+      "iconFile": "KFNDKDPBME.webp",
+      "iconAssetId": "c6d636b6-ca1c-47ef-9c8d-c46718b05506"
     },
     {
       "job": "아란",
       "name": "하이퍼 부스트 엔드-라스트 스탠드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNDKDPBMJ.webp"
+      "iconFile": "KFNDKDPBMJ.webp",
+      "iconAssetId": "94ab96fc-90fa-4acb-8b58-b3e297cfd273"
     },
     {
       "job": "아란",
       "name": "프로즌 그라운드 VI/아드레날린 맥시멈 VI/파이널 어택 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNDKDPBND.webp"
+      "iconFile": "KFNDKDPBND.webp",
+      "iconAssetId": "4c6a3bc8-c331-4af3-8970-e31ff9578696"
     },
     {
       "job": "아란",
       "name": "부스트 엔드-아드레날린 서지",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBEA.webp"
+      "iconFile": "KAPCLHKBEA.webp",
+      "iconAssetId": "f5fc97af-ed00-4ba6-acf5-f2f093102ff4"
     },
     {
       "job": "아란",
       "name": "브랜디쉬 마하",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBEB.webp"
+      "iconFile": "KAPCLHKBEB.webp",
+      "iconAssetId": "fadc191f-123f-48e2-b68d-cad05c3a5858"
     },
     {
       "job": "아란",
       "name": "파이널 비욘더-백호",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBEC.webp"
+      "iconFile": "KAPCLHKBEC.webp",
+      "iconAssetId": "a4b9ba3d-c958-495e-be11-e9e40b1c2fd2"
     },
     {
       "job": "아란",
       "name": "블리자드 템페스트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBED.webp"
+      "iconFile": "KAPCLHKBED.webp",
+      "iconAssetId": "e65a8c4f-2696-4338-966e-2eb77c18423c"
     },
     {
       "job": "아란",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "아란",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "아란",
       "name": "프리드의 가호 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBIF.webp"
+      "iconFile": "KAPCLHPBIF.webp",
+      "iconAssetId": "7c9c84d7-fbf7-44d7-82a8-22e00ccbab0e"
     },
     {
       "job": "에반",
       "name": "조디악 버스트",
       "apiType": "스킬 코어",
-      "iconFile": "KFNAJHPEMA.webp"
+      "iconFile": "KFNAJHPEMA.webp",
+      "iconAssetId": "80d48bb7-9c7f-4efc-a0c6-794f6959f5a3"
     },
     {
       "job": "에반",
       "name": "유니온 드라이브",
       "apiType": "스킬 코어",
-      "iconFile": "KFNAJHPEMC.webp"
+      "iconFile": "KFNAJHPEMC.webp",
+      "iconAssetId": "b9e85772-89b0-466c-a208-b47fac8ad08d"
     },
     {
       "job": "에반",
       "name": "드래곤 소어/버티컬 피니셔",
       "apiType": "스킬 코어",
-      "iconFile": "KFNAJHPEMF.webp"
+      "iconFile": "KFNAJHPEMF.webp",
+      "iconAssetId": "76a5442f-4eb8-441e-99f3-17b237ea4ba0"
     },
     {
       "job": "에반",
       "name": "서클 오브 마나 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNAJHPBMA.webp"
+      "iconFile": "KFNAJHPBMA.webp",
+      "iconAssetId": "5f461831-b635-406e-bbdb-3161a66b2f28"
     },
     {
       "job": "에반",
       "name": "드래곤 스위프트 VI/서클 오브 썬더 VI/스위프트 오브 썬더 VI/스위프트 오브 윈드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNAJHPBMD.webp"
+      "iconFile": "KFNAJHPBMD.webp",
+      "iconAssetId": "455825ce-0b10-4f91-88f5-a527897c643e"
     },
     {
       "job": "에반",
       "name": "드래곤 다이브 VI/다이브 오브 썬더 VI/서클 오브 어스 VI/다이브 오브 어스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNAJHPBMH.webp"
+      "iconFile": "KFNAJHPBMH.webp",
+      "iconAssetId": "c36753e6-4cfd-4a0e-b5f8-fff6c83c8fc6"
     },
     {
       "job": "에반",
       "name": "서클 오브 윈드 VI/드래곤 스파킹 VI/마법 잔해 VI/드래곤 브레스 VI/브레스 오브 어스 VI/브레스 오브 윈드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNAJHPBNA.webp"
+      "iconFile": "KFNAJHPBNA.webp",
+      "iconAssetId": "5ed7715f-8d2a-4fd8-a827-a208c5fba85b"
     },
     {
       "job": "에반",
       "name": "엘리멘탈 블래스트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBEE.webp"
+      "iconFile": "KAPCLHKBEE.webp",
+      "iconAssetId": "75377af0-63ae-4876-92df-e03fa1ce23c4"
     },
     {
       "job": "에반",
       "name": "드래곤 브레이크",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBEF.webp"
+      "iconFile": "KAPCLHKBEF.webp",
+      "iconAssetId": "3f152f63-b273-4d44-b1a0-0b7f39ee28f8"
     },
     {
       "job": "에반",
       "name": "조디악 레이",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBEG.webp"
+      "iconFile": "KAPCLHKBEG.webp",
+      "iconAssetId": "a900f268-4ead-4562-983d-f80d1ef3ad61"
     },
     {
       "job": "에반",
       "name": "스파이럴 오브 마나",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBEH.webp"
+      "iconFile": "KAPCLHKBEH.webp",
+      "iconAssetId": "d8ac3eba-930a-4fa5-9ddc-ab503a476431"
     },
     {
       "job": "에반",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "에반",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "에반",
       "name": "프리드의 가호 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBII.webp"
+      "iconFile": "KAPCLHPBII.webp",
+      "iconAssetId": "d7cc91c3-3a5a-47bd-8ac4-2551a03f8016"
     },
     {
       "job": "메르세데스",
       "name": "언페이딩 글로리",
       "apiType": "스킬 코어",
-      "iconFile": "KFNBKDPEMA.webp"
+      "iconFile": "KFNBKDPEMA.webp",
+      "iconAssetId": "99f770d5-8fd2-4854-98d2-41f805dee5bc"
     },
     {
       "job": "메르세데스",
       "name": "엘리멘탈 스피릿",
       "apiType": "스킬 코어",
-      "iconFile": "KFNBKDPEMF.webp"
+      "iconFile": "KFNBKDPEMF.webp",
+      "iconAssetId": "cdd05ec8-51ef-4351-8093-2a5d3e420c5e"
     },
     {
       "job": "메르세데스",
       "name": "베리안 서지",
       "apiType": "스킬 코어",
-      "iconFile": "KFNBKDPEMG.webp"
+      "iconFile": "KFNBKDPEMG.webp",
+      "iconAssetId": "ec9d68a2-5151-492a-b7c3-7d72d5f641a1"
     },
     {
       "job": "메르세데스",
       "name": "이슈타르의 링 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNBKDPBMA.webp"
+      "iconFile": "KFNBKDPBMA.webp",
+      "iconAssetId": "e507e797-2852-4b40-bf46-9d062d55a5be"
     },
     {
       "job": "메르세데스",
       "name": "리프 토네이도VI/레전드리 스피어 VI/래쓰 오브 엔릴VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNBKDPBMH.webp"
+      "iconFile": "KFNBKDPBMH.webp",
+      "iconAssetId": "878cc5e5-126d-4341-8bf4-800c6e0b79b6"
     },
     {
       "job": "메르세데스",
       "name": "유니콘 스파이크 VI/거스트 다이브 VI/스트라이크 듀얼샷 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNBKDPBNB.webp"
+      "iconFile": "KFNBKDPBNB.webp",
+      "iconAssetId": "53d7ced6-d9bb-4fe2-8dcc-52f40ee57abe"
     },
     {
       "job": "메르세데스",
       "name": "엘리멘탈 나이트 VI/파이널 어택 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNBKDPBND.webp"
+      "iconFile": "KFNBKDPBND.webp",
+      "iconAssetId": "98dc1620-90f8-4d02-96d1-8dd4964d9473"
     },
     {
       "job": "메르세데스",
       "name": "엘리멘탈 고스트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBEI.webp"
+      "iconFile": "KAPCLHKBEI.webp",
+      "iconAssetId": "6876de97-66b3-472b-8560-1deafa3996e9"
     },
     {
       "job": "메르세데스",
       "name": "실피디아",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBEJ.webp"
+      "iconFile": "KAPCLHKBEJ.webp",
+      "iconAssetId": "b16f68db-ade0-4fea-8a85-52eda4fc6e90"
     },
     {
       "job": "메르세데스",
       "name": "이르칼라의 숨결",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBFA.webp"
+      "iconFile": "KAPCLHKBFA.webp",
+      "iconAssetId": "c31f551b-7596-4c55-8f20-6d3d6db98c7b"
     },
     {
       "job": "메르세데스",
       "name": "로얄 나이츠",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBFB.webp"
+      "iconFile": "KAPCLHKBFB.webp",
+      "iconAssetId": "12f7eece-dd3a-4fac-9250-97a13224f673"
     },
     {
       "job": "메르세데스",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "메르세데스",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "메르세데스",
       "name": "프리드의 가호 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBJE.webp"
+      "iconFile": "KAPCLHPBJE.webp",
+      "iconAssetId": "5fc39507-7d37-4302-aebf-7028b4c9e66a"
     },
     {
       "job": "팬텀",
       "name": "디파잉 페이트",
       "apiType": "스킬 코어",
-      "iconFile": "KFNGKDPEMA.webp"
+      "iconFile": "KFNGKDPEMA.webp",
+      "iconAssetId": "e7aa79fe-2653-4984-b8ba-52282f1297bc"
     },
     {
       "job": "팬텀",
       "name": "문리트 세레나데",
       "apiType": "스킬 코어",
-      "iconFile": "KFNGKDPEMD.webp"
+      "iconFile": "KFNGKDPEMD.webp",
+      "iconAssetId": "710109ec-e251-425f-abd4-234567650ed6"
     },
     {
       "job": "팬텀",
       "name": "플레슈 르투르",
       "apiType": "스킬 코어",
-      "iconFile": "KFNGKDPEMF.webp"
+      "iconFile": "KFNGKDPEMF.webp",
+      "iconAssetId": "7bbfd121-b307-48bd-9772-4b243de5d5a9"
     },
     {
       "job": "팬텀",
       "name": "템페스트 오브 카드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNGKDPBMA.webp"
+      "iconFile": "KFNGKDPBMA.webp",
+      "iconAssetId": "38e50cc8-0d22-4d04-9f17-06bdd037c312"
     },
     {
       "job": "팬텀",
       "name": "얼티밋 드라이브 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNGKDPBMB.webp"
+      "iconFile": "KFNGKDPBMB.webp",
+      "iconAssetId": "5026d44c-d304-4f3e-a1d1-a390d6d29eee"
     },
     {
       "job": "팬텀",
       "name": "느와르 카르트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNGKDOBME.webp"
+      "iconFile": "KFNGKDOBME.webp",
+      "iconAssetId": "76e7c026-f33d-49d9-8383-2019e7a19a1f"
     },
     {
       "job": "팬텀",
       "name": "로즈 카르트 피날레 VI/라모르 카르트",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNGKDPBMG.webp"
+      "iconFile": "KFNGKDPBMG.webp",
+      "iconAssetId": "eb98bfb0-5792-4f14-9b6b-0978c98545a9"
     },
     {
       "job": "팬텀",
       "name": "조커",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBFC.webp"
+      "iconFile": "KAPCLHKBFC.webp",
+      "iconAssetId": "6f5d21b6-d655-4770-be25-7dcfd0bcaa68"
     },
     {
       "job": "팬텀",
       "name": "블랙잭",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBFD.webp"
+      "iconFile": "KAPCLHKBFD.webp",
+      "iconAssetId": "cdab3168-7314-4822-9935-325024ec0e5f"
     },
     {
       "job": "팬텀",
       "name": "마크 오브 팬텀",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBFE.webp"
+      "iconFile": "KAPCLHKBFE.webp",
+      "iconAssetId": "831f97c7-223e-4dc2-aee9-b3d356b386ce"
     },
     {
       "job": "팬텀",
       "name": "리프트 브레이크",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBFF.webp"
+      "iconFile": "KAPCLHKBFF.webp",
+      "iconAssetId": "4e54278e-3d1b-494f-a633-1c6e6e4e52d3"
     },
     {
       "job": "팬텀",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "팬텀",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "팬텀",
       "name": "프리드의 가호 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBJH.webp"
+      "iconFile": "KAPCLHPBJH.webp",
+      "iconAssetId": "fc59227d-39d7-4094-a876-18585518981d"
     },
     {
       "job": "루미너스",
       "name": "하모닉 패러독스",
       "apiType": "스킬 코어",
-      "iconFile": "KFNFKDPEMA.webp"
+      "iconFile": "KFNFKDPEMA.webp",
+      "iconAssetId": "2108bd28-f105-4ce0-8685-ccde572cb3ba"
     },
     {
       "job": "루미너스",
       "name": "러스트러스 오브",
       "apiType": "스킬 코어",
-      "iconFile": "KFNFKDPEMC.webp"
+      "iconFile": "KFNFKDPEMC.webp",
+      "iconAssetId": "5451d996-5690-4e63-8e09-3a7cd340c86a"
     },
     {
       "job": "루미너스",
       "name": "앱솔루트 스페이스",
       "apiType": "스킬 코어",
-      "iconFile": "KFNFKDPEME.webp"
+      "iconFile": "KFNFKDPEME.webp",
+      "iconAssetId": "bd43464c-49c2-44c9-9458-2296c1b90a17"
     },
     {
       "job": "루미너스",
       "name": "앱솔루트 킬 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNFKDPBMA.webp"
+      "iconFile": "KFNFKDPBMA.webp",
+      "iconAssetId": "ee573af1-5b65-4904-9c4d-0c9e86e6ed22"
     },
     {
       "job": "루미너스",
       "name": "라이트 리플렉션 VI/엔드리스 다크니스",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNFKDPBMB.webp"
+      "iconFile": "KFNFKDPBMB.webp",
+      "iconAssetId": "4cce37c6-3e86-4457-b63b-77fcf3f60de7"
     },
     {
       "job": "루미너스",
       "name": "아포칼립스 VI/이터널 라이트니스",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNFKDPBME.webp"
+      "iconFile": "KFNFKDPBME.webp",
+      "iconAssetId": "1ab42996-3f6f-451b-8149-4947007f72ff"
     },
     {
       "job": "루미너스",
       "name": "트와일라잇 노바 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNFKDPBMH.webp"
+      "iconFile": "KFNFKDPBMH.webp",
+      "iconAssetId": "eee943b3-e8fc-4f32-b436-2a4476ee4853"
     },
     {
       "job": "루미너스",
       "name": "진리의 문",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAMA.webp"
+      "iconFile": "KAPCLHKAMA.webp",
+      "iconAssetId": "0496348b-2ec0-4115-b1fb-c578a048701d"
     },
     {
       "job": "루미너스",
       "name": "퍼니싱 리소네이터",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAMB.webp"
+      "iconFile": "KAPCLHKAMB.webp",
+      "iconAssetId": "325fa703-f883-4c4a-b884-b81e881c59a4"
     },
     {
       "job": "루미너스",
       "name": "빛과 어둠의 세례",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAMC.webp"
+      "iconFile": "KAPCLHKAMC.webp",
+      "iconAssetId": "553caaed-1600-43de-aea1-25eaf820e8da"
     },
     {
       "job": "루미너스",
       "name": "리버레이션 오브",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAMD.webp"
+      "iconFile": "KAPCLHKAMD.webp",
+      "iconAssetId": "0335d253-f766-46e3-a6b7-df0c3b56b84a"
     },
     {
       "job": "루미너스",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "루미너스",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "루미너스",
       "name": "프리드의 가호 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBJB.webp"
+      "iconFile": "KAPCLHPBJB.webp",
+      "iconAssetId": "eb654f53-b5af-43c2-b1b9-efce0b620d5e"
     },
     {
       "job": "은월",
       "name": "호신강림",
       "apiType": "스킬 코어",
-      "iconFile": "KFNHKDPEMA.webp"
+      "iconFile": "KFNHKDPEMA.webp",
+      "iconAssetId": "cf277660-ef4c-4d08-9e45-4645e00d0281"
     },
     {
       "job": "은월",
       "name": "영월",
       "apiType": "스킬 코어",
-      "iconFile": "KFNHKDPEMD.webp"
+      "iconFile": "KFNHKDPEMD.webp",
+      "iconAssetId": "248ee4c7-6ec6-49b9-86de-c648bcd1a491"
     },
     {
       "job": "은월",
       "name": "연우격풍",
       "apiType": "스킬 코어",
-      "iconFile": "KFNHKDPEMI.webp"
+      "iconFile": "KFNHKDPEMI.webp",
+      "iconAssetId": "f348838c-ec45-44be-aec0-119c5d728479"
     },
     {
       "job": "은월",
       "name": "귀참 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNHKDPBMA.webp"
+      "iconFile": "KFNHKDPBMA.webp",
+      "iconAssetId": "72ba1919-0ba3-4702-9705-6a9924be4648"
     },
     {
       "job": "은월",
       "name": "여우령 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNHKDPBMB.webp"
+      "iconFile": "KFNHKDPBMB.webp",
+      "iconAssetId": "85c22400-3b6f-41a2-ab7b-511998086f8b"
     },
     {
       "job": "은월",
       "name": "폭류권 VI/사혼 각인 VI/천귀야참",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNHKDPBMD.webp"
+      "iconFile": "KFNHKDPBMD.webp",
+      "iconAssetId": "21c1f206-70cd-4c53-a609-f5292d5e4a59"
     },
     {
       "job": "은월",
       "name": "소혼 장막 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFNHKDPBMH.webp"
+      "iconFile": "KFNHKDPBMH.webp",
+      "iconAssetId": "c224365c-877e-4acc-ad5d-f9a21410382c"
     },
     {
       "job": "은월",
       "name": "환혼요호진",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBFG.webp"
+      "iconFile": "KAPCLHKBFG.webp",
+      "iconAssetId": "e485e57b-a519-4f32-828e-1c27ebc9e767"
     },
     {
       "job": "은월",
       "name": "귀문진",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBFH.webp"
+      "iconFile": "KAPCLHKBFH.webp",
+      "iconAssetId": "721b7298-8e47-4ecb-8c5a-01afa0e7f4d0"
     },
     {
       "job": "은월",
       "name": "진 귀참",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBFI.webp"
+      "iconFile": "KAPCLHKBFI.webp",
+      "iconAssetId": "9e38c4b8-6524-4406-9438-fec5a7db3f26"
     },
     {
       "job": "은월",
       "name": "파쇄 연권",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKBFJ.webp"
+      "iconFile": "KAPCLHKBFJ.webp",
+      "iconAssetId": "87192b68-1a8b-47d7-b5d0-1aff08861599"
     },
     {
       "job": "은월",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "은월",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "은월",
       "name": "프리드의 가호 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBKA.webp"
+      "iconFile": "KAPCLHPBKA.webp",
+      "iconAssetId": "ff527dfc-0ef7-4909-9e1f-ed086acb1b6e"
     },
     {
       "job": "카이저",
       "name": "마이트 오브 노바",
       "apiType": "스킬 코어",
-      "iconFile": "KFJDKDPEMA.webp"
+      "iconFile": "KFJDKDPEMA.webp",
+      "iconAssetId": "aadd100a-0b46-4cec-943f-e4faaf2d6303"
     },
     {
       "job": "카이저",
       "name": "파이로 인스팅트",
       "apiType": "스킬 코어",
-      "iconFile": "KFJDKDPEMC.webp"
+      "iconFile": "KFJDKDPEMC.webp",
+      "iconAssetId": "81f62e03-f49f-49ce-b427-786bbf6560b0"
     },
     {
       "job": "카이저",
       "name": "드라코닉 익스팅션",
       "apiType": "스킬 코어",
-      "iconFile": "KFJDKDPEMD.webp"
+      "iconFile": "KFJDKDPEMD.webp",
+      "iconAssetId": "3d1f0e23-3d20-4cf8-802b-de26dfc93bb8"
     },
     {
       "job": "카이저",
       "name": "기가 슬래셔 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJDKDPBMA.webp"
+      "iconFile": "KFJDKDPBMA.webp",
+      "iconAssetId": "23eec505-e210-45b1-8fa1-70540b101c9b"
     },
     {
       "job": "카이저",
       "name": "소드 스트라이크 VI/윌 오브 소드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJDKDPBMC.webp"
+      "iconFile": "KFJDKDPBMC.webp",
+      "iconAssetId": "86684778-3dc9-45f9-bf5f-5f94461e7aa6"
     },
     {
       "job": "카이저",
       "name": "인퍼널 브레스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJDKDPBMJ.webp"
+      "iconFile": "KFJDKDPBMJ.webp",
+      "iconAssetId": "a2ae7b7e-c779-4931-8ec4-601a3260d0c6"
     },
     {
       "job": "카이저",
       "name": "윙비트 VI/페트리파이드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJDKDOBNI.webp"
+      "iconFile": "KFJDKDOBNI.webp",
+      "iconAssetId": "09998f65-67c8-4a8f-a6a0-a6cc6e027cb9"
     },
     {
       "job": "카이저",
       "name": "가디언 오브 노바",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAPG.webp"
+      "iconFile": "KAPCLHKAPG.webp",
+      "iconAssetId": "921ad0c8-93d5-4a0c-814f-2f0f2e678b7d"
     },
     {
       "job": "카이저",
       "name": "윌 오브 소드 : 스트라이크",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAPH.webp"
+      "iconFile": "KAPCLHKAPH.webp",
+      "iconAssetId": "675bef21-db2d-4aa4-83cc-66447c47d7c1"
     },
     {
       "job": "카이저",
       "name": "드라코 슬래셔",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAPI.webp"
+      "iconFile": "KAPCLHKAPI.webp",
+      "iconAssetId": "9723c336-0adc-4fc0-a120-84e7cee9e4b3"
     },
     {
       "job": "카이저",
       "name": "드래곤 블레이즈",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAPJ.webp"
+      "iconFile": "KAPCLHKAPJ.webp",
+      "iconAssetId": "cdc8b22b-f54f-489f-ba72-798a88c12d48"
     },
     {
       "job": "카이저",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "카이저",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "카이저",
       "name": "판테온 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBLC.webp"
+      "iconFile": "KAPCLHPBLC.webp",
+      "iconAssetId": "670fa320-8725-4581-9835-363b2034452b"
     },
     {
       "job": "카데나",
       "name": "체인아츠:매서커",
       "apiType": "스킬 코어",
-      "iconFile": "KFJGKDPEMA.webp"
+      "iconFile": "KFJGKDPEMA.webp",
+      "iconAssetId": "4e233635-2970-4400-8da0-1fb6b49a90a6"
     },
     {
       "job": "카데나",
       "name": "브루탈 래비지",
       "apiType": "스킬 코어",
-      "iconFile": "KFJGKDPEMD.webp"
+      "iconFile": "KFJGKDPEMD.webp",
+      "iconAssetId": "14fbd319-4e30-4e57-80e7-9db15ae3d0c3"
     },
     {
       "job": "카데나",
       "name": "체인아츠:토렌트",
       "apiType": "스킬 코어",
-      "iconFile": "KFJGKDPEMF.webp"
+      "iconFile": "KFJGKDPEMF.webp",
+      "iconAssetId": "f6da313d-fe13-4882-ae52-94069e596f29"
     },
     {
       "job": "카데나",
       "name": "체인아츠:스트로크 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJGKDPBMA.webp"
+      "iconFile": "KFJGKDPBMA.webp",
+      "iconAssetId": "2573a7a1-a33a-463b-a9ae-ceb3ffe78a22"
     },
     {
       "job": "카데나",
       "name": "웨폰 버라이어티 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJGKDPBME.webp"
+      "iconFile": "KFJGKDPBME.webp",
+      "iconAssetId": "87cb4191-5b22-4756-a9f1-90a44ff6a8e1"
     },
     {
       "job": "카데나",
       "name": "서먼 커팅 시미터 VI/서먼 스크래칭 클로 VI/서먼 스로잉 윙대거 VI/서먼 비팅 니들배트 VI/체인아츠:크러시 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJGKDPBPA.webp"
+      "iconFile": "KFJGKDPBPA.webp",
+      "iconAssetId": "af83a68d-6fc0-4ae2-b102-10fe01d10cdd"
     },
     {
       "job": "카데나",
       "name": "서먼 슈팅 샷건 VI/서먼 슬래싱 나이프 VI/서먼 릴리싱 봄 VI/서먼 스트라이킹 브릭 VI/체인아츠:테이크다운 VI/프로페셔널 에이전트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJGKDPBOC.webp"
+      "iconFile": "KFJGKDPBOC.webp",
+      "iconAssetId": "f289decf-0922-4a80-89c1-8bc6cdf74887"
     },
     {
       "job": "카데나",
       "name": "체인아츠:퓨리",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAIE.webp"
+      "iconFile": "KAPCLHKAIE.webp",
+      "iconAssetId": "4c7d4895-6487-4730-8f70-ea978c6747fb"
     },
     {
       "job": "카데나",
       "name": "A.D 오드넌스",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAIF.webp"
+      "iconFile": "KAPCLHKAIF.webp",
+      "iconAssetId": "8f662406-ccaf-4756-b76d-96827c99728a"
     },
     {
       "job": "카데나",
       "name": "체인아츠:메일스트롬",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAIG.webp"
+      "iconFile": "KAPCLHKAIG.webp",
+      "iconAssetId": "805115c8-0078-4bfd-a480-a79647f034c8"
     },
     {
       "job": "카데나",
       "name": "웨폰 버라이어티 피날레",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAIH.webp"
+      "iconFile": "KAPCLHKAIH.webp",
+      "iconAssetId": "4b8eba28-460a-4e78-b9c6-4cba3c368bb6"
     },
     {
       "job": "카데나",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "카데나",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "카데나",
       "name": "판테온 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBLG.webp"
+      "iconFile": "KAPCLHPBLG.webp",
+      "iconAssetId": "ed4df181-14f7-41fe-801c-94794bff4a9e"
     },
     {
       "job": "엔젤릭버스터",
       "name": "그랜드 피날레",
       "apiType": "스킬 코어",
-      "iconFile": "KFJHKDPEMA.webp"
+      "iconFile": "KFJHKDPEMA.webp",
+      "iconAssetId": "bbb56af4-c9f3-4575-9d33-28f08c88485a"
     },
     {
       "job": "엔젤릭버스터",
       "name": "제뉴인 앙코르",
       "apiType": "스킬 코어",
-      "iconFile": "KFJHKDPEME.webp"
+      "iconFile": "KFJHKDPEME.webp",
+      "iconAssetId": "da7097e6-0226-4336-9a5c-9f01baf07b3e"
     },
     {
       "job": "엔젤릭버스터",
       "name": "팝핑 하트",
       "apiType": "스킬 코어",
-      "iconFile": "KFJHKDPEMG.webp"
+      "iconFile": "KFJHKDPEMG.webp",
+      "iconAssetId": "8a3c78db-fed9-4968-a313-8822caac9d7b"
     },
     {
       "job": "엔젤릭버스터",
       "name": "트리니티 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJHKDPBMA.webp"
+      "iconFile": "KFJHKDPBMA.webp",
+      "iconAssetId": "a80ec611-84fa-4bfe-b378-e1ba48c70b9e"
     },
     {
       "job": "엔젤릭버스터",
       "name": "소울 시커 VI/소울 시커 엑스퍼트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJHKDPBMB.webp"
+      "iconFile": "KFJHKDPBMB.webp",
+      "iconAssetId": "92bd26e5-102e-4597-ab50-9a9efbe5ae4b"
     },
     {
       "job": "엔젤릭버스터",
       "name": "슈퍼 노바 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJHKDPBMF.webp"
+      "iconFile": "KFJHKDPBMF.webp",
+      "iconAssetId": "6e44f994-9501-45bc-a3ea-3012be4e31c2"
     },
     {
       "job": "엔젤릭버스터",
       "name": "프라이멀 로어 VI/다카포 페투치아",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJHKDPBMG.webp"
+      "iconFile": "KFJHKDPBMG.webp",
+      "iconAssetId": "fad9948d-3999-4182-9d9a-9ec3f924997c"
     },
     {
       "job": "엔젤릭버스터",
       "name": "에너지 버스트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAII.webp"
+      "iconFile": "KAPCLHKAII.webp",
+      "iconAssetId": "bd6298b0-bebf-4738-ba6c-2c7aa42c99ce"
     },
     {
       "job": "엔젤릭버스터",
       "name": "스포트라이트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAIJ.webp"
+      "iconFile": "KAPCLHKAIJ.webp",
+      "iconAssetId": "153c7ac7-8a0b-49b7-9445-699941dcc1bd"
     },
     {
       "job": "엔젤릭버스터",
       "name": "마스코트 패밀리어",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAJA.webp"
+      "iconFile": "KAPCLHKAJA.webp",
+      "iconAssetId": "bad61b67-9297-40da-875c-53b46d232f92"
     },
     {
       "job": "엔젤릭버스터",
       "name": "트리니티 퓨전",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAJB.webp"
+      "iconFile": "KAPCLHKAJB.webp",
+      "iconAssetId": "d421975e-b3a4-4f70-948b-212c7c62c5ab"
     },
     {
       "job": "엔젤릭버스터",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "엔젤릭버스터",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "엔젤릭버스터",
       "name": "판테온 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBLI.webp"
+      "iconFile": "KAPCLHPBLI.webp",
+      "iconAssetId": "7eb2e446-b4e7-487e-8910-9ece577e88cc"
     },
     {
       "job": "카인",
       "name": "어나일레이션",
       "apiType": "스킬 코어",
-      "iconFile": "KFJBKDPEMA.webp"
+      "iconFile": "KFJBKDPEMA.webp",
+      "iconAssetId": "9ab18150-bfba-48bf-8c08-e8af74e1a9d3"
     },
     {
       "job": "카인",
       "name": "맬리셔스 플리커",
       "apiType": "스킬 코어",
-      "iconFile": "KFJBKDPEMG.webp"
+      "iconFile": "KFJBKDPEMG.webp",
+      "iconAssetId": "fcffb0b4-60ba-4581-9d54-46b3e163001c"
     },
     {
       "job": "카인",
       "name": "[발현] 스트라이크 임팩트/[처형] 팬텀 레퀴엠",
       "apiType": "스킬 코어",
-      "iconFile": "KFJBKDPEMJ.webp"
+      "iconFile": "KFJBKDPEMJ.webp",
+      "iconAssetId": "1dec53f2-3eae-4d3e-bfe1-59b71eb672b4"
     },
     {
       "job": "카인",
       "name": "폴링 더스트 VI/포이즌 니들 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJBKDPBMA.webp"
+      "iconFile": "KFJBKDPBMA.webp",
+      "iconAssetId": "17485ae5-b4f6-43a3-8c3b-95f55c3e74ee"
     },
     {
       "job": "카인",
       "name": "스트라이크 애로우 VI/스캐터링 샷 VI/테어링 나이프 VI/체인 시클 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJBKDPBMH.webp"
+      "iconFile": "KFJBKDPBMH.webp",
+      "iconAssetId": "57165089-6284-4442-9f45-e66cd7f14ef3"
     },
     {
       "job": "카인",
       "name": "드래곤 팡 VI/샤프트 브레이크 VI/팬텀 블레이드 VI/리메인 인센스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJBKDPBND.webp"
+      "iconFile": "KFJBKDPBND.webp",
+      "iconAssetId": "137b60af-4bc1-44a7-8d6b-79ea2e1e8283"
     },
     {
       "job": "카인",
       "name": "데스 블레싱 VI/체이싱 샷 VI/스니키 스나이핑 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KFJBKDPBNF.webp"
+      "iconFile": "KFJBKDPBNF.webp",
+      "iconAssetId": "7f0b4e06-ff17-40fd-b56f-2cda9d268160"
     },
     {
       "job": "카인",
       "name": "드래곤 버스트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAIA.webp"
+      "iconFile": "KAPCLHKAIA.webp",
+      "iconAssetId": "8ab6a1b9-84d1-424a-903a-cbfeb4a3e25b"
     },
     {
       "job": "카인",
       "name": "페이탈 블리츠",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAIB.webp"
+      "iconFile": "KAPCLHKAIB.webp",
+      "iconAssetId": "19ec468a-77a8-4cdf-b1cc-2c8b5c4ddc3a"
     },
     {
       "job": "카인",
       "name": "타나토스 디센트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAIC.webp"
+      "iconFile": "KAPCLHKAIC.webp",
+      "iconAssetId": "a30add2e-0f6f-49ee-b434-521f15d0b25c"
     },
     {
       "job": "카인",
       "name": "그립 오브 애거니",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAID.webp"
+      "iconFile": "KAPCLHKAID.webp",
+      "iconAssetId": "3764071c-67c9-44eb-890c-fd2261246cf5"
     },
     {
       "job": "카인",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "카인",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "카인",
       "name": "판테온 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBLE.webp"
+      "iconFile": "KAPCLHPBLE.webp",
+      "iconAssetId": "e820101a-2523-4e25-a414-b58ca962043e"
     },
     {
       "job": "아델",
       "name": "마에스트로",
       "apiType": "스킬 코어",
-      "iconFile": "KEKDKDPEMA.webp"
+      "iconFile": "KEKDKDPEMA.webp",
+      "iconAssetId": "5a5e8d61-6ed7-46df-bbaa-d1b8b1563755"
     },
     {
       "job": "아델",
       "name": "아인하이트",
       "apiType": "스킬 코어",
-      "iconFile": "KEKDKDPEMC.webp"
+      "iconFile": "KEKDKDPEMC.webp",
+      "iconAssetId": "f0299efe-ddcf-477c-927c-9de02985ce8d"
     },
     {
       "job": "아델",
       "name": "에테르 뤼페",
       "apiType": "스킬 코어",
-      "iconFile": "KEKDKDPEMD.webp"
+      "iconFile": "KEKDKDPEMD.webp",
+      "iconAssetId": "85b5c8d2-7144-4642-80b0-db6c5d310a28"
     },
     {
       "job": "아델",
       "name": "디바이드 VI/샤드 VI/원더 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKDKDPBMA.webp"
+      "iconFile": "KEKDKDPBMA.webp",
+      "iconAssetId": "d3aef781-80ec-47b8-b8c9-7647fe7c043a"
     },
     {
       "job": "아델",
       "name": "오더 VI/트레드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKDKDPBME.webp"
+      "iconFile": "KEKDKDPBME.webp",
+      "iconAssetId": "9a70ee0f-0d71-4cb1-97d4-0ba6f441ca9f"
     },
     {
       "job": "아델",
       "name": "임페일 VI/레조넌스 VI/게더링 VI/블로섬 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKDKDPBNA.webp"
+      "iconFile": "KEKDKDPBNA.webp",
+      "iconAssetId": "76ae0fb3-00c7-4c2e-93de-52d764700f7c"
     },
     {
       "job": "아델",
       "name": "크리에이션 VI/테리토리 VI/마커 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKDKDOBMG.webp"
+      "iconFile": "KEKDKDOBMG.webp",
+      "iconAssetId": "2fef2327-c0e2-4f91-9d95-b9157bc51ff5"
     },
     {
       "job": "아델",
       "name": "루인",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAKA.webp"
+      "iconFile": "KAPCLHKAKA.webp",
+      "iconAssetId": "41aa37bf-8f89-4469-8e65-0a242fee0078"
     },
     {
       "job": "아델",
       "name": "인피니트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAKB.webp"
+      "iconFile": "KAPCLHKAKB.webp",
+      "iconAssetId": "0f78914c-092a-49bf-bc1d-8928cfc6fcab"
     },
     {
       "job": "아델",
       "name": "리스토어",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAKC.webp"
+      "iconFile": "KAPCLHKAKC.webp",
+      "iconAssetId": "b5ef9ac0-9fe0-4022-9e6b-9cc0cbb9e0c8"
     },
     {
       "job": "아델",
       "name": "스톰",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAKD.webp"
+      "iconFile": "KAPCLHKAKD.webp",
+      "iconAssetId": "13f83835-7d29-4305-a3e5-b8aae3fecaf9"
     },
     {
       "job": "아델",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "아델",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "아델",
       "name": "매직 서킷 풀드라이브 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPAMH.webp"
+      "iconFile": "KAPCLHPAMH.webp",
+      "iconAssetId": "6efeb3c2-c201-4f6b-ae23-a900e28cdd67"
     },
     {
       "job": "일리움",
       "name": "언리미티드 크리스탈",
       "apiType": "스킬 코어",
-      "iconFile": "KEKAKDPEMA.webp"
+      "iconFile": "KEKAKDPEMA.webp",
+      "iconAssetId": "cfcc7cb9-8676-4f39-9faf-07976b4e9cbb"
     },
     {
       "job": "일리움",
       "name": "엑시디움",
       "apiType": "스킬 코어",
-      "iconFile": "KEKAKDPEMI.webp"
+      "iconFile": "KEKAKDPEMI.webp",
+      "iconAssetId": "f19ec014-eb9b-46ec-8d16-0883422b4fb9"
     },
     {
       "job": "일리움",
       "name": "글로리 윙:스플렌더",
       "apiType": "스킬 코어",
-      "iconFile": "KEKAKDOENA.webp"
+      "iconFile": "KEKAKDOENA.webp",
+      "iconAssetId": "0e8e9589-b7a3-4460-b689-df2d44ad13a7"
     },
     {
       "job": "일리움",
       "name": "크래프트:자벨린 VI/글로리 윙:자벨린 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKAKDPBMA.webp"
+      "iconFile": "KEKAKDPBMA.webp",
+      "iconAssetId": "22ebd787-d92b-46fa-91d9-435c46e2eefc"
     },
     {
       "job": "일리움",
       "name": "리액션:도미네이션 VI/리액션:디스트럭션 VI/글로리 윙:모탈 윙비트 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKAKDPBMI.webp"
+      "iconFile": "KEKAKDPBMI.webp",
+      "iconAssetId": "220155ca-fb9a-4909-a54a-ccc8c6758a1a"
     },
     {
       "job": "일리움",
       "name": "리요 VI/마키나 VI/데우스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKAKDPBNA.webp"
+      "iconFile": "KEKAKDPBNA.webp",
+      "iconAssetId": "d0284cae-cd44-4a8f-95cc-ab91c8f7bf50"
     },
     {
       "job": "일리움",
       "name": "롱기누스 VI/커스 마크 완성 VI/롱기누스 존 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKAKDPBNE.webp"
+      "iconFile": "KEKAKDPBNE.webp",
+      "iconAssetId": "be009816-5c4b-4855-a18c-7e5b90e76d95"
     },
     {
       "job": "일리움",
       "name": "크리스탈 이그니션",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAKE.webp"
+      "iconFile": "KAPCLHKAKE.webp",
+      "iconAssetId": "2ff909c5-5f90-4624-8224-96266da34a44"
     },
     {
       "job": "일리움",
       "name": "그람홀더",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAKF.webp"
+      "iconFile": "KAPCLHKAKF.webp",
+      "iconAssetId": "b72324df-d8a8-46a3-b9c8-d55dce6d668b"
     },
     {
       "job": "일리움",
       "name": "소울 오브 크리스탈",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAKG.webp"
+      "iconFile": "KAPCLHKAKG.webp",
+      "iconAssetId": "e07aac9b-4ac1-4e05-ac35-d215c3486422"
     },
     {
       "job": "일리움",
       "name": "크리스탈 게이트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAKH.webp"
+      "iconFile": "KAPCLHKAKH.webp",
+      "iconAssetId": "95b9f863-5b1d-48ae-8728-bccb80dc9851"
     },
     {
       "job": "일리움",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "일리움",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "일리움",
       "name": "매직 서킷 풀드라이브 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPANA.webp"
+      "iconFile": "KAPCLHPANA.webp",
+      "iconAssetId": "58040cfe-58c0-461e-9aca-aaad30879748"
     },
     {
       "job": "아크",
       "name": "가장 오래된 심연",
       "apiType": "스킬 코어",
-      "iconFile": "KEKHKDPEMA.webp"
+      "iconFile": "KEKHKDPEMA.webp",
+      "iconAssetId": "fe481670-f760-4460-a169-e4bf1948dc75"
     },
     {
       "job": "아크",
       "name": "절대 심연의 속삭임",
       "apiType": "스킬 코어",
-      "iconFile": "KEKHKDPEMC.webp"
+      "iconFile": "KEKHKDPEMC.webp",
+      "iconAssetId": "273cd998-dce4-4738-9afd-541e24e14ce0"
     },
     {
       "job": "아크",
       "name": "원초의 격류",
       "apiType": "스킬 코어",
-      "iconFile": "KEKHKDOEMF.webp"
+      "iconFile": "KEKHKDOEMF.webp",
+      "iconAssetId": "f54e5278-3d94-42be-b83a-908c6d9dcc49"
     },
     {
       "job": "아크",
       "name": "플레인 차지드라이브 VI/스칼렛 차지드라이브 VI/거스트 차지드라이브 VI/어비스 차지드라이브 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKHKDPBMA.webp"
+      "iconFile": "KEKHKDPBMA.webp",
+      "iconAssetId": "265c90dd-8fdb-4b0b-af80-6ffedbd3f1f4"
     },
     {
       "job": "아크",
       "name": "지워지지 않는 상처 VI/채워지지 않는 굶주림 VI/걷잡을 수 없는 혼돈 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKHKDPBOB.webp"
+      "iconFile": "KEKHKDPBOB.webp",
+      "iconAssetId": "2e7508d0-5b29-4734-b345-c6050bb37571"
     },
     {
       "job": "아크",
       "name": "돌아오는 증오 VI/황홀한 구속 VI/끝없는 고통 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKHKDPBPE.webp"
+      "iconFile": "KEKHKDPBPE.webp",
+      "iconAssetId": "57758493-f282-4e2b-b027-83d97befa510"
     },
     {
       "job": "아크",
       "name": "잊혀지지 않는 악몽 VI/잊혀지지 않는 흉몽 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKHKDPBPF.webp"
+      "iconFile": "KEKHKDPBPF.webp",
+      "iconAssetId": "92b2562d-2d98-4786-a059-2bf355e5b39a"
     },
     {
       "job": "아크",
       "name": "근원의 기억",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKALC.webp"
+      "iconFile": "KAPCLHKALC.webp",
+      "iconAssetId": "7973d18d-3253-4d53-b5e2-6d4cb5c2f1c3"
     },
     {
       "job": "아크",
       "name": "인피니티 스펠",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKALD.webp"
+      "iconFile": "KAPCLHKALD.webp",
+      "iconAssetId": "84615cea-fff4-428f-be7c-1d0e18d12877"
     },
     {
       "job": "아크",
       "name": "새어 나오는 악몽/새어 나오는 흉몽",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKALE.webp"
+      "iconFile": "KAPCLHKALE.webp",
+      "iconAssetId": "55e517d3-47f5-4470-b62d-35ee6adcbe62"
     },
     {
       "job": "아크",
       "name": "영원히 굶주리는 짐승",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKALF.webp"
+      "iconFile": "KAPCLHKALF.webp",
+      "iconAssetId": "bf948ed0-85d7-469f-bd60-7ed7187860ba"
     },
     {
       "job": "아크",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "아크",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "아크",
       "name": "매직 서킷 풀드라이브 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPANG.webp"
+      "iconFile": "KAPCLHPANG.webp",
+      "iconAssetId": "48bb25e4-a0bd-452c-84ed-4cb51ed4ad9b"
     },
     {
       "job": "칼리",
       "name": "헥스 : 샌드스톰",
       "apiType": "스킬 코어",
-      "iconFile": "KEKGKDPEMA.webp"
+      "iconFile": "KEKGKDPEMA.webp",
+      "iconAssetId": "2a2ea262-61da-404b-961a-393aa0b17640"
     },
     {
       "job": "칼리",
       "name": "보이드 어웨이크",
       "apiType": "스킬 코어",
-      "iconFile": "KEKGKDPEME.webp"
+      "iconFile": "KEKGKDPEME.webp",
+      "iconAssetId": "db551a37-b7d2-4fa1-8a22-a7c16d62f33b"
     },
     {
       "job": "칼리",
       "name": "헥스 : 듄 버스트",
       "apiType": "스킬 코어",
-      "iconFile": "KEKGKDPEMG.webp"
+      "iconFile": "KEKGKDPEMG.webp",
+      "iconAssetId": "03bc1703-750f-416b-807b-34758de8149a"
     },
     {
       "job": "칼리",
       "name": "아츠 : 플러리 VI/아츠 : 크레센텀 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKGKDPBMA.webp"
+      "iconFile": "KEKGKDPBMA.webp",
+      "iconAssetId": "29dd2cc8-9360-445e-96ba-e44c207c5882"
     },
     {
       "job": "칼리",
       "name": "보이드 러쉬 VI/보이드 블리츠 VI/헥스 : 차크람 스플릿 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKGKDPBMD.webp"
+      "iconFile": "KEKGKDPBMD.webp",
+      "iconAssetId": "3a58435b-0a31-4105-92f6-11ff3669467c"
     },
     {
       "job": "칼리",
       "name": "헥스 : 차크람 스윕 VI/헥스 : 차크람 퓨리 VI/데스 블로섬 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKGKDPBNB.webp"
+      "iconFile": "KEKGKDPBNB.webp",
+      "iconAssetId": "1973aaea-2e1b-4134-920a-3d4db03d0a93"
     },
     {
       "job": "칼리",
       "name": "레조네이트 VI/디시빙 블레이드 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEKGKDPBND.webp"
+      "iconFile": "KEKGKDPBND.webp",
+      "iconAssetId": "2bfc5b9b-14f5-4c03-b8d0-eeaa12b1189e"
     },
     {
       "job": "칼리",
       "name": "헥스 : 판데모니움",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAKI.webp"
+      "iconFile": "KAPCLHKAKI.webp",
+      "iconAssetId": "e510ece6-2df8-4b09-9240-1ff480a5c9e8"
     },
     {
       "job": "칼리",
       "name": "보이드 버스트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAKJ.webp"
+      "iconFile": "KAPCLHKAKJ.webp",
+      "iconAssetId": "113eaab9-b152-4cc6-8237-493be45e8fbe"
     },
     {
       "job": "칼리",
       "name": "아츠 : 아스트라",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKALA.webp"
+      "iconFile": "KAPCLHKALA.webp",
+      "iconAssetId": "b40f284b-4ed7-4a71-ab6e-31ca488c2605"
     },
     {
       "job": "칼리",
       "name": "레조네이트 : 얼티메이텀",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKALB.webp"
+      "iconFile": "KAPCLHKALB.webp",
+      "iconAssetId": "3138e846-d752-47c3-8d4f-e6a50e3b1884"
     },
     {
       "job": "칼리",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "칼리",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "칼리",
       "name": "매직 서킷 풀드라이브 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPAND.webp"
+      "iconFile": "KAPCLHPAND.webp",
+      "iconAssetId": "bafc15ed-3129-4fd8-be20-a32bd013f21c"
     },
     {
       "job": "라라",
       "name": "새록새록 꽃누리",
       "apiType": "스킬 코어",
-      "iconFile": "KEJAKDPEMA.webp"
+      "iconFile": "KEJAKDPEMA.webp",
+      "iconAssetId": "3b228ffb-bd2f-4123-b7c2-d1d2d3ff3bcd"
     },
     {
       "job": "라라",
       "name": "안다미로",
       "apiType": "스킬 코어",
-      "iconFile": "KEJAKDPEMC.webp"
+      "iconFile": "KEJAKDPEMC.webp",
+      "iconAssetId": "0cfc5ae9-bb16-472d-a329-aadd0854a527"
     },
     {
       "job": "라라",
       "name": "한아름 아우른 숨결",
       "apiType": "스킬 코어",
-      "iconFile": "KEJAKDPEMD.webp"
+      "iconFile": "KEJAKDPEMD.webp",
+      "iconAssetId": "62d977d5-04cd-43d7-86d6-edd4badbb238"
     },
     {
       "job": "라라",
       "name": "정기 뿌리기 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEJAKDPBMA.webp"
+      "iconFile": "KEJAKDPBMA.webp",
+      "iconAssetId": "1acf1a32-deb2-4d52-863a-7dda194a21d5"
     },
     {
       "job": "라라",
       "name": "용맥 분출 VI/분출 : 너울이는 강 VI/분출 : 돌개바람 VI/분출 : 해돋이 우물 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEJAKDPBMB.webp"
+      "iconFile": "KEJAKDPBMB.webp",
+      "iconAssetId": "744b8111-24a5-4cdf-a5d0-35c33409f434"
     },
     {
       "job": "라라",
       "name": "용맥 흡수 VI/흡수 : 강 웅덩이 물벼락 VI/흡수 : 소소리 바람 VI/흡수 : 햇빛 맹아리 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEJAKDPBNA.webp"
+      "iconFile": "KEJAKDPBNA.webp",
+      "iconAssetId": "ae51f286-93d0-4a0a-a138-da49ae2a9b5b"
     },
     {
       "job": "라라",
       "name": "잠 깨우기 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEJAKDPBOA.webp"
+      "iconFile": "KEJAKDPBOA.webp",
+      "iconAssetId": "26aaa776-0744-4fee-abd4-ccd4d98f8445"
     },
     {
       "job": "라라",
       "name": "큰 기지개",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKALG.webp"
+      "iconFile": "KAPCLHKALG.webp",
+      "iconAssetId": "2e13b238-a0cf-473f-91d0-2154c7aff688"
     },
     {
       "job": "라라",
       "name": "해 강 산 바람",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKALH.webp"
+      "iconFile": "KAPCLHKALH.webp",
+      "iconAssetId": "76b2595d-5e0d-4297-bf6b-c6736fc398cd"
     },
     {
       "job": "라라",
       "name": "용솟음치는 정기",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKALI.webp"
+      "iconFile": "KAPCLHKALI.webp",
+      "iconAssetId": "77f76cf7-bdad-4f87-bdd2-838d1206d8a2"
     },
     {
       "job": "라라",
       "name": "산등성이 굽이굽이",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKALJ.webp"
+      "iconFile": "KAPCLHKALJ.webp",
+      "iconAssetId": "415b396d-5b70-4c3c-be19-1d51a83c4895"
     },
     {
       "job": "라라",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "라라",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "라라",
       "name": "화중군자 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPAOB.webp"
+      "iconFile": "KAPCLHPAOB.webp",
+      "iconAssetId": "7cb2a054-a698-4050-bbec-23b7ca47ffc1"
     },
     {
       "job": "호영",
       "name": "선기 : 파천황",
       "apiType": "스킬 코어",
-      "iconFile": "KEJGKDPEMA.webp"
+      "iconFile": "KEJGKDPEMA.webp",
+      "iconAssetId": "fc79cb0b-f4d5-4d5a-8e2a-2c41fb5dce1b"
     },
     {
       "job": "호영",
       "name": "천세휘령",
       "apiType": "스킬 코어",
-      "iconFile": "KEJGKDPEMD.webp"
+      "iconFile": "KEJGKDPEMD.webp",
+      "iconAssetId": "1a85c526-8d15-4e34-a0aa-b8ba8469ae12"
     },
     {
       "job": "호영",
       "name": "선기 : 사흉해방 도철",
       "apiType": "스킬 코어",
-      "iconFile": "KEJGKDPEMF.webp"
+      "iconFile": "KEJGKDPEMF.webp",
+      "iconAssetId": "6355195c-4587-4738-a322-291bf8dedc4d"
     },
     {
       "job": "호영",
       "name": "멸화염 : 천 VI/지진쇄 : 지 VI/금고봉 : 인 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEJGKDPBMA.webp"
+      "iconFile": "KEJGKDPBMA.webp",
+      "iconAssetId": "d7e80bf3-61ce-4d95-b08b-b3c0ce921651"
     },
     {
       "job": "호영",
       "name": "파초풍 : 천 VI/토파류 : 지 VI/여의선 : 인 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEJGKDPBPF.webp"
+      "iconFile": "KEJGKDPBPF.webp",
+      "iconAssetId": "470f2a7d-777a-4611-850e-2356a4b0ba12"
     },
     {
       "job": "호영",
       "name": "환영 분신부 VI/추적 귀화부 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEJGKDPBJE.webp"
+      "iconFile": "KEJGKDPBJE.webp",
+      "iconAssetId": "02d156a1-c89d-4bad-8b75-36884b3e2542"
     },
     {
       "job": "호영",
       "name": "흡성와류 VI/권술 : 호접지몽 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEJGKDPBJJ.webp"
+      "iconFile": "KEJGKDPBJJ.webp",
+      "iconAssetId": "923e7ee5-c109-4df5-97fc-312274f77034"
     },
     {
       "job": "호영",
       "name": "선기 : 극대 분신난무",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAEA.webp"
+      "iconFile": "KAPCLHKAEA.webp",
+      "iconAssetId": "3fca12cc-099b-40c9-91b5-e66bfd9a491e"
     },
     {
       "job": "호영",
       "name": "권술 : 산령소환",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAEB.webp"
+      "iconFile": "KAPCLHKAEB.webp",
+      "iconAssetId": "ad153e90-77d7-460f-a78e-1452acaa8c8c"
     },
     {
       "job": "호영",
       "name": "선기 : 강림 괴력난신",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAEC.webp"
+      "iconFile": "KAPCLHKAEC.webp",
+      "iconAssetId": "1820cba5-e787-4fe5-aae4-16850a1f4e34"
     },
     {
       "job": "호영",
       "name": "선기 : 천지인 환영",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAED.webp"
+      "iconFile": "KAPCLHKAED.webp",
+      "iconAssetId": "1063bf19-2ebf-4160-831d-0ab354307e81"
     },
     {
       "job": "호영",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "호영",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "호영",
       "name": "화중군자 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPAOD.webp"
+      "iconFile": "KAPCLHPAOD.webp",
+      "iconAssetId": "cf88835e-05a9-4f16-84a6-9dfd6932497e"
     },
     {
       "job": "렌",
       "name": "창룡파천검 : 승천",
       "apiType": "스킬 코어",
-      "iconFile": "KEJDKDPEMA.webp"
+      "iconFile": "KEJDKDPEMA.webp",
+      "iconAssetId": "a4b0ce23-362f-49f7-a81a-94aae2a917c4"
     },
     {
       "job": "렌",
       "name": "창룡파천검 : 일매낙화 천비인적",
       "apiType": "스킬 코어",
-      "iconFile": "KEJDKDPEMG.webp"
+      "iconFile": "KEJDKDPEMG.webp",
+      "iconAssetId": "30953d76-6ff2-4c13-ac06-bd800c87319a"
     },
     {
       "job": "렌",
       "name": "창룡파천검 : 만참",
       "apiType": "스킬 코어",
-      "iconFile": "KEJDKDOEMH.webp"
+      "iconFile": "KEJDKDOEMH.webp",
+      "iconAssetId": "4441d1f2-41ea-4e60-82bb-4f7b2d04039b"
     },
     {
       "job": "렌",
       "name": "매화검 본초 : 선참 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEJDKDPBMA.webp"
+      "iconFile": "KEJDKDPBMA.webp",
+      "iconAssetId": "8259ec09-43d6-466c-b000-be147a5199c6"
     },
     {
       "job": "렌",
       "name": "망혼검 본초 : 영격 VI/망혼검 2초식 : 연참 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEJDKDPBMB.webp"
+      "iconFile": "KEJDKDPBMB.webp",
+      "iconAssetId": "b890125c-e03e-4885-bb4f-63fd90180bab"
     },
     {
       "job": "렌",
       "name": "망혼강림 VI/망혼검 절기 : 열지 VI/망혼검 절기 : 망탄 VI/망혼검 절기 : 무량겁 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEJDKDOBMF.webp"
+      "iconFile": "KEJDKDOBMF.webp",
+      "iconAssetId": "f9b1e8d0-965f-421a-9086-2df9b0de1499"
     },
     {
       "job": "렌",
       "name": "매화검 2초식 : 쇄매 VI/매화검 3초식 : 예인 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEJDKDOBMH.webp"
+      "iconFile": "KEJDKDOBMH.webp",
+      "iconAssetId": "22eb34dc-2960-4b00-8090-f9dd174bfa62"
     },
     {
       "job": "렌",
       "name": "매화검 절기 : 만리향",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKDMF.webp"
+      "iconFile": "KAPCLHKDMF.webp",
+      "iconAssetId": "6b227a43-cb81-43f1-b43e-00c7258c1eec"
     },
     {
       "job": "렌",
       "name": "망혼각성",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKDMG.webp"
+      "iconFile": "KAPCLHKDMG.webp",
+      "iconAssetId": "52582ede-b7d1-41b3-b0ba-8ba640d9fad8"
     },
     {
       "job": "렌",
       "name": "매화검 절기 : 섬무",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKDMH.webp"
+      "iconFile": "KAPCLHKDMH.webp",
+      "iconAssetId": "e5b84787-eb4f-4f5f-8d07-d2699b60846d"
     },
     {
       "job": "렌",
       "name": "망혼검 절기 : 심검",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKDMI.webp"
+      "iconFile": "KAPCLHKDMI.webp",
+      "iconAssetId": "a58b44de-9152-4ae8-a719-3a1314df1cc1"
     },
     {
       "job": "렌",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "렌",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "렌",
       "name": "화중군자 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPANJ.webp"
+      "iconFile": "KAPCLHPANJ.webp",
+      "iconAssetId": "eb83903c-be12-40c3-8ccb-6b72b61e3ac5"
     },
     {
       "job": "레테",
       "name": "오버로드 : 이터널 게이즈",
       "apiType": "스킬 코어",
-      "iconFile": "KEGAKDPEMA.webp"
+      "iconFile": "KEGAKDPEMA.webp",
+      "iconAssetId": "d656b43e-ee50-4b6f-9214-acd3a3f53a43"
     },
     {
       "job": "레테",
       "name": "앱솔루트 레인",
       "apiType": "스킬 코어",
-      "iconFile": "KEGAKDPEMC.webp"
+      "iconFile": "KEGAKDPEMC.webp",
+      "iconAssetId": "1b7bc287-d57f-44b9-81ed-742183b35ca3"
     },
     {
       "job": "레테",
       "name": "보이드 오리진",
       "apiType": "스킬 코어",
-      "iconFile": "KEGAKDPEME.webp"
+      "iconFile": "KEGAKDPEME.webp",
+      "iconAssetId": "b924d5c7-df79-4d4d-8b76-8eab90993598"
     },
     {
       "job": "레테",
       "name": "임프린트 VI/이딕트 : 펠 스톰 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEGAKDOBMA.webp"
+      "iconFile": "KEGAKDOBMA.webp",
+      "iconAssetId": "4d6efb78-508c-4c1e-9545-168e9f2e5422"
     },
     {
       "job": "레테",
       "name": "인보크 : 바르가르 VI/이딕트 : 램페이지 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEGAKDPBMF.webp"
+      "iconFile": "KEGAKDPBMF.webp",
+      "iconAssetId": "2c365c8d-fc68-40f4-a19a-38f2c3cb06a8"
     },
     {
       "job": "레테",
       "name": "인보크 : 템플러 VI/이딕트 : 템플러 아츠 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEGAKDPBNA.webp"
+      "iconFile": "KEGAKDPBNA.webp",
+      "iconAssetId": "e0bd7108-8d26-4b7b-ab50-1e9ee8e1d471"
     },
     {
       "job": "레테",
       "name": "임펠 VI/팩트 매니페스트",
       "apiType": "마스터리 코어",
-      "iconFile": "KEGAKDPBNF.webp"
+      "iconFile": "KEGAKDPBNF.webp",
+      "iconAssetId": "9f7d963c-760f-48f0-a666-df17136370dd"
     },
     {
       "job": "레테",
       "name": "오버로드 : 템플러 온슬로트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKDND.webp"
+      "iconFile": "KAPCLHKDND.webp",
+      "iconAssetId": "92c51d35-7610-4322-ae92-7564cfd37a05"
     },
     {
       "job": "레테",
       "name": "오버로드 : 바르가르 트라이던트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKDNE.webp"
+      "iconFile": "KAPCLHKDNE.webp",
+      "iconAssetId": "dbf919dd-5fc7-4297-98c2-8d26b468781f"
     },
     {
       "job": "레테",
       "name": "인보크/오버로드 : 아즈라스",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKDNF.webp"
+      "iconFile": "KAPCLHKDNF.webp",
+      "iconAssetId": "4222a136-57c7-449b-a00d-d769c931830e"
     },
     {
       "job": "레테",
       "name": "체인 커맨드",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKDNG.webp"
+      "iconFile": "KAPCLHKDNG.webp",
+      "iconAssetId": "a16ffb21-d49b-4b94-a8e3-fbf46efdff1d"
     },
     {
       "job": "레테",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "레테",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "레테",
       "name": "프라이멀 퓨리 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPAPG.webp"
+      "iconFile": "KAPCLHPAPG.webp",
+      "iconAssetId": "06432adb-56dc-40a9-b858-0c123694999b"
     },
     {
       "job": "제로",
       "name": "크로노 트리거",
       "apiType": "스킬 코어",
-      "iconFile": "KEPDKDPEMA.webp"
+      "iconFile": "KEPDKDPEMA.webp",
+      "iconAssetId": "a324f146-6078-4369-bd1f-ccdc45e619c4"
     },
     {
       "job": "제로",
       "name": "바이템포리스",
       "apiType": "스킬 코어",
-      "iconFile": "KEPDKDPEMD.webp"
+      "iconFile": "KEPDKDPEMD.webp",
+      "iconAssetId": "34bcae03-28c1-41ac-809e-d3742dbc1a6e"
     },
     {
       "job": "제로",
       "name": "타임 어소리티",
       "apiType": "스킬 코어",
-      "iconFile": "KEPDKDPEMG.webp"
+      "iconFile": "KEPDKDPEMG.webp",
+      "iconAssetId": "7774bfef-12f4-4e1d-953c-d6dce1a75af7"
     },
     {
       "job": "제로",
       "name": "윈드 커터 VI/기가 크래시 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEPDKDPBMG.webp"
+      "iconFile": "KEPDKDPBMG.webp",
+      "iconAssetId": "fc37ecae-1546-4af3-93f3-ace49bae86dd"
     },
     {
       "job": "제로",
       "name": "터닝 드라이브 VI/롤링 커브 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEPDKDPBNE.webp"
+      "iconFile": "KEPDKDPBNE.webp",
+      "iconAssetId": "bc116c7a-6924-44f4-a939-f9bfd3deb639"
     },
     {
       "job": "제로",
       "name": "플래시 어썰터 VI/프론트 슬래시 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KEPDKDPBOD.webp"
+      "iconFile": "KEPDKDPBOD.webp",
+      "iconAssetId": "32de277c-557e-4522-9cd2-eac6ddcf5627"
     },
     {
       "job": "제로",
       "name": "문 스트라이크 VI/어퍼 슬래시 VI/쉐도우 레인 VI/인피니트 레조넌스",
       "apiType": "마스터리 코어",
-      "iconFile": "KEPDKDPBOJ.webp"
+      "iconFile": "KEPDKDPBOJ.webp",
+      "iconAssetId": "43f27d9a-b88e-4c49-8fb1-470d5d6a5682"
     },
     {
       "job": "제로",
       "name": "리미트 브레이크",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAJC.webp"
+      "iconFile": "KAPCLHKAJC.webp",
+      "iconAssetId": "b2983876-4fa2-4372-9432-a4788d9c46f7"
     },
     {
       "job": "제로",
       "name": "조인트 어택",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAJD.webp"
+      "iconFile": "KAPCLHKAJD.webp",
+      "iconAssetId": "dd8219bd-f1f9-4555-9dd5-b9b7435aef3b"
     },
     {
       "job": "제로",
       "name": "쉐도우 플래시",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAJE.webp"
+      "iconFile": "KAPCLHKAJE.webp",
+      "iconAssetId": "c264e10a-e5c2-46ed-95c1-97b1a41ca730"
     },
     {
       "job": "제로",
       "name": "에고 웨폰",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAJF.webp"
+      "iconFile": "KAPCLHKAJF.webp",
+      "iconAssetId": "17177030-a688-4680-8388-ce0452922f4f"
     },
     {
       "job": "제로",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "제로",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "제로",
       "name": "트랜센던트 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBEA.webp"
+      "iconFile": "KAPCLHPBEA.webp",
+      "iconAssetId": "308fcb7c-988e-48bd-9527-b32f24c44316"
     },
     {
       "job": "키네시스",
       "name": "어나더 렐름",
       "apiType": "스킬 코어",
-      "iconFile": "KELAKDPEMA.webp"
+      "iconFile": "KELAKDPEMA.webp",
+      "iconAssetId": "d5d59c0c-c317-474b-bbe5-95a0966607e0"
     },
     {
       "job": "키네시스",
       "name": "프렉탈 호라이즌",
       "apiType": "스킬 코어",
-      "iconFile": "KELAKDPEMC.webp"
+      "iconFile": "KELAKDPEMC.webp",
+      "iconAssetId": "0d979824-106b-4ff0-aa6e-b3126ebec810"
     },
     {
       "job": "키네시스",
       "name": "그래비티 오브젝트",
       "apiType": "스킬 코어",
-      "iconFile": "KELAKDOEME.webp"
+      "iconFile": "KELAKDOEME.webp",
+      "iconAssetId": "a87192aa-4d60-4450-9781-3fb826818349"
     },
     {
       "job": "키네시스",
       "name": "얼티메이트 : 프레셔 VI/얼티메이트 : 체크 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KELAKDOBMB.webp"
+      "iconFile": "KELAKDOBMB.webp",
+      "iconAssetId": "a8978227-e8ff-412f-8bef-010fc5440567"
     },
     {
       "job": "키네시스",
       "name": "싸이킥 스매싱 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KELAKDPBMA.webp"
+      "iconFile": "KELAKDPBMA.webp",
+      "iconAssetId": "458669a7-c9c8-4b7b-a46c-6121a5d7c11a"
     },
     {
       "job": "키네시스",
       "name": "얼티메이트 : 오프닝 VI/얼티메이트 : 갬빗 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KELAKDPBMD.webp"
+      "iconFile": "KELAKDPBMD.webp",
+      "iconAssetId": "002c793d-1553-40c6-bb17-4ea4316cc4c3"
     },
     {
       "job": "키네시스",
       "name": "텔레키네시스 VI",
       "apiType": "마스터리 코어",
-      "iconFile": "KELAKDOBMI.webp"
+      "iconFile": "KELAKDOBMI.webp",
+      "iconAssetId": "1c954d2f-7134-469b-baf1-1a9427a736eb"
     },
     {
       "job": "키네시스",
       "name": "얼티메이트 : 체크메이트",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAJG.webp"
+      "iconFile": "KAPCLHKAJG.webp",
+      "iconAssetId": "4df7bdf0-3fbb-4cbf-a197-eb9232b6bb1d"
     },
     {
       "job": "키네시스",
       "name": "싸이킥 노바",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAJH.webp"
+      "iconFile": "KAPCLHKAJH.webp",
+      "iconAssetId": "749b0b6f-04fe-41e0-ae09-d355100d60fc"
     },
     {
       "job": "키네시스",
       "name": "싸이킥 불릿",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAJI.webp"
+      "iconFile": "KAPCLHKAJI.webp",
+      "iconAssetId": "2505b536-7afe-4f8a-9eee-3d857aeca735"
     },
     {
       "job": "키네시스",
       "name": "싸이킥 보드",
       "apiType": "강화 코어",
-      "iconFile": "KAPCLHKAJJ.webp"
+      "iconFile": "KAPCLHKAJJ.webp",
+      "iconAssetId": "4087d496-1260-488f-be62-de591be559fe"
     },
     {
       "job": "키네시스",
       "name": "솔 야누스",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMA.webp"
+      "iconFile": "KAPCLHPBMA.webp",
+      "iconAssetId": "de2a810b-b5fd-4a6b-92c7-4dbb0317043b"
     },
     {
       "job": "키네시스",
       "name": "솔 헤카테",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPBMF.webp"
+      "iconFile": "KAPCLHPBMF.webp",
+      "iconAssetId": "36b8ccf9-60ab-459a-a889-eef60479e927"
     },
     {
       "job": "키네시스",
       "name": "이계의 잔상 VI",
       "apiType": "공용 코어",
-      "iconFile": "KAPCLHPAMG.webp"
+      "iconFile": "KAPCLHPAMG.webp",
+      "iconAssetId": "2ca428d6-6367-4138-bf2c-9a448ecb4a70"
     }
   ],
   "stats": [

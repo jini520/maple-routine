@@ -20,7 +20,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { ScrollView } from 'react-native'
 import { Image, Pressable, View } from 'react-native'
 
-import { getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
+import { appImage } from '../../lib/assets/asset-lookup'
 
 import { useBossProfitPeriod } from '../../features/boss-profit/period-query'
 import type { BossProfitWeeklySubtotal, CharacterCardStub } from '../../features/boss-profit/period-snapshot'
@@ -108,7 +108,7 @@ export function BossProfitScreen(): React.JSX.Element {
   const faq = useFaqSheet('profit')
   // 총 수익 금액 옆 표식. 입력 카드의 메소 표식과 같은 그림이다. 원 안에 넣지 않는다. 32x31 픽셀 아트라 원에 가두면 그
   // 원이 크기를 정하게 된다. 렌더 안에서 찾는다. 모듈 최상위에서 찾으면 그림 목록을 받기 전의 빈 값으로 굳는다.
-  const mesoPouchIcon = getItemIconUrlByFile('meso_pouch.webp')
+  const mesoPouchIcon = appImage('meso_pouch')
   const {
     tab,
     periodKey,

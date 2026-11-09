@@ -31,16 +31,16 @@ export interface HexaCoreKind {
   readonly key: string
   readonly name: string
   readonly maxLevel: number
-  /** `src/assets/items/` 의 그림 파일. 종류 라벨이 붙은 그림이다. */
-  readonly icon: string
+  /** 종류 라벨이 붙은 그림의 id. */
+  readonly iconAssetId: string
 }
 
 export interface HexaCore {
   /** 기록의 `item_key`. 넥슨이 준 이름에서 앞뒤 공백을 걷은 글자다. */
   readonly name: string
   readonly apiType: string
-  /** `skills/` 의 그림 파일. */
-  readonly icon: string
+  /** 코어 스킬 그림의 id. */
+  readonly iconAssetId: string
   /** 종류 표에 없는 API 타입이면 `null` 이고 그 코어는 비용을 낼 수 없다. */
   readonly kind: HexaCoreKind | null
 }
@@ -55,8 +55,15 @@ const trimmed = (name: string): string => name.normalize('NFC').trim()
 
 function toKind(row: Row): HexaCoreKindRow | null {
   if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isNonEmptyString(row.apiType)) return null
-  if (!isBoolean(row.isDefault) || !isPositiveInteger(row.maxLevel) || !isNonEmptyString(row.iconFile)) return null
-  return { key: row.key, name: row.name, apiType: row.apiType, isDefault: row.isDefault, maxLevel: row.maxLevel, iconFile: row.iconFile }
+  if (!isBoolean(row.isDefault) || !isPositiveInteger(row.maxLevel) || !isNonEmptyString(row.iconAssetId)) return null
+  return {
+    key: row.key,
+    name: row.name,
+    apiType: row.apiType,
+    isDefault: row.isDefault,
+    maxLevel: row.maxLevel,
+    iconAssetId: row.iconAssetId,
+  }
 }
 
 function toLevelCost(row: Row): HexaCoreLevelCostRow | null {
@@ -72,8 +79,8 @@ function toNameKind(row: Row): HexaCoreNameKindRow | null {
 
 function toJobCore(row: Row): HexaJobCoreRow | null {
   if (!isNonEmptyString(row.job) || !isNonEmptyString(row.name)) return null
-  if (!isNonEmptyString(row.apiType) || !isNonEmptyString(row.iconFile)) return null
-  return { job: row.job, name: trimmed(row.name), apiType: row.apiType, iconFile: row.iconFile }
+  if (!isNonEmptyString(row.apiType) || !isNonEmptyString(row.iconAssetId)) return null
+  return { job: row.job, name: trimmed(row.name), apiType: row.apiType, iconAssetId: row.iconAssetId }
 }
 
 function toStat(row: Row): HexaStatRow | null {
@@ -112,7 +119,7 @@ export const hexaMatrixTable = gameTable(
 
 const index = derive(hexaMatrixTable, (table) => {
   const kinds = new Map<string, HexaCoreKind>(
-    table.kinds.map((row) => [row.key, { key: row.key, name: row.name, maxLevel: row.maxLevel, icon: row.iconFile }]),
+    table.kinds.map((row) => [row.key, { key: row.key, name: row.name, maxLevel: row.maxLevel, iconAssetId: row.iconAssetId }]),
   )
   const defaults = new Map<string, HexaCoreKind>()
   for (const row of table.kinds) {
@@ -130,7 +137,7 @@ const index = derive(hexaMatrixTable, (table) => {
   const coresByJob = new Map<string, HexaCore[]>()
   const coresByName = new Map<string, HexaCore>()
   for (const row of table.jobCores) {
-    const core: HexaCore = { name: row.name, apiType: row.apiType, icon: row.iconFile, kind: kindOf(row) }
+    const core: HexaCore = { name: row.name, apiType: row.apiType, iconAssetId: row.iconAssetId, kind: kindOf(row) }
     const list = coresByJob.get(row.job)
     if (list === undefined) coresByJob.set(row.job, [core])
     else list.push(core)

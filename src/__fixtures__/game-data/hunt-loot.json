@@ -6,6 +6,7 @@
       "kind": "fragment",
       "name": "솔 에르다 조각",
       "iconFile": "sol_erda_fragment.webp",
+      "iconAssetId": "ee64d8fa-0fce-41d3-aee9-abf058a3cab3",
       "npcPriceMeso": null,
       "from": null,
       "until": null
@@ -15,6 +16,7 @@
       "kind": "consumable",
       "name": "순록의 우유",
       "iconFile": "reindeer_milk.webp",
+      "iconAssetId": "835ac291-e5ba-4d00-a010-015ffd60bbda",
       "npcPriceMeso": 2750,
       "from": null,
       "until": null
@@ -24,6 +26,7 @@
       "kind": "consumable",
       "name": "황혼의 이슬",
       "iconFile": "sunset_dew.webp",
+      "iconAssetId": "24d8cfba-927b-414c-853d-a43664c5a52e",
       "npcPriceMeso": 5100,
       "from": null,
       "until": null
@@ -33,6 +36,7 @@
       "kind": "event",
       "name": "수상한 돋보기",
       "iconFile": "suspicious_magnifier.webp",
+      "iconAssetId": "78c86d45-0ed4-4f39-900d-74b01b3e3d9f",
       "npcPriceMeso": null,
       "from": "2026-10-22",
       "until": "2026-11-19"
@@ -42,6 +46,7 @@
       "kind": "event",
       "name": "탐정예티의 수상한 돋보기",
       "iconFile": "detective_yeti_suspicious_magnifier.webp",
+      "iconAssetId": "030e9e0f-491f-429d-85f3-026d056a3912",
       "npcPriceMeso": null,
       "from": "2026-10-22",
       "until": "2026-11-19"

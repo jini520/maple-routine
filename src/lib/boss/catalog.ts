@@ -38,7 +38,7 @@ function toDifficulty(row: Row): BossCatalogDifficulty | null {
 
 function toBoss(row: Row): BossCatalogBoss | null {
   if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isNonEmptyString(row.alias)) return null
-  if (!isNonEmptyString(row.portraitSlug) || !isOneOf(row.cycle, BOSS_CATALOG_CYCLES)) return null
+  if (!isNonEmptyString(row.portraitAssetId) || !isOneOf(row.cycle, BOSS_CATALOG_CYCLES)) return null
   const difficulties = rowsOf(row.difficulties, toDifficulty)
   if (difficulties === null || !uniqueBy(difficulties, (each) => each.difficulty)) return null
   const from = optional(row.from, isPeriodText)
@@ -49,7 +49,7 @@ function toBoss(row: Row): BossCatalogBoss | null {
     name: row.name,
     alias: row.alias,
     cycle: row.cycle,
-    portraitSlug: row.portraitSlug,
+    portraitAssetId: row.portraitAssetId,
     difficulties,
     from,
     until,

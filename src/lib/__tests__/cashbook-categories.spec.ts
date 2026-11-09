@@ -1,5 +1,5 @@
 import bundled from '../../__fixtures__/game-data/cashbook-categories.json'
-import { getItemIconUrlByFile } from '../assets/asset-lookup'
+import { getAssetImage } from '../assets/asset-lookup'
 import {
   cashbookCategoriesTable,
   countsQuantity,
@@ -8,6 +8,7 @@ import {
   incomeCategoryKeyOfName,
   incomePickerCategories,
   itemKindNameOf,
+  itemKinds,
   parseCashbookCategories,
   spendCategories,
   spendCategoryKeyOfName,
@@ -28,7 +29,7 @@ function withCategories(categories: unknown[]): void {
 describe('가계부 갈래 표', () => {
   it('갈래 카드 그림을 모두 찾는다', () => {
     for (const each of [...spendCategories(), ...incomeCategories()]) {
-      expect(getItemIconUrlByFile(each.icon)).not.toBeNull()
+      expect(getAssetImage(each.iconAssetId)).not.toBeNull()
     }
   })
 
@@ -73,6 +74,9 @@ describe('가계부 갈래 표', () => {
   it('수량과 관세는 아이템 종류 표의 단위 · 관세 칸을 따른다', () => {
     expect([countsQuantity('equipment'), hasTariff('equipment')]).toEqual([false, true])
     expect([countsQuantity('consumable'), hasTariff('consumable')]).toEqual([true, false])
+    // 캐시 아이템도 경매장에서 사고팔아 종류로 고를 수 있다. 수량을 묻고 구매 관세가 붙는다(사용자 지정 2026-11-08).
+    expect(itemKinds().map((each) => each.key)).toEqual(['equipment', 'consumable', 'etc', 'cash'])
+    expect([countsQuantity('cash'), hasTariff('cash')]).toEqual([true, true])
 
     const parsed = parseCashbookCategories({
       ...bundled,

@@ -14,19 +14,20 @@
 | `types/game-data.ts` | 칸 이름(`GAME_DATA_SECTIONS`)과 칸마다의 형식 |
 | `lib/game-data/table.ts` | 칸 하나의 현재 값(`gameTable` · `createTable` · `derive`) |
 | `lib/game-data/initial.ts` | 표의 첫 값. 앱은 빈 표이고, jest 는 `src/__fixtures__/game-data/initial.ts` 로 바꿔 fixture 로 시작한다 |
-| `lib/game-data/sections.ts` | 칸 열아홉의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
+| `lib/game-data/sections.ts` | 칸 스물의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
 | `lib/assets/asset-files.ts` | 그림 목록(`assets` 칸)과 받은 그림의 `{ uri, width, height }` |
 | `lib/assets/image-crops.ts` | 크롭 표(`imageCrops` 칸) |
-| `lib/assets/asset-lookup.ts` | 이름표를 그림 · 크롭으로 바꾸는 조회 |
+| `lib/assets/asset-lookup.ts` | 그림 칸의 id · 앱 그림 key 를 그림 · 크롭으로 바꾸는 조회 |
+| `lib/assets/app-images.ts` | 붙일 표가 없는 앱 그림(`appImages` 칸)의 key 와 드롭 연출 프레임 |
 | `features/game-data/sync.ts` | 켤 때 사본 읽기 · 잠근 채 받기 · 돌아올 때 조용히 받기(`startGameData` · `refreshGameData`) · 칸 구독 훅(`useGameTable`) |
 | `app/game-data/GameDataLock.tsx` | 다 받기 전의 잠금 화면 |
 | `server/game-data.ts` | `GET /v1/game-data` 를 ETag 와 함께 받고 칸마다 검사한다 |
 | `storage/game-data-copy.ts` | 기기 사본(SQLite `game_data_sections` · `game_data_meta`) |
 | `storage/adapters/rn-asset-files.ts` | 그림 파일(문서 디렉터리 `game-assets/`) |
-| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 열아홉. 운영 서버 응답을 떠 둔 것이다 |
+| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 스물. 운영 서버 응답을 떠 둔 것이다 |
 | `lib/boss/boss-profit-period.ts` | 줄의 유효 기간 판정(`isEffectiveIn` · `isEffectiveAnytimeIn`) |
 
-## 칸 열아홉
+## 칸 스물
 
 | 칸 | 담는 것 | 조회 모듈 | 관리 화면 |
 |---|---|---|---|
@@ -37,18 +38,19 @@
 | `crystalPrices` | 보스 · 난이도마다 결정석 가격 줄 106개. 한 조합에 기간 줄이 여럿일 수 있다 | `lib/boss/boss-crystal-prices` | `/admin/crystal-prices` |
 | `worlds` | 월드 19개의 key · 넥슨 표기 이름 · 엠블럼 · 챌린저스 여부 · 이벤트 월드 여부. 월드 key 마스터 표다 | `lib/world/worlds` | `/admin/worlds` |
 | `spendCatalog` | 가계부 지출 목록. 묶음 12(카드 제목) · 타일 54 · 항목 70(원본 이름 · 줄인 이름) 과 항목의 축 값 · 형태, 형태 이름 둘, 규칙(관세율 · 세라자르 주화 가격) | `lib/cashbook/spend-catalog` | `/admin/spend-catalog` |
-| `cashbookCategories` | 가계부 수입 · 지출 갈래 11개의 이름 · 카드 제목 · 그림 · 설명 · 단위와 아이템 종류 3개(장비 · 소비 · 기타)의 이름 · 단위 · 관세 여부 | `lib/cashbook/categories` | `/admin/cashbook-categories` |
+| `cashbookCategories` | 가계부 수입 · 지출 갈래 11개의 이름 · 카드 제목 · 그림 · 설명 · 단위와 아이템 종류 4개(장비 · 소비 · 기타 · 캐시)의 이름 · 단위 · 관세 여부 | `lib/cashbook/categories` | `/admin/cashbook-categories` |
 | `symbolCosts` | 심볼 묶음 3 · 심볼 14 · 레벨별 강화 비용 줄 194개. 비용 줄에는 기간이 있다 | `lib/cashbook/symbol-costs` | `/admin/symbol-costs` |
 | `hexaMatrix` | 헥사 코어 종류 6 · 종류별 레벨 비용 줄 180개(조각 · 솔 에르다) · 기본 종류가 아닌 코어 이름 50 · 직업 48 개의 코어 672 · 헥사 스탯 3 과 활성화 조각. 코어 그림은 `skills/` 에 있다 | `lib/cashbook/hexa-matrix` | `/admin/hexa-matrix` |
-| `contents` | 컨텐츠 분류 8 · 컨텐츠 41개의 넥슨 이름 · 표시 이름 · 배경 · 수동 모드 상한 · 요구 레벨 · 공유 범위 · 유효 기간. 컨텐츠 key 마스터 표다 | `lib/scheduler/contents` · `scheduler-content-scope` · `content-categories` | `/admin/contents` |
+| `contents` | 컨텐츠 분류 8 · 컨텐츠 41개의 넥슨 이름 · 표시 이름 · 배경 · 지역 아이콘 · 수동 모드 상한 · 요구 레벨 · 공유 범위 · 유효 기간. 컨텐츠 key 마스터 표다 | `lib/scheduler/contents` · `scheduler-content-scope` · `content-categories` | `/admin/contents` |
 | `equipmentItems` | 강화 비용을 매길 장비 467개의 key · 붙여 쓴 이름 · 착용 레벨. 장비 key 마스터 표다 | `lib/equipment/equipment-items` | `/admin/equipment-items` |
 | `enhancementCosts` | 잠재 재설정 비용 32줄 · 소울 잠재 재설정 비용 4줄 · 스타포스 단계 30줄과 규칙 셋. 식은 `lib/enhancement/cost.ts` 에 있다 | `lib/enhancement/cost` | `/admin/enhancement-costs` |
-| `mvpGrades` | MVP 등급 7개의 경매장 수수료와 스타포스 할인. 순서가 등급의 높낮이다 | `lib/mvp/grades` | `/admin/mvp-grades` |
+| `mvpGrades` | MVP 등급 7개의 경매장 수수료 · 스타포스 할인 · 명패 그림. 순서가 등급의 높낮이다 | `lib/mvp/grades` | `/admin/mvp-grades` |
 | `huntingGrounds` | 사냥 지역 21 · 사냥터 408 · 몬스터 레벨 줄 460. 계산 상수는 `lib/cashbook/hunting-meso.ts` 에 있다 | `lib/cashbook/hunting-grounds` | `/admin/hunting-grounds` |
 | `huntLoot` | 가계부 사냥 전리품 판매의 아이템 5개(조각 1 · 소비 2 · 이벤트 2)의 key · 분류 · 이름 · 그림 · NPC 개당 가격 · 유효 기간 | `lib/cashbook/hunt-loot` | `/admin/hunt-loot` |
-| `assets` | 앱이 받는 그림 약 350장의 경로 · 내용 해시 · 바이트 · 가로 · 세로 | `lib/assets/asset-files` | `/admin/assets` |
+| `assets` | 앱이 받는 그림 약 930장의 id · 경로 · 내용 해시 · 바이트 · 가로 · 세로 | `lib/assets/asset-files` | `/admin/assets` |
 | `imageCrops` | 보스 초상(카드 · 원형 아이콘 · 파티 모달 띠)과 컨텐츠 지역 지도의 크롭 | `lib/assets/image-crops` | `/admin/assets` |
 | `faqs` | 화면 FAQ 의 묶음(key · 제목)과 문항(질문 · 답 블록). 묶음 하나가 시트 하나다([[ADR-150]]) | `lib/faq/faqs` | `/admin/faqs` |
+| `appImages` | 붙일 표가 없는 앱 그림 72장의 key 와 그림 id. 결정석 칩 · 강화 다섯 · 메소 주머니 · 포스 · 모르는 캐릭터 · 드롭 연출 프레임 등이다([[ADR-187]] 결정 8) | `lib/assets/app-images` | 없음(S4 에서 만든다) |
 
 응답은 서버 표의 줄을 그대로 펼친 목록이다. 보스 · 난이도 · 분류로 묶거나 지역 안에 사냥터를 묶는 일은 조회 모듈이 한다.
 부르는 쪽은 값이 기기 사본에서 왔는지 서버 응답인지 모른다.
@@ -65,7 +67,7 @@
 
 ## 값이 기기에 반영되는 순서
 
-1. 켤 때 `startGameData` 가 기기 사본을 읽는다. 계약 판이 `GAME_DATA_CONTRACT` 와 같고 칸 열아홉이 계약을 지키면 표를
+1. 켤 때 `startGameData` 가 기기 사본을 읽는다. 계약 판이 `GAME_DATA_CONTRACT` 와 같고 칸 스물이 계약을 지키면 표를
    세우고 바로 연다.
 2. 사본이 없거나 읽을 수 없으면 잠금 화면을 세운다. 먼저 OTA 부팅 확인(`checkOnBoot`)이 끝나기를 기다린다. 새 번들이
    계약 판을 바꾸면 먼저 받은 게임 데이터를 재시작 뒤 또 받기 때문이다. 그다음 게임 데이터를 받는다. 처음 실행(사본이
@@ -79,8 +81,13 @@
 - 기록은 이름이 아니라 key 를 저장한다. 이름 칸에는 적을 때의 이름을 함께 둔다. 화면은 key 로 지금 이름을 찾고, 표에 없는
   key 면 저장된 이름을 보인다.
 - 넥슨 API 이름은 NFC 로 맞추고 공백을 모두 지운 뒤 완전히 같은 줄로 key 를 찾는다. 못 찾으면 key 는 `null` 이다.
-- 그림을 가리키는 칸(`portraitSlug` · `backgroundMap` · `iconFile` · `emblem`)은 그림 목록의 경로로 푼다. 서버는 그림을 그림 표의
-  id 로 들고 있다가 이 경로로 바꿔 내고, 쓰기 때 그림 표에 없는 그림은 거절한다. 그래서 새 보스나 새 아이템도 관리 화면에서 그림을 먼저 올리면 앱 빌드 없이 그림까지 나온다.
+- 그림을 가리키는 칸(`portraitAssetId` · `iconAssetId` · `emblemAssetId` · `backgroundMapAssetId` 등)은 그림 목록(`assets` 칸)의
+  id 다. 앱은 이 id 로 기기의 파일을 찾고, 경로는 보지 않는다. 서버는 쓰기 때 그림 표에 없는 그림을 거절한다. 그래서 새 보스나
+  새 아이템도 관리 화면에서 그림을 먼저 올리면 앱 빌드 없이 그림까지 나온다([[ADR-187]] 결정 4).
+- 서버는 옛 앱을 위해 옛 글자 칸(`portraitSlug` · `iconFile` · `emblem` · `backgroundMap` 등)도 함께 낸다. 지금 앱은 그 칸을
+  읽지 않는다. 옛 버전을 잠근 뒤 서버에서 지운다.
+- 앱 코드가 그림을 이름으로 직접 찾지 않는다. 붙일 표가 없는 그림은 `appImages` 칸의 key 로 찾는다. key 는 앱 코드
+  (`APP_IMAGE_KEYS`)가 정하고, 표에 없는 key 면 그림 없이 선다.
 
 ## 유효 기간
 

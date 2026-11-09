@@ -5,6 +5,7 @@
       "key": "scania",
       "name": "스카니아",
       "emblem": "scania",
+      "emblemAssetId": "ecab282f-8d5f-43ba-8afc-c7fdc91364d9",
       "challengers": false,
       "event": false
     },
@@ -12,6 +13,7 @@
       "key": "bera",
       "name": "베라",
       "emblem": "bera",
+      "emblemAssetId": "6f685cc3-7b10-480e-8458-42b15537fda6",
       "challengers": false,
       "event": false
     },
@@ -19,6 +21,7 @@
       "key": "luna",
       "name": "루나",
       "emblem": "luna",
+      "emblemAssetId": "35067314-b7c4-401d-a5d5-d827aaa21501",
       "challengers": false,
       "event": false
     },
@@ -26,6 +29,7 @@
       "key": "zenith",
       "name": "제니스",
       "emblem": "zenith",
+      "emblemAssetId": "f9aa8986-69cd-4394-ace0-71afd85af4ba",
       "challengers": false,
       "event": false
     },
@@ -33,6 +37,7 @@
       "key": "croa",
       "name": "크로아",
       "emblem": "croa",
+      "emblemAssetId": "802c57d6-c3c4-4ff0-839b-366209435f4c",
       "challengers": false,
       "event": false
     },
@@ -40,6 +45,7 @@
       "key": "union",
       "name": "유니온",
       "emblem": "union",
+      "emblemAssetId": "1cd8b897-ccc1-47fa-88ce-94816c4391e3",
       "challengers": false,
       "event": false
     },
@@ -47,6 +53,7 @@
       "key": "elysium",
       "name": "엘리시움",
       "emblem": "elysium",
+      "emblemAssetId": "0bb2a7b0-20ee-43ed-8a82-8b8f95b8b286",
       "challengers": false,
       "event": false
     },
@@ -54,6 +61,7 @@
       "key": "enosis",
       "name": "이노시스",
       "emblem": "enosis",
+      "emblemAssetId": "c828c9f8-10af-443b-ae80-a582118b812b",
       "challengers": false,
       "event": false
     },
@@ -61,6 +69,7 @@
       "key": "red",
       "name": "레드",
       "emblem": "red",
+      "emblemAssetId": "bd4f0c68-225a-4b0e-b556-172737af7c11",
       "challengers": false,
       "event": false
     },
@@ -68,6 +77,7 @@
       "key": "aurora",
       "name": "오로라",
       "emblem": "aurora",
+      "emblemAssetId": "8f015e69-cd7a-479f-9571-3974246c02ac",
       "challengers": false,
       "event": false
     },
@@ -75,6 +85,7 @@
       "key": "arcane",
       "name": "아케인",
       "emblem": "arcane",
+      "emblemAssetId": "dd4d7417-4bc9-4379-b769-e3f3ef701c02",
       "challengers": false,
       "event": false
     },
@@ -82,6 +93,7 @@
       "key": "nova",
       "name": "노바",
       "emblem": "nova",
+      "emblemAssetId": "f88dc86d-d9d6-4ae2-822d-ed90a61b45a4",
       "challengers": false,
       "event": false
     },
@@ -89,6 +101,7 @@
       "key": "eos",
       "name": "에오스",
       "emblem": "eos",
+      "emblemAssetId": "d6d98cf8-34c8-447f-9a12-c231105c4ad2",
       "challengers": false,
       "event": false
     },
@@ -96,6 +109,7 @@
       "key": "helios",
       "name": "핼리오스",
       "emblem": "helios",
+      "emblemAssetId": "7a31c2e7-fdeb-43f1-ab62-2b21f356bfbd",
       "challengers": false,
       "event": false
     },
@@ -103,6 +117,7 @@
       "key": "challengers",
       "name": "챌린저스",
       "emblem": "challengers",
+      "emblemAssetId": "026acfb7-66e5-46b3-9cb9-4ab687106ac5",
       "challengers": true,
       "event": false
     },
@@ -110,6 +125,7 @@
       "key": "challengers_2",
       "name": "챌린저스2",
       "emblem": "challengers",
+      "emblemAssetId": "026acfb7-66e5-46b3-9cb9-4ab687106ac5",
       "challengers": true,
       "event": false
     },
@@ -117,6 +133,7 @@
       "key": "challengers_3",
       "name": "챌린저스3",
       "emblem": "challengers",
+      "emblemAssetId": "026acfb7-66e5-46b3-9cb9-4ab687106ac5",
       "challengers": true,
       "event": false
     },
@@ -124,6 +141,7 @@
       "key": "challengers_4",
       "name": "챌린저스4",
       "emblem": "challengers",
+      "emblemAssetId": "026acfb7-66e5-46b3-9cb9-4ab687106ac5",
       "challengers": true,
       "event": false
     },
@@ -131,6 +149,7 @@
       "key": "special",
       "name": "스페셜",
       "emblem": null,
+      "emblemAssetId": null,
       "challengers": false,
       "event": true
     }

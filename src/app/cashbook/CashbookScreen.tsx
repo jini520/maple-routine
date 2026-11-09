@@ -114,7 +114,7 @@ import { useLedgerDays } from '../../features/cashbook/ledger-query'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
 import { loadRememberedLevels } from '../../features/cashbook/remembered-levels'
 // 보스 수익 탭의 행이 초상을 찾는 그 함수다. 같은 보스가 두 화면에서 다른 그림이면 안 된다.
-import { bossPortraitSlugOf } from '../../lib/boss/bosses'
+import { bossPortraitAssetIdOf } from '../../lib/boss/bosses'
 import { dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import { useResetBoundaryTick } from '../../features/query/reset-timer'
@@ -323,7 +323,7 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
               <View testID={`cashbook-boss-tile-${boss.bossKey}|${boss.difficulty}`} className="items-center gap-1">
                 <View style={{ borderRadius: BOSS_PORTRAIT_PX / 2, boxShadow: shadow }}>
                   <BossPortrait
-                    portraitSlug={bossPortraitSlugOf(boss.bossKey)}
+                    portraitAssetId={bossPortraitAssetIdOf(boss.bossKey)}
                     // 이름 줄이 없으므로 그 정보는 여기서만 말한다.
                     label={`${DIFFICULTY_NAME[boss.difficulty]} ${boss.bossName}`}
                     size={BOSS_PORTRAIT_PX}

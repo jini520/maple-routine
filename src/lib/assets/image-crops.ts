@@ -9,10 +9,10 @@ const SIZE = /^\d+(\.\d+)?% auto$/
 const POSITION = /^-?\d+(\.\d+)?% -?\d+(\.\d+)?%$/
 
 function toCrop(row: Row): ImageCropRow | null {
-  if (!isOneOf(row.kind, IMAGE_CROP_KINDS) || !isNonEmptyString(row.slug)) return null
+  if (!isOneOf(row.kind, IMAGE_CROP_KINDS) || !isNonEmptyString(row.assetId)) return null
   if (typeof row.size !== 'string' || !SIZE.test(row.size)) return null
   if (typeof row.position !== 'string' || !POSITION.test(row.position)) return null
-  return { kind: row.kind, slug: row.slug.normalize('NFC'), size: row.size, position: row.position }
+  return { kind: row.kind, assetId: row.assetId, size: row.size, position: row.position }
 }
 
 /** 크롭이 하나도 없어도 된다. 없는 그림은 기본 크롭으로 그린다. */
@@ -21,7 +21,7 @@ export function parseImageCrops(value: unknown): ImageCropsTable | null {
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
   const crops = rowsOf(value.crops, toCrop, { allowEmpty: true })
-  if (crops === null || !uniqueBy(crops, (crop) => `${crop.kind}/${crop.slug}`)) return null
+  if (crops === null || !uniqueBy(crops, (crop) => `${crop.kind}/${crop.assetId}`)) return null
   return { updatedAt, crops }
 }
 
@@ -29,13 +29,13 @@ export const imageCropsTable = gameTable<ImageCropsTable>('imageCrops', { update
 
 const byKey = derive(
   imageCropsTable,
-  (table) => new Map(table.crops.map((crop) => [`${crop.kind}/${crop.slug}`, { size: crop.size, position: crop.position }])),
+  (table) => new Map(table.crops.map((crop) => [`${crop.kind}/${crop.assetId}`, { size: crop.size, position: crop.position }])),
 )
 
 const DEFAULT_CROP: ImageCrop = { size: 'cover', position: 'center' }
 
-/** 표에 없는 그림은 `cover` · 가운데다. */
-export function imageCropOf(kind: ImageCropKind, slug: string | null): ImageCrop {
-  if (slug === null) return DEFAULT_CROP
-  return byKey().get(`${kind}/${slug.normalize('NFC')}`) ?? DEFAULT_CROP
+/** 그림 id 의 크롭. 표에 없는 그림과 빈 칸은 `cover` · 가운데다. */
+export function imageCropOf(kind: ImageCropKind, assetId: string | null | undefined): ImageCrop {
+  if (assetId == null) return DEFAULT_CROP
+  return byKey().get(`${kind}/${assetId}`) ?? DEFAULT_CROP
 }

@@ -15,7 +15,7 @@
 import { Image, Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms'
-import { getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
+import { getAssetImage } from '../../lib/assets/asset-lookup'
 import type { CashbookCategory } from '../../lib/cashbook/categories'
 
 /** 카드 그림의 한 변. 이름과 나란히 한 줄에 선다. */
@@ -45,7 +45,7 @@ export function CategoryPicker<T extends string>(props: {
           패딩(2)이 만든다. 카드 안쪽 여백 4 와 더해 가장자리는 6, 칸 사이는 4 다. */}
       <View className="flex-row flex-wrap rounded-[14px] bg-surface p-1">
         {props.categories.map((category) => {
-          const icon = getItemIconUrlByFile(category.icon)
+          const icon = getAssetImage(category.iconAssetId)
           return (
             <Pressable
               key={category.key}

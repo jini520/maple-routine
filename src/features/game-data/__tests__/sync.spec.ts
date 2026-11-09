@@ -40,7 +40,7 @@ const clearCopy = jest.mocked(clearGameDataCopy)
 
 const SHA_A = 'a'.repeat(64)
 const SHA_B = 'b'.repeat(64)
-const file = (path: string, sha: string, size = 100) => ({ path, file: `${sha}.webp`, sha256: sha, size, width: 1, height: 1 })
+const file = (path: string, sha: string, size = 100) => ({ id: path, path, file: `${sha}.webp`, sha256: sha, size, width: 1, height: 1 })
 
 /** fixture 칸 전부에 그림 목록만 바꾼 서버 응답. */
 function 응답(files: ReturnType<typeof file>[], worldsUpdatedAt = 't1', etag = '"e1"'): GameDataFetch {

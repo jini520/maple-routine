@@ -35,9 +35,9 @@ const FORCE_TYPES = ['arcane', 'authentic'] as const
 
 function toRegion(row: Row): HuntingRegionRow | null {
   if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isOneOf(row.forceType, FORCE_TYPES)) return null
-  const iconMap = optional(row.iconMap, isNonEmptyString)
-  if (iconMap === false) return null
-  return { key: row.key, name: row.name, forceType: row.forceType, iconMap: iconMap ?? null }
+  const iconAssetId = optional(row.iconAssetId, isNonEmptyString)
+  if (iconAssetId === false) return null
+  return { key: row.key, name: row.name, forceType: row.forceType, iconAssetId: iconAssetId ?? null }
 }
 
 function toGround(row: Row): HuntingGroundRow | null {
@@ -97,7 +97,7 @@ const regions = derive(huntingGroundsTable, (table): readonly HuntingRegion[] =>
     key: row.key,
     name: row.name,
     forceType: row.forceType,
-    iconMap: row.iconMap,
+    iconAssetId: row.iconAssetId,
     grounds: groundsByRegion.get(row.key) ?? [],
   }))
 })

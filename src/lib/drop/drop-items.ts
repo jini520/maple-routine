@@ -22,9 +22,9 @@ export type DropItem = DropItemRow
 
 function toItem(row: Row): DropItemRow | null {
   if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isBoolean(row.valuable)) return null
-  const iconFile = optional(row.iconFile, isNonEmptyString)
-  if (iconFile === false) return null
-  return compact({ key: row.key, name: row.name, iconFile, valuable: row.valuable })
+  const iconAssetId = optional(row.iconAssetId, isNonEmptyString)
+  if (iconAssetId === false) return null
+  return compact({ key: row.key, name: row.name, iconAssetId, valuable: row.valuable })
 }
 
 /** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */

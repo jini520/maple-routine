@@ -38,7 +38,7 @@ import {
   isLatestPeriod,
 } from '../../lib/boss/boss-profit-period'
 import { dropPayoutMeso, dropSplitLabel } from '../../lib/drop/drop-price'
-import { dropItemIconOf } from '../../lib/assets/asset-lookup'
+import { appImage, dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
 import type { RootStackParamList } from '../../navigation/routes'
 import type { RecordedDrop } from '../../types/drops'
@@ -70,7 +70,6 @@ import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
 import { getMaxPartySize } from '../../lib/boss/bosses'
-import { getItemIconUrlByFile } from '../../lib/assets/asset-lookup'
 
 /** 한 연쇄 안에서 매긴 값. 스토어를 다시 읽어도 이전으로 돌아가면 이 값이 보인다. */
 interface PriceEdit {
@@ -218,7 +217,7 @@ export function DropPriceScreen(): React.JSX.Element {
   const entered = allEntries.filter((entry) => entry.drop.priceState === 'entered').length
   const excluded = allEntries.filter((entry) => entry.drop.priceState === 'excluded').length
   const unpriced = allEntries.length - entered - excluded
-  const mesoPouchIcon = getItemIconUrlByFile('meso_pouch.webp')
+  const mesoPouchIcon = appImage('meso_pouch')
   const periodLabel = formatBossProfitPeriodLabel(cycle, week, now)
   /**
    * **이 기간을 읽었나.** `status` 만 보면 지난번 기간의 `ready` 를 이번 기간의 사실로 읽는다.

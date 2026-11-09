@@ -147,7 +147,7 @@ function registeredBoss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
     isComplete: false,
     ownComplete: false,
     bossKey: 'zakum',
-    portraitSlug: 'zakum',
+    portraitAssetId: 'zakum',
     isSeasonBoss: false,
     ...overrides,
   }

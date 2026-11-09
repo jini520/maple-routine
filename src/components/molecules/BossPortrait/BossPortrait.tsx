@@ -17,12 +17,12 @@ import { imageCropStyle, resolveImageCropLayout, type ImageCrop } from '../../..
 import { Text } from '../../atoms'
 
 export interface BossPortraitProps {
-  portraitSlug: string | null
+  portraitAssetId: string | null
   /** 읽어 주는 이름. 그림이 없어도 붙는다. */
   label: string
   /** 상자 한 변(px). 기본 40. */
   size?: number
-  /** 안 주면 `portraitSlug` 로 원형 아이콘 표에서 찾는다. */
+  /** 안 주면 `portraitAssetId` 로 원형 아이콘 표에서 찾는다. */
   crop?: ImageCrop
   /**
    * 모서리 모양. 기본 원형은 줄 안의 아바타 자리이고, `'square'` 는 격자에 서는 타일이다.
@@ -37,7 +37,7 @@ export function BossPortrait(props: BossPortraitProps): React.JSX.Element {
   const size = props.size ?? 40
   // 플레이스홀더도 같은 모양을 쓴다. 그림 유무로 모서리가 갈리면 격자에서 그 칸만 튄다.
   const shapeClass = props.shape === 'square' ? 'rounded-lg' : 'rounded-full'
-  const url = getBossPortraitUrl(props.portraitSlug)
+  const url = getBossPortraitUrl(props.portraitAssetId)
 
   if (url === null) {
     return (
@@ -52,7 +52,7 @@ export function BossPortrait(props: BossPortraitProps): React.JSX.Element {
     )
   }
 
-  const crop = props.crop ?? getBossPortraitIconCrop(props.portraitSlug)
+  const crop = props.crop ?? getBossPortraitIconCrop(props.portraitAssetId)
   const layout = resolveImageCropLayout(crop, imageNaturalSize(url))
 
   return (

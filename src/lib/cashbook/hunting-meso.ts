@@ -79,9 +79,6 @@ export function killedMobsOf(mobs: number, missedMobs: number): number {
  * 재획비는 합산 결과에 곱하는 것이라 둘 다 합연산으로 두면 안 된다. 유니온의 부만 켠 150% 에
  * 1.2 가 걸려 ×1.8 이 된다.
  *
- * `icon` 은 `assets/items/` 의 파일명이다. 칩이 글자가 아니라 그림이라 없으면 칩이 빈 채로
- * 뜬다. 에러가 아니다. 그 자리를 `IncomeSheet.test` 가 붙든다.
- *
  * `id` 는 기록에 글자로 박히므로(`hunt_boosts`) 이름을 바꿔도 id 는 안 바꾼다. 바꾸면 그전
  * 기록이 어느 아이템도 안 가리키게 된다. `kind` 를 바꾸는 것은 값을 바꾸는 일이라 그전 기록의
  * 금액과 갈린다.
@@ -94,9 +91,8 @@ export const MESO_BOOSTS = [
     label: '소형 재물 획득의 비약',
     percent: 20,
     kind: 'multiplier',
-    icon: 'wealth_acquisition_potion_small.webp',
   },
-  { id: 'union', label: '유니온의 부', percent: 50, kind: 'additive', icon: 'union_wealth.webp' },
+  { id: 'union', label: '유니온의 부', percent: 50, kind: 'additive' },
 ] as const
 
 export type MesoBoostId = (typeof MESO_BOOSTS)[number]['id']

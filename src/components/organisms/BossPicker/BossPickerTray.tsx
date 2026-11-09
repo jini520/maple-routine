@@ -27,7 +27,7 @@ import { BossPortrait } from '../../molecules/BossPortrait/BossPortrait'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { groupBossesByCharacter, moveWithinGroup } from '../../../features/party-appointments/boss-groups'
-import { bossAliasOf, bossPortraitSlugOf } from '../../../lib/boss/bosses'
+import { bossAliasOf, bossPortraitAssetIdOf } from '../../../lib/boss/bosses'
 import { selectionFeedback } from '../../../native/haptics'
 import { PORTRAIT_SHADOW, boxShadowOf, type ShadowLayer } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
@@ -160,7 +160,7 @@ function FlyingPortrait(props: {
       <View pointerEvents="none" style={{ position: 'absolute', left, top, width: TILE_PORTRAIT, height: TILE_PORTRAIT }}>
         <Animated.View style={style}>
           <BossPortrait
-            portraitSlug={bossPortraitSlugOf(flight.boss.bossKey)}
+            portraitAssetId={bossPortraitAssetIdOf(flight.boss.bossKey)}
             label={bossAliasOf(flight.boss.bossKey, flight.boss.bossKey)}
             size={TILE_PORTRAIT}
           />
@@ -230,7 +230,7 @@ function TrayItem(props: {
           testID={`tray-item-${keyOf(boss)}`}
           style={{ width: ITEM_PORTRAIT, height: ITEM_PORTRAIT, borderRadius: ITEM_PORTRAIT / 2, boxShadow: props.shadow }}
         >
-          <BossPortrait portraitSlug={bossPortraitSlugOf(boss.bossKey)} label={name} size={ITEM_PORTRAIT} />
+          <BossPortrait portraitAssetId={bossPortraitAssetIdOf(boss.bossKey)} label={name} size={ITEM_PORTRAIT} />
         </View>
         <Badge variant={boss.difficulty as BossDifficulty} size="xs">
           {DIFFICULTY_NAME[boss.difficulty as BossDifficulty] ?? boss.difficulty}

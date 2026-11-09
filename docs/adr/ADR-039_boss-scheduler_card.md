@@ -19,7 +19,7 @@
 
 ### 결정 2. 일러스트는 카드 왼쪽에 보이고 오른쪽으로 갈수록 바탕색으로 흐려진다
 
-- 일러스트는 보스마다 한 장이다. 난이도마다 따로 두지 않는다. 파일은 보스 표의 `portraitSlug` 로 찾는다
+- 일러스트는 보스마다 한 장이다. 난이도마다 따로 두지 않는다. 그림은 보스 표의 `portraitAssetId` 로 찾는다
   (`getBossPortraitUrl`).
 - 일러스트는 카드 전체 크기로 그리고, 왼쪽 38% 까지는 그대로 보이다가 76% 에서 완전히 사라진다
   (`FadedIllustration`). 흐림 효과는 쓰지 않는다. 글자가 잘 읽히도록 채도와 밝기를 조금 낮추고 불투명도를 0.65
@@ -40,7 +40,7 @@
 | `boss_portrait_icon` | 원형 초상화 `BossPortrait`(`getBossPortraitIconCrop`) |
 | `boss_portrait_modal` | 파티 모달 헤더의 띠(`getBossPortraitModalCrop`) |
 
-- 키는 `kind` 와 `portraitSlug` 이고, 표에 없으면 `cover` · `center` 를 쓴다.
+- 키는 `kind` 와 초상의 그림 id 이고, 표에 없으면 `cover` · `center` 를 쓴다.
 - 넓은 사각형, 작은 원, 좁고 높은 띠는 맞는 크롭이 서로 다르다. 크롭을 같이 쓰면 한 곳을 맞출 때마다 다른 곳의
   크롭도 함께 바뀐다.
 - 값은 이미지를 보고 정해야 하므로 AI 가 미리 채우지 않는다. 사용자가 관리 화면(`/admin/assets`)에서 직접 넣는다. 게임 수치
@@ -95,7 +95,7 @@
 | `app/boss-scheduler/__tests__/BossScreen.test.tsx` | 결정 4: 2인 이상인 카드에만 `n인` 배지가 붙는지 본다. 결정 5: 완료한 보스에만 `완료` 가 붙는지, 한도를 채우면 미처치 카드에 `마감` 이 붙는지, `마감` 이 `완료` 와 같은 크기인지 본다 |
 | | 결정 6: 카드를 누르면 모달이 열리는지, 완료한 보스도 열리는지, 보스 표에 없는 보스는 API 이름으로 나오고 누를 수 없는지 본다 |
 
-같은 `portraitSlug` 라도 `kind` 마다 다른 크롭을 읽고 표에 없으면 `cover` · `center` 인지는
+같은 그림이라도 `kind` 마다 다른 크롭을 읽고 표에 없으면 `cover` · `center` 인지는
 `lib/assets/__tests__/image-crops.spec.ts` 가, 고르지 않은 난이도의 흐림은
 `components/molecules/DifficultyExpander/__tests__/DifficultyExpander.test.tsx` 가 확인한다.
 

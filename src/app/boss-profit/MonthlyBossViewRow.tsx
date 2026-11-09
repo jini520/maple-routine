@@ -19,7 +19,7 @@ import { AnimatedNumber, Badge, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
-import { bossPortraitSlugOf } from '../../lib/boss/bosses'
+import { bossPortraitAssetIdOf } from '../../lib/boss/bosses'
 import { BOSS_PORTRAIT_SIZE, DropIndicator } from './BossProfitBossRow'
 import { rowHasValuableDrop } from './character-groups'
 import { InsetCell } from './InsetCell'
@@ -64,7 +64,7 @@ export function MonthlyBossViewRow(props: {
         className="flex-row items-center gap-3 px-3 py-2.5"
         sheen={rowHasValuableDrop(row, drops)}
       >
-        <BossPortrait portraitSlug={bossPortraitSlugOf(row.bossKey)} label={row.bossName} size={BOSS_PORTRAIT_SIZE} />
+        <BossPortrait portraitAssetId={bossPortraitAssetIdOf(row.bossKey)} label={row.bossName} size={BOSS_PORTRAIT_SIZE} />
 
         <View className="min-w-0 flex-1">
           <View className="h-6 w-full flex-row items-center gap-1.5">

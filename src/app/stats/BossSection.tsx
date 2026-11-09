@@ -12,7 +12,7 @@ import { Segment } from '../../components/molecules/Segment/Segment'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { bossTotalsBetween, type DaysByDate, type StatsRange } from '../../features/stats/aggregate'
-import { bossPortraitSlugOf } from '../../lib/boss/bosses'
+import { bossPortraitAssetIdOf } from '../../lib/boss/bosses'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 import { StatsSection } from './StatsSection'
 
@@ -65,7 +65,7 @@ export const BossSection = memo(function BossSection(props: {
                   style={{ marginBottom: BADGE_HALF }}
                 >
                   <BossPortrait
-                    portraitSlug={bossPortraitSlugOf(row.bossKey)}
+                    portraitAssetId={bossPortraitAssetIdOf(row.bossKey)}
                     label={row.difficulty === null ? row.name : `${DIFFICULTY_NAME[row.difficulty]} ${row.name}`}
                     size={PORTRAIT_SIZE}
                   />

@@ -1,3 +1,4 @@
+import { assetIdOfPath } from '../../assets/__tests__/asset-uri'
 import { bossesInSection } from '../boss/bosses'
 import type { BossContent } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
@@ -39,7 +40,7 @@ describe('matchBossContent', () => {
       isRegistered: true,
       isComplete: false,
       ownComplete: false,
-      portraitSlug: 'zakum',
+      portraitAssetId: assetIdOfPath('bosses/zakum.webp'),
       isSeasonBoss: false,
     })
   })
@@ -49,7 +50,7 @@ describe('matchBossContent', () => {
       bossContent({ bossKey: 'black_mage', apiName: '검은 마법사', difficulty: 'extreme', cycle: 'monthly', isComplete: true }),
     )
 
-    expect(result.portraitSlug).toBe('blackMage')
+    expect(result.portraitAssetId).toBe(assetIdOfPath('bosses/blackMage.webp'))
     expect(result.apiName).toBe('검은 마법사')
     expect(result.cycle).toBe('monthly')
     expect(result.isComplete).toBe(true)
@@ -59,7 +60,7 @@ describe('matchBossContent', () => {
     const result = matchBossContent(bossContent({ bossKey: 'meirin', apiName: '시즌 보스 메이린', difficulty: 'normal' }))
 
     expect(result.isSeasonBoss).toBe(true)
-    expect(result.portraitSlug).toBe('maerin')
+    expect(result.portraitAssetId).toBe(assetIdOfPath('bosses/maerin.webp'))
   })
 
   it('보스 표에 없는 보스(key 없음)는 에러 없이 초상 null · 시즌 아님으로 두고 원문을 보존한다', () => {
@@ -73,7 +74,7 @@ describe('matchBossContent', () => {
       isRegistered: true,
       isComplete: false,
       ownComplete: false,
-      portraitSlug: null,
+      portraitAssetId: null,
       isSeasonBoss: false,
     })
   })
@@ -94,14 +95,14 @@ function matchedBoss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
     cycle: 'weekly' as const,
     isRegistered: true,
     isComplete: false,
-    portraitSlug: 'zakum',
+    portraitAssetId: 'zakum',
     isSeasonBoss: false,
     ...overrides,
   }
   return { ...merged, ownComplete: overrides.ownComplete ?? merged.isComplete }
 }
 
-const 루시드 = { bossKey: 'lucid', apiName: '루시드', portraitSlug: 'lucid' }
+const 루시드 = { bossKey: 'lucid', apiName: '루시드', portraitAssetId: 'lucid' }
 
 describe('countClearedWeeklyBosses', () => {
   it('등록되고 완료된 주간 보스를 센다', () => {

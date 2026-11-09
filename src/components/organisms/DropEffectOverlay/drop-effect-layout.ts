@@ -13,20 +13,20 @@
  * `python3 scripts/measure-drop-effect-origins.py` 가 아래 테이블을 그대로 찍어 준다.
  */
 
-import { assetFrames } from '../../../lib/assets/asset-files'
+import { appImageFrames } from '../../../lib/assets/asset-lookup'
 import type { ImageAssetRef } from '../../../types/image-asset'
 
 /**
- * 연출 프레임 목록. 서버에서 받은 그림 가운데 `drop-effect/<단계>/<번호>` 를 번호 차례로 모은다.
+ * 연출 프레임 목록. 앱 그림 표(`appImages` 칸)의 `drop_effect_<단계>_<번호>` 를 번호 차례로 모은다.
  *
  * 상수가 아니라 함수다. 그림 목록은 받은 뒤에 채워지고 서버에서 바뀔 수 있다.
  */
 export function dropEffectFrames(): Record<DropEffectPhase | 'screen', ImageAssetRef[]> {
   return {
-    screen: assetFrames('drop-effect/screen'),
-    pre: assetFrames('drop-effect/pre'),
-    loop: assetFrames('drop-effect/loop'),
-    end: assetFrames('drop-effect/end'),
+    screen: appImageFrames('screen'),
+    pre: appImageFrames('pre'),
+    loop: appImageFrames('loop'),
+    end: appImageFrames('end'),
   }
 }
 

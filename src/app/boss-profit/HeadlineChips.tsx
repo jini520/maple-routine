@@ -3,7 +3,7 @@
  */
 import { Image, Pressable, View } from 'react-native'
 
-import { getItemIconUrlByFile, worldEmblemUrl } from '../../lib/assets/asset-lookup'
+import { appImage, worldEmblemUrl } from '../../lib/assets/asset-lookup'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
 import type { MonthlyCrystalsByWorld } from '../../features/boss-profit/monthly-crystals'
 
@@ -66,8 +66,8 @@ export function CrystalSummaryChip(props: {
   ) : null
   // 결정석 아이콘(주간/월간). 드롭 표 항목이 아니라 UI 표시 전용이라 파일 이름으로 직접 찾는다. 없으면 아이콘만 생략한다.
   // 렌더 안에서 찾는다. 모듈 최상위에서 찾으면 그림 목록을 받기 전의 빈 값으로 굳는다.
-  const weeklyCrystalIcon = getItemIconUrlByFile('intense_power_crystal_weekly.webp')
-  const monthlyCrystalIcon = getItemIconUrlByFile('intense_power_crystal_monthly.webp')
+  const weeklyCrystalIcon = appImage('boss_crystal_weekly')
+  const monthlyCrystalIcon = appImage('boss_crystal_monthly')
   const chipContent = (
     <>
       {!monthlyOnly && (

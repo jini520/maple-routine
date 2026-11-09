@@ -19,7 +19,7 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { partySizeForShares } from '../../lib/boss/party-shares'
 import type { BossPartyShareColumns } from '../../storage/boss-party-settings'
 import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartySizeModal'
-import { activeBossesInSection, activeDifficultiesNow, bossPortraitSlugOf, getMaxPartySize } from '../../lib/boss/bosses'
+import { activeBossesInSection, activeDifficultiesNow, bossPortraitAssetIdOf, getMaxPartySize } from '../../lib/boss/bosses'
 import { countManualWeeklyBosses, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 import { bossCycleOf, isSeasonBoss, type BossEntry } from '../../lib/boss/bosses'
 import { isChallengersWorld } from '../../lib/world/worlds'
@@ -431,7 +431,7 @@ export function BossManageScreen(): React.JSX.Element {
                     className={`flex-row items-center gap-3 px-3.5 py-4${isLimitBlocked ? ' opacity-40' : ''}`}
                   >
                     <View aria-hidden pointerEvents="none">
-                      <BossPortrait portraitSlug={entry.portraitSlug} label={entry.name} size={44} />
+                      <BossPortrait portraitAssetId={entry.portraitAssetId} label={entry.name} size={44} />
                       {isTracked && <TrackedMark />}
                     </View>
                     {activeDifficulty !== null ? (
@@ -479,7 +479,7 @@ export function BossManageScreen(): React.JSX.Element {
         <PartySizeModal
           bossName={partyModal.entry.name}
           cycleLabel={bossCycleOf(partyModal.entry.key) === 'monthly' ? '월간 보스' : '주간 보스'}
-          portraitSlug={bossPortraitSlugOf(partyModal.entry.key)}
+          portraitAssetId={bossPortraitAssetIdOf(partyModal.entry.key)}
           difficulties={activeDifficultiesNow(partyModal.entry.key)}
           difficulty={partyModal.difficulty}
           partySize={partySizes[partySizeKey(selected.ocid, partyModal.entry.key, partyModal.difficulty)] ?? 1}
