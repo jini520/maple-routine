@@ -34,10 +34,11 @@ import { gameTable, derive } from '../game-data/table'
 
 export type { ContentSection }
 
-/** 카드 그림. 지도 배경 slug 또는 보스 초상 slug 다. */
+/** 카드 그림의 id 셋. 배경은 지도와 보스 초상 중 하나이고, 지역 아이콘은 지도 배경 카드 옆에 선다. */
 export interface ContentBackground {
   map?: string
   portrait?: string
+  regionIcon?: string
 }
 
 /** 컨텐츠 한 줄. API 응답(`NexonDailyContentWire` · `NexonWeeklyContentWire`)과 같은 모양에 표의 칸을 더했다. */
@@ -82,8 +83,9 @@ function toContent(row: Row): ContentRow | null {
   if (!isBoolean(row.onlyWhenScheduled) || !isBoolean(row.trustRegistrationFlag) || !isBoolean(row.cumulativeScore)) {
     return null
   }
-  const backgroundMap = optional(row.backgroundMap, isNonEmptyString)
-  const backgroundPortrait = optional(row.backgroundPortrait, isNonEmptyString)
+  const backgroundMapAssetId = optional(row.backgroundMapAssetId, isNonEmptyString)
+  const backgroundPortraitAssetId = optional(row.backgroundPortraitAssetId, isNonEmptyString)
+  const regionIconAssetId = optional(row.regionIconAssetId, isNonEmptyString)
   const countTag = optional(row.countTag, isNonEmptyString)
   const requiredLevel = optional(row.requiredLevel, isPositiveInteger)
   const from = optional(row.from, isPeriodText)
@@ -91,8 +93,9 @@ function toContent(row: Row): ContentRow | null {
   const sharedShortName = optional(row.sharedShortName, isNonEmptyString)
   const maxCountOverride = optional(row.maxCountOverride, isPositiveInteger)
   if (
-    backgroundMap === false ||
-    backgroundPortrait === false ||
+    backgroundMapAssetId === false ||
+    backgroundPortraitAssetId === false ||
+    regionIconAssetId === false ||
     countTag === false ||
     requiredLevel === false ||
     from === false ||
@@ -109,8 +112,9 @@ function toContent(row: Row): ContentRow | null {
     category: row.category,
     displayName: row.displayName,
     shortName: row.shortName,
-    backgroundMap,
-    backgroundPortrait,
+    backgroundMapAssetId,
+    backgroundPortraitAssetId,
+    regionIconAssetId,
     countTag,
     type: row.type,
     maxCount: row.maxCount,
@@ -143,9 +147,13 @@ export const contentsTable = gameTable('contents', { updatedAt: null, categories
 /** 줄 하나를 지금 코드가 읽는 모양으로. 수동 모드 기본값 셋은 표에 없고 `type` 이 정한다. */
 function toEntry(row: ContentRow): ContentEntry {
   const background =
-    row.backgroundMap === undefined && row.backgroundPortrait === undefined
+    row.backgroundMapAssetId === undefined && row.backgroundPortraitAssetId === undefined
       ? undefined
-      : compact<ContentBackground>({ map: row.backgroundMap, portrait: row.backgroundPortrait })
+      : compact<ContentBackground>({
+          map: row.backgroundMapAssetId,
+          portrait: row.backgroundPortraitAssetId,
+          regionIcon: row.regionIconAssetId,
+        })
   return compact({
     key: row.key,
     content_name: row.apiName,

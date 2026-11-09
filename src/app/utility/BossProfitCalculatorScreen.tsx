@@ -38,7 +38,7 @@ import {
   activeDifficultiesNow,
   bossAliasOf,
   bossNameOf,
-  bossPortraitSlugOf,
+  bossPortraitAssetIdOf,
   getMaxPartySize,
   isSeasonBoss,
   WEEKLY_BOSS_CLEAR_LIMIT,
@@ -307,7 +307,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
         <PartySizeModal
           bossName={bossAliasOf(partyBoss.bossKey, bossNameOf(partyBoss.bossKey, partyBoss.bossKey))}
           cycleLabel="주간 보스"
-          portraitSlug={bossPortraitSlugOf(partyBoss.bossKey)}
+          portraitAssetId={bossPortraitAssetIdOf(partyBoss.bossKey)}
           difficulties={activeDifficultiesNow(partyBoss.bossKey)}
           difficulty={partyBoss.difficulty}
           partySize={partyBoss.partySize}

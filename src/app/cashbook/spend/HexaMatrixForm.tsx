@@ -23,7 +23,7 @@ import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
-import { getItemIconUrlByFile, getSkillIconByFile } from '../../../lib/assets/asset-lookup'
+import { getAssetImage, solErdaFragmentIcon } from '../../../lib/assets/asset-lookup'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import {
   allocateHexaStorage,
@@ -227,7 +227,7 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
     label: each.name,
     group: each.kind?.name ?? each.apiType,
   }))
-  const fragmentIcon = getItemIconUrlByFile('sol_erda_fragment.webp')
+  const fragmentIcon = solErdaFragmentIcon()
   // 헥사 스킬은 종류와 레벨이 바로 위 칸들에 이미 보여 둘째 줄을 두지 않는다. 헥사 스탯만 활성화 몫을 가른다.
   const detail =
     mode === '헥사 스킬'
@@ -273,7 +273,7 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
                       <Text className="text-sm text-text-disabled">{ocid === null ? '캐릭터를 먼저 고르세요' : '코어 선택'}</Text>
                     ) : (
                       <>
-                        {core.kind !== null && <KindChip icon={core.kind.icon} name={core.kind.name} />}
+                        {core.kind !== null && <KindChip iconAssetId={core.kind.iconAssetId} name={core.kind.name} />}
                         <CoreName core={core} iconSize={22} />
                       </>
                     )}
@@ -441,8 +441,8 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
 }
 
 /** 코어 종류 그림과 이름. 닫힌 줄의 위쪽 줄이다. */
-function KindChip(props: { icon: string; name: string }): React.JSX.Element {
-  const icon = getItemIconUrlByFile(props.icon)
+function KindChip(props: { iconAssetId: string; name: string }): React.JSX.Element {
+  const icon = getAssetImage(props.iconAssetId)
   return (
     <View className="flex-row items-center gap-1">
       {icon !== null && <Image source={icon} resizeMode="contain" style={{ width: 18, height: 18 }} />}
@@ -453,7 +453,7 @@ function KindChip(props: { icon: string; name: string }): React.JSX.Element {
 
 /** 코어의 스킬 그림과 첫 스킬 이름. 여러 스킬을 묶은 코어는 `외 n` 을 붙여 한 줄에 둔다. */
 function CoreName(props: { core: HexaCore; iconSize: number; selected?: boolean }): React.JSX.Element {
-  const icon = getSkillIconByFile(props.core.icon)
+  const icon = getAssetImage(props.core.iconAssetId)
   const { first, more } = hexaCoreLabel(props.core.name)
   return (
     <View className="flex-row items-center gap-1.5">

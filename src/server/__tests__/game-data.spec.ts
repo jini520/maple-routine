@@ -15,14 +15,14 @@ const 보스표: BossCatalog = {
       name: '스우',
       alias: '스우',
       cycle: 'weekly',
-      portraitSlug: 'lotus',
+      portraitAssetId: 'lotus',
       difficulties: [{ difficulty: 'normal', requiredLevel: 190 }],
     },
   ],
 }
 const 월드표: WorldsTable = {
   updatedAt: '2026-10-16T15:07:54.435Z',
-  worlds: [{ key: 'scania', name: '스카니아', emblem: 'scania', challengers: false, event: false }],
+  worlds: [{ key: 'scania', name: '스카니아', emblemAssetId: 'scania-id', challengers: false, event: false }],
 }
 
 /** 칸 열넷 중 넘긴 것만 값이고 나머지는 null 인 응답. */
@@ -92,7 +92,7 @@ describe('parseGameDataResponse', () => {
 
   // 서버는 선택 칸을 null 로 보낸다. 통과한 값에서는 그 칸이 빠진다.
   it('선택 칸의 null 은 빠진 칸으로 통과한다', () => {
-    const 응답 = { ...월드표, worlds: [{ ...월드표.worlds[0], emblem: null }] }
+    const 응답 = { ...월드표, worlds: [{ ...월드표.worlds[0], emblemAssetId: null }] }
 
     expect(parseGameDataResponse({ worlds: 응답 })?.worlds).toEqual({
       ...월드표,

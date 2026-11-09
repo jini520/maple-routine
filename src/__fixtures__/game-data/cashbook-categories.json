@@ -7,6 +7,7 @@
       "name": "사냥",
       "cardTitle": "사냥",
       "iconFile": "wealth_acquisition_potion_small.webp",
+      "iconAssetId": "3dd19744-c713-4c12-adb3-c41e0556c49b",
       "description": "메소 · 조각 수익 기록",
       "unit": "소재"
     },
@@ -16,6 +17,7 @@
       "name": "솔 에르다 조각",
       "cardTitle": "사냥",
       "iconFile": "sol_erda_fragment.webp",
+      "iconAssetId": "ee64d8fa-0fce-41d3-aee9-abf058a3cab3",
       "description": "사냥 수익 조각 정산",
       "unit": "개"
     },
@@ -25,6 +27,7 @@
       "name": "아이템 판매",
       "cardTitle": "아이템 판매",
       "iconFile": "dark_boss_pendant.png",
+      "iconAssetId": "fb62fe61-afdc-4f51-ac8a-0410ca2d635f",
       "description": "판매 아이템 수익",
       "unit": null
     },
@@ -34,6 +37,7 @@
       "name": "기타",
       "cardTitle": "기타",
       "iconFile": "meso.webp",
+      "iconAssetId": "a55fc203-f6f1-40eb-a7ca-0198586eaafa",
       "description": "이벤트 등 기타 수익",
       "unit": "개"
     },
@@ -43,6 +47,7 @@
       "name": "컨텐츠",
       "cardTitle": "컨텐츠",
       "iconFile": "monster_park_ticket.webp",
+      "iconAssetId": "a8cbdc1f-9667-46fc-aa5e-4f5fba36028f",
       "description": "몬파·에픽던전·퀵패스",
       "unit": null
     },
@@ -52,6 +57,7 @@
       "name": "이벤트·BM",
       "cardTitle": "이벤트·BM",
       "iconFile": "vip_sauna_ticket.webp",
+      "iconAssetId": "04aa9191-603b-45a5-923b-4342ebbfc392",
       "description": "메포샵·보약 버프 등",
       "unit": null
     },
@@ -61,6 +67,7 @@
       "name": "버프",
       "cardTitle": "버프",
       "iconFile": "seiram_elixir.webp",
+      "iconAssetId": "441da1e8-8c38-4ff8-af2f-1172c58c7fbb",
       "description": "메소 구입 버프 아이템",
       "unit": null
     },
@@ -70,6 +77,7 @@
       "name": "주문서",
       "cardTitle": "주문서",
       "iconFile": "amazing_positive_chaos_scroll.webp",
+      "iconAssetId": "e8b4f2ff-2a61-4ff3-871d-ed358f1b5c26",
       "description": "장비·악세·펫장비",
       "unit": null
     },
@@ -79,6 +87,7 @@
       "name": "심볼 강화",
       "cardTitle": "심볼강화",
       "iconFile": "authentic_symbol_selection_coupon.webp",
+      "iconAssetId": "c8d8b178-d2a7-4769-a386-6131f6a26b5e",
       "description": "심볼 강화 비용",
       "unit": null
     },
@@ -88,6 +97,7 @@
       "name": "헥사 매트릭스",
       "cardTitle": "헥사 매트릭스",
       "iconFile": "hexa_matrix.webp",
+      "iconAssetId": "9f5dfc83-e5de-49c1-9b77-54625396e332",
       "description": "헥사 스킬 · 헥사 스탯 강화",
       "unit": null
     },
@@ -97,6 +107,7 @@
       "name": "아이템 구매",
       "cardTitle": "아이템 구매",
       "iconFile": "dark_boss_pendant.png",
+      "iconAssetId": "fb62fe61-afdc-4f51-ac8a-0410ca2d635f",
       "description": "구매 아이템 지출",
       "unit": null
     },
@@ -106,6 +117,7 @@
       "name": "기타",
       "cardTitle": "기타",
       "iconFile": "meso.webp",
+      "iconAssetId": "a55fc203-f6f1-40eb-a7ca-0198586eaafa",
       "description": "각종 패스 등 기타 지출",
       "unit": "개"
     }
@@ -128,6 +140,12 @@
       "name": "기타",
       "unit": "개",
       "hasTariff": false
+    },
+    {
+      "key": "cash",
+      "name": "캐시",
+      "unit": "개",
+      "hasTariff": true
     }
   ]
 }

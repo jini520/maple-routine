@@ -169,7 +169,7 @@ function boss(overrides: Partial<MatchedBoss> = {}): MatchedBoss {
     isComplete: false,
     ownComplete: false,
     bossKey: 'zakum',
-    portraitSlug: 'zakum',
+    portraitAssetId: 'zakum',
     isSeasonBoss: false,
     ...overrides,
   }
@@ -296,7 +296,7 @@ describe('BossScreen: 목록', () => {
               bossKey: 'black_mage',
               difficulty: 'hard',
               cycle: 'monthly',
-              portraitSlug: 'blackMage',
+              portraitAssetId: 'blackMage',
               isComplete: true,
               ownComplete: true,
             }),
@@ -425,7 +425,7 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
       apiName: '시즌 보스 메이린',
       bossKey: 'meirin',
       difficulty: 'hard',
-      portraitSlug: 'maerin',
+      portraitAssetId: 'maerin',
       isSeasonBoss: true,
       isRegistered: false,
       ...overrides,
@@ -475,7 +475,7 @@ describe('BossScreen: 챌린저스 시즌 보스 배지', () => {
               bossKey: 'black_mage',
               difficulty: 'hard',
               cycle: 'monthly',
-              portraitSlug: 'blackMage',
+              portraitAssetId: 'blackMage',
               isRegistered: true,
             }),
           ],
@@ -648,7 +648,7 @@ describe('BossScreen: 실패의 목적지', () => {
 })
 
 describe('BossScreen: 솔로/파티 필터', () => {
-  const 스우 = boss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard', portraitSlug: 'lucid' })
+  const 스우 = boss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard', portraitAssetId: 'lucid' })
 
   const withFilterFixture = (): void => {
     mockSchedule({
@@ -705,7 +705,7 @@ describe('BossScreen: 솔로/파티 필터', () => {
               bossKey: 'black_mage',
               difficulty: 'hard',
               cycle: 'monthly',
-              portraitSlug: 'blackMage',
+              portraitAssetId: 'blackMage',
             }),
           ],
         }),
@@ -754,7 +754,7 @@ describe('BossScreen: 주간 헤더가 서는 조건', () => {
     bossKey: 'black_mage',
     difficulty: 'hard',
     cycle: 'monthly',
-    portraitSlug: 'blackMage',
+    portraitAssetId: 'blackMage',
   })
 
   // 검마만 4인 파티다. `파티` 를 고르면 주간이 통째로 걸러지고 월간 카드만 남는다.
@@ -926,7 +926,7 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
     mockSchedule({
       status: 'loaded',
       trackedOcids: ['ocid-1'],
-      characters: [character({ weeklyBosses: [boss({ apiName: '새로운 보스', bossKey: null, portraitSlug: null })] })],
+      characters: [character({ weeklyBosses: [boss({ apiName: '새로운 보스', bossKey: null, portraitAssetId: null })] })],
     })
     await renderScreen()
 
@@ -982,7 +982,7 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
       characters: [
         character({
           weeklyBosses: [
-            boss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard', portraitSlug: 'lucid' }),
+            boss({ apiName: '스우', bossKey: 'lotus', difficulty: 'hard', portraitAssetId: 'lucid' }),
           ],
         }),
       ],

@@ -24,7 +24,7 @@ import {
 } from '../../../components/organisms/MesoPad/meso-pad'
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
+import { solErdaFragmentIcon } from '../../../lib/assets/asset-lookup'
 import { fragmentSaleFeeOf, huntTotalOf } from '../../../lib/cashbook/hunting-meso'
 import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { useSaleFeeChoice } from './sale-fee'
@@ -61,7 +61,7 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
   const { saving, submit, remove } = useSheetSubmit(props)
 
   /** 조각 줄의 그림. 계산기와 같은 파일을 본다. */
-  const fragmentIcon = getItemIconUrlByFile('sol_erda_fragment.webp')
+  const fragmentIcon = solErdaFragmentIcon()
 
   const typedMeso = mesoValueOf(typedMesoText)
   const fragments = mesoValueOf(fragmentsText)

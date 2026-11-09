@@ -101,7 +101,7 @@ export function HuntLootSaleForm(
         {...props}
         ocid={ocid}
         head={head}
-        iconFile={fragment?.iconFile ?? category?.icon ?? ''}
+        iconAssetId={fragment?.iconAssetId ?? category?.iconAssetId ?? ''}
         name={fragment?.name ?? category?.name ?? ''}
       />
     )
@@ -264,13 +264,13 @@ function LootForm(
           )
           if (!props.auction) {
             return (
-              <NpcLootRow key={item.key} iconFile={item.iconFile} name={item.name} npcPriceMeso={item.npcPriceMeso ?? 0}>
+              <NpcLootRow key={item.key} iconAssetId={item.iconAssetId} name={item.name} npcPriceMeso={item.npcPriceMeso ?? 0}>
                 {countInput}
               </NpcLootRow>
             )
           }
           return (
-            <LootBlock key={item.key} iconFile={item.iconFile} name={item.name}>
+            <LootBlock key={item.key} iconAssetId={item.iconAssetId} name={item.name}>
               <LootLine label="개당 가격" unit="메소">
                 <AmountInput
                   testID={`income-sheet-loot-price-${item.key}`}

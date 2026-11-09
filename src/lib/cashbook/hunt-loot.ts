@@ -24,7 +24,7 @@ export type HuntLoot = HuntLootRow
 
 function toItem(row: Row): HuntLootRow | null {
   if (!isNonEmptyString(row.key) || !isOneOf(row.kind, HUNT_LOOT_KINDS)) return null
-  if (!isNonEmptyString(row.name) || !isNonEmptyString(row.iconFile)) return null
+  if (!isNonEmptyString(row.name) || !isNonEmptyString(row.iconAssetId)) return null
   // 소비 아이템은 앱이 이 값으로 단가를 채운다. 다른 분류에 값이 있으면 어느 쪽이 맞는지 모른다.
   const consumable = row.kind === 'consumable'
   if (consumable ? !isPositiveInteger(row.npcPriceMeso) : row.npcPriceMeso !== null) return null
@@ -35,7 +35,7 @@ function toItem(row: Row): HuntLootRow | null {
     key: row.key,
     kind: row.kind,
     name: row.name,
-    iconFile: row.iconFile,
+    iconAssetId: row.iconAssetId,
     npcPriceMeso: consumable ? (row.npcPriceMeso as number) : null,
     from,
     until,

@@ -20,7 +20,13 @@ import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/m
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import type { SelectOption } from '../../../components/organisms/SelectField/SelectField'
 import type { MesoRateLoad } from '../../../features/cashbook/meso-rate'
-import { FORCE_LABELS, forceIconOf, getHuntingRegionIconUrl, getItemIconUrlByFile } from '../../../lib/assets/asset-lookup'
+import {
+  FORCE_LABELS,
+  forceIconOf,
+  getHuntingRegionIconUrl,
+  mesoBoostIconOf,
+  solErdaFragmentIcon,
+} from '../../../lib/assets/asset-lookup'
 import {
   optionalMesoTextOf,
   optionalMesoValueOf,
@@ -417,7 +423,7 @@ export function HuntCalculatorForm(
   const appliedRate = appliedMesoRatePercent(boostPercent, boostMultiplier)
 
   /** 조각 줄의 그림. 이름을 그림이 지므로 못 찾으면 그 자리를 비운다. */
-  const fragmentIcon = getItemIconUrlByFile('sol_erda_fragment.webp')
+  const fragmentIcon = solErdaFragmentIcon()
 
   const huntInput = { characterLevel: huntLevel, missedMobs, boostPercent, boostMultiplier, sojae }
   /** 사냥터를 안 골랐으면 0 이다. 계산기가 반쯤 찬 상태이고, 그때도 조각 값은 선다. */
@@ -571,8 +577,8 @@ export function HuntCalculatorForm(
           selected={regionKey}
           onSelect={selectRegion}
           decorOf={(key) => {
-            const iconMap = findHuntingRegion(key)?.iconMap ?? null
-            return { icon: getHuntingRegionIconUrl(iconMap), iconSize: REGION_ICON_SIZE }
+            const iconAssetId = findHuntingRegion(key)?.iconAssetId ?? null
+            return { icon: getHuntingRegionIconUrl(iconAssetId), iconSize: REGION_ICON_SIZE }
           }}
         />
         <SelectRow
@@ -646,7 +652,7 @@ export function HuntCalculatorForm(
               <BoostToggle
                 key={boost.id}
                 label={boost.label}
-                icon={getItemIconUrlByFile(boost.icon)}
+                icon={mesoBoostIconOf(boost.id)}
                 testID={`income-sheet-boost-icon-${boost.id}`}
                 selected={boosts.includes(boost.id)}
                 onPress={() => toggleBoost(boost.id)}

@@ -20,8 +20,8 @@ export interface TableHead {
 export interface DropItemRow {
   key: string
   name: string
-  /** `assets/items/` 또는 `assets/items/rings/` 의 파일명. 없는 아이템은 빠진다. */
-  iconFile?: string
+  /** 그림 id(`assets` 칸). 그림이 없는 아이템은 빠진다. */
+  iconAssetId?: string
   /** 고가 드롭. 세트 소속이 아니라 이 칸 하나로 판정한다. */
   valuable: boolean
 }
@@ -72,8 +72,8 @@ export interface WorldRow {
   key: string
   /** API `world_name` 표기. 보이는 이름이다. */
   name: string
-  /** 엠블럼 파일 basename. 스페셜은 빠진다. */
-  emblem?: string
+  /** 엠블럼 그림 id. 스페셜은 빠진다. */
+  emblemAssetId?: string
   challengers: boolean
   event: boolean
 }
@@ -97,8 +97,8 @@ export interface SpendGroupRow {
 export interface SpendTileRow {
   key: string
   name: string
-  iconFile?: string
-  iconMap?: string
+  /** 아이템 그림이나 지역 아이콘의 그림 id. 그림이 없는 타일은 빠진다. */
+  iconAssetId?: string
 }
 export interface SpendItemRow {
   key: string
@@ -151,7 +151,7 @@ export interface CashbookCategoryRow {
   name: string
   /** 묶음이 없는 갈래의 하루 목록 카드 첫 줄. */
   cardTitle: string
-  iconFile: string
+  iconAssetId: string
   /** 갈래 카드 한 줄. 빈 글자일 수 있다. */
   description: string
   /** 묶음이 없는 갈래의 수량 단위. */
@@ -182,7 +182,7 @@ export interface SymbolRow {
   group: string
   name: string
   requiredLevel: number
-  iconFile: string
+  iconAssetId: string
 }
 export interface SymbolLevelCostRow {
   symbol: string
@@ -206,7 +206,7 @@ export interface HexaCoreKindRow {
   apiType: string
   isDefault: boolean
   maxLevel: number
-  iconFile: string
+  iconAssetId: string
 }
 export interface HexaCoreLevelCostRow {
   kind: string
@@ -225,7 +225,7 @@ export interface HexaJobCoreRow {
   job: string
   name: string
   apiType: string
-  iconFile: string
+  iconAssetId: string
 }
 export interface HexaStatRow {
   key: string
@@ -278,8 +278,11 @@ export interface ContentRow {
   category: ContentCategoryKey
   displayName: string
   shortName: string
-  backgroundMap?: string
-  backgroundPortrait?: string
+  /** 카드 그림 id. 지도 배경과 보스 초상 중 하나다. 둘 다 없으면 카드가 그림 없이 선다. */
+  backgroundMapAssetId?: string
+  backgroundPortraitAssetId?: string
+  /** 지도 배경 카드 옆의 지역 아이콘 그림 id. */
+  regionIconAssetId?: string
   /** 컨텐츠가 참고 태그를 덮는 글자. */
   countTag?: string
   type: 'contents' | 'quest'
@@ -355,6 +358,8 @@ export interface MvpGradeRow {
   name: string
   auctionFeePercent: number
   starforceDiscountPercent: number
+  /** 명패 그림 id. 일반 등급은 명패가 없어 빠진다. */
+  plateAssetId?: string
 }
 export interface MvpGradesTable extends TableHead {
   /** 낮은 등급부터. 이 차례가 높낮이다. */
@@ -369,7 +374,7 @@ export interface HuntLootRow {
   key: string
   kind: HuntLootKind
   name: string
-  iconFile: string
+  iconAssetId: string
   /** 소비 아이템의 NPC 개당 가격. 소비에만 있고 소비에는 반드시 있다. */
   npcPriceMeso: number | null
   from?: string
@@ -384,8 +389,8 @@ export interface HuntingRegionRow {
   key: string
   name: string
   forceType: ForceType
-  /** 지역 아이콘 slug(`maps/icons/`). 이 칸이 없던 옛 응답은 `null` 이다. */
-  iconMap: string | null
+  /** 지역 아이콘 그림 id. 없으면 `null` 이다. */
+  iconAssetId: string | null
 }
 export interface HuntingGroundRow {
   key: string
@@ -404,8 +409,9 @@ export interface HuntingGroundsTable extends TableHead {
   groundLevels: HuntingGroundLevelRow[]
 }
 
-/** 서버 그림 한 장. 앱은 `path` 로 찾고 기기에는 `file`(내용 해시 이름)로 둔다. */
+/** 서버 그림 한 장. 앱은 게임 데이터 표의 그림 칸이 든 `id` 로 찾고 기기에는 `file`(내용 해시 이름)로 둔다. */
 export interface AssetFileRow {
+  id: string
   /** 서버 경로. `bosses/bellona.webp` 처럼 디렉터리와 파일 이름이다 */
   path: string
   /** `<sha256>.<확장자>`. 서버 `/assets/` 아래와 기기 디렉터리의 이름이다 */
@@ -426,8 +432,8 @@ export type ImageCropKind = (typeof IMAGE_CROP_KINDS)[number]
 
 export interface ImageCropRow {
   kind: ImageCropKind
-  /** 보스는 `portraitSlug`, 지역은 `backgroundMap` 의 값 */
-  slug: string
+  /** 자르는 그림 id. 보스 초상이나 지역 지도다 */
+  assetId: string
   /** CSS `background-size` 문법(`120% auto`) */
   size: string
   /** CSS `background-position` 문법(`50% 40%`) */
@@ -455,7 +461,16 @@ export interface FaqsTable extends TableHead {
   items: FaqItemRow[]
 }
 
-/** 계약을 통과한 칸 열아홉. */
+/** 붙일 게임 데이터 표가 없는 앱 그림. key 는 앱 코드가 그림을 찾는 이름이다. */
+export interface AppImageRow {
+  key: string
+  assetId: string
+}
+export interface AppImagesTable extends TableHead {
+  images: AppImageRow[]
+}
+
+/** 계약을 통과한 칸 스물. */
 export interface GameData {
   bosses: BossCatalog
   dropItems: DropItemsTable
@@ -476,11 +491,12 @@ export interface GameData {
   assets: AssetFilesTable
   imageCrops: ImageCropsTable
   faqs: FaqsTable
+  appImages: AppImagesTable
 }
 
 export type GameDataSection = keyof GameData
 
-/** 칸 이름 열아홉. 응답과 기기 사본이 같은 차례로 든다. */
+/** 칸 이름 스물. 응답과 기기 사본이 같은 차례로 든다. */
 export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'bosses',
   'dropItems',
@@ -501,6 +517,7 @@ export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'assets',
   'imageCrops',
   'faqs',
+  'appImages',
 ]
 
 /** 서버 응답을 칸마다 검사한 결과. 못 받았거나 계약을 어겼거나 서버가 아직 안 넣은 칸은 `null` 이다. */

@@ -1,6 +1,17 @@
 /** MVP 등급 표(`mvpGrades` 칸) 조회. */
 import { MVP_GRADE_KEYS, type MvpGradeKey, type MvpGradeRow, type MvpGradesTable } from '../../types/game-data'
-import { isInteger, isNonEmptyString, isOneOf, isRow, rowsOf, uniqueBy, updatedAtOf, type Row } from '../game-data/contract'
+import {
+  compact,
+  isInteger,
+  isNonEmptyString,
+  isOneOf,
+  isRow,
+  optional,
+  rowsOf,
+  uniqueBy,
+  updatedAtOf,
+  type Row,
+} from '../game-data/contract'
 import { gameTable, derive } from '../game-data/table'
 
 export type { MvpGradeKey }
@@ -13,12 +24,15 @@ function isPercent(value: unknown): value is number {
 function toGrade(row: Row): MvpGradeRow | null {
   if (!isOneOf(row.key, MVP_GRADE_KEYS) || !isNonEmptyString(row.name)) return null
   if (!isPercent(row.auctionFeePercent) || !isPercent(row.starforceDiscountPercent)) return null
-  return {
+  const plateAssetId = optional(row.plateAssetId, isNonEmptyString)
+  if (plateAssetId === false) return null
+  return compact({
     key: row.key,
     name: row.name,
     auctionFeePercent: row.auctionFeePercent,
     starforceDiscountPercent: row.starforceDiscountPercent,
-  }
+    plateAssetId,
+  })
 }
 
 /**

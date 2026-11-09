@@ -4,684 +4,798 @@
     {
       "kind": "boss_portrait",
       "slug": "zakum",
+      "assetId": "f7aee7b7-473e-44d8-bc03-ce024e688a27",
       "size": "100% auto",
       "position": "50% 45%"
     },
     {
       "kind": "boss_portrait",
       "slug": "magnus",
+      "assetId": "6f401e48-bb27-4fcf-bbe2-0751bfa49899",
       "size": "100% auto",
       "position": "50% 40%"
     },
     {
       "kind": "boss_portrait",
       "slug": "papulatus",
+      "assetId": "c5a9135e-595e-463b-9494-ee217ec3ee78",
       "size": "100% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait",
       "slug": "vonBon",
+      "assetId": "31c0f940-2a00-44b4-a241-af86e43620c6",
       "size": "100% auto",
       "position": "50% 50%"
     },
     {
       "kind": "boss_portrait",
       "slug": "pierre",
+      "assetId": "8efc3289-813a-412a-a8b1-d8ab1d63a5d9",
       "size": "100% auto",
       "position": "50% 50%"
     },
     {
       "kind": "boss_portrait",
       "slug": "crimsonQueen",
+      "assetId": "77e49946-6a40-4084-acd3-e2edee53d946",
       "size": "100% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait",
       "slug": "vellum",
+      "assetId": "1e0afb70-384d-4498-aa7f-f099c763df8f",
       "size": "100% auto",
       "position": "50% 60%"
     },
     {
       "kind": "boss_portrait",
       "slug": "lotus",
+      "assetId": "9bddfe69-679e-4cd1-bfe6-ced7ab0bfe7a",
       "size": "100% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait",
       "slug": "damien",
+      "assetId": "1edbfb3f-733f-4a01-aab5-7aa4f7f38306",
       "size": "100% auto",
       "position": "30% 50%"
     },
     {
       "kind": "boss_portrait",
       "slug": "slime",
+      "assetId": "253e5c1b-2acc-4695-ad2b-387f1c165e92",
       "size": "100% auto",
       "position": "50% 50%"
     },
     {
       "kind": "boss_portrait",
       "slug": "lucid",
+      "assetId": "2d450c29-8d0b-450c-84e1-990b63305c48",
       "size": "100% auto",
       "position": "50% 60%"
     },
     {
       "kind": "boss_portrait",
       "slug": "will",
+      "assetId": "e97ab26e-7e53-4666-bed4-2d66c094acbb",
       "size": "100% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait",
       "slug": "gloom",
+      "assetId": "ff43b179-4499-4de8-8ecb-c22c77298bb7",
       "size": "100% auto",
       "position": "50% 30%"
     },
     {
       "kind": "boss_portrait",
       "slug": "verusHilla",
+      "assetId": "072b2c33-8d66-4dc9-90ce-15e11ab374b7",
       "size": "100% auto",
       "position": "50% 40%"
     },
     {
       "kind": "boss_portrait",
       "slug": "darknell",
+      "assetId": "4fd3ae23-376f-4ef9-a2fd-6310cc24eeba",
       "size": "100% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait",
       "slug": "seren",
+      "assetId": "392a43bf-8e49-4095-82dd-2d4fe350a25a",
       "size": "120% auto",
       "position": "50% 45%"
     },
     {
       "kind": "boss_portrait",
       "slug": "kalos",
+      "assetId": "eafa411b-740b-4b03-8a61-d4e55c2ff24b",
       "size": "100% auto",
       "position": "50% 75%"
     },
     {
       "kind": "boss_portrait",
       "slug": "adversary",
+      "assetId": "8a4ed1b9-a83c-4474-b2f8-eff42bd4fa37",
       "size": "100% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait",
       "slug": "kaling",
+      "assetId": "3e189e06-11f9-41c8-a02f-c06d683320de",
       "size": "90% auto",
       "position": "0% 38%"
     },
     {
       "kind": "boss_portrait",
       "slug": "maleficStar",
+      "assetId": "d3f9bd41-c5fc-4820-b454-f536100bc2c2",
       "size": "100% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait",
       "slug": "bellona",
+      "assetId": "9826b964-a4fc-437e-ba64-370959bd8dac",
       "size": "95% auto",
       "position": "0% 33%"
     },
     {
       "kind": "boss_portrait",
       "slug": "limbo",
+      "assetId": "6a64c46b-92be-49d4-880f-b4698514404e",
       "size": "100% auto",
       "position": "50% 65%"
     },
     {
       "kind": "boss_portrait",
       "slug": "bardrix",
+      "assetId": "3ecc62cc-9468-4065-b738-4f7d9de7d8d4",
       "size": "100% auto",
       "position": "50% 40%"
     },
     {
       "kind": "boss_portrait",
       "slug": "jupiter",
+      "assetId": "a33b871a-0c1d-4028-959d-bd03cc63b7e0",
       "size": "100% auto",
       "position": "50% 40%"
     },
     {
       "kind": "boss_portrait",
       "slug": "maerin",
+      "assetId": "7f30e1aa-4be5-4e83-9cb2-02e27753c5f1",
       "size": "100% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait",
       "slug": "blackMage",
+      "assetId": "b32e077a-c476-4795-9622-64804ce59cfb",
       "size": "100% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait",
       "slug": "ancientGodMitra",
+      "assetId": "afac0e49-28af-43ba-a777-3b0b57ae1d1a",
       "size": "150% auto",
       "position": "50% 50%"
     },
     {
       "kind": "boss_portrait",
       "slug": "senya",
+      "assetId": "4251b38c-4998-4584-aef8-6edd99e42164",
       "size": "150% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait",
       "slug": "baekyeon",
+      "assetId": "6f6c831b-b928-4242-b472-efd01df60686",
       "size": "150% auto",
       "position": "30% 40%"
     },
     {
       "kind": "boss_portrait",
       "slug": "lesa",
+      "assetId": "c7e52529-0c92-4cbe-b12d-1a91405bffb3",
       "size": "115% auto",
       "position": "40% 35%"
     },
     {
       "kind": "boss_portrait",
       "slug": "arcanus",
+      "assetId": "ab91261e-bbcf-4ce0-8412-870205da1fc4",
       "size": "70% auto",
       "position": "66% 29%"
     },
     {
       "kind": "boss_portrait",
       "slug": "armorDragon",
+      "assetId": "9ecfdbf6-a15c-4265-8188-26754164f9f1",
       "size": "80% auto",
       "position": "130% 27%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "zakum",
+      "assetId": "f7aee7b7-473e-44d8-bc03-ce024e688a27",
       "size": "220% auto",
       "position": "60% 40%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "magnus",
+      "assetId": "6f401e48-bb27-4fcf-bbe2-0751bfa49899",
       "size": "280% auto",
       "position": "40% 20%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "papulatus",
+      "assetId": "c5a9135e-595e-463b-9494-ee217ec3ee78",
       "size": "410% auto",
       "position": "50% 30%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "vonBon",
+      "assetId": "31c0f940-2a00-44b4-a241-af86e43620c6",
       "size": "250% auto",
       "position": "30% 35%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "pierre",
+      "assetId": "8efc3289-813a-412a-a8b1-d8ab1d63a5d9",
       "size": "240% auto",
       "position": "45% 45%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "crimsonQueen",
+      "assetId": "77e49946-6a40-4084-acd3-e2edee53d946",
       "size": "330% auto",
       "position": "55% 15%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "vellum",
+      "assetId": "1e0afb70-384d-4498-aa7f-f099c763df8f",
       "size": "170% auto",
       "position": "15% 50%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "lotus",
+      "assetId": "9bddfe69-679e-4cd1-bfe6-ced7ab0bfe7a",
       "size": "250% auto",
       "position": "45% 20%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "damien",
+      "assetId": "1edbfb3f-733f-4a01-aab5-7aa4f7f38306",
       "size": "250% auto",
       "position": "45% 35%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "slime",
+      "assetId": "253e5c1b-2acc-4695-ad2b-387f1c165e92",
       "size": "200% auto",
       "position": "40% 50%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "lucid",
+      "assetId": "2d450c29-8d0b-450c-84e1-990b63305c48",
       "size": "230% auto",
       "position": "35% 45%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "will",
+      "assetId": "e97ab26e-7e53-4666-bed4-2d66c094acbb",
       "size": "270% auto",
       "position": "35% 5%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "gloom",
+      "assetId": "ff43b179-4499-4de8-8ecb-c22c77298bb7",
       "size": "160% auto",
       "position": "45% 40%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "verusHilla",
+      "assetId": "072b2c33-8d66-4dc9-90ce-15e11ab374b7",
       "size": "250% auto",
       "position": "45% 15%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "darknell",
+      "assetId": "4fd3ae23-376f-4ef9-a2fd-6310cc24eeba",
       "size": "250% auto",
       "position": "50% 15%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "seren",
+      "assetId": "392a43bf-8e49-4095-82dd-2d4fe350a25a",
       "size": "330% auto",
       "position": "50% 40%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "kalos",
+      "assetId": "eafa411b-740b-4b03-8a61-d4e55c2ff24b",
       "size": "210% auto",
       "position": "40% 65%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "adversary",
+      "assetId": "8a4ed1b9-a83c-4474-b2f8-eff42bd4fa37",
       "size": "210% auto",
       "position": "40% 35%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "kaling",
+      "assetId": "3e189e06-11f9-41c8-a02f-c06d683320de",
       "size": "250% auto",
       "position": "55% 35%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "maleficStar",
+      "assetId": "d3f9bd41-c5fc-4820-b454-f536100bc2c2",
       "size": "250% auto",
       "position": "40% 25%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "bellona",
+      "assetId": "9826b964-a4fc-437e-ba64-370959bd8dac",
       "size": "250% auto",
       "position": "50% 30%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "limbo",
+      "assetId": "6a64c46b-92be-49d4-880f-b4698514404e",
       "size": "240% auto",
       "position": "30% 60%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "bardrix",
+      "assetId": "3ecc62cc-9468-4065-b738-4f7d9de7d8d4",
       "size": "230% auto",
       "position": "25% 30%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "jupiter",
+      "assetId": "a33b871a-0c1d-4028-959d-bd03cc63b7e0",
       "size": "200% auto",
       "position": "45% 25%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "maerin",
+      "assetId": "7f30e1aa-4be5-4e83-9cb2-02e27753c5f1",
       "size": "180% auto",
       "position": "50% 30%"
     },
     {
       "kind": "boss_portrait_icon",
       "slug": "blackMage",
+      "assetId": "b32e077a-c476-4795-9622-64804ce59cfb",
       "size": "240% auto",
       "position": "20% 20%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "zakum",
+      "assetId": "f7aee7b7-473e-44d8-bc03-ce024e688a27",
       "size": "149% auto",
       "position": "50% 45%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "magnus",
+      "assetId": "6f401e48-bb27-4fcf-bbe2-0751bfa49899",
       "size": "149% auto",
       "position": "50% 40%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "papulatus",
+      "assetId": "c5a9135e-595e-463b-9494-ee217ec3ee78",
       "size": "149% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "vonBon",
+      "assetId": "31c0f940-2a00-44b4-a241-af86e43620c6",
       "size": "149% auto",
       "position": "20% 50%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "pierre",
+      "assetId": "8efc3289-813a-412a-a8b1-d8ab1d63a5d9",
       "size": "149% auto",
       "position": "20% 50%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "crimsonQueen",
+      "assetId": "77e49946-6a40-4084-acd3-e2edee53d946",
       "size": "149% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "vellum",
+      "assetId": "1e0afb70-384d-4498-aa7f-f099c763df8f",
       "size": "129% auto",
       "position": "-20% 70%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "lotus",
+      "assetId": "9bddfe69-679e-4cd1-bfe6-ced7ab0bfe7a",
       "size": "149% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "damien",
+      "assetId": "1edbfb3f-733f-4a01-aab5-7aa4f7f38306",
       "size": "149% auto",
       "position": "30% 50%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "slime",
+      "assetId": "253e5c1b-2acc-4695-ad2b-387f1c165e92",
       "size": "149% auto",
       "position": "30% 50%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "lucid",
+      "assetId": "2d450c29-8d0b-450c-84e1-990b63305c48",
       "size": "149% auto",
       "position": "20% 60%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "will",
+      "assetId": "e97ab26e-7e53-4666-bed4-2d66c094acbb",
       "size": "179% auto",
       "position": "30% 30%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "gloom",
+      "assetId": "ff43b179-4499-4de8-8ecb-c22c77298bb7",
       "size": "149% auto",
       "position": "50% 30%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "verusHilla",
+      "assetId": "072b2c33-8d66-4dc9-90ce-15e11ab374b7",
       "size": "149% auto",
       "position": "40% 40%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "darknell",
+      "assetId": "4fd3ae23-376f-4ef9-a2fd-6310cc24eeba",
       "size": "149% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "seren",
+      "assetId": "392a43bf-8e49-4095-82dd-2d4fe350a25a",
       "size": "179% auto",
       "position": "50% 45%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "kalos",
+      "assetId": "eafa411b-740b-4b03-8a61-d4e55c2ff24b",
       "size": "149% auto",
       "position": "20% 75%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "adversary",
+      "assetId": "8a4ed1b9-a83c-4474-b2f8-eff42bd4fa37",
       "size": "149% auto",
       "position": "20% 35%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "kaling",
+      "assetId": "3e189e06-11f9-41c8-a02f-c06d683320de",
       "size": "134% auto",
       "position": "60% 38%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "maleficStar",
+      "assetId": "d3f9bd41-c5fc-4820-b454-f536100bc2c2",
       "size": "149% auto",
       "position": "30% 35%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "bellona",
+      "assetId": "9826b964-a4fc-437e-ba64-370959bd8dac",
       "size": "142% auto",
       "position": "40% 33%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "limbo",
+      "assetId": "6a64c46b-92be-49d4-880f-b4698514404e",
       "size": "149% auto",
       "position": "30% 65%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "bardrix",
+      "assetId": "3ecc62cc-9468-4065-b738-4f7d9de7d8d4",
       "size": "149% auto",
       "position": "0% 40%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "jupiter",
+      "assetId": "a33b871a-0c1d-4028-959d-bd03cc63b7e0",
       "size": "149% auto",
       "position": "40% 40%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "maerin",
+      "assetId": "7f30e1aa-4be5-4e83-9cb2-02e27753c5f1",
       "size": "149% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "blackMage",
+      "assetId": "b32e077a-c476-4795-9622-64804ce59cfb",
       "size": "149% auto",
       "position": "20% 35%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "ancientGodMitra",
+      "assetId": "afac0e49-28af-43ba-a777-3b0b57ae1d1a",
       "size": "224% auto",
       "position": "50% 50%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "senya",
+      "assetId": "4251b38c-4998-4584-aef8-6edd99e42164",
       "size": "224% auto",
       "position": "50% 35%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "baekyeon",
+      "assetId": "6f6c831b-b928-4242-b472-efd01df60686",
       "size": "224% auto",
       "position": "30% 40%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "lesa",
+      "assetId": "c7e52529-0c92-4cbe-b12d-1a91405bffb3",
       "size": "172% auto",
       "position": "40% 35%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "arcanus",
+      "assetId": "ab91261e-bbcf-4ce0-8412-870205da1fc4",
       "size": "104% auto",
       "position": "66% 29%"
     },
     {
       "kind": "boss_portrait_modal",
       "slug": "armorDragon",
+      "assetId": "9ecfdbf6-a15c-4265-8188-26754164f9f1",
       "size": "119% auto",
       "position": "130% 27%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "roadOfVanishing",
+      "assetId": "294681f1-9e9b-4f7e-8506-8030bee2c154",
       "size": "210% auto",
       "position": "105% 95%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "chewChew",
+      "assetId": "77a49dfa-cc6c-40e4-88c1-474457ea386e",
       "size": "230% auto",
       "position": "65% 70%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "lacheln",
+      "assetId": "b5f820f0-c56c-4489-ad10-cb076ade5631",
       "size": "310% auto",
       "position": "0% 45%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "arcana",
+      "assetId": "925d3243-aa3b-495b-8cd3-dc25166865fd",
       "size": "200% auto",
       "position": "100% 65%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "morass",
+      "assetId": "2794ea45-c227-4475-82fe-5536ed58b8b2",
       "size": "170% auto",
       "position": "0% 80%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "esfera",
+      "assetId": "5472bc19-552f-4eb1-9d0a-69c8879713a6",
       "size": "280% auto",
       "position": "60% 60%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "moonBridge",
+      "assetId": "aa1f436e-285c-47a4-b4a1-06d1a96d71c0",
       "size": "190% auto",
       "position": "0% 60%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "theLabyrinthOfSuffering",
+      "assetId": "f8281a22-041a-411a-914a-ced3264feccb",
       "size": "120% auto",
       "position": "0% 50%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "limen",
+      "assetId": "120adac5-2ca7-4d7c-b7a3-ebe3bd82022d",
       "size": "140% auto",
       "position": "25% 50%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "cernium",
+      "assetId": "7add2fd4-f64f-40bc-8808-feac7cde9fec",
       "size": "220% auto",
       "position": "50% 40%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "Arcs",
+      "assetId": "a111a96d-1f3a-4355-95fb-60da2bfb1972",
       "size": "220% auto",
       "position": "20% 35%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "odium",
+      "assetId": "01b8281d-56af-4e44-8adf-9b8b5970186a",
       "size": "250% auto",
       "position": "50% 50%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "dowonkyung",
+      "assetId": "f890b104-89c5-4994-8a68-eaa109a53245",
       "size": "170% auto",
       "position": "50% 65%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "arteria",
+      "assetId": "3a6f584b-2d87-46fe-bb55-077adc5cb675",
       "size": "180% auto",
       "position": "50% 45%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "carcion",
+      "assetId": "1cc4410e-69ff-4943-8455-955b3272fa3d",
       "size": "190% auto",
       "position": "45% 45%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "tallahart",
+      "assetId": "b195ce0a-7fa2-41bc-9af6-40f274b46b8e",
       "size": "260% auto",
       "position": "0% 70%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "geardrak",
+      "assetId": "163688af-badf-4780-95a1-d7b06da04341",
       "size": "220% auto",
       "position": "70% 60%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "monsterPark",
+      "assetId": "d76f5ba3-1f2d-48da-81cf-f382488a0f1a",
       "size": "250% auto",
       "position": "5% 60%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "hallOfHeroes",
+      "assetId": "61656c07-2619-488e-a098-5e41ebd2e05a",
       "size": "200% auto",
       "position": "15% 55%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "flagRace",
+      "assetId": "cf6191e9-2dc9-49dd-9be6-22f84b8056b1",
       "size": "180% auto",
       "position": "70% 65%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "critias",
+      "assetId": "0f2595c8-d6f2-47ee-80da-af8c0b5ad234",
       "size": "140% auto",
       "position": "79% 87%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "fallenWorldTree",
+      "assetId": "236b1e7e-cee4-4cf4-a083-a6e4e2c1e654",
       "size": "170% auto",
       "position": "110% 100%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "haven",
+      "assetId": "d174aeba-7198-4db1-9742-d5e7749f28b0",
       "size": "170% auto",
       "position": "93% 67%"
     },
     {
       "kind": "daily_quest_region",
       "slug": "muruengRaid",
+      "assetId": "41eda90a-46aa-4244-b577-581c590e290b",
       "size": "200% auto",
       "position": "91% 93%"
     }

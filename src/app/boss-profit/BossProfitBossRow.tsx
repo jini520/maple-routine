@@ -24,7 +24,7 @@ import { partySizeForShares } from '../../lib/boss/party-shares'
 import { SOLO_PARTY_PLAN, partyPlanKey } from '../../features/boss-profit/party-plans'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
-import { bossPortraitSlugOf } from '../../lib/boss/bosses'
+import { bossPortraitAssetIdOf } from '../../lib/boss/bosses'
 import { BossDropSheet } from './BossDropSheet'
 import { ManualCompletionButton } from './ManualCompletionButton'
 import { ManualCompletionMark } from './ManualCompletionMark'
@@ -238,7 +238,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
       className="flex-row items-center gap-3 px-3 py-2.5"
       sheen={rowHasValuableDrop(row, props.drops)}
     >
-      <BossPortrait portraitSlug={bossPortraitSlugOf(row.bossKey)} label={row.bossName} size={BOSS_PORTRAIT_SIZE} />
+      <BossPortrait portraitAssetId={bossPortraitAssetIdOf(row.bossKey)} label={row.bossName} size={BOSS_PORTRAIT_SIZE} />
 
       <View className="min-w-0 flex-1">
         {/* 이름 라인 전체가 드롭 시트 열기 버튼. 파티 스테퍼는 아래 줄이라 탭 충돌 없음. */}
@@ -331,7 +331,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
         <PartySizeModal
           bossName={row.bossName}
           cycleLabel={row.cycle === 'monthly' ? '월간 보스' : '주간 보스'}
-          portraitSlug={bossPortraitSlugOf(row.bossKey)}
+          portraitAssetId={bossPortraitAssetIdOf(row.bossKey)}
           difficulties={withOwnDifficulty(activeDifficultiesOf(row.bossKey, row.periodKey, new Date()), row.difficulty)}
           difficulty={row.difficulty}
           partySize={partySize}

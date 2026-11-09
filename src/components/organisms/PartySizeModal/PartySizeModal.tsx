@@ -123,7 +123,7 @@ export function PartySizeModal(props: {
   bossName: string
   /** 히어로의 키커. '주간 보스' / '월간 보스'. */
   cycleLabel: string
-  portraitSlug: string | null
+  portraitAssetId: string | null
   difficulties: BossDifficulty[]
   /** 지금 고른 난이도. 바뀌면 인원과 비율이 그 난이도의 저장값으로 갈아탄다. */
   difficulty: BossDifficulty
@@ -182,10 +182,10 @@ export function PartySizeModal(props: {
   const panelScope = buildSheetScopeVariables(definition)
   const surface = panelScope['--color-surface']
 
-  const portraitUrl = getBossPortraitUrl(props.portraitSlug)
+  const portraitUrl = getBossPortraitUrl(props.portraitAssetId)
   // **띠 전용 표다**(`boss-portrait-modal-crops.json`). 카드 표와 갈라 둔 것은 띠가 카드보다 좁고
   // 높아 같은 값이 다른 구도를 내기 때문이고, 한 표를 같이 쓰면 여기를 맞출 때마다 카드가 움직인다.
-  const crop = getBossPortraitModalCrop(props.portraitSlug)
+  const crop = getBossPortraitModalCrop(props.portraitAssetId)
 
   return (
     // align="center": 이 모달은 키보드를 띄우지 않는다(`Modal` 기본은 'top').

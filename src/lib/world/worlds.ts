@@ -23,9 +23,9 @@ export type WorldEntry = WorldRow
 function toWorld(row: Row): WorldRow | null {
   if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
   if (!isBoolean(row.challengers) || !isBoolean(row.event)) return null
-  const emblem = optional(row.emblem, isNonEmptyString)
-  if (emblem === false) return null
-  return compact({ key: row.key, name: row.name, emblem, challengers: row.challengers, event: row.event })
+  const emblemAssetId = optional(row.emblemAssetId, isNonEmptyString)
+  if (emblemAssetId === false) return null
+  return compact({ key: row.key, name: row.name, emblemAssetId, challengers: row.challengers, event: row.event })
 }
 
 /** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */

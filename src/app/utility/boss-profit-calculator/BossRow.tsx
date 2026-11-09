@@ -12,7 +12,7 @@ import { DifficultyExpander } from '../../../components/molecules/DifficultyExpa
 import { Stepper } from '../../../components/molecules/Stepper/Stepper'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { CalculatorBoss } from '../../../lib/boss/boss-profit-calculator'
-import { activeDifficultiesNow, bossAliasOf, bossNameOf, bossPortraitSlugOf, getMaxPartySize } from '../../../lib/boss/bosses'
+import { activeDifficultiesNow, bossAliasOf, bossNameOf, bossPortraitAssetIdOf, getMaxPartySize } from '../../../lib/boss/bosses'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { formatShareRatio } from '../../../lib/boss/party-shares'
 import type { BossDifficulty } from '../../../types'
@@ -32,7 +32,7 @@ export function BossRow(props: {
   return (
     <View testID={`calculator-boss-${boss.bossKey}`} className="flex-row gap-3 px-3.5 py-2.5">
       <View aria-hidden>
-        <BossPortrait portraitSlug={bossPortraitSlugOf(boss.bossKey)} label={name} size={40} />
+        <BossPortrait portraitAssetId={bossPortraitAssetIdOf(boss.bossKey)} label={name} size={40} />
       </View>
       <View className="flex-1 gap-1.5">
         <View className="flex-row items-baseline justify-between gap-2">

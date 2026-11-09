@@ -8,6 +8,7 @@
 //   이라 감싸는 순간 기준 상자가 바뀌어 그림이 사라진다(컴포넌트 주석).
 // `aria-pressed` → **`accessibilityState.selected`**(`DifficultySegment` 가 `aria-selected` 를
 //   쓴다. RN 접근성 상태에 *pressed* 가 없다).
+import { assetIdOfPath } from '../../../../assets/__tests__/asset-uri'
 import { useState } from 'react'
 import { act, fireEvent } from '@testing-library/react-native'
 
@@ -33,7 +34,7 @@ function props(overrides: Partial<Props> = {}): Props {
   return {
     bossName: '스우',
     cycleLabel: '주간 보스',
-    portraitSlug: 'lotus',
+    portraitAssetId: assetIdOfPath('bosses/lotus.webp') ?? null,
     difficulties: ['normal', 'hard', 'extreme'],
     difficulty: 'hard',
     partySize: 4,
@@ -161,14 +162,14 @@ describe('PartySizeModal', () => {
 
   it('일러스트가 없는 보스면 히어로를 비우고 이름만 남긴다', async () => {
     const { getByText, queryByTestId } = await renderOverlay(
-      <PartySizeModal {...props({ portraitSlug: null })} />,
+      <PartySizeModal {...props({ portraitAssetId: null })} />,
     )
 
     expect(getByText('스우')).toBeTruthy()
     expect(queryByTestId('faded-illustration', HIDDEN)).toBeNull()
   })
 
-  it('에셋이 있는 슬러그는 히어로에 일러스트를 그린다', async () => {
+  it('그림이 있는 초상은 히어로에 일러스트를 그린다', async () => {
     const { getByTestId, queryByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
 
     expect(getByTestId('faded-illustration', HIDDEN)).toBeTruthy()
@@ -201,10 +202,10 @@ describe('PartySizeModal', () => {
     expect(corner.props.cy).toBe('100%')
   })
 
-  // 반대쪽. 매핑에 없는 슬러그는 아트를 안 만든다(그림 없는 보스가 타던 분기 그대로).
-  it('에셋이 없는 슬러그는 일러스트를 그리지 않는다', async () => {
+  // 반대쪽. 그림 목록에 없는 id 는 아트를 안 만든다(그림 없는 보스가 타던 분기 그대로).
+  it('그림 목록에 없는 id 는 일러스트를 그리지 않는다', async () => {
     const { queryByTestId } = await renderOverlay(
-      <PartySizeModal {...props({ portraitSlug: '없는보스' })} />,
+      <PartySizeModal {...props({ portraitAssetId: '없는보스' })} />,
     )
 
     expect(queryByTestId('faded-illustration', HIDDEN)).toBeNull()

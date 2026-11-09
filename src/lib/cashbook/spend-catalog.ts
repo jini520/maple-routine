@@ -98,16 +98,6 @@ export interface SpendCatalogItem extends EffectivePeriod {
 }
 
 /**
- * 타일 그림. 아이템 그림 파일(`src/assets/items/`) 또는 지역 아이콘 slug(`src/assets/maps/icons/`).
- *
- * 지역 아이콘은 에픽던전 넷의 것이라 타일에서 이름 옆에 선다.
- */
-export interface SpendTileIcon {
-  readonly file?: string
-  readonly map?: string
-}
-
-/**
  * 목록의 **한 칸**(타일). 사용자가 1단계에서 고르는 단위다.
  *
  * 같은 타일의 항목들이 한 칸으로 접힌다(하이마운틴 1·2단계 → 하이마운틴). 그래서 `items` 가 둘
@@ -118,7 +108,8 @@ export interface SpendCatalogChoice {
   readonly key: string
   /** 칸에 적히는 이름. */
   readonly label: string
-  readonly icon?: SpendTileIcon
+  /** 아이템 그림이나 지역 아이콘의 id. 지역 아이콘은 에픽던전 넷의 것이라 타일에서 이름 옆에 선다. */
+  readonly iconAssetId?: string
   readonly items: readonly SpendCatalogItem[]
 }
 
@@ -159,10 +150,9 @@ function toGroup(row: Row): SpendGroupRow | null {
 
 function toTile(row: Row): SpendTileRow | null {
   if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
-  const iconFile = optional(row.iconFile, isNonEmptyString)
-  const iconMap = optional(row.iconMap, isNonEmptyString)
-  if (iconFile === false || iconMap === false) return null
-  return compact({ key: row.key, name: row.name, iconFile, iconMap })
+  const iconAssetId = optional(row.iconAssetId, isNonEmptyString)
+  if (iconAssetId === false) return null
+  return compact({ key: row.key, name: row.name, iconAssetId })
 }
 
 function toItem(row: Row): SpendItemRow | null {
@@ -245,7 +235,7 @@ interface CatalogIndex {
   /** 항목 줄에 축 값과 형태를 붙인 것. 차례는 표의 차례다. */
   readonly items: readonly SpendCatalogItem[]
   readonly groups: ReadonlyMap<string, SpendGroupRow>
-  readonly tiles: ReadonlyMap<string, { readonly name: string; readonly icon?: SpendTileIcon }>
+  readonly tiles: ReadonlyMap<string, { readonly name: string; readonly iconAssetId?: string }>
 }
 
 const catalog = derive(spendCatalogTable, (table): CatalogIndex => {
@@ -253,10 +243,7 @@ const catalog = derive(spendCatalogTable, (table): CatalogIndex => {
   const tiles = new Map(
     table.tiles.map((tile) => [
       tile.key,
-      {
-        name: tile.name,
-        icon: tile.iconFile === undefined && tile.iconMap === undefined ? undefined : compact({ file: tile.iconFile, map: tile.iconMap }),
-      },
+      compact({ name: tile.name, iconAssetId: tile.iconAssetId }),
     ]),
   )
   const optionsByItem = new Map<string, Record<string, string>>()
@@ -324,7 +311,7 @@ export function rewardCoinPriceMeso(): number {
 }
 
 /** 세라자르 주화. 에픽던전 추가 리워드가 주고 상점에 팔면 메소가 된다. 이름과 그림은 앱 상수이고 판매가는 `rewardCoinPriceMeso()` 다. */
-export const SPEND_REWARD_COIN = { name: '세라자르 주화', icon: 'selazar_coin.webp' } as const
+export const SPEND_REWARD_COIN = { name: '세라자르 주화' } as const
 
 const MESO_PER_RATE_UNIT = 100_000_000
 
@@ -358,7 +345,7 @@ function groupItems(items: readonly SpendCatalogItem[]): SpendCatalogGroup[] {
     key: string
     group: string
     active: boolean
-    choices: { key: string; label: string; icon?: SpendTileIcon; items: SpendCatalogItem[] }[]
+    choices: { key: string; label: string; iconAssetId?: string; items: SpendCatalogItem[] }[]
   }[] = []
   for (const item of items) {
     let group = groups[groups.length - 1]
@@ -377,7 +364,7 @@ function groupItems(items: readonly SpendCatalogItem[]): SpendCatalogGroup[] {
       continue
     }
     const tile = catalog().tiles.get(item.tile)
-    group.choices.push({ key: item.tile, label: tile?.name ?? item.name, icon: tile?.icon, items: [item] })
+    group.choices.push(compact({ key: item.tile, label: tile?.name ?? item.name, iconAssetId: tile?.iconAssetId, items: [item] }))
   }
   return groups
 }

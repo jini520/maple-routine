@@ -32,10 +32,10 @@ export function DailyQuestCard(props: {
 }): React.JSX.Element {
   const { content } = props
   const displayName = contentDisplayNameOf(content.contentKey, content.apiName)
-  const backgroundSlug = findContent(content.contentKey)?.background?.map ?? null
-  const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
-  const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
-  const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
+  const background = findContent(content.contentKey)?.background
+  const backgroundUrl = getDailyQuestBackgroundUrl(background?.map ?? null)
+  const iconUrl = getDailyQuestRegionIconUrl(background?.regionIcon ?? null)
+  const crop = props.crop ?? getDailyQuestRegionCrop(background?.map ?? null)
 
   // 카드 배경/보더/이름 텍스트는 BossCard와 동일하게 앱 테마와 무관하게 레테(다크) 고정 배색을
   // 쓴다. 일러스트 bleed·페이드·text-shadow가 어두운 배경을 전제로 튜닝됐기 때문(/020).
@@ -80,10 +80,10 @@ export function MonsterParkCard(props: {
   isBlocked?: boolean
 }): React.JSX.Element {
   const { content } = props
-  const backgroundSlug = findContent(content.contentKey)?.background?.map ?? null
-  const backgroundUrl = getDailyQuestBackgroundUrl(backgroundSlug)
-  const iconUrl = getDailyQuestRegionIconUrl(backgroundSlug)
-  const crop = props.crop ?? getDailyQuestRegionCrop(backgroundSlug)
+  const background = findContent(content.contentKey)?.background
+  const backgroundUrl = getDailyQuestBackgroundUrl(background?.map ?? null)
+  const iconUrl = getDailyQuestRegionIconUrl(background?.regionIcon ?? null)
+  const crop = props.crop ?? getDailyQuestRegionCrop(background?.map ?? null)
   const progressPercent = content.maxCount > 0 ? Math.min((content.nowCount / content.maxCount) * 100, 100) : 0
 
   return (

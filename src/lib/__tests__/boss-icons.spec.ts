@@ -2,7 +2,7 @@
 import { getBossPortraitCrop, getBossPortraitUrl } from '../assets/asset-lookup'
 
 describe('getBossPortraitUrl', () => {
-  it('portraitSlug가 null이면 null을 반환한다', () => {
+  it('portraitAssetId가 null이면 null을 반환한다', () => {
     expect(getBossPortraitUrl(null)).toBeNull()
   })
 
@@ -12,7 +12,7 @@ describe('getBossPortraitUrl', () => {
 })
 
 describe('getBossPortraitCrop', () => {
-  it('portraitSlug가 null이면 기본 폴백(cover/center)을 반환한다', () => {
+  it('portraitAssetId가 null이면 기본 폴백(cover/center)을 반환한다', () => {
     expect(getBossPortraitCrop(null)).toEqual({ size: 'cover', position: 'center' })
   })
 

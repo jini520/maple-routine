@@ -86,8 +86,8 @@ function BossCard(props: {
   onEdit?: () => void
 }): React.JSX.Element {
   const { boss, partySize } = props
-  const portraitUrl = getBossPortraitUrl(boss.portraitSlug)
-  const crop = props.crop ?? getBossPortraitCrop(boss.portraitSlug)
+  const portraitUrl = getBossPortraitUrl(boss.portraitAssetId)
+  const crop = props.crop ?? getBossPortraitCrop(boss.portraitAssetId)
   // 보스 표에 없는 보스는 API 원문으로 선다.
   const bossName = bossNameOf(boss.bossKey, boss.apiName)
   const editable = props.onEdit !== undefined
@@ -602,7 +602,7 @@ export function BossScreen(): React.JSX.Element {
         <PartySizeModal
           bossName={bossNameOf(modalBossKey, partyModal.boss.apiName)}
           cycleLabel={partyModal.boss.cycle === 'monthly' ? '월간 보스' : '주간 보스'}
-          portraitSlug={partyModal.boss.portraitSlug}
+          portraitAssetId={partyModal.boss.portraitAssetId}
           // 표에서 빠진 key 는 후보를 알 수 없다. 지금 난이도 하나만 그려 세그먼트가 사라지지 않게 한다.
           difficulties={
             activeDifficultiesNow(modalBossKey).length > 0

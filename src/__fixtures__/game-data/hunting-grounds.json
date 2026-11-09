@@ -5,127 +5,148 @@
       "key": "road_of_vanishing",
       "name": "소멸의 여로",
       "forceType": "arcane",
-      "iconMap": "roadOfVanishing"
+      "iconMap": "roadOfVanishing",
+      "iconAssetId": "8789cf44-d6eb-4039-ab06-2b78f70500ca"
     },
     {
       "key": "reverse_city",
       "name": "리버스 시티",
       "forceType": "arcane",
-      "iconMap": "reverseCity"
+      "iconMap": "reverseCity",
+      "iconAssetId": null
     },
     {
       "key": "chew_chew",
       "name": "츄츄 아일랜드",
       "forceType": "arcane",
-      "iconMap": "chewChew"
+      "iconMap": "chewChew",
+      "iconAssetId": "e3db66d6-ea6c-4410-9e4a-d1bdc3e9ddc5"
     },
     {
       "key": "yum_yum",
       "name": "얌얌 아일랜드",
       "forceType": "arcane",
-      "iconMap": "yumYum"
+      "iconMap": "yumYum",
+      "iconAssetId": null
     },
     {
       "key": "lacheln",
       "name": "레헬른",
       "forceType": "arcane",
-      "iconMap": "lacheln"
+      "iconMap": "lacheln",
+      "iconAssetId": "c4091efe-782a-4ef2-834c-5d9fa294104c"
     },
     {
       "key": "arcana",
       "name": "아르카나",
       "forceType": "arcane",
-      "iconMap": "arcana"
+      "iconMap": "arcana",
+      "iconAssetId": "803a1b49-cd79-4ee9-9274-fac91a60bc12"
     },
     {
       "key": "morass",
       "name": "모라스",
       "forceType": "arcane",
-      "iconMap": "morass"
+      "iconMap": "morass",
+      "iconAssetId": "3f31234f-922d-4ab7-8c55-d9e9338a1216"
     },
     {
       "key": "esfera",
       "name": "에스페라",
       "forceType": "arcane",
-      "iconMap": "esfera"
+      "iconMap": "esfera",
+      "iconAssetId": "836d27b1-b555-4b97-9ec4-1ba6615e4551"
     },
     {
       "key": "sellas",
       "name": "셀라스",
       "forceType": "arcane",
-      "iconMap": "sellas"
+      "iconMap": "sellas",
+      "iconAssetId": null
     },
     {
       "key": "moon_bridge",
       "name": "문브릿지",
       "forceType": "arcane",
-      "iconMap": "moonBridge"
+      "iconMap": "moonBridge",
+      "iconAssetId": "3ca87180-629e-484d-9fdd-2f4f76e1e9e4"
     },
     {
       "key": "labyrinth_of_suffering",
       "name": "고통의 미궁",
       "forceType": "arcane",
-      "iconMap": "theLabyrinthOfSuffering"
+      "iconMap": "theLabyrinthOfSuffering",
+      "iconAssetId": "0bf93d61-8994-457c-85f8-c60d11ddbc1b"
     },
     {
       "key": "limen",
       "name": "리멘",
       "forceType": "arcane",
-      "iconMap": "limen"
+      "iconMap": "limen",
+      "iconAssetId": "5447a04f-dc56-4c35-86f1-1e62b093bf23"
     },
     {
       "key": "cernium",
       "name": "세르니움",
       "forceType": "authentic",
-      "iconMap": "cernium"
+      "iconMap": "cernium",
+      "iconAssetId": "42c49daf-b13b-46e0-b857-9d2c76775af5"
     },
     {
       "key": "burning_cernium",
       "name": "불타는 세르니움",
       "forceType": "authentic",
-      "iconMap": "burningCernium"
+      "iconMap": "burningCernium",
+      "iconAssetId": null
     },
     {
       "key": "arcs",
       "name": "호텔 아르크스",
       "forceType": "authentic",
-      "iconMap": "Arcs"
+      "iconMap": "Arcs",
+      "iconAssetId": "003b3d79-b778-43db-b08b-d848d66817e5"
     },
     {
       "key": "odium",
       "name": "오디움",
       "forceType": "authentic",
-      "iconMap": "odium"
+      "iconMap": "odium",
+      "iconAssetId": "298a60b8-71a0-427e-98e2-9e52ab6d6592"
     },
     {
       "key": "dowonkyung",
       "name": "도원경",
       "forceType": "authentic",
-      "iconMap": "dowonkyung"
+      "iconMap": "dowonkyung",
+      "iconAssetId": "03449428-e2cf-4bcd-ac4f-679822ec6ada"
     },
     {
       "key": "arteria",
       "name": "아르테리아",
       "forceType": "authentic",
-      "iconMap": "arteria"
+      "iconMap": "arteria",
+      "iconAssetId": "da68469f-f8a7-44c6-b1c9-18a4eb1f1760"
     },
     {
       "key": "carcion",
       "name": "카르시온",
       "forceType": "authentic",
-      "iconMap": "carcion"
+      "iconMap": "carcion",
+      "iconAssetId": "13fe1f18-102d-445c-a319-bf33cd7c940f"
     },
     {
       "key": "tallahart",
       "name": "탈라하트",
       "forceType": "authentic",
-      "iconMap": "tallahart"
+      "iconMap": "tallahart",
+      "iconAssetId": "3901e475-4d91-4698-b6b5-41cfee99cb8a"
     },
     {
       "key": "geardrak",
       "name": "기어드락",
       "forceType": "authentic",
-      "iconMap": "geardrak"
+      "iconMap": "geardrak",
+      "iconAssetId": "3b9fc9b6-8109-43f4-aac3-8a0e0dc3199b"
     }
   ],
   "grounds": [
