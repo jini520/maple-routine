@@ -98,8 +98,8 @@ export async function signInWithNexon(options?: NexonSignInOptions): Promise<Nex
     if (options?.fresh === true) await forgetTrackedSelection()
 
     // 메이플 ID 가 같은 키를 저장하기 전에 서버에서 잇고, 로그인이 그 키의 계정 id 를 이어받아 저장된다. 못 적으면 다시
-    // 켤 때 로그인 상태가 아니다. 성공이라고 말하면 안 된다.
-    await saveNexonLogin(session)
+    // 켤 때 로그인 상태가 아니다. 성공이라고 말하면 안 된다. 로그인 화면의 로그인은 새 로그인이라 앞 메인 키를 버린다.
+    await saveNexonLogin(session, { fresh: options?.fresh === true })
     return { kind: 'signedIn' }
   } catch {
     return { kind: 'failed' }

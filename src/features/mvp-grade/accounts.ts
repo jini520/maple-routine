@@ -1,10 +1,10 @@
 /** 등급을 묻고 고치는 자리가 함께 쓰는 메이플 ID 읽기. 추적 캐릭터의 ID 와 ID 표시. */
-import { currentCredential } from '../auth/current-credential'
+import { currentCredentials } from '../auth/current-credential'
 import { summarizeAccount, type AccountSummaryView } from '../character-manage/derivations'
 import { accountOfOcid, type CharacterAccountSighting } from '../../lib/mvp/membership'
 import { getCharacterProfiles } from '../../storage/character-profiles'
 import type { MapleAccount } from '../../types'
-import { fetchCharacterListCached } from './character-list'
+import { fetchCharacterListsCached } from './character-list'
 
 export interface AccountIdentity {
   /** 목록을 못 받았으면 `null` 이라 ID 만 적는다 */
@@ -25,9 +25,10 @@ export function trackedAccountIdsOf(
 
 /** 목록을 받아 그 ID 들의 표시를 만든다. 못 받으면 표시 없이 ID 만 선다. */
 export async function loadAccountIdentities(accountIds: readonly string[]): Promise<Map<string, AccountIdentity>> {
-  let lists: MapleAccount[] = []
-  const credential = await currentCredential()
-  if (credential !== null) lists = await fetchCharacterListCached(credential).catch(() => [])
+  // 넥슨 계정마다 받는다. 부계정의 메이플 ID 는 그 계정의 목록에만 있다.
+  const lists: MapleAccount[] = (await fetchCharacterListsCached(await currentCredentials())).flatMap(
+    (list) => list.accounts ?? [],
+  )
   const summaries = new Map<string, AccountSummaryView>()
   for (const account of lists) {
     if (!accountIds.includes(account.accountId)) continue

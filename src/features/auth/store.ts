@@ -12,18 +12,18 @@ import { fetchAndRecordCharacterList, fetchUnsavedCharacterList, recordCharacter
 import { probeApiKeyStage } from '../../nexon/key-stage'
 import { isInvalidApiKeyError, NexonMaintenanceError, NexonRateLimitError } from '../../nexon/errors'
 import {
-  clearAuthConfig,
   clearNexonLogin,
   getAuthConfig,
   removeAllApiKeys,
   removeApiKey,
-  setApiKey,
+  setMainApiKey,
+  signOutAuth,
 } from '../../storage/api-key'
 import { useAppEntryStore } from '../app-entry/store'
 import { revokeNexonSession } from '../../server/nexon-auth'
 import { useToastStore } from '../toast/store'
 import { formatAuthError } from './format'
-import { apiKeyCredential } from '../../lib/nexon-credential'
+import { apiKeyCredential, credentialOf } from '../../lib/nexon-credential'
 import { signInWithNexon } from './nexon-login'
 import { pruneCoveredApiKeys } from './prune-covered-keys'
 import { currentCredential } from './current-credential'
@@ -94,7 +94,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
   // 키 하나만 본다. 뒤 단계의 재개는 `useAppEntryStore` 가 저장된 값에서 따로 파생한다.
   async restoreFromStorage() {
-    if ((await getAuthConfig()) === null) {
+    if (credentialOf(await getAuthConfig()) === null) {
       return
     }
 
@@ -135,7 +135,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       // 로그인 화면에서 들어온 새 로그인이라 캐릭터를 새로 고른다.
       const reusedId = (await reusableNexonAccountId(accounts)) ?? undefined
       await forgetTrackedSelection()
-      await setApiKey(apiKey, '', reusedId)
+      await setMainApiKey(apiKey, '', reusedId)
       const saved = (await getAuthConfig())?.apiKeys.find((one) => one.value === apiKey)
       recordCharacterList(accounts, saved?.id ?? null)
     } catch {
@@ -210,8 +210,8 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     }
 
     // 무엇이 남았는지 모르면 로그인 화면으로 보낸다. 앱을 세워 두면 죽은 수단이 그대로 남아
-    // 같은 실패를 무한히 다시 만난다.
-    const 남은수단 = 지웠다 ? await getAuthConfig().catch(() => null) : null
+    // 같은 실패를 무한히 다시 만난다. 부계정 키만 남은 것도 남은 수단이 아니다. 다시 로그인할 때까지 부르지 않는다.
+    const 남은수단 = 지웠다 ? credentialOf(await getAuthConfig().catch(() => null)) : null
     if (남은수단 !== null) {
       // 남은 수단으로 앱은 계속 선다. 알림만 닫는다. 여기서 로그아웃을 내면 그 수단으로
       // 조회되던 메이플 ID 까지 함께 잃는다.
@@ -268,7 +268,8 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     if (session !== undefined) await revokeNexonSession(session)
 
     await clearUnsentServerData()
-    await clearAuthConfig()
+    // 넥슨 로그인과 메인 키를 지운다. 부계정 키는 그 로그인에 귀속된 채 남아, 같은 넥슨 ID 로 다시 로그인하면 이어진다.
+    await signOutAuth()
     set((state) => authReducer(state, { type: 'SIGNED_OUT' }))
     useAppEntryStore.getState().reset()
   },

@@ -9,9 +9,9 @@ import { accountOfOcid, type CharacterAccountSighting } from '../../lib/mvp/memb
 import { getCharacterAccountSightings } from '../../storage/character-accounts'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import type { MapleAccount } from '../../types'
-import { currentCredential } from '../auth/current-credential'
+import { currentCredentials } from '../auth/current-credential'
 import { trackedAccountIdsOf } from '../mvp-grade/accounts'
-import { readCachedCharacterList } from '../mvp-grade/character-list'
+import { readCachedCharacterLists } from '../mvp-grade/character-list'
 import { readCharacterBasic } from '../schedule-sync/read-schedule'
 
 /** 대표를 못 찾은 ID 의 이름. MVP 등급 카드가 목록을 못 받은 ID 를 부르는 말과 같다. */
@@ -79,13 +79,14 @@ export function sheetAccountsOf(sources: AccountNameSources): SheetAccount[] {
 
 /** 못 읽은 값은 비운 채로 간다. 이름이 `메이플 ID` 로 떨어질 뿐 기록은 보인다. */
 async function loadSources(): Promise<AccountNameSources> {
-  const [sightings, trackedOcids, credential] = await Promise.all([
+  const [sightings, trackedOcids, credentials] = await Promise.all([
     getCharacterAccountSightings().catch(() => []),
     getTrackedCharacterOcids().catch(() => null),
-    currentCredential(),
+    currentCredentials(),
   ])
   return {
-    lists: credential === null ? undefined : readCachedCharacterList(credential),
+    // 넥슨 계정마다 받아 둔 목록을 모은다. 부계정의 메이플 ID 는 그 계정의 목록에만 있다.
+    lists: readCachedCharacterLists(credentials),
     sightings,
     trackedOcids: trackedOcids ?? [],
     profileOf: (ocid) => {

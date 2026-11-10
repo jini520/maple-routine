@@ -4,7 +4,24 @@ jest.mock('../../../storage/mvp-grades', () => ({ getMvpGradeHistories: jest.fn(
 jest.mock('../../../storage/mvp-grade-prefs', () => ({ getMvpWeeklyCheckOff: jest.fn(), setMvpWeeklyCheckOff: jest.fn() }))
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/character-profiles', () => ({ getCharacterProfiles: jest.fn() }))
-jest.mock('../character-list', () => ({ fetchCharacterListCached: jest.fn() }))
+// 계정마다 받는 함수는 진짜처럼 계정 하나씩 `fetchCharacterListCached` 로 받는다. 몇 번 받았는지를 그쪽에서 센다.
+jest.mock('../character-list', () => {
+  const fetchCharacterListCached = jest.fn()
+  return {
+    fetchCharacterListCached,
+    fetchCharacterListsCached: jest.fn((credentials: unknown[]) =>
+      Promise.all(
+        credentials.map(async (credential) => {
+          try {
+            return { credential, accounts: await fetchCharacterListCached(credential), error: null }
+          } catch (error) {
+            return { credential, accounts: null, error }
+          }
+        }),
+      ),
+    ),
+  }
+})
 jest.mock('../after-change', () => ({ afterGradeChange: jest.fn() }))
 jest.mock('../../toast/store', () => ({ useToastStore: { getState: () => ({ showError: mockShowError }) } }))
 
@@ -38,7 +55,7 @@ beforeEach(() => {
     ]),
   )
   m(getMvpWeeklyCheckOff).mockResolvedValue(true)
-  m(getAuthConfig).mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key' }] })
+  m(getAuthConfig).mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key', loginId: null }] })
   m(fetchCharacterListCached).mockResolvedValue([
     { accountId: 'A', characters: [{ ocid: 'a1', name: '에이', world: '스카니아', worldKey: 'scania', jobClass: '비숍', level: 280 }] },
   ])

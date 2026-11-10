@@ -41,7 +41,7 @@ describe('정상 흐름', () => {
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'signedIn' })
 
     expect(redeemNexonSession).toHaveBeenCalledWith({ redeemKey: '되찾기열쇠', receipt: '영수증' })
-    expect(saveNexonLogin).toHaveBeenCalledWith('받은세션')
+    expect(saveNexonLogin).toHaveBeenCalledWith('받은세션', { fresh: false })
   })
 
   it('서버가 준 주소를 그대로 열고 돌아올 주소는 등록한 스킴이다', async () => {
@@ -76,7 +76,7 @@ describe('콜백이 아직 도는 중이면 되묻는다', () => {
 
     await expect(result).resolves.toEqual({ kind: 'signedIn' })
     expect(redeemNexonSession).toHaveBeenCalledTimes(3)
-    expect(saveNexonLogin).toHaveBeenCalledWith('늦은세션')
+    expect(saveNexonLogin).toHaveBeenCalledWith('늦은세션', { fresh: false })
   })
 
   it('끝까지 pending 이면 실패다. 무한히 안 묻는다', async () => {
@@ -179,6 +179,15 @@ describe('새 로그인의 추적 목록 비우기', () => {
     await signInWithNexon({ fresh: false })
 
     expect(forgetTrackedSelection).not.toHaveBeenCalled()
+  })
+
+  // 새 로그인이면 저장이 앞 메인 키를 버리고, 연동이면 그 키를 부계정으로 둔다.
+  it('새 로그인인지를 저장에 넘긴다', async () => {
+    await signInWithNexon({ fresh: true })
+    expect(saveNexonLogin).toHaveBeenLastCalledWith('받은세션', { fresh: true })
+
+    await signInWithNexon({ fresh: false })
+    expect(saveNexonLogin).toHaveBeenLastCalledWith('받은세션', { fresh: false })
   })
 
   it.each([

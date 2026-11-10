@@ -7,7 +7,7 @@
  */
 import type { DatabaseSync } from 'node:sqlite'
 
-import { findNexonAccountIdOfMapleIds, recordCharacterAccounts } from '../../character-accounts'
+import { findNexonAccountIdOfMapleIds, getNexonAccountIdsOfOcids, recordCharacterAccounts } from '../../character-accounts'
 import { fillLegacyNexonAccountIds } from '../../nexon-account-ids'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
@@ -291,5 +291,21 @@ describe('버전 16: 남은 다섯 표의 기본키를 uuid 로 옮기고 칸 �
     await expect(findNexonAccountIdOfMapleIds(['maple-2', 'maple-1'])).resolves.toBe('account-a')
     await expect(findNexonAccountIdOfMapleIds(['maple-2'])).resolves.toBeNull()
     await expect(findNexonAccountIdOfMapleIds([])).resolves.toBeNull()
+  })
+
+  // 캐릭터는 그 캐릭터가 속한 넥슨 계정의 자격으로 부른다. 계정을 모르는 소속(빈 칸 · 빈 글자)은 답이 아니다.
+  it('ocid 마다 마지막으로 본 소속의 넥슨 계정을 찾는다. 계정을 모르는 소속은 건너뛴다', async () => {
+    await getBossProfitDb()
+    const 목록 = (ocid: string, name: string) => [
+      { accountId: 'maple-1', characters: [{ ocid, name, world: '스카니아', worldKey: 'scania', jobClass: '비숍', level: 280 }] },
+    ]
+    await recordCharacterAccounts(목록('o-이름바꿈', '옛이름'), '2026-10-01', 'account-old')
+    await recordCharacterAccounts(목록('o-이름바꿈', '새이름'), '2026-10-05', 'account-new')
+    await recordCharacterAccounts(목록('o-모름', '모름'), '2026-10-02', null)
+    await recordCharacterAccounts(목록('o-다른', '다른'), '2026-10-02', 'account-other')
+
+    const found = await getNexonAccountIdsOfOcids(['o-이름바꿈', 'o-모름', 'o-없음'])
+
+    expect([...found.entries()]).toEqual([['o-이름바꿈', 'account-new']])
   })
 })

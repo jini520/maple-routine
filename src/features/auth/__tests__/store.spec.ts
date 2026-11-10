@@ -20,16 +20,16 @@ const { probeApiKeyStage: probeApiKeyStageMock } = jest.requireMock('../../../ne
 
 jest.mock('../../../storage/api-key', () => ({
   getAuthConfig: jest.fn(),
-  setApiKey: jest.fn(),
-  clearAuthConfig: jest.fn(),
+  setMainApiKey: jest.fn(),
+  signOutAuth: jest.fn(),
   removeApiKey: jest.fn(),
   removeAllApiKeys: jest.fn(),
   clearNexonLogin: jest.fn(),
 }))
 const {
   getAuthConfig: getAuthConfigMock,
-  setApiKey: setApiKeyMock,
-  clearAuthConfig: clearAuthConfigMock,
+  setMainApiKey: setMainApiKeyMock,
+  signOutAuth: signOutAuthMock,
   removeApiKey: removeApiKeyMock,
   removeAllApiKeys: removeAllApiKeysMock,
   clearNexonLogin: clearNexonLoginMock,
@@ -101,8 +101,8 @@ const { reusableNexonAccountId } = jest.requireMock('../reentry-account-id') as 
 beforeEach(() => {
   useAuthStore.setState(initialAuthState)
   reusableNexonAccountId.mockReset().mockResolvedValue(null)
-  setApiKeyMock.mockResolvedValue(undefined)
-  clearAuthConfigMock.mockResolvedValue(undefined)
+  setMainApiKeyMock.mockResolvedValue(undefined)
+  signOutAuthMock.mockResolvedValue(undefined)
   removeApiKeyMock.mockResolvedValue(undefined)
   removeAllApiKeysMock.mockResolvedValue(undefined)
   clearNexonLoginMock.mockResolvedValue(undefined)
@@ -112,7 +112,7 @@ beforeEach(() => {
   recordCharacterAccountsMock.mockResolvedValue(undefined)
   // 판정이 안 서는 것이 통상 경로다. 서는 경우만 그 테스트가 직접 세운다.
   probeApiKeyStageMock.mockResolvedValue('undetermined')
-  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
+  getAuthConfigMock.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }] })
 })
 
 afterEach(() => {
@@ -131,8 +131,20 @@ describe('useAuthStore.restoreFromStorage', () => {
     expect(fetchCharacterListMock).not.toHaveBeenCalled()
   })
 
+  it('로그인이 없고 부계정 키만 남았으면 로그인 상태가 아니다', async () => {
+    getAuthConfigMock.mockResolvedValue({
+      login: null,
+      mainKeyId: null,
+      apiKeys: [{ type: 'key', id: 'account-부', label: '', value: '부-키', loginId: 'account-login' }],
+    })
+
+    await useAuthStore.getState().restoreFromStorage()
+
+    expect(useAuthStore.getState()).toMatchObject(initialAuthState)
+  })
+
   it('저장된 키가 있으면 signedIn 이 된다. 네트워크는 안 탄다', async () => {
-    getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
+    getAuthConfigMock.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }] })
 
     await useAuthStore.getState().restoreFromStorage()
 
@@ -144,7 +156,8 @@ describe('useAuthStore.restoreFromStorage', () => {
   it('로그인한 채 앱을 켜면 키 거두기를 다시 한다', async () => {
     getAuthConfigMock.mockResolvedValue({
       login: { type: 'login', id: 'login-id', session: '세션' },
-      apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }],
+      mainKeyId: null,
+      apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: 'login-id' }],
     })
 
     await useAuthStore.getState().restoreFromStorage()
@@ -174,7 +187,7 @@ describe('useAuthStore.signIn: 무효 키(400 OPENAPI00005)', () => {
     expect(state.status).toBe('signedOut')
     expect(state.error).toEqual({ kind: 'invalidApiKey' })
     expect(showErrorMock).toHaveBeenCalledWith('API 키가 유효하지 않습니다')
-    expect(setApiKeyMock).not.toHaveBeenCalled()
+    expect(setMainApiKeyMock).not.toHaveBeenCalled()
   })
 
   // 회귀 가드: 키와 무관한 400 까지 무효 키로 삼으면 캐릭터·날짜 문제가 키 문제로 둔갑한다.
@@ -218,7 +231,7 @@ describe('useAuthStore.signIn', () => {
     const state = useAuthStore.getState()
     expect(state.status).toBe('signedOut')
     expect(state.error).toEqual({ kind: 'invalidApiKey' })
-    expect(setApiKeyMock).not.toHaveBeenCalled()
+    expect(setMainApiKeyMock).not.toHaveBeenCalled()
     expect(resolveAfterSignInMock).not.toHaveBeenCalled()
   })
 
@@ -241,11 +254,11 @@ describe('useAuthStore.signIn', () => {
     expect(showSuccessMock).not.toHaveBeenCalled()
   })
 
-  // 전에는 setApiKey가 try 밖이라 미처리 rejection이었다. 아무 일도 안 일어난
+  // 전에는 키 저장이 try 밖이라 미처리 rejection이었다. 아무 일도 안 일어난
   // 것처럼 보였다. storageWriteFailed 문구가 이 경로로 처음 도달 가능해진다.
   it('키 저장에 실패하면 storageWriteFailed 로 남고 토스트로 알린다', async () => {
     fetchCharacterListMock.mockResolvedValue([{ accountId: 'acc-1', characters: [] }])
-    setApiKeyMock.mockRejectedValue(new Error('write failed'))
+    setMainApiKeyMock.mockRejectedValue(new Error('write failed'))
 
     await useAuthStore.getState().signIn('key-1')
 
@@ -316,7 +329,7 @@ describe('useAuthStore.noticeApiKeyIssue', () => {
       useAuthStore.getState().noticeApiKeyIssue(kind)
 
       expect(removeAllApiKeysMock).not.toHaveBeenCalled()
-      expect(clearAuthConfigMock).not.toHaveBeenCalled()
+      expect(signOutAuthMock).not.toHaveBeenCalled()
       expect(showErrorMock).not.toHaveBeenCalled()
     },
   )
@@ -383,7 +396,7 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
   }
 
   /** 지운 뒤 남은 수단. `null` 이면 하나도 안 남았다. */
-  function 지운뒤남는것(config: { login: unknown; apiKeys: unknown[] } | null): void {
+  function 지운뒤남는것(config: { login: unknown; apiKeys: unknown[]; mainKeyId: string | null } | null): void {
     getAuthConfigMock.mockResolvedValue(config)
   }
 
@@ -407,7 +420,7 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
     '%s. 수단이 남아 있으면 알림만 닫고 앱은 그대로 선다',
     async (kind) => {
       primeNoticed(kind)
-      지운뒤남는것({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '살아있는키' }] })
+      지운뒤남는것({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '살아있는키', loginId: null }] })
 
       await useAuthStore.getState().confirmApiKeyNotice()
 
@@ -419,23 +432,36 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
     },
   )
 
+  // 부계정 키는 메인 계정이 되지 않는다. 다시 로그인할 때까지 남겨 두고 부르지 않는다.
+  it('signInRequired 로 로그인을 뗀 뒤 부계정 키만 남으면 키를 지우지 않고 로그인 화면으로 간다', async () => {
+    primeNoticed('signInRequired')
+    지운뒤남는것({ login: null, mainKeyId: null, apiKeys: [{ type: 'key', id: 'account-부', label: '', value: '부-키', loginId: 'account-login' }] })
+
+    await useAuthStore.getState().confirmApiKeyNotice()
+
+    expect(useAuthStore.getState()).toMatchObject(initialAuthState)
+    expect(entryResetMock).toHaveBeenCalledTimes(1)
+    expect(removeApiKeyMock).not.toHaveBeenCalled()
+    expect(removeAllApiKeysMock).not.toHaveBeenCalled()
+  })
+
   // 로그인이 만료됐는데 API 키를 지우면 멀쩡한 키를, 여럿이면 다른 넥슨 계정의 키까지 잃는다.
   it('signInRequired 는 로그인만 뗀다. API 키는 안 건드린다', async () => {
     primeNoticed('signInRequired')
-    지운뒤남는것({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '키' }] })
+    지운뒤남는것({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '키', loginId: null }] })
 
     await useAuthStore.getState().confirmApiKeyNotice()
 
     expect(clearNexonLoginMock).toHaveBeenCalledTimes(1)
     expect(removeApiKeyMock).not.toHaveBeenCalled()
     expect(removeAllApiKeysMock).not.toHaveBeenCalled()
-    expect(clearAuthConfigMock).not.toHaveBeenCalled()
+    expect(signOutAuthMock).not.toHaveBeenCalled()
   })
 
-  // clearAuthConfig 는 지우는 범위가 넓어 재개를 불가능하게 만든다. 429 도 키를
+  // 로그아웃(signOutAuth)은 로그인과 메인 키를 함께 떼어 재개를 불가능하게 만든다. 429 도 키를
   // 지운다. 원인별로 갈라 처리하지 않는다.
   it.each(['invalid', 'rateLimited'] as const)(
-    '%s. 저장소에서 apiKey만 지운다(연결 해제 경로 clearAuthConfig를 타지 않는다)',
+    '%s. 저장소에서 apiKey만 지운다(로그아웃 경로 signOutAuth를 타지 않는다)',
     async (kind) => {
       primeNoticed(kind)
       지운뒤남는것(null)
@@ -444,7 +470,7 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
 
       // 알림이 키를 안 실어 왔다. 어느 키인지 못 가려 전부 지운다.
       expect(removeAllApiKeysMock).toHaveBeenCalledTimes(1)
-      expect(clearAuthConfigMock).not.toHaveBeenCalled()
+      expect(signOutAuthMock).not.toHaveBeenCalled()
       expect(clearNexonLoginMock).not.toHaveBeenCalled()
     },
   )
@@ -453,7 +479,7 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
   // 다른 넥슨 계정의 키까지 잃는 일이다.
   it('실린 키가 있으면 그 키만 지운다', async () => {
     primeNoticed('invalid', '죽은키')
-    지운뒤남는것({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '산키' }] })
+    지운뒤남는것({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '산키', loginId: null }] })
 
     await useAuthStore.getState().confirmApiKeyNotice()
 
@@ -496,12 +522,12 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
   })
 
   // 회귀 가드: 로그아웃과 무효화는 저장소에 하는 일이 다르다. 섞이면 재개가 조용히 깨진다.
-  it('signOut()은 여전히 clearAuthConfig로 넓게 지운다', async () => {
+  it('signOut()은 무효화가 아니라 로그아웃 저장 함수로 지운다', async () => {
     primeNoticed()
 
     await useAuthStore.getState().signOut()
 
-    expect(clearAuthConfigMock).toHaveBeenCalledTimes(1)
+    expect(signOutAuthMock).toHaveBeenCalledTimes(1)
     expect(removeAllApiKeysMock).not.toHaveBeenCalled()
   })
 })
@@ -516,21 +542,23 @@ describe('useAuthStore.signOut', () => {
     expect(forget.requestAccountDeletion).not.toHaveBeenCalled()
   })
 
-  // 넥슨 로그인만 떼는 로그아웃을 합쳤다. 키가 남으면 다른 넥슨 계정으로 앱이 계속 선다.
-  it('넥슨 로그인과 API 키를 함께 지운다', async () => {
+  // 넥슨 로그인만 떼는 로그아웃을 합쳤다. 메인 수단이 남으면 다른 넥슨 계정으로 앱이 계속 선다. 부계정 키는 저장 함수가 남긴다.
+  it('넥슨 로그인과 메인 키를 함께 떼는 로그아웃 저장 함수를 부른다', async () => {
     getAuthConfigMock.mockResolvedValue({
       login: { type: 'login', id: 'account-login', session: '세션값' },
-      apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '키' }],
+      mainKeyId: null,
+      apiKeys: [{ type: 'key', id: 'account-key', label: '', value: '키', loginId: 'account-login' }],
     })
 
     await useAuthStore.getState().signOut()
 
-    expect(clearAuthConfigMock).toHaveBeenCalledTimes(1)
+    expect(signOutAuthMock).toHaveBeenCalledTimes(1)
   })
 
   it('서버 세션과 못 보낸 것을 거둔 뒤에 기기를 지운다', async () => {
     getAuthConfigMock.mockResolvedValue({
       login: { type: 'login', id: 'account-login', session: '세션값' },
+      mainKeyId: null,
       apiKeys: [],
     })
     const 순서: string[] = []
@@ -540,7 +568,7 @@ describe('useAuthStore.signOut', () => {
     forget.clearUnsentServerData.mockImplementation(async () => {
       순서.push('못 보낸 것')
     })
-    clearAuthConfigMock.mockImplementation(async () => {
+    signOutAuthMock.mockImplementation(async () => {
       순서.push('기기')
     })
 
@@ -578,7 +606,7 @@ describe('useAuthStore.deleteAccount', () => {
       순서.push('예약')
       return true
     })
-    clearAuthConfigMock.mockImplementation(async () => {
+    signOutAuthMock.mockImplementation(async () => {
       순서.push('기기')
     })
 
@@ -595,7 +623,7 @@ describe('useAuthStore.deleteAccount', () => {
 
     await expect(useAuthStore.getState().deleteAccount()).resolves.toBe(false)
 
-    expect(clearAuthConfigMock).not.toHaveBeenCalled()
+    expect(signOutAuthMock).not.toHaveBeenCalled()
     expect(useAuthStore.getState().status).toBe('signedIn')
   })
 })
@@ -608,7 +636,7 @@ describe('useAuthStore.signIn: 개발 단계 키를 문 앞에서 막는다', ()
     await useAuthStore.getState().signIn('dev-key')
 
     expect(useAuthStore.getState().developmentStageBlocked).toBe(true)
-    expect(setApiKeyMock).not.toHaveBeenCalled()
+    expect(setMainApiKeyMock).not.toHaveBeenCalled()
     expect(showSuccessMock).not.toHaveBeenCalled()
     // 로그인이 안 됐으므로 진입 게이트도 안 움직인다.
     expect(resolveAfterSignInMock).not.toHaveBeenCalled()
@@ -659,19 +687,19 @@ describe('useAuthStore.signIn: 개발 단계 키를 문 앞에서 막는다', ()
     useAuthStore.getState().acknowledgeDevelopmentStageKey()
 
     expect(removeAllApiKeysMock).not.toHaveBeenCalled()
-    expect(clearAuthConfigMock).not.toHaveBeenCalled()
+    expect(signOutAuthMock).not.toHaveBeenCalled()
   })
 
   // 저장한 뒤 지우는 순서로 두면 그 사이에 앱이 죽었을 때 개발 단계 키가 살아남고, 다음 부팅의
   // 단계 파생이 그 키로 앞 단계를 건너뛴다.
-  it('프로브가 `setApiKey` 보다 먼저 돈다', async () => {
+  it('프로브가 키 저장(`setMainApiKey`)보다 먼저 돈다', async () => {
     fetchCharacterListMock.mockResolvedValue([account('acc-1')])
 
     await useAuthStore.getState().signIn('key-1')
 
-    expect(setApiKeyMock).toHaveBeenCalled()
+    expect(setMainApiKeyMock).toHaveBeenCalled()
     expect(probeApiKeyStageMock.mock.invocationCallOrder[0]).toBeLessThan(
-      setApiKeyMock.mock.invocationCallOrder[0],
+      setMainApiKeyMock.mock.invocationCallOrder[0],
     )
   })
 
@@ -700,7 +728,7 @@ describe('useAuthStore.signIn: 개발 단계 키를 문 앞에서 막는다', ()
 
     await useAuthStore.getState().signIn('key-1')
 
-    expect(setApiKeyMock).toHaveBeenCalledWith('key-1', '', undefined)
+    expect(setMainApiKeyMock).toHaveBeenCalledWith('key-1', '', undefined)
     expect(useAuthStore.getState().error).toBeNull()
   })
 })
@@ -715,7 +743,7 @@ describe('useAuthStore.signIn: 다시 받은 키가 옛 계정을 잇는다', ()
     await useAuthStore.getState().signIn('key-1')
 
     expect(reusableNexonAccountId).toHaveBeenCalledWith([account('acc-1')])
-    expect(setApiKeyMock).toHaveBeenCalledWith('key-1', '', 'account-old')
+    expect(setMainApiKeyMock).toHaveBeenCalledWith('key-1', '', 'account-old')
   })
 })
 
@@ -731,7 +759,7 @@ describe('useAuthStore.signIn: 새 로그인은 추적 목록을 비운다', () 
     forgetTrackedSelectionMock.mockImplementation(async () => {
       order.push('forget')
     })
-    setApiKeyMock.mockImplementation(async () => {
+    setMainApiKeyMock.mockImplementation(async () => {
       order.push('save')
     })
 
@@ -759,7 +787,7 @@ describe('useAuthStore.signIn: 소속은 키를 저장한 뒤에 적는다', () 
   })
 
   it('저장된 키의 계정 id 로 적는다', async () => {
-    getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: '새-계정', label: '', value: 'key-1' }] })
+    getAuthConfigMock.mockResolvedValue({ login: null, mainKeyId: '새-계정', apiKeys: [{ type: 'key', id: '새-계정', label: '', value: 'key-1', loginId: null }] })
 
     await useAuthStore.getState().signIn('key-1')
 

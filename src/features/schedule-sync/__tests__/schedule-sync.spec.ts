@@ -44,8 +44,13 @@ const { getAuthConfig: getAuthConfigMock } = jest.requireMock('../../../storage/
 jest.mock('../../../storage/character-accounts', () => ({
   getCharacterAccountSightings: jest.fn(),
   recordCharacterAccounts: jest.fn(),
+  getNexonAccountIdsOfOcids: jest.fn(),
 }))
-const { getCharacterAccountSightings: getCharacterAccountSightingsMock, recordCharacterAccounts: recordCharacterAccountsMock } = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
+const {
+  getCharacterAccountSightings: getCharacterAccountSightingsMock,
+  recordCharacterAccounts: recordCharacterAccountsMock,
+  getNexonAccountIdsOfOcids: getNexonAccountIdsOfOcidsMock,
+} = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
 
 jest.mock('../../../storage/character-profiles', () => ({
   getCharacterProfiles: jest.fn(),
@@ -190,10 +195,11 @@ beforeEach(async () => {
   refreshSettlementMock.mockReset().mockResolvedValue(undefined)
   useRefreshProgress.getState().resetForTests()
   prefs = installFakePreferences()
-  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
+  getAuthConfigMock.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }] })
   queryClient.clear()
   getCharacterAccountSightingsMock.mockResolvedValue([])
   recordCharacterAccountsMock.mockResolvedValue(undefined)
+  getNexonAccountIdsOfOcidsMock.mockResolvedValue(new Map())
   saveCharacterProfileMock.mockResolvedValue(undefined)
   markCharacterUnavailableMock.mockReset().mockResolvedValue(undefined)
   getCharacterProfilesMock.mockResolvedValue(new Map())
@@ -1489,7 +1495,7 @@ describe('syncSchedules', () => {
 
     // RN 은 계정을 고르는 단계가 없어 selectedAccountId 가 영영 null 이다.
     it('selectedAccountId 가 없어도 동기화한다. 계정을 고른 적 없는 설치본', async () => {
-      getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
+      getAuthConfigMock.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }] })
       fetchCharacterListMock.mockResolvedValue([account('acc-9', [mockCharacter('ocid-1')])])
       fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터1'))
 
@@ -2293,7 +2299,10 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       return basicProfile({ name: '정상캐릭', level: 100 })
     })
 
-    await expect(getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })).rejects.toThrow(NexonAuthError)
+    await expect(getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })).rejects.toMatchObject({
+      failure: expect.any(NexonAuthError),
+      apiKey: 'key-1',
+    })
   })
 
   it('한 캐릭터에서 429(NexonRateLimitError)가 발생하면 전체를 에러로 던진다', async () => {
@@ -2304,7 +2313,10 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       return basicProfile({ name: '정상캐릭', level: 100 })
     })
 
-    await expect(getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })).rejects.toThrow(NexonRateLimitError)
+    await expect(getCharacterPickerRoster(jest.fn(), { accountId: 'acc-1' })).rejects.toMatchObject({
+      failure: expect.any(NexonRateLimitError),
+      apiKey: 'key-1',
+    })
   })
 
   describe(': access_flag 확인된 캐릭터만 방출 + 콜드 스타트 중간 방출 억제', () => {
@@ -2466,7 +2478,10 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       })
 
       const onUpdate = jest.fn()
-      await expect(getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })).rejects.toThrow(NexonAuthError)
+      await expect(getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })).rejects.toMatchObject({
+      failure: expect.any(NexonAuthError),
+      apiKey: 'key-1',
+    })
       expect(onUpdate).not.toHaveBeenCalled()
     })
 
@@ -2479,7 +2494,10 @@ describe('getCharacterPickerRoster (: 캐시 우선 + 스트리밍 갱신)', () 
       })
 
       const onUpdate = jest.fn()
-      await expect(getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })).rejects.toThrow(NexonRateLimitError)
+      await expect(getCharacterPickerRoster(onUpdate, { accountId: 'acc-1' })).rejects.toMatchObject({
+      failure: expect.any(NexonRateLimitError),
+      apiKey: 'key-1',
+    })
       expect(onUpdate).not.toHaveBeenCalled()
     })
   })
@@ -2649,5 +2667,157 @@ describe('이름·직업으로 월드 리프를 잇는다', () => {
     linkByNameAndJobMock.mockRejectedValue(new Error('sqlite'))
 
     await expect(syncSchedules(['ocid-1'])).resolves.toHaveLength(1)
+  })
+})
+
+// 다계정. 캐릭터는 그 캐릭터가 속한 넥슨 계정의 자격으로만 부를 수 있다. 한 계정의 실패로 다른 계정의 캐릭터가 멈추면 안 된다.
+describe('넥슨 계정이 여럿', () => {
+  const 메인 = 'account-login'
+  const 부 = 'account-부'
+
+  /** 로그인과 그 로그인에 귀속된 부계정 키 하나. 계정마다 메이플 ID 하나와 캐릭터를 둔다. */
+  function 두계정(lists: { main: MapleCharacter[]; sub: MapleCharacter[] | Error }): void {
+    getAuthConfigMock.mockResolvedValue({
+      login: { type: 'login', id: 메인, session: '세션' },
+      apiKeys: [{ type: 'key', id: 부, label: '', value: '부-키', loginId: 메인 }],
+      mainKeyId: null,
+    })
+    fetchCharacterListMock.mockImplementation(async (credential: NexonCredential) => {
+      if (credential.accountId === 메인) return [account('maple-메인', lists.main)]
+      if (lists.sub instanceof Error) throw lists.sub
+      return [account('maple-부', lists.sub)]
+    })
+  }
+
+  async function ledgerOf(ocid: string) {
+    const { getScheduleProbeLedger } = require('../../../storage/schedule-probe-ledger') as typeof import('../../../storage/schedule-probe-ledger')
+    return getScheduleProbeLedger(ocid, new Date(NOW))
+  }
+
+  it('캐릭터마다 그 캐릭터가 사는 계정의 자격으로 스케줄러를 부른다', async () => {
+    두계정({ main: [mockCharacter('o-메인')], sub: [mockCharacter('o-부')] })
+    fetchSchedulerCharacterStateMock.mockImplementation(async (_credential: NexonCredential, ocid: string) => schedulerState(ocid))
+
+    const results = await syncSchedules(['o-메인', 'o-부'])
+
+    const accountOf = new Map(
+      fetchSchedulerCharacterStateMock.mock.calls.map(([credential, ocid]: [NexonCredential, string]) => [ocid, credential.accountId]),
+    )
+    expect(accountOf).toEqual(new Map([['o-메인', 메인], ['o-부', 부]]))
+    expect(results.map((result) => [result.ocid, result.error])).toEqual(
+      expect.arrayContaining([['o-메인', null], ['o-부', null]]),
+    )
+  })
+
+  // 목록을 못 받은 것이지 캐릭터가 사라진 것이 아니다. 조회 불가로 세우면 멀쩡한 캐릭터에 표식이 선다.
+  it('한 계정의 목록을 못 받으면 그 계정의 캐릭터는 부르지 않고 캐시로 세운다. 실패에 그 키를 싣고 조회 불가로 적지 않는다', async () => {
+    두계정({ main: [mockCharacter('o-메인')], sub: new NexonAuthError('401') })
+    getNexonAccountIdsOfOcidsMock.mockResolvedValue(new Map([['o-부', 부]]))
+    seedSchedule('o-부', { state: schedulerState('부캐'), syncedAt: '2026-07-10T00:00:00.000Z' })
+    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('메인캐'))
+
+    const results = await syncSchedules(['o-메인', 'o-부'])
+
+    expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(1)
+    expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith(expect.anything(), 'o-부', expect.anything())
+    expect(results.find((result) => result.ocid === 'o-부')).toMatchObject({
+      characterName: '부캐',
+      isStale: true,
+      error: { kind: 'invalidApiKey', apiKey: '부-키' },
+    })
+    expect(results.find((result) => result.ocid === 'o-메인')?.error).toBeNull()
+    expect((await ledgerOf('o-부')).unavailable).toBe(false)
+  })
+
+  it('모든 계정의 목록을 못 받으면 첫 계정의 실패를 그 키와 함께 던진다', async () => {
+    getAuthConfigMock.mockResolvedValue({
+      login: null,
+      apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }],
+      mainKeyId: 'account-key',
+    })
+    fetchCharacterListMock.mockRejectedValue(new NexonAuthError('401'))
+
+    await expect(syncSchedules(['o-1'])).rejects.toMatchObject({ failure: expect.any(NexonAuthError), apiKey: 'key-1' })
+  })
+
+  // 자격 전체가 막혔는지 보는 첫 호출은 계정마다다. 부계정 키가 막혀도 메인 계정은 그대로 부른다.
+  it('한 계정의 키가 막히면 그 계정의 나머지만 폴백하고 다른 계정은 부른다', async () => {
+    두계정({ main: [mockCharacter('o-메인1'), mockCharacter('o-메인2')], sub: [mockCharacter('o-부1'), mockCharacter('o-부2')] })
+    fetchSchedulerCharacterStateMock.mockImplementation(async (credential: NexonCredential, ocid: string) => {
+      if (credential.accountId === 부) throw new NexonAuthError('401')
+      return schedulerState(ocid)
+    })
+
+    const results = await syncSchedules(['o-메인1', 'o-메인2', 'o-부1', 'o-부2'])
+
+    const subCalls = fetchSchedulerCharacterStateMock.mock.calls.filter(([credential]: [NexonCredential]) => credential.accountId === 부)
+    expect(subCalls).toHaveLength(1)
+    expect(results.filter((result) => result.error === null).map((result) => result.ocid).sort()).toEqual(['o-메인1', 'o-메인2'])
+    expect(results.filter((result) => result.error?.kind === 'invalidApiKey')).toHaveLength(2)
+  })
+
+  // 지운 키의 계정에 남은 캐릭터다. 다른 계정의 자격으로 부르면 조회 불가가 된다.
+  it('계정은 알지만 부를 자격이 없는 캐릭터는 묻지 않고 조회 불가로도 적지 않는다', async () => {
+    두계정({ main: [mockCharacter('o-메인')], sub: [] })
+    getNexonAccountIdsOfOcidsMock.mockResolvedValue(new Map([['o-지운', 'account-지운-키']]))
+    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('메인캐'))
+
+    await syncSchedules(['o-메인', 'o-지운'])
+
+    expect(fetchCharacterBasicMock).not.toHaveBeenCalledWith(expect.anything(), 'o-지운', expect.anything())
+    expect((await ledgerOf('o-지운')).unavailable).toBe(false)
+  })
+
+  it('목록 밖 추적 캐릭터는 그 캐릭터가 속한 계정의 자격으로 묻는다', async () => {
+    두계정({ main: [mockCharacter('o-메인')], sub: [mockCharacter('o-부')] })
+    getNexonAccountIdsOfOcidsMock.mockResolvedValue(new Map([['o-리프', 부]]))
+    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터'))
+    fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '리프', level: 200 }))
+
+    await syncSchedules(['o-메인', 'o-부', 'o-리프'])
+
+    expect(fetchCharacterBasicMock).toHaveBeenCalledWith(
+      expect.objectContaining({ accountId: 부 }),
+      'o-리프',
+      expect.anything(),
+    )
+  })
+})
+
+describe('getCharacterPickerRoster: 넥슨 계정이 여럿', () => {
+  it('고른 메이플 ID 가 속한 넥슨 계정의 자격으로 그 캐릭터를 부른다', async () => {
+    getAuthConfigMock.mockResolvedValue({
+      login: { type: 'login', id: 'account-login', session: '세션' },
+      apiKeys: [{ type: 'key', id: 'account-부', label: '', value: '부-키', loginId: 'account-login' }],
+      mainKeyId: null,
+    })
+    fetchCharacterListMock.mockImplementation(async (credential: NexonCredential) =>
+      credential.accountId === 'account-부'
+        ? [account('maple-부', [mockCharacter('o-부')])]
+        : [account('maple-메인', [mockCharacter('o-메인')])],
+    )
+    fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '부캐', level: 200 }))
+    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('부캐'))
+
+    await getCharacterPickerRoster(jest.fn(), { accountId: 'maple-부' })
+
+    expect(fetchCharacterBasicMock).toHaveBeenCalledWith(expect.objectContaining({ accountId: 'account-부' }), 'o-부', expect.anything())
+  })
+
+  it('고른 메이플 ID 가 목록을 못 받은 계정에 있으면 그 키의 실패를 던진다', async () => {
+    getAuthConfigMock.mockResolvedValue({
+      login: { type: 'login', id: 'account-login', session: '세션' },
+      apiKeys: [{ type: 'key', id: 'account-부', label: '', value: '부-키', loginId: 'account-login' }],
+      mainKeyId: null,
+    })
+    fetchCharacterListMock.mockImplementation(async (credential: NexonCredential) => {
+      if (credential.accountId === 'account-부') throw new NexonRateLimitError('429')
+      return [account('maple-메인', [mockCharacter('o-메인')])]
+    })
+
+    await expect(getCharacterPickerRoster(jest.fn(), { accountId: 'maple-부' })).rejects.toMatchObject({
+      failure: expect.any(NexonRateLimitError),
+      apiKey: '부-키',
+    })
   })
 })

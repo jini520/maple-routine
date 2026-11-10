@@ -16,7 +16,7 @@ import { apiKeyHashHex } from '../../lib/crypto/api-key-hash'
 import type { CredentialAccounts } from '../../lib/maple-ids'
 import { linkApiKeyOnServer } from '../../server/api-key-link'
 import { fetchAndRecordCharacterList, fetchUnsavedCharacterList } from '../mvp-grade/character-list'
-import { getAuthConfig, setNexonLogin } from '../../storage/api-key'
+import { getAuthConfig, setNexonLogin, type SetNexonLoginOptions } from '../../storage/api-key'
 import { moveNexonAccountRows } from '../../storage/nexon-account-ids'
 import type { MapleAccount } from '../../types'
 import type { NexonApiKeyMethod } from '../../types/auth'
@@ -64,12 +64,17 @@ async function linkSameMapleIdKeys(
  *
  * @param reusedId 거둔 키가 없을 때 이을 옛 계정 id. 로그인의 메이플 ID 가 속했던 id 다
  */
-async function saveLoginTakingKeys(session: string, linkedKeys: readonly string[], reusedId?: string): Promise<void> {
+async function saveLoginTakingKeys(
+  session: string,
+  linkedKeys: readonly string[],
+  reusedId?: string,
+  options?: SetNexonLoginOptions,
+): Promise<void> {
   const config = await getAuthConfig()
   const taken = (config?.apiKeys ?? []).filter((one) => linkedKeys.includes(one.value))
   const heir = taken[0]
   if (heir === undefined) {
-    await setNexonLogin({ session }, [], reusedId)
+    await setNexonLogin({ session }, [], reusedId, options)
     return
   }
 
@@ -79,17 +84,17 @@ async function saveLoginTakingKeys(session: string, linkedKeys: readonly string[
   try {
     await moveNexonAccountRows(oldIds, heir.id)
   } catch {
-    await setNexonLogin({ session }, [], reusedId)
+    await setNexonLogin({ session }, [], reusedId, options)
     return
   }
-  await setNexonLogin({ session }, linkedKeys)
+  await setNexonLogin({ session }, linkedKeys, undefined, options)
 }
 
 /**
  * 로그인 직후, 세션을 저장하기 전에 부른다. **잇지 못해도 로그인은 저장한다** - 남은 키는 앱을 켤 때 다시 다룬다.
  * 저장이 실패하면 던진다. 다시 켤 때 로그인 상태가 아니므로 성공이라고 말하면 안 된다.
  */
-export async function saveNexonLogin(session: string): Promise<void> {
+export async function saveNexonLogin(session: string, options?: SetNexonLoginOptions): Promise<void> {
   const config = await getAuthConfig().catch(() => null)
   const loginAccountId = config?.login?.id ?? null
   const loginAccounts = await loginAccountsOf(session, loginAccountId)
@@ -98,16 +103,19 @@ export async function saveNexonLogin(session: string): Promise<void> {
       ? []
       : await linkSameMapleIdKeys(session, loginAccountId, loginAccounts, config.apiKeys).catch(() => [])
   const reusedId = (await reusableNexonAccountId(loginAccounts)) ?? undefined
-  await saveLoginTakingKeys(session, linked, reusedId)
+  await saveLoginTakingKeys(session, linked, reusedId, options)
 }
 
 /** 로그인한 채 앱을 켤 때 부른다. 로그인 직후 잇지 못해 남은 키를 다시 다룬다. */
 export async function pruneCoveredApiKeys(): Promise<void> {
   const config = await getAuthConfig()
-  if (config?.login == null || config.apiKeys.length === 0) return
+  // 이 로그인의 부계정 키만 본다. 다른 로그인에 귀속된 키는 부르지 않는 키다.
+  const login = config?.login
+  const apiKeys = login == null ? [] : (config?.apiKeys ?? []).filter((one) => one.loginId === login.id)
+  if (login == null || apiKeys.length === 0) return
 
-  const loginAccounts = await loginAccountsOf(config.login.session, config.login.id)
-  const linked = await linkSameMapleIdKeys(config.login.session, config.login.id, loginAccounts, config.apiKeys)
+  const loginAccounts = await loginAccountsOf(login.session, login.id)
+  const linked = await linkSameMapleIdKeys(login.session, login.id, loginAccounts, apiKeys)
   if (linked.length === 0) return
-  await saveLoginTakingKeys(config.login.session, linked)
+  await saveLoginTakingKeys(login.session, linked)
 }

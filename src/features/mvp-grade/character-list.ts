@@ -93,3 +93,38 @@ export async function fetchCharacterListCached(
 export function readCachedCharacterList(credential: NexonCredential): MapleAccount[] | undefined {
   return queryClient.getQueryData<MapleAccount[]>(queryKeys.characterList(credentialKeyOf(credential)))
 }
+
+/** 넥슨 계정 하나의 목록. 못 받았으면 `accounts` 가 `null` 이고 `error` 에 그 실패가 든다. */
+export interface CredentialCharacterList {
+  credential: NexonCredential
+  accounts: MapleAccount[] | null
+  error: unknown
+}
+
+/**
+ * 넥슨 계정마다 목록을 받는다. 차례는 자격의 차례다.
+ *
+ * 한 계정이 실패해도 다른 계정의 목록은 그대로 낸다. 한 계정의 실패로 모든 캐릭터가 멈추면 안 된다.
+ */
+export function fetchCharacterListsCached(
+  credentials: readonly NexonCredential[],
+  options?: FetchCharacterListOptions,
+): Promise<CredentialCharacterList[]> {
+  return Promise.all(
+    credentials.map(async (credential) => {
+      try {
+        return { credential, accounts: await fetchCharacterListCached(credential, options), error: null }
+      } catch (error) {
+        return { credential, accounts: null, error }
+      }
+    }),
+  )
+}
+
+/** 계정마다 받아 둔 목록을 이은 것. 넥슨을 부르지 않는다. 하나도 받은 적이 없으면 `undefined` 다. */
+export function readCachedCharacterLists(credentials: readonly NexonCredential[]): MapleAccount[] | undefined {
+  const lists = credentials
+    .map(readCachedCharacterList)
+    .filter((list): list is MapleAccount[] => list !== undefined)
+  return lists.length === 0 ? undefined : lists.flat()
+}

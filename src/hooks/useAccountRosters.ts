@@ -17,7 +17,7 @@
  * @example
  * const roster = useAccountRosters()
  */
-import { currentCredential } from '../features/auth/current-credential'
+import { currentCredentials } from '../features/auth/current-credential'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
@@ -31,10 +31,10 @@ import {
   toScheduleSyncError,
   type ScheduleSyncError,
 } from '../features/schedule-sync/schedule-sync'
-import { fetchCharacterListCached } from '../features/mvp-grade/character-list'
+import { fetchCharacterListsCached } from '../features/mvp-grade/character-list'
+import { CredentialFailure } from '../features/schedule-sync/errors'
 import type { CharacterPickerEntry } from '../types'
 import { apiKeyValueOf } from '../lib/nexon-credential'
-import type { NexonCredential } from '../types/auth'
 
 /** 계정 하나의 후보 목록 + **성공 도장**. 도장이 없으면 TTL 판정에서 아직 이다. */
 interface AccountRoster {
@@ -121,8 +121,7 @@ export function useAccountRosters(): AccountRosters {
       })
       .catch((error: unknown) => {
         if (openAccountRef.current !== accountId) return
-        // 자격을 `getCharacterPickerRoster` 안에서 고르므로 여기서는 어느 키였는지 모른다.
-        // 그래서 이 경로의 무효화는 키를 전부 지운다. 키가 여럿이 되면 그 안에서 실어 보낼 것.
+        // 자격을 `getCharacterPickerRoster` 안에서 고르므로 어느 키였는지는 그쪽이 실패에 실어 보낸다(`CredentialFailure`).
         setRosterError(toScheduleSyncError(error))
         setIsRosterLoading(false)
       })
@@ -131,17 +130,21 @@ export function useAccountRosters(): AccountRosters {
   useEffect(() => {
     let cancelled = false
     void (async () => {
-      // catch 에서도 읽어야 해서 try 밖에 둔다. 실패했을 때 **어느 키로 부르다 그랬는지**를
-      // 실어 보내야 알림이 그 키만 지운다.
-      let credential: NexonCredential | null = null
       try {
-        credential = await currentCredential()
-        if (credential === null) {
+        const credentials = await currentCredentials()
+        if (credentials.length === 0) {
           throw new Error('useAccountRosters: API 키가 없습니다')
         }
-        // 후보 목록(`getCharacterPickerRoster`)이 5분 안에 같은 응답을 쓴다. 다시 시도만 새로 받는다.
-        const list = await fetchCharacterListCached(credential, { force: accountsNonce > 0 })
+        // 넥슨 계정마다 받는다. 후보 목록(`getCharacterPickerRoster`)이 5분 안에 같은 응답을 쓴다. 다시 시도만 새로 받는다.
+        const lists = await fetchCharacterListsCached(credentials, { force: accountsNonce > 0 })
         if (cancelled) return
+        // 한 계정의 목록을 못 받아도 다른 계정의 메이플 ID 는 그대로 세운다. 모두 못 받았을 때만 실패로 그린다. 어느 키로
+        // 부르다 그랬는지 실어 보내야 알림이 그 키만 지운다.
+        const failed = lists.find((one) => one.accounts === null)
+        if (failed !== undefined && lists.every((one) => one.accounts === null)) {
+          throw new CredentialFailure(failed.error, apiKeyValueOf(failed.credential))
+        }
+        const list = lists.flatMap((one) => one.accounts ?? [])
         // 캐릭터 0명 계정은 `normalizeCharacterList` 가 이미 걸렀고,
         // `summarizeAccount` 의 `null` 은 그 규칙이 뚫렸을 때의 안전망이다. 렌더 중에 던지지 않는다.
         // 차례는 **대표 레벨이 높은 계정이 먼저** 다(`sortAccountSummaries`). 그래서 아래 `[0]` 이
@@ -163,9 +166,7 @@ export function useAccountRosters(): AccountRosters {
         if (next !== null) loadRoster(next)
       } catch (error: unknown) {
         if (cancelled) return
-        setAccountsError(
-          toScheduleSyncError(error, credential === null ? undefined : apiKeyValueOf(credential)),
-        )
+        setAccountsError(toScheduleSyncError(error))
         setIsAccountsLoading(false)
       }
     })()

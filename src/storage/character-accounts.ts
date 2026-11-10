@@ -71,3 +71,23 @@ export async function findNexonAccountIdOfMapleIds(accountIds: readonly string[]
   const found = values?.[0]?.nexon_account_id
   return typeof found === 'string' ? found : null
 }
+
+/**
+ * 캐릭터마다 속한 넥슨 계정 id. 계정을 모르는 캐릭터는 빠진다.
+ *
+ * 이름을 바꾼 캐릭터는 줄이 여럿이라 마지막으로 본 줄의 계정을 쓴다.
+ */
+export async function getNexonAccountIdsOfOcids(ocids: readonly string[]): Promise<Map<string, string>> {
+  const found = new Map<string, string>()
+  if (ocids.length === 0) return found
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT ocid, nexon_account_id FROM character_accounts
+      WHERE ocid IN (${ocids.map(() => '?').join(', ')})
+        AND nexon_account_id IS NOT NULL AND nexon_account_id <> ''
+      ORDER BY last_seen_date ASC`,
+    [...ocids],
+  )
+  for (const row of values ?? []) found.set(row.ocid as string, row.nexon_account_id as string)
+  return found
+}

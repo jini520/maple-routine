@@ -24,7 +24,7 @@ import { deriveEntryStage } from '../stage'
 
 beforeEach(() => {
   // 기본값 = 앱이 열리는 상태
-  getAuthConfigMock.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }] })
+  getAuthConfigMock.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }] })
   getTrackingModeMock.mockResolvedValue('auto')
   getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1'])
   setTrackingModeMock.mockResolvedValue(undefined)
@@ -38,6 +38,17 @@ afterEach(() => {
 // 진입 단계 파생표. 부팅(resolveFromStorage)과 로그인 직후(resolveAfterSignIn)가
 // 이 함수 하나를 공유한다. 두 벌이 되면 규칙의 진실이 둘이 된다.
 describe('deriveEntryStage', () => {
+  // 로그인이 만료돼 부계정 키만 남으면 부를 메인 계정이 없다. 다시 로그인해야 부계정도 이어진다.
+  it('로그인이 없고 부계정 키만 남았으면 로그인 화면이다', async () => {
+    getAuthConfigMock.mockResolvedValue({
+      login: null,
+      mainKeyId: null,
+      apiKeys: [{ type: 'key', id: 'account-부', label: '', value: '부-키', loginId: 'account-login' }],
+    })
+
+    await expect(deriveEntryStage()).resolves.toBe('signIn')
+  })
+
   it('apiKey가 없으면 signIn 이다', async () => {
     getAuthConfigMock.mockResolvedValue(null)
 
