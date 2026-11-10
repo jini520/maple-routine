@@ -783,7 +783,13 @@ export function CashbookScreen(): React.JSX.Element {
   async function saveEdit(entry: ManualDayRecord, draft: IncomeDraft | SpendDraft): Promise<void> {
     try {
       if (entry.kind === 'spend') {
-        await editSpend({ ...(draft as SpendDraft), id: entry.record.id, recordedAt: entry.record.recordedAt })
+        // 메소마켓 수수료율도 원본의 것을 얹는다. 시트는 요율을 모르고, 적힌 요율은 고쳐도 그대로다.
+        await editSpend({
+          ...(draft as SpendDraft),
+          id: entry.record.id,
+          recordedAt: entry.record.recordedAt,
+          mesoMarketFeePercent: entry.record.mesoMarketFeePercent,
+        })
       } else {
         await editIncome({ ...(draft as IncomeDraft), id: entry.record.id, recordedAt: entry.record.recordedAt })
       }

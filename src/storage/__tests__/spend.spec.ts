@@ -58,6 +58,7 @@ const mesoSpend: SpendRecord = {
   tariffMeso: null,
   pointAmount: null,
   pointPer100mMeso: null,
+  mesoMarketFeePercent: null,
   cashAmount: null,
   hexa: null,
   recordedAt: '2026-08-23T05:00:00.000Z',

@@ -329,8 +329,9 @@ describe('항목. 고르면 채워진다', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    // 30,000 메포 ÷ 1,180 × 1억 = 2,542,372,881 메소. 여기서 주화 8개(3억 2천만)가 빠진다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 2237만 2881')
+    // 30,000 메포 × 1억 ÷ (1,180 × 0.99) = 2,568,053,415 메소. 메소마켓 수수료 1% 를 시세에서 뗀다.
+    // 여기서 주화 8개(3억 2천만)가 빠진다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 4805만 3415')
     // 주화 줄도 메소를 적으므로 큰 숫자의 통화는 그 줄의 이름으로 짚는다.
     expect(view.getByTestId('spend-sheet-amount-unit')).toHaveTextContent(/메소/)
     expect(view.queryByTestId('spend-sheet-amount-hint')).toBeNull()
@@ -378,8 +379,8 @@ describe('세라자르 주화', () => {
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
     await 형태단계(view, '솔 에르다', '2단계')
 
-    // 37,500 메포 ÷ 1,180 × 1억 = 3,177,966,101 메소. 주화 12개는 4억 8천만이다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('26억 9796만 6101')
+    // 37,500 메포 × 1억 ÷ (1,180 × 0.99) = 3,210,066,769 메소. 주화 12개는 4억 8천만이다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('27억 3006만 6769')
   })
 
   // 메포를 메소로 환산하지 않는 상태라 뺄 값을 얹을 축이 없다. 여기서 주화만 빼면 아직 아무것도
@@ -400,8 +401,8 @@ describe('세라자르 주화', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
 
-    // 7,500 메포 ÷ 10,000 × 1억 = 75,000,000 메소. 주화 4개는 1억 6천만이다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('-8500만')
+    // 7,500 메포 × 1억 ÷ (10,000 × 0.99) = 75,757,575 메소. 주화 4개는 1억 6천만이다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('-8424만 2425')
   })
 })
 
@@ -754,6 +755,7 @@ const 악몽선경2 = {
   tariffMeso: null,
   pointAmount: 50_000,
   pointPer100mMeso: 1_180,
+  mesoMarketFeePercent: null,
   cashAmount: null,
   hexa: null,
   recordedAt: '2026-08-23T01:00:00.000Z',
@@ -860,7 +862,7 @@ describe('형태별 단계', () => {
     })
   })
 
-  // 큰 숫자는 그 합을 메소로 옮긴 값이다. 37,500 ÷ 1,180 × 1억 = 3,177,966,101 메소.
+  // 큰 숫자는 그 합을 메소로 옮긴 값이다. 37,500 메포 × 1억 ÷ (1,180 × 0.99) = 3,210,066,769 메소.
   // 거기서 주화 12개(4억 8천만)가 빠진다.
   it('큰 숫자가 그 합을 메소로 든다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
@@ -868,7 +870,7 @@ describe('형태별 단계', () => {
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
     await 형태단계(view, '솔 에르다', '2단계')
 
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('26억 9796만 6101')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('27억 3006만 6769')
   })
 
   // 0단계인 형태를 이름이나 key 에 적으면 **안 산 것이 산 것처럼** 읽힌다.
@@ -1044,6 +1046,7 @@ describe('주문서', () => {
         tariffMeso: null,
         pointAmount: null,
         pointPer100mMeso: null,
+        mesoMarketFeePercent: null,
         cashAmount: null,
         hexa: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
@@ -1385,8 +1388,8 @@ describe('시세가 비어 있을 때', () => {
 
     await 카드칸에치기(view, 'spend-sheet-rate', '1180')
 
-    // 2,542,372,881 메소에서 주화 8개(3억 2천만)가 빠진 값이다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 2237만 2881')
+    // 메소마켓 수수료 1% 를 뗀 시세로 바꾼 2,568,053,415 메소에서 주화 8개(3억 2천만)가 빠진 값이다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 4805만 3415')
     // 별표는 **물어본 칸이라는 표시**라 값을 채워도 남는다. `왜 막혔나` 와는 다른 말이다.
     expect(view.getByTestId('spend-sheet-required')).toBeTruthy()
   })
@@ -1580,8 +1583,8 @@ describe('기타. 금액 × 수량', () => {
     await 금액치기(view, '30000')
     await 카드칸에치기(view, 'spend-sheet-quantity', '2')
 
-    // 60,000 메포 ÷ 1,180 × 1억 = 5,084,745,762 메소.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('50억 8474만 5762')
+    // 60,000 메포 × 1억 ÷ (1,180 × 0.99) = 5,136,106,831 메소. 메소마켓 수수료 1% 를 시세에서 뗀다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('51억 3610만 6831')
     expect(줄글자(view, 'spend-sheet-unit-price')).toBe('30,000')
   })
 
@@ -1649,6 +1652,7 @@ describe('시작 기간 전인 항목', () => {
         tariffMeso: null,
         pointAmount: 135_000,
         pointPer100mMeso: 1_180,
+        mesoMarketFeePercent: null,
         cashAmount: null,
         hexa: null,
         recordedAt: '2026-09-16T01:00:00.000Z',
@@ -1678,6 +1682,7 @@ describe('수정 모드', () => {
     tariffMeso: null,
     pointAmount: 50_000,
     pointPer100mMeso: 1_180,
+    mesoMarketFeePercent: null,
     cashAmount: null,
     hexa: null,
     recordedAt: '2026-08-23T01:00:00.000Z',
@@ -1795,9 +1800,9 @@ describe('수량 줄', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
 
-    // 7,500 메포 × 1 ÷ 1,180 × 1억 = 635,593,220 메소에서 주화 4개(1억 6천만)가 빠진다.
+    // 7,500 메포 × 1 × 1억 ÷ (1,180 × 0.99) = 642,013,353 메소에서 주화 4개(1억 6천만)가 빠진다.
     // 낸 메포를 적던 힌트는 사라졌다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('4억 7559만 3220')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('4억 8201만 3353')
   })
 
   it('상한이 여럿인 항목은 수량이 그대로 선다. 규칙이지 특별 취급이 아니다', async () => {
@@ -2096,6 +2101,7 @@ describe('되짚어 여는 식', () => {
     formItemKeys: null,
     pointAmount: null,
     pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
     cashAmount: null,
     hexa: null,
     recordedAt: '2026-08-23T01:00:00.000Z',
@@ -2123,6 +2129,27 @@ describe('되짚어 여는 식', () => {
 
     // 손을 안 댄 상태의 큰 숫자는 **저장된 총액 그대로**여야 한다(935,000,000 × 1.1 이 아니라).
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('9억 3500만')
+  })
+
+  // 요율은 기록마다 저장한다. 지금 규칙(1%)과 달라도 그 기록에 적힌 요율로 그린다.
+  it('메포 기록은 그 기록에 적힌 메소마켓 수수료율로 큰 숫자를 그린다', async () => {
+    const view = await 고치기({
+      ...기록,
+      category: 'etc',
+      item: '메포 지출',
+      itemKind: null,
+      levelFrom: null,
+      levelTo: null,
+      quantity: 1,
+      mesoAmount: null,
+      tariffMeso: null,
+      pointAmount: 9_800,
+      pointPer100mMeso: 1_000,
+      mesoMarketFeePercent: 2,
+    })
+
+    // 9,800 메포 × 1억 ÷ (1,000 × 0.98) = 10억. 지금 규칙 1% 로 그리면 9억 8989만 8989 다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent(/^10억$/)
   })
 
   it('그 기록을 그대로 저장하면 값이 안 부푼다', async () => {
@@ -2350,6 +2377,7 @@ describe('수정으로 열 때의 큰 숫자', () => {
       tariffMeso: null,
       pointAmount: null,
       pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
       cashAmount: null,
       hexa: null,
       recordedAt: '2026-08-23T01:00:00.000Z',
@@ -2524,6 +2552,7 @@ describe('심볼 강화', () => {
     tariffMeso: null,
     pointAmount: null,
     pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
     cashAmount: null,
     hexa: null,
     recordedAt: '2026-09-19T01:00:00.000Z',
@@ -2929,6 +2958,7 @@ describe('헥사 매트릭스', () => {
       tariffMeso: null,
       pointAmount: null,
       pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
       cashAmount: null,
       hexa: {
         fragmentCount: 345,
@@ -2972,6 +3002,7 @@ describe('헥사 매트릭스', () => {
       tariffMeso: null,
       pointAmount: null,
       pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
       cashAmount: null,
       hexa: { fragmentCount: 340, untradableFragmentCount: 0, fragmentPrice: 7_200_000, activation: true, useStorage: false, storageAsSpend: false, storageUses: [] },
       recordedAt: '2026-08-23T01:00:00.000Z',
@@ -3006,6 +3037,7 @@ describe('가격을 치는 버프', () => {
       tariffMeso: null,
       pointAmount: null,
       pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
       cashAmount: null,
       hexa: null,
       recordedAt: '2026-08-23T01:00:00.000Z',

@@ -45,6 +45,7 @@ const 선참: SpendRecord = {
   tariffMeso: null,
   pointAmount: null,
   pointPer100mMeso: null,
+  mesoMarketFeePercent: null,
   cashAmount: null,
   hexa: {
     fragmentCount: 345,

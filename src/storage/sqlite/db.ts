@@ -472,6 +472,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'cashbook_entry_items', 'hexa_activation', 'INTEGER')
   await ensureColumn(db, 'cashbook_entry_items', 'hexa_use_storage', 'INTEGER')
   await ensureColumn(db, 'cashbook_entry_items', 'hexa_storage_as_spend', 'INTEGER')
+  // 이 칸이 생기기 전의 메포 지출에는 버전 20 이관이 요율을 채운다.
+  await ensureColumn(db, 'cashbook_entry_items', 'meso_market_fee_percent', 'INTEGER')
   // 사용자가 직접 적은 완료를 가르는 칸. 이미 기록을 쌓아 둔 기기에는 CREATE 가 안 붙인다.
   await ensureColumn(db, 'boss_profit_records', 'source', 'TEXT')
   await ensureColumn(db, 'character_profiles', 'world_key', 'TEXT')

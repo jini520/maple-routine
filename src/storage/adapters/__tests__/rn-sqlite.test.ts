@@ -147,6 +147,7 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_activation INTEGER',
       'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_use_storage INTEGER',
       'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_storage_as_spend INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN meso_market_fee_percent INTEGER',
       // 사용자가 직접 적은 완료를 가르는 칸.
       'ALTER TABLE boss_profit_records ADD COLUMN source TEXT',
       'ALTER TABLE character_profiles ADD COLUMN world_key TEXT',
@@ -281,6 +282,7 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'hexa_activation' },
             { name: 'hexa_use_storage' },
             { name: 'hexa_storage_as_spend' },
+            { name: 'meso_market_fee_percent' },
             { name: 'from_star' },
             { name: 'to_star' },
             { name: 'created_date' },

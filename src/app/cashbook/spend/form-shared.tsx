@@ -19,8 +19,11 @@ import type { SpendCategoryKey } from '../../../lib/cashbook/categories'
 import type { HexaStorageChecks } from '../../../storage/hexa-storage-checks'
 import { type SpendRecord } from '../../../storage/spend'
 
-/** 저장할 값에서 **어댑터가 아니라 화면이 정하는 것 둘**(`id`·`recordedAt`)을 뺀 나머지. */
-export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
+/**
+ * 저장할 값에서 **어댑터가 아니라 화면이 정하는 것 둘**(`id`·`recordedAt`)과, 저장할 때 붙는 메소마켓 수수료율을 뺀
+ * 나머지.
+ */
+export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt' | 'mesoMarketFeePercent'>
 
 /** 저장 줄이 그리는 값과 누를 때 부를 것. 시트가 이것을 받아 바닥에 세운다. */
 export interface SpendSaveSlot {

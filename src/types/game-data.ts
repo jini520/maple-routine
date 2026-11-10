@@ -91,6 +91,8 @@ export interface WorldsTable extends TableHead {
 export interface SpendCatalogRules {
   tariffPercent: number
   rewardCoinPriceMeso: number
+  /** 메소마켓에서 메소를 팔 때 받는 메포에서 떼는 수수료(%). */
+  mesoMarketFeePercent: number
 }
 export interface SpendGroupRow {
   key: string

@@ -336,7 +336,8 @@ SQL 을 더해야 했다. 그래서 기록에 key 를 함께 저장한다.
 | `lib/enhancement/__tests__/cost.spec.ts` | 결정 10: 큐브 식과 무료 구간, 잠재 표의 구간 경계, 스타포스의 반올림 · 할인 순서, 두 몫과 MVP 할인을 본다 |
 | `lib/enhancement/__tests__/world.spec.ts` | 결정 11: 월드를 아는 줄과 붙인 캐릭터의 월드로 판정하는 줄, 리프 전 줄과 월드를 모르는 캐릭터를 일반 월드로 세는지 본다 |
 | `storage/__tests__/enhancement-history.spec.ts` | 결정 9: 원장을 계정마다 읽고 확정 표시와 커서를 적는지, 옛 원본의 깨진 `payload` 가 그 줄만 비우는지 본다 |
-| `storage/sqlite/__tests__/db-real-sqlite.test.ts` | 결정 16: 이관이 옛 행의 이름에서 key 를 채우고 못 찾은 행은 비워 두는지 실제 SQLite 엔진에서 본다. 결정 17: 버전 20 이관이 메포 지출 품목에만 요율 1 을 채우고 수입 · 메소 품목은 비워 두는지 본다 |
+| `storage/sqlite/__tests__/db-real-sqlite.test.ts` | 결정 16: 이관이 옛 행의 이름에서 key 를 채우고 못 찾은 행은 비워 두는지 실제 SQLite 엔진에서 본다 |
+| `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` | 결정 17: 요율을 형태마다 품목에 저장하고 되읽는지, 버전 20 이관이 메포 지출 품목에만 요율 1 을 채우고 메소 지출 · 메포 수입은 비워 두는지 실제 SQLite 엔진에서 본다 |
 | `storage/__tests__/last-point-rate.spec.ts` | 결정 2: 잘못된 값은 없는 것으로 보고 쓰지도 않는지 본다 |
 | `app/cashbook/__tests__/SpendSheet.test.tsx` | 결정 17: 메포 항목과 메포 `기타` 의 큰 숫자에 수수료가 들어가는지 본다 |
 

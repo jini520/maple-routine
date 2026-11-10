@@ -617,6 +617,7 @@ describe('이번 주 수익', () => {
         tariffMeso: null,
         pointAmount: null,
         pointPer100mMeso: null,
+        mesoMarketFeePercent: null,
         cashAmount: null,
         hexa: null,
         recordedAt: `${week.from}T00:00:00.000Z`,

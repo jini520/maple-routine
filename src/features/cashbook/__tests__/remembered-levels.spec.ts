@@ -110,6 +110,7 @@ const 헥사: SpendRecord = {
   tariffMeso: null,
   pointAmount: null,
   pointPer100mMeso: null,
+  mesoMarketFeePercent: null,
   cashAmount: null,
   hexa: { fragmentCount: 345, untradableFragmentCount: 0, fragmentPrice: 0, activation: null, useStorage: false, storageAsSpend: false, storageUses: [] },
   recordedAt: '2026-10-30T00:00:00.000Z',

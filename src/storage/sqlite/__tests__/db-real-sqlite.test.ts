@@ -388,6 +388,7 @@ describe('심볼 강화의 레벨 두 칸', () => {
     tariffMeso: null,
     pointAmount: null,
     pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
     cashAmount: null,
     hexa: null,
     recordedAt: '2026-09-19T10:00:00.000Z',

@@ -343,8 +343,8 @@ describe('캐릭터별 마지막 사냥을 기억한다', () => {
 describe('spendMesoOf: 메소 축으로 접는다', () => {
   const { spendMesoOf } = require('../records') as typeof import('../records')
 
-  // 환산만 보는 줄이라 주화를 안 받는 행이다. 주화는 아래 describe 가 따로 본다.
-  const 행 = { ...메포지출, id: 'x', recordedAt: '', formItemKeys: null }
+  // 환산만 보는 줄이라 주화를 안 받는 행이다. 주화는 아래 describe 가, 수수료는 그 아래 describe 가 따로 본다.
+  const 행 = { ...메포지출, id: 'x', recordedAt: '', formItemKeys: null, mesoMarketFeePercent: null }
 
   it('메포는 시세로 환산해 더한다', () => {
     expect(spendMesoOf(행)).toBe(2_542_372_881)
@@ -370,7 +370,7 @@ describe('spendMesoOf: 메소 축으로 접는다', () => {
 describe('spendMesoOf: 세라자르 주화를 뺀다', () => {
   const { spendMesoOf } = require('../records') as typeof import('../records')
 
-  const 행 = { ...메포지출, id: 'x', recordedAt: '' }
+  const 행 = { ...메포지출, id: 'x', recordedAt: '', mesoMarketFeePercent: null }
 
   // 솔 에르다 2단계 하나라 주화 8개다. 8 × 40,000,000 = 320,000,000.
   it('고른 단계의 주화 판매가만큼 뺀다', () => {
@@ -414,6 +414,68 @@ describe('spendMesoOf: 세라자르 주화를 뺀다', () => {
   // 주화를 안 주는 갈래는 그대로다. 되짚어도 개수가 0 이다.
   it('에픽던전이 아닌 행은 그대로다', () => {
     expect(spendMesoOf({ ...행, category: 'etc', formItemKeys: null })).toBe(2_542_372_881)
+  })
+})
+
+/**
+ * 메포를 쓰려면 메소를 팔아야 하고, 메소마켓은 메소를 팔 때만 수수료를 뗀다. 받은 메포를 메소로 바꾸는 수입은
+ * 메소를 사는 쪽이라 수수료가 없다(사용자 확인 2026-11-10).
+ */
+describe('spendMesoOf: 메소마켓 수수료', () => {
+  const { incomeMesoOf, spendMesoOf } = require('../records') as typeof import('../records')
+
+  const 행 = { ...메포지출, id: 'x', recordedAt: '', formItemKeys: null, mesoMarketFeePercent: 1 }
+
+  // 30,000 메포 × 1억 ÷ (1,180 × 0.99) = 2,568,053,415. 수수료가 없으면 2,542,372,881 이다.
+  it('지출의 메포는 수수료를 뗀 시세로 바꾸고, 같은 메포의 수입은 수수료 없이 바꾼다', () => {
+    const 메포수입 = { ...수입행, mesoAmount: null, pointAmount: 30_000, pointPer100mMeso: 1_180 }
+
+    expect(spendMesoOf(행)).toBe(2_568_053_415)
+    expect(incomeMesoOf(메포수입)).toBe(2_542_372_881)
+  })
+
+  // 솔 에르다 2단계라 주화 8개(320,000,000)다.
+  it('세라자르 주화는 수수료를 넣은 값에서 뺀다', () => {
+    expect(spendMesoOf({ ...행, formItemKeys: { sol_erda: 'high_mountain_2' } })).toBe(2_568_053_415 - 320_000_000)
+  })
+})
+
+/** 요율은 기록마다 저장한다. 요율이 바뀌는 날 지난 기록의 금액이 따라 바뀌면 안 된다. */
+describe('메소마켓 수수료율을 기록에 적는다', () => {
+  beforeEach(() => {
+    spend.insertSpendRecord.mockResolvedValue(undefined)
+    spend.updateSpendRecord.mockResolvedValue(undefined)
+  })
+
+  it('새 메포 지출은 참조표 규칙의 요율을 적고, 메소 지출은 비운다', async () => {
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend(메포지출, 지금)
+    await recordSpend({ ...메포지출, mesoAmount: 4_000_000, pointAmount: null, pointPer100mMeso: null }, 지금)
+
+    const [메포, 메소] = spend.insertSpendRecord.mock.calls.map((call) => call[0])
+    expect(메포.mesoMarketFeePercent).toBe(1)
+    expect(메소.mesoMarketFeePercent).toBeNull()
+  })
+
+  it('고칠 때는 그 기록에 적힌 요율을 지킨다. 지금 규칙이 달라도 그대로다', async () => {
+    const { editSpend } = require('../records') as typeof import('../records')
+
+    await editSpend({ ...지출행, quantity: 3, mesoMarketFeePercent: 2 })
+
+    expect(spend.updateSpendRecord.mock.calls[0][0].mesoMarketFeePercent).toBe(2)
+  })
+
+  // 메소로 적었던 `기타` 를 메포로 고친 경우다. 적힌 요율이 없으니 그때의 규칙을 적는다.
+  it('요율이 없던 기록을 메포로 고치면 그때의 규칙을 적고, 메소로 고치면 비운다', async () => {
+    const { editSpend } = require('../records') as typeof import('../records')
+
+    await editSpend({ ...지출행, mesoMarketFeePercent: null })
+    await editSpend({ ...지출행, mesoAmount: 4_000_000, pointAmount: null, pointPer100mMeso: null, mesoMarketFeePercent: 1 })
+
+    const [메포, 메소] = spend.updateSpendRecord.mock.calls.map((call) => call[0])
+    expect(메포.mesoMarketFeePercent).toBe(1)
+    expect(메소.mesoMarketFeePercent).toBeNull()
   })
 })
 
@@ -486,6 +548,8 @@ const 지출행 = {
   tariffMeso: null,
   pointAmount: 1_200,
   pointPer100mMeso: 1_180,
+  // 수수료는 아래 describe 가 따로 본다. 다른 케이스는 환산값을 그대로 쓰려고 비운다.
+  mesoMarketFeePercent: null,
   cashAmount: null,
   hexa: null,
   recordedAt: '2026-08-25T02:00:00.000Z',
@@ -704,7 +768,8 @@ describe('고치기와 지우기', () => {
 
     await editSpend({ ...지출행, quantity: 3 })
 
-    expect(spend.updateSpendRecord).toHaveBeenCalledWith({ ...지출행, quantity: 3 })
+    // 메포 기록이라 요율이 없으면 그때의 규칙(1)이 붙는다.
+    expect(spend.updateSpendRecord).toHaveBeenCalledWith({ ...지출행, quantity: 3, mesoMarketFeePercent: 1 })
     expect(rate.setLastPointRate).toHaveBeenCalledWith(1_180)
   })
 
@@ -1305,7 +1370,7 @@ describe('헥사 보관 체크 기억', () => {
     expect(hexaChecks.setHexaStorageChecks).toHaveBeenCalledWith({ useStorage: true, storageAsSpend: false })
 
     hexaChecks.setHexaStorageChecks.mockClear()
-    await editSpend({ ...헥사지출, id: 'rec-1', recordedAt: '2026-08-23T05:00:00.000Z' })
+    await editSpend({ ...헥사지출, id: 'rec-1', recordedAt: '2026-08-23T05:00:00.000Z', mesoMarketFeePercent: null })
     await recordSpend(메포지출, 지금)
     expect(hexaChecks.setHexaStorageChecks).not.toHaveBeenCalled()
   })

@@ -26,6 +26,7 @@ import {
   findSpendRewardChoice,
   pointToMeso,
   rewardCoinMeso,
+  mesoMarketFeeOf,
   spendGroupCardTitleOf,
   spendRewardCoins,
 } from '../../lib/cashbook/spend-catalog'
@@ -76,7 +77,13 @@ import { loadAccountLabels } from './account-names'
 import { latestLevelRecordId, rememberAfterEdit, rememberAfterRemove, rememberAfterSave } from './remembered-levels'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
-export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
+/** 시트가 만드는 지출. 메소마켓 수수료율은 시트가 정하지 않고 저장할 때 붙인다(`withMesoMarketFee`). */
+export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt' | 'mesoMarketFeePercent'>
+
+/** 저장할 지출에 메소마켓 수수료율을 붙인다. 메포 지출만 요율이 있다. */
+function withMesoMarketFee(record: SpendRecord): SpendRecord {
+  return { ...record, mesoMarketFeePercent: record.pointAmount === null ? null : mesoMarketFeeOf(record.mesoMarketFeePercent) }
+}
 
 
 export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void> {
@@ -129,7 +136,7 @@ async function quietly(task: () => Promise<void>): Promise<void> {
 
 export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
   const id = randomUuid()
-  const record: SpendRecord = { ...draft, id, recordedAt: now.toISOString() }
+  const record = withMesoMarketFee({ ...draft, id, recordedAt: now.toISOString(), mesoMarketFeePercent: null })
   await insertSpendRecord(record)
   await quietly(() => rememberAfterSave(record))
   // 다음 새 헥사 폼이 이 상태로 열린다. 수정 저장은 그 기록만 고치는 일이라 적지 않는다.
@@ -151,7 +158,8 @@ export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
  * 메소로 낸(번) 것 + 메소마켓 시세로 환산한 메포다. 캐시는 안 든다. 환산 자체를 안 하므로
  * 캐시가 낀 날은 이 값이 그날의 전부가 아니다. 그 사실은 고른 날의 상세가 따로 말한다.
  *
- * 수입과 지출이 같은 식이다. 그래야 수입 − 지출 이 한 자로 재인다.
+ * 수입과 지출이 같은 시세로 바꾼다. 그래야 수입 − 지출 이 한 자로 재인다. 받은 메포를 메소로 바꾸는 것은 메소를 사는
+ * 쪽이라 메소마켓 수수료가 없다.
  */
 export function incomeMesoOf(record: IncomeRecord): number {
   const meso = record.mesoAmount ?? 0
@@ -160,7 +168,9 @@ export function incomeMesoOf(record: IncomeRecord): number {
 }
 
 /**
- * 지출 한 건의 메소 축 금액. 수입과 **같은 식**이되 주화 한 항이 더 있다.
+ * 지출 한 건의 메소 축 금액. 수입과 **같은 시세**로 바꾸되 메소마켓 수수료와 주화가 더 있다.
+ *
+ * 메포를 쓰려면 메소를 팔아야 하고 메소마켓은 팔 때 받는 메포에서 수수료를 떼므로, 그 기록에 적힌 요율을 시세에서 뺀다.
  *
  * 에픽던전 추가 리워드는 세라자르 주화를 주고 그 주화는 상점에 팔면 메소가 되므로, 실제로 나간
  * 돈은 메포 값에서 주화 판매가를 뺀 값이다. 그 뺄셈을 **읽을 때** 한다. 저장 칸을 안 더하므로
@@ -172,7 +182,7 @@ export function spendMesoOf(record: SpendRecord): number {
   const meso = record.mesoAmount ?? 0
   // 메포를 환산하지 않는 행이라 주화를 얹을 축도 없다.
   if (record.pointAmount === null || record.pointPer100mMeso === null) return meso
-  return meso + pointToMeso(record.pointAmount, record.pointPer100mMeso) - rewardCoinMesoOf(record)
+  return meso + pointToMeso(record.pointAmount, record.pointPer100mMeso, record.mesoMarketFeePercent) - rewardCoinMesoOf(record)
 }
 
 /**
@@ -1078,7 +1088,8 @@ export function loadHexaStorageChecks(): Promise<HexaStorageChecks> {
 }
 
 /** 고치기. `recordedAt` 은 안 바뀐다. 시세를 기억하는 순서는 넣을 때와 같다. 성공한 뒤에만. */
-export async function editSpend(record: SpendRecord): Promise<void> {
+export async function editSpend(edited: SpendRecord): Promise<void> {
+  const record = withMesoMarketFee(edited)
   await updateSpendRecord(record)
   await quietly(() => rememberAfterEdit(record))
   if (record.pointPer100mMeso !== null) {

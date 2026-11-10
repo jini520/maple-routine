@@ -21,7 +21,7 @@ import {
 } from '../../../lib/cashbook/free-currency'
 import { CASH_QUICK_ADDS, POINT_AMOUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
-import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
+import { mesoMarketFeeOf, pointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { ownerFieldsOf, ownerValueOf } from '../character-options'
 import { AmountInput, FieldCard, FieldRow, OwnerField, TextField, useCountField } from '../sheet-fields'
 import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
@@ -67,7 +67,8 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
   /** **언제나 곱한다**. 금액 × 수량. */
   const amount = typed * quantity
   // 캐시는 **환산하지 않는다**. 그래서 메소 축 합계에 안 든다.
-  const totalMeso = currency === 'cash' ? 0 : usesPoint ? pointToMeso(amount, rate ?? 0) : amount
+  const pointMeso = pointToMeso(amount, rate ?? 0, mesoMarketFeeOf(props.editing?.mesoMarketFeePercent))
+  const totalMeso = currency === 'cash' ? 0 : usesPoint ? pointMeso : amount
   // 메포를 쓰는데 시세가 없으면 **막는다**. 저장하면 영영 메소로 표시할 수 없는 행이 된다.
   const blocked = usesPoint && (rate === null || rate <= 0)
   const canSave = owner !== null && amount > 0 && !blocked

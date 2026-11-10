@@ -236,6 +236,7 @@ describe('월드 리프 옮기기', () => {
       tariffMeso: null,
       pointAmount: null,
       pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
       cashAmount: null,
       hexa: {
         fragmentCount: 10,
