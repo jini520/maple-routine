@@ -132,8 +132,10 @@ export const STORAGE_KEYS = {
   partyAppointments: 'partyAppointments',
   // 과거 기록을 서버로 어디까지 올렸나(종류마다 마지막으로 보낸 id 와 끝났는지).
   serverBackfill: 'serverBackfill',
-  // 옛 강화 원본 표를 합계로 옮겼나. 원본 표는 v1.0.14 에서 지운다.
+  // 옛 강화 원본 표를 합계로 옮겼나. 옮긴 뒤 원본 표를 지운다.
   enhancementTotalsMoved: 'enhancementTotalsMoved',
+  // 월드로만 묶던 옛 월드 공유 원장을 메이플 ID 마다 베꼈나. 베낀 뒤 옛 원장을 지운다.
+  worldSharedProgressSplit: 'worldSharedProgressSplit',
   // 주간 보스 수익 계산기의 기록(JSON). 사용자가 남긴 것이라 아무도 되살려 주지 않는다. 데이터 삭제 그룹에 넣지 말 것.
   bossProfitCalculatorRecords: 'bossProfitCalculatorRecords',
   // 1.0.13 전의 게임 데이터 사본(TanStack Query 캐시). 사본은 이제 SQLite 에 있어 안 읽고 켤 때 지우기만 한다.
@@ -194,10 +196,17 @@ export function manualTrackedContentKey(ocid: string): string {
   return `manualTrackedContent:${ocid}`
 }
 
-// 월드/계정 단위로 완료가 공유되는 콘텐츠의 진행 상태 원장 키. 월드 부분은 월드 key 다.
-export function worldSharedProgressKey(worldKey: string): string {
-  return `worldSharedProgress:${worldKey}`
+// 월드 단위로 완료가 공유되는 콘텐츠의 진행 상태 원장 키. 같은 월드라도 메이플 ID 가 다르면 따로 센다.
+export function worldSharedProgressKey(accountId: string, worldKey: string): string {
+  return `worldSharedProgress:${accountId}:${worldKey}`
 }
+
+// 월드로만 묶던 옛 원장의 키. 월드 부분은 월드 key 이거나, 그보다 옛 원장은 월드 이름이다. 메이플 ID 마다 베낀 뒤 지운다.
+export function legacyWorldSharedProgressKey(world: string): string {
+  return `worldSharedProgress:${world}`
+}
+
+// 계정 단위로 완료가 공유되는 콘텐츠의 진행 상태 원장 키. 계정은 메이플 ID 다.
 
 export function accountSharedProgressKey(accountId: string): string {
   return `accountSharedProgress:${accountId}`

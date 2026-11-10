@@ -64,8 +64,9 @@ jest.mock('../../../storage/shared-progress-cache', () => ({
   getAccountSharedProgress: jest.fn(),
   setWorldSharedProgressEntry: jest.fn(),
   setAccountSharedProgressEntry: jest.fn(),
+  splitWorldSharedProgress: jest.fn(),
 }))
-const { getWorldSharedProgress: getWorldSharedProgressMock, getAccountSharedProgress: getAccountSharedProgressMock, setWorldSharedProgressEntry: setWorldSharedProgressEntryMock, setAccountSharedProgressEntry: setAccountSharedProgressEntryMock } = jest.requireMock('../../../storage/shared-progress-cache') as Record<string, jest.Mock>
+const { getWorldSharedProgress: getWorldSharedProgressMock, getAccountSharedProgress: getAccountSharedProgressMock, setWorldSharedProgressEntry: setWorldSharedProgressEntryMock, setAccountSharedProgressEntry: setAccountSharedProgressEntryMock, splitWorldSharedProgress: splitWorldSharedProgressMock } = jest.requireMock('../../../storage/shared-progress-cache') as Record<string, jest.Mock>
 
 // 모달을 안 거친 리프를 이름·직업으로 잇는 대조. 목록 응답을 받은 자리에서 불리는가만 본다.
 jest.mock('../../boss-profit/world-leap-link', () => ({
@@ -205,6 +206,7 @@ beforeEach(async () => {
   getCharacterProfilesMock.mockResolvedValue(new Map())
   resetWorldLeapStoreForTests()
   getWorldSharedProgressMock.mockResolvedValue({})
+  splitWorldSharedProgressMock.mockResolvedValue(undefined)
   getAccountSharedProgressMock.mockResolvedValue({})
   setWorldSharedProgressEntryMock.mockResolvedValue(undefined)
   setAccountSharedProgressEntryMock.mockResolvedValue(undefined)
@@ -759,7 +761,7 @@ describe('syncSchedules', () => {
 
       await syncSchedules(['ocid-1'])
 
-      expect(getWorldSharedProgressMock).toHaveBeenCalledWith('elysium')
+      expect(getWorldSharedProgressMock).toHaveBeenCalledWith('acc-1', 'elysium')
       expect(getAccountSharedProgressMock).toHaveBeenCalledWith('acc-1')
       expect(mergeSchedulerStateMock).toHaveBeenCalledWith({
         previous: cachedPrevious.state,
@@ -811,7 +813,7 @@ describe('syncSchedules', () => {
 
       await syncSchedules(['ocid-1'])
 
-      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith('elysium', 'monster_park', worldEntry)
+      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', 'elysium', 'monster_park', worldEntry)
       expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', 'epic_dungeon_nightmare_paradise', accountEntry)
     })
 
@@ -1178,7 +1180,7 @@ describe('syncSchedules', () => {
         2,
         expect.objectContaining({ worldLedger: { monster_park: worldEntry }, accountLedger: {} }),
       )
-      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith('elysium', 'monster_park', worldEntry)
+      expect(setWorldSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', 'elysium', 'monster_park', worldEntry)
       expect(setAccountSharedProgressEntryMock).toHaveBeenCalledWith('acc-1', 'epic_dungeon_nightmare_paradise', accountEntry)
     })
 
@@ -2781,6 +2783,40 @@ describe('넥슨 계정이 여럿', () => {
       'o-리프',
       expect.anything(),
     )
+  })
+})
+
+// 같은 월드라도 메이플 ID 가 다르면 따로 센다. 옛 원장은 그 월드에 추적 캐릭터가 있는 메이플 ID 마다 베낀다.
+describe('월드 공유 원장 나누기', () => {
+  it('모든 계정의 목록을 받은 회차가 추적 캐릭터의 메이플 ID 와 월드로 옛 원장을 나눈다', async () => {
+    fetchCharacterListMock.mockResolvedValue([account('maple-1', [mockCharacter('o-1')]), account('maple-2', [mockCharacter('o-2')])])
+    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터'))
+
+    await syncSchedules(['o-1', 'o-2'])
+
+    expect(splitWorldSharedProgressMock).toHaveBeenCalledWith([
+      { accountId: 'maple-1', worldKey: 'bera' },
+      { accountId: 'maple-2', worldKey: 'bera' },
+    ])
+  })
+
+  // 목록을 못 받은 계정의 메이플 ID 는 옛 원장을 받지 못한다. 나누기는 한 번만 돌아 그 기회가 사라진다.
+  it('목록을 못 받은 계정의 추적 캐릭터가 있으면 나누지 않고 다음 회차로 미룬다', async () => {
+    getAuthConfigMock.mockResolvedValue({
+      login: { type: 'login', id: 'account-login', session: '세션' },
+      apiKeys: [{ type: 'key', id: 'account-부', label: '', value: '부-키', loginId: 'account-login' }],
+      mainKeyId: null,
+    })
+    fetchCharacterListMock.mockImplementation(async (credential: NexonCredential) => {
+      if (credential.accountId === 'account-부') throw new NexonAuthError('401')
+      return [account('maple-1', [mockCharacter('o-1')])]
+    })
+    getNexonAccountIdsOfOcidsMock.mockResolvedValue(new Map([['o-부', 'account-부']]))
+    fetchSchedulerCharacterStateMock.mockResolvedValue(schedulerState('캐릭터'))
+
+    await syncSchedules(['o-1', 'o-부'])
+
+    expect(splitWorldSharedProgressMock).not.toHaveBeenCalled()
   })
 })
 

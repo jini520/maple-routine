@@ -451,6 +451,7 @@
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 결정 18: 그 넥슨 계정 캐릭터의 그날 줄은 다른 계정 id 로 적혔어도 갈아 끼우는지, 옛 원본을 옮길 때 앱이 본 캐릭터에 붙이고 못 붙인 날을 다시 받을 날로 적는지 본다. 결정 22: 리프 전 월드를 리프한 날 앞의 가까운 스타포스 줄에서 찾는지 본다 |
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (원본 표) · `storage/__tests__/enhancement-history.spec.ts` | 결정 27: 옛 원본을 옮기면 원본 표를 지우고, 이미 옮긴 기기는 켤 때 지우고, 새 DB 에는 원본 표가 없고, 없는 표는 읽지 않는지 본다 |
 | `storage/__tests__/spend.spec.ts` · `features/cashbook/__tests__/legacy-entry-accounts.spec.ts` · `app/cashbook/__tests__/SpendSheet.test.tsx` | 결정 28: 남은 주인 모르는 옛 기록을 대표 캐릭터의 메이플 ID 나 그 캐릭터에 붙이는지, 대표를 모르면 다음에 다시 보는지 본다. 결정 29: 지출 컨텐츠 시트에 메이플 ID 보기가 서는지 본다 |
+| `storage/__tests__/shared-progress-cache.spec.ts` · `features/schedule-sync/__tests__/schedule-sync.spec.ts` (원장) | 결정 23: 월드 원장이 같은 월드라도 메이플 ID 마다 따로인지, 옛 원장을 추적 캐릭터가 있는 메이플 ID 마다 베끼고 지우는지, 새 원장의 항목이 이기고 한 번만 도는지, 목록을 못 받은 계정이 있으면 나누기를 미루는지 본다 |
 | `features/cashbook/__tests__/records.spec.ts` · `features/stats/__tests__/aggregate.spec.ts` · `lib/mvp/__tests__/starforce.spec.ts` | 결정 20: 가계부 · 통계가 강화 줄을 ocid 로 묶어 이름을 바꾼 캐릭터의 옛 이름 줄도 그 캐릭터에 넣는지, MVP 할인을 그 줄의 메이플 ID 등급으로 붙이는지 본다 |
 | `features/auth/__tests__/nexon-login.spec.ts` | 결정 14: 로그인 화면의 넥슨 로그인만 세션을 받은 뒤 저장하기 전에 추적 목록을 비우는지, 연동 시트와 창을 닫거나 세션을 못 받은 로그인은 비우지 않는지 본다 |
 | `features/auth/__tests__/store.spec.ts` | 결정 14: 키 입력이 키를 저장하기 전에 추적 목록을 비우고, 무효 키 · 개발 단계 키는 비우지 않는지 본다. 로그인 화면과 연동 시트가 새 로그인 여부를 다르게 넘기는지 본다. 결정 20: 키 입력이 소속을 키를 저장한 뒤 그 키의 계정 id 로 적고, 막힌 키는 적지 않는지 본다 |

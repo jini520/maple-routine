@@ -19,6 +19,7 @@ import {
   getWorldSharedProgress,
   setAccountSharedProgressEntry,
   setWorldSharedProgressEntry,
+  splitWorldSharedProgress,
 } from '../../storage/shared-progress-cache'
 import type { MapleCharacter, SchedulerCharacterState, SharedProgressEntry } from '../../types'
 
@@ -278,7 +279,7 @@ async function syncOneCharacter(
     const previousCache = readScheduleEntry(character.ocid)
     const [worldLedger, accountLedger] = await Promise.all([
       // 월드 key 가 없으면 월드 공유 원장을 읽지도 쓰지도 않는다. 월드를 모르는 것과 같다.
-      fresh.worldKey === null ? {} : getWorldSharedProgress(fresh.worldKey),
+      fresh.worldKey === null ? {} : getWorldSharedProgress(accountId, fresh.worldKey),
       getAccountSharedProgress(accountId),
     ])
 
@@ -306,7 +307,7 @@ async function syncOneCharacter(
       ...(characterState.worldKey === null
         ? []
         : Object.entries(worldLedgerUpdates).map(([contentKey, entry]) =>
-            setWorldSharedProgressEntry(characterState.worldKey!, contentKey, entry),
+            setWorldSharedProgressEntry(accountId, characterState.worldKey!, contentKey, entry),
           )),
       ...Object.entries(accountLedgerUpdates).map(([name, entry]) =>
         setAccountSharedProgressEntry(accountId, name, entry),
@@ -353,6 +354,16 @@ async function runSyncRound(
   // 것이 없다.
   const skipped = new Set([...unlisted.map((one) => one.ocid), ...uncallable])
   const judged = ocids.filter((ocid) => !skipped.has(ocid))
+
+  // 월드로만 묶던 옛 월드 공유 원장을 메이플 ID 마다 나눈다. 목록을 못 받은 캐릭터가 있으면 그 메이플 ID 가 옛 원장을 못 받아
+  // 다음 회차로 미룬다.
+  if (skipped.size === 0) {
+    await splitWorldSharedProgress(
+      targets.flatMap(({ character, accountId }) =>
+        character.worldKey === null || character.worldKey === undefined ? [] : [{ accountId, worldKey: character.worldKey }],
+      ),
+    ).catch(() => undefined)
+  }
 
   const total = targets.length
 
