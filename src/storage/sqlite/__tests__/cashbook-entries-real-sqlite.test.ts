@@ -9,7 +9,7 @@ import { existsSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 
 import { saveCharacterProfile } from '../../character-profiles'
-import { getIncomeRecordsBetween } from '../../income'
+import { getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '../../income'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { assignOwnerlessSpends, getSpendRecordsBetween, insertSpendRecord, updateSpendRecord, type SpendRecord } from '../../spend'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
@@ -228,6 +228,7 @@ describe('가계부 기록의 월드', () => {
     tariffMeso: null,
     pointAmount: null,
     pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
     cashAmount: null,
     hexa: null,
     recordedAt: '2026-10-05T01:00:00.000Z',
@@ -298,5 +299,88 @@ describe('가계부 기록의 월드', () => {
 
     expect(worldOf(버프.id)).toBe('elysium')
     expect(worldOf(메이플ID기록.id)).toBeNull()
+  })
+})
+
+describe('메포 지출의 메소마켓 수수료율', () => {
+  const 메포지출: SpendRecord = {
+    id: '4f5a6b7c-8d9e-4f0a-9b1c-2d3e4f5a6b7c',
+    ocid: 'ocid-1',
+    spentOn: '2026-10-05',
+    category: 'content',
+    item: null,
+    itemKey: null,
+    formItemKeys: { exp: 'high_mountain_1', sol_erda: 'high_mountain_2' },
+    itemKind: null,
+    levelFrom: null,
+    levelTo: null,
+    quantity: 1,
+    mesoAmount: null,
+    tariffMeso: null,
+    pointAmount: 37_500,
+    pointPer100mMeso: 1_180,
+    mesoMarketFeePercent: 2,
+    cashAmount: null,
+    hexa: null,
+    recordedAt: '2026-10-05T01:00:00.000Z',
+  }
+  const 메소지출: SpendRecord = {
+    ...메포지출,
+    id: '5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a6b7c8d',
+    formItemKeys: null,
+    itemKey: 'seiram_elixir',
+    category: 'buff',
+    mesoAmount: 4_000_000,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
+  }
+  const 메포수입: IncomeRecord = {
+    id: '6b7c8d9e-0f1a-4b2c-9d3e-4f5a6b7c8d9e',
+    ocid: 'ocid-1',
+    earnedOn: '2026-10-05',
+    category: 'etc',
+    item: '이벤트 보상',
+    itemKey: null,
+    mesoAmount: null,
+    saleFeePercent: null,
+    saleFeeMeso: null,
+    saleFeeAuto: false,
+    pointAmount: 30_000,
+    pointPer100mMeso: 1_180,
+    cashAmount: null,
+    quantity: null,
+    itemKind: null,
+    hunt: null,
+    recordedAt: '2026-10-05T02:00:00.000Z',
+  }
+
+  function feesOf(entryId: string): unknown[] {
+    return all(`SELECT meso_market_fee_percent FROM cashbook_entry_items WHERE entry_id = '${entryId}' ORDER BY sort_order`).map(
+      (row) => row.meso_market_fee_percent,
+    )
+  }
+
+  // 에픽던전 형태 둘은 품목 둘로 나뉜다. 두 품목 모두 같은 요율이어야 되읽은 기록이 그 요율이다.
+  it('적은 요율을 형태마다 품목에 저장하고 그대로 되읽는다', async () => {
+    await insertSpendRecord(메포지출)
+
+    expect(feesOf(메포지출.id)).toEqual([2, 2])
+    const [read] = await getSpendRecordsBetween('2026-10-05', '2026-10-05')
+    expect(read?.mesoMarketFeePercent).toBe(2)
+  })
+
+  it('버전 20 은 메포 지출 품목에만 요율 1 을 채우고, 메소 지출과 메포 수입은 비워 둔다', async () => {
+    await insertSpendRecord({ ...메포지출, mesoMarketFeePercent: null })
+    await insertSpendRecord(메소지출)
+    await insertIncomeRecord(메포수입)
+    await closeBossProfitDb()
+    real.inspect((db) => db.exec('PRAGMA user_version = 19'))
+
+    await getBossProfitDb()
+
+    expect(feesOf(메포지출.id)).toEqual([1, 1])
+    expect(feesOf(메소지출.id)).toEqual([null])
+    expect(feesOf(메포수입.id)).toEqual([null])
   })
 })

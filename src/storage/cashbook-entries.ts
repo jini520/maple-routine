@@ -36,6 +36,7 @@ export interface EntryItem {
   saleFeeAuto: boolean
   amountPoint: number | null
   pointPer100mMeso: number | null
+  mesoMarketFeePercent: number | null
   amountCash: number | null
   fragmentCount: number | null
   untradableFragmentCount: number | null
@@ -89,6 +90,7 @@ export const EMPTY_ITEM: EntryItem = {
   saleFeeAuto: false,
   amountPoint: null,
   pointPer100mMeso: null,
+  mesoMarketFeePercent: null,
   amountCash: null,
   fragmentCount: null,
   untradableFragmentCount: null,
@@ -105,9 +107,10 @@ function flagOf(value: boolean | null): number | null {
 const INSERT_ITEM_SQL = `
   INSERT INTO cashbook_entry_items
     (id, entry_id, sort_order, item_key, item_name, form_key, item_kind_key, quantity, from_level, to_level,
-     amount_meso, tariff_meso, sale_fee_percent, sale_fee_meso, sale_fee_auto, amount_point, point_per_100m_meso, amount_cash,
+     amount_meso, tariff_meso, sale_fee_percent, sale_fee_meso, sale_fee_auto, amount_point, point_per_100m_meso,
+     meso_market_fee_percent, amount_cash,
      fragment_count, untradable_fragment_count, fragment_price_meso, hexa_activation, hexa_use_storage, hexa_storage_as_spend)
-  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 const INSERT_FRAGMENT_USE_SQL = `
@@ -139,6 +142,7 @@ async function writeChildren(db: SqliteDbConnection, entry: StoredEntry): Promis
       item.saleFeeAuto ? 1 : null,
       item.amountPoint,
       item.pointPer100mMeso,
+      item.mesoMarketFeePercent,
       item.amountCash,
       item.fragmentCount,
       item.untradableFragmentCount,
@@ -358,6 +362,7 @@ function itemOf(row: Record<string, unknown>): EntryItem {
     saleFeeAuto: Number(row.sale_fee_auto) === 1,
     amountPoint: numberOrNull(row.amount_point),
     pointPer100mMeso: numberOrNull(row.point_per_100m_meso),
+    mesoMarketFeePercent: numberOrNull(row.meso_market_fee_percent),
     amountCash: numberOrNull(row.amount_cash),
     fragmentCount: numberOrNull(row.fragment_count),
     untradableFragmentCount: numberOrNull(row.untradable_fragment_count),

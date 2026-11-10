@@ -138,7 +138,12 @@ function toRules(value: unknown): SpendCatalogRules | null {
   if (!isRow(value) || !isNonNegativeInteger(value.tariffPercent) || !isNonNegativeInteger(value.rewardCoinPriceMeso)) {
     return null
   }
-  return { tariffPercent: value.tariffPercent, rewardCoinPriceMeso: value.rewardCoinPriceMeso }
+  if (!isNonNegativeInteger(value.mesoMarketFeePercent)) return null
+  return {
+    tariffPercent: value.tariffPercent,
+    rewardCoinPriceMeso: value.rewardCoinPriceMeso,
+    mesoMarketFeePercent: value.mesoMarketFeePercent,
+  }
 }
 
 // 갈래는 앱이 폼을 모르는 key 도 온다. 그 갈래는 시트에서 못 골라 묶음도 안 선다.
@@ -229,7 +234,7 @@ export function parseSpendCatalog(value: unknown): SpendCatalogTable | null {
   return { updatedAt, rules, groups, tiles, items, itemOptions, itemForms, forms }
 }
 
-export const spendCatalogTable = gameTable('spendCatalog', { updatedAt: null, rules: { tariffPercent: 0, rewardCoinPriceMeso: 0 }, groups: [], tiles: [], items: [], itemOptions: [], itemForms: [], forms: [] }, parseSpendCatalog)
+export const spendCatalogTable = gameTable('spendCatalog', { updatedAt: null, rules: { tariffPercent: 0, rewardCoinPriceMeso: 0, mesoMarketFeePercent: 0 }, groups: [], tiles: [], items: [], itemOptions: [], itemForms: [], forms: [] }, parseSpendCatalog)
 
 interface CatalogIndex {
   /** 항목 줄에 축 값과 형태를 붙인 것. 차례는 표의 차례다. */
@@ -308,6 +313,17 @@ export function spendTariffPercent(): number {
 /** 세라자르 주화 1개의 상점 판매가(메소). 규칙이라 표가 든다. */
 export function rewardCoinPriceMeso(): number {
   return spendCatalogTable.get().rules.rewardCoinPriceMeso
+}
+
+/**
+ * 메포 지출에 쓰는 메소마켓 수수료율(%). 기록에 적힌 요율이 있으면 그것이고, 없으면 지금 규칙이다.
+ *
+ * 적힌 요율을 지금 규칙으로 덮으면 규칙이 바뀐 뒤 고친 지난 기록의 금액이 달라진다.
+ *
+ * @param stored 그 기록에 적힌 요율. 새 기록은 `undefined` 다
+ */
+export function mesoMarketFeeOf(stored: number | null | undefined): number {
+  return stored ?? spendCatalogTable.get().rules.mesoMarketFeePercent
 }
 
 /** 세라자르 주화. 에픽던전 추가 리워드가 주고 상점에 팔면 메소가 된다. 이름과 그림은 앱 상수이고 판매가는 `rewardCoinPriceMeso()` 다. */
@@ -673,18 +689,27 @@ export function optionItemOf(
  * 메포 → 메소. 시세의 단위가 **1억 메소당 메포**라 이것은 **나눗셈**이다.
  *
  * ```
- * 메소 = 메포 × 100,000,000 ÷ 시세
+ * 메소 = 메포 × 100,000,000 × 100 ÷ (시세 × (100 − 수수료율))
  * ```
  *
  * 곱셈으로 짜면 결과가 **1억 배** 어긋난다. 컬럼 이름을 `meso_per_point` 에서
  * `point_per_100m_meso` 로 고친 이유가 그것이다.
  *
+ * 수수료율은 메포 지출만 넘긴다. 메소마켓은 메소를 팔 때 받는 메포에서 수수료를 떼므로 시세에서 뺀다.
+ * 메소 값에 수수료율을 더하면 그보다 작게 나온다.
+ *
  * 시세가 0 이하면 **0 을 돌려준다.** 어댑터가 저장을 막지만(`storage/spend.ts`) 화면은 입력
  * 중간에 0 을 들고 있을 수 있고, 그때 `Infinity` 가 금액 칸에 들어가면 화면이 깨진다.
+ *
+ * @param mesoMarketFeePercent 그 기록의 메소마켓 수수료율. 수입과 요율 없는 기록은 `null` 이다
  */
-export function pointToMeso(pointAmount: number, pointPer100mMeso: number): number {
-  if (pointPer100mMeso <= 0) return 0
-  return Math.floor((pointAmount * MESO_PER_RATE_UNIT) / pointPer100mMeso)
+export function pointToMeso(pointAmount: number, pointPer100mMeso: number, mesoMarketFeePercent: number | null = null): number {
+  const divisor = pointPer100mMeso * (100 - (mesoMarketFeePercent ?? 0))
+  if (pointPer100mMeso <= 0 || divisor <= 0) return 0
+  // ×100 까지 곱해 한 번에 나누면 몫이 커서 나눗셈의 반올림이 내림을 1 메소 넘기는 값이 있다. 몫과 나머지로 나눠 센다.
+  const scaled = pointAmount * MESO_PER_RATE_UNIT
+  const whole = Math.floor(scaled / divisor)
+  return whole * 100 + Math.floor(((scaled - whole * divisor) * 100) / divisor)
 }
 
 /**

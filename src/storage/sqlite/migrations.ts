@@ -46,7 +46,7 @@ import {
 import { NEW_UUID_SQL } from './uuid'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 19
+export const DB_VERSION = 20
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -512,6 +512,8 @@ function legacySpendRecordOf(row: Row, id: string): SpendRecord {
     tariffMeso: numberOrNull(row.tariff_meso),
     pointAmount: numberOrNull(row.point_amount),
     pointPer100mMeso: numberOrNull(row.point_per_100m_meso),
+    // 요율은 버전 20 이 채운다.
+    mesoMarketFeePercent: null,
     cashAmount: numberOrNull(row.cash_amount),
     hexa: null,
     recordedAt: row.recorded_at as string,
@@ -751,6 +753,22 @@ async function fillCashbookEntryWorlds(db: SqliteDbConnection): Promise<void> {
   )
 }
 
+/**
+ * 수수료율 칸이 생기기 전에 적은 메포 지출 품목에 메소마켓 수수료율 1 을 채운다.
+ *
+ * 1 은 그때까지의 거래에 붙은 요율이다(사용자 확인). 지금 규칙을 읽어 채우면 규칙이 바뀐 뒤 처음 켠 기기에서 지난 거래에
+ * 새 요율이 붙는다.
+ */
+async function fillMesoMarketFees(db: SqliteDbConnection): Promise<void> {
+  await db.run(
+    `UPDATE cashbook_entry_items
+        SET meso_market_fee_percent = 1
+      WHERE amount_point IS NOT NULL
+        AND meso_market_fee_percent IS NULL
+        AND entry_id IN (SELECT id FROM cashbook_entries WHERE entry_type = 'spend')`,
+  )
+}
+
 /** 합계 표의 값 칸. 다시 쓴 표로 옮길 때 그대로 나른다. */
 const ENHANCEMENT_TOTAL_VALUE_COLUMNS = [
   'enhancement_type',
@@ -889,6 +907,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   dropCashbookMemo,
   attachEnhancementOcids,
   fillCashbookEntryWorlds,
+  fillMesoMarketFees,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

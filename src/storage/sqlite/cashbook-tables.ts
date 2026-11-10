@@ -51,6 +51,8 @@ export const CASHBOOK_ENTRY_ITEMS_BODY = `(
     amount_point INTEGER,
     -- 1억 메소당 메포. amount_point 가 있으면 함께 있다.
     point_per_100m_meso INTEGER,
+    -- 메포 지출의 메소마켓 수수료율(%). 수입과 메소 · 캐시 품목은 NULL 이다.
+    meso_market_fee_percent INTEGER,
     -- 환산하지 않는다.
     amount_cash INTEGER,
     -- 헥사 강화의 필요 조각 · 교환 불가 조각 · 조각 개당 가격. 다른 갈래는 NULL 이다.
