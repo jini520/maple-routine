@@ -21,7 +21,7 @@
 | `bossDrops` | `boss_drop_rewards` |
 | `dropBoxes` | `drop_boxes` · `drop_box_contents` |
 | `crystalPrices` | `boss_crystal_prices` |
-| `worlds` | `worlds` |
+| `worlds` | `worlds` · `world_periods`(월드가 열린 기간, [[ADR-100]] 결정 9) |
 | `spendCatalog` | `spend_groups` · `spend_tiles` · `spend_items` · `spend_item_options` · `spend_item_forms` · `spend_forms` · `game_rules` |
 | `cashbookCategories` | `cashbook_categories` · `cashbook_item_kinds` |
 | `symbolCosts` | `symbol_groups` · `symbols` · `symbol_level_costs` |

@@ -76,6 +76,13 @@ export interface WorldRow {
   emblemAssetId?: string
   challengers: boolean
   event: boolean
+  /** 열린 기간. 이벤트 · 챌린저스 월드는 같은 이름으로 다시 열려 여러 줄이다. `from` 차례 */
+  periods: WorldPeriod[]
+}
+/** KST `YYYY-MM-DD`. `from` 은 연 날, `until` 은 닫힌 다음 날이라 기간에 안 든다. */
+export interface WorldPeriod {
+  from: string
+  until: string
 }
 export interface WorldsTable extends TableHead {
   worlds: WorldRow[]

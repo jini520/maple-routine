@@ -7,7 +7,8 @@
       "emblem": "scania",
       "emblemAssetId": "ecab282f-8d5f-43ba-8afc-c7fdc91364d9",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "bera",
@@ -15,7 +16,8 @@
       "emblem": "bera",
       "emblemAssetId": "6f685cc3-7b10-480e-8458-42b15537fda6",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "luna",
@@ -23,7 +25,8 @@
       "emblem": "luna",
       "emblemAssetId": "35067314-b7c4-401d-a5d5-d827aaa21501",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "zenith",
@@ -31,7 +34,8 @@
       "emblem": "zenith",
       "emblemAssetId": "f9aa8986-69cd-4394-ace0-71afd85af4ba",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "croa",
@@ -39,7 +43,8 @@
       "emblem": "croa",
       "emblemAssetId": "802c57d6-c3c4-4ff0-839b-366209435f4c",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "union",
@@ -47,7 +52,8 @@
       "emblem": "union",
       "emblemAssetId": "1cd8b897-ccc1-47fa-88ce-94816c4391e3",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "elysium",
@@ -55,7 +61,8 @@
       "emblem": "elysium",
       "emblemAssetId": "0bb2a7b0-20ee-43ed-8a82-8b8f95b8b286",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "enosis",
@@ -63,7 +70,8 @@
       "emblem": "enosis",
       "emblemAssetId": "c828c9f8-10af-443b-ae80-a582118b812b",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "red",
@@ -71,7 +79,8 @@
       "emblem": "red",
       "emblemAssetId": "bd4f0c68-225a-4b0e-b556-172737af7c11",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "aurora",
@@ -79,7 +88,8 @@
       "emblem": "aurora",
       "emblemAssetId": "8f015e69-cd7a-479f-9571-3974246c02ac",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "arcane",
@@ -87,7 +97,8 @@
       "emblem": "arcane",
       "emblemAssetId": "dd4d7417-4bc9-4379-b769-e3f3ef701c02",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "nova",
@@ -95,7 +106,8 @@
       "emblem": "nova",
       "emblemAssetId": "f88dc86d-d9d6-4ae2-822d-ed90a61b45a4",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "eos",
@@ -103,7 +115,8 @@
       "emblem": "eos",
       "emblemAssetId": "d6d98cf8-34c8-447f-9a12-c231105c4ad2",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "helios",
@@ -111,7 +124,8 @@
       "emblem": "helios",
       "emblemAssetId": "7a31c2e7-fdeb-43f1-ab62-2b21f356bfbd",
       "challengers": false,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "challengers",
@@ -119,7 +133,8 @@
       "emblem": "challengers",
       "emblemAssetId": "026acfb7-66e5-46b3-9cb9-4ab687106ac5",
       "challengers": true,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "challengers_2",
@@ -127,7 +142,8 @@
       "emblem": "challengers",
       "emblemAssetId": "026acfb7-66e5-46b3-9cb9-4ab687106ac5",
       "challengers": true,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "challengers_3",
@@ -135,7 +151,8 @@
       "emblem": "challengers",
       "emblemAssetId": "026acfb7-66e5-46b3-9cb9-4ab687106ac5",
       "challengers": true,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "challengers_4",
@@ -143,7 +160,8 @@
       "emblem": "challengers",
       "emblemAssetId": "026acfb7-66e5-46b3-9cb9-4ab687106ac5",
       "challengers": true,
-      "event": false
+      "event": false,
+      "periods": []
     },
     {
       "key": "special",
@@ -151,7 +169,27 @@
       "emblem": null,
       "emblemAssetId": null,
       "challengers": false,
-      "event": true
+      "event": true,
+      "periods": [
+        {
+          "from": "2025-11-20",
+          "until": "2025-12-19"
+        }
+      ]
+    },
+    {
+      "key": "special_2",
+      "name": "스페셜2",
+      "emblem": null,
+      "emblemAssetId": null,
+      "challengers": false,
+      "event": true,
+      "periods": [
+        {
+          "from": "2025-11-20",
+          "until": "2025-12-19"
+        }
+      ]
     }
   ]
 }

@@ -11,7 +11,11 @@ jest.mock('../../../storage/enhancement-history', () => ({
   loadEnhancementChecks: jest.fn(),
   markEnhancementChecked: jest.fn(),
 }))
-jest.mock('../../../storage/enhancement-totals', () => ({ replaceEnhancementTotals: jest.fn() }))
+jest.mock('../../../storage/enhancement-totals', () => ({ replaceEnhancementTotals: jest.fn(), markEventWorldTotals: jest.fn() }))
+jest.mock('../../../storage/event-world-characters', () => ({
+  loadEventWorldCharacters: jest.fn(),
+  rememberEventWorldCharacters: jest.fn(),
+}))
 jest.mock('../legacy-totals', () => ({ ensureEnhancementTotals: jest.fn() }))
 jest.mock('../../../storage/enhancement-recomputes', () => ({
   loadRecomputeProgress: jest.fn(),
@@ -26,7 +30,8 @@ const { fetchCharacterList } = jest.requireMock('../../../nexon/character') as R
 const store = jest.requireMock('../../../storage/enhancement-history') as Record<string, jest.Mock>
 const { saveEventWorldNames } = jest.requireMock('../event-world-names') as Record<string, jest.Mock>
 const { fillLegacyAccountIds } = jest.requireMock('../../auth/legacy-account-ids') as Record<string, jest.Mock>
-const { replaceEnhancementTotals } = jest.requireMock('../../../storage/enhancement-totals') as Record<string, jest.Mock>
+const { replaceEnhancementTotals, markEventWorldTotals } = jest.requireMock('../../../storage/enhancement-totals') as Record<string, jest.Mock>
+const remembered = jest.requireMock('../../../storage/event-world-characters') as Record<string, jest.Mock>
 const { ensureEnhancementTotals } = jest.requireMock('../legacy-totals') as Record<string, jest.Mock>
 const recomputes = jest.requireMock('../../../storage/enhancement-recomputes') as Record<string, jest.Mock>
 const { RECOMPUTE_REQUESTS } = jest.requireMock('../recompute') as { RECOMPUTE_REQUESTS: unknown[] }
@@ -60,6 +65,9 @@ beforeEach(() => {
   store.loadEnhancementChecks.mockReset().mockResolvedValue(new Map())
   store.markEnhancementChecked.mockReset().mockResolvedValue(undefined)
   replaceEnhancementTotals.mockReset().mockResolvedValue(undefined)
+  markEventWorldTotals.mockReset().mockResolvedValue(undefined)
+  remembered.loadEventWorldCharacters.mockReset().mockResolvedValue(new Map())
+  remembered.rememberEventWorldCharacters.mockReset().mockResolvedValue(undefined)
   ensureEnhancementTotals.mockReset().mockResolvedValue(undefined)
   recomputes.loadRecomputeProgress.mockReset().mockResolvedValue(new Map())
   recomputes.saveRecomputeProgress.mockReset().mockResolvedValue(undefined)
@@ -319,6 +327,81 @@ describe('수집', () => {
 })
 
 // 계산 코드나 비용 표를 고친 기간은 굳은 날이라도 넥슨 API 에서 다시 받아야 지난 합계가 바뀐다.
+/** 그 월드에서 한 스타포스 한 줄. 값을 매길 수 있는 줄이라 합계에 든다. */
+const starforceRow = (characterName: string, worldName: string) => ({
+  id: `${characterName}-${worldName}`,
+  characterName,
+  createdAt: '2026-09-05T07:00:00.000+09:00',
+  dateKey: '2026-09-05',
+  targetItem: '아케인셰이드 클로',
+  itemKey: 'arcane_umbra_knuckle',
+  itemLevel: null,
+  payload: { world_name: worldName, before_starforce_count: 10, after_starforce_count: 11, upgrade_item: '' },
+})
+
+const starforceDay = (...rows: ReturnType<typeof starforceRow>[]) =>
+  fetchEnhancementHistory.mockImplementation(async (_credential: unknown, kind: string) =>
+    kind === 'starforce' ? { rows, nextCursor: null } : page([]),
+  )
+
+describe('이벤트 월드 판정', () => {
+  // 이벤트가 끝나기 전에 캐릭터를 지우면 목록에서 사라진다. 그때 큐브 · 잠재 · 소울 줄을 가를 단서가 이것뿐이다.
+  it('이벤트 월드 스타포스 줄의 이름과 월드를 남기고, 일반 월드 줄은 안 남긴다', async () => {
+    starforceDay(starforceRow('지운캐릭', '스페셜2'), starforceRow('낟낟', '엘리시움'))
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    expect(remembered.rememberEventWorldCharacters).toHaveBeenCalledWith(
+      'account-key',
+      [{ characterName: '지운캐릭', worldKey: 'special_2' }],
+      NOW,
+    )
+  })
+
+  // 표에 넣으면 다음 회차가 다시 받아 판정해야 한다. 굳히면 그 기회가 사라진다.
+  it('표에 없는 월드의 줄이 있는 날은 굳히지 않고 그 월드 이름을 알린다', async () => {
+    starforceDay(starforceRow('새캐릭', '스페셜3'))
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    expect(store.markEnhancementChecked).toHaveBeenCalledWith(
+      'account-key', 'starforce', '2026-09-05', null, false, expect.any(String),
+    )
+    expect(store.markEnhancementChecked).toHaveBeenCalledWith(
+      'account-key', 'cube', '2026-09-05', null, true, expect.any(String),
+    )
+    expect(reportEnhancementAnomalies).toHaveBeenCalledWith([
+      expect.objectContaining({ enhancementType: 'starforce', anomalyType: 'event_world_unknown', detail: '스페셜3' }),
+    ])
+  })
+
+  // 한 회차의 일은 동시에 돈다. 큐브 날을 스타포스보다 먼저 매기면 이름을 남기기 전에 판정되고, 굳으면 다시 안 받는다.
+  it('회차가 끝나면 목록에 없는 남겨 둔 이름의 줄을 그 월드의 기간으로 고친다', async () => {
+    remembered.loadEventWorldCharacters.mockResolvedValue(
+      new Map([
+        ['지운캐릭', ['special_2']],
+        ['머리맨들맨둘', ['special']],
+      ]),
+    )
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    expect(markEventWorldTotals.mock.calls).toEqual([['account-key', '지운캐릭', '2025-11-20', '2025-12-19']])
+    const lastReplace = Math.max(...replaceEnhancementTotals.mock.invocationCallOrder)
+    expect(markEventWorldTotals.mock.invocationCallOrder[0]).toBeGreaterThan(lastReplace)
+  })
+
+  // 목록이 1순위다. 목록 없이는 그 이름이 목록에 없는지 알 수 없다.
+  it('목록을 못 받은 회차는 고치지 않는다', async () => {
+    fetchCharacterList.mockRejectedValue(new Error('boom'))
+    remembered.loadEventWorldCharacters.mockResolvedValue(new Map([['지운캐릭', ['special_2']]]))
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    expect(markEventWorldTotals).not.toHaveBeenCalled()
+  })
+})
+
 describe('다시 매기기 요청', () => {
   const cubeRequest = (from: string, to: string) => ({ id: 'r1', from, to, kinds: ['cube'] })
   const settledDay = (dateKey: string) =>

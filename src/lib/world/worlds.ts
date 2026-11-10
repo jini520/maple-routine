@@ -4,7 +4,7 @@
  * 기록 · 원장 · 판정은 월드 key 를 들고, 보이는 이름 · 엠블럼 · 챌린저스 여부 · 이벤트 월드 여부는 이 표에서 찾는다.
  * API 이름에서 key 를 얻는 규칙도 여기 하나다(`worldKeyOfApiName`).
  */
-import type { WorldRow, WorldsTable } from '../../types/game-data'
+import type { WorldPeriod, WorldRow, WorldsTable } from '../../types/game-data'
 import {
   compact,
   isBoolean,
@@ -20,12 +20,23 @@ import { gameTable, derive } from '../game-data/table'
 
 export type WorldEntry = WorldRow
 
+const DATE_TEXT = /^\d{4}-\d{2}-\d{2}$/
+
+function toPeriod(row: Row): WorldPeriod | null {
+  const { from, until } = row
+  if (typeof from !== 'string' || typeof until !== 'string' || !DATE_TEXT.test(from) || !DATE_TEXT.test(until)) return null
+  return until > from ? { from, until } : null
+}
+
 function toWorld(row: Row): WorldRow | null {
   if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
   if (!isBoolean(row.challengers) || !isBoolean(row.event)) return null
   const emblemAssetId = optional(row.emblemAssetId, isNonEmptyString)
   if (emblemAssetId === false) return null
-  return compact({ key: row.key, name: row.name, emblemAssetId, challengers: row.challengers, event: row.event })
+  // 기간 칸이 생기기 전의 서버 응답에는 칸이 없다. 그때는 기간이 없는 것으로 읽는다.
+  const periods = row.periods === undefined ? [] : rowsOf(row.periods, toPeriod, { allowEmpty: true })
+  if (periods === null) return null
+  return compact({ key: row.key, name: row.name, emblemAssetId, challengers: row.challengers, event: row.event, periods })
 }
 
 /** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */
@@ -80,4 +91,9 @@ export function isChallengersWorld(key: string | null | undefined): boolean {
 
 export function isEventWorld(key: string | null | undefined): boolean {
   return findWorld(key)?.event === true
+}
+
+/** 그 월드가 그 날 열려 있었나. 기간이 없는 월드와 모르는 key 는 거짓이다. @param dateKey KST `YYYY-MM-DD` */
+export function isInWorldPeriod(key: string, dateKey: string): boolean {
+  return findWorld(key)?.periods.some((period) => period.from <= dateKey && dateKey < period.until) === true
 }
