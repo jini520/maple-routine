@@ -170,7 +170,7 @@ const TABLE_DEFINITIONS = [
     name: 'character_profiles',
     createSql: `CREATE TABLE IF NOT EXISTS character_profiles ${CHARACTER_PROFILES_BODY}`,
   },
-  // 월드 리프로 갈린 옛 ocid → 새 ocid 연결. 리프한 기간의 중복 기록을 지우는 데만 쓴다.
+  // 월드 리프로 갈린 옛 ocid → 새 ocid 연결. 리프한 기간의 중복 기록을 지우고 옛 ocid 의 기록을 새 ocid 로 옮기는 데 쓴다.
   // 옛 ocid 는 목록에서 빠져 되살릴 길이 없어 데이터 삭제가 지우지 않는다.
   {
     name: 'character_world_leaps',
@@ -595,6 +595,10 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'enhancement_totals', 'from_star', 'INTEGER')
   await ensureColumn(db, 'enhancement_totals', 'to_star', 'INTEGER')
   await ensureColumn(db, 'character_accounts', 'world_key', 'TEXT')
+  // 캐릭터 기록의 그때 월드. 옛 행은 버전 19 가 프로필 월드로 채운다.
+  await ensureColumn(db, 'cashbook_entries', 'world_key', 'TEXT')
+  // 리프 자동 판정이 읽는 만든 날. 옛 행은 NULL 이고 다음 `character/basic` 이 채운다.
+  await ensureColumn(db, 'character_profiles', 'created_date', 'TEXT')
   // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
   await runVersionedMigrations(db)
   // 기본키를 uuid 로 옮긴 뒤에 선다. 종전에는 기본키가 곧 이 인덱스였다.

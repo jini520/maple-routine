@@ -18,6 +18,7 @@ import {
   assignOwnerlessEntries,
   deleteEntry,
   insertEntry,
+  moveEntriesToOcid,
   readEntries,
   replaceEntry,
 } from './cashbook-entries'
@@ -233,6 +234,12 @@ export async function assignOwnerlessIncomes(
 ): Promise<void> {
   const db = await getBossProfitDb()
   if (await assignOwnerlessEntries(db, 'income', owner, categoryKeys)) bumpIncomeRecordsRevision()
+}
+
+/** 월드 리프한 캐릭터의 수입을 새 ocid 로 옮긴다. 옮긴 것이 있을 때만 판이 오른다. */
+export async function moveIncomeRecordsToOcid(fromOcid: string, toOcid: string): Promise<void> {
+  const db = await getBossProfitDb()
+  if (await inTransaction(db, () => moveEntriesToOcid(db, 'income', fromOcid, toOcid))) bumpIncomeRecordsRevision()
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */

@@ -176,6 +176,22 @@ describe('normalizeCharacterBasic', () => {
     expect(normalizeCharacterBasic(wire, worldKeyOf).guildName).toBeUndefined()
   })
 
+  // 리프 자동 판정이 두 캐릭터의 만든 날을 견준다. 응답은 시각과 시간대를 붙여 오므로 KST 날짜만 남긴다.
+  it('만든 날을 KST 날짜로 자르고, 응답에 없으면 모름(undefined)이다', () => {
+    const wire: NexonCharacterBasicResponse = {
+      character_name: '낟낟',
+      character_level: 293,
+      character_image: 'https://open.api.nexon.com/static/maplestory/character/look/abc',
+      access_flag: 'true',
+    }
+
+    expect(normalizeCharacterBasic({ ...wire, character_date_create: '2025-06-19T00:00+09:00' }, worldKeyOf).createdDate).toBe(
+      '2025-06-19',
+    )
+    expect(normalizeCharacterBasic(wire, worldKeyOf).createdDate).toBeUndefined()
+    expect(normalizeCharacterBasic({ ...wire, character_date_create: null }, worldKeyOf).createdDate).toBeUndefined()
+  })
+
   // character_exp_rate 는 숫자가 아니라 **문자열**("80.300")이다. access_flag와 같은
   // 모양의 함정이라 여기서 풀어 두지 않으면 문자열째 비교돼("9.500" > "80.300" 이 사전순으로 참)
   // 진행률 바가 조용히 뒤집힌다.

@@ -1,6 +1,7 @@
 import { installFakePreferences } from './fake-preferences'
 import {
   getBossProfitCalculatorRecords,
+  moveBossProfitCalculatorRecordsToOcid,
   setBossProfitCalculatorRecords,
   type BossProfitCalculatorRecord,
 } from '../boss-profit-calculator-records'
@@ -63,4 +64,32 @@ it('보스가 없는 캐릭터도 읽는다', async () => {
   await setBossProfitCalculatorRecords([빈캐릭터])
 
   expect(await getBossProfitCalculatorRecords()).toEqual([빈캐릭터])
+})
+
+describe('월드 리프 옮기기', () => {
+  it('기록 속 옛 ocid 를 새 ocid 로 바꾼다', async () => {
+    await setBossProfitCalculatorRecords([기록])
+
+    await moveBossProfitCalculatorRecordsToOcid('ocid-1', 'ocid-9')
+
+    const [moved] = await getBossProfitCalculatorRecords()
+    expect(moved!.characters.map((each) => each.ocid)).toEqual(['ocid-9'])
+    expect(moved!.characters[0]!.bosses).toEqual(기록.characters[0]!.bosses)
+  })
+
+  // 한 기록에 같은 캐릭터가 둘이면 계산기가 한 캐릭터를 두 번 센다.
+  it('새 캐릭터가 이미 든 기록은 옮기지 않는다', async () => {
+    const both: BossProfitCalculatorRecord = {
+      ...기록,
+      id: '7a2d3c1f-9e5b-4d2f-8c8b-3a4e5f6a7b8c',
+      characters: [...기록.characters, { ocid: 'ocid-9', bosses: [] }],
+    }
+    await setBossProfitCalculatorRecords([기록, both])
+
+    await moveBossProfitCalculatorRecordsToOcid('ocid-1', 'ocid-9')
+
+    const records = await getBossProfitCalculatorRecords()
+    expect(records.find((one) => one.id === 기록.id)!.characters.map((each) => each.ocid)).toEqual(['ocid-9'])
+    expect(records.find((one) => one.id === both.id)!.characters.map((each) => each.ocid)).toEqual(['ocid-1', 'ocid-9'])
+  })
 })

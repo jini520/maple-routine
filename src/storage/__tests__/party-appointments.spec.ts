@@ -1,5 +1,5 @@
 import { installFakePreferences } from './fake-preferences'
-import { getPartyAppointments } from '../party-appointments'
+import { getPartyAppointments, movePartyAppointmentsToOcid, setPartyAppointments } from '../party-appointments'
 import { STORAGE_KEYS } from '../keys'
 import type { PartyAppointment } from '../../types/party-appointment'
 
@@ -87,5 +87,40 @@ describe('옛 약속 id', () => {
     await getPartyAppointments()
 
     expect(prefs.set).not.toHaveBeenCalled()
+  })
+})
+
+// 리프한 캐릭터의 약속은 새 캐릭터의 약속으로 이어진다. 이 주만 바꾼 회차의 보스 판도 같은 캐릭터다.
+describe('월드 리프 옮기기', () => {
+  it('보스 판 · 이 주만 바꾼 회차 · 파티원의 옛 ocid 를 새 ocid 로 바꾸고, 바꾼 것이 있으면 참이다', async () => {
+    await setPartyAppointments([LIMBO])
+
+    await expect(movePartyAppointmentsToOcid('ocid-1', 'ocid-9')).resolves.toBe(true)
+    await expect(movePartyAppointmentsToOcid('ocid-2', 'ocid-8')).resolves.toBe(true)
+
+    const [moved] = await getPartyAppointments()
+    expect(moved!.bosses).toEqual([{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-9' }])
+    expect(moved!.exceptions['2026-10-01']!.bosses).toEqual([{ bossKey: 'bardrix', difficulty: 'hard', ocid: 'ocid-9' }])
+    expect(moved!.members).toEqual([{ type: 'text', name: '친구1' }, { type: 'character', ocid: 'ocid-8' }])
+  })
+
+  // 같은 캐릭터가 파티원 칸 둘을 차지하면 파티원이 한 명 더 있는 것으로 보인다.
+  it('파티원에 두 캐릭터가 함께 있으면 앞의 칸 하나만 남긴다', async () => {
+    await setPartyAppointments([
+      { ...LIMBO, members: [{ type: 'character', ocid: 'ocid-2' }, { type: 'text', name: '친구1' }, { type: 'character', ocid: 'ocid-8' }] },
+    ])
+
+    await movePartyAppointmentsToOcid('ocid-2', 'ocid-8')
+
+    const [moved] = await getPartyAppointments()
+    expect(moved!.members).toEqual([{ type: 'character', ocid: 'ocid-8' }, { type: 'text', name: '친구1' }])
+  })
+
+  it('옛 ocid 가 없으면 저장하지 않고 거짓이다', async () => {
+    await setPartyAppointments([LIMBO])
+    const before = await prefs.get(STORAGE_KEYS.partyAppointments)
+
+    await expect(movePartyAppointmentsToOcid('ocid-7', 'ocid-9')).resolves.toBe(false)
+    expect(await prefs.get(STORAGE_KEYS.partyAppointments)).toBe(before)
   })
 })

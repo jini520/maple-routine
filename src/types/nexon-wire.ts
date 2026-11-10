@@ -32,6 +32,8 @@ export interface NexonCharacterBasicResponse {
   // 진행률이 조용히 뒤집히므로 normalizeCharacterBasic이 반드시 Number로 푼다.
   // 축약 응답(미접속 캐릭터)에서 빠질 수 있어 옵셔널이다.
   character_exp_rate?: string
+  // 만든 날. 예: `2025-06-19T00:00+09:00`. 리프 뒤에도 처음 만든 날 그대로다.
+  character_date_create?: string | null
 }
 
 /**

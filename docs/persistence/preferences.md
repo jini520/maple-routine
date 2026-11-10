@@ -79,6 +79,9 @@
 `schedulerCache:*` · `characterBasicCache:*` · `mesoRateCache:*` 는 `캐시` 가 지운다. 나머지는 데이터 삭제가 남긴다. 조회 원장은 지우면 다시
 띄우자마자 넥슨 API 를 한꺼번에 불러 호출 한도에 걸릴 수 있기 때문이다. 추적 캐릭터가 없으면 캐릭터 고르기부터 다시 해야 한다.
 
+월드 리프를 이으면 `manualTrackedContent:{ocid}` 와 ocid 를 든 기록 키(`lastHunts` · `partyAppointments` ·
+`bossProfitCalculatorRecords`)의 옛 ocid 를 새 ocid 로 옮긴다. 새 ocid 에 값이 있으면 새 것을 둔다([[ADR-101]] 결정 22).
+
 | 키 | 값 | 어댑터 | 메모 |
 |---|---|---|---|
 | `schedulerCache:{ocid}` | JSON `{ state, syncedAt, version: 4 }` | `scheduler-cache.ts` | 1.0.12 까지의 스케줄 캐시. 업데이트 뒤 첫 실행이 추적 캐릭터 중 쿼리 캐시 `schedule(ocid)` 에 없는 것만 옮긴 뒤 지운다(`seedScheduleQueriesFromLegacyCache`, [[ADR-142]] 결정 7). `version` 이 다르면 옮기지 않는다. 추적하지 않는 캐릭터의 키는 `캐시` 가 지울 때까지 남는다 |

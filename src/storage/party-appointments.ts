@@ -108,3 +108,44 @@ export async function getPartyAppointments(): Promise<PartyAppointment[]> {
 export async function setPartyAppointments(appointments: readonly PartyAppointment[]): Promise<void> {
   await preferences.set(STORAGE_KEYS.partyAppointments, JSON.stringify(appointments))
 }
+
+/**
+ * 월드 리프한 캐릭터를 약속 속에서 새 ocid 로 바꾸는 함수. 바꾼 것이 있으면 참이다.
+ *
+ * 파티원에 두 캐릭터가 함께 있으면 앞의 칸 하나만 남긴다. 같은 캐릭터가 두 칸을 차지하면 파티원이 한 명 더 있는 것으로 보인다.
+ */
+export async function movePartyAppointmentsToOcid(fromOcid: string, toOcid: string): Promise<boolean> {
+  const appointments = await getPartyAppointments()
+  let changed = false
+  const moveBosses = (bosses: PartyAppointmentBoss[]): PartyAppointmentBoss[] =>
+    bosses.map((boss) => {
+      if (boss.ocid !== fromOcid) return boss
+      changed = true
+      return { ...boss, ocid: toOcid }
+    })
+  const moveMembers = (members: PartyMember[]): PartyMember[] => {
+    const seen = new Set<string>()
+    return members.flatMap((member): PartyMember[] => {
+      if (member.type !== 'character') return [member]
+      if (member.ocid === fromOcid) changed = true
+      const ocid = member.ocid === fromOcid ? toOcid : member.ocid
+      if (seen.has(ocid)) return []
+      seen.add(ocid)
+      return [{ ...member, ocid }]
+    })
+  }
+  const next = appointments.map((appointment) => ({
+    ...appointment,
+    bosses: moveBosses(appointment.bosses),
+    members: moveMembers(appointment.members),
+    exceptions: Object.fromEntries(
+      Object.entries(appointment.exceptions).map(([dateKey, exception]) => [
+        dateKey,
+        { ...exception, bosses: moveBosses(exception.bosses) },
+      ]),
+    ),
+  }))
+  if (!changed) return false
+  await setPartyAppointments(next)
+  return true
+}

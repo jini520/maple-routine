@@ -166,6 +166,9 @@ async function writeChildren(db: SqliteDbConnection, entry: StoredEntry): Promis
   ])
 }
 
+/** 그 ocid 의 프로필 월드. 같은 ocid 의 월드는 바뀌지 않아 기록을 적을 때 한 번 정한다. ocid 가 `NULL` 이면 `NULL` 이다. */
+const PROFILE_WORLD_SQL = '(SELECT p.world_key FROM character_profiles p WHERE p.ocid = ?)'
+
 /**
  * 부르는 쪽이 트랜잭션으로 감싼다. 품목이 기록 행과 함께 서야 한다.
  *
@@ -174,12 +177,13 @@ async function writeChildren(db: SqliteDbConnection, entry: StoredEntry): Promis
 export async function insertEntry(db: SqliteDbConnection, entry: StoredEntry): Promise<void> {
   const { head } = entry
   await db.run(
-    `INSERT INTO cashbook_entries (id, ocid, account_id, entry_type, category_key, entry_date, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO cashbook_entries (id, ocid, account_id, world_key, entry_type, category_key, entry_date, created_at, updated_at)
+     VALUES (?, ?, ?, ${PROFILE_WORLD_SQL}, ?, ?, ?, ?, ?)`,
     [
       head.id,
       head.ocid,
       head.accountId,
+      head.ocid,
       head.entryType,
       head.categoryKey,
       head.entryDate,
@@ -196,6 +200,8 @@ export async function insertEntry(db: SqliteDbConnection, entry: StoredEntry): P
  *
  * 넥슨 계정 칸은 주인을 고르면 비우고, 아직 주인이 없으면 지킨다. 그래서 그 칸이 찬 행은 늘 주인을 모르는 옛 기록이다.
  *
+ * 월드 칸은 캐릭터를 바꿨을 때만 다시 채운다. 리프로 옮긴 기록을 새 ocid 의 월드로 덮으면 리프 전 기록이 새 월드로 옮겨 간다.
+ *
  * @param now 마지막으로 고친 시각
  */
 export async function replaceEntry(db: SqliteDbConnection, entry: StoredEntry, now: Date): Promise<void> {
@@ -203,9 +209,21 @@ export async function replaceEntry(db: SqliteDbConnection, entry: StoredEntry, n
   await db.run(
     `UPDATE cashbook_entries
         SET ocid = ?, account_id = ?, nexon_account_id = CASE WHEN ? IS NULL AND ? IS NULL THEN nexon_account_id END,
+            world_key = CASE WHEN ocid IS ? THEN world_key ELSE ${PROFILE_WORLD_SQL} END,
             category_key = ?, entry_date = ?, updated_at = ?
       WHERE id = ?`,
-    [head.ocid, head.accountId, head.ocid, head.accountId, head.categoryKey, head.entryDate, now.toISOString(), head.id],
+    [
+      head.ocid,
+      head.accountId,
+      head.ocid,
+      head.accountId,
+      head.ocid,
+      head.ocid,
+      head.categoryKey,
+      head.entryDate,
+      now.toISOString(),
+      head.id,
+    ],
   )
   await db.run(`DELETE FROM cashbook_entry_items WHERE entry_id = ?`, [head.id])
   await db.run(`DELETE FROM cashbook_entry_hunt_inputs WHERE entry_id = ?`, [head.id])
@@ -278,7 +296,41 @@ export async function assignOwnerlessEntries(
       [owner.accountId, entryType, ...accountCategoryKeys],
     )
   }
-  await db.run(`UPDATE cashbook_entries SET ocid = ?, nexon_account_id = NULL WHERE ${ownerless}`, [owner.ocid, entryType])
+  await db.run(
+    `UPDATE cashbook_entries SET ocid = ?, nexon_account_id = NULL, world_key = ${PROFILE_WORLD_SQL} WHERE ${ownerless}`,
+    [owner.ocid, owner.ocid, entryType],
+  )
+  return true
+}
+
+/**
+ * 월드 리프한 캐릭터의 기록을 새 ocid 로 옮긴다. 월드 칸은 그대로라 리프 전 월드의 기록으로 남는다. 부르는 쪽이 트랜잭션으로 감싼다.
+ *
+ * @returns 옮긴 것이 있었는지
+ */
+export async function moveEntriesToOcid(
+  db: SqliteDbConnection,
+  entryType: EntryType,
+  fromOcid: string,
+  toOcid: string,
+): Promise<boolean> {
+  const scope = 'entry_type = ? AND ocid = ?'
+  const { values } = await db.query(`SELECT COUNT(*) AS n FROM cashbook_entries WHERE ${scope}`, [entryType, fromOcid])
+  if (Number(values?.[0]?.n ?? 0) === 0) return false
+  await db.run(`UPDATE cashbook_entries SET ocid = ? WHERE ${scope}`, [toOcid, entryType, fromOcid])
+  return true
+}
+
+/**
+ * 헥사 강화가 월드 리프한 캐릭터의 보관에서 가져간 조각을 새 ocid 의 몫으로 옮긴다. 조각 보관은 사냥 기록과 이 줄에서 세므로, 기록만
+ * 옮기면 새 캐릭터의 보관이 가져간 만큼 많아진다. 부르는 쪽이 트랜잭션으로 감싼다.
+ *
+ * @returns 옮긴 것이 있었는지
+ */
+export async function moveFragmentUsesToOcid(db: SqliteDbConnection, fromOcid: string, toOcid: string): Promise<boolean> {
+  const { values } = await db.query(`SELECT COUNT(*) AS n FROM cashbook_entry_fragment_uses WHERE ocid = ?`, [fromOcid])
+  if (Number(values?.[0]?.n ?? 0) === 0) return false
+  await db.run(`UPDATE cashbook_entry_fragment_uses SET ocid = ? WHERE ocid = ?`, [toOcid, fromOcid])
   return true
 }
 

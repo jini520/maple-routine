@@ -21,6 +21,8 @@ export const CHARACTER_PROFILES_BODY = `(
     level INTEGER,
     -- 월드 이전 판정이 읽는다. 이름만으로는 옮겨간 캐릭터를 짚을 수 없어 직업이 유일성을 세운다.
     job_class TEXT,
+    -- character_date_create 의 KST 날짜. 리프 뒤에도 그대로라 리프 자동 판정이 이름 · 직업이 같은 다른 캐릭터를 가른다.
+    created_date TEXT,
     updated_at TEXT NOT NULL
   )`
 
