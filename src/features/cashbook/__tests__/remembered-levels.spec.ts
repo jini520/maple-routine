@@ -1,7 +1,7 @@
 // 심볼 · 헥사 코어의 강화 레벨 기억. 추적을 시작할 때 넥슨 값으로 채우고, 그 뒤로는 사용자가 저장한 기록을 따른다.
 import type { SpendRecord } from '../../../storage/spend'
 
-jest.mock('../../auth/current-credential', () => ({ currentCredential: jest.fn() }))
+jest.mock('../../auth/current-credential', () => ({ credentialOfOcid: jest.fn() }))
 jest.mock('../../../nexon/symbol-levels', () => ({ fetchSymbolEquipment: jest.fn() }))
 jest.mock('../../../nexon/hexamatrix', () => ({ fetchHexaMatrix: jest.fn() }))
 jest.mock('../../../storage/remembered-levels', () => ({
@@ -11,7 +11,7 @@ jest.mock('../../../storage/remembered-levels', () => ({
 }))
 jest.mock('../../../storage/spend', () => ({ getLatestSpendFor: jest.fn() }))
 
-const { currentCredential } = jest.requireMock('../../auth/current-credential') as Record<string, jest.Mock>
+const { credentialOfOcid } = jest.requireMock('../../auth/current-credential') as Record<string, jest.Mock>
 const { fetchSymbolEquipment } = jest.requireMock('../../../nexon/symbol-levels') as Record<string, jest.Mock>
 const { fetchHexaMatrix } = jest.requireMock('../../../nexon/hexamatrix') as Record<string, jest.Mock>
 const storage = jest.requireMock('../../../storage/remembered-levels') as Record<string, jest.Mock>
@@ -28,7 +28,7 @@ const {
 const 자격 = { type: 'key', value: 'api-key', accountId: 'account-key' }
 
 beforeEach(() => {
-  currentCredential.mockReset().mockResolvedValue(자격)
+  credentialOfOcid.mockReset().mockResolvedValue(자격)
   fetchSymbolEquipment.mockReset().mockResolvedValue([{ symbol_name: '어센틱심볼 : 세르니움', symbol_level: 4 }])
   fetchHexaMatrix.mockReset().mockResolvedValue([
     { hexa_core_name: '셀레스티얼 클리브 ', hexa_core_level: 9, hexa_core_event_level: 3, hexa_core_type: '스킬 코어' },
@@ -45,6 +45,17 @@ describe('seedRememberedLevels: 추적을 시작할 때', () => {
 
     expect(storage.rememberLevels).toHaveBeenCalledWith('ocid-1', 'symbol', { cernium: 4 }, 'fill')
     expect(storage.rememberLevels).toHaveBeenCalledWith('ocid-1', 'hexa', { '셀레스티얼 클리브': 9 }, 'fill')
+  })
+
+  it('그 캐릭터가 속한 넥슨 계정의 자격으로 부르고, 자격이 없으면 부르지 않는다', async () => {
+    await seedRememberedLevels(['ocid-1'])
+    expect(credentialOfOcid).toHaveBeenCalledWith('ocid-1')
+    expect(fetchSymbolEquipment).toHaveBeenCalledWith(자격, 'ocid-1')
+
+    fetchSymbolEquipment.mockClear()
+    credentialOfOcid.mockResolvedValue(null)
+    await seedRememberedLevels(['ocid-2'])
+    expect(fetchSymbolEquipment).not.toHaveBeenCalled()
   })
 
   // 다시 추적하는 캐릭터의 기억은 사용자가 쌓은 값이다. 넥슨 값으로 덮지 않는다.

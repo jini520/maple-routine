@@ -32,13 +32,15 @@ describe('probeApiKeyStage', () => {
     await probeApiKeyStage(자격('key-1'))
 
     expect(requestJsonMock).toHaveBeenCalledTimes(PROBE_CALL_COUNT)
-    for (const [path, credential] of requestJsonMock.mock.calls) {
+    for (const [path, credential, options] of requestJsonMock.mock.calls) {
       expect(path).toBe('/maplestory/v1/character/list')
       expect(credential).toEqual(자격('key-1'))
+      // 키의 초당 상한을 거치면 요청이 나눠 나가 개발 단계 키도 429 를 내지 않는다.
+      expect(options).toEqual({ skipKeyRateLimit: true })
     }
   })
 
-  // 이 테스트가 이 파일의 요점이다. 초당 5건 한도를 넘기려면 하나도 안 끝난 상태에서 열 건이
+  // 이 테스트가 이 파일의 요점이다. 초당 5건 한도를 넘기려면 하나도 안 끝난 상태에서 모든 건이
   // 나가 있어야 한다. 순차 루프면 앞이 끝나야 다음이 나가 한도에 절대 안 닿는다.
   it('앞선 호출이 하나도 끝나기 전에 전부 나간다', async () => {
     const release: Array<() => void> = []
@@ -83,7 +85,7 @@ describe('probeApiKeyStage', () => {
     await expect(probeApiKeyStage(자격('key-1'))).resolves.toBe('undetermined')
   })
 
-  // 차단은 **양성 증거**를 요구한다. 네트워크가 끊겨 열 건이 다 죽은 것을 개발 단계로 읽으면
+  // 차단은 **양성 증거**를 요구한다. 네트워크가 끊겨 모든 건이 다 죽은 것을 개발 단계로 읽으면
   // 비행기 안에서 키를 넣은 사람이 서비스 단계 키를 거부당한다.
   it('네트워크 오류만 있으면 판정을 안 세운다', async () => {
     respond(...Array.from({ length: PROBE_CALL_COUNT }, () => new NexonNetworkError('down')))
@@ -99,7 +101,7 @@ describe('probeApiKeyStage', () => {
 
   // 프로브는 판정만 내고 던지지 않는다. 던지면 호출부가 검증 실패와 단계 판정 실패를
   // 구분하려고 같은 분기를 두 벌 갖게 된다.
-  it('열 건이 다 실패해도 던지지 않는다', async () => {
+  it('모든 건이 다 실패해도 던지지 않는다', async () => {
     respond(...Array.from({ length: PROBE_CALL_COUNT }, () => new NexonNetworkError('down')))
 
     await expect(probeApiKeyStage(자격('key-1'))).resolves.toBeDefined()

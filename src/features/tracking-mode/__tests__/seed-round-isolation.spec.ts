@@ -115,7 +115,8 @@ beforeEach(() => {
   })
   getAuthConfigMock.mockResolvedValue({
     login: null,
-    apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1' }],
+    mainKeyId: 'account-key',
+    apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }],
   })
   mergeSchedulerStateMock.mockImplementation(({ fresh }: { fresh: SchedulerCharacterState }) => ({
     characterState: fresh,

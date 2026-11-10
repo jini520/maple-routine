@@ -14,7 +14,7 @@
  * 부르는 자리가 둘이라(보스 수익 동기화 뒤 · 가계부 진입) 겹침을 둘이 막는다. 조회 원장이 이미 본
  * 날짜를 들고, `inFlight` 가 같은 순간에 두 번 도는 것을 막는다.
  */
-import { currentCredential } from '../auth/current-credential'
+import { credentialsOfOcids } from '../auth/current-credential'
 import type { NexonCredential } from '../../types/auth'
 import {
   MIN_SCHEDULER_DATE,
@@ -352,24 +352,26 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
     return 0
   }
 
-  /**
-   * 키는 조회할 때만 필요하다. 여기서 막지 않는다.
-   *
-   * 소거법과 리셋 당일은 관측이 하나도 없어도 답이 나온다. 키 검사를 함수 맨 앞에 두면 조회할
-   * 것이 없는 건까지 0 으로 나가고, 키를 지운 기기에서는 오늘 잡은 보스가 영영 캘린더에 안 찍힌다.
-   */
-  const credential = await currentCredential()
-
-  // 여기서부터 스케줄러를 부른다. 결산 여부도 함께 묻는다(안 기다린다). 미확정 기록이 없어 위에서
-  // 돌아가는 길은 조회가 0회라 그 재진입을 이 요청으로 유료로 만들지 않는다.
-  if (credential !== null) void refreshSettlement()
-
   const byOcid = new Map<string, UndatedBossProfitRecord[]>()
   for (const candidate of candidates) {
     const bucket = byOcid.get(candidate.ocid)
     if (bucket === undefined) byOcid.set(candidate.ocid, [candidate])
     else bucket.push(candidate)
   }
+
+  /**
+   * 키는 조회할 때만 필요하다. 여기서 막지 않는다.
+   *
+   * 소거법과 리셋 당일은 관측이 하나도 없어도 답이 나온다. 키 검사를 함수 맨 앞에 두면 조회할
+   * 것이 없는 건까지 0 으로 나가고, 키를 지운 기기에서는 오늘 잡은 보스가 영영 캘린더에 안 찍힌다.
+   *
+   * 캐릭터마다 그 캐릭터가 속한 넥슨 계정의 자격으로 부른다. 스케줄러는 그 계정의 자격으로만 받을 수 있다.
+   */
+  const credentials = await credentialsOfOcids([...byOcid.keys()])
+
+  // 여기서부터 스케줄러를 부른다. 결산 여부도 함께 묻는다(안 기다린다). 미확정 기록이 없어 위에서
+  // 돌아가는 길은 조회가 0회라 그 재진입을 이 요청으로 유료로 만들지 않는다.
+  if ([...credentials.values()].some((credential) => credential !== null)) void refreshSettlement()
 
   // 조회는 캐릭터끼리 나란히, **쓰기는 뒤에서 차례로**. 단일 공유 커넥션이라 동시에 쓰면 트랜잭션이
   // 겹쳐 던진다(`auto-record.ts` 가 같은 이유로 순차다).
@@ -396,6 +398,7 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
         (record) => resolveFor(record, observed, unobservable, todayDateKey, floorDateKey) === null,
       )
       // 키가 없으면 **부를 수가 없다**. 가진 것으로 푼 만큼만 채우고 나머지는 NULL 로 둔다.
+      const credential = credentials.get(ocid) ?? null
       if (unresolved.length > 0 && credential !== null) {
         const days = missingDays(ledger.dates, periodsOf(unresolved), floorDateKey, ceilingDateKey)
         const probed = await probeDays(credential, ocid, days)

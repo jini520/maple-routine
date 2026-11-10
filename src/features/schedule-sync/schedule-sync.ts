@@ -33,11 +33,11 @@ import {
   probeStrandedTrackedCharacters,
   resolveTrackedCharacterContext,
 } from './character-roster'
-import type { TrackedCharacterContext } from './character-roster'
+import type { TrackedCharacterContext, UnlistedTrackedCharacter } from './character-roster'
 import { persistUnavailable } from './stranded-characters'
 import { resolveDisplayRepresentative } from '../character-manage/derivations'
 import { getRepresentativeCharacter } from '../../storage/character-selection'
-import { apiKeyValueOf } from '../../lib/nexon-credential'
+import { apiKeyValueOf, groupByCredential, isSameCredential } from '../../lib/nexon-credential'
 // 공개 API 는 그대로 둔다. 옮긴 것은 구현 위치이지 호출부가 알 바가 아니다.
 export { toScheduleSyncError } from './errors'
 export type { ScheduleSyncError } from './errors'
@@ -327,11 +327,12 @@ async function syncOneCharacter(
   }
 }
 
-  // 첫 캐릭터를 프리플라이트로 먼저 호출해 401/403·429처럼 모든 캐릭터에 똑같이 적용되는 전역
-  // 실패인지 확인한다. 전역 실패면 나머지는 API 를 더 호출하지 않고 캐시 폴백만 한다. 아니면
-  // 나머지 캐릭터는 서로 기다리지 않고 병렬로 호출한다. 서비스 단계 키(초당 500건)라 병렬
-  // 호출이 한도와 충돌하지 않는다. 병렬 구간에서 개별 캐릭터가 401/429 를 반환해도 이미 발사된
-  // 형제 호출은 못 막으므로 그 캐릭터만 개별 폴백한다.
+  // 넥슨 계정마다 첫 캐릭터를 프리플라이트로 먼저 호출해 401/403·429처럼 그 계정의 모든 캐릭터에 똑같이 적용되는 전역
+  // 실패인지 확인한다. 전역 실패면 그 계정의 나머지는 API 를 더 호출하지 않고 캐시 폴백만 한다. 아니면 나머지 캐릭터는
+  // 서로 기다리지 않고 병렬로 호출한다. 서비스 단계 키(초당 500건)라 병렬 호출이 한도와 충돌하지 않는다. 병렬 구간에서 개별
+  // 캐릭터가 401/429 를 반환해도 이미 발사된 형제 호출은 못 막으므로 그 캐릭터만 개별 폴백한다.
+  //
+  // 프리플라이트가 계정마다인 것은 자격이 계정마다 달라서다. 한 계정의 키가 막혀도 다른 계정은 그대로 부른다.
   //
   // ocids 로 지정된 캐릭터만 동기화한다. 계정의 전체 캐릭터를 대상으로 하면 추적 대상이 아닌
   // 캐릭터까지 호출해 로딩이 느려진다.
@@ -339,24 +340,81 @@ async function runSyncRound(
   ocids: string[],
   onProgress?: (completed: number, total: number) => void,
 ): Promise<CharacterScheduleSync[]> {
-  // 추적 목록이 메이플 ID 경계를 넘으므로 선택 계정의 캐릭터를 받아 거르지 않는다. 전 계정에서
-  // 찾고 각 캐릭터가 자기 계정을 들고 다닌다. 단일 계정에서는 결과가 완전히 같다.
-  const { credential, characters: targets, allCharacters } = await resolveTrackedCharacterContext(ocids)
+  // 추적 목록이 넥슨 계정 · 메이플 ID 경계를 넘으므로 모든 계정에서 찾고, 각 캐릭터가 자기 메이플 ID 와 자격을 들고 다닌다.
+  // 단일 계정에서는 결과가 완전히 같다.
+  const { characters: targets, allCharacters, probeCredentialOf, unlisted, uncallable } =
+    await resolveTrackedCharacterContext(ocids)
+
+  // 목록을 못 받은 계정의 캐릭터는 부르지 않고 캐시로 폴백한다. 그 계정의 실패를 실어 알림이 그 키만 다룬다.
+  const unlistedResults = (await Promise.all(unlisted.map(fallbackOfUnlisted))).filter(
+    (result): result is CharacterScheduleSync => result !== null,
+  )
+  // 판정(조회 불가 표식 · 리프)은 목록을 받은 계정의 캐릭터만 한다. 목록을 못 받았거나 자격이 없는 캐릭터는 이번 회차에 알게 된
+  // 것이 없다.
+  const skipped = new Set([...unlisted.map((one) => one.ocid), ...uncallable])
+  const judged = ocids.filter((ocid) => !skipped.has(ocid))
+
   const total = targets.length
 
   // 추적 캐릭터가 전부 목록에서 빠졌다(캐릭터 하나만 관리하다 리프한 경우). 부를 캐릭터는 없어도
   // 리프 판정과 조회 불가 기록은 돌아야 모달과 표식이 선다.
   if (total === 0) {
-    await settleStrandedCharacters(credential, ocids, allCharacters, [])
-    return []
+    await settleStrandedCharacters(probeCredentialOf, judged, allCharacters, [])
+    return unlistedResults
   }
 
   onProgress?.(0, total)
+  let completed = 0
+  const report = (count: number): void => {
+    completed += count
+    onProgress?.(completed, total)
+  }
 
+  // 대표 하나는 5분 가드를 건너뛴다. today 의 대표 위젯이 그 캐릭터의 EXP 를 그리는데, 가드에
+  // 걸리면 사용자가 새로고침을 눌러도 그 숫자가 안 움직인다. 화면이 대표 자리에 세우는 캐릭터와
+  // 같은 함수로 고른다. 둘이 갈리면 보이는 캐릭터가 아닌 쪽을 다시 받는다.
+  const forcedOcid = resolveDisplayRepresentative(ocids, await getRepresentativeCharacter())
+
+  const rounds = await Promise.all(
+    groupByCredential(targets, (target) => target.credential).map(({ credential, items }) =>
+      syncAccountGroup(credential, items, forcedOcid, report),
+    ),
+  )
+  const results = [...rounds.flatMap((round) => round.results), ...unlistedResults]
+
+  // 모든 계정이 막혔다(401·429·점검). 그 상태에서는 프로브도 같은 실패를 받아 아무것도 못 짚는다. 폴백 결과로 되던 캐릭터의
+  // 표식만 내린다.
+  if (rounds.every((round) => round.blocked)) {
+    await persistUnavailable(judged, results)
+    return results
+  }
+
+  // 막힌 계정의 캐릭터는 묻지 않는다. 물어도 같은 실패를 받는다.
+  const blocked = rounds.filter((round) => round.blocked).map((round) => round.credential)
+  const credentialOf = (ocid: string): NexonCredential | null => {
+    const credential = probeCredentialOf(ocid)
+    return credential === null || blocked.some((one) => isSameCredential(one, credential)) ? null : credential
+  }
+  await settleStrandedCharacters(credentialOf, judged, allCharacters, results)
+  return results
+}
+
+/**
+ * 넥슨 계정 하나의 추적 캐릭터를 동기화한다. 첫 캐릭터로 그 계정의 자격 전체가 막혔는지 먼저 본다.
+ *
+ * @param report 끝난 캐릭터 수를 더한다. 진행률의 분모는 모든 계정의 캐릭터 수다
+ */
+async function syncAccountGroup(
+  credential: NexonCredential,
+  targets: TrackedCharacterContext[],
+  forcedOcid: string | null,
+  report: (count: number) => void,
+): Promise<{ credential: NexonCredential; results: CharacterScheduleSync[]; blocked: boolean }> {
   const [first, ...rest] = targets
+  if (first === undefined) return { credential, results: [], blocked: false }
+
   const firstResult = await syncOneCharacter(credential, first.character, first.accountId)
-  let completed = 1
-  onProgress?.(completed, total)
+  report(1)
 
   // 앞 셋은 **자격 한 벌 전체**가, 점검은 넥슨 전체가 막힌 것이라 남은 캐릭터도 똑같이 실패한다.
   // 안 세우면 같은 실패를 N 번 더 부른다.
@@ -370,39 +428,44 @@ async function runSyncRound(
     const fallbackRest = await Promise.all(
       rest.map(({ character }) => buildFallbackResult(character, firstResult.error as ScheduleSyncError)),
     )
-    completed += fallbackRest.length
-    onProgress?.(completed, total)
-    // 401·429·점검이다. 전원에 폴백 결과가 있어 답하지 않은 ocid 가 0개이므로, 이 길로도 조회 불가
-    // 표식이 잘못 서지 않는다. 그래도 부르는 것은 **되던 캐릭터의 표식을 내리기** 위해서다.
-    await persistUnavailable(ocids, [firstResult, ...fallbackRest])
-    return [firstResult, ...fallbackRest]
+    report(fallbackRest.length)
+    return { credential, results: [firstResult, ...fallbackRest], blocked: true }
   }
 
   // character/basic 편승 갱신을 스케줄 병렬 구간과 같은 `Promise.all` 로 묶어 동시에 내보낸다.
   // 체감 대기 시간이 안 는다. 자리는 isGlobalFailure 를 걸러 낸 뒤여야 한다. 401/429 인데
-  // 캐릭터 수만큼 호출을 낭비하지 않는다. 대상은 targets 전체다.
-  // 대표 하나는 5분 가드를 건너뛴다. today 의 대표 위젯이 그 캐릭터의 EXP 를 그리는데, 가드에
-  // 걸리면 사용자가 새로고침을 눌러도 그 숫자가 안 움직인다. 화면이 대표 자리에 세우는 캐릭터와
-  // 같은 함수로 고른다. 둘이 갈리면 보이는 캐릭터가 아닌 쪽을 다시 받는다.
-  const forcedOcid = resolveDisplayRepresentative(ocids, await getRepresentativeCharacter())
-
+  // 캐릭터 수만큼 호출을 낭비하지 않는다. 대상은 이 계정의 targets 전체다.
   const [restResults] = await Promise.all([
     Promise.all(
       rest.map(async ({ character, accountId }) => {
         const result = await syncOneCharacter(credential, character, accountId)
-        completed += 1
-        onProgress?.(completed, total)
+        report(1)
         return result
       }),
     ),
     refreshCharacterBasics(credential, targets, forcedOcid),
   ])
 
-  const results = [firstResult, ...restResults]
+  return { credential, results: [firstResult, ...restResults], blocked: false }
+}
 
-  // 401·429 갈래에는 안 둔다. 그 상태에서는 프로브도 같은 실패를 받아 아무것도 못 짚는다.
-  await settleStrandedCharacters(credential, ocids, allCharacters, results)
-  return results
+/**
+ * 목록을 못 받은 넥슨 계정의 추적 캐릭터를 캐시로 세운다. 캐시가 없으면 `null` 이다.
+ *
+ * 목록을 못 받은 것이지 캐릭터가 사라진 것이 아니다. 결과를 안 내면 화면이 그 캐릭터를 목록 밖(조회 불가)으로 세운다.
+ */
+async function fallbackOfUnlisted({ ocid, credential, error }: UnlistedTrackedCharacter): Promise<CharacterScheduleSync | null> {
+  const cached = readScheduleEntry(ocid)
+  if (cached === null) return null
+  return {
+    ocid,
+    characterName: cached.state.characterName,
+    worldKey: cached.state.worldKey,
+    state: cached.state,
+    syncedAt: cached.syncedAt,
+    isStale: true,
+    error: toScheduleSyncError(error, apiKeyValueOf(credential)),
+  }
 }
 
 /**
@@ -410,9 +473,11 @@ async function runSyncRound(
  *
  * 여기 있는 것은 이 판정이 캐릭터 관리 화면에만 있어 그 화면을 안 여는 사용자에게 영영 안
  * 닿았기 때문이다. 콜드 스타트는 이 경로를 반드시 지난다.
+ *
+ * @param credentialOf 목록 밖 추적 캐릭터를 물을 자격. `null` 이면 묻지 않는다
  */
 async function settleStrandedCharacters(
-  credential: NexonCredential,
+  credentialOf: (ocid: string) => NexonCredential | null,
   ocids: string[],
   allCharacters: MapleCharacter[],
   results: CharacterScheduleSync[],
@@ -420,7 +485,7 @@ async function settleStrandedCharacters(
   // 목록 밖 추적 ocid 를 따로 물어 월드 리프를 짚는다. **`persistUnavailable` 보다 앞이어야
   // 한다** - 그쪽이 원장에 표식을 먼저 적으면 프로브가 건너뛰어, 목록에 없다는 것만으로 판정한
   // 셈이 된다. 빠진 것은 물어볼 이유이지 답이 아니다.
-  await probeStrandedTrackedCharacters(credential, new Set(ocids), allCharacters, new Date())
+  await probeStrandedTrackedCharacters(credentialOf, new Set(ocids), allCharacters, new Date())
   // 모달을 안 거친 리프의 연결. 뒤에서 스토어가 기록을 쓰고 정리할 때 이 연결을 읽는다.
   await linkWorldLeapsFromRoster(allCharacters, new Date())
 

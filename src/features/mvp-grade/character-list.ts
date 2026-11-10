@@ -17,9 +17,23 @@ import { queryKeys } from '../query/keys'
  */
 export async function fetchAndRecordCharacterList(credential: NexonCredential, now: Date = new Date()): Promise<MapleAccount[]> {
   const accounts = await fetchCharacterList(credential, worldKeyOfApiName)
-  // 소속 기록이 실패해도 목록을 받은 자리는 그대로 간다.
-  void recordCharacterAccounts(accounts, getCurrentKstDateKey(now), credential.accountId).catch(() => undefined)
+  recordCharacterList(accounts, credential.accountId, now)
   return accounts
+}
+
+/**
+ * 넥슨 계정 id 가 정해지기 전에 받는 목록. 소속을 적지 않는다. 로그인 · 키 입력이 쓰고, id 를 정한 뒤 `recordCharacterList`
+ * 로 적는다.
+ *
+ * 먼저 적으면 막힌 키의 캐릭터가 계정 칸이 빈 채로 남고, 로그인이 옛 계정 id 를 찾기 전에 그 칸을 덮는다.
+ */
+export function fetchUnsavedCharacterList(credential: NexonCredential): Promise<MapleAccount[]> {
+  return fetchCharacterList(credential, worldKeyOfApiName)
+}
+
+/** 받은 목록의 메이플 ID 소속을 적는 함수. 실패해도 목록을 받은 자리는 그대로 간다. */
+export function recordCharacterList(accounts: readonly MapleAccount[], accountId: string | null, now: Date = new Date()): void {
+  void recordCharacterAccounts([...accounts], getCurrentKstDateKey(now), accountId).catch(() => undefined)
 }
 
 /**
@@ -28,9 +42,28 @@ export async function fetchAndRecordCharacterList(credential: NexonCredential, n
  */
 export const CHARACTER_LIST_TTL_MS = 5 * 60 * 1000
 
-/** 자격의 열쇠. 키는 그 값, 로그인은 계정 id 다. 자격이 바뀌면 다른 목록이라 열쇠도 다르다. */
+/**
+ * 목록 캐시의 열쇠. 넥슨 계정 id 로 만든다. 열쇠에 키 값을 넣으면 기기 캐시에 키가 한 벌 더 저장되고, 같은 계정의 키를
+ * 다시 받으면 옛 캐시가 주인 없이 남는다.
+ */
 function credentialKeyOf(credential: NexonCredential): string {
-  return credential.type === 'key' ? `key:${credential.value}` : `login:${credential.accountId ?? ''}`
+  return `${ACCOUNT_KEY_PREFIX}${credential.accountId ?? ''}`
+}
+
+const ACCOUNT_KEY_PREFIX = 'account:'
+
+/**
+ * 옛 열쇠(`key:` 와 키 값, `login:` 과 계정 id)로 남은 목록을 캐시에서 걷는 함수. 저장된 캐시를 올린 뒤 한 번 부른다.
+ * 캐시는 버리지 않는 설정이라 걷지 않으면 키 값이 기기 캐시에 계속 남는다.
+ */
+export function dropLegacyCharacterLists(): void {
+  queryClient.removeQueries({
+    queryKey: queryKeys.allCharacterLists(),
+    predicate: (query) => {
+      const credentialKey = query.queryKey[1]
+      return typeof credentialKey !== 'string' || !credentialKey.startsWith(ACCOUNT_KEY_PREFIX)
+    },
+  })
 }
 
 export interface FetchCharacterListOptions {
@@ -59,4 +92,39 @@ export async function fetchCharacterListCached(
 /** 마지막으로 받아 둔 목록. 넥슨을 부르지 않는다. 받은 적이 없으면 `undefined` 다. */
 export function readCachedCharacterList(credential: NexonCredential): MapleAccount[] | undefined {
   return queryClient.getQueryData<MapleAccount[]>(queryKeys.characterList(credentialKeyOf(credential)))
+}
+
+/** 넥슨 계정 하나의 목록. 못 받았으면 `accounts` 가 `null` 이고 `error` 에 그 실패가 든다. */
+export interface CredentialCharacterList {
+  credential: NexonCredential
+  accounts: MapleAccount[] | null
+  error: unknown
+}
+
+/**
+ * 넥슨 계정마다 목록을 받는다. 차례는 자격의 차례다.
+ *
+ * 한 계정이 실패해도 다른 계정의 목록은 그대로 낸다. 한 계정의 실패로 모든 캐릭터가 멈추면 안 된다.
+ */
+export function fetchCharacterListsCached(
+  credentials: readonly NexonCredential[],
+  options?: FetchCharacterListOptions,
+): Promise<CredentialCharacterList[]> {
+  return Promise.all(
+    credentials.map(async (credential) => {
+      try {
+        return { credential, accounts: await fetchCharacterListCached(credential, options), error: null }
+      } catch (error) {
+        return { credential, accounts: null, error }
+      }
+    }),
+  )
+}
+
+/** 계정마다 받아 둔 목록을 이은 것. 넥슨을 부르지 않는다. 하나도 받은 적이 없으면 `undefined` 다. */
+export function readCachedCharacterLists(credentials: readonly NexonCredential[]): MapleAccount[] | undefined {
+  const lists = credentials
+    .map(readCachedCharacterList)
+    .filter((list): list is MapleAccount[] => list !== undefined)
+  return lists.length === 0 ? undefined : lists.flat()
 }

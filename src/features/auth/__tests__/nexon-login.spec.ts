@@ -10,12 +10,14 @@ jest.mock('../../../server/nexon-auth', () => ({
   redeemNexonSession: jest.fn(),
 }))
 jest.mock('../prune-covered-keys', () => ({ saveNexonLogin: jest.fn() }))
+jest.mock('../../character-selection/forget', () => ({ forgetTrackedSelection: jest.fn() }))
 
 const { openAuthSession } = jest.requireMock('../../../native/browser') as Record<string, jest.Mock>
 const { startNexonLogin, redeemNexonSession } = jest.requireMock(
   '../../../server/nexon-auth',
 ) as Record<string, jest.Mock>
 const { saveNexonLogin } = jest.requireMock('../prune-covered-keys') as Record<string, jest.Mock>
+const { forgetTrackedSelection } = jest.requireMock('../../character-selection/forget') as Record<string, jest.Mock>
 
 const 시작값 = { authorizeUrl: 'https://openid.nexon.com/oauth2/authorize?state=s', redeemKey: '되찾기열쇠' }
 
@@ -30,6 +32,7 @@ beforeEach(() => {
   startNexonLogin.mockResolvedValue(시작값)
   redeemNexonSession.mockResolvedValue({ status: 'ok', session: '받은세션' })
   saveNexonLogin.mockResolvedValue(undefined)
+  forgetTrackedSelection.mockResolvedValue(undefined)
   콜백('com.mapleroutine.app://oauth/callback?receipt=영수증')
 })
 
@@ -38,7 +41,7 @@ describe('정상 흐름', () => {
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'signedIn' })
 
     expect(redeemNexonSession).toHaveBeenCalledWith({ redeemKey: '되찾기열쇠', receipt: '영수증' })
-    expect(saveNexonLogin).toHaveBeenCalledWith('받은세션')
+    expect(saveNexonLogin).toHaveBeenCalledWith('받은세션', { fresh: false })
   })
 
   it('서버가 준 주소를 그대로 열고 돌아올 주소는 등록한 스킴이다', async () => {
@@ -73,7 +76,7 @@ describe('콜백이 아직 도는 중이면 되묻는다', () => {
 
     await expect(result).resolves.toEqual({ kind: 'signedIn' })
     expect(redeemNexonSession).toHaveBeenCalledTimes(3)
-    expect(saveNexonLogin).toHaveBeenCalledWith('늦은세션')
+    expect(saveNexonLogin).toHaveBeenCalledWith('늦은세션', { fresh: false })
   })
 
   it('끝까지 pending 이면 실패다. 무한히 안 묻는다', async () => {
@@ -153,5 +156,48 @@ describe('던지지 않는다', () => {
     saveNexonLogin.mockRejectedValue(new Error('디스크'))
 
     await expect(signInWithNexon()).resolves.toEqual({ kind: 'failed' })
+  })
+})
+
+// 로그인 화면의 새 로그인은 캐릭터를 새로 고르게 한다. 세션을 받기 전에 비우면 취소하거나 실패한 로그인이 목록을 지운다.
+describe('새 로그인의 추적 목록 비우기', () => {
+  it('세션을 받은 뒤, 저장하기 전에 비운다', async () => {
+    const order: string[] = []
+    forgetTrackedSelection.mockImplementation(async () => {
+      order.push('forget')
+    })
+    saveNexonLogin.mockImplementation(async () => {
+      order.push('save')
+    })
+
+    await signInWithNexon({ fresh: true })
+
+    expect(order).toEqual(['forget', 'save'])
+  })
+
+  it('today 의 연동처럼 새 로그인이 아니면 비우지 않는다', async () => {
+    await signInWithNexon({ fresh: false })
+
+    expect(forgetTrackedSelection).not.toHaveBeenCalled()
+  })
+
+  // 새 로그인이면 저장이 앞 메인 키를 버리고, 연동이면 그 키를 부계정으로 둔다.
+  it('새 로그인인지를 저장에 넘긴다', async () => {
+    await signInWithNexon({ fresh: true })
+    expect(saveNexonLogin).toHaveBeenLastCalledWith('받은세션', { fresh: true })
+
+    await signInWithNexon({ fresh: false })
+    expect(saveNexonLogin).toHaveBeenLastCalledWith('받은세션', { fresh: false })
+  })
+
+  it.each([
+    ['창을 닫으면', () => openAuthSession.mockResolvedValue(null)],
+    ['세션을 받지 못하면', () => redeemNexonSession.mockResolvedValue({ status: 'gone' })],
+  ])('%s 비우지 않는다', async (_label, arrange) => {
+    arrange()
+
+    await signInWithNexon({ fresh: true })
+
+    expect(forgetTrackedSelection).not.toHaveBeenCalled()
   })
 })

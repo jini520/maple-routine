@@ -18,10 +18,10 @@
 | `storage/character-selection.ts` | 추적 목록(`trackedCharacters`) · 마지막 선택(`lastSelectedCharacter`) · 대표 저장, 옛 키 이관 |
 | `storage/schedule-probe-ledger.ts` | (ocid, 날짜) 조회 원장(`scheduleProbe:{ocid}`)과 조회 불가 표식 |
 | `storage/character-profiles.ts` | 지워지지 않는 이름 · 얼굴 표(`character_profiles`) |
-| `features/schedule-sync/character-roster.ts` | 후보 목록을 단계마다 나눠 내보낸다(`getCharacterPickerRoster`). 계정의 캐릭터(`resolveRegisteredCharacters`)와 추적 캐릭터의 계정(`resolveTrackedCharacterContext`)은 같은 `character/list` 응답에서 찾는다 |
+| `features/schedule-sync/character-roster.ts` | 후보 목록을 단계마다 나눠 내보낸다(`getCharacterPickerRoster`). 메이플 ID 의 캐릭터(`resolveRegisteredCharacters`)와 추적 캐릭터의 메이플 ID(`resolveTrackedCharacterContext`)는 넥슨 계정마다 받은 `character/list` 응답에서 찾는다. 캐릭터는 그 캐릭터가 속한 넥슨 계정의 자격으로 부른다([[ADR-101]] 결정 4) |
 | `features/schedule-sync/read-schedule.ts` | 쿼리 캐시를 렌더 밖에서 읽는다(`readCharacterBasic` · `readScheduleEntry` · `readCachedBasicOcids`). 후보 목록의 첫 그리기, 캐릭터 관리의 위 목록, 가계부 시트의 캐릭터 이름이 쓴다 |
 | `features/schedule-sync/character-basic-fetch.ts` | `character/basic` 통과 지점(`fetchCharacterBasicCached`). 5분 안은 쿼리 캐시 `characterBasic(ocid)` 의 값을 돌려주고, 받은 값은 그 열쇠에만 넣는다 |
-| `features/mvp-grade/character-list.ts` | `character/list` 를 5분 안에 한 번만 받는다(`fetchCharacterListCached`, 쿼리 `characterList(credentialKey)`). 캐릭터 관리의 계정 목록과 후보 목록이 나눠 쓴다 |
+| `features/mvp-grade/character-list.ts` | `character/list` 를 5분 안에 한 번만 받는다(`fetchCharacterListCached`, 쿼리 `characterList(credentialKey)`). 넥슨 계정마다 받고, 한 계정이 실패해도 다른 계정의 목록은 낸다(`fetchCharacterListsCached`). 캐릭터 관리의 계정 목록과 후보 목록이 나눠 쓴다 |
 | `features/schedule-sync/character-eligibility.ts` | 후보 자격 판정(`resolveCharacterEligibility`) |
 | `features/schedule-sync/stranded-characters.ts` | `character/list` 에 없는 추적 ocid 를 따로 조회한다 |
 | `features/character-profile/resolve.ts` | 표시할 이름 · 얼굴을 찾는다(`resolveDisplayProfiles`). 표 → 쿼리 캐시 → 옛 Preferences 키 순이고, 찾은 것은 표에 심는다([[ADR-142]] 결정 10) |

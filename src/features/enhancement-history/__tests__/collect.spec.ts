@@ -57,7 +57,7 @@ const page = (ids: string[], nextCursor: string | null = null) => ({
 
 beforeEach(() => {
   queryClient.clear()
-  getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'k' }] })
+  getAuthConfig.mockReset().mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'k', loginId: null }] })
   fetchCharacterList.mockReset().mockResolvedValue([
     { accountId: 'a', characters: [{ ocid: '1', name: '머리맨들맨둘', world: '스페셜', worldKey: 'special', jobClass: '', level: 1 }] },
   ])
@@ -467,7 +467,7 @@ describe('다시 매기기 요청', () => {
 
   // 로그인 계정의 강화 내역은 서버 스트림을 거친다. 스트림 요청 하나가 16MB 를 넘으면 남은 날이 실패해 같은 날들을 끝없이 다시 받는다.
   it('넥슨 로그인 계정은 한 회차에 60일만 받고 끝을 적지 않는다', async () => {
-    getAuthConfig.mockResolvedValue({ login: { id: 'account-login', session: 's' }, apiKeys: [] })
+    getAuthConfig.mockResolvedValue({ login: { id: 'account-login', session: 's' }, mainKeyId: null, apiKeys: [] })
     setRequests([cubeRequest('2026-06-01', '2026-08-20')])
 
     await collectEnhancementHistory([], NOW)
@@ -554,11 +554,65 @@ describe('자격마다 동시에 부르는 수', () => {
   })
 
   it('로그인은 회차의 일을 한꺼번에 부른다', async () => {
-    getAuthConfig.mockResolvedValue({ login: { id: 'account-login', session: 's' }, apiKeys: [] })
+    getAuthConfig.mockResolvedValue({ login: { id: 'account-login', session: 's' }, mainKeyId: null, apiKeys: [] })
     const max = 동시최대()
 
     await collectEnhancementHistory(닷새, NOW)
 
     expect(max()).toBe(닷새.length * KINDS.length)
+  })
+})
+
+// 강화 내역은 계정 단위 API 다. 넥슨 계정마다 그 계정의 자격으로 받고, 조회 기록과 합계도 계정 id 로 나뉜다.
+describe('넥슨 계정이 여럿', () => {
+  beforeEach(() => {
+    getAuthConfig.mockResolvedValue({
+      login: { type: 'login', id: 'account-login', session: 's' },
+      mainKeyId: null,
+      apiKeys: [{ type: 'key', id: 'account-부', label: '', value: '부-키', loginId: 'account-login' }],
+    })
+    fetchCharacterList.mockImplementation(async (credential: { accountId: string }) => [
+      {
+        accountId: `maple-${credential.accountId}`,
+        characters: [{ ocid: credential.accountId, name: `스페셜-${credential.accountId}`, world: '스페셜', worldKey: 'special', jobClass: '', level: 1 }],
+      },
+    ])
+  })
+
+  it('계정마다 그 계정의 자격으로 받아 그 계정 id 로 적고, 분모는 모든 계정의 합이다', async () => {
+    const seen: [number, number][] = []
+
+    await collectEnhancementHistory(['2026-09-05'], NOW, (done, total) => seen.push([done, total]))
+
+    const pairs = fetchEnhancementHistory.mock.calls.map(([credential, kind]: [{ accountId: string }, string]) => `${credential.accountId}:${kind}`)
+    expect(pairs.sort()).toEqual(
+      ['account-login', 'account-부'].flatMap((account) => KINDS.map((kind) => `${account}:${kind}`)).sort(),
+    )
+    expect(new Set(replaceEnhancementTotals.mock.calls.map(([accountId]) => accountId))).toEqual(new Set(['account-login', 'account-부']))
+    expect(seen[0]).toEqual([0, 6])
+    expect(seen[seen.length - 1]).toEqual([6, 6])
+    await expect(measureEnhancementHistory(['2026-09-05'], NOW)).resolves.toEqual({ total: 6, hasPast: true })
+  })
+
+  // 한 계정의 실패로 다른 계정의 강화 내역까지 멈추면 안 된다.
+  it('한 계정의 날을 못 받아도 다른 계정의 날은 굳힌다', async () => {
+    fetchEnhancementHistory.mockImplementation(async (credential: { accountId: string }) => {
+      if (credential.accountId === 'account-부') throw new Error('401')
+      return page([])
+    })
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    const marked = store.markEnhancementChecked.mock.calls.map(([accountId]) => accountId)
+    expect(new Set(marked)).toEqual(new Set(['account-login']))
+    expect(marked).toHaveLength(3)
+  })
+
+  // 옛 원본은 계정 칸이 생기기 전의 메인 계정 기록이라, 부계정의 스페셜 이름이 섞이면 메인 계정의 줄을 잘못 가른다.
+  it('옛 원본을 옮기는 단계에 남기는 스페셜 이름은 메인 계정의 목록에서만 온다', async () => {
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    expect(saveEventWorldNames).toHaveBeenCalledTimes(1)
+    expect(saveEventWorldNames).toHaveBeenCalledWith(new Set(['스페셜-account-login']))
   })
 })

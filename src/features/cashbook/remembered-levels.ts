@@ -15,12 +15,12 @@ import {
   type RememberedLevelKind,
 } from '../../storage/remembered-levels'
 import { getLatestSpendFor, type SpendRecord } from '../../storage/spend'
-import { currentCredential } from '../auth/current-credential'
+import { credentialOfOcid } from '../auth/current-credential'
 
 /** 넥슨에서 그 갈래의 레벨을 받는다. 키가 없거나 실패하면 `null` 이고 던지지 않는다. */
 async function fetchLevels(ocid: string, kind: RememberedLevelKind): Promise<Record<string, number> | null> {
-  const credential = await currentCredential()
-  // 키가 없으면 부르지도 않는다. 401 을 만들면 그 사슬이 저장된 키를 지운다.
+  // 그 캐릭터가 속한 넥슨 계정의 자격으로 부른다. 자격이 없으면 부르지도 않는다. 401 을 만들면 그 사슬이 저장된 키를 지운다.
+  const credential = await credentialOfOcid(ocid)
   if (credential === null) return null
   try {
     return kind === 'symbol'

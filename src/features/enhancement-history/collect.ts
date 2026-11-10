@@ -7,7 +7,7 @@
  * 하루가 1000줄을 넘기면 커서로 콜이 더 나가는데, 콜을 세면 분모가 도는 중에 늘어난다. 커서는
  * 작업 **안쪽** 일이라 밖에서는 1이다.
  */
-import { currentCredential } from '../auth/current-credential'
+import { currentCredentials } from '../auth/current-credential'
 import { fillLegacyAccountIds } from '../auth/legacy-account-ids'
 import { ensureEnhancementTotals } from './legacy-totals'
 import type { NexonCredential } from '../../types/auth'
@@ -186,12 +186,38 @@ export async function measureEnhancementHistory(
   dateKeys: readonly string[],
   now: Date,
 ): Promise<HistoryPlanSize> {
-  const credential = await currentCredential()
-  const accountId = credential?.accountId ?? null
-  if (credential === null || accountId === null) return { total: 0, hasPast: false }
-  const todayDateKey = getCurrentKstDateKey(now)
-  const { jobs, hasPast } = await planRound(accountId, dateKeys, todayDateKey, recomputeDaysOf(credential))
-  return { total: jobs.length, hasPast }
+  const plans = await planAccounts(dateKeys, getCurrentKstDateKey(now))
+  return {
+    total: plans.reduce((sum, plan) => sum + plan.jobs.length, 0),
+    hasPast: plans.some((plan) => plan.hasPast),
+  }
+}
+
+/** 넥슨 계정 하나의 이번 회차. */
+interface AccountPlan {
+  credential: NexonCredential
+  accountId: string
+  /** 메인 계정인가. 옛 원본을 합계로 옮기는 단계가 메인 계정의 스페셜 캐릭터 이름만 쓴다 */
+  main: boolean
+  jobs: EnhancementHistoryJob[]
+  chunks: RecomputeChunk[]
+  hasPast: boolean
+}
+
+/**
+ * 넥슨 계정마다 회차를 센다. 강화 내역은 계정 단위 API 라 계정마다 그 계정의 자격으로 따로 받고, 조회 기록도 계정 id 로 나뉜다.
+ * **콜이 한 건도 안 나간다.**
+ */
+async function planAccounts(dateKeys: readonly string[], todayDateKey: string): Promise<AccountPlan[]> {
+  const credentials = await currentCredentials()
+  const plans: AccountPlan[] = []
+  for (const [index, credential] of credentials.entries()) {
+    const accountId = credential.accountId
+    if (accountId === null) continue
+    const round = await planRound(accountId, dateKeys, todayDateKey, recomputeDaysOf(credential))
+    plans.push({ credential, accountId, main: index === 0, ...round })
+  }
+  return plans
 }
 
 /**
@@ -240,38 +266,74 @@ async function markRememberedEventWorld(
 /**
  * 창의 형제. **던지지 않는다.** 못 채운 칸은 원장에 안 남아 다음 회차가 다시 온다.
  *
- * 계정 목록을 먼저 한 번 받는다. 큐브·잠재 응답에 `world_name` 이 없어 스페셜 캐릭터를 이름으로
- * 가려야 하고, 그 이름을 여기서만 알 수 있다. **못 받으면 그 날짜를 안 굳힌다** - 지출을 가릴 수
- * 없는 채로 굳히면 다시 올 계기가 사라진다. 줄 자체는 받아 둔다. 사실은 사실이다.
+ * 넥슨 계정마다 그 계정의 자격으로 받는다. 부계정의 강화 내역도 그 계정 id 로 따로 적혀 가계부 합계에 더해진다.
  */
 export async function collectEnhancementHistory(
   dateKeys: readonly string[],
   now: Date,
   onProgress?: HistoryProgress,
 ): Promise<void> {
-  const credential = await currentCredential()
-  const accountId = credential?.accountId ?? null
-  if (credential === null || accountId === null) {
-    onProgress?.(0, 0)
-    return
-  }
-
   const todayDateKey = getCurrentKstDateKey(now)
-  const { jobs, chunks } = await planRound(accountId, dateKeys, todayDateKey, recomputeDaysOf(credential))
+  const plans = await planAccounts(dateKeys, todayDateKey)
+  const total = plans.reduce((sum, plan) => sum + plan.jobs.length, 0)
 
   // 분모가 여기서 확정된다. 부를 것이 없어도 한 번은 알린다(화면이 바를 안 그리게).
-  onProgress?.(0, jobs.length)
-  if (jobs.length === 0) {
-    await saveRecomputes(accountId, chunks, new Set(), now)
+  onProgress?.(0, total)
+  if (plans.length === 0) return
+  if (total === 0) {
+    for (const plan of plans) await saveRecomputes(plan.accountId, plan.chunks, new Set(), now)
     return
   }
+
+  let done = 0
+  const advance = (): void => {
+    done += 1
+    onProgress?.(done, total)
+  }
+  // 회차가 끝날 때 한 번에 보낸다. 날마다 보내면 로그인 자격이 날들을 한꺼번에 받을 때 요청이 같은 순간에 몰린다.
+  const anomalies: EnhancementAnomaly[] = []
+  // 한 회차의 쓰기를 한 묶음으로. 판 알림이 끝날 때 한 번이라 첫 수집의 93칸이 가계부를 93번 다시 읽게 하지 않는다.
+  // 넥슨 계정끼리는 나란히 받는다. 한 계정의 실패는 그 계정의 날만 굳히지 않는다.
+  const results = await batchRecordWrites(() =>
+    Promise.all(plans.map((plan) => collectAccount(plan, todayDateKey, now, anomalies, advance))),
+  )
+  await reportEnhancementAnomalies(anomalies)
+  for (const [index, plan] of plans.entries()) {
+    const ok = results[index] ?? []
+    const failed = new Set(plan.jobs.flatMap((job, at) => (ok[at] === true ? [] : [checkKey(job.kind, job.dateKey)])))
+    await saveRecomputes(plan.accountId, plan.chunks, failed, now)
+  }
+
+  // 오늘이 든 회차만 실시간이다. 머리의 `hh:mm:ss 기준` 이 이 시각과 스케줄 회차의 시각 중 늦은 쪽을 그린다. 지난 달은
+  // 확정된 기록이라 시각을 안 움직인다.
+  if (dateKeys.includes(todayDateKey)) {
+    queryClient.setQueryData(queryKeys.enhancementToday(), { fetchedAt: new Date().toISOString() })
+  }
+}
+
+/**
+ * 넥슨 계정 하나의 날들을 받아 합계를 적는다. **던지지 않는다.** 일마다 받았는지를 돌려준다.
+ *
+ * 계정 목록을 먼저 한 번 받는다. 큐브·잠재 응답에 `world_name` 이 없어 스페셜 캐릭터를 이름으로
+ * 가려야 하고, 그 이름을 여기서만 알 수 있다. **못 받으면 그 날짜를 안 굳힌다** - 지출을 가릴 수
+ * 없는 채로 굳히면 다시 올 계기가 사라진다. 줄 자체는 받아 둔다. 사실은 사실이다.
+ */
+async function collectAccount(
+  plan: AccountPlan,
+  todayDateKey: string,
+  now: Date,
+  anomalies: EnhancementAnomaly[],
+  advance: () => void,
+): Promise<(boolean | undefined)[]> {
+  const { credential, accountId, jobs } = plan
+  if (jobs.length === 0) return []
 
   // 목록을 못 받은 것과 스페셜 캐릭터가 없는 것은 다르다. 앞은 null, 뒤는 빈 목록이다.
   let listError: string | null = null
   const listed = await fetchCharacterListCached(credential)
     .then((accounts) => {
-      // 옛 원본을 합계로 옮기는 단계가 이것을 쓴다.
-      saveEventWorldNames(eventWorldCharacterNames(accounts))
+      // 옛 원본을 합계로 옮기는 단계가 이것을 쓴다. 옛 원본은 계정 칸이 생기기 전의 메인 계정 기록이다.
+      if (plan.main) saveEventWorldNames(eventWorldCharacterNames(accounts))
       return listedJudgmentsOf(accounts)
     })
     .catch((error: unknown) => {
@@ -284,40 +346,26 @@ export async function collectEnhancementHistory(
   }
 
   const checkedAt = now.toISOString()
-  // 회차가 끝날 때 한 번에 보낸다. 날마다 보내면 로그인 자격이 날들을 한꺼번에 받을 때 요청이 같은 순간에 몰린다.
-  const anomalies: EnhancementAnomaly[] = []
-  // 한 회차의 쓰기를 한 묶음으로. 판 알림이 끝날 때 한 번이라 첫 수집의 93칸이 가계부를 93번 다시 읽게 하지 않는다.
-  const results = await batchRecordWrites(async () => {
-    const done = await mapWithLimit(
-      jobs,
-      credential.type === 'login' ? jobs.length : HISTORY_CALL_LIMIT,
-      async (job) => {
-        const { firstCursor, rows } = await fetchDay(credential, job)
-        const sources = rows.map((row) => ({ ...row, kind: job.kind }))
-        if (job.kind === 'starforce') await rememberEventWorldCharacters(accountId, eventWorldCharactersOf(sources), now)
-        const totals = summarizeEnhancement(sources, evidence)
-        anomalies.push(...enhancementAnomaliesOf(sources, evidence, listError))
-        await replaceEnhancementTotals(accountId, job.kind, job.dateKey, totals, now)
-        // 목록을 못 받았거나 표에 없는 월드의 줄이 있으면 굳히지 않는다. 다음 회차가 다시 받아 판정을 채운다.
-        const settled = job.dateKey < todayDateKey && listed !== null && totals.every((total) => total.eventWorld !== null)
-        await markEnhancementChecked(accountId, job.kind, job.dateKey, firstCursor, settled, checkedAt)
-        return true
-      },
-      (count) => onProgress?.(count, jobs.length),
-    )
-    // 목록이 1순위라 목록 없이는 이름이 목록에 없는지 알 수 없다.
-    if (listed !== null) await markRememberedEventWorld(accountId, listed).catch(() => undefined)
-    return done
-  })
-  await reportEnhancementAnomalies(anomalies)
-  const failed = new Set(jobs.flatMap((job, index) => (results[index] === true ? [] : [checkKey(job.kind, job.dateKey)])))
-  await saveRecomputes(accountId, chunks, failed, now)
-
-  // 오늘이 든 회차만 실시간이다. 머리의 `hh:mm:ss 기준` 이 이 시각과 스케줄 회차의 시각 중 늦은 쪽을 그린다. 지난 달은
-  // 확정된 기록이라 시각을 안 움직인다.
-  if (dateKeys.includes(todayDateKey)) {
-    queryClient.setQueryData(queryKeys.enhancementToday(), { fetchedAt: new Date().toISOString() })
-  }
+  const done = await mapWithLimit(
+    jobs,
+    credential.type === 'login' ? jobs.length : HISTORY_CALL_LIMIT,
+    async (job) => {
+      const { firstCursor, rows } = await fetchDay(credential, job)
+      const sources = rows.map((row) => ({ ...row, kind: job.kind }))
+      if (job.kind === 'starforce') await rememberEventWorldCharacters(accountId, eventWorldCharactersOf(sources), now)
+      const totals = summarizeEnhancement(sources, evidence)
+      anomalies.push(...enhancementAnomaliesOf(sources, evidence, listError))
+      await replaceEnhancementTotals(accountId, job.kind, job.dateKey, totals, now)
+      // 목록을 못 받았거나 표에 없는 월드의 줄이 있으면 굳히지 않는다. 다음 회차가 다시 받아 판정을 채운다.
+      const settled = job.dateKey < todayDateKey && listed !== null && totals.every((total) => total.eventWorld !== null)
+      await markEnhancementChecked(accountId, job.kind, job.dateKey, firstCursor, settled, checkedAt)
+      return true
+    },
+    advance,
+  )
+  // 목록이 1순위라 목록 없이는 이름이 목록에 없는지 알 수 없다.
+  if (listed !== null) await markRememberedEventWorld(accountId, listed).catch(() => undefined)
+  return done
 }
 
 /**

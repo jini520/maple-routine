@@ -41,7 +41,7 @@ beforeEach(() => {
   real = createRealSqlite()
   setSqlitePort(real.port)
   __resetEnhancementTotalsMoveForTest()
-  getAuthConfig.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-main', label: '', value: 'k' }] })
+  getAuthConfig.mockResolvedValue({ login: null, mainKeyId: 'account-main', apiKeys: [{ type: 'key', id: 'account-main', label: '', value: 'k', loginId: null }] })
   readEventWorldNames.mockReturnValue(new Set(['머리맨들맨둘']))
   moved.isEnhancementTotalsMoved.mockResolvedValue(false)
   moved.markEnhancementTotalsMoved.mockReset().mockResolvedValue(undefined)

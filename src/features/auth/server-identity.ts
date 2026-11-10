@@ -12,10 +12,11 @@
  * 서버가 키 쪽으로 넘어가지 않고 재로그인을 요구한다 - 넘어가면 같은 사람의 기록이 두 열쇠로
  * 갈라진다. 앱도 같은 선을 보여 한쪽만 싣는다.
  *
- * **키를 여럿 둔 사용자는 첫 키로 밝힌다.** 키를 더하는 기능이 로그인 사용자에게만 열리므로,
- * 키가 여럿인 사용자는 세션이 있어 이 갈림에 안 온다.
+ * **세션이 없으면 메인 키로 밝힌다.** 부계정 키로는 밝히지 않는다. 부계정은 로그인 사용자만 등록하므로 그 사용자는
+ * 세션으로 밝혀지고, 로그인이 만료돼 부계정 키만 남으면 밝힐 수단이 없다.
  */
 import { apiKeyHashHex } from '../../lib/crypto/api-key-hash'
+import { mainApiKeyOf } from '../../lib/nexon-credential'
 import { getAuthConfig } from '../../storage/api-key'
 
 /** 밝힐 수단이 없으면 `null`. 그때는 서버에 아무것도 안 보낸다. */
@@ -32,8 +33,8 @@ export async function serverIdentityHeaders(): Promise<Record<string, string> | 
     return { Authorization: `Bearer ${login.session}`, 'x-nexon-account-id': login.id }
   }
 
-  const key = config?.apiKeys[0]
-  if (key !== undefined && key.value !== '') {
+  const key = mainApiKeyOf(config ?? null)
+  if (key !== null && key.value !== '') {
     return { 'x-api-key-hash': apiKeyHashHex(key.value), 'x-nexon-account-id': key.id }
   }
 

@@ -11,7 +11,7 @@ const 목록 = [{ accountId: 'maple-1', characters: [] }]
 
 beforeEach(() => {
   findNexonAccountIdOfMapleIds.mockReset()
-  getAuthConfig.mockReset().mockResolvedValue({ login: { type: 'login', id: 'account-main', session: 's' }, apiKeys: [] })
+  getAuthConfig.mockReset().mockResolvedValue({ login: { type: 'login', id: 'account-main', session: 's' }, mainKeyId: null, apiKeys: [] })
 })
 
 it('목록의 메이플 ID 가 속했던 계정이 지금 수단에 없으면 그 계정을 잇는다', async () => {

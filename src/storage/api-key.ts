@@ -9,10 +9,9 @@ import { preferences } from './ports'
 import type { NexonApiKeyMethod, NexonAuthConfig, NexonLoginMethod } from '../types'
 import { STORAGE_KEYS } from './keys'
 
-interface StoredShape {
-  login: NexonLoginMethod | null
-  apiKeys: NexonApiKeyMethod[]
-}
+type StoredShape = NexonAuthConfig
+
+const EMPTY: StoredShape = { login: null, apiKeys: [], mainKeyId: null }
 
 /** 읽은 칸과, 옛 모양이라 다시 적어야 하는지. */
 interface Parsed {
@@ -41,14 +40,26 @@ function loginOf(value: unknown): { login: NexonLoginMethod | null; outdated: bo
   }
 }
 
-function keyOf(value: unknown): { key: NexonApiKeyMethod; outdated: boolean } | null {
+/**
+ * 저장된 키 칸.
+ *
+ * @param loginId 등록한 로그인 칸이 없는 옛 키가 받을 값. 그 칸이 생기기 전에는 로그인과 함께 남은 키가 곧 그 로그인의 부계정이었다
+ */
+function keyOf(value: unknown, loginId: string | null): { key: NexonApiKeyMethod; outdated: boolean } | null {
   const one = recordOf(value)
   if (one === null || (one.type !== 'key' && one.kind !== 'apiKey')) return null
   if (typeof one.value !== 'string' || typeof one.label !== 'string') return null
   const current = isCurrent(one, 'key')
+  const hasLoginId = one.loginId === null || (typeof one.loginId === 'string' && one.loginId !== '')
   return {
-    key: { type: 'key', id: current ? (one.id as string) : randomUuid(), label: one.label, value: one.value },
-    outdated: !current,
+    key: {
+      type: 'key',
+      id: current ? (one.id as string) : randomUuid(),
+      label: one.label,
+      value: one.value,
+      loginId: hasLoginId ? (one.loginId as string | null) : loginId,
+    },
+    outdated: !current || !hasLoginId,
   }
 }
 
@@ -63,10 +74,18 @@ function parse(raw: string | null): Parsed | null {
     const shape = recordOf(JSON.parse(raw))
     if (shape === null || !Array.isArray(shape.apiKeys)) return null
     const login = loginOf(shape.login)
-    const keys = shape.apiKeys.map(keyOf).filter((one) => one !== null)
+    const keys = shape.apiKeys.map((one) => keyOf(one, login.login?.id ?? null)).filter((one) => one !== null)
+    const apiKeys = keys.map((one) => one.key)
+    // 메인 키 칸이 없는 옛 수단은 로그인이 없으면 첫 키가 메인이었다.
+    const hasMainKeyId = shape.mainKeyId === null || typeof shape.mainKeyId === 'string'
+    const mainKeyId = hasMainKeyId ? (shape.mainKeyId as string | null) : login.login === null ? (apiKeys[0]?.id ?? null) : null
     return {
-      shape: { login: login.login, apiKeys: keys.map((one) => one.key) },
-      outdated: login.outdated || keys.some((one) => one.outdated),
+      shape: {
+        login: login.login,
+        apiKeys,
+        mainKeyId: login.login === null && apiKeys.some((one) => one.id === mainKeyId) ? mainKeyId : null,
+      },
+      outdated: login.outdated || keys.some((one) => one.outdated) || !hasMainKeyId,
     }
   } catch {
     return null
@@ -82,7 +101,11 @@ async function liftLegacy(): Promise<Parsed | null> {
   const legacy = await preferences.get(STORAGE_KEYS.apiKey)
   if (legacy === null || legacy === '') return null
   // 이름을 짓지 않는다. 우리가 지어낸 것이 사용자가 붙인 것처럼 보이면 안 된다.
-  return { shape: { login: null, apiKeys: [{ type: 'key', id: randomUuid(), label: '', value: legacy }] }, outdated: true }
+  const id = randomUuid()
+  return {
+    shape: { login: null, apiKeys: [{ type: 'key', id, label: '', value: legacy, loginId: null }], mainKeyId: id },
+    outdated: true,
+  }
 }
 
 async function readStored(): Promise<Parsed | null> {
@@ -123,57 +146,81 @@ async function write(shape: StoredShape): Promise<void> {
 }
 
 /**
- * API 키를 더한다. **같은 값이 이미 있으면 늘리지 않고 이름만 간다.**
+ * 로그인 화면에서 넣은 키를 메인 키로 둔다. **같은 값이 이미 있으면 늘리지 않는다.**
  *
- * 키 재입력 경로에서 같은 키를 다시 넣는 일이 흔하다. 늘어나면 목록이 지저분해진다.
+ * 로그인 화면의 로그인은 새 로그인이라 앞 메인 수단을 버린다. 남은 넥슨 로그인은 떼고, 귀속되지 않은 키는 지운다. 남기면 앞
+ * 수단이 계속 메인이라 새 키의 캐릭터를 앞 수단으로 부른다. 넥슨 로그인에 귀속된 부계정 키는 귀속된 채 남는다. 그 키를 넣었으면
+ * 귀속을 든 채 메인 키가 되어, 나중에 그 넥슨 ID 로 다시 로그인하면 다시 부계정으로 이어진다.
  *
  * @param label 목록에서 구분하는 이름. 안 주면 빈 문자열이고 우리가 짓지 않는다
  * @param accountId 다시 받은 키가 이을 옛 넥슨 계정 id. 안 주면 새 계정이다
  */
-export async function setApiKey(apiKey: string, label = '', accountId?: string): Promise<void> {
-  const current = (await getAuthConfig()) ?? { login: null, apiKeys: [] }
-  const next = current.apiKeys.some((one) => one.value === apiKey)
-    ? current.apiKeys.map((one) => (one.value === apiKey ? { ...one, label } : one))
-    : [...current.apiKeys, { type: 'key' as const, id: accountId ?? randomUuid(), label, value: apiKey }]
+export async function setMainApiKey(apiKey: string, label = '', accountId?: string): Promise<void> {
+  const current = (await getAuthConfig()) ?? EMPTY
+  const existing = current.apiKeys.find((one) => one.value === apiKey)
+  const key: NexonApiKeyMethod = existing === undefined
+    ? { type: 'key', id: accountId ?? randomUuid(), label, value: apiKey, loginId: null }
+    : { ...existing, label }
+  const kept = current.apiKeys.filter((one) => one.value !== apiKey && one.loginId !== null)
+  await write({ login: null, apiKeys: [...kept, key], mainKeyId: key.id })
+}
 
-  await write({ login: current.login, apiKeys: next })
+export interface SetNexonLoginOptions {
+  /**
+   * 로그인 화면의 로그인인가. 새 로그인이라 귀속되지 않은 키를 지운다. 아니면(today 의 `넥슨 ID 연동하기`) 메인 키와 귀속되지
+   * 않은 키가 이 로그인의 부계정이 된다. 메인 키는 앞 로그인의 부계정 키였어도 지금 쓰는 계정이라 귀속을 옮긴다.
+   */
+  fresh?: boolean
 }
 
 /**
  * 넥슨 로그인을 붙인다. **로그인은 0~1개라 있던 것을 갈아끼운다.**
  *
- * 로그인은 앱 사용자를 식별하는 축이고 키는 거기 붙는 자원이다. 둘 이상일 이유가 없다.
+ * 로그인은 앱 사용자를 식별하는 축이고 키는 거기 붙는 자원이다. 둘 이상일 이유가 없다. 로그인이 메인이라 메인 키는 없어진다.
  *
  * 거둘 키를 넘기면 그 키들을 같은 저장에서 빼고, 로그인은 그중 목록에서 앞선 키의 계정 id 를 이어받는다. 같은 넥슨 계정이라
  * 기기 기록이 이어져야 한다. 나눠 적으면 그 사이에 두 수단이 같은 id 를 갖는다.
  *
- * @param takenKeys 메이플 ID 가 같아 서버에서 이은 키의 값. 안 주면 키는 안 건드린다
+ * 다른 로그인에 귀속된 부계정 키는 그대로 둔다. 같은 계정 id 의 로그인이 돌아오면 다시 부계정으로 이어진다.
+ *
+ * @param takenKeys 메이플 ID 가 같아 서버에서 이은 키의 값. 안 주면 키는 안 거둔다
+ * @param accountId 거둔 키가 없을 때 로그인이 이을 옛 넥슨 계정 id. 안 주면 지금 로그인의 id, 그것도 없으면 새 id 다
  */
-export async function setNexonLogin(login: { session: string }, takenKeys: readonly string[] = []): Promise<void> {
-  const current = (await getAuthConfig()) ?? { login: null, apiKeys: [] }
+export async function setNexonLogin(
+  login: { session: string },
+  takenKeys: readonly string[] = [],
+  accountId?: string,
+  options?: SetNexonLoginOptions,
+): Promise<void> {
+  const current = (await getAuthConfig()) ?? EMPTY
   const taken = current.apiKeys.filter((one) => takenKeys.includes(one.value))
+  const id = taken[0]?.id ?? accountId ?? current.login?.id ?? randomUuid()
+  const kept = current.apiKeys.filter((one) => !takenKeys.includes(one.value))
   await write({
-    login: { type: 'login', id: taken[0]?.id ?? current.login?.id ?? randomUuid(), session: login.session },
-    apiKeys: current.apiKeys.filter((one) => !takenKeys.includes(one.value)),
+    login: { type: 'login', id, session: login.session },
+    apiKeys:
+      options?.fresh === true
+        ? kept.filter((one) => one.loginId !== null)
+        : kept.map((one) => (one.loginId === null || one.id === current.mainKeyId ? { ...one, loginId: id } : one)),
+    mainKeyId: null,
   })
 }
 
 /**
- * 넥슨 로그인을 뗀다. API 키는 남는다.
+ * 넥슨 로그인을 뗀다. 로그인이 만료되거나 동의를 철회했을 때다. 부계정 키는 귀속된 채 남는다.
  *
- * 로그인만 있던 사용자는 이 뒤로 수단이 없어 `getAuthConfig` 가 `null` 이고 로그인 화면이 선다.
+ * 메인 수단이 없어 로그인 화면이 선다. 같은 넥슨 ID 로 다시 로그인하면 부계정이 이어진다.
  */
 export async function clearNexonLogin(): Promise<void> {
   const current = await getAuthConfig()
   if (current === null) return
-  await write({ login: null, apiKeys: current.apiKeys })
+  await write({ ...current, login: null })
 }
 
 /**
  * 무효화된 키 **하나만** 지운다(400 OPENAPI00005 · 401/403 · 429).
  *
- * 아래 `clearAuthConfig` 로 갈아끼우지 말 것. 그쪽은 로그아웃용이라 목록을 통째로 버리고
- * **다른 넥슨 계정의 키까지 함께 사라진다.** 키 재입력 후의 재개는 남아 있는
+ * 아래 `signOutAuth` 로 갈아끼우지 말 것. 그쪽은 로그아웃용이라 로그인과 메인 키를 함께 뗀다. 키 재입력 후의 재개는 남아 있는
  * trackingMode·trackedCharacters 에서 파생된다.
  *
  * @param apiKey 실패한 자격의 값. 실패가 여기까지 실어 나른다
@@ -182,10 +229,8 @@ export async function removeApiKey(apiKey: string): Promise<void> {
   const current = await getAuthConfig()
   if (current === null) return
 
-  await write({
-    login: current.login,
-    apiKeys: current.apiKeys.filter((one) => one.value !== apiKey),
-  })
+  const apiKeys = current.apiKeys.filter((one) => one.value !== apiKey)
+  await write({ ...current, apiKeys, mainKeyId: apiKeys.some((one) => one.id === current.mainKeyId) ? current.mainKeyId : null })
 }
 
 /**
@@ -197,19 +242,24 @@ export async function removeApiKey(apiKey: string): Promise<void> {
 export async function removeAllApiKeys(): Promise<void> {
   const current = await getAuthConfig()
   if (current === null) return
-  await write({ login: current.login, apiKeys: [] })
+  await write({ login: current.login, apiKeys: [], mainKeyId: null })
 }
 
 /**
- * 로그아웃 전용. 저장된 인증 정보를 통째로 버린다(위 `removeApiKey` 와 목적이 다르다).
+ * 로그아웃. 넥슨 로그인과 메인 키를 지우고, 넥슨 로그인에 귀속된 부계정 키는 남긴다.
  *
- * **옛 칸까지 치운다.** 안 치우면 다음 읽기가 그것을 다시 목록으로 올린다.
+ * 같은 넥슨 ID 로 다시 로그인하면 부계정을 이어 쓰게 하려는 것이다. 다른 넥슨 ID 나 API 키로 로그인하면 계정 id 가 달라 이어지지
+ * 않는다. 메인 키는 어느 로그인에도 귀속되지 않아 다시 이을 곳이 없다. 앞 로그인의 부계정 키를 메인으로 쓰고 있었으면 메인
+ * 표시만 지운다.
  *
- * `selectedAccountId` 는 **레거시 키**다(계정 선택이 사라졌다). 아무도 쓰지 않지만 옛 설치본에는
- * 값이 남아 있어, 로그아웃에서 함께 치운다.
+ * **옛 칸까지 치운다.** 안 치우면 다음 읽기가 그것을 다시 목록으로 올린다. `selectedAccountId` 는 **레거시 키**다(계정 선택이
+ * 사라졌다). 아무도 쓰지 않지만 옛 설치본에는 값이 남아 있어 함께 치운다.
  */
-export async function clearAuthConfig(): Promise<void> {
-  await preferences.remove(STORAGE_KEYS.authMethods)
+export async function signOutAuth(): Promise<void> {
+  const current = await getAuthConfig()
+  const apiKeys = (current?.apiKeys ?? []).filter((one) => one.loginId !== null)
+  if (apiKeys.length === 0) await preferences.remove(STORAGE_KEYS.authMethods)
+  else await write({ login: null, apiKeys, mainKeyId: null })
   await preferences.remove(STORAGE_KEYS.apiKey)
   await preferences.remove(STORAGE_KEYS.legacySelectedAccountId)
 }

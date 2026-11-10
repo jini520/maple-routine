@@ -228,7 +228,7 @@ beforeEach(() => {
     goBack,
     setParams: jest.fn(),
   } as unknown as ReturnType<typeof useSettingsNavigation>)
-  mockedGetAuthConfig.mockResolvedValue({ login: null, apiKeys: [{ type: 'key' as const, id: 'account-key', label: '', value: 'key' }] })
+  mockedGetAuthConfig.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key' as const, id: 'account-key', label: '', value: 'key', loginId: null }] })
   mockedFetchCharacterList.mockResolvedValue([계정A, 계정B])
   // `character/list` 가 5분 동안 쿼리 캐시에 남는다. 앞 케이스의 응답을 물려받지 않게 비우고 다시 심는다.
   queryClient.clear()

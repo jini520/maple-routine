@@ -16,6 +16,7 @@
 import { create } from 'zustand'
 
 import {
+  clearLastSelectedCharacter,
   clearRepresentativeCharacter,
   getLastSelectedCharacter,
   getRepresentativeCharacter,
@@ -58,6 +59,8 @@ export interface CharacterSelectionStore {
    * 부른다. 못 읽으면 든 값을 그대로 둔다.
    */
   reloadRepresentative(): Promise<void>
+  /** 고른 캐릭터와 대표를 메모리와 저장소에서 함께 비우는 자리. 새로 로그인할 때 쓴다. */
+  forget(): Promise<void>
 }
 
 /** 못 읽으면 `undefined`. 미지정(`null`)과 가르기 위해서다. */
@@ -104,5 +107,11 @@ export const useCharacterSelectionStore = create<CharacterSelectionStore>()((set
     const representative = await readRepresentative()
     if (representative === undefined) return
     set({ representativeOcid: representative, isRepresentativeHydrated: true })
+  },
+
+  async forget() {
+    // 비운 것이 곧 읽은 값이다. 하이드레이션이 저장소를 다시 읽지 않게 표시한다.
+    set({ selectedOcid: null, representativeOcid: null, isRepresentativeHydrated: true })
+    await Promise.all([clearLastSelectedCharacter(), clearRepresentativeCharacter()])
   },
 }))

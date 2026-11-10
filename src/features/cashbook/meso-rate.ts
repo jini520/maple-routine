@@ -7,7 +7,7 @@
  * 부르는 계기는 시트에서 캐릭터를 고를 때 하나다. 수정으로 열 때는 안 부른다. 그 행에 적힌
  * 그때의 값이 있고, 지금 값으로 다시 재면 옛 기록의 금액이 열 때마다 달라진다.
  */
-import { currentCredential } from '../auth/current-credential'
+import { credentialOfOcid } from '../auth/current-credential'
 import { fetchMesoRate } from '../../nexon/meso-rate'
 import { queryClient } from '../query/client'
 import { queryKeys } from '../query/keys'
@@ -45,8 +45,8 @@ function lastMesoRate(ocid: string): number | null {
 }
 
 export async function loadMesoRate(ocid: string): Promise<MesoRateLoad> {
-  const credential = await currentCredential()
-  // 키가 없으면 **부르지도 않는다**. 401 을 만들면 그 사슬이 저장된 키를 지운다.
+  // 그 캐릭터가 속한 넥슨 계정의 자격으로 부른다. 자격이 없으면 **부르지도 않는다**. 401 을 만들면 그 사슬이 저장된 키를 지운다.
+  const credential = await credentialOfOcid(ocid)
   if (credential === null) return { kind: 'fallback', percent: lastMesoRate(ocid) }
 
   try {

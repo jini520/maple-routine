@@ -18,8 +18,8 @@ import { getKstDateKeyDaysAgo } from '../../lib/scheduler/reset-clock'
 import { toProbeObservation } from '../../lib/scheduler/scheduler-activity'
 import { fetchSchedulerCharacterState } from '../../nexon/schedule'
 import { SCHEDULE_NAME_RESOLVERS } from '../../lib/scheduler/schedule-name-resolvers'
-import { currentCredential } from '../auth/current-credential'
-import { getAuthConfig } from '../../storage/api-key'
+import { credentialsOfOcids } from '../auth/current-credential'
+import { groupByCredential } from '../../lib/nexon-credential'
 import {
   getScheduleProbeLedger,
   isSettledProbe,
@@ -101,13 +101,14 @@ export type WindowProgress = (done: number, total: number) => void
  * 등록하면 앞 수집기가 이미 100% 를 찍은 뒤라 바가 뒤로 간다.
  */
 export interface ScheduleWindowPlan {
-  /** 없으면 부를 수 없다. 로그인 전이거나 키가 없다 */
-  readonly credential: NexonCredential | null
-  readonly jobs: readonly { readonly ocid: string; readonly dateKey: string }[]
+  /** 부를 수 있는 캐릭터가 하나라도 있는가. 없으면 로그인 전이거나 키가 없다 */
+  readonly callable: boolean
+  /** 캐릭터마다 그 캐릭터가 속한 넥슨 계정의 자격을 든다. 스케줄러는 그 계정의 자격으로만 받을 수 있다 */
+  readonly jobs: readonly { readonly ocid: string; readonly dateKey: string; readonly credential: NexonCredential }[]
 }
 
 /** 부를 것이 없는 계획. 세울 것도 없을 때 이 값을 쓴다. */
-const EMPTY_PLAN: ScheduleWindowPlan = { credential: null, jobs: [] }
+const EMPTY_PLAN: ScheduleWindowPlan = { callable: false, jobs: [] }
 
 /**
  * 창의 계획을 세운다. **콜 없이 원장만 읽는다.**
@@ -120,8 +121,9 @@ export async function planScheduleWindow(
 ): Promise<ScheduleWindowPlan> {
   if (ocids.length === 0) return EMPTY_PLAN
 
-  const authConfig = await getAuthConfig().catch(() => null)
-  if (authConfig === null) return EMPTY_PLAN
+  // 자격이 없는 캐릭터는 부를 수 없어 계획에 넣지 않는다.
+  const credentials = await credentialsOfOcids(ocids)
+  if (![...credentials.values()].some((credential) => credential !== null)) return EMPTY_PLAN
 
   const rollingFloor = getMinQueryableDate(now)
   const floorDateKey = rollingFloor > MIN_SCHEDULER_DATE ? rollingFloor : MIN_SCHEDULER_DATE
@@ -130,16 +132,18 @@ export async function planScheduleWindow(
 
   // 캐릭터 × 날짜를 한 줄로 펴서 게이트에 넘긴다. 캐릭터별로 나눠 돌리면 상한이 캐릭터 수만큼
   // 곱해져 게이트가 뜻을 잃는다.
-  const jobs: { ocid: string; dateKey: string }[] = []
+  const jobs: { ocid: string; dateKey: string; credential: NexonCredential }[] = []
   for (const ocid of ocids) {
+    const credential = credentials.get(ocid) ?? null
+    if (credential === null) continue
     const ledger = await getScheduleProbeLedger(ocid, now)
     if (ledger.unavailable) continue
     for (const dateKey of missingDays(ledger.dates, floorDateKey, ceilingDateKey, todayDateKey)) {
-      jobs.push({ ocid, dateKey })
+      jobs.push({ ocid, dateKey, credential })
     }
   }
 
-  return { credential: await currentCredential(), jobs }
+  return { callable: true, jobs }
 }
 
 /**
@@ -162,8 +166,8 @@ export async function fillScheduleWindow(
     return
   }
 
-  const { credential, jobs } = plan ?? (await planScheduleWindow(ocids, now))
-  if (credential === null) {
+  const { callable, jobs } = plan ?? (await planScheduleWindow(ocids, now))
+  if (!callable) {
     onProgress?.(0, 0)
     return
   }
@@ -178,32 +182,52 @@ export async function fillScheduleWindow(
   const unavailable = new Set<string>()
   const failures: WindowFailure[] = []
 
-  const limit = credential.type === 'login' ? jobs.length : WINDOW_CALL_LIMIT
-  await mapWithLimit(jobs, limit, async ({ ocid, dateKey }) => {
-    if (unavailable.has(ocid)) return
-
-    let state
-    try {
-      state = await fetchSchedulerCharacterState(credential, ocid, SCHEDULE_NAME_RESOLVERS, dateKey)
-    } catch (error) {
-      const kind = toScheduleSyncError(error).kind
-      if (kind === 'characterUnavailable') {
-        unavailable.add(ocid)
-        await markScheduleProbeUnavailable(ocid)
-        return
-      }
-      if (kind === 'periodOutOfRange') {
-        await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
-        return
-      }
-      // 집계 전(00009)·429·네트워크·파싱은 **원장에 기록하지 않는다.** 나중에 풀린다.
-      // 다만 화면이 `아직` 과 `못 불러왔다` 를 가를 수 있게 이 회차의 사실로는 남긴다.
-      failures.push({ ocid, dateKey, outcome: kind === 'notCollected' ? 'notCollected' : 'failed' })
-      return
-    }
-
-    await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...toProbeObservation(state) })
-  }, (done) => onProgress?.(done, jobs.length))
+  // 상한은 넥슨 계정마다 따로다. 로그인은 서버 스트림이 묶어 보내 한꺼번에, 키는 그 키로 6건씩 부른다.
+  let done = 0
+  await Promise.all(
+    groupByCredential(jobs, (job) => job.credential).map(({ credential, items }) =>
+      mapWithLimit(
+        items,
+        credential.type === 'login' ? items.length : WINDOW_CALL_LIMIT,
+        (job) => fillDay(job, unavailable, failures),
+        () => {
+          done += 1
+          onProgress?.(done, jobs.length)
+        },
+      ),
+    ),
+  )
 
   lastFailures = failures
+}
+
+/** 한 캐릭터의 하루를 받아 원장에 적는다. 던지지 않는다. */
+async function fillDay(
+  { ocid, dateKey, credential }: ScheduleWindowPlan['jobs'][number],
+  unavailable: Set<string>,
+  failures: WindowFailure[],
+): Promise<void> {
+  if (unavailable.has(ocid)) return
+
+  let state
+  try {
+    state = await fetchSchedulerCharacterState(credential, ocid, SCHEDULE_NAME_RESOLVERS, dateKey)
+  } catch (error) {
+    const kind = toScheduleSyncError(error).kind
+    if (kind === 'characterUnavailable') {
+      unavailable.add(ocid)
+      await markScheduleProbeUnavailable(ocid)
+      return
+    }
+    if (kind === 'periodOutOfRange') {
+      await recordScheduleProbe(ocid, dateKey, { kind: 'outOfRange' })
+      return
+    }
+    // 집계 전(00009)·429·네트워크·파싱은 **원장에 기록하지 않는다.** 나중에 풀린다.
+    // 다만 화면이 `아직` 과 `못 불러왔다` 를 가를 수 있게 이 회차의 사실로는 남긴다.
+    failures.push({ ocid, dateKey, outcome: kind === 'notCollected' ? 'notCollected' : 'failed' })
+    return
+  }
+
+  await recordScheduleProbe(ocid, dateKey, { kind: 'observed', ...toProbeObservation(state) })
 }
