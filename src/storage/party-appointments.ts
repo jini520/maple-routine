@@ -110,9 +110,9 @@ export async function setPartyAppointments(appointments: readonly PartyAppointme
 }
 
 /**
- * 월드 리프한 캐릭터를 약속 속에서 새 ocid 로 바꾸는 함수. 바꾼 것이 있으면 참이다.
+ * 월드 리프한 캐릭터가 가는 보스 판을 새 ocid 로 바꾸는 함수. 이 주만 바꾼 회차도 바꾼다. 바꾼 것이 있으면 참이다.
  *
- * 파티원에 두 캐릭터가 함께 있으면 앞의 칸 하나만 남긴다. 같은 캐릭터가 두 칸을 차지하면 파티원이 한 명 더 있는 것으로 보인다.
+ * 파티원 칸은 다루지 않는다. 약속에 파티원을 넣는 화면이 없어 늘 비어 있다.
  */
 export async function movePartyAppointmentsToOcid(fromOcid: string, toOcid: string): Promise<boolean> {
   const appointments = await getPartyAppointments()
@@ -123,21 +123,9 @@ export async function movePartyAppointmentsToOcid(fromOcid: string, toOcid: stri
       changed = true
       return { ...boss, ocid: toOcid }
     })
-  const moveMembers = (members: PartyMember[]): PartyMember[] => {
-    const seen = new Set<string>()
-    return members.flatMap((member): PartyMember[] => {
-      if (member.type !== 'character') return [member]
-      if (member.ocid === fromOcid) changed = true
-      const ocid = member.ocid === fromOcid ? toOcid : member.ocid
-      if (seen.has(ocid)) return []
-      seen.add(ocid)
-      return [{ ...member, ocid }]
-    })
-  }
   const next = appointments.map((appointment) => ({
     ...appointment,
     bosses: moveBosses(appointment.bosses),
-    members: moveMembers(appointment.members),
     exceptions: Object.fromEntries(
       Object.entries(appointment.exceptions).map(([dateKey, exception]) => [
         dateKey,
