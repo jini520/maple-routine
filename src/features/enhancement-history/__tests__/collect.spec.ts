@@ -1,5 +1,10 @@
 import { queryClient } from '../../query/client'
-import { collectEnhancementHistory, measureEnhancementHistory, planEnhancementHistory } from '../collect'
+import {
+  collectEnhancementHistory,
+  collectEnhancementRefetches,
+  measureEnhancementHistory,
+  planEnhancementHistory,
+} from '../collect'
 
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../auth/legacy-account-ids', () => ({ fillLegacyAccountIds: jest.fn() }))
@@ -429,24 +434,73 @@ describe('캐릭터에 붙이기', () => {
 
 // 1.0.14 이관이 캐릭터에 붙이지 못해 지운 줄의 날. 화면이 연 기간만 받으면 열지 않은 달의 지출이 빈 채로 남는다.
 describe('이관이 지운 날 다시 받기', () => {
-  it('화면 범위 밖이어도 받고, 지난 날 모달은 세우지 않으며, 받아 굳히면 지운다', async () => {
-    refetches.loadEnhancementRefetches.mockResolvedValue([{ kind: 'cube', dateKey: '2026-09-01' }])
+  /** 받아 굳히면 지워지는 다시 받을 날. 지운 만큼 다음 읽기에서 빠진다. */
+  function storedRefetches(days: { kind: string; dateKey: string }[]): void {
+    const left = [...days]
+    refetches.loadEnhancementRefetches.mockImplementation(async () => [...left])
+    refetches.removeEnhancementRefetch.mockImplementation(async (_account: string, kind: string, dateKey: string) => {
+      const at = left.findIndex((one) => one.kind === kind && one.dateKey === dateKey)
+      if (at >= 0) left.splice(at, 1)
+    })
+  }
 
-    await expect(measureEnhancementHistory([], NOW)).resolves.toEqual({ total: 1, hasPast: false })
+  const loginDays = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      kind: 'cube',
+      dateKey: new Date(Date.UTC(2026, 5, 1 + index)).toISOString().slice(0, 10),
+    }))
+
+  const fetchedDays = () =>
+    new Set(fetchEnhancementHistory.mock.calls.map((call) => (call[3] as { dateKey?: string }).dateKey).filter(Boolean))
+
+  // 화면이 이 받기를 기다리면 사용자 기기에서 60일에 8분 넘게 불러오는 중으로 남았다(2026-11-10).
+  it('화면 회차는 다시 받을 날을 받지 않고 분모에도 넣지 않는다', async () => {
+    storedRefetches([{ kind: 'cube', dateKey: '2026-09-01' }])
+
+    await expect(measureEnhancementHistory([], NOW)).resolves.toEqual({ total: 0, hasPast: false })
     await collectEnhancementHistory([], NOW)
+
+    expect(fetchEnhancementHistory).not.toHaveBeenCalled()
+  })
+
+  it('뒤에서 따로 받고, 받아 굳히면 지운다', async () => {
+    storedRefetches([{ kind: 'cube', dateKey: '2026-09-01' }])
+
+    await collectEnhancementRefetches(NOW)
 
     expect(fetchEnhancementHistory).toHaveBeenCalledWith(expect.anything(), 'cube', expect.anything(), { dateKey: '2026-09-01' })
     expect(refetches.removeEnhancementRefetch).toHaveBeenCalledWith('account-key', 'cube', '2026-09-01')
   })
 
-  // 스트림 요청 하나의 한도(16MB) 안에서 받게 다시 매기기와 같은 한도로 나눈다.
-  it('넥슨 로그인 계정은 한 회차에 다시 매기기와 같은 날 수만 받는다', async () => {
+  // 스트림 요청 하나의 한도(16MB) 안에서 받게 다시 매기기와 같은 한도로 나누되, 남은 날은 다음 화면 회차를 기다리지 않고 이어서 받는다.
+  it('넥슨 로그인 계정은 한 번에 60일씩 받고, 남은 날이 줄어드는 동안 이어서 받는다', async () => {
     getAuthConfig.mockResolvedValue({ login: { type: 'login', id: 'account-login', session: 's' }, mainKeyId: null, apiKeys: [] })
-    refetches.loadEnhancementRefetches.mockResolvedValue(
-      Array.from({ length: 70 }, (_, index) => ({ kind: 'cube', dateKey: `2026-0${index < 30 ? 7 : 8}-${String((index % 30) + 1).padStart(2, '0')}` })),
-    )
+    storedRefetches(loginDays(70))
 
-    await expect(measureEnhancementHistory([], NOW)).resolves.toMatchObject({ total: 60 })
+    await collectEnhancementRefetches(NOW)
+
+    expect(fetchedDays().size).toBe(70)
+    expect(fetchEnhancementHistory).toHaveBeenCalledTimes(70)
+  })
+
+  // 넥슨이 실패하는 동안 같은 날을 끝없이 부르지 않는다. 다음 화면 회차가 다시 시작한다.
+  it('한 번 받고도 남은 날이 줄지 않으면 멈춘다', async () => {
+    getAuthConfig.mockResolvedValue({ login: { type: 'login', id: 'account-login', session: 's' }, mainKeyId: null, apiKeys: [] })
+    storedRefetches(loginDays(70))
+    fetchEnhancementHistory.mockRejectedValue(new Error('down'))
+
+    await collectEnhancementRefetches(NOW)
+
+    expect(fetchEnhancementHistory).toHaveBeenCalledTimes(60)
+  })
+
+  // 화면 회차가 끝날 때마다 부른다. 겹쳐 돌면 같은 날을 두 번 받는다.
+  it('한 번에 한 받기만 돈다', async () => {
+    storedRefetches([{ kind: 'cube', dateKey: '2026-09-01' }])
+
+    await Promise.all([collectEnhancementRefetches(NOW), collectEnhancementRefetches(NOW)])
+
+    expect(fetchEnhancementHistory).toHaveBeenCalledTimes(1)
   })
 })
 

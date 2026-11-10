@@ -46,6 +46,30 @@ export async function saveDatedName(ocid: string, dateKey: string, value: DatedN
   )
 }
 
+/** 적어 둔 그날 이름에 그 이름이 있는 ocid. 이름을 바꾼 캐릭터의 옛 이름 줄을 그 캐릭터부터 물을 때 쓴다. */
+export async function getOcidsNamed(name: string): Promise<string[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(`SELECT DISTINCT ocid FROM character_dated_names WHERE name = ?`, [name])
+  return (values ?? []).map((row) => row.ocid as string)
+}
+
+/**
+ * ocid 마다 값이 없던 것을 아는 가장 늦은 날. 캐릭터 값은 처음 값이 온 날부터 이어져서 그 앞 날짜에도 값이 없을 것이다. 적어 둔
+ * 값이 없는 ocid 는 빠진다.
+ */
+export async function getNoValueThroughDates(ocids: readonly string[]): Promise<Map<string, string>> {
+  const through = new Map<string, string>()
+  if (ocids.length === 0) return through
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT ocid, MAX(history_date) AS through FROM character_dated_names
+      WHERE name IS NULL AND ocid IN (${ocids.map(() => '?').join(', ')}) GROUP BY ocid`,
+    [...ocids],
+  )
+  for (const row of values ?? []) through.set(row.ocid as string, row.through as string)
+  return through
+}
+
 /** `getDatedNames` 의 열쇠. */
 export function datedNameKey(ocid: string, dateKey: string): string {
   return keyOf(ocid, dateKey)
