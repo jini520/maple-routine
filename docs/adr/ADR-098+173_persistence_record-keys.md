@@ -99,7 +99,7 @@ uuid 를 JS 가 아니라 SQLite 가 만드는 이유는 `storage/sqlite/uuid.ts
     줄이 그 날을 더 많이 담는다. `character_accounts` · `cashbook_entries` 는 계정 칸이 `UNIQUE` 에 없어 그대로 옮긴다.
   - 기록을 먼저 옮기고 인증 수단을 저장한다. 저장이 실패해도 기록은 아직 살아 있는 키의 `id` 아래에 있다.
 - 넥슨 자격(`NexonCredential`)도 `accountId` 를 든다. 저장 전에 검증하는 키는 아직 계정이 없어 `null` 이다.
-- 메인 계정은 로그인이 있으면 로그인, 없으면 첫 번째 키다. 지금 넥슨을 부를 때 고르는 자격(`credentialOf`)과 같다.
+- 메인 계정은 로그인이 있으면 로그인, 없으면 로그인 없이 쓰는 메인 키다([[ADR-101]] 결정 5). 메인 계정의 자격(`credentialOf`)과 같다.
 
 ### 결정 6. 계정 단위로 받는 표에 `nexon_account_id` 칸을 둔다
 

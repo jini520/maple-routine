@@ -53,7 +53,7 @@
 | 경우 | 싣는 헤더 |
 |---|---|
 | 넥슨 로그인 세션이 있다 | `Authorization: Bearer <세션>` 하나 |
-| 키만 있다 | `x-api-key-hash: <첫 키의 SHA-256, 소문자 16진 64자>` 하나 |
+| 키만 있다 | `x-api-key-hash: <메인 키의 SHA-256, 소문자 16진 64자>` 하나. 부계정 키로는 밝히지 않는다 |
 | 둘 다 없다 | 보내지 않는다(`serverIdentityHeaders` 가 `null`) |
 
 API 키 원문은 서버로 가지 않는다.

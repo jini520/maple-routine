@@ -1,7 +1,7 @@
 # ADR-101+186 다계정: 넥슨 로그인 아래에 API 키 계정을 더 등록한다
 
 > ⚪ 미구현
-> 관련 소스: `storage/api-key.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/enhancement-history/collect.ts` · `features/cashbook/account-names.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts`
+> 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/collect.ts` · `features/cashbook/account-names.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts`
 
 ## 배경
 
@@ -75,15 +75,43 @@
   로그인 사용자가 나눠 쓰는 한도라, 부계정의 호출까지 얹지 않는다.
 - `character/list` 와 강화 내역(`history/*`)은 넥슨 계정마다 따로 받는다. 강화 내역은 이미 넥슨 계정 id 로 조회 기록을 나눈다.
 - 한 계정의 조회가 실패해도 다른 계정의 캐릭터는 그대로 동기화한다. 한 계정의 실패로 모든 캐릭터가 멈추면 안 된다.
+  - 한 계정의 `character/list` 가 실패하면 그 계정의 추적 캐릭터는 그 회차에서 부르지 않고 캐시를 그대로 둔다. 목록에 없다고
+    월드 이전 후보나 `조회 불가` 로 넘기지 않는다. 목록을 못 받은 것이지 캐릭터가 사라진 것이 아니기 때문이다.
+  - 스케줄 회차는 첫 캐릭터를 먼저 불러 자격 전체가 막혔는지(무효 키 · 429 · 로그인 만료 · 점검) 보는데, 이것을 계정마다 한다.
+    한 계정의 키가 막혀도 다른 계정은 그대로 부른다.
+- 어느 계정의 캐릭터인지 모르는 캐릭터(`character_accounts` 에 계정 칸이 없는 캐릭터)는 메인 계정의 자격으로 부른다. 계정 칸이
+  생기기 전의 기록은 모두 메인 계정의 자격으로 받았기 때문이다([[ADR-098]] 결정 6). 계정은 알지만 그 계정의 자격이 없는 캐릭터는
+  부르지 않는다. 다른 계정의 자격으로 부르면 `조회 불가` 가 되기 때문이다.
 - 넥슨을 부르는 곳이 모두 이 규칙을 따른다. 스케줄 회차 · 백그라운드 갱신 · 13일 창 · 처치 날짜 · 월드 이전 찾기 · 강화 수집 ·
   MVP 등급 · 가계부의 메이플 ID 이름 · 캐릭터 관리 목록이다.
 
-### 결정 5. 넥슨 로그인이 만료되거나 떨어지면 부계정 조회를 멈춘다
+### 결정 5. 부계정 키는 등록한 넥슨 로그인에 귀속되고, 그 로그인이 살아 있을 때만 부른다
 
-- 부계정 키는 지우지 않고, 다시 로그인할 때까지 부계정의 캐릭터를 부르지 않는다(사용자 지정 2026-11-08). 다계정은 넥슨 로그인
-  사용자의 기능이고, 어느 부계정이 이 사용자의 것인지는 로그인에 붙은 목록(결정 6)이 정하기 때문이다.
-- 그래서 로그인이 없을 때 부계정 키를 메인 계정으로 쓰지 않는다. 지금은 로그인이 지워지면 첫 키가 메인이 된다(`credentialOf`).
-- 로그인 만료와 동의 철회는 키 문제(결정 15)가 아니다. 로그인 화면으로 가고, 같은 넥슨 ID 로 다시 로그인하면 부계정 조회가 이어진다.
+- 키마다 그 키를 부계정으로 등록한 넥슨 로그인의 계정 id(`loginId`)를 적는다(사용자 선택 2026-11-10). 앱은 지금 로그인과 같은 id 가
+  적힌 키만 부계정으로 부른다. 다계정은 넥슨 로그인 사용자의 기능이고, 어느 부계정이 이 사용자의 것인지는 로그인이 정하기
+  때문이다(결정 6).
+- 로그인이 만료되거나, 동의를 철회하거나, 로그아웃해도 부계정 키는 지우지 않고 그 로그인에 귀속된 채 남긴다(사용자 지정 2026-11-08 ·
+  11-10). 다시 로그인할 때까지 부계정의 캐릭터를 부르지 않는다.
+  - 같은 넥슨 ID 로 다시 로그인하면 결정 16 이 같은 계정 id 를 이어, 그 로그인의 부계정이 그대로 이어진다(사용자 지정 2026-11-10).
+  - 다른 넥슨 ID 로 로그인하거나 API 키로 로그인하면 앞 로그인의 부계정 키는 이어지지 않는다(사용자 지정 2026-11-10). 계정 id 가
+    달라 보이지 않고 부르지도 않는다. 나중에 today 의 `넥슨 ID 연동하기` 로 그 넥슨 ID 를 붙이면 다시 이어진다.
+  - 계정 삭제도 로그아웃과 같이 부계정 키를 남긴다. 계정 삭제는 서버에 예약한 뒤 로그아웃하는 것이고([[ADR-017]] 결정 7), 유예 30일
+    안에 같은 넥슨 ID 로 돌아오면 예약을 취소할 수 있기 때문이다.
+- 로그인 없이 쓰는 메인 키는 따로 적는다(`mainKeyId`). 메인 계정은 로그인이 있으면 로그인이고, 없으면 이 키다(`credentialOf`).
+  부계정 키를 메인 계정으로 쓰지 않는다. 부계정 키만 남으면 부를 수단이 없는 것으로 보고 로그인 화면으로 간다.
+  - 귀속과 메인 표시를 따로 두는 이유는, 로그아웃 뒤 로그인 화면에서 앞 로그인의 부계정 키를 넣을 수 있기 때문이다. 그 키는 메인
+    키가 되지만 귀속은 그대로라, 나중에 그 넥슨 ID 로 다시 로그인하면 다시 부계정으로 이어진다.
+  - 로그아웃하면 메인 키는 지운다. 어느 로그인에도 귀속되지 않아 다시 이을 곳이 없다. 앞 로그인의 부계정 키를 메인으로 쓰고
+    있었으면 메인 표시만 지우고 키는 귀속된 채 남긴다.
+- 로그인 화면에서 로그인하면(넥슨 로그인 · API 키) 새 로그인이라 앞 메인 수단을 버린다(사용자 지정 2026-11-10). 귀속되지 않은 키는
+  지우고, 넥슨 로그인이 남아 있었으면 그 로그인을 뗀다. 온보딩 중에 로그인 화면으로 돌아가 다른 수단으로 다시 들어오는 경우다.
+  앞 키를 남기면 그 키가 계속 메인이라, 새 수단의 캐릭터를 앞 키로 불러 `조회 불가` 가 된다.
+- today 의 `넥슨 ID 연동하기` 는 새 로그인이 아니다(결정 14). 메인 키는 지우지 않고 그 로그인의 부계정이 된다. 그 키가 앞 로그인의
+  부계정 키였어도 지금 쓰는 계정이라 새 로그인으로 귀속을 옮긴다. 옮기지 않으면 지금 쓰던 계정의 캐릭터를 부를 수 없다.
+- 두 칸이 생기기 전에 저장된 수단은 이렇게 읽는다. 로그인이 있으면 키는 모두 그 로그인의 부계정이다. 로그인과 함께 남은 키는
+  로그인이 거두지 않은 다른 넥슨 계정의 키였기 때문이다. 로그인이 없으면 키는 귀속이 없고 첫 키가 메인 키다. 지금까지 첫 키가
+  메인이었다.
+- 로그인 만료와 동의 철회는 키 문제(결정 15)가 아니다. 로그인 화면으로 간다.
 
 ### 결정 6. 부계정 목록은 서버가 넥슨 로그인에 붙여 들고, 앱은 서버가 준 목록만 쓴다
 
@@ -394,6 +422,16 @@
 | 파일 | 확인하는 것 |
 |---|---|
 | `nexon/__tests__/key-stage.spec.ts` | 결정 3: 개발 단계 판정이 20건을 키의 초당 상한을 거치지 않고 동시에 보내는지 본다 |
+| `lib/__tests__/nexon-credential.spec.ts` | 결정 4: 캐릭터가 속한 넥슨 계정의 자격을 고르고, 계정을 모르면 메인 계정, 자격이 없는 계정이면 `null` 인지 본다. 결정 5: 로그인이 있으면 로그인과 그 로그인에 귀속된 부계정 키만 쓰고, 없으면 메인 키 하나만 쓰는지, 귀속된 키도 메인 키가 될 수 있는지 본다 |
+| `features/auth/__tests__/current-credential.spec.ts` | 결정 4: 캐릭터마다 소속에서 자격을 고르고, 소속을 못 읽으면 메인 계정으로 부르는지 본다 |
+| `storage/sqlite/__tests__/record-keys-real-sqlite.test.ts` | 결정 4: 캐릭터마다 마지막으로 본 소속의 넥슨 계정을 찾고, 계정을 모르는 소속은 건너뛰는지 본다 |
+| `features/schedule-sync/__tests__/schedule-sync.spec.ts` | 결정 4: 회차가 캐릭터마다 그 계정의 자격으로 부르는지, 목록을 못 받은 계정의 캐릭터를 캐시로 세우고 그 키를 실어 조회 불가로 적지 않는지, 키가 막힌 계정만 폴백하는지, 자격이 없는 캐릭터를 묻지 않는지, 목록 밖 캐릭터를 그 계정의 자격으로 묻는지, 후보 목록이 고른 메이플 ID 의 계정으로 부르고 그 계정의 실패를 키와 함께 던지는지 본다 |
+| `features/schedule-window/__tests__/window.spec.ts` | 결정 4: 13일 창이 캐릭터마다 그 계정의 자격으로 부르고 키의 동시 상한을 키마다 세는지 본다 |
+| `features/boss-profit/__tests__/defeat-dates.spec.ts` | 결정 4: 처치 날짜를 캐릭터마다 그 계정의 자격으로 묻고 자격이 없으면 묻지 않는지 본다 |
+| `features/enhancement-history/__tests__/collect.spec.ts` | 결정 4: 강화 내역을 계정마다 그 계정의 자격으로 받아 그 계정 id 로 적는지, 한 계정의 실패가 다른 계정의 날을 막지 않는지, 옛 원본을 옮길 스페셜 이름은 메인 계정에서만 오는지 본다 |
+| `features/cashbook/__tests__/meso-rate.spec.ts` · `remembered-levels.spec.ts` | 결정 4: 메획 · 심볼 · 헥사 레벨을 그 캐릭터가 속한 계정의 자격으로 받는지 본다 |
+| `storage/__tests__/api-key.spec.ts` | 결정 5: 로그아웃 · 로그인 만료가 부계정 키를 귀속된 채 남기는지, 같은 계정 id 로 다시 로그인하면 이어지고 다른 id 면 이어지지 않는지, 로그인 화면의 로그인이 귀속 없는 키를 버리고 연동은 메인 키를 부계정으로 옮기는지, 앞 로그인의 부계정 키로 키 로그인하면 귀속을 든 채 메인이 되는지, 두 칸이 없던 옛 수단을 읽는지 본다 |
+| `features/auth/__tests__/store.spec.ts` · `features/app-entry/__tests__/stage.spec.ts` | 결정 5: 부계정 키만 남으면 로그인 상태가 아니고 로그인 화면으로 가며 키를 지우지 않는지 본다 |
 | `features/auth/__tests__/nexon-login.spec.ts` | 결정 14: 로그인 화면의 넥슨 로그인만 세션을 받은 뒤 저장하기 전에 추적 목록을 비우는지, 연동 시트와 창을 닫거나 세션을 못 받은 로그인은 비우지 않는지 본다 |
 | `features/auth/__tests__/store.spec.ts` | 결정 14: 키 입력이 키를 저장하기 전에 추적 목록을 비우고, 무효 키 · 개발 단계 키는 비우지 않는지 본다. 로그인 화면과 연동 시트가 새 로그인 여부를 다르게 넘기는지 본다. 결정 20: 키 입력이 소속을 키를 저장한 뒤 그 키의 계정 id 로 적고, 막힌 키는 적지 않는지 본다 |
 | `features/character-selection/__tests__/forget.spec.ts` | 결정 14: 저장소 · 쿼리 캐시 · 메모리의 추적 목록 · 대표 · 마지막에 고른 캐릭터를 모두 비우는지, 비우기 전에 시작한 조회가 늦게 끝나도 앞 목록이 캐시에 돌아오지 않는지 본다 |
