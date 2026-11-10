@@ -67,14 +67,26 @@ it('보스가 없는 캐릭터도 읽는다', async () => {
 })
 
 describe('월드 리프 옮기기', () => {
+  const keepAll = (): boolean => true
+
   it('기록 속 옛 ocid 를 새 ocid 로 바꾼다', async () => {
     await setBossProfitCalculatorRecords([기록])
 
-    await moveBossProfitCalculatorRecordsToOcid('ocid-1', 'ocid-9')
+    await moveBossProfitCalculatorRecordsToOcid('ocid-1', 'ocid-9', keepAll)
 
     const [moved] = await getBossProfitCalculatorRecords()
     expect(moved!.characters.map((each) => each.ocid)).toEqual(['ocid-9'])
     expect(moved!.characters[0]!.bosses).toEqual(기록.characters[0]!.bosses)
+  })
+
+  // 새 캐릭터가 잡을 수 없는 보스(일반 월드로 리프한 캐릭터의 시즌 보스)는 넘기지 않는다. 어느 보스인지는 부르는 쪽이 고른다.
+  it('넘길 보스 줄만 새 캐릭터로 옮긴다', async () => {
+    await setBossProfitCalculatorRecords([기록])
+
+    await moveBossProfitCalculatorRecordsToOcid('ocid-1', 'ocid-9', (boss) => boss.bossKey !== 'lotus')
+
+    const [moved] = await getBossProfitCalculatorRecords()
+    expect(moved!.characters).toEqual([{ ocid: 'ocid-9', bosses: [기록.characters[0]!.bosses[0]] }])
   })
 
   // 기록을 열면 추적 중인 캐릭터만 보이는데 목록 금액은 기록의 캐릭터를 모두 더한다. 옛 캐릭터를 남기면 두 금액이 갈린다.
@@ -87,7 +99,7 @@ describe('월드 리프 옮기기', () => {
     }
     await setBossProfitCalculatorRecords([기록, both])
 
-    await moveBossProfitCalculatorRecordsToOcid('ocid-1', 'ocid-9')
+    await moveBossProfitCalculatorRecordsToOcid('ocid-1', 'ocid-9', keepAll)
 
     const records = await getBossProfitCalculatorRecords()
     expect(records.find((one) => one.id === 기록.id)!.characters.map((each) => each.ocid)).toEqual(['ocid-9'])
