@@ -56,16 +56,18 @@
 다계정([[ADR-101]])을 위해 나눴다(사용자 선택 2026-10-26). 옛 `users` 는 한 줄에 `nexon_uid` 나 `api_key_hash` 하나를 둬서,
 한 사람이 넥슨 계정을 여럿 가질 수 없었다.
 
-- `users` 는 사람이다. `nexon_accounts` 가 자격을 든다. 한 줄이 넥슨 계정 하나이고, 칸은 `user_id` · 종류(로그인 · 키) ·
-  `nexon_uid` 또는 `api_key_hash` · 기기가 만든 계정 id 다.
+- `users` 는 사람이다. `nexon_accounts` 의 한 줄이 넥슨 ID 하나이고, 칸은 `user_id` · 넥슨 로그인으로 확인한 `nexon_uid` ·
+  기기가 만든 계정 id 다. API 키는 `nexon_account_keys`, 메이플 ID 는 `nexon_account_maple_ids` 가 든다([[ADR-101]] 결정 25).
 - 기기가 만든 계정 id([[ADR-098]] 결정 5)는 사람 안에서만 유일하다. 드롭 기록 id 와 같은 이유다([[ADR-018]] 결정 7).
 - 로그인 방식과 상관없이 모든 계정의 기록을 보낸다(사용자 지정). 부계정의 기록을 어느 행에 붙이고 메인 계정과 어떻게 잇는지는
   [[ADR-101]] 결정 7 에 있다. 지금은 부계정을 등록할 수 없다.
 
 ```
-users             id · deleted_at · created_at
-nexon_accounts    id · user_id · identity_source(login · key) · nexon_uid UNIQUE · api_key_hash UNIQUE
-                  · account_record_id · created_at · updated_at        UNIQUE(user_id, account_record_id)
+users                     id · deletion_requested_at · created_at
+nexon_accounts            id · user_id · nexon_uid UNIQUE · account_record_id · referral_code UNIQUE
+                          · created_at · updated_at        UNIQUE(user_id, account_record_id)
+nexon_account_keys        id · nexon_account_id · api_key_hash UNIQUE
+nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 ```
 
 ### 결정 6. 기기의 넥슨 계정 id 는 쓰기 요청마다 신원 헤더 옆에 싣는다
@@ -102,3 +104,5 @@ nexon_accounts    id · user_id · identity_source(login · key) · nexon_uid UN
   결정을 지우고 남은 결정을 다시 번호 매겼다
 - (2026-11-08) 결정 5 에서 키를 부계정으로 등록할 때 키 사용자를 메인 사람 밑으로 합치는 것을 걷었다. 부계정 기록은 부계정 행에 붙고 메인 계정과는 등록
   정보로 잇는다([[ADR-101]] 결정 7)
+- (2026-11-10) 결정 5 의 계정 표를 [[ADR-101]] 결정 25 에 맞췄다. 넥슨 계정 줄은 넥슨 ID 하나에 하나이고, 키 해시와 메이플 ID 를 따로
+  표로 둔다
