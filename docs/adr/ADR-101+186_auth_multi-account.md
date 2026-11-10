@@ -591,6 +591,9 @@
 | 서버 `modules/identity/sub-accounts.controller.spec.ts` · `me.controller.spec.ts` | 결정 6 · 25: 부계정 경로 셋이 세션만 받고 같은 넥슨 ID · 다섯째를 409 로 돌려주는지, 메이플 ID 알리기가 그 신원의 넥슨 계정에 적고 그 계정이 가진 메이플 ID 를 돌려주는지 본다 |
 | 서버 `database/nexon-account-identity-migration.spec.ts` | 결정 21: 이관이 키 해시를 키 표로 옮기고, 한 사람의 로그인 줄과 키 줄을 로그인 줄 하나로 합치고, 강화 이상 보고를 넥슨 계정 줄이 하나인 사람만 채우는지 본다 |
 | 서버 `modules/enhancement-anomalies/*.spec.ts` | 결정 21: 한 사람 밑의 두 넥슨 계정이 같은 열쇠로 서로 덮지 않는지 본다 |
+| 서버 `modules/drop-prices/drop-prices.repository.spec.ts` · `drop-prices.controller.spec.ts` | 결정 19 · 24 · 25: 남의 메이플 ID 면 적지 않고 409 인지(묶음은 그 건만 실패), 같은 드롭이 이미 있으면 누가 보냈든 적지 않는지, 같은 메이플 ID · 기록 id 로 다시 오면 그 줄을 고치고 리프로 ocid 가 바뀌어도 같은 줄인지, 고친 값이 다른 줄과 같은 드롭이 되면 고침을 적지 않는지, 지운 줄은 같은 드롭 판정에서 빠지는지, 옛 줄에 넥슨이 준 값을 채우고 채우다 같은 드롭이 되면 먼저 들어온 줄을 남기는지, 계정을 지우면 메이플 ID 는 비고 ocid 는 남아 돌아와 다시 보내도 줄이 늘지 않는지, 메이플 ID · ocid · 몇 번째가 셋 다 오거나 셋 다 없어야 하는지 본다 |
+| 서버 `modules/boss-clears/*.spec.ts` · `cashbook-entries/*.spec.ts` · `enhancement-totals/*.spec.ts` | 결정 19 · 26: 처치는 같은 메이플 ID · 기간 행이면 덮고 리프로 ocid 가 바뀌어도 같은 줄이며 같은 처치(ocid · 보스 · 기간)는 다른 기간 행 id 로 와도 적지 않는지, 가계부는 내용이 같아도 기록 id 가 다르면 따로 적는지, 강화 합계는 기록 id · 이름이 달라도 같은 합계면 한 줄인지, 셋 다 남의 메이플 ID 를 거절하고 지우기는 내 계정의 메이플 ID 줄만 지우며 계정을 지우면 함께 지워지는지 본다 |
+| 서버 `database/record-natural-keys-migration.spec.ts` | 결정 21 · 24: 이관이 기기 계정 id 칸을 걷고 옛 드롭 줄은 넥슨이 준 값이 빈 채로 남기는지 본다 |
 
 ## 번호 기록
 

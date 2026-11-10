@@ -18,7 +18,7 @@
 
 ```
 users                     id · created_at · deletion_requested_at
-nexon_accounts            id · user_id · nexon_uid(UNIQUE) · account_record_id · referral_code   넥슨 ID 하나
+nexon_accounts            id · user_id · nexon_uid(UNIQUE) · referral_code                       넥슨 ID 하나
 nexon_account_keys        id · nexon_account_id · api_key_hash(UNIQUE)                           API 키 하나
 nexon_account_maple_ids   id · nexon_account_id · maple_id(UNIQUE)                               메이플 ID 하나
 ```
@@ -110,8 +110,8 @@ users   id · created_at · deletion_requested_at   NULL 이 아니면 삭제 �
 
 | 표 | 계정 삭제 때 | 이유 |
 |---|---|---|
-| `drop_prices` · `usage_events` · `enhancement_anomalies` | `user_id` 를 비우고 줄은 남긴다. 강화 이상 보고는 넥슨 계정 칸도 비운다 | 시세 통계와 사용 통계가 사람이 나갈 때마다 흔들리면 안 된다(사용자 지정). 줄에는 기기가 만든 무작위 id 와 게임 값만 있어, 사람과의 연결을 끊으면 누구의 것인지 알 수 없다 |
-| `boss_clears` · `cashbook_entries` · `enhancement_totals` | 사람과 함께 지운다 | 옛 앱이 보낸 표라 지금은 쓰지 않는다([[ADR-099]] 결정 1). 캐릭터 식별자(`ocid` · 캐릭터 이름)가 들어 있어 연결을 끊어도 익명이 아니다. 지금 앱이 보내는 값에는 캐릭터 식별자가 없다 |
+| `drop_prices` · `usage_events` · `enhancement_anomalies` | `user_id` 를 비우고 줄은 남긴다. 드롭 가격은 메이플 ID 를, 강화 이상 보고는 넥슨 계정 칸도 비운다. 드롭의 `ocid` 는 남긴다 | 시세 통계와 사용 통계가 사람이 나갈 때마다 흔들리면 안 된다(사용자 지정). `ocid` 는 넥슨이 누구에게나 주는 공개 값이라, 남겨야 지운 뒤 돌아온 사람이 같은 드롭을 다시 보내도 줄이 늘지 않는다([[ADR-101]] 결정 24) |
+| `boss_clears` · `cashbook_entries` · `enhancement_totals` | 그 계정의 메이플 ID 줄과 함께 지운다 | 지금 앱이 보내지 않는 표다([[ADR-099]] 결정 1). 캐릭터 식별자(`ocid` · 메이플 ID)가 들어 있어 연결을 끊어도 익명이 아니다 |
 
 - 남기는 표의 `user_id` 는 `NULL` 을 받고 외래키는 `ON DELETE SET NULL` 이다. 같은 사람 안에서만 덮는 규칙([[ADR-018]] 결정 7)은
   사람이 있는 줄에만 걸린다. 연결이 끊긴 줄은 다시 고쳐지지 않는다.
@@ -231,7 +231,7 @@ K 의 사람에게 다른 줄이 없으면 그 사람의 기록을 L 의 사람�
 |---|---|
 | `drop_prices` | `user_id` 를 L 의 사람으로 바꾼다. 같은 기록이 L 의 사람에게도 있어 UNIQUE 가 겹치면 `updated_at` 이 늦은 줄을 남긴다. 같은 사람 안에서는 나중 값이 앞 값을 덮는 규칙([[ADR-018]] 결정 7)과 같다 |
 | `enhancement_anomalies` · `usage_events` | `user_id` 를 L 의 사람으로 바꾼다 |
-| `boss_clears` · `cashbook_entries` · `enhancement_totals` | 옮기지 않고 K 의 사람과 함께 지운다. 지금 앱이 보내지 않는 옛 표라([[ADR-099]] 결정 1) 옮겨도 쓰는 곳이 없다 |
+| `boss_clears` · `cashbook_entries` · `enhancement_totals` | 옮기지 않는다. 메이플 ID 를 가리키므로, 메이플 ID 가 L 로 옮겨 가면 함께 이어진다 |
 
 - `identified_by` 는 받을 때의 값(`key`)으로 둔다(사용자 선택). 합치는 일도 해시만 보고 한 것이라, 그 줄을 믿을 수 있는 정도는
   달라지지 않는다. 이 칸은 집계 때 두 부류의 가중치를 나누려고 둔 것이다(결정 3).
@@ -300,5 +300,6 @@ referrals        id · referred_account_id(UNIQUE) · referrer_account_id · cre
   키의 사람을 로그인한 사람에 합친다(#607). 결정 4 의 저장 칸 이름을 넥슨 계정 표에 맞췄다
 - ADR-185 (2026-11-08): 결정 10 을 더했다. 넥슨 로그인 계정마다 추천인 코드를 주고, 추천 기록을 담을 `referrals` 표를 둔다. 앱은
   아직 코드를 보여 주지 않고 코드를 받는 경로도 없다
-- (2026-11-10) [[ADR-101]] 결정 21 · 25 를 서버에 구현하며 결정 1 · 5 · 6 · 9 를 고쳤다. 넥슨 계정 줄은 넥슨 ID 하나에 하나이고,
-  키 해시와 메이플 ID 를 따로 표로 둔다. 잇기는 사람이 아니라 키의 넥슨 계정 줄을 로그인 계정 줄로 합친다
+- (2026-11-10) [[ADR-101]] 결정 21 · 24 · 25 · 26 을 서버에 구현하며 결정 1 · 5 · 6 · 9 를 고쳤다. 넥슨 계정 줄은 넥슨 ID 하나에
+  하나이고, 키 해시와 메이플 ID 를 따로 표로 둔다. 잇기는 사람이 아니라 키의 넥슨 계정 줄을 로그인 계정 줄로 합친다. 기록 표는 메이플
+  ID 를 가리켜 계정 삭제 때 메이플 ID 와 함께 지워지거나(드롭은) 그 칸만 빈다
