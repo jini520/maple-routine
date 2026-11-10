@@ -51,7 +51,7 @@ import { ensureEnhancementTotals } from '../enhancement-history/legacy-totals'
 import { getMvpGradeHistories } from '../../storage/mvp-grades'
 import { getCharacterAccountSightings } from '../../storage/character-accounts'
 import type { MvpGradeEntry } from '../../lib/mvp/history'
-import { starforceMvpDiscountResolver } from '../../lib/mvp/starforce'
+import { starforceMvpDiscountOf } from '../../lib/mvp/starforce'
 import { withMvpDiscount } from '../../lib/enhancement/cost'
 import { loadEnhancementTotals } from '../../storage/enhancement-totals'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
@@ -330,6 +330,9 @@ async function loadBossDaySummaries(
 /** 화면이 쓰는 강화 합계 한 줄. MVP 할인을 붙인 금액이다. */
 interface EnhancementSpending {
   dateKey: string
+  /** 그 줄을 붙인 캐릭터. 이름을 바꿔도 같은 값이라 이것으로 묶는다 */
+  ocid: string
+  /** 응답이 준 그날의 이름. 지금 이름을 모를 때 보인다 */
   characterName: string
   category: EnhancementCategory
   /** 장비 칸을 묶는 열쇠. 합계 표의 `item_group` 이다 */
@@ -343,22 +346,21 @@ interface EnhancementSpending {
 }
 
 /**
- * 그 범위의 강화 합계를 **금액이 붙은 줄**로. 스타포스는 그 날짜 · 그 캐릭터의 MVP 할인을 시도 비용에 붙인다.
+ * 그 범위의 강화 합계를 **금액이 붙은 줄**로. 스타포스는 그 날짜 · 그 캐릭터의 메이플 ID 의 MVP 할인을 시도 비용에 붙인다.
  *
  * 이벤트 월드 줄과 판정하지 못한 줄은 지출이 아니라 뺀다. 읽기가 실패하면 빈 목록이다. 칸이 지출을 빼고 보이지만 화면은 산다.
  */
 async function loadEnhancementSpending(fromDateKey: string, toDateKey: string): Promise<EnhancementSpending[]> {
   await ensureEnhancementTotals()
-  const [totals, histories, sightings] = await Promise.all([
+  const [totals, histories] = await Promise.all([
     withSqliteFallback(loadEnhancementTotals(fromDateKey, toDateKey), []),
     withSqliteFallback(getMvpGradeHistories(), new Map<string, MvpGradeEntry[]>()),
-    withSqliteFallback(getCharacterAccountSightings(), []),
   ])
-  const mvpDiscountOf = starforceMvpDiscountResolver(histories, sightings)
   return totals
     .filter((total) => total.eventWorld === false)
     .map((total) => ({
       dateKey: total.historyDate,
+      ocid: total.ocid,
       characterName: total.characterName,
       category: total.enhancementCategory,
       itemGroup: total.itemGroup,
@@ -371,7 +373,7 @@ async function loadEnhancementSpending(fromDateKey: string, toDateKey: string): 
         total.enhancementType === 'starforce'
           ? withMvpDiscount(
               { attemptMeso: total.attemptCostMeso, destroyDefenceMeso: total.destroyDefenceCostMeso },
-              mvpDiscountOf(total.characterName, total.historyDate),
+              starforceMvpDiscountOf(histories, total.accountId, total.historyDate),
             )
           : total.attemptCostMeso + total.destroyDefenceCostMeso,
     }))
@@ -413,6 +415,7 @@ export async function loadMonthDays(
       ...incomes.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
       ...spends.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
       ...bossSummaries.map((summary) => summary.ocid),
+      ...enhancements.map((row) => row.ocid),
     ]),
     loadAccountLabels([
       ...new Set([...incomes, ...spends].flatMap((record) => (record.accountId === undefined ? [] : [record.accountId]))),
@@ -440,7 +443,7 @@ export async function loadMonthDays(
     bucketOf(summary.dateKey).auto.push(...toAutoRecords([summary], names))
   }
   for (const [dateKey, rows] of groupByDate(enhancements)) {
-    bucketOf(dateKey).auto.push(...toEnhancementRecords(rows))
+    bucketOf(dateKey).auto.push(...toEnhancementRecords(rows, names))
   }
   for (const record of incomes) {
     bucketOf(record.earnedOn).manual.push({
@@ -630,13 +633,15 @@ export interface SoldItem {
  * **자동 줄인데 지출이다.** 앞의 둘과 갈리는 자리가 이것뿐이고, `dayTotalsOf` 와 화면의 아이콘이
  * 그 하나를 안다.
  *
- * `ocid` 가 없다. 계정 단위 API 라 이름만 온다. 그래서 초상이 안 붙는다.
+ * 강화 응답은 이름만 주지만, 합계 줄은 그날 그 이름이었던 캐릭터(ocid)에 붙어 있다. 그래서 이름을 바꾼 캐릭터의 줄도 한
+ * 캐릭터로 묶인다.
  */
 export interface EnhancementDayRecord {
   kind: 'enhancement'
-  /** 갈래 key. 이름과 함께 이 줄의 신원이다. 제목에 적는 글자는 갈래 표에서 찾는다 */
+  /** 갈래 key. 캐릭터와 함께 이 줄의 신원이다. 제목에 적는 글자는 갈래 표에서 찾는다 */
   category: EnhancementCategory
-  /** 이름뿐이다 */
+  ocid: string
+  /** 그 캐릭터의 지금 이름. 모르면 그날의 이름이다 */
   characterName: string
   /** 그날 쓴 메소. 스타포스는 MVP 할인을 붙인 값이다 */
   payoutMeso: number
@@ -685,10 +690,8 @@ export function isManualRecord(entry: DayRecord): entry is ManualDayRecord {
  */
 export function rowKeyOf(entry: DayRecord): string {
   if (isManualRecord(entry)) return entry.record.id
-  // 강화 줄은 `ocid` 가 없다. 하루에 캐릭터 하나가 갈래마다 한 줄이라 그 둘이 신원이다.
-  return entry.kind === 'enhancement'
-    ? `${entry.kind}:${entry.category}:${entry.characterName}`
-    : `${entry.kind}:${entry.ocid}`
+  // 강화 줄은 하루에 캐릭터 하나가 갈래마다 한 줄이라 그 둘이 신원이다.
+  return entry.kind === 'enhancement' ? `${entry.kind}:${entry.category}:${entry.ocid}` : `${entry.kind}:${entry.ocid}`
 }
 
 /**
@@ -712,21 +715,25 @@ function isEmptySpend(entry: DayRecord): boolean {
 }
 
 /**
- * 강화 합계를 **캐릭터 · 분류마다 한 줄**로 접는다. 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
+ * 강화 합계를 **캐릭터(ocid) · 분류마다 한 줄**로 접는다. 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
  *
  * 펼친 장비 칸은 합계 표의 `item_group` 으로 묶는다. 이름은 처음 든 합계의 API 이름이다.
  */
-function toEnhancementRecords(rows: readonly EnhancementSpending[]): EnhancementDayRecord[] {
+function toEnhancementRecords(
+  rows: readonly EnhancementSpending[],
+  names: ReadonlyMap<string, string>,
+): EnhancementDayRecord[] {
   const groups = new Map<string, { record: EnhancementDayRecord; items: Map<string, EnhancedItem> }>()
   for (const row of rows) {
-    const key = `${row.category}|${row.characterName}`
+    const key = `${row.category}|${row.ocid}`
     let group = groups.get(key)
     if (group === undefined) {
       group = {
         record: {
           kind: 'enhancement',
           category: row.category,
-          characterName: row.characterName,
+          ocid: row.ocid,
+          characterName: names.get(row.ocid) ?? row.characterName,
           payoutMeso: 0,
           count: 0,
           items: [],

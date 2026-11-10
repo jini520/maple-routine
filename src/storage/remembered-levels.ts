@@ -49,3 +49,18 @@ export async function hasRememberedLevels(ocid: string): Promise<boolean> {
   const result = await db.query(`SELECT 1 FROM remembered_levels WHERE ocid = ? LIMIT 1`, [ocid])
   return (result.values ?? []).length > 0
 }
+
+/** 월드 리프한 캐릭터의 기억을 새 ocid 로 옮긴다. 새 캐릭터에 같은 대상의 기억이 있으면 리프 뒤의 그 값을 둔다. */
+export async function moveRememberedLevelsToOcid(fromOcid: string, toOcid: string): Promise<void> {
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    await db.run(
+      `UPDATE remembered_levels SET ocid = ?
+        WHERE ocid = ? AND NOT EXISTS (
+          SELECT 1 FROM remembered_levels mine
+           WHERE mine.ocid = ? AND mine.kind = remembered_levels.kind AND mine.item_key = remembered_levels.item_key)`,
+      [toOcid, fromOcid, toOcid],
+    )
+    await db.run(`DELETE FROM remembered_levels WHERE ocid = ?`, [fromOcid])
+  })
+}

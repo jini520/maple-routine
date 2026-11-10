@@ -1,7 +1,7 @@
 # ADR-100+174+189 강화 내역을 계산한 합계로 저장하고, 다시 매길 기간은 환경 변수로 건다
 
 > 🟢 유효
-> 관련 소스: `features/enhancement-history/spending.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/legacy-totals.ts` · `lib/enhancement/world.ts` · `lib/world/worlds.ts` · `storage/enhancement-totals.ts` · `storage/event-world-characters.ts` · `storage/sqlite/enhancement-tables.ts` · `lib/enhancement/cost.ts` · `features/cashbook/records.ts` · `app/cashbook/CashbookScreen.tsx` · 서버 `database/schema.ts`(`world_periods`) · 서버 `modules/worlds/worlds.repository.ts` · 서버 `modules/admin/`
+> 관련 소스: `features/enhancement-history/spending.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/owners.ts` · `features/enhancement-history/legacy-totals.ts` · `lib/enhancement/world.ts` · `lib/enhancement/sighted-owner.ts` · `lib/world/worlds.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/enhancement-tables.ts` · `lib/enhancement/cost.ts` · `features/cashbook/records.ts` · `app/cashbook/CashbookScreen.tsx` · 서버 `database/schema.ts`(`world_periods`) · 서버 `modules/worlds/worlds.repository.ts` · 서버 `modules/admin/`
 
 ## 배경
 
@@ -42,8 +42,10 @@ SQLite 버전 이관이 아니라 앱이 켜진 뒤 한 번 도는 단계(`ensur
 - 수집기와 가계부가 합계를 읽기 전에 이 단계를 기다린다. 다 옮기면 Preferences `enhancementTotalsMoved` 에 적고 다시 돌지 않는다.
 - 메인 계정이나 이름 목록이 아직 없으면 옮기지 않고 다음 호출이 다시 본다. 이름 목록 없이 옮기면 판정이 빈 줄이 남는데, 옛
   날짜는 굳어 있어 다시 받지 않으므로 그 지출이 영영 안 보이기 때문이다.
-- 옛 `enhancement_history` 는 v1.0.13 에서 이 단계만 읽고 두었다가 v1.0.14 에서 지운다(사용자 선택, #685). [[ADR-078]] 결정 9 와
-  같은 이유다.
+- 옛 `enhancement_history` 는 이 단계만 읽는다. 다 옮기면 지우고, 이미 옮긴 기기는 켤 때 지운다(사용자 선택, #685 ·
+  [[ADR-101]] 결정 27). 새 기기에는 만들지 않는다. 여러 버전을 건너뛰어 올라온 기기도 옮긴 뒤에 지우므로 옛 지출을 잃지 않는다.
+  옮길 때 넥슨을 부를 수 없어, 줄은 앱이 그 이름으로 본 기간으로만 캐릭터에 붙인다. 붙이지 못한 줄의 날은 다시 받을 날로 적어
+  수집기가 넥슨에서 그날 이름을 찾게 한다([[ADR-101]] 결정 18).
 
 ### 결정 4. 다시 매길 기간은 `EXPO_PUBLIC_*` 환경 변수로 걸고, 끝나면 넥슨 계정마다 완료를 적는다
 
@@ -69,7 +71,7 @@ SQLite 버전 이관이 아니라 앱이 켜진 뒤 한 번 도는 단계(`ensur
   않는다. 회차 하나가 넥슨을 동시에 4건까지만 부르기 때문이다(서버 `FRIENDS_FANOUT`).
 - API 키 계정은 앱이 넥슨을 직접 부르므로 나누지 않는다.
 
-### 결정 5. 이벤트 월드인지는 저장할 때 판정해 합계 줄에 적고, 회차가 끝나면 목록에 없는 이름을 다시 본다
+### 결정 5. 이벤트 월드인지는 저장할 때 판정해 합계 줄에 적는다
 
 이벤트 월드(스페셜 · 스페셜2) 캐릭터의 강화는 지출에서 뺀다([[ADR-047]] 결정 11). 원본을 버리면 읽을 때 응답을 다시 볼 수
 없어, 받는 회차가 판정해 합계 줄의 `event_world` 칸에 적는다(사용자 선택 2026-10-26). 칸의 값은 셋이다. 이벤트 월드는 `1`,
@@ -78,16 +80,15 @@ SQLite 버전 이관이 아니라 앱이 켜진 뒤 한 번 도는 단계(`ensur
 **스타포스는 그 줄의 `world_name` 으로 판정한다.** 그 시도를 한 때의 월드라 지금 캐릭터 목록보다 정확하다. 캐릭터를 지워도
 줄에 남는다.
 
-**큐브 · 잠재 · 소울은 응답에 월드가 없어 캐릭터 이름으로 판정한다.** 근거는 차례대로 둘이다(사용자 지정 2026-11-09).
+**큐브 · 잠재 · 소울은 응답에 월드가 없어 줄을 붙인 캐릭터의 월드로 판정한다.** 합계 줄은 그날 그 이름이었던 캐릭터(ocid)에
+붙는다([[ADR-101]] 결정 18). 같은 ocid 의 월드는 바뀌지 않는다(사용자 확인 2026-11-10). 캐릭터의 월드는 그 계정의 목록에 있으면
+목록의 월드 이름이고, 없으면(지운 캐릭터) 소속 기록에 적힌 월드다. 그것도 모르면 일반 월드로 센다. 모름으로 두면 그 날이 굳지
+않아 같은 날을 끝없이 다시 받는다.
 
-1. 그 회차에 받은 캐릭터 목록. 이름이 목록에 있으면 그 캐릭터의 월드로 판정한다. 목록이 1순위다.
-2. 스타포스 기록에서 남겨 둔 이름. 이벤트가 끝나기 전에 캐릭터를 지우면 목록에서 사라진다. 그래서 수집기는 이벤트 월드의
-   스타포스 줄을 받을 때마다 그 캐릭터 이름과 월드를 기기 표 `event_world_characters` 에 남긴다. 목록에 없는 이름이 이 표에
-   있고, 그 줄의 날짜가 그 월드의 기간(결정 9) 안이면 이벤트 월드로 판정한다.
-
-목록에도 없고 남겨 둔 이름도 아니면 일반 월드로 센다. 남겨 둔 이름이라도 기간 밖의 줄은 일반 월드로 센다. 이름 판정은
-이벤트 월드에서 쓰던 이름을 일반 월드에서 다시 만들지 않는다는 데 기댄다. 다시 만들면 그 캐릭터의 기간 안 기록도 빠지는데,
-그 경우는 무시한다(사용자 지정).
+- 리프 전 기간의 줄은 이벤트 월드의 줄이 아니다. 스페셜 월드에서 일반 월드로는 리프할 수 없다(사용자 확인 2026-11-10).
+- 캐릭터에 붙이지 못한 줄은 합계에 넣지 않으므로 판정할 줄이 없다. 그래서 이름으로 판정하던 것과 스타포스 줄에서 이름을
+  남기던 표(`event_world_characters`)를 걷었다([[ADR-101]] 결정 20). 이름으로 판정하면 이름을 바꾼 이벤트 월드 캐릭터의 지난
+  줄을 지출로 셌다.
 
 **월드 표에 없는 월드 이름은 모름이다.** 일반 월드로 세지 않는다. 2025년 이벤트 월드는 스페셜과 스페셜2 둘이었는데 표에는
 스페셜만 있었다. 그래서 스페셜2 캐릭터의 강화가 목록 · 스타포스 줄 모두에서 일반 월드로 풀려 지출로 굳었다(#932).
@@ -98,16 +99,6 @@ SQLite 버전 이관이 아니라 앱이 켜진 뒤 한 번 도는 단계(`ensur
   것을 운영자가 그 보고로 안다.
 - 월드 이름은 판정할 때 지금 월드 표에서 찾는다. 캐릭터 목록 캐시가 받은 때 찾아 둔 월드 key(`worldKey`)는 쓰지 않는다. 받은
   때 표가 비어 있었으면 key 가 비어 있고, 그 key 로 판정하면 이벤트 월드 캐릭터가 일반 월드로 풀린다.
-
-**캐릭터 목록을 못 받은 회차의 큐브 · 잠재 · 소울 줄도 모름이다.** 그 날도 굳히지 않아 다음 회차가 다시 받는다.
-
-**회차가 끝나면 목록에 없는 이름을 남겨 둔 이름으로 한 번 더 본다.** 그 계정의 큐브 · 잠재 · 소울 합계 중 `0` 인 줄의 이름이
-그 회차 목록에 없고 `event_world_characters` 에 있으며, 날짜가 그 월드의 기간 안이면 `1` 로 고친다.
-
-- 한 회차의 일은 동시에 돈다. 그래서 큐브 날짜를 스타포스 날짜보다 먼저 매기면 그 큐브 줄은 이름을 남기기 전에 판정된다.
-  그 날이 굳으면 다시 받지 않으므로 회차가 끝난 뒤에 고친다. 앞 회차들이 굳힌 줄도 같이 고쳐진다.
-- 기기 SQL 만 쓰고 넥슨을 부르지 않는다.
-- 목록을 못 받은 회차는 하지 않는다. 목록이 1순위라, 목록 없이는 이름이 목록에 없는지 알 수 없다.
 
 **스페셜2 를 넣기 전에 굳은 날은 다시 받는다.** 다시 매기기 요청 `event-world-special2-932` 로 2025-11-20 ~ 2025-12-18
 (스페셜 · 스페셜2 가 열린 날)의 네 종류를 다시 받는다(결정 4). 서버 월드 표에 스페셜2 와 기간을 넣은 뒤에 이 요청을 실은
@@ -122,22 +113,25 @@ OTA 를 낸다. 순서가 바뀌면 다시 받은 날이 다시 모름으로 남
 늘지 않는다. 결정 4 의 다시 매기기도 같은 방법으로 갈아 끼운다.
 
 - 갈아 끼울 때 같은 열쇠의 줄은 값을 고쳐 적고, 다시 만든 합계에 없는 줄은 지운다.
+- 지우는 범위는 그 넥슨 계정 id 로 적힌 줄과 그 넥슨 계정 캐릭터의 그날 줄이다([[ADR-101]] 결정 18). 한 번 받으면 그 넥슨 계정의
+  그날 줄이 모두 온다. 계정 id 만 보면 옛 번호로 적힌 같은 캐릭터의 줄이 남는다.
+- 그날 이름을 묻다 실패한 이름이 있으면 그 날을 갈아 끼우지도 굳히지도 않는다. 갈아 끼우면 그 이름의 줄이 지워진 채 굳는다.
 - 굳은 날은 지금처럼 다시 받지 않는다.
 
 ### 결정 7. 표
 
 ```
-기기 enhancement_totals   id · nexon_account_id · history_date · character_name · enhancement_type · enhancement_category
-                          · item_group · item_key · item_name · attempts · attempt_cost_meso · destroy_defence_cost_meso
-                          · from_star · to_star · event_world · updated_at
-                          UNIQUE(nexon_account_id, history_date, character_name, enhancement_category, item_group)
-기기 event_world_characters   id · nexon_account_id · character_name · world_key · updated_at
-                          UNIQUE(nexon_account_id, character_name, world_key)
+기기 enhancement_totals   id · nexon_account_id · history_date · character_name · ocid · account_id · world_key
+                          · enhancement_type · enhancement_category · item_group · item_key · item_name · attempts
+                          · attempt_cost_meso · destroy_defence_cost_meso · from_star · to_star · event_world · updated_at
+                          UNIQUE(ocid, history_date, enhancement_category, item_group)
 ```
 
-- `event_world_characters` 는 결정 5 의 남겨 둔 이름이다. 이벤트 월드의 스타포스 줄을 받을 때 더하고 지우지 않는다. 캐릭터를
-  지운 뒤에도 그 이름의 줄을 가려야 하기 때문이다. 강화 내역이 계정 단위라 계정 칸을 든다. 데이터 삭제의 `강화` 그룹이
-  합계와 함께 지운다. 합계를 지우면 다시 받으며 이름도 다시 남는다.
+- `ocid` 는 그날 그 이름이었던 캐릭터이고 `account_id` 는 그 메이플 ID 다([[ADR-101]] 결정 18). 판정 열쇠에 넥슨 계정 id 를
+  넣지 않는다. 기기가 만든 값이라 같은 넥슨 계정이 번호를 새로 받으면 같은 줄이 두 번 들어갔다. `character_name` 은 응답이 준
+  그날의 이름으로 남긴다.
+- `world_key` 는 그 줄의 월드다([[ADR-101]] 결정 22). 스타포스는 줄의 월드, 아니면 그 캐릭터의 월드이고, 리프 전 줄은 같은 기간
+  스타포스 줄의 월드다. 모르면 비어 있다.
 
 - `enhancement_type` 은 받은 API 종류(큐브 · 스타포스 · 잠재 · 소울)이고 갈아 끼우는 단위다. `enhancement_category` 는 화면의
   분류 다섯(잠재를 본 · 에디셔널로 나눈다)이다.
@@ -205,9 +199,9 @@ OTA 를 낸다. 순서가 바뀌면 다시 받은 날이 다시 모름으로 남
 | `features/enhancement-history/__tests__/spending.spec.ts` (성) | 최신 줄부터 받아도 가장 이른 시도의 강화 전 성과 가장 늦은 시도의 강화 후 성을 드는지, 중간에 성이 오르내려도 두 끝만 잇는지, 합계에 안 드는 줄은 성에도 안 드는지(결정 8) |
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (성) | 갈아 끼울 때 성 칸도 고쳐 적는지, 성 칸이 없던 옛 기기의 표에도 적히고 옛 줄은 비어 있는지(결정 8) |
 | `app/cashbook/__tests__/CashbookScreen.test.tsx` (성) | 펼친 스타포스 장비 줄이 이름 아래 줄에 `17성 → 21성` 과 횟수를 따로 세우고 성이 빈 줄은 횟수만 세우는지, 다른 분류의 줄은 한 줄인지(결정 8) |
-| `lib/enhancement/__tests__/world.spec.ts` | 목록에 있는 이름은 목록의 월드가 이기는지, 목록에 없는 이름은 남겨 둔 이름과 그 월드의 기간으로 판정하는지, 기간 밖이면 일반 월드인지, 표에 없는 월드는 목록 · 스타포스 둘 다 모름인지, 캐시의 `worldKey` 가 비어도 월드 이름으로 다시 찾는지(결정 5) |
-| `features/enhancement-history/__tests__/collect.spec.ts` (이벤트 월드) | 이벤트 월드 스타포스 줄의 이름을 남기는지, 모름 줄이 있는 날을 굳히지 않고 월드 이름을 이상 보고에 싣는지, 큐브를 먼저 매긴 회차도 끝난 뒤 이벤트 월드로 고치는지, 목록을 못 받은 회차는 고치지 않는지(결정 5) |
-| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (이벤트 월드) | 남겨 둔 이름을 같은 계정 · 이름 · 월드에 한 줄만 두는지, 다시 볼 때 목록에 없는 이름 · 기간 안 · 큐브 · 잠재 · 소울의 `0` 줄만 `1` 로 고치는지(결정 5 · 7) |
+| `lib/enhancement/__tests__/world.spec.ts` | 스타포스는 줄의 월드가 이기는지, 큐브 · 잠재 · 소울은 붙인 캐릭터의 월드로 판정하는지, 표에 없는 월드는 모름인지, 리프 전 줄과 월드를 모르는 캐릭터는 일반 월드인지, 캐시의 `worldKey` 가 비어도 월드 이름으로 다시 찾는지(결정 5) |
+| `features/enhancement-history/__tests__/collect.spec.ts` (이벤트 월드) | 모름 줄이 있는 날을 굳히지 않고 월드 이름을 이상 보고에 싣는지, 그날 이름을 묻다 실패한 날을 갈아 끼우지도 굳히지도 않는지, 그 넥슨 계정의 캐릭터를 갈아 끼우는 범위로 넘기는지(결정 5 · 6) |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (계정 범위) | 그 넥슨 계정 캐릭터의 그날 줄은 다른 계정 id 로 적혔어도 갈아 끼우는지(결정 6 · 7) |
 | `lib/world/__tests__/worlds.spec.ts` | 월드마다 기간 배열을 읽고 없으면 빈 배열인지, 기간 글자가 틀리거나 `until` 이 `from` 보다 뒤가 아니면 표 전체가 `null` 인지, 날짜가 그 월드의 기간 안인지 `until` 을 빼고 가르는지(결정 9) |
 | 서버 `modules/worlds/worlds.repository.spec.ts` (기간) | 게임 데이터 칸의 월드마다 기간을 `from` 차례로 싣고 없으면 빈 배열인지, 기간을 더하고 고치고 지우면 칸의 `updatedAt` 이 바뀌는지, 겹치거나 `until` 이 `from` 보다 뒤가 아니면 400 인지(결정 9) |
 

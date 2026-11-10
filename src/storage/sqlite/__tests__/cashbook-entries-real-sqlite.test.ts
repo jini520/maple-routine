@@ -8,9 +8,10 @@
 import { existsSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 
+import { saveCharacterProfile } from '../../character-profiles'
 import { getIncomeRecordsBetween } from '../../income'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
-import { getSpendRecordsBetween } from '../../spend'
+import { assignOwnerlessSpends, getSpendRecordsBetween, insertSpendRecord, updateSpendRecord, type SpendRecord } from '../../spend'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
 import { DB_VERSION } from '../migrations'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
@@ -206,5 +207,96 @@ describe('버전 15: 가계부 손입력 두 표를 기록 표 셋으로 옮긴�
     } finally {
       backup.close()
     }
+  })
+})
+
+// 리프로 기록을 새 ocid 로 옮겨도 기록은 그때의 월드에 남아야 한다. 그래서 적을 때의 월드를 기록이 든다.
+describe('가계부 기록의 월드', () => {
+  const 버프: SpendRecord = {
+    id: '2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a',
+    ocid: 'ocid-1',
+    spentOn: '2026-10-05',
+    category: 'buff',
+    item: null,
+    itemKey: 'seiram_elixir',
+    formItemKeys: null,
+    itemKind: null,
+    levelFrom: null,
+    levelTo: null,
+    quantity: 1,
+    mesoAmount: 4_000_000,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
+    hexa: null,
+    recordedAt: '2026-10-05T01:00:00.000Z',
+  }
+  const 메이플ID기록: SpendRecord = {
+    ...버프,
+    id: '3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6a7b',
+    ocid: null,
+    accountId: 'acc-1',
+    category: 'etc',
+    item: '패스',
+    itemKey: null,
+  }
+
+  async function saveWorld(ocid: string, world: string, worldKey: string): Promise<void> {
+    await saveCharacterProfile({ ocid, name: ocid, imageUrl: '', world, worldKey, level: 285, jobClass: '레테', updatedAt: '2026-10-01T00:00:00.000Z' })
+  }
+
+  function worldOf(id: string): unknown {
+    return all(`SELECT world_key FROM cashbook_entries WHERE id = '${id}'`)[0]?.world_key
+  }
+
+  it('캐릭터 기록은 적을 때 그 캐릭터의 프로필 월드를 채우고, 메이플 ID 기록은 비운다', async () => {
+    await saveWorld('ocid-1', '엘리시움', 'elysium')
+
+    await insertSpendRecord(버프)
+    await insertSpendRecord(메이플ID기록)
+
+    expect(worldOf(버프.id)).toBe('elysium')
+    expect(worldOf(메이플ID기록.id)).toBeNull()
+  })
+
+  // 옮긴 기록을 고칠 때 새 ocid 의 월드로 덮으면 리프 전 기록이 새 월드로 옮겨 간다.
+  it('고칠 때는 캐릭터를 바꿨을 때만 그 캐릭터의 월드로 다시 채운다', async () => {
+    await saveWorld('ocid-1', '챌린저스2', 'challengers_2')
+    await saveWorld('ocid-2', '엘리시움', 'elysium')
+    await saveWorld('ocid-3', '스카니아', 'scania')
+    await insertSpendRecord(버프)
+    real.inspect((db) => db.exec(`UPDATE cashbook_entries SET ocid = 'ocid-2' WHERE id = '${버프.id}'`))
+
+    await updateSpendRecord({ ...버프, ocid: 'ocid-2', mesoAmount: 5_000_000 })
+    expect(worldOf(버프.id)).toBe('challengers_2')
+
+    await updateSpendRecord({ ...버프, ocid: 'ocid-3' })
+    expect(worldOf(버프.id)).toBe('scania')
+  })
+
+  it('주인 모르는 옛 기록을 대표 캐릭터에 붙이면 그 캐릭터의 월드를 채운다', async () => {
+    await saveWorld('ocid-1', '엘리시움', 'elysium')
+    await insertSpendRecord({ ...버프, ocid: null })
+
+    await assignOwnerlessSpends({ ocid: 'ocid-1', accountId: 'acc-1' }, ['etc'])
+
+    expect(worldOf(버프.id)).toBe('elysium')
+  })
+
+  it('버전 19 는 이미 있는 캐릭터 기록의 월드를 그 캐릭터의 프로필 월드로 채운다', async () => {
+    await saveWorld('ocid-1', '엘리시움', 'elysium')
+    await insertSpendRecord(버프)
+    await insertSpendRecord(메이플ID기록)
+    await closeBossProfitDb()
+    real.inspect((db) => {
+      db.exec('UPDATE cashbook_entries SET world_key = NULL')
+      db.exec('PRAGMA user_version = 18')
+    })
+
+    await getBossProfitDb()
+
+    expect(worldOf(버프.id)).toBe('elysium')
+    expect(worldOf(메이플ID기록.id)).toBeNull()
   })
 })

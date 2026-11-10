@@ -12,7 +12,7 @@
 | `storage/sqlite/boss-tables.ts` | 보스 표 셋의 정의를 한 곳에 둔다. 정상 생성과 버전 4 재작성에서 함께 쓴다 · 드롭 그룹 인덱스 |
 | `storage/sqlite/cashbook-tables.ts` | 가계부 기록 표 셋의 정의 · 날짜 인덱스 |
 | `storage/sqlite/record-key-tables.ts` | 버전 16 이 uuid 기본키로 다시 쓴 다섯 표(캐릭터 · 월드 리프 · 강화 조회 기록 · MVP 등급 · 메이플 ID 소속)의 정의 |
-| `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 17) |
+| `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 19) |
 | `storage/sqlite/transaction.ts` | 쓰기 여럿을 트랜잭션 하나로 묶는 `inTransaction`. 같은 연결의 트랜잭션은 차례로 돈다. 겹쳐 열면 SQLite 가 뒤의 것을 거절하기 때문이다(앱을 켤 때 계정 칸 채우기와 강화 합계 옮기기가 겹쳤다). 그래서 `work` 안에서 다시 부르면 멈춘다 |
 | `storage/sqlite/uuid.ts` | 행 식별자를 SQLite 가 만드는 식(`NEW_UUID_SQL`) |
 | `storage/adapters/rn-sqlite.ts` | `SqlitePort` 구현(op-sqlite) |
@@ -56,14 +56,16 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `boss_parties` | `id`(uuid, `(ocid, boss_key, difficulty)` 는 UNIQUE) | 캐릭터 · 보스 · 난이도 조합. 분배 칸이 보스 관리의 파티 설정이고, 비어 있으면 정한 적이 없다 | `storage/boss-party-settings.ts` | 행 단위(분배 칸은 수동 선택 항목) | [[ADR-078]] |
 | `boss_party_periods` | `id`(uuid, `(party_id, period_key)` 는 UNIQUE) | 조합 하나의 한 기간. `cleared` 면 처치 기록(결정석 가격 · 받은 몫 · 처치 날짜 · 분배)이고, `open` 이면 그 기간만 고친 분배 값이나 드롭만 있다. 월드와 가계부에서 뺀 표식도 여기 있다 | `storage/boss-profit.ts` · `storage/boss-party-period-overrides.ts` | 행 단위(처치는 보스 처치 · 드롭, 그 기간 값은 수동 선택 항목) | [[ADR-078]] · [[ADR-160]] |
 | `boss_drops` | `id`(uuid, 서버의 `drop_record_id`) | 기간 행에 붙는 드롭 한 개와 판매가 · 분배 · 수수료. 상태는 서버와 같은 `record_status` | `storage/boss-drops.ts` | 행 단위(보스 처치 · 드롭) | [[ADR-078]] |
-| `character_profiles` | `id`(uuid, `ocid` 는 UNIQUE) | 기록 옆에 보일 캐릭터 이름 · 초상 주소 · 월드 · 레벨 · 직업 | `storage/character-profiles.ts` | 남긴다 | `features/character.md` |
-| `character_world_leaps` | `id`(uuid, `from_ocid` 는 UNIQUE) | 월드 리프로 바뀐 옛 ocid 와 새 ocid 의 연결 | `storage/character-world-leaps.ts` | 남긴다 | `features/character.md` |
-| `enhancement_totals` | `id`(uuid, `(nexon_account_id, history_date, character_name, enhancement_category, item_group)` 는 UNIQUE) | 강화 내역을 날짜 · 캐릭터 · 분류 · 장비별로 묶은 합계. 비용은 MVP 할인 전 두 몫이고, 스타포스는 그날 첫 성과 끝 성을 든다. 이벤트 월드 판정과 가계부에서 뺀 표식도 든다 | `storage/enhancement-totals.ts` | 지운다 (강화) | [[ADR-100]] · [[ADR-160]] |
-| `enhancement_history` | `id` | 옛 강화 응답 원본. 합계로 옮기는 부팅 단계만 읽고 v1.0.14 에서 지운다 | `storage/enhancement-history.ts` | 남긴다 | [[ADR-100]] |
+| `character_profiles` | `id`(uuid, `ocid` 는 UNIQUE) | 기록 옆에 보일 캐릭터 이름 · 초상 주소 · 월드 · 레벨 · 직업. 리프 자동 판정이 읽는 만든 날 | `storage/character-profiles.ts` | 남긴다 | `features/character.md` |
+| `character_world_leaps` | `id`(uuid, `from_ocid` 는 UNIQUE) | 월드 리프로 바뀐 옛 ocid 와 새 ocid 의 연결. 리프한 기간의 중복 기록을 정리하고 옛 ocid 의 기록을 새 ocid 로 옮기는 데 쓴다([[ADR-101]] 결정 22) | `storage/character-world-leaps.ts` | 남긴다 | `features/character.md` |
+| `enhancement_totals` | `id`(uuid, `(ocid, history_date, enhancement_category, item_group)` 는 UNIQUE) | 강화 내역을 날짜 · 캐릭터(ocid) · 분류 · 장비별로 묶은 합계. 응답이 준 그날 이름을 그날 그 이름이었던 캐릭터에 붙여 적는다. 비용은 MVP 할인 전 두 몫이고, 스타포스는 그날 첫 성과 끝 성을 든다. 이벤트 월드 판정과 가계부에서 뺀 표식도 든다 | `storage/enhancement-totals.ts` | 지운다 (강화) | [[ADR-100]] · [[ADR-101]] · [[ADR-160]] |
+| `enhancement_history` | `id` | 옛 강화 응답 원본. 새 기기에는 만들지 않는다. 옛 기기는 합계로 옮기는 부팅 단계만 읽고, 옮긴 뒤 지운다 | `storage/enhancement-history.ts` | 남긴다 | [[ADR-100]] · [[ADR-101]] |
 | `enhancement_recomputes` | `id`(uuid, `(nexon_account_id, request_key)` 는 UNIQUE) | 강화 비용 다시 매기기 요청을 넥슨 계정마다 어디까지 받았는지와 끝났는지 | `storage/enhancement-recomputes.ts` | 지운다 (강화) | [[ADR-100]] |
 | `enhancement_history_checks` | `id`(uuid, `(nexon_account_id, enhancement_type, history_date)` 는 UNIQUE) | 강화 내역을 넥슨 계정 · 날짜별로 조회했는지 기록 | `storage/enhancement-history.ts` | 지운다 (강화) | `features/cashbook.md` |
-| `event_world_characters` | `id`(uuid, `(nexon_account_id, character_name, world_key)` 는 UNIQUE) | 이벤트 월드의 스타포스 줄에서 본 캐릭터 이름과 월드. 목록에서 사라진 캐릭터의 큐브 · 잠재 · 소울 줄을 그 월드의 기간 안에서 지출에서 빼는 데 쓴다 | `storage/event-world-characters.ts` | 지운다 (강화) | [[ADR-100]] |
-| `cashbook_entries` | `id`(uuid) | 가계부에 손으로 적은 수입 · 지출 한 건. 날짜 · 갈래 · 캐릭터나 메이플 ID | `storage/income.ts` · `storage/spend.ts` | 지운다 (가계부) | [[ADR-096]] · [[ADR-161]] |
+| `enhancement_refetches` | `id`(uuid, `(nexon_account_id, enhancement_type, history_date)` 는 UNIQUE) | 다시 받아야 하는 강화 내역의 날. 버전 18 이관과 옛 원본 옮기기가 캐릭터에 붙이지 못한 줄의 날을 적고, 수집기가 뒤에서 받아 굳히면 지운다 | `storage/enhancement-refetches.ts` | 지운다 (강화) | [[ADR-101]] |
+| `character_dated_names` | `id`(uuid, `(ocid, history_date)` 는 UNIQUE) | 캐릭터의 그날 이름과 월드 이름. 강화 줄의 이름을 캐릭터에 붙일 때 `character/basic` 에 날짜를 넣어 받은 값이다. 그날 값이 없으면 이름이 `NULL` 이다 | `storage/character-dated-names.ts` | 지운다 (강화) | [[ADR-101]] |
+| `character_first_days` | `id`(uuid, `ocid` 는 UNIQUE) | 캐릭터의 만든 날과 처음 값이 온 날 · 그날 이름. 리프 전 기간을 가른다 | `storage/character-first-days.ts` | 지운다 (강화) | [[ADR-101]] |
+| `cashbook_entries` | `id`(uuid) | 가계부에 손으로 적은 수입 · 지출 한 건. 날짜 · 갈래 · 캐릭터나 메이플 ID. 캐릭터 기록은 적을 때의 월드를 든다 | `storage/income.ts` · `storage/spend.ts` | 지운다 (가계부) | [[ADR-096]] · [[ADR-161]] |
 | `cashbook_entry_items` | `id`(uuid, `(entry_id, sort_order)` 는 UNIQUE) | 기록의 품목. 항목 key 또는 직접 친 이름, 수량 · 레벨, 금액 · 수수료 · 관세, 헥사 강화의 조각 칸 넷과 보관 체크 칸 둘 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-096]] |
 | `cashbook_entry_hunt_inputs` | `id`(uuid, `entry_id` 는 UNIQUE) | 사냥 기록의 계산기 입력 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-096]] |
 | `cashbook_entry_fragment_uses` | `id`(uuid) | 헥사 기록이 보관에서 가져온 조각을 캐릭터마다 한 줄. 보관 개수가 이것을 뺀다 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-137]] |
@@ -87,20 +89,22 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `boss_parties` | `id` NN · `ocid` NN · `boss_key` NN · `difficulty` NN · 분배 조건 · `created_at` NN · `updated_at` NN |
 | `boss_party_periods` | `id` NN · `party_id` NN · `period_key` NN · `cycle` NN · `world_key` · `clear_status` NN · `price_meso` · `payout_meso` · `defeated_date` · `source` · 분배 조건 · `excluded_from_cashbook` NN(기본 0) · `created_at` NN · `updated_at` NN |
 | `boss_drops` | `id` NN · `period_id` NN · `sort_order` NN · `category` NN · `item_key` NN · `box_origin_key` · `ring_level` · `record_status` NN · `price_meso` · `priced_at` · `sale_fee_percent` · `sale_fee_auto` · 분배 조건 · `created_at` NN · `updated_at` NN |
-| `character_profiles` | `id` NN · `ocid` NN UNIQUE · `name` NN · `image_url` NN · `world` · `world_key` · `level` · `job_class` · `updated_at` NN |
+| `character_profiles` | `id` NN · `ocid` NN UNIQUE · `name` NN · `image_url` NN · `world` · `world_key` · `level` · `job_class` · `created_date` · `updated_at` NN |
 | `character_world_leaps` | `id` NN · `from_ocid` NN UNIQUE · `to_ocid` NN · `linked_at` NN |
-| `enhancement_totals` | `id` NN · `nexon_account_id` NN · `history_date` NN · `character_name` NN · `enhancement_type` NN · `enhancement_category` NN · `item_group` NN · `item_key` · `item_name` NN · `attempts` NN · `attempt_cost_meso` NN · `destroy_defence_cost_meso` NN · `from_star` · `to_star`(스타포스만, 다른 분류와 칸이 생기기 전 줄은 `NULL`) · `event_world`(1 이벤트 월드 · 0 아님 · `NULL` 모름) · `excluded_from_cashbook` NN(기본 0) · `updated_at` NN |
+| `enhancement_totals` | `id` NN · `nexon_account_id` NN · `history_date` NN · `character_name` NN · `ocid` NN · `account_id` NN · `world_key` · `enhancement_type` NN · `enhancement_category` NN · `item_group` NN · `item_key` · `item_name` NN · `attempts` NN · `attempt_cost_meso` NN · `destroy_defence_cost_meso` NN · `from_star` · `to_star`(스타포스만, 다른 분류와 칸이 생기기 전 줄은 `NULL`) · `event_world`(1 이벤트 월드 · 0 아님 · `NULL` 모름) · `excluded_from_cashbook` NN(기본 0) · `updated_at` NN |
 | `enhancement_history` | `id` NN · `kind` NN · `date_key` NN · `created_at` NN · `character_name` NN · `target_item` NN · `item_key` · `item_level` · `payload` NN · `cost_meso` |
 | `enhancement_recomputes` | `id` NN · `nexon_account_id` NN · `request_key` NN · `done_through_date` · `completed_at` · `updated_at` NN |
-| `enhancement_history_checks` | `id` NN · `nexon_account_id` · `enhancement_type` NN · `history_date` NN · `next_cursor` · `settled` NN(기본 0) · `checked_at` NN |
-| `event_world_characters` | `id` NN · `nexon_account_id` NN · `character_name` NN · `world_key` NN · `updated_at` NN |
-| `cashbook_entries` | `id` NN · `ocid` · `account_id` · `nexon_account_id` · `entry_type` NN(`income` · `spend`) · `category_key` NN · `entry_date` NN · `created_at` NN · `updated_at` NN |
+| `enhancement_history_checks` | `id` NN · `nexon_account_id` NN · `enhancement_type` NN · `history_date` NN · `next_cursor` · `settled` NN(기본 0) · `checked_at` NN |
+| `enhancement_refetches` | `id` NN · `nexon_account_id` NN · `enhancement_type` NN · `history_date` NN · `created_at` NN |
+| `character_dated_names` | `id` NN · `ocid` NN · `history_date` NN · `name` · `world_name` · `checked_at` NN |
+| `character_first_days` | `id` NN · `ocid` NN · `created_date` NN · `first_date` NN · `first_name` NN · `checked_at` NN |
+| `cashbook_entries` | `id` NN · `ocid` · `account_id` · `nexon_account_id` · `world_key` · `entry_type` NN(`income` · `spend`) · `category_key` NN · `entry_date` NN · `created_at` NN · `updated_at` NN |
 | `cashbook_entry_items` | `id` NN · `entry_id` NN · `sort_order` NN · `item_key` · `item_name` · `form_key` · `item_kind_key` · `quantity` · `from_level` · `to_level` · `amount_meso` · `tariff_meso` · `sale_fee_percent` · `sale_fee_meso` · `sale_fee_auto` · `amount_point` · `point_per_100m_meso` · `amount_cash` · `fragment_count` · `untradable_fragment_count` · `fragment_price_meso` · `hexa_activation` · `hexa_use_storage` · `hexa_storage_as_spend` |
 | `cashbook_entry_hunt_inputs` | `id` NN · `entry_id` NN UNIQUE · `character_level` · `missed_mobs` · `boosts` · `fragments` · `fragment_price_meso` · `meso_rate` · `typed_meso` · `union_tier` |
 | `cashbook_entry_fragment_uses` | `id` NN · `entry_id` NN · `ocid` NN · `fragments` NN |
 | `remembered_levels` | `id` NN · `ocid` NN · `kind` NN · `item_key` NN · `level` NN · `updated_at` NN |
 | `mvp_grade_history` | `id` NN · `account_id` NN · `from_date` NN · `grade` · `updated_at` NN |
-| `character_accounts` | `id` NN · `ocid` NN · `name` NN · `account_id` NN · `nexon_account_id` · `first_seen_date` NN · `last_seen_date` NN |
+| `character_accounts` | `id` NN · `ocid` NN · `name` NN · `account_id` NN · `nexon_account_id` · `first_seen_date` NN · `last_seen_date` NN · `world_key` |
 | `server_sync_queue` | `id` NN · `record_type` NN · `record_id` NN UNIQUE · `attempts` NN(기본 0) · `last_error` · `created_at` NN |
 | `game_data_sections` | `id` NN · `section` NN UNIQUE · `body` NN |
 | `game_data_meta` | `id` NN · `key` NN UNIQUE · `value` NN |
@@ -146,6 +150,8 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | 15 | `moveCashbookRecordsToEntries` | 옛 가계부 표 둘의 행을 기록 표 셋으로 옮긴다. 옮기기 전에 DB 를 파일째 떠 둔다([[ADR-096]] 결정 9) |
 | 16 | `moveRecordKeysToUuid` | 기본키가 값의 조합이던 다섯 표를 uuid 기본키로 다시 쓰고, 칸 이름을 서버 규칙에 맞춘다. 계정 칸이 생기기 전의 행은 계정 칸에 빈 글자를 적는다([[ADR-098]]) |
 | 17 | `dropCashbookMemo` | 입력 시트가 모두 비워 두던 가계부 메모 칸을 지운다([[ADR-099]] 결정 7) |
+| 18 | `attachEnhancementOcids` | 강화 합계 줄에 앱이 그 이름으로 본 기간(`character_accounts`)으로 ocid · 메이플 ID · 월드를 붙이고 판정 열쇠를 ocid 로 다시 쓴다. 붙이지 못한 줄은 그 날의 조회 기록과 함께 지우고 다시 받을 날로 적는다. 조회 기록의 계정 칸을 `NOT NULL` 로 다시 쓰고 `event_world_characters` 를 지운다([[ADR-101]] 결정 18 · 20) |
+| 19 | `fillCashbookEntryWorlds` | 캐릭터에 붙은 가계부 기록의 월드 칸(`world_key`)을 그 ocid 의 프로필 월드로 채운다. 리프한 캐릭터의 기록을 새 ocid 로 옮기기 전에 옛 월드를 남긴다([[ADR-101]] 결정 22) |
 
 못 찾는 이름은 key 만 비우고 행과 이름은 남긴다.
 

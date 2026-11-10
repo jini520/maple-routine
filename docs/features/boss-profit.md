@@ -39,7 +39,7 @@
 | `features/boss-profit/rows.ts` | 행 만들기 · 기록 합치기 · 탭별로 자르기 |
 | `features/boss-profit/auto-record.ts` | 자동 기록과 처치 난이도 드롭 이관 |
 | `features/boss-profit/defeat-dates.ts` | 처치 날짜 찾기 |
-| `features/boss-profit/world-leap-records.ts` · `world-leap-link.ts` | 월드 리프한 기간의 중복 기록 정리와 두 캐릭터 연결 |
+| `features/boss-profit/world-leap-records.ts` · `world-leap-link.ts` · `world-leap-moves.ts` | 월드 리프한 기간의 중복 기록 정리 · 두 캐릭터 연결 · 옛 캐릭터 기록 옮기기 |
 | `features/boss-profit/period-navigation.ts` | 기록이 있는 이웃 기간 · 이전 화살표 판정 |
 | `features/boss-profit/period-window.ts` | 미리 읽을 기간 목록 |
 | `features/boss-profit/period-cache.ts` | 보스 기록 · 드롭 기록의 판 묶음(`bossRecordsStamp`). 아이템 가격 화면과 미입력 건수가 본다 |
@@ -74,6 +74,7 @@
 | 처치 난이도가 정해질 때 | 다른 난이도 키에 적은 드롭을 확정 난이도로 옮긴다 |
 | 스케줄 회차 · 창 동기화가 끝난 뒤 | 날짜 없는 기록의 처치 날짜를 찾는다(`resolveDefeatDates`). 합류한 회차가 시작한 뒤 기록 판이 올랐으면 한 번 더 돈다 |
 | 월드 리프한 기간에 같은 처치가 두 캐릭터에 생겼을 때 | 옛 캐릭터 기록을 지우고 드롭을 새 기록으로 합친다 |
+| 리프 중복 정리 바로 뒤 | 옛 캐릭터에 남은 보스 기록과 가계부 · 파티 약속 등 캐릭터 기록을 새 캐릭터로 옮긴다. 기간의 월드는 그대로 둔다([[ADR-101]] 결정 22) |
 
 기록하지 않는 경우와 그 이유는 [[ADR-040]] 결정 2 에 있다.
 

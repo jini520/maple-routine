@@ -106,7 +106,6 @@ const KEPT_TABLES = [
   'character_profiles',
   'character_accounts',
   'mvp_grade_history',
-  'enhancement_history',
   'income_records',
   'spend_records',
 ]
@@ -118,7 +117,9 @@ async function seedAll(): Promise<void> {
     'cashbook_entry_items',
     'enhancement_totals',
     'enhancement_history_checks',
-    'event_world_characters',
+    'enhancement_refetches',
+    'character_dated_names',
+    'character_first_days',
     'server_sync_queue',
     'query_cache',
     ...KEPT_TABLES,
@@ -162,13 +163,15 @@ describe('clearCacheData', () => {
   })
 
   // 확인 기록만 남으면 그 날짜를 다시 부르지 않아 합계가 빈 채로 굳는다.
-  // 남겨 둔 이벤트 월드 이름도 함께 지운다. 합계를 다시 받으며 스타포스에서 다시 남는다.
-  it('강화는 합계 · 확인 기록 · 남겨 둔 이벤트 월드 이름을 함께 비운다', async () => {
+  // 줄을 캐릭터에 붙이려고 넥슨에서 받은 그날 이름 · 처음 값이 온 날과 다시 받을 날도 함께 지운다. 다시 받으면 다시 찬다.
+  it('강화는 합계 · 확인 기록 · 다시 받을 날 · 그날 이름 · 처음 값이 온 날을 함께 비운다', async () => {
     await seedAll()
 
     await clearCacheData({ ...NONE, enhancement: true })
 
-    expect([count('enhancement_totals'), count('enhancement_history_checks'), count('event_world_characters')]).toEqual([0, 0, 0])
+    expect(
+      ['enhancement_totals', 'enhancement_history_checks', 'enhancement_refetches', 'character_dated_names', 'character_first_days'].map(count),
+    ).toEqual([0, 0, 0, 0, 0])
     expect(count('cashbook_entries')).toBe(1)
   })
 

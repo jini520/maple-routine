@@ -10,6 +10,7 @@ import type { MapleAccount } from '../../types'
 import { recordCharacterAccounts } from '../character-accounts'
 import {
   assignLegacySpendAccounts,
+  assignOwnerlessSpends,
   deleteSpendRecord,
   getSpendRecordsBetween,
   getSpendRecordsRevision,
@@ -281,6 +282,37 @@ describe('assignLegacySpendAccounts: 주인을 모르는 옛 기록을 메이플
       { account_id: null },
       { account_id: null },
     ])
+    expect(getSpendRecordsRevision()).toBe(before)
+  })
+})
+
+// 지금까지 앱은 넥슨 계정을 하나만 두었다. 고르지 않고 적은 기록도 그 계정의 것이라, 사용자가 적은 기록으로 보고 대표 캐릭터에게
+// 붙인다.
+describe('assignOwnerlessSpends: 남은 옛 기록을 대표 캐릭터에게 붙인다', () => {
+  const ids = ['6f1b0e2c-0000-4000-8000-000000000301', '6f1b0e2c-0000-4000-8000-000000000302', '6f1b0e2c-0000-4000-8000-000000000303']
+
+  it('메이플 ID 를 고를 수 있는 분류는 그 메이플 ID 에, 캐릭터만 고르는 분류는 그 캐릭터에 붙이고 계정 칸을 비운다', async () => {
+    await insertLegacySpend({ ...mesoSpend, id: ids[0]!, category: 'etc' }, 'account-a')
+    await insertLegacySpend({ ...mesoSpend, id: ids[1]!, category: 'buff' }, null)
+    await insertSpendRecord({ ...mesoSpend, id: ids[2]!, category: 'buff', ocid: 'ocid-다른' })
+    const before = getSpendRecordsRevision()
+
+    await assignOwnerlessSpends({ ocid: 'ocid-대표', accountId: 'maple-대표' }, ['event_bm', 'etc'])
+
+    expect(all('SELECT id, ocid, account_id, nexon_account_id FROM cashbook_entries ORDER BY id')).toEqual([
+      { id: ids[0], ocid: null, account_id: 'maple-대표', nexon_account_id: null },
+      { id: ids[1], ocid: 'ocid-대표', account_id: null, nexon_account_id: null },
+      { id: ids[2], ocid: 'ocid-다른', account_id: null, nexon_account_id: null },
+    ])
+    expect(getSpendRecordsRevision()).toBe(before + 1)
+  })
+
+  it('붙일 기록이 없으면 판이 그대로다', async () => {
+    await insertSpendRecord({ ...mesoSpend, id: ids[0]!, category: 'buff', ocid: 'ocid-1' })
+    const before = getSpendRecordsRevision()
+
+    await assignOwnerlessSpends({ ocid: 'ocid-대표', accountId: 'maple-대표' }, ['event_bm', 'etc'])
+
     expect(getSpendRecordsRevision()).toBe(before)
   })
 })

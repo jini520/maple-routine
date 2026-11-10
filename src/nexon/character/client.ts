@@ -4,8 +4,9 @@ import type {
   MapleAccount,
   NexonCharacterBasicResponse,
   NexonCharacterListResponse,
+  NexonDatedCharacterBasicResponse,
 } from '../../types'
-import { NexonNoCharacterError } from '../errors'
+import { NexonBadRequestError, NexonNoCharacterError } from '../errors'
 import { requestJson } from '../http'
 import { normalizeCharacterBasic, normalizeCharacterList } from './normalize'
 
@@ -53,4 +54,49 @@ export async function fetchCharacterBasic(
     throw new NexonNoCharacterError('이 ocid 에는 더 이상 캐릭터가 없습니다')
   }
   return normalizeCharacterBasic(wire, worldKeyOf)
+}
+
+/** 그날의 이름 · 월드 · 만든 날. 그날 그 ocid 에 값이 없으면 셋 다 `null` 이다. */
+export interface DatedCharacterBasic {
+  name: string | null
+  /** 월드 이름 원문 */
+  worldName: string | null
+  /** 만든 날의 KST `YYYY-MM-DD` */
+  createdDate: string | null
+}
+
+const NO_VALUE: DatedCharacterBasic = { name: null, worldName: null, createdDate: null }
+
+/**
+ * 그날의 `character/basic`. 강화 줄의 이름을 그날 그 이름이었던 캐릭터에 붙일 때 쓴다.
+ *
+ * 리프 전 ocid(400 `OPENAPI00003`)와 조회할 수 없는 날짜(400 `OPENAPI00004`)는 그날 값이 없는 것과 같게 돌려준다. 던지면
+ * 부르는 쪽이 다시 받을 실패로 여겨 같은 날을 끝없이 다시 부른다.
+ *
+ * @param dateKey KST `YYYY-MM-DD`. 오늘은 안 된다. 오늘의 이름은 `character/list` 가 준다
+ */
+export async function fetchCharacterBasicOn(
+  credential: NexonCredential,
+  ocid: string,
+  dateKey: string,
+): Promise<DatedCharacterBasic> {
+  let wire: NexonDatedCharacterBasicResponse
+  try {
+    wire = await requestJson<NexonDatedCharacterBasicResponse>(
+      `/maplestory/v1/character/basic?ocid=${encodeURIComponent(ocid)}&date=${dateKey}`,
+      credential,
+    )
+  } catch (error) {
+    if (error instanceof NexonBadRequestError && (error.code === 'OPENAPI00003' || error.code === 'OPENAPI00004')) {
+      return NO_VALUE
+    }
+    throw error
+  }
+  if (wire.character_name === null || wire.character_name === undefined) return NO_VALUE
+  return {
+    name: wire.character_name,
+    worldName: wire.world_name ?? null,
+    // `+09:00` 이 붙은 시각이라 앞 열 자가 곧 KST 날짜다.
+    createdDate: typeof wire.character_date_create === 'string' ? wire.character_date_create.slice(0, 10) : null,
+  }
 }

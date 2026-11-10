@@ -38,7 +38,7 @@ export type IncomeCategoryKey = (typeof INCOME_CATEGORY_KEYS)[number]
  * 메이플 ID 기록이 생긴다.
  */
 export const ACCOUNT_INCOME_CATEGORY_KEYS: readonly IncomeCategoryKey[] = ['etc']
-export const ACCOUNT_SPEND_CATEGORY_KEYS: readonly SpendCategoryKey[] = ['event_bm', 'etc']
+export const ACCOUNT_SPEND_CATEGORY_KEYS: readonly SpendCategoryKey[] = ['event_bm', 'etc', 'content']
 
 /** 아이템 구매 · 판매의 종류. 게임 인벤토리 탭이다. 수량 · 관세는 서버 표의 단위 · 관세 칸이 가른다. */
 export const ITEM_KIND_KEYS = ['equipment', 'consumable', 'etc', 'cash'] as const

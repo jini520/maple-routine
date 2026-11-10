@@ -105,3 +105,12 @@ export async function setLastHunt(ocid: string, hunt: LastHunt): Promise<void> {
   const current = await getLastHunts()
   await preferences.set(STORAGE_KEYS.lastHunts, JSON.stringify({ ...current, [ocid]: hunt }))
 }
+
+/** 월드 리프한 캐릭터의 마지막 사냥을 새 ocid 로 옮기는 함수. 새 캐릭터 몫이 있으면 리프 뒤의 그 사냥을 둔다. */
+export async function moveLastHuntToOcid(fromOcid: string, toOcid: string): Promise<void> {
+  const current = await getLastHunts()
+  const moved = current[fromOcid]
+  if (moved === undefined) return
+  const rest = Object.fromEntries(Object.entries(current).filter(([ocid]) => ocid !== fromOcid))
+  await preferences.set(STORAGE_KEYS.lastHunts, JSON.stringify({ [toOcid]: moved, ...rest }))
+}

@@ -25,6 +25,7 @@ import {
 import { findHuntingGroundByName } from '../../lib/cashbook/hunting-grounds'
 import { legacySpendKeysOf } from '../../lib/cashbook/spend-catalog'
 import { dropItemKeyOfName } from '../../lib/drop/drop-items'
+import { sightedOwnerOf, type OwnerSighting } from '../../lib/enhancement/sighted-owner'
 import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
@@ -34,6 +35,7 @@ import type { HuntingIncomeDetail, IncomeRecord } from '../income'
 import type { SqliteDbConnection } from '../ports'
 import type { SpendRecord } from '../spend'
 import { BOSS_DROP_RECORDS_BODY, BOSS_KEYED_TABLES } from './boss-tables'
+import { ENHANCEMENT_TOTALS_BODY } from './enhancement-tables'
 import {
   CHARACTER_ACCOUNTS_BODY,
   CHARACTER_PROFILES_BODY,
@@ -44,7 +46,7 @@ import {
 import { NEW_UUID_SQL } from './uuid'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 17
+export const DB_VERSION = 19
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -200,6 +202,8 @@ async function rekeyBossTables(db: SqliteDbConnection): Promise<void> {
  * **못 찾는 행은 key 만 비우고 남긴다.** 표에 없는 장비에 쓴 큐브 · 잠재도 실제 지출이라서다.
  */
 async function fillEnhancementItemKeys(db: SqliteDbConnection): Promise<void> {
+  // 새 기기에는 옛 원본 표가 없다.
+  if ((await columnsOf(db, 'enhancement_history')).size === 0) return
   const { values } = await db.query('SELECT DISTINCT target_item FROM enhancement_history')
   for (const row of (values ?? []) as Row[]) {
     const targetItem = String(row.target_item)
@@ -735,6 +739,134 @@ async function dropCashbookMemo(db: SqliteDbConnection): Promise<void> {
   }
 }
 
+/**
+ * 캐릭터에 붙은 가계부 기록의 월드 칸을 그 ocid 의 프로필 월드로 채운다. 리프한 캐릭터의 기록을 새 ocid 로 옮기기 전에 채워야
+ * 리프 전 월드가 남는다.
+ */
+async function fillCashbookEntryWorlds(db: SqliteDbConnection): Promise<void> {
+  await db.run(
+    `UPDATE cashbook_entries
+        SET world_key = (SELECT p.world_key FROM character_profiles p WHERE p.ocid = cashbook_entries.ocid)
+      WHERE ocid IS NOT NULL AND world_key IS NULL`,
+  )
+}
+
+/** 합계 표의 값 칸. 다시 쓴 표로 옮길 때 그대로 나른다. */
+const ENHANCEMENT_TOTAL_VALUE_COLUMNS = [
+  'enhancement_type',
+  'item_key',
+  'item_name',
+  'attempts',
+  'attempt_cost_meso',
+  'destroy_defence_cost_meso',
+  'from_star',
+  'to_star',
+  'event_world',
+  'updated_at',
+] as const
+
+/**
+ * 강화 합계 줄에 ocid · 메이플 ID · 월드를 붙이고, 판정 열쇠를 넥슨 계정 id 에서 ocid 로 바꾼다.
+ *
+ * 이관은 넥슨을 부를 수 없어서 앱이 그 이름으로 본 기간(`character_accounts`)으로만 붙인다. 붙이지 못한 줄은 그 날짜 · 종류의
+ * 조회 기록과 함께 지우고 다시 받을 날로 적는다. 수집기가 그 날을 다시 받아 넥슨에서 그날 이름을 찾는다. 같은 캐릭터의 같은 줄이
+ * 계정 id 둘로 들어가 있으면 늦게 적힌 줄을 남긴다. 계정 id 를 새로 받아 같은 날을 두 번 받은 줄이다.
+ *
+ * 조회 기록의 계정 칸을 `NOT NULL` 로 다시 쓰고, 이름으로 이벤트 월드를 가르던 표(`event_world_characters`)를 지운다.
+ */
+async function attachEnhancementOcids(db: SqliteDbConnection): Promise<void> {
+  if (!(await columnsOf(db, 'enhancement_totals')).has('ocid')) await rebuildEnhancementTotals(db)
+  await requireCheckAccounts(db)
+  await db.execute('DROP TABLE IF EXISTS event_world_characters')
+}
+
+async function rebuildEnhancementTotals(db: SqliteDbConnection): Promise<void> {
+  const { values: sightingRows } = await db.query(
+    'SELECT ocid, name, account_id, nexon_account_id, first_seen_date, last_seen_date FROM character_accounts',
+  )
+  const sightings: OwnerSighting[] = (sightingRows ?? []).map((row) => ({
+    ocid: String(row.ocid),
+    name: String(row.name),
+    accountId: String(row.account_id),
+    nexonAccountId: textOrNull(row.nexon_account_id),
+    firstSeenOn: String(row.first_seen_date),
+    lastSeenOn: String(row.last_seen_date),
+  }))
+  const { values: profileRows } = await db.query('SELECT ocid, world_key FROM character_profiles')
+  const worldOf = new Map((profileRows ?? []).map((row) => [String(row.ocid), textOrNull(row.world_key)]))
+
+  const rebuilt = 'enhancement_totals_v18'
+  await db.execute(`CREATE TABLE ${rebuilt} ${ENHANCEMENT_TOTALS_BODY}`)
+  const { values: rows } = await db.query('SELECT * FROM enhancement_totals ORDER BY updated_at, id')
+  const refetch = new Map<string, readonly [string, string, string]>()
+  for (const row of rows ?? []) {
+    const nexonAccountId = String(row.nexon_account_id)
+    const historyDate = String(row.history_date)
+    const owner = sightedOwnerOf(sightings, String(row.character_name), historyDate, nexonAccountId)
+    if (owner === null) {
+      const day = [nexonAccountId, String(row.enhancement_type), historyDate] as const
+      refetch.set(day.join('|'), day)
+      continue
+    }
+    // 늦게 적힌 줄이 이긴다. 줄을 적힌 차례로 읽어, 같은 열쇠의 앞 줄을 뒤 줄 값으로 덮는다.
+    await db.run(
+      `INSERT INTO ${rebuilt}
+         (id, nexon_account_id, history_date, character_name, ocid, account_id, world_key, enhancement_category, item_group,
+          ${ENHANCEMENT_TOTAL_VALUE_COLUMNS.join(', ')})
+       VALUES (${Array.from({ length: 9 + ENHANCEMENT_TOTAL_VALUE_COLUMNS.length }, () => '?').join(', ')})
+       ON CONFLICT (ocid, history_date, enhancement_category, item_group) DO UPDATE SET
+         nexon_account_id = excluded.nexon_account_id,
+         character_name = excluded.character_name,
+         ${ENHANCEMENT_TOTAL_VALUE_COLUMNS.map((column) => `${column} = excluded.${column}`).join(',\n         ')}`,
+      [
+        row.id,
+        nexonAccountId,
+        historyDate,
+        row.character_name,
+        owner.ocid,
+        owner.accountId,
+        worldOf.get(owner.ocid) ?? null,
+        row.enhancement_category,
+        row.item_group,
+        ...ENHANCEMENT_TOTAL_VALUE_COLUMNS.map((column) => row[column] ?? null),
+      ],
+    )
+  }
+  await db.execute('DROP TABLE enhancement_totals')
+  await db.execute(`ALTER TABLE ${rebuilt} RENAME TO enhancement_totals`)
+
+  const now = new Date().toISOString()
+  for (const [nexonAccountId, enhancementType, historyDate] of refetch.values()) {
+    await db.run(
+      'DELETE FROM enhancement_history_checks WHERE nexon_account_id = ? AND enhancement_type = ? AND history_date = ?',
+      [nexonAccountId, enhancementType, historyDate],
+    )
+    await db.run(
+      `INSERT OR IGNORE INTO enhancement_refetches (nexon_account_id, enhancement_type, history_date, created_at)
+       VALUES (?, ?, ?, ?)`,
+      [nexonAccountId, enhancementType, historyDate, now],
+    )
+  }
+}
+
+/** 조회 기록의 계정 칸을 `NOT NULL` 로 다시 쓴다. 비어 있던 행은 빈 글자로 옮겨 부팅 단계가 메인 계정으로 채운다. */
+async function requireCheckAccounts(db: SqliteDbConnection): Promise<void> {
+  const { values } = await db.query('PRAGMA table_info(enhancement_history_checks)')
+  const column = (values ?? []).find((row) => row.name === 'nexon_account_id')
+  if (column === undefined || Number(column.notnull) === 1) return
+
+  const rebuilt = 'enhancement_history_checks_v18'
+  await db.execute(`CREATE TABLE ${rebuilt} ${ENHANCEMENT_HISTORY_CHECKS_BODY}`)
+  // 빈 칸을 빈 글자로 옮기면 같은 날의 줄이 겹칠 수 있다. 늦게 조회한 줄부터 넣어 그 줄이 남는다.
+  await db.execute(
+    `INSERT OR IGNORE INTO ${rebuilt} (id, nexon_account_id, enhancement_type, history_date, next_cursor, settled, checked_at)
+     SELECT id, COALESCE(nexon_account_id, ''), enhancement_type, history_date, next_cursor, settled, checked_at
+       FROM enhancement_history_checks ORDER BY checked_at DESC`,
+  )
+  await db.execute('DROP TABLE enhancement_history_checks')
+  await db.execute(`ALTER TABLE ${rebuilt} RENAME TO enhancement_history_checks`)
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -755,6 +887,8 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   moveCashbookRecordsToEntries,
   moveRecordKeysToUuid,
   dropCashbookMemo,
+  attachEnhancementOcids,
+  fillCashbookEntryWorlds,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

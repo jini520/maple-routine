@@ -124,8 +124,13 @@ describe('db.ts 와 맞물리는가', () => {
   })
 
   it('옛 스키마 DB 에는 빠진 컬럼을 더한다', async () => {
+    // 옛 기기에는 강화 원본 표가 아직 남아 있다.
     mockRowsFor = (statement) =>
-      statement.startsWith('PRAGMA table_info') ? [{ name: 'ocid' }] : []
+      statement.startsWith('PRAGMA table_info')
+        ? [{ name: 'ocid' }]
+        : statement.includes('FROM sqlite_master')
+          ? [{ present: 1 }]
+          : []
 
     await getBossProfitDb()
 
@@ -211,6 +216,10 @@ describe('db.ts 와 맞물리는가', () => {
       // 스타포스 첫 성 · 끝 성.
       'ALTER TABLE enhancement_totals ADD COLUMN from_star INTEGER',
       'ALTER TABLE enhancement_totals ADD COLUMN to_star INTEGER',
+      'ALTER TABLE character_accounts ADD COLUMN world_key TEXT',
+      // 캐릭터 기록의 그때 월드와 리프 자동 판정이 읽는 만든 날.
+      'ALTER TABLE cashbook_entries ADD COLUMN world_key TEXT',
+      'ALTER TABLE character_profiles ADD COLUMN created_date TEXT',
     ])
   })
 
@@ -274,6 +283,7 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'hexa_storage_as_spend' },
             { name: 'from_star' },
             { name: 'to_star' },
+            { name: 'created_date' },
           ]
         : []
 

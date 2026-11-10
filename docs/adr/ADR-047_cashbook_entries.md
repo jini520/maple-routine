@@ -136,7 +136,7 @@
 ### 결정 8. 손입력 기록 표와 강화 내역은 사용자가 그 그룹을 골랐을 때만 데이터 삭제가 지운다
 
 데이터 삭제는 기록 표 넷(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses`)을 `가계부` 그룹을
-골랐을 때만 지운다. `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` · `event_world_characters` 는 `강화` 그룹을 골랐을
+골랐을 때만 지운다. `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` · `enhancement_refetches` · `character_dated_names` · `character_first_days` 는 `강화` 그룹을 골랐을
 때만 지운다([[ADR-053]] 결정 1). 확인 창은 아무 그룹도 고르지 않은 채 열린다. 손입력은 사용자 말고는 출처가 없어
 지우면 되살릴 수 없기 때문이다.
 
@@ -201,8 +201,8 @@ base = round100(1000 + L³ × (성수+1)^지수 ÷ 나눗수)
 - **이벤트 월드(스페셜 · 스페셜2)의 줄은 뺀다.** 그 월드의 재화는 본 서버에서 가치가 없고, 넣으면 지출이 두 배 가까이
   부푼다. 빼는 것은 월드 표에서 `event` 인 월드뿐이고, 챌린저스 월드는 일반 월드로 센다.
 - 어느 줄이 이벤트 월드인지는 받은 회차가 판정해 합계 줄의 `event_world` 에 적고, 화면은 일반 월드로 적힌 줄만 센다.
-  모름으로 적힌 줄도 지출로 세지 않는다. 판정 규칙(스타포스는 줄의 월드, 큐브 · 잠재 · 소울은 캐릭터 목록 다음 스타포스에서
-  남겨 둔 이름, 표에 없는 월드는 모름)은 [[ADR-100]] 결정 5 에 있다.
+  모름으로 적힌 줄도 지출로 세지 않는다. 판정 규칙(스타포스는 줄의 월드, 큐브 · 잠재 · 소울은 줄을 붙인 캐릭터의 월드, 표에
+  없는 월드는 모름)은 [[ADR-100]] 결정 5 에 있다.
 - **`펄스 인핸서` 로 한 큐브 · 스타포스 줄은 뺀다.** 전용 재화라 메소가 들지 않는다. 0 원으로 남기면 건수만
   늘어난다. 다른 강화권 줄은 0 원으로 남긴다. 메소가 안 들었을 뿐 실제로 쓴 물건이다.
 
@@ -300,7 +300,7 @@ SQL 을 더해야 했다. 그래서 기록에 key 를 함께 저장한다.
 | `features/enhancement-history/__tests__/collect.spec.ts` | 결정 9: 확정된 날짜 · 미래 날짜를 안 세고 오늘은 늘 세는지, 소울은 09-17 부터인지, 분모를 호출 전에 알리는지, 모든 쪽을 받아 합계를 갈아 끼우는지 본다. 결정 11: 캐릭터 목록을 못 받으면 확정하지 않고 판정을 비우는지 본다 |
 | `features/enhancement-history/__tests__/spending.spec.ts` | 결정 10: 분류별 비용 계산, 오르기 전 등급으로 매기는지, 파괴 방지를 따로 드는지, 강화권, 모르면 `null` 이고 합계에서 빠지는지 본다. 결정 11: 스페셜 월드 판정과 펄스 인핸서를 빼는지 본다 |
 | `lib/enhancement/__tests__/cost.spec.ts` | 결정 10: 큐브 식과 무료 구간, 잠재 표의 구간 경계, 스타포스의 반올림 · 할인 순서, 두 몫과 MVP 할인을 본다 |
-| `lib/enhancement/__tests__/world.spec.ts` | 결정 11: 월드를 아는 줄과 이름으로 판정하는 줄, 목록을 못 받았을 때와 빈 목록을 구분하는지 본다 |
+| `lib/enhancement/__tests__/world.spec.ts` | 결정 11: 월드를 아는 줄과 붙인 캐릭터의 월드로 판정하는 줄, 리프 전 줄과 월드를 모르는 캐릭터를 일반 월드로 세는지 본다 |
 | `storage/__tests__/enhancement-history.spec.ts` | 결정 9: 원장을 계정마다 읽고 확정 표시와 커서를 적는지, 옛 원본의 깨진 `payload` 가 그 줄만 비우는지 본다 |
 | `storage/sqlite/__tests__/db-real-sqlite.test.ts` | 결정 16: 이관이 옛 행의 이름에서 key 를 채우고 못 찾은 행은 비워 두는지 실제 SQLite 엔진에서 본다 |
 | `storage/__tests__/last-point-rate.spec.ts` | 결정 2: 잘못된 값은 없는 것으로 보고 쓰지도 않는지 본다 |

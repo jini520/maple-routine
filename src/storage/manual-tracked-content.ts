@@ -83,3 +83,13 @@ export async function setManualTrackedContent(
 ): Promise<void> {
   await preferences.set(manualTrackedContentKey(ocid), JSON.stringify(items))
 }
+
+/** 월드 리프한 캐릭터의 목록을 새 ocid 로 옮기는 함수. 새 캐릭터에 목록이 있으면 리프 뒤에 고른 그 목록을 둔다. */
+export async function moveManualTrackedContentToOcid(fromOcid: string, toOcid: string): Promise<void> {
+  const value = await preferences.get(manualTrackedContentKey(fromOcid))
+  if (value === null) return
+  if ((await preferences.get(manualTrackedContentKey(toOcid))) === null) {
+    await preferences.set(manualTrackedContentKey(toOcid), value)
+  }
+  await preferences.remove(manualTrackedContentKey(fromOcid))
+}

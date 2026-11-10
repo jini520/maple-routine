@@ -23,6 +23,7 @@ jest.mock('../../../storage/shared-progress-cache', () => ({
   getAccountSharedProgress: jest.fn().mockResolvedValue({}),
   setWorldSharedProgressEntry: jest.fn().mockResolvedValue(undefined),
   setAccountSharedProgressEntry: jest.fn().mockResolvedValue(undefined),
+  splitWorldSharedProgress: jest.fn().mockResolvedValue(undefined),
 }))
 // 병합은 이 파일이 검증할 대상이 아니다. fresh 를 그대로 통과시킨다.
 jest.mock('../../../lib/scheduler/scheduler-merge', () => ({ mergeSchedulerState: jest.fn() }))

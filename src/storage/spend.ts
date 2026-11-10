@@ -8,7 +8,16 @@
  * 한 행 = 한 통화로는 표현이 안 된다.
  */
 import type { ItemKindKey, SpendCategoryKey } from '../lib/cashbook/categories'
-import { assignLegacyEntryAccounts, deleteEntry, insertEntry, readEntries, replaceEntry } from './cashbook-entries'
+import {
+  assignLegacyEntryAccounts,
+  assignOwnerlessEntries,
+  deleteEntry,
+  insertEntry,
+  moveEntriesToOcid,
+  moveFragmentUsesToOcid,
+  readEntries,
+  replaceEntry,
+} from './cashbook-entries'
 import { spendEntryOf, spendRecordOf } from './cashbook-entry-shape'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
@@ -175,6 +184,30 @@ export async function updateSpendRecord(record: SpendRecord): Promise<void> {
 export async function assignLegacySpendAccounts(categoryKeys: readonly SpendCategoryKey[]): Promise<void> {
   const db = await getBossProfitDb()
   if (await assignLegacyEntryAccounts(db, 'spend', categoryKeys)) bumpSpendRecordsRevision()
+}
+
+/**
+ * 남은 주인 모르는 옛 지출을 대표 캐릭터에게 붙인다. 붙인 것이 있을 때만 판이 오른다.
+ *
+ * @param categoryKeys 메이플 ID 를 고를 수 있는 지출 분류
+ */
+export async function assignOwnerlessSpends(
+  owner: { ocid: string; accountId: string },
+  categoryKeys: readonly SpendCategoryKey[],
+): Promise<void> {
+  const db = await getBossProfitDb()
+  if (await assignOwnerlessEntries(db, 'spend', owner, categoryKeys)) bumpSpendRecordsRevision()
+}
+
+/** 월드 리프한 캐릭터의 지출과 그 캐릭터 보관에서 가져간 조각을 새 ocid 로 옮긴다. 옮긴 것이 있을 때만 판이 오른다. */
+export async function moveSpendRecordsToOcid(fromOcid: string, toOcid: string): Promise<void> {
+  const db = await getBossProfitDb()
+  const moved = await inTransaction(db, async () => {
+    const entries = await moveEntriesToOcid(db, 'spend', fromOcid, toOcid)
+    const uses = await moveFragmentUsesToOcid(db, fromOcid, toOcid)
+    return entries || uses
+  })
+  if (moved) bumpSpendRecordsRevision()
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */

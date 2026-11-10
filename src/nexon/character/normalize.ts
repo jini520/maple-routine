@@ -68,5 +68,6 @@ export function normalizeCharacterBasic(
     // character_exp(누적 절대값)는 일부러 나르지 않는다. 카드가 답해야 하는 것은 진행률이다.
     expRate: normalizeExpRate(wire.character_exp_rate),
     guildName: normalizeGuildName(wire.character_guild_name),
+    createdDate: typeof wire.character_date_create === 'string' ? wire.character_date_create.slice(0, 10) : undefined,
   }
 }

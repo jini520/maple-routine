@@ -46,7 +46,8 @@
 | `partyAppointments` | JSON `PartyAppointment[]` | `party-appointments.ts` | 남긴다 | 사용자가 적은 파티 약속. `id` 는 uuid 이고, 옛 `시각 + 난수` id 는 읽을 때 uuid 로 바꿔 다시 저장한다([[ADR-098]] 결정 4) |
 | `serverBackfill` | JSON. 종류(`dropPrice`)마다 마지막으로 보낸 기록 id 와 끝났는지. 옛 앱이 적은 다른 종류의 값은 읽지 않는다 | `server-backfill.ts` | 남긴다 | 업데이트 전 드롭을 서버로 어디까지 올렸나([[ADR-099]] 결정 3) |
 | `legacyCleanupDone` | `'1'` | `legacy-cleanup.ts` | 남긴다 | 옛 키 정리가 끝났다는 표식. 있으면 부팅이 정리를 건너뛴다([[ADR-142]] 결정 12) |
-| `enhancementTotalsMoved` | `'1'` | `enhancement-totals-moved.ts` | 남긴다 | 옛 강화 원본(`enhancement_history`)을 합계로 옮겼는지. 지워지면 다시 옮기며 업데이트 뒤 새로 받은 날의 합계를 옛 원본으로 덮는다([[ADR-100]] 결정 3) |
+| `enhancementTotalsMoved` | `'1'` | `enhancement-totals-moved.ts` | 남긴다 | 옛 강화 원본(`enhancement_history`)을 합계로 옮겼는지. 옮기면 원본 표를 지운다([[ADR-100]] 결정 3) |
+| `worldSharedProgressSplit` | ISO 시각 | `shared-progress-cache.ts` | 남긴다 | 월드로만 묶던 옛 월드 공유 원장을 메이플 ID 마다 나눴는지. 나누기는 한 번만 돈다([[ADR-101]] 결정 23) |
 | `appReview` | JSON `{ firstLaunchAt, saveCount, lastRequestedAt }`. 시각은 ISO, `lastRequestedAt` 은 요청 전이면 `null` | `app-review.ts` | 남긴다 | 앱 안 리뷰 요청의 기록([[ADR-052]] 결정 10). 지워지면 90일 간격을 처음부터 다시 센다 |
 | `partyScheduleView` | `'list'` · `'board'` | `party-schedule-view.ts` | 남긴다 | 파티 스케줄 화면에서 마지막으로 고른 보기. 없으면 목록 |
 | `bossProfitCalculatorRecords` | JSON `BossProfitCalculatorRecord[]` | `boss-profit-calculator-records.ts` | 남긴다 | 주간 보스 수익 계산기에서 저장한 기록. 금액 없이 보스 · 난이도 · 파티 값만 남긴다 |
@@ -78,6 +79,9 @@
 `schedulerCache:*` · `characterBasicCache:*` · `mesoRateCache:*` 는 `캐시` 가 지운다. 나머지는 데이터 삭제가 남긴다. 조회 원장은 지우면 다시
 띄우자마자 넥슨 API 를 한꺼번에 불러 호출 한도에 걸릴 수 있기 때문이다. 추적 캐릭터가 없으면 캐릭터 고르기부터 다시 해야 한다.
 
+월드 리프를 이으면 `manualTrackedContent:{ocid}` 와 ocid 를 든 기록 키(`lastHunts` · `partyAppointments` ·
+`bossProfitCalculatorRecords`)의 옛 ocid 를 새 ocid 로 옮긴다. 새 ocid 에 값이 있으면 새 것을 둔다([[ADR-101]] 결정 22).
+
 | 키 | 값 | 어댑터 | 메모 |
 |---|---|---|---|
 | `schedulerCache:{ocid}` | JSON `{ state, syncedAt, version: 4 }` | `scheduler-cache.ts` | 1.0.12 까지의 스케줄 캐시. 업데이트 뒤 첫 실행이 추적 캐릭터 중 쿼리 캐시 `schedule(ocid)` 에 없는 것만 옮긴 뒤 지운다(`seedScheduleQueriesFromLegacyCache`, [[ADR-142]] 결정 7). `version` 이 다르면 옮기지 않는다. 추적하지 않는 캐릭터의 키는 `캐시` 가 지울 때까지 남는다 |
@@ -90,5 +94,5 @@
 | `representativeCharacter` | ocid | `character-selection.ts` | 사용자가 고른 대표 캐릭터. 고르지 않았으면 키가 없다 |
 | `trackedCharacters:content` · `:boss` · `:daily` · `:weekly` · `lastSelectedCharacter:content` · `:boss` | | `character-selection.ts` | 옛 키. `trackedCharacters` 가 없을 때 합쳐 옮기고 지운다 |
 | `manualTrackedContent:{ocid}` | JSON `ManualTrackedItem[]` | `manual-tracked-content.ts` | 수동 모드에서 그 캐릭터가 추적할 항목 |
-| `worldSharedProgress:{worldKey}` | JSON `{ [contentKey]: SharedProgressEntry }` | `shared-progress-cache.ts` | 월드 단위로 완료가 공유되는 컨텐츠의 진행. 월드 이름을 쓰던 옛 키는 읽거나 쓸 때 옮기고 지운다 |
+| `worldSharedProgress:{accountId}:{worldKey}` | JSON `{ [contentKey]: SharedProgressEntry }` | `shared-progress-cache.ts` | 월드 단위로 완료가 공유되는 컨텐츠의 진행. 같은 월드라도 메이플 ID 마다 따로다. 월드로만 묶던 옛 키(`worldSharedProgress:{worldKey}` · 월드 이름)는 추적 캐릭터가 있는 메이플 ID 마다 한 번 베끼고 지운다([[ADR-101]] 결정 23) |
 | `accountSharedProgress:{accountId}` | JSON `{ [contentKey]: SharedProgressEntry }` | `shared-progress-cache.ts` | 계정 단위로 공유되는 컨텐츠의 진행. `accountId` 는 그 캐릭터가 속한 계정이다 |

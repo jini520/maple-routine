@@ -9,11 +9,10 @@ import {
   ensureEnhancementTotals,
 } from '../../../features/enhancement-history/legacy-totals'
 import type { EnhancementTotalDraft } from '../../../features/enhancement-history/spending'
-import { loadEnhancementTotals, markEventWorldTotals, replaceEnhancementTotals } from '../../enhancement-totals'
-import { loadEventWorldCharacters, rememberEventWorldCharacters } from '../../event-world-characters'
+import { findPreLeapWorldKey, loadEnhancementTotals, replaceEnhancementTotals } from '../../enhancement-totals'
+import { recordCharacterAccounts } from '../../character-accounts'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
-import { NEW_UUID_SQL } from '../uuid'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 jest.mock('../../api-key', () => ({ getAuthConfig: jest.fn() }))
@@ -57,7 +56,10 @@ const NOW = new Date('2026-10-26T00:00:00.000Z')
 
 const draft = (over: Partial<EnhancementTotalDraft> = {}): EnhancementTotalDraft => ({
   historyDate: '2026-10-20',
-  characterName: '낟낟',
+  characterName: over.characterName ?? '낟낟',
+  ocid: `ocid-${over.characterName ?? '낟낟'}`,
+  accountId: 'maple-1',
+  worldKey: 'elysium',
   enhancementType: 'cube',
   enhancementCategory: 'cube_reset',
   itemGroup: 'key:arcane_umbra_knuckle',
@@ -83,6 +85,16 @@ describe('갈아 끼우기', () => {
     expect(await loadEnhancementTotals('2026-10-20', '2026-10-20')).toEqual([
       expect.objectContaining({ itemGroup: 'key:arcane_umbra_knuckle', attempts: 3 }),
     ])
+  })
+
+  // 계정 id 만 보면 옛 번호로 적힌 같은 캐릭터의 줄이 남아 같은 강화가 두 번 세어진다.
+  it('그 넥슨 계정 캐릭터의 그날 줄은 다른 계정 id 로 적혔어도 갈아 끼운다', async () => {
+    await replaceEnhancementTotals('account-old', 'cube', '2026-10-20', [draft(), draft(EARRING)], NOW)
+
+    await replaceEnhancementTotals('account-new', 'cube', '2026-10-20', [draft({ attempts: 3 })], NOW, ['ocid-낟낟'])
+
+    expect((await loadEnhancementTotals('2026-10-20', '2026-10-20')).map((total) => [total.nexonAccountId, total.itemGroup, total.attempts]))
+      .toEqual([['account-new', 'key:arcane_umbra_knuckle', 3]])
   })
 
   // 한 종류를 다시 받았다고 같은 날 다른 종류 · 다른 계정의 합계가 지워지면 안 된다.
@@ -111,33 +123,6 @@ describe('갈아 끼우기', () => {
     ])
   })
 
-  // 성 칸 전에 표를 만든 기기는 CREATE 문이 칸을 안 붙인다. 칸이 없으면 INSERT 가 실패해 그 날의 강화 지출이 통째로 안 적힌다.
-  it('성 칸이 없던 옛 기기의 표에도 적힌다. 옛 줄의 두 칸은 NULL 이다', async () => {
-    real.inspect((db) => {
-      db.exec(`CREATE TABLE enhancement_totals (
-        id TEXT NOT NULL PRIMARY KEY DEFAULT (${NEW_UUID_SQL}),
-        nexon_account_id TEXT NOT NULL, history_date TEXT NOT NULL, character_name TEXT NOT NULL,
-        enhancement_type TEXT NOT NULL, enhancement_category TEXT NOT NULL, item_group TEXT NOT NULL,
-        item_key TEXT, item_name TEXT NOT NULL, attempts INTEGER NOT NULL, attempt_cost_meso INTEGER NOT NULL,
-        destroy_defence_cost_meso INTEGER NOT NULL, event_world INTEGER, updated_at TEXT NOT NULL,
-        UNIQUE (nexon_account_id, history_date, character_name, enhancement_category, item_group))`)
-      db.exec(
-        `INSERT INTO enhancement_totals (nexon_account_id, history_date, character_name, enhancement_type, enhancement_category,
-           item_group, item_name, attempts, attempt_cost_meso, destroy_defence_cost_meso, event_world, updated_at)
-         VALUES ('account-main', '2026-10-19', '낟낟', 'starforce', 'starforce', 'key:arcane_umbra_knuckle',
-           '아케인셰이드 클로', 1, 1000, 0, 0, '2026-10-19T00:00:00.000Z')`,
-      )
-    })
-
-    const starforce = draft({ enhancementType: 'starforce', enhancementCategory: 'starforce', fromStar: 17, toStar: 21 })
-    await replaceEnhancementTotals('account-main', 'starforce', '2026-10-20', [starforce], NOW)
-
-    expect((await loadEnhancementTotals('2026-10-19', '2026-10-20')).map((total) => [total.fromStar, total.toStar])).toEqual([
-      [null, null],
-      [17, 21],
-    ])
-  })
-
   it('이벤트 월드 판정의 세 값을 그대로 되읽는다', async () => {
     await replaceEnhancementTotals(
       'account-main',
@@ -156,9 +141,19 @@ describe('갈아 끼우기', () => {
   })
 })
 
+/** 옛 기기에 남은 원본 표. 새 기기에는 없다. */
+const LEGACY_HISTORY_TABLE = `CREATE TABLE IF NOT EXISTS enhancement_history (
+  id TEXT NOT NULL PRIMARY KEY, kind TEXT NOT NULL, date_key TEXT NOT NULL, created_at TEXT NOT NULL, character_name TEXT NOT NULL,
+  target_item TEXT NOT NULL, item_key TEXT, item_level INTEGER, payload TEXT NOT NULL, cost_meso INTEGER)`
+
+function historyTableExists(): boolean {
+  return real.inspect((db) => db.prepare(`SELECT 1 FROM sqlite_master WHERE name = 'enhancement_history'`).all().length > 0)
+}
+
 /** 옛 원본 표에 줄을 심는다. 큐브 한 줄은 200 레벨이라 감정비용이 500,000 이다. */
 async function seedHistory(rows: { id: string; kind: string; date: string; name: string; level: number | null; payload?: object }[]) {
   const db = await getBossProfitDb()
+  await db.execute(LEGACY_HISTORY_TABLE)
   for (const row of rows) {
     await db.run(
       `INSERT INTO enhancement_history (id, kind, date_key, created_at, character_name, target_item, item_key, item_level, payload)
@@ -168,66 +163,37 @@ async function seedHistory(rows: { id: string; kind: string; date: string; name:
   }
 }
 
-describe('이벤트 월드에서 본 이름', () => {
-  // 지운 캐릭터를 가를 단서라 지우지 않는다. 같은 이름 · 월드를 매 회차 다시 보아도 한 줄이다.
-  it('같은 계정 · 이름 · 월드는 한 줄이고 계정마다 따로 읽는다', async () => {
-    await rememberEventWorldCharacters('account-main', [{ characterName: '지운캐릭', worldKey: 'special_2' }], NOW)
-    await rememberEventWorldCharacters(
-      'account-main',
-      [
-        { characterName: '지운캐릭', worldKey: 'special_2' },
-        { characterName: '지운캐릭', worldKey: 'special' },
-      ],
-      NOW,
-    )
-    await rememberEventWorldCharacters('account-other', [{ characterName: '남의캐릭', worldKey: 'special' }], NOW)
+// 리프 전 줄은 리프 뒤 ocid 에 붙지만 그 월드는 리프 전 월드다. 같은 기간의 스타포스 줄이 그 월드를 든다.
+describe('리프 전 월드', () => {
+  it('리프한 날 앞의 그 캐릭터 스타포스 줄 가운데 날짜가 가까운 줄의 월드다', async () => {
+    const starforce = (historyDate: string, worldKey: string) =>
+      draft({ historyDate, enhancementType: 'starforce', enhancementCategory: 'starforce', worldKey })
+    await replaceEnhancementTotals('account-main', 'starforce', '2026-08-01', [starforce('2026-08-01', 'challengers_2')], NOW)
+    await replaceEnhancementTotals('account-main', 'starforce', '2026-09-20', [starforce('2026-09-20', 'elysium')], NOW)
 
-    const mine = await loadEventWorldCharacters('account-main')
-    expect([...mine].map(([name, keys]) => [name, [...keys].sort()])).toEqual([['지운캐릭', ['special', 'special_2']]])
+    await expect(findPreLeapWorldKey('ocid-낟낟', '2026-09-11', '2026-08-05')).resolves.toBe('challengers_2')
+    await expect(findPreLeapWorldKey('ocid-낟낟', '2026-07-01', '2026-06-05')).resolves.toBeNull()
   })
 })
 
-describe('남겨 둔 이름으로 다시 보기', () => {
-  // 고치는 것은 목록에 없는 이름의 큐브 · 잠재 · 소울 중 일반 월드로 적힌 줄뿐이다. 스타포스는 줄의 월드로 이미 판정했다.
-  it('그 계정 · 그 이름 · 기간 안 · 스타포스가 아닌 0 줄만 1 로 고친다', async () => {
-    const name = { characterName: '지운캐릭' }
-    await replaceEnhancementTotals('account-main', 'cube', '2025-11-20', [draft({ ...name, historyDate: '2025-11-20' })], NOW)
-    await replaceEnhancementTotals('account-main', 'cube', '2025-12-19', [draft({ ...name, historyDate: '2025-12-19' })], NOW)
-    await replaceEnhancementTotals(
-      'account-main',
-      'potential',
-      '2025-12-18',
-      [draft({ ...name, historyDate: '2025-12-18', enhancementType: 'potential', enhancementCategory: 'potential' })],
-      NOW,
-    )
-    await replaceEnhancementTotals(
-      'account-main',
-      'starforce',
-      '2025-11-25',
-      [draft({ ...name, historyDate: '2025-11-25', enhancementType: 'starforce', enhancementCategory: 'starforce' })],
-      NOW,
-    )
-    await replaceEnhancementTotals('account-main', 'cube', '2025-11-26', [draft({ ...name, historyDate: '2025-11-26', eventWorld: null })], NOW)
-    await replaceEnhancementTotals('account-main', 'cube', '2025-11-27', [draft({ historyDate: '2025-11-27' })], NOW)
-    await replaceEnhancementTotals('account-other', 'cube', '2025-11-21', [draft({ ...name, historyDate: '2025-11-21' })], NOW)
-
-    await markEventWorldTotals('account-main', '지운캐릭', '2025-11-20', '2025-12-19')
-
-    const rows = await loadEnhancementTotals('2025-11-01', '2025-12-31')
-    expect(rows.map((row) => [row.nexonAccountId, row.historyDate, row.characterName, row.enhancementType, row.eventWorld])).toEqual([
-      ['account-main', '2025-11-20', '지운캐릭', 'cube', true],
-      ['account-other', '2025-11-21', '지운캐릭', 'cube', false],
-      ['account-main', '2025-11-25', '지운캐릭', 'starforce', false],
-      ['account-main', '2025-11-26', '지운캐릭', 'cube', null],
-      ['account-main', '2025-11-27', '낟낟', 'cube', false],
-      ['account-main', '2025-12-18', '지운캐릭', 'potential', true],
-      ['account-main', '2025-12-19', '지운캐릭', 'cube', false],
-    ])
-  })
-})
+/** 앱이 그 이름으로 본 기간. 옮기는 단계는 넥슨을 부를 수 없어 이것으로만 줄을 캐릭터에 붙인다. */
+async function seenAs(ocid: string, name: string, worldKey: string): Promise<void> {
+  await recordCharacterAccounts(
+    [{ accountId: 'maple-1', characters: [{ ocid, name, world: '', worldKey, jobClass: '', level: 1 }] }],
+    '2026-09-01',
+    'account-main',
+  )
+  await recordCharacterAccounts(
+    [{ accountId: 'maple-1', characters: [{ ocid, name, world: '', worldKey, jobClass: '', level: 1 }] }],
+    '2026-10-31',
+    'account-main',
+  )
+}
 
 describe('옛 원본을 합계로 옮기기', () => {
-  it('날짜 · 종류마다 묶어 메인 계정으로 적고, 다 옮기면 표시를 남긴다', async () => {
+  it('날짜 · 종류마다 앱이 본 캐릭터에 붙여 메인 계정으로 적고, 다 옮기면 표시를 남긴다', async () => {
+    await seenAs('o-낟낟', '낟낟', 'elysium')
+    await seenAs('o-머리', '머리맨들맨둘', 'special')
     await seedHistory([
       { id: 'a', kind: 'cube', date: '2026-10-01', name: '낟낟', level: 200 },
       { id: 'b', kind: 'cube', date: '2026-10-01', name: '낟낟', level: 200 },
@@ -238,14 +204,43 @@ describe('옛 원본을 합계로 옮기기', () => {
     await ensureEnhancementTotals()
 
     const totals = await loadEnhancementTotals('2026-10-01', '2026-10-02')
-    expect(totals.map((total) => [total.historyDate, total.characterName, total.enhancementType, total.attempts, total.eventWorld]))
+    expect(totals.map((total) => [total.historyDate, total.ocid, total.enhancementType, total.attempts, total.eventWorld]))
       .toEqual([
-        ['2026-10-01', '낟낟', 'cube', 2, false],
-        ['2026-10-02', '낟낟', 'starforce', 1, false],
-        ['2026-10-02', '머리맨들맨둘', 'cube', 1, true],
+        ['2026-10-01', 'o-낟낟', 'cube', 2, false],
+        ['2026-10-02', 'o-낟낟', 'starforce', 1, false],
+        ['2026-10-02', 'o-머리', 'cube', 1, true],
       ])
     expect(new Set(totals.map((total) => total.nexonAccountId))).toEqual(new Set(['account-main']))
     expect(moved.markEnhancementTotalsMoved).toHaveBeenCalledTimes(1)
+    expect(historyTableExists()).toBe(false)
+  })
+
+  // 원본은 옮기는 단계 말고는 읽는 곳이 없다. 옮긴 기기에 남기면 자리만 차지한다.
+  it('이미 옮긴 기기는 원본 표를 지우고, 새 기기에는 원본 표가 처음부터 없다', async () => {
+    await getBossProfitDb()
+    expect(historyTableExists()).toBe(false)
+
+    await seedHistory([{ id: 'a', kind: 'cube', date: '2026-10-01', name: '낟낟', level: 200 }])
+    moved.isEnhancementTotalsMoved.mockResolvedValue(true)
+    await ensureEnhancementTotals()
+
+    expect(historyTableExists()).toBe(false)
+  })
+
+  // 넥슨에서 그날 이름을 찾게 한다. 버린 채 두면 그 날의 지출이 영영 빠진다.
+  it('앱이 본 적 없는 이름의 줄은 적지 않고, 그 날을 다시 받을 날로 적는다', async () => {
+    await seenAs('o-낟낟', '낟낟', 'elysium')
+    await seedHistory([
+      { id: 'a', kind: 'cube', date: '2026-10-01', name: '낟낟', level: 200 },
+      { id: 'b', kind: 'cube', date: '2026-10-01', name: '지운캐릭', level: 200 },
+    ])
+
+    await ensureEnhancementTotals()
+
+    expect((await loadEnhancementTotals('2026-10-01', '2026-10-01')).map((total) => total.ocid)).toEqual(['o-낟낟'])
+    expect(real.inspect((db) => db.prepare('SELECT nexon_account_id, enhancement_type, history_date FROM enhancement_refetches').all())).toEqual([
+      { nexon_account_id: 'account-main', enhancement_type: 'cube', history_date: '2026-10-01' },
+    ])
   })
 
   it('옮긴 표시가 있으면 다시 옮기지 않는다', async () => {
@@ -260,6 +255,7 @@ describe('옛 원본을 합계로 옮기기', () => {
   // 이름 목록 없이 옮기면 판정이 빈 줄이 남고, 옛 날짜는 다시 받지 않아 그 지출이 영영 안 보인다.
   it('계정이나 이벤트 월드 이름 목록이 없으면 옮기지 않고 다음 호출이 다시 본다', async () => {
     readEventWorldNames.mockReturnValue(null)
+    await seenAs('o-낟낟', '낟낟', 'elysium')
     await seedHistory([{ id: 'a', kind: 'cube', date: '2026-10-01', name: '낟낟', level: 200 }])
 
     await ensureEnhancementTotals()

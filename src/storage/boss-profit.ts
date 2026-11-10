@@ -11,6 +11,7 @@ import {
   numberOrNull,
   periodKeyValues,
 } from './boss-periods'
+import { bumpBossDropRecordsRevision } from './boss-drops'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
 import { NEW_UUID_SQL } from './sqlite/uuid'
@@ -563,6 +564,47 @@ export async function getEarliestBossProfitPeriodKeys(
     earliest[row.cycle as BossCycle] = row.period_key as string
   }
   return earliest
+}
+
+/**
+ * 월드 리프한 캐릭터의 보스 기록을 새 ocid 로 옮긴다. 옮긴 기간 수를 돌려준다.
+ *
+ * 새 캐릭터에 같은 보스 · 난이도 조합이 없으면 조합째 옮겨 옛 파티 설정도 따라간다. 있으면 기간만 옮기고 설정은 리프 뒤에 고른
+ * 새 것을 둔다. 새 조합에 이미 있는 기간은 옮기지 않는다. 리프 중복 정리가 짝을 짓지 않은 기간이라 어느 쪽이 맞는지 모른다.
+ * 기간의 월드 칸은 그대로라 리프 전 월드로 센다. 드롭은 기간을 따라간다.
+ */
+export async function moveBossRecordsToOcid(fromOcid: string, toOcid: string): Promise<number> {
+  const db = await getBossProfitDb()
+  const moved = await inTransaction(db, async () => {
+    const { values } = await db.query(
+      `SELECT src.id AS from_id, dst.id AS to_id,
+              (SELECT COUNT(*) FROM boss_party_periods pe WHERE pe.party_id = src.id) AS periods
+         FROM boss_parties src
+         LEFT JOIN boss_parties dst ON dst.ocid = ? AND dst.boss_key = src.boss_key AND dst.difficulty = src.difficulty
+        WHERE src.ocid = ?`,
+      [toOcid, fromOcid],
+    )
+    let count = 0
+    for (const row of values ?? []) {
+      if (row.to_id === null || row.to_id === undefined) {
+        await db.run(`UPDATE boss_parties SET ocid = ? WHERE id = ?`, [toOcid, row.from_id])
+        count += Number(row.periods)
+        continue
+      }
+      const free = `party_id = ? AND period_key NOT IN (SELECT period_key FROM boss_party_periods WHERE party_id = ?)`
+      const params = [row.from_id, row.to_id]
+      const { values: counted } = await db.query(`SELECT COUNT(*) AS n FROM boss_party_periods WHERE ${free}`, params)
+      const periods = Number(counted?.[0]?.n ?? 0)
+      if (periods > 0) await db.run(`UPDATE boss_party_periods SET party_id = ? WHERE ${free}`, [row.to_id, ...params])
+      count += periods
+    }
+    return count
+  })
+  if (moved > 0) {
+    bumpRecordsRevision()
+    bumpBossDropRecordsRevision()
+  }
+  return moved
 }
 
 /**

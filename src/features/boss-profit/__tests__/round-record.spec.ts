@@ -28,6 +28,7 @@ jest.mock('../auto-record', () => ({
 }))
 jest.mock('../orphan-drops', () => ({ sweepOrphanDrops: jest.fn(async () => 0) }))
 jest.mock('../world-leap-records', () => ({ cleanUpWorldLeapDuplicates: jest.fn(async () => 0) }))
+jest.mock('../world-leap-moves', () => ({ moveWorldLeapRecords: jest.fn(async () => 0) }))
 jest.mock('../../toast/store', () => ({ useToastStore: { getState: () => ({ showInfo: mockShowInfo }) } }))
 const mockShowInfo = jest.fn()
 
@@ -39,6 +40,7 @@ const { getBossProfitRecords: recordsMock } = jest.requireMock('../../../storage
 const { autoRecordRows: autoRecordMock } = jest.requireMock('../auto-record') as Record<string, jest.Mock>
 const { sweepOrphanDrops: sweepMock } = jest.requireMock('../orphan-drops') as Record<string, jest.Mock>
 const { cleanUpWorldLeapDuplicates: cleanUpMock } = jest.requireMock('../world-leap-records') as Record<string, jest.Mock>
+const { moveWorldLeapRecords: moveMock } = jest.requireMock('../world-leap-moves') as Record<string, jest.Mock>
 
 const NOW = new Date('2026-10-30T05:00:00.000Z')
 const 주간보스 = bossesInSection('weekly')[0]
@@ -75,6 +77,7 @@ beforeEach(() => {
   autoRecordMock.mockImplementation(async ({ rows }: { rows: unknown[] }) => rows)
   sweepMock.mockResolvedValue(0)
   cleanUpMock.mockResolvedValue(0)
+  moveMock.mockResolvedValue(0)
 })
 
 it('캐시로 채운 캐릭터는 자동 기록과 고아 정리에서 뺀다', async () => {
@@ -106,6 +109,10 @@ it('쓰기 셋은 판 알림을 모으는 한 묶음 안에서 돈다', async ()
     depths.push(mockBatchDepth)
     return 0
   })
+  moveMock.mockImplementation(async () => {
+    depths.push(mockBatchDepth)
+    return 0
+  })
   sweepMock.mockImplementation(async () => {
     depths.push(mockBatchDepth)
     return 0
@@ -113,7 +120,18 @@ it('쓰기 셋은 판 알림을 모으는 한 묶음 안에서 돈다', async ()
 
   await recordBossProfitFromRound(['a'], [result('a')], NOW)
 
-  expect(depths).toEqual([1, 1, 1])
+  expect(depths).toEqual([1, 1, 1, 1])
+})
+
+// 옮긴 기간은 새 캐릭터의 행이 된다. 다시 안 읽으면 고아 정리가 옮겨 온 기간을 못 보고 그 드롭을 고아로 읽는다.
+it('리프 옮기기가 보스 기간을 옮겼으면 기록을 다시 읽어 고아 정리에 넘긴다', async () => {
+  await recordBossProfitFromRound(['a'], [result('a')], NOW)
+  expect(recordsMock).toHaveBeenCalledTimes(1)
+
+  recordsMock.mockClear()
+  moveMock.mockResolvedValue(1)
+  await recordBossProfitFromRound(['a'], [result('a')], NOW)
+  expect(recordsMock).toHaveBeenCalledTimes(2)
 })
 
 it('지운 드롭이 있으면 안내하고, 없으면 조용하다', async () => {

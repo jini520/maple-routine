@@ -1,7 +1,7 @@
 # ADR-101+186 다계정: 넥슨 로그인 아래에 API 키 계정을 더 등록한다
 
 > ⚪ 미구현
-> 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/collect.ts` · `features/cashbook/account-names.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts`
+> 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/` · `lib/enhancement/sighted-owner.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/stats/aggregate.ts` · `lib/mvp/starforce.ts` · `features/cashbook/account-names.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts` · `features/boss-profit/world-leap-moves.ts` · `features/boss-profit/world-leap-link.ts` · `storage/cashbook-entries.ts` · `storage/character-profiles.ts`
 
 ## 배경
 
@@ -340,12 +340,30 @@
 ### 결정 22. 리프하면 옛 ocid 의 기록을 새 ocid 로 옮기되, 각 기록은 그때의 월드를 지킨다
 
 - 리프를 이으면 옛 ocid 에 붙은 기록을 새 ocid 로 옮긴다(사용자 지정 2026-11-09). 가계부 기록 · 조각 보관 · 직접 체크 목록 · 마지막 사냥 ·
-  기억한 심볼 레벨 · 파티 약속 · 보스 수익 계산기 기록 · 보스 기록이다. 지금은 추적 · 대표 · 마지막에 고른 캐릭터와 보스 파티 설정만
-  옮겨, 같은 캐릭터의 기록이 두 ocid 로 갈린다.
+  기억한 심볼 레벨 · 파티 약속 · 보스 수익 계산기 기록 · 보스 기록이다. 옮기지 않으면 같은 캐릭터의 기록이 두 ocid 로 갈린다.
+- 옮기기(`moveWorldLeapRecords`)는 리프 중복 정리([[ADR-040]] 결정 13) 바로 뒤에 연결마다 돈다. 창 동기화와 회차 자동 기록 뒤의 두
+  자리다. 리프한 기간의 같은 처치를 먼저 짝지어야 옮긴 옛 기록이 새 기록과 부딪치지 않는다. 잇는 순간 한 번이 아니라 회차마다 도는 것은,
+  이 기능 전에 이어 둔 연결의 기록도 옮기고 중간에 실패한 옮기기를 다음 회차가 마저 하기 위해서다. 다 옮긴 연결은 옮길 것이 없어 바로 끝난다.
+- 새 ocid 에 같은 자리의 값이 이미 있으면 새 ocid 의 것을 둔다. 리프 뒤에 사용자가 새 캐릭터에 적은 값이기 때문이다. 연결을 처음 쓸 때
+  보스 파티 설정을 복사하는 규칙([[ADR-040]] 결정 14)과 같다.
+
+| 기록 | 옮기는 법 |
+|---|---|
+| 가계부 기록 · 조각 보관 | 기록(`cashbook_entries`)과 헥사 강화가 가져간 보관 조각(`cashbook_entry_fragment_uses`)의 ocid 를 바꾼다. 조각 보관은 이 둘에서 세므로 함께 옮겨진다. 월드 칸은 그대로 둔다 |
+| 보스 기록 | 옛 캐릭터의 보스 · 난이도 조합(`boss_parties`)을 새 캐릭터로 옮긴다. 새 캐릭터에 같은 조합이 없으면 조합째 옮기고, 있으면 기간(`boss_party_periods`)만 옮기고 설정은 새 것을 둔다. 새 조합에 같은 기간이 이미 있으면 그 기간은 옮기지 않는다. 기간의 월드 칸은 그대로다 |
+| 직접 체크 목록 · 마지막 사냥 | 새 캐릭터에 값이 없을 때만 옮기고, 옛 값은 지운다 |
+| 기억한 심볼 레벨 | 대상(심볼 key · 헥사 코어 이름)마다 새 캐릭터에 없는 것만 옮기고, 옛 줄은 지운다 |
+| 파티 약속 | 그 캐릭터가 가는 보스 판의 ocid 를 바꾼다. 이 주만 바꾼 회차도 바꾼다. 파티원 칸은 약속에 파티원을 넣는 화면이 없어 늘 비어 있으므로 다루지 않는다 |
+| 보스 수익 계산기 기록 | 기록 속 옛 캐릭터를 새 캐릭터로 바꾼다. 새 캐릭터가 챌린저스 월드가 아니면 시즌 보스 줄은 빼고 옮긴다(사용자 지정 2026-11-10). 시즌 보스는 챌린저스 월드 캐릭터만 잡아서, 남기면 일반 월드 캐릭터가 못 잡는 보스가 수입에 든다. 새 캐릭터의 월드를 모르면 보스 선택처럼 시즌 보스를 못 잡는 캐릭터로 보고, 프로필을 못 읽은 회차에는 옮기지 않는다. 그 기록에 새 캐릭터가 이미 있으면 옛 캐릭터 항목을 지운다(사용자 지정 2026-11-10). 기록을 열면 추적 중인 캐릭터만 보이는데 기록 목록의 금액은 기록에 든 캐릭터를 모두 더해, 남겨 두면 두 금액이 갈린다. 기록에서 캐릭터 하나만 지우는 기능은 없다 |
+
 - 옮겨도 기록은 리프 전 월드의 기록으로 남는다(사용자 지정 2026-11-09). 그래서 캐릭터에 붙는 기록은 그때의 월드(`world_key`)를 함께
   적는다. 보스 기간(`boss_party_periods.world_key`)은 이미 그렇게 한다. 가계부 기록과 강화 합계에 이 칸을 더한다. 월드를 캐릭터의 지금
   월드로 읽으면 리프한 캐릭터의 과거가 새 월드로 옮겨 간다.
-- 이미 있는 기록의 월드는 1.0.14 이관이 그 기록의 ocid 의 프로필 월드로 채운다. 옮기기 전에 채워야 옛 월드가 남는다.
+- 가계부 기록의 월드는 캐릭터 기록을 적을 때 그 ocid 의 프로필 월드(`character_profiles.world_key`)로 채운다. 같은 ocid 의 월드는
+  바뀌지 않기 때문이다. 고칠 때는 캐릭터를 바꿨을 때만 다시 채운다. 옮긴 기록을 고칠 때 새 ocid 의 월드로 덮지 않기 위해서다. 메이플
+  ID 기록은 월드가 없어 비운다. 주인 모르는 옛 기록을 대표 캐릭터에 붙일 때(결정 28)도 그 캐릭터의 프로필 월드로 채운다.
+- 이미 있는 기록의 월드는 1.0.14 이관(DB 버전 19)이 그 기록의 ocid 의 프로필 월드로 채운다. 옮기기 전에 채워야 옛 월드가 남는다. 이관은
+  DB 를 열 때 돌고, 옮기기는 그 뒤의 회차에서 돈다.
 - 강화 줄의 월드는 스타포스면 응답의 `world_name` 이다. 아니면 결정 18 의 차례 1 ~ 3 으로 ocid 를 붙인 줄은 그 ocid 의 월드다. 같은
   ocid 의 월드는 바뀌지 않기 때문이다(사용자 확인 2026-11-10). 월드를 옮기면 리프처럼 ocid 가 바뀐다. 그래서 차례 1 로 붙인 줄도 그날
   월드를 따로 부르지 않는다.
@@ -353,8 +371,10 @@
   같은 기간 스타포스 줄의 월드를 쓰고, 그것도 없으면 비워 둔다.
 - 리프 전 기간의 줄은 이벤트 월드의 줄이 아니다. 스페셜 월드에서 일반 월드로는 리프할 수 없다(사용자 확인 2026-11-10). 그래서 월드를
   비워 둔 리프 전 줄도 지출로 센다. 모름으로 두면 그 날이 굳지 않아 같은 날을 끝없이 다시 받는다.
-- 리프를 잇는 자동 판정은 이름 · 직업에 만든 날(`character_date_create`)을 더해 본다. 만든 날은 리프 뒤에도 그대로라(결정 18 의 실측) 이름과
-  직업이 같은 다른 캐릭터를 가를 수 있다.
+- 리프를 잇는 자동 판정(`linkWorldLeapsByNameAndJob`)은 이름 · 직업에 만든 날(`character_date_create`)을 더해 본다. 만든 날은 리프
+  뒤에도 그대로라(결정 18 의 실측) 이름과 직업이 같은 다른 캐릭터를 가를 수 있다. 만든 날은 `character/basic` 을 받을 때 프로필
+  (`character_profiles.created_date`)에 적는다. 두 캐릭터 가운데 하나라도 만든 날을 모르면 이 조건은 건너뛴다. 이 기능 전에 리프한
+  캐릭터는 옛 ocid 를 더 부를 수 없어 만든 날을 알 길이 없다. 모름을 다름으로 읽으면 지금 잇는 리프를 못 잇는다.
 
 ### 결정 23. 월드 공유 컨텐츠의 진행 원장은 메이플 ID 와 월드마다 따로 둔다
 
@@ -442,6 +462,22 @@
 | `features/cashbook/__tests__/meso-rate.spec.ts` · `remembered-levels.spec.ts` | 결정 4: 메획 · 심볼 · 헥사 레벨을 그 캐릭터가 속한 계정의 자격으로 받는지 본다 |
 | `storage/__tests__/api-key.spec.ts` | 결정 5: 로그아웃 · 로그인 만료가 부계정 키를 귀속된 채 남기는지, 같은 계정 id 로 다시 로그인하면 이어지고 다른 id 면 이어지지 않는지, 로그인 화면의 로그인이 귀속 없는 키를 버리고 연동은 메인 키를 부계정으로 옮기는지, 앞 로그인의 부계정 키로 키 로그인하면 귀속을 든 채 메인이 되는지, 두 칸이 없던 옛 수단을 읽는지 본다 |
 | `features/auth/__tests__/store.spec.ts` · `features/app-entry/__tests__/stage.spec.ts` | 결정 5: 부계정 키만 남으면 로그인 상태가 아니고 로그인 화면으로 가며 키를 지우지 않는지 본다 |
+| `lib/enhancement/__tests__/sighted-owner.spec.ts` | 결정 18 차례 1: 그 이름으로 본 기간 안의 날만 붙이고, 이름을 바꾼 캐릭터는 그날 이름으로 찾고, 같은 날 같은 이름의 캐릭터가 둘이면 고르지 않는지 본다 |
+| `features/enhancement-history/__tests__/owners.spec.ts` | 결정 18 차례 2 ~ 4: 지금 이름이 같은 캐릭터부터 그날 이름을 묻고 적어 둔 값은 다시 묻지 않는지, 오늘은 목록 이름으로 붙이는지, 이름을 바꾼 날은 전날 · 다음 날 이름과 견주는지, 리프 전 기간을 만든 날과 처음 값이 온 날로 가르는지, 빈 이름 · 못 붙인 이름은 버리고 넥슨을 부르다 실패하면 다시 받는지 본다 |
+| `nexon/character/__tests__/client.spec.ts` | 결정 18: 날짜를 넣은 `character/basic` 이 그날 값이 없거나 400 `OPENAPI00003` · `OPENAPI00004` 면 값 없음으로 돌려주는지 본다 |
+| `features/enhancement-history/__tests__/spending.spec.ts` | 결정 18 · 20 · 22: 합계를 ocid 로 묶어 이름을 바꾼 캐릭터의 줄이 한 줄이 되는지, 붙이지 못한 줄을 버리는지, 이벤트 월드를 붙인 캐릭터의 월드로 판정하고 리프 전 줄은 이벤트 월드가 아닌지, 줄의 월드를 적는지 본다 |
+| `features/enhancement-history/__tests__/collect.spec.ts` | 결정 18: 붙일 곳이 없는 이름의 줄은 버리고 그 날을 굳히는지, 그날 이름을 묻다 실패한 날은 갈아 끼우지도 굳히지도 않는지, 그 넥슨 계정의 캐릭터를 갈아 끼우는 범위로 넘기는지, 이관이 지운 날을 뒤에서 받고 굳히면 지우는지, 넥슨 로그인 계정은 한 회차에 60일만 받는지 본다. 결정 22: 리프 전 줄에 같은 기간 스타포스 줄의 월드를 적는지 본다 |
+| `storage/sqlite/__tests__/enhancement-ocid-real-sqlite.test.ts` | 결정 18 · 20: 버전 18 이 앱이 본 기간의 줄에 ocid · 메이플 ID · 월드를 붙이고 계정 id 둘로 겹친 줄은 늦은 줄을 남기는지, 못 붙인 줄은 그 날의 조회 기록과 함께 지우고 다시 받을 날로 적는지, 조회 기록의 계정 칸이 `NOT NULL` 이 되고 이름 판정 표가 지워지는지 본다 |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 결정 18: 그 넥슨 계정 캐릭터의 그날 줄은 다른 계정 id 로 적혔어도 갈아 끼우는지, 옛 원본을 옮길 때 앱이 본 캐릭터에 붙이고 못 붙인 날을 다시 받을 날로 적는지 본다. 결정 22: 리프 전 월드를 리프한 날 앞의 가까운 스타포스 줄에서 찾는지 본다 |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (원본 표) · `storage/__tests__/enhancement-history.spec.ts` | 결정 27: 옛 원본을 옮기면 원본 표를 지우고, 이미 옮긴 기기는 켤 때 지우고, 새 DB 에는 원본 표가 없고, 없는 표는 읽지 않는지 본다 |
+| `storage/__tests__/spend.spec.ts` · `features/cashbook/__tests__/legacy-entry-accounts.spec.ts` · `app/cashbook/__tests__/SpendSheet.test.tsx` | 결정 28: 남은 주인 모르는 옛 기록을 대표 캐릭터의 메이플 ID 나 그 캐릭터에 붙이는지, 대표를 모르면 다음에 다시 보는지 본다. 결정 29: 지출 컨텐츠 시트에 메이플 ID 보기가 서는지 본다 |
+| `storage/__tests__/shared-progress-cache.spec.ts` · `features/schedule-sync/__tests__/schedule-sync.spec.ts` (원장) | 결정 23: 월드 원장이 같은 월드라도 메이플 ID 마다 따로인지, 옛 원장을 추적 캐릭터가 있는 메이플 ID 마다 베끼고 지우는지, 새 원장의 항목이 이기고 한 번만 도는지, 목록을 못 받은 계정이 있으면 나누기를 미루는지 본다 |
+| `features/boss-profit/__tests__/world-leap-moves.spec.ts` · `round-record.spec.ts` · `features/schedule-window/__tests__/sync.spec.ts` | 결정 22: 연결마다 여덟 기록을 옛 ocid 에서 새 ocid 로 옮기는지, 한 기록이나 한 연결의 실패가 나머지를 막지 않는지, 계산기 기록은 새 캐릭터가 챌린저스 월드가 아니거나 월드를 모르면 시즌 보스 줄을 빼고 프로필을 못 읽으면 옮기지 않는지, 약속을 바꿨을 때만 약속 쿼리를 무효화하는지, 옮기기가 리프 중복 정리 바로 뒤에 돌고 보스 기간을 옮겼으면 회차가 기록을 다시 읽는지 본다 |
+| `storage/sqlite/__tests__/world-leap-real-sqlite.test.ts` (옮기기) | 결정 22: 보스 조합을 새 캐릭터에 없으면 조합째, 있으면 기간만 옮기고 새 조합에 이미 있는 기간은 남기는지, 가계부 기록 · 가져간 보관 조각의 ocid 를 바꾸고 월드는 두는지, 기억한 레벨은 새 캐릭터에 없는 대상만 옮기는지 본다 |
+| `storage/__tests__/manual-tracked-content.spec.ts` · `last-hunts.spec.ts` · `party-appointments.spec.ts` · `boss-profit-calculator-records.spec.ts` (옮기기) | 결정 22: 새 캐릭터에 값이 있으면 새 것을 두고 옛 값을 지우는지, 약속의 보스 판과 이 주만 바꾼 회차의 캐릭터를 바꾸는지, 새 캐릭터가 이미 든 계산기 기록에서는 옛 캐릭터 항목을 지우는지 본다 |
+| `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` (월드) | 결정 22: 캐릭터 기록을 적을 때 프로필 월드를 채우고 메이플 ID 기록은 비우는지, 고칠 때 캐릭터를 바꿨을 때만 다시 채우는지, 대표 캐릭터에 붙인 옛 기록도 채우는지, 버전 19 가 이미 있는 기록을 채우는지 본다 |
+| `features/boss-profit/__tests__/world-leap-link.spec.ts` (만든 날) · `nexon/character/__tests__/normalize.spec.ts` · `features/schedule-sync/__tests__/character-basic-fetch.spec.ts` · `storage/__tests__/character-profiles.spec.ts` | 결정 22: 두 캐릭터의 만든 날이 다르면 잇지 않고 하나라도 모르면 이름 · 직업으로 잇는지, `character/basic` 의 만든 날을 KST 날짜로 프로필에 남기고 모르는 채 부른 경로가 그 값을 지우지 않는지 본다 |
+| `features/cashbook/__tests__/records.spec.ts` · `features/stats/__tests__/aggregate.spec.ts` · `lib/mvp/__tests__/starforce.spec.ts` | 결정 20: 가계부 · 통계가 강화 줄을 ocid 로 묶어 이름을 바꾼 캐릭터의 옛 이름 줄도 그 캐릭터에 넣는지, MVP 할인을 그 줄의 메이플 ID 등급으로 붙이는지 본다 |
 | `features/auth/__tests__/nexon-login.spec.ts` | 결정 14: 로그인 화면의 넥슨 로그인만 세션을 받은 뒤 저장하기 전에 추적 목록을 비우는지, 연동 시트와 창을 닫거나 세션을 못 받은 로그인은 비우지 않는지 본다 |
 | `features/auth/__tests__/store.spec.ts` | 결정 14: 키 입력이 키를 저장하기 전에 추적 목록을 비우고, 무효 키 · 개발 단계 키는 비우지 않는지 본다. 로그인 화면과 연동 시트가 새 로그인 여부를 다르게 넘기는지 본다. 결정 20: 키 입력이 소속을 키를 저장한 뒤 그 키의 계정 id 로 적고, 막힌 키는 적지 않는지 본다 |
 | `features/character-selection/__tests__/forget.spec.ts` | 결정 14: 저장소 · 쿼리 캐시 · 메모리의 추적 목록 · 대표 · 마지막에 고른 캐릭터를 모두 비우는지, 비우기 전에 시작한 조회가 늦게 끝나도 앞 목록이 캐시에 돌아오지 않는지 본다 |

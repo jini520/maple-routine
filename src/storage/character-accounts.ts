@@ -3,16 +3,18 @@
  *
  * @see docs/persistence/sqlite.md `character_accounts`
  */
+import type { OwnerSighting } from '../lib/enhancement/sighted-owner'
 import type { CharacterAccountSighting } from '../lib/mvp/membership'
 import type { MapleAccount } from '../types'
 import { getBossProfitDb } from './sqlite/db'
 
 const UPSERT_SQL = `
-  INSERT INTO character_accounts (ocid, name, account_id, nexon_account_id, first_seen_date, last_seen_date)
-  VALUES (?, ?, ?, ?, ?, ?)
+  INSERT INTO character_accounts (ocid, name, account_id, nexon_account_id, first_seen_date, last_seen_date, world_key)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(ocid, name, account_id) DO UPDATE SET
     -- 계정을 모르는 자격(저장 전에 검증하는 키)으로 본 것이 아는 계정을 지우면 안 된다.
     nexon_account_id = COALESCE(excluded.nexon_account_id, nexon_account_id),
+    world_key = COALESCE(excluded.world_key, world_key),
     first_seen_date = MIN(first_seen_date, excluded.first_seen_date),
     last_seen_date = MAX(last_seen_date, excluded.last_seen_date)
 `
@@ -32,7 +34,15 @@ export async function recordCharacterAccounts(
   for (const account of accounts) {
     for (const character of account.characters) {
       if (character.name === '') continue
-      await db.run(UPSERT_SQL, [character.ocid, character.name, account.accountId, nexonAccountId, seenOn, seenOn])
+      await db.run(UPSERT_SQL, [
+        character.ocid,
+        character.name,
+        account.accountId,
+        nexonAccountId,
+        seenOn,
+        seenOn,
+        character.worldKey ?? null,
+      ])
     }
   }
 }
@@ -90,4 +100,25 @@ export async function getNexonAccountIdsOfOcids(ocids: readonly string[]): Promi
   )
   for (const row of values ?? []) found.set(row.ocid as string, row.nexon_account_id as string)
   return found
+}
+
+/** 강화 줄을 캐릭터에 붙일 때 쓰는 소속 기록. 어느 넥슨 계정의 목록에서 봤는지와 월드까지 든다. */
+export interface EnhancementOwnerSighting extends OwnerSighting {
+  worldKey: string | null
+}
+
+export async function getOwnerSightings(): Promise<EnhancementOwnerSighting[]> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT ocid, name, account_id, nexon_account_id, first_seen_date, last_seen_date, world_key FROM character_accounts`,
+  )
+  return (values ?? []).map((row) => ({
+    ocid: row.ocid as string,
+    name: row.name as string,
+    accountId: row.account_id as string,
+    nexonAccountId: (row.nexon_account_id as string | null | undefined) ?? null,
+    firstSeenOn: row.first_seen_date as string,
+    lastSeenOn: row.last_seen_date as string,
+    worldKey: (row.world_key as string | null | undefined) ?? null,
+  }))
 }

@@ -1,5 +1,5 @@
 import { installFakePreferences } from './fake-preferences'
-import { getLastHunts, setLastHunt } from '../last-hunts'
+import { getLastHunts, moveLastHuntToOcid, setLastHunt } from '../last-hunts'
 
 let prefs = installFakePreferences()
 
@@ -129,6 +129,23 @@ describe('유니온의 부 단계', () => {
     expect(await getLastHunts()).toEqual({
       'ocid-1': { groundKey: 'geardrak_basement_1', boosts: [], unionTier: 3 },
       'ocid-2': { groundKey: 'arteria_west', boosts: [], unionTier: 3 },
+    })
+  })
+})
+
+// 리프 뒤에 새 캐릭터로 사냥을 적었으면 그것이 마지막 사냥이다.
+describe('월드 리프 옮기기', () => {
+  it('새 캐릭터 몫이 없으면 옛 몫을 옮기고, 있으면 새 몫을 둔다. 옛 몫은 어느 쪽이든 지운다', async () => {
+    await setLastHunt('old-1', { groundKey: 'geardrak_basement_1', boosts: ['union'], unionTier: 3 })
+    await setLastHunt('old-2', { groundKey: 'arteria_west', boosts: [], unionTier: 3 })
+    await setLastHunt('new-2', { groundKey: 'geardrak_basement_2_1', boosts: [], unionTier: 2 })
+
+    await moveLastHuntToOcid('old-1', 'new-1')
+    await moveLastHuntToOcid('old-2', 'new-2')
+
+    expect(await getLastHunts()).toEqual({
+      'new-1': { groundKey: 'geardrak_basement_1', boosts: ['union'], unionTier: 3 },
+      'new-2': { groundKey: 'geardrak_basement_2_1', boosts: [], unionTier: 2 },
     })
   })
 })

@@ -87,17 +87,12 @@ interface CharacterEntry {
 /**
  * 범위의 기록에 캐릭터 key 를 붙인 목록. 캐릭터별 합계와 캐릭터별 갈래가 같은 기준으로 나뉘도록 둘이 함께 쓴다.
  *
- * 메이플 ID 기록은 ID 마다 한 줄이다. 주인을 모르는 옛 손입력은 안 든다. 강화 기록은 이름만 들어, 지금 이름과 같은
- * 캐릭터가 있으면 거기 붙고 없으면(개명 전 이름) 그 이름으로 따로 선다. 가계부가 강화 줄을 이름으로 묶는 것과 같다.
+ * 메이플 ID 기록은 ID 마다 한 줄이다. 주인을 모르는 옛 손입력은 안 든다. 강화 기록도 그날 그 이름이었던 캐릭터(ocid)에
+ * 붙어 있어, 이름을 바꾼 캐릭터의 줄도 그 캐릭터로 묶인다.
  */
 function characterEntriesBetween(byDate: DaysByDate, range: StatsRange): CharacterEntry[] {
-  const entries = entriesBetween(byDate, range)
-  const keyByName = new Map<string, string>()
   const keyed: CharacterEntry[] = []
-
-  // 강화 줄이 이름으로 붙을 자리를 먼저 세운다. 줄 차례와 상관없이 같은 결과가 나와야 한다.
-  for (const entry of entries) {
-    if (entry.kind === 'enhancement') continue
+  for (const entry of entriesBetween(byDate, range)) {
     const accountId = entry.kind === 'income' || entry.kind === 'spend' ? entry.record.accountId : undefined
     if (accountId !== undefined) {
       keyed.push({ key: `account:${accountId}`, ocid: null, accountId, name: entry.characterName, entry })
@@ -105,18 +100,7 @@ function characterEntriesBetween(byDate: DaysByDate, range: StatsRange): Charact
     }
     const ocid = entry.kind === 'income' || entry.kind === 'spend' ? entry.record.ocid : entry.ocid
     if (ocid === null) continue
-    const key = `ocid:${ocid}`
-    keyed.push({ key, ocid, name: entry.characterName, entry })
-    if (entry.characterName !== '') keyByName.set(entry.characterName, key)
-  }
-  for (const entry of entries) {
-    if (entry.kind !== 'enhancement') continue
-    const key = keyByName.get(entry.characterName)
-    keyed.push(
-      key === undefined
-        ? { key: `name:${entry.characterName}`, ocid: null, name: entry.characterName, entry }
-        : { key, ocid: key.slice('ocid:'.length), name: entry.characterName, entry },
-    )
+    keyed.push({ key: `ocid:${ocid}`, ocid, name: entry.characterName, entry })
   }
   return keyed
 }

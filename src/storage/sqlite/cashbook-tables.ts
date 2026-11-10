@@ -13,6 +13,8 @@ export const CASHBOOK_ENTRIES_BODY = `(
     account_id TEXT,
     -- 주인을 모르는 옛 기록이 어느 넥슨 계정의 것인지. 새 기록은 적지 않는다. 계정은 ocid · account_id 에서 찾는다.
     nexon_account_id TEXT,
+    -- 캐릭터 기록을 적을 때 그 캐릭터의 월드 key. 리프로 기록을 새 ocid 로 옮겨도 그때의 월드에 남는다. 메이플 ID 기록은 NULL 이다.
+    world_key TEXT,
     entry_type TEXT NOT NULL CHECK (entry_type IN ('income', 'spend')),
     -- 갈래 key. 기타가 수입 · 지출 양쪽에 있어 entry_type 과 함께 읽는다.
     category_key TEXT NOT NULL,

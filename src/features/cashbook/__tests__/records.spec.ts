@@ -44,7 +44,7 @@ jest.mock('../../enhancement-history/legacy-totals', () => ({ ensureEnhancementT
 jest.mock('../../../storage/mvp-grades', () => ({ getMvpGradeHistories: jest.fn() }))
 jest.mock('../../../storage/character-accounts', () => ({ getCharacterAccountSightings: jest.fn() }))
 jest.mock('../../../storage/hexa-storage-checks', () => ({ setHexaStorageChecks: jest.fn(), getHexaStorageChecks: jest.fn() }))
-jest.mock('../../../lib/mvp/starforce', () => ({ starforceMvpDiscountResolver: jest.fn() }))
+jest.mock('../../../lib/mvp/starforce', () => ({ starforceMvpDiscountOf: jest.fn() }))
 jest.mock('../../app-review/request', () => ({ countCoreSave: jest.fn() }))
 jest.mock('../account-names', () => ({ loadAccountLabels: jest.fn(async () => new Map()) }))
 
@@ -89,7 +89,7 @@ beforeEach(() => {
   legacyTotals.ensureEnhancementTotals.mockResolvedValue(undefined)
   mvpGrades.getMvpGradeHistories.mockResolvedValue(new Map())
   characterAccounts.getCharacterAccountSightings.mockResolvedValue([])
-  mvp.starforceMvpDiscountResolver.mockReturnValue(() => 0)
+  mvp.starforceMvpDiscountOf.mockReturnValue(0)
   lastHunts.getLastHunts.mockResolvedValue({})
   income.getIncomeMonthRows.mockResolvedValue([])
   spend.getSpendMonthRows.mockResolvedValue([])
@@ -1372,6 +1372,9 @@ const 합계 = (over: Partial<EnhancementTotal> = {}): EnhancementTotal => ({
   nexonAccountId: 'account-main',
   historyDate: '2026-08-23',
   characterName: '낟낟',
+  ocid: `ocid-${over.characterName ?? '낟낟'}`,
+  accountId: 'maple-1',
+  worldKey: 'elysium',
   enhancementType: 'cube',
   enhancementCategory: 'cube_reset',
   itemGroup: 'key:arcane_umbra_knuckle',
@@ -1419,22 +1422,18 @@ describe('강화 지출이 칸에 든다', () => {
   })
 
   // 파괴 방지 추가분은 MVP 할인을 받지 않는다. 두 몫을 따로 저장한 이유다.
-  it('스타포스는 그 캐릭터 · 날짜의 MVP 할인을 시도 비용에만 붙인다', async () => {
-    const asked: [string, string][] = []
-    mvp.starforceMvpDiscountResolver.mockReturnValue((name: string, dateKey: string) => {
-      asked.push([name, dateKey])
-      return 10
-    })
+  it('스타포스는 그 캐릭터의 메이플 ID · 날짜의 MVP 할인을 시도 비용에만 붙인다', async () => {
+    mvp.starforceMvpDiscountOf.mockReturnValue(10)
     enhancementTotals.loadEnhancementTotals.mockResolvedValue([
       스타포스합계({ attemptCostMeso: 1_000_000, destroyDefenceCostMeso: 2_000_000 }),
     ])
 
     expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso).toBe(900_000 + 2_000_000)
-    expect(asked).toEqual([['낟낟', '2026-08-23']])
+    expect(mvp.starforceMvpDiscountOf).toHaveBeenCalledWith(expect.any(Map), 'maple-1', '2026-08-23')
   })
 
   it('MVP 할인은 스타포스에만 붙는다', async () => {
-    mvp.starforceMvpDiscountResolver.mockReturnValue(() => 10)
+    mvp.starforceMvpDiscountOf.mockReturnValue(10)
     enhancementTotals.loadEnhancementTotals.mockResolvedValue([합계()])
 
     expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso).toBe(450_000)
@@ -1462,6 +1461,14 @@ describe('강화 지출이 칸에 든다', () => {
 describe('강화 줄', () => {
   const 잠재합계 = (over: Partial<EnhancementTotal> = {}) =>
     합계({ enhancementType: 'potential', enhancementCategory: 'potential', attemptCostMeso: 38_250_000, ...over })
+
+  // 캐릭터의 지금 이름은 프로필이 준다. `ocid-이름` 의 지금 이름은 그 이름이다.
+  beforeEach(() => {
+    profileLookup.resolveDisplayProfiles.mockImplementation(
+      async (ocids: readonly string[]) =>
+        new Map([...new Set(ocids)].map((ocid) => [ocid, { name: ocid.replace('ocid-', ''), imageUrl: null, world: null, level: 285 }])),
+    )
+  })
 
   async function 줄들(rows: EnhancementTotal[]) {
     enhancementTotals.loadEnhancementTotals.mockResolvedValue(rows)
@@ -1509,11 +1516,20 @@ describe('강화 줄', () => {
     expect(detailOf(row)).toMatch(/ 3회$/)
   })
 
-  it('줄의 신원이 분류와 이름이다. ocid 가 안 온다', async () => {
+  it('줄의 신원이 분류와 캐릭터(ocid)다', async () => {
     const { rowKeyOf } = require('../records') as typeof import('../records')
     const [row] = await 줄들([합계()])
 
-    expect(rowKeyOf(row)).toBe('enhancement:cube_reset:낟낟')
+    expect(rowKeyOf(row)).toBe('enhancement:cube_reset:ocid-낟낟')
+  })
+
+  // 강화 줄은 그날 그 이름이었던 캐릭터에 붙어 있다. 이름으로 묶으면 이름을 바꾼 캐릭터가 둘로 갈린다.
+  it('이름을 바꾼 캐릭터의 옛 이름 줄도 같은 캐릭터의 한 줄로 접는다', async () => {
+    const rows = await 줄들([합계(), 합계({ id: 't2', characterName: '살름', ocid: 'ocid-낟낟' })])
+
+    expect(rows.filter((row) => row.kind === 'enhancement')).toEqual([
+      expect.objectContaining({ ocid: 'ocid-낟낟', characterName: '낟낟', count: 2 }),
+    ])
   })
 
   // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 분류를 고정 순서로 두면 그날 제일 많이 쓴
@@ -1592,7 +1608,7 @@ describe('강화 줄', () => {
   // 칸에 적힌 수와 그 칸을 눌러 나온 수가 갈리면 안 된다.
   it('칸 금액과 상세 합계가 같은 수를 낸다', async () => {
     const { dayTotalsOf } = require('../records') as typeof import('../records')
-    mvp.starforceMvpDiscountResolver.mockReturnValue(() => 10)
+    mvp.starforceMvpDiscountOf.mockReturnValue(10)
     enhancementTotals.loadEnhancementTotals.mockResolvedValue([
       합계(),
       잠재합계({ id: 't2' }),

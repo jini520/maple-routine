@@ -1471,7 +1471,8 @@ describe('캐릭터 귀속', () => {
   })
 
   // 갈래마다 사용자가 정했다(2026-11-04). 같은 폼을 쓰는 컨텐츠와 이벤트·BM 도 갈린다.
-  it('이벤트·BM 과 기타는 캐릭터 뒤에 메이플 ID 가 서고, 컨텐츠 · 심볼 강화 · 아이템 구매는 캐릭터만 선다', async () => {
+  // 지출 컨텐츠도 메이플 ID 를 고른다. 계정 공유 컨텐츠에 쓴 돈은 캐릭터 하나의 것이 아니다.
+  it('컨텐츠 · 이벤트·BM · 기타는 캐릭터 뒤에 메이플 ID 가 서고, 심볼 강화 · 아이템 구매는 캐릭터만 선다', async () => {
     const 이벤트 = await 그리기({ accounts: 메이플ID둘 }, '이벤트·BM')
     await 누르기(이벤트, '보약 버프 추가 구매')
     expect(await 보기들(이벤트)).toEqual(['ocid-1', 'ocid-2', 'account:maple-a', 'account:maple-b'])
@@ -1481,7 +1482,7 @@ describe('캐릭터 귀속', () => {
 
     const 컨텐츠 = await 그리기({ accounts: 메이플ID둘 })
     await 누르기(컨텐츠, '하이마운틴')
-    expect(await 보기들(컨텐츠)).toEqual(['ocid-1', 'ocid-2'])
+    expect(await 보기들(컨텐츠)).toEqual(['ocid-1', 'ocid-2', 'account:maple-a', 'account:maple-b'])
 
     for (const 갈래 of ['심볼 강화', '아이템 구매'] as const) {
       expect(await 보기들(await 그리기({ accounts: 메이플ID둘 }, 갈래))).toEqual(['ocid-1', 'ocid-2'])

@@ -47,13 +47,20 @@ function parsePayload(raw: unknown): unknown {
   }
 }
 
+/** 옛 원본 표가 남아 있나. 새 기기에는 없고, 옛 기기는 합계로 옮긴 뒤 지운다. */
+async function hasHistoryTable(): Promise<boolean> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'enhancement_history'`)
+  return (values ?? []).length > 0
+}
+
 /**
- * 옛 원본 표의 줄. 합계로 옮기는 부팅 단계만 읽는다. 원본 표는 v1.0.14 에서 지운다.
+ * 옛 원본 표의 줄. 합계로 옮기는 부팅 단계만 읽는다. 표가 없으면 빈 목록이다.
  */
 export async function loadEnhancementHistory(
   dateKeys: readonly string[],
 ): Promise<EnhancementHistoryEntry[]> {
-  if (dateKeys.length === 0) return []
+  if (dateKeys.length === 0 || !(await hasHistoryTable())) return []
   const db = await getBossProfitDb()
   const { values } = await db.query(
     `SELECT id, kind, date_key, created_at, character_name, target_item, item_key, item_level, payload
@@ -78,9 +85,18 @@ export async function loadEnhancementHistory(
 
 /** 옛 원본 표에 줄이 있는 날짜. 합계로 옮길 때 날짜마다 나눠 읽는다. */
 export async function listEnhancementHistoryDates(): Promise<string[]> {
+  if (!(await hasHistoryTable())) return []
   const db = await getBossProfitDb()
   const { values } = await db.query('SELECT DISTINCT date_key FROM enhancement_history ORDER BY date_key')
   return (values ?? []).map((row) => String(row.date_key))
+}
+
+/**
+ * 옛 원본 표를 지운다. 합계로 옮긴 기기에서만 부른다. 원본은 옮기는 단계 말고는 읽는 곳이 없다.
+ */
+export async function dropEnhancementHistory(): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.execute('DROP TABLE IF EXISTS enhancement_history')
 }
 
 /** 키는 `checkKey` 가 만든다. 없는 날짜는 **없는 대로** 둔다. 안 부른 것과 빈 날은 다르다. */

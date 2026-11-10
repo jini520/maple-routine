@@ -3,15 +3,26 @@
  */
 import { NEW_UUID_SQL } from './uuid'
 
-/** 날짜 · 캐릭터 · 분류 · 장비 하나가 한 줄이다. 같은 열쇠를 다시 받으면 id 를 지키고 값만 갈아 끼운다. */
+/**
+ * 날짜 · 캐릭터(ocid) · 분류 · 장비 하나가 한 줄이다. 같은 열쇠를 다시 받으면 id 를 지키고 값만 갈아 끼운다.
+ *
+ * 판정 열쇠에 넥슨 계정 id 를 넣지 않는다. 기기가 만든 값이라 같은 넥슨 계정이 번호를 새로 받으면 같은 줄이 두 번 들어간다.
+ * ocid 는 넥슨이 주는 값이고 이름을 바꿔도 그대로다.
+ */
 export const ENHANCEMENT_TOTALS_BODY = `(
     id TEXT NOT NULL PRIMARY KEY DEFAULT (${NEW_UUID_SQL}),
-    -- 받은 자격의 넥슨 계정. 빈 글자는 계정 칸이 생기기 전의 원본에서 옮긴 줄이고 부팅 단계가 메인 계정으로 채운다.
+    -- 받은 자격의 넥슨 계정. 그 계정의 날을 갈아 끼우고 다시 받는 단위다.
     nexon_account_id TEXT NOT NULL,
     -- KST YYYY-MM-DD.
     history_date TEXT NOT NULL,
-    -- 응답이 이름만 준다.
+    -- 응답이 준 그날의 이름. 묶고 찾는 것은 ocid 다.
     character_name TEXT NOT NULL,
+    -- 그날 그 이름이었던 캐릭터. 리프 전 기간의 줄은 리프 뒤의 ocid 다.
+    ocid TEXT NOT NULL,
+    -- 그 캐릭터의 메이플 ID.
+    account_id TEXT NOT NULL,
+    -- 그 줄의 월드. 리프 전 기간이라 모르면 NULL.
+    world_key TEXT,
     -- 받은 API 종류. 'cube' | 'starforce' | 'potential' | 'soul_potential'. 갈아 끼우는 단위다.
     enhancement_type TEXT NOT NULL,
     -- 화면의 분류 다섯. 잠재를 본 · 에디셔널로 나눈다.
@@ -31,7 +42,7 @@ export const ENHANCEMENT_TOTALS_BODY = `(
     -- 1 이벤트 월드 · 0 아님 · NULL 판정 못 함. 이벤트 월드와 모름은 지출에서 뺀다.
     event_world INTEGER,
     updated_at TEXT NOT NULL,
-    UNIQUE (nexon_account_id, history_date, character_name, enhancement_category, item_group)
+    UNIQUE (ocid, history_date, enhancement_category, item_group)
   )`
 
 /** 날짜 범위로 읽는다. */
@@ -55,15 +66,47 @@ export const ENHANCEMENT_RECOMPUTES_BODY = `(
   )`
 
 /**
- * 이벤트 월드의 스타포스 줄에서 본 캐릭터 이름과 월드. 이벤트 중에 지운 캐릭터는 목록에서 사라져, 그 이름의 큐브 · 잠재 · 소울
- * 줄을 가를 단서가 이것뿐이다. 그래서 지우지 않는다.
+ * 캐릭터의 그날 이름과 월드. 강화 줄의 이름을 ocid 에 붙일 때 `character/basic` 에 날짜를 넣어 받은 값이다. 지난 날의 값은
+ * 바뀌지 않아 같은 ocid · 날짜를 다시 부르지 않는다.
  */
-export const EVENT_WORLD_CHARACTERS_BODY = `(
+export const CHARACTER_DATED_NAMES_BODY = `(
     id TEXT NOT NULL PRIMARY KEY DEFAULT (${NEW_UUID_SQL}),
-    -- 강화 내역이 계정 단위라 계정마다 따로 남긴다.
+    ocid TEXT NOT NULL,
+    -- KST YYYY-MM-DD.
+    history_date TEXT NOT NULL,
+    -- 그날 그 ocid 에 값이 없으면 NULL. 리프 전 기간이 그렇다.
+    name TEXT,
+    -- 월드 이름 원문. 판정할 때 지금 월드 표에서 찾는다.
+    world_name TEXT,
+    checked_at TEXT NOT NULL,
+    UNIQUE (ocid, history_date)
+  )`
+
+/**
+ * 캐릭터마다 만든 날과 처음 값이 온 날. 리프한 캐릭터는 만든 날과 처음 값이 온 날 사이가 리프 전 기간이다. 캐릭터마다 한 번
+ * 찾아 둔다.
+ */
+export const CHARACTER_FIRST_DAYS_BODY = `(
+    id TEXT NOT NULL PRIMARY KEY DEFAULT (${NEW_UUID_SQL}),
+    ocid TEXT NOT NULL,
+    -- character_date_create 의 KST 날짜. 리프 뒤에도 처음 만든 날 그대로다.
+    created_date TEXT NOT NULL,
+    -- 날짜를 넣어 불렀을 때 처음 값이 온 날과 그날의 이름.
+    first_date TEXT NOT NULL,
+    first_name TEXT NOT NULL,
+    checked_at TEXT NOT NULL,
+    UNIQUE (ocid)
+  )`
+
+/**
+ * 다시 받아야 하는 강화 내역의 날. 1.0.14 이관이 ocid 를 붙이지 못해 지운 줄의 날이다. 수집기가 다시 매기기처럼 뒤에서 받고,
+ * 받아 굳히면 지운다.
+ */
+export const ENHANCEMENT_REFETCHES_BODY = `(
+    id TEXT NOT NULL PRIMARY KEY DEFAULT (${NEW_UUID_SQL}),
     nexon_account_id TEXT NOT NULL,
-    character_name TEXT NOT NULL,
-    world_key TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    UNIQUE (nexon_account_id, character_name, world_key)
+    enhancement_type TEXT NOT NULL,
+    history_date TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE (nexon_account_id, enhancement_type, history_date)
   )`

@@ -25,6 +25,7 @@ describe('saveCharacterProfile', () => {
       worldKey: 'scania',
       level: 285,
       jobClass: '레테',
+      createdDate: '2025-06-19',
       updatedAt: '2026-09-05T00:00:00.000Z',
     })
 
@@ -38,6 +39,7 @@ describe('saveCharacterProfile', () => {
       'scania',
       285,
       '레테',
+      '2025-06-19',
       '2026-09-05T00:00:00.000Z',
     ])
   })
@@ -62,6 +64,8 @@ describe('saveCharacterProfile', () => {
     expect(sql).toContain('job_class = COALESCE(excluded.job_class, character_profiles.job_class)')
     // 월드 key 도 아는 값이 있을 때만 덮는다.
     expect(sql).toContain('world_key = COALESCE(excluded.world_key, character_profiles.world_key)')
+    // 만든 날도 그렇다. 리프한 옛 캐릭터는 다시 부를 수 없어, 지우면 리프 자동 판정이 영영 그 값을 잃는다.
+    expect(sql).toContain('created_date = COALESCE(excluded.created_date, character_profiles.created_date)')
   })
 
   // 이름이 빈 스냅샷은 행을 못 만든다. 그것을 심으면 화면에 이름 없는 행이 서고, 그때
@@ -97,6 +101,7 @@ describe('getCharacterProfiles', () => {
           world_key: 'scania',
           level: 285,
           job_class: '레테',
+          created_date: '2025-06-19',
           updated_at: '2026-09-05T00:00:00.000Z',
         },
       ],
@@ -116,6 +121,7 @@ describe('getCharacterProfiles', () => {
       worldKey: 'scania',
       level: 285,
       jobClass: '레테',
+      createdDate: '2025-06-19',
       updatedAt: '2026-09-05T00:00:00.000Z',
     })
     expect(profiles.has('ocid-2')).toBe(false)
