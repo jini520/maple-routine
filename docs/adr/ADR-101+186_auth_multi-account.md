@@ -354,7 +354,7 @@
 | 직접 체크 목록 · 마지막 사냥 | 새 캐릭터에 값이 없을 때만 옮기고, 옛 값은 지운다 |
 | 기억한 심볼 레벨 | 대상(심볼 key · 헥사 코어 이름)마다 새 캐릭터에 없는 것만 옮기고, 옛 줄은 지운다 |
 | 파티 약속 | 그 캐릭터가 가는 보스 판의 ocid 를 바꾼다. 이 주만 바꾼 회차도 바꾼다. 파티원 칸은 약속에 파티원을 넣는 화면이 없어 늘 비어 있으므로 다루지 않는다 |
-| 보스 수익 계산기 기록 | 기록 속 캐릭터의 ocid 를 바꾼다. 그 기록에 새 캐릭터가 이미 있으면 그 기록은 옮기지 않는다. 한 기록에 같은 캐릭터가 둘이 되면 계산기가 한 캐릭터를 두 번 센다 |
+| 보스 수익 계산기 기록 | 기록 속 옛 캐릭터를 새 캐릭터로 바꾼다. 그 기록에 새 캐릭터가 이미 있으면 옛 캐릭터 항목을 지운다(사용자 지정 2026-11-10). 기록을 열면 추적 중인 캐릭터만 보이는데 기록 목록의 금액은 기록에 든 캐릭터를 모두 더해, 남겨 두면 두 금액이 갈린다. 기록에서 캐릭터 하나만 지우는 기능은 없다 |
 
 - 옮겨도 기록은 리프 전 월드의 기록으로 남는다(사용자 지정 2026-11-09). 그래서 캐릭터에 붙는 기록은 그때의 월드(`world_key`)를 함께
   적는다. 보스 기간(`boss_party_periods.world_key`)은 이미 그렇게 한다. 가계부 기록과 강화 합계에 이 칸을 더한다. 월드를 캐릭터의 지금
@@ -474,7 +474,7 @@
 | `storage/__tests__/shared-progress-cache.spec.ts` · `features/schedule-sync/__tests__/schedule-sync.spec.ts` (원장) | 결정 23: 월드 원장이 같은 월드라도 메이플 ID 마다 따로인지, 옛 원장을 추적 캐릭터가 있는 메이플 ID 마다 베끼고 지우는지, 새 원장의 항목이 이기고 한 번만 도는지, 목록을 못 받은 계정이 있으면 나누기를 미루는지 본다 |
 | `features/boss-profit/__tests__/world-leap-moves.spec.ts` · `round-record.spec.ts` · `features/schedule-window/__tests__/sync.spec.ts` | 결정 22: 연결마다 여덟 기록을 옛 ocid 에서 새 ocid 로 옮기는지, 한 기록이나 한 연결의 실패가 나머지를 막지 않는지, 약속을 바꿨을 때만 약속 쿼리를 무효화하는지, 옮기기가 리프 중복 정리 바로 뒤에 돌고 보스 기간을 옮겼으면 회차가 기록을 다시 읽는지 본다 |
 | `storage/sqlite/__tests__/world-leap-real-sqlite.test.ts` (옮기기) | 결정 22: 보스 조합을 새 캐릭터에 없으면 조합째, 있으면 기간만 옮기고 새 조합에 이미 있는 기간은 남기는지, 가계부 기록 · 가져간 보관 조각의 ocid 를 바꾸고 월드는 두는지, 기억한 레벨은 새 캐릭터에 없는 대상만 옮기는지 본다 |
-| `storage/__tests__/manual-tracked-content.spec.ts` · `last-hunts.spec.ts` · `party-appointments.spec.ts` · `boss-profit-calculator-records.spec.ts` (옮기기) | 결정 22: 새 캐릭터에 값이 있으면 새 것을 두고 옛 값을 지우는지, 약속의 보스 판과 이 주만 바꾼 회차의 캐릭터를 바꾸는지, 새 캐릭터가 이미 든 계산기 기록은 옮기지 않는지 본다 |
+| `storage/__tests__/manual-tracked-content.spec.ts` · `last-hunts.spec.ts` · `party-appointments.spec.ts` · `boss-profit-calculator-records.spec.ts` (옮기기) | 결정 22: 새 캐릭터에 값이 있으면 새 것을 두고 옛 값을 지우는지, 약속의 보스 판과 이 주만 바꾼 회차의 캐릭터를 바꾸는지, 새 캐릭터가 이미 든 계산기 기록에서는 옛 캐릭터 항목을 지우는지 본다 |
 | `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` (월드) | 결정 22: 캐릭터 기록을 적을 때 프로필 월드를 채우고 메이플 ID 기록은 비우는지, 고칠 때 캐릭터를 바꿨을 때만 다시 채우는지, 대표 캐릭터에 붙인 옛 기록도 채우는지, 버전 19 가 이미 있는 기록을 채우는지 본다 |
 | `features/boss-profit/__tests__/world-leap-link.spec.ts` (만든 날) · `nexon/character/__tests__/normalize.spec.ts` · `features/schedule-sync/__tests__/character-basic-fetch.spec.ts` · `storage/__tests__/character-profiles.spec.ts` | 결정 22: 두 캐릭터의 만든 날이 다르면 잇지 않고 하나라도 모르면 이름 · 직업으로 잇는지, `character/basic` 의 만든 날을 KST 날짜로 프로필에 남기고 모르는 채 부른 경로가 그 값을 지우지 않는지 본다 |
 | `features/cashbook/__tests__/records.spec.ts` · `features/stats/__tests__/aggregate.spec.ts` · `lib/mvp/__tests__/starforce.spec.ts` | 결정 20: 가계부 · 통계가 강화 줄을 ocid 로 묶어 이름을 바꾼 캐릭터의 옛 이름 줄도 그 캐릭터에 넣는지, MVP 할인을 그 줄의 메이플 ID 등급으로 붙이는지 본다 |

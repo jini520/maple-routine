@@ -77,12 +77,13 @@ describe('월드 리프 옮기기', () => {
     expect(moved!.characters[0]!.bosses).toEqual(기록.characters[0]!.bosses)
   })
 
-  // 한 기록에 같은 캐릭터가 둘이면 계산기가 한 캐릭터를 두 번 센다.
-  it('새 캐릭터가 이미 든 기록은 옮기지 않는다', async () => {
+  // 기록을 열면 추적 중인 캐릭터만 보이는데 목록 금액은 기록의 캐릭터를 모두 더한다. 옛 캐릭터를 남기면 두 금액이 갈린다.
+  it('새 캐릭터가 이미 든 기록에서는 옛 캐릭터 항목을 지우고 새 캐릭터 값을 둔다', async () => {
+    const fresh = [{ bossKey: 'kaling', difficulty: 'normal' as const, partySize: 1, shares: EVEN }]
     const both: BossProfitCalculatorRecord = {
       ...기록,
       id: '7a2d3c1f-9e5b-4d2f-8c8b-3a4e5f6a7b8c',
-      characters: [...기록.characters, { ocid: 'ocid-9', bosses: [] }],
+      characters: [...기록.characters, { ocid: 'ocid-9', bosses: fresh }],
     }
     await setBossProfitCalculatorRecords([기록, both])
 
@@ -90,6 +91,6 @@ describe('월드 리프 옮기기', () => {
 
     const records = await getBossProfitCalculatorRecords()
     expect(records.find((one) => one.id === 기록.id)!.characters.map((each) => each.ocid)).toEqual(['ocid-9'])
-    expect(records.find((one) => one.id === both.id)!.characters.map((each) => each.ocid)).toEqual(['ocid-1', 'ocid-9'])
+    expect(records.find((one) => one.id === both.id)!.characters).toEqual([{ ocid: 'ocid-9', bosses: fresh }])
   })
 })

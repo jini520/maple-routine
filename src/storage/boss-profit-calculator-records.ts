@@ -75,21 +75,21 @@ export async function setBossProfitCalculatorRecords(records: readonly BossProfi
 }
 
 /**
- * 월드 리프한 캐릭터를 기록 속에서 새 ocid 로 바꾸는 함수. 새 캐릭터가 이미 든 기록은 그대로 둔다. 한 기록에 같은 캐릭터가
- * 둘이면 계산기가 한 캐릭터를 두 번 센다.
+ * 월드 리프한 캐릭터를 기록 속에서 새 ocid 로 바꾸는 함수. 새 캐릭터가 이미 든 기록에서는 옛 캐릭터 항목을 지운다. 기록을 열면
+ * 추적 중인 캐릭터만 보이는데 목록 금액은 기록의 캐릭터를 모두 더해, 남겨 두면 두 금액이 갈린다.
  */
 export async function moveBossProfitCalculatorRecordsToOcid(fromOcid: string, toOcid: string): Promise<void> {
   const records = await getBossProfitCalculatorRecords()
   let changed = false
   const next = records.map((record) => {
     const ocids = record.characters.map((character) => character.ocid)
-    if (!ocids.includes(fromOcid) || ocids.includes(toOcid)) return record
+    if (!ocids.includes(fromOcid)) return record
     changed = true
     return {
       ...record,
-      characters: record.characters.map((character) =>
-        character.ocid === fromOcid ? { ...character, ocid: toOcid } : character,
-      ),
+      characters: ocids.includes(toOcid)
+        ? record.characters.filter((character) => character.ocid !== fromOcid)
+        : record.characters.map((character) => (character.ocid === fromOcid ? { ...character, ocid: toOcid } : character)),
     }
   })
   if (changed) await setBossProfitCalculatorRecords(next)
