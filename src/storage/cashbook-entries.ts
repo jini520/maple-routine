@@ -253,6 +253,35 @@ export async function assignLegacyEntryAccounts(
   return true
 }
 
+/**
+ * 주인을 모르는 옛 기록(캐릭터도 메이플 ID 도 없는 기록)을 대표 캐릭터에게 붙이고 계정 칸을 비운다. 몇 번을 불러도 결과가 같다.
+ *
+ * 메이플 ID 를 고를 수 있는 분류는 그 메이플 ID 에, 나머지는 캐릭터에만 붙을 수 있어 그 캐릭터(ocid)에 붙인다. 캐릭터 기록은
+ * ocid 로 메이플 ID 를 찾으므로 메이플 ID 칸을 채우지 않는다.
+ *
+ * @param accountCategoryKeys 메이플 ID 를 고를 수 있는 분류
+ * @returns 붙인 것이 있었는지
+ */
+export async function assignOwnerlessEntries(
+  db: SqliteDbConnection,
+  entryType: EntryType,
+  owner: { ocid: string; accountId: string },
+  accountCategoryKeys: readonly string[],
+): Promise<boolean> {
+  const ownerless = 'entry_type = ? AND ocid IS NULL AND account_id IS NULL'
+  const { values } = await db.query(`SELECT COUNT(*) AS n FROM cashbook_entries WHERE ${ownerless}`, [entryType])
+  if (Number(values?.[0]?.n ?? 0) === 0) return false
+  if (accountCategoryKeys.length > 0) {
+    await db.run(
+      `UPDATE cashbook_entries SET account_id = ?, nexon_account_id = NULL
+        WHERE ${ownerless} AND category_key IN (${accountCategoryKeys.map(() => '?').join(', ')})`,
+      [owner.accountId, entryType, ...accountCategoryKeys],
+    )
+  }
+  await db.run(`UPDATE cashbook_entries SET ocid = ?, nexon_account_id = NULL WHERE ${ownerless}`, [owner.ocid, entryType])
+  return true
+}
+
 function numberOrNull(value: unknown): number | null {
   return (value as number | null | undefined) ?? null
 }

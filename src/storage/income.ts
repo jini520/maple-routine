@@ -13,7 +13,14 @@
 import type { IncomeCategoryKey, ItemKindKey } from '../lib/cashbook/categories'
 import type { UnionTier } from '../lib/cashbook/hunting-meso'
 import type { FeePercent } from '../lib/cashbook/item-split'
-import { assignLegacyEntryAccounts, deleteEntry, insertEntry, readEntries, replaceEntry } from './cashbook-entries'
+import {
+  assignLegacyEntryAccounts,
+  assignOwnerlessEntries,
+  deleteEntry,
+  insertEntry,
+  readEntries,
+  replaceEntry,
+} from './cashbook-entries'
 import { incomeEntryOf, incomeRecordOf } from './cashbook-entry-shape'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
@@ -213,6 +220,19 @@ export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
 export async function assignLegacyIncomeAccounts(categoryKeys: readonly IncomeCategoryKey[]): Promise<void> {
   const db = await getBossProfitDb()
   if (await assignLegacyEntryAccounts(db, 'income', categoryKeys)) bumpIncomeRecordsRevision()
+}
+
+/**
+ * 남은 주인 모르는 옛 수입을 대표 캐릭터에게 붙인다. 붙인 것이 있을 때만 판이 오른다.
+ *
+ * @param categoryKeys 메이플 ID 를 고를 수 있는 수입 분류
+ */
+export async function assignOwnerlessIncomes(
+  owner: { ocid: string; accountId: string },
+  categoryKeys: readonly IncomeCategoryKey[],
+): Promise<void> {
+  const db = await getBossProfitDb()
+  if (await assignOwnerlessEntries(db, 'income', owner, categoryKeys)) bumpIncomeRecordsRevision()
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
