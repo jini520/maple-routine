@@ -124,8 +124,13 @@ describe('db.ts 와 맞물리는가', () => {
   })
 
   it('옛 스키마 DB 에는 빠진 컬럼을 더한다', async () => {
+    // 옛 기기에는 강화 원본 표가 아직 남아 있다.
     mockRowsFor = (statement) =>
-      statement.startsWith('PRAGMA table_info') ? [{ name: 'ocid' }] : []
+      statement.startsWith('PRAGMA table_info')
+        ? [{ name: 'ocid' }]
+        : statement.includes('FROM sqlite_master')
+          ? [{ present: 1 }]
+          : []
 
     await getBossProfitDb()
 

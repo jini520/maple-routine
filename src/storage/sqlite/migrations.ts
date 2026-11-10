@@ -202,6 +202,8 @@ async function rekeyBossTables(db: SqliteDbConnection): Promise<void> {
  * **못 찾는 행은 key 만 비우고 남긴다.** 표에 없는 장비에 쓴 큐브 · 잠재도 실제 지출이라서다.
  */
 async function fillEnhancementItemKeys(db: SqliteDbConnection): Promise<void> {
+  // 새 기기에는 옛 원본 표가 없다.
+  if ((await columnsOf(db, 'enhancement_history')).size === 0) return
   const { values } = await db.query('SELECT DISTINCT target_item FROM enhancement_history')
   for (const row of (values ?? []) as Row[]) {
     const targetItem = String(row.target_item)

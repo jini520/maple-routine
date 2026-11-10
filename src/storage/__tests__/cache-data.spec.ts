@@ -106,7 +106,6 @@ const KEPT_TABLES = [
   'character_profiles',
   'character_accounts',
   'mvp_grade_history',
-  'enhancement_history',
   'income_records',
   'spend_records',
 ]

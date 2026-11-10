@@ -449,6 +449,7 @@
 | `features/enhancement-history/__tests__/collect.spec.ts` | 결정 18: 붙일 곳이 없는 이름의 줄은 버리고 그 날을 굳히는지, 그날 이름을 묻다 실패한 날은 갈아 끼우지도 굳히지도 않는지, 그 넥슨 계정의 캐릭터를 갈아 끼우는 범위로 넘기는지, 이관이 지운 날을 뒤에서 받고 굳히면 지우는지, 넥슨 로그인 계정은 한 회차에 60일만 받는지 본다. 결정 22: 리프 전 줄에 같은 기간 스타포스 줄의 월드를 적는지 본다 |
 | `storage/sqlite/__tests__/enhancement-ocid-real-sqlite.test.ts` | 결정 18 · 20: 버전 18 이 앱이 본 기간의 줄에 ocid · 메이플 ID · 월드를 붙이고 계정 id 둘로 겹친 줄은 늦은 줄을 남기는지, 못 붙인 줄은 그 날의 조회 기록과 함께 지우고 다시 받을 날로 적는지, 조회 기록의 계정 칸이 `NOT NULL` 이 되고 이름 판정 표가 지워지는지 본다 |
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 결정 18: 그 넥슨 계정 캐릭터의 그날 줄은 다른 계정 id 로 적혔어도 갈아 끼우는지, 옛 원본을 옮길 때 앱이 본 캐릭터에 붙이고 못 붙인 날을 다시 받을 날로 적는지 본다. 결정 22: 리프 전 월드를 리프한 날 앞의 가까운 스타포스 줄에서 찾는지 본다 |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (원본 표) · `storage/__tests__/enhancement-history.spec.ts` | 결정 27: 옛 원본을 옮기면 원본 표를 지우고, 이미 옮긴 기기는 켤 때 지우고, 새 DB 에는 원본 표가 없고, 없는 표는 읽지 않는지 본다 |
 | `features/cashbook/__tests__/records.spec.ts` · `features/stats/__tests__/aggregate.spec.ts` · `lib/mvp/__tests__/starforce.spec.ts` | 결정 20: 가계부 · 통계가 강화 줄을 ocid 로 묶어 이름을 바꾼 캐릭터의 옛 이름 줄도 그 캐릭터에 넣는지, MVP 할인을 그 줄의 메이플 ID 등급으로 붙이는지 본다 |
 | `features/auth/__tests__/nexon-login.spec.ts` | 결정 14: 로그인 화면의 넥슨 로그인만 세션을 받은 뒤 저장하기 전에 추적 목록을 비우는지, 연동 시트와 창을 닫거나 세션을 못 받은 로그인은 비우지 않는지 본다 |
 | `features/auth/__tests__/store.spec.ts` | 결정 14: 키 입력이 키를 저장하기 전에 추적 목록을 비우고, 무효 키 · 개발 단계 키는 비우지 않는지 본다. 로그인 화면과 연동 시트가 새 로그인 여부를 다르게 넘기는지 본다. 결정 20: 키 입력이 소속을 키를 저장한 뒤 그 키의 계정 id 로 적고, 막힌 키는 적지 않는지 본다 |

@@ -176,42 +176,6 @@ const TABLE_DEFINITIONS = [
     name: 'character_world_leaps',
     createSql: `CREATE TABLE IF NOT EXISTS character_world_leaps ${CHARACTER_WORLD_LEAPS_BODY}`,
   },
-  // 계정 단위 강화 사용 내역. 큐브·스타포스·잠재 재설정에 무엇을 썼나.
-  //
-  // **`payload` 를 통째로 남기는 이유**: 비용 표가 아직 없어 지금은 메소를 못 매기는데, 어제
-  // 이전 날짜는 다시 안 부르므로 지금 안 남기면 표가 들어와도 셀 수가 없다. 나중에 `cost_meso`
-  // 를 채우는 일이 조회가 아니라 **계산**이어야 한다.
-  //
-  // `id` 는 응답 줄마다 붙는 계정 전체 유일값이라 그대로 PK 다. 같은 줄을 두 번 받아도 한 행이다.
-  {
-    name: 'enhancement_history',
-    createSql: `CREATE TABLE IF NOT EXISTS enhancement_history (
-    id TEXT NOT NULL,
-    -- 'cube' | 'starforce' | 'potential' | 'soul_potential'
-    kind TEXT NOT NULL,
-    -- KST YYYY-MM-DD. 가계부 칸이 이 값으로 선다.
-    date_key TEXT NOT NULL,
-    -- date_create 원본(타임존 포함).
-    created_at TEXT NOT NULL,
-    -- **이름만이다.** ocid 를 얻으려면 캐릭터마다 한 콜이라 안 받는다.
-    character_name TEXT NOT NULL,
-    -- 강화한 장비 이름. 셋 다 준다.
-    target_item TEXT NOT NULL,
-    -- 장비 key. 응답을 받을 때 target_item 으로 장비 표에서 찾고, 표에 없는 장비면 NULL 이다.
-    item_key TEXT,
-    -- 그 장비의 레벨. **스타포스 응답에는 없어서** 거기서는 NULL 이다.
-    --
-    -- 큐브·잠재는 이 값을 주고, 한 이름에 두 레벨이 붙은 적이 없다(1년치 27,187건 실측). 그래서
-    -- 이 칸이 곧 장비 이름에서 레벨로 가는 표이고, 스타포스는 **읽을 때** 같은 이름의 행을 찾는다.
-    -- 쓸 때 채우지 않는 이유는 레벨이 그 사건의 속성이 아니라 파생값이기 때문이다. 표가 자라면
-    -- 예전에 넣은 스타포스 행도 함께 값을 얻는다.
-    item_level INTEGER,
-    payload TEXT NOT NULL,
-    -- 쓴 메소. 비용 표가 오기 전까지 NULL 이고, NULL 은 0 이 아니라 **모름** 이다.
-    cost_meso INTEGER,
-    PRIMARY KEY (id)
-)`,
-  },
   // 강화 내역의 날짜 · 캐릭터 · 분류 · 장비별 합계. 응답 원본은 저장하지 않는다. 다시 받을 수 있는 기간이 2년이라 기록이다.
   {
     name: 'enhancement_totals',
@@ -398,6 +362,11 @@ export const BOSS_PROFIT_TABLE_NAMES: readonly string[] = TABLE_DEFINITIONS.map(
 // 이미 만들어진 DB에는 CREATE TABLE IF NOT EXISTS가 컬럼을 더해주지 않는다.
 // SQLite에 ADD COLUMN IF NOT EXISTS가 없으므로 table_info로 있는지 보고 없을 때만 더한다
 // (ALTER를 try/catch로 삼키면 다른 원인의 실패까지 숨는다).
+async function tableExists(db: SqliteDbConnection, table: string): Promise<boolean> {
+  const { values } = await db.query(`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?`, [table])
+  return (values ?? []).length > 0
+}
+
 async function ensureColumn(
   db: SqliteDbConnection,
   table: string,
@@ -506,12 +475,13 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // 사용자가 직접 적은 완료를 가르는 칸. 이미 기록을 쌓아 둔 기기에는 CREATE 가 안 붙인다.
   await ensureColumn(db, 'boss_profit_records', 'source', 'TEXT')
   await ensureColumn(db, 'character_profiles', 'world_key', 'TEXT')
-  // 이 브랜치에서 표를 세우는 동안 붙인 칸 둘. 아직 배포된 적이 없어 이관할 데이터도 없지만,
-  // DDL 과 여기가 함께 가야 재작성이 만드는 표와 어긋나지 않는다.
-  await ensureColumn(db, 'enhancement_history', 'target_item', 'TEXT NOT NULL DEFAULT \'\'')
-  await ensureColumn(db, 'enhancement_history', 'item_level', 'INTEGER')
-  // 강화 기록도 이름 대신 장비 key 를 든다. 값은 아래 버전 이관이 채운다.
-  await ensureColumn(db, 'enhancement_history', 'item_key', 'TEXT')
+  // 옛 강화 원본 표의 칸. 새 기기에는 이 표가 없고, 옛 기기는 합계로 옮긴 뒤 지운다. 옮기기 전의 기기만 칸을 더한다.
+  if (await tableExists(db, 'enhancement_history')) {
+    await ensureColumn(db, 'enhancement_history', 'target_item', 'TEXT NOT NULL DEFAULT \'\'')
+    await ensureColumn(db, 'enhancement_history', 'item_level', 'INTEGER')
+    // 강화 기록도 이름 대신 장비 key 를 든다. 값은 아래 버전 이관이 채운다.
+    await ensureColumn(db, 'enhancement_history', 'item_key', 'TEXT')
+  }
   // 이미 만들어진 DB에는 위 CREATE 가 컬럼을 더해주지 않는다.
   await ensureColumn(db, 'boss_drop_records', 'price_state', 'TEXT')
   await ensureColumn(db, 'boss_drop_records', 'price_meso', 'INTEGER')

@@ -10,7 +10,7 @@ import { sightedOwnerOf } from '../../lib/enhancement/sighted-owner'
 import { mainNexonAccountIdOf } from '../../lib/nexon-credential'
 import { getAuthConfig } from '../../storage/api-key'
 import { getOwnerSightings, type EnhancementOwnerSighting } from '../../storage/character-accounts'
-import { listEnhancementHistoryDates, loadEnhancementHistory } from '../../storage/enhancement-history'
+import { dropEnhancementHistory, listEnhancementHistoryDates, loadEnhancementHistory } from '../../storage/enhancement-history'
 import { addEnhancementRefetch } from '../../storage/enhancement-refetches'
 import { replaceEnhancementTotals } from '../../storage/enhancement-totals'
 import { isEnhancementTotalsMoved, markEnhancementTotalsMoved } from '../../storage/enhancement-totals-moved'
@@ -50,7 +50,11 @@ export function ensureEnhancementTotals(): Promise<void> {
 }
 
 async function move(): Promise<void> {
-  if (await isEnhancementTotalsMoved()) return
+  // 옮긴 기기는 원본을 지운다. 여러 버전을 건너뛰어 올라온 기기는 옮긴 뒤에 지운다.
+  if (await isEnhancementTotalsMoved()) {
+    await dropEnhancementHistory()
+    return
+  }
   const accountId = mainNexonAccountIdOf(await getAuthConfig())
   // 이름 목록은 수집기가 메인 계정의 목록을 받은 뒤에 선다. 그 전에 옮기면 이벤트 월드 판정이 빈 줄이 남는다. 옛 날짜는 다시
   // 받지 않아 그 지출이 영영 안 보인다.
@@ -87,7 +91,8 @@ async function move(): Promise<void> {
     }
   }
   await markEnhancementTotalsMoved()
-  // 옮기며 빠진 줄도 원본을 버리기 전에 알린다. 표시를 먼저 적어, 보내기가 늦어도 옮기기를 다시 하지 않는다.
+  await dropEnhancementHistory()
+  // 옮기며 빠진 줄도 알린다. 표시를 먼저 적어, 보내기가 늦어도 옮기기를 다시 하지 않는다.
   void reportEnhancementAnomalies(anomalies)
 }
 

@@ -141,9 +141,19 @@ describe('갈아 끼우기', () => {
   })
 })
 
+/** 옛 기기에 남은 원본 표. 새 기기에는 없다. */
+const LEGACY_HISTORY_TABLE = `CREATE TABLE IF NOT EXISTS enhancement_history (
+  id TEXT NOT NULL PRIMARY KEY, kind TEXT NOT NULL, date_key TEXT NOT NULL, created_at TEXT NOT NULL, character_name TEXT NOT NULL,
+  target_item TEXT NOT NULL, item_key TEXT, item_level INTEGER, payload TEXT NOT NULL, cost_meso INTEGER)`
+
+function historyTableExists(): boolean {
+  return real.inspect((db) => db.prepare(`SELECT 1 FROM sqlite_master WHERE name = 'enhancement_history'`).all().length > 0)
+}
+
 /** 옛 원본 표에 줄을 심는다. 큐브 한 줄은 200 레벨이라 감정비용이 500,000 이다. */
 async function seedHistory(rows: { id: string; kind: string; date: string; name: string; level: number | null; payload?: object }[]) {
   const db = await getBossProfitDb()
+  await db.execute(LEGACY_HISTORY_TABLE)
   for (const row of rows) {
     await db.run(
       `INSERT INTO enhancement_history (id, kind, date_key, created_at, character_name, target_item, item_key, item_level, payload)
@@ -202,6 +212,19 @@ describe('옛 원본을 합계로 옮기기', () => {
       ])
     expect(new Set(totals.map((total) => total.nexonAccountId))).toEqual(new Set(['account-main']))
     expect(moved.markEnhancementTotalsMoved).toHaveBeenCalledTimes(1)
+    expect(historyTableExists()).toBe(false)
+  })
+
+  // 원본은 옮기는 단계 말고는 읽는 곳이 없다. 옮긴 기기에 남기면 자리만 차지한다.
+  it('이미 옮긴 기기는 원본 표를 지우고, 새 기기에는 원본 표가 처음부터 없다', async () => {
+    await getBossProfitDb()
+    expect(historyTableExists()).toBe(false)
+
+    await seedHistory([{ id: 'a', kind: 'cube', date: '2026-10-01', name: '낟낟', level: 200 }])
+    moved.isEnhancementTotalsMoved.mockResolvedValue(true)
+    await ensureEnhancementTotals()
+
+    expect(historyTableExists()).toBe(false)
   })
 
   // 넥슨에서 그날 이름을 찾게 한다. 버린 채 두면 그 날의 지출이 영영 빠진다.
