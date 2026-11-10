@@ -92,18 +92,25 @@ export async function planEnhancementHistory(
   todayDateKey: string,
   recomputeDays: number | null = null,
 ): Promise<EnhancementHistoryJob[]> {
-  return (await planRound(nexonAccountId, dateKeys, todayDateKey, recomputeDays)).jobs
+  return (await planRound(nexonAccountId, dateKeys, todayDateKey, recomputeDays, 'range')).jobs
 }
+
+/**
+ * 회차가 받는 것. `range` 는 화면 회차라 화면이 연 날과 다시 매기기의 날을 받는다. `refetch` 는 이관이 지운 날만 받는다. 이관이 지운
+ * 날은 화면 회차에 넣으면 화면이 그 끝을 기다린다.
+ */
+type RoundScope = 'range' | 'refetch'
 
 async function planRound(
   nexonAccountId: string,
   dateKeys: readonly string[],
   todayDateKey: string,
   recomputeDays: number | null,
+  scope: RoundScope,
 ): Promise<{ jobs: EnhancementHistoryJob[]; chunks: RecomputeChunk[]; hasPast: boolean }> {
-  const days = dateKeys.filter((dateKey) => dateKey <= todayDateKey)
-  const chunks = await recomputeChunks(nexonAccountId, todayDateKey, recomputeDays)
-  const refetches = await refetchesOf(nexonAccountId, todayDateKey, recomputeDays)
+  const days = scope === 'range' ? dateKeys.filter((dateKey) => dateKey <= todayDateKey) : []
+  const chunks = scope === 'range' ? await recomputeChunks(nexonAccountId, todayDateKey, recomputeDays) : []
+  const refetches = scope === 'refetch' ? await refetchesOf(nexonAccountId, todayDateKey, recomputeDays) : []
   if (days.length === 0 && chunks.length === 0 && refetches.length === 0) return { jobs: [], chunks, hasPast: false }
 
   await fillLegacyAccountIds()
@@ -130,7 +137,6 @@ async function planRound(
       for (const kind of kindsOn(dateKey)) if (chunk.request.kinds.includes(kind)) add(kind, dateKey)
     }
   }
-  // 이관이 지운 날도 다시 매기기의 날처럼 뒤에서 받고 모달을 세우지 않는다.
   for (const { kind, dateKey } of refetches) add(kind, dateKey)
   return { jobs, chunks, hasPast }
 }
@@ -144,15 +150,20 @@ async function refetchesOf(
   todayDateKey: string,
   recomputeDays: number | null,
 ): Promise<{ kind: EnhancementKind; dateKey: string }[]> {
+  const kept = await keptRefetches(nexonAccountId, todayDateKey)
+  if (recomputeDays === null) return kept
+  const allowed = new Set([...new Set(kept.map((one) => one.dateKey))].slice(0, recomputeDays))
+  return kept.filter((one) => allowed.has(one.dateKey))
+}
+
+/** 받을 수 있는 다시 받을 날 전부. 조회 하한 앞의 날은 받을 수 없어 지운다. */
+async function keptRefetches(nexonAccountId: string, todayDateKey: string): Promise<{ kind: EnhancementKind; dateKey: string }[]> {
   const all = await loadEnhancementRefetches(nexonAccountId).catch(() => [])
   const floor = historyFloorDateKey(todayDateKey)
   for (const old of all.filter((one) => one.dateKey < floor)) {
     await removeEnhancementRefetch(nexonAccountId, old.kind, old.dateKey).catch(() => undefined)
   }
-  const kept = all.filter((one) => one.dateKey >= floor && one.dateKey <= todayDateKey)
-  if (recomputeDays === null) return kept
-  const allowed = new Set([...new Set(kept.map((one) => one.dateKey))].slice(0, recomputeDays))
-  return kept.filter((one) => allowed.has(one.dateKey))
+  return all.filter((one) => one.dateKey >= floor && one.dateKey <= todayDateKey)
 }
 
 /** 끝나지 않은 요청마다 이번 회차에 받을 날. 받을 날이 없어도 끝을 적어야 해서 목록에 든다. */
@@ -205,7 +216,7 @@ export async function measureEnhancementHistory(
   dateKeys: readonly string[],
   now: Date,
 ): Promise<HistoryPlanSize> {
-  const plans = await planAccounts(dateKeys, getCurrentKstDateKey(now))
+  const plans = await planAccounts(dateKeys, getCurrentKstDateKey(now), 'range')
   return {
     total: plans.reduce((sum, plan) => sum + plan.jobs.length, 0),
     hasPast: plans.some((plan) => plan.hasPast),
@@ -227,13 +238,13 @@ interface AccountPlan {
  * 넥슨 계정마다 회차를 센다. 강화 내역은 계정 단위 API 라 계정마다 그 계정의 자격으로 따로 받고, 조회 기록도 계정 id 로 나뉜다.
  * **콜이 한 건도 안 나간다.**
  */
-async function planAccounts(dateKeys: readonly string[], todayDateKey: string): Promise<AccountPlan[]> {
+async function planAccounts(dateKeys: readonly string[], todayDateKey: string, scope: RoundScope): Promise<AccountPlan[]> {
   const credentials = await currentCredentials()
   const plans: AccountPlan[] = []
   for (const [index, credential] of credentials.entries()) {
     const accountId = credential.accountId
     if (accountId === null) continue
-    const round = await planRound(accountId, dateKeys, todayDateKey, recomputeDaysOf(credential))
+    const round = await planRound(accountId, dateKeys, todayDateKey, recomputeDaysOf(credential), scope)
     plans.push({ credential, accountId, main: index === 0, ...round })
   }
   return plans
@@ -274,7 +285,7 @@ export async function collectEnhancementHistory(
   onProgress?: HistoryProgress,
 ): Promise<void> {
   const todayDateKey = getCurrentKstDateKey(now)
-  const plans = await planAccounts(dateKeys, todayDateKey)
+  const plans = await planAccounts(dateKeys, todayDateKey, 'range')
   const total = plans.reduce((sum, plan) => sum + plan.jobs.length, 0)
 
   // 분모가 여기서 확정된다. 부를 것이 없어도 한 번은 알린다(화면이 바를 안 그리게).
@@ -308,6 +319,44 @@ export async function collectEnhancementHistory(
   // 확정된 기록이라 시각을 안 움직인다.
   if (dateKeys.includes(todayDateKey)) {
     queryClient.setQueryData(queryKeys.enhancementToday(), { fetchedAt: new Date().toISOString() })
+  }
+}
+
+let refetchRun: Promise<void> | null = null
+
+/**
+ * 이관이 지운 날을 뒤에서 받는다. 가계부 · 통계 화면의 회차가 끝난 뒤 부르고, 화면은 기다리지 않는다. **던지지 않는다.**
+ *
+ * 한 번에 한 받기만 돈다. 넥슨 로그인 계정은 한 번에 60일씩 받고, 남은 날이 줄어드는 동안 이어서 받는다. 줄지 않으면 멈추고 다음
+ * 화면 회차를 기다린다. 넥슨이 실패하는 동안 같은 날을 끝없이 부르지 않기 위해서다.
+ *
+ * @example void collectEnhancementRefetches(new Date()) // 화면 회차가 끝난 자리에서
+ */
+export function collectEnhancementRefetches(now: Date): Promise<void> {
+  refetchRun ??= runRefetches(now)
+    .catch(() => undefined)
+    .finally(() => {
+      refetchRun = null
+    })
+  return refetchRun
+}
+
+async function runRefetches(now: Date): Promise<void> {
+  const todayDateKey = getCurrentKstDateKey(now)
+  let lastLeft = Number.POSITIVE_INFINITY
+  for (;;) {
+    const plans = await planAccounts([], todayDateKey, 'refetch')
+    if (plans.every((plan) => plan.jobs.length === 0)) return
+    let left = 0
+    for (const plan of plans) left += (await keptRefetches(plan.accountId, todayDateKey)).length
+    if (left >= lastLeft) return
+    lastLeft = left
+
+    const anomalies: EnhancementAnomaly[] = []
+    await batchRecordWrites(() =>
+      Promise.all(plans.map((plan) => collectAccount(plan, todayDateKey, now, anomalies, () => undefined))),
+    )
+    await reportEnhancementAnomalies(anomalies)
   }
 }
 

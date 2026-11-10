@@ -22,6 +22,18 @@ jest.mock('../../../storage/character-dated-names', () => {
     saveDatedName: jest.fn(async (ocid: string, dateKey: string, value: { name: string | null; worldName: string | null }) => {
       stored.set(`${ocid}|${dateKey}`, value)
     }),
+    getOcidsNamed: jest.fn(async (name: string) => [
+      ...new Set([...stored].filter(([, value]) => value.name === name).map(([key]) => key.split('|')[0]!)),
+    ]),
+    getNoValueThroughDates: jest.fn(async (ocids: string[]) => {
+      const through = new Map<string, string>()
+      for (const [key, value] of stored) {
+        const [ocid, dateKey] = key.split('|') as [string, string]
+        if (value.name !== null || !ocids.includes(ocid)) continue
+        if ((through.get(ocid) ?? '') < dateKey) through.set(ocid, dateKey)
+      }
+      return through
+    }),
   }
 })
 jest.mock('../../../storage/character-first-days', () => {
@@ -131,6 +143,86 @@ describe('차례 2: 그날 이름', () => {
 
     await expect(ownerOf('루디', TODAY)).resolves.toMatchObject({ ocid: 'o-1', worldName: '스카니아' })
     expect(fetchCharacterBasicOn).not.toHaveBeenCalled()
+  })
+})
+
+// 넥슨 로그인 사용자의 그날 이름 호출은 모두가 함께 쓰는 번들 개발자 키로 간다. 사용자 기기에서 60일에 약 2,460번 불러
+// 가계부가 8분 넘게 불러오는 중으로 남았다(2026-11-10). 이름은 한때 한 캐릭터만 쓰므로 묻는 차례만 바꿔 부르는 수를 줄인다.
+describe('묻는 차례', () => {
+  const 스무명 = () => 목록(...Array.from({ length: 20 }, (_, at) => 캐릭터(`o-${at + 1}`, `캐릭${at + 1}`)))
+  const 날짜들 = ['2025-12-01', '2025-12-02', '2025-12-03', '2025-12-04', '2025-12-05']
+  /** 모든 캐릭터는 그 날들에 지금 이름이고, o-15 만 그때 `살름` 이었다. */
+  const 살름표 = () => {
+    const table: Record<string, Record<string, string>> = {}
+    for (let at = 1; at <= 20; at += 1) {
+      table[`o-${at}`] = Object.fromEntries(날짜들.map((day) => [day, at === 15 ? '살름' : `캐릭${at}`]))
+    }
+    return table
+  }
+  const callsOn = (dateKey: string) => fetchCharacterBasicOn.mock.calls.filter((call) => call[2] === dateKey).length
+
+  it('한 번 붙인 이름은 다른 날짜에서 그 캐릭터부터 묻는다', async () => {
+    그날(살름표())
+    const ownerOf = resolver({ accounts: 스무명() })
+
+    await expect(ownerOf('살름', '2025-12-01')).resolves.toMatchObject({ ocid: 'o-15' })
+    await expect(ownerOf('살름', '2025-12-02')).resolves.toMatchObject({ ocid: 'o-15' })
+
+    expect(callsOn('2025-12-02')).toBe(1)
+  })
+
+  // 회차가 바뀌어도 앞 회차에서 적어 둔 그날 이름으로 그 캐릭터를 안다.
+  it('적어 둔 그날 이름에 그 이름이 있는 캐릭터부터 묻는다', async () => {
+    그날(살름표())
+    datedStore.__stored.set('o-15|2025-11-01', { name: '살름', worldName: '스카니아' })
+
+    await expect(resolver({ accounts: 스무명() })('살름', '2025-12-02')).resolves.toMatchObject({ ocid: 'o-15' })
+
+    expect(callsOn('2025-12-02')).toBe(1)
+  })
+
+  // 다시 받는 날들은 한꺼번에 돈다. 같은 이름을 나란히 찾으면 앞에서 찾은 캐릭터를 뒤가 모른다.
+  it('같은 이름을 여러 날짜에서 한꺼번에 찾아도 앞에서 찾은 캐릭터부터 묻는다', async () => {
+    그날(살름표())
+    const ownerOf = resolver({ accounts: 스무명() })
+
+    const owners = await Promise.all(날짜들.map((day) => ownerOf('살름', day)))
+
+    expect(owners.map((owner) => (typeof owner === 'string' ? owner : owner.ocid))).toEqual(날짜들.map(() => 'o-15'))
+    expect(날짜들.slice(1).map(callsOn)).toEqual([1, 1, 1, 1])
+  })
+
+  // 리프 전 줄마다 계정의 캐릭터를 다 묻고서야 차례 4 로 가면, 리프 전 기간 하루마다 캐릭터 수만큼 부른다.
+  it('지금 이름이 같은 캐릭터는 리프 전 기간까지 먼저 보고, 나머지 캐릭터는 묻지 않는다', async () => {
+    const days: Record<string, string> = { '2026-09-11': '지내우시', '2026-11-09': '지내우시' }
+    그날({ ...Object.fromEntries(Array.from({ length: 10 }, (_, at) => [`o-${at + 1}`, { '2026-08-01': `캐릭${at + 1}` }])), 'o-새': days }, {
+      'o-새': '2026-06-18',
+    })
+    const accounts = 목록(...Array.from({ length: 10 }, (_, at) => 캐릭터(`o-${at + 1}`, `캐릭${at + 1}`)), 캐릭터('o-새', '지내우시'))
+
+    await expect(resolver({ accounts })('지내우시', '2026-08-01')).resolves.toMatchObject({ ocid: 'o-새', preLeap: true })
+
+    expect(fetchCharacterBasicOn.mock.calls.filter((call) => call[1] !== 'o-새')).toHaveLength(0)
+  })
+
+  // 값은 처음 값이 온 날부터 이어진다. 그 앞 날짜는 물어도 값이 없다.
+  it('그 날짜나 그 뒤에 값이 없던 캐릭터는 맨 뒤에 묻고, 다른 캐릭터에서 찾으면 묻지 않는다', async () => {
+    그날({ 'o-1': {}, 'o-2': { '2025-12-05': '부캐' }, 'o-3': { '2025-12-05': '살름' } })
+    datedStore.__stored.set('o-1|2025-12-10', { name: null, worldName: null })
+    const ownerOf = resolver({ accounts: 목록(캐릭터('o-1', '새캐릭'), 캐릭터('o-2', '부캐'), 캐릭터('o-3', '낟낟')) })
+
+    await expect(ownerOf('살름', '2025-12-05')).resolves.toMatchObject({ ocid: 'o-3' })
+
+    expect(fetchCharacterBasicOn.mock.calls.filter((call) => call[1] === 'o-1')).toHaveLength(0)
+  })
+
+  // 넥슨 데이터가 중간에 하루 빈 날이 있으면, 건너뛴 캐릭터의 줄을 버리고 그 날을 굳혀 영영 잃는다.
+  it('아무도 맞지 않으면 값이 없던 캐릭터까지 묻는다. 건너뛰지 않는다', async () => {
+    그날({ 'o-1': { '2025-12-05': '살름' }, 'o-2': { '2025-12-05': '부캐' } })
+    datedStore.__stored.set('o-1|2025-12-10', { name: null, worldName: null })
+    const ownerOf = resolver({ accounts: 목록(캐릭터('o-1', '새캐릭'), 캐릭터('o-2', '부캐')) })
+
+    await expect(ownerOf('살름', '2025-12-05')).resolves.toMatchObject({ ocid: 'o-1' })
   })
 })
 

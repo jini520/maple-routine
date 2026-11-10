@@ -1,7 +1,7 @@
 # ADR-101+186 다계정: 넥슨 로그인 아래에 API 키 계정을 더 등록한다
 
 > ⚪ 미구현
-> 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/` · `lib/enhancement/sighted-owner.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/stats/aggregate.ts` · `lib/mvp/starforce.ts` · `features/cashbook/account-names.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts` · `features/boss-profit/world-leap-moves.ts` · `features/boss-profit/world-leap-link.ts` · `storage/cashbook-entries.ts` · `storage/character-profiles.ts`
+> 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/` · `lib/enhancement/sighted-owner.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/stats/aggregate.ts` · `lib/mvp/starforce.ts` · `features/cashbook/account-names.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts` · `features/boss-profit/world-leap-moves.ts` · `features/boss-profit/world-leap-link.ts` · `storage/cashbook-entries.ts` · `storage/character-profiles.ts` · `features/ledger/useLedgerData.tsx`
 
 ## 배경
 
@@ -276,8 +276,17 @@
   1. **앱이 직접 본 기간**: `character_accounts` 에 그 ocid 를 그 이름으로 본 기록이 있고 줄의 날짜가 처음 본 날 ~ 마지막 본 날 안이면 그 ocid
      를 붙인다. 넥슨을 부르지 않는다. 앱이 그 기간에 확인한 사실이기 때문이다.
   2. **그날 이름**: 그 계정의 `character/list` 에 있는 ocid 로 `character/basic` 을 그 날짜로 불러 그날 이름을 받고, 이름이 같으면 그 ocid 를
-     붙인다. 알려진 이름이 줄의 이름과 같은 캐릭터부터 부른다. 대개 한 번에 끝나서, 넥슨 로그인 사용자가 함께 쓰는 번들 개발자 키의
-     호출이 늘지 않는다. 받은 그날 이름은 기기에 적어 같은 ocid · 날짜를 다시 부르지 않는다.
+     붙인다. 받은 그날 이름은 기기에 적어 같은 ocid · 날짜를 다시 부르지 않는다. 넥슨 로그인 사용자의 이 호출은 모두가 함께 쓰는 번들
+     개발자 키로 가서, 부르는 수를 아래 차례로 줄인다(사용자 선택 2026-11-10). 이름은 한때 한 캐릭터만 쓰므로 차례를 바꿔도 붙는
+     캐릭터는 같다. 차례 4 만 그날 이름을 직접 받지 못해, 다른 캐릭터가 그날 그 이름이었다가 리프한 캐릭터가 리프 뒤에 그 이름을
+     가져간 경우에는 리프한 캐릭터에 붙는다. 한 사람의 캐릭터끼리 이렇게 될 일은 드물다.
+     - 그 이름을 쓴 적이 있는 캐릭터를 먼저 묻는다. 이번 회차에 그 이름으로 붙인 캐릭터, 적어 둔 그날 이름에 그 이름이 있는 캐릭터,
+       지금 이름이나 앱이 본 이름이 같은 캐릭터다. 이 캐릭터들은 차례 3 · 4 까지 먼저 본다. 리프 전 줄은 지금 이름이 같은 캐릭터에
+       차례 4 로 붙는데, 나머지 캐릭터를 다 물은 뒤에야 차례 4 로 가면 리프 전 줄 하루마다 계정의 캐릭터 수만큼 부른다.
+     - 나머지 캐릭터 가운데 그 날짜나 그 뒤에 값이 없던 것을 아는 캐릭터는 맨 뒤에 묻는다. 캐릭터 값은 처음 값이 온 날부터 이어져서
+       그 앞 날짜에도 값이 없을 것이기 때문이다. 건너뛰지 않고 미루기만 한다. 넥슨 데이터가 중간에 하루 비는 날이 있으면, 건너뛴
+       캐릭터의 줄을 버리고 그 날을 굳혀 영영 잃는다.
+     - 같은 이름은 날짜마다 차례로 찾는다. 여러 날짜를 한꺼번에 찾으면 앞 날짜에서 찾은 캐릭터를 뒤 날짜가 먼저 묻지 못한다.
   3. **이름을 바꾼 날**: 그날 이름과 다르면 같은 ocid 의 전날 · 다음 날 이름과도 견준다. `date` 의 값이 그날 어느 시각 기준인지 몰라, 바꾼
      날 강화한 줄은 옛 이름으로도 새 이름으로도 올 수 있다.
   4. **리프 전 기간**: 그 ocid 의 그날 값이 `null` 인데 만든 날(`character_date_create`)이 그날보다 앞이면, 그날은 그 캐릭터가 리프하기 전
@@ -295,9 +304,12 @@
   이벤트든 같다.
 - 1.0.14 이관은 넥슨을 부를 수 없어서, 이미 저장된 줄은 차례 1 로만 ocid 를 붙인다. 붙이지 못한 줄은 그 날짜 · 종류의 받은 날짜 기록과
   함께 지워, 수집기가 그 날짜를 다시 받아 차례 2 ~ 5 를 거치게 한다(사용자 지정 2026-11-09).
-  - 지운 날짜는 그 기기의 다시 매기기 요청으로 남겨 회차마다 뒤에서 받는다(사용자 선택 2026-11-10). 화면이 연 기간만 받으면 열지 않은
-    달의 지출이 빠진 채 남기 때문이다. 다시 매기기의 날이라 지난 날 모달은 띄우지 않고, 넥슨 로그인 계정은 한 회차에 60일씩 받는다.
-    다 받기 전까지 그 날의 지출은 가계부에서 잠시 빠진다.
+  - 지운 날짜는 다시 받을 날(`enhancement_refetches`)로 적어 뒤에서 받는다(사용자 선택 2026-11-10). 화면이 연 기간만 받으면 열지 않은
+    달의 지출이 빠진 채 남기 때문이다. 지난 날 모달은 띄우지 않는다. 다 받기 전까지 그 날의 지출은 가계부에서 잠시 빠진다.
+  - 이 받기는 가계부 · 통계 화면의 회차가 끝난 뒤 따로 돌고, 화면은 기다리지 않는다(사용자 선택 2026-11-10). 화면 회차 안에서 돌리자
+    사용자 기기에서 60일에 그날 이름을 약 2,460번 불러, 화면이 8분 넘게 불러오는 중으로 남았다(2026-11-10). 한 번에 한 받기만 돈다.
+    넥슨 로그인 계정은 한 번에 60일씩 받고, 남은 날이 줄어드는 동안 이어서 받는다. 한 번 받고도 줄지 않으면 멈추고 다음 화면 회차를
+    기다린다. 넥슨이 실패하는 동안 같은 날을 끝없이 부르지 않기 위해서다.
 - 그날을 갈아 끼울 때 지우는 범위도 그 넥슨 계정의 캐릭터들로 바꾼다. 한 번 받으면 그 넥슨 계정의 그날 줄이 모두 오기 때문이다.
 - 결정 16 과 함께 둔다. 받은 날짜 기록(`enhancement_history_checks`)과 다시 매기기 진행은 여전히 앱 계정 번호로 나뉜다. 결정 16 은 같은
   날짜를 다시 받지 않게 하고, 이 결정은 다시 받아도 줄이 늘지 않게 한다.
@@ -463,10 +475,10 @@
 | `storage/__tests__/api-key.spec.ts` | 결정 5: 로그아웃 · 로그인 만료가 부계정 키를 귀속된 채 남기는지, 같은 계정 id 로 다시 로그인하면 이어지고 다른 id 면 이어지지 않는지, 로그인 화면의 로그인이 귀속 없는 키를 버리고 연동은 메인 키를 부계정으로 옮기는지, 앞 로그인의 부계정 키로 키 로그인하면 귀속을 든 채 메인이 되는지, 두 칸이 없던 옛 수단을 읽는지 본다 |
 | `features/auth/__tests__/store.spec.ts` · `features/app-entry/__tests__/stage.spec.ts` | 결정 5: 부계정 키만 남으면 로그인 상태가 아니고 로그인 화면으로 가며 키를 지우지 않는지 본다 |
 | `lib/enhancement/__tests__/sighted-owner.spec.ts` | 결정 18 차례 1: 그 이름으로 본 기간 안의 날만 붙이고, 이름을 바꾼 캐릭터는 그날 이름으로 찾고, 같은 날 같은 이름의 캐릭터가 둘이면 고르지 않는지 본다 |
-| `features/enhancement-history/__tests__/owners.spec.ts` | 결정 18 차례 2 ~ 4: 지금 이름이 같은 캐릭터부터 그날 이름을 묻고 적어 둔 값은 다시 묻지 않는지, 오늘은 목록 이름으로 붙이는지, 이름을 바꾼 날은 전날 · 다음 날 이름과 견주는지, 리프 전 기간을 만든 날과 처음 값이 온 날로 가르는지, 빈 이름 · 못 붙인 이름은 버리고 넥슨을 부르다 실패하면 다시 받는지 본다 |
+| `features/enhancement-history/__tests__/owners.spec.ts` · `storage/sqlite/__tests__/character-dated-names-real-sqlite.test.ts` | 결정 18 차례 2 ~ 4: 지금 이름이 같은 캐릭터부터 그날 이름을 묻고 적어 둔 값은 다시 묻지 않는지, 한 번 붙인 이름 · 적어 둔 그날 이름의 캐릭터부터 묻고 같은 이름을 나란히 찾아도 그 캐릭터부터 묻는지, 리프 전 줄은 지금 이름이 같은 캐릭터만 보고 끝나는지, 값이 없던 날 뒤의 캐릭터는 맨 뒤로 미루되 아무도 안 맞으면 묻는지, 오늘은 목록 이름으로 붙이는지, 이름을 바꾼 날은 전날 · 다음 날 이름과 견주는지, 리프 전 기간을 만든 날과 처음 값이 온 날로 가르는지, 빈 이름 · 못 붙인 이름은 버리고 넥슨을 부르다 실패하면 다시 받는지 본다 |
 | `nexon/character/__tests__/client.spec.ts` | 결정 18: 날짜를 넣은 `character/basic` 이 그날 값이 없거나 400 `OPENAPI00003` · `OPENAPI00004` 면 값 없음으로 돌려주는지 본다 |
 | `features/enhancement-history/__tests__/spending.spec.ts` | 결정 18 · 20 · 22: 합계를 ocid 로 묶어 이름을 바꾼 캐릭터의 줄이 한 줄이 되는지, 붙이지 못한 줄을 버리는지, 이벤트 월드를 붙인 캐릭터의 월드로 판정하고 리프 전 줄은 이벤트 월드가 아닌지, 줄의 월드를 적는지 본다 |
-| `features/enhancement-history/__tests__/collect.spec.ts` | 결정 18: 붙일 곳이 없는 이름의 줄은 버리고 그 날을 굳히는지, 그날 이름을 묻다 실패한 날은 갈아 끼우지도 굳히지도 않는지, 그 넥슨 계정의 캐릭터를 갈아 끼우는 범위로 넘기는지, 이관이 지운 날을 뒤에서 받고 굳히면 지우는지, 넥슨 로그인 계정은 한 회차에 60일만 받는지 본다. 결정 22: 리프 전 줄에 같은 기간 스타포스 줄의 월드를 적는지 본다 |
+| `features/enhancement-history/__tests__/collect.spec.ts` · `features/ledger/__tests__/useLedgerData.spec.tsx` | 결정 18: 화면 회차가 끝나면 다시 받을 날을 뒤에서 받기 시작하고 그 끝을 기다리지 않는지, 붙일 곳이 없는 이름의 줄은 버리고 그 날을 굳히는지, 그날 이름을 묻다 실패한 날은 갈아 끼우지도 굳히지도 않는지, 그 넥슨 계정의 캐릭터를 갈아 끼우는 범위로 넘기는지, 이관이 지운 날을 화면 회차가 아니라 뒤에서 따로 받고 굳히면 지우는지, 넥슨 로그인 계정은 60일씩 받되 남은 날이 줄어드는 동안 이어 받고 줄지 않으면 멈추는지, 한 번에 한 받기만 도는지 본다. 결정 22: 리프 전 줄에 같은 기간 스타포스 줄의 월드를 적는지 본다 |
 | `storage/sqlite/__tests__/enhancement-ocid-real-sqlite.test.ts` | 결정 18 · 20: 버전 18 이 앱이 본 기간의 줄에 ocid · 메이플 ID · 월드를 붙이고 계정 id 둘로 겹친 줄은 늦은 줄을 남기는지, 못 붙인 줄은 그 날의 조회 기록과 함께 지우고 다시 받을 날로 적는지, 조회 기록의 계정 칸이 `NOT NULL` 이 되고 이름 판정 표가 지워지는지 본다 |
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 결정 18: 그 넥슨 계정 캐릭터의 그날 줄은 다른 계정 id 로 적혔어도 갈아 끼우는지, 옛 원본을 옮길 때 앱이 본 캐릭터에 붙이고 못 붙인 날을 다시 받을 날로 적는지 본다. 결정 22: 리프 전 월드를 리프한 날 앞의 가까운 스타포스 줄에서 찾는지 본다 |
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (원본 표) · `storage/__tests__/enhancement-history.spec.ts` | 결정 27: 옛 원본을 옮기면 원본 표를 지우고, 이미 옮긴 기기는 켤 때 지우고, 새 DB 에는 원본 표가 없고, 없는 표는 읽지 않는지 본다 |

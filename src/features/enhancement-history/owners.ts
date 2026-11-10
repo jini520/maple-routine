@@ -5,7 +5,8 @@
  * 차례는 넷이고, 앞에서 찾으면 뒤로 가지 않는다.
  *
  * 1. 앱이 직접 본 기간. 그 이름으로 본 기간 안의 날이면 넥슨을 부르지 않는다.
- * 2. 그날 이름. 그 계정의 캐릭터마다 `character/basic` 에 날짜를 넣어 그날 이름을 받는다. 지금 이름이 같은 캐릭터부터 묻는다.
+ * 2. 그날 이름. 그 계정의 캐릭터마다 `character/basic` 에 날짜를 넣어 그날 이름을 받는다. 그 이름을 쓴 적이 있는 캐릭터부터 묻고,
+ *    그 캐릭터들은 차례 3 · 4 까지 먼저 본다. 그 날짜나 그 뒤에 값이 없던 캐릭터는 맨 뒤에 묻는다.
  * 3. 이름을 바꾼 날. 그날 이름과 다르면 전날 · 다음 날 이름과도 견준다. `date` 가 그날 어느 시각 기준인지 몰라서다.
  * 4. 리프 전 기간. 그날 값이 없는데 만든 날이 앞이면 리프 전이다. 처음 값이 온 날의 이름이 같으면 붙인다.
  *
@@ -16,7 +17,14 @@ import { sightedOwnerOf } from '../../lib/enhancement/sighted-owner'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { fetchCharacterBasicOn } from '../../nexon/character/client'
 import type { EnhancementOwnerSighting } from '../../storage/character-accounts'
-import { datedNameKey, getDatedNames, saveDatedName, type DatedName } from '../../storage/character-dated-names'
+import {
+  datedNameKey,
+  getDatedNames,
+  getNoValueThroughDates,
+  getOcidsNamed,
+  saveDatedName,
+  type DatedName,
+} from '../../storage/character-dated-names'
 import { getCharacterFirstDays, saveCharacterFirstDay, type CharacterFirstDay } from '../../storage/character-first-days'
 import type { MapleAccount, MapleCharacter } from '../../types'
 import type { NexonCredential } from '../../types/auth'
@@ -75,6 +83,44 @@ export function createOwnerResolver(context: OwnerContext): OwnerOf {
   const firstDays = new Map<string, Promise<CharacterFirstDay | null | 'failed'>>()
   const results = new Map<string, Promise<OwnerResult>>()
   const limit = createLimiter(DATED_CALL_LIMIT)
+  /** 같은 이름의 찾기를 날짜마다 차례로 잇는 끝. 앞 날짜에서 찾은 캐릭터를 뒤 날짜가 먼저 묻게 한다. */
+  const nameTails = new Map<string, Promise<unknown>>()
+  /** 이번 회차에 그 이름으로 붙인 캐릭터. */
+  const foundOcids = new Map<string, string>()
+  /** 적어 둔 그날 이름에 그 이름이 있는 캐릭터. 이름마다 한 번 읽는다. */
+  const namedOcids = new Map<string, Promise<ReadonlySet<string>>>()
+  /** 캐릭터마다 값이 없던 것을 아는 가장 늦은 날. 그 날과 그 앞은 값이 없을 것이라 맨 뒤에 묻는다. */
+  const noValueThrough = new Map<string, string>()
+  let noValueSeeded: Promise<void> | null = null
+
+  function markNoValue(ocid: string, dateKey: string): void {
+    if ((noValueThrough.get(ocid) ?? '') < dateKey) noValueThrough.set(ocid, dateKey)
+  }
+
+  /** 적어 둔 값 없는 날과 처음 값이 온 날로 `noValueThrough` 를 채운다. 못 읽으면 비운 채로 둔다. 차례만 바뀐다. */
+  function seedNoValue(): Promise<void> {
+    noValueSeeded ??= (async () => {
+      const ocids = [...listed.keys()]
+      const [through, first] = await Promise.all([
+        getNoValueThroughDates(ocids).catch(() => new Map<string, string>()),
+        getCharacterFirstDays(ocids).catch(() => new Map<string, CharacterFirstDay>()),
+      ])
+      for (const [ocid, dateKey] of through) markNoValue(ocid, dateKey)
+      for (const [ocid, day] of first) markNoValue(ocid, shiftDateKey(day.firstDate, -1))
+    })()
+    return noValueSeeded
+  }
+
+  function namedOf(name: string): Promise<ReadonlySet<string>> {
+    let pending = namedOcids.get(name)
+    if (pending === undefined) {
+      pending = getOcidsNamed(name)
+        .then((ocids) => new Set(ocids))
+        .catch(() => new Set<string>())
+      namedOcids.set(name, pending)
+    }
+    return pending
+  }
 
   /** 그 ocid 의 그날 값. 오늘 뒤는 목록의 지금 이름이다. 적어 둔 값이 있으면 부르지 않는다. */
   function datedOf(ocid: string, dateKey: string): Promise<Dated> {
@@ -99,6 +145,7 @@ export function createOwnerResolver(context: OwnerContext): OwnerOf {
     try {
       const fetched = await limit(() => fetchCharacterBasicOn(context.credential, ocid, dateKey))
       const value: DatedName = { name: fetched.name, worldName: fetched.worldName }
+      if (value.name === null) markNoValue(ocid, dateKey)
       await saveDatedName(ocid, dateKey, value, context.now).catch(() => undefined)
       if (fetched.createdDate !== null) createdDates.set(ocid, fetched.createdDate)
       return value
@@ -180,52 +227,81 @@ export function createOwnerResolver(context: OwnerContext): OwnerOf {
     if (sighted !== null) return ownerOf(sighted.ocid, sighted.accountId)
     if (candidates === null) return 'retry'
 
-    // 지금 이름이나 앱이 본 이름이 같은 캐릭터부터. 대개 한 번에 끝난다.
+    // 그 이름을 쓴 적이 있는 캐릭터부터 차례 2 ~ 4 를 다 보고, 나머지로 간다. 이름은 한때 한 캐릭터만 쓰므로 붙는 캐릭터는 같고
+    // 부르는 수만 준다. 리프 전 줄은 지금 이름이 같은 캐릭터에 차례 4 로 붙어, 나머지를 다 물은 뒤에야 가면 하루마다 캐릭터 수만큼 부른다.
+    await seedNoValue()
+    const named = await namedOf(name)
     const knownNames = (ocid: string) => context.sightings.filter((sighting) => sighting.ocid === ocid).map((sighting) => sighting.name)
-    const ordered = [...candidates].sort(
-      (left, right) =>
-        Number(right.character.name === name || knownNames(right.character.ocid).includes(name)) -
-        Number(left.character.name === name || knownNames(left.character.ocid).includes(name)),
-    )
+    const preferred = (candidate: Candidate): boolean => {
+      const { ocid } = candidate.character
+      return foundOcids.get(name) === ocid || named.has(ocid) || candidate.character.name === name || knownNames(ocid).includes(name)
+    }
+    const first = candidates
+      .filter(preferred)
+      .sort((left, right) => Number(foundOcids.get(name) === right.character.ocid) - Number(foundOcids.get(name) === left.character.ocid))
+    // 값이 없던 날 뒤의 캐릭터는 건너뛰지 않고 미룬다. 넥슨 데이터가 하루 비는 날이 있으면 건너뛴 캐릭터의 줄을 버리고 그 날을 굳힌다.
+    const others = candidates.filter((candidate) => !preferred(candidate))
+    const noValue = (candidate: Candidate) => (noValueThrough.get(candidate.character.ocid) ?? '') >= dateKey
+    const rest = [...others.filter((candidate) => !noValue(candidate)), ...others.filter(noValue)]
+
+    let failed = false
+    for (const group of [first, rest]) {
+      const found = await searchGroup(group, name, dateKey)
+      if (found.failed) failed = true
+      if (found.owner !== null) {
+        if (!found.owner.preLeap) foundOcids.set(name, found.owner.ocid)
+        return found.owner
+      }
+    }
+    return failed ? 'retry' : 'none'
+  }
+
+  /** 캐릭터 무리 안에서 차례 2 · 3 · 4 를 본다. */
+  async function searchGroup(
+    group: readonly Candidate[],
+    name: string,
+    dateKey: string,
+  ): Promise<{ owner: LineOwner | null; failed: boolean }> {
     let failed = false
     const onDate = new Map<string, DatedName>()
-    for (const candidate of ordered) {
+    for (const candidate of group) {
       const value = await datedOf(candidate.character.ocid, dateKey)
       if (value === 'failed') {
         failed = true
         continue
       }
       onDate.set(candidate.character.ocid, value)
-      if (value.name === name) return ownerOf(candidate.character.ocid, candidate.accountId)
+      if (value.name === name) return { owner: ownerOf(candidate.character.ocid, candidate.accountId), failed }
     }
 
-    for (const candidate of ordered) {
+    for (const candidate of group) {
       if (onDate.get(candidate.character.ocid)?.name == null) continue
       for (const neighbor of [shiftDateKey(dateKey, -1), shiftDateKey(dateKey, 1)]) {
         const value = await datedOf(candidate.character.ocid, neighbor)
         if (value === 'failed') failed = true
-        else if (value.name === name) return ownerOf(candidate.character.ocid, candidate.accountId)
+        else if (value.name === name) return { owner: ownerOf(candidate.character.ocid, candidate.accountId), failed }
       }
     }
 
-    for (const candidate of ordered) {
+    for (const candidate of group) {
       const value = onDate.get(candidate.character.ocid)
       if (value === undefined || value.name !== null) continue
-      const first = await firstDayOf(candidate.character.ocid, dateKey)
-      if (first === 'failed') failed = true
-      else if (first !== null && dateKey < first.firstDate && first.firstName === name) {
-        return ownerOf(candidate.character.ocid, candidate.accountId, first.firstDate)
+      const day = await firstDayOf(candidate.character.ocid, dateKey)
+      if (day === 'failed') failed = true
+      else if (day !== null && dateKey < day.firstDate && day.firstName === name) {
+        return { owner: ownerOf(candidate.character.ocid, candidate.accountId, day.firstDate), failed }
       }
     }
-
-    return failed ? 'retry' : 'none'
+    return { owner: null, failed }
   }
 
   return (name, dateKey) => {
     const key = `${name}|${dateKey}`
     let pending = results.get(key)
     if (pending === undefined) {
-      pending = resolve(name, dateKey)
+      const run = (): Promise<OwnerResult> => resolve(name, dateKey)
+      pending = (nameTails.get(name) ?? Promise.resolve()).then(run, run)
+      nameTails.set(name, pending.catch(() => undefined))
       results.set(key, pending)
     }
     return pending

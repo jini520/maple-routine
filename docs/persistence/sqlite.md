@@ -62,7 +62,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `enhancement_history` | `id` | 옛 강화 응답 원본. 새 기기에는 만들지 않는다. 옛 기기는 합계로 옮기는 부팅 단계만 읽고, 옮긴 뒤 지운다 | `storage/enhancement-history.ts` | 남긴다 | [[ADR-100]] · [[ADR-101]] |
 | `enhancement_recomputes` | `id`(uuid, `(nexon_account_id, request_key)` 는 UNIQUE) | 강화 비용 다시 매기기 요청을 넥슨 계정마다 어디까지 받았는지와 끝났는지 | `storage/enhancement-recomputes.ts` | 지운다 (강화) | [[ADR-100]] |
 | `enhancement_history_checks` | `id`(uuid, `(nexon_account_id, enhancement_type, history_date)` 는 UNIQUE) | 강화 내역을 넥슨 계정 · 날짜별로 조회했는지 기록 | `storage/enhancement-history.ts` | 지운다 (강화) | `features/cashbook.md` |
-| `enhancement_refetches` | `id`(uuid, `(nexon_account_id, enhancement_type, history_date)` 는 UNIQUE) | 다시 받아야 하는 강화 내역의 날. 버전 18 이관과 옛 원본 옮기기가 캐릭터에 붙이지 못한 줄의 날을 적고, 수집기가 뒤에서 받아 굳히면 지운다 | `storage/enhancement-refetches.ts` | 지운다 (강화) | [[ADR-101]] |
+| `enhancement_refetches` | `id`(uuid, `(nexon_account_id, enhancement_type, history_date)` 는 UNIQUE) | 다시 받아야 하는 강화 내역의 날. 버전 18 이관과 옛 원본 옮기기가 캐릭터에 붙이지 못한 줄의 날을 적는다. 가계부 · 통계 화면의 회차가 끝난 뒤 수집기가 따로 받아 굳히면 지운다 | `storage/enhancement-refetches.ts` | 지운다 (강화) | [[ADR-101]] |
 | `character_dated_names` | `id`(uuid, `(ocid, history_date)` 는 UNIQUE) | 캐릭터의 그날 이름과 월드 이름. 강화 줄의 이름을 캐릭터에 붙일 때 `character/basic` 에 날짜를 넣어 받은 값이다. 그날 값이 없으면 이름이 `NULL` 이다 | `storage/character-dated-names.ts` | 지운다 (강화) | [[ADR-101]] |
 | `character_first_days` | `id`(uuid, `ocid` 는 UNIQUE) | 캐릭터의 만든 날과 처음 값이 온 날 · 그날 이름. 리프 전 기간을 가른다 | `storage/character-first-days.ts` | 지운다 (강화) | [[ADR-101]] |
 | `cashbook_entries` | `id`(uuid) | 가계부에 손으로 적은 수입 · 지출 한 건. 날짜 · 갈래 · 캐릭터나 메이플 ID. 캐릭터 기록은 적을 때의 월드를 든다 | `storage/income.ts` · `storage/spend.ts` | 지운다 (가계부) | [[ADR-096]] · [[ADR-161]] |

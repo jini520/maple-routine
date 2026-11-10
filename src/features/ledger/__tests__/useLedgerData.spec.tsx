@@ -15,6 +15,7 @@ jest.mock('../../schedule-sync/schedule-query', () => ({
 jest.mock('../../refresh/pull', () => ({ collectTodayEnhancement: jest.fn() }))
 jest.mock('../../enhancement-history/collect', () => ({
   collectEnhancementHistory: jest.fn(),
+  collectEnhancementRefetches: jest.fn(),
   measureEnhancementHistory: jest.fn(),
 }))
 
@@ -29,9 +30,11 @@ const {
   readTrackedOcids: trackedMock,
 } = jest.requireMock('../../schedule-sync/schedule-query') as Record<string, jest.Mock>
 const { collectTodayEnhancement: todayMock } = jest.requireMock('../../refresh/pull') as Record<string, jest.Mock>
-const { collectEnhancementHistory: collectMock, measureEnhancementHistory: sizeMock } = jest.requireMock(
-  '../../enhancement-history/collect',
-) as Record<string, jest.Mock>
+const {
+  collectEnhancementHistory: collectMock,
+  collectEnhancementRefetches: refetchMock,
+  measureEnhancementHistory: sizeMock,
+} = jest.requireMock('../../enhancement-history/collect') as Record<string, jest.Mock>
 
 function Probe(): React.JSX.Element {
   const { status, reload } = useLedgerData()
@@ -67,6 +70,7 @@ beforeEach(() => {
   trackedMock.mockReset().mockResolvedValue(['o1', 'o2'])
   todayMock.mockReset().mockResolvedValue(undefined)
   collectMock.mockReset().mockResolvedValue(undefined)
+  refetchMock.mockReset().mockResolvedValue(undefined)
   sizeMock.mockReset().mockResolvedValue({ total: 0, hasPast: false })
 })
 
@@ -96,6 +100,16 @@ it('마운트는 만료된 회차를 먼저 받은 뒤 창을 채운다. 신선�
   })
   await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready'))
   expect(refreshMock).not.toHaveBeenCalled()
+})
+
+// 이관이 지운 날을 다시 받는 일은 화면 회차가 끝난 뒤 따로 돈다. 화면이 기다리면 60일에 8분 넘게 불러오는 중으로 남았다.
+it('회차가 끝나면 다시 받을 날을 뒤에서 받기 시작하고, 그 끝을 기다리지 않고 ready 다', async () => {
+  refetchMock.mockReturnValue(new Promise<void>(() => undefined))
+
+  const view = await 그리기()
+
+  await waitFor(() => expect(view.getByTestId('probe')).toHaveTextContent('ready'))
+  expect(refetchMock).toHaveBeenCalledWith(expect.any(Date))
 })
 
 it('채우는 동안 filling 이다. 자식이 그 사이에 스켈레톤을 그린다', async () => {
