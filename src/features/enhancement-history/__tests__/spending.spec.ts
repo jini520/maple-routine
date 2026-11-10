@@ -1,5 +1,4 @@
-import type { EventWorldEvidence } from '../../../lib/enhancement/world'
-import { enhancementCostPartsOf, summarizeEnhancement, type EnhancementSource } from '../spending'
+import { enhancementCostPartsOf, summarizeEnhancement, type EnhancementSource, type EntryOwner } from '../spending'
 
 const entry = (over: Partial<EnhancementSource> = {}): EnhancementSource => ({
   kind: 'cube',
@@ -13,13 +12,22 @@ const entry = (over: Partial<EnhancementSource> = {}): EnhancementSource => ({
   ...over,
 })
 
-const NO_EVENT: EventWorldEvidence = { listed: new Map(), remembered: new Map() }
-
-/** 목록에 이벤트 월드로 있는 이름들. */
-const listedEvent = (...names: string[]): EventWorldEvidence => ({
-  listed: new Map(names.map((name) => [name, { eventWorld: true, unknownWorld: null }])),
-  remembered: new Map(),
+/** 이름마다 그날 그 이름이었던 캐릭터. 이름이 곧 ocid 인 일반 월드 캐릭터로 붙인다. */
+const NO_EVENT = (source: EnhancementSource): EntryOwner => ({
+  ocid: `ocid-${source.characterName}`,
+  accountId: 'maple-1',
+  worldName: '엘리시움',
+  worldKey: 'elysium',
+  preLeap: false,
 })
+
+/** 이름마다 붙일 캐릭터를 따로 준다. 없는 이름은 붙이지 못한 줄이다. */
+const owners =
+  (table: Record<string, Partial<EntryOwner>>) =>
+  (source: EnhancementSource): EntryOwner | null => {
+    const over = table[source.characterName]
+    return over === undefined ? null : { ...NO_EVENT(source), ...over }
+  }
 
 /** 줄 하나의 시도 비용. 값을 못 매기면 `null`. */
 const attemptMesoOf = (over: Partial<EnhancementSource>) => enhancementCostPartsOf(entry(over))?.attemptMeso ?? null
@@ -319,51 +327,60 @@ describe('스타포스 첫 성과 끝 성', () => {
 })
 
 describe('이벤트 월드', () => {
-  it('스페셜 캐릭터의 줄은 이벤트 월드로 적는다', () => {
+  it('붙인 캐릭터가 이벤트 월드면 그 줄을 이벤트 월드로 적는다', () => {
     const rows = summarizeEnhancement(
       [entry({ characterName: '머리맨들맨둘' }), entry({ characterName: '낟낟' })],
-      listedEvent('머리맨들맨둘'),
+      owners({ 머리맨들맨둘: { worldName: '스페셜', worldKey: 'special' }, 낟낟: {} }),
     )
 
-    expect(rows.map((row) => [row.characterName, row.eventWorld])).toEqual([
-      ['머리맨들맨둘', true],
-      ['낟낟', false],
+    expect(rows.map((row) => [row.characterName, row.eventWorld, row.worldKey])).toEqual([
+      ['머리맨들맨둘', true, 'special'],
+      ['낟낟', false, 'elysium'],
     ])
   })
 
-  // 스타포스는 줄이 월드를 직접 준다. 목록보다 그 값이 이긴다.
-  // 줄의 월드 이름은 응답 원문이라 월드 key 로 맞춘 뒤 판정한다.
-  it('줄이 월드를 주면 월드 key 로 맞춘 그 값으로 판정한다', () => {
+  // 스타포스는 줄이 월드를 직접 준다. 캐릭터의 월드보다 그 값이 이긴다. 줄의 월드 이름은 응답 원문이라 월드 key 로 맞춘다.
+  it('줄이 월드를 주면 월드 key 로 맞춘 그 값으로 판정하고 그 월드를 적는다', () => {
     const starforce = (worldName: string) =>
       entry({ kind: 'starforce', payload: { world_name: worldName, before_starforce_count: 0, upgrade_item: '' } })
     const rows = summarizeEnhancement(
       [starforce('스페셜 '.normalize('NFD')), { ...starforce('챌린저스2'), characterName: '둘째' }],
-      listedEvent('둘째'),
+      owners({ 낟낟: {}, 둘째: { worldName: '스페셜' } }),
     )
 
-    expect(rows.map((row) => [row.characterName, row.eventWorld])).toEqual([
-      ['낟낟', true],
-      ['둘째', false],
+    expect(rows.map((row) => [row.characterName, row.eventWorld, row.worldKey])).toEqual([
+      ['낟낟', true, 'special'],
+      ['둘째', false, 'challengers_2'],
     ])
   })
 
-  // 판정을 비워 두면 다음 목록을 받았을 때 다시 묶어 채운다. 지출로 세지도 서버로 보내지도 않는다.
-  it('목록을 못 받았으면 월드를 모르는 줄의 판정을 비운다', () => {
-    expect(summarizeEnhancement([entry()], { listed: null, remembered: new Map() })[0].eventWorld).toBeNull()
-  })
-
-  // 목록에서 사라진 이름은 그 줄의 날짜가 남겨 둔 월드의 기간 안인지로 가른다. 같은 이름이라도 날마다 판정이 다르다.
-  it('남겨 둔 이름은 줄마다 그 날짜로 판정한다', () => {
-    const remembered: EventWorldEvidence = { listed: new Map(), remembered: new Map([['지운캐릭', ['special_2']]]) }
+  // 스페셜 월드에서 일반 월드로는 리프할 수 없다. 리프 전 줄의 월드는 리프 뒤 ocid 의 월드가 아니다.
+  it('리프 전 줄은 이벤트 월드가 아니고, 월드는 붙인 캐릭터가 든 리프 전 월드다', () => {
     const rows = summarizeEnhancement(
-      [entry({ characterName: '지운캐릭', dateKey: '2025-11-25' }), entry({ characterName: '지운캐릭', dateKey: '2026-01-05' })],
-      remembered,
+      [entry({ characterName: '지내우시' })],
+      owners({ 지내우시: { preLeap: true, worldName: null, worldKey: 'challengers_2' } }),
     )
 
-    expect(rows.map((row) => [row.historyDate, row.eventWorld])).toEqual([
-      ['2025-11-25', true],
-      ['2026-01-05', false],
-    ])
+    expect(rows.map((row) => [row.eventWorld, row.worldKey])).toEqual([[false, 'challengers_2']])
+  })
+})
+
+// 이름으로 묶으면 이름을 바꾼 캐릭터가 둘로 갈리고, 이름이 다시 쓰이면 다른 캐릭터에 붙는다.
+describe('캐릭터에 붙이기', () => {
+  it('이름을 바꾼 캐릭터의 같은 날 줄은 한 ocid 로 묶인다', () => {
+    const rows = summarizeEnhancement(
+      [entry({ characterName: '살름' }), entry({ characterName: '낟낟' })],
+      owners({ 살름: { ocid: 'o-1' }, 낟낟: { ocid: 'o-1' } }),
+    )
+
+    expect(rows).toEqual([expect.objectContaining({ ocid: 'o-1', accountId: 'maple-1', attempts: 2 })])
+  })
+
+  // 어느 캐릭터의 기록인지 모르는 줄은 남기지 않는다.
+  it('캐릭터에 붙이지 못한 줄은 합계에 넣지 않는다', () => {
+    const rows = summarizeEnhancement([entry({ characterName: '지운캐릭' }), entry()], owners({ 낟낟: {} }))
+
+    expect(rows.map((row) => row.characterName)).toEqual(['낟낟'])
   })
 })
 

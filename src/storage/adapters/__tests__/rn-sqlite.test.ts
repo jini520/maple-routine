@@ -211,6 +211,7 @@ describe('db.ts 와 맞물리는가', () => {
       // 스타포스 첫 성 · 끝 성.
       'ALTER TABLE enhancement_totals ADD COLUMN from_star INTEGER',
       'ALTER TABLE enhancement_totals ADD COLUMN to_star INTEGER',
+      'ALTER TABLE character_accounts ADD COLUMN world_key TEXT',
     ])
   })
 

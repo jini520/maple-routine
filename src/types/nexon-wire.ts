@@ -34,6 +34,17 @@ export interface NexonCharacterBasicResponse {
   character_exp_rate?: string
 }
 
+/**
+ * 날짜를 넣어 부른 `character/basic`. 그날 그 ocid 에 값이 없으면 200 에 모든 칸이 `null` 이다. 리프 전 기간과 만들기 전
+ * 날짜가 그렇다(실측 2026-11-09 · 11-10).
+ */
+export interface NexonDatedCharacterBasicResponse {
+  character_name: string | null
+  world_name: string | null
+  /** 만든 날. 리프 뒤에도 처음 만든 날 그대로다. 예: `2025-06-19T00:00+09:00` */
+  character_date_create: string | null
+}
+
 export type NexonRawDifficulty = 'easy' | 'normal' | 'hard' | 'chaos' | 'extreme'
 export type NexonRawBossCycle = 'bossDaily' | 'bossWeekly' | 'bossMonthly'
 

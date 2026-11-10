@@ -46,8 +46,16 @@ const CASHBOOK_TABLES = [
   'remembered_levels',
 ]
 
-// 확인 기록만 남으면 그 날짜를 다시 부르지 않아 합계가 빈 채로 굳는다. 셋을 함께 지워야 다시 받는다.
-const ENHANCEMENT_TABLES = ['enhancement_totals', 'enhancement_history_checks', 'enhancement_recomputes', 'event_world_characters']
+// 확인 기록만 남으면 그 날짜를 다시 부르지 않아 합계가 빈 채로 굳는다. 함께 지워야 다시 받는다. 그날 이름 · 처음 값이 온 날은
+// 줄을 캐릭터에 붙이려고 넥슨에서 받은 값이라 다시 받으면 다시 찬다.
+const ENHANCEMENT_TABLES = [
+  'enhancement_totals',
+  'enhancement_history_checks',
+  'enhancement_recomputes',
+  'enhancement_refetches',
+  'character_dated_names',
+  'character_first_days',
+]
 
 const NULL_SPLIT = SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')
 

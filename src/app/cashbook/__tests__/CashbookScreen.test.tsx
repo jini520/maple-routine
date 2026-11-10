@@ -1716,6 +1716,7 @@ describe('강화 줄', () => {
   const 스타포스줄 = {
     kind: 'enhancement' as const,
     category: 'starforce' as const,
+    ocid: 'ocid-1',
     characterName: '낟낟',
     payoutMeso: 1_200_000_000,
     count: 47,
@@ -1727,6 +1728,7 @@ describe('강화 줄', () => {
   const 에디셔널줄 = {
     kind: 'enhancement' as const,
     category: 'additional_potential' as const,
+    ocid: 'ocid-1',
     characterName: '낟낟',
     payoutMeso: 740_000_000,
     count: 10,
@@ -1745,7 +1747,7 @@ describe('강화 줄', () => {
   it('나가는 돈으로 적힌다', async () => {
     const view = await 그리기()
 
-    expect(view.getByTestId('cashbook-row-enhancement:starforce:낟낟')).toHaveTextContent(
+    expect(view.getByTestId('cashbook-row-enhancement:starforce:ocid-1')).toHaveTextContent(
       '낟낟 · 강화스타포스 47회−12억',
     )
   })
@@ -1754,7 +1756,7 @@ describe('강화 줄', () => {
   it('갈래마다 줄이 따로 선다', async () => {
     const view = await 그리기()
 
-    expect(view.getByTestId('cashbook-row-enhancement:additional_potential:낟낟')).toHaveTextContent(
+    expect(view.getByTestId('cashbook-row-enhancement:additional_potential:ocid-1')).toHaveTextContent(
       '낟낟 · 강화에디셔널 잠재능력 10회−7.4억',
     )
   })
@@ -1765,7 +1767,7 @@ describe('강화 줄', () => {
 
     await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*펼치기$/)
 
-    expect(view.getByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeTruthy()
+    expect(view.getByTestId('cashbook-row-items-enhancement:starforce:ocid-1')).toBeTruthy()
     expect(mockOpenTab).not.toHaveBeenCalled()
     expect(view.queryByTestId('cashbook-spend-sheet')).toBeNull()
   })
@@ -1809,8 +1811,8 @@ describe('강화 줄', () => {
     await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*펼치기$/)
     await 이름으로누르기(view, /^낟낟 · 강화 에디셔널 잠재능력 .*펼치기$/)
 
-    expect(view.queryByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeNull()
-    expect(view.getByTestId('cashbook-row-items-enhancement:additional_potential:낟낟')).toBeTruthy()
+    expect(view.queryByTestId('cashbook-row-items-enhancement:starforce:ocid-1')).toBeNull()
+    expect(view.getByTestId('cashbook-row-items-enhancement:additional_potential:ocid-1')).toBeTruthy()
   })
 
   it('다시 누르면 접힌다', async () => {
@@ -1819,7 +1821,7 @@ describe('강화 줄', () => {
     await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*펼치기$/)
     await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*접기$/)
 
-    expect(view.queryByTestId('cashbook-row-items-enhancement:starforce:낟낟')).toBeNull()
+    expect(view.queryByTestId('cashbook-row-items-enhancement:starforce:ocid-1')).toBeNull()
   })
 })
 

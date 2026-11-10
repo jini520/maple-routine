@@ -1,20 +1,18 @@
-import { highestMvpGrade, starforceDiscountPercentOf } from './grades'
+import { starforceDiscountPercentOf } from './grades'
 import { type MvpGradeEntry, mvpGradeAt } from './history'
-import { type CharacterAccountSighting, accountOfName } from './membership'
 
 /**
- * 스타포스 줄의 MVP 할인(%)을 찾는 함수. 줄은 캐릭터 이름만 들어 소속을 이름으로 찾는다.
- * 소속을 모르면 그 날 등급을 가진 ID 가운데 가장 높은 등급이고, 고른 ID 의 등급으로 세지 않는다.
- * 고른 ID 를 바꿀 때마다 지난 줄의 값이 바뀌기 때문이다.
+ * 스타포스 줄의 MVP 할인(%). 그 줄을 붙인 캐릭터의 메이플 ID 의 그 날 등급이다. 등급 이력이 없으면 할인이 없다.
+ *
+ * 강화 줄은 캐릭터(ocid)와 그 메이플 ID 를 들어 소속을 이름으로 찾지 않는다. 이름으로 찾으면 이름을 바꾼 캐릭터의 지난 줄이나
+ * 다른 캐릭터가 쓰던 이름의 줄이 다른 ID 의 등급을 받는다.
+ *
+ * @param accountId 그 줄의 메이플 ID
  */
-export function starforceMvpDiscountResolver(
+export function starforceMvpDiscountOf(
   histories: ReadonlyMap<string, readonly MvpGradeEntry[]>,
-  sightings: readonly CharacterAccountSighting[],
-): (characterName: string, dateKey: string) => number {
-  return (characterName, dateKey) => {
-    const accountId = accountOfName(sightings, characterName, dateKey)
-    if (accountId !== null) return starforceDiscountPercentOf(mvpGradeAt(histories.get(accountId) ?? [], dateKey))
-    const grades = [...histories.values()].map((history) => mvpGradeAt(history, dateKey))
-    return starforceDiscountPercentOf(highestMvpGrade(grades))
-  }
+  accountId: string,
+  dateKey: string,
+): number {
+  return starforceDiscountPercentOf(mvpGradeAt(histories.get(accountId) ?? [], dateKey))
 }

@@ -42,9 +42,10 @@ function 합계(account: string, date: string, attempts: number, updatedAt: stri
   real.inspect((db) =>
     db
       .prepare(
-        `INSERT INTO enhancement_totals (nexon_account_id, history_date, character_name, enhancement_type, enhancement_category,
-           item_group, item_key, item_name, attempts, attempt_cost_meso, destroy_defence_cost_meso, event_world, updated_at)
-         VALUES (?, ?, '낟낟', 'starforce', 'starforce', 'name:모자', NULL, '모자', ?, 1000, 0, 0, ?)`,
+        `INSERT INTO enhancement_totals (nexon_account_id, history_date, character_name, ocid, account_id, enhancement_type,
+           enhancement_category, item_group, item_key, item_name, attempts, attempt_cost_meso, destroy_defence_cost_meso,
+           event_world, updated_at)
+         VALUES (?, ?, '낟낟', 'o1', 'maple-1', 'starforce', 'starforce', 'name:모자', NULL, '모자', ?, 1000, 0, 0, ?)`,
       )
       .run(account, date, attempts, updatedAt),
   )
@@ -67,12 +68,6 @@ it('옛 id 의 줄을 이어받은 id 로 옮기고, 다른 계정의 줄은 그
       `INSERT INTO character_accounts (ocid, name, account_id, nexon_account_id, first_seen_date, last_seen_date)
        VALUES ('o1', '낟낟', 'maple-1', ?, '2026-10-01', '2026-10-01')`,
     ).run(키)
-    for (const account of [키, 로그인]) {
-      db.prepare(
-        `INSERT INTO event_world_characters (nexon_account_id, character_name, world_key, updated_at)
-         VALUES (?, '지운캐릭', 'special_2', '2026-10-02T00:00:00.000Z')`,
-      ).run(account)
-    }
   })
 
   await moveNexonAccountRows([키], 로그인)
@@ -81,7 +76,6 @@ it('옛 id 의 줄을 이어받은 id 로 옮기고, 다른 계정의 줄은 그
   expect(줄('SELECT nexon_account_id AS a, attempts FROM enhancement_totals')).toEqual([{ a: 로그인, attempts: 3 }])
   expect(줄('SELECT nexon_account_id AS a FROM enhancement_recomputes')).toEqual([{ a: 로그인 }])
   expect(줄('SELECT nexon_account_id AS a FROM character_accounts')).toEqual([{ a: 로그인 }])
-  expect(줄('SELECT nexon_account_id AS a, character_name AS n FROM event_world_characters')).toEqual([{ a: 로그인, n: '지운캐릭' }])
 })
 
 // 같은 넥슨 계정의 같은 날을 두 번 받은 것이다. 나중 줄이 그 날을 더 많이 담는다.
@@ -90,10 +84,6 @@ it('계정 칸이 UNIQUE 에 든 표에서 겹치면 나중에 적힌 줄이 남
   조회(로그인, '2026-10-01', '2026-10-03T00:00:00.000Z')
   조회(키, '2026-10-02', '2026-10-03T00:00:00.000Z')
   조회(로그인, '2026-10-02', '2026-10-05T00:00:00.000Z')
-  합계(키, '2026-10-01', 7, '2026-10-05T00:00:00.000Z')
-  합계(로그인, '2026-10-01', 5, '2026-10-03T00:00:00.000Z')
-  합계(키, '2026-10-02', 5, '2026-10-03T00:00:00.000Z')
-  합계(로그인, '2026-10-02', 7, '2026-10-05T00:00:00.000Z')
 
   await moveNexonAccountRows([키], 로그인)
 
@@ -101,12 +91,9 @@ it('계정 칸이 UNIQUE 에 든 표에서 겹치면 나중에 적힌 줄이 남
     { d: '2026-10-01', at: '2026-10-05T00:00:00.000Z', a: 로그인 },
     { d: '2026-10-02', at: '2026-10-05T00:00:00.000Z', a: 로그인 },
   ])
-  expect(줄('SELECT history_date AS d, attempts, nexon_account_id AS a FROM enhancement_totals ORDER BY d')).toEqual([
-    { d: '2026-10-01', attempts: 7, a: 로그인 },
-    { d: '2026-10-02', attempts: 7, a: 로그인 },
-  ])
 })
 
+// 합계는 ocid 로 가려 계정 칸이 판정 열쇠에 없다. 칸만 옮긴다.
 it('옛 id 가 여럿이어도 모두 옮긴다', async () => {
   합계(키, '2026-10-01', 3, '2026-10-02T00:00:00.000Z')
   합계('account-key-2', '2026-10-02', 4, '2026-10-02T00:00:00.000Z')

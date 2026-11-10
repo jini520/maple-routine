@@ -15,20 +15,16 @@ import { fetchCharacterListCached } from '../mvp-grade/character-list'
 import type { EnhancementHistoryRow, EnhancementKind } from '../../nexon/history/client'
 import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
 import { fetchEnhancementHistory } from '../../nexon/history/client'
+import { getOwnerSightings } from '../../storage/character-accounts'
 import { checkKey, loadEnhancementChecks, markEnhancementChecked } from '../../storage/enhancement-history'
-import { markEventWorldTotals, replaceEnhancementTotals } from '../../storage/enhancement-totals'
-import { loadEventWorldCharacters, rememberEventWorldCharacters } from '../../storage/event-world-characters'
-import { eventWorldCharactersOf, summarizeEnhancement } from './spending'
+import { loadEnhancementRefetches, removeEnhancementRefetch } from '../../storage/enhancement-refetches'
+import { findPreLeapWorldKey, replaceEnhancementTotals } from '../../storage/enhancement-totals'
+import { eventWorldOf, summarizeEnhancement, type EnhancementSource, type EntryOwner } from './spending'
 import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
 import type { EnhancementAnomaly } from '../../types/server-records'
 import { saveEventWorldNames } from './event-world-names'
-import {
-  eventWorldCharacterNames,
-  listedJudgmentsOf,
-  type EventWorldEvidence,
-  type EventWorldJudgment,
-} from '../../lib/enhancement/world'
-import { findWorld, isEventWorld } from '../../lib/world/worlds'
+import { eventWorldCharacterNames } from '../../lib/enhancement/world'
+import { createOwnerResolver, type LineOwner, type OwnerResult } from './owners'
 import { SOUL_POTENTIAL_FROM } from '../../lib/enhancement/cost'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { batchRecordWrites } from '../../storage/record-revision-batch'
@@ -107,7 +103,8 @@ async function planRound(
 ): Promise<{ jobs: EnhancementHistoryJob[]; chunks: RecomputeChunk[]; hasPast: boolean }> {
   const days = dateKeys.filter((dateKey) => dateKey <= todayDateKey)
   const chunks = await recomputeChunks(nexonAccountId, todayDateKey, recomputeDays)
-  if (days.length === 0 && chunks.length === 0) return { jobs: [], chunks, hasPast: false }
+  const refetches = await refetchesOf(nexonAccountId, todayDateKey, recomputeDays)
+  if (days.length === 0 && chunks.length === 0 && refetches.length === 0) return { jobs: [], chunks, hasPast: false }
 
   await fillLegacyAccountIds()
   await ensureEnhancementTotals()
@@ -133,7 +130,29 @@ async function planRound(
       for (const kind of kindsOn(dateKey)) if (chunk.request.kinds.includes(kind)) add(kind, dateKey)
     }
   }
+  // 이관이 지운 날도 다시 매기기의 날처럼 뒤에서 받고 모달을 세우지 않는다.
+  for (const { kind, dateKey } of refetches) add(kind, dateKey)
   return { jobs, chunks, hasPast }
+}
+
+/**
+ * 이번 회차에 다시 받을, 이관이 지운 날. 넥슨 로그인 계정은 다시 매기기와 같은 한도로 날을 자른다. 조회 하한 앞의 날은 받을 수
+ * 없어 지운다.
+ */
+async function refetchesOf(
+  nexonAccountId: string,
+  todayDateKey: string,
+  recomputeDays: number | null,
+): Promise<{ kind: EnhancementKind; dateKey: string }[]> {
+  const all = await loadEnhancementRefetches(nexonAccountId).catch(() => [])
+  const floor = historyFloorDateKey(todayDateKey)
+  for (const old of all.filter((one) => one.dateKey < floor)) {
+    await removeEnhancementRefetch(nexonAccountId, old.kind, old.dateKey).catch(() => undefined)
+  }
+  const kept = all.filter((one) => one.dateKey >= floor && one.dateKey <= todayDateKey)
+  if (recomputeDays === null) return kept
+  const allowed = new Set([...new Set(kept.map((one) => one.dateKey))].slice(0, recomputeDays))
+  return kept.filter((one) => allowed.has(one.dateKey))
 }
 
 /** 끝나지 않은 요청마다 이번 회차에 받을 날. 받을 날이 없어도 끝을 적어야 해서 목록에 든다. */
@@ -245,25 +264,6 @@ async function fetchDay(
 }
 
 /**
- * 목록에 없는 남겨 둔 이름의 줄을 그 월드의 기간 안에서 이벤트 월드로 고친다. 한 회차의 일은 동시에 돌아 큐브 날을 스타포스
- * 날보다 먼저 매길 수 있고, 굳은 날은 다시 받지 않기 때문이다. 앞 회차들이 굳힌 줄도 같이 고쳐진다.
- */
-async function markRememberedEventWorld(
-  accountId: string,
-  listed: ReadonlyMap<string, EventWorldJudgment>,
-): Promise<void> {
-  for (const [name, worldKeys] of await loadEventWorldCharacters(accountId)) {
-    if (listed.has(name)) continue
-    for (const worldKey of worldKeys) {
-      if (!isEventWorld(worldKey)) continue
-      for (const period of findWorld(worldKey)?.periods ?? []) {
-        await markEventWorldTotals(accountId, name, period.from, period.until)
-      }
-    }
-  }
-}
-
-/**
  * 창의 형제. **던지지 않는다.** 못 채운 칸은 원장에 안 남아 다음 회차가 다시 온다.
  *
  * 넥슨 계정마다 그 계정의 자격으로 받는다. 부계정의 강화 내역도 그 계정 id 로 따로 적혀 가계부 합계에 더해진다.
@@ -328,44 +328,74 @@ async function collectAccount(
   const { credential, accountId, jobs } = plan
   if (jobs.length === 0) return []
 
-  // 목록을 못 받은 것과 스페셜 캐릭터가 없는 것은 다르다. 앞은 null, 뒤는 빈 목록이다.
-  let listError: string | null = null
-  const listed = await fetchCharacterListCached(credential)
-    .then((accounts) => {
-      // 옛 원본을 합계로 옮기는 단계가 이것을 쓴다. 옛 원본은 계정 칸이 생기기 전의 메인 계정 기록이다.
-      if (plan.main) saveEventWorldNames(eventWorldCharacterNames(accounts))
-      return listedJudgmentsOf(accounts)
-    })
-    .catch((error: unknown) => {
-      listError = String(error)
-      return null
-    })
-  const evidence: EventWorldEvidence = {
-    listed,
-    remembered: await loadEventWorldCharacters(accountId).catch(() => new Map<string, string[]>()),
-  }
+  // 목록을 못 받으면 넥슨에서 그날 이름을 찾을 캐릭터를 모른다. 앱이 본 기간의 줄만 붙이고, 나머지가 있는 날은 굳히지 않는다.
+  const accounts = await fetchCharacterListCached(credential).catch(() => null)
+  // 옛 원본을 합계로 옮기는 단계가 이것을 쓴다. 옛 원본은 계정 칸이 생기기 전의 메인 계정 기록이다.
+  if (accounts !== null && plan.main) saveEventWorldNames(eventWorldCharacterNames(accounts))
+  const sightings = await getOwnerSightings().catch(() => [])
+  const ownerOf = createOwnerResolver({ credential, nexonAccountId: accountId, accounts, sightings, todayDateKey, now })
+  const accountOcids = [
+    ...(accounts ?? []).flatMap((account) => account.characters.map((character) => character.ocid)),
+    ...sightings.filter((sighting) => sighting.nexonAccountId === accountId).map((sighting) => sighting.ocid),
+  ]
 
   const checkedAt = now.toISOString()
-  const done = await mapWithLimit(
+  return mapWithLimit(
     jobs,
     credential.type === 'login' ? jobs.length : HISTORY_CALL_LIMIT,
     async (job) => {
       const { firstCursor, rows } = await fetchDay(credential, job)
-      const sources = rows.map((row) => ({ ...row, kind: job.kind }))
-      if (job.kind === 'starforce') await rememberEventWorldCharacters(accountId, eventWorldCharactersOf(sources), now)
-      const totals = summarizeEnhancement(sources, evidence)
-      anomalies.push(...enhancementAnomaliesOf(sources, evidence, listError))
-      await replaceEnhancementTotals(accountId, job.kind, job.dateKey, totals, now)
-      // 목록을 못 받았거나 표에 없는 월드의 줄이 있으면 굳히지 않는다. 다음 회차가 다시 받아 판정을 채운다.
-      const settled = job.dateKey < todayDateKey && listed !== null && totals.every((total) => total.eventWorld !== null)
+      const sources: EnhancementSource[] = rows.map((row) => ({ ...row, kind: job.kind }))
+      const owners = await ownersOf(sources, job.dateKey, ownerOf)
+      // 그날 이름을 묻다 실패한 이름이 있으면 그 날을 갈아 끼우지 않는다. 그 이름의 줄이 지워진 채 굳는다.
+      if ([...owners.values()].includes('retry')) {
+        await markEnhancementChecked(accountId, job.kind, job.dateKey, firstCursor, false, checkedAt)
+        return false
+      }
+      const ownerOfEntry = (entry: EnhancementSource): EntryOwner | null => {
+        const owner = owners.get(entry.characterName)
+        return owner === undefined || typeof owner === 'string' ? null : owner
+      }
+      const totals = summarizeEnhancement(sources, ownerOfEntry)
+      anomalies.push(
+        ...enhancementAnomaliesOf(sources, (entry) => {
+          const owner = ownerOfEntry(entry)
+          return owner === null ? null : eventWorldOf(entry, owner)
+        }),
+      )
+      await replaceEnhancementTotals(accountId, job.kind, job.dateKey, totals, now, accountOcids)
+      // 표에 없는 월드의 줄이 있으면 굳히지 않는다. 운영자가 월드 표에 넣으면 다음 회차가 다시 받아 판정을 채운다.
+      const settled = job.dateKey < todayDateKey && totals.every((total) => total.eventWorld !== null)
       await markEnhancementChecked(accountId, job.kind, job.dateKey, firstCursor, settled, checkedAt)
+      if (settled) await removeEnhancementRefetch(accountId, job.kind, job.dateKey).catch(() => undefined)
       return true
     },
     advance,
   )
-  // 목록이 1순위라 목록 없이는 이름이 목록에 없는지 알 수 없다.
-  if (listed !== null) await markRememberedEventWorld(accountId, listed).catch(() => undefined)
-  return done
+}
+
+/**
+ * 그날 줄의 이름마다 붙인 캐릭터. 리프 전 줄에는 리프 전 월드를 같은 기간의 스타포스 줄에서 찾아 적는다.
+ *
+ * 응답은 그날 줄만 준다. 그래서 이름 하나를 그 날짜로 한 번만 묻는다.
+ */
+async function ownersOf(
+  sources: readonly EnhancementSource[],
+  dateKey: string,
+  ownerOf: (name: string, dateKey: string) => Promise<OwnerResult>,
+): Promise<Map<string, OwnerResult>> {
+  const owners = new Map<string, OwnerResult>()
+  for (const name of new Set(sources.map((source) => source.characterName))) {
+    const owner = await ownerOf(name, dateKey)
+    owners.set(name, typeof owner === 'string' || !owner.preLeap ? owner : await withPreLeapWorld(owner, dateKey))
+  }
+  return owners
+}
+
+async function withPreLeapWorld(owner: LineOwner, dateKey: string): Promise<LineOwner> {
+  if (owner.leapDate === null) return owner
+  const worldKey = await findPreLeapWorldKey(owner.ocid, owner.leapDate, dateKey).catch(() => null)
+  return { ...owner, worldKey }
 }
 
 /**

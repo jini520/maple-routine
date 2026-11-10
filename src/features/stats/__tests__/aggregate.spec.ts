@@ -87,10 +87,11 @@ function dropSale(ocid: string, characterName: string, payoutMeso: number): DayR
   }
 }
 
-function enhancement(characterName: string, category: 'starforce' | 'cube_reset', payoutMeso: number): DayRecord {
+function enhancement(ocid: string, characterName: string, category: 'starforce' | 'cube_reset', payoutMeso: number): DayRecord {
   return {
     kind: 'enhancement',
     category,
+    ocid,
     characterName,
     payoutMeso,
     count: 1,
@@ -105,7 +106,7 @@ describe('totalsBetween', () => {
     const byDate = {
       '2026-09-23': [crystal('a', '낟낟', 999)],
       '2026-09-24': [crystal('a', '낟낟', 500), spend(null, '', { mesoAmount: 120 })],
-      '2026-09-30': [enhancement('낟낟', 'starforce', 80)],
+      '2026-09-30': [enhancement('a', '낟낟', 'starforce', 80)],
       '2026-10-01': [income(null, '', { mesoAmount: 777 })],
     }
     expect(totalsBetween(byDate, WEEK)).toEqual({ incomeMeso: 500, expenseMeso: 200, netMeso: 300 })
@@ -176,14 +177,13 @@ describe('characterTotalsBetween', () => {
     ])
   })
 
-  // 강화 기록은 이름만 든다. 지금 이름과 같으면 그 캐릭터에 붙고, 개명 전 이름이면 따로 선다.
-  it('강화 지출은 기록의 이름으로 붙고 모르는 이름은 따로 선다', () => {
+  // 강화 줄은 그날 그 이름이었던 캐릭터(ocid)에 붙어 있다. 이름으로 묶으면 이름을 바꾼 캐릭터가 둘로 갈린다.
+  it('강화 지출은 그 줄을 붙인 캐릭터로 묶이고, 이름을 바꾼 캐릭터의 옛 이름 줄도 그 캐릭터다', () => {
     const byDate = {
-      '2026-09-24': [crystal('a', '낟낟', 500), enhancement('낟낟', 'starforce', 300), enhancement('단풍라떼', 'cube_reset', 40)],
+      '2026-09-24': [crystal('a', '낟낟', 500), enhancement('a', '낟낟', 'starforce', 300), enhancement('a', '살름', 'cube_reset', 40)],
     }
     expect(characterTotalsBetween(byDate, WEEK)).toEqual([
-      { key: 'ocid:a', ocid: 'a', name: '낟낟', incomeMeso: 500, expenseMeso: 300, netMeso: 200 },
-      { key: 'name:단풍라떼', ocid: null, name: '단풍라떼', incomeMeso: 0, expenseMeso: 40, netMeso: -40 },
+      { key: 'ocid:a', ocid: 'a', name: '낟낟', incomeMeso: 500, expenseMeso: 340, netMeso: 160 },
     ])
   })
 })
@@ -197,10 +197,10 @@ describe('characterCategoriesBetween', () => {
         crystal('a', '낟낟', 500),
         dropSale('a', '낟낟', 100),
         crystal('a', '낟낟', 200),
-        enhancement('낟낟', 'starforce', 300),
+        enhancement('a', '낟낟', 'starforce', 300),
         income('b', '낟넘', { category: 'hunting', mesoAmount: 70 }),
         spend('b', '낟넘', { category: 'buff', mesoAmount: 20 }),
-        enhancement('단풍라떼', 'cube_reset', 40),
+        enhancement('c', '단풍라떼', 'cube_reset', 40),
       ],
     }
     const byKey = characterCategoriesBetween(byDate, WEEK)
@@ -214,7 +214,7 @@ describe('characterCategoriesBetween', () => {
     })
     expect(byKey.get('ocid:b')?.income.map((total) => total.key)).toEqual(['hunting'])
     expect(byKey.get('ocid:b')?.expense.map((total) => total.key)).toEqual(['buff'])
-    expect(byKey.get('name:단풍라떼')?.expense.map((total) => total.meso)).toEqual([40])
+    expect(byKey.get('ocid:c')?.expense.map((total) => total.meso)).toEqual([40])
 
     for (const row of characterTotalsBetween(byDate, WEEK)) {
       const categories = byKey.get(row.key)!
@@ -341,9 +341,9 @@ describe('categoryTotalsBetween', () => {
   it('지출 갈래는 강화 갈래와 손입력 갈래이고 0 인 갈래는 없다', () => {
     const byDate = {
       '2026-09-24': [
-        enhancement('낟낟', 'starforce', 300),
-        enhancement('낟넘', 'starforce', 100),
-        enhancement('낟넘', 'cube_reset', 50),
+        enhancement('a', '낟낟', 'starforce', 300),
+        enhancement('b', '낟넘', 'starforce', 100),
+        enhancement('b', '낟넘', 'cube_reset', 50),
         spend(null, '', { category: 'symbol', mesoAmount: 70 }),
         spend(null, '', { category: 'etc', cashAmount: 10000 }),
       ],
@@ -479,6 +479,7 @@ describe('categoryTotalsBetween', () => {
           {
             kind: 'enhancement' as const,
             category: 'starforce' as const,
+            ocid: 'a',
             characterName: '낟낟',
             payoutMeso: 300,
             count: 3,

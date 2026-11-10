@@ -1,7 +1,7 @@
 # ADR-101+186 다계정: 넥슨 로그인 아래에 API 키 계정을 더 등록한다
 
 > ⚪ 미구현
-> 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/collect.ts` · `features/cashbook/account-names.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts`
+> 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/` · `lib/enhancement/sighted-owner.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/stats/aggregate.ts` · `lib/mvp/starforce.ts` · `features/cashbook/account-names.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts`
 
 ## 배경
 
@@ -442,6 +442,14 @@
 | `features/cashbook/__tests__/meso-rate.spec.ts` · `remembered-levels.spec.ts` | 결정 4: 메획 · 심볼 · 헥사 레벨을 그 캐릭터가 속한 계정의 자격으로 받는지 본다 |
 | `storage/__tests__/api-key.spec.ts` | 결정 5: 로그아웃 · 로그인 만료가 부계정 키를 귀속된 채 남기는지, 같은 계정 id 로 다시 로그인하면 이어지고 다른 id 면 이어지지 않는지, 로그인 화면의 로그인이 귀속 없는 키를 버리고 연동은 메인 키를 부계정으로 옮기는지, 앞 로그인의 부계정 키로 키 로그인하면 귀속을 든 채 메인이 되는지, 두 칸이 없던 옛 수단을 읽는지 본다 |
 | `features/auth/__tests__/store.spec.ts` · `features/app-entry/__tests__/stage.spec.ts` | 결정 5: 부계정 키만 남으면 로그인 상태가 아니고 로그인 화면으로 가며 키를 지우지 않는지 본다 |
+| `lib/enhancement/__tests__/sighted-owner.spec.ts` | 결정 18 차례 1: 그 이름으로 본 기간 안의 날만 붙이고, 이름을 바꾼 캐릭터는 그날 이름으로 찾고, 같은 날 같은 이름의 캐릭터가 둘이면 고르지 않는지 본다 |
+| `features/enhancement-history/__tests__/owners.spec.ts` | 결정 18 차례 2 ~ 4: 지금 이름이 같은 캐릭터부터 그날 이름을 묻고 적어 둔 값은 다시 묻지 않는지, 오늘은 목록 이름으로 붙이는지, 이름을 바꾼 날은 전날 · 다음 날 이름과 견주는지, 리프 전 기간을 만든 날과 처음 값이 온 날로 가르는지, 빈 이름 · 못 붙인 이름은 버리고 넥슨을 부르다 실패하면 다시 받는지 본다 |
+| `nexon/character/__tests__/client.spec.ts` | 결정 18: 날짜를 넣은 `character/basic` 이 그날 값이 없거나 400 `OPENAPI00003` · `OPENAPI00004` 면 값 없음으로 돌려주는지 본다 |
+| `features/enhancement-history/__tests__/spending.spec.ts` | 결정 18 · 20 · 22: 합계를 ocid 로 묶어 이름을 바꾼 캐릭터의 줄이 한 줄이 되는지, 붙이지 못한 줄을 버리는지, 이벤트 월드를 붙인 캐릭터의 월드로 판정하고 리프 전 줄은 이벤트 월드가 아닌지, 줄의 월드를 적는지 본다 |
+| `features/enhancement-history/__tests__/collect.spec.ts` | 결정 18: 붙일 곳이 없는 이름의 줄은 버리고 그 날을 굳히는지, 그날 이름을 묻다 실패한 날은 갈아 끼우지도 굳히지도 않는지, 그 넥슨 계정의 캐릭터를 갈아 끼우는 범위로 넘기는지, 이관이 지운 날을 뒤에서 받고 굳히면 지우는지, 넥슨 로그인 계정은 한 회차에 60일만 받는지 본다. 결정 22: 리프 전 줄에 같은 기간 스타포스 줄의 월드를 적는지 본다 |
+| `storage/sqlite/__tests__/enhancement-ocid-real-sqlite.test.ts` | 결정 18 · 20: 버전 18 이 앱이 본 기간의 줄에 ocid · 메이플 ID · 월드를 붙이고 계정 id 둘로 겹친 줄은 늦은 줄을 남기는지, 못 붙인 줄은 그 날의 조회 기록과 함께 지우고 다시 받을 날로 적는지, 조회 기록의 계정 칸이 `NOT NULL` 이 되고 이름 판정 표가 지워지는지 본다 |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 결정 18: 그 넥슨 계정 캐릭터의 그날 줄은 다른 계정 id 로 적혔어도 갈아 끼우는지, 옛 원본을 옮길 때 앱이 본 캐릭터에 붙이고 못 붙인 날을 다시 받을 날로 적는지 본다. 결정 22: 리프 전 월드를 리프한 날 앞의 가까운 스타포스 줄에서 찾는지 본다 |
+| `features/cashbook/__tests__/records.spec.ts` · `features/stats/__tests__/aggregate.spec.ts` · `lib/mvp/__tests__/starforce.spec.ts` | 결정 20: 가계부 · 통계가 강화 줄을 ocid 로 묶어 이름을 바꾼 캐릭터의 옛 이름 줄도 그 캐릭터에 넣는지, MVP 할인을 그 줄의 메이플 ID 등급으로 붙이는지 본다 |
 | `features/auth/__tests__/nexon-login.spec.ts` | 결정 14: 로그인 화면의 넥슨 로그인만 세션을 받은 뒤 저장하기 전에 추적 목록을 비우는지, 연동 시트와 창을 닫거나 세션을 못 받은 로그인은 비우지 않는지 본다 |
 | `features/auth/__tests__/store.spec.ts` | 결정 14: 키 입력이 키를 저장하기 전에 추적 목록을 비우고, 무효 키 · 개발 단계 키는 비우지 않는지 본다. 로그인 화면과 연동 시트가 새 로그인 여부를 다르게 넘기는지 본다. 결정 20: 키 입력이 소속을 키를 저장한 뒤 그 키의 계정 id 로 적고, 막힌 키는 적지 않는지 본다 |
 | `features/character-selection/__tests__/forget.spec.ts` | 결정 14: 저장소 · 쿼리 캐시 · 메모리의 추적 목록 · 대표 · 마지막에 고른 캐릭터를 모두 비우는지, 비우기 전에 시작한 조회가 늦게 끝나도 앞 목록이 캐시에 돌아오지 않는지 본다 |

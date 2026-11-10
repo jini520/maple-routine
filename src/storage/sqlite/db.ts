@@ -21,7 +21,9 @@ import {
   ENHANCEMENT_RECOMPUTES_BODY,
   ENHANCEMENT_TOTALS_BODY,
   ENHANCEMENT_TOTALS_DATE_INDEX,
-  EVENT_WORLD_CHARACTERS_BODY,
+  CHARACTER_DATED_NAMES_BODY,
+  CHARACTER_FIRST_DAYS_BODY,
+  ENHANCEMENT_REFETCHES_BODY,
 } from './enhancement-tables'
 import { GAME_DATA_META_BODY, GAME_DATA_SECTIONS_BODY } from './game-data-tables'
 import { QUERY_CACHE_BODY } from './query-cache-tables'
@@ -220,10 +222,20 @@ const TABLE_DEFINITIONS = [
     name: 'enhancement_recomputes',
     createSql: `CREATE TABLE IF NOT EXISTS enhancement_recomputes ${ENHANCEMENT_RECOMPUTES_BODY}`,
   },
-  // 이벤트 월드에서 본 캐릭터 이름. 합계를 다시 받으면 다시 남는다.
+  // 강화 줄의 이름을 ocid 에 붙이며 받은 그날 이름. 넥슨에서 다시 받을 수 있는 값이다.
   {
-    name: 'event_world_characters',
-    createSql: `CREATE TABLE IF NOT EXISTS event_world_characters ${EVENT_WORLD_CHARACTERS_BODY}`,
+    name: 'character_dated_names',
+    createSql: `CREATE TABLE IF NOT EXISTS character_dated_names ${CHARACTER_DATED_NAMES_BODY}`,
+  },
+  // 캐릭터마다 만든 날과 처음 값이 온 날. 리프 전 기간을 가른다. 넥슨에서 다시 받을 수 있는 값이다.
+  {
+    name: 'character_first_days',
+    createSql: `CREATE TABLE IF NOT EXISTS character_first_days ${CHARACTER_FIRST_DAYS_BODY}`,
+  },
+  // 다시 받아야 하는 강화 내역의 날. 지워지면 그 날의 지출이 빈 채로 남는다.
+  {
+    name: 'enhancement_refetches',
+    createSql: `CREATE TABLE IF NOT EXISTS enhancement_refetches ${ENHANCEMENT_REFETCHES_BODY}`,
   },
   // 날짜별 조회 원장. 계정 단위라 ocid 축이 없어 하루가 3콜이다.
   //
@@ -612,6 +624,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // 스타포스 첫 성 · 끝 성. 옛 줄은 NULL 이고 다시 매기기 요청이 그 날을 다시 받아 채운다.
   await ensureColumn(db, 'enhancement_totals', 'from_star', 'INTEGER')
   await ensureColumn(db, 'enhancement_totals', 'to_star', 'INTEGER')
+  await ensureColumn(db, 'character_accounts', 'world_key', 'TEXT')
   // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
   await runVersionedMigrations(db)
   // 기본키를 uuid 로 옮긴 뒤에 선다. 종전에는 기본키가 곧 이 인덱스였다.
