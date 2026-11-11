@@ -59,7 +59,7 @@
 - `users` 는 사람이다. `nexon_accounts` 의 한 줄이 넥슨 ID 하나이고, 칸은 `user_id` · 넥슨 로그인으로 확인한 `nexon_uid` ·
   기기가 만든 계정 id 다. API 키는 `nexon_account_keys`, 메이플 ID 는 `nexon_account_maple_ids` 가 든다([[ADR-101]] 결정 25).
 - 로그인 방식과 상관없이 모든 계정의 기록을 보낸다(사용자 지정). 부계정의 기록을 어느 행에 붙이고 메인 계정과 어떻게 잇는지는
-  [[ADR-101]] 결정 7 에 있다. 지금은 부계정을 등록할 수 없다.
+  [[ADR-101]] 결정 7 에 있다. 부계정 등록은 [[ADR-101]] 결정 14 대로 서버 전송 회차가 한다.
 
 ```
 users                     id · deletion_requested_at · created_at
@@ -68,11 +68,10 @@ nexon_account_keys        id · nexon_account_id · api_key_hash UNIQUE
 nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 ```
 
-### 결정 6. 기기의 넥슨 계정 id 는 쓰기 요청마다 신원 헤더 옆에 싣는다
+### 결정 6. 쓰기 요청에는 신원 헤더만 싣는다
 
-`x-nexon-account-id` 헤더에 메인 계정의 id([[ADR-098]] 결정 5)를 싣는다(사용자 선택 2026-10-26). 서버는 [[ADR-101]] 결정 21 부터
-이 헤더를 읽지 않는다. 기기가 만든 값이라 기기마다 다르고, 기록은 실어 온 메이플 ID 로 넥슨 계정을 찾기 때문이다. 앱이 헤더를
-걷는 것은 [[ADR-101]] 의 앱 작업에서 한다.
+기기가 만든 넥슨 계정 id 헤더(`x-nexon-account-id`)는 싣지 않는다. 기기마다 다른 값이라 서버가 [[ADR-101]] 결정 21 부터 읽지 않고,
+기록은 실어 온 메이플 ID 로 넥슨 계정을 찾는다. 어느 계정의 신원으로 보내는지는 [[ADR-101]] 결정 7 에 있다.
 
 ### 결정 7. 가계부 메모 칸을 없앤다
 
