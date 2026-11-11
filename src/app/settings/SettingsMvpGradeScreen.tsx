@@ -12,6 +12,7 @@ import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { AccountRow } from '../../components/organisms/AccountSelect/AccountSelect'
+import { mapleIdNameOf } from '../../lib/maple-id-name'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
@@ -117,7 +118,7 @@ function AccountCard(props: {
       <View className="px-1 pb-1 pt-0.5">
         {account.summary === null ? (
           <View className="flex-row items-center justify-between gap-2.5">
-            <Text className="text-sm font-semibold text-text">메이플 ID</Text>
+            <Text className="text-sm font-semibold text-text">{mapleIdNameOf(account.accountId)}</Text>
             {change}
           </View>
         ) : (

@@ -1,7 +1,9 @@
 import type { CharacterBasicProfile, MapleAccount, MapleCharacter } from '../../../types'
 import { pickRepresentativeCharacter } from '../../../lib/character-order'
+import type { NexonCredential } from '../../../types/auth'
 import {
   buildSelectedCharacterViews,
+  groupAccountSummaries,
   resolveDisplayRepresentative,
   resolveRepresentative,
   sortAccountSummaries,
@@ -35,75 +37,6 @@ function cached(overrides: Partial<CharacterBasicProfile> = {}): CharacterBasicP
     ...overrides,
   }
 }
-
-describe('summarizeAccount: 월드 집계', () => {
-  it('월드가 셋이면 많은 순으로 둘만 남긴다', () => {
-    const summary = summarizeAccount(
-      account([
-        character({ name: '가', level: 200, world: '엘리시움', worldKey: 'elysium' }),
-        character({ name: '나', level: 200, world: '스카니아', worldKey: 'scania' }),
-        character({ name: '다', level: 200, world: '스카니아', worldKey: 'scania' }),
-        character({ name: '라', level: 200, world: '스카니아', worldKey: 'scania' }),
-        character({ name: '마', level: 200, world: '엘리시움', worldKey: 'elysium' }),
-        character({ name: '바', level: 200, world: '루나', worldKey: 'luna' }),
-      ]),
-    )
-
-    expect(summary?.worldCounts).toEqual([
-      { worldKey: 'scania', world: '스카니아', count: 3 },
-      { worldKey: 'elysium', world: '엘리시움', count: 2 },
-    ])
-  })
-
-  it('개수가 같으면 이름순으로 결정된다 (입력 순서와 무관)', () => {
-    const forward = summarizeAccount(
-      account([
-        character({ name: '가', level: 200, world: '엘리시움', worldKey: 'elysium' }),
-        character({ name: '나', level: 200, world: '스카니아', worldKey: 'scania' }),
-      ]),
-    )
-    const reversed = summarizeAccount(
-      account([
-        character({ name: '나', level: 200, world: '스카니아', worldKey: 'scania' }),
-        character({ name: '가', level: 200, world: '엘리시움', worldKey: 'elysium' }),
-      ]),
-    )
-
-    expect(forward?.worldCounts).toEqual([
-      { worldKey: 'scania', world: '스카니아', count: 1 },
-      { worldKey: 'elysium', world: '엘리시움', count: 1 },
-    ])
-    expect(reversed?.worldCounts).toEqual(forward?.worldCounts)
-  })
-
-  // 월드 key 로 센다. 띄어쓰기만 다른 이름도 한 월드이고 적는 글자는 표 이름이다.
-  it('월드 key 로 세고 표 이름을 적는다. 월드 key 가 없는 캐릭터는 세지 않는다', () => {
-    const summary = summarizeAccount(
-      account([
-        character({ name: '가', level: 200, world: '챌린저스 2', worldKey: 'challengers_2' }),
-        character({ name: '나', level: 200, world: '챌린저스2', worldKey: 'challengers_2' }),
-        character({ name: '다', level: 200, world: '어딘가', worldKey: null }),
-      ]),
-    )
-
-    expect(summary?.worldCounts).toEqual([{ worldKey: 'challengers_2', world: '챌린저스2', count: 2 }])
-    expect(summary?.characterCount).toBe(3)
-  })
-
-  it('셋째 월드를 **외 n** 같은 꼬리로 적지 않는다. 목록이 정확히 둘이다', () => {
-    const summary = summarizeAccount(
-      account([
-        character({ name: '가', level: 200, world: '스카니아', worldKey: 'scania' }),
-        character({ name: '나', level: 200, world: '엘리시움', worldKey: 'elysium' }),
-        character({ name: '다', level: 200, world: '루나', worldKey: 'luna' }),
-        character({ name: '라', level: 200, world: '오로라', worldKey: 'aurora' }),
-      ]),
-    )
-
-    expect(summary?.worldCounts).toHaveLength(2)
-    expect(summary?.characterCount).toBe(4)
-  })
-})
 
 describe('summarizeAccount: 대표', () => {
   it('레벨이 가장 높은 캐릭터가 대표다', () => {
@@ -269,5 +202,43 @@ describe('sortAccountSummaries', () => {
     sortAccountSummaries(input)
 
     expect(input.map((view) => view.accountId)).toEqual(['a', 'b'])
+  })
+})
+
+describe('groupAccountSummaries: 캐릭터 관리 드롭다운의 넥슨 계정 묶음', () => {
+  const login: NexonCredential = { type: 'login', value: 'S', accountId: 'nexon-login' }
+  const key1: NexonCredential = { type: 'key', value: 'k1', accountId: 'nexon-key-1' }
+  const key2: NexonCredential = { type: 'key', value: 'k2', accountId: 'nexon-key-2' }
+  const of = (accountId: string, level: number): MapleAccount =>
+    account([character({ name: `${accountId}-대표`, level })], accountId)
+
+  // 부계정 키의 대표가 더 높아도 넥슨 ID 계정의 묶음이 먼저다. 계정 관리 목록과 같은 차례다.
+  it('넥슨 계정 차례로 묶고, 묶음 안에서는 대표 레벨이 높은 메이플 ID 가 먼저다', () => {
+    const grouped = groupAccountSummaries([
+      { credential: login, accounts: [of('maple-low', 250), of('maple-high', 270)] },
+      { credential: key1, accounts: [of('maple-sub', 290)] },
+    ])
+
+    expect(grouped.accounts.map((one) => one.accountId)).toEqual(['maple-high', 'maple-low', 'maple-sub'])
+  })
+
+  // 번호는 계정 관리 목록의 `API 키 N 계정` 과 같아야 한다. 못 받은 키를 건너뛰면 번호가 화면마다 갈린다.
+  it('넥슨 계정이 둘 이상 보이면 라벨을 붙이고, API 키 번호는 목록을 못 받은 키가 있어도 등록한 차례다', () => {
+    const grouped = groupAccountSummaries([
+      { credential: login, accounts: [of('maple-login', 270)] },
+      { credential: key1, accounts: null },
+      { credential: key2, accounts: [of('maple-sub', 260)] },
+    ])
+
+    expect(grouped.groupOf).toEqual({ 'maple-login': '넥슨 ID 계정', 'maple-sub': 'API 키 2 계정' })
+  })
+
+  it('보이는 넥슨 계정이 하나면 라벨을 붙이지 않는다', () => {
+    const grouped = groupAccountSummaries([
+      { credential: login, accounts: [of('maple-login', 270)] },
+      { credential: key1, accounts: null },
+    ])
+
+    expect(grouped.groupOf).toEqual({})
   })
 })

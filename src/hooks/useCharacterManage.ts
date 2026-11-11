@@ -31,6 +31,8 @@ import { useSelectionDraft } from './useSelectionDraft'
 export interface CharacterManageController {
   // 아래 층의 머리
   accounts: AccountSummaryView[]
+  /** 메이플 ID → 넥슨 계정 묶음 라벨. 보이는 넥슨 계정이 하나면 비어 있다 */
+  accountGroups: Record<string, string>
   portraitByAccountId: Record<string, string | null>
   selectedAccountId: string | null
   isAccountsLoading: boolean
@@ -107,6 +109,7 @@ export function useCharacterManage(): CharacterManageController {
 
   return {
     accounts: roster.accounts,
+    accountGroups: roster.accountGroups,
     portraitByAccountId,
     selectedAccountId: roster.selectedAccountId,
     isAccountsLoading: roster.isAccountsLoading,

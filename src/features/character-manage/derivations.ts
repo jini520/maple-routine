@@ -1,7 +1,7 @@
 /**
- * 캐릭터 관리 화면이 **직접 계산하면 안 되는 파생값** 셋.
+ * 캐릭터 관리 화면이 **직접 계산하면 안 되는 파생값**.
  *
- * 화면은 그리기만 하고 값 규칙은 여기가 갖는다. 그래야 월드는 둘까지 나 모르면 비운다 같은
+ * 화면은 그리기만 하고 값 규칙은 여기가 갖는다. 그래야 대표 캐릭터나 넥슨 계정 묶음 같은
  * 규칙을 테스트가 직접 물 수 있다.
  *
  * **순수 함수만 산다.** 저장소·네트워크를 부르지 않고 입력을 전부 인자로 받는다(캐시 조회·로스터
@@ -9,19 +9,14 @@
  */
 
 import type { MapleAccount, MapleCharacter } from '../../types'
+import type { NexonCredential } from '../../types/auth'
 import { compareByName, pickRepresentativeCharacter } from '../../lib/character-order'
-import { worldNameOf } from '../../lib/world/worlds'
-
-/** 월드는 **많은 순으로 둘까지**만 적는다. 셋째부터는 적지 않는다. */
-const MAX_LISTED_WORLDS = 2
 
 /** 메이플 ID 드롭다운 한 행이 쓰는 값. */
 export interface AccountSummaryView {
   accountId: string
-  /** 1줄에 서는 캐릭터. `character/list` 기준이라 조회 0회다. */
+  /** 이름 아래 줄에 서는 캐릭터. `character/list` 기준이라 조회 0회다. */
   representative: MapleCharacter
-  /** 2줄의 스카니아 19개, 엘리시움 7개. 월드 key 로 세고 `world` 는 표 이름이다. 많은 순, **최대 둘**. */
-  worldCounts: Array<{ worldKey: string; world: string; count: number }>
   characterCount: number
 }
 
@@ -36,26 +31,9 @@ export function summarizeAccount(account: MapleAccount): AccountSummaryView | nu
     return null
   }
 
-  // 월드 key 로 센다. 월드 key 가 없는 캐릭터는 월드를 모르는 것이라 세지 않는다.
-  const countByWorld = new Map<string, { world: string; count: number }>()
-  for (const character of account.characters) {
-    if (character.worldKey === null) continue
-    const counted = countByWorld.get(character.worldKey)
-    countByWorld.set(character.worldKey, {
-      world: counted?.world ?? worldNameOf(character.worldKey, character.world),
-      count: (counted?.count ?? 0) + 1,
-    })
-  }
-
-  // 동수일 때 입력 순서를 따르면 같은 계정이 열 때마다 다르게 보인다. 이름순으로 못박는다.
-  const worldCounts = Array.from(countByWorld, ([worldKey, { world, count }]) => ({ worldKey, world, count }))
-    .sort((a, b) => (b.count !== a.count ? b.count - a.count : compareByName(a.world, b.world)))
-    .slice(0, MAX_LISTED_WORLDS)
-
   return {
     accountId: account.accountId,
     representative: pickRepresentativeCharacter(account.characters),
-    worldCounts,
     characterCount: account.characters.length,
   }
 }
@@ -76,6 +54,42 @@ export function sortAccountSummaries(summaries: AccountSummaryView[]): AccountSu
       ? b.representative.level - a.representative.level
       : compareByName(a.representative.name, b.representative.name),
   )
+}
+
+/** 넥슨 계정 하나의 `character/list`. 못 받았으면 `accounts` 가 `null` 이다. */
+export interface NexonAccountList {
+  credential: NexonCredential
+  accounts: readonly MapleAccount[] | null
+}
+
+/** 드롭다운의 행과, 넥슨 계정이 둘 이상 보일 때 메이플 ID 마다 붙는 묶음 라벨. */
+export interface GroupedAccountSummaries {
+  accounts: AccountSummaryView[]
+  /** 메이플 ID → `넥슨 ID 계정` · `API 키 N 계정`. 보이는 넥슨 계정이 하나면 비어 있다 */
+  groupOf: Record<string, string>
+}
+
+/**
+ * 메이플 ID 를 넥슨 계정마다 묶는다. 묶음은 자격의 차례(넥슨 ID 계정, 그다음 API 키를 등록한 차례)이고 묶음 안은 대표 레벨 차례다.
+ *
+ * API 키의 번호는 목록을 못 받은 키도 세어 매긴다. 계정 관리 목록의 `API 키 N 계정` 과 번호가 같아야 한다.
+ */
+export function groupAccountSummaries(lists: readonly NexonAccountList[]): GroupedAccountSummaries {
+  let keyNumber = 0
+  const groups = lists.map((list) => {
+    const label = list.credential.type === 'login' ? '넥슨 ID 계정' : `API 키 ${++keyNumber} 계정`
+    const summaries = sortAccountSummaries(
+      (list.accounts ?? []).map(summarizeAccount).filter((one): one is AccountSummaryView => one !== null),
+    )
+    return { label, summaries }
+  }).filter((group) => group.summaries.length > 0)
+
+  const accounts = groups.flatMap((group) => group.summaries)
+  if (groups.length < 2) return { accounts, groupOf: {} }
+  return {
+    accounts,
+    groupOf: Object.fromEntries(groups.flatMap((group) => group.summaries.map((one) => [one.accountId, group.label]))),
+  }
 }
 
 /** 선택됨 층의 행 하나. 네트워크 없이 로컬 캐시로만 그린다. */

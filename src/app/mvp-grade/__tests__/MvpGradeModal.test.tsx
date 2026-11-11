@@ -14,7 +14,6 @@ function account(accountId: string, name: string, currentGrade: MvpAskAccount['c
     summary: {
       accountId,
       representative: { ocid: `ocid-${accountId}`, name, world: '스카니아', worldKey: 'scania', jobClass: '비숍', level: 280 },
-      worldCounts: [{ worldKey: 'scania', world: '스카니아', count: 3 }],
       characterCount: 3,
     },
     portraitUrl: null,
@@ -128,10 +127,11 @@ describe('MvpGradeModal', () => {
       expect(onDone.mock.calls[0][0].bulkApply).toBe(true)
     })
 
-    it('목록을 못 받은 ID 는 표시 없이 선다', async () => {
+    // 이름은 ID 값에서 지으므로 목록을 못 받아도 어느 ID 인지 읽힌다.
+    it('목록을 못 받은 ID 는 대표 캐릭터 없이 메이플 ID 이름만 선다', async () => {
       const { view } = await 그리기(ASK, [{ accountId: 'a', summary: null, portraitUrl: null, currentGrade: null }])
 
-      expect(카드(view, 'a').getByText('메이플 ID')).toBeTruthy()
+      expect(카드(view, 'a').getByText('메이플ID-a')).toBeTruthy()
     })
   })
 

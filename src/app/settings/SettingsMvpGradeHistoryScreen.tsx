@@ -11,6 +11,7 @@ import { AlertTriangleIcon, Card, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { MvpPlate } from '../../components/molecules/MvpPlate/MvpPlate'
 import { AccountRow } from '../../components/organisms/AccountSelect/AccountSelect'
+import { mapleIdNameOf } from '../../lib/maple-id-name'
 import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -69,7 +70,7 @@ export function SettingsMvpGradeHistoryScreen(props: {
               <Card className="gap-2 p-3">
                 <View className="px-1 pt-0.5">
                   {account.summary === null ? (
-                    <Text className="text-sm font-semibold text-text">메이플 ID</Text>
+                    <Text className="text-sm font-semibold text-text">{mapleIdNameOf(account.accountId)}</Text>
                   ) : (
                     <AccountRow summary={account.summary} portraitUrl={account.portraitUrl} />
                   )}
