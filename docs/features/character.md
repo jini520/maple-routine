@@ -32,7 +32,8 @@
 | `components/organisms/AccountSelect/` | 메이플 ID 드롭다운 |
 | `hooks/useCharacterManage.ts` · `useAccountRosters.ts` · `useKnownProfiles.ts` · `useSelectionDraft.ts` | 캐릭터 관리 화면 로직 |
 | `features/character-manage/derivations.ts` · `grid-split.ts` | 계정 요약 · 넥슨 계정 묶음(`groupAccountSummaries`) · 위 목록 뷰 · 격자 순서에서 고른 목록 자르기 |
-| `lib/maple-id-name.ts` | 메이플 ID 의 이름(`메이플ID-` 와 ID 앞 8자). 앱 전체가 이 이름을 쓴다([[ADR-101]] 결정 8) |
+| `lib/maple-id-name.ts` | 메이플 ID 의 이름. 사용자가 바꾼 이름이 있으면 그것, 없으면 `메이플ID-` 와 ID 앞 8자다. 앱 전체가 이 이름을 쓴다([[ADR-101]] 결정 8) |
+| `features/maple-id/names.ts` | 사용자가 바꾼 메이플 ID 이름을 든 스토어와 화면이 쓰는 이름 훅(`useMapleIdNameOf`) |
 | `app/today/CharacterManageButton.tsx` | today 헤더의 초상화 버튼 |
 | `app/settings/reload-tab-stores.ts` | 저장 뒤 보스 · 보스 수익 탭 스토어를 다시 읽힌다 |
 | `features/character-selection/store.ts` | 고른 캐릭터와 대표 표식을 갖는 스토어 |
