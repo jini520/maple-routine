@@ -111,7 +111,12 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
         />
       )}
       {replacing && (
-        <ApiKeySheet isSubmitting={submitting} onSubmit={(apiKey) => void submitOtherKey(apiKey)} onClose={() => setReplacing(false)} />
+        <ApiKeySheet
+          purpose="replace"
+          isSubmitting={submitting}
+          onSubmit={(apiKey) => void submitOtherKey(apiKey)}
+          onClose={() => setReplacing(false)}
+        />
       )}
       {replacing && <DevelopmentStageKeyModal />}
     </>

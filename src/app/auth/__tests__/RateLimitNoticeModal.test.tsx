@@ -92,11 +92,15 @@ describe('429 다시 시도 모달', () => {
 
   it('메인 키의 다른 키 입력은 키 입력 시트를 열고, 새 키가 저장되면 시트를 닫고 회차를 다시 돌린다', async () => {
     notice(2)
-    const { getByText, getByTestId, queryByTestId, getByLabelText } = await renderOverlay(<ApiKeyNoticeModal />)
+    const { getByText, getByTestId, queryByTestId, queryByText, getByLabelText } = await renderOverlay(<ApiKeyNoticeModal />)
 
     await waitFor(() => expect(getByText('다른 키 입력')).toBeTruthy())
     await fireEvent.press(getByText('다른 키 입력'))
     expect(getByTestId('api-key-sheet')).toBeTruthy()
+    // 앱을 쓰는 중에 키만 바꾸는 자리다. 로그인 화면의 제목과 `일부 기능 제한` 배지를 쓰지 않는다.
+    expect(getByText('다른 API 키로 바꾸기')).toBeTruthy()
+    expect(queryByText('API 키로 시작하기')).toBeNull()
+    expect(queryByText('일부 기능 제한')).toBeNull()
 
     await fireEvent.changeText(getByLabelText('Nexon Open API 키'), 'new-key')
     await fireEvent.press(getByText('확인'))
