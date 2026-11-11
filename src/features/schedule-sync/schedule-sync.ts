@@ -26,7 +26,7 @@ import type { MapleCharacter, SchedulerCharacterState, SharedProgressEntry } fro
 import { isMaintenanceSyncError, toScheduleSyncError } from './errors'
 import type { ScheduleSyncError } from './errors'
 import { useRefreshProgress } from '../refresh/progress'
-import { refreshSettlement } from '../settlement/store'
+import { refreshSettlement, settlingYesterdayOf } from '../settlement/store'
 import { fetchCharacterBasicCached } from './character-basic-fetch'
 import { readScheduleEntry } from './read-schedule'
 import {
@@ -155,7 +155,10 @@ async function fillMissingSections(
     return stage1
   }
 
+  // 결산 중이면 어제를 묻지 않는다. 원장에 안 남아 결산이 끝난 뒤의 회차가 채운다.
+  const settlingYesterday = await settlingYesterdayOf(now)
   const dateKeys = getBackfillDateKeys(now).filter((dateKey) => {
+    if (dateKey === settlingYesterday) return false
     const known = probeLedger.dates[dateKey]
     return known === undefined || canResolveAnyStaleSection(originallyStale, known)
   })

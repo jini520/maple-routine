@@ -145,10 +145,10 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-018](./adr/ADR-018_server-sync_drop-price.md) | 🟢 | server-sync | 드롭 가격 서버 전송 |
 | [ADR-019](./adr/ADR-019_game-data_reference.md) | 🟢 | game-data | 게임 데이터의 규칙 |
 | [ADR-020+097+103+140](./adr/ADR-020+097+103+140_game-data_server-catalog.md) | 🟢 | game-data | 게임 데이터 서버 표와 기기 사본 |
-| [ADR-021+195](./adr/ADR-021+195_nexon-api_sync.md) | ⚪ | nexon-api | 넥슨 API 호출과 스케줄러 동기화 |
+| [ADR-021+195](./adr/ADR-021+195_nexon-api_sync.md) | 🟢 | nexon-api | 넥슨 API 호출과 스케줄러 동기화 |
 | [ADR-022+081](./adr/ADR-022+081_error-resilience_failure-states.md) | 🟢 | error-resilience | 실패를 알리는 방법과 기간 데이터 상태 |
 | [ADR-023](./adr/ADR-023_error-resilience_resumable-task.md) | 🟢 | error-resilience | 이어서 하는 작업과 기록 판 알림 |
-| [ADR-024+196](./adr/ADR-024+196_auth_api-key.md) | ⚪ | auth | API 키 로그인과 키 재입력 |
+| [ADR-024+196](./adr/ADR-024+196_auth_api-key.md) | 🟢 | auth | API 키 로그인과 키 재입력 |
 | [ADR-025+068+083+105+166+169+170+171+192](./adr/ADR-025+068+083+105+166+169+170+171+192_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
 | [ADR-026](./adr/ADR-026_app-entry_onboarding.md) | 🟢 | app-entry | 온보딩 흐름 |
 | [ADR-027](./adr/ADR-027_app-entry_cold-start.md) | 🟢 | app-entry | 콜드 스타트 첫 화면 |
@@ -175,7 +175,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-046](./adr/ADR-046_cashbook_calendar.md) | 🟢 | cashbook | 가계부 캘린더 |
 | [ADR-047+190](./adr/ADR-047+190_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 · 메포 지출의 메소마켓 수수료 |
 | [ADR-048+070+118+126](./adr/ADR-048+070+118+126_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 |
-| [ADR-049+127+157+199](./adr/ADR-049+127+157+199_cashbook_hunting.md) | ⚪ | cashbook | 사냥 수입 |
+| [ADR-049+127+157+199](./adr/ADR-049+127+157+199_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
 | [ADR-095](./adr/ADR-095_cashbook_redesign.md) | 🟢 | cashbook | 가계부 고른 날 목록과 기간 이동 줄 리디자인 |
 | [ADR-050+110+128](./adr/ADR-050+110+128_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
 | [ADR-051+075+090](./adr/ADR-051+075+090_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |

@@ -20,6 +20,7 @@ import type {
   NexonUnionRaiderResponse,
 } from '../../types'
 import { maxMesoRateOf } from '../../lib/cashbook/meso-rate'
+import { NexonNetworkError } from '../errors'
 import { requestJson } from '../http'
 
 const withOcid = (path: string, ocid: string): string => `${path}?ocid=${encodeURIComponent(ocid)}`
@@ -39,7 +40,8 @@ const CHALLENGERS_SKILL_GRADE = '0'
  * 화면이 그것을 자동값으로 세우면 사용자는 그것이 참인 줄 안다. 부르는 쪽이 실패를 받아
  * 손입력으로 내려간다.
  *
- * 미접속 캐릭터의 **축약 응답**은 실패가 아니다. 필드가 없으면 그 축이 0 이고 합도 0 이 된다.
+ * **빈 배열은 0 이고, 지금 적용본 칸이 `null` 이거나 없으면 못 읽은 것이라 던진다.** 데이터가 없는 칸은 미접속 캐릭터도
+ * 빈 배열로 온다(실측). `null` 을 0 으로 세면 넥슨이 값을 비워 보낸 날 0% 가 읽은 값으로 선다.
  *
  * `jobClass` 는 응답이 아니라 **캐시에서 온다**(`character/list` 가 준 직업 이름). 모르면 `null`
  * 이고 그때 직업 스킬 몫이 0 이다.
@@ -60,6 +62,17 @@ export async function fetchMesoRate(
       credential,
     ),
   ])
+
+  const current: Record<string, unknown> = {
+    item_equipment: itemEquipment.item_equipment,
+    ability_info: ability.ability_info,
+    symbol: symbol.symbol,
+    union_raider_stat: unionRaider.union_raider_stat,
+    union_artifact_effect: unionArtifact.union_artifact_effect,
+    character_skill: skill.character_skill,
+  }
+  const missing = Object.keys(current).filter((field) => !Array.isArray(current[field]))
+  if (missing.length > 0) throw new NexonNetworkError(`메소 획득량 응답의 ${missing.join(', ')} 칸이 비어 있습니다`)
 
   return maxMesoRateOf({ itemEquipment, ability, symbol, unionRaider, unionArtifact, skill, jobClass })
 }

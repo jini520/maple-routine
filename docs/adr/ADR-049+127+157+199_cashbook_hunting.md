@@ -1,6 +1,6 @@
 # ADR-049+127+157+199 사냥 수입
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-175 · ADR-177 · ADR-201 · ADR-283 · ADR-288 · ADR-290 · ADR-328 · ADR-329
 > 관련 소스: `app/cashbook/income/HuntCalculatorForm.tsx` · `app/cashbook/income/HuntManualForm.tsx` · `app/cashbook/income/FragmentSettleForm.tsx` · `app/cashbook/income/form-shared.tsx` · `lib/cashbook/hunting-meso.ts` · `lib/cashbook/hunting-grounds.ts` · `lib/cashbook/meso-rate.ts` · `features/cashbook/meso-rate.ts` · `nexon/meso-rate/` · `storage/last-hunts.ts`
 
@@ -274,7 +274,7 @@ Preferences `lastHunts`(`{ [ocid]: { groundKey, boosts, unionTier } }`)가 캐�
 | | 결정 5: 두 페널티 표가 −100% 에서 끝나고 표 밖에서 머무는지 본다. 결정 9: 유니온의 부는 합산 안, 비약은 밖이라 둘 다 켜면 ×1.8 인지, 단계 분만큼 적용되는지, 화면 증가량이 소수점을 버리고 부동소수 오차가 없는지, 그림 파일이 실제 에셋으로 풀리는지 본다 |
 | | 결정 11: 가격 `null` 이면 조각 값이 빠지고 0 은 적은 값인지, 조각 몫에만 수수료가 붙는지 본다 |
 | `lib/__tests__/hunting-grounds.spec.ts` | 결정 2: `iconAssetId` 로 아이콘을 찾고, 아이콘이 없는 지역도 지역으로 읽는지 본다. 결정 7: 지역 범위의 위 · 아래 경계(포함), 몬스터 레벨로 재는지, 역순인지, 사냥터를 레벨 차이 · 마릿수 순으로 정렬하되 빠뜨리지 않고 원본을 안 바꾸는지 본다. 결정 2: 사냥터 key 하나로 지역이 함께 나오는지 본다 |
-| `lib/__tests__/meso-rate.test.ts` | 결정 8: 두 표기를 한 정규식이 읽고, 장비 상한을 프리셋마다 걸며, 축마다 최댓값을 더하고, 심볼 · 챌린저스 · 직업이 상한 밖이며, 유니온 프리셋이 비면 현재 적용본을 쓰고, 아티팩트를 두 번 세지 않는지 본다. 실측 캐릭터 값(149%)을 재현하는지 본다 |
+| `lib/__tests__/meso-rate.test.ts` | 결정 8: 두 표기를 한 정규식이 읽고, 장비 상한을 프리셋마다 걸며, 축마다 최댓값을 더하고, 심볼 · 챌린저스 · 직업이 상한 밖이며, 유니온은 공격대원 효과만 세고, 아티팩트를 두 번 세지 않는지 본다. 실측 캐릭터 값(149%)을 재현하는지 본다 |
 | `features/cashbook/__tests__/meso-rate.spec.ts` | 결정 8: 읽으면 자동값이고 캐시를 갱신하며, 실패하면 마지막 성공값으로 내려가고, 키가 없으면 부르지 않으며, 0 을 읽은 것은 성공이고 `null` 로 접지 않는지 본다 |
 | `storage/__tests__/last-hunts.spec.ts` | 결정 13: 캐릭터마다 따로 기억하고, 옛 두 키를 한 번 옮긴 뒤 지우며, 단계가 없으면 3단계로 읽는지 본다 |
 | `features/cashbook/__tests__/records.spec.ts` | 결정 13: 계산기로 적은 사냥만 그 캐릭터 몫을 남기고 저장이 실패하면 남기지 않는지 본다. 결정 14: 사냥 줄의 이름과 `n소재`, 수동 · 옛 기록은 셈 칸이 없는지 본다. 결정 12: 정산 줄의 이름과 판 개수, 보관 조회에 넘기는 인자를 본다 |
@@ -283,6 +283,7 @@ Preferences `lastHunts`(`{ [ocid]: { groundKey, boosts, unionTier } }`)가 캐�
 | | 결정 4: 효율 줄이 늘 보이고 사냥터 전에는 꺼져 있는지 본다. 결정 8 · 9: 자동값 · 치는 칸 · 줄의 증가량 · 내림 전 값으로 세는지, 유니온의 부 단계를 고르고 저장하는지 본다. 결정 10: 계산 입력을 넘기고 수정 시 그대로 채워지는지 본다 |
 | | 결정 11 · 12: 가격을 비우면 `null` 로 저장되고 0 은 0 으로 남는지, 정산 폼의 보관 · 판 개수 상한 · `모두` 칩 · 수수료 · 되짚기, 개당 가격이 비어도 0 메소로 저장되는지 본다. 결정 13: 캐릭터를 바꾸면 기억으로 덮어쓰거나 비우는지 본다 |
 | | 결정 15: `모든 캐릭터` 가 새 정산에만 서는지, 판 개수가 보관 합으로 고정되는지, 보관이 있는 캐릭터마다 한 줄씩 자기 등급 요율로 저장되는지, 한 캐릭터라도 못 읽으면 저장이 꺼지는지 본다 |
+| `nexon/meso-rate/__tests__/client.spec.ts` | 결정 8: 데이터가 없는 칸이 빈 배열이면 0 을 읽은 것이고, 지금 적용본 칸이 `null` 이거나 없으면 못 읽은 것으로 던지는지 본다 |
 
 ## 번호 기록
 

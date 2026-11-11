@@ -31,8 +31,10 @@ jest.mock('../../../nexon/schedule', () => ({
 }))
 const { fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
 
-jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn() }))
-const { refreshSettlement: refreshSettlementMock } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
+jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn(), settlingYesterdayOf: jest.fn() }))
+const { refreshSettlement: refreshSettlementMock, settlingYesterdayOf: settlingYesterdayMock } = jest.requireMock(
+  '../../settlement/store',
+) as Record<string, jest.Mock>
 
 jest.mock('../../../storage/api-key', () => ({
   getAuthConfig: jest.fn(),
@@ -194,6 +196,7 @@ beforeEach(async () => {
   // 합류해 영영 안 끝난다.
   resetSyncSingleFlightForTests()
   refreshSettlementMock.mockReset().mockResolvedValue(undefined)
+  settlingYesterdayMock.mockReset().mockResolvedValue(null)
   useRefreshProgress.getState().resetForTests()
   prefs = installFakePreferences()
   getAuthConfigMock.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }] })
@@ -885,6 +888,22 @@ describe('syncSchedules', () => {
         resolve(STALE_DAY)
       })
       await promise
+    })
+
+    // 넥슨 AI 에이전트 가이드는 00009 를 되풀이해 부르지 말라고 한다. 건너뛴 어제는 원장에 안 남아 다음 회차가 채운다.
+    it('서버가 결산 중이라고 하면 선채움이 어제를 묻지 않는다', async () => {
+      const characters = [mockCharacter('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+      mergeSchedulerStateMock.mockReturnValue({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+      fetchSchedulerCharacterStateMock.mockResolvedValueOnce(schedulerState('캐릭터1')).mockResolvedValue(STALE_DAY)
+      settlingYesterdayMock.mockResolvedValue('2026-07-10')
+
+      await syncSchedules(['ocid-1'])
+
+      const dated = fetchSchedulerCharacterStateMock.mock.calls.map(([, , , dateKey]) => dateKey).filter(Boolean)
+      expect(dated).toHaveLength(12)
+      expect(dated).not.toContain('2026-07-10')
     })
 
     it('병합이 일찍 멈춰도 이미 받은 날짜는 전부 원장에 기록한다 (이슈 #87 재발 방지)', async () => {

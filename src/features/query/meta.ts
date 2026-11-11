@@ -24,6 +24,8 @@ export interface QueryMeta extends Record<string, unknown> {
   tables?: readonly RecordTable[]
   /** 이 쿼리가 기대는 쿼리. 그 쿼리가 새 데이터를 들면 무효화된다. */
   dependsOn?: readonly QueryDependency[]
+  /** 받은 지 이만큼(ms) 지난 데이터는 기기에 저장하지 않는다. 넥슨 공지의 30일 갱신 의무가 쓴다. */
+  retainMs?: number
 }
 
 declare module '@tanstack/react-query' {

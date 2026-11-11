@@ -34,6 +34,7 @@ import { mapWithLimit } from '../schedule-window/gate'
 import { historyFloorDateKey } from '../cashbook/range'
 import { loadRecomputeProgress, saveRecomputeProgress } from '../../storage/enhancement-recomputes'
 import { RECOMPUTE_REQUESTS, recomputeDatesOf, type RecomputeRequest } from './recompute'
+import { settlingYesterdayOf } from '../settlement/store'
 
 /** 네 종류. 순서가 진행 표시에 보이지 않으므로 아무래도 된다. */
 export const ENHANCEMENT_KINDS: readonly EnhancementKind[] = ['cube', 'starforce', 'potential', 'soul_potential']
@@ -216,7 +217,7 @@ export async function measureEnhancementHistory(
   dateKeys: readonly string[],
   now: Date,
 ): Promise<HistoryPlanSize> {
-  const plans = await planAccounts(dateKeys, getCurrentKstDateKey(now), 'range')
+  const plans = await planAccounts(dateKeys, getCurrentKstDateKey(now), 'range', await settlingYesterdayOf(now))
   return {
     total: plans.reduce((sum, plan) => sum + plan.jobs.length, 0),
     hasPast: plans.some((plan) => plan.hasPast),
@@ -238,14 +239,21 @@ interface AccountPlan {
  * 넥슨 계정마다 회차를 센다. 강화 내역은 계정 단위 API 라 계정마다 그 계정의 자격으로 따로 받고, 조회 기록도 계정 id 로 나뉜다.
  * **콜이 한 건도 안 나간다.**
  */
-async function planAccounts(dateKeys: readonly string[], todayDateKey: string, scope: RoundScope): Promise<AccountPlan[]> {
+async function planAccounts(
+  dateKeys: readonly string[],
+  todayDateKey: string,
+  scope: RoundScope,
+  settlingYesterday: string | null,
+): Promise<AccountPlan[]> {
   const credentials = await currentCredentials()
   const plans: AccountPlan[] = []
   for (const [index, credential] of credentials.entries()) {
     const accountId = credential.accountId
     if (accountId === null) continue
     const round = await planRound(accountId, dateKeys, todayDateKey, recomputeDaysOf(credential), scope)
-    plans.push({ credential, accountId, main: index === 0, ...round })
+    // 결산 중이면 어제를 받지 않는다. 굳지 않은 날이라 결산이 끝난 뒤의 회차가 받는다.
+    const jobs = round.jobs.filter((job) => job.dateKey !== settlingYesterday)
+    plans.push({ credential, accountId, main: index === 0, ...round, jobs })
   }
   return plans
 }
@@ -285,7 +293,7 @@ export async function collectEnhancementHistory(
   onProgress?: HistoryProgress,
 ): Promise<void> {
   const todayDateKey = getCurrentKstDateKey(now)
-  const plans = await planAccounts(dateKeys, todayDateKey, 'range')
+  const plans = await planAccounts(dateKeys, todayDateKey, 'range', await settlingYesterdayOf(now))
   const total = plans.reduce((sum, plan) => sum + plan.jobs.length, 0)
 
   // 분모가 여기서 확정된다. 부를 것이 없어도 한 번은 알린다(화면이 바를 안 그리게).
@@ -345,7 +353,7 @@ async function runRefetches(now: Date): Promise<void> {
   const todayDateKey = getCurrentKstDateKey(now)
   let lastLeft = Number.POSITIVE_INFINITY
   for (;;) {
-    const plans = await planAccounts([], todayDateKey, 'refetch')
+    const plans = await planAccounts([], todayDateKey, 'refetch', await settlingYesterdayOf(now))
     if (plans.every((plan) => plan.jobs.length === 0)) return
     let left = 0
     for (const plan of plans) left += (await keptRefetches(plan.accountId, todayDateKey)).length

@@ -2,10 +2,10 @@ import { detectWorldLeap } from '../world-leap'
 import type { StrandedCharacter } from '../world-leap'
 import type { MapleCharacter } from '../../../types'
 
-// 실제로 겪은 사례를 그대로 세운다(2026-09-11). 챌린저스2 의 지내우시가 `character/list` 에서
-// 빠지고, 엘리시움에 같은 이름·직업·레벨의 캐릭터가 새 ocid 로 나타났다.
+// 실제로 겪은 사례를 세운다(2026-09-11). 챌린저스2 의 지내우시가 `character/list` 에서 빠지고, 엘리시움에 같은
+// 이름·직업·레벨의 캐릭터가 새 ocid 로 나타났다. ocid 는 길이만 실제와 같은 가짜 값이다. 공개 저장소에 실제 ocid 를 두지 않는다.
 const 옛프로필 = {
-  ocid: '4c9b04493104afca3e25fdf619852443',
+  ocid: '0123456789abcdef0123456789abcdef',
   name: '지내우시',
   world: '챌린저스2',
   worldKey: 'challengers_2',
@@ -14,7 +14,7 @@ const 옛프로필 = {
 }
 
 const 새캐릭터: MapleCharacter = {
-  ocid: '62328eaf219a887c3946f3e09918fe8f6fbb98200a15be5bcc73a64995849e9c',
+  ocid: 'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210',
   name: '지내우시',
   world: '엘리시움',
   worldKey: 'elysium',

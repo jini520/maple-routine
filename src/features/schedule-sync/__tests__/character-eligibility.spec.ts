@@ -18,8 +18,10 @@ jest.mock('../../../nexon/schedule', () => ({
 }))
 const { fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
 
-jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn() }))
-const { refreshSettlement: refreshSettlementMock } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
+jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn(), settlingYesterdayOf: jest.fn() }))
+const { refreshSettlement: refreshSettlementMock, settlingYesterdayOf: settlingYesterdayMock } = jest.requireMock(
+  '../../settlement/store',
+) as Record<string, jest.Mock>
 
 
 // KST 2026-08-03 12:00 → 백필 날짜는 2026-08-02 … 2026-07-21 (13일)
@@ -63,6 +65,7 @@ beforeEach(async () => {
   installFakePreferences()
   fetchSchedulerCharacterStateMock.mockReset()
   refreshSettlementMock.mockReset().mockResolvedValue(undefined)
+  settlingYesterdayMock.mockReset().mockResolvedValue(null)
   await clearScheduleProbeLedger('ocid-1')
 })
 
@@ -157,6 +160,19 @@ describe('과거 날짜 스윕. 13일을 한꺼번에 태운다', () => {
 
     await expect(resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)).resolves.toBe('ineligible')
     expect(fetchSchedulerCharacterStateMock).toHaveBeenCalledTimes(13)
+  })
+
+  // 넥슨 AI 에이전트 가이드는 00009 를 되풀이해 부르지 말라고 한다. 건너뛴 어제는 원장에 안 남아 다음 판정이 다시 묻는다.
+  it('서버가 결산 중이라고 하면 어제는 묻지 않는다', async () => {
+    settlingYesterdayMock.mockResolvedValue('2026-08-02')
+    fetchSchedulerCharacterStateMock.mockResolvedValue(state())
+
+    await resolveCharacterEligibility(자격('key'), 'ocid-1', false, NOW)
+
+    const asked = fetchSchedulerCharacterStateMock.mock.calls.map(([, , , dateKey]) => dateKey)
+    expect(asked).toHaveLength(12)
+    expect(asked).not.toContain('2026-08-02')
+    expect((await getScheduleProbeLedger('ocid-1', NOW)).dates['2026-08-02']).toBeUndefined()
   })
 
   it('오늘 응답을 이미 손에 쥔 호출부가 넘기면 그 완료만으로 통과한다 (호출 0회)', async () => {

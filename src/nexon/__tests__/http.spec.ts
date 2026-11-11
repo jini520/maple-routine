@@ -8,7 +8,7 @@ import {
   NexonSignInRequiredError,
 } from '../errors'
 import { __setDeveloperKeysForTest } from '../developer-keys'
-import { requestJson, setFriendsStreamForTest, setMaintenanceReporter } from '../http'
+import { requestJson, setFriendsStreamForTest, setMaintenanceReporter, setRetryWaitForTest } from '../http'
 import { KEY_REQUESTS_PER_SECOND, resetKeySlotsForTest } from '../key-rate-limit'
 import type { StreamLine } from '../../server/friends-stream'
 import type { NexonCredential } from '../../types/auth'
@@ -47,9 +47,19 @@ function response(status: number, body: unknown): Response {
   } as unknown as Response
 }
 
+/** 번들 개발자 키가 429 뒤 기다린 시간. 테스트는 실제로 기다리지 않고 기록만 한다. */
+let 기다림: number[] = []
+beforeEach(() => {
+  기다림 = []
+  setRetryWaitForTest(async (ms) => {
+    기다림.push(ms)
+  })
+})
+
 afterEach(() => {
   unstubAllGlobals()
   resetKeySlotsForTest()
+  setRetryWaitForTest(null)
 })
 
 describe('requestJson: 에러 코드 보존', () => {
@@ -96,9 +106,13 @@ describe('requestJson: 기존 분기 유지', () => {
     await expect(requestJson('/x', 자격('key'))).rejects.toBeInstanceOf(NexonAuthError)
   })
 
-  it('429 는 NexonRateLimitError', async () => {
-    stubGlobal('fetch', jest.fn(async () => response(429, { error: { name: 'OPENAPI00007' } })))
+  // 사용자 키의 429 는 다시 시도 모달로 사용자가 고른다. 앱이 혼자 다시 부르지 않는다.
+  it('429 는 NexonRateLimitError 이고, 사용자 키면 다시 부르지 않는다', async () => {
+    const fetcher = jest.fn(async () => response(429, { error: { name: 'OPENAPI00007' } }))
+    stubGlobal('fetch', fetcher)
     await expect(requestJson('/x', 자격('key'))).rejects.toBeInstanceOf(NexonRateLimitError)
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    expect(기다림).toEqual([])
   })
 
   it('5xx 는 NexonNetworkError (BadRequest가 아니다)', async () => {
@@ -350,15 +364,49 @@ describe('requestJson: 로그인은 프렌즈 밖 경로를 개발자 키로 부
     expect(fetcher).toHaveBeenCalledTimes(2)
   })
 
-  it('한도를 넘은 키도 뺀다', async () => {
-    __setDeveloperKeysForTest(['탄키', '산키'])
-    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async (_url, init) => {
-      const key = (init?.headers as Record<string, string>)['x-nxopen-api-key']
-      return key === '탄키' ? response(429, {}) : response(200, { ok: true })
+  // 키가 둘뿐이라, 429 로 빼면 둘 다 한 번씩 막힌 기기는 다시 켤 때까지 넥슨을 못 부른다.
+  it('429 를 받은 키는 빼지 않고, 기다렸다가 다시 부른다', async () => {
+    __setDeveloperKeysForTest(['키1'])
+    let 횟수 = 0
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async () => {
+      횟수 += 1
+      return 횟수 === 1 ? response(429, {}) : response(200, { ok: true })
     })
     stubGlobal('fetch', fetcher)
 
     await expect(requestJson(밖, 로그인)).resolves.toEqual({ ok: true })
+    await expect(requestJson(밖, 로그인)).resolves.toEqual({ ok: true })
+
+    expect(fetcher).toHaveBeenCalledTimes(3)
+    expect(기다림).toHaveLength(1)
+  })
+
+  // 로그인 사용자의 기기는 모두 이 키를 함께 쓴다. 같은 순간에 다시 부르지 않게 매번 흩뜨린다.
+  it('두 번 다시 불러도 429 면 올리고, 기다림은 1초 · 2초를 0.5 ~ 1.5배로 흩뜨린 값이다', async () => {
+    __setDeveloperKeysForTest(['키1'])
+    const fetcher = jest.fn(async () => response(429, {}))
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(밖, 로그인)).rejects.toBeInstanceOf(NexonRateLimitError)
+
+    expect(fetcher).toHaveBeenCalledTimes(3)
+    expect(기다림).toHaveLength(2)
+    expect(기다림[0]).toBeGreaterThanOrEqual(500)
+    expect(기다림[0]).toBeLessThanOrEqual(1500)
+    expect(기다림[1]).toBeGreaterThanOrEqual(1000)
+    expect(기다림[1]).toBeLessThanOrEqual(3000)
+  })
+
+  it('메이플스토리가 등록되지 않은 키(OPENAPI00006)도 뺀다', async () => {
+    __setDeveloperKeysForTest(['남의게임키', '산키'])
+    const fetcher = jest.fn<Promise<Response>, [string, RequestInit?]>(async (_url, init) => {
+      const key = (init?.headers as Record<string, string>)['x-nxopen-api-key']
+      return key === '남의게임키' ? response(400, { error: { name: 'OPENAPI00006' } }) : response(200, { ok: true })
+    })
+    stubGlobal('fetch', fetcher)
+
+    await expect(requestJson(밖, 로그인)).resolves.toEqual({ ok: true })
+    expect(fetcher).toHaveBeenCalledTimes(2)
   })
 
   it('401 을 받은 키도 뺀다', async () => {
@@ -375,9 +423,9 @@ describe('requestJson: 로그인은 프렌즈 밖 경로를 개발자 키로 부
   it('전부 죽으면 그 실패를 그대로 올린다', async () => {
     // 되살릴 키가 없다. 여기서 성공으로 접으면 화면이 빈 응답을 그린다.
     __setDeveloperKeysForTest(['키1', '키2'])
-    stubGlobal('fetch', jest.fn(async () => response(429, {})))
+    stubGlobal('fetch', jest.fn(async () => response(401, {})))
 
-    await expect(requestJson(밖, 로그인)).rejects.toBeInstanceOf(NexonRateLimitError)
+    await expect(requestJson(밖, 로그인)).rejects.toBeInstanceOf(NexonAuthError)
   })
 
   it('API 키 자격은 개발자 키를 안 쓴다', async () => {

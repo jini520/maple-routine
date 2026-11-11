@@ -22,11 +22,6 @@ const CASES: ReadonlyArray<{ kind: ApiKeyNoticeKind; title: string; body: string
     title: 'API 키가 더 이상 유효하지 않습니다',
     body: '키 입력 화면으로 이동합니다.',
   },
-  {
-    kind: 'rateLimited',
-    title: '호출 한도를 초과했습니다',
-    body: '서비스 단계 키로 다시 입력해주세요.',
-  },
 ]
 
 let confirmApiKeyNotice: jest.Mock
@@ -68,7 +63,6 @@ describe('ApiKeyNoticeModal', () => {
     })
 
     // 닫을 수 없어야 한다: 저장된 키로는 앞으로 갈 수 없으므로 닫아서 돌아갈 곳이 없다.
-    // 429 도 마찬가지다.
     it('오버레이를 눌러도 닫히지 않는다', async () => {
       const { getByText, getByTestId } = await renderOverlay(<ApiKeyNoticeModal />)
 

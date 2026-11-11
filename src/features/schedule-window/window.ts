@@ -26,7 +26,7 @@ import {
   markScheduleProbeUnavailable,
   recordScheduleProbe,
 } from '../../storage/schedule-probe-ledger'
-import { refreshSettlement } from '../settlement/store'
+import { refreshSettlement, settlingYesterdayOf } from '../settlement/store'
 import { toScheduleSyncError } from '../schedule-sync/errors'
 import { mapWithLimit } from './gate'
 
@@ -129,6 +129,8 @@ export async function planScheduleWindow(
   const floorDateKey = rollingFloor > MIN_SCHEDULER_DATE ? rollingFloor : MIN_SCHEDULER_DATE
   const ceilingDateKey = getMaxQueryableDate(now)
   const todayDateKey = getKstDateKeyDaysAgo(now, 0)
+  // 결산 중이면 어제를 묻지 않는다. 원장에 안 남아 결산이 끝난 뒤의 회차가 채운다.
+  const settlingYesterday = await settlingYesterdayOf(now)
 
   // 캐릭터 × 날짜를 한 줄로 펴서 게이트에 넘긴다. 캐릭터별로 나눠 돌리면 상한이 캐릭터 수만큼
   // 곱해져 게이트가 뜻을 잃는다.
@@ -139,7 +141,7 @@ export async function planScheduleWindow(
     const ledger = await getScheduleProbeLedger(ocid, now)
     if (ledger.unavailable) continue
     for (const dateKey of missingDays(ledger.dates, floorDateKey, ceilingDateKey, todayDateKey)) {
-      jobs.push({ ocid, dateKey, credential })
+      if (dateKey !== settlingYesterday) jobs.push({ ocid, dateKey, credential })
     }
   }
 
