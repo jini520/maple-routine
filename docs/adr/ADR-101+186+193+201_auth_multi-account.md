@@ -1,7 +1,7 @@
 # ADR-101+186+193+201 다계정: 넥슨 로그인 아래에 API 키 계정을 더 등록한다
 
 > ⚪ 미구현
-> 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/` · `lib/enhancement/sighted-owner.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/stats/aggregate.ts` · `lib/mvp/starforce.ts` · `features/cashbook/account-names.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts` · `features/boss-profit/world-leap-moves.ts` · `features/boss-profit/world-leap-link.ts` · `storage/cashbook-entries.ts` · `storage/character-profiles.ts` · `features/ledger/useLedgerData.tsx`
+> 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/` · `lib/enhancement/sighted-owner.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/stats/aggregate.ts` · `lib/mvp/starforce.ts` · `features/cashbook/account-names.ts` · `lib/maple-id-name.ts` · `features/character-manage/derivations.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/mvp-grade/MvpGradeCards.tsx` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts` · `features/boss-profit/world-leap-moves.ts` · `features/boss-profit/world-leap-link.ts` · `storage/cashbook-entries.ts` · `storage/character-profiles.ts` · `features/ledger/useLedgerData.tsx`
 
 ## 배경
 
@@ -222,12 +222,12 @@
   한글 10.7자 폭이어서 버튼에 들어간다.
 - 메이플 ID 를 보여 주는 곳은 모두 이 이름을 쓴다. today 위젯 드롭다운 · 캐릭터 관리 드롭다운 · 가계부의 메이플 ID 보기와 하루 목록 ·
   통계 `캐릭터별` 카드 · MVP 등급이다. 지금 이름 `메이플 ID · 대표 캐릭터`([[ADR-161]] 결정 3)를 이것으로 바꾼다(사용자 지정
-  2026-11-09). 같은 메이플 ID 가 화면마다 다른 이름이면 같은 ID 로 읽히지 않는다. 구현할 때 [[ADR-161]] 결정 3 을 고친다.
+  2026-11-09). 같은 메이플 ID 가 화면마다 다른 이름이면 같은 ID 로 읽히지 않는다. 가계부 쪽 규칙은 [[ADR-161]] 결정 3 에 있다.
 - 계정 관리 화면(결정 2)과 캐릭터 관리 드롭다운(결정 11)의 메이플 ID 줄은 이름 아래에 그 메이플 ID 의 대표 캐릭터를 보조 줄로
   둔다(사용자 선택 2026-11-11). 두 곳은 이름을 바꾸거나 캐릭터를 가져올 메이플 ID 를 고르는 곳이라, 이름만 있으면 어느 메이플 ID
   인지 알 수 없다.
 - 통계 `캐릭터별` 카드의 메이플 ID 줄도 이 이름만 쓰고, 캐릭터 줄과 가르는 표시를 따로 붙이지 않는다(사용자 지정 2026-11-09). 지금은
-  `메이플 ID ·` 로 시작해서 갈렸다. 구현할 때 [[ADR-161]] 결정 6 을 고친다.
+  `메이플 ID ·` 로 시작해서 갈렸다([[ADR-161]] 결정 6).
 
 ### 결정 9. today 공유 컨텐츠 위젯은 메이플 ID 마다 따로 보이고, 위젯 드롭다운 버튼으로 고른다
 
@@ -670,6 +670,8 @@
 | `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` (월드) | 결정 22: 캐릭터 기록을 적을 때 프로필 월드를 채우고 메이플 ID 기록은 비우는지, 고칠 때 캐릭터를 바꿨을 때만 다시 채우는지, 대표 캐릭터에 붙인 옛 기록도 채우는지, 버전 19 가 이미 있는 기록을 채우는지 본다 |
 | `features/boss-profit/__tests__/world-leap-link.spec.ts` (만든 날) · `nexon/character/__tests__/normalize.spec.ts` · `features/schedule-sync/__tests__/character-basic-fetch.spec.ts` · `storage/__tests__/character-profiles.spec.ts` | 결정 22: 두 캐릭터의 만든 날이 다르면 잇지 않고 하나라도 모르면 이름 · 직업으로 잇는지, `character/basic` 의 만든 날을 KST 날짜로 프로필에 남기고 모르는 채 부른 경로가 그 값을 지우지 않는지 본다 |
 | `features/cashbook/__tests__/records.spec.ts` · `features/stats/__tests__/aggregate.spec.ts` · `lib/mvp/__tests__/starforce.spec.ts` | 결정 20: 가계부 · 통계가 강화 줄을 ocid 로 묶어 이름을 바꾼 캐릭터의 옛 이름 줄도 그 캐릭터에 넣는지, MVP 할인을 그 줄의 메이플 ID 등급으로 붙이는지 본다 |
+| `features/cashbook/__tests__/account-names.spec.ts` · `app/mvp-grade/__tests__/MvpGradeModal.test.tsx` | 결정 8: 가계부의 메이플 ID 이름이 ID 앞 8자로 짓고 대표를 못 찾은 ID 도 이름이 서는지, MVP 등급 카드가 목록을 못 받은 ID 를 이름으로 부르는지 본다 |
+| `features/character-manage/__tests__/derivations.spec.ts` · `components/organisms/AccountSelect/__tests__/AccountSelect.test.tsx` | 결정 11: 캐릭터 관리 드롭다운이 넥슨 계정 차례로 묶고 묶음 안은 대표 레벨 차례인지, API 키 번호가 목록을 못 받은 키를 건너뛰어도 등록한 차례인지, 넥슨 계정이 둘 이상 보일 때만 묶음 라벨이 서는지, 행이 이름과 대표 캐릭터 줄이고 월드별 개수를 적지 않는지 본다 |
 | `features/auth/__tests__/nexon-login.spec.ts` | 결정 14: 로그인 화면의 넥슨 로그인만 세션을 받은 뒤 저장하기 전에 추적 목록을 비우는지, 연동 시트와 창을 닫거나 세션을 못 받은 로그인은 비우지 않는지 본다 |
 | `features/auth/__tests__/store.spec.ts` | 결정 14: 키 입력이 키를 저장하기 전에 추적 목록을 비우고, 무효 키 · 개발 단계 키는 비우지 않는지 본다. 로그인 화면과 연동 시트가 새 로그인 여부를 다르게 넘기는지 본다. 결정 20: 키 입력이 소속을 키를 저장한 뒤 그 키의 계정 id 로 적고, 막힌 키는 적지 않는지 본다 |
 | `features/character-selection/__tests__/forget.spec.ts` | 결정 14: 저장소 · 쿼리 캐시 · 메모리의 추적 목록 · 대표 · 마지막에 고른 캐릭터를 모두 비우는지, 비우기 전에 시작한 조회가 늦게 끝나도 앞 목록이 캐시에 돌아오지 않는지 본다 |
