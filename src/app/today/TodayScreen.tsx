@@ -57,6 +57,7 @@ import { NoticeBanner } from './NoticeBanner'
 import { SettlementBanner } from '../SettlementBanner'
 import { useQuickLinksStore } from '../../features/quick-links/store'
 import { useTodaySharedMapleIdStore } from '../../features/today/shared-maple-id'
+import { useMapleIdNamesStore } from '../../features/maple-id/names'
 import { useMapleIdOwners } from '../../hooks/useMapleIdOwners'
 import { buildTodayViewModel } from './view-model'
 import { WidgetGrid } from './WidgetGrid'
@@ -109,6 +110,7 @@ export function TodayScreen(): React.JSX.Element {
   // 공유 컨텐츠 · 결정석 한도는 메이플 ID 마다 따로다. 소속을 읽기 전에는 메이플 ID 를 가르지 않는다.
   const mapleIds = useMapleIdOwners(orderedOcids)
   const selectedSharedMapleId = useTodaySharedMapleIdStore((state) => state.mapleId)
+  const mapleIdNames = useMapleIdNamesStore((state) => state.names)
 
   const fetchedAt = useRealtimeFetchedAt()
 
@@ -135,6 +137,7 @@ export function TodayScreen(): React.JSX.Element {
     quickLinks,
     mapleIds,
     selectedSharedMapleId,
+    mapleIdNames,
   })
 
   // KST 자정을 넘기면 다시 그린다. 초기화 시각과 기간 값은 이 렌더의 `now` 로 정해져서, 다시 렌더되지 않으면

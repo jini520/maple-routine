@@ -17,6 +17,7 @@ export const queryKeys = {
   scheduleRound: () => ['schedule-round'] as const,
   /** 가계부의 날짜별 줄(두 끝 포함). today 의 이번 주 · 가계부의 달 · 통계의 전 기간이 범위만 달리 든다. */
   ledgerDays: (from: string, to: string) => ['ledger-days', from, to] as const,
+  allLedgerDays: () => ['ledger-days'] as const,
   /** 보스 수익 한 기간의 스냅샷. 첫 두 칸만으로 모든 기간을 한꺼번에 무효화한다. */
   bossProfitPeriod: (tab: BossCycle, periodKey: string) => ['boss-profit-period', tab, periodKey] as const,
   /** 드롭 기록 전 기간 묶음과 가뭄 요약. */

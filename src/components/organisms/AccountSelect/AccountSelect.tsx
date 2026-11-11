@@ -1,7 +1,7 @@
 /**
  * 메이플 ID 드롭다운. 캐릭터 관리 화면 아래 층의 머리에 서는 오버레이.
  *
- * 값 규칙은 밖에 있다. 대표 캐릭터는 `summarizeAccount`, 이름은 `mapleIdNameOf`, 넥슨 계정 묶음은
+ * 값 규칙은 밖에 있다. 대표 캐릭터는 `summarizeAccount`, 이름은 `useMapleIdNameOf`, 넥슨 계정 묶음은
  * `groupAccountSummaries` 가 정하고 이 컴포넌트는 받은 것을 그리기만 한다. 저장소도 네트워크도 모른다.
  *
  * 지키는 것 넷.
@@ -30,7 +30,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import type { AccountSummaryView } from '../../../features/character-manage/derivations'
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
-import { mapleIdNameOf } from '../../../lib/maple-id-name'
+import { useMapleIdNameOf } from '../../../features/maple-id/names'
 import { worldNameOf } from '../../../lib/world/worlds'
 
 import { FACE_AVATAR_SIZE } from '../../../lib/face-crop'
@@ -63,6 +63,7 @@ export function AccountRow(props: AccountRowProps): React.JSX.Element {
   const { accountId, representative } = props.summary
   const emblem = worldEmblemUrl(representative.worldKey)
   const worldName = worldNameOf(representative.worldKey, representative.world)
+  const nameOf = useMapleIdNameOf()
 
   return (
     <View className="flex-row items-center gap-2.5">
@@ -82,7 +83,7 @@ export function AccountRow(props: AccountRowProps): React.JSX.Element {
 
       <View className="min-w-0 flex-1 gap-0.5">
         <Text numberOfLines={1} className="text-sm font-semibold text-text">
-          {mapleIdNameOf(accountId)}
+          {nameOf(accountId)}
         </Text>
 
         <View className="flex-row items-center gap-1">

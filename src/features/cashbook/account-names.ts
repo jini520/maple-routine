@@ -6,6 +6,7 @@
  */
 import { compareByName, pickRepresentativeCharacter } from '../../lib/character-order'
 import { mapleIdNameOf } from '../../lib/maple-id-name'
+import { useMapleIdNamesStore } from '../maple-id/names'
 import { accountOfOcid, type CharacterAccountSighting } from '../../lib/mvp/membership'
 import { getCharacterAccountSightings } from '../../storage/character-accounts'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
@@ -30,6 +31,8 @@ export interface AccountNameSources {
   trackedOcids: readonly string[]
   /** 추적 캐릭터의 이름 · 레벨. 캐시에 없으면 `null` */
   profileOf: (ocid: string) => { name: string; level: number | null } | null
+  /** 사용자가 바꾼 메이플 ID 이름. 없으면 기본 이름이다 */
+  names?: Readonly<Record<string, string>>
 }
 
 interface Representative {
@@ -54,8 +57,11 @@ function representativeOf(accountId: string, sources: AccountNameSources): Repre
 }
 
 /** ID 마다 이름. 하루 목록 줄과 통계가 기록의 이름으로 쓴다. */
-export function accountLabelsOf(accountIds: readonly string[]): Map<string, string> {
-  return new Map(accountIds.map((accountId) => [accountId, mapleIdNameOf(accountId)]))
+export function accountLabelsOf(
+  accountIds: readonly string[],
+  custom?: Readonly<Record<string, string>>,
+): Map<string, string> {
+  return new Map(accountIds.map((accountId) => [accountId, mapleIdNameOf(accountId, custom)]))
 }
 
 /** 추적 캐릭터가 속한 ID 의 보기. 대표를 못 찾은 ID 는 맨 끝이다. */
@@ -68,7 +74,7 @@ export function sheetAccountsOf(sources: AccountNameSources): SheetAccount[] {
       }
       return byRepresentative(left.representative, right.representative)
     })
-    .map(({ accountId }) => ({ accountId, label: mapleIdNameOf(accountId) }))
+    .map(({ accountId }) => ({ accountId, label: mapleIdNameOf(accountId, sources.names) }))
 }
 
 /** 못 읽은 값은 비운 채로 간다. 대표를 못 찾은 ID 가 맨 끝으로 갈 뿐 보기는 선다. */
@@ -79,6 +85,7 @@ async function loadSources(): Promise<AccountNameSources> {
     currentCredentials(),
   ])
   return {
+    names: useMapleIdNamesStore.getState().names,
     // 넥슨 계정마다 받아 둔 목록을 모은다. 부계정의 메이플 ID 는 그 계정의 목록에만 있다.
     lists: readCachedCharacterLists(credentials),
     sightings,
@@ -91,7 +98,7 @@ async function loadSources(): Promise<AccountNameSources> {
 }
 
 export function loadAccountLabels(accountIds: readonly string[]): Promise<Map<string, string>> {
-  return Promise.resolve(accountLabelsOf(accountIds))
+  return Promise.resolve(accountLabelsOf(accountIds, useMapleIdNamesStore.getState().names))
 }
 
 export async function loadSheetAccounts(): Promise<SheetAccount[]> {

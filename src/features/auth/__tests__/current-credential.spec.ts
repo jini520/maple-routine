@@ -1,12 +1,17 @@
 // 넥슨을 부르기 직전에 **쓸 수 있는 자격**을 고른다. 로그인이면 값은 서버 세션이다. 앱은 액세스
 // 토큰을 안 들고, 세션이 죽었는지는 서버가 401 로 답한다.
+import { apiKeyHashHex } from '../../../lib/crypto/api-key-hash'
 import { credentialsOfOcids, currentCredential, currentCredentials } from '../current-credential'
 
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/character-accounts', () => ({ getNexonAccountIdsOfOcids: jest.fn() }))
+jest.mock('../../../storage/server-sub-accounts', () => ({ getServerSubAccounts: jest.fn() }))
+jest.mock('../../../storage/server-accounts', () => ({ getServerAccounts: jest.fn() }))
 
 const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 const { getNexonAccountIdsOfOcids } = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
+const { getServerSubAccounts } = jest.requireMock('../../../storage/server-sub-accounts') as Record<string, jest.Mock>
+const { getServerAccounts } = jest.requireMock('../../../storage/server-accounts') as Record<string, jest.Mock>
 
 function 설정(login: Record<string, unknown> | null, ...keys: string[]) {
   return {
@@ -18,6 +23,8 @@ function 설정(login: Record<string, unknown> | null, ...keys: string[]) {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  getServerSubAccounts.mockResolvedValue(null)
+  getServerAccounts.mockResolvedValue({ reported: {}, registered: [] })
 })
 
 describe('로그인이 있으면 세션이다', () => {
@@ -73,6 +80,22 @@ describe('currentCredentials', () => {
 
     getAuthConfig.mockRejectedValue(new Error('읽기 실패'))
     await expect(currentCredentials()).resolves.toEqual([])
+  })
+})
+
+// 다른 기기에서 지운 부계정의 키를 이 기기가 계속 부르면, 계정 관리에도 안 보이는 키가 조회를 이어 간다.
+describe('서버 목록', () => {
+  it('등록했는데 서버 목록에 없는 부계정 키는 부르지 않는다. 목록을 못 읽으면 기기의 키를 모두 부른다', async () => {
+    getAuthConfig.mockResolvedValue(로그인과부계정)
+    getServerSubAccounts.mockResolvedValue({ loginId: 'account-login', subAccounts: [] })
+    getServerAccounts.mockResolvedValue({ reported: {}, registered: [`account-login:${apiKeyHashHex('부-키')}`] })
+
+    await expect(currentCredentials()).resolves.toEqual([{ type: 'login', value: '세션', accountId: 'account-login' }])
+    getNexonAccountIdsOfOcids.mockResolvedValue(new Map([['o-부', 'account-부']]))
+    expect((await credentialsOfOcids(['o-부'])).get('o-부')).toBeNull()
+
+    getServerSubAccounts.mockRejectedValue(new Error('읽기 실패'))
+    await expect(currentCredentials()).resolves.toHaveLength(2)
   })
 })
 

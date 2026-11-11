@@ -323,6 +323,8 @@ export interface TodayViewModelInput {
   mapleIds: MapleIdOwners | null
   /** 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID */
   selectedSharedMapleId: string | null
+  /** 사용자가 바꾼 메이플 ID 이름. 없으면 기본 이름이다 */
+  mapleIdNames?: Readonly<Record<string, string>>
 }
 
 /** 다음 파티 스케줄의 캐릭터 묶음 하나 */
@@ -517,7 +519,7 @@ function buildSharedMapleIds(input: TodayViewModelInput): MapleIdOptionView[] {
   if (input.mapleIds === null) return []
   const { ofOcid, order } = input.mapleIds
   const tracked = new Set(input.orderedOcids.flatMap((ocid) => (ofOcid[ocid] === undefined ? [] : [ofOcid[ocid]])))
-  return order.filter((accountId) => tracked.has(accountId)).map((accountId) => ({ accountId, name: mapleIdNameOf(accountId) }))
+  return order.filter((accountId) => tracked.has(accountId)).map((accountId) => ({ accountId, name: mapleIdNameOf(accountId, input.mapleIdNames) }))
 }
 
 /**
@@ -681,7 +683,7 @@ function buildCrystalLimits(input: TodayViewModelInput): CrystalMapleIdView[] {
   }
   return [...byMapleId.entries()]
     .sort(([left], [right]) => compareRank(rankOf(left), rankOf(right)))
-    .map(([accountId, worlds]) => ({ accountId, name: accountId === null ? '' : mapleIdNameOf(accountId), worlds }))
+    .map(([accountId, worlds]) => ({ accountId, name: accountId === null ? '' : mapleIdNameOf(accountId, input.mapleIdNames), worlds }))
 }
 
 /**

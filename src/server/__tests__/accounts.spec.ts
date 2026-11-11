@@ -1,5 +1,10 @@
 // 메이플 ID 알리기와 부계정 등록. 서버의 주소 · 본문 · 409 의 code 와 어긋나면 계정이 이어지지 않아 기록이 늘 거절된다.
-import { registerSubAccountOnServer, reportMapleIdsToServer } from '../accounts'
+import {
+  listSubAccountsOnServer,
+  registerSubAccountOnServer,
+  reportMapleIdsToServer,
+  unregisterSubAccountOnServer,
+} from '../accounts'
 
 const fetchMock = jest.fn()
 
@@ -53,4 +58,42 @@ it('부계정 등록은 세션으로 키 해시 · 메이플 ID 해시를 보내
 
   fetchMock.mockRejectedValueOnce(new Error('offline'))
   await expect(registerSubAccountOnServer({}, 'kh', ['h1'])).resolves.toBe('failed')
+})
+
+// 계정 관리가 서버 목록으로 이 기기에 키가 없는 계정까지 세운다. 답의 모양이 다르면 목록을 못 받은 것으로 보고 마지막 목록을 쓴다.
+it('부계정 목록은 세션으로 GET 하고, 줄마다 키 해시와 메이플 ID 해시를 받는다', async () => {
+  fetchMock.mockResolvedValueOnce({
+    ok: true,
+    status: 200,
+    json: async () => ({ subAccounts: [{ apiKeyHashes: ['s1'], mapleIds: ['h1', 'h2'] }, { apiKeyHashes: 3, mapleIds: [] }] }),
+  })
+  await expect(listSubAccountsOnServer({ Authorization: 'Bearer S' })).resolves.toEqual({
+    outcome: 'listed',
+    subAccounts: [{ apiKeyHashes: ['s1'], mapleIds: ['h1', 'h2'] }],
+  })
+  expect(fetchMock).toHaveBeenCalledWith(
+    'https://mapleroutine.store/v1/me/sub-accounts',
+    expect.objectContaining({ method: 'GET', headers: { Authorization: 'Bearer S' } }),
+  )
+
+  fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({}) })
+  await expect(listSubAccountsOnServer({})).resolves.toEqual({ outcome: 'failed' })
+
+  fetchMock.mockRejectedValueOnce(new Error('offline'))
+  await expect(listSubAccountsOnServer({})).resolves.toEqual({ outcome: 'failed' })
+})
+
+it('부계정 지우기는 메이플 ID 해시를 주소에 넣어 DELETE 하고, 받았는지만 가른다', async () => {
+  fetchMock.mockResolvedValueOnce({ ok: true, status: 204, json: async () => { throw new Error('빈 본문') } })
+  await expect(unregisterSubAccountOnServer({ Authorization: 'Bearer S' }, 'h1')).resolves.toBe('removed')
+  expect(fetchMock).toHaveBeenCalledWith(
+    'https://mapleroutine.store/v1/me/sub-accounts/h1',
+    expect.objectContaining({ method: 'DELETE', headers: { Authorization: 'Bearer S' } }),
+  )
+
+  fetchMock.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+  await expect(unregisterSubAccountOnServer({}, 'h1')).resolves.toBe('failed')
+
+  fetchMock.mockRejectedValueOnce(new Error('offline'))
+  await expect(unregisterSubAccountOnServer({}, 'h1')).resolves.toBe('failed')
 })

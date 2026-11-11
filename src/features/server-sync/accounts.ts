@@ -5,20 +5,25 @@
  * 회차마다 기록보다 먼저 돈다.
  *
  * 1. 지금 로그인의 부계정 키를 세션으로 등록한다(`POST /v1/me/sub-accounts`). 등록한 키는 로그인마다 적어 다시 보내지 않는다.
- * 2. 계정마다 그 계정의 신원으로 메이플 ID 를 알린다(`PUT /v1/me/maple-ids`). 서버가 돌려준 목록에 다 있으면 보내지 않는다.
+ * 2. 지금 로그인의 부계정 목록을 받아 둔다(`GET /v1/me/sub-accounts`). 앱은 이 목록에 있는 부계정만 부른다.
+ * 3. 계정마다 그 계정의 신원으로 메이플 ID 를 알린다(`PUT /v1/me/maple-ids`). 서버가 돌려준 목록에 다 있으면 보내지 않는다.
  */
 import { apiKeyHashHex } from '../../lib/crypto/api-key-hash'
 import { nexonIdHashHex } from '../../lib/crypto/nexon-id-hash'
 import { credentialOf, usableCredentialsOf } from '../../lib/nexon-credential'
+import type { ServerSubAccountList } from '../../lib/sub-account-keys'
 import {
+  listSubAccountsOnServer,
   registerSubAccountOnServer,
   reportMapleIdsToServer,
+  type ListSubAccountsResult,
   type RegisterSubAccountResult,
   type ReportMapleIdsResult,
 } from '../../server/accounts'
 import { getAuthConfig } from '../../storage/api-key'
 import { getMapleIdsByNexonAccount } from '../../storage/character-accounts'
 import { getServerAccounts, setServerAccounts, type ServerAccountsState } from '../../storage/server-accounts'
+import { setServerSubAccounts } from '../../storage/server-sub-accounts'
 import type { NexonAuthConfig } from '../../types/auth'
 import { serverIdentityOfAccount } from '../auth/server-identity'
 
@@ -35,6 +40,8 @@ export interface PrepareAccountsDeps {
     apiKeyHash: string,
     mapleIds: readonly string[],
   ) => Promise<RegisterSubAccountResult>
+  listSubAccounts: (sessionHeaders: Record<string, string>) => Promise<ListSubAccountsResult>
+  setSubAccountList: (list: ServerSubAccountList) => Promise<void>
 }
 
 const DEFAULT_DEPS: PrepareAccountsDeps = {
@@ -44,6 +51,8 @@ const DEFAULT_DEPS: PrepareAccountsDeps = {
   setState: setServerAccounts,
   report: reportMapleIdsToServer,
   register: registerSubAccountOnServer,
+  listSubAccounts: listSubAccountsOnServer,
+  setSubAccountList: setServerSubAccounts,
 }
 
 /** 서버가 계정을 알게 한다. 실패한 것은 적지 않아 다음 회차가 다시 한다. 저장소를 못 읽으면 던지고, 부르는 쪽이 회차를 접는다. */
@@ -69,6 +78,9 @@ export async function prepareServerAccounts(deps: PrepareAccountsDeps = DEFAULT_
       // 같은 넥슨 ID 는 다시 보내도 늘 거절된다. 한도는 다른 부계정을 지우면 풀리므로 적지 않는다.
       if (result === 'registered' || result === 'same_account') state.registered.push(tag)
     }
+    // 등록한 뒤에 받는다. 먼저 받으면 방금 등록한 키가 목록에 없어 이번 회차에 보이지 않는다.
+    const listed = await deps.listSubAccounts(session)
+    if (listed.outcome === 'listed') await deps.setSubAccountList({ loginId: login.id, subAccounts: listed.subAccounts })
   }
 
   const credentials = login == null ? [credentialOf(config)] : usableCredentialsOf(config)
