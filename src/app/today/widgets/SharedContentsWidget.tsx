@@ -5,6 +5,8 @@
  *
  * ① 계열은 두 열로 서고 두 열의 줄 수가 가장 고른 지점에서 가른다. 오른쪽이 비면 한 열이다.
  * ② 체크박스를 누를 수 없다. 값이 게임에서 오므로 앱이 못 뒤집는다.
+ * ③ 고른 메이플 ID 의 추적 캐릭터만 모은다. 에픽 던전 · 메이플 유니온의 한도는 메이플 ID 마다 따로다. 고를 메이플 ID 가 둘
+ *    이상이면 제목 줄 오른쪽 위젯 드롭다운 버튼으로 고른다.
  *
  * @see docs/features/today.md 위젯 정책
  */
@@ -12,6 +14,8 @@
 import { View } from 'react-native'
 
 import { CheckBox, Text } from '../../../components/atoms'
+import { WidgetSelect } from '../../../components/organisms/WidgetSelect/WidgetSelect'
+import { useTodaySharedMapleIdStore } from '../../../features/today/shared-maple-id'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { SharedContentGroupView, SharedContentItemView } from '../view-model'
 import type { WidgetProps } from './types'
@@ -92,9 +96,24 @@ function SharedItemRow(props: { item: SharedContentItemView }): React.JSX.Elemen
 }
 
 export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
+  const selectMapleId = useTodaySharedMapleIdStore((state) => state.select)
+  // 고를 메이플 ID 가 하나면 버튼을 그리지 않는다. 고를 것이 없다.
+  const canSelect = data.sharedMapleIds.length >= 2 && data.selectedSharedMapleId !== null
+
   return (
     <View testID="widget-shared-contents" className="p-3">
-      <Text className="text-11 font-bold text-text-muted">계정 및 메이플 ID 공유 컨텐츠</Text>
+      <View className="flex-row items-center justify-between gap-2">
+        <Text className="shrink-0 text-11 font-bold text-text-muted">계정 및 메이플 ID 공유 컨텐츠</Text>
+        {canSelect && (
+          <WidgetSelect
+            label="공유 컨텐츠를 볼 메이플 ID"
+            testID="shared-maple-id-select"
+            options={data.sharedMapleIds.map((one) => ({ value: one.accountId, label: one.name }))}
+            selected={data.selectedSharedMapleId ?? ''}
+            onSelect={selectMapleId}
+          />
+        )}
+      </View>
 
       {data.sharedContents.length > 0 && (
         <View className="flex-row gap-2 pt-2">

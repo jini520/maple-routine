@@ -111,8 +111,22 @@ describe('countMonthlyCrystalsUpToWeek', () => {
     ]
 
     expect(countMonthlyCrystalsUpToWeek(records, '2026-09-03', NOW, [])).toEqual({
-      elysium: { world: '엘리시움', count: 1 },
-      scania: { world: '스카니아', count: 1 },
+      '|elysium': { accountId: null, worldKey: 'elysium', world: '엘리시움', count: 1 },
+      '|scania': { accountId: null, worldKey: 'scania', world: '스카니아', count: 1 },
+    })
+  })
+
+  // 같은 월드라도 메이플 ID 가 다르면 한도 줄이 따로라 월간 몫도 그 줄마다 센다. 메이플 ID 를 모르는 기록은 뺀다.
+  it('메이플 ID 를 넘기면 메이플 ID 와 월드마다 센다', () => {
+    const records = [
+      월간기록('A', { defeatedOn: '2026-09-05' }),
+      월간기록('B', { defeatedOn: '2026-09-05' }),
+      월간기록('C', { defeatedOn: '2026-09-05' }),
+    ]
+
+    expect(countMonthlyCrystalsUpToWeek(records, '2026-09-03', NOW, [], { A: 'maple-main', B: 'maple-sub' })).toEqual({
+      'maple-main|elysium': { accountId: 'maple-main', worldKey: 'elysium', world: '엘리시움', count: 1 },
+      'maple-sub|elysium': { accountId: 'maple-sub', worldKey: 'elysium', world: '엘리시움', count: 1 },
     })
   })
 
@@ -135,7 +149,7 @@ describe('useMonthlyCrystalsUpToWeek', () => {
 
     const { result } = await renderHook(() => useMonthlyCrystalsUpToWeek(['A'], '2026-09-10'))
 
-    await waitFor(() => expect(result.current?.elysium?.count).toBe(1))
+    await waitFor(() => expect(result.current?.['|elysium']?.count).toBe(1))
     expect(getBossProfitRecordsMock).toHaveBeenCalledWith(['A'], ['2026-09'])
   })
 
@@ -143,7 +157,7 @@ describe('useMonthlyCrystalsUpToWeek', () => {
   it('기록 판이 바뀌면 다시 센다', async () => {
     getBossProfitRecordsMock.mockResolvedValue([월간기록('A', { defeatedOn: '2026-09-05' })])
     const { result } = await renderHook(() => useMonthlyCrystalsUpToWeek(['A', 'B'], '2026-09-10'))
-    await waitFor(() => expect(result.current?.elysium?.count).toBe(1))
+    await waitFor(() => expect(result.current?.['|elysium']?.count).toBe(1))
 
     getBossProfitRecordsMock.mockResolvedValue([
       월간기록('A', { defeatedOn: '2026-09-05' }),
@@ -154,7 +168,7 @@ describe('useMonthlyCrystalsUpToWeek', () => {
       for (const listener of mockListeners) listener()
     })
 
-    await waitFor(() => expect(result.current?.elysium?.count).toBe(2))
+    await waitFor(() => expect(result.current?.['|elysium']?.count).toBe(2))
   })
 
   it('주간 탭이 아니면(null) 안 읽는다', async () => {

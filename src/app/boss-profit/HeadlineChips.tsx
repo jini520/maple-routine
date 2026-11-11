@@ -1,22 +1,25 @@
 /**
- * 총 수익 카드의 결정석 판매 칸. 월드별로 집계한다.
+ * 총 수익 카드의 결정석 판매 칸. 한도 줄(메이플 ID · 월드)마다 집계한다.
  */
 import { Image, Pressable, View } from 'react-native'
 
 import { appImage, worldEmblemUrl } from '../../lib/assets/asset-lookup'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
 import type { MonthlyCrystalsByWorld } from '../../features/boss-profit/monthly-crystals'
+import type { MapleIdOwners } from '../../features/maple-id/owners'
+import { mapleIdNameOf } from '../../lib/maple-id-name'
 
 import { ChevronDownIcon, ChevronUpIcon, Text } from '../../components/atoms'
 import { AnchoredPopover } from '../../components/molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { summarizeWorldCrystals } from './character-groups'
-import type { CharacterGroup } from './character-groups'
+import type { CharacterGroup, WorldCrystalSummary } from './character-groups'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 
 
-// 총 수익 카드 셋째 줄의 결정석 칸. 주간 90 한도 대비 주간 몫과 그 주에 잡은 월간 보스의 월간 몫을 칸 둘로 나눠 적는다.
-// 월간 몫은 한도가 없어 분모 없이 개수만 적고, 안 잡은 주에도 `0개` 로 선다.
+// 총 수익 카드 셋째 줄의 결정석 칸. 주간 몫과 그 주에 잡은 월간 보스의 월간 몫을 칸 둘로 나눠 적는다.
+// 둘 다 분모 없이 개수만 적고, 안 잡은 주에도 `0개` 로 선다. 주간 한도는 메이플 ID 와 월드마다 따로라 칸에 분모를 두면
+// 줄 수만큼 커져 어느 줄의 한도도 아니다(사용자 선택). 한도는 펼친 줄마다 `/90` 으로 본다.
 //
 // 월드별 분해는 흐름이 아니라 공용 팝오버(별도 네이티브 창)로 띄운다. 펼쳐도 카드 높이가 변하지 않는다.
 //
@@ -25,8 +28,10 @@ import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 export function CrystalSummaryChip(props: {
   groups: CharacterGroup[]
   variant?: 'weekly' | 'monthly'
-  /** 월드별 그 달 누적. 오면 행으로 센 월간 몫을 대신한다. */
+  /** 한도 줄마다의 그 달 누적. 오면 행으로 센 월간 몫을 대신한다. */
   monthlyByWorld?: MonthlyCrystalsByWorld
+  /** 캐릭터마다의 메이플 ID 와 그 차례. 오면 메이플 ID 와 월드마다 가르고, 못 읽었으면 월드로만 가른다 */
+  mapleIds?: MapleIdOwners | null
 }): React.JSX.Element | null {
   const monthlyOnly = props.variant === 'monthly'
   // 구조 분해가 필수다. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그 접근을
@@ -39,7 +44,7 @@ export function CrystalSummaryChip(props: {
     close: closeBreakdown,
   } = useAnchoredPopover()
 
-  const worlds = summarizeWorldCrystals(props.groups, props.monthlyByWorld)
+  const worlds = summarizeWorldCrystals(props.groups, props.monthlyByWorld, props.mapleIds?.ofOcid ?? null)
   // 월드를 아는 캐릭터가 하나도 없으면(구버전 캐시만 있는 경우) 대비할 한도가 없다. 반대로 월드는
   // 알지만 처치 수가 0 이면 `0 / 90` 을 그대로 보여준다. 정보로서 유효하다.
   if (worlds.length === 0) return null
@@ -47,12 +52,13 @@ export function CrystalSummaryChip(props: {
   const cleared = worlds.reduce((sum, summary) => sum + summary.cleared, 0)
   // 월간 수도 월드별 줄의 합이다. 칩과 펼친 줄이 같은 수를 말하고, 월드를 모르는 행은 둘 다에서 빠진다.
   const monthlyCleared = worlds.reduce((sum, summary) => sum + summary.monthlyCleared, 0)
-  // 각 월드가 각자 90 을 가지므로 복수 월드의 분모는 90 × 월드 수다.
-  const limit = WEEKLY_CRYSTAL_SALE_LIMIT * worlds.length
   const isExpandable = worlds.length > 1
   const label = monthlyOnly
     ? `월간 결정석 ${monthlyCleared}개`
-    : `주간 결정석 판매 ${cleared} / ${limit}, 월간 결정석 ${monthlyCleared}개`
+    : `주간 결정석 판매 ${cleared}개, 월간 결정석 ${monthlyCleared}개`
+  const sections = sectionsByMapleId(worlds, props.mapleIds?.order ?? [])
+  // 메이플 ID 가 하나면 이름으로 가를 것이 없다. 캐릭터 관리 드롭다운의 묶음 라벨과 같은 규칙이다.
+  const namesMapleIds = sections.length > 1
 
   // 칸은 간단히만. 월드 수 · 월드명 같은 부가 표기는 팝오버로 넘긴다. 숫자와 단위 사이는 마진이 아니라 실제
   // 공백 문자로 띄운다. 마진만으론 읽는 문자열이 `34/90` 으로 붙어 스크린리더가 이어 읽는다.
@@ -76,8 +82,9 @@ export function CrystalSummaryChip(props: {
             <Image source={weeklyCrystalIcon} resizeMode="contain" className="h-4 w-4 shrink-0" />
           )}
           <Text className="text-11 text-text-muted">주간 결정석</Text>
+          {/* `개` 는 한국어 표기상 숫자에 붙으므로 공백을 넣지 않는다. */}
           <Text className="ml-auto text-xs font-bold text-text" style={TABULAR_NUMS}>
-            {cleared} <Text className="font-normal text-text-muted">/ {limit}</Text>
+            {cleared}개
           </Text>
         </View>
       )}
@@ -129,50 +136,78 @@ export function CrystalSummaryChip(props: {
           onClose={closeBreakdown}
           className="p-3"
         >
-          <Text className="mb-2 text-11 font-bold tracking-wide text-text-muted">월드별 판매 현황</Text>
+          <Text className="mb-2 text-11 font-bold tracking-wide text-text-muted">
+            {namesMapleIds ? '메이플 ID · 월드별 판매 현황' : '월드별 판매 현황'}
+          </Text>
           <View className="gap-1">
-            {worlds.map((summary) => {
-              const emblemUrl = worldEmblemUrl(summary.worldKey)
-              // 줄은 그림이 주간 · 월간을 말해 숫자만 적는다. 읽는 이름은 두 몫을 말로 푼다.
-              const rowLabel = monthlyOnly
-                ? `${summary.world} 월간 결정석 ${summary.monthlyCleared}개`
-                : `${summary.world} 주간 결정석 ${summary.cleared} / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 ${summary.monthlyCleared}개`
-              return (
-                <View
-                  key={summary.worldKey}
-                  accessible
-                  aria-label={rowLabel}
-                  className="flex-row items-center gap-1.5 rounded-[10px] bg-card-inset px-2 py-1.5"
-                >
-                  {emblemUrl !== null && <Image source={emblemUrl} className="h-3.5 w-3.5 shrink-0" resizeMode="contain" />}
-                  <Text className="mr-3 shrink grow text-xs font-semibold text-text" numberOfLines={1}>
-                    {summary.world}
+            {sections.map((section, sectionIndex) => (
+              <View key={section.accountId ?? ''} className="gap-1">
+                {namesMapleIds && section.accountId !== null && (
+                  <Text className={`px-0.5 pb-0.5 text-11 font-bold text-text ${sectionIndex === 0 ? '' : 'pt-1.5'}`}>
+                    {mapleIdNameOf(section.accountId)}
                   </Text>
-                  {!monthlyOnly && (
-                    <View className="flex-row items-center gap-0.5">
-                      {weeklyCrystalIcon !== null && (
-                        <Image source={weeklyCrystalIcon} resizeMode="contain" className="h-4 w-3.5 shrink-0" />
-                      )}
-                      <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
-                        {summary.cleared}
-                        <Text className="text-11 font-normal text-text-muted">/{WEEKLY_CRYSTAL_SALE_LIMIT}</Text>
+                )}
+                {section.worlds.map((summary) => {
+                  const emblemUrl = worldEmblemUrl(summary.worldKey)
+                  // 줄은 그림이 주간 · 월간을 말해 숫자만 적는다. 읽는 이름은 두 몫을 말로 풀고, 메이플 ID 가 둘 이상이면 그 이름도 붙인다.
+                  const owner = namesMapleIds && summary.accountId !== null ? `${mapleIdNameOf(summary.accountId)} ` : ''
+                  const rowLabel = monthlyOnly
+                    ? `${owner}${summary.world} 월간 결정석 ${summary.monthlyCleared}개`
+                    : `${owner}${summary.world} 주간 결정석 ${summary.cleared} / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 ${summary.monthlyCleared}개`
+                  return (
+                    <View
+                      key={summary.worldKey}
+                      accessible
+                      aria-label={rowLabel}
+                      className="flex-row items-center gap-1.5 rounded-[10px] bg-card-inset px-2 py-1.5"
+                    >
+                      {emblemUrl !== null && <Image source={emblemUrl} className="h-3.5 w-3.5 shrink-0" resizeMode="contain" />}
+                      <Text className="mr-3 shrink grow text-xs font-semibold text-text" numberOfLines={1}>
+                        {summary.world}
                       </Text>
+                      {!monthlyOnly && (
+                        <View className="flex-row items-center gap-0.5">
+                          {weeklyCrystalIcon !== null && (
+                            <Image source={weeklyCrystalIcon} resizeMode="contain" className="h-4 w-3.5 shrink-0" />
+                          )}
+                          <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
+                            {summary.cleared}
+                            <Text className="text-11 font-normal text-text-muted">/{WEEKLY_CRYSTAL_SALE_LIMIT}</Text>
+                          </Text>
+                        </View>
+                      )}
+                      <View className={`flex-row items-center gap-0.5${monthlyOnly ? '' : ' ml-2'}`}>
+                        {monthlyCrystalIcon !== null && (
+                          <Image source={monthlyCrystalIcon} resizeMode="contain" className="h-4 w-3.5 shrink-0" />
+                        )}
+                        <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
+                          {summary.monthlyCleared}
+                        </Text>
+                      </View>
                     </View>
-                  )}
-                  <View className={`flex-row items-center gap-0.5${monthlyOnly ? '' : ' ml-2'}`}>
-                    {monthlyCrystalIcon !== null && (
-                      <Image source={monthlyCrystalIcon} resizeMode="contain" className="h-4 w-3.5 shrink-0" />
-                    )}
-                    <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
-                      {summary.monthlyCleared}
-                    </Text>
-                  </View>
-                </View>
-              )
-            })}
+                  )
+                })}
+              </View>
+            ))}
           </View>
         </AnchoredPopover>
       )}
     </>
   )
+}
+
+/** 펼친 줄을 메이플 ID 마다 묶는다. 메이플 ID 차례이고, 차례를 모르는 메이플 ID 와 소속을 가르지 않은 묶음은 뒤에 선다. */
+function sectionsByMapleId(
+  worlds: readonly WorldCrystalSummary[],
+  order: readonly string[],
+): Array<{ accountId: string | null; worlds: WorldCrystalSummary[] }> {
+  const sections = new Map<string | null, WorldCrystalSummary[]>()
+  for (const summary of worlds) sections.set(summary.accountId, [...(sections.get(summary.accountId) ?? []), summary])
+  const rankOf = (accountId: string | null): number => {
+    const index = accountId === null ? -1 : order.indexOf(accountId)
+    return index === -1 ? order.length : index
+  }
+  return [...sections.entries()]
+    .sort(([left], [right]) => rankOf(left) - rankOf(right))
+    .map(([accountId, list]) => ({ accountId, worlds: list }))
 }

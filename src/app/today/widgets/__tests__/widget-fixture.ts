@@ -12,6 +12,7 @@ import { contentCategoryNameOf, type ContentCategoryKey } from '../../../../lib/
 
 import type {
   CrystalLimitView,
+  CrystalMapleIdView,
   PricedDropView,
   RepresentativeView,
   ResetCountdown,
@@ -29,6 +30,8 @@ const DAY_MS = 24 * HOUR_MS
 export const 빈_뷰모델: TodayViewModel = {
   representative: null,
   sharedContents: [],
+  sharedMapleIds: [],
+  selectedSharedMapleId: null,
   schedule: [],
   weeklyIncome: {
     loading: false,
@@ -124,6 +127,11 @@ export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
  */
 export function 월드한도(부분: Partial<CrystalLimitView> = {}): CrystalLimitView {
   return { worldKey: 'scania', world: '스카니아', cleared: 34, limit: WEEKLY_CRYSTAL_SALE_LIMIT, ...부분 }
+}
+
+/** 메이플 ID 하나의 결정석 한도 묶음. 메이플 ID 가 하나면 위젯은 지금처럼 2칸 타일이다. */
+export function 메이플ID한도(worlds: CrystalLimitView[], accountId = 'da9b2f21-main'): CrystalMapleIdView {
+  return { accountId, name: `메이플ID-${accountId.slice(0, 8)}`, worlds }
 }
 
 /** n개 월드. 이름과 소진량이 서로 달라 합쳐졌는가 를 글자로 물을 수 있다. */

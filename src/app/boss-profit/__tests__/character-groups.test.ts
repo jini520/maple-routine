@@ -224,7 +224,7 @@ describe('summarizeWorldCrystals: 주간 몫과 월간 몫', () => {
   it('월간 보스를 잡아도 주간 몫의 분자는 그대로다', () => {
     const summaries = summarizeWorldCrystals([group([보스행({ world: '스카니아', worldKey: 'scania' }), 월간행({ world: '스카니아', worldKey: 'scania' })])])
 
-    expect(summaries).toEqual([{ world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 1 }])
+    expect(summaries).toEqual([{ accountId: null, world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 1 }])
   })
 
   it('월간 수도 행의 월드로 가른다', () => {
@@ -237,15 +237,15 @@ describe('summarizeWorldCrystals: 주간 몫과 월간 몫', () => {
     ])
 
     expect(summaries).toEqual([
-      { world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 0 },
-      { world: '루나', worldKey: 'luna', cleared: 1, monthlyCleared: 1 },
+      { accountId: null, world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 0 },
+      { accountId: null, world: '루나', worldKey: 'luna', cleared: 1, monthlyCleared: 1 },
     ])
   })
 
   it('안 잡은 월간 보스는 월간 수에 안 든다', () => {
     const summaries = summarizeWorldCrystals([group([보스행({ world: '스카니아', worldKey: 'scania' }), 월간행({ world: '스카니아', worldKey: 'scania', isComplete: false })])])
 
-    expect(summaries).toEqual([{ world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 0 }])
+    expect(summaries).toEqual([{ accountId: null, world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 0 }])
   })
 
   it('월간 수는 캐릭터마다 보스명 하나로 센다', () => {
@@ -257,7 +257,27 @@ describe('summarizeWorldCrystals: 주간 몫과 월간 몫', () => {
       ]),
     ])
 
-    expect(summaries).toEqual([{ world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 1 }])
+    expect(summaries).toEqual([{ accountId: null, world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 1 }])
+  })
+})
+
+// 같은 월드라도 메이플 ID 가 다르면 한도가 따로다. 메이플 ID 를 모르는 캐릭터는 어느 한도에도 안 든다.
+describe('summarizeWorldCrystals: 메이플 ID 를 넘기면 메이플 ID 와 월드마다 센다', () => {
+  it('같은 월드도 메이플 ID 가 다르면 따로 세고, 메이플 ID 를 모르는 캐릭터는 뺀다', () => {
+    const summaries = summarizeWorldCrystals(
+      [
+        group([보스행({ world: '스카니아', worldKey: 'scania' })]),
+        { ...group([보스행({ ocid: 'ocid-2', world: '스카니아', worldKey: 'scania' })]), ocid: 'ocid-2' },
+        { ...group([보스행({ ocid: 'ocid-3', world: '스카니아', worldKey: 'scania' })]), ocid: 'ocid-3' },
+      ],
+      undefined,
+      { [보스행().ocid]: 'maple-main', 'ocid-2': 'maple-sub' },
+    )
+
+    expect(summaries).toEqual([
+      { accountId: 'maple-main', world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 0 },
+      { accountId: 'maple-sub', world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 0 },
+    ])
   })
 })
 
@@ -269,7 +289,7 @@ describe('summarizeWorldCrystals: 월드 key 로 가른다', () => {
       { ...group([보스행({ ocid: 'ocid-2', world: '챌린저스2', worldKey: 'challengers_2' })]), ocid: 'ocid-2' },
     ])
 
-    expect(summaries).toEqual([{ world: '챌린저스2', worldKey: 'challengers_2', cleared: 2, monthlyCleared: 0 }])
+    expect(summaries).toEqual([{ accountId: null, world: '챌린저스2', worldKey: 'challengers_2', cleared: 2, monthlyCleared: 0 }])
   })
 
   // 챌린저스 넷은 엠블럼만 같이 쓰고 판매 한도는 월드마다 따로다(사용자 결정).

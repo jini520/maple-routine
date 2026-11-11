@@ -1,11 +1,11 @@
 /**
- * 위젯 5. 주간 결정석 판매 한도를 월드별로 그리는 타일.
+ * 위젯 5. 주간 결정석 판매 한도를 그리는 타일. 메이플 ID 가 하나면 2칸, 둘 이상이면 격자가 4칸으로 넓힌다.
  *
  * 지키는 것 다섯.
  *
- * ① 한도는 계정이 아니라 **월드마다** 각각이라 분모도 월드마다다. **절대 합치지 않는다.** 합친
- *    수는 어느 월드에서도 팔 수 있는 양이 아니라 게임에 없는 수치다. 첫 월드만 링으로 그리고
- *    나머지는 첫 월드 이름 옆의 `외 N` 으로 접는다.
+ * ① 한도는 **메이플 ID 와 월드마다** 각각이라 분모도 그 줄마다다. **절대 합치지 않는다.** 합친
+ *    수는 어느 월드에서도 팔 수 있는 양이 아니라 게임에 없는 수치다. 2칸이면 첫 월드만 링으로 그리고
+ *    나머지는 첫 월드 이름 옆의 `외 N` 으로 접는다. 넓히면 메이플 ID 마다 칸을 둔다(`crystal-cells.ts`).
  * ② **한도 숫자가 이 파일에 한 번도 안 나온다**(주석 포함, 테스트가 검사한다). 뷰모델이
  *    `CrystalLimitView.limit` 에 실어 준다. 여기 적으면 참조 데이터가 바뀌어도 화면만 옛 한도를 말한다.
  * ③ 링은 칸이 아니라 **연속 호**다. 이 한도는 캐릭터당 주간 보스 한도의 몇 배라 쪼개면 읽을 수 없는
@@ -16,10 +16,11 @@
 
 import { View } from 'react-native'
 
-import { ProgressRing, Text } from '../../../components/atoms'
+import { ProgressBar, ProgressRing, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { useThemeAppearance } from '../../../theme/context'
-import type { CrystalLimitView } from '../view-model'
+import type { CrystalLimitView, CrystalMapleIdView } from '../view-model'
+import { crystalCellRows, type CrystalCell } from './crystal-cells'
 import type { WidgetProps } from './types'
 
 const TITLE = '결정석 판매'
@@ -84,8 +85,108 @@ function Ring(props: { view: CrystalLimitView }): React.JSX.Element {
   )
 }
 
+/** `N개 남음`. 숫자만 굵다. */
+function Remaining(props: { view: CrystalLimitView; testID?: string }): React.JSX.Element {
+  return (
+    <Text testID={props.testID} numberOfLines={1} className="text-11 text-text-muted">
+      <Text style={TABULAR_NUMS} className="font-bold text-text">
+        {remainingOf(props.view)}
+      </Text>
+      개 남음
+    </Text>
+  )
+}
+
+/** 월드 1 의 칸. 2칸 타일과 같이 링 오른쪽에 월드와 `N개 남음` 이다. 옆 칸에 맞춰 늘어나면 링 줄이 세로 가운데에 선다. */
+function RingCell(props: { group: CrystalMapleIdView; view: CrystalLimitView }): React.JSX.Element {
+  return (
+    <View
+      testID={`crystal-cell-ring-${props.group.accountId ?? ''}`}
+      className="min-w-0 flex-1 gap-1.5 rounded-[10px] bg-card-inset px-2.5 pb-2.5 pt-2"
+    >
+      <Text numberOfLines={1} className="text-xs font-bold text-text">
+        {props.group.name}
+      </Text>
+      <View className="grow flex-row items-center gap-2.5">
+        <Ring view={props.view} />
+        <View className="min-w-0 flex-1 gap-0.5">
+          <Text numberOfLines={1} className="text-xs font-semibold text-text">
+            {props.view.world}
+          </Text>
+          <Remaining view={props.view} />
+        </View>
+      </View>
+    </View>
+  )
+}
+
+/** 막대 칸의 월드 한 줄. 월드 이름 · `N개 남음` 과 그 아래 막대다. */
+function BarLine(props: { view: CrystalLimitView }): React.JSX.Element {
+  return (
+    <View className="min-w-0 flex-1 gap-1">
+      <View className="flex-row items-baseline justify-between gap-1.5">
+        <Text numberOfLines={1} className="shrink text-xs font-semibold text-text">
+          {props.view.world}
+        </Text>
+        <Remaining view={props.view} />
+      </View>
+      <ProgressBar percent={ratioOf(props.view) * 100} height="thin" fillTestId="crystal-bar" />
+    </View>
+  )
+}
+
+/** 월드 2 의 칸(반 폭, 한 열)과 월드 3 이상의 칸(전체 폭, 두 열). */
+function BarCell(props: { cell: CrystalCell }): React.JSX.Element {
+  const { group, kind } = props.cell
+  const columns = kind === 'wide' ? 2 : 1
+  const lines: CrystalLimitView[][] = []
+  for (let index = 0; index < group.worlds.length; index += columns) lines.push(group.worlds.slice(index, index + columns))
+  return (
+    <View
+      testID={`crystal-cell-${kind}-${group.accountId ?? ''}`}
+      className="min-w-0 flex-1 gap-2 rounded-[10px] bg-card-inset px-2.5 pb-2.5 pt-2"
+    >
+      <Text numberOfLines={1} className="text-xs font-bold text-text">
+        {group.name}
+      </Text>
+      {lines.map((line) => (
+        <View key={line[0]?.worldKey} className="flex-row gap-3">
+          {line.map((view) => (
+            <BarLine key={view.worldKey} view={view} />
+          ))}
+          {/* 두 열의 마지막 줄에 월드가 하나면 오른쪽 열 자리를 비워 둔다. 왼쪽 막대가 두 열 폭으로 늘어나지 않게 */}
+          {line.length < columns && <View className="flex-1" />}
+        </View>
+      ))}
+    </View>
+  )
+}
+
+/** 메이플 ID 가 둘 이상일 때의 4칸 위젯. 반 폭 칸 둘은 한 줄에 서서 높이를 맞춘다. */
+function WideCrystalLimits(props: { groups: readonly CrystalMapleIdView[] }): React.JSX.Element {
+  return (
+    <View testID="widget-crystal-limit" className="gap-2 p-3">
+      <Text className="text-11 font-bold text-text-muted">{TITLE}</Text>
+      {crystalCellRows(props.groups).map((row) => (
+        <View key={row.cells[0]?.group.accountId ?? ''} className="flex-row gap-2">
+          {row.cells.map((cell) =>
+            cell.kind === 'ring' && cell.group.worlds[0] !== undefined ? (
+              <RingCell key={cell.group.accountId ?? ''} group={cell.group} view={cell.group.worlds[0]} />
+            ) : (
+              <BarCell key={cell.group.accountId ?? ''} cell={cell} />
+            ),
+          )}
+          {/* 짝 없이 남은 반 폭 칸은 반 폭 그대로 둔다(사용자 지정). 넓히면 월드 수가 같은 칸의 폭이 자리에 따라 달라진다 */}
+          {!row.wide && row.cells.length === 1 && <View className="flex-1" />}
+        </View>
+      ))}
+    </View>
+  )
+}
+
 export function CrystalLimitWidget({ data }: WidgetProps): React.JSX.Element {
-  const worlds = data.crystalLimits
+  if (data.crystalLimits.length >= 2) return <WideCrystalLimits groups={data.crystalLimits} />
+  const worlds = data.crystalLimits[0]?.worlds ?? []
 
   if (worlds.length === 0) {
     return (

@@ -231,3 +231,32 @@ describe('빈 상태와 이동', () => {
     expect(queryAllByRole('button')).toHaveLength(0)
   })
 })
+
+// 에픽 던전 · 메이플 유니온의 한도는 메이플 ID 마다 따로라, 메이플 ID 마다 따로 보이고 위젯 드롭다운 버튼으로 고른다.
+describe('메이플 ID 드롭다운 버튼', () => {
+  const 둘 = [
+    { accountId: 'da9b2f21-main', name: '메이플ID-da9b2f21' },
+    { accountId: '4f1c08ab-sub', name: '메이플ID-4f1c08ab' },
+  ]
+
+  it('고를 메이플 ID 가 둘 이상이면 제목 줄에 버튼이 서고 고른 메이플 ID 의 이름을 보인다', async () => {
+    const { getByTestId } = await renderOverlay(
+      <SharedContentsWidget
+        data={뷰모델({ sharedContents: 공유컨텐츠(), sharedMapleIds: 둘, selectedSharedMapleId: '4f1c08ab-sub' })}
+      />,
+    )
+
+    expect(getByTestId('shared-maple-id-select-trigger')).toHaveTextContent('메이플ID-4f1c08ab')
+  })
+
+  // 지금 위젯과 같다. 고를 것이 하나면 버튼은 아무것도 고르지 않는다.
+  it('고를 메이플 ID 가 하나면 버튼을 그리지 않는다', async () => {
+    const { queryByTestId } = await renderOverlay(
+      <SharedContentsWidget
+        data={뷰모델({ sharedContents: 공유컨텐츠(), sharedMapleIds: [둘[0]], selectedSharedMapleId: 'da9b2f21-main' })}
+      />,
+    )
+
+    expect(queryByTestId('shared-maple-id-select-trigger')).toBeNull()
+  })
+})

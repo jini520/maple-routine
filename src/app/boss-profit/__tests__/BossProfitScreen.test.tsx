@@ -32,7 +32,6 @@ import { queryKeys } from '../../../features/query/keys'
 import { useRefetchStaleOnFocus } from '../../../hooks/useRefetchStaleOnFocus'
 import { useRealtimeFetchedAt } from '../../../features/refresh/freshness'
 import { useTrackedOcids } from '../../../features/schedule-sync/use-schedule-queries'
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss/boss-matching'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period'
 import { bossesInSection, bossNameOf } from '../../../lib/boss/bosses'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
@@ -997,7 +996,7 @@ describe('총 수입 헤드라인', () => {
     mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행({ world: '스카니아', worldKey: 'scania' })] })
     const { getByLabelText } = await renderScreen()
 
-    expect(getByLabelText(`주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 0개`)).toBeTruthy()
+    expect(getByLabelText(`주간 결정석 판매 1개, 월간 결정석 0개`)).toBeTruthy()
   })
 
   // 주간 탭 행에 그 주에 선 월간 보스가 들어 있어, 그 주의 칩이 월간 결정석을 센다.
@@ -1011,7 +1010,7 @@ describe('총 수입 헤드라인', () => {
       ] })
     const { getByLabelText } = await renderScreen()
 
-    expect(getByLabelText(`주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 1개`)).toBeTruthy()
+    expect(getByLabelText(`주간 결정석 판매 1개, 월간 결정석 1개`)).toBeTruthy()
   })
 
   it('기간 전체 고가 드롭이 있으면 헤드라인에도 뱃지가 붙는다', async () => {
