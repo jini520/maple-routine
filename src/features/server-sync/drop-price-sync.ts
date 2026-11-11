@@ -10,12 +10,15 @@
  * **가격이 없는 기록도 올린다.** 미입력은 `pending`, 기록 안함은 `skipped` 다. 지우기(`DELETE`)는
  * 기기에서 기록이 사라진 때만이다.
  */
+import { nexonIdHashHex } from '../../lib/crypto/nexon-id-hash'
+import { getAuthConfig } from '../../storage/api-key'
 import { getBossDropRecordById, type BossDropRecord } from '../../storage/boss-drops'
+import { getCharacterOwnersOfOcids, type CharacterOwner } from '../../storage/character-accounts'
 import { getDropPeriodId } from '../../storage/server-sync-sources'
 import { enqueueServerSync } from '../../storage/server-sync-queue'
 import { deleteDropPrice, sendDropPrice, type SendResult } from '../../server/drop-price'
 import type { DropPricePayload, DropRecordStatus } from '../../types/drop-price'
-import { serverIdentityHeaders } from '../auth/server-identity'
+import { serverIdentitiesOf, serverIdentityOfAccount } from '../auth/server-identity'
 import type { SyncHandler } from './sweep'
 
 /** 대기 표의 `record_type` 칸에 들어가는 값. */
@@ -30,14 +33,21 @@ export const DROP_PRICE_RECORD_TYPE = 'drop-price'
  * **`itemKey` 가 없는 기록만 `null` 이다.** 서버가 그 칸을 분포의 축으로 쓰므로 빈 값을 받을 수
  * 없다. 아이템 표에 없는 아이템이라 이관이 key 를 못 채운 옛 행이고, 이 상태가 되면 지우기 요청 하나가
  * 헛나간다(서버는 못 찾고 아무것도 안 한다).
+ *
+ * @param owner 캐릭터의 주인. 앱이 그 캐릭터를 목록에서 본 적이 없으면 `null` 이고, 메이플 ID · ocid 없이 옛 모양으로 보낸다
  */
-export function dropPricePayloadOf(record: BossDropRecord, periodRecordId: string | null): DropPricePayload | null {
+export function dropPricePayloadOf(
+  record: BossDropRecord,
+  periodRecordId: string | null,
+  owner: CharacterOwner | null,
+): DropPricePayload | null {
   if (record.itemKey === null || record.itemKey === '') return null
 
   const status: DropRecordStatus =
     record.priceState === 'entered' ? 'completed' : record.priceState === 'excluded' ? 'skipped' : 'pending'
 
   return {
+    ...(owner === null ? {} : { mapleId: nexonIdHashHex(owner.mapleId), ocid: nexonIdHashHex(record.ocid) }),
     dropRecordId: record.dropRecordId,
     itemKey: record.itemKey,
     status,
@@ -49,19 +59,59 @@ export function dropPricePayloadOf(record: BossDropRecord, periodRecordId: strin
     difficulty: record.difficulty,
     periodRecordId,
     pricedAt: status === 'completed' ? record.pricedAt : null,
+    boxOriginKey: record.boxOriginKey,
   }
 }
 
+/** 드롭 한 건을 보내는 데 필요한 것. 값과, 그 값을 보낼 신원의 넥슨 계정이다. */
+export interface DropPriceSend {
+  payload: DropPricePayload
+  /** 캐릭터가 속한 넥슨 계정 id. 모르면 `null` 이고 메인 계정의 신원으로 보낸다 */
+  accountId: string | null
+}
+
+/** 기록이 있으면 보낼 것을 만든다. 보낼 값이 없는 기록(아이템 key 가 빈 옛 행)은 `payload` 가 없어 지우기로 보낸다. */
+async function dropSendOf(record: BossDropRecord): Promise<DropPriceSend | null> {
+  const owner = (await getCharacterOwnersOfOcids([record.ocid])).get(record.ocid) ?? null
+  const payload = dropPricePayloadOf(record, await getDropPeriodId(record.dropRecordId), owner)
+  return payload === null ? null : { payload, accountId: owner?.nexonAccountId ?? null }
+}
+
+/**
+ * 그 드롭의 캐릭터가 속한 계정의 신원으로 보낸다. 서버는 기록의 메이플 ID 가 보낸 신원의 계정에 있어야 적는다.
+ *
+ * 밝힐 수 없는 계정(다른 로그인의 부계정)이면 보내지 않고 `no-response` 로 답한다. 요청의 잘못이 아니라 횟수를 세지 않고,
+ * 그 로그인이 돌아오면 나간다.
+ */
+async function sendAsOwner(send: DropPriceSend): Promise<SendResult> {
+  const headers = serverIdentityOfAccount(await getAuthConfig(), send.accountId)
+  if (headers === null) return { outcome: 'no-response' }
+  return sendDropPrice(headers, send.payload)
+}
+
+/**
+ * 지금 쓸 수 있는 신원 모두로 지우기를 보낸다. 기록이 사라진 뒤라 어느 계정의 드롭이었는지 모른다. 서버는 신원의 메이플 ID 줄만
+ * 지우고 없으면 아무 일도 하지 않는다. 신원 모두가 받아야 `sent` 다.
+ */
+async function deleteEverywhere(dropRecordId: string): Promise<SendResult> {
+  const identities = serverIdentitiesOf(await getAuthConfig())
+  if (identities.length === 0) return { outcome: 'no-response' }
+  let result: SendResult = { outcome: 'sent' }
+  for (const headers of identities) {
+    const one = await deleteDropPrice(headers, dropRecordId)
+    if (one.outcome === 'no-response') return one
+    if (one.outcome === 'rejected') result = one
+  }
+  return result
+}
+
 /** 고리가 쓰는 함수 둘. 값의 모양은 이 파일이 알고 고리는 그대로 넘긴다. */
-export const dropPriceHandler: SyncHandler<DropPricePayload> = {
+export const dropPriceHandler: SyncHandler<DropPriceSend> = {
   read: async (recordId) => {
     const record = await getBossDropRecordById(recordId)
-    return record === null ? null : dropPricePayloadOf(record, await getDropPeriodId(recordId))
+    return record === null ? null : dropSendOf(record)
   },
-  send: async (headers, recordId, value) =>
-    value === null
-      ? deleteDropPrice(headers, recordId)
-      : sendDropPrice(headers, value),
+  send: async (recordId, value) => (value === null ? deleteEverywhere(recordId) : sendAsOwner(value)),
 }
 
 /**
@@ -82,10 +132,8 @@ export async function reportDropPrice(dropRecordId: string, now: Date): Promise<
     // 그 사이 기록이 사라졌다. 사라진 기록은 지운 자리가 따로 알린다.
     if (record === null) return
 
-    const value = dropPricePayloadOf(record, await getDropPeriodId(dropRecordId))
-    await sendOrQueue(dropRecordId, now, (headers) =>
-      value === null ? deleteDropPrice(headers, dropRecordId) : sendDropPrice(headers, value),
-    )
+    const send = await dropSendOf(record)
+    await sendOrQueue(dropRecordId, now, () => (send === null ? deleteEverywhere(dropRecordId) : sendAsOwner(send)))
   } catch {
     // 저장소를 못 읽었다. 기기 저장은 끝났고 과거 올리기가 남은 기록을 다시 집는다.
   }
@@ -101,27 +149,18 @@ export async function reportDropPrice(dropRecordId: string, now: Date): Promise<
  */
 export async function reportDropRemoved(dropRecordId: string, now: Date): Promise<void> {
   try {
-    await sendOrQueue(dropRecordId, now, (headers) => deleteDropPrice(headers, dropRecordId))
+    await sendOrQueue(dropRecordId, now, () => deleteEverywhere(dropRecordId))
   } catch {
     // 대기 표를 못 열었다. 기기 저장은 끝났다.
   }
 }
 
-/** 밝힐 수단이 없거나 보냈는데 `sent` 가 아니면 대기 표에 적는다. 두 전송 자리가 같은 꼬리를 쓴다. */
-async function sendOrQueue(
-  dropRecordId: string,
-  now: Date,
-  send: (headers: Record<string, string>) => Promise<SendResult>,
-): Promise<void> {
-  const headers = await serverIdentityHeaders()
-
-  // 밝힐 수단이 없다. 키를 지웠거나 로그인 전이라 지금은 못 보내고, 생기면 고리가 집어 간다.
-  if (headers === null) {
-    await enqueueServerSync(DROP_PRICE_RECORD_TYPE, dropRecordId, now.toISOString())
-    return
-  }
-
-  const result = await send(headers)
+/**
+ * 보냈는데 `sent` 가 아니면 대기 표에 적는다. 두 전송 자리가 같은 꼬리를 쓴다. 밝힐 수단이 없는 것(키를 지웠거나 로그인 전)도
+ * `sent` 가 아니라 여기 쌓이고, 수단이 생기면 고리가 집어 간다.
+ */
+async function sendOrQueue(dropRecordId: string, now: Date, send: () => Promise<SendResult>): Promise<void> {
+  const result = await send()
   if (result.outcome !== 'sent') {
     await enqueueServerSync(DROP_PRICE_RECORD_TYPE, dropRecordId, now.toISOString())
   }

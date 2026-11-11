@@ -24,20 +24,18 @@ import { MAX_SYNC_ATTEMPTS, type SyncQueueEntry } from '../../storage/server-syn
  * 종류 하나가 서버와 주고받는 법.
  *
  * `read` 가 `null` 을 주면 그 기록은 서버에서 지운다. **삭제 판정이 종류 안에 있다** - 드롭
- * 가격은 **원본이 없거나 `price_state` 가 `'entered'` 가 아니다** 를 `null` 로 답한다.
+ * 가격은 **원본이 없거나 아이템 key 가 없다** 를 `null` 로 답한다.
+ *
+ * **어느 신원으로 보낼지도 종류가 정한다.** 기록마다 그 캐릭터가 속한 계정의 신원으로 보내야 서버가 받는다.
  */
 export interface SyncHandler<Value> {
   read: (recordId: string) => Promise<Value | null>
-  send: (
-    headers: Record<string, string>,
-    recordId: string,
-    value: Value | null,
-  ) => Promise<SendResult>
+  send: (recordId: string, value: Value | null) => Promise<SendResult>
 }
 
 /** 이 고리가 밖에 맡기는 일 전부. 저장소와 신원은 어댑터를 거친다. */
 export interface SweepDeps {
-  /** 서버에 자기를 밝히는 헤더. 밝힐 수단이 없으면 `null` 이고 그 회차는 통째로 건너뛴다. */
+  /** 메인 계정의 신원. 밝힐 수단이 없으면 `null` 이고 그 회차는 통째로 건너뛴다. 기록마다의 신원은 종류가 고른다. */
   identity: () => Promise<Record<string, string> | null>
   list: () => Promise<SyncQueueEntry[]>
   countAttempt: (recordId: string, lastError: string) => Promise<void>
@@ -69,8 +67,7 @@ export async function sweepServerSync(deps: SweepDeps): Promise<SweepResult> {
   const entries = await deps.list()
   if (entries.length === 0) return { ...EMPTY }
 
-  const headers = await deps.identity()
-  if (headers === null) return { ...EMPTY }
+  if ((await deps.identity()) === null) return { ...EMPTY }
 
   const result: SweepResult = { ...EMPTY }
 
@@ -85,7 +82,7 @@ export async function sweepServerSync(deps: SweepDeps): Promise<SweepResult> {
     }
 
     const value = await handler.read(entry.recordId)
-    const outcome = await handler.send(headers, entry.recordId, value)
+    const outcome = await handler.send(entry.recordId, value)
 
     if (outcome.outcome === 'sent') {
       await deps.remove(entry.recordId)

@@ -5,7 +5,11 @@
 기록의 범위와 과거 올리기는 [[ADR-099]] 에, 누구의 값으로 받는지는 [[ADR-017]] 에 있다.
 
 서버로 보내는 넥슨 식별자(ocid · 메이플 ID)는 원문이 아니라 SHA-256 해시다. 서버에는 넥슨 식별자의 원문을 두지 않는다([[ADR-017]]
-결정 11, 구현 전). 지금 보내는 값에는 넥슨 식별자가 없다.
+결정 11). 기기에는 원문을 둔다.
+
+기록은 그 캐릭터가 속한 넥슨 계정의 신원으로 보낸다. 로그인 계정이면 세션, 부계정이면 그 키의 해시다([[ADR-101]] 결정 7). 서버는 기록의
+메이플 ID 가 보낸 계정의 것일 때만 적으므로, 회차마다 기록을 보내기 전에 계정마다 메이플 ID 를 알리고 부계정 키를 등록한다([[ADR-101]]
+결정 14 · 25).
 
 보스 처치 · 가계부 기록 · 강화 합계는 보내지 않는다. 서버는 API 키의 해시로 사람을 정하는데 기록 id 는 기기마다 따로 만들어,
 여러 기기에서 같은 처치 · 지출이 기기 수만큼 쌓였기 때문이다([[ADR-099]] 결정 1). 서버에 남은 그 세 표와 경로는 그대로 둔다.
@@ -16,17 +20,21 @@
 |---|---|
 | `features/server-sync/drop-price-sync.ts` | 드롭 가격 종류. 보낼 값 만들기(`dropPricePayloadOf`) · 저장할 때의 전송(`reportDropPrice` · `reportDropRemoved`) |
 | `features/server-sync/kick.ts` | 전송을 깨운다. 한 번에 한 회차만 돈다 |
-| `features/server-sync/run.ts` | 한 회차. 대기 표를 비운 뒤 과거 올리기를 잇는다(`runServerSync`) |
+| `features/server-sync/run.ts` | 한 회차. 계정을 서버에 알린 뒤 대기 표를 비우고 과거 올리기를 잇는다(`runServerSync`) |
+| `features/server-sync/accounts.ts` | 계정마다 메이플 ID 알리기 · 부계정 키 등록(`prepareServerAccounts`) |
 | `features/server-sync/sweep.ts` | 대기 표를 훑어 보내는 처리. 종류는 구분하지 않고, 레지스트리에 없는 종류의 줄은 지운다 |
 | `features/server-sync/backfill.ts` | 업데이트 전 드롭을 100 건씩 묶어 올린다(`runBackfill`) |
 | `features/server-sync/registry.ts` | 종류마다 함수 둘(`read` · `send`)을 모은 표 |
 | `features/server-sync/forget.ts` | 계정 삭제를 서버에 보내고, 로그아웃 · 계정 삭제 때 대기 표와 사용 로그 표를 비운다 |
-| `features/auth/server-identity.ts` | 신원 헤더와 메인 넥슨 계정 id 헤더 |
+| `features/auth/server-identity.ts` | 신원 헤더. 메인 계정의 신원 · 계정마다의 신원 · 지금 쓸 수 있는 신원 전부 |
+| `lib/crypto/nexon-id-hash.ts` | 넥슨 식별자(메이플 ID · ocid)의 SHA-256 |
+| `storage/server-accounts.ts` | 계정마다 서버가 마지막으로 돌려준 메이플 ID 목록과 등록한 부계정 키(Preferences `serverAccounts`) |
 | `storage/server-sync-queue.ts` | 보낼 것을 담는 대기 표(SQLite `server_sync_queue`) |
 | `storage/server-sync-sources.ts` | 드롭이 붙은 기간 행 id 를 읽는다. 과거 올리기가 id 차례로 나눠 읽는다 |
 | `storage/server-backfill.ts` | 과거 올리기를 어디까지 했는지(Preferences `serverBackfill`) |
 | `server/write.ts` | 쓰기 호출. 결과를 `sent` · `no-response` · `rejected` 로 나누고, 묶음은 건마다 결과를 돌려준다 |
 | `server/drop-price.ts` | 드롭 가격의 서버 경로 |
+| `server/accounts.ts` | 메이플 ID 알리기 · 부계정 등록의 서버 경로 |
 | `types/drop-price.ts` | 보내는 한 건의 형식 |
 | `features/usage-log/` | 사용 로그. 방문 · 화면 사건의 시점(`tracker.ts`) · 동작 세기(`record.ts`) · 묶어 보내기(`flush.ts`) · 앱 상태 잇기(`useUsageLog.ts`) |
 | `storage/usage-events.ts` | 보낼 사용 로그를 쌓는 표(SQLite `usage_events`) |
@@ -38,14 +46,14 @@
 | 사용자 동작 · 앱 일 | 보내는 것 |
 |---|---|
 | 드롭 시트 저장 · 가격 저장 · 난이도 확정 | 그 드롭을 그 자리에서 한 건씩 올린다. 사라진 드롭은 지우기를 보낸다 |
-| 앱을 켬 | 대기 표에 남은 것을 보내고, 끝나지 않은 과거 올리기를 잇는다 |
+| 앱을 켬 | 계정마다 메이플 ID 를 알리고 부계정 키를 등록한 뒤, 대기 표에 남은 것을 보내고 끝나지 않은 과거 올리기를 잇는다 |
 | 로그아웃 | 대기 표와 사용 로그 표를 비운다. 서버에는 알리지 않는다 |
 | 계정 삭제 | 서버에 삭제를 예약하고(30일 뒤 지우고, 보낸 기록은 익명으로 남는다), 대기 표와 사용 로그 표를 비운다 |
 
 - 기기 저장이 끝난 뒤에 보내고, 결과를 기다리지 않고, 실패해도 사용자에게 알리지 않는다. 설정에서 전송을 끌 수는 없다.
 - 대기 표 전송은 한 번에 한 회차만 돈다(`kick.ts`). 두 회차가 겹치면 같은 줄을 두 번 보낸다.
-- 쓰기 요청마다 `x-nexon-account-id` 에 메인 넥슨 계정 id 를 싣는다. 서버는 이 헤더를 더 읽지 않고, 앱이 걷는 것은 다계정
-  앱 작업에서 한다([[ADR-101]] 결정 21).
+- 기기가 만든 넥슨 계정 id 는 싣지 않는다. 기기마다 다른 값이라 서버가 읽지 않는다([[ADR-099]] 결정 6).
+- 지우기는 어느 계정의 기록이었는지 몰라 지금 쓸 수 있는 신원 모두로 보낸다([[ADR-101]] 결정 7).
 
 ## 과거 올리기
 

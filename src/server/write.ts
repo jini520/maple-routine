@@ -46,6 +46,24 @@ async function request(path: string, init: RequestInit): Promise<Response | null
   }
 }
 
+/** 본문까지 읽은 응답. 본문이 JSON 이 아니면 `body` 가 `null` 이다. */
+export type JsonCallResult =
+  | { outcome: 'no-response' }
+  | { outcome: 'answered'; ok: boolean; status: number; body: unknown }
+
+/** 답의 본문이 필요한 호출. 응답을 못 받은 것과 받은 것을 가르고, 받았으면 본문을 JSON 으로 읽는다. */
+export async function jsonCall(path: string, init: RequestInit): Promise<JsonCallResult> {
+  const response = await request(path, init)
+  if (response === null) return { outcome: 'no-response' }
+  let body: unknown = null
+  try {
+    body = await response.json()
+  } catch {
+    // 빈 본문(204)이거나 JSON 이 아니다. 상태 코드로만 가린다.
+  }
+  return { outcome: 'answered', ok: response.ok, status: response.status, body }
+}
+
 /** 응답을 못 받았는지 받았는지만 가려 돌려준다. 본문은 안 본다. */
 export async function writeCall(path: string, init: RequestInit): Promise<SendResult> {
   const response = await request(path, init)

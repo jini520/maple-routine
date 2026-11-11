@@ -26,6 +26,12 @@ export interface DropPricePayload {
   periodRecordId: string | null
   /** 거래 시각. 판매가를 적은 시각이고 `completed` 만 값이 있다. 서버가 받은 시각을 쓰면 과거 올리기가 올린 날이 거래 날짜가 된다. */
   pricedAt: string | null
+  /** 상자에서 나온 드롭이면 그 상자의 아이템 key. 보스가 직접 떨군 드롭은 `null`. 서버가 같은 드롭을 가리는 획득처다 */
+  boxOriginKey: string | null
+  /** 캐릭터의 메이플 ID 해시. 앱이 그 캐릭터를 목록에서 본 적이 없으면 `ocid` 와 함께 빠진다 */
+  mapleId?: string
+  /** 캐릭터 ocid 의 해시. 서버에는 원문을 두지 않는다 */
+  ocid?: string
 }
 
 /**
