@@ -718,8 +718,8 @@
 | `features/account-manage/__tests__/validate-key.spec.ts` | 결정 3: 무효 키 · 개발 단계 · 메이플 ID 없음 · 이미 등록된 계정 · 다른 계정을 차례로 가르고, 무효 키가 아닌 실패는 모달로 넘기지 않으며, 변경 · 입력은 그 계정을 빼고 겹침을 보는지 본다 |
 | `features/account-manage/__tests__/store.spec.ts` | 결정 2 · 3 · 6: 추가가 서버 등록 뒤에 저장하고 다섯째 거절이면 저장하지 않으며 응답이 없으면 저장하는지, 변경이 같은 계정 id 와 귀속으로 키를 바꾸는지, 삭제가 서버에서 지운 뒤에만 키와 그 계정의 추적 캐릭터를 빼는지 본다 |
 | `features/maple-id/__tests__/names.spec.ts` | 결정 8: 바꾼 이름만 저장하고 빈 칸으로 저장하면 그 이름을 지워 기본 이름으로 돌아가는지, 같은 이름도 받는지 본다 |
-| `app/settings/__tests__/SettingsAccountsScreen.test.tsx` · `SettingsAccountDetailScreen.test.tsx` | 결정 2: 목록의 카드 · `API 키 추가` · 5개 모달 · 빈 상태 · 로그인 블록, 상세의 이름 칸 · `저장` · 키 행이 사용자와 계정 종류마다 서는지, 저장하지 않고 나가면 고친 이름이 남지 않는지 본다 |
-| `app/auth/__tests__/ApiKeyNoticeModal.test.tsx` | 결정 2: 부계정 키의 `다른 키 입력` 이 그 계정의 상세 페이지를 `API 키 변경` 시트와 함께 여는지 본다 |
+| `app/settings/__tests__/SettingsAccountScreens.test.tsx` · `AppSettingsScreen.test.tsx` | 결정 2: 목록의 카드 · `API 키 추가` · 5개 모달 · 빈 상태 · 로그인 블록, 상세의 이름 칸 · `저장` · 키 행이 사용자와 계정 종류마다 서는지, 저장하지 않고 나가면 고친 이름이 남지 않는지 본다 |
+| `app/auth/__tests__/RateLimitNoticeModal.test.tsx` | 결정 2: 부계정 키의 `다른 키 입력` 이 그 계정의 상세 페이지를 `API 키 변경` 시트와 함께 여는지 본다 |
 | `features/auth/__tests__/nexon-login.spec.ts` | 결정 14: 로그인 화면의 넥슨 로그인만 세션을 받은 뒤 저장하기 전에 추적 목록을 비우는지, 연동 시트와 창을 닫거나 세션을 못 받은 로그인은 비우지 않는지 본다 |
 | `features/auth/__tests__/store.spec.ts` | 결정 14: 키 입력이 키를 저장하기 전에 추적 목록을 비우고, 무효 키 · 개발 단계 키는 비우지 않는지 본다. 로그인 화면과 연동 시트가 새 로그인 여부를 다르게 넘기는지 본다. 결정 20: 키 입력이 소속을 키를 저장한 뒤 그 키의 계정 id 로 적고, 막힌 키는 적지 않는지 본다 |
 | `features/character-selection/__tests__/forget.spec.ts` | 결정 14: 저장소 · 쿼리 캐시 · 메모리의 추적 목록 · 대표 · 마지막에 고른 캐릭터를 모두 비우는지, 비우기 전에 시작한 조회가 늦게 끝나도 앞 목록이 캐시에 돌아오지 않는지 본다 |

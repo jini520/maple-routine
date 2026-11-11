@@ -121,6 +121,8 @@ function hasChevron(node: AtomElement): boolean {
 const ROW_LABELS = [
   // 맨 위에 혼자 선다. 이 화면에서 유일하게 밖으로 나가는 설정이라 성질이 다르다.
   '알림 설정',
+  // 부계정을 등록해야 그 계정의 캐릭터를 고를 수 있어 `캐릭터 관리` 바로 위다(사용자 선택 2026-11-11).
+  '계정 관리',
   '캐릭터 관리',
   // 스케줄러 하위 바에서 빠진 보스 관리. `캐릭터 관리` 바로 다음 줄이다(사용자 지정).
   '보스 관리',
@@ -134,7 +136,7 @@ const ROW_LABELS = [
 ]
 
 /** 카드마다 달린 제목. 순서가 곧 화면 순서다(사용자 지정). */
-const SECTION_TITLES = ['알림', '캐릭터 · 보스', '테마 · 글자 크기 · 하단 탭', 'MVP 등급', '스케줄', '앱 데이터']
+const SECTION_TITLES = ['알림', '계정 · 캐릭터 · 보스', '테마 · 글자 크기 · 하단 탭', 'MVP 등급', '스케줄', '앱 데이터']
 
 function mockThemeStore(overrides: Partial<ReturnType<typeof useThemeStore>> = {}): void {
   mockedUseThemeStore.mockReturnValue({
@@ -198,7 +200,7 @@ describe('AppSettingsScreen', () => {
       })
 
     expect(labelsIn(cards[0])).toEqual(['알림 설정'])
-    expect(labelsIn(cards[1])).toEqual(['캐릭터 관리', '보스 관리'])
+    expect(labelsIn(cards[1])).toEqual(['계정 관리', '캐릭터 관리', '보스 관리'])
     expect(labelsIn(cards[2])).toEqual(['테마', '글자 크기', '하단 탭 순서'])
     // 구역 제목과 행 이름이 같아 `ROW_LABELS` 로는 못 찾는다. 카드 안에서 본다.
     expect(within(cards[3]).getByText('MVP 등급')).toBeTruthy()
@@ -221,7 +223,7 @@ describe('AppSettingsScreen', () => {
     // `MVP 등급` 은 제목과 행 이름이 같아 두 번 나온다. 처음 나온 자리로 순서를 본다.
     expect([...new Set(texts.filter((text) => SECTION_TITLES.includes(text)))]).toEqual(SECTION_TITLES)
     // 제목은 카드 **위**에 선다.
-    expect(texts.indexOf('캐릭터 · 보스')).toBeLessThan(texts.indexOf('캐릭터 관리'))
+    expect(texts.indexOf('계정 · 캐릭터 · 보스')).toBeLessThan(texts.indexOf('계정 관리'))
   })
 
   it('"MVP 등급" 행을 누르면 SettingsMvpGrade 로 민다', async () => {
@@ -391,6 +393,14 @@ describe('AppSettingsScreen: 캐릭터 관리', () => {
     await press(rowOf(view, '캐릭터 관리'))
 
     expect(navigate).toHaveBeenCalledWith('SettingsCharacters')
+  })
+
+  it('계정 관리 행을 누르면 계정 관리 목록을 민다', async () => {
+    const view = await renderOverlay(<AppSettingsScreen />)
+
+    await press(rowOf(view, '계정 관리'))
+
+    expect(navigate).toHaveBeenCalledWith('SettingsAccounts')
   })
 
   it('보스 관리 행을 누르면 보스 관리 화면을 민다', async () => {

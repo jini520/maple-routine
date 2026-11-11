@@ -8,10 +8,12 @@
  * 갈린다. 닫을 수 없다. 그 상태에서는 어느 화면도 제 기능을 못 하므로 닫아서 돌아갈 곳이 없다.
  *
  * 429 는 키를 지우지 않는 다시 시도 모달(`RateLimitNoticeModal`)이다. 메인 키의 `다른 키 입력` 은 이 컴포넌트가 든 키 입력
- * 시트를 연다. 시트는 알림을 닫은 뒤에도 서 있어야 해서 알림과 따로 든다.
+ * 시트를 연다. 시트는 알림을 닫은 뒤에도 서 있어야 해서 알림과 따로 든다. 부계정 키의 `다른 키 입력` 은 계정 관리에서 그 계정의
+ * 상세를 열고 `API 키 변경` 시트를 띄운다. 부계정 키는 그 계정의 메이플 ID 와 겹치는 키로만 바꾼다.
  */
 import { useEffect, useState } from 'react'
 
+import { accountKeyOfApiKey, useAccountDetailOpenStore } from '../../features/account-manage/open-request'
 import { useAuthStore } from '../../features/auth/store'
 import type { ApiKeyNoticeKind } from '../../features/auth/state'
 import { pullRefresh } from '../../features/refresh/pull'
@@ -73,8 +75,15 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
     void pullRefresh()
   }
   const enterOtherKey = (): void => {
+    const apiKey = rateLimited?.apiKey ?? null
     useAuthStore.getState().retryRateLimitNotice()
-    setReplacing(true)
+    if (keyRole === 'main' || apiKey === null) {
+      setReplacing(true)
+      return
+    }
+    void accountKeyOfApiKey(apiKey).then((accountKey) => {
+      if (accountKey !== null) useAccountDetailOpenStore.getState().open({ accountKey, openKeySheet: true })
+    })
   }
   const submitOtherKey = async (apiKey: string): Promise<void> => {
     setSubmitting(true)
@@ -92,7 +101,7 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
       {apiKeyNotice && rateLimited !== null && (
         <RateLimitNoticeModal
           attempt={rateLimited.attempt ?? 1}
-          canEnterOtherKey={keyRole === 'main'}
+          canEnterOtherKey={keyRole !== null}
           onRetry={retry}
           onEnterOtherKey={enterOtherKey}
         />

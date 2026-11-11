@@ -61,6 +61,7 @@
 | `features/account-manage/accounts.ts` | 설정 · 서버 목록 · 캐릭터 목록 · 소속에서 계정 관리 목록의 값을 짓는 순수 함수 |
 | `features/account-manage/validate-key.ts` | 키를 넣기 전의 검증 다섯 차례 |
 | `features/account-manage/store.ts` | 목록 읽기 · 키 추가 · 변경 · 입력 · 삭제 |
+| `features/account-manage/open-request.ts` | 내비게이터 밖의 429 모달이 연 계정 상세 요청. 내비게이션이 받아 민다 |
 | `lib/sub-account-keys.ts` | 서버 목록과 기기의 부계정 키를 맞추는 순수 함수 |
 | `server/accounts.ts` | 메이플 ID 알리기 · 부계정 등록 · 목록 · 지우기 |
 | `storage/server-sub-accounts.ts` | 서버가 마지막으로 준 그 로그인의 부계정 목록 |
