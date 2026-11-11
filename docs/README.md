@@ -52,7 +52,7 @@ docs/
 | `architecture` | [foundation/architecture.md](./foundation/architecture.md) | 디렉터리 · 계층 · 어댑터 경계 · 쿼리 캐시 · 테스트 | [[ADR-004]] · [[ADR-005]] · [[ADR-006]] · [[ADR-142]] |
 | `navigation` | [foundation/navigation.md](./foundation/navigation.md) | 화면 스택 · 하단바 · 하단바 순서 | [[ADR-059]] · [[ADR-152]] |
 | `design-system` | [foundation/design-system.md](./foundation/design-system.md) · [글자 체계](./foundation/design-system/typography.md) | 디자인 원칙 · 공용 부품 · 시트 · 화면 틀 · 글자 · 시안 규칙 | [[ADR-060]] · [[ADR-061]] · [[ADR-062]] · [[ADR-063]] · [[ADR-064]] · [[ADR-150]] |
-| `nexon-api` | [foundation/nexon-api.md](./foundation/nexon-api.md) | 넥슨 Open API 호출과 동기화 | [[ADR-021]] |
+| `nexon-api` | [foundation/nexon-api.md](./foundation/nexon-api.md) · [넥슨 AI 에이전트 가이드](./foundation/nexon-api/agent-guide.md) | 넥슨 Open API 호출과 동기화 · 넥슨이 낸 호출 규칙 원문 | [[ADR-021]] |
 | `error-resilience` | [foundation/error-resilience.md](./foundation/error-resilience.md) | 실패 처리 · 이어서 하는 작업 | [[ADR-022]] · [[ADR-023]] |
 | `game-data` | [foundation/game-data.md](./foundation/game-data.md) | 보스 · 드롭 · 지출 목록 같은 게임 수치와 화면 FAQ 문구 | [[ADR-019]] · [[ADR-020]] · [[ADR-150]] · [[ADR-187]] |
 | `server` | [foundation/server.md](./foundation/server.md) | 우리 서버의 경로와 인증 · 드롭 시세 | [[ADR-016]] · [[ADR-017]] · [[ADR-071]] |
@@ -65,6 +65,7 @@ docs/
 
 - **화면이나 기능을 만들거나 고칠 때**: 그 기능 문서와 ADR, 그리고 [foundation/architecture.md](./foundation/architecture.md) 의 계층 규칙과 [foundation/design-system.md](./foundation/design-system.md) 의 공용 부품.
 - **디자인을 고치거나 시안을 만들 때**: [foundation/design-system.md](./foundation/design-system.md) 의 `디자인 작업 전에` 부터 읽는다.
+- **넥슨 Open API 를 부르거나 그 응답을 다룰 때**: [foundation/nexon-api/agent-guide.md](./foundation/nexon-api/agent-guide.md) 를 먼저 읽고, [foundation/nexon-api.md](./foundation/nexon-api.md) 의 실측을 본다. 둘이 다르면 사용자에게 묻는다.
 - **게임 수치를 바꿀 때**: [foundation/game-data.md](./foundation/game-data.md). 값은 반드시 사용자에게 확인받는다.
 - **저장 형식을 바꿀 때**: [persistence/](./persistence/README.md) 의 해당 문서와 그 기능 문서.
 - **기존 사용자의 기기 데이터를 다룰 때**: [persistence/capacitor-storage.md](./persistence/capacitor-storage.md). 이름에 `capacitor` 가 붙은 파일을 지우면 안 되는 이유가 여기 있다.
