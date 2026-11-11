@@ -10,6 +10,7 @@
 import { create } from 'zustand'
 import { fetchAndRecordCharacterList, fetchUnsavedCharacterList, recordCharacterList } from '../mvp-grade/character-list'
 import { probeApiKeyStage } from '../../nexon/key-stage'
+import { lastKeySuccessAt } from '../../nexon/key-success'
 import { isInvalidApiKeyError, NexonMaintenanceError, NexonRateLimitError } from '../../nexon/errors'
 import {
   clearNexonLogin,
@@ -49,8 +50,17 @@ export interface AuthStore extends AuthState {
   // 401/403)와 429 둘이고 사슬은 하나이며 문구만 갈린다. 알리기만 하고 이동·삭제는 아래
   // confirmApiKeyNotice 가 한다.
   noticeApiKeyIssue(kind: ApiKeyNoticeKind, apiKey?: string): void
-  // 그 모달의 "확인". 죽은 수단을 지우고, 남은 수단이 없을 때만 로그인 화면으로 보낸다.
+  // 그 모달의 "확인". 죽은 수단을 지우고, 남은 수단이 없을 때만 로그인 화면으로 보낸다. 429 는 이 길을 타지 않는다.
   confirmApiKeyNotice(): Promise<void>
+  /** 429 모달의 `다시 시도`. 알림만 닫는다. 키는 지우지 않는다. 다시 부르는 것은 화면이 한다 */
+  retryRateLimitNotice(): void
+  /** 429 를 받은 키가 메인 키인지 부계정 키인지. `다른 키 입력` 이 여는 곳을 가른다. 모르면 `null` */
+  rateLimitedKeyRole(apiKey: string | null): Promise<'main' | 'sub' | null>
+  /**
+   * 429 모달의 `다른 키 입력` 으로 받은 새 키를 메인 키로 바꾼다. 검증과 개발 단계 판정은 로그인과 같다.
+   * 앱 안에서 키만 바꾸는 것이라 로그인 상태와 추적 목록은 그대로다. 옛 메인 키는 새 키를 저장할 때 빠진다.
+   */
+  replaceMainApiKey(apiKey: string): Promise<'replaced' | 'developmentStage' | 'failed'>
   /**
    * 넥슨 로그인 한 번. **끝나면 앱이 열린다.**
    *
@@ -88,6 +98,24 @@ function toAuthError(error: unknown): AuthError {
  * 그사이 첫 로그인은 끝까지 가므로 사용자는 로그인이 됐는데도 실패했다는 말을 듣는다.
  */
 let nexonSignInRunning = false
+
+/** 키마다 마지막으로 띄운 429 알림의 차례와 시각. 기기에 남기지 않는다. 앱을 다시 켜면 처음부터 센다 */
+const rateLimitNotices = new Map<string, { attempt: number; at: number }>()
+
+/** 같은 키로 연달아 받은 429 의 차례. 앞 알림 뒤에 그 키로 조회가 한 번이라도 성공했으면 처음부터 센다. */
+function rateLimitAttemptOf(apiKey: string | null): number {
+  const slot = apiKey ?? ''
+  const previous = rateLimitNotices.get(slot)
+  const succeeded = apiKey === null ? undefined : lastKeySuccessAt(apiKey)
+  const attempt =
+    previous !== undefined && (succeeded === undefined || succeeded < previous.at) ? previous.attempt + 1 : 1
+  rateLimitNotices.set(slot, { attempt, at: Date.now() })
+  return attempt
+}
+
+export function resetRateLimitNoticesForTest(): void {
+  rateLimitNotices.clear()
+}
 
 export const useAuthStore = create<AuthStore>()((set, get) => ({
   ...initialAuthState,
@@ -178,16 +206,55 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
     // status 는 그대로다. 뒤에 원래 화면이 남아 있어야 사용자가 무엇을 하다 이렇게 됐는지
     // 보면서 이유를 읽는다. 저장소도 아직 건드리지 않는다.
-    set((state) =>
-      authReducer(state, { type: 'API_KEY_NOTICED', notice: { kind, apiKey: apiKey ?? null } }),
-    )
+    const notice =
+      kind === 'rateLimited'
+        ? { kind, apiKey: apiKey ?? null, attempt: rateLimitAttemptOf(apiKey ?? null) }
+        : { kind, apiKey: apiKey ?? null }
+    set((state) => authReducer(state, { type: 'API_KEY_NOTICED', notice }))
+  },
+
+  retryRateLimitNotice() {
+    set((state) => authReducer(state, { type: 'NOTICE_ACKNOWLEDGED' }))
+  },
+
+  async rateLimitedKeyRole(apiKey) {
+    if (apiKey === null) return null
+    const config = await getAuthConfig().catch(() => null)
+    const key = config?.apiKeys.find((one) => one.value === apiKey)
+    if (key === undefined) return null
+    // 넥슨 로그인에 귀속된 키가 부계정 키다. 로그인 없이 쓰는 메인 키만 키 입력 폼으로 바꾼다.
+    return key.loginId === null && config?.mainKeyId === key.id ? 'main' : 'sub'
+  },
+
+  async replaceMainApiKey(apiKey) {
+    let accounts: AuthState['accounts']
+    try {
+      accounts = await fetchUnsavedCharacterList(apiKeyCredential(apiKey))
+    } catch (error) {
+      useToastStore.getState().showError(formatAuthError(toAuthError(error)))
+      return 'failed'
+    }
+    // 저장보다 먼저다. 이유는 signIn 과 같다. 로그인 상태는 그대로 두고 개발 단계 키 모달만 띄운다.
+    if ((await probeApiKeyStage(apiKeyCredential(apiKey))) === 'developmentStage') {
+      set({ developmentStageBlocked: true })
+      return 'developmentStage'
+    }
+    try {
+      const reusedId = (await reusableNexonAccountId(accounts)) ?? undefined
+      await setMainApiKey(apiKey, '', reusedId)
+      const saved = (await getAuthConfig())?.apiKeys.find((one) => one.value === apiKey)
+      recordCharacterList(accounts, saved?.id ?? null)
+    } catch {
+      useToastStore.getState().showError(formatAuthError({ kind: 'storageWriteFailed' }))
+      return 'failed'
+    }
+    useToastStore.getState().showSuccess('API 키를 확인했어요')
+    set((state) => ({ ...authReducer(state, { type: 'NOTICE_ACKNOWLEDGED' }), accounts }))
+    return 'replaced'
   },
 
   // 모달의 확인. 여기서야 삭제와 이동이 일어난다. **차례가 그 순서인 것이 요점이다.** 남은
   // 수단은 지운 뒤에야 셀 수 있고, 그 수가 로그인 화면으로 보낼지 앱을 세워 둘지를 가른다.
-  //
-  // 429 도 키를 지운다. 안 지우면 재시작 때 같은 키로 앱이 열려 또 막히고, 사용자에게는
-  // 재시작하면 되는 것처럼 보이다가 안 되는 상태가 된다. 같은 키를 다시 붙여넣는 것은 안 막는다.
   async confirmApiKeyNotice() {
     const notice = get().apiKeyNotice
     if (notice === null) {

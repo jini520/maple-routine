@@ -373,6 +373,9 @@ today 머리 아래, 위젯 격자 위에 공지 하나를 보여 준다(`Notice
 | `app/settings/__tests__/notice-banner-motion.test.ts` | 결정 10 · 12: 진하기 곡선, 넘기는 방향에 따른 새 배너와 이전 배너, 숨은 칸이 스크롤해도 같은 스타일이라 다시 반영되지 않는지, 양끝 사본 번호 바꾸기, 점 표시가 늘었다 줄어드는지 본다 |
 | `app/settings/__tests__/NoticeSkeleton.test.tsx` | 결정 10: 스켈레톤이 결과와 같은 비율과 줄 높이를 갖는지 본다 |
 | `app/today/__tests__/NoticeBanner.test.tsx` | 결정 9: 보여 줄 공지가 없으면 그리지 않는지, 접힌 상태에 버튼이 없는지, 머리를 누르면 펼쳐지고 이동하지 않는지, 공지가 바뀌면 접힌 채 보이는지, 두 버튼이 상세를 열고 배너를 닫는지 본다 |
+| `features/notice/__tests__/notice-query.spec.tsx` (기한) · `features/query/__tests__/persist.spec.ts` | 결정 5: 넥슨 공지 쿼리가 보관 기한 30일을 들고, 받은 지 30일이 지난 목록을 그리지도 찾지도 저장하지도 않는지, 앱 공지는 그대로인지 본다 |
+| `features/notice/__tests__/format.spec.ts` | 결정 6: 발행일을 기기 시간대가 아니라 한국 시간의 날짜로 적는지 본다 |
+| 서버 `modules/notices/notice-poller.spec.ts` · `notices.repository.spec.ts` · `clients/nexon-open-api.client.spec.ts` · `database/nexon-guide-compliance-migration.spec.ts` | 결정 11: 목록 칸이 배열이 아니면 던지는지, 제목 · 날짜가 빈 글과 상세가 실패하거나 비어 있는 썬데이 글만 다음 회차로 미루는지, 목록에 있는 글의 값과 받은 시각을 고치고 다시 알리지 않는지, 썬데이 상세를 다시 받는지, 받은 지 30일이 지난 넥슨 공지만 지우는지, 이관이 이미 있는 글의 받은 시각을 채우는지 본다 |
 
 ## 번호 기록
 

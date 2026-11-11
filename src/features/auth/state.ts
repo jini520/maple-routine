@@ -32,11 +32,14 @@ export type AuthError =
 export interface ApiKeyNotice {
   kind: ApiKeyNoticeKind
   apiKey: string | null
+  /** 429 만. 같은 키로 연달아 받은 429 의 차례(1부터). 두 번째부터 `다른 키 입력` 이 주 버튼이다 */
+  attempt?: number
 }
 
 export type ApiKeyNoticeKind =
-  | 'invalid' // 400 OPENAPI00005 · 401/403. 키 자체가 무효해졌다
-  | 'rateLimited' // 429. 개발 단계 키의 호출 한도 초과
+  | 'invalid' // 400 OPENAPI00005 · OPENAPI00006 · 401/403. 키 자체가 무효해졌다
+  // 429. 키를 지우지 않고 다시 시도 모달로 알린다. 서비스 단계 키도 여러 기기 · 다른 도구에서 함께 쓰면 잠깐 한도에 닿는다
+  | 'rateLimited'
   // 우리 서버가 세션을 거절했다(갱신 토큰 14일). 이 종류만 `apiKey` 가 늘 `null` 이고, 확인이
   // 지우는 것도 로그인 하나다. 키와 섞으면 멀쩡한 키가 사라진다.
   | 'signInRequired'

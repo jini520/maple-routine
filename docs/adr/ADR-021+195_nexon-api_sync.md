@@ -1,6 +1,6 @@
 # ADR-021+195 넥슨 API 호출과 스케줄러 동기화
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-007 · ADR-067 결정 1 · 4 · ADR-097 · ADR-111 결정 5 · ADR-113 결정 1 · ADR-148 · ADR-218 결정 1 · 2 · ADR-222 결정 1 ~ 4 · 8 · 정정 2 · 6 · ADR-226 결정 2 ~ 4 · 정정 1 · 3
 > 관련 소스: `nexon/` · `features/schedule-sync/` · `features/schedule-window/` · `features/refresh/progress.ts` · `features/refresh/pull.ts` · `features/ledger/useLedgerData.tsx` · `lib/scheduler/sync-freshness.ts` · `storage/schedule-probe-ledger.ts`
 
@@ -328,6 +328,11 @@ advance(slot, done, total?) 그 몫의 진척. 실제 분모가 오면 고친다
 | `features/schedule-window/__tests__/records.spec.ts` | 결정 8: 기간의 마지막 관측이 기록을 정하는지, 단계 하나가 죽어도 다른 기간 · 캐릭터를 쓰는지 본다 |
 | `features/refresh/__tests__/progress.spec.ts` | 결정 10: 분모와 분자를 더하는지, 회차 안에서 앞 단계가 끝나도 막대가 안 꺼지는지, 안쪽 회차가 닫혀도 바깥이 열려 있으면 안 지우는지, 실제 분모로 고치는지 본다 |
 | `features/ledger/__tests__/useLedgerData.spec.tsx` | 결정 10 · 11: 한 회차가 한 막대인지, 조각마다 부르는 것이 맞는지, 마운트가 만료된 회차만 받은 뒤 창을 채우는지 본다 |
+| `nexon/history/__tests__/client.spec.ts` | 결정 1 · 13: 넥슨이 준 커서도 인코딩하는지, 내역 칸이 배열이 아니면 빈 쪽이 아니라 던지는지 본다 |
+| `nexon/schedule/__tests__/normalize.spec.ts` (주기) | 결정 2: 주간 · 월간이 아닌 모르는 cycle 을 월간으로 받지 않고 버리는지 본다 |
+| `nexon/__tests__/http.spec.ts` (번들 개발자 키) | 결정 12: 429 를 받은 키를 빼지 않고 기다렸다 다시 부르는지, 두 번까지이고 기다림이 1초 · 2초를 0.5 ~ 1.5배로 흩뜨린 값인지, 무효 키(`OPENAPI00006` 포함)만 빼는지, 사용자 키의 429 는 다시 부르지 않는지 본다 |
+| `features/settlement/__tests__/query.spec.tsx` (`settlingYesterdayOf`) | 결정 14: 0시 ~ 2시에만 서버에 묻고 결산 중이면 어제 날짜를 주는지, 결산 아님 · 모름 · 실패면 `null` 인지, 1분 안에는 다시 묻지 않는지 본다 |
+| `features/schedule-window/__tests__/window.spec.ts` · `features/schedule-sync/__tests__/character-eligibility.spec.ts` · `schedule-sync.spec.ts` · `features/boss-profit/__tests__/defeat-dates.spec.ts` · `features/enhancement-history/__tests__/collect.spec.ts` (결산 중) | 결정 14: 결산 중이면 창 · 자격 · 선채움 · 처치 날짜 · 강화 내역이 어제를 묻지 않고 원장에도 남기지 않는지 본다 |
 
 ## 번호 기록
 

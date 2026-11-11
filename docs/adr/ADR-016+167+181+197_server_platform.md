@@ -316,6 +316,8 @@ manual_completion_bosses
 | 서버 `modules/settlement/*.spec.ts` | 결정 11: 창 안의 타점에만 확인하는지, 응답마다 판정이 맞게 바뀌고 모름이 판정을 안 바꾸는지, `startedAt` 이 그 밤의 날짜인지 본다 |
 | 서버 `modules/admin/views/borderless.spec.ts` | 결정 13: 관리 화면 뷰의 스타일에 굵기가 0 이 아닌 `border` 선언이 없는지 본다. 부품을 하나씩 고치다 빠뜨린 선을 잡는다 |
 | 서버 `modules/friends/*.spec.ts` | 결정 8 · 9 · 10: 줄 형식, 넥슨이 토큰을 거절하면 `fail` 없이 세션을 지우고 `relogin` 으로 끝내는지, 동시 회차 상한과 503, 시간 · 바이트 예산이 새 작업만 막는지, 끊기면 넥슨 요청을 취소하는지 본다 |
+| 서버 `clients/nexon-bucket.spec.ts` | 결정 10: 토큰이 남아 있어도 요청 사이 간격을 1초 ÷ 초당 수보다 좁히지 않는지 본다 |
+| 서버 `modules/settlement/settlement-watch.spec.ts` · `settlement.service.spec.ts` | 결정 11: 06:00 분의 마지막 확인은 부르고 그 뒤는 안 부르는지, 06:00:01 에 `OPENAPI00009` 가 와도 결산 아님인지 본다 |
 
 ## 번호 기록
 

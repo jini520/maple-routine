@@ -11,6 +11,7 @@ import {
 } from './errors'
 import { markDeveloperKeyDead, nextDeveloperKey } from './developer-keys'
 import { waitForKeySlot } from './key-rate-limit'
+import { recordKeySuccess } from './key-success'
 import type { StreamLine, StreamTask } from '../server/friends-stream'
 import type { NexonCredential } from '../types/auth'
 
@@ -562,5 +563,7 @@ async function requestOnce<T>(path: string, credential: NexonCredential, options
     throw new NexonNetworkError('Nexon API 응답을 JSON으로 파싱하지 못했습니다', { cause: error })
   }
   maintenanceReporter?.succeeded(bareOf(path))
+  // 429 다시 시도 모달이 연달아 받은 429 를 셀 때, 그 사이에 이 키로 성공했으면 처음부터 센다.
+  if (credential.type === 'key') recordKeySuccess(credential.value)
   return body
 }

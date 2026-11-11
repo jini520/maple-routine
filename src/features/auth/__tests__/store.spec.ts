@@ -74,7 +74,8 @@ jest.mock('../../app-entry/store', () => {
 const resolveAfterSignInMock = jest.requireMock('../../app-entry/store').useAppEntryStore.getState().resolveAfterSignIn as jest.Mock
 const entryResetMock = jest.requireMock('../../app-entry/store').useAppEntryStore.getState().reset as jest.Mock
 
-import { useAuthStore } from '../store'
+import { recordKeySuccess, resetKeySuccessForTest } from '../../../nexon/key-success'
+import { resetRateLimitNoticesForTest, useAuthStore } from '../store'
 import type { NexonCredential } from '../../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
@@ -100,6 +101,8 @@ const { reusableNexonAccountId } = jest.requireMock('../reentry-account-id') as 
 
 beforeEach(() => {
   useAuthStore.setState(initialAuthState)
+  resetRateLimitNoticesForTest()
+  resetKeySuccessForTest()
   reusableNexonAccountId.mockReset().mockResolvedValue(null)
   setMainApiKeyMock.mockResolvedValue(undefined)
   signOutAuthMock.mockResolvedValue(undefined)
@@ -315,7 +318,7 @@ describe('useAuthStore.noticeApiKeyIssue', () => {
       useAuthStore.getState().noticeApiKeyIssue(kind)
 
       const state = useAuthStore.getState()
-      expect(state.apiKeyNotice).toEqual({ kind, apiKey: null })
+      expect(state.apiKeyNotice).toEqual(kind === 'rateLimited' ? { kind, apiKey: null, attempt: 1 } : { kind, apiKey: null })
       expect(state.status).toBe('signedIn')
     },
   )
@@ -344,7 +347,7 @@ describe('useAuthStore.noticeApiKeyIssue', () => {
     useAuthStore.getState().noticeApiKeyIssue('invalid')
 
     expect(useAuthStore.getState()).toBe(afterFirst)
-    expect(useAuthStore.getState().apiKeyNotice).toEqual({ kind: 'rateLimited', apiKey: null })
+    expect(useAuthStore.getState().apiKeyNotice).toEqual({ kind: 'rateLimited', apiKey: null, attempt: 1 })
   })
 
   // 가드는 "이미 로그인 화면인가"만 본다. 그 두 상태가 곧 그 화면이라 보낼 곳이 없고,
@@ -374,7 +377,7 @@ describe('useAuthStore.noticeApiKeyIssue', () => {
     useAuthStore.getState().noticeApiKeyIssue('rateLimited')
 
     const state = useAuthStore.getState()
-    expect(state.apiKeyNotice).toEqual({ kind: 'rateLimited', apiKey: null })
+    expect(state.apiKeyNotice).toEqual({ kind: 'rateLimited', apiKey: null, attempt: 1 })
     // 알리기만 한다. status를 뒤집는 것은 확인(confirmApiKeyNotice)의 몫이다.
     expect(state.status).toBe('signedIn')
     expect(removeAllApiKeysMock).not.toHaveBeenCalled()
@@ -402,7 +405,7 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
 
   // 수단이 하나도 안 남으면 로그인 화면이다. 이 앱은 수단 없이 할 수 있는 것이 거의 없다.
   // 상태를 뒤집는 것이 곧 이동이고, 화면 목록을 가르는 진입 게이트도 함께 되돌린다.
-  it.each(['invalid', 'rateLimited', 'signInRequired'] as const)(
+  it.each(['invalid', 'signInRequired'] as const)(
     '%s. 남은 수단이 없으면 signedOut 으로 되돌리고 진입 게이트도 로그인으로 보낸다',
     async (kind) => {
       primeNoticed(kind)
@@ -416,7 +419,7 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
   )
 
   // 남은 수단으로 조회되던 메이플 ID 를 같이 잃으면 안 된다. 앱 전체가 멈출 이유가 없다.
-  it.each(['invalid', 'rateLimited', 'signInRequired'] as const)(
+  it.each(['invalid', 'signInRequired'] as const)(
     '%s. 수단이 남아 있으면 알림만 닫고 앱은 그대로 선다',
     async (kind) => {
       primeNoticed(kind)
@@ -458,9 +461,8 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
     expect(signOutAuthMock).not.toHaveBeenCalled()
   })
 
-  // 로그아웃(signOutAuth)은 로그인과 메인 키를 함께 떼어 재개를 불가능하게 만든다. 429 도 키를
-  // 지운다. 원인별로 갈라 처리하지 않는다.
-  it.each(['invalid', 'rateLimited'] as const)(
+  // 로그아웃(signOutAuth)은 로그인과 메인 키를 함께 떼어 재개를 불가능하게 만든다.
+  it.each(['invalid'] as const)(
     '%s. 저장소에서 apiKey만 지운다(로그아웃 경로 signOutAuth를 타지 않는다)',
     async (kind) => {
       primeNoticed(kind)
@@ -529,6 +531,108 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
 
     expect(signOutAuthMock).toHaveBeenCalledTimes(1)
     expect(removeAllApiKeysMock).not.toHaveBeenCalled()
+  })
+})
+
+// 429 는 키를 지우지 않고 다시 시도 모달로 알린다. 주 버튼은 같은 키로 연달아 받은 429 의 횟수로 정한다.
+describe('useAuthStore: 429 다시 시도 모달', () => {
+  function primeSignedIn(): void {
+    useAuthStore.setState({ ...initialAuthState, status: 'signedIn', accounts: [account('acc-1')] })
+  }
+
+  it('다시 시도해도 같은 키로 또 429 면 두 번째다', () => {
+    primeSignedIn()
+
+    useAuthStore.getState().noticeApiKeyIssue('rateLimited', 'key-1')
+    expect(useAuthStore.getState().apiKeyNotice).toEqual({ kind: 'rateLimited', apiKey: 'key-1', attempt: 1 })
+
+    useAuthStore.getState().retryRateLimitNotice()
+    expect(useAuthStore.getState().apiKeyNotice).toBeNull()
+    useAuthStore.getState().noticeApiKeyIssue('rateLimited', 'key-1')
+    expect(useAuthStore.getState().apiKeyNotice?.attempt).toBe(2)
+  })
+
+  it('그 키로 조회가 한 번이라도 성공하면 처음부터 센다', () => {
+    primeSignedIn()
+    useAuthStore.getState().noticeApiKeyIssue('rateLimited', 'key-1')
+    useAuthStore.getState().retryRateLimitNotice()
+
+    recordKeySuccess('key-1')
+    useAuthStore.getState().noticeApiKeyIssue('rateLimited', 'key-1')
+
+    expect(useAuthStore.getState().apiKeyNotice?.attempt).toBe(1)
+  })
+
+  it('키마다 따로 센다', () => {
+    primeSignedIn()
+    useAuthStore.getState().noticeApiKeyIssue('rateLimited', 'key-1')
+    useAuthStore.getState().retryRateLimitNotice()
+
+    useAuthStore.getState().noticeApiKeyIssue('rateLimited', 'key-2')
+
+    expect(useAuthStore.getState().apiKeyNotice?.attempt).toBe(1)
+  })
+
+  // 서비스 단계 키도 여러 기기 · 다른 도구에서 함께 쓰면 잠깐 한도에 닿는다. 한 번의 429 로 멀쩡한 키를 지우지 않는다.
+  it('다시 시도는 알림만 닫고 키를 지우지 않는다', () => {
+    primeSignedIn()
+    useAuthStore.getState().noticeApiKeyIssue('rateLimited', 'key-1')
+
+    useAuthStore.getState().retryRateLimitNotice()
+
+    expect(removeApiKeyMock).not.toHaveBeenCalled()
+    expect(removeAllApiKeysMock).not.toHaveBeenCalled()
+    expect(useAuthStore.getState().status).toBe('signedIn')
+  })
+
+  it('알림의 키가 메인 키인지 부계정 키인지 가른다', async () => {
+    getAuthConfigMock.mockResolvedValue({
+      login: null,
+      mainKeyId: 'main-id',
+      apiKeys: [
+        { type: 'key', id: 'main-id', label: '', value: 'main-key', loginId: null },
+        { type: 'key', id: 'sub-id', label: '', value: 'sub-key', loginId: 'login-id' },
+      ],
+    })
+
+    await expect(useAuthStore.getState().rateLimitedKeyRole('main-key')).resolves.toBe('main')
+    await expect(useAuthStore.getState().rateLimitedKeyRole('sub-key')).resolves.toBe('sub')
+    await expect(useAuthStore.getState().rateLimitedKeyRole(null)).resolves.toBeNull()
+  })
+
+  describe('replaceMainApiKey', () => {
+    beforeEach(() => {
+      primeSignedIn()
+      fetchCharacterListMock.mockResolvedValue([account('acc-2')])
+    })
+
+    // 앱 안에서 키만 바꾸는 것이라 로그인 화면의 새 로그인과 다르다. 추적 캐릭터를 비우지 않고 화면도 그대로다.
+    it('새 키를 검증해 메인 키로 저장하고, 추적 목록을 비우지 않고 로그인 상태도 그대로다', async () => {
+      await expect(useAuthStore.getState().replaceMainApiKey('new-key')).resolves.toBe('replaced')
+
+      expect(setMainApiKeyMock).toHaveBeenCalledWith('new-key', '', undefined)
+      expect(forgetTrackedSelectionMock).not.toHaveBeenCalled()
+      expect(useAuthStore.getState().status).toBe('signedIn')
+    })
+
+    it('개발 단계 키면 저장하지 않고 developmentStage 이며, 로그인 상태는 그대로다', async () => {
+      probeApiKeyStageMock.mockResolvedValue('developmentStage')
+
+      await expect(useAuthStore.getState().replaceMainApiKey('dev-key')).resolves.toBe('developmentStage')
+
+      expect(setMainApiKeyMock).not.toHaveBeenCalled()
+      expect(useAuthStore.getState().status).toBe('signedIn')
+      expect(useAuthStore.getState().developmentStageBlocked).toBe(true)
+    })
+
+    it('무효 키면 원인에 맞는 토스트를 띄우고 저장하지 않는다', async () => {
+      fetchCharacterListMock.mockRejectedValue(new NexonBadRequestError('x', 'OPENAPI00005'))
+
+      await expect(useAuthStore.getState().replaceMainApiKey('bad-key')).resolves.toBe('failed')
+
+      expect(showErrorMock).toHaveBeenCalledWith('API 키가 유효하지 않습니다')
+      expect(setMainApiKeyMock).not.toHaveBeenCalled()
+    })
   })
 })
 
