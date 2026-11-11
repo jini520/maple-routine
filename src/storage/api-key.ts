@@ -207,6 +207,29 @@ export async function setNexonLogin(
 }
 
 /**
+ * 계정 관리에서 넣은 부계정 키를 더한다. 검증과 서버 등록은 부르는 쪽이 끝냈다.
+ *
+ * @param loginId 이 키를 등록한 넥슨 로그인의 계정 id
+ * @param accountId 이 키의 넥슨 계정 id. 메이플 ID 로 찾은 옛 id 가 있으면 그것이라 기록이 이어진다
+ */
+export async function addSubApiKey(apiKey: string, loginId: string, accountId: string): Promise<void> {
+  const current = (await getAuthConfig()) ?? EMPTY
+  const key: NexonApiKeyMethod = { type: 'key', id: accountId, label: '', value: apiKey, loginId }
+  await write({ ...current, apiKeys: [...current.apiKeys.filter((one) => one.value !== apiKey), key] })
+}
+
+/**
+ * 키 하나의 값만 바꾼다. 같은 넥슨 계정의 새 키라 계정 id · 귀속 · 차례는 그대로다. 옛 값은 이 저장에서 빠진다.
+ *
+ * @param id 바꿀 키의 넥슨 계정 id
+ */
+export async function replaceApiKeyValue(id: string, apiKey: string): Promise<void> {
+  const current = await getAuthConfig()
+  if (current === null) return
+  await write({ ...current, apiKeys: current.apiKeys.map((one) => (one.id === id ? { ...one, value: apiKey } : one)) })
+}
+
+/**
  * 넥슨 로그인을 뗀다. 로그인이 만료되거나 동의를 철회했을 때다. 부계정 키는 귀속된 채 남는다.
  *
  * 메인 수단이 없어 로그인 화면이 선다. 같은 넥슨 ID 로 다시 로그인하면 부계정이 이어진다.

@@ -94,6 +94,11 @@ export function readCachedCharacterList(credential: NexonCredential): MapleAccou
   return queryClient.getQueryData<MapleAccount[]>(queryKeys.characterList(credentialKeyOf(credential)))
 }
 
+/** 넥슨 계정 id 로 받아 둔 목록. 이 기기에서 키를 지운 계정도 그 id 의 목록이 남아 있으면 읽는다. 없으면 `undefined` 다. */
+export function readCachedCharacterListOfAccount(accountId: string): MapleAccount[] | undefined {
+  return queryClient.getQueryData<MapleAccount[]>(queryKeys.characterList(`${ACCOUNT_KEY_PREFIX}${accountId}`))
+}
+
 /** 넥슨 계정 하나의 목록. 못 받았으면 `accounts` 가 `null` 이고 `error` 에 그 실패가 든다. */
 export interface CredentialCharacterList {
   credential: NexonCredential
