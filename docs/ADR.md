@@ -140,15 +140,15 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-013+151](./adr/ADR-013+151_splash_boot.md) | 🟢 | splash | 스플래시와 앱 아이콘 |
 | [ADR-014](./adr/ADR-014_ads_inline.md) | 🟢 | ads | 광고 배선 |
 | [ADR-015+156](./adr/ADR-015+156_site_guide.md) | 🟢 | site | 안내 사이트와 홍보 첫 화면 |
-| [ADR-016+167+181](./adr/ADR-016+167+181_server_platform.md) | 🟢 | server | 서버 구성 |
-| [ADR-017+159+172+185](./adr/ADR-017+159+172+185_server_users.md) | 🟢 | server | 서버의 사용자와 신원 · 로그아웃과 계정 삭제 · 키 사용자 합치기 · 추천인 코드 |
+| [ADR-016+167+181+197](./adr/ADR-016+167+181+197_server_platform.md) | ⚪ | server | 서버 구성 |
+| [ADR-017+159+172+185+194](./adr/ADR-017+159+172+185+194_server_users.md) | ⚪ | server | 서버의 사용자와 신원 · 로그아웃과 계정 삭제 · 키 사용자 합치기 · 추천인 코드 |
 | [ADR-018](./adr/ADR-018_server-sync_drop-price.md) | 🟢 | server-sync | 드롭 가격 서버 전송 |
 | [ADR-019](./adr/ADR-019_game-data_reference.md) | 🟢 | game-data | 게임 데이터의 규칙 |
 | [ADR-020+097+103+140](./adr/ADR-020+097+103+140_game-data_server-catalog.md) | 🟢 | game-data | 게임 데이터 서버 표와 기기 사본 |
-| [ADR-021](./adr/ADR-021_nexon-api_sync.md) | 🟢 | nexon-api | 넥슨 API 호출과 스케줄러 동기화 |
+| [ADR-021+195](./adr/ADR-021+195_nexon-api_sync.md) | ⚪ | nexon-api | 넥슨 API 호출과 스케줄러 동기화 |
 | [ADR-022+081](./adr/ADR-022+081_error-resilience_failure-states.md) | 🟢 | error-resilience | 실패를 알리는 방법과 기간 데이터 상태 |
 | [ADR-023](./adr/ADR-023_error-resilience_resumable-task.md) | 🟢 | error-resilience | 이어서 하는 작업과 기록 판 알림 |
-| [ADR-024](./adr/ADR-024_auth_api-key.md) | 🟢 | auth | API 키 로그인과 키 재입력 |
+| [ADR-024+196](./adr/ADR-024+196_auth_api-key.md) | ⚪ | auth | API 키 로그인과 키 재입력 |
 | [ADR-025+068+083+105+166+169+170+171+192](./adr/ADR-025+068+083+105+166+169+170+171+192_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
 | [ADR-026](./adr/ADR-026_app-entry_onboarding.md) | 🟢 | app-entry | 온보딩 흐름 |
 | [ADR-027](./adr/ADR-027_app-entry_cold-start.md) | 🟢 | app-entry | 콜드 스타트 첫 화면 |
@@ -175,7 +175,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-046](./adr/ADR-046_cashbook_calendar.md) | 🟢 | cashbook | 가계부 캘린더 |
 | [ADR-047+190](./adr/ADR-047+190_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 · 메포 지출의 메소마켓 수수료 |
 | [ADR-048+070+118+126](./adr/ADR-048+070+118+126_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 |
-| [ADR-049+127+157](./adr/ADR-049+127+157_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
+| [ADR-049+127+157+199](./adr/ADR-049+127+157+199_cashbook_hunting.md) | ⚪ | cashbook | 사냥 수입 |
 | [ADR-095](./adr/ADR-095_cashbook_redesign.md) | 🟢 | cashbook | 가계부 고른 날 목록과 기간 이동 줄 리디자인 |
 | [ADR-050+110+128](./adr/ADR-050+110+128_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
 | [ADR-051+075+090](./adr/ADR-051+075+090_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
@@ -184,7 +184,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-054+115+132](./adr/ADR-054+115+132_theme_tokens.md) | 🟢 | theme | 테마와 색 토큰 · 테마 페이지 |
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |
 | [ADR-056+072+164+182](./adr/ADR-056+072+164+182_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |
-| [ADR-057+125](./adr/ADR-057+125_notice_feed.md) | 🟢 | notice | 운영자 공지와 넥슨 공지 |
+| [ADR-057+125+198](./adr/ADR-057+125+198_notice_feed.md) | ⚪ | notice | 운영자 공지와 넥슨 공지 |
 | [ADR-058+087+176+179](./adr/ADR-058+087+176+179_today_widgets.md) | 🟢 | today | today 위젯 격자 |
 | [ADR-089](./adr/ADR-089_today_quick-links.md) | 🟢 | today | today 빠른 이동 |
 | [ADR-059+136](./adr/ADR-059+136_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
@@ -200,7 +200,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-098+173](./adr/ADR-098+173_persistence_record-keys.md) | 🟢 | persistence | 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id |
 | [ADR-099+143](./adr/ADR-099+143_server-sync_records.md) | 🟢 | server-sync | 서버로 보내는 기록의 범위와 과거 드롭 올리기 |
 | [ADR-100+174+189](./adr/ADR-100+174+189_cashbook_enhancement-totals.md) | 🟢 | cashbook | 강화 합계 저장과 재계산 요청 · 스타포스 첫 성과 끝 성 · 이벤트 월드 판정과 월드 기간 |
-| [ADR-101+186](./adr/ADR-101+186_auth_multi-account.md) | ⚪ | auth | 다계정 |
+| [ADR-101+186+193](./adr/ADR-101+186+193_auth_multi-account.md) | ⚪ | auth | 다계정 |
 | [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | 🟢 | server-sync | 예상하지 못한 상황의 서버 로그 |
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |
 | [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |
