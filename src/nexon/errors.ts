@@ -122,6 +122,8 @@ export class NexonMaintenanceError extends NexonApiError {
  * 판정도 하나여야 하기 때문이다. 자리가 `nexon/` 인 것도 같은 이유다. 동기화·온보딩·설정의
  * 어휘가 아니라 API 의 성질이다.
  *
+ * `OPENAPI00006` 은 메이플스토리가 등록되지 않은 키(다른 게임으로 받은 키)라 같은 무효 키다.
+ *
  * 다른 400 코드를 여기 넣지 말 것. `00003`(조회 불가 ocid)·`00004`(날짜)·`00009`(집계 전)는
  * 키와 무관하고, 무효 키로 오인하면 사용자를 엉뚱하게 키 입력 화면으로 보낸다.
  */
@@ -129,5 +131,5 @@ export function isInvalidApiKeyError(error: unknown): boolean {
   if (error instanceof NexonAuthError) {
     return true
   }
-  return error instanceof NexonBadRequestError && error.code === 'OPENAPI00005'
+  return error instanceof NexonBadRequestError && (error.code === 'OPENAPI00005' || error.code === 'OPENAPI00006')
 }

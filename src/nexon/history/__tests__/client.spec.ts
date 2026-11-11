@@ -128,13 +128,26 @@ describe('응답 정규화', () => {
     expect(page.rows[0]).toMatchObject({ dateKey: '2026-09-04', characterName: '루디' })
   })
 
-  // 배열이 없거나 모양이 다르면 **빈 쪽**이다. 던지면 그 날짜가 영영 안 채워진다.
-  it('모양이 다르면 빈 쪽으로 접는다', async () => {
-    requestJsonMock.mockResolvedValue({ count: 0 })
+  // 0건이면 넥슨은 빈 배열을 준다. 배열이 아닌 것을 빈 쪽으로 받으면 그날이 0건으로 원장에 굳어 다시 받지 않는다.
+  it('내역 칸이 배열이 아니면 빈 쪽이 아니라 던진다', async () => {
+    for (const body of [{ count: 0 }, { count: 0, cube_history: null }]) {
+      requestJsonMock.mockResolvedValue(body)
 
-    const page = await fetchEnhancementHistory(자격('key'), 'cube', itemKeyOf, { dateKey: '2026-09-04' })
+      await expect(
+        fetchEnhancementHistory(자격('key'), 'cube', itemKeyOf, { dateKey: '2026-09-04' }),
+      ).rejects.toThrow()
+    }
+  })
 
-    expect(page).toEqual({ rows: [], nextCursor: null })
+  it('넥슨이 준 커서도 주소에 그대로 붙이지 않고 인코딩한다', async () => {
+    requestJsonMock.mockResolvedValue({ count: 0, next_cursor: null, cube_history: [] })
+
+    await fetchEnhancementHistory(자격('key'), 'cube', itemKeyOf, { cursor: 'a+b/c=' })
+
+    expect(requestJsonMock).toHaveBeenCalledWith(
+      '/maplestory/v1/history/cube?count=1000&cursor=a%2Bb%2Fc%3D',
+      expect.anything(),
+    )
   })
 })
 

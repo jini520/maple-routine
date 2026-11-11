@@ -34,6 +34,7 @@ jest.mock('../../../storage/enhancement-recomputes', () => ({
 }))
 jest.mock('../anomalies', () => ({ ...jest.requireActual('../anomalies'), reportEnhancementAnomalies: jest.fn() }))
 jest.mock('../recompute', () => ({ ...jest.requireActual('../recompute'), RECOMPUTE_REQUESTS: [] }))
+jest.mock('../../settlement/store', () => ({ settlingYesterdayOf: jest.fn() }))
 
 const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 const { fetchEnhancementHistory } = jest.requireMock('../../../nexon/history/client') as Record<string, jest.Mock>
@@ -52,6 +53,7 @@ const { ensureEnhancementTotals } = jest.requireMock('../legacy-totals') as Reco
 const recomputes = jest.requireMock('../../../storage/enhancement-recomputes') as Record<string, jest.Mock>
 const { RECOMPUTE_REQUESTS } = jest.requireMock('../recompute') as { RECOMPUTE_REQUESTS: unknown[] }
 const { reportEnhancementAnomalies } = jest.requireMock('../anomalies') as Record<string, jest.Mock>
+const { settlingYesterdayOf } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
 const setRequests = (requests: unknown[]) => RECOMPUTE_REQUESTS.splice(0, RECOMPUTE_REQUESTS.length, ...requests)
 
 const NOW = new Date('2026-09-06T12:00:00+09:00')
@@ -73,6 +75,7 @@ const page = (ids: string[], nextCursor: string | null = null) => ({
 
 beforeEach(() => {
   queryClient.clear()
+  settlingYesterdayOf.mockReset().mockResolvedValue(null)
   getAuthConfig.mockReset().mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'k', loginId: null }] })
   fetchCharacterList.mockReset().mockResolvedValue([
     { accountId: 'a', characters: [{ ocid: '1', name: '머리맨들맨둘', world: '스페셜', worldKey: 'special', jobClass: '', level: 1 }] },
@@ -243,6 +246,19 @@ describe('수집', () => {
     expect(fetchEnhancementHistory.mock.calls.map((call) => call[1]).sort()).toEqual(
       ['cube', 'potential', 'soul_potential', 'starforce'],
     )
+  })
+
+  // 넥슨 AI 에이전트 가이드는 00009 를 되풀이해 부르지 말라고 한다. 건너뛴 날은 굳지 않아 결산이 끝난 뒤의 회차가 받는다.
+  it('서버가 결산 중이라고 하면 어제의 내역은 받지 않고 굳히지도 않는다', async () => {
+    settlingYesterdayOf.mockResolvedValue('2026-09-05')
+
+    await collectEnhancementHistory(['2026-09-04', '2026-09-05'], NOW)
+
+    expect(settlingYesterdayOf).toHaveBeenCalledWith(NOW)
+    const asked = fetchEnhancementHistory.mock.calls.map(([, , , query]) => (query as { dateKey?: string }).dateKey)
+    expect(asked).not.toContain('2026-09-05')
+    expect(asked).toContain('2026-09-04')
+    expect(store.markEnhancementChecked.mock.calls.map(([, , dateKey]) => dateKey)).not.toContain('2026-09-05')
   })
 
   it('받은 줄을 합계로 묶어 그 날 그 종류를 바꿔 적는다', async () => {

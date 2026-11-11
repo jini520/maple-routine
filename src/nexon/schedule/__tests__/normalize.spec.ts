@@ -172,6 +172,21 @@ describe('normalizeSchedulerCharacterState', () => {
     expect(result.bossContents).toHaveLength(2)
   })
 
+  // 넥슨이 새 주기를 만들었을 때 그 보스를 월간으로 받으면 그 달의 월간 완료를 덮을 수 있다.
+  it('주간 · 월간이 아닌 모르는 cycle 은 월간으로 받지 않고 버린다', () => {
+    const wire: NexonSchedulerCharacterStateWire = {
+      ...baseWire,
+      boss_contents: [
+        ...(baseWire.boss_contents ?? []),
+        { content_name: '새 보스', difficulty: 'normal', cycle: 'bossQuarterly', registration_flag: 'true', complete_flag: 'false' },
+      ] as NexonSchedulerCharacterStateWire['boss_contents'],
+    }
+
+    const result = normalizeSchedulerCharacterState(wire, resolve)
+
+    expect(result.bossContents.find((boss) => boss.apiName === '새 보스')).toBeUndefined()
+  })
+
   // 새 보스가 나왔는데 보스 표를 아직 못 고친 경우다. 항목은 남기고 key 만 비운다.
   it('resolver 가 못 찾는 보스는 bossKey 가 null 이고 API 원문 이름을 든다', () => {
     const result = normalizeSchedulerCharacterState(

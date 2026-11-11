@@ -189,44 +189,20 @@ describe('심볼. 전용 숫자 필드이고 캡 밖이다', () => {
   })
 })
 
-describe('유니온. 죽은 프리셋과 크리스탈 이중계산', () => {
-  it('union_raider_preset 이 전부 null 이면 현재 적용본으로 폴백한다', () => {
+describe('유니온 · 아티팩트', () => {
+  // 점령 · 스테이트 효과와 유니온 프리셋에는 메소 획득량이 없다(사용자 확인 2026-11-11). 프리셋은 실측에서도 모든 캐릭터가 null 이었다.
+  it('유니온은 공격대원 효과만 센다', () => {
     expect(
       only({
         unionRaider: {
           union_raider_stat: [INC(4)],
-          union_raider_preset_1: null,
-          union_raider_preset_2: null,
-          union_raider_preset_3: null,
-          union_raider_preset_4: null,
-          union_raider_preset_5: null,
+          union_occupied_stat: [INC(5)],
+          union_state_stat: [INC(3)],
+          union_state_stat_preset: [{ union_state_stat: [INC(3)] }],
+          union_raider_preset_1: { union_raider_stat: [INC(9)] },
         },
       }),
     ).toBe(4)
-  })
-
-  it('프리셋이 되살아나면 그중 최댓값을 쓴다', () => {
-    expect(
-      only({
-        unionRaider: {
-          union_raider_stat: [INC(4)],
-          union_raider_preset_1: { union_raider_stat: [INC(9)] },
-          union_raider_preset_2: { union_raider_stat: [INC(2)] },
-        },
-      }),
-    ).toBe(9)
-  })
-
-  it('점령(스테이트) 효과 프리셋도 훑는다', () => {
-    expect(
-      only({
-        unionRaider: {
-          union_raider_stat: [INC(4)],
-          union_state_stat: [],
-          union_state_stat_preset: [{ union_state_stat: [INC(3)] }, { union_state_stat: [] }],
-        },
-      }),
-    ).toBe(7)
   })
 
   it('아티팩트는 effect 만 센다. crystal 을 더하면 이중 계산이다', () => {
