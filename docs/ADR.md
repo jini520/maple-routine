@@ -200,7 +200,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-098+173](./adr/ADR-098+173_persistence_record-keys.md) | 🟢 | persistence | 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id |
 | [ADR-099+143](./adr/ADR-099+143_server-sync_records.md) | 🟢 | server-sync | 서버로 보내는 기록의 범위와 과거 드롭 올리기 |
 | [ADR-100+174+189](./adr/ADR-100+174+189_cashbook_enhancement-totals.md) | 🟢 | cashbook | 강화 합계 저장과 재계산 요청 · 스타포스 첫 성과 끝 성 · 이벤트 월드 판정과 월드 기간 |
-| [ADR-101+186+193](./adr/ADR-101+186+193_auth_multi-account.md) | ⚪ | auth | 다계정 |
+| [ADR-101+186+193+201](./adr/ADR-101+186+193+201_auth_multi-account.md) | ⚪ | auth | 다계정 |
 | [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | 🟢 | server-sync | 예상하지 못한 상황의 서버 로그 |
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |
 | [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |
