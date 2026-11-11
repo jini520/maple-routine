@@ -1,6 +1,6 @@
-# ADR-049+127+157 사냥 수입
+# ADR-049+127+157+199 사냥 수입
 
-> 🟢 유효
+> ⚪ 미구현
 > 옛 번호: ADR-175 · ADR-177 · ADR-201 · ADR-283 · ADR-288 · ADR-290 · ADR-328 · ADR-329
 > 관련 소스: `app/cashbook/income/HuntCalculatorForm.tsx` · `app/cashbook/income/HuntManualForm.tsx` · `app/cashbook/income/FragmentSettleForm.tsx` · `app/cashbook/income/form-shared.tsx` · `lib/cashbook/hunting-meso.ts` · `lib/cashbook/hunting-grounds.ts` · `lib/cashbook/meso-rate.ts` · `features/cashbook/meso-rate.ts` · `nexon/meso-rate/` · `storage/last-hunts.ts`
 
@@ -121,7 +121,7 @@ API 여섯 개를 함께 불러(`fetchMesoRate`) 도달할 수 있는 최대값�
 | 장비 잠재 · 에디셔널 | `character/item-equipment` | 프리셋마다 합에 100% 상한을 걸고, 그중 가장 큰 프리셋 |
 | 어빌리티 | `character/ability` | 프리셋 중 가장 큰 것 |
 | 심볼 | `character/symbol-equipment` | `symbol_meso_rate` 의 합. 장비 상한 밖이다 |
-| 유니온 공격대 | `user/union-raider` | 프리셋이 비어 있으면 현재 적용본 |
+| 유니온 공격대 | `user/union-raider` | `union_raider_stat`(공격대원 효과) 만 |
 | 유니온 아티팩트 | `user/union-artifact` | `union_artifact_effect` 만. 크리스탈까지 더하면 두 번 센다 |
 | 챌린저스 버프 | `character/skill` | 설명문에 다섯 티어가 다 적힌 `챌린저스` 스킬이면 20% |
 | 직업 | `character/list` 가 캐시에 남긴 직업 이름 | 섀도어면 20% |
@@ -131,6 +131,15 @@ API 여섯 개를 함께 불러(`fetchMesoRate`) 도달할 수 있는 최대값�
 - 장비와 어빌리티는 서로 따로 바꿔 입으므로, 축마다 최댓값을 골라 더한 것이 실제로 도달할 수 있는 최대다.
 - 잠재 · 어빌리티 · 유니온 · 아티팩트의 글자는 정규식 하나로 읽는다. 두 표기를 따로 파싱하면 한쪽 표기가 바뀔 때
   조용히 0 이 된다.
+- 유니온은 공격대원 효과만 읽는다. 점령 효과(`union_occupied_stat`) · `union_state_stat` · `union_state_stat_preset` 과
+  유니온 프리셋(`union_raider_preset_1~5`)에는 메소 획득량이 없다(사용자 확인 2026-11-11). 프리셋은 2026-11-11 실측에서도 모든
+  캐릭터가 `null` 이었다.
+- **빈 배열은 0 이고, `null` 이나 칸이 없는 것은 못 읽은 것이다**([[ADR-021]] 결정 13, 사용자 지정 2026-11-11). 지금 적용본 여섯 칸
+  (`item_equipment` · `ability_info` · `symbol` · `union_raider_stat` · `union_artifact_effect` · `character_skill`) 가운데 하나라도
+  `null` 이거나 없으면 호출이 실패한 것과 같이 다룬다. 장비 · 어빌리티의 프리셋이 `null` 이면 그 프리셋만 계산에서 뺀다.
+  - 2026-11-11 실측(저레벨 · 미접속 캐릭터 다섯): 데이터가 없는 칸은 `null` 이 아니라 `[]` 로 왔다. 장비 없는 축 · 심볼 없는 캐릭터 ·
+    아티팩트를 안 연 계정이 모두 `[]` 였다. 그래서 `null` 을 못 읽은 것으로 봐도 멀쩡한 캐릭터가 치는 칸으로 내려가지 않는다.
+  - 지금은 `null` 을 빈 배열로 바꿔(`?? []`) 0 으로 센다. 그러면 넥슨이 값을 비워 보낸 날 0% 가 읽은 값으로 서고 칠 수도 없다.
 - **읽었으면 자동값이고 칠 수 없다.** 못 읽었으면(키가 없거나 호출이 실패하면) 메소 획득량 칸이 치는 칸이 되고, 기본값은
   그 캐릭터의 마지막 성공값(쿼리 `mesoRate(ocid)`, 기한 없음)이다. 그것도 없으면 비어 있다. 키가 없으면 아예 부르지
   않는다. 401 응답 때문에 저장된 키가 지워지지 않게 하기 위해서다. 0% 를 읽은 것은 성공이다.
@@ -280,3 +289,5 @@ Preferences `lastHunts`(`{ [ocid]: { groundKey, boosts, unionTier } }`)가 캐�
 - ADR-049 (2026-10-19): 옛 ADR-175 · 177 · 201 · 283 · 288 · 290 · 328 · 329 를 합쳐 처음 작성
 - ADR-127 (2026-10-29): 결정 2 에 지역의 `iconMap` 을 더했다(#790)
 - ADR-157 (2026-11-04): 결정 12 에 0 메소 정산을 더하고, 모든 캐릭터를 한 번에 정산하는 결정 15 를 더했다(#843)
+- ADR-199 (2026-11-11): 결정 8 을 고쳤다. 유니온은 공격대원 효과만 읽고, 지금 적용본 칸이 `null` 이거나 없으면 못 읽은 것으로 본다(#956,
+  넥슨 AI 에이전트 가이드)

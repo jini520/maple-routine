@@ -1,4 +1,4 @@
-# ADR-101+186 다계정: 넥슨 로그인 아래에 API 키 계정을 더 등록한다
+# ADR-101+186+193 다계정: 넥슨 로그인 아래에 API 키 계정을 더 등록한다
 
 > ⚪ 미구현
 > 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/` · `lib/enhancement/sighted-owner.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/stats/aggregate.ts` · `lib/mvp/starforce.ts` · `features/cashbook/account-names.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/today/view-model.ts` · `app/boss-profit/character-groups.ts` · `features/boss-profit/world-leap-moves.ts` · `features/boss-profit/world-leap-link.ts` · `storage/cashbook-entries.ts` · `storage/character-profiles.ts` · `features/ledger/useLedgerData.tsx`
@@ -240,9 +240,9 @@
 
 ### 결정 15. 키에 문제가 생기면 그 키와 그 키의 추적 캐릭터를 지우고, 닫을 수 없는 모달로 알린다
 
-- **키 문제**는 무효 키(401 · 403 · 400 `OPENAPI00005`)와 429 다. 429 도 키 문제로 보는 것은 이 앱의 정책이다(사용자 지정
-  2026-11-09). 서비스 단계 키는 한도에 걸리지 않게 부르고, 429 를 받는 것은 개발 단계 키뿐이라고 본다. 이 전제는 결정 17 이 지킨다.
-  네트워크 오류 · 점검 · 로그인 만료는 키 문제가 아니다.
+- **키 문제**는 무효 키(401 · 403 · 400 `OPENAPI00005` · `OPENAPI00006`)다. 네트워크 오류 · 점검 · 로그인 만료 · 429 는 키 문제가 아니다.
+- 429 는 키를 지우지 않고 다시 시도 모달로 알린다([[ADR-024]] 결정 11, 사용자 지정 2026-11-10). 서비스 단계 키도 같은 키를 여러 기기나 다른
+  도구에서 함께 쓰면 잠깐 한도에 닿는다. 한 번의 429 로 멀쩡한 키를 지우면 사용자가 같은 키를 다시 넣어야 한다.
 - 키 문제가 나면 그 키를 앱이 지운다(사용자 지정 2026-11-09). 넥슨에서 지워진 키는 다시 살아나지 않는다.
 - 그 키의 넥슨 계정에 속한 추적 캐릭터를 목록에서 뺀다(사용자 지정 2026-11-09). 앱에 `조회 불가` 캐릭터가 서지 않게 하려는 것이다.
   보스 수익 · 가계부 기록은 지우지 않는다.
@@ -346,7 +346,8 @@
 - 다른 기록과 서버 표도 같은 원칙을 따른다(사용자 지정 2026-11-09). 앱 · 서버 스키마 전수 검사(2026-11-09)로 정한 표마다의 수정은
   결정 20 ~ 28 에 있다.
 - 사용자가 만드는 기록의 유일 기준은 넥슨이 준 값과 기록 내용으로만 건다(사용자 지정 2026-11-10). 넥슨이 준 값은 넥슨 ID(로그인의
-  `nexon_uid`) · 메이플 ID(`character/list` 의 `account_id`) · 캐릭터(`ocid`)다. 서버가 만든 줄 id(사람 줄 · 넥슨 계정 줄)와 기기가
+  `nexon_uid`) · 메이플 ID(`character/list` 의 `account_id`) · 캐릭터(`ocid`)다. 서버에서는 셋 모두 원문이 아니라 해시다([[ADR-017]]
+  결정 11). 서버가 만든 줄 id(사람 줄 · 넥슨 계정 줄)와 기기가
   만든 값(앱 계정 번호 · 기록 id · 키 해시)은 기준에 넣지 않는다. 이 값들은 기기를 바꾸거나, 다시 설치하거나, 키를 다시 받으면 바뀌어서
   같은 기록이 한 줄 더 생긴다.
 - 기록 id 는 메이플 ID 안에서만 유일하고, 같은 기록을 다시 보냈을 때 그 줄을 찾는 데 쓴다. 내용으로 가릴 수 없는 기록만 기록 id 가
@@ -434,9 +435,10 @@
 
 ### 결정 24. 서버의 드롭 가격 기록에 ocid 와 메이플 ID 를 싣고, 같은 드롭이 다시 오면 서버에 적지 않는다
 
-- 앱이 드롭 가격을 보낼 때 그 드롭의 `ocid` 와 메이플 ID 를 싣는다(사용자 지정 2026-11-09). [[ADR-017]] 결정 6 의 익명 원칙을 이것으로 바꾼다.
-- 계정을 삭제하면 메이플 ID 는 비우고 `ocid` 는 남긴다(사용자 지정 2026-11-09). ocid 는 넥슨이 누구에게나 주는 공개 값이다. 남긴
-  ocid 가 있어야, 지운 뒤 돌아온 사람이 같은 드롭을 다시 보내도 줄이 늘지 않는다.
+- 앱이 드롭 가격을 보낼 때 그 드롭의 `ocid` 와 메이플 ID 를 해시로 싣는다(사용자 지정 2026-11-09 · 11-10, [[ADR-017]] 결정 11). [[ADR-017]]
+  결정 6 의 익명 원칙을 이것으로 바꾼다.
+- 계정을 삭제하면 메이플 ID 는 비우고 `ocid` 해시는 남긴다(사용자 지정 2026-11-09). 원문이 아니라 해시라 남겨도 키 조각이 남지 않는다.
+  남긴 해시가 있어야, 지운 뒤 돌아온 사람이 같은 드롭을 다시 보내도 줄이 늘지 않는다.
 - 같은 드롭인지는 `ocid` · 보스 · 기간(`period_key`) · 아이템 · 그 기간에 같은 아이템이 몇 번째인지로 가린다(사용자 지정 2026-11-09).
   이것이 `drop_prices` 의 유일 기준이다(결정 19).
   - 난이도는 넣지 않는다. 한 캐릭터는 한 기간에 한 보스를 한 난이도로만 잡으므로, 난이도를 넣으면 난이도만 고친 같은 드롭이 두 줄이 된다.
@@ -467,9 +469,9 @@
 
   | 표 | 줄 하나 | 유일 기준 |
   |---|---|---|
-  | `nexon_accounts` | 넥슨 ID 하나 | `nexon_uid`. 넥슨 로그인으로 확인한 계정만 값이 있다 |
+  | `nexon_accounts` | 넥슨 ID 하나 | `nexon_uid` 해시. 넥슨 로그인으로 확인한 계정만 값이 있다 |
   | `nexon_account_keys` | 그 넥슨 ID 의 API 키 하나 | 키 해시 |
-  | `nexon_account_maple_ids` | 그 넥슨 ID 의 메이플 ID 하나 | 메이플 ID. 서버 전체에서 한 줄이다 |
+  | `nexon_account_maple_ids` | 그 넥슨 ID 의 메이플 ID 하나 | 메이플 ID 해시. 서버 전체에서 한 줄이다 |
 
 - 넥슨 로그인은 `nexon_uid` 로 알아본다. 기기와 다시 로그인에 상관없이 같은 값이다. API 키는 키 해시로 찾지만, 키 해시는 키를 다시 받으면
   바뀐다. 그래서 같은 넥슨 ID 인지는 메이플 ID 로 가린다. 메이플 ID 는 넥슨 계정 하나에만 속한다(사용자 지정 2026-11-09).
@@ -505,7 +507,10 @@
 - `boss_clears` · `cashbook_entries` · `enhancement_totals` 와 그 경로를 지우지 않는다(사용자 지정 2026-11-09). 중복이 생기지 않게 스키마를
   고친 뒤 다시 보낸다.
 - 세 표는 2026-11-10 운영에 줄이 없다. 그래서 옛 줄을 옮길 일 없이, 넥슨이 준 값의 칸을 처음부터 `NOT NULL` 로 다시 만든다.
-- 고칠 방향은 결정 18 · 19 · 25 와 같다. 사람 칸(`user_id`)을 걷고 메이플 ID 칸을 둔다. 캐릭터 기록은 `ocid` 도 둔다.
+- 고칠 방향은 결정 18 · 19 · 25 와 같다. 사람 칸(`user_id`)을 걷고 메이플 ID 해시 칸을 둔다. 캐릭터 기록은 `ocid` 해시도 둔다([[ADR-017]]
+  결정 11).
+- 서버에는 캐릭터 이름을 두지 않는다(사용자 지정 2026-11-10). `enhancement_totals` 의 이름 칸(`character_name`)을 걷는다. 캐릭터는 `ocid`
+  해시로 가리키고, 이름은 기기가 자기 캐릭터 목록에서 붙인다.
 
   | 표 | 유일 기준 | 다시 보낸 기록의 줄을 찾는 기준 |
   |---|---|---|
@@ -607,3 +612,6 @@
   결정 6 · 7 · 21 · 24 · 25 · 26 의 서버 표 · 경로를 그에 맞춰 적었다. 넥슨 계정 줄은 넥슨 ID 하나에 하나이고, 메이플 ID 가 겹친 줄은 합친다.
   키를 다시 받은 계정은 옛 줄로 잇고, 메인 계정을 삭제하면 부계정 등록 정보만 지우고, 남의 메이플 ID 기록은 적지 않고, 1.0.13 을 잠근 뒤
   ocid 가 없는 드롭 줄은 지운다(사용자 선택)
+- ADR-193 (2026-11-11): 결정 19 · 24 · 25 · 26 의 서버 식별자(`nexon_uid` · 메이플 ID · ocid)를 해시로 바꿨다([[ADR-017]] 결정 11, #956).
+  드롭에 남기는 ocid 를 공개 값이라고 한 이유를 걷었고, `enhancement_totals` 의 캐릭터 이름 칸을 걷는다. 결정 15 의 키 문제에서 429 를
+  빼고 `OPENAPI00006` 을 넣었다(429 는 [[ADR-024]] 결정 11)
