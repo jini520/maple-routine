@@ -193,7 +193,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-062+082+091+106+119+123+129+131+134+141+148](./adr/ADR-062+082+091+106+119+123+129+131+134+141+148_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 |
 | [ADR-063+080+113+116+146+184](./adr/ADR-063+080+113+116+146+184_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 체계 · 화면 배율 · 글자 크기 페이지 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
-| [ADR-071+205](./adr/ADR-071+205_server_drop-price-market.md) | ⚪ | server | 드롭 시세 · 잘못 적은 값 빼기 · 드롭 가격 · 시세 관리 화면 |
+| [ADR-071+205](./adr/ADR-071+205_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 잘못 적은 값 빼기 · 드롭 가격 · 시세 관리 화면 |
 | [ADR-074](./adr/ADR-074_utility_boss-profit-calculator.md) | 🟢 | utility | 주간 보스 수익 계산기 |
 | [ADR-078](./adr/ADR-078_persistence_boss-tables.md) | 🟢 | persistence | 보스 기록 테이블 재설계 |
 | [ADR-096](./adr/ADR-096_persistence_cashbook-tables.md) | 🟢 | persistence | 가계부 기록 테이블 재설계 |
