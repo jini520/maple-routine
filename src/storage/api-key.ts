@@ -51,6 +51,7 @@ function keyOf(value: unknown, loginId: string | null): { key: NexonApiKeyMethod
   if (typeof one.value !== 'string' || typeof one.label !== 'string') return null
   const current = isCurrent(one, 'key')
   const hasLoginId = one.loginId === null || (typeof one.loginId === 'string' && one.loginId !== '')
+  const invalid = invalidOf(one.invalid)
   return {
     key: {
       type: 'key',
@@ -58,9 +59,17 @@ function keyOf(value: unknown, loginId: string | null): { key: NexonApiKeyMethod
       label: one.label,
       value: one.value,
       loginId: hasLoginId ? (one.loginId as string | null) : loginId,
+      ...(invalid === null ? {} : { invalid }),
     },
     outdated: !current || !hasLoginId,
   }
+}
+
+/** 무효 표시. 모양이 아니면 `null` 이다. 표시를 잃으면 무효 키를 다시 불러 같은 알림을 받을 뿐이라 키를 버리지 않는다. */
+function invalidOf(value: unknown): { untrackedOcids: string[] } | null {
+  const ocids = recordOf(value)?.untrackedOcids
+  if (!Array.isArray(ocids)) return null
+  return { untrackedOcids: ocids.filter((one): one is string => typeof one === 'string') }
 }
 
 /**
@@ -219,14 +228,34 @@ export async function addSubApiKey(apiKey: string, loginId: string, accountId: s
 }
 
 /**
- * 키 하나의 값만 바꾼다. 같은 넥슨 계정의 새 키라 계정 id · 귀속 · 차례는 그대로다. 옛 값은 이 저장에서 빠진다.
+ * 키 하나의 값만 바꾼다. 같은 넥슨 계정의 새 키라 계정 id · 귀속 · 차례는 그대로다. 옛 값과 무효 표시는 이 저장에서 빠진다.
  *
  * @param id 바꿀 키의 넥슨 계정 id
  */
 export async function replaceApiKeyValue(id: string, apiKey: string): Promise<void> {
   const current = await getAuthConfig()
   if (current === null) return
-  await write({ ...current, apiKeys: current.apiKeys.map((one) => (one.id === id ? { ...one, value: apiKey } : one)) })
+  const apiKeys = current.apiKeys.map((one) => {
+    if (one.id !== id) return one
+    const next: NexonApiKeyMethod = { ...one, value: apiKey }
+    delete next.invalid
+    return next
+  })
+  await write({ ...current, apiKeys })
+}
+
+/**
+ * 넥슨에서 무효가 된 부계정 키에 무효 표시를 붙인다. 키는 지우지 않는다.
+ *
+ * @param untrackedOcids 이 키 때문에 추적에서 뺀 캐릭터. 같은 계정의 새 키로 바꾸면 되돌린다
+ */
+export async function markApiKeyInvalid(apiKey: string, untrackedOcids: readonly string[]): Promise<void> {
+  const current = await getAuthConfig()
+  if (current === null) return
+  const apiKeys = current.apiKeys.map((one) =>
+    one.value === apiKey ? { ...one, invalid: { untrackedOcids: [...untrackedOcids] } } : one,
+  )
+  await write({ ...current, apiKeys })
 }
 
 /**

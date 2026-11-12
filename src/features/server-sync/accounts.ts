@@ -58,7 +58,8 @@ export async function prepareServerAccounts(deps: PrepareAccountsDeps = DEFAULT_
   if (login != null && login.session !== '') {
     const session = { Authorization: `Bearer ${login.session}` }
     for (const key of config.apiKeys) {
-      if (key.loginId !== login.id || key.value === '') continue
+      // 무효 표시가 붙은 키는 넥슨에서 지워진 키라 등록하지 않는다.
+      if (key.loginId !== login.id || key.value === '' || key.invalid !== undefined) continue
       const keyHash = apiKeyHashHex(key.value)
       const tag = `${login.id}:${keyHash}`
       if (state.registered.includes(tag)) continue

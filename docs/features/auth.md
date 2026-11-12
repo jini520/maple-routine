@@ -29,6 +29,7 @@
 | `features/auth/store.ts` | `signIn` · `noticeApiKeyIssue` · `confirmApiKeyNotice` · `signInWithNexonAccount` · `signOutNexonLogin` · `signOut` |
 | `features/auth/format.ts` | 키 입력 실패 토스트 문구(`formatAuthError`) |
 | `features/auth/use-api-key-notice.ts` | 조회 오류를 알림으로 넘기는 훅 |
+| `features/auth/key-problem.ts` | 무효가 된 부계정 키의 처리. 뺄 추적 캐릭터와 확인 뒤 가는 곳을 가르고, 키에 무효 표시를 붙인다 |
 | `features/auth/nexon-login.ts` | 넥슨 로그인 한 번(`signInWithNexon`) |
 | `features/auth/prune-covered-keys.ts` | 로그인을 저장하기 전과 로그인한 채 앱을 켤 때, 메이플 ID 가 같은 키를 서버에서 잇고 거둔다. 로그인은 그 키의 계정 id 를 이어받고, 거둔 키가 없으면 메이플 ID 가 속했던 옛 계정 id 를 잇는다 |
 | `features/character-selection/forget.ts` | 새 로그인이 저장하기 전에 추적 목록 · 대표 · 마지막에 고른 캐릭터를 저장소와 쿼리 캐시에서 비운다(`forgetTrackedSelection`) |

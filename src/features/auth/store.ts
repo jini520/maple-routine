@@ -28,6 +28,8 @@ import { signInWithNexon } from './nexon-login'
 import { pruneCoveredApiKeys } from './prune-covered-keys'
 import { currentCredential } from './current-credential'
 import { reusableNexonAccountId } from './reentry-account-id'
+import { destinationOf, planInvalidSubKey, retireInvalidSubKey, type InvalidKeyDestination } from './key-problem'
+import { useAccountManageOpenStore } from '../account-manage/open-request'
 import {
   authReducer,
   initialAuthState,
@@ -49,7 +51,10 @@ export interface AuthStore extends AuthState {
   // confirmApiKeyNotice 가 한다.
   noticeApiKeyIssue(kind: ApiKeyNoticeKind, apiKey?: string): void
   // 그 모달의 "확인". 죽은 수단을 지우고, 남은 수단이 없을 때만 로그인 화면으로 보낸다. 429 는 이 길을 타지 않는다.
+  // 지금 로그인의 부계정 키는 지우지 않고 무효로 표시한 뒤 계정 관리 목록이나 캐릭터 설정으로 보낸다.
   confirmApiKeyNotice(): Promise<void>
+  /** 무효 키 알림의 `확인` 뒤 가는 곳. 모달 본문이 쓴다. 확인과 같은 판정이라 읽은 곳으로 간다 */
+  invalidKeyDestination(apiKey: string | null): Promise<InvalidKeyDestination>
   /** 429 모달의 `다시 시도`. 알림만 닫는다. 키는 지우지 않는다. 다시 부르는 것은 화면이 한다 */
   retryRateLimitNotice(): void
   /** 429 를 받은 키가 메인 키인지 부계정 키인지. `다른 키 입력` 이 여는 곳을 가른다. 모르면 `null` */
@@ -238,10 +243,34 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
   // 모달의 확인. 여기서야 삭제와 이동이 일어난다. **차례가 그 순서인 것이 요점이다.** 남은
   // 수단은 지운 뒤에야 셀 수 있고, 그 수가 로그인 화면으로 보낼지 앱을 세워 둘지를 가른다.
+  async invalidKeyDestination(apiKey) {
+    return destinationOf(await planInvalidSubKey(apiKey).catch(() => null))
+  },
+
   async confirmApiKeyNotice() {
     const notice = get().apiKeyNotice
     if (notice === null) {
       return
+    }
+
+    // 지금 로그인의 부계정 키는 지우지 않는다. 지우면 계정 관리에서 그 계정이 사라져 어느 계정의 키가 문제인지 알 수 없다.
+    if (notice.kind === 'invalid') {
+      let plan: Awaited<ReturnType<typeof planInvalidSubKey>> = null
+      try {
+        plan = await planInvalidSubKey(notice.apiKey)
+        if (plan !== null) await retireInvalidSubKey(plan)
+      } catch {
+        // 무엇을 적었는지 모르면 아래 지우기 실패와 같이 로그인 화면으로 보낸다.
+        set((state) => authReducer(state, { type: 'SIGNED_OUT' }))
+        useAppEntryStore.getState().reset()
+        return
+      }
+      if (plan !== null) {
+        set((state) => authReducer(state, { type: 'NOTICE_ACKNOWLEDGED' }))
+        // 남은 추적 캐릭터가 없으면 추적 목록을 비운 진입 판정이 캐릭터 설정으로 보낸다.
+        if (plan.remaining.length > 0) useAccountManageOpenStore.getState().open({ accountKey: null, openKeySheet: false })
+        return
+      }
     }
 
     let 지웠다 = true

@@ -33,6 +33,8 @@ export interface ManagedAccount {
   label: string
   /** 이 기기의 키. 넥슨 ID 계정은 `null` */
   apiKey: NexonApiKeyMethod | null
+  /** 키가 넥슨에서 무효가 됐다. 목록에 남아 사용자가 그 계정에서 키를 바꾼다 */
+  invalid: boolean
   mapleIds: ManagedMapleId[]
   /** 이 계정의 메이플 ID 해시. 키를 넣을 때의 겹침 판정과 지우기가 쓴다 */
   mapleIdHashes: string[]
@@ -58,7 +60,15 @@ function mapleIdsOfAccount(nexonAccountId: string, sources: AccountManageSources
 
 function accountOfKey(key: NexonApiKeyMethod, kind: 'subKey' | 'mainKey', label: string, sources: AccountManageSources): ManagedAccount {
   const mapleIds = mapleIdsOfAccount(key.id, sources)
-  return { key: key.id, kind, label, apiKey: key, mapleIds, mapleIdHashes: mapleIds.map((one) => nexonIdHashHex(one.accountId)) }
+  return {
+    key: key.id,
+    kind,
+    label,
+    apiKey: key,
+    invalid: key.invalid !== undefined,
+    mapleIds,
+    mapleIdHashes: mapleIds.map((one) => nexonIdHashHex(one.accountId)),
+  }
 }
 
 export function buildAccountManageView(sources: AccountManageSources): AccountManageView {
@@ -76,6 +86,7 @@ export function buildAccountManageView(sources: AccountManageSources): AccountMa
       kind: 'login',
       label: '넥슨 ID 계정',
       apiKey: null,
+      invalid: false,
       mapleIds: loginMapleIds,
       mapleIdHashes: loginMapleIds.map((one) => nexonIdHashHex(one.accountId)),
     },

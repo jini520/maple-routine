@@ -36,7 +36,8 @@ function keyCredentialOf(key: NexonApiKeyMethod): NexonCredential {
 /**
  * 지금 부를 수 있는 넥슨 계정마다의 자격. 메인 계정이 맨 앞이다.
  *
- * 로그인이 있으면 로그인과 그 로그인에 등록한 부계정 키다. 다른 로그인의 부계정 키는 빠진다. 로그인이 없으면 메인 키 하나뿐이다.
+ * 로그인이 있으면 로그인과 그 로그인에 등록한 부계정 키다. 다른 로그인의 부계정 키와 무효 표시가 붙은 키는 빠진다. 로그인이 없으면
+ * 메인 키 하나뿐이다.
  */
 export function usableCredentialsOf(config: NexonAuthConfig | null): NexonCredential[] {
   const login = config?.login
@@ -46,7 +47,7 @@ export function usableCredentialsOf(config: NexonAuthConfig | null): NexonCreden
   }
   return [
     { type: 'login', value: login.session, accountId: login.id },
-    ...(config?.apiKeys ?? []).filter((one) => one.loginId === login.id).map(keyCredentialOf),
+    ...(config?.apiKeys ?? []).filter((one) => one.loginId === login.id && one.invalid === undefined).map(keyCredentialOf),
   ]
 }
 

@@ -11,7 +11,7 @@ jest.mock('../../../features/account-manage/open-request', () => ({
 
 import { fireEvent, waitFor } from '@testing-library/react-native'
 
-import { useAccountDetailOpenStore } from '../../../features/account-manage/open-request'
+import { useAccountManageOpenStore } from '../../../features/account-manage/open-request'
 import { useAuthStore } from '../../../features/auth/store'
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { ApiKeyNoticeModal } from '../ApiKeyNoticeModal'
@@ -87,7 +87,7 @@ describe('429 다시 시도 모달', () => {
 
   // 부계정 키는 그 계정의 메이플 ID 와 겹치는 키로만 바꾼다. 메인 키 시트로 받으면 다른 계정의 키가 메인 키가 된다.
   it('부계정 키의 다른 키 입력은 키 시트 대신 그 계정의 상세를 API 키 변경 시트와 함께 연다', async () => {
-    useAccountDetailOpenStore.setState({ request: null })
+    useAccountManageOpenStore.setState({ request: null })
     notice(2, 'sub')
     const { getByText, queryByTestId } = await renderOverlay(<ApiKeyNoticeModal />)
 
@@ -95,7 +95,7 @@ describe('429 다시 시도 모달', () => {
     await fireEvent.press(getByText('다른 키 입력'))
 
     expect(retryRateLimitNotice).toHaveBeenCalledTimes(1)
-    await waitFor(() => expect(useAccountDetailOpenStore.getState().request).toEqual({ accountKey: 'k-sub', openKeySheet: true }))
+    await waitFor(() => expect(useAccountManageOpenStore.getState().request).toEqual({ accountKey: 'k-sub', openKeySheet: true }))
     expect(queryByTestId('api-key-sheet')).toBeNull()
   })
 

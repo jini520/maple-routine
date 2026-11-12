@@ -6,7 +6,7 @@
 // `getAllByRole('button')` → RN 에서는 `Modal` 오버레이 자체가 `Pressable` 이라 버튼 수를 세면
 //   자리마다 값이 달라진다. 대신 **닫기 수단이 없다**는 사실을 직접 본다(오버레이를 눌러도
 //   확인이 안 불리고 화면이 그대로다).
-import { fireEvent } from '@testing-library/react-native'
+import { fireEvent, waitFor } from '@testing-library/react-native'
 
 import { useAuthStore } from '../../../features/auth/store'
 import type { ApiKeyNoticeKind } from '../../../features/auth/state'
@@ -25,10 +25,12 @@ const CASES: ReadonlyArray<{ kind: ApiKeyNoticeKind; title: string; body: string
 ]
 
 let confirmApiKeyNotice: jest.Mock
+let invalidKeyDestination: jest.Mock
 
 beforeEach(() => {
   confirmApiKeyNotice = jest.fn(async () => {})
-  useAuthStore.setState({ apiKeyNotice: null, confirmApiKeyNotice })
+  invalidKeyDestination = jest.fn(async () => 'signIn')
+  useAuthStore.setState({ apiKeyNotice: null, confirmApiKeyNotice, invalidKeyDestination })
 })
 
 describe('ApiKeyNoticeModal', () => {
@@ -46,27 +48,27 @@ describe('ApiKeyNoticeModal', () => {
     // 원인마다 다른 말을 해야 한다. 무효 키는 "다음에 무슨 일이 일어나는가"를, 429 는 처방을
     // 말한다(모달은 줄바꿈이 되므로 처방까지 담는 자리다).
     it('원인에 맞는 제목과 본문을 그린다', async () => {
-      const { getByText } = await renderOverlay(<ApiKeyNoticeModal />)
+      const { findByText, getByText } = await renderOverlay(<ApiKeyNoticeModal />)
 
-      expect(getByText(title)).toBeTruthy()
+      expect(await findByText(title)).toBeTruthy()
       expect(getByText(body)).toBeTruthy()
     })
 
     // 사용자가 이유를 인지하고 넘어가도록 확인을 강제한다. 확인 전에는 이동도 삭제도 없다.
     it('확인을 눌러야 이동이 일어난다', async () => {
-      const { getByText } = await renderOverlay(<ApiKeyNoticeModal />)
+      const { findByText } = await renderOverlay(<ApiKeyNoticeModal />)
       expect(confirmApiKeyNotice).not.toHaveBeenCalled()
 
-      await fireEvent.press(getByText('확인'))
+      await fireEvent.press(await findByText('확인'))
 
       expect(confirmApiKeyNotice).toHaveBeenCalledTimes(1)
     })
 
     // 닫을 수 없어야 한다: 저장된 키로는 앞으로 갈 수 없으므로 닫아서 돌아갈 곳이 없다.
     it('오버레이를 눌러도 닫히지 않는다', async () => {
-      const { getByText, getByTestId } = await renderOverlay(<ApiKeyNoticeModal />)
+      const { getByText, findByTestId } = await renderOverlay(<ApiKeyNoticeModal />)
 
-      await fireEvent.press(getByTestId('api-key-notice-overlay'))
+      await fireEvent.press(await findByTestId('api-key-notice-overlay'))
 
       expect(getByText(title)).toBeTruthy()
       expect(confirmApiKeyNotice).not.toHaveBeenCalled()
@@ -75,13 +77,26 @@ describe('ApiKeyNoticeModal', () => {
     // RN 에서만 물을 수 있는 것. 안드로이드 시스템 뒤로가기도 닫기다(후반).
     // `onClose` 가 no-op 이므로 아무 일도 일어나지 않아야 한다.
     it('안드로이드 뒤로가기로도 닫히지 않는다', async () => {
-      const { getByText, getByTestId } = await renderOverlay(<ApiKeyNoticeModal />)
+      const { getByText, findByTestId } = await renderOverlay(<ApiKeyNoticeModal />)
 
-      await fireEvent(getByTestId('api-key-notice-overlay-modal'), 'requestClose')
+      await fireEvent(await findByTestId('api-key-notice-overlay-modal'), 'requestClose')
 
       expect(getByText(title)).toBeTruthy()
       expect(confirmApiKeyNotice).not.toHaveBeenCalled()
     })
   })
 
+  // 확인을 누르면 화면이 바뀌므로 갈 곳을 먼저 말한다. 부계정 키는 지우지 않고 그 키의 캐릭터만 추적에서 뺀다.
+  it.each([
+    ['accounts', '이 키의 캐릭터를 추적에서 빼고 계정 관리로 이동합니다.'],
+    ['characterSetup', '이 키의 캐릭터를 추적에서 빼고 캐릭터 설정으로 이동합니다.'],
+  ])('무효 키의 본문은 확인 뒤 가는 곳(%s)을 말한다', async (destination, body) => {
+    invalidKeyDestination.mockResolvedValue(destination)
+    useAuthStore.setState({ apiKeyNotice: { kind: 'invalid', apiKey: '부-키' } })
+
+    const { findByText } = await renderOverlay(<ApiKeyNoticeModal />)
+
+    expect(await findByText(body)).toBeTruthy()
+    await waitFor(() => expect(invalidKeyDestination).toHaveBeenCalledWith('부-키'))
+  })
 })

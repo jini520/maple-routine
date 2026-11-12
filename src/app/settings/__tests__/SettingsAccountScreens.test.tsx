@@ -38,6 +38,7 @@ const 넥슨ID: ManagedAccount = {
   kind: 'login',
   label: '넥슨 ID 계정',
   apiKey: null,
+  invalid: false,
   mapleIds: [{ accountId: 'da9b2f21aa', representative: '낮잠자는곰' }],
   mapleIdHashes: ['h-main'],
 }
@@ -47,6 +48,7 @@ const 부계정: ManagedAccount = {
   kind: 'subKey',
   label: 'API 키 1 계정',
   apiKey: { type: 'key', id: 'k-sub', label: '', value: '부-키', loginId: 'login-1' },
+  invalid: false,
   mapleIds: [{ accountId: '4f1c08abbb', representative: '리프한도적' }],
   mapleIdHashes: ['h-sub'],
 }
@@ -56,6 +58,7 @@ const 둘째부계정: ManagedAccount = {
   kind: 'subKey',
   label: 'API 키 2 계정',
   apiKey: { type: 'key', id: 'k-sub-2', label: '', value: '둘째-키', loginId: 'login-1' },
+  invalid: false,
   mapleIds: [{ accountId: '9e3a77cccc', representative: null }],
   mapleIdHashes: ['h-sub-2'],
 }
@@ -66,6 +69,7 @@ let load: jest.Mock
 let addKey: jest.Mock
 let changeKey: jest.Mock
 let removeAccount: jest.Mock
+let replaceWithKey: jest.Mock
 
 function 보기(view: Partial<AccountManageView>): void {
   useAccountManageStore.setState({ view: { hasLogin: true, accounts: [넥슨ID], canAdd: true, ...view } })
@@ -77,7 +81,8 @@ beforeEach(() => {
   addKey = jest.fn(async () => ({ outcome: 'saved' }))
   changeKey = jest.fn(async () => ({ outcome: 'saved' }))
   removeAccount = jest.fn(async () => 'removed')
-  useAccountManageStore.setState({ view: null, load, addKey, changeKey, removeAccount })
+  replaceWithKey = jest.fn(async () => ({ outcome: 'saved' }))
+  useAccountManageStore.setState({ view: null, load, addKey, changeKey, removeAccount, replaceWithKey })
   useMapleIdNamesStore.setState({ names: {} })
 })
 
@@ -132,6 +137,37 @@ describe('SettingsAccountsScreen', () => {
     await fireEvent.changeText(view.getByLabelText('Nexon Open API 키'), '새-키')
     await fireEvent.press(view.getByText('확인'))
     await waitFor(() => expect(addKey).toHaveBeenLastCalledWith('새-키'))
+    await waitFor(() => expect(view.queryByTestId('api-key-sheet')).toBeNull())
+  })
+
+  // 모달에서 읽은 말과 목록의 표시가 이어져야 어느 계정의 키가 문제인지 찾는다.
+  it('키가 무효가 된 계정 행에만 유효하지 않은 키를 적는다', async () => {
+    보기({ accounts: [넥슨ID, { ...부계정, invalid: true }, 둘째부계정] })
+    const view = await renderOverlay(<SettingsAccountsScreen />)
+
+    expect(view.getAllByText('유효하지 않은 키')).toHaveLength(1)
+  })
+
+  it('등록된 부계정의 키를 추가하면 바꿀지 묻고, 바꾸기는 그 계정의 키를 바꾸고 취소는 시트로 돌아간다', async () => {
+    보기({ accounts: [넥슨ID, 부계정] })
+    addKey.mockResolvedValue({ outcome: 'existing', accountKey: 'k-sub', label: 'API 키 1 계정' })
+    const view = await renderOverlay(<SettingsAccountsScreen />)
+
+    await fireEvent.press(view.getByText('API 키 추가'))
+    await fireEvent.changeText(view.getByLabelText('Nexon Open API 키'), '같은-계정-키')
+    await fireEvent.press(view.getByText('확인'))
+    await waitFor(() => expect(view.getByText('이미 등록된 계정의 API 키예요')).toBeTruthy())
+    expect(view.getByText('API 키 1 계정의 키를 새로 입력한 키로 바꿀까요?')).toBeTruthy()
+
+    await fireEvent.press(view.getByText('취소'))
+    await waitFor(() => expect(view.queryByText('이미 등록된 계정의 API 키예요')).toBeNull())
+    expect(view.getByTestId('api-key-sheet')).toBeTruthy()
+    expect(replaceWithKey).not.toHaveBeenCalled()
+
+    await fireEvent.press(view.getByText('확인'))
+    await waitFor(() => expect(view.getByText('바꾸기')).toBeTruthy())
+    await fireEvent.press(view.getByText('바꾸기'))
+    await waitFor(() => expect(replaceWithKey).toHaveBeenCalledWith('k-sub', '같은-계정-키'))
     await waitFor(() => expect(view.queryByTestId('api-key-sheet')).toBeNull())
   })
 
