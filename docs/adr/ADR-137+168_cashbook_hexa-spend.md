@@ -1,7 +1,7 @@
 # ADR-137+168 헥사 강화 지출과 강화 레벨 기억
 
 > 🟢 유효
-> 관련 소스: `app/cashbook/spend/HexaMatrixForm.tsx` · `app/cashbook/spend/LevelRangeGrid.tsx` · `app/cashbook/spend/level-range.ts` · `app/cashbook/spend/SymbolForm.tsx` · `lib/cashbook/hexa-matrix.ts` · `features/cashbook/remembered-levels.ts` · `storage/remembered-levels.ts` · `nexon/hexamatrix/` · `features/cashbook/records.ts` · `storage/cashbook-entries.ts` · `storage/income.ts` · `storage/hexa-storage-checks.ts`
+> 관련 소스: `app/cashbook/spend/HexaMatrixForm.tsx` · `app/cashbook/spend/LevelRangeGrid.tsx` · `app/cashbook/spend/level-range.ts` · `app/cashbook/spend/SymbolForm.tsx` · `lib/cashbook/hexa-matrix.ts` · `features/cashbook/remembered-levels.ts` · `storage/remembered-levels.ts` · `nexon/hexamatrix/` · `features/cashbook/records.ts` · `storage/cashbook-entries.ts` · `storage/income.ts` · `storage/fragment-ledger.ts` · `storage/hexa-storage-checks.ts`
 
 ## 배경
 
@@ -217,7 +217,8 @@
   뺀다. 같은 ID · 같은 월드인지 모르는 캐릭터의 보관을 빼면 옮길 수 없는 조각을 쓴 것으로 남을 수 있다.
 - 차례는 강화한 캐릭터가 먼저이고, 그다음은 캐릭터 관리에 저장한 순서(`getTrackedCharacterOcids`)다(`hexaStorageCandidates`).
   사용자가 캐릭터 관리에서 순서를 바꾸면 어느 캐릭터의 보관부터 빠질지 정할 수 있다.
-- 보관은 기록 날짜까지 센다. `getFragmentStorage` 와 같은 규칙이다. 나중에 보관한 조각을 앞선 날짜의 강화에 쓸 수 없기 때문이다.
+- 후보마다 쓸 수 있는 보관은 [[ADR-049]] 결정 11 의 개수다(`getFragmentStorage`). 기록 날짜와 그 뒤 모든 날의 남은 개수 가운데
+  가장 작은 값이다. 그래서 나중에 모은 조각도, 그 뒤 날짜에 팔거나 쓴 조각도 이 강화에 쓸 수 없다.
 - 보관이 0 이하인 캐릭터는 건너뛴다.
 - 후보 중 한 캐릭터라도 보관을 못 읽으면 개수가 `-` 이고 저장을 끈다(`loadHexaStorages` 가 `null`). 못 읽은 캐릭터를 건너뛰면
   차례가 뒤 캐릭터로 밀려 다른 보관이 빠지기 때문이다. 정산 폼의 `모든 캐릭터` 와 같은 규칙이다([[ADR-049]] 결정 15).
@@ -229,6 +230,9 @@
 - 저장할 때 배분을 표 `cashbook_entry_fragment_uses` 에 캐릭터마다 한 줄로 적는다. 칸은 uuid 기본키 · 기록 id · `ocid` · 개수이고,
   기록을 지우면 함께 지워진다. 저장할 때마다 다시 계산하면 옛 사냥 기록을 고쳤을 때 지난 헥사 기록이 가져간 캐릭터가 조용히 바뀐다.
 - `getFragmentStorage` 는 사냥 보관에서 정산한 개수와 함께 이 표의 개수도 뺀다.
+- 저장 · 수정 · 삭제는 조각 장부를 0 아래로 내리는지 검사를 거친다([[ADR-049]] 결정 17).
+- 굳힌 배분이 바뀌는 때는 하나다. 사냥 기록을 고쳐 이 기록이 가져간 보관이 모자라게 되면, 다른 캐릭터의 보관으로 옮기거나
+  보관 사용을 줄인다([[ADR-049]] 결정 17). 금액이 바뀌면 사용자가 확인 창에서 본 뒤에만 바꾼다.
 - 수정으로 열면 그 기록의 몫을 뺀 보관으로 다시 배분한다.
 - 0 메소 정산 기록을 대신 만들지 않는다. 하루 목록에 판매처럼 서고, 헥사 기록을 고치거나 지울 때 그 줄도 맞춰야 하기 때문이다.
 - 데이터 삭제의 가계부 그룹이 이 표도 지운다([[ADR-053]]).
@@ -255,7 +259,7 @@
 | `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` | 결정 3 · 9: 조각 칸 넷이 그대로 돌아오는지, 칸이 없는 옛 품목 표에 칸이 붙는지, 가장 최근 기록 조회와 기억의 fill · overwrite 를 진짜 SQLite 로 본다 |
 | `features/cashbook/__tests__/records.spec.ts` · `row-icon.spec.ts` · `features/stats/__tests__/aggregate.spec.ts` | 결정 12: 0 메소 헥사 줄이 서는지, 줄 두 줄 · 그림, 통계의 코어 · 스탯별 몫을 본다 |
 | `lib/__tests__/hexa-matrix.test.ts` (보관) | 결정 14 · 15 · 17: 교환 불가를 먼저 빼고 보관을 차례대로 가져오며 마지막 캐릭터는 모자란 만큼만 쓰는지, 강화한 캐릭터 다음 같은 메이플 ID · 같은 월드 캐릭터를 캐릭터 관리 순서로 두는지, 메이플 ID 나 월드를 모르면 자신뿐이고 월드를 모르는 다른 캐릭터는 빠지는지, 보관 0 이하를 건너뛰는지, 지출 체크에 따라 금액이 갈리는지 본다 |
-| `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` (`보관에서 가져온 조각`) | 결정 13 · 16 · 17: 두 체크와 배분이 그대로 돌아오고 가격 없는 기록도 헥사 기록인지, 고치면 배분을 갈아 끼우고 지우면 함께 지워지는지, 보관이 헥사 기록이 가져간 개수를 날짜 · 수정 중인 기록을 가려 빼는지 진짜 SQLite 로 본다 |
+| `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` (`보관에서 가져온 조각`) | 결정 13 · 16 · 17: 두 체크와 배분이 그대로 돌아오고 가격 없는 기록도 헥사 기록인지, 고치면 배분을 갈아 끼우고 지우면 함께 지워지는지, 보관이 헥사 기록이 가져간 개수를 빼고 수정 중인 기록의 몫은 되돌리는지 진짜 SQLite 로 본다 |
 | `features/cashbook/__tests__/records.spec.ts` (`헥사 보관 체크 기억` · `loadHexaStorages`) | 결정 13 · 15: 새 헥사 기록만 두 체크를 기억하는지, 같은 메이플 ID · 같은 월드 캐릭터의 보관을 차례대로 읽고 한 캐릭터라도 못 읽으면 `null` 인지 본다 |
 | `app/cashbook/__tests__/SpendSheet.test.tsx` (`헥사 매트릭스` 의 보관) | 결정 13 · 14 · 15 · 16 · 17: 보관을 켜면 줄인 필요 조각과 취소선 원래 수가 서고 배분을 저장하는지, 다 채우면 가격 입력이 꺼지고 지출 체크로 다시 켜지는지, 못 읽으면 저장이 꺼지는지, 새 폼은 기억한 체크로 · 수정은 기록의 체크로 열리는지 본다 |
 | `src/modules/hexa-matrix/hexa-matrix.repository.spec.ts` | 결정 5 · 6: API 타입마다 기본 종류가 하나인지, 비용 줄이 0 부터 만렙 − 1 까지 다 있어야 하는지, 직업별 코어의 차례를 진짜 Postgres 로 본다 |
