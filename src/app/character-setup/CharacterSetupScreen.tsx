@@ -129,6 +129,7 @@ export function CharacterSetupScreen(): React.JSX.Element {
             manage={manage}
             scrollableRef={scrollableRef}
             place="characterSetup"
+            onBackToSignIn={() => navigation.goBack()}
           />
         </View>
       </EntryScroll>

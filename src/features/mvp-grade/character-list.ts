@@ -17,9 +17,23 @@ import { queryKeys } from '../query/keys'
  */
 export async function fetchAndRecordCharacterList(credential: NexonCredential, now: Date = new Date()): Promise<MapleAccount[]> {
   const accounts = await fetchCharacterList(credential, worldKeyOfApiName)
-  // 소속 기록이 실패해도 목록을 받은 자리는 그대로 간다.
-  void recordCharacterAccounts(accounts, getCurrentKstDateKey(now), credential.accountId).catch(() => undefined)
+  recordCharacterList(accounts, credential.accountId, now)
   return accounts
+}
+
+/**
+ * 넥슨 계정 id 가 정해지기 전에 받는 목록. 소속을 적지 않는다. 로그인 · 키 입력이 쓰고, id 를 정한 뒤 `recordCharacterList`
+ * 로 적는다.
+ *
+ * 먼저 적으면 막힌 키의 캐릭터가 계정 칸이 빈 채로 남고, 로그인이 옛 계정 id 를 찾기 전에 그 칸을 덮는다.
+ */
+export function fetchUnsavedCharacterList(credential: NexonCredential): Promise<MapleAccount[]> {
+  return fetchCharacterList(credential, worldKeyOfApiName)
+}
+
+/** 받은 목록의 메이플 ID 소속을 적는 함수. 실패해도 목록을 받은 자리는 그대로 간다. */
+export function recordCharacterList(accounts: readonly MapleAccount[], accountId: string | null, now: Date = new Date()): void {
+  void recordCharacterAccounts([...accounts], getCurrentKstDateKey(now), accountId).catch(() => undefined)
 }
 
 /**
@@ -54,6 +68,14 @@ export async function fetchCharacterListCached(
     meta: { persist: true, source: 'nexon' },
   })
   return queryClient.fetchQuery(listOptions)
+}
+
+/**
+ * 방금 받은 목록을 그 자격의 캐시에 넣는 함수. 로그인을 갈아끼우면 새 로그인이 앞 로그인의 계정 id 를 이어받아 캐시 열쇠가
+ * 같다. 안 넣으면 앞 로그인의 목록이 5분 동안 화면에 선다.
+ */
+export function primeCharacterList(credential: NexonCredential, accounts: MapleAccount[]): void {
+  queryClient.setQueryData(queryKeys.characterList(credentialKeyOf(credential)), accounts)
 }
 
 /** 마지막으로 받아 둔 목록. 넥슨을 부르지 않는다. 받은 적이 없으면 `undefined` 다. */
