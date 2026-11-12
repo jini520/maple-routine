@@ -407,6 +407,7 @@ export interface HuntingGroundRow {
   name: string
   force: number
   mobs: number
+  popular: boolean
 }
 export interface HuntingGroundLevelRow {
   ground: string

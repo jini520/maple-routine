@@ -43,6 +43,7 @@ jest.mock('../../../features/mvp-grade/fee-context', () => ({
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { IncomeSheet } from '../IncomeSheet'
 import { cashbookCategoriesTable } from '../../../lib/cashbook/categories'
+import { huntingGroundsTable } from '../../../lib/cashbook/hunting-grounds'
 import type { IncomeRecord } from '../../../storage/income'
 
 // 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다.
@@ -1532,6 +1533,34 @@ describe('사냥 계산기', () => {
     ])
     // 참조표에서 맨 앞이던 `성문으로 가는 길 1`(270)은 뒤로 밀린다.
     expect(이름들.indexOf('odium_road_to_castle_gate_1')).toBeGreaterThan(10)
+  })
+
+  describe('인기 사냥터', () => {
+    const 원래표 = huntingGroundsTable.get()
+    const 인기 = 'odium_laboratory_behind_locked_door_4'
+    beforeEach(() => {
+      huntingGroundsTable.set({
+        ...원래표,
+        grounds: 원래표.grounds.map((each) => (each.key === 인기 ? { ...each, popular: true } : each)),
+      })
+    })
+    afterEach(() => huntingGroundsTable.set(원래표))
+
+    /** 인기는 사냥터를 고를 때 쓰는 정보라 목록에만 선다(사용자 지정 2026-11-12). */
+    it('인기 사냥터 줄에만 왕관이 서고, 고른 뒤 닫힌 사냥터 칸에는 서지 않는다', async () => {
+      const view = await 그리기({}, 'hunting')
+      await 루디고르기(view)
+      await 사슬고르기(view, 'odium')
+      await 아이디로누르기(view, 'income-sheet-ground-open')
+
+      expect(within(view.getByTestId(`income-sheet-ground-option-${인기}`)).getByTestId('popular-mark')).toBeTruthy()
+      expect(view.getAllByTestId('popular-mark')).toHaveLength(1)
+
+      await 아이디로누르기(view, `income-sheet-ground-option-${인기}`)
+
+      expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('잠긴 문 뒤 실험실 4')
+      expect(view.queryByTestId('popular-mark')).toBeNull()
+    })
   })
 
   /**

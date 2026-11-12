@@ -21,6 +21,8 @@ export interface HuntingGround {
    * 둘 다 쓰기 때문이다. 한 값으로 접으면 그 구분이 사라진다. 셋 이상인 맵은 없다.
    */
   readonly levels: readonly number[]
+  /** 인기 사냥터. 레벨 차이가 같은 사냥터 사이에서 먼저 서고, 목록 줄에 왕관이 선다. */
+  readonly popular: boolean
 }
 
 export interface HuntingRegion {
