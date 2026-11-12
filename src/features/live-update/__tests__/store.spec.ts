@@ -40,6 +40,7 @@ const INITIAL = {
   justUpdated: false,
   holdingSplash: true,
   lastCheckedAt: null,
+  updatePending: false,
 }
 
 const s = () => useLiveUpdateStore.getState()
@@ -537,6 +538,10 @@ describe('useLiveUpdateStore', () => {
     /** 지금 시각을 `T0` 에서 `minutes` 분 뒤로 놓는 함수. */
     const at = (minutes: number) => now.mockReturnValue(T0 + minutes * MINUTE)
 
+    // 잠깐 나갔다 온 복귀. 받아 둔 번들을 적용하는 10분보다 짧다.
+    const BRIEF = 1 * MINUTE
+    const AWAY = 10 * MINUTE
+
     it('부팅 확인과 `업데이트 확인` 버튼을 마지막 확인으로 세어, 그 뒤 1시간이 지나야 확인한다', async () => {
       getCurrentBundleVersionMock.mockResolvedValue('1.0.1')
       checkForLiveUpdateMock.mockResolvedValue({ kind: 'up-to-date' })
@@ -544,23 +549,23 @@ describe('useLiveUpdateStore', () => {
       expect(checkForLiveUpdateMock).toHaveBeenCalledTimes(1)
 
       at(59)
-      await s().checkOnReturn()
+      await s().checkOnReturn(BRIEF)
       expect(checkForLiveUpdateMock).toHaveBeenCalledTimes(1)
 
       at(60)
       await s().check()
       at(119)
-      await s().checkOnReturn()
+      await s().checkOnReturn(BRIEF)
       expect(checkForLiveUpdateMock).toHaveBeenCalledTimes(2)
 
       at(120)
-      await s().checkOnReturn()
+      await s().checkOnReturn(BRIEF)
       expect(checkForLiveUpdateMock).toHaveBeenCalledTimes(3)
     })
 
     it('한 번도 확인하지 않았으면 건너뛴다. 곧 부팅 확인이 돈다', async () => {
       at(24 * 60)
-      await s().checkOnReturn()
+      await s().checkOnReturn(AWAY)
       expect(checkForLiveUpdateMock).not.toHaveBeenCalled()
     })
 
@@ -572,23 +577,102 @@ describe('useLiveUpdateStore', () => {
       expect(s().status).toBe('ready-to-apply')
 
       at(120)
-      await s().checkOnReturn()
+      await s().checkOnReturn(BRIEF)
       expect(checkForLiveUpdateMock).toHaveBeenCalledTimes(1)
       expect(s().status).toBe('ready-to-apply')
       expect(s().hasDownloadedBundle).toBe(true)
     })
 
-    it('`나중에` 를 누른 뒤 1시간이 지나 돌아오면 다시 받아 적용을 묻는다', async () => {
+    it('`나중에` 를 누른 뒤 1시간이 지나 잠깐 나갔다 돌아오면 다시 받아 적용을 묻는다', async () => {
       checkForLiveUpdateMock.mockResolvedValue(SMALL)
       downloadLiveUpdateMock.mockResolvedValue(undefined)
       await s().check()
       s().dismiss()
 
       at(60)
-      await s().checkOnReturn()
+      await s().checkOnReturn(BRIEF)
       expect(downloadLiveUpdateMock).toHaveBeenCalledTimes(2)
       expect(s().status).toBe('ready-to-apply')
       expect(s().hasDownloadedBundle).toBe(true)
+    })
+
+    // `나중에` 를 눌러도 앱을 다시 열면 업데이트된 상태로 보여야 한다. 짧은 외출은 권한 창이나 로그인 브라우저일 수 있다.
+    it('받아 두고 `나중에` 를 누른 뒤 10분 넘게 나갔다 돌아오면 확인하지 않고 적용한다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(SMALL)
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      applyLiveUpdateMock.mockResolvedValue(undefined)
+      await s().check()
+      s().dismiss()
+
+      at(30)
+      await s().checkOnReturn(AWAY - 1_000)
+      expect(applyLiveUpdateMock).not.toHaveBeenCalled()
+      expect(s().status).toBe('idle')
+
+      at(120)
+      await s().checkOnReturn(AWAY)
+      expect(applyLiveUpdateMock).toHaveBeenCalledTimes(1)
+      expect(s().status).toBe('applying')
+      expect(checkForLiveUpdateMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('`업데이트 준비 완료` 에 답하지 않고 10분 넘게 나갔다 와도 적용한다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(SMALL)
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      applyLiveUpdateMock.mockResolvedValue(undefined)
+      await s().check()
+      expect(s().status).toBe('ready-to-apply')
+
+      await s().checkOnReturn(AWAY)
+      expect(applyLiveUpdateMock).toHaveBeenCalledTimes(1)
+      expect(s().status).toBe('applying')
+    })
+
+    it('받아 둔 번들이 없으면 10분 넘게 나갔다 와도 적용하지 않는다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(AVAILABLE)
+      await s().check()
+      s().dismiss()
+
+      at(30)
+      await s().checkOnReturn(AWAY)
+      expect(downloadLiveUpdateMock).not.toHaveBeenCalled()
+      expect(applyLiveUpdateMock).not.toHaveBeenCalled()
+      expect(s().status).toBe('idle')
+    })
+
+    it('스토어 업데이트 모달이 떠 있으면 받아 둔 번들을 적용하지 않는다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(SMALL)
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      await s().check()
+      s().dismiss()
+      checkForLiveUpdateMock.mockResolvedValue({ kind: 'store-required', version: '2.0.0' })
+      await s().check()
+
+      await s().checkOnReturn(AWAY)
+      expect(applyLiveUpdateMock).not.toHaveBeenCalled()
+      expect(s().status).toBe('store-required')
+    })
+
+    // 사용자가 시작한 적용이 아니라 실패를 모달로 알리지 않는다. 받아 둔 번들은 남아 있다.
+    it('적용이 실패하면 모달 없이 커버를 걷고 적용 전 상태로 돌아가, 다음 복귀에 다시 적용한다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(SMALL)
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      await s().check()
+      s().dismiss()
+      applyLiveUpdateMock.mockImplementationOnce(async () => {
+        await closeNativeModals()
+        throw new Error('reload failed')
+      })
+
+      await s().checkOnReturn(AWAY)
+      expect(hideSplashScreenMock).toHaveBeenCalledTimes(1)
+      expect(nativeModalsOpen()).toBe(true)
+      expect(s().status).toBe('idle')
+
+      applyLiveUpdateMock.mockResolvedValue(undefined)
+      await s().checkOnReturn(AWAY)
+      expect(applyLiveUpdateMock).toHaveBeenCalledTimes(2)
+      expect(s().status).toBe('applying')
     })
   })
 

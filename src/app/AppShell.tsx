@@ -252,9 +252,9 @@ function refreshOnReturn(): void {
   void refreshGameData()
 }
 
-/** 백그라운드에서 돌아올 때의 OTA 확인. 1시간 간격은 스토어가 지킨다. */
-function checkUpdateOnReturn(): void {
-  void useLiveUpdateStore.getState().checkOnReturn()
+/** 백그라운드에서 돌아올 때의 OTA 처리. 받아 둔 번들을 적용할지와 1시간 간격은 스토어가 정한다. */
+function checkUpdateOnReturn(awayMs: number): void {
+  void useLiveUpdateStore.getState().checkOnReturn(awayMs)
 }
 
 export function AppShell(): React.JSX.Element {
