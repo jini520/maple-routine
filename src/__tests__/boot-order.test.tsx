@@ -112,7 +112,7 @@ jest.mock('../app/prehydrate', () => ({
   },
 }))
 
-// OTA 부팅 확인은 셸이 아니라 `boot.ts` 가 부른다. 셸이 읽는 것은 스플래시 붙들기와 잠금 위 모달의 상태뿐이다.
+// OTA 부팅 확인은 셸이 아니라 `boot.ts` 가 부른다. 셸이 쓰는 것은 스플래시 붙들기, 잠금 위 모달의 상태, 복귀 확인이다.
 // 확인이 실제로 무엇을 하는지는 어댑터·스토어 테스트의 몫이다.
 const mockLiveUpdate = {
   status: 'idle',
@@ -125,6 +125,9 @@ const mockLiveUpdate = {
   minNativeVersion: null,
   downloadProgress: 0,
   channel: 'production',
+  checkOnReturn: async () => {
+    mockCalls.push('check:liveUpdate')
+  },
 }
 jest.mock('../features/live-update/store', () => {
   const useLiveUpdateStore = (selector?: (value: typeof mockLiveUpdate) => unknown) =>
@@ -286,8 +289,9 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     expect(mockCalls.indexOf('restored:notice')).toBeLessThan(mockCalls.indexOf('resubscribe:notice'))
   })
 
-  // OS 설정에서 알림 권한을 켜고 돌아오면 그때 구독이 맞춰져야 한다.
-  it('백그라운드에서 돌아오면 다시 구독한다', async () => {
+  // OS 설정에서 알림 권한을 켜고 돌아오면 그때 구독이 맞춰져야 한다. 아이폰은 앱을 새로 켜지 않고 이어서 돌리므로
+  // 게임 데이터와 OTA 도 돌아올 때 다시 확인해야 늦지 않는다.
+  it('백그라운드에서 돌아오면 다시 구독하고, 게임 데이터와 업데이트를 다시 확인한다', async () => {
     const currentState = Object.getOwnPropertyDescriptor(AppState, 'currentState')
     Object.defineProperty(AppState, 'currentState', { value: 'active', configurable: true, writable: true })
     const listeners: ((next: AppStateStatus) => void)[] = []
@@ -311,7 +315,7 @@ describe('① 셸이 무엇을 언제 하는가', () => {
         }
       })
 
-      expect(mockCalls.sort()).toEqual(['refresh:gameData', 'resubscribe:notice'])
+      expect(mockCalls.sort()).toEqual(['check:liveUpdate', 'refresh:gameData', 'resubscribe:notice'])
     } finally {
       stopFocus()
       focusManager.setFocused(undefined)

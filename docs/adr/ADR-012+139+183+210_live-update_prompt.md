@@ -1,6 +1,6 @@
 # ADR-012+139+183+210 업데이트 동의 모달과 적용
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-026 · ADR-027 결정 1 · 4 · 6 · 7 · ADR-065 결정 2 · ADR-117 결정 1 · 5 · 7 · ADR-268 결정 1 · 5
 > 관련 소스: `features/live-update/store.ts` · `app/UpdatePromptModal.tsx` · `app/settings/AppUpdateSection.tsx` · `app/AppShell.tsx` · `native/live-update.ts` · `storage/sqlite/db.ts` · `lib/native-modal-gate.ts` · `components/organisms/Modal/Modal.tsx`
 
@@ -295,8 +295,8 @@ RN `Modal` 을 모두 `visible={false}` 로 바꾸고, iOS 가 닫았다고 알�
 | `lib/__tests__/native-modal-gate.spec.ts` | 결정 13: iOS 에서 떠 있는 모달이 닫혔다고 알릴 때까지 기다리는지, 알림이 오지 않아도 1.5초에 끝나는지, 안드로이드는 기다리지 않는지, 되돌린 뒤에는 모달을 다시 그리는지 본다 |
 | `components/organisms/Modal/__tests__/Modal.test.tsx` | 결정 13: 모달 닫기가 걸리면 RN `Modal` 을 `visible={false}` 로 두고, 그 `onDismiss` 가 기다림을 푸는지 본다 |
 | `features/live-update/__tests__/store.spec.ts` | 결정 6 · 13: 적용이 실패하거나 12초를 넘기면 모달을 다시 그릴 수 있게 되돌리는지, 처음 실행의 적용이 실패해도 되돌리는지 본다 |
-| `features/live-update/__tests__/store.spec.ts` | 결정 14: 마지막 확인 뒤 1시간이 지나야 확인하는지(59분에는 하지 않는다), `업데이트 확인` 버튼도 마지막 확인으로 세는지, 한 번도 확인하지 않았으면 건너뛰는지, 적용을 묻는 중이면 확인하지 않아 받아 둔 번들 표시가 남는지, 찾으면 5MB 이하를 받아 적용을 묻는지 본다 |
-| `__tests__/boot-order.test.tsx` | 결정 14: 앱이 백그라운드에서 돌아오면 `checkOnReturn` 을 부르는지 본다 |
+| `features/live-update/__tests__/store.spec.ts` | 결정 2 · 14: 부팅 확인과 `업데이트 확인` 버튼을 마지막 확인으로 세어 그 뒤 1시간이 지나야 확인하는지(59분에는 하지 않는다), 한 번도 확인하지 않았으면 건너뛰는지, 적용을 묻는 중이면 확인하지 않아 받아 둔 번들 표시가 남는지, `나중에` 를 누른 뒤 1시간이 지나 돌아오면 다시 받아 적용을 묻는지 본다 |
+| `__tests__/boot-order.test.tsx` | 결정 14: 앱이 백그라운드에서 돌아오면 셸이 `checkOnReturn` 을 부르는지 본다 |
 
 ## 번호 기록
 
