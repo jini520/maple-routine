@@ -81,6 +81,7 @@ const entryResetMock = jest.requireMock('../../app-entry/store').useAppEntryStor
 import { recordKeySuccess, resetKeySuccessForTest } from '../../../nexon/key-success'
 import { useAccountManageOpenStore } from '../../account-manage/open-request'
 import { resetRateLimitNoticesForTest, useAuthStore } from '../store'
+import { readCachedCharacterList } from '../../mvp-grade/character-list'
 import type { NexonCredential } from '../../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
@@ -962,17 +963,33 @@ describe('useAuthStore.signIn: 소속은 키를 저장한 뒤에 적는다', () 
 // 진입 단계를 다시 판정하지 않으면 사용자는 로그인하고도 같은 화면에 남는다.
 describe('useAuthStore.signInWithNexonAccount', () => {
   beforeEach(() => {
-    signInWithNexonMock.mockResolvedValue({ kind: 'signedIn' })
-    currentCredentialMock.mockResolvedValue({ type: 'login', value: '토큰', accountId: null })
-    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+    signInWithNexonMock.mockResolvedValue({ kind: 'signedIn', accounts: [account('acc-1')] })
+    currentCredentialMock.mockResolvedValue({ type: 'login', value: '토큰', accountId: 'login-id' })
   })
 
-  it('성공하면 목록을 받아 진입 단계를 다시 판정한다', async () => {
+  it('성공하면 로그인이 저장 전에 받은 목록으로 진입 단계를 다시 판정하고, 목록을 다시 받지 않는다', async () => {
     const ok = await useAuthStore.getState().signInWithNexonAccount()
 
     expect(ok).toBe(true)
     expect(useAuthStore.getState().status).toBe('signedIn')
     expect(resolveAfterSignInMock).toHaveBeenCalledWith([account('acc-1')])
+    expect(fetchCharacterListMock).not.toHaveBeenCalled()
+  })
+
+  it('받은 목록을 그 로그인의 캐시에 넣는다. 갈아끼운 로그인은 앞 로그인의 계정 id 를 이어받아 빈 목록이 남아 있을 수 있다', async () => {
+    await useAuthStore.getState().signInWithNexonAccount()
+
+    expect(readCachedCharacterList({ type: 'login', value: '토큰', accountId: 'login-id' })).toEqual([account('acc-1')])
+  })
+
+  it('메이플 ID 가 없는 넥슨 ID 면 그렇다고 말하고 앱을 열지 않는다', async () => {
+    signInWithNexonMock.mockResolvedValue({ kind: 'noMapleId' })
+
+    expect(await useAuthStore.getState().signInWithNexonAccount()).toBe(false)
+    expect(showErrorMock).toHaveBeenCalledWith('이 넥슨 ID 에 연결된 메이플 ID 를 찾지 못했어요')
+    expect(showSuccessMock).not.toHaveBeenCalled()
+    expect(resolveAfterSignInMock).not.toHaveBeenCalled()
+    expect(useAuthStore.getState().status).toBe('signedOut')
   })
 
   // today 의 `넥슨 ID 연동하기` 는 키로 쓰던 사람이 로그인을 붙이는 것이라 새 로그인이 아니다.
@@ -1002,17 +1019,9 @@ describe('useAuthStore.signInWithNexonAccount', () => {
     expect(showErrorMock).toHaveBeenCalledWith('넥슨 로그인에 실패했습니다')
   })
 
-  it('로그인은 됐는데 목록을 못 받으면 앱을 열지 않는다', async () => {
-    // 세션은 저장됐다. 다음 회차가 다시 받으면 된다. 여기서 앱을 열면 캐릭터 없는 화면이 선다.
-    fetchCharacterListMock.mockRejectedValue(new Error('network'))
-
-    expect(await useAuthStore.getState().signInWithNexonAccount()).toBe(false)
-    expect(resolveAfterSignInMock).not.toHaveBeenCalled()
-  })
-
   it('진행 중에 다시 부르면 새로 시작하지 않는다', async () => {
     // 로그인 창은 하나만 열 수 있다. 두 번째 시작은 창을 못 열고 실패 토스트를 내는데, 그사이 첫 로그인은 성공한다.
-    let finish: (result: { kind: 'signedIn' }) => void = () => undefined
+    let finish: (result: { kind: 'signedIn'; accounts: MapleAccount[] }) => void = () => undefined
     signInWithNexonMock.mockReturnValueOnce(
       new Promise((resolve) => {
         finish = resolve
@@ -1021,7 +1030,7 @@ describe('useAuthStore.signInWithNexonAccount', () => {
 
     const first = useAuthStore.getState().signInWithNexonAccount()
     const second = await useAuthStore.getState().signInWithNexonAccount()
-    finish({ kind: 'signedIn' })
+    finish({ kind: 'signedIn', accounts: [account('acc-1')] })
 
     expect(second).toBe(false)
     expect(await first).toBe(true)
@@ -1031,5 +1040,62 @@ describe('useAuthStore.signInWithNexonAccount', () => {
     // 끝나면 다시 누를 수 있다.
     await useAuthStore.getState().signInWithNexonAccount()
     expect(signInWithNexonMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+// 메이플 ID 가 없는 넥슨 로그인이 이미 저장된 기기의 출구. 조회는 로그인이 있으면 늘 로그인으로 가서, 로그인을 떼지 않으면 빈 화면에서 못 나온다.
+describe('useAuthStore.leaveEmptyNexonLogin', () => {
+  const 빈로그인 = { type: 'login', id: 'login-id', session: '빈세션' }
+  const 키 = { type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }
+  const 부계정키 = { type: 'key', id: 'sub-key', label: '', value: 'key-2', loginId: 'login-id' }
+
+  beforeEach(() => {
+    useAuthStore.setState({ ...initialAuthState, status: 'signedIn' })
+  })
+
+  it('서버 세션을 거두고 넥슨 로그인만 뗀다. API 키는 지우지 않는다', async () => {
+    getAuthConfigMock.mockResolvedValueOnce({ login: 빈로그인, mainKeyId: 'account-key', apiKeys: [키] }).mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [키] })
+
+    await useAuthStore.getState().leaveEmptyNexonLogin()
+
+    expect(revokeNexonSessionMock).toHaveBeenCalledWith('빈세션')
+    expect(clearNexonLoginMock).toHaveBeenCalled()
+    expect(removeAllApiKeysMock).not.toHaveBeenCalled()
+    expect(removeApiKeyMock).not.toHaveBeenCalled()
+  })
+
+  it('API 키가 남으면 로그인 상태로 두고 true 다. 화면이 그 키로 목록을 다시 받는다', async () => {
+    getAuthConfigMock.mockResolvedValueOnce({ login: 빈로그인, mainKeyId: 'account-key', apiKeys: [키] }).mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [키] })
+
+    await expect(useAuthStore.getState().leaveEmptyNexonLogin()).resolves.toBe(true)
+    expect(useAuthStore.getState().status).toBe('signedIn')
+    expect(entryResetMock).not.toHaveBeenCalled()
+  })
+
+  it('남은 수단이 없으면 로그인 화면으로 보내고 false 다', async () => {
+    getAuthConfigMock.mockResolvedValueOnce({ login: 빈로그인, mainKeyId: null, apiKeys: [] }).mockResolvedValue(null)
+
+    await expect(useAuthStore.getState().leaveEmptyNexonLogin()).resolves.toBe(false)
+    expect(useAuthStore.getState().status).toBe('signedOut')
+    expect(entryResetMock).toHaveBeenCalled()
+  })
+
+  it('로그인에 귀속된 부계정 키만 남으면 남은 수단이 아니다. 로그인 화면으로 보낸다', async () => {
+    getAuthConfigMock
+      .mockResolvedValueOnce({ login: 빈로그인, mainKeyId: null, apiKeys: [부계정키] })
+      .mockResolvedValue({ login: null, mainKeyId: null, apiKeys: [부계정키] })
+
+    await expect(useAuthStore.getState().leaveEmptyNexonLogin()).resolves.toBe(false)
+    expect(removeApiKeyMock).not.toHaveBeenCalled()
+    expect(entryResetMock).toHaveBeenCalled()
+  })
+
+  it('로그인을 떼다 실패하면 무엇이 남았는지 모르므로 로그인 화면으로 보낸다', async () => {
+    getAuthConfigMock.mockResolvedValue({ login: 빈로그인, mainKeyId: 'account-key', apiKeys: [키] })
+    clearNexonLoginMock.mockRejectedValue(new Error('디스크'))
+
+    await expect(useAuthStore.getState().leaveEmptyNexonLogin()).resolves.toBe(false)
+    expect(useAuthStore.getState().status).toBe('signedOut')
+    expect(entryResetMock).toHaveBeenCalled()
   })
 })
