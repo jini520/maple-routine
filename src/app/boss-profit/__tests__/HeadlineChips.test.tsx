@@ -19,20 +19,23 @@ function group(rows: BossProfitRow[]): CharacterGroup {
   }
 }
 
+// 이 파일의 주간 탭 케이스는 따로 적지 않으면 한도를 월드마다 세던 2026-11-19 전 주를 연다.
+const 옛규칙주 = '2026-11-12'
+
 describe('CrystalSummaryChip', () => {
   const 월간행 = (overrides: Partial<BossProfitRow> = {}): BossProfitRow =>
     보스행({ bossKey: 월간보스, cycle: 'monthly', periodKey: '2026-07', ...overrides })
 
   it('월드를 아는 캐릭터가 없으면 아예 그리지 않는다. 대비할 한도가 없다', async () => {
     // 프로바이더는 남으므로 트리 전체가 아니라 **칩이 없는 것**을 본다.
-    const { queryByLabelText } = await renderOverlay(<CrystalSummaryChip groups={[group([보스행(), 월간행()])]} />)
+    const { queryByLabelText } = await renderOverlay(<CrystalSummaryChip weekKey={옛규칙주} groups={[group([보스행(), 월간행()])]} />)
 
     expect(queryByLabelText(/결정석/)).toBeNull()
   })
 
   it('단일 월드는 펼칠 것이 없어 버튼이 아니다', async () => {
     const { getByLabelText, queryByLabelText } = await renderOverlay(
-      <CrystalSummaryChip groups={[group([보스행({ world: '스카니아', worldKey: 'scania' })])]} />,
+      <CrystalSummaryChip weekKey={옛규칙주} groups={[group([보스행({ world: '스카니아', worldKey: 'scania' })])]} />,
     )
 
     expect(getByLabelText(`주간 결정석 판매 1개, 월간 결정석 0개`)).toBeTruthy()
@@ -42,7 +45,7 @@ describe('CrystalSummaryChip', () => {
   // 한 칩에 두 몫을 싣는다. 월간 보스를 안 잡은 주에도 월간 몫은 `0개` 로 선다(사용자 지정).
   it('칩 하나가 주간 몫과 월간 몫을 함께 읽힌다', async () => {
     const { getByLabelText } = await renderOverlay(
-      <CrystalSummaryChip groups={[group([보스행({ world: '스카니아', worldKey: 'scania' }), 월간행({ world: '스카니아', worldKey: 'scania' })])]} />,
+      <CrystalSummaryChip weekKey={옛규칙주} groups={[group([보스행({ world: '스카니아', worldKey: 'scania' }), 월간행({ world: '스카니아', worldKey: 'scania' })])]} />,
     )
 
     // 월간 보스를 잡은 주에도 주간 몫의 분자는 그대로다. 월간 결정석은 90 한도 밖이다.
@@ -55,7 +58,7 @@ describe('CrystalSummaryChip', () => {
       group([보스행({ world: '스카니아', worldKey: 'scania' })]),
       group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나', worldKey: 'luna' })]),
     ]
-    const { getByLabelText, queryByTestId, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} />)
+    const { getByLabelText, queryByTestId, getByTestId } = await renderOverlay(<CrystalSummaryChip weekKey={옛규칙주} groups={groups} />)
 
     const chip = getByLabelText(`주간 결정석 판매 2개, 월간 결정석 0개`)
     expect(queryByTestId('world-crystal-breakdown')).toBeNull()
@@ -78,7 +81,7 @@ describe('CrystalSummaryChip', () => {
         월간행({ ocid: 'ocid-2', world: '루나', worldKey: 'luna' }),
       ]),
     ]
-    const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} />)
+    const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip weekKey={옛규칙주} groups={groups} />)
 
     await act(async () => {
       fireEvent.press(getByLabelText(/주간 결정석 판매/))
@@ -95,6 +98,7 @@ describe('CrystalSummaryChip', () => {
   it('월간 누적이 넘어오면 그 수로 선다', async () => {
     const { getByLabelText } = await renderOverlay(
       <CrystalSummaryChip
+        weekKey={옛규칙주}
         groups={[group([보스행({ world: '스카니아', worldKey: 'scania' })])]}
         monthlyByWorld={{ '|scania': { accountId: null, worldKey: 'scania', world: '스카니아', count: 3 } }}
       />,
@@ -108,6 +112,7 @@ describe('CrystalSummaryChip', () => {
   it('누적에만 있는 월드도 펼친 줄에 선다', async () => {
     const { getByLabelText, getByTestId } = await renderOverlay(
       <CrystalSummaryChip
+        weekKey={옛규칙주}
         groups={[group([보스행({ world: '스카니아', worldKey: 'scania' })])]}
         monthlyByWorld={{
           '|scania': { accountId: null, worldKey: 'scania', world: '스카니아', count: 1 },
@@ -130,6 +135,7 @@ describe('CrystalSummaryChip', () => {
       const { getByLabelText, queryByText } = await renderOverlay(
         <CrystalSummaryChip
           variant="monthly"
+          weekKey={null}
           groups={[
             group([월간행({ world: '스카니아', worldKey: 'scania' })]),
             group([월간행({ ocid: 'ocid-2', world: '스카니아', worldKey: 'scania' })]),
@@ -145,6 +151,7 @@ describe('CrystalSummaryChip', () => {
       const { getByLabelText, getByTestId } = await renderOverlay(
         <CrystalSummaryChip
           variant="monthly"
+          weekKey={null}
           groups={[
             group([월간행({ world: '스카니아', worldKey: 'scania' })]),
             group([월간행({ ocid: 'ocid-2', world: '루나', worldKey: 'luna' })]),
@@ -163,7 +170,7 @@ describe('CrystalSummaryChip', () => {
 
     it('월드를 아는 월간 행이 없으면 안 선다', async () => {
       const { queryByLabelText } = await renderOverlay(
-        <CrystalSummaryChip variant="monthly" groups={[group([월간행()])]} />,
+        <CrystalSummaryChip variant="monthly" weekKey={null} groups={[group([월간행()])]} />,
       )
 
       expect(queryByLabelText(/결정석/)).toBeNull()
@@ -180,7 +187,7 @@ describe('CrystalSummaryChip', () => {
       group([보스행({ world: '스카니아', worldKey: 'scania' })]),
       group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나', worldKey: 'luna' })]),
     ]
-    const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} />)
+    const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip weekKey={옛규칙주} groups={groups} />)
 
     await act(async () => {
       fireEvent.press(getByLabelText(/주간 결정석 판매/))
@@ -198,7 +205,7 @@ describe('CrystalSummaryChip', () => {
       group([보스행({ world: '스카니아', worldKey: 'scania' }), 월간행({ world: '스카니아', worldKey: 'scania' })]),
       group([보스행({ ocid: 'ocid-2', world: '스카니아', worldKey: 'scania' }), 월간행({ ocid: 'ocid-2', world: null, worldKey: null })]),
     ]
-    const { getByLabelText } = await renderOverlay(<CrystalSummaryChip groups={groups} />)
+    const { getByLabelText } = await renderOverlay(<CrystalSummaryChip weekKey={옛규칙주} groups={groups} />)
 
     expect(getByLabelText(`주간 결정석 판매 2개, 월간 결정석 1개`)).toBeTruthy()
   })
@@ -209,7 +216,7 @@ describe('CrystalSummaryChip', () => {
       group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나', worldKey: 'luna' }), 월간행({ ocid: 'ocid-2', world: '루나', worldKey: 'luna' })]),
       group([월간행({ ocid: 'ocid-3', world: null, worldKey: null })]),
     ]
-    const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} />)
+    const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip weekKey={옛규칙주} groups={groups} />)
 
     await act(async () => {
       fireEvent.press(getByLabelText(`주간 결정석 판매 2개, 월간 결정석 2개`))
@@ -221,7 +228,7 @@ describe('CrystalSummaryChip', () => {
 
   it('월드는 아는데 처치가 0이면 0개 를 그대로 보여준다', async () => {
     const { getByLabelText } = await renderOverlay(
-      <CrystalSummaryChip groups={[group([보스행({ world: '스카니아', worldKey: 'scania', isComplete: false })])]} />,
+      <CrystalSummaryChip weekKey={옛규칙주} groups={[group([보스행({ world: '스카니아', worldKey: 'scania', isComplete: false })])]} />,
     )
 
     expect(getByLabelText(`주간 결정석 판매 0개, 월간 결정석 0개`)).toBeTruthy()
@@ -234,7 +241,7 @@ describe('CrystalSummaryChip', () => {
       group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '스카니아', worldKey: 'scania' })]),
     ]
     const mapleIds = { ofOcid: { [보스행().ocid]: 'da9b2f21-main', 'ocid-2': '4f1c08ab-sub' }, order: ['da9b2f21-main', '4f1c08ab-sub'] }
-    const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} mapleIds={mapleIds} />)
+    const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip weekKey={옛규칙주} groups={groups} mapleIds={mapleIds} />)
 
     await act(async () => {
       fireEvent.press(getByLabelText('주간 결정석 판매 2개, 월간 결정석 0개'))
@@ -252,12 +259,80 @@ describe('CrystalSummaryChip', () => {
       group([보스행({ ocid: 'ocid-2', bossKey: 다른주간보스, world: '루나', worldKey: 'luna' })]),
     ]
     const mapleIds = { ofOcid: { [보스행().ocid]: 'da9b2f21-main', 'ocid-2': 'da9b2f21-main' }, order: ['da9b2f21-main'] }
-    const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip groups={groups} mapleIds={mapleIds} />)
+    const { getByLabelText, getByTestId } = await renderOverlay(<CrystalSummaryChip weekKey={옛규칙주} groups={groups} mapleIds={mapleIds} />)
 
     await act(async () => {
       fireEvent.press(getByLabelText(/주간 결정석 판매/))
     })
 
     expect(within(getByTestId('world-crystal-breakdown')).queryByText('메이플ID-da9b2f21')).toBeNull()
+  })
+})
+
+// 2026-11-19 주부터 한도를 메이플 ID 마다 센다(챌린저스 월드만 따로). 팝오버는 한도 줄마다 칸 하나에 머리와 월드 줄을 둔다.
+// 한도는 줄 전체의 것이라 월드 줄에는 분모를 두지 않는다(사용자 선택 2026-11-12).
+describe('CrystalSummaryChip: 2026-11-19 주부터', () => {
+  const 새규칙주 = '2026-11-19'
+  const 캐릭터 = (ocid: string, world: string, worldKey: string, bossKey = 다른주간보스): CharacterGroup =>
+    group([보스행({ ocid, bossKey, world, worldKey })])
+  const 소속 = (entries: Record<string, string>, order: string[]) => ({ ofOcid: entries, order })
+
+  async function 펼친상자(element: React.ReactElement): Promise<ReturnType<typeof within>> {
+    const { getByLabelText, getByTestId } = await renderOverlay(element)
+    await act(async () => {
+      fireEvent.press(getByLabelText(/주간 결정석 판매 \d+개/))
+    })
+    return within(getByTestId('world-crystal-breakdown'))
+  }
+
+  // 메이플 ID 를 하나만 써도 월드마다 판 수를 보여 주는 곳이 이 팝오버뿐이다.
+  it('메이플 ID 가 하나여도 월드가 둘이면 열리고, 한도는 제목 줄에 하나만 적는다', async () => {
+    const 상자 = await 펼친상자(
+      <CrystalSummaryChip
+        weekKey={새규칙주}
+        groups={[캐릭터('ocid-1', '스카니아', 'scania'), 캐릭터('ocid-2', '루나', 'luna')]}
+        mapleIds={소속({ 'ocid-1': 'da9b2f21-main', 'ocid-2': 'da9b2f21-main' }, ['da9b2f21-main'])}
+      />,
+    )
+
+    expect(상자.getByLabelText(`주간 결정석 판매 2 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)).toBeTruthy()
+    expect(상자.getAllByText(`/${WEEKLY_CRYSTAL_SALE_LIMIT}`)).toHaveLength(1)
+    expect(상자.getByLabelText('스카니아 주간 결정석 1개, 월간 결정석 0개')).toBeTruthy()
+    expect(상자.getByLabelText('루나 주간 결정석 1개, 월간 결정석 0개')).toBeTruthy()
+    // 한도 줄이 하나면 줄 이름이 가를 것이 없다.
+    expect(상자.queryByText('일반 월드')).toBeNull()
+  })
+
+  it('한도 줄이 둘(일반 월드 · 챌린저스)이면 칸마다 머리에 줄 이름과 한도를 적는다', async () => {
+    const 상자 = await 펼친상자(
+      <CrystalSummaryChip
+        weekKey={새규칙주}
+        groups={[캐릭터('ocid-1', '챌린저스2', 'challengers_2'), 캐릭터('ocid-2', '스카니아', 'scania'), 캐릭터('ocid-3', '루나', 'luna')]}
+        mapleIds={소속({ 'ocid-1': 'da9b2f21-main', 'ocid-2': 'da9b2f21-main', 'ocid-3': 'da9b2f21-main' }, ['da9b2f21-main'])}
+      />,
+    )
+
+    expect(상자.getByLabelText(`일반 월드 주간 결정석 판매 2 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)).toBeTruthy()
+    expect(상자.getByLabelText(`챌린저스 주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)).toBeTruthy()
+    expect(상자.getByLabelText('챌린저스2 주간 결정석 1개, 월간 결정석 0개')).toBeTruthy()
+    // 제목 줄에는 한도가 없다. 어느 줄의 한도인지 말할 수 없다.
+    expect(상자.queryByLabelText(`주간 결정석 판매 3 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)).toBeNull()
+  })
+
+  it('메이플 ID 가 둘이면 한도 줄이 하나인 메이플 ID 는 이름 줄에 한도를 적는다', async () => {
+    const 상자 = await 펼친상자(
+      <CrystalSummaryChip
+        weekKey={새규칙주}
+        groups={[캐릭터('ocid-1', '스카니아', 'scania'), 캐릭터('ocid-2', '루나', 'luna'), 캐릭터('ocid-3', '스카니아', 'scania')]}
+        mapleIds={소속(
+          { 'ocid-1': 'da9b2f21-main', 'ocid-2': 'da9b2f21-main', 'ocid-3': '4f1c08ab-sub' },
+          ['da9b2f21-main', '4f1c08ab-sub'],
+        )}
+      />,
+    )
+
+    expect(상자.getByLabelText(`메이플ID-da9b2f21 주간 결정석 판매 2 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)).toBeTruthy()
+    expect(상자.getByLabelText(`메이플ID-4f1c08ab 주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}`)).toBeTruthy()
+    expect(상자.getByLabelText('메이플ID-4f1c08ab 스카니아 주간 결정석 1개, 월간 결정석 0개')).toBeTruthy()
   })
 })

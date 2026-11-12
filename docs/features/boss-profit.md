@@ -28,7 +28,7 @@
 | `app/boss-profit/HeadlineChips.tsx` | 총 수익 카드의 결정석 칸 |
 | `app/boss-profit/ItemRevenuePopover.tsx` · `ItemRevenueTrigger.tsx` | 수익 내역 상자와 그것을 여는 금액 |
 | `app/boss-profit/CharacterIssue.tsx` | 금액 위 칸의 조회 불가 · 동기화 실패 배지, 금액 칸의 조회 불가 알약, 설명 팝오버 |
-| `app/boss-profit/character-groups.ts` | 행을 캐릭터로 묶고 금액 · 처치 수 · 결정석 수 · 고가 드롭을 센다 |
+| `app/boss-profit/character-groups.ts` | 행을 캐릭터로 묶고 금액 · 처치 수 · 결정석 수 · 고가 드롭을 센다. 월드별 결정석 수를 한도 줄로 묶는다 |
 | `app/boss-profit/DropPriceFab.tsx` | 아이템 가격 입력 버튼과 미입력 배지 |
 | `features/boss-profit/store.ts` | 보던 탭 · 기간 · 이번 기간을 따라가는지 · 파티 계획과 기록을 쓰는 액션(파티 · 직접 완료 · 드롭) |
 | `features/manual-completion/query.ts` | 직접 완료를 연 보스 쿼리 `manualCompletion()`. `BossProfitBossRow` 가 `useManualCompletionBosses` 로 단추를 세울지 가른다. 화면 포커스 · 앱 복귀마다 다시 받는다 |
@@ -48,6 +48,7 @@
 | `features/boss-profit/use-period-error-toast.ts` | 기간 읽기 실패 토스트 |
 | `lib/boss/boss-profit-period.ts` | 기간 키 · 기간 이름 · 조회 가능 범위 · 기간 상태 판정 |
 | `lib/boss/monthly-boss-week.ts` | 월간 보스가 들어가는 주 |
+| `lib/boss/crystal-limit.ts` | 주간 결정석 판매 한도를 메이플 ID 마다 세기 시작한 주와 한도 줄 열쇠 |
 | `storage/boss-profit.ts` | 처치 기록(SQLite `boss_party_periods` 의 `cleared` 행) 읽기 · 쓰기 · 개정 수 |
 | `storage/boss-periods.ts` | 처치 · 그 기간 값 · 드롭 · 파티 설정이 같이 쓰는 조합 행(`boss_parties`) · 기간 행 도우미 |
 | `storage/character-world-leaps.ts` | 리프한 두 캐릭터의 연결(`character_world_leaps`) |

@@ -18,10 +18,10 @@ import {
 import { bossRecordsStamp, subscribeBossRecordsStamp } from './period-cache'
 import { withSqliteFallback } from './sqlite-guards'
 
-/** 한도 줄(메이플 ID · 월드)마다의 월간 결정석 수와 보이는 월드 이름. 열쇠는 `crystalPairKey` 다. */
+/** 메이플 ID · 월드마다의 월간 결정석 수와 보이는 월드 이름. 열쇠는 `crystalPairKey` 다. */
 export type MonthlyCrystalsByWorld = Record<string, { accountId: string | null; worldKey: string; world: string; count: number }>
 
-/** 메이플 ID 와 월드로 한도 줄 하나를 가리키는 열쇠. 메이플 ID 를 가르지 않으면 `null` 이다. */
+/** 메이플 ID 와 월드 하나를 가리키는 열쇠. 메이플 ID 를 가르지 않으면 `null` 이다. */
 export function crystalPairKey(accountId: string | null, worldKey: string): string {
   return `${accountId ?? ''}|${worldKey}`
 }

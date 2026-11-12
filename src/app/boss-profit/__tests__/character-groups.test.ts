@@ -16,6 +16,7 @@ import {
   collectGroupValuableDrops,
   collectPayableDrops,
   collectRevenueDrops,
+  crystalLimitLines,
   groupTotalMeso,
   monthlyCrystalMesoOf,
   sumPayout,
@@ -304,6 +305,71 @@ describe('summarizeWorldCrystals: 월드 key 로 가른다', () => {
 
   it('월드 이름이 있어도 월드 key 가 없는 행은 어느 한도에도 안 든다', () => {
     expect(summarizeWorldCrystals([group([보스행({ world: '스카니아', worldKey: null })])])).toEqual([])
+  })
+})
+
+// 게임이 2026-11-19 주부터 한도를 메이플 ID 마다 센다. 챌린저스 월드만 따로다(사용자 확인 2026-11-12).
+// 그 전 주는 그 주의 규칙(월드마다)대로 센다. 지금 규칙으로 세면 지난 주가 한도를 넘긴 것으로 보인다.
+describe('crystalLimitLines: 한도 줄', () => {
+  const 새규칙주 = '2026-11-19'
+  const 옛규칙주 = '2026-11-12'
+  const 캐릭터 = (ocid: string, rows: BossProfitRow[]): CharacterGroup => ({ ...group(rows), ocid })
+  const 한메이플ID = (groups: CharacterGroup[]) =>
+    summarizeWorldCrystals(groups, undefined, Object.fromEntries(groups.map((one) => [one.ocid, 'maple-main'])))
+  const 네월드 = () =>
+    한메이플ID([
+      캐릭터('ocid-2', [보스행({ ocid: 'ocid-2', world: '챌린저스2', worldKey: 'challengers_2' })]),
+      캐릭터('ocid-1', [보스행({ world: '스카니아', worldKey: 'scania' })]),
+      캐릭터('ocid-3', [
+        보스행({ ocid: 'ocid-3', world: '루나', worldKey: 'luna' }),
+        보스행({ ocid: 'ocid-3', bossKey: 다른주간보스, world: '루나', worldKey: 'luna' }),
+      ]),
+      캐릭터('ocid-4', [보스행({ ocid: 'ocid-4', world: '스페셜', worldKey: 'special' })]),
+    ])
+  const 요약 = (lines: ReturnType<typeof crystalLimitLines>) =>
+    lines.map((line) => ({ accountId: line.accountId, key: line.key, name: line.name, cleared: line.cleared }))
+
+  // 일반 월드 줄이 먼저다. 처치 순서로 차례를 정하면 2칸 위젯의 링이 주마다 다른 줄을 그린다.
+  it('11-19 주부터 챌린저스가 아닌 월드(이벤트 월드 포함)를 한 줄로 합치고, 챌린저스 월드는 따로 센다', () => {
+    expect(요약(crystalLimitLines(네월드(), 새규칙주))).toEqual([
+      { accountId: 'maple-main', key: 'general', name: '일반 월드', cleared: 4 },
+      { accountId: 'maple-main', key: 'challengers_2', name: '챌린저스', cleared: 1 },
+    ])
+  })
+
+  it('한도 줄은 그 줄에 든 월드를 함께 든다. 팝오버가 월드마다 판 수를 적는다', () => {
+    const [일반] = crystalLimitLines(네월드(), 새규칙주)
+
+    expect(일반?.worlds.map((world) => [world.worldKey, world.cleared])).toEqual([
+      ['scania', 1],
+      ['luna', 2],
+      ['special', 1],
+    ])
+  })
+
+  it('그 전 주는 월드마다 한 줄이고 줄 이름은 월드 이름이다', () => {
+    expect(요약(crystalLimitLines(네월드(), 옛규칙주))).toEqual([
+      { accountId: 'maple-main', key: 'challengers_2', name: '챌린저스2', cleared: 1 },
+      { accountId: 'maple-main', key: 'scania', name: '스카니아', cleared: 1 },
+      { accountId: 'maple-main', key: 'luna', name: '루나', cleared: 2 },
+      { accountId: 'maple-main', key: 'special', name: '스페셜', cleared: 1 },
+    ])
+  })
+
+  it('메이플 ID 가 다르면 같은 일반 월드라도 줄이 따로다', () => {
+    const summaries = summarizeWorldCrystals(
+      [
+        group([보스행({ world: '스카니아', worldKey: 'scania' })]),
+        캐릭터('ocid-2', [보스행({ ocid: 'ocid-2', world: '루나', worldKey: 'luna' })]),
+      ],
+      undefined,
+      { [보스행().ocid]: 'maple-main', 'ocid-2': 'maple-sub' },
+    )
+
+    expect(요약(crystalLimitLines(summaries, 새규칙주))).toEqual([
+      { accountId: 'maple-main', key: 'general', name: '일반 월드', cleared: 1 },
+      { accountId: 'maple-sub', key: 'general', name: '일반 월드', cleared: 1 },
+    ])
   })
 })
 

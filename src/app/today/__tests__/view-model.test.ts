@@ -869,8 +869,9 @@ describe('최고가 아이템', () => {
   })
 })
 
+// NOW 는 한도를 월드마다 세던 2026-11-19 전 주다. 그 주의 한도 줄은 월드다.
 describe('주간 결정석 판매 한도', () => {
-  it('월드별로 갈리고 분모는 WEEKLY_CRYSTAL_SALE_LIMIT 이다', () => {
+  it('11-19 전 주는 월드별로 갈리고 분모는 WEEKLY_CRYSTAL_SALE_LIMIT 이다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a', 'b'],
@@ -883,9 +884,9 @@ describe('주간 결정석 판매 한도', () => {
       }),
     )
 
-    expect(model.crystalLimits[0]?.worlds).toEqual([
-      { worldKey: 'scania', world: '스카니아', cleared: 2, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
-      { worldKey: 'luna', world: '루나', cleared: 1, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
+    expect(model.crystalLimits[0]?.lines).toEqual([
+      { key: 'scania', name: '스카니아', cleared: 2, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
+      { key: 'luna', name: '루나', cleared: 1, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
     ])
   })
 
@@ -901,13 +902,13 @@ describe('주간 결정석 판매 한도', () => {
       }),
     )
 
-    expect(model.crystalLimits[0]?.worlds).toEqual([
-      { worldKey: 'challengers_2', world: '챌린저스2', cleared: 2, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
+    expect(model.crystalLimits[0]?.lines).toEqual([
+      { key: 'challengers_2', name: '챌린저스2', cleared: 2, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
     ])
   })
 
   // 처치가 없으면 아직 하나도 안 판 것이다. 문구로 비우면 이 위젯이 무엇을 세는지 알 수 없다(사용자 지정).
-  it('이번 주 처치 기록이 없어도 추적 캐릭터의 월드를 0 으로 세운다', () => {
+  it('이번 주 처치 기록이 없어도 추적 캐릭터의 한도 줄을 0 으로 세운다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a', 'b'],
@@ -918,8 +919,8 @@ describe('주간 결정석 판매 한도', () => {
       }),
     )
 
-    expect(model.crystalLimits[0]?.worlds).toEqual([
-      { worldKey: 'scania', world: '스카니아', cleared: 0, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
+    expect(model.crystalLimits[0]?.lines).toEqual([
+      { key: 'scania', name: '스카니아', cleared: 0, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
     ])
   })
 
@@ -938,7 +939,7 @@ describe('주간 결정석 판매 한도', () => {
       }),
     )
 
-    expect(model.crystalLimits[0]?.worlds.map((view) => [view.worldKey, view.cleared])).toEqual([
+    expect(model.crystalLimits[0]?.lines.map((view) => [view.key, view.cleared])).toEqual([
       ['luna', 1],
       ['scania', 0],
       ['elysium', 0],
@@ -959,7 +960,7 @@ describe('주간 결정석 판매 한도', () => {
       }),
     )
 
-    expect(model.crystalLimits.map((one) => [one.name, one.worlds.map((world) => [world.worldKey, world.cleared])])).toEqual([
+    expect(model.crystalLimits.map((one) => [one.name, one.lines.map((line) => [line.key, line.cleared])])).toEqual([
       ['메이플ID-da9b2f21', [['scania', 2]]],
       ['메이플ID-4f1c08ab', [['scania', 1]]],
     ])
@@ -977,7 +978,55 @@ describe('주간 결정석 판매 한도', () => {
       }),
     )
 
-    expect(model.crystalLimits.map((one) => one.worlds.map((world) => world.cleared))).toEqual([[1]])
+    expect(model.crystalLimits.map((one) => one.lines.map((line) => line.cleared))).toEqual([[1]])
+  })
+
+  // 2026-11-19 주부터 게임이 한도를 메이플 ID 마다 센다. 챌린저스 월드만 따로다(사용자 확인 2026-11-12).
+  describe('2026-11-19 주부터', () => {
+    const 새규칙주의날 = new Date('2026-11-20T03:00:00.000Z')
+    const 한메이플ID = { ofOcid: { a: 'maple-main', b: 'maple-main', c: 'maple-main' }, order: ['maple-main'] }
+
+    // 처치 순서로 차례를 정하면 2칸 위젯의 링이 주마다 다른 줄을 그린다.
+    it('메이플 ID 안의 챌린저스가 아닌 월드를 한 줄로 합치고, 챌린저스는 따로, 일반 월드가 먼저다', () => {
+      const model = buildTodayViewModel(
+        input({
+          now: 새규칙주의날,
+          orderedOcids: ['c', 'a', 'b'],
+          mapleIds: 한메이플ID,
+          profitRows: [
+            profitRow({ ocid: 'c', world: '챌린저스2', worldKey: 'challengers_2', bossKey: 'lotus', isComplete: true }),
+            profitRow({ ocid: 'a', world: '스카니아', worldKey: 'scania', bossKey: 'lotus', isComplete: true }),
+            profitRow({ ocid: 'a', world: '스카니아', worldKey: 'scania', bossKey: 'damien', isComplete: true }),
+            profitRow({ ocid: 'b', world: '루나', worldKey: 'luna', bossKey: 'lotus', isComplete: true }),
+          ],
+        }),
+      )
+
+      expect(model.crystalLimits[0]?.lines).toEqual([
+        { key: 'general', name: '일반 월드', cleared: 3, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
+        { key: 'challengers_2', name: '챌린저스', cleared: 1, limit: WEEKLY_CRYSTAL_SALE_LIMIT },
+      ])
+    })
+
+    it('처치 기록이 없는 추적 캐릭터의 한도 줄도 0 으로 세운다', () => {
+      const model = buildTodayViewModel(
+        input({
+          now: 새규칙주의날,
+          orderedOcids: ['c', 'a', 'b'],
+          mapleIds: 한메이플ID,
+          profilesByOcid: {
+            a: profile({ world: '스카니아', worldKey: 'scania' }),
+            b: profile({ world: '루나', worldKey: 'luna' }),
+            c: profile({ world: '챌린저스', worldKey: 'challengers' }),
+          },
+        }),
+      )
+
+      expect(model.crystalLimits[0]?.lines.map((line) => [line.key, line.cleared])).toEqual([
+        ['general', 0],
+        ['challengers', 0],
+      ])
+    })
   })
 })
 
