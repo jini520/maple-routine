@@ -1,8 +1,8 @@
-# ADR-040 보스 수익 기록
+# ADR-040+208 보스 수익 기록
 
 > 🟢 유효
 > 옛 번호: ADR-017 결정 1 · 4 · ADR-032 결정 3 · 4 · 7 · ADR-035 결정 21 · ADR-067 결정 7 · ADR-069 · ADR-111 · ADR-172 결정 1~6 · 9 · 정정 6 · 7 · 9 · ADR-189 결정 2 · ADR-219 결정 5 · ADR-237 · ADR-253 정정 7 · ADR-274 · ADR-335 · ADR-336
-> 관련 소스: `features/boss-profit/round-record.ts` · `features/boss-profit/store.ts` · `features/boss-profit/auto-record.ts` · `features/boss-profit/rows.ts` · `features/boss-profit/period-snapshot.ts` · `features/boss-profit/defeat-dates.ts` · `features/boss-profit/world-leap-records.ts` · `features/boss-profit/world-leap-link.ts` · `features/boss-profit/drops-loader.ts` · `storage/boss-profit.ts` · `app/boss-profit/character-groups.ts`
+> 관련 소스: `features/boss-profit/round-record.ts` · `features/schedule-sync/schedule-query.ts` · `features/schedule-sync/schedule-sync.ts` · `features/boss-profit/store.ts` · `features/boss-profit/auto-record.ts` · `features/boss-profit/rows.ts` · `features/boss-profit/period-snapshot.ts` · `features/boss-profit/defeat-dates.ts` · `features/boss-profit/world-leap-records.ts` · `features/boss-profit/world-leap-link.ts` · `features/boss-profit/drops-loader.ts` · `storage/boss-profit.ts` · `app/boss-profit/character-groups.ts`
 
 ## 배경
 
@@ -36,9 +36,15 @@
 |---|---|
 | 미완료 행 | 기록해 두면 나중에 실제로 잡았을 때 이미 기록이 있다고 읽혀 0 메소로 고정된다 |
 | 동기화가 실패해 낡은 캐시로 그린 행(`isStale`) | 4주 전 처치가 이번 주 수익으로 잘못 기록되고, 한 번 적히면 스스로 사라지지 않는다 |
+| 넥슨에 묻기 시작한 시각과 기록하는 시각의 주 · 달이 다른 회차 | 수요일 밤에 받은 지난주 완료를 목요일 0시 뒤에 기록하면 이번 주 처치가 된다(#980) |
 | 기록 조회 자체가 실패한 회차(`records === null`) | 실패를 기록 없음으로 읽으면 사용자가 고친 파티 인원이 1 로 덮인다 |
 | 같은 (캐릭터, 보스, 기간)에 기록이 이미 있는 행 | 난이도가 달라도 쓰지 않는다. 한 주에 한 보스를 두 난이도로 잡을 수 없어, 더 쓰면 같은 처치를 두 번 센다 |
 | 결정석 가격을 모르는 행 | 금액을 정할 수 없다 |
+
+넥슨에 묻기 시작한 시각은 회차가 `syncSchedules` 를 부르기 직전의 시각(`requestedAt`)이다. 응답이 도착한 시각이나
+병합이 끝난 시각으로 재면 안 된다. 아이폰에서 갱신 도중 앱을 뒤로 보내면 앱이 멈췄다가, 0시 뒤에 다시 열 때 그 회차가
+이어서 돌기 때문이다. 기간이 다른 회차는 기록 · 지우기(결정 19) · 드롭 정리를 모두 하지 않는다. 다음 회차가 같은
+기간에서 다시 하므로 기록이 늦어질 뿐 빠지지 않는다.
 
 기록 조회는 `withSqliteFallback` 의 폴백을 `[]` 가 아니라 `null` 로 둔다. 그래야 조회 실패와 기록 없음이
 구분된다. 건너뛴 조합은 다음 동기화에서 다시 시도되므로 기록이 사라지지 않고 늦어질 뿐이다.
@@ -52,7 +58,7 @@
 
 - 회차는 받은 스케줄로 지금 주 · 지금 달의 행을 만들고(`selectProfitDisplayBosses` · `buildBossProfitRow`), 기존
   기록을 합친 뒤 `autoRecordRows` 로 쓴다. 동기화가 실패해 캐시로 채운 캐릭터(`isStale`)는 지금의 사실이 아니라
-  기록과 정리에서 뺀다(`isSourceCurrent`).
+  기록과 정리에서 뺀다(`isSourceCurrent`). 넥슨에 묻기 시작한 시각과 기간이 다른 회차도 뺀다(결정 2).
 - 한 회차의 쓰기 전부를 `batchRecordWrites` 로 묶는다. 판 알림이 끝날 때 한 번이라 그 표를 읽는 쿼리가 쓰기마다
   다시 읽지 않는다([[ADR-023]] 결정 7).
 - 새로 추적한 캐릭터만 받는 `syncAddedCharacters` 도 같은 함수를 거친다.
@@ -282,12 +288,40 @@ today 위젯과 보스 수익 주간 탭은 같은 이번 주 행을 읽어야 �
 - 이 넓힌 목록을 동기화 · 창 동기화 · 잡지 않은 보스의 드롭 정리에 넘기지 않는다. 동기화는 넥슨을 부르고,
   드롭 정리는 동기화가 성공한 캐릭터만 믿을 수 있어서 넣는 순간 뺀 캐릭터의 드롭을 지운다.
 
+### 결정 19. 넥슨이 미완료라고 주면 이번 기간의 자동 기록을 지운다
+
+한 번 적힌 자동 기록은 스스로 사라지지 않는다. 보스 수익의 이번 기간 목록은 기록이 있으면 넥슨 응답과 관계없이
+`완료` 로 그리고(`mergeRecordsIntoRows`), 가계부의 결정석 수입도 같은 기록을 읽는다. 그래서 결정 2 가 막기 전에
+적힌 기록이나, 넥슨이 초기화 직후 지난 기간의 완료를 정상 응답으로 준 경우의 기록이 갱신해도 계속 남았다(#980).
+
+한 기간 안에서 잡은 보스가 미완료로 돌아가는 일은 없다. 그래서 같은 기간의 넥슨 응답이 미완료라고 하면 그 기록은
+잘못 적힌 것이다. 회차가 자동 기록보다 먼저 지운다.
+
+- 자동 기록(`source` 가 `manual` 이 아닌 것)만 지운다. 직접 적은 완료는 넥슨이 완료를 주지 않는 보스를 위한 것이라,
+  넥슨이 미완료라고 해도 지우지 않는다([[ADR-037]] 결정 12).
+- 이번 주 · 이번 달 기록만 본다. 날짜 없는 오늘 응답은 지금 기간의 상태만 말하기 때문이다.
+- 넥슨이 그 보스를 이번 응답에 담아 보냈고, 그 보스의 어느 난이도도 완료가 아닐 때만 지운다. 다른 난이도가
+  완료면 지우지 않는다. 같은 보스를 다른 난이도로 잡은 경우는 [[ADR-037]] 결정 12 그대로다.
+- 보스 목록이 줄어든 응답으로는 판단하지 않는다. 주간 보스가 하나도 없는 응답은 주간 · 월간 모두, 월간 보스가 없는
+  응답은 월간을 판단하지 않는다(`isWeeklyBossStale` · `isMonthlyBossStale`). 접속하지 않은 캐릭터의 응답이 줄어들면
+  남은 월간 보스가 미완료로 오는데, 그것은 안 잡았다는 사실이 아니기 때문이다.
+- 이번 응답이 담아 보낸 보스는 `CharacterScheduleSync` 의 `reportedBossKeys` 가 든다. 병합한 상태에는 캐시에서
+  되살린 보스가 미완료로 섞여 있어, 그것으로 판단하면 넥슨이 보내지 않은 보스의 기록을 지운다. 캐시로 채운 결과에는
+  이 값이 없어 지우지 않는다.
+- 결정 2 의 기간이 다른 회차에서는 지우지 않는다.
+- 사용자에게 알리지 않는다(사용자 결정 2026-11-12).
+- 지우면 그 기간 행은 미완료로 돌아간다(`deleteBossProfitRecord`). 그 행에 적은 드롭은 남지만, 미완료 행의 드롭이라
+  금액에 들지 않는다(결정 4).
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
 |---|---|
 | `features/boss-profit/__tests__/auto-record.spec.ts` | 결정 1 · 2: 기본 인원 1, 파티 설정과 그 기간 값의 우선순위, 자동 수수료로 기록하는지 본다. 미완료 · 낡은 출처 · 조회 실패 · 가격 없음 · 같은 기간 다른 난이도에서 쓰지 않는지, 순서를 지키고 순차로 쓰는지 본다 |
-| `features/boss-profit/__tests__/round-record.spec.ts` | 결정 2 · 3: 캐시로 채운 캐릭터는 기록 · 고아 정리에서 빼는지, 기록 조회가 실패하면 아무것도 안 쓰는지, 기록만 있는 조합을 되살리는지 본다. 결정 13: 자동 기록 뒤에 리프 정리를 하고 다시 읽는지 본다 |
+| `features/boss-profit/__tests__/round-record.spec.ts` | 결정 2 · 3: 캐시로 채운 캐릭터는 기록 · 고아 정리에서 빼는지, 기록 조회가 실패하면 아무것도 안 쓰는지, 기록만 있는 조합을 되살리는지 본다. 넥슨에 묻기 시작한 시각과 기록 시각의 주가 다른 회차는 완료를 기록하지 않는지 본다. 결정 13: 자동 기록 뒤에 리프 정리를 하고 다시 읽는지 본다 |
+| | 결정 19: 넥슨이 담아 보낸 보스가 미완료면 이번 기간 자동 기록을 지우는지, 직접 적은 완료 · 다른 난이도가 완료인 보스 · 이번 응답에 없는 보스 · 캐시로 채운 캐릭터 · 기간이 다른 회차에서는 안 지우는지 본다 |
+| `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 2: 회차가 기록에 넥슨에 묻기 직전의 시각과 기록하는 시각을 함께 넘기는지 본다 |
+| `features/schedule-sync/__tests__/schedule-sync.spec.ts` | 결정 19: `reportedBossKeys` 가 이번 응답의 보스만 담고, 캐시에서 되살린 보스와 주간 보스가 없는 응답의 보스는 빼는지 본다 |
 | `features/boss-profit/__tests__/period-query.spec.ts` | 결정 17: 수동 모드에서 추적만 한 보스가 미완료 행으로 보이고, 실제 처치 난이도로 보이는지 본다. 결정 18: 추적에서 뺀 캐릭터의 행이 지난 기간과 이번 기간에 보이고 미완료 행은 안 보이는지, 드롭 정리에 동기화 대상만 넘기는지 본다 |
 | | 결정 4: 미완료 행을 만들되 기록하지 않는지, 주차 소계가 미완료 드롭을 더하지 않는지 본다. 결정 5: 기록값을 복원하는지 본다. 결정 15: 이번 주 열쇠의 스냅샷이 주간 보스와 그 주의 월간 보스를 함께 내는지 본다 |
 | `features/boss-profit/__tests__/store.spec.ts` | 결정 5: `setRowParty` 가 기록만 쓰고 화면 사본을 고치지 않는지 본다 |
@@ -305,3 +339,4 @@ today 위젯과 보스 수익 주간 탭은 같은 이번 주 행을 읽어야 �
 ## 번호 기록
 
 - ADR-040 (2026-10-19): 옛 ADR-017 · 032 · 035 · 067 · 069 · 111 · 172 · 189 · 219 · 237 · 253 · 274 · 335 · 336 을 합쳐 처음 작성
+- ADR-208 (2026-11-12): 결정 2 에 기간이 다른 회차를 더하고 결정 19 를 더했다. 자정을 넘긴 회차가 지난주 처치를 이번 주로 기록했고, 그 기록이 갱신해도 남았다(#980). 1.0.13 핫픽스로 낸다
