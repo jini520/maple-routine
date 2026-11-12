@@ -45,7 +45,7 @@
 | `equipmentItems` | 강화 비용을 매길 장비 467개의 key · 띄어 쓴 이름 · 착용 레벨. 장비 key 마스터 표다 | `lib/equipment/equipment-items` | `/admin/equipment-items` |
 | `enhancementCosts` | 잠재 재설정 비용 32줄 · 소울 잠재 재설정 비용 4줄 · 스타포스 단계 30줄과 규칙 셋. 식은 `lib/enhancement/cost.ts` 에 있다 | `lib/enhancement/cost` | `/admin/enhancement-costs` |
 | `mvpGrades` | MVP 등급 7개의 경매장 수수료 · 스타포스 할인 · 명패 그림. 순서가 등급의 높낮이다 | `lib/mvp/grades` | `/admin/mvp-grades` |
-| `huntingGrounds` | 사냥 지역 21 · 사냥터 408 · 몬스터 레벨 줄 460. 계산 상수는 `lib/cashbook/hunting-meso.ts` 에 있다 | `lib/cashbook/hunting-grounds` | `/admin/hunting-grounds` |
+| `huntingGrounds` | 사냥 지역 21 · 사냥터 408(인기 여부 포함) · 몬스터 레벨 줄 460. 계산 상수는 `lib/cashbook/hunting-meso.ts` 에 있다 | `lib/cashbook/hunting-grounds` | `/admin/hunting-grounds` |
 | `huntLoot` | 가계부 사냥 전리품 판매의 아이템 5개(조각 1 · 소비 2 · 이벤트 2)의 key · 분류 · 이름 · 그림 · NPC 개당 가격 · 유효 기간 | `lib/cashbook/hunt-loot` | `/admin/hunt-loot` |
 | `assets` | 앱이 받는 그림 약 930장의 id · 경로 · 내용 해시 · 바이트 · 가로 · 세로 | `lib/assets/asset-files` | `/admin/assets` |
 | `imageCrops` | 보스 초상(카드 · 원형 아이콘 · 파티 모달 띠)과 컨텐츠 지역 지도의 크롭 | `lib/assets/image-crops` | `/admin/assets` |
