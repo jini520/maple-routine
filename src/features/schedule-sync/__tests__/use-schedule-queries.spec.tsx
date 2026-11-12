@@ -11,6 +11,7 @@ import type { CachedCharacterBasicEntry } from '../../../storage/character-basic
 import type { CachedSchedulerEntry } from '../../../storage/scheduler-cache'
 import { queryClient } from '../../query/client'
 import { queryKeys } from '../../query/keys'
+import { useResetBoundaryTick } from '../../query/reset-timer'
 import type { CharacterScheduleSync } from '../schedule-sync'
 
 jest.mock('../schedule-sync', () => ({ syncSchedules: jest.fn() }))
@@ -24,6 +25,7 @@ const { getTrackedCharacterOcids: getTrackedMock } = jest.requireMock('../../../
   jest.Mock
 >
 
+import { readScheduleSnapshot } from '../read-schedule'
 import { useCharacterProfiles, useScheduleQueries, useTrackedOcids } from '../use-schedule-queries'
 
 function wrapper({ children }: { children: ReactNode }): React.JSX.Element {
@@ -41,14 +43,19 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reje
 }
 
 function entry(characterName: string, syncedAt = '2026-10-30T05:00:00.000Z'): CachedSchedulerEntry {
-  return { state: { characterName } as CachedSchedulerEntry['state'], syncedAt }
+  return { state: stateOf(characterName), syncedAt }
+}
+
+/** 진행이 비어 있는 상태. 화면에 넘기기 전에 지난 기간의 진행을 비우는 단계가 세 배열을 읽는다. */
+function stateOf(characterName: string): CachedSchedulerEntry['state'] {
+  return { characterName, dailyContents: [], weeklyContents: [], bossContents: [] } as unknown as CachedSchedulerEntry['state']
 }
 
 function synced(ocid: string, characterName: string): CharacterScheduleSync {
   return {
     ocid,
     characterName,
-    state: { characterName } as CharacterScheduleSync['state'],
+    state: stateOf(characterName),
     syncedAt: '2026-10-30T06:00:00.000Z',
     isStale: false,
     error: null,
@@ -185,5 +192,67 @@ describe('useCharacterProfiles', () => {
 
     await waitFor(() => expect(Object.keys(result.current)).toEqual(['a', 'b']))
     expect(result.current.b.name).toBe('비')
+  })
+})
+
+describe('받은 뒤 초기화를 넘긴 캐시', () => {
+  const NOT_FAKED = [
+    'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'nextTick', 'queueMicrotask',
+    'performance', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'hrtime',
+  ] as never
+  const WEDNESDAY_NIGHT = '2026-11-11T23:50:00+09:00'
+  const THURSDAY = new Date('2026-11-12T00:30:00+09:00')
+
+  /** 수요일 밤에 받은, 스우를 잡은 캐시. */
+  function lotusCleared(): CachedSchedulerEntry {
+    return {
+      syncedAt: new Date(WEDNESDAY_NIGHT).toISOString(),
+      state: {
+        ...stateOf('캐릭터'),
+        bossContents: [
+          { bossKey: 'lotus', apiName: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+        ],
+      },
+    }
+  }
+
+  function lotusOf(snapshot: { schedules: ReadonlyMap<string, CachedSchedulerEntry> }): boolean | undefined {
+    return snapshot.schedules.get('a')?.state.bossContents[0]?.isComplete
+  }
+
+  beforeEach(() => {
+    jest.useFakeTimers({ doNotFake: NOT_FAKED })
+    queryClient.setQueryData(queryKeys.trackedOcids(), ['a'])
+    queryClient.setQueryData(queryKeys.schedule('a'), lotusCleared())
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  it('수요일 밤에 받은 캐시를 목요일에 읽으면 훅과 readScheduleSnapshot 둘 다 주간 보스가 미완료다. 캐시는 그대로 둔다', async () => {
+    jest.setSystemTime(THURSDAY)
+
+    const { result } = await renderHook(() => useScheduleQueries(), { wrapper })
+    await waitFor(() => expect(result.current.status).toBe('loaded'))
+
+    expect(lotusOf(result.current.snapshot)).toBe(false)
+    expect(lotusOf(readScheduleSnapshot())).toBe(false)
+    // 다음 회차의 병합이 이 값을 이전 상태로 읽는다.
+    expect(queryClient.getQueryData<CachedSchedulerEntry>(queryKeys.schedule('a'))?.state.bossContents[0].isComplete).toBe(true)
+  })
+
+  it('화면이 열린 채 목요일 0시의 틱이 오르면 훅이 다시 비운다', async () => {
+    jest.setSystemTime(new Date('2026-11-11T23:55:00+09:00'))
+    const { result } = await renderHook(() => useScheduleQueries(), { wrapper })
+    await waitFor(() => expect(result.current.status).toBe('loaded'))
+    expect(lotusOf(result.current.snapshot)).toBe(true)
+
+    jest.setSystemTime(THURSDAY)
+    await act(async () => {
+      useResetBoundaryTick.setState((state) => ({ tick: state.tick + 1 }))
+    })
+
+    expect(lotusOf(result.current.snapshot)).toBe(false)
   })
 })
