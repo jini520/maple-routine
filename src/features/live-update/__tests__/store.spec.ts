@@ -39,6 +39,7 @@ const INITIAL = {
   hasDownloadedBundle: false,
   justUpdated: false,
   holdingSplash: true,
+  lastCheckedAt: null,
 }
 
 const s = () => useLiveUpdateStore.getState()
@@ -518,6 +519,79 @@ describe('useLiveUpdateStore', () => {
   })
 
   // 잠근 채 켜지면 게임 데이터가 이 약속을 기다린다. 끝나는 때가 곧 게임 데이터 받기를 시작하는 때다.
+  // 아이폰은 앱을 백그라운드에 오래 남겨 두어, 부팅 확인만으로는 OTA 가 며칠 늦게 닿는다.
+  describe('checkOnReturn', () => {
+    const MINUTE = 60_000
+    const T0 = 1_800_000_000_000
+    const SMALL = { ...AVAILABLE, size: 3_000_000 }
+    let now: jest.SpyInstance
+
+    beforeEach(() => {
+      now = jest.spyOn(Date, 'now').mockReturnValue(T0)
+    })
+
+    afterEach(() => {
+      now.mockRestore()
+    })
+
+    /** 지금 시각을 `T0` 에서 `minutes` 분 뒤로 놓는 함수. */
+    const at = (minutes: number) => now.mockReturnValue(T0 + minutes * MINUTE)
+
+    it('부팅 확인과 `업데이트 확인` 버튼을 마지막 확인으로 세어, 그 뒤 1시간이 지나야 확인한다', async () => {
+      getCurrentBundleVersionMock.mockResolvedValue('1.0.1')
+      checkForLiveUpdateMock.mockResolvedValue({ kind: 'up-to-date' })
+      await bootOpened()
+      expect(checkForLiveUpdateMock).toHaveBeenCalledTimes(1)
+
+      at(59)
+      await s().checkOnReturn()
+      expect(checkForLiveUpdateMock).toHaveBeenCalledTimes(1)
+
+      at(60)
+      await s().check()
+      at(119)
+      await s().checkOnReturn()
+      expect(checkForLiveUpdateMock).toHaveBeenCalledTimes(2)
+
+      at(120)
+      await s().checkOnReturn()
+      expect(checkForLiveUpdateMock).toHaveBeenCalledTimes(3)
+    })
+
+    it('한 번도 확인하지 않았으면 건너뛴다. 곧 부팅 확인이 돈다', async () => {
+      at(24 * 60)
+      await s().checkOnReturn()
+      expect(checkForLiveUpdateMock).not.toHaveBeenCalled()
+    })
+
+    // 확인은 시작하면서 받아 둔 번들 표시를 비운다. 떠 있던 모달이 사라지면 안 된다.
+    it('적용을 묻는 중이면 확인하지 않아 받아 둔 번들이 남는다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(SMALL)
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      await s().check()
+      expect(s().status).toBe('ready-to-apply')
+
+      at(120)
+      await s().checkOnReturn()
+      expect(checkForLiveUpdateMock).toHaveBeenCalledTimes(1)
+      expect(s().status).toBe('ready-to-apply')
+      expect(s().hasDownloadedBundle).toBe(true)
+    })
+
+    it('`나중에` 를 누른 뒤 1시간이 지나 돌아오면 다시 받아 적용을 묻는다', async () => {
+      checkForLiveUpdateMock.mockResolvedValue(SMALL)
+      downloadLiveUpdateMock.mockResolvedValue(undefined)
+      await s().check()
+      s().dismiss()
+
+      at(60)
+      await s().checkOnReturn()
+      expect(downloadLiveUpdateMock).toHaveBeenCalledTimes(2)
+      expect(s().status).toBe('ready-to-apply')
+      expect(s().hasDownloadedBundle).toBe(true)
+    })
+  })
+
   describe('checkOnBoot: 게임 데이터가 기다리는 약속', () => {
     const LOCKED = { locked: true, firstRun: false }
     const FIRST_RUN = { locked: true, firstRun: true }

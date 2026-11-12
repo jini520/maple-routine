@@ -68,7 +68,10 @@ export const BOOT_CHECK_WAIT_MS = 5_000
 /** 처음 실행에서 스플래시를 붙들어 두는 상한. 망이 느리면 받기를 뒤로 돌리고 게임 데이터로 넘어간다. */
 export const FIRST_RUN_HOLD_MS = 20_000
 
-// 게임 데이터 받기가 기다려도 되는 상태. 이 중 하나가 되면 OTA 가 할 일을 마쳤거나 사용자가 미뤘다.
+/** 복귀 확인 사이의 최소 간격. 마지막 확인을 시작한 때부터 잰다. 확인 한 번에 서버 요청이 둘이라 돌아올 때마다 묻지 않는다. */
+export const RETURN_CHECK_INTERVAL_MS = 60 * 60 * 1000
+
+// OTA 가 할 일을 마쳤거나 사용자가 미룬 상태. 게임 데이터 받기는 이 상태를 기다리고, 복귀 확인은 이 상태에서만 돈다.
 const SETTLED: ReadonlySet<LiveUpdateStatus> = new Set([
   'idle',
   'up-to-date',
@@ -102,6 +105,8 @@ export interface LiveUpdateStore {
    * 있다는 표시.
    */
   hasDownloadedBundle: boolean
+  /** 내부: 마지막 확인을 시작한 시각(ms). 복귀 확인의 간격을 잰다. 한 번도 확인하지 않았으면 `null`. */
+  lastCheckedAt: number | null
   loadCurrentVersion(): Promise<void>
   check(): Promise<void>
   /**
@@ -110,6 +115,12 @@ export interface LiveUpdateStore {
    * @example await useLiveUpdateStore.getState().checkOnBoot({ locked: true, firstRun: true })
    */
   checkOnBoot(context: LiveUpdateBootContext): Promise<void>
+  /**
+   * 백그라운드에서 돌아올 때의 확인. 마지막 확인 뒤 1시간이 지났고 진행 중인 일이 없을 때만 `check()` 를 부른다.
+   *
+   * @example void useLiveUpdateStore.getState().checkOnReturn()
+   */
+  checkOnReturn(): Promise<void>
   startDownload(): Promise<void>
   confirmCellularDownload(): Promise<void>
   apply(): Promise<void>
@@ -219,6 +230,7 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
     justUpdated: false,
     // 처음 실행인지는 게임 데이터가 사본을 읽어야 안다. 그 전에 스플래시가 걷히면 안 되므로 켠 채로 시작한다.
     holdingSplash: true,
+    lastCheckedAt: null,
     ...CLEARED,
 
     async loadCurrentVersion() {
@@ -232,7 +244,7 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
 
     // 체크만 한다. 다운로드/적용 없음. 결과에 따라 모달용 상태로 전환한다.
     async check() {
-      set({ status: 'checking', ...CLEARED })
+      set({ status: 'checking', lastCheckedAt: Date.now(), ...CLEARED })
       const result = await checkForLiveUpdate()
       switch (result.kind) {
         case 'update-available':
@@ -309,6 +321,14 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
         })
         void get().check()
       })
+    },
+
+    async checkOnReturn() {
+      const { lastCheckedAt, status } = get()
+      // 확인한 적이 없으면 부팅 확인이 곧 돈다. 진행 중에 확인하면 받아 둔 번들 표시가 비워져 떠 있던 모달이 사라진다.
+      if (lastCheckedAt === null || !SETTLED.has(status)) return
+      if (Date.now() - lastCheckedAt < RETURN_CHECK_INTERVAL_MS) return
+      await get().check()
     },
 
     // [다운로드] 탭. 셀룰러면 데이터 경고를 먼저 띄우고, 아니면 바로 받는다.
