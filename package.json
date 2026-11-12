@@ -8,6 +8,13 @@
       "exclude": [
         "react-native-reanimated"
       ]
+    },
+    "autolinking": {
+      "android": {
+        "buildFromSource": [
+          "expo-web-browser"
+        ]
+      }
     }
   },
   "scripts": {
