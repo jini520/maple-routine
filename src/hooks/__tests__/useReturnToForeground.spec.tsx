@@ -37,7 +37,7 @@ function startFocusSignal(initial: AppStateStatus): { change: (next: AppStateSta
   }
 }
 
-function Harness({ onReturn }: { onReturn: () => void }): null {
+function Harness({ onReturn }: { onReturn: (awayMs: number) => void }): null {
   useReturnToForeground(onReturn)
   return null
 }
@@ -98,7 +98,22 @@ describe('useReturnToForeground', () => {
     expect(onReturn).not.toHaveBeenCalled()
   })
 
-  it('백그라운드 상태로 마운트된 뒤 돌아와도 부른다', async () => {
+  // OTA 가 이 시간으로 받아 둔 번들을 적용할지 정한다. 짧은 외출은 권한 창이나 로그인 브라우저일 수 있다.
+  it('백그라운드에 나가 있던 시간을 넘긴다', async () => {
+    const appState = startFocusSignal('active')
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1_000_000)
+    const onReturn = jest.fn()
+    await render(<Harness onReturn={onReturn} />)
+
+    appState.change('background')
+    now.mockReturnValue(1_000_000 + 600_000)
+    appState.change('active')
+
+    expect(onReturn).toHaveBeenCalledWith(600_000)
+  })
+
+  // 나간 시각을 모르는데 긴 외출로 치면, 켜자마자 받아 둔 번들을 적용할 수 있다.
+  it('백그라운드 상태로 마운트된 뒤 돌아와도 부르고, 나간 시각을 모르면 0 을 넘긴다', async () => {
     const appState = startFocusSignal('background')
     const onReturn = jest.fn()
     await render(<Harness onReturn={onReturn} />)
@@ -106,6 +121,7 @@ describe('useReturnToForeground', () => {
     appState.change('active')
 
     expect(onReturn).toHaveBeenCalledTimes(1)
+    expect(onReturn).toHaveBeenCalledWith(0)
   })
 
   it('언마운트하면 더 안 부른다', async () => {

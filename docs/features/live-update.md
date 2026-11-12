@@ -4,7 +4,8 @@
 매니페스트는 우리 서버(`/v1/ota/manifest` · `/v1/ota/latest`)가, 번들과 에셋은 같은 앱 박스의 nginx
 (`/ota/files/`)가 내준다. 1.0.12 바이너리는 Cloudflare Worker 와 GitHub Releases `live-update-rn` 을 묻고, 그쪽에는
 더 이상 발행하지 않는다([[ADR-011]] 결정 2). 앱은 켤 때와, 마지막 확인 뒤 1시간이 지나 백그라운드에서 돌아올 때 새
-번들이 있는지 확인한다. 작은 번들은 묻지 않고 받은 뒤 적용할지를 사용자에게 묻는다.
+번들이 있는지 확인한다. 작은 번들은 묻지 않고 받은 뒤 적용할지를 사용자에게 묻는다. 받아 둔 번들을 적용하지 않은 채
+10분 넘게 나갔다 돌아오면 묻지 않고 적용한다.
 
 왜 이렇게 만들었는지는 [[ADR-011]](프로토콜 · 발행 · 버전)과 [[ADR-012]](모달 · 적용)에 있다.
 
@@ -15,12 +16,12 @@
 | `native/ports.ts` 의 `LiveUpdatePort` | 확인 · 받기 · 적용 계약 |
 | `native/adapters/rn-live-update.ts` | `expo-updates` 구현. `/latest` 로 스토어 업데이트 필요 판정, 표시 버전 결정 |
 | `native/live-update.ts` | `isNewerVersion` · 적용 순서(`applyLiveUpdate`) |
-| `features/live-update/store.ts` | 상태 열다섯 가지 · 확인 · 묻지 않고 받기 · 적용 · 완료 안내 판정 · 부팅 순서 · 복귀 확인(`checkOnReturn`) |
+| `features/live-update/store.ts` | 상태 열다섯 가지 · 확인 · 묻지 않고 받기 · 적용 · 완료 안내 판정 · 부팅 순서 · 복귀 확인과 복귀 적용(`checkOnReturn`) |
 | `features/live-update/use-running-app-version.ts` | 화면에 보이는 앱 버전 |
 | `app/UpdatePromptModal.tsx` | 동의 모달. 잠금이 풀린 뒤는 `navigation/AppNavigation.tsx`, 잠긴 동안은 `app/AppShell.tsx` 의 `LockedUpdatePrompt` 가 띄운다 |
 | `app/settings/AppUpdateSection.tsx` | `앱 정보` 화면의 현재 버전 · 상태 · `업데이트 확인` |
 | `boot.ts` 의 `loadGameData` | 게임 데이터 사본을 읽은 뒤 `checkOnBoot()` 호출 |
-| `app/AppShell.tsx` | 앱이 백그라운드에서 돌아오면 `checkOnReturn()` 호출(`useReturnToForeground`) |
+| `app/AppShell.tsx` · `hooks/useReturnToForeground.ts` | 앱이 백그라운드에서 돌아오면 나가 있던 시간을 넘겨 `checkOnReturn(awayMs)` 호출 |
 | `app/BootSplash.tsx` · `hooks/useBootSplashDone.ts` | 처음 실행에서 OTA 를 적용하는 동안 스플래시를 붙들고, 다 걷힌 뒤에야 모달을 그리게 한다 |
 | `lib/native-modal-gate.ts` | 재시작 직전에 떠 있는 RN `Modal` 을 모두 닫고 iOS 가 다 닫을 때까지 기다린다. 실패하면 되돌린다 |
 | `lib/app-version.ts` | 버전 형식 읽기(`x.y.z` · `x.y.z+n`) · 화면 표기 `x.y.z(n)` |
@@ -45,7 +46,7 @@
 | `downloading` | `다운로드` 를 누른 뒤 받는 중 | 모달: 진행률 막대. 배경을 눌러도 안 닫힌다 |
 | `background-downloading` | 5MB 이하 번들을 묻지 않고 받는 중 | 카드 상태 줄만 |
 | `ready-to-apply` | 다 받았을 때 | 모달: `지금 적용 (재시작)` · `나중에` |
-| `applying` | 적용 중 | 모달: 스피너와 `적용하고 있어요`. 버튼 없음 |
+| `applying` | 적용 중. 10분 넘게 나갔다 돌아와 묻지 않고 적용할 때도 이 상태다 | 모달: 스피너와 `적용하고 있어요`. 버튼 없음 |
 | `store-required` | 기기 지문이 받아 주는 목록에 없을 때 | 닫을 수 없는 모달: `스토어로 이동` 하나 |
 | `check-error` | 확인 실패 | 카드 상태 줄만 |
 | `background-download-error` | 묻지 않고 받다가 실패 | 카드 상태 줄만. 다음 확인 때 다시 받는다 |
@@ -87,6 +88,16 @@ OTA 부팅 확인은 `boot.ts` 의 `loadGameData()` 가 게임 데이터 사본�
 
 아이폰은 앱을 백그라운드에 오래 남겨 두고 다시 열면 이어서 돈다. 부팅 때만 확인하면 앱을 직접 끄지 않는 사용자가 OTA 를
 며칠 늦게 받는다. 돌아올 때마다 확인하지 않는 것은 확인 한 번에 서버 요청이 두 번 가기 때문이다.
+
+받아 두고 적용하지 않은 번들이 있으면(`updatePending`) 확인보다 적용이 먼저다. 백그라운드에 10분(`RETURN_APPLY_AWAY_MS`)
+넘게 나가 있다가 돌아왔고 상태가 `SETTLED` 이거나 `ready-to-apply` 면, 묻지 않고 `지금 적용 (재시작)` 과 같은 순서로
+적용한다. `나중에` 를 누른 경우와 `업데이트 준비 완료` 에 답하지 않고 나간 경우 둘 다다. 다시 시작한 앱은 `업데이트를
+마쳤어요` 를 띄운다. 실패하면 모달 없이 화면과 상태를 되돌리고, 다음에 10분 넘게 나갔다 돌아올 때 다시 적용한다
+([[ADR-012]] 결정 15).
+
+앱을 종료하지 않고 JS 만 다시 시작하는 것은 종료에 네이티브 코드가 필요해서다. iOS 에는 종료 API 가 없고, 안드로이드의
+`BackHandler.exitApp()` 은 프로세스를 남긴다. 나갈 때가 아니라 돌아올 때 적용하는 것은, 안드로이드가 권한 창이나 넥슨 로그인
+브라우저가 뜰 때도 `background` 를 알리기 때문이다. 나갈 때 다시 시작하면 그 흐름이 끊긴다.
 
 화면에 보이는 버전은 OTA 번들이면 매니페스트 `extra.appVersion`, 스토어 바이너리의 번들이면 바이너리
 버전이다([[ADR-011]] 결정 10).

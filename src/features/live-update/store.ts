@@ -71,6 +71,9 @@ export const FIRST_RUN_HOLD_MS = 20_000
 /** 복귀 확인 사이의 최소 간격. 마지막 확인을 시작한 때부터 잰다. 확인 한 번에 서버 요청이 둘이라 돌아올 때마다 묻지 않는다. */
 export const RETURN_CHECK_INTERVAL_MS = 60 * 60 * 1000
 
+/** 돌아올 때 받아 둔 번들을 묻지 않고 적용하는 최소 외출 시간. 안드로이드는 권한 창 · 로그인 브라우저에도 백그라운드로 가서, 짧으면 그 흐름이 끊긴다. */
+export const RETURN_APPLY_AWAY_MS = 10 * 60 * 1000
+
 // OTA 가 할 일을 마쳤거나 사용자가 미룬 상태. 게임 데이터 받기는 이 상태를 기다리고, 복귀 확인은 이 상태에서만 돈다.
 const SETTLED: ReadonlySet<LiveUpdateStatus> = new Set([
   'idle',
@@ -107,6 +110,8 @@ export interface LiveUpdateStore {
   hasDownloadedBundle: boolean
   /** 내부: 마지막 확인을 시작한 시각(ms). 복귀 확인의 간격을 잰다. 한 번도 확인하지 않았으면 `null`. */
   lastCheckedAt: number | null
+  /** 내부: 이번 실행에서 받아 두고 아직 적용하지 않은 번들이 있는가. `hasDownloadedBundle` 과 달리 `나중에` 와 확인 시작에도 남는다. */
+  updatePending: boolean
   loadCurrentVersion(): Promise<void>
   check(): Promise<void>
   /**
@@ -116,11 +121,13 @@ export interface LiveUpdateStore {
    */
   checkOnBoot(context: LiveUpdateBootContext): Promise<void>
   /**
-   * 백그라운드에서 돌아올 때의 확인. 마지막 확인 뒤 1시간이 지났고 진행 중인 일이 없을 때만 `check()` 를 부른다.
+   * 백그라운드에서 돌아올 때의 처리. 받아 둔 번들이 있고 10분 넘게 나가 있었으면 묻지 않고 적용한다. 아니면 마지막 확인 뒤
+   * 1시간이 지났고 진행 중인 일이 없을 때만 `check()` 를 부른다.
    *
-   * @example void useLiveUpdateStore.getState().checkOnReturn()
+   * @param awayMs 백그라운드에 나가 있던 시간(ms)
+   * @example void useLiveUpdateStore.getState().checkOnReturn(awayMs)
    */
-  checkOnReturn(): Promise<void>
+  checkOnReturn(awayMs: number): Promise<void>
   startDownload(): Promise<void>
   confirmCellularDownload(): Promise<void>
   apply(): Promise<void>
@@ -179,7 +186,7 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
     set({ status: 'downloading', downloadProgress: 0 })
     try {
       await downloadLiveUpdate((percent) => set({ downloadProgress: percent }))
-      set({ status: 'ready-to-apply', downloadProgress: 100, hasDownloadedBundle: true })
+      set({ status: 'ready-to-apply', downloadProgress: 100, hasDownloadedBundle: true, updatePending: true })
     } catch {
       // 사용자가 시작한 실패라 모달로 알린다.
       set({ status: 'download-error' })
@@ -196,13 +203,24 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
       set({ status: 'background-download-error' })
       return
     }
-    set({ downloadProgress: 100, hasDownloadedBundle: true })
+    set({ downloadProgress: 100, hasDownloadedBundle: true, updatePending: true })
     if (!firstRunApplying) {
       set({ status: 'ready-to-apply' })
       return
     }
     // 성공하면 그 자리에서 JS 가 새로 시작해 아래는 돌지 않는다. 실패는 모달 없이 넘긴다. 받아 둔
     // 번들은 남아 있어 다음에 앱을 새로 켤 때 그것으로 시작한다.
+    try {
+      await applyWithinTimeout()
+    } catch {
+      // 적용은 다시 시작하기 전에 모달을 모두 내린다. 되돌리지 않으면 그 뒤로 어떤 모달도 뜨지 않는다.
+      reopenNativeModals()
+      set({ status: 'idle', ...CLEARED })
+    }
+  }
+
+  // 적용에 12초 상한을 씌운 것. 성공하면 JS 가 새로 시작해 돌아오지 않고, 실패나 시간 초과는 던진다.
+  async function applyWithinTimeout(): Promise<void> {
     let timer: ReturnType<typeof setTimeout> | undefined
     try {
       await Promise.race([
@@ -211,12 +229,22 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
           timer = setTimeout(() => reject(new Error('live update apply timeout')), APPLY_TIMEOUT_MS)
         }),
       ])
-    } catch {
-      // 적용은 다시 시작하기 전에 모달을 모두 내린다. 되돌리지 않으면 그 뒤로 어떤 모달도 뜨지 않는다.
-      reopenNativeModals()
-      set({ status: 'idle', ...CLEARED })
     } finally {
+      // 성공 경로에서는 컨텍스트가 파괴돼 의미가 없지만, 테스트 환경에서 타이머가 새는 것을 막는다.
       clearTimeout(timer)
+    }
+  }
+
+  // 10분 넘게 나갔다 돌아왔을 때의 적용. 사용자가 시작하지 않았으므로 실패하면 모달 없이 적용 전 상태로 돌린다.
+  async function applyOnReturn(previous: LiveUpdateStatus) {
+    // `applying` 모달이 DB 를 닫는 동안 옛 화면을 누르지 못하게 막는다.
+    set({ status: 'applying' })
+    try {
+      await applyWithinTimeout()
+    } catch {
+      await hideSplashScreen().catch(() => {})
+      reopenNativeModals()
+      set({ status: previous })
     }
   }
 
@@ -231,6 +259,7 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
     // 처음 실행인지는 게임 데이터가 사본을 읽어야 안다. 그 전에 스플래시가 걷히면 안 되므로 켠 채로 시작한다.
     holdingSplash: true,
     lastCheckedAt: null,
+    updatePending: false,
     ...CLEARED,
 
     async loadCurrentVersion() {
@@ -323,8 +352,13 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
       })
     },
 
-    async checkOnReturn() {
-      const { lastCheckedAt, status } = get()
+    async checkOnReturn(awayMs) {
+      const { lastCheckedAt, status, updatePending } = get()
+      // 받아 둔 번들은 앱을 새로 켜야 적용된다. 앱을 끄지 않는 사용자도 오래 나갔다 오면 새 버전으로 보이게 한다.
+      if (updatePending && awayMs >= RETURN_APPLY_AWAY_MS && (SETTLED.has(status) || status === 'ready-to-apply')) {
+        await applyOnReturn(status)
+        return
+      }
       // 확인한 적이 없으면 부팅 확인이 곧 돈다. 진행 중에 확인하면 받아 둔 번들 표시가 비워져 떠 있던 모달이 사라진다.
       if (lastCheckedAt === null || !SETTLED.has(status)) return
       if (Date.now() - lastCheckedAt < RETURN_CHECK_INTERVAL_MS) return
@@ -357,14 +391,8 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
       // 전환은 어떤 await보다 앞이어야 원자적이다. 그 사이에 두 번째 탭이 끼면 가드가 무의미해진다.
       set({ status: 'applying' })
 
-      let timer: ReturnType<typeof setTimeout> | undefined
       try {
-        await Promise.race([
-          applyLiveUpdate(),
-          new Promise<never>((_, reject) => {
-            timer = setTimeout(() => reject(new Error('live update apply timeout')), APPLY_TIMEOUT_MS)
-          }),
-        ])
+        await applyWithinTimeout()
       } catch {
         // 세 고리(커버 show() 미완료 · 커넥션 닫기 무응답 · set() reject) 중 어느 것이 끊겼든
         // 화면은 돌아와야 한다. `hideSplashScreen` 이 커버까지 걷는다. 걷기 실패까지 삼켜야
@@ -375,9 +403,6 @@ export const useLiveUpdateStore = create<LiveUpdateStore>()((set, get) => {
         // hasDownloadedBundle 은 비우지 않는다. 받아둔 번들은 그대로 살아 있고 모달의 다시 시도가
         // 다시 부른다. 여기서 비우면 재시도가 불가능해진다(download-error 와 다른 점).
         set({ status: 'apply-error' })
-      } finally {
-        // 성공 경로에서는 컨텍스트가 파괴돼 실질적으로 의미가 없지만, 테스트 환경에서 타이머가 새는 것을 막는다.
-        clearTimeout(timer)
       }
     },
 
