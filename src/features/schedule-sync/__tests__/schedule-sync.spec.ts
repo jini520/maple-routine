@@ -304,6 +304,7 @@ describe('syncSchedules', () => {
         syncedAt: NOW,
         isStale: false,
         error: null,
+        reportedBossKeys: [],
       },
       {
         ocid: 'ocid-2',
@@ -313,6 +314,7 @@ describe('syncSchedules', () => {
         syncedAt: NOW,
         isStale: false,
         error: null,
+        reportedBossKeys: [],
       },
     ])
   })
@@ -481,6 +483,7 @@ describe('syncSchedules', () => {
       syncedAt: NOW,
       isStale: false,
       error: null,
+      reportedBossKeys: [],
     })
   })
 
@@ -2874,5 +2877,48 @@ describe('getCharacterPickerRoster: 넥슨 계정이 여럿', () => {
       failure: expect.any(NexonRateLimitError),
       apiKey: '부-키',
     })
+  })
+})
+
+// 이번 응답이 담아 보낸 보스만이 넥슨이 미완료라고 말한 보스다. 처치 기록을 지우는 판단이 이 값을 본다.
+describe('이번 응답이 담아 보낸 보스(reportedBossKeys)', () => {
+  function boss(bossKey: string, cycle: 'weekly' | 'monthly'): SchedulerCharacterState['bossContents'][number] {
+    return { bossKey, apiName: bossKey, difficulty: 'hard', cycle, isRegistered: true, isComplete: false, ownComplete: false }
+  }
+
+  beforeEach(() => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
+    fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '캐릭터1', level: 200 }))
+  })
+
+  it('병합이 캐시에서 되살린 보스는 담지 않는다', async () => {
+    fetchSchedulerCharacterStateMock.mockResolvedValue({
+      ...schedulerState('캐릭터1'),
+      bossContents: [boss('lotus', 'weekly'), boss('black_mage', 'monthly')],
+    })
+    mergeSchedulerStateMock.mockImplementation((input: { fresh: SchedulerCharacterState }) => ({
+      characterState: { ...input.fresh, bossContents: [...input.fresh.bossContents, boss('will', 'weekly')] },
+      worldLedgerUpdates: {},
+      accountLedgerUpdates: {},
+    }))
+
+    const [result] = await syncSchedules(['ocid-1'])
+
+    expect(result.state?.bossContents.map((content) => content.bossKey)).toEqual(['lotus', 'black_mage', 'will'])
+    expect(result.reportedBossKeys).toEqual(['lotus', 'black_mage'])
+  })
+
+  // 접속하지 않은 캐릭터의 응답은 주간 보스부터 빠지고 월간 보스가 미완료로 남는다. 안 잡았다는 사실이 아니다.
+  it('주간 보스가 하나도 없는 응답의 보스는 담지 않는다', async () => {
+    fetchSchedulerCharacterStateMock.mockResolvedValue({
+      ...schedulerState('캐릭터1'),
+      bossContents: [boss('black_mage', 'monthly')],
+      isWeeklyBossStale: true,
+      isMonthlyBossStale: true,
+    })
+
+    const [result] = await syncSchedules(['ocid-1'])
+
+    expect(result.reportedBossKeys).toEqual([])
   })
 })

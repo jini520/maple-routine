@@ -52,6 +52,11 @@ export interface CharacterScheduleSync {
   syncedAt: string | null
   isStale: boolean
   error: ScheduleSyncError | null
+  /**
+   * 이번 응답이 담아 보낸 보스 key. 보스 목록이 줄어든 주기의 보스는 뺀다. 캐시로 채운 결과에는 없다. 병합한 상태에는
+   * 캐시에서 되살린 보스가 미완료로 섞여 있어, 넥슨이 미완료라고 말한 보스는 이것으로만 가린다.
+   */
+  reportedBossKeys?: string[]
 }
 export { getCharacterPickerRoster } from './character-roster'
 export type { CharacterPickerRosterOptions } from './character-roster'
@@ -91,6 +96,14 @@ function needsBackfill(state: SchedulerCharacterState): boolean {
     state.isWeeklyBossStale ||
     state.isMonthlyBossStale
   )
+}
+
+/** 이번 응답이 담아 보낸 보스 key. 접속하지 않은 캐릭터처럼 보스 목록이 줄어든 주기는 남은 보스도 뺀다. */
+function reportedBossKeysOf(fresh: SchedulerCharacterState): string[] {
+  return fresh.bossContents.flatMap((boss) => {
+    const shrunk = boss.cycle === 'weekly' ? fresh.isWeeklyBossStale : fresh.isMonthlyBossStale
+    return boss.bossKey === null || shrunk ? [] : [boss.bossKey]
+  })
 }
 
 // 이미 조회한 날짜를 다시 부를 가치가 있는가. 원장은 그 날짜에 각 섹션의 내용이 있었는지만
@@ -325,6 +338,7 @@ async function syncOneCharacter(
       syncedAt,
       isStale: false,
       error: null,
+      reportedBossKeys: reportedBossKeysOf(fresh),
     }
   } catch (error) {
     return buildFallbackResult(character, toScheduleSyncError(error, apiKeyValueOf(credential)))
