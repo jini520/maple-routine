@@ -1,6 +1,6 @@
 # ADR-071+205 드롭 시세 · 드롭 가격 관리 화면
 
-> ⚪ 미구현
+> 🟢 유효
 > 관련 소스: 서버 `modules/drop-market/` · `database/migrations/0013_drop_market.sql` · `modules/drop-prices/drop-prices.repository.ts` · `modules/worlds/worlds.repository.ts` · `modules/drop-items/drop-items.repository.ts` · `modules/admin/admin.controller.ts` · `modules/admin/views/layout.ts` · `modules/admin/views/drop-market.ts` · `modules/admin/views/drop-market-item.ts` · `modules/admin/views/drop-prices.ts` · `database/schema.ts`(`drop_prices.priced_at` · `drop_prices.box_origin_item_id` · `worlds.price_group` · `items.world_bound`)
 
 ## 배경
@@ -222,4 +222,4 @@
 - ADR-071 (2026-10-20): 처음 작성. 같은 날 주봉과 봉 정보를 더했다
 - ADR-205 (2026-11-12): 관리 화면을 다시 짰다(서버 #95). 시세 한눈에 보는 화면에 정렬 · 검색 · 범위 드롭다운을 넣었다(결정 5).
   [[ADR-018]] 에 한 줄로 있던 드롭 가격 화면을 아이템 목록과 상세로 바꿔 이 문서로 옮기고, 획득처를 보였다(결정 6). 두 목록
-  화면의 가격을 억 · 만으로 쓴다(결정 7)
+  화면의 가격을 억 · 만으로 쓴다(결정 7). 같은 날 서버 #98 로 구현했다
