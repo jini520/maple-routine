@@ -19,6 +19,7 @@ import {
   replaceEntry,
 } from './cashbook-entries'
 import { spendEntryOf, spendRecordOf } from './cashbook-entry-shape'
+import { writeCheckingFragments } from './fragment-ledger'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
@@ -155,18 +156,20 @@ export function subscribeSpendRecordsRevision(listener: () => void): () => void 
   }
 }
 
-function bumpSpendRecordsRevision(): void {
+/** 판을 올린다. 사냥 기록을 고쳐 헥사 기록이 함께 바뀌면 수입 어댑터도 부른다. */
+export function bumpSpendRecordsRevision(): void {
   spendRecordsRevision += 1
   notifyAfterBatch(() => {
     for (const listener of revisionListeners) listener()
   })
 }
 
+/** 조각 장부를 모자라게 하면 던진다(`FragmentShortageError`). 넣기 · 고치기 · 지우기가 모두 같다. */
 export async function insertSpendRecord(record: SpendRecord): Promise<void> {
   assertPointRate(record)
 
   const db = await getBossProfitDb()
-  await inTransaction(db, () => insertEntry(db, spendEntryOf(record)))
+  await inTransaction(db, () => writeCheckingFragments(db, () => insertEntry(db, spendEntryOf(record))))
   bumpSpendRecordsRevision()
 }
 
@@ -178,7 +181,7 @@ export async function updateSpendRecord(record: SpendRecord): Promise<void> {
   assertPointRate(record)
 
   const db = await getBossProfitDb()
-  await inTransaction(db, () => replaceEntry(db, spendEntryOf(record), new Date()))
+  await inTransaction(db, () => writeCheckingFragments(db, () => replaceEntry(db, spendEntryOf(record), new Date())))
   bumpSpendRecordsRevision()
 }
 
@@ -219,7 +222,7 @@ export async function moveSpendRecordsToOcid(fromOcid: string, toOcid: string): 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteSpendRecord(id: string): Promise<void> {
   const db = await getBossProfitDb()
-  await deleteEntry(db, id)
+  await inTransaction(db, () => writeCheckingFragments(db, () => deleteEntry(db, id)))
   bumpSpendRecordsRevision()
 }
 

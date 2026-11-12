@@ -805,7 +805,7 @@ function toEnhancementRecords(
  * 못 찾은 `ocid` 는 표에 안 든다. 부르는 쪽이 그때 빈 문자열을 쓴다. `ocid` 는 사용자에게 아무
  * 뜻도 없는 문자열이라 그것을 적을 바에 이름을 안 적는다.
  */
-async function namesByOcid(ocids: readonly string[]): Promise<Map<string, string>> {
+export async function namesByOcid(ocids: readonly string[]): Promise<Map<string, string>> {
   const profiles = await resolveDisplayProfiles(ocids).catch(() => new Map())
   return new Map([...profiles].map(([ocid, profile]) => [ocid, profile.name]))
 }
@@ -1033,7 +1033,7 @@ export function recordCashOf(entry: DayRecord): number | null {
 }
 
 /**
- * 한 캐릭터가 고른 날까지 보관 중인 솔 에르다 조각 개수. 정산 폼이 쓴다.
+ * 한 캐릭터가 그 날 쓸 수 있는 솔 에르다 조각. 그 날과 뒤 모든 날의 남은 개수 가운데 가장 작은 값이고, 정산 폼이 쓴다.
  *
  * 못 읽으면 `null` 이다. 0 으로 읽으면 보관이 있는데도 정산 폼이 없다고 적는다.
  *
@@ -1041,18 +1041,29 @@ export function recordCashOf(entry: DayRecord): number | null {
  */
 export function loadFragmentStorage(
   ocid: string,
-  onOrBeforeDateKey: string,
+  dateKey: string,
   excludeRecordId: string | undefined,
 ): Promise<number | null> {
-  return withSqliteFallback<number | null>(
-    getFragmentStorage(ocid, onOrBeforeDateKey, excludeRecordId),
-    null,
-  )
+  return withSqliteFallback<number | null>(getFragmentStorage(ocid, dateKey, excludeRecordId), null)
 }
 
 /**
- * 헥사 강화가 보관 조각을 가져올 캐릭터와 그 보관. 강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID · 같은 월드의
- * 추적 캐릭터를 캐릭터 관리 순서로 둔다. 월드는 캐릭터 기본 정보 캐시에서 읽는다.
+ * 헥사 강화가 보관 조각을 가져올 캐릭터의 차례를 내는 함수. 강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID · 같은
+ * 월드의 추적 캐릭터를 캐릭터 관리 순서로 둔다. 월드는 캐릭터 기본 정보 캐시에서 읽는다.
+ */
+export async function loadHexaCandidatesOf(): Promise<(ocid: string) => string[]> {
+  const [trackedOcids, sightings] = await Promise.all([getTrackedCharacterOcids(), getCharacterAccountSightings()])
+  return (ocid) =>
+    hexaStorageCandidates({
+      ocid,
+      trackedOcids: trackedOcids ?? [],
+      accountOf: (each) => accountOfOcid(sightings, each),
+      worldOf: (each) => readCharacterBasic(each)?.profile?.worldKey ?? null,
+    })
+}
+
+/**
+ * 헥사 강화가 보관 조각을 가져올 캐릭터와 그 날 쓸 수 있는 보관. 차례는 `loadHexaCandidatesOf` 다.
  *
  * 한 캐릭터라도 못 읽으면 `null` 이다. 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.
  *
@@ -1060,21 +1071,15 @@ export function loadFragmentStorage(
  */
 export async function loadHexaStorages(
   ocid: string,
-  onOrBeforeDateKey: string,
+  dateKey: string,
   excludeRecordId: string | undefined,
 ): Promise<{ ocid: string; stored: number }[] | null> {
   try {
-    const [trackedOcids, sightings] = await Promise.all([getTrackedCharacterOcids(), getCharacterAccountSightings()])
-    const candidates = hexaStorageCandidates({
-      ocid,
-      trackedOcids: trackedOcids ?? [],
-      accountOf: (each) => accountOfOcid(sightings, each),
-      worldOf: (each) => readCharacterBasic(each)?.profile?.worldKey ?? null,
-    })
+    const candidatesOf = await loadHexaCandidatesOf()
     return await Promise.all(
-      candidates.map(async (each) => ({
+      candidatesOf(ocid).map(async (each) => ({
         ocid: each,
-        stored: await getFragmentStorage(each, onOrBeforeDateKey, excludeRecordId),
+        stored: await getFragmentStorage(each, dateKey, excludeRecordId),
       })),
     )
   } catch {
