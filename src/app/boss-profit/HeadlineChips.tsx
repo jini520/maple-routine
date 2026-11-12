@@ -1,10 +1,11 @@
 /**
- * 총 수익 카드의 결정석 판매 칸. 한도 줄(메이플 ID · 월드)마다 집계한다.
+ * 총 수익 카드의 결정석 판매 칸. 한도 줄마다 집계한다.
  */
 import { Image, Pressable, View } from 'react-native'
 
 import { appImage, worldEmblemUrl } from '../../lib/assets/asset-lookup'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
+import { countsCrystalLimitPerMapleId } from '../../lib/boss/crystal-limit'
 import type { MonthlyCrystalsByWorld } from '../../features/boss-profit/monthly-crystals'
 import type { MapleIdOwners } from '../../features/maple-id/owners'
 import { useMapleIdNameOf } from '../../features/maple-id/names'
@@ -12,13 +13,13 @@ import { useMapleIdNameOf } from '../../features/maple-id/names'
 import { ChevronDownIcon, ChevronUpIcon, Text } from '../../components/atoms'
 import { AnchoredPopover } from '../../components/molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
-import { summarizeWorldCrystals } from './character-groups'
-import type { CharacterGroup, WorldCrystalSummary } from './character-groups'
+import { crystalLimitLines, summarizeWorldCrystals } from './character-groups'
+import type { CharacterGroup, CrystalLimitLine, WorldCrystalSummary } from './character-groups'
 import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 
 
 // 총 수익 카드 셋째 줄의 결정석 칸. 주간 몫과 그 주에 잡은 월간 보스의 월간 몫을 칸 둘로 나눠 적는다.
-// 둘 다 분모 없이 개수만 적고, 안 잡은 주에도 `0개` 로 선다. 주간 한도는 메이플 ID 와 월드마다 따로라 칸에 분모를 두면
+// 둘 다 분모 없이 개수만 적고, 안 잡은 주에도 `0개` 로 선다. 주간 한도는 한도 줄마다 따로라 칸에 분모를 두면
 // 줄 수만큼 커져 어느 줄의 한도도 아니다(사용자 선택). 한도는 펼친 줄마다 `/90` 으로 본다.
 //
 // 월드별 분해는 흐름이 아니라 공용 팝오버(별도 네이티브 창)로 띄운다. 펼쳐도 카드 높이가 변하지 않는다.
@@ -28,6 +29,8 @@ import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 export function CrystalSummaryChip(props: {
   groups: CharacterGroup[]
   variant?: 'weekly' | 'monthly'
+  /** 주간 탭이 보고 있는 주. 그 주의 규칙으로 한도 줄을 가른다. 월간 탭은 `null` */
+  weekKey: string | null
   /** 한도 줄마다의 그 달 누적. 오면 행으로 센 월간 몫을 대신한다. */
   monthlyByWorld?: MonthlyCrystalsByWorld
   /** 캐릭터마다의 메이플 ID 와 그 차례. 오면 메이플 ID 와 월드마다 가르고, 못 읽었으면 월드로만 가른다 */
@@ -60,6 +63,16 @@ export function CrystalSummaryChip(props: {
   const sections = sectionsByMapleId(worlds, props.mapleIds?.order ?? [])
   // 메이플 ID 가 하나면 이름으로 가를 것이 없다. 캐릭터 관리 드롭다운의 묶음 라벨과 같은 규칙이다.
   const namesMapleIds = sections.length > 1
+  // 한도를 메이플 ID 마다 세는 주는 한도 줄마다 칸을 둔다. 그 전 주와 월간 탭은 월드 줄마다 칸이다.
+  const weekKey = monthlyOnly ? null : props.weekKey
+  const lineSections =
+    weekKey !== null && countsCrystalLimitPerMapleId(weekKey)
+      ? sections.map((section) => ({ accountId: section.accountId, lines: crystalLimitLines(section.worlds, weekKey) }))
+      : null
+  // 한도 줄이 하나뿐이고 메이플 ID 이름도 적지 않으면 한도를 둘 머리가 없어 제목 줄에 둔다.
+  const titleLine = lineSections !== null && !namesMapleIds && lineSections.length === 1 && lineSections[0].lines.length === 1
+    ? lineSections[0].lines[0]
+    : null
 
   // 칸은 간단히만. 월드 수 · 월드명 같은 부가 표기는 팝오버로 넘긴다. 숫자와 단위 사이는 마진이 아니라 실제
   // 공백 문자로 띄운다. 마진만으론 읽는 문자열이 `34/90` 으로 붙어 스크린리더가 이어 읽는다.
@@ -137,9 +150,91 @@ export function CrystalSummaryChip(props: {
           onClose={closeBreakdown}
           className="p-3"
         >
-          <Text className="mb-2 text-11 font-bold tracking-wide text-text-muted">
-            {namesMapleIds ? '메이플 ID · 월드별 판매 현황' : '월드별 판매 현황'}
-          </Text>
+          <View className="mb-2 flex-row items-center gap-2">
+            <Text className="text-11 font-bold tracking-wide text-text-muted">
+              {namesMapleIds ? '메이플 ID · 월드별 판매 현황' : '월드별 판매 현황'}
+            </Text>
+            {titleLine !== null && (
+              <View accessible aria-label={limitLabel('', titleLine)} className="ml-auto">
+                <LimitFigure cleared={titleLine.cleared} icon={weeklyCrystalIcon} />
+              </View>
+            )}
+          </View>
+          {lineSections !== null ? (
+            <View className="gap-1">
+              {lineSections.map((section, sectionIndex) => {
+                const name = namesMapleIds && section.accountId !== null ? nameOf(section.accountId) : null
+                const owner = name === null ? '' : `${name} `
+                // 한도 줄이 하나면 줄 이름이 가를 것이 없다. 한도는 이름 줄이나 제목 줄에 둔다.
+                const nameLine = name !== null && section.lines.length === 1 ? section.lines[0] : null
+                const headless = section.lines.length === 1 && (nameLine !== null || titleLine !== null)
+                return (
+                  <View key={section.accountId ?? ''} className={`gap-1${sectionIndex === 0 ? '' : ' pt-1'}`}>
+                    {name !== null && (
+                      <View
+                        accessible={nameLine !== null}
+                        aria-label={nameLine === null ? undefined : limitLabel(owner, nameLine)}
+                        className="flex-row items-center gap-2 px-0.5"
+                      >
+                        <Text className="text-11 font-bold text-text">{name}</Text>
+                        {nameLine !== null && (
+                          <View className="ml-auto">
+                            <LimitFigure cleared={nameLine.cleared} icon={weeklyCrystalIcon} />
+                          </View>
+                        )}
+                      </View>
+                    )}
+                    {section.lines.map((line) => (
+                      <View key={line.key} className="gap-1 rounded-[10px] bg-card-inset p-2">
+                        {!headless && (
+                          <View accessible aria-label={limitLabel(`${owner}${line.name} `, line)} className="flex-row items-center gap-2">
+                            <Text className="shrink text-xs font-semibold text-text" numberOfLines={1}>
+                              {line.name}
+                            </Text>
+                            <View className="ml-auto">
+                              <LimitFigure cleared={line.cleared} icon={weeklyCrystalIcon} />
+                            </View>
+                          </View>
+                        )}
+                        {line.worlds.map((summary) => {
+                          const emblemUrl = worldEmblemUrl(summary.worldKey)
+                          return (
+                            <View
+                              key={summary.worldKey}
+                              accessible
+                              aria-label={`${owner}${summary.world} 주간 결정석 ${summary.cleared}개, 월간 결정석 ${summary.monthlyCleared}개`}
+                              className="flex-row items-center gap-1.5"
+                            >
+                              {emblemUrl !== null && <Image source={emblemUrl} className="h-3.5 w-3.5 shrink-0" resizeMode="contain" />}
+                              <Text className="mr-3 shrink grow text-xs text-text-muted" numberOfLines={1}>
+                                {summary.world}
+                              </Text>
+                              <View className="flex-row items-center gap-0.5">
+                                {weeklyCrystalIcon !== null && (
+                                  <Image source={weeklyCrystalIcon} resizeMode="contain" className="h-4 w-3.5 shrink-0" />
+                                )}
+                                <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
+                                  {summary.cleared}
+                                </Text>
+                              </View>
+                              <View className="ml-2 flex-row items-center gap-0.5">
+                                {monthlyCrystalIcon !== null && (
+                                  <Image source={monthlyCrystalIcon} resizeMode="contain" className="h-4 w-3.5 shrink-0" />
+                                )}
+                                <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
+                                  {summary.monthlyCleared}
+                                </Text>
+                              </View>
+                            </View>
+                          )
+                        })}
+                      </View>
+                    ))}
+                  </View>
+                )
+              })}
+            </View>
+          ) : (
           <View className="gap-1">
             {sections.map((section, sectionIndex) => (
               <View key={section.accountId ?? ''} className="gap-1">
@@ -191,9 +286,28 @@ export function CrystalSummaryChip(props: {
               </View>
             ))}
           </View>
+          )}
         </AnchoredPopover>
       )}
     </>
+  )
+}
+
+/** 한도 줄의 읽는 이름. `prefix` 는 메이플 ID 이름이나 줄 이름과 그 뒤의 공백이다. */
+function limitLabel(prefix: string, line: CrystalLimitLine): string {
+  return `${prefix}주간 결정석 판매 ${line.cleared} / ${WEEKLY_CRYSTAL_SALE_LIMIT}`
+}
+
+/** 한도 줄의 `판 수/90`. 주간 결정석 그림이 무엇의 수인지 말한다. */
+function LimitFigure(props: { cleared: number; icon: ReturnType<typeof appImage> }): React.JSX.Element {
+  return (
+    <View className="flex-row items-center gap-0.5">
+      {props.icon !== null && <Image source={props.icon} resizeMode="contain" className="h-4 w-3.5 shrink-0" />}
+      <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
+        {props.cleared}
+        <Text className="text-11 font-normal text-text-muted">/{WEEKLY_CRYSTAL_SALE_LIMIT}</Text>
+      </Text>
+    </View>
   )
 }
 
