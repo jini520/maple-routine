@@ -14,7 +14,7 @@
 import { useRef, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { CheckBox, Text } from '../../../components/atoms'
+import { CheckBox, CrownIcon, Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
@@ -199,33 +199,60 @@ function restorableGroundOf(
   return huntingRegionsForLevel(level).some((each) => each.key === found.region.key) ? found : null
 }
 
-/** 사냥터 목록의 한 줄. 이름 · 포스 배지 · 레벨 · 마릿수. */
 /** 지역 드롭다운의 지역 아이콘 크기. 닫힌 줄과 목록 줄이 같다. */
 const REGION_ICON_SIZE = 20
 
+/**
+ * 사냥터 목록 줄 앞의 왕관 칸. 인기 사냥터면 원 바탕 왕관이 서고 아니면 빈다.
+ *
+ * 칸은 늘 둔다. 왕관을 따라 생기고 사라지면 줄마다 이름이 서는 가로 자리가 달라진다. 원 바탕 아이콘은
+ * `Badge` 에 없는 모양이라 이 목록에만 둔다.
+ */
+function CrownSlot(props: { popular: boolean }): React.JSX.Element {
+  return (
+    <View className="h-5 w-5">
+      {props.popular ? (
+        <View testID="popular-mark" className="h-5 w-5 items-center justify-center rounded-full bg-secondary-tint">
+          <CrownIcon className="h-3 w-3 text-secondary-ink" strokeWidth={2} aria-hidden />
+        </View>
+      ) : null}
+    </View>
+  )
+}
+
+/** 사냥터 목록의 글자 한 줄. 사냥터 이름과 `선택 안함` 이 같은 모양이다. */
+function GroundOptionLabel(props: { label: string; isSelected: boolean }): React.JSX.Element {
+  return (
+    <Text className={`text-sm ${props.isSelected ? 'font-semibold text-primary-ink' : 'text-text'}`}>
+      {props.label}
+    </Text>
+  )
+}
+
+/**
+ * 사냥터 목록의 한 줄. 왕관 칸 옆에 이름, 그 아래에 포스 배지 · 레벨 · 마릿수다.
+ *
+ * 이름은 잘리면 안 된다. 세 값을 이름과 한 줄에 두면 폭 375 에서 이름이 잘려서 아랫줄로 내렸다.
+ */
 function GroundOptionRow(props: {
   region: HuntingRegion
   ground: HuntingGround
   isSelected: boolean
 }): React.JSX.Element {
   return (
-    <View className="flex-row items-center gap-2">
-      <Text
-        numberOfLines={1}
-        className={`shrink text-sm ${
-          props.isSelected ? 'font-semibold text-primary-ink' : 'text-text'
-        }`}
-      >
-        {props.ground.name}
-      </Text>
-      <View className="ml-auto flex-row shrink-0 items-center gap-2">
-        <ForceBadge region={props.region} force={props.ground.force} />
-        <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
-          {levelLabelOf(props.ground)}
-        </Text>
-        <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
-          {props.ground.mobs}마리
-        </Text>
+    <View className="flex-row items-start gap-2">
+      <CrownSlot popular={props.ground.popular} />
+      <View className="shrink gap-1">
+        <GroundOptionLabel label={props.ground.name} isSelected={props.isSelected} />
+        <View className="flex-row items-center gap-2">
+          <ForceBadge region={props.region} force={props.ground.force} />
+          <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
+            {levelLabelOf(props.ground)}
+          </Text>
+          <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
+            {props.ground.mobs}마리
+          </Text>
+        </View>
       </View>
     </View>
   )
@@ -595,19 +622,16 @@ export function HuntCalculatorForm(
           }
           selected={groundKey}
           onSelect={setGroundKey}
-          // 목록 한 줄에 포스 배지·레벨·마릿수가 함께 선다.
+          // `선택 안함` 도 왕관 칸을 비워 사냥터 이름과 같은 열에 선다. `지역을 먼저 고르세요` 는 맞출 이름이 없다.
           renderOption={(option: SelectOption, isSelected: boolean) => {
+            if (huntRegion === null) return <GroundOptionLabel label={option.label} isSelected={isSelected} />
             const ground =
-              huntRegion === null || option.value === null
-                ? null
-                : (huntRegion.grounds.find((each) => each.key === option.value) ?? null)
-            return ground === null || huntRegion === null ? (
-              <Text
-                numberOfLines={1}
-                className={`text-sm ${isSelected ? 'font-semibold text-primary-ink' : 'text-text'}`}
-              >
-                {option.label}
-              </Text>
+              option.value === null ? null : (huntRegion.grounds.find((each) => each.key === option.value) ?? null)
+            return ground === null ? (
+              <View className="flex-row items-start gap-2">
+                <CrownSlot popular={false} />
+                <GroundOptionLabel label={option.label} isSelected={isSelected} />
+              </View>
             ) : (
               <GroundOptionRow region={huntRegion} ground={ground} isSelected={isSelected} />
             )
