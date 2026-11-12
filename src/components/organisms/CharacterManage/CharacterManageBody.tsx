@@ -212,6 +212,7 @@ export function CharacterManageBody({
                   {manage.selectedAccountId !== null && (
                     <AccountSelect
                       accounts={manage.accounts}
+                      groupOf={manage.accountGroups}
                       selectedAccountId={manage.selectedAccountId}
                       portraitByAccountId={manage.portraitByAccountId}
                       onSelect={manage.selectAccount}

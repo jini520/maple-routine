@@ -564,7 +564,7 @@ export async function loadLastHunts(): Promise<LastHunts> {
  */
 interface ManualDayRecordBase {
   /**
-   * 그 기록에 붙은 캐릭터의 이름, 메이플 ID 기록이면 `메이플 ID · 대표 캐릭터`. 없으면 빈 문자열이다.
+   * 그 기록에 붙은 캐릭터의 이름, 메이플 ID 기록이면 그 ID 의 이름(`메이플ID-da9b2f21`). 없으면 빈 문자열이다.
    *
    * 주인을 모르는 옛 기록이거나 캐시에 이름이 없으면 빈다. 줄은 그때 항목만 적는다.
    */

@@ -20,11 +20,7 @@
 import { currentCredentials } from '../features/auth/current-credential'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import {
-  sortAccountSummaries,
-  summarizeAccount,
-  type AccountSummaryView,
-} from '../features/character-manage/derivations'
+import { groupAccountSummaries, type AccountSummaryView } from '../features/character-manage/derivations'
 import { CHARACTER_BASIC_TTL_MS } from '../features/schedule-sync/character-basic-fetch'
 import {
   getCharacterPickerRoster,
@@ -44,6 +40,8 @@ interface AccountRoster {
 
 export interface AccountRosters {
   accounts: AccountSummaryView[]
+  /** 메이플 ID → 넥슨 계정 묶음 라벨. 보이는 넥슨 계정이 하나면 비어 있다 */
+  accountGroups: Record<string, string>
   selectedAccountId: string | null
   isAccountsLoading: boolean
   accountsError: ScheduleSyncError | null
@@ -62,6 +60,7 @@ export interface AccountRosters {
 
 export function useAccountRosters(): AccountRosters {
   const [accounts, setAccounts] = useState<AccountSummaryView[]>([])
+  const [accountGroups, setAccountGroups] = useState<Record<string, string>>({})
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
   const [isAccountsLoading, setIsAccountsLoading] = useState(true)
   const [accountsError, setAccountsError] = useState<ScheduleSyncError | null>(null)
@@ -144,22 +143,17 @@ export function useAccountRosters(): AccountRosters {
         if (failed !== undefined && lists.every((one) => one.accounts === null)) {
           throw new CredentialFailure(failed.error, apiKeyValueOf(failed.credential))
         }
-        const list = lists.flatMap((one) => one.accounts ?? [])
-        // 캐릭터 0명 계정은 `normalizeCharacterList` 가 이미 걸렀고,
-        // `summarizeAccount` 의 `null` 은 그 규칙이 뚫렸을 때의 안전망이다. 렌더 중에 던지지 않는다.
-        // 차례는 **대표 레벨이 높은 계정이 먼저** 다(`sortAccountSummaries`). 그래서 아래 `[0]` 이
-        // 고르는 첫 계정도 주력 ID 가 된다.
-        const summaries = sortAccountSummaries(
-          list
-            .map(summarizeAccount)
-            .filter((summary): summary is AccountSummaryView => summary !== null),
-        )
+        // 넥슨 계정마다 묶고 묶음 안은 대표 레벨 차례다(`groupAccountSummaries`). 그래서 아래 `[0]` 이 고르는 첫 계정은
+        // 넥슨 ID 계정의 주력 ID 다.
+        const grouped = groupAccountSummaries(lists)
+        const summaries = grouped.accounts
         const open = openAccountRef.current
         const next =
           open !== null && summaries.some((summary) => summary.accountId === open)
             ? open
             : (summaries[0]?.accountId ?? null)
         setAccounts(summaries)
+        setAccountGroups(grouped.groupOf)
         setSelectedAccountId(next)
         openAccountRef.current = next
         setIsAccountsLoading(false)
@@ -210,6 +204,7 @@ export function useAccountRosters(): AccountRosters {
 
   return {
     accounts,
+    accountGroups,
     selectedAccountId,
     isAccountsLoading,
     accountsError,

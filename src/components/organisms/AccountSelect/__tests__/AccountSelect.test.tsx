@@ -1,9 +1,8 @@
 // 이 앱이 **처음으로 직접 만드는 여는 목록**이라 테스트가 지키는 것도 **값이
-// 잘 나오는가** 보다 **무엇을 두지 않기로 했는가** 쪽이 많다. 스크림 없음· **명** 없음·
-// 지시받지 않은 문구 없음.
+// 잘 나오는가** 보다 **무엇을 두지 않기로 했는가** 쪽이 많다. 스크림 없음 · 지시받지 않은 문구 없음.
 //
-// 값 규칙(대표· 월드 최대 둘)은 `summarizeAccount` 가 갖는다. 그래서 픽스처를 손으로
-// 적지 않고 **그 함수를 통과시켜** 만든다. 여기서 기대값을 베끼면 규칙이 두 벌이 된다.
+// 대표 캐릭터 규칙은 `summarizeAccount` 가 갖는다. 그래서 픽스처를 손으로 적지 않고 **그 함수를 통과시켜** 만든다.
+// 여기서 기대값을 베끼면 규칙이 두 벌이 된다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import {
@@ -31,22 +30,25 @@ function 요약(accountId: string, characters: MapleCharacter[]): AccountSummary
   return summary
 }
 
-/** 스카니아 19· 엘리시움 7· 크로아 3. 셋째 월드는 적히지 않아야 한다. */
-const 계정A = 요약('account-a', [
+const A = 'da9b2f21-a'
+const B = '4f1c08ab-b'
+
+/** 스카니아 19 · 엘리시움 7 · 크로아 3. 월드별 개수는 행에 적지 않는다. */
+const 계정A = 요약(A, [
   캐릭터('낟낟', '스카니아', 294),
   ...여럿('스카니아', 18, 200),
   ...여럿('엘리시움', 7, 210),
   ...여럿('크로아', 3, 180),
 ])
 
-const 계정B = 요약('account-b', [캐릭터('밤샘메린', '루나', 275), ...여럿('루나', 4, 150)])
+const 계정B = 요약(B, [캐릭터('밤샘메린', '루나', 275), ...여럿('루나', 4, 150)])
 
 type Props = React.ComponentProps<typeof AccountSelect>
 
 function props(overrides: Partial<Props> = {}): Props {
   return {
     accounts: [계정A, 계정B],
-    selectedAccountId: 'account-a',
+    selectedAccountId: A,
     portraitByAccountId: {},
     onSelect: jest.fn(),
     ...overrides,
@@ -70,17 +72,18 @@ function backgroundColors(node: unknown): unknown[] {
 }
 
 describe('AccountSelect: 트리거', () => {
-  it('트리거가 선택된 계정의 행을 그린다. 1줄 대표, 2줄 월드별 개수', async () => {
-    const { getByTestId, getByText } = await renderOverlay(<AccountSelect {...props()} />)
+  it('트리거가 선택된 메이플 ID 의 행을 그린다. 1줄 메이플 ID 이름, 2줄 대표 캐릭터이고 월드별 개수는 적지 않는다', async () => {
+    const { getByTestId, getByText, queryByText } = await renderOverlay(<AccountSelect {...props()} />)
 
     expect(getByTestId('account-select-trigger')).toBeTruthy()
+    expect(getByText('메이플ID-da9b2f21')).toBeTruthy()
     expect(getByText('스카니아 Lv.294 낟낟')).toBeTruthy()
-    expect(getByText('스카니아 19개, 엘리시움 7개')).toBeTruthy()
+    expect(queryByText(/\d+개/)).toBeNull()
   })
 
   it('계정이 하나여도 그린다. 숨기면 메이플 ID 가 여럿일 수 있다는 사실이 사라진다', async () => {
     const { getByTestId, getByText } = await renderOverlay(
-      <AccountSelect {...props({ accounts: [계정B], selectedAccountId: 'account-b' })} />,
+      <AccountSelect {...props({ accounts: [계정B], selectedAccountId: B })} />,
     )
 
     expect(getByTestId('account-select-trigger')).toBeTruthy()
@@ -93,48 +96,55 @@ describe('AccountSelect: 트리거', () => {
       <AccountSelect {...props()} />,
     )
 
-    expect(queryByTestId('account-select-face-account-a')).toBeNull()
+    expect(queryByTestId(`account-select-face-${A}`)).toBeNull()
     expect(queryByText('낟')).toBeNull()
     expect(queryByText('?')).toBeNull()
-    expect(getByTestId('account-select-face-fallback-account-a')).toBeTruthy()
+    expect(getByTestId(`account-select-face-fallback-${A}`)).toBeTruthy()
   })
 
   it('캐시에 얼굴이 있으면 그것을 쓴다', async () => {
     const { getByTestId } = await renderOverlay(
-      <AccountSelect {...props({ portraitByAccountId: { 'account-a': 'https://face/a' } })} />,
+      <AccountSelect {...props({ portraitByAccountId: { [A]: 'https://face/a' } })} />,
     )
 
-    expect(getByTestId('account-select-face-account-a')).toBeTruthy()
+    expect(getByTestId(`account-select-face-${A}`)).toBeTruthy()
   })
 })
 
 describe('AccountSelect: 열린 목록', () => {
-  it('각 행이 대표와 월드별 개수를 말한다. 셋째 월드부터는 적지 않는다', async () => {
-    const { getAllByText, queryByText } = await 열어서()
+  it('각 행이 메이플 ID 이름과 대표 캐릭터를 말한다', async () => {
+    const { getAllByText } = await 열어서()
 
-    // 트리거가 뒤에 남아 있으므로 선택된 계정의 줄은 두 번(트리거 + 목록 행) 나온다.
+    // 트리거가 뒤에 남아 있으므로 선택된 메이플 ID 의 줄은 두 번(트리거 + 목록 행) 나온다.
+    expect(getAllByText('메이플ID-da9b2f21')).toHaveLength(2)
     expect(getAllByText('스카니아 Lv.294 낟낟')).toHaveLength(2)
-    expect(getAllByText('스카니아 19개, 엘리시움 7개')).toHaveLength(2)
+    expect(getAllByText('메이플ID-4f1c08ab')).toHaveLength(1)
     expect(getAllByText('루나 Lv.275 밤샘메린')).toHaveLength(1)
-    expect(getAllByText('루나 5개')).toHaveLength(1)
-    expect(queryByText(/크로아/)).toBeNull()
+  })
+
+  // 넥슨 계정이 하나면 라벨로 가를 것이 없어 부르는 쪽이 라벨을 넘기지 않는다.
+  it('묶음 라벨을 받으면 묶음이 바뀌는 행 앞에만 라벨이 선다', async () => {
+    const 계정C = 요약('0c5a7e6f-c', [캐릭터('새벽파티장', '루나', 268)])
+    const { getAllByText } = await 열어서({
+      accounts: [계정A, 계정B, 계정C],
+      groupOf: { [A]: '넥슨 ID 계정', [B]: '넥슨 ID 계정', '0c5a7e6f-c': 'API 키 1 계정' },
+    })
+
+    expect(getAllByText('넥슨 ID 계정')).toHaveLength(1)
+    expect(getAllByText('API 키 1 계정')).toHaveLength(1)
+  })
+
+  it('묶음 라벨을 안 받으면 라벨이 없다', async () => {
+    const { queryByText } = await 열어서()
+
+    expect(queryByText(/계정$/)).toBeNull()
   })
 
   it('선택된 계정만 선택 상태다', async () => {
     const { getByTestId } = await 열어서()
 
-    expect(getByTestId('account-select-option-account-a').props.accessibilityState.selected).toBe(
-      true,
-    )
-    expect(getByTestId('account-select-option-account-b').props.accessibilityState.selected).toBe(
-      false,
-    )
-  })
-
-  it('캐릭터를 세는 단위가 **개** 다. **명** 은 사람을 센다(결정 8)', async () => {
-    const { queryByText } = await 열어서()
-
-    expect(queryByText(/\d+명/)).toBeNull()
+    expect(getByTestId(`account-select-option-${A}`).props.accessibilityState.selected).toBe(true)
+    expect(getByTestId(`account-select-option-${B}`).props.accessibilityState.selected).toBe(false)
   })
 
   it('지시받지 않은 문구를 붙이지 않는다. **선택 n개**·**방금 확인함** 이 없다', async () => {
@@ -150,9 +160,9 @@ describe('AccountSelect: 열린 목록', () => {
     const rendered = await renderOverlay(<AccountSelect {...p} />)
     await fireEvent.press(rendered.getByTestId('account-select-trigger'))
 
-    await fireEvent.press(rendered.getByTestId('account-select-option-account-b'))
+    await fireEvent.press(rendered.getByTestId(`account-select-option-${B}`))
 
-    expect(p.onSelect).toHaveBeenCalledWith('account-b')
+    expect(p.onSelect).toHaveBeenCalledWith(B)
     expect(rendered.queryByTestId('account-select-list')).toBeNull()
   })
 })

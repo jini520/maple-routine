@@ -1,7 +1,7 @@
-# ADR-161 가계부 메이플 ID 기록
+# ADR-161+202 가계부 메이플 ID 기록
 
 > 🟢 유효
-> 관련 소스: `app/cashbook/character-options.ts` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/EtcForm.tsx` · `app/cashbook/spend/CatalogForm.tsx` · `app/cashbook/spend/SymbolForm.tsx` · `app/cashbook/spend/ItemBuyForm.tsx` · `app/cashbook/spend/EtcForm.tsx` · `features/cashbook/account-names.ts` · `features/cashbook/legacy-entry-accounts.ts` · `features/cashbook/records.ts` · `lib/cashbook/categories.ts` · `storage/cashbook-entries.ts` · `storage/income.ts` · `storage/spend.ts` · `storage/sqlite/migrations.ts` · `features/mvp-grade/character-list.ts` · `features/stats/aggregate.ts` · `app/stats/CharacterSection.tsx` · `app/today/view-model.ts`
+> 관련 소스: `app/cashbook/character-options.ts` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/EtcForm.tsx` · `app/cashbook/spend/CatalogForm.tsx` · `app/cashbook/spend/SymbolForm.tsx` · `app/cashbook/spend/ItemBuyForm.tsx` · `app/cashbook/spend/EtcForm.tsx` · `features/cashbook/account-names.ts` · `lib/maple-id-name.ts` · `features/cashbook/legacy-entry-accounts.ts` · `features/cashbook/records.ts` · `lib/cashbook/categories.ts` · `storage/cashbook-entries.ts` · `storage/income.ts` · `storage/spend.ts` · `storage/sqlite/migrations.ts` · `features/mvp-grade/character-list.ts` · `features/stats/aggregate.ts` · `app/stats/CharacterSection.tsx` · `app/today/view-model.ts`
 
 ## 배경
 
@@ -57,23 +57,22 @@
   남는다.
 - 추적 캐릭터가 속한 ID 만 선다. 소속은 기기 표 `character_accounts` 에서 찾는다. MVP 등급이 등급을 묻는 ID 와 같은
   기준이다([[ADR-050]] 결정 12). 소속을 모르는 캐릭터의 ID 는 서지 않는다.
-- ID 끼리는 캐릭터 관리의 메이플 ID 드롭다운과 같은 차례다. 대표 캐릭터의 레벨이 높은 ID 가 먼저이고, 같으면 대표 이름순이다.
+- ID 끼리는 대표 캐릭터의 레벨이 높은 ID 가 먼저이고, 같으면 대표 이름순이다. 대표 캐릭터는 그 ID 에서 레벨이 가장 높은
+  캐릭터다(`pickRepresentativeCharacter`). 넥슨 `character/list` 응답을 담아 기기에 저장한 쿼리 `characterList(credentialKey)`
+  에서 고르고([[ADR-142]] 결정 2), 그 응답에 ID 가 없으면 그 ID 의 추적 캐릭터 가운데 레벨이 가장 높은 캐릭터를 쓴다. 레벨은
+  쿼리 캐시 `characterBasic(ocid)` 의 값이다. 대표를 못 찾은 ID 는 맨 끝이다. 가계부는 저장된 응답을 읽기만 하고 넥슨을 따로
+  부르지 않는다.
 - 메이플 ID 보기는 글자만 선다. 캐릭터 보기의 월드 엠블럼 같은 그림을 붙이지 않는다(사용자 지정 2026-11-04).
 
-### 결정 3. 메이플 ID 의 이름은 `메이플 ID · 대표 캐릭터` 이다
+### 결정 3. 메이플 ID 의 이름은 [[ADR-101]] 결정 8 의 이름이다
 
-- 대표 캐릭터는 그 ID 에서 레벨이 가장 높은 캐릭터다(사용자 지정 2026-11-04). 캐릭터 관리 · MVP 등급 화면이 ID 를 보여 줄
-  때의 대표와 같다(`summarizeAccount` 의 `pickRepresentativeCharacter`). 같은 ID 가 화면마다 다른 이름이면 같은 ID 로 읽히지
-  않는다.
-- 대표는 넥슨 `character/list` 응답에서 고른다. 그 응답을 담는 쿼리 `characterList(credentialKey)` 를 기기에 저장한다
-  ([[ADR-142]] 결정 2, 사용자 지정 2026-11-04). 가계부 · 통계 · today 는 저장된 응답을 읽기만 하고 넥슨을 따로 부르지 않는다.
-  캐릭터 관리 · MVP 등급 · 회차 · 강화 수집이 목록을 받을 때마다 저장된 응답이 새것으로 바뀐다.
-- 저장된 응답이 없거나 그 ID 가 응답에 없으면, 그 ID 의 추적 캐릭터 가운데 레벨이 가장 높은 캐릭터를 쓴다. 레벨은 쿼리 캐시
-  `characterBasic(ocid)` 의 값이다.
-- 둘 다 없으면 `메이플 ID` 만 적는다(사용자 지정 2026-11-04). MVP 등급 카드가 목록을 못 받은 ID 를 부르는 방식과 같다. 이런
-  ID 가 둘이면 같은 이름이 두 줄 선다.
-- 기록에는 ID 만 저장하고 이름은 그릴 때 만든다. 그래서 대표가 바뀌면 옛 기록의 이름도 함께 바뀐다. 이름을 저장하면 같은 ID
-  의 기록이 이름마다 갈린다.
+- 기본 이름은 `메이플ID-` 뒤에 그 메이플 ID 값의 앞 8자를 붙인 것이다(`메이플ID-da9b2f21`). 앱 전체가 메이플 ID 를 이 이름으로
+  부른다([[ADR-101]] 결정 8, 사용자 지정 2026-11-11). 같은 ID 가 화면마다 다른 이름이면 같은 ID 로 읽히지 않는다.
+- 이름은 ID 값에서 바로 만들어서, 대표 캐릭터나 저장된 `character/list` 응답이 없어도 늘 선다. 그래서 이름을 못 만드는 ID 가
+  없고, 서로 다른 ID 가 같은 이름으로 서지 않는다.
+- 가계부의 메이플 ID 보기와 하루 목록 줄은 이름만 적고 대표 캐릭터를 붙이지 않는다. 이름 아래에 대표 캐릭터를 두는 것은 계정
+  관리 화면과 캐릭터 관리 드롭다운뿐이다([[ADR-101]] 결정 8).
+- 기록에는 ID 만 저장하고 이름은 그릴 때 만든다. 이름을 저장하면 같은 ID 의 기록이 이름마다 갈린다.
 
 ### 결정 4. 기록은 `ocid` 나 `account_id` 하나만 채우고, 넥슨 계정 id 는 주인을 모르는 옛 기록에만 남는다
 
@@ -110,15 +109,15 @@
 
 | 자리 | 메이플 ID 기록 | 캐릭터도 메이플 ID 도 없는 옛 기록 |
 |---|---|---|
-| 가계부 하루 목록 줄의 첫 줄 | `메이플 ID · 대표 · 제목`. 캐릭터 기록의 `이름 · 제목` 과 같은 형식이다 | 제목만 |
+| 가계부 하루 목록 줄의 첫 줄 | `메이플 ID 이름 · 제목`(`메이플ID-da9b2f21 · 제목`). 캐릭터 기록의 `이름 · 제목` 과 같은 형식이다 | 제목만 |
 | 통계 `캐릭터별` 카드의 막대 | ID 마다 한 줄. 금액 순서대로 캐릭터 줄 사이에 선다 | 빠진다 |
 | 통계 `캐릭터별` 카드의 단상 | 서지 않는다. 메이플 ID 줄을 뺀 캐릭터 줄의 상위 셋이 선다 | 빠진다 |
 | today `이번 주 수익` 의 순위 | 서지 않는다 | 빠진다 |
 
 - 단상과 today 순위는 전신 그림 · 얼굴이 서는 자리다. 메이플 ID 에는 그림을 두지 않으므로(결정 2) 이 두 자리에는 세우지
   않는다(사용자 지정 2026-11-04).
-- 통계 카드 제목은 `캐릭터별` 그대로다(사용자 지정 2026-11-04). 메이플 ID 줄은 이름이 `메이플 ID ·` 로 시작해서 줄만 보고도
-  가를 수 있다.
+- 통계 카드 제목은 `캐릭터별` 그대로다(사용자 지정 2026-11-04). 메이플 ID 줄도 결정 3 의 이름만 쓰고, 캐릭터 줄과 가르는
+  표시를 따로 붙이지 않는다([[ADR-101]] 결정 8, 사용자 지정 2026-11-09).
 - 순 수익 · 수입 내역 · 지출 내역 같은 다른 카드와 today 의 합계 · 도넛은 지금처럼 모든 기록을 센다.
 
 ## 테스트
@@ -126,7 +125,7 @@
 | 파일 | 확인하는 것 |
 |---|---|
 | `app/cashbook/__tests__/IncomeSheet.test.tsx` · `app/cashbook/__tests__/SpendSheet.test.tsx` | 결정 1 · 2: 결정 1 의 분류마다 목록에 `선택 안함` 이 없는지, 메이플 ID 보기가 고를 수 있는 분류(지출 컨텐츠 포함)에서만 캐릭터 뒤에 서는지, 고르기 전에는 저장이 꺼지고 메이플 ID 를 고르면 그 ID 로 저장되는지, 옛 기록이 빈 칸으로 열려 골라야 다시 저장되는지 본다 |
-| `features/cashbook/__tests__/account-names.spec.ts` | 결정 2: 추적 캐릭터가 속한 ID 만 대표 레벨 차례로 서는지 본다. 결정 3: 대표를 저장된 목록 · 추적 캐릭터 · `메이플 ID` 차례로 찾는지 본다 |
+| `features/cashbook/__tests__/account-names.spec.ts` | 결정 2: 추적 캐릭터가 속한 ID 만 대표 레벨 차례로 서고, 대표를 저장된 목록 · 추적 캐릭터 차례로 찾는지, 대표를 못 찾은 ID 가 맨 끝인지 본다. 결정 3: 대표를 못 찾은 ID 도 기본 이름으로 서는지 본다 |
 | `features/cashbook/__tests__/records.spec.ts` | 결정 6: 하루 목록 줄의 첫 줄에 메이플 ID 이름이 붙고, 캐릭터도 메이플 ID 도 없는 옛 기록은 제목만인지 본다 |
 | `storage/__tests__/income.spec.ts` · `storage/__tests__/spend.spec.ts` | 결정 4: `account_id` 가 저장되고 읽히는지, 새 기록과 주인을 고른 옛 기록의 `nexon_account_id` 가 비는지 본다. 결정 5: 메이플 ID 가 하나인 넥슨 계정의 옛 기록만, 메이플 ID 를 고를 수 있는 분류만 옮기는지, 남은 옛 기록을 분류에 따라 대표 캐릭터의 메이플 ID 나 그 캐릭터에 붙이는지 본다 |
 | `features/cashbook/__tests__/legacy-entry-accounts.spec.ts` | 결정 5: 메이플 ID 가 하나뿐인 옮기기 뒤에 남은 기록을 화면이 대표로 세우는 캐릭터에게 붙이는지, 대표나 그 메이플 ID 를 모르면 붙이지 않는지, 지출 컨텐츠가 메이플 ID 분류인지 본다 |
@@ -137,3 +136,4 @@
 ## 번호 기록
 
 - ADR-161 (2026-11-04): 캐릭터 없이 저장되던 가계부 분류에 캐릭터나 메이플 ID 를 고르게 하고, 메이플 ID 기록을 이름과 함께 보여 주는 결정을 처음 작성했다(#851)
+- ADR-202 (2026-11-11): 메이플 ID 의 이름을 `메이플 ID · 대표 캐릭터` 에서 [[ADR-101]] 결정 8 의 이름(`메이플ID-` 와 ID 앞 8자)으로 바꿨다. 대표 캐릭터는 ID 의 차례를 정하는 데만 쓴다(#928)

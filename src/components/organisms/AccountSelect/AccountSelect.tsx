@@ -1,8 +1,8 @@
 /**
  * 메이플 ID 드롭다운. 캐릭터 관리 화면 아래 층의 머리에 서는 오버레이.
  *
- * 값 규칙은 `summarizeAccount` 가 갖는다. 대표 캐릭터와 월드별 개수를 거기서 정하고 이 컴포넌트는
- * 받은 것을 그리기만 한다. 저장소도 네트워크도 모른다.
+ * 값 규칙은 밖에 있다. 대표 캐릭터는 `summarizeAccount`, 이름은 `mapleIdNameOf`, 넥슨 계정 묶음은
+ * `groupAccountSummaries` 가 정하고 이 컴포넌트는 받은 것을 그리기만 한다. 저장소도 네트워크도 모른다.
  *
  * 지키는 것 넷.
  *
@@ -30,6 +30,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import type { AccountSummaryView } from '../../../features/character-manage/derivations'
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
+import { mapleIdNameOf } from '../../../lib/maple-id-name'
 import { worldNameOf } from '../../../lib/world/worlds'
 
 import { FACE_AVATAR_SIZE } from '../../../lib/face-crop'
@@ -57,9 +58,9 @@ export interface AccountRowProps {
   trailing?: React.ReactNode
 }
 
-/** 메이플 ID 표시 한 줄. 드롭다운 밖에서는 MVP 등급 모달의 ID 카드가 쓴다. */
+/** 메이플 ID 표시 한 줄. 이름 아래에 대표 캐릭터를 둔다. 드롭다운 밖에서는 MVP 등급 모달의 ID 카드가 쓴다. */
 export function AccountRow(props: AccountRowProps): React.JSX.Element {
-  const { accountId, representative, worldCounts } = props.summary
+  const { accountId, representative } = props.summary
   const emblem = worldEmblemUrl(representative.worldKey)
   const worldName = worldNameOf(representative.worldKey, representative.world)
 
@@ -80,6 +81,10 @@ export function AccountRow(props: AccountRowProps): React.JSX.Element {
       />
 
       <View className="min-w-0 flex-1 gap-0.5">
+        <Text numberOfLines={1} className="text-sm font-semibold text-text">
+          {mapleIdNameOf(accountId)}
+        </Text>
+
         <View className="flex-row items-center gap-1">
           {emblem !== null && (
             <View testID={`account-select-emblem-${accountId}`} className="shrink-0">
@@ -92,14 +97,10 @@ export function AccountRow(props: AccountRowProps): React.JSX.Element {
               />
             </View>
           )}
-          <Text numberOfLines={1} className="min-w-0 flex-1 text-sm font-semibold text-text">
+          <Text numberOfLines={1} className="min-w-0 flex-1 text-xs text-text-muted">
             {`${worldName} Lv.${representative.level} ${representative.name}`}
           </Text>
         </View>
-
-        <Text numberOfLines={1} className="text-xs text-text-muted">
-          {worldCounts.map((entry) => `${entry.world} ${entry.count}개`).join(', ')}
-        </Text>
       </View>
 
       {props.trailing}
@@ -110,6 +111,8 @@ export function AccountRow(props: AccountRowProps): React.JSX.Element {
 export interface AccountSelectProps {
 /** 파생값. 값 규칙(대표 · 월드 둘까지)은 이미 여기 담겨 온다. */
   accounts: AccountSummaryView[]
+  /** 메이플 ID → 넥슨 계정 묶음 라벨. 없거나 비어 있으면 라벨을 두지 않는다 */
+  groupOf?: Readonly<Record<string, string>>
   selectedAccountId: string
   /** 그 계정의 대표 캐릭터 얼굴. **캐시에 있을 때만**. 없으면 이니셜. */
   portraitByAccountId: Record<string, string | null>
@@ -223,25 +226,38 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
             <ScrollView>
               {/* 자연 높이를 재는 자리. `ScrollView` 안이라 바깥 `maxHeight` 에 눌리지 않는다. */}
               <View onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}>
-                {props.accounts.map((account) => {
+                {props.accounts.map((account, index) => {
                   const isSelected = account.accountId === props.selectedAccountId
+                  const group = props.groupOf?.[account.accountId]
+                  const previous = props.accounts[index - 1]
+                  const opensGroup = group !== undefined && group !== (previous === undefined ? undefined : props.groupOf?.[previous.accountId])
                   return (
-                    <Pressable
-                      key={account.accountId}
-                      testID={`account-select-option-${account.accountId}`}
-                      role="button"
-                      aria-selected={isSelected}
-                      onPress={() => {
-                        close()
-                        props.onSelect(account.accountId)
-                      }}
-                      className={`${ROW_PADDING}${isSelected ? ' bg-primary-tint' : ''}`}
-                    >
-                      <AccountRow
-                        summary={account}
-                        portraitUrl={props.portraitByAccountId[account.accountId] ?? null}
-                      />
-                    </Pressable>
+                    <View key={account.accountId}>
+                      {opensGroup && (
+                        // `SelectField` 의 묶음 라벨과 같다. 첫 묶음 말고는 위를 더 띄워 앞 묶음의 끝이 보이게 한다. 선은 긋지 않는다.
+                        <Text
+                          testID={`account-select-group-${group}`}
+                          className={`px-3 pb-1 text-11 font-bold text-text-disabled ${index === 0 ? 'pt-2.5' : 'pt-4'}`}
+                        >
+                          {group}
+                        </Text>
+                      )}
+                      <Pressable
+                        testID={`account-select-option-${account.accountId}`}
+                        role="button"
+                        aria-selected={isSelected}
+                        onPress={() => {
+                          close()
+                          props.onSelect(account.accountId)
+                        }}
+                        className={`${ROW_PADDING}${isSelected ? ' bg-primary-tint' : ''}`}
+                      >
+                        <AccountRow
+                          summary={account}
+                          portraitUrl={props.portraitByAccountId[account.accountId] ?? null}
+                        />
+                      </Pressable>
+                    </View>
                   )
                 })}
               </View>

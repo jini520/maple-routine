@@ -31,7 +31,8 @@
 | `components/organisms/CharacterRow/` | 캐릭터 관리의 카드 한 장 |
 | `components/organisms/AccountSelect/` | 메이플 ID 드롭다운 |
 | `hooks/useCharacterManage.ts` · `useAccountRosters.ts` · `useKnownProfiles.ts` · `useSelectionDraft.ts` | 캐릭터 관리 화면 로직 |
-| `features/character-manage/derivations.ts` · `grid-split.ts` | 계정 요약 · 위 목록 뷰 · 격자 순서에서 고른 목록 자르기 |
+| `features/character-manage/derivations.ts` · `grid-split.ts` | 계정 요약 · 넥슨 계정 묶음(`groupAccountSummaries`) · 위 목록 뷰 · 격자 순서에서 고른 목록 자르기 |
+| `lib/maple-id-name.ts` | 메이플 ID 의 이름(`메이플ID-` 와 ID 앞 8자). 앱 전체가 이 이름을 쓴다([[ADR-101]] 결정 8) |
 | `app/today/CharacterManageButton.tsx` | today 헤더의 초상화 버튼 |
 | `app/settings/reload-tab-stores.ts` | 저장 뒤 보스 · 보스 수익 탭 스토어를 다시 읽힌다 |
 | `features/character-selection/store.ts` | 고른 캐릭터와 대표 표식을 갖는 스토어 |
@@ -63,7 +64,7 @@
 | 영역 | 보이는 것 | 누르면 |
 |---|---|---|
 | `선택된 캐릭터 N개` | 모든 메이플 ID 의 추적 캐릭터. 저장 순서. 왼쪽 끌기 핸들 · 오른쪽 대표 별과 `✕` | 핸들: 순서 변경 · 별: 대표 지정 · `✕`: 후보로 되돌림 |
-| 메이플 ID 드롭다운 | 계정의 대표 캐릭터와 월드별 캐릭터 수 | 다른 계정의 후보를 연다 |
+| 메이플 ID 드롭다운 | 넥슨 계정마다 묶은 메이플 ID. 행은 대표 캐릭터 얼굴 · 메이플 ID 이름 · 그 아래 대표 캐릭터 줄(월드 엠블럼 · 월드 · 레벨 · 이름). 넥슨 계정이 둘 이상일 때만 묶음 위에 `넥슨 ID 계정` · `API 키 1 계정` 라벨([[ADR-101]] 결정 8 · 11) | 다른 메이플 ID 의 후보를 연다 |
 | `캐릭터 추가` | 고른 메이플 ID 의 후보. 레벨 내림차순 | 카드: 위 목록 끝으로 옮긴다 |
 | 하단 `저장` | 목록 · 순서 · 대표가 바뀌었고 1개 이상일 때만 켜진다 | 저장하고 화면을 나간다 |
 

@@ -211,6 +211,6 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-152](./adr/ADR-152_navigation_bar-order.md) | 🟢 | navigation | 하단바 순서 바꾸기 |
 | [ADR-158+180](./adr/ADR-158+180_server-sync_usage-log.md) | 🟢 | server-sync | 앱 사용 로그와 관리자 대시보드(사용자 · 사용 로그) |
 | [ADR-160+200](./adr/ADR-160+200_cashbook_exclusions.md) | ⚪ | cashbook | 가계부에서 빼는 강화 기록 |
-| [ADR-161](./adr/ADR-161_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |
+| [ADR-161+202](./adr/ADR-161+202_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |
 | [ADR-187](./adr/ADR-187_game-data_item-catalog.md) | ⚪ | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 |
 | [ADR-188](./adr/ADR-188_release_branches.md) | 🟢 | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기 |
