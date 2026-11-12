@@ -31,6 +31,9 @@ jest.mock('../../../features/cashbook/records', () => {
   }
 })
 
+// 사냥 기록의 수정 · 삭제는 확인 창 흐름을 탄다. 그 흐름은 `fragment-cuts.spec.ts` 가 보고, 여기서는 화면이 그 길로 보내는지만 본다.
+jest.mock('../../../features/cashbook/fragment-cuts', () => ({ saveHuntWithCuts: jest.fn() }))
+
 // 창의 소유자는 부모 층이다. 이 화면은 진행 상태를 구독하고 다시 채워 달라고 부탁만 한다. 기록은 쿼리가 든다.
 const mockWindow = {
   status: 'ready' as 'idle' | 'filling' | 'ready',
@@ -89,6 +92,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 import { QueryClient, QueryClientProvider, notifyManager } from '@tanstack/react-query'
 
 import { useToastStore } from '../../../features/toast/store'
+import { saveHuntWithCuts } from '../../../features/cashbook/fragment-cuts'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { useResetBoundaryTick } from '../../../features/query/reset-timer'
 import { useSettlementBanner } from '../../../features/settlement/query'
@@ -1246,6 +1250,53 @@ describe('줄을 누르면 고칠 수 있다', () => {
 
     expect(records.removeRecord).toHaveBeenCalledWith({ kind: 'spend', record: 그날지출, characterName: '' })
     expect(view.queryByText('지출 수정')).toBeNull()
+  })
+
+  // 사냥 기록을 고치거나 지우면 그 조각을 쓴 뒤 기록이 함께 바뀔 수 있다. 확인 창에서 취소하면 실패가 아니다.
+  describe('사냥 기록', () => {
+    const 그날사냥 = {
+      ...그날수입,
+      id: 'hunt-1',
+      category: 'hunting',
+      item: null,
+      mesoAmount: 100_000_000,
+      quantity: null,
+      itemKind: null,
+      hunt: { mode: 'manual', typedMeso: 100_000_000, fragments: 100, fragmentPrice: null },
+    }
+
+    beforeEach(() => {
+      useToastStore.setState({ toasts: [], queue: [] })
+      records.loadTrackedCharacters.mockResolvedValue([루디])
+      그날줄을(고른날, [{ kind: 'income', record: 그날사냥, characterName: '' }])
+    })
+
+    it('고치면 확인 창 흐름으로 저장하고, 취소하면 시트가 남고 토스트가 없다', async () => {
+      jest.mocked(saveHuntWithCuts).mockReset().mockResolvedValue(false)
+      const view = await 그리기()
+      await 누르기(view, 'cashbook-row-hunt-1')
+
+      await 이름으로누르기(view, '수정')
+      await act(async () => {})
+
+      expect(jest.mocked(saveHuntWithCuts).mock.calls[0]?.[1]).toMatchObject({ kind: 'edit', record: { id: 'hunt-1' } })
+      expect(records.editIncome).not.toHaveBeenCalled()
+      expect(view.getByTestId('income-sheet-amount')).toBeTruthy()
+      expect(useToastStore.getState().toasts).toEqual([])
+    })
+
+    it('지우면 확인 창 흐름으로 지우고, 저장되면 시트가 닫힌다', async () => {
+      jest.mocked(saveHuntWithCuts).mockReset().mockResolvedValue(true)
+      const view = await 그리기()
+      await 누르기(view, 'cashbook-row-hunt-1')
+
+      await 이름으로누르기(view, '삭제')
+      await act(async () => {})
+
+      expect(jest.mocked(saveHuntWithCuts)).toHaveBeenCalledWith(그날사냥, { kind: 'remove', id: 'hunt-1' })
+      expect(records.removeRecord).not.toHaveBeenCalled()
+      expect(view.queryByTestId('income-sheet-amount')).toBeNull()
+    })
   })
 
   // 새로 적는 시트에는 지울 것이 없다.

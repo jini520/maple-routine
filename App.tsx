@@ -11,6 +11,7 @@ import './global.css'
 import { AppShell } from './src/app/AppShell'
 import { ErrorBoundary } from './src/components/organisms/ErrorBoundary/ErrorBoundary'
 import { ThemeProvider } from './src/theme/ThemeProvider'
+import { FragmentCutsHost } from './src/app/cashbook/FragmentCutsHost'
 import { InputCardHost } from './src/components/organisms/InputCard/InputCardHost'
 import { QueryCacheProvider } from './src/app/QueryCacheProvider'
 
@@ -76,6 +77,8 @@ export default function App(): React.JSX.Element {
               시트 안에서 그린 카드는 무엇으로 감싸도 시트 위로 못 올라간다. 여기 두면 그 전부를
               덮으면서 평범한 터치 트리 안에 있어 카드의 누르개가 산다.
             */}
+            {/* 조각 확인 창은 시트 위 · 입력 카드 아래다. 그 창의 가격 칸이 입력 카드를 연다. */}
+            <FragmentCutsHost />
             <InputCardHost />
           </ThemeProvider>
         </KeyboardProvider>

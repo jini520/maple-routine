@@ -22,8 +22,19 @@ import {
   readEntries,
   replaceEntry,
 } from './cashbook-entries'
+import { availableFragmentsOn } from '../lib/cashbook/fragment-ledger'
 import { incomeEntryOf, incomeRecordOf } from './cashbook-entry-shape'
+import {
+  applyApprovedCuts,
+  NO_FRAGMENT_CUTS,
+  planCutsAfterWrite,
+  type FragmentCutPlan,
+  type FragmentCutsApproval,
+} from './fragment-cuts'
+import { readFragmentMoves, writeCheckingFragments } from './fragment-ledger'
+import type { SqliteDbConnection } from './ports'
 import { notifyAfterBatch } from './record-revision-batch'
+import { bumpSpendRecordsRevision } from './spend'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
 
@@ -191,26 +202,85 @@ function bumpIncomeRecordsRevision(): void {
   })
 }
 
+/** 조각 장부를 모자라게 하면 던진다(`FragmentShortageError`). 넣기 · 고치기 · 지우기가 모두 같다. */
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
   const db = await getBossProfitDb()
-  await inTransaction(db, () => insertEntry(db, incomeEntryOf(record)))
+  await inTransaction(db, () => writeCheckingFragments(db, () => insertEntry(db, incomeEntryOf(record))))
   bumpIncomeRecordsRevision()
 }
 
 /** 여러 건을 한 트랜잭션으로 넣는다. 하나라도 못 넣으면 아무것도 안 남는다. */
 export async function insertIncomeRecords(records: readonly IncomeRecord[]): Promise<void> {
   const db = await getBossProfitDb()
-  await inTransaction(db, async () => {
-    for (const record of records) await insertEntry(db, incomeEntryOf(record))
-  })
+  await inTransaction(db, () =>
+    writeCheckingFragments(db, async () => {
+      for (const record of records) await insertEntry(db, incomeEntryOf(record))
+    }),
+  )
   bumpIncomeRecordsRevision()
 }
 
-/** 갈아 끼우기. 지출과 같은 계약이다. 저장 시각은 그대로다. */
-export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
+/** 사냥 기록 하나를 고치거나 지우는 일. 조각이 모자라게 되면 뒤 기록을 함께 줄일 수 있다. */
+export type IncomeChange = { kind: 'edit'; record: IncomeRecord } | { kind: 'remove'; id: string }
+
+function changedIdOf(change: IncomeChange): string {
+  return change.kind === 'edit' ? change.record.id : change.id
+}
+
+function writeChange(db: SqliteDbConnection, change: IncomeChange, now: Date): Promise<void> {
+  return change.kind === 'edit' ? replaceEntry(db, incomeEntryOf(change.record), now) : deleteEntry(db, change.id)
+}
+
+/**
+ * 고치기 · 지우기를 쓰고, 받은 계획이 있으면 뒤 기록을 함께 줄인다. 계획 없이 모자라게 되면 던진다.
+ *
+ * @param cuts 확인 창에 보인 계획. 사냥 기록만 넘긴다. 정산 · 헥사는 폼이 쓸 수 있는 개수까지만 받는다
+ */
+async function writeIncomeChange(change: IncomeChange, cuts: FragmentCutsApproval | undefined): Promise<void> {
   const db = await getBossProfitDb()
-  await inTransaction(db, () => replaceEntry(db, incomeEntryOf(record), new Date()))
+  const now = new Date()
+  const id = changedIdOf(change)
+  const plan = await inTransaction(db, () =>
+    writeCheckingFragments(
+      db,
+      () => writeChange(db, change, now),
+      cuts === undefined ? undefined : (before) => applyApprovedCuts(db, [id], before, cuts, now),
+    ),
+  )
   bumpIncomeRecordsRevision()
+  if (plan?.changes.some((each) => each.kind === 'hexa') === true) bumpSpendRecordsRevision()
+}
+
+/** 갈아 끼우기. 지출과 같은 계약이다. 저장 시각은 그대로다. */
+export function updateIncomeRecord(record: IncomeRecord, cuts?: FragmentCutsApproval): Promise<void> {
+  return writeIncomeChange({ kind: 'edit', record }, cuts)
+}
+
+/** 확인 창용 계획만 세고 쓴 것은 되돌린다는 표시. */
+const PREVIEW_ONLY = Symbol('previewOnly')
+
+/**
+ * 사냥 기록을 고치거나 지우면 함께 줄일 뒤 기록. 저장과 같은 함수로 세도록 쓰고 센 뒤 되돌린다.
+ *
+ * @param candidatesOf 헥사 강화가 보관을 가져올 캐릭터의 차례
+ */
+export async function previewIncomeCuts(
+  change: IncomeChange,
+  candidatesOf: (ocid: string) => readonly string[],
+): Promise<FragmentCutPlan> {
+  const db = await getBossProfitDb()
+  let plan: FragmentCutPlan = NO_FRAGMENT_CUTS
+  try {
+    await inTransaction(db, async () => {
+      const before = await readFragmentMoves(db)
+      await writeChange(db, change, new Date())
+      plan = await planCutsAfterWrite(db, [changedIdOf(change)], before, candidatesOf)
+      throw PREVIEW_ONLY
+    })
+  } catch (error) {
+    if (error !== PREVIEW_ONLY) throw error
+  }
+  return plan
 }
 
 /**
@@ -243,10 +313,8 @@ export async function moveIncomeRecordsToOcid(fromOcid: string, toOcid: string):
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
-export async function deleteIncomeRecord(id: string): Promise<void> {
-  const db = await getBossProfitDb()
-  await deleteEntry(db, id)
-  bumpIncomeRecordsRevision()
+export function deleteIncomeRecord(id: string, cuts?: FragmentCutsApproval): Promise<void> {
+  return writeIncomeChange({ kind: 'remove', id }, cuts)
 }
 
 const INCOME = `e.entry_type = 'income'`
@@ -342,35 +410,15 @@ export async function applyAutoIncomeSaleFees(updates: readonly IncomeSaleFeeUpd
 }
 
 /**
- * 한 캐릭터의 솔 에르다 조각 보관 개수. 조각 가격을 안 적은(`NULL`) 사냥 기록의 조각 합에서 `솔 에르다 조각` 정산 기록이 판
- * 개수 합과 헥사 기록이 그 캐릭터의 보관에서 가져간 개수 합을 뺀 값이다.
- *
- * 보관을 따로 저장하지 않고 기록에서 센다. 저장하면 사냥 기록을 고치거나 지울 때마다 그 값도 맞춰야 한다. 마이너스도 그대로 낸다.
+ * 한 캐릭터가 그 날 쓸 수 있는 솔 에르다 조각. 그 날과 뒤 모든 날의 남은 개수 가운데 가장 작은 값이다. 정산 폼 ·
+ * 헥사 폼 · 사냥 전리품 판매의 `보유` 가 모두 이것을 읽는다. 따로 세면 한 폼에서 받은 개수가 다른 폼에서 모자라게 된다.
  *
  * @param ocid 보관이 캐릭터별이라 캐릭터 없는 기록은 안 든다
- * @param onOrBeforeDateKey 이 날까지 쌓인 기록만 센다. 나중에 보관한 조각을 앞선 날짜로 팔 수 없다
+ * @param dateKey 쓰려는 날
  * @param excludeRecordId 수정 중인 정산 · 헥사 기록. 자기 몫을 빼야 보관을 다 쓴 기록을 열어 저장할 수 있다
  */
-export async function getFragmentStorage(
-  ocid: string,
-  onOrBeforeDateKey: string,
-  excludeRecordId?: string,
-): Promise<number> {
+export async function getFragmentStorage(ocid: string, dateKey: string, excludeRecordId?: string): Promise<number> {
   const db = await getBossProfitDb()
-  const scope = `e.entry_type = 'income' AND e.ocid = ? AND e.entry_date <= ? AND e.id != ?`
-  const params = [ocid, onOrBeforeDateKey, excludeRecordId ?? '']
-  const { values } = await db.query(
-    `SELECT
-       (SELECT COALESCE(SUM(h.fragments), 0)
-          FROM cashbook_entries e JOIN cashbook_entry_hunt_inputs h ON h.entry_id = e.id
-         WHERE ${scope} AND e.category_key = 'hunting' AND h.fragment_price_meso IS NULL)
-       - (SELECT COALESCE(SUM(i.quantity), 0)
-          FROM cashbook_entries e JOIN cashbook_entry_items i ON i.entry_id = e.id
-         WHERE ${scope} AND e.category_key = 'sol_erda_fragment')
-       - (SELECT COALESCE(SUM(u.fragments), 0)
-          FROM cashbook_entries e JOIN cashbook_entry_fragment_uses u ON u.entry_id = e.id
-         WHERE u.ocid = ? AND e.entry_date <= ? AND e.id != ?) AS stored`,
-    [...params, ...params, ...params],
-  )
-  return Number((values?.[0] as { stored?: unknown } | undefined)?.stored ?? 0)
+  const moves = (await readFragmentMoves(db, ocid)).filter((move) => move.entryId !== excludeRecordId)
+  return availableFragmentsOn(moves, dateKey)
 }
