@@ -30,7 +30,7 @@
 | `app/boss-profit/CharacterIssue.tsx` | 금액 위 칸의 조회 불가 · 동기화 실패 배지, 금액 칸의 조회 불가 알약, 설명 팝오버 |
 | `app/boss-profit/character-groups.ts` | 행을 캐릭터로 묶고 금액 · 처치 수 · 결정석 수 · 고가 드롭을 센다 |
 | `app/boss-profit/DropPriceFab.tsx` | 아이템 가격 입력 버튼과 미입력 배지 |
-| `features/boss-profit/store.ts` | 보던 탭 · 기간 · 파티 계획과 기록을 쓰는 액션(파티 · 직접 완료 · 드롭) |
+| `features/boss-profit/store.ts` | 보던 탭 · 기간 · 이번 기간을 따라가는지 · 파티 계획과 기록을 쓰는 액션(파티 · 직접 완료 · 드롭) |
 | `features/manual-completion/query.ts` | 직접 완료를 연 보스 쿼리 `manualCompletion()`. `BossProfitBossRow` 가 `useManualCompletionBosses` 로 단추를 세울지 가른다. 화면 포커스 · 앱 복귀마다 다시 받는다 |
 | `features/boss-profit/period-query.ts` | 기간 쿼리 `bossProfitPeriod(tab, periodKey)` · 앞뒤 기간 미리 읽기 · 이번 주 예열 |
 | `features/boss-profit/period-snapshot.ts` | 한 기간의 스냅샷. 지금 기간은 스케줄 쿼리 캐시에서, 지난 기간은 기록에서 만든다 |
@@ -109,6 +109,8 @@ hh:mm:ss 기준
 
 - 기간의 데이터는 쿼리 `bossProfitPeriod(tab, periodKey)` 가 든다. 보스 기록 · 드롭 기록 · 조회 원장의 판이 오르거나
   스케줄 회차가 새 데이터를 들면 다시 읽는다([[ADR-142]] 결정 6 · 9).
+- 이번 기간의 행은 스케줄 캐시로 만든다. 캐시를 받은 뒤 목요일 0시나 1일 0시를 넘겼으면 그 주기의 완료를 비워서 만든다.
+  그래서 새로 받기 전에도 지난 기간의 처치가 이번 기간에 `완료` 로 서지 않는다([[ADR-032]] 결정 10).
 - 목록을 아래로 당기면 `LedgerLayer` 가 스케줄 회차 · 창 동기화 · 오늘 강화를 다시 돌린다(`reload(['live', 'window'])`).
   어느 기간에서든 되고, 보던 기간을 떠나지 않는다. 화면에 돌아오면 만료된 회차만 다시 받는다
   (`useRefetchStaleOnFocus`). 당김 동작은 [[ADR-064]] 에 있다.
@@ -118,6 +120,8 @@ hh:mm:ss 기준
   연다)를 보인다. 추적 목록을 아직 안 읽었으면(`null`) 이 화면을 그리지 않는다.
 - 카드 순서는 사용자가 캐릭터 관리에서 정한 추적 순서다. 추적에서 뺐지만 기록이 있는 캐릭터의 카드도 보인다.
 - 수익·지출 그룹을 떠나면 주간 · 이번 주로 돌아온다.
+- 이번 기간을 보고 있었으면 초기화 시각에 새 기간으로 옮긴다. 주간 탭은 목요일 0시, 월간 탭은 1일 0시다. 앱을 그 전에
+  켜 두었다가 초기화 뒤에 처음 열어도 같다. 지난 기간을 보고 있었으면 그대로 둔다([[ADR-041]] 결정 13).
 
 ## 기간 상태
 

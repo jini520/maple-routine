@@ -1,8 +1,8 @@
-# ADR-032 스케줄러 응답 병합과 캐시
+# ADR-032+204 스케줄러 응답 병합과 캐시
 
-> 🟢 유효
+> ⚪ 미구현(결정 10)
 > 옛 번호: ADR-030 · ADR-034 · ADR-270 · ADR-271 결정 6
-> 관련 소스: `lib/scheduler/scheduler-merge.ts` · `lib/scheduler/scheduler-content-scope.ts` · `lib/scheduler/scheduler-activity.ts` · `lib/scheduler/reset-clock.ts` · `features/schedule-sync/schedule-sync.ts` · `storage/scheduler-cache.ts` · `storage/shared-progress-cache.ts`
+> 관련 소스: `lib/scheduler/scheduler-merge.ts` · `features/schedule-sync/use-schedule-queries.ts` · `features/schedule-sync/read-schedule.ts` · `lib/scheduler/scheduler-content-scope.ts` · `lib/scheduler/scheduler-activity.ts` · `lib/scheduler/reset-clock.ts` · `features/schedule-sync/schedule-sync.ts` · `storage/scheduler-cache.ts` · `storage/shared-progress-cache.ts`
 
 ## 배경
 
@@ -150,6 +150,32 @@
   겹치면 먼저 끝난 쓰기가 덮일 수 있다. 메이플 유니온의 `active: false` 쓰기가 덮이면 미접속 캐릭터가 원장의 옛
   `true` 를 읽는다. 이번 응답을 받은 캐릭터의 화면은 응답 값을 바로 쓰므로 영향이 없다.
 
+### 결정 10. 받은 시각이 지난 기간이면 그 주기의 진행을 비워서 그린다
+
+결정 2 의 병합은 넥슨에서 새로 받은 응답에만 돈다. 그런데 화면은 그 사이에도 쿼리 캐시(`schedule(ocid)`)를 그린다. 그래서
+초기화 시각을 넘긴 뒤 새로 받기 전까지, 또는 받기에 실패하면 지난 기간의 완료와 진행이 이번 기간 이름으로 보였다(#967).
+캐시는 앱을 다시 켜도 남으므로([[ADR-142]] 결정 7), 목요일 0시 뒤에 앱을 켜면 첫 화면부터 지난주 완료가 보였다.
+
+- 캐시를 내주는 두 곳이 이 규칙을 건다. 화면이 쓰는 훅 `useScheduleQueries` 와 렌더 밖에서 읽는 `readScheduleSnapshot`
+  이다. 보스 스케줄러 · 컨텐츠 스케줄러 · today · 보스 수익의 이번 기간 · 미완료 스케줄 알림 · 계산기가 모두 이 둘을
+  거친다. 화면마다 걸면 빠뜨리는 화면이 생긴다.
+- 주기마다 따로 본다(`clearPastPeriodProgress`).
+
+| 받은 시각(`syncedAt`)과 지금이 | 비우는 것 |
+|---|---|
+| 다른 KST 날짜 | 일간 컨텐츠 |
+| 다른 주(목요일 0시) | 주간 컨텐츠 · 주간 보스 |
+| 다른 달(1일 0시) | 월간 보스 |
+
+- 주간 컨텐츠는 모두 목요일 0시에 초기화된다(사용자 확인 2026-11-12). 기간은 병합과 같은 함수로 가른다. 일간은
+  `getCurrentKstDateKey`, 주간 · 월간은 `getCurrentBossProfitPeriod` 의 기간 키다.
+- 비우는 방법은 결정 2 의 되살리기와 같다. 컨텐츠는 `nowCount` 를 0 으로, `questState` 는 값이 있을 때만 0 으로 둔다.
+  보스는 `isComplete` 와 `ownComplete` 를 둘 다 거짓으로 둔다. 이름과 등록 여부는 남긴다. 초기화를 지났으면 게임에서도
+  진행이 0 이므로, 모르는 값을 지어내는 것이 아니다.
+- 캐시 자체는 고치지 않는다. 다음 회차의 병합이 이 값을 이전 상태로 읽고, 새로 받으면 덮인다.
+- 훅은 초기화 시각의 틱(`useResetBoundaryTick`)이 오르면 스냅샷을 다시 만든다. 캐시가 그대로여도 기간이 바뀌기 때문이다.
+- 직접 적은 보스 완료는 기간 키로 따로 읽으므로([[ADR-037]] 결정 14) 이 규칙과 관계없이 이번 기간 것만 얹힌다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -160,6 +186,8 @@
 | | 결정 5: 유니온 두 항목은 원장이 참이어도 응답이 거짓이면 거짓인지, 에픽 던전은 그대로 참인지 본다 |
 | | 결정 6: 원장의 `active: false` 칸을 `isRegistered: false` 로 채우는지, 칸이 없으면 안 채우는지, 리셋 구간을 넘긴 원장은 진행값만 0 인지, 지난 날짜로 다시 합쳐도 등록 안 한 에픽 던전이 남는지 본다 |
 | | 결정 7: `max_count` 를 컨텐츠 표 값으로 덮는지, 캐시에서 되살린 항목에도 적용되는지 본다 |
+| | 결정 10: 받은 날과 지금이 같은 날이면 그대로인지, 날만 다르면 일간만, 목요일 0시를 넘기면 주간 컨텐츠와 주간 보스까지, 1일 0시를 넘기면 월간 보스까지 비우는지, 이름과 등록 여부는 남기는지 본다 |
+| `features/schedule-sync/__tests__/use-schedule-queries.spec.tsx` | 결정 10: 수요일에 받은 캐시를 목요일에 읽으면 훅과 `readScheduleSnapshot` 둘 다 주간 보스 완료가 비어 있는지, 화면이 열린 채 목요일 0시의 틱이 오르면 훅이 다시 비우는지 본다 |
 | `lib/__tests__/scheduler-content-scope.spec.ts` | 결정 3 · 5 · 7: 컨텐츠별 공유 범위, `trustsRegistrationFlag` 가 유니온 둘이 아닌 항목에 거짓인지, 익스트림 몬스터파커에 덮어쓰는 값이 없는지 본다 |
 | `lib/__tests__/reset-clock.spec.ts` | 결정 6 · 8: KST 날짜와 주간 리셋을 기기 시간대와 관계없이 내는지, 지난 날짜 목록이 00:10 전후로 시작일을 바꾸는지 본다 |
 | `features/schedule-sync/__tests__/schedule-sync.spec.ts` | 결정 4: 원장을 각 캐릭터가 속한 계정 키로 읽고 쓰는지, 월드 key 가 없으면 월드 원장을 건드리지 않는지 본다 |
@@ -170,3 +198,4 @@
 ## 번호 기록
 
 - ADR-032 (2026-10-19): 옛 ADR-030 · 034 · 270 과 옛 ADR-271 결정 6 을 합쳐 처음 작성
+- ADR-204 (2026-11-12): 결정 10 을 더했다. 캐시를 받은 뒤 초기화 시각을 넘긴 주기는 진행을 비워서 그린다(#967)
