@@ -14,7 +14,8 @@ export const rnBrowserPort: BrowserPort = {
     await openBrowserAsync(url, { ...colors, presentationStyle: WebBrowserPresentationStyle.PAGE_SHEET })
   },
   async openAuthSession(url, redirectUrl) {
-    const result = await openAuthSessionAsync(url, redirectUrl)
+    // iOS 는 Safari · 다른 로그인 창과 쿠키를 나누지 않는다. 나누면 네이버 같은 소셜 로그인이 앞서 고른 계정으로 묻지 않고 돌려보낸다.
+    const result = await openAuthSessionAsync(url, redirectUrl, { preferEphemeralSession: true })
     // `cancel`·`dismiss` 는 사용자가 창을 닫은 것이라 돌아온 주소가 없다.
     return result.type === 'success' ? result.url : null
   },

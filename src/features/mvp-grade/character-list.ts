@@ -89,6 +89,14 @@ export async function fetchCharacterListCached(
   return queryClient.fetchQuery(listOptions)
 }
 
+/**
+ * 방금 받은 목록을 그 자격의 캐시에 넣는 함수. 로그인을 갈아끼우면 새 로그인이 앞 로그인의 계정 id 를 이어받아 캐시 열쇠가
+ * 같다. 안 넣으면 앞 로그인의 목록이 5분 동안 화면에 선다.
+ */
+export function primeCharacterList(credential: NexonCredential, accounts: MapleAccount[]): void {
+  queryClient.setQueryData(queryKeys.characterList(credentialKeyOf(credential)), accounts)
+}
+
 /** 마지막으로 받아 둔 목록. 넥슨을 부르지 않는다. 받은 적이 없으면 `undefined` 다. */
 export function readCachedCharacterList(credential: NexonCredential): MapleAccount[] | undefined {
   return queryClient.getQueryData<MapleAccount[]>(queryKeys.characterList(credentialKeyOf(credential)))

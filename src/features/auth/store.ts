@@ -8,7 +8,7 @@
  * 그 결과를 `useAppEntryStore` 에 알린다.
  */
 import { create } from 'zustand'
-import { fetchAndRecordCharacterList, fetchUnsavedCharacterList, recordCharacterList } from '../mvp-grade/character-list'
+import { fetchUnsavedCharacterList, primeCharacterList, recordCharacterList } from '../mvp-grade/character-list'
 import { probeApiKeyStage } from '../../nexon/key-stage'
 import { lastKeySuccessAt } from '../../nexon/key-success'
 import {
@@ -67,7 +67,7 @@ export interface AuthStore extends AuthState {
   /**
    * 넥슨 로그인 한 번. **끝나면 앱이 열린다.**
    *
-   * `signInWithNexon` 은 세션을 적는 데까지다. 여기서 목록을 받아 진입 단계를 다시 판정해야
+   * `signInWithNexon` 은 목록을 받아 세션을 적는 데까지다. 여기서 그 목록으로 진입 단계를 다시 판정해야
    * 로그인 화면에 선 사용자가 그 자리를 벗어난다.
    *
    * 앱으로 넘어갈 수 있으면 `true`.
@@ -75,6 +75,12 @@ export interface AuthStore extends AuthState {
    * @param options 로그인 화면이면 `{ fresh: true }`. 앞 로그인의 추적 목록을 비운다
    */
   signInWithNexonAccount(options?: { fresh?: boolean }): Promise<boolean>
+  /**
+   * 메이플 ID 가 없는 넥슨 로그인을 떼는 출구. 서버 세션을 거두고 API 키는 남긴다.
+   *
+   * 남은 수단이 있으면 `true` 이고 화면이 그 수단으로 목록을 다시 받는다. 없으면 로그인 화면으로 보내고 `false`.
+   */
+  leaveEmptyNexonLogin(): Promise<boolean>
   /** 로그아웃. 넥슨 로그인과 API 키를 모두 뗀다. 앱 데이터와 서버 데이터는 남는다. */
   signOut(): Promise<void>
   /** 계정 삭제를 서버에 예약하고 로그아웃한다. 서버가 받지 못하면 로그아웃하지 않고 `false` 다. */
@@ -317,19 +323,20 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
         useToastStore.getState().showError('넥슨 로그인에 실패했습니다')
         return false
       }
+      // 로그인은 저장되지 않았다. 로그인 화면이면 그 자리에, 연동 시트면 앱에 그대로 남는다.
+      if (result.kind === 'noMapleId') {
+        useToastStore.getState().showError('이 넥슨 ID 에 연결된 메이플 ID 를 찾지 못했어요')
+        return false
+      }
 
       // 세션은 이미 적혔다. 여기서부터는 **앱을 여는 일**이다.
       const credential = await currentCredential()
       if (credential === null) return false
 
-      let accounts: AuthState['accounts']
-      try {
-        accounts = await fetchAndRecordCharacterList(credential)
-      } catch {
-        // 로그인은 끝났다. 목록은 다음 회차가 다시 받는다. 여기서 앱을 열면 캐릭터 없는 화면이
-        // 선다. 토스트는 안 띄운다 - 로그인 자체는 성공이라 실패라고 말하면 거짓이다.
-        return false
-      }
+      // 목록은 로그인이 저장 전에 받아 왔다. 소속은 계정 id 가 정해진 지금 적는다.
+      const { accounts } = result
+      recordCharacterList(accounts, credential.accountId)
+      primeCharacterList(credential, accounts)
 
       useToastStore.getState().showSuccess('넥슨 계정을 연결했어요')
       set((state) => authReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
@@ -338,6 +345,26 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     } finally {
       nexonSignInRunning = false
     }
+  },
+
+  async leaveEmptyNexonLogin() {
+    let 남은수단: ReturnType<typeof credentialOf> = null
+    try {
+      // 기기에서 지우기 전에 거둬야 세션 값을 아직 들고 있다.
+      const session = (await getAuthConfig())?.login?.session
+      if (session !== undefined) await revokeNexonSession(session)
+      await clearNexonLogin()
+      // 로그인에 귀속된 부계정 키만 남은 것은 남은 수단이 아니다. 다시 로그인할 때까지 부르지 않는다.
+      남은수단 = credentialOf(await getAuthConfig())
+    } catch {
+      // 무엇이 남았는지 모르면 로그인 화면으로 보낸다. 앱을 세워 두면 빈 로그인이 남아 같은 화면에 머문다.
+      남은수단 = null
+    }
+    if (남은수단 !== null) return true
+
+    set((state) => authReducer(state, { type: 'SIGNED_OUT' }))
+    useAppEntryStore.getState().reset()
+    return false
   },
 
   async signOut() {

@@ -30,6 +30,7 @@ import {
 import { fetchCharacterListsCached } from '../features/mvp-grade/character-list'
 import { CredentialFailure } from '../features/schedule-sync/errors'
 import type { CharacterPickerEntry } from '../types'
+import type { NexonCredential } from '../types/auth'
 import { apiKeyValueOf } from '../lib/nexon-credential'
 
 /** 계정 하나의 후보 목록 + **성공 도장**. 도장이 없으면 TTL 판정에서 아직 이다. */
@@ -45,6 +46,8 @@ export interface AccountRosters {
   selectedAccountId: string | null
   isAccountsLoading: boolean
   accountsError: ScheduleSyncError | null
+  /** `accounts` 를 부른 자격의 종류. 빈 목록일 때 화면이 넥슨 로그인과 API 키의 문구를 가른다 */
+  accountsCredentialType: NexonCredential['type'] | null
 
   /** 열어 본 계정 전부의 후보. 캐시가 모르는 얼굴을 여기서 채운다. */
   loadedEntries: CharacterPickerEntry[]
@@ -64,6 +67,7 @@ export function useAccountRosters(): AccountRosters {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
   const [isAccountsLoading, setIsAccountsLoading] = useState(true)
   const [accountsError, setAccountsError] = useState<ScheduleSyncError | null>(null)
+  const [accountsCredentialType, setAccountsCredentialType] = useState<NexonCredential['type'] | null>(null)
   const [accountsNonce, setAccountsNonce] = useState(0)
 
   const [rosters, setRosters] = useState<Record<string, AccountRoster>>({})
@@ -154,6 +158,8 @@ export function useAccountRosters(): AccountRosters {
             : (summaries[0]?.accountId ?? null)
         setAccounts(summaries)
         setAccountGroups(grouped.groupOf)
+        // 메인 수단이 맨 앞이다. 모두 비었을 때 화면이 그 수단의 문구를 고른다.
+        setAccountsCredentialType(credentials[0]?.type ?? null)
         setSelectedAccountId(next)
         openAccountRef.current = next
         setIsAccountsLoading(false)
@@ -208,6 +214,7 @@ export function useAccountRosters(): AccountRosters {
     selectedAccountId,
     isAccountsLoading,
     accountsError,
+    accountsCredentialType,
     loadedEntries,
     selectable,
     isRosterLoading,
