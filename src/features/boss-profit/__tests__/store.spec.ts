@@ -176,7 +176,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   queryClient.clear()
   queryClient.setQueryData(queryKeys.trackedOcids(), ['ocid-1'])
-  useBossProfitStore.setState({ tab: 'weekly', periodKey: WEEK, partyPlans: {} })
+  useBossProfitStore.setState({ tab: 'weekly', periodKey: WEEK, followsCurrentPeriod: true, partyPlans: {} })
   // 기본은 바로 옆 칸에 기록이 있다.
   findAdjacentMock.mockImplementation(async (_ocids: string[], tab: BossCycle, key: string, direction: 'prev' | 'next') =>
     getAdjacentPeriodKey(tab, key, direction),
@@ -244,6 +244,57 @@ describe('탭과 지금 기간', () => {
     await store().retryPeriod()
 
     expect(refetchPeriodMock).toHaveBeenCalledWith('weekly', PREVIOUS_WEEK)
+  })
+})
+
+describe('초기화 시각에 지금 기간 따라가기', () => {
+  // PINNED_NOW(9월 12일 토요일)의 주는 9월 10일에 시작한다. 다음 목요일 0시가 지난 시각이다.
+  const NEXT_THURSDAY = new Date('2026-09-17T00:30:00+09:00')
+  const NEXT_WEEK = getCurrentBossProfitPeriod('weekly', NEXT_THURSDAY).periodKey
+
+  it('이번 주를 보던 스토어는 목요일 0시를 넘긴 시각에 새 주로 옮긴다', () => {
+    store().followCurrentPeriod(NEXT_THURSDAY)
+
+    expect(store().periodKey).toBe(NEXT_WEEK)
+  })
+
+  it('같은 주 안의 자정에는 옮길 것이 없어 상태를 안 바꾼다', () => {
+    const listener = jest.fn()
+    const unsubscribe = useBossProfitStore.subscribe(listener)
+
+    store().followCurrentPeriod(new Date('2026-09-13T00:30:00+09:00'))
+    unsubscribe()
+
+    expect(listener).not.toHaveBeenCalled()
+  })
+
+  it('이전 화살표로 지난 기간에 간 스토어는 그대로 둔다', async () => {
+    seedPeriod('weekly', WEEK)
+    await store().goToPreviousPeriod()
+    expect(store().periodKey).toBe(PREVIOUS_WEEK)
+
+    store().followCurrentPeriod(NEXT_THURSDAY)
+
+    expect(store().periodKey).toBe(PREVIOUS_WEEK)
+  })
+
+  it('다음 화살표로 지금 기간에 돌아오면 다시 따라간다', async () => {
+    seedPeriod('weekly', WEEK)
+    await store().goToPreviousPeriod()
+    await store().goToNextPeriod()
+    expect(store().periodKey).toBe(WEEK)
+
+    store().followCurrentPeriod(NEXT_THURSDAY)
+
+    expect(store().periodKey).toBe(NEXT_WEEK)
+  })
+
+  it('월간 탭은 1일 0시를 넘긴 시각에 새 달로 옮긴다', () => {
+    store().setTab('monthly')
+
+    store().followCurrentPeriod(new Date('2026-10-01T00:30:00+09:00'))
+
+    expect(store().periodKey).toBe('2026-10')
   })
 })
 

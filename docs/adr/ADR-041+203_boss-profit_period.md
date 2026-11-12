@@ -1,6 +1,6 @@
 # ADR-041+203 보스 수익 기간
 
-> ⚪ 미구현(결정 13)
+> 🟢 유효
 > 옛 번호: ADR-023 결정 1~5 · ADR-030 결정 3 · ADR-037 결정 1 · ADR-067 결정 2 · 3 · 6 · ADR-068 결정 5 · ADR-075 · ADR-076 결정 2 · 4 · ADR-078 결정 1 · 2 · ADR-224 · ADR-221 · ADR-251 결정 1~6 · ADR-254 · ADR-256 · ADR-294 · ADR-295 · ADR-326 결정 1 · 2
 > 관련 소스: `app/boss-profit/BossProfitScreen.tsx` · `lib/boss/monthly-boss-week.ts` · `features/boss-profit/rows.ts` · `app/boss-profit/AccordionBody.tsx` · `app/boss-profit/MonthlyBossViewRow.tsx` · `features/boss-profit/store.ts` · `features/boss-profit/period-navigation.ts` · `features/boss-profit/period-window.ts` · `features/boss-profit/period-query.ts` · `features/boss-profit/period-snapshot.ts` · `lib/boss/boss-profit-period.ts` · `storage/boss-profit.ts`
 
@@ -247,8 +247,8 @@ API 는 최근 14일만 주므로, 오래 쉬었다 돌아오면 그 사이 기�
 | `lib/__tests__/boss-profit-period.spec.ts` | 결정 1: 목요일 · 1일 경계, 기간 이름, 달 경계 주의 귀속을 본다. 결정 5: 상태 판정 순서와 화면 합치기 우선순위를 본다. 결정 7: `containsInProgressWeek` 가 달 경계 주의 지난 달에서만 참인지 본다 |
 | `features/boss-profit/__tests__/period-navigation.spec.ts` | 결정 2: 기록이 있는 기간으로 건너뛰는지, 월간 처치 주를 후보에 넣는지, 다음이 지금 기간을 넘지 않는지 본다 |
 | `storage/__tests__/boss-profit.spec.ts` | 결정 2: 이웃 기간을 SQL 하나로 찾고 월간은 두 축을 함께 보는지 본다 |
-| `app/boss-profit/__tests__/BossProfitScreen.test.tsx` | 결정 3: 겹화살표가 지금 기간에 흐려지고 이름이 주기를 따르는지, 화살표와 촉각을 본다. 결정 5: 상태별 화면과 집계 전 요약을 본다. 결정 11: 언마운트하면 주간 · 이번 주로 돌리는지 본다. 결정 13: 수요일에 정해진 기간으로 목요일에 처음 마운트하면 이번 주를 그리는지, 보던 중에 목요일 0시의 틱이 오르면 이번 주로 옮기는지 본다 |
-| `features/boss-profit/__tests__/store.spec.ts` | 결정 2: 연타해도 한 칸만 가고 기록이 없으면 안 가는지 본다. 결정 8: 쓰기 액션이 기록만 쓰고 캐시에서 행을 찾는지 본다. 결정 13: 이번 기간을 보던 스토어는 `followCurrentPeriod` 가 목요일 · 1일을 넘긴 시각에 새 기간으로 옮기는지, 이전 화살표로 지난 기간에 간 스토어는 그대로 두는지, 다음 화살표로 지금 기간에 돌아오면 다시 따라가는지 본다 |
+| `app/boss-profit/__tests__/BossProfitScreen.test.tsx` | 결정 3: 겹화살표가 지금 기간에 흐려지고 이름이 주기를 따르는지, 화살표와 촉각을 본다. 결정 5: 상태별 화면과 집계 전 요약을 본다. 결정 11: 언마운트하면 주간 · 이번 주로 돌리는지 본다. 결정 13: 처음 마운트할 때와, 보던 중에 목요일 0시의 틱이 올라 지금 기간이 바뀔 때 `followCurrentPeriod` 를 부르는지 본다 |
+| `features/boss-profit/__tests__/store.spec.ts` | 결정 2: 연타해도 한 칸만 가고 기록이 없으면 안 가는지 본다. 결정 8: 쓰기 액션이 기록만 쓰고 캐시에서 행을 찾는지 본다. 결정 13: 이번 기간을 보던 스토어는 `followCurrentPeriod` 가 목요일 · 1일을 넘긴 시각에 새 기간으로 옮기고 같은 주 안의 자정에는 그대로인지, 이전 화살표로 지난 기간에 간 스토어는 그대로 두는지, 다음 화살표로 지금 기간에 돌아오면 다시 따라가는지 본다 |
 | `features/boss-profit/__tests__/period-query.spec.ts` | 결정 4 · 8 · 9: 지금 기간은 스케줄 캐시에서, 지난 기간은 기록에서 만드는지, 관측 없는 기간에서 창을 채우며 기다리는지, `retryPeriod` 가 신선해도 다시 읽는지, 미리 읽기가 창 동기화가 필요한 기간을 건너뛰는지 본다. 결정 7: 달 경계 주 합계, 추적하지 않는 캐릭터와 400 주의 상태를 본다. 결정 10: 프로필을 캐릭터당 한 번 읽는지 본다. 결정 12: 주간 탭이 월간 보스를 맨 위에 내고, 달 경계 주를 열면 다음 달 월간 보스가 나오는지 본다 |
 | `features/boss-profit/__tests__/use-period-error-toast.spec.tsx` | 결정 5: 실패 토스트를 기간마다 한 번, 로딩을 거쳐 다시 실패하면 또 띄우는지 본다 |
 | `lib/__tests__/monthly-boss-week.spec.ts` | 결정 12: 그 주에 걸친 달에서만 나오는지, 달 경계 주가 두 달에 걸치는지, 안 잡았으면 이번 주에만, 잡았으면 잡은 주에만, 날짜 모르면 기록이 있는 가장 빠른 주차에 나오는지 본다 |

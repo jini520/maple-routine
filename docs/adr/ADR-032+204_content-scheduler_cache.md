@@ -1,6 +1,6 @@
 # ADR-032+204 스케줄러 응답 병합과 캐시
 
-> ⚪ 미구현(결정 10)
+> 🟢 유효
 > 옛 번호: ADR-030 · ADR-034 · ADR-270 · ADR-271 결정 6
 > 관련 소스: `lib/scheduler/scheduler-merge.ts` · `features/schedule-sync/use-schedule-queries.ts` · `features/schedule-sync/read-schedule.ts` · `lib/scheduler/scheduler-content-scope.ts` · `lib/scheduler/scheduler-activity.ts` · `lib/scheduler/reset-clock.ts` · `features/schedule-sync/schedule-sync.ts` · `storage/scheduler-cache.ts` · `storage/shared-progress-cache.ts`
 
