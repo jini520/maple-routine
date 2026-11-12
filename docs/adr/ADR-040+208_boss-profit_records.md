@@ -1,6 +1,6 @@
 # ADR-040+208 보스 수익 기록
 
-> ⚪ 미구현(결정 2 의 기간이 다른 회차 · 결정 19)
+> 🟢 유효
 > 옛 번호: ADR-017 결정 1 · 4 · ADR-032 결정 3 · 4 · 7 · ADR-035 결정 21 · ADR-067 결정 7 · ADR-069 · ADR-111 · ADR-172 결정 1~6 · 9 · 정정 6 · 7 · 9 · ADR-189 결정 2 · ADR-219 결정 5 · ADR-237 · ADR-253 정정 7 · ADR-274 · ADR-335 · ADR-336
 > 관련 소스: `features/boss-profit/round-record.ts` · `features/schedule-sync/schedule-query.ts` · `features/schedule-sync/schedule-sync.ts` · `features/boss-profit/store.ts` · `features/boss-profit/auto-record.ts` · `features/boss-profit/rows.ts` · `features/boss-profit/period-snapshot.ts` · `features/boss-profit/defeat-dates.ts` · `features/boss-profit/world-leap-records.ts` · `features/boss-profit/world-leap-link.ts` · `features/boss-profit/drops-loader.ts` · `storage/boss-profit.ts` · `app/boss-profit/character-groups.ts`
 
@@ -318,6 +318,7 @@ today 위젯과 보스 수익 주간 탭은 같은 이번 주 행을 읽어야 �
 | `features/boss-profit/__tests__/auto-record.spec.ts` | 결정 1 · 2: 기본 인원 1, 파티 설정과 그 기간 값의 우선순위, 자동 수수료로 기록하는지 본다. 미완료 · 낡은 출처 · 조회 실패 · 가격 없음 · 같은 기간 다른 난이도에서 쓰지 않는지, 순서를 지키고 순차로 쓰는지 본다 |
 | `features/boss-profit/__tests__/round-record.spec.ts` | 결정 2 · 3: 캐시로 채운 캐릭터는 기록 · 고아 정리에서 빼는지, 기록 조회가 실패하면 아무것도 안 쓰는지, 기록만 있는 조합을 되살리는지 본다. 넥슨에 묻기 시작한 시각과 기록 시각의 주가 다른 회차는 완료를 기록하지 않는지 본다. 결정 13: 자동 기록 뒤에 리프 정리를 하고 다시 읽는지 본다 |
 | | 결정 19: 넥슨이 담아 보낸 보스가 미완료면 이번 기간 자동 기록을 지우는지, 직접 적은 완료 · 다른 난이도가 완료인 보스 · 이번 응답에 없는 보스 · 캐시로 채운 캐릭터 · 기간이 다른 회차에서는 안 지우는지 본다 |
+| `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 2: 회차가 기록에 넥슨에 묻기 직전의 시각과 기록하는 시각을 함께 넘기는지 본다 |
 | `features/schedule-sync/__tests__/schedule-sync.spec.ts` | 결정 19: `reportedBossKeys` 가 이번 응답의 보스만 담고, 캐시에서 되살린 보스와 주간 보스가 없는 응답의 보스는 빼는지 본다 |
 | `features/boss-profit/__tests__/period-query.spec.ts` | 결정 17: 수동 모드에서 추적만 한 보스가 미완료 행으로 보이고, 실제 처치 난이도로 보이는지 본다. 결정 18: 추적에서 뺀 캐릭터의 행이 지난 기간과 이번 기간에 보이고 미완료 행은 안 보이는지, 드롭 정리에 동기화 대상만 넘기는지 본다 |
 | | 결정 4: 미완료 행을 만들되 기록하지 않는지, 주차 소계가 미완료 드롭을 더하지 않는지 본다. 결정 5: 기록값을 복원하는지 본다. 결정 15: 이번 주 열쇠의 스냅샷이 주간 보스와 그 주의 월간 보스를 함께 내는지 본다 |

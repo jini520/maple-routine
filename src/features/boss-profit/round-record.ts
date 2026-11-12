@@ -12,6 +12,7 @@ import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { manualCompletionKey } from '../../lib/boss/manual-completion'
 import { getBossDropRecords } from '../../storage/boss-drops'
 import {
+  deleteBossProfitRecord,
   fillMissingRecordWorlds,
   getBossProfitRecords,
   getManualBossProfitRecordKeys,
@@ -75,12 +76,55 @@ function notifyOrphanDropCleanup(removedDrops: number): void {
   useToastStore.getState().showInfo(`잡지 않은 보스의 기록 ${removedDrops}건을 정리했어요`)
 }
 
+/** 두 시각의 주와 달이 같은가. 다르면 앞 시각에 받은 완료는 뒤 시각의 기간 것이 아니다. */
+function isSamePeriods(requestedAt: Date, now: Date): boolean {
+  return currentPeriodKeys(requestedAt).join('|') === currentPeriodKeys(now).join('|')
+}
+
+/**
+ * 넥슨이 미완료라고 준 이번 기간 자동 기록을 지우고 남은 기록. 한 기간 안에서 잡은 보스는 미완료로 돌아가지 않으므로
+ * 그 기록은 잘못 적힌 것이다. 직접 적은 완료는 넥슨이 완료를 주지 않는 보스를 위한 것이라 남긴다. 넥슨이 이번 응답에 담아
+ * 보낸 보스만 본다(`reportedBossKeys`).
+ */
+async function withoutFalseAutoRecords(
+  records: BossProfitRecord[],
+  results: readonly CharacterScheduleSync[],
+  now: Date,
+): Promise<BossProfitRecord[]> {
+  const currentKeys = new Set(currentPeriodKeys(now))
+  const reported = new Map<string, { reported: Set<string>; completed: Set<string> }>()
+  for (const result of results) {
+    if (result.isStale || result.reportedBossKeys === undefined) continue
+    const completed = (result.state?.bossContents ?? []).flatMap((boss) =>
+      boss.ownComplete && boss.bossKey !== null ? [boss.bossKey] : [],
+    )
+    reported.set(result.ocid, { reported: new Set(result.reportedBossKeys), completed: new Set(completed) })
+  }
+
+  const falseRecords = records.filter((record) => {
+    if (record.source === 'manual' || !currentKeys.has(record.periodKey)) return false
+    const answer = reported.get(record.ocid)
+    return answer !== undefined && answer.reported.has(record.bossKey) && !answer.completed.has(record.bossKey)
+  })
+  for (const record of falseRecords) {
+    const { ocid, bossKey, difficulty, periodKey } = record
+    await withSqliteFallback(deleteBossProfitRecord({ ocid, bossKey, difficulty, periodKey }), undefined)
+  }
+  return falseRecords.length === 0 ? records : records.filter((record) => !falseRecords.includes(record))
+}
+
+/**
+ * @param requestedAt 회차가 넥슨에 묻기 시작한 시각. 지금과 주 · 달이 다르면 받은 완료가 지난 기간의 것이라 기록 · 지우기 ·
+ *   드롭 정리를 하지 않는다
+ */
 export async function recordBossProfitFromRound(
   ocids: readonly string[],
   results: readonly CharacterScheduleSync[],
   now: Date,
+  requestedAt: Date,
 ): Promise<void> {
   if (ocids.length === 0 || results.length === 0) return
+  const inPeriod = isSamePeriods(requestedAt, now)
 
   const [profiles, trackingMode, manualCompletedKeys] = await Promise.all([
     resolveDisplayProfiles(ocids),
@@ -138,27 +182,32 @@ export async function recordBossProfitFromRound(
   const records = await withSqliteFallback<BossProfitRecord[] | null>(getBossProfitRecords([...ocids], periodKeys), null)
   const dropRecords = records === null ? [] : await withSqliteFallback(getBossDropRecords([...ocids], periodKeys), [])
 
+  // 동기화가 실패했거나 기간이 다른 회차의 상태는 지금의 사실이 아니다. 기록 · 지우기 · 드롭 정리에서 뺀다.
+  const isCurrent = (ocid: string): boolean => inPeriod && !staleOcids.has(ocid)
+
   // 한 회차의 쓰기 전부를 한 묶음으로. 판 알림은 끝날 때 한 번이다.
   await batchRecordWrites(async () => {
+    // 지우기가 먼저다. 남겨 두면 행이 그 기록을 따라 완료로 선다.
+    const liveRecords = records === null || !inPeriod ? records : await withoutFalseAutoRecords(records, results, now)
     const recordedRows = await autoRecordRows({
-      rows: mergeRecordsIntoRows(rows, records ?? []),
-      records,
+      rows: mergeRecordsIntoRows(rows, liveRecords ?? []),
+      records: liveRecords,
       dropRecords,
       now,
-      isSourceCurrent: (row) => !staleOcids.has(row.ocid),
+      isSourceCurrent: (row) => isCurrent(row.ocid),
       nexonCompleted,
     })
 
     // 리프 중복 정리는 방금 쓴 새 기록의 짝을 봐야 해서 자동 기록 뒤다. 지운 것이 있으면 기록을 다시 읽어 고아 정리가
     // 지운 기록의 행을 안 본다.
-    let settledRecords = records
-    if (records !== null && (await withSqliteFallback(cleanUpWorldLeapDuplicates(now), 0)) > 0) {
-      settledRecords = await withSqliteFallback(getBossProfitRecords([...ocids], periodKeys), records)
+    let settledRecords = liveRecords
+    if (liveRecords !== null && (await withSqliteFallback(cleanUpWorldLeapDuplicates(now), 0)) > 0) {
+      settledRecords = await withSqliteFallback(getBossProfitRecords([...ocids], periodKeys), liveRecords)
     }
     if (settledRecords === null) return
 
     const unionRows = appendRecordOnlyRows(
-      settledRecords === records ? recordedRows : mergeRecordsIntoRows(recordedRows, settledRecords),
+      settledRecords === liveRecords ? recordedRows : mergeRecordsIntoRows(recordedRows, settledRecords),
       settledRecords,
       characterProfiles,
       now,
@@ -168,7 +217,7 @@ export async function recordBossProfitFromRound(
     const removed = await sweepOrphanDrops({
       ocids: [...ocids],
       rows: unionRows,
-      trustedOcids: new Set(ocids.filter((ocid) => !staleOcids.has(ocid))),
+      trustedOcids: new Set(ocids.filter(isCurrent)),
       knownPeriodKeys: new Set(currentPeriodKeys(now)),
       now,
     })
