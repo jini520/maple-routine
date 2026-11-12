@@ -252,6 +252,11 @@ function refreshOnReturn(): void {
   void refreshGameData()
 }
 
+/** 백그라운드에서 돌아올 때의 OTA 확인. 1시간 간격은 스토어가 지킨다. */
+function checkUpdateOnReturn(): void {
+  void useLiveUpdateStore.getState().checkOnReturn()
+}
+
 export function AppShell(): React.JSX.Element {
   const restoreTheme = useThemeStore((state) => state.restoreFromStorage)
   const restoreTextSize = useTextSizeStore((state) => state.restoreFromStorage)
@@ -282,6 +287,7 @@ export function AppShell(): React.JSX.Element {
   }, [])
 
   useReturnToForeground(refreshOnReturn)
+  useReturnToForeground(checkUpdateOnReturn)
 
   return (
     <>

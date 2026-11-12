@@ -3,8 +3,8 @@
 스토어 심사 없이 JS 번들과 에셋을 바꿔 내보내는 기능이다. `expo-updates` 를 쓰고, v1.0.13 바이너리부터
 매니페스트는 우리 서버(`/v1/ota/manifest` · `/v1/ota/latest`)가, 번들과 에셋은 같은 앱 박스의 nginx
 (`/ota/files/`)가 내준다. 1.0.12 바이너리는 Cloudflare Worker 와 GitHub Releases `live-update-rn` 을 묻고, 그쪽에는
-더 이상 발행하지 않는다([[ADR-011]] 결정 2). 앱은 켤 때 새 번들이 있는지 확인하고, 작은 번들은 묻지 않고 받은 뒤
-적용할지를 사용자에게 묻는다.
+더 이상 발행하지 않는다([[ADR-011]] 결정 2). 앱은 켤 때와, 마지막 확인 뒤 1시간이 지나 백그라운드에서 돌아올 때 새
+번들이 있는지 확인한다. 작은 번들은 묻지 않고 받은 뒤 적용할지를 사용자에게 묻는다.
 
 왜 이렇게 만들었는지는 [[ADR-011]](프로토콜 · 발행 · 버전)과 [[ADR-012]](모달 · 적용)에 있다.
 
@@ -15,11 +15,12 @@
 | `native/ports.ts` 의 `LiveUpdatePort` | 확인 · 받기 · 적용 계약 |
 | `native/adapters/rn-live-update.ts` | `expo-updates` 구현. `/latest` 로 스토어 업데이트 필요 판정, 표시 버전 결정 |
 | `native/live-update.ts` | `isNewerVersion` · 적용 순서(`applyLiveUpdate`) |
-| `features/live-update/store.ts` | 상태 열다섯 가지 · 확인 · 묻지 않고 받기 · 적용 · 완료 안내 판정 · 부팅 순서 |
+| `features/live-update/store.ts` | 상태 열다섯 가지 · 확인 · 묻지 않고 받기 · 적용 · 완료 안내 판정 · 부팅 순서 · 복귀 확인(`checkOnReturn`) |
 | `features/live-update/use-running-app-version.ts` | 화면에 보이는 앱 버전 |
 | `app/UpdatePromptModal.tsx` | 동의 모달. 잠금이 풀린 뒤는 `navigation/AppNavigation.tsx`, 잠긴 동안은 `app/AppShell.tsx` 의 `LockedUpdatePrompt` 가 띄운다 |
 | `app/settings/AppUpdateSection.tsx` | `앱 정보` 화면의 현재 버전 · 상태 · `업데이트 확인` |
 | `boot.ts` 의 `loadGameData` | 게임 데이터 사본을 읽은 뒤 `checkOnBoot()` 호출 |
+| `app/AppShell.tsx` | 앱이 백그라운드에서 돌아오면 `checkOnReturn()` 호출(`useReturnToForeground`) |
 | `app/BootSplash.tsx` · `hooks/useBootSplashDone.ts` | 처음 실행에서 OTA 를 적용하는 동안 스플래시를 붙들고, 다 걷힌 뒤에야 모달을 그리게 한다 |
 | `lib/native-modal-gate.ts` | 재시작 직전에 떠 있는 RN `Modal` 을 모두 닫고 iOS 가 다 닫을 때까지 기다린다. 실패하면 되돌린다 |
 | `lib/app-version.ts` | 버전 형식 읽기(`x.y.z` · `x.y.z+n`) · 화면 표기 `x.y.z(n)` |
@@ -37,7 +38,7 @@
 
 | 상태 | 언제 | 화면 |
 |---|---|---|
-| `checking` | 부팅하거나 `업데이트 확인` 을 눌렀을 때 | 카드 상태 줄 |
+| `checking` | 부팅하거나, 앱이 돌아왔거나, `업데이트 확인` 을 눌렀을 때 | 카드 상태 줄 |
 | `up-to-date` | 받을 것이 없고 지문도 맞을 때 | 카드 `최신 버전입니다` |
 | `update-available` | 새 번들이 5MB 를 넘을 때 | 모달: 버전 배지 · 다운로드 크기 · `자세히 보기`(핵심 목록) · `다운로드` · `나중에` |
 | `confirm-cellular` | 셀룰러에서 받으려 할 때 | 모달. 지금은 도달하지 않는다([[ADR-012]] 결정 5) |
@@ -47,7 +48,7 @@
 | `applying` | 적용 중 | 모달: 스피너와 `적용하고 있어요`. 버튼 없음 |
 | `store-required` | 기기 지문이 받아 주는 목록에 없을 때 | 닫을 수 없는 모달: `스토어로 이동` 하나 |
 | `check-error` | 확인 실패 | 카드 상태 줄만 |
-| `background-download-error` | 묻지 않고 받다가 실패 | 카드 상태 줄만. 다음에 켤 때 다시 받는다 |
+| `background-download-error` | 묻지 않고 받다가 실패 | 카드 상태 줄만. 다음 확인 때 다시 받는다 |
 | `download-error` | `다운로드` 를 누른 뒤 받기 실패 | 모달(배지 색 `error`): `다시 시도`(다시 받기) · `나중에` |
 | `apply-error` | 적용 실패나 12초 초과 | 모달(배지 색 `error`): `다시 시도`(적용만 다시) · `나중에` |
 | `unsupported` | 개발 서버처럼 런타임이 없을 때 | 카드 `이 플랫폼에서는 지원되지 않습니다` |
@@ -76,6 +77,16 @@ OTA 부팅 확인은 `boot.ts` 의 `loadGameData()` 가 게임 데이터 사본�
 | 사본이 있음 | 앱을 바로 열고, 확인은 따로 돈다 |
 | 사본이 아예 없음(처음 실행) | `BootSplash` 를 붙든 채 확인한다. 새 번들이 있으면 크기와 상관없이 받아 바로 재시작하고, 재시작 뒤 완료 안내는 띄우지 않는다. 실패하거나 20초(`FIRST_RUN_HOLD_MS`)가 지나면 스플래시를 걷고 게임 데이터로 넘어간다 |
 | 계약 판이 바뀌어 잠김 | 게임 데이터 받기가 확인을 기다린다(상한 5초, `BOOT_CHECK_WAIT_MS`). 새 번들이 있으면 먼저 받고 잠금 화면 위에서 적용을 묻는다(`LockedUpdatePrompt`). `나중에` 를 누르면 게임 데이터를 받는다 |
+
+### 앱이 돌아올 때
+
+앱이 백그라운드에서 돌아오면 `AppShell` 이 `checkOnReturn()` 을 부른다. 마지막 확인을 시작한 지
+1시간(`RETURN_CHECK_INTERVAL_MS`)이 지났고 상태가 `SETTLED` 에 있을 때만 확인한다. 부팅 확인과 `업데이트 확인` 버튼도
+마지막 확인으로 센다. 확인한 뒤는 부팅 때와 같다. 5MB 이하는 받아 두고 적용을 묻고, 스토어 업데이트가 필요하면 닫을 수
+없는 모달이 뜬다([[ADR-012]] 결정 14).
+
+아이폰은 앱을 백그라운드에 오래 남겨 두고 다시 열면 이어서 돈다. 부팅 때만 확인하면 앱을 직접 끄지 않는 사용자가 OTA 를
+며칠 늦게 받는다. 돌아올 때마다 확인하지 않는 것은 확인 한 번에 서버 요청이 두 번 가기 때문이다.
 
 화면에 보이는 버전은 OTA 번들이면 매니페스트 `extra.appVersion`, 스토어 바이너리의 번들이면 바이너리
 버전이다([[ADR-011]] 결정 10).
