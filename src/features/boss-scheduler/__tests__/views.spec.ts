@@ -197,7 +197,11 @@ describe('readBossCharacters', () => {
 
   it('쿼리 캐시의 추적 목록 · 스케줄 · 회차로 뷰를 만든다', () => {
     queryClient.setQueryData(queryKeys.trackedOcids(), ['a', 'b'])
-    queryClient.setQueryData(queryKeys.schedule('a'), entry('캐릭터', [bossContent({ isComplete: true })]))
+    // 방금 받은 캐시다. 지난 주에 받은 캐시라면 읽을 때 완료가 비어 처치 수가 0 이다.
+    queryClient.setQueryData(queryKeys.schedule('a'), {
+      ...entry('캐릭터', [bossContent({ isComplete: true })]),
+      syncedAt: new Date().toISOString(),
+    })
     queryClient.setQueryData(queryKeys.characterBasic('a'), basic(250))
     queryClient.setQueryData(
       queryKeys.scheduleRound(),

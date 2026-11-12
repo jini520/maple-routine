@@ -1,5 +1,5 @@
 import type { SchedulerCharacterState, SharedProgressEntry } from '../../types'
-import { mergeSchedulerState } from '../scheduler/scheduler-merge'
+import { clearPastPeriodProgress, mergeSchedulerState } from '../scheduler/scheduler-merge'
 
 function baseState(overrides: Partial<SchedulerCharacterState> = {}): SchedulerCharacterState {
   return {
@@ -681,5 +681,70 @@ describe('mergeSchedulerState: 보스 (cycle별 독립 stale)', () => {
       { bossKey: 'kaling', apiName: '카링', difficulty: 'easy', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
       { bossKey: 'kaling', apiName: '카링', difficulty: 'hard', cycle: 'weekly', isRegistered: false, isComplete: false, ownComplete: false },
     ])
+  })
+})
+
+describe('clearPastPeriodProgress: 받은 뒤 초기화를 넘긴 주기의 진행을 비운다', () => {
+  /** 네 주기를 하나씩 든 캐시. 모두 진행이 있다. */
+  function progressed(): SchedulerCharacterState {
+    return baseState({
+      dailyContents: [
+        { contentKey: 'daily_quest_lacheln', apiName: '[일일 퀘스트] 레헬른의 평온한 밤', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 2 },
+      ],
+      weeklyContents: [
+        { contentKey: 'mu_lung_dojo', apiName: '무릉도장', kind: 'contents', isRegistered: true, nowCount: 5, maxCount: 0, questState: null },
+      ],
+      bossContents: [
+        { bossKey: 'lotus', apiName: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+        { bossKey: 'black_mage', apiName: '검은 마법사', difficulty: 'extreme', cycle: 'monthly', isRegistered: true, isComplete: true, ownComplete: true },
+      ],
+    })
+  }
+
+  function syncedAt(kst: string): string {
+    return new Date(kst).toISOString()
+  }
+
+  it('받은 날과 지금이 같은 KST 날이면 받은 값을 그대로 돌려준다', () => {
+    const state = progressed()
+
+    const result = clearPastPeriodProgress(state, syncedAt('2026-11-12T00:05:00+09:00'), new Date('2026-11-12T23:59:00+09:00'))
+
+    expect(result).toBe(state)
+  })
+
+  it('날만 바뀌면 일간 컨텐츠만 비우고 이름과 등록 여부는 남긴다', () => {
+    // 화요일 밤에 받고 수요일 새벽에 본다. 목요일을 넘지 않았다.
+    const result = clearPastPeriodProgress(progressed(), syncedAt('2026-11-10T23:50:00+09:00'), new Date('2026-11-11T00:30:00+09:00'))
+
+    expect(result.dailyContents).toEqual([
+      { contentKey: 'daily_quest_lacheln', apiName: '[일일 퀘스트] 레헬른의 평온한 밤', kind: 'quest', isRegistered: true, nowCount: 0, maxCount: 0, questState: 0 },
+    ])
+    expect(result.weeklyContents).toEqual(progressed().weeklyContents)
+    expect(result.bossContents).toEqual(progressed().bossContents)
+  })
+
+  it('목요일 0시를 넘기면 주간 컨텐츠와 주간 보스도 비운다. 같은 달이면 월간 보스는 남긴다', () => {
+    // 신고된 경우다. 수요일 밤에 받은 캐시를 목요일 00:30 에 본다.
+    const result = clearPastPeriodProgress(progressed(), syncedAt('2026-11-11T23:50:00+09:00'), new Date('2026-11-12T00:30:00+09:00'))
+
+    expect(result.weeklyContents).toEqual([
+      { contentKey: 'mu_lung_dojo', apiName: '무릉도장', kind: 'contents', isRegistered: true, nowCount: 0, maxCount: 0, questState: null },
+    ])
+    expect(result.bossContents).toEqual([
+      { bossKey: 'lotus', apiName: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: false, ownComplete: false },
+      { bossKey: 'black_mage', apiName: '검은 마법사', difficulty: 'extreme', cycle: 'monthly', isRegistered: true, isComplete: true, ownComplete: true },
+    ])
+  })
+
+  it('1일 0시를 넘기면 월간 보스를 비운다. 같은 주면 주간 보스는 남긴다', () => {
+    // 10-31(토) 밤에 받고 11-01(일) 새벽에 본다. 두 날 모두 10-29(목)에 시작한 주다.
+    const result = clearPastPeriodProgress(progressed(), syncedAt('2026-10-31T23:50:00+09:00'), new Date('2026-11-01T00:30:00+09:00'))
+
+    expect(result.bossContents).toEqual([
+      { bossKey: 'lotus', apiName: '스우', difficulty: 'hard', cycle: 'weekly', isRegistered: true, isComplete: true, ownComplete: true },
+      { bossKey: 'black_mage', apiName: '검은 마법사', difficulty: 'extreme', cycle: 'monthly', isRegistered: true, isComplete: false, ownComplete: false },
+    ])
+    expect(result.weeklyContents).toEqual(progressed().weeklyContents)
   })
 })
