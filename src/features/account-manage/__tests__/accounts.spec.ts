@@ -65,6 +65,23 @@ describe('넥슨 로그인 사용자', () => {
     ])
   })
 
+  // 키가 무효가 된 계정도 목록에 남아야 사용자가 어느 계정의 키가 문제인지 보고 그 계정에서 키를 바꾼다.
+  it('무효 표시가 붙은 키의 계정도 서고 무효로 표시된다', () => {
+    const config: NexonAuthConfig = {
+      login: 로그인,
+      apiKeys: [{ ...키('k-bad', '죽은-키'), invalid: { untrackedOcids: ['o-1'] } }, 키('k-ok', '산-키')],
+      mainKeyId: null,
+    }
+
+    const view = buildAccountManageView(소스({ config }))
+
+    expect(view.accounts.map((one) => [one.label, one.invalid])).toEqual([
+      ['넥슨 ID 계정', false],
+      ['API 키 1 계정', true],
+      ['API 키 2 계정', false],
+    ])
+  })
+
   // 상한은 기기 한 대의 호출이 늘어나는 것을 막는 값이라 이 기기의 계정으로 센다. 다른 로그인에 귀속된 키는 부르지 않아 세지 않는다.
   it('이 기기의 넥슨 계정이 5개면 더 추가할 수 없다', () => {
     const keys = ['1', '2', '3', '4'].map((n) => 키(`k-${n}`, `키-${n}`))

@@ -42,6 +42,9 @@ export function SettingsAccountsScreen(): React.JSX.Element {
   const [submitting, setSubmitting] = useState(false)
   const [rejection, setRejection] = useState<KeyRejection | null>(null)
   const [limitOpen, setLimitOpen] = useState(false)
+  // 추가한 키가 등록된 부계정의 키면 그 계정의 키를 바꿀지 묻는다. 시트는 그 뒤에 그대로 있다.
+  const [replacing, setReplacing] = useState<{ accountKey: string; label: string; apiKey: string } | null>(null)
+  const [replaceBusy, setReplaceBusy] = useState(false)
 
   useFocusEffect(
     useCallback(() => {
@@ -64,10 +67,21 @@ export function SettingsAccountsScreen(): React.JSX.Element {
     setSubmitting(false)
     if (result.outcome === 'saved') setAdding(false)
     else if (result.outcome === 'rejected') setRejection(result.reason)
+    else if (result.outcome === 'existing') setReplacing({ accountKey: result.accountKey, label: result.label, apiKey })
     else if (result.outcome === 'limit') {
       setAdding(false)
       setLimitOpen(true)
     }
+  }
+
+  const confirmReplace = async (): Promise<void> => {
+    if (replacing === null) return
+    setReplaceBusy(true)
+    const result = await useAccountManageStore.getState().replaceWithKey(replacing.accountKey, replacing.apiKey)
+    setReplaceBusy(false)
+    setReplacing(null)
+    if (result.outcome === 'saved') setAdding(false)
+    else if (result.outcome === 'rejected') setRejection(result.reason)
   }
 
   const linkNexon = async (): Promise<void> => {
@@ -159,6 +173,20 @@ export function SettingsAccountsScreen(): React.JSX.Element {
         />
       )}
       {rejection !== null && <UnregistrableKeyModal reason={rejection} onClose={() => setRejection(null)} />}
+      {replacing !== null && (
+        <NoticeModal
+          icon={KeyRoundIcon}
+          tone="primary"
+          title="이미 등록된 계정의 API 키예요"
+          description={`${replacing.label}의 키를 새로 입력한 키로 바꿀까요?`}
+          action={{ label: '바꾸기', onPress: () => void confirmReplace(), busy: replaceBusy, disabled: replaceBusy }}
+          secondaryAction={{ label: '취소', onPress: () => setReplacing(null), disabled: replaceBusy }}
+          onClose={() => {
+            if (!replaceBusy) setReplacing(null)
+          }}
+          testId="replace-existing-key"
+        />
+      )}
       {limitOpen && (
         <NoticeModal
           icon={KeyRoundIcon}
@@ -180,7 +208,11 @@ function AccountRows(props: { account: ManagedAccount; last: boolean; onOpen: (a
   const nameOf = useMapleIdNameOf()
   return (
     <>
-      <SettingsRow label={`${account.label} 설정`} onPress={() => props.onOpen(account)} />
+      <SettingsRow
+        label={`${account.label} 설정`}
+        onPress={() => props.onOpen(account)}
+        rightContent={account.invalid ? <Text className="text-xs font-semibold text-error-ink">유효하지 않은 키</Text> : undefined}
+      />
       {account.mapleIds.length > 0 && (
         <View className={`gap-2.5 px-3.5 pt-2 ${props.last ? 'pb-2.5' : 'pb-3.5'}`}>
           {account.mapleIds.map((mapleId) => (

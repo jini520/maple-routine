@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native'
 
-import { useAccountDetailOpenStore } from '../features/account-manage/open-request'
+import { useAccountManageOpenStore } from '../features/account-manage/open-request'
 import { useAppEntryStore } from '../features/app-entry/store'
 import { useNoticeDelivery } from '../features/notice/use-notice-delivery'
 import { useLocalNotificationPress } from '../features/local-notifications/use-notification-press'
@@ -121,12 +121,15 @@ export function AppNavigation(): React.JSX.Element {
     ;(navigationRef.navigate as (route: string, params: TabNavigateParams) => void)(name, nested)
   }, [alertRequest, routeNames, navigationRef])
 
-  // 429 모달의 `다른 키 입력` 은 부계정이면 그 계정의 상세를 연다. 모달이 내비게이터 밖이라 요청을 받아 여기서 민다.
-  const accountRequest = useAccountDetailOpenStore((state) => state.request)
+  // 429 모달의 `다른 키 입력` 은 부계정이면 그 계정의 상세를, 무효 키 모달은 계정 관리 목록을 연다. 모달이 내비게이터 밖이라 요청을
+  // 받아 여기서 민다.
+  const accountRequest = useAccountManageOpenStore((state) => state.request)
   useEffect(() => {
     if (accountRequest === null || !routeNames.includes('Main')) return
-    useAccountDetailOpenStore.getState().clear()
-    navigationRef.navigate('SettingsAccountDetail', accountRequest)
+    useAccountManageOpenStore.getState().clear()
+    const { accountKey, openKeySheet } = accountRequest
+    if (accountKey === null) navigationRef.navigate('SettingsAccounts')
+    else navigationRef.navigate('SettingsAccountDetail', { accountKey, openKeySheet })
   }, [accountRequest, routeNames, navigationRef])
 
   return (

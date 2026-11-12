@@ -3,6 +3,7 @@ import {
   addSubApiKey,
   clearNexonLogin,
   getAuthConfig,
+  markApiKeyInvalid,
   removeAllApiKeys,
   removeApiKey,
   replaceApiKeyValue,
@@ -440,5 +441,19 @@ describe('계정 관리', () => {
 
     const config = await getAuthConfig()
     expect(config?.apiKeys).toEqual([{ ...키('a', 'login-1'), value: '바꾼-키' }, 키('b', 'login-1')])
+  })
+
+  // 무효가 된 부계정 키는 지우지 않는다. 계정 관리에 남아야 사용자가 어느 계정의 키인지 보고 바꾼다.
+  it('무효 표시는 그 키에 뺀 캐릭터와 함께 붙고, 다시 읽어도 남으며, 키를 바꾸면 걷힌다', async () => {
+    await 저장({ login: 로그인칸, apiKeys: [키('a', 'login-1'), 키('b', 'login-1')], mainKeyId: null })
+
+    await markApiKeyInvalid('값-a', ['o-1', 'o-2'])
+
+    await expect(getAuthConfig()).resolves.toMatchObject({
+      apiKeys: [{ ...키('a', 'login-1'), invalid: { untrackedOcids: ['o-1', 'o-2'] } }, 키('b', 'login-1')],
+    })
+
+    await replaceApiKeyValue('a', '바꾼-키')
+    expect((await getAuthConfig())?.apiKeys[0]).toEqual({ ...키('a', 'login-1'), value: '바꾼-키' })
   })
 })

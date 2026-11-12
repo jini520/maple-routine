@@ -37,6 +37,7 @@
 | `app/today/CharacterManageButton.tsx` | today 헤더의 초상화 버튼 |
 | `app/settings/reload-tab-stores.ts` | 저장 뒤 보스 · 보스 수익 탭 스토어를 다시 읽힌다 |
 | `features/character-selection/store.ts` | 고른 캐릭터와 대표 표식을 갖는 스토어 |
+| `features/character-selection/untrack.ts` | 추적 캐릭터 일부를 뺀다. 하나도 남지 않으면 진입 단계를 다시 판정한다. 부계정 삭제와 무효가 된 부계정 키가 부른다 |
 | `features/character-selection/selected-character.ts` | 고른 캐릭터가 목록에 없을 때 대신 보여 줄 캐릭터 |
 | `lib/scheduler/tracked-order.ts` | 추적 목록 저장 순서로 정렬(`orderByTracked`) |
 | `features/content-scheduler/content-completion.ts` | 진행 링이 세는 완료 판정 |

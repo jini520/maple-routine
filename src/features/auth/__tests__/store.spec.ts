@@ -43,6 +43,10 @@ jest.mock('../reentry-account-id', () => ({ reusableNexonAccountId: jest.fn() })
 jest.mock('../prune-covered-keys', () => ({ pruneCoveredApiKeys: jest.fn() }))
 jest.mock('../../character-selection/forget', () => ({ forgetTrackedSelection: jest.fn() }))
 jest.mock('../../../storage/character-accounts', () => ({ recordCharacterAccounts: jest.fn() }))
+jest.mock('../key-problem', () => ({ planInvalidSubKey: jest.fn(), retireInvalidSubKey: jest.fn(), destinationOf: jest.fn() }))
+const { planInvalidSubKey: planInvalidSubKeyMock, retireInvalidSubKey: retireInvalidSubKeyMock } = jest.requireMock(
+  '../key-problem',
+) as Record<string, jest.Mock>
 const { forgetTrackedSelection: forgetTrackedSelectionMock } = jest.requireMock('../../character-selection/forget') as Record<
   string,
   jest.Mock
@@ -75,6 +79,7 @@ const resolveAfterSignInMock = jest.requireMock('../../app-entry/store').useAppE
 const entryResetMock = jest.requireMock('../../app-entry/store').useAppEntryStore.getState().reset as jest.Mock
 
 import { recordKeySuccess, resetKeySuccessForTest } from '../../../nexon/key-success'
+import { useAccountManageOpenStore } from '../../account-manage/open-request'
 import { resetRateLimitNoticesForTest, useAuthStore } from '../store'
 import type { NexonCredential } from '../../../types/auth'
 
@@ -113,6 +118,9 @@ beforeEach(() => {
   pruneCoveredApiKeysMock.mockResolvedValue(undefined)
   forgetTrackedSelectionMock.mockResolvedValue(undefined)
   recordCharacterAccountsMock.mockResolvedValue(undefined)
+  planInvalidSubKeyMock.mockResolvedValue(null)
+  retireInvalidSubKeyMock.mockResolvedValue(undefined)
+  useAccountManageOpenStore.getState().clear()
   // 판정이 안 서는 것이 통상 경로다. 서는 경우만 그 테스트가 직접 세운다.
   probeApiKeyStageMock.mockResolvedValue('undetermined')
   getAuthConfigMock.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }] })
@@ -521,6 +529,48 @@ describe('useAuthStore.confirmApiKeyNotice', () => {
     await useAuthStore.getState().confirmApiKeyNotice()
 
     expect(useAuthStore.getState().status).toBe('signedOut')
+  })
+
+  describe('지금 로그인의 부계정 키', () => {
+    const plan = { apiKey: '부-키', untrack: ['o-sub'], remaining: ['o-main'] }
+
+    // 지우면 기기마다 따로 관리하는 계정 관리 목록에서 그 계정이 사라져, 어느 계정의 키가 문제인지 알 수 없다.
+    it('키를 지우지 않고 무효로 표시하고, 남은 추적 캐릭터가 있으면 계정 관리 목록만 연다', async () => {
+      primeNoticed('invalid', '부-키')
+      planInvalidSubKeyMock.mockResolvedValue(plan)
+
+      await useAuthStore.getState().confirmApiKeyNotice()
+
+      expect(planInvalidSubKeyMock).toHaveBeenCalledWith('부-키')
+      expect(retireInvalidSubKeyMock).toHaveBeenCalledWith(plan)
+      expect(removeApiKeyMock).not.toHaveBeenCalled()
+      expect(removeAllApiKeysMock).not.toHaveBeenCalled()
+      expect(useAuthStore.getState()).toMatchObject({ apiKeyNotice: null, status: 'signedIn' })
+      expect(useAccountManageOpenStore.getState().request).toEqual({ accountKey: null, openKeySheet: false })
+      expect(entryResetMock).not.toHaveBeenCalled()
+    })
+
+    // 추적 캐릭터가 없으면 앱을 쓸 수 없다. 추적 목록을 비운 진입 판정이 캐릭터 설정으로 보낸다.
+    it('남은 추적 캐릭터가 없으면 계정 관리를 열지 않는다', async () => {
+      primeNoticed('invalid', '부-키')
+      planInvalidSubKeyMock.mockResolvedValue({ ...plan, remaining: [] })
+
+      await useAuthStore.getState().confirmApiKeyNotice()
+
+      expect(retireInvalidSubKeyMock).toHaveBeenCalled()
+      expect(useAuthStore.getState().apiKeyNotice).toBeNull()
+      expect(useAccountManageOpenStore.getState().request).toBeNull()
+    })
+
+    it('무효로 적지 못하면 무엇이 남았는지 모르니 로그인 화면으로 보낸다', async () => {
+      primeNoticed('invalid', '부-키')
+      planInvalidSubKeyMock.mockResolvedValue(plan)
+      retireInvalidSubKeyMock.mockRejectedValue(new Error('disk full'))
+
+      await useAuthStore.getState().confirmApiKeyNotice()
+
+      expect(useAuthStore.getState().status).toBe('signedOut')
+    })
   })
 
   // 회귀 가드: 로그아웃과 무효화는 저장소에 하는 일이 다르다. 섞이면 재개가 조용히 깨진다.

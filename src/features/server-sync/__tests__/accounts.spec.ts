@@ -95,6 +95,21 @@ it('메이플 ID 를 아직 모르는 키는 미루고, 같은 넥슨 ID 거절�
   expect(failed.saved().registered).toEqual([])
 })
 
+// 무효가 된 키는 지우지 않고 계정 관리에 남는다. 그 키로는 더 부르지도 등록하지도 않는다.
+it('무효 표시가 붙은 부계정 키는 등록하지 않고 그 계정도 알리지 않는다', async () => {
+  const config: NexonAuthConfig = {
+    ...LOGIN,
+    apiKeys: [{ type: 'key', id: 'acc-sub', label: '', value: '부-키', loginId: 'acc-login', invalid: { untrackedOcids: [] } }],
+  }
+  const { deps } = depsOf(config, { 'acc-login': ['m1'], 'acc-sub': ['m3'] })
+
+  await prepareServerAccounts(deps)
+
+  expect(deps.register).not.toHaveBeenCalled()
+  expect(deps.report).toHaveBeenCalledTimes(1)
+  expect(deps.report).toHaveBeenCalledWith({ Authorization: 'Bearer S' }, [h('m1')])
+})
+
 it('로그인이 없으면 등록하지 않고 메인 키의 계정만 알린다', async () => {
   const config: NexonAuthConfig = { login: null, mainKeyId: 'acc-main', apiKeys: [{ type: 'key', id: 'acc-main', label: '', value: '메인-키', loginId: null }] }
   const { deps } = depsOf(config, { 'acc-main': ['m1'] })

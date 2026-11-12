@@ -23,6 +23,7 @@ jest.mock('../../../storage/character-selection', () => ({
   setTrackedCharacterOcids: jest.fn(async () => undefined),
 }))
 jest.mock('../../../server/accounts', () => ({ registerSubAccountOnServer: jest.fn() }))
+jest.mock('../../schedule-sync/save-tracked', () => ({ saveTrackedCharacters: jest.fn(async () => undefined) }))
 jest.mock('../../mvp-grade/character-list', () => ({
   readCachedCharacterListOfAccount: jest.fn(() => undefined),
   fetchCharacterListsCached: jest.fn(async () => []),
@@ -46,6 +47,7 @@ const selection = mocked<Record<string, unknown>>('../../../storage/character-se
 const server = mocked<Record<string, unknown>>('../../../server/accounts')
 const characterList = mocked<Record<string, unknown>>('../../mvp-grade/character-list')
 const validate = mocked<Record<string, unknown>>('../validate-key')
+const tracked = mocked<Record<string, unknown>>('../../schedule-sync/save-tracked')
 
 const { useAccountManageStore } = require('../store') as typeof import('../store')
 const { useToastStore } = require('../../toast/store') as typeof import('../../toast/store')
@@ -54,7 +56,7 @@ const h = nexonIdHashHex
 const 로그인 = { type: 'login' as const, id: 'login-1', session: 'S' }
 const 부계정키 = { type: 'key' as const, id: 'k-sub', label: '', value: '부-키', loginId: 'login-1' }
 
-function 설정(...apiKeys: (typeof 부계정키)[]): NexonAuthConfig {
+function 설정(...apiKeys: NexonAuthConfig['apiKeys']): NexonAuthConfig {
   return { login: 로그인, apiKeys, mainKeyId: null }
 }
 
@@ -78,8 +80,8 @@ describe('추가', () => {
 
     await expect(useAccountManageStore.getState().addKey('새-키')).resolves.toEqual({ outcome: 'saved' })
 
-    // 겹침은 지금 계정들의 메이플 ID 로 본다.
-    expect(validate.checkApiKey).toHaveBeenCalledWith('새-키', { taken: [h('m-main'), h('m-sub')], target: null })
+    // 막는 겹침은 로그인의 메이플 ID 다. 부계정과 겹치면 막지 않고 그 계정의 키를 바꿀지 묻는다.
+    expect(validate.checkApiKey).toHaveBeenCalledWith('새-키', { taken: [h('m-main')], target: null })
     expect(server.registerSubAccountOnServer).toHaveBeenCalledWith({ Authorization: 'Bearer S' }, apiKeyHashHex('새-키'), [h('m-new')])
     expect(server.registerSubAccountOnServer.mock.invocationCallOrder[0]).toBeLessThan(apiKeyStore.addSubApiKey.mock.invocationCallOrder[0]!)
     expect(apiKeyStore.addSubApiKey).toHaveBeenCalledWith('새-키', 'login-1', 'uuid-new')
@@ -104,6 +106,25 @@ describe('추가', () => {
     expect(apiKeyStore.addSubApiKey).toHaveBeenCalled()
   })
 
+  // 같은 넥슨 계정의 키를 새로 받은 사용자가 그 계정의 상세를 찾아가지 않아도 되게 한다.
+  it('등록된 부계정과 겹치면 저장하지 않고 그 계정을 돌려주고, 바꾸기를 고르면 검증을 다시 하지 않고 그 계정의 키를 바꾼다', async () => {
+    validate.checkApiKey.mockResolvedValue({ ...통과, mapleIdHashes: [h('m-sub')] })
+
+    await expect(useAccountManageStore.getState().addKey('같은-계정-키')).resolves.toEqual({
+      outcome: 'existing',
+      accountKey: 'k-sub',
+      label: 'API 키 1 계정',
+    })
+    expect(server.registerSubAccountOnServer).not.toHaveBeenCalled()
+    expect(apiKeyStore.addSubApiKey).not.toHaveBeenCalled()
+
+    await expect(useAccountManageStore.getState().replaceWithKey('k-sub', '같은-계정-키')).resolves.toEqual({ outcome: 'saved' })
+
+    expect(validate.checkApiKey).toHaveBeenCalledTimes(1)
+    expect(apiKeyStore.replaceApiKeyValue).toHaveBeenCalledWith('k-sub', '같은-계정-키')
+    expect(server.registerSubAccountOnServer).toHaveBeenCalledWith({ Authorization: 'Bearer S' }, apiKeyHashHex('같은-계정-키'), [h('m-sub')])
+  })
+
   it('검증에 걸리면 서버에도 기기에도 적지 않는다', async () => {
     validate.checkApiKey.mockResolvedValue({ outcome: 'rejected', reason: 'alreadyRegistered' })
 
@@ -124,6 +145,19 @@ describe('변경', () => {
     expect(apiKeyStore.addSubApiKey).not.toHaveBeenCalled()
     expect(server.registerSubAccountOnServer).toHaveBeenCalledWith({ Authorization: 'Bearer S' }, apiKeyHashHex('새-부-키'), [h('m-sub')])
   })
+})
+
+// 키가 무효가 되면 그 계정의 추적 캐릭터를 빼 두었다. 같은 계정의 새 키로 바꾸면 그대로 이어지게 되돌린다.
+it('무효 표시가 붙은 키를 바꾸면 뺐던 캐릭터를 추적 목록 끝에 겹치지 않게 다시 넣는다', async () => {
+  apiKeyStore.getAuthConfig.mockResolvedValue(설정({ ...부계정키, invalid: { untrackedOcids: ['o-sub', 'o-main'] } }))
+  selection.getTrackedCharacterOcids.mockResolvedValue(['o-main'])
+  await useAccountManageStore.getState().load()
+  validate.checkApiKey.mockResolvedValue({ ...통과, mapleIdHashes: [h('m-sub')] })
+
+  await expect(useAccountManageStore.getState().changeKey('k-sub', '새-부-키')).resolves.toEqual({ outcome: 'saved' })
+
+  expect(apiKeyStore.replaceApiKeyValue).toHaveBeenCalledWith('k-sub', '새-부-키')
+  expect(tracked.saveTrackedCharacters).toHaveBeenCalledWith(['o-main', 'o-sub'])
 })
 
 describe('삭제', () => {

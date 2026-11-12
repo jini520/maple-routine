@@ -5,7 +5,8 @@
  * 토스트는 스스로 사라지기까지 한다. 그래서 원래 화면이 뒤에 남은 채 이 모달이 덮인다.
  *
  * 무효 키와 넥슨 로그인 만료는 확인을 눌러야 이동한다. 저장된 수단으로는 앞으로 갈 수 없다는 것이 둘 다 같아 아이콘과 문구만
- * 갈린다. 닫을 수 없다. 그 상태에서는 어느 화면도 제 기능을 못 하므로 닫아서 돌아갈 곳이 없다.
+ * 갈린다. 닫을 수 없다. 그 상태에서는 어느 화면도 제 기능을 못 하므로 닫아서 돌아갈 곳이 없다. 무효 키의 본문은 확인 뒤 가는 곳을
+ * 말한다. 부계정 키는 지우지 않고 무효로 표시해 계정 관리나 캐릭터 설정으로, 메인 키는 지우고 로그인 화면으로 간다.
  *
  * 429 는 키를 지우지 않는 다시 시도 모달(`RateLimitNoticeModal`)이다. 메인 키의 `다른 키 입력` 은 이 컴포넌트가 든 키 입력
  * 시트를 연다. 시트는 알림을 닫은 뒤에도 서 있어야 해서 알림과 따로 든다. 부계정 키의 `다른 키 입력` 은 계정 관리에서 그 계정의
@@ -13,9 +14,10 @@
  */
 import { useEffect, useState } from 'react'
 
-import { accountKeyOfApiKey, useAccountDetailOpenStore } from '../../features/account-manage/open-request'
+import { accountKeyOfApiKey, useAccountManageOpenStore } from '../../features/account-manage/open-request'
+import type { InvalidKeyDestination } from '../../features/auth/key-problem'
 import { useAuthStore } from '../../features/auth/store'
-import type { ApiKeyNoticeKind } from '../../features/auth/state'
+import type { ApiKeyNotice, ApiKeyNoticeKind } from '../../features/auth/state'
 import { pullRefresh } from '../../features/refresh/pull'
 
 import { CircleUserRoundIcon, KeyRoundIcon } from '../../components/atoms'
@@ -30,12 +32,19 @@ interface NoticeCopy {
   body: string
 }
 
+// 다음에 무슨 일이 일어나는지 먼저 말한다. 확인을 누르면 화면이 바뀌기 때문이다.
+const INVALID_KEY_BODY: Record<InvalidKeyDestination, string> = {
+  accounts: '이 키의 캐릭터를 추적에서 빼고 계정 관리로 이동합니다.',
+  characterSetup: '이 키의 캐릭터를 추적에서 빼고 캐릭터 설정으로 이동합니다.',
+  signIn: '키 입력 화면으로 이동합니다.',
+}
+
 const NOTICE_COPY: Record<Exclude<ApiKeyNoticeKind, 'rateLimited'>, NoticeCopy> = {
-  // 다음에 무슨 일이 일어나는지 먼저 말한다. 확인을 누르면 화면이 바뀌기 때문이다.
+  // 본문은 확인 뒤 가는 곳에 따라 `INVALID_KEY_BODY` 에서 고른다.
   invalid: {
     icon: KeyRoundIcon,
     title: 'API 키가 더 이상 유효하지 않습니다',
-    body: '키 입력 화면으로 이동합니다.',
+    body: INVALID_KEY_BODY.signIn,
   },
   // 다음에 무슨 일이 일어나는지 말하지 않는다. 이 원인만 **사용자마다 다르다** - API 키가 남아
   // 있으면 확인을 눌러도 화면이 그대로다. 대신 두 갈래에서 모두 참인 처방을 말한다.
@@ -55,6 +64,23 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
   const [keyRole, setKeyRole] = useState<'main' | 'sub' | null>(null)
 
   const rateLimited = apiKeyNotice?.kind === 'rateLimited' ? apiKeyNotice : null
+  // 무효 키 본문의 가는 곳. 그 알림의 것일 때만 쓴다. 정해지기 전에는 모달을 그리지 않는다. 읽던 본문이 바뀌면 안 된다.
+  const invalid = apiKeyNotice?.kind === 'invalid' ? apiKeyNotice : null
+  const [destined, setDestined] = useState<{ notice: ApiKeyNotice; destination: InvalidKeyDestination } | null>(null)
+  useEffect(() => {
+    if (invalid === null) return
+    let alive = true
+    void useAuthStore
+      .getState()
+      .invalidKeyDestination(invalid.apiKey)
+      .then((destination) => {
+        if (alive) setDestined({ notice: invalid, destination })
+      })
+    return () => {
+      alive = false
+    }
+  }, [invalid])
+  const destination = invalid !== null && destined?.notice === invalid ? destined.destination : null
   useEffect(() => {
     if (rateLimited === null) return
     let alive = true
@@ -82,7 +108,7 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
       return
     }
     void accountKeyOfApiKey(apiKey).then((accountKey) => {
-      if (accountKey !== null) useAccountDetailOpenStore.getState().open({ accountKey, openKeySheet: true })
+      if (accountKey !== null) useAccountManageOpenStore.getState().open({ accountKey, openKeySheet: true })
     })
   }
   const submitOtherKey = async (apiKey: string): Promise<void> => {
@@ -106,13 +132,13 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
           onEnterOtherKey={enterOtherKey}
         />
       )}
-      {apiKeyNotice && apiKeyNotice.kind !== 'rateLimited' && (
+      {apiKeyNotice && apiKeyNotice.kind !== 'rateLimited' && (apiKeyNotice.kind !== 'invalid' || destination !== null) && (
         // 톤은 두 원인 모두 `error` 다. 아이콘만 원인을 가리킨다: 무효 키는 `KeyRound`, 로그인 만료는 사람(`CircleUserRound`).
         <NoticeModal
           icon={NOTICE_COPY[apiKeyNotice.kind].icon}
           tone="error"
           title={NOTICE_COPY[apiKeyNotice.kind].title}
-          description={NOTICE_COPY[apiKeyNotice.kind].body}
+          description={destination !== null ? INVALID_KEY_BODY[destination] : NOTICE_COPY[apiKeyNotice.kind].body}
           action={{ label: '확인', onPress: () => void confirmApiKeyNotice() }}
           // 닫을 수 없다. 뒤에 있는 화면이 이미 제 기능을 못 해 닫아서 돌아갈 곳이 없다.
           onClose={() => {}}
