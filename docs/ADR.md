@@ -167,7 +167,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-093+121](./adr/ADR-093+121_boss-scheduler_manage-redesign.md) | 🟢 | boss-scheduler | 보스 관리 화면 리디자인과 난이도 고르개 통일 |
 | [ADR-040+208](./adr/ADR-040+208_boss-profit_records.md) | 🟢 | boss-profit | 보스 수익 기록 |
 | [ADR-041+203](./adr/ADR-041+203_boss-profit_period.md) | 🟢 | boss-profit | 보스 수익 기간 |
-| [ADR-042+135+178](./adr/ADR-042+135+178_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 |
+| [ADR-042+135+178+212](./adr/ADR-042+135+178+212_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 |
 | [ADR-043](./adr/ADR-043_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |
 | [ADR-092+112+153](./adr/ADR-092+112+153_boss-profit_redesign.md) | 🟢 | boss-profit | 보스 수익 리디자인과 고가 드롭 홀로그램 강조 |
 | [ADR-044+066+076+111+120](./adr/ADR-044+066+076+111+120_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
