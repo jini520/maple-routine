@@ -25,8 +25,6 @@ function depsOf(config: NexonAuthConfig | null, byAccount: Record<string, string
     }),
     report: jest.fn(async (_headers: Record<string, string>, ids: readonly string[]) => ({ outcome: 'sent' as const, mapleIds: [...ids] })),
     register: jest.fn(async () => 'registered' as const),
-    listSubAccounts: jest.fn(async () => ({ outcome: 'listed' as const, subAccounts: [{ apiKeyHashes: ['s1'], mapleIds: ['h3'] }] })),
-    setSubAccountList: jest.fn(async () => undefined),
   } satisfies PrepareAccountsDeps
   return { deps, saved: () => saved }
 }
@@ -81,7 +79,7 @@ it('지금 로그인의 부계정 키를 세션으로 등록하고, 등록한 �
   expect(again.register).not.toHaveBeenCalled()
 })
 
-it('메이플 ID 를 아직 모르는 키는 미루고, 같은 넥슨 ID 거절은 적고, 한도 · 실패는 적지 않는다', async () => {
+it('메이플 ID 를 아직 모르는 키는 미루고, 같은 넥슨 ID 거절은 적고, 실패는 적지 않는다', async () => {
   const noIds = depsOf(LOGIN, {})
   await prepareServerAccounts(noIds.deps)
   expect(noIds.deps.register).not.toHaveBeenCalled()
@@ -91,12 +89,10 @@ it('메이플 ID 를 아직 모르는 키는 미루고, 같은 넥슨 ID 거절�
   await prepareServerAccounts(same.deps)
   expect(same.saved().registered).toEqual(['acc-login:' + apiKeyHashHex('부-키')])
 
-  for (const outcome of ['limit', 'failed'] as const) {
-    const run = depsOf(LOGIN, { 'acc-sub': ['m3'] })
-    run.deps.register.mockResolvedValueOnce(outcome as never)
-    await prepareServerAccounts(run.deps)
-    expect(run.saved().registered).toEqual([])
-  }
+  const failed = depsOf(LOGIN, { 'acc-sub': ['m3'] })
+  failed.deps.register.mockResolvedValueOnce('failed' as never)
+  await prepareServerAccounts(failed.deps)
+  expect(failed.saved().registered).toEqual([])
 })
 
 it('로그인이 없으면 등록하지 않고 메인 키의 계정만 알린다', async () => {
@@ -107,22 +103,4 @@ it('로그인이 없으면 등록하지 않고 메인 키의 계정만 알린다
 
   expect(deps.register).not.toHaveBeenCalled()
   expect(deps.report).toHaveBeenCalledWith({ 'x-api-key-hash': apiKeyHashHex('메인-키') }, [h('m1')])
-})
-
-// 앱은 서버가 준 부계정만 부른다. 회차마다 받아 둬야 다른 기기에서 지운 부계정을 이 기기도 그만 부른다.
-it('부계정을 등록한 뒤 그 로그인의 부계정 목록을 받아 적고, 못 받으면 적지 않는다', async () => {
-  const { deps } = depsOf(LOGIN, { 'acc-sub': ['m3'] })
-  await prepareServerAccounts(deps)
-  expect(deps.listSubAccounts).toHaveBeenCalledWith({ Authorization: 'Bearer S' })
-  expect(deps.register.mock.invocationCallOrder[0]).toBeLessThan(deps.listSubAccounts.mock.invocationCallOrder[0]!)
-  expect(deps.setSubAccountList).toHaveBeenCalledWith({ loginId: 'acc-login', subAccounts: [{ apiKeyHashes: ['s1'], mapleIds: ['h3'] }] })
-
-  const { deps: failed } = depsOf(LOGIN, {})
-  failed.listSubAccounts.mockResolvedValueOnce({ outcome: 'failed' } as never)
-  await prepareServerAccounts(failed)
-  expect(failed.setSubAccountList).not.toHaveBeenCalled()
-
-  const { deps: keyOnly } = depsOf({ login: null, apiKeys: [], mainKeyId: null }, {})
-  await prepareServerAccounts(keyOnly)
-  expect(keyOnly.listSubAccounts).not.toHaveBeenCalled()
 })

@@ -178,14 +178,9 @@ export function SettingsAccountsScreen(): React.JSX.Element {
 function AccountRows(props: { account: ManagedAccount; last: boolean; onOpen: (account: ManagedAccount) => void }): React.JSX.Element {
   const { account } = props
   const nameOf = useMapleIdNameOf()
-  const missingKey = account.kind === 'subKey' && account.apiKey === null
   return (
     <>
-      <SettingsRow
-        label={`${account.label} 설정`}
-        onPress={() => props.onOpen(account)}
-        rightContent={missingKey ? <Text className="text-xs font-semibold text-error-ink">이 기기에 키 없음</Text> : undefined}
-      />
+      <SettingsRow label={`${account.label} 설정`} onPress={() => props.onOpen(account)} />
       {account.mapleIds.length > 0 && (
         <View className={`gap-2.5 px-3.5 pt-2 ${props.last ? 'pb-2.5' : 'pb-3.5'}`}>
           {account.mapleIds.map((mapleId) => (

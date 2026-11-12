@@ -1,7 +1,7 @@
 /**
  * 키 입력 상단 시트. 경고 모달의 `그래도 API 키로 시작하기` 나, 넥슨 로그인 입구가 꺼졌을 때의 `API 키로 로그인` 이 연다.
  * 429 모달의 `다른 키 입력` 도 연다(`purpose="replace"`). 그때는 앱을 쓰는 중에 키만 바꾸는 자리라 제목이 다르고 배지가 없다.
- * 계정 관리도 연다. 제목만 연 곳의 이름(`API 키 추가` · `API 키 변경` · `API 키 입력`)이고 배지가 없다.
+ * 계정 관리도 연다. 제목만 연 곳의 이름(`API 키 추가` · `API 키 변경`)이고 배지가 없다.
  *
  * 위에서 내려오는 것은 키보드 때문이다. 키보드는 아래에서 올라오므로 위에 선 입력칸과 `확인` 을 가리지 않는다.
  * 머리 줄의 배지는 경고를 지나온 뒤에도 키 경로가 제한된 경로라는 것을 한 줄로 남긴다.
@@ -15,14 +15,13 @@ import { TopSheet } from '../../components/organisms/TopSheet/TopSheet'
 import { NEXON_LOGIN_ENABLED } from '../../features/auth/nexon-login-enabled'
 import { ApiKeyForm } from './ApiKeyForm'
 
-export type ApiKeySheetPurpose = 'start' | 'replace' | 'add' | 'change' | 'enter'
+export type ApiKeySheetPurpose = 'start' | 'replace' | 'add' | 'change'
 
 const SHEET_TITLES: Record<ApiKeySheetPurpose, string> = {
   start: 'API 키로 시작하기',
   replace: '다른 API 키로 바꾸기',
   add: 'API 키 추가',
   change: 'API 키 변경',
-  enter: 'API 키 입력',
 }
 
 export function ApiKeySheet(props: {
@@ -31,7 +30,7 @@ export function ApiKeySheet(props: {
   onClose: () => void
   /** 저장된 키. 온보딩 중간에서 로그인 화면으로 돌아왔을 때 채워 둔다 */
   initialApiKey?: string
-  /** `replace` 는 앱을 쓰는 중에 메인 키를 바꾸는 자리, 나머지 셋은 계정 관리. 기본은 로그인 화면의 `start` */
+  /** `replace` 는 앱을 쓰는 중에 메인 키를 바꾸는 자리, `add` · `change` 는 계정 관리. 기본은 로그인 화면의 `start` */
   purpose?: ApiKeySheetPurpose
 }): React.JSX.Element {
   const purpose = props.purpose ?? 'start'

@@ -1,7 +1,6 @@
 /**
- * 넥슨 계정을 우리 서버에 알리는 경로. 메이플 ID 알리기와 부계정 등록 · 목록 · 지우기다. 값은 모두 해시다.
+ * 넥슨 계정을 우리 서버에 알리는 두 경로. 메이플 ID 알리기와 부계정 등록이다. 값은 모두 해시다.
  */
-import { serverSubAccountsOf, type ServerSubAccount } from '../lib/sub-account-keys'
 import { jsonCall } from './write'
 
 export type ReportMapleIdsResult =
@@ -30,7 +29,7 @@ export async function reportMapleIdsToServer(
 }
 
 /** 등록의 결과. `failed` 는 응답이 없거나 그 밖의 거절이라 다음 회차에 다시 본다. */
-export type RegisterSubAccountResult = 'registered' | 'same_account' | 'limit' | 'failed'
+export type RegisterSubAccountResult = 'registered' | 'same_account' | 'failed'
 
 /**
  * 키의 넥슨 계정을 세션의 로그인에 부계정으로 등록한다. 같은 키를 다시 등록해도 서버는 그대로다.
@@ -52,29 +51,5 @@ export async function registerSubAccountOnServer(
   if (result.ok) return 'registered'
   const code = (result.body as { code?: unknown } | null)?.code
   if (result.status === 409 && code === 'same_account') return 'same_account'
-  if (result.status === 409 && code === 'sub_account_limit') return 'limit'
   return 'failed'
-}
-
-export type ListSubAccountsResult = { outcome: 'listed'; subAccounts: ServerSubAccount[] } | { outcome: 'failed' }
-
-/** 세션의 로그인에 등록된 부계정 목록. 차례는 등록한 차례다. 답이 없거나 모양이 다르면 `failed` 라 부르는 쪽이 마지막 목록을 쓴다. */
-export async function listSubAccountsOnServer(sessionHeaders: Record<string, string>): Promise<ListSubAccountsResult> {
-  const result = await jsonCall('/me/sub-accounts', { method: 'GET', headers: sessionHeaders })
-  if (result.outcome === 'no-response' || !result.ok) return { outcome: 'failed' }
-  const subAccounts = serverSubAccountsOf((result.body as { subAccounts?: unknown } | null)?.subAccounts)
-  return subAccounts === null ? { outcome: 'failed' } : { outcome: 'listed', subAccounts }
-}
-
-/**
- * 메이플 ID 가 속한 부계정의 등록을 세션의 로그인에서 지운다. 넥슨 계정 줄과 기록은 서버에 남는다.
- *
- * @param mapleIdHash 그 부계정의 메이플 ID 해시 하나(`nexonIdHashHex`)
- */
-export async function unregisterSubAccountOnServer(
-  sessionHeaders: Record<string, string>,
-  mapleIdHash: string,
-): Promise<'removed' | 'failed'> {
-  const result = await jsonCall(`/me/sub-accounts/${mapleIdHash}`, { method: 'DELETE', headers: sessionHeaders })
-  return result.outcome === 'answered' && result.ok ? 'removed' : 'failed'
 }

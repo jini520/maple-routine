@@ -67,11 +67,8 @@ export function SettingsAccountDetailScreen(props: { route?: { params?: Partial<
     }
     const result = await useAccountManageStore.getState().changeKey(account.key, apiKey)
     setSubmitting(false)
-    if (result.outcome === 'saved') {
-      setKeySheetOpen(false)
-      // 서버에만 있던 계정에 키를 넣으면 그 키의 넥슨 계정 id 가 새 `key` 다. 옛 `key` 로는 상세를 다시 찾지 못한다.
-      if (account.apiKey === null) navigation.goBack()
-    } else if (result.outcome === 'rejected') setRejection(result.reason)
+    if (result.outcome === 'saved') setKeySheetOpen(false)
+    else if (result.outcome === 'rejected') setRejection(result.reason)
   }
 
   const removeAccount = async (): Promise<void> => {
@@ -119,7 +116,7 @@ export function SettingsAccountDetailScreen(props: { route?: { params?: Partial<
 
       {keySheetOpen && account !== undefined && (
         <ApiKeySheet
-          purpose={account.kind === 'subKey' && account.apiKey === null ? 'enter' : 'change'}
+          purpose="change"
           isSubmitting={submitting}
           onSubmit={(apiKey) => void submitKey(apiKey)}
           onClose={() => setKeySheetOpen(false)}
@@ -218,19 +215,13 @@ function NameFields(props: { account: ManagedAccount }): React.JSX.Element {
   )
 }
 
-/** `API 키` 카드. 이 기기에 키가 없으면 안내 글자와 `API 키 입력`, 있으면 `API 키 변경` 이다. 부계정만 `API 키 삭제` 가 있다. */
+/** `API 키` 카드. `API 키 변경` 과, 부계정만 `API 키 삭제` 가 있다. */
 function KeyRows(props: { account: ManagedAccount; onOpenKeySheet: () => void; onDelete: () => void }): React.JSX.Element {
-  const missingKey = props.account.apiKey === null
   return (
     <View className="gap-2">
       <SectionTitle>API 키</SectionTitle>
       <Card className={SETTINGS_CARD_CLASS}>
-        {missingKey && (
-          <Text className="px-2 pb-1.5 pt-2 text-xs text-text-muted">
-            이 기기에는 이 계정의 API 키가 없어요. 키를 넣어야 이 계정의 캐릭터를 불러올 수 있어요.
-          </Text>
-        )}
-        <SettingsRow label={missingKey ? 'API 키 입력' : 'API 키 변경'} onPress={props.onOpenKeySheet} />
+        <SettingsRow label="API 키 변경" onPress={props.onOpenKeySheet} />
         {/* 로그인하지 않은 사용자의 키는 유일한 수단이라 지우면 로그아웃과 같다. 그 일은 `앱 정보 및 계정` 의 로그아웃이 맡는다. */}
         {props.account.kind === 'subKey' && (
           <SettingsRow label="API 키 삭제" danger showChevron={false} onPress={props.onDelete} />

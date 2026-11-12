@@ -1,8 +1,5 @@
-// 계정 관리 목록의 값. 앱은 서버가 지금 로그인에 준 부계정만 보이고, 서버는 메이플 ID 를 해시로만 준다. 기기가 본 메이플 ID 만
-// 이름이 서고, 본 적 없는 메이플 ID 를 지어내지 않는다.
-import { apiKeyHashHex } from '../../../lib/crypto/api-key-hash'
+// 계정 관리 목록의 값. 부계정은 기기마다 따로 관리해, 이 기기에 있는 지금 로그인의 키만 계정으로 선다.
 import { nexonIdHashHex } from '../../../lib/crypto/nexon-id-hash'
-import { storedApiKeyHashHex } from '../../../lib/sub-account-keys'
 import type { MapleAccount, NexonApiKeyMethod, NexonAuthConfig } from '../../../types'
 import { buildAccountManageView, type AccountManageSources } from '../accounts'
 
@@ -25,8 +22,6 @@ const 로그인 = { type: 'login' as const, id: 'login-1', session: 'S' }
 function 소스(overrides: Partial<AccountManageSources>): AccountManageSources {
   return {
     config: { login: 로그인, apiKeys: [], mainKeyId: null },
-    subAccounts: null,
-    registered: [],
     listOf: () => undefined,
     mapleIdsByAccount: new Map(),
     ...overrides,
@@ -53,74 +48,30 @@ describe('넥슨 로그인 사용자', () => {
     })
   })
 
-  it('API 키 계정은 서버 목록의 차례로 번호를 받고, 아직 등록하지 못한 키는 그 뒤에 선다', () => {
-    const config: NexonAuthConfig = { login: 로그인, apiKeys: [키('k-new', '새-키'), 키('k-old', '옛-키')], mainKeyId: null }
+  // 부계정은 기기마다 따로 관리한다. 앞 로그인에 귀속된 키는 지금 로그인의 부계정이 아니다.
+  it('API 키 계정은 이 기기에 저장된 차례로 번호를 받고, 지금 로그인에 귀속된 키만 선다', () => {
+    const config: NexonAuthConfig = {
+      login: 로그인,
+      apiKeys: [키('k-first', '첫-키'), 키('k-old-login', '남의-키', 'login-old'), 키('k-second', '둘째-키')],
+      mainKeyId: null,
+    }
 
-    const view = buildAccountManageView(
-      소스({
-        config,
-        subAccounts: [{ apiKeyHashes: [storedApiKeyHashHex('옛-키')], mapleIds: [h('m-old')] }],
-        registered: [`login-1:${apiKeyHashHex('옛-키')}`],
-      }),
-    )
+    const view = buildAccountManageView(소스({ config }))
 
     expect(view.accounts.map((one) => [one.label, one.apiKey?.id ?? null])).toEqual([
       ['넥슨 ID 계정', null],
-      ['API 키 1 계정', 'k-old'],
-      ['API 키 2 계정', 'k-new'],
+      ['API 키 1 계정', 'k-first'],
+      ['API 키 2 계정', 'k-second'],
     ])
   })
 
-  // 다른 기기에서 지운 부계정이다. 보이면 서버가 모르는 계정을 지우려 하게 된다.
-  it('등록했는데 서버 목록에 없는 키는 보이지 않는다', () => {
-    const view = buildAccountManageView(
-      소스({
-        config: { login: 로그인, apiKeys: [키('k-gone', '지운-키')], mainKeyId: null },
-        subAccounts: [],
-        registered: [`login-1:${apiKeyHashHex('지운-키')}`],
-      }),
-    )
-
-    expect(view.accounts.map((one) => one.label)).toEqual(['넥슨 ID 계정'])
-  })
-
-  it('서버에만 있는 계정은 키가 없고, 기기가 본 메이플 ID 만 이름이 선다', () => {
-    const seen = buildAccountManageView(
-      소스({
-        subAccounts: [{ apiKeyHashes: ['다른-기기-키'], mapleIds: [h('m-seen'), h('m-never')] }],
-        mapleIdsByAccount: new Map([['k-deleted', ['m-seen']]]),
-        listOf: (id) => (id === 'k-deleted' ? [메이플ID('m-seen', 캐릭터('본캐', 270))] : undefined),
-      }),
-    )
-    expect(seen.accounts[1]).toMatchObject({
-      label: 'API 키 1 계정',
-      apiKey: null,
-      mapleIds: [{ accountId: 'm-seen', representative: '본캐' }],
-      mapleIdHashes: [h('m-seen'), h('m-never')],
-    })
-
-    const unseen = buildAccountManageView(소스({ subAccounts: [{ apiKeyHashes: ['다른-기기-키'], mapleIds: [h('m-never')] }] }))
-    expect(unseen.accounts[1]).toMatchObject({ apiKey: null, mapleIds: [] })
-  })
-
-  // 다른 기기에서 같은 계정의 키를 새로 받았으면 서버의 키 해시는 이 기기의 키와 다르다. 메이플 ID 가 같으면 같은 계정이다.
-  it('키 해시가 달라도 기기가 아는 메이플 ID 가 겹치면 그 기기의 키를 그 계정에 붙인다', () => {
-    const view = buildAccountManageView(
-      소스({
-        config: { login: 로그인, apiKeys: [키('k-a', '이-기기-키')], mainKeyId: null },
-        subAccounts: [{ apiKeyHashes: ['새로-받은-키'], mapleIds: [h('m-a')] }],
-        registered: [`login-1:${apiKeyHashHex('이-기기-키')}`],
-        mapleIdsByAccount: new Map([['k-a', ['m-a']]]),
-      }),
-    )
-
-    expect(view.accounts.map((one) => one.apiKey?.id ?? null)).toEqual([null, 'k-a'])
-  })
-
-  it('넥슨 계정이 5개면 더 추가할 수 없다', () => {
+  // 상한은 기기 한 대의 호출이 늘어나는 것을 막는 값이라 이 기기의 계정으로 센다. 다른 로그인에 귀속된 키는 부르지 않아 세지 않는다.
+  it('이 기기의 넥슨 계정이 5개면 더 추가할 수 없다', () => {
     const keys = ['1', '2', '3', '4'].map((n) => 키(`k-${n}`, `키-${n}`))
     expect(buildAccountManageView(소스({ config: { login: 로그인, apiKeys: keys, mainKeyId: null } })).canAdd).toBe(false)
     expect(buildAccountManageView(소스({ config: { login: 로그인, apiKeys: keys.slice(1), mainKeyId: null } })).canAdd).toBe(true)
+    const withOther = [...keys.slice(1), 키('k-other', '남의-키', 'login-old')]
+    expect(buildAccountManageView(소스({ config: { login: 로그인, apiKeys: withOther, mainKeyId: null } })).canAdd).toBe(true)
   })
 })
 

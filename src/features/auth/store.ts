@@ -32,7 +32,6 @@ import {
   authReducer,
   initialAuthState,
   type ApiKeyNoticeKind,
-  type AuthError,
   type AuthState,
 } from './state'
 import { clearUnsentServerData, requestAccountDeletion } from '../server-sync/forget'

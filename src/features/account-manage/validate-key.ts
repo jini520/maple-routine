@@ -5,7 +5,7 @@
  * 2. 20건을 동시에 보내 429 가 오면 개발 단계 키라 막는다.
  * 3. 메이플 ID 가 하나도 없으면 막는다. 같은 계정인지 가를 수 없다.
  * 4. 메이플 ID 가 다른 등록된 계정과 하나라도 겹치면 막는다. 메이플 ID 는 넥슨 계정 하나에만 속해서 겹치면 같은 계정이다.
- * 5. 변경 · 입력이면 그 계정의 메이플 ID 와 하나라도 겹쳐야 받는다. 겹치지 않으면 다른 넥슨 계정의 키다.
+ * 5. 변경이면 그 계정의 메이플 ID 와 하나라도 겹쳐야 받는다. 겹치지 않으면 다른 넥슨 계정의 키다.
  */
 import { nexonIdHashHex } from '../../lib/crypto/nexon-id-hash'
 import { apiKeyCredential } from '../../lib/nexon-credential'
@@ -26,7 +26,7 @@ export type KeyCheck =
 export interface KeyCheckContext {
   /** 다른 등록된 계정들의 메이플 ID 해시. 바꾸려는 계정은 뺀다 */
   taken: readonly string[]
-  /** 변경 · 입력이면 그 계정의 메이플 ID 해시. 추가면 `null` */
+  /** 변경이면 그 계정의 메이플 ID 해시. 추가면 `null` */
   target: readonly string[] | null
 }
 

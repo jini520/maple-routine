@@ -68,7 +68,7 @@ it('메이플 ID 가 다른 등록된 계정과 하나라도 겹치면 이미 �
 })
 
 // 바꾸는 계정은 겹침에서 뺀 채 넘어온다. 그 계정과는 오히려 겹쳐야 같은 넥슨 계정이다.
-it('변경 · 입력은 그 계정의 메이플 ID 와 하나도 겹치지 않으면 다른 계정의 키다', async () => {
+it('변경은 그 계정의 메이플 ID 와 하나도 겹치지 않으면 다른 계정의 키다', async () => {
   const deps = depsOf([메이플ID('m-a'), 메이플ID('m-new')])
 
   await expect(checkApiKey('키', { taken: [], target: [h('m-a')] }, deps)).resolves.toMatchObject({ outcome: 'ok' })

@@ -138,8 +138,6 @@ export const STORAGE_KEYS = {
   serverBackfill: 'serverBackfill',
   // 서버가 계정마다 마지막으로 돌려준 메이플 ID 해시와 등록한 부계정 키(로그인마다 키 해시).
   serverAccounts: 'serverAccounts',
-  // 서버가 마지막으로 준 그 로그인의 부계정 목록(키 해시 · 메이플 ID 해시). 서버에 묻지 못할 때 쓴다.
-  serverSubAccounts: 'serverSubAccounts',
   // 옛 강화 원본 표를 합계로 옮겼나. 옮긴 뒤 원본 표를 지운다.
   enhancementTotalsMoved: 'enhancementTotalsMoved',
   // 월드로만 묶던 옛 월드 공유 원장을 메이플 ID 마다 베꼈나. 베낀 뒤 옛 원장을 지운다.

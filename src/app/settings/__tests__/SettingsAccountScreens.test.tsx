@@ -38,7 +38,6 @@ const 넥슨ID: ManagedAccount = {
   kind: 'login',
   label: '넥슨 ID 계정',
   apiKey: null,
-  server: null,
   mapleIds: [{ accountId: 'da9b2f21aa', representative: '낮잠자는곰' }],
   mapleIdHashes: ['h-main'],
 }
@@ -48,19 +47,17 @@ const 부계정: ManagedAccount = {
   kind: 'subKey',
   label: 'API 키 1 계정',
   apiKey: { type: 'key', id: 'k-sub', label: '', value: '부-키', loginId: 'login-1' },
-  server: { apiKeyHashes: ['s'], mapleIds: ['h-sub'] },
   mapleIds: [{ accountId: '4f1c08abbb', representative: '리프한도적' }],
   mapleIdHashes: ['h-sub'],
 }
 
-const 키없는계정: ManagedAccount = {
-  key: 'server:h-far',
+const 둘째부계정: ManagedAccount = {
+  key: 'k-sub-2',
   kind: 'subKey',
   label: 'API 키 2 계정',
-  apiKey: null,
-  server: { apiKeyHashes: ['x'], mapleIds: ['h-far'] },
-  mapleIds: [],
-  mapleIdHashes: ['h-far'],
+  apiKey: { type: 'key', id: 'k-sub-2', label: '', value: '둘째-키', loginId: 'login-1' },
+  mapleIds: [{ accountId: '9e3a77cccc', representative: null }],
+  mapleIdHashes: ['h-sub-2'],
 }
 
 const 메인키: ManagedAccount = { ...부계정, key: 'k-main', kind: 'mainKey', label: 'API 키 계정' }
@@ -86,7 +83,7 @@ beforeEach(() => {
 
 describe('SettingsAccountsScreen', () => {
   it('넥슨 ID 계정 · API 키 추가 · API 키 계정 차례로 서고, 계정 행 아래에 메이플 ID 이름과 대표 캐릭터를 적는다', async () => {
-    보기({ accounts: [넥슨ID, 부계정, 키없는계정] })
+    보기({ accounts: [넥슨ID, 부계정, 둘째부계정] })
     const view = await renderOverlay(<SettingsAccountsScreen />)
 
     expect(load).toHaveBeenCalled()
@@ -95,11 +92,9 @@ describe('SettingsAccountsScreen', () => {
     expect(view.getByText('낮잠자는곰')).toBeTruthy()
     expect(view.getByText('API 키 1 계정 설정')).toBeTruthy()
     expect(view.getByText('API 키 추가')).toBeTruthy()
-    // 이 기기에 키가 없는 계정만 표시를 단다.
-    expect(view.getAllByText('이 기기에 키 없음')).toHaveLength(1)
 
     await fireEvent.press(view.getByText('API 키 2 계정 설정'))
-    expect(mockNavigate).toHaveBeenCalledWith('SettingsAccountDetail', { accountKey: 'server:h-far' })
+    expect(mockNavigate).toHaveBeenCalledWith('SettingsAccountDetail', { accountKey: 'k-sub-2' })
   })
 
   it('바꾼 이름이 있으면 그 이름을 적는다', async () => {
@@ -184,15 +179,6 @@ describe('SettingsAccountDetailScreen', () => {
 
     expect(view.getByText('메이플 ID 이름')).toBeTruthy()
     expect(view.queryByText('API 키')).toBeNull()
-  })
-
-  it('이 기기에 키가 없고 메이플 ID 도 모르는 계정은 이름 칸 없이 안내와 API 키 입력 · 삭제만 둔다', async () => {
-    const view = await 상세(키없는계정)
-
-    expect(view.queryByText('메이플 ID 이름')).toBeNull()
-    expect(view.getByText('이 기기에는 이 계정의 API 키가 없어요. 키를 넣어야 이 계정의 캐릭터를 불러올 수 있어요.')).toBeTruthy()
-    expect(view.getByText('API 키 입력')).toBeTruthy()
-    expect(view.getByText('API 키 삭제')).toBeTruthy()
   })
 
   // 이 키가 유일한 수단이라 지우면 로그아웃과 같다. 키를 떼는 것은 로그아웃이 맡는다.
