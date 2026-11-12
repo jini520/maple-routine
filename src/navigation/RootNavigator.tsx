@@ -8,6 +8,8 @@ import { SignInScreen } from '../app/auth/SignInScreen'
 import { CharacterSetupScreen } from '../app/character-setup/CharacterSetupScreen'
 import { MvpGradeConfirmScreen, MvpGradePickScreen } from '../app/mvp-grade/MvpGradeOnboarding'
 import { SettingsAboutScreen } from '../app/settings/SettingsAboutScreen'
+import { SettingsAccountDetailScreen } from '../app/settings/SettingsAccountDetailScreen'
+import { SettingsAccountsScreen } from '../app/settings/SettingsAccountsScreen'
 import { SettingsCharactersScreen } from '../app/settings/SettingsCharactersScreen'
 import { BossManageScreen } from '../app/boss-scheduler/BossManageScreen'
 import { SettingsNoticeDetailScreen } from '../app/settings/SettingsNoticeDetailScreen'
@@ -43,6 +45,8 @@ const STACK_SCREENS = {
   SettingsReleaseNotes: SettingsReleaseNotesScreen,
   SettingsAbout: SettingsAboutScreen,
   SettingsCharacters: SettingsCharactersScreen,
+  SettingsAccounts: SettingsAccountsScreen,
+  SettingsAccountDetail: SettingsAccountDetailScreen,
   BossManage: BossManageScreen,
   SettingsTheme: SettingsThemeScreen,
   SettingsTextSize: SettingsTextSizeScreen,

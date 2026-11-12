@@ -117,6 +117,8 @@ export const STORAGE_KEYS = {
   quickLinks: 'quickLinks',
   // today 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID. 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   todaySharedMapleId: 'todaySharedMapleId',
+  // 사용자가 바꾼 메이플 ID 이름(JSON `{ [메이플 ID]: 이름 }`). 사용자가 지은 것이라 데이터 삭제 그룹에 넣지 말 것.
+  mapleIdNames: 'mapleIdNames',
   // 하단바 순서(JSON `{ groups, subs }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   barOrder: 'barOrder',
   // MVP 등급 주간 확인을 끈 체크박스(`앞으로 등급은 직접 바꿀게요`). 데이터 삭제 그룹에 넣지 말 것.

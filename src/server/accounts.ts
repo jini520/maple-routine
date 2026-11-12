@@ -29,7 +29,7 @@ export async function reportMapleIdsToServer(
 }
 
 /** 등록의 결과. `failed` 는 응답이 없거나 그 밖의 거절이라 다음 회차에 다시 본다. */
-export type RegisterSubAccountResult = 'registered' | 'same_account' | 'limit' | 'failed'
+export type RegisterSubAccountResult = 'registered' | 'same_account' | 'failed'
 
 /**
  * 키의 넥슨 계정을 세션의 로그인에 부계정으로 등록한다. 같은 키를 다시 등록해도 서버는 그대로다.
@@ -51,6 +51,5 @@ export async function registerSubAccountOnServer(
   if (result.ok) return 'registered'
   const code = (result.body as { code?: unknown } | null)?.code
   if (result.status === 409 && code === 'same_account') return 'same_account'
-  if (result.status === 409 && code === 'sub_account_limit') return 'limit'
   return 'failed'
 }

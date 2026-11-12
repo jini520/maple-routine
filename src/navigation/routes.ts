@@ -104,6 +104,13 @@ export interface NoticeDetailParams {
   noticeId: string
 }
 
+/** 계정 상세가 받는 파라미터. 계정은 스토어가 들고 있어 그 계정의 `key` 만 넘긴다. */
+export interface AccountDetailParams {
+  accountKey: string
+  /** 참이면 열자마자 `API 키 변경` 시트를 띄운다. 429 모달의 `다른 키 입력` 이 준다 */
+  openKeySheet?: boolean
+}
+
 /** MVP 등급 이력 상세가 받는 파라미터. 이력은 스토어가 들고 있어 ID 만 넘긴다. */
 export interface MvpGradeHistoryParams {
   accountId: string
@@ -158,6 +165,10 @@ export type RootStackParamList = {
    * 캐릭터 관리. 두 층 + 드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어가 하위 페이지가 됐다.
    */
   SettingsCharacters: undefined
+  /** 계정 관리 목록. 넥슨 계정마다 행 하나와 그 계정의 메이플 ID 이름. 앱 설정의 `계정 관리` 행이 연다 */
+  SettingsAccounts: undefined
+  /** 넥슨 계정 하나의 상세. 메이플 ID 이름 칸과 API 키 행. 목록의 계정 행과 429 모달의 `다른 키 입력` 이 연다 */
+  SettingsAccountDetail: AccountDetailParams
   /** 보스 관리. 스케줄러 하위 탭이던 것이 설정에서 여는 하위 페이지가 됐다 */
   BossManage: undefined
   /** 테마. 고르면 이 페이지만 바뀌고 `적용` 으로 앱 전체에 적용한다 */
@@ -336,6 +347,18 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/settings/notices/alerts',
     screen: 'SettingsNoticeAlertsScreen',
     target: { kind: 'push', route: 'SettingsNoticeAlerts' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/accounts',
+    screen: 'SettingsAccountsScreen',
+    target: { kind: 'push', route: 'SettingsAccounts' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/accounts/detail',
+    screen: 'SettingsAccountDetailScreen',
+    target: { kind: 'push', route: 'SettingsAccountDetail' },
     origin: 'rn',
   },
   {

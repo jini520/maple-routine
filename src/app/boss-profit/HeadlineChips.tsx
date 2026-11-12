@@ -7,7 +7,7 @@ import { appImage, worldEmblemUrl } from '../../lib/assets/asset-lookup'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
 import type { MonthlyCrystalsByWorld } from '../../features/boss-profit/monthly-crystals'
 import type { MapleIdOwners } from '../../features/maple-id/owners'
-import { mapleIdNameOf } from '../../lib/maple-id-name'
+import { useMapleIdNameOf } from '../../features/maple-id/names'
 
 import { ChevronDownIcon, ChevronUpIcon, Text } from '../../components/atoms'
 import { AnchoredPopover } from '../../components/molecules/Popover/Popover'
@@ -33,6 +33,7 @@ export function CrystalSummaryChip(props: {
   /** 캐릭터마다의 메이플 ID 와 그 차례. 오면 메이플 ID 와 월드마다 가르고, 못 읽었으면 월드로만 가른다 */
   mapleIds?: MapleIdOwners | null
 }): React.JSX.Element | null {
+  const nameOf = useMapleIdNameOf()
   const monthlyOnly = props.variant === 'monthly'
   // 구조 분해가 필수다. `popover.toggle` 처럼 프로퍼티로 읽으면 `react-hooks/refs` 가 그 접근을
   // 렌더 중 ref 접근으로 본다. 훅이 안에서 `useRef` 를 쓴다.
@@ -144,13 +145,13 @@ export function CrystalSummaryChip(props: {
               <View key={section.accountId ?? ''} className="gap-1">
                 {namesMapleIds && section.accountId !== null && (
                   <Text className={`px-0.5 pb-0.5 text-11 font-bold text-text ${sectionIndex === 0 ? '' : 'pt-1.5'}`}>
-                    {mapleIdNameOf(section.accountId)}
+                    {nameOf(section.accountId)}
                   </Text>
                 )}
                 {section.worlds.map((summary) => {
                   const emblemUrl = worldEmblemUrl(summary.worldKey)
                   // 줄은 그림이 주간 · 월간을 말해 숫자만 적는다. 읽는 이름은 두 몫을 말로 풀고, 메이플 ID 가 둘 이상이면 그 이름도 붙인다.
-                  const owner = namesMapleIds && summary.accountId !== null ? `${mapleIdNameOf(summary.accountId)} ` : ''
+                  const owner = namesMapleIds && summary.accountId !== null ? `${nameOf(summary.accountId)} ` : ''
                   const rowLabel = monthlyOnly
                     ? `${owner}${summary.world} 월간 결정석 ${summary.monthlyCleared}개`
                     : `${owner}${summary.world} 주간 결정석 ${summary.cleared} / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 ${summary.monthlyCleared}개`

@@ -21,7 +21,7 @@ import { GUIDE_URL } from './api-key-links'
 export function RateLimitNoticeModal(props: {
   /** 같은 키로 연달아 받은 429 의 차례(1부터) */
   attempt: number
-  /** `다른 키 입력` 을 둘지. 계정 관리 화면이 생기기 전까지 부계정 키는 다시 시도만 둔다 */
+  /** `다른 키 입력` 을 둘지. 저장된 키가 아니라 어느 계정인지 모르면 다시 시도만 둔다 */
   canEnterOtherKey: boolean
   onRetry: () => void
   onEnterOtherKey: () => void

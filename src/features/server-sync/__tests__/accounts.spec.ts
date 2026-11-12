@@ -79,7 +79,7 @@ it('지금 로그인의 부계정 키를 세션으로 등록하고, 등록한 �
   expect(again.register).not.toHaveBeenCalled()
 })
 
-it('메이플 ID 를 아직 모르는 키는 미루고, 같은 넥슨 ID 거절은 적고, 한도 · 실패는 적지 않는다', async () => {
+it('메이플 ID 를 아직 모르는 키는 미루고, 같은 넥슨 ID 거절은 적고, 실패는 적지 않는다', async () => {
   const noIds = depsOf(LOGIN, {})
   await prepareServerAccounts(noIds.deps)
   expect(noIds.deps.register).not.toHaveBeenCalled()
@@ -89,12 +89,10 @@ it('메이플 ID 를 아직 모르는 키는 미루고, 같은 넥슨 ID 거절�
   await prepareServerAccounts(same.deps)
   expect(same.saved().registered).toEqual(['acc-login:' + apiKeyHashHex('부-키')])
 
-  for (const outcome of ['limit', 'failed'] as const) {
-    const run = depsOf(LOGIN, { 'acc-sub': ['m3'] })
-    run.deps.register.mockResolvedValueOnce(outcome as never)
-    await prepareServerAccounts(run.deps)
-    expect(run.saved().registered).toEqual([])
-  }
+  const failed = depsOf(LOGIN, { 'acc-sub': ['m3'] })
+  failed.deps.register.mockResolvedValueOnce('failed' as never)
+  await prepareServerAccounts(failed.deps)
+  expect(failed.saved().registered).toEqual([])
 })
 
 it('로그인이 없으면 등록하지 않고 메인 키의 계정만 알린다', async () => {

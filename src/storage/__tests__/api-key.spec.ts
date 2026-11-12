@@ -1,9 +1,11 @@
 import { installFakePreferences } from './fake-preferences'
 import {
+  addSubApiKey,
   clearNexonLogin,
   getAuthConfig,
   removeAllApiKeys,
   removeApiKey,
+  replaceApiKeyValue,
   setMainApiKey,
   setNexonLogin,
   signOutAuth,
@@ -412,5 +414,31 @@ describe('옛 모양을 읽는다', () => {
     const config = await getAuthConfig()
     expect(config?.apiKeys.map((one) => one.loginId)).toEqual([null, null])
     expect(config?.mainKeyId).toBe('account-가')
+  })
+})
+
+// 계정 관리의 부계정 키. 귀속과 넥슨 계정 id 가 바뀌면 그 계정의 추적 캐릭터와 기록이 끊긴다.
+describe('계정 관리', () => {
+  const 로그인칸 = { type: 'login' as const, id: 'login-1', session: 'S' }
+
+  it('부계정 키를 더하면 그 로그인에 귀속되고, 넘긴 계정 id 를 든다. 다른 수단은 그대로다', async () => {
+    await 저장({ login: 로그인칸, apiKeys: [키('a', 'login-1')], mainKeyId: null })
+
+    await addSubApiKey('새-키', 'login-1', 'account-new')
+
+    await expect(getAuthConfig()).resolves.toEqual({
+      login: 로그인칸,
+      apiKeys: [키('a', 'login-1'), { type: 'key', id: 'account-new', label: '', value: '새-키', loginId: 'login-1' }],
+      mainKeyId: null,
+    })
+  })
+
+  it('키를 바꾸면 같은 계정 id · 귀속 · 차례에 값만 바뀐다', async () => {
+    await 저장({ login: 로그인칸, apiKeys: [키('a', 'login-1'), 키('b', 'login-1')], mainKeyId: null })
+
+    await replaceApiKeyValue('a', '바꾼-키')
+
+    const config = await getAuthConfig()
+    expect(config?.apiKeys).toEqual([{ ...키('a', 'login-1'), value: '바꾼-키' }, 키('b', 'login-1')])
   })
 })

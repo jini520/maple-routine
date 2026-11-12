@@ -66,7 +66,7 @@ export async function prepareServerAccounts(deps: PrepareAccountsDeps = DEFAULT_
       const mapleIds = hashesOf(key.id)
       if (mapleIds.length === 0) continue
       const result = await deps.register(session, keyHash, mapleIds)
-      // 같은 넥슨 ID 는 다시 보내도 늘 거절된다. 한도는 다른 부계정을 지우면 풀리므로 적지 않는다.
+      // 같은 넥슨 ID 는 다시 보내도 늘 거절된다.
       if (result === 'registered' || result === 'same_account') state.registered.push(tag)
     }
   }

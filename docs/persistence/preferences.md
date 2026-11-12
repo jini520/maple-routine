@@ -34,6 +34,7 @@
 | `selectedAccountId` | 문자열 | `api-key.ts` | 남긴다 | 옛 키. 아무도 쓰지 않고, 로그아웃이 지운다 |
 | `theme` | 테마 이름(`job-themes.json` 의 키) | `theme.ts` | 남긴다 | |
 | `textSize` | `'small'` · `'default'` · `'large'` · `'xlarge'` | `text-size.ts` | 남긴다 | 없거나 모르는 값이면 `기본` |
+| `mapleIdNames` | JSON `{ [메이플 ID]: 이름 }`. 깨진 값은 빈 값으로 읽는다 | `maple-id-names.ts` | 남긴다 | 사용자가 바꾼 메이플 ID 이름만 든다. 없는 ID 는 기본 이름(`메이플ID-` 와 ID 앞 8자)이다([[ADR-101]] 결정 8) |
 | `todaySharedMapleId` | 메이플 ID 글자 | `today-shared-maple-id.ts` | 남긴다 | today 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID. 고를 목록에 없으면 첫 메이플 ID 를 보인다([[ADR-101]] 결정 9) |
 | `quickLinks` | JSON `{ rows, ids }`. `rows` 는 1 · 2, `ids` 는 위젯에 놓이는 차례 그대로 | `quick-links.ts` | 남긴다 | today 빠른 이동의 구성. 깨졌으면 기본 구성이다 |
 | `barOrder` | JSON `{ groups, subs }`. 그룹 다섯과, 하위가 있는 그룹마다 하위 페이지의 차례 | `bar-order.ts` | 남긴다 | 하단바 순서. 읽을 때 표에 맞추고, 깨졌으면 기본 순서다([[ADR-152]] 결정 5) |

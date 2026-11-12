@@ -11,7 +11,6 @@ import { create } from 'zustand'
 import { fetchAndRecordCharacterList, fetchUnsavedCharacterList, recordCharacterList } from '../mvp-grade/character-list'
 import { probeApiKeyStage } from '../../nexon/key-stage'
 import { lastKeySuccessAt } from '../../nexon/key-success'
-import { isInvalidApiKeyError, NexonMaintenanceError, NexonRateLimitError } from '../../nexon/errors'
 import {
   clearNexonLogin,
   getAuthConfig,
@@ -23,7 +22,7 @@ import {
 import { useAppEntryStore } from '../app-entry/store'
 import { revokeNexonSession } from '../../server/nexon-auth'
 import { useToastStore } from '../toast/store'
-import { formatAuthError } from './format'
+import { formatAuthError, toAuthError } from './format'
 import { apiKeyCredential, credentialOf } from '../../lib/nexon-credential'
 import { signInWithNexon } from './nexon-login'
 import { pruneCoveredApiKeys } from './prune-covered-keys'
@@ -33,7 +32,6 @@ import {
   authReducer,
   initialAuthState,
   type ApiKeyNoticeKind,
-  type AuthError,
   type AuthState,
 } from './state'
 import { clearUnsentServerData, requestAccountDeletion } from '../server-sync/forget'
@@ -76,21 +74,6 @@ export interface AuthStore extends AuthState {
   signOut(): Promise<void>
   /** 계정 삭제를 서버에 예약하고 로그아웃한다. 서버가 받지 못하면 로그아웃하지 않고 `false` 다. */
   deleteAccount(): Promise<boolean>
-}
-
-function toAuthError(error: unknown): AuthError {
-  // 400 OPENAPI00005 도 무효 키다(판정은 nexon/errors 한 곳). 이 폼에서 키를 잘못 입력했을 때
-  // 네트워크 오류라고 말하면 원인이 키인데 네트워크를 가리키게 된다.
-  if (isInvalidApiKeyError(error)) {
-    return { kind: 'invalidApiKey' }
-  }
-  if (error instanceof NexonRateLimitError) {
-    return { kind: 'rateLimited' }
-  }
-  if (error instanceof NexonMaintenanceError) {
-    return { kind: error.scope === 'game' ? 'gameMaintenance' : 'apiMaintenance' }
-  }
-  return { kind: 'network' }
 }
 
 /**
