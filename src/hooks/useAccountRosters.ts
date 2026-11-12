@@ -47,6 +47,8 @@ export interface AccountRosters {
   selectedAccountId: string | null
   isAccountsLoading: boolean
   accountsError: ScheduleSyncError | null
+  /** `accounts` 를 부른 자격의 종류. 빈 목록일 때 화면이 넥슨 로그인과 API 키의 문구를 가른다 */
+  accountsCredentialType: NexonCredential['type'] | null
 
   /** 열어 본 계정 전부의 후보. 캐시가 모르는 얼굴을 여기서 채운다. */
   loadedEntries: CharacterPickerEntry[]
@@ -65,6 +67,7 @@ export function useAccountRosters(): AccountRosters {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
   const [isAccountsLoading, setIsAccountsLoading] = useState(true)
   const [accountsError, setAccountsError] = useState<ScheduleSyncError | null>(null)
+  const [accountsCredentialType, setAccountsCredentialType] = useState<NexonCredential['type'] | null>(null)
   const [accountsNonce, setAccountsNonce] = useState(0)
 
   const [rosters, setRosters] = useState<Record<string, AccountRoster>>({})
@@ -157,6 +160,7 @@ export function useAccountRosters(): AccountRosters {
             ? open
             : (summaries[0]?.accountId ?? null)
         setAccounts(summaries)
+        setAccountsCredentialType(credential.type)
         setSelectedAccountId(next)
         openAccountRef.current = next
         setIsAccountsLoading(false)
@@ -212,6 +216,7 @@ export function useAccountRosters(): AccountRosters {
     selectedAccountId,
     isAccountsLoading,
     accountsError,
+    accountsCredentialType,
     loadedEntries,
     selectable,
     isRosterLoading,

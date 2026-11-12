@@ -8,6 +8,7 @@
  * 넥슨   서버의 콜백으로 code 와 state 를 보낸다
  * 서버   짝을 집어 교환하고 세션을 봉해 둔 뒤 com.mapleroutine.app://oauth/callback?receipt= 로 돌려보낸다
  * 앱     redeemKey 와 receipt 를 서버에 넘겨 세션을 받는다. 콜백이 아직 도는 중이면 잠시 뒤 다시 묻는다
+ * 앱     그 세션으로 캐릭터 목록을 받는다. 메이플 ID 가 없으면 저장하지 않고 세션을 거둔다
  * ```
  *
  * **열쇠가 둘이다.** `redeemKey` 는 시작한 앱만 들고 `receipt` 는 돌아오는 길에만 실린다. 돌아오는
@@ -23,8 +24,10 @@
 import { Platform } from 'react-native'
 
 import { openAuthSession } from '../../native/browser'
-import { redeemNexonSession, startNexonLogin } from '../../server/nexon-auth'
+import { redeemNexonSession, revokeNexonSession, startNexonLogin } from '../../server/nexon-auth'
+import type { MapleAccount } from '../../types'
 import type { Platform as NexonPlatform } from '../../types/auth'
+import { fetchUnsavedCharacterList } from '../mvp-grade/character-list'
 import { saveNexonLogin } from './prune-covered-keys'
 
 /** 넥슨에 등록한 값. 인증 세션이 이 주소로 돌아올 때만 콜백을 우리에게 준다. */
@@ -42,9 +45,12 @@ export const REDEEM_MAX_TRIES = 30
  *
  * **취소가 실패와 갈린다.** 사용자가 창을 닫은 것은 아무 일도 안 일어난 것이라, 안내를 띄우면
  * 자기가 닫아 놓고 무엇이 잘못됐나 찾게 된다.
+ *
+ * `signedIn` 은 저장 전에 받은 캐릭터 목록을 싣는다. `noMapleId` 는 메이플 ID 가 없는 넥슨 ID 라 저장하지 않은 것이다.
  */
 export type NexonSignInResult =
-  | { kind: 'signedIn' }
+  | { kind: 'signedIn'; accounts: MapleAccount[] }
+  | { kind: 'noMapleId' }
   | { kind: 'cancelled' }
   | { kind: 'failed' }
 
@@ -84,10 +90,18 @@ export async function signInWithNexon(): Promise<NexonSignInResult> {
     const session = await redeemUntilSettled(started.redeemKey, receipt)
     if (session === null) return { kind: 'failed' }
 
+    // 저장하기 전에 목록을 받는다. 메이플 ID 가 없는 로그인을 저장하면 조회가 늘 그 로그인으로 가서, API 키로도 다른
+    // 넥슨 ID 로도 빠져나올 수 없다. 계정 id 는 저장할 때 정해지므로 소속은 아직 적지 않는다.
+    const accounts = await fetchUnsavedCharacterList({ type: 'login', value: session, accountId: null })
+    if (accounts.length === 0) {
+      await revokeNexonSession(session)
+      return { kind: 'noMapleId' }
+    }
+
     // 메이플 ID 가 같은 키를 저장하기 전에 서버에서 잇고, 로그인이 그 키의 계정 id 를 이어받아 저장된다. 못 적으면 다시
     // 켤 때 로그인 상태가 아니다. 성공이라고 말하면 안 된다.
     await saveNexonLogin(session)
-    return { kind: 'signedIn' }
+    return { kind: 'signedIn', accounts }
   } catch {
     return { kind: 'failed' }
   }

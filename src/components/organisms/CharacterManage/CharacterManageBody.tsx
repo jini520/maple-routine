@@ -55,6 +55,8 @@ export interface CharacterManageBodyProps {
    * 틀린 자리의 문구를 조용히 물려받는다.
    */
   place: RosterErrorPlace
+  /** 빈 넥슨 로그인을 떼고 남은 수단이 없을 때. 같은 온보딩 스택 위의 화면은 스스로 빠져야 로그인 화면이 보인다 */
+  onBackToSignIn?: () => void
 }
 
 // 대기 자리. 마크와 문구가 함께 선다.
@@ -145,12 +147,32 @@ export function CharacterManageBody({
   manage,
   scrollableRef,
   place,
+  onBackToSignIn,
 }: CharacterManageBodyProps): React.JSX.Element {
   const headerHeight = useSharedValue(0)
   const separatorTop = useSharedValue<number | null>(null)
 
   // 계정을 하나도 못 고르면 본문 전체가 이 화면이다(넷째 줄).
   if (!manage.isAccountsLoading && manage.accountsError === null && manage.accounts.length === 0) {
+    // 조회는 로그인이 있으면 늘 로그인으로 간다. 키 문구를 보이면 키를 지워도 빈 로그인이 남아 이 화면에 머문다.
+    if (manage.accountsCredentialType === 'login') {
+      const leaveLogin = async (): Promise<void> => {
+        if (await useAuthStore.getState().leaveEmptyNexonLogin()) manage.retryAccounts()
+        else onBackToSignIn?.()
+      }
+      return (
+        <View testID="character-manage-body">
+          <EmptyState
+            icon="leaf"
+            size="page"
+            title="조회되는 캐릭터가 없어요"
+            description="이 넥슨 ID 에 연결된 메이플 ID 를 찾지 못했어요"
+            action={{ label: '다른 넥슨 ID 로 로그인', onClick: () => void leaveLogin() }}
+          />
+        </View>
+      )
+    }
+
     return (
       <View testID="character-manage-body">
         <EmptyState

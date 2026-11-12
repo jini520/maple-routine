@@ -23,6 +23,7 @@ import {
 import { useTrackedOcids } from '../features/schedule-sync/use-schedule-queries'
 import type { ScheduleSyncError } from '../features/schedule-sync/schedule-sync'
 import type { CharacterPickerEntry } from '../types'
+import type { NexonCredential } from '../types/auth'
 
 import { useAccountRosters } from './useAccountRosters'
 import { useKnownProfiles } from './useKnownProfiles'
@@ -35,6 +36,8 @@ export interface CharacterManageController {
   selectedAccountId: string | null
   isAccountsLoading: boolean
   accountsError: ScheduleSyncError | null
+  /** 계정 목록을 부른 자격의 종류. 빈 목록 문구를 가른다 */
+  accountsCredentialType: NexonCredential['type'] | null
 
   // 위 층
   selectedOcids: string[]
@@ -111,6 +114,7 @@ export function useCharacterManage(): CharacterManageController {
     selectedAccountId: roster.selectedAccountId,
     isAccountsLoading: roster.isAccountsLoading,
     accountsError: roster.accountsError,
+    accountsCredentialType: roster.accountsCredentialType,
     selectedOcids: draft.selectedOcids,
     selectedViews,
     representativeOcid: draft.representativeOcid,

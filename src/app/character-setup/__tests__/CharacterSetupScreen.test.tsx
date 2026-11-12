@@ -39,6 +39,7 @@ import { CharacterSetupScreen } from '../CharacterSetupScreen'
 // 팩토리 밖 변수를 참조하려면 이름이 `mock` 으로 시작해야 한다(babel-jest 규칙).
 const mockGetRoster = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
+const mockLeaveEmptyNexonLogin = jest.fn()
 const mockCompleteCharacterSetup = jest.fn()
 const mockNavigate = jest.fn()
 const mockGoBack = jest.fn()
@@ -93,7 +94,9 @@ jest.mock('../../../features/content-scheduler/store', () => ({ useContentSchedu
 // **`useApiKeyNotice` 는 실물을 쓴다**. 이 파일이 보려는 것이 "무엇을 그 훅에 넘기는가"라,
 // 훅을 목으로 세우면 검사 대상이 사라진다. 그래서 그 끝인 스토어만 세운다.
 jest.mock('../../../features/auth/store', () => ({
-  useAuthStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
+  useAuthStore: {
+    getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue, leaveEmptyNexonLogin: mockLeaveEmptyNexonLogin }),
+  },
 }))
 
 // 진입 게이트는 저장의 끝이다. 이 파일이 보는 것은 **무엇을 넘기는가** 라 그 함수만 세운다
@@ -260,6 +263,19 @@ describe('CharacterSetupScreen: 머리와 CTA', () => {
     await press(pressableOf(view.getByText('낟낟')))
 
     expect(stateOf(button(view, '계속하기')).disabled).toBe(false)
+  })
+
+  // 진입 단계만 되돌리면 같은 온보딩 스택이라 이 화면이 로그인 화면 위에 남는다.
+  it('메이플 ID 가 없는 넥슨 로그인을 떼고 남은 수단이 없으면 로그인 화면으로 돌아간다', async () => {
+    mockedGetAuthConfig.mockResolvedValue({ login: { type: 'login' as const, id: 'login-id', session: '빈세션' }, apiKeys: [] })
+    mockedFetchCharacterList.mockResolvedValue([])
+    mockLeaveEmptyNexonLogin.mockResolvedValue(false)
+    const { view } = await renderStep()
+
+    await press(view.getByText('다른 넥슨 ID 로 로그인'))
+
+    expect(mockLeaveEmptyNexonLogin).toHaveBeenCalledTimes(1)
+    expect(mockGoBack).toHaveBeenCalled()
   })
 
   // 온보딩은 뒤로 갈 수 있는 한 스택이다.
