@@ -1,4 +1,4 @@
-import { placeDropdown, placePopover } from '../place-dropdown'
+import { placeDropdown, placePopover, placeDropdownX } from '../place-dropdown'
 
 const BASE = { windowHeight: 800, safeTop: 40, safeBottom: 30, edgeGap: 12 }
 
@@ -69,5 +69,27 @@ describe('placePopover', () => {
 
   it('가운데로도 안 들어가면 위 한계에 붙인다', () => {
     expect(placePopover({ ...인너, anchorTop: 300, anchorHeight: 27, contentHeight: 560 }).top).toBe(31 + 12)
+  })
+})
+
+// 목록의 가로 자리. 위젯 드롭다운 버튼은 제목 줄 오른쪽 끝에 서서, 목록도 버튼의 오른쪽 끝에 맞춰 가장 긴 이름의 폭으로 연다.
+const 화면 = { windowWidth: 390, edgeGap: 12 }
+
+describe('placeDropdownX', () => {
+  it('기본은 트리거 왼쪽 끝에서 트리거 폭으로 연다', () => {
+    expect(placeDropdownX({ ...화면, anchorLeft: 40, anchorWidth: 200, contentWidth: 120 })).toEqual({ left: 40, width: 200 })
+  })
+
+  // 이름이 버튼보다 길면 버튼 폭으로 열 때 이름이 잘린다.
+  it('내용에 맞추면 트리거보다 넓어질 수 있고, 오른쪽 끝에 맞추면 트리거의 오른쪽 끝에서 왼쪽으로 연다', () => {
+    expect(
+      placeDropdownX({ ...화면, anchorLeft: 230, anchorWidth: 120, contentWidth: 160, align: 'end', fitContent: true }),
+    ).toEqual({ left: 190, width: 160 })
+  })
+
+  it('화면 밖으로 나가면 가장자리 여백 안으로 밀어 넣는다', () => {
+    expect(
+      placeDropdownX({ ...화면, anchorLeft: 20, anchorWidth: 60, contentWidth: 160, align: 'end', fitContent: true }),
+    ).toEqual({ left: 12, width: 160 })
   })
 })

@@ -13,11 +13,11 @@ import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../../lib/boss/boss-matching'
 
 import { renderAtom } from '../../../../components/__tests__/render-atom'
 import { CrystalLimitWidget } from '../CrystalLimitWidget'
-import { 뷰모델, 빈_뷰모델, 월드한도, 월드한도목록 } from './widget-fixture'
+import { 뷰모델, 빈_뷰모델, 메이플ID한도, 월드한도, 월드한도목록 } from './widget-fixture'
 import type { TodayViewModel } from '../../view-model'
 import { flattenStyle } from '../../../../components/__tests__/render-atom'
 
-const 한월드 = 뷰모델({ crystalLimits: [월드한도()] })
+const 한월드 = 뷰모델({ crystalLimits: [메이플ID한도([월드한도()])] })
 
 async function 위젯(data: TodayViewModel = 한월드): Promise<ReturnType<typeof renderAtom>> {
   return renderAtom(<CrystalLimitWidget data={data} />)
@@ -33,7 +33,7 @@ describe('분모는 참조 데이터에서 온다', () => {
 
   // 판별력. 분모를 박아 뒀다면 이 케이스가 여전히 실제 한도를 그린다.
   it('한도가 달라지면 분모도 따라 달라진다', async () => {
-    const { getByText, queryByText } = await 위젯(뷰모델({ crystalLimits: [월드한도({ limit: 7, cleared: 3 })] }),
+    const { getByText, queryByText } = await 위젯(뷰모델({ crystalLimits: [메이플ID한도([월드한도({ limit: 7, cleared: 3 })])] }),
     )
 
     expect(getByText('/7')).toBeTruthy()
@@ -59,7 +59,7 @@ describe('남은 개수 (이월되지 않는다)', () => {
 
   // 추적 밖 캐릭터가 있으면 소진량이 한도를 넘겨 보일 수 있다(알려진 한계 1).
   it('한도를 넘겨도 **−n개 남음** 이라고 하지 않는다', async () => {
-    const { getByTestId } = await 위젯(뷰모델({ crystalLimits: [월드한도({ cleared: WEEKLY_CRYSTAL_SALE_LIMIT + 5 })] }),
+    const { getByTestId } = await 위젯(뷰모델({ crystalLimits: [메이플ID한도([월드한도({ cleared: WEEKLY_CRYSTAL_SALE_LIMIT + 5 })])] }),
     )
 
     expect(getByTestId('crystal-remaining')).toHaveTextContent('0개 남음')
@@ -68,14 +68,14 @@ describe('남은 개수 (이월되지 않는다)', () => {
 
 describe('넘치는 월드 (합치지 않고 첫 월드 줄에 접는다)', () => {
   it('첫 월드의 링 하나만 그린다. 월드끼리 분모를 더하지 않는다', async () => {
-    const { getAllByTestId, queryByText } = await 위젯(뷰모델({ crystalLimits: 월드한도목록(2) }))
+    const { getAllByTestId, queryByText } = await 위젯(뷰모델({ crystalLimits: [메이플ID한도(월드한도목록(2))] }))
 
     expect(getAllByTestId('crystal-ring')).toHaveLength(1)
     expect(queryByText(`/${WEEKLY_CRYSTAL_SALE_LIMIT * 2}`)).toBeNull()
   })
 
   it('나머지는 첫 월드 줄에 **외 N** 으로 붙는다', async () => {
-    const { getByTestId } = await 위젯(뷰모델({ crystalLimits: 월드한도목록(4) }))
+    const { getByTestId } = await 위젯(뷰모델({ crystalLimits: [메이플ID한도(월드한도목록(4))] }))
     const line = within(getByTestId('crystal-world-line'))
 
     expect(line.getByText('스카니아')).toBeTruthy()
@@ -83,7 +83,7 @@ describe('넘치는 월드 (합치지 않고 첫 월드 줄에 접는다)', () =
   })
 
   it('나머지가 하나여도 **외 1** 이고 그 월드의 이름과 남은 개수는 적지 않는다', async () => {
-    const { getByTestId, queryByText } = await 위젯(뷰모델({ crystalLimits: 월드한도목록(2) }))
+    const { getByTestId, queryByText } = await 위젯(뷰모델({ crystalLimits: [메이플ID한도(월드한도목록(2))] }))
 
     expect(getByTestId('crystal-rest')).toHaveTextContent('외 1')
     expect(queryByText(/루나/)).toBeNull()
@@ -91,7 +91,7 @@ describe('넘치는 월드 (합치지 않고 첫 월드 줄에 접는다)', () =
 
   // 말줄임 대신 줄을 나눈다. 월드 이름과 한 글자 덩어리로 합치면 줄 끝이 잘려 `외 N` 이 사라진다.
   it('줄에 안 들어가면 **외 N** 이 다음 줄로 내려간다', async () => {
-    const { getByTestId } = await 위젯(뷰모델({ crystalLimits: 월드한도목록(2) }))
+    const { getByTestId } = await 위젯(뷰모델({ crystalLimits: [메이플ID한도(월드한도목록(2))] }))
 
     expect(flattenStyle(getByTestId('crystal-world-line').props.style).flexWrap).toBe('wrap')
   })
@@ -114,7 +114,7 @@ describe('링', () => {
 
   // 길이 0인 호를 `round` 캡으로 그리면 점 하나가 찍혀 **조금 팔았다** 로 보인다.
   it('소진이 0이면 찬 호를 그리지 않는다', async () => {
-    const { getByTestId, queryByTestId } = await 위젯(뷰모델({ crystalLimits: [월드한도({ cleared: 0 })] }),
+    const { getByTestId, queryByTestId } = await 위젯(뷰모델({ crystalLimits: [메이플ID한도([월드한도({ cleared: 0 })])] }),
     )
 
     expect(getByTestId('progress-ring-track')).toBeTruthy()
@@ -153,6 +153,41 @@ describe('집계할 것이 없을 때', () => {
     const { getByText } = await 위젯(빈_뷰모델)
 
     expect(getByText('집계할 기록이 없습니다')).toBeTruthy()
+  })
+})
+
+// 메이플 ID 가 둘 이상이면 격자가 이 위젯을 4칸으로 넓힌다. 칸은 메이플 ID 마다 하나이고, 월드 수가 모양을 정한다.
+describe('메이플 ID 가 둘 이상', () => {
+  const 메이플ID_둘 = 뷰모델({
+    crystalLimits: [
+      메이플ID한도(월드한도목록(2), 'da9b2f21-main'),
+      메이플ID한도([월드한도({ cleared: 45 })], '4f1c08ab-sub'),
+      메이플ID한도(월드한도목록(3), '0c5a7e6f-sub2'),
+    ],
+  })
+
+  it('메이플 ID 마다 칸을 두고 칸 맨 위에 그 이름을 적는다', async () => {
+    const { getByText } = await 위젯(메이플ID_둘)
+
+    for (const name of ['메이플ID-da9b2f21', '메이플ID-4f1c08ab', '메이플ID-0c5a7e6f']) {
+      expect(getByText(name)).toBeTruthy()
+    }
+  })
+
+  it('월드 1 은 링 칸, 2 는 막대 칸, 3 이상은 넓은 막대 칸이다', async () => {
+    const { getByTestId } = await 위젯(메이플ID_둘)
+
+    expect(getByTestId('crystal-cell-ring-4f1c08ab-sub')).toBeTruthy()
+    expect(getByTestId('crystal-cell-bars-da9b2f21-main')).toBeTruthy()
+    expect(getByTestId('crystal-cell-wide-0c5a7e6f-sub2')).toBeTruthy()
+  })
+
+  // 링 칸만 링이다. 막대 칸의 줄은 막대가 진행을 말한다.
+  it('막대 칸의 월드마다 `N개 남음` 과 막대가 선다', async () => {
+    const { getAllByTestId } = await 위젯(메이플ID_둘)
+
+    expect(getAllByTestId('crystal-bar')).toHaveLength(5)
+    expect(getAllByTestId('crystal-ring')).toHaveLength(1)
   })
 })
 

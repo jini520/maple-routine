@@ -33,6 +33,7 @@ import { useResetBoundaryTick } from '../../features/query/reset-timer'
 import { refreshSchedules } from '../../features/schedule-sync/schedule-query'
 import { useTrackedOcids } from '../../features/schedule-sync/use-schedule-queries'
 import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
+import { useMapleIdOwners } from '../../hooks/useMapleIdOwners'
 import type { RecordedDrop } from '../../types/drops'
 import { useMonthlyCrystalsUpToWeek } from '../../features/boss-profit/monthly-crystals'
 import {
@@ -264,9 +265,12 @@ export function BossProfitScreen(): React.JSX.Element {
 
   // 주간 탭 칩의 월간 몫은 **그 주가 끝날 때까지의 그 달 누적**이다. 행에는 그 주에 선 월간 보스만
   // 있어 기록에서 따로 센다. 세는 캐릭터는 카드가 선 캐릭터 - 칩의 주간 몫과 같은 범위다.
+  // 결정석 한도는 메이플 ID 와 월드마다 따로다. 소속을 읽기 전에는 월드로만 가른다.
+  const mapleIds = useMapleIdOwners(trackedOcids ?? [])
   const monthlyCrystalsUpToWeek = useMonthlyCrystalsUpToWeek(
     characterGroups.map((group) => group.ocid),
     tab === 'weekly' ? periodKey : null,
+    mapleIds?.ofOcid ?? null,
   )
 
   if (isEmpty) {
@@ -420,9 +424,9 @@ export function BossProfitScreen(): React.JSX.Element {
 
           <View className="flex-row items-center gap-1.5">
             {tab === 'weekly' ? (
-              <CrystalSummaryChip groups={characterGroups} monthlyByWorld={monthlyCrystalsUpToWeek ?? undefined} />
+              <CrystalSummaryChip groups={characterGroups} monthlyByWorld={monthlyCrystalsUpToWeek ?? undefined} mapleIds={mapleIds} />
             ) : (
-              <CrystalSummaryChip variant="monthly" groups={characterGroups} />
+              <CrystalSummaryChip variant="monthly" groups={characterGroups} mapleIds={mapleIds} />
             )}
             <Pressable
               ref={periodChipRef}

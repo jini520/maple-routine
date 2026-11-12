@@ -115,6 +115,8 @@ export const STORAGE_KEYS = {
   statsCumulativeStart: 'statsCumulativeStart',
   // today 빠른 이동 구성(JSON `{ rows, ids }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   quickLinks: 'quickLinks',
+  // today 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID. 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
+  todaySharedMapleId: 'todaySharedMapleId',
   // 하단바 순서(JSON `{ groups, subs }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   barOrder: 'barOrder',
   // MVP 등급 주간 확인을 끈 체크박스(`앞으로 등급은 직접 바꿀게요`). 데이터 삭제 그룹에 넣지 말 것.

@@ -18,8 +18,13 @@ import {
 import { bossRecordsStamp, subscribeBossRecordsStamp } from './period-cache'
 import { withSqliteFallback } from './sqlite-guards'
 
-/** 월드 key 별 월간 결정석 수와 보이는 월드 이름. */
-export type MonthlyCrystalsByWorld = Record<string, { world: string; count: number }>
+/** 한도 줄(메이플 ID · 월드)마다의 월간 결정석 수와 보이는 월드 이름. 열쇠는 `crystalPairKey` 다. */
+export type MonthlyCrystalsByWorld = Record<string, { accountId: string | null; worldKey: string; world: string; count: number }>
+
+/** 메이플 ID 와 월드로 한도 줄 하나를 가리키는 열쇠. 메이플 ID 를 가르지 않으면 `null` 이다. */
+export function crystalPairKey(accountId: string | null, worldKey: string): string {
+  return `${accountId ?? ''}|${worldKey}`
+}
 
 /**
  * 그 주 **이름의 달**에서, 선 주가 `weekKey` 와 같거나 앞선 월간 기록을 월드별로 센다.
@@ -29,12 +34,15 @@ export type MonthlyCrystalsByWorld = Record<string, { world: string; count: numb
  * - 선 주는 주간 목록이 그 보스를 세우는 주와 같다. 날짜를 알면 그 날의 주, 모르면
  *   `resolveUndatedWeek` 가 고른 주다
  * - 단위는 캐릭터마다 보스 하나다. 월드를 모르는 기록은 뺀다 - 칩이 월드별 줄의 합이라서다
+ *
+ * @param mapleIdOfOcid ocid → 메이플 ID. 주면 메이플 ID 와 월드마다 세고 메이플 ID 를 모르는 기록은 뺀다
  */
 export function countMonthlyCrystalsUpToWeek(
   records: readonly BossProfitRecord[],
   weekKey: string,
   now: Date,
   weeksWithRecords: readonly string[],
+  mapleIdOfOcid?: Readonly<Record<string, string>> | null,
 ): MonthlyCrystalsByWorld {
   const monthKey = weekKey.slice(0, 7)
   const undatedWeek = resolveUndatedWeek(monthKey, now, weeksWithRecords)
@@ -45,11 +53,14 @@ export function countMonthlyCrystalsUpToWeek(
     if (record.cycle !== 'monthly' || record.periodKey !== monthKey || record.worldKey === null) continue
     const standingWeek = record.defeatedOn == null ? undatedWeek : resetWeekStartOf(record.defeatedOn)
     if (standingWeek > weekKey) continue
+    const accountId = mapleIdOfOcid == null ? null : mapleIdOfOcid[record.ocid]
+    if (accountId === undefined) continue
     const identity = `${record.ocid}|${record.bossKey}`
     if (seen.has(identity)) continue
     seen.add(identity)
-    const entry = byWorld[record.worldKey] ?? { world: record.world ?? record.worldKey, count: 0 }
-    byWorld[record.worldKey] = { ...entry, count: entry.count + 1 }
+    const key = crystalPairKey(accountId, record.worldKey)
+    const entry = byWorld[key] ?? { accountId, worldKey: record.worldKey, world: record.world ?? record.worldKey, count: 0 }
+    byWorld[key] = { ...entry, count: entry.count + 1 }
   }
   return byWorld
 }
@@ -64,11 +75,15 @@ export function countMonthlyCrystalsUpToWeek(
 export function useMonthlyCrystalsUpToWeek(
   ocids: readonly string[],
   weekKey: string | null,
+  /** ocid → 메이플 ID. 오면 메이플 ID 와 월드마다 센다 */
+  mapleIdOfOcid?: Readonly<Record<string, string>> | null,
 ): MonthlyCrystalsByWorld | null {
   const stamp = useSyncExternalStore(subscribeBossRecordsStamp, bossRecordsStamp)
   const [counted, setCounted] = useState<{ key: string; byWorld: MonthlyCrystalsByWorld } | null>(null)
   // 의존성 배열에 배열을 그대로 넣으면 렌더마다 새 배열이라 끝없이 다시 읽는다. 내용으로 견준다.
   const ocidsKey = ocids.join(',')
+  // 소속을 읽기 전과 뒤의 값은 열쇠가 달라 섞이면 안 된다. 섞이면 메이플 ID 를 모르는 줄이 한 번 더 선다.
+  const countKey = `${ocidsKey}|${weekKey ?? ''}|${mapleIdOfOcid == null ? 'world' : 'maple-id'}`
 
   useEffect(() => {
     if (weekKey === null) return
@@ -82,16 +97,16 @@ export function useMonthlyCrystalsUpToWeek(
       ])
       if (!alive || records === null) return
       setCounted({
-        key: `${ocidsKey}|${weekKey}`,
-        byWorld: countMonthlyCrystalsUpToWeek(records, weekKey, new Date(), weeksWithRecords),
+        key: countKey,
+        byWorld: countMonthlyCrystalsUpToWeek(records, weekKey, new Date(), weeksWithRecords, mapleIdOfOcid),
       })
     })()
     return () => {
       alive = false
     }
-  }, [ocidsKey, weekKey, stamp])
+  }, [ocidsKey, weekKey, stamp, countKey, mapleIdOfOcid])
 
   if (weekKey === null) return null
   // 다른 주 · 다른 캐릭터 묶음의 값은 내지 않는다. 그 주의 첫 읽기 전에는 `null` 이다.
-  return counted !== null && counted.key === `${ocidsKey}|${weekKey}` ? counted.byWorld : null
+  return counted !== null && counted.key === countKey ? counted.byWorld : null
 }

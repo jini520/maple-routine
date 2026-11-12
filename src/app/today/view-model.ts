@@ -21,6 +21,8 @@ import type { BossProfitRow } from '../../features/boss-profit/store'
 import { dropRowKey } from '../../features/boss-profit/store'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
 import { worldNameOf } from '../../lib/world/worlds'
+import { mapleIdNameOf } from '../../lib/maple-id-name'
+import type { MapleIdOwners } from '../../features/maple-id/owners'
 import { getSharedContentGroups } from '../../lib/scheduler/scheduler-content-scope'
 import { contentCategoryNameOf, type ContentCategoryKey } from '../../lib/scheduler/content-categories'
 import { groupWeeklyLimitOf, isClosedByWeeklyLimit } from '../../lib/scheduler/group-weekly-limit'
@@ -221,12 +223,27 @@ export interface PricedDropView extends UnpricedDropView {
 }
 
 export interface CrystalLimitView {
-  /** 월드 key. 한도를 세는 단위이고 목록의 신원이다 */
+  /** 월드 key. 메이플 ID 안에서 한도를 세는 단위이고 목록의 신원이다 */
   worldKey: string
   /** 보이는 월드 이름. 월드 표 이름이다 */
   world: string
   cleared: number
   limit: number
+}
+
+/** 메이플 ID 하나의 결정석 한도. 한도는 메이플 ID 와 월드마다 따로다. */
+export interface CrystalMapleIdView {
+  /** 메이플 ID. 소속을 아직 못 읽었으면 `null` 이고 묶음이 하나다 */
+  accountId: string | null
+  /** 메이플 ID 이름. 소속을 못 읽은 묶음은 빈 글자다 */
+  name: string
+  worlds: CrystalLimitView[]
+}
+
+/** 위젯 드롭다운 버튼이 고르는 메이플 ID 하나. */
+export interface MapleIdOptionView {
+  accountId: string
+  name: string
 }
 
 export interface ResetCountdown {
@@ -302,6 +319,10 @@ export interface TodayViewModelInput {
   partyAppointments: readonly PartyAppointment[]
   /** 빠른 이동 스토어. 위젯이 스토어를 모르게 화면이 넘긴다. */
   quickLinks: QuickLinksConfig
+  /** 캐릭터마다의 메이플 ID 와 그 차례. 못 읽었으면 `null` 이고, 그때는 메이플 ID 를 가르지 않는다 */
+  mapleIds: MapleIdOwners | null
+  /** 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID */
+  selectedSharedMapleId: string | null
 }
 
 /** 다음 파티 스케줄의 캐릭터 묶음 하나 */
@@ -329,8 +350,12 @@ export interface NextPartyView {
 
 export interface TodayViewModel {
   representative: RepresentativeView | null
-  /** 계열별로 묶인 공유 컨텐츠. 위젯 9. */
+  /** 계열별로 묶인 공유 컨텐츠. 고른 메이플 ID 의 추적 캐릭터만 모은다. 위젯 9. */
   sharedContents: SharedContentGroupView[]
+  /** 공유 컨텐츠를 고를 수 있는 메이플 ID. 추적 캐릭터가 있는 메이플 ID 만 메이플 ID 차례로 선다 */
+  sharedMapleIds: MapleIdOptionView[]
+  /** 공유 컨텐츠가 보이는 메이플 ID. 고를 것이 없으면 `null` */
+  selectedSharedMapleId: string | null
   /** **캐릭터 관리 순서**의 목록. 남은 개수 많은 순은 탭을 아는 위젯이 세운다. */
   schedule: ScheduleRowView[]
   weeklyIncome: WeeklyIncomeView
@@ -338,7 +363,8 @@ export interface TodayViewModel {
   topItem: PricedDropView | null
   /** 이번 주 가격 미입력 드롭 건수. 최고가 위젯 안에 넣지 않는다. */
   unpricedCount: number
-  crystalLimits: CrystalLimitView[]
+  /** 메이플 ID 마다의 결정석 한도. 메이플 ID 차례다. 둘 이상이면 격자가 이 위젯을 넓힌다 */
+  crystalLimits: CrystalMapleIdView[]
   resets: ResetCountdownView
   /**
    * 진행 중인 파티 스케줄 회차와 지금 뒤에 시작하는 회차. 시작 순. 위젯 10 은 분마다 시계를 읽어 아직 끝나지 않은 맨 앞을 그린다.
@@ -357,11 +383,17 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
   // 사용자가 값을 매기지 않기로 정한 것이라 기다리는 건이 아니다.
   const unpriced = weeklyDrops.filter((record) => record.priceState === undefined)
 
-  const sharedContents = buildSharedContents(input, weeklyPeriodKey)
+  const sharedMapleIds = buildSharedMapleIds(input)
+  const selectedSharedMapleId = sharedMapleIds.some((one) => one.accountId === input.selectedSharedMapleId)
+    ? input.selectedSharedMapleId
+    : (sharedMapleIds[0]?.accountId ?? null)
+  const sharedContents = buildSharedContents(input, weeklyPeriodKey, sharedMapleIds.length >= 2 ? selectedSharedMapleId : null)
 
   return {
     representative: buildRepresentative(input),
     sharedContents,
+    sharedMapleIds,
+    selectedSharedMapleId,
     schedule,
     weeklyIncome: buildWeeklyIncome(input, weeklyPeriodKey),
     topItem: buildTopItem(weeklyDrops, input.profilesByOcid),
@@ -478,12 +510,34 @@ function contentsInputOf(
  * 줄은 카탈로그에서 만들므로 게임에 아직 없는 컨텐츠도 카탈로그에 있으면 선다. 그래서 줄의 시작
  * 기간을 **지금 주간 기간**으로 거른다.
  */
-function buildSharedContents(input: TodayViewModelInput, weeklyPeriodKey: string): SharedContentGroupView[] {
+/**
+ * 공유 컨텐츠를 고를 수 있는 메이플 ID. 스케줄러는 캐릭터로만 부를 수 있어서, 추적 캐릭터가 없는 메이플 ID 는 보여 줄 값이 없다.
+ */
+function buildSharedMapleIds(input: TodayViewModelInput): MapleIdOptionView[] {
+  if (input.mapleIds === null) return []
+  const { ofOcid, order } = input.mapleIds
+  const tracked = new Set(input.orderedOcids.flatMap((ocid) => (ofOcid[ocid] === undefined ? [] : [ofOcid[ocid]])))
+  return order.filter((accountId) => tracked.has(accountId)).map((accountId) => ({ accountId, name: mapleIdNameOf(accountId) }))
+}
+
+/**
+ * @param mapleId 고른 메이플 ID. 이 메이플 ID 의 캐릭터만 모은다. `null` 이면 모든 캐릭터다(고를 메이플 ID 가 하나뿐일 때)
+ */
+function buildSharedContents(
+  input: TodayViewModelInput,
+  weeklyPeriodKey: string,
+  mapleId: string | null,
+): SharedContentGroupView[] {
   const daily: DailyContent[] = []
   const weekly: WeeklyContent[] = []
   const scheduled = new Set<string>()
+  // 에픽 던전 · 메이플 유니온의 한도는 메이플 ID 마다 따로라, 다른 메이플 ID 의 진행이 섞이면 틀린다.
+  const characters =
+    mapleId === null || input.mapleIds === null
+      ? input.contentCharacters
+      : input.contentCharacters.filter((content) => input.mapleIds?.ofOcid[content.ocid] === mapleId)
 
-  for (const content of input.contentCharacters) {
+  for (const content of characters) {
     daily.push(...content.dailyContents)
     weekly.push(...content.weeklyContents)
 
@@ -590,25 +644,44 @@ function buildScheduleRows(input: TodayViewModelInput, weeklyPeriodKey: string):
   return orderByTracked(rows, input.orderedOcids)
 }
 
-function buildCrystalLimits(input: TodayViewModelInput): CrystalLimitView[] {
+/** 모르는 차례(무한대)끼리는 같다고 본다. 빼면 NaN 이 되어 차례가 흔들린다. */
+function compareRank(left: number, right: number): number {
+  return left === right ? 0 : left < right ? -1 : 1
+}
+
+function buildCrystalLimits(input: TodayViewModelInput): CrystalMapleIdView[] {
   // 스토어가 이번 주로 자른 행을 그대로 받는다. 여기서 다시 거르면 그 자가 보스 수익 화면의
   // 자와 갈려, 그 주에 잡은 월간 보스 수익이 이 화면에서만 사라진다(사용자 제보 2026-10-04).
   // 월간 탭에서만 채워지는 값이라 이번 주 계산에는 언제나 빈 배열이다.
   const groups = buildCharacterGroups([...input.profitRows], [])
-  const views = summarizeWorldCrystals(groups).map((summary) => ({
-    worldKey: summary.worldKey,
-    world: summary.world,
-    cleared: summary.cleared,
-    limit: WEEKLY_CRYSTAL_SALE_LIMIT,
-  }))
+  // 소속을 못 읽었으면 메이플 ID 를 가르지 않고 한 묶음으로 센다. 메이플 ID 를 모르는 캐릭터는 어느 한도에도 넣지 않는다.
+  const ofOcid = input.mapleIds?.ofOcid ?? null
+  const byMapleId = new Map<string | null, CrystalLimitView[]>()
+  const push = (accountId: string | null, view: CrystalLimitView): void => {
+    byMapleId.set(accountId, [...(byMapleId.get(accountId) ?? []), view])
+  }
+  for (const summary of summarizeWorldCrystals(groups, undefined, ofOcid)) {
+    push(summary.accountId, { worldKey: summary.worldKey, world: summary.world, cleared: summary.cleared, limit: WEEKLY_CRYSTAL_SALE_LIMIT })
+  }
   // 처치 행이 없는 추적 캐릭터의 월드도 0 으로 세운다. 처치가 없으면 아직 하나도 안 판 것이다.
   for (const ocid of input.orderedOcids) {
     const profile = input.profilesByOcid[ocid]
     const worldKey = profile?.worldKey
-    if (worldKey == null || views.some((view) => view.worldKey === worldKey)) continue
-    views.push({ worldKey, world: worldNameOf(worldKey, profile.world ?? worldKey), cleared: 0, limit: WEEKLY_CRYSTAL_SALE_LIMIT })
+    if (worldKey == null) continue
+    const accountId = ofOcid === null ? null : (ofOcid[ocid] ?? undefined)
+    if (accountId === undefined) continue
+    if ((byMapleId.get(accountId) ?? []).some((view) => view.worldKey === worldKey)) continue
+    push(accountId, { worldKey, world: worldNameOf(worldKey, profile.world ?? worldKey), cleared: 0, limit: WEEKLY_CRYSTAL_SALE_LIMIT })
   }
-  return views
+
+  const order = input.mapleIds?.order ?? []
+  const rankOf = (accountId: string | null): number => {
+    const index = accountId === null ? -1 : order.indexOf(accountId)
+    return index === -1 ? Number.POSITIVE_INFINITY : index
+  }
+  return [...byMapleId.entries()]
+    .sort(([left], [right]) => compareRank(rankOf(left), rankOf(right)))
+    .map(([accountId, worlds]) => ({ accountId, name: accountId === null ? '' : mapleIdNameOf(accountId), worlds }))
 }
 
 /**

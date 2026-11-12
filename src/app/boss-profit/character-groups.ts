@@ -7,7 +7,7 @@
 
 import { dropRowKey } from '../../features/boss-profit/store'
 import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../features/boss-profit/store'
-import type { MonthlyCrystalsByWorld } from '../../features/boss-profit/monthly-crystals'
+import { crystalPairKey, type MonthlyCrystalsByWorld } from '../../features/boss-profit/monthly-crystals'
 import { isSeasonBoss } from '../../lib/boss/bosses'
 import { isValuableDropItem } from '../../lib/drop/drop-items'
 import { worldNameOf } from '../../lib/world/worlds'
@@ -23,7 +23,9 @@ export interface CharacterGroup {
 }
 
 export interface WorldCrystalSummary {
-  /** 월드 key. 한도를 세는 단위이고 엠블럼을 찾는 열쇠다. */
+  /** 메이플 ID. 소속을 넘기지 않았으면 `null` 이고 월드로만 가른다. */
+  accountId: string | null
+  /** 월드 key. 메이플 ID 안에서 한도를 세는 단위이고 엠블럼을 찾는 열쇠다. */
   worldKey: string
   /** 보이는 월드 이름. 월드 표 이름이다. */
   world: string
@@ -283,10 +285,15 @@ export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
 export function summarizeWorldCrystals(
   groups: CharacterGroup[],
   monthlyByWorld?: MonthlyCrystalsByWorld,
+  /** ocid → 메이플 ID. 주면 메이플 ID 와 월드마다 가르고 메이플 ID 를 모르는 캐릭터는 뺀다. 같은 월드라도 메이플 ID 가 다르면 한도가 따로다 */
+  mapleIdOfOcid?: Readonly<Record<string, string>> | null,
 ): WorldCrystalSummary[] {
-  // 월드 → (캐릭터 → 그 월드에서 처치한 보스 key 집합). 캐릭터를 한 번 더 갈라야 서로 다른
+  // 한도 줄(메이플 ID · 월드) → (캐릭터 → 그 줄에서 처치한 보스 key 집합). 캐릭터를 한 번 더 갈라야 서로 다른
   // 캐릭터가 같은 보스를 잡은 것이 하나로 합쳐지지 않는다. 주간과 월간은 한도가 갈려 집합도 따로다.
-  const byWorld = new Map<string, Map<string, { weekly: Set<string>; monthly: Set<string> }>>()
+  const byPair = new Map<
+    string,
+    { accountId: string | null; worldKey: string; byCharacter: Map<string, { weekly: Set<string>; monthly: Set<string> }> }
+  >()
   // 보이는 이름의 폴백. 월드 표 이름이 먼저고, 표에 없는 key 면 행이 적어 둔 이름이다.
   const nameByWorldKey = new Map<string, string>()
 
@@ -295,23 +302,27 @@ export function summarizeWorldCrystals(
       if (row.worldKey === null) {
         continue
       }
+      const accountId = mapleIdOfOcid == null ? null : mapleIdOfOcid[row.ocid]
+      if (accountId === undefined) continue
       if (!nameByWorldKey.has(row.worldKey)) nameByWorldKey.set(row.worldKey, row.world ?? row.worldKey)
       // 월드 집합과 처치 수를 분리한다. 월드를 아는 행이 있으면 처치가 0 이어도 그 월드를
       // 목록에 넣어 `0 / 90` 을 보여준다. 완료 조건을 월드 판정에 섞으면 그 표시가 사라진다.
-      const byCharacter = byWorld.get(row.worldKey) ?? new Map<string, { weekly: Set<string>; monthly: Set<string> }>()
-      const bossKeys = byCharacter.get(row.ocid) ?? { weekly: new Set<string>(), monthly: new Set<string>() }
+      const key = crystalPairKey(accountId, row.worldKey)
+      const pair = byPair.get(key) ?? { accountId, worldKey: row.worldKey, byCharacter: new Map() }
+      const bossKeys = pair.byCharacter.get(row.ocid) ?? { weekly: new Set<string>(), monthly: new Set<string>() }
       if (row.isComplete && row.cycle === 'weekly' && !isSeasonBoss(row.bossKey)) {
         bossKeys.weekly.add(row.bossKey)
       }
       if (row.isComplete && row.cycle === 'monthly') {
         bossKeys.monthly.add(row.bossKey)
       }
-      byCharacter.set(row.ocid, bossKeys)
-      byWorld.set(row.worldKey, byCharacter)
+      pair.byCharacter.set(row.ocid, bossKeys)
+      byPair.set(key, pair)
     }
   }
 
-  const summaries = [...byWorld].map(([worldKey, byCharacter]) => ({
+  const summaries = [...byPair.values()].map(({ accountId, worldKey, byCharacter }) => ({
+    accountId,
     worldKey,
     world: worldNameOf(worldKey, nameByWorldKey.get(worldKey) ?? worldKey),
     cleared: [...byCharacter.values()].reduce((sum, bossKeys) => sum + bossKeys.weekly.size, 0),
@@ -321,11 +332,17 @@ export function summarizeWorldCrystals(
 
   const merged = summaries.map((summary) => ({
     ...summary,
-    monthlyCleared: monthlyByWorld[summary.worldKey]?.count ?? 0,
+    monthlyCleared: monthlyByWorld[crystalPairKey(summary.accountId, summary.worldKey)]?.count ?? 0,
   }))
-  for (const [worldKey, entry] of Object.entries(monthlyByWorld)) {
-    if (merged.some((summary) => summary.worldKey === worldKey)) continue
-    merged.push({ worldKey, world: worldNameOf(worldKey, entry.world), cleared: 0, monthlyCleared: entry.count })
+  for (const [key, entry] of Object.entries(monthlyByWorld)) {
+    if (merged.some((summary) => crystalPairKey(summary.accountId, summary.worldKey) === key)) continue
+    merged.push({
+      accountId: entry.accountId,
+      worldKey: entry.worldKey,
+      world: worldNameOf(entry.worldKey, entry.world),
+      cleared: 0,
+      monthlyCleared: entry.count,
+    })
   }
   return merged
 }

@@ -90,6 +90,27 @@ describe('WidgetGrid: 줄과 칸', () => {
   })
 })
 
+// 메이플 ID 가 둘 이상이면 결정석 위젯을 넓힌다. 결정석만 넓히면 카운트다운이 그 줄에 혼자 남아 둘 다 4칸이다(사용자 지정).
+describe('메이플 ID 가 둘 이상일 때', () => {
+  const 메이플ID_둘 = {
+    ...빈_뷰모델,
+    crystalLimits: [
+      { accountId: 'maple-a', name: '메이플ID-maple-a', worlds: [] },
+      { accountId: 'maple-b', name: '메이플ID-maple-b', worlds: [] },
+    ],
+  }
+
+  it('카운트다운과 결정석 위젯이 4칸으로 한 줄씩 서고 그 아래가 한 줄 내려간다', async () => {
+    const view = await 격자(메이플ID_둘)
+
+    expect(줄의_타일(view, 2)).toEqual(['reset-countdown'])
+    expect(줄의_타일(view, 3)).toEqual(['crystal-limit'])
+    expect(줄의_타일(view, 4)).toEqual(['shared-contents'])
+    expect(스타일(view.getByTestId('widget-tile-reset-countdown'))).toMatchObject({ width: 칸폭(4) })
+    expect(스타일(view.getByTestId('widget-tile-crystal-limit'))).toMatchObject({ width: 칸폭(4), marginLeft: 0 })
+  })
+})
+
 // 다음 파티 스케줄은 보여 줄 회차가 없으면 맨 아래 줄로 내려가고, 그 줄만큼 아래가 올라온다.
 describe('다음 파티 스케줄 타일', () => {
   const 회차 = {

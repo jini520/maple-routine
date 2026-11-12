@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useDropEffectStore } from '../features/drop-effect/store'
 import { useBarOrderStore } from '../features/bar-order/store'
 import { useQuickLinksStore } from '../features/quick-links/store'
+import { useTodaySharedMapleIdStore } from '../features/today/shared-maple-id'
 import { startKeyboardHeightRecorder } from '../features/input-card/keyboard-height'
 import { loadMesoUnits } from '../features/input-card/meso-unit'
 import { useNoticeStore } from '../features/notice/store'
@@ -82,6 +83,7 @@ function ReadyShell(): React.JSX.Element {
   const restoreTrackingMode = useTrackingModeStore((state) => state.restoreFromStorage)
   const restoreDropEffect = useDropEffectStore((state) => state.restoreFromStorage)
   const restoreQuickLinks = useQuickLinksStore((state) => state.restoreFromStorage)
+  const restoreSharedMapleId = useTodaySharedMapleIdStore((state) => state.restoreFromStorage)
   const restoreNotice = useNoticeStore((state) => state.restore)
   const resubscribeNotice = useNoticeStore((state) => state.resubscribe)
   const isKeyboardVisible = useKeyboardVisible()
@@ -116,6 +118,7 @@ function ReadyShell(): React.JSX.Element {
 
   useEffect(() => {
     void restoreQuickLinks()
+    void restoreSharedMapleId()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

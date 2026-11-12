@@ -11,7 +11,11 @@
 | `app/today/view-model.ts` | `buildTodayViewModel`. 위젯이 읽는 값을 한 번에 만드는 순수 함수 |
 | `app/today/WidgetGrid.tsx` | 격자. 배치를 줄로 묶어 줄마다 `flex-row` 로 그리고, 같은 줄의 타일을 가장 높은 것에 맞춘다 |
 | `app/today/widgets/registry.ts` | 위젯마다 그리는 폭 · 누르면 갈 곳 · 숨김 조건 |
-| `app/today/widgets/layout.ts` | 기본 배치 좌표(`TILE_LAYOUT`) |
+| `app/today/widgets/layout.ts` | 기본 배치 좌표(`TILE_LAYOUT`)와 결정석 위젯을 넓힌 배치(`WIDE_CRYSTAL_LAYOUT`) |
+| `app/today/widgets/crystal-cells.ts` | 넓힌 결정석 위젯의 칸 고르기 · 차례 · 줄 나누기 |
+| `components/organisms/WidgetSelect/` | 위젯 제목 줄의 메이플 ID 드롭다운 버튼 |
+| `features/maple-id/owners.ts` · `hooks/useMapleIdOwners.ts` | 캐릭터마다의 메이플 ID 와 메이플 ID 의 차례(넥슨 계정 차례) |
+| `features/today/shared-maple-id.ts` · `storage/today-shared-maple-id.ts` | 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID(Preferences `todaySharedMapleId`) |
 | `app/today/widgets/types.ts` | 위젯 id 와 프롭 형식 |
 | `app/today/widgets/*Widget.tsx` | 위젯 열 개 |
 | `app/today/quick-links.ts` | 빠른 이동 칸마다 가는 화면 · 아이콘과, 칸을 칠하는 색 |
@@ -79,6 +83,33 @@ WidgetGrid            px-4 pt-2
 7  2칸  이번 주 최고가          2칸  가격 미입력
 ```
 
+메이플 ID 가 둘 이상이면 결정석 위젯을 넓히고 줄 2 를 둘로 가른다([[ADR-101]] 결정 10).
+
+```
+2  4칸  초기화 카운트다운
+3  4칸  주간 결정석 판매 한도
+```
+
+그 아래 위젯은 한 줄씩 내려간다. 결정석 위젯만 넓히면 카운트다운이 그 줄에 혼자 남는다.
+넓힌 카운트다운의 내용은 2칸일 때와 같고 폭만 넓다(사용자 확인 2026-11-11). 그 줄에 다른 위젯이 들어오기 전에는 넓은 폭에 더 넣을 것이 없다.
+
+### 넓힌 결정석 위젯
+
+메이플 ID 마다 `card-inset` 칸 하나이고, 칸 맨 위에 메이플 ID 이름을 적는다. 칸은 그 메이플 ID 의 월드 수로 정한다.
+
+| 월드 수 | 칸 | 폭 |
+|---|---|---|
+| 1 | 링 칸. 링 오른쪽에 월드와 `N개 남음` | 반 |
+| 2 | 막대 칸. 월드마다 월드 이름 · `N개 남음` 한 줄과 그 아래 막대 | 반 |
+| 3 이상 | 막대 칸. 월드 줄을 두 열로 | 전체 |
+
+- 칸의 차례는 넥슨 계정 차례(넥슨 ID 계정, 그다음 API 키를 등록한 차례)다. 월드가 3개 이상인 메이플 ID 가 있으면 월드가 많은 차례로
+  다시 놓고, 같으면 기본 차례를 지킨다.
+- 반 폭 칸은 그 차례대로 둘씩 한 줄에 놓고 높이를 맞춘다. 링 칸이 늘어나면 링 줄을 세로 가운데에 둔다. 짝 없이 남은 칸은 반 폭
+  그대로다.
+- 메이플 ID 를 모르는 캐릭터의 처치는 어느 한도에도 넣지 않는다. 소속은 캐릭터 목록을 받을 때 적고 캐릭터는 그 목록에서 고르므로,
+  이런 캐릭터는 소속 기록이 생긴 1.0.10+3 전에 추적하고 그 뒤 어느 목록에도 나오지 않은 캐릭터뿐이다.
+
 위젯을 더할 때는 `types.ts` 의 `WidgetId`, `registry.ts` 의 한 줄, `layout.ts` 의 좌표 한 줄을 고친다.
 셋이 어긋나면 `widget-registry.test.ts` 가 잡는다.
 
@@ -88,10 +119,10 @@ WidgetGrid            px-4 pt-2
 |---|---|---|---|---|
 | `representative-character` | 초상화(52) 오른쪽에 월드 엠블럼 · 닉네임 · 길드, 레벨 · 직업, EXP 칸 | 4 | 없음 | 쿼리 캐시 `characterBasic(ocid)` · 캐릭터 선택 스토어 |
 | `quick-links` | 사용자가 고른 화면으로 가는 칸. 한 줄 5칸 · 두 줄 10칸, 원 안의 아이콘과 9px 짧은 이름. 제목 줄의 `편집` 이 편집 시트를 연다 | 4 | 칸마다 그 화면 | 빠른 이동 스토어 |
-| `reset-countdown` | 일일 · 주간 초기화까지 남은 시간. 일일은 초까지 1초마다 | 2 | 없음 | 뷰모델의 `resets` |
-| `crystal-limit` | 첫 월드의 링(반시계)과 `N개 남음`, 나머지 월드는 첫 월드 이름 옆의 `외 N`. 줄에 안 들어가면 `외 N` 이 다음 줄로 | 2 | 보스 수익 탭 | 쿼리 `bossProfitPeriod('weekly', 이번 주)` · 추적 캐릭터 프로필의 월드 |
+| `reset-countdown` | 일일 · 주간 초기화까지 남은 시간. 일일은 초까지 1초마다 | 2. 결정석 위젯을 넓히면 4 | 없음 | 뷰모델의 `resets` |
+| `crystal-limit` | 한도는 메이플 ID 와 월드마다 따로다. 메이플 ID 가 하나면 첫 월드의 링(반시계)과 `N개 남음`, 나머지 월드는 첫 월드 이름 옆의 `외 N`. 줄에 안 들어가면 `외 N` 이 다음 줄로. 메이플 ID 가 둘 이상이면 아래 `넓힌 결정석 위젯` | 2 · 4 | 보스 수익 탭 | 쿼리 `bossProfitPeriod('weekly', 이번 주)` · 추적 캐릭터 프로필의 월드 · 캐릭터의 메이플 ID(`character_accounts`) |
 | `next-party-schedule` | 진행 중인 파티 회차 하나(`진행 중`). 없으면 시작 전인 가장 가까운 회차 하나. 캐릭터마다 칸에 닉네임과 보스 줄. 회차가 없으면 맨 아래 줄에서 `매주 반복` · `한 번만` 등록 칸 | 4 | 회차 상세, 또는 고른 갈래의 새 스케줄 시트 | 쿼리 `partyAppointments()` |
-| `shared-contents` | 몬스터파크 · 메이플 유니온 · 에픽 던전의 공유 진행 | 4 | 없음 | 컨텐츠 스케줄러 스토어 |
+| `shared-contents` | 고른 메이플 ID 의 추적 캐릭터만 모은 몬스터파크 · 메이플 유니온 · 에픽 던전의 공유 진행. 추적 캐릭터가 있는 메이플 ID 가 둘 이상이면 제목 줄 오른쪽 드롭다운 버튼으로 고르고, 마지막에 고른 것을 기억한다 | 4 | 없음 | 컨텐츠 스케줄러 스토어 · 캐릭터의 메이플 ID · Preferences `todaySharedMapleId` |
 | `remaining-schedule` | 캐릭터별 남은 퀘스트 · 보스. 일간 · 주간 · 월간 탭 | 4 | 없음(행마다 펼침) | 컨텐츠 · 보스 스케줄러 스토어. 세는 함수는 `features/remaining-schedule/` 이고 미완료 스케줄 알림과 같다 |
 | `weekly-income` | 이번 주 순 수익 · 수익 · 지출(세그먼트), 반원 도넛과 갈래, 캐릭터 상위 셋(메이플 ID 기록은 순위에 서지 않는다). 캐릭터 줄을 누르면 갈래별 금액 팝오버 | 4 | 없음 | 쿼리 `ledgerDays(이번 주)` 와 통계의 집계 함수 |
 | `top-valuable-item` | 이번 주 기록한 판매가 중 가장 큰 아이템의 아이콘과 금액 | 2 | 아이템 가격 입력 | 쿼리 `dropHistory()` |
