@@ -168,7 +168,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-093+121](./adr/ADR-093+121_boss-scheduler_manage-redesign.md) | 🟢 | boss-scheduler | 보스 관리 화면 리디자인과 난이도 고르개 통일 |
 | [ADR-040+208](./adr/ADR-040+208_boss-profit_records.md) | 🟢 | boss-profit | 보스 수익 기록 |
 | [ADR-041+203](./adr/ADR-041+203_boss-profit_period.md) | 🟢 | boss-profit | 보스 수익 기간 |
-| [ADR-042+135+178](./adr/ADR-042+135+178_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 |
+| [ADR-042+135+178+212](./adr/ADR-042+135+178+212_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 |
 | [ADR-043](./adr/ADR-043_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |
 | [ADR-092+112+153](./adr/ADR-092+112+153_boss-profit_redesign.md) | 🟢 | boss-profit | 보스 수익 리디자인과 고가 드롭 홀로그램 강조 |
 | [ADR-044+066+076+111+120](./adr/ADR-044+066+076+111+120_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
@@ -176,7 +176,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-046](./adr/ADR-046_cashbook_calendar.md) | 🟢 | cashbook | 가계부 캘린더 |
 | [ADR-047+190](./adr/ADR-047+190_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 · 메포 지출의 메소마켓 수수료 |
 | [ADR-048+070+118+126](./adr/ADR-048+070+118+126_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 |
-| [ADR-049+127+157+199+206](./adr/ADR-049+127+157+199+206_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
+| [ADR-049+127+157+199+206+211](./adr/ADR-049+127+157+199+206+211_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
 | [ADR-095](./adr/ADR-095_cashbook_redesign.md) | 🟢 | cashbook | 가계부 고른 날 목록과 기간 이동 줄 리디자인 |
 | [ADR-050+110+128](./adr/ADR-050+110+128_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
 | [ADR-051+075+090](./adr/ADR-051+075+090_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |

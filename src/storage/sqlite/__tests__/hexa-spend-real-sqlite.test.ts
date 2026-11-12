@@ -151,8 +151,15 @@ describe('보관에서 가져온 조각', () => {
     }
   }
 
+  /** `보관사용` 이 가져갈 만큼의 보관. 모자라면 저장이 조각 장부 검사에 걸린다. */
+  async function stock(): Promise<void> {
+    await insertIncomeRecord(hunt('ocid-1', '2026-10-29', 150, '1a1a1a1a-0000-4000-8000-000000000001'))
+    await insertIncomeRecord(hunt('ocid-2', '2026-10-29', 200, '1a1a1a1a-0000-4000-8000-000000000002'))
+  }
+
   // 수정으로 다시 열면 두 체크가 저장한 대로 서야 한다. 곱할 개수가 없어 가격 없이 저장한 기록도 헥사 기록이다.
   it('두 체크와 캐릭터별 배분이 그대로 돌아오고, 가격 없는 기록도 헥사 기록으로 읽힌다', async () => {
+    await stock()
     await insertSpendRecord(보관사용)
 
     const [row] = await getSpendRecordsBetween('2026-10-30', '2026-10-30')
@@ -160,20 +167,21 @@ describe('보관에서 가져온 조각', () => {
   })
 
   it('고치면 배분을 갈아 끼우고, 기록을 지우면 배분도 함께 지워진다', async () => {
+    await stock()
     await insertSpendRecord(보관사용)
-    const edited = { ...보관사용, hexa: { ...보관사용.hexa!, storageUses: [{ ocid: 'ocid-2', fragments: 300 }] } }
+    const edited = { ...보관사용, hexa: { ...보관사용.hexa!, storageUses: [{ ocid: 'ocid-2', fragments: 150 }] } }
     await updateSpendRecord(edited)
 
     const [row] = await getSpendRecordsBetween('2026-10-30', '2026-10-30')
-    expect(row?.hexa?.storageUses).toEqual([{ ocid: 'ocid-2', fragments: 300 }])
+    expect(row?.hexa?.storageUses).toEqual([{ ocid: 'ocid-2', fragments: 150 }])
 
     await deleteSpendRecord(보관사용.id)
     expect(real.inspect((db) => db.prepare('SELECT COUNT(*) AS n FROM cashbook_entry_fragment_uses').get())).toEqual({ n: 0 })
   })
 
-  // 배분을 저장해 두므로 보관은 그 기록이 가져간 개수를 뺀다. 나중에 보관한 조각을 앞선 날짜의 강화에 쓸 수 없다.
-  it('보관은 헥사 기록이 가져간 개수를 빼고, 고른 날 뒤의 헥사 기록과 수정 중인 기록은 안 뺀다', async () => {
-    await insertIncomeRecord(hunt('ocid-1', '2026-10-29', 150, '1a1a1a1a-0000-4000-8000-000000000001'))
+  // 배분을 저장해 두므로 보관은 그 기록이 가져간 개수를 뺀다. 뒤 날짜에 가져간 조각을 앞 날짜의 강화에서 또 쓸 수 없다.
+  it('보관은 그 날과 뒤 날짜의 헥사 기록이 가져간 개수를 빼고, 수정 중인 기록의 몫은 되돌린다', async () => {
+    await stock()
     await insertSpendRecord(보관사용)
     await insertSpendRecord({
       ...보관사용,
@@ -182,10 +190,10 @@ describe('보관에서 가져온 조각', () => {
       hexa: { ...보관사용.hexa!, storageUses: [{ ocid: 'ocid-1', fragments: 40 }] },
     })
 
-    await expect(getFragmentStorage('ocid-1', '2026-10-30')).resolves.toBe(50)
+    await expect(getFragmentStorage('ocid-1', '2026-10-29')).resolves.toBe(10)
     await expect(getFragmentStorage('ocid-1', '2026-11-02')).resolves.toBe(10)
-    await expect(getFragmentStorage('ocid-1', '2026-10-30', 보관사용.id)).resolves.toBe(150)
-    await expect(getFragmentStorage('ocid-2', '2026-10-30')).resolves.toBe(-200)
+    await expect(getFragmentStorage('ocid-1', '2026-10-30', 보관사용.id)).resolves.toBe(110)
+    await expect(getFragmentStorage('ocid-2', '2026-10-30')).resolves.toBe(0)
   })
 })
 

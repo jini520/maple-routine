@@ -40,7 +40,7 @@ export interface BossCatalogBoss {
 export interface BossCatalogRules {
   /** 캐릭터당 주간 보스 등록 · 처치 한도. */
   weeklyBossSelectionLimit: number
-  /** 월드당 주간 결정석 판매 한도. */
+  /** 한도 줄(메이플 ID 마다, 챌린저스 월드는 따로)마다의 주간 결정석 판매 한도. */
   weeklyCrystalSaleLimit: number
   /** 난이도 줄이 상한을 안 들 때의 파티 인원 상한. 게임 수치라 코드에 박지 않는다. */
   defaultMaxPartySize: number

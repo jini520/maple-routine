@@ -28,7 +28,7 @@
 | `app/boss-profit/HeadlineChips.tsx` | 총 수익 카드의 결정석 칸 |
 | `app/boss-profit/ItemRevenuePopover.tsx` · `ItemRevenueTrigger.tsx` | 수익 내역 상자와 그것을 여는 금액 |
 | `app/boss-profit/CharacterIssue.tsx` | 금액 위 칸의 조회 불가 · 동기화 실패 배지, 금액 칸의 조회 불가 알약, 설명 팝오버 |
-| `app/boss-profit/character-groups.ts` | 행을 캐릭터로 묶고 금액 · 처치 수 · 결정석 수 · 고가 드롭을 센다 |
+| `app/boss-profit/character-groups.ts` | 행을 캐릭터로 묶고 금액 · 처치 수 · 결정석 수 · 고가 드롭을 센다. 월드별 결정석 수를 한도 줄로 묶는다 |
 | `app/boss-profit/DropPriceFab.tsx` | 아이템 가격 입력 버튼과 미입력 배지 |
 | `features/boss-profit/store.ts` | 보던 탭 · 기간 · 이번 기간을 따라가는지 · 파티 계획과 기록을 쓰는 액션(파티 · 직접 완료 · 드롭) |
 | `features/manual-completion/query.ts` | 직접 완료를 연 보스 쿼리 `manualCompletion()`. `BossProfitBossRow` 가 `useManualCompletionBosses` 로 단추를 세울지 가른다. 화면 포커스 · 앱 복귀마다 다시 받는다 |
@@ -48,6 +48,7 @@
 | `features/boss-profit/use-period-error-toast.ts` | 기간 읽기 실패 토스트 |
 | `lib/boss/boss-profit-period.ts` | 기간 키 · 기간 이름 · 조회 가능 범위 · 기간 상태 판정 |
 | `lib/boss/monthly-boss-week.ts` | 월간 보스가 들어가는 주 |
+| `lib/boss/crystal-limit.ts` | 주간 결정석 판매 한도를 메이플 ID 마다 세기 시작한 주와 한도 줄 열쇠 |
 | `storage/boss-profit.ts` | 처치 기록(SQLite `boss_party_periods` 의 `cleared` 행) 읽기 · 쓰기 · 개정 수 |
 | `storage/boss-periods.ts` | 처치 · 그 기간 값 · 드롭 · 파티 설정이 같이 쓰는 조합 행(`boss_parties`) · 기간 행 도우미 |
 | `storage/character-world-leaps.ts` | 리프한 두 캐릭터의 연결(`character_world_leaps`) |
@@ -100,7 +101,7 @@ hh:mm:ss 기준
 | 주간/월간 | 세그먼트 | 그 탭의 지금 기간으로 간다 |
 | `‹` `›` | 이전 · 다음 화살표(공용 `PeriodStepper`) | 기록이 있는 가장 가까운 기간으로 간다 |
 | `>>` | 겹화살표. 지금 기간이면 흐리다 | 지금 기간으로 간다 |
-| 결정석 칸 | 주간 탭 `주간 결정석 165개`(이번 주에 판 수의 합, 분모 없음) · `월간 1개`, 월간 탭 `월간 결정석 3개` | 한도 줄(메이플 ID × 월드)이 둘 이상이면 팝오버를 연다. 메이플 ID 마다 묶은 월드별 줄(주간 `판 수/90` · 월간 개수)이고, 메이플 ID 가 둘 이상이면 묶음 위에 메이플 ID 이름을 적는다([[ADR-101]] 결정 10) |
+| 결정석 칸 | 주간 탭 `주간 결정석 165개`(이번 주에 판 수의 합, 분모 없음) · `월간 1개`, 월간 탭 `월간 결정석 3개` | 월드가 둘 이상이면 팝오버를 연다. 메이플 ID 가 둘 이상이면 메이플 ID 마다 묶고 묶음 위에 이름을 적는다. 2026-11-19 주부터는 한도 줄(메이플 ID 마다 `일반 월드` · 챌린저스 월드)마다 칸 하나에 머리 `판 수/90` 과 월드 줄(판 수 · 월간 개수)을 둔다. 한도 줄이 하나면 `판 수/90` 을 메이플 ID 이름 줄이나 제목 줄 오른쪽에 둔다. 그 전 주는 월드마다 `판 수/90` 칸 한 줄이다([[ADR-042]] 결정 3 · 5) |
 | `자세히` | | 총 수익 내역 상자(결정석 · 아이템 · 합계, 상위 10건) |
 | 고가 드롭 표시 | 그 기간에 먹은 고가 아이템 그림 셋과 나머지 `+N` | |
 | 캐릭터 카드 헤더 | 초상과 처치 진행 링 · 이름 · 오른쪽 열(위는 고가 드롭 표시, 아래는 금액). 고가 드롭 카드는 카드 전면의 오로라 금속빛(띠가 저절로 흐른다. 카드는 고정)과 오로라 금액. 동기화가 실패하면 윗줄에 `조회 불가` · `동기화 실패` 배지가 서고 고가 드롭 강조가 꺼진다 | 펼친다. 아이템이 섞인 금액을 누르면 카드 내역 상자(상위 5건). 배지를 누르면 설명 팝오버 |

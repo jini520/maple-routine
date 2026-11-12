@@ -95,8 +95,8 @@ describe('메이플 ID 가 둘 이상일 때', () => {
   const 메이플ID_둘 = {
     ...빈_뷰모델,
     crystalLimits: [
-      { accountId: 'maple-a', name: '메이플ID-maple-a', worlds: [] },
-      { accountId: 'maple-b', name: '메이플ID-maple-b', worlds: [] },
+      { accountId: 'maple-a', name: '메이플ID-maple-a', lines: [] },
+      { accountId: 'maple-b', name: '메이플ID-maple-b', lines: [] },
     ],
   }
 

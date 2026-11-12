@@ -120,33 +120,36 @@ export function 드롭(부분: Partial<PricedDropView> = {}): PricedDropView {
 }
 
 /**
- * 월드 한도 한 줄. **분모는 언제나 참조 데이터에서 온다**.
+ * 한도 줄 하나. **분모는 언제나 참조 데이터에서 온다**.
  *
  * 픽스처가 숫자를 적으면 위젯이 그 숫자를 그대로 그려도 상수에서 왔는가 를 못 묻는다. 그래서
  * 기본값을 상수로 두고, 판별력 확인이 필요한 테스트만 `limit` 을 명시적으로 덮는다.
  */
-export function 월드한도(부분: Partial<CrystalLimitView> = {}): CrystalLimitView {
-  return { worldKey: 'scania', world: '스카니아', cleared: 34, limit: WEEKLY_CRYSTAL_SALE_LIMIT, ...부분 }
+export function 한도줄(부분: Partial<CrystalLimitView> = {}): CrystalLimitView {
+  return { key: 'general', name: '일반 월드', cleared: 34, limit: WEEKLY_CRYSTAL_SALE_LIMIT, ...부분 }
 }
 
-/** 메이플 ID 하나의 결정석 한도 묶음. 메이플 ID 가 하나면 위젯은 지금처럼 2칸 타일이다. */
-export function 메이플ID한도(worlds: CrystalLimitView[], accountId = 'da9b2f21-main'): CrystalMapleIdView {
-  return { accountId, name: `메이플ID-${accountId.slice(0, 8)}`, worlds }
+/** 메이플 ID 하나의 결정석 한도 묶음. 메이플 ID 가 하나면 위젯은 2칸 타일이다. */
+export function 메이플ID한도(lines: CrystalLimitView[], accountId = 'da9b2f21-main'): CrystalMapleIdView {
+  return { accountId, name: `메이플ID-${accountId.slice(0, 8)}`, lines }
 }
 
-/** n개 월드. 이름과 소진량이 서로 달라 합쳐졌는가 를 글자로 물을 수 있다. */
-export function 월드한도목록(n: number): CrystalLimitView[] {
-  const 월드 = [
-    ['scania', '스카니아'],
-    ['luna', '루나'],
+/**
+ * n개 한도 줄. 이름과 소진량이 서로 달라 합쳐졌는가 를 글자로 물을 수 있다.
+ * 셋째부터는 한도를 월드마다 세던 2026-11-19 전 주의 줄(월드)이다.
+ */
+export function 한도줄목록(n: number): CrystalLimitView[] {
+  const 줄 = [
+    ['general', '일반 월드'],
+    ['challengers_2', '챌린저스'],
     ['aurora', '오로라'],
     ['bera', '베라'],
     ['croa', '크로아'],
   ]
   return Array.from({ length: n }, (_, index) =>
-    월드한도({
-      worldKey: 월드[index]?.[0] ?? `world_${index + 1}`,
-      world: 월드[index]?.[1] ?? `월드${index + 1}`,
+    한도줄({
+      key: 줄[index]?.[0] ?? `line_${index + 1}`,
+      name: 줄[index]?.[1] ?? `줄${index + 1}`,
       cleared: 10 * (index + 1),
     }),
   )

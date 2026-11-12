@@ -194,8 +194,8 @@ describe('assignLegacyIncomeAccounts: 주인을 모르는 옛 수입을 메이�
 })
 
 describe('getFragmentStorage: 캐릭터별 솔 에르다 조각 보관', () => {
-  // 가격을 안 적은 사냥의 조각이 쌓이고, 정산 기록이 판 개수만큼 빠진다.
-  it('고른 날까지 그 캐릭터의 보관 조각에서 판 개수를 빼고, 수정 중인 정산은 뺀다', async () => {
+  // 가격을 안 적은 사냥의 조각이 쌓이고, 정산 기록이 판 개수만큼 빠진다. 뒤 날짜에 판 조각은 앞 날짜에서도 없다.
+  it('그 날과 뒤 모든 날의 남은 개수 가운데 가장 작은 값이고, 수정 중인 정산은 뺀다', async () => {
     await insertIncomeRecord(calculatorHunt)
     await insertIncomeRecord({
       ...calculatorHunt,
@@ -210,12 +210,13 @@ describe('getFragmentStorage: 캐릭터별 솔 에르다 조각 보관', () => {
       category: 'sol_erda_fragment',
       item: null,
       itemKind: null,
+      earnedOn: '2026-08-25',
       quantity: 50,
     }
     await insertIncomeRecord(settle)
 
-    // 30 을 보관하고 50 을 팔아 마이너스다. 그대로 낸다.
-    await expect(getFragmentStorage('ocid-1', '2026-08-20')).resolves.toBe(-20)
+    // 08-20 에 30, 08-25 에 30 을 더 보관하고 08-25 에 50 을 팔았다. 08-20 에 쓸 수 있는 것은 남은 10 이다.
+    await expect(getFragmentStorage('ocid-1', '2026-08-20')).resolves.toBe(10)
     await expect(getFragmentStorage('ocid-1', '2026-08-25')).resolves.toBe(10)
     await expect(getFragmentStorage('ocid-1', '2026-08-20', settle.id)).resolves.toBe(30)
     await expect(getFragmentStorage('ocid-3', '2026-08-20')).resolves.toBe(0)

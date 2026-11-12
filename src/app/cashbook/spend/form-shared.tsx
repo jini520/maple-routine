@@ -87,7 +87,7 @@ export interface SpendFormProps {
    */
   loadHexaStorages: (
     ocid: string,
-    onOrBeforeDateKey: string,
+    dateKey: string,
     excludeRecordId: string | undefined,
   ) => Promise<readonly { ocid: string; stored: number }[] | null>
   /** 새 헥사 폼의 두 체크. 직전에 새 헥사 기록을 저장한 때의 상태다. */

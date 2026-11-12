@@ -138,7 +138,8 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 - 복귀의 `inactive → active` 는 세지 않는다. iOS 알림 센터를 내렸다 올린 것은 배경에 간 적이 없기 때문이다.
 - 복귀 신호는 `app-focus.ts` 하나다. 쿼리 밖의 일(게임 데이터 확인 · 알림 재구독 · 알림 재조정 · MVP 등급)은
   `hooks/useReturnToForeground` 를 쓰고, 이 훅은 `focusManager` 를 구독해 포커스가 켜질 때 콜백을 부른다. 전에는 훅이 `AppState`
-  리스너를 따로 달아 같은 규칙이 두 벌이었다.
+  리스너를 따로 달아 같은 규칙이 두 벌이었다. 콜백은 백그라운드에 나가 있던 시간을 받는다. OTA 가 받아 둔 번들을 적용할지
+  그 시간으로 정한다([[ADR-012]] 결정 15).
 - 우리 서버 쿼리(결산 · 직접 완료 · 공지)도 `refetchOnWindowFocus: 'always'` 다. 새벽 결산 중 배경에 두었다가 돌아오면 결산
   줄이 걷히고(#812 A5), 더보기 · 공지 목록을 연 채 돌아오면 새 글이 서고(A7), 배경에서 온 운영자 공지는 today 배너가
   서버를 다시 물어 세운다(A8). `meta.source` 는 `server` 다. 자정 무효화는 `nexon` 만 본다.

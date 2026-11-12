@@ -56,7 +56,7 @@ import type {
 import type { RecordedDrop } from '../../types/drops'
 
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
-import { buildCharacterGroups, summarizeWorldCrystals } from '../boss-profit/character-groups'
+import { buildCharacterGroups, crystalLimitLines, summarizeWorldCrystals } from '../boss-profit/character-groups'
 import {
   categoryTotalsBetween,
   characterCategoriesBetween,
@@ -223,21 +223,21 @@ export interface PricedDropView extends UnpricedDropView {
 }
 
 export interface CrystalLimitView {
-  /** 월드 key. 메이플 ID 안에서 한도를 세는 단위이고 목록의 신원이다 */
-  worldKey: string
-  /** 보이는 월드 이름. 월드 표 이름이다 */
-  world: string
+  /** 한도 줄의 열쇠. 메이플 ID 안에서 목록의 신원이다 */
+  key: string
+  /** 줄 이름. `일반 월드` · `챌린저스`, 월드마다 세던 주는 월드 이름 */
+  name: string
   cleared: number
   limit: number
 }
 
-/** 메이플 ID 하나의 결정석 한도. 한도는 메이플 ID 와 월드마다 따로다. */
+/** 메이플 ID 하나의 결정석 한도. 한도는 메이플 ID 안에서도 한도 줄마다 따로다. */
 export interface CrystalMapleIdView {
   /** 메이플 ID. 소속을 아직 못 읽었으면 `null` 이고 묶음이 하나다 */
   accountId: string | null
   /** 메이플 ID 이름. 소속을 못 읽은 묶음은 빈 글자다 */
   name: string
-  worlds: CrystalLimitView[]
+  lines: CrystalLimitView[]
 }
 
 /** 위젯 드롭다운 버튼이 고르는 메이플 ID 하나. */
@@ -400,7 +400,7 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
     weeklyIncome: buildWeeklyIncome(input, weeklyPeriodKey),
     topItem: buildTopItem(weeklyDrops, input.profilesByOcid),
     unpricedCount: unpriced.length,
-    crystalLimits: buildCrystalLimits(input),
+    crystalLimits: buildCrystalLimits(input, weeklyPeriodKey),
     resets: buildResets(input.now),
     nextParty: buildNextParty(input),
     quickLinks: input.quickLinks,
@@ -651,20 +651,14 @@ function compareRank(left: number, right: number): number {
   return left === right ? 0 : left < right ? -1 : 1
 }
 
-function buildCrystalLimits(input: TodayViewModelInput): CrystalMapleIdView[] {
+function buildCrystalLimits(input: TodayViewModelInput, weeklyPeriodKey: string): CrystalMapleIdView[] {
   // 스토어가 이번 주로 자른 행을 그대로 받는다. 여기서 다시 거르면 그 자가 보스 수익 화면의
   // 자와 갈려, 그 주에 잡은 월간 보스 수익이 이 화면에서만 사라진다(사용자 제보 2026-10-04).
   // 월간 탭에서만 채워지는 값이라 이번 주 계산에는 언제나 빈 배열이다.
   const groups = buildCharacterGroups([...input.profitRows], [])
   // 소속을 못 읽었으면 메이플 ID 를 가르지 않고 한 묶음으로 센다. 메이플 ID 를 모르는 캐릭터는 어느 한도에도 넣지 않는다.
   const ofOcid = input.mapleIds?.ofOcid ?? null
-  const byMapleId = new Map<string | null, CrystalLimitView[]>()
-  const push = (accountId: string | null, view: CrystalLimitView): void => {
-    byMapleId.set(accountId, [...(byMapleId.get(accountId) ?? []), view])
-  }
-  for (const summary of summarizeWorldCrystals(groups, undefined, ofOcid)) {
-    push(summary.accountId, { worldKey: summary.worldKey, world: summary.world, cleared: summary.cleared, limit: WEEKLY_CRYSTAL_SALE_LIMIT })
-  }
+  const worlds = summarizeWorldCrystals(groups, undefined, ofOcid)
   // 처치 행이 없는 추적 캐릭터의 월드도 0 으로 세운다. 처치가 없으면 아직 하나도 안 판 것이다.
   for (const ocid of input.orderedOcids) {
     const profile = input.profilesByOcid[ocid]
@@ -672,8 +666,13 @@ function buildCrystalLimits(input: TodayViewModelInput): CrystalMapleIdView[] {
     if (worldKey == null) continue
     const accountId = ofOcid === null ? null : (ofOcid[ocid] ?? undefined)
     if (accountId === undefined) continue
-    if ((byMapleId.get(accountId) ?? []).some((view) => view.worldKey === worldKey)) continue
-    push(accountId, { worldKey, world: worldNameOf(worldKey, profile.world ?? worldKey), cleared: 0, limit: WEEKLY_CRYSTAL_SALE_LIMIT })
+    if (worlds.some((summary) => summary.accountId === accountId && summary.worldKey === worldKey)) continue
+    worlds.push({ accountId, worldKey, world: worldNameOf(worldKey, profile.world ?? worldKey), cleared: 0, monthlyCleared: 0 })
+  }
+  const byMapleId = new Map<string | null, CrystalLimitView[]>()
+  for (const line of crystalLimitLines(worlds, weeklyPeriodKey)) {
+    const view = { key: line.key, name: line.name, cleared: line.cleared, limit: WEEKLY_CRYSTAL_SALE_LIMIT }
+    byMapleId.set(line.accountId, [...(byMapleId.get(line.accountId) ?? []), view])
   }
 
   const order = input.mapleIds?.order ?? []
@@ -683,7 +682,7 @@ function buildCrystalLimits(input: TodayViewModelInput): CrystalMapleIdView[] {
   }
   return [...byMapleId.entries()]
     .sort(([left], [right]) => compareRank(rankOf(left), rankOf(right)))
-    .map(([accountId, worlds]) => ({ accountId, name: accountId === null ? '' : mapleIdNameOf(accountId, input.mapleIdNames), worlds }))
+    .map(([accountId, lines]) => ({ accountId, name: accountId === null ? '' : mapleIdNameOf(accountId, input.mapleIdNames), lines }))
 }
 
 /**

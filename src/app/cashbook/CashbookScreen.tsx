@@ -119,6 +119,7 @@ import { dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import { useResetBoundaryTick } from '../../features/query/reset-timer'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
+import { saveHuntWithCuts } from '../../features/cashbook/fragment-cuts'
 import { useToastStore } from '../../features/toast/store'
 import { SETTLEMENT_BANNER_DETAIL_LEDGER } from '../../features/settlement/banner-text'
 import { SettlementBanner } from '../SettlementBanner'
@@ -594,6 +595,9 @@ function DayRecordRow(props: {
   )
 }
 
+/** 사냥 기록의 확인 창에서 `취소` 를 눌렀다는 표시. 던져서 시트를 그대로 두고, 실패가 아니라 토스트는 안 띄운다. */
+const HUNT_CUTS_CANCELLED = Symbol('huntCutsCancelled')
+
 export function CashbookScreen(): React.JSX.Element {
   const faq = useFaqSheet('cashbook')
   /**
@@ -790,20 +794,25 @@ export function CashbookScreen(): React.JSX.Element {
           recordedAt: entry.record.recordedAt,
           mesoMarketFeePercent: entry.record.mesoMarketFeePercent,
         })
+      } else if (entry.record.category === 'hunting') {
+        const record = { ...(draft as IncomeDraft), id: entry.record.id, recordedAt: entry.record.recordedAt }
+        if (!(await saveHuntWithCuts(entry.record, { kind: 'edit', record }))) throw HUNT_CUTS_CANCELLED
       } else {
         await editIncome({ ...(draft as IncomeDraft), id: entry.record.id, recordedAt: entry.record.recordedAt })
       }
     } catch (error) {
-      useToastStore.getState().showError('기록을 고치지 못했습니다')
+      if (error !== HUNT_CUTS_CANCELLED) useToastStore.getState().showError('기록을 고치지 못했습니다')
       throw error
     }
   }
 
   async function deleteEntry(entry: ManualDayRecord): Promise<void> {
     try {
-      await removeRecord(entry)
+      if (entry.kind === 'income' && entry.record.category === 'hunting') {
+        if (!(await saveHuntWithCuts(entry.record, { kind: 'remove', id: entry.record.id }))) throw HUNT_CUTS_CANCELLED
+      } else await removeRecord(entry)
     } catch (error) {
-      useToastStore.getState().showError('기록을 지우지 못했습니다')
+      if (error !== HUNT_CUTS_CANCELLED) useToastStore.getState().showError('기록을 지우지 못했습니다')
       throw error
     }
   }
