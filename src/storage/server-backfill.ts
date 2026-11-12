@@ -27,8 +27,9 @@ export async function getBackfillState(): Promise<BackfillState> {
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>
     const state: BackfillState = {}
-    // 옛 앱이 적은 다른 종류의 진행은 읽지 않는다. 다음에 적을 때 빠진다.
-    for (const kind of ['dropPrice'] as const) {
+    // 옛 앱이 적은 다른 종류의 진행은 읽지 않는다. 다음에 적을 때 빠진다. 1.0.13 까지의 `dropPrice` 도 그래서 다시
+    // 처음부터 올라가, 옛 줄에 메이플 ID · ocid · 획득처가 채워진다.
+    for (const kind of ['dropPriceOwner'] as const) {
       if (isProgress(parsed[kind])) state[kind] = parsed[kind]
     }
     return state

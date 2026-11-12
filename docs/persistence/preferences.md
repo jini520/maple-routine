@@ -45,7 +45,8 @@
 | `partyAlarmEnabled` | `'on'` · `'off'` | `party-appointment-settings.ts` | 남긴다 | 파티 약속 알림 스위치. 없으면 켜짐 |
 | `scheduleAlertEnabled` | `'on'` · `'off'` | `schedule-alert-settings.ts` | 남긴다 | 미완료 스케줄 알림 스위치. 없으면 켜짐 |
 | `partyAppointments` | JSON `PartyAppointment[]` | `party-appointments.ts` | 남긴다 | 사용자가 적은 파티 약속. `id` 는 uuid 이고, 옛 `시각 + 난수` id 는 읽을 때 uuid 로 바꿔 다시 저장한다([[ADR-098]] 결정 4) |
-| `serverBackfill` | JSON. 종류(`dropPrice`)마다 마지막으로 보낸 기록 id 와 끝났는지. 옛 앱이 적은 다른 종류의 값은 읽지 않는다 | `server-backfill.ts` | 남긴다 | 업데이트 전 드롭을 서버로 어디까지 올렸나([[ADR-099]] 결정 3) |
+| `serverBackfill` | JSON. 종류(`dropPriceOwner`)마다 마지막으로 보낸 기록 id 와 끝났는지. 옛 앱이 적은 다른 종류(1.0.13 까지의 `dropPrice` 포함)의 값은 읽지 않는다 | `server-backfill.ts` | 남긴다 | 업데이트 전 드롭을 서버로 어디까지 올렸나([[ADR-099]] 결정 3). 1.0.14 는 메이플 ID · ocid 를 채우려고 처음부터 다시 올린다([[ADR-101]] 결정 24) |
+| `serverAccounts` | JSON `{ reported: { [넥슨 계정 id]: 메이플 ID 해시[] }, registered: '로그인 계정 id:키 해시'[] }`. 깨진 값은 빈 값으로 읽는다 | `server-accounts.ts` | 남긴다 | 서버가 계정마다 마지막으로 돌려준 메이플 ID 와, 등록한 부계정 키. 이미 아는 것은 다시 보내지 않는다([[ADR-101]] 결정 14 · 25) |
 | `legacyCleanupDone` | `'1'` | `legacy-cleanup.ts` | 남긴다 | 옛 키 정리가 끝났다는 표식. 있으면 부팅이 정리를 건너뛴다([[ADR-142]] 결정 12) |
 | `enhancementTotalsMoved` | `'1'` | `enhancement-totals-moved.ts` | 남긴다 | 옛 강화 원본(`enhancement_history`)을 합계로 옮겼는지. 옮기면 원본 표를 지운다([[ADR-100]] 결정 3) |
 | `worldSharedProgressSplit` | ISO 시각 | `shared-progress-cache.ts` | 남긴다 | 월드로만 묶던 옛 월드 공유 원장을 메이플 ID 마다 나눴는지. 나누기는 한 번만 돈다([[ADR-101]] 결정 23) |
