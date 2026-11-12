@@ -29,6 +29,7 @@ import {
   type BossProfitStore,
   type BossProfitWeeklySubtotal } from '../../../features/boss-profit/store'
 import { queryKeys } from '../../../features/query/keys'
+import { useResetBoundaryTick } from '../../../features/query/reset-timer'
 import { useRefetchStaleOnFocus } from '../../../hooks/useRefetchStaleOnFocus'
 import { useRealtimeFetchedAt } from '../../../features/refresh/freshness'
 import { useTrackedOcids } from '../../../features/schedule-sync/use-schedule-queries'
@@ -139,9 +140,11 @@ function mockStore(overrides: Partial<화면값> = {}): void {
   const value: 화면값 = {
     tab: 'weekly',
     periodKey: CURRENT_WEEKLY,
+    followsCurrentPeriod: true,
     partyPlans: {},
     setTab: jest.fn(),
     goToCurrentPeriod: jest.fn(),
+    followCurrentPeriod: jest.fn(),
     resetToCurrentWeek: jest.fn(),
     goToPreviousPeriod: jest.fn().mockResolvedValue(undefined),
     goToNextPeriod: jest.fn().mockResolvedValue(undefined),
@@ -172,9 +175,11 @@ function mockStore(overrides: Partial<화면값> = {}): void {
   mockedStore.mockReturnValue({
     tab: value.tab,
     periodKey: value.periodKey,
+    followsCurrentPeriod: value.followsCurrentPeriod,
     partyPlans: value.partyPlans,
     setTab: value.setTab,
     goToCurrentPeriod: value.goToCurrentPeriod,
+    followCurrentPeriod: value.followCurrentPeriod,
     resetToCurrentWeek: value.resetToCurrentWeek,
     goToPreviousPeriod: value.goToPreviousPeriod,
     goToNextPeriod: value.goToNextPeriod,
@@ -369,6 +374,44 @@ describe('빈 상태', () => {
 })
 
 // 파티 인원 관리는 보스 수익과 바로 이어지는데 이 화면에서 보스 관리로 가는 길이 없었다.
+describe('초기화 시각', () => {
+  const NOT_FAKED = [
+    'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'nextTick', 'queueMicrotask',
+    'performance', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'hrtime',
+  ] as never
+
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  // 스토어의 기간은 앱을 켤 때 정해진다. 수요일에 켠 앱에서 목요일에 처음 열어도 이번 주를 봐야 한다.
+  it('처음 마운트하면 지금 기간을 따라가게 부른다', async () => {
+    const followCurrentPeriod = jest.fn()
+    mockStore({ followCurrentPeriod })
+
+    await renderScreen()
+
+    expect(followCurrentPeriod).toHaveBeenCalledTimes(1)
+  })
+
+  it('보던 중에 목요일 0시의 틱이 올라 지금 기간이 바뀌면 다시 부른다', async () => {
+    jest.useFakeTimers({ doNotFake: NOT_FAKED })
+    jest.setSystemTime(new Date('2026-11-11T23:55:00+09:00'))
+    const followCurrentPeriod = jest.fn()
+    mockStore({ followCurrentPeriod, periodKey: '2026-11-05', loadedPeriodKey: '2026-11-05' })
+    await renderScreen()
+    expect(followCurrentPeriod).toHaveBeenCalledTimes(1)
+
+    jest.setSystemTime(new Date('2026-11-12T00:30:00+09:00'))
+    await act(async () => {
+      useResetBoundaryTick.setState((state) => ({ tick: state.tick + 1 }))
+    })
+
+    expect(followCurrentPeriod).toHaveBeenCalledTimes(2)
+    expect(followCurrentPeriod.mock.calls[1][0]).toEqual(new Date('2026-11-12T00:30:00+09:00'))
+  })
+})
+
 describe('보스 관리로 가는 길', () => {
   it('헤더의 `보스 관리` 를 누르면 보스 관리 화면을 연다', async () => {
     const { getByText } = await renderScreen()

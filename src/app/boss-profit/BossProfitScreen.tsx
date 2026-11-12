@@ -29,6 +29,7 @@ import { useBossProfitRound } from '../../features/boss-profit/round-view'
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
 import { queryKeys } from '../../features/query/keys'
+import { useResetBoundaryTick } from '../../features/query/reset-timer'
 import { refreshSchedules } from '../../features/schedule-sync/schedule-query'
 import { useTrackedOcids } from '../../features/schedule-sync/use-schedule-queries'
 import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
@@ -114,6 +115,7 @@ export function BossProfitScreen(): React.JSX.Element {
     periodKey,
     setTab,
     goToCurrentPeriod,
+    followCurrentPeriod,
     resetToCurrentWeek,
     goToPreviousPeriod,
     goToNextPeriod,
@@ -201,7 +203,17 @@ export function BossProfitScreen(): React.JSX.Element {
    * 오늘로 가는 길이 있나. `isCurrentPeriod` 는 `>=` 라 지금보다 앞선 키도 참이므로, **지금 그
    * 기간을 보고 있나**는 따로 묻는다.
    */
-  const isOnCurrentPeriod = periodKey === getCurrentBossProfitPeriod(tab, now).periodKey
+  const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
+  const isOnCurrentPeriod = periodKey === currentPeriodKey
+
+  // KST 자정을 넘기면 다시 그린다. 안 그리면 아래 `currentPeriodKey` 가 지난 기간에 머문다.
+  useResetBoundaryTick()
+  // 스토어의 기간은 앱을 켤 때 정해진다. 마운트할 때와 지금 기간이 바뀔 때, 지금 기간을 보던 중이었으면 새 기간으로 옮긴다.
+  // 안 부르면 수요일에 켠 앱을 목요일에 열 때 지난주가 이번 주처럼 보인다.
+  useEffect(() => {
+    followCurrentPeriod(new Date())
+  }, [currentPeriodKey, followCurrentPeriod])
+
   // 앞으로 갈 수 있나. 지금 기간이 하한이다.
   const canGoNext = !isCurrentPeriod
 
