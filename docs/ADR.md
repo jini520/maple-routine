@@ -161,7 +161,7 @@ ADR-001+010_boss-profit_drop-records.md    결정이 바뀌어 010 을 덧붙인
 | [ADR-038](./adr/ADR-038_boss-scheduler_party.md) | 🟢 | boss-scheduler | 보스 파티 인원과 결정석 분배 비율 |
 | [ADR-039](./adr/ADR-039_boss-scheduler_card.md) | 🟢 | boss-scheduler | 보스 카드 |
 | [ADR-093+121](./adr/ADR-093+121_boss-scheduler_manage-redesign.md) | 🟢 | boss-scheduler | 보스 관리 화면 리디자인과 난이도 고르개 통일 |
-| [ADR-040](./adr/ADR-040_boss-profit_records.md) | 🟢 | boss-profit | 보스 수익 기록 |
+| [ADR-040+208](./adr/ADR-040+208_boss-profit_records.md) | 🟢 | boss-profit | 보스 수익 기록 |
 | [ADR-041](./adr/ADR-041_boss-profit_period.md) | 🟢 | boss-profit | 보스 수익 기간 |
 | [ADR-042+135+178](./adr/ADR-042+135+178_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 |
 | [ADR-043](./adr/ADR-043_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |

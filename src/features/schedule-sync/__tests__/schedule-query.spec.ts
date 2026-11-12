@@ -141,8 +141,23 @@ describe('scheduleRound', () => {
     await prefetchSchedules()
 
     expect(order).toEqual(['sync', 'record', 'dates'])
-    expect(recordMock).toHaveBeenCalledWith(['a', 'b'], results, expect.any(Date))
+    expect(recordMock).toHaveBeenCalledWith(['a', 'b'], results, expect.any(Date), expect.any(Date))
     expect(defeatDatesMock).toHaveBeenCalledWith(['a', 'b'], expect.any(Date))
+  })
+
+  // 기록하는 시각의 기간과 견줄 시각이다. 넥슨이 답한 뒤나 기록 직전에 재면, 수요일 밤에 받은 완료가 목요일 기록이 된다.
+  it('기록에 넥슨에 묻기 직전의 시각과 기록하는 시각을 함께 넘긴다', async () => {
+    const before = new Date('2026-11-11T23:59:00+09:00')
+    const after = new Date('2026-11-12T00:30:00+09:00')
+    jest.setSystemTime(before)
+    syncSchedulesMock.mockImplementation(async () => {
+      jest.setSystemTime(after)
+      return [synced('a')]
+    })
+
+    await prefetchSchedules()
+
+    expect(recordMock).toHaveBeenCalledWith(['a', 'b'], [synced('a')], after, before)
   })
 
   it('기록이나 날짜 캐기가 던져도 회차는 선다. 받은 스케줄은 이미 캐시에 들었다', async () => {
@@ -201,7 +216,7 @@ describe('syncAddedCharacters', () => {
     expect(round?.ocids).toEqual(['a', 'b', 'c'])
     expect(round?.outcomes.c?.isStale).toBe(false)
     // 새 캐릭터의 완료도 그 자리에서 기록한다.
-    expect(recordMock).toHaveBeenLastCalledWith(['c'], [synced('c')], expect.any(Date))
+    expect(recordMock).toHaveBeenLastCalledWith(['c'], [synced('c')], expect.any(Date), expect.any(Date))
     // 더한 목록이 추적 목록을 덮으므로 다음 자동 진입은 안 받는다.
     queryClient.setQueryData(queryKeys.trackedOcids(), ['a', 'b', 'c'])
     await prefetchSchedules()
