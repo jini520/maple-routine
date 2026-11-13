@@ -13,6 +13,7 @@
 
 import type { NavigatorScreenParams } from '@react-navigation/native'
 
+import type { IncomeCategoryKey } from '../lib/cashbook/categories'
 import type { NoticeKind } from '../types/notice'
 import type { BossCycle } from '../types/scheduler'
 
@@ -43,7 +44,12 @@ export type TabParamList = {
   Boss: undefined
   Appointments: undefined
   Profit: undefined
-  Cashbook: undefined
+  /**
+   * 이 분류의 새 수입 폼을 열어 둔 채로 이 탭에 보내는 파라미터. today 빠른 이동의 가계부 분류 칸이 보낸다.
+   *
+   * `Settings` 의 `openPicker` 처럼 스택에 남으므로 화면이 `setParams` 로 지운다(`CashbookScreen`).
+   */
+  Cashbook: { incomeCategory?: IncomeCategoryKey } | undefined
   Stats: undefined
   Inventory: undefined
   Utility: undefined
@@ -83,7 +89,7 @@ export type ScheduleSubsParamList = {
 
 export type LedgerSubsParamList = {
   Profit: undefined
-  Cashbook: undefined
+  Cashbook: { incomeCategory?: IncomeCategoryKey } | undefined
   Stats: undefined
   Inventory: undefined
 }

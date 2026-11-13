@@ -1,13 +1,15 @@
-// 빠른 이동 위젯. 이 파일이 지키는 것 셋.
+// 빠른 이동 위젯. 이 파일이 지키는 것 넷.
 // ① 칸은 구성 차례대로 다섯씩 줄을 이루고, 칸 아래는 짧은 이름 · 접근성 이름은 전체 이름이다
 // ② 탭 화면 칸은 그 탭을 열고, 하위 페이지 칸은 스택에 민다. 칸마다 갈 곳이 달라 타일 전체는 누를 수 없다
 // ③ 제목 줄의 `편집` 이 편집 시트를 연다
+// ④ 가계부 분류 칸은 그 분류를 넘겨 가계부 탭을 연다. 서버 갈래 표에 그 분류가 없으면 칸을 그리지 않는다
 import type { ReactNode } from 'react'
-import { fireEvent } from '@testing-library/react-native'
+import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay } from '../../../../components/__tests__/render-atom'
 import { useOpenTab } from '../../../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../../../hooks/useScreenNavigation'
+import { cashbookCategoriesTable } from '../../../../lib/cashbook/categories'
 import type { QuickLinksConfig } from '../../../../types/quick-links'
 import { QuickLinksWidget } from '../QuickLinksWidget'
 import { 뷰모델 } from './widget-fixture'
@@ -88,5 +90,33 @@ describe('누르기', () => {
     await fireEvent.press(view.getByRole('button', { name: '빠른 이동 편집' }))
 
     expect(await view.findByTestId('quick-links-sheet')).toBeTruthy()
+  })
+})
+
+describe('가계부 분류 칸', () => {
+  // 앱에 든 테스트 데이터는 옛 표라 `사냥 전리품 판매` 줄이 없다.
+  const 옛표 = cashbookCategoriesTable.get()
+  afterEach(() => cashbookCategoriesTable.set(옛표))
+
+  function 전리품판매를더한표(): typeof 옛표 {
+    const 조각 = 옛표.categories.find((each) => each.key === 'sol_erda_fragment')!
+    return { ...옛표, categories: [...옛표.categories, { ...조각, key: 'hunt_loot_sale', name: '사냥 전리품 판매' }] }
+  }
+
+  it('누르면 그 분류를 넘겨 가계부 탭을 연다', async () => {
+    const view = await 위젯({ rows: 1, ids: ['income-hunting'] })
+
+    await fireEvent.press(view.getByRole('button', { name: '수입 사냥' }))
+
+    expect(openTab).toHaveBeenCalledWith('Cashbook', { incomeCategory: 'hunting' })
+  })
+
+  it('서버 갈래 표에 없는 분류의 칸은 그리지 않고, 표에 줄이 들어오면 그 자리에 다시 선다', async () => {
+    const view = await 위젯({ rows: 1, ids: ['profit', 'income-hunt-loot-sale', 'stats'] })
+    expect(view.getByTestId('quick-links-row-0')).toHaveTextContent(/^보스 수입통계$/)
+
+    await act(async () => cashbookCategoriesTable.set(전리품판매를더한표()))
+
+    expect(view.getByTestId('quick-links-row-0')).toHaveTextContent(/^보스 수입전리품 판매통계$/)
   })
 })

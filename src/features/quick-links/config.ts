@@ -22,14 +22,19 @@ export const QUICK_LINK_NAMES: Readonly<Record<QuickLinkId, QuickLinkName>> = {
   profit: { name: '보스 수입', short: '보스 수입' },
   cashbook: { name: '가계부', short: '가계부' },
   stats: { name: '통계', short: '통계' },
+  inventory: { name: '인벤토리', short: '인벤토리' },
   utility: { name: '유틸리티', short: '유틸리티' },
+  'income-hunting': { name: '수입 사냥', short: '사냥' },
+  'income-hunt-loot-sale': { name: '수입 사냥 전리품 판매', short: '전리품 판매' },
   'boss-manage': { name: '보스 관리', short: '보스 관리' },
   characters: { name: '캐릭터 관리', short: '캐릭터 관리' },
+  accounts: { name: '계정 관리', short: '계정 관리' },
   'item-split': { name: '판매 분배금 계산기', short: '분배금 계산' },
   'boss-profit-calculator': { name: '주간 보스 수입 계산기', short: '보스 계산기' },
   'mvp-grade': { name: 'MVP 등급', short: 'MVP 등급' },
   notices: { name: '공지 목록', short: '공지' },
   'notice-alerts': { name: '알림 설정', short: '알림 설정' },
+  theme: { name: '테마', short: '테마' },
   'app-settings': { name: '설정', short: '설정' },
 }
 
@@ -40,10 +45,11 @@ export interface QuickLinkGroup {
 
 /** 편집 시트 본문의 카드 차례 */
 export const QUICK_LINK_GROUPS: readonly QuickLinkGroup[] = [
-  { label: '탭', ids: ['appointments', 'content', 'boss', 'profit', 'cashbook', 'stats', 'utility'] },
-  { label: '관리', ids: ['boss-manage', 'characters'] },
+  { label: '탭', ids: ['appointments', 'content', 'boss', 'profit', 'cashbook', 'stats', 'inventory', 'utility'] },
+  { label: '가계부 수입', ids: ['income-hunting', 'income-hunt-loot-sale'] },
+  { label: '관리', ids: ['boss-manage', 'characters', 'accounts'] },
   { label: '유틸리티 도구', ids: ['item-split', 'boss-profit-calculator'] },
-  { label: '더보기', ids: ['mvp-grade', 'notices', 'notice-alerts', 'app-settings'] },
+  { label: '더보기', ids: ['mvp-grade', 'notices', 'notice-alerts', 'theme', 'app-settings'] },
 ]
 
 export const DEFAULT_QUICK_LINKS: QuickLinksConfig = {
@@ -83,4 +89,13 @@ export function toggleQuickLink(config: QuickLinksConfig, id: QuickLinkId): Quic
   if (config.ids.includes(id)) return { ...config, ids: config.ids.filter((one) => one !== id) }
   if (config.ids.length >= capacityOf(config.rows)) return config
   return { ...config, ids: [...config.ids, id] }
+}
+
+/**
+ * 지금 열 수 있는 칸만 남긴 구성. 칸의 차례와 줄 수는 그대로다.
+ *
+ * 저장된 구성은 바꾸지 않는다. 기기의 서버 표에 줄이 들어오면 숨었던 칸이 그 자리에 다시 서야 한다.
+ */
+export function onlyOpenable(config: QuickLinksConfig, canOpen: (id: QuickLinkId) => boolean): QuickLinksConfig {
+  return { ...config, ids: config.ids.filter(canOpen) }
 }

@@ -187,7 +187,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-056+072+164+182](./adr/ADR-056+072+164+182_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |
 | [ADR-057+125+198](./adr/ADR-057+125+198_notice_feed.md) | ⚪ | notice | 운영자 공지와 넥슨 공지 |
 | [ADR-058+087+176+179](./adr/ADR-058+087+176+179_today_widgets.md) | 🟢 | today | today 위젯 격자 |
-| [ADR-089+218](./adr/ADR-089+218_today_quick-links.md) | ⚪ | today | today 빠른 이동 · 가계부 분류 칸 |
+| [ADR-089+218](./adr/ADR-089+218_today_quick-links.md) | 🟢 | today | today 빠른 이동 · 가계부 분류 칸 |
 | [ADR-059+136](./adr/ADR-059+136_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
 | [ADR-060+073+079+085+088+107+109+130+133](./adr/ADR-060+073+079+085+088+107+109+130+133_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
 | [ADR-061+149](./adr/ADR-061+149_design-system_states.md) | 🟢 | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 · 토스트 표시 |
