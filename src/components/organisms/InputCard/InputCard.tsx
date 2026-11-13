@@ -949,9 +949,9 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                   aria-label={`‘${draft.trim()}’ 직접 입력`}
                   onPress={() => give(props.onConfirm)}
                   style={{ height: SUGGESTION_ROW_HEIGHT }}
-                  className="flex-row items-center gap-2.5 rounded-[10px] px-3 active:bg-card-inset"
+                  // 그림이 없는 줄이라 그림 자리를 비워 두지 않고 글자를 왼쪽에 붙인다.
+                  className="flex-row items-center rounded-[10px] px-3 active:bg-card-inset"
                 >
-                  <View style={{ width: 24, height: 24 }} />
                   <Text numberOfLines={1} className="shrink text-sm text-text">
                     {`‘${draft.trim()}’ 직접 입력`}
                   </Text>
