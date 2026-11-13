@@ -473,6 +473,19 @@ describe('categoryTotalsBetween', () => {
       expect(income_.find((total) => total.key === 'etc')?.parts).toEqual([{ key: 'unnamed', name: '이름 없음', meso: 30 }])
     })
 
+    // 인벤토리에서 판 기록은 이름 칸이 비어 있어 아이템 표의 이름을 친 이름처럼 쓴다. 같은 이름을 친 판매와 한 줄이다.
+    it('이름 칸이 빈 아이템 판매는 아이템 표의 이름으로 묶는다', () => {
+      const byDate = {
+        '2026-09-24': [
+          income(null, '', { category: 'item_sale', item: null, itemKey: 'soul_ether_1', mesoAmount: 70 }),
+          income(null, '', { category: 'item_sale', item: '1단계 소울 에테르', mesoAmount: 30 }),
+        ],
+      }
+      expect(categoryTotalsBetween(byDate, WEEK, 'income').find((total) => total.key === 'item_sale')?.parts).toEqual([
+        { key: 'name:1단계 소울 에테르', name: '1단계 소울 에테르', meso: 100 },
+      ])
+    })
+
     it('강화는 장비별이고 값을 못 매긴 건은 금액에 없다', () => {
       const byDate = {
         '2026-09-24': [

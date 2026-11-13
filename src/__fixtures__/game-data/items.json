@@ -1,0 +1,4702 @@
+{
+  "updatedAt": "2026-11-13T01:34:00.000Z",
+  "items": [
+    {
+      "key": "soul_ether_1",
+      "name": "1단계 소울 에테르",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "292c4620-2422-4ec2-9177-b462edad4945"
+    },
+    {
+      "key": "soul_ether_2",
+      "name": "2단계 소울 에테르",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "622220bc-7ecf-4bfc-b6ee-0a82b9501532"
+    },
+    {
+      "key": "soul_ether_3",
+      "name": "3단계 소울 에테르",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "464d55eb-f782-4653-8738-19f52fc93167"
+    },
+    {
+      "key": "soul_ether_4",
+      "name": "4단계 소울 에테르",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "1f4879bd-d1a0-4e2f-970c-db5511941b03"
+    },
+    {
+      "key": "guardian_angel_ring",
+      "name": "가디언 엔젤 링",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "6cfc15e7-c598-4a43-8aa1-783ccbad2c46"
+    },
+    {
+      "key": "guardians_meister_immortal_ring",
+      "name": "가디언의 마이스터 임모탈 링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "a2cb42b3-c8d3-4a7b-be50-d6e309f540f3"
+    },
+    {
+      "key": "longing_eternel_armor_box",
+      "name": "갈망의 에테르넬 방어구 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "97bd5f79-dc99-4f89-b01e-da9be6f980cb"
+    },
+    {
+      "key": "giant_terror",
+      "name": "거대한 공포",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "2819794d-ab6d-491f-b688-ddaa7bf3a071"
+    },
+    {
+      "key": "mirror_world_core_gemstone",
+      "name": "거울세계의 코어 젬스톤",
+      "kind": "consumable",
+      "category": "core_gemstone",
+      "iconAssetId": "679074fa-a2e5-4299-9e77-16748f5c8b88"
+    },
+    {
+      "key": "bond_ring",
+      "name": "결속의 반지",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "072fe635-176c-4dfd-8ff5-51b2185c0bed"
+    },
+    {
+      "key": "noble_ifias_ring",
+      "name": "고귀한 이피아의 반지",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "74e9ea46-bafc-4804-a52b-831fa29bb073"
+    },
+    {
+      "key": "ancient_eternel_armor_box",
+      "name": "고대의 에테르넬 방어구 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "acbadfe9-264a-4069-8b35-9cf5f05e5864"
+    },
+    {
+      "key": "source_of_suffering",
+      "name": "고통의 근원",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "fb62fe61-afdc-4f51-ac8a-0410ca2d635f"
+    },
+    {
+      "key": "golden_clover_belt",
+      "name": "골든 클로버 벨트",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "9277f9e8-048b-41da-8002-260e0d89c4fb"
+    },
+    {
+      "key": "madness_eternel_armor_box",
+      "name": "광기의 에테르넬 방어구 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "ac5a7058-b1b6-4720-8c0d-52b603f5c732"
+    },
+    {
+      "key": "gumihos_spirit_ring",
+      "name": "구미호의 혼령 반지",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "12481643-c2cd-4396-a26b-090c6046e7c0"
+    },
+    {
+      "key": "starving_crimson_wraith",
+      "name": "굶주리는 핏빛 원혼",
+      "kind": "accessory",
+      "category": "radiance_boss_set",
+      "iconAssetId": "3ba5e93c-5abc-4bbf-8116-3e0ee4303764"
+    },
+    {
+      "key": "grand_authentic_symbol_geardrak_coupon",
+      "name": "그랜드 어센틱심볼 : 기어드락 교환권",
+      "kind": "consumable",
+      "category": "symbol_coupon",
+      "iconAssetId": "81f04c6c-cdf9-4fcc-814e-51dc494af088"
+    },
+    {
+      "key": "grand_authentic_symbol_tallahart_coupon",
+      "name": "그랜드 어센틱심볼 : 탈라하트 교환권",
+      "kind": "consumable",
+      "category": "symbol_coupon",
+      "iconAssetId": "bbf72500-9731-4ec5-8fa9-7baa9b0480ef"
+    },
+    {
+      "key": "greed_pendant",
+      "name": "그리드 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "f895473d-b031-404d-97eb-a2e1d8b3ce13"
+    },
+    {
+      "key": "green_soul_ring",
+      "name": "그린 소울링",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "04779eb7-1826-4792-a72f-aedec5ff58b3"
+    },
+    {
+      "key": "force_shield_of_extremity",
+      "name": "극한의 포스실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "2ec5fb86-875d-466a-85ad-5d916fb82e58"
+    },
+    {
+      "key": "whisper_of_origin",
+      "name": "근원의 속삭임",
+      "kind": "accessory",
+      "category": "radiance_boss_set",
+      "iconAssetId": "58f0e3b1-1839-4018-9aa2-70e2bd4688ba"
+    },
+    {
+      "key": "glory_lucent_wings",
+      "name": "글로리 매직윙",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "362b15ca-662f-4fa3-9bec-be8e718c1d3e"
+    },
+    {
+      "key": "supreme_glorion_ring",
+      "name": "글로리온 링 : 슈프림",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "2fda58c2-e312-4b9c-bcf2-cac529befc2a"
+    },
+    {
+      "key": "other_ring",
+      "name": "기타",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "29ad90e9-bb23-4140-8034-2bc6c60a4adc"
+    },
+    {
+      "key": "swift_rake",
+      "name": "날렵한 갈퀴",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "f287d457-5577-4e0a-8a98-36b35a582411"
+    },
+    {
+      "key": "lingering_kalos_will",
+      "name": "남겨진 칼로스의 의지",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "61ecd1eb-6434-4e50-95f6-5411e3edbe55"
+    },
+    {
+      "key": "lingering_kalos_will_fragment",
+      "name": "남겨진 칼로스의 의지 조각",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "f2180295-702a-45fb-90a3-198e9680c91c"
+    },
+    {
+      "key": "noble_bracelet",
+      "name": "노블 브레이슬릿",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "04cd5134-48f4-4a84-9cad-18a9d7475348"
+    },
+    {
+      "key": "nox_magic_quill",
+      "name": "녹스 마법깃펜",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "2f763c2a-ffa5-4971-af96-4baded7e9f86"
+    },
+    {
+      "key": "green_boss_ring_box",
+      "name": "녹옥의 보스 반지 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "49dbddae-99dc-4d8a-b823-c5542297a633"
+    },
+    {
+      "key": "grand_boss_medal_of_honor",
+      "name": "대형 보스 명예의 훈장",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "36fa30a1-80e2-4081-86e5-4eeeeb79e2c9"
+    },
+    {
+      "key": "carte_finale",
+      "name": "데르니에 카르트",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "c22a808d-ebe0-44c8-ace5-60cba8c77a1e"
+    },
+    {
+      "key": "destiny_guard",
+      "name": "데스티니 가즈",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "375bdde7-4dd5-42d9-a8ba-71892f76665f"
+    },
+    {
+      "key": "destiny_dagger",
+      "name": "데스티니 대거",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "39351057-4aca-49f0-8245-2ffffb866dda"
+    },
+    {
+      "key": "destiny_desperado",
+      "name": "데스티니 데스페라도",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "07b8fdc1-e31f-4185-834f-ade7618f784c"
+    },
+    {
+      "key": "destiny_dual_bowgun",
+      "name": "데스티니 듀얼보우건",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "ec898f40-e073-4b27-a352-c54899346339"
+    },
+    {
+      "key": "destiny_lazuli",
+      "name": "데스티니 라즐리",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "21805b2d-9e27-4634-93d8-29a51d693379"
+    },
+    {
+      "key": "destiny_lapis",
+      "name": "데스티니 라피스",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "c9b91c94-40bc-40ba-b664-9a4d0561749a"
+    },
+    {
+      "key": "destiny_magic_gauntlet",
+      "name": "데스티니 매직 건틀렛",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "f5976a9a-052e-48fb-9b6c-3f8ff02ed902"
+    },
+    {
+      "key": "destiny_bow",
+      "name": "데스티니 보우",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "6142ef66-d43c-4456-9945-8ce575a35677"
+    },
+    {
+      "key": "destiny_breath_shooter",
+      "name": "데스티니 브레스 슈터",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "f2b70fd3-62ec-4a1e-84e1-df16d035122e"
+    },
+    {
+      "key": "destiny_blast_cannon",
+      "name": "데스티니 블래스트캐논",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "22d08313-2fbd-4713-8ec9-83852909c50d"
+    },
+    {
+      "key": "destiny_shining_rod",
+      "name": "데스티니 샤이닝로드",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "afdd49ee-3d58-40fb-8154-31a043b49ec0"
+    },
+    {
+      "key": "destiny_saber",
+      "name": "데스티니 세이버",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "d9909e88-8bbb-4652-a79c-c12559a760ca"
+    },
+    {
+      "key": "destiny_soul_shooter",
+      "name": "데스티니 소울슈터",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "7ce397d8-3853-4cd0-b37f-f235ab88781d"
+    },
+    {
+      "key": "destiny_staff",
+      "name": "데스티니 스태프",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "63e00755-18d7-4a74-a913-3e71569c7033"
+    },
+    {
+      "key": "destiny_spear",
+      "name": "데스티니 스피어",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "390793a5-d19d-4856-9472-2c845b133ccf"
+    },
+    {
+      "key": "destiny_energy_chain",
+      "name": "데스티니 에너지체인",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "c32cfbbd-9502-4ef9-a121-d23c7ade8407"
+    },
+    {
+      "key": "destiny_ancient_bow",
+      "name": "데스티니 에인션트 보우",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "1615a9f8-2fa3-4f12-8419-638734fdffb4"
+    },
+    {
+      "key": "destiny_axe",
+      "name": "데스티니 엑스",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "9e8e5335-153d-4ad1-89f8-19b482adf79a"
+    },
+    {
+      "key": "destiny_ellaha",
+      "name": "데스티니 엘라하",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "4af173fa-c2a8-4337-b25b-c2a409fa7222"
+    },
+    {
+      "key": "destiny_wand",
+      "name": "데스티니 완드",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "50e8f490-113b-4c8c-b463-cf10090185b3"
+    },
+    {
+      "key": "destiny_chakram",
+      "name": "데스티니 차크람",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "2d5bf047-55dd-4b8c-af77-2325b185ebc8"
+    },
+    {
+      "key": "destiny_chain",
+      "name": "데스티니 체인",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "1c473ecc-1897-4b05-99ea-61340ede2359"
+    },
+    {
+      "key": "destiny_ultra_sword",
+      "name": "데스티니 초극검",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "c07f43a9-f3e9-4772-88a4-576292dc36c6"
+    },
+    {
+      "key": "destiny_transcendent_fan",
+      "name": "데스티니 초월선",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "8aaaa897-d7da-4b35-85b8-47e58cc53682"
+    },
+    {
+      "key": "destiny_cane",
+      "name": "데스티니 케인",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "8a060885-b9e9-4ceb-a41d-530af53b1b5c"
+    },
+    {
+      "key": "destiny_crossbow",
+      "name": "데스티니 크로스보우",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "90e936a1-3a0c-4593-9e67-2217b953332e"
+    },
+    {
+      "key": "destiny_knuckle",
+      "name": "데스티니 클로",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "c6213922-7e07-4ffa-8a4d-19211eabe85f"
+    },
+    {
+      "key": "destiny_two_handed_sword",
+      "name": "데스티니 투핸드소드",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "a9c970fb-27e0-44a8-ae52-ef1095b289ce"
+    },
+    {
+      "key": "destiny_two_handed_axe",
+      "name": "데스티니 투핸드엑스",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "27509ce4-bf01-4fa0-a3e4-cb0a0ac11c44"
+    },
+    {
+      "key": "destiny_two_handed_hammer",
+      "name": "데스티니 투핸드해머",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "3759dfef-0ff8-4980-a344-c5f126368a06"
+    },
+    {
+      "key": "destiny_tuner",
+      "name": "데스티니 튜너",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "630513a9-e5cb-41d5-8dc0-5aac0bc0cbda"
+    },
+    {
+      "key": "destiny_polearm",
+      "name": "데스티니 폴암",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "a65d65c7-9319-4c2e-9b8d-577088717b51"
+    },
+    {
+      "key": "destiny_pistol",
+      "name": "데스티니 피스톨",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "4b4e32f3-95c2-47d8-a288-7b5e3dd219fc"
+    },
+    {
+      "key": "destiny_hammer",
+      "name": "데스티니 해머",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "4e3c174f-314f-4288-8e4e-fab022b8f2fe"
+    },
+    {
+      "key": "destiny_esp_limiter",
+      "name": "데스티니 ESP리미터",
+      "kind": "equipment",
+      "category": "destiny_weapon",
+      "iconAssetId": "d17f8a5a-d71c-4438-a528-dc382d318922"
+    },
+    {
+      "key": "dea_sidus_earring",
+      "name": "데아 시두스 이어링",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "c71e8de4-4e77-4440-968d-a91e6ef6eb5d"
+    },
+    {
+      "key": "deimos_darkness_shield",
+      "name": "데이모스 다크니스 실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "992a6033-be3b-43b9-b885-1339f2288f27"
+    },
+    {
+      "key": "deimos_sage_shield",
+      "name": "데이모스 세이지 실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "9e12501e-e72c-4b48-94e3-2a16c216aa14"
+    },
+    {
+      "key": "daybreak_pendant",
+      "name": "데이브레이크 펜던트",
+      "kind": "accessory",
+      "category": "dawn_boss_set",
+      "iconAssetId": "4928cd0f-61cb-491c-b6ee-39dc41983369"
+    },
+    {
+      "key": "dominator_pendant",
+      "name": "도미네이터 펜던트",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "9d151b0e-6835-485f-9212-2f4376782ede"
+    },
+    {
+      "key": "tangled_beast_link",
+      "name": "뒤엉킨 흉수의 고리",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "11adbbf3-bdb2-4794-9773-f5c04c598791"
+    },
+    {
+      "key": "tangled_beast_link_fragment",
+      "name": "뒤엉킨 흉수의 고리 조각",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "e8876ac4-3216-43df-9555-21fa0a8cbe68"
+    },
+    {
+      "key": "twisted_longing_shard",
+      "name": "뒤틀린 갈망의 편린",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "d1f4c403-c012-4d51-86f2-00d12cd307a6"
+    },
+    {
+      "key": "durability_ring",
+      "name": "듀라빌리티 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "044b60b1-747e-40f6-9103-5fe39c6fe57b"
+    },
+    {
+      "key": "dragon_masters_legacy",
+      "name": "드래곤마스터의 유산",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "97679353-7faa-40a0-bbae-98eb8dde8392"
+    },
+    {
+      "key": "strawberry_earrings",
+      "name": "딸기 귀고리",
+      "kind": "accessory",
+      "category": "earring",
+      "iconAssetId": "3b08ade8-a342-4cd7-bd9e-e2db85c9c57c"
+    },
+    {
+      "key": "red_magician_meister_symbol",
+      "name": "레드 매지션 마이스터 심볼",
+      "kind": "accessory",
+      "category": "face_accessory",
+      "iconAssetId": "4809bde6-8f62-4d9b-82e6-8e5955e86a65"
+    },
+    {
+      "key": "red_thief_meister_symbol",
+      "name": "레드 시프 마이스터 심볼",
+      "kind": "accessory",
+      "category": "face_accessory",
+      "iconAssetId": "4809bde6-8f62-4d9b-82e6-8e5955e86a65"
+    },
+    {
+      "key": "red_archer_meister_symbol",
+      "name": "레드 아처 마이스터 심볼",
+      "kind": "accessory",
+      "category": "face_accessory",
+      "iconAssetId": "4809bde6-8f62-4d9b-82e6-8e5955e86a65"
+    },
+    {
+      "key": "red_warrior_meister_symbol",
+      "name": "레드 워리어 마이스터 심볼",
+      "kind": "accessory",
+      "category": "face_accessory",
+      "iconAssetId": "4809bde6-8f62-4d9b-82e6-8e5955e86a65"
+    },
+    {
+      "key": "red_pirate_meister_symbol",
+      "name": "레드 파이렛 마이스터 심볼",
+      "kind": "accessory",
+      "category": "face_accessory",
+      "iconAssetId": "4809bde6-8f62-4d9b-82e6-8e5955e86a65"
+    },
+    {
+      "key": "level_puff_d_ring",
+      "name": "레벨퍼프 - D링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "201a106c-c94a-462e-89de-1e9793711962"
+    },
+    {
+      "key": "level_puff_i_ring",
+      "name": "레벨퍼프 - I링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "201a106c-c94a-462e-89de-1e9793711962"
+    },
+    {
+      "key": "level_puff_l_ring",
+      "name": "레벨퍼프 - L링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "201a106c-c94a-462e-89de-1e9793711962"
+    },
+    {
+      "key": "level_puff_s_ring",
+      "name": "레벨퍼프 - S링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "201a106c-c94a-462e-89de-1e9793711962"
+    },
+    {
+      "key": "royal_black_metal_shoulder",
+      "name": "로얄 블랙메탈 숄더",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "06d1e336-b3b1-47fa-af40-bb5910fdc917"
+    },
+    {
+      "key": "ruin_force_shield",
+      "name": "루인 포스실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "337a2ac7-fb89-4c35-a336-2a97446bbe8a"
+    },
+    {
+      "key": "loose_control_machine_mark",
+      "name": "루즈 컨트롤 머신 마크",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "052544e1-53eb-4292-9c2c-3d19fcb72139"
+    },
+    {
+      "key": "limit_ring",
+      "name": "리밋 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "29ad90e9-bb23-4140-8034-2bc6c60a4adc"
+    },
+    {
+      "key": "risk_taker_ring",
+      "name": "리스크테이커 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "d80be9f2-b975-4fe8-a495-528233f3302a"
+    },
+    {
+      "key": "wrist_armor",
+      "name": "리스트 아머",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "eb838d2a-3889-41d3-9995-c4b24bd476e3"
+    },
+    {
+      "key": "restraint_ring",
+      "name": "리스트레인트 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "9f293c6c-b152-4bfa-ad98-447e55d89761"
+    },
+    {
+      "key": "recover_defense_ring",
+      "name": "리커버디펜스 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "dffa9cc9-cb73-4ab2-9b8b-64a3219db440"
+    },
+    {
+      "key": "recover_stance_ring",
+      "name": "리커버스탠스 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "530f7204-870f-4a4b-8fa8-6a5a0b6179d5"
+    },
+    {
+      "key": "lithium_heart",
+      "name": "리튬 하트",
+      "kind": "equipment",
+      "category": "mechanical_heart",
+      "iconAssetId": "5e60c9e5-ccf1-4fbd-ac1f-9acd92bc27e3"
+    },
+    {
+      "key": "reflective_ring",
+      "name": "리플렉티브 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "68768bb6-3637-4135-b9d4-aa150f69c8bb"
+    },
+    {
+      "key": "ring_of_sum",
+      "name": "링 오브 썸",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "21560880-4a65-4de7-881a-7ec547b1e8d2"
+    },
+    {
+      "key": "mana_cut_ring",
+      "name": "마나컷 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "bf249ba2-1ada-436b-91e5-59310edd33c6"
+    },
+    {
+      "key": "magic_eyepatch",
+      "name": "마력이 깃든 안대",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "ea9b302f-bfd3-4a76-ab4e-2118151efa98"
+    },
+    {
+      "key": "master_abandon_set_selection_coupon",
+      "name": "마스터 어밴든 세트 선택권",
+      "kind": "cash",
+      "category": "cash",
+      "iconAssetId": "344062f1-289a-4fec-8967-4e93e95c1133"
+    },
+    {
+      "key": "meister_shoulder",
+      "name": "마이스터 숄더",
+      "kind": "accessory",
+      "category": "shoulder_accessory",
+      "iconAssetId": "8e059733-41a8-4ba5-876c-43fa3c52f0f7"
+    },
+    {
+      "key": "meister_almighty_ring",
+      "name": "마이스터 올마이티링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "fe9b175d-26f4-471b-99c6-da363b3a83b8"
+    },
+    {
+      "key": "meister_ear_ring",
+      "name": "마이스터 이어링",
+      "kind": "accessory",
+      "category": "earring",
+      "iconAssetId": "043b86d7-17ff-46de-9342-622c8815096a"
+    },
+    {
+      "key": "meister_ring",
+      "name": "마이스터링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "01aa36d3-b3b8-49f2-b00a-e6aca82574a7"
+    },
+    {
+      "key": "magical_weapon_scroll_voucher",
+      "name": "매지컬 무기 주문서 교환권",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "345b4598-875b-434e-a442-efd8031de5c9"
+    },
+    {
+      "key": "mechanator_pendant",
+      "name": "매커네이터 펜던트",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "75c9b4ea-c026-4dbf-a89b-e06e236840e1"
+    },
+    {
+      "key": "maximizer_ball",
+      "name": "맥시마이즈 볼",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "f8ffff7d-2503-4351-8bb7-7b6521b0febe"
+    },
+    {
+      "key": "oath_eternel_armor_box",
+      "name": "맹세의 에테르넬 방어구 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "cd31c0a1-e4e6-492e-8e48-eb4aaa15d807"
+    },
+    {
+      "key": "memento_gold_cube",
+      "name": "메멘토 골드 큐브",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "68b5d8f2-7827-4b14-9aaf-0fef1302d4b1"
+    },
+    {
+      "key": "memento_bronze_additional_cube",
+      "name": "메멘토 브론즈 에디셔널 큐브",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "8baead84-abd4-45bc-87f8-2526942c6c2f"
+    },
+    {
+      "key": "memento_silver_cube",
+      "name": "메멘토 실버 큐브",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "5323d55b-2364-4d6c-9274-30139ad4119b"
+    },
+    {
+      "key": "meirin_upper_sol_erda_fragment_box",
+      "name": "메이린의 상급 솔 에르다 조각 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "56418068-175a-49eb-933c-6417e1a95e9e"
+    },
+    {
+      "key": "meirin_eternel_armor_box",
+      "name": "메이린의 에테르넬 방어구 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "5e392c92-649c-425f-a303-fc389d6f3056"
+    },
+    {
+      "key": "meirin_pitch_black_accessory_box",
+      "name": "메이린의 칠흑 장신구 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "96f97b81-cace-4d48-a731-5cd43a80ecd0"
+    },
+    {
+      "key": "meirin_lower_sol_erda_fragment_box",
+      "name": "메이린의 하급 솔 에르다 조각 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "56418068-175a-49eb-933c-6417e1a95e9e"
+    },
+    {
+      "key": "maple_treasure_soul_shield",
+      "name": "메이플 트레져 소울실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "be977044-3908-47f1-9a75-a8584428849d"
+    },
+    {
+      "key": "maple_treasure_force_shield",
+      "name": "메이플 트레져 포스실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "93c1d6a3-d178-497d-af5a-3be849e4265f"
+    },
+    {
+      "key": "metal_silver_earrings",
+      "name": "메탈실버 이어링",
+      "kind": "accessory",
+      "category": "earring",
+      "iconAssetId": "b31da2ac-e0d9-4443-b8f4-b2f43feffd1b"
+    },
+    {
+      "key": "metal_heart_earrings",
+      "name": "메탈하트 이어링",
+      "kind": "accessory",
+      "category": "earring",
+      "iconAssetId": "8c7a11d9-5224-43f7-80d9-30f7aae876ee"
+    },
+    {
+      "key": "dreamy_belt",
+      "name": "몽환의 벨트",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "ab63d30d-86d4-4fbd-9bfc-2807d9b6d681"
+    },
+    {
+      "key": "murmurs_lord_ring",
+      "name": "무르무르의 로드 링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "a620d114-ae46-4cb0-858d-adebc7da746f"
+    },
+    {
+      "key": "murmurs_mage_ring",
+      "name": "무르무르의 메이지 링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "d23e2ea8-9518-48b9-b74b-f0abf678d3b5"
+    },
+    {
+      "key": "infinite_magic_arrows",
+      "name": "무한의 마법 화살",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "2b092c00-9324-4026-b8d9-35419562769e"
+    },
+    {
+      "key": "mitras_rage_bowman",
+      "name": "미트라의 분노 : 궁수",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "a14cbac7-d44f-4b28-9a54-e5e64235fc92"
+    },
+    {
+      "key": "mitras_rage_thief",
+      "name": "미트라의 분노 : 도적",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "c9380a82-cdbd-4713-b740-94836c1dac5e"
+    },
+    {
+      "key": "mitras_rage_magician",
+      "name": "미트라의 분노 : 마법사",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "a493ebf7-7cd5-49b6-8f57-07b5a9af30d7"
+    },
+    {
+      "key": "mitras_rage_warrior",
+      "name": "미트라의 분노 : 전사",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "14e4827f-868e-4670-95c1-8adf98cc7777"
+    },
+    {
+      "key": "mitras_rage_pirate",
+      "name": "미트라의 분노 : 해적",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "e14182bb-8ae7-4ef4-82c5-f16e6a204742"
+    },
+    {
+      "key": "mitra_rage_selection_box",
+      "name": "미트라의 분노 선택 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "6ccfd468-5eed-4f52-92a1-2f38a7bcfe9f"
+    },
+    {
+      "key": "mitra_core_gemstone",
+      "name": "미트라의 코어 젬스톤",
+      "kind": "consumable",
+      "category": "core_gemstone",
+      "iconAssetId": "24e6387d-6062-43a4-9b1b-4bf136de16c8"
+    },
+    {
+      "key": "white_gold_book_epode",
+      "name": "백금의 서 <종장>",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "9bd1b28b-e19f-41d0-92d2-024a5755d76f"
+    },
+    {
+      "key": "white_boss_ring_box",
+      "name": "백옥의 보스 반지 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "fcee3c43-01df-4e1c-8300-89bc8588d86e"
+    },
+    {
+      "key": "badge_of_donarr",
+      "name": "뱃지 오브 도나르",
+      "kind": "accessory",
+      "category": "badge",
+      "iconAssetId": "fd240b74-c63b-4b05-a69c-53924c9ca83c"
+    },
+    {
+      "key": "badge_of_mano",
+      "name": "뱃지 오브 마노",
+      "kind": "accessory",
+      "category": "badge",
+      "iconAssetId": "c8b5ede3-8c34-4a88-ae7e-61742658edb6"
+    },
+    {
+      "key": "badge_of_wodan",
+      "name": "뱃지 오브 보탄",
+      "kind": "accessory",
+      "category": "badge",
+      "iconAssetId": "39602639-20da-4e55-b9c1-0d4e839c6ed6"
+    },
+    {
+      "key": "badge_of_saturnus",
+      "name": "뱃지 오브 사투르누스",
+      "kind": "accessory",
+      "category": "badge",
+      "iconAssetId": "7fc0c170-1668-4b60-99d7-516613ffed3e"
+    },
+    {
+      "key": "badge_of_junna",
+      "name": "뱃지 오브 준나",
+      "kind": "accessory",
+      "category": "badge",
+      "iconAssetId": "3d15df2a-6af8-4210-82a3-7d0cd0666bd8"
+    },
+    {
+      "key": "badge_of_chiu",
+      "name": "뱃지 오브 치우",
+      "kind": "accessory",
+      "category": "badge",
+      "iconAssetId": "556775fc-c958-4570-9953-0e3614591ad0"
+    },
+    {
+      "key": "badge_of_pruba",
+      "name": "뱃지 오브 프루바",
+      "kind": "accessory",
+      "category": "badge",
+      "iconAssetId": "7c0e52c8-1dea-4e09-9ef6-46d386bbffa8"
+    },
+    {
+      "key": "burden_lift_ring",
+      "name": "버든리프트 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "5922c7af-ec4b-4483-810e-e61ee1f9a303"
+    },
+    {
+      "key": "berserkers_meister_immortal_ring",
+      "name": "버서커의 마이스터 임모탈 링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "f7e0d54b-d6fd-42d8-b332-3bde227ca209"
+    },
+    {
+      "key": "berserk_chain",
+      "name": "버서크 체인",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "f3c81920-ff17-4647-8550-8829fcdb2db5"
+    },
+    {
+      "key": "virtues_medallion",
+      "name": "버츄스 메달",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "58a3ffac-cf51-4d77-aac2-02e6132e53b2"
+    },
+    {
+      "key": "bears_green_pendant",
+      "name": "베어스 그린 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "99b3f878-4813-4907-ae7f-418cd08c2b41"
+    },
+    {
+      "key": "bears_red_pendant",
+      "name": "베어스 레드 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "8f16fcb8-489a-4404-b692-d658b2495e97"
+    },
+    {
+      "key": "bears_purple_pendant",
+      "name": "베어스 퍼플 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "b183a00a-bb1e-4c88-8cd8-5b62eeb77db9"
+    },
+    {
+      "key": "bears_pink_pendant",
+      "name": "베어스 핑크 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "1c0f74ed-9b64-4775-8b11-bcb7578eec95"
+    },
+    {
+      "key": "vengeance_ring",
+      "name": "벤젼스 링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "d5334177-341e-4b7c-a1a8-1f960a480aa7"
+    },
+    {
+      "key": "changing_fate_shard",
+      "name": "변화하는 운명의 파편",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "637a436d-1494-459f-b39d-91655073d17a"
+    },
+    {
+      "key": "center_fire_bomb",
+      "name": "봄버드 센터파이어",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "514d25b2-4297-4481-a67e-8beff9003466"
+    },
+    {
+      "key": "boutique_ticket",
+      "name": "부티크 티켓",
+      "kind": "cash",
+      "category": "cash",
+      "iconAssetId": "9519565f-f75b-41f6-8089-1c86ed256751"
+    },
+    {
+      "key": "enraged_zakum_belt",
+      "name": "분노한 자쿰의 벨트",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "94bc05af-e150-462f-8223-31bea06c5dd0"
+    },
+    {
+      "key": "immortal_legacy",
+      "name": "불멸의 유산",
+      "kind": "accessory",
+      "category": "radiance_boss_set",
+      "iconAssetId": "90f9d109-18ba-4416-8fcf-2a3333006b6b"
+    },
+    {
+      "key": "blasted_feather",
+      "name": "블라스트 페더",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "0ebaf6fb-ad40-41ee-aece-619c8aa0ac96"
+    },
+    {
+      "key": "black_soul_shield",
+      "name": "블랙 소울실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "93035e01-26a3-4b12-817b-ee80ce9053dd"
+    },
+    {
+      "key": "black_force_shield",
+      "name": "블랙 포스실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "279685a0-87cc-4b58-a08f-b4842ae9be7f"
+    },
+    {
+      "key": "black_bean_mark",
+      "name": "블랙빈 마크",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "4cbfd538-79a2-4efe-bad0-7669f8a2297c"
+    },
+    {
+      "key": "shining_saok_norigae",
+      "name": "빛나는 사옥 노리개",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "258d945f-b810-4ba9-86fc-017b7138609a"
+    },
+    {
+      "key": "advanced_item_crystal",
+      "name": "상급 아이템 결정",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "7aa6f2f0-6845-4e64-a362-4101406e52b1"
+    },
+    {
+      "key": "grand_spell_essence",
+      "name": "상급 주문의 정수",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "7bff2b3c-def5-47b4-9ae4-2222917f9c0b"
+    },
+    {
+      "key": "life_boss_ring_box",
+      "name": "생명의 보스 반지 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "f7637412-6d0b-4819-a43f-5fd65c3cfa9e"
+    },
+    {
+      "key": "life_whetstone",
+      "name": "생명의 연마석",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "73baf374-8006-4aa6-aadc-70b5d92b821e"
+    },
+    {
+      "key": "shaman_earrings",
+      "name": "샤먼 이어링",
+      "kind": "accessory",
+      "category": "earring",
+      "iconAssetId": "8d626b1c-d922-4080-8999-6fe281cbe0c6"
+    },
+    {
+      "key": "shiny_red_magician_meister_symbol",
+      "name": "샤이니 레드 매지션 마이스터 심볼",
+      "kind": "accessory",
+      "category": "face_accessory",
+      "iconAssetId": "e941a983-812d-4bb1-8588-eab970c74119"
+    },
+    {
+      "key": "shiny_red_thief_meister_symbol",
+      "name": "샤이니 레드 시프 마이스터 심볼",
+      "kind": "accessory",
+      "category": "face_accessory",
+      "iconAssetId": "e941a983-812d-4bb1-8588-eab970c74119"
+    },
+    {
+      "key": "shiny_red_archer_meister_symbol",
+      "name": "샤이니 레드 아처 마이스터 심볼",
+      "kind": "accessory",
+      "category": "face_accessory",
+      "iconAssetId": "e941a983-812d-4bb1-8588-eab970c74119"
+    },
+    {
+      "key": "shiny_red_warrior_meister_symbol",
+      "name": "샤이니 레드 워리어 마이스터 심볼",
+      "kind": "accessory",
+      "category": "face_accessory",
+      "iconAssetId": "e941a983-812d-4bb1-8588-eab970c74119"
+    },
+    {
+      "key": "shiny_red_pirate_meister_symbol",
+      "name": "샤이니 레드 파이렛 마이스터 심볼",
+      "kind": "accessory",
+      "category": "face_accessory",
+      "iconAssetId": "e941a983-812d-4bb1-8588-eab970c74119"
+    },
+    {
+      "key": "arcane_symbol_selection_coupon",
+      "name": "선택 아케인심볼 교환권",
+      "kind": "consumable",
+      "category": "symbol_coupon",
+      "iconAssetId": "0b5896b8-2d96-444e-afde-6733bdaff15e"
+    },
+    {
+      "key": "sacred_rosary",
+      "name": "세이크리드 로자리오",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "592acc46-e434-4cb6-aa2d-ecda456f8804"
+    },
+    {
+      "key": "sword_earrings",
+      "name": "소드 이어링",
+      "kind": "accessory",
+      "category": "earring",
+      "iconAssetId": "497a4587-74f1-43cd-8cf2-d3402bd9f846"
+    },
+    {
+      "key": "damaged_black_heart",
+      "name": "손상된 블랙 하트",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "d4201887-14f0-462d-9385-28e0abfdbe5f"
+    },
+    {
+      "key": "sol_erda_fragment",
+      "name": "솔 에르다 조각",
+      "kind": "etc",
+      "category": "growth_material",
+      "iconAssetId": "ee64d8fa-0fce-41d3-aee9-abf058a3cab3"
+    },
+    {
+      "key": "sol_erda_energy",
+      "name": "솔 에르다의 기운",
+      "kind": "etc",
+      "category": "growth_material",
+      "iconAssetId": "1072336d-cad8-40fb-b3ca-26f1749b26ea"
+    },
+    {
+      "key": "sol_hecate_noxy_skin_coupon",
+      "name": "솔 헤카테 : 녹시 스킨 교환권",
+      "kind": "cash",
+      "category": "cash",
+      "iconAssetId": "c280be73-5ca1-4f62-93a3-d4f0a28ad2f9"
+    },
+    {
+      "key": "sol_hecate_lumiel_skin_coupon",
+      "name": "솔 헤카테 : 루미엘 스킨 교환권",
+      "kind": "cash",
+      "category": "cash",
+      "iconAssetId": "c3b53ca7-27d0-47e8-ad6d-eeb46f53d5ad"
+    },
+    {
+      "key": "sol_hecate_mimicry_skin_coupon",
+      "name": "솔 헤카테 : 미미크리 스킨 교환권",
+      "kind": "cash",
+      "category": "cash",
+      "iconAssetId": "5a71f7af-5cb8-4154-81ea-26a5a51160e4"
+    },
+    {
+      "key": "sol_hecate_teenieping_skin_coupon",
+      "name": "솔 헤카테 : 티니핑 스킨 교환권",
+      "kind": "cash",
+      "category": "cash",
+      "iconAssetId": "72ee74d8-06b4-4e7c-a38b-c5c7baf30469"
+    },
+    {
+      "key": "suspicious_magnifier",
+      "name": "수상한 돋보기",
+      "kind": "consumable",
+      "category": "hunt_loot",
+      "iconAssetId": "78c86d45-0ed4-4f39-900d-74b01b3e3d9f"
+    },
+    {
+      "key": "reindeer_milk",
+      "name": "순록의 우유",
+      "kind": "consumable",
+      "category": "hunt_loot",
+      "iconAssetId": "835ac291-e5ba-4d00-a010-015ffd60bbda"
+    },
+    {
+      "key": "pure_clean_slate_scroll_10",
+      "name": "순백의 주문서 10%",
+      "kind": "consumable",
+      "category": "scroll",
+      "iconAssetId": "26540888-cc8d-487f-aef5-d194d62ba5d2"
+    },
+    {
+      "key": "pure_clean_slate_scroll_5",
+      "name": "순백의 주문서 5%",
+      "kind": "consumable",
+      "category": "scroll",
+      "iconAssetId": "ef83ba9f-9f16-468d-b156-380d2d20c45d"
+    },
+    {
+      "key": "swift_ring",
+      "name": "스위프트 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "de040ead-a583-4980-abe8-9cb558ed8e61"
+    },
+    {
+      "key": "scarlet_ring",
+      "name": "스칼렛 링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "12d0fd5c-abfa-43aa-8888-2fdaaeb10800"
+    },
+    {
+      "key": "scarlet_shoulder",
+      "name": "스칼렛 숄더",
+      "kind": "accessory",
+      "category": "shoulder_accessory",
+      "iconAssetId": "b4e8f16a-cc45-4571-8eab-fb608b9daaab"
+    },
+    {
+      "key": "scarlet_earring",
+      "name": "스칼렛 이어링",
+      "kind": "accessory",
+      "category": "earring",
+      "iconAssetId": "fc7d0f6f-258c-496f-8b6a-dc2489f52205"
+    },
+    {
+      "key": "stance_shift_ring",
+      "name": "스탠스쉬프트 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "78748b4e-ca25-4cce-86c1-c55da6be714c"
+    },
+    {
+      "key": "wrench",
+      "name": "스패너",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "c39425f6-936a-4fe0-b49d-fe84fc6b77e9"
+    },
+    {
+      "key": "slashing_shadow",
+      "name": "슬래싱 섀도우",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "654b6bcf-2439-405a-a4e2-d5853db3fb3f"
+    },
+    {
+      "key": "faith_whetstone",
+      "name": "신념의 연마석",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "baf22006-0b0c-40df-9c90-e7a670bb370b"
+    },
+    {
+      "key": "shield_swap_ring",
+      "name": "실드스와프 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "851c5bfb-6289-4623-9519-4637cf2c8936"
+    },
+    {
+      "key": "silver_blossom_ring",
+      "name": "실버블라썸 링",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "f3136134-66f2-4ead-9ddd-aba4bd7a7d75"
+    },
+    {
+      "key": "astra_diamond_seonchu",
+      "name": "아스트라 금강석 선추",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "50590509-3918-4016-860a-7d060f34fcf7"
+    },
+    {
+      "key": "astra_nova_essence",
+      "name": "아스트라 노바의 정수",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "37023c31-6924-4346-b149-0884930979bd"
+    },
+    {
+      "key": "astra_decacore_controller",
+      "name": "아스트라 데카코어 컨트롤러",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "faf3d9ae-e075-4aef-a652-2f1422961c9c"
+    },
+    {
+      "key": "astra_raven_eye",
+      "name": "아스트라 레이븐아이",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "f76d3a4e-aaf5-417c-842d-2b405508bbea"
+    },
+    {
+      "key": "astra_relic",
+      "name": "아스트라 렐릭",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "3cff6cdc-3cd0-4b0d-95ec-e404522eed2d"
+    },
+    {
+      "key": "astra_rosario",
+      "name": "아스트라 로자리오",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "15021e06-163e-4672-9bf6-d9e2d5d7f210"
+    },
+    {
+      "key": "astra_ruby_shield",
+      "name": "아스트라 루비실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "79f3d9ed-041c-481a-9e66-b96d3a3a572e"
+    },
+    {
+      "key": "astra_wrist_band",
+      "name": "아스트라 리스트 밴드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "0947dd6a-ac9f-44d7-887b-5b0732b3d114"
+    },
+    {
+      "key": "astra_rimless",
+      "name": "아스트라 림리스",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "82900577-769b-4852-967e-a22dc552c5da"
+    },
+    {
+      "key": "astra_magic_arrow",
+      "name": "아스트라 마법 화살",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "b092715e-1fc2-4c8c-b60f-e32d2437df5f"
+    },
+    {
+      "key": "astra_magic_quill",
+      "name": "아스트라 마법깃펜",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "b5ce8d70-6db6-4f86-a4c2-e3206ce49d03"
+    },
+    {
+      "key": "astra_magnum",
+      "name": "아스트라 매그넘",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "80de1882-8c3f-482d-ad7e-272acee8ed98"
+    },
+    {
+      "key": "astra_magic_wing",
+      "name": "아스트라 매직윙",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "8ae7f812-8871-4892-860f-b0099e62b90e"
+    },
+    {
+      "key": "astra_medal",
+      "name": "아스트라 메달",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "5fe2097b-c15e-4e64-9932-62d8c524e96b"
+    },
+    {
+      "key": "astra_baekhochu",
+      "name": "아스트라 백호추",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "cdf7fa29-510e-4eb2-ad83-8335b74d957e"
+    },
+    {
+      "key": "astra_vane_shield",
+      "name": "아스트라 베인실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "b12073f4-21dd-446f-9f03-47fe88dcd4c6"
+    },
+    {
+      "key": "astra_bullseye",
+      "name": "아스트라 불스아이",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "a51a5d1c-a8bc-4c86-ac7e-f1c2313d2313"
+    },
+    {
+      "key": "astra_bracelet",
+      "name": "아스트라 브레이슬릿",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "d718caac-b052-4b4b-b871-70a810ee72b3"
+    },
+    {
+      "key": "astra_blade",
+      "name": "아스트라 블레이드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "644bbe00-32df-42b8-ba11-9465242e0dbc"
+    },
+    {
+      "key": "astra_saok_norigae",
+      "name": "아스트라 사옥 노리개",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "5b2cc1bb-d6cc-4bf9-9ad2-dbe282797451"
+    },
+    {
+      "key": "astra_sapphire",
+      "name": "아스트라 사파이어",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "d7d3fb27-d3c7-40ae-8e50-0154379924a1"
+    },
+    {
+      "key": "astra_sacred_aegis",
+      "name": "아스트라 세이크리드이지스",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "6b722066-9e3d-4aed-97ff-32b1fed0d1ce"
+    },
+    {
+      "key": "astra_soul_ring",
+      "name": "아스트라 소울링",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "da783f7f-1afe-411e-b436-f3a0b707140a"
+    },
+    {
+      "key": "astra_soul_shield",
+      "name": "아스트라 소울실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "46d3345e-87b7-476b-a35a-79b9efff04e9"
+    },
+    {
+      "key": "astra_hourglass",
+      "name": "아스트라 아워글라스",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "5e50fd33-a10d-4853-82a0-b90ebc3127e1"
+    },
+    {
+      "key": "astra_arcane_shield",
+      "name": "아스트라 아케인실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "3b3773cf-a190-4131-8920-1e603ff26845"
+    },
+    {
+      "key": "astra_umbral_shield",
+      "name": "아스트라 엄브럴실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "2607a78c-6522-4f1d-9d8a-a2f3dbfcb2e1"
+    },
+    {
+      "key": "astra_emerald",
+      "name": "아스트라 에메랄드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "21f5286c-cb67-4243-a062-7da6afb64aa6"
+    },
+    {
+      "key": "astra_fox_marble",
+      "name": "아스트라 여우구슬",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "4c78a224-bebc-4e37-888e-801c83ae25ae"
+    },
+    {
+      "key": "astra_yeouiboju",
+      "name": "아스트라 여의보주",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "e2887d4e-ef80-488e-a55e-f9d0a0165042"
+    },
+    {
+      "key": "astra_orb",
+      "name": "아스트라 오브",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "3ed201cf-9990-48aa-a6d0-a1d3db243238"
+    },
+    {
+      "key": "astra_obsidian",
+      "name": "아스트라 옵시디언",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "ef77f545-1715-43c4-90be-87be3ebb63f7"
+    },
+    {
+      "key": "astra_wild_tusk",
+      "name": "아스트라 와일드 터스크",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "fb489b69-78de-4c3b-b04b-d25562067f20"
+    },
+    {
+      "key": "astra_weapon_belt",
+      "name": "아스트라 웨폰 벨트",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "862b38ed-4cf0-4fb2-bcb1-b9a3f38ab67f"
+    },
+    {
+      "key": "astra_explosive_pill",
+      "name": "아스트라 익스플로시브 필",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "7d80cf03-39a8-40a9-9468-07b25ea0d9f4"
+    },
+    {
+      "key": "astra_chesspiece_the_king",
+      "name": "아스트라 체스피스 디 킹",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "f96cb6c6-129a-45ca-b0b8-c69f7702d0e9"
+    },
+    {
+      "key": "astra_chain",
+      "name": "아스트라 체인",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "36b221f9-685b-43e0-ba8d-e5cd0ce82b51"
+    },
+    {
+      "key": "astra_karte",
+      "name": "아스트라 카르트",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "58757833-2e90-47e0-b6d4-01869e285c34"
+    },
+    {
+      "key": "astra_talisman",
+      "name": "아스트라 탈리스만",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "28c7cace-be42-4acf-9ed7-2d3a8b9cf35f"
+    },
+    {
+      "key": "astra_topaz",
+      "name": "아스트라 토파즈",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "96950b59-0771-44f5-a396-33c85955aff5"
+    },
+    {
+      "key": "astra_topaz_aegis",
+      "name": "아스트라 토파즈이지스",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "a9eca33a-a99b-4f86-8a38-f270537445d8"
+    },
+    {
+      "key": "astra_transmitter",
+      "name": "아스트라 트랜스미터",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "b60cd3b5-50a1-45b9-afbd-9c903304e7ed"
+    },
+    {
+      "key": "astra_pass",
+      "name": "아스트라 패스",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "2ef5d3cb-bec8-4b3b-975c-cc6bb46fb811"
+    },
+    {
+      "key": "astra_feather",
+      "name": "아스트라 페더",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "0285dde3-fd1c-4052-9260-bb4cd2df2c62"
+    },
+    {
+      "key": "astra_force_shield",
+      "name": "아스트라 포스실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "371aacde-4391-4df8-a88a-3cf47c30accb"
+    },
+    {
+      "key": "astra_prominent_shield",
+      "name": "아스트라 프로미넌트실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "97be266a-fa80-44be-a8a5-b64d488e3672"
+    },
+    {
+      "key": "astra_hexseeker",
+      "name": "아스트라 헥스시커",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "ab4e136e-8303-4b93-bcc7-3101715da878"
+    },
+    {
+      "key": "owls_green_pendant",
+      "name": "아울스 그린 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "99b3f878-4813-4907-ae7f-418cd08c2b41"
+    },
+    {
+      "key": "owls_red_pendant",
+      "name": "아울스 레드 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "8f16fcb8-489a-4404-b692-d658b2495e97"
+    },
+    {
+      "key": "owls_purple_pendant",
+      "name": "아울스 퍼플 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "e268808f-c653-4e96-a14e-bcd34b3d811f"
+    },
+    {
+      "key": "owls_pink_pendant",
+      "name": "아울스 핑크 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "1c0f74ed-9b64-4775-8b11-bcb7578eec95"
+    },
+    {
+      "key": "arcane_umbra_guards",
+      "name": "아케인셰이드 가즈",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "efdb2591-0f10-42b5-a656-1e010dcc80b0"
+    },
+    {
+      "key": "arcane_umbra_knight_gloves",
+      "name": "아케인셰이드 나이트글러브",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "55829a37-fce3-4547-85ac-e75932debf27"
+    },
+    {
+      "key": "arcane_umbra_knight_shoulder",
+      "name": "아케인셰이드 나이트숄더",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "9c1ddba3-aa59-4809-bc0a-5493773c56e5"
+    },
+    {
+      "key": "arcane_umbra_knight_shoes",
+      "name": "아케인셰이드 나이트슈즈",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "97105bf3-8cc1-4e7d-8420-93920976d65c"
+    },
+    {
+      "key": "arcane_umbra_knight_suit",
+      "name": "아케인셰이드 나이트슈트",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "a5d8d039-ac77-4e4e-b67a-4e09dbdadf10"
+    },
+    {
+      "key": "arcane_umbra_knight_cape",
+      "name": "아케인셰이드 나이트케이프",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "90454460-5e20-47e3-b3ce-4242551885d5"
+    },
+    {
+      "key": "arcane_umbra_knight_hat",
+      "name": "아케인셰이드 나이트햇",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "b1b45e3a-febd-4d4a-9db2-9b30c99af523"
+    },
+    {
+      "key": "arcane_umbra_dagger",
+      "name": "아케인셰이드 대거",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "73c02289-5afa-4d6f-a6dc-aa0f749f9519"
+    },
+    {
+      "key": "arcane_umbra_desperado",
+      "name": "아케인셰이드 데스페라도",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "d0225701-12ac-45dd-9bf8-a857512988fa"
+    },
+    {
+      "key": "arcane_umbra_dual_bowguns",
+      "name": "아케인셰이드 듀얼보우건",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "5dae5980-7ac7-4e04-a462-d1314ecf8a28"
+    },
+    {
+      "key": "arcane_umbra_dikio",
+      "name": "아케인셰이드 디키오",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "8c422903-e50a-4c76-a00f-8b196d906cb1"
+    },
+    {
+      "key": "arcane_umbra_lucent_gauntlet",
+      "name": "아케인셰이드 매직 건틀렛",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "7468a4ba-ba8e-40dd-a93d-dab431b40422"
+    },
+    {
+      "key": "arcane_umbra_mage_gloves",
+      "name": "아케인셰이드 메이지글러브",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "7b79de22-b7d7-451e-b5d2-7fd405e5c80b"
+    },
+    {
+      "key": "arcane_umbra_mage_shoulder",
+      "name": "아케인셰이드 메이지숄더",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "4c56c256-37ba-4721-9d70-cf58265b9072"
+    },
+    {
+      "key": "arcane_umbra_mage_shoes",
+      "name": "아케인셰이드 메이지슈즈",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "3e074a79-8068-441c-b6f2-b1757c64b626"
+    },
+    {
+      "key": "arcane_umbra_mage_suit",
+      "name": "아케인셰이드 메이지슈트",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "c2662fda-f29a-49da-8f34-e7838cb75ad3"
+    },
+    {
+      "key": "arcane_umbra_mage_cape",
+      "name": "아케인셰이드 메이지케이프",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "24f9640d-48cd-4100-a58f-bcf2230ffc28"
+    },
+    {
+      "key": "arcane_umbra_mage_hat",
+      "name": "아케인셰이드 메이지햇",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "276de5c3-4786-4e80-af26-1b539020484f"
+    },
+    {
+      "key": "arcane_umbra_bow",
+      "name": "아케인셰이드 보우",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "1f8cf3f0-a40e-469d-8d01-cb6d85fef58a"
+    },
+    {
+      "key": "arcane_umbra_whispershot",
+      "name": "아케인셰이드 브레스 슈터",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "80211821-da8e-4836-bb9e-4b0d3a17c220"
+    },
+    {
+      "key": "arcane_umbra_bladecaster",
+      "name": "아케인셰이드 블레이드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "b03f86ea-7003-44a8-8c18-9ec8c2ea1fe7"
+    },
+    {
+      "key": "arcane_umbra_shining_rod",
+      "name": "아케인셰이드 샤이닝로드",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "ae9f83e6-4404-47b5-82d5-a55bc83bfc9d"
+    },
+    {
+      "key": "arcane_umbra_saber",
+      "name": "아케인셰이드 세이버",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "04b801eb-f606-4ba8-840f-2f9104fd7dba"
+    },
+    {
+      "key": "arcane_umbra_soul_shooter",
+      "name": "아케인셰이드 소울슈터",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "da5ea64f-58c3-4eed-90ca-700f2731a85d"
+    },
+    {
+      "key": "arcane_umbra_staff",
+      "name": "아케인셰이드 스태프",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "bb5371d7-c456-4957-a444-90f07614ec90"
+    },
+    {
+      "key": "arcane_umbra_spear",
+      "name": "아케인셰이드 스피어",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "714903a3-ece0-4890-b281-a9e268ad44f2"
+    },
+    {
+      "key": "arcane_umbra_siege_gun",
+      "name": "아케인셰이드 시즈건",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "242f557a-3732-4532-89bc-bfdbd4c81ad3"
+    },
+    {
+      "key": "arcane_umbra_thief_gloves",
+      "name": "아케인셰이드 시프글러브",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "b49b521f-763b-4529-b7f8-467df7f7b5ea"
+    },
+    {
+      "key": "arcane_umbra_thief_shoulder",
+      "name": "아케인셰이드 시프숄더",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "f0a4cbf0-581b-419c-a5cb-47746b436a8b"
+    },
+    {
+      "key": "arcane_umbra_thief_shoes",
+      "name": "아케인셰이드 시프슈즈",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "f9c9cf0b-aaad-44be-b419-39a03f9692df"
+    },
+    {
+      "key": "arcane_umbra_thief_suit",
+      "name": "아케인셰이드 시프슈트",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "2acc291b-d652-4b56-b24d-0740c28828b2"
+    },
+    {
+      "key": "arcane_umbra_thief_cape",
+      "name": "아케인셰이드 시프케이프",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "29f57ee6-ffca-47e7-a24b-cdf51f371c8c"
+    },
+    {
+      "key": "arcane_umbra_thief_hat",
+      "name": "아케인셰이드 시프햇",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "40ced1e0-d4a0-4170-aeae-70077f4c858c"
+    },
+    {
+      "key": "arcane_umbra_archer_gloves",
+      "name": "아케인셰이드 아처글러브",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "a7b0d5f0-3271-493e-9022-bdd13b19cee2"
+    },
+    {
+      "key": "arcane_umbra_archer_shoulder",
+      "name": "아케인셰이드 아처숄더",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "c931a3cb-afb2-485b-b308-d21688ef8e0a"
+    },
+    {
+      "key": "arcane_umbra_archer_shoes",
+      "name": "아케인셰이드 아처슈즈",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "62433d9f-21ec-4f2a-ac0b-c7eb763b0a9b"
+    },
+    {
+      "key": "arcane_umbra_archer_suit",
+      "name": "아케인셰이드 아처슈트",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "de511d9a-0abc-4b1c-9099-bfb49ce4350c"
+    },
+    {
+      "key": "arcane_umbra_archer_cape",
+      "name": "아케인셰이드 아처케이프",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "941b6254-a54b-4369-a5d5-889c1128004b"
+    },
+    {
+      "key": "arcane_umbra_archer_hat",
+      "name": "아케인셰이드 아처햇",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "d4077876-638a-45fe-8f49-930ceb7531f3"
+    },
+    {
+      "key": "arcane_umbra_energy_chain",
+      "name": "아케인셰이드 에너지체인",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "8c625d7f-4bc4-4605-b9da-b72bebd94016"
+    },
+    {
+      "key": "arcane_umbra_ancient_bow",
+      "name": "아케인셰이드 에인션트 보우",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "f40a143a-1faf-430f-b2a2-c0517bbf4abf"
+    },
+    {
+      "key": "arcane_umbra_axe",
+      "name": "아케인셰이드 엑스",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "a7ca5866-14cd-4681-b294-2092f5f426c5"
+    },
+    {
+      "key": "arcane_umbra_ellaha",
+      "name": "아케인셰이드 엘라하",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "26e19497-9a35-45b0-b8e9-d591d3b70f6b"
+    },
+    {
+      "key": "arcane_umbra_wand",
+      "name": "아케인셰이드 완드",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "95f95b4a-1828-4b0f-ab9f-67077c8bb08a"
+    },
+    {
+      "key": "arcane_umbra_chakram",
+      "name": "아케인셰이드 차크람",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "e6d5ed4a-5abb-4dd7-9eb4-3b82160858b9"
+    },
+    {
+      "key": "arcane_umbra_chain",
+      "name": "아케인셰이드 체인",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "f61d4e6a-e031-4fc9-8167-0d152e28148a"
+    },
+    {
+      "key": "arcane_umbra_choseon",
+      "name": "아케인셰이드 초선",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "e00d426d-318b-4756-babd-90e08574d223"
+    },
+    {
+      "key": "arcane_umbra_cane",
+      "name": "아케인셰이드 케인",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "854414a6-7bd3-4cea-91db-ad466de650a9"
+    },
+    {
+      "key": "arcane_umbra_crossbow",
+      "name": "아케인셰이드 크로스보우",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "0c29e66d-92a9-422e-9024-d424e746da13"
+    },
+    {
+      "key": "arcane_umbra_knuckle",
+      "name": "아케인셰이드 클로",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "ac567c61-9619-430c-99f8-5857eb8c6a0a"
+    },
+    {
+      "key": "arcane_umbra_two_handed_sword",
+      "name": "아케인셰이드 투핸드소드",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "390b1a36-2379-4772-96c7-4f3a62d04fdf"
+    },
+    {
+      "key": "arcane_umbra_two_handed_axe",
+      "name": "아케인셰이드 투핸드엑스",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "b6881353-cfb3-4b8c-a39d-782d045d334a"
+    },
+    {
+      "key": "arcane_umbra_two_handed_hammer",
+      "name": "아케인셰이드 투핸드해머",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "c6b6d3c6-f709-40f6-a4fc-804a4a9f8eb9"
+    },
+    {
+      "key": "arcane_umbra_tuner",
+      "name": "아케인셰이드 튜너",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "1f122b74-c4c8-4fb4-834b-e3d3ca8e0b37"
+    },
+    {
+      "key": "arcane_umbra_pirate_gloves",
+      "name": "아케인셰이드 파이렛글러브",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "bda09aba-6b77-407c-950a-e32377e61614"
+    },
+    {
+      "key": "arcane_umbra_pirate_shoulder",
+      "name": "아케인셰이드 파이렛숄더",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "61bf92f3-fff5-470f-b3d8-7806705b717b"
+    },
+    {
+      "key": "arcane_umbra_pirate_shoes",
+      "name": "아케인셰이드 파이렛슈즈",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "8f098193-e507-4e6f-8b7a-24a3a1695aaa"
+    },
+    {
+      "key": "arcane_umbra_pirate_suit",
+      "name": "아케인셰이드 파이렛슈트",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "90874827-090a-46f2-94cb-80f30ddb63a3"
+    },
+    {
+      "key": "arcane_umbra_pirate_cape",
+      "name": "아케인셰이드 파이렛케이프",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "bbfa1691-a98c-41fa-b04e-6f1132b16082"
+    },
+    {
+      "key": "arcane_umbra_pirate_hat",
+      "name": "아케인셰이드 파이렛햇",
+      "kind": "equipment",
+      "category": "arcane_armor",
+      "iconAssetId": "02324134-6f26-4a10-a2e5-8c48a824bead"
+    },
+    {
+      "key": "arcane_umbra_polearm",
+      "name": "아케인셰이드 폴암",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "44e9d8a3-ea04-48bc-94bc-7598292d1dd1"
+    },
+    {
+      "key": "arcane_umbra_pistol",
+      "name": "아케인셰이드 피스톨",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "d031b303-2c88-4343-92d4-d88dabae3a6f"
+    },
+    {
+      "key": "arcane_umbra_hammer",
+      "name": "아케인셰이드 해머",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "73c32cd9-5080-4ffb-b5f3-3871f0baba88"
+    },
+    {
+      "key": "arcane_umbra_hwangeom",
+      "name": "아케인셰이드 환검",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "97b38cf6-177c-49f9-92db-814cdd5f8409"
+    },
+    {
+      "key": "arcane_umbra_psy_limiter",
+      "name": "아케인셰이드 ESP리미터",
+      "kind": "equipment",
+      "category": "arcane_weapon",
+      "iconAssetId": "9a5f8eb8-9d59-4d70-9e06-5102b2bd7c81"
+    },
+    {
+      "key": "aquatic_letter_eye_accessory",
+      "name": "아쿠아틱 레터 눈장식",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "e0bc1978-9f17-4a74-9117-01e79a6b6634"
+    },
+    {
+      "key": "archlords_meister_eternal_ring",
+      "name": "아크로드의 마이스터 이터널 링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "1a183e74-22be-4b70-ad3a-4bd232054418"
+    },
+    {
+      "key": "absolab_goeseon",
+      "name": "앱솔랩스 괴선",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "1de10658-5f23-4924-929e-1c1961b9dd97"
+    },
+    {
+      "key": "absolab_knight_gloves",
+      "name": "앱솔랩스 나이트글러브",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "427bf87e-2333-485a-804e-46be273aa9f9"
+    },
+    {
+      "key": "absolab_knight_shoulder",
+      "name": "앱솔랩스 나이트숄더",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "30f63da1-06fd-4d74-bd0c-c00abd7301dd"
+    },
+    {
+      "key": "absolab_knight_shoes",
+      "name": "앱솔랩스 나이트슈즈",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "28409403-7ac3-4488-a1c8-c4ba60bf9cc6"
+    },
+    {
+      "key": "absolab_knight_suit",
+      "name": "앱솔랩스 나이트슈트",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "7c073ea6-5682-4266-bdf9-6ec695ea10cf"
+    },
+    {
+      "key": "absolab_knight_cape",
+      "name": "앱솔랩스 나이트케이프",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "7e448f89-4c14-45b9-9589-f7300994552f"
+    },
+    {
+      "key": "absolab_knight_helm",
+      "name": "앱솔랩스 나이트헬름",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "c9ff2c62-5de4-4bc0-b031-dfa9706e02f2"
+    },
+    {
+      "key": "absolab_desperado",
+      "name": "앱솔랩스 데스페라도",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "7c43b548-3f48-4dd4-b745-34a6a9602331"
+    },
+    {
+      "key": "absolab_dual_bowguns",
+      "name": "앱솔랩스 듀얼보우건",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "d6066144-7cc6-44c8-985e-26ba693823ce"
+    },
+    {
+      "key": "absolab_revenge_guard",
+      "name": "앱솔랩스 리벤지가즈",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "9d2ecb99-1496-4c72-acfc-3cc46e9509b9"
+    },
+    {
+      "key": "absolab_lucent_gauntlet",
+      "name": "앱솔랩스 매직 건틀렛",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "717f94f3-6078-4cd8-8151-20540e49d77c"
+    },
+    {
+      "key": "absolab_mage_gloves",
+      "name": "앱솔랩스 메이지글러브",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "15e45b04-d866-490e-83e3-cc09bf417cef"
+    },
+    {
+      "key": "absolab_mage_shoulder",
+      "name": "앱솔랩스 메이지숄더",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "ea52837b-5b86-43ab-a293-05480bdab892"
+    },
+    {
+      "key": "absolab_mage_shoes",
+      "name": "앱솔랩스 메이지슈즈",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "287c2582-3941-4ab7-8f8e-338560d7a520"
+    },
+    {
+      "key": "absolab_mage_suit",
+      "name": "앱솔랩스 메이지슈트",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "b26b1851-531d-437f-a1ac-75417b6684cf"
+    },
+    {
+      "key": "absolab_mage_cape",
+      "name": "앱솔랩스 메이지케이프",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "621f4e25-43a5-46ea-a9cb-28af71d7ce97"
+    },
+    {
+      "key": "absolab_mage_crown",
+      "name": "앱솔랩스 메이지크라운",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "7d930ef4-63f4-4360-bfe4-a2a26a04d7a8"
+    },
+    {
+      "key": "absolab_whispershot",
+      "name": "앱솔랩스 브레스 슈터",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "53f61d86-857e-4b27-94d1-0deca8058555"
+    },
+    {
+      "key": "absolab_broad_saber",
+      "name": "앱솔랩스 브로드세이버",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "e42bb9c8-50c6-44c0-bd34-e1e2485cd937"
+    },
+    {
+      "key": "absolab_broad_axe",
+      "name": "앱솔랩스 브로드엑스",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "7b175fb6-ab46-4c0e-b5ae-87b0a8fc105b"
+    },
+    {
+      "key": "absolab_broad_hammer",
+      "name": "앱솔랩스 브로드해머",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "55d1ce9c-8b94-4260-bd33-395d1b8df802"
+    },
+    {
+      "key": "absolab_blast_cannon",
+      "name": "앱솔랩스 블래스트캐논",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "6693257e-550b-4453-881d-65966b7f6f02"
+    },
+    {
+      "key": "absolab_bladecaster",
+      "name": "앱솔랩스 블레이드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "e243d481-ebf1-40ea-a2e9-71193470b9ac"
+    },
+    {
+      "key": "absolab_blast_knuckle",
+      "name": "앱솔랩스 블로우너클",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "edb0d5b5-6e8e-41ac-b499-06e12b8ff04e"
+    },
+    {
+      "key": "absolab_bit_hammer",
+      "name": "앱솔랩스 비트해머",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "4931b611-c5ba-4205-9a3e-a9d933479dd4"
+    },
+    {
+      "key": "absolab_shining_rod",
+      "name": "앱솔랩스 샤이닝로드",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "286dd47c-78eb-4054-8dc6-579f510b4143"
+    },
+    {
+      "key": "absolab_saber",
+      "name": "앱솔랩스 세이버",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "d56e1b4c-fa30-4d31-ae6f-e782338bf571"
+    },
+    {
+      "key": "absolab_soul_shooter",
+      "name": "앱솔랩스 소울슈터",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "6bfb592d-0904-4883-b16d-e03c301593d2"
+    },
+    {
+      "key": "absolab_sureshot_bow",
+      "name": "앱솔랩스 슈팅보우",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "ae4e83e3-572e-4bab-8694-29ef58322db3"
+    },
+    {
+      "key": "absolab_spellsong_staff",
+      "name": "앱솔랩스 스펠링스태프",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "bf888e6e-c319-4748-acdf-62e1c9c6c805"
+    },
+    {
+      "key": "absolab_spellsong_wand",
+      "name": "앱솔랩스 스펠링완드",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "99f4a47a-ecb4-4fdf-8229-ef8d218ca26a"
+    },
+    {
+      "key": "absolab_blade_lord",
+      "name": "앱솔랩스 슬래셔",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "76cd1cec-0f4a-44b3-a1f2-c3b342eb1db3"
+    },
+    {
+      "key": "absolab_bandit_gloves",
+      "name": "앱솔랩스 시프글러브",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "c1897cdd-b4ad-4f6f-9205-570bc5a2176c"
+    },
+    {
+      "key": "absolab_bandit_shoulder",
+      "name": "앱솔랩스 시프숄더",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "5d174c0e-4446-441b-bdfa-7f02a59599a7"
+    },
+    {
+      "key": "absolab_bandit_shoes",
+      "name": "앱솔랩스 시프슈즈",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "f691e833-b6e4-4e7d-a9f0-62d215aa1fd9"
+    },
+    {
+      "key": "absolab_bandit_suit",
+      "name": "앱솔랩스 시프슈트",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "a499f556-9a02-48c8-8b60-eb8ec2dfece6"
+    },
+    {
+      "key": "absolab_bandit_cap",
+      "name": "앱솔랩스 시프캡",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "56dbad3e-3aae-45d0-ba09-2df545a7ad88"
+    },
+    {
+      "key": "absolab_bandit_cape",
+      "name": "앱솔랩스 시프케이프",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "7b43885c-0c75-4e1c-a629-1aeb32c3a90e"
+    },
+    {
+      "key": "absolab_archer_gloves",
+      "name": "앱솔랩스 아처글러브",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "edb95044-aefc-4e95-be39-baf346df5c3a"
+    },
+    {
+      "key": "absolab_archer_shoulder",
+      "name": "앱솔랩스 아처숄더",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "89943e61-d24f-466f-a6b3-109b015612c1"
+    },
+    {
+      "key": "absolab_archer_shoes",
+      "name": "앱솔랩스 아처슈즈",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "09217def-954b-4a00-af46-902c7a50b869"
+    },
+    {
+      "key": "absolab_archer_suit",
+      "name": "앱솔랩스 아처슈트",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "da3ff07e-6894-4595-8f2d-b183453d4d6b"
+    },
+    {
+      "key": "absolab_archer_cape",
+      "name": "앱솔랩스 아처케이프",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "f952b122-4d80-43ce-b39a-0d1770e87619"
+    },
+    {
+      "key": "absolab_archer_hood",
+      "name": "앱솔랩스 아처후드",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "b97686de-c570-420b-a699-557b4c630d99"
+    },
+    {
+      "key": "absolab_whip_blade",
+      "name": "앱솔랩스 에너지소드",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "3dcd6287-2092-4364-b91b-e3d3443b131e"
+    },
+    {
+      "key": "absolab_ancient_bow",
+      "name": "앱솔랩스 에인션트 보우",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "eab47d9f-5c45-4a10-ba15-8ad93f1d6240"
+    },
+    {
+      "key": "absolab_axe",
+      "name": "앱솔랩스 엑스",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "779733f6-c60a-4e5c-a11f-2a6d744b344b"
+    },
+    {
+      "key": "absolab_wingtooth",
+      "name": "앱솔랩스 윙투스",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "2a1d0476-51e4-4738-bae3-f7c3d8add22a"
+    },
+    {
+      "key": "absolab_chakram",
+      "name": "앱솔랩스 차크람",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "5b158fdb-0952-4ef9-815b-26728251e4ae"
+    },
+    {
+      "key": "absolab_chain",
+      "name": "앱솔랩스 체인",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "93ced069-1479-4692-b6b9-2563f92f8fcd"
+    },
+    {
+      "key": "absolab_crossbow",
+      "name": "앱솔랩스 크로스보우",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "78f38e4d-1319-42bd-9773-b36c01b8671a"
+    },
+    {
+      "key": "absolab_tuner",
+      "name": "앱솔랩스 튜너",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "aaf14978-513d-42da-9d25-bdfc283a43d6"
+    },
+    {
+      "key": "absolab_pirate_gloves",
+      "name": "앱솔랩스 파이렛글러브",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "3cddc341-38fa-43d4-83f4-65c8687a9d03"
+    },
+    {
+      "key": "absolab_pirate_shoulder",
+      "name": "앱솔랩스 파이렛숄더",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "40c47206-b0ab-45d3-83f3-8b35118c77da"
+    },
+    {
+      "key": "absolab_pirate_shoes",
+      "name": "앱솔랩스 파이렛슈즈",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "a9872ebd-189f-44f0-8af8-f6759675503e"
+    },
+    {
+      "key": "absolab_pirate_suit",
+      "name": "앱솔랩스 파이렛슈트",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "37b34ddd-a779-4a98-ba96-2dfef85f4c61"
+    },
+    {
+      "key": "absolab_pirate_cape",
+      "name": "앱솔랩스 파이렛케이프",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "4a625432-2762-4263-a3d2-ccfc5cca759c"
+    },
+    {
+      "key": "absolab_pirate_fedora",
+      "name": "앱솔랩스 파이렛페도라",
+      "kind": "equipment",
+      "category": "absolab_armor",
+      "iconAssetId": "4ade1b1a-42c3-4787-92eb-13214ba917c1"
+    },
+    {
+      "key": "absolab_pile_god",
+      "name": "앱솔랩스 파일 갓",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "cf7fbdcc-21c8-4863-97e4-d2e95a2107aa"
+    },
+    {
+      "key": "absolab_point_gun",
+      "name": "앱솔랩스 포인팅건",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "a6da04c5-2ded-4c54-a7d4-1666cc8478a3"
+    },
+    {
+      "key": "absolab_furious_sword",
+      "name": "앱솔랩스 폭검",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "b14a8c89-89d4-4d55-b901-b2c8a1378a2e"
+    },
+    {
+      "key": "absolab_piercing_spear",
+      "name": "앱솔랩스 피어싱스피어",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "25f1c26b-b648-419b-a576-25cf529532f1"
+    },
+    {
+      "key": "absolab_forked_cane",
+      "name": "앱솔랩스 핀쳐케인",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "cbc0913a-97b1-4142-80ce-87558fcda56e"
+    },
+    {
+      "key": "absolab_hellslayer",
+      "name": "앱솔랩스 핼버드",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "ef014c85-b55b-4cf8-9ce5-cc49b0915ee7"
+    },
+    {
+      "key": "absolab_psy_limiter",
+      "name": "앱솔랩스 ESP리미터",
+      "kind": "equipment",
+      "category": "absolab_weapon",
+      "iconAssetId": "5afeab4e-478e-42c8-85a2-59e52d60f5f4"
+    },
+    {
+      "key": "ascendant_pulse_ring",
+      "name": "어센던트 펄스링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "40a14313-2364-4437-ac05-6de9c9b1606f"
+    },
+    {
+      "key": "authentic_symbol_shangri_la_coupon",
+      "name": "어센틱심볼 : 도원경 교환권",
+      "kind": "consumable",
+      "category": "symbol_coupon",
+      "iconAssetId": "b105eb5a-2cfc-4adf-807e-ece55e9d50f6"
+    },
+    {
+      "key": "authentic_symbol_cernium_coupon",
+      "name": "어센틱심볼 : 세르니움 교환권",
+      "kind": "consumable",
+      "category": "symbol_coupon",
+      "iconAssetId": "34c5a467-6ae8-4e28-8b68-4ad0e50a85b4"
+    },
+    {
+      "key": "authentic_symbol_arcus_coupon",
+      "name": "어센틱심볼 : 아르크스 교환권",
+      "kind": "consumable",
+      "category": "symbol_coupon",
+      "iconAssetId": "05521c5e-af9c-4534-ab39-97d815527c41"
+    },
+    {
+      "key": "authentic_symbol_arteria_coupon",
+      "name": "어센틱심볼 : 아르테리아 교환권",
+      "kind": "consumable",
+      "category": "symbol_coupon",
+      "iconAssetId": "86d50d1c-211d-418f-a46b-5358ab78f363"
+    },
+    {
+      "key": "authentic_symbol_odium_coupon",
+      "name": "어센틱심볼 : 오디움 교환권",
+      "kind": "consumable",
+      "category": "symbol_coupon",
+      "iconAssetId": "1f210581-60f4-4e99-b4c1-fed18078ed4d"
+    },
+    {
+      "key": "authentic_symbol_carcion_coupon",
+      "name": "어센틱심볼 : 카르시온 교환권",
+      "kind": "consumable",
+      "category": "symbol_coupon",
+      "iconAssetId": "615e3cc5-6fe1-49d2-bbfb-8d7e8cf09f42"
+    },
+    {
+      "key": "awake_ring",
+      "name": "어웨이크 링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "bc7d5ce1-34db-4aff-9645-bb83db6dd094"
+    },
+    {
+      "key": "ultimatum_ring",
+      "name": "얼티메이덤 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "1f1e0ae7-61e8-4e38-9b76-3b60f6ce14a6"
+    },
+    {
+      "key": "ultimate_path",
+      "name": "얼티밋 패스",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "b8c4f795-0fc1-4a89-b4c0-98f4fbd17bae"
+    },
+    {
+      "key": "ereve_brilliance",
+      "name": "에레브의 광휘",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "31458068-db69-48be-baeb-7250a6498928"
+    },
+    {
+      "key": "erion_fragment",
+      "name": "에리온의 조각",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "c6714c04-e05a-43ef-99c5-85fbc17bbe0a"
+    },
+    {
+      "key": "estella_earring",
+      "name": "에스텔라 이어링",
+      "kind": "accessory",
+      "category": "dawn_boss_set",
+      "iconAssetId": "7a6c9fba-b3ec-482d-9a65-fcb8ed24d5a7"
+    },
+    {
+      "key": "eternel_warrior_gloves",
+      "name": "에테르넬 나이트글러브",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "627fe8b9-2769-44dd-9009-f3d849e2e438"
+    },
+    {
+      "key": "eternel_warrior_shoulder",
+      "name": "에테르넬 나이트숄더",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "d55fba02-ba45-4a56-8bf0-72a784151aa9"
+    },
+    {
+      "key": "eternel_warrior_shoes",
+      "name": "에테르넬 나이트슈즈",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "4698af57-3974-4a9d-8230-b6e244036509"
+    },
+    {
+      "key": "eternel_warrior_armor",
+      "name": "에테르넬 나이트아머",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "a829cdcd-7ae3-4788-b808-a57d3f3dfb40"
+    },
+    {
+      "key": "eternel_warrior_cape",
+      "name": "에테르넬 나이트케이프",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "c366ad84-ec5e-4951-95da-e0eb9f9f72ca"
+    },
+    {
+      "key": "eternel_warrior_pants",
+      "name": "에테르넬 나이트팬츠",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "4d3f2172-592e-4c58-a471-824bbcac1a50"
+    },
+    {
+      "key": "eternel_warrior_helm",
+      "name": "에테르넬 나이트헬름",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "2bda56f4-88e5-4a21-b92f-bb4e801b148f"
+    },
+    {
+      "key": "eternel_mage_gloves",
+      "name": "에테르넬 메이지글러브",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "4b7e5f05-0784-498d-ac3e-526a41eec5b0"
+    },
+    {
+      "key": "eternel_mage_robe",
+      "name": "에테르넬 메이지로브",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "bb8cef34-69f3-4344-b955-c77fc7d0ebe5"
+    },
+    {
+      "key": "eternel_mage_shoulder",
+      "name": "에테르넬 메이지숄더",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "d23155a0-3338-4afd-b7d2-31a1a45b96af"
+    },
+    {
+      "key": "eternel_mage_shoes",
+      "name": "에테르넬 메이지슈즈",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "3f1cbea8-fead-49ae-b5d6-017ae5596cfd"
+    },
+    {
+      "key": "eternel_mage_cape",
+      "name": "에테르넬 메이지케이프",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "ac641a6b-26d5-4665-a3b4-f72acf6c375a"
+    },
+    {
+      "key": "eternel_mage_pants",
+      "name": "에테르넬 메이지팬츠",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "0d6a5442-6dc9-4f88-993b-467bac758ead"
+    },
+    {
+      "key": "eternel_mage_hat",
+      "name": "에테르넬 메이지햇",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "8defee0e-bb2a-470d-b4d7-ff774323dc79"
+    },
+    {
+      "key": "eternel_thief_gloves",
+      "name": "에테르넬 시프글러브",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "2496767f-defa-4cf6-b657-1df0e836f2f5"
+    },
+    {
+      "key": "eternel_thief_bandana",
+      "name": "에테르넬 시프반다나",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "be536c4d-6320-415e-8ca2-b7d2957c8722"
+    },
+    {
+      "key": "eternel_thief_shirt",
+      "name": "에테르넬 시프셔츠",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "ffb12bad-10a2-4b53-8905-08608487f1f6"
+    },
+    {
+      "key": "eternel_thief_shoulder",
+      "name": "에테르넬 시프숄더",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "36e21fac-f537-49f1-9df1-16756440b7cb"
+    },
+    {
+      "key": "eternel_thief_shoes",
+      "name": "에테르넬 시프슈즈",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "9adc5417-295e-466b-aad5-ca0ef5af5190"
+    },
+    {
+      "key": "eternel_thief_cape",
+      "name": "에테르넬 시프케이프",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "6622deb9-3a77-4430-8280-d2b4462e3c42"
+    },
+    {
+      "key": "eternel_thief_pants",
+      "name": "에테르넬 시프팬츠",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "afcc9cef-90ea-4b11-b333-13ca4ec268ee"
+    },
+    {
+      "key": "eternel_archer_gloves",
+      "name": "에테르넬 아처글러브",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "cb886fc5-5429-4c4e-bc66-efd8fa012f7a"
+    },
+    {
+      "key": "eternel_archer_shoulder",
+      "name": "에테르넬 아처숄더",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "45721dd7-35cf-4665-9a8a-197a00f890e9"
+    },
+    {
+      "key": "eternel_archer_shoes",
+      "name": "에테르넬 아처슈즈",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "af1fa755-bf61-42d6-a50d-5e6446f8942a"
+    },
+    {
+      "key": "eternel_archer_cape",
+      "name": "에테르넬 아처케이프",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "a541f2e4-a1bb-4807-9fc3-521111063c78"
+    },
+    {
+      "key": "eternel_archer_pants",
+      "name": "에테르넬 아처팬츠",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "bc0b8418-7c0f-4eba-8fc0-3fb1a8189bde"
+    },
+    {
+      "key": "eternel_archer_hat",
+      "name": "에테르넬 아처햇",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "ddacb630-fd13-4113-b5ac-6de34c392c5a"
+    },
+    {
+      "key": "eternel_archer_hood",
+      "name": "에테르넬 아처후드",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "48d08502-d86e-4cf6-8757-6713d8f1cb37"
+    },
+    {
+      "key": "eternel_pirate_gloves",
+      "name": "에테르넬 파이렛글러브",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "a982e812-41d6-4a9e-9812-16836f36c788"
+    },
+    {
+      "key": "eternel_pirate_shoulder",
+      "name": "에테르넬 파이렛숄더",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "a039c691-3326-4a22-b096-20256f19c794"
+    },
+    {
+      "key": "eternel_pirate_shoes",
+      "name": "에테르넬 파이렛슈즈",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "90e1c18b-7c07-4216-bb25-3d6d01e22a65"
+    },
+    {
+      "key": "eternel_pirate_cape",
+      "name": "에테르넬 파이렛케이프",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "4f60a645-a296-49cf-89a2-dceaf86fa226"
+    },
+    {
+      "key": "eternel_pirate_coat",
+      "name": "에테르넬 파이렛코트",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "1bdefc11-1fe1-4205-8e39-e0d034b00b39"
+    },
+    {
+      "key": "eternel_pirate_pants",
+      "name": "에테르넬 파이렛팬츠",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "f3a67082-d2f0-4b1e-946b-fa818ed76f5d"
+    },
+    {
+      "key": "eternel_pirate_hat",
+      "name": "에테르넬 파이렛햇",
+      "kind": "equipment",
+      "category": "eternel_armor",
+      "iconAssetId": "3d583ab0-1768-4cb8-95ab-eca5dbe9311a"
+    },
+    {
+      "key": "epic_potential_scroll_50",
+      "name": "에픽 잠재능력 부여 주문서 50%",
+      "kind": "consumable",
+      "category": "scroll",
+      "iconAssetId": "86ff61a8-6e5f-461b-b6f0-45036d6a79b3"
+    },
+    {
+      "key": "dawn_guardian_angel_ring",
+      "name": "여명의 가디언 엔젤 링",
+      "kind": "accessory",
+      "category": "dawn_boss_set",
+      "iconAssetId": "6cfc15e7-c598-4a43-8aa1-783ccbad2c46"
+    },
+    {
+      "key": "alchemists_ring",
+      "name": "연금술사의 반지",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "befbc28a-b8a6-43b2-b4fe-0e43c55715dc"
+    },
+    {
+      "key": "clear_moonlight_potion",
+      "name": "영롱한 달빛 포션",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "14b4daae-9c8c-4d5b-8de9-ee2f6bf8740c"
+    },
+    {
+      "key": "brilliant_dusk_essence",
+      "name": "영롱한 황혼의 정수",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "480b6146-4fea-4748-8a97-2d99eb87a901"
+    },
+    {
+      "key": "eternal_loyalty_trace",
+      "name": "영원한 충성의 흔적",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "5bec3426-a79b-4073-905e-15a22b973c81"
+    },
+    {
+      "key": "oracles_meister_eternal_ring",
+      "name": "오라클의 마이스터 이터널 링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "49357b0e-6cad-4789-95af-cc34e700a33f"
+    },
+    {
+      "key": "original_sin_of_arrogance",
+      "name": "오만의 원죄",
+      "kind": "accessory",
+      "category": "radiance_boss_set",
+      "iconAssetId": "1c6cc31c-8b8b-4326-b286-669cd7ca7a94"
+    },
+    {
+      "key": "overpass_ring",
+      "name": "오버패스 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "546d32a0-ba19-4c7c-81eb-13374540bd31"
+    },
+    {
+      "key": "ocean_glow_earrings",
+      "name": "오션 글로우 이어링",
+      "kind": "accessory",
+      "category": "earring",
+      "iconAssetId": "8df4efa5-b923-42a7-939e-5b36c036132e"
+    },
+    {
+      "key": "opal",
+      "name": "오팔",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "cee64650-f3cd-42fe-8f5b-b48ba2c0979d"
+    },
+    {
+      "key": "octa_core_controller",
+      "name": "옥타코어 컨트롤러",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "a9f55854-7f13-4cfe-af49-a428022b9748"
+    },
+    {
+      "key": "almighty_ring",
+      "name": "올마이티링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "3c14a83d-4b31-482b-8a75-deea8bdad01e"
+    },
+    {
+      "key": "wild_fang",
+      "name": "와일드 팡",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "c9a478b2-4bae-4404-990c-546027e856a6"
+    },
+    {
+      "key": "distorted_desire_crystal",
+      "name": "왜곡된 욕망의 결정",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "c380ca81-c57c-4204-980b-8d246a606aa8"
+    },
+    {
+      "key": "desire_eternel_armor_box",
+      "name": "욕망의 에테르넬 방어구 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "dd60293e-2c7f-440f-b71e-5d642f6fdd82"
+    },
+    {
+      "key": "fate_eternel_armor_box",
+      "name": "운명의 에테르넬 방어구 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "657dadc5-318d-4309-8780-5cec42e1c68e"
+    },
+    {
+      "key": "wolves_green_pendant",
+      "name": "울프스 그린 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "99b3f878-4813-4907-ae7f-418cd08c2b41"
+    },
+    {
+      "key": "wolves_red_pendant",
+      "name": "울프스 레드 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "8f16fcb8-489a-4404-b692-d658b2495e97"
+    },
+    {
+      "key": "wolves_purple_pendant",
+      "name": "울프스 퍼플 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "5419c9e1-6c09-4f01-80a5-ee4a23487dd3"
+    },
+    {
+      "key": "wolves_pink_pendant",
+      "name": "울프스 핑크 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "1c0f74ed-9b64-4775-8b11-bcb7578eec95"
+    },
+    {
+      "key": "moonstone_seonchu",
+      "name": "월장석 선추",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "345a8969-85a0-4f4c-bca9-78961f5ac65e"
+    },
+    {
+      "key": "weapon_puff_d_ring",
+      "name": "웨폰퍼프 - D링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "debe4db0-2f5d-4a22-8c93-d7d40301981b"
+    },
+    {
+      "key": "weapon_puff_i_ring",
+      "name": "웨폰퍼프 - I링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "debe4db0-2f5d-4a22-8c93-d7d40301981b"
+    },
+    {
+      "key": "weapon_puff_l_ring",
+      "name": "웨폰퍼프 - L링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "debe4db0-2f5d-4a22-8c93-d7d40301981b"
+    },
+    {
+      "key": "weapon_puff_s_ring",
+      "name": "웨폰퍼프 - S링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "debe4db0-2f5d-4a22-8c93-d7d40301981b"
+    },
+    {
+      "key": "magnificent_damien_soul",
+      "name": "위대한 데미안의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "5513aa43-1738-411c-b0c3-83d4353c8667"
+    },
+    {
+      "key": "magnificent_darknell_soul",
+      "name": "위대한 듄켈의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "5b848e32-265a-450e-8d2c-b723129bdee6"
+    },
+    {
+      "key": "magnificent_dragon_lore_soul",
+      "name": "위대한 드래곤 로어의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "63a41824-cb99-4fd8-bb0a-b0face367b06"
+    },
+    {
+      "key": "magnificent_lucid_soul",
+      "name": "위대한 루시드의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "49ec5ab7-d7b9-4773-a88b-ae56f98f4ef8"
+    },
+    {
+      "key": "magnificent_limbo_soul",
+      "name": "위대한 림보의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "6b5df2ff-b200-4846-9bae-94de85e72bb4"
+    },
+    {
+      "key": "magnificent_magnus_soul",
+      "name": "위대한 매그너스의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "22e7e08c-c436-4f38-b6bc-a041c1638a68"
+    },
+    {
+      "key": "magnificent_meirin_soul",
+      "name": "위대한 메이린의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "c4b5ee4e-b399-45df-8477-cb649cf67f5e"
+    },
+    {
+      "key": "magnificent_murmur_soul",
+      "name": "위대한 무르무르의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "0bbaf784-0b2f-46ee-a431-51d9a500fa5c"
+    },
+    {
+      "key": "magnificent_bardrix_soul",
+      "name": "위대한 발드릭스의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "78684875-e53a-4a73-8a63-ef56f331968f"
+    },
+    {
+      "key": "magnificent_bellona_soul",
+      "name": "위대한 벨로나의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "3b10c912-0bb6-4dc7-a61c-95f80b89a060"
+    },
+    {
+      "key": "magnificent_vellum_soul",
+      "name": "위대한 벨룸의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "3ac2771a-7a83-46d8-ab38-cda6b29026cc"
+    },
+    {
+      "key": "magnificent_crimson_queen_soul",
+      "name": "위대한 블러디퀸의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "2a843ac4-b731-44c7-9fc1-c2fe2d074983"
+    },
+    {
+      "key": "magnificent_annihilation_weapon_lotus_soul",
+      "name": "위대한 섬멸병기 스우의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "3a08bab6-791c-4797-88a2-910e679ddbca"
+    },
+    {
+      "key": "magnificent_lotus_soul",
+      "name": "위대한 스우의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "df2a378b-2c41-4ff2-8445-f13de1f6d302"
+    },
+    {
+      "key": "magnificent_cygnus_soul",
+      "name": "위대한 시그너스의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "3dfd7a4f-2746-474f-b3d3-dd080bd8de26"
+    },
+    {
+      "key": "magnificent_will_soul",
+      "name": "위대한 윌의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "843e1b36-d67a-4222-b199-7798139c5d09"
+    },
+    {
+      "key": "magnificent_jupiter_soul",
+      "name": "위대한 유피테르의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "3ec20c57-0f58-495a-99ce-c8c427ef1735"
+    },
+    {
+      "key": "magnificent_verus_hilla_soul",
+      "name": "위대한 진 힐라의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "987b27e7-6361-48e0-9659-518188035b4e"
+    },
+    {
+      "key": "magnificent_radiant_malefic_star_soul",
+      "name": "위대한 찬란한 흉성의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "a59d3c8f-9023-4077-aab3-80e3457ac78d"
+    },
+    {
+      "key": "magnificent_first_adversary_soul",
+      "name": "위대한 최초의 대적자의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "b5367ba5-8bb0-4356-afd8-982fccb77642"
+    },
+    {
+      "key": "magnificent_kaling_soul",
+      "name": "위대한 카링의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "401f1c78-0435-49d6-82c5-c94efaef63e3"
+    },
+    {
+      "key": "magnificent_kai_soul",
+      "name": "위대한 카이의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "12ccf2a6-f8b4-48cf-9ec1-6379806d1905"
+    },
+    {
+      "key": "magnificent_guardian_kalos_soul",
+      "name": "위대한 칼로스의 소울",
+      "kind": "consumable",
+      "category": "soul",
+      "iconAssetId": "8163a7d3-8cc3-4b0c-8bc3-34892f2ad8d7"
+    },
+    {
+      "key": "silver_ingot",
+      "name": "은괴",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "05f502fc-5ebb-4c5e-98ff-4099c4415e6e"
+    },
+    {
+      "key": "condensed_power_crystal",
+      "name": "응축된 힘의 결정석",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "ac010763-beed-42c8-9243-598aed7080dc"
+    },
+    {
+      "key": "will_eternel_armor_box",
+      "name": "의지의 에테르넬 방어구 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "11bce573-9bad-45b0-a017-ca9485f9295b"
+    },
+    {
+      "key": "eagle_eye_dunwitch_robe",
+      "name": "이글아이 던위치로브",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "02043fee-acac-4497-b5b9-395d6c21c77f"
+    },
+    {
+      "key": "eagle_eye_ranger_cowl",
+      "name": "이글아이 레인져후드",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "0af5a088-a741-4f5c-9427-fe38a57ce03a"
+    },
+    {
+      "key": "eagle_eye_assassin_shirt",
+      "name": "이글아이 어새신셔츠",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "dfce7c19-ab8c-48a3-8902-f067038af750"
+    },
+    {
+      "key": "eagle_eye_warrior_armor",
+      "name": "이글아이 워리어아머",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "18ce1711-e090-4761-812c-0c9d4fee1d0f"
+    },
+    {
+      "key": "eagle_eye_wanderer_coat",
+      "name": "이글아이 원더러코트",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "2a0ef6c2-5d1b-4e5f-91df-1491408b41b5"
+    },
+    {
+      "key": "innocence_scroll_50",
+      "name": "이노센트 주문서 50%",
+      "kind": "consumable",
+      "category": "scroll",
+      "iconAssetId": "8a8083e2-dc48-4cfb-b4ac-b87558109c3b"
+    },
+    {
+      "key": "evolving_force_shield_of_extremity",
+      "name": "이볼빙 극한의 포스실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "13c29a3f-0090-4153-8280-04b2dc40959a"
+    },
+    {
+      "key": "evolving_soul_shield_of_justice",
+      "name": "이볼빙 정의의 소울실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "ff4f6ff8-2ab1-4baf-b6e9-1a92f6d18a66"
+    },
+    {
+      "key": "linked_ancient_resolve",
+      "name": "이어진 고대의 결의",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "f3f2e8cc-c04a-468f-986d-83d278e1c9cb"
+    },
+    {
+      "key": "linked_ancient_resolve_fragment",
+      "name": "이어진 고대의 결의 조각",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "a282aee6-3a4e-4f48-ae9d-a4d134fb293f"
+    },
+    {
+      "key": "eternal_magnum",
+      "name": "이터널 매그넘",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "ea819427-b5c2-44c5-92c0-f6e3cee6566a"
+    },
+    {
+      "key": "eternal_flame_ring",
+      "name": "이터널 플레임 링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "fc826d47-6032-4334-aa85-588678739e69"
+    },
+    {
+      "key": "ifias_earrings",
+      "name": "이피아의 귀고리",
+      "kind": "accessory",
+      "category": "earring",
+      "iconAssetId": "66e3bdaa-35e8-4a2b-b299-0f7ddef5fe6b"
+    },
+    {
+      "key": "exceptional_hammer_earring",
+      "name": "익셉셔널 해머(귀고리)",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "ad121573-d59e-4331-b444-be1e8ee9571a"
+    },
+    {
+      "key": "exceptional_hammer_eye_accessory",
+      "name": "익셉셔널 해머(눈장식)",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "7fac6377-36cb-45d6-a017-3290fd8ed94c"
+    },
+    {
+      "key": "exceptional_hammer_belt",
+      "name": "익셉셔널 해머(벨트)",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "c53919e6-8b05-4a97-97c5-80417118daa2"
+    },
+    {
+      "key": "exceptional_hammer_face_accessory",
+      "name": "익셉셔널 해머(얼굴장식)",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "be227e1b-038a-435b-b8df-f53d25722c82"
+    },
+    {
+      "key": "exceptional_hammer_pendant",
+      "name": "익셉셔널 해머(펜던트)",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "b74a3746-613c-47ec-9959-b0585747d35f"
+    },
+    {
+      "key": "exceptional_hammer_pocket",
+      "name": "익셉셔널 해머(포켓)",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "263f9183-7000-4a7a-8b54-c825f56acf0b"
+    },
+    {
+      "key": "exceptional_hammer_medal",
+      "name": "익셉셔널 해머(훈장)",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "c88ac85c-cd5d-4420-af10-4e7f05553e91"
+    },
+    {
+      "key": "masterwork_charges",
+      "name": "익스플로시브 필<3호>",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "5a98ce89-86f0-4ea5-9b49-434f291556a5"
+    },
+    {
+      "key": "infinite_hexseeker",
+      "name": "인피니트 헥스시커",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "aa9f63c6-e2f7-4eb9-8f59-830a40f1359c"
+    },
+    {
+      "key": "purple_yeouiboju",
+      "name": "자색 여의보주",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "4dc7ce3e-d7ee-4a13-8a3e-2306f2ad36ff"
+    },
+    {
+      "key": "rose_earrings",
+      "name": "장미꽃 귀고리",
+      "kind": "accessory",
+      "category": "earring",
+      "iconAssetId": "2b1d21cf-0cf7-424f-a111-daa85d694753"
+    },
+    {
+      "key": "cursed_green_spellbook",
+      "name": "저주받은 녹의 마도서",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "a3182363-0e31-4bd9-91f2-90236fcdb1f0"
+    },
+    {
+      "key": "cursed_spellbook_selection_box",
+      "name": "저주받은 마도서 선택 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "ef2be358-fb46-41cf-8320-9428064f7bbb"
+    },
+    {
+      "key": "cursed_wraith_remnant",
+      "name": "저주받은 원혼의 잔재",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "dc7a6e26-4dea-4c32-bc49-35f607ed957b"
+    },
+    {
+      "key": "cursed_red_spellbook",
+      "name": "저주받은 적의 마도서",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "705a7bfb-c7af-4b4d-8938-09b670715cff"
+    },
+    {
+      "key": "cursed_blue_spellbook",
+      "name": "저주받은 청의 마도서",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "c051e67b-da99-440a-8f34-83a88b2702df"
+    },
+    {
+      "key": "cursed_yellow_spellbook",
+      "name": "저주받은 황의 마도서",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "52ed77f3-18ac-49fc-b6a8-7adafb161266"
+    },
+    {
+      "key": "rusty_book_epode",
+      "name": "적녹의 서 <종장>",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "29ce95f9-7498-4cd1-9288-07cc1e48fa59"
+    },
+    {
+      "key": "true_shot",
+      "name": "전발적중",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "73b64596-5c27-4f8e-a94c-1015bbf34fd2"
+    },
+    {
+      "key": "soul_shield_of_justice",
+      "name": "정의의 소울실드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "656385b4-9fd9-4514-b727-1c772ab4ee59"
+    },
+    {
+      "key": "genesis_guard",
+      "name": "제네시스 가즈",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "8ad3eb12-624c-44e4-b152-4b2de7095612"
+    },
+    {
+      "key": "genesis_dagger",
+      "name": "제네시스 대거",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "be6e9a11-e131-4080-b8a4-6517c2ab67f3"
+    },
+    {
+      "key": "genesis_desperado",
+      "name": "제네시스 데스페라도",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "e03dd3e2-7329-43cb-8ab2-3edc16359ec0"
+    },
+    {
+      "key": "genesis_dual_bowgun",
+      "name": "제네시스 듀얼보우건",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "0f28ec90-693a-410f-b9aa-24cece982b01"
+    },
+    {
+      "key": "genesis_lazuli",
+      "name": "제네시스 라즐리",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "ca42b3a2-f6f4-43e0-bc32-329ee016f1e2"
+    },
+    {
+      "key": "genesis_lapis",
+      "name": "제네시스 라피스",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "2a6392a3-dbaa-41d5-bb74-038bd1720ec2"
+    },
+    {
+      "key": "genesis_magic_gauntlet",
+      "name": "제네시스 매직 건틀렛",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "d05a0c8b-6394-48e8-be33-6ce0730ef4e7"
+    },
+    {
+      "key": "genesis_bow",
+      "name": "제네시스 보우",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "ab3ff67f-f580-4001-b3c3-2f23b91f1e49"
+    },
+    {
+      "key": "genesis_breath_shooter",
+      "name": "제네시스 브레스 슈터",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "87149ec8-5524-4633-9143-5996150ee382"
+    },
+    {
+      "key": "genesis_shining_rod",
+      "name": "제네시스 샤이닝로드",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "9f4eaf15-27fb-4b99-879c-740339260288"
+    },
+    {
+      "key": "genesis_saber",
+      "name": "제네시스 세이버",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "f7f7396e-8b14-4b8d-a322-eef56a15f316"
+    },
+    {
+      "key": "genesis_soul_shooter",
+      "name": "제네시스 소울슈터",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "5400396f-622e-4338-a8bc-b53dd3ee1297"
+    },
+    {
+      "key": "genesis_staff",
+      "name": "제네시스 스태프",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "a50d3745-30ae-44f4-835e-7c1e67bd29c5"
+    },
+    {
+      "key": "genesis_spear",
+      "name": "제네시스 스피어",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "0553dd98-7d63-48e2-9820-6be2fa2b0ded"
+    },
+    {
+      "key": "genesis_siege_gun",
+      "name": "제네시스 시즈건",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "6993f860-d18f-41f4-bb32-a528aa7da087"
+    },
+    {
+      "key": "genesis_energy_chain",
+      "name": "제네시스 에너지체인",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "02c4c73b-fb05-40e1-b755-dbe8c641bfb3"
+    },
+    {
+      "key": "genesis_ancient_bow",
+      "name": "제네시스 에인션트 보우",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "98a5995b-8f8b-4a30-adc1-21905a8358d6"
+    },
+    {
+      "key": "genesis_axe",
+      "name": "제네시스 엑스",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "ee2255d2-8b74-4947-9bc4-b514d767b74a"
+    },
+    {
+      "key": "genesis_ellaha",
+      "name": "제네시스 엘라하",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "983fdfb0-0a65-4952-b95b-bc0cfb9a089b"
+    },
+    {
+      "key": "genesis_wand",
+      "name": "제네시스 완드",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "885dd825-8fe5-4761-9587-1730a87b519a"
+    },
+    {
+      "key": "genesis_eclipse",
+      "name": "제네시스 이클립스",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "d6699548-3dda-4906-a1d0-f54cfc6ab639"
+    },
+    {
+      "key": "genesis_god_sword",
+      "name": "제네시스 창세검",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "154dfe4a-b07c-4089-8b50-17ea4df5cad0"
+    },
+    {
+      "key": "genesis_creation_fan",
+      "name": "제네시스 창세선",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "0d62439d-74ff-4c3c-be15-7b0a0a0b1bbd"
+    },
+    {
+      "key": "genesis_chain",
+      "name": "제네시스 체인",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "4fe14800-ad44-48cd-a7b7-6a74ae4c30ff"
+    },
+    {
+      "key": "genesis_karta",
+      "name": "제네시스 카르타",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "14a553c8-7671-4162-84d7-28cc6c49cf6f"
+    },
+    {
+      "key": "genesis_cane",
+      "name": "제네시스 케인",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "c421c818-b11f-404b-a27c-a12d55782401"
+    },
+    {
+      "key": "genesis_crossbow",
+      "name": "제네시스 크로스보우",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "f93bef38-b8e9-4094-b87e-2f245490f7ff"
+    },
+    {
+      "key": "genesis_knuckle",
+      "name": "제네시스 클로",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "fa787357-48dc-4add-aa40-264a82289c51"
+    },
+    {
+      "key": "genesis_two_handed_sword",
+      "name": "제네시스 투핸드소드",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "5fce49b7-3bc5-4f2e-b47f-33fb27867216"
+    },
+    {
+      "key": "genesis_two_handed_axe",
+      "name": "제네시스 투핸드엑스",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "5833d127-c38f-4b68-91a0-a67c40258bc1"
+    },
+    {
+      "key": "genesis_two_handed_hammer",
+      "name": "제네시스 투핸드해머",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "6b6a7480-9960-4e2b-94bf-0eebd831a456"
+    },
+    {
+      "key": "genesis_tuner",
+      "name": "제네시스 튜너",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "807b00aa-0892-482c-976e-102115889073"
+    },
+    {
+      "key": "genesis_polearm",
+      "name": "제네시스 폴암",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "65b7ccfb-b32e-4758-ba28-229002adb680"
+    },
+    {
+      "key": "genesis_pistol",
+      "name": "제네시스 피스톨",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "f4480340-e9e6-4296-8323-5af52a12142e"
+    },
+    {
+      "key": "genesis_hammer",
+      "name": "제네시스 해머",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "422ced9d-80aa-40e3-9467-32b96fd8b761"
+    },
+    {
+      "key": "genesis_esp_limiter",
+      "name": "제네시스 ESP리미터",
+      "kind": "equipment",
+      "category": "genesis_weapon",
+      "iconAssetId": "abe17e9c-fac3-41bf-bef7-cb002ab54465"
+    },
+    {
+      "key": "spell_trace",
+      "name": "주문의 흔적",
+      "kind": "etc",
+      "category": "growth_material",
+      "iconAssetId": "d807e2c8-2156-43f9-bf81-fbe9f02ef775"
+    },
+    {
+      "key": "oath_of_death",
+      "name": "죽음의 맹세",
+      "kind": "accessory",
+      "category": "radiance_boss_set",
+      "iconAssetId": "1c013064-fc14-40c1-806c-ee1ef3ea6e18"
+    },
+    {
+      "key": "intermediate_item_crystal",
+      "name": "중급 아이템 결정",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "c703d0dd-aa75-42fb-89a6-39234d66df68"
+    },
+    {
+      "key": "juniper_berry_seed",
+      "name": "쥬니퍼베리 씨앗",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "28250620-c894-4da3-9fca-79643ffa4f62"
+    },
+    {
+      "key": "juniper_berry_seed_oil",
+      "name": "쥬니퍼베리 씨앗 오일",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "b35bce68-3a50-4db8-9a27-4757b62372f0"
+    },
+    {
+      "key": "will_o_the_wisps",
+      "name": "지옥의 불꽃",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "e23c3354-1818-49a6-961a-c4dde99c111d"
+    },
+    {
+      "key": "nova_truth_essence",
+      "name": "진리의 노바의 정수",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "aa524d67-80c6-4749-8895-237a396109e7"
+    },
+    {
+      "key": "genesis_badge",
+      "name": "창세의 뱃지",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "4d60409e-3c70-4e57-86c2-d6b5cb866936"
+    },
+    {
+      "key": "dragon_mass",
+      "name": "천룡추",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "875d8c47-a7fd-42ed-9b80-bf3fe559f980"
+    },
+    {
+      "key": "metallic_blue_book_epode",
+      "name": "청은의 서 <종장>",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "5fe5ff38-3edf-41f4-85ad-02e771b9b53f"
+    },
+    {
+      "key": "queen_chess_piece",
+      "name": "체스피스 디 퀸",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "919b53fc-4b42-46c5-b911-0843ae1f2d59"
+    },
+    {
+      "key": "superior_item_crystal",
+      "name": "최상급 아이템 결정",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "29a9624e-6a33-43a0-9dbb-1dd6baf37979"
+    },
+    {
+      "key": "karma_orb",
+      "name": "카르마 오브",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "2ddf92a3-066f-47c6-877b-edb61d5dff9b"
+    },
+    {
+      "key": "chaos_ring",
+      "name": "카오스 링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "2d50c59b-df99-4d95-9d55-5ce8aead400a"
+    },
+    {
+      "key": "chaos_velum_helm",
+      "name": "카오스 벨룸의 헬름",
+      "kind": "equipment",
+      "category": "other_armor",
+      "iconAssetId": "e00f310f-be84-4110-a72f-d2534e9c1b64"
+    },
+    {
+      "key": "chaos_horntail_necklace",
+      "name": "카오스 혼테일의 목걸이",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "39a75bd2-538f-4922-b480-70cab1125081"
+    },
+    {
+      "key": "commander_force_earring",
+      "name": "커맨더 포스 이어링",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "076bd096-4f71-49d6-8c00-4913291f7afe"
+    },
+    {
+      "key": "continuous_ring",
+      "name": "컨티뉴어스 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "ed5433a5-5b91-44ca-8410-f5e40eb9577f"
+    },
+    {
+      "key": "complete_under_control",
+      "name": "컴플리트 언더컨트롤",
+      "kind": "accessory",
+      "category": "dark_boss_set",
+      "iconAssetId": "29e03d7b-0560-47b1-bbde-48297bcf9a0a"
+    },
+    {
+      "key": "cosmos_ring",
+      "name": "코스모스 링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "d6bce540-f08d-4caa-83f2-2569bde1608e"
+    },
+    {
+      "key": "core_gemstone",
+      "name": "코어 젬스톤",
+      "kind": "consumable",
+      "category": "core_gemstone",
+      "iconAssetId": "c6e5afc8-8b31-4dec-b60a-22f97bc2eb63"
+    },
+    {
+      "key": "crisis_h_ring",
+      "name": "크라이시스 - H링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "9540b24a-bc32-4084-a133-e1c80924644a"
+    },
+    {
+      "key": "crisis_hm_ring",
+      "name": "크라이시스 - HM링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "74cbb05f-7504-442b-b1c8-18c8262d2962"
+    },
+    {
+      "key": "crisis_m_ring",
+      "name": "크라이시스 - M링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "6c8ef310-2625-4ff0-a229-1e78e1f4e590"
+    },
+    {
+      "key": "critical_damage_ring",
+      "name": "크리데미지 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "a96d1220-be3a-4503-9365-f59217aacb8e"
+    },
+    {
+      "key": "critical_defense_ring",
+      "name": "크리디펜스 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "272899ba-7e6d-49a1-a764-116482db8cf6"
+    },
+    {
+      "key": "critical_shift_ring",
+      "name": "크리쉬프트 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "d8112bf6-9ce9-4db6-b83e-f0f8e2de81bb"
+    },
+    {
+      "key": "tyrant_lycaon_belt",
+      "name": "타일런트 리카온 벨트",
+      "kind": "accessory",
+      "category": "belt",
+      "iconAssetId": "49d165ed-66b2-40f0-9013-753e2d94d3bb"
+    },
+    {
+      "key": "tyrant_altair_belt",
+      "name": "타일런트 알테어 벨트",
+      "kind": "accessory",
+      "category": "belt",
+      "iconAssetId": "9ba2ed2d-b39f-495a-8918-9e43c427a211"
+    },
+    {
+      "key": "tyrant_charon_belt",
+      "name": "타일런트 케이론 벨트",
+      "kind": "accessory",
+      "category": "belt",
+      "iconAssetId": "5541566f-a836-4277-8e69-23a4034c648b"
+    },
+    {
+      "key": "tyrant_hermes_belt",
+      "name": "타일런트 헤르메스 벨트",
+      "kind": "accessory",
+      "category": "belt",
+      "iconAssetId": "a9af9811-c8ab-4399-a8a4-e082a397f916"
+    },
+    {
+      "key": "tyrant_hyades_belt",
+      "name": "타일런트 히아데스 벨트",
+      "kind": "accessory",
+      "category": "belt",
+      "iconAssetId": "edb5c0db-175a-460d-936e-8101a64774a3"
+    },
+    {
+      "key": "timeless_wristband",
+      "name": "타임리스 리스트",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "9e37d082-2d1d-4f5b-8349-c9e6fda88d69"
+    },
+    {
+      "key": "timeless_earrings",
+      "name": "타임리스 이어링",
+      "kind": "accessory",
+      "category": "earring",
+      "iconAssetId": "3b3ebc37-a242-444c-bbe8-ac66f203c02b"
+    },
+    {
+      "key": "timeless_prelude",
+      "name": "타임리스 프렐류드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "8d4c118a-9eb6-463e-b880-119f897fa183"
+    },
+    {
+      "key": "detective_yeti_suspicious_magnifier",
+      "name": "탐정예티의 수상한 돋보기",
+      "kind": "consumable",
+      "category": "hunt_loot",
+      "iconAssetId": "030e9e0f-491f-429d-85f3-026d056a3912"
+    },
+    {
+      "key": "primordial_essence",
+      "name": "태초의 정수",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "0c3cbc08-a2e2-479f-b9ee-36f64436eebe"
+    },
+    {
+      "key": "tenebris_expedition_ring",
+      "name": "테네브리스 원정대 반지",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "49d98990-19dd-4275-861b-489ffc978ee8"
+    },
+    {
+      "key": "transmitter_type_a",
+      "name": "트랜스미터 type:A",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "6974f45d-6b3d-4bde-b490-81fbeec82b23"
+    },
+    {
+      "key": "trixter_dunwitch_pants",
+      "name": "트릭스터 던위치팬츠",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "887b0489-8885-4729-ab25-3cde9c57679b"
+    },
+    {
+      "key": "trixter_ranger_pants",
+      "name": "트릭스터 레인져팬츠",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "a16c4875-46b7-4649-b4f8-f800bdb6adfe"
+    },
+    {
+      "key": "trixter_assassin_pants",
+      "name": "트릭스터 어새신팬츠",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "0d147eaf-7390-4cb2-9fa6-244b8fc003c1"
+    },
+    {
+      "key": "trickster_warrior_pants",
+      "name": "트릭스터 워리어팬츠",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "707dd26d-7ef5-4033-8595-53ab82af0d2d"
+    },
+    {
+      "key": "trixter_wanderer_pants",
+      "name": "트릭스터 원더러팬츠",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "49157172-1dfc-4168-8e64-32f5a9621977"
+    },
+    {
+      "key": "twilight_mark",
+      "name": "트와일라이트 마크",
+      "kind": "accessory",
+      "category": "dawn_boss_set",
+      "iconAssetId": "271a9501-40ce-4480-92dd-5dabcb16e76b"
+    },
+    {
+      "key": "death_sender_charm",
+      "name": "파사부",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "f35ddefa-fbb5-4e86-a83e-0aa496487deb"
+    },
+    {
+      "key": "power_elixir",
+      "name": "파워 엘릭서",
+      "kind": "consumable",
+      "category": "potion",
+      "iconAssetId": "fd2aeb3e-af08-431c-b8dc-ad8f314c304e"
+    },
+    {
+      "key": "papulatus_mark",
+      "name": "파풀라투스 마크",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "e1a5af45-c5ba-4ad1-a988-8157a9d42a25"
+    },
+    {
+      "key": "fafnir_guardian_hammer",
+      "name": "파프니르 골디언해머",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "7887310a-2f45-4456-9e06-d3f6d1ad3e23"
+    },
+    {
+      "key": "fafnir_nightchaser",
+      "name": "파프니르 나이트체이서",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "efc70682-195d-4785-834d-0eb7a0d56e56"
+    },
+    {
+      "key": "fafnir_damascus",
+      "name": "파프니르 다마스커스",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "5edcf9e5-a8d7-428c-a205-e6718fe89385"
+    },
+    {
+      "key": "fafnir_death_bringer",
+      "name": "파프니르 데스브링어",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "240534bd-2d25-4ea6-baff-bec4b442c458"
+    },
+    {
+      "key": "fafnir_dual_windwing",
+      "name": "파프니르 듀얼윈드윙",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "1d34395c-c937-4432-97dd-09d2958e57ca"
+    },
+    {
+      "key": "fafnir_lightning_striker",
+      "name": "파프니르 라이트닝어",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "eeeb0531-e376-4f91-bf1d-7dca218e37b2"
+    },
+    {
+      "key": "fafnir_rapid_edge",
+      "name": "파프니르 래피드엣지",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "1a27c907-11f5-4da3-a888-066e972d7915"
+    },
+    {
+      "key": "fafnir_lost_cannon",
+      "name": "파프니르 러스터캐논",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "977cb867-c933-4d8a-9334-a29bbfbefe37"
+    },
+    {
+      "key": "fafnir_risk_holder",
+      "name": "파프니르 리스크홀더",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "1812410c-6458-4ff4-8c3d-41df8b8766ab"
+    },
+    {
+      "key": "fafnir_mana_crown",
+      "name": "파프니르 마나크라운",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "74bbd7ec-8040-4aad-b661-dbb9fa726664"
+    },
+    {
+      "key": "fafnir_mana_cradle",
+      "name": "파프니르 마나크래들",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "62786339-e84a-4bba-927e-bdd845d29b2a"
+    },
+    {
+      "key": "fafnir_mana_taker",
+      "name": "파프니르 마나테이커",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "15cf8a5e-19c7-4a60-8f9a-c9393279b4ff"
+    },
+    {
+      "key": "fafnir_lucent_gauntlet",
+      "name": "파프니르 매직 건틀렛",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "00ce8580-1af7-42b8-a85f-9f75b536f406"
+    },
+    {
+      "key": "fafnir_moon_glaive",
+      "name": "파프니르 문글레이브",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "1e215aec-ea86-4c72-befc-4f7d9f7aeb61"
+    },
+    {
+      "key": "fafnir_mistilteinn",
+      "name": "파프니르 미스틸테인",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "c177e768-0829-4786-935f-dc400aa2f01b"
+    },
+    {
+      "key": "fafnir_battle_cleaver",
+      "name": "파프니르 배틀클리버",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "abb74401-c169-43fa-b9d4-e28aa7bcbc04"
+    },
+    {
+      "key": "fafnir_brionak",
+      "name": "파프니르 브류나크",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "201d09c9-c7c9-4b9c-9682-abb76a601143"
+    },
+    {
+      "key": "fafnir_big_mountain",
+      "name": "파프니르 빅 마운틴",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "ac08d42b-5099-4154-a56b-a868cf2f65d9"
+    },
+    {
+      "key": "fafnir_split_edge",
+      "name": "파프니르 스플릿엣지",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "cf3626bd-0fd7-4acd-b1de-09a59ec5da1e"
+    },
+    {
+      "key": "fafnir_ancient_bow",
+      "name": "파프니르 에인션트 보우",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "a26c01a8-7894-4004-93c4-e1b10d4aa156"
+    },
+    {
+      "key": "fafnir_angelic_shooter",
+      "name": "파프니르 엔젤릭슈터",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "d2098f6a-cb32-4ae5-886c-7c734846ebca"
+    },
+    {
+      "key": "fafnir_dragon_ritual_fan",
+      "name": "파프니르 용선",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "26dd423a-00ff-40b0-9f5c-dc59901d69c5"
+    },
+    {
+      "key": "fafnir_soaring_sword",
+      "name": "파프니르 용천검",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "80c54daf-2fab-4e6f-83db-1c3bc34c6e3f"
+    },
+    {
+      "key": "fafnir_windwing_shooter",
+      "name": "파프니르 윈드윙슈터",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "19cabfe2-186e-4aab-851c-af2b6e996c7f"
+    },
+    {
+      "key": "fafnir_wind_chaser",
+      "name": "파프니르 윈드체이서",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "28a6b38c-09d5-4f0c-a218-482f7e99835d"
+    },
+    {
+      "key": "fafnir_edict",
+      "name": "파프니르 이딕트",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "74456e01-eb01-4962-be52-d1c46054aca9"
+    },
+    {
+      "key": "fafnir_chakram",
+      "name": "파프니르 차크람",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "68165401-7146-40ca-a6bf-5270177e679b"
+    },
+    {
+      "key": "fafnir_chain",
+      "name": "파프니르 체인",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "6e311a19-ca2d-49c5-9a7c-f0b0e5e30045"
+    },
+    {
+      "key": "fafnir_zeliska",
+      "name": "파프니르 첼리스카",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "5ae54265-cdf4-48df-87ed-200243a48c83"
+    },
+    {
+      "key": "fafnir_ciel_claire",
+      "name": "파프니르 클레르시엘",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "dcd44a5e-fa17-4668-a1c8-065cfb73fa61"
+    },
+    {
+      "key": "fafnir_twin_cleaver",
+      "name": "파프니르 트윈클리버",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "8599fa54-efd0-452c-8e2e-6f345e4e5ced"
+    },
+    {
+      "key": "fafnir_penitent_tears",
+      "name": "파프니르 페니텐시아",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "235a8724-438f-4a70-aa65-195525fe5cb7"
+    },
+    {
+      "key": "fafnir_perry_talon",
+      "name": "파프니르 펜리르탈론",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "ffc295d1-f474-4997-a70a-7d3af0eb21bb"
+    },
+    {
+      "key": "fafnir_mercy",
+      "name": "파프니르 포기브니스",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "3db53974-311b-4025-81b3-2f54c61b47f0"
+    },
+    {
+      "key": "fafnir_psy_limiter",
+      "name": "파프니르 ESP리미터",
+      "kind": "equipment",
+      "category": "rootabyss_weapon",
+      "iconAssetId": "517a9ea5-5d6c-4315-80c3-b60ad8b99c61"
+    },
+    {
+      "key": "falcon_eye",
+      "name": "팔콘아이",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "a6b6c70a-3ea9-442f-9ee5-69960ec3a04c"
+    },
+    {
+      "key": "perfect_relic",
+      "name": "퍼펙트 렐릭",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "07c80062-2e52-4445-8ac7-2d4994205283"
+    },
+    {
+      "key": "fairy_heart",
+      "name": "페어리 하트",
+      "kind": "equipment",
+      "category": "mechanical_heart",
+      "iconAssetId": "f617ee1c-c724-4c07-8a69-cdb831d4631a"
+    },
+    {
+      "key": "prime_additional_cube",
+      "name": "프라임 에디셔널 큐브",
+      "kind": "cash",
+      "category": "cash",
+      "iconAssetId": "ad626573-a06e-4240-81bf-7f5eb5efa17a"
+    },
+    {
+      "key": "prime_cube",
+      "name": "프라임 큐브",
+      "kind": "cash",
+      "category": "cash",
+      "iconAssetId": "1b9a102f-e9e5-41a4-b22b-31442a18c3d4"
+    },
+    {
+      "key": "premium_accessory_scroll_voucher",
+      "name": "프리미엄 악세서리 스크롤 교환권",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "46964a84-5069-48d1-92bd-ef9f0dec6c26"
+    },
+    {
+      "key": "premium_pet_equipment_scroll_voucher",
+      "name": "프리미엄 펫장비 스크롤 교환권",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "c13c1a35-19aa-4203-ab83-fba504413cc1"
+    },
+    {
+      "key": "plasma_heart",
+      "name": "플라즈마 하트",
+      "kind": "equipment",
+      "category": "mechanical_heart",
+      "iconAssetId": "c7fd2abb-cdaf-45b0-a3c1-421994e012cc"
+    },
+    {
+      "key": "fearless_wristband",
+      "name": "피어리스 리스트",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "1012daa2-dc84-4e09-bc06-04db8b1062c3"
+    },
+    {
+      "key": "fearless_prelude",
+      "name": "피어리스 프렐류드",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "6d8e33eb-0b98-4ee8-bd5c-5be80f1473ef"
+    },
+    {
+      "key": "peacocks_green_pendant",
+      "name": "피콕스 그린 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "99b3f878-4813-4907-ae7f-418cd08c2b41"
+    },
+    {
+      "key": "peacocks_red_pendant",
+      "name": "피콕스 레드 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "8f16fcb8-489a-4404-b692-d658b2495e97"
+    },
+    {
+      "key": "peacocks_purple_pendant",
+      "name": "피콕스 퍼플 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "8e5cfc4d-05b3-498c-a515-32e8f05c60f3"
+    },
+    {
+      "key": "peacocks_pink_pendant",
+      "name": "피콕스 핑크 펜던트",
+      "kind": "accessory",
+      "category": "pendant",
+      "iconAssetId": "1c0f74ed-9b64-4775-8b11-bcb7578eec95"
+    },
+    {
+      "key": "pink_holy_cup",
+      "name": "핑크빛 성배",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "5a599d0d-39bd-49b2-9679-207bdd335bc6"
+    },
+    {
+      "key": "basic_item_crystal",
+      "name": "하급 아이템 결정",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "735404aa-cc38-4f56-9e9b-8bfcf5d10147"
+    },
+    {
+      "key": "royal_dunwitch_hat",
+      "name": "하이네스 던위치햇",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "b1446ccc-1884-4a9b-974b-c5010dbc421d"
+    },
+    {
+      "key": "royal_ranger_beret",
+      "name": "하이네스 레인져베레",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "5cf06ce1-fde8-4147-a1ac-a8f0d85e4d58"
+    },
+    {
+      "key": "royal_assassin_hood",
+      "name": "하이네스 어새신보닛",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "02295e9e-d4b4-44d9-be80-0a5544ef6a45"
+    },
+    {
+      "key": "royal_warrior_helm",
+      "name": "하이네스 워리어헬름",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "73910b49-7908-4bad-8d4c-93d78eda9a11"
+    },
+    {
+      "key": "royal_wanderer_hat",
+      "name": "하이네스 원더러햇",
+      "kind": "equipment",
+      "category": "rootabyss_armor",
+      "iconAssetId": "b158af64-d7f9-4311-8c89-7fbd0baac5c0"
+    },
+    {
+      "key": "half_earrings",
+      "name": "하프 이어링",
+      "kind": "accessory",
+      "category": "earring",
+      "iconAssetId": "915e0126-2dda-4965-8ed3-481d38869817"
+    },
+    {
+      "key": "health_cut_ring",
+      "name": "헬스컷 링",
+      "kind": "accessory",
+      "category": "special_skill_ring",
+      "iconAssetId": "56ce48d1-7184-445f-828f-d1416144bc88"
+    },
+    {
+      "key": "chaos_pitch_black_accessory_box",
+      "name": "혼돈의 칠흑 장신구 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "a6d02125-051e-4411-997d-cff2a3a67698"
+    },
+    {
+      "key": "confusion_fragment",
+      "name": "혼돈의 파편",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "fd09f12a-af24-440a-bb05-61824e80a90f"
+    },
+    {
+      "key": "horntail_necklace",
+      "name": "혼테일의 목걸이",
+      "kind": "accessory",
+      "category": "boss_accessory_set",
+      "iconAssetId": "52021b59-f269-4f66-afed-e7bd2d52f2d1"
+    },
+    {
+      "key": "red_boss_ring_box",
+      "name": "홍옥의 보스 반지 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "306c03a1-8430-465a-bf8f-d67f70cb2555"
+    },
+    {
+      "key": "illusion_eternel_armor_box",
+      "name": "환상의 에테르넬 방어구 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "5256ab72-78ee-4789-926e-6d269dcf2d35"
+    },
+    {
+      "key": "golden_fox_marble",
+      "name": "황금빛 여우구슬",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "73391f6d-fd70-4404-8dd1-9ed38cd4563b"
+    },
+    {
+      "key": "sunset_dew",
+      "name": "황혼의 이슬",
+      "kind": "consumable",
+      "category": "hunt_loot",
+      "iconAssetId": "24d8cfba-927b-414c-853d-a43664c5a52e"
+    },
+    {
+      "key": "dusk_essence",
+      "name": "황혼의 정수",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "2998a9f8-7855-4491-b4f3-89880ea4d1c0"
+    },
+    {
+      "key": "enchanting_nightmare",
+      "name": "황홀한 악몽",
+      "kind": "accessory",
+      "category": "radiance_boss_set",
+      "iconAssetId": "271e6494-97e1-468a-af68-f4ae9a1792c0"
+    },
+    {
+      "key": "enchanting_illusion_shard",
+      "name": "황홀한 환상의 단편",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "7c75a83a-cc40-4b48-8814-69c7c0b599a8"
+    },
+    {
+      "key": "enchanting_illusion_shard_fragment",
+      "name": "황홀한 환상의 단편 조각",
+      "kind": "consumable",
+      "category": "boss_loot",
+      "iconAssetId": "5d7b0efc-d6dc-449b-9597-c23200b365ea"
+    },
+    {
+      "key": "beast_eternel_armor_box",
+      "name": "흉수의 에테르넬 방어구 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "906141eb-cb1d-4a98-be09-6552af0af37f"
+    },
+    {
+      "key": "black_boss_ring_box",
+      "name": "흑옥의 보스 반지 상자",
+      "kind": "consumable",
+      "category": "box",
+      "iconAssetId": "5f57ec41-1c97-49f0-a4b2-e052f8e14597"
+    },
+    {
+      "key": "hyssop_flower",
+      "name": "히솝 꽃",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "4bf0b334-a3c8-41c6-8de4-edb715ec6519"
+    },
+    {
+      "key": "hyssop_flower_oil",
+      "name": "히솝 꽃 오일",
+      "kind": "etc",
+      "category": "profession_material_tool",
+      "iconAssetId": "6fd81b74-760c-426a-b8ff-cd54b308e915"
+    },
+    {
+      "key": "d100_custom_weapon_belt",
+      "name": "D100 커스텀 웨폰 벨트",
+      "kind": "equipment",
+      "category": "secondary_weapon",
+      "iconAssetId": "3296deea-fb75-425d-b44a-ec1440f24eca"
+    },
+    {
+      "key": "ss_master_jewel_ring",
+      "name": "SS급 마스터 쥬얼링",
+      "kind": "accessory",
+      "category": "ring",
+      "iconAssetId": "9ff3dac7-5611-4d47-a1e0-d1e37a79f968"
+    }
+  ]
+}

@@ -699,6 +699,13 @@ describe('하루 목록 카드의 두 줄', () => {
     ).toEqual(['아이템 판매', '마력의 돌 3개'])
   })
 
+  // 인벤토리에서 판 기록은 이름 칸이 비어 있다. 서버에서 이름을 고쳐도 따라오게 아이템 표에서 찾는다.
+  it('이름 칸이 빈 아이템 판매는 아이템 표에서 key 로 이름을 찾는다', () => {
+    const 판매 = { ...수입행, category: 'item_sale' as const, item: null, itemKey: 'soul_ether_1', itemKind: 'consumable' as const, quantity: 2 }
+
+    expect(카드({ kind: 'income', record: 판매, characterName: '' })).toEqual(['아이템 판매', '1단계 소울 에테르 2개'])
+  })
+
   it('기타는 직접 친 이름이고 수량이 2 이상일 때만 붙인다. 이름이 없으면 둘째 줄이 없다', () => {
     const 기타 = { ...지출행, category: 'etc' as const, item: '모멘텀 프라임 패스', itemKey: null, quantity: 1 }
 

@@ -1,7 +1,7 @@
 # ADR-187+213 서버 아이템 표와 그림 연결 · 관리 화면
 
 > ⚪ 미구현
-> 관련 소스: 서버 `database/schema.ts` · `modules/items/` · `modules/drop-items/` · `modules/equipment-items/` · `modules/hunt-loot/` · `modules/assets/` · `modules/game-data/` · `modules/admin/` · 앱 `lib/assets/` · `lib/game-data/sections.ts` · `lib/cashbook/categories.ts` · 이슈 #911 · #912 · #914
+> 관련 소스: 서버 `database/schema.ts` · `modules/items/` · `modules/drop-items/` · `modules/equipment-items/` · `modules/hunt-loot/` · `modules/assets/` · `modules/game-data/` · `modules/admin/` · 앱 `lib/assets/` · `lib/game-data/sections.ts` · `lib/item-catalog.ts` · `lib/cashbook/categories.ts` · 이슈 #911 · #912 · #914
 
 ## 배경
 

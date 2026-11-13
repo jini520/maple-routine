@@ -58,6 +58,7 @@ import { withMvpDiscount } from '../../lib/enhancement/cost'
 import { loadEnhancementTotals } from '../../storage/enhancement-totals'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
+import { recordedItemNameOf } from '../../lib/item-catalog'
 import { randomUuid } from '../../native/uuid'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import { getLastHunts, setLastHunt, type LastHunt, type LastHunts } from '../../storage/last-hunts'
@@ -915,7 +916,7 @@ function incomeCard(record: IncomeRecord): RecordCard {
       return { title, detail: record.quantity === null ? name : `${name} ${quantityText(record.quantity, '개')} 판매` }
     }
     case 'item_sale':
-      return { title, detail: tradedItemDetail(record.item, record.itemKind ?? 'equipment', record.quantity) }
+      return { title, detail: tradedItemDetail(recordedItemNameOf(record.item, record.itemKey), record.itemKind ?? 'equipment', record.quantity) }
     case 'etc':
       return { title, detail: joined([record.item, etcQuantity(record.quantity, category?.unit)]) }
   }

@@ -22,6 +22,7 @@ import hexaMatrix from './hexa-matrix.json'
 import huntingGrounds from './hunting-grounds.json'
 import huntLoot from './hunt-loot.json'
 import imageCrops from './image-crops.json'
+import items from './items.json'
 import mvpGrades from './mvp-grades.json'
 import spendCatalog from './spend-catalog.json'
 import symbolCosts from './symbol-costs.json'
@@ -48,6 +49,7 @@ const FIXTURES: Record<GameDataSection, unknown> = {
   imageCrops,
   faqs,
   appImages,
+  items,
 }
 
 export function initialTable<T>(name: GameDataSection, _empty: T, parse: (value: unknown) => T | null): T {

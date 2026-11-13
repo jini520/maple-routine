@@ -21,7 +21,7 @@
 | `features/inventory/owner-face.ts` | 넣은 아이템 칸의 얼굴 고르기 |
 | `features/inventory/query.ts` | 격자 쿼리. 드롭 · 가계부 · 인벤토리 표의 판이 오르면 다시 읽는다 |
 | `features/inventory/actions.ts` | 판매 · 기록 안함 · 넣기 · 수정 · 삭제 |
-| `features/inventory/catalog.ts` · `item-look.ts` | 넣을 수 있는 아이템 목록과 칸의 그림 · 이름 |
+| `features/inventory/catalog.ts` · `item-look.ts` | 넣을 수 있는 아이템 목록과 칸의 그림 · 이름. 둘 다 `lib/item-catalog.ts` 의 아이템 표를 읽는다 |
 | `lib/item-search.ts` | 아이템 이름 찾기(`searchItems`). 가계부 아이템 고르기와 같이 쓴다 |
 | `storage/inventory.ts` | `inventory_items` 읽기 · 쓰기, 남은 개수 세기 |
 | `features/boss-profit/drop-price-store.ts` | 기간을 가리지 않는 드롭 판매 · 기록 안함(`saveDropPriceOf` · `excludeDropPriceOf`) |
@@ -53,6 +53,8 @@
 
 - 판매 시트는 아이템 블록(그림 · 이름 · 메이플 ID · 남은 개수) 아래에 단가 · 수량(장비는 판매 대금), 수수료, 판 날짜를 받는다.
   저장하면 그 메이플 ID 의 `item_sale` 기록이 한 줄 생기고 판 날짜의 가계부에 선다. 남은 것보다 많이는 팔 수 없다.
+- 판 기록은 이름 칸을 비우고 `item_key` 만 적는다. 가계부 줄과 통계는 아이템 표에서 이름을 찾는다(`recordedItemNameOf`).
+  서버에서 이름을 고치면 옛 기록도 새 이름으로 선다.
 - 수정 시트는 그 칸에 지금 남은 개수만 고친다. 판 기록은 그대로다.
 - 삭제는 확인 창(배지 없는 `NoticeModal`)을 거쳐 남은 것만 지운다. 판 · 헥사 강화에 쓴 기록은 그대로다.
 
@@ -65,7 +67,8 @@
 - 아이템 칸을 누르면 입력 카드가 뜨고, 친 글자가 이름 안에 차례대로 들어 있는 그 종류의 아이템이 카드 안 목록에 선다. 한 줄을
   누르면 그 아이템으로 정한다. 목록에 없는 이름은 넣을 수 없다.
 - 같은 메이플 ID · 월드에 같은 아이템을 다시 넣으면 그 줄의 개수가 는다. 장비는 줄이 하나 더 생긴다.
-- 넣을 수 있는 아이템 목록은 서버 아이템 표다. 앱이 그 표를 아직 받지 않아(#912) 지금은 목록이 비어 있다.
+- 넣을 수 있는 아이템은 게임 데이터 `items` 칸에서 상자 묶음을 뺀 전부다. 상자는 열어 나온 아이템을 넣으면 되기 때문이다.
+  장신구는 `장비` 종류로 고른다. 게임에서도 장비 탭에 든다.
 
 ## 저장
 
