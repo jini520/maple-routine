@@ -1139,6 +1139,16 @@ async function 목록에서고르기(view: Rendered, testID: string, 친글자: 
 const 주인찾기 = async () => (ocid: string) => (ocid === 'ocid-1' ? { accountId: 'maple-a', worldKey: 'scania' } : null)
 
 describe('아이템 구매 · 목록에서 고르기', () => {
+  it('처음에는 종류 칸이 없고, 목록에 없는 이름을 치면 장비로 선다', async () => {
+    const view = await 그리기()
+    await 갈래바꾸기(view, '아이템 구매')
+    expect(view.queryByTestId('spend-sheet-item-kind')).toBeNull()
+
+    await 카드칸에치기(view, 'spend-sheet-name', '소울 에테르 꾸러미')
+
+    expect(within(view.getByTestId('spend-sheet-item-kind')).getByRole('button', { name: '장비', selected: true })).toBeTruthy()
+  })
+
   it('목록에서 고르면 key 로 저장하고 종류 칸이 숨는다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
@@ -1180,16 +1190,19 @@ describe('아이템 구매 · 목록에서 고르기', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'risk_taker_ring', ringLevel: 3, itemKind: 'equipment', quantity: null })
   })
 
-  // 인벤토리는 목록에 있는 아이템만 받고, 주인은 구매 캐릭터의 메이플 ID · 월드다.
-  it('보관 체크는 목록에서 고른 구매에만 꺼진 채 서고, 켜면 구매 캐릭터의 메이플 ID · 월드로 보관한다', async () => {
+  // 인벤토리는 목록에 있는 아이템만 받고, 주인은 구매 캐릭터의 메이플 ID · 월드다. 체크가 나타났다 사라지면 찾게 되어 늘 둔다.
+  it('보관 체크는 늘 서되 목록에서 고른 아이템과 캐릭터를 갖춰야 눌리고, 켜면 구매 캐릭터의 메이플 ID · 월드로 보관한다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, loadStoreOwnerOf: 주인찾기 })
     await 갈래바꾸기(view, '아이템 구매')
+    expect(view.getByTestId('spend-sheet-store')).toBeDisabled()
+
     await 캐릭터고르기(view)
     await 카드칸에치기(view, 'spend-sheet-name', '소울 에테르 꾸러미')
-    expect(view.queryByTestId('spend-sheet-store')).toBeNull()
+    expect(view.getByTestId('spend-sheet-store')).toBeDisabled()
 
     await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
+    expect(view.getByTestId('spend-sheet-store')).toBeEnabled()
     expect(view.getByTestId('spend-sheet-store')).not.toBeChecked()
 
     await act(async () => {
@@ -1200,13 +1213,13 @@ describe('아이템 구매 · 목록에서 고르기', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'soul_ether_1', inventoryStore: { accountId: 'maple-a', worldKey: 'scania' } })
   })
 
-  it('메이플 ID 를 모르는 캐릭터의 구매에는 보관 체크가 서지 않는다', async () => {
+  it('메이플 ID 를 모르는 캐릭터의 구매에서는 보관 체크가 눌리지 않는다', async () => {
     const view = await 그리기({ loadStoreOwnerOf: 주인찾기 })
     await 갈래바꾸기(view, '아이템 구매')
     await 캐릭터고르기(view, 'ocid-2')
     await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
 
-    expect(view.queryByTestId('spend-sheet-store')).toBeNull()
+    expect(view.getByTestId('spend-sheet-store')).toBeDisabled()
   })
 
   it('보관한 구매를 고치면 고른 아이템이 서고 보관 체크가 켜진 채 열린다', async () => {
@@ -2048,9 +2061,11 @@ describe('아이템 구매의 종류', () => {
     })
   }
 
+  /** 종류 칸은 목록에 없는 이름을 쳤을 때만 서므로 이름부터 친다. */
   async function 구매(종류?: '소비' | '기타') {
     const view = await 그리기()
     await 갈래바꾸기(view, '아이템 구매')
+    await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
     if (종류 !== undefined) await 종류고르기(view, 종류)
     return view
   }
@@ -2101,10 +2116,10 @@ describe('아이템 구매의 종류', () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
     await 갈래바꾸기(view, '아이템 구매')
+    await 카드칸에치기(view, 'spend-sheet-name', '주문서')
     await 종류고르기(view, '소비')
     await 단가치기(view, '12000')
     await 수량치기(view, '300')
-    await 카드칸에치기(view, 'spend-sheet-name', '주문서')
     await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
@@ -2148,6 +2163,7 @@ describe('아이템 구매의 종류', () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
     await 갈래바꾸기(view, '아이템 구매')
+    await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
     await 치기(view, '12000')
     await 관세고르기(view, '10%')
 
@@ -2428,11 +2444,14 @@ describe('갈래마다 자기 폼', () => {
   it('`아이템 구매`의 종류가 갈래를 안 넘어간다', async () => {
     const view = await 그리기()
     await 갈래바꾸기(view, '아이템 구매')
+    // 종류 칸은 목록에 없는 이름을 쳤을 때만 선다.
+    await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
     await 누르기(view, '소비')
     expect(view.getByLabelText('소비').props.accessibilityState?.selected).toBe(true)
 
     await 갈래바꾸기(view, '기타')
     await 갈래바꾸기(view, '아이템 구매')
+    await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
 
     // 기본값(장비)으로 돌아온다. 종류가 수량과 관세를 정하므로 남으면 화면이 딴 모양으로 열린다.
     expect(view.getByLabelText('장비').props.accessibilityState?.selected).toBe(true)
@@ -2527,6 +2546,7 @@ describe('아이템 구매의 수량 단위', () => {
   it('소비·기타를 고르면 수량 옆에 개가 선다', async () => {
     const view = await 그리기()
     await 갈래바꾸기(view, '아이템 구매')
+    await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
     await 누르기(view, '소비')
 
     expect(view.getByTestId('spend-sheet-quantity-unit')).toHaveTextContent('개')

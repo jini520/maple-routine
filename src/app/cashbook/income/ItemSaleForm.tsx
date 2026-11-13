@@ -133,8 +133,8 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
           />
         </FieldRow>
 
-        {/* 목록에서 고른 아이템은 종류가 정해져 있어 칸이 없다. */}
-        {item.picked === null && (
+        {/* 목록에서 고른 아이템은 종류가 정해져 있어 칸이 없고, 목록에 없는 이름을 쳤을 때만 선다. */}
+        {item.picked === null && name !== '' && (
           <FieldRow label="종류" testID="income-sheet-item-kind">
             <Segment size="sm"
               options={itemKinds().map((each) => each.name)}

@@ -89,6 +89,8 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   const ownerOcid = ownerFieldsOf(owner).ocid
   // 인벤토리는 목록에 있는 아이템만 받는다. 직접 친 이름은 보관할 수 없다.
   const storeOwner = item.picked !== null && ownerOcid !== null && storeOwnerOf !== null ? storeOwnerOf(ownerOcid) : null
+  // 체크는 늘 서고, 보관할 수 없는 동안은 꺼진 채 눌리지 않는다.
+  const stored = store && storeOwner !== null
 
   const typed = mesoValueOf(typedText)
   const quantity = mesoValueOf(quantityText)
@@ -140,7 +142,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         pointPer100mMeso: null,
         cashAmount: null,
         hexa: null,
-        inventoryStore: store && storeOwner !== null ? storeOwner : undefined,
+        inventoryStore: stored && storeOwner !== null ? storeOwner : undefined,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })
@@ -179,8 +181,8 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         </FieldRow>
 
         {/* 종류가 나머지 둘을 정한다. 세그먼트인 것은 통화와 같은 이유다. 갈래가 아니라 값의
-            축이다. 목록에서 고른 아이템은 종류가 정해져 있어 칸이 없다. */}
-        {item.picked === null && (
+            축이다. 목록에서 고른 아이템은 종류가 정해져 있어 칸이 없고, 목록에 없는 이름을 쳤을 때만 선다. */}
+        {item.picked === null && name !== '' && (
           <FieldRow label="종류" testID="spend-sheet-item-kind">
             <Segment size="sm"
               options={itemKinds().map((each) => each.name)}
@@ -254,20 +256,20 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         )}
       </FieldCard>
 
-      {storeOwner !== null && (
-        <Pressable
-          testID="spend-sheet-store"
-          role="checkbox"
-          aria-label="인벤토리에 보관"
-          aria-checked={store}
-          onPress={() => setStore((current) => !current)}
-          hitSlop={8}
-          className="flex-row items-center gap-2 self-start px-1"
-        >
-          <CheckBox checked={store} />
-          <Text className="text-xs text-text-muted">인벤토리에 보관</Text>
-        </Pressable>
-      )}
+      <Pressable
+        testID="spend-sheet-store"
+        role="checkbox"
+        aria-label="인벤토리에 보관"
+        aria-checked={stored}
+        aria-disabled={storeOwner === null}
+        disabled={storeOwner === null}
+        onPress={() => setStore((current) => !current)}
+        hitSlop={8}
+        className={`flex-row items-center gap-2 self-start px-1${storeOwner === null ? ' opacity-40' : ''}`}
+      >
+        <CheckBox checked={stored} />
+        <Text className="text-xs text-text-muted">인벤토리에 보관</Text>
+      </Pressable>
 
       <AmountFigure
         // 어디서도 못 친다. 관세를 더한 값을 바로 그린다. 더해지는 금액을 따로 안 적는 것은

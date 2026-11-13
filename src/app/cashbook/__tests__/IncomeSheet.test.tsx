@@ -860,6 +860,13 @@ describe('수정 모드', () => {
  * 종류에서 합계에 대해 뗀다.
  */
 describe('아이템 판매의 종류', () => {
+  /** 종류 칸은 목록에 없는 이름을 쳤을 때만 서므로 이름부터 친다. */
+  async function 친판매시트(overrides: Partial<React.ComponentProps<typeof IncomeSheet>> = {}): Promise<Rendered> {
+    const view = await 고른판매시트(overrides)
+    await 칸에치기(view, 'income-sheet-name', '앱솔 무기')
+    return view
+  }
+
   async function 종류고르기(view: Rendered, 이름: '장비' | '소비' | '기타'): Promise<void> {
     await act(async () => {
       fireEvent.press(within(view.getByTestId('income-sheet-item-kind')).getByLabelText(이름))
@@ -872,7 +879,7 @@ describe('아이템 판매의 종류', () => {
   }
 
   it('새 판매는 장비로 열린다. 금액 칸은 판매 대금이고 수량 칸이 없다', async () => {
-    const view = await 고른판매시트()
+    const view = await 친판매시트()
 
     expect(고른종류(view, '장비')).toBe(true)
     expect(view.getByLabelText('판매 대금')).toBeTruthy()
@@ -880,7 +887,7 @@ describe('아이템 판매의 종류', () => {
   })
 
   it('소비를 고르면 금액 칸이 단가가 되고 수량 칸이 1 로 선다', async () => {
-    const view = await 고른판매시트()
+    const view = await 친판매시트()
 
     await 종류고르기(view, '소비')
 
@@ -891,7 +898,7 @@ describe('아이템 판매의 종류', () => {
 
   it('단가 × 수량에서 수수료를 떼고 종류와 수량을 함께 저장한다', async () => {
     const onSave = jest.fn()
-    const view = await 고른판매시트({ onSave })
+    const view = await 친판매시트({ onSave })
     await 종류고르기(view, '소비')
     await 대금치기(view, '1000000')
     await 아이디로치기(view, 'income-sheet-quantity', '100')
@@ -913,7 +920,7 @@ describe('아이템 판매의 종류', () => {
 
   it('장비는 수량 없이 저장한다', async () => {
     const onSave = jest.fn()
-    const view = await 고른판매시트({ onSave })
+    const view = await 친판매시트({ onSave })
     await 대금치기(view, '1200000000')
 
     await 누르기(view, '저장')
@@ -922,7 +929,7 @@ describe('아이템 판매의 종류', () => {
   })
 
   it('종류를 바꾸면 수량은 1 로 돌아가고 친 금액은 남는다', async () => {
-    const view = await 고른판매시트()
+    const view = await 친판매시트()
     await 종류고르기(view, '기타')
     await 대금치기(view, '1000000')
     await 아이디로치기(view, 'income-sheet-quantity', '30')
