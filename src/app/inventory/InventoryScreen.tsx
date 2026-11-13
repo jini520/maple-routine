@@ -179,7 +179,10 @@ export function InventoryScreen(): React.JSX.Element {
       {sheet?.kind === 'edit' && (
         <InventoryEditSheet cell={sheet.cell} owner={data?.owners[sheet.cell.item.id] ?? ''} onClose={() => setSheet(null)} />
       )}
-      {sheet?.kind === 'add' && <InventoryAddSheet onClose={() => setSheet(null)} />}
+      {sheet?.kind === 'add' && (
+        // 보고 있던 탭의 종류로 연다. 넣은 뒤 그 탭에 바로 선다. 전체 탭이면 첫 종류(장비)다.
+        <InventoryAddSheet initialKind={tab === 'all' ? 'equipment' : tab} onClose={() => setSheet(null)} />
+      )}
 
       <InventoryAddFab onPress={() => setSheet({ kind: 'add' })} />
     </View>

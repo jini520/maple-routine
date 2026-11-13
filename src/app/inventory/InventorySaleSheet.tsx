@@ -49,7 +49,7 @@ export function InventoryItemBlock(props: {
         {props.right !== undefined && <View className="ml-auto shrink-0">{props.right}</View>}
       </View>
       <View className="min-h-7 flex-row items-center gap-3">
-        <Text className="shrink-0 text-xs text-text-muted">메이플 ID</Text>
+        <Text className="shrink-0 text-xs text-text-muted">메이플 ID · 월드</Text>
         <Text className="ml-auto shrink text-right text-sm text-text-muted" numberOfLines={1}>
           {props.owner}
         </Text>

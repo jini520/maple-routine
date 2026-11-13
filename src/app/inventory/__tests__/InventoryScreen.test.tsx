@@ -1,6 +1,35 @@
+import type { ReactNode } from 'react'
 import { act, fireEvent } from '@testing-library/react-native'
 
+// 시트 껍데기는 가계부 시트 테스트와 같은 방식으로 세운다. 라이브러리를 목으로 갈아 끼우고 내용만 본다.
+jest.mock('@gorhom/bottom-sheet', () => {
+  const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
+  const React = jest.requireActual<typeof import('react')>('react')
+
+  return {
+    BottomSheetBackdrop: (props: Record<string, unknown>) =>
+      React.createElement(ReactNative.View, { testID: 'sheet-backdrop', ...props }),
+    BottomSheetModal: React.forwardRef((props: Record<string, unknown>, ref: unknown) => {
+      React.useImperativeHandle(ref as never, () => ({ present: jest.fn(), dismiss: jest.fn() }))
+      return React.createElement(ReactNative.View, props)
+    }),
+    BottomSheetScrollView: (props: Record<string, unknown>) => React.createElement(ReactNative.View, props),
+    useBottomSheetTimingConfigs: (config: unknown) => config,
+    useBottomSheetInternal: () =>
+      jest.requireActual<typeof import('../../../components/__tests__/bottom-sheet-internal-fake')>(
+        '../../../components/__tests__/bottom-sheet-internal-fake',
+      ).fakeBottomSheetInternal(),
+    BottomSheetModalProvider: (props: { children: ReactNode }) => props.children,
+  }
+})
+
 jest.mock('../../../features/inventory/query', () => ({ useInventory: jest.fn() }))
+jest.mock('../../../features/inventory/load', () => ({
+  loadInventoryOwners: jest.fn(async () => [
+    { accountId: 'maple-a', worldKey: 'scania', mapleIdName: '메이플ID-maple-a', characterName: '낮잠곰', label: '메이플ID-maple-a · 스카니아' },
+    { accountId: 'maple-a', worldKey: 'bera', mapleIdName: '메이플ID-maple-a', characterName: '단풍줍기', label: '메이플ID-maple-a · 베라' },
+  ]),
+}))
 jest.mock('../../../features/inventory/actions', () => ({
   loadDropForSale: jest.fn(),
   sellDrop: jest.fn(async () => undefined),
@@ -104,6 +133,24 @@ describe('InventoryScreen', () => {
       fireEvent.press(view.getByText('삭제'))
     })
     expect(actions.removeInventoryRemaining).toHaveBeenCalledWith('item-1')
+  })
+
+  it('넣기 시트는 보고 있던 탭의 종류로 열리고, 전체 탭이면 장비로 열린다', async () => {
+    const view = await 열기()
+
+    await 누르기(view, 'inventory-tabs-consumable')
+    await 누르기(view, 'inventory-add-fab')
+    expect(view.getByRole('button', { name: '소비', selected: true })).toBeTruthy()
+  })
+
+  it('메이플 ID · 월드 보기는 메이플 ID 이름과 그 월드 대표 캐릭터 두 줄이고, 같은 메이플 ID 라도 월드마다 따로 선다', async () => {
+    const view = await 열기()
+    await 누르기(view, 'inventory-add-fab')
+
+    await 누르기(view, 'inventory-add-owner-open')
+
+    expect(view.getByTestId('inventory-add-owner-option-maple-a|scania')).toHaveTextContent('메이플ID-maple-a낮잠곰')
+    expect(view.getByTestId('inventory-add-owner-option-maple-a|bera')).toHaveTextContent('메이플ID-maple-a단풍줍기')
   })
 
   it('탭을 고르면 그 종류의 칸만 선다', async () => {

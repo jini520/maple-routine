@@ -4,7 +4,7 @@
  * 머리에 날짜가 없다.
  */
 import { useEffect, useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms'
 import { Segment } from '../../components/molecules/Segment/Segment'
@@ -16,26 +16,63 @@ import { addToInventory } from '../../features/inventory/actions'
 import { catalogMatches, inventoryCatalog, type CatalogItem } from '../../features/inventory/catalog'
 import { loadInventoryOwners, type InventoryOwner } from '../../features/inventory/load'
 import { useToastStore } from '../../features/toast/store'
+import { worldEmblemUrl } from '../../lib/assets/asset-lookup'
 import { countsQuantity, itemKindNameOf, itemKinds, type ItemKindKey } from '../../lib/cashbook/categories'
+import { naturalAspectStyle } from '../../lib/image-aspect'
+import { worldNameOf } from '../../lib/world/worlds'
 import { SaveRow } from '../cashbook/income/form-shared'
 import { AmountInput, FieldCard, FieldRow, SelectRow } from '../cashbook/sheet-fields'
 
 const ownerKeyOf = (owner: Pick<InventoryOwner, 'accountId' | 'worldKey'>): string => `${owner.accountId}|${owner.worldKey}`
 
 /**
+ * 보기 한 줄. 첫 줄은 메이플 ID 이름, 둘째 줄은 월드 아이콘과 그 메이플 ID · 월드의 대표 캐릭터 이름이다. 같은 메이플 ID 라도
+ * 월드가 다르면 보기가 따로 서므로, 둘째 줄이 둘을 가른다. 캐릭터 관리의 메이플 ID 줄(`AccountRow`)과 같은 글자다.
+ */
+function OwnerOption(props: { owner: InventoryOwner; selected: boolean; testID: string }): React.JSX.Element {
+  const emblem = worldEmblemUrl(props.owner.worldKey)
+  return (
+    <View testID={props.testID} className="min-w-0 flex-1 gap-0.5">
+      <Text numberOfLines={1} className={`text-sm font-semibold ${props.selected ? 'text-primary-ink' : 'text-text'}`}>
+        {props.owner.mapleIdName}
+      </Text>
+      <View className="flex-row items-center gap-1">
+        {emblem !== null && (
+          <Image
+            accessibilityLabel={worldNameOf(props.owner.worldKey, props.owner.worldKey)}
+            source={emblem}
+            // 폭은 그림이 정한다. 안 적으면 엠블럼의 고유 폭이 남아 줄 왼쪽이 벌어진다.
+            style={naturalAspectStyle(emblem, { height: 17 })}
+            resizeMode="contain"
+          />
+        )}
+        <Text numberOfLines={1} className={`min-w-0 flex-1 text-xs ${props.selected ? 'text-primary-ink' : 'text-text-muted'}`}>
+          {props.owner.characterName}
+        </Text>
+      </View>
+    </View>
+  )
+}
+
+/**
+ * @param props.initialKind 처음 고른 종류. 보고 있던 탭의 종류다
  * @param props.catalog 고를 수 있는 아이템. 비우면 서버 아이템 표다
  */
-export function InventoryAddSheet(props: { onClose: () => void; catalog?: readonly CatalogItem[] }): React.JSX.Element {
+export function InventoryAddSheet(props: {
+  onClose: () => void
+  initialKind: ItemKindKey
+  catalog?: readonly CatalogItem[]
+}): React.JSX.Element {
   const catalog = props.catalog ?? inventoryCatalog()
   const [owners, setOwners] = useState<readonly InventoryOwner[]>([])
   const [ownerKey, setOwnerKey] = useState<string | null>(null)
-  const [kind, setKind] = useState<ItemKindKey>('etc')
+  const [kind, setKind] = useState<ItemKindKey>(props.initialKind)
   const [item, setItem] = useState<CatalogItem | null>(null)
   const [quantityText, setQuantityText] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    void loadInventoryOwners().then(setOwners, () => undefined)
+    void loadInventoryOwners(new Date()).then(setOwners, () => undefined)
   }, [])
 
   const owner = owners.find((each) => ownerKeyOf(each) === ownerKey) ?? null
@@ -91,11 +128,17 @@ export function InventoryAddSheet(props: { onClose: () => void; catalog?: readon
         <FieldCard>
           <SelectRow
             testID="inventory-add-owner"
-            label="메이플 ID"
-            placeholder="메이플 ID 선택"
+            label="메이플 ID · 월드"
+            placeholder="메이플 ID · 월드 선택"
             options={owners.map((each) => ({ value: ownerKeyOf(each), label: each.label }))}
             selected={ownerKey}
             onSelect={setOwnerKey}
+            renderOption={(option, isSelected) => {
+              const owner = owners.find((each) => ownerKeyOf(each) === option.value)
+              return owner === undefined ? null : (
+                <OwnerOption owner={owner} selected={isSelected} testID={`inventory-add-owner-row-${option.value ?? ''}`} />
+              )
+            }}
           />
           <FieldRow label="종류" testID="inventory-add-kind">
             <Segment
