@@ -92,7 +92,7 @@ export function CharacterManageButton(props: {
     >
       {props.portrait !== null && (
         <CharacterAvatar
-          headOverflow
+          overFrame
           testID="character-manage-face-box"
           imageTestID="character-manage-face"
           imageUrl={props.portrait.imageUrl}

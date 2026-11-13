@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 // 머리를 원 안에만 그리는 얼굴은 캐릭터 레일 하나다. 스케줄러 링이 얼굴 바로 바깥에 있어서 머리가 링을 가린다.
-// 새 호출부가 `headOverflow` 를 빠뜨리면 그 자리만 원에 갇힌다. 렌더로는 못 물어서 소스로 묻는다.
+// 새 호출부가 `overFrame` 을 빠뜨리면 그 자리만 원에 갇힌다. 렌더로는 못 물어서 소스로 묻는다.
 const SRC = join(__dirname, '..', '..', '..', '..')
 
 function tsxFiles(dir: string): string[] {
@@ -42,17 +42,17 @@ function isRailFace(tag: string): boolean {
   return tag.includes('PORTRAIT_RAIL.faceSize')
 }
 
-it('레일 말고 모든 얼굴 호출부가 `headOverflow` 를 넘긴다', () => {
+it('레일 말고 모든 얼굴 호출부가 `overFrame` 을 넘긴다', () => {
   const missing = faceTags()
-    .filter(({ tag }) => !isRailFace(tag) && !/\bheadOverflow\b/.test(tag))
+    .filter(({ tag }) => !isRailFace(tag) && !/\boverFrame\b/.test(tag))
     .map(({ path }) => path)
 
   expect(missing).toEqual([])
 })
 
-it('레일은 `headOverflow` 를 넘기지 않는다', () => {
+it('레일은 `overFrame` 을 넘기지 않는다', () => {
   const rail = faceTags().filter(({ tag }) => isRailFace(tag))
 
   expect(rail).toHaveLength(1)
-  expect(rail.filter(({ tag }) => /\bheadOverflow\b/.test(tag))).toEqual([])
+  expect(rail.filter(({ tag }) => /\boverFrame\b/.test(tag))).toEqual([])
 })

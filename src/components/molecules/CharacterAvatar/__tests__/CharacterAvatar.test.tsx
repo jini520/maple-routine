@@ -3,7 +3,8 @@ import { within } from '@testing-library/react-native'
 import type { ReactTestRendererJSON } from 'react-test-renderer'
 import { View } from 'react-native'
 
-import { FACE_CROP_BOX, FACE_SOURCE_IMAGE_SIZE } from '../../../../lib/face-crop'
+import { useOverFrameStore } from '../../../../features/over-frame/store'
+import { FACE_CROP_BOX, FACE_SOURCE_IMAGE_SIZE, faceCropStyle } from '../../../../lib/face-crop'
 import { findAllOfType, flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { Text } from '../../../atoms'
 import { CharacterAvatar } from '../CharacterAvatar'
@@ -164,12 +165,28 @@ function 원안에(트리: ReactTestRendererJSON, testID: string): boolean {
 }
 
 // 줄과 today 머리 버튼의 얼굴은 머리를 원 밖으로 그린다. 원이 자르지 않고 마스크가 자른다.
-describe('머리 넘침', () => {
+describe('오버 프레임', () => {
   const 그림 = 'https://example.test/a.png'
 
-  it('`headOverflow` 를 주면 원이 자르지 않고 마스크 안에 그림을 그린다', async () => {
+  afterEach(() => {
+    useOverFrameStore.setState({ enabled: true })
+  })
+
+  // 테마 페이지에서 끈 사용자는 예전 모양을 본다. 호출부는 설정을 안 읽으니 이 부품이 따라야 한다.
+  it('설정을 끄면 `overFrame` 자리도 원 안에 그리고 크롭이 기본으로 돌아간다', async () => {
+    useOverFrameStore.setState({ enabled: false })
     const { getByTestId, toJSON } = await renderAtom(
-      <CharacterAvatar testID="얼굴" imageTestID="그림" imageUrl={그림} name="아무개" size={36} headOverflow />,
+      <CharacterAvatar testID="얼굴" imageTestID="그림" imageUrl={그림} name="아무개" size={36} overFrame />,
+    )
+
+    expect(원상자(getByTestId('얼굴'))).toBe(true)
+    expect(findAllOfType(toJSON(), 'RNCMaskedView')).toHaveLength(0)
+    expect(flattenStyle(getByTestId('그림').props.style)).toMatchObject(faceCropStyle(36))
+  })
+
+  it('`overFrame` 을 주면 원이 자르지 않고 마스크 안에 그림을 그린다', async () => {
+    const { getByTestId, toJSON } = await renderAtom(
+      <CharacterAvatar testID="얼굴" imageTestID="그림" imageUrl={그림} name="아무개" size={36} overFrame />,
     )
 
     expect(flattenStyle(getByTestId('얼굴').props.style).overflow).not.toBe('hidden')
@@ -182,7 +199,7 @@ describe('머리 넘침', () => {
   // 원 밖의 머리가 핸들 · 버튼 · 위 줄에 걸려도 그 자리의 누름은 그쪽이 받아야 한다.
   it('얼굴이 형제 위에 서고 누름을 받지 않는다', async () => {
     const { getByTestId } = await renderAtom(
-      <CharacterAvatar testID="얼굴" imageUrl={그림} name="아무개" size={36} headOverflow />,
+      <CharacterAvatar testID="얼굴" imageUrl={그림} name="아무개" size={36} overFrame />,
     )
 
     expect(Number(flattenStyle(getByTestId('얼굴').props.style).zIndex)).toBeGreaterThan(0)
@@ -201,7 +218,7 @@ describe('머리 넘침', () => {
 
   it('그림이 없으면 폴백을 원 안에 그린다', async () => {
     const { toJSON } = await renderAtom(
-      <CharacterAvatar testID="얼굴" imageUrl={null} name="아무개" size={36} fallback={폴백} headOverflow />,
+      <CharacterAvatar testID="얼굴" imageUrl={null} name="아무개" size={36} fallback={폴백} overFrame />,
     )
 
     const 트리 = toJSON() as ReactTestRendererJSON
@@ -219,7 +236,7 @@ describe('머리 넘침', () => {
         name="지내우시"
         size={36}
         unavailable
-        headOverflow
+        overFrame
       />,
     )
 

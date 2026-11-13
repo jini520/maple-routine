@@ -144,7 +144,7 @@ function StatusBadge(props: { testID: string; tone: 'clear' | 'issue'; label: st
 function Portrait(props: { row: ScheduleRowView }): React.JSX.Element {
   return (
     <CharacterAvatar
-      headOverflow
+      overFrame
       imageTestID="schedule-face"
       mirrored
       imageUrl={props.row.imageUrl}

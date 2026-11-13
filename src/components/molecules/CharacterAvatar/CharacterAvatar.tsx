@@ -10,7 +10,8 @@
 import MaskedView from '@react-native-masked-view/masked-view'
 import { Image, View, type ImageStyle } from 'react-native'
 
-import { faceCropStyle, headOverflowCropStyle, headOverflowFrame } from '../../../lib/face-crop'
+import { useOverFrameStore } from '../../../features/over-frame/store'
+import { faceCropStyle, overFrameCropStyle, overFrameMask } from '../../../lib/face-crop'
 import { UnavailableFaceMark } from './UnavailableFaceMark'
 
 /** 마스크 조각의 색. 마스크는 알파만 읽는다. 3자리 hex 는 안드로이드가 거부한다. */
@@ -46,10 +47,11 @@ export interface CharacterAvatarProps {
   /** 조회할 수 없게 된 캐릭터. 그림을 흐리고 원 안을 경고 덮개로 덮는다. */
   readonly unavailable?: boolean
   /**
-   * 머리를 원 밖으로 그린다. 원 위로 지름만큼, 양옆으로 지름만큼 넓혀 자르고 원 위 끝에서 지름의 75% 아래는 원으로 자른다.
+   * 이 자리가 오버 프레임을 쓴다. 머리를 원 밖으로 그린다. 원 위로 지름만큼, 양옆으로 지름만큼 넓혀 자르고 원 위 끝에서 지름의
+   * 75% 아래는 원으로 자른다. 사용자가 테마 페이지에서 오버 프레임을 끄면 원 안에만 그린다.
    * 캐릭터 레일만 안 준다. 스케줄러 링이 얼굴 바로 둘레에 있어 머리가 링을 가린다.
    */
-  readonly headOverflow?: boolean
+  readonly overFrame?: boolean
 }
 
 /** 잘라 낸 전신 그림. 원이 자르는 얼굴과 마스크가 자르는 얼굴이 배치만 달리 쓴다. */
@@ -66,9 +68,9 @@ function FaceImage(props: { avatar: CharacterAvatarProps; imageUrl: string; styl
   )
 }
 
-/** 머리를 원 밖으로 그리는 얼굴. 원이 자르지 않고 마스크가 자른다. */
-function HeadOverflowAvatar(props: CharacterAvatarProps): React.JSX.Element {
-  const frame = headOverflowFrame(props.size)
+/** 오버 프레임 얼굴. 원이 자르지 않고 마스크가 자른다. */
+function OverFrameAvatar(props: CharacterAvatarProps): React.JSX.Element {
+  const frame = overFrameMask(props.size)
   return (
     <View
       testID={props.testID}
@@ -104,7 +106,7 @@ function HeadOverflowAvatar(props: CharacterAvatarProps): React.JSX.Element {
           <FaceImage
             avatar={props}
             imageUrl={props.imageUrl}
-            style={headOverflowCropStyle(props.size, props.faceZoom, props.mirrored)}
+            style={overFrameCropStyle(props.size, props.faceZoom, props.mirrored)}
           />
         </MaskedView>
       )}
@@ -120,7 +122,9 @@ function HeadOverflowAvatar(props: CharacterAvatarProps): React.JSX.Element {
 }
 
 export function CharacterAvatar(props: CharacterAvatarProps): React.JSX.Element {
-  if (props.headOverflow === true) return <HeadOverflowAvatar {...props} />
+  // 설정은 여기서만 읽는다. 호출부마다 읽으면 한 곳이 빠졌을 때 그 자리만 설정을 따르지 않는다.
+  const overFrameEnabled = useOverFrameStore((state) => state.enabled)
+  if (props.overFrame === true && overFrameEnabled) return <OverFrameAvatar {...props} />
 
   const unavailable = props.unavailable === true
   return (

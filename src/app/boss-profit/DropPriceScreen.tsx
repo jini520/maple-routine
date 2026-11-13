@@ -407,7 +407,7 @@ export function DropPriceScreen(): React.JSX.Element {
                   {/* 캐릭터 머리. 보스 수익 아코디언 헤더와 같은 짜임(아바타 32 + 이름 + 금액). */}
                   <View className="flex-row items-center gap-3 px-4 py-3">
                     <CharacterAvatar
-                      headOverflow
+                      overFrame
                       mirrored
                       imageUrl={group.imageUrl}
                       name={group.characterName}

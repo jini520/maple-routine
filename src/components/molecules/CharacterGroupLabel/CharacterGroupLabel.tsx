@@ -16,7 +16,7 @@ export function CharacterGroupLabel(props: { name: string; imageUrl: string | nu
   return (
     <View testID="character-group-label" style={{ width: CHARACTER_LABEL_WIDTH }} className="items-center gap-0.5">
       <CharacterAvatar
-        headOverflow
+        overFrame
         testID="character-group-face"
         mirrored
         imageUrl={props.imageUrl}

@@ -72,7 +72,7 @@ export function CharacterRow(props: CharacterRowProps): React.JSX.Element {
       {/* 이름 첫 글자가 아니라 흰 실루엣이다. 첫 글자는 이 캐릭터의 얼굴처럼 보여서 못
           가져왔다 를 말하지 못한다. */}
       <CharacterAvatar
-        headOverflow
+        overFrame
         imageTestID="character-row-face"
         mirrored
         imageUrl={props.imageUrl}

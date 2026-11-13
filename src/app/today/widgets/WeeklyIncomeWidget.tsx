@@ -175,7 +175,7 @@ function RankRow(props: {
           {props.rank}
         </Text>
         <CharacterAvatar
-          headOverflow
+          overFrame
           mirrored
           imageUrl={props.character.imageUrl}
           name={props.character.name}

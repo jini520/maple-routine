@@ -93,7 +93,7 @@ function CompactPortrait(props: CompactPortraitProps): React.JSX.Element {
         label={props.clears.label}
       />
       <CharacterAvatar
-        headOverflow
+        overFrame
         imageTestID="character-portrait-image"
         imageUrl={props.imageUrl}
         name={props.characterName}

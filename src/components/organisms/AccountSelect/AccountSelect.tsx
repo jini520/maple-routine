@@ -70,7 +70,7 @@ export function AccountRow(props: AccountRowProps): React.JSX.Element {
       {/* 초상화 규칙은 `CharacterRow` 와 같다. 두 자리가 갈리면 같은 얼굴이 화면마다 다르게
           없어진다. */}
       <CharacterAvatar
-        headOverflow
+        overFrame
         imageTestID={`account-select-face-${accountId}`}
         mirrored
         imageUrl={props.portraitUrl}

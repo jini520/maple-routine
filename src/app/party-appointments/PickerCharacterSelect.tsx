@@ -38,7 +38,7 @@ function CharacterFace(props: { ocid: string; name: string; imageUrl: string | n
   return (
     // 원 밖으로 나온 머리가 옆 이름 위에 서야 한다. 얼굴의 `zIndex` 는 이 상자 안에서만 먹는다.
     <Animated.View style={[style, { zIndex: 1 }]}>
-      <CharacterAvatar headOverflow imageUrl={props.imageUrl} name={props.name} size={22} className="bg-surface-2" mirrored />
+      <CharacterAvatar overFrame imageUrl={props.imageUrl} name={props.name} size={22} className="bg-surface-2" mirrored />
     </Animated.View>
   )
 }
@@ -80,7 +80,7 @@ export function PickerCharacterSelect(props: {
         return (
           <View className="flex-row items-center gap-2.5">
             <CharacterAvatar
-              headOverflow
+              overFrame
               imageUrl={character?.imageUrl ?? null}
               name={option.label}
               size={20}

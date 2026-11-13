@@ -80,7 +80,7 @@ function CellView(props: {
       {cell.faceOcid !== null && props.face !== null && (
         <View className="absolute left-[3px] top-[3px]" aria-hidden>
           <CharacterAvatar
-            headOverflow
+            overFrame
             imageUrl={props.face.imageUrl}
             name={props.face.name}
             size={FACE_SIZE}
