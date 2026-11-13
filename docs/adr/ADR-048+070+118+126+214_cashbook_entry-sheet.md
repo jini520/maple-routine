@@ -1,8 +1,8 @@
-# ADR-048+070+118+126 가계부 입력 시트
+# ADR-048+070+118+126+214 가계부 입력 시트
 
 > 🟢 유효
 > 옛 번호: ADR-170 결정 5 · 6 · 9 · 정정 9 · 14 · 17 · ADR-173 · ADR-178 · ADR-202 · ADR-203 · ADR-241 결정 1 · ADR-243 · ADR-244 · ADR-245 · ADR-262 · ADR-301 · ADR-325 결정 1 · 2 · 5 · ADR-327 · ADR-333 결정 5 · 6
-> 관련 소스: `app/cashbook/IncomeSheet.tsx` · `app/cashbook/SpendSheet.tsx` · `app/cashbook/CategoryPicker.tsx` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/` · `app/cashbook/spend/` · `app/cashbook/character-options.ts` · `app/cashbook/select-value.tsx` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/symbol-costs.ts` · `constants/domain/quick-adds.ts`
+> 관련 소스: `app/cashbook/income/ItemSaleForm.tsx` · `app/cashbook/spend/ItemBuyForm.tsx` · `app/cashbook/IncomeSheet.tsx` · `app/cashbook/SpendSheet.tsx` · `app/cashbook/CategoryPicker.tsx` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/` · `app/cashbook/spend/` · `app/cashbook/character-options.ts` · `app/cashbook/select-value.tsx` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/symbol-costs.ts` · `constants/domain/quick-adds.ts`
 
 ## 배경
 
@@ -305,6 +305,30 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 - 사냥터 드롭다운(포스 배지 · 레벨 · 마릿수)과 심볼 드롭다운(심볼 그림 · 묶음 라벨)은 이 결정 밖이다. 그 둘은 줄마다 값이
   여럿이라 자기 모양이 따로 있다. 사냥터 드롭다운의 모양은 [[ADR-049]] 결정 16 에 있다.
 
+### 결정 18. 아이템 구매 · 판매는 아이템 목록에서 고르거나 이름을 치고, 산 아이템은 인벤토리에 보관할 수 있다
+
+자주 사고파는 아이템을 매번 치지 않게 하려고 인벤토리 넣기와 같은 아이템 목록에서 고르게 한다(#912). 목록과 찾기 규칙은
+[[ADR-187]] 결정 10 과 [[ADR-209]] 결정 9 를 그대로 쓴다.
+
+- 이름 칸(`구매 아이템` · `판매 아이템`)은 입력 카드 안 목록(`suggestions`)에서 고른다. 인벤토리와 달리 `pickOnly` 를 꺼서 목록에 없는
+  이름도 친 그대로 받는다(사용자 지정 2026-11-13). 목록에는 자주 쓰일 아이템 위주로만 들어 있기 때문이다.
+- 고른 아이템은 `item_key` 에 key 를 적고 `item_name` 은 비운다. 이름은 key 로 아이템 표에서 찾는다(`recordedItemNameOf`). 이름을 적어
+  두면 서버에서 이름을 고쳐도 옛 이름이 남는다. 직접 친 이름은 지금처럼 `item_key` 가 비고 `item_name` 에 남는다. 이미 친 옛 기록은 이름이
+  목록과 같아도 key 로 바꾸지 않는다.
+- 아이템을 고르면 종류 칸을 숨기고, 고른 아이템의 종류(장신구는 장비)로 적는다(사용자 지정 2026-11-13). 아이템마다 종류가 정해져 있어
+  다시 고를 까닭이 없다. 고른 뒤 이름 글자를 고치면 고른 것이 풀리고 종류 칸이 다시 선다. 이때 종류는 고르던 아이템의 종류에서 시작한다.
+- 고른 아이템은 하루 목록 줄에 그 아이템 그림이 서고, 둘째 줄 이름도 아이템 표에서 찾는다. 통계도 같은 이름으로 묶는다.
+- 특수스킬 반지는 목록에서 레벨마다 한 줄로 선다(사용자 지정 2026-11-13). 줄 이름은 `리스트레인트 링 Lv.4` 처럼 이름 뒤에 `Lv.N` 이고,
+  높은 레벨부터 `Lv.4` · `Lv.3` · `Lv.2` · `Lv.1` 이다. 레벨을 따로 고르는 칸을 두지 않고 고르는 순간 레벨까지 정한다. 레벨은 품목의
+  `ring_level`(새 칸)에 적고, 하루 목록 줄과 수정 시트의 아이템 칸에도 `Lv.N` 이 함께 선다. 범위는 [[ADR-209]] 결정 9 와 같은 1~4 다.
+- 구매에서 목록의 아이템을 고르면 `인벤토리에 보관` 체크가 카드 밖, 최종 금액 바로 위에 선다(사용자 지정 2026-11-13). 처음에는 꺼져 있다. 켜면 산 수량이 구매
+  캐릭터의 메이플 ID · 월드 인벤토리에 들어간다. 아이템 구매는 캐릭터를 반드시 고르므로([[ADR-161]] 결정 1) 주인이 늘 정해진다. 그
+  캐릭터의 메이플 ID 를 모르면 스위치가 서지 않는다. 직접 친 이름은 보관할 수 없다. 인벤토리는 목록에 있는 아이템만 받기 때문이다.
+- 보관한 특수스킬 반지는 고른 줄의 레벨로 인벤토리에 들어가고, 칸의 `lv` 배지로 선다([[ADR-209]] 결정 3).
+- 보관 체크와 수량은 수정 시트에서도 고친다(사용자 지정 2026-11-13). 보관한 구매를 고치면 인벤토리의 개수가 함께 바뀌고,
+  지우거나 스위치를 끄면 보관한 것이 빠진다. 그 결과 남은 개수가 0 아래로 내려가면(이미 판 것보다 적어지면) 저장이 되돌아가고
+  토스트가 뜬다. 조각 장부 검사와 같은 자리에서 본다([[ADR-209]] 결정 12).
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -323,6 +347,8 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 | `lib/__tests__/cashbook-categories.spec.ts` | 결정 2: 분류 카드의 그림을 모두 찾는지 본다 |
 | `app/cashbook/__tests__/sheet-fields.test.tsx` | 결정 7: 고르는 칸이 고른 이름을 글자로 보이고, 안 골랐으면 자리표시자를, 목록에서 고르면 그 값을 넘기는지 본다. 결정 17: 아이콘 · 레벨이 닫힌 줄과 목록 줄에 함께 서고, `보유` 는 목록에만 서는지 본다 |
 | `app/cashbook/__tests__/IncomeSheet.test.tsx` | 결정 17: 사냥 캐릭터 목록에 레벨이, 조각 칸 캐릭터 목록에 캐릭터마다 센 보유가 서고 못 읽은 캐릭터는 보유가 없는지 본다 |
+| `app/cashbook/__tests__/SpendSheet.test.tsx` · `IncomeSheet.test.tsx` | 결정 18: 목록에서 고르면 key 로 저장되고 종류 칸이 숨는지, 이름을 고치면 다시 서는지, 목록에 없는 이름도 저장되는지, 특수스킬 반지를 레벨째 고르면 그 레벨이 저장되는지, 보관 체크가 고른 아이템의 구매에만 서고 꺼진 채 시작하는지 본다 |
+| `storage/sqlite/__tests__/inventory-real-sqlite.test.ts` | 결정 18: 보관한 구매가 인벤토리 개수에 더해지고, 구매를 고치거나 지우면 따라 바뀌며, 이미 판 것보다 적게 만드는 저장이 되돌아가는지, 보관한 반지가 고른 레벨로 들어가는지 본다 |
 
 ## 번호 기록
 
@@ -330,3 +356,4 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 - ADR-070 (2026-10-20): 결정 5 에 지출 `기타` 의 캐시 · 메포 금액 칩을 더했다. 그 전에는 통화와 상관없이 메소 칩이 떴다
 - ADR-118 (2026-10-28): 시트 새 디자인(#746). 결정 2 의 분류와 항목 타일을 카드 하나 안의 `card-inset` 칸으로 바꾸고, 결정 4 에 칸 카드와 `card-inset` 칸을, 결정 7 에 알약 대신 값 글자를 적었다
 - ADR-126 (2026-10-29): 결정 17 을 더했다. 캐릭터 · 지역 드롭다운에 월드 · 지역 아이콘과 레벨 · 보유를 붙이고, 목록 줄을 닫힌 줄과 같은 모양으로 왼쪽에 붙였다(#790)
+- ADR-214 (2026-11-13): 결정 18 을 더했다. 아이템 구매 · 판매가 아이템 목록에서 고르고, 산 아이템은 인벤토리에 보관할 수 있다(#912)
