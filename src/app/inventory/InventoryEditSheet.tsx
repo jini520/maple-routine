@@ -25,7 +25,9 @@ export function InventoryEditSheet(props: { cell: ItemCell; owner: string; onClo
   const [saving, setSaving] = useState(false)
   const remaining = mesoValueOf(quantityText)
   // 0 개로 고치는 것은 삭제다. 삭제는 팝오버의 `삭제` 가 확인을 묻고 한다.
-  const canSave = remaining > 0 && remaining !== cell.count
+  // 구매로 보관한 몫은 그 구매 기록이 정한다. 수정으로는 아직 남은 그 몫 아래로 내리지 못한다.
+  const floor = Math.max(1, cell.item.purchased - cell.item.used)
+  const canSave = remaining >= floor && remaining !== cell.count
 
   async function save(): Promise<void> {
     setSaving(true)

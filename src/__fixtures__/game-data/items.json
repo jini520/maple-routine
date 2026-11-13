@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-13T01:48:52.133Z",
+  "updatedAt": "2026-11-13T05:41:33.300Z",
   "items": [
     {
       "key": "soul_ether_1",
@@ -175,13 +175,6 @@
       "iconAssetId": "2fda58c2-e312-4b9c-bcf2-cac529befc2a",
       "kind": "accessory",
       "category": "ring"
-    },
-    {
-      "key": "other_ring",
-      "name": "기타",
-      "iconAssetId": "29ad90e9-bb23-4140-8034-2bc6c60a4adc",
-      "kind": "accessory",
-      "category": "special_skill_ring"
     },
     {
       "key": "swift_rake",
@@ -548,13 +541,6 @@
       "category": "boss_loot"
     },
     {
-      "key": "durability_ring",
-      "name": "듀라빌리티 링",
-      "iconAssetId": "044b60b1-747e-40f6-9103-5fe39c6fe57b",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
       "key": "dragon_masters_legacy",
       "name": "드래곤마스터의 유산",
       "iconAssetId": "97679353-7faa-40a0-bbae-98eb8dde8392",
@@ -604,34 +590,6 @@
       "category": "face_accessory"
     },
     {
-      "key": "level_puff_d_ring",
-      "name": "레벨퍼프 - D링",
-      "iconAssetId": "201a106c-c94a-462e-89de-1e9793711962",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
-      "key": "level_puff_i_ring",
-      "name": "레벨퍼프 - I링",
-      "iconAssetId": "201a106c-c94a-462e-89de-1e9793711962",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
-      "key": "level_puff_l_ring",
-      "name": "레벨퍼프 - L링",
-      "iconAssetId": "201a106c-c94a-462e-89de-1e9793711962",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
-      "key": "level_puff_s_ring",
-      "name": "레벨퍼프 - S링",
-      "iconAssetId": "201a106c-c94a-462e-89de-1e9793711962",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
       "key": "royal_black_metal_shoulder",
       "name": "로얄 블랙메탈 숄더",
       "iconAssetId": "06d1e336-b3b1-47fa-af40-bb5910fdc917",
@@ -651,13 +609,6 @@
       "iconAssetId": "052544e1-53eb-4292-9c2c-3d19fcb72139",
       "kind": "accessory",
       "category": "dark_boss_set"
-    },
-    {
-      "key": "limit_ring",
-      "name": "리밋 링",
-      "iconAssetId": "29ad90e9-bb23-4140-8034-2bc6c60a4adc",
-      "kind": "accessory",
-      "category": "special_skill_ring"
     },
     {
       "key": "risk_taker_ring",
@@ -681,20 +632,6 @@
       "category": "special_skill_ring"
     },
     {
-      "key": "recover_defense_ring",
-      "name": "리커버디펜스 링",
-      "iconAssetId": "dffa9cc9-cb73-4ab2-9b8b-64a3219db440",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
-      "key": "recover_stance_ring",
-      "name": "리커버스탠스 링",
-      "iconAssetId": "530f7204-870f-4a4b-8fa8-6a5a0b6179d5",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
       "key": "lithium_heart",
       "name": "리튬 하트",
       "iconAssetId": "5e60c9e5-ccf1-4fbd-ac1f-9acd92bc27e3",
@@ -702,23 +639,9 @@
       "category": "mechanical_heart"
     },
     {
-      "key": "reflective_ring",
-      "name": "리플렉티브 링",
-      "iconAssetId": "68768bb6-3637-4135-b9d4-aa150f69c8bb",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
       "key": "ring_of_sum",
       "name": "링 오브 썸",
       "iconAssetId": "21560880-4a65-4de7-881a-7ec547b1e8d2",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
-      "key": "mana_cut_ring",
-      "name": "마나컷 링",
-      "iconAssetId": "bf249ba2-1ada-436b-91e5-59310edd33c6",
       "kind": "accessory",
       "category": "special_skill_ring"
     },
@@ -1008,13 +931,6 @@
       "iconAssetId": "7c0e52c8-1dea-4e09-9ef6-46d386bbffa8",
       "kind": "accessory",
       "category": "badge"
-    },
-    {
-      "key": "burden_lift_ring",
-      "name": "버든리프트 링",
-      "iconAssetId": "5922c7af-ec4b-4483-810e-e61ee1f9a303",
-      "kind": "accessory",
-      "category": "special_skill_ring"
     },
     {
       "key": "berserkers_meister_immortal_ring",
@@ -1311,13 +1227,6 @@
       "category": "scroll"
     },
     {
-      "key": "swift_ring",
-      "name": "스위프트 링",
-      "iconAssetId": "de040ead-a583-4980-abe8-9cb558ed8e61",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
       "key": "scarlet_ring",
       "name": "스칼렛 링",
       "iconAssetId": "12d0fd5c-abfa-43aa-8888-2fdaaeb10800",
@@ -1339,13 +1248,6 @@
       "category": "earring"
     },
     {
-      "key": "stance_shift_ring",
-      "name": "스탠스쉬프트 링",
-      "iconAssetId": "78748b4e-ca25-4cce-86c1-c55da6be714c",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
       "key": "wrench",
       "name": "스패너",
       "iconAssetId": "c39425f6-936a-4fe0-b49d-fe84fc6b77e9",
@@ -1365,13 +1267,6 @@
       "iconAssetId": "baf22006-0b0c-40df-9c90-e7a670bb370b",
       "kind": "consumable",
       "category": "boss_loot"
-    },
-    {
-      "key": "shield_swap_ring",
-      "name": "실드스와프 링",
-      "iconAssetId": "851c5bfb-6289-4623-9519-4637cf2c8936",
-      "kind": "accessory",
-      "category": "special_skill_ring"
     },
     {
       "key": "silver_blossom_ring",
@@ -3054,13 +2949,6 @@
       "category": "radiance_boss_set"
     },
     {
-      "key": "overpass_ring",
-      "name": "오버패스 링",
-      "iconAssetId": "546d32a0-ba19-4c7c-81eb-13374540bd31",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
       "key": "ocean_glow_earrings",
       "name": "오션 글로우 이어링",
       "iconAssetId": "8df4efa5-b923-42a7-939e-5b36c036132e",
@@ -3992,13 +3880,6 @@
       "category": "core_gemstone"
     },
     {
-      "key": "crisis_h_ring",
-      "name": "크라이시스 - H링",
-      "iconAssetId": "9540b24a-bc32-4084-a133-e1c80924644a",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
       "key": "crisis_hm_ring",
       "name": "크라이시스 - HM링",
       "iconAssetId": "74cbb05f-7504-442b-b1c8-18c8262d2962",
@@ -4006,30 +3887,9 @@
       "category": "special_skill_ring"
     },
     {
-      "key": "crisis_m_ring",
-      "name": "크라이시스 - M링",
-      "iconAssetId": "6c8ef310-2625-4ff0-a229-1e78e1f4e590",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
       "key": "critical_damage_ring",
       "name": "크리데미지 링",
       "iconAssetId": "a96d1220-be3a-4503-9365-f59217aacb8e",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
-      "key": "critical_defense_ring",
-      "name": "크리디펜스 링",
-      "iconAssetId": "272899ba-7e6d-49a1-a764-116482db8cf6",
-      "kind": "accessory",
-      "category": "special_skill_ring"
-    },
-    {
-      "key": "critical_shift_ring",
-      "name": "크리쉬프트 링",
-      "iconAssetId": "d8112bf6-9ce9-4db6-b83e-f0f8e2de81bb",
       "kind": "accessory",
       "category": "special_skill_ring"
     },
@@ -4578,13 +4438,6 @@
       "iconAssetId": "915e0126-2dda-4965-8ed3-481d38869817",
       "kind": "accessory",
       "category": "earring"
-    },
-    {
-      "key": "health_cut_ring",
-      "name": "헬스컷 링",
-      "iconAssetId": "56ce48d1-7184-445f-828f-d1416144bc88",
-      "kind": "accessory",
-      "category": "special_skill_ring"
     },
     {
       "key": "chaos_pitch_black_accessory_box",

@@ -6,26 +6,26 @@ import { ITEM_KIND_KEYS, type ItemKindKey } from '../../lib/cashbook/categories'
 import { compact, isOneOf } from '../../lib/game-data/contract'
 import { derive } from '../../lib/game-data/table'
 import { getAssetImage } from '../../lib/assets/asset-lookup'
-import { findItem, itemsTable } from '../../lib/item-catalog'
+import { findItem, itemsTable, withRingLevel } from '../../lib/item-catalog'
 import { searchItems } from '../../lib/item-search'
 import type { ItemRow } from '../../types/game-data'
 import type { ImageAssetRef } from '../../types/image-asset'
 
-/** 특수스킬 반지의 묶음. 이 묶음의 아이템은 넣을 때 레벨을 고른다. */
+/** 특수스킬 반지의 묶음. 이 묶음의 아이템은 목록에서 레벨마다 한 줄로 선다. */
 const SPECIAL_SKILL_RING = 'special_skill_ring'
 
-/** 넣을 때 고르는 특수스킬 반지의 레벨. 서버 반지 상자 표의 레벨 범위를 합친 것과 같다. */
-export const RING_LEVELS = [1, 2, 3, 4] as const
-
-/** 특수스킬 반지를 고르면 처음 골라져 있는 레벨 */
-export const DEFAULT_RING_LEVEL = 4
+/** 목록에 서는 특수스킬 반지의 레벨. 서버 반지 상자 표의 레벨 범위를 합친 것과 같고, 높은 레벨부터 선다. */
+const RING_LEVELS = [4, 3, 2, 1] as const
 
 export interface CatalogItem {
+  /** 목록 줄의 key. 특수스킬 반지는 레벨마다 다르다(`risk_taker_ring@4`) */
   key: string
+  itemKey: string
+  /** 목록 줄의 이름. 특수스킬 반지는 이름 뒤에 `Lv.N` 이 붙는다 */
   name: string
   kind: ItemKindKey
-  /** 특수스킬 반지면 넣을 때 레벨을 고른다 */
-  ringLevels: boolean
+  /** 특수스킬 반지의 레벨. 다른 아이템은 `null` 이다 */
+  ringLevel: number | null
   iconAssetId?: string
 }
 
@@ -50,20 +50,26 @@ const catalog = derive(itemsTable, (table): readonly CatalogItem[] =>
   table.items.flatMap((item) => {
     const kind = itemKindOf(item.kind)
     if (kind === null || excluded(item)) return []
-    return [
+    const entry = (ringLevel: number | null): CatalogItem =>
       compact({
-        key: item.key,
-        name: item.name,
+        key: ringLevel === null ? item.key : `${item.key}@${ringLevel}`,
+        itemKey: item.key,
+        name: withRingLevel(item.name, ringLevel),
         kind,
-        ringLevels: item.category === SPECIAL_SKILL_RING,
+        ringLevel,
         iconAssetId: item.iconAssetId,
-      }),
-    ]
+      })
+    return item.category === SPECIAL_SKILL_RING ? RING_LEVELS.map(entry) : [entry(null)]
   }),
 )
 
 export function inventoryCatalog(): readonly CatalogItem[] {
   return catalog()
+}
+
+/** 목록 줄 하나. 고친 기록을 열 때 그 기록의 아이템 · 반지 레벨로 찾는다. 목록에 없으면 `null` 이다. */
+export function catalogEntryOf(itemKey: string, ringLevel: number | null | undefined): CatalogItem | null {
+  return catalog().find((item) => item.itemKey === itemKey && item.ringLevel === (ringLevel ?? null)) ?? null
 }
 
 /** 아이템 표에서 그 아이템의 가계부 아이템 종류. 표에 없거나 옮길 수 없는 종류면 `null` 이다. */

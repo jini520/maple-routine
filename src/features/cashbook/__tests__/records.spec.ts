@@ -706,6 +706,15 @@ describe('하루 목록 카드의 두 줄', () => {
     expect(카드({ kind: 'income', record: 판매, characterName: '' })).toEqual(['아이템 판매', '1단계 소울 에테르 2개'])
   })
 
+  // 목록에서 고른 구매도 이름을 비우고 key 를 적는다. 같은 반지도 레벨마다 다른 물건이라 레벨을 붙인다.
+  it('목록에서 고른 구매 · 판매는 아이템 표의 이름이고, 특수스킬 반지는 이름 뒤에 Lv.N 이 붙는다', () => {
+    const 구매 = { ...지출행, category: 'item_purchase' as const, item: null, itemKey: 'soul_ether_1', itemKind: 'consumable' as const, quantity: 2 }
+    const 반지 = { ...수입행, category: 'item_sale' as const, item: null, itemKey: 'risk_taker_ring', itemKind: 'equipment' as const, quantity: null, ringLevel: 4 }
+
+    expect(카드({ kind: 'spend', record: 구매, characterName: '' })).toEqual(['아이템 구매', '1단계 소울 에테르 2개'])
+    expect(카드({ kind: 'income', record: 반지, characterName: '' })).toEqual(['아이템 판매', '리스크테이커 링 Lv.4'])
+  })
+
   it('기타는 직접 친 이름이고 수량이 2 이상일 때만 붙인다. 이름이 없으면 둘째 줄이 없다', () => {
     const 기타 = { ...지출행, category: 'etc' as const, item: '모멘텀 프라임 패스', itemKey: null, quantity: 1 }
 

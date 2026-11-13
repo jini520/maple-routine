@@ -50,3 +50,11 @@ export function findItem(key: string | null | undefined): ItemRow | null {
 export function recordedItemNameOf(item: string | null, itemKey: string | null): string | null {
   return item ?? findItem(itemKey)?.name ?? null
 }
+
+/**
+ * 특수스킬 반지의 레벨을 붙인 이름(`리스트레인트 링 Lv.4`). 레벨이 없으면 이름 그대로다. 같은 반지도 레벨마다 다른 물건이라
+ * 목록 줄 · 기록 줄이 같은 모양으로 레벨을 보인다.
+ */
+export function withRingLevel(name: string, ringLevel: number | null | undefined): string {
+  return ringLevel == null ? name : `${name} Lv.${ringLevel}`
+}

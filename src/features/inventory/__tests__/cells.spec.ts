@@ -7,7 +7,7 @@ function drop(id: string, itemKey: string, category: BossDropRecord['category'],
 }
 
 function item(id: string, itemKey: string, itemKindKey: string, remaining: number, accountId = 'maple-a'): InventoryItem {
-  return { id, accountId, worldKey: 'scania', itemKey, itemKindKey, quantity: remaining, used: 0, remaining, ringLevel: null }
+  return { id, accountId, worldKey: 'scania', itemKey, itemKindKey, quantity: remaining, used: 0, purchased: 0, remaining, ringLevel: null }
 }
 
 const faceOf = (accountId: string): string | null => ({ 'maple-a': 'ocid-a', 'maple-b': 'ocid-b' })[accountId] ?? null

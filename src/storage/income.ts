@@ -112,6 +112,8 @@ export interface IncomeRecord {
   recordedAt: string
   /** 인벤토리에서 판 아이템 판매가 가리키는 인벤토리 줄. 가계부에서 적은 판매는 칸이 없다. */
   inventoryItemId?: string
+  /** 아이템 판매에서 목록으로 고른 특수스킬 반지의 레벨. 다른 기록은 칸이 없다. */
+  ringLevel?: number
   /** 인벤토리에서 판 기타 조각. 판 개수만큼 그 메이플 ID · 월드의 기타 조각에서 가져온다. 다른 기록은 칸이 없다. */
   otherFragmentUse?: OtherFragmentUse
 }

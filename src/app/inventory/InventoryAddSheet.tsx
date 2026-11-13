@@ -1,25 +1,18 @@
 /**
- * 아이템 넣기. 주인(메이플 ID · 월드) → 아이템 → 레벨(특수스킬 반지만) → 수량 차례다. 아이템 칸은 글자를 치는 칸이고, 치는 동안
- * 이름이 맞는 아이템이 종류를 가리지 않고 입력 카드 안 목록에 떠 그중에서 고른다. 종류는 고른 아이템의 종류로 적는다. 목록에 없는
- * 아이템은 넣을 수 없다. 넣은 아이템에는 날짜가 없어 머리에 날짜가 없다.
+ * 아이템 넣기. 주인(메이플 ID · 월드) → 아이템 → 수량 차례다. 아이템 칸은 글자를 치는 칸이고, 치는 동안 이름이 맞는 아이템이
+ * 종류를 가리지 않고 입력 카드 안 목록에 떠 그중에서 고른다. 종류는 고른 아이템의 종류로, 특수스킬 반지는 고른 줄의 레벨로
+ * 적는다. 목록에 없는 아이템은 넣을 수 없다. 넣은 아이템에는 날짜가 없어 머리에 날짜가 없다.
  */
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms'
-import { Segment } from '../../components/molecules/Segment/Segment'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
 import { mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
 import { COUNT_QUICK_ADDS } from '../../constants/domain/quick-adds'
 import { openInputCard } from '../../features/input-card/store'
 import { addToInventory } from '../../features/inventory/actions'
-import {
-  catalogMatches,
-  DEFAULT_RING_LEVEL,
-  inventoryCatalog,
-  RING_LEVELS,
-  type CatalogItem,
-} from '../../features/inventory/catalog'
+import { catalogMatches, inventoryCatalog, type CatalogItem } from '../../features/inventory/catalog'
 import { loadInventoryOwners, type InventoryOwner } from '../../features/inventory/load'
 import { useToastStore } from '../../features/toast/store'
 import { worldEmblemUrl } from '../../lib/assets/asset-lookup'
@@ -67,7 +60,6 @@ export function InventoryAddSheet(props: { onClose: () => void; catalog?: readon
   const [owners, setOwners] = useState<readonly InventoryOwner[]>([])
   const [ownerKey, setOwnerKey] = useState<string | null>(null)
   const [item, setItem] = useState<CatalogItem | null>(null)
-  const [ringLevel, setRingLevel] = useState<number | null>(null)
   const [quantityText, setQuantityText] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -81,10 +73,7 @@ export function InventoryAddSheet(props: { onClose: () => void; catalog?: readon
   const canSave = owner !== null && item !== null && quantity > 0
 
   function pickItem(key: string): void {
-    // 아이템이 바뀌면 고른 레벨은 그 아이템의 것이 아니다.
-    const next = catalog.find((each) => each.key === key) ?? null
-    setItem(next)
-    setRingLevel(next?.ringLevels === true ? DEFAULT_RING_LEVEL : null)
+    setItem(catalog.find((each) => each.key === key) ?? null)
   }
 
   function openItemCard(): void {
@@ -109,10 +98,10 @@ export function InventoryAddSheet(props: { onClose: () => void; catalog?: readon
       await addToInventory({
         accountId: owner.accountId,
         worldKey: owner.worldKey,
-        itemKey: item.key,
+        itemKey: item.itemKey,
         itemKindKey: item.kind,
         quantity,
-        ringLevel: item.ringLevels ? ringLevel : null,
+        ringLevel: item.ringLevel,
       })
       props.onClose()
     } catch {
@@ -155,16 +144,6 @@ export function InventoryAddSheet(props: { onClose: () => void; catalog?: readon
               </Text>
             </Pressable>
           </FieldRow>
-          {item?.ringLevels === true && (
-            <FieldRow label="레벨" testID="inventory-add-ring-level">
-              <Segment
-                size="sm"
-                options={RING_LEVELS.map(String)}
-                selected={ringLevel === null ? null : String(ringLevel)}
-                onSelect={(level) => setRingLevel(Number(level))}
-              />
-            </FieldRow>
-          )}
           {counts && (
             <FieldRow label="수량">
               <AmountInput

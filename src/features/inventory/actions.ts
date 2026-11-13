@@ -9,6 +9,7 @@ import {
   setInventoryRemaining,
   type NewInventoryItem,
 } from '../../storage/inventory'
+import { bumpSpendRecordsRevision } from '../../storage/spend'
 import {
   excludeDropPriceOf,
   loadDropPriceEntry,
@@ -42,6 +43,8 @@ export function editInventoryRemaining(id: string, remaining: number): Promise<v
 }
 
 /** 그 칸에 남은 것을 지운다. 판 · 헥사 강화에 쓴 기록은 그대로다. */
-export function removeInventoryRemaining(id: string): Promise<void> {
-  return deleteInventoryRemaining(id, new Date())
+export async function removeInventoryRemaining(id: string): Promise<void> {
+  await deleteInventoryRemaining(id, new Date())
+  // 이 줄에 보관한 가계부 구매는 보관이 풀려, 그 기록을 보는 가계부 화면도 다시 읽어야 한다.
+  bumpSpendRecordsRevision()
 }

@@ -58,7 +58,7 @@ import { withMvpDiscount } from '../../lib/enhancement/cost'
 import { loadEnhancementTotals } from '../../storage/enhancement-totals'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
-import { recordedItemNameOf } from '../../lib/item-catalog'
+import { recordedItemNameOf, withRingLevel } from '../../lib/item-catalog'
 import { randomUuid } from '../../native/uuid'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import { getLastHunts, setLastHunt, type LastHunt, type LastHunts } from '../../storage/last-hunts'
@@ -884,6 +884,12 @@ function joined(parts: ReadonlyArray<string | null | undefined>, separator = ' '
 }
 
 /** 직접 친 이름 뒤에 종류 단위의 수량을 붙인다. 장비는 수량이 없다. */
+/** 아이템 구매 · 판매 줄의 이름. 고른 아이템은 아이템 표의 이름이고, 특수스킬 반지는 이름 뒤에 레벨이 붙는다. */
+function tradedItemName(record: { item: string | null; itemKey: string | null; ringLevel?: number }): string | null {
+  const name = recordedItemNameOf(record.item, record.itemKey)
+  return name === null ? null : withRingLevel(name, record.ringLevel)
+}
+
 function tradedItemDetail(item: string | null, kind: ItemKindKey | null, quantity: number | null): string | null {
   const counted = kind !== null && countsQuantity(kind) && quantity !== null
   return joined([item, counted ? quantityText(quantity, itemKindUnitOf(kind)) : null])
@@ -916,7 +922,7 @@ function incomeCard(record: IncomeRecord): RecordCard {
       return { title, detail: record.quantity === null ? name : `${name} ${quantityText(record.quantity, '개')} 판매` }
     }
     case 'item_sale':
-      return { title, detail: tradedItemDetail(recordedItemNameOf(record.item, record.itemKey), record.itemKind ?? 'equipment', record.quantity) }
+      return { title, detail: tradedItemDetail(tradedItemName(record), record.itemKind ?? 'equipment', record.quantity) }
     case 'etc':
       return { title, detail: joined([record.item, etcQuantity(record.quantity, category?.unit)]) }
   }
@@ -942,7 +948,7 @@ function spendCard(record: SpendRecord): RecordCard {
       return { title: categoryTitle, detail: joined([target?.name ?? record.item, levels]) }
     }
     case 'item_purchase':
-      return { title: categoryTitle, detail: tradedItemDetail(record.item, record.itemKind ?? 'equipment', record.quantity) }
+      return { title: categoryTitle, detail: tradedItemDetail(tradedItemName(record), record.itemKind ?? 'equipment', record.quantity) }
     case 'etc':
       return { title: categoryTitle, detail: joined([record.item, etcQuantity(record.quantity, category?.unit)]) }
     default: {
