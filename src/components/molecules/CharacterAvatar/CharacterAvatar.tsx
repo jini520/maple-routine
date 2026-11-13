@@ -47,7 +47,7 @@ export interface CharacterAvatarProps {
   readonly unavailable?: boolean
   /**
    * 머리를 원 밖으로 그린다. 원 위로 지름만큼, 양옆으로 지름만큼 넓혀 자르고 중심선 아래는 원으로 자른다.
-   * 링이 얼굴 바로 둘레에 있는 자리(레일 · 보스 카드)는 안 준다. 머리가 링을 가린다.
+   * 캐릭터 레일만 안 준다. 스케줄러 링이 얼굴 바로 둘레에 있어 머리가 링을 가린다.
    */
   readonly headOverflow?: boolean
 }

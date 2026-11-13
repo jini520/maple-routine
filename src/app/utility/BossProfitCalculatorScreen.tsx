@@ -260,7 +260,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
         >
           {/* 어느 캐릭터의 카드를 보고 있든 그 캐릭터의 합이 늘 같은 자리에 보인다. */}
           <View className="flex-row items-center gap-2 px-1 py-2">
-            <CharacterAvatar imageUrl={selected.imageUrl ?? null} name={selectedName} size={28} className="bg-surface-2" mirrored />
+            <CharacterAvatar headOverflow imageUrl={selected.imageUrl ?? null} name={selectedName} size={28} className="bg-surface-2" mirrored />
             <Text className="text-sm font-semibold text-text">{selectedName} 주간 수입</Text>
             <Text
               testID="calculator-character-total"

@@ -1,17 +1,9 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
-// 머리를 원 밖으로 그리는 얼굴은 아래 다섯 파일뿐이다. 레일 · 보스 카드 · 알약 · 묶음 라벨은 원 안에만 그린다.
-// 다른 자리에 번지면 머리가 링이나 작은 칸을 덮는다. 렌더로는 못 물어서 소스로 묻는다.
+// 머리를 원 안에만 그리는 얼굴은 캐릭터 레일 하나다. 스케줄러 링이 얼굴 바로 바깥에 있어서 머리가 링을 가린다.
+// 새 호출부가 `headOverflow` 를 빠뜨리면 그 자리만 원에 갇힌다. 렌더로는 못 물어서 소스로 묻는다.
 const SRC = join(__dirname, '..', '..', '..', '..')
-
-const HEAD_OVERFLOW_FILES = [
-  'app/today/CharacterManageButton.tsx',
-  'app/today/widgets/RemainingScheduleWidget.tsx',
-  'app/today/widgets/WeeklyIncomeWidget.tsx',
-  'components/organisms/AccountSelect/AccountSelect.tsx',
-  'components/organisms/CharacterRow/CharacterRow.tsx',
-]
 
 function tsxFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -34,16 +26,33 @@ function openingTag(source: string, start: number): string {
   return source.slice(start)
 }
 
-it('`headOverflow` 를 넘기는 얼굴 호출부가 정한 다섯 파일과 같다', () => {
-  const found = tsxFiles(SRC)
-    .filter((file) => {
-      const source = readFileSync(file, 'utf8')
-      return [...source.matchAll(/<CharacterAvatar\b/g)].some((match) =>
-        /\bheadOverflow\b/.test(openingTag(source, match.index)),
-      )
-    })
-    .map((file) => relative(SRC, file))
-    .sort()
+/** 모든 `CharacterAvatar` 여는 태그와 그 파일. */
+function faceTags(): { path: string; tag: string }[] {
+  return tsxFiles(SRC).flatMap((file) => {
+    const source = readFileSync(file, 'utf8')
+    return [...source.matchAll(/<CharacterAvatar\b/g)].map((match) => ({
+      path: relative(SRC, file),
+      tag: openingTag(source, match.index),
+    }))
+  })
+}
 
-  expect(found).toEqual(HEAD_OVERFLOW_FILES)
+/** 레일의 얼굴. 지름을 `PORTRAIT_RAIL` 에서 읽는다. */
+function isRailFace(tag: string): boolean {
+  return tag.includes('PORTRAIT_RAIL.faceSize')
+}
+
+it('레일 말고 모든 얼굴 호출부가 `headOverflow` 를 넘긴다', () => {
+  const missing = faceTags()
+    .filter(({ tag }) => !isRailFace(tag) && !/\bheadOverflow\b/.test(tag))
+    .map(({ path }) => path)
+
+  expect(missing).toEqual([])
+})
+
+it('레일은 `headOverflow` 를 넘기지 않는다', () => {
+  const rail = faceTags().filter(({ tag }) => isRailFace(tag))
+
+  expect(rail).toHaveLength(1)
+  expect(rail.filter(({ tag }) => /\bheadOverflow\b/.test(tag))).toEqual([])
 })

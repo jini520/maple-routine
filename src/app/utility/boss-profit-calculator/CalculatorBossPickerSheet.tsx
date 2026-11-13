@@ -90,7 +90,7 @@ export function CalculatorBossPickerSheet(props: {
         <BossPickerBody
           character={
             <View className="h-10 flex-row items-center gap-2 self-start rounded-full bg-surface pl-1.5 pr-4">
-              <CharacterAvatar imageUrl={props.character.imageUrl} name={props.character.name} size={28} className="bg-surface-2" mirrored />
+              <CharacterAvatar headOverflow imageUrl={props.character.imageUrl} name={props.character.name} size={28} className="bg-surface-2" mirrored />
               <Text className="text-sm font-semibold text-text">{props.character.name}</Text>
             </View>
           }
