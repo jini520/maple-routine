@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ChevronDownIcon, Text } from '../../atoms'
 import { boxShadowOf, DROPDOWN_SHADOW } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
+import { itemDelay, itemStartOffset, LIST_START_SCALE, listStartOffset, type DropdownSide } from '../../../lib/dropdown-motion'
 import { placeDropdown, placeDropdownX } from '../../../lib/place-dropdown'
 
 /** 목록이 화면 가장자리에 붙지 않게 남기는 여백. `AccountSelect` 와 같은 값이다. */
@@ -58,22 +59,22 @@ export function SelectChevron(props: { open: boolean; className?: string }): Rea
   )
 }
 
-/** 목록 상자. 0.85 배 · 6 위에서 위쪽 가운데를 기준으로 펼쳐진다(가운데 기준 배율을 위로 당겨 맞춘다) */
-function listEntering(height: number) {
+/** 목록 상자. 0.85 배에서 칸에 닿는 변을 기준으로 펼쳐진다. 위로 열리면 아래쪽 끝이 기준이다 */
+function listEntering(height: number, side: DropdownSide) {
   return new Keyframe({
-    0: { opacity: 0, transform: [{ translateY: -LIST_GAP_PX - height * 0.075 }, { scaleY: 0.85 }] },
+    0: { opacity: 0, transform: [{ translateY: listStartOffset(height, LIST_GAP_PX, side) }, { scaleY: LIST_START_SCALE }] },
     100: { opacity: 1, transform: [{ translateY: 0 }, { scaleY: 1 }], easing: EASE_OUT },
   }).duration(220)
 }
 
-/** 목록의 칸 하나. 위에서 4 내려오며 나타나고, 칸마다 40ms 씩 늦게 시작한다 */
-function itemEntering(index: number) {
+/** 목록의 칸 하나. 칸 쪽에서 4 움직이며 나타나고, 칸에 가까운 칸부터 40ms 씩 늦게 시작한다 */
+function itemEntering(index: number, count: number, side: DropdownSide) {
   return new Keyframe({
-    0: { opacity: 0, transform: [{ translateY: -4 }] },
+    0: { opacity: 0, transform: [{ translateY: itemStartOffset(side) }] },
     100: { opacity: 1, transform: [{ translateY: 0 }], easing: EASE_OUT },
   })
     .duration(200)
-    .delay(index * 40)
+    .delay(itemDelay(index, count, side))
 }
 
 export interface SelectOption {
@@ -202,7 +203,8 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           fitContent: props.listFitsContent,
         })
 
-  function renderOptions(animate: boolean): React.ReactNode {
+  /** @param side 펼치는 목록이면 연 쪽. 자리를 재는 안 보이는 목록은 `null` 이라 움직이지 않는다 */
+  function renderOptions(side: DropdownSide | null): React.ReactNode {
     return props.options.map((option, index) => {
       const isSelected = option.value === props.selected
       const opensGroup = option.group !== undefined && option.group !== props.options[index - 1]?.group
@@ -241,8 +243,8 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           </Pressable>
         </>
       )
-      return animate ? (
-        <Animated.View key={keyOf(option.value)} entering={itemEntering(index)}>
+      return side !== null ? (
+        <Animated.View key={keyOf(option.value)} entering={itemEntering(index, props.options.length, side)}>
           {body}
         </Animated.View>
       ) : (
@@ -303,7 +305,9 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
             <View
               style={{ position: 'absolute', left: horizontal?.left ?? 0, top: placement.top, width: horizontal?.width }}
             >
-              <Animated.View entering={listEntering(Math.min(contentHeight, placement.maxHeight, props.listMaxHeight ?? Infinity))}>
+              <Animated.View
+                entering={listEntering(Math.min(contentHeight, placement.maxHeight, props.listMaxHeight ?? Infinity), placement.side)}
+              >
                 {/* 그림자는 바깥 상자가 든다. 모서리를 자르는 안쪽 상자에 주면 iOS 가 그림자까지 자른다. */}
                 <View style={{ borderRadius: 14, boxShadow: boxShadowOf(definition.shadowColor, DROPDOWN_SHADOW) }}>
                   <View
@@ -313,7 +317,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
                     style={{ maxHeight: Math.min(placement.maxHeight, props.listMaxHeight ?? Infinity) }}
                     className="overflow-hidden rounded-[14px] bg-surface"
                   >
-                    <ScrollView contentContainerStyle={{ padding: 6 }}>{renderOptions(true)}</ScrollView>
+                    <ScrollView contentContainerStyle={{ padding: 6 }}>{renderOptions(placement.side)}</ScrollView>
                   </View>
                 </View>
               </Animated.View>
@@ -334,7 +338,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
                   setContentHeight(event.nativeEvent.layout.height)
                 }}
               >
-                {renderOptions(false)}
+                {renderOptions(null)}
               </View>
             </View>
           )}

@@ -8,12 +8,14 @@ describe('placeDropdown', () => {
 
     expect(placed.top).toBe(146)
     expect(placed.maxHeight).toBe(800 - 30 - 12 - 146)
+    expect(placed.side).toBe('below')
   })
 
   it('간격을 주고 아래가 모자라면 트리거 위로 그만큼 띄워 뒤집는다', () => {
     const placed = placeDropdown({ ...BASE, anchorTop: 600, anchorHeight: 40, contentHeight: 200, gap: 6 })
 
     expect(placed.top).toBe(600 - 6 - 200)
+    expect(placed.side).toBe('above')
   })
 })
 
