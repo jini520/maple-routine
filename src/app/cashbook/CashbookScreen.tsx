@@ -26,6 +26,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
+import { useRoute, type RouteProp } from '@react-navigation/native'
 
 import {
   Badge,
@@ -52,6 +53,9 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
+import { useScreenNavigation } from '../../hooks/useScreenNavigation'
+import type { IncomeCategoryKey } from '../../lib/cashbook/categories'
+import type { TabParamList } from '../../navigation/routes'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import {
   formatBossProfitPeriodLabel,
@@ -733,6 +737,12 @@ export function CashbookScreen(): React.JSX.Element {
   const [monthKey, setMonthKey] = useState(() => getCurrentMonthKey(now))
   const [weekStartKey, setWeekStartKey] = useState(() => resetWeekStartOf(todayDateKey))
   const [selectedDateKey, setSelectedDateKey] = useState(todayDateKey)
+  const navigation = useScreenNavigation()
+  /**
+   * today 빠른 이동의 가계부 분류 칸이 보낸 분류. 있으면 그 분류의 새 수입 폼을 연 채로 그린다. 이 화면은 today 에서
+   * 올 때 새로 마운트되므로 고른 날이 곧 오늘이고, 시트도 오늘 날짜로 열린다.
+   */
+  const quickLinkCategory = useRoute<RouteProp<TabParamList, 'Cashbook'>>().params?.incomeCategory
   /**
    * 시트가 무엇을 하고 있나. 셋이다.
    *
@@ -740,7 +750,11 @@ export function CashbookScreen(): React.JSX.Element {
    * 있으므로 어느 시트를 열까 와 무엇을 채울까 가 한 값에서 나온다. 자동 줄은 타입이 막아
    * 여기 못 들어온다.
    */
-  const [sheet, setSheet] = useState<'income' | 'expense' | ManualDayRecord | null>(null)
+  const [sheet, setSheet] = useState<'income' | 'expense' | ManualDayRecord | null>(() =>
+    quickLinkCategory === undefined ? null : 'income',
+  )
+  /** 새 수입 시트를 이 분류의 폼으로 바로 연다. today 빠른 이동으로 들어올 때만 있다. */
+  const [startCategory, setStartCategory] = useState<IncomeCategoryKey | undefined>(quickLinkCategory)
   /**
    * 펼쳐 둔 결정석 줄. 한 번에 하나다. 값은 `rowKeyOf` 가 만든 줄의 신원
    * (`bossCrystal:{ocid}`)이고, 그것이 날짜를 안 들고 있으므로 날을 바꿀 때 여기서 지워야 한다.
@@ -760,6 +774,11 @@ export function CashbookScreen(): React.JSX.Element {
   >([])
   /** 시트의 캐릭터 칸에 캐릭터 뒤로 서는 메이플 ID. 캐릭터 목록과 같이 들어올 때 한 번 읽는다. */
   const [accounts, setAccounts] = useState<readonly SheetAccount[]>([])
+
+  // 파라미터는 받자마자 지운다. 탭 파라미터는 스택에 남아, 안 지우면 탭을 떠났다 돌아올 때 시트가 다시 열린다.
+  useEffect(() => {
+    if (quickLinkCategory !== undefined) navigation.setParams({ incomeCategory: undefined })
+  }, [quickLinkCategory, navigation])
 
   const monthWeeks = buildCalendarMonth(monthKey)
   const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
@@ -1260,7 +1279,10 @@ export function CashbookScreen(): React.JSX.Element {
             description: '사냥 · 아이템 판매 등을 기록',
             accessibilityLabel: '수입 추가',
             Icon: ProfitIcon,
-            onSelect: () => setSheet('income'),
+            onSelect: () => {
+              setStartCategory(undefined)
+              setSheet('income')
+            },
           },
           {
             key: 'expense',
@@ -1290,6 +1312,7 @@ export function CashbookScreen(): React.JSX.Element {
           todayDateKey={todayDateKey}
           earliestDateKey={historyFloorDateKey(todayDateKey)}
           editing={typeof sheet === 'object' ? sheet.record : undefined}
+          startCategory={startCategory}
           onSave={
             typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveIncome
           }

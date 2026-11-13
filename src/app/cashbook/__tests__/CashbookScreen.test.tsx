@@ -67,6 +67,15 @@ jest.mock('../../../features/settlement/query', () => ({
 const mockOpenTab = jest.fn()
 jest.mock('../../../hooks/useOpenTab', () => ({ useOpenTab: () => mockOpenTab }))
 
+// today 빠른 이동이 넘기는 분류 파라미터는 케이스마다 다르므로 변수로 준다. 화면이 지우는 것은 `setParams` 로 본다.
+let mockRouteParams: { incomeCategory?: string } | undefined
+const mockSetParams = jest.fn()
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useRoute: () => ({ params: mockRouteParams }),
+}))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: () => ({ setParams: mockSetParams }) }))
+
 // 시트 껍데기는 `BossDropSheet.test.tsx` 와 같은 방식으로 세운다.
 jest.mock('@gorhom/bottom-sheet', () => {
   const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
@@ -127,6 +136,8 @@ beforeEach(() => {
   mockWindow.collecting = false
   mockWindow.reload.mockReset().mockResolvedValue(undefined)
   mockOpenTab.mockReset()
+  mockRouteParams = undefined
+  mockSetParams.mockReset()
   records.editIncome.mockReset().mockResolvedValue(undefined)
   records.editSpend.mockReset().mockResolvedValue(undefined)
   records.removeRecord.mockReset().mockResolvedValue(undefined)
@@ -288,6 +299,27 @@ describe('CashbookScreen: 연도 표시', () => {
 
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2025년 12월')
     expect(view.queryByTestId('cashbook-period-year')).toBeNull()
+  })
+})
+
+// today 빠른 이동의 `사냥` · `전리품 판매` 칸이 분류를 파라미터로 넘겨 이 탭을 연다.
+describe('CashbookScreen: 빠른 이동의 분류 파라미터', () => {
+  it('받으면 그 분류의 수입 폼을 오늘 날짜로 바로 열고 파라미터를 지운다. 분류를 다시 고르는 누르개는 없다', async () => {
+    mockRouteParams = { incomeCategory: 'hunting' }
+
+    const view = await 그리기()
+
+    expect(view.getByTestId('income-sheet-title')).toHaveTextContent('사냥')
+    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 23일 (일)')
+    expect(view.queryByTestId('income-sheet-back')).toBeNull()
+    expect(mockSetParams).toHaveBeenCalledWith({ incomeCategory: undefined })
+  })
+
+  it('파라미터 없이 들어오면 시트를 열지 않는다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByTestId('income-sheet')).toBeNull()
+    expect(mockSetParams).not.toHaveBeenCalled()
   })
 })
 

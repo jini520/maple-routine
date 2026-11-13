@@ -18,6 +18,7 @@ import {
   QUICK_LINK_NAMES,
   QUICK_LINKS_PER_ROW,
   capacityOf,
+  onlyOpenable,
   toggleQuickLink,
   withRows,
 } from '../../features/quick-links/config'
@@ -26,7 +27,7 @@ import { boxShadowOf, type ShadowLayer } from '../../lib/shadow'
 import { selectionFeedback } from '../../native/haptics'
 import { useThemeAppearance } from '../../theme/context'
 import type { QuickLinkId, QuickLinkRows, QuickLinksConfig } from '../../types/quick-links'
-import { QUICK_LINK_ICONS, useQuickLinkColors } from './quick-links'
+import { QUICK_LINK_ICONS, useCanOpenQuickLink, useQuickLinkColors } from './quick-links'
 
 /** 칸이 다 찼을 때 고르지 않은 타일. 흐리지 않으면 누를 수 없는 타일이 멀쩡해 보인다 */
 const LOCKED_OPACITY = 0.35
@@ -117,7 +118,9 @@ function TrayItem(props: { id: QuickLinkId; onPress: () => void }): React.JSX.El
 
 export function QuickLinksSheet(props: QuickLinksSheetProps): React.JSX.Element {
   const { definition } = useThemeAppearance()
-  const [draft, setDraft] = useState(props.config)
+  const canOpen = useCanOpenQuickLink()
+  // 위젯에 보이는 칸으로만 시작한다. 숨은 칸을 트레이에 두면 열 수 없는 칸을 고른 채 저장한다.
+  const [draft, setDraft] = useState(() => onlyOpenable(props.config, canOpen))
   const capacity = capacityOf(draft.rows)
   const full = draft.ids.length >= capacity
   const empty = draft.ids.length === 0
@@ -199,7 +202,7 @@ export function QuickLinksSheet(props: QuickLinksSheetProps): React.JSX.Element 
           <View key={group.label} className="rounded-[22px] bg-surface px-3 pb-1 pt-3.5">
             <Text className="px-1.5 pb-2.5 text-xs font-bold text-text">{group.label}</Text>
             <View className="flex-row flex-wrap">
-              {group.ids.map((id) => {
+              {group.ids.filter(canOpen).map((id) => {
                 const selected = draft.ids.includes(id)
                 return (
                   <Tile

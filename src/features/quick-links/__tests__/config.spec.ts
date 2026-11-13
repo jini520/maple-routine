@@ -2,10 +2,13 @@
 // ① 저장된 값이 깨졌거나 옛 화면 id 를 들고 있어도 위젯이 칸을 넘치거나 없는 화면을 그리지 않는다
 // ② `한 줄` 로 바꾸면 트레이 차례로 여섯 번째부터 빠진다
 // ③ 칸이 다 차면 더 고를 수 없다
+// ④ 열 수 없는 칸을 빼도 남은 칸의 차례가 그대로다
 import {
   DEFAULT_QUICK_LINKS,
   QUICK_LINK_GROUPS,
+  QUICK_LINK_NAMES,
   capacityOf,
+  onlyOpenable,
   parseQuickLinks,
   toggleQuickLink,
   withRows,
@@ -66,11 +69,23 @@ describe('toggleQuickLink: 본문 타일을 누른다', () => {
   })
 })
 
+describe('onlyOpenable: 열 수 없는 칸을 뺀다', () => {
+  it('열 수 없는 칸만 빼고, 남은 칸의 차례와 줄 수는 그대로다', () => {
+    const 구성: QuickLinksConfig = { rows: 2, ids: ['profit', 'income-hunt-loot-sale', 'stats', 'income-hunting'] }
+
+    expect(onlyOpenable(구성, (id) => id !== 'income-hunt-loot-sale')).toEqual({
+      rows: 2,
+      ids: ['profit', 'stats', 'income-hunting'],
+    })
+  })
+})
+
 describe('목록', () => {
   // 묶음 표에서 빠진 화면은 편집 시트에 타일이 없어 다시 고를 길이 없다.
-  it('기본 구성의 화면이 모두 묶음 표에 있고, 묶음 표에 같은 화면이 두 번 나오지 않는다', () => {
+  it('모든 화면이 묶음 표에 한 번씩 있고, 기본 구성의 화면도 그 안에 있다', () => {
     const 표 = QUICK_LINK_GROUPS.flatMap((group) => group.ids)
     expect(new Set(표).size).toBe(표.length)
+    expect([...표].sort()).toEqual(Object.keys(QUICK_LINK_NAMES).sort())
     expect(DEFAULT_QUICK_LINKS.ids.every((id) => 표.includes(id))).toBe(true)
     expect(DEFAULT_QUICK_LINKS.ids).toHaveLength(capacityOf(DEFAULT_QUICK_LINKS.rows))
   })
