@@ -40,6 +40,21 @@ describe('inventoryCatalog', () => {
     expect(inventoryCatalog().map((item) => item.key)).toEqual(['green_soul_ring'])
   })
 
+  // 레벨을 고르는 칸 없이 목록에서 레벨째 고른다. 높은 레벨부터 선다.
+  it('특수스킬 반지는 레벨마다 한 줄로, 높은 레벨부터 이름 뒤에 Lv.N 을 붙여 서고 줄마다 레벨을 든다', () => {
+    itemsTable.set({
+      updatedAt: null,
+      items: [{ key: 'risk_taker_ring', name: '리스크테이커 링', kind: 'accessory', category: 'special_skill_ring' }],
+    })
+
+    expect(inventoryCatalog().map((item) => [item.key, item.itemKey, item.name, item.ringLevel])).toEqual([
+      ['risk_taker_ring@4', 'risk_taker_ring', '리스크테이커 링 Lv.4', 4],
+      ['risk_taker_ring@3', 'risk_taker_ring', '리스크테이커 링 Lv.3', 3],
+      ['risk_taker_ring@2', 'risk_taker_ring', '리스크테이커 링 Lv.2', 2],
+      ['risk_taker_ring@1', 'risk_taker_ring', '리스크테이커 링 Lv.1', 1],
+    ])
+  })
+
   // 서버 분류 트리에 종류가 늘어도 앱이 모르는 종류는 어느 탭에도 세울 수 없어 뺀다.
   it('가계부 아이템 종류로 옮길 수 없는 종류의 아이템은 뺀다', () => {
     itemsTable.set({
@@ -52,9 +67,9 @@ describe('inventoryCatalog', () => {
 
   it('운영 아이템 표에서 종류를 가리지 않고 친 글자로 찾고, 찾은 아이템은 제 종류를 든다', () => {
     const 찾은것 = catalogMatches(inventoryCatalog(), '1에르')
-    const 반지 = catalogMatches(inventoryCatalog(), '리스크테이커')
+    const 반지 = catalogMatches(inventoryCatalog(), '리스크테이커4')
 
     expect(찾은것.find((item) => item.name === '1단계 소울 에테르')?.kind).toBe('consumable')
-    expect(반지.find((item) => item.key === 'risk_taker_ring')?.kind).toBe('equipment')
+    expect(반지.map((item) => [item.name, item.kind])).toEqual([['리스크테이커 링 Lv.4', 'equipment']])
   })
 })

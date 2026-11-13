@@ -135,7 +135,7 @@ describe('InventoryScreen', () => {
     expect(actions.removeInventoryRemaining).toHaveBeenCalledWith('item-1')
   })
 
-  it('넣기에는 종류 칸이 없고 찾아 고른 아이템의 종류로 넣는다. 특수스킬 반지는 수량 대신 레벨 칸이 4 로 선다', async () => {
+  it('넣기에는 종류 칸이 없고 찾아 고른 아이템의 종류로 넣는다. 특수스킬 반지는 목록에서 레벨째 골라 레벨 칸 · 수량 칸이 없다', async () => {
     const view = await 열기()
     await 누르기(view, 'inventory-add-fab')
     expect(view.queryByTestId('inventory-add-kind')).toBeNull()
@@ -146,12 +146,14 @@ describe('InventoryScreen', () => {
     await act(async () => {
       fireEvent.changeText(view.getByTestId('input-card-value'), '리스크테이커')
     })
+    expect(view.getByTestId('input-card-suggestion-risk_taker_ring@3')).toHaveTextContent('리스크테이커 링 Lv.3')
     await act(async () => {
-      fireEvent.press(view.getByTestId('input-card-suggestion-risk_taker_ring'))
+      fireEvent.press(view.getByTestId('input-card-suggestion-risk_taker_ring@4'))
     })
 
     expect(view.queryByTestId('inventory-add-quantity')).toBeNull()
-    expect(within(view.getByTestId('inventory-add-ring-level')).getByRole('button', { name: '4', selected: true })).toBeTruthy()
+    expect(view.queryByTestId('inventory-add-ring-level')).toBeNull()
+    expect(view.getByTestId('inventory-add-item')).toHaveTextContent('리스크테이커 링 Lv.4')
 
     await act(async () => {
       fireEvent.press(view.getByRole('button', { name: '저장' }))
