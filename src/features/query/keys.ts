@@ -22,6 +22,8 @@ export const queryKeys = {
   bossProfitPeriod: (tab: BossCycle, periodKey: string) => ['boss-profit-period', tab, periodKey] as const,
   /** 드롭 기록 전 기간 묶음과 가뭄 요약. */
   dropHistory: () => ['drop-history'] as const,
+  /** 인벤토리 격자의 칸과 칸 얼굴. 사냥 조각을 세는 날이 둘째 칸이다. */
+  inventory: (todayDateKey: string) => ['inventory', todayDateKey] as const,
   /** 오늘 강화 내역을 마지막으로 받은 시각. 수집기가 `setQueryData` 로 넣는다. */
   enhancementToday: () => ['enhancement-today'] as const,
   /** 넥슨 계정 하나의 캐릭터 목록. 둘째 칸은 그 계정 id 로 만든다. */

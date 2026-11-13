@@ -17,6 +17,7 @@ import {
   SwordsIcon,
   Text,
   TrendingUpIcon,
+  BackpackIcon,
   WalletIcon,
   WrenchIcon,
 } from '../../atoms'
@@ -75,6 +76,8 @@ const ICONS: Readonly<Record<GroupId | TabRouteName, IconComponent>> = {
   Cashbook: CalendarIcon,
   // 오르는 화살표. 기간을 모아 흐름을 보는 자리라 장부(달력)와 갈린다.
   Stats: TrendingUpIcon,
+  // 게임의 인벤토리가 가방이다(사용자 지정).
+  Inventory: BackpackIcon,
   Utility: WrenchIcon,
   Settings: MenuIcon,
 }

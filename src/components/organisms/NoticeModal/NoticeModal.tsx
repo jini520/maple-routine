@@ -48,7 +48,8 @@ interface NoticeAction {
 }
 
 export interface NoticeModalProps {
-  icon: ModalIcon
+  /** 비우면 배지 없이 제목만 선다. 아래 `content` 가 무엇을 다루는지 보여 주는 확인(인벤토리 삭제)이 쓴다 */
+  icon?: ModalIcon
   tone: ModalTone
   title: string
   description?: string
@@ -131,6 +132,7 @@ export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
           <View testID={`${testId}-header`}>
             <ModalHeader
               icon={props.icon}
+              bare={props.icon === undefined}
               tone={props.tone}
               title={props.title}
               description={props.description}

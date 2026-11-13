@@ -33,6 +33,7 @@ export type TabRouteName =
   | 'Profit'
   | 'Cashbook'
   | 'Stats'
+  | 'Inventory'
   | 'Utility'
   | 'Settings'
 
@@ -44,6 +45,7 @@ export type TabParamList = {
   Profit: undefined
   Cashbook: undefined
   Stats: undefined
+  Inventory: undefined
   Utility: undefined
   /**
    * 캐릭터 관리 피커를 열어 둔 채로 이 탭에 보내는 파라미터. 보내는 쪽은 셋이다. 보스 수익의
@@ -83,6 +85,7 @@ export type LedgerSubsParamList = {
   Profit: undefined
   Cashbook: undefined
   Stats: undefined
+  Inventory: undefined
 }
 
 export type LayerParamList = {
@@ -294,6 +297,7 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   { path: '/appointments', screen: 'AppointmentsScreen', target: { kind: 'tab', route: 'Appointments' }, origin: 'rn' },
   { path: '/cashbook', screen: 'CashbookScreen', target: { kind: 'tab', route: 'Cashbook' }, origin: 'rn' },
   { path: '/stats', screen: 'StatsScreen', target: { kind: 'tab', route: 'Stats' }, origin: 'rn' },
+  { path: '/inventory', screen: 'InventoryScreen', target: { kind: 'tab', route: 'Inventory' }, origin: 'rn' },
   { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },
   {
     path: '/utility/item-split',

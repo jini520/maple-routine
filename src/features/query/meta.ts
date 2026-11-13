@@ -11,6 +11,7 @@ export type RecordTable =
   | 'spend_records'
   | 'enhancement_totals'
   | 'schedule_probe_ledger'
+  | 'inventory_items'
 
 /** 다른 쿼리가 새 데이터를 들면 무효화되는 관계. 이름은 `queryKeys` 의 첫 칸과 같다. */
 export type QueryDependency = 'schedule-round' | 'tracked-ocids'

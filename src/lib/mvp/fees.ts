@@ -19,6 +19,11 @@ export function recordGradeAt(context: FeeRateContext, ocid: string | null, date
   return highestMvpGrade([...context.histories.values()].map((history) => mvpGradeAt(history, dateKey)))
 }
 
+/** 메이플 ID 기록의 자동 수수료 요율(%). 그 메이플 ID 의 그 날 등급 요율이고, 등급이 없으면 일반 요율. */
+export function accountFeePercent(context: FeeRateContext, accountId: string, dateKey: string): number {
+  return auctionFeePercentOf(mvpGradeAt(context.histories.get(accountId) ?? [], dateKey))
+}
+
 /** 자동 수수료 요율(%). 기록의 그 날 등급 요율이고, 등급이 없으면 일반 요율. */
 export function autoFeePercent(context: FeeRateContext, ocid: string | null, dateKey: string): number {
   return auctionFeePercentOf(recordGradeAt(context, ocid, dateKey))

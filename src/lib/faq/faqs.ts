@@ -24,6 +24,7 @@ export const FAQ_SHEET_KEYS = [
   'profit',
   'cashbook',
   'stats',
+  'inventory',
   'utility',
   'settings',
   'content-manage',

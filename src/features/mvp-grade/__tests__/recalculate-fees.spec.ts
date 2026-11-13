@@ -69,6 +69,14 @@ describe('다시 계산이 고쳐 쓸 목록', () => {
     expect(update?.saleFeePercent).toBe(3)
   })
 
+  it('메이플 ID 기록은 대표 캐릭터가 아니라 그 메이플 ID 의 등급으로 센다', async () => {
+    // 대표 a1 의 ID A 는 실버(3%)지만 기록의 ID B 는 등급이 없어 일반 5% 다.
+    mocked(getAutoFeeIncomeRecords).mockResolvedValue([income({ id: 'maple-b', ocid: null, accountId: 'B', saleFeePercent: 3 })])
+
+    const [update] = await recalcIncomeUpdates()
+    expect(update?.saleFeePercent).toBe(5)
+  })
+
   it('대표 캐릭터가 없으면 추적 목록의 첫 캐릭터로 센다', async () => {
     mocked(getRepresentativeCharacter).mockResolvedValue(null)
     mocked(getAutoFeeIncomeRecords).mockResolvedValue([income({ id: 'account-wide', ocid: null })])

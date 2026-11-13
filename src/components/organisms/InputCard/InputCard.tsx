@@ -32,6 +32,7 @@ import {
   Image,
   Keyboard,
   Pressable,
+  ScrollView,
   View,
   useWindowDimensions,
   type LayoutChangeEvent,
@@ -80,6 +81,26 @@ import type { MvpGradeKey } from '../../../lib/mvp/grades'
  * 않는 것은, 부품이 아는 그림이 늘수록 어느 화면이 무엇을 쓰는지가 이 파일로 새기 때문이다.
  */
 export type InputCardIcon = 'meso' | 'fragment' | ImageAssetRef
+
+/** 입력 카드 안 목록의 한 줄. */
+export interface InputCardSuggestion {
+  key: string
+  name: string
+  icon: ImageAssetRef | null
+}
+
+export interface InputCardSuggestions {
+  /** 친 글자에 맞는 아이템. 차례 그대로 선다 */
+  itemsOf: (draft: string) => readonly InputCardSuggestion[]
+  /** 고른 아이템의 key. 이어서 `onConfirm` 이 그 이름으로 불린다 */
+  onPick: (key: string) => void
+  /** 참이면 목록에 있는 아이템만 받는다. 확인은 친 글자가 목록의 이름과 같을 때만 눌린다 */
+  pickOnly?: boolean
+}
+
+/** 목록 한 줄의 높이. 목록 자리는 세 줄과 넷째 줄의 반이라, 넷째 줄이 반만 보여 목록이 스크롤된다는 것을 알린다. */
+const SUGGESTION_ROW_HEIGHT = 42
+const SUGGESTION_LIST_HEIGHT = SUGGESTION_ROW_HEIGHT * 3.5
 
 /**
  * 값 칸 아래 수 고르개. 라벨도 접미사도 호출부가 준다.
@@ -252,6 +273,11 @@ export interface InputCardProps {
    * `기록 안함` 이 쓴다.
    */
   exclude?: { label: string; onPress: () => void }
+  /**
+   * 값 칸과 버튼 줄 사이의 아이템 목록. 친 글자로 찾은 아이템이 서고, 한 줄을 누르면 그 아이템으로 정하고 닫는다. 목록 자리
+   * 높이가 정해져 있어 치는 동안 맞는 수가 바뀌어도 카드 높이가 안 바뀐다. 아직 안 쳤어도 자리는 빈 채로 선다.
+   */
+  suggestions?: InputCardSuggestions
   /**
    * 확인 바로 왼쪽에 서는 **뒤로**. 확인과 같은 것을 넘기고, 쓸지 말지는 받는 쪽이 정한다.
    *
@@ -599,6 +625,10 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
    * 비율을 안 넘긴 카드는 인자 하나로 부른다. 없는 비율을 채워 보내면 받는 쪽이 그것을 값으로
    * 읽을 수 있다.
    */
+  /** 친 글자와 이름이 같은 목록의 아이템. 목록에서만 받는 카드는 이것이 있어야 확인이 눌린다. */
+  const exactPick = props.suggestions?.itemsOf(draft).find((item) => item.name === draft.trim())
+  const confirmable = props.suggestions?.pickOnly !== true || exactPick !== undefined
+
   function give(to: ((next: string, share?: ShareValue, fees?: FeesValue) => void) | undefined): void {
     if (to === undefined) return
     if (props.fees !== undefined) {
@@ -879,6 +909,39 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             )}
           </View>
 
+          {props.suggestions !== undefined && (
+            <ScrollView
+              testID="input-card-suggestions"
+              style={{ height: SUGGESTION_LIST_HEIGHT }}
+              className="mt-2"
+              keyboardShouldPersistTaps="handled"
+            >
+              {props.suggestions.itemsOf(draft).map((item) => (
+                <Pressable
+                  key={item.key}
+                  testID={`input-card-suggestion-${item.key}`}
+                  role="button"
+                  aria-label={item.name}
+                  onPress={() => {
+                    props.suggestions?.onPick(item.key)
+                    props.onConfirm(item.name)
+                  }}
+                  style={{ height: SUGGESTION_ROW_HEIGHT }}
+                  className="flex-row items-center gap-2.5 rounded-[10px] px-3 active:bg-card-inset"
+                >
+                  {item.icon === null ? (
+                    <View style={{ width: 24, height: 24 }} />
+                  ) : (
+                    <Image source={item.icon} style={{ width: 24, height: 24 }} resizeMode="contain" aria-hidden />
+                  )}
+                  <Text numberOfLines={1} className="shrink text-sm text-text">
+                    {item.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          )}
+
           {/*
             값 칸 아래 전부. **판이 이 위에 덮인다.**
 
@@ -1013,10 +1076,19 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             <Pressable
               testID="input-card-confirm"
               role="button"
-              onPress={() => give(props.onConfirm)}
-              className="h-11 flex-[2] items-center justify-center rounded-xl bg-primary"
+              aria-disabled={!confirmable}
+              onPress={() => {
+                if (!confirmable) return
+                if (exactPick !== undefined) props.suggestions?.onPick(exactPick.key)
+                give(props.onConfirm)
+              }}
+              className={`h-11 flex-[2] items-center justify-center rounded-xl ${confirmable ? 'bg-primary' : 'bg-card-inset'}`}
             >
-              <Text numberOfLines={1} className="text-sm font-bold text-on-primary" style={TABULAR_NUMS}>
+              <Text
+                numberOfLines={1}
+                className={`text-sm font-bold ${confirmable ? 'text-on-primary' : 'text-text-disabled'}`}
+                style={TABULAR_NUMS}
+              >
                 {draft === '' ? (props.confirmEmptyLabel ?? props.confirmLabel ?? '입력') : (props.confirmLabel ?? '입력')}
               </Text>
             </Pressable>

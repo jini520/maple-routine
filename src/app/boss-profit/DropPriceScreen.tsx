@@ -16,9 +16,7 @@
  * @see docs/features/boss-profit.md 정책
  */
 import type { FeesValue, ShareValue } from '../../components/organisms/InputCard/InputCard'
-import { dropFeeSeeds } from '../../features/boss-profit/drop-fees'
-import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
-import { periodStartDateKey } from '../../lib/boss/boss-profit-period'
+import { useMvpGradeContext } from '../../features/mvp-grade/store'
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 import { useRoute, type RouteProp } from '@react-navigation/native'
@@ -66,17 +64,10 @@ import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { PORTRAIT_COMPACT } from '../../components/organisms/CharacterPortrait/portrait-metrics'
 import { closeInputCard, openInputCard } from '../../features/input-card/store'
-import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
-import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
+import { mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
-import { getMaxPartySize } from '../../lib/boss/bosses'
+import { dropPriceCardRequest, type PriceEdit } from './drop-price-card'
 
-/** 한 연쇄 안에서 매긴 값. 스토어를 다시 읽어도 이전으로 돌아가면 이 값이 보인다. */
-interface PriceEdit {
-  meso: number
-  share: ShareValue
-  fees?: FeesValue
-}
 
 function characterTotal(group: DropPriceGroup): number {
   return group.entries.reduce((sum, entry) => sum + dropPayoutMeso(entry.drop), 0)
@@ -274,57 +265,32 @@ export function DropPriceScreen(): React.JSX.Element {
       void runWrite(() => savePrice(target, meso, 몫, fees), items, to, 다음편집)
     }
 
-    const [saleSeed, splitSeed] = dropFeeSeeds(target.drop, edit?.fees)
-
-    openInputCard({
-      // 머리가 그 아이템을 말한다. `판매 가격` 이라는 말은 이미 누른 행이 했다.
-      label: dropItemNameOf(target.drop.itemKey, target.drop.itemName),
-      context: `${characterName} · ${target.bossName}`,
-      icon: dropItemIconOf(target.drop.itemKey) ?? 'meso',
-      unit: '메소',
-      reading: true,
-      unitKey: 'dropPrice',
-      chips: MESO_QUICK_ADDS,
-      value: mesoTextOf(edit?.meso ?? target.drop.priceMeso ?? 0),
-      share: {
-        label: '분배 비율',
-        // 열 때의 자리는 **적힌 방식**이 정한다. 숫자로 되짚으면 비율 33.3% 가 기본 3인으로 열린다.
-        mode: edit?.share.mode ?? target.drop.priceSplitMode ?? target.defaultShare.mode,
-        // 인원과 비율은 **칸이 다르다**. 한 칸에서 둘을 뿌리면 비율에서 고친 합이 인원을 덮는다.
-        partySize: edit?.share.partySize ?? target.drop.pricePartySize ?? target.defaultShare.partySize,
-        myShare: edit?.share.myShare ?? target.drop.priceMyShare ?? target.defaultShare.myShare,
-        sharesTotal: edit?.share.sharesTotal ?? target.drop.priceShare ?? target.defaultShare.sharesTotal,
-        maxPartySize: getMaxPartySize(target.bossKey, target.difficulty),
-      },
-      fees: {
-        // 드롭에는 날짜 칸이 없어 기간 첫날의 등급으로 센다(다시 계산도 같은 날을 본다).
-        autoFee:
-          gradeContext === null ? null : autoFeeFrom(gradeContext, target.ocid, periodStartDateKey(target.periodKey)),
-        sale: saleSeed,
-        split: splitSeed,
-      },
-      ...confirmLabels({
-        하나: items.length === 1,
-        마지막: index === items.length - 1,
-        자리: index,
-        전체: items.length,
-        매긴것,
-        지금매김,
-      }),
-      exclude: {
-        label: '기록 안함',
-        onPress: () => {
+    openInputCard(
+      dropPriceCardRequest({
+        target,
+        characterName,
+        edit,
+        gradeContext,
+        labels: confirmLabels({
+          하나: items.length === 1,
+          마지막: index === items.length - 1,
+          자리: index,
+          전체: items.length,
+          매긴것,
+          지금매김,
+        }),
+        onExclude: () => {
           const 다음편집 = new Map(edits)
           다음편집.delete(index)
           void runWrite(() => excludePrice(target), items, index + 1, 다음편집)
         },
-      },
-      prev:
-        index > 0
-          ? { label: `이전(${index}/${items.length})`, onPress: (next, share, fees) => move(index - 1, next, share, fees) }
-          : undefined,
-      onConfirm: (next, share, fees) => move(index + 1, next, share, fees),
-    })
+        prev:
+          index > 0
+            ? { label: `이전(${index}/${items.length})`, onPress: (next, share, fees) => move(index - 1, next, share, fees) }
+            : undefined,
+        onConfirm: (next, share, fees) => move(index + 1, next, share, fees),
+      }),
+    )
   }
 
   /** 쓰고 나서 그 자리로. 실패하면 **안 넘어간다**. 넘어가면 못 쓴 건을 지나친다. */

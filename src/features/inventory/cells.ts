@@ -23,11 +23,11 @@ export type InventoryCell =
 
 export type InventoryCellKind = InventoryCell['kind']
 
-/** 팝오버의 글자. 칸에 따라 다르다. */
-export function inventoryMenuOf(kind: InventoryCellKind): readonly string[] {
-  if (kind === 'drop') return ['판매', '기록 안함']
-  if (kind === 'hunt') return ['판매']
-  return ['판매', '수정', '삭제']
+/** 팝오버의 글자. 칸에 따라 다르다. 장비는 늘 하나라 고칠 개수가 없어 `수정` 이 없다. */
+export function inventoryMenuOf(cell: Pick<InventoryCell, 'kind' | 'itemKindKey'>): readonly string[] {
+  if (cell.kind === 'drop') return ['판매', '기록 안함']
+  if (cell.kind === 'hunt') return ['판매']
+  return cell.itemKindKey === 'equipment' ? ['판매', '삭제'] : ['판매', '수정', '삭제']
 }
 
 /** 드롭 표의 장비 · 소비는 같은 이름의 가계부 종류로 선다. 고정 드롭은 기타 칸에 선다. */

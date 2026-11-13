@@ -81,8 +81,12 @@ describe('buildInventoryCells', () => {
 
 describe('inventoryMenuOf', () => {
   it('보스 드롭은 판매 · 기록 안함, 사냥 조각은 판매, 넣은 아이템은 판매 · 수정 · 삭제다', () => {
-    expect(inventoryMenuOf('drop')).toEqual(['판매', '기록 안함'])
-    expect(inventoryMenuOf('hunt')).toEqual(['판매'])
-    expect(inventoryMenuOf('item')).toEqual(['판매', '수정', '삭제'])
+    expect(inventoryMenuOf({ kind: 'drop', itemKindKey: 'equipment' })).toEqual(['판매', '기록 안함'])
+    expect(inventoryMenuOf({ kind: 'hunt', itemKindKey: 'etc' })).toEqual(['판매'])
+    expect(inventoryMenuOf({ kind: 'item', itemKindKey: 'consumable' })).toEqual(['판매', '수정', '삭제'])
+  })
+
+  it('넣은 장비는 늘 하나라 고칠 개수가 없어 판매 · 삭제만 선다', () => {
+    expect(inventoryMenuOf({ kind: 'item', itemKindKey: 'equipment' })).toEqual(['판매', '삭제'])
   })
 })

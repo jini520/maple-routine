@@ -41,6 +41,15 @@ describe('NoticeModal: 영역', () => {
     expect(within(scroll).queryByText('나중에')).toBeNull()
   })
 
+  // 아래 칸이 무엇을 다루는지 보여 주는 확인은 배지 없이 제목만 둔다. 빈 원이 남으면 제목이 오른쪽으로 밀린다.
+  it('아이콘을 안 주면 배지 자리가 없다', async () => {
+    const { icon: _icon, ...rest } = 기본프롭()
+    const { queryByTestId, getByText } = await renderOverlay(<NoticeModal {...rest} />)
+
+    expect(queryByTestId('notice-badge')).toBeNull()
+    expect(getByText('이 키로는 연결할 수 없습니다')).toBeTruthy()
+  })
+
   // 나머지 다섯은 선택이다. 안 주면 그 자리가 아예 없어야 한다. 빈 `View` 로 남으면 위아래
   // 간격이 두 번 먹어 덩어리 사이가 벌어진다.
   it('나머지 영역은 안 주면 자리가 없다', async () => {

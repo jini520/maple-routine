@@ -90,6 +90,7 @@
 | `DataFreshness` | 제목 아래 `hh:mm:ss 기준` 줄 |
 | `UnavailableBadge` | 값 대신 보이는 `조회 불가` 알약 |
 | `Segment` | 테두리 없는 세그먼트(크기 `sm` 26 · `md` 28 · 화면 헤더 탭 `lg` 32) |
+| `InventoryTabs` | 게임 인벤토리처럼 판 위에 같은 폭으로 늘어선 탭. 판에 붙고, 고른 탭은 판과 같은 `surface`, 나머지는 `surface-2` 다([[ADR-209]] 결정 3) |
 | `Popover` | `PopoverLayer` · `AnchoredPopover` |
 | `ModalHeader` | 가운데 모달의 머리 줄. 왼쪽 40 원 배지 옆에 제목 · 설명([[ADR-062]] 결정 8) |
 | `InsetRow` | 가운데 모달의 `card-inset` 칸 한 줄. 앞 표시 · 이름 · 값([[ADR-062]] 결정 8) |
@@ -118,10 +119,10 @@
 |---|---|
 | `BottomSheet` | 바텀시트 껍데기. 상단 시트를 뒤집은 떠 있는 모양이고, 다크에서 안쪽 표면을 한 칸 올린다 |
 | `TopSheet` | 위에서 내려오는 떠 있는 시트. 끌면 늘어났다 돌아오고, 치는 칸을 직접 품는다([[ADR-062]] 결정 15) |
-| `InputCard` | 키보드 위에 뜨는 입력 카드. `InputCardHost` 는 앱 셸에 한 번만 둔다. 패널은 `ModalSurface` 이고, 값 칸은 `card-inset` 바탕에 커서가 보일 때만 테마색 그림자가 번진다([[ADR-062]] 결정 17). `unitKey` 를 넘기면 금액 단위 세그먼트(`기본` · `만` · `억`)가 선다([[ADR-082]] 결정 13). `multiline` 이면 세 줄로 열려 네 줄까지 자라는 글자 칸이다([[ADR-091]] 결정 14) |
+| `InputCard` | 키보드 위에 뜨는 입력 카드. `InputCardHost` 는 앱 셸에 한 번만 둔다. 패널은 `ModalSurface` 이고, 값 칸은 `card-inset` 바탕에 커서가 보일 때만 테마색 그림자가 번진다([[ADR-062]] 결정 17). `unitKey` 를 넘기면 금액 단위 세그먼트(`기본` · `만` · `억`)가 선다([[ADR-082]] 결정 13). `multiline` 이면 세 줄로 열려 네 줄까지 자라는 글자 칸이다([[ADR-091]] 결정 14). `suggestions` 를 넘기면 값 칸과 버튼 줄 사이에 높이가 정해진 아이템 목록(세 줄 반)이 서고, `pickOnly` 면 목록의 이름만 받는다([[ADR-209]] 결정 9) |
 | `MesoPad` | 숫자 칸의 글자 처리와 커서 계산, 금액 단위 환산(`meso-pad.ts` · `meso-caret.ts` · `meso-unit.ts`) |
 | `BossPicker` | 보스 고르기의 본문 · 선택 줄 · 난이도 팝오버. 파티 스케줄과 주간 보스 수익 계산기가 쓴다([[ADR-051]] 결정 13) |
-| `Modal` · `NoticeModal` | 가운데 모달(테두리 없는 패널 `Modal.Card` · 껍데기 `ModalSurface`) · 알림 모달 틀([[ADR-062]] 결정 8) |
+| `Modal` · `NoticeModal` | 가운데 모달(테두리 없는 패널 `Modal.Card` · 껍데기 `ModalSurface`) · 알림 모달 틀([[ADR-062]] 결정 8). `NoticeModal` 은 `icon` 을 비우면 배지 없이 제목만 선다. 아래 칸이 무엇을 다루는지 보여 주는 확인(인벤토리 삭제)이 쓴다([[ADR-209]] 결정 11) |
 | `LoadingModal` · `TaskProgressModal` · `TaskResumeModal` | 불러오는 중 모달 · 오래 걸리는 작업 진행률 · 이어서 하기([[ADR-023]]) |
 | `CalendarPopover` · `TimePopover` | 날짜 · 시각 팝오버 |
 | `SelectField` · `AccountSelect` | 드롭다운 · 메이플 ID 드롭다운 |
