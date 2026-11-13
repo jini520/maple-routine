@@ -18,7 +18,7 @@
 | `features/today/shared-maple-id.ts` · `storage/today-shared-maple-id.ts` | 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID(Preferences `todaySharedMapleId`) |
 | `app/today/widgets/types.ts` | 위젯 id 와 프롭 형식 |
 | `app/today/widgets/*Widget.tsx` | 위젯 열 개 |
-| `app/today/quick-links.ts` | 빠른 이동 칸마다 가는 화면 · 아이콘과, 칸을 칠하는 색 |
+| `app/today/quick-links.ts` | 빠른 이동 칸마다 가는 화면 · 아이콘과, 칸을 칠하는 색. 서버 갈래 표에 없는 가계부 분류의 칸을 가린다 |
 | `app/today/QuickLinksSheet.tsx` | 빠른 이동 편집 시트 |
 | `features/quick-links/config.ts` · `store.ts` | 빠른 이동의 화면 목록 · 기본 구성 · 구성을 바꾸는 함수와 스토어 |
 | `storage/quick-links.ts` | 빠른 이동 구성(Preferences `quickLinks`) |
@@ -117,7 +117,7 @@ WidgetGrid            px-4 pt-2
 | id | 내용 | 폭 | 누르면 | 값의 출처 |
 |---|---|---|---|---|
 | `representative-character` | 초상화(52) 오른쪽에 월드 엠블럼 · 닉네임 · 길드, 레벨 · 직업, EXP 칸 | 4 | 없음 | 쿼리 캐시 `characterBasic(ocid)` · 캐릭터 선택 스토어 |
-| `quick-links` | 사용자가 고른 화면으로 가는 칸. 한 줄 5칸 · 두 줄 10칸, 원 안의 아이콘과 9px 짧은 이름. 제목 줄의 `편집` 이 편집 시트를 연다 | 4 | 칸마다 그 화면 | 빠른 이동 스토어 |
+| `quick-links` | 사용자가 고른 화면으로 가는 칸. 한 줄 5칸 · 두 줄 10칸, 원 안의 아이콘과 9px 짧은 이름. 제목 줄의 `편집` 이 편집 시트를 연다. 고를 수 있는 칸은 스물이고, 가계부 분류 칸은 사냥 · 사냥 전리품 판매 둘이다([[ADR-089]] 결정 2) | 4 | 칸마다 그 화면. 가계부 분류 칸은 가계부 탭과 그 분류의 새 기록 폼(오늘 날짜) | 빠른 이동 스토어 · 서버 갈래 표(가계부 분류 칸) |
 | `reset-countdown` | 일일 · 주간 초기화까지 남은 시간. 일일은 초까지 1초마다 | 2. 결정석 위젯을 넓히면 4 | 없음 | 뷰모델의 `resets` |
 | `crystal-limit` | 한도 줄마다 링(반시계) 하나. 한도 줄은 2026-11-19 주부터 메이플 ID 마다 `일반 월드` 와 챌린저스 월드다([[ADR-042]] 결정 3). 메이플 ID 가 하나면 첫 한도 줄의 링과 `N개 남음`, 줄이 둘이면 첫 줄 이름 옆에 `외 N`(`일반 월드 외 1`). 줄이 하나면 줄 이름을 적지 않는다. 줄에 안 들어가면 `외 N` 이 다음 줄로. 메이플 ID 가 둘 이상이면 위 `넓힌 결정석 위젯` | 2 · 4 | 보스 수익 탭 | 쿼리 `bossProfitPeriod('weekly', 이번 주)` · 추적 캐릭터 프로필의 월드 · 캐릭터의 메이플 ID(`character_accounts`) |
 | `next-party-schedule` | 진행 중인 파티 회차 하나(`진행 중`). 없으면 시작 전인 가장 가까운 회차 하나. 캐릭터마다 칸에 닉네임과 보스 줄. 회차가 없으면 맨 아래 줄에서 `매주 반복` · `한 번만` 등록 칸 | 4 | 회차 상세, 또는 고른 갈래의 새 스케줄 시트 | 쿼리 `partyAppointments()` |
