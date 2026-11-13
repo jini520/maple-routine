@@ -13,9 +13,10 @@
  * 소비·기타에 관세가 없는 것은 월드 간 거래가 안 되기 때문이다. 있을 수 없는 것을 물을 수 있게
  * 두지 않는다. 통화는 언제나 메소다. 관세를 메소로 재므로 메포 칸이 없다.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Pressable } from 'react-native'
 
-import { Text } from '../../../components/atoms'
+import { CheckBox, Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
@@ -29,7 +30,9 @@ import {
   type ItemKindKey,
 } from '../../../lib/cashbook/categories'
 import { ownerFieldsOf, ownerValueOf } from '../character-options'
-import { AmountInput, FieldCard, FieldRow, OwnerField, TextField, useCountField } from '../sheet-fields'
+import { ItemPickField } from '../item-pick-field'
+import { useItemPick } from '../../../hooks/useItemPick'
+import { AmountInput, FieldCard, FieldRow, OwnerField, useCountField } from '../sheet-fields'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
@@ -48,7 +51,6 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
   /** 고른 캐릭터나 메이플 ID(`ownerValueOf`). 주인을 모르는 옛 기록은 빈 채로 열린다. */
   const [owner, setOwner] = useState<string | null>(ownerValueOf(props.editing))
-  const [name, setName] = useState(props.editing?.item ?? '')
   const { text: quantityText, pristine: quantityPristine, set: setQuantityText, reset: resetQuantity } =
     useCountField(props.editing?.quantity)
   /**
@@ -69,6 +71,24 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
     props.editing?.itemKind ?? itemKinds()[0]?.key ?? 'equipment',
   )
   const { saving, submit, remove } = useSpendSubmit(props)
+  // 목록에서 고르면 그 아이템의 종류로 바꾼다. 종류를 바꿀 때처럼 수량은 1 로, 관세는 꺼진다.
+  const item = useItemPick(props.editing, (kind) => {
+    if (kind === itemKind) return
+    setItemKind(kind)
+    resetQuantity()
+    setHasTariff(false)
+  })
+  const name = item.name
+  /** 구매 캐릭터의 메이플 ID · 월드를 찾는 함수. 못 찾으면 보관 체크가 안 선다. */
+  const [storeOwnerOf, setStoreOwnerOf] = useState<((ocid: string) => { accountId: string; worldKey: string } | null) | null>(null)
+  const [store, setStore] = useState(props.editing?.inventoryItemId !== undefined)
+  const { loadStoreOwnerOf } = props
+  useEffect(() => {
+    void loadStoreOwnerOf?.().then((ownerOf) => setStoreOwnerOf(() => ownerOf), () => undefined)
+  }, [loadStoreOwnerOf])
+  const ownerOcid = ownerFieldsOf(owner).ocid
+  // 인벤토리는 목록에 있는 아이템만 받는다. 직접 친 이름은 보관할 수 없다.
+  const storeOwner = item.picked !== null && ownerOcid !== null && storeOwnerOf !== null ? storeOwnerOf(ownerOcid) : null
 
   const typed = mesoValueOf(typedText)
   const quantity = mesoValueOf(quantityText)
@@ -106,9 +126,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         ...ownerFieldsOf(owner),
         spentOn: props.dateKey,
         category: 'item_purchase',
-        item: name.trim() === '' ? null : name.trim(),
-        // 직접 친 이름이라 가리킬 카탈로그 항목이 없다.
-        itemKey: null,
+        ...item.fields,
         formItemKeys: null,
         itemKind,
         levelFrom: null,
@@ -122,6 +140,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         pointPer100mMeso: null,
         cashAmount: null,
         hexa: null,
+        inventoryStore: store && storeOwner !== null ? storeOwner : undefined,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })
@@ -148,24 +167,28 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         />
 
         <FieldRow label="구매 아이템" labelTestID="spend-sheet-name-label">
-          <TextField
+          <ItemPickField
             testID="spend-sheet-name"
             label="구매 아이템"
             placeholder="아이템 명"
-            value={name}
-            onChange={setName}
+            picked={item.picked}
+            name={name}
+            onPick={item.pick}
+            onType={item.type}
           />
         </FieldRow>
 
         {/* 종류가 나머지 둘을 정한다. 세그먼트인 것은 통화와 같은 이유다. 갈래가 아니라 값의
-            축이다. */}
-        <FieldRow label="종류" testID="spend-sheet-item-kind">
-          <Segment size="sm"
-            options={itemKinds().map((each) => each.name)}
-            selected={itemKindNameOf(itemKind)}
-            onSelect={selectItemKind}
-          />
-        </FieldRow>
+            축이다. 목록에서 고른 아이템은 종류가 정해져 있어 칸이 없다. */}
+        {item.picked === null && (
+          <FieldRow label="종류" testID="spend-sheet-item-kind">
+            <Segment size="sm"
+              options={itemKinds().map((each) => each.name)}
+              selected={itemKindNameOf(itemKind)}
+              onSelect={selectItemKind}
+            />
+          </FieldRow>
+        )}
 
         {/* 늘 선다. 자리가 `종류` 바로 밑이라 장비의 줄 차례가 `종류 · 구매 비용 · 관세` 가 된다. */}
         <FieldRow label={counts ? '단가' : '구매 비용'}>
@@ -230,6 +253,21 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
           </FieldRow>
         )}
       </FieldCard>
+
+      {storeOwner !== null && (
+        <Pressable
+          testID="spend-sheet-store"
+          role="checkbox"
+          aria-label="인벤토리에 보관"
+          aria-checked={store}
+          onPress={() => setStore((current) => !current)}
+          hitSlop={8}
+          className="flex-row items-center gap-2 self-start px-1"
+        >
+          <CheckBox checked={store} />
+          <Text className="text-xs text-text-muted">인벤토리에 보관</Text>
+        </Pressable>
+      )}
 
       <AmountFigure
         // 어디서도 못 친다. 관세를 더한 값을 바로 그린다. 더해지는 금액을 따로 안 적는 것은

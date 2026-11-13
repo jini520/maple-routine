@@ -1122,6 +1122,130 @@ async function 치기(view: Rendered, text: string): Promise<void> {
   await 카드칸에치기(view, 'spend-sheet-unit-price', text)
 }
 
+/** 이름 칸의 입력 카드에서 치고, 목록의 한 줄을 누른다. */
+async function 목록에서고르기(view: Rendered, testID: string, 친글자: string, 줄: string): Promise<void> {
+  await act(async () => {
+    fireEvent.press(view.getByTestId(testID))
+  })
+  await act(async () => {
+    fireEvent.changeText(view.getByTestId('input-card-value'), 친글자)
+  })
+  await act(async () => {
+    fireEvent.press(view.getByTestId(`input-card-suggestion-${줄}`))
+  })
+}
+
+/** 구매를 보관할 주인. 루디만 메이플 ID 를 안다. */
+const 주인찾기 = async () => (ocid: string) => (ocid === 'ocid-1' ? { accountId: 'maple-a', worldKey: 'scania' } : null)
+
+describe('아이템 구매 · 목록에서 고르기', () => {
+  it('목록에서 고르면 key 로 저장하고 종류 칸이 숨는다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 갈래바꾸기(view, '아이템 구매')
+    await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
+
+    expect(view.queryByTestId('spend-sheet-item-kind')).toBeNull()
+    await 치기(view, '1000')
+    await 캐릭터고르기(view)
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ category: 'item_purchase', itemKey: 'soul_ether_1', item: null, itemKind: 'consumable' })
+  })
+
+  it('고른 뒤 이름 글자를 고치면 직접 친 이름이 되고, 종류 칸이 고르던 아이템의 종류로 다시 선다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 갈래바꾸기(view, '아이템 구매')
+    await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
+
+    await 카드칸에치기(view, 'spend-sheet-name', '소울 에테르 꾸러미')
+
+    expect(within(view.getByTestId('spend-sheet-item-kind')).getByRole('button', { name: '소비', selected: true })).toBeTruthy()
+    await 치기(view, '1000')
+    await 캐릭터고르기(view)
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: null, item: '소울 에테르 꾸러미', itemKind: 'consumable' })
+  })
+
+  it('특수스킬 반지는 목록에서 레벨째 골라 그 레벨로 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 갈래바꾸기(view, '아이템 구매')
+    await 목록에서고르기(view, 'spend-sheet-name', '리스크테이커', 'risk_taker_ring@3')
+
+    expect(view.getByTestId('spend-sheet-name')).toHaveTextContent('리스크테이커 링 Lv.3')
+    await 치기(view, '500000000')
+    await 캐릭터고르기(view)
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'risk_taker_ring', ringLevel: 3, itemKind: 'equipment', quantity: null })
+  })
+
+  // 인벤토리는 목록에 있는 아이템만 받고, 주인은 구매 캐릭터의 메이플 ID · 월드다.
+  it('보관 체크는 목록에서 고른 구매에만 꺼진 채 서고, 켜면 구매 캐릭터의 메이플 ID · 월드로 보관한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, loadStoreOwnerOf: 주인찾기 })
+    await 갈래바꾸기(view, '아이템 구매')
+    await 캐릭터고르기(view)
+    await 카드칸에치기(view, 'spend-sheet-name', '소울 에테르 꾸러미')
+    expect(view.queryByTestId('spend-sheet-store')).toBeNull()
+
+    await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
+    expect(view.getByTestId('spend-sheet-store')).not.toBeChecked()
+
+    await act(async () => {
+      fireEvent.press(view.getByTestId('spend-sheet-store'))
+    })
+    await 치기(view, '1000')
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'soul_ether_1', inventoryStore: { accountId: 'maple-a', worldKey: 'scania' } })
+  })
+
+  it('메이플 ID 를 모르는 캐릭터의 구매에는 보관 체크가 서지 않는다', async () => {
+    const view = await 그리기({ loadStoreOwnerOf: 주인찾기 })
+    await 갈래바꾸기(view, '아이템 구매')
+    await 캐릭터고르기(view, 'ocid-2')
+    await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
+
+    expect(view.queryByTestId('spend-sheet-store')).toBeNull()
+  })
+
+  it('보관한 구매를 고치면 고른 아이템이 서고 보관 체크가 켜진 채 열린다', async () => {
+    const view = await 그리기(
+      {
+        loadStoreOwnerOf: 주인찾기,
+        editing: {
+          id: 'p1',
+          ocid: 'ocid-1',
+          spentOn: '2026-08-23',
+          category: 'item_purchase',
+          item: null,
+          itemKey: 'soul_ether_1',
+          formItemKeys: null,
+          itemKind: 'consumable',
+          levelFrom: null,
+          levelTo: null,
+          quantity: 2,
+          mesoAmount: 2000,
+          tariffMeso: null,
+          pointAmount: null,
+          pointPer100mMeso: null,
+          mesoMarketFeePercent: null,
+          cashAmount: null,
+          hexa: null,
+          recordedAt: '2026-08-23T01:00:00.000Z',
+          inventoryItemId: 'inv-1',
+        },
+        onDelete: jest.fn(),
+      },
+      null,
+    )
+
+    expect(view.getByTestId('spend-sheet-name')).toHaveTextContent('1단계 소울 에테르')
+    expect(view.queryByTestId('spend-sheet-item-kind')).toBeNull()
+    expect(view.getByTestId('spend-sheet-store')).toBeChecked()
+  })
+})
+
 describe('아이템 구매', () => {
   /**
    * **갈래를 옮기면 금액을 안 들고 간다**.

@@ -90,6 +90,7 @@ import {
   loadFragmentStorage,
   loadHexaStorageChecks,
   loadHexaStorages,
+  loadHexaOwnerOf,
   loadTrackedCharacters,
   recordIncome,
   recordIncomes,
@@ -1178,6 +1179,8 @@ export function CashbookScreen(): React.JSX.Element {
           // 헥사 매트릭스 폼이 보관 조각을 가져올 캐릭터와 그 보관을 읽을 때 부른다.
           loadHexaStorages={loadHexaStorages}
           hexaStorageChecks={hexaStorageChecks}
+          // 아이템 구매가 인벤토리에 보관할 메이플 ID · 월드를 찾을 때 부른다. 헥사의 기타 조각 주인과 같은 규칙이다.
+          loadStoreOwnerOf={loadHexaOwnerOf}
           editing={typeof sheet === 'object' ? sheet.record : undefined}
           onSave={typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveSpend}
           onDelete={typeof sheet === 'object' ? () => deleteEntry(sheet) : undefined}

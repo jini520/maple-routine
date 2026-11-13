@@ -65,6 +65,8 @@ export interface SpendSheetProps {
   loadHexaStorages: SpendFormProps['loadHexaStorages']
   /** 새 헥사 폼의 두 체크. 화면이 읽어서 넘긴다. */
   hexaStorageChecks: SpendFormProps['hexaStorageChecks']
+  /** 아이템 구매를 인벤토리에 보관할 주인을 찾는 콜백. 화면이 넘긴다. */
+  loadStoreOwnerOf?: SpendFormProps['loadStoreOwnerOf']
   /**
    * 고칠 기록. 있으면 수정 모드다. 머리와 버튼 글자가 갈리고 삭제가 선다. 화면을 따로 만들지
    * 않는 것은 입력 규칙이 한 벌이어야 하기 때문이다.
@@ -149,6 +151,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           loadRememberedLevels: props.loadRememberedLevels,
           loadHexaStorages: props.loadHexaStorages,
           hexaStorageChecks: props.hexaStorageChecks,
+          loadStoreOwnerOf: props.loadStoreOwnerOf,
         }
 
   return (

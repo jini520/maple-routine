@@ -486,6 +486,18 @@ describe('categoryTotalsBetween', () => {
       ])
     })
 
+    it('목록에서 고른 아이템 구매도 아이템 표의 이름으로 묶는다', () => {
+      const byDate = {
+        '2026-09-24': [
+          spend(null, '', { category: 'item_purchase', item: null, itemKey: 'soul_ether_1', mesoAmount: 70 }),
+          spend(null, '', { category: 'item_purchase', item: '1단계 소울 에테르', mesoAmount: 30 }),
+        ],
+      }
+      expect(categoryTotalsBetween(byDate, WEEK, 'expense').find((total) => total.key === 'item_purchase')?.parts).toEqual([
+        { key: 'name:1단계 소울 에테르', name: '1단계 소울 에테르', meso: 100 },
+      ])
+    })
+
     it('강화는 장비별이고 값을 못 매긴 건은 금액에 없다', () => {
       const byDate = {
         '2026-09-24': [

@@ -576,6 +576,22 @@ describe('판매 수수료', () => {
     })
   })
 
+  it('목록에서 고르면 key 로 저장하고 종류 칸이 숨으며, 특수스킬 반지는 고른 줄의 레벨로 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 고른판매시트({ onSave })
+    await 아이디로누르기(view, 'income-sheet-name')
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('input-card-value'), '리스크테이커')
+    })
+    await 아이디로누르기(view, 'input-card-suggestion-risk_taker_ring@4')
+
+    expect(view.queryByTestId('income-sheet-item-kind')).toBeNull()
+    expect(view.getByTestId('income-sheet-name')).toHaveTextContent('리스크테이커 링 Lv.4')
+    await 대금치기(view, '1000000')
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'risk_taker_ring', item: null, ringLevel: 4, itemKind: 'equipment' })
+  })
+
   /**
    * 갈래를 옮기면 골라 둔 것이 통째로 풀린다.
    *

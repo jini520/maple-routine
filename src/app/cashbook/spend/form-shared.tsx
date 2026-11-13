@@ -89,6 +89,8 @@ export interface SpendFormProps {
   loadHexaStorages: (ocid: string, dateKey: string, excludeRecordId: string | undefined) => Promise<HexaStorages | null>
   /** 새 헥사 폼의 두 체크. 직전에 새 헥사 기록을 저장한 때의 상태다. */
   hexaStorageChecks: HexaStorageChecks
+  /** 캐릭터의 메이플 ID · 월드를 찾는 함수를 읽는 콜백. 아이템 구매 폼이 인벤토리에 보관할 주인을 정할 때 쓴다. */
+  loadStoreOwnerOf?: () => Promise<(ocid: string) => { accountId: string; worldKey: string } | null>
 }
 
 /**

@@ -13,6 +13,7 @@ import { findHexaCore } from '../../lib/cashbook/hexa-matrix'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
 import { findSpendChoice, findSpendRewardChoice } from '../../lib/cashbook/spend-catalog'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
+import { findItem } from '../../lib/item-catalog'
 import type { ImageAssetRef } from '../../types/image-asset'
 import { isManualRecord, type DayRecord } from './records'
 
@@ -35,6 +36,11 @@ export function recordIconKeyOf(entry: DayRecord): string {
  * 못한 옛 기록도 `null` 이다.
  */
 export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
+  // 아이템 구매 · 판매에서 목록으로 고른 아이템은 그 아이템의 그림이다. 직접 친 이름은 key 가 없어 그림이 없다.
+  if (isManualRecord(entry) && (entry.record.category === 'item_purchase' || entry.record.category === 'item_sale')) {
+    const item = findItem(entry.record.itemKey)
+    if (item !== null) return getAssetImage(item.iconAssetId)
+  }
   if (entry.kind === 'spend') {
     const { category, itemKey, formItemKeys } = entry.record
     // 심볼 강화는 선택 목록이 아니라 비용 표에서 심볼을 되짚는다.

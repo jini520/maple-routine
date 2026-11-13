@@ -283,6 +283,7 @@ function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; part
         case 'hexa_matrix':
           return { slice, parts: [hexaPart(entry.record, meso)] }
         case 'item_purchase':
+          return { slice, parts: [typedNamePart(recordedItemNameOf(entry.record.item, entry.record.itemKey), meso)] }
         case 'etc':
           return { slice, parts: [typedNamePart(entry.record.item, meso)] }
       }
