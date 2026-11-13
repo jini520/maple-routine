@@ -71,12 +71,12 @@ function CellView(props: {
         <Image source={icon} style={{ width: ICON_SIZE, height: ICON_SIZE }} resizeMode="contain" aria-hidden />
       )}
       {cell.tag !== null && (
-        <Text className="absolute left-[5px] top-[3px] text-9 text-text-muted" aria-hidden>
+        <Text className="absolute right-[5px] top-[3px] text-9 text-text-muted" aria-hidden>
           {cell.tag}
         </Text>
       )}
       {cell.faceOcid !== null && props.face !== null && (
-        <View className="absolute right-[3px] top-[3px]" aria-hidden>
+        <View className="absolute left-[3px] top-[3px]" aria-hidden>
           <CharacterAvatar
             imageUrl={props.face.imageUrl}
             name={props.face.name}
