@@ -105,12 +105,25 @@ import {
   recordCashOf,
   isManualRecord,
   rowKeyOf,
+  spendMesoOf,
+  spendTileOf,
   type DayRecord,
   type DefeatedBoss,
   type EnhancedItem,
   type ManualDayRecord,
+  type RecordCard,
   type SoldItem,
 } from '../../features/cashbook/records'
+import {
+  mergeDayRows,
+  mergedRowCardOf,
+  mergedRowIconOf,
+  mergedRowKeyOf,
+  mergedRowMesoOf,
+  type MergedDayRow,
+  type SpendDayRecord,
+} from '../../features/cashbook/merged-rows'
+import type { ImageAssetRef } from '../../types/image-asset'
 import type { HexaStorageChecks } from '../../storage/hexa-storage-checks'
 import type { LastHunts } from '../../storage/last-hunts'
 import { useLedgerDays } from '../../features/cashbook/ledger-query'
@@ -476,6 +489,97 @@ function DayTotalHalf(props: {
   )
 }
 
+/** 줄 카드의 머리 한 줄(표식 · 두 줄 · 금액 · 화살촉). 기록 줄과 합친 줄이 함께 쓰는 부품. */
+function RowHeader(props: {
+  rowKey: string
+  card: RecordCard
+  amountText: string
+  income: boolean
+  rowIcon: ImageAssetRef | null
+  Chevron: typeof ChevronRightIcon
+  /** 읽어 주는 이름 끝의 할 일. `고치기` · `펼치기` · `접기` */
+  action: string
+  /** 펼칠 수 없는 줄이면 `undefined` */
+  expanded: boolean | undefined
+  onPress: () => void
+}): React.JSX.Element {
+  const { rowKey, card, income, rowIcon, Chevron } = props
+  const Icon = income ? ProfitIcon : ShoppingCartIcon
+  return (
+    <Pressable
+      role="button"
+      testID={`cashbook-row-${rowKey}`}
+      // 자동 줄은 고치러 가는 것이 아니라 보러 가는 것이다. 읽어 주는 이름이 그 사실을 말해야
+      // 눌렀더니 시트가 안 열린다 가 고장으로 읽히지 않는다.
+      // 둘째 줄까지 읽는다. 강화 줄은 제목이 모두 `강화` 라 둘째 줄이 있어야 줄이 갈린다.
+      aria-label={`${card.title}${card.detail === null ? '' : ` ${card.detail}`} ${props.action}`}
+      aria-expanded={props.expanded}
+      onPress={props.onPress}
+      className="flex-row items-center gap-2.5 py-3 pl-3 pr-2.5"
+    >
+      {/* 자리는 그림이 있든 없든 **같은 28**다. 크기가 갈리면 줄 높이가 흔들려 목록이
+          울퉁불퉁해진다.
+
+          바탕은 아이콘일 때만 칠한다(사용자 지정). 선 아이콘은 색 있는 판이 있어야 표식으로
+          읽히지만 게임 그림은 그 자체가 이미 그림이라, 뒤에 원을 깔면 두 그림이 겹쳐 보인다. */}
+      <View
+        testID={`cashbook-row-icon-${rowKey}`}
+        className={`h-7 w-7 items-center justify-center rounded-full ${
+          rowIcon !== null ? '' : income ? 'bg-rise-tint' : 'bg-fall-tint'
+        }`}
+      >
+        {rowIcon === null ? (
+          <Icon
+            className={`h-4 w-4 ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
+            strokeWidth={2}
+            aria-hidden
+          />
+        ) : (
+          <Image
+            testID={`cashbook-row-image-${rowKey}`}
+            source={rowIcon}
+            className="h-6 w-6"
+            resizeMode="contain"
+            aria-hidden
+          />
+        )}
+      </View>
+
+      {/* 첫 줄은 캐릭터 · 제목, 둘째 줄은 무엇을 얼마나다. 갈래마다 다른 규칙은 화면이 아니라
+          `recordCardOf` 가 든다. */}
+      <View className="min-w-0 flex-1">
+        <Text numberOfLines={1} testID={`cashbook-row-title-${rowKey}`} className="text-xs font-semibold text-text">
+          {card.title}
+        </Text>
+        {card.detail !== null && (
+          <Text
+            numberOfLines={1}
+            testID={`cashbook-row-detail-${rowKey}`}
+            className="text-11 text-text-muted"
+            style={TABULAR_NUMS}
+          >
+            {card.detail}
+          </Text>
+        )}
+      </View>
+
+      <Text
+        className={`shrink-0 text-xs font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
+        style={TABULAR_NUMS}
+      >
+        {props.amountText}
+      </Text>
+      {/* 화살촉이 상자를 하나 쓰는 이유는 lucide 아이콘이 `testID` 를 SVG 안으로 안 흘려보내
+          화살촉이 사라졌다 를 테스트가 못 잡기 때문이다. 상자는 `shrink-0` 도 함께 든다.
+
+*/}
+      <View testID={`cashbook-row-chevron-${rowKey}`} className="shrink-0">
+        <Chevron className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
+      </View>
+    </Pressable>
+  )
+}
+
 function DayRecordRow(props: {
   entry: DayRecord
   expanded: boolean
@@ -486,11 +590,6 @@ function DayRecordRow(props: {
   // 나가는 돈은 둘이다. 손으로 적은 지출과 강화 사용 내역. 결정석·판매는 들어오는 돈이다.
   const income = entry.kind !== 'spend' && entry.kind !== 'enhancement'
   const cash = recordCashOf(entry)
-  const card = recordCardOf(entry)
-  const Icon = income ? ProfitIcon : ShoppingCartIcon
-  // 화면 글자가 아니라 줄의 신원으로 찾는다. 손입력 줄은 이름을 적으면 그것이 뜨므로
-  // 보이는 글자로 찾으면 이름을 적은 줄에서만 그림이 사라진다.
-  const rowIcon = recordIconOf(entry)
   /**
    * 펼칠 수 있는 줄은 둘이다. 결정석은 잡은 보스를, 강화는 만진 장비를 편다. 판매 줄은 둘 중
    * 어느 칸도 안 갖는 타입이라(`AutoDayRecord` 가 합집합이다) 분기를 잘못 쓰면 컴파일 단계에서
@@ -501,89 +600,28 @@ function DayRecordRow(props: {
   const soldItems = entry.kind === 'dropSale' ? entry.items : null
   const expandable = bosses !== null || items !== null || soldItems !== null
   const isOpen = expanded && expandable
-  /**
-   * 무슨 일이 일어날지 미리 말하는 화살촉. 같은 카드 두 줄이 서로 다르게 반응하는데
-   * 그림이 같으면 그것이 고장으로 읽힌다.
-   */
-  const Chevron = !expandable ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon
-  const action = !expandable ? '고치기' : isOpen ? '접기' : '펼치기'
 
   return (
     // 줄과 펼친 판이 테두리 없는 카드 하나다. 판이 카드 밖에 따로 붙으면 둘 사이에 다시 경계 선이 필요해진다.
     <View testID={`cashbook-row-card-${rowKey}`} className="rounded-[14px] bg-surface">
-      <Pressable
-        role="button"
-        testID={`cashbook-row-${rowKey}`}
-        // 자동 줄은 고치러 가는 것이 아니라 보러 가는 것이다. 읽어 주는 이름이 그 사실을 말해야
-        // 눌렀더니 시트가 안 열린다 가 고장으로 읽히지 않는다.
-        // 둘째 줄까지 읽는다. 강화 줄은 제목이 모두 `강화` 라 둘째 줄이 있어야 줄이 갈린다.
-        aria-label={`${card.title}${card.detail === null ? '' : ` ${card.detail}`} ${action}`}
-        aria-expanded={expandable ? isOpen : undefined}
-        onPress={props.onPress}
-        className="flex-row items-center gap-2.5 py-3 pl-3 pr-2.5"
-      >
-        {/* 자리는 그림이 있든 없든 **같은 28**다. 크기가 갈리면 줄 높이가 흔들려 목록이
-            울퉁불퉁해진다.
-
-            바탕은 아이콘일 때만 칠한다(사용자 지정). 선 아이콘은 색 있는 판이 있어야 표식으로
-            읽히지만 게임 그림은 그 자체가 이미 그림이라, 뒤에 원을 깔면 두 그림이 겹쳐 보인다. */}
-        <View
-          testID={`cashbook-row-icon-${rowKey}`}
-          className={`h-7 w-7 items-center justify-center rounded-full ${
-            rowIcon !== null ? '' : income ? 'bg-rise-tint' : 'bg-fall-tint'
-          }`}
-        >
-          {rowIcon === null ? (
-            <Icon
-              className={`h-4 w-4 ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
-              strokeWidth={2}
-              aria-hidden
-            />
-          ) : (
-            <Image
-              testID={`cashbook-row-image-${rowKey}`}
-              source={rowIcon}
-              className="h-6 w-6"
-              resizeMode="contain"
-              aria-hidden
-            />
-          )}
-        </View>
-
-        {/* 첫 줄은 캐릭터 · 제목, 둘째 줄은 무엇을 얼마나다. 갈래마다 다른 규칙은 화면이 아니라
-            `recordCardOf` 가 든다. */}
-        <View className="min-w-0 flex-1">
-          <Text numberOfLines={1} testID={`cashbook-row-title-${rowKey}`} className="text-xs font-semibold text-text">
-            {card.title}
-          </Text>
-          {card.detail !== null && (
-            <Text
-              numberOfLines={1}
-              testID={`cashbook-row-detail-${rowKey}`}
-              className="text-11 text-text-muted"
-              style={TABULAR_NUMS}
-            >
-              {card.detail}
-            </Text>
-          )}
-        </View>
-
-        <Text
-          className={`shrink-0 text-xs font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
-          style={TABULAR_NUMS}
-        >
-          {cash === null
+      <RowHeader
+        rowKey={rowKey}
+        card={recordCardOf(entry)}
+        amountText={
+          cash === null
             ? formatMesoSigned(recordMesoOf(entry), income ? '+' : '−')
-            : `${cash === 0 ? '' : income ? '+' : '−'}${cash.toLocaleString()}원`}
-        </Text>
-        {/* 화살촉이 상자를 하나 쓰는 이유는 lucide 아이콘이 `testID` 를 SVG 안으로 안 흘려보내
-            화살촉이 사라졌다 를 테스트가 못 잡기 때문이다. 상자는 `shrink-0` 도 함께 든다.
-
-*/}
-        <View testID={`cashbook-row-chevron-${rowKey}`} className="shrink-0">
-          <Chevron className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
-        </View>
-      </Pressable>
+            : `${cash === 0 ? '' : income ? '+' : '−'}${cash.toLocaleString()}원`
+        }
+        income={income}
+        // 화면 글자가 아니라 줄의 신원으로 찾는다. 손입력 줄은 이름을 적으면 그것이 뜨므로
+        // 보이는 글자로 찾으면 이름을 적은 줄에서만 그림이 사라진다.
+        rowIcon={recordIconOf(entry)}
+        // 무슨 일이 일어날지 미리 말하는 화살촉. 같은 카드 두 줄이 서로 다르게 반응하는데 그림이 같으면 그것이 고장으로 읽힌다.
+        Chevron={!expandable ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon}
+        action={!expandable ? '고치기' : isOpen ? '접기' : '펼치기'}
+        expanded={expandable ? isOpen : undefined}
+        onPress={props.onPress}
+      />
       {isOpen && bosses !== null && <DefeatedBossTiles rowKey={rowKey} bosses={bosses} />}
       {isOpen && items !== null && (
         <EnhancedItemRows
@@ -594,6 +632,89 @@ function DayRecordRow(props: {
       )}
       {isOpen && soldItems !== null && <SoldItemRows rowKey={rowKey} items={soldItems} />}
     </View>
+  )
+}
+
+/**
+ * 헥사 매트릭스 · 아이템 구매를 캐릭터마다 합친 줄. 누르면 그 자리에서 기록마다 칸이 펼쳐지고, 칸을 누르면 그 기록의
+ * 시트가 열린다. 합친 뒤에는 기록을 고칠 곳이 그 칸뿐이다.
+ */
+function MergedRecordRow(props: {
+  row: MergedDayRow
+  expanded: boolean
+  onToggle: () => void
+  onOpenRecord: (entry: ManualDayRecord) => void
+}): React.JSX.Element {
+  const { row, expanded } = props
+  const rowKey = mergedRowKeyOf(row)
+  return (
+    <View testID={`cashbook-row-card-${rowKey}`} className="rounded-[14px] bg-surface">
+      <RowHeader
+        rowKey={rowKey}
+        card={mergedRowCardOf(row)}
+        amountText={formatMesoSigned(mergedRowMesoOf(row), '−')}
+        income={false}
+        rowIcon={mergedRowIconOf(row)}
+        Chevron={expanded ? ChevronUpIcon : ChevronDownIcon}
+        action={expanded ? '접기' : '펼치기'}
+        expanded={expanded}
+        onPress={props.onToggle}
+      />
+      {expanded && (
+        <View testID={`cashbook-merged-tiles-${rowKey}`} className="mx-2.5 mb-2.5 gap-y-1.5">
+          {row.records.map((entry) => (
+            <MergedRecordTile key={entry.record.id} entry={entry} onPress={() => props.onOpenRecord(entry)} />
+          ))}
+        </View>
+      )}
+    </View>
+  )
+}
+
+/**
+ * 펼친 합친 줄의 기록 칸 하나. 칸 하나가 눌러서 시트를 여는 단위라, 판 하나에 줄을 늘어놓지 않고 칸마다 card-inset 이다.
+ *
+ * 최소 높이 49 는 두 줄 칸의 높이. 둘째 줄이 없는 칸(헥사 스탯 · 장비)도 높이가 같다.
+ */
+function MergedRecordTile(props: { entry: SpendDayRecord; onPress: () => void }): React.JSX.Element {
+  const { record } = props.entry
+  const tile = spendTileOf(record)
+  const icon = recordIconOf(props.entry)
+  return (
+    <Pressable
+      role="button"
+      testID={`cashbook-merged-tile-${record.id}`}
+      aria-label={`${tile.title}${tile.detail === null ? '' : ` ${tile.detail}`} 고치기`}
+      onPress={props.onPress}
+      className="min-h-[49px] flex-row items-center gap-2.5 rounded-[10px] bg-card-inset px-2.5 py-2"
+    >
+      {/* 그림이 없는 기록(직접 친 이름)은 판매 줄의 판처럼 그림 자리 없이 이름부터 선다. */}
+      {icon !== null && (
+        <Image
+          testID={`cashbook-merged-tile-image-${record.id}`}
+          source={icon}
+          className="h-6 w-6 shrink-0"
+          resizeMode="contain"
+          aria-hidden
+        />
+      )}
+      <View className="min-w-0 flex-1">
+        <Text numberOfLines={1} className="text-xs font-semibold text-text">
+          {tile.title}
+        </Text>
+        {tile.detail !== null && (
+          <Text numberOfLines={1} className="text-11 text-text-muted" style={TABULAR_NUMS}>
+            {tile.detail}
+          </Text>
+        )}
+      </View>
+      <Text className="shrink-0 text-xs font-semibold text-fall-ink" style={TABULAR_NUMS}>
+        {formatMesoSigned(spendMesoOf(record), '−')}
+      </Text>
+      <View className="shrink-0">
+        <ChevronRightIcon className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
+      </View>
+    </Pressable>
   )
 }
 
@@ -831,7 +952,11 @@ export function CashbookScreen(): React.JSX.Element {
      *
      * 판매 줄도 편다. 가계부는 판 것만 보여 주고 값을 넣을 일은 보스 수익 탭이 든다.
      */
-    const key = rowKeyOf(entry)
+    toggleRow(rowKeyOf(entry))
+  }
+
+  /** 줄 하나 펴고 접기. 펼친 줄은 한 번에 하나. */
+  function toggleRow(key: string): void {
     setExpandedRowKey((current) => (current === key ? null : key))
   }
 
@@ -1096,17 +1221,27 @@ export function CashbookScreen(): React.JSX.Element {
                 </View>
 
                 {dayRecords.length > 0 && (
-                  // 합계 아래에 적은 것이 한 줄씩 선다. 접지 않는다. 같은 날 같은 것을 두 번
-                  // 적은 것은 정상이고, 접으면 어느 쪽을 고치는지 못 고른다.
+                  // 손입력은 한 기록이 한 줄이다. 헥사 매트릭스 · 아이템 구매만 같은 캐릭터의 기록 둘 이상을 한 줄로 합치고,
+                  // 고칠 기록은 펼친 칸에서 고른다.
                   <View className="gap-1.5">
-                    {dayRecords.map((entry) => (
-                      <DayRecordRow
-                        key={rowKeyOf(entry)}
-                        entry={entry}
-                        expanded={expandedRowKey === rowKeyOf(entry)}
-                        onPress={() => openRecord(entry)}
-                      />
-                    ))}
+                    {mergeDayRows(dayRecords).map((row) =>
+                      row.kind === 'merged' ? (
+                        <MergedRecordRow
+                          key={mergedRowKeyOf(row)}
+                          row={row}
+                          expanded={expandedRowKey === mergedRowKeyOf(row)}
+                          onToggle={() => toggleRow(mergedRowKeyOf(row))}
+                          onOpenRecord={openRecord}
+                        />
+                      ) : (
+                        <DayRecordRow
+                          key={rowKeyOf(row)}
+                          entry={row}
+                          expanded={expandedRowKey === rowKeyOf(row)}
+                          onPress={() => openRecord(row)}
+                        />
+                      ),
+                    )}
                   </View>
                 )}
               </View>

@@ -885,16 +885,20 @@ function joined(parts: ReadonlyArray<string | null | undefined>, separator = ' '
   return kept.length === 0 ? null : kept.join(separator)
 }
 
-/** 직접 친 이름 뒤에 종류 단위의 수량을 붙인다. 장비는 수량이 없다. */
 /** 아이템 구매 · 판매 줄의 이름. 고른 아이템은 아이템 표의 이름이고, 특수스킬 반지는 이름 뒤에 레벨이 붙는다. */
 function tradedItemName(record: { item: string | null; itemKey: string | null; ringLevel?: number }): string | null {
   const name = recordedItemNameOf(record.item, record.itemKey)
   return name === null ? null : withRingLevel(name, record.ringLevel)
 }
 
+/** 종류 단위의 수량. 장비처럼 단위가 없는 종류는 수량이 없다. */
+function tradedItemQuantity(kind: ItemKindKey | null, quantity: number | null): string | null {
+  return kind !== null && countsQuantity(kind) && quantity !== null ? quantityText(quantity, itemKindUnitOf(kind)) : null
+}
+
+/** 직접 친 이름 뒤에 종류 단위의 수량을 붙인다. */
 function tradedItemDetail(item: string | null, kind: ItemKindKey | null, quantity: number | null): string | null {
-  const counted = kind !== null && countsQuantity(kind) && quantity !== null
-  return joined([item, counted ? quantityText(quantity, itemKindUnitOf(kind)) : null])
+  return joined([item, tradedItemQuantity(kind, quantity)])
 }
 
 /** 사냥에서 조각 가격을 적었으면 판 개수. 보관한 조각은 안 적는다. */
@@ -944,11 +948,8 @@ function spendCard(record: SpendRecord): RecordCard {
       const levels = record.levelFrom === null || record.levelTo === null ? null : `${record.levelFrom} → ${record.levelTo}`
       return { title: categoryTitle, detail: found === null ? record.item : joined([found.symbol.name, levels]) }
     }
-    case 'hexa_matrix': {
-      const target = hexaTargetOf(record.itemKey, record.hexa?.activation != null)
-      const levels = record.levelFrom === null || record.levelTo === null ? null : `${record.levelFrom} → ${record.levelTo}`
-      return { title: categoryTitle, detail: joined([target?.name ?? record.item, levels]) }
-    }
+    case 'hexa_matrix':
+      return { title: categoryTitle, detail: joined(hexaParts(record)) }
     case 'item_purchase':
       return { title: categoryTitle, detail: tradedItemDetail(tradedItemName(record), record.itemKind ?? 'equipment', record.quantity) }
     case 'etc':
@@ -975,6 +976,25 @@ function spendCard(record: SpendRecord): RecordCard {
       }
     }
   }
+}
+
+/** 헥사 기록의 이름(코어의 첫 스킬이나 스탯)과 레벨. */
+function hexaParts(record: SpendRecord): [string | null, string | null] {
+  const target = hexaTargetOf(record.itemKey, record.hexa?.activation != null)
+  const levels = record.levelFrom === null || record.levelTo === null ? null : `${record.levelFrom} → ${record.levelTo}`
+  return [target?.name ?? record.item, levels]
+}
+
+/**
+ * 합친 줄을 펼친 칸의 두 줄. 기록 줄의 둘째 줄을 이름과 레벨 · 수량으로 나눈 것이라 두 곳이 같은 조각을 쓴다.
+ * 이름을 모르면 갈래 이름이다.
+ */
+export function spendTileOf(record: SpendRecord): RecordCard {
+  const [name, detail] =
+    record.category === 'hexa_matrix'
+      ? hexaParts(record)
+      : [tradedItemName(record), tradedItemQuantity(record.itemKind ?? 'equipment', record.quantity)]
+  return { title: name ?? cashbookCategoryOf('spend', record.category)?.name ?? record.category, detail }
 }
 
 function autoDetail(entry: AutoDayRecord): string {

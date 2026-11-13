@@ -12,6 +12,8 @@ jest.mock('../../../features/cashbook/records', () => {
     recordCardOf: actual.recordCardOf,
     recordMesoOf: actual.recordMesoOf,
     recordCashOf: actual.recordCashOf,
+    spendMesoOf: actual.spendMesoOf,
+    spendTileOf: actual.spendTileOf,
     dayTotalsOf: actual.dayTotalsOf,
     isManualRecord: actual.isManualRecord,
     rowKeyOf: actual.rowKeyOf,
@@ -117,7 +119,7 @@ beforeEach(() => {
   records.loadMonthDays.mockReset().mockResolvedValue({})
   records.loadLastPointRate.mockReset().mockResolvedValue(null)
   records.loadLastHunts.mockReset().mockResolvedValue({})
-  records.loadHexaStorageChecks.mockReset().mockResolvedValue({ useStorage: false, storageAsSpend: false })
+  records.loadHexaStorageChecks.mockReset().mockResolvedValue({ useStorage: false, storageAsSpend: false, storageUses: [] })
   records.loadTrackedCharacters.mockReset().mockResolvedValue([])
   records.recordIncome.mockReset().mockResolvedValue(undefined)
   records.recordSpend.mockReset().mockResolvedValue(undefined)
@@ -1318,6 +1320,92 @@ describe('줄을 누르면 고칠 수 있다', () => {
     await 이름으로누르기(view, '지출 추가')
 
     expect(view.queryByTestId('spend-sheet-delete')).toBeNull()
+  })
+})
+
+// 헥사 매트릭스 · 아이템 구매는 그날 같은 캐릭터의 기록이 둘 이상이면 한 줄로 합친다. 합친 줄은 자동 줄처럼 그 자리에서
+// 펼치고, 기록을 고치는 곳은 펼친 칸이다. 어느 기록을 묶는지는 `merged-rows.spec.ts` 가 보고 여기서는 배선을 본다.
+describe('헥사 · 구매 합친 줄', () => {
+  const 지출 = (over: Record<string, unknown>) => ({
+    kind: 'spend' as const,
+    characterName: '루디',
+    record: {
+      ocid: 'ocid-1',
+      spentOn: 고른날,
+      category: 'item_purchase',
+      item: null,
+      itemKey: null,
+      formItemKeys: null,
+      itemKind: null,
+      levelFrom: null,
+      levelTo: null,
+      quantity: null,
+      mesoAmount: 0,
+      tariffMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
+      cashAmount: null,
+      hexa: null,
+      ...over,
+    },
+  })
+  const 벨트 = 지출({ id: 'buy-belt', itemKey: 'dreamy_belt', itemKind: 'equipment', mesoAmount: 3_200_000_000, recordedAt: '2026-08-23T01:00:00.000Z' })
+  const 흔적 = 지출({ id: 'buy-trace', itemKey: 'spell_trace', itemKind: 'etc', quantity: 3_000, mesoAmount: 105_000_000, recordedAt: '2026-08-23T02:00:00.000Z' })
+  const 구매줄 = 'cashbook-row-merged:item_purchase:ocid-1'
+
+  beforeEach(() => {
+    그날줄을(고른날, [벨트, 흔적])
+  })
+
+  it('기록이 둘이면 `n건` 과 합계로 한 줄에 서고, 기록마다의 줄은 없다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId(구매줄)).toHaveTextContent('루디 · 아이템 구매2건−33.05억')
+    expect(view.queryByTestId('cashbook-row-buy-belt')).toBeNull()
+    expect(view.queryByTestId('cashbook-row-buy-trace')).toBeNull()
+  })
+
+  // 칸의 글자는 지금 줄의 둘째 줄을 이름과 수량으로 나눈 것이다. 수량은 소비 · 기타 아이템에만 선다.
+  it('누르면 시트 대신 기록마다 칸이 적은 순으로 펼쳐진다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, 구매줄)
+
+    expect(view.queryByTestId('spend-sheet-title')).toBeNull()
+    const tiles = within(view.getByTestId('cashbook-merged-tiles-merged:item_purchase:ocid-1')).getAllByRole('button')
+    expect(tiles.map((tile) => tile.props.testID)).toEqual(['cashbook-merged-tile-buy-belt', 'cashbook-merged-tile-buy-trace'])
+    expect(view.getByLabelText('주문의 흔적 3,000개 고치기')).toBe(tiles[1])
+    expect(view.getByTestId('cashbook-merged-tile-buy-belt')).toHaveTextContent('몽환의 벨트−32억')
+    expect(view.getByTestId('cashbook-merged-tile-buy-trace')).toHaveTextContent('주문의 흔적3,000개−1.05억')
+  })
+
+  // 합친 뒤에는 기록을 고치거나 지울 곳이 이 칸뿐이다.
+  it('칸을 누르면 그 기록으로 채운 지출 시트가 열린다', async () => {
+    const view = await 그리기()
+    await 누르기(view, 구매줄)
+
+    await 누르기(view, 'cashbook-merged-tile-buy-trace')
+    await 이름으로누르기(view, '삭제')
+    await act(async () => {})
+
+    expect(records.removeRecord).toHaveBeenCalledWith(흔적)
+  })
+
+  // 헥사 스탯은 둘째 줄이 없다. 헥사 스킬은 코어의 첫 스킬 이름 아래에 레벨이 선다.
+  it('헥사 칸은 이름 아래에 레벨이 서고, 헥사 스탯 칸은 이름만 선다', async () => {
+    const 조각 = { fragmentCount: 100, untradableFragmentCount: 0, fragmentPrice: 1, useStorage: false, storageAsSpend: false, storageUses: [] }
+    그날줄을(고른날, [
+      지출({ id: 'hexa-skill', category: 'hexa_matrix', itemKey: '창룡파천검 : 만참', levelFrom: 25, levelTo: 28, mesoAmount: 4_830_000_000, hexa: { ...조각, activation: null }, recordedAt: '2026-08-23T01:00:00.000Z' }),
+      지출({ id: 'hexa-stat', category: 'hexa_matrix', itemKey: 'hexa_stat_1', mesoAmount: 0, hexa: { ...조각, activation: false }, recordedAt: '2026-08-23T02:00:00.000Z' }),
+    ])
+    const view = await 그리기()
+
+    await 누르기(view, 'cashbook-row-merged:hexa_matrix:ocid-1')
+
+    expect(view.getByTestId('cashbook-merged-tile-hexa-skill')).toHaveTextContent('창룡파천검 : 만참25 → 28−48.3억')
+    // 0 메소 헥사 기록도 칸이 선다.
+    expect(view.getByTestId('cashbook-merged-tile-hexa-stat')).toHaveTextContent('헥사 스탯 Ⅰ0')
   })
 })
 
