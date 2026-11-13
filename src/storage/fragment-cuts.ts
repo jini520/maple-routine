@@ -9,8 +9,10 @@ import { hexaPricedFragments } from '../lib/cashbook/hexa-matrix'
 import { netProceedsMeso } from '../lib/cashbook/item-split'
 import { deleteEntry, readEntries, replaceEntry } from './cashbook-entries'
 import { incomeEntryOf, incomeRecordOf, spendEntryOf, spendRecordOf } from './cashbook-entry-shape'
+import type { OtherFragmentUse } from './cashbook-entries'
 import { readFragmentMoves, shortagesOf, type StoredFragmentMove } from './fragment-ledger'
 import type { IncomeRecord } from './income'
+import { readInventoryRemaining } from './inventory'
 import type { SqliteDbConnection } from './ports'
 import type { SpendRecord } from './spend'
 
@@ -25,10 +27,15 @@ export interface FragmentCutPlan {
   key: string
 }
 
+/** 강화한 캐릭터의 메이플 ID · 월드. 그 기타 조각을 먼저 다시 가져온다. 모르면 `null` 이다 */
+export type HexaOwnerOf = (ocid: string) => { accountId: string; worldKey: string } | null
+
 /** 확인 창에 보인 계획과 그 창에서 받은 값. */
 export interface FragmentCutsApproval {
   /** 헥사 강화가 보관을 가져올 캐릭터의 차례. 강화한 캐릭터를 받는다 */
   candidatesOf: (ocid: string) => readonly string[]
+  /** 헥사 강화가 기타 조각을 가져올 메이플 ID · 월드. 없으면 그 기록이 이미 가져간 기타 조각의 주인만 본다 */
+  ownerOf?: HexaOwnerOf
   key: string
   /** 가격 없이 저장된 헥사 기록에 넣을 개당 가격. 기록 id 가 열쇠이고 0 도 값이다 */
   prices: Readonly<Record<string, number>>
@@ -50,7 +57,7 @@ function pricedOf(record: SpendRecord): number {
   return hexaPricedFragments({
     fragments: hexa.fragmentCount,
     untradable: hexa.untradableFragmentCount,
-    taken: hexa.storageUses.reduce((sum, use) => sum + use.fragments, 0),
+    taken: hexa.storageUses.reduce((sum, use) => sum + use.fragments, hexa.otherUse?.fragments ?? 0),
     takenAsSpend: hexa.storageAsSpend,
   })
 }
@@ -73,8 +80,16 @@ function cutSettle(record: IncomeRecord, cut: number): IncomeRecord | null {
 }
 
 /** 보관 사용을 고친 헥사 기록. 금액은 그 기록의 개당 가격으로 다시 센다. 가격이 없으면 0 이다. */
-function withUses(record: SpendRecord, uses: readonly { ocid: string; fragments: number }[]): SpendRecord {
-  const next: SpendRecord = { ...record, hexa: { ...record.hexa!, storageUses: uses.filter((use) => use.fragments > 0) } }
+function withUses(
+  record: SpendRecord,
+  uses: readonly { ocid: string; fragments: number }[],
+  otherUse: OtherFragmentUse | undefined,
+): SpendRecord {
+  const { otherUse: _previous, ...hexa } = record.hexa!
+  const next: SpendRecord = {
+    ...record,
+    hexa: { ...hexa, storageUses: uses.filter((use) => use.fragments > 0), ...(otherUse === undefined ? {} : { otherUse }) },
+  }
   return { ...next, mesoAmount: pricedOf(next) * (next.hexa!.fragmentPrice ?? 0) }
 }
 
@@ -83,23 +98,27 @@ function keyOf(changes: readonly FragmentCutChange[]): string {
     .map((change) =>
       change.kind === 'settle'
         ? `${change.before.id}=${change.after?.quantity ?? 0}`
-        : `${change.before.id}=${change.after.hexa!.storageUses.map((use) => `${use.ocid}:${use.fragments}`).join(',')}`,
+        : `${change.before.id}=${change.after.hexa!.storageUses.map((use) => `${use.ocid}:${use.fragments}`).join(',')}` +
+          `+${change.after.hexa!.otherUse?.fragments ?? 0}`,
     )
     .join('|')
 }
 
 /**
  * 쓰기 뒤 모자라게 된 장부를 되돌릴 계획. 모자란 캐릭터마다 고친 날짜에 가까운 기록부터 줄인다. 헥사 강화는 줄인 만큼을
- * 먼저 다른 캐릭터의 보관에서 다시 가져오고, 그래도 모자란 만큼만 보관 사용을 줄인다.
+ * 먼저 강화한 캐릭터의 메이플 ID · 월드의 기타 조각에서, 그다음 다른 캐릭터의 보관에서 다시 가져오고, 그래도 모자란 만큼만
+ * 보관 사용을 줄인다. 다시 가져오는 차례가 강화할 때의 배분(`allocateHexaStorage`)과 같다.
  *
  * @param savingIds 지금 쓰는 기록. 줄일 기록에서 뺀다
  * @param before 쓰기 전 장부
+ * @param ownerOf 강화한 캐릭터의 메이플 ID · 월드. 없으면 그 기록이 이미 가져간 기타 조각의 주인만 본다
  */
 export async function planCutsAfterWrite(
   db: SqliteDbConnection,
   savingIds: readonly string[],
   before: readonly StoredFragmentMove[],
   candidatesOf: (ocid: string) => readonly string[],
+  ownerOf?: HexaOwnerOf,
 ): Promise<FragmentCutPlan> {
   const after = await readFragmentMoves(db)
   const shortOcids = shortagesOf(before, after).map((each) => each.ocid)
@@ -130,6 +149,8 @@ export async function planCutsAfterWrite(
   const entryOf = new Map(entries.map((entry) => [entry.head.id, entry]))
   /** 다시 가져온 몫까지 든 장부. 앞의 헥사 기록이 가져간 보관을 뒤 기록이 또 가져가지 않게 한다. */
   const simulated: { ocid: string; date: string; delta: number }[] = [...after]
+  /** 메이플 ID · 월드마다 남은 기타 조각. 다시 가져간 만큼 줄여 뒤 기록이 또 가져가지 않게 한다 */
+  const otherLeft = await readInventoryRemaining(db)
   const changes = order.map((id): FragmentCutChange => {
     const entry = entryOf.get(id)!
     const settleCut = settleCuts.get(id)
@@ -141,6 +162,17 @@ export async function planCutsAfterWrite(
     const cutByOcid = hexaCuts.get(id)!
     const uses = record.hexa!.storageUses.map((use) => ({ ...use, fragments: use.fragments - (cutByOcid.get(use.ocid) ?? 0) }))
     let rest = [...cutByOcid.values()].reduce((sum, each) => sum + each, 0)
+    let otherUse = record.hexa!.otherUse
+    const owner = otherUse ?? (record.ocid === null ? null : (ownerOf?.(record.ocid) ?? null))
+    if (owner !== null) {
+      const key = `other:${owner.accountId}:${owner.worldKey}`
+      const take = Math.min(Math.max(otherLeft.get(key) ?? 0, 0), rest)
+      if (take > 0) {
+        otherLeft.set(key, (otherLeft.get(key) ?? 0) - take)
+        otherUse = { accountId: owner.accountId, worldKey: owner.worldKey, fragments: (otherUse?.fragments ?? 0) + take }
+        rest -= take
+      }
+    }
     const candidates = record.ocid === null ? [] : candidatesOf(record.ocid)
     for (const ocid of candidates.filter((each) => !shortOcids.includes(each))) {
       if (rest === 0) break
@@ -153,7 +185,7 @@ export async function planCutsAfterWrite(
       else held.fragments += take
       rest -= take
     }
-    return { kind: 'hexa', before: record, after: withUses(record, uses) }
+    return { kind: 'hexa', before: record, after: withUses(record, uses, otherUse) }
   })
   return { changes, key: keyOf(changes) }
 }
@@ -170,7 +202,7 @@ export async function applyApprovedCuts(
   approval: FragmentCutsApproval,
   now: Date,
 ): Promise<FragmentCutPlan> {
-  const plan = await planCutsAfterWrite(db, savingIds, before, approval.candidatesOf)
+  const plan = await planCutsAfterWrite(db, savingIds, before, approval.candidatesOf, approval.ownerOf)
   if (plan.key !== approval.key) throw new FragmentCutsChangedError()
   for (const change of plan.changes) {
     if (change.kind === 'settle') {

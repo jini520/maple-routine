@@ -18,6 +18,7 @@ import {
   readEntries,
   replaceEntry,
 } from './cashbook-entries'
+import type { OtherFragmentUse } from './cashbook-entries'
 import { spendEntryOf, spendRecordOf } from './cashbook-entry-shape'
 import { writeCheckingFragments } from './fragment-ledger'
 import { notifyAfterBatch } from './record-revision-batch'
@@ -118,6 +119,8 @@ export interface SpendHexa {
   storageAsSpend: boolean
   /** 보관에서 가져온 조각을 캐릭터마다. 보관을 안 쓰면 빈 배열이다. */
   storageUses: readonly { ocid: string; fragments: number }[]
+  /** 강화한 캐릭터의 메이플 ID · 월드의 기타 조각에서 가져온 조각. 가져온 것이 없으면 칸이 없다. */
+  otherUse?: OtherFragmentUse
 }
 
 /**

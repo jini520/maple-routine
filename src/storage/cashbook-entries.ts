@@ -46,11 +46,20 @@ export interface EntryItem {
   /** 헥사 기록만 참 · 거짓이고 나머지는 `null` 이다. */
   hexaUseStorage: boolean | null
   hexaStorageAsSpend: boolean | null
+  /** 인벤토리에서 판 판매가 가리키는 인벤토리 줄. 가계부에서 적은 판매는 `null` 이다. */
+  inventoryItemId: string | null
 }
 
-/** 헥사 기록이 한 캐릭터의 보관에서 가져온 조각. */
+/** 헥사 기록이 한 캐릭터의 사냥 조각 보관에서 가져온 조각. */
 export interface FragmentUse {
   ocid: string
+  fragments: number
+}
+
+/** 기록이 한 메이플 ID · 월드의 기타 조각(인벤토리에 넣은 조각)에서 가져온 조각. */
+export interface OtherFragmentUse {
+  accountId: string
+  worldKey: string
   fragments: number
 }
 
@@ -70,8 +79,10 @@ export interface StoredEntry {
   /** 차례대로다. 하나 이상이다. */
   items: EntryItem[]
   hunt: EntryHunt | null
-  /** 헥사 기록이 보관에서 가져온 조각. 다른 기록은 빈 배열이다. */
+  /** 헥사 기록이 사냥 조각 보관에서 가져온 조각. 다른 기록은 빈 배열이다. */
   fragmentUses: readonly FragmentUse[]
+  /** 헥사 강화와 인벤토리의 기타 조각 판매가 기타 조각에서 가져온 조각. 다른 기록은 빈 배열이다. */
+  otherFragmentUses: readonly OtherFragmentUse[]
 }
 
 /** 빈 품목. 쓰는 칸만 덮어 만든다. */
@@ -98,6 +109,7 @@ export const EMPTY_ITEM: EntryItem = {
   hexaActivation: null,
   hexaUseStorage: null,
   hexaStorageAsSpend: null,
+  inventoryItemId: null,
 }
 
 function flagOf(value: boolean | null): number | null {
@@ -109,12 +121,18 @@ const INSERT_ITEM_SQL = `
     (id, entry_id, sort_order, item_key, item_name, form_key, item_kind_key, quantity, from_level, to_level,
      amount_meso, tariff_meso, sale_fee_percent, sale_fee_meso, sale_fee_auto, amount_point, point_per_100m_meso,
      meso_market_fee_percent, amount_cash,
-     fragment_count, untradable_fragment_count, fragment_price_meso, hexa_activation, hexa_use_storage, hexa_storage_as_spend)
-  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     fragment_count, untradable_fragment_count, fragment_price_meso, hexa_activation, hexa_use_storage, hexa_storage_as_spend,
+     inventory_item_id)
+  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 const INSERT_FRAGMENT_USE_SQL = `
-  INSERT INTO cashbook_entry_fragment_uses (id, entry_id, ocid, fragments) VALUES (${NEW_UUID_SQL}, ?, ?, ?)
+  INSERT INTO cashbook_entry_fragment_uses (id, entry_id, fragment_source, ocid, fragments) VALUES (${NEW_UUID_SQL}, ?, 'hunt', ?, ?)
+`
+
+const INSERT_OTHER_FRAGMENT_USE_SQL = `
+  INSERT INTO cashbook_entry_fragment_uses (id, entry_id, fragment_source, account_id, world_key, fragments)
+  VALUES (${NEW_UUID_SQL}, ?, 'other', ?, ?, ?)
 `
 
 const INSERT_HUNT_SQL = `
@@ -150,10 +168,14 @@ async function writeChildren(db: SqliteDbConnection, entry: StoredEntry): Promis
       flagOf(item.hexaActivation),
       flagOf(item.hexaUseStorage),
       flagOf(item.hexaStorageAsSpend),
+      item.inventoryItemId,
     ])
   }
   for (const use of entry.fragmentUses) {
     await db.run(INSERT_FRAGMENT_USE_SQL, [entry.head.id, use.ocid, use.fragments])
+  }
+  for (const use of entry.otherFragmentUses) {
+    await db.run(INSERT_OTHER_FRAGMENT_USE_SQL, [entry.head.id, use.accountId, use.worldKey, use.fragments])
   }
   const hunt = entry.hunt
   if (hunt === null) return
@@ -370,6 +392,7 @@ function itemOf(row: Record<string, unknown>): EntryItem {
     hexaActivation: row.hexa_activation == null ? null : Number(row.hexa_activation) === 1,
     hexaUseStorage: row.hexa_use_storage == null ? null : Number(row.hexa_use_storage) === 1,
     hexaStorageAsSpend: row.hexa_storage_as_spend == null ? null : Number(row.hexa_storage_as_spend) === 1,
+    inventoryItemId: textOrNull(row.inventory_item_id),
   }
 }
 
@@ -402,8 +425,15 @@ export async function readEntries(db: SqliteDbConnection, where: string, params:
     db.query(`SELECT * FROM cashbook_entry_fragment_uses WHERE entry_id IN (${ids}) ORDER BY rowid`, params),
   ])
   const usesOf = new Map<string, FragmentUse[]>()
+  const otherUsesOf = new Map<string, OtherFragmentUse[]>()
   for (const row of uses.values ?? []) {
     const id = row.entry_id as string
+    if (row.fragment_source === 'other') {
+      const list = otherUsesOf.get(id) ?? []
+      list.push({ accountId: row.account_id as string, worldKey: row.world_key as string, fragments: Number(row.fragments) })
+      otherUsesOf.set(id, list)
+      continue
+    }
     const list = usesOf.get(id) ?? []
     list.push({ ocid: row.ocid as string, fragments: Number(row.fragments) })
     usesOf.set(id, list)
@@ -429,5 +459,6 @@ export async function readEntries(db: SqliteDbConnection, where: string, params:
     items: itemsOf.get(row.id as string) ?? [{ ...EMPTY_ITEM }],
     hunt: huntOfEntry.get(row.id as string) ?? null,
     fragmentUses: usesOf.get(row.id as string) ?? [],
+    otherFragmentUses: otherUsesOf.get(row.id as string) ?? [],
   }))
 }

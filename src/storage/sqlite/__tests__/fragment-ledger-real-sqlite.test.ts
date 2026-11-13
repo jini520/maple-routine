@@ -17,6 +17,7 @@ import {
   updateIncomeRecord,
   type IncomeRecord,
 } from '../../income'
+import { addInventoryItem, SOL_ERDA_FRAGMENT_ITEM_KEY } from '../../inventory'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { getSpendRecordsBetween, insertSpendRecord, type SpendRecord } from '../../spend'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
@@ -208,6 +209,24 @@ describe('사냥 기록을 고쳐 모자라면 그 조각을 쓴 뒤 기록을 �
 
     expect(await spendOf('hexa-20')).toMatchObject({ mesoAmount: 60 * 7_200_000, hexa: { storageUses: [{ ocid: 'b', fragments: 40 }] } })
     await expect(getFragmentStorage('b', '2026-09-10')).resolves.toBe(0)
+  })
+
+  it('헥사 강화는 강화한 캐릭터의 메이플 ID · 월드의 기타 조각을 다른 캐릭터 보관보다 먼저 다시 가져온다', async () => {
+    await insertIncomeRecord(hunt('hunt-a', 'a', '2026-09-17', 60))
+    await insertIncomeRecord(hunt('hunt-b', 'b', '2026-09-10', 40))
+    await insertSpendRecord(hexa('hexa-20', 'a', '2026-09-20', { fragments: 100, uses: [{ ocid: 'a', fragments: 60 }], asSpend: false, price: 7_200_000 }))
+    await addInventoryItem({ accountId: 'maple-a', worldKey: 'scania', itemKey: SOL_ERDA_FRAGMENT_ITEM_KEY, itemKindKey: 'etc', quantity: 30 }, new Date())
+    const candidatesOf = (ocid: string): string[] => (ocid === 'a' ? ['a', 'b'] : [ocid])
+    const ownerOf = (ocid: string) => (ocid === 'a' ? { accountId: 'maple-a', worldKey: 'scania' } : null)
+
+    const plan = await previewIncomeCuts({ kind: 'remove', id: 'hunt-a' }, candidatesOf, ownerOf)
+    await deleteIncomeRecord('hunt-a', { candidatesOf, ownerOf, key: plan.key, prices: {} })
+
+    expect(await spendOf('hexa-20')).toMatchObject({
+      mesoAmount: 40 * 7_200_000,
+      hexa: { storageUses: [{ ocid: 'b', fragments: 30 }], otherUse: { accountId: 'maple-a', worldKey: 'scania', fragments: 30 } },
+    })
+    await expect(getFragmentStorage('b', '2026-09-10')).resolves.toBe(10)
   })
 
   // 사용자가 본 것과 다른 기록이 바뀌면 안 된다. 창을 다시 띄우도록 던지고 아무것도 쓰지 않는다.

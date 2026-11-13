@@ -43,6 +43,7 @@ jest.mock('../../../storage/enhancement-totals', () => ({ loadEnhancementTotals:
 jest.mock('../../enhancement-history/legacy-totals', () => ({ ensureEnhancementTotals: jest.fn() }))
 jest.mock('../../../storage/mvp-grades', () => ({ getMvpGradeHistories: jest.fn() }))
 jest.mock('../../../storage/character-accounts', () => ({ getCharacterAccountSightings: jest.fn() }))
+jest.mock('../../../storage/inventory', () => ({ getOtherFragmentStorage: jest.fn(async () => 0) }))
 jest.mock('../../../storage/hexa-storage-checks', () => ({ setHexaStorageChecks: jest.fn(), getHexaStorageChecks: jest.fn() }))
 jest.mock('../../../lib/mvp/starforce', () => ({ starforceMvpDiscountOf: jest.fn() }))
 jest.mock('../../app-review/request', () => ({ countCoreSave: jest.fn() }))
@@ -1403,11 +1404,25 @@ describe('loadHexaStorages', () => {
     income.getFragmentStorage.mockImplementation(async (ocid: string) => ({ main: 10, alt: 20 })[ocid] ?? 0)
     const { loadHexaStorages } = require('../records') as typeof import('../records')
 
-    await expect(loadHexaStorages('main', '2026-10-30', 'rec-1')).resolves.toEqual([
-      { ocid: 'main', stored: 10 },
-      { ocid: 'alt', stored: 20 },
-    ])
+    await expect(loadHexaStorages('main', '2026-10-30', 'rec-1')).resolves.toMatchObject({
+      hunts: [
+        { ocid: 'main', stored: 10 },
+        { ocid: 'alt', stored: 20 },
+      ],
+    })
     expect(income.getFragmentStorage).toHaveBeenCalledWith('main', '2026-10-30', 'rec-1')
+  })
+
+  it('강화한 캐릭터의 메이플 ID · 월드의 기타 조각을 함께 읽는다', async () => {
+    const inventory = jest.requireMock('../../../storage/inventory') as Record<string, jest.Mock>
+    inventory.getOtherFragmentStorage.mockResolvedValueOnce(30)
+    income.getFragmentStorage.mockResolvedValue(0)
+    const { loadHexaStorages } = require('../records') as typeof import('../records')
+
+    await expect(loadHexaStorages('main', '2026-10-30', 'rec-1')).resolves.toMatchObject({
+      other: { accountId: 'A', worldKey: 'scania', stored: 30 },
+    })
+    expect(inventory.getOtherFragmentStorage).toHaveBeenCalledWith('A', 'scania', 'rec-1')
   })
 
   // 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.

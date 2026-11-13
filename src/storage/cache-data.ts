@@ -38,11 +38,14 @@ const RECORD_GROUPS: readonly CacheDataGroupId[] = ['manual', 'boss', 'cashbook'
 
 // 품목 · 사냥 입력 · 보관에서 가져온 조각은 기록의 자식이라 기록과 함께 지워야 고아가 안 생긴다. 강화 레벨 기억은
 // 기록에서 나온 값이라 기록만 지우고 남기면 다음 기록의 강화 전 칸이 지운 기록의 레벨로 선다.
+// 인벤토리에 넣은 아이템은 남은 개수를 가계부 판매에서 센다. 가계부만 지우면 판 아이템이 다시 서고, 인벤토리만 지우면 판
+// 기록이 가리키는 줄이 사라진다. 판 품목이 그 줄을 가리키므로 품목 뒤에 지운다.
 const CASHBOOK_TABLES = [
   'cashbook_entries',
   'cashbook_entry_items',
   'cashbook_entry_hunt_inputs',
   'cashbook_entry_fragment_uses',
+  'inventory_items',
   'remembered_levels',
 ]
 
@@ -163,7 +166,8 @@ export async function getCacheDataCounts(): Promise<CacheDataCounts> {
     manualCharacters: keys.filter((key) => key.startsWith('manualTrackedContent:')).length,
     bossClears: await scalar(`SELECT count(*) AS n FROM boss_party_periods WHERE clear_status = 'cleared'`),
     bossDrops: await scalar('SELECT count(*) AS n FROM boss_drops'),
-    cashbookEntries: await scalar('SELECT count(*) AS n FROM cashbook_entries'),
+    cashbookEntries:
+      (await scalar('SELECT count(*) AS n FROM cashbook_entries')) + (await scalar('SELECT count(*) AS n FROM inventory_items')),
     enhancementDays: await scalar('SELECT count(DISTINCT history_date) AS n FROM enhancement_totals'),
     cacheEntries: keys.filter(isCacheKey).length,
   }

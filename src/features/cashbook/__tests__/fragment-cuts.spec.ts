@@ -14,6 +14,7 @@ jest.mock('../../../storage/income', () => ({
 
 jest.mock('../records', () => ({
   loadHexaCandidatesOf: jest.fn(async () => (ocid: string) => [ocid]),
+  loadHexaOwnerOf: jest.fn(async () => () => null),
   namesByOcid: jest.fn(async () => new Map([['a', '단풍소녀']])),
   recordCardOf: jest.fn((entry: { record: { id: string } }) => ({ title: '제목', detail: `이름 ${entry.record.id}` })),
 }))

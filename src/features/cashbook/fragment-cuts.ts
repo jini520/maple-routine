@@ -19,7 +19,7 @@ import {
   type IncomeChange,
   type IncomeRecord,
 } from '../../storage/income'
-import { loadHexaCandidatesOf, namesByOcid, recordCardOf } from './records'
+import { loadHexaCandidatesOf, loadHexaOwnerOf, namesByOcid, recordCardOf } from './records'
 
 /** 사냥 기록 하나를 고치거나 지우는 일. */
 export type HuntChange = IncomeChange
@@ -51,10 +51,14 @@ export interface FragmentCutPreview {
   rows: FragmentCutRow[]
   key: string
   candidatesOf: (ocid: string) => readonly string[]
+  /** 헥사 강화가 기타 조각을 가져올 메이플 ID · 월드 */
+  ownerOf?: (ocid: string) => { accountId: string; worldKey: string } | null
 }
 
-function takenOf(record: { hexa: { storageUses: readonly { fragments: number }[] } | null }): number {
-  return (record.hexa?.storageUses ?? []).reduce((sum, use) => sum + use.fragments, 0)
+function takenOf(record: {
+  hexa: { storageUses: readonly { fragments: number }[]; otherUse?: { fragments: number } } | null
+}): number {
+  return (record.hexa?.storageUses ?? []).reduce((sum, use) => sum + use.fragments, record.hexa?.otherUse?.fragments ?? 0)
 }
 
 /** 보관에서 가져온 개수가 그대로인 헥사 기록. 다른 캐릭터의 보관으로 옮겼을 뿐이라 화면에 보이는 것이 안 바뀐다. */
@@ -105,9 +109,9 @@ async function rowsOf(plan: FragmentCutPlan): Promise<FragmentCutRow[]> {
 
 /** 사냥 기록을 고치거나 지우면 함께 바뀔 뒤 기록. */
 async function previewHuntCuts(change: HuntChange): Promise<FragmentCutPreview> {
-  const candidatesOf = await loadHexaCandidatesOf()
-  const plan = await previewIncomeCuts(change, candidatesOf)
-  return { change, rows: await rowsOf(plan), key: plan.key, candidatesOf }
+  const [candidatesOf, ownerOf] = await Promise.all([loadHexaCandidatesOf(), loadHexaOwnerOf()])
+  const plan = await previewIncomeCuts(change, candidatesOf, ownerOf)
+  return { change, rows: await rowsOf(plan), key: plan.key, candidatesOf, ownerOf }
 }
 
 /**
@@ -116,7 +120,7 @@ async function previewHuntCuts(change: HuntChange): Promise<FragmentCutPreview> 
  * @param prices 가격이 필요한 헥사 기록에 넣을 개당 가격. 기록 id 가 열쇠이고 0 도 값이다
  */
 async function saveHuntChange(preview: FragmentCutPreview, prices: Readonly<Record<string, number>>): Promise<void> {
-  const approval = { candidatesOf: preview.candidatesOf, key: preview.key, prices }
+  const approval = { candidatesOf: preview.candidatesOf, ownerOf: preview.ownerOf, key: preview.key, prices }
   const { change } = preview
   if (change.kind === 'edit') await updateIncomeRecord(change.record, approval)
   else await deleteIncomeRecord(change.id, approval)
