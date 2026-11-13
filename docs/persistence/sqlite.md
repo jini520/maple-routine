@@ -87,8 +87,8 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 
 | 테이블 | 칸 |
 |---|---|
-| `boss_parties` | `id` NN · `ocid` NN · `boss_key` NN · `difficulty` NN · 분배 조건 · `created_at` NN · `updated_at` NN |
-| `boss_party_periods` | `id` NN · `party_id` NN · `period_key` NN · `cycle` NN · `world_key` · `clear_status` NN · `price_meso` · `payout_meso` · `defeated_date` · `source` · 분배 조건 · `created_at` NN · `updated_at` NN |
+| `boss_parties` | `id` NN · `ocid` NN · `boss_key` NN · `difficulty` NN · 분배 조건 · `crystal_excluded` · `created_at` NN · `updated_at` NN |
+| `boss_party_periods` | `id` NN · `party_id` NN · `period_key` NN · `cycle` NN · `world_key` · `clear_status` NN · `price_meso` · `payout_meso` · `defeated_date` · `source` · 분배 조건 · `crystal_excluded` · `over_crystal_limit` · `created_at` NN · `updated_at` NN |
 | `boss_drops` | `id` NN · `period_id` NN · `sort_order` NN · `category` NN · `item_key` NN · `box_origin_key` · `ring_level` · `record_status` NN · `price_meso` · `priced_at` · `sale_fee_percent` · `sale_fee_auto` · 분배 조건 · `created_at` NN · `updated_at` NN |
 | `character_profiles` | `id` NN · `ocid` NN UNIQUE · `name` NN · `image_url` NN · `world` · `world_key` · `level` · `job_class` · `created_date` · `updated_at` NN |
 | `character_world_leaps` | `id` NN · `from_ocid` NN UNIQUE · `to_ocid` NN · `linked_at` NN |
@@ -115,6 +115,10 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 분배 조건은 세 표가 같이 쓰는 여섯 칸이다. `split_mode`(`even` · `ratio`) · `party_size` · `my_share` · `shares_total` ·
 `split_fee_percent` · `split_fee_auto`. 정의는 `boss-tables.ts` 한 곳에 있다. 이름은 저장하지 않는다. 보스 · 아이템 · 월드
 이름은 읽을 때 key 로 게임 데이터에서 찾는다([[ADR-078]] 결정 6).
+
+`boss_parties` · `boss_party_periods` 에는 분배 칸 `crystal_excluded` 가 하나 더 있다. `1` 이면 분배 방식 `제외` 다([[ADR-038]]
+결정 12). `boss_party_periods.over_crystal_limit` 는 주간 결정석 판매 한도를 넘겨 0 메소로 읽는 처치다. `payout_meso` 는 그대로
+두고 읽을 때 0 으로 읽는다([[ADR-042]] 결정 15). 두 칸 모두 옛 기기에는 `ensureColumn` 이 붙인다.
 
 `boss_drops` 의 `(period_id, sort_order)` 에는 인덱스 `boss_drops_period` 가 있다. 유일 인덱스가 아니다. 한 행씩 고치는
 동안 `sort_order` 가 잠깐 겹치기 때문이다([[ADR-077]] 결정 8).
