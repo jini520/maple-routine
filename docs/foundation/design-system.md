@@ -125,7 +125,7 @@
 | `Modal` · `NoticeModal` | 가운데 모달(테두리 없는 패널 `Modal.Card` · 껍데기 `ModalSurface`) · 알림 모달 틀([[ADR-062]] 결정 8). `NoticeModal` 은 `icon` 을 비우면 배지 없이 제목만 선다. 아래 칸이 무엇을 다루는지 보여 주는 확인(인벤토리 삭제)이 쓴다([[ADR-209]] 결정 11) |
 | `LoadingModal` · `TaskProgressModal` · `TaskResumeModal` | 불러오는 중 모달 · 오래 걸리는 작업 진행률 · 이어서 하기([[ADR-023]]) |
 | `CalendarPopover` · `TimePopover` | 날짜 · 시각 팝오버 |
-| `SelectField` · `AccountSelect` | 드롭다운 · 메이플 ID 드롭다운 |
+| `SelectField` · `AccountSelect` | 드롭다운 · 메이플 ID 드롭다운. 드롭다운은 위로 열리면 펼치는 움직임과 그림자도 뒤집어, 칸에 닿는 쪽에서부터 펼쳐지고 그림자는 칸에서 먼 쪽으로 진다([[ADR-062]] 결정 9) |
 | `FaqSheet` · `FaqButton` | 설명용 바텀시트 · 화면 머리 제목 옆에서 그 화면의 FAQ 시트를 여는 물음표. 진입 전 화면(로그인 · 캐릭터 설정 · MVP 등급 둘)은 같은 부품의 글자 모양 `자주 묻는 질문` 을 쓴다. 글자 모양은 진입 전 화면에서만 쓴다. 묶음에 문항이 없으면 아무것도 그리지 않는다([[ADR-150]]) |
 | `SpeedDial` | 펼치는 ＋ |
 | `Toast` | 토스트와 쌓기(`ToastStack`). 테두리 없이 그림자로 뜨고, 남은 시간은 닫기 버튼 둘레의 `TimerRing` 이 보인다. 같은 토스트는 한 장만 뜬다([[ADR-061]] 결정 11 · 12) |

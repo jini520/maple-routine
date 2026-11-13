@@ -26,6 +26,8 @@ interface DropdownPlacement {
   top: number
   /** 넘치는 목록은 잘리고 안에서 굴린다. */
   maxHeight: number
+  /** 연 쪽. 펼치는 움직임을 이 쪽에 맞춰 뒤집는다 */
+  side: 'below' | 'above'
 }
 
 interface DropdownXInput {
@@ -76,14 +78,14 @@ export function placeDropdown(input: DropdownPlacementInput): DropdownPlacement 
   const spaceAbove = aboveEnd - topLimit
 
   if (input.contentHeight <= spaceBelow) {
-    return { top: belowStart, maxHeight: spaceBelow }
+    return { top: belowStart, maxHeight: spaceBelow, side: 'below' }
   }
   if (input.contentHeight <= spaceAbove) {
-    return { top: aboveEnd - input.contentHeight, maxHeight: spaceAbove }
+    return { top: aboveEnd - input.contentHeight, maxHeight: spaceAbove, side: 'above' }
   }
   return spaceAbove > spaceBelow
-    ? { top: topLimit, maxHeight: spaceAbove }
-    : { top: belowStart, maxHeight: spaceBelow }
+    ? { top: topLimit, maxHeight: spaceAbove, side: 'above' }
+    : { top: belowStart, maxHeight: spaceBelow, side: 'below' }
 }
 
 interface PopoverPlacement {
