@@ -175,8 +175,11 @@ export function InventorySaleSheet(props: { cell: ItemCell; owner: string; onClo
           <InventoryItemBlock
             cell={cell}
             owner={props.owner}
+            // 장비는 늘 하나라 남은 개수를 적지 않는다.
             right={
-              <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>{`${cell.count.toLocaleString()}개`}</Text>
+              equipment ? undefined : (
+                <Text className="text-xs text-text-muted" style={TABULAR_NUMS}>{`${cell.count.toLocaleString()}개`}</Text>
+              )
             }
           >
             {fragment && (

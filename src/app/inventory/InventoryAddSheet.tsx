@@ -1,7 +1,7 @@
 /**
- * 아이템 넣기. 주인(메이플 ID · 월드) → 종류 → 아이템 → 수량 차례다. 아이템 칸은 글자를 치는 칸이고, 치는 동안 고른 종류 가운데
- * 이름이 맞는 아이템이 입력 카드 안 목록에 떠 그중에서 고른다. 목록에 없는 아이템은 넣을 수 없다. 넣은 아이템에는 날짜가 없어
- * 머리에 날짜가 없다.
+ * 아이템 넣기. 주인(메이플 ID · 월드) → 아이템 → 레벨(특수스킬 반지만) → 수량 차례다. 아이템 칸은 글자를 치는 칸이고, 치는 동안
+ * 이름이 맞는 아이템이 종류를 가리지 않고 입력 카드 안 목록에 떠 그중에서 고른다. 종류는 고른 아이템의 종류로 적는다. 목록에 없는
+ * 아이템은 넣을 수 없다. 넣은 아이템에는 날짜가 없어 머리에 날짜가 없다.
  */
 import { useEffect, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
@@ -13,11 +13,11 @@ import { mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
 import { COUNT_QUICK_ADDS } from '../../constants/domain/quick-adds'
 import { openInputCard } from '../../features/input-card/store'
 import { addToInventory } from '../../features/inventory/actions'
-import { catalogMatches, inventoryCatalog, type CatalogItem } from '../../features/inventory/catalog'
+import { catalogMatches, inventoryCatalog, RING_LEVELS, type CatalogItem } from '../../features/inventory/catalog'
 import { loadInventoryOwners, type InventoryOwner } from '../../features/inventory/load'
 import { useToastStore } from '../../features/toast/store'
 import { worldEmblemUrl } from '../../lib/assets/asset-lookup'
-import { countsQuantity, itemKindNameOf, itemKinds, type ItemKindKey } from '../../lib/cashbook/categories'
+import { countsQuantity } from '../../lib/cashbook/categories'
 import { naturalAspectStyle } from '../../lib/image-aspect'
 import { worldNameOf } from '../../lib/world/worlds'
 import { SaveRow } from '../cashbook/income/form-shared'
@@ -54,20 +54,13 @@ function OwnerOption(props: { owner: InventoryOwner; selected: boolean; testID: 
   )
 }
 
-/**
- * @param props.initialKind 처음 고른 종류. 보고 있던 탭의 종류다
- * @param props.catalog 고를 수 있는 아이템. 비우면 서버 아이템 표다
- */
-export function InventoryAddSheet(props: {
-  onClose: () => void
-  initialKind: ItemKindKey
-  catalog?: readonly CatalogItem[]
-}): React.JSX.Element {
+/** @param props.catalog 고를 수 있는 아이템. 비우면 서버 아이템 표다 */
+export function InventoryAddSheet(props: { onClose: () => void; catalog?: readonly CatalogItem[] }): React.JSX.Element {
   const catalog = props.catalog ?? inventoryCatalog()
   const [owners, setOwners] = useState<readonly InventoryOwner[]>([])
   const [ownerKey, setOwnerKey] = useState<string | null>(null)
-  const [kind, setKind] = useState<ItemKindKey>(props.initialKind)
   const [item, setItem] = useState<CatalogItem | null>(null)
+  const [ringLevel, setRingLevel] = useState<number | null>(null)
   const [quantityText, setQuantityText] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -76,28 +69,26 @@ export function InventoryAddSheet(props: {
   }, [])
 
   const owner = owners.find((each) => ownerKeyOf(each) === ownerKey) ?? null
-  const counts = countsQuantity(kind)
+  const counts = item !== null && countsQuantity(item.kind)
   const quantity = counts ? mesoValueOf(quantityText) : 1
-  const canSave = owner !== null && item !== null && quantity > 0
+  const ringReady = item?.ringLevels !== true || ringLevel !== null
+  const canSave = owner !== null && item !== null && quantity > 0 && ringReady
 
-  function selectKind(name: string): void {
-    const next = itemKinds().find((each) => each.name === name)?.key
-    if (next === undefined || next === kind) return
-    // 종류가 바뀌면 고른 아이템이 그 종류가 아니게 된다.
-    setKind(next)
-    setItem(null)
+  function pickItem(key: string): void {
+    // 아이템이 바뀌면 고른 레벨은 그 아이템의 것이 아니다.
+    setItem(catalog.find((each) => each.key === key) ?? null)
+    setRingLevel(null)
   }
 
   function openItemCard(): void {
     openInputCard({
       label: '아이템',
-      context: itemKindNameOf(kind),
       text: true,
       placeholder: '아이템 명',
       value: item?.name ?? '',
       suggestions: {
-        itemsOf: (draft) => catalogMatches(catalog, kind, draft),
-        onPick: (key) => setItem(catalog.find((each) => each.key === key) ?? null),
+        itemsOf: (draft) => catalogMatches(catalog, draft),
+        onPick: pickItem,
         pickOnly: true,
       },
       onConfirm: () => undefined,
@@ -108,7 +99,14 @@ export function InventoryAddSheet(props: {
     if (owner === null || item === null) return
     setSaving(true)
     try {
-      await addToInventory({ accountId: owner.accountId, worldKey: owner.worldKey, itemKey: item.key, itemKindKey: kind, quantity })
+      await addToInventory({
+        accountId: owner.accountId,
+        worldKey: owner.worldKey,
+        itemKey: item.key,
+        itemKindKey: item.kind,
+        quantity,
+        ringLevel: item.ringLevels ? ringLevel : null,
+      })
       props.onClose()
     } catch {
       useToastStore.getState().showError('아이템을 넣지 못했습니다')
@@ -140,14 +138,6 @@ export function InventoryAddSheet(props: {
               )
             }}
           />
-          <FieldRow label="종류" testID="inventory-add-kind">
-            <Segment
-              size="sm"
-              options={itemKinds().map((each) => each.name)}
-              selected={itemKindNameOf(kind)}
-              onSelect={selectKind}
-            />
-          </FieldRow>
           <FieldRow label="아이템">
             <Pressable testID="inventory-add-item" role="button" aria-label="아이템" onPress={openItemCard} className="h-5 flex-1">
               <Text
@@ -158,6 +148,16 @@ export function InventoryAddSheet(props: {
               </Text>
             </Pressable>
           </FieldRow>
+          {item?.ringLevels === true && (
+            <FieldRow label="레벨" testID="inventory-add-ring-level">
+              <Segment
+                size="sm"
+                options={RING_LEVELS.map(String)}
+                selected={ringLevel === null ? null : String(ringLevel)}
+                onSelect={(level) => setRingLevel(Number(level))}
+              />
+            </FieldRow>
+          )}
           {counts && (
             <FieldRow label="수량">
               <AmountInput

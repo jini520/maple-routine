@@ -181,7 +181,7 @@ export function InventoryScreen(): React.JSX.Element {
       )}
       {sheet?.kind === 'add' && (
         // 보고 있던 탭의 종류로 연다. 넣은 뒤 그 탭에 바로 선다. 전체 탭이면 첫 종류(장비)다.
-        <InventoryAddSheet initialKind={tab === 'all' ? 'equipment' : tab} onClose={() => setSheet(null)} />
+        <InventoryAddSheet onClose={() => setSheet(null)} />
       )}
 
       <InventoryAddFab onPress={() => setSheet({ kind: 'add' })} />
@@ -205,9 +205,12 @@ function DeletingItem(props: { cell: ItemCell; owner: string }): React.JSX.Eleme
           {props.owner}
         </Text>
       </View>
-      <Text className="shrink-0 text-sm font-semibold text-text" style={TABULAR_NUMS}>
-        {`${props.cell.count.toLocaleString('ko-KR')}개`}
-      </Text>
+      {/* 장비는 늘 하나라 수량을 적지 않는다. */}
+      {props.cell.itemKindKey !== 'equipment' && (
+        <Text className="shrink-0 text-sm font-semibold text-text" style={TABULAR_NUMS}>
+          {`${props.cell.count.toLocaleString('ko-KR')}개`}
+        </Text>
+      )}
     </View>
   )
 }

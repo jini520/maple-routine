@@ -24,6 +24,8 @@ export interface InventoryItem {
   /** 판 · 쓴 수. 판매 품목의 수량(장비는 하나)이고, 기타 조각은 그 메이플 ID · 월드의 조각 사용이다. */
   used: number
   remaining: number
+  /** 특수스킬 반지의 레벨. 다른 아이템은 `null` 이다. */
+  ringLevel: number | null
 }
 
 export interface NewInventoryItem {
@@ -32,6 +34,8 @@ export interface NewInventoryItem {
   itemKey: string
   itemKindKey: string
   quantity: number
+  /** 특수스킬 반지만 */
+  ringLevel?: number | null
 }
 
 /** 저장으로 넣은 아이템이나 기타 조각의 남은 개수가 0 아래로 내려가 쓴 것을 되돌렸다는 뜻. */
@@ -69,6 +73,7 @@ function itemOf(row: Record<string, unknown>): InventoryItem {
     quantity,
     used,
     remaining: quantity - used,
+    ringLevel: row.ring_level == null ? null : Number(row.ring_level),
   }
 }
 
@@ -142,11 +147,11 @@ export async function addInventoryItem(item: NewInventoryItem, now: Date): Promi
   const at = now.toISOString()
   const equipment = item.itemKindKey === 'equipment'
   await db.run(
-    `INSERT INTO inventory_items (id, account_id, world_key, item_key, item_kind_key, quantity, created_at, updated_at)
-     VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO inventory_items (id, account_id, world_key, item_key, item_kind_key, quantity, ring_level, created_at, updated_at)
+     VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (account_id, world_key, item_key) WHERE item_kind_key <> 'equipment'
      DO UPDATE SET quantity = quantity + excluded.quantity, updated_at = excluded.updated_at`,
-    [item.accountId, item.worldKey, item.itemKey, item.itemKindKey, equipment ? 1 : item.quantity, at, at],
+    [item.accountId, item.worldKey, item.itemKey, item.itemKindKey, equipment ? 1 : item.quantity, item.ringLevel ?? null, at, at],
   )
   bumpInventoryItemsRevision()
 }

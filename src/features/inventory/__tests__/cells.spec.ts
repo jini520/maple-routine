@@ -3,11 +3,11 @@ import { SOL_ERDA_FRAGMENT_ITEM_KEY, type InventoryItem } from '../../../storage
 import { buildInventoryCells, inventoryMenuOf } from '../cells'
 
 function drop(id: string, itemKey: string, category: BossDropRecord['category'], ocid = 'ocid-a'): BossDropRecord {
-  return { dropRecordId: id, ocid, itemKey, category, quantity: 1, priceState: null } as BossDropRecord
+  return { dropRecordId: id, ocid, itemKey, category, quantity: 1, priceState: null, ringLevel: null } as BossDropRecord
 }
 
 function item(id: string, itemKey: string, itemKindKey: string, remaining: number, accountId = 'maple-a'): InventoryItem {
-  return { id, accountId, worldKey: 'scania', itemKey, itemKindKey, quantity: remaining, used: 0, remaining }
+  return { id, accountId, worldKey: 'scania', itemKey, itemKindKey, quantity: remaining, used: 0, remaining, ringLevel: null }
 }
 
 const faceOf = (accountId: string): string | null => ({ 'maple-a': 'ocid-a', 'maple-b': 'ocid-b' })[accountId] ?? null
@@ -38,6 +38,22 @@ describe('buildInventoryCells', () => {
     expect(cells.map((cell) => [cell.kind, cell.count, cell.faceOcid])).toEqual([
       ['item', 1, 'ocid-a'],
       ['item', 1, 'ocid-b'],
+    ])
+  })
+
+  // 반지 상자의 결과는 드롭 기록에 상자의 종류(소비)로 남는다. 그대로 쓰면 반지가 소비 칸에 서고 수량이 붙는다.
+  it('아이템 목록에 있는 아이템은 목록의 종류로 서서 반지 상자의 반지가 장비 칸이고, 반지는 드롭 · 넣은 줄의 레벨을 든다', () => {
+    const cells = buildInventoryCells({
+      pendingDrops: [{ ...drop('d1', 'weapon_puff_l_ring', 'consumable'), ringLevel: 4 }, drop('d2', 'stone', 'consumable')],
+      huntFragments: 0,
+      items: [{ ...item('i1', 'risk_taker_ring', 'equipment', 1), ringLevel: 2 }],
+      faceOf,
+    })
+
+    expect(cells.map((cell) => [cell.itemKey, cell.itemKindKey, cell.ringLevel])).toEqual([
+      ['weapon_puff_l_ring', 'equipment', 4],
+      ['risk_taker_ring', 'equipment', 2],
+      ['stone', 'consumable', null],
     ])
   })
 

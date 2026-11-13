@@ -125,6 +125,16 @@ describe('인벤토리 넣기', () => {
 
     expect((await getInventoryItems()).map((item) => item.quantity)).toEqual([1, 1])
   })
+
+  it('특수스킬 반지는 줄마다 넣을 때 고른 레벨을 들고, 다른 아이템은 레벨이 없다', async () => {
+    await addInventoryItem({ ...SCANIA, itemKey: 'risk_taker_ring', itemKindKey: 'equipment', quantity: 1, ringLevel: 4 }, NOW)
+    await addInventoryItem({ ...SCANIA, itemKey: 'risk_taker_ring', itemKindKey: 'equipment', quantity: 1, ringLevel: 2 }, NOW)
+    await addInventoryItem({ ...SCANIA, itemKey: 'stone', itemKindKey: 'consumable', quantity: 3 }, NOW)
+
+    // 같은 시각에 넣어 줄의 차례는 id 가 정한다. 차례는 보지 않는다.
+    const rows = (await getInventoryItems()).map((item) => `${item.itemKey}:${item.ringLevel}`).sort()
+    expect(rows).toEqual(['risk_taker_ring:2', 'risk_taker_ring:4', 'stone:null'])
+  })
 })
 
 describe('남은 개수', () => {

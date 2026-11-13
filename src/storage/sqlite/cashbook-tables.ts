@@ -119,6 +119,8 @@ export const INVENTORY_ITEMS_BODY = `(
     item_kind_key TEXT NOT NULL,
     -- 넣은 개수. 판 · 쓴 수를 포함한다. 수정은 판 · 쓴 수 + 남길 개수로 바꾼다.
     quantity INTEGER NOT NULL CHECK (quantity >= 0),
+    -- 특수스킬 반지의 레벨. 같은 반지도 레벨마다 다른 물건이다. 다른 아이템은 NULL 이다.
+    ring_level INTEGER,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`

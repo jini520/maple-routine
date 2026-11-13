@@ -4,12 +4,15 @@
 import { ITEM_KIND_KEYS, type ItemKindKey } from '../../lib/cashbook/categories'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import { SOL_ERDA_FRAGMENT_ITEM_KEY, type InventoryItem } from '../../storage/inventory'
+import { catalogKindOf } from './catalog'
 
 interface CellBase {
   itemKey: string
   itemKindKey: ItemKindKey
   /** 칸에 서는 개수 */
   count: number
+  /** 특수스킬 반지의 레벨. 칸 오른쪽 아래 배지로 선다 */
+  ringLevel: number | null
   /** 칸 왼쪽 위의 얼굴. 보스 드롭은 드롭을 가진 캐릭터, 넣은 아이템은 그 메이플 ID · 월드의 대표 캐릭터 */
   faceOcid: string | null
   /** 칸 오른쪽 위의 경로 글자. 솔 에르다 조각만 `사냥` · `기타` 로 가른다 */
@@ -30,7 +33,10 @@ export function inventoryMenuOf(cell: Pick<InventoryCell, 'kind' | 'itemKindKey'
   return cell.itemKindKey === 'equipment' ? ['판매', '삭제'] : ['판매', '수정', '삭제']
 }
 
-/** 드롭 표의 장비 · 소비는 같은 이름의 가계부 종류로 선다. 고정 드롭은 기타 칸에 선다. */
+/**
+ * 아이템 목록에 없는 드롭의 종류. 드롭 표의 장비 · 소비는 같은 이름의 가계부 종류로 선다. 고정 드롭은 기타 칸에 선다.
+ * 상자에서 나온 드롭은 상자의 종류(소비)로 저장돼 있어 목록의 종류가 먼저다.
+ */
 function dropKindOf(category: BossDropRecord['category']): ItemKindKey {
   if (category === 'equipment') return 'equipment'
   if (category === 'consumable') return 'consumable'
@@ -62,8 +68,9 @@ export function buildInventoryCells(input: {
           kind: 'drop',
           drop,
           itemKey: drop.itemKey!,
-          itemKindKey: dropKindOf(drop.category),
+          itemKindKey: catalogKindOf(drop.itemKey!) ?? dropKindOf(drop.category),
           count: drop.quantity,
+          ringLevel: drop.ringLevel,
           faceOcid: drop.ocid,
           tag: null,
         }),
@@ -75,6 +82,7 @@ export function buildInventoryCells(input: {
             itemKey: SOL_ERDA_FRAGMENT_ITEM_KEY,
             itemKindKey: 'etc',
             count: input.huntFragments,
+            ringLevel: null,
             faceOcid: null,
             tag: '사냥',
           } satisfies InventoryCell,
@@ -87,8 +95,9 @@ export function buildInventoryCells(input: {
           kind: 'item',
           item,
           itemKey: item.itemKey,
-          itemKindKey: itemKindOf(item.itemKindKey),
+          itemKindKey: catalogKindOf(item.itemKey) ?? itemKindOf(item.itemKindKey),
           count: item.remaining,
+          ringLevel: item.ringLevel,
           faceOcid: input.faceOf(item.accountId, item.worldKey),
           tag: item.itemKey === SOL_ERDA_FRAGMENT_ITEM_KEY ? '기타' : null,
         }),

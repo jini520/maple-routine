@@ -103,7 +103,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `cashbook_entry_items` | `id` NN · `entry_id` NN · `sort_order` NN · `item_key` · `item_name` · `form_key` · `item_kind_key` · `quantity` · `from_level` · `to_level` · `amount_meso` · `tariff_meso` · `sale_fee_percent` · `sale_fee_meso` · `sale_fee_auto` · `amount_point` · `point_per_100m_meso` · `meso_market_fee_percent` · `amount_cash` · `fragment_count` · `untradable_fragment_count` · `fragment_price_meso` · `hexa_activation` · `hexa_use_storage` · `hexa_storage_as_spend` · `inventory_item_id` |
 | `cashbook_entry_hunt_inputs` | `id` NN · `entry_id` NN UNIQUE · `character_level` · `missed_mobs` · `boosts` · `fragments` · `fragment_price_meso` · `meso_rate` · `typed_meso` · `union_tier` |
 | `cashbook_entry_fragment_uses` | `id` NN · `entry_id` NN · `fragment_source` NN(`hunt` · `other`) · `ocid`(`hunt` 만) · `account_id` · `world_key`(`other` 만) · `fragments` NN |
-| `inventory_items` | `id` NN · `account_id` NN · `world_key` NN · `item_key` NN · `item_kind_key` NN · `quantity` NN · `created_at` NN · `updated_at` NN |
+| `inventory_items` | `id` NN · `account_id` NN · `world_key` NN · `item_key` NN · `item_kind_key` NN · `quantity` NN · `ring_level`(특수스킬 반지만, 옛 줄에는 `ensureColumn` 이 붙인다) · `created_at` NN · `updated_at` NN |
 | `remembered_levels` | `id` NN · `ocid` NN · `kind` NN · `item_key` NN · `level` NN · `updated_at` NN |
 | `mvp_grade_history` | `id` NN · `account_id` NN · `from_date` NN · `grade` · `updated_at` NN |
 | `character_accounts` | `id` NN · `ocid` NN · `name` NN · `account_id` NN · `nexon_account_id` · `first_seen_date` NN · `last_seen_date` NN · `world_key` |

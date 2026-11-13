@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 // 시트 껍데기는 가계부 시트 테스트와 같은 방식으로 세운다. 라이브러리를 목으로 갈아 끼우고 내용만 본다.
 jest.mock('@gorhom/bottom-sheet', () => {
@@ -50,13 +50,13 @@ const { useInventory } = jest.requireMock('../../../features/inventory/query') a
 const actions = jest.requireMock('../../../features/inventory/actions') as Record<string, jest.Mock>
 
 const 드롭 = { dropRecordId: 'drop-1', ocid: 'ocid-a', itemKey: 'stone', category: 'consumable', quantity: 1 } as BossDropRecord
-const 넣은것 = { id: 'item-1', accountId: 'maple-a', worldKey: 'scania', itemKey: 'stone', itemKindKey: 'consumable', quantity: 3, used: 0, remaining: 3 }
+const 넣은것 = { id: 'item-1', accountId: 'maple-a', worldKey: 'scania', itemKey: 'stone', itemKindKey: 'consumable', quantity: 3, used: 0, remaining: 3, ringLevel: null }
 const 넣은장비 = { ...넣은것, id: 'item-2', itemKey: 'belt', itemKindKey: 'equipment', quantity: 1, remaining: 1 }
 
 const CELLS: InventoryCell[] = [
-  { kind: 'item', item: 넣은장비, itemKey: 'belt', itemKindKey: 'equipment', count: 1, faceOcid: null, tag: null },
-  { kind: 'drop', drop: 드롭, itemKey: 'stone', itemKindKey: 'consumable', count: 1, faceOcid: 'ocid-a', tag: null },
-  { kind: 'item', item: 넣은것, itemKey: 'stone', itemKindKey: 'consumable', count: 3, faceOcid: null, tag: null },
+  { kind: 'item', item: 넣은장비, itemKey: 'belt', itemKindKey: 'equipment', count: 1, ringLevel: null, faceOcid: null, tag: null },
+  { kind: 'drop', drop: 드롭, itemKey: 'stone', itemKindKey: 'consumable', count: 1, ringLevel: null, faceOcid: 'ocid-a', tag: null },
+  { kind: 'item', item: 넣은것, itemKey: 'stone', itemKindKey: 'consumable', count: 3, ringLevel: null, faceOcid: null, tag: null },
 ]
 
 const VIEW: InventoryView = {
@@ -135,12 +135,53 @@ describe('InventoryScreen', () => {
     expect(actions.removeInventoryRemaining).toHaveBeenCalledWith('item-1')
   })
 
-  it('넣기 시트는 보고 있던 탭의 종류로 열리고, 전체 탭이면 장비로 열린다', async () => {
+  it('넣기에는 종류 칸이 없고 찾아 고른 아이템의 종류로 넣는다. 특수스킬 반지는 수량 대신 레벨을 골라야 저장된다', async () => {
+    const view = await 열기()
+    await 누르기(view, 'inventory-add-fab')
+    expect(view.queryByTestId('inventory-add-kind')).toBeNull()
+
+    await 누르기(view, 'inventory-add-owner-open')
+    await 누르기(view, 'inventory-add-owner-option-maple-a|scania')
+    await 누르기(view, 'inventory-add-item')
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('input-card-value'), '리스크테이커')
+    })
+    await act(async () => {
+      fireEvent.press(view.getByTestId('input-card-suggestion-risk_taker_ring'))
+    })
+
+    expect(view.queryByTestId('inventory-add-quantity')).toBeNull()
+    expect(view.getByRole('button', { name: '저장' })).toBeDisabled()
+
+    await act(async () => {
+      fireEvent.press(within(view.getByTestId('inventory-add-ring-level')).getByRole('button', { name: '4' }))
+    })
+    await act(async () => {
+      fireEvent.press(view.getByRole('button', { name: '저장' }))
+    })
+
+    expect(actions.addToInventory).toHaveBeenCalledWith({
+      accountId: 'maple-a',
+      worldKey: 'scania',
+      itemKey: 'risk_taker_ring',
+      itemKindKey: 'equipment',
+      quantity: 1,
+      ringLevel: 4,
+    })
+  })
+
+  it('특수스킬 반지 칸은 레벨 배지를 달고, 장비는 칸과 삭제 확인에 수량을 적지 않는다', async () => {
+    useInventory.mockReturnValue({ data: { ...VIEW, cells: [{ ...CELLS[0], ringLevel: 4 }] }, isError: false, refetch: jest.fn() })
     const view = await 열기()
 
-    await 누르기(view, 'inventory-tabs-consumable')
-    await 누르기(view, 'inventory-add-fab')
-    expect(view.getByRole('button', { name: '소비', selected: true })).toBeTruthy()
+    // 배지는 읽기 도구에서 숨기고 칸의 이름표가 레벨을 읽는다.
+    expect(within(view.getByTestId('inventory-cell-0')).getByText('lv4', { includeHiddenElements: true })).toBeTruthy()
+    expect(view.getByLabelText('belt 4레벨')).toBeTruthy()
+
+    await 누르기(view, 'inventory-cell-0')
+    await 누르기(view, '삭제')
+    expect(view.getByText('아이템을 삭제할까요?')).toBeTruthy()
+    expect(view.queryByText('1개')).toBeNull()
   })
 
   it('메이플 ID · 월드 보기는 메이플 ID 이름과 그 월드 대표 캐릭터 두 줄이고, 같은 메이플 ID 라도 월드마다 따로 선다', async () => {

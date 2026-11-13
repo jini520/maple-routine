@@ -55,7 +55,9 @@ function CellView(props: {
       ref={setNode}
       testID={`inventory-cell-${props.index}`}
       role="button"
-      aria-label={showsCount ? `${name} ${cell.tag ?? ''} ${cell.count}개`.replace(/\s+/g, ' ') : name}
+      aria-label={[name, cell.tag, cell.ringLevel === null ? null : `${cell.ringLevel}레벨`, showsCount ? `${cell.count}개` : null]
+        .filter((part) => part !== null)
+        .join(' ')}
       onPress={() => {
         // 팝오버는 자리를 재기 전에도 연다. 재고 나면 꼬리가 이 칸을 가리킨다.
         props.onPress(cell, null)
@@ -84,6 +86,12 @@ function CellView(props: {
             unavailable={props.face.unavailable}
             mirrored
           />
+        </View>
+      )}
+      {cell.ringLevel !== null && (
+        // 그림 오른쪽 아래. 개수와 마주 보는 자리라 왼쪽 위 얼굴 · 오른쪽 위 경로 글자와 겹치지 않는다.
+        <View className="absolute bottom-2 right-[5px] rounded-full bg-primary px-1 py-px" aria-hidden>
+          <Text className="text-9 font-bold leading-none text-on-primary">lv{cell.ringLevel}</Text>
         </View>
       )}
       {showsCount && (
