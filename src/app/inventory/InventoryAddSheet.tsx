@@ -38,7 +38,8 @@ const ownerKeyOf = (owner: Pick<InventoryOwner, 'accountId' | 'worldKey'>): stri
 function OwnerOption(props: { owner: InventoryOwner; selected: boolean; testID: string }): React.JSX.Element {
   const emblem = worldEmblemUrl(props.owner.worldKey)
   return (
-    <View testID={props.testID} className="min-w-0 flex-1 gap-0.5">
+    // flex-1 을 주지 않는다. 드롭다운이 목록을 잴 때 높이 auto 상자 안에서 0 으로 접혀 짧게 재진다.
+    <View testID={props.testID} className="gap-0.5">
       <Text numberOfLines={1} className={`text-sm font-semibold ${props.selected ? 'text-primary-ink' : 'text-text'}`}>
         {props.owner.mapleIdName}
       </Text>

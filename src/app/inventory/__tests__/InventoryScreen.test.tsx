@@ -39,7 +39,7 @@ jest.mock('../../../features/inventory/actions', () => ({
   addToInventory: jest.fn(async () => undefined),
 }))
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import type { BossDropRecord } from '../../../storage/boss-drops'
 import type { InventoryCell } from '../../../features/inventory/cells'
 import type { InventoryView } from '../../../features/inventory/load'
@@ -189,6 +189,18 @@ describe('InventoryScreen', () => {
 
     expect(view.getByTestId('inventory-add-owner-option-maple-a|scania')).toHaveTextContent('메이플ID-maple-a낮잠곰')
     expect(view.getByTestId('inventory-add-owner-option-maple-a|bera')).toHaveTextContent('메이플ID-maple-a단풍줍기')
+  })
+
+  // 드롭다운은 열기 전에 높이 auto 상자에서 목록을 재고 자리를 정한다. 보기에 flex-1(기준 크기 0)이 있으면 거기서 접혀 짧게 재지고,
+  // 아래에 다 들어간다고 보고 열어 보기 둘에도 스크롤이 생긴다.
+  it('메이플 ID · 월드 보기의 상자는 기준 크기가 0 이 아니라 목록을 잴 때 접히지 않는다', async () => {
+    const view = await 열기()
+    await 누르기(view, 'inventory-add-fab')
+    await 누르기(view, 'inventory-add-owner-open')
+
+    for (const row of view.getAllByTestId(/^inventory-add-owner-row-/, { includeHiddenElements: true })) {
+      expect(flattenStyle(row.props.style).flexBasis).toBeUndefined()
+    }
   })
 
   it('탭을 고르면 그 종류의 칸만 선다', async () => {
