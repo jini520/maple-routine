@@ -46,7 +46,7 @@ export interface CharacterAvatarProps {
   /** 조회할 수 없게 된 캐릭터. 그림을 흐리고 원 안을 경고 덮개로 덮는다. */
   readonly unavailable?: boolean
   /**
-   * 머리를 원 밖으로 그린다. 원 위로 지름만큼, 양옆으로 지름만큼 넓혀 자르고 중심선 아래는 원으로 자른다.
+   * 머리를 원 밖으로 그린다. 원 위로 지름만큼, 양옆으로 지름만큼 넓혀 자르고 원 위 끝에서 지름의 60% 아래는 원으로 자른다.
    * 캐릭터 레일만 안 준다. 스케줄러 링이 얼굴 바로 둘레에 있어 머리가 링을 가린다.
    */
   readonly headOverflow?: boolean

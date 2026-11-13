@@ -111,7 +111,7 @@ describe('mirrored', () => {
   })
 })
 
-// 머리를 원 밖으로 그리는 얼굴. 원 중심선 위는 원 위로 지름만큼 · 양옆으로 지름만큼 넓힌 네모로 자르고, 아래는 원으로
+// 머리를 원 밖으로 그리는 얼굴. 원 위 끝에서 지름의 60% 높이까지는 원 위로 지름만큼 · 양옆으로 지름만큼 넓힌 네모로 자르고, 아래는 원으로
 // 자른다. 값이 어긋나도 에러는 안 나고 머리가 엉뚱한 높이에서 잘릴 뿐이라 관계로 지킨다.
 describe('머리 넘침', () => {
   const SIZE = 36
@@ -127,18 +127,18 @@ describe('머리 넘침', () => {
     expect(frame.height).toBe(SIZE * 2)
   })
 
-  // 원 조각이 옮겨 가면 중심선 아래가 원래 원과 다른 자리에서 잘린다.
+  // 원 조각이 옮겨 가면 네모 아래가 원래 원과 다른 자리에서 잘린다.
   it('원 조각은 원래 원 자리에 그대로 선다', () => {
     const frame = headOverflowFrame(SIZE)
 
     expect(frame.circle).toEqual({ left: -frame.left, top: -frame.top, size: SIZE })
   })
 
-  it('네모 조각은 상자 위 끝에서 원 중심선까지라, 중심선 아래는 원만 남는다', () => {
+  it('네모 조각은 상자 위 끝에서 원 위 끝으로부터 지름의 60% 높이까지라, 그 아래는 원만 남는다', () => {
     const frame = headOverflowFrame(SIZE)
 
     expect(frame.upper.width).toBe(frame.width)
-    expect(frame.upper.height).toBe(frame.circle.top + SIZE / 2)
+    expect(frame.upper.height).toBeCloseTo(frame.circle.top + SIZE * 0.6, 9)
   })
 
   it('크롭 상자를 1.1 배로 넓혀 얼굴이 작아진다. 받은 배수에 곱한다', () => {
