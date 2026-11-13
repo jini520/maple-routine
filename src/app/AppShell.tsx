@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import { useDropEffectStore } from '../features/drop-effect/store'
+import { useOverFrameStore } from '../features/over-frame/store'
 import { useBarOrderStore } from '../features/bar-order/store'
 import { useQuickLinksStore } from '../features/quick-links/store'
 import { useTodaySharedMapleIdStore } from '../features/today/shared-maple-id'
@@ -83,6 +84,7 @@ function ReadyShell(): React.JSX.Element {
   const restoreAuth = useAuthStore((state) => state.restoreFromStorage)
   const restoreTrackingMode = useTrackingModeStore((state) => state.restoreFromStorage)
   const restoreDropEffect = useDropEffectStore((state) => state.restoreFromStorage)
+  const restoreOverFrame = useOverFrameStore((state) => state.restoreFromStorage)
   const restoreQuickLinks = useQuickLinksStore((state) => state.restoreFromStorage)
   const restoreSharedMapleId = useTodaySharedMapleIdStore((state) => state.restoreFromStorage)
   const restoreMapleIdNames = useMapleIdNamesStore((state) => state.restoreFromStorage)
@@ -115,6 +117,11 @@ function ReadyShell(): React.JSX.Element {
 
   useEffect(() => {
     void restoreDropEffect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    void restoreOverFrame()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

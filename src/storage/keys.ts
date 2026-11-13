@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
   // 남은 값을 치우기 위해 이름만 남긴다(로그아웃이 지운다).
   legacySelectedAccountId: 'selectedAccountId',
   theme: 'theme',
+  // 오버 프레임(머리를 원 밖으로 그리는 얼굴) 켜짐. 'on' · 'off', 없으면 켜짐.
+  overFrame: 'overFrame',
   textSize: 'textSize',
   trackingMode: 'trackingMode',
   dropEffect: 'dropEffect',

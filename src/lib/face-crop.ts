@@ -59,3 +59,61 @@ export function faceCropStyle(
     ...(mirrored ? { transform: [{ scaleX: -1 }] } : {}),
   }
 }
+
+/**
+ * 오버 프레임(머리를 원 밖으로 그리는 얼굴)의 비율. `zoom` 말고는 모두 지름에 댄 값이다.
+ *
+ * 크롭 상자를 넓혀(`zoom`) 얼굴을 작게 그리고 위로 올려야(`lift`) 넓힌 위쪽에 머리가 들어간다. `sideDepth` 는 양옆을
+ * 넓힌 네모가 원 위 끝에서 내려오는 높이이고, 그 아래는 원으로만 자른다.
+ */
+export const OVER_FRAME = { zoom: 1.1, lift: 0.08, top: 1, side: 1, sideDepth: 0.75 } as const
+
+/**
+ * 오버 프레임의 마스크 상자. 원의 왼쪽 위가 (0, 0) 인 좌표다.
+ *
+ * 마스크는 두 조각의 합이다. `upper` 는 상자 위 끝에서 `OVER_FRAME.sideDepth` 높이까지의 네모, `circle` 은 원래
+ * 원이다. 그래서 그 높이 아래는 원만 남는다. 두 조각의 좌표는 상자의 왼쪽 위가 (0, 0) 이다.
+ *
+ * @param size 원의 지름
+ */
+export function overFrameMask(size: number): {
+  left: number
+  top: number
+  width: number
+  height: number
+  upper: { width: number; height: number }
+  circle: { left: number; top: number; size: number }
+} {
+  const above = OVER_FRAME.top * size
+  const side = OVER_FRAME.side * size
+  const width = size + side * 2
+  return {
+    left: -side,
+    top: -above,
+    width,
+    height: above + size,
+    upper: { width, height: above + OVER_FRAME.sideDepth * size },
+    circle: { left: side, top: above, size },
+  }
+}
+
+/**
+ * 오버 프레임의 `<Image>` 배치. 마스크 상자(`overFrameMask`) 안의 좌표다.
+ *
+ * @param size 원의 지름
+ * @param zoom 호출하는 쪽의 배수. 여기에 `OVER_FRAME.zoom` 을 곱한다
+ * @param mirrored 그림을 좌우로 뒤집는다
+ */
+export function overFrameCropStyle(
+  size: number,
+  zoom = 1,
+  mirrored = false,
+): ReturnType<typeof faceCropStyle> {
+  const frame = overFrameMask(size)
+  const crop = faceCropStyle(size, zoom * OVER_FRAME.zoom, mirrored)
+  return {
+    ...crop,
+    left: crop.left - frame.left,
+    top: crop.top - frame.top - OVER_FRAME.lift * size,
+  }
+}

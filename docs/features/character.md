@@ -43,8 +43,9 @@
 | `features/content-scheduler/content-completion.ts` | 진행 링이 세는 완료 판정 |
 | `components/organisms/CharacterRail/` | 초상화 레일 |
 | `components/organisms/CharacterPortrait/` | 초상화 · 링 · 곡선 글자 · 치수 표(`portrait-metrics.ts`) |
-| `components/molecules/CharacterAvatar/` | 얼굴 원과 그림이 없을 때의 실루엣 |
-| `lib/face-crop.ts` | 얼굴을 자르는 좌표 |
+| `components/molecules/CharacterAvatar/` | 얼굴 원과 그림이 없을 때의 실루엣, 오버 프레임 마스크 |
+| `lib/face-crop.ts` | 얼굴을 자르는 좌표와 오버 프레임 마스크 치수(`OVER_FRAME`) |
+| `features/over-frame/store.ts` · `storage/over-frame.ts` | 오버 프레임 켜기 · 끄기(Preferences `overFrame`) |
 
 ## 추적 캐릭터
 
@@ -78,6 +79,7 @@
 나눠 쓴다([[ADR-142]] 결정 8). 위 목록의 이름 · 레벨 · 직업은 쿼리 캐시의 `characterBasic(ocid)` 에서 읽는다.
 
 today 헤더의 버튼은 지름 48 원 안에 대표 캐릭터 얼굴 한 장을 그린다. 추적 캐릭터가 없으면 사람 아이콘을 그린다([[ADR-147]] 결정 2).
+얼굴의 머리는 원 밖으로 나온다([[ADR-219]] 결정 12).
 
 ## 캐릭터 선택
 
@@ -103,3 +105,6 @@ today 헤더의 버튼은 지름 48 원 안에 대표 캐릭터 얼굴 한 장�
 
 줄의 왼쪽 끝에 서는 얼굴은 좌우를 뒤집어 오른쪽의 이름과 금액을 보게 한다. 넥슨 그림의 캐릭터가 왼쪽을 보기
 때문이다. 레일과 today 머리의 캐릭터 관리 버튼은 뒤집지 않는다([[ADR-155]] 결정 11).
+
+캐릭터 레일 말고는 모든 얼굴이 머리를 원 밖으로 그린다(오버 프레임). 원 위로 지름만큼, 양옆으로 지름만큼 넓혀 자르고, 양옆은 원 위
+끝에서 지름의 75% 높이까지 내려온다. 레일은 스케줄러 링이 얼굴 바로 바깥에 있어서, 머리가 링을 가리지 않게 원 안에만 그린다([[ADR-219]] 결정 12). 오버 프레임은 테마 페이지에서 끌 수 있다([[ADR-219]] 결정 13).
