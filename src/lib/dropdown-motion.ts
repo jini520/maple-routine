@@ -3,6 +3,8 @@
  * 목록이 칸과 이어져 보인다.
  */
 
+import { DROPDOWN_SHADOW, type ShadowLayer } from './shadow'
+
 export type DropdownSide = 'below' | 'above'
 
 /** 목록이 펼쳐지기 시작할 때의 세로 배율 */
@@ -29,4 +31,9 @@ export function itemStartOffset(side: DropdownSide): number {
 /** 보기가 늦게 시작하는 시간. 칸에 가까운 보기부터 나타난다 */
 export function itemDelay(index: number, count: number, side: DropdownSide): number {
   return (side === 'below' ? index : count - 1 - index) * ITEM_STAGGER_MS
+}
+
+/** 목록의 그림자. 칸에서 먼 쪽으로 진다. 위로 열린 목록의 그림자가 아래 칸 쪽으로 지면 어색하다 */
+export function listShadowOf(side: DropdownSide): ShadowLayer {
+  return side === 'below' ? DROPDOWN_SHADOW : { ...DROPDOWN_SHADOW, y: -DROPDOWN_SHADOW.y }
 }

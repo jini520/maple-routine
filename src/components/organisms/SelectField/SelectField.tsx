@@ -21,9 +21,16 @@ import Animated, { Easing, Keyframe, useAnimatedStyle, useDerivedValue, withTimi
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ChevronDownIcon, Text } from '../../atoms'
-import { boxShadowOf, DROPDOWN_SHADOW } from '../../../lib/shadow'
+import { boxShadowOf } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
-import { itemDelay, itemStartOffset, LIST_START_SCALE, listStartOffset, type DropdownSide } from '../../../lib/dropdown-motion'
+import {
+  itemDelay,
+  itemStartOffset,
+  LIST_START_SCALE,
+  listShadowOf,
+  listStartOffset,
+  type DropdownSide,
+} from '../../../lib/dropdown-motion'
 import { placeDropdown, placeDropdownX } from '../../../lib/place-dropdown'
 
 /** 목록이 화면 가장자리에 붙지 않게 남기는 여백. `AccountSelect` 와 같은 값이다. */
@@ -309,7 +316,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
                 entering={listEntering(Math.min(contentHeight, placement.maxHeight, props.listMaxHeight ?? Infinity), placement.side)}
               >
                 {/* 그림자는 바깥 상자가 든다. 모서리를 자르는 안쪽 상자에 주면 iOS 가 그림자까지 자른다. */}
-                <View style={{ borderRadius: 14, boxShadow: boxShadowOf(definition.shadowColor, DROPDOWN_SHADOW) }}>
+                <View style={{ borderRadius: 14, boxShadow: boxShadowOf(definition.shadowColor, listShadowOf(placement.side)) }}>
                   <View
                     testID={`${props.testID}-list`}
                     role="menu"

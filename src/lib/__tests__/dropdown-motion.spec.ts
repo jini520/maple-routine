@@ -1,4 +1,5 @@
-import { itemDelay, itemStartOffset, listStartOffset } from '../dropdown-motion'
+import { DROPDOWN_SHADOW } from '../shadow'
+import { itemDelay, itemStartOffset, listShadowOf, listStartOffset } from '../dropdown-motion'
 
 describe('드롭다운이 펼쳐지는 움직임', () => {
   // 가운데 기준으로 줄인 목록을 칸에 닿는 변 쪽으로 밀어 둔다. 아래로 열리면 위쪽 끝, 위로 열리면 아래쪽 끝이다.
@@ -13,6 +14,11 @@ describe('드롭다운이 펼쳐지는 움직임', () => {
   it('보기는 아래로 열리면 위에서 내려오고, 위로 열리면 아래에서 올라온다', () => {
     expect(itemStartOffset('below')).toBeLessThan(0)
     expect(itemStartOffset('above')).toBe(-itemStartOffset('below'))
+  })
+
+  it('그림자는 아래로 열리면 아래로, 위로 열리면 위로 같은 거리만큼 진다', () => {
+    expect(listShadowOf('below')).toEqual(DROPDOWN_SHADOW)
+    expect(listShadowOf('above')).toEqual({ ...DROPDOWN_SHADOW, y: -DROPDOWN_SHADOW.y })
   })
 
   it('칸에 가까운 보기부터 나타난다. 위로 열리면 아래 보기가 먼저다', () => {
