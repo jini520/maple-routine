@@ -60,7 +60,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | `utility` | 도구 목록 · 판매 분배금 계산기 | `features/utility.md` |
 | `cashbook` | 수익 · 지출 캘린더 · 손입력 | `features/cashbook.md` |
 | `stats` | 기간별 수익 · 지출 통계 | `features/stats.md` |
-| `inventory` | 팔지 않고 가진 아이템 · 판매 · 수정 · 삭제 | `features/inventory.md`(구현 때 쓴다) |
+| `inventory` | 팔지 않고 가진 아이템 · 판매 · 수정 · 삭제 | `features/inventory.md` |
 | `mvp-grade` | MVP 등급 · 수수료 · 할인 | `features/mvp-grade.md` |
 | `party-appointments` | 파티 약속 · 약속 알림 | `features/party-appointments.md` |
 | `settings` | 설정 화면 · 안내 · 계정 데이터 | `features/settings.md` |

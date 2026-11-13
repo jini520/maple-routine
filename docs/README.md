@@ -29,6 +29,7 @@ docs/
 | `item-drop` | [features/item-drop.md](./features/item-drop.md) | 드롭 기록 · 판매 가격 · 연출 | [[ADR-044]] · [[ADR-045]] |
 | `cashbook` | [features/cashbook.md](./features/cashbook.md) | 수입 · 지출 캘린더와 손입력 | [[ADR-046]] · [[ADR-047]] · [[ADR-048]] · [[ADR-049]] · [[ADR-095]] · [[ADR-100]] · [[ADR-117]] · [[ADR-137]] · [[ADR-160]] · [[ADR-161]] |
 | `stats` | [features/stats.md](./features/stats.md) | 기간별 수익 · 지출 통계 | [[ADR-002]] |
+| `inventory` | [features/inventory.md](./features/inventory.md) | 팔지 않고 가진 아이템 · 판매 · 수정 · 삭제 · 넣기 | [[ADR-209]] |
 | `party-appointments` | [features/party-appointments.md](./features/party-appointments.md) | 파티 일정과 알림 | [[ADR-051]] |
 | `utility` | [features/utility.md](./features/utility.md) | 도구 목록 · 판매 분배금 계산기 · 주간 보스 수익 계산기 | [[ADR-001]] · [[ADR-074]] |
 | `mvp-grade` | [features/mvp-grade.md](./features/mvp-grade.md) | MVP 등급과 수수료 | [[ADR-050]] |
