@@ -1,6 +1,6 @@
 # ADR-209 인벤토리
 
-> ⚪ 미구현
+> 🟢 유효
 > 관련 소스: `navigation/bar-groups.ts` · `storage/income.ts`(`getFragmentStorage`) · `lib/cashbook/hexa-matrix.ts`(`allocateHexaStorage`) · `lib/character-order.ts`(`pickRepresentativeCharacter`) · `storage/sqlite/cashbook-tables.ts` · `storage/cache-data.ts` · 이슈 #911 · #912
 
 ## 배경

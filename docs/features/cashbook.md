@@ -25,6 +25,7 @@
 | `storage/enhancement-totals.ts` · `storage/enhancement-history.ts` · `features/enhancement-history/` · `lib/enhancement/` | 강화 사용 내역 수집 · 비용 계산 · 합계 저장 · 지출 판정. 원장은 `enhancement-history.ts` 에 있다 |
 | `app/cashbook/IncomeSheet.tsx` · `SpendSheet.tsx` · `CategoryPicker.tsx` · `sheet-fields.tsx` | 두 시트와 공용 부품 |
 | `app/cashbook/income/` · `app/cashbook/spend/` | 분류별 폼 |
+| `app/cashbook/item-pick-field.tsx` · `hooks/useItemPick.ts` | 아이템 구매 · 판매의 아이템 칸. 목록에서 고르거나 직접 친다 |
 | `lib/cashbook/categories.ts` | 지출 · 수입 분류, 메이플 ID 를 고를 수 있는 분류, 아이템 종류, 에픽던전 형태의 key 와 이름 |
 | `lib/cashbook/spend-catalog.ts` | 지출 참조표(서버 게임 데이터의 `spendCatalog` 칸) · 메포 환산 · 관세 · 주화 |
 | `lib/cashbook/symbol-costs.ts` | 심볼 강화 비용(`symbolCosts` 칸) |
