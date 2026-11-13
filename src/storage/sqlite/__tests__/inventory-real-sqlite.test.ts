@@ -9,13 +9,21 @@ import {
   addInventoryItem,
   deleteInventoryRemaining,
   getInventoryItems,
+  getOtherFragmentStorage,
   InventoryShortageError,
   setInventoryRemaining,
   SOL_ERDA_FRAGMENT_ITEM_KEY,
   type InventoryItem,
 } from '../../inventory'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
-import { insertSpendRecord, type SpendHexa, type SpendRecord } from '../../spend'
+import {
+  deleteSpendRecord,
+  getSpendRecordsBetween,
+  insertSpendRecord,
+  updateSpendRecord,
+  type SpendHexa,
+  type SpendRecord,
+} from '../../spend'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
 import { DB_VERSION } from '../migrations'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
@@ -95,6 +103,33 @@ function hexa(id: string, uses: Pick<SpendHexa, 'storageUses' | 'otherUse'>): Sp
 
 function hexaTakingOther(id: string, fragments: number): SpendRecord {
   return hexa(id, { storageUses: [], otherUse: { ...SCANIA, fragments } })
+}
+
+/** 가계부 아이템 구매. 보관을 켜면 그 메이플 ID · 월드의 인벤토리에 들어간다. */
+function purchase(id: string, over: Partial<SpendRecord> = {}): SpendRecord {
+  return {
+    id,
+    ocid: 'ocid-a',
+    spentOn: '2026-11-12',
+    category: 'item_purchase',
+    item: null,
+    itemKey: 'stone',
+    formItemKeys: null,
+    itemKind: 'consumable',
+    levelFrom: null,
+    levelTo: null,
+    quantity: 5,
+    mesoAmount: 5_000_000,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
+    cashAmount: null,
+    hexa: null,
+    recordedAt: '2026-11-12T03:00:00.000Z',
+    inventoryStore: SCANIA,
+    ...over,
+  }
 }
 
 async function only(itemKey: string): Promise<InventoryItem> {
@@ -247,5 +282,71 @@ describe('버전 21 이관', () => {
       { id: 'u-2', fragment_source: 'hunt', ocid: 'ocid-b', account_id: null, fragments: 5 },
       { id: 'u-1', fragment_source: 'hunt', ocid: 'ocid-a', account_id: null, fragments: 7 },
     ])
+  })
+})
+
+describe('가계부 구매 보관', () => {
+  it('보관한 구매는 그 메이플 ID · 월드의 같은 아이템 줄에 더해지고, 직접 넣은 개수와 함께 센다', async () => {
+    await addInventoryItem({ ...SCANIA, itemKey: 'stone', itemKindKey: 'consumable', quantity: 2 }, NOW)
+    await insertSpendRecord(purchase('p1'))
+
+    expect(await only('stone')).toMatchObject({ quantity: 2, purchased: 5, remaining: 7 })
+  })
+
+  it('보관한 구매를 고치면 개수가 따라 바뀌고, 보관을 풀면 빠지며 아무것도 안 남은 줄은 지워진다', async () => {
+    await insertSpendRecord(purchase('p1'))
+    await updateSpendRecord(purchase('p1', { quantity: 3 }))
+    expect((await only('stone')).remaining).toBe(3)
+
+    await updateSpendRecord(purchase('p1', { quantity: 3, inventoryStore: undefined }))
+    expect(await getInventoryItems()).toEqual([])
+  })
+
+  it('이미 판 것보다 적게 만드는 구매 고치기 · 지우기는 되돌아간다', async () => {
+    await insertSpendRecord(purchase('p1'))
+    await insertIncomeRecord(itemSale('s1', (await only('stone')).id, 4))
+
+    await expect(updateSpendRecord(purchase('p1', { quantity: 3 }))).rejects.toBeInstanceOf(InventoryShortageError)
+    await expect(deleteSpendRecord('p1')).rejects.toBeInstanceOf(InventoryShortageError)
+    expect((await only('stone')).remaining).toBe(1)
+  })
+
+  it('보관한 장비 구매는 구매마다 줄을 만들고, 특수스킬 반지는 고른 레벨을 들며, 구매를 지우면 그 줄도 지워진다', async () => {
+    const ring = { itemKey: 'risk_taker_ring', itemKind: 'equipment' as const, quantity: null }
+    await insertSpendRecord(purchase('p1', { ...ring, ringLevel: 4 }))
+    await insertSpendRecord(purchase('p2', { ...ring, ringLevel: 2 }))
+
+    const rows = (await getInventoryItems()).map((item) => `${item.itemKey}:${item.ringLevel}:${item.remaining}`).sort()
+    expect(rows).toEqual(['risk_taker_ring:2:1', 'risk_taker_ring:4:1'])
+
+    await deleteSpendRecord('p1')
+    expect((await getInventoryItems()).map((item) => item.ringLevel)).toEqual([2])
+  })
+
+  // 구매 기록은 지출의 근거라 인벤토리 쪽이 고치지 않는다. 삭제는 보관만 푼다.
+  it('인벤토리 삭제는 보관을 풀고 구매 기록은 그대로 남긴다', async () => {
+    await insertSpendRecord(purchase('p1'))
+    await deleteInventoryRemaining((await only('stone')).id, NOW)
+
+    expect(await getInventoryItems()).toEqual([])
+    const [kept] = await getSpendRecordsBetween('2026-11-12', '2026-11-12')
+    expect(kept).toMatchObject({ id: 'p1', quantity: 5 })
+    expect(kept?.inventoryItemId).toBeUndefined()
+  })
+
+  it('수정은 직접 넣은 개수만 바꿔, 구매로 들어와 남은 개수 아래로 내리지 못한다', async () => {
+    await addInventoryItem({ ...SCANIA, itemKey: 'stone', itemKindKey: 'consumable', quantity: 2 }, NOW)
+    await insertSpendRecord(purchase('p1'))
+    const id = (await only('stone')).id
+
+    await setInventoryRemaining(id, 6, NOW)
+    expect(await only('stone')).toMatchObject({ quantity: 1, remaining: 6 })
+    await expect(setInventoryRemaining(id, 4, NOW)).rejects.toBeInstanceOf(InventoryShortageError)
+  })
+
+  it('보관한 솔 에르다 조각 구매는 그 메이플 ID · 월드의 기타 조각에 더해진다', async () => {
+    await insertSpendRecord(purchase('p1', { itemKey: SOL_ERDA_FRAGMENT_ITEM_KEY, itemKind: 'etc', quantity: 30 }))
+
+    expect(await getOtherFragmentStorage(SCANIA.accountId, SCANIA.worldKey)).toBe(30)
   })
 })

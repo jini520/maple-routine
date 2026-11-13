@@ -50,7 +50,7 @@ const { useInventory } = jest.requireMock('../../../features/inventory/query') a
 const actions = jest.requireMock('../../../features/inventory/actions') as Record<string, jest.Mock>
 
 const 드롭 = { dropRecordId: 'drop-1', ocid: 'ocid-a', itemKey: 'stone', category: 'consumable', quantity: 1 } as BossDropRecord
-const 넣은것 = { id: 'item-1', accountId: 'maple-a', worldKey: 'scania', itemKey: 'stone', itemKindKey: 'consumable', quantity: 3, used: 0, remaining: 3, ringLevel: null }
+const 넣은것 = { id: 'item-1', accountId: 'maple-a', worldKey: 'scania', itemKey: 'stone', itemKindKey: 'consumable', quantity: 3, used: 0, purchased: 0, remaining: 3, ringLevel: null }
 const 넣은장비 = { ...넣은것, id: 'item-2', itemKey: 'belt', itemKindKey: 'equipment', quantity: 1, remaining: 1 }
 
 const CELLS: InventoryCell[] = [

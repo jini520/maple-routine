@@ -21,6 +21,8 @@ import {
 import type { OtherFragmentUse } from './cashbook-entries'
 import { spendEntryOf, spendRecordOf } from './cashbook-entry-shape'
 import { writeCheckingFragments } from './fragment-ledger'
+import { deleteEmptyInventoryRows, inventoryRowForPurchase, linkedInventoryItemOf } from './inventory'
+import type { SqliteDbConnection } from './ports'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
@@ -99,6 +101,15 @@ export interface SpendRecord {
   /** 헥사 매트릭스 기록의 조각. 다른 갈래는 `null` 이다. */
   hexa: SpendHexa | null
   recordedAt: string
+  /** 아이템 구매에서 목록으로 고른 특수스킬 반지의 레벨. 다른 기록은 칸이 없다. */
+  ringLevel?: number
+  /** 인벤토리에 보관한 아이템 구매가 가리키는 인벤토리 줄. 읽을 때만 채운다. 저장은 `inventoryStore` 로 고른다. */
+  inventoryItemId?: string
+  /**
+   * 아이템 구매를 보관할 메이플 ID · 월드. 있으면 저장할 때 그 주인의 인벤토리 줄을 찾거나 만들어 잇고, 없으면 보관을 푼다. 읽은
+   * 기록에는 칸이 없다. 주인을 정하는 캐릭터 정보가 저장 계층 밖에 있어 고르는 쪽이 넘긴다.
+   */
+  inventoryStore?: { accountId: string; worldKey: string }
 }
 
 /**
@@ -167,12 +178,41 @@ export function bumpSpendRecordsRevision(): void {
   })
 }
 
-/** 조각 장부를 모자라게 하면 던진다(`FragmentShortageError`). 넣기 · 고치기 · 지우기가 모두 같다. */
+/**
+ * 보관할 아이템 구매면 그 주인의 인벤토리 줄을 찾거나 만들어 기록에 잇는다. 보관하지 않으면 잇지 않는다. 부르는 쪽이 트랜잭션으로
+ * 감싼다.
+ *
+ * @param previousId 고치기 전 그 기록이 가리키던 줄. 같은 주인 · 아이템이면 다시 쓴다
+ */
+async function withInventoryLink(db: SqliteDbConnection, record: SpendRecord, previousId: string | null): Promise<SpendRecord> {
+  const { inventoryItemId: _previous, ...rest } = record
+  const store = record.inventoryStore
+  if (record.category !== 'item_purchase' || store === undefined || record.itemKey === null) return rest
+  const id = await inventoryRowForPurchase(db, {
+    ...store,
+    itemKey: record.itemKey,
+    itemKindKey: record.itemKind ?? 'equipment',
+    ringLevel: record.ringLevel ?? null,
+    previousId,
+    now: new Date(),
+  })
+  return { ...rest, inventoryItemId: id }
+}
+
+/**
+ * 조각 장부나 인벤토리를 모자라게 하면 던진다(`FragmentShortageError` · `InventoryShortageError`). 넣기 · 고치기 · 지우기가 모두
+ * 같다. 보관한 구매를 고치거나 지워 이미 판 것보다 적어지는 저장도 여기서 되돌아간다.
+ */
 export async function insertSpendRecord(record: SpendRecord): Promise<void> {
   assertPointRate(record)
 
   const db = await getBossProfitDb()
-  await inTransaction(db, () => writeCheckingFragments(db, () => insertEntry(db, spendEntryOf(record))))
+  await inTransaction(db, () =>
+    writeCheckingFragments(db, async () => {
+      await insertEntry(db, spendEntryOf(await withInventoryLink(db, record, null)))
+      await deleteEmptyInventoryRows(db)
+    }),
+  )
   bumpSpendRecordsRevision()
 }
 
@@ -184,7 +224,13 @@ export async function updateSpendRecord(record: SpendRecord): Promise<void> {
   assertPointRate(record)
 
   const db = await getBossProfitDb()
-  await inTransaction(db, () => writeCheckingFragments(db, () => replaceEntry(db, spendEntryOf(record), new Date())))
+  await inTransaction(db, () =>
+    writeCheckingFragments(db, async () => {
+      const linked = await withInventoryLink(db, record, await linkedInventoryItemOf(db, record.id))
+      await replaceEntry(db, spendEntryOf(linked), new Date())
+      await deleteEmptyInventoryRows(db)
+    }),
+  )
   bumpSpendRecordsRevision()
 }
 
@@ -225,7 +271,12 @@ export async function moveSpendRecordsToOcid(fromOcid: string, toOcid: string): 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteSpendRecord(id: string): Promise<void> {
   const db = await getBossProfitDb()
-  await inTransaction(db, () => writeCheckingFragments(db, () => deleteEntry(db, id)))
+  await inTransaction(db, () =>
+    writeCheckingFragments(db, async () => {
+      await deleteEntry(db, id)
+      await deleteEmptyInventoryRows(db)
+    }),
+  )
   bumpSpendRecordsRevision()
 }
 

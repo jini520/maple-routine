@@ -46,8 +46,10 @@ export interface EntryItem {
   /** 헥사 기록만 참 · 거짓이고 나머지는 `null` 이다. */
   hexaUseStorage: boolean | null
   hexaStorageAsSpend: boolean | null
-  /** 인벤토리에서 판 판매가 가리키는 인벤토리 줄. 가계부에서 적은 판매는 `null` 이다. */
+  /** 이 품목이 가리키는 인벤토리 줄. 인벤토리에서 판 판매와 인벤토리에 보관한 구매가 채운다. 나머지는 `null` 이다. */
   inventoryItemId: string | null
+  /** 아이템 구매 · 판매에서 고른 특수스킬 반지의 레벨. 다른 품목은 `null` 이다. */
+  ringLevel: number | null
 }
 
 /** 헥사 기록이 한 캐릭터의 사냥 조각 보관에서 가져온 조각. */
@@ -110,6 +112,7 @@ export const EMPTY_ITEM: EntryItem = {
   hexaUseStorage: null,
   hexaStorageAsSpend: null,
   inventoryItemId: null,
+  ringLevel: null,
 }
 
 function flagOf(value: boolean | null): number | null {
@@ -122,8 +125,8 @@ const INSERT_ITEM_SQL = `
      amount_meso, tariff_meso, sale_fee_percent, sale_fee_meso, sale_fee_auto, amount_point, point_per_100m_meso,
      meso_market_fee_percent, amount_cash,
      fragment_count, untradable_fragment_count, fragment_price_meso, hexa_activation, hexa_use_storage, hexa_storage_as_spend,
-     inventory_item_id)
-  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     inventory_item_id, ring_level)
+  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 const INSERT_FRAGMENT_USE_SQL = `
@@ -169,6 +172,7 @@ async function writeChildren(db: SqliteDbConnection, entry: StoredEntry): Promis
       flagOf(item.hexaUseStorage),
       flagOf(item.hexaStorageAsSpend),
       item.inventoryItemId,
+      item.ringLevel,
     ])
   }
   for (const use of entry.fragmentUses) {
@@ -393,6 +397,7 @@ function itemOf(row: Record<string, unknown>): EntryItem {
     hexaUseStorage: row.hexa_use_storage == null ? null : Number(row.hexa_use_storage) === 1,
     hexaStorageAsSpend: row.hexa_storage_as_spend == null ? null : Number(row.hexa_storage_as_spend) === 1,
     inventoryItemId: textOrNull(row.inventory_item_id),
+    ringLevel: numberOrNull(row.ring_level),
   }
 }
 

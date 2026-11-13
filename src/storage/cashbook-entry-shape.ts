@@ -48,6 +48,8 @@ export function spendItemsOf(record: SpendRecord): EntryItem[] {
     hexaActivation: record.hexa?.activation ?? null,
     hexaUseStorage: record.hexa?.useStorage ?? null,
     hexaStorageAsSpend: record.hexa?.storageAsSpend ?? null,
+    inventoryItemId: record.inventoryItemId ?? null,
+    ringLevel: record.ringLevel ?? null,
   }
   const forms = SPEND_FORM_KEYS.filter((form) => record.formItemKeys?.[form] !== undefined)
   if (forms.length === 0) {
@@ -139,6 +141,8 @@ export function spendRecordOf(entry: StoredEntry): SpendRecord {
     cashAmount: sumOf(entry.items, (item) => item.amountCash),
     hexa: hexaOf(first, entry.fragmentUses, entry.otherFragmentUses),
     recordedAt: entry.head.createdAt,
+    ...(first.inventoryItemId === null ? {} : { inventoryItemId: first.inventoryItemId }),
+    ...(first.ringLevel === null ? {} : { ringLevel: first.ringLevel }),
   }
 }
 
@@ -236,6 +240,7 @@ export function incomeEntryOf(record: IncomeRecord): StoredEntry {
         pointPer100mMeso: record.pointPer100mMeso,
         amountCash: record.cashAmount,
         inventoryItemId: record.inventoryItemId ?? null,
+        ringLevel: record.ringLevel ?? null,
       },
     ],
     hunt: huntRowOf(record.hunt),
@@ -267,6 +272,7 @@ export function incomeRecordOf(entry: StoredEntry): IncomeRecord {
     hunt: huntOf(entry.hunt, hunting ? item.quantity : null),
     recordedAt: entry.head.createdAt,
     ...(item.inventoryItemId === null ? {} : { inventoryItemId: item.inventoryItemId }),
+    ...(item.ringLevel === null ? {} : { ringLevel: item.ringLevel }),
     ...(entry.otherFragmentUses[0] === undefined ? {} : { otherFragmentUse: entry.otherFragmentUses[0] }),
   }
 }

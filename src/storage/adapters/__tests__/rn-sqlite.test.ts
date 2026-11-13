@@ -150,6 +150,7 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE cashbook_entry_items ADD COLUMN meso_market_fee_percent INTEGER',
       'ALTER TABLE cashbook_entry_items ADD COLUMN inventory_item_id TEXT REFERENCES inventory_items(id)',
       'ALTER TABLE inventory_items ADD COLUMN ring_level INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN ring_level INTEGER',
       // 사용자가 직접 적은 완료를 가르는 칸.
       'ALTER TABLE boss_profit_records ADD COLUMN source TEXT',
       'ALTER TABLE character_profiles ADD COLUMN world_key TEXT',

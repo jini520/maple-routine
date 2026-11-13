@@ -64,8 +64,10 @@ export const CASHBOOK_ENTRY_ITEMS_BODY = `(
     -- 헥사 기록의 두 체크(1 · 0). 보관 중인 조각 사용과, 보관에서 가져온 몫을 지출로 셀지다. 다른 갈래는 NULL 이다.
     hexa_use_storage INTEGER,
     hexa_storage_as_spend INTEGER,
-    -- 인벤토리에서 판 아이템 판매가 가리키는 인벤토리 줄. 그 줄의 남은 개수가 이 수량을 뺀다. 가계부에서 적은 판매는 NULL 이다.
+    -- 이 품목이 가리키는 인벤토리 줄. 인벤토리에서 판 아이템 판매는 그 줄의 남은 개수에서 빼고, 인벤토리에 보관한 아이템 구매는 더한다.
     inventory_item_id TEXT REFERENCES inventory_items(id),
+    -- 아이템 구매 · 판매에서 고른 특수스킬 반지의 레벨. 같은 반지도 레벨마다 다른 물건이다. 다른 품목은 NULL 이다.
+    ring_level INTEGER,
     UNIQUE (entry_id, sort_order)
   )`
 
