@@ -204,7 +204,7 @@ describe('SettingsAccountDetailScreen', () => {
 
     expect(view.getByText('API 키 1 계정 설정')).toBeTruthy()
     expect(view.getByText('대표 캐릭터 리프한도적')).toBeTruthy()
-    expect(view.getByDisplayValue('메이플ID-4f1c08ab')).toBeTruthy()
+    expect(view.getByTestId('maple-id-name-4f1c08abbb')).toBeTruthy()
     expect(view.getByText('API 키 변경')).toBeTruthy()
     expect(view.getByText('API 키 삭제')).toBeTruthy()
   })
@@ -223,6 +223,32 @@ describe('SettingsAccountDetailScreen', () => {
 
     expect(view.getByText('API 키 변경')).toBeTruthy()
     expect(view.queryByText('API 키 삭제')).toBeNull()
+  })
+
+  // 14자 기본 이름을 10자 상한 칸에 채우면 iOS 가 4자 이하를 지우는 입력을 버린다.
+  it('이름을 바꾼 적 없는 메이플 ID 는 칸을 비우고 기본 이름을 안내 글자로 보인다', async () => {
+    const view = await 상세(부계정)
+    const field = view.getByTestId('maple-id-name-4f1c08abbb')
+
+    expect(field.props.defaultValue).toBe('')
+    expect(field.props.placeholder).toBe('메이플ID-4f1c08ab')
+    expect(field.props.defaultValue.length).toBeLessThanOrEqual(field.props.maxLength)
+  })
+
+  it('바꾼 이름이 있는 칸은 그 이름으로 시작하고, 빈 칸에 친 이름은 그 메이플 ID 의 이름으로 저장한다', async () => {
+    const save = jest.fn(async () => undefined)
+    useMapleIdNamesStore.setState({ names: { '4f1c08abbb': '부캐' }, save })
+    const view = await 상세({
+      ...부계정,
+      mapleIds: [...부계정.mapleIds, { accountId: '9e3a77cccc', representative: null }],
+    })
+
+    expect(view.getByTestId('maple-id-name-4f1c08abbb').props.defaultValue).toBe('부캐')
+    expect(view.getByTestId('maple-id-name-9e3a77cccc').props.defaultValue).toBe('')
+    await fireEvent.changeText(view.getByPlaceholderText('메이플ID-9e3a77cc'), '본캐')
+    await fireEvent.press(view.getByText('저장'))
+
+    expect(save).toHaveBeenCalledWith({ '9e3a77cccc': '본캐' })
   })
 
   it('저장은 고친 이름만 넘기고, 칸을 비우면 빈 값으로 넘겨 기본 이름으로 돌린다', async () => {
@@ -249,12 +275,12 @@ describe('SettingsAccountDetailScreen', () => {
       )
     }
     const view = await renderOverlay(<DetailToggle />)
-    await fireEvent.changeText(view.getByDisplayValue('메이플ID-4f1c08ab'), '고친이름')
+    await fireEvent.changeText(view.getByPlaceholderText('메이플ID-4f1c08ab'), '고친이름')
     expect(view.getByDisplayValue('고친이름')).toBeTruthy()
 
     await fireEvent.press(view.getByTestId('toggle-detail'))
     await fireEvent.press(view.getByTestId('toggle-detail'))
-    expect(view.getByDisplayValue('메이플ID-4f1c08ab')).toBeTruthy()
+    expect(view.getByTestId('maple-id-name-4f1c08abbb').props.defaultValue).toBe('')
     expect(view.queryByDisplayValue('고친이름')).toBeNull()
   })
 
