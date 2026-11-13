@@ -1,6 +1,6 @@
 # ADR-038+220 보스 파티 인원과 결정석 분배 비율
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-014 결정 1 · ADR-019 결정 1 · 2 · 3 · 7 · 8 · ADR-121 결정 2 · 3 · 7 · ADR-305 결정 1 · 2 · 3 · 4 · 5 · 9 · 10 · 13 · ADR-312 결정 1 · 2 · 3 · 4 · ADR-313
 > 관련 소스: `storage/boss-party-settings.ts` · `storage/boss-party-period-overrides.ts` · `lib/boss/party-shares.ts` · `features/boss-scheduler/store.ts` · `components/organisms/PartySizeModal/` · `components/molecules/PartyShareSummary/`
 

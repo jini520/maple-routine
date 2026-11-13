@@ -25,6 +25,7 @@ import { resolveDisplayProfiles } from '../character-profile/resolve'
 import type { CharacterScheduleSync } from '../schedule-sync/schedule-sync'
 import { useToastStore } from '../toast/store'
 import { autoRecordRows, nexonCompletedKeysOf } from './auto-record'
+import { judgeCrystalLimit } from './crystal-limit-judge'
 import { sweepOrphanDrops } from './orphan-drops'
 import {
   appendRecordOnlyRows,
@@ -208,6 +209,8 @@ export async function recordBossProfitFromRound(
       if (removed + moved > 0) {
         settledRecords = await withSqliteFallback(getBossProfitRecords([...ocids], periodKeys), liveRecords)
       }
+      // 옮긴 옛 캐릭터 기록은 어느 주인지 모르므로 그때는 모든 주를 판정한다.
+      await judgeCrystalLimit(removed + moved > 0 ? 'all' : periodKeys)
     }
     if (settledRecords === null) return
 

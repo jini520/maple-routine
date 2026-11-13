@@ -209,6 +209,15 @@ describe('MonthlyAccordionBody', () => {
     expect(getByText('2인 · 완료')).toBeTruthy()
   })
 
+  // 숨긴 인원을 적으면 0 메소 옆에 고칠 수 없는 인원이 보인다.
+  it('분배 방식 `제외` 면 인원 대신 `제외` 를 적는다', async () => {
+    const { getByText } = await renderProfit(
+      <MonthlyAccordionBody bossRows={[월간행({ crystalExcluded: true, payoutMeso: 0 })]} weeklySubtotals={[]} />,
+    )
+
+    expect(getByText('제외 · 9월 2일 완료')).toBeTruthy()
+  })
+
   // 금액을 모르는 자리에 0 을 쓰지 않는다. 0 은 0메소 벌었다 로 읽힌다.
   it('미완료면 금액 자리에 배지가 선다', async () => {
     const { getByText, queryByText } = await renderProfit(

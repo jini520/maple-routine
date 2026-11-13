@@ -55,6 +55,7 @@ export async function recalcCrystalUpdates(): Promise<ProfitSplitFeeUpdate[]> {
       myShare: record.crystalMyShare,
       sharesTotal: record.crystalSharesTotal,
       splitFeePercent: percent,
+      excluded: record.crystalExcluded,
     })
     const { ocid, bossKey, difficulty, periodKey } = record
     updates.push({ ocid, bossKey, difficulty, periodKey, splitFeePercent: percent, payoutMeso })

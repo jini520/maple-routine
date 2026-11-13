@@ -916,6 +916,30 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
     expect(rows.map(detailOf)).toEqual(['2마리', '1건'])
   })
 
+  // 가계부는 돈이 오간 기록만 세운다. 0 이 된 결정석(`제외` · 한도 초과)은 판 것이 아니다.
+  it('0 이 된 결정석은 결정석 줄의 목록과 마리 수에서 빠진다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([
+      스우기록,
+      { ...데미안기록, payoutMeso: 0, overCrystalLimit: true },
+      { ...스우기록, bossKey: 'lucid', boss: '루시드', payoutMeso: 0, crystalExcluded: true },
+    ])
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(rows.map(titleOf)).toEqual(['루디 · 보스 결정석'])
+    expect(detailOf(rows[0])).toBe('1마리')
+    expect(rows[0]?.kind === 'bossCrystal' && rows[0].bosses.map((boss) => boss.bossKey)).toEqual(['lotus'])
+  })
+
+  it('그날 결정석이 모두 0 이면 결정석 줄은 안 서고 드롭 판매 줄은 선다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([{ ...스우기록, payoutMeso: 0, overCrystalLimit: true }])
+    bossDrops.getBossDropRecords.mockResolvedValue([드롭()])
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(rows.map(titleOf)).toEqual(['루디 · 보스 드롭 판매'])
+  })
+
   it('판매가 하나도 없으면 그 줄이 안 선다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
 

@@ -40,6 +40,7 @@ function override(over: Partial<BossPartyPeriodOverride> = {}): BossPartyPeriodO
     crystalMyShare: null,
     crystalSharesTotal: null,
     splitFeePercent: null,
+    crystalExcluded: false,
     updatedAt: AT,
     ...over,
   }
@@ -87,5 +88,16 @@ describe('getBossPartyPeriodOverrides', () => {
   it('캐릭터나 기간이 비면 조회하지 않는다', async () => {
     expect(await getBossPartyPeriodOverrides([], ['2026-10-02'])).toEqual([])
     expect(await getBossPartyPeriodOverrides(['ocid-1'], [])).toEqual([])
+  })
+})
+
+describe('분배 방식 `제외`', () => {
+  it('그 기간만 `제외` 로 고치면 숨긴 인원과 함께 `제외` 로 읽는다', async () => {
+    await setBossPartyPeriodOverride(override({ partySize: 4, crystalExcluded: true }))
+
+    expect(await getBossPartyPeriodOverride('ocid-1', 'lucid', 'hard', '2026-10-02')).toMatchObject({
+      partySize: 4,
+      crystalExcluded: true,
+    })
   })
 })

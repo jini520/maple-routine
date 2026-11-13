@@ -1,6 +1,6 @@
 # ADR-042+135+178+212+221 보스 수익 금액 표시
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-046 결정 1~4 · ADR-054 결정 1 · 2 · 7 · 8 · 9 · 정정 4 · 5 · 6 · 7 · ADR-059 결정 2~4 · 7 · 정정 1 · 2 · ADR-087 결정 6~8 · 정정 1 · 정정 3 결정 3-1 · ADR-124 결정 7 · ADR-253 결정 5 · 7 · ADR-258 · ADR-265 · ADR-272 · ADR-273 결정 2 · 4~8 · ADR-298 · ADR-304
 > 관련 소스: `app/boss-profit/BossProfitScreen.tsx` · `app/boss-profit/CharacterAccordion.tsx` · `app/boss-profit/HeadlineChips.tsx` · `app/boss-profit/ItemRevenuePopover.tsx` · `app/boss-profit/ItemRevenueTrigger.tsx` · `app/boss-profit/CharacterIssue.tsx` · `app/boss-profit/character-groups.ts` · `lib/boss/crystal-limit.ts` · `features/boss-profit/crystal-limit-judge.ts` · `app/boss-profit/DropPriceFab.tsx` · `features/boss-profit/monthly-crystals.ts` · `features/boss-profit/use-unpriced-drop-count.ts` · `lib/drop/drop-order.ts` · `components/atoms/AnimatedNumber/`
 

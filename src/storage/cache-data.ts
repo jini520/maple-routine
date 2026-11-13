@@ -1,6 +1,6 @@
 import { preferences } from './ports'
 import { characterBasicCacheKey, STORAGE_KEYS } from './keys'
-import { SPLIT_COLUMN_NAMES } from './boss-periods'
+import { CRYSTAL_SPLIT_COLUMN_NAMES } from './boss-periods'
 import { getCachedCharacterBasic } from './character-basic-cache'
 import { addMissingCharacterProfile, type CharacterProfileSnapshot } from './character-profiles'
 import { getBossProfitDb } from './sqlite/db'
@@ -60,7 +60,7 @@ const ENHANCEMENT_TABLES = [
   'character_first_days',
 ]
 
-const NULL_SPLIT = SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')
+const NULL_SPLIT = CRYSTAL_SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')
 
 // 보스 기록 표 셋은 한 표에 두 그룹의 행이 섞여 있어 행 단위로 지운다. 조합 행이 처치와 드롭의 부모라 표를 통째로
 // 지우면 외래키를 따라 다른 그룹까지 사라진다.

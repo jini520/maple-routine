@@ -310,6 +310,8 @@ async function loadBossDaySummaries(
   const dateByBossRow = new Map<string, string>()
   for (const record of records) {
     dateByBossRow.set(bossRowKey(record), record.defeatedOn)
+    // 0 이 된 결정석(`제외` · 한도 초과)은 판 것이 아니라 줄에 안 세운다. 날짜는 그 보스의 드롭이 물려받으므로 위에서 먼저 남긴다.
+    if (record.crystalExcluded || record.overCrystalLimit) continue
     const bucket = bucketOf(record.defeatedOn, record.ocid)
     bucket.crystalMeso += record.payoutMeso
     bucket.bossCount += 1

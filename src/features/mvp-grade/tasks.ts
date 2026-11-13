@@ -6,6 +6,7 @@
 import type { ResumableTask, TaskStep } from '../resumable-task/task'
 import { applyAutoDropFees, updateDropFees } from '../../storage/boss-drops'
 import { updateProfitSplitFees } from '../../storage/boss-profit'
+import { judgeCrystalLimit } from '../boss-profit/crystal-limit-judge'
 import { applyAutoIncomeSaleFees, updateIncomeSaleFees } from '../../storage/income'
 import { bulkDropUpdates, bulkIncomeUpdates } from './bulk-apply'
 import { recalcCrystalUpdates, recalcDropUpdates, recalcIncomeUpdates } from './recalculate-fees'
@@ -44,7 +45,11 @@ export const mvpRecalcFeeTask: ResumableTask = {
   steps: [
     step('판매 기록', undefined, recalcIncomeUpdates, updateIncomeSaleFees),
     step('드롭 판매가', undefined, recalcDropUpdates, updateDropFees),
-    step('결정석 분배', undefined, recalcCrystalUpdates, updateProfitSplitFees),
+    step('결정석 분배', undefined, recalcCrystalUpdates, async (chunk) => {
+      await updateProfitSplitFees(chunk)
+      // 받은 몫이 바뀌면 한도를 넘긴 처치의 차례도 바뀐다.
+      await judgeCrystalLimit(chunk.map((update) => update.periodKey))
+    }),
   ],
   doneToast: (count) => `자동 수수료 기록 ${count.toLocaleString()}건을 다시 계산했어요`,
 }

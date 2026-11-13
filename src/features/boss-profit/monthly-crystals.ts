@@ -51,6 +51,8 @@ export function countMonthlyCrystalsUpToWeek(
 
   for (const record of records) {
     if (record.cycle !== 'monthly' || record.periodKey !== monthKey || record.worldKey === null) continue
+    // 분배 방식 `제외` 는 팔지 않은 결정석이다.
+    if (record.crystalExcluded === true) continue
     const standingWeek = record.defeatedOn == null ? undatedWeek : resetWeekStartOf(record.defeatedOn)
     if (standingWeek > weekKey) continue
     const accountId = mapleIdOfOcid == null ? null : mapleIdOfOcid[record.ocid]
