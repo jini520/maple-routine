@@ -185,7 +185,7 @@ export function bumpSpendRecordsRevision(): void {
  * @param previousId 고치기 전 그 기록이 가리키던 줄. 같은 주인 · 아이템이면 다시 쓴다
  */
 async function withInventoryLink(db: SqliteDbConnection, record: SpendRecord, previousId: string | null): Promise<SpendRecord> {
-  const { inventoryItemId: _previous, ...rest } = record
+  const rest: SpendRecord = { ...record, inventoryItemId: undefined }
   const store = record.inventoryStore
   if (record.category !== 'item_purchase' || store === undefined || record.itemKey === null) return rest
   const id = await inventoryRowForPurchase(db, {
