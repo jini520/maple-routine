@@ -66,7 +66,7 @@ export function faceCropStyle(
  * 크롭 상자를 넓혀(`zoom`) 얼굴을 작게 그리고 위로 올려야(`lift`) 넓힌 위쪽에 머리가 들어간다. `sideDepth` 는 양옆을
  * 넓힌 네모가 원 위 끝에서 내려오는 높이이고, 그 아래는 원으로만 자른다.
  */
-export const HEAD_OVERFLOW = { zoom: 1.1, lift: 0.08, top: 1, side: 1, sideDepth: 0.6 } as const
+export const HEAD_OVERFLOW = { zoom: 1.1, lift: 0.08, top: 1, side: 1, sideDepth: 0.75 } as const
 
 /**
  * 머리를 넘기는 얼굴의 마스크 상자. 원의 왼쪽 위가 (0, 0) 인 좌표다.
