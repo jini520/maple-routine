@@ -89,18 +89,19 @@ export function shortagesOf(
  * 감싸므로 던지면 쓴 것이 모두 되돌아간다. 인벤토리에 넣은 아이템과 기타 조각의 남은 개수도 같이 본다
  * (`InventoryShortageError`). 판매 · 헥사 강화가 그 개수를 가져가기 때문이다.
  *
- * @param cut 쓴 뒤 검사 전에 부르는 일. 사냥 기록을 고쳐 모자라게 된 뒤 기록을 함께 줄인다. 받는 것은 쓰기 전 장부
- * @returns `cut` 이 돌려준 값
+ * @param move 쓴 뒤 검사 전에 부르는 일. 사냥 기록을 고쳐 모자라게 된 장부에서 헥사 강화를 다른 보관으로 옮긴다. 받는 것은
+ *   쓰기 전 장부
+ * @returns `move` 가 돌려준 값
  */
 export async function writeCheckingFragments<T = undefined>(
   db: SqliteDbConnection,
   write: () => Promise<void>,
-  cut?: (before: readonly StoredFragmentMove[]) => Promise<T>,
+  move?: (before: readonly StoredFragmentMove[]) => Promise<T>,
 ): Promise<T | undefined> {
   const before = await readFragmentMoves(db)
   const inventoryBefore = await readInventoryRemaining(db)
   await write()
-  const result = cut === undefined ? undefined : await cut(before)
+  const result = move === undefined ? undefined : await move(before)
   const shortages = shortagesOf(before, await readFragmentMoves(db))
   if (shortages.length > 0) throw new FragmentShortageError(shortages)
   const inventoryShortages = inventoryShortagesOf(inventoryBefore, await readInventoryRemaining(db))

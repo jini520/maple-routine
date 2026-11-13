@@ -25,15 +25,8 @@ import {
 import { availableFragmentsOn } from '../lib/cashbook/fragment-ledger'
 import type { OtherFragmentUse } from './cashbook-entries'
 import { incomeEntryOf, incomeRecordOf } from './cashbook-entry-shape'
-import {
-  applyApprovedCuts,
-  NO_FRAGMENT_CUTS,
-  planCutsAfterWrite,
-  type FragmentCutPlan,
-  type FragmentCutsApproval,
-  type HexaOwnerOf,
-} from './fragment-cuts'
 import { readFragmentMoves, writeCheckingFragments } from './fragment-ledger'
+import { moveHexaAfterWrite, type HexaSources } from './fragment-moves'
 import type { SqliteDbConnection } from './ports'
 import { notifyAfterBatch } from './record-revision-batch'
 import { bumpSpendRecordsRevision } from './spend'
@@ -228,8 +221,8 @@ export async function insertIncomeRecords(records: readonly IncomeRecord[]): Pro
   bumpIncomeRecordsRevision()
 }
 
-/** 사냥 기록 하나를 고치거나 지우는 일. 조각이 모자라게 되면 뒤 기록을 함께 줄일 수 있다. */
-export type IncomeChange = { kind: 'edit'; record: IncomeRecord } | { kind: 'remove'; id: string }
+/** 수입 기록 하나를 고치거나 지우는 일. */
+type IncomeChange = { kind: 'edit'; record: IncomeRecord } | { kind: 'remove'; id: string }
 
 function changedIdOf(change: IncomeChange): string {
   return change.kind === 'edit' ? change.record.id : change.id
@@ -240,57 +233,29 @@ function writeChange(db: SqliteDbConnection, change: IncomeChange, now: Date): P
 }
 
 /**
- * 고치기 · 지우기를 쓰고, 받은 계획이 있으면 뒤 기록을 함께 줄인다. 계획 없이 모자라게 되면 던진다.
+ * 고치기 · 지우기를 쓰고, 옮길 곳을 받았으면 모자라게 된 장부에서 헥사 강화를 다른 보관으로 옮긴다. 옮기고도 모자라면
+ * `FragmentShortageError` 를 던지고 아무것도 남기지 않는다.
  *
- * @param cuts 확인 창에 보인 계획. 사냥 기록만 넘긴다. 정산 · 헥사는 폼이 쓸 수 있는 개수까지만 받는다
+ * @param sources 사냥 기록만 넘긴다. 정산은 폼이 쓸 수 있는 개수까지만 받으므로, 모자라면 그 저장만 실패한다
  */
-async function writeIncomeChange(change: IncomeChange, cuts: FragmentCutsApproval | undefined): Promise<void> {
+async function writeIncomeChange(change: IncomeChange, sources: HexaSources | undefined): Promise<void> {
   const db = await getBossProfitDb()
   const now = new Date()
   const id = changedIdOf(change)
-  const plan = await inTransaction(db, () =>
+  const moved = await inTransaction(db, () =>
     writeCheckingFragments(
       db,
       () => writeChange(db, change, now),
-      cuts === undefined ? undefined : (before) => applyApprovedCuts(db, [id], before, cuts, now),
+      sources === undefined ? undefined : (before) => moveHexaAfterWrite(db, [id], before, sources, now),
     ),
   )
   bumpIncomeRecordsRevision()
-  if (plan?.changes.some((each) => each.kind === 'hexa') === true) bumpSpendRecordsRevision()
+  if (moved === true) bumpSpendRecordsRevision()
 }
 
 /** 갈아 끼우기. 지출과 같은 계약이다. 저장 시각은 그대로다. */
-export function updateIncomeRecord(record: IncomeRecord, cuts?: FragmentCutsApproval): Promise<void> {
-  return writeIncomeChange({ kind: 'edit', record }, cuts)
-}
-
-/** 확인 창용 계획만 세고 쓴 것은 되돌린다는 표시. */
-const PREVIEW_ONLY = Symbol('previewOnly')
-
-/**
- * 사냥 기록을 고치거나 지우면 함께 줄일 뒤 기록. 저장과 같은 함수로 세도록 쓰고 센 뒤 되돌린다.
- *
- * @param candidatesOf 헥사 강화가 보관을 가져올 캐릭터의 차례
- * @param ownerOf 헥사 강화가 기타 조각을 가져올 메이플 ID · 월드
- */
-export async function previewIncomeCuts(
-  change: IncomeChange,
-  candidatesOf: (ocid: string) => readonly string[],
-  ownerOf?: HexaOwnerOf,
-): Promise<FragmentCutPlan> {
-  const db = await getBossProfitDb()
-  let plan: FragmentCutPlan = NO_FRAGMENT_CUTS
-  try {
-    await inTransaction(db, async () => {
-      const before = await readFragmentMoves(db)
-      await writeChange(db, change, new Date())
-      plan = await planCutsAfterWrite(db, [changedIdOf(change)], before, candidatesOf, ownerOf)
-      throw PREVIEW_ONLY
-    })
-  } catch (error) {
-    if (error !== PREVIEW_ONLY) throw error
-  }
-  return plan
+export function updateIncomeRecord(record: IncomeRecord, sources?: HexaSources): Promise<void> {
+  return writeIncomeChange({ kind: 'edit', record }, sources)
 }
 
 /**
@@ -323,8 +288,8 @@ export async function moveIncomeRecordsToOcid(fromOcid: string, toOcid: string):
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
-export function deleteIncomeRecord(id: string, cuts?: FragmentCutsApproval): Promise<void> {
-  return writeIncomeChange({ kind: 'remove', id }, cuts)
+export function deleteIncomeRecord(id: string, sources?: HexaSources): Promise<void> {
+  return writeIncomeChange({ kind: 'remove', id }, sources)
 }
 
 const INCOME = `e.entry_type = 'income'`

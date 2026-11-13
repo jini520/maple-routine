@@ -36,6 +36,7 @@ import { HuntCalculatorForm } from './income/HuntCalculatorForm'
 import { ItemSaleForm } from './income/ItemSaleForm'
 import { HuntManualForm } from './income/HuntManualForm'
 import { SaveRow, type IncomeDraft, type IncomeFormProps, type SaveSlot, type SheetCharacter } from './income/form-shared'
+import type { LoadHuntFragmentFloor } from './income/hunt-fragment-floor'
 
 export type { IncomeDraft } from './income/form-shared'
 
@@ -66,6 +67,8 @@ export interface IncomeSheetProps {
   lastHunts: LastHunts
   /** 솔 에르다 조각 보관 개수 조회. 사냥 전리품 판매의 조각 칸이 쓰고 화면이 넘긴다. */
   loadFragmentStorage: LoadFragmentStorage
+  /** 수정으로 연 사냥 기록의 조각 최소 개수 조회. 사냥 폼의 조각 개수 카드가 쓰고 화면이 넘긴다. */
+  loadHuntFragmentFloor: LoadHuntFragmentFloor
   /**
    * 고칠 기록. 있으면 **수정 모드**다. 머리와 버튼 글자가 갈리고 삭제가 선다.
    */
@@ -255,12 +258,13 @@ function IncomeForm(
     return <EtcForm {...props.formProps} lastPointRate={props.lastPointRate} />
   }
   return props.huntMode === 'manual' ? (
-    <HuntManualForm {...props.formProps} />
+    <HuntManualForm {...props.formProps} loadHuntFragmentFloor={props.loadHuntFragmentFloor} />
   ) : (
     <HuntCalculatorForm
       {...props.formProps}
       loadMesoRate={props.loadMesoRate}
       lastHunts={props.lastHunts}
+      loadHuntFragmentFloor={props.loadHuntFragmentFloor}
     />
   )
 }

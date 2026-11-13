@@ -1,10 +1,10 @@
-// 솔 에르다 조각 장부. 쓸 수 있는 개수 · 모자란 날 · 줄일 기록을 날짜와 개수 변화의 목록만으로 센다.
+// 솔 에르다 조각 장부. 쓸 수 있는 개수 · 모자란 날 · 다른 보관으로 옮길 기록을 날짜와 개수 변화의 목록만으로 센다.
 import fc from 'fast-check'
 
 import {
   availableFragmentsOn,
   fragmentShortfall,
-  planFragmentCuts,
+  planFragmentMoves,
   type FragmentMove,
   type FragmentTaker,
 } from '../cashbook/fragment-ledger'
@@ -14,12 +14,25 @@ function day(n: number): string {
   return `2026-09-${String(n).padStart(2, '0')}`
 }
 
-/** 장부와 줄인 개수를 합친 장부. 줄인 기록은 그만큼 덜 나간다. */
-function withCuts(moves: readonly (FragmentMove & { id?: string })[], cuts: readonly { id: string; fragments: number }[]): FragmentMove[] {
+/** 장부와 옮긴 개수를 합친 장부. 옮긴 기록은 그만큼 이 장부에서 덜 나간다. */
+function withMoved(moves: readonly (FragmentMove & { id?: string })[], moved: readonly { id: string; fragments: number }[]): FragmentMove[] {
   return moves.map((move) => {
-    const cut = cuts.find((each) => each.id === move.id)
-    return cut === undefined ? move : { ...move, delta: move.delta + cut.fragments }
+    const each = moved.find((transfer) => transfer.id === move.id)
+    return each === undefined ? move : { ...move, delta: move.delta + each.fragments }
   })
+}
+
+/** 옮길 곳이 넉넉하다. 옮기려는 만큼 모두 옮긴다. */
+const takeAll = (_taker: FragmentTaker, wanted: number): number => wanted
+
+/** 기록마다 옮길 수 있는 개수가 정해진 옮길 곳. 옮긴 만큼 줄어든다. */
+function takeUpTo(caps: Record<string, number>): (taker: FragmentTaker, wanted: number) => number {
+  const left = { ...caps }
+  return (taker, wanted) => {
+    const got = Math.min(wanted, left[taker.id] ?? 0)
+    left[taker.id] = (left[taker.id] ?? 0) - got
+    return got
+  }
 }
 
 describe('availableFragmentsOn: 날짜 D 에 쓸 수 있는 조각', () => {
@@ -70,52 +83,100 @@ describe('fragmentShortfall: 이 저장으로 모자라게 된 날', () => {
   })
 })
 
-describe('planFragmentCuts: 모자란 장부를 되돌리려고 줄일 기록', () => {
+describe('planFragmentMoves: 모자란 장부를 되돌리려고 다른 보관으로 옮길 기록', () => {
   const takers: FragmentTaker[] = [
-    { id: 'settle-18', date: day(18), fragments: 20 },
+    { id: 'hexa-18', date: day(18), fragments: 20 },
     { id: 'hexa-19', date: day(19), fragments: 20 },
     { id: 'hexa-20', date: day(20), fragments: 60 },
   ]
   const outflows = takers.map((each) => ({ id: each.id, date: each.date, delta: -each.fragments }))
 
-  // 그 사냥의 조각은 바로 뒤의 기록이 가져갔다고 본다. 같은 개수를 줄여도 앞쪽을 줄여야 그 뒤 날의 남은 개수가 크다.
-  it('고친 날짜에 가까운 기록부터 모자란 만큼만 줄인다', () => {
+  // 그 사냥의 조각은 바로 뒤의 기록이 가져갔다고 본다. 같은 개수를 옮겨도 앞쪽을 옮겨야 그 뒤 날의 남은 개수가 크다.
+  it('고친 날짜에 가까운 기록부터 모자란 만큼만 옮긴다', () => {
     const before = [{ date: day(1), delta: 30 }, { date: day(17), delta: 100 }, ...outflows]
     const after = [{ date: day(1), delta: 30 }, { date: day(17), delta: 50 }, ...outflows]
-    expect(planFragmentCuts({ before, after, takers })).toEqual([{ id: 'settle-18', fragments: 20 }])
+    expect(planFragmentMoves({ before, after, takers, take: takeAll })).toEqual([{ id: 'hexa-18', fragments: 20 }])
   })
 
-  it('사냥을 지우면 그 조각을 가져간 기록을 차례로 다 줄인다', () => {
+  it('사냥을 지우면 그 조각을 가져간 기록을 차례로 다 옮긴다', () => {
     const before = [{ date: day(17), delta: 100 }, ...outflows]
-    expect(planFragmentCuts({ before, after: outflows, takers })).toEqual([
-      { id: 'settle-18', fragments: 20 },
+    expect(planFragmentMoves({ before, after: outflows, takers, take: takeAll })).toEqual([
+      { id: 'hexa-18', fragments: 20 },
       { id: 'hexa-19', fragments: 20 },
       { id: 'hexa-20', fragments: 60 },
     ])
   })
 
-  it('고친 날짜 앞의 기록은 건드리지 않는다', () => {
-    const early = { id: 'settle-10', date: day(10), fragments: 10 }
-    const before = [{ date: day(1), delta: 40 }, { date: day(10), delta: -10 }, { date: day(17), delta: 100 }, ...outflows]
-    const after = [{ date: day(1), delta: 40 }, { date: day(10), delta: -10 }, { date: day(17), delta: 40 }, ...outflows]
-    expect(planFragmentCuts({ before, after, takers: [early, ...takers] })).toEqual([
-      { id: 'settle-18', fragments: 20 },
+  it('옮길 곳이 모자란 기록은 옮길 수 있는 만큼만 옮기고 다음 기록으로 넘어간다', () => {
+    const before = [{ date: day(17), delta: 100 }, ...outflows]
+    const after = [{ date: day(17), delta: 70 }, ...outflows]
+    expect(planFragmentMoves({ before, after, takers, take: takeUpTo({ 'hexa-18': 5, 'hexa-19': 20, 'hexa-20': 60 }) })).toEqual([
+      { id: 'hexa-18', fragments: 5 },
+      { id: 'hexa-19', fragments: 20 },
+      { id: 'hexa-20', fragments: 5 },
+    ])
+  })
+
+  // 옮길 곳이 없으면 장부가 모자란 채로 남는다. 저장을 막는 것은 부르는 쪽의 검사다.
+  it('옮길 곳이 없으면 아무것도 옮기지 않고 장부는 모자란 채로 남는다', () => {
+    const before = [{ date: day(17), delta: 100 }, ...outflows]
+    const after = [{ date: day(17), delta: 70 }, ...outflows]
+    const moved = planFragmentMoves({ before, after, takers, take: () => 0 })
+    expect(moved).toEqual([])
+    expect(fragmentShortfall(before, withMoved(after, moved))).not.toEqual([])
+  })
+
+  it('그 범위에서 풀리면 고친 날짜 앞의 기록은 건드리지 않는다', () => {
+    const early = { id: 'hexa-10', date: day(10), fragments: 10 }
+    const before = [{ date: day(1), delta: 40 }, { id: 'hexa-10', date: day(10), delta: -10 }, { date: day(17), delta: 100 }, ...outflows]
+    const after = [{ date: day(1), delta: 40 }, { id: 'hexa-10', date: day(10), delta: -10 }, { date: day(17), delta: 40 }, ...outflows]
+    expect(planFragmentMoves({ before, after, takers: [early, ...takers], take: takeAll })).toEqual([
+      { id: 'hexa-18', fragments: 20 },
       { id: 'hexa-19', fragments: 10 },
     ])
   })
 
-  // 이미 0 아래인 장부에서만 생긴다. 고친 날짜 뒤에 가져간 기록이 없으면 그 앞의 기록을 가까운 것부터 줄인다.
-  it('뒤에 줄일 기록이 없으면 고친 날짜 앞의 기록을 가까운 것부터 줄인다', () => {
+  it('그 범위의 기록으로 다 풀리지 않으면 고친 날짜 앞의 기록을 가까운 것부터 옮긴다', () => {
+    const early: FragmentTaker[] = [
+      { id: 'hexa-05', date: day(5), fragments: 10 },
+      { id: 'hexa-10', date: day(10), fragments: 10 },
+    ]
+    const earlyOut = early.map((each) => ({ id: each.id, date: each.date, delta: -each.fragments }))
+    const before = [{ date: day(1), delta: 40 }, ...earlyOut, { date: day(17), delta: 100 }, ...outflows]
+    const after = [{ date: day(1), delta: 40 }, ...earlyOut, { date: day(17), delta: 40 }, ...outflows]
+    const asked: string[] = []
+    const take = takeUpTo({ 'hexa-05': 10, 'hexa-10': 10, 'hexa-18': 5 })
+
+    const moved = planFragmentMoves({
+      before,
+      after,
+      takers: [...early, ...takers],
+      take: (taker, wanted) => {
+        asked.push(taker.id)
+        return take(taker, wanted)
+      },
+    })
+
+    expect(asked.slice(0, 3)).toEqual(['hexa-18', 'hexa-19', 'hexa-20'])
+    expect(moved).toEqual([
+      { id: 'hexa-18', fragments: 5 },
+      { id: 'hexa-10', fragments: 10 },
+      { id: 'hexa-05', fragments: 10 },
+    ])
+  })
+
+  // 이미 0 아래인 장부에서만 생긴다. 고친 날짜 뒤에 가져간 기록이 없으면 그 앞의 기록을 가까운 것부터 옮긴다.
+  it('뒤에 옮길 기록이 없으면 고친 날짜 앞의 기록을 가까운 것부터 옮긴다', () => {
     const old: FragmentTaker[] = [
-      { id: 'settle-01', date: day(1), fragments: 10 },
-      { id: 'settle-03', date: day(3), fragments: 4 },
+      { id: 'hexa-01', date: day(1), fragments: 10 },
+      { id: 'hexa-03', date: day(3), fragments: 4 },
     ]
     const olds = old.map((each) => ({ date: each.date, delta: -each.fragments }))
     const before = [...olds, { date: day(5), delta: 20 }]
     const after = [...olds, { date: day(5), delta: 5 }]
-    expect(planFragmentCuts({ before, after, takers: old })).toEqual([
-      { id: 'settle-03', fragments: 4 },
-      { id: 'settle-01', fragments: 5 },
+    expect(planFragmentMoves({ before, after, takers: old, take: takeAll })).toEqual([
+      { id: 'hexa-03', fragments: 4 },
+      { id: 'hexa-01', fragments: 5 },
     ])
   })
 })
@@ -150,25 +211,49 @@ describe('무작위 장부(fast-check)', () => {
     )
   })
 
-  it('들어온 줄을 줄이거나 지운 장부를 줄이면 날마다 다시 0 이상이고, 모자란 만큼보다 더 줄이지 않는다', () => {
+  /** 들어온 줄 하나를 줄이거나 지운 장부와, 그 장부에서 나간 줄 전부를 옮길 수 있는 기록으로. */
+  function editedLedger(moves: readonly (FragmentMove & { id: string })[], pick: number, keep: number) {
+    const inflows = moves.filter((move) => move.delta > 0)
+    const edited = inflows[pick % inflows.length]!
+    const after = moves.map((move) => (move === edited ? { ...move, delta: keep % (edited.delta + 1) } : move))
+    const takers = after
+      .filter((move) => move.delta < 0)
+      .map((move) => ({ id: move.id, date: move.date, fragments: -move.delta }))
+    return { edited, after, takers }
+  }
+
+  it('옮길 곳이 넉넉하면 옮긴 뒤 날마다 다시 0 이상이고, 모자란 만큼보다 더 옮기지 않는다', () => {
     fc.assert(
       fc.property(ledgerArb, fc.nat(), fc.nat(), (moves, pick, keep) => {
-        const inflows = moves.filter((move) => move.delta > 0)
-        fc.pre(inflows.length > 0)
-        const edited = inflows[pick % inflows.length]!
-        const nextDelta = keep % (edited.delta + 1)
-        const after = moves.map((move) => (move === edited ? { ...move, delta: nextDelta } : move))
-        const takers = after
-          .filter((move) => move.delta < 0)
-          .map((move) => ({ id: move.id, date: move.date, fragments: -move.delta }))
+        fc.pre(moves.some((move) => move.delta > 0))
+        const { edited, after, takers } = editedLedger(moves, pick, keep)
 
-        const cuts = planFragmentCuts({ before: moves, after, takers })
+        const moved = planFragmentMoves({ before: moves, after, takers, take: takeAll })
 
-        expect(fragmentShortfall(moves, withCuts(after, cuts))).toEqual([])
-        const cutDates = cuts.map((cut) => takers.find((taker) => taker.id === cut.id)!.date)
-        expect(cutDates.every((date) => date >= edited.date)).toBe(true)
+        expect(fragmentShortfall(moves, withMoved(after, moved))).toEqual([])
+        const movedDates = moved.map((each) => takers.find((taker) => taker.id === each.id)!.date)
+        expect(movedDates.every((date) => date >= edited.date)).toBe(true)
         const worst = Math.max(0, ...fragmentShortfall(moves, after).map((each) => each.missing))
-        expect(cuts.reduce((sum, cut) => sum + cut.fragments, 0)).toBe(worst)
+        expect(moved.reduce((sum, each) => sum + each.fragments, 0)).toBe(worst)
+      }),
+    )
+  })
+
+  it('옮길 곳이 정해져 있으면 기록마다 그보다 많이, 가져간 개수보다 많이 옮기지 않는다', () => {
+    fc.assert(
+      fc.property(ledgerArb, fc.nat(), fc.nat(), fc.array(fc.nat({ max: 80 }), { minLength: 25, maxLength: 25 }), (moves, pick, keep, capList) => {
+        fc.pre(moves.some((move) => move.delta > 0))
+        const { after, takers } = editedLedger(moves, pick, keep)
+        const caps = Object.fromEntries(takers.map((taker, index) => [taker.id, capList[index]!]))
+
+        const moved = planFragmentMoves({ before: moves, after, takers, take: takeUpTo(caps) })
+
+        for (const each of moved) {
+          expect(each.fragments).toBeGreaterThan(0)
+          expect(each.fragments).toBeLessThanOrEqual(Math.min(caps[each.id]!, takers.find((taker) => taker.id === each.id)!.fragments))
+        }
+        const worst = Math.max(0, ...fragmentShortfall(moves, after).map((each) => each.missing))
+        expect(moved.reduce((sum, each) => sum + each.fragments, 0)).toBeLessThanOrEqual(worst)
       }),
     )
   })

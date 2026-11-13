@@ -9,6 +9,7 @@ import { loadMesoRate } from '../../features/cashbook/meso-rate'
 import { historyFloorDateKey } from '../../features/cashbook/range'
 import {
   loadFragmentStorage,
+  loadHuntFragmentFloor,
   loadLastHunts,
   loadTrackedCharacters,
   recordIncome,
@@ -50,6 +51,7 @@ export function HuntFragmentSaleSheet(props: { onClose: () => void }): React.JSX
       lastHunts={lastHunts}
       loadMesoRate={loadMesoRate}
       loadFragmentStorage={loadFragmentStorage}
+      loadHuntFragmentFloor={loadHuntFragmentFloor}
       dateKey={todayDateKey}
       todayDateKey={todayDateKey}
       earliestDateKey={historyFloorDateKey(todayDateKey)}

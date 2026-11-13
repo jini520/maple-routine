@@ -88,6 +88,8 @@ import {
   loadLastHunts,
   nextLastHunts,
   loadFragmentStorage,
+  loadHuntFragmentFloor,
+  isFragmentShortage,
   loadHexaStorageChecks,
   loadHexaStorages,
   loadHexaOwnerOf,
@@ -120,7 +122,6 @@ import { dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import { useResetBoundaryTick } from '../../features/query/reset-timer'
 import { useLedgerData } from '../../features/ledger/useLedgerData'
-import { saveHuntWithCuts } from '../../features/cashbook/fragment-cuts'
 import { useToastStore } from '../../features/toast/store'
 import { SETTLEMENT_BANNER_DETAIL_LEDGER } from '../../features/settlement/banner-text'
 import { SettlementBanner } from '../SettlementBanner'
@@ -596,9 +597,6 @@ function DayRecordRow(props: {
   )
 }
 
-/** 사냥 기록의 확인 창에서 `취소` 를 눌렀다는 표시. 던져서 시트를 그대로 두고, 실패가 아니라 토스트는 안 띄운다. */
-const HUNT_CUTS_CANCELLED = Symbol('huntCutsCancelled')
-
 export function CashbookScreen(): React.JSX.Element {
   const faq = useFaqSheet('cashbook')
   /**
@@ -795,25 +793,23 @@ export function CashbookScreen(): React.JSX.Element {
           recordedAt: entry.record.recordedAt,
           mesoMarketFeePercent: entry.record.mesoMarketFeePercent,
         })
-      } else if (entry.record.category === 'hunting') {
-        const record = { ...(draft as IncomeDraft), id: entry.record.id, recordedAt: entry.record.recordedAt }
-        if (!(await saveHuntWithCuts(entry.record, { kind: 'edit', record }))) throw HUNT_CUTS_CANCELLED
       } else {
         await editIncome({ ...(draft as IncomeDraft), id: entry.record.id, recordedAt: entry.record.recordedAt })
       }
     } catch (error) {
-      if (error !== HUNT_CUTS_CANCELLED) useToastStore.getState().showError('기록을 고치지 못했습니다')
+      // 사냥 기록의 조각을 정산 · 헥사 강화가 가져갔으면 다시 저장해도 막힌다. 그 기록을 먼저 고쳐야 해서 까닭을 말한다.
+      const blocked = entry.kind === 'income' && entry.record.category === 'hunting' && isFragmentShortage(error)
+      useToastStore.getState().showError(blocked ? '조각을 사용한 기록이 있어 고칠 수 없습니다' : '기록을 고치지 못했습니다')
       throw error
     }
   }
 
   async function deleteEntry(entry: ManualDayRecord): Promise<void> {
     try {
-      if (entry.kind === 'income' && entry.record.category === 'hunting') {
-        if (!(await saveHuntWithCuts(entry.record, { kind: 'remove', id: entry.record.id }))) throw HUNT_CUTS_CANCELLED
-      } else await removeRecord(entry)
+      await removeRecord(entry)
     } catch (error) {
-      if (error !== HUNT_CUTS_CANCELLED) useToastStore.getState().showError('기록을 지우지 못했습니다')
+      const blocked = entry.kind === 'income' && entry.record.category === 'hunting' && isFragmentShortage(error)
+      useToastStore.getState().showError(blocked ? '조각을 사용한 기록이 있어 지울 수 없습니다' : '기록을 지우지 못했습니다')
       throw error
     }
   }
@@ -1154,6 +1150,7 @@ export function CashbookScreen(): React.JSX.Element {
           // 캐릭터의 메소 획득량. 시트는 `nexon/` 도 `storage/` 도 모른다.
           loadMesoRate={loadMesoRate}
           loadFragmentStorage={loadFragmentStorage}
+          loadHuntFragmentFloor={loadHuntFragmentFloor}
           dateKey={typeof sheet === 'object' ? sheet.record.earnedOn : selectedDateKey}
           todayDateKey={todayDateKey}
           earliestDateKey={historyFloorDateKey(todayDateKey)}

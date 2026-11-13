@@ -105,6 +105,8 @@ async function 시트열기(overrides: Partial<React.ComponentProps<typeof Incom
       lastHunts={{}}
       // 보관이 없는 상태가 기본이다. 정산을 보는 케이스만 값을 준다.
       loadFragmentStorage={async () => 0}
+      // 가져간 조각이 없는 상태가 기본이다. 최소 개수를 보는 케이스만 값을 준다.
+      loadHuntFragmentFloor={async () => 0}
       onSave={jest.fn()}
       onSaveMany={jest.fn()}
       onClose={jest.fn()}
@@ -2410,6 +2412,80 @@ describe('조각 가격을 비우면 보관', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({
       mesoAmount: 500_000_000,
       hunt: { mode: 'manual', typedMeso: 500_000_000, fragments: 10, fragmentPrice: null },
+    })
+  })
+  /**
+   * 수정으로 연 사냥 기록의 조각을 정산 · 헥사 강화가 가져갔으면 그보다 줄일 수 없다. 화면이 그 기록으로 센 최소 개수를
+   * 넘기고, 조각 개수 카드가 그것을 보이고 막는다. 저장을 누른 뒤에야 막힌 것을 알지 않게 하려는 것이다.
+   */
+  describe('최소 개수', () => {
+    const 수동 = { mode: 'manual', typedMeso: 500_000_000, fragments: 100, fragmentPrice: null } as const
+
+    async function 조각카드열기(view: Rendered): Promise<void> {
+      await 아이디로누르기(view, 'income-sheet-fragments')
+    }
+
+    it.each([
+      ['계산기', () => 사냥기록(계산기(100, null), 21_168_000)],
+      ['수동', () => 사냥기록(수동, 500_000_000)],
+    ])('%s 폼은 조각 개수 카드의 설명 줄에 최소 개수를 세우고, 그보다 적으면 입력이 안 눌린다', async (_폼, 기록) => {
+      const editing = 기록()
+      const loadHuntFragmentFloor = jest.fn(async () => 60)
+      const view = await 그리기({ editing, onDelete: jest.fn(), loadHuntFragmentFloor })
+
+      await 조각카드열기(view)
+
+      expect(loadHuntFragmentFloor).toHaveBeenCalledWith(editing)
+      expect(view.getByTestId('input-card-context')).toHaveTextContent('솔 에르다 조각 · 최소 60개')
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '59')
+      })
+      await 아이디로누르기(view, 'input-card-confirm')
+      expect(줄글자(view, 'income-sheet-fragments')).toBe('100')
+
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '60')
+      })
+      await 아이디로누르기(view, 'input-card-confirm')
+      expect(줄글자(view, 'income-sheet-fragments')).toBe('60')
+    })
+
+    it('최소 개수가 0 이면 설명 줄은 그대로다', async () => {
+      const view = await 그리기({ editing: 사냥기록(수동, 500_000_000), onDelete: jest.fn() })
+
+      await 조각카드열기(view)
+
+      expect(view.getByTestId('input-card-context')).toHaveTextContent(/^솔 에르다 조각$/)
+    })
+
+    it('새 기록은 최소 개수를 읽지 않는다', async () => {
+      const loadHuntFragmentFloor = jest.fn(async () => 60)
+      const view = await 그리기({ loadHuntFragmentFloor }, 'hunting')
+      await 이름으로누르기(view, '획득 메소 직접 입력')
+
+      await 조각카드열기(view)
+
+      expect(loadHuntFragmentFloor).not.toHaveBeenCalled()
+      expect(view.getByTestId('input-card-context')).toHaveTextContent(/^솔 에르다 조각$/)
+    })
+
+    // 조각이 보관에 드는지, 어느 캐릭터 · 날짜에 드는지가 달라지면 연 기록으로 센 최소 개수가 맞지 않는다. 막히는지는 저장이 본다.
+    it.each([
+      ['조각 가격을 채우면', (view: Rendered) => 칸에치기(view, 'income-sheet-fragment-price', '7000000')],
+      ['캐릭터를 바꾸면', (view: Rendered) => 사슬고르기(view, 'ocid-2')],
+      ['날짜를 바꾸면', (view: Rendered) => 날짜고르기(view, '2026-08-22')],
+    ])('%s 최소 개수가 서지 않고 그보다 적어도 입력이 눌린다', async (_바꾼것, 바꾸기) => {
+      const view = await 그리기({ editing: 사냥기록(수동, 500_000_000), onDelete: jest.fn(), loadHuntFragmentFloor: async () => 60 })
+
+      await 바꾸기(view)
+      await 조각카드열기(view)
+
+      expect(view.getByTestId('input-card-context')).toHaveTextContent(/^솔 에르다 조각$/)
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '10')
+      })
+      await 아이디로누르기(view, 'input-card-confirm')
+      expect(줄글자(view, 'income-sheet-fragments')).toBe('10')
     })
   })
 })
