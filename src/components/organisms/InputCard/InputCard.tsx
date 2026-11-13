@@ -619,16 +619,19 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     settleCaret(next, next.length, caret?.start ?? shown.length)
   }
 
+  const suggestionItems = props.suggestions?.itemsOf(draft) ?? []
+  /** 친 글자와 이름이 같은 목록의 아이템. 목록에서만 받는 카드는 이것이 있어야 확인이 눌린다. */
+  const exactPick = suggestionItems.find((item) => item.name === draft.trim())
+  // 목록에 없는 이름도 받는 카드에서 맞는 아이템이 없으면, 목록 자리에 친 이름을 확인하는 한 줄을 세운다.
+  const offersTyped = props.suggestions !== undefined && props.suggestions.pickOnly !== true && draft.trim() !== '' && suggestionItems.length === 0
+  const confirmable = props.suggestions?.pickOnly !== true || exactPick !== undefined
+
   /**
    * 지금 든 것을 넘긴다. 확인과 이전이 **같은 것을 준다**.
    *
    * 비율을 안 넘긴 카드는 인자 하나로 부른다. 없는 비율을 채워 보내면 받는 쪽이 그것을 값으로
    * 읽을 수 있다.
    */
-  /** 친 글자와 이름이 같은 목록의 아이템. 목록에서만 받는 카드는 이것이 있어야 확인이 눌린다. */
-  const exactPick = props.suggestions?.itemsOf(draft).find((item) => item.name === draft.trim())
-  const confirmable = props.suggestions?.pickOnly !== true || exactPick !== undefined
-
   function give(to: ((next: string, share?: ShareValue, fees?: FeesValue) => void) | undefined): void {
     if (to === undefined) return
     if (props.fees !== undefined) {
@@ -916,7 +919,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               className="mt-2"
               keyboardShouldPersistTaps="handled"
             >
-              {props.suggestions.itemsOf(draft).map((item) => (
+              {suggestionItems.map((item) => (
                 <Pressable
                   key={item.key}
                   testID={`input-card-suggestion-${item.key}`}
@@ -939,6 +942,21 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                   </Text>
                 </Pressable>
               ))}
+              {offersTyped && (
+                <Pressable
+                  testID="input-card-suggestion-typed"
+                  role="button"
+                  aria-label={`‘${draft.trim()}’ 직접 입력`}
+                  onPress={() => give(props.onConfirm)}
+                  style={{ height: SUGGESTION_ROW_HEIGHT }}
+                  className="flex-row items-center gap-2.5 rounded-[10px] px-3 active:bg-card-inset"
+                >
+                  <View style={{ width: 24, height: 24 }} />
+                  <Text numberOfLines={1} className="shrink text-sm text-text">
+                    {`‘${draft.trim()}’ 직접 입력`}
+                  </Text>
+                </Pressable>
+              )}
             </ScrollView>
           )}
 

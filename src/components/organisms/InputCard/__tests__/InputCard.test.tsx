@@ -583,4 +583,28 @@ describe('InputCard: 칸 안 아이템 목록', () => {
     expect(onPick).toHaveBeenCalledWith('low')
     expect(onConfirm).toHaveBeenCalledWith('하급 아이템 결정')
   })
+
+  // 목록에 없는 이름도 받는 카드는, 맞는 아이템이 없을 때 목록 자리가 비지 않게 친 이름을 한 줄로 보인다.
+  it('맞는 아이템이 없으면 ‘친 글자’ 직접 입력 한 줄이 서고, 누르면 입력과 같다', async () => {
+    const onPick = jest.fn()
+    const { view, onConfirm } = await 그리기({ text: true, suggestions: { itemsOf: 찾기, onPick } })
+
+    await 치기(view, '아이템 결')
+    expect(view.queryByTestId('input-card-suggestion-typed')).toBeNull()
+
+    await 치기(view, '만병통치약')
+    expect(view.getByTestId('input-card-suggestion-typed')).toHaveTextContent('‘만병통치약’ 직접 입력')
+    await 누르기(view, 'input-card-suggestion-typed')
+
+    expect(onPick).not.toHaveBeenCalled()
+    expect(onConfirm).toHaveBeenCalledWith('만병통치약')
+  })
+
+  it('목록에서만 받는 카드와 아직 안 친 카드에는 직접 입력 줄이 없다', async () => {
+    const { view } = await 그리기({ text: true, suggestions: { itemsOf: 찾기, onPick: jest.fn(), pickOnly: true } })
+    expect(view.queryByTestId('input-card-suggestion-typed')).toBeNull()
+
+    await 치기(view, '만병통치약')
+    expect(view.queryByTestId('input-card-suggestion-typed')).toBeNull()
+  })
 })

@@ -312,6 +312,8 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 
 - 이름 칸(`구매 아이템` · `판매 아이템`)은 입력 카드 안 목록(`suggestions`)에서 고른다. 인벤토리와 달리 `pickOnly` 를 꺼서 목록에 없는
   이름도 친 그대로 받는다(사용자 지정 2026-11-13). 목록에는 자주 쓰일 아이템 위주로만 들어 있기 때문이다.
+- 친 글자에 맞는 아이템이 없으면 목록 자리에 `‘만병통치약’ 직접 입력` 처럼 친 글자를 곡선 따옴표로 감싼 한 줄이 선다(사용자 지정
+  2026-11-13). 누르면 `입력` 과 같다. 목록이 비면 목록에 없는 이름도 받는다는 것을 알 수 없기 때문이다.
 - 고른 아이템은 `item_key` 에 key 를 적고 `item_name` 은 비운다. 이름은 key 로 아이템 표에서 찾는다(`recordedItemNameOf`). 이름을 적어
   두면 서버에서 이름을 고쳐도 옛 이름이 남는다. 직접 친 이름은 지금처럼 `item_key` 가 비고 `item_name` 에 남는다. 이미 친 옛 기록은 이름이
   목록과 같아도 key 로 바꾸지 않는다.
@@ -349,6 +351,7 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 | `lib/__tests__/cashbook-categories.spec.ts` | 결정 2: 분류 카드의 그림을 모두 찾는지 본다 |
 | `app/cashbook/__tests__/sheet-fields.test.tsx` | 결정 7: 고르는 칸이 고른 이름을 글자로 보이고, 안 골랐으면 자리표시자를, 목록에서 고르면 그 값을 넘기는지 본다. 결정 17: 아이콘 · 레벨이 닫힌 줄과 목록 줄에 함께 서고, `보유` 는 목록에만 서는지 본다 |
 | `app/cashbook/__tests__/IncomeSheet.test.tsx` | 결정 17: 사냥 캐릭터 목록에 레벨이, 조각 칸 캐릭터 목록에 캐릭터마다 센 보유가 서고 못 읽은 캐릭터는 보유가 없는지 본다 |
+| `components/organisms/InputCard/__tests__/InputCard.test.tsx` | 결정 18: 목록에 없는 이름도 받는 카드에서 맞는 아이템이 없으면 `‘친 글자’ 직접 입력` 한 줄이 서고 누르면 `입력` 과 같은지, 목록에서만 받는 카드에는 그 줄이 없는지 본다 |
 | `app/cashbook/__tests__/SpendSheet.test.tsx` · `IncomeSheet.test.tsx` | 결정 18: 처음에는 종류 칸이 없고 목록에 없는 이름을 치면 서는지, 목록에서 고르면 key 로 저장되고 종류 칸이 숨는지, 이름을 고치면 다시 서는지, 목록에 없는 이름도 저장되는지, 특수스킬 반지를 레벨째 고르면 그 레벨이 저장되는지, 보관 체크가 늘 서되 고른 아이템 · 캐릭터 · 메이플 ID 를 갖춰야 눌리고 꺼진 채 시작하는지 본다 |
 | `storage/sqlite/__tests__/inventory-real-sqlite.test.ts` | 결정 18: 보관한 구매가 인벤토리 개수에 더해지고, 구매를 고치거나 지우면 따라 바뀌며, 이미 판 것보다 적게 만드는 저장이 되돌아가는지, 보관한 반지가 고른 레벨로 들어가는지 본다 |
 
