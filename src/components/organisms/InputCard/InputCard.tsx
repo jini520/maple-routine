@@ -244,6 +244,8 @@ export interface InputCardProps {
   multiline?: boolean
   /** 값에 더하는 눈금. 글자 칸에서는 무시된다. */
   chips?: readonly InputCardChip[]
+  /** 확인이 눌리는 가장 작은 값. 숫자 칸만 보고 빈 칸은 0 으로 본다. */
+  min?: number
   /**
    * 값 칸 아래에 서는 **분배 비율 고르개**. 넘기면 카드가 칸 둘을 받는 모양이 된다.
    *
@@ -624,7 +626,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   const exactPick = suggestionItems.find((item) => item.name === draft.trim())
   // 목록에 없는 이름도 받는 카드에서 맞는 아이템이 없으면, 목록 자리에 친 이름을 확인하는 한 줄을 세운다.
   const offersTyped = props.suggestions !== undefined && props.suggestions.pickOnly !== true && draft.trim() !== '' && suggestionItems.length === 0
-  const confirmable = props.suggestions?.pickOnly !== true || exactPick !== undefined
+  const belowMin = props.min !== undefined && !isText && mesoValueOf(draftMeso) < props.min
+  const confirmable = (props.suggestions?.pickOnly !== true || exactPick !== undefined) && !belowMin
 
   /**
    * 지금 든 것을 넘긴다. 확인과 이전이 **같은 것을 준다**.

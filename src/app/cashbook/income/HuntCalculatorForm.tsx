@@ -61,6 +61,7 @@ import type { LastHunt, LastHunts } from '../../../storage/last-hunts'
 import { FIELD_CELL_CLASS, FieldCard, FieldRow, QuantityStepper, SelectRow, useCountField } from '../sheet-fields'
 import { characterDecorOf, requiredCharacterOptions } from '../character-options'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
+import { fragmentCountContextOf, useHuntFragmentFloor, type LoadHuntFragmentFloor } from './hunt-fragment-floor'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import type { InputCardProps } from '../../../components/organisms/InputCard/InputCard'
 import { openInputCard } from '../../../features/input-card/store'
@@ -99,6 +100,11 @@ const CARD_FIELDS: Record<EditingField, Omit<InputCardProps, 'value' | 'onConfir
     chips: FRAGMENT_PRICE_QUICK_ADDS,
     placeholder: '미입력 시 보관',
   },
+}
+
+/** 조각 개수 카드에 더하는 설명 줄과 최소 개수. 정산 · 헥사 강화가 가져간 몫 아래로는 못 줄인다. */
+function fragmentCardOf(floor: number | undefined): Pick<InputCardProps, 'context' | 'min'> {
+  return { context: fragmentCountContextOf(floor), ...(floor === undefined ? {} : { min: floor }) }
 }
 
 /** lv.294·lv.200-201. 원 자료의 표기를 그대로 되돌린다. */
@@ -318,6 +324,8 @@ export function HuntCalculatorForm(
     loadMesoRate: (ocid: string) => Promise<MesoRateLoad>
     /** 캐릭터별 마지막 사냥. 캐릭터를 고르면 그 몫이 선다. 화면이 읽어서 넘긴다. */
     lastHunts: LastHunts
+    /** 수정으로 연 기록의 조각 최소 개수 조회. 조각 개수 카드가 쓴다 */
+    loadHuntFragmentFloor: LoadHuntFragmentFloor
   },
 ): React.JSX.Element {
   const editing = props.editing !== undefined
@@ -386,6 +394,7 @@ export function HuntCalculatorForm(
   function editField(field: EditingField): void {
     openInputCard({
       ...CARD_FIELDS[field],
+      ...(field === 'fragments' ? fragmentCardOf(fragmentFloor) : {}),
       value: cardValueOf(field),
       onConfirm: (next) => confirmCard(field, next),
     })
@@ -457,6 +466,11 @@ export function HuntCalculatorForm(
   const huntMeso = huntGround === null ? 0 : huntingMesoOf({ ...huntInput, ground: huntGround })
   const fragments = mesoValueOf(fragmentsText)
   const fragmentPrice = optionalMesoValueOf(fragmentPriceText)
+  const fragmentFloor = useHuntFragmentFloor(props.editing, props.loadHuntFragmentFloor, {
+    ocid,
+    dateKey: props.dateKey,
+    fragmentPrice,
+  })
   const fee = useSaleFeeChoice(props.editing, ocid, props.dateKey)
   /** 조각을 그 자리에서 판 몫에만 붙는 판매 수수료. 가격을 안 적었으면 0 이다. */
   const fragmentFee = fragmentSaleFeeOf({ fragments, fragmentPrice }, fee.percent)

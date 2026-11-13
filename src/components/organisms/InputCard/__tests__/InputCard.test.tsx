@@ -178,6 +178,22 @@ describe('InputCard', () => {
     expect(숫자.getByTestId('input-card-value').props.keyboardType).toBe('number-pad')
   })
 
+  // 사냥 기록의 조각 개수처럼 더 줄일 수 없는 경계가 있는 칸. 시트의 저장을 누르기 전에 카드에서 막는다.
+  it('min 보다 적은 값이면 확인이 안 눌리고, 같거나 크면 눌린다', async () => {
+    const { view, onConfirm } = await 그리기({ label: '조각 개수', unit: '개', value: '100', min: 60 })
+
+    await 치기(view, '')
+    await 누르기(view, 'input-card-confirm')
+    await 치기(view, '59')
+    await 누르기(view, 'input-card-confirm')
+    expect(onConfirm).not.toHaveBeenCalled()
+    expect(view.getByTestId('input-card-confirm').props.accessibilityState?.disabled).toBe(true)
+
+    await 치기(view, '60')
+    await 누르기(view, 'input-card-confirm')
+    expect(onConfirm).toHaveBeenCalledWith('60')
+  })
+
   it('필수 칸은 값이 차도 별표가 남는다', async () => {
     const { view } = await 그리기({ label: '시세 · 1억당', required: true, value: '1350' })
 

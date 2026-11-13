@@ -1,19 +1,18 @@
 /// <reference types="node" />
 /**
  * 솔 에르다 조각 장부를 진짜 SQLite 로 태운다. 장부를 바꾸는 저장이 같은 검사를 거치는지, 사냥 기록을 고쳐 모자라게
- * 되면 그 조각을 쓴 뒤 기록을 함께 줄이는지 본다.
+ * 되면 헥사 강화를 다른 보관으로 옮기고 그래도 모자라면 막는지 본다.
  */
 import fc from 'fast-check'
 
 import { allocateHexaStorage } from '../../../lib/cashbook/hexa-matrix'
-import { FragmentCutsChangedError, cutNeedsPrice, type FragmentCutPlan } from '../../fragment-cuts'
 import { FragmentShortageError, readFragmentMoves } from '../../fragment-ledger'
+import { getHuntFragmentFloor } from '../../fragment-moves'
 import {
   deleteIncomeRecord,
   getFragmentStorage,
   getIncomeRecordsBetween,
   insertIncomeRecord,
-  previewIncomeCuts,
   updateIncomeRecord,
   type IncomeRecord,
 } from '../../income'
@@ -119,7 +118,10 @@ function hexa(
 }
 
 const SEPT = ['2026-09-01', '2026-09-30'] as const
-const onlySelf = (ocid: string): string[] => [ocid]
+/** 옮길 다른 캐릭터가 없다. */
+const ONLY_SELF = { candidatesOf: (ocid: string): string[] => [ocid] }
+/** a 의 헥사 강화는 b 의 보관으로 옮길 수 있다. */
+const A_THEN_B = { candidatesOf: (ocid: string): string[] => (ocid === 'a' ? ['a', 'b'] : [ocid]) }
 
 /** 시안의 장부. 9/17 사냥 100 을 9/18 정산 20 · 9/19 헥사 20(지출 체크 켬) · 9/20 헥사 60(가격 없음)이 다 가져갔다. */
 async function mockupLedger(): Promise<void> {
@@ -147,7 +149,8 @@ describe('모든 저장이 같은 장부 검사를 거친다', () => {
     expect(await incomeOf('settle-08')).toBeUndefined()
   })
 
-  it('계획 없이 사냥 기록을 고쳐 모자라게 되면 던지고 사냥 기록도 그대로다', async () => {
+  // 정산 · 헥사 폼의 길은 옮길 곳을 넘기지 않는다. 폼을 연 사이에 장부가 바뀌었으면 그 저장만 실패한다.
+  it('옮길 곳을 넘기지 않은 저장은 모자라면 옮기지 않고 던진다', async () => {
     await mockupLedger()
 
     await expect(updateIncomeRecord(hunt('hunt-17', 'a', '2026-09-17', 0))).rejects.toBeInstanceOf(FragmentShortageError)
@@ -158,69 +161,33 @@ describe('모든 저장이 같은 장부 검사를 거친다', () => {
     await mockupLedger()
     const same = (await incomeOf('hunt-17'))!
 
-    await expect(updateIncomeRecord(same)).resolves.toBeUndefined()
-    await expect(previewIncomeCuts({ kind: 'edit', record: same }, onlySelf)).resolves.toMatchObject({ changes: [], key: '' })
+    await expect(updateIncomeRecord(same, ONLY_SELF)).resolves.toBeUndefined()
+    expect((await spendOf('hexa-20'))?.hexa?.storageUses).toEqual([{ ocid: 'a', fragments: 60 }])
   })
 })
 
-describe('사냥 기록을 고쳐 모자라면 그 조각을 쓴 뒤 기록을 함께 줄인다', () => {
-  /** 확인 창에서 `함께 저장` 을 누른 것. 가격이 필요한 헥사 기록에는 `price` 를 넣는다. */
-  function approve(plan: FragmentCutPlan, price = 0) {
-    const prices = Object.fromEntries(plan.changes.filter(cutNeedsPrice).map((each) => [each.before.id, price]))
-    return { candidatesOf: onlySelf, key: plan.key, prices }
-  }
-
-  it('고친 날짜에 가까운 기록부터 모자란 만큼만 줄이고, 정산 금액은 그 단가와 수수료율로 다시 센다', async () => {
-    await mockupLedger()
-    const edit = { kind: 'edit', record: hunt('hunt-17', 'a', '2026-09-17', 90) } as const
-
-    const plan = await previewIncomeCuts(edit, onlySelf)
-    expect(plan.changes.map((each) => each.before.id)).toEqual(['settle-18'])
-    await updateIncomeRecord(edit.record, approve(plan))
-
-    expect(await incomeOf('settle-18')).toMatchObject({ quantity: 10, mesoAmount: 66_500_000, saleFeeMeso: 3_500_000 })
-    expect((await spendOf('hexa-20'))?.hexa?.storageUses).toEqual([{ ocid: 'a', fragments: 60 }])
-    await expect(getFragmentStorage('a', '2026-09-17')).resolves.toBe(0)
-  })
-
-  it('사냥을 지우면 정산은 지우고, 헥사는 보관 사용을 줄여 지출 체크와 받은 가격으로 금액을 다시 센다', async () => {
-    await mockupLedger()
-    const remove = { kind: 'remove', id: 'hunt-17' } as const
-
-    const plan = await previewIncomeCuts(remove, onlySelf)
-    expect(plan.changes.filter(cutNeedsPrice).map((each) => each.before.id)).toEqual(['hexa-20'])
-    await deleteIncomeRecord('hunt-17', approve(plan, 5_000_000))
-
-    expect(await incomeOf('settle-18')).toBeUndefined()
-    expect(await spendOf('hexa-19')).toMatchObject({ mesoAmount: 20 * 7_200_000, hexa: { storageUses: [] } })
-    expect(await spendOf('hexa-20')).toMatchObject({ mesoAmount: 60 * 5_000_000, hexa: { storageUses: [], fragmentPrice: 5_000_000 } })
-    expect(await readFragmentMoves(await getBossProfitDb(), 'a')).toEqual([])
-  })
-
-  // 다른 캐릭터에 쓸 수 있는 보관이 있으면 금액이 그대로라 사용자에게 묻지 않고 옮길 수 있다.
-  it('헥사 강화는 같은 메이플 ID · 같은 월드의 다른 캐릭터 보관에서 먼저 다시 가져온다', async () => {
+describe('사냥 기록을 고쳐 모자라면 헥사 강화를 다른 보관으로 옮긴다', () => {
+  // 다른 캐릭터에 쓸 수 있는 보관이 있으면 가져온 개수가 그대로라 금액이 안 바뀐다. 그래서 묻지 않고 옮긴다.
+  it('같은 메이플 ID · 같은 월드의 다른 캐릭터 보관으로 옮기고 금액은 그대로다', async () => {
     await insertIncomeRecord(hunt('hunt-a', 'a', '2026-09-17', 60))
-    await insertIncomeRecord(hunt('hunt-b', 'b', '2026-09-10', 40))
+    await insertIncomeRecord(hunt('hunt-b', 'b', '2026-09-10', 60))
     await insertSpendRecord(hexa('hexa-20', 'a', '2026-09-20', { fragments: 100, uses: [{ ocid: 'a', fragments: 60 }], asSpend: false, price: 7_200_000 }))
-    const candidatesOf = (ocid: string): string[] => (ocid === 'a' ? ['a', 'b'] : [ocid])
 
-    const plan = await previewIncomeCuts({ kind: 'remove', id: 'hunt-a' }, candidatesOf)
-    await deleteIncomeRecord('hunt-a', { candidatesOf, key: plan.key, prices: {} })
+    await deleteIncomeRecord('hunt-a', A_THEN_B)
 
-    expect(await spendOf('hexa-20')).toMatchObject({ mesoAmount: 60 * 7_200_000, hexa: { storageUses: [{ ocid: 'b', fragments: 40 }] } })
+    expect(await incomeOf('hunt-a')).toBeUndefined()
+    expect(await spendOf('hexa-20')).toMatchObject({ mesoAmount: 40 * 7_200_000, hexa: { storageUses: [{ ocid: 'b', fragments: 60 }] } })
     await expect(getFragmentStorage('b', '2026-09-10')).resolves.toBe(0)
   })
 
-  it('헥사 강화는 강화한 캐릭터의 메이플 ID · 월드의 기타 조각을 다른 캐릭터 보관보다 먼저 다시 가져온다', async () => {
+  it('강화한 캐릭터의 메이플 ID · 월드의 기타 조각으로 다른 캐릭터 보관보다 먼저 옮긴다', async () => {
     await insertIncomeRecord(hunt('hunt-a', 'a', '2026-09-17', 60))
     await insertIncomeRecord(hunt('hunt-b', 'b', '2026-09-10', 40))
     await insertSpendRecord(hexa('hexa-20', 'a', '2026-09-20', { fragments: 100, uses: [{ ocid: 'a', fragments: 60 }], asSpend: false, price: 7_200_000 }))
     await addInventoryItem({ accountId: 'maple-a', worldKey: 'scania', itemKey: SOL_ERDA_FRAGMENT_ITEM_KEY, itemKindKey: 'etc', quantity: 30 }, new Date())
-    const candidatesOf = (ocid: string): string[] => (ocid === 'a' ? ['a', 'b'] : [ocid])
     const ownerOf = (ocid: string) => (ocid === 'a' ? { accountId: 'maple-a', worldKey: 'scania' } : null)
 
-    const plan = await previewIncomeCuts({ kind: 'remove', id: 'hunt-a' }, candidatesOf, ownerOf)
-    await deleteIncomeRecord('hunt-a', { candidatesOf, ownerOf, key: plan.key, prices: {} })
+    await deleteIncomeRecord('hunt-a', { ...A_THEN_B, ownerOf })
 
     expect(await spendOf('hexa-20')).toMatchObject({
       mesoAmount: 40 * 7_200_000,
@@ -229,16 +196,72 @@ describe('사냥 기록을 고쳐 모자라면 그 조각을 쓴 뒤 기록을 �
     await expect(getFragmentStorage('b', '2026-09-10')).resolves.toBe(10)
   })
 
-  // 사용자가 본 것과 다른 기록이 바뀌면 안 된다. 창을 다시 띄우도록 던지고 아무것도 쓰지 않는다.
-  it('확인 창을 띄운 뒤 다른 저장으로 계획이 달라지면 던지고 사냥 기록도 그대로 둔다', async () => {
-    await mockupLedger()
-    const edit = { kind: 'edit', record: hunt('hunt-17', 'a', '2026-09-17', 90) } as const
-    const plan = await previewIncomeCuts(edit, onlySelf)
-    await insertIncomeRecord(hunt('hunt-18', 'a', '2026-09-18', 10))
+  // 판 조각은 정산에 적힌 캐릭터의 보관에서 나온 것이라 옮길 곳이 없다. 고친 날짜에 더 가까워도 건너뛴다.
+  it('정산은 옮기지 않고 그 뒤의 헥사 강화를 옮긴다', async () => {
+    await insertIncomeRecord(hunt('hunt-a', 'a', '2026-09-17', 100))
+    await insertIncomeRecord(hunt('hunt-b', 'b', '2026-09-10', 100))
+    await insertIncomeRecord(settle('settle-18', 'a', '2026-09-18', 20))
+    await insertSpendRecord(hexa('hexa-20', 'a', '2026-09-20', { fragments: 60, uses: [{ ocid: 'a', fragments: 60 }], asSpend: true, price: 7_200_000 }))
 
-    await expect(updateIncomeRecord(edit.record, approve(plan))).rejects.toBeInstanceOf(FragmentCutsChangedError)
+    await updateIncomeRecord(hunt('hunt-a', 'a', '2026-09-17', 50), A_THEN_B)
+
+    expect(await incomeOf('settle-18')).toMatchObject({ quantity: 20, mesoAmount: 133_000_000, saleFeeMeso: 7_000_000 })
+    expect(await spendOf('hexa-20')).toMatchObject({
+      mesoAmount: 60 * 7_200_000,
+      hexa: { storageUses: [{ ocid: 'a', fragments: 30 }, { ocid: 'b', fragments: 30 }] },
+    })
+  })
+})
+
+describe('옮기고도 모자라면 사냥 기록을 저장하지 않는다', () => {
+  it('정산 · 헥사 강화를 줄이지 않고 던지며, 사냥 기록도 그대로다', async () => {
+    await mockupLedger()
+
+    await expect(deleteIncomeRecord('hunt-17', ONLY_SELF)).rejects.toBeInstanceOf(FragmentShortageError)
+
     expect((await incomeOf('hunt-17'))?.hunt).toMatchObject({ fragments: 100 })
     expect(await incomeOf('settle-18')).toMatchObject({ quantity: 20 })
+    expect((await spendOf('hexa-19'))?.hexa?.storageUses).toEqual([{ ocid: 'a', fragments: 20 }])
+    expect(await spendOf('hexa-20')).toMatchObject({ mesoAmount: 0, hexa: { storageUses: [{ ocid: 'a', fragments: 60 }], fragmentPrice: null } })
+  })
+
+  // 일부만 옮겨지면 그것도 쓰지 않는다. 옮긴 것만 남으면 사용자가 저장하지 않은 기록이 바뀐다.
+  it('일부만 옮길 수 있으면 옮긴 것까지 되돌린다', async () => {
+    await insertIncomeRecord(hunt('hunt-a', 'a', '2026-09-17', 60))
+    await insertIncomeRecord(hunt('hunt-b', 'b', '2026-09-10', 30))
+    await insertSpendRecord(hexa('hexa-20', 'a', '2026-09-20', { fragments: 100, uses: [{ ocid: 'a', fragments: 60 }], asSpend: false, price: 7_200_000 }))
+
+    await expect(deleteIncomeRecord('hunt-a', A_THEN_B)).rejects.toBeInstanceOf(FragmentShortageError)
+
+    expect(await incomeOf('hunt-a')).toBeDefined()
+    expect((await spendOf('hexa-20'))?.hexa?.storageUses).toEqual([{ ocid: 'a', fragments: 60 }])
+    await expect(getFragmentStorage('b', '2026-09-10')).resolves.toBe(30)
+  })
+})
+
+describe('getHuntFragmentFloor: 사냥 기록의 최소 개수', () => {
+  // 시안의 장부에 b 의 보관 30 을 더한다. 사냥 100 중 100 을 가져갔고 30 은 b 로 옮길 수 있어 70 이 경계다.
+  it('그 개수로는 저장되고 하나 적으면 막히는 경계다', async () => {
+    await mockupLedger()
+    await insertIncomeRecord(hunt('hunt-b', 'b', '2026-09-10', 30))
+    const stored = (await incomeOf('hunt-17'))!
+
+    await expect(getHuntFragmentFloor(stored, A_THEN_B)).resolves.toBe(70)
+    await expect(getHuntFragmentFloor(stored, ONLY_SELF)).resolves.toBe(100)
+
+    await expect(updateIncomeRecord(hunt('hunt-17', 'a', '2026-09-17', 69), A_THEN_B)).rejects.toBeInstanceOf(FragmentShortageError)
+    await expect(updateIncomeRecord(hunt('hunt-17', 'a', '2026-09-17', 70), A_THEN_B)).resolves.toBeUndefined()
+  })
+
+  it('가져간 개수가 최소 개수이고, 보관이 아닌 기록과 새 기록은 0 이다', async () => {
+    await insertIncomeRecord(hunt('hunt-a', 'a', '2026-09-17', 60))
+    await insertIncomeRecord(settle('settle-18', 'a', '2026-09-18', 20))
+    const sold: IncomeRecord = { ...hunt('hunt-sold', 'a', '2026-09-01', 50), hunt: { mode: 'manual', typedMeso: 100_000_000, fragments: 50, fragmentPrice: 7_000_000 } }
+    await insertIncomeRecord(sold)
+
+    await expect(getHuntFragmentFloor((await incomeOf('hunt-a'))!, ONLY_SELF)).resolves.toBe(20)
+    await expect(getHuntFragmentFloor(sold, ONLY_SELF)).resolves.toBe(0)
+    await expect(getHuntFragmentFloor(hunt('hunt-new', 'a', '2026-09-20', 10), ONLY_SELF)).resolves.toBe(0)
   })
 })
 
@@ -264,8 +287,21 @@ describe('무작위 차례의 쓰기(fast-check)', () => {
     })
   }
 
+  /** 사냥 수정이 바꾸면 안 되는 것. 정산의 판 개수 · 금액과 헥사 강화의 금액 · 보관에서 가져온 개수다. */
+  async function soldAndSpent(): Promise<string> {
+    const settles = (await getIncomeRecordsBetween(...SEPT))
+      .filter((record) => record.category === 'sol_erda_fragment')
+      .map((record) => [record.id, record.quantity, record.mesoAmount])
+    const hexas = (await getSpendRecordsBetween(...SEPT)).map((record) => [
+      record.id,
+      record.mesoAmount,
+      (record.hexa?.storageUses ?? []).reduce((sum, use) => sum + use.fragments, record.hexa?.otherUse?.fragments ?? 0),
+    ])
+    return JSON.stringify([settles, hexas])
+  }
+
   // 사냥 기록을 고치고 지우는 사이에 정산 · 헥사가 끼어도, 저장이 끝날 때마다 장부가 날마다 0 이상이어야 한다.
-  it('폼과 같은 개수로 적고 확인 창을 받으며 고치면, 어떤 차례로 적어도 장부가 날마다 0 이상이다', async () => {
+  it('폼과 같은 개수로 적고 고치면, 어떤 차례로 적어도 장부가 날마다 0 이상이고 사냥 수정은 정산 · 헥사 금액을 바꾸지 않는다', async () => {
     await close()
     await fc.assert(
       fc.asyncProperty(fc.array(opArb, { minLength: 1, maxLength: 14 }), async (ops) => {
@@ -290,18 +326,23 @@ describe('무작위 차례의 쓰기(fast-check)', () => {
               await insertSpendRecord(hexa(id, ocid, dateOf(step.day), { fragments: step.n, uses, asSpend: step.asSpend, price: 1_000_000 }))
             } else if (hunts.length > 0) {
               const target = hunts[step.pick % hunts.length]!
-              const change =
-                step.op === 'edit'
-                  ? ({ kind: 'edit', record: { ...(await incomeOf(target))!, earnedOn: dateOf(step.day), hunt: { mode: 'manual', typedMeso: 0, fragments: step.n, fragmentPrice: null } } } as const)
-                  : ({ kind: 'remove', id: target } as const)
-              const plan = await previewIncomeCuts(change, candidatesOf)
-              const prices = Object.fromEntries(plan.changes.filter(cutNeedsPrice).map((each) => [each.before.id, 0]))
-              const approval = { candidatesOf, key: plan.key, prices }
-              if (change.kind === 'edit') await updateIncomeRecord(change.record, approval)
-              else {
-                await deleteIncomeRecord(change.id, approval)
-                hunts.splice(hunts.indexOf(target), 1)
+              const untouched = await soldAndSpent()
+              const ledger = JSON.stringify(await readFragmentMoves(await getBossProfitDb()))
+              try {
+                if (step.op === 'edit') {
+                  const record = (await incomeOf(target))!
+                  const hunted = { mode: 'manual', typedMeso: 0, fragments: step.n, fragmentPrice: null } as const
+                  await updateIncomeRecord({ ...record, earnedOn: dateOf(step.day), hunt: hunted }, { candidatesOf })
+                } else {
+                  await deleteIncomeRecord(target, { candidatesOf })
+                  hunts.splice(hunts.indexOf(target), 1)
+                }
+              } catch (error) {
+                if (!(error instanceof FragmentShortageError)) throw error
+                // 막힌 저장은 옮긴 것까지 아무것도 남기지 않는다.
+                if (JSON.stringify(await readFragmentMoves(await getBossProfitDb())) !== ledger) return false
               }
+              if ((await soldAndSpent()) !== untouched) return false
             }
             if (!(await everyDayHeld())) return false
           }

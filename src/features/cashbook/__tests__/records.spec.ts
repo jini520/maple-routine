@@ -806,7 +806,24 @@ describe('고치기와 지우기', () => {
     await removeRecord({ kind: 'income', record: 수입행, characterName: '' })
 
     expect(spend.deleteSpendRecord).toHaveBeenCalledWith('spd-1')
-    expect(income.deleteIncomeRecord).toHaveBeenCalledWith('inc-1')
+    expect(income.deleteIncomeRecord.mock.calls[0]?.[0]).toBe('inc-1')
+  })
+
+  // 사냥 기록을 고쳐 조각이 모자라면 헥사 강화를 다른 보관으로 옮긴다. 정산은 폼이 쓸 수 있는 개수까지만 받아 넘기지 않는다.
+  it('사냥 기록의 고치기 · 지우기에만 헥사 강화를 옮길 곳을 넘긴다', async () => {
+    const { editIncome, removeRecord } = require('../records') as typeof import('../records')
+    const 기타행 = { ...수입행, id: 'inc-2', category: 'etc' as const }
+    const 옮길곳 = expect.objectContaining({ candidatesOf: expect.any(Function), ownerOf: expect.any(Function) })
+
+    await editIncome(수입행)
+    await editIncome(기타행)
+    await removeRecord({ kind: 'income', record: 수입행, characterName: '' })
+    await removeRecord({ kind: 'income', record: 기타행, characterName: '' })
+
+    expect(income.updateIncomeRecord).toHaveBeenCalledWith(수입행, 옮길곳)
+    expect(income.updateIncomeRecord).toHaveBeenCalledWith(기타행, undefined)
+    expect(income.deleteIncomeRecord).toHaveBeenCalledWith('inc-1', 옮길곳)
+    expect(income.deleteIncomeRecord).toHaveBeenCalledWith('inc-2', undefined)
   })
 })
 

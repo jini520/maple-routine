@@ -18,15 +18,15 @@ export interface FragmentShortDay {
   missing: number
 }
 
-/** 줄일 수 있는 기록 하나. 나간 개수는 양수. */
+/** 다른 보관으로 옮길 수 있는 기록 하나. 나간 개수는 양수. */
 export interface FragmentTaker {
   id: string
   date: string
   fragments: number
 }
 
-/** 기록 하나에서 줄일 개수. */
-export interface FragmentCut {
+/** 기록 하나에서 다른 보관으로 옮긴 개수. */
+export interface FragmentTransfer {
   id: string
   fragments: number
 }
@@ -66,18 +66,21 @@ export function fragmentShortfall(before: readonly FragmentMove[], after: readon
 }
 
 /**
- * 모자라게 된 장부를 되돌리려고 줄일 기록과 개수. 모자란 날을 앞에서부터 하나씩 채운다.
+ * 모자라게 된 장부를 되돌리려고 다른 보관으로 옮길 기록과 개수. 모자란 날을 앞에서부터 하나씩 채운다.
  *
- * 줄이는 차례는 이 저장으로 개수가 처음 줄어든 날에 가까운 기록부터다. 그 날부터 모자란 날까지의 기록을 날짜 차례로
+ * 옮기는 차례는 이 저장으로 개수가 처음 줄어든 날에 가까운 기록부터다. 그 날부터 모자란 날까지의 기록을 날짜 차례로
  * 쓰고, 그래도 모자라면 그 날 앞의 기록을 가까운 것부터 쓴다. 같은 날의 기록은 `takers` 에 넘긴 차례다.
  *
  * @param input.after `takers` 의 나간 줄이 들어 있는 저장 뒤 장부
+ * @param input.take 기록 하나에서 옮기려는 개수를 받아 실제로 옮긴 개수를 돌려준다. 옮길 곳이 모자라면 그보다 적다
+ * @returns 옮긴 기록과 개수. 다 옮기고도 장부가 모자랄 수 있고, 그 저장을 막는 것은 부르는 쪽의 검사다
  */
-export function planFragmentCuts(input: {
+export function planFragmentMoves(input: {
   before: readonly FragmentMove[]
   after: readonly FragmentMove[]
   takers: readonly FragmentTaker[]
-}): FragmentCut[] {
+  take: (taker: FragmentTaker, wanted: number) => number
+}): FragmentTransfer[] {
   const short = fragmentShortfall(input.before, input.after)
   if (short.length === 0) return []
   const dates = datesOf(input.before, input.after)
@@ -86,20 +89,22 @@ export function planFragmentCuts(input: {
     ...input.takers.filter((taker) => taker.date >= firstLowered).sort((a, b) => a.date.localeCompare(b.date)),
     ...input.takers.filter((taker) => taker.date < firstLowered).sort((a, b) => b.date.localeCompare(a.date)),
   ]
-  const cuts = new Map<string, number>()
+  const moved = new Map<string, number>()
   const raisedOn = (date: string): number =>
-    nearFirst.reduce((sum, taker) => (taker.date <= date ? sum + (cuts.get(taker.id) ?? 0) : sum), 0)
+    nearFirst.reduce((sum, taker) => (taker.date <= date ? sum + (moved.get(taker.id) ?? 0) : sum), 0)
 
   for (const { date } of short) {
     let missing = Math.min(balanceOn(input.before, date), 0) - balanceOn(input.after, date) - raisedOn(date)
     for (const taker of nearFirst) {
       if (missing <= 0) break
       if (taker.date > date) continue
-      const cut = Math.min(taker.fragments - (cuts.get(taker.id) ?? 0), missing)
-      if (cut <= 0) continue
-      cuts.set(taker.id, (cuts.get(taker.id) ?? 0) + cut)
-      missing -= cut
+      const wanted = Math.min(taker.fragments - (moved.get(taker.id) ?? 0), missing)
+      if (wanted <= 0) continue
+      const got = input.take(taker, wanted)
+      if (got <= 0) continue
+      moved.set(taker.id, (moved.get(taker.id) ?? 0) + got)
+      missing -= got
     }
   }
-  return [...cuts].map(([id, fragments]) => ({ id, fragments }))
+  return [...moved].map(([id, fragments]) => ({ id, fragments }))
 }

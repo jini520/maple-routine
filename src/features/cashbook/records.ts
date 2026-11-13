@@ -52,6 +52,8 @@ import { ensureEnhancementTotals } from '../enhancement-history/legacy-totals'
 import { getMvpGradeHistories } from '../../storage/mvp-grades'
 import { getCharacterAccountSightings } from '../../storage/character-accounts'
 import { getOtherFragmentStorage } from '../../storage/inventory'
+import { FragmentShortageError } from '../../storage/fragment-ledger'
+import { getHuntFragmentFloor, type HexaSources } from '../../storage/fragment-moves'
 import type { MvpGradeEntry } from '../../lib/mvp/history'
 import { starforceMvpDiscountOf } from '../../lib/mvp/starforce'
 import { withMvpDiscount } from '../../lib/enhancement/cost'
@@ -1128,8 +1130,34 @@ export async function editSpend(edited: SpendRecord): Promise<void> {
   }
 }
 
+/** 사냥 기록을 고쳐 조각이 모자라면 헥사 강화를 옮길 곳. 강화할 때 가져오는 차례와 같다. */
+async function loadHexaSources(): Promise<HexaSources> {
+  const [candidatesOf, ownerOf] = await Promise.all([loadHexaCandidatesOf(), loadHexaOwnerOf()])
+  return { candidatesOf, ownerOf }
+}
+
+/** 사냥 기록만 옮길 곳을 넘긴다. 정산은 폼이 쓸 수 있는 개수까지만 받아, 모자라면 그 저장만 실패한다. */
+async function sourcesFor(record: IncomeRecord): Promise<HexaSources | undefined> {
+  return record.category === 'hunting' ? loadHexaSources() : undefined
+}
+
 export async function editIncome(record: IncomeRecord): Promise<void> {
-  await updateIncomeRecord(record)
+  await updateIncomeRecord(record, await sourcesFor(record))
+}
+
+/**
+ * 수정으로 연 사냥 기록의 조각을 이보다 적게 저장할 수 없는 개수. 정산 · 헥사 강화가 가져간 몫이다. 못 읽으면 0 이고,
+ * 그때는 저장이 막히는지를 본다.
+ */
+export function loadHuntFragmentFloor(record: IncomeRecord): Promise<number> {
+  return loadHexaSources()
+    .then((sources) => getHuntFragmentFloor(record, sources))
+    .catch(() => 0)
+}
+
+/** 조각 장부가 모자라 저장이 막혔는가. 다시 저장해도 같아서 화면이 다른 실패와 문구를 가른다. */
+export function isFragmentShortage(error: unknown): boolean {
+  return error instanceof FragmentShortageError
 }
 
 /** 지우기. 갈래가 어느 테이블인지를 안다. 손입력만 받는다. */
@@ -1143,5 +1171,5 @@ export async function removeRecord(entry: ManualDayRecord): Promise<void> {
     })
     await deleteSpendRecord(record.id)
     await quietly(() => rememberAfterRemove(record, latestId))
-  } else await deleteIncomeRecord(entry.record.id)
+  } else await deleteIncomeRecord(entry.record.id, await sourcesFor(entry.record))
 }
