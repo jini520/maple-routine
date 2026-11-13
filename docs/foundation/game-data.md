@@ -25,7 +25,7 @@
 | `server/game-data.ts` | `GET /v1/game-data` 를 ETag 와 함께 받고 칸마다 검사한다 |
 | `storage/game-data-copy.ts` | 기기 사본(SQLite `game_data_sections` · `game_data_meta`) |
 | `storage/adapters/rn-asset-files.ts` | 그림 파일(문서 디렉터리 `game-assets/`) |
-| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 스물하나. 운영 서버 응답을 떠 둔 것이다. `items` 칸은 서버에 그 칸이 들어가기 전에 운영 아이템 표를 서버와 같은 규칙으로 옮겨 만들었다 |
+| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 스물하나. 운영 서버 응답을 떠 둔 것이다 |
 | `lib/boss/boss-profit-period.ts` | 줄의 유효 기간 판정(`isEffectiveIn` · `isEffectiveAnytimeIn`) |
 
 ## 칸 스물하나
@@ -52,7 +52,7 @@
 | `imageCrops` | 보스 초상(카드 · 원형 아이콘 · 파티 모달 띠)과 컨텐츠 지역 지도의 크롭 | `lib/assets/image-crops` | `/admin/assets` |
 | `faqs` | 화면 FAQ 의 묶음(key · 제목)과 문항(질문 · 답 블록). 묶음 하나가 시트 하나다([[ADR-150]]) | `lib/faq/faqs` | `/admin/faqs` |
 | `appImages` | 붙일 표가 없는 앱 그림 72장의 key 와 그림 id. 결정석 칩 · 강화 다섯 · 메소 주머니 · 포스 · 모르는 캐릭터 · 드롭 연출 프레임 등이다([[ADR-187]] 결정 8) | `lib/assets/app-images` | 없음(S4 에서 만든다) |
-| `items` | 분류가 있는 아이템 671개의 key · 이름 · 종류(분류 트리의 첫 단) · 묶음 · 그림 id. 이름 차례다. 인벤토리 넣기와 가계부 아이템 고르기가 여기서 고르고, 상자를 빼는 일과 장신구를 장비로 옮기는 일은 고르는 쪽이 한다([[ADR-187]] 결정 10) | `lib/item-catalog` | `/admin/items` |
+| `items` | 분류가 있는 아이템 672개의 key · 이름 · 종류(분류 트리의 첫 단) · 묶음 · 그림 id. 이름 차례다. 인벤토리 넣기와 가계부 아이템 고르기가 여기서 고르고, 상자를 빼는 일과 장신구를 장비로 옮기는 일은 고르는 쪽이 한다([[ADR-187]] 결정 10) | `lib/item-catalog` | `/admin/items` |
 
 응답은 서버 표의 줄을 그대로 펼친 목록이다. 보스 · 난이도 · 분류로 묶거나 지역 안에 사냥터를 묶는 일은 조회 모듈이 한다.
 부르는 쪽은 값이 기기 사본에서 왔는지 서버 응답인지 모른다.
