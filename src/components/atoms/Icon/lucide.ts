@@ -15,7 +15,6 @@
 
 import ArrowLeft from 'lucide-react-native/icons/arrow-left'
 import ArrowRight from 'lucide-react-native/icons/arrow-right'
-import Backpack from 'lucide-react-native/icons/backpack'
 import Ban from 'lucide-react-native/icons/ban'
 import Bell from 'lucide-react-native/icons/bell'
 import BellOff from 'lucide-react-native/icons/bell-off'
@@ -111,8 +110,6 @@ export const AlertTriangleIcon = withIconInterop(TriangleAlert)
 export const ArrowLeftIcon = withIconInterop(ArrowLeft)
 export const ArrowRightIcon = withIconInterop(ArrowRight)
 /** 직전 기간 대비 **증가**. 보스 수익 증감 칩. */
-/** 인벤토리 하위 탭. 게임의 인벤토리가 가방이다. */
-export const BackpackIcon = withIconInterop(Backpack)
 /** 조회 불가 캐릭터. 보스 수익 `CharacterIssue`(영구 이슈 표식). */
 export const BanIcon = withIconInterop(Ban)
 /** 에픽 던전 카테고리. `ContentManageScreen` 그룹 헤더·행. */
